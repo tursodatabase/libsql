@@ -2,108 +2,25 @@
 use crate::types::{FromSql, FromSqlError, FromSqlResult, ToSql, ToSqlOutput, ValueRef};
 use crate::{Error, Result};
 use time::format_description::well_known::Rfc3339;
-use time::format_description::{modifier, Component, FormatItem};
+use time::format_description::FormatItem;
+use time::macros::format_description;
 use time::{OffsetDateTime, PrimitiveDateTime, UtcOffset};
 
-const DATE_FORMAT: &[FormatItem<'_>] = &[
-    FormatItem::Component(Component::Year(modifier::Year {
-        repr: modifier::YearRepr::Full,
-        iso_week_based: false,
-        sign_is_mandatory: false,
-        padding: modifier::Padding::Zero,
-    })),
-    FormatItem::Literal(b"-"),
-    FormatItem::Component(Component::Month(modifier::Month {
-        repr: modifier::MonthRepr::Numerical,
-        padding: modifier::Padding::Zero,
-    })),
-    FormatItem::Literal(b"-"),
-    FormatItem::Component(Component::Day(modifier::Day {
-        padding: modifier::Padding::Zero,
-    })),
-];
-
-const SHORT_TIME_FORMAT: &[FormatItem<'_>] = &[
-    FormatItem::Component(Component::Hour(modifier::Hour {
-        padding: modifier::Padding::Zero,
-        is_12_hour_clock: false,
-    })),
-    FormatItem::Literal(b":"),
-    FormatItem::Component(Component::Minute(modifier::Minute {
-        padding: modifier::Padding::Zero,
-    })),
-    FormatItem::Literal(b":"),
-    FormatItem::Component(Component::Second(modifier::Second {
-        padding: modifier::Padding::Zero,
-    })),
-];
-const TIME_FORMAT: &[FormatItem<'_>] = &[
-    FormatItem::Compound(SHORT_TIME_FORMAT),
-    FormatItem::Literal(b"."),
-    FormatItem::Component(Component::Subsecond(modifier::Subsecond {
-        digits: modifier::SubsecondDigits::OneOrMore, // TODO SQLite supports ZeroOrMore
-    })),
-];
-const LEGACY_TIME_FORMAT: &[FormatItem<'_>] = &[
-    FormatItem::Compound(SHORT_TIME_FORMAT),
-    FormatItem::Literal(b":"), // legacy
-    FormatItem::Component(Component::Subsecond(modifier::Subsecond {
-        digits: modifier::SubsecondDigits::OneOrMore,
-    })),
-];
-
-const OFFSET_FORMAT: &[FormatItem<'_>] = &[
-    FormatItem::Component(Component::OffsetHour(modifier::OffsetHour {
-        sign_is_mandatory: true,
-        padding: modifier::Padding::Zero,
-    })),
-    FormatItem::Literal(b":"),
-    FormatItem::Component(Component::OffsetMinute(modifier::OffsetMinute {
-        padding: modifier::Padding::Zero,
-    })),
-];
-
-const PRIMITIVE_SHORT_DATE_TIME_FORMAT: &[FormatItem<'_>] = &[
-    FormatItem::Compound(DATE_FORMAT),
-    FormatItem::Literal(b" "), // TODO "T"
-    FormatItem::Compound(SHORT_TIME_FORMAT),
-];
-
-const PRIMITIVE_DATE_TIME_FORMAT: &[FormatItem<'_>] = &[
-    FormatItem::Compound(DATE_FORMAT),
-    FormatItem::Literal(b" "), // TODO "T"
-    FormatItem::Compound(TIME_FORMAT),
-];
-const PRIMITIVE_DATE_TIME_Z_FORMAT: &[FormatItem<'_>] = &[
-    FormatItem::Compound(DATE_FORMAT),
-    FormatItem::Literal(b" "), // TODO "T"
-    FormatItem::Compound(TIME_FORMAT),
-    FormatItem::Literal(b"Z"), // TODO "T"
-];
-
-const OFFSET_SHORT_DATE_TIME_FORMAT: &[FormatItem<'_>] = &[
-    FormatItem::Compound(DATE_FORMAT),
-    FormatItem::Literal(b" "), // TODO "T"
-    FormatItem::Compound(SHORT_TIME_FORMAT),
-    //FormatItem::Literal(b" "), optional
-    FormatItem::Compound(OFFSET_FORMAT),
-];
-
-const OFFSET_DATE_TIME_FORMAT: &[FormatItem<'_>] = &[
-    FormatItem::Compound(DATE_FORMAT),
-    FormatItem::Literal(b" "), // TODO "T"
-    FormatItem::Compound(TIME_FORMAT),
-    // FormatItem::Literal(b" "), optional
-    FormatItem::Compound(OFFSET_FORMAT),
-];
-
-const LEGACY_DATE_TIME_FORMAT: &[FormatItem<'_>] = &[
-    FormatItem::Compound(DATE_FORMAT),
-    FormatItem::Literal(b" "), // TODO "T"
-    FormatItem::Compound(LEGACY_TIME_FORMAT),
-    FormatItem::Literal(b" "),
-    FormatItem::Compound(OFFSET_FORMAT),
-];
+const PRIMITIVE_SHORT_DATE_TIME_FORMAT: &[FormatItem<'_>] =
+    format_description!("[year]-[month]-[day] [hour]:[minute]:[second]");
+const PRIMITIVE_DATE_TIME_FORMAT: &[FormatItem<'_>] =
+    format_description!("[year]-[month]-[day] [hour]:[minute]:[second].[subsecond]");
+const PRIMITIVE_DATE_TIME_Z_FORMAT: &[FormatItem<'_>] =
+    format_description!("[year]-[month]-[day] [hour]:[minute]:[second].[subsecond]Z");
+const OFFSET_SHORT_DATE_TIME_FORMAT: &[FormatItem<'_>] = format_description!(
+    "[year]-[month]-[day] [hour]:[minute]:[second][offset_hour sign:mandatory]:[offset_minute]"
+);
+const OFFSET_DATE_TIME_FORMAT: &[FormatItem<'_>] = format_description!(
+    "[year]-[month]-[day] [hour]:[minute]:[second].[subsecond][offset_hour sign:mandatory]:[offset_minute]"
+);
+const LEGACY_DATE_TIME_FORMAT: &[FormatItem<'_>] = format_description!(
+    "[year]-[month]-[day] [hour]:[minute]:[second]:[subsecond] [offset_hour sign:mandatory]:[offset_minute]"
+);
 
 impl ToSql for OffsetDateTime {
     #[inline]
@@ -151,8 +68,8 @@ impl FromSql for OffsetDateTime {
 #[cfg(test)]
 mod test {
     use crate::{Connection, Result};
-    use time::OffsetDateTime;
     use time::format_description::well_known::Rfc3339;
+    use time::OffsetDateTime;
 
     fn checked_memory_handle() -> Result<Connection> {
         let db = Connection::open_in_memory()?;
@@ -195,16 +112,16 @@ mod test {
         for (s, t) in vec![
             (
                 "2013-10-07 08:23:19.120",
-                Ok(OffsetDateTime::parse("2013-10-07T08:23:19.120Z", &Rfc3339).unwrap())
+                Ok(OffsetDateTime::parse("2013-10-07T08:23:19.120Z", &Rfc3339).unwrap()),
             ),
             (
                 "2013-10-07 08:23:19.120Z",
-                Ok(OffsetDateTime::parse("2013-10-07T08:23:19.120Z", &Rfc3339).unwrap())
+                Ok(OffsetDateTime::parse("2013-10-07T08:23:19.120Z", &Rfc3339).unwrap()),
             ),
             //"2013-10-07T08:23:19.120Z", // TODO
             (
                 "2013-10-07 04:23:19.120-04:00",
-                Ok(OffsetDateTime::parse("2013-10-07T04:23:19.120-04:00", &Rfc3339).unwrap())
+                Ok(OffsetDateTime::parse("2013-10-07T04:23:19.120-04:00", &Rfc3339).unwrap()),
             ),
         ] {
             let result: Result<OffsetDateTime> = db.query_row("SELECT ?", [s], |r| r.get(0));
