@@ -14,7 +14,6 @@ use crate::{Connection, InnerConnection};
 #[repr(i32)]
 #[non_exhaustive]
 #[allow(clippy::upper_case_acronyms)]
-#[cfg_attr(docsrs, doc(cfg(feature = "hooks")))]
 pub enum Action {
     /// Unsupported / unexpected action
     UNKNOWN = -1,
@@ -43,14 +42,14 @@ impl From<i32> for Action {
 /// See <https://sqlite.org/c3ref/set_authorizer.html> for more info.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct AuthContext<'c> {
-    // The action to be authorized.
+    /// The action to be authorized.
     pub action: AuthAction<'c>,
 
     /// The database name, if applicable.
     pub database_name: Option<&'c str>,
 
-    // The inner-most trigger or view responsible for the access attempt.
-    // `None` if the access attempt was made by top-level SQL code.
+    /// The inner-most trigger or view responsible for the access attempt.
+    /// `None` if the access attempt was made by top-level SQL code.
     pub accessor: Option<&'c str>,
 }
 
@@ -299,6 +298,7 @@ pub(crate) type BoxedAuthorizer =
 /// A transaction operation.
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[non_exhaustive]
+#[allow(missing_docs)]
 pub enum TransactionOperation {
     Unknown,
     Begin,
@@ -317,6 +317,7 @@ impl TransactionOperation {
     }
 }
 
+/// [`authorizer`](Connection::authorizer) return code
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[non_exhaustive]
 pub enum Authorization {
@@ -598,7 +599,7 @@ impl InnerConnection {
         };
     }
 
-    pub fn authorizer<'c, F>(&'c mut self, authorizer: Option<F>)
+    fn authorizer<'c, F>(&'c mut self, authorizer: Option<F>)
     where
         F: for<'r> FnMut(AuthContext<'r>) -> Authorization + Send + RefUnwindSafe + 'static,
     {

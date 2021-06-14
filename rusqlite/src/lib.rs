@@ -74,8 +74,6 @@ pub use crate::cache::CachedStatement;
 pub use crate::column::Column;
 pub use crate::error::Error;
 pub use crate::ffi::ErrorCode;
-#[cfg(feature = "hooks")]
-pub use crate::hooks::Action;
 #[cfg(feature = "load_extension")]
 pub use crate::load_extension_guard::LoadExtensionGuard;
 pub use crate::params::{params_from_iter, Params, ParamsFromIter};
@@ -108,7 +106,7 @@ mod context;
 pub mod functions;
 #[cfg(feature = "hooks")]
 #[cfg_attr(docsrs, doc(cfg(feature = "hooks")))]
-mod hooks;
+pub mod hooks;
 mod inner_connection;
 #[cfg(feature = "limits")]
 #[cfg_attr(docsrs, doc(cfg(feature = "limits")))]
@@ -845,7 +843,7 @@ impl Connection {
 
     #[inline]
     fn decode_result(&self, code: c_int) -> Result<()> {
-        self.db.borrow_mut().decode_result(code)
+        self.db.borrow().decode_result(code)
     }
 
     /// Return the number of rows modified, inserted or deleted by the most
@@ -853,7 +851,7 @@ impl Connection {
     /// connection.
     #[inline]
     fn changes(&self) -> usize {
-        self.db.borrow_mut().changes()
+        self.db.borrow().changes()
     }
 
     /// Test for auto-commit mode.
