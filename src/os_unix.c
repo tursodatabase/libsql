@@ -8068,6 +8068,7 @@ int sqlite3_os_init(void){
   }
   unixBigLock = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_VFS1);
 
+#ifndef SQLITE_OMIT_WAL
   /* Validate lock assumptions */
   assert( SQLITE_SHM_NLOCK==8 );  /* Number of available locks */
   assert( UNIX_SHM_BASE==120  );  /* Start of locking area */
@@ -8083,6 +8084,8 @@ int sqlite3_os_init(void){
   **    DMS         UNIX_SHM_BASE+8    128
   */
   assert( UNIX_SHM_DMS==128   );  /* Byte offset of the deadman-switch */
+#endif
+
   return SQLITE_OK; 
 }
 
