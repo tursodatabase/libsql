@@ -1160,13 +1160,13 @@ static int renameEditSql(
   const char *zNew,               /* New token text */
   int bQuote                      /* True to always quote token */
 ){
-  int nNew = sqlite3Strlen30(zNew);
-  int nSql = sqlite3Strlen30(zSql);
+  i64 nNew = sqlite3Strlen30(zNew);
+  i64 nSql = sqlite3Strlen30(zSql);
   sqlite3 *db = sqlite3_context_db_handle(pCtx);
   int rc = SQLITE_OK;
   char *zQuot = 0;
   char *zOut;
-  int nQuot = 0;
+  i64 nQuot = 0;
   char *zBuf1 = 0;
   char *zBuf2 = 0;
 

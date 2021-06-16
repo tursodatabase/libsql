@@ -1,5 +1,5 @@
-C Fix\ssome\s#ifdefs\sso\sthat\sbuilds\swork\sfor\sall\ssupported\scompile-time\soptions.
-D 2021-06-15T20:10:25.201
+C Enhanced\sdefense\sagainst\sinteger\soverflow\sin\sALTER\sTABLE.
+D 2021-06-16T11:32:54.576
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -478,7 +478,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
-F src/alter.c 00212ce60260818eee9ce7d881251ae172f3996db577729a2593d2e3d70551ec
+F src/alter.c 774a2a175ec747b55046ec62f5c1208d730ee22b10bdad5f182591fa247946a8
 F src/analyze.c 01c6c6765cb4d40b473b71d85535093730770bb186f2f473abac25f07fcdee5c
 F src/attach.c a514e81758ba7b3a3a0501faf70af6cfc509de8810235db726cfc9f25165e929
 F src/auth.c 08954fdc4cc2da5264ba5b75cfd90b67a6fc7d1710a02ccf917c38eadec77853
@@ -1918,8 +1918,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 603b851d7d923d71543760b09a55d72dbbc185ac9c353c954c331c0454992c80 4b2bb46730393292364b2be7db4e73fc8f93cd5a141aaf04f20fe0119deb5ab3
-R c793a2b6fd573c5020d76ea917fab815
-T +closed 4b2bb46730393292364b2be7db4e73fc8f93cd5a141aaf04f20fe0119deb5ab3
+P ca7d78f7818b4754fd04ea2b618dee1f01e11c6a5acb54951217c0d03df8e187
+R e472ba5ac6b47e2e07dd760592d28813
 U drh
-Z 83f5ebc6b2c42f5bde61078e332a4e0b
+Z a2a26cfc7aeeb72d48e041fe86674b54
