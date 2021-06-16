@@ -1,5 +1,5 @@
-C Adjust\sthe\smkshellc.tcl\sscript\sso\sthat\sthe\sgenerated\scode\salways\suses\nunix-style\sline\sendings.
-D 2021-06-16T15:56:09.899
+C Do\snot\srun\stest\sfile\ssessionbig.test\son\s32-bit\splatforms.\sIt\suses\stoo\smuch\smemory.
+D 2021-06-16T16:56:56.405
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -446,7 +446,7 @@ F ext/session/sessionH.test b17afdbd3b8f17e9bab91e235acf167cf35485db2ab2df0ea889
 F ext/session/session_common.tcl f613174665456b2d916ae8df3e5735092a1c1712f36f46840172e9a01e8cc53e
 F ext/session/session_speed_test.c dcf0ef58d76b70c8fbd9eab3be77cf9deb8bc1638fed8be518b62d6cbdef88b3
 F ext/session/sessionat.test efe88965e74ff1bc2af9c310b28358c02d420c1fb2705cc7a28f0c1cc142c3ec
-F ext/session/sessionbig.test 5851fc7f9981e2ccf1c7d9e7cb239dc530db07d5e878ebbb2f6d993d27872a43
+F ext/session/sessionbig.test 890ade19e3f80f3d3a3e83821ff79c5e2af906a67ecb5450879f0015cadf101e
 F ext/session/sessiondiff.test ad13dd65664bae26744e1f18eb3cbd5588349b7e9118851d8f9364248d67bcec
 F ext/session/sessionfault.test da273f2712b6411e85e71465a1733b8501dbf6f7
 F ext/session/sessionfault2.test dd593f80b6b4786f7adfe83c5939620bc505559770cc181332da26f29cddd7bb
@@ -1918,7 +1918,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f8d7ac0104b76555142ce0d32714594f42d19b311dce2f77f42f92756b5e0c93
-R 8096b459bc52999a686a07ce38e2633d
-U drh
-Z d9829fc7ef6888439b3e9b0991becf3b
+P 9f69af4dbcb273519fa87b7868f3792560fb71b192f4ffe53b8b465334da5ae4
+R 06f7b4439ba296963e7ccd835b648d5b
+U dan
+Z 21e3b53cf1eababb187a92aca9194afb
