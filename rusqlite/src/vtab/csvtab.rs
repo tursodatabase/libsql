@@ -212,7 +212,7 @@ unsafe impl<'vtab> VTab<'vtab> for CsvTab {
                     if n_col.is_none() && schema.is_none() {
                         cols = headers
                             .into_iter()
-                            .map(|header| escape_double_quote(&header).into_owned())
+                            .map(|header| escape_double_quote(header).into_owned())
                             .collect();
                     }
                 }

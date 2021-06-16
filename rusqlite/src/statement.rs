@@ -453,7 +453,7 @@ impl Statement<'_> {
     {
         let mut rows = self.query(params)?;
 
-        rows.get_expected_row().and_then(|r| f(&r))
+        rows.get_expected_row().and_then(|r| f(r))
     }
 
     /// Convenience method to execute a query with named parameter(s) that is

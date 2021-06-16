@@ -181,7 +181,10 @@ mod build_bundled {
 
             if cfg!(feature = "bundled-sqlcipher-vendored-openssl") {
                 cfg.include(std::env::var("DEP_OPENSSL_INCLUDE").unwrap());
-                println!("cargo:rustc-link-lib=static=crypto"); // cargo will resolve downstream to the static lib in openssl-sys
+                println!("cargo:rustc-link-lib=static=crypto"); // cargo will
+                                                                // resolve downstream
+                                                                // to the static
+                                                                // lib in openssl-sys
             } else if is_windows {
                 // FIXME README says that bundled-sqlcipher is Unix only, and the sources are
                 // configured on a Unix machine. So maybe this should be made unreachable.

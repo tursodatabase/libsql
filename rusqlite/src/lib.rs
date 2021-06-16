@@ -670,7 +670,7 @@ impl Connection {
         stmt.check_no_tail()?;
         let mut rows = stmt.query(params)?;
 
-        rows.get_expected_row().map_err(E::from).and_then(|r| f(&r))
+        rows.get_expected_row().map_err(E::from).and_then(|r| f(r))
     }
 
     /// Prepare a SQL statement for execution.
