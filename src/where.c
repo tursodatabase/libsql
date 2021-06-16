@@ -2719,7 +2719,7 @@ static int whereLoopAddBtreeIndex(
         tRowcnt nOut = 0;
         if( nInMul==0 
          && pProbe->nSample 
-         && pNew->u.btree.nEq<=pProbe->nSampleCol
+         && ALWAYS(pNew->u.btree.nEq<=pProbe->nSampleCol)
          && ((eOp & WO_IN)==0 || !ExprHasProperty(pTerm->pExpr, EP_xIsSelect))
          && OptimizationEnabled(db, SQLITE_Stat4)
         ){
