@@ -1,5 +1,5 @@
-C Adjustments\sto\srequirement\smarkings\sin\scomments.\s\sNo\schanges\sto\scode.
-D 2021-06-16T12:26:01.882
+C Avoid\sominous\swarning\sin\sshowdb.c
+D 2021-06-16T13:26:40.463
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1868,7 +1868,7 @@ F tool/replace.tcl 60f91e8dd06ab81f74d213ecbd9c9945f32ac048
 F tool/restore_jrnl.tcl 6957a34f8f1f0f8285e07536225ec3b292a9024a
 F tool/rollback-test.c 9fc98427d1e23e84429d7e6d07d9094fbdec65a5
 F tool/run-speed-test.sh f95d19fd669b68c4c38b6b475242841d47c66076
-F tool/showdb.c 6554d4af7690404f5b9242cf0349a74b59cafbda95fcf8f31c36303faf8539da
+F tool/showdb.c 7cc12c6deeddfe40ba5d948b408730696d8365988da05fcb6b6a90ea4965e2b4
 F tool/showjournal.c 5bad7ae8784a43d2b270d953060423b8bd480818
 F tool/showlocks.c 9cc5e66d4ebbf2d194f39db2527ece92077e86ae627ddd233ee48e16e8142564
 F tool/showshm.c a0ab6ec32dd1f11218ca2a4018f8fb875b59414801ab8ceed8b2e69b7b45a809
@@ -1918,7 +1918,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fb7f094e4e0f03622c2e7fa02483c17671a8899c7ad8aba8659177180f406704
-R 835c1d545e4c21bb73584857e935c084
-U drh
-Z 85ada50dc9f2e32edaced765f42b5e14
+P be00e45b723adf64bc78927dc12de3116fd04912a52e5c105a52f235c57698f5
+R ff172fb118f95b7d18532fd66becde9e
+U larrybr
+Z 9772cb1ad713ae796d8354e91b29d691
