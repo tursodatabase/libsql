@@ -1,5 +1,5 @@
-C Do\snot\srun\stest\sfile\ssessionbig.test\son\s32-bit\splatforms.\sIt\suses\stoo\smuch\smemory.
-D 2021-06-16T16:56:56.405
+C Omit\sa\shandful\sof\stests\sfrom\spager1.test\swhen\stesting\sSQLITE_ENABLE_ZIPVFS\sbuilds.
+D 2021-06-16T18:58:01.955
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1254,7 +1254,7 @@ F test/oserror.test 1fc9746b83d778e70d115049747ba19c7fba154afce7cc165b09feb6ca6a
 F test/ossfuzz.c 9636dad2092a05a32110df0ca06713038dd0c43dd89a77dabe4b8b0d71096715
 F test/ossshell.c f125c5bd16e537a2549aa579b328dd1c59905e7ab1338dfc210e755bb7b69f17
 F test/ovfl.test 199c482696defceacee8c8e0e0ef36da62726b2f
-F test/pager1.test 293c7ad1f19a07e548179b97534c6588249d4e40058b378ea26e75cc84d936f5
+F test/pager1.test a4e438c344663ad7f0bf6e880cacae7531bdf7d960db15a3db4751273ecee06d
 F test/pager2.test 67b8f40ae98112bcdba1f2b2d03ea83266418c71
 F test/pager3.test 4e9a83d6ca0838d7c602c9eb93d1357562d9059c1e02ffb138a8271020838370
 F test/pager4.test a122e9e6925d5b23b31e3dfef8c6a44bbf19590e
@@ -1918,7 +1918,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9f69af4dbcb273519fa87b7868f3792560fb71b192f4ffe53b8b465334da5ae4
-R 06f7b4439ba296963e7ccd835b648d5b
+P 75e53215fe436999cdc70434c6ae96d3ce6642c71528cce9f5715fe1b1b81876
+R a30b9f26bd7f73e8281d608010515622
 U dan
-Z 21e3b53cf1eababb187a92aca9194afb
+Z 55702563d6bc46337e90dc74dba260ce
