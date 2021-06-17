@@ -1486,6 +1486,7 @@ static int zipfileBegin(sqlite3_vtab *pVtab){
 static u32 zipfileTime(void){
   sqlite3_vfs *pVfs = sqlite3_vfs_find(0);
   u32 ret;
+  if( pVfs==0 ) return 0;
   if( pVfs->iVersion>=2 && pVfs->xCurrentTimeInt64 ){
     i64 ms;
     pVfs->xCurrentTimeInt64(pVfs, &ms);

@@ -1391,9 +1391,23 @@ do_test auth-1.205 {
   }
   catchsql {DROP INDEX i2}
 } {1 {not authorized}}
-do_test auth-1.206 {
+do_test auth-1.205a {
   set ::authargs
 } {i2 t2 main {}}
+db eval {
+  ATTACH ':memory:' as di205;
+  CREATE TABLE di205.t1(x);
+  CREATE INDEX di205.t1x ON t1(x);
+}
+do_catchsql_test auth-1.205b {
+  DROP INDEX di205.t1x;
+} {1 {not authorized}}
+db eval {
+  DETACH di205;
+}
+do_test auth-1.206 {
+  set ::authargs
+} {t1x t1 di205 {}}
 do_test auth-1.207 {
   execsql {SELECT name FROM sqlite_master}
 } {t2 i2}
