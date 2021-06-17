@@ -209,12 +209,18 @@ ifcapable json1&&vtab {
       WHERE type='index';
   }
 
-  db close
-  sqlite3 db test.db
+  # Do not run this tests if there is any presql (SQL run from within
+  # the [sqlite3] command) configured. In this case the schema is parsed
+  # before the "PRAGMA writable_schema" command is executed and the 
+  # script throws and exception.
+  if {[info exists ::G(perm:presql)]==0 || $::G(perm:presql)==""} {
+    db close
+    sqlite3 db test.db
 
-  do_execsql_test 5.1 {
-    PRAGMA writable_schema = 1;
-    SELECT * FROM t1
+    do_execsql_test 5.1 {
+      PRAGMA writable_schema = 1;
+      SELECT * FROM t1
+    }
   }
 }; # ifcapable json1&&vtab
 

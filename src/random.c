@@ -76,11 +76,16 @@ void sqlite3_randomness(int N, void *pBuf){
   ** number generator) not as an encryption device.
   */
   if( !wsdPrng.isInit ){
+    sqlite3_vfs *pVfs = sqlite3_vfs_find(0);
     int i;
     char k[256];
     wsdPrng.j = 0;
     wsdPrng.i = 0;
-    sqlite3OsRandomness(sqlite3_vfs_find(0), 256, k);
+    if( NEVER(pVfs==0) ){
+      memset(k, 0, sizeof(k));
+    }else{
+      sqlite3OsRandomness(pVfs, 256, k);
+    }
     for(i=0; i<256; i++){
       wsdPrng.s[i] = (u8)i;
     }
