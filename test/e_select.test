@@ -1004,12 +1004,13 @@ do_execsql_test e_select-4.9.0 {
   INSERT INTO b3 VALUES('dEF', 'dEF');
 } {}
 
-# EVIDENCE-OF: R-07284-35990 If the SELECT statement is an aggregate
+# EVIDENCE-OF: R-40855-36147 If the SELECT statement is an aggregate
 # query with a GROUP BY clause, then each of the expressions specified
 # as part of the GROUP BY clause is evaluated for each row of the
-# dataset. Each row is then assigned to a "group" based on the results;
-# rows for which the results of evaluating the GROUP BY expressions are
-# the same get assigned to the same group.
+# dataset according to the processing rules stated below for ORDER BY
+# expressions. Each row is then assigned to a "group" based on the
+# results; rows for which the results of evaluating the GROUP BY
+# expressions are the same get assigned to the same group.
 #
 #   These tests also show that the following is not untrue:
 #

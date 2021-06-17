@@ -949,4 +949,23 @@ do_execsql_test 30.2 {
   END}
 }
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 31.0 {
+  CREATE TABLE t1(q);
+  CREATE VIEW vvv AS WITH x AS (WITH y AS (SELECT * FROM x) SELECT 1) SELECT 1;
+}
+
+do_execsql_test 31.1 {
+  SELECT * FROM vvv;
+} {1}
+
+do_execsql_test 31.2 {
+  ALTER TABLE t1 RENAME TO t1x;
+}
+
+do_execsql_test 31.3 {
+  ALTER TABLE t1x RENAME q TO x;
+}
+
 finish_test

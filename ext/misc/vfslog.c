@@ -754,6 +754,7 @@ static int vlogCurrentTimeInt64(sqlite3_vfs *pVfs, sqlite3_int64 *p){
 */
 int sqlite3_register_vfslog(const char *zArg){
   vlog_vfs.pVfs = sqlite3_vfs_find(0);
+  if( vlog_vfs.pVfs==0 ) return SQLITE_ERROR;
   vlog_vfs.base.szOsFile = sizeof(VLogFile) + vlog_vfs.pVfs->szOsFile;
   return sqlite3_vfs_register(&vlog_vfs.base, 1);
 }

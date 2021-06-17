@@ -4288,7 +4288,7 @@ int sqlite3_test_control(int op, ...){
        break;
     }
 
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) && !defined(SQLITE_OMIT_WSD)
     /* sqlite3_test_control(SQLITE_TESTCTRL_TUNE, id, *piValue)
     **
     ** If "id" is an integer between 1 and SQLITE_NTUNE then set the value

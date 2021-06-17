@@ -1764,6 +1764,12 @@ tv delete
 #-------------------------------------------------------------------------
 # Test specal "PRAGMA journal_mode=OFF" test cases.
 #
+# Do not run these tests for SQLITE_ENABLE_ZIPVFS builds. Such builds
+# cause the pager to enter the error state if a statement transaction
+# cannot be rolled back due to a prior "PRAGMA journal_mode=OFF". Which
+# causes these tests to fail.
+#
+if {[info commands zip_register]==""} {
 faultsim_delete_and_reopen
 do_execsql_test pager1-14.1.1 {
   PRAGMA journal_mode = OFF;
@@ -1788,8 +1794,11 @@ do_catchsql_test pager1-14.1.4 {
 } {1 {UNIQUE constraint failed: t1.rowid}}
 do_execsql_test pager1-14.1.5 {
   COMMIT;
+}
+do_execsql_test pager1-14.1.6 {
   SELECT * FROM t1;
 } {1 2 2 2}
+}
 
 #-------------------------------------------------------------------------
 # Test opening and closing the pager sub-system with different values
