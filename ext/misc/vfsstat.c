@@ -806,6 +806,7 @@ int sqlite3_vfsstat_init(
   int rc = SQLITE_OK;
   SQLITE_EXTENSION_INIT2(pApi);
   vstat_vfs.pVfs = sqlite3_vfs_find(0);
+  if( vstat_vfs.pVfs==0 ) return SQLITE_ERROR;
   vstat_vfs.base.szOsFile = sizeof(VStatFile) + vstat_vfs.pVfs->szOsFile;
   rc = sqlite3_vfs_register(&vstat_vfs.base, 1);
   if( rc==SQLITE_OK ){

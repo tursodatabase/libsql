@@ -823,6 +823,7 @@ static int cksmRegisterVfs(void){
   sqlite3_vfs *pOrig;
   if( sqlite3_vfs_find("cksmvfs")!=0 ) return SQLITE_OK;
   pOrig = sqlite3_vfs_find(0);
+  if( pOrig==0 ) return SQLITE_ERROR;
   cksm_vfs.iVersion = pOrig->iVersion;
   cksm_vfs.pAppData = pOrig;
   cksm_vfs.szOsFile = pOrig->szOsFile + sizeof(CksmFile);
@@ -870,9 +871,6 @@ int sqlite3_cksumvfs_init(
   SQLITE_EXTENSION_INIT2(pApi);
   (void)pzErrMsg; /* not used */
   rc = cksmRegisterFunc(db, 0, 0);
-  if( rc==SQLITE_OK ){
-    
-  }
   if( rc==SQLITE_OK ){
     rc = cksmRegisterVfs();
   }

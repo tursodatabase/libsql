@@ -559,6 +559,7 @@ int sqlite3_memvfs_init(
   int rc = SQLITE_OK;
   SQLITE_EXTENSION_INIT2(pApi);
   mem_vfs.pAppData = sqlite3_vfs_find(0);
+  if( mem_vfs.pAppData==0 ) return SQLITE_ERROR;
   mem_vfs.szOsFile = sizeof(MemFile);
   rc = sqlite3_vfs_register(&mem_vfs, 1);
 #ifdef MEMVFS_TEST
