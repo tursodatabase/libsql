@@ -850,7 +850,11 @@ static int renameUnmapSelectCb(Walker *pWalker, Select *p){
   Parse *pParse = pWalker->pParse;
   int i;
   if( pParse->nErr ) return WRC_Abort;
-  if( p->selFlags & SF_View ) return WRC_Prune;
+  if( p->selFlags & (SF_View|SF_CopyCte) ){
+    testcase( p->selFlags & SF_View );
+    testcase( p->selFlags & SF_CopyCte );
+    return WRC_Prune;
+  }
   if( ALWAYS(p->pEList) ){
     ExprList *pList = p->pEList;
     for(i=0; i<pList->nExpr; i++){
@@ -958,7 +962,11 @@ static RenameToken *renameTokenFind(
 ** descend into sub-select statements.
 */
 static int renameColumnSelectCb(Walker *pWalker, Select *p){
-  if( p->selFlags & SF_View ) return WRC_Prune;
+  if( p->selFlags & (SF_View|SF_CopyCte) ){
+    testcase( p->selFlags & SF_View );
+    testcase( p->selFlags & SF_CopyCte );
+    return WRC_Prune;
+  }
   renameWalkWith(pWalker, p);
   return WRC_Continue;
 }
@@ -1152,13 +1160,13 @@ static int renameEditSql(
   const char *zNew,               /* New token text */
   int bQuote                      /* True to always quote token */
 ){
-  int nNew = sqlite3Strlen30(zNew);
-  int nSql = sqlite3Strlen30(zSql);
+  i64 nNew = sqlite3Strlen30(zNew);
+  i64 nSql = sqlite3Strlen30(zSql);
   sqlite3 *db = sqlite3_context_db_handle(pCtx);
   int rc = SQLITE_OK;
   char *zQuot = 0;
   char *zOut;
-  int nQuot = 0;
+  i64 nQuot = 0;
   char *zBuf1 = 0;
   char *zBuf2 = 0;
 
@@ -1594,7 +1602,11 @@ static int renameTableSelectCb(Walker *pWalker, Select *pSelect){
   int i;
   RenameCtx *p = pWalker->u.pRename;
   SrcList *pSrc = pSelect->pSrc;
-  if( pSelect->selFlags & SF_View ) return WRC_Prune;
+  if( pSelect->selFlags & (SF_View|SF_CopyCte) ){
+    testcase( pSelect->selFlags & SF_View );
+    testcase( pSelect->selFlags & SF_CopyCte );
+    return WRC_Prune;
+  }
   if( NEVER(pSrc==0) ){
     assert( pWalker->pParse->db->mallocFailed );
     return WRC_Abort;

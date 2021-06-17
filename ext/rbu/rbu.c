@@ -56,7 +56,7 @@ void usage(const char *zArgv0){
 
 void report_default_vfs(){
   sqlite3_vfs *pVfs = sqlite3_vfs_find(0);
-  fprintf(stdout, "default vfs is \"%s\"\n", pVfs->zName);
+  fprintf(stdout, "default vfs is \"%s\"\n", pVfs ? pVfs->zName : "NULL");
 }
 
 void report_rbu_vfs(sqlite3rbu *pRbu){

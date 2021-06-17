@@ -1316,10 +1316,10 @@ static void trimFunc(
 ){
   const unsigned char *zIn;         /* Input string */
   const unsigned char *zCharSet;    /* Set of characters to trim */
-  int nIn;                          /* Number of bytes in input */
+  unsigned int nIn;                 /* Number of bytes in input */
   int flags;                        /* 1: trimleft  2: trimright  3: trim */
   int i;                            /* Loop counter */
-  unsigned char *aLen = 0;          /* Length of each character in zCharSet */
+  unsigned int *aLen = 0;           /* Length of each character in zCharSet */
   unsigned char **azChar = 0;       /* Individual characters in zCharSet */
   int nChar;                        /* Number of characters in zCharSet */
 
@@ -1328,13 +1328,13 @@ static void trimFunc(
   }
   zIn = sqlite3_value_text(argv[0]);
   if( zIn==0 ) return;
-  nIn = sqlite3_value_bytes(argv[0]);
+  nIn = (unsigned)sqlite3_value_bytes(argv[0]);
   assert( zIn==sqlite3_value_text(argv[0]) );
   if( argc==1 ){
-    static const unsigned char lenOne[] = { 1 };
+    static const unsigned lenOne[] = { 1 };
     static unsigned char * const azOne[] = { (u8*)" " };
     nChar = 1;
-    aLen = (u8*)lenOne;
+    aLen = (unsigned*)lenOne;
     azChar = (unsigned char **)azOne;
     zCharSet = 0;
   }else if( (zCharSet = sqlite3_value_text(argv[1]))==0 ){
@@ -1345,15 +1345,16 @@ static void trimFunc(
       SQLITE_SKIP_UTF8(z);
     }
     if( nChar>0 ){
-      azChar = contextMalloc(context, ((i64)nChar)*(sizeof(char*)+1));
+      azChar = contextMalloc(context, 
+                     ((i64)nChar)*(sizeof(char*)+sizeof(unsigned)));
       if( azChar==0 ){
         return;
       }
-      aLen = (unsigned char*)&azChar[nChar];
+      aLen = (unsigned*)&azChar[nChar];
       for(z=zCharSet, nChar=0; *z; nChar++){
         azChar[nChar] = (unsigned char *)z;
         SQLITE_SKIP_UTF8(z);
-        aLen[nChar] = (u8)(z - azChar[nChar]);
+        aLen[nChar] = (unsigned)(z - azChar[nChar]);
       }
     }
   }
@@ -1361,7 +1362,7 @@ static void trimFunc(
     flags = SQLITE_PTR_TO_INT(sqlite3_user_data(context));
     if( flags & 1 ){
       while( nIn>0 ){
-        int len = 0;
+        unsigned int len = 0;
         for(i=0; i<nChar; i++){
           len = aLen[i];
           if( len<=nIn && memcmp(zIn, azChar[i], len)==0 ) break;
@@ -1373,7 +1374,7 @@ static void trimFunc(
     }
     if( flags & 2 ){
       while( nIn>0 ){
-        int len = 0;
+        unsigned int len = 0;
         for(i=0; i<nChar; i++){
           len = aLen[i];
           if( len<=nIn && memcmp(&zIn[nIn-len],azChar[i],len)==0 ) break;
