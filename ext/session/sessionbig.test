@@ -25,6 +25,11 @@ if {[permutation]=="session_strm" || [permutation]=="session_eec"} {
   return
 }
 
+if {$::tcl_platform(pointerSize)<8} {
+  finish_test
+  return
+}
+
 set testprefix sessionbig
 
 forcedelete test.db2

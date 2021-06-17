@@ -861,7 +861,9 @@ end_deserialize:
 */
 int sqlite3MemdbInit(void){
   sqlite3_vfs *pLower = sqlite3_vfs_find(0);
-  unsigned int sz = pLower->szOsFile;
+  unsigned int sz;
+  if( NEVER(pLower==0) ) return SQLITE_ERROR;
+  sz = pLower->szOsFile;
   memdb_vfs.pAppData = pLower;
   /* The following conditional can only be true when compiled for
   ** Windows x86 and SQLITE_MAX_MMAP_SIZE=0.  We always leave

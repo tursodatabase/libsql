@@ -3234,6 +3234,7 @@ struct Select {
 #define SF_UpdateFrom    0x0800000 /* Statement is an UPDATE...FROM */
 #define SF_PushDown      0x1000000 /* SELECT has be modified by push-down opt */
 #define SF_MultiPart     0x2000000 /* Has multiple incompatible PARTITIONs */
+#define SF_CopyCte       0x4000000 /* SELECT statement is a copy of a CTE */
 
 /*
 ** The results of a SELECT can be distributed in several ways, as defined
