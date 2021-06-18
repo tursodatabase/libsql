@@ -1,5 +1,5 @@
-C Merge\srecent\strunk\senhancements\sinto\sreuse-schema\sbranch.
-D 2021-06-17T17:26:53.514
+C Merge\sversion\s3.36.0
+D 2021-06-18T19:01:15.358
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1928,7 +1928,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f21a53fb4141eaeca2fb33b25bbadfad4e461b0ed1a3526f54a42316f3dd5d9b 7bd55eee1ac63cf6d5699ce85bc5a29bf51afdf7a80bce44937fa833947a40f4
+P 92d8f967c9a7e4005c63703af8075b3d2ae5aa43c6b5bc6e599735dc4479bef6 5c9a6c06871cb9fe42814af9c039eb6da5427a6ec28f187af7ebfb62eafa66e5
 R 36eb132f78c5514148fa4679afcdeeb6
 U drh
-Z b8158accb8090ec1215133e4764405b8
+Z e12fbca0ecb8c5a30c8e5b0bded987be
