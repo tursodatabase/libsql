@@ -1,5 +1,5 @@
-C Split\sthe\ssqlite3BtreeMovetoUnpacked()\sroutine\sinto\stwo\sseparate\sroutines\nsqlite3BtreeTableMoveto()\sand\ssqlite3BtreeIndexMoveto(),\ssince\swe\susually\nknow\sthe\stype\sof\sbtree\sin\sadvance.\s\sThis\sresults\sin\sless\sbranching\sand\nbetter\sperformance.
-D 2021-06-19T18:32:20.087
+C The\sprevious\scheck-in\sis\sa\ssignificant\schange\sto\sbtree,\sso\sgo\sahead\sand\nincrement\sthe\sversion\snumber\sfor\sthe\snext\sdevelopment\scycle.
+D 2021-06-19T18:35:20.994
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -7,7 +7,7 @@ F Makefile.in ff5ac24ec9cb700135ee4453fa14c18ea371e94250d3673bda1f2cb56e1108ce
 F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
 F Makefile.msc 8285e1ea7264f32b08702866d69dd127c0f663bbc2002323d853c68c27c6b6e4
 F README.md 27fb76aa7eb57ed63a53bbba7292b6bf71f51125554f79f16b5d040edd1e6110
-F VERSION 8c392f6d70d82e513a0eac622bdf23c43df3e084cb630288beba8cef3012c812
+F VERSION c6595fef606851f2bc3ebed6a7386c73751835fc909feab7c093739fa4b3c1d1
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
@@ -34,7 +34,7 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 883205ddf25b46f10c181818bf42c09da9888884af96f79e1719264345053bd6
 F config.h.in 6376abec766e9a0785178b1823b5a587e9f1ccbc
 F config.sub c2d0260f17f3e4bc0b6808fccf1b291cb5e9126c14fc5890efc77b9fd0175559
-F configure c658869fc056a2460a2212fb2960e410cd24e3fb9c55640fbc78d15b48810936 x
+F configure 9712ea724ff2a1d48fadcf04b29fa1852f325792462c55f4fc71ab972653b20d x
 F configure.ac 4e4b58b32f88c8da9914a2f2c3158f80e69907eccc019fcc7e3ba14ffd91c640
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/F2FS.txt c1d4a0ae9711cfe0e1d8b019d154f1c29e0d3abfe820787ba1e9ed7691160fcd
@@ -1918,7 +1918,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5c9a6c06871cb9fe42814af9c039eb6da5427a6ec28f187af7ebfb62eafa66e5
-R cc13a86c593d747f18b1766f1996fa8f
+P 3b0d34e5e5f9a16c3397e4551f3b534729b1b375770f05f6ed5847818b1f4c0b
+R e85267aa1e581371a6eeabbe5500efbb
 U drh
-Z 15ce4941abcea77bc0d9552f8406032e
+Z 413ce8c5c5db00ea92410effb5485be3
