@@ -3501,7 +3501,7 @@ int SQLITE_NOINLINE sqlite3VdbeFinishMoveto(VdbeCursor *p){
   assert( p->deferredMoveto );
   assert( p->isTable );
   assert( p->eCurType==CURTYPE_BTREE );
-  rc = sqlite3BtreeMovetoUnpacked(p->uc.pCursor, 0, p->movetoTarget, 0, &res);
+  rc = sqlite3BtreeTableMoveto(p->uc.pCursor, p->movetoTarget, 0, &res);
   if( rc ) return rc;
   if( res!=0 ) return SQLITE_CORRUPT_BKPT;
 #ifdef SQLITE_TEST

@@ -4307,7 +4307,7 @@ case OP_SeekGT: {       /* jump, in3, group */
         if( (oc & 0x0001)==(OP_SeekLT & 0x0001) ) oc++;
       }
     }
-    rc = sqlite3BtreeMovetoUnpacked(pC->uc.pCursor, 0, (u64)iKey, 0, &res);
+    rc = sqlite3BtreeTableMoveto(pC->uc.pCursor, (u64)iKey, 0, &res);
     pC->movetoTarget = iKey;  /* Used by OP_Delete */
     if( rc!=SQLITE_OK ){
       goto abort_due_to_error;
@@ -4354,7 +4354,7 @@ case OP_SeekGT: {       /* jump, in3, group */
     { int i; for(i=0; i<r.nField; i++) assert( memIsValid(&r.aMem[i]) ); }
 #endif
     r.eqSeen = 0;
-    rc = sqlite3BtreeMovetoUnpacked(pC->uc.pCursor, &r, 0, 0, &res);
+    rc = sqlite3BtreeIndexMoveto(pC->uc.pCursor, &r, &res);
     if( rc!=SQLITE_OK ){
       goto abort_due_to_error;
     }
@@ -4773,7 +4773,7 @@ case OP_Found: {        /* jump, in3 */
       }
     }
   }
-  rc = sqlite3BtreeMovetoUnpacked(pC->uc.pCursor, pIdxKey, 0, 0, &res);
+  rc = sqlite3BtreeIndexMoveto(pC->uc.pCursor, pIdxKey, &res);
   if( pFree ) sqlite3DbFreeNN(db, pFree);
   if( rc!=SQLITE_OK ){
     goto abort_due_to_error;
@@ -4882,7 +4882,7 @@ notExistsWithKey:
   pCrsr = pC->uc.pCursor;
   assert( pCrsr!=0 );
   res = 0;
-  rc = sqlite3BtreeMovetoUnpacked(pCrsr, 0, iKey, 0, &res);
+  rc = sqlite3BtreeTableMoveto(pCrsr, iKey, 0, &res);
   assert( rc==SQLITE_OK || res==0 );
   pC->movetoTarget = iKey;  /* Used by OP_Delete */
   pC->nullRow = 0;
@@ -5039,7 +5039,7 @@ case OP_NewRowid: {           /* out2 */
       do{
         sqlite3_randomness(sizeof(v), &v);
         v &= (MAX_ROWID>>1); v++;  /* Ensure that v is greater than zero */
-      }while(  ((rc = sqlite3BtreeMovetoUnpacked(pC->uc.pCursor, 0, (u64)v,
+      }while(  ((rc = sqlite3BtreeTableMoveto(pC->uc.pCursor, (u64)v,
                                                  0, &res))==SQLITE_OK)
             && (res==0)
             && (++cnt<100));
@@ -5937,7 +5937,7 @@ case OP_IdxDelete: {
   r.nField = (u16)pOp->p3;
   r.default_rc = 0;
   r.aMem = &aMem[pOp->p2];
-  rc = sqlite3BtreeMovetoUnpacked(pCrsr, &r, 0, 0, &res);
+  rc = sqlite3BtreeIndexMoveto(pCrsr, &r, &res);
   if( rc ) goto abort_due_to_error;
   if( res==0 ){
     rc = sqlite3BtreeDelete(pCrsr, BTREE_AUXDELETE);

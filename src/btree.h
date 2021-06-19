@@ -247,11 +247,15 @@ void sqlite3BtreeCursorHint(BtCursor*, int, ...);
 #endif
 
 int sqlite3BtreeCloseCursor(BtCursor*);
-int sqlite3BtreeMovetoUnpacked(
+int sqlite3BtreeTableMoveto(
   BtCursor*,
-  UnpackedRecord *pUnKey,
   i64 intKey,
   int bias,
+  int *pRes
+);
+int sqlite3BtreeIndexMoveto(
+  BtCursor*,
+  UnpackedRecord *pUnKey,
   int *pRes
 );
 int sqlite3BtreeCursorHasMoved(BtCursor*);

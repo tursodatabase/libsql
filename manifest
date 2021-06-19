@@ -1,5 +1,5 @@
-C Version\s3.36.0
-D 2021-06-18T18:36:39.378
+C Split\sthe\ssqlite3BtreeMovetoUnpacked()\sroutine\sinto\stwo\sseparate\sroutines\nsqlite3BtreeTableMoveto()\sand\ssqlite3BtreeIndexMoveto(),\ssince\swe\susually\nknow\sthe\stype\sof\sbtree\sin\sadvance.\s\sThis\sresults\sin\sless\sbranching\sand\nbetter\sperformance.
+D 2021-06-19T18:32:20.087
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -485,8 +485,8 @@ F src/auth.c 08954fdc4cc2da5264ba5b75cfd90b67a6fc7d1710a02ccf917c38eadec77853
 F src/backup.c 3014889fa06e20e6adfa0d07b60097eec1f6e5b06671625f476a714d2356513d
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c 399e1ebcd6c4f9ad47f5457bfe3623441db287f0923433cf6539497791557be8
-F src/btree.h 096cc53baa58be22b02c896d1cf933c38cfc6d65f9253c1367ece8cc88a24de5
+F src/btree.c 6079ee9dc399a7a6f0727f2c6ba2f43c18600c71827a76ddcdedde54a58b646e
+F src/btree.h ace9c1c243612bb95c32d848e3f9e159340c2caefcb68412b441569f56328f65
 F src/btreeInt.h 7bc15a24a02662409ebcd6aeaa1065522d14b7fda71573a2b0568b458f514ae0
 F src/build.c ea28944f65b04f771e7aa5d614d406faa1bde5fe4ce882e2ead73049f03ed568
 F src/callback.c d0b853dd413255d2e337b34545e54d888ea02f20da5ad0e63585b389624c4a6c
@@ -616,11 +616,11 @@ F src/upsert.c df8f1727d62b5987c4fd302cd4d7c0c84ae57cd65683c5a34a740dfe24039235
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c 41c7a72da1df47864faa378a1c720b38adb288c6838cb6be5594511b6287a048
 F src/vacuum.c 492422c1463c076473bae1858799c7a0a5fe87a133d1223239447c422cd26286
-F src/vdbe.c 6ece0ee94fa3a95601372efdc4ec6d068cd6cc58e28af8852f3407b90be4b7f8
+F src/vdbe.c 226deb5bc5d88c4feb215cccaecdbe36924078737f27629fa06123d4da10f609
 F src/vdbe.h 25dabb25c7e157b84e59260cfb5b466c3ac103ede9f36f4db371332c47601abe
 F src/vdbeInt.h 465fcb494db4ca6630fb9c19b2f3dfed597fbe885b0d4204193a5093b0dd7dc6
 F src/vdbeapi.c aa5aaf2c37676b83af5724c6cd8207a3064ed46a217fd180957f75ac84f7a2a5
-F src/vdbeaux.c 065a10392378109f08435bd50d03dff315e384cde2831d6b8dbaec05f33b10af
+F src/vdbeaux.c 17e5f6a491d439396296dd20427829fad14c78a6be8f84415d253ff94c31ce9a
 F src/vdbeblob.c c6b8db50b227f66fb404215732068df76485b5b433e5f9d4d9ac27410b218193
 F src/vdbemem.c 53881aa0a7845922a075b3f375695588618098871a7a4120af4c297b80fa3e64
 F src/vdbesort.c cd5130f683706c1a43e165a74187745fb3351cb56052cf9dc91de820634bbde2
@@ -1918,9 +1918,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7bd55eee1ac63cf6d5699ce85bc5a29bf51afdf7a80bce44937fa833947a40f4
-R 6b8a0a7cf847af9edb1fb9387491b821
-T +sym-release *
-T +sym-version-3.36.0 *
+P 5c9a6c06871cb9fe42814af9c039eb6da5427a6ec28f187af7ebfb62eafa66e5
+R cc13a86c593d747f18b1766f1996fa8f
 U drh
-Z 05ee2bbc3eef4148ab2800c954a168c4
+Z 15ce4941abcea77bc0d9552f8406032e
