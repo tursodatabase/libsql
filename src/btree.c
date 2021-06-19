@@ -8903,9 +8903,6 @@ int sqlite3BtreeInsert(
         r.aMem = pX->aMem;
         r.nField = pX->nMem;
         r.default_rc = 0;
-        r.errCode = 0;
-        r.r1 = 0;
-        r.r2 = 0;
         r.eqSeen = 0;
         rc = sqlite3BtreeIndexMoveto(pCur, &r, &loc);
       }else{

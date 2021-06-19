@@ -1,5 +1,5 @@
-C The\sprevious\scheck-in\sis\sa\ssignificant\schange\sto\sbtree,\sso\sgo\sahead\sand\nincrement\sthe\sversion\snumber\sfor\sthe\snext\sdevelopment\scycle.
-D 2021-06-19T18:35:20.994
+C Remove\sunnecessary\s(redundant)\svariable\sinitialization\sfrom\nsqlite3BtreeInsert()\sfor\sa\ssmall\ssize\sreduction\sand\sperformance\sincrease.
+D 2021-06-19T20:20:23.249
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -485,7 +485,7 @@ F src/auth.c 08954fdc4cc2da5264ba5b75cfd90b67a6fc7d1710a02ccf917c38eadec77853
 F src/backup.c 3014889fa06e20e6adfa0d07b60097eec1f6e5b06671625f476a714d2356513d
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c 6079ee9dc399a7a6f0727f2c6ba2f43c18600c71827a76ddcdedde54a58b646e
+F src/btree.c 5c6533683f1ece5159a6e4a2cbbf71dd9b3ff75c4748998497ad37870578c3d4
 F src/btree.h ace9c1c243612bb95c32d848e3f9e159340c2caefcb68412b441569f56328f65
 F src/btreeInt.h 7bc15a24a02662409ebcd6aeaa1065522d14b7fda71573a2b0568b458f514ae0
 F src/build.c ea28944f65b04f771e7aa5d614d406faa1bde5fe4ce882e2ead73049f03ed568
@@ -1918,7 +1918,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3b0d34e5e5f9a16c3397e4551f3b534729b1b375770f05f6ed5847818b1f4c0b
-R e85267aa1e581371a6eeabbe5500efbb
+P 2eb6697051c13bf0cc3772fd6c16bfdea0be3b01c0d985e05004c04eaf7a4a48
+R f4744447deeee4d736853bd310124014
 U drh
-Z 413ce8c5c5db00ea92410effb5485be3
+Z d23a58a69ada4da5b4f1a357cc1eef9e
