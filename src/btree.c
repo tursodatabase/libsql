@@ -1682,7 +1682,7 @@ static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
       int g2;
       assert( pSpace+nByte<=data+pPage->pBt->usableSize );
       *pIdx = g2 = (int)(pSpace-data);
-      if( NEVER(g2<=gap) ){
+      if( g2<=gap ){
         return SQLITE_CORRUPT_PAGE(pPage);
       }else{
         return SQLITE_OK;
