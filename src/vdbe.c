@@ -3792,11 +3792,12 @@ case OP_ReopenIdx: {
   ** index, then fall through into OP_OpenRead to force a reopen */
 case OP_OpenRead:
 case OP_OpenWrite:
+vdbe_open_read_cursor:
 
   assert( pOp->opcode==OP_OpenWrite || pOp->p5==0 || pOp->p5==OPFLAG_SEEKEQ );
   assert( p->bIsReader );
   assert( pOp->opcode==OP_OpenRead || pOp->opcode==OP_ReopenIdx
-          || p->readOnly==0 );
+          || pOp->opcode==OP_NullRow || p->readOnly==0 );
 
   if( p->expired==1 ){
     rc = SQLITE_ABORT_ROLLBACK;
@@ -5540,7 +5541,7 @@ case OP_NullRow: {
 
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
-  assert( pC!=0 );
+  if( pC==0 ) goto vdbe_open_read_cursor;
   pC->nullRow = 1;
   pC->cacheStatus = CACHE_STALE;
   if( pC->eCurType==CURTYPE_BTREE ){

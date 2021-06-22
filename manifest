@@ -1,5 +1,5 @@
-C Add\sthe\ssqlite3_changes64()\sand\ssqlite3_total_changes64()\sAPI\sfunctions.
-D 2021-06-22T18:32:05.878
+C This\sis\san\salternative\sfix\sto\sthe\scovering\sindex\son\sWHERE_MULTI_OR\sin\sa\nLEFT\sJOIN\sproblem\sthat\sis\sfixed\snearby.\s\sThis\sone\sworks\sby\shaving\sthe\nOP_NullRow\sopcode\screate\sthe\sindex\sif\sit\sdoes\snot\salready\sexist.\s\sThat\sis\nslightly\smore\scomplex.\s\sThis\spatch\sis\ssaved\sfor\shistorical\sreference\sonly.
+D 2021-06-22T23:27:48.079
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -616,7 +616,7 @@ F src/upsert.c df8f1727d62b5987c4fd302cd4d7c0c84ae57cd65683c5a34a740dfe24039235
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c 41c7a72da1df47864faa378a1c720b38adb288c6838cb6be5594511b6287a048
 F src/vacuum.c 454973a59fb20bb982efc2df568a098616db6328a0491b6e84e2e07f7333db45
-F src/vdbe.c e86894469af9c4c7824832df00f38ef727f6127080c69a7ad2f06d519c6db9aa
+F src/vdbe.c 120a8a90310b0897e293f8549bae98641aa1c2b9c698a8c429526c947c94764c
 F src/vdbe.h 25dabb25c7e157b84e59260cfb5b466c3ac103ede9f36f4db371332c47601abe
 F src/vdbeInt.h 1fc1e3581afcd3f56bdbe930639edac84ee823c034f31da97f49c35522f4c8c2
 F src/vdbeapi.c aa5aaf2c37676b83af5724c6cd8207a3064ed46a217fd180957f75ac84f7a2a5
@@ -631,7 +631,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c c8ec20a1ca161d5635a4f19c2a4efec2e006e19a8a61f272bf6bce1c80ab7436
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c 7342becedf3f8a26f9817f08436bdf8b56ad69af83705f6b9320a0ad3092c2ac
-F src/where.c 4caf843825c6292440113258fefaa6f747fd570c6915628957e42e39529988f5
+F src/where.c 8355c636a666641af79b7aadc054270cc44b29954e1585a607f9479f3191f21f
 F src/whereInt.h 9248161dd004f625ce5d3841ca9b99fed3fc8d61522cf76340fc5217dbe1375b
 F src/wherecode.c 9f1f65d11437b25cd0a1497a170514c785f19ce6ad9d3e6fc73719cb5a49012f
 F src/whereexpr.c 5a9c9f5d2dac4bcdcaae3035034b4667523f731df228e0bb1d4efc669efa9da5
@@ -1919,7 +1919,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f662ff4746aaa43e63e20710b8cbfeeceab3183e953ac1685c41846d2e9d124c
-R d7ab321cd3717ae98c57b82526dde848
-U dan
-Z 21b9ccfdea30ed9e9c32e68e5722010b
+P 48fdec22c966003f5577e0bf52906ef90df11e4e395723a646304e67ed976f37
+R 8afbc25562541081f44503243b324779
+T *branch * multi-or-covidx-fix2
+T *sym-multi-or-covidx-fix2 *
+T +closed *
+T -sym-trunk *
+U drh
+Z a4faa9dcdcc34665381571335ffe6782
