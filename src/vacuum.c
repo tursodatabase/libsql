@@ -151,8 +151,8 @@ SQLITE_NOINLINE int sqlite3RunVacuum(
   Btree *pTemp;           /* The temporary database we vacuum into */
   u32 saved_mDbFlags;     /* Saved value of db->mDbFlags */
   u64 saved_flags;        /* Saved value of db->flags */
-  int saved_nChange;      /* Saved value of db->nChange */
-  int saved_nTotalChange; /* Saved value of db->nTotalChange */
+  i64 saved_nChange;      /* Saved value of db->nChange */
+  i64 saved_nTotalChange; /* Saved value of db->nTotalChange */
   u32 saved_openFlags;    /* Saved value of db->openFlags */
   u8 saved_mTrace;        /* Saved trace settings */
   Db *pDb = 0;            /* Database to detach at end of vacuum */

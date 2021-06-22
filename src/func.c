@@ -582,7 +582,7 @@ static void changes(
 ){
   sqlite3 *db = sqlite3_context_db_handle(context);
   UNUSED_PARAMETER2(NotUsed, NotUsed2);
-  sqlite3_result_int(context, sqlite3_changes(db));
+  sqlite3_result_int64(context, sqlite3_changes64(db));
 }
 
 /*

@@ -9543,7 +9543,7 @@ static int clearDatabasePage(
   BtShared *pBt,           /* The BTree that contains the table */
   Pgno pgno,               /* Page number to clear */
   int freePageFlag,        /* Deallocate page if true */
-  int *pnChange            /* Add number of Cells freed to this counter */
+  i64 *pnChange            /* Add number of Cells freed to this counter */
 ){
   MemPage *pPage;
   int rc;
@@ -9606,7 +9606,7 @@ cleardatabasepage_out:
 ** If pnChange is not NULL, then the integer value pointed to by pnChange
 ** is incremented by the number of entries in the table.
 */
-int sqlite3BtreeClearTable(Btree *p, int iTable, int *pnChange){
+int sqlite3BtreeClearTable(Btree *p, int iTable, i64 *pnChange){
   int rc;
   BtShared *pBt = p->pBt;
   sqlite3BtreeEnter(p);

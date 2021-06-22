@@ -6250,7 +6250,7 @@ case OP_Destroy: {     /* out2 */
 ** See also: Destroy
 */
 case OP_Clear: {
-  int nChange;
+  i64 nChange;
  
   sqlite3VdbeIncrWriteCounter(p, 0);
   nChange = 0;

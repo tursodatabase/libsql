@@ -5009,7 +5009,7 @@ int sqlite3VdbeIdxKeyCompare(
 ** This routine sets the value to be returned by subsequent calls to
 ** sqlite3_changes() on the database handle 'db'. 
 */
-void sqlite3VdbeSetChanges(sqlite3 *db, int nChange){
+void sqlite3VdbeSetChanges(sqlite3 *db, i64 nChange){
   assert( sqlite3_mutex_held(db->mutex) );
   db->nChange = nChange;
   db->nTotalChange += nChange;

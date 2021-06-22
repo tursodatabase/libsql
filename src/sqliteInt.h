@@ -1522,8 +1522,8 @@ struct sqlite3 {
   u8 nSqlExec;                  /* Number of pending OP_SqlExec opcodes */
   int nextPagesize;             /* Pagesize after VACUUM if >0 */
   u32 magic;                    /* Magic number for detect library misuse */
-  int nChange;                  /* Value returned by sqlite3_changes() */
-  int nTotalChange;             /* Value returned by sqlite3_total_changes() */
+  i64 nChange;                  /* Value returned by sqlite3_changes() */
+  i64 nTotalChange;             /* Value returned by sqlite3_total_changes() */
   int aLimit[SQLITE_N_LIMIT];   /* Limits */
   int nMaxSorterMmap;           /* Maximum size of regions mapped by sorter */
   struct sqlite3InitInfo {      /* Information used during initialization */
@@ -4741,7 +4741,7 @@ Expr *sqlite3ExprSkipCollateAndLikely(Expr*);
 int sqlite3CheckCollSeq(Parse *, CollSeq *);
 int sqlite3WritableSchema(sqlite3*);
 int sqlite3CheckObjectName(Parse*, const char*,const char*,const char*);
-void sqlite3VdbeSetChanges(sqlite3 *, int);
+void sqlite3VdbeSetChanges(sqlite3 *, i64);
 int sqlite3AddInt64(i64*,i64);
 int sqlite3SubInt64(i64*,i64);
 int sqlite3MulInt64(i64*,i64);
