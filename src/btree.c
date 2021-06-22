@@ -7757,6 +7757,7 @@ static int balance_nonroot(
         goto balance_cleanup;
       }
     }
+    nMaxCells += apOld[i]->nCell + ArraySize(pParent->apOvfl);
     if( (i--)==0 ) break;
 
     if( pParent->nOverflow && i+nxDiv==pParent->aiOvfl[0] ){
@@ -7798,7 +7799,6 @@ static int balance_nonroot(
 
   /* Make nMaxCells a multiple of 4 in order to preserve 8-byte
   ** alignment */
-  nMaxCells = nOld*(MX_CELL(pBt) + ArraySize(pParent->apOvfl));
   nMaxCells = (nMaxCells + 3)&~3;
 
   /*

@@ -1,5 +1,5 @@
-C Load\srecent\sdbsqlfuzz\scases\sinto\stest/fuzzdata8.db.
-D 2021-06-20T22:52:51.103
+C Ensure\sthat\sthe\scell\sarray\sused\sin\sbalance_nonroot()\sis\salways\slarge\senough,\seven\sif\sthe\spages\sbeing\sbalanced\sare\scorrupt.
+D 2021-06-22T14:59:34.354
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -485,7 +485,7 @@ F src/auth.c 08954fdc4cc2da5264ba5b75cfd90b67a6fc7d1710a02ccf917c38eadec77853
 F src/backup.c 3014889fa06e20e6adfa0d07b60097eec1f6e5b06671625f476a714d2356513d
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c 8bb85e524ba7f8bce294deedaf8f86582a5ae72f1fe2fd33ca18dfdaa876b9db
+F src/btree.c 195bb34aecc258cdf4093497f4e586914df0dbf84e3f4e69eb88243810886ec8
 F src/btree.h ace9c1c243612bb95c32d848e3f9e159340c2caefcb68412b441569f56328f65
 F src/btreeInt.h 7bc15a24a02662409ebcd6aeaa1065522d14b7fda71573a2b0568b458f514ae0
 F src/build.c ea28944f65b04f771e7aa5d614d406faa1bde5fe4ce882e2ead73049f03ed568
@@ -1918,7 +1918,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1c41e86fa102ec2b73fb7a55357ba6328fda37af316215e8808be88e2d1fd75f
-R 672505c5366119aa1f60ba1d5624e0f4
-U drh
-Z fa7f3737c560a11c39f1b19fa42176a0
+P a766bba0eead47e9ff24b6afd152a7fbd331261e04dd76feb9510585a08c5786
+R 9b0dfa599c959c734c474e105e6aca28
+U dan
+Z f84f280f537453851309b8a740cc4fce
