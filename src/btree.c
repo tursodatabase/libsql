@@ -9576,6 +9576,7 @@ static int clearDatabasePage(
   if( !pPage->leaf ){
     rc = clearDatabasePage(pBt, get4byte(&pPage->aData[hdr+8]), 1, pnChange);
     if( rc ) goto cleardatabasepage_out;
+    if( pPage->intKey ) pnChange = 0;
   }
   if( pnChange ){
     testcase( !pPage->intKey );
