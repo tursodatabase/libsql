@@ -4169,10 +4169,15 @@ int sqlite3_prepare16_v3(
 ** ^The string returned by sqlite3_expanded_sql(P), on the other hand,
 ** is obtained from [sqlite3_malloc()] and must be free by the application
 ** by passing it to [sqlite3_free()].
+**
+** ^The sqlite3_normalized_sql() interface is only available if
+** the [SQLITE_ENABLE_NORMALIZE] compile-time option is defined.
 */
 const char *sqlite3_sql(sqlite3_stmt *pStmt);
 char *sqlite3_expanded_sql(sqlite3_stmt *pStmt);
+#ifdef SQLITE_ENABLE_NORMALIZE
 const char *sqlite3_normalized_sql(sqlite3_stmt *pStmt);
+#endif
 
 /*
 ** CAPI3REF: Determine If An SQL Statement Writes The Database
