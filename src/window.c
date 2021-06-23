@@ -908,9 +908,7 @@ static ExprList *exprListAppendList(
       if( bIntToNull ){
         int iDummy;
         Expr *pSub;
-        for(pSub=pDup; ExprHasProperty(pSub, EP_Skip); pSub=pSub->pLeft){
-          assert( pSub );
-        }
+        pSub = sqlite3ExprSkipCollateAndLikely(pDup);
         if( sqlite3ExprIsInteger(pSub, &iDummy) ){
           pSub->op = TK_NULL;
           pSub->flags &= ~(EP_IntValue|EP_IsTrue|EP_IsFalse);
