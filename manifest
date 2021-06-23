@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\shandling\sORDER\sBY\sterms\sof\sthe\sform\s"ORDER\sBY\slikely(<integer>)"\swithin\swindow\sframes.
-D 2021-06-23T11:12:48.590
+C Show\sCROSS\sJOINs\sin\sthe\sTreeView\sdebuggingn\soutput.
+D 2021-06-23T11:39:00.942
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -609,7 +609,7 @@ F src/test_window.c cdae419fdcea5bad6dcd9368c685abdad6deb59e9fc8b84b153de513d394
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c bae853ad129d1129c063de8630a3e99e306283bc40146f359b1bb91be2c08f1e
-F src/treeview.c 21449a944d5abd3ac07b7eab76f7221e20c9480d06f01798f8dc66d9bc361769
+F src/treeview.c 306674a0ff430b00f6532baeea2eb531aa64046ac35843d80a64b8da15cec98f
 F src/trigger.c e0fd347b2571a2d956318cdc6d011ccca7ce862d10a0ca04188a37920ef5440c
 F src/update.c 56fa0458b1ffc1042629f926443e8ed44203983df3ab2b0db2ba556e6ceed68c
 F src/upsert.c df8f1727d62b5987c4fd302cd4d7c0c84ae57cd65683c5a34a740dfe24039235
@@ -1919,7 +1919,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 787c76a865dc51dbca4f30432d64783199c2efb1df4619e4bbaf32182977321e
-R 040b3a70559e632e7f4d0e77b4ed4a83
-U dan
-Z a607a5f52d5e3746cd5c447f723f1e23
+P 710f75b98bb4ac5bfdfa745c1de832dd1e4d9fb387da52b2f0d1353613f5cdc3
+R deb7f56745addc69e13d52fefa0f17ad
+U drh
+Z 7e9741f4effaeb688f644a914016758c

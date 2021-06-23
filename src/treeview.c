@@ -142,6 +142,8 @@ void sqlite3TreeViewSrcList(TreeView *pView, const SrcList *pSrc){
     }
     if( pItem->fg.jointype & JT_LEFT ){
       sqlite3_str_appendf(&x, " LEFT-JOIN");
+    }else if( pItem->fg.jointype & JT_CROSS ){
+      sqlite3_str_appendf(&x, " CROSS-JOIN");
     }
     if( pItem->fg.fromDDL ){
       sqlite3_str_appendf(&x, " DDL");
