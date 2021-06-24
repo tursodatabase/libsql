@@ -8730,6 +8730,8 @@ static int do_meta_command(char *zLine, ShellState *p){
         p->openMode = SHELL_OPEN_READONLY;
       }else if( optionMatch(z, "nofollow") ){
         p->openFlags |= SQLITE_OPEN_NOFOLLOW;
+      }else if( optionMatch(z, "excl") ){
+        p->openFlags |= SQLITE_OPEN_EXCLUSIVE;
 #ifndef SQLITE_OMIT_DESERIALIZE
       }else if( optionMatch(z, "deserialize") ){
         p->openMode = SHELL_OPEN_DESERIALIZE;
