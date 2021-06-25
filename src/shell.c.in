@@ -8060,7 +8060,7 @@ static int do_meta_command(char *zLine, ShellState *p){
        "     FROM sqlite_schema UNION ALL"
        "   SELECT sql, type, tbl_name, name, rowid FROM sqlite_temp_schema) "
        "WHERE type!='meta' AND sql NOTNULL AND name NOT LIKE 'sqlite_%' "
-       "ORDER BY rowid",
+       "ORDER BY x",
        callback, &data, 0
     );
     if( rc==SQLITE_OK ){
