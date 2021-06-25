@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sthe\s".fullschema"\sdot-command\sof\sthe\sCLI\sbrought\sto\slight\sby\ncheck-in\s[a2ddb89b206c1387]\s-\sraising\san\serror\son\sat\sattempt\sto\saccess\sthe\nrowid\sof\sa\ssubquery\sor\sview.
-D 2021-06-25T11:14:10.652
+C Remove\sa\sredundant\s"ANALYZE"\sline\sfrom\sthe\s".fullschema"\soutput.
+D 2021-06-25T11:21:21.086
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -545,7 +545,7 @@ F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c 35630effd4d16d2373caa41bae40a3d71f853f3ad0cb4f572f2ed4b8c350c1e9
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 4fa607bab6bcc580f12dbaf9c800b2250a1e408f10321a1d3bcb1dd30c447e62
-F src/shell.c.in a51de4f1f9d3e8510e095f9099c701d914968a0f20950f304745c3e0f8cf1626
+F src/shell.c.in 699910739eb7296fd47be19db71f6e5d15d0760f4352c62639d4d6cc7bd8d4cc
 F src/sqlite.h.in ecf5aa981da30c33da3e9f353bf3ebf055d3c380c80d6a4f954e58d18ccd6df1
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h e97f4e9b509408fea4c4e9bef5a41608dfac343b4d3c7a990dedde1e19af9510
@@ -1919,7 +1919,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8acaf7964551b4524fcdbb8d01fae7b0911508ecf6dcf23c3e0f8d8c790b78d8
-R aebdda5224a0a63abb78bffc26330861
+P 36875827a416067e1b8ffba0ff0ff88313177f8d84dd8e5bc9c23ea3f2d587ba
+R 319bc6af402967c5f681ae21c2a771a7
 U drh
-Z 8cef5f08df554ceda36b81b1c7575d49
+Z 018d2a6eb739243c48cf000b81003061

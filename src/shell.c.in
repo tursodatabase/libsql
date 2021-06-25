@@ -8076,8 +8076,6 @@ static int do_meta_command(char *zLine, ShellState *p){
       raw_printf(p->out, "/* No STAT tables available */\n");
     }else{
       raw_printf(p->out, "ANALYZE sqlite_schema;\n");
-      sqlite3_exec(p->db, "SELECT 'ANALYZE sqlite_schema'",
-                   callback, &data, 0);
       data.cMode = data.mode = MODE_Insert;
       data.zDestTable = "sqlite_stat1";
       shell_exec(&data, "SELECT * FROM sqlite_stat1", 0);
