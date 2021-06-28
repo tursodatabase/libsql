@@ -1,5 +1,5 @@
-C The\sOP_ReopenIdx\sopcode\sshould\sclear\sthe\scursor\sif\sthe\scursor\sis\sbeing\nreused.\s\sThis\sprevents\sleaving\sthe\scursor\sin\san\sinitialized\sstate\swhich\ncould\scause\sproblems\sfor\sa\ssubsequent\sOP_SeekScan\sopcode.\nFix\sfor\sticket\s[6dcbfd11cf666e21]\sand\sthe\sOP_SeekScan\soptimization\nof\scheck-in\s[4a43430fd23f8835].
-D 2021-06-25T14:48:24.152
+C When\sgenerating\sdata\sfor\sa\sRETURNING\sclause,\savoid\sassuming\scursor\snumber\s0\sis\savailable\sfor\suse.
+D 2021-06-28T15:25:17.222
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -610,7 +610,7 @@ F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c bae853ad129d1129c063de8630a3e99e306283bc40146f359b1bb91be2c08f1e
 F src/treeview.c 306674a0ff430b00f6532baeea2eb531aa64046ac35843d80a64b8da15cec98f
-F src/trigger.c e0fd347b2571a2d956318cdc6d011ccca7ce862d10a0ca04188a37920ef5440c
+F src/trigger.c 7d16aa09e63226b6d8b3f0fc60b21cbfa596fc406288b2ebcf4266633d1ba222
 F src/update.c 56fa0458b1ffc1042629f926443e8ed44203983df3ab2b0db2ba556e6ceed68c
 F src/upsert.c df8f1727d62b5987c4fd302cd4d7c0c84ae57cd65683c5a34a740dfe24039235
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
@@ -1300,7 +1300,7 @@ F test/releasetest.tcl 6f803ef0b896f8f3f4c26eb072c0399963a5987a509a64d45f5dfbc1e
 F test/releasetest_data.tcl f88ed29aa18366ed3956ace36c96ec6868ef5b9ee04cc05d32f4d81031e19e28
 F test/resetdb.test 8062cf10a09d8c048f8de7711e94571c38b38168db0e5877ba7561789e5eeb2b
 F test/resolver01.test f4022acafda7f4d40eca94dbf16bc5fc4ac30ceb
-F test/returning1.test 52b4ed60f104a4ce85b38417e5319b2078b2b908c71a768d539cee3c0ce8bdc9
+F test/returning1.test 6b29cb020129fc682dbef1890170606fe4e325190b8300d9ee7563640165d708
 F test/rollback.test 06680159bc6746d0f26276e339e3ae2f951c64812468308838e0a3362d911eaa
 F test/rollback2.test 3f3a4e20401825017df7e7671e9f31b6de5fae5620c2b9b49917f52f8c160a8f
 F test/rollbackfault.test 0e646aeab8840c399cfbfa43daab46fd609cf04a
@@ -1919,7 +1919,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7b47f420954000ce46d05adde6e91a2fbdab8dd528ebd8089cca4fcf9d8a3605
-R c9ef525db14ea1f2cab6b77dc2c157fe
-U drh
-Z 1d62a11400fe9140c3b779da4524cbe7
+P d4bf5243f2bf0a2bc77ad12f3e1e4797cb62f2745f9d54eee5f675c3b5f80880
+R fa1451caa0f45c6ae133c6c4d565c752
+U dan
+Z 71577863a4009a469e681a38dfbd9444

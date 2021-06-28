@@ -926,6 +926,7 @@ static void codeReturningTrigger(
   sSelect.pSrc = &sFrom;
   sFrom.nSrc = 1;
   sFrom.a[0].pTab = pTab;
+  sFrom.a[0].iCursor = -1;
   sqlite3SelectPrep(pParse, &sSelect, 0);
   if( db->mallocFailed==0 && pParse->nErr==0 ){
     sqlite3GenerateColumnNames(pParse, &sSelect);
