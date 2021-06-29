@@ -826,7 +826,7 @@ mod test {
         assert_eq!("foo", op.table_name());
         assert_eq!(1, op.number_of_columns());
         assert_eq!(Action::SQLITE_INSERT, op.code());
-        assert_eq!(false, op.indirect());
+        assert!(!op.indirect());
 
         let pk = item.pk()?;
         assert_eq!(&[1], pk);
