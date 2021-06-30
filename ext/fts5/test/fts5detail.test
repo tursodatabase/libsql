@@ -212,6 +212,10 @@ do_catchsql_test 4.1 {
   SELECT * FROM t4('a:a')
 } {1 {fts5: column queries are not supported (detail=none)}}
 
+do_catchsql_test 4.2 {
+  SELECT * FROM t4('a:a &')
+} {1 {fts5: syntax error near "&"}}
+
 #-------------------------------------------------------------------------
 # Test that for the same content detail=none uses less space than 
 # detail=col, and that detail=col uses less space than detail=full

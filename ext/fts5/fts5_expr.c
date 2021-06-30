@@ -135,6 +135,7 @@ void sqlite3Fts5ParseError(Fts5Parse *pParse, const char *zFmt, ...){
   va_list ap;
   va_start(ap, zFmt);
   if( pParse->rc==SQLITE_OK ){
+    assert( pParse->zErr==0 );
     pParse->zErr = sqlite3_vmprintf(zFmt, ap);
     pParse->rc = SQLITE_ERROR;
   }
@@ -2144,9 +2145,8 @@ void sqlite3Fts5ParseSetColset(
 ){
   Fts5Colset *pFree = pColset;
   if( pParse->pConfig->eDetail==FTS5_DETAIL_NONE ){
-    pParse->rc = SQLITE_ERROR;
-    pParse->zErr = sqlite3_mprintf(
-      "fts5: column queries are not supported (detail=none)"
+    sqlite3Fts5ParseError(pParse, 
+        "fts5: column queries are not supported (detail=none)"
     );
   }else{
     fts5ParseSetColset(pParse, pExpr, pColset, &pFree);
@@ -2320,13 +2320,10 @@ Fts5ExprNode *sqlite3Fts5ParseNode(
                 || pPhrase->nTerm>1
                 || (pPhrase->nTerm>0 && pPhrase->aTerm[0].bFirst)
               ){
-              assert( pParse->rc==SQLITE_OK );
-              pParse->rc = SQLITE_ERROR;
-              assert( pParse->zErr==0 );
-              pParse->zErr = sqlite3_mprintf(
+              sqlite3Fts5ParseError(pParse, 
                   "fts5: %s queries are not supported (detail!=full)", 
                   pNear->nPhrase==1 ? "phrase": "NEAR"
-                  );
+              );
               sqlite3_free(pRet);
               pRet = 0;
             }
