@@ -72,15 +72,18 @@ pub enum Error {
     /// [`functions::Context::get`](crate::functions::Context::get) when the
     /// function argument cannot be converted to the requested type.
     #[cfg(feature = "functions")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "functions")))]
     InvalidFunctionParameterType(usize, Type),
     /// Error returned by [`vtab::Values::get`](crate::vtab::Values::get) when
     /// the filter argument cannot be converted to the requested type.
     #[cfg(feature = "vtab")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "vtab")))]
     InvalidFilterParameterType(usize, Type),
 
     /// An error case available for implementors of custom user functions (e.g.,
     /// [`create_scalar_function`](crate::Connection::create_scalar_function)).
     #[cfg(feature = "functions")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "functions")))]
     #[allow(dead_code)]
     UserFunctionError(Box<dyn error::Error + Send + Sync + 'static>),
 
@@ -94,11 +97,13 @@ pub enum Error {
     /// An error case available for implementors of custom modules (e.g.,
     /// [`create_module`](crate::Connection::create_module)).
     #[cfg(feature = "vtab")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "vtab")))]
     #[allow(dead_code)]
     ModuleError(String),
 
     /// An unwinding panic occurs in an UDF (user-defined function).
     #[cfg(feature = "functions")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "functions")))]
     UnwindingPanic,
 
     /// An error returned when
@@ -106,6 +111,7 @@ pub enum Error {
     /// retrieve data of a different type than what had been stored using
     /// [`Context::set_aux`](crate::functions::Context::set_aux).
     #[cfg(feature = "functions")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "functions")))]
     GetAuxWrongType,
 
     /// Error when the SQL contains multiple statements.
@@ -120,6 +126,7 @@ pub enum Error {
     /// [`Blob::raw_read_at_exact`](crate::blob::Blob::raw_read_at_exact) will
     /// return it if the blob has insufficient data.
     #[cfg(feature = "blob")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "blob")))]
     BlobSizeError,
 }
 

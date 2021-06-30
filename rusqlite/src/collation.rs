@@ -1,4 +1,4 @@
-//! `feature = "collation"` Add, remove, or modify a collation
+//! Add, remove, or modify a collation
 use std::cmp::Ordering;
 use std::os::raw::{c_char, c_int, c_void};
 use std::panic::{catch_unwind, UnwindSafe};
@@ -14,7 +14,7 @@ unsafe extern "C" fn free_boxed_value<T>(p: *mut c_void) {
 }
 
 impl Connection {
-    /// `feature = "collation"` Add or modify a collation.
+    /// Add or modify a collation.
     #[inline]
     pub fn create_collation<'c, C>(&'c self, collation_name: &str, x_compare: C) -> Result<()>
     where
@@ -25,7 +25,7 @@ impl Connection {
             .create_collation(collation_name, x_compare)
     }
 
-    /// `feature = "collation"` Collation needed callback
+    /// Collation needed callback
     #[inline]
     pub fn collation_needed(
         &self,
@@ -34,7 +34,7 @@ impl Connection {
         self.db.borrow_mut().collation_needed(x_coll_needed)
     }
 
-    /// `feature = "collation"` Remove collation.
+    /// Remove collation.
     #[inline]
     pub fn remove_collation(&self, collation_name: &str) -> Result<()> {
         self.db.borrow_mut().remove_collation(collation_name)

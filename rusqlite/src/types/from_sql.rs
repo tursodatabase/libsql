@@ -15,15 +15,17 @@ pub enum FromSqlError {
     /// requested type.
     OutOfRange(i64),
 
-    /// `feature = "i128_blob"` Error returned when reading an `i128` from a
+    /// Error returned when reading an `i128` from a
     /// blob with a size other than 16. Only available when the `i128_blob`
     /// feature is enabled.
     #[cfg(feature = "i128_blob")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "i128_blob")))]
     InvalidI128Size(usize),
 
-    /// `feature = "uuid"` Error returned when reading a `uuid` from a blob with
+    /// Error returned when reading a `uuid` from a blob with
     /// a size other than 16. Only available when the `uuid` feature is enabled.
     #[cfg(feature = "uuid")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "uuid")))]
     InvalidUuidSize(usize),
 
     /// An error case available for implementors of the [`FromSql`] trait.
@@ -176,6 +178,7 @@ impl FromSql for Vec<u8> {
 }
 
 #[cfg(feature = "i128_blob")]
+#[cfg_attr(docsrs, doc(cfg(feature = "i128_blob")))]
 impl FromSql for i128 {
     #[inline]
     fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
@@ -192,6 +195,7 @@ impl FromSql for i128 {
 }
 
 #[cfg(feature = "uuid")]
+#[cfg_attr(docsrs, doc(cfg(feature = "uuid")))]
 impl FromSql for uuid::Uuid {
     #[inline]
     fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {

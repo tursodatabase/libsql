@@ -48,6 +48,7 @@
 //! }
 //! ```
 #![warn(missing_docs)]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 
 pub use libsqlite3_sys as ffi;
 
@@ -86,23 +87,29 @@ pub use crate::version::*;
 mod error;
 
 #[cfg(feature = "backup")]
+#[cfg_attr(docsrs, doc(cfg(feature = "backup")))]
 pub mod backup;
 #[cfg(feature = "blob")]
+#[cfg_attr(docsrs, doc(cfg(feature = "blob")))]
 pub mod blob;
 mod busy;
 mod cache;
 #[cfg(feature = "collation")]
+#[cfg_attr(docsrs, doc(cfg(feature = "collation")))]
 mod collation;
 mod column;
 pub mod config;
 #[cfg(any(feature = "functions", feature = "vtab"))]
 mod context;
 #[cfg(feature = "functions")]
+#[cfg_attr(docsrs, doc(cfg(feature = "functions")))]
 pub mod functions;
 #[cfg(feature = "hooks")]
+#[cfg_attr(docsrs, doc(cfg(feature = "hooks")))]
 pub mod hooks;
 mod inner_connection;
 #[cfg(feature = "limits")]
+#[cfg_attr(docsrs, doc(cfg(feature = "limits")))]
 pub mod limits;
 #[cfg(feature = "load_extension")]
 mod load_extension_guard;
@@ -111,15 +118,18 @@ mod pragma;
 mod raw_statement;
 mod row;
 #[cfg(feature = "session")]
+#[cfg_attr(docsrs, doc(cfg(feature = "session")))]
 pub mod session;
 mod statement;
 #[cfg(feature = "trace")]
+#[cfg_attr(docsrs, doc(cfg(feature = "trace")))]
 pub mod trace;
 mod transaction;
 pub mod types;
 mod unlock_notify;
 mod version;
 #[cfg(feature = "vtab")]
+#[cfg_attr(docsrs, doc(cfg(feature = "vtab")))]
 pub mod vtab;
 
 pub(crate) mod util;
@@ -712,7 +722,7 @@ impl Connection {
         r.map_err(move |err| (self, err))
     }
 
-    /// `feature = "load_extension"` Enable loading of SQLite extensions.
+    /// Enable loading of SQLite extensions.
     /// Strongly consider using `LoadExtensionGuard` instead of this function.
     ///
     /// ## Example
@@ -731,12 +741,13 @@ impl Connection {
     ///
     /// Will return `Err` if the underlying SQLite call fails.
     #[cfg(feature = "load_extension")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "load_extension")))]
     #[inline]
     pub fn load_extension_enable(&self) -> Result<()> {
         self.db.borrow_mut().enable_load_extension(1)
     }
 
-    /// `feature = "load_extension"` Disable loading of SQLite extensions.
+    /// Disable loading of SQLite extensions.
     ///
     /// See `load_extension_enable` for an example.
     ///
@@ -744,12 +755,13 @@ impl Connection {
     ///
     /// Will return `Err` if the underlying SQLite call fails.
     #[cfg(feature = "load_extension")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "load_extension")))]
     #[inline]
     pub fn load_extension_disable(&self) -> Result<()> {
         self.db.borrow_mut().enable_load_extension(0)
     }
 
-    /// `feature = "load_extension"` Load the SQLite extension at `dylib_path`.
+    /// Load the SQLite extension at `dylib_path`.
     /// `dylib_path` is passed through to `sqlite3_load_extension`, which may
     /// attempt OS-specific modifications if the file cannot be loaded directly.
     ///
@@ -773,6 +785,7 @@ impl Connection {
     ///
     /// Will return `Err` if the underlying SQLite call fails.
     #[cfg(feature = "load_extension")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "load_extension")))]
     #[inline]
     pub fn load_extension<P: AsRef<Path>>(
         &self,
@@ -851,6 +864,7 @@ impl Connection {
     /// Determine if all associated prepared statements have been reset.
     #[inline]
     #[cfg(feature = "modern_sqlite")] // 3.8.6
+    #[cfg_attr(docsrs, doc(cfg(feature = "modern_sqlite")))]
     pub fn is_busy(&self) -> bool {
         self.db.borrow().is_busy()
     }
