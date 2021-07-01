@@ -1,5 +1,5 @@
-C Import\sthe\supdated\snmakehlp.c\sfile\sused\sby\sthe\sTCL\sExtension\sArchitecture\s(TEA)\nbuilds\sin\sthe\samalgamation\starballs.\n[forum:/forumpost/5a5001f20a|Forum\spost\s5a5001f20a].
-D 2021-07-01T16:57:48.827
+C Allow\sunqualified\s"rowid"\sreferences\sto\sbe\sused\sin\sjoin\squeries,\sprovided\sthat\sonly\sone\sof\sthe\ssource\sobjects\shas\sa\srowid.
+D 2021-07-01T18:19:17.704
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -542,7 +542,7 @@ F src/pragma.h 8dc78ab7e9ec6ce3ded8332810a2066f1ef6267e2e03cd7356ee00276125c6cf
 F src/prepare.c 0d53d20532aada295c1690792a125adbd6435f5ce703ff0adf1b9b3605238b67
 F src/printf.c 78fabb49b9ac9a12dd1c89d744abdc9b67fd3205e62967e158f78b965a29ec4b
 F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
-F src/resolve.c 35630effd4d16d2373caa41bae40a3d71f853f3ad0cb4f572f2ed4b8c350c1e9
+F src/resolve.c 73c7177a20a7e40d3eb2eebf6e4b129e7c1bff2c9047919860bd6e20efd3b2f7
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 4fa607bab6bcc580f12dbaf9c800b2250a1e408f10321a1d3bcb1dd30c447e62
 F src/shell.c.in 699910739eb7296fd47be19db71f6e5d15d0760f4352c62639d4d6cc7bd8d4cc
@@ -699,7 +699,7 @@ F test/autoindex1.test fe27af92eaf884bd9c38f94be3e8afa04ec494e5eefb189902026181a
 F test/autoindex2.test 12ef578928102baaa0dc23ad397601a2f4ecb0df
 F test/autoindex3.test 2d13958a5617e987624a428d7aed91bf51f322b49b476e3573fadec697ce6da5
 F test/autoindex4.test 49d3cd791a9baa16fb461d7ea3de80d019a819cf
-F test/autoindex5.test ee0aa95e3f44190347a29a672c3d4ecf042e3f33c5fa3dc29f0ab6be057bbded
+F test/autoindex5.test 2ee94f033b87ca0160e08d81034c507aff8e230df2627f0304fa309b2fee19a3
 F test/autovacuum.test 0831cd34e14695d297187f7f6519265e3121c5b0a1720e548e86829e796129e9
 F test/autovacuum_ioerr2.test 8a367b224183ad801e0e24dcb7d1501f45f244b4
 F test/avfs.test 0c3a38e03cccb0fc3127838462dc05dc3f4c1480d770c084b388304c25de3652
@@ -1307,7 +1307,7 @@ F test/rollbackfault.test 0e646aeab8840c399cfbfa43daab46fd609cf04a
 F test/round1.test 768018b04522ca420b1aba8a24bd76091d269f3bce3902af3ec6ebcee41ab21e
 F test/rowallock.test 3f88ec6819489d0b2341c7a7528ae17c053ab7cc
 F test/rowhash.test 0bc1d31415e4575d10cacf31e1a66b5cc0f8be81
-F test/rowid.test bfbd7b97d9267660be3c8f28507c4ed7f205196b8877c0db42df347c2e8845e3
+F test/rowid.test e29025be95baf6b32f0d5edef59a7633028325896a98f1caa8019559ca910350
 F test/rowvalue.test 37effea4dd83555ea969a9461dfcffb25e6731a5db7c388e232410999c100853
 F test/rowvalue2.test 060d238b7e5639a7c5630cb5e63e311b44efef2b
 F test/rowvalue3.test 3068f508753af69884b12125995f023da0dbb256
@@ -1919,7 +1919,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7c279670f544a5bb9733a88862d9e490062b07415cd790e0d6d1e2cb584d2007
-R ea4df91ece4d61dc769c7d82973a118f
-U drh
-Z 7ad010d3e1df58bf34aaee6bf80c92a4
+P 595bf95bf8884c545e85e3feee6f43503b59d3c6d69073f0aaba4473c7c61cac
+R b40ea640e783bee9c07b7a6c7eb2888d
+U dan
+Z 23ae68986931e08e3c9295a66ca57f7c
