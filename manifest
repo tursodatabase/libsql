@@ -1,5 +1,5 @@
-C Fix\sa\smemory\sleak\sin\sfts5\sthat\scould\soccur\swhen\sprocessing\sa\squery\scontaining\smultiple\sclasses\sof\serror.
-D 2021-06-30T14:04:25.220
+C Import\sthe\supdated\snmakehlp.c\sfile\sused\sby\sthe\sTCL\sExtension\sArchitecture\s(TEA)\nbuilds\sin\sthe\samalgamation\starballs.\n[forum:/forumpost/5a5001f20a|Forum\spost\s5a5001f20a].
+D 2021-07-01T16:57:48.827
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -29,7 +29,7 @@ F autoconf/tea/pkgIndex.tcl.in 3ef61715cf1c7bdcff56947ffadb26bc991ca39d
 F autoconf/tea/tclconfig/install-sh bdd5e293591621ae60d9824d86a4b1c5f22c3d00
 F autoconf/tea/tclconfig/tcl.m4 66ddf0a5d5e4b1d29bff472c0985fd7fa89d0fb5
 F autoconf/tea/win/makefile.vc a5ff708245260c2794c6aaa0151efe5403d5896566eaf096747be0d9075284e4
-F autoconf/tea/win/nmakehlp.c 190bf8b40f6f90eeb6cbc1e5c13a19fc7ad870e479e0314c88174f71bf9e28a7
+F autoconf/tea/win/nmakehlp.c b01f822eabbe1ed2b64e70882d97d48402b42d2689a1ea00342d1a1a7eaa19cb
 F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 883205ddf25b46f10c181818bf42c09da9888884af96f79e1719264345053bd6
 F config.h.in 6376abec766e9a0785178b1823b5a587e9f1ccbc
@@ -1919,7 +1919,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9e760e256089c0ebbf816a8de8b186f62e1ffcd6b8b0e76dab8387798cd4d0e1
-R d8e84becbe3e499665a01229c17289ad
-U dan
-Z 94aad6f32f8b281da0508c0481608ec6
+P 7c279670f544a5bb9733a88862d9e490062b07415cd790e0d6d1e2cb584d2007
+R ea4df91ece4d61dc769c7d82973a118f
+U drh
+Z 7ad010d3e1df58bf34aaee6bf80c92a4
