@@ -443,6 +443,19 @@ pub const SQLITE_DESERIALIZE_READONLY: i32 = 4;
 pub const NOT_WITHIN: i32 = 0;
 pub const PARTLY_WITHIN: i32 = 1;
 pub const FULLY_WITHIN: i32 = 2;
+pub const __SQLITESESSION_H_: i32 = 1;
+pub const SQLITE_CHANGESETSTART_INVERT: i32 = 2;
+pub const SQLITE_CHANGESETAPPLY_NOSAVEPOINT: i32 = 1;
+pub const SQLITE_CHANGESETAPPLY_INVERT: i32 = 2;
+pub const SQLITE_CHANGESET_DATA: i32 = 1;
+pub const SQLITE_CHANGESET_NOTFOUND: i32 = 2;
+pub const SQLITE_CHANGESET_CONFLICT: i32 = 3;
+pub const SQLITE_CHANGESET_CONSTRAINT: i32 = 4;
+pub const SQLITE_CHANGESET_FOREIGN_KEY: i32 = 5;
+pub const SQLITE_CHANGESET_OMIT: i32 = 0;
+pub const SQLITE_CHANGESET_REPLACE: i32 = 1;
+pub const SQLITE_CHANGESET_ABORT: i32 = 2;
+pub const SQLITE_SESSION_CONFIG_STRMSIZE: i32 = 1;
 pub const FTS5_TOKENIZE_QUERY: i32 = 1;
 pub const FTS5_TOKENIZE_PREFIX: i32 = 2;
 pub const FTS5_TOKENIZE_DOCUMENT: i32 = 4;
@@ -4296,6 +4309,43 @@ extern "C" {
     pub fn sqlite3_db_cacheflush(arg1: *mut sqlite3) -> ::std::os::raw::c_int;
 }
 extern "C" {
+    pub fn sqlite3_preupdate_hook(
+        db: *mut sqlite3,
+        xPreUpdate: ::std::option::Option<
+            unsafe extern "C" fn(
+                pCtx: *mut ::std::os::raw::c_void,
+                db: *mut sqlite3,
+                op: ::std::os::raw::c_int,
+                zDb: *const ::std::os::raw::c_char,
+                zName: *const ::std::os::raw::c_char,
+                iKey1: sqlite3_int64,
+                iKey2: sqlite3_int64,
+            ),
+        >,
+        arg1: *mut ::std::os::raw::c_void,
+    ) -> *mut ::std::os::raw::c_void;
+}
+extern "C" {
+    pub fn sqlite3_preupdate_old(
+        arg1: *mut sqlite3,
+        arg2: ::std::os::raw::c_int,
+        arg3: *mut *mut sqlite3_value,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn sqlite3_preupdate_count(arg1: *mut sqlite3) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn sqlite3_preupdate_depth(arg1: *mut sqlite3) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn sqlite3_preupdate_new(
+        arg1: *mut sqlite3,
+        arg2: ::std::os::raw::c_int,
+        arg3: *mut *mut sqlite3_value,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
     pub fn sqlite3_system_errno(arg1: *mut sqlite3) -> ::std::os::raw::c_int;
 }
 #[repr(C)]
@@ -4680,6 +4730,471 @@ fn bindgen_test_layout_sqlite3_rtree_query_info() {
             stringify!(apSqlParam)
         )
     );
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct sqlite3_session {
+    _unused: [u8; 0],
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct sqlite3_changeset_iter {
+    _unused: [u8; 0],
+}
+extern "C" {
+    pub fn sqlite3session_create(
+        db: *mut sqlite3,
+        zDb: *const ::std::os::raw::c_char,
+        ppSession: *mut *mut sqlite3_session,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn sqlite3session_delete(pSession: *mut sqlite3_session);
+}
+extern "C" {
+    pub fn sqlite3session_enable(
+        pSession: *mut sqlite3_session,
+        bEnable: ::std::os::raw::c_int,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn sqlite3session_indirect(
+        pSession: *mut sqlite3_session,
+        bIndirect: ::std::os::raw::c_int,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn sqlite3session_attach(
+        pSession: *mut sqlite3_session,
+        zTab: *const ::std::os::raw::c_char,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn sqlite3session_table_filter(
+        pSession: *mut sqlite3_session,
+        xFilter: ::std::option::Option<
+            unsafe extern "C" fn(
+                pCtx: *mut ::std::os::raw::c_void,
+                zTab: *const ::std::os::raw::c_char,
+            ) -> ::std::os::raw::c_int,
+        >,
+        pCtx: *mut ::std::os::raw::c_void,
+    );
+}
+extern "C" {
+    pub fn sqlite3session_changeset(
+        pSession: *mut sqlite3_session,
+        pnChangeset: *mut ::std::os::raw::c_int,
+        ppChangeset: *mut *mut ::std::os::raw::c_void,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn sqlite3session_diff(
+        pSession: *mut sqlite3_session,
+        zFromDb: *const ::std::os::raw::c_char,
+        zTbl: *const ::std::os::raw::c_char,
+        pzErrMsg: *mut *mut ::std::os::raw::c_char,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn sqlite3session_patchset(
+        pSession: *mut sqlite3_session,
+        pnPatchset: *mut ::std::os::raw::c_int,
+        ppPatchset: *mut *mut ::std::os::raw::c_void,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn sqlite3session_isempty(pSession: *mut sqlite3_session) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn sqlite3changeset_start(
+        pp: *mut *mut sqlite3_changeset_iter,
+        nChangeset: ::std::os::raw::c_int,
+        pChangeset: *mut ::std::os::raw::c_void,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn sqlite3changeset_start_v2(
+        pp: *mut *mut sqlite3_changeset_iter,
+        nChangeset: ::std::os::raw::c_int,
+        pChangeset: *mut ::std::os::raw::c_void,
+        flags: ::std::os::raw::c_int,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn sqlite3changeset_next(pIter: *mut sqlite3_changeset_iter) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn sqlite3changeset_op(
+        pIter: *mut sqlite3_changeset_iter,
+        pzTab: *mut *const ::std::os::raw::c_char,
+        pnCol: *mut ::std::os::raw::c_int,
+        pOp: *mut ::std::os::raw::c_int,
+        pbIndirect: *mut ::std::os::raw::c_int,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn sqlite3changeset_pk(
+        pIter: *mut sqlite3_changeset_iter,
+        pabPK: *mut *mut ::std::os::raw::c_uchar,
+        pnCol: *mut ::std::os::raw::c_int,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn sqlite3changeset_old(
+        pIter: *mut sqlite3_changeset_iter,
+        iVal: ::std::os::raw::c_int,
+        ppValue: *mut *mut sqlite3_value,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn sqlite3changeset_new(
+        pIter: *mut sqlite3_changeset_iter,
+        iVal: ::std::os::raw::c_int,
+        ppValue: *mut *mut sqlite3_value,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn sqlite3changeset_conflict(
+        pIter: *mut sqlite3_changeset_iter,
+        iVal: ::std::os::raw::c_int,
+        ppValue: *mut *mut sqlite3_value,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn sqlite3changeset_fk_conflicts(
+        pIter: *mut sqlite3_changeset_iter,
+        pnOut: *mut ::std::os::raw::c_int,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn sqlite3changeset_finalize(pIter: *mut sqlite3_changeset_iter) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn sqlite3changeset_invert(
+        nIn: ::std::os::raw::c_int,
+        pIn: *const ::std::os::raw::c_void,
+        pnOut: *mut ::std::os::raw::c_int,
+        ppOut: *mut *mut ::std::os::raw::c_void,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn sqlite3changeset_concat(
+        nA: ::std::os::raw::c_int,
+        pA: *mut ::std::os::raw::c_void,
+        nB: ::std::os::raw::c_int,
+        pB: *mut ::std::os::raw::c_void,
+        pnOut: *mut ::std::os::raw::c_int,
+        ppOut: *mut *mut ::std::os::raw::c_void,
+    ) -> ::std::os::raw::c_int;
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct sqlite3_changegroup {
+    _unused: [u8; 0],
+}
+extern "C" {
+    pub fn sqlite3changegroup_new(pp: *mut *mut sqlite3_changegroup) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn sqlite3changegroup_add(
+        arg1: *mut sqlite3_changegroup,
+        nData: ::std::os::raw::c_int,
+        pData: *mut ::std::os::raw::c_void,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn sqlite3changegroup_output(
+        arg1: *mut sqlite3_changegroup,
+        pnData: *mut ::std::os::raw::c_int,
+        ppData: *mut *mut ::std::os::raw::c_void,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn sqlite3changegroup_delete(arg1: *mut sqlite3_changegroup);
+}
+extern "C" {
+    pub fn sqlite3changeset_apply(
+        db: *mut sqlite3,
+        nChangeset: ::std::os::raw::c_int,
+        pChangeset: *mut ::std::os::raw::c_void,
+        xFilter: ::std::option::Option<
+            unsafe extern "C" fn(
+                pCtx: *mut ::std::os::raw::c_void,
+                zTab: *const ::std::os::raw::c_char,
+            ) -> ::std::os::raw::c_int,
+        >,
+        xConflict: ::std::option::Option<
+            unsafe extern "C" fn(
+                pCtx: *mut ::std::os::raw::c_void,
+                eConflict: ::std::os::raw::c_int,
+                p: *mut sqlite3_changeset_iter,
+            ) -> ::std::os::raw::c_int,
+        >,
+        pCtx: *mut ::std::os::raw::c_void,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn sqlite3changeset_apply_v2(
+        db: *mut sqlite3,
+        nChangeset: ::std::os::raw::c_int,
+        pChangeset: *mut ::std::os::raw::c_void,
+        xFilter: ::std::option::Option<
+            unsafe extern "C" fn(
+                pCtx: *mut ::std::os::raw::c_void,
+                zTab: *const ::std::os::raw::c_char,
+            ) -> ::std::os::raw::c_int,
+        >,
+        xConflict: ::std::option::Option<
+            unsafe extern "C" fn(
+                pCtx: *mut ::std::os::raw::c_void,
+                eConflict: ::std::os::raw::c_int,
+                p: *mut sqlite3_changeset_iter,
+            ) -> ::std::os::raw::c_int,
+        >,
+        pCtx: *mut ::std::os::raw::c_void,
+        ppRebase: *mut *mut ::std::os::raw::c_void,
+        pnRebase: *mut ::std::os::raw::c_int,
+        flags: ::std::os::raw::c_int,
+    ) -> ::std::os::raw::c_int;
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct sqlite3_rebaser {
+    _unused: [u8; 0],
+}
+extern "C" {
+    pub fn sqlite3rebaser_create(ppNew: *mut *mut sqlite3_rebaser) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn sqlite3rebaser_configure(
+        arg1: *mut sqlite3_rebaser,
+        nRebase: ::std::os::raw::c_int,
+        pRebase: *const ::std::os::raw::c_void,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn sqlite3rebaser_rebase(
+        arg1: *mut sqlite3_rebaser,
+        nIn: ::std::os::raw::c_int,
+        pIn: *const ::std::os::raw::c_void,
+        pnOut: *mut ::std::os::raw::c_int,
+        ppOut: *mut *mut ::std::os::raw::c_void,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn sqlite3rebaser_delete(p: *mut sqlite3_rebaser);
+}
+extern "C" {
+    pub fn sqlite3changeset_apply_strm(
+        db: *mut sqlite3,
+        xInput: ::std::option::Option<
+            unsafe extern "C" fn(
+                pIn: *mut ::std::os::raw::c_void,
+                pData: *mut ::std::os::raw::c_void,
+                pnData: *mut ::std::os::raw::c_int,
+            ) -> ::std::os::raw::c_int,
+        >,
+        pIn: *mut ::std::os::raw::c_void,
+        xFilter: ::std::option::Option<
+            unsafe extern "C" fn(
+                pCtx: *mut ::std::os::raw::c_void,
+                zTab: *const ::std::os::raw::c_char,
+            ) -> ::std::os::raw::c_int,
+        >,
+        xConflict: ::std::option::Option<
+            unsafe extern "C" fn(
+                pCtx: *mut ::std::os::raw::c_void,
+                eConflict: ::std::os::raw::c_int,
+                p: *mut sqlite3_changeset_iter,
+            ) -> ::std::os::raw::c_int,
+        >,
+        pCtx: *mut ::std::os::raw::c_void,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn sqlite3changeset_apply_v2_strm(
+        db: *mut sqlite3,
+        xInput: ::std::option::Option<
+            unsafe extern "C" fn(
+                pIn: *mut ::std::os::raw::c_void,
+                pData: *mut ::std::os::raw::c_void,
+                pnData: *mut ::std::os::raw::c_int,
+            ) -> ::std::os::raw::c_int,
+        >,
+        pIn: *mut ::std::os::raw::c_void,
+        xFilter: ::std::option::Option<
+            unsafe extern "C" fn(
+                pCtx: *mut ::std::os::raw::c_void,
+                zTab: *const ::std::os::raw::c_char,
+            ) -> ::std::os::raw::c_int,
+        >,
+        xConflict: ::std::option::Option<
+            unsafe extern "C" fn(
+                pCtx: *mut ::std::os::raw::c_void,
+                eConflict: ::std::os::raw::c_int,
+                p: *mut sqlite3_changeset_iter,
+            ) -> ::std::os::raw::c_int,
+        >,
+        pCtx: *mut ::std::os::raw::c_void,
+        ppRebase: *mut *mut ::std::os::raw::c_void,
+        pnRebase: *mut ::std::os::raw::c_int,
+        flags: ::std::os::raw::c_int,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn sqlite3changeset_concat_strm(
+        xInputA: ::std::option::Option<
+            unsafe extern "C" fn(
+                pIn: *mut ::std::os::raw::c_void,
+                pData: *mut ::std::os::raw::c_void,
+                pnData: *mut ::std::os::raw::c_int,
+            ) -> ::std::os::raw::c_int,
+        >,
+        pInA: *mut ::std::os::raw::c_void,
+        xInputB: ::std::option::Option<
+            unsafe extern "C" fn(
+                pIn: *mut ::std::os::raw::c_void,
+                pData: *mut ::std::os::raw::c_void,
+                pnData: *mut ::std::os::raw::c_int,
+            ) -> ::std::os::raw::c_int,
+        >,
+        pInB: *mut ::std::os::raw::c_void,
+        xOutput: ::std::option::Option<
+            unsafe extern "C" fn(
+                pOut: *mut ::std::os::raw::c_void,
+                pData: *const ::std::os::raw::c_void,
+                nData: ::std::os::raw::c_int,
+            ) -> ::std::os::raw::c_int,
+        >,
+        pOut: *mut ::std::os::raw::c_void,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn sqlite3changeset_invert_strm(
+        xInput: ::std::option::Option<
+            unsafe extern "C" fn(
+                pIn: *mut ::std::os::raw::c_void,
+                pData: *mut ::std::os::raw::c_void,
+                pnData: *mut ::std::os::raw::c_int,
+            ) -> ::std::os::raw::c_int,
+        >,
+        pIn: *mut ::std::os::raw::c_void,
+        xOutput: ::std::option::Option<
+            unsafe extern "C" fn(
+                pOut: *mut ::std::os::raw::c_void,
+                pData: *const ::std::os::raw::c_void,
+                nData: ::std::os::raw::c_int,
+            ) -> ::std::os::raw::c_int,
+        >,
+        pOut: *mut ::std::os::raw::c_void,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn sqlite3changeset_start_strm(
+        pp: *mut *mut sqlite3_changeset_iter,
+        xInput: ::std::option::Option<
+            unsafe extern "C" fn(
+                pIn: *mut ::std::os::raw::c_void,
+                pData: *mut ::std::os::raw::c_void,
+                pnData: *mut ::std::os::raw::c_int,
+            ) -> ::std::os::raw::c_int,
+        >,
+        pIn: *mut ::std::os::raw::c_void,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn sqlite3changeset_start_v2_strm(
+        pp: *mut *mut sqlite3_changeset_iter,
+        xInput: ::std::option::Option<
+            unsafe extern "C" fn(
+                pIn: *mut ::std::os::raw::c_void,
+                pData: *mut ::std::os::raw::c_void,
+                pnData: *mut ::std::os::raw::c_int,
+            ) -> ::std::os::raw::c_int,
+        >,
+        pIn: *mut ::std::os::raw::c_void,
+        flags: ::std::os::raw::c_int,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn sqlite3session_changeset_strm(
+        pSession: *mut sqlite3_session,
+        xOutput: ::std::option::Option<
+            unsafe extern "C" fn(
+                pOut: *mut ::std::os::raw::c_void,
+                pData: *const ::std::os::raw::c_void,
+                nData: ::std::os::raw::c_int,
+            ) -> ::std::os::raw::c_int,
+        >,
+        pOut: *mut ::std::os::raw::c_void,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn sqlite3session_patchset_strm(
+        pSession: *mut sqlite3_session,
+        xOutput: ::std::option::Option<
+            unsafe extern "C" fn(
+                pOut: *mut ::std::os::raw::c_void,
+                pData: *const ::std::os::raw::c_void,
+                nData: ::std::os::raw::c_int,
+            ) -> ::std::os::raw::c_int,
+        >,
+        pOut: *mut ::std::os::raw::c_void,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn sqlite3changegroup_add_strm(
+        arg1: *mut sqlite3_changegroup,
+        xInput: ::std::option::Option<
+            unsafe extern "C" fn(
+                pIn: *mut ::std::os::raw::c_void,
+                pData: *mut ::std::os::raw::c_void,
+                pnData: *mut ::std::os::raw::c_int,
+            ) -> ::std::os::raw::c_int,
+        >,
+        pIn: *mut ::std::os::raw::c_void,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn sqlite3changegroup_output_strm(
+        arg1: *mut sqlite3_changegroup,
+        xOutput: ::std::option::Option<
+            unsafe extern "C" fn(
+                pOut: *mut ::std::os::raw::c_void,
+                pData: *const ::std::os::raw::c_void,
+                nData: ::std::os::raw::c_int,
+            ) -> ::std::os::raw::c_int,
+        >,
+        pOut: *mut ::std::os::raw::c_void,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn sqlite3rebaser_rebase_strm(
+        pRebaser: *mut sqlite3_rebaser,
+        xInput: ::std::option::Option<
+            unsafe extern "C" fn(
+                pIn: *mut ::std::os::raw::c_void,
+                pData: *mut ::std::os::raw::c_void,
+                pnData: *mut ::std::os::raw::c_int,
+            ) -> ::std::os::raw::c_int,
+        >,
+        pIn: *mut ::std::os::raw::c_void,
+        xOutput: ::std::option::Option<
+            unsafe extern "C" fn(
+                pOut: *mut ::std::os::raw::c_void,
+                pData: *const ::std::os::raw::c_void,
+                nData: ::std::os::raw::c_int,
+            ) -> ::std::os::raw::c_int,
+        >,
+        pOut: *mut ::std::os::raw::c_void,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn sqlite3session_config(
+        op: ::std::os::raw::c_int,
+        pArg: *mut ::std::os::raw::c_void,
+    ) -> ::std::os::raw::c_int;
 }
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]

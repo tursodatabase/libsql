@@ -24,7 +24,7 @@ rm -f "$SQLITE3_LIB_DIR/bindgen_bundled_version.rs"
 cargo update
 # Just to make sure there is only one bindgen.rs file in target dir
 find "$SCRIPT_DIR/../target" -type f -name bindgen.rs -exec rm {} \;
-env LIBSQLITE3_SYS_BUNDLING=1 cargo build --features "buildtime_bindgen" --no-default-features
+env LIBSQLITE3_SYS_BUNDLING=1 cargo build --features "buildtime_bindgen session" --no-default-features
 find "$SCRIPT_DIR/../target" -type f -name bindgen.rs -exec mv {} "$SQLITE3_LIB_DIR/bindgen_bundled_version.rs" \;
 
 SQLCIPHER_VERSION="4.4.3"
@@ -41,9 +41,10 @@ rm -rf "v${SQLCIPHER_VERSION}.tar.gz" sqlcipher.src
 
 # Regenerate bindgen file for sqlcipher
 rm -f "$SQLCIPHER_LIB_DIR/bindgen_bundled_version.rs"
+cargo clean
 # cargo update
 # find "$SCRIPT_DIR/../target" -type f -name bindgen.rs -exec rm {} \;
-env LIBSQLITE3_SYS_BUNDLING=1 cargo build --features "sqlcipher buildtime_bindgen"
+env LIBSQLITE3_SYS_BUNDLING=1 cargo build --features "sqlcipher buildtime_bindgen session"
 find "$SCRIPT_DIR/../target" -type f -name bindgen.rs -exec mv {} "$SQLCIPHER_LIB_DIR/bindgen_bundled_version.rs" \;
 
 # Sanity checks
