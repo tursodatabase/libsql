@@ -303,7 +303,7 @@ static int lookupName(
         u8 hCol;
         pTab = pItem->pTab;
         assert( pTab!=0 && pTab->zName!=0 );
-        assert( pTab->nCol>0 );
+        assert( pTab->nCol>0 || pParse->nErr );
         if( pItem->pSelect && (pItem->pSelect->selFlags & SF_NestedFrom)!=0 ){
           int hit = 0;
           pEList = pItem->pSelect->pEList;

@@ -1,5 +1,5 @@
-C Allow\sunqualified\s"rowid"\sreferences\sto\sbe\sused\sin\sjoin\squeries,\sprovided\sthat\sonly\sone\sof\sthe\ssource\sobjects\shas\sa\srowid.
-D 2021-07-01T18:19:17.704
+C Fix\sa\sharmless\sassertion\sfault\sdiscovered\sby\n[https://oss-fuzz.com/testcase-detail/5517690440646656|OSSFuzz].\s\sThe\nassertion\sfault\sis\sharmless\sbecause\sthe\sassert()\schecks\sa\scondition\sthat\nthat\sis\sharmless\sif\sfalse\sand\sthe\sassert()\sis\sdisabled\sin\sproduction\nbuilds.
+D 2021-07-02T12:08:12.748
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -542,7 +542,7 @@ F src/pragma.h 8dc78ab7e9ec6ce3ded8332810a2066f1ef6267e2e03cd7356ee00276125c6cf
 F src/prepare.c 0d53d20532aada295c1690792a125adbd6435f5ce703ff0adf1b9b3605238b67
 F src/printf.c 78fabb49b9ac9a12dd1c89d744abdc9b67fd3205e62967e158f78b965a29ec4b
 F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
-F src/resolve.c 73c7177a20a7e40d3eb2eebf6e4b129e7c1bff2c9047919860bd6e20efd3b2f7
+F src/resolve.c 628bf06ebf7792c4d6c97a365a80010f669160c00c28376c23e0ca9ff4875f4f
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 4fa607bab6bcc580f12dbaf9c800b2250a1e408f10321a1d3bcb1dd30c447e62
 F src/shell.c.in 699910739eb7296fd47be19db71f6e5d15d0760f4352c62639d4d6cc7bd8d4cc
@@ -658,7 +658,7 @@ F test/altermalloc.test 167a47de41b5c638f5f5c6efb59784002b196fff70f98d9b4ed3cd74
 F test/altermalloc2.test ca3ebc01670d9313953a2b7628d8cc00dc5ea9988f229b3cbbbe1cca506dae45
 F test/altermalloc3.test 059841a3de6b6780efd9f0b30bf1d9b4443c555f68d39975cbcac2583167b239
 F test/alterqf.test 67568ad152db8c1187b15633b801242cf960f1beafc51261a3d1725d910baeb2
-F test/altertab.test 466b9757630d68455080690b6e99c5ff11b199df4b3530e17f3df10a63aa05d3
+F test/altertab.test a13e11cb1933575002367613b1094f0eeb31f493e4bd9ebeca73279fe00c85e7
 F test/altertab2.test b0d62f323ca5dab42b0bc028c52e310ebdd13e655e8fac070fe622bad7852c2b
 F test/altertab3.test 2b82fa2236a3a91553d53ae5555d8e723c7eec174c41f1fa62ff497355398479
 F test/amatch1.test b5ae7065f042b7f4c1c922933f4700add50cdb9f
@@ -1919,7 +1919,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 595bf95bf8884c545e85e3feee6f43503b59d3c6d69073f0aaba4473c7c61cac
-R b40ea640e783bee9c07b7a6c7eb2888d
-U dan
-Z 23ae68986931e08e3c9295a66ca57f7c
+P d4097364c511709b1874881a0c036640777d1f724165416adf6f53a41f8c6e40
+R 06d8a058c123567f74b029ea10d56275
+U drh
+Z 88dce2abcd7b7311d16c48742670267b
