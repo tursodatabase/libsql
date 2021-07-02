@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\sassertion\sfault\sdiscovered\sby\n[https://oss-fuzz.com/testcase-detail/5517690440646656|OSSFuzz].\s\sThe\nassertion\sfault\sis\sharmless\sbecause\sthe\sassert()\schecks\sa\scondition\sthat\nthat\sis\sharmless\sif\sfalse\sand\sthe\sassert()\sis\sdisabled\sin\sproduction\nbuilds.
-D 2021-07-02T12:08:12.748
+C Put\sALWAYS()\son\sa\sbranch\sthat\sis\salways\strue\sdue\sto\s[d4097364c511709b].\nFix\sa\stestcase\sprecondition\sassociated\swith\sthe\ssame\scheck-in.
+D 2021-07-02T12:25:30.181
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -542,7 +542,7 @@ F src/pragma.h 8dc78ab7e9ec6ce3ded8332810a2066f1ef6267e2e03cd7356ee00276125c6cf
 F src/prepare.c 0d53d20532aada295c1690792a125adbd6435f5ce703ff0adf1b9b3605238b67
 F src/printf.c 78fabb49b9ac9a12dd1c89d744abdc9b67fd3205e62967e158f78b965a29ec4b
 F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
-F src/resolve.c 628bf06ebf7792c4d6c97a365a80010f669160c00c28376c23e0ca9ff4875f4f
+F src/resolve.c b379c5ffe3b692e9c64fa37817cc0efa204b7c9468a818309dde85fd132d9d81
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 4fa607bab6bcc580f12dbaf9c800b2250a1e408f10321a1d3bcb1dd30c447e62
 F src/shell.c.in 699910739eb7296fd47be19db71f6e5d15d0760f4352c62639d4d6cc7bd8d4cc
@@ -1300,7 +1300,7 @@ F test/releasetest.tcl 6f803ef0b896f8f3f4c26eb072c0399963a5987a509a64d45f5dfbc1e
 F test/releasetest_data.tcl f88ed29aa18366ed3956ace36c96ec6868ef5b9ee04cc05d32f4d81031e19e28
 F test/resetdb.test 8062cf10a09d8c048f8de7711e94571c38b38168db0e5877ba7561789e5eeb2b
 F test/resolver01.test f4022acafda7f4d40eca94dbf16bc5fc4ac30ceb
-F test/returning1.test 6b29cb020129fc682dbef1890170606fe4e325190b8300d9ee7563640165d708
+F test/returning1.test f96c7245f6ac16038e802760cd90b93479369939a8a7a44e2329ee5aed28239c
 F test/rollback.test 06680159bc6746d0f26276e339e3ae2f951c64812468308838e0a3362d911eaa
 F test/rollback2.test 3f3a4e20401825017df7e7671e9f31b6de5fae5620c2b9b49917f52f8c160a8f
 F test/rollbackfault.test 0e646aeab8840c399cfbfa43daab46fd609cf04a
@@ -1919,7 +1919,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d4097364c511709b1874881a0c036640777d1f724165416adf6f53a41f8c6e40
-R 06d8a058c123567f74b029ea10d56275
+P 79443aabe1db8cc2ff9537fde0dac0e858eae3f3848ee9cc1b8fba47b824bf08
+R a94b1a132c62d42da273f13c87956435
 U drh
-Z 88dce2abcd7b7311d16c48742670267b
+Z f0e0de42e2a789ea61733a3dc3ade20b

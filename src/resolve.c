@@ -475,7 +475,7 @@ static int lookupName(
      && pMatch
      && (pNC->ncFlags & (NC_IdxExpr|NC_GenCol))==0
      && sqlite3IsRowid(zCol)
-     && VisibleRowid(pMatch->pTab)
+     && ALWAYS(VisibleRowid(pMatch->pTab))
     ){
       cnt = 1;
       pExpr->iColumn = -1;
