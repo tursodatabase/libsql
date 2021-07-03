@@ -868,6 +868,13 @@ impl Connection {
     pub fn is_busy(&self) -> bool {
         self.db.borrow().is_busy()
     }
+
+    /// Flush caches to disk mid-transaction
+    #[cfg(feature = "modern_sqlite")] // 3.10.0
+    #[cfg_attr(docsrs, doc(cfg(feature = "modern_sqlite")))]
+    pub fn cache_flush(&self) -> Result<()> {
+        self.db.borrow_mut().cache_flush()
+    }
 }
 
 impl fmt::Debug for Connection {
