@@ -868,6 +868,13 @@ impl Connection {
     pub fn is_busy(&self) -> bool {
         self.db.borrow().is_busy()
     }
+
+    /// Flush caches to disk mid-transaction
+    #[cfg(feature = "modern_sqlite")] // 3.10.0
+    #[cfg_attr(docsrs, doc(cfg(feature = "modern_sqlite")))]
+    pub fn cache_flush(&self) -> Result<()> {
+        self.db.borrow_mut().cache_flush()
+    }
 }
 
 impl fmt::Debug for Connection {
@@ -1955,5 +1962,12 @@ mod test {
             })?;
         assert_eq!(row_id, 1);
         Ok(())
+    }
+
+    #[test]
+    #[cfg(feature = "modern_sqlite")]
+    fn test_cache_flush() -> Result<()> {
+        let db = checked_memory_handle();
+        db.cache_flush()
     }
 }
