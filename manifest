@@ -1,5 +1,5 @@
-C In\sthe\sPRAGMA\sforeign_key_check,\sensure\sthat\ssufficient\sregisters\sare\nallocated\sfor\sthe\svirtual\smachine,\seven\sif\sone\sor\smore\sforeign\skeys\sreuses\nthe\ssame\scolumn\smultiple\stimes\sand\shas\smore\scolumns\sthan\sthe\stable\sit\sis\spart\nof.\s\s[forum:/forumpost/a6b0c05277|Forum\spost\sa6b0c05277].
-D 2021-07-03T02:55:47.684
+C Fix\sa\s(harmless)\stypo\sin\sa\scomment.\s\sNo\scode\schanges.
+D 2021-07-03T18:57:40.326
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -505,7 +505,7 @@ F src/hash.c 8d7dda241d0ebdafb6ffdeda3149a412d7df75102cecfc1021c98d6219823b19
 F src/hash.h 9d56a9079d523b648774c1784b74b89bd93fac7b365210157482e4319a468f38
 F src/hwtime.h cb1d7e3e1ed94b7aa6fde95ae2c2daccc3df826be26fc9ed7fd90d1750ae6144
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c 2189e0e596010a0dc5405d9f14f78db1ee2fa71138c931f5b6ea96610b95bfc1
+F src/insert.c d560dc585c50e01b015cbf924c173de88f61c8c85b3d1adb9d4865b92fff2d72
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 0aa9e7f08e168e3874cb54984408e3976dafdf5616d511952c425b5ac088ea3e
 F src/main.c aedd8596e4dbdedacbf69fc4ff0462404effb9e6528146a1fdf4adee004053c9
@@ -1919,7 +1919,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 55e2fbebb0a2c9991feef46f31e79b82a24de272aae836bf4d3c06ee06ef1a70
-R 6361a08fc6d48a70d5a532fc3e15d75a
+P 68db1ff9c44fa9c37690ce55ad304d4263ba6fac490063d9e08470de6c17cfe6
+R ef095c3d03da44ce5f668f94092bc2d9
 U drh
-Z e9d1bfeaf7de1edba9fbe2d83f57c7d8
+Z 288b71fb8ffb2328973607c231545eec
