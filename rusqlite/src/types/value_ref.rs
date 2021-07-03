@@ -77,6 +77,16 @@ impl<'a> ValueRef<'a> {
             _ => Err(FromSqlError::InvalidType),
         }
     }
+
+    /// Returns the byte slice that makes up this ValueRef if it's either
+    /// [`ValueRef::Blob`] or [`ValueRef::Text`].
+    #[inline]
+    pub fn as_bytes(&self) -> FromSqlResult<&'a [u8]> {
+        match self {
+            ValueRef::Text(s) | ValueRef::Blob(s) => Ok(s),
+            _ => Err(FromSqlError::InvalidType),
+        }
+    }
 }
 
 impl From<ValueRef<'_>> for Value {
