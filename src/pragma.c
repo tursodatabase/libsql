@@ -1466,6 +1466,7 @@ void sqlite3Pragma(
           sqlite3ExprCodeGetColumnOfTable(v, pTab, 0, iCol, regRow+j);
           sqlite3VdbeAddOp2(v, OP_IsNull, regRow+j, addrOk); VdbeCoverage(v);
         }
+        if( regRow+j>pParse->nMem ) pParse->nMem = regRow+j;
 
         /* Generate code to query the parent index for a matching parent
         ** key. If a match is found, jump to addrOk. */

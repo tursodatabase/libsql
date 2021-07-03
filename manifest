@@ -1,5 +1,5 @@
-C Put\sALWAYS()\son\sa\sbranch\sthat\sis\salways\strue\sdue\sto\s[d4097364c511709b].\nFix\sa\stestcase\sprecondition\sassociated\swith\sthe\ssame\scheck-in.
-D 2021-07-02T12:25:30.181
+C In\sthe\sPRAGMA\sforeign_key_check,\sensure\sthat\ssufficient\sregisters\sare\nallocated\sfor\sthe\svirtual\smachine,\seven\sif\sone\sor\smore\sforeign\skeys\sreuses\nthe\ssame\scolumn\smultiple\stimes\sand\shas\smore\scolumns\sthan\sthe\stable\sit\sis\spart\nof.\s\s[forum:/forumpost/a6b0c05277|Forum\spost\sa6b0c05277].
+D 2021-07-03T02:55:47.684
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -537,7 +537,7 @@ F src/parse.y 8920f4444957d7827ca458029b2e41ffa32dd3b72917be0b52cae0aace3eadb5
 F src/pcache.c 385ff064bca69789d199a98e2169445dc16e4291fa807babd61d4890c3b34177
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c 388304fd2d91c39591080b5e0f3c62cfba87db20370e7e0554062bfb29740e9f
-F src/pragma.c eb42cb9bec189cf18cef5d8fcae56e13bb73ef2b019b198fb48740ced81bce95
+F src/pragma.c e74fbc64dcf4985bf11f8366ca3e37df1db1b211f42f25270b461c118411a512
 F src/pragma.h 8dc78ab7e9ec6ce3ded8332810a2066f1ef6267e2e03cd7356ee00276125c6cf
 F src/prepare.c 0d53d20532aada295c1690792a125adbd6435f5ce703ff0adf1b9b3605238b67
 F src/printf.c 78fabb49b9ac9a12dd1c89d744abdc9b67fd3205e62967e158f78b965a29ec4b
@@ -899,7 +899,7 @@ F test/filter1.test 6c483ecf7886c8843a8612c021aa23f33c581f584151f251842b3a3592c9
 F test/filter2.tcl 44e525497ce07382915f01bd29ffd0fa49dab3adb87253b5e5103ba8f93393e8
 F test/filter2.test 485cf95d1f6d6ceee5632201ca52a71868599836f430cdee42e5f7f14666e30a
 F test/filterfault.test c08fb491d698e8df6c122c98f7db1c65ffcfcad2c1ab0e07fa8a5be1b34eaa8b
-F test/fkey1.test d11dbb8a93ead9b5c46ae5d02da016d61245d47662fb2d844c99214f6163f768
+F test/fkey1.test a0a38fc7f1b88497a355e2931115395fd43dc20cfb317e39c5bf4e11bedea199
 F test/fkey2.test 1063d65e5923c054cfb8f0555a92a3ae0fa8c067275a33ee1715bd856cdb304c
 F test/fkey3.test 76d475c80b84ee7a5d062e56ccb6ea68882e2b49
 F test/fkey4.test 86446017011273aad8f9a99c1a65019e7bd9ca9d
@@ -1919,7 +1919,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 79443aabe1db8cc2ff9537fde0dac0e858eae3f3848ee9cc1b8fba47b824bf08
-R a94b1a132c62d42da273f13c87956435
+P 55e2fbebb0a2c9991feef46f31e79b82a24de272aae836bf4d3c06ee06ef1a70
+R 6361a08fc6d48a70d5a532fc3e15d75a
 U drh
-Z f0e0de42e2a789ea61733a3dc3ade20b
+Z e9d1bfeaf7de1edba9fbe2d83f57c7d8
