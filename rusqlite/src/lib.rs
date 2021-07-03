@@ -1963,4 +1963,11 @@ mod test {
         assert_eq!(row_id, 1);
         Ok(())
     }
+
+    #[test]
+    #[cfg(feature = "modern_sqlite")]
+    fn test_cache_flush() -> Result<()> {
+        let db = checked_memory_handle();
+        db.cache_flush()
+    }
 }
