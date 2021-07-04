@@ -2,6 +2,7 @@
 
 use std::os::raw::c_int;
 
+use crate::error::check;
 use crate::ffi;
 use crate::{Connection, Result};
 
@@ -80,12 +81,12 @@ impl Connection {
         let c = self.db.borrow();
         unsafe {
             let mut val = 0;
-            check!(ffi::sqlite3_db_config(
+            check(ffi::sqlite3_db_config(
                 c.db(),
                 config as c_int,
                 -1,
-                &mut val
-            ));
+                &mut val,
+            ))?;
             Ok(val != 0)
         }
     }
@@ -109,12 +110,12 @@ impl Connection {
         let c = self.db.borrow_mut();
         unsafe {
             let mut val = 0;
-            check!(ffi::sqlite3_db_config(
+            check(ffi::sqlite3_db_config(
                 c.db(),
                 config as c_int,
                 if new_val { 1 } else { 0 },
-                &mut val
-            ));
+                &mut val,
+            ))?;
             Ok(val != 0)
         }
     }

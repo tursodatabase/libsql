@@ -10,7 +10,7 @@ use std::sync::{Arc, Mutex};
 use super::ffi;
 use super::str_for_sqlite;
 use super::{Connection, InterruptHandle, OpenFlags, Result};
-use crate::error::{error_from_handle, error_from_sqlite_code, Error};
+use crate::error::{check, error_from_handle, error_from_sqlite_code, Error};
 use crate::raw_statement::RawStatement;
 use crate::statement::Statement;
 use crate::unlock_notify;
@@ -304,8 +304,7 @@ impl InnerConnection {
 
     #[cfg(feature = "modern_sqlite")] // 3.10.0
     pub fn cache_flush(&mut self) -> Result<()> {
-        check!(unsafe { ffi::sqlite3_db_cacheflush(self.db()) });
-        Ok(())
+        check(unsafe { ffi::sqlite3_db_cacheflush(self.db()) })
     }
 
     #[cfg(not(feature = "hooks"))]
