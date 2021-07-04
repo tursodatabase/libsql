@@ -218,6 +218,7 @@ static void setTextMode(FILE *file, int isOutput){
 #endif
 
 static const char *(azHelp[]);
+static unsigned numCommands;
 
 /* True if the timer is enabled */
 static int enableTimer = 0;
@@ -3911,7 +3912,7 @@ static int showHelp(FILE *out, const char *zPattern){
         }
         pzH = pzHxtra;
         n++;
-      } else {
+      }else{
         ++pzH;
       }
     }
@@ -7130,6 +7131,39 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
 }
 #endif /* !(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_ENABLE_DBPAGE_VTAB) */
 
+CONDITION_COMMAND(seeargs defined(SQLITE_GIMME_SEEARGS));
+/*****************
+ * The .seeargs command
+ */
+COLLECT_HELP_TEXT[
+  ".seeargs                 Echo arguments separated by |",
+  "    A near-dummy command for use as a template (to vanish soon)",
+];
+DISPATCHABLE_COMMAND( seeargs ? 0 0 azArg nArg p ){
+  int rc = 0;
+  for (rc=1; rc<nArg; ++rc)
+    raw_printf(p->out, "%s%s", azArg[rc], (rc==nArg-1)? "\n" : "|");
+  return rc;
+}
+
+/*****************
+ * The .auth command
+ */
+CONDITION_COMMAND(auth !defined(SQLITE_OMIT_AUTHORIZATION));
+COLLECT_HELP_TEXT[
+  ".auth ON|OFF             Show authorizer callbacks",
+];
+DISPATCHABLE_COMMAND( auth 3 2 2 azArg nArg p ){
+  int rc = 0;
+  open_db(p, 0);
+  if( booleanValue(azArg[1]) ){
+    sqlite3_set_authorizer(p->db, shellAuth, p);
+  }else{
+    sqlite3_set_authorizer(p->db, 0, 0);
+  }
+  return rc;
+}
+
 /*****************
  * The .help command
  */
@@ -7161,6 +7195,7 @@ static struct DispatchEntry {
   EMIT_DISPATCH();
   { 0, 0, 0, -1, -1 }
 };
+static unsigned numCommands = sizeof(command_table)/sizeof(struct DispatchEntry) - 1;
 
 /*****************
  * Command dispatcher
@@ -7171,17 +7206,27 @@ static struct DispatchEntry {
 int dispatchCommand(char *azArg[], int nArg, ShellState *pSS)
 {
   const char *cmdName = azArg[0];
-  /* A temporary, simple-minded scan */
-  struct DispatchEntry *pde = command_table;
-  while (pde->cmdName != 0){
-    if (0==strncmp(cmdName, pde->cmdName, pde->minLen)){
-      if((pde->minArgs > 0 && pde->minArgs > nArg)||(pde->maxArgs > 0 && pde->maxArgs < nArg)){
-        return INVALID_ARGS;
-      }
-      return (pde->cmdDoer)(azArg, nArg, pSS);
-    } else { ++pde; }
+  struct DispatchEntry *pde = 0;
+  int ixb = 0, ixe = numCommands-1;
+  while( ixb <= ixe ){
+    int ixm = (ixb+ixe)/2;
+    int md = strncmp(cmdName, command_table[ixm].cmdName, command_table[ixm].minLen);
+    if( md>0 ){
+      ixb = ixm+1;
+    }else if( md<0 ){
+      ixe = ixm-1;
+    }else{
+      pde = &command_table[ixm];
+      break;
+    }
   }
-  return NO_SUCH_COMMAND;
+  if( 0==pde ){
+    return NO_SUCH_COMMAND;
+  }
+  if((pde->minArgs > 0 && pde->minArgs > nArg)||(pde->maxArgs > 0 && pde->maxArgs < nArg)){
+    return INVALID_ARGS;
+  }
+  return (pde->cmdDoer)(azArg, nArg, pSS);
 }
 
 
@@ -7236,21 +7281,6 @@ static int do_meta_command(char *zLine, ShellState *p){
   c = azArg[0][0];
   clearTempFile(p);
 
-#ifndef SQLITE_OMIT_AUTHORIZATION
-  if( c=='a' && strncmp(azArg[0], "auth", n)==0 ){
-    if( nArg!=2 ){
-      raw_printf(stderr, "Usage: .auth ON|OFF\n");
-      rc = 1;
-      goto meta_command_exit;
-    }
-    open_db(p, 0);
-    if( booleanValue(azArg[1]) ){
-      sqlite3_set_authorizer(p->db, shellAuth, p);
-    }else{
-      sqlite3_set_authorizer(p->db, 0, 0);
-    }
-  }else
-#endif
 
 #if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_HAVE_ZLIB)
   if( c=='a' && strncmp(azArg[0], "archive", n)==0 ){
@@ -10198,9 +10228,14 @@ static int do_meta_command(char *zLine, ShellState *p){
     /* The meta-command is not among the specially handled ones. Dispatch it. */
   {
     int dispatchResult = dispatchCommand(azArg, nArg, p);
-    if( NO_SUCH_COMMAND==dispatchResult || INVALID_ARGS==dispatchResult ){
-      utf8_printf(stderr, "Error: unknown command or invalid arguments: "
-                  " \"%s\". Enter \".help\" for help\n", azArg[0]);
+    if( NO_SUCH_COMMAND==dispatchResult ){
+      utf8_printf(stderr, "Error: unknown command: \"%s\"\n"
+                  "  Enter \".help\" for a list of commands.\n", azArg[0]);
+      rc = 1;
+    }
+    if( INVALID_ARGS==dispatchResult ){
+      utf8_printf(stderr, "Error: invalid arguments for \".%s\"\n"
+                  "  Enter \".help %s\" for help on it.\n", azArg[0],azArg[0]);
       rc = 1;
     }
   }
@@ -10555,11 +10590,6 @@ COLLECT_HELP_TEXT[
 #endif
 ];
 COLLECT_HELP_TEXT[
-#ifndef SQLITE_OMIT_AUTHORIZATION
-  ".auth ON|OFF             Show authorizer callbacks",
-#endif
-];
-COLLECT_HELP_TEXT[
   ".backup ?DB? FILE        Backup DB (default \"main\") to FILE",
   "       --append            Use the appendvfs",
   "       --async             Write to FILE without journal and fsync()",
@@ -10829,8 +10859,12 @@ COLLECT_HELP_TEXT[
 ** start of the description of what that command does.
 */
 static const char *(azHelp[]) = {
+/* Template for help text indents and length:
+  ".whatever ?arg? ...      Summary of effects (limited to this line's length)",
+  "   ^ ^                   ^  ^                                              ",
+*/
   EMIT_HELP_TEXT();
-  0
+  0 /* Sentinel */
 };
 
 /*
