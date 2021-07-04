@@ -1,5 +1,5 @@
-C Fix\sa\s(harmless)\stypo\sin\sa\scomment.\s\sNo\scode\schanges.
-D 2021-07-03T18:57:40.326
+C Enhance\sthe\streeview\sdebugging\smechanism\sso\sthat\sit\scorrectly\sdeals\swith\nTK_ROW\sexpression\snodes.
+D 2021-07-04T22:33:08.770
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -609,7 +609,7 @@ F src/test_window.c cdae419fdcea5bad6dcd9368c685abdad6deb59e9fc8b84b153de513d394
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c bae853ad129d1129c063de8630a3e99e306283bc40146f359b1bb91be2c08f1e
-F src/treeview.c 306674a0ff430b00f6532baeea2eb531aa64046ac35843d80a64b8da15cec98f
+F src/treeview.c 6c1dbbc1140c4acb2248db19caf43819be6d3ec1d374ec497d2890c442bf7e4c
 F src/trigger.c 7d16aa09e63226b6d8b3f0fc60b21cbfa596fc406288b2ebcf4266633d1ba222
 F src/update.c 56fa0458b1ffc1042629f926443e8ed44203983df3ab2b0db2ba556e6ceed68c
 F src/upsert.c df8f1727d62b5987c4fd302cd4d7c0c84ae57cd65683c5a34a740dfe24039235
@@ -1919,7 +1919,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 68db1ff9c44fa9c37690ce55ad304d4263ba6fac490063d9e08470de6c17cfe6
-R ef095c3d03da44ce5f668f94092bc2d9
+P d2b9b8daa3b87c3dba1329e2f2f44b60d6b5bb9a49d741045aa20cc7813446b2
+R 609c183d475a913dd24e3c87f3c64788
 U drh
-Z 288b71fb8ffb2328973607c231545eec
+Z 06a5f6147855dc1f11121575b77f39d6

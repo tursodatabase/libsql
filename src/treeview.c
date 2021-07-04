@@ -716,6 +716,15 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
       sqlite3TreeViewExpr(pView, &tmp, 0);
       break;
     }
+    case TK_ROW: {
+      if( pExpr->iColumn<=0 ){
+        sqlite3TreeViewLine(pView, "First FROM table rowid");
+      }else{
+        sqlite3TreeViewLine(pView, "First FROM table column %d",
+            pExpr->iColumn-1);
+      }
+      break;
+    }
     default: {
       sqlite3TreeViewLine(pView, "op=%d", pExpr->op);
       break;
