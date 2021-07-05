@@ -699,8 +699,9 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
       break;
     }
     case TK_SELECT_COLUMN: {
-      sqlite3TreeViewLine(pView, "SELECT-COLUMN %d of [0..%d]",
-              pExpr->iColumn, pExpr->iTable-1);
+      sqlite3TreeViewLine(pView, "SELECT-COLUMN %d of [0..%d]%s",
+              pExpr->iColumn, pExpr->iTable-1,
+              pExpr->pRight==pExpr->pLeft ? " (SELECT-owner)" : "");
       sqlite3TreeViewSelect(pView, pExpr->pLeft->x.pSelect, 0);
       break;
     }
