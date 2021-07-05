@@ -1570,6 +1570,6 @@ do_catchsql_test 25.0 {
   CREATE VIRTUAL TABLE t1 USING echo(t0);
   WITH t3(a) AS (SELECT * FROM t1 UNION ALL SELECT * FROM t1)
   UPDATE t1 SET (a,a) = (SELECT 1, 0) FROM t3;
-} {1 {target object/alias may not appear in FROM clause: t1}}
+} {0 {}}
 
 finish_test

@@ -1,5 +1,5 @@
-C Improved\srebustness\sin\ssqlite3ExprListDup()\swhen\sit\scontains\sa\svector\sassignment\nfrom\san\sUPDATE\swhere\sthe\sinitial\sterm\sis\somitted.\s\sThis\scan\shappen\sduring\sa\nUNION\sALL\squery\sflattening\swhile\sprocessing\sa\svirtual\stable\supdate\sin\swhich\nthe\sfirst\sterm\sof\sthe\svector\sis\srepeated.\n[forum:/forumpost/16ca0e9f32|Forum\spost\s16ca0e9f32].
-D 2021-07-05T02:40:29.435
+C Allow\ssub-queries\sin\sthe\sFROM\sclause\sof\san\sUPDATE...FROM\sstatement\sto\saccess\sthe\sobject\sbeing\supdated\swithout\susing\san\salias,\sas\sis\srequired\sin\sthe\sparent\squery.
+D 2021-07-05T11:27:13.620
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -544,12 +544,12 @@ F src/printf.c 78fabb49b9ac9a12dd1c89d744abdc9b67fd3205e62967e158f78b965a29ec4b
 F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c b379c5ffe3b692e9c64fa37817cc0efa204b7c9468a818309dde85fd132d9d81
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c 4fa607bab6bcc580f12dbaf9c800b2250a1e408f10321a1d3bcb1dd30c447e62
+F src/select.c 1c1230aaa4e5979edd3c5a9f7a90ab856a302cca4962e8a7d08f42dd2e7e1a49
 F src/shell.c.in 699910739eb7296fd47be19db71f6e5d15d0760f4352c62639d4d6cc7bd8d4cc
 F src/sqlite.h.in ecf5aa981da30c33da3e9f353bf3ebf055d3c380c80d6a4f954e58d18ccd6df1
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h e97f4e9b509408fea4c4e9bef5a41608dfac343b4d3c7a990dedde1e19af9510
-F src/sqliteInt.h 6cfa7b73801657c89155a02e748ba538b8bb12fe6f4e8143c74f055d55e1190d
+F src/sqliteInt.h bb5868a443be017a2701bff26a7eb934b5390adef6322ff36ae4e41d3d036b81
 F src/sqliteLimit.h d7323ffea5208c6af2734574bae933ca8ed2ab728083caa117c9738581a31657
 F src/status.c 4b8bc2a6905163a38b739854a35b826c737333fab5b1f8e03fa7eb9a4799c4c1
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -611,7 +611,7 @@ F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c bae853ad129d1129c063de8630a3e99e306283bc40146f359b1bb91be2c08f1e
 F src/treeview.c ce7a3da38caba094c78d888d2366f749ea33dc8cbafb04218b57768fb8669a6c
 F src/trigger.c 7d16aa09e63226b6d8b3f0fc60b21cbfa596fc406288b2ebcf4266633d1ba222
-F src/update.c 56fa0458b1ffc1042629f926443e8ed44203983df3ab2b0db2ba556e6ceed68c
+F src/update.c ff10c7ca6dc9007cdebb3eee6630e87639ef9f949ccb574c34f9d34c52c32fb9
 F src/upsert.c df8f1727d62b5987c4fd302cd4d7c0c84ae57cd65683c5a34a740dfe24039235
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c 41c7a72da1df47864faa378a1c720b38adb288c6838cb6be5594511b6287a048
@@ -1660,7 +1660,7 @@ F test/update.test e906ca7cb1dc6f52af1ea243e08f727edfa79f924c2691f2f9e72481f8473
 F test/update2.test 67455bc61fcbcf96923c45b3bc4f87bc72be7d67575ad35f134906148c7b06d3
 F test/upfrom1.tcl 8859d9d437f03b44174c4524a7a734a391fd4526fcff65be08285dafc9dc9041
 F test/upfrom1.test 8cb06689e99cd707d884faa16da0e8eb26ff658bb01c47ddf72fadade666e6e1
-F test/upfrom2.test f92e47bfc35e9410d3e8716ee626384e89ad026c55fd6148508ca9d707521673
+F test/upfrom2.test 88d39cb755db5789541e645d4e2764abc697a56958f28a3f8451a0e9342bbd6b
 F test/upfrom3.test 6130f24ebf97f5ea865e5d2a14a2d543fe5428a62e87cc60f62d875e45c1f5f0
 F test/upfromfault.test 3a10075a0043f0c4fad6614b2c371f88a8ba5a4acab68b907438413865d6a8d6
 F test/upsert1.test 88f9e258c6a0eeeb85937b08831e8daad440ba41f125af48439e9d33f266fb18
@@ -1685,7 +1685,7 @@ F test/varint.test bbce22cda8fc4d135bcc2b589574be8410614e62
 F test/veryquick.test 57ab846bacf7b90cf4e9a672721ea5c5b669b661
 F test/view.test ea88361d5e9bc8eabf9f573185a16aea73a885be9b6c6a95ae84908913416a80
 F test/view2.test db32c8138b5b556f610b35dfddd38c5a58a292f07fda5281eedb0851b2672679
-F test/vtab1.test e5760911437a97f5887f41ed37d6b124b2c4d8f7dc6ab4e08be8c0dff75b34e8
+F test/vtab1.test 772c94825d455dffc5da34dcf4b648d8a23887616185fa024a472bf745e56df8
 F test/vtab2.test 14d4ab26cee13ba6cf5c5601b158e4f57552d3b055cdd9406cf7f711e9c84082
 F test/vtab3.test b45f47d20f225ccc9c28dc915d92740c2dee311e
 F test/vtab4.test 8e73ed268f3d596bc3590f45fc948fb40f28e9c3
@@ -1919,7 +1919,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 026f08d4cff19a95e0f38f2ef431cacd65c7c77ed92e30d7f2ded84651f47150
-R 370a07f45c8536f9b9e4e0469f767d7e
-U drh
-Z 4f1da44a75ffa77140a4f27e7fbced11
+P 2547cfe38f8fb35109b3fc5bdfada387fe4b2b8a304156b704ab7f03f1f71198
+R 3e8d3cb17bf6ee799e7e5bba55fb6114
+U dan
+Z 5d47dc2f76359fb6048332e2e7229d64
