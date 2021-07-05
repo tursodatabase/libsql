@@ -1341,8 +1341,8 @@ static void exprAnalyze(
     for(i=0; i<nLeft; i++){
       int idxNew;
       Expr *pNew;
-      Expr *pLeft = sqlite3ExprForVectorField(pParse, pExpr->pLeft, i);
-      Expr *pRight = sqlite3ExprForVectorField(pParse, pExpr->pRight, i);
+      Expr *pLeft = sqlite3ExprForVectorField(pParse, pExpr->pLeft, i, nLeft);
+      Expr *pRight = sqlite3ExprForVectorField(pParse, pExpr->pRight, i, nLeft);
 
       pNew = sqlite3PExpr(pParse, pExpr->op, pLeft, pRight);
       transferJoinMarkings(pNew, pExpr);
