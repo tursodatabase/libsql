@@ -1,5 +1,5 @@
-C Allow\ssub-queries\sin\sthe\sFROM\sclause\sof\san\sUPDATE...FROM\sstatement\sto\saccess\sthe\sobject\sbeing\supdated\swithout\susing\san\salias,\sas\sis\srequired\sin\sthe\sparent\squery.
-D 2021-07-05T11:27:13.620
+C Revert\s[5204c2c4a7b73a64],\srestoring\sthe\sold\spre-processor\slogic\sfor\sdetermining\sthe\savailability\sof\sthe\s__atomic_store_n()/__atomic_load_n()\sprimitives.
+D 2021-07-05T17:15:38.183
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -549,7 +549,7 @@ F src/shell.c.in 699910739eb7296fd47be19db71f6e5d15d0760f4352c62639d4d6cc7bd8d4c
 F src/sqlite.h.in ecf5aa981da30c33da3e9f353bf3ebf055d3c380c80d6a4f954e58d18ccd6df1
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h e97f4e9b509408fea4c4e9bef5a41608dfac343b4d3c7a990dedde1e19af9510
-F src/sqliteInt.h bb5868a443be017a2701bff26a7eb934b5390adef6322ff36ae4e41d3d036b81
+F src/sqliteInt.h 72bdf367026290b4a631779127de4d50fc2b1b59066342beabaf80a11555aaf7
 F src/sqliteLimit.h d7323ffea5208c6af2734574bae933ca8ed2ab728083caa117c9738581a31657
 F src/status.c 4b8bc2a6905163a38b739854a35b826c737333fab5b1f8e03fa7eb9a4799c4c1
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -1919,7 +1919,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2547cfe38f8fb35109b3fc5bdfada387fe4b2b8a304156b704ab7f03f1f71198
-R 3e8d3cb17bf6ee799e7e5bba55fb6114
+P 740cb43025449b7d7b47a97ad00885e54b7701cbcb14f4a50c7523022e3936d5
+R c38bc63b0e4c77ae43be3b1d873807d7
 U dan
-Z 5d47dc2f76359fb6048332e2e7229d64
+Z 5c6f4318a3def93e7f66935738dec11e
