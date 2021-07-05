@@ -564,6 +564,7 @@ int sqlite3Fts5GetTokenizer(
 Fts5Table *sqlite3Fts5TableFromCsrid(Fts5Global*, i64);
 
 int sqlite3Fts5FlushToDisk(Fts5Table*);
+void sqlite3Fts5VocabLock(Fts5Table*, int);
 
 /*
 ** End of interface to code in fts5.c.

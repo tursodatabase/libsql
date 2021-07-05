@@ -117,6 +117,7 @@ struct Fts5FullTable {
   Fts5Storage *pStorage;          /* Document store */
   Fts5Global *pGlobal;            /* Global (connection wide) data */
   Fts5Cursor *pSortCsr;           /* Sort data from this cursor */
+  int nVocabLock;                 /* Number of locks held by fts5vocab csrs */
 #ifdef SQLITE_DEBUG
   struct Fts5TransactionState ts;
 #endif
@@ -1634,7 +1635,9 @@ static int fts5UpdateMethod(
   assert( pTab->p.pConfig->pzErrmsg==0 );
   pTab->p.pConfig->pzErrmsg = &pTab->p.base.zErrMsg;
 
-  /* Put any active cursors into REQUIRE_SEEK state. */
+  /* Return an error if there are any fts5vocab cursors open. Put any active 
+  ** fts5 cursors into REQUIRE_SEEK state. */
+  if( pTab->nVocabLock ) return SQLITE_LOCKED;
   fts5TripCursors(pTab);
 
   eType0 = sqlite3_value_type(apVal[0]);
@@ -2556,6 +2559,17 @@ static int fts5RenameMethod(
 int sqlite3Fts5FlushToDisk(Fts5Table *pTab){
   fts5TripCursors((Fts5FullTable*)pTab);
   return sqlite3Fts5StorageSync(((Fts5FullTable*)pTab)->pStorage);
+}
+
+/* 
+** Take (bUnlock==0) or release (bUnlock==1) a vocab lock on the table
+** passed as the only argument. It is not possible to modify the
+** structure of the table if there are one or more vocab locks.
+*/
+void sqlite3Fts5VocabLock(Fts5Table *pVtab, int bUnlock){
+  Fts5FullTable *pTab = (Fts5FullTable*)pVtab;
+  pTab->nVocabLock += (bUnlock ? -1 : +1);
+  assert( pTab->nVocabLock>=0 );
 }
 
 /*

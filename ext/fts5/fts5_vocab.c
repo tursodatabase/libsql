@@ -382,6 +382,7 @@ static int fts5VocabOpenMethod(
     pCsr->pStmt = pStmt;
     pCsr->aCnt = (i64*)&pCsr[1];
     pCsr->aDoc = &pCsr->aCnt[pFts5->pConfig->nCol];
+    sqlite3Fts5VocabLock(pFts5, 0);
   }else{
     sqlite3_finalize(pStmt);
   }
@@ -407,6 +408,7 @@ static void fts5VocabResetCursor(Fts5VocabCursor *pCsr){
 static int fts5VocabCloseMethod(sqlite3_vtab_cursor *pCursor){
   Fts5VocabCursor *pCsr = (Fts5VocabCursor*)pCursor;
   fts5VocabResetCursor(pCsr);
+  sqlite3Fts5VocabLock(pCsr->pFts5, 1);
   sqlite3Fts5BufferFree(&pCsr->term);
   sqlite3_finalize(pCsr->pStmt);
   sqlite3_free(pCsr);
