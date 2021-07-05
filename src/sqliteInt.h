@@ -215,9 +215,11 @@
 # define __has_extension(x) 0     /* compatibility with non-clang compilers */
 #endif
 #if GCC_VERSION>=4007000 || __has_extension(c_atomic) 
+# define SQLITE_ATOMIC_INTRINSICS 1
 # define AtomicLoad(PTR)       __atomic_load_n((PTR),__ATOMIC_RELAXED)
 # define AtomicStore(PTR,VAL)  __atomic_store_n((PTR),(VAL),__ATOMIC_RELAXED)
 #else
+# define SQLITE_ATOMIC_INTRINSICS 0
 # define AtomicLoad(PTR)       (*(PTR))
 # define AtomicStore(PTR,VAL)  (*(PTR) = (VAL))
 #endif

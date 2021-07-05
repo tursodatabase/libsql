@@ -1,5 +1,5 @@
-C Revert\s[5204c2c4a7b73a64],\srestoring\sthe\sold\spre-processor\slogic\sfor\sdetermining\sthe\savailability\sof\sthe\s__atomic_store_n()/__atomic_load_n()\sprimitives.
-D 2021-07-05T17:15:38.183
+C Add\sthe\sATOMIC_INTRINSICS\scompile-time\soutput\soutput.\s\sMove\ssqlite3Int.h\nin\sfront\sof\sctime.c\sso\sthat\sdefault\svalues\sthat\sare\snot\soverridden\sare\nshown\sin\sPRAGMA\scompile-time\soption\soutput.
+D 2021-07-05T18:37:37.729
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -491,7 +491,7 @@ F src/btreeInt.h 7bc15a24a02662409ebcd6aeaa1065522d14b7fda71573a2b0568b458f514ae
 F src/build.c ea28944f65b04f771e7aa5d614d406faa1bde5fe4ce882e2ead73049f03ed568
 F src/callback.c d0b853dd413255d2e337b34545e54d888ea02f20da5ad0e63585b389624c4a6c
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
-F src/ctime.c 3052b6b05ed9ef547a3dd66b8e01bfa9d582e78752ad6ed327da84652641e038
+F src/ctime.c 8159d5f706551861c18ec6c8f6bdf105e15ea00367f05d9ab65d31a1077facc1
 F src/date.c e0632f335952b32401482d099321bbf12716b29d6e72836b53ae49683ebae4bf
 F src/dbpage.c 8a01e865bf8bc6d7b1844b4314443a6436c07c3efe1d488ed89e81719047833a
 F src/dbstat.c 3aa79fc3aed7ce906e4ea6c10e85d657299e304f6049861fe300053ac57de36c
@@ -549,7 +549,7 @@ F src/shell.c.in 699910739eb7296fd47be19db71f6e5d15d0760f4352c62639d4d6cc7bd8d4c
 F src/sqlite.h.in ecf5aa981da30c33da3e9f353bf3ebf055d3c380c80d6a4f954e58d18ccd6df1
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h e97f4e9b509408fea4c4e9bef5a41608dfac343b4d3c7a990dedde1e19af9510
-F src/sqliteInt.h 72bdf367026290b4a631779127de4d50fc2b1b59066342beabaf80a11555aaf7
+F src/sqliteInt.h b5e0732368e4a4f925b7994538cd3fd3b85027a1c4dcadf3fc944b36f35ce8cd
 F src/sqliteLimit.h d7323ffea5208c6af2734574bae933ca8ed2ab728083caa117c9738581a31657
 F src/status.c 4b8bc2a6905163a38b739854a35b826c737333fab5b1f8e03fa7eb9a4799c4c1
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -1846,7 +1846,7 @@ F tool/max-limits.c cbb635fbb37ae4d05f240bfb5b5270bb63c54439
 F tool/merge-test.tcl de76b62f2de2a92d4c1ca4f976bce0aea6899e0229e250479b229b2a1914b176
 F tool/mkautoconfamal.sh f62353eb6c06ab264da027fd4507d09914433dbdcab9cb011cdc18016f1ab3b8
 F tool/mkccode.tcl 86463e68ce9c15d3041610fedd285ce32a5cf7a58fc88b3202b8b76837650dbe x
-F tool/mkctimec.tcl 06b0d503ee0e6c2d4abe83563b43d4925a12e31ec9fb3249ce39661f53fbd1ce
+F tool/mkctimec.tcl 5ef1891ed3d0e8143ff39bad7c01ed60c2817a2fb2d9a09487f7ccad2df621e4
 F tool/mkkeywordhash.c 08b6e4d7a482a7f37a9a0032e7ba968e26624a027b6b2e9ba589be6f5e3d8c2c
 F tool/mkmsvcmin.tcl 6ecab9fe22c2c8de4d82d4c46797bda3d2deac8e763885f5a38d0c44a895ab33
 F tool/mkopcodec.tcl d1b6362bd3aa80d5520d4d6f3765badf01f6c43c
@@ -1857,7 +1857,7 @@ F tool/mkshellc.tcl 5fe7e518112b262e25726f248c0f33dd153192867453984b6af0a76a88e9
 F tool/mksourceid.c 36aa8020014aed0836fd13c51d6dc9219b0df1761d6b5f58ff5b616211b079b9
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl 4f7cfef5152b0c91920355cbfc1d608a4ad242cb819f1aea07f6d0274f584a7f
-F tool/mksqlite3c.tcl 00c4c0382eb000153182da2bee2547ca05554eeeed10177efe5894c54e4e6d4d
+F tool/mksqlite3c.tcl b4a930a4c3f8f43273cde45a459eb8881479be3c2845526c92b2513a4995aab8
 F tool/mksqlite3h.tcl 1f5e4a1dbbbc43c83cc6e74fe32c6c620502240b66c7c0f33a51378e78fc4edf
 F tool/mksqlite3internalh.tcl eb994013e833359137eb53a55acdad0b5ae1049b
 F tool/mkvsix.tcl b9e0777a213c23156b6542842c238479e496ebf5
@@ -1919,7 +1919,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 740cb43025449b7d7b47a97ad00885e54b7701cbcb14f4a50c7523022e3936d5
-R c38bc63b0e4c77ae43be3b1d873807d7
-U dan
-Z 5c6f4318a3def93e7f66935738dec11e
+P e690abb9e4e189c41182ac813115d55d811135013f5ce94ec0c45a547597f8ad
+R a2ccd00a396f9ce88779c0faa6b62ebe
+U drh
+Z bd5982e15977a466d333a20a1806f8f8
