@@ -1,5 +1,5 @@
-C Enhance\sthe\streeview\sdebugging\smechanism\sso\sthat\sit\scorrectly\sdeals\swith\nTK_ROW\sexpression\snodes.
-D 2021-07-04T22:33:08.770
+C Fix\san\sincorrect\scomment\son\stestcase\smisc1-27.0.\s\sNo\schanges\sto\scode.
+D 2021-07-05T00:07:39.333
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1200,7 +1200,7 @@ F test/minmax.test 0015e5cd5e7af48bb3364f26d9f3a9cdbea2a442d4774281c39e2229591b7
 F test/minmax2.test cf9311babb6f0518d04e42fd6a42c619531c4309a9dd790a2c4e9b3bc595e0de
 F test/minmax3.test cc1e8b010136db0d01a6f2a29ba5a9f321034354
 F test/minmax4.test 272ca395257f05937dc96441c9dde4bc9fbf116a8d4fa02baeb0d13d50e36c87
-F test/misc1.test 7ce84b25df9872e7d7878613a96815d2ba5bc974ac4e15a50118dde8f3917599
+F test/misc1.test e3fa5732080cc9a2b77bd5dd4ebb55bd6785b02565f8806092686b83ac58d600
 F test/misc2.test 71e746af479119386ac2ed7ab7d81d99970e75b49ffd3e8efffee100b4b5f350
 F test/misc3.test cf3dda47d5dda3e53fc5804a100d3c82be736c9d
 F test/misc4.test 10cd6addb2fa9093df4751a1b92b50440175dd5468a6ec84d0386e78f087db0e
@@ -1919,7 +1919,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d2b9b8daa3b87c3dba1329e2f2f44b60d6b5bb9a49d741045aa20cc7813446b2
-R 609c183d475a913dd24e3c87f3c64788
+P e87fdb6514b6f6775a5a36ca0ec5c920eeaba9e3b842dffa327e970b27cd036d
+R 389f03ccb1a382c69b94dc83b230b2b0
 U drh
-Z 06a5f6147855dc1f11121575b77f39d6
+Z 310dc77b27d9638577d1119dcb3f50a7
