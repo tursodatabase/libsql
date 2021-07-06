@@ -37,7 +37,28 @@ set ::cmd_help [dict create]
 set ::cmd_dispatch [dict create]
 set ::cmd_condition [dict create]
 set ::iShuffleErrors 0
-set ::commandFuncSuffix "Command"
+
+# Setup dispatching function signature and table entry struct .
+set ::dispCfg [dict create \
+  RETURN_TYPE int \
+  STORAGE_CLASS static \
+  ARGS_SIGNATURE "char *\$arg4\\\[\\\], int \$arg5, ShellState *\$arg6" \
+  DISPATCH_ENTRY \
+   "\x7B \"\$cmd\", \$\x7Bcmd\x7DCommand, \$arg1,\$arg2,\$arg3 \x7D," \
+  DISPATCHEE_NAME {${cmd}Command} \
+  CMD_CAPTURE_RE "^\\s*\x7B\\s*\"(\\w+)\"" \
+]
+# Other config keys:
+#  DC_ARG_COUNT=<number of arguments to DISPATCHABLE_COMMAND()>
+#  DC_ARG#_DEFAULT=<default value for the #th argument>
+# Variables $cmd and $arg# (where # = 0 .. DC_ARG_COUNT-1) have values
+# when ARGS_SIGNATURE, DISPATCH_ENTRY, and DISPATCHEE_NAME are evaluated.
+
+# proc dump_cfg {} {
+#   foreach k [dict keys $::dispCfg] {
+#     puts stderr "$k=[dict get $::dispCfg $k]"
+#   }
+# }
 
 proc condition_command {cmd pp_expr} {
   if {[regexp {^(!)?defined\(\s*(\w+)\s*\)} $pp_expr ma bang pp_var]} {
@@ -52,12 +73,19 @@ proc condition_command {cmd pp_expr} {
   dict set ::cmd_condition $cmd $pp_expr
 }
 
-proc emit_conditionally {cmd lines ostrm} {
+proc emit_conditionally {cmd lines ostrm {indent ""}} {
   set wrapped [dict exists $::cmd_condition $cmd]
   if {$wrapped} {
     puts $ostrm [dict get $::cmd_condition $cmd]
   }
-  puts $ostrm [join $lines "\n"]
+  if {[regexp {^\s*(\d+)\s*$} $indent ma inum]} {
+    set lead [string repeat " " $inum]
+    foreach line $lines {
+      puts $ostrm "$lead[string trimleft $line]"
+    }
+  } else {
+    puts $ostrm [join $lines "\n"]
+  }
   if {$wrapped} {
     puts $ostrm "#endif"
   }
@@ -118,7 +146,9 @@ proc chunkify_help {htin} {
 # in which case it is emitted as-is.
 proc do_shuffle {hFile lx ostrm} {
   set iAte 0
-  if {[regexp {^COLLECT_HELP_TEXT\[} $lx]} {
+  if {![regexp {^\s{0,4}[A-Z]+} $lx]} {
+    puts $ostrm $lx
+  } elseif {[regexp {^COLLECT_HELP_TEXT\[} $lx]} {
     incr iAte
     set help_frag {}
     set lx [gets $hFile]
@@ -133,9 +163,22 @@ proc do_shuffle {hFile lx ostrm} {
       && $tc eq "\x7B"} {
     set args [split [regsub {\s+} [string trim $args] " "]]
     incr iAte
-    if {[llength $args] != 7} {
+    set na [llength $args]
+    set cmd [lindex $args 0]
+    set naPass [dict get $::dispCfg DC_ARG_COUNT]
+    if {$na > $naPass} {
       puts stderr "Bad args: $lx"
     } else {
+      while {$na < $naPass} {
+        if {![dict exists $::dispCfg "DC_ARG${na}_DEFAULT"]} {
+          puts stderr "Too few args: $lx (need $naPass)"
+          incr ::iShuffleErrors
+          break
+        } else {
+          lappend args [subst [dict get $::dispCfg "DC_ARG${na}_DEFAULT"]]
+        }
+        incr na
+      }
       set body {}
       while {![eof $hFile]} {
         set lb [gets $hFile]
@@ -143,41 +186,72 @@ proc do_shuffle {hFile lx ostrm} {
         lappend body $lb
         if {[regexp "^\x7D\\s*\$" $lb]} { break }
       }
-      foreach {cmd cmdLen naMin naMax azA nA pSS} $args {
-        if {$cmdLen eq "?"} {
-          set cmdLen [string length $cmd]
+      for {set aix 1} {$aix < $na} {incr aix} {
+        set av [lindex $args $aix]
+        if {$av eq "?"} {
+          set ai [expr {$aix + 1}]
+          set av [subst [dict get $::dispCfg "DC_ARG${ai}_DEFAULT"]]
         }
-        set func "$cmd$::commandFuncSuffix"
-        set dispEntry "  \x7B \"$cmd\", $func, $cmdLen, $naMin, $naMax \x7D,"
-        set funcOpen "static int ${func}(char *$azA\[\], int $nA, ShellState *$pSS)\x7B"
+        set "arg$aix" $av
+      }
+      if {$cmd ne "?"} {
+        set rsct [dict get $::dispCfg STORAGE_CLASS]
+        set rsct "$rsct [dict get $::dispCfg RETURN_TYPE]"
+        set argexp [subst [dict get $::dispCfg ARGS_SIGNATURE]]
+        set fname [subst [dict get $::dispCfg DISPATCHEE_NAME]]
+        set funcOpen "$rsct $fname\($argexp\)\x7B"
+        set dispEntry [subst [dict get $::dispCfg DISPATCH_ENTRY]]
         emit_conditionally $cmd [linsert $body 0 $funcOpen] $ostrm
         dict set ::cmd_dispatch $cmd [list $dispEntry]
       }
     }
-  } elseif {[regexp {^\s*EMIT_HELP_TEXT\(\)} $lx]} {
+  } elseif {[regexp {^\s*EMIT_HELP_TEXT\((\d*)\)} $lx ma indent]} {
     incr iAte
     foreach htc [lsort [dict keys $::cmd_help]] {
       emit_conditionally $htc [dict get $::cmd_help $htc] $ostrm
     }
-  } elseif {[regexp {^COLLECT_DISPATCH\(\s*(\w+)\s*\)\[} $lx ma cmd]} {
+  } elseif {[regexp {^COLLECT_DISPATCH\(\s*([\w\*]+)\s*\)\[} $lx ma cmd]} {
     incr iAte
-    set disp_frag {}
     set lx [gets $hFile]
     while {![eof $hFile] && ![regexp {^\s*\];} $lx]} {
       lappend disp_frag $lx
+      set grabCmd [dict get $::dispCfg CMD_CAPTURE_RE]
+      if {![regexp $grabCmd $lx ma dcmd]} {
+        puts stderr "malformed dispatch element:\n $lx"
+        incr ::iShuffleErrors
+      } elseif {$cmd ne "*" && $dcmd ne $cmd} {
+        puts stderr "misdeclared dispatch element:\n $lx"
+        incr ::iShuffleErrors
+      } else {
+        dict set ::cmd_dispatch $dcmd [list $lx]
+      }
       set lx [gets $hFile]
       incr iAte
     }
     incr iAte
-    dict set ::cmd_dispatch $cmd $disp_frag
-  } elseif {[regexp {^\s*EMIT_DISPATCH\(\)} $lx]} {
+  } elseif {[regexp {^\s*EMIT_DISPATCH\((\d*)\)} $lx ma indent]} {
     incr iAte
     foreach cmd [lsort [dict keys $::cmd_dispatch]] {
-      emit_conditionally $cmd [dict get $::cmd_dispatch $cmd] $ostrm
+      emit_conditionally $cmd [dict get $::cmd_dispatch $cmd] $ostrm $indent
     }
   } elseif {[regexp {^CONDITION_COMMAND\(\s*(\w+)\s+([^;]+)\);} $lx ma cmd pp_expr]} {
     incr iAte
     condition_command $cmd [string trim $pp_expr]
+  } elseif {[regexp {^DISPATCH_CONFIG\[} $lx]} {
+    incr iAte
+    set def_disp {}
+    set lx [gets $hFile]
+    while {![eof $hFile] && ![regexp {^\s*\];} $lx]} {
+      lappend def_disp $lx
+      set lx [gets $hFile]
+      incr iAte
+    }
+    incr iAte
+    foreach line $def_disp {
+      if {[regexp {^\s*(\w+)=(.+)$} $line ma k v]} {
+        dict set ::dispCfg $k $v
+      }
+    }
   } else {
     puts $ostrm $lx
   }
