@@ -945,6 +945,55 @@ void sqlite3PExprAddSelect(Parse *pParse, Expr *pExpr, Select *pSelect){
   }
 }
 
+/*
+** Expression list pEList is a list of vector values. This function
+** converts the contents of pEList to a VALUES(...) Select statement
+** returning 1 row for each element of the list. If there are any
+** non-vector expressions in the list, the corresponding row returned
+** by the values statement contains a single column, the value of
+** the non-vector expression itself.
+**
+** For example, the expression list:
+**
+**   ( (1, 2), 3, (3, 4, 5) )
+**
+** is translated to:
+**
+**   VALUES(1, 2), (3), (3, 4, 5)
+**
+** This is used as part of processing IN(...) expressions with a list
+** of vectors on the RHS. e.g. "... IN ((1,2), (3,4), (5,6))".
+*/
+Select *sqlite3ExprListToValues(Parse *pParse, ExprList *pEList){
+  int ii;
+  Select *pRet = 0;
+  for(ii=0; ii<pEList->nExpr; ii++){
+    Select *pSel;
+    ExprList *pList;
+    Expr *pExpr = pEList->a[ii].pExpr;
+    if( pExpr->op==TK_VECTOR ){
+      pList = pExpr->x.pList;
+      pExpr->x.pList = 0;
+    }else{
+      pList = sqlite3ExprListAppend(pParse, 0, pExpr);
+      pEList->a[ii].pExpr = 0;
+    }
+    pSel = sqlite3SelectNew(pParse, pList, 0, 0, 0, 0, 0, SF_Values, 0);
+    if( pSel ){
+      if( pRet ){
+        pSel->op = TK_ALL;
+        pSel->pPrior = pRet;
+      }
+      pRet = pSel;
+    }
+  }
+
+  if( pRet && pRet->pPrior ){
+    pRet->selFlags |= SF_MultiValue;
+  }
+  sqlite3ExprListDelete(pParse->db, pEList);
+  return pRet;
+}
 
 /*
 ** Join two expressions using an AND operator.  If either expression is

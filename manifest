@@ -1,5 +1,5 @@
-C Do\snot\sallow\swrites\sto\san\sfts5\stable\sif\sthere\sare\sany\sopen\sfts5vocab\scursors.
-D 2021-07-05T19:01:09.054
+C Handle\s"<vector>\sIN\s(<vector>,\s<vector>\s...)"\sin\sthe\ssame\sway\sas\s"<vector>\sIN\s(VALUES(<vector>,\s<vector>,\s...)".
+D 2021-07-06T20:44:32.552
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -496,7 +496,7 @@ F src/date.c e0632f335952b32401482d099321bbf12716b29d6e72836b53ae49683ebae4bf
 F src/dbpage.c 8a01e865bf8bc6d7b1844b4314443a6436c07c3efe1d488ed89e81719047833a
 F src/dbstat.c 3aa79fc3aed7ce906e4ea6c10e85d657299e304f6049861fe300053ac57de36c
 F src/delete.c 62451bba9fe641159e9c0b7d9d2bab1c48d0cff11e16de2d14000603d2af1fcf
-F src/expr.c 5c532072d91855d1b91b2581c2d4447e517932713f583ed02020b7129f1cfbd7
+F src/expr.c ab3935a79da7f0aa0f2f26b16a7fdee527cd21e457876f1d53f009c472a43226
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c e9063648396c58778f77583a678342fe4a9bc82436bf23c5f9f444f2df0fdaa4
 F src/func.c c96ac6f7c4f2d684217c4673a80446e1b50e25b5ea79366f333f484622d010a0
@@ -533,7 +533,7 @@ F src/os_win.c 77d39873836f1831a9b0b91894fec45ab0e9ca8e067dc8c549e1d1eca1566fe9
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 95c255256b13827caf038c8f963d334784073f38ab6ef9d70371d9d04f3c43e0
 F src/pager.h 4bf9b3213a4b2bebbced5eaa8b219cf25d4a82f385d093cd64b7e93e5285f66f
-F src/parse.y 8920f4444957d7827ca458029b2e41ffa32dd3b72917be0b52cae0aace3eadb5
+F src/parse.y 50ef70ca8c7797a405139bbf92ee34812eaa4c0aff10822792672940de424e36
 F src/pcache.c 385ff064bca69789d199a98e2169445dc16e4291fa807babd61d4890c3b34177
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c 388304fd2d91c39591080b5e0f3c62cfba87db20370e7e0554062bfb29740e9f
@@ -549,7 +549,7 @@ F src/shell.c.in 699910739eb7296fd47be19db71f6e5d15d0760f4352c62639d4d6cc7bd8d4c
 F src/sqlite.h.in ecf5aa981da30c33da3e9f353bf3ebf055d3c380c80d6a4f954e58d18ccd6df1
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h e97f4e9b509408fea4c4e9bef5a41608dfac343b4d3c7a990dedde1e19af9510
-F src/sqliteInt.h b5e0732368e4a4f925b7994538cd3fd3b85027a1c4dcadf3fc944b36f35ce8cd
+F src/sqliteInt.h c78fbfc341832bad59299bfc1f932a48e3631d652ae7f443fed969d7c2de76ad
 F src/sqliteLimit.h d7323ffea5208c6af2734574bae933ca8ed2ab728083caa117c9738581a31657
 F src/status.c 4b8bc2a6905163a38b739854a35b826c737333fab5b1f8e03fa7eb9a4799c4c1
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -1317,7 +1317,8 @@ F test/rowvalue6.test d19b54feb604d5601f8614b15e214e0774c01087
 F test/rowvalue7.test c1cbdbf407029db01f87764097c6ac02a1c5a37efd2776eff32a9cdfdf6f2dba
 F test/rowvalue8.test 5900eddad9e2c3c2e26f1a95f74aafc1232ee5e0
 F test/rowvalue9.test cb5380df82dca9db463081e26952c1e097b34fc2c2ac87453970c048d97df687
-F test/rowvaluefault.test 7cd9ccc6c2fbdd881672984087aad0491bb75504
+F test/rowvalueA.test 1e73cc7d35491bb46352adaade23cecc9add6094434d85445a3251fc20079ebe
+F test/rowvaluefault.test 1dbe9e2a57c4b1a2ee4fb78c7a08c13d4c62885125019713190594aa4847f740
 F test/rowvaluevtab.test cd9747bb3f308086944c07968f547ad6b05022e698d80b9ffbdfe09ce0b8da6f
 F test/rtree.test 0c8d9dd458d6824e59683c19ab2ffa9ef946f798
 F test/run-wordcount.sh 891e89c4c2d16e629cd45951d4ed899ad12afc09
@@ -1919,7 +1920,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e306952690bfb140e2c404a74b05ff2d070c487f7e52c62d62a004505fba0e15
-R 97f692da529fbbc0053b9965bcfd2834
+P c49a6ed78a917d4972e048e2a9bbe4d400691f97ce7e022f0e4436ceaed7fb73
+R 088831e8438f8281d3a5f02f1fe2374b
 U dan
-Z 35b3ccac90623680edbe1ba22c3e426c
+Z e8e70fe2aaf0c6a219c124f4d93d407b
