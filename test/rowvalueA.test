@@ -59,19 +59,19 @@ do_execsql_test 1.6.2 "
 
 do_catchsql_test 2.0 {
   SELECT (1, 2) IN ( (1, 2), (3, 4, 5), (5, 6) )
-} {1 {all VALUES must have the same number of terms}}
+} {1 {IN(...) element has 3 terms - expected 2}}
 
 do_catchsql_test 2.1 {
   SELECT (1, 2) IN ( (1, 2), 4, (5, 6) )
-} {1 {all VALUES must have the same number of terms}}
+} {1 {IN(...) element has 1 term - expected 2}}
 
 do_catchsql_test 2.2 {
   SELECT (1, 2, 3) IN ( (1, 2), (3, 4), (5, 6) )
-} {1 {sub-select returns 2 columns - expected 3}}
+} {1 {IN(...) element has 2 terms - expected 3}}
 
 do_catchsql_test 2.3 {
   SELECT 2 IN ( (1, 2), (3, 4), (5, 6) )
-} {1 {sub-select returns 2 columns - expected 1}}
+} {1 {row value misused}}
 
 finish_test
 

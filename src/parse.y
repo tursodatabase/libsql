@@ -1256,15 +1256,18 @@ expr(A) ::= expr(A) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
       A = sqlite3Expr(pParse->db, TK_INTEGER, N ? "1" : "0");
     }else{
       Expr *pRHS = Y->a[0].pExpr;
-      if( Y->nExpr==1 && sqlite3ExprIsConstant(pRHS) && pRHS->op!=TK_VECTOR ){
+      if( Y->nExpr==1 && sqlite3ExprIsConstant(pRHS) && A->op!=TK_VECTOR ){
         Y->a[0].pExpr = 0;
         sqlite3ExprListDelete(pParse->db, Y);
         pRHS = sqlite3PExpr(pParse, TK_UPLUS, pRHS, 0);
         A = sqlite3PExpr(pParse, TK_EQ, A, pRHS);
       }else{
         A = sqlite3PExpr(pParse, TK_IN, A, 0);
-        if( pRHS->op==TK_VECTOR || A==0 ){
-          Select *pRHS = sqlite3ExprListToValues(pParse, Y);
+        if( A==0 ){
+          sqlite3ExprListDelete(pParse->db, Y);
+        }else if( A->pLeft->op==TK_VECTOR ){
+          int nExpr = A->pLeft->x.pList->nExpr;
+          Select *pRHS = sqlite3ExprListToValues(pParse, nExpr, Y);
           if( pRHS ){
             parserDoubleLinkSelect(pParse, pRHS);
             sqlite3PExprAddSelect(pParse, A, pRHS);

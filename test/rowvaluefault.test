@@ -80,10 +80,10 @@ do_faultsim_test 7 -faults oom* -body {
 do_faultsim_test 8 -faults oom* -body {
   execsql { 
     SELECT fou FROM xyz 
-    WHERE two IN ( ('a','b','c'), ('A','A','A'), (1,2,3) );
+    WHERE (two, one) IN ( ('a','b','c'), ('A','A','A'), (1,2,3) );
   }
 } -test {
-  faultsim_test_result {1 {sub-select returns 3 columns - expected 1}}
+  faultsim_test_result {1 {IN(...) element has 3 terms - expected 2}}
 }
 
 finish_test

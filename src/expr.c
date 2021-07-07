@@ -948,37 +948,37 @@ void sqlite3PExprAddSelect(Parse *pParse, Expr *pExpr, Select *pSelect){
 /*
 ** Expression list pEList is a list of vector values. This function
 ** converts the contents of pEList to a VALUES(...) Select statement
-** returning 1 row for each element of the list. If there are any
-** non-vector expressions in the list, the corresponding row returned
-** by the values statement contains a single column, the value of
-** the non-vector expression itself.
+** returning 1 row for each element of the list. For example, the 
+** expression list:
 **
-** For example, the expression list:
+**   ( (1,2), (3,4) (5,6) )
 **
-**   ( (1, 2), 3, (3, 4, 5) )
+** is translated to the equivalent of:
 **
-** is translated to:
+**   VALUES(1,2), (3,4), (5,6)
 **
-**   VALUES(1, 2), (3), (3, 4, 5)
+** Each of the vector values in pEList must contain exactly nElem terms.
+** If a list element that is not a vector or does not contain nElem terms,
+** an error message is left in pParse.
 **
 ** This is used as part of processing IN(...) expressions with a list
 ** of vectors on the RHS. e.g. "... IN ((1,2), (3,4), (5,6))".
 */
-Select *sqlite3ExprListToValues(Parse *pParse, ExprList *pEList){
+Select *sqlite3ExprListToValues(Parse *pParse, int nElem, ExprList *pEList){
   int ii;
   Select *pRet = 0;
   for(ii=0; ii<pEList->nExpr; ii++){
     Select *pSel;
-    ExprList *pList;
     Expr *pExpr = pEList->a[ii].pExpr;
-    if( pExpr->op==TK_VECTOR ){
-      pList = pExpr->x.pList;
-      pExpr->x.pList = 0;
-    }else{
-      pList = sqlite3ExprListAppend(pParse, 0, pExpr);
-      pEList->a[ii].pExpr = 0;
+    int nExprElem = sqlite3ExprVectorSize(pExpr);
+    if( nExprElem!=nElem ){
+      sqlite3ErrorMsg(pParse, "IN(...) element has %d term%s - expected %d", 
+          nExprElem, nExprElem>1?"s":"", nElem
+      );
+      break;
     }
-    pSel = sqlite3SelectNew(pParse, pList, 0, 0, 0, 0, 0, SF_Values, 0);
+    pSel = sqlite3SelectNew(pParse, pExpr->x.pList, 0, 0, 0, 0, 0, SF_Values,0);
+    pExpr->x.pList = 0;
     if( pSel ){
       if( pRet ){
         pSel->op = TK_ALL;
