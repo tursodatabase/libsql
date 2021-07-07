@@ -1,5 +1,5 @@
-C Follow-up\sto\s[68db1ff9c44fa9c3]:\s\sThe\snumber\sof\sregisters\sneeded\sby\nPRAGMA\sforeign_key_check\swas\sincreased\stoo\slate\sfor\san\sassert()\sdeep\ndown\sinside\sof\ssqlite3ExprCode().\s\sSo\smove\sthe\ssize\sincrease\sa\slittle\nearlier.\n[forum:/forumpost/79c9e4797d|Forum\spost\s79c9e4797d].
-D 2021-07-07T16:48:24.382
+C Fix\sa\sharmless\scompiler\swarning\s-\sduplicate\slocal\svariable\snamed\s"pRHS".
+D 2021-07-07T19:40:18.184
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -533,7 +533,7 @@ F src/os_win.c 77d39873836f1831a9b0b91894fec45ab0e9ca8e067dc8c549e1d1eca1566fe9
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 95c255256b13827caf038c8f963d334784073f38ab6ef9d70371d9d04f3c43e0
 F src/pager.h 4bf9b3213a4b2bebbced5eaa8b219cf25d4a82f385d093cd64b7e93e5285f66f
-F src/parse.y 62388bd7323ce1b76b219de0a0974789224d98fc14cfccb08dd98524ccd693c3
+F src/parse.y 6d90c816edf65e99fb978c3b5486df5e661c3534347efac2842b80eb02263e68
 F src/pcache.c 385ff064bca69789d199a98e2169445dc16e4291fa807babd61d4890c3b34177
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c 388304fd2d91c39591080b5e0f3c62cfba87db20370e7e0554062bfb29740e9f
@@ -1920,7 +1920,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f586c06a5d03943db32add4d3d058a5aa09c819870b29cd8b54cf69433a8cdb1
-R 1e2ab0b571f6af295ffe5d3c314f1294
+P 7072404ad0267b8ee774b2804ea59ea28e29316521d76d76a701595e51d1be97
+R 1be7d03e27aa073e31e902cdae6fc97a
 U drh
-Z 9f0157c1df421495cc816917f7595608
+Z 3f25e8f9f004c2bac41112687f415810

@@ -1267,10 +1267,10 @@ expr(A) ::= expr(A) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
           sqlite3ExprListDelete(pParse->db, Y);
         }else if( A->pLeft->op==TK_VECTOR ){
           int nExpr = A->pLeft->x.pList->nExpr;
-          Select *pRHS = sqlite3ExprListToValues(pParse, nExpr, Y);
-          if( pRHS ){
-            parserDoubleLinkSelect(pParse, pRHS);
-            sqlite3PExprAddSelect(pParse, A, pRHS);
+          Select *pSelectRHS = sqlite3ExprListToValues(pParse, nExpr, Y);
+          if( pSelectRHS ){
+            parserDoubleLinkSelect(pParse, pSelectRHS);
+            sqlite3PExprAddSelect(pParse, A, pSelectRHS);
           }
         }else{
           A->x.pList = Y;
