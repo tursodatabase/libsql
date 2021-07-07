@@ -967,10 +967,11 @@ void sqlite3PExprAddSelect(Parse *pParse, Expr *pExpr, Select *pSelect){
 Select *sqlite3ExprListToValues(Parse *pParse, int nElem, ExprList *pEList){
   int ii;
   Select *pRet = 0;
+  assert( nElem>1 );
   for(ii=0; ii<pEList->nExpr; ii++){
     Select *pSel;
     Expr *pExpr = pEList->a[ii].pExpr;
-    int nExprElem = sqlite3ExprVectorSize(pExpr);
+    int nExprElem = (pExpr->op==TK_VECTOR ? pExpr->x.pList->nExpr : 1);
     if( nExprElem!=nElem ){
       sqlite3ErrorMsg(pParse, "IN(...) element has %d term%s - expected %d", 
           nExprElem, nExprElem>1?"s":"", nElem
