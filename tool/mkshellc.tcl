@@ -32,9 +32,6 @@ set headComment {/* DO NOT EDIT!
 ** "src/shell.c.in", then rerun the tool/mkshellc.tcl script.
 */}
 
- #  -it <inc_type>=<include_filename>
- #   -tcl
- 
 set customRun 0
 set infiles {}
 array set incTypes [list "*" {}]
@@ -450,7 +447,6 @@ while {1} {
   }
   set iAte [do_shuffle $in $lx $out]
   if {$iAte > 0} {
-if {![regexp {^\d+$} $iAte]} {puts "??? $iAte"}
     incr iLine [expr {$iAte - 1}]
   }
 
