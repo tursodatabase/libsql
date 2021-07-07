@@ -435,6 +435,9 @@ void sqlite3Fts5IndexCloseReader(Fts5Index*);
 */
 const char *sqlite3Fts5IterTerm(Fts5IndexIter*, int*);
 int sqlite3Fts5IterNextScan(Fts5IndexIter*);
+void *sqlite3Fts5StructureRef(Fts5Index*);
+void sqlite3Fts5StructureRelease(void*);
+int sqlite3Fts5StructureTest(Fts5Index*, void*);
 
 
 /*
@@ -564,7 +567,6 @@ int sqlite3Fts5GetTokenizer(
 Fts5Table *sqlite3Fts5TableFromCsrid(Fts5Global*, i64);
 
 int sqlite3Fts5FlushToDisk(Fts5Table*);
-void sqlite3Fts5VocabLock(Fts5Table*, int);
 
 /*
 ** End of interface to code in fts5.c.

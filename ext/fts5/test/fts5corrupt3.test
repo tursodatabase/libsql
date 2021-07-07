@@ -15364,7 +15364,7 @@ do_execsql_test 79.1 {
 
 do_catchsql_test 79.2 {
   INSERT INTO t1(t1) SELECT 'merge' FROM t2;
-} {1 {database table is locked}}
+} {1 {query aborted}}
 
 sqlite3_fts5_may_be_corrupt 0
 finish_test
