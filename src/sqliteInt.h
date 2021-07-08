@@ -183,12 +183,13 @@
 
 /* Optionally #include a user-defined header, whereby compilation options
 ** may be set prior to where they take effect, but after platform setup. 
-** If SQLITE_CUSTOM_INC=? is defined, its value names the #include file.
+** If SQLITE_CUSTOM_INCLUDE=? is defined, its value names the #include
+** file.
 */
-#ifdef SQLITE_CUSTOM_INC
+#ifdef SQLITE_CUSTOM_INCLUDE
 # define INC_STRINGIFY_(f) #f
 # define INC_STRINGIFY(f) INC_STRINGIFY_(f)
-# include INC_STRINGIFY(SQLITE_CUSTOM_INC)
+# include INC_STRINGIFY(SQLITE_CUSTOM_INCLUDE)
 #endif
 
 /* The public SQLite interface.  The _FILE_OFFSET_BITS macro must appear
