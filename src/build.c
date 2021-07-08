@@ -453,6 +453,7 @@ Table *sqlite3LocateTable(
         pMod = sqlite3PragmaVtabRegister(db, zName);
       }
       if( pMod && sqlite3VtabEponymousTableInit(pParse, pMod) ){
+        testcase( pMod->pEpoTab==0 );
         return pMod->pEpoTab;
       }
     }

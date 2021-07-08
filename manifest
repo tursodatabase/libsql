@@ -1,5 +1,5 @@
-C Fix\san\sissue\swith\sthe\sSQLite\sExpert\sextension\swhen\sa\scolumn\shas\sno\ncollating\ssequence.\n[forum:/forumpost/78165fa250|Forum\spost\s78165fa250].
-D 2021-07-08T12:12:39.946
+C Preserve\sand\sreturn\sto\sthe\suser\sany\serror\smessage\sreturned\sby\sa\sfailed\sxConnect()\scall\son\san\seponymous\svirtual\stable\sthat\sprevents\sa\squery\sfrom\sbeing\scompiled.
+D 2021-07-08T18:29:25.913
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -488,7 +488,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c e204a9c8fb4fe5dbb910a863ba487f4af9b5c501254ec4ccbfcdd6b1f65b7fb4
 F src/btree.h 74d64b8f28cfa4a894d14d4ed64fa432cd697b98b61708d4351482ae15913e22
 F src/btreeInt.h 7bc15a24a02662409ebcd6aeaa1065522d14b7fda71573a2b0568b458f514ae0
-F src/build.c ea28944f65b04f771e7aa5d614d406faa1bde5fe4ce882e2ead73049f03ed568
+F src/build.c 98e23c9197fd4c979f7d59360bd3b0050b37e683e078715f6f2fbfef77971f0d
 F src/callback.c d0b853dd413255d2e337b34545e54d888ea02f20da5ad0e63585b389624c4a6c
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 8159d5f706551861c18ec6c8f6bdf105e15ea00367f05d9ab65d31a1077facc1
@@ -626,7 +626,7 @@ F src/vdbemem.c 53881aa0a7845922a075b3f375695588618098871a7a4120af4c297b80fa3e64
 F src/vdbesort.c cd5130f683706c1a43e165a74187745fb3351cb56052cf9dc91de820634bbde2
 F src/vdbetrace.c 666c6fd9f1b62be6999e072a45b913e3c2c3518bc60dfd4d54fe304130acb724
 F src/vdbevtab.c f99b275366c5fc5e2d99f734729880994ab9500bdafde7fae3b02d562b9d323c
-F src/vtab.c b928405ccb66040fc6c3a11eaa93ddb02cbf20f9ab6860b301b222b9b50dc089
+F src/vtab.c 3a9a6ae1fd14f7c00af184233cb9f3bced89ae277a75a312f85fb77297a3cdfa
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c c8ec20a1ca161d5635a4f19c2a4efec2e006e19a8a61f272bf6bce1c80ab7436
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
@@ -714,7 +714,7 @@ F test/backup_malloc.test 0c9abdf74c51e7bedb66d504cd684f28d4bd4027
 F test/badutf.test d5360fc31f643d37a973ab0d8b4fb85799c3169f
 F test/badutf2.test f310fd3b24a491b6b77bccdf14923b85d6ebcce751068c180d93a6b8ff854399
 F test/bc_common.tcl b5e42d80305be95697e6370e015af571e5333a1c
-F test/bestindex1.test 2e92e046148b3f8a2be62af9c0f307413547a33677af0df159c0fcc76e5134a2
+F test/bestindex1.test 7cc626f1f4a7483bb6b38487d467db4477083be5cd93958aeda5d5127640dc81
 F test/bestindex2.test 60266e2854055788459cbfd86cef575601eabe74a2c61faba72601739fea4398
 F test/bestindex3.test e061a6ed0f519beee037ba7e7a4c37f80c8a7e4a303e2559ed1f760e4b0235eb
 F test/bestindex4.test 82250e7dcc6d5b15244edc9d6554b1760583af1b8548c2a255a1c4f28e744c0e
@@ -1920,7 +1920,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8c432642572c8c4b7251f413def0725b3b8e9e7fe10230aa0aabe86b58e5902d
-R 071d661bdc6fd21184ca44df9d313bc9
-U drh
-Z 1681065afffdc03570a282c19a0930fc
+P b1e0c22ec981cf5f8a6597abc6711b1a25019dd51de31129fbc504d3dc743bb4
+R 1cb77db1445fe50c7a7de69e9dbf5037
+U dan
+Z 508b782908ee6fdd030763447f8aaf0f

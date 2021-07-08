@@ -323,5 +323,8 @@ do_test 4.1 {
     ]
 ]
 
+do_catchsql_test 5.0 {
+  SELECT * FROM tcl('abc');
+} {1 {wrong number of arguments}}
 
 finish_test

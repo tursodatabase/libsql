@@ -1190,8 +1190,9 @@ void sqlite3VtabMakeWritable(Parse *pParse, Table *pTab){
 /*
 ** Check to see if virtual table module pMod can be have an eponymous
 ** virtual table instance.  If it can, create one if one does not already
-** exist. Return non-zero if the eponymous virtual table instance exists
-** when this routine returns, and return zero if it does not exist.
+** exist. Return non-zero if either the eponymous virtual table instance 
+** exists when this routine returns or if an attempt to create it failed
+** and an error message was left in pParse.
 **
 ** An eponymous virtual table instance is one that is named after its
 ** module, and more importantly, does not require a CREATE VIRTUAL TABLE
@@ -1230,7 +1231,6 @@ int sqlite3VtabEponymousTableInit(Parse *pParse, Module *pMod){
     sqlite3ErrorMsg(pParse, "%s", zErr);
     sqlite3DbFree(db, zErr);
     sqlite3VtabEponymousTableClear(db, pMod);
-    return 0;
   }
   return 1;
 }
