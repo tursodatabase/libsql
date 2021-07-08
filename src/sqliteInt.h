@@ -181,6 +181,16 @@
 # define _USE_32BIT_TIME_T
 #endif
 
+/* Optionally #include a user-defined header, whereby compilation options
+** may be set prior to where they take effect, but after platform setup. 
+** If SQLITE_CUSTOM_INC=? is defined, its value names the #include file.
+*/
+#ifdef SQLITE_CUSTOM_INC
+# define INC_STRINGIFY_(f) #f
+# define INC_STRINGIFY(f) INC_STRINGIFY_(f)
+# include INC_STRINGIFY(SQLITE_CUSTOM_INC)
+#endif
+
 /* The public SQLite interface.  The _FILE_OFFSET_BITS macro must appear
 ** first in QNX.  Also, the _USE_32BIT_TIME_T macro must appear first for
 ** MinGW.
