@@ -1,5 +1,5 @@
-C Add\sthe\susual\s"#ifdef\s__cplusplus"\smagic\sto\sheader\sfile\sext/misc/carray.h.\sAlso\supdate\scarray.h/carray.c\sto\suse\sSQLITE_API\sin\sthe\susual\sway.
-D 2021-07-09T11:52:53.967
+C Enhance\sthe\ssqlite3_create_function()\sinterfaces\sto\sassume\sa\svalue\sof\nSQLITE_UTF8\sis\spresented\swith\sa\snonsense\svalue\sfor\sthe\spreferred\sencoding.\nThis\sis\sundocumented\sbehavior\sadded\sfor\srobustness.
+D 2021-07-09T13:52:01.084
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -508,7 +508,7 @@ F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c d560dc585c50e01b015cbf924c173de88f61c8c85b3d1adb9d4865b92fff2d72
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 0aa9e7f08e168e3874cb54984408e3976dafdf5616d511952c425b5ac088ea3e
-F src/main.c aedd8596e4dbdedacbf69fc4ff0462404effb9e6528146a1fdf4adee004053c9
+F src/main.c 6df43445e0c0c45642aff43726c0b2d42fcbb73c0c5a1e805c3b5b3c9b4eb106
 F src/malloc.c cbc93cdd429c4594912017d92ab656e2579aca64dbd1c6888551275bed46f25b
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
@@ -1920,7 +1920,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P eb8af9a494fb68c0a1c600b3ac71467645b51b296fc6e2116d7d855319d59a59
-R 4921ff9c6662da771dcaa161286cae4d
-U dan
-Z a202a1f73cdb865aaa148dd68fbda945
+P 0f97c2a459bfadc2fe19e710e8845039b4434010656d311074b9594b02d0826a
+R 7868302cf3bc690aec9205f019a549f7
+U drh
+Z f8eef76cb448b8627630bf5bdf905136
