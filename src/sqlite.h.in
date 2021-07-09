@@ -43,7 +43,9 @@ extern "C" {
 
 
 /*
-** Provide the ability to override linkage features of the interface.
+** Facilitate override of interface linkage and calling conventions.
+** Be aware that some or many of these next few defined macros may
+** not be used within this particular translation of sqlite.h.in .
 */
 #ifndef SQLITE_EXTERN
 # define SQLITE_EXTERN extern
