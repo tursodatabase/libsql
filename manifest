@@ -1,5 +1,5 @@
-C Rename\soptional\sSQLITE_CUSTOM_INC\sdefine\sto\sSQLITE_CUSTOM_INCLUDE.
-D 2021-07-08T23:35:20.867
+C Allow\sCLI\sshell\sbuild\sto\s#include\ssame\suser-specified\sheader\sas\slibrary\sbuild.
+D 2021-07-09T00:12:05.614
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -545,7 +545,7 @@ F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c b379c5ffe3b692e9c64fa37817cc0efa204b7c9468a818309dde85fd132d9d81
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 1c1230aaa4e5979edd3c5a9f7a90ab856a302cca4962e8a7d08f42dd2e7e1a49
-F src/shell.c.in 699910739eb7296fd47be19db71f6e5d15d0760f4352c62639d4d6cc7bd8d4cc
+F src/shell.c.in 856de2945bb7fdfdeebe7136cf1b59d24618845aa5e5f3937fda7ff37c623b51
 F src/sqlite.h.in ecf5aa981da30c33da3e9f353bf3ebf055d3c380c80d6a4f954e58d18ccd6df1
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h e97f4e9b509408fea4c4e9bef5a41608dfac343b4d3c7a990dedde1e19af9510
@@ -1920,7 +1920,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 71e6490bbe59939cd15f0094e507dd8a2e167fdd8de675c3ebfeaf528a01f87a
-R 51883f0b3802300d245d2b5832e9f8cd
-U mistachkin
-Z a08768035297a355b998597449342f70
+P 060aec37accae858ced5b081a2ff76dccdd8f8bcefc63d1fe2e7478257c69e76
+R 50583abc677d1e775bb177169ec30e48
+U larrybr
+Z c9015fea980b646abec4bd4e9aaa109a

@@ -18,6 +18,18 @@
 #endif
 
 /*
+** Optionally #include a user-defined header, whereby compilation options
+** may be set prior to where they take effect, but after platform setup. 
+** If SQLITE_CUSTOM_INCLUDE=? is defined, its value names the #include
+** file. Note that this macro has a like effect on sqlite3.c compilation.
+*/
+#ifdef SQLITE_CUSTOM_INCLUDE
+# define INC_STRINGIFY_(f) #f
+# define INC_STRINGIFY(f) INC_STRINGIFY_(f)
+# include INC_STRINGIFY(SQLITE_CUSTOM_INCLUDE)
+#endif
+
+/*
 ** Determine if we are dealing with WinRT, which provides only a subset of
 ** the full Win32 API.
 */
