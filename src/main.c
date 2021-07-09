@@ -1977,7 +1977,7 @@ static int createFunctionApi(
       xSFunc, xStep, xFinal, xValue, xInverse, pArg
   );
   if( pArg && pArg->nRef==0 ){
-    assert( rc!=SQLITE_OK );
+    assert( rc!=SQLITE_OK || (xStep==0 && xFinal==0) );
     xDestroy(p);
     sqlite3_free(pArg);
   }
