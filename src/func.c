@@ -572,7 +572,7 @@ static void last_insert_rowid(
 ** Implementation of the changes() SQL function.
 **
 ** IMP: R-62073-11209 The changes() SQL function is a wrapper
-** around the sqlite3_changes() C/C++ function and hence follows the same
+** around the sqlite3_changes64() C/C++ function and hence follows the same
 ** rules for counting changes.
 */
 static void changes(
@@ -582,12 +582,12 @@ static void changes(
 ){
   sqlite3 *db = sqlite3_context_db_handle(context);
   UNUSED_PARAMETER2(NotUsed, NotUsed2);
-  sqlite3_result_int(context, sqlite3_changes(db));
+  sqlite3_result_int64(context, sqlite3_changes64(db));
 }
 
 /*
 ** Implementation of the total_changes() SQL function.  The return value is
-** the same as the sqlite3_total_changes() API function.
+** the same as the sqlite3_total_changes64() API function.
 */
 static void total_changes(
   sqlite3_context *context,
@@ -596,9 +596,9 @@ static void total_changes(
 ){
   sqlite3 *db = sqlite3_context_db_handle(context);
   UNUSED_PARAMETER2(NotUsed, NotUsed2);
-  /* IMP: R-52756-41993 This function is a wrapper around the
+  /* IMP: R-52756-41993 This function was a wrapper around the
   ** sqlite3_total_changes() C/C++ interface. */
-  sqlite3_result_int(context, sqlite3_total_changes(db));
+  sqlite3_result_int64(context, sqlite3_total_changes64(db));
 }
 
 /*

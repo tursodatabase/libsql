@@ -18,6 +18,18 @@
 #endif
 
 /*
+** Optionally #include a user-defined header, whereby compilation options
+** may be set prior to where they take effect, but after platform setup. 
+** If SQLITE_CUSTOM_INCLUDE=? is defined, its value names the #include
+** file. Note that this macro has a like effect on sqlite3.c compilation.
+*/
+#ifdef SQLITE_CUSTOM_INCLUDE
+# define INC_STRINGIFY_(f) #f
+# define INC_STRINGIFY(f) INC_STRINGIFY_(f)
+# include INC_STRINGIFY(SQLITE_CUSTOM_INCLUDE)
+#endif
+
+/*
 ** Determine if we are dealing with WinRT, which provides only a subset of
 ** the full Win32 API.
 */
@@ -8303,7 +8315,7 @@ static int do_meta_command(char *zLine, ShellState *p){
        "     FROM sqlite_schema UNION ALL"
        "   SELECT sql, type, tbl_name, name, rowid FROM sqlite_temp_schema) "
        "WHERE type!='meta' AND sql NOTNULL AND name NOT LIKE 'sqlite_%' "
-       "ORDER BY rowid",
+       "ORDER BY x",
        callback, &data, 0
     );
     if( rc==SQLITE_OK ){
@@ -8319,8 +8331,6 @@ static int do_meta_command(char *zLine, ShellState *p){
       raw_printf(p->out, "/* No STAT tables available */\n");
     }else{
       raw_printf(p->out, "ANALYZE sqlite_schema;\n");
-      sqlite3_exec(p->db, "SELECT 'ANALYZE sqlite_schema'",
-                   callback, &data, 0);
       data.cMode = data.mode = MODE_Insert;
       data.zDestTable = "sqlite_stat1";
       shell_exec(&data, "SELECT * FROM sqlite_stat1", 0);
@@ -8975,6 +8985,8 @@ static int do_meta_command(char *zLine, ShellState *p){
         p->openMode = SHELL_OPEN_SHAREDSCHEMA;
       }else if( optionMatch(z, "nofollow") ){
         p->openFlags |= SQLITE_OPEN_NOFOLLOW;
+      }else if( optionMatch(z, "excl") ){
+        p->openFlags |= SQLITE_OPEN_EXCLUSIVE;
 #ifndef SQLITE_OMIT_DESERIALIZE
       }else if( optionMatch(z, "deserialize") ){
         p->openMode = SHELL_OPEN_DESERIALIZE;
@@ -10775,8 +10787,8 @@ static int runOneSqlLine(ShellState *p, char *zSql, FILE *in, int startline){
     }
     return 1;
   }else if( ShellHasFlag(p, SHFLG_CountChanges) ){
-    raw_printf(p->out, "changes: %3d   total_changes: %d\n",
-            sqlite3_changes(p->db), sqlite3_total_changes(p->db));
+    raw_printf(p->out, "changes: %3lld   total_changes: %lld\n",
+            sqlite3_changes64(p->db), sqlite3_total_changes64(p->db));
   }
   return 0;
 }

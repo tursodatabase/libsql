@@ -1785,7 +1785,7 @@ int main(int argc, char **argv){
           while( rc==0 && fgets(zLine,sizeof(zLine),stdin)!=0 ){
             size_t kk = strlen(zLine);
             while( kk>0 && zLine[kk-1]<=' ' ) kk--;
-            sqlite3_bind_text(pStmt, 1, zLine, kk, SQLITE_STATIC);
+            sqlite3_bind_text(pStmt, 1, zLine, (int)kk, SQLITE_STATIC);
             if( verboseFlag ) printf("loading %.*s\n", (int)kk, zLine);
             sqlite3_step(pStmt);
             rc = sqlite3_reset(pStmt);

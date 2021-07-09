@@ -1467,6 +1467,7 @@ void sqlite3Pragma(
         ** regRow..regRow+n. If any of the child key values are NULL, this 
         ** row cannot cause an FK violation. Jump directly to addrOk in 
         ** this case. */
+        if( regRow+pFK->nCol>pParse->nMem ) pParse->nMem = regRow+pFK->nCol;
         for(j=0; j<pFK->nCol; j++){
           int iCol = aiCols ? aiCols[j] : pFK->aCol[j].iFrom;
           sqlite3ExprCodeGetColumnOfTable(v, pTab, 0, iCol, regRow+j);

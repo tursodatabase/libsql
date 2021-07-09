@@ -476,8 +476,10 @@ Table *sqlite3LocateTable(
         }
         if( sqlite3VtabEponymousTableInit(pParse, pMod) ){
           Table *pEpoTab = pMod->pEpoTab;
-          assert( IsSharedSchema(db) || pEpoTab->pSchema==db->aDb[0].pSchema );
-          pEpoTab->pSchema = db->aDb[0].pSchema;  /* For SHARED_SCHEMA mode */
+          if( pEpoTab ){
+            assert( IsSharedSchema(db)||pEpoTab->pSchema==db->aDb[0].pSchema );
+            pEpoTab->pSchema = db->aDb[0].pSchema;  /* For SHARED_SCHEMA mode */
+          }
           return pEpoTab;
         }
       }

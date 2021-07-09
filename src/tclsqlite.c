@@ -2207,7 +2207,7 @@ static int SQLITE_TCLAPI DbObjCmd(
       return TCL_ERROR;
     }
     pResult = Tcl_GetObjResult(interp);
-    Tcl_SetIntObj(pResult, sqlite3_changes(pDb->db));
+    Tcl_SetWideIntObj(pResult, sqlite3_changes64(pDb->db));
     break;
   }
 
@@ -3255,7 +3255,7 @@ deserialize_error:
       return TCL_ERROR;
     }
     pResult = Tcl_GetObjResult(interp);
-    Tcl_SetIntObj(pResult, sqlite3_total_changes(pDb->db));
+    Tcl_SetWideIntObj(pResult, sqlite3_total_changes64(pDb->db));
     break;
   }
 

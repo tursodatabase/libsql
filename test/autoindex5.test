@@ -123,6 +123,10 @@ do_execsql_test 2.1 {
       SELECT sum(z) FROM vvv WHERE x='aaa'
   ) FROM one;
 } {8.0}
+
+# At one point the following was returning "no such column: rowid". This
+# was incorrect - "rowid" matches against the rowid of table t1 in this
+# query.
 do_catchsql_test 2.2 {
   DROP TABLE t1;
   CREATE TABLE t1(aaa);
@@ -136,7 +140,7 @@ do_catchsql_test 2.2 {
       ) WHERE bbb = 1
     )
   );
-} {1 {no such column: rowid}}
+} {0 9}
 
 # Ticket https://www.sqlite.org/src/info/787fa716be3a7f65
 # Segfault due to multiple uses of the same subquery where the

@@ -5528,6 +5528,12 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       if( (ws & WHERE_INDEXED) 
        || ((ws & WHERE_MULTI_OR) && pLevel->u.pCovidx) 
       ){
+        if( ws & WHERE_MULTI_OR ){
+          Index *pIx = pLevel->u.pCovidx;
+          int iDb = sqlite3SchemaToIndex(db, pIx->pSchema);
+          sqlite3VdbeAddOp3(v, OP_ReopenIdx, pLevel->iIdxCur, pIx->tnum, iDb);
+          sqlite3VdbeSetP4KeyInfo(pParse, pIx);
+        }
         sqlite3VdbeAddOp1(v, OP_NullRow, pLevel->iIdxCur);
       }
       if( pLevel->op==OP_Return ){

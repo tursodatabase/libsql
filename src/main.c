@@ -1086,7 +1086,7 @@ void sqlite3_set_last_insert_rowid(sqlite3 *db, sqlite3_int64 iRowid){
 /*
 ** Return the number of changes in the most recent call to sqlite3_exec().
 */
-int sqlite3_changes(sqlite3 *db){
+sqlite3_int64 sqlite3_changes64(sqlite3 *db){
 #ifdef SQLITE_ENABLE_API_ARMOR
   if( !sqlite3SafetyCheckOk(db) ){
     (void)SQLITE_MISUSE_BKPT;
@@ -1095,11 +1095,14 @@ int sqlite3_changes(sqlite3 *db){
 #endif
   return db->nChange;
 }
+int sqlite3_changes(sqlite3 *db){
+  return (int)sqlite3_changes64(db);
+}
 
 /*
 ** Return the number of changes since the database handle was opened.
 */
-int sqlite3_total_changes(sqlite3 *db){
+sqlite3_int64 sqlite3_total_changes64(sqlite3 *db){
 #ifdef SQLITE_ENABLE_API_ARMOR
   if( !sqlite3SafetyCheckOk(db) ){
     (void)SQLITE_MISUSE_BKPT;
@@ -1107,6 +1110,9 @@ int sqlite3_total_changes(sqlite3 *db){
   }
 #endif
   return db->nTotalChange;
+}
+int sqlite3_total_changes(sqlite3 *db){
+  return (int)sqlite3_total_changes64(db);
 }
 
 /*
@@ -3155,7 +3161,6 @@ static int openDatabase(
   ** off all other flags.
   */
   flags &=  ~( SQLITE_OPEN_DELETEONCLOSE |
-               SQLITE_OPEN_EXCLUSIVE |
                SQLITE_OPEN_MAIN_DB |
                SQLITE_OPEN_TEMP_DB | 
                SQLITE_OPEN_TRANSIENT_DB | 
