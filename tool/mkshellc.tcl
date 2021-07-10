@@ -22,7 +22,7 @@ set headComment {/* DO NOT EDIT!
 ** Most of the code found below comes from the "src/shell.c.in" file in
 ** the canonical SQLite source tree.  That main file contains "INCLUDE"
 ** lines that specify other files in the canonical source tree that are
-** inserted to getnerate this complete program source file.
+** inserted and transformed to generate this complete program source file.
 **
 ** The code from multiple files is combined into this single "shell.c"
 ** source file to help make the command-line program easier to compile.
@@ -68,6 +68,7 @@ set ::cmd_help [dict create]
 set ::cmd_dispatch [dict create]
 set ::cmd_condition [dict create]
 set ::iShuffleErrors 0
+regexp {(\{)(\})} "{}" ma ::lb ::rb ; # Ease use of { and }.
 
 # Setup dispatching function signature and table entry struct .
 set ::dispCfg [dict create \
@@ -75,9 +76,9 @@ set ::dispCfg [dict create \
   STORAGE_CLASS static \
   ARGS_SIGNATURE "char *\$arg4\\\[\\\], int \$arg5, ShellState *\$arg6" \
   DISPATCH_ENTRY \
-   "\x7B \"\$cmd\", \$\x7Bcmd\x7DCommand, \$arg1,\$arg2,\$arg3 \x7D," \
+   "{ \"\$cmd\", \${cmd}Command, \$arg1,\$arg2,\$arg3 }," \
   DISPATCHEE_NAME {${cmd}Command} \
-  CMD_CAPTURE_RE "^\\s*\x7B\\s*\"(\\w+)\"" \
+  CMD_CAPTURE_RE "^\\s*$::lb\\s*\"(\\w+)\"" \
 ]
 # Other config keys:
 #  DC_ARG_COUNT=<number of arguments to DISPATCHABLE_COMMAND()>
@@ -184,7 +185,7 @@ array set ::macroUsages [list \
   COLLECT_HELP_TEXT "\[\n   <help text lines>\n  \];" \
   CONDITION_COMMAND "( name pp_expr );" \
   DISPATCH_CONFIG "\[\n   <NAME=value lines>\n  \];" \
-  DISPATCHABLE_COMMAND "( name args... )\x7B\n   <code lines>\n  \x7D" \
+  DISPATCHABLE_COMMAND "( name args... ){\n   <code lines>\n  }" \
   EMIT_DISPATCH "( indent );" \
   EMIT_HELP_TEXT "( indent );" \
 ]
@@ -262,7 +263,7 @@ proc DISPATCHABLE_COMMAND {hFile tailCapture ostrm} {
   # Generate and emit a function definition, maybe wrapped as set by
   # CONDITION_COMMAND(), and generate/collect its dispatch table entry.
   lassign $tailCapture args tc
-  if {$tc ne "\x7B"} {
+  if {$tc ne $::lb} {
     yap_usage "DISPATCHABLE_COMMAND($args)$tc" DISPATCHABLE_COMMAND
     incr $::iShuffleErrors
     return 0
@@ -288,10 +289,10 @@ proc DISPATCHABLE_COMMAND {hFile tailCapture ostrm} {
     }
     set body {}
     while {![eof $hFile]} {
-      set lb [gets $hFile]
+      set bl [gets $hFile]
       incr iAte
-      lappend body $lb
-      if {[regexp "^\x7D\\s*\$" $lb]} { break }
+      lappend body $bl
+      if {[regexp "^$::rb\\s*\$" $bl]} { break }
     }
     for {set aix 1} {$aix < $na} {incr aix} {
       set av [lindex $args $aix]
@@ -306,7 +307,7 @@ proc DISPATCHABLE_COMMAND {hFile tailCapture ostrm} {
       set rsct "$rsct [dict get $::dispCfg RETURN_TYPE]"
       set argexp [subst [dict get $::dispCfg ARGS_SIGNATURE]]
       set fname [subst [dict get $::dispCfg DISPATCHEE_NAME]]
-      set funcOpen "$rsct $fname\($argexp\)\x7B"
+      set funcOpen "$rsct $fname\($argexp\)$::lb"
       set dispEntry [subst [dict get $::dispCfg DISPATCH_ENTRY]]
       emit_conditionally $cmd [linsert $body 0 $funcOpen] $ostrm
       dict set ::cmd_dispatch $cmd [list $dispEntry]
