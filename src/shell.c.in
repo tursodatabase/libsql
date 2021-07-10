@@ -9781,8 +9781,12 @@ COLLECT_HELP_TEXT[
   ".indexes ?TABLE?         Show names of indexes",
   "                           If TABLE is specified, only show indexes for",
   "                           tables matching TABLE using the LIKE operator.",
+#ifndef LEGACY_TABLES_LISTING
+  ".tables ?FLAG? ?TABLE?   List names of tables/views matching LIKE pattern TABLE",
+  "   FLAG can be -t to list tables only or -v to list views only",
+#else
   ".tables ?TABLE?          List names of tables/views matching LIKE pattern TABLE",
-  ".views  ?VIEW            List names of only views matching LIKE pattern TABLE",
+#endif
 ];
 static int showTableLike(char *azArg[], int nArg, ShellState *p, char ot){
   int rc;
@@ -9809,6 +9813,7 @@ static int showTableLike(char *azArg[], int nArg, ShellState *p, char ot){
   }
   for(ii=0; sqlite3_step(pStmt)==SQLITE_ROW; ii++){
     const char *zDbName = (const char*)sqlite3_column_text(pStmt, 1);
+    const char *zFilter = "";
     if( zDbName==0 ) continue;
     if( s.z && s.z[0] ) appendText(&s, " UNION ALL ", 0);
     if( sqlite3_stricmp(zDbName, "main")==0 ){
@@ -9820,19 +9825,27 @@ static int showTableLike(char *azArg[], int nArg, ShellState *p, char ot){
     }
     appendText(&s, zDbName, '"');
     appendText(&s, ".sqlite_schema ", 0);
-    if( ot=='i' ){
-      appendText(&s," WHERE type='index'"
-                 "   AND tbl_name LIKE ?1", 0);
-    }else{
-      appendText(&s," WHERE type IN ('view'", 0);
-      if( ot=='t' ){
-        appendText(&s, ",'table'", 0);
-      }
-      appendText(&s, ") AND name NOT LIKE 'sqlite_%'"
-                 "   AND name LIKE ?1"
-                 "   AND name NOT LIKE 'sqlite_%'"
-                 "   AND name LIKE ?1", 0);
+    switch (ot) {
+    case 'i':
+      zFilter = "'index'";
+      break;
+#ifndef LEGACY_TABLES_LISTING
+    case 't':
+      zFilter = "'table'";
+      break;
+    case 'v':
+      zFilter = "'view'";
+      break;
+#endif
+    case 'T':
+      zFilter = "'table','view'";
+      break;
+    default:
+      assert(0);
     }
+    appendText(&s, " WHERE type IN(", 0);
+    appendText(&s, zFilter, 0);
+    appendText(&s, ") AND name LIKE ?1 AND name NOT LIKE 'sqlite_%'", 0);
   }
   rc = sqlite3_finalize(pStmt);
   appendText(&s, " ORDER BY 1", 0);
@@ -9892,11 +9905,24 @@ static int showTableLike(char *azArg[], int nArg, ShellState *p, char ot){
   sqlite3_free(azResult);
   return 0;
 }
-DISPATCHABLE_COMMAND( tables 2 1 2 ){
-  return showTableLike(azArg, nArg, p, 't');
-}
-DISPATCHABLE_COMMAND( views 2 1 2 ){
-  return showTableLike(azArg, nArg, p, 'v');
+DISPATCHABLE_COMMAND( tables 2 1 3 ){
+  char objType = 'T';
+#ifndef LEGACY_TABLES_LISTING
+  if( nArg>1 && azArg[1][0]=='-' && azArg[1][1]!=0 && azArg[1][2]==0 ){
+    char c = azArg[1][1];
+    switch (c){
+    case 't':
+    case 'v':
+      objType = c;
+      ++azArg;
+      --nArg;
+      break;
+    default:
+      return INVALID_ARGS;
+    }
+  }
+#endif
+  return showTableLike(azArg, nArg, p, objType);
 }
 DISPATCHABLE_COMMAND( indexes 3 1 2 ){
   return showTableLike(azArg, nArg, p, 'i');
