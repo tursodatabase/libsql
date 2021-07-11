@@ -6876,13 +6876,17 @@ static int writeDb( char *azArg[], int nArg, ShellState *p ){
   return rc;
 }
 
-/*
- * Define meta-commands and provide for their dispatch and .help text.
- * These should be kept in command name order for coding convenience
- * except where meta-commands share implementation. (The ordering
- * required for dispatch and help text is effected regardless.)
- */
-
+/* Meta-command implementation functions are defined in this section.
+COMMENT  Define meta-commands and provide for their dispatch and .help text.
+COMMENT  These should be kept in command name order for coding convenience
+COMMENT  except where meta-commands share implementation. (The ordering
+COMMENT  required for dispatch and help text is effected regardless.) The
+COMMENT  effect of this configuration can be seen in generated output or by
+COMMENT  executing tool/mkshellc.tcl --parameters (or --details or --help).
+COMMENT  Generally, this section defines dispatchable functions inline and
+COMMENT  causes collection of dispatch and help table entries, to be later
+COMMENT  emitted by the EMIT_DISPATCH and EMIT_HELP_TEXT macros further on.
+*/
 DISPATCH_CONFIG[
   RETURN_TYPE=int
   STORAGE_CLASS=static
@@ -7830,8 +7834,8 @@ DISPATCHABLE_COMMAND( import ? 3 7 ){
     }
     if( nSep>1 ){
       raw_printf(stderr, 
-                 "Error: multi-character column separators not allowed"
-                 " for import\n");
+                 "Error: multi-character or multi-byte column separators"
+                 " not allowed for import\n");
       return 1;
     }
     nSep = strlen30(p->rowSeparator);
@@ -9775,18 +9779,12 @@ DISPATCHABLE_COMMAND( stats ? 0 0 ){
 
 /*****************
  * The .tables, .views, .indices and .indexes command
- * These are kept together because they share implementation or are aliases.
+ * These are together because they share implementation or are aliases.
  */
 COLLECT_HELP_TEXT[
   ".indexes ?TABLE?         Show names of indexes",
   "                           If TABLE is specified, only show indexes for",
   "                           tables matching TABLE using the LIKE operator.",
-#ifndef LEGACY_TABLES_LISTING
-  ".tables ?FLAG? ?TABLE?   List names of tables/views matching LIKE pattern TABLE",
-  "   FLAG can be -t to list tables only or -v to list views only",
-#else
-  ".tables ?TABLE?          List names of tables/views matching LIKE pattern TABLE",
-#endif
 ];
 static int showTableLike(char *azArg[], int nArg, ShellState *p, char ot){
   int rc;
@@ -9814,6 +9812,7 @@ static int showTableLike(char *azArg[], int nArg, ShellState *p, char ot){
   for(ii=0; sqlite3_step(pStmt)==SQLITE_ROW; ii++){
     const char *zDbName = (const char*)sqlite3_column_text(pStmt, 1);
     const char *zFilter = "";
+    const char *zSystem = " AND name NOT LIKE 'sqlite_%'";
     if( zDbName==0 ) continue;
     if( s.z && s.z[0] ) appendText(&s, " UNION ALL ", 0);
     if( sqlite3_stricmp(zDbName, "main")==0 ){
@@ -9837,6 +9836,9 @@ static int showTableLike(char *azArg[], int nArg, ShellState *p, char ot){
       zFilter = "'view'";
       break;
 #endif
+    case 's':
+      zSystem = " AND name LIKE 'sqlite_%'";
+      /* fall thru */
     case 'T':
       zFilter = "'table','view'";
       break;
@@ -9845,7 +9847,8 @@ static int showTableLike(char *azArg[], int nArg, ShellState *p, char ot){
     }
     appendText(&s, " WHERE type IN(", 0);
     appendText(&s, zFilter, 0);
-    appendText(&s, ") AND name LIKE ?1 AND name NOT LIKE 'sqlite_%'", 0);
+    appendText(&s, ") AND name LIKE ?1", 0);
+    appendText(&s, zSystem, 0);
   }
   rc = sqlite3_finalize(pStmt);
   appendText(&s, " ORDER BY 1", 0);
@@ -9905,12 +9908,22 @@ static int showTableLike(char *azArg[], int nArg, ShellState *p, char ot){
   sqlite3_free(azResult);
   return 0;
 }
+
+COLLECT_HELP_TEXT[
+#ifndef LEGACY_TABLES_LISTING
+  ".tables ?FLAG? ?TABLE?   List names of tables/views matching LIKE pattern TABLE",
+  "   FLAG can be -t, -v or -s to list tables or views only, or system tables only",
+#else
+  ".tables ?TABLE?          List names of tables/views matching LIKE pattern TABLE",
+#endif
+];
 DISPATCHABLE_COMMAND( tables 2 1 3 ){
   char objType = 'T';
 #ifndef LEGACY_TABLES_LISTING
   if( nArg>1 && azArg[1][0]=='-' && azArg[1][1]!=0 && azArg[1][2]==0 ){
     char c = azArg[1][1];
     switch (c){
+    case 's':
     case 't':
     case 'v':
       objType = c;
@@ -10441,16 +10454,51 @@ DISPATCHABLE_COMMAND( wheretrace ? 1 2 ){
   return 0;
 }
 
+/* End of published, standard meta-command implementation functions
+COMMENT  Build-time overrides of above meta-commands or new meta-commands may be
+COMMENT  incorporated into shell.c via: -it COMMAND_CUSTOMIZE=<customize source>
+COMMENT  where <customize source> names a file using the methodology of the above
+COMMENT  section to define new or altered meta-commands and their help text.
+*/
+INCLUDE( COMMAND_CUSTOMIZE );
+
 /* Define and populate command dispatch table. */
 static struct DispatchEntry {
   const char * cmdName;
   int (*cmdDoer)(char *azArg[], int nArg, ShellState *);
   unsigned char minLen, minArgs, maxArgs;
 } command_table[] = {
+  COMMENT Emit the dispatch table entries generated and collected above.
   EMIT_DISPATCH(2);
   { 0, 0, 0, -1, -1 }
 };
 static unsigned numCommands = sizeof(command_table)/sizeof(struct DispatchEntry) - 1;
+
+COMMENT  This help text is set seperately from meta-command definition section
+COMMENT  for the always-built-in, non-customizable commands with visible help.
+COLLECT_HELP_TEXT[
+  ".exit ?CODE?             Exit this program with return-code CODE or 0",
+  ".quit                    Exit this program",
+];
+
+/*
+** Text of help messages.
+**
+** The help text for each individual command begins with a line that starts
+** with ".".  Subsequent lines are supplimental information.
+**
+** There must be two or more spaces between the end of the command and the
+** start of the description of what that command does.
+*/
+static const char *(azHelp[]) = {
+/* Template for help text indents and length:
+  ".whatever ?arg? ...      Summary of effects (limited to this line's length)",
+  "   ^ ^                   ^  ^                                              ",
+*/
+  COMMENT  Emit the help text fragments collected above via COLLECT_HELP_TEXT.
+  EMIT_HELP_TEXT(2);
+  0 /* Sentinel */
+};
 
 /*****************
  * Command dispatcher
@@ -10917,29 +10965,6 @@ static void process_sqliterc(
   p->lineno = savedLineno;
   sqlite3_free(zBuf);
 }
-
-COLLECT_HELP_TEXT[
-  ".exit ?CODE?             Exit this program with return-code CODE",
-  ".quit                    Exit this program",
-];
-
-/*
-** Text of help messages.
-**
-** The help text for each individual command begins with a line that starts
-** with ".".  Subsequent lines are supplimental information.
-**
-** There must be two or more spaces between the end of the command and the
-** start of the description of what that command does.
-*/
-static const char *(azHelp[]) = {
-/* Template for help text indents and length:
-  ".whatever ?arg? ...      Summary of effects (limited to this line's length)",
-  "   ^ ^                   ^  ^                                              ",
-*/
-  EMIT_HELP_TEXT(2);
-  0 /* Sentinel */
-};
 
 /*
 ** Show available command line options

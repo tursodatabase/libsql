@@ -22,34 +22,41 @@ set headComment {/* DO NOT EDIT!
 ** Most of the code found below comes from the "src/shell.c.in" file in
 ** the canonical SQLite source tree.  That main file contains "INCLUDE"
 ** lines that specify other files in the canonical source tree that are
-** inserted and transformed to generate this complete program source file.
+** inserted and transformed, (via macro invocations explained by running
+** "tool/mkshellc.tcl --help"), to generate this complete program source.
 **
-** The code from multiple files is combined into this single "shell.c"
-** source file to help make the command-line program easier to compile.
+** By means of this generation process, creating this single "shell.c"
+** file, building the command-line program is made simpler and easier.
 **
 ** To modify this program, get a copy of the canonical SQLite source tree,
-** edit the src/shell.c.in" and/or some of the other files included by
-** "src/shell.c.in", then rerun the tool/mkshellc.tcl script.
+** edit file src/shell.c.in and/or some of the other files included by it,
+** then rerun the tool/mkshellc.tcl script.
 */}
 
 set customRun 0
+set lineDirectives 1
 set infiles {}
-array set incTypes [list "*" {}]
+array set ::incTypes [list "*" {}]
 
 while  {[llength $argv] > 0} {
   set argv [lassign $argv opt]
-  if {[regexp {^-{1,2}((help)|(details))$} $opt ma ho]} {
-    if {$ho eq "help"} { set customRun 2 } else { set customRun 3 }
+  if {[regexp {^-{1,2}((help)|(details)|(parameters))$} $opt ma ho]} {
+    switch $ho {
+      help {set customRun 2}
+      details {set customRun 3}
+      parameters {set customRun 4}
+    }
   } elseif {[regexp {^-it$} $opt]} {
     set argv [lassign $argv nextOpt]
     if {![regexp {^(\w+)=(.+)$} $nextOpt ma k v]} {
       puts stderr "Get help with --help."
       exit 1 
     }
-    set incTypes($k) $v
-    puts stderr "Include types not yet implemented or needed." ; exit 1
+    set ::incTypes($k) $v
   } elseif {$opt eq "-tcl"} {
     puts stderr "Tcl extension not yet implemented." ; exit 1
+  } elseif {[regexp {^--?no-line-directives$} $opt]} {
+    set lineDirectives 0
   } elseif {[regexp {^[^-]} $opt]} {
     lappend infiles $opt
     set customRun 1
@@ -67,10 +74,33 @@ if {[llength $infiles] == 0} {
 set ::cmd_help [dict create]
 set ::cmd_dispatch [dict create]
 set ::cmd_condition [dict create]
+set ::inc_type_files [dict create]
 set ::iShuffleErrors 0
 regexp {(\{)(\})} "{}" ma ::lb ::rb ; # Ease use of { and }.
 
 # Setup dispatching function signature and table entry struct .
+# The effect of these key/value pairs is as this --parameters output says:
+set ::parametersHelp {
+  The following parameters given to DISPATCH_CONFIG have these effects:
+   RETURN_TYPE sets the generated dispatchable function signature return type.
+   STORAGE_CLASS sets the dispatchable function linkage, (typically "static".)
+   ARGS_SIGNATURE sets the formal argument list for the dispatchable functions.
+   DISPATCH_ENTRY sets the text of each entry line in emitted dispatch table.
+   DISPATCHEE_NAME sets the name to be generated for dispatchable functions.
+   CMD_CAPTURE_RE sets a regular expression to be used for capturing the name
+     to be used for meta-commands within a line passed into COLLECT_DISPATCH,
+     (which is needed to permit them to be emitted in lexical order by name.)
+   DC_ARG_COUNT sets the effective argument count for DISPATCHABLE_COMMAND().
+   DC_ARG#_DEFAULT sets a default value, DISPATCHABLE_COMMAND() #'th argument.
+  Within values set for ARGS_SIGNATURE, DISPATCHEE_NAME, and DISPATCH_ENTRY
+  parameters, the variables $cmd and $arg# (where # is an integer) may appear,
+  to be replaced by the meta-command name or the #'th effective argument to
+  DISPATCHABLE_COMMAND(). The "effective" argument is either what is provided,
+  or a default value when the actual argument is missing (at the right end of
+  the provided argument list) or the argument has the value ? . The expansion
+  of $cmd and $arg# variables is done by Tcl evaluation (via subst), allowing
+  a wide range of logic to be employed in the derivation of effective values.
+}
 set ::dispCfg [dict create \
   RETURN_TYPE int \
   STORAGE_CLASS static \
@@ -174,23 +204,27 @@ proc chunkify_help {htin} {
 array set ::macroTailREs [list \
   COLLECT_DISPATCH {^\(\s*([\w\*]+)\s*\)\[} \
   COLLECT_HELP_TEXT {^\[} \
+  COMMENT {\s+(.*)$} \
   CONDITION_COMMAND {^\(\s*(\w+)\s+([^;]+)\);} \
   DISPATCH_CONFIG {^\[} \
   DISPATCHABLE_COMMAND {^\(([\w\? ]+)\)(\S)\s*$} \
   EMIT_DISPATCH {^\((\d*)\)} \
   EMIT_HELP_TEXT {^\((\d*)\)} \
+  INCLUDE {^\(\s*(\w+)\s*\)} \
 ]
 array set ::macroUsages [list \
   COLLECT_DISPATCH "\[\n   <dispatch table entry lines>\n  \];" \
   COLLECT_HELP_TEXT "\[\n   <help text lines>\n  \];" \
+  COMMENT " <arbitrary characters to end of line>" \
   CONDITION_COMMAND "( name pp_expr );" \
   DISPATCH_CONFIG "\[\n   <NAME=value lines>\n  \];" \
-  DISPATCHABLE_COMMAND "( name args... ){\n   <code lines>\n  }" \
+  DISPATCHABLE_COMMAND "( name args... ){\n   <implementation code lines>\n  }" \
   EMIT_DISPATCH "( indent );" \
   EMIT_HELP_TEXT "( indent );" \
+  INCLUDE {( <inc_type> )} \
 ]
 # RE for early discard of non-macro lines, matching all above keywords
-set ::macroKeywordTailRE {^\s{0,8}((?:(?:CO)|(?:DI)|(?:EM))[A-Z_]+)\M(.+)$}
+set ::macroKeywordTailRE {^\s{0,8}((?:(?:CO)|(?:DI)|(?:EM)|(?:IN))[A-Z_]+)\M(.+)$}
 
 # All macro processor procs return the count of extra input lines consumed.
 
@@ -217,7 +251,29 @@ proc COLLECT_DISPATCH {hFile tailCapture ostrm} {
   incr iAte
   return $iAte
 }
- 
+
+proc COMMENT {hFile tailCaptureIgnore ostrm} {
+  # Allow comments in an input file which have no effect on output.
+  return 1
+}
+
+proc INCLUDE {hFile tailCaptureIncType ostrm} {
+  # If invoked with a bare filename, include the named file. If invoked
+  # with the parenthesized word form, include a file named by means of
+  # the '-it <inc_type>=filename' command line option, provided that the
+  # word matches a specified <inc_type>. Otherwise, do nothing.
+  set it [lindex $tailCaptureIncType 0]
+  if {[regexp {\s*([a-zA-Z\._\\/]+)\s*} $it ma it]} {
+    if {[info exists ::incTypes($it)]} {
+      set fname $::incTypes($it)
+      puts $ostrm "/* INCLUDE($it), of \"$fname\" skipped. */"
+      # ToDo: Get including done with a proc so it can be done from here.
+      # This will support emitting #line directives to aid debugging.
+    }
+  }
+  return 1
+}
+
 proc COLLECT_HELP_TEXT {hFile tailCaptureEmpty ostrm} {
   # Collect help text table values, along with ordering info.
   set iAte 0
@@ -261,7 +317,8 @@ proc DISPATCH_CONFIG {hFile tailCaptureEmpty ostrm} {
 
 proc DISPATCHABLE_COMMAND {hFile tailCapture ostrm} {
   # Generate and emit a function definition, maybe wrapped as set by
-  # CONDITION_COMMAND(), and generate/collect its dispatch table entry.
+  # CONDITION_COMMAND(), and generate/collect its dispatch table entry,
+  # as determined by its actual arguments and DISPATCH_CONFIG parameters.
   lassign $tailCapture args tc
   if {$tc ne $::lb} {
     yap_usage "DISPATCHABLE_COMMAND($args)$tc" DISPATCHABLE_COMMAND
@@ -393,19 +450,25 @@ if {$customRun == 2} {
   # Show options and usage
   say_usage [lsort [array names ::macroUsages]] {
  mkshellc.tcl <options>
-  <options> may be either --help, --details, or any sequence of:
+  <options> may be either --help, --details, --parameters or any sequence of:
     <input_filename>
     -it <inc_type>=<include_filename>
     -tcl
- If no input files are specified, <PROJECT_ROOT>/src/shell.c.in will be
- read. Input files are read and processed, producing output to sdout.
- They may include macro lines or line sequences matching any of:
-  INCUDE <file_name>
-  INCUDE(<inc_type>) }
-  puts stderr { Use --details option for effects of these macros.}
+    -no-line-directives
+ If no input files are specified, <PROJECT_ROOT>/src/shell.c.in is read.
+ Input files are read and processed in order, producing output to sdout.
+ The -it option associates a filename with an <inc_type> word which may
+ be encountered during execution of INCLUDE(...) directives in the input.
+ Input files may include macro lines or line sequences matching any of:
+  INCUDE <file_name> }
+  puts stderr {
+ Use --details option for detailed effects of these macros.
+ Use --parameters option for DISPATCH_CONFIG parameter names and effects.
+  }
   exit 0
 } elseif {$customRun == 3} {
   set sfd [open $argv0 r]
+  set macdos [dict create]
   while {![eof $sfd]} {
     if {[regexp {^proc ([A-Z_]+\M)} [gets $sfd] ma macro]} {
       if {[info exists ::macroTailREs($macro)]} {
@@ -413,12 +476,17 @@ if {$customRun == 2} {
         while {[regexp {^\s+#\s*(.+)$} [gets $sfd] ma effect]} {
           lappend effects " $effect"
         }
-        puts stderr "\nThe $macro macro will:"
-        puts stderr [join $effects "\n"]
+        dict set macdos $macro [join $effects "\n"]
       }
     }
   }
   close $sfd
+  foreach m [lsort [dict keys $macdos]] {
+    puts stderr "\nThe $m macro will:\n [dict get $macdos $m]"
+  }
+  exit 0
+} elseif {$customRun == 4} {
+  puts stderr $::parametersHelp
   exit 0
 }
 
