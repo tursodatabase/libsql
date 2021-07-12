@@ -1,5 +1,5 @@
-C Provide\sthe\sSQLITE_DEFAULT_LEGACY_ALTER_TABLE\scompile-time\soption.
-D 2020-05-06T18:46:38.246
+C Fix\sa\sdefect\sin\sthe\squery-flattener\soptimization\sidentified\sby\nticket\s[8f157e8010b22af0].\sThis\sfix\sis\sassociated\swith\sCVE-2020-15358.
+D 2021-07-12T14:38:35.304
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -518,12 +518,12 @@ F src/printf.c 67f79227273a9009d86a017619717c3f554f50b371294526da59faa6014ed2cd
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 567888ee3faec14dae06519b4306201771058364a37560186a3e0e755ebc4cb8
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
-F src/select.c 3c78ea0e7039cbe5e342c4734ad96ef707269d4e9ea6f748f349c54d6c4b33ae
+F src/select.c 4cbf5e611ce796762f4d28585abc3723fa4056272343697457372dd9409b6828
 F src/shell.c.in c1986496062f9dba4ed5b70db06b5e0f32e1954cdcfab0b30372c6c186796810
 F src/sqlite.h.in 59f5e145b8d7a915ca29c6bf4a1f00e3112c1605c9ac5c627c45060110332ba2
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 9ecc93b8493bd20c0c07d52e2ac0ed8bab9b549c7f7955b59869597b650dd8b5
-F src/sqliteInt.h 1c6c05fa6463b3ab906385be3957b91f9ace0812e8cf5e3e0fef2460748954f3
+F src/sqliteInt.h 59e2f279aef255764d0778ee2741b05d6978167d8115135c26dfe3170a876937
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c 46e7aec11f79dad50965a5ca5fa9de009f7d6bde08be2156f1538a0a296d4d0e
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -1276,7 +1276,7 @@ F test/select6.test 39eac4a5c03650b2b473c532882273283ee8b7a0
 F test/select7.test f659f231489349e8c5734e610803d7654207318f
 F test/select8.test 8c8f5ae43894c891efc5755ed905467d1d67ad5d
 F test/select9.test aebc2bb0c3bc44606125033cbcaac2c8d1f33a95
-F test/selectA.test b8a590f6493cad5b0bb4dfe1709bf7dcda0b6c40bb4caf32d1e36a89eebc8fc5
+F test/selectA.test 68de52409e45a3313d00b8461b48bef4fb729faf36ade9067a994eae55cc86f4
 F test/selectB.test 954e4e49cf1f896d61794e440669e03a27ceea25
 F test/selectC.test e25243f8ca503e06f252eb0218976d07cfeceac3
 F test/selectD.test fc20452847a01775710090383cfb4423275d2f745fed61f34fbf37573ac0d214
@@ -1819,8 +1819,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b302b260ca9a4ca3d84771d9157fb1fc0b0e1ba175638f0c006cdf94f92a19c9
-Q +63e659d9a793227604aa95685a8d83cd08305f1d01e135407a3ffc6d54482ab8
-R 9665180e78afb4e67cd073a7cdd70a7b
-U drh
-Z 1251dedb90e7f5e3cb02ff7b6f6f74f6
+P b2325a6e1cfa19e9fd533c1f7dacfc8e5aa4f2e111fa066a5c7d3040418fc8ad
+Q +10fa79d00f8091e5748c245f4cae5b5f499a5f8db20da741c130e05a21ede443
+R 2f7ed49a59f813270c0a413329be5222
+T *branch * branch-3.28a
+T *sym-branch-3.28a *
+T -sym-branch-3.28 *
+U dan
+Z 6353f457ee6dcc6c6c64510073572327
