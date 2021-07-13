@@ -25,10 +25,11 @@
 set help {Usage: tclsh mksqlite3c.tcl <options>
  where <options> is zero or more of the following with these effects:
    --nostatic     => Do not generate with compile-time modifiable linkage.
-   --linemacros=? => Insert #line directives into the output or not. (1 or 0)
+   --line_tags=?  => Emit #line directives into output or not. (? = 1 or 0)
    --useapicall   => Prepend functions with SQLITE_APICALL or SQLITE_CDECL.
    --srcdir $SRC  => Specify the directory containing constituent sources.
    --help         => See this.
+ The value setting options default to --line_tags=1 and '--srcdir tsrc' .
 }
 
 # Begin by reading the "sqlite3.h" header file.  Extract the version number
@@ -37,7 +38,7 @@ set help {Usage: tclsh mksqlite3c.tcl <options>
 #
 
 set addstatic 1
-set linemacros 1
+set line_tags 1
 set useapicall 0
 set srcdir tsrc
 
@@ -45,8 +46,8 @@ for {set i 0} {$i<[llength $argv]} {incr i} {
   set x [lindex $argv $i]
   if {[regexp {^-?-nostatic$} $x]} {
     set addstatic 0
-  } elseif {[regexp {^-?-linemacros=([01])$} $x ma ulm]} {
-    set linemacros $ulm
+  } elseif {[regexp {^-?-line_tags=([01])$} $x ma ulm]} {
+    set line_tags $ulm
   } elseif {[regexp {^-?-useapicall$} $x]} {
     set useapicall 1
   } elseif {[regexp {^-?-srcdir$} $x]} {
@@ -203,11 +204,11 @@ proc section_comment {text} {
 #
 proc copy_file {filename} {
   global seen_hdr available_hdr varonly_hdr cdecllist out
-  global addstatic linemacros useapicall srcdir
+  global addstatic line_tags useapicall srcdir
   set ln 0
   set tail [file tail $filename]
   section_comment "Begin file $tail"
-  if {$linemacros} {puts $out "#line 1 \"$filename\""}
+  if {$line_tags} {puts $out "#line 1 \"$filename\""}
   set in [open $filename r]
   set varpattern {^[a-zA-Z][a-zA-Z_0-9 *]+(sqlite3[_a-zA-Z0-9]+)(\[|;| =)}
   set declpattern {([a-zA-Z][a-zA-Z_0-9 ]+ \**)(sqlite3[_a-zA-Z0-9]+)(\(.*)}
@@ -227,7 +228,7 @@ proc copy_file {filename} {
           section_comment "Include $hdr in the middle of $tail"
           copy_file $srcdir/$hdr
           section_comment "Continuing where we left off in $tail"
-          if {$linemacros} {puts $out "#line [expr {$ln+1}] \"$filename\""}
+          if {$line_tags} {puts $out "#line [expr {$ln+1}] \"$filename\""}
         } else {
           # Comment out the entire line, replacing any nested comment
           # begin/end markers with the harmless substring "**".
@@ -249,7 +250,7 @@ proc copy_file {filename} {
       }
     } elseif {[regexp {^#ifdef __cplusplus} $line]} {
       puts $out "#if 0"
-    } elseif {!$linemacros && [regexp {^#line} $line]} {
+    } elseif {!$line_tags && [regexp {^#line} $line]} {
       # Skip #line directives.
     } elseif {$addstatic
                && ![regexp {^(static|typedef|SQLITE_PRIVATE)} $line]} {

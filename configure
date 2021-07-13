@@ -10312,7 +10312,7 @@ USE_AMALGAMATION=1
 # This is a build option not shown by ./configure --help
 # To control it, use configure option: amalgamation_line_tags=?
 # where ? is no to suppress #line directives or yes to create them.
-AMALGAMATION_LINE_TAGS=--linemacros=1
+AMALGAMATION_LINE_TAGS=--line_tags=1
 
 #########
 # See whether we can run specific tclsh versions known to work well;
@@ -11291,10 +11291,10 @@ if test "${amalgamation_line_tags+set}" = set; then :
 fi
 
 if test "${amalgamation_line_tags}" = "yes" ; then
-  AMALGAMATION_LINE_TAGS=--linemacros=1
+  AMALGAMATION_LINE_TAGS=--line_tags=1
 fi
 if test "${amalgamation_line_tags}" = "no" ; then
-  AMALGAMATION_LINE_TAGS=--linemacros=0
+  AMALGAMATION_LINE_TAGS=--line_tags=0
 fi
 
 
