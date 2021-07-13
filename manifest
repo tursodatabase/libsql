@@ -1,5 +1,5 @@
-C Further\srevisions\sto\s#line\shandling\sfor\samalgamation\sbuilds.
-D 2021-07-13T21:59:22.649
+C Enhance\scomments\spertaining\sto\sthe\sinterface\slinkage\s/\scalling\sconvention\smacros.
+D 2021-07-13T22:49:02.204
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -546,7 +546,7 @@ F src/resolve.c b379c5ffe3b692e9c64fa37817cc0efa204b7c9468a818309dde85fd132d9d81
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 1c1230aaa4e5979edd3c5a9f7a90ab856a302cca4962e8a7d08f42dd2e7e1a49
 F src/shell.c.in 856de2945bb7fdfdeebe7136cf1b59d24618845aa5e5f3937fda7ff37c623b51
-F src/sqlite.h.in 8ddae2ca8a31132336c385cd7b938fbcadf5ed57873dbe529d3c75d28241685b
+F src/sqlite.h.in a5d5641afa335226231231c7b6e424de327f17577d9e8aeaaaab78d9bbbcf381
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h e97f4e9b509408fea4c4e9bef5a41608dfac343b4d3c7a990dedde1e19af9510
 F src/sqliteInt.h 129619232aa632fa85db7792bfe4b378ed28d3361bf9cbcdb4522353fd04b89b
@@ -1920,7 +1920,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 999eb80018f1bb8a8ad73483610400faf5fb37b1be446ce30edbf7028340f50b
-R f35bd0cfcf360e047d19fadb646cae86
+P 9a84321229ad499ee0f7c85732c2728afb4476c72073a510401a559dda9be38f
+R 3789b43d6e6200974e3100b41a3c444f
 U mistachkin
-Z d52b02f968087a7fee10f230044f7d8b
+Z eb61d76fb75de1f468d1b3d6692793bb

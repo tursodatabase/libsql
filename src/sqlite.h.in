@@ -44,8 +44,29 @@ extern "C" {
 
 /*
 ** Facilitate override of interface linkage and calling conventions.
-** Be aware that some or many of these next few defined macros may
-** not be used within this particular translation of sqlite.h.in .
+** Be aware that these macros may not be used within this particular
+** translation of the amalgamation and its associated header file.
+**
+** The SQLITE_EXTERN and SQLITE_API macros are used to instruct the
+** compiler that the target identifier should have external linkage.
+**
+** The SQLITE_CDECL macro is used to set the calling convention for
+** public functions that accept a variable number of arguments.
+**
+** The SQLITE_APICALL macro is used to set the calling convention for
+** public functions that accept a fixed number of arguments.
+**
+** The SQLITE_STDCALL macro is no longer used and is now deprecated.
+**
+** The SQLITE_CALLBACK macro is used to set the calling convention for
+** function pointers.
+**
+** The SQLITE_SYSAPI macro is used to set the calling convention for
+** functions provided by the operating system.
+**
+** Currently, the SQLITE_CDECL, SQLITE_APICALL, SQLITE_CALLBACK, and
+** SQLITE_SYSAPI macros are used only when building for environments
+** that require non-default calling conventions.
 */
 #ifndef SQLITE_EXTERN
 # define SQLITE_EXTERN extern
