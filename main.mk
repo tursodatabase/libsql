@@ -1,3 +1,4 @@
+
 ###############################################################################
 # The following macros should be defined before this script is
 # invoked:
@@ -663,7 +664,7 @@ sqlite3ext.h:	target_source
 	cp tsrc/sqlite3ext.h .
 
 sqlite3.c-debug:	target_source $(TOP)/tool/mksqlite3c.tcl
-	tclsh $(TOP)/tool/mksqlite3c.tcl --linemacros
+	tclsh $(TOP)/tool/mksqlite3c.tcl --line_tags=1
 	echo '#ifndef USE_SYSTEM_SQLITE' >tclsqlite3.c
 	cat sqlite3.c >>tclsqlite3.c
 	echo '#endif /* USE_SYSTEM_SQLITE */' >>tclsqlite3.c
