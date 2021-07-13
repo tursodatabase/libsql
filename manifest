@@ -1,9 +1,9 @@
-C Clarify\scomment\son\ssqlite3.h's\sinterface\sdecaration\smacros.
-D 2021-07-09T23:12:42.486
+C Amalgamation\shas\s#line\sdirectives\sby\sdefault.\sMinor\smksqlite3c.tcl\schanges
+D 2021-07-13T01:45:04.109
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in ff5ac24ec9cb700135ee4453fa14c18ea371e94250d3673bda1f2cb56e1108ce
+F Makefile.in 31b3f386d47577c610dedf116aa5deab039c749d36b7735e9bc01a6f31c90f2b
 F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
 F Makefile.msc 8285e1ea7264f32b08702866d69dd127c0f663bbc2002323d853c68c27c6b6e4
 F README.md 27fb76aa7eb57ed63a53bbba7292b6bf71f51125554f79f16b5d040edd1e6110
@@ -34,7 +34,7 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 883205ddf25b46f10c181818bf42c09da9888884af96f79e1719264345053bd6
 F config.h.in 6376abec766e9a0785178b1823b5a587e9f1ccbc
 F config.sub c2d0260f17f3e4bc0b6808fccf1b291cb5e9126c14fc5890efc77b9fd0175559
-F configure 9712ea724ff2a1d48fadcf04b29fa1852f325792462c55f4fc71ab972653b20d x
+F configure 0c8ec49c8c57e549748fd3c9df50f997272649fdba3be5b91ebf9f2546856157 x
 F configure.ac 4e4b58b32f88c8da9914a2f2c3158f80e69907eccc019fcc7e3ba14ffd91c640
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/F2FS.txt c1d4a0ae9711cfe0e1d8b019d154f1c29e0d3abfe820787ba1e9ed7691160fcd
@@ -1858,7 +1858,7 @@ F tool/mkshellc.tcl 5fe7e518112b262e25726f248c0f33dd153192867453984b6af0a76a88e9
 F tool/mksourceid.c 36aa8020014aed0836fd13c51d6dc9219b0df1761d6b5f58ff5b616211b079b9
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl 4f7cfef5152b0c91920355cbfc1d608a4ad242cb819f1aea07f6d0274f584a7f
-F tool/mksqlite3c.tcl b4a930a4c3f8f43273cde45a459eb8881479be3c2845526c92b2513a4995aab8
+F tool/mksqlite3c.tcl bfbdf3661d82a9d5913a52dfa8d78b2a069a8af1a4b457162609bd6b55700de0
 F tool/mksqlite3h.tcl 1f5e4a1dbbbc43c83cc6e74fe32c6c620502240b66c7c0f33a51378e78fc4edf
 F tool/mksqlite3internalh.tcl eb994013e833359137eb53a55acdad0b5ae1049b
 F tool/mkvsix.tcl b9e0777a213c23156b6542842c238479e496ebf5
@@ -1920,7 +1920,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ab1550a608684b6b9104b555a975482cfabca5053b7d7dcc60d63a0e3a8d707d
-R ccb396cfbaef0a2b4107a89e839d38ef
+P 7cb09aef49c0b98c0c5e332d953a2eeb71ae9e243b1e37ab1c8ed4af15d46f50
+R 6df1eb2d72698e3e5d1e65e62fb29077
+T *branch * line_tags
+T *sym-line_tags *
+T -sym-trunk *
 U larrybr
-Z 05b6e9c94023ac4e996b4a1256a4c2d0
+Z 26f306c76e23d1272de3ca395f0d82ae
