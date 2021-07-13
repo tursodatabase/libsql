@@ -235,7 +235,7 @@ DEBUG = 0
 !ENDIF
 
 # <<mark>>
-# By default, use --line_tags=1 argument to the mksqlite3c.tcl tool, which
+# By default, use --linemacros=1 argument to the mksqlite3c.tcl tool, which
 # is used to build the amalgamation. This can be turned off to ease debug
 # of the amalgamation away from the source tree.
 #
@@ -788,10 +788,10 @@ MKSQLITE3C_TOOL = $(TOP)\tool\mksqlite3c.tcl
 !ENDIF
 
 !IFNDEF MKSQLITE3C_ARGS
-!IF $(NO_LINEMACROS)==0
-MKSQLITE3C_ARGS = --line_tags=1
+!IF $(DEBUG)>1 && $(NO_LINEMACROS)==0
+MKSQLITE3C_ARGS = --linemacros=1
 !ELSE
-MKSQLITE3C_ARGS = --line_tags=0
+MKSQLITE3C_ARGS = --linemacros=0
 !ENDIF
 !IF $(USE_STDCALL)!=0 || $(FOR_WIN10)!=0
 MKSQLITE3C_ARGS = $(MKSQLITE3C_ARGS) --useapicall
