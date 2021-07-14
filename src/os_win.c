@@ -272,6 +272,7 @@ struct winFile {
   winShm *pShm;           /* Instance of shared memory on this file */
 #endif
   const char *zPath;      /* Full pathname of this file */
+  unsigned iBusyTimeout;  /* Wait this many millisec on locks */
   int szChunk;            /* Chunk size configured by FCNTL_CHUNK_SIZE */
 #if SQLITE_OS_WINCE
   LPWSTR zDeleteOnClose;  /* Name of file to delete when closing */
@@ -2503,9 +2504,13 @@ static BOOL winceUnlockFile(
 
 /*
 ** Lock a file region.
+**
+** If the pFile->iBusyTimeout value is non-zero and the lock cannot be
+** acquired immediately, then try to block for up to iBusyTimeout milliseconds
+** waiting on the conflicting lock to appear.
 */
 static BOOL winLockFile(
-  LPHANDLE phFile,
+  winFile *pFile,
   DWORD flags,
   DWORD offsetLow,
   DWORD offsetHigh,
@@ -2517,7 +2522,7 @@ static BOOL winLockFile(
   ** NOTE: Windows CE is handled differently here due its lack of the Win32
   **       API LockFile.
   */
-  return winceLockFile(phFile, offsetLow, offsetHigh,
+  return winceLockFile(&pFile->h, offsetLow, offsetHigh,
                        numBytesLow, numBytesHigh);
 #else
   if( osIsNT() ){
@@ -2525,9 +2530,9 @@ static BOOL winLockFile(
     memset(&ovlp, 0, sizeof(OVERLAPPED));
     ovlp.Offset = offsetLow;
     ovlp.OffsetHigh = offsetHigh;
-    return osLockFileEx(*phFile, flags, 0, numBytesLow, numBytesHigh, &ovlp);
+    return osLockFileEx(pFile->h, flags, 0, numBytesLow, numBytesHigh, &ovlp);
   }else{
-    return osLockFile(*phFile, offsetLow, offsetHigh, numBytesLow,
+    return osLockFile(pFile->h, offsetLow, offsetHigh, numBytesLow,
                       numBytesHigh);
   }
 #endif
@@ -3162,7 +3167,7 @@ static int winGetReadLock(winFile *pFile){
     */
     res = winceLockFile(&pFile->h, SHARED_FIRST, 0, 1, 0);
 #else
-    res = winLockFile(&pFile->h, SQLITE_LOCKFILEEX_FLAGS, SHARED_FIRST, 0,
+    res = winLockFile(pFile, SQLITE_LOCKFILEEX_FLAGS, SHARED_FIRST, 0,
                       SHARED_SIZE, 0);
 #endif
   }
@@ -3171,7 +3176,7 @@ static int winGetReadLock(winFile *pFile){
     int lk;
     sqlite3_randomness(sizeof(lk), &lk);
     pFile->sharedLockByte = (short)((lk & 0x7fffffff)%(SHARED_SIZE - 1));
-    res = winLockFile(&pFile->h, SQLITE_LOCKFILE_FLAGS,
+    res = winLockFile(pFile, SQLITE_LOCKFILE_FLAGS,
                       SHARED_FIRST+pFile->sharedLockByte, 0, 1, 0);
   }
 #endif
@@ -3275,7 +3280,7 @@ static int winLock(sqlite3_file *id, int locktype){
    || (locktype==EXCLUSIVE_LOCK && pFile->locktype<=RESERVED_LOCK)
   ){
     int cnt = 3;
-    while( cnt-->0 && (res = winLockFile(&pFile->h, SQLITE_LOCKFILE_FLAGS,
+    while( cnt-->0 && (res = winLockFile(pFile, SQLITE_LOCKFILE_FLAGS,
                                          PENDING_BYTE, 0, 1, 0))==0 ){
       /* Try 3 times to get the pending lock.  This is needed to work
       ** around problems caused by indexing and/or anti-virus software on
@@ -3317,7 +3322,7 @@ static int winLock(sqlite3_file *id, int locktype){
   */
   if( locktype==RESERVED_LOCK && res ){
     assert( pFile->locktype==SHARED_LOCK );
-    res = winLockFile(&pFile->h, SQLITE_LOCKFILE_FLAGS, RESERVED_BYTE, 0, 1, 0);
+    res = winLockFile(pFile, SQLITE_LOCKFILE_FLAGS, RESERVED_BYTE, 0, 1, 0);
     if( res ){
       newLocktype = RESERVED_LOCK;
     }else{
@@ -3337,7 +3342,7 @@ static int winLock(sqlite3_file *id, int locktype){
   if( locktype==EXCLUSIVE_LOCK && res ){
     assert( pFile->locktype>=SHARED_LOCK );
     res = winUnlockReadLock(pFile);
-    res = winLockFile(&pFile->h, SQLITE_LOCKFILE_FLAGS, SHARED_FIRST, 0,
+    res = winLockFile(pFile, SQLITE_LOCKFILE_FLAGS, SHARED_FIRST, 0,
                       SHARED_SIZE, 0);
     if( res ){
       newLocktype = EXCLUSIVE_LOCK;
@@ -3388,7 +3393,7 @@ static int winCheckReservedLock(sqlite3_file *id, int *pResOut){
     res = 1;
     OSTRACE(("TEST-WR-LOCK file=%p, result=%d (local)\n", pFile->h, res));
   }else{
-    res = winLockFile(&pFile->h, SQLITE_LOCKFILEEX_FLAGS,RESERVED_BYTE,0,1,0);
+    res = winLockFile(pFile, SQLITE_LOCKFILEEX_FLAGS,RESERVED_BYTE,0,1,0);
     if( res ){
       winUnlockFile(&pFile->h, RESERVED_BYTE, 0, 1, 0);
     }
@@ -3525,6 +3530,12 @@ static int winFileControl(sqlite3_file *id, int op, void *pArg){
     case SQLITE_FCNTL_CHUNK_SIZE: {
       pFile->szChunk = *(int *)pArg;
       OSTRACE(("FCNTL file=%p, rc=SQLITE_OK\n", pFile->h));
+      return SQLITE_OK;
+    }
+    case SQLITE_FCNTL_LOCK_TIMEOUT: {
+      int iOld = pFile->iBusyTimeout;
+      pFile->iBusyTimeout = *(int*)pArg;
+      *(int*)pArg = iOld;
       return SQLITE_OK;
     }
     case SQLITE_FCNTL_SIZE_HINT: {
@@ -3804,7 +3815,7 @@ static int winShmSystemLock(
     /* Initialize the locking parameters */
     DWORD dwFlags = LOCKFILE_FAIL_IMMEDIATELY;
     if( lockType == WINSHM_WRLCK ) dwFlags |= LOCKFILE_EXCLUSIVE_LOCK;
-    rc = winLockFile(&pFile->hFile.h, dwFlags, ofst, 0, nByte, 0);
+    rc = winLockFile(&pFile->hFile, dwFlags, ofst, 0, nByte, 0);
   }
 
   if( rc!= 0 ){
@@ -4085,6 +4096,7 @@ static int winShmLock(
   mask = (u16)((1U<<(ofst+n)) - (1U<<ofst));
   assert( n>1 || mask==(1<<ofst) );
   sqlite3_mutex_enter(pShmNode->mutex);
+  pShmNode->hFile.iBusyTimeout = pDbFd->iBusyTimeout;
   if( flags & SQLITE_SHM_UNLOCK ){
     u16 allMask = 0; /* Mask of locks held by siblings */
 
