@@ -1744,6 +1744,7 @@ struct sqlite3 {
 #define SQLITE_PropagateConst 0x00008000 /* The constant propagation opt */
 #define SQLITE_MinMaxOpt      0x00010000 /* The min/max optimization */
 #define SQLITE_SeekScan       0x00020000 /* The OP_SeekScan optimization */
+#define SQLITE_OmitOrderBy    0x00040000 /* Omit pointless ORDER BY */
 #define SQLITE_AllOpts        0xffffffff /* All optimizations */
 
 /*
@@ -1823,12 +1824,13 @@ struct FuncDestructor {
 ** are assert() statements in the code to verify this.
 **
 ** Value constraints (enforced via assert()):
-**     SQLITE_FUNC_MINMAX    ==  NC_MinMaxAgg      == SF_MinMaxAgg
-**     SQLITE_FUNC_LENGTH    ==  OPFLAG_LENGTHARG
-**     SQLITE_FUNC_TYPEOF    ==  OPFLAG_TYPEOFARG
-**     SQLITE_FUNC_CONSTANT  ==  SQLITE_DETERMINISTIC from the API
-**     SQLITE_FUNC_DIRECT    ==  SQLITE_DIRECTONLY from the API
-**     SQLITE_FUNC_UNSAFE    ==  SQLITE_INNOCUOUS
+**     SQLITE_FUNC_MINMAX      ==  NC_MinMaxAgg      == SF_MinMaxAgg
+**     SQLITE_FUNC_ANYORDER    ==  NC_OrderAgg       == SF_OrderByReqd
+**     SQLITE_FUNC_LENGTH      ==  OPFLAG_LENGTHARG
+**     SQLITE_FUNC_TYPEOF      ==  OPFLAG_TYPEOFARG
+**     SQLITE_FUNC_CONSTANT    ==  SQLITE_DETERMINISTIC from the API
+**     SQLITE_FUNC_DIRECT      ==  SQLITE_DIRECTONLY from the API
+**     SQLITE_FUNC_UNSAFE      ==  SQLITE_INNOCUOUS
 **     SQLITE_FUNC_ENCMASK   depends on SQLITE_UTF* macros in the API
 */
 #define SQLITE_FUNC_ENCMASK  0x0003 /* SQLITE_UTF8, SQLITE_UTF16BE or UTF16LE */
@@ -1853,6 +1855,7 @@ struct FuncDestructor {
 #define SQLITE_FUNC_SUBTYPE  0x00100000 /* Result likely to have sub-type */
 #define SQLITE_FUNC_UNSAFE   0x00200000 /* Function has side effects */
 #define SQLITE_FUNC_INLINE   0x00400000 /* Functions implemented in-line */
+#define SQLITE_FUNC_ANYORDER 0x08000000 /* count/min/max aggregate */
 
 /* Identifier numbers for each in-line function */
 #define INLINEFUNC_coalesce             0
@@ -3088,31 +3091,33 @@ struct NameContext {
 ** Allowed values for the NameContext, ncFlags field.
 **
 ** Value constraints (all checked via assert()):
-**    NC_HasAgg    == SF_HasAgg    == EP_Agg
-**    NC_MinMaxAgg == SF_MinMaxAgg == SQLITE_FUNC_MINMAX
+**    NC_HasAgg    == SF_HasAgg       == EP_Agg
+**    NC_MinMaxAgg == SF_MinMaxAgg    == SQLITE_FUNC_MINMAX
+**    NC_OrderAgg  == SF_OrderByReqd  == SQLITE_FUNC_ANYORDER
 **    NC_HasWin    == EP_Win
 **
 */
-#define NC_AllowAgg  0x00001  /* Aggregate functions are allowed here */
-#define NC_PartIdx   0x00002  /* True if resolving a partial index WHERE */
-#define NC_IsCheck   0x00004  /* True if resolving a CHECK constraint */
-#define NC_GenCol    0x00008  /* True for a GENERATED ALWAYS AS clause */
-#define NC_HasAgg    0x00010  /* One or more aggregate functions seen */
-#define NC_IdxExpr   0x00020  /* True if resolving columns of CREATE INDEX */
-#define NC_SelfRef   0x0002e  /* Combo: PartIdx, isCheck, GenCol, and IdxExpr */
-#define NC_VarSelect 0x00040  /* A correlated subquery has been seen */
-#define NC_UEList    0x00080  /* True if uNC.pEList is used */
-#define NC_UAggInfo  0x00100  /* True if uNC.pAggInfo is used */
-#define NC_UUpsert   0x00200  /* True if uNC.pUpsert is used */
-#define NC_UBaseReg  0x00400  /* True if uNC.iBaseReg is used */
-#define NC_MinMaxAgg 0x01000  /* min/max aggregates seen.  See note above */
-#define NC_Complex   0x02000  /* True if a function or subquery seen */
-#define NC_AllowWin  0x04000  /* Window functions are allowed here */
-#define NC_HasWin    0x08000  /* One or more window functions seen */
-#define NC_IsDDL     0x10000  /* Resolving names in a CREATE statement */
-#define NC_InAggFunc 0x20000  /* True if analyzing arguments to an agg func */
-#define NC_FromDDL   0x40000  /* SQL text comes from sqlite_schema */
-#define NC_NoSelect  0x80000  /* Do not descend into sub-selects */
+#define NC_AllowAgg  0x000001 /* Aggregate functions are allowed here */
+#define NC_PartIdx   0x000002 /* True if resolving a partial index WHERE */
+#define NC_IsCheck   0x000004 /* True if resolving a CHECK constraint */
+#define NC_GenCol    0x000008 /* True for a GENERATED ALWAYS AS clause */
+#define NC_HasAgg    0x000010 /* One or more aggregate functions seen */
+#define NC_IdxExpr   0x000020 /* True if resolving columns of CREATE INDEX */
+#define NC_SelfRef   0x00002e /* Combo: PartIdx, isCheck, GenCol, and IdxExpr */
+#define NC_VarSelect 0x000040 /* A correlated subquery has been seen */
+#define NC_UEList    0x000080 /* True if uNC.pEList is used */
+#define NC_UAggInfo  0x000100 /* True if uNC.pAggInfo is used */
+#define NC_UUpsert   0x000200 /* True if uNC.pUpsert is used */
+#define NC_UBaseReg  0x000400 /* True if uNC.iBaseReg is used */
+#define NC_MinMaxAgg 0x001000 /* min/max aggregates seen.  See note above */
+#define NC_Complex   0x002000 /* True if a function or subquery seen */
+#define NC_AllowWin  0x004000 /* Window functions are allowed here */
+#define NC_HasWin    0x008000 /* One or more window functions seen */
+#define NC_IsDDL     0x010000 /* Resolving names in a CREATE statement */
+#define NC_InAggFunc 0x020000 /* True if analyzing arguments to an agg func */
+#define NC_FromDDL   0x040000 /* SQL text comes from sqlite_schema */
+#define NC_NoSelect  0x080000 /* Do not descend into sub-selects */
+#define NC_OrderAgg 0x8000000 /* Has an aggregate other than count/min/max */
 
 /*
 ** An instance of the following object describes a single ON CONFLICT
@@ -3195,9 +3200,10 @@ struct Select {
 ** "Select Flag".
 **
 ** Value constraints (all checked via assert())
-**     SF_HasAgg     == NC_HasAgg
-**     SF_MinMaxAgg  == NC_MinMaxAgg     == SQLITE_FUNC_MINMAX
-**     SF_FixedLimit == WHERE_USE_LIMIT
+**     SF_HasAgg      == NC_HasAgg
+**     SF_MinMaxAgg   == NC_MinMaxAgg     == SQLITE_FUNC_MINMAX
+**     SF_OrderByReqd == NC_OrderAgg      == SQLITE_FUNC_ANYORDER
+**     SF_FixedLimit  == WHERE_USE_LIMIT
 */
 #define SF_Distinct      0x0000001 /* Output should be DISTINCT */
 #define SF_All           0x0000002 /* Includes the ALL keyword */
@@ -3226,6 +3232,7 @@ struct Select {
 #define SF_PushDown      0x1000000 /* SELECT has be modified by push-down opt */
 #define SF_MultiPart     0x2000000 /* Has multiple incompatible PARTITIONs */
 #define SF_CopyCte       0x4000000 /* SELECT statement is a copy of a CTE */
+#define SF_OrderByReqd   0x8000000 /* The ORDER BY clause may not be purged */
 
 /*
 ** The results of a SELECT can be distributed in several ways, as defined
