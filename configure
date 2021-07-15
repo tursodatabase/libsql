@@ -10312,7 +10312,7 @@ USE_AMALGAMATION=1
 # This is a build option not shown by ./configure --help
 # To control it, use configure option: amalgamation_line_macros=?
 # where ? is no to suppress #line directives or yes to create them.
-AMALGAMATION_LINE_MACROS=--linemacros=1
+AMALGAMATION_LINE_MACROS=--linemacros=0
 
 #########
 # See whether we can run specific tclsh versions known to work well;
