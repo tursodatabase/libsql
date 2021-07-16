@@ -1,5 +1,5 @@
-C Fix\sa\suse-after-free\serror\sin\sioerr.test\scaused\sby\san\serror\sin\stest\scode.
-D 2021-07-14T21:18:31.520
+C Experiment\swith\shaving\sSQLITE_ENABLE_SETLK_TIMEOUT\sbuilds\son\sunix\suse\sa\scondition\svariable\sto\swait\sfor\swal\slocks\sheld\sby\sother\sthreads.
+D 2021-07-16T18:30:27.066
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -528,7 +528,7 @@ F src/os.c 59ed1f503347e8b5434c0ce7d7d0f02a3f24a72fea8b26d0bba2de8dfaef778b
 F src/os.h 26890f540b475598cd9881dcc68931377b8d429d3ea3e2eeb64470cde64199f8
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
-F src/os_unix.c b11e4610769922253dec27d7af4a07ff84f65169d19bda5e9b12a152a706f7f5
+F src/os_unix.c aea96704db0860b61ad95272bd9cb3fc3a4910e6d68506cc6c48d5d8f7922d0b
 F src/os_win.c 77d39873836f1831a9b0b91894fec45ab0e9ca8e067dc8c549e1d1eca1566fe9
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 95c255256b13827caf038c8f963d334784073f38ab6ef9d70371d9d04f3c43e0
@@ -1465,7 +1465,7 @@ F test/thread2.test f35d2106452b77523b3a2b7d1dcde2e5ee8f9e46
 F test/thread_common.tcl 334639cadcb9f912bf82aa73f49efd5282e6cadd
 F test/threadtest1.c 6029d9c5567db28e6dc908a0c63099c3ba6c383b
 F test/threadtest2.c a70a8e94bef23339d34226eb9521015ef99f4df8
-F test/threadtest3.c e63013af10cf236c7610eb06d33bde08c861806dc64be811940ff4d9ddd34a4f
+F test/threadtest3.c f39994e150bc2c5b61e041905249b49623ada3223ed772454343b22f96ef67ab
 F test/threadtest4.c c1e67136ceb6c7ec8184e56ac61db28f96bd2925
 F test/threadtest5.c 9b4d782c58d8915d7e955ff8051f3d03628bda0d33b82971ea8c0f2f2808c421
 F test/time-wordcount.sh 8e0b0f8109367827ad5d58f5cc849705731e4b90
@@ -1920,7 +1920,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c378e99250fe06fae8ca40c62185b607f004d6806e07dbb9f964dd849b4e55f8
-R 5dc9e7510bb681a9844c30d96bdfacf1
+P 1594056aab068b9fae82f6b885828c7127d9bedcc37c4340486e32791bc87c7a
+R fc7634cfdafbf55388fafa77867b7fbb
+T *branch * unix-timed-wait-exp
+T *sym-unix-timed-wait-exp *
+T -sym-trunk *
 U dan
-Z ab55d4571a2b3927d12f63db9cd8ac86
+Z 91d9b974e91effdc9a593e4e66c579de

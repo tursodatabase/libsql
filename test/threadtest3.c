@@ -1426,6 +1426,93 @@ static void dynamic_triggers(int nMs){
   print_and_free_err(&err);
 }
 
+typedef struct Walthread6 Walthread6;
+struct Walthread6 {
+  int nInsert;
+  int nBusy;
+  int nMaxFrame;
+};
+
+static int walthread6_walhook(
+  void *pArg,                     /* Pointer to Walthread6 structure */
+  sqlite3 *db,                    /* Database handle */
+  const char *zDb,                /* "main" */
+  int nFrame                      /* Frames current in wal file */
+){
+  int rc = SQLITE_OK;
+  Walthread6 *p = (Walthread6*)pArg;
+
+  if( nFrame>p->nMaxFrame ) p->nMaxFrame = nFrame;
+  if( nFrame>1000 ){
+    sqlite3_wal_checkpoint_v2(db, zDb, SQLITE_CHECKPOINT_RESTART, 0, 0);
+  }
+
+  return rc;
+}
+
+static char *walthread6_thread(int iTid, void *pArg){
+  Error err = {0};
+  Sqlite db = {0};
+
+  Walthread6 res;
+  memset(&res, 0, sizeof(res));
+
+  opendb(&err, &db, "test.db", 0);
+  sqlite3_busy_timeout(db.db, 1000);
+  sqlite3_wal_hook(db.db, walthread6_walhook, (void*)&res);
+
+  while( !timetostop(&err) ){
+    int i;
+    execsql(&err, &db, "BEGIN IMMEDIATE");
+    if( err.rc==SQLITE_BUSY ){
+      res.nBusy++;
+      clear_error(&err, SQLITE_BUSY);
+    }else{
+      res.nInsert++;
+      for(i=0; i<20; i++){
+        execsql(&err, &db, "INSERT INTO t1(b) VALUES(random())");
+      }
+      usleep(10*1000);
+      execsql(&err, &db, "COMMIT");
+    }
+  }
+
+  closedb(&err, &db);
+  print_and_free_err(&err);
+  return sqlite3_mprintf(
+      "%d transactions (%d busy), max-wal-size=%d frames",
+      res.nInsert, res.nBusy, res.nMaxFrame
+  );
+}
+
+/*
+** 
+*/
+static void walthread6(int nMs){
+  Error err = {0};
+  Sqlite db = {0};
+  Threadset threads = {0};
+
+  int i;
+  int nThread = 2;
+
+  opendb(&err, &db, "test.db", 1);
+  sql_script(&err, &db, 
+      "PRAGMA page_size = 1024;"
+      "PRAGMA journal_mode = WAL;"
+      "CREATE TABLE t1(a INTEGER PRIMARY KEY, b TEXT);"
+  );
+  closedb(&err, &db);
+
+  setstoptime(&err, nMs);
+  for(i=0; i<nThread; i++){
+    launch_thread(&err, &threads, walthread6_thread, 0);
+  }
+  join_all_threads(&err, &threads);
+
+  print_and_free_err(&err);
+}
+
 
 
 #include "tt3_checkpoint.c"
@@ -1446,6 +1533,8 @@ int main(int argc, char **argv){
     { walthread3, "walthread3", 20000 },
     { walthread4, "walthread4", 20000 },
     { walthread5, "walthread5",  1000 },
+
+    { walthread6, "walthread6", 5000 },
     
     { cgt_pager_1,      "cgt_pager_1", 0 },
     { dynamic_triggers, "dynamic_triggers", 20000 },

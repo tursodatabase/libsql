@@ -4271,7 +4271,12 @@ static int unixGetpagesize(void){
 */
 struct unixShmNode {
   unixInodeInfo *pInode;     /* unixInodeInfo that owns this SHM node */
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+  pthread_cond_t shmcond;
+  pthread_mutex_t shmmutex;
+#else
   sqlite3_mutex *pShmMutex;  /* Mutex to access this object */
+#endif
   char *zFilename;           /* Name of the mmapped file */
   int hShm;                  /* Open file descriptor */
   int szRegion;              /* Size of shared-memory regions */
@@ -4288,6 +4293,15 @@ struct unixShmNode {
   u8 nextShmId;              /* Next available unixShm.id value */
 #endif
 };
+
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+# define ENTER_SHMNODE_MUTEX(p) pthread_mutex_lock(&p->shmmutex)
+# define LEAVE_SHMNODE_MUTEX(p) pthread_mutex_unlock(&p->shmmutex)
+#else
+# define ENTER_SHMNODE_MUTEX(p) sqlite3_mutex_enter(p->pShmMutex)
+# define LEAVE_SHMNODE_MUTEX(p) sqlite3_mutex_leave(p->pShmMutex)
+#endif
+
 
 /*
 ** Structure used internally by this VFS to record the state of an
@@ -4338,13 +4352,13 @@ static int unixFcntlExternalReader(unixFile *pFile, int *piOut){
     f.l_start = UNIX_SHM_BASE + 3;
     f.l_len = SQLITE_SHM_NLOCK - 3;
 
-    sqlite3_mutex_enter(pShmNode->pShmMutex);
+    ENTER_SHMNODE_MUTEX(pShmNode);
     if( osFcntl(pShmNode->hShm, F_GETLK, &f)<0 ){
       rc = SQLITE_IOERR_LOCK;
     }else{
       *piOut = (f.l_type!=F_UNLCK);
     }
-    sqlite3_mutex_leave(pShmNode->pShmMutex);
+    LEAVE_SHMNODE_MUTEX(pShmNode);
   }
 
   return rc;
@@ -4358,7 +4372,7 @@ static int unixFcntlExternalReader(unixFile *pFile, int *piOut){
 ** otherwise.
 */
 static int unixShmSystemLock(
-  unixFile *pFile,       /* Open connection to the WAL file */
+  unixFile *pFile,       /* Open connection to the database file */
   int lockType,          /* F_UNLCK, F_RDLCK, or F_WRLCK */
   int ofst,              /* First byte of the locking range */
   int n                  /* Number of bytes to lock */
@@ -4369,7 +4383,9 @@ static int unixShmSystemLock(
 
   /* Access to the unixShmNode object is serialized by the caller */
   pShmNode = pFile->pInode->pShmNode;
+#ifndef SQLITE_ENABLE_SETLK_TIMEOUT
   assert( pShmNode->nRef==0 || sqlite3_mutex_held(pShmNode->pShmMutex) );
+#endif
   assert( pShmNode->nRef>0 || unixMutexHeld() );
 
   /* Shared locks never span more than one byte */
@@ -4463,7 +4479,12 @@ static void unixShmPurge(unixFile *pFd){
     int nShmPerMap = unixShmRegionPerMap();
     int i;
     assert( p->pInode==pFd->pInode );
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+    pthread_cond_destroy(&p->shmcond);
+    pthread_mutex_destroy(&p->shmmutex);
+#else
     sqlite3_mutex_free(p->pShmMutex);
+#endif
     for(i=0; i<p->nRegion; i+=nShmPerMap){
       if( p->hShm>=0 ){
         osMunmap(p->apRegion[i], p->szRegion);
@@ -4639,11 +4660,16 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
     pDbFd->pInode->pShmNode = pShmNode;
     pShmNode->pInode = pDbFd->pInode;
     if( sqlite3GlobalConfig.bCoreMutex ){
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+      pthread_cond_init(&pShmNode->shmcond, 0);
+      pthread_mutex_init(&pShmNode->shmmutex, 0);
+#else
       pShmNode->pShmMutex = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
       if( pShmNode->pShmMutex==0 ){
         rc = SQLITE_NOMEM_BKPT;
         goto shm_open_err;
       }
+#endif
     }
 
     if( pInode->bProcessLock==0 ){
@@ -4688,10 +4714,10 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
   ** at pShmNode->pFirst. This must be done while holding the
   ** pShmNode->pShmMutex.
   */
-  sqlite3_mutex_enter(pShmNode->pShmMutex);
+  ENTER_SHMNODE_MUTEX(pShmNode);
   p->pNext = pShmNode->pFirst;
   pShmNode->pFirst = p;
-  sqlite3_mutex_leave(pShmNode->pShmMutex);
+  LEAVE_SHMNODE_MUTEX(pShmNode);
   return rc;
 
   /* Jump here on any error */
@@ -4743,7 +4769,7 @@ static int unixShmMap(
 
   p = pDbFd->pShm;
   pShmNode = p->pShmNode;
-  sqlite3_mutex_enter(pShmNode->pShmMutex);
+  ENTER_SHMNODE_MUTEX(pShmNode);
   if( pShmNode->isUnlocked ){
     rc = unixLockSharedMemory(pDbFd, pShmNode);
     if( rc!=SQLITE_OK ) goto shmpage_out;
@@ -4852,7 +4878,7 @@ shmpage_out:
     *pp = 0;
   }
   if( pShmNode->isReadonly && rc==SQLITE_OK ) rc = SQLITE_READONLY;
-  sqlite3_mutex_leave(pShmNode->pShmMutex);
+  LEAVE_SHMNODE_MUTEX(pShmNode);
   return rc;
 }
 
@@ -4867,7 +4893,9 @@ shmpage_out:
 static int assertLockingArrayOk(unixShmNode *pShmNode){
   unixShm *pX;
   int aLock[SQLITE_SHM_NLOCK];
+#ifndef SQLITE_ENABLE_SETLK_TIMEOUT
   assert( sqlite3_mutex_held(pShmNode->pShmMutex) );
+#endif
 
   memset(aLock, 0, sizeof(aLock));
   for(pX=pShmNode->pFirst; pX; pX=pX->pNext){
@@ -4909,6 +4937,11 @@ static int unixShmLock(
   u16 mask;                             /* Mask of locks to take or release */
   int *aLock = pShmNode->aLock;
 
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+  int bRetry;
+  struct timespec sTimespec;
+#endif
+
   assert( pShmNode==pDbFd->pInode->pShmNode );
   assert( pShmNode->pInode==pDbFd->pInode );
   assert( ofst>=0 && ofst+n<=SQLITE_SHM_NLOCK );
@@ -4941,82 +4974,128 @@ static int unixShmLock(
       && (ofst!=0 || (p->exclMask|p->sharedMask)<3)
       && (ofst<3  || (p->exclMask|p->sharedMask)<(1<<ofst))
   ));
+
+  if( pDbFd->iBusyTimeout ){
+    struct timeval tm;
+    memset(&sTimespec, 0, sizeof(sTimespec));
+    gettimeofday(&tm, 0);
+    TIMEVAL_TO_TIMESPEC(&tm, &sTimespec);
+    sTimespec.tv_sec += pDbFd->iBusyTimeout / 1000;
+    sTimespec.tv_nsec += (pDbFd->iBusyTimeout % 1000) * 1000000;
+    if( sTimespec.tv_nsec>(1000*1000000) ){
+      sTimespec.tv_sec++;
+      sTimespec.tv_nsec -= (1000*1000000);
+    }
+  }
 #endif
 
   mask = (1<<(ofst+n)) - (1<<ofst);
   assert( n>1 || mask==(1<<ofst) );
-  sqlite3_mutex_enter(pShmNode->pShmMutex);
-  assert( assertLockingArrayOk(pShmNode) );
-  if( flags & SQLITE_SHM_UNLOCK ){
-    if( (p->exclMask|p->sharedMask) & mask ){
-      int ii;
-      int bUnlock = 1;
+  ENTER_SHMNODE_MUTEX(pShmNode);
 
-      for(ii=ofst; ii<ofst+n; ii++){
-        if( aLock[ii]>((p->sharedMask & (1<<ii)) ? 1 : 0) ){
-          bUnlock = 0;
-        }
-      }
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+  do{
+    bRetry = 0;
+#endif
 
-      if( bUnlock ){
-        rc = unixShmSystemLock(pDbFd, F_UNLCK, ofst+UNIX_SHM_BASE, n);
-        if( rc==SQLITE_OK ){
-          memset(&aLock[ofst], 0, sizeof(int)*n);
-        }
-      }else if( ALWAYS(p->sharedMask & (1<<ofst)) ){
-        assert( n==1 && aLock[ofst]>1 );
-        aLock[ofst]--;
-      }
-
-      /* Undo the local locks */
-      if( rc==SQLITE_OK ){
-        p->exclMask &= ~mask;
-        p->sharedMask &= ~mask;
-      } 
-    }
-  }else if( flags & SQLITE_SHM_SHARED ){
-    assert( n==1 );
-    assert( (p->exclMask & (1<<ofst))==0 );
-    if( (p->sharedMask & mask)==0 ){
-      if( aLock[ofst]<0 ){
-        rc = SQLITE_BUSY;
-      }else if( aLock[ofst]==0 ){
-        rc = unixShmSystemLock(pDbFd, F_RDLCK, ofst+UNIX_SHM_BASE, n);
-      }
-
-      /* Get the local shared locks */
-      if( rc==SQLITE_OK ){
-        p->sharedMask |= mask;
-        aLock[ofst]++;
-      }
-    }
-  }else{
-    /* Make sure no sibling connections hold locks that will block this
-    ** lock.  If any do, return SQLITE_BUSY right away.  */
-    int ii;
-    for(ii=ofst; ii<ofst+n; ii++){
-      assert( (p->sharedMask & mask)==0 );
-      if( ALWAYS((p->exclMask & (1<<ii))==0) && aLock[ii] ){
-        rc = SQLITE_BUSY;
-        break;
-      }
-    }
-
-    /* Get the exclusive locks at the system level. Then if successful
-    ** also update the in-memory values. */
-    if( rc==SQLITE_OK ){
-      rc = unixShmSystemLock(pDbFd, F_WRLCK, ofst+UNIX_SHM_BASE, n);
-      if( rc==SQLITE_OK ){
-        assert( (p->sharedMask & mask)==0 );
-        p->exclMask |= mask;
+    assert( assertLockingArrayOk(pShmNode) );
+    if( flags & SQLITE_SHM_UNLOCK ){
+      if( (p->exclMask|p->sharedMask) & mask ){
+        int ii;
+        int bUnlock = 1;
+  
         for(ii=ofst; ii<ofst+n; ii++){
-          aLock[ii] = -1;
+          if( aLock[ii]>((p->sharedMask & (1<<ii)) ? 1 : 0) ){
+            bUnlock = 0;
+          }
+        }
+  
+        if( bUnlock ){
+          rc = unixShmSystemLock(pDbFd, F_UNLCK, ofst+UNIX_SHM_BASE, n);
+          if( rc==SQLITE_OK ){
+            memset(&aLock[ofst], 0, sizeof(int)*n);
+          }
+        }else if( ALWAYS(p->sharedMask & (1<<ofst)) ){
+          assert( n==1 && aLock[ofst]>1 );
+          aLock[ofst]--;
+        }
+  
+        /* Undo the local locks */
+        if( rc==SQLITE_OK ){
+          p->exclMask &= ~mask;
+          p->sharedMask &= ~mask;
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+          pthread_cond_broadcast(&pShmNode->shmcond);
+#endif
+        } 
+      }
+    }else if( flags & SQLITE_SHM_SHARED ){
+      assert( n==1 );
+      assert( (p->exclMask & (1<<ofst))==0 );
+      if( (p->sharedMask & mask)==0 ){
+        if( aLock[ofst]<0 ){
+          rc = SQLITE_BUSY;
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+          bRetry = (pDbFd->iBusyTimeout!=0);
+#endif
+        }else if( aLock[ofst]==0 ){
+          rc = unixShmSystemLock(pDbFd, F_RDLCK, ofst+UNIX_SHM_BASE, n);
+        }
+  
+        /* Get the local shared locks */
+        if( rc==SQLITE_OK ){
+          p->sharedMask |= mask;
+          aLock[ofst]++;
+        }
+      }
+    }else{
+      /* Make sure no sibling connections hold locks that will block this
+      ** lock.  If any do, return SQLITE_BUSY right away.  */
+      int ii;
+      for(ii=ofst; ii<ofst+n; ii++){
+        assert( (p->sharedMask & mask)==0 );
+        if( ALWAYS((p->exclMask & (1<<ii))==0) && aLock[ii] ){
+          rc = SQLITE_BUSY;
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+          bRetry = (pDbFd->iBusyTimeout!=0);
+#endif
+          break;
+        }
+      }
+  
+      /* Get the exclusive locks at the system level. Then if successful
+      ** also update the in-memory values. */
+      if( rc==SQLITE_OK ){
+        rc = unixShmSystemLock(pDbFd, F_WRLCK, ofst+UNIX_SHM_BASE, n);
+        if( rc==SQLITE_OK ){
+          assert( (p->sharedMask & mask)==0 );
+          p->exclMask |= mask;
+          for(ii=ofst; ii<ofst+n; ii++){
+            aLock[ii] = -1;
+          }
         }
       }
     }
-  }
+
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+    if( bRetry ){
+      int prc;
+      assert( rc==SQLITE_BUSY );
+      prc = pthread_cond_timedwait(
+          &pShmNode->shmcond, &pShmNode->shmmutex, &sTimespec
+      );
+      if( prc==0 ){
+        rc = SQLITE_OK;
+      }else{
+        /* printf("prc=%d (%s)\n", prc, strerror(prc)); */
+        bRetry = 0;
+      }
+    }
+  }while( bRetry );
+#endif
+
   assert( assertLockingArrayOk(pShmNode) );
-  sqlite3_mutex_leave(pShmNode->pShmMutex);
+  LEAVE_SHMNODE_MUTEX(pShmNode);
   OSTRACE(("SHM-LOCK shmid-%d, pid-%d got %03x,%03x\n",
            p->id, osGetpid(0), p->sharedMask, p->exclMask));
   return rc;
@@ -5066,14 +5145,14 @@ static int unixShmUnmap(
 
   /* Remove connection p from the set of connections associated
   ** with pShmNode */
-  sqlite3_mutex_enter(pShmNode->pShmMutex);
+  ENTER_SHMNODE_MUTEX(pShmNode);
   for(pp=&pShmNode->pFirst; (*pp)!=p; pp = &(*pp)->pNext){}
   *pp = p->pNext;
 
   /* Free the connection p */
   sqlite3_free(p);
   pDbFd->pShm = 0;
-  sqlite3_mutex_leave(pShmNode->pShmMutex);
+  LEAVE_SHMNODE_MUTEX(pShmNode);
 
   /* If pShmNode->nRef has reached 0, then close the underlying
   ** shared-memory file, too */
