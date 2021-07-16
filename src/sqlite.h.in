@@ -4197,7 +4197,7 @@ int sqlite3_prepare16_v3(
 ** are managed by SQLite and are automatically freed when the prepared
 ** statement is finalized.
 ** ^The string returned by sqlite3_expanded_sql(P), on the other hand,
-** is obtained from [sqlite3_malloc()] and must be free by the application
+** is obtained from [sqlite3_malloc()] and must be freed by the application
 ** by passing it to [sqlite3_free()].
 **
 ** ^The sqlite3_normalized_sql() interface is only available if
