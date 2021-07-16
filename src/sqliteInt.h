@@ -3232,7 +3232,7 @@ struct Select {
 #define SF_PushDown      0x1000000 /* SELECT has be modified by push-down opt */
 #define SF_MultiPart     0x2000000 /* Has multiple incompatible PARTITIONs */
 #define SF_CopyCte       0x4000000 /* SELECT statement is a copy of a CTE */
-#define SF_OrderByReqd   0x8000000 /* The ORDER BY clause may not be purged */
+#define SF_OrderByReqd   0x8000000 /* The ORDER BY clause may not be omitted */
 
 /*
 ** The results of a SELECT can be distributed in several ways, as defined

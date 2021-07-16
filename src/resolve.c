@@ -1635,7 +1635,7 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
       p->pOrderBy = 0;
     }
   
-    /* Recursively resolve names in all subqueries
+    /* Recursively resolve names in all subqueries in the FROM clause
     */
     for(i=0; i<p->pSrc->nSrc; i++){
       SrcItem *pItem = &p->pSrc->a[i];
