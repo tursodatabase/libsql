@@ -1,5 +1,5 @@
-C Fix\sthe\s"main.mk"\smakefile\sso\sthat\s"series.c"\sis\sa\sdependency\sof\s"shell.c".
-D 2021-07-16T15:30:19.396
+C Modify\sthe\sgenerate_series()\stable-valued\sfunctions\sso\sthat\sits\sfirst\nargument\s(the\sSTART\svalue)\sis\srequired.\s\sThrow\san\serror\sif\sthat\sargument\nis\snot\ssupplied.\s\sIn\sthis\swas\sthe\sseries.c\sloadable\sextension\scan\sbe\sused\nas\sa\sdemonstration\sof\show\sto\scode\san\sxBestIndex\sfunction\sto\srequire\scertain\nparameters.\s\sCompile\swith\s-DZERO_ARGUMENT_GENERATE_SERIES\sto\sobtain\sthe\nlegacy\sbehavior.
+D 2021-07-16T17:04:17.942
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -319,7 +319,7 @@ F ext/misc/regexp.c 5853b0e5ed40c47f7ded2b0bf2ff73796f7cb21543089c5f07308e003264
 F ext/misc/remember.c add730f0f7e7436cd15ea3fd6a90fd83c3f706ab44169f7f048438b7d6baa69c
 F ext/misc/rot13.c 51ac5f51e9d5fd811db58a9c23c628ad5f333c173f1fc53c8491a3603d38556c
 F ext/misc/scrub.c 2a44b0d44c69584c0580ad2553f6290a307a49df4668941d2812135bfb96a946
-F ext/misc/series.c c6bd5d249e5199a1b55aeee4d0e6576ff3a68702fc475dbd64503a32903516c7
+F ext/misc/series.c 233804fd4e07de94ecae42b487fb38bbd819b249114bb34bb46f227c8c7111df
 F ext/misc/sha1.c c8f2253c8792ffab9517695ea7d88c079f0395a5505eefef5c8198fe184ed5ac
 F ext/misc/shathree.c e984f31731de4cf302a0386be5fe664580f63d8204c47b9b41cc4b997745f9ec
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
@@ -1442,7 +1442,7 @@ F test/sync.test 89539f4973c010eda5638407e71ca7fddbcd8e0594f4c9980229f804d433309
 F test/sync2.test 8f9f7d4f6d5be8ca8941a8dadcc4299e558cb6a1ff653a9469146c7a76ef2039
 F test/syscall.test a39d9a36f852ae6e4800f861bc2f2e83f68bbc2112d9399931ecfadeabd2d69d
 F test/sysfault.test c9f2b0d8d677558f74de750c75e12a5454719d04
-F test/tabfunc01.test acb5be558868c65d8cf3495539fff23093d77139eb1e4e8c4580568099f98645
+F test/tabfunc01.test d6821e7042e5653104dac0c63d75eff24a2415ab1889fc68b5db7fde59464c59
 F test/table.test eb3463b7add9f16a5bb836badf118cf391b809d09fdccd1f79684600d07ec132
 F test/tableapi.test ecbcc29c4ab62c1912c3717c48ea5c5e59f7d64e4a91034e6148bd2b82f177f4
 F test/tableopts.test dba698ba97251017b7c80d738c198d39ab747930
@@ -1920,7 +1920,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bacfa93677fbe014737fab7dbdb4e7a168a310bc5b914b17896ae2a48435c7b1
-R c8ff11932c350e983e9fb8ccf092c387
+P ff959917918495ef352ce48c240b1de6da162f2a5e76e37dcc53fa50bce27642
+R aa3d348b2c34c0c9b3d3fd2a8d2ce220
 U drh
-Z fd34dc6395fc4ba0b62b54a8700203f9
+Z 4342f932cf72c33e96387442e529227b
