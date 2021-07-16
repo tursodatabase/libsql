@@ -1,5 +1,5 @@
-C By\sdefault,\sdo\snot\semit\s#line\sdirectives\sin\sthe\samalgamation.
-D 2021-07-15T23:34:14.480
+C Fix\sthe\s"main.mk"\smakefile\sso\sthat\s"series.c"\sis\sa\sdependency\sof\s"shell.c".
+D 2021-07-16T15:30:19.396
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -466,7 +466,7 @@ F ext/userauth/userauth.c 7f00cded7dcaa5d47f54539b290a43d2e59f4b1eb5f447545fa865
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 200bf75c882c4822ea722840fc5212f22e5e18773851352c2a0d077958de8b7f
+F main.mk 4e075c9618c06c55d1cc723087b0722f384247b6b8db1ac2cb161f864c953c97
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -1920,7 +1920,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3beb77d6a792d07ca605ec8e5402b8a305860cba4044fcafeed00b9fa862fa16
-R daf164cb48477e7248acc5698977e210
-U mistachkin
-Z 68baf9b3461559a5c1573182f5e84392
+P bacfa93677fbe014737fab7dbdb4e7a168a310bc5b914b17896ae2a48435c7b1
+R c8ff11932c350e983e9fb8ccf092c387
+U drh
+Z fd34dc6395fc4ba0b62b54a8700203f9
