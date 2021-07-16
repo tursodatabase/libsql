@@ -6386,7 +6386,8 @@ int sqlite3Select(
 
     /* If a FROM-clause subquery has an ORDER BY clause that is not
     ** really doing anything, then delete it now so that it does not
-    ** interfere with query flattening.
+    ** interfere with query flattening.  See the discussion at
+    ** https://sqlite.org/forum/forumpost/2d76f2bcf65d256a
     **
     ** Beware of these cases where the ORDER BY clause may not be safely
     ** omitted:
@@ -6394,13 +6395,20 @@ int sqlite3Select(
     **    (1)   There is also a LIMIT clause
     **    (2)   The subquery was added to help with window-function
     **          processing
-    **    (3)   The outer query uses an aggregate function other than
+    **    (3)   The subquery is in the FROM clause of an UPDATE
+    **    (4)   The outer query uses an aggregate function other than
     **          the built-in count(), min(), or max().
+    **    (5)   The ORDER BY isn't going to accomplish anything because
+    **          one of:
+    **            (a)  The outer query has a different ORDER BY clause
+    **            (b)  The subquery is part of a join
+    **          See forum post 062d576715d277c8
     */
     if( pSub->pOrderBy!=0
+     && (p->pOrderBy!=0 || pTabList->nSrc>1)      /* Condition (5) */
      && pSub->pLimit==0                           /* Condition (1) */
      && (pSub->selFlags & SF_OrderByReqd)==0      /* Condition (2) */
-     && (p->selFlags & SF_OrderByReqd)==0         /* Condition (3) */
+     && (p->selFlags & SF_OrderByReqd)==0         /* Condition (3) and (4) */
      && OptimizationEnabled(db, SQLITE_OmitOrderBy)
     ){
       SELECTTRACE(0x100,pParse,p,

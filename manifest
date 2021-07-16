@@ -1,5 +1,5 @@
-C Attempt\sto\somit\sORDER\sBY\sclauses\sfrom\sFROM-clause\ssubqueries\sif\sthose\sORDER\sBY\nclauses\sdo\snot\saffect\sthe\soutput.\s\sSee\n[forum:/forumpost/2d76f2bcf65d256a|forum\sthread\s2d76f2bcf65d256a]\sfor\ndiscussion.\s\sThis\scan\shelp\sthe\squery\sflattener\sin\nsome\scases,\sresulting\sin\sfaster\squery\splans.\s\sThe\scurrent\simplemention\sdoes\nnot\salways\swork.
-D 2021-07-15T19:29:43.004
+C Get\sthe\s"omit\sORDER\sBY\sin\sFROM-clause\ssubqueries"\soptimization\sworking\sfor\sthe\ncore\stest\scases.
+D 2021-07-16T01:19:19.310
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -544,7 +544,7 @@ F src/printf.c 78fabb49b9ac9a12dd1c89d744abdc9b67fd3205e62967e158f78b965a29ec4b
 F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c 9b54a60702c35b3efbeb5d0439a94d67c4cb93a896e1afa89f21d7a9d183a071
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c cc61c6b86617387803d67994fec6131365f6a049399aa28b11028ad0b4ee53b8
+F src/select.c 0c783511b5f35b37d971dcd653c554d21f74d7cb63a4979991a61d068480c40f
 F src/shell.c.in 856de2945bb7fdfdeebe7136cf1b59d24618845aa5e5f3937fda7ff37c623b51
 F src/sqlite.h.in a5d5641afa335226231231c7b6e424de327f17577d9e8aeaaaab78d9bbbcf381
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -611,7 +611,7 @@ F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c bae853ad129d1129c063de8630a3e99e306283bc40146f359b1bb91be2c08f1e
 F src/treeview.c ce7a3da38caba094c78d888d2366f749ea33dc8cbafb04218b57768fb8669a6c
 F src/trigger.c 7d16aa09e63226b6d8b3f0fc60b21cbfa596fc406288b2ebcf4266633d1ba222
-F src/update.c ff10c7ca6dc9007cdebb3eee6630e87639ef9f949ccb574c34f9d34c52c32fb9
+F src/update.c 30465f9accc854e8a7932b413578027fbb68186132abbb36e01d2022473fc83d
 F src/upsert.c df8f1727d62b5987c4fd302cd4d7c0c84ae57cd65683c5a34a740dfe24039235
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c 41c7a72da1df47864faa378a1c720b38adb288c6838cb6be5594511b6287a048
@@ -1920,10 +1920,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3beb77d6a792d07ca605ec8e5402b8a305860cba4044fcafeed00b9fa862fa16
-R be1da55dd559418ff2dfd4ecbe7a006e
-T *branch * omit-subquery-order-by
-T *sym-omit-subquery-order-by *
-T -sym-trunk *
+P ef97c3e7c3ea2cf1a4db6591328fe7ce3f1d189afc2d578159135824ec89e620
+R f27eb88a1585b6967c8257fe374701ea
 U drh
-Z fa9c090cb9dd3863cd70130aca6f84ef
+Z 493c03b78cdd1bd0aeff046f5ac8dff0

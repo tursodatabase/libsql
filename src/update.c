@@ -261,6 +261,7 @@ static void updateFromSelect(
   pSelect = sqlite3SelectNew(pParse, pList, 
       pSrc, pWhere2, pGrp, 0, pOrderBy2, SF_UFSrcCheck|SF_IncludeHidden, pLimit2
   );
+  if( pSelect ) pSelect->selFlags |= SF_OrderByReqd;
   sqlite3SelectDestInit(&dest, eDest, iEph);
   dest.iSDParm2 = (pPk ? pPk->nKeyCol : -1);
   sqlite3Select(pParse, pSelect, &dest);
