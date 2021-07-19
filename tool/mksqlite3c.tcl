@@ -38,7 +38,7 @@ set help {Usage: tclsh mksqlite3c.tcl <options>
 #
 
 set addstatic 1
-set linemacros 1
+set linemacros 0
 set useapicall 0
 set srcdir tsrc
 

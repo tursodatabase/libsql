@@ -3181,6 +3181,7 @@ int sqlite3ReadOnlyShadowTables(sqlite3 *db){
   if( (db->flags & SQLITE_Defensive)!=0
    && db->pVtabCtx==0
    && db->nVdbeExec==0
+   && !sqlite3VtabInSync(db)
   ){
     return 1;
   }
