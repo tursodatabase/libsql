@@ -1510,9 +1510,13 @@ static int walthread6_walhook(
 static char *walthread6_thread(int iTid, void *pArg){
   Error err = {0};
   Sqlite db = {0};
+  int nBlk = 0;
+  int nInsertPerTransaction = 1;
+  i64 iPrev = -1000000;
 
   Walthread6 res;
   memset(&res, 0, sizeof(res));
+
 
   opendb(&err, &db, "test.db", 0);
   sqlite3_busy_timeout(db.db, 1000);
@@ -1525,20 +1529,27 @@ static char *walthread6_thread(int iTid, void *pArg){
       res.nBusy++;
       clear_error(&err, SQLITE_BUSY);
     }else{
+      i64 iRowid;
       res.nInsert++;
-      for(i=0; i<20; i++){
+      for(i=0; i<nInsertPerTransaction; i++){
         execsql(&err, &db, "INSERT INTO t1(b) VALUES(random())");
       }
-      usleep(10*1000);
+
+      iRowid = sqlite3_last_insert_rowid(db.db);
+      if( iRowid!=(iPrev+nInsertPerTransaction) ) nBlk++;
+      iPrev = iRowid;
+
+      sqlite3_sleep(10);
       execsql(&err, &db, "COMMIT");
+      sqlite3_sleep(1);
     }
   }
 
   closedb(&err, &db);
   print_and_free_err(&err);
   return sqlite3_mprintf(
-      "%d transactions (%d busy), max-wal-size=%d frames",
-      res.nInsert, res.nBusy, res.nMaxFrame
+      "%d transactions (%d busy) in %d blocks, max-wal-size=%d frames",
+      res.nInsert, res.nBusy, nBlk, res.nMaxFrame
   );
 }
 
