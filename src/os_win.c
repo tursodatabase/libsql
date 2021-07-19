@@ -3962,7 +3962,7 @@ static int winIsSameFile(
            && info1.nFileIndexHigh == info2.nFileIndexHigh
             && info1.nFileIndexLow == info2.nFileIndexLow ){
       OSTRACE(("SAME pid=%lu, pFile=%p, name1=%s, name2=%s, "
-               "YES, rc=SQLITE_OK\n", osGetCurrentProcessId(),
+               "YES (ID), rc=SQLITE_OK\n", osGetCurrentProcessId(),
                pFile, zFilename1, zFilename2));
       *pbSame = 1;
       return SQLITE_OK;
@@ -3995,9 +3995,10 @@ fallback:
 done:
     if( zFull2 ) sqlite3_free(zFull2);
     if( zFull1 ) sqlite3_free(zFull1);
-    OSTRACE(("SAME pid=%lu, pFile=%p, name1=%s, name2=%s, %s, rc=%s\n",
-             osGetCurrentProcessId(), pFile, zFilename1, zFilename2,
-             *pbSame?"YES":"NO", sqlite3ErrName(rc)));
+    OSTRACE(("SAME pid=%lu, pFile=%p, name1=%s, name2=%s, "
+             "%s (NAME), rc=%s\n", osGetCurrentProcessId(),
+             pFile, zFilename1, zFilename2, *pbSame?"YES":"NO",
+             sqlite3ErrName(rc)));
     return rc;
   }
 }
