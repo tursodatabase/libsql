@@ -2586,6 +2586,17 @@ rbu.exe:	$(TOP)\ext\rbu\rbu.c $(TOP)\ext\rbu\sqlite3rbu.c $(SQLITE3C) $(SQLITE3H
 	$(LTLINK) $(NO_WARN) -DSQLITE_ENABLE_RBU \
 		$(TOP)\ext\rbu\rbu.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
+
+THREADTEST3_SRC = $(TOP)\test\threadtest3.c    \
+                  $(TOP)\test\tt3_checkpoint.c \
+                  $(TOP)\test\tt3_index.c      \
+                  $(TOP)\test\tt3_vacuum.c      \
+                  $(TOP)\test\tt3_stress.c      \
+                  $(TOP)\test\tt3_lookaside1.c
+
+threadtest3.exe: sqlite3.obj $(THREADTEST3_SRC) $(TOP)/src/test_multiplex.c
+	$(LTLINK) $(TOP)\test\threadtest3.c $(TOP)\src\test_multiplex.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
+
 LSMDIR=$(TOP)\ext\lsm1
 !INCLUDE $(LSMDIR)\Makefile.msc
 
