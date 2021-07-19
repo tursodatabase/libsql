@@ -323,5 +323,34 @@ do_execsql_test 12.3 {
   SELECT * FROM t2 JOIN ft USING (ft)
 } {3 4 b b}
 
+#-------------------------------------------------------------------------
+# Forum post https://sqlite.org/forum/forumpost/21127c1160
+#
+reset_db
+sqlite3_db_config db DEFENSIVE 1
+
+do_execsql_test 13.0 {
+  CREATE TABLE a (id INTEGER PRIMARY KEY, name TEXT);
+  CREATE VIRTUAL TABLE b USING fts5(name);
+  CREATE TRIGGER a_trigger AFTER INSERT ON a BEGIN 
+    INSERT INTO b (name) VALUES ('foo');
+  END;
+}
+
+do_test 13.1 {
+  set ::STMT [
+    sqlite3_prepare db "INSERT INTO a VALUES (1, 'foo') RETURNING id;" -1 dummy
+  ]
+  sqlite3_step $::STMT
+} {SQLITE_ROW}
+
+do_test 13.2 {
+  sqlite3_finalize $::STMT
+} {SQLITE_OK}
+
+do_test 13.3 {
+  sqlite3_errmsg db
+} {not an error}
+
 finish_test
 

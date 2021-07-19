@@ -1,5 +1,5 @@
-C Fix\sminor\sspacing\sissues\sin\sthe\sMSVC\smakefile.
-D 2021-07-19T03:38:13.243
+C In\sdefensive\smode,\sallow\sstatements\sthat\swrite\sto\sshadow\stables\sto\sbe\sprepared\sfrom\swith\svirtual-table\sxSync()\scalls.
+D 2021-07-19T14:00:29.519
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -193,7 +193,7 @@ F ext/fts5/test/fts5leftjoin.test c0b4cafb9661379e576dc4405c0891d8fcc27826807405
 F ext/fts5/test/fts5matchinfo.test 10c9a6f7fe61fb132299c4183c012770b10c4d5c2f2edb6df0b6607f683d737a
 F ext/fts5/test/fts5merge.test e92a8db28b45931e7a9c7b1bbd36101692759d00274df74d83fd29d25d53b3a6
 F ext/fts5/test/fts5merge2.test 3ebad1a59d6ad3fb66eff6523a09e95dc6367cbefb3cd73196801dea0425c8e2
-F ext/fts5/test/fts5misc.test 088ac5f0f5de1ad45b0f83197ab5263bcae8130156cdc901bff2375ff2b8af86
+F ext/fts5/test/fts5misc.test 4d7d20372242cc618688de029b87d897d09fa1640302c254abee63cf3ffa2c10
 F ext/fts5/test/fts5multi.test a15bc91cdb717492e6e1b66fec1c356cb57386b980c7ba5af1915f97fe878581
 F ext/fts5/test/fts5multiclient.test 5ff811c028d6108045ffef737f1e9f05028af2458e456c0937c1d1b8dea56d45
 F ext/fts5/test/fts5near.test 211477940142d733ac04fad97cb24095513ab2507073a99c2765c3ddd2ef58bd
@@ -488,7 +488,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c e204a9c8fb4fe5dbb910a863ba487f4af9b5c501254ec4ccbfcdd6b1f65b7fb4
 F src/btree.h 74d64b8f28cfa4a894d14d4ed64fa432cd697b98b61708d4351482ae15913e22
 F src/btreeInt.h 7bc15a24a02662409ebcd6aeaa1065522d14b7fda71573a2b0568b458f514ae0
-F src/build.c 98e23c9197fd4c979f7d59360bd3b0050b37e683e078715f6f2fbfef77971f0d
+F src/build.c a27511863001ba088afd5e19efc9c37ea660983bd6ddf012def10f6cc4456a01
 F src/callback.c d0b853dd413255d2e337b34545e54d888ea02f20da5ad0e63585b389624c4a6c
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 8159d5f706551861c18ec6c8f6bdf105e15ea00367f05d9ab65d31a1077facc1
@@ -1920,7 +1920,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 85ddaf1b59a19cbd9efe7724a163b30c14bafabfaf2cfced07b463e76f73e494
-R 4eef8627720563ebb21acd0bdf777bd1
-U mistachkin
-Z 3b091060036ec0c06d6ff58dfb637bd5
+P d78c272b3966cc1b12bc7e83fbe909a3c517d553a942d7f1c07bddf69f2e2164
+R db28e0ca4ea83a622e82068e2a2a636b
+U dan
+Z 8b08dd57f21b0e772cbc6de26df5a8fe
