@@ -1,11 +1,11 @@
-C Try\sto\somit\sthe\sORDER\sBY\sclause\sin\ssubqueries\sif\sdoing\sso\sdoes\snot\schange\nthe\sresult\sin\sany\sway.\sSee\n[forum:/forumpost/2d76f2bcf65d256a|Forum\spost\s2d76f2bcf65d256a]\sfor\ndetails\sand\shistory.
-D 2021-07-16T22:43:00.597
+C Fix\sminor\sspacing\sissues\sin\sthe\sMSVC\smakefile.
+D 2021-07-19T03:38:13.243
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
 F Makefile.in 83c348515cb62f6f2a2ddf3fd014113ff20564b776e1a614079722c88c6ff43d
 F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
-F Makefile.msc d481375cd138e705f749dad2549b2f80d5d76e23132c5fc9be337f7416cb9fc8
+F Makefile.msc f889e0dcf8668cccac0c68be2ea09fc585dd40ac44ca37e9fb15638ee9315a92
 F README.md 27fb76aa7eb57ed63a53bbba7292b6bf71f51125554f79f16b5d040edd1e6110
 F VERSION c6595fef606851f2bc3ebed6a7386c73751835fc909feab7c093739fa4b3c1d1
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -1920,8 +1920,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 56b0f5418dad34d1e83d53741916e2a38a5448369031d959b8a44867774be657 6854b5919beefa43da21ba739e82d583183c8cdfe5dd63e27a810ac1ffe2330b
-R 6e75e47df06fbba5ca701a4a4bf4039e
-T +closed 6854b5919beefa43da21ba739e82d583183c8cdfe5dd63e27a810ac1ffe2330b
-U drh
-Z f23b8c5ab82b5bff69635213de4f5afb
+P 85ddaf1b59a19cbd9efe7724a163b30c14bafabfaf2cfced07b463e76f73e494
+R 4eef8627720563ebb21acd0bdf777bd1
+U mistachkin
+Z 3b091060036ec0c06d6ff58dfb637bd5
