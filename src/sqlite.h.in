@@ -9923,6 +9923,10 @@ unsigned char *sqlite3_serialize(
 ** database is currently in a read transaction or is involved in a backup
 ** operation.
 **
+** It is not possible to deserialized into the TEMP database.  If the
+** S argument to sqlite3_deserialize(D,S,P,N,M,F) is "temp" then the
+** function returns SQLITE_ERROR.
+**
 ** If sqlite3_deserialize(D,S,P,N,M,F) fails for any reason and if the 
 ** SQLITE_DESERIALIZE_FREEONCLOSE bit is set in argument F, then
 ** [sqlite3_free()] is invoked on argument P prior to returning.
