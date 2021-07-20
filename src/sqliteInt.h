@@ -3437,7 +3437,8 @@ struct Parse {
   Vdbe *pVdbe;         /* An engine for executing database bytecode */
   int rc;              /* Return code from execution */
   u8 colNamesSet;      /* TRUE after OP_ColumnName has been issued to pVdbe */
-  u8 checkSchema;      /* Causes schema cookie check after an error */
+  u8 checkSchema : 1;  /* Causes schema cookie check after an error */
+  u8 bDiscardCheck :1; /* A CHECK constraint was discarded by the parser */
   u8 nested;           /* Number of nested calls to the parser/code generator */
   u8 nTempReg;         /* Number of temporary registers in aTempReg[] */
   u8 isMultiWrite;     /* True if statement may modify/insert multiple rows */

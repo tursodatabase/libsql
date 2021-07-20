@@ -1,5 +1,5 @@
-C It\sdoes\snot\swork\sto\sdeserialized\sinto\sTEMP,\sso\sdo\snot\sallow\sit.\s\sThe\nsqlite3_deserialize()\sroutine\snow\sreturns\sSQLITE_ERROR\sif\syou\stry.
-D 2021-07-20T02:02:24.771
+C Demonstration\scode\sto\sshow\show\sNOT\sNULL\sand\sCHECK\sconstraints\scan\sbe\nverified\safter\san\sALTER\sTABLE\sADD\sCOLUMN.
+D 2021-07-20T07:35:07.295
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -478,7 +478,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
-F src/alter.c 774a2a175ec747b55046ec62f5c1208d730ee22b10bdad5f182591fa247946a8
+F src/alter.c 1589ea8a5dcef74e12b49182928062cbd2958cc223004bb6d534e44521c59d0a
 F src/analyze.c 01c6c6765cb4d40b473b71d85535093730770bb186f2f473abac25f07fcdee5c
 F src/attach.c a514e81758ba7b3a3a0501faf70af6cfc509de8810235db726cfc9f25165e929
 F src/auth.c 08954fdc4cc2da5264ba5b75cfd90b67a6fc7d1710a02ccf917c38eadec77853
@@ -488,7 +488,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c e204a9c8fb4fe5dbb910a863ba487f4af9b5c501254ec4ccbfcdd6b1f65b7fb4
 F src/btree.h 74d64b8f28cfa4a894d14d4ed64fa432cd697b98b61708d4351482ae15913e22
 F src/btreeInt.h 7bc15a24a02662409ebcd6aeaa1065522d14b7fda71573a2b0568b458f514ae0
-F src/build.c a27511863001ba088afd5e19efc9c37ea660983bd6ddf012def10f6cc4456a01
+F src/build.c 602ab2f5b49df357a70ac4ff64bc6cc23effd97a6ae16b60e947f5ab25866f44
 F src/callback.c d0b853dd413255d2e337b34545e54d888ea02f20da5ad0e63585b389624c4a6c
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 8159d5f706551861c18ec6c8f6bdf105e15ea00367f05d9ab65d31a1077facc1
@@ -538,7 +538,7 @@ F src/pcache.c 385ff064bca69789d199a98e2169445dc16e4291fa807babd61d4890c3b34177
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c 388304fd2d91c39591080b5e0f3c62cfba87db20370e7e0554062bfb29740e9f
 F src/pragma.c 9fe75aa29e8706a2cf6b9c1600ac05a2efc55c44ce719b65aa45d10ff58acc9d
-F src/pragma.h 8dc78ab7e9ec6ce3ded8332810a2066f1ef6267e2e03cd7356ee00276125c6cf
+F src/pragma.h a11b4798f9c49f156f130e1f7041a9fcc9d316a64f3501b6013acdd2e4c6f549
 F src/prepare.c 0d53d20532aada295c1690792a125adbd6435f5ce703ff0adf1b9b3605238b67
 F src/printf.c 78fabb49b9ac9a12dd1c89d744abdc9b67fd3205e62967e158f78b965a29ec4b
 F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
@@ -549,7 +549,7 @@ F src/shell.c.in 856de2945bb7fdfdeebe7136cf1b59d24618845aa5e5f3937fda7ff37c623b5
 F src/sqlite.h.in 43fcf0fe2af04081f420a906fc020bde1243851ba44b0aa567a27f94bf8c3145
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h e97f4e9b509408fea4c4e9bef5a41608dfac343b4d3c7a990dedde1e19af9510
-F src/sqliteInt.h b3762f49d8b6b4bf7bf30d154f007d6f9421c86343042d7a246a79988d1fec1a
+F src/sqliteInt.h 0982664df2e04968d9588535efa0f3987a7f23fb6d6872f0a7a0c5fa97e53933
 F src/sqliteLimit.h d7323ffea5208c6af2734574bae933ca8ed2ab728083caa117c9738581a31657
 F src/status.c 4b8bc2a6905163a38b739854a35b826c737333fab5b1f8e03fa7eb9a4799c4c1
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -1853,7 +1853,7 @@ F tool/mkmsvcmin.tcl 6ecab9fe22c2c8de4d82d4c46797bda3d2deac8e763885f5a38d0c44a89
 F tool/mkopcodec.tcl d1b6362bd3aa80d5520d4d6f3765badf01f6c43c
 F tool/mkopcodeh.tcl 130b88697da6ec5b89b41844d955d08fb62c2552e889dec8c7bcecb28d8f50bd
 F tool/mkopts.tcl 680f785fdb09729fd9ac50632413da4eadbdf9071535e3f26d03795828ab07fa
-F tool/mkpragmatab.tcl ae5585ae76ca26e4d6ccd5ea9cdebaf5efefb318bf989497a0e846cd711d9ab1
+F tool/mkpragmatab.tcl 7f6db47d1995bc08247255622524567b2ab8962d98063f8aef97e35c3c54e3b8
 F tool/mkshellc.tcl 5fe7e518112b262e25726f248c0f33dd153192867453984b6af0a76a88e97cb2
 F tool/mksourceid.c 36aa8020014aed0836fd13c51d6dc9219b0df1761d6b5f58ff5b616211b079b9
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
@@ -1920,7 +1920,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b5ede6a68891820bd5b6d051b1b641bc1cd49104cad2466db184134d14f58f5b
-R e22cd931ae144bced3e3587611f0e114
+P 18068cc60698d4944a9d682cdf34b14b4d4b32f043f8d584dbf41c2bb5ac6220
+R 32477a4a8d73756ec29530de57bdffab
+T *branch * add-column-constraint-check
+T *sym-add-column-constraint-check *
+T -sym-trunk *
 U drh
-Z b4c2ab277c13106aeed921dd3a580a07
+Z 445808b8851b3290a628722ea679d598
