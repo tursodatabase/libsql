@@ -65,6 +65,12 @@
 #endif
 
 /*
+** Define this symbol to enable blocking in-process locks if the
+** core is built with SQLITE_ENABLE_SETLK_TIMEOUT.
+*/
+#define SQLITE_WIN32_LOCKTMOUT 1
+
+/*
 ** Define the required Windows SDK version constants if they are not
 ** already available.
 */
@@ -3766,7 +3772,12 @@ static int winShmMutexHeld(void) {
 **
 */
 struct winShmNode {
+#ifdef SQLITE_WIN32_LOCKTMOUT
+  CRITICAL_SECTION winMutex;
+  CONDITION_VARIABLE winCond;
+#else
   sqlite3_mutex *mutex;      /* Mutex to access this object */
+#endif
   char *zFilename;           /* Name of the file */
   winFile hFile;             /* File handle from winOpen */
 
@@ -3788,6 +3799,14 @@ struct winShmNode {
   u8 nextShmId;              /* Next available winShm.id value */
 #endif
 };
+
+#ifdef SQLITE_WIN32_LOCKTMOUT
+# define ENTER_SHMNODE_MUTEX(p) EnterCriticalSection(&(p)->winMutex)
+# define LEAVE_SHMNODE_MUTEX(p) LeaveCriticalSection(&(p)->winMutex)
+#else
+# define ENTER_SHMNODE_MUTEX(p) sqlite3_mutex_enter(pShmNode->mutex)
+# define LEAVE_SHMNODE_MUTEX(p) sqlite3_mutex_leave(pShmNode->mutex)
+#endif
 
 /*
 ** A global array of all winShmNode objects.
@@ -4019,7 +4038,11 @@ static void winShmPurge(sqlite3_vfs *pVfs, int deleteFlag){
   while( (p = *pp)!=0 ){
     if( p->nRef==0 ){
       int i;
+#ifdef SQLITE_WIN32_LOCKTMOUT
+      DeleteCriticalSection(&p->winMutex);
+#else
       if( p->mutex ){ sqlite3_mutex_free(p->mutex); }
+#endif
       for(i=0; i<p->nRegion; i++){
         BOOL bRc = osUnmapViewOfFile(p->aRegion[i].pMap);
         OSTRACE(("SHM-PURGE-UNMAP pid=%lu, region=%d, rc=%s\n",
@@ -4139,11 +4162,16 @@ static int winOpenSharedMemory(winFile *pDbFd){
     winShmNodeList = pShmNode;
 
     if( sqlite3GlobalConfig.bCoreMutex ){
+#ifdef SQLITE_WIN32_LOCKTMOUT
+      InitializeCriticalSection(&pShmNode->winMutex);
+      InitializeConditionVariable(&pShmNode->winCond);
+#else
       pShmNode->mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
       if( pShmNode->mutex==0 ){
         rc = SQLITE_IOERR_NOMEM_BKPT;
         goto shm_open_err;
       }
+#endif
     }
 
     if( 0==sqlite3_uri_boolean(pDbFd->zPath, "readonly_shm", 0) ){
@@ -4181,10 +4209,10 @@ static int winOpenSharedMemory(winFile *pDbFd){
   ** at pShmNode->pFirst. This must be done while holding the pShmNode->mutex
   ** mutex.
   */
-  sqlite3_mutex_enter(pShmNode->mutex);
+  ENTER_SHMNODE_MUTEX(pShmNode);
   p->pNext = pShmNode->pFirst;
   pShmNode->pFirst = p;
-  sqlite3_mutex_leave(pShmNode->mutex);
+  LEAVE_SHMNODE_MUTEX(pShmNode);
   return rc;
 
   /* Jump here on any error */
@@ -4217,14 +4245,14 @@ static int winShmUnmap(
 
   /* Remove connection p from the set of connections associated
   ** with pShmNode */
-  sqlite3_mutex_enter(pShmNode->mutex);
+  ENTER_SHMNODE_MUTEX(pShmNode);
   for(pp=&pShmNode->pFirst; (*pp)!=p; pp = &(*pp)->pNext){}
   *pp = p->pNext;
 
   /* Free the connection p */
   sqlite3_free(p);
   pDbFd->pShm = 0;
-  sqlite3_mutex_leave(pShmNode->mutex);
+  LEAVE_SHMNODE_MUTEX(pShmNode);
 
   /* If pShmNode->nRef has reached 0, then close the underlying
   ** shared-memory file, too */
@@ -4254,6 +4282,10 @@ static int winShmLock(
   winShmNode *pShmNode = p->pShmNode;
   int rc = SQLITE_OK;                   /* Result code */
   u16 mask;                             /* Mask of locks to take or release */
+#ifdef SQLITE_WIN32_LOCKTMOUT
+  i64 iTimeout = 0;
+  int bRetry;
+#endif
 
   assert( ofst>=0 && ofst+n<=SQLITE_SHM_NLOCK );
   assert( n>=1 );
@@ -4265,8 +4297,14 @@ static int winShmLock(
 
   mask = (u16)((1U<<(ofst+n)) - (1U<<ofst));
   assert( n>1 || mask==(1<<ofst) );
-  sqlite3_mutex_enter(pShmNode->mutex);
+  ENTER_SHMNODE_MUTEX(pShmNode);
   pShmNode->hFile.iBusyTimeout = pDbFd->iBusyTimeout;
+
+#ifdef SQLITE_WIN32_LOCKTMOUT
+  do{
+    bRetry = 0;
+#endif
+
   if( flags & SQLITE_SHM_UNLOCK ){
     u16 allMask = 0; /* Mask of locks held by siblings */
 
@@ -4288,6 +4326,9 @@ static int winShmLock(
     if( rc==SQLITE_OK ){
       p->exclMask &= ~mask;
       p->sharedMask &= ~mask;
+#ifdef SQLITE_WIN32_LOCKTMOUT
+      WakeAllConditionVariable(&pShmNode->winCond);
+#endif
     }
   }else if( flags & SQLITE_SHM_SHARED ){
     u16 allShared = 0;  /* Union of locks held by connections other than "p" */
@@ -4299,6 +4340,9 @@ static int winShmLock(
     for(pX=pShmNode->pFirst; pX; pX=pX->pNext){
       if( (pX->exclMask & mask)!=0 ){
         rc = SQLITE_BUSY;
+#ifdef SQLITE_WIN32_LOCKTMOUT
+        bRetry = (pDbFd->iBusyTimeout!=0);
+#endif
         break;
       }
       allShared |= pX->sharedMask;
@@ -4324,6 +4368,9 @@ static int winShmLock(
     for(pX=pShmNode->pFirst; pX; pX=pX->pNext){
       if( (pX->exclMask & mask)!=0 || (pX->sharedMask & mask)!=0 ){
         rc = SQLITE_BUSY;
+#ifdef SQLITE_WIN32_LOCKTMOUT
+        bRetry = (pDbFd->iBusyTimeout!=0);
+#endif
         break;
       }
     }
@@ -4339,7 +4386,26 @@ static int winShmLock(
       }
     }
   }
-  sqlite3_mutex_leave(pShmNode->mutex);
+
+#ifdef SQLITE_WIN32_LOCKTMOUT
+    if( bRetry ){
+      i64 iMs;
+      if( iTimeout==0 ){
+        pDbFd->pVfs->xCurrentTimeInt64(pDbFd->pVfs, &iTimeout);
+        iTimeout += pDbFd->iBusyTimeout;
+        iMs = pDbFd->iBusyTimeout;
+      }else{
+        pDbFd->pVfs->xCurrentTimeInt64(pDbFd->pVfs, &iMs);
+        iMs -= iTimeout;
+      }
+      bRetry = (int)SleepConditionVariableCS(
+          &pShmNode->winCond, &pShmNode->winMutex, iMs
+      );
+    }
+  }while( bRetry );
+#endif
+
+  LEAVE_SHMNODE_MUTEX(pShmNode);
   OSTRACE(("SHM-LOCK pid=%lu, id=%d, sharedMask=%03x, exclMask=%03x, rc=%s\n",
            osGetCurrentProcessId(), p->id, p->sharedMask, p->exclMask,
            sqlite3ErrName(rc)));
@@ -4402,7 +4468,7 @@ static int winShmMap(
   }
   pShmNode = pShm->pShmNode;
 
-  sqlite3_mutex_enter(pShmNode->mutex);
+  ENTER_SHMNODE_MUTEX(pShmNode);
   if( pShmNode->isUnlocked ){
     rc = winLockSharedMemory(pShmNode);
     if( rc!=SQLITE_OK ) goto shmpage_out;
@@ -4519,7 +4585,7 @@ shmpage_out:
     *pp = 0;
   }
   if( pShmNode->isReadonly && rc==SQLITE_OK ) rc = SQLITE_READONLY;
-  sqlite3_mutex_leave(pShmNode->mutex);
+  LEAVE_SHMNODE_MUTEX(pShmNode);
   return rc;
 }
 
