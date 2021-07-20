@@ -306,6 +306,48 @@ do_execsql_test 5.5 {
     b, b;
 }
 
+#-------------------------------------------------------------------------
+# dbsqlfuzz a779227f721a834df95f4f42d0c31550a1f8b8a2 
+#
+reset_db
+do_execsql_test 6.0 {
+  CREATE TABLE t1(a);
+  CREATE TABLE t2(b);
+
+  INSERT INTO t1 VALUES('x');
+  INSERT INTO t2 VALUES(1);
+}
+
+do_execsql_test 6.1.1 {
+  SELECT ( 
+    SELECT t2.b FROM (SELECT t2.b AS c FROM t1) GROUP BY 1 HAVING t2.b
+  )
+  FROM t2 GROUP BY 'constant_string';
+} {1}
+do_execsql_test 6.1.2 {
+  SELECT ( 
+    SELECT c FROM (SELECT t2.b AS c FROM t1) GROUP BY c HAVING t2.b
+  )
+  FROM t2 GROUP BY 'constant_string';
+} {1}
+
+do_execsql_test 6.2.0 {
+  UPDATE t2 SET b=0
+}
+do_execsql_test 6.2.1 {
+  SELECT ( 
+    SELECT t2.b FROM (SELECT t2.b AS c FROM t1) GROUP BY 1 HAVING t2.b
+  )
+  FROM t2 GROUP BY 'constant_string';
+} {{}}
+do_execsql_test 6.2.2 {
+  SELECT ( 
+    SELECT c FROM (SELECT t2.b AS c FROM t1) GROUP BY c HAVING t2.b
+  )
+  FROM t2 GROUP BY 'constant_string';
+} {{}}
+
+
 
  
 

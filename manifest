@@ -1,5 +1,5 @@
-C It\sdoes\snot\swork\sto\sdeserialized\sinto\sTEMP,\sso\sdo\snot\sallow\sit.\s\sThe\nsqlite3_deserialize()\sroutine\snow\sreturns\sSQLITE_ERROR\sif\syou\stry.
-D 2021-07-20T02:02:24.771
+C Avoid\sa\smalfunction\sthat\scould\soccur\sif\sthe\ssame\scorrelated\scolumn\sreference\sappears\sin\sboth\sthe\sGROUP\sBY\sand\sthe\sHAVING\sclause\sof\sa\ssub-select.\sdbsqlfuzz\sa779227f721a834df95f4f42d0c31550a1f8b8a2.
+D 2021-07-20T14:57:49.212
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -544,7 +544,7 @@ F src/printf.c 78fabb49b9ac9a12dd1c89d744abdc9b67fd3205e62967e158f78b965a29ec4b
 F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c ea205123fba6bb254666f50b6c220270913eae54eb03d263abaa432c703f5857
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c 0c783511b5f35b37d971dcd653c554d21f74d7cb63a4979991a61d068480c40f
+F src/select.c bc9767ab4972c63ca6def53d7b5c8cc8e4df78b63bf51981ae14a82084089a5b
 F src/shell.c.in 856de2945bb7fdfdeebe7136cf1b59d24618845aa5e5f3937fda7ff37c623b51
 F src/sqlite.h.in 43fcf0fe2af04081f420a906fc020bde1243851ba44b0aa567a27f94bf8c3145
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -640,7 +640,7 @@ F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test ce1aafc86e110685b324e9a763eab4f2a73f737842ec3b687bd965867de90627
 F test/affinity3.test eecb0dabee4b7765a8465439d5e99429279ffba23ca74a7eae270a452799f9e7
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
-F test/aggnested.test 2f65ec8132e0ca896de550b9908094d49ad65a99116a9d79deeb6017604ad4f6
+F test/aggnested.test cc47afa5e11e0d6771a85a4993fa6ff721480ddb53ea538ec3fdbafb720bd505
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 2ecb8bbd52416642e41c9081182a8df05d42c75637afd4488aace78cc4b69e13
 F test/alter.test f53d8a4ecd35f051c07e54a36beec5d0a30d30a9d98bc723f6cde6afbfb3c5ca
@@ -1920,7 +1920,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b5ede6a68891820bd5b6d051b1b641bc1cd49104cad2466db184134d14f58f5b
-R e22cd931ae144bced3e3587611f0e114
-U drh
-Z b4c2ab277c13106aeed921dd3a580a07
+P 18068cc60698d4944a9d682cdf34b14b4d4b32f043f8d584dbf41c2bb5ac6220
+R facd06e35d967824eff05936c4ae18f7
+U dan
+Z 1eb6cf39f57a9c2d1d0141c8c9e6030e
