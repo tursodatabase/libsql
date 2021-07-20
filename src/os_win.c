@@ -272,6 +272,7 @@ struct winFile {
   winShm *pShm;           /* Instance of shared memory on this file */
 #endif
   const char *zPath;      /* Full pathname of this file */
+  unsigned iBusyTimeout;  /* Wait this many millisec on locks */
   int szChunk;            /* Chunk size configured by FCNTL_CHUNK_SIZE */
 #if SQLITE_OS_WINCE
   LPWSTR zDeleteOnClose;  /* Name of file to delete when closing */
@@ -1126,7 +1127,7 @@ static struct win_syscall {
   { "InterlockedCompareExchange", (SYSCALL)InterlockedCompareExchange, 0 },
 
 #define osInterlockedCompareExchange ((LONG(WINAPI*)(LONG \
-        SQLITE_WIN32_VOLATILE*, LONG,LONG))aSyscall[76].pCurrent)
+        SQLITE_WIN32_VOLATILE*,LONG,LONG))aSyscall[76].pCurrent)
 #endif /* defined(InterlockedCompareExchange) */
 
 #if !SQLITE_OS_WINCE && !SQLITE_OS_WINRT && SQLITE_WIN32_USE_UUID
@@ -1154,6 +1155,23 @@ static struct win_syscall {
 
 #define osFlushViewOfFile \
         ((BOOL(WINAPI*)(LPCVOID,SIZE_T))aSyscall[79].pCurrent)
+
+#if !SQLITE_OS_WINRT
+  { "GetFileInformationByHandle", (SYSCALL)GetFileInformationByHandle, 0 },
+#else
+  { "GetFileInformationByHandle", (SYSCALL)0,                  0 },
+#endif
+
+#define osGetFileInformationByHandle ((BOOL(WINAPI*)(HANDLE, \
+        LPBY_HANDLE_FILE_INFORMATION))aSyscall[80].pCurrent)
+
+#if !SQLITE_OS_WINRT
+  { "SleepEx",                 (SYSCALL)SleepEx,                 0 },
+#else
+  { "SleepEx",                 (SYSCALL)0,                       0 },
+#endif
+
+#define osSleepEx ((VOID(WINAPI*)(DWORD,BOOL))aSyscall[81].pCurrent)
 
 }; /* End of the overrideable system calls */
 
@@ -1379,17 +1397,24 @@ void sqlite3_win32_write_debug(const char *zBuf, int nBuf){
 static HANDLE sleepObj = NULL;
 #endif
 
-void sqlite3_win32_sleep(DWORD milliseconds){
+void sqlite3Win32Sleep(DWORD milliseconds, BOOL alertable){
 #if SQLITE_OS_WINRT
   if ( sleepObj==NULL ){
     sleepObj = osCreateEventExW(NULL, NULL, CREATE_EVENT_MANUAL_RESET,
                                 SYNCHRONIZE);
   }
   assert( sleepObj!=NULL );
-  osWaitForSingleObjectEx(sleepObj, milliseconds, FALSE);
+  osWaitForSingleObjectEx(sleepObj, milliseconds, alertable);
 #else
-  osSleep(milliseconds);
+  if( alertable ){
+    osSleepEx(milliseconds, alertable);
+  }else{
+    osSleep(milliseconds);
+  }
 #endif
+}
+void sqlite3_win32_sleep(DWORD milliseconds){
+  sqlite3Win32Sleep(milliseconds, FALSE);
 }
 
 #if SQLITE_MAX_WORKER_THREADS>0 && !SQLITE_OS_WINCE && !SQLITE_OS_WINRT && \
@@ -2154,13 +2179,13 @@ static int winRetryIoerr(int *pnRetry, DWORD *pError){
     return 0;
   }
   if( winIoerrCanRetry1(e) ){
-    sqlite3_win32_sleep(winIoerrRetryDelay*(1+*pnRetry));
+    sqlite3Win32Sleep(winIoerrRetryDelay*(1+*pnRetry), TRUE);
     ++*pnRetry;
     return 1;
   }
 #if defined(winIoerrCanRetry2)
   else if( winIoerrCanRetry2(e) ){
-    sqlite3_win32_sleep(winIoerrRetryDelay*(1+*pnRetry));
+    sqlite3Win32Sleep(winIoerrRetryDelay*(1+*pnRetry), TRUE);
     ++*pnRetry;
     return 1;
   }
@@ -2503,9 +2528,13 @@ static BOOL winceUnlockFile(
 
 /*
 ** Lock a file region.
+**
+** If the pFile->iBusyTimeout value is non-zero and the lock cannot be
+** acquired immediately, then try to block for up to iBusyTimeout milliseconds
+** waiting on the conflicting lock to appear.
 */
 static BOOL winLockFile(
-  LPHANDLE phFile,
+  winFile *pFile,
   DWORD flags,
   DWORD offsetLow,
   DWORD offsetHigh,
@@ -2517,17 +2546,31 @@ static BOOL winLockFile(
   ** NOTE: Windows CE is handled differently here due its lack of the Win32
   **       API LockFile.
   */
-  return winceLockFile(phFile, offsetLow, offsetHigh,
+  return winceLockFile(&pFile->h, offsetLow, offsetHigh,
                        numBytesLow, numBytesHigh);
 #else
   if( osIsNT() ){
+    BOOL bResult;
     OVERLAPPED ovlp;
     memset(&ovlp, 0, sizeof(OVERLAPPED));
     ovlp.Offset = offsetLow;
     ovlp.OffsetHigh = offsetHigh;
-    return osLockFileEx(*phFile, flags, 0, numBytesLow, numBytesHigh, &ovlp);
+    bResult = osLockFileEx(pFile->h, flags, 0, numBytesLow,
+                           numBytesHigh, &ovlp);
+    if( !bResult && pFile->iBusyTimeout>0 ){
+      unsigned iDelay = (unsigned)winIoerrRetryDelay;
+      if( iDelay>0 ){
+        u64 iTotalDelay = 0;
+        do{
+          sqlite3Win32Sleep(iDelay, TRUE); iTotalDelay += iDelay;
+          bResult = osLockFileEx(pFile->h, flags, 0, numBytesLow,
+                                 numBytesHigh, &ovlp);
+        }while( !bResult && iTotalDelay<pFile->iBusyTimeout );
+      }
+    }
+    return bResult;
   }else{
-    return osLockFile(*phFile, offsetLow, offsetHigh, numBytesLow,
+    return osLockFile(pFile->h, offsetLow, offsetHigh, numBytesLow,
                       numBytesHigh);
   }
 #endif
@@ -2673,7 +2716,7 @@ static int winClose(sqlite3_file *id){
   do{
     rc = osCloseHandle(pFile->h);
     /* SimulateIOError( rc=0; cnt=MX_CLOSE_ATTEMPT; ); */
-  }while( rc==0 && ++cnt < MX_CLOSE_ATTEMPT && (sqlite3_win32_sleep(100), 1) );
+  }while( rc==0 && ++cnt<MX_CLOSE_ATTEMPT && (sqlite3Win32Sleep(100,TRUE), 1) );
 #if SQLITE_OS_WINCE
 #define WINCE_DELETION_ATTEMPTS 3
   {
@@ -2689,7 +2732,7 @@ static int winClose(sqlite3_file *id){
         && osGetFileAttributesW(pFile->zDeleteOnClose)!=0xffffffff
         && cnt++ < WINCE_DELETION_ATTEMPTS
     ){
-       sqlite3_win32_sleep(100);  /* Wait a little before trying again */
+       sqlite3Win32Sleep(100, TRUE);  /* Wait a little before trying again */
     }
     sqlite3_free(pFile->zDeleteOnClose);
   }
@@ -3162,7 +3205,7 @@ static int winGetReadLock(winFile *pFile){
     */
     res = winceLockFile(&pFile->h, SHARED_FIRST, 0, 1, 0);
 #else
-    res = winLockFile(&pFile->h, SQLITE_LOCKFILEEX_FLAGS, SHARED_FIRST, 0,
+    res = winLockFile(pFile, SQLITE_LOCKFILEEX_FLAGS, SHARED_FIRST, 0,
                       SHARED_SIZE, 0);
 #endif
   }
@@ -3171,7 +3214,7 @@ static int winGetReadLock(winFile *pFile){
     int lk;
     sqlite3_randomness(sizeof(lk), &lk);
     pFile->sharedLockByte = (short)((lk & 0x7fffffff)%(SHARED_SIZE - 1));
-    res = winLockFile(&pFile->h, SQLITE_LOCKFILE_FLAGS,
+    res = winLockFile(pFile, SQLITE_LOCKFILE_FLAGS,
                       SHARED_FIRST+pFile->sharedLockByte, 0, 1, 0);
   }
 #endif
@@ -3275,7 +3318,7 @@ static int winLock(sqlite3_file *id, int locktype){
    || (locktype==EXCLUSIVE_LOCK && pFile->locktype<=RESERVED_LOCK)
   ){
     int cnt = 3;
-    while( cnt-->0 && (res = winLockFile(&pFile->h, SQLITE_LOCKFILE_FLAGS,
+    while( cnt-->0 && (res = winLockFile(pFile, SQLITE_LOCKFILE_FLAGS,
                                          PENDING_BYTE, 0, 1, 0))==0 ){
       /* Try 3 times to get the pending lock.  This is needed to work
       ** around problems caused by indexing and/or anti-virus software on
@@ -3293,7 +3336,7 @@ static int winLock(sqlite3_file *id, int locktype){
                  pFile->h, cnt, sqlite3ErrName(rc)));
         return rc;
       }
-      if( cnt ) sqlite3_win32_sleep(1);
+      if( cnt ) sqlite3Win32Sleep(1, TRUE);
     }
     gotPendingLock = res;
     if( !res ){
@@ -3317,7 +3360,7 @@ static int winLock(sqlite3_file *id, int locktype){
   */
   if( locktype==RESERVED_LOCK && res ){
     assert( pFile->locktype==SHARED_LOCK );
-    res = winLockFile(&pFile->h, SQLITE_LOCKFILE_FLAGS, RESERVED_BYTE, 0, 1, 0);
+    res = winLockFile(pFile, SQLITE_LOCKFILE_FLAGS, RESERVED_BYTE, 0, 1, 0);
     if( res ){
       newLocktype = RESERVED_LOCK;
     }else{
@@ -3337,7 +3380,7 @@ static int winLock(sqlite3_file *id, int locktype){
   if( locktype==EXCLUSIVE_LOCK && res ){
     assert( pFile->locktype>=SHARED_LOCK );
     res = winUnlockReadLock(pFile);
-    res = winLockFile(&pFile->h, SQLITE_LOCKFILE_FLAGS, SHARED_FIRST, 0,
+    res = winLockFile(pFile, SQLITE_LOCKFILE_FLAGS, SHARED_FIRST, 0,
                       SHARED_SIZE, 0);
     if( res ){
       newLocktype = EXCLUSIVE_LOCK;
@@ -3388,7 +3431,7 @@ static int winCheckReservedLock(sqlite3_file *id, int *pResOut){
     res = 1;
     OSTRACE(("TEST-WR-LOCK file=%p, result=%d (local)\n", pFile->h, res));
   }else{
-    res = winLockFile(&pFile->h, SQLITE_LOCKFILEEX_FLAGS,RESERVED_BYTE,0,1,0);
+    res = winLockFile(pFile, SQLITE_LOCKFILEEX_FLAGS,RESERVED_BYTE,0,1,0);
     if( res ){
       winUnlockFile(&pFile->h, RESERVED_BYTE, 0, 1, 0);
     }
@@ -3525,6 +3568,12 @@ static int winFileControl(sqlite3_file *id, int op, void *pArg){
     case SQLITE_FCNTL_CHUNK_SIZE: {
       pFile->szChunk = *(int *)pArg;
       OSTRACE(("FCNTL file=%p, rc=SQLITE_OK\n", pFile->h));
+      return SQLITE_OK;
+    }
+    case SQLITE_FCNTL_LOCK_TIMEOUT: {
+      int iOld = pFile->iBusyTimeout;
+      pFile->iBusyTimeout = *(int*)pArg;
+      *(int*)pArg = iOld;
       return SQLITE_OK;
     }
     case SQLITE_FCNTL_SIZE_HINT: {
@@ -3804,7 +3853,7 @@ static int winShmSystemLock(
     /* Initialize the locking parameters */
     DWORD dwFlags = LOCKFILE_FAIL_IMMEDIATELY;
     if( lockType == WINSHM_WRLCK ) dwFlags |= LOCKFILE_EXCLUSIVE_LOCK;
-    rc = winLockFile(&pFile->hFile.h, dwFlags, ofst, 0, nByte, 0);
+    rc = winLockFile(&pFile->hFile, dwFlags, ofst, 0, nByte, 0);
   }
 
   if( rc!= 0 ){
@@ -3824,6 +3873,135 @@ static int winShmSystemLock(
 /* Forward references to VFS methods */
 static int winOpen(sqlite3_vfs*,const char*,sqlite3_file*,int,int*);
 static int winDelete(sqlite3_vfs *,const char*,int);
+static int winFullPathname(sqlite3_vfs *,const char *,int,char *);
+static void *winConvertFromUtf8Filename(const char *);
+
+#if !SQLITE_OS_WINRT
+/*
+** This function attempts to query the metadata information for the
+** specified file.  Upon success, SQLITE_OK is returned; otherwise,
+** an appropriate error code is returned.
+*/
+
+static int winGetFileInfo(
+  const char *zFilename,
+  winFile *pFile,
+  LPBY_HANDLE_FILE_INFORMATION pFileInfo
+){
+  int rc = SQLITE_OK;
+  HANDLE hFile = NULL;
+  int lastError = 0;
+  void *zConverted = winConvertFromUtf8Filename(zFilename);
+  if( zConverted==0 ){
+    lastError = osGetLastError();
+    if( pFile ) pFile->lastErrno = lastError;
+    return winLogError(SQLITE_IOERR_NOMEM, lastError,
+                       "winGetFileInfo1", zFilename);
+  }
+  if( osIsNT() ){
+    hFile = osCreateFileW(
+        (LPCWSTR)zConverted, GENERIC_READ,
+        FILE_SHARE_READ|FILE_SHARE_WRITE, NULL,
+        OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL
+    );
+#ifdef SQLITE_WIN32_HAS_ANSI
+  }else{
+    hFile = osCreateFileA(
+        (LPCSTR)zConverted, GENERIC_READ,
+        FILE_SHARE_READ|FILE_SHARE_WRITE, NULL,
+        OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL
+    );
+#endif
+  }
+  sqlite3_free(zConverted);
+  if( hFile==INVALID_HANDLE_VALUE ){
+    lastError = osGetLastError();
+    if( pFile ) pFile->lastErrno = lastError;
+    return winLogError(SQLITE_CANTOPEN, lastError,
+                       "winGetFileInfo2", zFilename);
+  }
+  if( !osGetFileInformationByHandle(hFile, pFileInfo) ){
+    lastError = osGetLastError();
+    if( pFile ) pFile->lastErrno = lastError;
+    rc = winLogError(SQLITE_IOERR_FSTAT, lastError,
+                     "winGetFileInfo3", zFilename);
+  }
+  osCloseHandle(hFile);
+  return rc;
+}
+#endif
+
+/*
+** Returns non-zero if both of the specified file names refer to the same
+** underlying file.  On some sub-platforms, this function may return zero
+** even when both file names refer to the same underlying file; however,
+** it will never return non-zero unless both file names refer to the same
+** underlying file.
+*/
+
+static int winIsSameFile(
+  sqlite3_vfs *pVfs,
+  winFile *pFile,
+  const char *zFilename1,
+  const char *zFilename2,
+  BOOL *pbSame
+){
+  *pbSame = 0; /* initially, assume not the same file */
+
+#if !SQLITE_OS_WINRT
+  {
+    BY_HANDLE_FILE_INFORMATION info1;
+    BY_HANDLE_FILE_INFORMATION info2;
+
+    if( !winGetFileInfo(zFilename1, pFile, &info1)
+     || !winGetFileInfo(zFilename2, pFile, &info2) ){
+      /* wrong file system type?  ok, use fallback. */
+      goto fallback;
+    }
+    if( info1.dwVolumeSerialNumber == info2.dwVolumeSerialNumber
+           && info1.nFileIndexHigh == info2.nFileIndexHigh
+            && info1.nFileIndexLow == info2.nFileIndexLow ){
+      OSTRACE(("SAME pid=%lu, pFile=%p, name1=%s, name2=%s, "
+               "YES (ID), rc=SQLITE_OK\n", osGetCurrentProcessId(),
+               pFile, zFilename1, zFilename2));
+      *pbSame = 1;
+      return SQLITE_OK;
+    }
+  }
+#endif
+
+fallback:
+  {
+    int rc = SQLITE_OK;
+    int nFull = pVfs->mxPathname+1;
+    char *zFull1 = NULL;
+    char *zFull2 = NULL;
+
+    zFull1 = sqlite3MallocZero( nFull );
+    if( zFull1==0 ){
+      rc = SQLITE_IOERR_NOMEM_BKPT;
+      goto done;
+    }
+    zFull2 = sqlite3MallocZero( nFull );
+    if( zFull2==0 ){
+      rc = SQLITE_IOERR_NOMEM_BKPT;
+      goto done;
+    }
+    rc = winFullPathname(pVfs, zFilename1, nFull, zFull1);
+    if( rc!=SQLITE_OK ) goto done;
+    rc = winFullPathname(pVfs, zFilename2, nFull, zFull2);
+    if( rc!=SQLITE_OK ) goto done;
+    *pbSame = sqlite3StrICmp(zFull1, zFull2)==0;
+done:
+    if( zFull2 ) sqlite3_free(zFull2);
+    if( zFull1 ) sqlite3_free(zFull1);
+    OSTRACE(("SAME pid=%lu, pFile=%p, name1=%s, name2=%s, "
+             "%s (NAME), rc=%s\n", osGetCurrentProcessId(),
+             pFile, zFilename1, zFilename2, *pbSame?"YES":"NO",
+             sqlite3ErrName(rc)));
+    return rc;
+  }
+}
 
 /*
 ** Purge the winShmNodeList list of all entries with winShmNode.nRef==0.
@@ -3940,10 +4118,13 @@ static int winOpenSharedMemory(winFile *pDbFd){
   */
   winShmEnterMutex();
   for(pShmNode = winShmNodeList; pShmNode; pShmNode=pShmNode->pNext){
-    /* TBD need to come up with better match here.  Perhaps
-    ** use FILE_ID_BOTH_DIR_INFO Structure.
-    */
-    if( sqlite3StrICmp(pShmNode->zFilename, pNew->zFilename)==0 ) break;
+    BOOL bSame;
+    rc = winIsSameFile(
+        pDbFd->pVfs, pDbFd, pShmNode->zFilename, pNew->zFilename,
+        &bSame
+    );
+    if( rc!=SQLITE_OK ) goto shm_open_err;
+    if( bSame ) break;
   }
   if( pShmNode ){
     sqlite3_free(pNew);
@@ -4085,6 +4266,7 @@ static int winShmLock(
   mask = (u16)((1U<<(ofst+n)) - (1U<<ofst));
   assert( n>1 || mask==(1<<ofst) );
   sqlite3_mutex_enter(pShmNode->mutex);
+  pShmNode->hFile.iBusyTimeout = pDbFd->iBusyTimeout;
   if( flags & SQLITE_SHM_UNLOCK ){
     u16 allMask = 0; /* Mask of locks held by siblings */
 
@@ -4990,7 +5172,7 @@ static int winOpen(
   int flags,                /* Open mode flags */
   int *pOutFlags            /* Status return flags */
 ){
-  HANDLE h;
+  HANDLE h = INVALID_HANDLE_VALUE;
   DWORD lastErrno = 0;
   DWORD dwDesiredAccess;
   DWORD dwShareMode;
@@ -5277,7 +5459,7 @@ static int winOpen(
     pFile->ctrlFlags |= WINFILE_RDONLY;
   }
   if( (flags & SQLITE_OPEN_MAIN_DB)
-   && sqlite3_uri_boolean(zName, "psow", SQLITE_POWERSAFE_OVERWRITE) 
+   && sqlite3_uri_boolean(zName, "psow", SQLITE_POWERSAFE_OVERWRITE)
   ){
     pFile->ctrlFlags |= WINFILE_PSOW;
   }
@@ -5884,7 +6066,7 @@ static int winRandomness(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
 ** Sleep for a little while.  Return the amount of time slept.
 */
 static int winSleep(sqlite3_vfs *pVfs, int microsec){
-  sqlite3_win32_sleep((microsec+999)/1000);
+  sqlite3Win32Sleep((microsec+999)/1000, FALSE);
   UNUSED_PARAMETER(pVfs);
   return ((microsec+999)/1000)*1000;
 }
@@ -6105,7 +6287,7 @@ int sqlite3_os_init(void){
 
   /* Double-check that the aSyscall[] array has been constructed
   ** correctly.  See ticket [bb3a86e890c8e96ab] */
-  assert( ArraySize(aSyscall)==80 );
+  assert( ArraySize(aSyscall)==82 );
 
   /* get memory map allocation granularity */
   memset(&winSysInfo, 0, sizeof(SYSTEM_INFO));
