@@ -1,5 +1,5 @@
-C Avoid\sa\smalfunction\sthat\scould\soccur\sif\sthe\ssame\scorrelated\scolumn\sreference\sappears\sin\sboth\sthe\sGROUP\sBY\sand\sthe\sHAVING\sclause\sof\sa\ssub-select.\sdbsqlfuzz\sa779227f721a834df95f4f42d0c31550a1f8b8a2.
-D 2021-07-20T14:57:49.212
+C Run\sa\s"PRAGMA\squick_check",\sif\snecessary,\son\sthe\smodified\stable\safter\s\nan\sALTER\sTABLE\sADD\sCOLUMN\sto\sverify\sthat\sadded\sNOT\sNULL\sor\sCHECK\sconstraints\nare\ssatisfied\sby\sexisting\srows.\s\sAbort\sthe\sADD\sCOLUMN\sif\snot.\n[forum:/forumpost/c04814903d6ec4f7|Forum\spost\sc04814903d6ec4f7].
+D 2021-07-20T16:07:15.775
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -478,7 +478,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
-F src/alter.c 774a2a175ec747b55046ec62f5c1208d730ee22b10bdad5f182591fa247946a8
+F src/alter.c 8b6d394cca07e1aa0bd9364111098017dee578e2edad6ce6eb6a0cf78738413c
 F src/analyze.c 01c6c6765cb4d40b473b71d85535093730770bb186f2f473abac25f07fcdee5c
 F src/attach.c a514e81758ba7b3a3a0501faf70af6cfc509de8810235db726cfc9f25165e929
 F src/auth.c 08954fdc4cc2da5264ba5b75cfd90b67a6fc7d1710a02ccf917c38eadec77853
@@ -538,7 +538,7 @@ F src/pcache.c 385ff064bca69789d199a98e2169445dc16e4291fa807babd61d4890c3b34177
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c 388304fd2d91c39591080b5e0f3c62cfba87db20370e7e0554062bfb29740e9f
 F src/pragma.c 9fe75aa29e8706a2cf6b9c1600ac05a2efc55c44ce719b65aa45d10ff58acc9d
-F src/pragma.h 8dc78ab7e9ec6ce3ded8332810a2066f1ef6267e2e03cd7356ee00276125c6cf
+F src/pragma.h a11b4798f9c49f156f130e1f7041a9fcc9d316a64f3501b6013acdd2e4c6f549
 F src/prepare.c 0d53d20532aada295c1690792a125adbd6435f5ce703ff0adf1b9b3605238b67
 F src/printf.c 78fabb49b9ac9a12dd1c89d744abdc9b67fd3205e62967e158f78b965a29ec4b
 F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
@@ -645,7 +645,7 @@ F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 2ecb8bbd52416642e41c9081182a8df05d42c75637afd4488aace78cc4b69e13
 F test/alter.test f53d8a4ecd35f051c07e54a36beec5d0a30d30a9d98bc723f6cde6afbfb3c5ca
 F test/alter2.test a966ccfcddf9ce0a4e0e6ff1aca9e6e7948e0e242cd7e43fc091948521807687
-F test/alter3.test e487958dec7932453e0b83baf21d6b1e71d5e7d9a55bc20eadfa62a51ddffc29
+F test/alter3.test ffc4ab29ce78a3517a66afd69b2730667e3471622509c283b2bd4c46f680fba3
 F test/alter4.test 716caa071dd8a3c6d57225778d15d3c3cbf5e34b2e84ae44199aeb2bbf50a707
 F test/alterauth.test 63442ba61ceb0c1eeb63aac1f4f5cebfa509d352276059d27106ae256bafc959
 F test/alterauth2.test 381b1ab603c9ef96314a3158528ea17f7964449385a28eeaf8191120b2e24a8d
@@ -1853,7 +1853,7 @@ F tool/mkmsvcmin.tcl 6ecab9fe22c2c8de4d82d4c46797bda3d2deac8e763885f5a38d0c44a89
 F tool/mkopcodec.tcl d1b6362bd3aa80d5520d4d6f3765badf01f6c43c
 F tool/mkopcodeh.tcl 130b88697da6ec5b89b41844d955d08fb62c2552e889dec8c7bcecb28d8f50bd
 F tool/mkopts.tcl 680f785fdb09729fd9ac50632413da4eadbdf9071535e3f26d03795828ab07fa
-F tool/mkpragmatab.tcl ae5585ae76ca26e4d6ccd5ea9cdebaf5efefb318bf989497a0e846cd711d9ab1
+F tool/mkpragmatab.tcl 7f6db47d1995bc08247255622524567b2ab8962d98063f8aef97e35c3c54e3b8
 F tool/mkshellc.tcl 5fe7e518112b262e25726f248c0f33dd153192867453984b6af0a76a88e97cb2
 F tool/mksourceid.c 36aa8020014aed0836fd13c51d6dc9219b0df1761d6b5f58ff5b616211b079b9
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
@@ -1920,7 +1920,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 18068cc60698d4944a9d682cdf34b14b4d4b32f043f8d584dbf41c2bb5ac6220
-R facd06e35d967824eff05936c4ae18f7
-U dan
-Z 1eb6cf39f57a9c2d1d0141c8c9e6030e
+P 1e35cc6d5c2f563c6bb163bb150d7bc6ede4c993efa828af1face3261bf65a2c 48434ad3fa9504c063d812d119bc8f622548fd02b3d478ff247b11474c4ce5db
+R 6d35c00da4d952e8a1f7a6cbfeee134e
+T +closed 48434ad3fa9504c063d812d119bc8f622548fd02b3d478ff247b11474c4ce5db
+U drh
+Z 90f3914d2224c6dcb594ff0c1dfca96d
