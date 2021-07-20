@@ -830,7 +830,9 @@ static void join_all_threads_x(
   Thread *p;
   Thread *pNext;
   for(p=pThreads->pThread; p; p=pNext){
+#ifndef _WIN32
     void *ret;
+#endif
     int rc;
     pNext = p->pNext;
 
