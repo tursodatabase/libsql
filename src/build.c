@@ -1769,7 +1769,6 @@ void sqlite3AddCheckConstraint(
   }else
 #endif
   {
-    pParse->bDiscardCheck = 1;
     sqlite3ExprDelete(pParse->db, pCheckExpr);
   }
 }

@@ -1,5 +1,5 @@
-C Demonstration\scode\sto\sshow\show\sNOT\sNULL\sand\sCHECK\sconstraints\scan\sbe\nverified\safter\san\sALTER\sTABLE\sADD\sCOLUMN.
-D 2021-07-20T07:35:07.295
+C Fix\sissues\sin\sthe\snew\sADD\sCOLUMN\sconstraint\schecking.\s\sAdd\spreliminary\ntest\scases.
+D 2021-07-20T08:23:54.879
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -478,7 +478,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
-F src/alter.c 1589ea8a5dcef74e12b49182928062cbd2958cc223004bb6d534e44521c59d0a
+F src/alter.c 8b6d394cca07e1aa0bd9364111098017dee578e2edad6ce6eb6a0cf78738413c
 F src/analyze.c 01c6c6765cb4d40b473b71d85535093730770bb186f2f473abac25f07fcdee5c
 F src/attach.c a514e81758ba7b3a3a0501faf70af6cfc509de8810235db726cfc9f25165e929
 F src/auth.c 08954fdc4cc2da5264ba5b75cfd90b67a6fc7d1710a02ccf917c38eadec77853
@@ -488,7 +488,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c e204a9c8fb4fe5dbb910a863ba487f4af9b5c501254ec4ccbfcdd6b1f65b7fb4
 F src/btree.h 74d64b8f28cfa4a894d14d4ed64fa432cd697b98b61708d4351482ae15913e22
 F src/btreeInt.h 7bc15a24a02662409ebcd6aeaa1065522d14b7fda71573a2b0568b458f514ae0
-F src/build.c 602ab2f5b49df357a70ac4ff64bc6cc23effd97a6ae16b60e947f5ab25866f44
+F src/build.c a27511863001ba088afd5e19efc9c37ea660983bd6ddf012def10f6cc4456a01
 F src/callback.c d0b853dd413255d2e337b34545e54d888ea02f20da5ad0e63585b389624c4a6c
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 8159d5f706551861c18ec6c8f6bdf105e15ea00367f05d9ab65d31a1077facc1
@@ -549,7 +549,7 @@ F src/shell.c.in 856de2945bb7fdfdeebe7136cf1b59d24618845aa5e5f3937fda7ff37c623b5
 F src/sqlite.h.in 43fcf0fe2af04081f420a906fc020bde1243851ba44b0aa567a27f94bf8c3145
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h e97f4e9b509408fea4c4e9bef5a41608dfac343b4d3c7a990dedde1e19af9510
-F src/sqliteInt.h 0982664df2e04968d9588535efa0f3987a7f23fb6d6872f0a7a0c5fa97e53933
+F src/sqliteInt.h b3762f49d8b6b4bf7bf30d154f007d6f9421c86343042d7a246a79988d1fec1a
 F src/sqliteLimit.h d7323ffea5208c6af2734574bae933ca8ed2ab728083caa117c9738581a31657
 F src/status.c 4b8bc2a6905163a38b739854a35b826c737333fab5b1f8e03fa7eb9a4799c4c1
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -645,7 +645,7 @@ F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 2ecb8bbd52416642e41c9081182a8df05d42c75637afd4488aace78cc4b69e13
 F test/alter.test f53d8a4ecd35f051c07e54a36beec5d0a30d30a9d98bc723f6cde6afbfb3c5ca
 F test/alter2.test a966ccfcddf9ce0a4e0e6ff1aca9e6e7948e0e242cd7e43fc091948521807687
-F test/alter3.test e487958dec7932453e0b83baf21d6b1e71d5e7d9a55bc20eadfa62a51ddffc29
+F test/alter3.test ffc4ab29ce78a3517a66afd69b2730667e3471622509c283b2bd4c46f680fba3
 F test/alter4.test 716caa071dd8a3c6d57225778d15d3c3cbf5e34b2e84ae44199aeb2bbf50a707
 F test/alterauth.test 63442ba61ceb0c1eeb63aac1f4f5cebfa509d352276059d27106ae256bafc959
 F test/alterauth2.test 381b1ab603c9ef96314a3158528ea17f7964449385a28eeaf8191120b2e24a8d
@@ -1920,10 +1920,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 18068cc60698d4944a9d682cdf34b14b4d4b32f043f8d584dbf41c2bb5ac6220
-R 32477a4a8d73756ec29530de57bdffab
-T *branch * add-column-constraint-check
-T *sym-add-column-constraint-check *
-T -sym-trunk *
+P 039f540373b03af9e0c87499e5e0423eb093d1d343829282a5ac1de2d600b881
+R a9df6797ac98d60db9408d8a0375d0a2
 U drh
-Z 445808b8851b3290a628722ea679d598
+Z 8c3fc1d16a03a8cd3196e7a282e45db6

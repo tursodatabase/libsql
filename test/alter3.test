@@ -13,8 +13,6 @@
 # file format change that may be used in the future to implement
 # "ALTER TABLE ... ADD COLUMN".
 #
-# $Id: alter3.test,v 1.11 2008/03/19 00:21:31 drh Exp $
-#
 
 set testdir [file dirname $argv0]
 
@@ -394,5 +392,52 @@ do_test alter3-8.2 {
     SELECT sql FROM sqlite_master WHERE name = 't4';
   }
 } [list $::sql]
+
+# 2021-07-20:  Add support for detecting CHECK and NOT NULL constraint
+# violations in ALTER TABLE ADD COLUMN
+#
+reset_db
+do_execsql_test alter3-9.1 {
+  CREATE TABLE t1(a,b);
+  INSERT INTO t1 VALUES(1, 2), ('null!',NULL), (3,4);
+} {}
+do_catchsql_test alter3-9.2 {
+  ALTER TABLE t1 ADD COLUMN c CHECK(a!=1);
+} {1 {CHECK constraint failed}}
+do_catchsql_test alter3-9.3 {
+  ALTER TABLE t1 ADD COLUMN c CHECK(a!=3);
+} {1 {CHECK constraint failed}}
+do_catchsql_test alter3-9.4 {
+  ALTER TABLE t1 ADD COLUMN c CHECK(a!=2);
+} {0 {}}
+do_catchsql_test alter3-9.5 {
+  ALTER TABLE t1 ADD COLUMN d AS (b+1) NOT NULL;
+} {1 {NOT NULL constraint failed}}
+do_catchsql_test alter3-9.6 {
+  ALTER TABLE t1 ADD COLUMN d AS (b+1) NOT NULL CHECK(a!=1);
+} {1 {CHECK constraint failed}}
+do_catchsql_test alter3-9.7 {
+  ALTER TABLE t1 ADD COLUMN d AS (b+1) NOT NULL CHECK(a!=3);
+} {1 {NOT NULL constraint failed}}
+
+do_execsql_test alter3-9.10 {
+  CREATE TEMP TABLE t0(m,n);
+  INSERT INTO t0 VALUES(1, 2), ('null!',NULL), (3,4);
+  ATTACH ':memory:' AS aux1;
+  CREATE TABLE aux1.t2(x,y);
+  INSERT INTO t2 VALUES(1, 2), ('null!',NULL), (3,4);
+} {}
+do_catchsql_test alter3-9.11 {
+  ALTER TABLE t0 ADD COLUMN xtra1 AS (n+1) NOT NULL CHECK(m!=1);
+} {1 {CHECK constraint failed}}
+do_catchsql_test alter3-9.12 {
+  ALTER TABLE t0 ADD COLUMN xtra1 AS (n+1) NOT NULL CHECK(m!=3);
+} {1 {NOT NULL constraint failed}}
+do_catchsql_test alter3-9.13 {
+  ALTER TABLE t2 ADD COLUMN xtra1 AS (y+1) NOT NULL CHECK(x!=1);
+} {1 {CHECK constraint failed}}
+do_catchsql_test alter3-9.14 {
+  ALTER TABLE t2 ADD COLUMN xtra1 AS (y+1) NOT NULL CHECK(x!=3);
+} {1 {NOT NULL constraint failed}}
 
 finish_test

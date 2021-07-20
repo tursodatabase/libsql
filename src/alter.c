@@ -446,16 +446,16 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
     renameReloadSchema(pParse, iDb, INITFLAG_AlterRename);
 
     /* Verify that constraints are still satisfied */
-    if( pParse->bDiscardCheck
+    if( pNew->pCheck!=0
      || (pCol->notNull && (pCol->colFlags & COLFLAG_GENERATED)!=0)
     ){
       sqlite3NestedParse(pParse,
         "SELECT CASE WHEN quick_check GLOB 'CHECK*'"
         " THEN raise(ABORT,'CHECK constraint failed')"
-        " WHEN quick_check GLOB 'NULL*'"
-        " THEN raise(ABORT,'NOT NULL constraint failed')"
+        " ELSE raise(ABORT,'NOT NULL constraint failed')"
         " END"
-        "  FROM pragma_quick_check(\"%w\",\"%w\")",
+        "  FROM pragma_quick_check(\"%w\",\"%w\")"
+        " WHERE quick_check GLOB 'CHECK*' OR quick_check GLOB 'NULL*'",
         zTab, zDb
       );
     }
