@@ -1,5 +1,5 @@
-C Run\sa\s"PRAGMA\squick_check",\sif\snecessary,\son\sthe\smodified\stable\safter\s\nan\sALTER\sTABLE\sADD\sCOLUMN\sto\sverify\sthat\sadded\sNOT\sNULL\sor\sCHECK\sconstraints\nare\ssatisfied\sby\sexisting\srows.\s\sAbort\sthe\sADD\sCOLUMN\sif\snot.\n[forum:/forumpost/c04814903d6ec4f7|Forum\spost\sc04814903d6ec4f7].
-D 2021-07-20T16:07:15.775
+C Improved\srobustness\sof\scursor\srenumbering\sin\sthe\sUNION\sALL\sflattener\nwhen\soperating\son\svector\sassignments\sof\san\sUPDATE\sFROM.\ndbsqlfuzz\s417d2b053b9b3c9edaf22dd515564f06999e029c
+D 2021-07-21T15:42:05.099
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -544,7 +544,7 @@ F src/printf.c 78fabb49b9ac9a12dd1c89d744abdc9b67fd3205e62967e158f78b965a29ec4b
 F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c ea205123fba6bb254666f50b6c220270913eae54eb03d263abaa432c703f5857
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c bc9767ab4972c63ca6def53d7b5c8cc8e4df78b63bf51981ae14a82084089a5b
+F src/select.c 3896009f30352985b28511a0c4d7dbb77ba418e91db80ab7745a7f6dcbe1031f
 F src/shell.c.in 856de2945bb7fdfdeebe7136cf1b59d24618845aa5e5f3937fda7ff37c623b51
 F src/sqlite.h.in 43fcf0fe2af04081f420a906fc020bde1243851ba44b0aa567a27f94bf8c3145
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1920,8 +1920,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1e35cc6d5c2f563c6bb163bb150d7bc6ede4c993efa828af1face3261bf65a2c 48434ad3fa9504c063d812d119bc8f622548fd02b3d478ff247b11474c4ce5db
-R 6d35c00da4d952e8a1f7a6cbfeee134e
-T +closed 48434ad3fa9504c063d812d119bc8f622548fd02b3d478ff247b11474c4ce5db
+P e3794997c34f03db2a4ac0ca5b76727d0e031778d92b08eaaf9631689ec3e56d
+R 1d0984f765e8e6292164e6d1f063ec4e
 U drh
-Z 90f3914d2224c6dcb594ff0c1dfca96d
+Z a6d780ffb6dd6089f7ed6e79e41c67b8

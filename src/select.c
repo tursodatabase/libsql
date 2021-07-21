@@ -3754,10 +3754,10 @@ static void recomputeColumnsUsed(
 ** new cursor number assigned, set an entry in the aCsrMap[] array 
 ** to map the old cursor number to the new:
 **
-**     aCsrMap[iOld] = iNew;
+**     aCsrMap[iOld+1] = iNew;
 **
 ** The array is guaranteed by the caller to be large enough for all
-** existing cursor numbers in pSrc.
+** existing cursor numbers in pSrc.  aCsrMap[0] is the array size.
 **
 ** If pSrc contains any sub-selects, call this routine recursively
 ** on the FROM clause of each such sub-select, with iExcept set to -1.
@@ -3773,10 +3773,11 @@ static void srclistRenumberCursors(
   for(i=0, pItem=pSrc->a; i<pSrc->nSrc; i++, pItem++){
     if( i!=iExcept ){
       Select *p;
-      if( !pItem->fg.isRecursive || aCsrMap[pItem->iCursor]==0 ){
-        aCsrMap[pItem->iCursor] = pParse->nTab++;
+      assert( pItem->iCursor < aCsrMap[0] );
+      if( !pItem->fg.isRecursive || aCsrMap[pItem->iCursor+1]==0 ){
+        aCsrMap[pItem->iCursor+1] = pParse->nTab++;
       }
-      pItem->iCursor = aCsrMap[pItem->iCursor];
+      pItem->iCursor = aCsrMap[pItem->iCursor+1];
       for(p=pItem->pSelect; p; p=p->pPrior){
         srclistRenumberCursors(pParse, aCsrMap, p->pSrc, -1);
       }
@@ -3785,17 +3786,27 @@ static void srclistRenumberCursors(
 }
 
 /*
+** *piCursor is a cursor number.  Change it if it needs to be mapped.
+*/
+static void renumberCursorDoMapping(Walker *pWalker, int *piCursor){
+  int *aCsrMap = pWalker->u.aiCol;
+  int iCsr = *piCursor;
+  if( iCsr < aCsrMap[0] && aCsrMap[iCsr+1]>0 ){
+    *piCursor = aCsrMap[iCsr+1];
+  }
+}
+
+/*
 ** Expression walker callback used by renumberCursors() to update
 ** Expr objects to match newly assigned cursor numbers.
 */
 static int renumberCursorsCb(Walker *pWalker, Expr *pExpr){
-  int *aCsrMap = pWalker->u.aiCol;
   int op = pExpr->op;
-  if( (op==TK_COLUMN || op==TK_IF_NULL_ROW) && aCsrMap[pExpr->iTable] ){
-    pExpr->iTable = aCsrMap[pExpr->iTable];
+  if( op==TK_COLUMN || op==TK_IF_NULL_ROW ){
+    renumberCursorDoMapping(pWalker, &pExpr->iTable);
   }
-  if( ExprHasProperty(pExpr, EP_FromJoin) && aCsrMap[pExpr->iRightJoinTable] ){
-    pExpr->iRightJoinTable = aCsrMap[pExpr->iRightJoinTable];
+  if( ExprHasProperty(pExpr, EP_FromJoin) ){
+    renumberCursorDoMapping(pWalker, &pExpr->iRightJoinTable);
   }
   return WRC_Continue;
 }
@@ -4139,7 +4150,8 @@ static int flattenSubquery(
 
     if( pSrc->nSrc>1 ){
       if( pParse->nSelect>500 ) return 0;
-      aCsrMap = sqlite3DbMallocZero(db, pParse->nTab*sizeof(int));
+      aCsrMap = sqlite3DbMallocZero(db, (pParse->nTab+1)*sizeof(int));
+      if( aCsrMap ) aCsrMap[0] = pParse->nTab;
     }
   }
 
