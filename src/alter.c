@@ -2174,6 +2174,12 @@ void sqlite3AlterDropColumn(Parse *pParse, SrcList *pSrc, Token *pName){
         nField++;
       }
     }
+    if( nField==0 ){
+      /* dbsqlfuzz 5f09e7bcc78b4954d06bf9f2400d7715f48d1fef */
+      pParse->nMem++;
+      sqlite3VdbeAddOp2(v, OP_Null, 0, reg+1);
+      nField = 1;
+    }
     sqlite3VdbeAddOp3(v, OP_MakeRecord, reg+1, nField, regRec);
     if( pPk ){
       sqlite3VdbeAddOp4Int(v, OP_IdxInsert, iCur, regRec, reg+1, pPk->nKeyCol);
