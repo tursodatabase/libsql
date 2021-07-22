@@ -1507,7 +1507,7 @@ static int walthread6_walhook(
   return rc;
 }
 
-static char *walthread6_thread(int iTid, void *pArg){
+static char *contention1_thread(int iTid, void *pArg){
   Error err = {0};
   Sqlite db = {0};
   int nBlk = 0;
@@ -1548,15 +1548,35 @@ static char *walthread6_thread(int iTid, void *pArg){
   closedb(&err, &db);
   print_and_free_err(&err);
   return sqlite3_mprintf(
-      "%d transactions (%d busy) in %d blocks, max-wal-size=%d frames",
-      res.nInsert, res.nBusy, nBlk, res.nMaxFrame
+      "%d transactions in %d runs (%d busy), max-wal-size=%d frames",
+      res.nInsert, nBlk, res.nBusy, res.nMaxFrame
   );
 }
 
 /*
+** Test case "contention1".
+**
+** Start with a database in wal mode containing a single table. Then run
+** two threads in a loop as follows:
+**
+**   while( not-finished ){
+**     BEGIN IMMEDIATE;
+**       INSERT INTO tbl ...
+**       sleep( 10ms );
+**     COMMIT;
+**     sleep( 1ms );
+**   }
 ** 
+** Each thread is configured with sqlite3_busy_timeout(1000ms). Each 
+** thread reports:
+**
+**   * the number of successful inserts,
+**   * the number of runs the inserts are separated into (a run is a
+**     series of contiguous inserts not interrupted by an insert from
+**     the other thread), and
+**   * the number of SQLITE_BUSY errors.
 */
-static void walthread6(int nMs){
+static void contention1(int nMs){
   Error err = {0};
   Sqlite db = {0};
   Threadset threads = {0};
@@ -1574,7 +1594,7 @@ static void walthread6(int nMs){
 
   setstoptime(&err, nMs);
   for(i=0; i<nThread; i++){
-    launch_thread(&err, &threads, walthread6_thread, 0);
+    launch_thread(&err, &threads, contention1_thread, 0);
   }
   join_all_threads(&err, &threads);
 
@@ -1602,7 +1622,7 @@ int main(int argc, char **argv){
     { walthread4, "walthread4", 20000 },
     { walthread5, "walthread5",  1000 },
 
-    { walthread6, "walthread6", 5000 },
+    { contention1, "contention1", 10000 },
     
     { cgt_pager_1,      "cgt_pager_1", 0 },
     { dynamic_triggers, "dynamic_triggers", 20000 },

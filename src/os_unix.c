@@ -4940,6 +4940,7 @@ static int unixShmLock(
 #ifdef SQLITE_ENABLE_SETLK_TIMEOUT
   int bRetry;
   struct timespec sTimespec;
+  memset(&sTimespec, 0, sizeof(sTimespec));
 #endif
 
   assert( pShmNode==pDbFd->pInode->pShmNode );
@@ -4974,19 +4975,6 @@ static int unixShmLock(
       && (ofst!=0 || (p->exclMask|p->sharedMask)<3)
       && (ofst<3  || (p->exclMask|p->sharedMask)<(1<<ofst))
   ));
-
-  if( pDbFd->iBusyTimeout ){
-    struct timeval tm;
-    memset(&sTimespec, 0, sizeof(sTimespec));
-    gettimeofday(&tm, 0);
-    TIMEVAL_TO_TIMESPEC(&tm, &sTimespec);
-    sTimespec.tv_sec += pDbFd->iBusyTimeout / 1000;
-    sTimespec.tv_nsec += (pDbFd->iBusyTimeout % 1000) * 1000000;
-    if( sTimespec.tv_nsec>(1000*1000000) ){
-      sTimespec.tv_sec++;
-      sTimespec.tv_nsec -= (1000*1000000);
-    }
-  }
 #endif
 
   mask = (1<<(ofst+n)) - (1<<ofst);
@@ -5081,13 +5069,25 @@ static int unixShmLock(
     if( bRetry ){
       int prc;
       assert( rc==SQLITE_BUSY );
+
+      /* If the timeout is still zero, calculate it now. */
+      if( sTimespec.tv_sec==0 ){
+        static const sqlite3_int64 unixEpoch = 24405875*(sqlite3_int64)8640000;
+        i64 iAbs;
+        pDbFd->pVfs->xCurrentTimeInt64(pDbFd->pVfs, &iAbs);
+        iAbs -= unixEpoch;
+        iAbs += pDbFd->iBusyTimeout;
+        memset(&sTimespec, 0, sizeof(sTimespec));
+        sTimespec.tv_sec = iAbs / 1000;
+        sTimespec.tv_nsec = (iAbs % 1000) * 1000000;
+      }
+
       prc = pthread_cond_timedwait(
           &pShmNode->shmcond, &pShmNode->shmmutex, &sTimespec
       );
       if( prc==0 ){
         rc = SQLITE_OK;
       }else{
-        /* printf("prc=%d (%s)\n", prc, strerror(prc)); */
         bRetry = 0;
       }
     }

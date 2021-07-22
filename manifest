@@ -1,5 +1,5 @@
-C Add\sin-process\sblocking\slocks\sto\sos_win.c\susing\sa\ssimilar\stechnique.
-D 2021-07-20T21:02:43.412
+C Fix\sa\sproblem\sin\sthe\snew\sos_unix.c\scode.\sRefine\sthe\sthreadtest3\stest\scase\ssome.
+D 2021-07-22T10:44:31.628
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -528,7 +528,7 @@ F src/os.c 59ed1f503347e8b5434c0ce7d7d0f02a3f24a72fea8b26d0bba2de8dfaef778b
 F src/os.h 26890f540b475598cd9881dcc68931377b8d429d3ea3e2eeb64470cde64199f8
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
-F src/os_unix.c aea96704db0860b61ad95272bd9cb3fc3a4910e6d68506cc6c48d5d8f7922d0b
+F src/os_unix.c b28ab4bc1320fde00495f5dce41544fc7de9f5b801f82afe3b1429614f487ed8
 F src/os_win.c 03017ffbfa230d833421667a02edca8baab76ff8446533e796206a04c618b2d6
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 95c255256b13827caf038c8f963d334784073f38ab6ef9d70371d9d04f3c43e0
@@ -1465,7 +1465,7 @@ F test/thread2.test f35d2106452b77523b3a2b7d1dcde2e5ee8f9e46
 F test/thread_common.tcl 334639cadcb9f912bf82aa73f49efd5282e6cadd
 F test/threadtest1.c 6029d9c5567db28e6dc908a0c63099c3ba6c383b
 F test/threadtest2.c a70a8e94bef23339d34226eb9521015ef99f4df8
-F test/threadtest3.c 7d68734b4a1697f851db18c79ae5182909deed80f44205c7d2b7bed5059a8d59
+F test/threadtest3.c 9cada9dfdc405310f8f3802e54a45e1d85449f0a15ac081e05f175c1386c82f1
 F test/threadtest4.c c1e67136ceb6c7ec8184e56ac61db28f96bd2925
 F test/threadtest5.c 9b4d782c58d8915d7e955ff8051f3d03628bda0d33b82971ea8c0f2f2808c421
 F test/time-wordcount.sh 8e0b0f8109367827ad5d58f5cc849705731e4b90
@@ -1920,7 +1920,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 85fd18d7a2ea96d40fc1d59778ad5eabd0a42f775c417ece183b230eea57a993
-R 86dd5c706e5b2d8a1aff71102b4d56d3
+P b67c157fd89f73078e3bf4e3d6e8d77fa59ef1ec5c3a9d0e3af955362d751960
+R 969567a5ddcecbed0f31287f4ee2f6dc
 U dan
-Z e4f62272e7587bffc54dda28167a17c7
+Z 94f6a6af08448cd4cddc3bdd1340b73f
