@@ -1272,6 +1272,7 @@ void sqlite3StartTable(
 
   /* If an error occurs, we jump here */
 begin_table_error:
+  pParse->checkSchema = 1;
   sqlite3DbFree(db, zName);
   return;
 }

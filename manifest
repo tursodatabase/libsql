@@ -1,5 +1,5 @@
-C Fix\sALTER\sTABLE\sDROP\sCOLUMN\sso\sthat\sit\sgenerates\svalid\sbytecode\seven\swhen\noperating\son\sa\scorrupt\sdatabase\sand\susing\sPRAGMA\swritable_schema=ON.\ndbsqlfuzz\s5f09e7bcc78b4954d06bf9f2400d7715f48d1fef
-D 2021-07-22T18:22:51.707
+C Set\sthe\scheckSchema\sflag\sif\sa\sCREATE\sTABLE\sparse\sfails\sbecause\sthe\stable\nalready\sexists,\sto\sensure\sthat\sthe\stable\swas\snot\spreviously\sdeleted\sby\nsome\sother\sconnection.
+D 2021-07-22T21:11:06.648
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -488,7 +488,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c e204a9c8fb4fe5dbb910a863ba487f4af9b5c501254ec4ccbfcdd6b1f65b7fb4
 F src/btree.h 74d64b8f28cfa4a894d14d4ed64fa432cd697b98b61708d4351482ae15913e22
 F src/btreeInt.h 7bc15a24a02662409ebcd6aeaa1065522d14b7fda71573a2b0568b458f514ae0
-F src/build.c a27511863001ba088afd5e19efc9c37ea660983bd6ddf012def10f6cc4456a01
+F src/build.c 9978caf1e5c6c82d04d85e290d46979abc2219fb79bcd970258d1ebe368d184e
 F src/callback.c d0b853dd413255d2e337b34545e54d888ea02f20da5ad0e63585b389624c4a6c
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 8159d5f706551861c18ec6c8f6bdf105e15ea00367f05d9ab65d31a1077facc1
@@ -1920,7 +1920,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1f6796044008e6f3a61bcf390c0c7eb31947e971f0edada74e7a3a211f8ae76a
-R 7315df7a3ffb1a7d3694104258ba6a80
+P b65f4f763979ee9e0b943c787609ea22d6f7e01d41dfc1e084ec50a085a3550c
+R ed9a1584f4d75ade417ceb251baf5a51
 U drh
-Z 1036f3ec1711682b3c2317c34f22e66c
+Z f439f5ab1be78d6d001ae417ae6fc683
