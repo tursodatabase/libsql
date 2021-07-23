@@ -1,5 +1,5 @@
-C Merge\srecent\senhancements\son\strunk\sinto\sthe\swin-blocking-locks\sbranch.
-D 2021-07-23T14:53:09.233
+C Merge\sthe\s".connection"\sCLI\senhancement\sfrom\strunk.
+D 2021-07-23T19:26:06.314
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -545,7 +545,7 @@ F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c 047a822844cea769f6fdd8418a335dd4bcd8b75ab5e264f2506a0804f869b562
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 3896009f30352985b28511a0c4d7dbb77ba418e91db80ab7745a7f6dcbe1031f
-F src/shell.c.in 856de2945bb7fdfdeebe7136cf1b59d24618845aa5e5f3937fda7ff37c623b51
+F src/shell.c.in dc889872292ce143ab43080e7eb48b95f9b13beabf85ae729388a6b9ee08bab7
 F src/sqlite.h.in 43fcf0fe2af04081f420a906fc020bde1243851ba44b0aa567a27f94bf8c3145
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h e97f4e9b509408fea4c4e9bef5a41608dfac343b4d3c7a990dedde1e19af9510
@@ -1920,7 +1920,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3249a6a38d9c86d45d5d04b32d552f306d12fd4d3c94d2efed192104c0c3948a 91bcb9621529b58d28e91a2763eb9eef3951400d5eaef105073258f3dd331872
-R 98d111fbbc918b923c6ed746e9c23fad
+P 9ecad2f8c6ee5ce3d8128d646d7de6acb1c8dae1d688bbd0eb3233b364bc9ca4 54eaf076c05887157179459ab39c2556953f6fef9c1b14f17a8aa74087da3023
+R 0830ed2cdc1ea25ffb6b0cb306a449b5
 U drh
-Z 8c10d6a60485e7ed9fa28339d1e50632
+Z 2fec14357d79aa55a2bf5b767c0d5533
