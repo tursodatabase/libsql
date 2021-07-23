@@ -474,8 +474,8 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
       break;
     }
     case TK_TRUEFALSE: {
-      sqlite3TreeViewLine(pView,
-         sqlite3ExprTruthValue(pExpr) ? "TRUE" : "FALSE");
+      sqlite3TreeViewLine(pView,"%s%s",
+         sqlite3ExprTruthValue(pExpr) ? "TRUE" : "FALSE", zFlgs);
       break;
     }
 #ifndef SQLITE_OMIT_BLOB_LITERAL

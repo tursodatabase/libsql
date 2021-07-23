@@ -2209,11 +2209,11 @@ SHELL_SRC = \
 	$(TOP)\src\shell.c.in \
 	$(TOP)\ext\misc\appendvfs.c \
 	$(TOP)\ext\misc\completion.c \
-        $(TOP)\ext\misc\decimal.c \
+	$(TOP)\ext\misc\decimal.c \
 	$(TOP)\ext\misc\fileio.c \
-        $(TOP)\ext\misc\ieee754.c \
-        $(TOP)\ext\misc\regexp.c \
-        $(TOP)\ext\misc\series.c \
+	$(TOP)\ext\misc\ieee754.c \
+	$(TOP)\ext\misc\regexp.c \
+	$(TOP)\ext\misc\series.c \
 	$(TOP)\ext\misc\shathree.c \
 	$(TOP)\ext\misc\uint.c \
 	$(TOP)\ext\expert\sqlite3expert.c \
@@ -2586,6 +2586,17 @@ rbu.exe:	$(TOP)\ext\rbu\rbu.c $(TOP)\ext\rbu\sqlite3rbu.c $(SQLITE3C) $(SQLITE3H
 	$(LTLINK) $(NO_WARN) -DSQLITE_ENABLE_RBU \
 		$(TOP)\ext\rbu\rbu.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
+THREADTEST3_SRC = \
+  $(TOP)\test\threadtest3.c \
+  $(TOP)\test\tt3_checkpoint.c \
+  $(TOP)\test\tt3_index.c \
+  $(TOP)\test\tt3_vacuum.c \
+  $(TOP)\test\tt3_stress.c \
+  $(TOP)\test\tt3_lookaside1.c
+
+threadtest3.exe: $(THREADTEST3_SRC) $(TOP)\src\test_multiplex.c $(SQLITE3C) $(SQLITE3H)
+	$(LTLINK) $(NO_WARN) $(TOP)\test\threadtest3.c $(TOP)\src\test_multiplex.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
+
 LSMDIR=$(TOP)\ext\lsm1
 !INCLUDE $(LSMDIR)\Makefile.msc
 
@@ -2623,7 +2634,7 @@ clean:
 	del /Q sqlite-*-output.vsix 2>NUL
 	del /Q fuzzershell.exe fuzzcheck.exe sqldiff.exe dbhash.exe 2>NUL
 	del /Q sqltclsh.* 2>NUL
-	del /Q dbfuzz.exe sessionfuzz.exe 2>NUL
+	del /Q dbfuzz.exe sessionfuzz.exe threadtest3.exe 2>NUL
 	del /Q kvtest.exe ossshell.exe scrub.exe 2>NUL
 	del /Q showshm.exe sqlite3_checker.* sqlite3_expert.exe 2>NUL
 	del /Q fts5.* fts5parse.* 2>NUL

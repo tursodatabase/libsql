@@ -4285,7 +4285,7 @@ SQLITE_NOINLINE int sqlite3BlobCompare(const Mem *pB1, const Mem *pB2){
 ** number.  Return negative, zero, or positive if the first (i64) is less than,
 ** equal to, or greater than the second (double).
 */
-static int sqlite3IntFloatCompare(i64 i, double r){
+int sqlite3IntFloatCompare(i64 i, double r){
   if( sizeof(LONGDOUBLE_TYPE)>8 ){
     LONGDOUBLE_TYPE x = (LONGDOUBLE_TYPE)i;
     testcase( x<r );

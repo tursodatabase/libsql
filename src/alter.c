@@ -427,12 +427,12 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
     db->mDbFlags = savedDbFlags;
   }
 
-  /* Make sure the schema version is at least 3.  But do not upgrade
-  ** from less than 3 to 4, as that will corrupt any preexisting DESC
-  ** index.
-  */
   v = sqlite3GetVdbe(pParse);
   if( v ){
+    /* Make sure the schema version is at least 3.  But do not upgrade
+    ** from less than 3 to 4, as that will corrupt any preexisting DESC
+    ** index.
+    */
     r1 = sqlite3GetTempReg(pParse);
     sqlite3VdbeAddOp3(v, OP_ReadCookie, iDb, r1, BTREE_FILE_FORMAT);
     sqlite3VdbeUsesBtree(v, iDb);
@@ -441,10 +441,25 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
     VdbeCoverage(v);
     sqlite3VdbeAddOp3(v, OP_SetCookie, iDb, BTREE_FILE_FORMAT, 3);
     sqlite3ReleaseTempReg(pParse, r1);
-  }
 
-  /* Reload the table definition */
-  renameReloadSchema(pParse, iDb, INITFLAG_AlterRename);
+    /* Reload the table definition */
+    renameReloadSchema(pParse, iDb, INITFLAG_AlterRename);
+
+    /* Verify that constraints are still satisfied */
+    if( pNew->pCheck!=0
+     || (pCol->notNull && (pCol->colFlags & COLFLAG_GENERATED)!=0)
+    ){
+      sqlite3NestedParse(pParse,
+        "SELECT CASE WHEN quick_check GLOB 'CHECK*'"
+        " THEN raise(ABORT,'CHECK constraint failed')"
+        " ELSE raise(ABORT,'NOT NULL constraint failed')"
+        " END"
+        "  FROM pragma_quick_check(\"%w\",\"%w\")"
+        " WHERE quick_check GLOB 'CHECK*' OR quick_check GLOB 'NULL*'",
+        zTab, zDb
+      );
+    }
+  }
 }
 
 /*
@@ -2158,6 +2173,12 @@ void sqlite3AlterDropColumn(Parse *pParse, SrcList *pSrc, Token *pName){
         }
         nField++;
       }
+    }
+    if( nField==0 ){
+      /* dbsqlfuzz 5f09e7bcc78b4954d06bf9f2400d7715f48d1fef */
+      pParse->nMem++;
+      sqlite3VdbeAddOp2(v, OP_Null, 0, reg+1);
+      nField = 1;
     }
     sqlite3VdbeAddOp3(v, OP_MakeRecord, reg+1, nField, regRec);
     if( pPk ){

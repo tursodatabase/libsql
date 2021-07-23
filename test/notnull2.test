@@ -109,4 +109,24 @@ do_execsql_test 3.1 {
   SELECT * FROM t0 WHERE ((c0 NOT NULL) AND 1) OR (c0 == NULL);
 } {0}
 
+# 2021-07-22 https://sqlite.org/forum/forumpost/2078b7edd2
+#
+reset_db
+do_execsql_test 4.0 {
+  SELECT *, '/'
+  FROM (
+      SELECT NULL val FROM (SELECT 1)
+      UNION ALL
+      SELECT 'missing' FROM (SELECT 1)
+  ) a
+  LEFT JOIN (SELECT 1)
+      ON a.val IS NULL;
+} {{} 1 / missing {} /}
+do_execsql_test 4.1 {
+  CREATE TABLE t1(a INT);
+  INSERT INTO t1(a) VALUES(1);
+  CREATE TABLE t2(b INT);
+  SELECT * FROM (SELECT 3 AS c FROM t1) AS t3 LEFT JOIN t2 ON c IS NULL;
+} {3 {}}
+
 finish_test
