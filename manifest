@@ -1,5 +1,5 @@
-C Much\sself-doc\simprovement\sfor\sshell.c\sgeneration.\sMisleading\serror\smessage\sfixed.
-D 2021-07-11T12:58:51.966
+C Manual\smerge\sof\snew\s.connection\sshell\scommand
+D 2021-07-26T01:35:47.674
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -545,7 +545,7 @@ F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c b379c5ffe3b692e9c64fa37817cc0efa204b7c9468a818309dde85fd132d9d81
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 4fa607bab6bcc580f12dbaf9c800b2250a1e408f10321a1d3bcb1dd30c447e62
-F src/shell.c.in 95d72eae73d2c9bb76934c0bb9f083c0a770822640ef167cb15276102d1b7e52
+F src/shell.c.in fbc62e5ac7f79dd5f31fcd4ca719bc9cc959e147ae8fbb8630883a250a539b54
 F src/sqlite.h.in ecf5aa981da30c33da3e9f353bf3ebf055d3c380c80d6a4f954e58d18ccd6df1
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h e97f4e9b509408fea4c4e9bef5a41608dfac343b4d3c7a990dedde1e19af9510
@@ -1919,7 +1919,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 827ea61d7d509fb6356aeab9e4fdd7619c1eeb4e8860d71ccb79a91737f9dde9
-R 8d6fc3f0c488c96ecd42108ef059ec74
+P 7738ce1b2b97fa29125ed8391670cda9343b87a476ad01f4421fea30e0d4dfe1
+R e40233741ba2186d11491dc0171c1a99
 U larrybr
-Z 3572dfa7570a81d67634e9e7f808d789
+Z d7243f2870d6870902d201b4510ac8d9
