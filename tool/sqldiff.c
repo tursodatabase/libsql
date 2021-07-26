@@ -34,7 +34,6 @@ struct GlobalVars {
   int bSchemaOnly;          /* Only show schema differences */
   int bSchemaPK;            /* Use the schema-defined PK, not the true PK */
   int bHandleVtab;          /* Handle fts3, fts4, fts5 and rtree vtabs */
-  int bDarkCtl;             /* Render controls in text as blob literals */
   unsigned fDebug;          /* Debug flags */
   sqlite3 *db;              /* The database connection */
 } g;
@@ -381,45 +380,35 @@ static void printQuoted(FILE *out, sqlite3_value *X){
     }
     case SQLITE_TEXT: {
       const unsigned char *zArg = sqlite3_value_text(X);
-      int i, j;
 
       if( zArg==0 ){
         fprintf(out, "NULL");
       }else{
+	int inctl = 0;
+	int i, j;
         fprintf(out, "'");
-	if( !g.bDarkCtl ){
-	  for(i=j=0; zArg[i]; i++){
-	    if( zArg[i]=='\'' ){
+	for(i=j=0; zArg[i]; i++){
+	  char c = zArg[i];
+	  int ctl = iscntrl(c);
+	  if( ctl>inctl ){
+	    inctl = ctl;
+	    fprintf(out, "%.*s'||X'%02x", i-j, &zArg[j], c);
+	    j = i+1;
+	  }else if( ctl ){
+	    fprintf(out, "%02x", c);
+	    j = i+1;
+	  }else{
+	    if( inctl ){
+	      inctl = 0;
+	      fprintf(out, "'\n||'");
+	    }
+	    if( c=='\'' ){
 	      fprintf(out, "%.*s'", i-j+1, &zArg[j]);
 	      j = i+1;
 	    }
 	  }
-	  fprintf(out, "%s'", &zArg[j]);
-	}else{
-	  int inctl = 0;
-	  for(i=j=0; zArg[i]; i++){
-	    char c = zArg[i];
-	    int ctl = iscntrl(c);
-	    if( ctl>inctl ){
-	      inctl = ctl;
-	      fprintf(out, "%.*s'||X'%02x", i-j, &zArg[j], c);
-	      j = i+1;
-	    }else if( ctl ){
-	      fprintf(out, "%02x", c);
-	      j = i+1;
-	    }else{
-	      if( inctl ){
-		inctl = 0;
-		fprintf(out, "'\n||'");
-	      }
-	      if( c=='\'' ){
-		fprintf(out, "%.*s'", i-j+1, &zArg[j]);
-		j = i+1;
-	      }
-	    }
-	  }
-	  fprintf(out, "%s'", &zArg[j]);
 	}
+	fprintf(out, "%s'", &zArg[j]);
       }
       break;
     }
@@ -1902,7 +1891,6 @@ static void showHelp(void){
 "  --table TAB           Show only differences in table TAB\n"
 "  --transaction         Show SQL output inside a transaction\n"
 "  --vtab                Handle fts3, fts4, fts5 and rtree tables\n"
-"  --visible-controls    Render controls in text as blob literals\n"
   );
 }
 
@@ -1975,9 +1963,6 @@ int main(int argc, char **argv){
       }else
       if( strcmp(z,"vtab")==0 ){
         g.bHandleVtab = 1;
-      }else
-      if( strcmp(z, "visible-controls")==0 ){
-	g.bDarkCtl = 1;
       }else
       {
         cmdlineError("unknown option: %s", argv[i]);
