@@ -44,15 +44,14 @@ impl<'conn> Blob<'conn> {
         //    losslessly converted to i32, since `len` came from an i32.
         // Sanity check the above.
         debug_assert!(i32::try_from(write_start).is_ok() && i32::try_from(buf.len()).is_ok());
-        unsafe {
-            check!(ffi::sqlite3_blob_write(
+        self.conn.decode_result(unsafe {
+            ffi::sqlite3_blob_write(
                 self.blob,
                 buf.as_ptr() as *const _,
                 buf.len() as i32,
                 write_start as i32,
-            ));
-        }
-        Ok(())
+            )
+        })
     }
 
     /// An alias for `write_at` provided for compatibility with the conceptually
@@ -151,12 +150,12 @@ impl<'conn> Blob<'conn> {
         debug_assert!(i32::try_from(read_len).is_ok());
 
         unsafe {
-            check!(ffi::sqlite3_blob_read(
+            self.conn.decode_result(ffi::sqlite3_blob_read(
                 self.blob,
                 buf.as_mut_ptr() as *mut _,
                 read_len as i32,
                 read_start as i32,
-            ));
+            ))?;
 
             Ok(from_raw_parts_mut(buf.as_mut_ptr() as *mut u8, read_len))
         }
