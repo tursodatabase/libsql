@@ -83,7 +83,6 @@ pub use crate::transaction::{DropBehavior, Savepoint, Transaction, TransactionBe
 pub use crate::types::ToSql;
 pub use crate::version::*;
 
-#[macro_use]
 mod error;
 
 #[cfg(feature = "backup")]

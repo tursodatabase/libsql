@@ -1,6 +1,6 @@
 use crate::types::FromSqlError;
 use crate::types::Type;
-use crate::{errmsg_to_string, ffi};
+use crate::{errmsg_to_string, ffi, Result};
 use std::error;
 use std::fmt;
 use std::os::raw::c_int;
@@ -357,11 +357,10 @@ pub unsafe fn error_from_handle(db: *mut ffi::sqlite3, code: c_int) -> Error {
     error_from_sqlite_code(code, message)
 }
 
-macro_rules! check {
-    ($funcall:expr) => {{
-        let rc = $funcall;
-        if rc != crate::ffi::SQLITE_OK {
-            return Err(crate::error::error_from_sqlite_code(rc, None).into());
-        }
-    }};
+pub fn check(code: c_int) -> Result<()> {
+    if code != crate::ffi::SQLITE_OK {
+        Err(crate::error::error_from_sqlite_code(code, None))
+    } else {
+        Ok(())
+    }
 }

@@ -11,7 +11,7 @@ use std::slice::{from_raw_parts, from_raw_parts_mut};
 
 use fallible_streaming_iterator::FallibleStreamingIterator;
 
-use crate::error::error_from_sqlite_code;
+use crate::error::{check, error_from_sqlite_code};
 use crate::ffi;
 use crate::hooks::Action;
 use crate::types::ValueRef;
@@ -45,7 +45,7 @@ impl Session<'_> {
         let db = db.db.borrow_mut().db;
 
         let mut s: *mut ffi::sqlite3_session = ptr::null_mut();
-        check!(unsafe { ffi::sqlite3session_create(db, name.as_ptr(), &mut s) });
+        check(unsafe { ffi::sqlite3session_create(db, name.as_ptr(), &mut s) })?;
 
         Ok(Session {
             phantom: PhantomData,
@@ -109,15 +109,14 @@ impl Session<'_> {
             None
         };
         let table = table.as_ref().map(|s| s.as_ptr()).unwrap_or(ptr::null());
-        unsafe { check!(ffi::sqlite3session_attach(self.s, table)) };
-        Ok(())
+        check(unsafe { ffi::sqlite3session_attach(self.s, table) })
     }
 
     /// Generate a Changeset
     pub fn changeset(&mut self) -> Result<Changeset> {
         let mut n = 0;
         let mut cs: *mut c_void = ptr::null_mut();
-        check!(unsafe { ffi::sqlite3session_changeset(self.s, &mut n, &mut cs) });
+        check(unsafe { ffi::sqlite3session_changeset(self.s, &mut n, &mut cs) })?;
         Ok(Changeset { cs, n })
     }
 
@@ -125,14 +124,13 @@ impl Session<'_> {
     #[inline]
     pub fn changeset_strm(&mut self, output: &mut dyn Write) -> Result<()> {
         let output_ref = &output;
-        check!(unsafe {
+        check(unsafe {
             ffi::sqlite3session_changeset_strm(
                 self.s,
                 Some(x_output),
                 output_ref as *const &mut dyn Write as *mut c_void,
             )
-        });
-        Ok(())
+        })
     }
 
     /// Generate a Patchset
@@ -140,7 +138,7 @@ impl Session<'_> {
     pub fn patchset(&mut self) -> Result<Changeset> {
         let mut n = 0;
         let mut ps: *mut c_void = ptr::null_mut();
-        check!(unsafe { ffi::sqlite3session_patchset(self.s, &mut n, &mut ps) });
+        check(unsafe { ffi::sqlite3session_patchset(self.s, &mut n, &mut ps) })?;
         // TODO Validate: same struct
         Ok(Changeset { cs: ps, n })
     }
@@ -149,14 +147,13 @@ impl Session<'_> {
     #[inline]
     pub fn patchset_strm(&mut self, output: &mut dyn Write) -> Result<()> {
         let output_ref = &output;
-        check!(unsafe {
+        check(unsafe {
             ffi::sqlite3session_patchset_strm(
                 self.s,
                 Some(x_output),
                 output_ref as *const &mut dyn Write as *mut c_void,
             )
-        });
-        Ok(())
+        })
     }
 
     /// Load the difference between tables.
@@ -228,15 +225,14 @@ impl Drop for Session<'_> {
 pub fn invert_strm(input: &mut dyn Read, output: &mut dyn Write) -> Result<()> {
     let input_ref = &input;
     let output_ref = &output;
-    check!(unsafe {
+    check(unsafe {
         ffi::sqlite3changeset_invert_strm(
             Some(x_input),
             input_ref as *const &mut dyn Read as *mut c_void,
             Some(x_output),
             output_ref as *const &mut dyn Write as *mut c_void,
         )
-    });
-    Ok(())
+    })
 }
 
 /// Combine two changesets
@@ -249,7 +245,7 @@ pub fn concat_strm(
     let input_a_ref = &input_a;
     let input_b_ref = &input_b;
     let output_ref = &output;
-    check!(unsafe {
+    check(unsafe {
         ffi::sqlite3changeset_concat_strm(
             Some(x_input),
             input_a_ref as *const &mut dyn Read as *mut c_void,
@@ -258,8 +254,7 @@ pub fn concat_strm(
             Some(x_output),
             output_ref as *const &mut dyn Write as *mut c_void,
         )
-    });
-    Ok(())
+    })
 }
 
 /// Changeset or Patchset
@@ -274,9 +269,9 @@ impl Changeset {
     pub fn invert(&self) -> Result<Changeset> {
         let mut n = 0;
         let mut cs = ptr::null_mut();
-        check!(unsafe {
+        check(unsafe {
             ffi::sqlite3changeset_invert(self.n, self.cs, &mut n, &mut cs as *mut *mut _)
-        });
+        })?;
         Ok(Changeset { cs, n })
     }
 
@@ -284,7 +279,7 @@ impl Changeset {
     #[inline]
     pub fn iter(&self) -> Result<ChangesetIter<'_>> {
         let mut it = ptr::null_mut();
-        check!(unsafe { ffi::sqlite3changeset_start(&mut it as *mut *mut _, self.n, self.cs) });
+        check(unsafe { ffi::sqlite3changeset_start(&mut it as *mut *mut _, self.n, self.cs) })?;
         Ok(ChangesetIter {
             phantom: PhantomData,
             it,
@@ -297,9 +292,9 @@ impl Changeset {
     pub fn concat(a: &Changeset, b: &Changeset) -> Result<Changeset> {
         let mut n = 0;
         let mut cs = ptr::null_mut();
-        check!(unsafe {
+        check(unsafe {
             ffi::sqlite3changeset_concat(a.n, a.cs, b.n, b.cs, &mut n, &mut cs as *mut *mut _)
-        });
+        })?;
         Ok(Changeset { cs, n })
     }
 }
@@ -326,13 +321,13 @@ impl ChangesetIter<'_> {
     #[inline]
     pub fn start_strm<'input>(input: &&'input mut dyn Read) -> Result<ChangesetIter<'input>> {
         let mut it = ptr::null_mut();
-        check!(unsafe {
+        check(unsafe {
             ffi::sqlite3changeset_start_strm(
                 &mut it as *mut *mut _,
                 Some(x_input),
                 input as *const &mut dyn Read as *mut c_void,
             )
-        });
+        })?;
         Ok(ChangesetIter {
             phantom: PhantomData,
             it,
@@ -427,11 +422,11 @@ impl ChangesetItem {
     pub fn conflict(&self, col: usize) -> Result<ValueRef<'_>> {
         unsafe {
             let mut p_value: *mut ffi::sqlite3_value = ptr::null_mut();
-            check!(ffi::sqlite3changeset_conflict(
+            check(ffi::sqlite3changeset_conflict(
                 self.it,
                 col as i32,
                 &mut p_value,
-            ));
+            ))?;
             Ok(ValueRef::from_value(p_value))
         }
     }
@@ -444,7 +439,7 @@ impl ChangesetItem {
     pub fn fk_conflicts(&self) -> Result<i32> {
         unsafe {
             let mut p_out = 0;
-            check!(ffi::sqlite3changeset_fk_conflicts(self.it, &mut p_out));
+            check(ffi::sqlite3changeset_fk_conflicts(self.it, &mut p_out))?;
             Ok(p_out)
         }
     }
@@ -457,7 +452,7 @@ impl ChangesetItem {
     pub fn new_value(&self, col: usize) -> Result<ValueRef<'_>> {
         unsafe {
             let mut p_value: *mut ffi::sqlite3_value = ptr::null_mut();
-            check!(ffi::sqlite3changeset_new(self.it, col as i32, &mut p_value,));
+            check(ffi::sqlite3changeset_new(self.it, col as i32, &mut p_value))?;
             Ok(ValueRef::from_value(p_value))
         }
     }
@@ -470,7 +465,7 @@ impl ChangesetItem {
     pub fn old_value(&self, col: usize) -> Result<ValueRef<'_>> {
         unsafe {
             let mut p_value: *mut ffi::sqlite3_value = ptr::null_mut();
-            check!(ffi::sqlite3changeset_old(self.it, col as i32, &mut p_value,));
+            check(ffi::sqlite3changeset_old(self.it, col as i32, &mut p_value))?;
             Ok(ValueRef::from_value(p_value))
         }
     }
@@ -483,13 +478,13 @@ impl ChangesetItem {
         let mut indirect = 0;
         let tab = unsafe {
             let mut pz_tab: *const c_char = ptr::null();
-            check!(ffi::sqlite3changeset_op(
+            check(ffi::sqlite3changeset_op(
                 self.it,
                 &mut pz_tab,
                 &mut number_of_columns,
                 &mut code,
-                &mut indirect
-            ));
+                &mut indirect,
+            ))?;
             CStr::from_ptr(pz_tab)
         };
         let table_name = tab.to_str()?;
@@ -507,11 +502,11 @@ impl ChangesetItem {
         let mut number_of_columns = 0;
         unsafe {
             let mut pks: *mut c_uchar = ptr::null_mut();
-            check!(ffi::sqlite3changeset_pk(
+            check(ffi::sqlite3changeset_pk(
                 self.it,
                 &mut pks,
-                &mut number_of_columns
-            ));
+                &mut number_of_columns,
+            ))?;
             Ok(from_raw_parts(pks, number_of_columns as usize))
         }
     }
@@ -528,29 +523,27 @@ impl Changegroup {
     #[inline]
     pub fn new() -> Result<Self> {
         let mut cg = ptr::null_mut();
-        check!(unsafe { ffi::sqlite3changegroup_new(&mut cg) });
+        check(unsafe { ffi::sqlite3changegroup_new(&mut cg) })?;
         Ok(Changegroup { cg })
     }
 
     /// Add a changeset
     #[inline]
     pub fn add(&mut self, cs: &Changeset) -> Result<()> {
-        check!(unsafe { ffi::sqlite3changegroup_add(self.cg, cs.n, cs.cs) });
-        Ok(())
+        check(unsafe { ffi::sqlite3changegroup_add(self.cg, cs.n, cs.cs) })
     }
 
     /// Add a changeset read from `input` to this change group.
     #[inline]
     pub fn add_stream(&mut self, input: &mut dyn Read) -> Result<()> {
         let input_ref = &input;
-        check!(unsafe {
+        check(unsafe {
             ffi::sqlite3changegroup_add_strm(
                 self.cg,
                 Some(x_input),
                 input_ref as *const &mut dyn Read as *mut c_void,
             )
-        });
-        Ok(())
+        })
     }
 
     /// Obtain a composite Changeset
@@ -558,7 +551,7 @@ impl Changegroup {
     pub fn output(&mut self) -> Result<Changeset> {
         let mut n = 0;
         let mut output: *mut c_void = ptr::null_mut();
-        check!(unsafe { ffi::sqlite3changegroup_output(self.cg, &mut n, &mut output) });
+        check(unsafe { ffi::sqlite3changegroup_output(self.cg, &mut n, &mut output) })?;
         Ok(Changeset { cs: output, n })
     }
 
@@ -566,14 +559,13 @@ impl Changegroup {
     #[inline]
     pub fn output_strm(&mut self, output: &mut dyn Write) -> Result<()> {
         let output_ref = &output;
-        check!(unsafe {
+        check(unsafe {
             ffi::sqlite3changegroup_output_strm(
                 self.cg,
                 Some(x_output),
                 output_ref as *const &mut dyn Write as *mut c_void,
             )
-        });
-        Ok(())
+        })
     }
 }
 
@@ -597,7 +589,7 @@ impl Connection {
 
         let filtered = filter.is_some();
         let tuple = &mut (filter, conflict);
-        check!(unsafe {
+        check(unsafe {
             if filtered {
                 ffi::sqlite3changeset_apply(
                     db,
@@ -617,8 +609,7 @@ impl Connection {
                     tuple as *mut (Option<F>, C) as *mut c_void,
                 )
             }
-        });
-        Ok(())
+        })
     }
 
     /// Apply a changeset to a database
@@ -637,7 +628,7 @@ impl Connection {
 
         let filtered = filter.is_some();
         let tuple = &mut (filter, conflict);
-        check!(unsafe {
+        check(unsafe {
             if filtered {
                 ffi::sqlite3changeset_apply_strm(
                     db,
@@ -657,8 +648,7 @@ impl Connection {
                     tuple as *mut (Option<F>, C) as *mut c_void,
                 )
             }
-        });
-        Ok(())
+        })
     }
 }
 

@@ -304,8 +304,7 @@ impl InnerConnection {
 
     #[cfg(feature = "modern_sqlite")] // 3.10.0
     pub fn cache_flush(&mut self) -> Result<()> {
-        check!(unsafe { ffi::sqlite3_db_cacheflush(self.db()) });
-        Ok(())
+        crate::error::check(unsafe { ffi::sqlite3_db_cacheflush(self.db()) })
     }
 
     #[cfg(not(feature = "hooks"))]
