@@ -1082,7 +1082,7 @@ mod test {
         ensure_sync::<InterruptHandle>();
     }
 
-    pub fn checked_memory_handle() -> Connection {
+    fn checked_memory_handle() -> Connection {
         Connection::open_in_memory().unwrap()
     }
 
@@ -1210,7 +1210,7 @@ mod test {
 
     #[test]
     fn test_close_retry() -> Result<()> {
-        let db = checked_memory_handle();
+        let db = Connection::open_in_memory()?;
 
         // force the DB to be busy by preparing a statement; this must be done at the
         // FFI level to allow us to call .close() without dropping the prepared
@@ -1263,7 +1263,7 @@ mod test {
 
     #[test]
     fn test_execute_batch() -> Result<()> {
-        let db = checked_memory_handle();
+        let db = Connection::open_in_memory()?;
         let sql = "BEGIN;
                    CREATE TABLE foo(x INTEGER);
                    INSERT INTO foo VALUES(1);
@@ -1281,7 +1281,7 @@ mod test {
 
     #[test]
     fn test_execute() -> Result<()> {
-        let db = checked_memory_handle();
+        let db = Connection::open_in_memory()?;
         db.execute_batch("CREATE TABLE foo(x INTEGER)")?;
 
         assert_eq!(1, db.execute("INSERT INTO foo(x) VALUES (?)", [1i32])?);
@@ -1322,7 +1322,7 @@ mod test {
 
     #[test]
     fn test_prepare_column_names() -> Result<()> {
-        let db = checked_memory_handle();
+        let db = Connection::open_in_memory()?;
         db.execute_batch("CREATE TABLE foo(x INTEGER);")?;
 
         let stmt = db.prepare("SELECT * FROM foo")?;
@@ -1337,7 +1337,7 @@ mod test {
 
     #[test]
     fn test_prepare_execute() -> Result<()> {
-        let db = checked_memory_handle();
+        let db = Connection::open_in_memory()?;
         db.execute_batch("CREATE TABLE foo(x INTEGER);")?;
 
         let mut insert_stmt = db.prepare("INSERT INTO foo(x) VALUES(?)")?;
@@ -1358,7 +1358,7 @@ mod test {
 
     #[test]
     fn test_prepare_query() -> Result<()> {
-        let db = checked_memory_handle();
+        let db = Connection::open_in_memory()?;
         db.execute_batch("CREATE TABLE foo(x INTEGER);")?;
 
         let mut insert_stmt = db.prepare("INSERT INTO foo(x) VALUES(?)")?;
@@ -1393,7 +1393,7 @@ mod test {
 
     #[test]
     fn test_query_map() -> Result<()> {
-        let db = checked_memory_handle();
+        let db = Connection::open_in_memory()?;
         let sql = "BEGIN;
                    CREATE TABLE foo(x INTEGER, y TEXT);
                    INSERT INTO foo VALUES(4, \"hello\");
@@ -1412,7 +1412,7 @@ mod test {
 
     #[test]
     fn test_query_row() -> Result<()> {
-        let db = checked_memory_handle();
+        let db = Connection::open_in_memory()?;
         let sql = "BEGIN;
                    CREATE TABLE foo(x INTEGER);
                    INSERT INTO foo VALUES(1);
@@ -1441,7 +1441,7 @@ mod test {
 
     #[test]
     fn test_optional() -> Result<()> {
-        let db = checked_memory_handle();
+        let db = Connection::open_in_memory()?;
 
         let result: Result<i64> = db.query_row("SELECT 1 WHERE 0 <> 0", [], |r| r.get(0));
         let result = result.optional();
@@ -1465,7 +1465,7 @@ mod test {
 
     #[test]
     fn test_pragma_query_row() -> Result<()> {
-        let db = checked_memory_handle();
+        let db = Connection::open_in_memory()?;
 
         assert_eq!(
             "memory",
@@ -1480,7 +1480,7 @@ mod test {
 
     #[test]
     fn test_prepare_failures() -> Result<()> {
-        let db = checked_memory_handle();
+        let db = Connection::open_in_memory()?;
         db.execute_batch("CREATE TABLE foo(x INTEGER);")?;
 
         let err = db.prepare("SELECT * FROM does_not_exist").unwrap_err();
@@ -1490,7 +1490,7 @@ mod test {
 
     #[test]
     fn test_last_insert_rowid() -> Result<()> {
-        let db = checked_memory_handle();
+        let db = Connection::open_in_memory()?;
         db.execute_batch("CREATE TABLE foo(x INTEGER PRIMARY KEY)")?;
         db.execute_batch("INSERT INTO foo DEFAULT VALUES")?;
 
@@ -1505,18 +1505,19 @@ mod test {
     }
 
     #[test]
-    fn test_is_autocommit() {
-        let db = checked_memory_handle();
+    fn test_is_autocommit() -> Result<()> {
+        let db = Connection::open_in_memory()?;
         assert!(
             db.is_autocommit(),
             "autocommit expected to be active by default"
         );
+        Ok(())
     }
 
     #[test]
     #[cfg(feature = "modern_sqlite")]
     fn test_is_busy() -> Result<()> {
-        let db = checked_memory_handle();
+        let db = Connection::open_in_memory()?;
         assert!(!db.is_busy());
         let mut stmt = db.prepare("PRAGMA schema_version")?;
         assert!(!db.is_busy());
@@ -1533,7 +1534,7 @@ mod test {
 
     #[test]
     fn test_statement_debugging() -> Result<()> {
-        let db = checked_memory_handle();
+        let db = Connection::open_in_memory()?;
         let query = "SELECT 12345";
         let stmt = db.prepare(query)?;
 
@@ -1552,7 +1553,7 @@ mod test {
         #[cfg(not(feature = "modern_sqlite"))]
         fn check_extended_code(_extended_code: c_int) {}
 
-        let db = checked_memory_handle();
+        let db = Connection::open_in_memory()?;
         db.execute_batch("CREATE TABLE foo(x NOT NULL)")?;
 
         let result = db.execute("INSERT INTO foo (x) VALUES (NULL)", []);
@@ -1581,7 +1582,7 @@ mod test {
     #[test]
     #[cfg(feature = "functions")]
     fn test_interrupt() -> Result<()> {
-        let db = checked_memory_handle();
+        let db = Connection::open_in_memory()?;
 
         let interrupt_handle = db.get_interrupt_handle();
 
@@ -1629,7 +1630,7 @@ mod test {
 
     #[test]
     fn test_get_raw() -> Result<()> {
-        let db = checked_memory_handle();
+        let db = Connection::open_in_memory()?;
         db.execute_batch("CREATE TABLE foo(i, x);")?;
         let vals = ["foobar", "1234", "qwerty"];
         let mut insert_stmt = db.prepare("INSERT INTO foo(i, x) VALUES(?, ?)")?;
@@ -1662,7 +1663,7 @@ mod test {
 
     #[test]
     fn test_from_handle() -> Result<()> {
-        let db = checked_memory_handle();
+        let db = Connection::open_in_memory()?;
         let handle = unsafe { db.handle() };
         {
             let db = unsafe { Connection::from_handle(handle) }?;
@@ -1714,7 +1715,7 @@ mod test {
 
         #[test]
         fn test_query_and_then() -> Result<()> {
-            let db = checked_memory_handle();
+            let db = Connection::open_in_memory()?;
             let sql = "BEGIN;
                        CREATE TABLE foo(x INTEGER, y TEXT);
                        INSERT INTO foo VALUES(4, \"hello\");
@@ -1734,7 +1735,7 @@ mod test {
 
         #[test]
         fn test_query_and_then_fails() -> Result<()> {
-            let db = checked_memory_handle();
+            let db = Connection::open_in_memory()?;
             let sql = "BEGIN;
                        CREATE TABLE foo(x INTEGER, y TEXT);
                        INSERT INTO foo VALUES(4, \"hello\");
@@ -1764,7 +1765,7 @@ mod test {
 
         #[test]
         fn test_query_and_then_custom_error() -> CustomResult<()> {
-            let db = checked_memory_handle();
+            let db = Connection::open_in_memory()?;
             let sql = "BEGIN;
                        CREATE TABLE foo(x INTEGER, y TEXT);
                        INSERT INTO foo VALUES(4, \"hello\");
@@ -1785,7 +1786,7 @@ mod test {
 
         #[test]
         fn test_query_and_then_custom_error_fails() -> Result<()> {
-            let db = checked_memory_handle();
+            let db = Connection::open_in_memory()?;
             let sql = "BEGIN;
                        CREATE TABLE foo(x INTEGER, y TEXT);
                        INSERT INTO foo VALUES(4, \"hello\");
@@ -1827,7 +1828,7 @@ mod test {
 
         #[test]
         fn test_query_row_and_then_custom_error() -> CustomResult<()> {
-            let db = checked_memory_handle();
+            let db = Connection::open_in_memory()?;
             let sql = "BEGIN;
                        CREATE TABLE foo(x INTEGER, y TEXT);
                        INSERT INTO foo VALUES(4, \"hello\");
@@ -1844,7 +1845,7 @@ mod test {
 
         #[test]
         fn test_query_row_and_then_custom_error_fails() -> Result<()> {
-            let db = checked_memory_handle();
+            let db = Connection::open_in_memory()?;
             let sql = "BEGIN;
                        CREATE TABLE foo(x INTEGER, y TEXT);
                        INSERT INTO foo VALUES(4, \"hello\");
@@ -1881,7 +1882,7 @@ mod test {
 
     #[test]
     fn test_dynamic() -> Result<()> {
-        let db = checked_memory_handle();
+        let db = Connection::open_in_memory()?;
         let sql = "BEGIN;
                        CREATE TABLE foo(x INTEGER, y TEXT);
                        INSERT INTO foo VALUES(4, \"hello\");
@@ -1895,7 +1896,7 @@ mod test {
     }
     #[test]
     fn test_dyn_box() -> Result<()> {
-        let db = checked_memory_handle();
+        let db = Connection::open_in_memory()?;
         db.execute_batch("CREATE TABLE foo(x INTEGER);")?;
         let b: Box<dyn ToSql> = Box::new(5);
         db.execute("INSERT INTO foo VALUES(?)", [b])?;
@@ -1907,7 +1908,7 @@ mod test {
 
     #[test]
     fn test_params() -> Result<()> {
-        let db = checked_memory_handle();
+        let db = Connection::open_in_memory()?;
         db.query_row(
             "SELECT
             ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
@@ -1928,7 +1929,7 @@ mod test {
     #[test]
     #[cfg(not(feature = "extra_check"))]
     fn test_alter_table() -> Result<()> {
-        let db = checked_memory_handle();
+        let db = Connection::open_in_memory()?;
         db.execute_batch("CREATE TABLE x(t);")?;
         // `execute_batch` should be used but `execute` should also work
         db.execute("ALTER TABLE x RENAME TO y;", [])?;
@@ -1937,7 +1938,7 @@ mod test {
 
     #[test]
     fn test_batch() -> Result<()> {
-        let db = checked_memory_handle();
+        let db = Connection::open_in_memory()?;
         let sql = r"
              CREATE TABLE tbl1 (col);
              CREATE TABLE tbl2 (col);
@@ -1953,7 +1954,7 @@ mod test {
     #[test]
     #[cfg(all(feature = "bundled", not(feature = "bundled-sqlcipher")))] // SQLite >= 3.35.0
     fn test_returning() -> Result<()> {
-        let db = checked_memory_handle();
+        let db = Connection::open_in_memory()?;
         db.execute_batch("CREATE TABLE foo(x INTEGER PRIMARY KEY)")?;
         let row_id =
             db.query_row::<i64, _, _>("INSERT INTO foo DEFAULT VALUES RETURNING ROWID", [], |r| {
@@ -1966,7 +1967,7 @@ mod test {
     #[test]
     #[cfg(feature = "modern_sqlite")]
     fn test_cache_flush() -> Result<()> {
-        let db = checked_memory_handle();
+        let db = Connection::open_in_memory()?;
         db.cache_flush()
     }
 }

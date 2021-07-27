@@ -40,7 +40,7 @@ use std::time::Duration;
 
 use crate::ffi;
 
-use crate::error::{error_from_handle, error_from_sqlite_code};
+use crate::error::error_from_handle;
 use crate::{Connection, DatabaseName, Result};
 
 impl Connection {
@@ -169,7 +169,7 @@ pub struct Progress {
 /// A handle to an online backup.
 pub struct Backup<'a, 'b> {
     phantom_from: PhantomData<&'a Connection>,
-    phantom_to: PhantomData<&'b Connection>,
+    to: &'b Connection,
     b: *mut ffi::sqlite3_backup,
 }
 
@@ -223,7 +223,7 @@ impl Backup<'_, '_> {
 
         Ok(Backup {
             phantom_from: PhantomData,
-            phantom_to: PhantomData,
+            to,
             b,
         })
     }
@@ -263,7 +263,7 @@ impl Backup<'_, '_> {
             ffi::SQLITE_OK => Ok(More),
             ffi::SQLITE_BUSY => Ok(Busy),
             ffi::SQLITE_LOCKED => Ok(Locked),
-            _ => Err(error_from_sqlite_code(rc, None)),
+            _ => self.to.decode_result(rc).map(|_| More),
         }
     }
 

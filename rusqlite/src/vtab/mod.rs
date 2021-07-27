@@ -198,7 +198,7 @@ impl VTabConnection {
 /// #[repr(C)]
 /// struct MyTab {
 ///    /// Base class. Must be first
-///    base: ffi::sqlite3_vtab,
+///    base: rusqlite::vtab::sqlite3_vtab,
 ///    /* Virtual table implementations will typically add additional fields */
 /// }
 /// ```
@@ -488,7 +488,7 @@ impl OrderBy<'_> {
 /// #[repr(C)]
 /// struct MyTabCursor {
 ///    /// Base class. Must be first
-///    base: ffi::sqlite3_vtab_cursor,
+///    base: rusqlite::vtab::sqlite3_vtab_cursor,
 ///    /* Virtual table implementations will typically add additional fields */
 /// }
 /// ```
