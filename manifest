@@ -1,5 +1,5 @@
-C Reduce\sthe\sscope\sof\sa\svariable\sin\sorder\sto\sfix\sa\sharmless\scompiler\swarning\nthat\soccurs\sunder\s-DSQLITE_OMIT_AUTOMATIC_INDEX.
-D 2021-07-28T01:22:23.386
+C Fix\sa\sharmless\suninitialized\svariable\sread\sthat\soccurs\safter\san\serror\nassociated\swith\sa\ssubquery\sthat\suses\sDISTINCT.\s\sFound\sby\sa\sfuzzer.
+D 2021-07-28T02:04:58.814
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -544,7 +544,7 @@ F src/printf.c 78fabb49b9ac9a12dd1c89d744abdc9b67fd3205e62967e158f78b965a29ec4b
 F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c 047a822844cea769f6fdd8418a335dd4bcd8b75ab5e264f2506a0804f869b562
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c 3896009f30352985b28511a0c4d7dbb77ba418e91db80ab7745a7f6dcbe1031f
+F src/select.c 99c36dd4e7c2207ebdfd8c30986ab5aaeae74d0cdbbc471420807d50c417c241
 F src/shell.c.in dc889872292ce143ab43080e7eb48b95f9b13beabf85ae729388a6b9ee08bab7
 F src/sqlite.h.in 43fcf0fe2af04081f420a906fc020bde1243851ba44b0aa567a27f94bf8c3145
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1920,7 +1920,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ff74c0cc4cefa5271b12ecfff3f2fd4749852d9d1d01f4ae64a07a26decc001b
-R 0b9907c89e298e6ec44e54b431c85ab9
+P 36d5dbbe13562f4ea6435e620d102f8515bd0e6b8e66fd1841062a4e4621e330
+R f3f844f66ceec878dd9e2f813d0ea286
 U drh
-Z bd3d716a77b8cb99bd8719b71b186559
+Z 2e0111a600397f530b0a2c274b105089
