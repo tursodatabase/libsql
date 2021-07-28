@@ -1,5 +1,5 @@
-C Remove\ssqldiff\s--visible-controls\soption,\smake\sit\salways\shappen.\sAdd\stest\scases\sfor\scontrols\smade\svisible
-D 2021-07-26T19:49:01.920
+C Reduce\sthe\sscope\sof\sa\svariable\sin\sorder\sto\sfix\sa\sharmless\scompiler\swarning\nthat\soccurs\sunder\s-DSQLITE_OMIT_AUTOMATIC_INDEX.
+D 2021-07-28T01:22:23.386
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -631,7 +631,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c c8ec20a1ca161d5635a4f19c2a4efec2e006e19a8a61f272bf6bce1c80ab7436
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c 7342becedf3f8a26f9817f08436bdf8b56ad69af83705f6b9320a0ad3092c2ac
-F src/where.c 07a4097fe42a01b1f99d2a136598654051f0bdcd6c17cbef7fa285a9cf21e4d2
+F src/where.c 07c63dde6ab72477b964f4c81bee61ef78a246ca149bb9a560784f2e85cd78d7
 F src/whereInt.h 9248161dd004f625ce5d3841ca9b99fed3fc8d61522cf76340fc5217dbe1375b
 F src/wherecode.c 9f1f65d11437b25cd0a1497a170514c785f19ce6ad9d3e6fc73719cb5a49012f
 F src/whereexpr.c 3a9144a9d52e110efdc012a73b1574e7b2b4df4bf98949387cb620295eba0975
@@ -1920,7 +1920,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 68d2373f5d578cf3aff9d1ac4b1ab3ac00b466e94e1eb516523fc7660dfc0549
-R b342ee6ef1ac53ce3fb2ee3a5429a66d
-U larrybr
-Z 6a37992a46fe8182f8f9e189a49d79b9
+P ff74c0cc4cefa5271b12ecfff3f2fd4749852d9d1d01f4ae64a07a26decc001b
+R 0b9907c89e298e6ec44e54b431c85ab9
+U drh
+Z bd3d716a77b8cb99bd8719b71b186559

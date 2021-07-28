@@ -2984,7 +2984,6 @@ static int whereLoopAddBtree(
   int iSortIdx = 1;           /* Index number */
   int b;                      /* A boolean value */
   LogEst rSize;               /* number of rows in the table */
-  LogEst rLogSize;            /* Logarithm of the number of rows in the table */
   WhereClause *pWC;           /* The parsed WHERE clause */
   Table *pTab;                /* Table being queried */
   
@@ -3027,7 +3026,6 @@ static int whereLoopAddBtree(
     pProbe = &sPk;
   }
   rSize = pTab->nRowLogEst;
-  rLogSize = estLog(rSize);
 
 #ifndef SQLITE_OMIT_AUTOMATIC_INDEX
   /* Automatic indexes */
@@ -3041,8 +3039,10 @@ static int whereLoopAddBtree(
    && !pSrc->fg.isRecursive  /* Not a recursive common table expression. */
   ){
     /* Generate auto-index WhereLoops */
+    LogEst rLogSize;         /* Logarithm of the number of rows in the table */
     WhereTerm *pTerm;
     WhereTerm *pWCEnd = pWC->a + pWC->nTerm;
+    rLogSize = estLog(rSize);
     for(pTerm=pWC->a; rc==SQLITE_OK && pTerm<pWCEnd; pTerm++){
       if( pTerm->prereqRight & pNew->maskSelf ) continue;
       if( termCanDriveIndex(pTerm, pSrc, 0) ){
