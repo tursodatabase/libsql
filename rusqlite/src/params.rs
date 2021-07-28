@@ -169,8 +169,8 @@ pub trait Params: Sealed {
 // Explicitly impl for empty array. Critically, for `conn.execute([])` to be
 // unambiguous, this must be the *only* implementation for an empty array. This
 // avoids `NO_PARAMS` being a necessary part of the API.
-impl Sealed for [&dyn ToSql; 0] {}
-impl Params for [&dyn ToSql; 0] {
+impl Sealed for [&(dyn ToSql + Send + Sync); 0] {}
+impl Params for [&(dyn ToSql + Send + Sync); 0] {
     #[inline]
     fn __bind_in(self, stmt: &mut Statement<'_>) -> Result<()> {
         // Note: Can't just return `Ok(())` — `Statement::bind_parameters`
