@@ -10040,6 +10040,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       { "prng_save",          SQLITE_TESTCTRL_PRNG_SAVE,     ""               },
       { "prng_seed",          SQLITE_TESTCTRL_PRNG_SEED,     "SEED ?db?"      },
       { "seek_count",         SQLITE_TESTCTRL_SEEK_COUNT,    ""               },
+      { "sorter_mmap",        SQLITE_TESTCTRL_SORTER_MMAP,   "NMAX"           },
       { "tune",               SQLITE_TESTCTRL_TUNE,          "ID VALUE"       },
     };
     int testctrl = -1;
@@ -10220,6 +10221,13 @@ static int do_meta_command(char *zLine, ShellState *p){
           break;
         }
 #endif
+        case SQLITE_TESTCTRL_SORTER_MMAP:
+          if( nArg==3 ){
+            int opt = (unsigned int)integerValue(azArg[2]);
+            rc2 = sqlite3_test_control(testctrl, p->db, opt);
+            isOk = 3;
+          }
+          break;
       }
     }
     if( isOk==0 && iCtrl>=0 ){
