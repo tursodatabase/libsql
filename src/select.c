@@ -873,7 +873,9 @@ static void fixDistinctOpenEph(
   int iVal,          /* Value returned by codeDistinct() */
   int iOpenEphAddr   /* Address of OP_OpenEphemeral instruction for iTab */
 ){
-  if( eTnctType==WHERE_DISTINCT_UNIQUE || eTnctType==WHERE_DISTINCT_ORDERED ){
+  if( pParse->nErr==0
+   && (eTnctType==WHERE_DISTINCT_UNIQUE || eTnctType==WHERE_DISTINCT_ORDERED)
+  ){
     Vdbe *v = pParse->pVdbe;
     sqlite3VdbeChangeToNoop(v, iOpenEphAddr);
     if( sqlite3VdbeGetOp(v, iOpenEphAddr+1)->opcode==OP_Explain ){
