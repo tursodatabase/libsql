@@ -5681,9 +5681,9 @@ static int impliesNotNullRow(Walker *pWalker, Expr *pExpr){
       testcase( pExpr->op==TK_GE );
       /* The y.pTab=0 assignment in wherecode.c always happens after the
       ** impliesNotNullRow() test */
-      if( (pLeft->op==TK_COLUMN && ALWAYS(pLeft->y.pTab!=0)
+      if( (pLeft->op==TK_COLUMN && pLeft->y.pTab!=0
                                && IsVirtual(pLeft->y.pTab))
-       || (pRight->op==TK_COLUMN && ALWAYS(pRight->y.pTab!=0)
+       || (pRight->op==TK_COLUMN && pRight->y.pTab!=0
                                && IsVirtual(pRight->y.pTab))
       ){
         return WRC_Prune;
