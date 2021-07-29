@@ -91,8 +91,8 @@ unsafe impl<'vtab> VTab<'vtab> for ArrayTab {
 
     fn best_index(&self, info: &mut IndexInfo) -> Result<()> {
         // Index of the pointer= constraint
-        let mut ptr_idx = None;
-        for (i, constraint) in info.constraints().enumerate() {
+        let mut ptr_idx = false;
+        for (constraint, mut constraint_usage) in info.constraints_and_usages() {
             if !constraint.is_usable() {
                 continue;
             }
@@ -100,15 +100,12 @@ unsafe impl<'vtab> VTab<'vtab> for ArrayTab {
                 continue;
             }
             if let CARRAY_COLUMN_POINTER = constraint.column() {
-                ptr_idx = Some(i);
-            }
-        }
-        if let Some(ptr_idx) = ptr_idx {
-            {
-                let mut constraint_usage = info.constraint_usage(ptr_idx);
+                ptr_idx = true;
                 constraint_usage.set_argv_index(1);
                 constraint_usage.set_omit(true);
             }
+        }
+        if ptr_idx {
             info.set_estimated_cost(1f64);
             info.set_estimated_rows(100);
             info.set_idx_num(1);
