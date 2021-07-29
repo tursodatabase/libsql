@@ -1660,7 +1660,7 @@ char *sqlite3VdbeDisplayP4(sqlite3 *db, Op *pOp){
     case P4_COLLSEQ: {
       static const char *const encnames[] = {"?", "8", "16LE", "16BE"};
       CollSeq *pColl = pOp->p4.pColl;
-      assert( pColl->enc>=0 && pColl->enc<4 );
+      assert( pColl->enc<4 );
       sqlite3_str_appendf(&x, "%.18s-%s", pColl->zName,
                           encnames[pColl->enc]);
       break;
