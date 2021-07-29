@@ -1,5 +1,5 @@
-C Improve\scomments\sand\sadd\snew\sassert()\sstatements\sin\sWAL\sto\shelp\sdocument\nhow\severything\sworks.
-D 2021-07-29T16:48:21.089
+C Minor\stweaks\sto\svarious\sTCL\sbuild\sscripts\sso\sthat\sthey\swork\seven\sfor\sTCL\s8.4,\nwhich\sis\sobsolete,\sbut\sis\salso\sall\sthat\sis\savailable\sfor\ssome\slegacy\splatforms.
+D 2021-07-29T16:49:28.900
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -233,7 +233,7 @@ F ext/fts5/test/fts5vocab2.test c0a8397523561eb780b4f439e75d4969fade0ac40bc73e0c
 F ext/fts5/tool/fts5speed.tcl b0056f91a55b2d1a3684ec05729de92b042e2f85
 F ext/fts5/tool/fts5txt2db.tcl c0d43c8590656f8240e622b00957b3a0facc49482411a9fdc2870b45c0c82f9f
 F ext/fts5/tool/loadfts5.tcl 95b03429ee6b138645703c6ca192c3ac96eaf093
-F ext/fts5/tool/mkfts5c.tcl d1c2a9ab8e0ec690a52316f33dd9b1d379942f45
+F ext/fts5/tool/mkfts5c.tcl 3eba8e9bee4221ed165f3304b51b2a74a705f4ec5df3d044573a2be539534af8
 F ext/fts5/tool/showfts5.tcl d54da0e067306663e2d5d523965ca487698e722c
 F ext/icu/README.txt 1c48ffaf7f255bd73d00a35f68f6de357c2a6594f16cb00506a151be23694706
 F ext/icu/icu.c 91c021c7e3e8bbba286960810fa303295c622e323567b2e6def4ce58e4466e60
@@ -1850,11 +1850,11 @@ F tool/mkccode.tcl 86463e68ce9c15d3041610fedd285ce32a5cf7a58fc88b3202b8b76837650
 F tool/mkctimec.tcl 5ef1891ed3d0e8143ff39bad7c01ed60c2817a2fb2d9a09487f7ccad2df621e4
 F tool/mkkeywordhash.c 08b6e4d7a482a7f37a9a0032e7ba968e26624a027b6b2e9ba589be6f5e3d8c2c
 F tool/mkmsvcmin.tcl 6ecab9fe22c2c8de4d82d4c46797bda3d2deac8e763885f5a38d0c44a895ab33
-F tool/mkopcodec.tcl d1b6362bd3aa80d5520d4d6f3765badf01f6c43c
+F tool/mkopcodec.tcl 33d20791e191df43209b77d37f0ff0904620b28465cca6990cf8d60da61a07ef
 F tool/mkopcodeh.tcl 130b88697da6ec5b89b41844d955d08fb62c2552e889dec8c7bcecb28d8f50bd
 F tool/mkopts.tcl 680f785fdb09729fd9ac50632413da4eadbdf9071535e3f26d03795828ab07fa
 F tool/mkpragmatab.tcl 7f6db47d1995bc08247255622524567b2ab8962d98063f8aef97e35c3c54e3b8
-F tool/mkshellc.tcl 5fe7e518112b262e25726f248c0f33dd153192867453984b6af0a76a88e97cb2
+F tool/mkshellc.tcl df5d249617f9cc94d5c48eb0401673eb3f31f383ecbc54e8a13ca3dd97e89450
 F tool/mksourceid.c 36aa8020014aed0836fd13c51d6dc9219b0df1761d6b5f58ff5b616211b079b9
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl 4f7cfef5152b0c91920355cbfc1d608a4ad242cb819f1aea07f6d0274f584a7f
@@ -1920,7 +1920,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4d1dbfa35c7dc0f09321b2e274a00e506f4ca65322454652d5891d815a6966d3
-R 7a7643ec86e1f4d8e14a77c61b23a38c
+P 23b08fe9db24a953cc231b093cf74d140c9965d22964d0401ff8ab3d4ecba443
+R 7cc2835397664c86246e99abe4a64984
 U drh
-Z faf097f1ce1cc5bd6964b75ff7d837f7
+Z 6820ddb47fc7506cf54e2e30c650a734

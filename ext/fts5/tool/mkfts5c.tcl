@@ -60,7 +60,8 @@ proc fts5_source_id {zDir} {
 
   set L [split [readfile [file join $top manifest]]] 
   set date [lindex $L [expr [lsearch -exact $L D]+1]]
-  set date [string range $date 0 [string last . $date]-1]
+  set idx [expr {[string last . $date]-1}]
+  set date [string range $date 0 $idx]
   set date [string map {T { }} $date]
 
   return "fts5: $date $uuid"
