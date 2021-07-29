@@ -1,5 +1,5 @@
-C Improvements\sto\sasserts\sto\senforce\smagic\snumbers\sin\sthe\swal-index\sformat.\nAlso\simprove\sautomatic\sconfigure\sand\smake\sbuilds\son\slegacy\sPPC\siBooks.
-D 2021-07-29T17:31:40.386
+C Enhance\sthe\swal.c\ssource\sfile\swith\san\sASCII-art\sschematic\sof\sthe\s-shm\sfile\nheader.
+D 2021-07-29T18:34:35.597
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -628,7 +628,7 @@ F src/vdbetrace.c 666c6fd9f1b62be6999e072a45b913e3c2c3518bc60dfd4d54fe304130acb7
 F src/vdbevtab.c f99b275366c5fc5e2d99f734729880994ab9500bdafde7fae3b02d562b9d323c
 F src/vtab.c 3a9a6ae1fd14f7c00af184233cb9f3bced89ae277a75a312f85fb77297a3cdfa
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c ce589eddfba84f9f89e789d08ea5ffe9e85454cbbfaba8fd42a258e3e08cf5e5
+F src/wal.c 2be08331d798237ad5d7ae0b252700ffb2b63189cb18d993496d009a93e2f81c
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c 7342becedf3f8a26f9817f08436bdf8b56ad69af83705f6b9320a0ad3092c2ac
 F src/where.c 07c63dde6ab72477b964f4c81bee61ef78a246ca149bb9a560784f2e85cd78d7
@@ -1920,8 +1920,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4d1dbfa35c7dc0f09321b2e274a00e506f4ca65322454652d5891d815a6966d3 ef2a0850394b1c6c1fc84b26694a3712ae1e50d52bb78fea2ec40148a7d833de
-R 0cc81a8b442d38496113a96ee86b0452
-T +closed ef2a0850394b1c6c1fc84b26694a3712ae1e50d52bb78fea2ec40148a7d833de
+P 87b8d47889f1990442aa90398614656658207085d064381074f72bda9bdcbfa5
+R d8c25bc87f149d13a2a70b86ca69893f
 U drh
-Z 98161da94e50e1df5812fdb04f331f1a
+Z 666b852ed7a04d1347b165527afd3943
