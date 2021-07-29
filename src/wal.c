@@ -161,7 +161,10 @@
 ** HASHTABLE_NPAGE_ONE frames. The values of HASHTABLE_NPAGE_ONE and 
 ** HASHTABLE_NPAGE are selected so that together the wal-index header and
 ** first index block are the same size as all other index blocks in the
-** wal-index.
+** wal-index.  The values are:
+**
+**   HASHTABLE_NPAGE      4096
+**   HASHTABLE_NPAGE_ONE  4062
 **
 ** Each index block contains two sections, a page-mapping that contains the
 ** database page number associated with each wal frame, and a hash-table 
@@ -1410,14 +1413,42 @@ int sqlite3WalOpen(
   assert( zWalName && zWalName[0] );
   assert( pDbFd );
 
+  /* Verify the values of various constants.  Any changes to the values
+  ** of these constants would result in an incompatible on-disk format
+  ** for the -shm file.  Any change that causes one of these asserts to
+  ** fail is a backward compatibility problem, even if the change otherwise
+  ** works.
+  **
+  ** This table also serves as a helpful cross-reference when trying to
+  ** interpret hex dumps of the -shm file.
+  */
+  assert(    48 ==  sizeof(WalIndexHdr)  );
+  assert(    40 ==  sizeof(WalCkptInfo)  );
+  assert(   120 ==  WALINDEX_LOCK_OFFSET );
+  assert(   136 ==  WALINDEX_HDR_SIZE    );
+  assert(  4096 ==  HASHTABLE_NPAGE      );
+  assert(  4062 ==  HASHTABLE_NPAGE_ONE  );
+  assert(  8192 ==  HASHTABLE_NSLOT      );
+  assert(   383 ==  HASHTABLE_HASH_1     );
+  assert( 32768 ==  WALINDEX_PGSZ        );
+  assert(     8 ==  SQLITE_SHM_NLOCK     );
+  assert(     5 ==  WAL_NREADER          );
+  assert(    24 ==  WAL_HDRSIZE          );
+  assert(   120 ==  WALINDEX_LOCK_OFFSET + WAL_WRITE_LOCK   );
+  assert(   121 ==  WALINDEX_LOCK_OFFSET + WAL_CKPT_LOCK    );
+  assert(   122 ==  WALINDEX_LOCK_OFFSET + WAL_RECOVER_LOCK );
+  assert(   123 ==  WALINDEX_LOCK_OFFSET + WAL_READ_LOCK(0) );
+  assert(   124 ==  WALINDEX_LOCK_OFFSET + WAL_READ_LOCK(1) );
+  assert(   125 ==  WALINDEX_LOCK_OFFSET + WAL_READ_LOCK(2) );
+  assert(   126 ==  WALINDEX_LOCK_OFFSET + WAL_READ_LOCK(3) );
+  assert(   127 ==  WALINDEX_LOCK_OFFSET + WAL_READ_LOCK(4) );
+
   /* In the amalgamation, the os_unix.c and os_win.c source files come before
   ** this source file.  Verify that the #defines of the locking byte offsets
   ** in os_unix.c and os_win.c agree with the WALINDEX_LOCK_OFFSET value.
   ** For that matter, if the lock offset ever changes from its initial design
   ** value of 120, we need to know that so there is an assert() to check it.
   */
-  assert( 120==WALINDEX_LOCK_OFFSET );
-  assert( 136==WALINDEX_HDR_SIZE );
 #ifdef WIN_SHM_BASE
   assert( WIN_SHM_BASE==WALINDEX_LOCK_OFFSET );
 #endif

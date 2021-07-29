@@ -1,5 +1,5 @@
-C Remove\sALWAYS()\smacros\sthat\scan\sbe\strue\sif\sthe\sinternal\stest\sfunction\nimplies_nonnull_row()\sis\sused\sin\sthe\sresult\sset\sof\sa\squery\sand\scontains\ncomparison\soperator\sagainst\sa\scomputed\scolumn.\ndbsqlfuzz\s4c34db5bff6247f33ee49e341a1f3018e72be0a0.
-D 2021-07-29T00:33:20.860
+C Improve\scomments\sand\sadd\snew\sassert()\sstatements\sin\sWAL\sto\shelp\sdocument\nhow\severything\sworks.
+D 2021-07-29T16:48:21.089
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -628,7 +628,7 @@ F src/vdbetrace.c 666c6fd9f1b62be6999e072a45b913e3c2c3518bc60dfd4d54fe304130acb7
 F src/vdbevtab.c f99b275366c5fc5e2d99f734729880994ab9500bdafde7fae3b02d562b9d323c
 F src/vtab.c 3a9a6ae1fd14f7c00af184233cb9f3bced89ae277a75a312f85fb77297a3cdfa
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c c8ec20a1ca161d5635a4f19c2a4efec2e006e19a8a61f272bf6bce1c80ab7436
+F src/wal.c 1b1e7311d3f12ab60c012734e49ebf048d6eeb4485b6f077bd79f340e9c36731
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c 7342becedf3f8a26f9817f08436bdf8b56ad69af83705f6b9320a0ad3092c2ac
 F src/where.c 07c63dde6ab72477b964f4c81bee61ef78a246ca149bb9a560784f2e85cd78d7
@@ -1920,7 +1920,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a2fc531177c3a061f2881198bb711d502db7cd831351b6a5dd415936845b6625
-R 302893be0ad635d55b2ba074ef459057
+P 4d1dbfa35c7dc0f09321b2e274a00e506f4ca65322454652d5891d815a6966d3
+R 7a7643ec86e1f4d8e14a77c61b23a38c
 U drh
-Z 214bc8f469ab254a07e1605231d14a09
+Z faf097f1ce1cc5bd6964b75ff7d837f7
