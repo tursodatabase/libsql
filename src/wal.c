@@ -1433,7 +1433,8 @@ int sqlite3WalOpen(
   assert( 32768 ==  WALINDEX_PGSZ        );
   assert(     8 ==  SQLITE_SHM_NLOCK     );
   assert(     5 ==  WAL_NREADER          );
-  assert(    24 ==  WAL_HDRSIZE          );
+  assert(    24 ==  WAL_FRAME_HDRSIZE    );
+  assert(    32 ==  WAL_HDRSIZE          );
   assert(   120 ==  WALINDEX_LOCK_OFFSET + WAL_WRITE_LOCK   );
   assert(   121 ==  WALINDEX_LOCK_OFFSET + WAL_CKPT_LOCK    );
   assert(   122 ==  WALINDEX_LOCK_OFFSET + WAL_RECOVER_LOCK );
