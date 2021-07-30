@@ -600,6 +600,6 @@ do_execsql_test gencol1-21.1 {
   );
   INSERT INTO t1(a) VALUES(5);
   SELECT name, type FROM pragma_table_xinfo('t1');
-} {a integer b int c text d {} e {int}}
+} {a INTEGER b INT c TEXT d {} e INT}
 
 finish_test

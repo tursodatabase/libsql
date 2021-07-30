@@ -1382,6 +1382,9 @@ void sqlite3AddColumn(Parse *pParse, Token sName, Token sType){
   sqlite3 *db = pParse->db;
   u8 hName;
   Column *aNew;
+  u8 eType = COLTYPE_CUSTOM;
+  u8 szEst = 1;
+  char affinity = SQLITE_AFF_BLOB;
 
   if( (p = pParse->pNewTable)==0 ) return;
   if( p->nCol+1>db->aLimit[SQLITE_LIMIT_COLUMN] ){
@@ -1407,7 +1410,25 @@ void sqlite3AddColumn(Parse *pParse, Token sName, Token sType){
     }
   }
 
-  z = sqlite3DbMallocRaw(db, sName.n + sType.n + 2);
+  /* Check for standard typenames.  For standard typenames we will
+  ** set the Column.eType field rather than storing the typename after
+  ** the column name, in order to save space. */
+  if( sType.n>=3 ){
+    sqlite3DequoteToken(&sType);
+    for(i=0; i<SQLITE_N_STDTYPE; i++){
+       if( sType.n==sqlite3StdTypeLen[i]
+        && sqlite3_strnicmp(sType.z, sqlite3StdType[i], sType.n)==0
+       ){
+         sType.n = 0;
+         eType = i+1;
+         affinity = sqlite3StdTypeAffinity[i];
+         if( affinity<=SQLITE_AFF_TEXT ) szEst = 5;
+         break;
+       }
+    }
+  }
+
+  z = sqlite3DbMallocRaw(db, sName.n + 1 + sType.n + (sType.n>0) );
   if( z==0 ) return;
   if( IN_RENAME_OBJECT ) sqlite3RenameTokenMap(pParse, (void*)z, &sName);
   memcpy(z, sName.z, sName.n);
@@ -1436,11 +1457,14 @@ void sqlite3AddColumn(Parse *pParse, Token sName, Token sType){
   if( sType.n==0 ){
     /* If there is no type specified, columns have the default affinity
     ** 'BLOB' with a default size of 4 bytes. */
-    pCol->affinity = SQLITE_AFF_BLOB;
-    pCol->szEst = 1;
+    pCol->affinity = affinity;
+    pCol->eType = eType;
+    pCol->szEst = szEst;
 #ifdef SQLITE_ENABLE_SORTER_REFERENCES
-    if( 4>=sqlite3GlobalConfig.szSorterRef ){
-      pCol->colFlags |= COLFLAG_SORTERREF;
+    if( affinity==SQLITE_AFF_BLOB ){
+      if( 4>=sqlite3GlobalConfig.szSorterRef ){
+        pCol->colFlags |= COLFLAG_SORTERREF;
+      }
     }
 #endif
   }else{
@@ -1729,7 +1753,7 @@ void sqlite3AddPrimaryKey(
   }
   if( nTerm==1
    && pCol
-   && sqlite3StrICmp(sqlite3ColumnType(pCol,""), "INTEGER")==0
+   && pCol->eType==COLTYPE_INTEGER
    && sortOrder!=SQLITE_SO_DESC
   ){
     if( IN_RENAME_OBJECT && pList ){

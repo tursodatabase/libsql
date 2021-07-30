@@ -91,6 +91,9 @@ int sqlite3Strlen30(const char *z){
 char *sqlite3ColumnType(Column *pCol, char *zDflt){
   if( pCol->colFlags & COLFLAG_HASTYPE ){
     return pCol->zName + strlen(pCol->zName) + 1;
+  }else if( pCol->eType ){
+    assert( pCol->eType<=SQLITE_N_STDTYPE );
+    return (char*)sqlite3StdType[pCol->eType-1];
   }else{
     return zDflt;
   }

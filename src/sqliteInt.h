@@ -2037,8 +2037,24 @@ struct Column {
   char affinity;   /* One of the SQLITE_AFF_... values */
   u8 szEst;        /* Estimated size of value in this column. sizeof(INT)==1 */
   u8 hName;        /* Column name hash for faster lookup */
+  u8 eType;        /* One of the standard types */
   u16 colFlags;    /* Boolean properties.  See COLFLAG_ defines below */
 };
+
+/* Allowed values for Column.eType.
+**
+** Values must match entries in the global constant arrays
+** sqlite3StdTypeLen[] and sqlite3StdType[].  Each value is one more
+** than the offset into these arrays for the corresponding name.
+** Adjust the SQLITE_N_STDTYPE value if adding or removing entries.
+*/
+#define COLTYPE_CUSTOM      0   /* Type appended to zName */
+#define COLTYPE_BLOB        1
+#define COLTYPE_INT         2
+#define COLTYPE_INTEGER     3
+#define COLTYPE_REAL        4
+#define COLTYPE_TEXT        5
+#define SQLITE_N_STDTYPE    5  /* Number of standard types */
 
 /* Allowed values for Column.colFlags.
 **
@@ -4794,6 +4810,9 @@ void sqlite3ValueApplyAffinity(sqlite3_value *, u8, u8);
 #ifndef SQLITE_AMALGAMATION
 extern const unsigned char sqlite3OpcodeProperty[];
 extern const char sqlite3StrBINARY[];
+extern const unsigned char sqlite3StdTypeLen[];
+extern const char sqlite3StdTypeAffinity[];
+extern const char *sqlite3StdType[];
 extern const unsigned char sqlite3UpperToLower[];
 extern const unsigned char *sqlite3aLTb;
 extern const unsigned char *sqlite3aEQb;
