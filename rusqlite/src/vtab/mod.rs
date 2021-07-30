@@ -1,4 +1,4 @@
-//! `feature = "vtab"` Create virtual tables.
+//! Create virtual tables.
 //!
 //! Follow these steps to create your own virtual table:
 //! 1. Write implementation of [`VTab`] and [`VTabCursor`] traits.
@@ -57,7 +57,7 @@ use crate::{str_to_cstring, Connection, Error, InnerConnection, Result};
 // ffi::sqlite3_vtab => VTab
 // ffi::sqlite3_vtab_cursor => VTabCursor
 
-/// `feature = "vtab"` Virtual table module
+/// Virtual table module
 ///
 /// (See [SQLite doc](https://sqlite.org/c3ref/module.html))
 #[repr(transparent)]
@@ -84,7 +84,7 @@ const ZERO_MODULE: ffi::sqlite3_module = unsafe {
     .module
 };
 
-/// `feature = "vtab"` Create a read-only virtual table implementation.
+/// Create a read-only virtual table implementation.
 ///
 /// Step 2 of [Creating New Virtual Table Implementations](https://sqlite.org/vtab.html#creating_new_virtual_table_implementations).
 pub fn read_only_module<'vtab, T: CreateVTab<'vtab>>() -> &'static Module<'vtab, T> {
@@ -122,7 +122,7 @@ pub fn read_only_module<'vtab, T: CreateVTab<'vtab>>() -> &'static Module<'vtab,
     }
 }
 
-/// `feature = "vtab"` Create an eponymous only virtual table implementation.
+/// Create an eponymous only virtual table implementation.
 ///
 /// Step 2 of [Creating New Virtual Table Implementations](https://sqlite.org/vtab.html#creating_new_virtual_table_implementations).
 pub fn eponymous_only_module<'vtab, T: VTab<'vtab>>() -> &'static Module<'vtab, T> {
@@ -187,7 +187,7 @@ impl VTabConnection {
     }
 }
 
-/// `feature = "vtab"` Virtual table instance trait.
+/// Virtual table instance trait.
 ///
 /// # Safety
 ///
@@ -198,7 +198,7 @@ impl VTabConnection {
 /// #[repr(C)]
 /// struct MyTab {
 ///    /// Base class. Must be first
-///    base: ffi::sqlite3_vtab,
+///    base: rusqlite::vtab::sqlite3_vtab,
 ///    /* Virtual table implementations will typically add additional fields */
 /// }
 /// ```
@@ -228,7 +228,7 @@ pub unsafe trait VTab<'vtab>: Sized {
     fn open(&'vtab self) -> Result<Self::Cursor>;
 }
 
-/// `feature = "vtab"` Non-eponymous virtual table instance trait.
+/// Non-eponymous virtual table instance trait.
 ///
 /// (See [SQLite doc](https://sqlite.org/c3ref/vtab.html))
 pub trait CreateVTab<'vtab>: VTab<'vtab> {
@@ -257,7 +257,7 @@ pub trait CreateVTab<'vtab>: VTab<'vtab> {
     }
 }
 
-/// `feature = "vtab"` Index constraint operator.
+/// Index constraint operator.
 /// See [Virtual Table Constraint Operator Codes](https://sqlite.org/c3ref/c_index_constraint_eq.html) for details.
 #[derive(Debug, PartialEq)]
 #[allow(non_snake_case, non_camel_case_types, missing_docs)]
@@ -302,7 +302,7 @@ impl From<u8> for IndexConstraintOp {
     }
 }
 
-/// `feature = "vtab"` Pass information into and receive the reply from the
+/// Pass information into and receive the reply from the
 /// [`VTab::best_index`] method.
 ///
 /// (See [SQLite doc](http://sqlite.org/c3ref/index_info.html))
@@ -370,6 +370,7 @@ impl IndexInfo {
 
     /// Estimated number of rows returned.
     #[cfg(feature = "modern_sqlite")] // SQLite >= 3.8.2
+    #[cfg_attr(docsrs, doc(cfg(feature = "modern_sqlite")))]
     #[inline]
     pub fn set_estimated_rows(&mut self, estimated_rows: i64) {
         unsafe {
@@ -402,7 +403,7 @@ impl<'a> Iterator for IndexConstraintIter<'a> {
     }
 }
 
-/// `feature = "vtab"` WHERE clause constraint.
+/// WHERE clause constraint.
 pub struct IndexConstraint<'a>(&'a ffi::sqlite3_index_constraint);
 
 impl IndexConstraint<'_> {
@@ -425,7 +426,7 @@ impl IndexConstraint<'_> {
     }
 }
 
-/// `feature = "vtab"` Information about what parameters to pass to
+/// Information about what parameters to pass to
 /// [`VTabCursor::filter`].
 pub struct IndexConstraintUsage<'a>(&'a mut ffi::sqlite3_index_constraint_usage);
 
@@ -463,7 +464,7 @@ impl<'a> Iterator for OrderByIter<'a> {
     }
 }
 
-/// `feature = "vtab"` A column of the ORDER BY clause.
+/// A column of the ORDER BY clause.
 pub struct OrderBy<'a>(&'a ffi::sqlite3_index_info_sqlite3_index_orderby);
 
 impl OrderBy<'_> {
@@ -480,14 +481,14 @@ impl OrderBy<'_> {
     }
 }
 
-/// `feature = "vtab"` Virtual table cursor trait.
+/// Virtual table cursor trait.
 ///
 /// Implementations must be like:
 /// ```rust,ignore
 /// #[repr(C)]
 /// struct MyTabCursor {
 ///    /// Base class. Must be first
-///    base: ffi::sqlite3_vtab_cursor,
+///    base: rusqlite::vtab::sqlite3_vtab_cursor,
 ///    /* Virtual table implementations will typically add additional fields */
 /// }
 /// ```
@@ -514,7 +515,7 @@ pub unsafe trait VTabCursor: Sized {
     fn rowid(&self) -> Result<i64>;
 }
 
-/// `feature = "vtab"` Context is used by [`VTabCursor::column`] to specify the
+/// Context is used by [`VTabCursor::column`] to specify the
 /// cell value.
 pub struct Context(*mut ffi::sqlite3_context);
 
@@ -530,7 +531,7 @@ impl Context {
     // TODO sqlite3_vtab_nochange (http://sqlite.org/c3ref/vtab_nochange.html)
 }
 
-/// `feature = "vtab"` Wrapper to [`VTabCursor::filter`] arguments, the values
+/// Wrapper to [`VTabCursor::filter`] arguments, the values
 /// requested by [`VTab::best_index`].
 pub struct Values<'a> {
     args: &'a [*mut ffi::sqlite3_value],
@@ -560,10 +561,12 @@ impl Values<'_> {
             }
             FromSqlError::OutOfRange(i) => Error::IntegralValueOutOfRange(idx, i),
             #[cfg(feature = "i128_blob")]
+            #[cfg_attr(docsrs, doc(cfg(feature = "i128_blob")))]
             FromSqlError::InvalidI128Size(_) => {
                 Error::InvalidColumnType(idx, idx.to_string(), value.data_type())
             }
             #[cfg(feature = "uuid")]
+            #[cfg_attr(docsrs, doc(cfg(feature = "uuid")))]
             FromSqlError::InvalidUuidSize(_) => {
                 Error::FromSqlConversionFailure(idx, value.data_type(), Box::new(err))
             }
@@ -573,6 +576,7 @@ impl Values<'_> {
     // `sqlite3_value_type` returns `SQLITE_NULL` for pointer.
     // So it seems not possible to enhance `ValueRef::from_value`.
     #[cfg(feature = "array")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "array")))]
     fn get_array(&self, idx: usize) -> Option<array::Array> {
         use crate::types::Value;
         let arg = self.args[idx];
@@ -630,7 +634,7 @@ impl<'a> Iterator for ValueIter<'a> {
 }
 
 impl Connection {
-    /// `feature = "vtab"` Register a virtual table implementation.
+    /// Register a virtual table implementation.
     ///
     /// Step 3 of [Creating New Virtual Table
     /// Implementations](https://sqlite.org/vtab.html#creating_new_virtual_table_implementations).
@@ -680,7 +684,7 @@ impl InnerConnection {
     }
 }
 
-/// `feature = "vtab"` Escape double-quote (`"`) character occurrences by
+/// Escape double-quote (`"`) character occurrences by
 /// doubling them (`""`).
 pub fn escape_double_quote(identifier: &str) -> Cow<'_, str> {
     if identifier.contains('"') {
@@ -690,7 +694,7 @@ pub fn escape_double_quote(identifier: &str) -> Cow<'_, str> {
         Borrowed(identifier)
     }
 }
-/// `feature = "vtab"` Dequote string
+/// Dequote string
 pub fn dequote(s: &str) -> &str {
     if s.len() < 2 {
         return s;
@@ -703,7 +707,7 @@ pub fn dequote(s: &str) -> &str {
         _ => s,
     }
 }
-/// `feature = "vtab"` The boolean can be one of:
+/// The boolean can be one of:
 /// ```text
 /// 1 yes true on
 /// 0 no false off
@@ -1072,10 +1076,13 @@ fn alloc(s: &str) -> *mut c_char {
 }
 
 #[cfg(feature = "array")]
+#[cfg_attr(docsrs, doc(cfg(feature = "array")))]
 pub mod array;
 #[cfg(feature = "csvtab")]
+#[cfg_attr(docsrs, doc(cfg(feature = "csvtab")))]
 pub mod csvtab;
 #[cfg(feature = "series")]
+#[cfg_attr(docsrs, doc(cfg(feature = "series")))]
 pub mod series; // SQLite >= 3.9.0
 
 #[cfg(test)]

@@ -41,6 +41,7 @@ impl From<isize> for Value {
 }
 
 #[cfg(feature = "i128_blob")]
+#[cfg_attr(docsrs, doc(cfg(feature = "i128_blob")))]
 impl From<i128> for Value {
     #[inline]
     fn from(i: i128) -> Value {
@@ -54,6 +55,7 @@ impl From<i128> for Value {
 }
 
 #[cfg(feature = "uuid")]
+#[cfg_attr(docsrs, doc(cfg(feature = "uuid")))]
 impl From<uuid::Uuid> for Value {
     #[inline]
     fn from(id: uuid::Uuid) -> Value {

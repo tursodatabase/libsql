@@ -1,6 +1,6 @@
 use crate::{Connection, Result};
 
-/// `feature = "load_extension"` RAII guard temporarily enabling SQLite
+/// RAII guard temporarily enabling SQLite
 /// extensions to be loaded.
 ///
 /// ## Example
@@ -14,6 +14,7 @@ use crate::{Connection, Result};
 ///     conn.load_extension(Path::new("my_sqlite_extension"), None)
 /// }
 /// ```
+#[cfg_attr(docsrs, doc(cfg(feature = "load_extension")))]
 pub struct LoadExtensionGuard<'conn> {
     conn: &'conn Connection,
 }

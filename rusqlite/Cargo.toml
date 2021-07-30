@@ -150,6 +150,7 @@ features = [ "array", "backup", "blob", "chrono", "collation", "functions", "lim
 all-features = false
 no-default-features = true
 default-target = "x86_64-unknown-linux-gnu"
+rustdoc-args = ["--cfg", "docsrs"]
 
 [package.metadata.playground]
 features = ["bundled-full"]

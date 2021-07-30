@@ -85,7 +85,7 @@ fn test_dummy_module() -> rusqlite::Result<()> {
 
     let db = Connection::open_in_memory()?;
 
-    db.create_module::<DummyTab>("dummy", &module, None)?;
+    db.create_module::<DummyTab>("dummy", module, None)?;
 
     let version = version_number();
     if version < 3_008_012 {

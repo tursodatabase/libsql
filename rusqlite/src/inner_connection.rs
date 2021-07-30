@@ -136,7 +136,7 @@ impl InnerConnection {
     }
 
     #[inline]
-    pub fn decode_result(&mut self, code: c_int) -> Result<()> {
+    pub fn decode_result(&self, code: c_int) -> Result<()> {
         unsafe { InnerConnection::decode_result_raw(self.db(), code) }
     }
 
@@ -278,7 +278,7 @@ impl InnerConnection {
     }
 
     #[inline]
-    pub fn changes(&mut self) -> usize {
+    pub fn changes(&self) -> usize {
         unsafe { ffi::sqlite3_changes(self.db()) as usize }
     }
 
@@ -300,6 +300,11 @@ impl InnerConnection {
             }
         }
         false
+    }
+
+    #[cfg(feature = "modern_sqlite")] // 3.10.0
+    pub fn cache_flush(&mut self) -> Result<()> {
+        crate::error::check(unsafe { ffi::sqlite3_db_cacheflush(self.db()) })
     }
 
     #[cfg(not(feature = "hooks"))]

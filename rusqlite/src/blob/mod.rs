@@ -1,4 +1,4 @@
-//! `feature = "blob"` Incremental BLOB I/O.
+//! Incremental BLOB I/O.
 //!
 //! Note that SQLite does not provide API-level access to change the size of a
 //! BLOB; that must be performed through SQL statements.
@@ -196,7 +196,7 @@ use crate::{Connection, DatabaseName, Result};
 
 mod pos_io;
 
-/// `feature = "blob"` Handle to an open BLOB. See
+/// Handle to an open BLOB. See
 /// [`rusqlite::blob`](crate::blob) documentation for in-depth discussion.
 pub struct Blob<'conn> {
     conn: &'conn Connection,
@@ -206,7 +206,7 @@ pub struct Blob<'conn> {
 }
 
 impl Connection {
-    /// `feature = "blob"` Open a handle to the BLOB located in `row_id`,
+    /// Open a handle to the BLOB located in `row_id`,
     /// `column`, `table` in database `db`.
     ///
     /// # Failure
@@ -223,7 +223,7 @@ impl Connection {
         row_id: i64,
         read_only: bool,
     ) -> Result<Blob<'a>> {
-        let mut c = self.db.borrow_mut();
+        let c = self.db.borrow_mut();
         let mut blob = ptr::null_mut();
         let db = db.as_cstring()?;
         let table = super::str_to_cstring(table)?;
@@ -400,7 +400,7 @@ impl Drop for Blob<'_> {
     }
 }
 
-/// `feature = "blob"` BLOB of length N that is filled with zeroes.
+/// BLOB of length N that is filled with zeroes.
 ///
 /// Zeroblobs are intended to serve as placeholders for BLOBs whose content is
 /// later written using incremental BLOB I/O routines.
