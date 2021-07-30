@@ -1389,6 +1389,24 @@ void sqlite3AddColumn(Parse *pParse, Token sName, Token sType){
     return;
   }
   if( !IN_RENAME_OBJECT ) sqlite3DequoteToken(&sName);
+
+  /* Because keywords GENERATE ALWAYS can be converted into indentifiers
+  ** by the parser, we can sometimes end up with a typename that ends
+  ** with "generated always".  Check for this case and omit the surplus
+  ** text. */
+  if( sType.n>=16
+   && sqlite3_strnicmp(sType.z+(sType.n-6),"always",6)==0
+  ){
+    sType.n -= 6;
+    while( ALWAYS(sType.n>0) && sqlite3Isspace(sType.z[sType.n-1]) ) sType.n--;
+    if( sType.n>=9
+     && sqlite3_strnicmp(sType.z+(sType.n-9),"generated",9)==0
+    ){
+      sType.n -= 9;
+      while( sType.n>0 && sqlite3Isspace(sType.z[sType.n-1]) ) sType.n--;
+    }
+  }
+
   z = sqlite3DbMallocRaw(db, sName.n + sType.n + 2);
   if( z==0 ) return;
   if( IN_RENAME_OBJECT ) sqlite3RenameTokenMap(pParse, (void*)z, &sName);
