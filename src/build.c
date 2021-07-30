@@ -1381,6 +1381,7 @@ void sqlite3AddColumn(Parse *pParse, Token *pName, Token *pType){
   Column *pCol;
   sqlite3 *db = pParse->db;
   u8 hName;
+  Column *aNew;
 
   if( (p = pParse->pNewTable)==0 ) return;
   if( p->nCol+1>db->aLimit[SQLITE_LIMIT_COLUMN] ){
@@ -1401,15 +1402,12 @@ void sqlite3AddColumn(Parse *pParse, Token *pName, Token *pType){
       return;
     }
   }
-  if( (p->nCol & 0x7)==0 ){
-    Column *aNew;
-    aNew = sqlite3DbRealloc(db,p->aCol,(p->nCol+8)*sizeof(p->aCol[0]));
-    if( aNew==0 ){
-      sqlite3DbFree(db, z);
-      return;
-    }
-    p->aCol = aNew;
+  aNew = sqlite3DbRealloc(db,p->aCol,(p->nCol+1)*sizeof(p->aCol[0]));
+  if( aNew==0 ){
+    sqlite3DbFree(db, z);
+    return;
   }
+  p->aCol = aNew;
   pCol = &p->aCol[p->nCol];
   memset(pCol, 0, sizeof(p->aCol[0]));
   pCol->zName = z;

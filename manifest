@@ -1,5 +1,5 @@
-C Enhance\sthe\swal.c\ssource\sfile\swith\san\sASCII-art\sschematic\sof\sthe\s-shm\sfile\nheader.
-D 2021-07-29T18:34:35.597
+C Reduce\sclownfooting\sin\sthe\sallocation\sof\sthe\sTable.aCol\sarray.\s\sThis\sreduces\nthe\samount\sof\sheap\sspace\srequired\sto\shold\slarge\sschemas\sby\sabout\s11%.
+D 2021-07-30T12:47:35.850
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -488,7 +488,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c e204a9c8fb4fe5dbb910a863ba487f4af9b5c501254ec4ccbfcdd6b1f65b7fb4
 F src/btree.h 74d64b8f28cfa4a894d14d4ed64fa432cd697b98b61708d4351482ae15913e22
 F src/btreeInt.h 7bc15a24a02662409ebcd6aeaa1065522d14b7fda71573a2b0568b458f514ae0
-F src/build.c 9978caf1e5c6c82d04d85e290d46979abc2219fb79bcd970258d1ebe368d184e
+F src/build.c 218628f5743e2329959f66269928ac9521cc5e7f69d8bcc0e90a57f2715fe0ae
 F src/callback.c d0b853dd413255d2e337b34545e54d888ea02f20da5ad0e63585b389624c4a6c
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 8159d5f706551861c18ec6c8f6bdf105e15ea00367f05d9ab65d31a1077facc1
@@ -1920,7 +1920,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 87b8d47889f1990442aa90398614656658207085d064381074f72bda9bdcbfa5
-R d8c25bc87f149d13a2a70b86ca69893f
+P a6c160e08a61d105f8aab959440ac5ec4f1aaca8f0d393e08e7c2c67815b5bb2
+R 05be268cc1d65b192983539c10fe9664
 U drh
-Z 666b852ed7a04d1347b165527afd3943
+Z 293e50cb88f37ee66f4747a547b7dd6f
