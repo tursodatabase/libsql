@@ -1373,7 +1373,7 @@ void sqlite3AddReturning(Parse *pParse, ExprList *pList){
 ** first to get things going.  Then this routine is called for each
 ** column.
 */
-void sqlite3AddColumn(Parse *pParse, Token *pName, Token *pType){
+void sqlite3AddColumn(Parse *pParse, Token sName, Token sType){
   Table *p;
   int i;
   char *z;
@@ -1388,11 +1388,12 @@ void sqlite3AddColumn(Parse *pParse, Token *pName, Token *pType){
     sqlite3ErrorMsg(pParse, "too many columns on %s", p->zName);
     return;
   }
-  z = sqlite3DbMallocRaw(db, pName->n + pType->n + 2);
+  if( !IN_RENAME_OBJECT ) sqlite3DequoteToken(&sName);
+  z = sqlite3DbMallocRaw(db, sName.n + sType.n + 2);
   if( z==0 ) return;
-  if( IN_RENAME_OBJECT ) sqlite3RenameTokenMap(pParse, (void*)z, pName);
-  memcpy(z, pName->z, pName->n);
-  z[pName->n] = 0;
+  if( IN_RENAME_OBJECT ) sqlite3RenameTokenMap(pParse, (void*)z, &sName);
+  memcpy(z, sName.z, sName.n);
+  z[sName.n] = 0;
   sqlite3Dequote(z);
   hName = sqlite3StrIHash(z);
   for(i=0; i<p->nCol; i++){
@@ -1414,7 +1415,7 @@ void sqlite3AddColumn(Parse *pParse, Token *pName, Token *pType){
   pCol->hName = hName;
   sqlite3ColumnPropertiesFromName(p, pCol);
  
-  if( pType->n==0 ){
+  if( sType.n==0 ){
     /* If there is no type specified, columns have the default affinity
     ** 'BLOB' with a default size of 4 bytes. */
     pCol->affinity = SQLITE_AFF_BLOB;
@@ -1426,8 +1427,8 @@ void sqlite3AddColumn(Parse *pParse, Token *pName, Token *pType){
 #endif
   }else{
     zType = z + sqlite3Strlen30(z) + 1;
-    memcpy(zType, pType->z, pType->n);
-    zType[pType->n] = 0;
+    memcpy(zType, sType.z, sType.n);
+    zType[sType.n] = 0;
     sqlite3Dequote(zType);
     pCol->affinity = sqlite3AffinityType(zType, pCol);
     pCol->colFlags |= COLFLAG_HASTYPE;

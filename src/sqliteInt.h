@@ -4317,6 +4317,7 @@ void sqlite3ErrorMsg(Parse*, const char*, ...);
 int sqlite3ErrorToParser(sqlite3*,int);
 void sqlite3Dequote(char*);
 void sqlite3DequoteExpr(Expr*);
+void sqlite3DequoteToken(Token*);
 void sqlite3TokenInit(Token*,char*);
 int sqlite3KeywordCode(const unsigned char*, int);
 int sqlite3RunParser(Parse*, const char*, char **);
@@ -4383,7 +4384,7 @@ void sqlite3StartTable(Parse*,Token*,Token*,int,int,int,int);
 #else
 # define sqlite3ColumnPropertiesFromName(T,C) /* no-op */
 #endif
-void sqlite3AddColumn(Parse*,Token*,Token*);
+void sqlite3AddColumn(Parse*,Token,Token);
 void sqlite3AddNotNull(Parse*, int);
 void sqlite3AddPrimaryKey(Parse*, ExprList*, int, int, int);
 void sqlite3AddCheckConstraint(Parse*, Expr*, const char*, const char*);
