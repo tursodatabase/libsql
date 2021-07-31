@@ -41,9 +41,9 @@ rm -rf "v${SQLCIPHER_VERSION}.tar.gz" sqlcipher.src
 
 # Regenerate bindgen file for sqlcipher
 rm -f "$SQLCIPHER_LIB_DIR/bindgen_bundled_version.rs"
-cargo clean
+
 # cargo update
-# find "$SCRIPT_DIR/../target" -type f -name bindgen.rs -exec rm {} \;
+find "$SCRIPT_DIR/../target" -type f -name bindgen.rs -exec rm {} \;
 env LIBSQLITE3_SYS_BUNDLING=1 cargo build --features "sqlcipher buildtime_bindgen session"
 find "$SCRIPT_DIR/../target" -type f -name bindgen.rs -exec mv {} "$SQLCIPHER_LIB_DIR/bindgen_bundled_version.rs" \;
 
