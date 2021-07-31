@@ -2031,13 +2031,13 @@ struct Module {
 */
 struct Column {
   char *zName;     /* Name of this column, \000, then the type */
-  Expr *pDflt;     /* Default value or GENERATED ALWAYS AS value */
   char *zColl;     /* Collating sequence.  If NULL, use the default */
-  u8 notNull;      /* An OE_ code for handling a NOT NULL constraint */
+  u8 notNull : 4;  /* An OE_ code for handling a NOT NULL constraint */
+  u8 eType : 4;    /* One of the standard types */
   char affinity;   /* One of the SQLITE_AFF_... values */
   u8 szEst;        /* Estimated size of value in this column. sizeof(INT)==1 */
   u8 hName;        /* Column name hash for faster lookup */
-  u8 eType;        /* One of the standard types */
+  u16 iDflt;       /* 1-based index of DEFAULT.  0 means "none" */
   u16 colFlags;    /* Boolean properties.  See COLFLAG_ defines below */
 };
 
@@ -2213,6 +2213,7 @@ struct Table {
   char *zColAff;       /* String defining the affinity of each column */
   ExprList *pCheck;    /* All CHECK constraints */
                        /*   ... also used as column name list in a VIEW */
+  ExprList *pDfltList; /* DEFAULT clauses on various columns */
   Pgno tnum;           /* Root BTree page for this table */
   u32 nTabRef;         /* Number of pointers to this Table */
   u32 tabFlags;        /* Mask of TF_* values */
@@ -4379,6 +4380,8 @@ void sqlite3ResetAllSchemasOfConnection(sqlite3*);
 void sqlite3ResetOneSchema(sqlite3*,int);
 void sqlite3CollapseDatabaseArray(sqlite3*);
 void sqlite3CommitInternalChanges(sqlite3*);
+void sqlite3ColumnSetExpr(Parse*,Table*,Column*,Expr*);
+Expr *sqlite3ColumnExpr(Table*,Column*);
 void sqlite3DeleteColumnNames(sqlite3*,Table*);
 void sqlite3GenerateColumnNames(Parse *pParse, Select *pSelect);
 int sqlite3ColumnsFromExprList(Parse*,ExprList*,i16*,Column**);
@@ -4517,7 +4520,7 @@ void sqlite3ExprCodeGetColumnOfTable(Vdbe*, Table*, int, int, int);
 void sqlite3ExprCodeMove(Parse*, int, int, int);
 void sqlite3ExprCode(Parse*, Expr*, int);
 #ifndef SQLITE_OMIT_GENERATED_COLUMNS
-void sqlite3ExprCodeGeneratedColumn(Parse*, Column*, int);
+void sqlite3ExprCodeGeneratedColumn(Parse*, Table*, Column*, int);
 #endif
 void sqlite3ExprCodeCopy(Parse*, Expr*, int);
 void sqlite3ExprCodeFactorable(Parse*, Expr*, int);

@@ -829,10 +829,12 @@ int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
       Table *pNew = sParse.pNewTable;
       Index *pIdx;
       pTab->aCol = pNew->aCol;
+      pTab->pDfltList = pNew->pDfltList;
       pTab->nNVCol = pTab->nCol = pNew->nCol;
       pTab->tabFlags |= pNew->tabFlags & (TF_WithoutRowid|TF_NoVisibleRowid);
       pNew->nCol = 0;
       pNew->aCol = 0;
+      pNew->pDfltList = 0;
       assert( pTab->pIndex==0 );
       assert( HasRowid(pNew) || sqlite3PrimaryKeyIndex(pNew)!=0 );
       if( !HasRowid(pNew)

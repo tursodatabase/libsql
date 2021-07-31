@@ -3643,9 +3643,10 @@ void sqlite3ExprCodeLoadIndexColumn(
 ** and store the result in register regOut
 */
 void sqlite3ExprCodeGeneratedColumn(
-  Parse *pParse,
-  Column *pCol,
-  int regOut
+  Parse *pParse,     /* Parsing context */
+  Table *pTab,       /* Table containing the generated column */
+  Column *pCol,      /* The generated column */
+  int regOut         /* Put the result in this register */
 ){
   int iAddr;
   Vdbe *v = pParse->pVdbe;
@@ -3656,7 +3657,7 @@ void sqlite3ExprCodeGeneratedColumn(
   }else{
     iAddr = 0;
   }
-  sqlite3ExprCodeCopy(pParse, pCol->pDflt, regOut);
+  sqlite3ExprCodeCopy(pParse, sqlite3ColumnExpr(pTab,pCol), regOut);
   if( pCol->affinity>=SQLITE_AFF_TEXT ){
     sqlite3VdbeAddOp4(v, OP_Affinity, regOut, 1, 0, &pCol->affinity, 1);
   }
@@ -3697,7 +3698,7 @@ void sqlite3ExprCodeGetColumnOfTable(
         int savedSelfTab = pParse->iSelfTab;
         pCol->colFlags |= COLFLAG_BUSY;
         pParse->iSelfTab = iTabCur+1;
-        sqlite3ExprCodeGeneratedColumn(pParse, pCol, regOut);
+        sqlite3ExprCodeGeneratedColumn(pParse, pTab, pCol, regOut);
         pParse->iSelfTab = savedSelfTab;
         pCol->colFlags &= ~COLFLAG_BUSY;
       }
@@ -4031,7 +4032,7 @@ expr_code_doover:
             }
             pCol->colFlags |= COLFLAG_BUSY;
             if( pCol->colFlags & COLFLAG_NOTAVAIL ){
-              sqlite3ExprCodeGeneratedColumn(pParse, pCol, iSrc);
+              sqlite3ExprCodeGeneratedColumn(pParse, pTab, pCol, iSrc);
             }
             pCol->colFlags &= ~(COLFLAG_BUSY|COLFLAG_NOTAVAIL);
             return iSrc;

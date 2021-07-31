@@ -1177,13 +1177,16 @@ void sqlite3Pragma(
         }else{
           for(k=1; k<=pTab->nCol && pPk->aiColumn[k-1]!=i; k++){}
         }
-        assert( pCol->pDflt==0 || pCol->pDflt->op==TK_SPAN || isHidden>=2 );
+        assert( sqlite3ColumnExpr(pTab,pCol)==0
+             || sqlite3ColumnExpr(pTab,pCol)->op==TK_SPAN
+             || isHidden>=2 );
         sqlite3VdbeMultiLoad(v, 1, pPragma->iArg ? "issisii" : "issisi",
                i-nHidden,
                pCol->zName,
                sqlite3ColumnType(pCol,""),
                pCol->notNull ? 1 : 0,
-               pCol->pDflt && isHidden<2 ? pCol->pDflt->u.zToken : 0,
+               isHidden>=2 || sqlite3ColumnExpr(pTab,pCol)==0 ? 0 :
+                          sqlite3ColumnExpr(pTab,pCol)->u.zToken,
                k,
                isHidden);
       }

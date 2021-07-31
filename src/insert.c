@@ -293,7 +293,7 @@ void sqlite3ComputeGeneratedColumns(
         int x;
         pCol->colFlags |= COLFLAG_BUSY;
         w.eCode = 0;
-        sqlite3WalkExpr(&w, pCol->pDflt);
+        sqlite3WalkExpr(&w, sqlite3ColumnExpr(pTab, pCol));
         pCol->colFlags &= ~COLFLAG_BUSY;
         if( w.eCode & COLFLAG_NOTAVAIL ){
           pRedo = pCol;
@@ -302,7 +302,7 @@ void sqlite3ComputeGeneratedColumns(
         eProgress = 1;
         assert( pCol->colFlags & COLFLAG_GENERATED );
         x = sqlite3TableColumnToStorage(pTab, i) + iRegStore;
-        sqlite3ExprCodeGeneratedColumn(pParse, pCol, x);
+        sqlite3ExprCodeGeneratedColumn(pParse, pTab, pCol, x);
         pCol->colFlags &= ~COLFLAG_NOTAVAIL;
       }
     }
@@ -1088,7 +1088,9 @@ void sqlite3Insert(
       }else if( pColumn==0 ){
         /* Hidden columns that are not explicitly named in the INSERT
         ** get there default value */
-        sqlite3ExprCodeFactorable(pParse, pTab->aCol[i].pDflt, iRegStore);
+        sqlite3ExprCodeFactorable(pParse, 
+            sqlite3ColumnExpr(pTab, &pTab->aCol[i]),
+            iRegStore);
         continue;
       }
     }
@@ -1097,13 +1099,17 @@ void sqlite3Insert(
       if( j>=pColumn->nId ){
         /* A column not named in the insert column list gets its
         ** default value */
-        sqlite3ExprCodeFactorable(pParse, pTab->aCol[i].pDflt, iRegStore);
+        sqlite3ExprCodeFactorable(pParse, 
+            sqlite3ColumnExpr(pTab, &pTab->aCol[i]),
+            iRegStore);
         continue;
       }
       k = j;
     }else if( nColumn==0 ){
       /* This is INSERT INTO ... DEFAULT VALUES.  Load the default value. */
-      sqlite3ExprCodeFactorable(pParse, pTab->aCol[i].pDflt, iRegStore);
+      sqlite3ExprCodeFactorable(pParse, 
+          sqlite3ColumnExpr(pTab, &pTab->aCol[i]),
+          iRegStore);
       continue;
     }else{
       k = i - nHidden;
@@ -1669,7 +1675,7 @@ void sqlite3GenerateConstraintChecks(
         }
         if( onError==OE_Replace ){
           if( b2ndPass        /* REPLACE becomes ABORT on the 2nd pass */
-           || pCol->pDflt==0  /* REPLACE is ABORT if no DEFAULT value */
+           || pCol->iDflt==0  /* REPLACE is ABORT if no DEFAULT value */
           ){
             testcase( pCol->colFlags & COLFLAG_VIRTUAL );
             testcase( pCol->colFlags & COLFLAG_STORED );
@@ -1691,7 +1697,8 @@ void sqlite3GenerateConstraintChecks(
             VdbeCoverage(v);
             assert( (pCol->colFlags & COLFLAG_GENERATED)==0 );
             nSeenReplace++;
-            sqlite3ExprCodeCopy(pParse, pCol->pDflt, iReg);
+            sqlite3ExprCodeCopy(pParse,
+               sqlite3ColumnExpr(pTab, pCol), iReg);
             sqlite3VdbeJumpHere(v, addr1);
             break;
           }
@@ -2412,7 +2419,7 @@ void sqlite3SetMakeRecordP5(Vdbe *v, Table *pTab){
   if( pTab->pSchema->file_format<2 ) return;
 
   for(i=pTab->nCol-1; i>0; i--){
-    if( pTab->aCol[i].pDflt!=0 ) break;
+    if( pTab->aCol[i].iDflt!=0 ) break;
     if( pTab->aCol[i].colFlags & COLFLAG_PRIMKEY ) break;
   }
   sqlite3VdbeChangeP5(v, i+1);
@@ -2829,7 +2836,9 @@ static int xferOptimization(
     ** This requirement could be relaxed for VIRTUAL columns, I suppose.
     */
     if( (pDestCol->colFlags & COLFLAG_GENERATED)!=0 ){
-      if( sqlite3ExprCompare(0, pSrcCol->pDflt, pDestCol->pDflt, -1)!=0 ){
+      if( sqlite3ExprCompare(0,
+             sqlite3ColumnExpr(pSrc, pSrcCol),
+             sqlite3ColumnExpr(pDest, pDestCol), -1)!=0 ){
         testcase( pDestCol->colFlags & COLFLAG_VIRTUAL );
         testcase( pDestCol->colFlags & COLFLAG_STORED );
         return 0;  /* Different generator expressions */
@@ -2847,11 +2856,13 @@ static int xferOptimization(
     }
     /* Default values for second and subsequent columns need to match. */
     if( (pDestCol->colFlags & COLFLAG_GENERATED)==0 && i>0 ){
-      assert( pDestCol->pDflt==0 || pDestCol->pDflt->op==TK_SPAN );
-      assert( pSrcCol->pDflt==0 || pSrcCol->pDflt->op==TK_SPAN );
-      if( (pDestCol->pDflt==0)!=(pSrcCol->pDflt==0) 
-       || (pDestCol->pDflt && strcmp(pDestCol->pDflt->u.zToken,
-                                       pSrcCol->pDflt->u.zToken)!=0)
+      Expr *pDestExpr = sqlite3ColumnExpr(pDest, pDestCol);
+      Expr *pSrcExpr = sqlite3ColumnExpr(pSrc, pSrcCol);
+      assert( pDestExpr==0 || pDestExpr->op==TK_SPAN );
+      assert( pSrcExpr==0 || pSrcExpr->op==TK_SPAN );
+      if( (pDestExpr==0)!=(pSrcExpr==0) 
+       || (pDestExpr!=0 && strcmp(pDestExpr->u.zToken,
+                                       pSrcExpr->u.zToken)!=0)
       ){
         return 0;    /* Default values must be the same for all columns */
       }

@@ -668,6 +668,42 @@ void sqlite3CommitInternalChanges(sqlite3 *db){
 }
 
 /*
+** Set the expression associated with a column.  This is usually
+** the DEFAULT value, but might also be the expression that computes
+** the value for a generated column.
+*/
+void sqlite3ColumnSetExpr(
+  Parse *pParse,    /* Parsing context */
+  Table *pTab,      /* The table containing the column */
+  Column *pCol,     /* The column to receive the new DEFAULT expression */
+  Expr *pExpr       /* The new default expression */
+){
+  ExprList *pList = pTab->pDfltList;
+  if( pCol->iDflt==0
+   || pList==0
+   || pList->nExpr<pCol->iDflt
+  ){
+    pCol->iDflt = pList==0 ? 1 : pList->nExpr+1;
+    pTab->pDfltList = sqlite3ExprListAppend(pParse, pList, pExpr);
+  }else{
+    sqlite3ExprDelete(pParse->db, pList->a[pCol->iDflt-1].pExpr);
+    pList->a[pCol->iDflt-1].pExpr = pExpr;
+  }
+}
+
+/*
+** Return the expression associated with a column.  The expression might be
+** the DEFAULT clause or the AS clause of a generated column.
+** Return NULL if the column has no associated expression.
+*/
+Expr *sqlite3ColumnExpr(Table *pTab, Column *pCol){
+  if( pCol->iDflt==0 ) return 0;
+  if( pTab->pDfltList==0 ) return 0;
+  if( pTab->pDfltList->nExpr<pCol->iDflt ) return 0;
+  return pTab->pDfltList->a[pCol->iDflt-1].pExpr;
+}
+
+/*
 ** Delete memory allocated for the column names of a table or view (the
 ** Table.aCol[] array).
 */
@@ -679,10 +715,15 @@ void sqlite3DeleteColumnNames(sqlite3 *db, Table *pTable){
     for(i=0; i<pTable->nCol; i++, pCol++){
       assert( pCol->zName==0 || pCol->hName==sqlite3StrIHash(pCol->zName) );
       sqlite3DbFree(db, pCol->zName);
-      sqlite3ExprDelete(db, pCol->pDflt);
       sqlite3DbFree(db, pCol->zColl);
     }
     sqlite3DbFree(db, pTable->aCol);
+    sqlite3ExprListDelete(db, pTable->pDfltList);
+    if( db==0 || db->pnBytesFreed==0 ){
+      pTable->aCol = 0;
+      pTable->nCol = 0;
+      pTable->pDfltList = 0;
+    }
   }
 }
 
@@ -1636,15 +1677,15 @@ void sqlite3AddDefaultValue(
       /* A copy of pExpr is used instead of the original, as pExpr contains
       ** tokens that point to volatile memory.
       */
-      Expr x;
-      sqlite3ExprDelete(db, pCol->pDflt);
+      Expr x, *pDfltExpr;
       memset(&x, 0, sizeof(x));
       x.op = TK_SPAN;
       x.u.zToken = sqlite3DbSpanDup(db, zStart, zEnd);
       x.pLeft = pExpr;
       x.flags = EP_Skip;
-      pCol->pDflt = sqlite3ExprDup(db, &x, EXPRDUP_REDUCE);
+      pDfltExpr = sqlite3ExprDup(db, &x, EXPRDUP_REDUCE);
       sqlite3DbFree(db, x.u.zToken);
+      sqlite3ColumnSetExpr(pParse, p, pCol, pDfltExpr);
     }
   }
   if( IN_RENAME_OBJECT ){
@@ -1868,7 +1909,7 @@ void sqlite3AddGenerated(Parse *pParse, Expr *pExpr, Token *pType){
     sqlite3ErrorMsg(pParse, "virtual tables cannot use computed columns");
     goto generated_done;
   }
-  if( pCol->pDflt ) goto generated_error;
+  if( pCol->iDflt>0 ) goto generated_error;
   if( pType ){
     if( pType->n==7 && sqlite3StrNICmp("virtual",pType->z,7)==0 ){
       /* no-op */
@@ -1886,7 +1927,7 @@ void sqlite3AddGenerated(Parse *pParse, Expr *pExpr, Token *pType){
   if( pCol->colFlags & COLFLAG_PRIMKEY ){
     makeColumnPartOfPrimaryKey(pParse, pCol); /* For the error message */
   }
-  pCol->pDflt = pExpr;
+  sqlite3ColumnSetExpr(pParse, pTab, pCol, pExpr);
   pExpr = 0;
   goto generated_done;
 
@@ -2540,7 +2581,7 @@ void sqlite3EndTable(
     for(ii=0; ii<p->nCol; ii++){
       u32 colFlags = p->aCol[ii].colFlags;
       if( (colFlags & COLFLAG_GENERATED)!=0 ){
-        Expr *pX = p->aCol[ii].pDflt;
+        Expr *pX = sqlite3ColumnExpr(p, &p->aCol[ii]);
         testcase( colFlags & COLFLAG_VIRTUAL );
         testcase( colFlags & COLFLAG_STORED );
         if( sqlite3ResolveSelfReference(pParse, p, NC_GenCol, pX, 0) ){
@@ -2550,8 +2591,8 @@ void sqlite3EndTable(
           ** tree that have been allocated from lookaside memory, which is
           ** illegal in a schema and will lead to errors or heap corruption
           ** when the database connection closes. */
-          sqlite3ExprDelete(db, pX);
-          p->aCol[ii].pDflt = sqlite3ExprAlloc(db, TK_NULL, 0, 0);
+          sqlite3ColumnSetExpr(pParse, p, &p->aCol[ii], 
+               sqlite3ExprAlloc(db, TK_NULL, 0, 0));
         }
       }else{
         nNG++;
@@ -2965,8 +3006,6 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
   pTable->pSchema->schemaFlags |= DB_UnresetViews;
   if( db->mallocFailed ){
     sqlite3DeleteColumnNames(db, pTable);
-    pTable->aCol = 0;
-    pTable->nCol = 0;
   }
 #endif /* SQLITE_OMIT_VIEW */
   return nErr;  
@@ -2985,8 +3024,6 @@ static void sqliteViewResetAll(sqlite3 *db, int idx){
     Table *pTab = sqliteHashData(i);
     if( pTab->pSelect ){
       sqlite3DeleteColumnNames(db, pTab);
-      pTab->aCol = 0;
-      pTab->nCol = 0;
     }
   }
   DbClearProperty(db, idx, DB_UnresetViews);
