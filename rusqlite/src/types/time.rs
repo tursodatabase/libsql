@@ -37,16 +37,17 @@ impl ToSql for OffsetDateTime {
 impl FromSql for OffsetDateTime {
     fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
         value.as_str().and_then(|s| {
+            if s.len() > 10 && s.as_bytes()[10] == b'T' {
+                // YYYY-MM-DDTHH:MM:SS.SSS[+-]HH:MM
+                return OffsetDateTime::parse(s, &Rfc3339)
+                    .map_err(|err| FromSqlError::Other(Box::new(err)));
+            }
             let s = s.strip_suffix('Z').unwrap_or(s);
             match s.len() {
                 len if len <= 19 => {
                     // TODO YYYY-MM-DDTHH:MM:SS
                     PrimitiveDateTime::parse(s, &PRIMITIVE_SHORT_DATE_TIME_FORMAT)
                         .map(|d| d.assume_utc())
-                }
-                _ if s.as_bytes()[10] == b'T' => {
-                    // YYYY-MM-DDTHH:MM:SS.SSS[+-]HH:MM
-                    OffsetDateTime::parse(s, &Rfc3339)
                 }
                 _ if s.as_bytes()[19] == b':' => {
                     // legacy
@@ -71,15 +72,10 @@ mod test {
     use time::format_description::well_known::Rfc3339;
     use time::OffsetDateTime;
 
-    fn checked_memory_handle() -> Result<Connection> {
-        let db = Connection::open_in_memory()?;
-        db.execute_batch("CREATE TABLE foo (t TEXT, i INTEGER, f FLOAT)")?;
-        Ok(db)
-    }
-
     #[test]
     fn test_offset_date_time() -> Result<()> {
-        let db = checked_memory_handle()?;
+        let db = Connection::open_in_memory()?;
+        db.execute_batch("CREATE TABLE foo (t TEXT, i INTEGER, f FLOAT)")?;
 
         let mut ts_vec = vec![];
 
@@ -108,8 +104,20 @@ mod test {
 
     #[test]
     fn test_string_values() -> Result<()> {
-        let db = checked_memory_handle()?;
+        let db = Connection::open_in_memory()?;
         for (s, t) in vec![
+            (
+                "2013-10-07 08:23:19",
+                Ok(OffsetDateTime::parse("2013-10-07T08:23:19Z", &Rfc3339).unwrap()),
+            ),
+            (
+                "2013-10-07 08:23:19Z",
+                Ok(OffsetDateTime::parse("2013-10-07T08:23:19Z", &Rfc3339).unwrap()),
+            ),
+            (
+                "2013-10-07T08:23:19Z",
+                Ok(OffsetDateTime::parse("2013-10-07T08:23:19Z", &Rfc3339).unwrap()),
+            ),
             (
                 "2013-10-07 08:23:19.120",
                 Ok(OffsetDateTime::parse("2013-10-07T08:23:19.120Z", &Rfc3339).unwrap()),
@@ -118,9 +126,20 @@ mod test {
                 "2013-10-07 08:23:19.120Z",
                 Ok(OffsetDateTime::parse("2013-10-07T08:23:19.120Z", &Rfc3339).unwrap()),
             ),
-            //"2013-10-07T08:23:19.120Z", // TODO
+            (
+                "2013-10-07T08:23:19.120Z",
+                Ok(OffsetDateTime::parse("2013-10-07T08:23:19.120Z", &Rfc3339).unwrap()),
+            ),
+            (
+                "2013-10-07 04:23:19-04:00",
+                Ok(OffsetDateTime::parse("2013-10-07T04:23:19-04:00", &Rfc3339).unwrap()),
+            ),
             (
                 "2013-10-07 04:23:19.120-04:00",
+                Ok(OffsetDateTime::parse("2013-10-07T04:23:19.120-04:00", &Rfc3339).unwrap()),
+            ),
+            (
+                "2013-10-07T04:23:19.120-04:00",
                 Ok(OffsetDateTime::parse("2013-10-07T04:23:19.120-04:00", &Rfc3339).unwrap()),
             ),
         ] {
@@ -132,7 +151,7 @@ mod test {
 
     #[test]
     fn test_sqlite_functions() -> Result<()> {
-        let db = checked_memory_handle()?;
+        let db = Connection::open_in_memory()?;
         let result: Result<OffsetDateTime> =
             db.query_row("SELECT CURRENT_TIMESTAMP", [], |r| r.get(0));
         assert!(result.is_ok());
@@ -141,7 +160,7 @@ mod test {
 
     #[test]
     fn test_param() -> Result<()> {
-        let db = checked_memory_handle()?;
+        let db = Connection::open_in_memory()?;
         let result: Result<bool> = db.query_row("SELECT 1 WHERE ? BETWEEN datetime('now', '-1 minute') AND datetime('now', '+1 minute')", [OffsetDateTime::now_utc()], |r| r.get(0));
         assert!(result.is_ok());
         Ok(())
