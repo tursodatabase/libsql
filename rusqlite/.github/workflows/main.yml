@@ -185,7 +185,12 @@ jobs:
       - name: Run cargo-tarpaulin
         uses: actions-rs/tarpaulin@v0.1
         with:
-          args: '--features "bundled-full session buildtime_bindgen"'
+          # FIXME: Uncomment to re-enable `session` feature once the situation
+          # with bitvec and tarpaulin is resolved:
+          # https://github.com/rusqlite/rusqlite/issues/1004
+          #
+          # args: '--features "bundled-full session buildtime_bindgen"'
+          args: "--features bundled-full"
 
       - name: Upload to codecov.io
         uses: codecov/codecov-action@v1
