@@ -165,6 +165,7 @@ LTINSTALL = $(LIBTOOL) --mode=install $(INSTALL)
 ###############################################################################
 
 USE_AMALGAMATION = @USE_AMALGAMATION@
+AMALGAMATION_LINE_MACROS = @AMALGAMATION_LINE_MACROS@
 
 # Object files for the SQLite library (non-amalgamation).
 #
@@ -756,7 +757,7 @@ mptest:	mptester$(TEXE)
 	touch .target_source
 
 sqlite3.c:	.target_source $(TOP)/tool/mksqlite3c.tcl
-	$(TCLSH_CMD) $(TOP)/tool/mksqlite3c.tcl
+	$(TCLSH_CMD) $(TOP)/tool/mksqlite3c.tcl $(AMALGAMATION_LINE_MACROS)
 	cp tsrc/sqlite3ext.h .
 	cp $(TOP)/ext/session/sqlite3session.h .
 

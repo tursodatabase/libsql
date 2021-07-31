@@ -1558,4 +1558,18 @@ ifcapable fts3 {
   }
 }
 
+# 2021-07-04 https://sqlite.org/forum/forumpost/16ca0e9f32
+# Yu Liang crash involving UPDATE on a virtual table with
+# a duplicate column in a vector changeset and invoking the
+# query flattener for UNION ALL.
+#
+reset_db
+register_echo_module db
+do_catchsql_test 25.0 {
+  CREATE TABLE t0(a);
+  CREATE VIRTUAL TABLE t1 USING echo(t0);
+  WITH t3(a) AS (SELECT * FROM t1 UNION ALL SELECT * FROM t1)
+  UPDATE t1 SET (a,a) = (SELECT 1, 0) FROM t3;
+} {0 {}}
+
 finish_test

@@ -453,6 +453,7 @@ Table *sqlite3LocateTable(
         pMod = sqlite3PragmaVtabRegister(db, zName);
       }
       if( pMod && sqlite3VtabEponymousTableInit(pParse, pMod) ){
+        testcase( pMod->pEpoTab==0 );
         return pMod->pEpoTab;
       }
     }
@@ -1271,6 +1272,7 @@ void sqlite3StartTable(
 
   /* If an error occurs, we jump here */
 begin_table_error:
+  pParse->checkSchema = 1;
   sqlite3DbFree(db, zName);
   return;
 }
@@ -1371,7 +1373,7 @@ void sqlite3AddReturning(Parse *pParse, ExprList *pList){
 ** first to get things going.  Then this routine is called for each
 ** column.
 */
-void sqlite3AddColumn(Parse *pParse, Token *pName, Token *pType){
+void sqlite3AddColumn(Parse *pParse, Token sName, Token sType){
   Table *p;
   int i;
   char *z;
@@ -1379,17 +1381,58 @@ void sqlite3AddColumn(Parse *pParse, Token *pName, Token *pType){
   Column *pCol;
   sqlite3 *db = pParse->db;
   u8 hName;
+  Column *aNew;
+  u8 eType = COLTYPE_CUSTOM;
+  u8 szEst = 1;
+  char affinity = SQLITE_AFF_BLOB;
 
   if( (p = pParse->pNewTable)==0 ) return;
   if( p->nCol+1>db->aLimit[SQLITE_LIMIT_COLUMN] ){
     sqlite3ErrorMsg(pParse, "too many columns on %s", p->zName);
     return;
   }
-  z = sqlite3DbMallocRaw(db, pName->n + pType->n + 2);
+  if( !IN_RENAME_OBJECT ) sqlite3DequoteToken(&sName);
+
+  /* Because keywords GENERATE ALWAYS can be converted into indentifiers
+  ** by the parser, we can sometimes end up with a typename that ends
+  ** with "generated always".  Check for this case and omit the surplus
+  ** text. */
+  if( sType.n>=16
+   && sqlite3_strnicmp(sType.z+(sType.n-6),"always",6)==0
+  ){
+    sType.n -= 6;
+    while( ALWAYS(sType.n>0) && sqlite3Isspace(sType.z[sType.n-1]) ) sType.n--;
+    if( sType.n>=9
+     && sqlite3_strnicmp(sType.z+(sType.n-9),"generated",9)==0
+    ){
+      sType.n -= 9;
+      while( sType.n>0 && sqlite3Isspace(sType.z[sType.n-1]) ) sType.n--;
+    }
+  }
+
+  /* Check for standard typenames.  For standard typenames we will
+  ** set the Column.eType field rather than storing the typename after
+  ** the column name, in order to save space. */
+  if( sType.n>=3 ){
+    sqlite3DequoteToken(&sType);
+    for(i=0; i<SQLITE_N_STDTYPE; i++){
+       if( sType.n==sqlite3StdTypeLen[i]
+        && sqlite3_strnicmp(sType.z, sqlite3StdType[i], sType.n)==0
+       ){
+         sType.n = 0;
+         eType = i+1;
+         affinity = sqlite3StdTypeAffinity[i];
+         if( affinity<=SQLITE_AFF_TEXT ) szEst = 5;
+         break;
+       }
+    }
+  }
+
+  z = sqlite3DbMallocRaw(db, sName.n + 1 + sType.n + (sType.n>0) );
   if( z==0 ) return;
-  if( IN_RENAME_OBJECT ) sqlite3RenameTokenMap(pParse, (void*)z, pName);
-  memcpy(z, pName->z, pName->n);
-  z[pName->n] = 0;
+  if( IN_RENAME_OBJECT ) sqlite3RenameTokenMap(pParse, (void*)z, &sName);
+  memcpy(z, sName.z, sName.n);
+  z[sName.n] = 0;
   sqlite3Dequote(z);
   hName = sqlite3StrIHash(z);
   for(i=0; i<p->nCol; i++){
@@ -1399,35 +1442,35 @@ void sqlite3AddColumn(Parse *pParse, Token *pName, Token *pType){
       return;
     }
   }
-  if( (p->nCol & 0x7)==0 ){
-    Column *aNew;
-    aNew = sqlite3DbRealloc(db,p->aCol,(p->nCol+8)*sizeof(p->aCol[0]));
-    if( aNew==0 ){
-      sqlite3DbFree(db, z);
-      return;
-    }
-    p->aCol = aNew;
+  aNew = sqlite3DbRealloc(db,p->aCol,(p->nCol+1)*sizeof(p->aCol[0]));
+  if( aNew==0 ){
+    sqlite3DbFree(db, z);
+    return;
   }
+  p->aCol = aNew;
   pCol = &p->aCol[p->nCol];
   memset(pCol, 0, sizeof(p->aCol[0]));
   pCol->zName = z;
   pCol->hName = hName;
   sqlite3ColumnPropertiesFromName(p, pCol);
  
-  if( pType->n==0 ){
+  if( sType.n==0 ){
     /* If there is no type specified, columns have the default affinity
     ** 'BLOB' with a default size of 4 bytes. */
-    pCol->affinity = SQLITE_AFF_BLOB;
-    pCol->szEst = 1;
+    pCol->affinity = affinity;
+    pCol->eType = eType;
+    pCol->szEst = szEst;
 #ifdef SQLITE_ENABLE_SORTER_REFERENCES
-    if( 4>=sqlite3GlobalConfig.szSorterRef ){
-      pCol->colFlags |= COLFLAG_SORTERREF;
+    if( affinity==SQLITE_AFF_BLOB ){
+      if( 4>=sqlite3GlobalConfig.szSorterRef ){
+        pCol->colFlags |= COLFLAG_SORTERREF;
+      }
     }
 #endif
   }else{
     zType = z + sqlite3Strlen30(z) + 1;
-    memcpy(zType, pType->z, pType->n);
-    zType[pType->n] = 0;
+    memcpy(zType, sType.z, sType.n);
+    zType[sType.n] = 0;
     sqlite3Dequote(zType);
     pCol->affinity = sqlite3AffinityType(zType, pCol);
     pCol->colFlags |= COLFLAG_HASTYPE;
@@ -1710,7 +1753,7 @@ void sqlite3AddPrimaryKey(
   }
   if( nTerm==1
    && pCol
-   && sqlite3StrICmp(sqlite3ColumnType(pCol,""), "INTEGER")==0
+   && pCol->eType==COLTYPE_INTEGER
    && sortOrder!=SQLITE_SO_DESC
   ){
     if( IN_RENAME_OBJECT && pList ){
@@ -3180,6 +3223,7 @@ int sqlite3ReadOnlyShadowTables(sqlite3 *db){
   if( (db->flags & SQLITE_Defensive)!=0
    && db->pVtabCtx==0
    && db->nVdbeExec==0
+   && !sqlite3VtabInSync(db)
   ){
     return 1;
   }

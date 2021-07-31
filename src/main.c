@@ -1854,22 +1854,33 @@ int sqlite3CreateFunc(
   ** If SQLITE_ANY is specified, add three versions of the function
   ** to the hash table.
   */
-  if( enc==SQLITE_UTF16 ){
-    enc = SQLITE_UTF16NATIVE;
-  }else if( enc==SQLITE_ANY ){
-    int rc;
-    rc = sqlite3CreateFunc(db, zFunctionName, nArg,
-         (SQLITE_UTF8|extraFlags)^SQLITE_FUNC_UNSAFE,
-         pUserData, xSFunc, xStep, xFinal, xValue, xInverse, pDestructor);
-    if( rc==SQLITE_OK ){
+  switch( enc ){
+    case SQLITE_UTF16:
+      enc = SQLITE_UTF16NATIVE;
+      break;
+    case SQLITE_ANY: {
+      int rc;
       rc = sqlite3CreateFunc(db, zFunctionName, nArg,
-           (SQLITE_UTF16LE|extraFlags)^SQLITE_FUNC_UNSAFE,
+           (SQLITE_UTF8|extraFlags)^SQLITE_FUNC_UNSAFE,
            pUserData, xSFunc, xStep, xFinal, xValue, xInverse, pDestructor);
+      if( rc==SQLITE_OK ){
+        rc = sqlite3CreateFunc(db, zFunctionName, nArg,
+             (SQLITE_UTF16LE|extraFlags)^SQLITE_FUNC_UNSAFE,
+             pUserData, xSFunc, xStep, xFinal, xValue, xInverse, pDestructor);
+      }
+      if( rc!=SQLITE_OK ){
+        return rc;
+      }
+      enc = SQLITE_UTF16BE;
+      break;
     }
-    if( rc!=SQLITE_OK ){
-      return rc;
-    }
-    enc = SQLITE_UTF16BE;
+    case SQLITE_UTF8:
+    case SQLITE_UTF16LE:
+    case SQLITE_UTF16BE:
+      break;
+    default:
+      enc = SQLITE_UTF8;
+      break;
   }
 #else
   enc = SQLITE_UTF8;
@@ -1966,7 +1977,7 @@ static int createFunctionApi(
       xSFunc, xStep, xFinal, xValue, xInverse, pArg
   );
   if( pArg && pArg->nRef==0 ){
-    assert( rc!=SQLITE_OK );
+    assert( rc!=SQLITE_OK || (xStep==0 && xFinal==0) );
     xDestroy(p);
     sqlite3_free(pArg);
   }

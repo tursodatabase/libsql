@@ -113,7 +113,7 @@ const char *sqlite3IndexAffinityStr(sqlite3 *db, Index *pIdx){
 ** Compute the affinity string for table pTab, if it has not already been
 ** computed.  As an optimization, omit trailing SQLITE_AFF_BLOB affinities.
 **
-** If the affinity exists (if it is no entirely SQLITE_AFF_BLOB values) and
+** If the affinity exists (if it is not entirely SQLITE_AFF_BLOB values) and
 ** if iReg>0 then code an OP_Affinity opcode that will set the affinities
 ** for register iReg and following.  Or if affinities exists and iReg==0,
 ** then just set the P4 operand of the previous opcode (which should  be

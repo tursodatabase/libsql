@@ -774,6 +774,7 @@ USE_GCOV
 OPT_FEATURE_FLAGS
 HAVE_ZLIB
 USE_AMALGAMATION
+AMALGAMATION_LINE_MACROS
 TARGET_DEBUG
 TARGET_HAVE_EDITLINE
 TARGET_HAVE_READLINE
@@ -902,6 +903,7 @@ with_readline_lib
 with_readline_inc
 enable_debug
 enable_amalgamation
+amalgamation_line_macros
 enable_load_extension
 enable_math
 enable_all
@@ -10306,6 +10308,13 @@ done
 USE_AMALGAMATION=1
 
 #########
+# By default, amalgamation sqlite3.c will have #line directives.
+# This is a build option not shown by ./configure --help
+# To control it, use configure option: amalgamation_line_macros=?
+# where ? is no to suppress #line directives or yes to create them.
+AMALGAMATION_LINE_MACROS=--linemacros=0
+
+#########
 # See whether we can run specific tclsh versions known to work well;
 # if not, then we fall back to plain tclsh.
 # TODO: try other versions before falling back?
@@ -11273,6 +11282,19 @@ fi
 
 if test "${enable_amalgamation}" = "no" ; then
   USE_AMALGAMATION=0
+fi
+
+########
+# See whether --disable
+if test "${amalgamation_line_macros+set}" = set; then :
+  enableval=$amalgamation_line_macros;
+fi
+
+if test "${amalgamation_line_macros}" = "yes" ; then
+  AMALGAMATION_LINE_MACROS=--linemacros=1
+fi
+if test "${amalgamation_line_macros}" = "no" ; then
+  AMALGAMATION_LINE_MACROS=--linemacros=0
 fi
 
 

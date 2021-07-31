@@ -4275,6 +4275,7 @@ case OP_SeekGT: {       /* jump, in3, group */
     /* If the P3 value could not be converted into an integer without
     ** loss of information, then special processing is required... */
     if( (newType & (MEM_Int|MEM_IntReal))==0 ){
+      int c;
       if( (newType & MEM_Real)==0 ){
         if( (newType & MEM_Null) || oc>=OP_SeekGE ){
           VdbeBranchTaken(1,2);
@@ -4284,7 +4285,8 @@ case OP_SeekGT: {       /* jump, in3, group */
           if( rc!=SQLITE_OK ) goto abort_due_to_error;
           goto seek_not_found;
         }
-      }else
+      }
+      c = sqlite3IntFloatCompare(iKey, pIn3->u.r);
 
       /* If the approximation iKey is larger than the actual real search
       ** term, substitute >= for > and < for <=. e.g. if the search term
@@ -4293,7 +4295,7 @@ case OP_SeekGT: {       /* jump, in3, group */
       **        (x >  4.9)    ->     (x >= 5)
       **        (x <= 4.9)    ->     (x <  5)
       */
-      if( pIn3->u.r<(double)iKey ){
+      if( c>0 ){
         assert( OP_SeekGE==(OP_SeekGT-1) );
         assert( OP_SeekLT==(OP_SeekLE-1) );
         assert( (OP_SeekLE & 0x0001)==(OP_SeekGT & 0x0001) );
@@ -4302,7 +4304,7 @@ case OP_SeekGT: {       /* jump, in3, group */
 
       /* If the approximation iKey is smaller than the actual real search
       ** term, substitute <= for < and > for >=.  */
-      else if( pIn3->u.r>(double)iKey ){
+      else if( c<0 ){
         assert( OP_SeekLE==(OP_SeekLT+1) );
         assert( OP_SeekGT==(OP_SeekGE+1) );
         assert( (OP_SeekLT & 0x0001)==(OP_SeekGE & 0x0001) );

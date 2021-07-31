@@ -181,6 +181,17 @@
 # define _USE_32BIT_TIME_T
 #endif
 
+/* Optionally #include a user-defined header, whereby compilation options
+** may be set prior to where they take effect, but after platform setup. 
+** If SQLITE_CUSTOM_INCLUDE=? is defined, its value names the #include
+** file.
+*/
+#ifdef SQLITE_CUSTOM_INCLUDE
+# define INC_STRINGIFY_(f) #f
+# define INC_STRINGIFY(f) INC_STRINGIFY_(f)
+# include INC_STRINGIFY(SQLITE_CUSTOM_INCLUDE)
+#endif
+
 /* The public SQLite interface.  The _FILE_OFFSET_BITS macro must appear
 ** first in QNX.  Also, the _USE_32BIT_TIME_T macro must appear first for
 ** MinGW.
@@ -214,11 +225,12 @@
 #ifndef __has_extension
 # define __has_extension(x) 0     /* compatibility with non-clang compilers */
 #endif
-#if GCC_VERSION>=4007000 || \
-    (__has_extension(c_atomic) && __has_extension(c_atomic_store_n))
+#if GCC_VERSION>=4007000 || __has_extension(c_atomic) 
+# define SQLITE_ATOMIC_INTRINSICS 1
 # define AtomicLoad(PTR)       __atomic_load_n((PTR),__ATOMIC_RELAXED)
 # define AtomicStore(PTR,VAL)  __atomic_store_n((PTR),(VAL),__ATOMIC_RELAXED)
 #else
+# define SQLITE_ATOMIC_INTRINSICS 0
 # define AtomicLoad(PTR)       (*(PTR))
 # define AtomicStore(PTR,VAL)  (*(PTR) = (VAL))
 #endif
@@ -849,6 +861,7 @@ typedef INT16_TYPE LogEst;
 #   define SQLITE_PTRSIZE __SIZEOF_POINTER__
 # elif defined(i386)     || defined(__i386__)   || defined(_M_IX86) ||    \
        defined(_M_ARM)   || defined(__arm__)    || defined(__x86)   ||    \
+      (defined(__APPLE__) && defined(__POWERPC__)) ||                     \
       (defined(__TOS_AIX__) && !defined(__64BIT__))
 #   define SQLITE_PTRSIZE 4
 # else
@@ -1732,6 +1745,8 @@ struct sqlite3 {
 #define SQLITE_PropagateConst 0x00008000 /* The constant propagation opt */
 #define SQLITE_MinMaxOpt      0x00010000 /* The min/max optimization */
 #define SQLITE_SeekScan       0x00020000 /* The OP_SeekScan optimization */
+#define SQLITE_OmitOrderBy    0x00040000 /* Omit pointless ORDER BY */
+   /* TH3 expects this value  ^^^^^^^^^^ to be 0x40000. Coordinate any change */
 #define SQLITE_AllOpts        0xffffffff /* All optimizations */
 
 /*
@@ -1811,12 +1826,13 @@ struct FuncDestructor {
 ** are assert() statements in the code to verify this.
 **
 ** Value constraints (enforced via assert()):
-**     SQLITE_FUNC_MINMAX    ==  NC_MinMaxAgg      == SF_MinMaxAgg
-**     SQLITE_FUNC_LENGTH    ==  OPFLAG_LENGTHARG
-**     SQLITE_FUNC_TYPEOF    ==  OPFLAG_TYPEOFARG
-**     SQLITE_FUNC_CONSTANT  ==  SQLITE_DETERMINISTIC from the API
-**     SQLITE_FUNC_DIRECT    ==  SQLITE_DIRECTONLY from the API
-**     SQLITE_FUNC_UNSAFE    ==  SQLITE_INNOCUOUS
+**     SQLITE_FUNC_MINMAX      ==  NC_MinMaxAgg      == SF_MinMaxAgg
+**     SQLITE_FUNC_ANYORDER    ==  NC_OrderAgg       == SF_OrderByReqd
+**     SQLITE_FUNC_LENGTH      ==  OPFLAG_LENGTHARG
+**     SQLITE_FUNC_TYPEOF      ==  OPFLAG_TYPEOFARG
+**     SQLITE_FUNC_CONSTANT    ==  SQLITE_DETERMINISTIC from the API
+**     SQLITE_FUNC_DIRECT      ==  SQLITE_DIRECTONLY from the API
+**     SQLITE_FUNC_UNSAFE      ==  SQLITE_INNOCUOUS
 **     SQLITE_FUNC_ENCMASK   depends on SQLITE_UTF* macros in the API
 */
 #define SQLITE_FUNC_ENCMASK  0x0003 /* SQLITE_UTF8, SQLITE_UTF16BE or UTF16LE */
@@ -1841,6 +1857,7 @@ struct FuncDestructor {
 #define SQLITE_FUNC_SUBTYPE  0x00100000 /* Result likely to have sub-type */
 #define SQLITE_FUNC_UNSAFE   0x00200000 /* Function has side effects */
 #define SQLITE_FUNC_INLINE   0x00400000 /* Functions implemented in-line */
+#define SQLITE_FUNC_ANYORDER 0x08000000 /* count/min/max aggregate */
 
 /* Identifier numbers for each in-line function */
 #define INLINEFUNC_coalesce             0
@@ -2020,8 +2037,24 @@ struct Column {
   char affinity;   /* One of the SQLITE_AFF_... values */
   u8 szEst;        /* Estimated size of value in this column. sizeof(INT)==1 */
   u8 hName;        /* Column name hash for faster lookup */
+  u8 eType;        /* One of the standard types */
   u16 colFlags;    /* Boolean properties.  See COLFLAG_ defines below */
 };
+
+/* Allowed values for Column.eType.
+**
+** Values must match entries in the global constant arrays
+** sqlite3StdTypeLen[] and sqlite3StdType[].  Each value is one more
+** than the offset into these arrays for the corresponding name.
+** Adjust the SQLITE_N_STDTYPE value if adding or removing entries.
+*/
+#define COLTYPE_CUSTOM      0   /* Type appended to zName */
+#define COLTYPE_BLOB        1
+#define COLTYPE_INT         2
+#define COLTYPE_INTEGER     3
+#define COLTYPE_REAL        4
+#define COLTYPE_TEXT        5
+#define SQLITE_N_STDTYPE    5  /* Number of standard types */
 
 /* Allowed values for Column.colFlags.
 **
@@ -3076,31 +3109,33 @@ struct NameContext {
 ** Allowed values for the NameContext, ncFlags field.
 **
 ** Value constraints (all checked via assert()):
-**    NC_HasAgg    == SF_HasAgg    == EP_Agg
-**    NC_MinMaxAgg == SF_MinMaxAgg == SQLITE_FUNC_MINMAX
+**    NC_HasAgg    == SF_HasAgg       == EP_Agg
+**    NC_MinMaxAgg == SF_MinMaxAgg    == SQLITE_FUNC_MINMAX
+**    NC_OrderAgg  == SF_OrderByReqd  == SQLITE_FUNC_ANYORDER
 **    NC_HasWin    == EP_Win
 **
 */
-#define NC_AllowAgg  0x00001  /* Aggregate functions are allowed here */
-#define NC_PartIdx   0x00002  /* True if resolving a partial index WHERE */
-#define NC_IsCheck   0x00004  /* True if resolving a CHECK constraint */
-#define NC_GenCol    0x00008  /* True for a GENERATED ALWAYS AS clause */
-#define NC_HasAgg    0x00010  /* One or more aggregate functions seen */
-#define NC_IdxExpr   0x00020  /* True if resolving columns of CREATE INDEX */
-#define NC_SelfRef   0x0002e  /* Combo: PartIdx, isCheck, GenCol, and IdxExpr */
-#define NC_VarSelect 0x00040  /* A correlated subquery has been seen */
-#define NC_UEList    0x00080  /* True if uNC.pEList is used */
-#define NC_UAggInfo  0x00100  /* True if uNC.pAggInfo is used */
-#define NC_UUpsert   0x00200  /* True if uNC.pUpsert is used */
-#define NC_UBaseReg  0x00400  /* True if uNC.iBaseReg is used */
-#define NC_MinMaxAgg 0x01000  /* min/max aggregates seen.  See note above */
-#define NC_Complex   0x02000  /* True if a function or subquery seen */
-#define NC_AllowWin  0x04000  /* Window functions are allowed here */
-#define NC_HasWin    0x08000  /* One or more window functions seen */
-#define NC_IsDDL     0x10000  /* Resolving names in a CREATE statement */
-#define NC_InAggFunc 0x20000  /* True if analyzing arguments to an agg func */
-#define NC_FromDDL   0x40000  /* SQL text comes from sqlite_schema */
-#define NC_NoSelect  0x80000  /* Do not descend into sub-selects */
+#define NC_AllowAgg  0x000001 /* Aggregate functions are allowed here */
+#define NC_PartIdx   0x000002 /* True if resolving a partial index WHERE */
+#define NC_IsCheck   0x000004 /* True if resolving a CHECK constraint */
+#define NC_GenCol    0x000008 /* True for a GENERATED ALWAYS AS clause */
+#define NC_HasAgg    0x000010 /* One or more aggregate functions seen */
+#define NC_IdxExpr   0x000020 /* True if resolving columns of CREATE INDEX */
+#define NC_SelfRef   0x00002e /* Combo: PartIdx, isCheck, GenCol, and IdxExpr */
+#define NC_VarSelect 0x000040 /* A correlated subquery has been seen */
+#define NC_UEList    0x000080 /* True if uNC.pEList is used */
+#define NC_UAggInfo  0x000100 /* True if uNC.pAggInfo is used */
+#define NC_UUpsert   0x000200 /* True if uNC.pUpsert is used */
+#define NC_UBaseReg  0x000400 /* True if uNC.iBaseReg is used */
+#define NC_MinMaxAgg 0x001000 /* min/max aggregates seen.  See note above */
+#define NC_Complex   0x002000 /* True if a function or subquery seen */
+#define NC_AllowWin  0x004000 /* Window functions are allowed here */
+#define NC_HasWin    0x008000 /* One or more window functions seen */
+#define NC_IsDDL     0x010000 /* Resolving names in a CREATE statement */
+#define NC_InAggFunc 0x020000 /* True if analyzing arguments to an agg func */
+#define NC_FromDDL   0x040000 /* SQL text comes from sqlite_schema */
+#define NC_NoSelect  0x080000 /* Do not descend into sub-selects */
+#define NC_OrderAgg 0x8000000 /* Has an aggregate other than count/min/max */
 
 /*
 ** An instance of the following object describes a single ON CONFLICT
@@ -3183,9 +3218,10 @@ struct Select {
 ** "Select Flag".
 **
 ** Value constraints (all checked via assert())
-**     SF_HasAgg     == NC_HasAgg
-**     SF_MinMaxAgg  == NC_MinMaxAgg     == SQLITE_FUNC_MINMAX
-**     SF_FixedLimit == WHERE_USE_LIMIT
+**     SF_HasAgg      == NC_HasAgg
+**     SF_MinMaxAgg   == NC_MinMaxAgg     == SQLITE_FUNC_MINMAX
+**     SF_OrderByReqd == NC_OrderAgg      == SQLITE_FUNC_ANYORDER
+**     SF_FixedLimit  == WHERE_USE_LIMIT
 */
 #define SF_Distinct      0x0000001 /* Output should be DISTINCT */
 #define SF_All           0x0000002 /* Includes the ALL keyword */
@@ -3210,10 +3246,11 @@ struct Select {
 #define SF_WinRewrite    0x0100000 /* Window function rewrite accomplished */
 #define SF_View          0x0200000 /* SELECT statement is a view */
 #define SF_NoopOrderBy   0x0400000 /* ORDER BY is ignored for this query */
-#define SF_UpdateFrom    0x0800000 /* Statement is an UPDATE...FROM */
+#define SF_UFSrcCheck    0x0800000 /* Check pSrc as required by UPDATE...FROM */
 #define SF_PushDown      0x1000000 /* SELECT has be modified by push-down opt */
 #define SF_MultiPart     0x2000000 /* Has multiple incompatible PARTITIONs */
 #define SF_CopyCte       0x4000000 /* SELECT statement is a copy of a CTE */
+#define SF_OrderByReqd   0x8000000 /* The ORDER BY clause may not be omitted */
 
 /*
 ** The results of a SELECT can be distributed in several ways, as defined
@@ -4296,6 +4333,7 @@ void sqlite3ErrorMsg(Parse*, const char*, ...);
 int sqlite3ErrorToParser(sqlite3*,int);
 void sqlite3Dequote(char*);
 void sqlite3DequoteExpr(Expr*);
+void sqlite3DequoteToken(Token*);
 void sqlite3TokenInit(Token*,char*);
 int sqlite3KeywordCode(const unsigned char*, int);
 int sqlite3RunParser(Parse*, const char*, char **);
@@ -4323,6 +4361,7 @@ void sqlite3ExprDeferredDelete(Parse*, Expr*);
 void sqlite3ExprUnmapAndDelete(Parse*, Expr*);
 ExprList *sqlite3ExprListAppend(Parse*,ExprList*,Expr*);
 ExprList *sqlite3ExprListAppendVector(Parse*,ExprList*,IdList*,Expr*);
+Select *sqlite3ExprListToValues(Parse*, int, ExprList*);
 void sqlite3ExprListSetSortOrder(ExprList*,int,int);
 void sqlite3ExprListSetName(Parse*,ExprList*,Token*,int);
 void sqlite3ExprListSetSpan(Parse*,ExprList*,const char*,const char*);
@@ -4361,7 +4400,7 @@ void sqlite3StartTable(Parse*,Token*,Token*,int,int,int,int);
 #else
 # define sqlite3ColumnPropertiesFromName(T,C) /* no-op */
 #endif
-void sqlite3AddColumn(Parse*,Token*,Token*);
+void sqlite3AddColumn(Parse*,Token,Token);
 void sqlite3AddNotNull(Parse*, int);
 void sqlite3AddPrimaryKey(Parse*, ExprList*, int, int, int);
 void sqlite3AddCheckConstraint(Parse*, Expr*, const char*, const char*);
@@ -4771,6 +4810,9 @@ void sqlite3ValueApplyAffinity(sqlite3_value *, u8, u8);
 #ifndef SQLITE_AMALGAMATION
 extern const unsigned char sqlite3OpcodeProperty[];
 extern const char sqlite3StrBINARY[];
+extern const unsigned char sqlite3StdTypeLen[];
+extern const char sqlite3StdTypeAffinity[];
+extern const char *sqlite3StdType[];
 extern const unsigned char sqlite3UpperToLower[];
 extern const unsigned char *sqlite3aLTb;
 extern const unsigned char *sqlite3aEQb;
@@ -5191,7 +5233,7 @@ int sqlite3DbstatRegister(sqlite3*);
 int sqlite3ExprVectorSize(Expr *pExpr);
 int sqlite3ExprIsVector(Expr *pExpr);
 Expr *sqlite3VectorFieldSubexpr(Expr*, int);
-Expr *sqlite3ExprForVectorField(Parse*,Expr*,int);
+Expr *sqlite3ExprForVectorField(Parse*,Expr*,int,int);
 void sqlite3VectorErrorMsg(Parse*, Expr*);
 
 #ifndef SQLITE_OMIT_COMPILEOPTION_DIAGS

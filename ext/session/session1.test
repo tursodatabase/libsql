@@ -152,6 +152,26 @@ do_changeset_test $tn.2.4.2 S {}
 do_changeset_invert_test $tn.2.4.3 S {}
 do_test $tn.2.4.4 { S delete } {}
 
+do_execsql_test $tn.2.5.0 {
+  SELECT * FROM t1 ORDER BY x
+} {
+  2  Surin
+  10 Sukhothai
+  20 Thapae
+}
+
+do_test $tn.2.5.1 {
+  sqlite3session S db main
+  S attach t1
+  execsql { DELETE FROM t1 }
+} {}
+do_changeset_test $tn.2.5.2 S {
+  {DELETE t1 0 X. {i 10 t Sukhothai} {}} 
+  {DELETE t1 0 X. {i 2 t Surin} {}}
+  {DELETE t1 0 X. {i 20 t Thapae} {}}
+}
+do_test $tn.2.5.3 { S delete } {}
+
 #-------------------------------------------------------------------------
 # Test the application of simple changesets. These tests also test that
 # the conflict callback is invoked correctly. For these tests, the 

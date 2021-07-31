@@ -65,11 +65,12 @@ while  {[llength $argv] > 0} {
   }
 }
 if {[llength $infiles] == 0} {
-  set in [open $topdir/src/shell.c.in rb]
+  set in [open $topdir/src/shell.c.in]
 } else {
   set infiles [lassign $infiles infile]
-  set in [open $infile rb]
+  set in [open $infile]
 }
+fconfigure $in -translation binary
 
 set ::cmd_help [dict create]
 set ::cmd_dispatch [dict create]

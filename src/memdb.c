@@ -809,10 +809,11 @@ int sqlite3_deserialize(
   sqlite3_mutex_enter(db->mutex);
   if( zSchema==0 ) zSchema = db->aDb[0].zDbSName;
   iDb = sqlite3FindDbName(db, zSchema);
-  if( iDb<0 ){
+  testcase( iDb==1 );
+  if( iDb<2 && iDb!=0 ){
     rc = SQLITE_ERROR;
     goto end_deserialize;
-  }    
+  }
   zSql = sqlite3_mprintf("ATTACH x AS %Q", zSchema);
   if( zSql==0 ){
     rc = SQLITE_NOMEM;

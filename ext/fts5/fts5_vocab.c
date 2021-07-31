@@ -60,6 +60,7 @@ struct Fts5VocabCursor {
 
   int bEof;                       /* True if this cursor is at EOF */
   Fts5IndexIter *pIter;           /* Term/rowid iterator object */
+  void *pStruct;                  /* From sqlite3Fts5StructureRef() */
 
   int nLeTerm;                    /* Size of zLeTerm in bytes */
   char *zLeTerm;                  /* (term <= $zLeTerm) paramater, or NULL */
@@ -393,6 +394,8 @@ static int fts5VocabOpenMethod(
 static void fts5VocabResetCursor(Fts5VocabCursor *pCsr){
   pCsr->rowid = 0;
   sqlite3Fts5IterClose(pCsr->pIter);
+  sqlite3Fts5StructureRelease(pCsr->pStruct);
+  pCsr->pStruct = 0;
   pCsr->pIter = 0;
   sqlite3_free(pCsr->zLeTerm);
   pCsr->nLeTerm = -1;
@@ -470,9 +473,11 @@ static int fts5VocabInstanceNext(Fts5VocabCursor *pCsr){
 static int fts5VocabNextMethod(sqlite3_vtab_cursor *pCursor){
   Fts5VocabCursor *pCsr = (Fts5VocabCursor*)pCursor;
   Fts5VocabTable *pTab = (Fts5VocabTable*)pCursor->pVtab;
-  int rc = SQLITE_OK;
   int nCol = pCsr->pFts5->pConfig->nCol;
+  int rc;
 
+  rc = sqlite3Fts5StructureTest(pCsr->pFts5->pIndex, pCsr->pStruct);
+  if( rc!=SQLITE_OK ) return rc;
   pCsr->rowid++;
 
   if( pTab->eType==FTS5_VOCAB_INSTANCE ){
@@ -646,6 +651,9 @@ static int fts5VocabFilterMethod(
   if( rc==SQLITE_OK ){
     Fts5Index *pIndex = pCsr->pFts5->pIndex;
     rc = sqlite3Fts5IndexQuery(pIndex, zTerm, nTerm, f, 0, &pCsr->pIter);
+    if( rc==SQLITE_OK ){
+      pCsr->pStruct = sqlite3Fts5StructureRef(pIndex);
+    }
   }
   if( rc==SQLITE_OK && eType==FTS5_VOCAB_INSTANCE ){
     rc = fts5VocabInstanceNewTerm(pCsr);

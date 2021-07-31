@@ -370,7 +370,7 @@ static const PragmaName aPragmaName[] = {
 #if !defined(SQLITE_OMIT_INTEGRITY_CHECK)
  {/* zName:     */ "integrity_check",
   /* ePragTyp:  */ PragTyp_INTEGRITY_CHECK,
-  /* ePragFlg:  */ PragFlg_NeedSchema|PragFlg_Result0|PragFlg_Result1,
+  /* ePragFlg:  */ PragFlg_NeedSchema|PragFlg_Result0|PragFlg_Result1|PragFlg_SchemaOpt,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ 0 },
 #endif
@@ -478,7 +478,7 @@ static const PragmaName aPragmaName[] = {
 #if !defined(SQLITE_OMIT_INTEGRITY_CHECK)
  {/* zName:     */ "quick_check",
   /* ePragTyp:  */ PragTyp_INTEGRITY_CHECK,
-  /* ePragFlg:  */ PragFlg_NeedSchema|PragFlg_Result0|PragFlg_Result1,
+  /* ePragFlg:  */ PragFlg_NeedSchema|PragFlg_Result0|PragFlg_Result1|PragFlg_SchemaOpt,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ 0 },
 #endif
