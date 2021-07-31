@@ -309,6 +309,19 @@ impl From<u8> for IndexConstraintOp {
 pub struct IndexInfo(*mut ffi::sqlite3_index_info);
 
 impl IndexInfo {
+    /// Iterate on index constraint and its associated usage.
+    #[inline]
+    pub fn constraints_and_usages(&mut self) -> IndexConstraintAndUsageIter<'_> {
+        let constraints =
+            unsafe { slice::from_raw_parts((*self.0).aConstraint, (*self.0).nConstraint as usize) };
+        let constraint_usages = unsafe {
+            slice::from_raw_parts_mut((*self.0).aConstraintUsage, (*self.0).nConstraint as usize)
+        };
+        IndexConstraintAndUsageIter {
+            iter: constraints.iter().zip(constraint_usages.iter_mut()),
+        }
+    }
+
     /// Record WHERE clause constraints.
     #[inline]
     pub fn constraints(&self) -> IndexConstraintIter<'_> {
@@ -382,6 +395,30 @@ impl IndexInfo {
     // TODO colUsed
 
     // TODO sqlite3_vtab_collation (http://sqlite.org/c3ref/vtab_collation.html)
+}
+
+/// Iterate on index constraint and its associated usage.
+pub struct IndexConstraintAndUsageIter<'a> {
+    iter: std::iter::Zip<
+        slice::Iter<'a, ffi::sqlite3_index_constraint>,
+        slice::IterMut<'a, ffi::sqlite3_index_constraint_usage>,
+    >,
+}
+
+impl<'a> Iterator for IndexConstraintAndUsageIter<'a> {
+    type Item = (IndexConstraint<'a>, IndexConstraintUsage<'a>);
+
+    #[inline]
+    fn next(&mut self) -> Option<(IndexConstraint<'a>, IndexConstraintUsage<'a>)> {
+        self.iter
+            .next()
+            .map(|raw| (IndexConstraint(raw.0), IndexConstraintUsage(raw.1)))
+    }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.iter.size_hint()
+    }
 }
 
 /// `feature = "vtab"`
