@@ -212,15 +212,16 @@ impl Connection {
     ///
     /// Prefer [PRAGMA function](https://sqlite.org/pragma.html#pragfunc) introduced in SQLite 3.20:
     /// `SELECT * FROM pragma_table_info(?);`
-    pub fn pragma<F>(
+    pub fn pragma<F, V>(
         &self,
         schema_name: Option<DatabaseName<'_>>,
         pragma_name: &str,
-        pragma_value: &dyn ToSql,
+        pragma_value: V,
         mut f: F,
     ) -> Result<()>
     where
         F: FnMut(&Row<'_>) -> Result<()>,
+        V: ToSql,
     {
         let mut sql = Sql::new();
         sql.push_pragma(schema_name, pragma_name)?;
@@ -228,7 +229,7 @@ impl Connection {
         // or it may be separated from the pragma name by an equal sign.
         // The two syntaxes yield identical results.
         sql.open_brace();
-        sql.push_value(pragma_value)?;
+        sql.push_value(&pragma_value)?;
         sql.close_brace();
         let mut stmt = self.prepare(&sql)?;
         let mut rows = stmt.query([])?;
@@ -243,34 +244,14 @@ impl Connection {
     ///
     /// Some pragmas will return the updated value which cannot be retrieved
     /// with this method.
-    pub fn pragma_update(
+    pub fn pragma_update<V>(
         &self,
         schema_name: Option<DatabaseName<'_>>,
         pragma_name: &str,
-        pragma_value: &dyn ToSql,
-    ) -> Result<()> {
-        let mut sql = Sql::new();
-        sql.push_pragma(schema_name, pragma_name)?;
-        // The argument may be either in parentheses
-        // or it may be separated from the pragma name by an equal sign.
-        // The two syntaxes yield identical results.
-        sql.push_equal_sign();
-        sql.push_value(pragma_value)?;
-        self.execute_batch(&sql)
-    }
-
-    /// Set a new value to `pragma_name` and return the updated value.
-    ///
-    /// Only few pragmas automatically return the updated value.
-    pub fn pragma_update_and_check<F, T>(
-        &self,
-        schema_name: Option<DatabaseName<'_>>,
-        pragma_name: &str,
-        pragma_value: &dyn ToSql,
-        f: F,
-    ) -> Result<T>
+        pragma_value: V,
+    ) -> Result<()>
     where
-        F: FnOnce(&Row<'_>) -> Result<T>,
+        V: ToSql,
     {
         let mut sql = Sql::new();
         sql.push_pragma(schema_name, pragma_name)?;
@@ -278,7 +259,31 @@ impl Connection {
         // or it may be separated from the pragma name by an equal sign.
         // The two syntaxes yield identical results.
         sql.push_equal_sign();
-        sql.push_value(pragma_value)?;
+        sql.push_value(&pragma_value)?;
+        self.execute_batch(&sql)
+    }
+
+    /// Set a new value to `pragma_name` and return the updated value.
+    ///
+    /// Only few pragmas automatically return the updated value.
+    pub fn pragma_update_and_check<F, T, V>(
+        &self,
+        schema_name: Option<DatabaseName<'_>>,
+        pragma_name: &str,
+        pragma_value: V,
+        f: F,
+    ) -> Result<T>
+    where
+        F: FnOnce(&Row<'_>) -> Result<T>,
+        V: ToSql,
+    {
+        let mut sql = Sql::new();
+        sql.push_pragma(schema_name, pragma_name)?;
+        // The argument may be either in parentheses
+        // or it may be separated from the pragma name by an equal sign.
+        // The two syntaxes yield identical results.
+        sql.push_equal_sign();
+        sql.push_value(&pragma_value)?;
         self.query_row(&sql, [], f)
     }
 }
@@ -393,15 +398,26 @@ mod test {
     #[test]
     fn pragma_update() -> Result<()> {
         let db = Connection::open_in_memory()?;
-        db.pragma_update(None, "user_version", &1)
+        db.pragma_update(None, "user_version", 1)
     }
 
     #[test]
     fn pragma_update_and_check() -> Result<()> {
         let db = Connection::open_in_memory()?;
         let journal_mode: String =
-            db.pragma_update_and_check(None, "journal_mode", &"OFF", |row| row.get(0))?;
+            db.pragma_update_and_check(None, "journal_mode", "OFF", |row| row.get(0))?;
         assert_eq!("off", &journal_mode);
+        // Sanity checks to ensure the move to a generic `ToSql` wasn't breaking
+        assert_eq!(
+            "off",
+            db.pragma_update_and_check(None, "journal_mode", &"OFF", |row| row
+                .get::<_, String>(0))?,
+        );
+        let param: &dyn crate::ToSql = &"OFF";
+        assert_eq!(
+            "off",
+            db.pragma_update_and_check(None, "journal_mode", param, |row| row.get::<_, String>(0))?,
+        );
         Ok(())
     }
 
