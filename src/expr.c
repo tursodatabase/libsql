@@ -2513,7 +2513,7 @@ static Select *isCandidateForInOpt(Expr *pX){
   if( pSrc->a[0].pSelect ) return 0;     /* FROM is not a subquery or view */
   pTab = pSrc->a[0].pTab;
   assert( pTab!=0 );
-  assert( pTab->pSelect==0 );            /* FROM clause is not a view */
+  assert( !IsView(pTab)  );              /* FROM clause is not a view */
   if( IsVirtual(pTab) ) return 0;        /* FROM clause not a virtual table */
   pEList = p->pEList;
   assert( pEList!=0 );

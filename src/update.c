@@ -60,7 +60,7 @@ static void updateVirtualTable(
 */
 void sqlite3ColumnDefault(Vdbe *v, Table *pTab, int i, int iReg){
   assert( pTab!=0 );
-  if( !pTab->pSelect ){
+  if( !IsView(pTab) ){
     sqlite3_value *pValue = 0;
     u8 enc = ENC(sqlite3VdbeDb(v));
     Column *pCol = &pTab->aCol[i];
@@ -237,7 +237,7 @@ static void updateFromSelect(
       pList = sqlite3ExprListAppend(pParse, pList, pNew);
     }
     eDest = IsVirtual(pTab) ? SRT_Table : SRT_Upfrom;
-  }else if( pTab->pSelect ){
+  }else if( IsView(pTab) ){
     for(i=0; i<pTab->nCol; i++){
       pList = sqlite3ExprListAppend(pParse, pList, exprRowColumn(pParse, i));
     }
@@ -362,7 +362,7 @@ void sqlite3Update(
   */
 #ifndef SQLITE_OMIT_TRIGGER
   pTrigger = sqlite3TriggersExist(pParse, pTab, TK_UPDATE, pChanges, &tmask);
-  isView = pTab->pSelect!=0;
+  isView = IsView(pTab);
   assert( pTrigger || tmask==0 );
 #else
 # define pTrigger 0

@@ -703,7 +703,7 @@ void sqlite3Insert(
   */
 #ifndef SQLITE_OMIT_TRIGGER
   pTrigger = sqlite3TriggersExist(pParse, pTab, TK_INSERT, 0, &tmask);
-  isView = pTab->pSelect!=0;
+  isView = IsView(pTab);
 #else
 # define pTrigger 0
 # define tmask 0
@@ -989,7 +989,7 @@ void sqlite3Insert(
               pTab->zName);
       goto insert_cleanup;
     }
-    if( pTab->pSelect ){
+    if( IsView(pTab) ){
       sqlite3ErrorMsg(pParse, "cannot UPSERT a view");
       goto insert_cleanup;
     }
@@ -1624,7 +1624,7 @@ void sqlite3GenerateConstraintChecks(
   db = pParse->db;
   v = pParse->pVdbe;
   assert( v!=0 );
-  assert( pTab->pSelect==0 );  /* This table is not a VIEW */
+  assert( !IsView(pTab) );  /* This table is not a VIEW */
   nCol = pTab->nCol;
   
   /* pPk is the PRIMARY KEY index for WITHOUT ROWID tables and NULL for
@@ -2185,7 +2185,7 @@ void sqlite3GenerateConstraintChecks(
      && ( 0==(db->flags&SQLITE_RecTriggers) ||      /* Condition 4 */
           0==sqlite3TriggersExist(pParse, pTab, TK_DELETE, 0, 0))
      && ( 0==(db->flags&SQLITE_ForeignKeys) ||      /* Condition 5 */
-         (0==pTab->pFKey && 0==sqlite3FkReferences(pTab)))
+         (0==pTab->u.tab.pFKey && 0==sqlite3FkReferences(pTab)))
     ){
       sqlite3VdbeResolveLabel(v, addrUniqueOk);
       continue;
@@ -2484,7 +2484,7 @@ void sqlite3CompleteInsertion(
 
   v = pParse->pVdbe;
   assert( v!=0 );
-  assert( pTab->pSelect==0 );  /* This table is not a VIEW */
+  assert( !IsView(pTab) );  /* This table is not a VIEW */
   for(i=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
     /* All REPLACE indexes are at the end of the list */
     assert( pIdx->onError!=OE_Replace
@@ -2786,13 +2786,8 @@ static int xferOptimization(
   if( HasRowid(pDest)!=HasRowid(pSrc) ){
     return 0;   /* source and destination must both be WITHOUT ROWID or not */
   }
-#ifndef SQLITE_OMIT_VIRTUALTABLE
-  if( IsVirtual(pSrc) ){
-    return 0;   /* tab2 must not be a virtual table */
-  }
-#endif
-  if( pSrc->pSelect ){
-    return 0;   /* tab2 may not be a view */
+  if( !IsOrdinaryTable(pSrc) ){
+    return 0;   /* tab2 may not be a view or virtual table */
   }
   if( pDest->nCol!=pSrc->nCol ){
     return 0;   /* Number of columns must be the same in tab1 and tab2 */
@@ -2899,7 +2894,7 @@ static int xferOptimization(
   ** the extra complication to make this rule less restrictive is probably
   ** not worth the effort.  Ticket [6284df89debdfa61db8073e062908af0c9b6118e]
   */
-  if( (db->flags & SQLITE_ForeignKeys)!=0 && pDest->pFKey!=0 ){
+  if( (db->flags & SQLITE_ForeignKeys)!=0 && pDest->u.tab.pFKey!=0 ){
     return 0;
   }
 #endif

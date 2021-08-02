@@ -678,13 +678,15 @@ void sqlite3ColumnSetExpr(
   Column *pCol,     /* The column to receive the new DEFAULT expression */
   Expr *pExpr       /* The new default expression */
 ){
-  ExprList *pList = pTab->pDfltList;
+  ExprList *pList;
+  assert( !IsVirtual(pTab) );
+  pList = pTab->u.tab.pDfltList;
   if( pCol->iDflt==0
    || pList==0
    || pList->nExpr<pCol->iDflt
   ){
     pCol->iDflt = pList==0 ? 1 : pList->nExpr+1;
-    pTab->pDfltList = sqlite3ExprListAppend(pParse, pList, pExpr);
+    pTab->u.tab.pDfltList = sqlite3ExprListAppend(pParse, pList, pExpr);
   }else{
     sqlite3ExprDelete(pParse->db, pList->a[pCol->iDflt-1].pExpr);
     pList->a[pCol->iDflt-1].pExpr = pExpr;
@@ -698,9 +700,10 @@ void sqlite3ColumnSetExpr(
 */
 Expr *sqlite3ColumnExpr(Table *pTab, Column *pCol){
   if( pCol->iDflt==0 ) return 0;
-  if( pTab->pDfltList==0 ) return 0;
-  if( pTab->pDfltList->nExpr<pCol->iDflt ) return 0;
-  return pTab->pDfltList->a[pCol->iDflt-1].pExpr;
+  if( IsVirtual(pTab) ) return 0;
+  if( pTab->u.tab.pDfltList==0 ) return 0;
+  if( pTab->u.tab.pDfltList->nExpr<pCol->iDflt ) return 0;
+  return pTab->u.tab.pDfltList->a[pCol->iDflt-1].pExpr;
 }
 
 /*
@@ -718,11 +721,15 @@ void sqlite3DeleteColumnNames(sqlite3 *db, Table *pTable){
       sqlite3DbFree(db, pCol->zColl);
     }
     sqlite3DbFree(db, pTable->aCol);
-    sqlite3ExprListDelete(db, pTable->pDfltList);
+    if( !IsVirtual(pTable) ){
+      sqlite3ExprListDelete(db, pTable->u.tab.pDfltList);
+    }
     if( db==0 || db->pnBytesFreed==0 ){
       pTable->aCol = 0;
       pTable->nCol = 0;
-      pTable->pDfltList = 0;
+      if( !IsVirtual(pTable) ){
+        pTable->u.tab.pDfltList = 0;
+      }
     }
   }
 }
@@ -775,19 +782,25 @@ static void SQLITE_NOINLINE deleteTable(sqlite3 *db, Table *pTable){
     sqlite3FreeIndex(db, pIndex);
   }
 
-  /* Delete any foreign keys attached to this table. */
-  sqlite3FkDelete(db, pTable);
+  if( IsOrdinaryTable(pTable) ){
+    sqlite3FkDelete(db, pTable);
+  }
+#ifndef SQLITE_OMIT_VIRTUAL_TABLE
+  else if( IsVirtual(pTable) ){
+    sqlite3VtabClear(db, pTable);
+  }
+#endif
+  else{
+    assert( IsView(pTable) );
+    sqlite3SelectDelete(db, pTable->u.view.pSelect);
+  }
 
   /* Delete the Table structure itself.
   */
   sqlite3DeleteColumnNames(db, pTable);
   sqlite3DbFree(db, pTable->zName);
   sqlite3DbFree(db, pTable->zColAff);
-  sqlite3SelectDelete(db, pTable->pSelect);
   sqlite3ExprListDelete(db, pTable->pCheck);
-#ifndef SQLITE_OMIT_VIRTUALTABLE
-  sqlite3VtabClear(db, pTable);
-#endif
   sqlite3DbFree(db, pTable);
 
   /* Verify that no lookaside memory was used by schema tables */
@@ -2420,7 +2433,7 @@ int sqlite3IsShadowTableOf(sqlite3 *db, Table *pTab, const char *zName){
   nName = sqlite3Strlen30(pTab->zName);
   if( sqlite3_strnicmp(zName, pTab->zName, nName)!=0 ) return 0;
   if( zName[nName]!='_' ) return 0;
-  pMod = (Module*)sqlite3HashFind(&db->aModule, pTab->azModuleArg[0]);
+  pMod = (Module*)sqlite3HashFind(&db->aModule, pTab->u.vtab.azArg[0]);
   if( pMod==0 ) return 0;
   if( pMod->pModule->iVersion<3 ) return 0;
   if( pMod->pModule->xShadowName==0 ) return 0;
@@ -2632,7 +2645,7 @@ void sqlite3EndTable(
     /* 
     ** Initialize zType for the new view or table.
     */
-    if( p->pSelect==0 ){
+    if( IsOrdinaryTable(p) ){
       /* A regular table */
       zType = "table";
       zType2 = "TABLE";
@@ -2782,12 +2795,12 @@ void sqlite3EndTable(
   }
 
 #ifndef SQLITE_OMIT_ALTERTABLE
-  if( !pSelect && !p->pSelect ){
+  if( !pSelect && IsOrdinaryTable(p) ){
     assert( pCons && pEnd );
     if( pCons->z==0 ){
       pCons = pEnd;
     }
-    p->addColOffset = 13 + (int)(pCons->z - pParse->sNameToken.z);
+    p->u.tab.addColOffset = 13 + (int)(pCons->z - pParse->sNameToken.z);
   }
 #endif
 }
@@ -2844,12 +2857,13 @@ void sqlite3CreateView(
   */
   pSelect->selFlags |= SF_View;
   if( IN_RENAME_OBJECT ){
-    p->pSelect = pSelect;
+    p->u.view.pSelect = pSelect;
     pSelect = 0;
   }else{
-    p->pSelect = sqlite3SelectDup(db, pSelect, EXPRDUP_REDUCE);
+    p->u.view.pSelect = sqlite3SelectDup(db, pSelect, EXPRDUP_REDUCE);
   }
   p->pCheck = sqlite3ExprListDup(db, pCNames, EXPRDUP_REDUCE);
+  p->eTabType = TABTYP_VIEW;
   if( db->mallocFailed ) goto create_view_fail;
 
   /* Locate the end of the CREATE VIEW statement.  Make sEnd point to
@@ -2946,8 +2960,8 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
   ** to be permanent.  So the computation is done on a copy of the SELECT
   ** statement that defines the view.
   */
-  assert( pTable->pSelect );
-  pSel = sqlite3SelectDup(db, pTable->pSelect, 0);
+  assert( IsView(pTable) );
+  pSel = sqlite3SelectDup(db, pTable->u.view.pSelect, 0);
   if( pSel ){
     u8 eParseMode = pParse->eParseMode;
     pParse->eParseMode = PARSE_MODE_NORMAL;
@@ -3022,7 +3036,7 @@ static void sqliteViewResetAll(sqlite3 *db, int idx){
   if( !DbHasProperty(db, idx, DB_UnresetViews) ) return;
   for(i=sqliteHashFirst(&db->aDb[idx].pSchema->tblHash); i;i=sqliteHashNext(i)){
     Table *pTab = sqliteHashData(i);
-    if( pTab->pSelect ){
+    if( IsView(pTab) ){
       sqlite3DeleteColumnNames(db, pTab);
     }
   }
@@ -3364,11 +3378,11 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView, int noErr){
   /* Ensure DROP TABLE is not used on a view, and DROP VIEW is not used
   ** on a table.
   */
-  if( isView && pTab->pSelect==0 ){
+  if( isView && !IsView(pTab) ){
     sqlite3ErrorMsg(pParse, "use DROP TABLE to delete table %s", pTab->zName);
     goto exit_drop_table;
   }
-  if( !isView && pTab->pSelect ){
+  if( !isView && IsView(pTab) ){
     sqlite3ErrorMsg(pParse, "use DROP VIEW to delete view %s", pTab->zName);
     goto exit_drop_table;
   }
@@ -3455,7 +3469,7 @@ void sqlite3CreateForeignKey(
     goto fk_end;
   }
   pFKey->pFrom = p;
-  pFKey->pNextFrom = p->pFKey;
+  pFKey->pNextFrom = p->u.tab.pFKey;
   z = (char*)&pFKey->aCol[nCol];
   pFKey->zTo = z;
   if( IN_RENAME_OBJECT ){
@@ -3520,7 +3534,8 @@ void sqlite3CreateForeignKey(
 
   /* Link the foreign key to the table as the last step.
   */
-  p->pFKey = pFKey;
+  assert( !IsVirtual(p) );
+  p->u.tab.pFKey = pFKey;
   pFKey = 0;
 
 fk_end:
@@ -3541,7 +3556,9 @@ void sqlite3DeferForeignKey(Parse *pParse, int isDeferred){
 #ifndef SQLITE_OMIT_FOREIGN_KEY
   Table *pTab;
   FKey *pFKey;
-  if( (pTab = pParse->pNewTable)==0 || (pFKey = pTab->pFKey)==0 ) return;
+  if( (pTab = pParse->pNewTable)==0 ) return;
+  if( IsVirtual(pTab) ) return;
+  if( (pFKey = pTab->u.tab.pFKey)==0 ) return;
   assert( isDeferred==0 || isDeferred==1 ); /* EV: R-30323-21917 */
   pFKey->isDeferred = (u8)isDeferred;
 #endif
@@ -3833,7 +3850,7 @@ void sqlite3CreateIndex(
     goto exit_create_index;
   }
 #ifndef SQLITE_OMIT_VIEW
-  if( pTab->pSelect ){
+  if( IsView(pTab) ){
     sqlite3ErrorMsg(pParse, "views may not be indexed");
     goto exit_create_index;
   }

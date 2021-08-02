@@ -723,7 +723,8 @@ void sqlite3FkDropTable(Parse *pParse, SrcList *pName, Table *pTab){
     Vdbe *v = sqlite3GetVdbe(pParse);
 
     assert( v );                  /* VDBE has already been allocated */
-    assert( pTab->pSelect==0 );   /* Not a view */
+    assert( !IsView(pTab) );      /* Not a view */
+    assert( !IsVirtual(pTab) );
     if( sqlite3FkReferences(pTab)==0 ){
       /* Search for a deferred foreign key constraint for which this table
       ** is the child table. If one cannot be found, return without 
@@ -731,7 +732,7 @@ void sqlite3FkDropTable(Parse *pParse, SrcList *pName, Table *pTab){
       ** the entire DELETE if there are no outstanding deferred constraints
       ** when this statement is run.  */
       FKey *p;
-      for(p=pTab->pFKey; p; p=p->pNextFrom){
+      for(p=pTab->u.tab.pFKey; p; p=p->pNextFrom){
         if( p->isDeferred || (db->flags & SQLITE_DeferFKs) ) break;
       }
       if( !p ) return;
@@ -893,7 +894,8 @@ void sqlite3FkCheck(
 
   /* Loop through all the foreign key constraints for which pTab is the
   ** child table (the table that the foreign key definition is part of).  */
-  for(pFKey=pTab->pFKey; pFKey; pFKey=pFKey->pNextFrom){
+  assert( !IsVirtual(pTab) );
+  for(pFKey=pTab->u.tab.pFKey; pFKey; pFKey=pFKey->pNextFrom){
     Table *pTo;                   /* Parent table of foreign key pFKey */
     Index *pIdx = 0;              /* Index on key columns in pTo */
     int *aiFree = 0;
@@ -1078,7 +1080,8 @@ u32 sqlite3FkOldmask(
   if( pParse->db->flags&SQLITE_ForeignKeys ){
     FKey *p;
     int i;
-    for(p=pTab->pFKey; p; p=p->pNextFrom){
+    assert( !IsVirtual(pTab) );
+    for(p=pTab->u.tab.pFKey; p; p=p->pNextFrom){
       for(i=0; i<p->nCol; i++) mask |= COLUMN_MASK(p->aCol[i].iFrom);
     }
     for(p=sqlite3FkReferences(pTab); p; p=p->pNextTo){
@@ -1128,19 +1131,19 @@ int sqlite3FkRequired(
 ){
   int eRet = 1;                   /* Value to return if bHaveFK is true */
   int bHaveFK = 0;                /* If FK processing is required */
-  if( pParse->db->flags&SQLITE_ForeignKeys ){
+  if( pParse->db->flags&SQLITE_ForeignKeys && !IsVirtual(pTab) ){
     if( !aChange ){
       /* A DELETE operation. Foreign key processing is required if the 
       ** table in question is either the child or parent table for any 
       ** foreign key constraint.  */
-      bHaveFK = (sqlite3FkReferences(pTab) || pTab->pFKey);
+      bHaveFK = (sqlite3FkReferences(pTab) || pTab->u.tab.pFKey);
     }else{
       /* This is an UPDATE. Foreign key processing is only required if the
       ** operation modifies one or more child or parent key columns. */
       FKey *p;
 
       /* Check if any child key columns are being modified. */
-      for(p=pTab->pFKey; p; p=p->pNextFrom){
+      for(p=pTab->u.tab.pFKey; p; p=p->pNextFrom){
         if( fkChildIsModified(pTab, p, aChange, chngRowid) ){
           if( 0==sqlite3_stricmp(pTab->zName, p->zTo) ) eRet = 2;
           bHaveFK = 1;
@@ -1416,9 +1419,9 @@ void sqlite3FkDelete(sqlite3 *db, Table *pTab){
   FKey *pFKey;                    /* Iterator variable */
   FKey *pNext;                    /* Copy of pFKey->pNextFrom */
 
-  assert( db==0 || IsVirtual(pTab)
-         || sqlite3SchemaMutexHeld(db, 0, pTab->pSchema) );
-  for(pFKey=pTab->pFKey; pFKey; pFKey=pNext){
+  assert( !IsVirtual(pTab) );
+  assert( db==0 || sqlite3SchemaMutexHeld(db, 0, pTab->pSchema) );
+  for(pFKey=pTab->u.tab.pFKey; pFKey; pFKey=pNext){
 
     /* Remove the FK from the fkeyHash hash table. */
     if( !db || db->pnBytesFreed==0 ){

@@ -2201,19 +2201,16 @@ struct VTable {
 #define SQLITE_VTABRISK_High         2
 
 /*
-** The schema for each SQL table and view is represented in memory
-** by an instance of the following structure.
+** The schema for each SQL table, virtual table, and view is represented
+** in memory by an instance of the following structure.
 */
 struct Table {
   char *zName;         /* Name of the table or view */
   Column *aCol;        /* Information about each column */
   Index *pIndex;       /* List of SQL indexes on this table. */
-  Select *pSelect;     /* NULL for tables.  Points to definition if a view. */
-  FKey *pFKey;         /* Linked list of all foreign keys in this table */
   char *zColAff;       /* String defining the affinity of each column */
   ExprList *pCheck;    /* All CHECK constraints */
                        /*   ... also used as column name list in a VIEW */
-  ExprList *pDfltList; /* DEFAULT clauses on various columns */
   Pgno tnum;           /* Root BTree page for this table */
   u32 nTabRef;         /* Number of pointers to this Table */
   u32 tabFlags;        /* Mask of TF_* values */
@@ -2226,15 +2223,24 @@ struct Table {
   LogEst costMult;     /* Cost multiplier for using this table */
 #endif
   u8 keyConf;          /* What to do in case of uniqueness conflict on iPKey */
-#ifndef SQLITE_OMIT_ALTERTABLE
-  int addColOffset;    /* Offset in CREATE TABLE stmt to add a new column */
-#endif
-#ifndef SQLITE_OMIT_VIRTUALTABLE
-  int nModuleArg;      /* Number of arguments to the module */
-  char **azModuleArg;  /* 0: module 1: schema 2: vtab name 3...: args */
-  VTable *pVTable;     /* List of VTable objects. */
-#endif
-  Trigger *pTrigger;   /* List of triggers stored in pSchema */
+  u8 eTabType;         /* 0: normal, 1: virtual, 2: view */
+  union {
+    struct {             /* Used by ordinary tables: */
+      int addColOffset;    /* Offset in CREATE TABLE stmt to add a new column */
+      FKey *pFKey;         /* Linked list of all foreign keys in this table */
+      ExprList *pDfltList; /* DEFAULT clauses on various columns.
+                           ** Or the AS clause for generated columns. */
+    } tab;
+    struct {             /* Used by views: */
+      Select *pSelect;     /* View definition */
+    } view;
+    struct {             /* Used by virtual tables only: */
+      int nArg;            /* Number of arguments to the module */
+      char **azArg;        /* 0: module 1: schema 2: vtab name 3...: args */
+      VTable *p;           /* List of VTable objects. */
+    } vtab;
+  } u;
+  Trigger *pTrigger;   /* List of triggers on this object */
   Schema *pSchema;     /* Schema that contains this table */
 };
 
@@ -2253,24 +2259,34 @@ struct Table {
 **         TF_HasStored  == COLFLAG_STORED
 **         TF_HasHidden  == COLFLAG_HIDDEN
 */
-#define TF_Readonly        0x0001    /* Read-only system table */
-#define TF_HasHidden       0x0002    /* Has one or more hidden columns */
-#define TF_HasPrimaryKey   0x0004    /* Table has a primary key */
-#define TF_Autoincrement   0x0008    /* Integer primary key is autoincrement */
-#define TF_HasStat1        0x0010    /* nRowLogEst set from sqlite_stat1 */
-#define TF_HasVirtual      0x0020    /* Has one or more VIRTUAL columns */
-#define TF_HasStored       0x0040    /* Has one or more STORED columns */
-#define TF_HasGenerated    0x0060    /* Combo: HasVirtual + HasStored */
-#define TF_WithoutRowid    0x0080    /* No rowid.  PRIMARY KEY is the key */
-#define TF_StatsUsed       0x0100    /* Query planner decisions affected by
+#define TF_Readonly       0x00000001 /* Read-only system table */
+#define TF_HasHidden      0x00000002 /* Has one or more hidden columns */
+#define TF_HasPrimaryKey  0x00000004 /* Table has a primary key */
+#define TF_Autoincrement  0x00000008 /* Integer primary key is autoincrement */
+#define TF_HasStat1       0x00000010 /* nRowLogEst set from sqlite_stat1 */
+#define TF_HasVirtual     0x00000020 /* Has one or more VIRTUAL columns */
+#define TF_HasStored      0x00000040 /* Has one or more STORED columns */
+#define TF_HasGenerated   0x00000060 /* Combo: HasVirtual + HasStored */
+#define TF_WithoutRowid   0x00000080 /* No rowid.  PRIMARY KEY is the key */
+#define TF_StatsUsed      0x00000100 /* Query planner decisions affected by
                                      ** Index.aiRowLogEst[] values */
-#define TF_NoVisibleRowid  0x0200    /* No user-visible "rowid" column */
-#define TF_OOOHidden       0x0400    /* Out-of-Order hidden columns */
-#define TF_HasNotNull      0x0800    /* Contains NOT NULL constraints */
-#define TF_Shadow          0x1000    /* True for a shadow table */
-#define TF_HasStat4        0x2000    /* STAT4 info available for this table */
-#define TF_Ephemeral       0x4000    /* An ephemeral table */
-#define TF_Eponymous       0x8000    /* An eponymous virtual table */
+#define TF_NoVisibleRowid 0x00000200 /* No user-visible "rowid" column */
+#define TF_OOOHidden      0x00000400 /* Out-of-Order hidden columns */
+#define TF_HasNotNull     0x00000800 /* Contains NOT NULL constraints */
+#define TF_Shadow         0x00001000 /* True for a shadow table */
+#define TF_HasStat4       0x00002000 /* STAT4 info available for this table */
+#define TF_Ephemeral      0x00004000 /* An ephemeral table */
+#define TF_Eponymous      0x00008000 /* An eponymous virtual table */
+
+/*
+** Allowed values for Table.eTabType
+*/
+#define TABTYP_NORM      0     /* Ordinary table */
+#define TABTYP_VTAB      1     /* Virtual table */
+#define TABTYP_VIEW      2     /* A view */
+
+#define IsView(X)           ((X)->eTabType==TABTYP_VIEW)
+#define IsOrdinaryTable(X)  ((X)->eTabType==TABTYP_NORM)
 
 /*
 ** Test to see whether or not a table is a virtual table.  This is
@@ -2278,9 +2294,9 @@ struct Table {
 ** table support is omitted from the build.
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-#  define IsVirtual(X)      ((X)->nModuleArg)
+#  define IsVirtual(X)      ((X)->eTabType==TABTYP_VTAB)
 #  define ExprIsVtab(X)  \
-              ((X)->op==TK_COLUMN && (X)->y.pTab!=0 && (X)->y.pTab->nModuleArg)
+    ((X)->op==TK_COLUMN && (X)->y.pTab!=0 && (X)->y.pTab->eTabType==TABTYP_VTAB)
 #else
 #  define IsVirtual(X)      0
 #  define ExprIsVtab(X)     0

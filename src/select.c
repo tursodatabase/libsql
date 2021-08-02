@@ -4933,7 +4933,7 @@ static Table *isSimpleCount(Select *p, AggInfo *pAggInfo){
   }
   pTab = p->pSrc->a[0].pTab;
   pExpr = p->pEList->a[0].pExpr;
-  assert( pTab && !pTab->pSelect && pExpr );
+  assert( pTab && !IsView(pTab) && pExpr );
 
   if( IsVirtual(pTab) ) return 0;
   if( pExpr->op!=TK_AGG_FUNCTION ) return 0;
@@ -5478,30 +5478,31 @@ static int selectExpander(Walker *pWalker, Select *p){
         return WRC_Abort;
       }
 #if !defined(SQLITE_OMIT_VIEW) || !defined(SQLITE_OMIT_VIRTUALTABLE)
-      if( IsVirtual(pTab) || pTab->pSelect ){
+      if( !IsOrdinaryTable(pTab) ){
         i16 nCol;
         u8 eCodeOrig = pWalker->eCode;
         if( sqlite3ViewGetColumnNames(pParse, pTab) ) return WRC_Abort;
         assert( pFrom->pSelect==0 );
-        if( pTab->pSelect
-         && (db->flags & SQLITE_EnableView)==0
-         && pTab->pSchema!=db->aDb[1].pSchema
-        ){
-          sqlite3ErrorMsg(pParse, "access to view \"%s\" prohibited",
-            pTab->zName);
-        }
+        if( IsView(pTab) ){
+          if( (db->flags & SQLITE_EnableView)==0
+           && pTab->pSchema!=db->aDb[1].pSchema
+          ){
+            sqlite3ErrorMsg(pParse, "access to view \"%s\" prohibited",
+              pTab->zName);
+          }
+          pFrom->pSelect = sqlite3SelectDup(db, pTab->u.view.pSelect, 0);
+        }else
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-        assert( SQLITE_VTABRISK_Normal==1 && SQLITE_VTABRISK_High==2 );
-        if( IsVirtual(pTab)
+        if( ALWAYS(IsVirtual(pTab))
          && pFrom->fg.fromDDL
-         && ALWAYS(pTab->pVTable!=0)
-         && pTab->pVTable->eVtabRisk > ((db->flags & SQLITE_TrustedSchema)!=0)
+         && ALWAYS(pTab->u.vtab.p!=0)
+         && pTab->u.vtab.p->eVtabRisk > ((db->flags & SQLITE_TrustedSchema)!=0)
         ){
           sqlite3ErrorMsg(pParse, "unsafe use of virtual table \"%s\"",
                                   pTab->zName);
         }
+        assert( SQLITE_VTABRISK_Normal==1 && SQLITE_VTABRISK_High==2 );
 #endif
-        pFrom->pSelect = sqlite3SelectDup(db, pTab->pSelect, 0);
         nCol = pTab->nCol;
         pTab->nCol = -1;
         pWalker->eCode = 1;  /* Turn on Select.selId renumbering */

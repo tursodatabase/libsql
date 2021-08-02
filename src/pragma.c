@@ -1360,8 +1360,8 @@ void sqlite3Pragma(
     FKey *pFK;
     Table *pTab;
     pTab = sqlite3FindTable(db, zRight, zDb);
-    if( pTab ){
-      pFK = pTab->pFKey;
+    if( pTab && !IsVirtual(pTab) ){
+      pFK = pTab->u.tab.pFKey;
       if( pFK ){
         int iTabDb = sqlite3SchemaToIndex(db, pTab->pSchema);
         int i = 0; 
@@ -1420,7 +1420,7 @@ void sqlite3Pragma(
         pTab = (Table*)sqliteHashData(k);
         k = sqliteHashNext(k);
       }
-      if( pTab==0 || pTab->pFKey==0 ) continue;
+      if( pTab==0 || IsVirtual(pTab) || pTab->u.tab.pFKey==0 ) continue;
       iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
       zDb = db->aDb[iDb].zDbSName;
       sqlite3CodeVerifySchema(pParse, iDb);
@@ -1428,7 +1428,8 @@ void sqlite3Pragma(
       if( pTab->nCol+regRow>pParse->nMem ) pParse->nMem = pTab->nCol + regRow;
       sqlite3OpenTable(pParse, 0, iDb, pTab, OP_OpenRead);
       sqlite3VdbeLoadString(v, regResult, pTab->zName);
-      for(i=1, pFK=pTab->pFKey; pFK; i++, pFK=pFK->pNextFrom){
+      assert( !IsVirtual(pTab) );
+      for(i=1, pFK=pTab->u.tab.pFKey; pFK; i++, pFK=pFK->pNextFrom){
         pParent = sqlite3FindTable(db, pFK->zTo, zDb);
         if( pParent==0 ) continue;
         pIdx = 0;
@@ -1450,7 +1451,8 @@ void sqlite3Pragma(
       if( pFK ) break;
       if( pParse->nTab<i ) pParse->nTab = i;
       addrTop = sqlite3VdbeAddOp1(v, OP_Rewind, 0); VdbeCoverage(v);
-      for(i=1, pFK=pTab->pFKey; pFK; i++, pFK=pFK->pNextFrom){
+      assert( !IsVirtual(pTab) );
+      for(i=1, pFK=pTab->u.tab.pFKey; pFK; i++, pFK=pFK->pNextFrom){
         pParent = sqlite3FindTable(db, pFK->zTo, zDb);
         pIdx = 0;
         aiCols = 0;
