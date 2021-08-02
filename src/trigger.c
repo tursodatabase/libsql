@@ -877,11 +877,11 @@ static ExprList *sqlite3ExpandReturning(
       for(jj=0; jj<pTab->nCol; jj++){
         Expr *pNewExpr;
         if( IsHiddenColumn(pTab->aCol+jj) ) continue;
-        pNewExpr = sqlite3Expr(db, TK_ID, pTab->aCol[jj].zName);
+        pNewExpr = sqlite3Expr(db, TK_ID, pTab->aCol[jj].zCnName);
         pNew = sqlite3ExprListAppend(pParse, pNew, pNewExpr);
         if( !db->mallocFailed ){
           struct ExprList_item *pItem = &pNew->a[pNew->nExpr-1];
-          pItem->zEName = sqlite3DbStrDup(db, pTab->aCol[jj].zName);
+          pItem->zEName = sqlite3DbStrDup(db, pTab->aCol[jj].zCnName);
           pItem->eEName = ENAME_NAME;
         }
       }

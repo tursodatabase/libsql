@@ -187,7 +187,7 @@ int sqlite3_blob_open(
 
     /* Now search pTab for the exact column. */
     for(iCol=0; iCol<pTab->nCol; iCol++) {
-      if( sqlite3StrICmp(pTab->aCol[iCol].zName, zColumn)==0 ){
+      if( sqlite3StrICmp(pTab->aCol[iCol].zCnName, zColumn)==0 ){
         break;
       }
     }

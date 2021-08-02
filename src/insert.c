@@ -308,7 +308,7 @@ void sqlite3ComputeGeneratedColumns(
     }
   }while( pRedo && eProgress );
   if( pRedo ){
-    sqlite3ErrorMsg(pParse, "generated column loop on \"%s\"", pRedo->zName);
+    sqlite3ErrorMsg(pParse, "generated column loop on \"%s\"", pRedo->zCnName);
   }
   pParse->iSelfTab = 0;
 }
@@ -794,7 +794,7 @@ void sqlite3Insert(
     }
     for(i=0; i<pColumn->nId; i++){
       for(j=0; j<pTab->nCol; j++){
-        if( sqlite3StrICmp(pColumn->a[i].zName, pTab->aCol[j].zName)==0 ){
+        if( sqlite3StrICmp(pColumn->a[i].zName, pTab->aCol[j].zCnName)==0 ){
           pColumn->a[i].idx = j;
           if( i!=j ) bIdListInOrder = 0;
           if( j==pTab->iPKey ){
@@ -804,7 +804,7 @@ void sqlite3Insert(
           if( pTab->aCol[j].colFlags & (COLFLAG_STORED|COLFLAG_VIRTUAL) ){
             sqlite3ErrorMsg(pParse, 
                "cannot INSERT into generated column \"%s\"",
-               pTab->aCol[j].zName);
+               pTab->aCol[j].zCnName);
             goto insert_cleanup;
           }
 #endif
@@ -1708,7 +1708,7 @@ void sqlite3GenerateConstraintChecks(
           case OE_Rollback:
           case OE_Fail: {
             char *zMsg = sqlite3MPrintf(db, "%s.%s", pTab->zName,
-                                        pCol->zName);
+                                        pCol->zCnName);
             sqlite3VdbeAddOp3(v, OP_HaltIfNull, SQLITE_CONSTRAINT_NOTNULL,
                               onError, iReg);
             sqlite3VdbeAppendP4(v, zMsg, P4_DYNAMIC);
@@ -2126,7 +2126,7 @@ void sqlite3GenerateConstraintChecks(
         testcase( sqlite3TableColumnToStorage(pTab, iField)!=iField );
         x = sqlite3TableColumnToStorage(pTab, iField) + regNewData + 1;
         sqlite3VdbeAddOp2(v, OP_SCopy, x, regIdx+i);
-        VdbeComment((v, "%s", pTab->aCol[iField].zName));
+        VdbeComment((v, "%s", pTab->aCol[iField].zCnName));
       }
     }
     sqlite3VdbeAddOp3(v, OP_MakeRecord, regIdx, pIdx->nColumn, aRegIdx[ix]);
@@ -2220,7 +2220,7 @@ void sqlite3GenerateConstraintChecks(
             x = sqlite3TableColumnToIndex(pIdx, pPk->aiColumn[i]);
             sqlite3VdbeAddOp3(v, OP_Column, iThisCur, x, regR+i);
             VdbeComment((v, "%s.%s", pTab->zName,
-                         pTab->aCol[pPk->aiColumn[i]].zName));
+                         pTab->aCol[pPk->aiColumn[i]].zCnName));
           }
         }
         if( isUpdate ){
@@ -2843,7 +2843,7 @@ static int xferOptimization(
     if( pDestCol->affinity!=pSrcCol->affinity ){
       return 0;    /* Affinity must be the same on all columns */
     }
-    if( sqlite3_stricmp(pDestCol->zColl, pSrcCol->zColl)!=0 ){
+    if( sqlite3_stricmp(pDestCol->zCnColl, pSrcCol->zCnColl)!=0 ){
       return 0;    /* Collating sequence must be the same on all columns */
     }
     if( pDestCol->notNull && !pSrcCol->notNull ){

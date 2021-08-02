@@ -716,9 +716,9 @@ void sqlite3DeleteColumnNames(sqlite3 *db, Table *pTable){
   assert( pTable!=0 );
   if( (pCol = pTable->aCol)!=0 ){
     for(i=0; i<pTable->nCol; i++, pCol++){
-      assert( pCol->zName==0 || pCol->hName==sqlite3StrIHash(pCol->zName) );
-      sqlite3DbFree(db, pCol->zName);
-      sqlite3DbFree(db, pCol->zColl);
+      assert( pCol->zCnName==0 || pCol->hName==sqlite3StrIHash(pCol->zCnName) );
+      sqlite3DbFree(db, pCol->zCnName);
+      sqlite3DbFree(db, pCol->zCnColl);
     }
     sqlite3DbFree(db, pTable->aCol);
     if( !IsVirtual(pTable) ){
@@ -1336,7 +1336,7 @@ begin_table_error:
 */
 #if SQLITE_ENABLE_HIDDEN_COLUMNS
 void sqlite3ColumnPropertiesFromName(Table *pTab, Column *pCol){
-  if( sqlite3_strnicmp(pCol->zName, "__hidden__", 10)==0 ){
+  if( sqlite3_strnicmp(pCol->zCnName, "__hidden__", 10)==0 ){
     pCol->colFlags |= COLFLAG_HIDDEN;
     if( pTab ) pTab->tabFlags |= TF_HasHidden;
   }else if( pTab && pCol!=pTab->aCol && (pCol[-1].colFlags & COLFLAG_HIDDEN) ){
@@ -1490,7 +1490,7 @@ void sqlite3AddColumn(Parse *pParse, Token sName, Token sType){
   sqlite3Dequote(z);
   hName = sqlite3StrIHash(z);
   for(i=0; i<p->nCol; i++){
-    if( p->aCol[i].hName==hName && sqlite3StrICmp(z, p->aCol[i].zName)==0 ){
+    if( p->aCol[i].hName==hName && sqlite3StrICmp(z, p->aCol[i].zCnName)==0 ){
       sqlite3ErrorMsg(pParse, "duplicate column name: %s", z);
       sqlite3DbFree(db, z);
       return;
@@ -1504,7 +1504,7 @@ void sqlite3AddColumn(Parse *pParse, Token sName, Token sType){
   p->aCol = aNew;
   pCol = &p->aCol[p->nCol];
   memset(pCol, 0, sizeof(p->aCol[0]));
-  pCol->zName = z;
+  pCol->zCnName = z;
   pCol->hName = hName;
   sqlite3ColumnPropertiesFromName(p, pCol);
  
@@ -1679,7 +1679,7 @@ void sqlite3AddDefaultValue(
     pCol = &(p->aCol[p->nCol-1]);
     if( !sqlite3ExprIsConstantOrFunction(pExpr, isInit) ){
       sqlite3ErrorMsg(pParse, "default value of column [%s] is not constant",
-          pCol->zName);
+          pCol->zCnName);
 #ifndef SQLITE_OMIT_GENERATED_COLUMNS
     }else if( pCol->colFlags & COLFLAG_GENERATED ){
       testcase( pCol->colFlags & COLFLAG_VIRTUAL );
@@ -1796,7 +1796,7 @@ void sqlite3AddPrimaryKey(
       if( pCExpr->op==TK_ID ){
         const char *zCName = pCExpr->u.zToken;
         for(iCol=0; iCol<pTab->nCol; iCol++){
-          if( sqlite3StrICmp(zCName, pTab->aCol[iCol].zName)==0 ){
+          if( sqlite3StrICmp(zCName, pTab->aCol[iCol].zCnName)==0 ){
             pCol = &pTab->aCol[iCol];
             makeColumnPartOfPrimaryKey(pParse, pCol);
             break;
@@ -1887,8 +1887,8 @@ void sqlite3AddCollateType(Parse *pParse, Token *pToken){
 
   if( sqlite3LocateCollSeq(pParse, zColl) ){
     Index *pIdx;
-    sqlite3DbFree(db, p->aCol[i].zColl);
-    p->aCol[i].zColl = zColl;
+    sqlite3DbFree(db, p->aCol[i].zCnColl);
+    p->aCol[i].zCnColl = zColl;
   
     /* If the column is declared as "<name> PRIMARY KEY COLLATE <type>",
     ** then an index may have been created on this column before the
@@ -1897,7 +1897,7 @@ void sqlite3AddCollateType(Parse *pParse, Token *pToken){
     for(pIdx=p->pIndex; pIdx; pIdx=pIdx->pNext){
       assert( pIdx->nKeyCol==1 );
       if( pIdx->aiColumn[0]==i ){
-        pIdx->azColl[0] = p->aCol[i].zColl;
+        pIdx->azColl[0] = p->aCol[i].zCnColl;
       }
     }
   }else{
@@ -1946,7 +1946,7 @@ void sqlite3AddGenerated(Parse *pParse, Expr *pExpr, Token *pType){
 
 generated_error:
   sqlite3ErrorMsg(pParse, "error in generated column \"%s\"",
-                  pCol->zName);
+                  pCol->zCnName);
 generated_done:
   sqlite3ExprDelete(pParse->db, pExpr);
 #else
@@ -2048,7 +2048,7 @@ static char *createTableStmt(sqlite3 *db, Table *p){
   Column *pCol;
   n = 0;
   for(pCol = p->aCol, i=0; i<p->nCol; i++, pCol++){
-    n += identLength(pCol->zName) + 5;
+    n += identLength(pCol->zCnName) + 5;
   }
   n += identLength(p->zName);
   if( n<50 ){ 
@@ -2084,7 +2084,7 @@ static char *createTableStmt(sqlite3 *db, Table *p){
     sqlite3_snprintf(n-k, &zStmt[k], zSep);
     k += sqlite3Strlen30(&zStmt[k]);
     zSep = zSep2;
-    identPut(zStmt, &k, pCol->zName);
+    identPut(zStmt, &k, pCol->zCnName);
     assert( pCol->affinity-SQLITE_AFF_BLOB >= 0 );
     assert( pCol->affinity-SQLITE_AFF_BLOB < ArraySize(azType) );
     testcase( pCol->affinity==SQLITE_AFF_BLOB );
@@ -2303,7 +2303,7 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
   if( pTab->iPKey>=0 ){
     ExprList *pList;
     Token ipkToken;
-    sqlite3TokenInit(&ipkToken, pTab->aCol[pTab->iPKey].zName);
+    sqlite3TokenInit(&ipkToken, pTab->aCol[pTab->iPKey].zCnName);
     pList = sqlite3ExprListAppend(pParse, 0, 
                   sqlite3ExprAlloc(db, TK_ID, &ipkToken, 0));
     if( pList==0 ){
@@ -3446,7 +3446,7 @@ void sqlite3CreateForeignKey(
     if( pToCol && pToCol->nExpr!=1 ){
       sqlite3ErrorMsg(pParse, "foreign key on %s"
          " should reference only one column of table %T",
-         p->aCol[iCol].zName, pTo);
+         p->aCol[iCol].zCnName, pTo);
       goto fk_end;
     }
     nCol = 1;
@@ -3486,7 +3486,7 @@ void sqlite3CreateForeignKey(
     for(i=0; i<nCol; i++){
       int j;
       for(j=0; j<p->nCol; j++){
-        if( sqlite3StrICmp(p->aCol[j].zName, pFromCol->a[i].zEName)==0 ){
+        if( sqlite3StrICmp(p->aCol[j].zCnName, pFromCol->a[i].zEName)==0 ){
           pFKey->aCol[i].iFrom = j;
           break;
         }
@@ -3941,7 +3941,7 @@ void sqlite3CreateIndex(
     Token prevCol;
     Column *pCol = &pTab->aCol[pTab->nCol-1];
     pCol->colFlags |= COLFLAG_UNIQUE;
-    sqlite3TokenInit(&prevCol, pCol->zName);
+    sqlite3TokenInit(&prevCol, pCol->zCnName);
     pList = sqlite3ExprListAppend(pParse, 0,
               sqlite3ExprAlloc(db, TK_ID, &prevCol, 0));
     if( pList==0 ) goto exit_create_index;
@@ -4062,7 +4062,7 @@ void sqlite3CreateIndex(
       zExtra += nColl;
       nExtra -= nColl;
     }else if( j>=0 ){
-      zColl = pTab->aCol[j].zColl;
+      zColl = pTab->aCol[j].zCnColl;
     }
     if( !zColl ) zColl = sqlite3StrBINARY;
     if( !db->init.busy && !sqlite3LocateCollSeq(pParse, zColl) ){
@@ -5154,7 +5154,7 @@ void sqlite3UniqueConstraint(
     for(j=0; j<pIdx->nKeyCol; j++){
       char *zCol;
       assert( pIdx->aiColumn[j]>=0 );
-      zCol = pTab->aCol[pIdx->aiColumn[j]].zName;
+      zCol = pTab->aCol[pIdx->aiColumn[j]].zCnName;
       if( j ) sqlite3_str_append(&errMsg, ", ", 2);
       sqlite3_str_appendall(&errMsg, pTab->zName);
       sqlite3_str_append(&errMsg, ".", 1);
@@ -5181,7 +5181,7 @@ void sqlite3RowidConstraint(
   int rc;
   if( pTab->iPKey>=0 ){
     zMsg = sqlite3MPrintf(pParse->db, "%s.%s", pTab->zName,
-                          pTab->aCol[pTab->iPKey].zName);
+                          pTab->aCol[pTab->iPKey].zCnName);
     rc = SQLITE_CONSTRAINT_PRIMARYKEY;
   }else{
     zMsg = sqlite3MPrintf(pParse->db, "%s.rowid", pTab->zName);

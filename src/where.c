@@ -805,7 +805,7 @@ static void constructAutomaticIndex(
       if( !sentWarning ){
         sqlite3_log(SQLITE_WARNING_AUTOINDEX,
             "automatic index on %s(%s)", pTable->zName,
-            pTable->aCol[iCol].zName);
+            pTable->aCol[iCol].zCnName);
         sentWarning = 1;
       }
       if( (idxCols & cMask)==0 ){

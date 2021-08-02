@@ -1182,7 +1182,7 @@ void sqlite3Pragma(
              || isHidden>=2 );
         sqlite3VdbeMultiLoad(v, 1, pPragma->iArg ? "issisii" : "issisi",
                i-nHidden,
-               pCol->zName,
+               pCol->zCnName,
                sqlite3ColumnType(pCol,""),
                pCol->notNull ? 1 : 0,
                isHidden>=2 || sqlite3ColumnExpr(pTab,pCol)==0 ? 0 :
@@ -1253,7 +1253,7 @@ void sqlite3Pragma(
       for(i=0; i<mx; i++){
         i16 cnum = pIdx->aiColumn[i];
         sqlite3VdbeMultiLoad(v, 1, "iisX", i, cnum,
-                             cnum<0 ? 0 : pTab->aCol[cnum].zName);
+                             cnum<0 ? 0 : pTab->aCol[cnum].zCnName);
         if( pPragma->iArg ){
           sqlite3VdbeMultiLoad(v, 4, "isiX",
             pIdx->aSortOrder[i],
@@ -1374,7 +1374,7 @@ void sqlite3Pragma(
                    i,
                    j,
                    pFK->zTo,
-                   pTab->aCol[pFK->aCol[j].iFrom].zName,
+                   pTab->aCol[pFK->aCol[j].iFrom].zCnName,
                    pFK->aCol[j].zCol,
                    actionName(pFK->aAction[1]),  /* ON UPDATE */
                    actionName(pFK->aAction[0]),  /* ON DELETE */
@@ -1687,7 +1687,7 @@ void sqlite3Pragma(
           }
           jmp2 = sqlite3VdbeAddOp1(v, OP_NotNull, 3); VdbeCoverage(v);
           zErr = sqlite3MPrintf(db, "NULL value in %s.%s", pTab->zName,
-                              pTab->aCol[j].zName);
+                              pTab->aCol[j].zCnName);
           sqlite3VdbeAddOp4(v, OP_String8, 0, 3, 0, zErr, P4_DYNAMIC);
           integrityCheckResultRow(v);
           sqlite3VdbeJumpHere(v, jmp2);

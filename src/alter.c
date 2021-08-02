@@ -537,9 +537,9 @@ void sqlite3AlterBeginAddColumn(Parse *pParse, SrcList *pSrc){
   memcpy(pNew->aCol, pTab->aCol, sizeof(Column)*pNew->nCol);
   for(i=0; i<pNew->nCol; i++){
     Column *pCol = &pNew->aCol[i];
-    pCol->zName = sqlite3DbStrDup(db, pCol->zName);
-    pCol->hName = sqlite3StrIHash(pCol->zName);
-    pCol->zColl = 0;
+    pCol->zCnName = sqlite3DbStrDup(db, pCol->zCnName);
+    pCol->hName = sqlite3StrIHash(pCol->zCnName);
+    pCol->zCnColl = 0;
   }
   assert( !IsVirtual(pNew) );
   pNew->u.tab.pDfltList = sqlite3ExprListDup(db, pTab->u.tab.pDfltList, 0);
@@ -631,7 +631,7 @@ void sqlite3AlterRenameColumn(
   zOld = sqlite3NameFromToken(db, pOld);
   if( !zOld ) goto exit_rename_column;
   for(iCol=0; iCol<pTab->nCol; iCol++){
-    if( 0==sqlite3StrICmp(pTab->aCol[iCol].zName, zOld) ) break;
+    if( 0==sqlite3StrICmp(pTab->aCol[iCol].zCnName, zOld) ) break;
   }
   if( iCol==pTab->nCol ){
     sqlite3ErrorMsg(pParse, "no such column: \"%s\"", zOld);
@@ -1477,7 +1477,7 @@ static void renameColumnFunc(
     sqlite3BtreeLeaveAll(db);
     return;
   }
-  zOld = pTab->aCol[iCol].zName;
+  zOld = pTab->aCol[iCol].zCnName;
   memset(&sCtx, 0, sizeof(sCtx));
   sCtx.iCol = ((iCol==pTab->iPKey) ? -1 : iCol);
 
@@ -1514,7 +1514,7 @@ static void renameColumnFunc(
       if( bFKOnly==0 ){
         if( iCol<sParse.pNewTable->nCol ){
           renameTokenFind(
-              &sParse, &sCtx, (void*)sParse.pNewTable->aCol[iCol].zName
+              &sParse, &sCtx, (void*)sParse.pNewTable->aCol[iCol].zCnName
           );
         }
         if( sCtx.iCol<0 ){
@@ -2041,10 +2041,10 @@ static void dropColumnFunc(
     goto drop_column_done;
   }
 
-  pCol = renameTokenFind(&sParse, 0, (void*)pTab->aCol[iCol].zName);
+  pCol = renameTokenFind(&sParse, 0, (void*)pTab->aCol[iCol].zCnName);
   if( iCol<pTab->nCol-1 ){
     RenameToken *pEnd;
-    pEnd = renameTokenFind(&sParse, 0, (void*)pTab->aCol[iCol+1].zName);
+    pEnd = renameTokenFind(&sParse, 0, (void*)pTab->aCol[iCol+1].zCnName);
     zEnd = (const char*)pEnd->t.z;
   }else{
     assert( !IsVirtual(pTab) );

@@ -2030,8 +2030,8 @@ struct Module {
 **                            columns to the left.
 */
 struct Column {
-  char *zName;     /* Name of this column, \000, then the type */
-  char *zColl;     /* Collating sequence.  If NULL, use the default */
+  char *zCnName;   /* Name of this column */
+  char *zCnColl;   /* Collating sequence.  If NULL, use the default */
   u8 notNull : 4;  /* An OE_ code for handling a NOT NULL constraint */
   u8 eType : 4;    /* One of the standard types */
   char affinity;   /* One of the SQLITE_AFF_... values */

@@ -215,7 +215,9 @@ int sqlite3FkLocateIndex(
     */
     if( pParent->iPKey>=0 ){
       if( !zKey ) return 0;
-      if( !sqlite3StrICmp(pParent->aCol[pParent->iPKey].zName, zKey) ) return 0;
+      if( !sqlite3StrICmp(pParent->aCol[pParent->iPKey].zCnName, zKey) ){
+        return 0;
+      }
     }
   }else if( paiCol ){
     assert( nCol>1 );
@@ -257,11 +259,11 @@ int sqlite3FkLocateIndex(
           /* If the index uses a collation sequence that is different from
           ** the default collation sequence for the column, this index is
           ** unusable. Bail out early in this case.  */
-          zDfltColl = pParent->aCol[iCol].zColl;
+          zDfltColl = pParent->aCol[iCol].zCnColl;
           if( !zDfltColl ) zDfltColl = sqlite3StrBINARY;
           if( sqlite3StrICmp(pIdx->azColl[i], zDfltColl) ) break;
 
-          zIdxCol = pParent->aCol[iCol].zName;
+          zIdxCol = pParent->aCol[iCol].zCnName;
           for(j=0; j<nCol; j++){
             if( sqlite3StrICmp(pFKey->aCol[j].zCol, zIdxCol)==0 ){
               if( aiCol ) aiCol[i] = pFKey->aCol[j].iFrom;
@@ -485,7 +487,7 @@ static Expr *exprTableRegister(
       pCol = &pTab->aCol[iCol];
       pExpr->iTable = regBase + sqlite3TableColumnToStorage(pTab,iCol) + 1;
       pExpr->affExpr = pCol->affinity;
-      zColl = pCol->zColl;
+      zColl = pCol->zCnColl;
       if( zColl==0 ) zColl = db->pDfltColl->zName;
       pExpr = sqlite3ExprAddCollateString(pParse, pExpr, zColl);
     }else{
@@ -594,7 +596,7 @@ static void fkScanChildren(
     pLeft = exprTableRegister(pParse, pTab, regData, iCol);
     iCol = aiCol ? aiCol[i] : pFKey->aCol[0].iFrom;
     assert( iCol>=0 );
-    zCol = pFKey->pFrom->aCol[iCol].zName;
+    zCol = pFKey->pFrom->aCol[iCol].zCnName;
     pRight = sqlite3Expr(db, TK_ID, zCol);
     pEq = sqlite3PExpr(pParse, TK_EQ, pLeft, pRight);
     pWhere = sqlite3ExprAnd(pParse, pWhere, pEq);
@@ -629,7 +631,7 @@ static void fkScanChildren(
         i16 iCol = pIdx->aiColumn[i];
         assert( iCol>=0 );
         pLeft = exprTableRegister(pParse, pTab, regData, iCol);
-        pRight = sqlite3Expr(db, TK_ID, pTab->aCol[iCol].zName);
+        pRight = sqlite3Expr(db, TK_ID, pTab->aCol[iCol].zCnName);
         pEq = sqlite3PExpr(pParse, TK_IS, pLeft, pRight);
         pAll = sqlite3ExprAnd(pParse, pAll, pEq);
       }
@@ -821,7 +823,7 @@ static int fkParentIsModified(
       if( aChange[iKey]>=0 || (iKey==pTab->iPKey && bChngRowid) ){
         Column *pCol = &pTab->aCol[iKey];
         if( zKey ){
-          if( 0==sqlite3StrICmp(pCol->zName, zKey) ) return 1;
+          if( 0==sqlite3StrICmp(pCol->zCnName, zKey) ) return 1;
         }else if( pCol->colFlags & COLFLAG_PRIMKEY ){
           return 1;
         }
@@ -962,7 +964,7 @@ void sqlite3FkCheck(
       ** values read from the parent table are NULL. */
       if( db->xAuth ){
         int rcauth;
-        char *zCol = pTo->aCol[pIdx ? pIdx->aiColumn[i] : pTo->iPKey].zName;
+        char *zCol = pTo->aCol[pIdx ? pIdx->aiColumn[i] : pTo->iPKey].zCnName;
         rcauth = sqlite3AuthReadCol(pParse, pTo->zName, zCol, iDb);
         bIgnore = (rcauth==SQLITE_IGNORE);
       }
@@ -1236,8 +1238,8 @@ static Trigger *fkActionTrigger(
       assert( pIdx!=0 || (pTab->iPKey>=0 && pTab->iPKey<pTab->nCol) );
       assert( pIdx==0 || pIdx->aiColumn[i]>=0 );
       sqlite3TokenInit(&tToCol,
-                   pTab->aCol[pIdx ? pIdx->aiColumn[i] : pTab->iPKey].zName);
-      sqlite3TokenInit(&tFromCol, pFKey->pFrom->aCol[iFromCol].zName);
+                   pTab->aCol[pIdx ? pIdx->aiColumn[i] : pTab->iPKey].zCnName);
+      sqlite3TokenInit(&tFromCol, pFKey->pFrom->aCol[iFromCol].zCnName);
 
       /* Create the expression "OLD.zToCol = zFromCol". It is important
       ** that the "OLD.zToCol" term is on the LHS of the = operator, so
