@@ -1178,13 +1178,16 @@ void sqlite3Pragma(
         }else{
           for(k=1; k<=pTab->nCol && pPk->aiColumn[k-1]!=i; k++){}
         }
-        assert( pCol->pDflt==0 || pCol->pDflt->op==TK_SPAN || isHidden>=2 );
+        assert( sqlite3ColumnExpr(pTab,pCol)==0
+             || sqlite3ColumnExpr(pTab,pCol)->op==TK_SPAN
+             || isHidden>=2 );
         sqlite3VdbeMultiLoad(v, 1, pPragma->iArg ? "issisii" : "issisi",
                i-nHidden,
-               pCol->zName,
+               pCol->zCnName,
                sqlite3ColumnType(pCol,""),
                pCol->notNull ? 1 : 0,
-               pCol->pDflt && isHidden<2 ? pCol->pDflt->u.zToken : 0,
+               isHidden>=2 || sqlite3ColumnExpr(pTab,pCol)==0 ? 0 :
+                          sqlite3ColumnExpr(pTab,pCol)->u.zToken,
                k,
                isHidden);
       }
@@ -1251,7 +1254,7 @@ void sqlite3Pragma(
       for(i=0; i<mx; i++){
         i16 cnum = pIdx->aiColumn[i];
         sqlite3VdbeMultiLoad(v, 1, "iisX", i, cnum,
-                             cnum<0 ? 0 : pTab->aCol[cnum].zName);
+                             cnum<0 ? 0 : pTab->aCol[cnum].zCnName);
         if( pPragma->iArg ){
           sqlite3VdbeMultiLoad(v, 4, "isiX",
             pIdx->aSortOrder[i],
@@ -1358,8 +1361,8 @@ void sqlite3Pragma(
     FKey *pFK;
     Table *pTab;
     pTab = sqlite3FindTable(db, zRight, zDb);
-    if( pTab ){
-      pFK = pTab->pFKey;
+    if( pTab && !IsVirtual(pTab) ){
+      pFK = pTab->u.tab.pFKey;
       if( pFK ){
         int iTabDb = sqlite3SchemaToIndex(db, pTab->pSchema);
         int i = 0; 
@@ -1372,7 +1375,7 @@ void sqlite3Pragma(
                    i,
                    j,
                    pFK->zTo,
-                   pTab->aCol[pFK->aCol[j].iFrom].zName,
+                   pTab->aCol[pFK->aCol[j].iFrom].zCnName,
                    pFK->aCol[j].zCol,
                    actionName(pFK->aAction[1]),  /* ON UPDATE */
                    actionName(pFK->aAction[0]),  /* ON DELETE */
@@ -1418,7 +1421,7 @@ void sqlite3Pragma(
         pTab = (Table*)sqliteHashData(k);
         k = sqliteHashNext(k);
       }
-      if( pTab==0 || pTab->pFKey==0 ) continue;
+      if( pTab==0 || IsVirtual(pTab) || pTab->u.tab.pFKey==0 ) continue;
       iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
       zDb = db->aDb[iDb].zDbSName;
       sqlite3CodeVerifySchema(pParse, iDb);
@@ -1426,7 +1429,8 @@ void sqlite3Pragma(
       if( pTab->nCol+regRow>pParse->nMem ) pParse->nMem = pTab->nCol + regRow;
       sqlite3OpenTable(pParse, 0, iDb, pTab, OP_OpenRead);
       sqlite3VdbeLoadString(v, regResult, pTab->zName);
-      for(i=1, pFK=pTab->pFKey; pFK; i++, pFK=pFK->pNextFrom){
+      assert( !IsVirtual(pTab) );
+      for(i=1, pFK=pTab->u.tab.pFKey; pFK; i++, pFK=pFK->pNextFrom){
         pParent = sqlite3FindTable(db, pFK->zTo, zDb);
         if( pParent==0 ) continue;
         pIdx = 0;
@@ -1448,7 +1452,8 @@ void sqlite3Pragma(
       if( pFK ) break;
       if( pParse->nTab<i ) pParse->nTab = i;
       addrTop = sqlite3VdbeAddOp1(v, OP_Rewind, 0); VdbeCoverage(v);
-      for(i=1, pFK=pTab->pFKey; pFK; i++, pFK=pFK->pNextFrom){
+      assert( !IsVirtual(pTab) );
+      for(i=1, pFK=pTab->u.tab.pFKey; pFK; i++, pFK=pFK->pNextFrom){
         pParent = sqlite3FindTable(db, pFK->zTo, zDb);
         pIdx = 0;
         aiCols = 0;
@@ -1462,6 +1467,7 @@ void sqlite3Pragma(
         ** regRow..regRow+n. If any of the child key values are NULL, this 
         ** row cannot cause an FK violation. Jump directly to addrOk in 
         ** this case. */
+        if( regRow+pFK->nCol>pParse->nMem ) pParse->nMem = regRow+pFK->nCol;
         for(j=0; j<pFK->nCol; j++){
           int iCol = aiCols ? aiCols[j] : pFK->aCol[j].iFrom;
           sqlite3ExprCodeGetColumnOfTable(v, pTab, 0, iCol, regRow+j);
@@ -1682,7 +1688,7 @@ void sqlite3Pragma(
           }
           jmp2 = sqlite3VdbeAddOp1(v, OP_NotNull, 3); VdbeCoverage(v);
           zErr = sqlite3MPrintf(db, "NULL value in %s.%s", pTab->zName,
-                              pTab->aCol[j].zName);
+                              pTab->aCol[j].zCnName);
           sqlite3VdbeAddOp4(v, OP_String8, 0, 3, 0, zErr, P4_DYNAMIC);
           integrityCheckResultRow(v);
           sqlite3VdbeJumpHere(v, jmp2);

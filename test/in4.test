@@ -470,4 +470,30 @@ do_execsql_test 11.2 {
      AND c BETWEEN 'abc' AND 'xyz';
 } {/ SeekScan /}
 
+# 2021-06-25 ticket 6dcbfd11cf666e21
+# Another problem with OP_SeekScan
+#
+reset_db
+do_execsql_test 12.0 {
+  CREATE TABLE t1(a,b,c);
+  CREATE INDEX t1abc ON t1(a,b,c);
+  CREATE INDEX t1bca on t1(b,c,a);
+  INSERT INTO t1 VALUES(56,1119,1115);
+  INSERT INTO t1 VALUES(57,1147,1137);
+  INSERT INTO t1 VALUES(100,1050,1023);
+  INSERT INTO t1 VALUES(101,1050,1023);
+  ANALYZE sqlite_schema;
+  INSERT INTO sqlite_stat1 VALUES('t1','t1abc','358677 2 2 1');
+  INSERT INTO sqlite_stat1 VALUES('t1','t1bca','358677 4 2 1');
+  ANALYZE sqlite_schema;
+  SELECT * FROM t1 NOT INDEXED
+   WHERE (b = 1137 AND c IN (97, 98))
+      OR (b = 1119 AND c IN (1115, 1023));
+} {56 1119 1115}
+do_execsql_test 12.1 {
+  SELECT * FROM t1
+   WHERE (b = 1137 AND c IN (97, 98))
+      OR (b = 1119 AND c IN (1115, 1023));
+} {56 1119 1115}
+
 finish_test

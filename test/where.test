@@ -1571,4 +1571,19 @@ do_execsql_test where-26.8 {
   SELECT '-1'>=0 AND '-1'<=t1.c0 FROM t1;
 } {1}
 
+# 2021-07-19 https://sqlite.org/forum/forumpost/2bdb86a068
+# Lose of precision when doing comparisons between integer and
+# floating point values that are near 9223372036854775807 in the
+# OP_SeekGE opcode (and similar).
+#
+reset_db
+do_execsql_test where-27.1 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY);
+  INSERT INTO t1(a) VALUES(9223372036854775807);
+  SELECT 1 FROM t1 WHERE a>=(9223372036854775807+1);
+} {}
+do_execsql_test where-27.2 {
+  SELECT a>=9223372036854775807+1 FROM t1;
+} {0}
+
 finish_test

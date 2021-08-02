@@ -23,9 +23,9 @@
 static char *vacuum1_thread_writer(int iTid, void *pArg){
   Error err = {0};                /* Error code and message */
   Sqlite db = {0};                /* SQLite database connection */
-  opendb(&err, &db, "test.db", 0);
   i64 i = 0;
 
+  opendb(&err, &db, "test.db", 0);
   while( !timetostop(&err) ){
     i++;
 

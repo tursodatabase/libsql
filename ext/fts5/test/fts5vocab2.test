@@ -234,4 +234,27 @@ ifcapable fts3 {
   } {1 {no such fts5 table: main.nosuchtable}}
 }
 
+#-------------------------------------------------------------------------
+# Check that the fts5 table cannot be written while there are vocab 
+# cursors open.
+reset_db
+do_execsql_test 5.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(a);
+  CREATE VIRTUAL TABLE v1 USING fts5vocab(t1, instance);
+  INSERT INTO t1 VALUES('one'), ('two'), ('three'), ('four');
+}
+
+do_test 5.1 {
+  list [catch {
+    db eval { SELECT * FROM v1 } {
+      db eval {INSERT INTO t1 VALUES('five')}
+    }
+  } msg] $msg
+} {1 {query aborted}}
+
+do_execsql_test 5.2 {
+  SELECT * FROM t1
+} {one two three four five}
 finish_test
+
+

@@ -222,5 +222,24 @@ do_execsql_test 6.2 {
   INSERT INTO c1 VALUES(1);
 } {}
 
+# 2021-07-03 https://sqlite.org/forum/forumpost/a6b0c05277
+# 2021-07-07 https://sqlite.org/forum/forumpost/79c9e4797d
+# Failure to allocate enough registers in the VDBE for a
+# PRAGMA foreign_key_check when the foreign key has more
+# columns than the table.
+#
+reset_db
+do_execsql_test 7.1 {
+  PRAGMA foreign_keys=OFF;
+  CREATE TABLE t1(a,b,c,FOREIGN KEY(a,a,a,a,a,a,a,a,a,a,a,a,a,a) REFERENCES t0);
+  INSERT INTO t1 VALUES(1,2,3);
+  PRAGMA foreign_key_check;
+} {t1 1 t0 0}
+do_execsql_test 7.2 {
+  DROP TABLE t1;
+  CREATE TABLE t1(a,b,c AS(1),d, FOREIGN KEY(c,d,b,a,b,d,b,c) REFERENCES t0);
+  PRAGMA foreign_key_check;
+} {}
+
 
 finish_test

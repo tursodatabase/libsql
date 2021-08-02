@@ -198,6 +198,14 @@ do_test func3-5.59 {
 } [db eval {EXPLAIN SELECT min(1.0+'2.0',4*11)}]
 
 
+# Test the outcome of specifying NULL xStep and xFinal pointers (normally
+# used to delete any existing function) and a non-NULL xDestroy when there 
+# is no existing function to destroy.
+#
+do_test func3-6.0 {
+  sqlite3_create_function_v2 db nofunc 1 utf8
+} {}
+
 
 
 finish_test

@@ -337,6 +337,9 @@ struct sqlite3_api_routines {
   sqlite3_file *(*database_file_object)(const char*);
   /* Version 3.34.0 and later */
   int (*txn_state)(sqlite3*,const char*);
+  /* Version 3.36.1 and later */
+  sqlite3_int64 (*changes64)(sqlite3*);
+  sqlite3_int64 (*total_changes64)(sqlite3*);
 };
 
 /*

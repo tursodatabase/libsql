@@ -480,6 +480,9 @@ static const sqlite3_api_routines sqlite3Apis = {
   sqlite3_database_file_object,
   /* Version 3.34.0 and later */
   sqlite3_txn_state,
+  /* Version 3.36.1 and later */
+  sqlite3_changes64,
+  sqlite3_total_changes64,
 };
 
 /* True if x is the directory separator character
