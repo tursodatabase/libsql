@@ -728,7 +728,14 @@ do_execsql_test misc1-26.0 {
 # 2017-12-29
 #
 # The following behaviors (duplicate column names on an INSERT or UPDATE)
-# are undocumented.  These tests are added to ensure that historical behavior
+# are undocumented.  <<---  Not so.  There is a long-standing requirement
+# in lang_update.in to say that when the columns to be updated appear more
+# than once in an UPDATE statement that only the rightmost expression is used.
+# See e_update-1.6.* for the tests.  This is unfortunate, since omitting
+# that requirement would greatly simplify the fix to the problem identified
+# by forum post https://sqlite.org/forum/info/16ca0e9f32c38567
+#
+# These tests are added to ensure that historical behavior
 # does not change accidentally.
 #
 # For duplication columns on an INSERT, the first value is used.

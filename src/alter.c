@@ -175,7 +175,7 @@ void sqlite3AlterRenameTable(
   }
 
 #ifndef SQLITE_OMIT_VIEW
-  if( pTab->pSelect ){
+  if( IsView(pTab) ){
     sqlite3ErrorMsg(pParse, "view %s may not be altered", pTab->zName);
     goto exit_rename_table;
   }
@@ -337,7 +337,7 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
   zDb = db->aDb[iDb].zDbSName;
   zTab = &pNew->zName[16];  /* Skip the "sqlite_altertab_" prefix on the name */
   pCol = &pNew->aCol[pNew->nCol-1];
-  pDflt = pCol->pDflt;
+  pDflt = sqlite3ColumnExpr(pNew, pCol);
   pTab = sqlite3FindTable(db, zTab, zDb);
   assert( pTab );
 
@@ -371,7 +371,7 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
     if( pDflt && pDflt->pLeft->op==TK_NULL ){
       pDflt = 0;
     }
-    if( (db->flags&SQLITE_ForeignKeys) && pNew->pFKey && pDflt ){
+    if( (db->flags&SQLITE_ForeignKeys) && pNew->u.tab.pFKey && pDflt ){
       sqlite3ErrorIfNotEmpty(pParse, zDb, zTab,
           "Cannot add a REFERENCES column with non-NULL default value");
     }
@@ -415,24 +415,25 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
     db->mDbFlags |= DBFLAG_PreferBuiltin;
     /* substr() operations on characters, but addColOffset is in bytes. So we
     ** have to use printf() to translate between these units: */
+    assert( !IsVirtual(pTab) );
     sqlite3NestedParse(pParse, 
         "UPDATE \"%w\"." DFLT_SCHEMA_TABLE " SET "
           "sql = printf('%%.%ds, ',sql) || %Q"
           " || substr(sql,1+length(printf('%%.%ds',sql))) "
         "WHERE type = 'table' AND name = %Q", 
-      zDb, pNew->addColOffset, zCol, pNew->addColOffset,
+      zDb, pNew->u.tab.addColOffset, zCol, pNew->u.tab.addColOffset,
       zTab
     );
     sqlite3DbFree(db, zCol);
     db->mDbFlags = savedDbFlags;
   }
 
-  /* Make sure the schema version is at least 3.  But do not upgrade
-  ** from less than 3 to 4, as that will corrupt any preexisting DESC
-  ** index.
-  */
   v = sqlite3GetVdbe(pParse);
   if( v ){
+    /* Make sure the schema version is at least 3.  But do not upgrade
+    ** from less than 3 to 4, as that will corrupt any preexisting DESC
+    ** index.
+    */
     r1 = sqlite3GetTempReg(pParse);
     sqlite3VdbeAddOp3(v, OP_ReadCookie, iDb, r1, BTREE_FILE_FORMAT);
     sqlite3VdbeUsesBtree(v, iDb);
@@ -441,10 +442,25 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
     VdbeCoverage(v);
     sqlite3VdbeAddOp3(v, OP_SetCookie, iDb, BTREE_FILE_FORMAT, 3);
     sqlite3ReleaseTempReg(pParse, r1);
-  }
 
-  /* Reload the table definition */
-  renameReloadSchema(pParse, iDb, INITFLAG_AlterRename);
+    /* Reload the table definition */
+    renameReloadSchema(pParse, iDb, INITFLAG_AlterRename);
+
+    /* Verify that constraints are still satisfied */
+    if( pNew->pCheck!=0
+     || (pCol->notNull && (pCol->colFlags & COLFLAG_GENERATED)!=0)
+    ){
+      sqlite3NestedParse(pParse,
+        "SELECT CASE WHEN quick_check GLOB 'CHECK*'"
+        " THEN raise(ABORT,'CHECK constraint failed')"
+        " ELSE raise(ABORT,'NOT NULL constraint failed')"
+        " END"
+        "  FROM pragma_quick_check(\"%w\",\"%w\")"
+        " WHERE quick_check GLOB 'CHECK*' OR quick_check GLOB 'NULL*'",
+        zTab, zDb
+      );
+    }
+  }
 }
 
 /*
@@ -485,7 +501,7 @@ void sqlite3AlterBeginAddColumn(Parse *pParse, SrcList *pSrc){
 #endif
 
   /* Make sure this is not an attempt to ALTER a view. */
-  if( pTab->pSelect ){
+  if( IsView(pTab) ){
     sqlite3ErrorMsg(pParse, "Cannot add a column to a view");
     goto exit_begin_add_column;
   }
@@ -494,7 +510,7 @@ void sqlite3AlterBeginAddColumn(Parse *pParse, SrcList *pSrc){
   }
 
   sqlite3MayAbort(pParse);
-  assert( pTab->addColOffset>0 );
+  assert( pTab->u.tab.addColOffset>0 );
   iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
 
   /* Put a copy of the Table struct in Parse.pNewTable for the
@@ -521,13 +537,14 @@ void sqlite3AlterBeginAddColumn(Parse *pParse, SrcList *pSrc){
   memcpy(pNew->aCol, pTab->aCol, sizeof(Column)*pNew->nCol);
   for(i=0; i<pNew->nCol; i++){
     Column *pCol = &pNew->aCol[i];
-    pCol->zName = sqlite3DbStrDup(db, pCol->zName);
-    pCol->hName = sqlite3StrIHash(pCol->zName);
-    pCol->zColl = 0;
-    pCol->pDflt = 0;
+    pCol->zCnName = sqlite3DbStrDup(db, pCol->zCnName);
+    pCol->hName = sqlite3StrIHash(pCol->zCnName);
+    pCol->zCnColl = 0;
   }
+  assert( !IsVirtual(pNew) );
+  pNew->u.tab.pDfltList = sqlite3ExprListDup(db, pTab->u.tab.pDfltList, 0);
   pNew->pSchema = db->aDb[iDb].pSchema;
-  pNew->addColOffset = pTab->addColOffset;
+  pNew->u.tab.addColOffset = pTab->u.tab.addColOffset;
   pNew->nTabRef = 1;
 
 exit_begin_add_column:
@@ -547,7 +564,7 @@ exit_begin_add_column:
 static int isRealTable(Parse *pParse, Table *pTab, int bDrop){
   const char *zType = 0;
 #ifndef SQLITE_OMIT_VIEW
-  if( pTab->pSelect ){
+  if( IsView(pTab) ){
     zType = "view";
   }
 #endif
@@ -614,7 +631,7 @@ void sqlite3AlterRenameColumn(
   zOld = sqlite3NameFromToken(db, pOld);
   if( !zOld ) goto exit_rename_column;
   for(iCol=0; iCol<pTab->nCol; iCol++){
-    if( 0==sqlite3StrICmp(pTab->aCol[iCol].zName, zOld) ) break;
+    if( 0==sqlite3StrICmp(pTab->aCol[iCol].zCnName, zOld) ) break;
   }
   if( iCol==pTab->nCol ){
     sqlite3ErrorMsg(pParse, "no such column: \"%s\"", zOld);
@@ -1460,7 +1477,7 @@ static void renameColumnFunc(
     sqlite3BtreeLeaveAll(db);
     return;
   }
-  zOld = pTab->aCol[iCol].zName;
+  zOld = pTab->aCol[iCol].zCnName;
   memset(&sCtx, 0, sizeof(sCtx));
   sCtx.iCol = ((iCol==pTab->iPKey) ? -1 : iCol);
 
@@ -1479,8 +1496,8 @@ static void renameColumnFunc(
   sCtx.pTab = pTab;
   if( rc!=SQLITE_OK ) goto renameColumnFunc_done;
   if( sParse.pNewTable ){
-    Select *pSelect = sParse.pNewTable->pSelect;
-    if( pSelect ){
+    if( IsView(sParse.pNewTable) ){
+      Select *pSelect = sParse.pNewTable->u.view.pSelect;
       pSelect->selFlags &= ~SF_View;
       sParse.rc = SQLITE_OK;
       sqlite3SelectPrep(&sParse, pSelect, 0);
@@ -1489,16 +1506,15 @@ static void renameColumnFunc(
         sqlite3WalkSelect(&sWalker, pSelect);
       }
       if( rc!=SQLITE_OK ) goto renameColumnFunc_done;
-    }else{
+    }else if( IsOrdinaryTable(sParse.pNewTable) ){
       /* A regular table */
       int bFKOnly = sqlite3_stricmp(zTable, sParse.pNewTable->zName);
       FKey *pFKey;
-      assert( sParse.pNewTable->pSelect==0 );
       sCtx.pTab = sParse.pNewTable;
       if( bFKOnly==0 ){
         if( iCol<sParse.pNewTable->nCol ){
           renameTokenFind(
-              &sParse, &sCtx, (void*)sParse.pNewTable->aCol[iCol].zName
+              &sParse, &sCtx, (void*)sParse.pNewTable->aCol[iCol].zCnName
           );
         }
         if( sCtx.iCol<0 ){
@@ -1513,12 +1529,15 @@ static void renameColumnFunc(
         }
 #ifndef SQLITE_OMIT_GENERATED_COLUMNS
         for(i=0; i<sParse.pNewTable->nCol; i++){
-          sqlite3WalkExpr(&sWalker, sParse.pNewTable->aCol[i].pDflt);
+          Expr *pExpr = sqlite3ColumnExpr(sParse.pNewTable,
+                                                  &sParse.pNewTable->aCol[i]);
+          sqlite3WalkExpr(&sWalker, pExpr);
         }
 #endif
       }
 
-      for(pFKey=sParse.pNewTable->pFKey; pFKey; pFKey=pFKey->pNextFrom){
+      assert( !IsVirtual(sParse.pNewTable) );
+      for(pFKey=sParse.pNewTable->u.tab.pFKey; pFKey; pFKey=pFKey->pNextFrom){
         for(i=0; i<pFKey->nCol; i++){
           if( bFKOnly==0 && pFKey->aCol[i].iFrom==iCol ){
             renameTokenFind(&sParse, &sCtx, (void*)&pFKey->aCol[i]);
@@ -1684,28 +1703,31 @@ static void renameTableFunc(
       if( sParse.pNewTable ){
         Table *pTab = sParse.pNewTable;
 
-        if( pTab->pSelect ){
+        if( IsView(pTab) ){
           if( isLegacy==0 ){
-            Select *pSelect = pTab->pSelect;
+            Select *pSelect = pTab->u.view.pSelect;
             NameContext sNC;
             memset(&sNC, 0, sizeof(sNC));
             sNC.pParse = &sParse;
 
             assert( pSelect->selFlags & SF_View );
             pSelect->selFlags &= ~SF_View;
-            sqlite3SelectPrep(&sParse, pTab->pSelect, &sNC);
+            sqlite3SelectPrep(&sParse, pTab->u.view.pSelect, &sNC);
             if( sParse.nErr ){
               rc = sParse.rc;
             }else{
-              sqlite3WalkSelect(&sWalker, pTab->pSelect);
+              sqlite3WalkSelect(&sWalker, pTab->u.view.pSelect);
             }
           }
         }else{
           /* Modify any FK definitions to point to the new table. */
 #ifndef SQLITE_OMIT_FOREIGN_KEY
-          if( isLegacy==0 || (db->flags & SQLITE_ForeignKeys) ){
+          if( (isLegacy==0 || (db->flags & SQLITE_ForeignKeys))
+           && !IsVirtual(pTab)
+          ){
             FKey *pFKey;
-            for(pFKey=pTab->pFKey; pFKey; pFKey=pFKey->pNextFrom){
+            assert( !IsVirtual(pTab) );
+            for(pFKey=pTab->u.tab.pFKey; pFKey; pFKey=pFKey->pNextFrom){
               if( sqlite3_stricmp(pFKey->zTo, zOld)==0 ){
                 renameTokenFind(&sParse, &sCtx, (void*)pFKey->zTo);
               }
@@ -1845,8 +1867,8 @@ static void renameQuotefixFunc(
       sWalker.u.pRename = &sCtx;
 
       if( sParse.pNewTable ){
-        Select *pSelect = sParse.pNewTable->pSelect;
-        if( pSelect ){
+        if( IsView(sParse.pNewTable) ){
+          Select *pSelect = sParse.pNewTable->u.view.pSelect;
           pSelect->selFlags &= ~SF_View;
           sParse.rc = SQLITE_OK;
           sqlite3SelectPrep(&sParse, pSelect, 0);
@@ -1859,7 +1881,9 @@ static void renameQuotefixFunc(
           sqlite3WalkExprList(&sWalker, sParse.pNewTable->pCheck);
 #ifndef SQLITE_OMIT_GENERATED_COLUMNS
           for(i=0; i<sParse.pNewTable->nCol; i++){
-            sqlite3WalkExpr(&sWalker, sParse.pNewTable->aCol[i].pDflt);
+            sqlite3WalkExpr(&sWalker, 
+               sqlite3ColumnExpr(sParse.pNewTable, 
+                                         &sParse.pNewTable->aCol[i]));
           }
 #endif /* SQLITE_OMIT_GENERATED_COLUMNS */
         }
@@ -1942,11 +1966,11 @@ static void renameTableTest(
     rc = renameParseSql(&sParse, zDb, db, zInput, bTemp);
     db->flags |= (flags & (SQLITE_DqsDML|SQLITE_DqsDDL));
     if( rc==SQLITE_OK ){
-      if( isLegacy==0 && sParse.pNewTable && sParse.pNewTable->pSelect ){
+      if( isLegacy==0 && sParse.pNewTable && IsView(sParse.pNewTable) ){
         NameContext sNC;
         memset(&sNC, 0, sizeof(sNC));
         sNC.pParse = &sParse;
-        sqlite3SelectPrep(&sParse, sParse.pNewTable->pSelect, &sNC);
+        sqlite3SelectPrep(&sParse, sParse.pNewTable->u.view.pSelect, &sNC);
         if( sParse.nErr ) rc = sParse.rc;
       }
 
@@ -2017,13 +2041,14 @@ static void dropColumnFunc(
     goto drop_column_done;
   }
 
-  pCol = renameTokenFind(&sParse, 0, (void*)pTab->aCol[iCol].zName);
+  pCol = renameTokenFind(&sParse, 0, (void*)pTab->aCol[iCol].zCnName);
   if( iCol<pTab->nCol-1 ){
     RenameToken *pEnd;
-    pEnd = renameTokenFind(&sParse, 0, (void*)pTab->aCol[iCol+1].zName);
+    pEnd = renameTokenFind(&sParse, 0, (void*)pTab->aCol[iCol+1].zCnName);
     zEnd = (const char*)pEnd->t.z;
   }else{
-    zEnd = (const char*)&zSql[pTab->addColOffset];
+    assert( !IsVirtual(pTab) );
+    zEnd = (const char*)&zSql[pTab->u.tab.addColOffset];
     while( ALWAYS(pCol->t.z[0]!=0) && pCol->t.z[0]!=',' ) pCol->t.z--;
   }
 
@@ -2158,6 +2183,12 @@ void sqlite3AlterDropColumn(Parse *pParse, SrcList *pSrc, Token *pName){
         }
         nField++;
       }
+    }
+    if( nField==0 ){
+      /* dbsqlfuzz 5f09e7bcc78b4954d06bf9f2400d7715f48d1fef */
+      pParse->nMem++;
+      sqlite3VdbeAddOp2(v, OP_Null, 0, reg+1);
+      nField = 1;
     }
     sqlite3VdbeAddOp3(v, OP_MakeRecord, reg+1, nField, regRec);
     if( pPk ){

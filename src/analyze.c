@@ -968,7 +968,7 @@ static void analyzeVdbeCommentIndexWithColumnName(
   }else if( i==XN_EXPR ){
     VdbeComment((v,"%s.expr(%d)",pIdx->zName, k));
   }else{
-    VdbeComment((v,"%s.%s", pIdx->zName, pIdx->pTable->aCol[i].zName));
+    VdbeComment((v,"%s.%s", pIdx->zName, pIdx->pTable->aCol[i].zCnName));
   }
 }
 #else

@@ -17,31 +17,54 @@
 # After the "tsrc" directory has been created and populated, run
 # this script:
 #
-#      tclsh mksqlite3c.tcl --srcdir $SRC
+#      tclsh mksqlite3c.tcl
 #
 # The amalgamated SQLite code will be written into sqlite3.c
 #
+
+set help {Usage: tclsh mksqlite3c.tcl <options>
+ where <options> is zero or more of the following with these effects:
+   --nostatic     => Do not generate with compile-time modifiable linkage.
+   --linemacros=?  => Emit #line directives into output or not. (? = 1 or 0)
+   --useapicall   => Prepend functions with SQLITE_APICALL or SQLITE_CDECL.
+   --srcdir $SRC  => Specify the directory containing constituent sources.
+   --help         => See this.
+ The value setting options default to --linemacros=1 and '--srcdir tsrc' .
+}
 
 # Begin by reading the "sqlite3.h" header file.  Extract the version number
 # from in this file.  The version number is needed to generate the header
 # comment of the amalgamation.
 #
+
 set addstatic 1
 set linemacros 0
 set useapicall 0
+set srcdir tsrc
+
 for {set i 0} {$i<[llength $argv]} {incr i} {
   set x [lindex $argv $i]
-  if {[regexp {^-+nostatic$} $x]} {
+  if {[regexp {^-?-nostatic$} $x]} {
     set addstatic 0
-  } elseif {[regexp {^-+linemacros} $x]} {
-    set linemacros 1
-  } elseif {[regexp {^-+useapicall} $x]} {
+  } elseif {[regexp {^-?-linemacros(?:=([01]))?$} $x ma ulm]} {
+    if {$ulm == ""} {set ulm 1}
+    set linemacros $ulm
+  } elseif {[regexp {^-?-useapicall$} $x]} {
     set useapicall 1
+  } elseif {[regexp {^-?-srcdir$} $x]} {
+    incr i
+    if {$i==[llength $argv]} {
+      error "No argument following $x"
+    }
+    set srcdir [lindex $argv $i]
+  } elseif {[regexp {^-?-((help)|\?)$} $x]} {
+    puts $help
+    exit 0
   } else {
     error "unknown command-line option: $x"
   }
 }
-set in [open tsrc/sqlite3.h]
+set in [open $srcdir/sqlite3.h]
 set cnt 0
 set VERSION ?????
 while {![eof $in]} {
@@ -94,7 +117,7 @@ if {$addstatic} {
 # 
 # then set the SQLITE_UDL_CAPABLE_PARSER flag in the amalgamation.
 #
-set in [open tsrc/parse.c]
+set in [open $srcdir/parse.c]
 if {[regexp {ifndef SQLITE_ENABLE_UPDATE_DELETE_LIMIT} [read $in]]} {
   puts $out "#define SQLITE_UDL_CAPABLE_PARSER 1"
 }
@@ -182,7 +205,7 @@ proc section_comment {text} {
 #
 proc copy_file {filename} {
   global seen_hdr available_hdr varonly_hdr cdecllist out
-  global addstatic linemacros useapicall
+  global addstatic linemacros useapicall srcdir
   set ln 0
   set tail [file tail $filename]
   section_comment "Begin file $tail"
@@ -204,7 +227,7 @@ proc copy_file {filename} {
             set available_hdr($hdr) 0
           }
           section_comment "Include $hdr in the middle of $tail"
-          copy_file tsrc/$hdr
+          copy_file $srcdir/$hdr
           section_comment "Continuing where we left off in $tail"
           if {$linemacros} {puts $out "#line [expr {$ln+1}] \"$filename\""}
         } else {
@@ -255,7 +278,7 @@ proc copy_file {filename} {
             }
           }
           append line $funcname $rest
-          if {$funcname=="sqlite3_sourceid" && !$linemacros} {
+          if {$funcname=="sqlite3_sourceid"} {
             # The sqlite3_sourceid() routine is synthesized at the end of
             # the amalgamation
             puts $out "/* $line */"
@@ -303,8 +326,8 @@ proc copy_file {filename} {
 # inlining opportunities.
 #
 foreach file {
-   ctime.c
    sqliteInt.h
+   ctime.c
 
    global.c
    status.c
@@ -417,36 +440,13 @@ foreach file {
    fts5.c
    stmt.c
 } {
-  copy_file tsrc/$file
+  copy_file $srcdir/$file
 }
 
-# Synthesize an alternative sqlite3_sourceid() implementation that
-# that tries to detects changes in the amalgamation source text
-# and modify returns a modified source-id if changes are detected.
-#
-# The only detection mechanism we have is the __LINE__ macro.  So only
-# edits that changes the number of lines of source code are detected.
-#
-if {!$linemacros} {
-  flush $out
-  set in2 [open sqlite3.c]
-  set cnt 0
-  set oldsrcid {}
-  while {![eof $in2]} {
-    incr cnt
-    gets $in2 line
-    if {[regexp {^#define SQLITE_SOURCE_ID } $line]} {set oldsrcid $line}
-  }
-  close $in2
-  regsub {[0-9a-flt]{4}"} $oldsrcid {alt2"} oldsrcid
-  puts $out \
-"#if __LINE__!=[expr {$cnt+0}]
-#undef SQLITE_SOURCE_ID
-$oldsrcid
-#endif
-/* Return the source-id for this library */
+puts $out \
+"/* Return the source-id for this library */
 SQLITE_API const char *sqlite3_sourceid(void){ return SQLITE_SOURCE_ID; }"
-}
+
 puts $out \
 "/************************** End of sqlite3.c ******************************/"
 

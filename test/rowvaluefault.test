@@ -68,4 +68,22 @@ do_faultsim_test 6 -faults oom* -body {
   faultsim_test_result {0 {2 3}} 
 }
 
+do_faultsim_test 7 -faults oom* -body {
+  execsql { 
+    SELECT fou FROM xyz 
+    WHERE (one, two, thr) IN ( ('a','b','c'), ('A','A','A'), (1,2,3) );
+  }
+} -test {
+  faultsim_test_result {0 1}
+}
+
+do_faultsim_test 8 -faults oom* -body {
+  execsql { 
+    SELECT fou FROM xyz 
+    WHERE (two, one) IN ( ('a','b','c'), ('A','A','A'), (1,2,3) );
+  }
+} -test {
+  faultsim_test_result {1 {IN(...) element has 3 terms - expected 2}}
+}
+
 finish_test

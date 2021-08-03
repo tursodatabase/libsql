@@ -195,6 +195,22 @@ do_test 620 {
   lappend rc $msg
 } {1 {wrong # args: should be "db serialize ?DATABASE?"}}
 
+# 2021-07-19 https://sqlite.org/forum/forumpost/e1cbb5f450b98aa6
+# The TEMP database cannot participate in serialization or
+# deserialization.
+#
+reset_db
+do_test 650 {
+  db eval {
+    CREATE TEMP TABLE t0(a);
+    CREATE TABLE t1(x);
+    WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<1000)
+    INSERT INTO t1(x) SELECT random() FROM c;
+  }
+  set rc [catch {db deserialize temp [db serialize main]} err]
+  lappend rc err
+} {1 err}
+
 #-------------------------------------------------------------------------
 ifcapable vtab {
   reset_db

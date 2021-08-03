@@ -56,14 +56,24 @@
 SQLITE_EXTENSION_INIT1
 #include <assert.h>
 #include <string.h>
-
+ 
 /* Allowed values for the mFlags parameter to sqlite3_carray_bind().
 ** Must exactly match the definitions in carray.h.
 */
-#define CARRAY_INT32     0      /* Data is 32-bit signed integers */
-#define CARRAY_INT64     1      /* Data is 64-bit signed integers */
-#define CARRAY_DOUBLE    2      /* Data is doubles */
-#define CARRAY_TEXT      3      /* Data is char* */
+#ifndef CARRAY_INT32
+# define CARRAY_INT32     0      /* Data is 32-bit signed integers */
+# define CARRAY_INT64     1      /* Data is 64-bit signed integers */
+# define CARRAY_DOUBLE    2      /* Data is doubles */
+# define CARRAY_TEXT      3      /* Data is char* */
+#endif
+
+#ifndef SQLITE_API
+# ifdef _WIN32
+#  define SQLITE_API __declspec(dllexport)
+# else
+#  define SQLITE_API
+# endif
+#endif
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 
@@ -400,10 +410,7 @@ static void carrayBindDel(void *pPtr){
 ** Invoke this interface in order to bind to the single-argument
 ** version of CARRAY().
 */
-#ifdef _WIN32
-__declspec(dllexport)
-#endif
-int sqlite3_carray_bind(
+SQLITE_API int sqlite3_carray_bind(
   sqlite3_stmt *pStmt,
   int idx,
   void *aData,
@@ -498,10 +505,7 @@ static void inttoptrFunc(
 
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
 
-#ifdef _WIN32
-__declspec(dllexport)
-#endif
-int sqlite3_carray_init(
+SQLITE_API int sqlite3_carray_init(
   sqlite3 *db, 
   char **pzErrMsg, 
   const sqlite3_api_routines *pApi

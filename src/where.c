@@ -805,7 +805,7 @@ static void constructAutomaticIndex(
       if( !sentWarning ){
         sqlite3_log(SQLITE_WARNING_AUTOINDEX,
             "automatic index on %s(%s)", pTable->zName,
-            pTable->aCol[iCol].zName);
+            pTable->aCol[iCol].zCnName);
         sentWarning = 1;
       }
       if( (idxCols & cMask)==0 ){
@@ -2984,7 +2984,6 @@ static int whereLoopAddBtree(
   int iSortIdx = 1;           /* Index number */
   int b;                      /* A boolean value */
   LogEst rSize;               /* number of rows in the table */
-  LogEst rLogSize;            /* Logarithm of the number of rows in the table */
   WhereClause *pWC;           /* The parsed WHERE clause */
   Table *pTab;                /* Table being queried */
   
@@ -3027,7 +3026,6 @@ static int whereLoopAddBtree(
     pProbe = &sPk;
   }
   rSize = pTab->nRowLogEst;
-  rLogSize = estLog(rSize);
 
 #ifndef SQLITE_OMIT_AUTOMATIC_INDEX
   /* Automatic indexes */
@@ -3041,8 +3039,10 @@ static int whereLoopAddBtree(
    && !pSrc->fg.isRecursive  /* Not a recursive common table expression. */
   ){
     /* Generate auto-index WhereLoops */
+    LogEst rLogSize;         /* Logarithm of the number of rows in the table */
     WhereTerm *pTerm;
     WhereTerm *pWCEnd = pWC->a + pWC->nTerm;
+    rLogSize = estLog(rSize);
     for(pTerm=pWC->a; rc==SQLITE_OK && pTerm<pWCEnd; pTerm++){
       if( pTerm->prereqRight & pNew->maskSelf ) continue;
       if( termCanDriveIndex(pTerm, pSrc, 0) ){
@@ -3060,7 +3060,7 @@ static int whereLoopAddBtree(
         ** those objects, since there is no opportunity to add schema
         ** indexes on subqueries and views. */
         pNew->rSetup = rLogSize + rSize;
-        if( pTab->pSelect==0 && (pTab->tabFlags & TF_Ephemeral)==0 ){
+        if( !IsView(pTab) && (pTab->tabFlags & TF_Ephemeral)==0 ){
           pNew->rSetup += 28;
         }else{
           pNew->rSetup -= 10;
@@ -5211,7 +5211,7 @@ WhereInfo *sqlite3WhereBegin(
     pTab = pTabItem->pTab;
     iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
     pLoop = pLevel->pWLoop;
-    if( (pTab->tabFlags & TF_Ephemeral)!=0 || pTab->pSelect ){
+    if( (pTab->tabFlags & TF_Ephemeral)!=0 || IsView(pTab) ){
       /* Do nothing */
     }else
 #ifndef SQLITE_OMIT_VIRTUALTABLE
@@ -5528,6 +5528,12 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       if( (ws & WHERE_INDEXED) 
        || ((ws & WHERE_MULTI_OR) && pLevel->u.pCovidx) 
       ){
+        if( ws & WHERE_MULTI_OR ){
+          Index *pIx = pLevel->u.pCovidx;
+          int iDb = sqlite3SchemaToIndex(db, pIx->pSchema);
+          sqlite3VdbeAddOp3(v, OP_ReopenIdx, pLevel->iIdxCur, pIx->tnum, iDb);
+          sqlite3VdbeSetP4KeyInfo(pParse, pIx);
+        }
         sqlite3VdbeAddOp1(v, OP_NullRow, pLevel->iIdxCur);
       }
       if( pLevel->op==OP_Return ){
@@ -5574,7 +5580,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
     ** created for the ONEPASS optimization.
     */
     if( (pTab->tabFlags & TF_Ephemeral)==0
-     && pTab->pSelect==0
+     && !IsView(pTab)
      && (pWInfo->wctrlFlags & WHERE_OR_SUBCLAUSE)==0
     ){
       int ws = pLoop->wsFlags;

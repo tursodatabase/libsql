@@ -968,4 +968,16 @@ do_execsql_test 31.3 {
   ALTER TABLE t1x RENAME q TO x;
 }
 
+# 2021-07-02 OSSFuzz https://oss-fuzz.com/testcase-detail/5517690440646656
+# Bad assert() statement
+#
+reset_db
+do_catchsql_test 32.0 {
+  CREATE TABLE t1(x);
+  CREATE TRIGGER r1 BEFORE INSERT ON t1 BEGIN 
+    UPDATE t1 SET x=x FROM (SELECT*);
+  END;
+  ALTER TABLE t1 RENAME TO x;
+} {1 {error in trigger r1: no tables specified}}
+
 finish_test
