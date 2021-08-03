@@ -22,7 +22,8 @@ puts "const char *sqlite3OpcodeName(int i)\173"
 puts " static const char *const azName\[\] = \173"
 set mx 0
 
-set in [open [lindex $argv 0] rb]
+set in [open [lindex $argv 0]]
+fconfigure $in -translation binary
 while {![eof $in]} {
   set line [gets $in]
   if {[regexp {^#define OP_} $line]} {

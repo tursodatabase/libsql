@@ -815,7 +815,7 @@ do_test pragma-6.7 {
             ORDER BY cid}
 } [concat \
   {0 one INT 1 -1 0} \
-  {1 two text 0 {} 0} \
+  {1 two TEXT 0 {} 0} \
   {2 three {VARCHAR(45, 65)} 0 'abcde' 0} \
   {3 four REAL 0 X'abcdef' 0} \
   {4 five {} 0 CURRENT_TIME 0} \

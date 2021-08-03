@@ -2175,5 +2175,19 @@ do_catchsql_test 69.2 {
   SELECT * FROM t1 WHERE b <= (SELECT b FROM t1 ORDER BY lead(b) OVER () AND sum(a));
 } {1 {misuse of aggregate: sum()}}
 
+# 2021-06-23
+# Forum https://sqlite.org/forum/forumpost/31e0432608
+#
+reset_db
+do_execsql_test 70.0 {
+  CREATE TABLE t1(a);
+}
+do_execsql_test 70.1 {
+  SELECT substr(a,4,lag(a,7) OVER(PARTITION BY 'cf23' ORDER BY 2)) AS ca0 FROM t1 ORDER BY ca0;
+}
+do_execsql_test 70.2 {
+  SELECT substr(a,4,lag(a,7) OVER(PARTITION BY 'cf23' ORDER BY likely(2))) AS ca0 FROM t1 ORDER BY ca0;
+}
+
 
 finish_test

@@ -64,13 +64,13 @@ do_test capi2-1.4 {
 } {t1 1}
 do_test capi2-1.5 {
   get_column_names $VM
-} {name rowid text INTEGER}
+} {name rowid TEXT INTEGER}
 do_test capi2-1.6 {
   sqlite3_step $VM 
 } {SQLITE_DONE}
 do_test capi2-1.7 {
   list [sqlite3_column_count $VM] [get_row_values $VM] [get_column_names $VM]
-} {2 {} {name rowid text INTEGER}}
+} {2 {} {name rowid TEXT INTEGER}}
 
 # This used to be SQLITE_MISUSE.  But now we automatically reset prepared
 # statements.
@@ -91,7 +91,7 @@ ifcapable autoreset {
 do_test capi2-1.9 {
   sqlite3_reset $VM
   list [sqlite3_column_count $VM] [get_row_values $VM] [get_column_names $VM]
-} {2 {} {name rowid text INTEGER}}
+} {2 {} {name rowid TEXT INTEGER}}
 do_test capi2-1.10 {
   sqlite3_data_count $VM
 } {0}
@@ -120,13 +120,13 @@ do_test capi2-2.2 {
   lappend r [sqlite3_column_count $VM] \
             [get_row_values $VM] \
             [get_column_names $VM]
-} {SQLITE_ROW 2 {t1 1} {name rowid text INTEGER}}
+} {SQLITE_ROW 2 {t1 1} {name rowid TEXT INTEGER}}
 do_test capi2-2.3 {
   set r [sqlite3_step $VM]
   lappend r [sqlite3_column_count $VM] \
             [get_row_values $VM] \
             [get_column_names $VM]
-} {SQLITE_DONE 2 {} {name rowid text INTEGER}}
+} {SQLITE_DONE 2 {} {name rowid TEXT INTEGER}}
 do_test capi2-2.4 {
   sqlite3_finalize $VM
 } {SQLITE_OK}
@@ -141,7 +141,7 @@ do_test capi2-2.6 {
   lappend r [sqlite3_column_count $VM] \
             [get_row_values $VM] \
             [get_column_names $VM]
-} {SQLITE_DONE 2 {} {name rowid text INTEGER}}
+} {SQLITE_DONE 2 {} {name rowid TEXT INTEGER}}
 do_test capi2-2.7 {
   sqlite3_finalize $VM
 } {SQLITE_OK}

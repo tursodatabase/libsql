@@ -100,7 +100,7 @@ do_test delete-5.2.1 {
 } {200}
 do_test delete-5.2.2 {
   execsql {DELETE FROM table1}
-} {202}
+} {200}
 do_test delete-5.2.3 {
   execsql {BEGIN TRANSACTION}
   for {set i 1} {$i<=200} {incr i} {
