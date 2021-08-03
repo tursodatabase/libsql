@@ -821,6 +821,22 @@ static void fts5StructureRef(Fts5Structure *pStruct){
   pStruct->nRef++;
 }
 
+void *sqlite3Fts5StructureRef(Fts5Index *p){
+  fts5StructureRef(p->pStruct);
+  return (void*)p->pStruct;
+}
+void sqlite3Fts5StructureRelease(void *p){
+  if( p ){
+    fts5StructureRelease((Fts5Structure*)p);
+  }
+}
+int sqlite3Fts5StructureTest(Fts5Index *p, void *pStruct){
+  if( p->pStruct!=(Fts5Structure*)pStruct ){
+    return SQLITE_ABORT;
+  }
+  return SQLITE_OK;
+}
+
 /*
 ** Deserialize and return the structure record currently stored in serialized
 ** form within buffer pData/nData.

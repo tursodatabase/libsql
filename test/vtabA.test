@@ -128,7 +128,7 @@ proc analyse_parse {columns decltype_list} {
 
 do_test vtabA-2.1 {
   analyse_parse {(a text, b integer hidden, c hidden)} {a b c}
-} {a text integer {}}
+} {a TEXT integer {}}
 
 do_test vtabA-2.2 {
   analyse_parse {(a hidden   , b integerhidden, c hidden1)} {a b c}

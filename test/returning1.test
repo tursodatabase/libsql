@@ -318,4 +318,19 @@ do_test 12.4 {
   lsort [array names cname]
 } {{"x"+"y"} *}
 
+ifcapable rtree {
+#-------------------------------------------------------------------------
+# Based on dbsqlfuzz find crash-ffbba524cac354b2a61bfd677cec9d2a4333f49a
+reset_db
+do_execsql_test 13.0 {
+  CREATE VIRTUAL TABLE t1 USING rtree(a, b, c);
+  CREATE TABLE t2(x);
+}
+
+do_execsql_test 13.1 {
+  INSERT INTO t1(a,b,c) VALUES(1,2,3) 
+  RETURNING (SELECT b FROM t2);
+} {{}}
+} ;# end ifcapable rtree
+
 finish_test

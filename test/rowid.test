@@ -18,6 +18,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set testprefix rowid
 
 # Basic ROWID functionality tests.
 #
@@ -785,6 +786,35 @@ do_execsql_test rowid-15.2 {
       WHERE ((t2.rowid <= 'a')) OR (t1.c0 <= t2.c0) ORDER BY 'a' DESC LIMIT 100
   );
 } {1 {}}
+
+#-------------------------------------------------------------------------
+# Check that an unqualified "rowid" can be used in join queries so long 
+# as only one of the source objects has a rowid column.
+#
+reset_db
+do_execsql_test 16.0 {
+  CREATE TABLE t1(x);
+  CREATE TABLE t2(y PRIMARY KEY) WITHOUT ROWID;
+  CREATE VIEW v1 AS SELECT x FROM t1;
+  CREATE TABLE t3(z);
+
+  INSERT INTO t1(rowid, x) VALUES(1, 1);
+  INSERT INTO t2(y) VALUES(2);
+  INSERT INTO t3(rowid, z) VALUES(3, 3);
+}
+
+do_execsql_test 16.1 { SELECT rowid FROM t1, t2; } {1}
+do_execsql_test 16.2 { SELECT rowid FROM t1, v1; } {1}
+do_execsql_test 16.3 { SELECT rowid FROM t3, v1; } {3}
+do_execsql_test 16.4 { SELECT rowid FROM t3, (SELECT 123); } {3}
+
+do_execsql_test 16.5 { SELECT rowid FROM t2, t1; } {1}
+do_execsql_test 16.6 { SELECT rowid FROM v1, t1; } {1}
+do_execsql_test 16.7 { SELECT rowid FROM v1, t3; } {3}
+do_execsql_test 16.8 { SELECT rowid FROM (SELECT 123), t3; } {3}
+
+do_catchsql_test 16.5 { SELECT rowid FROM t1, t3; } {1 {no such column: rowid}}
+
 
 
 finish_test
