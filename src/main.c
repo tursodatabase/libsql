@@ -1344,7 +1344,7 @@ void sqlite3LeaveMutexAndCloseZombie(sqlite3 *db){
       sqlite3BtreeClose(pDb->pBt);
       pDb->pBt = 0;
       if( j!=1 ){
-        sqlite3SchemaDisconnect(db, j, 0);
+        (void)sqlite3SchemaDisconnect(db, j, 0);
         pDb->pSchema = 0;
       }
     }
@@ -1866,22 +1866,33 @@ int sqlite3CreateFunc(
   ** If SQLITE_ANY is specified, add three versions of the function
   ** to the hash table.
   */
-  if( enc==SQLITE_UTF16 ){
-    enc = SQLITE_UTF16NATIVE;
-  }else if( enc==SQLITE_ANY ){
-    int rc;
-    rc = sqlite3CreateFunc(db, zFunctionName, nArg,
-         (SQLITE_UTF8|extraFlags)^SQLITE_FUNC_UNSAFE,
-         pUserData, xSFunc, xStep, xFinal, xValue, xInverse, pDestructor);
-    if( rc==SQLITE_OK ){
+  switch( enc ){
+    case SQLITE_UTF16:
+      enc = SQLITE_UTF16NATIVE;
+      break;
+    case SQLITE_ANY: {
+      int rc;
       rc = sqlite3CreateFunc(db, zFunctionName, nArg,
-           (SQLITE_UTF16LE|extraFlags)^SQLITE_FUNC_UNSAFE,
+           (SQLITE_UTF8|extraFlags)^SQLITE_FUNC_UNSAFE,
            pUserData, xSFunc, xStep, xFinal, xValue, xInverse, pDestructor);
+      if( rc==SQLITE_OK ){
+        rc = sqlite3CreateFunc(db, zFunctionName, nArg,
+             (SQLITE_UTF16LE|extraFlags)^SQLITE_FUNC_UNSAFE,
+             pUserData, xSFunc, xStep, xFinal, xValue, xInverse, pDestructor);
+      }
+      if( rc!=SQLITE_OK ){
+        return rc;
+      }
+      enc = SQLITE_UTF16BE;
+      break;
     }
-    if( rc!=SQLITE_OK ){
-      return rc;
-    }
-    enc = SQLITE_UTF16BE;
+    case SQLITE_UTF8:
+    case SQLITE_UTF16LE:
+    case SQLITE_UTF16BE:
+      break;
+    default:
+      enc = SQLITE_UTF8;
+      break;
   }
 #else
   enc = SQLITE_UTF8;
@@ -1978,7 +1989,7 @@ static int createFunctionApi(
       xSFunc, xStep, xFinal, xValue, xInverse, pArg
   );
   if( pArg && pArg->nRef==0 ){
-    assert( rc!=SQLITE_OK );
+    assert( rc!=SQLITE_OK || (xStep==0 && xFinal==0) );
     xDestroy(p);
     sqlite3_free(pArg);
   }
@@ -3747,7 +3758,7 @@ int sqlite3_table_column_metadata(
   }
   if( SQLITE_OK!=rc ) goto error_out;
 
-  if( !pTab || pTab->pSelect ){
+  if( !pTab || IsView(pTab) ){
     pTab = 0;
     goto error_out;
   }
@@ -3758,7 +3769,7 @@ int sqlite3_table_column_metadata(
   }else{
     for(iCol=0; iCol<pTab->nCol; iCol++){
       pCol = &pTab->aCol[iCol];
-      if( 0==sqlite3StrICmp(pCol->zName, zColumnName) ){
+      if( 0==sqlite3StrICmp(pCol->zCnName, zColumnName) ){
         break;
       }
     }
@@ -3785,7 +3796,7 @@ int sqlite3_table_column_metadata(
   */ 
   if( pCol ){
     zDataType = sqlite3ColumnType(pCol,0);
-    zCollSeq = pCol->zColl;
+    zCollSeq = pCol->zCnColl;
     notnull = pCol->notNull!=0;
     primarykey  = (pCol->colFlags & COLFLAG_PRIMKEY)!=0;
     autoinc = pTab->iPKey==iCol && (pTab->tabFlags & TF_Autoincrement)!=0;

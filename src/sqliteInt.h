@@ -861,6 +861,7 @@ typedef INT16_TYPE LogEst;
 #   define SQLITE_PTRSIZE __SIZEOF_POINTER__
 # elif defined(i386)     || defined(__i386__)   || defined(_M_IX86) ||    \
        defined(_M_ARM)   || defined(__arm__)    || defined(__x86)   ||    \
+      (defined(__APPLE__) && defined(__POWERPC__)) ||                     \
       (defined(__TOS_AIX__) && !defined(__64BIT__))
 #   define SQLITE_PTRSIZE 4
 # else
@@ -1761,6 +1762,8 @@ struct sqlite3 {
 #define SQLITE_PropagateConst 0x00008000 /* The constant propagation opt */
 #define SQLITE_MinMaxOpt      0x00010000 /* The min/max optimization */
 #define SQLITE_SeekScan       0x00020000 /* The OP_SeekScan optimization */
+#define SQLITE_OmitOrderBy    0x00040000 /* Omit pointless ORDER BY */
+   /* TH3 expects this value  ^^^^^^^^^^ to be 0x40000. Coordinate any change */
 #define SQLITE_AllOpts        0xffffffff /* All optimizations */
 
 /*
@@ -1840,12 +1843,13 @@ struct FuncDestructor {
 ** are assert() statements in the code to verify this.
 **
 ** Value constraints (enforced via assert()):
-**     SQLITE_FUNC_MINMAX    ==  NC_MinMaxAgg      == SF_MinMaxAgg
-**     SQLITE_FUNC_LENGTH    ==  OPFLAG_LENGTHARG
-**     SQLITE_FUNC_TYPEOF    ==  OPFLAG_TYPEOFARG
-**     SQLITE_FUNC_CONSTANT  ==  SQLITE_DETERMINISTIC from the API
-**     SQLITE_FUNC_DIRECT    ==  SQLITE_DIRECTONLY from the API
-**     SQLITE_FUNC_UNSAFE    ==  SQLITE_INNOCUOUS
+**     SQLITE_FUNC_MINMAX      ==  NC_MinMaxAgg      == SF_MinMaxAgg
+**     SQLITE_FUNC_ANYORDER    ==  NC_OrderAgg       == SF_OrderByReqd
+**     SQLITE_FUNC_LENGTH      ==  OPFLAG_LENGTHARG
+**     SQLITE_FUNC_TYPEOF      ==  OPFLAG_TYPEOFARG
+**     SQLITE_FUNC_CONSTANT    ==  SQLITE_DETERMINISTIC from the API
+**     SQLITE_FUNC_DIRECT      ==  SQLITE_DIRECTONLY from the API
+**     SQLITE_FUNC_UNSAFE      ==  SQLITE_INNOCUOUS
 **     SQLITE_FUNC_ENCMASK   depends on SQLITE_UTF* macros in the API
 */
 #define SQLITE_FUNC_ENCMASK  0x0003 /* SQLITE_UTF8, SQLITE_UTF16BE or UTF16LE */
@@ -1870,6 +1874,7 @@ struct FuncDestructor {
 #define SQLITE_FUNC_SUBTYPE  0x00100000 /* Result likely to have sub-type */
 #define SQLITE_FUNC_UNSAFE   0x00200000 /* Function has side effects */
 #define SQLITE_FUNC_INLINE   0x00400000 /* Functions implemented in-line */
+#define SQLITE_FUNC_ANYORDER 0x08000000 /* count/min/max aggregate */
 
 /* Identifier numbers for each in-line function */
 #define INLINEFUNC_coalesce             0
@@ -2042,15 +2047,31 @@ struct Module {
 **                            columns to the left.
 */
 struct Column {
-  char *zName;     /* Name of this column, \000, then the type */
-  Expr *pDflt;     /* Default value or GENERATED ALWAYS AS value */
-  char *zColl;     /* Collating sequence.  If NULL, use the default */
-  u8 notNull;      /* An OE_ code for handling a NOT NULL constraint */
+  char *zCnName;   /* Name of this column */
+  char *zCnColl;   /* Collating sequence.  If NULL, use the default */
+  u8 notNull : 4;  /* An OE_ code for handling a NOT NULL constraint */
+  u8 eType : 4;    /* One of the standard types */
   char affinity;   /* One of the SQLITE_AFF_... values */
   u8 szEst;        /* Estimated size of value in this column. sizeof(INT)==1 */
   u8 hName;        /* Column name hash for faster lookup */
+  u16 iDflt;       /* 1-based index of DEFAULT.  0 means "none" */
   u16 colFlags;    /* Boolean properties.  See COLFLAG_ defines below */
 };
+
+/* Allowed values for Column.eType.
+**
+** Values must match entries in the global constant arrays
+** sqlite3StdTypeLen[] and sqlite3StdType[].  Each value is one more
+** than the offset into these arrays for the corresponding name.
+** Adjust the SQLITE_N_STDTYPE value if adding or removing entries.
+*/
+#define COLTYPE_CUSTOM      0   /* Type appended to zName */
+#define COLTYPE_BLOB        1
+#define COLTYPE_INT         2
+#define COLTYPE_INTEGER     3
+#define COLTYPE_REAL        4
+#define COLTYPE_TEXT        5
+#define SQLITE_N_STDTYPE    5  /* Number of standard types */
 
 /* Allowed values for Column.colFlags.
 **
@@ -2200,15 +2221,13 @@ struct VTable {
 #define SQLITE_VTABRISK_High         2
 
 /*
-** The schema for each SQL table and view is represented in memory
-** by an instance of the following structure.
+** The schema for each SQL table, virtual table, and view is represented
+** in memory by an instance of the following structure.
 */
 struct Table {
   char *zName;         /* Name of the table or view */
   Column *aCol;        /* Information about each column */
   Index *pIndex;       /* List of SQL indexes on this table. */
-  Select *pSelect;     /* NULL for tables.  Points to definition if a view. */
-  FKey *pFKey;         /* Linked list of all foreign keys in this table */
   char *zColAff;       /* String defining the affinity of each column */
   ExprList *pCheck;    /* All CHECK constraints */
                        /*   ... also used as column name list in a VIEW */
@@ -2224,15 +2243,24 @@ struct Table {
   LogEst costMult;     /* Cost multiplier for using this table */
 #endif
   u8 keyConf;          /* What to do in case of uniqueness conflict on iPKey */
-#ifndef SQLITE_OMIT_ALTERTABLE
-  int addColOffset;    /* Offset in CREATE TABLE stmt to add a new column */
-#endif
-#ifndef SQLITE_OMIT_VIRTUALTABLE
-  int nModuleArg;      /* Number of arguments to the module */
-  char **azModuleArg;  /* 0: module 1: schema 2: vtab name 3...: args */
-  VTable *pVTable;     /* List of VTable objects. */
-#endif
-  Trigger *pTrigger;   /* List of triggers stored in pSchema */
+  u8 eTabType;         /* 0: normal, 1: virtual, 2: view */
+  union {
+    struct {             /* Used by ordinary tables: */
+      int addColOffset;    /* Offset in CREATE TABLE stmt to add a new column */
+      FKey *pFKey;         /* Linked list of all foreign keys in this table */
+      ExprList *pDfltList; /* DEFAULT clauses on various columns.
+                           ** Or the AS clause for generated columns. */
+    } tab;
+    struct {             /* Used by views: */
+      Select *pSelect;     /* View definition */
+    } view;
+    struct {             /* Used by virtual tables only: */
+      int nArg;            /* Number of arguments to the module */
+      char **azArg;        /* 0: module 1: schema 2: vtab name 3...: args */
+      VTable *p;           /* List of VTable objects. */
+    } vtab;
+  } u;
+  Trigger *pTrigger;   /* List of triggers on this object */
   Schema *pSchema;     /* Schema that contains this table */
 };
 
@@ -2251,24 +2279,34 @@ struct Table {
 **         TF_HasStored  == COLFLAG_STORED
 **         TF_HasHidden  == COLFLAG_HIDDEN
 */
-#define TF_Readonly        0x0001    /* Read-only system table */
-#define TF_HasHidden       0x0002    /* Has one or more hidden columns */
-#define TF_HasPrimaryKey   0x0004    /* Table has a primary key */
-#define TF_Autoincrement   0x0008    /* Integer primary key is autoincrement */
-#define TF_HasStat1        0x0010    /* nRowLogEst set from sqlite_stat1 */
-#define TF_HasVirtual      0x0020    /* Has one or more VIRTUAL columns */
-#define TF_HasStored       0x0040    /* Has one or more STORED columns */
-#define TF_HasGenerated    0x0060    /* Combo: HasVirtual + HasStored */
-#define TF_WithoutRowid    0x0080    /* No rowid.  PRIMARY KEY is the key */
-#define TF_StatsUsed       0x0100    /* Query planner decisions affected by
+#define TF_Readonly       0x00000001 /* Read-only system table */
+#define TF_HasHidden      0x00000002 /* Has one or more hidden columns */
+#define TF_HasPrimaryKey  0x00000004 /* Table has a primary key */
+#define TF_Autoincrement  0x00000008 /* Integer primary key is autoincrement */
+#define TF_HasStat1       0x00000010 /* nRowLogEst set from sqlite_stat1 */
+#define TF_HasVirtual     0x00000020 /* Has one or more VIRTUAL columns */
+#define TF_HasStored      0x00000040 /* Has one or more STORED columns */
+#define TF_HasGenerated   0x00000060 /* Combo: HasVirtual + HasStored */
+#define TF_WithoutRowid   0x00000080 /* No rowid.  PRIMARY KEY is the key */
+#define TF_StatsUsed      0x00000100 /* Query planner decisions affected by
                                      ** Index.aiRowLogEst[] values */
-#define TF_NoVisibleRowid  0x0200    /* No user-visible "rowid" column */
-#define TF_OOOHidden       0x0400    /* Out-of-Order hidden columns */
-#define TF_HasNotNull      0x0800    /* Contains NOT NULL constraints */
-#define TF_Shadow          0x1000    /* True for a shadow table */
-#define TF_HasStat4        0x2000    /* STAT4 info available for this table */
-#define TF_Ephemeral       0x4000    /* An ephemeral table */
-#define TF_Eponymous       0x8000    /* An eponymous virtual table */
+#define TF_NoVisibleRowid 0x00000200 /* No user-visible "rowid" column */
+#define TF_OOOHidden      0x00000400 /* Out-of-Order hidden columns */
+#define TF_HasNotNull     0x00000800 /* Contains NOT NULL constraints */
+#define TF_Shadow         0x00001000 /* True for a shadow table */
+#define TF_HasStat4       0x00002000 /* STAT4 info available for this table */
+#define TF_Ephemeral      0x00004000 /* An ephemeral table */
+#define TF_Eponymous      0x00008000 /* An eponymous virtual table */
+
+/*
+** Allowed values for Table.eTabType
+*/
+#define TABTYP_NORM      0     /* Ordinary table */
+#define TABTYP_VTAB      1     /* Virtual table */
+#define TABTYP_VIEW      2     /* A view */
+
+#define IsView(X)           ((X)->eTabType==TABTYP_VIEW)
+#define IsOrdinaryTable(X)  ((X)->eTabType==TABTYP_NORM)
 
 /*
 ** Test to see whether or not a table is a virtual table.  This is
@@ -2276,9 +2314,9 @@ struct Table {
 ** table support is omitted from the build.
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-#  define IsVirtual(X)      ((X)->nModuleArg)
+#  define IsVirtual(X)      ((X)->eTabType==TABTYP_VTAB)
 #  define ExprIsVtab(X)  \
-              ((X)->op==TK_COLUMN && (X)->y.pTab!=0 && (X)->y.pTab->nModuleArg)
+    ((X)->op==TK_COLUMN && (X)->y.pTab!=0 && (X)->y.pTab->eTabType==TABTYP_VTAB)
 #else
 #  define IsVirtual(X)      0
 #  define ExprIsVtab(X)     0
@@ -3108,31 +3146,33 @@ struct NameContext {
 ** Allowed values for the NameContext, ncFlags field.
 **
 ** Value constraints (all checked via assert()):
-**    NC_HasAgg    == SF_HasAgg    == EP_Agg
-**    NC_MinMaxAgg == SF_MinMaxAgg == SQLITE_FUNC_MINMAX
+**    NC_HasAgg    == SF_HasAgg       == EP_Agg
+**    NC_MinMaxAgg == SF_MinMaxAgg    == SQLITE_FUNC_MINMAX
+**    NC_OrderAgg  == SF_OrderByReqd  == SQLITE_FUNC_ANYORDER
 **    NC_HasWin    == EP_Win
 **
 */
-#define NC_AllowAgg  0x00001  /* Aggregate functions are allowed here */
-#define NC_PartIdx   0x00002  /* True if resolving a partial index WHERE */
-#define NC_IsCheck   0x00004  /* True if resolving a CHECK constraint */
-#define NC_GenCol    0x00008  /* True for a GENERATED ALWAYS AS clause */
-#define NC_HasAgg    0x00010  /* One or more aggregate functions seen */
-#define NC_IdxExpr   0x00020  /* True if resolving columns of CREATE INDEX */
-#define NC_SelfRef   0x0002e  /* Combo: PartIdx, isCheck, GenCol, and IdxExpr */
-#define NC_VarSelect 0x00040  /* A correlated subquery has been seen */
-#define NC_UEList    0x00080  /* True if uNC.pEList is used */
-#define NC_UAggInfo  0x00100  /* True if uNC.pAggInfo is used */
-#define NC_UUpsert   0x00200  /* True if uNC.pUpsert is used */
-#define NC_UBaseReg  0x00400  /* True if uNC.iBaseReg is used */
-#define NC_MinMaxAgg 0x01000  /* min/max aggregates seen.  See note above */
-#define NC_Complex   0x02000  /* True if a function or subquery seen */
-#define NC_AllowWin  0x04000  /* Window functions are allowed here */
-#define NC_HasWin    0x08000  /* One or more window functions seen */
-#define NC_IsDDL     0x10000  /* Resolving names in a CREATE statement */
-#define NC_InAggFunc 0x20000  /* True if analyzing arguments to an agg func */
-#define NC_FromDDL   0x40000  /* SQL text comes from sqlite_schema */
-#define NC_NoSelect  0x80000  /* Do not descend into sub-selects */
+#define NC_AllowAgg  0x000001 /* Aggregate functions are allowed here */
+#define NC_PartIdx   0x000002 /* True if resolving a partial index WHERE */
+#define NC_IsCheck   0x000004 /* True if resolving a CHECK constraint */
+#define NC_GenCol    0x000008 /* True for a GENERATED ALWAYS AS clause */
+#define NC_HasAgg    0x000010 /* One or more aggregate functions seen */
+#define NC_IdxExpr   0x000020 /* True if resolving columns of CREATE INDEX */
+#define NC_SelfRef   0x00002e /* Combo: PartIdx, isCheck, GenCol, and IdxExpr */
+#define NC_VarSelect 0x000040 /* A correlated subquery has been seen */
+#define NC_UEList    0x000080 /* True if uNC.pEList is used */
+#define NC_UAggInfo  0x000100 /* True if uNC.pAggInfo is used */
+#define NC_UUpsert   0x000200 /* True if uNC.pUpsert is used */
+#define NC_UBaseReg  0x000400 /* True if uNC.iBaseReg is used */
+#define NC_MinMaxAgg 0x001000 /* min/max aggregates seen.  See note above */
+#define NC_Complex   0x002000 /* True if a function or subquery seen */
+#define NC_AllowWin  0x004000 /* Window functions are allowed here */
+#define NC_HasWin    0x008000 /* One or more window functions seen */
+#define NC_IsDDL     0x010000 /* Resolving names in a CREATE statement */
+#define NC_InAggFunc 0x020000 /* True if analyzing arguments to an agg func */
+#define NC_FromDDL   0x040000 /* SQL text comes from sqlite_schema */
+#define NC_NoSelect  0x080000 /* Do not descend into sub-selects */
+#define NC_OrderAgg 0x8000000 /* Has an aggregate other than count/min/max */
 
 /*
 ** An instance of the following object describes a single ON CONFLICT
@@ -3215,9 +3255,10 @@ struct Select {
 ** "Select Flag".
 **
 ** Value constraints (all checked via assert())
-**     SF_HasAgg     == NC_HasAgg
-**     SF_MinMaxAgg  == NC_MinMaxAgg     == SQLITE_FUNC_MINMAX
-**     SF_FixedLimit == WHERE_USE_LIMIT
+**     SF_HasAgg      == NC_HasAgg
+**     SF_MinMaxAgg   == NC_MinMaxAgg     == SQLITE_FUNC_MINMAX
+**     SF_OrderByReqd == NC_OrderAgg      == SQLITE_FUNC_ANYORDER
+**     SF_FixedLimit  == WHERE_USE_LIMIT
 */
 #define SF_Distinct      0x0000001 /* Output should be DISTINCT */
 #define SF_All           0x0000002 /* Includes the ALL keyword */
@@ -3246,6 +3287,7 @@ struct Select {
 #define SF_PushDown      0x1000000 /* SELECT has be modified by push-down opt */
 #define SF_MultiPart     0x2000000 /* Has multiple incompatible PARTITIONs */
 #define SF_CopyCte       0x4000000 /* SELECT statement is a copy of a CTE */
+#define SF_OrderByReqd   0x8000000 /* The ORDER BY clause may not be omitted */
 
 /*
 ** The results of a SELECT can be distributed in several ways, as defined
@@ -4331,6 +4373,7 @@ void sqlite3ErrorMsg(Parse*, const char*, ...);
 int sqlite3ErrorToParser(sqlite3*,int);
 void sqlite3Dequote(char*);
 void sqlite3DequoteExpr(Expr*);
+void sqlite3DequoteToken(Token*);
 void sqlite3TokenInit(Token*,char*);
 int sqlite3KeywordCode(const unsigned char*, int);
 int sqlite3RunParser(Parse*, const char*, char **);
@@ -4376,6 +4419,8 @@ void sqlite3ResetAllSchemasOfConnection(sqlite3*);
 void sqlite3ResetOneSchema(sqlite3*,int);
 void sqlite3CollapseDatabaseArray(sqlite3*);
 void sqlite3CommitInternalChanges(sqlite3*);
+void sqlite3ColumnSetExpr(Parse*,Table*,Column*,Expr*);
+Expr *sqlite3ColumnExpr(Table*,Column*);
 void sqlite3DeleteColumnNames(sqlite3*,Table*);
 void sqlite3GenerateColumnNames(Parse *pParse, Select *pSelect);
 int sqlite3ColumnsFromExprList(Parse*,ExprList*,i16*,Column**);
@@ -4397,7 +4442,7 @@ void sqlite3StartTable(Parse*,Token*,Token*,int,int,int,int);
 #else
 # define sqlite3ColumnPropertiesFromName(T,C) /* no-op */
 #endif
-void sqlite3AddColumn(Parse*,Token*,Token*);
+void sqlite3AddColumn(Parse*,Token,Token);
 void sqlite3AddNotNull(Parse*, int);
 void sqlite3AddPrimaryKey(Parse*, ExprList*, int, int, int);
 void sqlite3AddCheckConstraint(Parse*, Expr*, const char*, const char*);
@@ -4514,7 +4559,7 @@ void sqlite3ExprCodeGetColumnOfTable(Vdbe*, Table*, int, int, int);
 void sqlite3ExprCodeMove(Parse*, int, int, int);
 void sqlite3ExprCode(Parse*, Expr*, int);
 #ifndef SQLITE_OMIT_GENERATED_COLUMNS
-void sqlite3ExprCodeGeneratedColumn(Parse*, Column*, int);
+void sqlite3ExprCodeGeneratedColumn(Parse*, Table*, Column*, int);
 #endif
 void sqlite3ExprCodeCopy(Parse*, Expr*, int);
 void sqlite3ExprCodeFactorable(Parse*, Expr*, int);
@@ -4807,6 +4852,9 @@ void sqlite3ValueApplyAffinity(sqlite3_value *, u8, u8);
 #ifndef SQLITE_AMALGAMATION
 extern const unsigned char sqlite3OpcodeProperty[];
 extern const char sqlite3StrBINARY[];
+extern const unsigned char sqlite3StdTypeLen[];
+extern const char sqlite3StdTypeAffinity[];
+extern const char *sqlite3StdType[];
 extern const unsigned char sqlite3UpperToLower[];
 extern const unsigned char *sqlite3aLTb;
 extern const unsigned char *sqlite3aEQb;

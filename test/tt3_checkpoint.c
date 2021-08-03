@@ -75,7 +75,7 @@ static char *checkpoint_starvation_reader(int iTid, void *pArg){
     i64 iCount1, iCount2;
     sql_script(&err, &db, "BEGIN");
     iCount1 = execsql_i64(&err, &db, "SELECT count(x) FROM t1");
-    usleep(CHECKPOINT_STARVATION_READMS*1000);
+    sqlite3_sleep(CHECKPOINT_STARVATION_READMS);
     iCount2 = execsql_i64(&err, &db, "SELECT count(x) FROM t1");
     sql_script(&err, &db, "COMMIT");
 
@@ -107,7 +107,7 @@ static void checkpoint_starvation_main(int nMs, CheckpointStarvationCtx *p){
 
   for(i=0; i<4; i++){
     launch_thread(&err, &threads, checkpoint_starvation_reader, 0);
-    usleep(CHECKPOINT_STARVATION_READMS*1000/4);
+    sqlite3_sleep(CHECKPOINT_STARVATION_READMS/4);
   }
 
   sqlite3_wal_hook(db.db, checkpoint_starvation_walhook, (void *)p);

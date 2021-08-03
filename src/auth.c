@@ -175,10 +175,10 @@ void sqlite3AuthRead(
 
   if( iCol>=0 ){
     assert( iCol<pTab->nCol );
-    zCol = pTab->aCol[iCol].zName;
+    zCol = pTab->aCol[iCol].zCnName;
   }else if( pTab->iPKey>=0 ){
     assert( pTab->iPKey<pTab->nCol );
-    zCol = pTab->aCol[pTab->iPKey].zName;
+    zCol = pTab->aCol[pTab->iPKey].zCnName;
   }else{
     zCol = "ROWID";
   }

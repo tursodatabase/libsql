@@ -30,7 +30,8 @@ puts $out {/* DO NOT EDIT!
 ** edit the src/shell.c.in" and/or some of the other files that are included
 ** by "src/shell.c.in", then rerun the tool/mkshellc.tcl script.
 */}
-set in [open $topdir/src/shell.c.in rb]
+set in [open $topdir/src/shell.c.in]
+fconfigure $in -translation binary
 proc omit_redundant_typedefs {line} {
   global typedef_seen
   if {[regexp {^typedef .*;} $line]} {
@@ -50,7 +51,8 @@ while {1} {
     set cfile [lindex $lx 1]
     puts $out "/************************* Begin $cfile ******************/"
 #   puts $out "#line 1 \"$cfile\""
-    set in2 [open $topdir/src/$cfile rb]
+    set in2 [open $topdir/src/$cfile]
+    fconfigure $in2 -translation binary
     while {![eof $in2]} {
       set lx [omit_redundant_typedefs [gets $in2]]
       if {[regexp {^#include "sqlite} $lx]} {

@@ -173,7 +173,7 @@ CollSeq *sqlite3ExprCollSeq(Parse *pParse, const Expr *pExpr){
       ** a TK_COLUMN but was previously evaluated and cached in a register */
       int j = p->iColumn;
       if( j>=0 ){
-        const char *zColl = p->y.pTab->aCol[j].zColl;
+        const char *zColl = p->y.pTab->aCol[j].zCnColl;
         pColl = sqlite3FindCollSeq(db, ENC(db), zColl, 0);
       }
       break;
@@ -2513,7 +2513,7 @@ static Select *isCandidateForInOpt(Expr *pX){
   if( pSrc->a[0].pSelect ) return 0;     /* FROM is not a subquery or view */
   pTab = pSrc->a[0].pTab;
   assert( pTab!=0 );
-  assert( pTab->pSelect==0 );            /* FROM clause is not a view */
+  assert( !IsView(pTab)  );              /* FROM clause is not a view */
   if( IsVirtual(pTab) ) return 0;        /* FROM clause not a virtual table */
   pEList = p->pEList;
   assert( pEList!=0 );
@@ -3643,9 +3643,10 @@ void sqlite3ExprCodeLoadIndexColumn(
 ** and store the result in register regOut
 */
 void sqlite3ExprCodeGeneratedColumn(
-  Parse *pParse,
-  Column *pCol,
-  int regOut
+  Parse *pParse,     /* Parsing context */
+  Table *pTab,       /* Table containing the generated column */
+  Column *pCol,      /* The generated column */
+  int regOut         /* Put the result in this register */
 ){
   int iAddr;
   Vdbe *v = pParse->pVdbe;
@@ -3656,7 +3657,7 @@ void sqlite3ExprCodeGeneratedColumn(
   }else{
     iAddr = 0;
   }
-  sqlite3ExprCodeCopy(pParse, pCol->pDflt, regOut);
+  sqlite3ExprCodeCopy(pParse, sqlite3ColumnExpr(pTab,pCol), regOut);
   if( pCol->affinity>=SQLITE_AFF_TEXT ){
     sqlite3VdbeAddOp4(v, OP_Affinity, regOut, 1, 0, &pCol->affinity, 1);
   }
@@ -3692,12 +3693,13 @@ void sqlite3ExprCodeGetColumnOfTable(
     }else if( (pCol = &pTab->aCol[iCol])->colFlags & COLFLAG_VIRTUAL ){
       Parse *pParse = sqlite3VdbeParser(v);
       if( pCol->colFlags & COLFLAG_BUSY ){
-        sqlite3ErrorMsg(pParse, "generated column loop on \"%s\"", pCol->zName);
+        sqlite3ErrorMsg(pParse, "generated column loop on \"%s\"",
+                        pCol->zCnName);
       }else{
         int savedSelfTab = pParse->iSelfTab;
         pCol->colFlags |= COLFLAG_BUSY;
         pParse->iSelfTab = iTabCur+1;
-        sqlite3ExprCodeGeneratedColumn(pParse, pCol, regOut);
+        sqlite3ExprCodeGeneratedColumn(pParse, pTab, pCol, regOut);
         pParse->iSelfTab = savedSelfTab;
         pCol->colFlags &= ~COLFLAG_BUSY;
       }
@@ -3965,7 +3967,8 @@ expr_code_doover:
         if( pCol->iColumn<0 ){
           VdbeComment((v,"%s.rowid",pTab->zName));
         }else{
-          VdbeComment((v,"%s.%s",pTab->zName,pTab->aCol[pCol->iColumn].zName));
+          VdbeComment((v,"%s.%s", 
+              pTab->zName, pTab->aCol[pCol->iColumn].zCnName));
           if( pTab->aCol[pCol->iColumn].affinity==SQLITE_AFF_REAL ){
             sqlite3VdbeAddOp1(v, OP_RealAffinity, target);
           }
@@ -4026,12 +4029,12 @@ expr_code_doover:
           if( pCol->colFlags & COLFLAG_GENERATED ){
             if( pCol->colFlags & COLFLAG_BUSY ){
               sqlite3ErrorMsg(pParse, "generated column loop on \"%s\"",
-                              pCol->zName);
+                              pCol->zCnName);
               return 0;
             }
             pCol->colFlags |= COLFLAG_BUSY;
             if( pCol->colFlags & COLFLAG_NOTAVAIL ){
-              sqlite3ExprCodeGeneratedColumn(pParse, pCol, iSrc);
+              sqlite3ExprCodeGeneratedColumn(pParse, pTab, pCol, iSrc);
             }
             pCol->colFlags &= ~(COLFLAG_BUSY|COLFLAG_NOTAVAIL);
             return iSrc;
@@ -4509,7 +4512,7 @@ expr_code_doover:
       sqlite3VdbeAddOp2(v, OP_Param, p1, target);
       VdbeComment((v, "r[%d]=%s.%s", target,
         (pExpr->iTable ? "new" : "old"),
-        (pExpr->iColumn<0 ? "rowid" : pExpr->y.pTab->aCol[iCol].zName)
+        (pExpr->iColumn<0 ? "rowid" : pExpr->y.pTab->aCol[iCol].zCnName)
       ));
 
 #ifndef SQLITE_OMIT_FLOATING_POINT
@@ -5681,9 +5684,9 @@ static int impliesNotNullRow(Walker *pWalker, Expr *pExpr){
       testcase( pExpr->op==TK_GE );
       /* The y.pTab=0 assignment in wherecode.c always happens after the
       ** impliesNotNullRow() test */
-      if( (pLeft->op==TK_COLUMN && ALWAYS(pLeft->y.pTab!=0)
+      if( (pLeft->op==TK_COLUMN && pLeft->y.pTab!=0
                                && IsVirtual(pLeft->y.pTab))
-       || (pRight->op==TK_COLUMN && ALWAYS(pRight->y.pTab!=0)
+       || (pRight->op==TK_COLUMN && pRight->y.pTab!=0
                                && IsVirtual(pRight->y.pTab))
       ){
         return WRC_Prune;

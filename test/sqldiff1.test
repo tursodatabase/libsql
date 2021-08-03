@@ -35,6 +35,10 @@ do_test sqldiff-1.0 {
     DELETE FROM x2.t2 WHERE a=48;
     INSERT INTO x2.t1(a,b) VALUES(1234,'hello');
     INSERT INTO x2.t2(a,b) VALUES(50.5,'xyzzy');
+    INSERT INTO x2.t2(a,b) VALUES(51.5,'');
+    INSERT INTO x2.t2(a,b) VALUES(52.5,''||X'0d0a');
+    INSERT INTO x2.t2(a,b) VALUES(53.5,'one'||X'0a0d');
+    INSERT INTO x2.t2(a,b) VALUES(54.5,'one'||X'0a'||'two');
     CREATE TABLE x2.t3(a,b,c);
     INSERT INTO x2.t3 VALUES(111,222,333);
     CREATE TABLE main.t4(x,y,z);
@@ -50,6 +54,11 @@ do_test sqldiff-1.1 {
 INSERT INTO t1(a,b) VALUES(1234,'hello');
 DELETE FROM t2 WHERE a=48;
 INSERT INTO t2(a,b) VALUES(50.5,'xyzzy');
+INSERT INTO t2(a,b) VALUES(51.5,'');
+INSERT INTO t2(a,b) VALUES(52.5,''||X'0d0a');
+INSERT INTO t2(a,b) VALUES(53.5,'one'||X'0a0d');
+INSERT INTO t2(a,b) VALUES(54.5,'one'||X'0a'
+||'two');
 CREATE TABLE t3(a,b,c);
 INSERT INTO t3(rowid,a,b,c) VALUES(1,111,222,333);
 DROP TABLE t4;}

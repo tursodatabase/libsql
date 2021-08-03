@@ -1904,21 +1904,23 @@ proc do_ioerr_test {testname args} {
       set ::sqlite_io_error_hardhit 0
       set r [catch $::ioerrorbody msg]
       set ::errseen $r
-      set rc [sqlite3_errcode $::DB]
-      if {$::ioerropts(-erc)} {
-        # If we are in extended result code mode, make sure all of the
-        # IOERRs we get back really do have their extended code values.
-        # If an extended result code is returned, the sqlite3_errcode
-        # TCLcommand will return a string of the form:  SQLITE_IOERR+nnnn
-        # where nnnn is a number
-        if {[regexp {^SQLITE_IOERR} $rc] && ![regexp {IOERR\+\d} $rc]} {
-          return $rc
-        }
-      } else {
-        # If we are not in extended result code mode, make sure no
-        # extended error codes are returned.
-        if {[regexp {\+\d} $rc]} {
-          return $rc
+      if {[info commands db]!=""} {
+        set rc [sqlite3_errcode db]
+        if {$::ioerropts(-erc)} {
+          # If we are in extended result code mode, make sure all of the
+          # IOERRs we get back really do have their extended code values.
+          # If an extended result code is returned, the sqlite3_errcode
+          # TCLcommand will return a string of the form:  SQLITE_IOERR+nnnn
+          # where nnnn is a number
+          if {[regexp {^SQLITE_IOERR} $rc] && ![regexp {IOERR\+\d} $rc]} {
+            return $rc
+          }
+        } else {
+          # If we are not in extended result code mode, make sure no
+          # extended error codes are returned.
+          if {[regexp {\+\d} $rc]} {
+            return $rc
+          }
         }
       }
       # The test repeats as long as $::go is non-zero.  $::go starts out

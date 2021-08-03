@@ -293,7 +293,7 @@ void sqlite3ComputeGeneratedColumns(
         int x;
         pCol->colFlags |= COLFLAG_BUSY;
         w.eCode = 0;
-        sqlite3WalkExpr(&w, pCol->pDflt);
+        sqlite3WalkExpr(&w, sqlite3ColumnExpr(pTab, pCol));
         pCol->colFlags &= ~COLFLAG_BUSY;
         if( w.eCode & COLFLAG_NOTAVAIL ){
           pRedo = pCol;
@@ -302,13 +302,13 @@ void sqlite3ComputeGeneratedColumns(
         eProgress = 1;
         assert( pCol->colFlags & COLFLAG_GENERATED );
         x = sqlite3TableColumnToStorage(pTab, i) + iRegStore;
-        sqlite3ExprCodeGeneratedColumn(pParse, pCol, x);
+        sqlite3ExprCodeGeneratedColumn(pParse, pTab, pCol, x);
         pCol->colFlags &= ~COLFLAG_NOTAVAIL;
       }
     }
   }while( pRedo && eProgress );
   if( pRedo ){
-    sqlite3ErrorMsg(pParse, "generated column loop on \"%s\"", pRedo->zName);
+    sqlite3ErrorMsg(pParse, "generated column loop on \"%s\"", pRedo->zCnName);
   }
   pParse->iSelfTab = 0;
 }
@@ -703,7 +703,7 @@ void sqlite3Insert(
   */
 #ifndef SQLITE_OMIT_TRIGGER
   pTrigger = sqlite3TriggersExist(pParse, pTab, TK_INSERT, 0, &tmask);
-  isView = pTab->pSelect!=0;
+  isView = IsView(pTab);
 #else
 # define pTrigger 0
 # define tmask 0
@@ -794,7 +794,7 @@ void sqlite3Insert(
     }
     for(i=0; i<pColumn->nId; i++){
       for(j=0; j<pTab->nCol; j++){
-        if( sqlite3StrICmp(pColumn->a[i].zName, pTab->aCol[j].zName)==0 ){
+        if( sqlite3StrICmp(pColumn->a[i].zName, pTab->aCol[j].zCnName)==0 ){
           pColumn->a[i].idx = j;
           if( i!=j ) bIdListInOrder = 0;
           if( j==pTab->iPKey ){
@@ -804,7 +804,7 @@ void sqlite3Insert(
           if( pTab->aCol[j].colFlags & (COLFLAG_STORED|COLFLAG_VIRTUAL) ){
             sqlite3ErrorMsg(pParse, 
                "cannot INSERT into generated column \"%s\"",
-               pTab->aCol[j].zName);
+               pTab->aCol[j].zCnName);
             goto insert_cleanup;
           }
 #endif
@@ -989,7 +989,7 @@ void sqlite3Insert(
               pTab->zName);
       goto insert_cleanup;
     }
-    if( pTab->pSelect ){
+    if( IsView(pTab) ){
       sqlite3ErrorMsg(pParse, "cannot UPSERT a view");
       goto insert_cleanup;
     }
@@ -1088,7 +1088,9 @@ void sqlite3Insert(
       }else if( pColumn==0 ){
         /* Hidden columns that are not explicitly named in the INSERT
         ** get there default value */
-        sqlite3ExprCodeFactorable(pParse, pTab->aCol[i].pDflt, iRegStore);
+        sqlite3ExprCodeFactorable(pParse, 
+            sqlite3ColumnExpr(pTab, &pTab->aCol[i]),
+            iRegStore);
         continue;
       }
     }
@@ -1097,13 +1099,17 @@ void sqlite3Insert(
       if( j>=pColumn->nId ){
         /* A column not named in the insert column list gets its
         ** default value */
-        sqlite3ExprCodeFactorable(pParse, pTab->aCol[i].pDflt, iRegStore);
+        sqlite3ExprCodeFactorable(pParse, 
+            sqlite3ColumnExpr(pTab, &pTab->aCol[i]),
+            iRegStore);
         continue;
       }
       k = j;
     }else if( nColumn==0 ){
       /* This is INSERT INTO ... DEFAULT VALUES.  Load the default value. */
-      sqlite3ExprCodeFactorable(pParse, pTab->aCol[i].pDflt, iRegStore);
+      sqlite3ExprCodeFactorable(pParse, 
+          sqlite3ColumnExpr(pTab, &pTab->aCol[i]),
+          iRegStore);
       continue;
     }else{
       k = i - nHidden;
@@ -1618,7 +1624,7 @@ void sqlite3GenerateConstraintChecks(
   db = pParse->db;
   v = pParse->pVdbe;
   assert( v!=0 );
-  assert( pTab->pSelect==0 );  /* This table is not a VIEW */
+  assert( !IsView(pTab) );  /* This table is not a VIEW */
   nCol = pTab->nCol;
   
   /* pPk is the PRIMARY KEY index for WITHOUT ROWID tables and NULL for
@@ -1669,7 +1675,7 @@ void sqlite3GenerateConstraintChecks(
         }
         if( onError==OE_Replace ){
           if( b2ndPass        /* REPLACE becomes ABORT on the 2nd pass */
-           || pCol->pDflt==0  /* REPLACE is ABORT if no DEFAULT value */
+           || pCol->iDflt==0  /* REPLACE is ABORT if no DEFAULT value */
           ){
             testcase( pCol->colFlags & COLFLAG_VIRTUAL );
             testcase( pCol->colFlags & COLFLAG_STORED );
@@ -1691,7 +1697,8 @@ void sqlite3GenerateConstraintChecks(
             VdbeCoverage(v);
             assert( (pCol->colFlags & COLFLAG_GENERATED)==0 );
             nSeenReplace++;
-            sqlite3ExprCodeCopy(pParse, pCol->pDflt, iReg);
+            sqlite3ExprCodeCopy(pParse,
+               sqlite3ColumnExpr(pTab, pCol), iReg);
             sqlite3VdbeJumpHere(v, addr1);
             break;
           }
@@ -1701,7 +1708,7 @@ void sqlite3GenerateConstraintChecks(
           case OE_Rollback:
           case OE_Fail: {
             char *zMsg = sqlite3MPrintf(db, "%s.%s", pTab->zName,
-                                        pCol->zName);
+                                        pCol->zCnName);
             sqlite3VdbeAddOp3(v, OP_HaltIfNull, SQLITE_CONSTRAINT_NOTNULL,
                               onError, iReg);
             sqlite3VdbeAppendP4(v, zMsg, P4_DYNAMIC);
@@ -2119,7 +2126,7 @@ void sqlite3GenerateConstraintChecks(
         testcase( sqlite3TableColumnToStorage(pTab, iField)!=iField );
         x = sqlite3TableColumnToStorage(pTab, iField) + regNewData + 1;
         sqlite3VdbeAddOp2(v, OP_SCopy, x, regIdx+i);
-        VdbeComment((v, "%s", pTab->aCol[iField].zName));
+        VdbeComment((v, "%s", pTab->aCol[iField].zCnName));
       }
     }
     sqlite3VdbeAddOp3(v, OP_MakeRecord, regIdx, pIdx->nColumn, aRegIdx[ix]);
@@ -2178,7 +2185,7 @@ void sqlite3GenerateConstraintChecks(
      && ( 0==(db->flags&SQLITE_RecTriggers) ||      /* Condition 4 */
           0==sqlite3TriggersExist(pParse, pTab, TK_DELETE, 0, 0))
      && ( 0==(db->flags&SQLITE_ForeignKeys) ||      /* Condition 5 */
-         (0==pTab->pFKey && 0==sqlite3FkReferences(pTab)))
+         (0==pTab->u.tab.pFKey && 0==sqlite3FkReferences(pTab)))
     ){
       sqlite3VdbeResolveLabel(v, addrUniqueOk);
       continue;
@@ -2213,7 +2220,7 @@ void sqlite3GenerateConstraintChecks(
             x = sqlite3TableColumnToIndex(pIdx, pPk->aiColumn[i]);
             sqlite3VdbeAddOp3(v, OP_Column, iThisCur, x, regR+i);
             VdbeComment((v, "%s.%s", pTab->zName,
-                         pTab->aCol[pPk->aiColumn[i]].zName));
+                         pTab->aCol[pPk->aiColumn[i]].zCnName));
           }
         }
         if( isUpdate ){
@@ -2412,7 +2419,7 @@ void sqlite3SetMakeRecordP5(Vdbe *v, Table *pTab){
   if( pTab->pSchema->file_format<2 ) return;
 
   for(i=pTab->nCol-1; i>0; i--){
-    if( pTab->aCol[i].pDflt!=0 ) break;
+    if( pTab->aCol[i].iDflt!=0 ) break;
     if( pTab->aCol[i].colFlags & COLFLAG_PRIMKEY ) break;
   }
   sqlite3VdbeChangeP5(v, i+1);
@@ -2477,7 +2484,7 @@ void sqlite3CompleteInsertion(
 
   v = pParse->pVdbe;
   assert( v!=0 );
-  assert( pTab->pSelect==0 );  /* This table is not a VIEW */
+  assert( !IsView(pTab) );  /* This table is not a VIEW */
   for(i=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
     /* All REPLACE indexes are at the end of the list */
     assert( pIdx->onError!=OE_Replace
@@ -2779,13 +2786,8 @@ static int xferOptimization(
   if( HasRowid(pDest)!=HasRowid(pSrc) ){
     return 0;   /* source and destination must both be WITHOUT ROWID or not */
   }
-#ifndef SQLITE_OMIT_VIRTUALTABLE
-  if( IsVirtual(pSrc) ){
-    return 0;   /* tab2 must not be a virtual table */
-  }
-#endif
-  if( pSrc->pSelect ){
-    return 0;   /* tab2 may not be a view */
+  if( !IsOrdinaryTable(pSrc) ){
+    return 0;   /* tab2 may not be a view or virtual table */
   }
   if( pDest->nCol!=pSrc->nCol ){
     return 0;   /* Number of columns must be the same in tab1 and tab2 */
@@ -2829,7 +2831,9 @@ static int xferOptimization(
     ** This requirement could be relaxed for VIRTUAL columns, I suppose.
     */
     if( (pDestCol->colFlags & COLFLAG_GENERATED)!=0 ){
-      if( sqlite3ExprCompare(0, pSrcCol->pDflt, pDestCol->pDflt, -1)!=0 ){
+      if( sqlite3ExprCompare(0,
+             sqlite3ColumnExpr(pSrc, pSrcCol),
+             sqlite3ColumnExpr(pDest, pDestCol), -1)!=0 ){
         testcase( pDestCol->colFlags & COLFLAG_VIRTUAL );
         testcase( pDestCol->colFlags & COLFLAG_STORED );
         return 0;  /* Different generator expressions */
@@ -2839,7 +2843,7 @@ static int xferOptimization(
     if( pDestCol->affinity!=pSrcCol->affinity ){
       return 0;    /* Affinity must be the same on all columns */
     }
-    if( sqlite3_stricmp(pDestCol->zColl, pSrcCol->zColl)!=0 ){
+    if( sqlite3_stricmp(pDestCol->zCnColl, pSrcCol->zCnColl)!=0 ){
       return 0;    /* Collating sequence must be the same on all columns */
     }
     if( pDestCol->notNull && !pSrcCol->notNull ){
@@ -2847,11 +2851,13 @@ static int xferOptimization(
     }
     /* Default values for second and subsequent columns need to match. */
     if( (pDestCol->colFlags & COLFLAG_GENERATED)==0 && i>0 ){
-      assert( pDestCol->pDflt==0 || pDestCol->pDflt->op==TK_SPAN );
-      assert( pSrcCol->pDflt==0 || pSrcCol->pDflt->op==TK_SPAN );
-      if( (pDestCol->pDflt==0)!=(pSrcCol->pDflt==0) 
-       || (pDestCol->pDflt && strcmp(pDestCol->pDflt->u.zToken,
-                                       pSrcCol->pDflt->u.zToken)!=0)
+      Expr *pDestExpr = sqlite3ColumnExpr(pDest, pDestCol);
+      Expr *pSrcExpr = sqlite3ColumnExpr(pSrc, pSrcCol);
+      assert( pDestExpr==0 || pDestExpr->op==TK_SPAN );
+      assert( pSrcExpr==0 || pSrcExpr->op==TK_SPAN );
+      if( (pDestExpr==0)!=(pSrcExpr==0) 
+       || (pDestExpr!=0 && strcmp(pDestExpr->u.zToken,
+                                       pSrcExpr->u.zToken)!=0)
       ){
         return 0;    /* Default values must be the same for all columns */
       }
@@ -2888,7 +2894,7 @@ static int xferOptimization(
   ** the extra complication to make this rule less restrictive is probably
   ** not worth the effort.  Ticket [6284df89debdfa61db8073e062908af0c9b6118e]
   */
-  if( (db->flags & SQLITE_ForeignKeys)!=0 && pDest->pFKey!=0 ){
+  if( (db->flags & SQLITE_ForeignKeys)!=0 && pDest->u.tab.pFKey!=0 ){
     return 0;
   }
 #endif

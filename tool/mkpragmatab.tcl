@@ -304,12 +304,12 @@ set pragma_def {
   IF:   !defined(SQLITE_OMIT_CASE_SENSITIVE_LIKE_PRAGMA)
 
   NAME: integrity_check
-  FLAG: NeedSchema Result0 Result1
+  FLAG: NeedSchema Result0 Result1 SchemaOpt
   IF:   !defined(SQLITE_OMIT_INTEGRITY_CHECK)
 
   NAME: quick_check
   TYPE: INTEGRITY_CHECK
-  FLAG: NeedSchema Result0 Result1
+  FLAG: NeedSchema Result0 Result1 SchemaOpt
   IF:   !defined(SQLITE_OMIT_INTEGRITY_CHECK)
 
   NAME: encoding
