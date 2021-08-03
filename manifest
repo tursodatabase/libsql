@@ -1,5 +1,5 @@
-C Refactor\sfield\snames\sin\sthe\sColumn\sobject,\szCnName\sand\szCnColl,\sto\smake\sthem\nunique\sand\sthus\seasier\sto\sfind\samid\sall\sthe\sother\scode.
-D 2021-08-02T18:03:43.555
+C Improved\sharmony\swith\sthe\sreuse-schema\sbranch.
+D 2021-08-03T18:45:41.599
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -498,7 +498,7 @@ F src/dbstat.c 3aa79fc3aed7ce906e4ea6c10e85d657299e304f6049861fe300053ac57de36c
 F src/delete.c b43f0f4db586acf0b4078e3982485c26fbec984674df513d5ade48a08a323c5a
 F src/expr.c 0d541b9f9ecddf9d6d310f31922006f03509d7264ef53ac39c391b82a62383f9
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
-F src/fkey.c 7713a4e87755afbe85d1cb3e3e36b6a9989dc24a210a4e99bf2af9a9ae2851c2
+F src/fkey.c 9e2b4127463c18e6351ff3665475045f048dd2e2f72a3761721e4ff6c6a45abf
 F src/func.c c224240cbc97fa5e9c4fe9acb128716cb835ca045532bca6951b7c45b020c56c
 F src/global.c 5eba017ebbd887e2365e6e6e815e1619e41406b8946d17594e94116174787df5
 F src/hash.c 8d7dda241d0ebdafb6ffdeda3149a412d7df75102cecfc1021c98d6219823b19
@@ -1920,7 +1920,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bbb6759bcf6e01d36dfc787a82a610d359f50aaeac8104b73883a84906d54e1f
-R 7046be8b76bab8142bfe76e50eb88e2a
+P 8b781dcaf68e0cf12a844708c82eee00193e340195cbca915d077e4846983bf3
+R aec3d39b20c053360793daa87c6c0ea6
 U drh
-Z 5e85f685bd644cac3700fa74d443a453
+Z 2256f032a8f708c831506dd967b0c662
