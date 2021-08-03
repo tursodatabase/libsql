@@ -120,7 +120,6 @@ set boolean_defnil_options {
   SQLITE_MUTEX_PTHREADS
   SQLITE_MUTEX_W32
   SQLITE_NEED_ERR_NAME
-  SQLITE_NOINLINE
   SQLITE_NO_SYNC
   SQLITE_OMIT_ALTERTABLE
   SQLITE_OMIT_ANALYZE
@@ -216,6 +215,7 @@ set value2_options {
 # and is a single scalar.
 #
 set value_options {
+  SQLITE_ATOMIC_INTRINSICS
   SQLITE_BITMASK_TYPE
   SQLITE_DEFAULT_CACHE_SIZE
   SQLITE_DEFAULT_FILE_FORMAT
@@ -330,7 +330,7 @@ foreach name_defval $boolean_defnnz_options {
 foreach b $boolean_defnil_options {
   set name [trim_name $b]
   set options($name) [subst {
-#if $b
+#ifdef $b
   "$name",
 #endif
 }]

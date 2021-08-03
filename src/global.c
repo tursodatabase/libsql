@@ -347,3 +347,23 @@ const unsigned char sqlite3OpcodeProperty[] = OPFLG_INITIALIZER;
 ** Name of the default collating sequence
 */
 const char sqlite3StrBINARY[] = "BINARY";
+
+/*
+** Standard typenames.  These names must match the COLTYPE_* definitions.
+** Adjust the SQLITE_N_STDTYPE value if adding or removing entries.
+*/
+const unsigned char sqlite3StdTypeLen[] = { 4, 3, 7, 4, 4 };
+const char sqlite3StdTypeAffinity[] = {
+  SQLITE_AFF_BLOB,
+  SQLITE_AFF_INTEGER,
+  SQLITE_AFF_INTEGER,
+  SQLITE_AFF_REAL,
+  SQLITE_AFF_TEXT
+};
+const char *sqlite3StdType[] = {
+  "BLOB",
+  "INT",
+  "INTEGER",
+  "REAL",
+  "TEXT"
+};

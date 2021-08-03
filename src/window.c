@@ -908,9 +908,7 @@ static ExprList *exprListAppendList(
       if( bIntToNull ){
         int iDummy;
         Expr *pSub;
-        for(pSub=pDup; ExprHasProperty(pSub, EP_Skip); pSub=pSub->pLeft){
-          assert( pSub );
-        }
+        pSub = sqlite3ExprSkipCollateAndLikely(pDup);
         if( sqlite3ExprIsInteger(pSub, &iDummy) ){
           pSub->op = TK_NULL;
           pSub->flags &= ~(EP_IntValue|EP_IsTrue|EP_IsFalse);
@@ -1072,7 +1070,7 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
       Table *pTab2;
       p->pSrc->a[0].pSelect = pSub;
       sqlite3SrcListAssignCursors(pParse, p->pSrc);
-      pSub->selFlags |= SF_Expanded;
+      pSub->selFlags |= SF_Expanded|SF_OrderByReqd;
       pTab2 = sqlite3ResultSetOfSelect(pParse, pSub, SQLITE_AFF_NONE);
       pSub->selFlags |= (selFlags & SF_Aggregate);
       if( pTab2==0 ){

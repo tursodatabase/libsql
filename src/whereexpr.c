@@ -1144,7 +1144,11 @@ static void exprAnalyze(
       pNew->prereqRight = prereqLeft | extraRight;
       pNew->prereqAll = prereqAll;
       pNew->eOperator = (operatorMask(pDup->op) + eExtraOp) & opMask;
-    }else if( op==TK_ISNULL && 0==sqlite3ExprCanBeNull(pLeft) ){
+    }else 
+    if( op==TK_ISNULL
+     && !ExprHasProperty(pExpr,EP_FromJoin)
+     && 0==sqlite3ExprCanBeNull(pLeft)
+    ){
       pExpr->op = TK_TRUEFALSE;
       pExpr->u.zToken = "false";
       ExprSetProperty(pExpr, EP_IsFalse);
@@ -1341,8 +1345,8 @@ static void exprAnalyze(
     for(i=0; i<nLeft; i++){
       int idxNew;
       Expr *pNew;
-      Expr *pLeft = sqlite3ExprForVectorField(pParse, pExpr->pLeft, i);
-      Expr *pRight = sqlite3ExprForVectorField(pParse, pExpr->pRight, i);
+      Expr *pLeft = sqlite3ExprForVectorField(pParse, pExpr->pLeft, i, nLeft);
+      Expr *pRight = sqlite3ExprForVectorField(pParse, pExpr->pRight, i, nLeft);
 
       pNew = sqlite3PExpr(pParse, pExpr->op, pLeft, pRight);
       transferJoinMarkings(pNew, pExpr);

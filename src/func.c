@@ -574,7 +574,7 @@ static void last_insert_rowid(
 ** Implementation of the changes() SQL function.
 **
 ** IMP: R-62073-11209 The changes() SQL function is a wrapper
-** around the sqlite3_changes() C/C++ function and hence follows the same
+** around the sqlite3_changes64() C/C++ function and hence follows the same
 ** rules for counting changes.
 */
 static void changes(
@@ -584,12 +584,12 @@ static void changes(
 ){
   sqlite3 *db = sqlite3_context_db_handle(context);
   UNUSED_PARAMETER2(NotUsed, NotUsed2);
-  sqlite3_result_int(context, sqlite3_changes(db));
+  sqlite3_result_int64(context, sqlite3_changes64(db));
 }
 
 /*
 ** Implementation of the total_changes() SQL function.  The return value is
-** the same as the sqlite3_total_changes() API function.
+** the same as the sqlite3_total_changes64() API function.
 */
 static void total_changes(
   sqlite3_context *context,
@@ -598,9 +598,9 @@ static void total_changes(
 ){
   sqlite3 *db = sqlite3_context_db_handle(context);
   UNUSED_PARAMETER2(NotUsed, NotUsed2);
-  /* IMP: R-52756-41993 This function is a wrapper around the
+  /* IMP: R-52756-41993 This function was a wrapper around the
   ** sqlite3_total_changes() C/C++ interface. */
-  sqlite3_result_int(context, sqlite3_total_changes(db));
+  sqlite3_result_int64(context, sqlite3_total_changes64(db));
 }
 
 /*
@@ -2162,11 +2162,11 @@ void sqlite3RegisterBuiltinFunctions(void){
     FUNCTION(min,               -1, 0, 1, minmaxFunc       ),
     FUNCTION(min,                0, 0, 1, 0                ),
     WAGGREGATE(min, 1, 0, 1, minmaxStep, minMaxFinalize, minMaxValue, 0,
-                                          SQLITE_FUNC_MINMAX ),
+                                 SQLITE_FUNC_MINMAX|SQLITE_FUNC_ANYORDER ),
     FUNCTION(max,               -1, 1, 1, minmaxFunc       ),
     FUNCTION(max,                0, 1, 1, 0                ),
     WAGGREGATE(max, 1, 1, 1, minmaxStep, minMaxFinalize, minMaxValue, 0,
-                                          SQLITE_FUNC_MINMAX ),
+                                 SQLITE_FUNC_MINMAX|SQLITE_FUNC_ANYORDER ),
     FUNCTION2(typeof,            1, 0, 0, typeofFunc,  SQLITE_FUNC_TYPEOF),
     FUNCTION2(length,            1, 0, 0, lengthFunc,  SQLITE_FUNC_LENGTH),
     FUNCTION(instr,              2, 0, 0, instrFunc        ),
@@ -2202,9 +2202,10 @@ void sqlite3RegisterBuiltinFunctions(void){
     WAGGREGATE(total, 1,0,0, sumStep,totalFinalize,totalFinalize,sumInverse, 0),
     WAGGREGATE(avg,   1,0,0, sumStep, avgFinalize, avgFinalize, sumInverse, 0),
     WAGGREGATE(count, 0,0,0, countStep, 
-        countFinalize, countFinalize, countInverse, SQLITE_FUNC_COUNT  ),
+        countFinalize, countFinalize, countInverse,
+        SQLITE_FUNC_COUNT|SQLITE_FUNC_ANYORDER  ),
     WAGGREGATE(count, 1,0,0, countStep, 
-        countFinalize, countFinalize, countInverse, 0  ),
+        countFinalize, countFinalize, countInverse, SQLITE_FUNC_ANYORDER ),
     WAGGREGATE(group_concat, 1, 0, 0, groupConcatStep, 
         groupConcatFinalize, groupConcatValue, groupConcatInverse, 0),
     WAGGREGATE(group_concat, 2, 0, 0, groupConcatStep, 

@@ -365,5 +365,21 @@ foreach {tn update nm} {
     "1 {target object/alias may not appear in FROM clause: $nm}"
 }
 
+#--------------------------------------------------------------------------
+reset_db
+do_execsql_test 6.0 {
+  CREATE TABLE t1(a); 
+}
+
+do_execsql_test 6.1 {
+  UPDATE t1 SET a = 1 FROM (
+      SELECT * FROM t1
+  )
+} {}
+do_execsql_test 6.2 {
+  UPDATE t1 SET a = 1 FROM (
+      SELECT * FROM t1 UNION ALL SELECT * FROM t1
+  )
+} {}
 
 finish_test
