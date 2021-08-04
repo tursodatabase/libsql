@@ -1194,7 +1194,9 @@ static void rbuTableType(
   assert( p->rc==SQLITE_OK );
   p->rc = prepareFreeAndCollectError(p->dbMain, &aStmt[0], &p->zErrmsg, 
     sqlite3_mprintf(
-          "SELECT (sql LIKE 'create virtual%%'), rootpage"
+          "SELECT "
+          " (sql COLLATE nocase BETWEEN 'CREATE VIRTUAL' AND 'CREATE VIRTUAM'),"
+          " rootpage"
           "  FROM sqlite_schema"
           " WHERE name=%Q", zTab
   ));
