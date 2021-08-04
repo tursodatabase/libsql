@@ -686,8 +686,8 @@ void sqlite3ColumnSetExpr(
   assert( !IsVirtual(pTab) );
   pList = pTab->u.tab.pDfltList;
   if( pCol->iDflt==0
-   || pList==0
-   || pList->nExpr<pCol->iDflt
+   || NEVER(pList==0)
+   || NEVER(pList->nExpr<pCol->iDflt)
   ){
     pCol->iDflt = pList==0 ? 1 : pList->nExpr+1;
     pTab->u.tab.pDfltList = sqlite3ExprListAppend(pParse, pList, pExpr);
@@ -704,9 +704,9 @@ void sqlite3ColumnSetExpr(
 */
 Expr *sqlite3ColumnExpr(Table *pTab, Column *pCol){
   if( pCol->iDflt==0 ) return 0;
-  if( IsVirtual(pTab) ) return 0;
-  if( pTab->u.tab.pDfltList==0 ) return 0;
-  if( pTab->u.tab.pDfltList->nExpr<pCol->iDflt ) return 0;
+  if( NEVER(IsVirtual(pTab)) ) return 0;
+  if( NEVER(pTab->u.tab.pDfltList==0) ) return 0;
+  if( NEVER(pTab->u.tab.pDfltList->nExpr<pCol->iDflt) ) return 0;
   return pTab->u.tab.pDfltList->a[pCol->iDflt-1].pExpr;
 }
 
@@ -3561,7 +3561,7 @@ void sqlite3DeferForeignKey(Parse *pParse, int isDeferred){
   Table *pTab;
   FKey *pFKey;
   if( (pTab = pParse->pNewTable)==0 ) return;
-  if( IsVirtual(pTab) ) return;
+  if( NEVER(IsVirtual(pTab)) ) return;
   if( (pFKey = pTab->u.tab.pFKey)==0 ) return;
   assert( isDeferred==0 || isDeferred==1 ); /* EV: R-30323-21917 */
   pFKey->isDeferred = (u8)isDeferred;
