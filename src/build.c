@@ -285,20 +285,22 @@ void sqlite3FinishCoding(Parse *pParse){
 /*
 ** Run the parser and code generator recursively in order to generate
 ** code for the SQL statement given onto the end of the pParse context
-** currently under construction.  When the parser is run recursively
-** this way, the final OP_Halt is not appended and other initialization
-** and finalization steps are omitted because those are handling by the
-** outermost parser.
+** currently under construction.  Notes:
 **
-** Not everything is nestable.  This facility is designed to permit
-** INSERT, UPDATE, and DELETE operations against the schema table.  Use
-** care if you decide to try to use this routine for some other purposes.
+**   *  The final OP_Halt is not appended and other initialization
+**      and finalization steps are omitted because those are handling by the
+**      outermost parser.
+**
+**   *  Built-in SQL functions always take precedence over application-defined
+**      SQL functions.  In other words, it is not possible to override a
+**      built-in function.
 */
 void sqlite3NestedParse(Parse *pParse, const char *zFormat, ...){
   va_list ap;
   char *zSql;
   char *zErrMsg = 0;
   sqlite3 *db = pParse->db;
+  u32 savedDbFlags = db->mDbFlags;
   char saveBuf[PARSE_TAIL_SZ];
 
   if( pParse->nErr ) return;
@@ -317,7 +319,9 @@ void sqlite3NestedParse(Parse *pParse, const char *zFormat, ...){
   pParse->nested++;
   memcpy(saveBuf, PARSE_TAIL(pParse), PARSE_TAIL_SZ);
   memset(PARSE_TAIL(pParse), 0, PARSE_TAIL_SZ);
+  db->mDbFlags |= DBFLAG_PreferBuiltin;
   sqlite3RunParser(pParse, zSql, &zErrMsg);
+  db->mDbFlags = savedDbFlags;
   sqlite3DbFree(db, zErrMsg);
   sqlite3DbFree(db, zSql);
   memcpy(PARSE_TAIL(pParse), saveBuf, PARSE_TAIL_SZ);
