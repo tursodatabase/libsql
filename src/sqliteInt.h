@@ -2028,10 +2028,17 @@ struct Module {
 **                            or equal to the table column index.  It is
 **                            equal if and only if there are no VIRTUAL
 **                            columns to the left.
+**
+** Notes on zCnName:
+** The zCnName field stores the name of the column, the datatype of the
+** column, and the collating sequence for the column, in that order, all in
+** a single allocation.  Each string is 0x00 terminated.  The datatype
+** is only included if the COLFLAG_HASTYPE bit of colFlags is set and the
+** collating sequence name is only included if the COLFLAG_HASCOLL bit is
+** set.
 */
 struct Column {
   char *zCnName;   /* Name of this column */
-  char *zCnColl;   /* Collating sequence.  If NULL, use the default */
   u8 notNull : 4;  /* An OE_ code for handling a NOT NULL constraint */
   u8 eType : 4;    /* One of the standard types */
   char affinity;   /* One of the SQLITE_AFF_... values */
@@ -2072,6 +2079,7 @@ struct Column {
 #define COLFLAG_STORED    0x0040   /* GENERATED ALWAYS AS ... STORED */
 #define COLFLAG_NOTAVAIL  0x0080   /* STORED column not yet calculated */
 #define COLFLAG_BUSY      0x0100   /* Blocks recursion on GENERATED columns */
+#define COLFLAG_HASCOLL   0x0200   /* Has collating sequence name in zCnName */
 #define COLFLAG_GENERATED 0x0060   /* Combo: _STORED, _VIRTUAL */
 #define COLFLAG_NOINSERT  0x0062   /* Combo: _HIDDEN, _STORED, _VIRTUAL */
 
@@ -4398,6 +4406,8 @@ void sqlite3CollapseDatabaseArray(sqlite3*);
 void sqlite3CommitInternalChanges(sqlite3*);
 void sqlite3ColumnSetExpr(Parse*,Table*,Column*,Expr*);
 Expr *sqlite3ColumnExpr(Table*,Column*);
+void sqlite3ColumnSetColl(sqlite3*,Column*,const char*zColl);
+const char *sqlite3ColumnColl(Column*);
 void sqlite3DeleteColumnNames(sqlite3*,Table*);
 void sqlite3GenerateColumnNames(Parse *pParse, Select *pSelect);
 int sqlite3ColumnsFromExprList(Parse*,ExprList*,i16*,Column**);

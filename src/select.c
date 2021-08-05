@@ -2193,8 +2193,9 @@ void sqlite3SelectAddColumnTypeAndCollation(
     }
     if( pCol->affinity<=SQLITE_AFF_NONE ) pCol->affinity = aff;
     pColl = sqlite3ExprCollSeq(pParse, p);
-    if( pColl && pCol->zCnColl==0 ){
-      pCol->zCnColl = sqlite3DbStrDup(db, pColl->zName);
+    if( pColl && (pCol->colFlags & COLFLAG_HASCOLL)==0 ){
+      assert( pTab->pIndex==0 );
+      sqlite3ColumnSetColl(db, pCol, pColl->zName);
     }
   }
   pTab->szTabRow = 1; /* Any non-zero value works */

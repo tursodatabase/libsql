@@ -711,6 +711,45 @@ Expr *sqlite3ColumnExpr(Table *pTab, Column *pCol){
 }
 
 /*
+** Set the collating sequence name for a column.
+*/
+void sqlite3ColumnSetColl(
+  sqlite3 *db,
+  Column *pCol,
+  const char *zColl
+){
+  int nColl;
+  int n;
+  char *zNew;
+  assert( zColl!=0 );
+  n = sqlite3Strlen30(pCol->zCnName) + 1;
+  if( pCol->colFlags & COLFLAG_HASTYPE ){
+    n += sqlite3Strlen30(pCol->zCnName+n) + 1;
+  }
+  nColl = sqlite3Strlen30(zColl) + 1;
+  zNew = sqlite3DbRealloc(db, pCol->zCnName, nColl+n);
+  if( zNew ){
+    pCol->zCnName = zNew;
+    memcpy(pCol->zCnName + n, zColl, nColl);
+    pCol->colFlags |= COLFLAG_HASCOLL;
+  }
+}
+
+/*
+** Return the collating squence name for a column
+*/
+const char *sqlite3ColumnColl(Column *pCol){
+  const char *z;
+  if( (pCol->colFlags & COLFLAG_HASCOLL)==0 ) return 0;
+  z = pCol->zCnName;
+  while( *z ){ z++; }
+  if( pCol->colFlags & COLFLAG_HASTYPE ){
+    do{ z++; }while( *z );
+  }
+  return z+1;
+}
+
+/*
 ** Delete memory allocated for the column names of a table or view (the
 ** Table.aCol[] array).
 */
@@ -722,7 +761,6 @@ void sqlite3DeleteColumnNames(sqlite3 *db, Table *pTable){
     for(i=0; i<pTable->nCol; i++, pCol++){
       assert( pCol->zCnName==0 || pCol->hName==sqlite3StrIHash(pCol->zCnName) );
       sqlite3DbFree(db, pCol->zCnName);
-      sqlite3DbFree(db, pCol->zCnColl);
     }
     sqlite3DbFree(db, pTable->aCol);
     if( !IsVirtual(pTable) ){
@@ -1891,8 +1929,7 @@ void sqlite3AddCollateType(Parse *pParse, Token *pToken){
 
   if( sqlite3LocateCollSeq(pParse, zColl) ){
     Index *pIdx;
-    sqlite3DbFree(db, p->aCol[i].zCnColl);
-    p->aCol[i].zCnColl = zColl;
+    sqlite3ColumnSetColl(db, &p->aCol[i], zColl);
   
     /* If the column is declared as "<name> PRIMARY KEY COLLATE <type>",
     ** then an index may have been created on this column before the
@@ -1901,12 +1938,11 @@ void sqlite3AddCollateType(Parse *pParse, Token *pToken){
     for(pIdx=p->pIndex; pIdx; pIdx=pIdx->pNext){
       assert( pIdx->nKeyCol==1 );
       if( pIdx->aiColumn[0]==i ){
-        pIdx->azColl[0] = p->aCol[i].zCnColl;
+        pIdx->azColl[0] = sqlite3ColumnColl(&p->aCol[i]);
       }
     }
-  }else{
-    sqlite3DbFree(db, zColl);
   }
+  sqlite3DbFree(db, zColl);
 }
 
 /* Change the most recently parsed column to be a GENERATED ALWAYS AS
@@ -4066,7 +4102,7 @@ void sqlite3CreateIndex(
       zExtra += nColl;
       nExtra -= nColl;
     }else if( j>=0 ){
-      zColl = pTab->aCol[j].zCnColl;
+      zColl = sqlite3ColumnColl(&pTab->aCol[j]);
     }
     if( !zColl ) zColl = sqlite3StrBINARY;
     if( !db->init.busy && !sqlite3LocateCollSeq(pParse, zColl) ){
