@@ -1,5 +1,5 @@
-C Attempt\sto\sfix\sthe\sshowwal.c\sutility\sprogram\sso\sthat\sit\sworks\son\sWAL\sfiles\nlarger\sthan\s4GiB.
-D 2021-08-06T19:38:23.599
+C Fix\san\sRBU\sproblem\swith\srestarting\san\supdate\safter\sthe\s*-oal\sfile\sis\salready\slarger\sthan\s4GiB.
+D 2021-08-06T20:17:39.191
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -379,7 +379,7 @@ F ext/rbu/rbuvacuum.test 55e101e90168c2b31df6c9638fe73dc7f7cc666b6142266d1563697
 F ext/rbu/rbuvacuum2.test b8e5b51dc8b2c0153373d024c0936be3f66f9234acbd6d0baab0869d56b14e6b
 F ext/rbu/rbuvacuum3.test 8addd82e4b83b4c93fa47428eae4fd0dbf410f8512c186f38e348feb49ba03dc
 F ext/rbu/rbuvacuum4.test a78898e438a44803eb2bc897ba3323373c9f277418e2d6d76e90f2f1dbccfd10
-F ext/rbu/sqlite3rbu.c 496c11fa35fbfd977171de50baccd9c73ecc9e30e4aa037ebe3a992fb9fe4288
+F ext/rbu/sqlite3rbu.c d020eda938e3ed1c5227a7e1425751a9870f5d143542d806f8098c8cfa2eafa0
 F ext/rbu/sqlite3rbu.h 1dc88ab7bd32d0f15890ea08d23476c4198d3da3056985403991f8c9cd389812
 F ext/rbu/test_rbu.c 03f6f177096a5f822d68d8e4069ad8907fe572c62ff2d19b141f59742821828a
 F ext/repair/README.md 92f5e8aae749a4dae14f02eea8e1bb42d4db2b6ce5e83dbcdd6b1446997e0c15
@@ -1920,7 +1920,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 091427007818537bb2f860c42dad867cb19050899186d4d180d195a1c6a98798
-R a7df768dc8afad426b142b0d7495573f
-U drh
-Z 557b7104be9ed20145851a8d359fd9c8
+P 5c0f9ea98a2b944857fe05d53a0143cb827b7d8215c37f33f1bce47ec1189952
+R 031a22d26158ce5e8d5ab23ad625bcf1
+U dan
+Z a43027e17c934fafb82cd4d4ece727af
