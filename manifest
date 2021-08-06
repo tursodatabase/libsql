@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings.\s\sOmit\sredundant\scopies\sof\sos_common.h\sand\nhwtime.h\sfrom\sthe\samalgamation.
-D 2021-08-06T15:26:01.985
+C Attempt\sto\sfix\sthe\sshowwal.c\sutility\sprogram\sso\sthat\sit\sworks\son\sWAL\sfiles\nlarger\sthan\s4GiB.
+D 2021-08-06T19:38:23.599
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1875,7 +1875,7 @@ F tool/showjournal.c 5bad7ae8784a43d2b270d953060423b8bd480818
 F tool/showlocks.c 9cc5e66d4ebbf2d194f39db2527ece92077e86ae627ddd233ee48e16e8142564
 F tool/showshm.c a0ab6ec32dd1f11218ca2a4018f8fb875b59414801ab8ceed8b2e69b7b45a809
 F tool/showstat4.c 0682ebea7abf4d3657f53c4a243f2e7eab48eab344ed36a94bb75dcd19a5c2a1
-F tool/showwal.c ad9d768f96ca6199ad3a8c9562d679680bd032dd01204ea3e5ea6fb931d81847
+F tool/showwal.c 0253c187ae16fdae9cde89e63e1dfcd3bb35e5416d066415f99e2f8cac6ab03d
 F tool/soak1.tcl 8d407956e1a45b485a8e072470a3e629a27037fe
 F tool/spaceanal.tcl 1b5be34c6223cb1af06da2a10fb77863eb869b1962d055820b0a11cf2336ab45
 F tool/speed-check.sh 8ba7c7c0dba37e664679974f5954f2282275271a5b92f890756e282df0bfc458
@@ -1920,7 +1920,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 832ac4c1ee384be0de72a4bdd55ed87e0f8294e7df5eefcf6b4942db3d85a69e
-R 9b8bf1cf8f9f47bbc3756297fbda6376
+P 091427007818537bb2f860c42dad867cb19050899186d4d180d195a1c6a98798
+R a7df768dc8afad426b142b0d7495573f
 U drh
-Z 8a1bbef3e175c4d55647fe110d7234dc
+Z 557b7104be9ed20145851a8d359fd9c8
