@@ -284,7 +284,7 @@ void sqlite3DequoteExpr(Expr *p){
 ** is always a no-op.
 */
 void sqlite3DequoteToken(Token *p){
-  int i;
+  unsigned int i;
   if( p->n<2 ) return;
   if( !sqlite3Isquote(p->z[0]) ) return;
   for(i=1; i<p->n-1; i++){

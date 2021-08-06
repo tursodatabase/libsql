@@ -2038,14 +2038,14 @@ struct Module {
 ** set.
 */
 struct Column {
-  char *zCnName;   /* Name of this column */
-  u8 notNull : 4;  /* An OE_ code for handling a NOT NULL constraint */
-  u8 eType : 4;    /* One of the standard types */
-  char affinity;   /* One of the SQLITE_AFF_... values */
-  u8 szEst;        /* Estimated size of value in this column. sizeof(INT)==1 */
-  u8 hName;        /* Column name hash for faster lookup */
-  u16 iDflt;       /* 1-based index of DEFAULT.  0 means "none" */
-  u16 colFlags;    /* Boolean properties.  See COLFLAG_ defines below */
+  char *zCnName;        /* Name of this column */
+  unsigned notNull :4;  /* An OE_ code for handling a NOT NULL constraint */
+  unsigned eType :4;    /* One of the standard types */
+  char affinity;        /* One of the SQLITE_AFF_... values */
+  u8 szEst;             /* Est size of value in this column. sizeof(INT)==1 */
+  u8 hName;             /* Column name hash for faster lookup */
+  u16 iDflt;            /* 1-based index of DEFAULT.  0 means "none" */
+  u16 colFlags;         /* Boolean properties.  See COLFLAG_ defines below */
 };
 
 /* Allowed values for Column.eType.

@@ -1,5 +1,5 @@
-C Store\sthe\scollating\ssequence\sname\sfor\seach\scolumn\sof\sa\stable\sas\san\nextension\sto\sthe\scolumn\sname,\sfor\san\sadditional\ssavings\sin\sthe\sheap\sspace\nneeded\sto\shold\sthe\sschema.
-D 2021-08-05T15:27:19.168
+C Fix\sharmless\scompiler\swarnings.\s\sOmit\sredundant\scopies\sof\sos_common.h\sand\nhwtime.h\sfrom\sthe\samalgamation.
+D 2021-08-06T15:26:01.985
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -549,7 +549,7 @@ F src/shell.c.in 24b99dae8818d1a234732d73f4d5b49f12b510bc62735a41c04e314fafae09e
 F src/sqlite.h.in 43fcf0fe2af04081f420a906fc020bde1243851ba44b0aa567a27f94bf8c3145
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h e97f4e9b509408fea4c4e9bef5a41608dfac343b4d3c7a990dedde1e19af9510
-F src/sqliteInt.h 3dbca904012fc663b4e8c51ad644eb99ba17bb03589de0b1358496fa73dc8039
+F src/sqliteInt.h c12ad0bda10276615f042c78317270c12502d7b301656516384c0f76d9fa8b77
 F src/sqliteLimit.h d7323ffea5208c6af2734574bae933ca8ed2ab728083caa117c9738581a31657
 F src/status.c 4b8bc2a6905163a38b739854a35b826c737333fab5b1f8e03fa7eb9a4799c4c1
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -614,7 +614,7 @@ F src/trigger.c 3f612ce5f0858b6c23460a3c799d01f408b49b0b29d931d8b8e6fc224a8667de
 F src/update.c 69c4c10bc6873a80c0a77cb578f9fc60ee90003d03f9530bc3370fa24615772d
 F src/upsert.c 8789047a8f0a601ea42fa0256d1ba3190c13746b6ba940fe2d25643a7e991937
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
-F src/util.c b18a971c8936e9299fecc00474269a11135989d6fe9bd91b1e52137d6f27bd8c
+F src/util.c c5dd51a245d621deb98e33c9db048111e58fc3af008bdcc6197c7044af0c8b79
 F src/vacuum.c 454973a59fb20bb982efc2df568a098616db6328a0491b6e84e2e07f7333db45
 F src/vdbe.c b73a5ec9940185eb001ff8cff2cfd429bb438c7e89f2885e0bfdb56c3ff13386
 F src/vdbe.h 25dabb25c7e157b84e59260cfb5b466c3ac103ede9f36f4db371332c47601abe
@@ -1858,7 +1858,7 @@ F tool/mkshellc.tcl df5d249617f9cc94d5c48eb0401673eb3f31f383ecbc54e8a13ca3dd97e8
 F tool/mksourceid.c 36aa8020014aed0836fd13c51d6dc9219b0df1761d6b5f58ff5b616211b079b9
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl 4f7cfef5152b0c91920355cbfc1d608a4ad242cb819f1aea07f6d0274f584a7f
-F tool/mksqlite3c.tcl cf5686da672bc2e62cf868b7d53fc9a2aebf1b0e497164cbb9f647ec724ce0b2
+F tool/mksqlite3c.tcl bf9b40811aba68f73f2a8848fad9b1fb09fd54ab5b77e5227f18eea87ab60d92
 F tool/mksqlite3h.tcl 1f5e4a1dbbbc43c83cc6e74fe32c6c620502240b66c7c0f33a51378e78fc4edf
 F tool/mksqlite3internalh.tcl eb994013e833359137eb53a55acdad0b5ae1049b
 F tool/mkvsix.tcl b9e0777a213c23156b6542842c238479e496ebf5
@@ -1920,7 +1920,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 806939eb5947f9187dc9c4814b26e9f94ec0186596c7be97981dbea7c2169c26
-R c05bd2cc9216ebbd1f44d1211c54be18
+P 832ac4c1ee384be0de72a4bdd55ed87e0f8294e7df5eefcf6b4942db3d85a69e
+R 9b8bf1cf8f9f47bbc3756297fbda6376
 U drh
-Z 761dcef26d3489b5940c28f76fcc5ec9
+Z 8a1bbef3e175c4d55647fe110d7234dc
