@@ -1533,8 +1533,8 @@ struct sqlite3 {
   u8 mTrace;                    /* zero or more SQLITE_TRACE flags */
   u8 noSharedCache;             /* True if no shared-cache backends */
   u8 nSqlExec;                  /* Number of pending OP_SqlExec opcodes */
+  u8 eOpenState;                /* Current condition of the connection */
   int nextPagesize;             /* Pagesize after VACUUM if >0 */
-  u32 magic;                    /* Magic number for detect library misuse */
   i64 nChange;                  /* Value returned by sqlite3_changes() */
   i64 nTotalChange;             /* Value returned by sqlite3_total_changes() */
   int aLimit[SQLITE_N_LIMIT];   /* Limits */
@@ -1762,16 +1762,16 @@ struct sqlite3 {
 #define ConstFactorOk(P) ((P)->okConstFactor)
 
 /*
-** Possible values for the sqlite.magic field.
+** Possible values for the sqlite.eOpenState field.
 ** The numbers are obtained at random and have no special meaning, other
 ** than being distinct from one another.
 */
-#define SQLITE_MAGIC_OPEN     0xa029a697  /* Database is open */
-#define SQLITE_MAGIC_CLOSED   0x9f3c2d33  /* Database is closed */
-#define SQLITE_MAGIC_SICK     0x4b771290  /* Error and awaiting close */
-#define SQLITE_MAGIC_BUSY     0xf03b7906  /* Database currently in use */
-#define SQLITE_MAGIC_ERROR    0xb5357930  /* An SQLITE_MISUSE error occurred */
-#define SQLITE_MAGIC_ZOMBIE   0x64cffc7f  /* Close with last statement close */
+#define SQLITE_STATE_OPEN     0xa0  /* Database is open */
+#define SQLITE_STATE_CLOSED   0x9f  /* Database is closed */
+#define SQLITE_STATE_SICK     0x4b  /* Error and awaiting close */
+#define SQLITE_STATE_BUSY     0xf0  /* Database currently in use */
+#define SQLITE_STATE_ERROR    0xb5  /* An SQLITE_MISUSE error occurred */
+#define SQLITE_STATE_ZOMBIE   0x64  /* Close with last statement close */
 
 /*
 ** Each SQL function is defined by an instance of the following
