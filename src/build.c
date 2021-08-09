@@ -285,20 +285,22 @@ void sqlite3FinishCoding(Parse *pParse){
 /*
 ** Run the parser and code generator recursively in order to generate
 ** code for the SQL statement given onto the end of the pParse context
-** currently under construction.  When the parser is run recursively
-** this way, the final OP_Halt is not appended and other initialization
-** and finalization steps are omitted because those are handling by the
-** outermost parser.
+** currently under construction.  Notes:
 **
-** Not everything is nestable.  This facility is designed to permit
-** INSERT, UPDATE, and DELETE operations against the schema table.  Use
-** care if you decide to try to use this routine for some other purposes.
+**   *  The final OP_Halt is not appended and other initialization
+**      and finalization steps are omitted because those are handling by the
+**      outermost parser.
+**
+**   *  Built-in SQL functions always take precedence over application-defined
+**      SQL functions.  In other words, it is not possible to override a
+**      built-in function.
 */
 void sqlite3NestedParse(Parse *pParse, const char *zFormat, ...){
   va_list ap;
   char *zSql;
   char *zErrMsg = 0;
   sqlite3 *db = pParse->db;
+  u32 savedDbFlags = db->mDbFlags;
   char saveBuf[PARSE_TAIL_SZ];
 
   if( pParse->nErr ) return;
@@ -317,7 +319,9 @@ void sqlite3NestedParse(Parse *pParse, const char *zFormat, ...){
   pParse->nested++;
   memcpy(saveBuf, PARSE_TAIL(pParse), PARSE_TAIL_SZ);
   memset(PARSE_TAIL(pParse), 0, PARSE_TAIL_SZ);
+  db->mDbFlags |= DBFLAG_PreferBuiltin;
   sqlite3RunParser(pParse, zSql, &zErrMsg);
+  db->mDbFlags = savedDbFlags;
   sqlite3DbFree(db, zErrMsg);
   sqlite3DbFree(db, zSql);
   memcpy(PARSE_TAIL(pParse), saveBuf, PARSE_TAIL_SZ);
@@ -707,8 +711,8 @@ void sqlite3ColumnSetExpr(
   assert( !IsVirtual(pTab) );
   pList = pTab->u.tab.pDfltList;
   if( pCol->iDflt==0
-   || pList==0
-   || pList->nExpr<pCol->iDflt
+   || NEVER(pList==0)
+   || NEVER(pList->nExpr<pCol->iDflt)
   ){
     pCol->iDflt = pList==0 ? 1 : pList->nExpr+1;
     pTab->u.tab.pDfltList = sqlite3ExprListAppend(pParse, pList, pExpr);
@@ -725,10 +729,49 @@ void sqlite3ColumnSetExpr(
 */
 Expr *sqlite3ColumnExpr(Table *pTab, Column *pCol){
   if( pCol->iDflt==0 ) return 0;
-  if( IsVirtual(pTab) ) return 0;
-  if( pTab->u.tab.pDfltList==0 ) return 0;
-  if( pTab->u.tab.pDfltList->nExpr<pCol->iDflt ) return 0;
+  if( NEVER(IsVirtual(pTab)) ) return 0;
+  if( NEVER(pTab->u.tab.pDfltList==0) ) return 0;
+  if( NEVER(pTab->u.tab.pDfltList->nExpr<pCol->iDflt) ) return 0;
   return pTab->u.tab.pDfltList->a[pCol->iDflt-1].pExpr;
+}
+
+/*
+** Set the collating sequence name for a column.
+*/
+void sqlite3ColumnSetColl(
+  sqlite3 *db,
+  Column *pCol,
+  const char *zColl
+){
+  int nColl;
+  int n;
+  char *zNew;
+  assert( zColl!=0 );
+  n = sqlite3Strlen30(pCol->zCnName) + 1;
+  if( pCol->colFlags & COLFLAG_HASTYPE ){
+    n += sqlite3Strlen30(pCol->zCnName+n) + 1;
+  }
+  nColl = sqlite3Strlen30(zColl) + 1;
+  zNew = sqlite3DbRealloc(db, pCol->zCnName, nColl+n);
+  if( zNew ){
+    pCol->zCnName = zNew;
+    memcpy(pCol->zCnName + n, zColl, nColl);
+    pCol->colFlags |= COLFLAG_HASCOLL;
+  }
+}
+
+/*
+** Return the collating squence name for a column
+*/
+const char *sqlite3ColumnColl(Column *pCol){
+  const char *z;
+  if( (pCol->colFlags & COLFLAG_HASCOLL)==0 ) return 0;
+  z = pCol->zCnName;
+  while( *z ){ z++; }
+  if( pCol->colFlags & COLFLAG_HASTYPE ){
+    do{ z++; }while( *z );
+  }
+  return z+1;
 }
 
 /*
@@ -743,7 +786,6 @@ void sqlite3DeleteColumnNames(sqlite3 *db, Table *pTable){
     for(i=0; i<pTable->nCol; i++, pCol++){
       assert( pCol->zCnName==0 || pCol->hName==sqlite3StrIHash(pCol->zCnName) );
       sqlite3DbFree(db, pCol->zCnName);
-      sqlite3DbFree(db, pCol->zCnColl);
     }
     sqlite3DbFree(db, pTable->aCol);
     if( !IsVirtual(pTable) ){
@@ -1912,8 +1954,7 @@ void sqlite3AddCollateType(Parse *pParse, Token *pToken){
 
   if( sqlite3LocateCollSeq(pParse, zColl) ){
     Index *pIdx;
-    sqlite3DbFree(db, p->aCol[i].zCnColl);
-    p->aCol[i].zCnColl = zColl;
+    sqlite3ColumnSetColl(db, &p->aCol[i], zColl);
   
     /* If the column is declared as "<name> PRIMARY KEY COLLATE <type>",
     ** then an index may have been created on this column before the
@@ -1922,12 +1963,11 @@ void sqlite3AddCollateType(Parse *pParse, Token *pToken){
     for(pIdx=p->pIndex; pIdx; pIdx=pIdx->pNext){
       assert( pIdx->nKeyCol==1 );
       if( pIdx->aiColumn[0]==i ){
-        pIdx->azColl[0] = p->aCol[i].zCnColl;
+        pIdx->azColl[0] = sqlite3ColumnColl(&p->aCol[i]);
       }
     }
-  }else{
-    sqlite3DbFree(db, zColl);
   }
+  sqlite3DbFree(db, zColl);
 }
 
 /* Change the most recently parsed column to be a GENERATED ALWAYS AS
@@ -3583,7 +3623,7 @@ void sqlite3DeferForeignKey(Parse *pParse, int isDeferred){
   Table *pTab;
   FKey *pFKey;
   if( (pTab = pParse->pNewTable)==0 ) return;
-  if( IsVirtual(pTab) ) return;
+  if( NEVER(IsVirtual(pTab)) ) return;
   if( (pFKey = pTab->u.tab.pFKey)==0 ) return;
   assert( isDeferred==0 || isDeferred==1 ); /* EV: R-30323-21917 */
   pFKey->isDeferred = (u8)isDeferred;
@@ -4088,7 +4128,7 @@ void sqlite3CreateIndex(
       zExtra += nColl;
       nExtra -= nColl;
     }else if( j>=0 ){
-      zColl = pTab->aCol[j].zCnColl;
+      zColl = sqlite3ColumnColl(&pTab->aCol[j]);
     }
     if( !zColl ) zColl = sqlite3StrBINARY;
     if( !db->init.busy && !sqlite3LocateCollSeq(pParse, zColl) ){

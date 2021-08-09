@@ -284,7 +284,7 @@ void sqlite3DequoteExpr(Expr *p){
 ** is always a no-op.
 */
 void sqlite3DequoteToken(Token *p){
-  int i;
+  unsigned int i;
   if( p->n<2 ) return;
   if( !sqlite3Isquote(p->z[0]) ) return;
   for(i=1; i<p->n-1; i++){
@@ -1399,13 +1399,13 @@ static void logBadConnection(const char *zType){
 ** used as an argument to sqlite3_errmsg() or sqlite3_close().
 */
 int sqlite3SafetyCheckOk(sqlite3 *db){
-  u32 magic;
+  u8 eOpenState;
   if( db==0 ){
     logBadConnection("NULL");
     return 0;
   }
-  magic = db->magic;
-  if( magic!=SQLITE_MAGIC_OPEN ){
+  eOpenState = db->eOpenState;
+  if( eOpenState!=SQLITE_STATE_OPEN ){
     if( sqlite3SafetyCheckSickOrOk(db) ){
       testcase( sqlite3GlobalConfig.xLog!=0 );
       logBadConnection("unopened");
@@ -1416,11 +1416,11 @@ int sqlite3SafetyCheckOk(sqlite3 *db){
   }
 }
 int sqlite3SafetyCheckSickOrOk(sqlite3 *db){
-  u32 magic;
-  magic = db->magic;
-  if( magic!=SQLITE_MAGIC_SICK &&
-      magic!=SQLITE_MAGIC_OPEN &&
-      magic!=SQLITE_MAGIC_BUSY ){
+  u8 eOpenState;
+  eOpenState = db->eOpenState;
+  if( eOpenState!=SQLITE_STATE_SICK &&
+      eOpenState!=SQLITE_STATE_OPEN &&
+      eOpenState!=SQLITE_STATE_BUSY ){
     testcase( sqlite3GlobalConfig.xLog!=0 );
     logBadConnection("invalid");
     return 0;

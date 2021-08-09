@@ -43,7 +43,7 @@ struct SchemaPool {
 #ifdef SQLITE_ENABLE_SHARED_SCHEMA
 #ifdef SQLITE_DEBUG
 static void assert_schema_state_ok(sqlite3 *db){
-  if( IsSharedSchema(db) && db->magic!=SQLITE_MAGIC_ZOMBIE ){
+  if( IsSharedSchema(db) && db->eOpenState!=SQLITE_STATE_ZOMBIE ){
     int i;
     for(i=0; i<db->nDb; i++){
       if( i!=1 ){

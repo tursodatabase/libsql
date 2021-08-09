@@ -173,7 +173,7 @@ CollSeq *sqlite3ExprCollSeq(Parse *pParse, const Expr *pExpr){
       ** a TK_COLUMN but was previously evaluated and cached in a register */
       int j = p->iColumn;
       if( j>=0 ){
-        const char *zColl = p->y.pTab->aCol[j].zCnColl;
+        const char *zColl = sqlite3ColumnColl(&p->y.pTab->aCol[j]);
         pColl = sqlite3FindCollSeq(db, ENC(db), zColl, 0);
       }
       break;
