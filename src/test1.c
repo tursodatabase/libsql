@@ -5348,37 +5348,6 @@ static int SQLITE_TCLAPI test_stmt_int(
   return TCL_OK;
 }
 
-/*
-** Usage:  sqlite_set_magic  DB  MAGIC-NUMBER
-**
-** Set the db->magic value.  This is used to test error recovery logic.
-*/
-static int SQLITE_TCLAPI sqlite_set_magic(
-  void * clientData,
-  Tcl_Interp *interp,
-  int argc,
-  char **argv
-){
-  sqlite3 *db;
-  if( argc!=3 ){
-    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-         " DB MAGIC", 0);
-    return TCL_ERROR;
-  }
-  if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
-  if( strcmp(argv[2], "SQLITE_MAGIC_OPEN")==0 ){
-    db->magic = SQLITE_MAGIC_OPEN;
-  }else if( strcmp(argv[2], "SQLITE_MAGIC_CLOSED")==0 ){
-    db->magic = SQLITE_MAGIC_CLOSED;
-  }else if( strcmp(argv[2], "SQLITE_MAGIC_BUSY")==0 ){
-    db->magic = SQLITE_MAGIC_BUSY;
-  }else if( strcmp(argv[2], "SQLITE_MAGIC_ERROR")==0 ){
-    db->magic = SQLITE_MAGIC_ERROR;
-  }else if( Tcl_GetInt(interp, argv[2], (int*)&db->magic) ){
-    return TCL_ERROR;
-  }
-  return TCL_OK;
-}
 
 /*
 ** Usage:  sqlite3_interrupt  DB 
@@ -8354,7 +8323,6 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "breakpoint",                    (Tcl_CmdProc*)test_breakpoint       },
      { "sqlite3_key",                   (Tcl_CmdProc*)test_key              },
      { "sqlite3_rekey",                 (Tcl_CmdProc*)test_rekey            },
-     { "sqlite_set_magic",              (Tcl_CmdProc*)sqlite_set_magic      },
      { "sqlite3_interrupt",             (Tcl_CmdProc*)test_interrupt        },
      { "sqlite_delete_function",        (Tcl_CmdProc*)delete_function       },
      { "sqlite_delete_collation",       (Tcl_CmdProc*)delete_collation      },
