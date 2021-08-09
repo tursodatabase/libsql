@@ -1,5 +1,5 @@
-C Ensure\sthat\sthe\spcache1\scache\ssize\sdoes\snot\sget\sso\sbig\sthat\sit\soverflows\nthe\sinteger\sthat\sis\skeeping\strack\sof\sthe\scache\ssize.
-D 2021-08-09T18:07:06.575
+C Further\simprovements\sto\sthe\seOpenState\sbit\svalues.
+D 2021-08-09T18:13:38.173
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -549,7 +549,7 @@ F src/shell.c.in f795a4ae3c35631f5edcfa754c7824ff1d8a75b23a07e22e664b50f82e82634
 F src/sqlite.h.in 43fcf0fe2af04081f420a906fc020bde1243851ba44b0aa567a27f94bf8c3145
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h e97f4e9b509408fea4c4e9bef5a41608dfac343b4d3c7a990dedde1e19af9510
-F src/sqliteInt.h 548e07437d82c9732357d5efdb2d4e0ec403dedd9dab8def66a03d3d42ee9512
+F src/sqliteInt.h a7f02fb629d7657cea714446d8c285d195b0504c31ae843833e44c46f941e3b6
 F src/sqliteLimit.h d7323ffea5208c6af2734574bae933ca8ed2ab728083caa117c9738581a31657
 F src/status.c 4b8bc2a6905163a38b739854a35b826c737333fab5b1f8e03fa7eb9a4799c4c1
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -1920,7 +1920,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7929dc2f6f304b077c174d41711b49a24120adeb0b29cb6acb4d6a40852d7e00
-R 5ed20c4f6f3dd0873a45a27ab6ba0f51
-U drh
-Z c3f298e00599b50c24893f0a3ffdacea
+P bf9d70fc2fde06a3f132270a26d4abe321687169066aff26ad9e92757c7f9ee4
+R a9151e310251de143fbd3b8abd808680
+U mistachkin
+Z e0914599a10f85fbe60bdb3fef5eb7e0

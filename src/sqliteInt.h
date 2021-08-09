@@ -1765,12 +1765,12 @@ struct sqlite3 {
 ** The numbers are randomly selected such that a minimum of three bits must
 ** change to convert any number to another or to zero
 */
-#define SQLITE_STATE_OPEN     0x3b  /* Database is open */
-#define SQLITE_STATE_CLOSED   0x63  /* Database is closed */
-#define SQLITE_STATE_SICK     0x77  /* Error and awaiting close */
-#define SQLITE_STATE_BUSY     0x7d  /* Database currently in use */
-#define SQLITE_STATE_ERROR    0xb5  /* An SQLITE_MISUSE error occurred */
-#define SQLITE_STATE_ZOMBIE   0xe5  /* Close with last statement close */
+#define SQLITE_STATE_OPEN     0x76  /* Database is open */
+#define SQLITE_STATE_CLOSED   0xce  /* Database is closed */
+#define SQLITE_STATE_SICK     0xba  /* Error and awaiting close */
+#define SQLITE_STATE_BUSY     0x6d  /* Database currently in use */
+#define SQLITE_STATE_ERROR    0xd5  /* An SQLITE_MISUSE error occurred */
+#define SQLITE_STATE_ZOMBIE   0xa7  /* Close with last statement close */
 
 /*
 ** Each SQL function is defined by an instance of the following
