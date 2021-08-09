@@ -11141,9 +11141,9 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       sqlite3_config(SQLITE_CONFIG_LOOKASIDE, sz, n);
       if( sz*n==0 ) data.shellFlgs &= ~SHFLG_Lookaside;
     }else if( strcmp(z,"-threadsafe")==0 ){
-      int n, sz;
-      sz = (int)integerValue(cmdline_option_value(argc,argv,++i));
-      switch( sz ){
+      int n;
+      n = (int)integerValue(cmdline_option_value(argc,argv,++i));
+      switch( n ){
          case 0:  sqlite3_config(SQLITE_CONFIG_SINGLETHREAD);  break;
          case 2:  sqlite3_config(SQLITE_CONFIG_MULTITHREAD);   break;
          default: sqlite3_config(SQLITE_CONFIG_SERIALIZED);    break;
