@@ -2843,7 +2843,8 @@ static int xferOptimization(
     if( pDestCol->affinity!=pSrcCol->affinity ){
       return 0;    /* Affinity must be the same on all columns */
     }
-    if( sqlite3_stricmp(pDestCol->zCnColl, pSrcCol->zCnColl)!=0 ){
+    if( sqlite3_stricmp(sqlite3ColumnColl(pDestCol), 
+                        sqlite3ColumnColl(pSrcCol))!=0 ){
       return 0;    /* Collating sequence must be the same on all columns */
     }
     if( pDestCol->notNull && !pSrcCol->notNull ){

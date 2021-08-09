@@ -1241,8 +1241,9 @@ static void whereIndexExprTrans(
 #ifndef SQLITE_OMIT_GENERATED_COLUMNS
     }else if( iRef>=0
        && (pTab->aCol[iRef].colFlags & COLFLAG_VIRTUAL)!=0
-       && (pTab->aCol[iRef].zCnColl==0
-           || sqlite3StrICmp(pTab->aCol[iRef].zCnColl, sqlite3StrBINARY)==0)
+       && ((pTab->aCol[iRef].colFlags & COLFLAG_HASCOLL)==0
+           || sqlite3StrICmp(sqlite3ColumnColl(&pTab->aCol[iRef]),
+                                               sqlite3StrBINARY)==0)
     ){
       /* Check to see if there are direct references to generated columns
       ** that are contained in the index.  Pulling the generated column
