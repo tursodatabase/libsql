@@ -1762,7 +1762,7 @@ struct sqlite3 {
 #define ConstFactorOk(P) ((P)->okConstFactor)
 
 /*
-** Possible values for the sqlite.eOpenState field.
+** Possible values for the sqlite3.eOpenState field.
 ** The numbers are obtained at random and have no special meaning, other
 ** than being distinct from one another.
 */
