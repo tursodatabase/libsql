@@ -3022,9 +3022,9 @@ int sqlite3VdbeCheckFk(Vdbe *p, int deferred){
 ** has made changes and is in autocommit mode, then commit those
 ** changes.  If a rollback is needed, then do the rollback.
 **
-** This routine is the only way to move the state of a VM from
-** SQLITE_MAGIC_RUN to SQLITE_MAGIC_HALT.  It is harmless to
-** call this on a VM that is in the SQLITE_MAGIC_HALT state.
+** This routine is the only way to move the sqlite3eOpenState of a VM from
+** SQLITE_STATE_RUN to SQLITE_STATE_HALT.  It is harmless to
+** call this on a VM that is in the SQLITE_STATE_HALT state.
 **
 ** Return an error code.  If the commit could not complete because of
 ** lock contention, return SQLITE_BUSY.  If SQLITE_BUSY is returned, it

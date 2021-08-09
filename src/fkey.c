@@ -259,7 +259,7 @@ int sqlite3FkLocateIndex(
           /* If the index uses a collation sequence that is different from
           ** the default collation sequence for the column, this index is
           ** unusable. Bail out early in this case.  */
-          zDfltColl = pParent->aCol[iCol].zCnColl;
+          zDfltColl = sqlite3ColumnColl(&pParent->aCol[iCol]);
           if( !zDfltColl ) zDfltColl = sqlite3StrBINARY;
           if( sqlite3StrICmp(pIdx->azColl[i], zDfltColl) ) break;
 
@@ -487,7 +487,7 @@ static Expr *exprTableRegister(
       pCol = &pTab->aCol[iCol];
       pExpr->iTable = regBase + sqlite3TableColumnToStorage(pTab,iCol) + 1;
       pExpr->affExpr = pCol->affinity;
-      zColl = pCol->zCnColl;
+      zColl = sqlite3ColumnColl(pCol);
       if( zColl==0 ) zColl = db->pDfltColl->zName;
       pExpr = sqlite3ExprAddCollateString(pParse, pExpr, zColl);
     }else{
@@ -1422,8 +1422,8 @@ void sqlite3FkDelete(sqlite3 *db, Table *pTab){
   FKey *pNext;                    /* Copy of pFKey->pNextFrom */
 
   assert( !IsVirtual(pTab) );
-  assert( db==0 || sqlite3SchemaMutexHeld(db, 0, pTab->pSchema) );
   for(pFKey=pTab->u.tab.pFKey; pFKey; pFKey=pNext){
+    assert( db==0 || sqlite3SchemaMutexHeld(db, 0, pTab->pSchema) );
 
     /* Remove the FK from the fkeyHash hash table. */
     if( !db || db->pnBytesFreed==0 ){
