@@ -1543,8 +1543,8 @@ struct sqlite3 {
   u8 mTrace;                    /* zero or more SQLITE_TRACE flags */
   u8 noSharedCache;             /* True if no shared-cache backends */
   u8 nSqlExec;                  /* Number of pending OP_SqlExec opcodes */
+  u8 eOpenState;                /* Current condition of the connection */
   int nextPagesize;             /* Pagesize after VACUUM if >0 */
-  u32 magic;                    /* Magic number for detect library misuse */
   FastPrng sPrng;               /* State of the per-connection PRNG */
   i64 nChange;                  /* Value returned by sqlite3_changes() */
   i64 nTotalChange;             /* Value returned by sqlite3_total_changes() */
@@ -1782,17 +1782,16 @@ struct sqlite3 {
 */
 #define ConstFactorOk(P) ((P)->okConstFactor)
 
-/*
-** Possible values for the sqlite.magic field.
-** The numbers are obtained at random and have no special meaning, other
-** than being distinct from one another.
+/* Possible values for the sqlite3.eOpenState field.
+** The numbers are randomly selected such that a minimum of three bits must
+** change to convert any number to another or to zero
 */
-#define SQLITE_MAGIC_OPEN     0xa029a697  /* Database is open */
-#define SQLITE_MAGIC_CLOSED   0x9f3c2d33  /* Database is closed */
-#define SQLITE_MAGIC_SICK     0x4b771290  /* Error and awaiting close */
-#define SQLITE_MAGIC_BUSY     0xf03b7906  /* Database currently in use */
-#define SQLITE_MAGIC_ERROR    0xb5357930  /* An SQLITE_MISUSE error occurred */
-#define SQLITE_MAGIC_ZOMBIE   0x64cffc7f  /* Close with last statement close */
+#define SQLITE_STATE_OPEN     0x76  /* Database is open */
+#define SQLITE_STATE_CLOSED   0xce  /* Database is closed */
+#define SQLITE_STATE_SICK     0xba  /* Error and awaiting close */
+#define SQLITE_STATE_BUSY     0x6d  /* Database currently in use */
+#define SQLITE_STATE_ERROR    0xd5  /* An SQLITE_MISUSE error occurred */
+#define SQLITE_STATE_ZOMBIE   0xa7  /* Close with last statement close */
 
 /*
 ** Each SQL function is defined by an instance of the following
@@ -2049,17 +2048,24 @@ struct Module {
 **                            or equal to the table column index.  It is
 **                            equal if and only if there are no VIRTUAL
 **                            columns to the left.
+**
+** Notes on zCnName:
+** The zCnName field stores the name of the column, the datatype of the
+** column, and the collating sequence for the column, in that order, all in
+** a single allocation.  Each string is 0x00 terminated.  The datatype
+** is only included if the COLFLAG_HASTYPE bit of colFlags is set and the
+** collating sequence name is only included if the COLFLAG_HASCOLL bit is
+** set.
 */
 struct Column {
-  char *zCnName;   /* Name of this column */
-  char *zCnColl;   /* Collating sequence.  If NULL, use the default */
-  u8 notNull : 4;  /* An OE_ code for handling a NOT NULL constraint */
-  u8 eType : 4;    /* One of the standard types */
-  char affinity;   /* One of the SQLITE_AFF_... values */
-  u8 szEst;        /* Estimated size of value in this column. sizeof(INT)==1 */
-  u8 hName;        /* Column name hash for faster lookup */
-  u16 iDflt;       /* 1-based index of DEFAULT.  0 means "none" */
-  u16 colFlags;    /* Boolean properties.  See COLFLAG_ defines below */
+  char *zCnName;        /* Name of this column */
+  unsigned notNull :4;  /* An OE_ code for handling a NOT NULL constraint */
+  unsigned eType :4;    /* One of the standard types */
+  char affinity;        /* One of the SQLITE_AFF_... values */
+  u8 szEst;             /* Est size of value in this column. sizeof(INT)==1 */
+  u8 hName;             /* Column name hash for faster lookup */
+  u16 iDflt;            /* 1-based index of DEFAULT.  0 means "none" */
+  u16 colFlags;         /* Boolean properties.  See COLFLAG_ defines below */
 };
 
 /* Allowed values for Column.eType.
@@ -2093,6 +2099,7 @@ struct Column {
 #define COLFLAG_STORED    0x0040   /* GENERATED ALWAYS AS ... STORED */
 #define COLFLAG_NOTAVAIL  0x0080   /* STORED column not yet calculated */
 #define COLFLAG_BUSY      0x0100   /* Blocks recursion on GENERATED columns */
+#define COLFLAG_HASCOLL   0x0200   /* Has collating sequence name in zCnName */
 #define COLFLAG_GENERATED 0x0060   /* Combo: _STORED, _VIRTUAL */
 #define COLFLAG_NOINSERT  0x0062   /* Combo: _HIDDEN, _STORED, _VIRTUAL */
 
@@ -4419,6 +4426,8 @@ void sqlite3CollapseDatabaseArray(sqlite3*);
 void sqlite3CommitInternalChanges(sqlite3*);
 void sqlite3ColumnSetExpr(Parse*,Table*,Column*,Expr*);
 Expr *sqlite3ColumnExpr(Table*,Column*);
+void sqlite3ColumnSetColl(sqlite3*,Column*,const char*zColl);
+const char *sqlite3ColumnColl(Column*);
 void sqlite3DeleteColumnNames(sqlite3*,Table*);
 void sqlite3GenerateColumnNames(Parse *pParse, Select *pSelect);
 int sqlite3ColumnsFromExprList(Parse*,ExprList*,i16*,Column**);
