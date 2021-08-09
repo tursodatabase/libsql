@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\sand\simprove\sthe\spresentation\sfor\sthe\snew\n--threadsafe\soption\sto\sthe\sCLI.
-D 2021-08-09T17:45:00.703
+C Ensure\sthat\sthe\spcache1\scache\ssize\sdoes\snot\sget\sso\sbig\sthat\sit\soverflows\nthe\sinteger\sthat\sis\skeeping\strack\sof\sthe\scache\ssize.
+D 2021-08-09T18:07:06.575
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -536,7 +536,7 @@ F src/pager.h 4bf9b3213a4b2bebbced5eaa8b219cf25d4a82f385d093cd64b7e93e5285f66f
 F src/parse.y 0ba0baec5de6921ec8ba8bbcf1018969144ef29d26112e17539d8fbb1662e3eb
 F src/pcache.c 385ff064bca69789d199a98e2169445dc16e4291fa807babd61d4890c3b34177
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
-F src/pcache1.c 388304fd2d91c39591080b5e0f3c62cfba87db20370e7e0554062bfb29740e9f
+F src/pcache1.c 00541fef31d2798dc20308ee1fa46205b76ad1df2c871e9c9bfe9508e59ab54c
 F src/pragma.c af0f43789545622fd5377d71f6d4c0e7c9b9295a3f5d5b1242e4032d38ca12b5
 F src/pragma.h a11b4798f9c49f156f130e1f7041a9fcc9d316a64f3501b6013acdd2e4c6f549
 F src/prepare.c 0d53d20532aada295c1690792a125adbd6435f5ce703ff0adf1b9b3605238b67
@@ -1920,7 +1920,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2d8f297c115f378854c1f2198e47ac5af5f222a5de8cc7575c42154094e71b53
-R 258f399591b3b9733af56f676f73726d
+P 7929dc2f6f304b077c174d41711b49a24120adeb0b29cb6acb4d6a40852d7e00
+R 5ed20c4f6f3dd0873a45a27ab6ba0f51
 U drh
-Z ad4908f9b36be8e4480ff9f55397f698
+Z c3f298e00599b50c24893f0a3ffdacea
