@@ -1242,7 +1242,7 @@ static int sqlite3Close(sqlite3 *db, int forceZombie){
 
   /* Convert the connection into a zombie and then close it.
   */
-  db->magic = SQLITE_MAGIC_ZOMBIE;
+  db->eOpenState = SQLITE_STATE_ZOMBIE;
   sqlite3LeaveMutexAndCloseZombie(db);
   return SQLITE_OK;
 }
@@ -1306,7 +1306,7 @@ void sqlite3LeaveMutexAndCloseZombie(sqlite3 *db){
   ** or if the connection has not yet been closed by sqlite3_close_v2(),
   ** then just leave the mutex and return.
   */
-  if( db->magic!=SQLITE_MAGIC_ZOMBIE || connectionIsBusy(db) ){
+  if( db->eOpenState!=SQLITE_STATE_ZOMBIE || connectionIsBusy(db) ){
     sqlite3_mutex_leave(db->mutex);
     return;
   }
@@ -1396,7 +1396,7 @@ void sqlite3LeaveMutexAndCloseZombie(sqlite3 *db){
   sqlite3_free(db->auth.zAuthPW);
 #endif
 
-  db->magic = SQLITE_MAGIC_ERROR;
+  db->eOpenState = SQLITE_STATE_ERROR;
 
   /* The temp-database schema is allocated differently from the other schema
   ** objects (using sqliteMalloc() directly, instead of sqlite3BtreeSchema()).
@@ -1406,7 +1406,7 @@ void sqlite3LeaveMutexAndCloseZombie(sqlite3 *db){
   */
   sqlite3DbFree(db, db->aDb[1].pSchema);
   sqlite3_mutex_leave(db->mutex);
-  db->magic = SQLITE_MAGIC_CLOSED;
+  db->eOpenState = SQLITE_STATE_CLOSED;
   sqlite3_mutex_free(db->mutex);
   assert( sqlite3LookasideUsed(db,0)==0 );
   if( db->lookaside.bMalloced ){
@@ -1794,7 +1794,7 @@ int sqlite3_busy_timeout(sqlite3 *db, int ms){
 */
 void sqlite3_interrupt(sqlite3 *db){
 #ifdef SQLITE_ENABLE_API_ARMOR
-  if( !sqlite3SafetyCheckOk(db) && (db==0 || db->magic!=SQLITE_MAGIC_ZOMBIE) ){
+  if( !sqlite3SafetyCheckOk(db) && (db==0 || db->eOpenState!=SQLITE_STATE_ZOMBIE) ){
     (void)SQLITE_MISUSE_BKPT;
     return;
   }
@@ -3197,7 +3197,7 @@ static int openDatabase(
   sqlite3_mutex_enter(db->mutex);
   db->errMask = 0xff;
   db->nDb = 2;
-  db->magic = SQLITE_MAGIC_BUSY;
+  db->eOpenState = SQLITE_STATE_BUSY;
   db->aDb = db->aDbStatic;
   db->lookaside.bDisable = 1;
   db->lookaside.sz = 0;
@@ -3357,7 +3357,7 @@ static int openDatabase(
   db->aDb[1].zDbSName = "temp";
   db->aDb[1].safety_level = PAGER_SYNCHRONOUS_OFF;
 
-  db->magic = SQLITE_MAGIC_OPEN;
+  db->eOpenState = SQLITE_STATE_OPEN;
   if( db->mallocFailed ){
     goto opendb_out;
   }
@@ -3424,7 +3424,7 @@ opendb_out:
     sqlite3_close(db);
     db = 0;
   }else if( rc!=SQLITE_OK ){
-    db->magic = SQLITE_MAGIC_SICK;
+    db->eOpenState = SQLITE_STATE_SICK;
   }
   *ppDb = db;
 #ifdef SQLITE_ENABLE_SQLLOG
@@ -3773,7 +3773,7 @@ int sqlite3_table_column_metadata(
   */ 
   if( pCol ){
     zDataType = sqlite3ColumnType(pCol,0);
-    zCollSeq = pCol->zCnColl;
+    zCollSeq = sqlite3ColumnColl(pCol);
     notnull = pCol->notNull!=0;
     primarykey  = (pCol->colFlags & COLFLAG_PRIMKEY)!=0;
     autoinc = pTab->iPKey==iCol && (pTab->tabFlags & TF_Autoincrement)!=0;

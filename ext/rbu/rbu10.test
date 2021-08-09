@@ -50,7 +50,7 @@ do_test 1.1 {
 #
 ifcapable fts3 {
   do_execsql_test 2.0 {
-    CREATE VIRTUAL TABLE ft USING fts4(a, b, languageid='langid');
+    create virtual TABLE ft USING fts4(a, b, languageid='langid');
   }
   do_test 2.1 {
     apply_rbu {

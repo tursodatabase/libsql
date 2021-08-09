@@ -135,9 +135,7 @@ void sqlite3AlterRenameTable(
   const char *zTabName;     /* Original name of the table */
   Vdbe *v;
   VTable *pVTab = 0;        /* Non-zero if this is a v-tab with an xRename() */
-  u32 savedDbFlags;         /* Saved value of db->mDbFlags */
 
-  savedDbFlags = db->mDbFlags;  
   if( NEVER(db->mallocFailed) ) goto exit_rename_table;
   assert( pSrc->nSrc==1 );
   assert( sqlite3BtreeHoldsAllMutexes(pParse->db) );
@@ -146,7 +144,6 @@ void sqlite3AlterRenameTable(
   if( !pTab ) goto exit_rename_table;
   iDb = sqlite3SchemaToIndex(pParse->db, pTab->pSchema);
   zDb = db->aDb[iDb].zDbSName;
-  db->mDbFlags |= DBFLAG_PreferBuiltin;
 
   /* Get a NULL terminated version of the new table name. */
   zName = sqlite3NameFromToken(db, pName);
@@ -287,7 +284,6 @@ void sqlite3AlterRenameTable(
 exit_rename_table:
   sqlite3SrcListDelete(db, pSrc);
   sqlite3DbFree(db, zName);
-  db->mDbFlags = savedDbFlags;
 }
 
 /*
@@ -408,11 +404,9 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
   zCol = sqlite3DbStrNDup(db, (char*)pColDef->z, pColDef->n);
   if( zCol ){
     char *zEnd = &zCol[pColDef->n-1];
-    u32 savedDbFlags = db->mDbFlags;
     while( zEnd>zCol && (*zEnd==';' || sqlite3Isspace(*zEnd)) ){
       *zEnd-- = '\0';
     }
-    db->mDbFlags |= DBFLAG_PreferBuiltin;
     /* substr() operations on characters, but addColOffset is in bytes. So we
     ** have to use printf() to translate between these units: */
     assert( !IsVirtual(pTab) );
@@ -425,7 +419,6 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
       zTab
     );
     sqlite3DbFree(db, zCol);
-    db->mDbFlags = savedDbFlags;
   }
 
   v = sqlite3GetVdbe(pParse);
@@ -539,7 +532,6 @@ void sqlite3AlterBeginAddColumn(Parse *pParse, SrcList *pSrc){
     Column *pCol = &pNew->aCol[i];
     pCol->zCnName = sqlite3DbStrDup(db, pCol->zCnName);
     pCol->hName = sqlite3StrIHash(pCol->zCnName);
-    pCol->zCnColl = 0;
   }
   assert( !IsVirtual(pNew) );
   pNew->u.tab.pDfltList = sqlite3ExprListDup(db, pTab->u.tab.pDfltList, 0);
@@ -1506,7 +1498,7 @@ static void renameColumnFunc(
         sqlite3WalkSelect(&sWalker, pSelect);
       }
       if( rc!=SQLITE_OK ) goto renameColumnFunc_done;
-    }else if( IsOrdinaryTable(sParse.pNewTable) ){
+    }else if( ALWAYS(IsOrdinaryTable(sParse.pNewTable)) ){
       /* A regular table */
       int bFKOnly = sqlite3_stricmp(zTable, sParse.pNewTable->zName);
       FKey *pFKey;
