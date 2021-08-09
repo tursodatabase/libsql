@@ -287,7 +287,7 @@ void sqlite3UpsertDoUpdate(
         k = sqlite3TableColumnToIndex(pIdx, pPk->aiColumn[i]);
         sqlite3VdbeAddOp3(v, OP_Column, iCur, k, iPk+i);
         VdbeComment((v, "%s.%s", pIdx->zName,
-                    pTab->aCol[pPk->aiColumn[i]].zName));
+                    pTab->aCol[pPk->aiColumn[i]].zCnName));
       }
       sqlite3VdbeVerifyAbortable(v, OE_Abort);
       i = sqlite3VdbeAddOp4Int(v, OP_Found, iDataCur, 0, iPk, nPk);
