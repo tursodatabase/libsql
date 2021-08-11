@@ -1,5 +1,5 @@
-C If\sthe\sspecial\s"sqlite_rbu_replace_hack"\stable\sis\spresent\sin\san\sRBU\sdatabase,\suse\sREPLACE\sinstead\sof\sINSERT\swhen\swriting\sindex\sentries\sto\simposter\stables.
-D 2021-08-11T18:44:50.304
+C Fix\san\sRBU\sproblem\swith\srestarting\san\supdate\safter\sthe\s*-oal\sfile\sis\salready\slarger\sthan\s4GiB.
+D 2021-08-11T18:56:49.597
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -366,7 +366,7 @@ F ext/rbu/rbuvacuum.test 55e101e90168c2b31df6c9638fe73dc7f7cc666b6142266d1563697
 F ext/rbu/rbuvacuum2.test b8e5b51dc8b2c0153373d024c0936be3f66f9234acbd6d0baab0869d56b14e6b
 F ext/rbu/rbuvacuum3.test 8addd82e4b83b4c93fa47428eae4fd0dbf410f8512c186f38e348feb49ba03dc
 F ext/rbu/rbuvacuum4.test a78898e438a44803eb2bc897ba3323373c9f277418e2d6d76e90f2f1dbccfd10
-F ext/rbu/sqlite3rbu.c e8424eb4700fa5c957b78704b76d3167283c17953a41f50413a1d55d48e93cad
+F ext/rbu/sqlite3rbu.c d175cbd98baba39cdea85df1de376277ab207ef1e4af8071aa1c208bb4fccc84
 F ext/rbu/sqlite3rbu.h 1dc88ab7bd32d0f15890ea08d23476c4198d3da3056985403991f8c9cd389812
 F ext/rbu/test_rbu.c 03f6f177096a5f822d68d8e4069ad8907fe572c62ff2d19b141f59742821828a
 F ext/repair/README.md 92f5e8aae749a4dae14f02eea8e1bb42d4db2b6ce5e83dbcdd6b1446997e0c15
@@ -1847,10 +1847,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c20a35336432025445f9f7e289d0cc3e4003fb17f45a4ce74c6269c407c6e09f
-R a8856db772e2bb9949da7c267e1829ab
-T *branch * rbu-replace-hack
-T *sym-rbu-replace-hack *
-T -sym-trunk *
+P 4b73e151cdb4b89bdd2f1bab5c0378500234ce6c479cc1d8cd4e006be79d1162
+Q +087b8b41c6ed76b55c11315e7e95679d67590be20ae21108b593d00bb7d1c57a
+R f1bc15780a98eb9fb1abdadc164e3b34
 U dan
-Z aa38f9f5e27caa9871ead4f8e1acfb36
+Z 02ec0c40b41079c9dff32d6e22ece993
