@@ -1,5 +1,5 @@
-C Version\s3.30.0
-D 2019-10-04T15:03:17.190
+C If\sthe\sspecial\s"sqlite_rbu_replace_hack"\stable\sis\spresent\sin\san\sRBU\sdatabase,\suse\sREPLACE\sinstead\sof\sINSERT\swhen\swriting\sindex\sentries\sto\simposter\stables.
+D 2021-08-11T18:44:50.304
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -353,6 +353,7 @@ F ext/rbu/rbufault2.test c81327a3ac2c385b9b954db3644d4e0df93eeebfc3de9f1f29975a1
 F ext/rbu/rbufault3.test b2fcc9db5c982b869f67d1d4688d8cb515d5b92f58011fff95665f2e62cec179
 F ext/rbu/rbufault4.test 03d2849c3df7d7bd14a622e789ff049e5080edd34a79cd432e01204db2a5930a
 F ext/rbu/rbufts.test 0ae8d1da191c75bd776b86e24456db0fb6e97b7c944259fae5407ea55d23c31d
+F ext/rbu/rbuhack.test 95e7b35e58d5b2a8d182dde1a404949edf077c07485e6c2bce8a7f582941e729
 F ext/rbu/rbumisc.test 329986cf5dd51890c4eb906c2f960ebb773a79a64bed90f506b7c417825b37eb
 F ext/rbu/rbumulti.test 5fb139058f37ddc5a113c5b93238de915b769b7792de41b44c983bc7c18cf5b9
 F ext/rbu/rbupartial.test f25df014b8dbe3c5345851fba6e66f79ab237f57dc201b2d5f0dbae658ae5a4c
@@ -365,7 +366,7 @@ F ext/rbu/rbuvacuum.test 55e101e90168c2b31df6c9638fe73dc7f7cc666b6142266d1563697
 F ext/rbu/rbuvacuum2.test b8e5b51dc8b2c0153373d024c0936be3f66f9234acbd6d0baab0869d56b14e6b
 F ext/rbu/rbuvacuum3.test 8addd82e4b83b4c93fa47428eae4fd0dbf410f8512c186f38e348feb49ba03dc
 F ext/rbu/rbuvacuum4.test a78898e438a44803eb2bc897ba3323373c9f277418e2d6d76e90f2f1dbccfd10
-F ext/rbu/sqlite3rbu.c f3a3e09f575157052813be667d6ab3b54f47fb02e6e1c9f767ad7bb8f1fb90b3
+F ext/rbu/sqlite3rbu.c e8424eb4700fa5c957b78704b76d3167283c17953a41f50413a1d55d48e93cad
 F ext/rbu/sqlite3rbu.h 1dc88ab7bd32d0f15890ea08d23476c4198d3da3056985403991f8c9cd389812
 F ext/rbu/test_rbu.c 03f6f177096a5f822d68d8e4069ad8907fe572c62ff2d19b141f59742821828a
 F ext/repair/README.md 92f5e8aae749a4dae14f02eea8e1bb42d4db2b6ce5e83dbcdd6b1446997e0c15
@@ -1846,10 +1847,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7f9a4b6015ac332a04d3e394a6b3210fc95253d8786a261178a5639cb8d9d987
-R f116075cb1c47b7928f41444f3803579
-T +bgcolor * #d0c0ff
-T +sym-release *
-T +sym-version-3.30.0 *
-U drh
-Z edadfb0c72633ac9bcd13396063b6815
+P c20a35336432025445f9f7e289d0cc3e4003fb17f45a4ce74c6269c407c6e09f
+R a8856db772e2bb9949da7c267e1829ab
+T *branch * rbu-replace-hack
+T *sym-rbu-replace-hack *
+T -sym-trunk *
+U dan
+Z aa38f9f5e27caa9871ead4f8e1acfb36

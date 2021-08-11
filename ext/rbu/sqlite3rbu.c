@@ -103,6 +103,8 @@
 # define RBU_ENABLE_DELTA_CKSUM 0
 #endif
 
+#define RBU_REPLACE_HACK_TABLE "sqlite_rbu_replace_hack"
+
 /*
 ** Swap two objects of type TYPE.
 */
@@ -376,6 +378,7 @@ struct sqlite3rbu {
   char *zRbu;                     /* Path to rbu db */
   char *zState;                   /* Path to state db (or NULL if zRbu) */
   char zStateDb[5];               /* Db name for state ("stat" or "main") */
+  int bRbuReplaceHack;            /* Do the REPLACE hack */
   int rc;                         /* Value returned by last rbu_step() call */
   char *zErrmsg;                  /* Error message if rc!=SQLITE_OK */
   int nStep;                      /* Rows processed for current object */
@@ -2350,7 +2353,10 @@ static int rbuObjIterPrepareAll(
       if( p->rc==SQLITE_OK ){
         p->rc = prepareFreeAndCollectError(
             p->dbMain, &pIter->pInsert, &p->zErrmsg,
-          sqlite3_mprintf("INSERT INTO \"rbu_imp_%w\" VALUES(%s)", zTbl, zBind)
+          sqlite3_mprintf("%s INTO \"rbu_imp_%w\" VALUES(%s)", 
+            p->bRbuReplaceHack ? "REPLACE" : "INSERT",
+            zTbl, zBind
+          )
         );
       }
 
@@ -2442,7 +2448,8 @@ static int rbuObjIterPrepareAll(
       if( p->rc==SQLITE_OK ){
         p->rc = prepareFreeAndCollectError(p->dbMain, &pIter->pInsert, pz,
             sqlite3_mprintf(
-              "INSERT INTO \"%s%w\"(%s%s) VALUES(%s)", 
+              "%s INTO \"%s%w\"(%s%s) VALUES(%s)", 
+              p->bRbuReplaceHack ? "REPLACE" : "INSERT",
               zWrite, zTbl, zCollist, (bRbuRowid ? ", _rowid_" : ""), zBindings
             )
         );
@@ -2743,6 +2750,24 @@ static RbuState *rbuLoadState(sqlite3rbu *p){
   }
   rc2 = sqlite3_finalize(pStmt);
   if( rc==SQLITE_OK ) rc = rc2;
+
+  /* If this is not a vacuum operation, search for the special table
+  ** "sqlite_rbu_replace_hack". Set the flag if it is found.
+  */
+  if( rc==SQLITE_OK && !rbuIsVacuum(p) ){
+    sqlite3_stmt *pQuery = 0;
+    rc = prepareFreeAndCollectError(p->dbRbu, &pQuery, &p->zErrmsg, 
+        sqlite3_mprintf("SELECT 1 FROM main.sqlite_master WHERE name='%s'",
+          RBU_REPLACE_HACK_TABLE
+        )
+    );
+    if( rc==SQLITE_OK ){
+      if( sqlite3_step(pQuery)==SQLITE_ROW ){
+        p->bRbuReplaceHack = 1;
+      }
+      rc = sqlite3_finalize(pQuery);
+    }
+  }
 
   p->rc = rc;
   return pRet;
