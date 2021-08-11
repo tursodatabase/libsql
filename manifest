@@ -1,5 +1,5 @@
-C Fix\sa\scompiler\swarning\sin\spcache1.\s\sReduce\sthe\smaximum\ssize\sof\sa\spcache1\ncache\sto\s2147418112\spages.
-D 2021-08-09T19:54:27.186
+C Improved\scomment\son\sthe\sOP_OpenDup\sused\sto\sget\sa\snew\scursor\sfor\sa\nreused\smaterialized\sCTE.
+D 2021-08-11T13:19:13.186
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -544,7 +544,7 @@ F src/printf.c 78fabb49b9ac9a12dd1c89d744abdc9b67fd3205e62967e158f78b965a29ec4b
 F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c 42b94d37a54200707a95566eff4f7e8a380e32d080016b699f23bd79a73a5028
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c 63077c0243ded1432d97c90c1a4c3419b3a574b36634c674599a68bfe4c3bdc2
+F src/select.c 082fe06fd0a4a6809013f60a8e1e25a646f9461cfc375c6bb06b0ed123ebe3b2
 F src/shell.c.in f795a4ae3c35631f5edcfa754c7824ff1d8a75b23a07e22e664b50f82e826346
 F src/sqlite.h.in 43fcf0fe2af04081f420a906fc020bde1243851ba44b0aa567a27f94bf8c3145
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1920,7 +1920,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d44f74f14a387960ce105913526b572f4a3d1935351c6aab10cee85946488a9e
-R 19e90c8b9bdd61fd7709a8e960a3ede7
+P 4bc93658aa563f2fa84f7f85f7f9f336dc80425640140c0fc2aec4a3606fad48
+R fe3d22d1884ef23f4a46e50bdba59015
 U drh
-Z 8656b513dcc008313098af5e52544bda
+Z 5ce7c4f7680efc3f37d51bc4e04fac8a
