@@ -611,4 +611,14 @@ do_execsql_test 12.1 {
   SELECT quote(c) FROM v3;
 } {1 'hello' 4.25 NULL X'3C626C6F623E'}
 
+# 2021-08-11 https://sqlite.org/forum/forumpost/d496c3d29bc93736
+reset_db
+do_execsql_test 13.1 {
+  WITH
+    t1(x) AS (SELECT 111),
+    t2(y) AS (SELECT 222),
+    t3(z) AS (SELECT * FROM t2 WHERE false UNION ALL SELECT * FROM t2)
+  SELECT * FROM t1, t3;
+} {111 222}
+
 finish_test
