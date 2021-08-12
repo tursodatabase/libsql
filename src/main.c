@@ -3205,7 +3205,14 @@ static int openDatabase(
   db->nextAutovac = -1;
   db->szMmap = sqlite3GlobalConfig.szMmap;
   db->nextPagesize = 0;
+#ifdef SQLITE_ENABLE_SORTER_MMAP
+  /* Beginning with version 3.37.0, using the VFS xFetch() API to memory-map 
+  ** the temporary files used to do external sorts (see code in vdbesort.c)
+  ** is disabled. It can still be used either by defining
+  ** SQLITE_ENABLE_SORTER_MMAP at compile time or by using the
+  ** SQLITE_TESTCTRL_SORTER_MMAP test-control at runtime. */
   db->nMaxSorterMmap = 0x7FFFFFFF;
+#endif
   db->flags |= SQLITE_ShortColNames
                  | SQLITE_EnableTrigger
                  | SQLITE_EnableView
