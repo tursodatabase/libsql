@@ -1,5 +1,5 @@
-C Rename\sthe\sColumn.eType\sfield\sto\sColumn.eCType\s-\swith\san\sextra\s"C".
-D 2021-08-18T12:05:22.798
+C What\swould\sit\sbe\slike\sif\syou\scould\sadd\sthe\skeyword\s"STRICT"\safter\sa\sCREATE\nTABLE\sstatement\sto\scause\sthe\stable\sto\s(1)\sallow\sonly\sa\sfew\swell-defined\ndatatypes,\s(2)\srigidly\senforce\sthose\stypes,\s(3)\srequire\sNOT\sNULL\son\sPK\ncolumns,\s(4)\salways\senforce\sforeign\skey\sconstraint,\sand\sso\sforth?\s\sThis\nbranch\sseeks\sto\sexplore\sthat\squestion.
+D 2021-08-18T13:13:58.021
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -488,7 +488,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c e204a9c8fb4fe5dbb910a863ba487f4af9b5c501254ec4ccbfcdd6b1f65b7fb4
 F src/btree.h 74d64b8f28cfa4a894d14d4ed64fa432cd697b98b61708d4351482ae15913e22
 F src/btreeInt.h 7bc15a24a02662409ebcd6aeaa1065522d14b7fda71573a2b0568b458f514ae0
-F src/build.c 0374faa35f0920c51147a20bb3462fae22310f2acaf29721ca99821fc7232548
+F src/build.c bf8b4f6f4fb9620eedadaa9513a2682b9ff80c643285f56d9ea34105dc3c2e2b
 F src/callback.c d0b853dd413255d2e337b34545e54d888ea02f20da5ad0e63585b389624c4a6c
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 8159d5f706551861c18ec6c8f6bdf105e15ea00367f05d9ab65d31a1077facc1
@@ -533,7 +533,7 @@ F src/os_win.c 77d39873836f1831a9b0b91894fec45ab0e9ca8e067dc8c549e1d1eca1566fe9
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 95c255256b13827caf038c8f963d334784073f38ab6ef9d70371d9d04f3c43e0
 F src/pager.h 4bf9b3213a4b2bebbced5eaa8b219cf25d4a82f385d093cd64b7e93e5285f66f
-F src/parse.y 0ba0baec5de6921ec8ba8bbcf1018969144ef29d26112e17539d8fbb1662e3eb
+F src/parse.y 86aa016b281f61d7664dd8cb7808cab8114d14cfaf362a9b9fc9ead8f33546b7
 F src/pcache.c 385ff064bca69789d199a98e2169445dc16e4291fa807babd61d4890c3b34177
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c 54881292a9a5db202b2c0ac541c5e3ef9a5e8c4f1c1383adb2601d5499a60e65
@@ -549,7 +549,7 @@ F src/shell.c.in f795a4ae3c35631f5edcfa754c7824ff1d8a75b23a07e22e664b50f82e82634
 F src/sqlite.h.in 43fcf0fe2af04081f420a906fc020bde1243851ba44b0aa567a27f94bf8c3145
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h e97f4e9b509408fea4c4e9bef5a41608dfac343b4d3c7a990dedde1e19af9510
-F src/sqliteInt.h a65ddfb177549c82dcd1374a2f23260328eb65ced55b50843419386177e159be
+F src/sqliteInt.h 25581e591444d7be1eda83890a8828b28b8ff4c65ffd85a15acd4f0820260821
 F src/sqliteLimit.h d7323ffea5208c6af2734574bae933ca8ed2ab728083caa117c9738581a31657
 F src/status.c 4b8bc2a6905163a38b739854a35b826c737333fab5b1f8e03fa7eb9a4799c4c1
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -1425,6 +1425,7 @@ F test/stat.test 15a3106eddedfc882f64bc09f237b4169be4b92dd57c93031b8ff8b13af3e7c
 F test/statfault.test f525a7bf633e50afd027700e9a486090684b1ac1
 F test/stmt.test 54ed2cc0764bf3e48a058331813c3dbd19fc1d0827c3d8369914a5d8f564ec75
 F test/stmtvtab1.test 6873dfb24f8e79cbb5b799b95c2e4349060eb7a3b811982749a84b359468e2d5
+F test/strict1.test d84d23c8b2e2742277d943db3a56d2cf0d886ad9bb4de46228aa6c7c676f6553
 F test/subjournal.test 8d4e2572c0ee9a15549f0d8e40863161295107e52f07a3e8012a2e1fdd093c49
 F test/subquery.test d7268d193dd33d5505df965399d3a594e76ae13f
 F test/subquery2.test 90cf944b9de8204569cf656028391e4af1ccc8c0cc02d4ef38ee3be8de1ffb12
@@ -1920,7 +1921,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7cca80808cef192fe0479477056a028e230a164fd368e72100def065d424ca2c
-R b66c8f57a17fe88d4036ed4eb83a05fb
+P b9b0dcd5af072c22f2ce71cf9584b5b572fbcfbce6410a7d703b586adb8938ba
+R d1aed29af5d2a129b155039aa4e933b3
+T *branch * strict-tables
+T *sym-strict-tables *
+T -sym-trunk *
 U drh
-Z 2628ebdae9db72c0a61ecc0e228d76e8
+Z d972776960407c2f55c8c38fcd2522b6

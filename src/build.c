@@ -2554,7 +2554,7 @@ void sqlite3EndTable(
   Parse *pParse,          /* Parse context */
   Token *pCons,           /* The ',' token after the last column defn. */
   Token *pEnd,            /* The ')' before options in the CREATE TABLE */
-  u8 tabOpts,             /* Extra table options. Usually 0. */
+  u32 tabOpts,            /* Extra table options. Usually 0. */
   Select *pSelect         /* Select from a "CREATE ... AS SELECT" */
 ){
   Table *p;                 /* The new table */
@@ -2588,6 +2588,21 @@ void sqlite3EndTable(
     }
     p->tnum = db->init.newTnum;
     if( p->tnum==1 ) p->tabFlags |= TF_Readonly;
+  }
+
+  /* Do not allow COLTYPE_CUSTOM in STRICT mode */
+  if( tabOpts & TF_Strict ){
+    int ii;
+    p->tabFlags |= TF_Strict;
+    for(ii=0; ii<p->nCol; ii++){
+      if( p->aCol[ii].eCType==COLTYPE_CUSTOM ){
+        sqlite3ErrorMsg(pParse,
+          "unknown datatype for %s.%s: \"%s\"",
+          p->zName, p->aCol[ii].zCnName, sqlite3ColumnType(p->aCol+ii, "")
+        );
+        return;
+      }
+    }    
   }
 
   assert( (p->tabFlags & TF_HasPrimaryKey)==0
