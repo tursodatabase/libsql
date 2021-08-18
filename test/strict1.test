@@ -37,5 +37,56 @@ do_catchsql_test strict1-1.5 {
 do_catchsql_test strict1-1.6 {
   CREATE TABLE t1(a TEXT PRIMARY KEY, b INT, c INTEGER, d REAL, e BLOB, f TEXT(50)) WITHOUT ROWID, STRICT;
 } {1 {unknown datatype for t1.f: "TEXT(50)"}}
-  
+
+do_execsql_test strict1-2.0 {
+  CREATE TABLE t1(
+    a INT,
+    b INTEGER,
+    c BLOB,
+    d TEXT,
+    e REAL
+  ) STRICT;
+} {}
+do_catchsql_test strict1-2.1 {
+  INSERT INTO t1(a) VALUES('xyz');
+} {1 {t1.a holds only INT values}}
+do_catchsql_test strict1-2.2 {
+  INSERT INTO t1(b) VALUES('xyz');
+} {1 {t1.b holds only INTEGER values}}
+do_catchsql_test strict1-2.3 {
+  INSERT INTO t1(c) VALUES('xyz');
+} {1 {t1.c holds only BLOB values}}
+do_catchsql_test strict1-2.4 {
+  INSERT INTO t1(d) VALUES(x'3142536475');
+} {1 {t1.d holds only TEXT values}}
+do_catchsql_test strict1-2.5 {
+  INSERT INTO t1(e) VALUES('xyz');
+} {1 {t1.e holds only REAL values}}
+
+do_execsql_test strict1-3.1 {
+  INSERT INTO t1(a, b) VALUES(1,2),('3','4'),(5.0, 6.0),(null,null);
+  SELECT a, b, '|' FROM t1;
+} {1 2 | 3 4 | 5 6 | {} {} |}
+do_catchsql_test strict1-3.2 {
+  INSERT INTO t1(a) VALUES(1.2);
+} {1 {t1.a holds only INT values}}
+do_catchsql_test strict1-3.3 {
+  INSERT INTO t1(a) VALUES(x'313233');
+} {1 {t1.a holds only INT values}}
+do_catchsql_test strict1-3.4 {
+  INSERT INTO t1(b) VALUES(1.2);
+} {1 {t1.b holds only INTEGER values}}
+do_catchsql_test strict1-3.5 {
+  INSERT INTO t1(b) VALUES(x'313233');
+} {1 {t1.b holds only INTEGER values}}
+
+do_execsql_test strict1-4.1 {
+  DELETE FROM t1;
+  INSERT INTO t1(c) VALUES(x'313233'), (NULL);
+  SELECT typeof(c), c FROM t1;
+} {blob 123 null {}}
+do_catchsql_test strict1-4.2 {
+  INSERT INTO t1(c) VALUES('456');
+} {1 {t1.c holds only BLOB values}}
+
 finish_test

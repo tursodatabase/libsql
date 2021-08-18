@@ -131,7 +131,25 @@ const char *sqlite3IndexAffinityStr(sqlite3 *db, Index *pIdx){
 */
 void sqlite3TableAffinity(Vdbe *v, Table *pTab, int iReg){
   int i, j;
-  char *zColAff = pTab->zColAff;
+  char *zColAff;
+  if( pTab->tabFlags & TF_Strict ){
+    if( iReg==0 ){
+      /* Move the previous opcode (which should be OP_MakeRecord) forward
+      ** by one slot and insert a new OP_TypeCheck where the current
+      ** OP_MakeRecord is found */
+      VdbeOp *pPrev;
+      sqlite3VdbeAppendP4(v, pTab, P4_TABLE);
+      pPrev = sqlite3VdbeGetOp(v, -1);
+      pPrev->opcode = OP_TypeCheck;
+      sqlite3VdbeAddOp3(v, OP_MakeRecord, pPrev->p1, pPrev->p2, pPrev->p3);
+    }else{
+      /* Insert an isolated OP_Typecheck */
+      sqlite3VdbeAddOp2(v, OP_TypeCheck, iReg, pTab->nNVCol);
+      sqlite3VdbeAppendP4(v, pTab, P4_TABLE);
+    }
+    return;
+  }
+  zColAff = pTab->zColAff;
   if( zColAff==0 ){
     sqlite3 *db = sqlite3VdbeDb(v);
     zColAff = (char *)sqlite3DbMallocRaw(0, pTab->nCol+1);
