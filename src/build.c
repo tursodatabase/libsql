@@ -2321,7 +2321,9 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
   */
   if( !db->init.imposterTable ){
     for(i=0; i<pTab->nCol; i++){
-      if( (pTab->aCol[i].colFlags & COLFLAG_PRIMKEY)!=0 ){
+      if( (pTab->aCol[i].colFlags & COLFLAG_PRIMKEY)!=0
+       && (pTab->aCol[i].notNull==OE_None)
+      ){
         pTab->aCol[i].notNull = OE_Abort;
       }
     }
