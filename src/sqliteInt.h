@@ -2039,7 +2039,7 @@ struct Module {
 struct Column {
   char *zCnName;        /* Name of this column */
   unsigned notNull :4;  /* An OE_ code for handling a NOT NULL constraint */
-  unsigned eType :4;    /* One of the standard types */
+  unsigned eCType :4;    /* One of the standard types */
   char affinity;        /* One of the SQLITE_AFF_... values */
   u8 szEst;             /* Est size of value in this column. sizeof(INT)==1 */
   u8 hName;             /* Column name hash for faster lookup */
@@ -2047,7 +2047,7 @@ struct Column {
   u16 colFlags;         /* Boolean properties.  See COLFLAG_ defines below */
 };
 
-/* Allowed values for Column.eType.
+/* Allowed values for Column.eCType.
 **
 ** Values must match entries in the global constant arrays
 ** sqlite3StdTypeLen[] and sqlite3StdType[].  Each value is one more

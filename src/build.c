@@ -1554,7 +1554,7 @@ void sqlite3AddColumn(Parse *pParse, Token sName, Token sType){
     /* If there is no type specified, columns have the default affinity
     ** 'BLOB' with a default size of 4 bytes. */
     pCol->affinity = affinity;
-    pCol->eType = eType;
+    pCol->eCType = eType;
     pCol->szEst = szEst;
 #ifdef SQLITE_ENABLE_SORTER_REFERENCES
     if( affinity==SQLITE_AFF_BLOB ){
@@ -1849,7 +1849,7 @@ void sqlite3AddPrimaryKey(
   }
   if( nTerm==1
    && pCol
-   && pCol->eType==COLTYPE_INTEGER
+   && pCol->eCType==COLTYPE_INTEGER
    && sortOrder!=SQLITE_SO_DESC
   ){
     if( IN_RENAME_OBJECT && pList ){
