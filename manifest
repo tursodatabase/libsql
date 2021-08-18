@@ -1,5 +1,5 @@
-C Trying\sto\sinsert\san\sincorrect\sdatatype\sinto\sa\sSTRICT\stable\sraises\san\nSQLITE_CONSTRAINT_DATATYPE\serror.\s\sSeems\sto\swork,\sthough\slots\smore\stesting\nis\sneeded.
-D 2021-08-18T19:22:27.620
+C Merge\sthe\sWITHOUT\sROWID,\sNOT\sNULL\sON\sCONFLICT\sbug\sfix\sinto\sthe\sstrict-tables\nbranch.
+D 2021-08-18T23:00:43.920
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -488,7 +488,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c e204a9c8fb4fe5dbb910a863ba487f4af9b5c501254ec4ccbfcdd6b1f65b7fb4
 F src/btree.h 74d64b8f28cfa4a894d14d4ed64fa432cd697b98b61708d4351482ae15913e22
 F src/btreeInt.h 7bc15a24a02662409ebcd6aeaa1065522d14b7fda71573a2b0568b458f514ae0
-F src/build.c bf8b4f6f4fb9620eedadaa9513a2682b9ff80c643285f56d9ea34105dc3c2e2b
+F src/build.c 25adabcbe538ce25c577c3f6815c0a83c483a700984d784a69ed6883cbbd7a98
 F src/callback.c d0b853dd413255d2e337b34545e54d888ea02f20da5ad0e63585b389624c4a6c
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 8159d5f706551861c18ec6c8f6bdf105e15ea00367f05d9ab65d31a1077facc1
@@ -1808,7 +1808,7 @@ F test/without_rowid1.test 6abc5d497f634520944dac0a89a6c240a48d2ee0f8353356a750e
 F test/without_rowid2.test af260339f79d13cb220288b67cd287fbcf81ad99
 F test/without_rowid3.test 39ab0dd773eaa62e59b17093f875327630f54c4145458f6d2b053d68d4b2f67b
 F test/without_rowid4.test 4e08bcbaee0399f35d58b5581881e7a6243d458a
-F test/without_rowid5.test 89b1c587bd92a0590e440da33e7666bf4891572a
+F test/without_rowid5.test f058a97600c09c7c8754733b9d8adc428e055f815d8926d74b59b872e20d0e2b
 F test/without_rowid6.test efbd7add62c59bf5ca97bf8da674e734e6a70ef979234e816166824b4d258f68
 F test/without_rowid7.test d7c59a93d726b55812d620f8f284e01904a5b85f9ee9eea8f2f68571a5e8c40e
 F test/wordcount.c d721a4b6fae93e6e33449700bce1686bc23257c27425bc3ef1599dc912adec66
@@ -1921,7 +1921,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 78732b9f98936693ae29c85a692c35a84c7d065aec79903af34b08d18f10a5e6
-R 1fff96359c6ac1b1e05dcf91c71ba789
+P a19305e5cfedf5c472200d6e05c1396443e348f052a40a0979f860f2ff06851d 13abba0941a724eb62455650976b03678e4455b6b3090c84a2ab2f4a7656b4d8
+R fda99db412e4d20b77fa444be1944106
 U drh
-Z 89d8d7739872c2c88b7cdfc8d1469967
+Z 59e849481af66370dc20d95e87531af1
