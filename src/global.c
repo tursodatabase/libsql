@@ -360,6 +360,13 @@ const char sqlite3StdTypeAffinity[] = {
   SQLITE_AFF_REAL,
   SQLITE_AFF_TEXT
 };
+const char sqlite3StdTypeMap[] = {
+  SQLITE_BLOB,
+  SQLITE_INTEGER,
+  SQLITE_INTEGER,
+  SQLITE_FLOAT,
+  SQLITE_TEXT
+};
 const char *sqlite3StdType[] = {
   "BLOB",
   "INT",

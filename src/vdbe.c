@@ -2534,6 +2534,22 @@ case OP_NotNull: {            /* same as TK_NOTNULL, jump, in1 */
   break;
 }
 
+/* Opcode: IfType P1 P2 P3 * *
+** Synopsis: if typeof(r[P1])!=P3 goto P2
+**
+** Jump to P2 if the value in register has a datatype given by P3.
+** P3 is an integer which should be one of SQLITE_INTEGER, SQLITE_FLOAT,
+** SQLITE_BLOB, SQLITE_NULL, or SQLITE_TEXT.
+*/
+case OP_IfType: {            /* jump, in1 */
+  int doTheJump;
+  pIn1 = &aMem[pOp->p1];
+  doTheJump = sqlite3_value_type(pIn1)==pOp->p3;
+  VdbeBranchTaken( doTheJump, 2);
+  if( doTheJump ) goto jump_to_p2;
+  break;
+}
+
 /* Opcode: IfNullRow P1 P2 P3 * *
 ** Synopsis: if P1.nullRow then r[P3]=NULL, goto P2
 **
