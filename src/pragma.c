@@ -1675,6 +1675,7 @@ void sqlite3Pragma(
           /* Sanity check on record header decoding */
           sqlite3VdbeAddOp3(v, OP_Column, iDataCur, pTab->nNVCol-1,3);
           sqlite3VdbeChangeP5(v, OPFLAG_TYPEOFARG);
+          VdbeComment((v, "(right-most column)"));
         }
         /* Verify that all NOT NULL columns really are NOT NULL.  At the
         ** same time verify the type of the content of STRICT tables */
@@ -1682,37 +1683,37 @@ void sqlite3Pragma(
         for(j=0; j<pTab->nCol; j++){
           char *zErr;
           Column *pCol = pTab->aCol + j;
-          int endLabel;
+          int doError, jmp2;
           if( j==pTab->iPKey ) continue;
           if( pCol->notNull==0 && !bStrict ) continue;
-          endLabel = bStrict ? sqlite3VdbeMakeLabel(pParse) : 0;
+          doError = bStrict ? sqlite3VdbeMakeLabel(pParse) : 0;
           sqlite3ExprCodeGetColumnOfTable(v, pTab, iDataCur, j, 3);
           if( sqlite3VdbeGetOp(v,-1)->opcode==OP_Column ){
             sqlite3VdbeChangeP5(v, OPFLAG_TYPEOFARG);
           }
           if( pCol->notNull ){
-            int jmp2;
             jmp2 = sqlite3VdbeAddOp1(v, OP_NotNull, 3); VdbeCoverage(v);
             zErr = sqlite3MPrintf(db, "NULL value in %s.%s", pTab->zName,
                                 pCol->zCnName);
             sqlite3VdbeAddOp4(v, OP_String8, 0, 3, 0, zErr, P4_DYNAMIC);
-            integrityCheckResultRow(v);
-            if( bStrict ) sqlite3VdbeGoto(v, endLabel);
+            if( bStrict ){
+              sqlite3VdbeGoto(v, doError);
+            }else{
+              integrityCheckResultRow(v);
+            }
             sqlite3VdbeJumpHere(v, jmp2);
           }
           if( pTab->tabFlags & TF_Strict ){
-            if( pCol->notNull==0 ){
-              sqlite3VdbeAddOp2(v, OP_IsNull, 3, endLabel); VdbeCoverage(v);
-            }
-            sqlite3VdbeAddOp3(v, OP_IfType, 3, endLabel, 
+            jmp2 = sqlite3VdbeAddOp3(v, OP_IsNullOrType, 3, 0, 
                                      sqlite3StdTypeMap[pCol->eCType-1]);
             VdbeCoverage(v);
             zErr = sqlite3MPrintf(db, "non-%s value in %s.%s",
                                   sqlite3StdType[pCol->eCType-1],
                                   pTab->zName, pTab->aCol[j].zCnName);
             sqlite3VdbeAddOp4(v, OP_String8, 0, 3, 0, zErr, P4_DYNAMIC);
+            sqlite3VdbeResolveLabel(v, doError);
             integrityCheckResultRow(v);
-            sqlite3VdbeResolveLabel(v, endLabel);
+            sqlite3VdbeJumpHere(v, jmp2);
           }
         }
         /* Verify CHECK constraints */

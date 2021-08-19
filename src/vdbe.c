@@ -2502,6 +2502,22 @@ case OP_IsNull: {            /* same as TK_ISNULL, jump, in1 */
   break;
 }
 
+/* Opcode: IsNullOrType P1 P2 P3 * *
+** Synopsis: if typeof(r[P1]) IN (P3,5) goto P2
+**
+** Jump to P2 if the value in register P1 is NULL or has a datatype P3.
+** P3 is an integer which should be one of SQLITE_INTEGER, SQLITE_FLOAT,
+** SQLITE_BLOB, SQLITE_NULL, or SQLITE_TEXT.
+*/
+case OP_IsNullOrType: {      /* jump, in1 */
+  int doTheJump;
+  pIn1 = &aMem[pOp->p1];
+  doTheJump = (pIn1->flags & MEM_Null)!=0 || sqlite3_value_type(pIn1)==pOp->p3;
+  VdbeBranchTaken( doTheJump, 2);
+  if( doTheJump ) goto jump_to_p2;
+  break;
+}
+
 /* Opcode: ZeroOrNull P1 P2 P3 * *
 ** Synopsis: r[P2] = 0 OR NULL
 **
@@ -2531,22 +2547,6 @@ case OP_NotNull: {            /* same as TK_NOTNULL, jump, in1 */
   if( (pIn1->flags & MEM_Null)==0 ){
     goto jump_to_p2;
   }
-  break;
-}
-
-/* Opcode: IfType P1 P2 P3 * *
-** Synopsis: if typeof(r[P1])!=P3 goto P2
-**
-** Jump to P2 if the value in register has a datatype given by P3.
-** P3 is an integer which should be one of SQLITE_INTEGER, SQLITE_FLOAT,
-** SQLITE_BLOB, SQLITE_NULL, or SQLITE_TEXT.
-*/
-case OP_IfType: {            /* jump, in1 */
-  int doTheJump;
-  pIn1 = &aMem[pOp->p1];
-  doTheJump = sqlite3_value_type(pIn1)==pOp->p3;
-  VdbeBranchTaken( doTheJump, 2);
-  if( doTheJump ) goto jump_to_p2;
   break;
 }
 
@@ -2896,6 +2896,16 @@ op_column_corrupt:
 ** This opcode is similar to OP_Affinity except that this opcode
 ** forces the register type to the Table column type.  This is used
 ** to implement "strict affinity".
+**
+** Preconditions:
+**
+** <ul>
+** <li> P2 should be the number of non-virtual columns in the
+**      table of P4.
+** <li> Table P4 should be a STRICT table.
+** </ul>
+**
+** If any precondition is false, an assertion fault occurs.
 */
 case OP_TypeCheck: {
   Table *pTab;
@@ -2905,6 +2915,7 @@ case OP_TypeCheck: {
   assert( pOp->p4type==P4_TABLE );
   pTab = pOp->p4.pTab;
   assert( pTab->tabFlags & TF_Strict );
+  assert( pTab->nNVCol==pOp->p2 );
   aCol = pTab->aCol;
   pIn1 = &aMem[pOp->p1];
   for(i=0; i<pTab->nCol; i++){

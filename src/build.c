@@ -2592,7 +2592,15 @@ void sqlite3EndTable(
     if( p->tnum==1 ) p->tabFlags |= TF_Readonly;
   }
 
-  /* Do not allow COLTYPE_CUSTOM in STRICT mode */
+  /* Special processing for tables that include the STRICT keyword:
+  **
+  **   *  Do not allow custom column datatypes.  Every column must have
+  **      a datatype that is one of INT, INTEGER, REAL, TEXT, or BLOB.
+  **
+  **   *  If a PRIMARY KEY is defined, other than the INTEGER PRIMARY KEY,
+  **      then all columns of the PRIMARY KEY must have a NOT NULL
+  **      constraint.
+  */
   if( tabOpts & TF_Strict ){
     int ii;
     p->tabFlags |= TF_Strict;
@@ -2609,8 +2617,6 @@ void sqlite3EndTable(
        && p->iPKey!=ii
        && pCol->notNull == OE_None
       ){
-        /* Primary key columns other than the IPK may not be NULL
-        ** in strict mode */
         pCol->notNull = OE_Abort;
         p->tabFlags |= TF_HasNotNull;
       }
