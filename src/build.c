@@ -2597,12 +2597,22 @@ void sqlite3EndTable(
     int ii;
     p->tabFlags |= TF_Strict;
     for(ii=0; ii<p->nCol; ii++){
-      if( p->aCol[ii].eCType==COLTYPE_CUSTOM ){
+      Column *pCol = &p->aCol[ii];
+      if( pCol->eCType==COLTYPE_CUSTOM ){
         sqlite3ErrorMsg(pParse,
           "unknown datatype for %s.%s: \"%s\"",
-          p->zName, p->aCol[ii].zCnName, sqlite3ColumnType(p->aCol+ii, "")
+          p->zName, pCol->zCnName, sqlite3ColumnType(pCol, "")
         );
         return;
+      }
+      if( (pCol->colFlags & COLFLAG_PRIMKEY)!=0
+       && p->iPKey!=ii
+       && pCol->notNull == OE_None
+      ){
+        /* Primary key columns other than the IPK may not be NULL
+        ** in strict mode */
+        pCol->notNull = OE_Abort;
+        p->tabFlags |= TF_HasNotNull;
       }
     }    
   }
