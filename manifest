@@ -1,5 +1,5 @@
-C Fix\sON\sCONFLICT\sclause\sprocessing\sfor\sNOT\sNULL\sconstraints\sof\sPRIMARY\sKEY\ncolumns\son\sWITHOUT\sROWID\stables.\nTicket\s[f2be158c57aaa8c6]
-D 2021-08-18T22:26:51.356
+C If\sSQLITE_USE_SEH\sis\sdefined,\shandle\sstructured-exceptions\sthrown\sby\sMSVC\sbuilds\sif\sthe\s*-shm\sfile\smapping\sis\saccessed\safter\sit\sbecomes\sinvalid\sfor\ssome\sreason.
+D 2021-08-19T21:01:15.043
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -628,7 +628,7 @@ F src/vdbetrace.c 666c6fd9f1b62be6999e072a45b913e3c2c3518bc60dfd4d54fe304130acb7
 F src/vdbevtab.c f99b275366c5fc5e2d99f734729880994ab9500bdafde7fae3b02d562b9d323c
 F src/vtab.c 88404ac1517903b3eb2abe256772ee95bb09f81ac0a17e13afe5d467df4de4ee
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 2be08331d798237ad5d7ae0b252700ffb2b63189cb18d993496d009a93e2f81c
+F src/wal.c dd9ca83fcd91eb237790c18e972f8f2fd30cf86848d6fa9fc09da25e8acf56ae
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c 7342becedf3f8a26f9817f08436bdf8b56ad69af83705f6b9320a0ad3092c2ac
 F src/where.c 99b6e13664a7bd9a553c554978d0e253066995dade621f44cffa8928c8b493b5
@@ -1393,7 +1393,7 @@ F test/snapshot.test a504f2e7009f512ef66c719f0ea1c55a556bdaf1e1312c80a04d46fc1a3
 F test/snapshot2.test 8d6ff5dd9cc503f6e12d408a30409c3f9c653507b24408d9cd7195931c89bc54
 F test/snapshot3.test 8744313270c55f6e18574283553d3c5c5fe4c5970585663613a0e75c151e599b
 F test/snapshot4.test d4e9347ef2fcabc491fc893506c7bbaf334da3be111d6eb4f3a97cc623b78322
-F test/snapshot_fault.test f6c5ef7cb93bf92fbb4e864ecc5c87df7d3a250064838822db5b4d3a5563ede4
+F test/snapshot_fault.test 129234ceb9b26a0e1000e8563a16e790f5c1412354e70749cbd78c3d5d07d60a
 F test/snapshot_up.test a0a29c4cf33475fcef07c3f8e64af795e24ab91b4cc68295863402a393cdd41c
 F test/soak.test 18944cf21b94a7fe0df02016a6ee1e9632bc4e8d095a0cb49d95e15d5cca2d5c
 F test/softheap1.test 843cd84db9891b2d01b9ab64cef3e9020f98d087
@@ -1739,6 +1739,7 @@ F test/walprotocol2.test 7d3b6b4bf0b12f8007121b1e6ef714bc99101fb3b48e46371df1db8
 F test/walro.test cb438d05ba0d191f10b688e39c4f0cd5b71569a1d1f4440e5bdf3c6880e08c20
 F test/walro2.test 0e79dd15cbdb4f482c01ea248373669c732414a726b357d04846a816afafb768
 F test/walrofault.test c70cb6e308c443867701856cce92ad8288cd99488fa52afab77cca6cfd51af68
+F test/walseh1.test 970946bdd40bc37d1552811b54ec94dd4a5a4178354b4afa129f2053b99bf09f
 F test/walsetlk.test 3185bebc90557e0d611442c8d64f7a0cb7b06f8e156eea37a4a7358f722715be
 F test/walshared.test 0befc811dcf0b287efae21612304d15576e35417
 F test/walslow.test c05c68d4dc2700a982f89133ce103a1a84cc285f
@@ -1920,7 +1921,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b9b0dcd5af072c22f2ce71cf9584b5b572fbcfbce6410a7d703b586adb8938ba
-R f57d6ed5153ac1a3784cf20c59f627b9
-U drh
-Z 19e6156db8fe8743846e026420e0b856
+P 13abba0941a724eb62455650976b03678e4455b6b3090c84a2ab2f4a7656b4d8
+R f5105d1628b1a51745c8bcb5cc4af959
+T *branch * wal-shm-exceptions
+T *sym-wal-shm-exceptions *
+T -sym-trunk *
+U dan
+Z 55cb3a3675f7aa624d05737d0648760c
