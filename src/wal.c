@@ -624,8 +624,8 @@ struct WalIterator {
 # define SEH_TRY    __try { \
    assert( walAssertLockmask(pWal) && pWal->nSehTry==0 ); TESTONLY(pWal->nSehTry++);
 
-# define SEH_EXCEPT TESTONLY(pWal->nSehTry--); assert( pWal->nSehTry==0 ); \
-   } __except( sehExceptionFilter(pWal, GetExceptionCode()) )
+# define SEH_EXCEPT(X) TESTONLY(pWal->nSehTry--); assert( pWal->nSehTry==0 ); \
+   } __except( sehExceptionFilter(pWal, GetExceptionCode()) ){ X }
 
 # define SEH_INJECT_FAULT sehInjectFault(pWal) 
 
@@ -650,10 +650,13 @@ static void sehInjectFault(Wal *pWal){
  }
 }
 
+#define SEH_FREE_ON_ERROR(X)  pWal->pFree = X
+
 #else
 # define SEH_TRY
-# define SEH_EXCEPT if(0)
+# define SEH_EXCEPT(X)
 # define SEH_INJECT_FAULT
+# define SEH_FREE_ON_ERROR(X)
 #endif /* ifdef SQLITE_USE_SEH */
 
 
@@ -1365,7 +1368,8 @@ static int walIndexRecover(Wal *pWal){
 
     /* Malloc a buffer to read frames into. */
     szFrame = szPage + WAL_FRAME_HDRSIZE;
-    pWal->pFree = aFrame = (u8 *)sqlite3_malloc64(szFrame + WALINDEX_PGSZ);
+    aFrame = (u8 *)sqlite3_malloc64(szFrame + WALINDEX_PGSZ);
+    SEH_FREE_ON_ERROR(aFrame);
     if( !aFrame ){
       rc = SQLITE_NOMEM_BKPT;
       goto recovery_error;
@@ -1444,7 +1448,7 @@ static int walIndexRecover(Wal *pWal){
     }
 
     sqlite3_free(aFrame);
-    pWal->pFree = 0;
+    SEH_FREE_ON_ERROR(0);
   }
 
 finished:
@@ -1863,7 +1867,7 @@ static int walIteratorInit(Wal *pWal, u32 nBackfill, WalIterator **pp){
   memset(p, 0, nByte);
   p->nSegment = nSegment;
   aTmp = (ht_slot*)&(((u8*)p)[nByte]);
-  pWal->pFree = p;
+  SEH_FREE_ON_ERROR(p);
 
   for(i=walFramePage(nBackfill+1); rc==SQLITE_OK && i<nSegment; i++){
     WalHashLoc sLoc;
@@ -1896,7 +1900,8 @@ static int walIteratorInit(Wal *pWal, u32 nBackfill, WalIterator **pp){
 
   if( rc!=SQLITE_OK ){
     walIteratorFree(p);
-    pWal->pFree = p = 0;
+    p = 0;
+    SEH_FREE_ON_ERROR(0);
   }
   *pp = p;
   return rc;
@@ -2261,9 +2266,11 @@ static int walCheckpoint(
   }
 
  walcheckpoint_out:
+#ifdef SQLITE_USE_SEH
   assert( pWal->pFree==(void*)pIter );
-  walIteratorFree(pIter);
   pWal->pFree = 0;
+#endif
+  walIteratorFree(pIter);
   return rc;
 }
 
@@ -2980,7 +2987,7 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
 ** invalid in SQLITE_USE_SEH builds. It is used as follows:
 **
 **   SEH_TRY { ... }
-**   SEH_EXCEPT { rc = walHandleException(pWal); }
+**   SEH_EXCEPT( rc = walHandleException(pWal); )
 **
 ** This function does three things:
 **
@@ -3113,9 +3120,7 @@ int sqlite3WalSnapshotRecover(Wal *pWal){
       SEH_TRY {
         rc = walSnapshotRecover(pWal, pBuf1, pBuf2);
       }
-      SEH_EXCEPT {
-        rc = SQLITE_IOERR;
-      }
+      SEH_EXCEPT( rc = SQLITE_IOERR; )
       pWal->ckptLock = 0;
     }
 
@@ -3251,9 +3256,7 @@ int sqlite3WalBeginReadTransaction(Wal *pWal, int *pChanged){
   SEH_TRY {
     rc = walBeginReadTransaction(pWal, pChanged);
   }
-  SEH_EXCEPT { 
-    rc = walHandleException(pWal); 
-  }
+  SEH_EXCEPT( rc = walHandleException(pWal); )
   return rc;
 }
 
@@ -3386,7 +3389,7 @@ int sqlite3WalFindFrame(
   SEH_TRY {
     rc = walFindFrame(pWal, pgno, piRead);
   }
-  SEH_EXCEPT { rc = SQLITE_IOERR; }
+  SEH_EXCEPT( rc = SQLITE_IOERR; )
   return rc;
 }
 
@@ -3476,7 +3479,7 @@ int sqlite3WalBeginWriteTransaction(Wal *pWal){
       rc = SQLITE_BUSY_SNAPSHOT;
     }
   }
-  SEH_EXCEPT { rc = SQLITE_IOERR; }
+  SEH_EXCEPT( rc = SQLITE_IOERR; )
 
   if( rc!=SQLITE_OK ){
     walUnlockExclusive(pWal, WAL_WRITE_LOCK, 1);
@@ -3543,9 +3546,7 @@ int sqlite3WalUndo(Wal *pWal, int (*xUndo)(void *, Pgno), void *pUndoCtx){
       }
       if( iMax!=pWal->hdr.mxFrame ) walCleanupHash(pWal);
     }
-    SEH_EXCEPT {
-      rc = SQLITE_IOERR;
-    }
+    SEH_EXCEPT( rc = SQLITE_IOERR; )
   }
   return rc;
 }
@@ -3592,9 +3593,7 @@ int sqlite3WalSavepointUndo(Wal *pWal, u32 *aWalData){
     SEH_TRY {
       walCleanupHash(pWal);
     }
-    SEH_EXCEPT { 
-      rc = SQLITE_IOERR; 
-    }
+    SEH_EXCEPT( rc = SQLITE_IOERR; )
   }
 
   return rc;
@@ -4015,9 +4014,7 @@ int sqlite3WalFrames(
   SEH_TRY {
     rc = walFrames(pWal, szPage, pList, nTruncate, isCommit, sync_flags);
   }
-  SEH_EXCEPT { 
-    rc = walHandleException(pWal);
-  }
+  SEH_EXCEPT( rc = walHandleException(pWal); )
   return rc;
 }
 
@@ -4126,9 +4123,7 @@ int sqlite3WalCheckpoint(
       if( pnCkpt ) *pnCkpt = (int)(walCkptInfo(pWal)->nBackfill);
     }
   }
-  SEH_EXCEPT { 
-    rc = walHandleException(pWal); 
-  }
+  SEH_EXCEPT( rc = walHandleException(pWal); )
 
   if( isChanged ){
     /* If a new wal-index header was loaded before the checkpoint was 
@@ -4320,9 +4315,7 @@ int sqlite3WalSnapshotCheck(Wal *pWal, sqlite3_snapshot *pSnapshot){
       }
     }
   }
-  SEH_EXCEPT {
-    rc = walHandleException(pWal);
-  }
+  SEH_EXCEPT( rc = walHandleException(pWal); )
   return rc;
 }
 

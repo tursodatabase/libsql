@@ -1,5 +1,5 @@
-C If\sSQLITE_USE_SEH\sis\sdefined,\shandle\sstructured-exceptions\sthrown\sby\sMSVC\sbuilds\sif\sthe\s*-shm\sfile\smapping\sis\saccessed\safter\sit\sbecomes\sinvalid\sfor\ssome\sreason.
-D 2021-08-19T21:01:15.043
+C Enable\sthis\sbranch\sto\srun\sboth\swith\sand\swithout\sthe\s-DSQLITE_USE_SEH\soption.
+D 2021-08-19T23:10:57.409
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -628,7 +628,7 @@ F src/vdbetrace.c 666c6fd9f1b62be6999e072a45b913e3c2c3518bc60dfd4d54fe304130acb7
 F src/vdbevtab.c f99b275366c5fc5e2d99f734729880994ab9500bdafde7fae3b02d562b9d323c
 F src/vtab.c 88404ac1517903b3eb2abe256772ee95bb09f81ac0a17e13afe5d467df4de4ee
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c dd9ca83fcd91eb237790c18e972f8f2fd30cf86848d6fa9fc09da25e8acf56ae
+F src/wal.c c07f7f1301f2af98e2ae83b5bde451b715da14ca88a355f85a7d4656f8f295c3
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c 7342becedf3f8a26f9817f08436bdf8b56ad69af83705f6b9320a0ad3092c2ac
 F src/where.c 99b6e13664a7bd9a553c554978d0e253066995dade621f44cffa8928c8b493b5
@@ -1921,10 +1921,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 13abba0941a724eb62455650976b03678e4455b6b3090c84a2ab2f4a7656b4d8
-R f5105d1628b1a51745c8bcb5cc4af959
-T *branch * wal-shm-exceptions
-T *sym-wal-shm-exceptions *
-T -sym-trunk *
-U dan
-Z 55cb3a3675f7aa624d05737d0648760c
+P 5c5fa47076c5da25ca92248df3a4c11b90a0225a07f05d7220fa95d9bbb36f43
+R 7dea1ca77fe483a4591a9d63bfe86a5f
+U drh
+Z 84658daaaacd80f58fddb8eaeaf9e417
