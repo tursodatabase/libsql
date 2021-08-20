@@ -1,5 +1,5 @@
-C Support\sfor\sSTRICT\stables.\s\sA\stable\swith\sthe\sSTRICT\soption\sonly\sallows\sa\sfew\ncore\sdatatypes\son\scolumns\sand\senforces\sthose\stypes\srigidly.\s\sAlso,\sPRIMARY\sKEY\ncolumns\smust\sbe\sNOT\sNULL.
-D 2021-08-20T15:44:48.339
+C Improvement\sto\serror\shandling\sin\sLemon.\s\sNo\simpact\son\sSQLite.\n[forum:/forumpost/2f468f43cbc48d7f|Forum\spost\s2f468f43cbc48d7f]
+D 2021-08-20T19:51:22.252
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1841,7 +1841,7 @@ F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/index_usage.c f62a0c701b2c7ff2f3e21d206f093c123f222dbf07136a10ffd1ca15a5c706c5
 F tool/kvtest-speed.sh 4761a9c4b3530907562314d7757995787f7aef8f
 F tool/lemon.c a5acddd3eec6a388872aae6efc7563336348a9c45e5563642f77e8e3a50e859d
-F tool/lempar.c bbabd74a36513a4376a6b26a35804b11adae6f335d47aab29cc3bbaaa85fa4d5
+F tool/lempar.c 757e4ec699b99e0b7e78ffd8ec2063d9fa198b9102d2009dbe08369dc5775dcb
 F tool/libvers.c caafc3b689638a1d88d44bc5f526c2278760d9b9
 F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
 F tool/logest.c 11346aa019e2e77a00902aa7d0cabd27bd2e8cca
@@ -1922,8 +1922,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 13abba0941a724eb62455650976b03678e4455b6b3090c84a2ab2f4a7656b4d8 39abca01479c0f4f747b7b21fa05181896b00ed7559f0ab74aa575c23097ac21
-R 1becdbd72e9bc3a6d98c91082fba4b52
-T +closed 39abca01479c0f4f747b7b21fa05181896b00ed7559f0ab74aa575c23097ac21
+P f9c1d3441b87ee296542faa724410d16a348143cba24fe74292eefc48e038a55
+R 3829f57b5af884ac6a3eac174eaf41b9
 U drh
-Z 79dbee5e99fe8860b2834d21eb986cdc
+Z 207405ca15399b499fa1775f00fc4a3a
