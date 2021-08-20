@@ -623,10 +623,10 @@ struct WalIterator {
 
 # define SEH_TRY    __try { \
    assert( walAssertLockmask(pWal) && pWal->nSehTry==0 ); \
-   TESTONLY(pWal->nSehTry++);
+   VVA_ONLY(pWal->nSehTry++);
 
 # define SEH_EXCEPT(X) \
-   TESTONLY(pWal->nSehTry--); \
+   VVA_ONLY(pWal->nSehTry--); \
    assert( pWal->nSehTry==0 ); \
    } __except( sehExceptionFilter(pWal, GetExceptionCode()) ){ X }
 
@@ -639,7 +639,7 @@ struct WalIterator {
 ** file mapping. Or EXCEPTION_CONTINUE_SEARCH otherwise.
 */
 static int sehExceptionFilter(Wal *pWal, int eCode){
-  TESTONLY(pWal->nSehTry--);
+  VVA_ONLY(pWal->nSehTry--);
   if( eCode==EXCEPTION_ACCESS_VIOLATION ){
     return EXCEPTION_EXECUTE_HANDLER;
   }
@@ -676,8 +676,8 @@ static void sehInjectFault(Wal *pWal){
   assert( (X==0 || Y==0) && pWal->pFree==X ); pWal->pFree = Y
 
 #else
-# define SEH_TRY          TESTONLY(pWal->nSehTry++);
-# define SEH_EXCEPT(X)    TESTONLY(pWal->nSehTry--); assert( pWal->nSehTry==0 );
+# define SEH_TRY          VVA_ONLY(pWal->nSehTry++);
+# define SEH_EXCEPT(X)    VVA_ONLY(pWal->nSehTry--); assert( pWal->nSehTry==0 );
 # define SEH_INJECT_FAULT assert( pWal->nSehTry>0 );
 # define SEH_FREE_ON_ERROR(X,Y)
 #endif /* ifdef SQLITE_USE_SEH */
