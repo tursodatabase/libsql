@@ -351,6 +351,18 @@ const char sqlite3StrBINARY[] = "BINARY";
 /*
 ** Standard typenames.  These names must match the COLTYPE_* definitions.
 ** Adjust the SQLITE_N_STDTYPE value if adding or removing entries.
+**
+**    sqlite3StdType[]            The actual names of the datatypes.
+**
+**    sqlite3StdTypeLen[]         The length (in bytes) of each entry
+**                                in sqlite3StdType[].
+**
+**    sqlite3StdTypeAffinity[]    The affinity associated with each entry
+**                                in sqlite3StdType[].
+**
+**    sqlite3StdTypeMap[]         The type value (as returned from
+**                                sqlite3_column_type() or sqlite3_value_type())
+**                                for each entry in sqlite3StdType[].
 */
 const unsigned char sqlite3StdTypeLen[] = { 4, 3, 7, 4, 4 };
 const char sqlite3StdTypeAffinity[] = {
@@ -359,6 +371,13 @@ const char sqlite3StdTypeAffinity[] = {
   SQLITE_AFF_INTEGER,
   SQLITE_AFF_REAL,
   SQLITE_AFF_TEXT
+};
+const char sqlite3StdTypeMap[] = {
+  SQLITE_BLOB,
+  SQLITE_INTEGER,
+  SQLITE_INTEGER,
+  SQLITE_FLOAT,
+  SQLITE_TEXT
 };
 const char *sqlite3StdType[] = {
   "BLOB",

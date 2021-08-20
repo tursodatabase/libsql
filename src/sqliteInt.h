@@ -2039,7 +2039,7 @@ struct Module {
 struct Column {
   char *zCnName;        /* Name of this column */
   unsigned notNull :4;  /* An OE_ code for handling a NOT NULL constraint */
-  unsigned eCType :4;    /* One of the standard types */
+  unsigned eCType :4;   /* One of the standard types */
   char affinity;        /* One of the SQLITE_AFF_... values */
   u8 szEst;             /* Est size of value in this column. sizeof(INT)==1 */
   u8 hName;             /* Column name hash for faster lookup */
@@ -2284,6 +2284,7 @@ struct Table {
 #define TF_HasStat4       0x00002000 /* STAT4 info available for this table */
 #define TF_Ephemeral      0x00004000 /* An ephemeral table */
 #define TF_Eponymous      0x00008000 /* An eponymous virtual table */
+#define TF_Strict         0x00010000 /* STRICT mode */
 
 /*
 ** Allowed values for Table.eTabType
@@ -4435,7 +4436,7 @@ void sqlite3AddCheckConstraint(Parse*, Expr*, const char*, const char*);
 void sqlite3AddDefaultValue(Parse*,Expr*,const char*,const char*);
 void sqlite3AddCollateType(Parse*, Token*);
 void sqlite3AddGenerated(Parse*,Expr*,Token*);
-void sqlite3EndTable(Parse*,Token*,Token*,u8,Select*);
+void sqlite3EndTable(Parse*,Token*,Token*,u32,Select*);
 void sqlite3AddReturning(Parse*,ExprList*);
 int sqlite3ParseUri(const char*,const char*,unsigned int*,
                     sqlite3_vfs**,char**,char **);
@@ -4840,6 +4841,7 @@ extern const unsigned char sqlite3OpcodeProperty[];
 extern const char sqlite3StrBINARY[];
 extern const unsigned char sqlite3StdTypeLen[];
 extern const char sqlite3StdTypeAffinity[];
+extern const char sqlite3StdTypeMap[];
 extern const char *sqlite3StdType[];
 extern const unsigned char sqlite3UpperToLower[];
 extern const unsigned char *sqlite3aLTb;

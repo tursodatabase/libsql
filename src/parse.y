@@ -196,18 +196,29 @@ ifnotexists(A) ::= IF NOT EXISTS. {A = 1;}
 temp(A) ::= TEMP.  {A = pParse->db->init.busy==0;}
 %endif  SQLITE_OMIT_TEMPDB
 temp(A) ::= .      {A = 0;}
-create_table_args ::= LP columnlist conslist_opt(X) RP(E) table_options(F). {
+create_table_args ::= LP columnlist conslist_opt(X) RP(E) table_option_set(F). {
   sqlite3EndTable(pParse,&X,&E,F,0);
 }
 create_table_args ::= AS select(S). {
   sqlite3EndTable(pParse,0,0,0,S);
   sqlite3SelectDelete(pParse->db, S);
 }
-%type table_options {int}
-table_options(A) ::= .    {A = 0;}
-table_options(A) ::= WITHOUT nm(X). {
+%type table_option_set {u32}
+%type table_option {u32}
+table_option_set(A) ::= .    {A = 0;}
+table_option_set(A) ::= table_option(A).
+table_option_set(A) ::= table_option_set(X) COMMA table_option(Y). {A = X|Y;}
+table_option(A) ::= WITHOUT nm(X). {
   if( X.n==5 && sqlite3_strnicmp(X.z,"rowid",5)==0 ){
     A = TF_WithoutRowid | TF_NoVisibleRowid;
+  }else{
+    A = 0;
+    sqlite3ErrorMsg(pParse, "unknown table option: %.*s", X.n, X.z);
+  }
+}
+table_option(A) ::= nm(X). {
+  if( X.n==6 && sqlite3_strnicmp(X.z,"strict",6)==0 ){
+    A = TF_Strict;
   }else{
     A = 0;
     sqlite3ErrorMsg(pParse, "unknown table option: %.*s", X.n, X.z);
