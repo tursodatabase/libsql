@@ -528,10 +528,10 @@ struct Wal {
   u32 iReCksum;              /* On commit, recalculate checksums from here */
   const char *zWalName;      /* Name of WAL file */
   u32 nCkpt;                 /* Checkpoint sequence counter in the wal-header */
-#ifdef SQLITE_USE_SEH
 # ifdef SQLITE_DEBUG
   int nSehTry;               /* Number of nested SEH_TRY{} blocks */
 # endif
+#ifdef SQLITE_USE_SEH
   u32 lockMask;              /* Mask of locks held */
   void *pFree;               /* Pointer to sqlite3_free() if exception thrown */
 #endif
@@ -622,9 +622,12 @@ struct WalIterator {
 #include <Windows.h>
 
 # define SEH_TRY    __try { \
-   assert( walAssertLockmask(pWal) && pWal->nSehTry==0 ); TESTONLY(pWal->nSehTry++);
+   assert( walAssertLockmask(pWal) && pWal->nSehTry==0 ); \
+   TESTONLY(pWal->nSehTry++);
 
-# define SEH_EXCEPT(X) TESTONLY(pWal->nSehTry--); assert( pWal->nSehTry==0 ); \
+# define SEH_EXCEPT(X) \
+   TESTONLY(pWal->nSehTry--); \
+   assert( pWal->nSehTry==0 ); \
    } __except( sehExceptionFilter(pWal, GetExceptionCode()) ){ X }
 
 # define SEH_INJECT_FAULT sehInjectFault(pWal) 
@@ -643,6 +646,12 @@ static int sehExceptionFilter(Wal *pWal, int eCode){
   return EXCEPTION_CONTINUE_SEARCH;
 }
 
+/*
+** If one is configured, invoke the xTestCallback callback with 650 as
+** the argument. If it returns true, throw the same exception that is
+** thrown by the system if the *-shm file mapping is accessed after it
+** has been invalidated.
+*/
 static void sehInjectFault(Wal *pWal){
  assert( pWal->nSehTry>0 );
  if( sqlite3FaultSim(650) ){
@@ -650,13 +659,27 @@ static void sehInjectFault(Wal *pWal){
  }
 }
 
-#define SEH_FREE_ON_ERROR(X)  pWal->pFree = X
+/*
+** There are two ways to use this macro. To set a pointer to be freed
+** if an exception is thrown:
+**
+**   SEH_FREE_ON_ERROR(0, pPtr);
+**
+** and to cancel the same:
+**
+**   SEH_FREE_ON_ERROR(pPtr, 0);
+**
+** In the first case, there must not already be a pointer registered to
+** be freed. In the second case, pPtr must be the registered pointer.
+*/
+#define SEH_FREE_ON_ERROR(X,Y) \
+  assert( (X==0 || Y==0) && pWal->pFree==X ); pWal->pFree = Y
 
 #else
-# define SEH_TRY
-# define SEH_EXCEPT(X)
-# define SEH_INJECT_FAULT
-# define SEH_FREE_ON_ERROR(X)
+# define SEH_TRY          TESTONLY(pWal->nSehTry++);
+# define SEH_EXCEPT(X)    TESTONLY(pWal->nSehTry--); assert( pWal->nSehTry==0 );
+# define SEH_INJECT_FAULT assert( pWal->nSehTry>0 );
+# define SEH_FREE_ON_ERROR(X,Y)
 #endif /* ifdef SQLITE_USE_SEH */
 
 
@@ -1369,7 +1392,7 @@ static int walIndexRecover(Wal *pWal){
     /* Malloc a buffer to read frames into. */
     szFrame = szPage + WAL_FRAME_HDRSIZE;
     aFrame = (u8 *)sqlite3_malloc64(szFrame + WALINDEX_PGSZ);
-    SEH_FREE_ON_ERROR(aFrame);
+    SEH_FREE_ON_ERROR(0, aFrame);
     if( !aFrame ){
       rc = SQLITE_NOMEM_BKPT;
       goto recovery_error;
@@ -1447,8 +1470,8 @@ static int walIndexRecover(Wal *pWal){
       if( iFrame<=iLast ) break;
     }
 
+    SEH_FREE_ON_ERROR(aFrame, 0);
     sqlite3_free(aFrame);
-    SEH_FREE_ON_ERROR(0);
   }
 
 finished:
@@ -1867,7 +1890,7 @@ static int walIteratorInit(Wal *pWal, u32 nBackfill, WalIterator **pp){
   memset(p, 0, nByte);
   p->nSegment = nSegment;
   aTmp = (ht_slot*)&(((u8*)p)[nByte]);
-  SEH_FREE_ON_ERROR(p);
+  SEH_FREE_ON_ERROR(0, p);
 
   for(i=walFramePage(nBackfill+1); rc==SQLITE_OK && i<nSegment; i++){
     WalHashLoc sLoc;
@@ -1899,9 +1922,9 @@ static int walIteratorInit(Wal *pWal, u32 nBackfill, WalIterator **pp){
   }
 
   if( rc!=SQLITE_OK ){
+    SEH_FREE_ON_ERROR(p, 0);
     walIteratorFree(p);
     p = 0;
-    SEH_FREE_ON_ERROR(0);
   }
   *pp = p;
   return rc;
@@ -2266,10 +2289,7 @@ static int walCheckpoint(
   }
 
  walcheckpoint_out:
-#ifdef SQLITE_USE_SEH
-  assert( pWal->pFree==(void*)pIter );
-  pWal->pFree = 0;
-#endif
+  SEH_FREE_ON_ERROR(pIter, 0);
   walIteratorFree(pIter);
   return rc;
 }
@@ -2306,9 +2326,7 @@ int sqlite3WalClose(
   if( pWal ){
     int isDelete = 0;             /* True to unlink wal and wal-index files */
 
-#ifdef SQLITE_USE_SEH
-    assert( pWal->lockMask==0 );
-#endif
+    assert( walAssertLockmask(pWal) );
 
     /* If an EXCLUSIVE lock can be obtained on the database file (using the
     ** ordinary, rollback-mode locking methods, this guarantees that the
@@ -3020,6 +3038,13 @@ static int walHandleException(Wal *pWal){
   return SQLITE_IOERR;
 }
 
+/*
+** Assert that the Wal.lockMask mask, which indicates the locks held
+** by the connenction, is consistent with the Wal.readLock, Wal.writeLock
+** and Wal.ckptLock variables. To be used as:
+**
+**   assert( walAssertLockmask(pWal) );
+*/
 static int walAssertLockmask(Wal *pWal){
   if( pWal->exclusiveMode==0 ){
     static const int S = 1;
@@ -3134,18 +3159,8 @@ int sqlite3WalSnapshotRecover(Wal *pWal){
 #endif /* SQLITE_ENABLE_SNAPSHOT */
 
 /*
-** Begin a read transaction on the database.
-**
-** This routine used to be called sqlite3OpenSnapshot() and with good reason:
-** it takes a snapshot of the state of the WAL and wal-index for the current
-** instant in time.  The current thread will continue to use this snapshot.
-** Other threads might append new content to the WAL and wal-index but
-** that extra content is ignored by the current thread.
-**
-** If the database contents have changes since the previous read
-** transaction, then *pChanged is set to 1 before returning.  The
-** Pager layer will use this to know that its cache is stale and
-** needs to be flushed.
+** This function does the work of sqlite3WalBeginReadTransaction() (see 
+** below). That function simply calls this one inside an SEH_TRY{...} block.
 */
 static int walBeginReadTransaction(Wal *pWal, int *pChanged){
   int rc;                         /* Return code */
@@ -3157,6 +3172,7 @@ static int walBeginReadTransaction(Wal *pWal, int *pChanged){
 #endif
 
   assert( pWal->ckptLock==0 );
+  assert( pWal->nSehTry>0 );
 
 #ifdef SQLITE_ENABLE_SNAPSHOT
   if( pSnapshot ){
@@ -3251,6 +3267,20 @@ static int walBeginReadTransaction(Wal *pWal, int *pChanged){
   return rc;
 }
 
+/*
+** Begin a read transaction on the database.
+**
+** This routine used to be called sqlite3OpenSnapshot() and with good reason:
+** it takes a snapshot of the state of the WAL and wal-index for the current
+** instant in time.  The current thread will continue to use this snapshot.
+** Other threads might append new content to the WAL and wal-index but
+** that extra content is ignored by the current thread.
+**
+** If the database contents have changes since the previous read
+** transaction, then *pChanged is set to 1 before returning.  The
+** Pager layer will use this to know that its cache is stale and
+** needs to be flushed.
+*/
 int sqlite3WalBeginReadTransaction(Wal *pWal, int *pChanged){
   int rc;
   SEH_TRY {
@@ -3380,6 +3410,17 @@ static int walFindFrame(
   return SQLITE_OK;
 }
 
+/*
+** Search the wal file for page pgno. If found, set *piRead to the frame that
+** contains the page. Otherwise, if pgno is not in the wal file, set *piRead
+** to zero.
+**
+** Return SQLITE_OK if successful, or an error code if an error occurs. If an
+** error does occur, the final value of *piRead is undefined.
+**
+** The difference between this function and walFindFrame() is that this
+** function wraps walFindFrame() in an SEH_TRY{...} block.
+*/
 int sqlite3WalFindFrame(
   Wal *pWal,                      /* WAL handle */
   Pgno pgno,                      /* Database page number to read data for */
@@ -4002,6 +4043,13 @@ static int walFrames(
   return rc;
 }
 
+/* 
+** Write a set of frames to the log. The caller must hold the write-lock
+** on the log file (obtained using sqlite3WalBeginWriteTransaction()).
+**
+** The difference between this function and walFrames() is that this
+** function wraps walFrames() in an SEH_TRY{...} block.
+*/
 int sqlite3WalFrames(
   Wal *pWal,                      /* Wal handle to write to */
   int szPage,                     /* Database page-size in bytes */
