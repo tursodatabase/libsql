@@ -1,5 +1,5 @@
-C Add\ssome\sassert()\sstatements\sand\sfix\ssmall\sissues\swith\scode\son\sthis\sbranch.
-D 2021-08-20T16:19:19.544
+C Add\smissing\sSEH_INJECT_FAULT\smacros.
+D 2021-08-20T17:23:19.198
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -628,7 +628,7 @@ F src/vdbetrace.c 666c6fd9f1b62be6999e072a45b913e3c2c3518bc60dfd4d54fe304130acb7
 F src/vdbevtab.c f99b275366c5fc5e2d99f734729880994ab9500bdafde7fae3b02d562b9d323c
 F src/vtab.c 88404ac1517903b3eb2abe256772ee95bb09f81ac0a17e13afe5d467df4de4ee
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c d47742fa0d58fa622416cfd105b4b309f39006f30d903e02db2f48236f3d83d7
+F src/wal.c 5f98987c924f3262e19bc1c124cc4e02553f768a86cfdfb4d193db04c4d0b3da
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c 7342becedf3f8a26f9817f08436bdf8b56ad69af83705f6b9320a0ad3092c2ac
 F src/where.c 99b6e13664a7bd9a553c554978d0e253066995dade621f44cffa8928c8b493b5
@@ -1921,7 +1921,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5a98820c3d20766813bb4b0da23247ac90f380c07827ff13b61d5b606d8311aa
-R eab33be79c818813f4366ae19768ee1d
+P bd9b373b177a71f5eaeb7ce8dd1dc755b34951ee1376c24652418bb329bfcb45
+R 18bce27bc9709a49e95cb84782c68c82
 U dan
-Z 8887602c0a0185b63b60ad6538fd96e1
+Z 8c053f205f09cec18507fce552900c67

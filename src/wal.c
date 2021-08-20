@@ -1133,6 +1133,7 @@ static int walFramePage(u32 iFrame){
 */
 static u32 walFramePgno(Wal *pWal, u32 iFrame){
   int iHash = walFramePage(iFrame);
+  SEH_INJECT_FAULT;
   if( iHash==0 ){
     return pWal->apWiData[0][WALINDEX_HDR_SIZE/sizeof(u32) + iFrame - 1];
   }
@@ -1228,7 +1229,7 @@ static int walIndexAppend(Wal *pWal, u32 iFrame, u32 iPage){
 
     idx = iFrame - sLoc.iZero;
     assert( idx <= HASHTABLE_NSLOT/2 + 1 );
-    
+
     /* If this is the first entry to be added to this hash-table, zero the
     ** entire hash table and aPgno[] array before proceeding. 
     */
@@ -1467,6 +1468,7 @@ static int walIndexRecover(Wal *pWal){
         }
       }
 #endif
+      SEH_INJECT_FAULT;
       if( iFrame<=iLast ) break;
     }
 
@@ -1498,6 +1500,7 @@ finished:
         }else{
           pInfo->aReadMark[i] = READMARK_NOT_USED;
         }
+        SEH_INJECT_FAULT;
         walUnlockExclusive(pWal, WAL_READ_LOCK(i), 1);
       }else if( rc!=SQLITE_BUSY ){
         goto recovery_error;
@@ -2154,7 +2157,7 @@ static int walCheckpoint(
         rc = walBusyLock(pWal, xBusy, pBusyArg, WAL_READ_LOCK(i), 1);
         if( rc==SQLITE_OK ){
           u32 iMark = (i==1 ? mxSafeFrame : READMARK_NOT_USED);
-          AtomicStore(pInfo->aReadMark+i, iMark);
+          AtomicStore(pInfo->aReadMark+i, iMark); SEH_INJECT_FAULT;
           walUnlockExclusive(pWal, WAL_READ_LOCK(i), 1);
         }else if( rc==SQLITE_BUSY ){
           mxSafeFrame = y;
@@ -2206,6 +2209,7 @@ static int walCheckpoint(
       while( rc==SQLITE_OK && 0==walIteratorNext(pIter, &iDbpage, &iFrame) ){
         i64 iOffset;
         assert( walFramePgno(pWal, iFrame)==iDbpage );
+        SEH_INJECT_FAULT;
         if( AtomicLoad(&db->u1.isInterrupted) ){
           rc = db->mallocFailed ? SQLITE_NOMEM_BKPT : SQLITE_INTERRUPT;
           break;
@@ -2235,7 +2239,7 @@ static int walCheckpoint(
           }
         }
         if( rc==SQLITE_OK ){
-          AtomicStore(&pInfo->nBackfill, mxSafeFrame);
+          AtomicStore(&pInfo->nBackfill, mxSafeFrame); SEH_INJECT_FAULT;
         }
       }
 
@@ -2311,6 +2315,73 @@ static void walLimitSize(Wal *pWal, i64 nMax){
     sqlite3_log(rx, "cannot limit WAL size: %s", pWal->zWalName);
   }
 }
+
+#ifdef SQLITE_USE_SEH
+/*
+** This is the "standard" exception handler used in a few places to handle 
+** an exception thrown by reading from the *-shm mapping after it has become
+** invalid in SQLITE_USE_SEH builds. It is used as follows:
+**
+**   SEH_TRY { ... }
+**   SEH_EXCEPT( rc = walHandleException(pWal); )
+**
+** This function does three things:
+**
+**   1) Determines the locks that should be held, based on the contents of
+**      the Wal.readLock, Wal.writeLock and Wal.ckptLock variables. All other
+**      held locks are assumed to be transient locks that would have been
+**      released had the exception not been thrown and are dropped.
+**
+**   2) Frees the pointer at Wal.pFree, if any, using sqlite3_free().
+**
+**   3) Returns SQLITE_IOERR.
+*/
+static int walHandleException(Wal *pWal){
+  if( pWal->exclusiveMode==0 ){
+    static const int S = 1;
+    static const int E = (1<<SQLITE_SHM_NLOCK);
+    int ii;
+    u32 mUnlock = pWal->lockMask & ~(
+        (pWal->readLock<0 ? 0 : (S << WAL_READ_LOCK(pWal->readLock)))
+        | (pWal->writeLock ? (E << WAL_WRITE_LOCK) : 0)
+        | (pWal->ckptLock ? (E << WAL_CKPT_LOCK) : 0)
+        );
+    for(ii=0; ii<SQLITE_SHM_NLOCK; ii++){
+      if( (S<<ii) & mUnlock ) walUnlockShared(pWal, ii);
+      if( (E<<ii) & mUnlock ) walUnlockExclusive(pWal, ii, 1);
+    }
+  }
+  sqlite3_free(pWal->pFree);
+  pWal->pFree = 0;
+  return SQLITE_IOERR;
+}
+
+/*
+** Assert that the Wal.lockMask mask, which indicates the locks held
+** by the connenction, is consistent with the Wal.readLock, Wal.writeLock
+** and Wal.ckptLock variables. To be used as:
+**
+**   assert( walAssertLockmask(pWal) );
+*/
+static int walAssertLockmask(Wal *pWal){
+  if( pWal->exclusiveMode==0 ){
+    static const int S = 1;
+    static const int E = (1<<SQLITE_SHM_NLOCK);
+    u32 mExpect = (
+        (pWal->readLock<0 ? 0 : (S << WAL_READ_LOCK(pWal->readLock)))
+      | (pWal->writeLock ? (E << WAL_WRITE_LOCK) : 0)
+      | (pWal->ckptLock ? (E << WAL_CKPT_LOCK) : 0)
+#ifdef SQLITE_ENABLE_SNAPSHOT
+      | (pWal->pSnapshot ? (pWal->lockMask & (1 << WAL_CKPT_LOCK)) : 0)
+#endif
+    );
+    assert( mExpect==pWal->lockMask );
+  }
+  return 1;
+}
+#else
+# define walAssertLockmask(x) 1
+#endif /* ifdef SQLITE_USE_SEH */
 
 /*
 ** Close a connection to a log file.
@@ -2997,71 +3068,6 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
   }
   return rc;
 }
-
-#ifdef SQLITE_USE_SEH
-/*
-** This is the "standard" exception handler used in a few places to handle 
-** an exception thrown by reading from the *-shm mapping after it has become
-** invalid in SQLITE_USE_SEH builds. It is used as follows:
-**
-**   SEH_TRY { ... }
-**   SEH_EXCEPT( rc = walHandleException(pWal); )
-**
-** This function does three things:
-**
-**   1) Determines the locks that should be held, based on the contents of
-**      the Wal.readLock, Wal.writeLock and Wal.ckptLock variables. All other
-**      held locks are assumed to be transient locks that would have been
-**      released had the exception not been thrown and are dropped.
-**
-**   2) Frees the pointer at Wal.pFree, if any, using sqlite3_free().
-**
-**   3) Returns SQLITE_IOERR.
-*/
-static int walHandleException(Wal *pWal){
-  if( pWal->exclusiveMode==0 ){
-    static const int S = 1;
-    static const int E = (1<<SQLITE_SHM_NLOCK);
-    int ii;
-    u32 mUnlock = pWal->lockMask & ~(
-        (pWal->readLock<0 ? 0 : (S << WAL_READ_LOCK(pWal->readLock)))
-        | (pWal->writeLock ? (E << WAL_WRITE_LOCK) : 0)
-        | (pWal->ckptLock ? (E << WAL_CKPT_LOCK) : 0)
-        );
-    for(ii=0; ii<SQLITE_SHM_NLOCK; ii++){
-      if( (S<<ii) & mUnlock ) walUnlockShared(pWal, ii);
-      if( (E<<ii) & mUnlock ) walUnlockExclusive(pWal, ii, 1);
-    }
-  }
-  sqlite3_free(pWal->pFree);
-  pWal->pFree = 0;
-  return SQLITE_IOERR;
-}
-
-/*
-** Assert that the Wal.lockMask mask, which indicates the locks held
-** by the connenction, is consistent with the Wal.readLock, Wal.writeLock
-** and Wal.ckptLock variables. To be used as:
-**
-**   assert( walAssertLockmask(pWal) );
-*/
-static int walAssertLockmask(Wal *pWal){
-  if( pWal->exclusiveMode==0 ){
-    static const int S = 1;
-    static const int E = (1<<SQLITE_SHM_NLOCK);
-    u32 mExpect = (
-        (pWal->readLock<0 ? 0 : (S << WAL_READ_LOCK(pWal->readLock)))
-      | (pWal->writeLock ? (E << WAL_WRITE_LOCK) : 0)
-      | (pWal->ckptLock ? (E << WAL_CKPT_LOCK) : 0)
-#ifdef SQLITE_ENABLE_SNAPSHOT
-      | (pWal->pSnapshot ? (pWal->lockMask & (1 << WAL_CKPT_LOCK)) : 0)
-#endif
-    );
-    assert( mExpect==pWal->lockMask );
-  }
-  return 1;
-}
-#endif
 
 #ifdef SQLITE_ENABLE_SNAPSHOT
 /*
@@ -4167,6 +4173,7 @@ int sqlite3WalCheckpoint(
       /* If no error occurred, set the output variables. */
       if( rc==SQLITE_OK || rc==SQLITE_BUSY ){
         if( pnLog ) *pnLog = (int)pWal->hdr.mxFrame;
+        SEH_INJECT_FAULT;
         if( pnCkpt ) *pnCkpt = (int)(walCkptInfo(pWal)->nBackfill);
       }
     }
