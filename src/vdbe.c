@@ -671,6 +671,19 @@ static Mem *out2Prerelease(Vdbe *p, VdbeOp *pOp){
   }
 }
 
+/*
+** Return the symbolic name for the data type of a pMem
+*/
+static const char *vdbeMemTypeName(Mem *pMem){
+  static const char *azTypes[] = {
+      /* SQLITE_INTEGER */ "INT",
+      /* SQLITE_FLOAT   */ "REAL",
+      /* SQLITE_TEXT    */ "TEXT",
+      /* SQLITE_BLOB    */ "BLOB",
+      /* SQLITE_NULL    */ "NULL"
+  };
+  return azTypes[sqlite3_value_type(pMem)-1];
+}
 
 /*
 ** Execute as much of a VDBE program as we can.
@@ -2970,8 +2983,9 @@ case OP_TypeCheck: {
   break;
 
 vdbe_type_error:
-  sqlite3VdbeError(p, "%s.%s holds only %s values",
-       pTab->zName, aCol[i].zCnName, sqlite3StdType[aCol[i].eCType-1]);
+  sqlite3VdbeError(p, "cannot store %s value in %s column %s.%s",
+     vdbeMemTypeName(pIn1), sqlite3StdType[aCol[i].eCType-1],
+     pTab->zName, aCol[i].zCnName);
   rc = SQLITE_CONSTRAINT_DATATYPE;
   goto abort_due_to_error;
 }

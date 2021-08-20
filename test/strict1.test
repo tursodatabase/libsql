@@ -49,19 +49,19 @@ do_execsql_test strict1-2.0 {
 } {}
 do_catchsql_test strict1-2.1 {
   INSERT INTO t1(a) VALUES('xyz');
-} {1 {t1.a holds only INT values}}
+} {1 {cannot store TEXT value in INT column t1.a}}
 do_catchsql_test strict1-2.2 {
   INSERT INTO t1(b) VALUES('xyz');
-} {1 {t1.b holds only INTEGER values}}
+} {1 {cannot store TEXT value in INTEGER column t1.b}}
 do_catchsql_test strict1-2.3 {
   INSERT INTO t1(c) VALUES('xyz');
-} {1 {t1.c holds only BLOB values}}
+} {1 {cannot store TEXT value in BLOB column t1.c}}
 do_catchsql_test strict1-2.4 {
   INSERT INTO t1(d) VALUES(x'3142536475');
-} {1 {t1.d holds only TEXT values}}
+} {1 {cannot store BLOB value in TEXT column t1.d}}
 do_catchsql_test strict1-2.5 {
   INSERT INTO t1(e) VALUES('xyz');
-} {1 {t1.e holds only REAL values}}
+} {1 {cannot store TEXT value in REAL column t1.e}}
 
 do_execsql_test strict1-3.1 {
   INSERT INTO t1(a, b) VALUES(1,2),('3','4'),(5.0, 6.0),(null,null);
@@ -69,16 +69,16 @@ do_execsql_test strict1-3.1 {
 } {1 2 | 3 4 | 5 6 | {} {} |}
 do_catchsql_test strict1-3.2 {
   INSERT INTO t1(a) VALUES(1.2);
-} {1 {t1.a holds only INT values}}
+} {1 {cannot store REAL value in INT column t1.a}}
 do_catchsql_test strict1-3.3 {
   INSERT INTO t1(a) VALUES(x'313233');
-} {1 {t1.a holds only INT values}}
+} {1 {cannot store BLOB value in INT column t1.a}}
 do_catchsql_test strict1-3.4 {
   INSERT INTO t1(b) VALUES(1.2);
-} {1 {t1.b holds only INTEGER values}}
+} {1 {cannot store REAL value in INTEGER column t1.b}}
 do_catchsql_test strict1-3.5 {
   INSERT INTO t1(b) VALUES(x'313233');
-} {1 {t1.b holds only INTEGER values}}
+} {1 {cannot store BLOB value in INTEGER column t1.b}}
 
 do_execsql_test strict1-4.1 {
   DELETE FROM t1;
@@ -87,7 +87,7 @@ do_execsql_test strict1-4.1 {
 } {blob 123 null {}}
 do_catchsql_test strict1-4.2 {
   INSERT INTO t1(c) VALUES('456');
-} {1 {t1.c holds only BLOB values}}
+} {1 {cannot store TEXT value in BLOB column t1.c}}
 
 do_execsql_test strict1-5.1 {
   DELETE FROM t1;
@@ -96,7 +96,7 @@ do_execsql_test strict1-5.1 {
 } {text xyz text 4 text 5.5 null {}}
 do_catchsql_test strict1-5.2 {
   INSERT INTO t1(d) VALUES(x'4567');
-} {1 {t1.d holds only TEXT values}}
+} {1 {cannot store BLOB value in TEXT column t1.d}}
 
 do_execsql_test strict1-6.1 {
   DELETE FROM t1;
@@ -105,9 +105,9 @@ do_execsql_test strict1-6.1 {
 } {real 1.0 real 2.5 real 3.0 real 4.5 real 6.0 null {}}
 do_catchsql_test strict1-6.2 {
   INSERT INTO t1(e) VALUES('xyz');
-} {1 {t1.e holds only REAL values}}
+} {1 {cannot store TEXT value in REAL column t1.e}}
 do_catchsql_test strict1-6.3 {
   INSERT INTO t1(e) VALUES(x'3456');
-} {1 {t1.e holds only REAL values}}
+} {1 {cannot store BLOB value in REAL column t1.e}}
 
 finish_test
