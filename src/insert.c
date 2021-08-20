@@ -2837,6 +2837,9 @@ static int xferOptimization(
   if( pDest->iPKey!=pSrc->iPKey ){
     return 0;   /* Both tables must have the same INTEGER PRIMARY KEY */
   }
+  if( (pDest->tabFlags & TF_Strict)!=0 && (pSrc->tabFlags & TF_Strict)==0 ){
+    return 0;   /* Cannot feed from a non-strict into a strict table */
+  }
   for(i=0; i<pDest->nCol; i++){
     Column *pDestCol = &pDest->aCol[i];
     Column *pSrcCol = &pSrc->aCol[i];
