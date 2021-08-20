@@ -4113,14 +4113,14 @@ int sqlite3WalCheckpoint(
       if( pWal->hdr.mxFrame && walPagesize(pWal)!=nBuf ){
         rc = SQLITE_CORRUPT_BKPT;
       }else{
-        rc = walCheckpoint(pWal, db, eMode2, xBusy2, pBusyArg, sync_flags, zBuf);
+        rc = walCheckpoint(pWal, db, eMode2, xBusy2, pBusyArg, sync_flags,zBuf);
       }
-    }
-  
-    /* If no error occurred, set the output variables. */
-    if( rc==SQLITE_OK || rc==SQLITE_BUSY ){
-      if( pnLog ) *pnLog = (int)pWal->hdr.mxFrame;
-      if( pnCkpt ) *pnCkpt = (int)(walCkptInfo(pWal)->nBackfill);
+
+      /* If no error occurred, set the output variables. */
+      if( rc==SQLITE_OK || rc==SQLITE_BUSY ){
+        if( pnLog ) *pnLog = (int)pWal->hdr.mxFrame;
+        if( pnCkpt ) *pnCkpt = (int)(walCkptInfo(pWal)->nBackfill);
+      }
     }
   }
   SEH_EXCEPT( rc = walHandleException(pWal); )
