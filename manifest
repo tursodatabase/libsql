@@ -1,5 +1,5 @@
-C Defer\sdeleting\ssubqueries\sin\sthe\scompound-SELECT\scode\sgenerator\suntil\sthe\nend\sof\scode\sgeneration,\sin\sorder\sto\savoid\sdeleting\sexpressions\sout\sfrom\sunder\nthe\saggregation\sfunction\ssanity\schecking\sassert()s\sthat\soccur\snear\sthe\nend\sof\sSELECT\scode\sgeneration.\s\sThis\sfixes\sthe\sassertion\sfault\sdescribed\sby\n[forum:/forumpost/cfcb4b461d|forum\spost\scfcb4b461d].
-D 2021-08-21T16:42:58.444
+C Allow\stypeless\scolumns\sin\sSTRICT\stables\sthat\sare\sable\sto\saccept\sany\ndata\stype.
+D 2021-08-21T20:54:19.283
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -488,7 +488,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c e204a9c8fb4fe5dbb910a863ba487f4af9b5c501254ec4ccbfcdd6b1f65b7fb4
 F src/btree.h 74d64b8f28cfa4a894d14d4ed64fa432cd697b98b61708d4351482ae15913e22
 F src/btreeInt.h 7bc15a24a02662409ebcd6aeaa1065522d14b7fda71573a2b0568b458f514ae0
-F src/build.c 4f58fcdf5b8a7f273edd2fb07a8b7afa91f34cea4396d9b5fc438cbfe1c6b87e
+F src/build.c f9246c633829153bb6d41f03eeb5a121a6e618b48e20a5e9c18927c381df072d
 F src/callback.c d0b853dd413255d2e337b34545e54d888ea02f20da5ad0e63585b389624c4a6c
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 8159d5f706551861c18ec6c8f6bdf105e15ea00367f05d9ab65d31a1077facc1
@@ -616,7 +616,7 @@ F src/upsert.c 8789047a8f0a601ea42fa0256d1ba3190c13746b6ba940fe2d25643a7e991937
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c eafc8cfeb66fdbf8839922d13019b7882f242ac31b383e3451aab7744c54df3e
 F src/vacuum.c 454973a59fb20bb982efc2df568a098616db6328a0491b6e84e2e07f7333db45
-F src/vdbe.c bf2d58ee9d12767e3aca7c29fe8c10eeea1844d5b16865d280743aee54d8c86d
+F src/vdbe.c b228d775c269c4f44284ca9f855329f7cb429159d0f79e54408e4506c932b712
 F src/vdbe.h 25dabb25c7e157b84e59260cfb5b466c3ac103ede9f36f4db371332c47601abe
 F src/vdbeInt.h 38206c8dd6b60ff03d9fd4f626b1b4fd0eef7cdc44f2fc2c1973b0f932a3f26b
 F src/vdbeapi.c aa5aaf2c37676b83af5724c6cd8207a3064ed46a217fd180957f75ac84f7a2a5
@@ -1425,7 +1425,7 @@ F test/stat.test 15a3106eddedfc882f64bc09f237b4169be4b92dd57c93031b8ff8b13af3e7c
 F test/statfault.test f525a7bf633e50afd027700e9a486090684b1ac1
 F test/stmt.test 54ed2cc0764bf3e48a058331813c3dbd19fc1d0827c3d8369914a5d8f564ec75
 F test/stmtvtab1.test 6873dfb24f8e79cbb5b799b95c2e4349060eb7a3b811982749a84b359468e2d5
-F test/strict1.test 314971e166395f8d736d9ecd25c75565e6aac103f9346018c1f78df602e6e2d0
+F test/strict1.test c5848830ebbf96b5126c41b16974d76110a50f8877dec42e222527cd292c47f5
 F test/strict2.test fe1928b3768f51b39774d753ac7e71727718d1c3305eead0e5ea60f75e9e6b4c
 F test/subjournal.test 8d4e2572c0ee9a15549f0d8e40863161295107e52f07a3e8012a2e1fdd093c49
 F test/subquery.test d7268d193dd33d5505df965399d3a594e76ae13f
@@ -1922,7 +1922,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 18cc2f85744a18b6810d30baebe07a7a1bd332348e13b1a50d779edc616fb0c1
-R 863979ca99363723562a0c75fdd1d6ba
+P 600f1991e5c0a5d89cd8776a157b6fd72c7489791085876925e8dd7ab146fe1f
+R 1fec1fd4fd154dec8605720039e4eeb3
 U drh
-Z 648d8b4016ae6c490e2d3154fbaf6a59
+Z 8c2a8dfd9ff7ca38c0c83e9da4b64c4b

@@ -2606,7 +2606,7 @@ void sqlite3EndTable(
     p->tabFlags |= TF_Strict;
     for(ii=0; ii<p->nCol; ii++){
       Column *pCol = &p->aCol[ii];
-      if( pCol->eCType==COLTYPE_CUSTOM ){
+      if( pCol->eCType==COLTYPE_CUSTOM && pCol->colFlags & COLFLAG_HASTYPE ){
         sqlite3ErrorMsg(pParse,
           "unknown datatype for %s.%s: \"%s\"",
           p->zName, pCol->zCnName, sqlite3ColumnType(pCol, "")

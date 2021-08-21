@@ -2950,8 +2950,7 @@ case OP_TypeCheck: {
           if( (pIn1->flags & MEM_Str)==0 ) goto vdbe_type_error;
           break;
         }
-        default: {
-          assert( aCol[i].eCType==COLTYPE_REAL );
+        case COLTYPE_REAL: {
           if( pIn1->flags & MEM_Int ){
             /* When applying REAL affinity, if the result is still an MEM_Int
             ** that will fit in 6 bytes, then change the type to MEM_IntReal
@@ -2972,6 +2971,10 @@ case OP_TypeCheck: {
           }else if( (pIn1->flags & MEM_Real)==0 ){
             goto vdbe_type_error;
           }
+          break;
+        }
+        default: {
+          /* anything goes */
           break;
         }
       }
