@@ -1,5 +1,5 @@
-C Improvement\sto\serror\shandling\sin\sLemon.\s\sNo\simpact\son\sSQLite.\n[forum:/forumpost/2f468f43cbc48d7f|Forum\spost\s2f468f43cbc48d7f]
-D 2021-08-20T19:51:22.252
+C Defer\sdeleting\ssubqueries\sin\sthe\scompound-SELECT\scode\sgenerator\suntil\sthe\nend\sof\scode\sgeneration,\sin\sorder\sto\savoid\sdeleting\sexpressions\sout\sfrom\sunder\nthe\saggregation\sfunction\ssanity\schecking\sassert()s\sthat\soccur\snear\sthe\nend\sof\sSELECT\scode\sgeneration.\s\sThis\sfixes\sthe\sassertion\sfault\sdescribed\sby\n[forum:/forumpost/cfcb4b461d|forum\spost\scfcb4b461d].
+D 2021-08-21T16:42:58.444
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -544,7 +544,7 @@ F src/printf.c 78fabb49b9ac9a12dd1c89d744abdc9b67fd3205e62967e158f78b965a29ec4b
 F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c 42b94d37a54200707a95566eff4f7e8a380e32d080016b699f23bd79a73a5028
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c 0577308f097363b6ebac223e210418810acf74e677f580597f7d0718476fe3ef
+F src/select.c cf72265a344201647348fd15ce943185bf634287787030c1ddcf07306516e8b8
 F src/shell.c.in f795a4ae3c35631f5edcfa754c7824ff1d8a75b23a07e22e664b50f82e826346
 F src/sqlite.h.in 4e977a5e2ed1a9e8987ff65a2cab5f99a4298ebf040ea5ff636e1753339ff45a
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1196,7 +1196,7 @@ F test/memjournal.test 70f3a00c7f84ee2978ad14e831231caa1e7f23915a2c54b4f775a021d
 F test/memleak.test 10b9c6c57e19fc68c32941495e9ba1c50123f6e2
 F test/memsubsys1.test 9e7555a22173b8f1c96c281ce289b338fcba2abe8b157f8798ca195bbf1d347e
 F test/memsubsys2.test 3e4a8d0c05fd3e5fa92017c64666730a520c7e08
-F test/minmax.test 0015e5cd5e7af48bb3364f26d9f3a9cdbea2a442d4774281c39e2229591b7351
+F test/minmax.test fe638b55d77d2375531a8f549b338eafcd9adfbd2f72df37ed77d9b26ca0a71a
 F test/minmax2.test cf9311babb6f0518d04e42fd6a42c619531c4309a9dd790a2c4e9b3bc595e0de
 F test/minmax3.test cc1e8b010136db0d01a6f2a29ba5a9f321034354
 F test/minmax4.test 272ca395257f05937dc96441c9dde4bc9fbf116a8d4fa02baeb0d13d50e36c87
@@ -1922,7 +1922,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f9c1d3441b87ee296542faa724410d16a348143cba24fe74292eefc48e038a55
-R 3829f57b5af884ac6a3eac174eaf41b9
+P 18cc2f85744a18b6810d30baebe07a7a1bd332348e13b1a50d779edc616fb0c1
+R 863979ca99363723562a0c75fdd1d6ba
 U drh
-Z 207405ca15399b499fa1775f00fc4a3a
+Z 648d8b4016ae6c490e2d3154fbaf6a59

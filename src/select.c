@@ -3015,7 +3015,11 @@ static int multiSelect(
 multi_select_end:
   pDest->iSdst = dest.iSdst;
   pDest->nSdst = dest.nSdst;
-  sqlite3SelectDelete(db, pDelete);
+  if( pDelete ){
+    sqlite3ParserAddCleanup(pParse,
+        (void(*)(sqlite3*,void*))sqlite3SelectDelete,
+        pDelete);
+  }
   return rc;
 }
 #endif /* SQLITE_OMIT_COMPOUND_SELECT */
