@@ -1,5 +1,5 @@
-C Use\sVVA_ONLY()\sinstead\sof\sTESTONLY()\sin\sSEH\smacros\sso\sthat\sthe\sbuild\nworks\sfor\scoverage\stesting.
-D 2021-08-20T18:18:12.982
+C Add\stest\scases\sto\sensure\sthat\sthere\sis\sat\sleast\sone\stest\sthat\scauses\san\sexception\sto\sbe\sthrown\sfrom\seach\sSEH_INJECT_FAULT\smacro.
+D 2021-08-21T15:49:15.749
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1739,7 +1739,7 @@ F test/walprotocol2.test 7d3b6b4bf0b12f8007121b1e6ef714bc99101fb3b48e46371df1db8
 F test/walro.test cb438d05ba0d191f10b688e39c4f0cd5b71569a1d1f4440e5bdf3c6880e08c20
 F test/walro2.test 0e79dd15cbdb4f482c01ea248373669c732414a726b357d04846a816afafb768
 F test/walrofault.test c70cb6e308c443867701856cce92ad8288cd99488fa52afab77cca6cfd51af68
-F test/walseh1.test 970946bdd40bc37d1552811b54ec94dd4a5a4178354b4afa129f2053b99bf09f
+F test/walseh1.test 7aff09e275a10a4b140f0a34c9da55de2d3747582590f16b638831e1dd7396b2
 F test/walsetlk.test 3185bebc90557e0d611442c8d64f7a0cb7b06f8e156eea37a4a7358f722715be
 F test/walshared.test 0befc811dcf0b287efae21612304d15576e35417
 F test/walslow.test c05c68d4dc2700a982f89133ce103a1a84cc285f
@@ -1921,7 +1921,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 27e9bdb3a90a5826f45d32e0378e9afa90a16ac762a75236f38218f41bc45ded
-R 66057be76f6babcd4edb6b4970a8bed6
-U drh
-Z 72862037c4132917dc5cd800ca04f4aa
+P 9e9d5b566da72adf780685ea27da7d76a7274e904a533438255af92875c94503
+R 1ec6de0718c621705d76375df7f5b74b
+U dan
+Z 1df868f8b39d7326ed3c02e05075825f

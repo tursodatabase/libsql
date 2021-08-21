@@ -13,7 +13,7 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 source $testdir/malloc_common.tcl
-set testprefix seh1
+set testprefix walseh1
 
 set ::seh_countdown 0 
 proc seh_faultsim_callback {iFault} {
@@ -94,6 +94,36 @@ do_faultsim_test 4 -faults seh -prep {
   faultsim_restore_and_reopen
 } -body {
   execsql { PRAGMA wal_checkpoint }
+  execsql { INSERT INTO t1 VALUES(7, 8) }
+  execsql { SELECT * FROM t1 }
+} -test {
+  faultsim_test_result {0 {1 2 3 4 7 8}} 
+}
+catch { db close }
+
+do_faultsim_test 5 -faults seh -prep {
+  catch { db close }
+  faultsim_restore_and_reopen
+  execsql {
+    PRAGMA cache_size = 5;
+    BEGIN;
+      WITH s(i) AS (
+        SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<50
+      )
+      INSERT INTO t1 SELECT randomblob(500), randomblob(500) FROM s;
+  }
+} -body {
+  execsql ROLLBACK
+} -test {
+  faultsim_test_result {0 {}}
+}
+catch { db close }
+
+do_faultsim_test 6 -faults seh -prep {
+  catch { db close }
+  faultsim_restore_and_reopen
+} -body {
+  execsql { PRAGMA wal_checkpoint = TRUNCATE }
   execsql { INSERT INTO t1 VALUES(7, 8) }
   execsql { SELECT * FROM t1 }
 } -test {
