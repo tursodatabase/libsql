@@ -2974,7 +2974,7 @@ case OP_TypeCheck: {
           break;
         }
         default: {
-          /* anything goes */
+          /* COLTYPE_ANY.  Accept anything. */
           break;
         }
       }

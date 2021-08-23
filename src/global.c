@@ -364,8 +364,9 @@ const char sqlite3StrBINARY[] = "BINARY";
 **                                sqlite3_column_type() or sqlite3_value_type())
 **                                for each entry in sqlite3StdType[].
 */
-const unsigned char sqlite3StdTypeLen[] = { 4, 3, 7, 4, 4 };
+const unsigned char sqlite3StdTypeLen[] = { 3, 4, 3, 7, 4, 4 };
 const char sqlite3StdTypeAffinity[] = {
+  SQLITE_AFF_NUMERIC,
   SQLITE_AFF_BLOB,
   SQLITE_AFF_INTEGER,
   SQLITE_AFF_INTEGER,
@@ -373,6 +374,7 @@ const char sqlite3StdTypeAffinity[] = {
   SQLITE_AFF_TEXT
 };
 const char sqlite3StdTypeMap[] = {
+  0,
   SQLITE_BLOB,
   SQLITE_INTEGER,
   SQLITE_INTEGER,
@@ -380,6 +382,7 @@ const char sqlite3StdTypeMap[] = {
   SQLITE_TEXT
 };
 const char *sqlite3StdType[] = {
+  "ANY",
   "BLOB",
   "INT",
   "INTEGER",
