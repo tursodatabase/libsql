@@ -640,7 +640,7 @@ struct WalIterator {
 */
 static int sehExceptionFilter(Wal *pWal, int eCode){
   VVA_ONLY(pWal->nSehTry--);
-  if( eCode==EXCEPTION_ACCESS_VIOLATION ){
+  if( eCode==EXCEPTION_IN_PAGE_ERROR ){
     return EXCEPTION_EXECUTE_HANDLER;
   }
   return EXCEPTION_CONTINUE_SEARCH;
@@ -655,7 +655,7 @@ static int sehExceptionFilter(Wal *pWal, int eCode){
 static void sehInjectFault(Wal *pWal){
  assert( pWal->nSehTry>0 );
  if( sqlite3FaultSim(650) ){
-   RaiseException(EXCEPTION_ACCESS_VIOLATION, 0, 0, NULL);
+   RaiseException(EXCEPTION_IN_PAGE_ERROR, 0, 0, NULL);
  }
 }
 

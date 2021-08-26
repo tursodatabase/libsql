@@ -1,5 +1,5 @@
-C Add\stest\scases\sto\sensure\sthat\sthere\sis\sat\sleast\sone\stest\sthat\scauses\san\sexception\sto\sbe\sthrown\sfrom\seach\sSEH_INJECT_FAULT\smacro.
-D 2021-08-21T15:49:15.749
+C Change\sthe\sstructuree\sexception\shandler\sin\swal.c\sto\scatch\sEXCEPTION_IN_PAGE_ERROR\sinstead\sof\sEXCEPTION_ACCESS_VIOLATION.
+D 2021-08-26T21:12:07.088
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -628,7 +628,7 @@ F src/vdbetrace.c 666c6fd9f1b62be6999e072a45b913e3c2c3518bc60dfd4d54fe304130acb7
 F src/vdbevtab.c f99b275366c5fc5e2d99f734729880994ab9500bdafde7fae3b02d562b9d323c
 F src/vtab.c 88404ac1517903b3eb2abe256772ee95bb09f81ac0a17e13afe5d467df4de4ee
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 2000742eae6204d2e6dff721eabf7905171af22bb99e3760670188f8a18d66f4
+F src/wal.c 75bcffce59a3108ad3e24c186977821ffe5083ab2044ff477a5bbc4a9e8a5455
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c 7342becedf3f8a26f9817f08436bdf8b56ad69af83705f6b9320a0ad3092c2ac
 F src/where.c 99b6e13664a7bd9a553c554978d0e253066995dade621f44cffa8928c8b493b5
@@ -1921,7 +1921,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9e9d5b566da72adf780685ea27da7d76a7274e904a533438255af92875c94503
-R 1ec6de0718c621705d76375df7f5b74b
+P e480146f49004c818ad93464289761d8a7246b502bd079f8140d0a6f684ebe4e
+R e565d7a955f7dfbceec6b3e9d7245e4b
 U dan
-Z 1df868f8b39d7326ed3c02e05075825f
+Z 2c7b74af84f6da4d9875b4b1565fc82a
