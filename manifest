@@ -1,5 +1,5 @@
-C Patch\slemon\sto\sfix\s"error"\stoken\shandling,\saccording\sot\n[forum:/forumpost/e680f42f53090061|forum\spost\se680f42f53090061].
-D 2021-08-27T11:26:37.146
+C Do\snot\sdisable\sa\srowid=?\sterm\sused\sto\sdrive\san\sIPK\sindex\sif\sit\sis\sa\stransitive\sconstraint.
+D 2021-08-30T17:02:48.783
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -633,7 +633,7 @@ F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c 7342becedf3f8a26f9817f08436bdf8b56ad69af83705f6b9320a0ad3092c2ac
 F src/where.c 99b6e13664a7bd9a553c554978d0e253066995dade621f44cffa8928c8b493b5
 F src/whereInt.h 9248161dd004f625ce5d3841ca9b99fed3fc8d61522cf76340fc5217dbe1375b
-F src/wherecode.c 9b33f463a279feeee69622b747b0050f0b836eb8b5ac48599ba3a6bfbea798a7
+F src/wherecode.c 0208553a0602146b5640747c0e3f7a8c785108c2d06a160b69f23491e9dc781e
 F src/whereexpr.c 3a9144a9d52e110efdc012a73b1574e7b2b4df4bf98949387cb620295eba0975
 F src/window.c 420167512050a0dfc0f0115b9f0c7d299da9759c9bb2ae83a61fb8d730a5707f
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1622,7 +1622,7 @@ F test/trace3.test ae2004df24b585fed9046cc0bae4601762bc6fc4aa321d475f1350bba5047
 F test/trans.test 45f6f9ab6f66a7b5744f1caac06b558f95da62501916906cf55586a896f9f439
 F test/trans2.test 62bd045bfc7a1c14c5ba83ba64d21ade31583f76
 F test/trans3.test 91a100e5412b488e22a655fe423a14c26403ab94
-F test/transitive1.test 06bcfeeb2ed719abf6ae582f9f65a6b07642dd1363fa648ae9a74a35e83a825c
+F test/transitive1.test 7dcd1f263813688cb5433c15c758dcab9a62b3c4ec72edd96c0255e0b322d470
 F test/trigger1.test d30cd09ae8ac365a088f09daba583cc5c0b8fc7d4e1d70809d0b4be3bf6ae2ab
 F test/trigger2.test 6e35bd7321c49e63d540aee980eb95dec63e1d1caca175224101045bcc80871f
 F test/trigger3.test aa640bb2bbb03edd5ff69c055117ea088f121945
@@ -1922,7 +1922,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c76870cb1a8e2e1389ad864c51b9f596dff21df8bb58f438f0a2cacfa63b22a4
-R c18392e64d5f9a64cf0c5ede682cfbfb
-U drh
-Z 30473933374c4aa8bce1a958333c8a4a
+P 106b5e5355a3836a9756333e6dcbb13f0878a5352dab00973b8f0900879bd724
+R 390ae46cb67974ab5b963609771fe7af
+U dan
+Z 277d9ab62dc946ab2c8cb8f1af415f95
