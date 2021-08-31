@@ -1,5 +1,5 @@
-C Do\snot\sdisable\sa\srowid=?\sterm\sused\sto\sdrive\san\sIPK\sindex\sif\sit\sis\sa\stransitive\sconstraint.
-D 2021-08-30T17:02:48.783
+C Have\sthe\splanner\sensure\sthat\sif\sone\sscan\suses\sa\ssubset\sof\sthe\sWHERE\sclause\sof\sanother,\sthat\sscan\sis\sestimated\sto\scost\sless\sand\sreturn\sfewer\srows.
+D 2021-08-31T15:53:58.805
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -631,7 +631,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 2be08331d798237ad5d7ae0b252700ffb2b63189cb18d993496d009a93e2f81c
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c 7342becedf3f8a26f9817f08436bdf8b56ad69af83705f6b9320a0ad3092c2ac
-F src/where.c 99b6e13664a7bd9a553c554978d0e253066995dade621f44cffa8928c8b493b5
+F src/where.c da3981a12e9eb5a71d32bab60ac1957fd4aa337aaea07ca8019b01f8788f442a
 F src/whereInt.h 9248161dd004f625ce5d3841ca9b99fed3fc8d61522cf76340fc5217dbe1375b
 F src/wherecode.c 0208553a0602146b5640747c0e3f7a8c785108c2d06a160b69f23491e9dc781e
 F src/whereexpr.c 3a9144a9d52e110efdc012a73b1574e7b2b4df4bf98949387cb620295eba0975
@@ -1922,7 +1922,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 106b5e5355a3836a9756333e6dcbb13f0878a5352dab00973b8f0900879bd724
-R 390ae46cb67974ab5b963609771fe7af
+P 46e28cbcf6044b36aa4ddcda09adb49a46c6c6a8d41d558467ede3091304aa8c
+R 7a7a4eb3153f412c9a6ad188811a1057
 U dan
-Z 277d9ab62dc946ab2c8cb8f1af415f95
+Z 5dffd43884b54fa608822427de1e26e7

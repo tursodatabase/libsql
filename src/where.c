@@ -2011,7 +2011,8 @@ static void whereUndoExprMods(WhereInfo *pWInfo){
 /*
 ** Return TRUE if all of the following are true:
 **
-**   (1)  X has the same or lower cost that Y
+**   (1)  X has the same or lower cost, or returns the same or fewer rows, 
+**        than Y.
 **   (2)  X uses fewer WHERE clause terms than Y
 **   (3)  Every WHERE clause term used by X is also used by Y
 **   (4)  X skips at least as many columns as Y
@@ -2034,11 +2035,8 @@ static int whereLoopCheaperProperSubset(
   if( pX->nLTerm-pX->nSkip >= pY->nLTerm-pY->nSkip ){
     return 0; /* X is not a subset of Y */
   }
+  if( pX->rRun>pY->rRun && pX->nOut>pY->nOut ) return 0;
   if( pY->nSkip > pX->nSkip ) return 0;
-  if( pX->rRun >= pY->rRun ){
-    if( pX->rRun > pY->rRun ) return 0;    /* X costs more than Y */
-    if( pX->nOut > pY->nOut ) return 0;    /* X costs more than Y */
-  }
   for(i=pX->nLTerm-1; i>=0; i--){
     if( pX->aLTerm[i]==0 ) continue;
     for(j=pY->nLTerm-1; j>=0; j--){
@@ -2054,8 +2052,8 @@ static int whereLoopCheaperProperSubset(
 }
 
 /*
-** Try to adjust the cost of WhereLoop pTemplate upwards or downwards so
-** that:
+** Try to adjust the cost and number of output rows of WhereLoop pTemplate
+** upwards or downwards so that:
 **
 **   (1) pTemplate costs less than any other WhereLoops that are a proper
 **       subset of pTemplate
@@ -2076,16 +2074,20 @@ static void whereLoopAdjustCost(const WhereLoop *p, WhereLoop *pTemplate){
       /* Adjust pTemplate cost downward so that it is cheaper than its 
       ** subset p. */
       WHERETRACE(0x80,("subset cost adjustment %d,%d to %d,%d\n",
-                       pTemplate->rRun, pTemplate->nOut, p->rRun, p->nOut-1));
-      pTemplate->rRun = p->rRun;
-      pTemplate->nOut = p->nOut - 1;
+                       pTemplate->rRun, pTemplate->nOut, 
+                       MIN(p->rRun, pTemplate->rRun),
+                       MIN(p->nOut - 1, pTemplate->nOut)));
+      pTemplate->rRun = MIN(p->rRun, pTemplate->rRun);
+      pTemplate->nOut = MIN(p->nOut - 1, pTemplate->nOut);
     }else if( whereLoopCheaperProperSubset(pTemplate, p) ){
       /* Adjust pTemplate cost upward so that it is costlier than p since
       ** pTemplate is a proper subset of p */
       WHERETRACE(0x80,("subset cost adjustment %d,%d to %d,%d\n",
-                       pTemplate->rRun, pTemplate->nOut, p->rRun, p->nOut+1));
-      pTemplate->rRun = p->rRun;
-      pTemplate->nOut = p->nOut + 1;
+                       pTemplate->rRun, pTemplate->nOut, 
+                       MAX(p->rRun, pTemplate->rRun),
+                       MAX(p->nOut + 1, pTemplate->nOut)));
+      pTemplate->rRun = MAX(p->rRun, pTemplate->rRun);
+      pTemplate->nOut = MAX(p->nOut + 1, pTemplate->nOut);
     }
   }
 }
