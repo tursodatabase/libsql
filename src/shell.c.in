@@ -10780,9 +10780,6 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
   }else
 #endif
-
-  if( c=='w' && strncmp(azArg[0], "wheretrace", n)==0 ){
-  }else
     /* The meta-command is not among the specially handled ones. Dispatch it. */
   {
     int dispatchResult = dispatchCommand(azArg, nArg, p);

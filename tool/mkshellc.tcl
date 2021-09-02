@@ -72,12 +72,12 @@ if {[llength $infiles] == 0} {
 }
 fconfigure $in -translation binary
 
-set ::cmd_help [dict create]
-set ::cmd_dispatch [dict create]
-set ::cmd_condition [dict create]
-set ::inc_type_files [dict create]
+array set ::cmd_help {}
+array set ::cmd_dispatch {}
+array set ::cmd_condition {}
+array set ::inc_type_files {}
 set ::iShuffleErrors 0
-regexp {(\{)(\})} "{}" ma ::lb ::rb ; # Ease use of { and }.
+regexp {(\{)(\})} "{}" ma ::lb ::rb ; # Ease use of { and } in literals.
 
 # Setup dispatching function signature and table entry struct .
 # The effect of these key/value pairs is as this --parameters output says:
@@ -102,7 +102,7 @@ set ::parametersHelp {
   of $cmd and $arg# variables is done by Tcl evaluation (via subst), allowing
   a wide range of logic to be employed in the derivation of effective values.
 }
-set ::dispCfg [dict create \
+array set ::dispCfg [list \
   RETURN_TYPE int \
   STORAGE_CLASS static \
   ARGS_SIGNATURE "char *\$arg4\\\[\\\], int \$arg5, ShellState *\$arg6" \
@@ -117,12 +117,6 @@ set ::dispCfg [dict create \
 # Variables $cmd and $arg# (where # = 0 .. DC_ARG_COUNT-1) have values
 # when ARGS_SIGNATURE, DISPATCH_ENTRY, and DISPATCHEE_NAME are evaluated.
 
-# proc dump_cfg {} {
-#   foreach k [dict keys $::dispCfg] {
-#     puts stderr "$k=[dict get $::dispCfg $k]"
-#   }
-# }
-
 proc condition_command {cmd pp_expr} {
   if {[regexp {^(!)?defined\(\s*(\w+)\s*\)} $pp_expr ma bang pp_var]} {
     if {$bang eq "!"} {
@@ -133,13 +127,13 @@ proc condition_command {cmd pp_expr} {
   } else {
     set pp_expr "#if [string trim $pp_expr]"
   }
-  dict set ::cmd_condition $cmd $pp_expr
+  set ::cmd_condition($cmd) $pp_expr
 }
 
 proc emit_conditionally {cmd lines ostrm {indent ""}} {
-  set wrapped [dict exists $::cmd_condition $cmd]
+  set wrapped [info exists ::cmd_condition($cmd)]
   if {$wrapped} {
-    puts $ostrm [dict get $::cmd_condition $cmd]
+    puts $ostrm $::cmd_condition($cmd)
   }
   if {[regexp {^\s*(\d+)\s*$} $indent ma inum]} {
     set lead [string repeat " " $inum]
@@ -154,7 +148,7 @@ proc emit_conditionally {cmd lines ostrm {indent ""}} {
   }
 }
 
-# Convert list of help text lines into a dict.
+# Convert list of help text lines into a key-value list.
 # Keys are the command names. Values are the help for the
 # commands as a list of lines, with .* logically first.
 # Any #if... #endif structures are maintained and do not
@@ -163,14 +157,14 @@ proc emit_conditionally {cmd lines ostrm {indent ""}} {
 # (The effect of this is to defeat sorting by command if
 # help for multiple commands' is within one conditional.)
 proc chunkify_help {htin} {
-  set rv [dict create]
+  array set rv [list]
   set if_depth 0
   set cmd_seen ""
   set chunk {}
   foreach htx $htin {
     if {[regexp {^\s*\"\.\w} $htx] && $cmd_seen ne "" && $if_depth == 0} {
       # Flush accumulated chunk.
-      dict set rv $cmd_seen $chunk
+      set rv($cmd_seen) $chunk
       set cmd_seen ""
       set chunk {}
     }
@@ -193,13 +187,13 @@ proc chunkify_help {htin} {
   } else {
     if {$cmd_seen ne "" && [llength $chunk] > 0} {
       # Flush accumulated chunk.
-      dict set rv $cmd_seen $chunk
+      set rv($cmd_seen) $chunk
     } elseif {$cmd_seen ne "" || [llength $chunk] > 0} {
       puts stderr "Orphaned help: '$cmd_seen' [join $chunk \n]"
       incr ::iShuffleErrors
     }
   }
-  return $rv
+  return [array get rv]
 }
 
 array set ::macroTailREs [list \
@@ -236,7 +230,7 @@ proc COLLECT_DISPATCH {hFile tailCapture ostrm} {
   set lx [gets $hFile]
   while {![eof $hFile] && ![regexp {^\s*\];} $lx]} {
     lappend disp_frag $lx
-    set grabCmd [dict get $::dispCfg CMD_CAPTURE_RE]
+    set grabCmd $::dispCfg(CMD_CAPTURE_RE)
     if {![regexp $grabCmd $lx ma dcmd]} {
       puts stderr "malformed dispatch element:\n $lx"
       incr ::iShuffleErrors
@@ -244,7 +238,7 @@ proc COLLECT_DISPATCH {hFile tailCapture ostrm} {
       puts stderr "misdeclared dispatch element:\n $lx"
       incr ::iShuffleErrors
     } else {
-      dict set ::cmd_dispatch $dcmd [list $lx]
+      set ::cmd_dispatch($dcmd) [list $lx]
     }
     set lx [gets $hFile]
     incr iAte
@@ -286,7 +280,7 @@ proc COLLECT_HELP_TEXT {hFile tailCaptureEmpty ostrm} {
     incr iAte
   }
   incr iAte
-  set ::cmd_help [dict merge $::cmd_help [chunkify_help $help_frag]]
+  array set ::cmd_help [chunkify_help $help_frag]
   return $iAte
 }
 
@@ -310,7 +304,7 @@ proc DISPATCH_CONFIG {hFile tailCaptureEmpty ostrm} {
   incr iAte
   foreach line $def_disp {
     if {[regexp {^\s*(\w+)=(.+)$} $line ma k v]} {
-      dict set ::dispCfg $k $v
+      set ::dispCfg($k) $v
     }
   }
   return $iAte
@@ -331,17 +325,18 @@ proc DISPATCHABLE_COMMAND {hFile tailCapture ostrm} {
   incr iAte
   set na [llength $args]
   set cmd [lindex $args 0]
-  set naPass [dict get $::dispCfg DC_ARG_COUNT]
+  set naPass $::dispCfg(DC_ARG_COUNT)
   if {$na > $naPass} {
     puts stderr "Bad args: $lx"
   } else {
     while {$na < $naPass} {
-      if {![dict exists $::dispCfg "DC_ARG${na}_DEFAULT"]} {
+      set nad "DC_ARG${na}_DEFAULT"
+      if {![info exists ::dispCfg($nad)]} {
         puts stderr "Too few args: $lx (need $naPass)"
         incr ::iShuffleErrors
         break
       } else {
-        lappend args [subst [dict get $::dispCfg "DC_ARG${na}_DEFAULT"]]
+        lappend args [subst $::dispCfg($nad)]
       }
       incr na
     }
@@ -356,19 +351,20 @@ proc DISPATCHABLE_COMMAND {hFile tailCapture ostrm} {
       set av [lindex $args $aix]
       if {$av eq "?"} {
         set ai [expr {$aix + 1}]
-        set av [subst [dict get $::dispCfg "DC_ARG${ai}_DEFAULT"]]
+        set aid "DC_ARG${ai}_DEFAULT"
+        set av [subst $::dispCfg($aid)]
       }
       set "arg$aix" $av
     }
     if {$cmd ne "?"} {
-      set rsct [dict get $::dispCfg STORAGE_CLASS]
-      set rsct "$rsct [dict get $::dispCfg RETURN_TYPE]"
-      set argexp [subst [dict get $::dispCfg ARGS_SIGNATURE]]
-      set fname [subst [dict get $::dispCfg DISPATCHEE_NAME]]
+      set rsct $::dispCfg(STORAGE_CLASS)
+      set rsct "$rsct $::dispCfg(RETURN_TYPE)"
+      set argexp [subst $::dispCfg(ARGS_SIGNATURE)]
+      set fname [subst $::dispCfg(DISPATCHEE_NAME)]
       set funcOpen "$rsct $fname\($argexp\)$::lb"
-      set dispEntry [subst [dict get $::dispCfg DISPATCH_ENTRY]]
+      set dispEntry [subst $::dispCfg(DISPATCH_ENTRY)]
       emit_conditionally $cmd [linsert $body 0 $funcOpen] $ostrm
-      dict set ::cmd_dispatch $cmd [list $dispEntry]
+      set ::cmd_dispatch($cmd) [list $dispEntry]
     }
   }
   return $iAte
@@ -377,8 +373,8 @@ proc DISPATCHABLE_COMMAND {hFile tailCapture ostrm} {
 proc EMIT_DISPATCH {hFile tailCap ostrm} {
   # Emit the collected dispatch table entries, in command order, maybe
   # wrapped with a conditional construct as set by CONDITION_COMMAND().
-  foreach cmd [lsort [dict keys $::cmd_dispatch]] {
-    emit_conditionally $cmd [dict get $::cmd_dispatch $cmd] $ostrm $tailCap
+  foreach cmd [lsort [array names ::cmd_dispatch]] {
+    emit_conditionally $cmd $::cmd_dispatch($cmd) $ostrm $tailCap
   }
   return 0
 }
@@ -386,8 +382,8 @@ proc EMIT_DISPATCH {hFile tailCap ostrm} {
 proc EMIT_HELP_TEXT {hFile tailCap ostrm} {
   # Emit the collected help text table entries, in command order, maybe
   # wrapped with a conditional construct as set by CONDITION_COMMAND().
-  foreach htc [lsort [dict keys $::cmd_help]] {
-    emit_conditionally $htc [dict get $::cmd_help $htc] $ostrm $tailCap
+  foreach htc [lsort [array names ::cmd_help]] {
+    emit_conditionally $htc $::cmd_help($htc) $ostrm $tailCap
   }
   return 0
 }
@@ -438,7 +434,7 @@ proc transform_line {line nesting} {
   } elseif {$nesting == 0} {
     return $line
   }
-  if {[regexp {^#include "sqlite} $line]} {
+  if {[regexp {^#include "sqlite.*"} $line]} {
     return "/* $line */"
   }
   if {[regexp {^# *include "test_windirent.h"} $line]} {
@@ -469,7 +465,7 @@ if {$customRun == 2} {
   exit 0
 } elseif {$customRun == 3} {
   set sfd [open $argv0 r]
-  set macdos [dict create]
+  array set macdos [list]
   while {![eof $sfd]} {
     if {[regexp {^proc ([A-Z_]+\M)} [gets $sfd] ma macro]} {
       if {[info exists ::macroTailREs($macro)]} {
@@ -477,13 +473,13 @@ if {$customRun == 2} {
         while {[regexp {^\s+#\s*(.+)$} [gets $sfd] ma effect]} {
           lappend effects " $effect"
         }
-        dict set macdos $macro [join $effects "\n"]
+        set macdos($macro) [join $effects "\n"]
       }
     }
   }
   close $sfd
-  foreach m [lsort [dict keys $macdos]] {
-    puts stderr "\nThe $m macro will:\n [dict get $macdos $m]"
+  foreach m [lsort [array names macdos]] {
+    puts stderr "\nThe $m macro will:\n $macdos($m)"
   }
   exit 0
 } elseif {$customRun == 4} {
