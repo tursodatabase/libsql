@@ -1106,6 +1106,8 @@ struct ShellState {
   u8 doXdgOpen;          /* Invoke start/open/xdg-open in output_reset() */
   u8 nEqpLevel;          /* Depth of the EQP output graph */
   u8 eTraceType;         /* SHELL_TRACE_* value for type of trace */
+  u8 bSafeMode;          /* True when unsafe operations are prohibited */
+  u8 bSafeModeFuture;    /* Next bSafeMode - 0, 1 or suspending downto 1 */
   unsigned statsOn;      /* True to display memory stats before each finalize */
   unsigned mEqpLines;    /* Mask of veritical lines in the EQP output graph */
   int outCount;          /* Revert to stdout when reaching zero */
@@ -1157,8 +1159,9 @@ struct ShellState {
   int *aiIndent;         /* Array of indents used in MODE_Explain */
   int nIndent;           /* Size of array aiIndent[] */
   int iIndent;           /* Index of current op in aiIndent[] */
+  char *zNonce;          /* Nonce for temporary safe-mode excapes */
   EQPGraph sGraph;       /* Information for the graphical EXPLAIN QUERY PLAN */
-  ExpertInfo expert;        /* Valid if previous command was ".expert OPT..." */
+  ExpertInfo expert;     /* Valid if previous command was ".expert OPT..." */
 };
 
 
@@ -1292,6 +1295,27 @@ static void shellPutsFunc(
   (void)nVal;
   utf8_printf(p->out, "%s\n", sqlite3_value_text(apVal[0]));
   sqlite3_result_value(pCtx, apVal[0]);
+}
+
+/*
+** If in safe mode, print an error message described by the arguments
+** and exit immediately.
+*/
+static void failIfSafeMode(
+  ShellState *p,
+  const char *zErrMsg,
+  ...
+){
+  if( p->bSafeMode ){
+    va_list ap;
+    char *zMsg;
+    va_start(ap, zErrMsg);
+    zMsg = sqlite3_vmprintf(zErrMsg, ap);
+    va_end(ap);
+    raw_printf(stderr, "line %d: ", p->lineno);
+    utf8_printf(stderr, "%s\n", zMsg);
+    exit(1);
+  }
 }
 
 /*
@@ -1772,6 +1796,49 @@ static BOOL WINAPI ConsoleCtrlHandler(
 
 #ifndef SQLITE_OMIT_AUTHORIZATION
 /*
+** This authorizer runs in safe mode.
+*/
+static int safeModeAuth(
+  void *pClientData,
+  int op,
+  const char *zA1,
+  const char *zA2,
+  const char *zA3,
+  const char *zA4
+){
+  ShellState *p = (ShellState*)pClientData;
+  static const char *azProhibitedFunctions[] = {
+    "edit",
+    "fts3_tokenizer",
+    "load_extension",
+    "readfile",
+    "writefile",
+    "zipfile",
+    "zipfile_cds",
+  };
+  UNUSED_PARAMETER(zA2);
+  UNUSED_PARAMETER(zA3);
+  UNUSED_PARAMETER(zA4);
+  switch( op ){
+    case SQLITE_ATTACH: {
+      failIfSafeMode(p, "cannot run ATTACH in safe mode");
+      break;
+    }
+    case SQLITE_FUNCTION: {
+      int i;
+      for(i=0; i<ArraySize(azProhibitedFunctions); i++){
+        if( sqlite3_stricmp(zA1, azProhibitedFunctions[i])==0 ){
+          failIfSafeMode(p, "cannot use the %s() function in safe mode",
+                         azProhibitedFunctions[i]);
+        }
+      }
+      break;
+    }
+  }
+  return SQLITE_OK;
+}
+
+/*
 ** When the ".auth ON" is set, the following authorizer callback is
 ** invoked.  It always returns SQLITE_OK.
 */
@@ -1813,6 +1880,7 @@ static int shellAuth(
     }
   }
   raw_printf(p->out, "\n");
+  if( p->bSafeMode ) (void)safeModeAuth(pClientData, op, zA1, zA2, zA3, zA4);
   return SQLITE_OK;
 }
 #endif
@@ -4450,6 +4518,9 @@ static void open_db(ShellState *p, int openFlags){
     }
 #endif
   }
+  if( p->bSafeModeFuture && p->db!=0 ){
+    sqlite3_set_authorizer(p->db, safeModeAuth, p);
+  }
 }
 
 /*
@@ -6823,6 +6894,7 @@ static int writeDb( char *azArg[], int nArg, ShellState *p ){
   int j;
   int bAsync = 0;
   const char *zVfs = 0;
+  failIfSafeMode(p, "cannot run .%s in safe mode", azArg[0]);
   for(j=1; j<nArg; j++){
     const char *z = azArg[j];
     if( z[0]=='-' ){
@@ -6952,6 +7024,7 @@ COLLECT_HELP_TEXT[
 ];
 DISPATCHABLE_COMMAND( archive ? 3 0 azArg nArg p ){
   open_db(p, 0);
+  failIfSafeMode(p, "cannot run .archive in safe mode");
   return arDotCommand(p, 0, azArg, nArg);
 }
 
@@ -6967,6 +7040,8 @@ DISPATCHABLE_COMMAND( auth 3 2 2 azArg nArg p ){
   open_db(p, 0);
   if( booleanValue(azArg[1]) ){
     sqlite3_set_authorizer(p->db, shellAuth, p);
+  }else if( p->bSafeModeFuture ){
+    sqlite3_set_authorizer(p->db, safeModeAuth, p);
   }else{
     sqlite3_set_authorizer(p->db, 0, 0);
   }
@@ -7026,6 +7101,7 @@ DISPATCHABLE_COMMAND( binary 3 2 2 ){
 
 DISPATCHABLE_COMMAND( cd ? 2 2 ){
   int rc=0;
+  failIfSafeMode(p, "cannot run .cd in safe mode");
 #if defined(_WIN32) || defined(WIN32)
   wchar_t *z = sqlite3_win32_utf8_to_unicode(azArg[1]);
   rc = !SetCurrentDirectoryW(z);
@@ -7088,6 +7164,7 @@ DISPATCHABLE_COMMAND( check 3 0 0 ){
   return rc;
 }
 DISPATCHABLE_COMMAND( clone ? 2 2 ){
+  failIfSafeMode(p, "cannot run .clone in safe mode");
   tryToClone(p, azArg[1]);
   return 0;
 }
@@ -7471,6 +7548,7 @@ static int outputRedirs(char *azArg[], int nArg, ShellState *p,
   int bTxtMode = 0;
   int i;
   int bBOM = 0;
+  failIfSafeMode(p, "cannot run .%s in safe mode", azArg[0]);
   for(i=1; i<nArg; i++){
     char *z = azArg[i];
     if( z[0]=='-' ){
@@ -7828,6 +7906,7 @@ DISPATCHABLE_COMMAND( import ? 3 7 ){
   int useOutputMode = 1;      /* Use output mode to determine separators */
   int rc = 0;
 
+  failIfSafeMode(p, "cannot run .import in safe mode");
   memset(&sCtx, 0, sizeof(sCtx));
   if( p->mode==MODE_Ascii ){
     xRead = ascii_read_one_field;
@@ -8283,6 +8362,7 @@ DISPATCHABLE_COMMAND( lint 3 1 0 ){
 DISPATCHABLE_COMMAND( load ? 2 3 ){
   const char *zFile, *zProc;
   char *zErrMsg = 0;
+  failIfSafeMode(p, "cannot run .load in safe mode");
   zFile = azArg[1];
   zProc = nArg>=3 ? azArg[2] : 0;
   open_db(p, 0);
@@ -8296,6 +8376,7 @@ DISPATCHABLE_COMMAND( load ? 2 3 ){
 
 DISPATCHABLE_COMMAND( log ? 2 2 ){
   const char *zFile = azArg[1];
+  failIfSafeMode(p, "cannot run .log in safe mode");
   output_file_close(p->pLog);
   p->pLog = output_file_open(zFile, 0);
   return 0;
@@ -8416,7 +8497,7 @@ DISPATCHABLE_COMMAND( oom ? 1 4 ){
 }
 
 /*****************
- * The .open and .nullvalue commands
+ * The .open, .nonce and .nullvalue commands
  */
 COLLECT_HELP_TEXT[
   ".open ?OPTIONS? ?FILE?   Close existing database and reopen FILE",
@@ -8431,6 +8512,7 @@ COLLECT_HELP_TEXT[
   "        --nofollow      Do not follow symbolic links",
   "        --readonly      Open FILE readonly",
   "        --zip           FILE is a ZIP archive",
+  ".nonce STRING            Disable safe mode for one command if nonce matches",
   ".nullvalue STRING        Use STRING in place of NULL values",
 ];
 DISPATCHABLE_COMMAND( open 3 1 0 ){
@@ -8484,7 +8566,14 @@ DISPATCHABLE_COMMAND( open 3 1 0 ){
   }
   /* If a filename is specified, try to open it first */
   if( zNewFilename || p->openMode==SHELL_OPEN_HEXDB ){
-    if( newFlag ) shellDeleteFile(zNewFilename);
+    if( newFlag && !p->bSafeMode ) shellDeleteFile(zNewFilename);
+    if( p->bSafeMode
+        && p->openMode!=SHELL_OPEN_HEXDB
+        && zNewFilename
+        && strcmp(zNewFilename,":memory:")!=0
+        ){
+      failIfSafeMode(p, "cannot open disk-based database files in safe mode");
+    }
     p->pAuxDb->zDbFilename = zNewFilename;
     open_db(p, OPEN_DB_KEEPALIVE);
     if( p->db==0 ){
@@ -8499,6 +8588,17 @@ DISPATCHABLE_COMMAND( open 3 1 0 ){
     p->pAuxDb->zDbFilename = 0;
     open_db(p, 0);
   }
+  return 0;
+}
+
+DISPATCHABLE_COMMAND( nonce ? 2 2 ){
+  if( p->zNonce==0 || strcmp(azArg[1],p->zNonce)!=0 ){
+    raw_printf(stderr, "line %d: incorrect nonce: \"%s\"\n",
+               p->lineno, azArg[1]);
+    exit(1);
+  }
+  /* Suspend safe mode for 1 meta-command after this. */
+  p->bSafeModeFuture = 2;
   return 0;
 }
 
@@ -8720,6 +8820,7 @@ DISPATCHABLE_COMMAND( read 3 2 2 ){
   int rc = 0;
   FILE *inSaved = p->in;
   int savedLineno = p->lineno;
+  failIfSafeMode(p, "cannot run .read in safe mode");
   if( azArg[1][0]=='|' ){
 #ifdef SQLITE_OMIT_POPEN
     raw_printf(stderr, "Error: pipes are not supported in this OS\n");
@@ -9075,6 +9176,7 @@ DISPATCHABLE_COMMAND( restore ? 2 3 ){
   sqlite3_backup *pBackup;
   int nTimeout = 0;
 
+  failIfSafeMode(p, "cannot run .restore in safe mode");
   if( nArg==2 ){
     zSrcFile = azArg[1];
     zDb = "main";
@@ -9366,6 +9468,7 @@ DISPATCHABLE_COMMAND( session 3 2 0 ){
     */
     if( strcmp(azCmd[0],"changeset")==0 || strcmp(azCmd[0],"patchset")==0 ){
       FILE *out = 0;
+      failIfSafeMode(p, "cannot run \".session %s\" in safe mode", azCmd[0]);
       if( nCmd!=2 ) goto session_syntax_error;
       if( pSession->p==0 ) goto session_not_open;
       out = fopen(azCmd[1], "wb");
@@ -9758,6 +9861,7 @@ DISPATCHABLE_COMMAND( selftest 4 0 0 ){
 static int shellOut(char *azArg[], int nArg, ShellState *p){
   char *zCmd;
   int i, x;
+  failIfSafeMode(p, "cannot run .%s in safe mode", azArg[0]);
   zCmd = sqlite3_mprintf(strchr(azArg[1],' ')==0?"%s":"\"%s\"", azArg[1]);
   for(i=2; i<nArg; i++){
     zCmd = sqlite3_mprintf(strchr(azArg[i],' ')==0?"%z %s":"%z \"%s\"",
@@ -10699,6 +10803,16 @@ meta_command_exit:
     p->outCount--;
     if( p->outCount==0 ) output_reset(p);
   }
+  switch( p->bSafeModeFuture ){
+  default:
+    --p->bSafeModeFuture;
+    /* fall thru */
+  case 0:
+    p->bSafeMode = 0;
+    break;
+  case 1:
+    p->bSafeMode = 1;
+  }
   return rc;
 }
 
@@ -10896,6 +11010,7 @@ static int process_input(ShellState *p){
       }else{
         clearTempFile(p);
       }
+      p->bSafeMode = p->bSafeModeFuture!= 1;
     }else if( nSql && _all_whitespace(zSql) ){
       if( ShellHasFlag(p, SHFLG_Echo) ) printf("%s\n", zSql);
       nSql = 0;
@@ -11062,10 +11177,12 @@ static const char zOptions[] =
 #endif
   "   -newline SEP         set output row separator. Default: '\\n'\n"
   "   -nofollow            refuse to open symbolic links to database files\n"
+  "   -nonce STRING        set the safe-mode escape nonce\n"
   "   -nullvalue TEXT      set text string for NULL values. Default ''\n"
   "   -pagecache SIZE N    use N slots of SZ bytes each for page cache memory\n"
   "   -quote               set output mode to 'quote'\n"
   "   -readonly            open the database read-only\n"
+  "   -safe                enable safe-mode\n"
   "   -separator SEP       set output column separator. Default: '|'\n"
 #ifdef SQLITE_ENABLE_SORTER_REFERENCES
   "   -sorterref SIZE      sorter references threshold size\n"
@@ -11411,6 +11528,11 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       sqlite3MemTraceActivate(stderr);
     }else if( strcmp(z,"-bail")==0 ){
       bail_on_error = 1;
+    }else if( strcmp(z,"-nonce")==0 ){
+      free(data.zNonce);
+      data.zNonce = strdup(argv[++i]);
+    }else if( strcmp(z,"-safe")==0 ){
+      /* no-op - catch this on the second pass */
     }
   }
   verify_uninitialized();
@@ -11573,6 +11695,8 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       i+=2;
     }else if( strcmp(z,"-threadsafe")==0 ){
       i+=2;
+    }else if( strcmp(z,"-nonce")==0 ){
+      i += 2;
     }else if( strcmp(z,"-mmap")==0 ){
       i++;
     }else if( strcmp(z,"-memtrace")==0 ){
@@ -11631,6 +11755,8 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       readStdin = 0;
       break;
 #endif
+    }else if( strcmp(z,"-safe")==0 ){
+      data.bSafeMode = data.bSafeModeFuture = 1;
     }else{
       utf8_printf(stderr,"%s: Error: unknown option: %s\n", Argv0, z);
       raw_printf(stderr,"Use -help for a list of options.\n");
@@ -11733,6 +11859,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   free(argvToFree);
 #endif
   free(data.colWidth);
+  free(data.zNonce);
   /* Clear the global data structure so that valgrind will detect memory
   ** leaks */
   memset(&data, 0, sizeof(data));
