@@ -39,7 +39,8 @@ set infiles {}
 array set ::incTypes [list "*" {}]
 
 while  {[llength $argv] > 0} {
-  set argv [lassign $argv opt]
+  set opt [lindex $argv 0]
+  set argv [lreplace $argv 0 0]
   if {[regexp {^-{1,2}((help)|(details)|(parameters))$} $opt ma ho]} {
     switch $ho {
       help {set customRun 2}
@@ -47,7 +48,8 @@ while  {[llength $argv] > 0} {
       parameters {set customRun 4}
     }
   } elseif {[regexp {^-it$} $opt]} {
-    set argv [lassign $argv nextOpt]
+    set nextOpt [lindex $argv 0]
+    set argv [lreplace $argv 0 0]
     if {![regexp {^(\w+)=(.+)$} $nextOpt ma k v]} {
       puts stderr "Get help with --help."
       exit 1 
@@ -65,12 +67,13 @@ while  {[llength $argv] > 0} {
   }
 }
 if {[llength $infiles] == 0} {
-  set in [open $topdir/src/shell.c.in]
+  set in [open $topdir/src/shell.c.in r]
 } else {
-  set infiles [lassign $infiles infile]
-  set in [open $infile]
+  set infile [lindex $infiles 0]
+  set infiles [lreplace $infiles 0 0]
+  set in [open $infile r]
 }
-fconfigure $in -translation binary
+fconfigure $in -translation auto
 
 array set ::cmd_help {}
 array set ::cmd_dispatch {}
@@ -314,7 +317,8 @@ proc DISPATCHABLE_COMMAND {hFile tailCapture ostrm} {
   # Generate and emit a function definition, maybe wrapped as set by
   # CONDITION_COMMAND(), and generate/collect its dispatch table entry,
   # as determined by its actual arguments and DISPATCH_CONFIG parameters.
-  lassign $tailCapture args tc
+  set args [lindex $tailCapture 0]
+  set tc [lindex $tailCapture 1]
   if {$tc ne $::lb} {
     yap_usage "DISPATCHABLE_COMMAND($args)$tc" DISPATCHABLE_COMMAND
     incr $::iShuffleErrors
@@ -501,7 +505,8 @@ while {1} {
     set cfile [lindex $lx 1]
     puts $out "/************************* Begin $cfile ******************/"
 #   puts $out "#line 1 \"$cfile\""
-    set in2 [open $topdir/src/$cfile rb]
+    set in2 [open $topdir/src/$cfile r]
+    fconfigure $in2 -translation auto
     while {![eof $in2]} {
       set lx [transform_line [gets $in2] 1]
       do_shuffle $in2 $lx $out
