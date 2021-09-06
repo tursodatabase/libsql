@@ -1,5 +1,5 @@
-C Restore\sthe\suse\sof\ssystem\sisnan()\sthat\swas\sremoved\sby\ncheck-in\s[ea748edecb261f2b].\s\sSee\n[forum:/forumpost/d7c530ac587f59e6|forum\sthread\sd7c530ac587f59e6].
-D 2021-09-06T11:44:19.557
+C Fix\san\sissue\sin\sthe\s"shrink.test"\stest\sscript\sreported\sby\n[forum:/forumpost/90a74bd61861f58f|forum\spost\s90a74bd618].
+D 2021-09-06T15:59:32.983
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1382,7 +1382,7 @@ F test/shell8.test 96be02ea0c21f05b24c1883d7b711a1fa8525a68ab7b636aacf6057876941
 F test/shmlock.test 3dbf017d34ab0c60abe6a44e447d3552154bd0c87b41eaf5ceacd408dd13fda5
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/show_speedtest1_rtree.tcl 32e6c5f073d7426148a6936a0408f4b5b169aba5
-F test/shrink.test 1b4330b1fd9e818c04726d45cb28db73087535ce
+F test/shrink.test 9521e5e0d74c0b6192794f3de3a3e5e3190d465527ae365d96763ef753c7229c
 F test/sidedelete.test f0ad71abe6233e3b153100f3b8d679b19a488329
 F test/skipscan1.test 1a9972e1dc15ca3887f306d3cd9a29679afb382eca0f3539f3b746f3c2ccaf68
 F test/skipscan2.test c588cb7ed947db724d300f2a0dc537dd2ad292b0f812641d8481bc0b95dd3f49
@@ -1922,7 +1922,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2262a49467fa56c386080dac3e99a66e16c1700e138dba74db66e7b93ae76bf5
-R d8ba99d74275c13962c86910c5d71eaf
+P b3cfe23bec0b95ca673802526704200e2396df715fdded72aa71addd7f47e0e1
+R d804c1fe9dfdd55c91d9dd7be30deb33
 U drh
-Z b03f3a58c51480d14c4f0272dcd9a510
+Z c12e0d7a856c0cabe2857d56a3d90a01
