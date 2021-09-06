@@ -186,34 +186,31 @@ impl InnerConnection {
 
     #[inline]
     #[cfg(feature = "load_extension")]
-    pub fn enable_load_extension(&mut self, onoff: c_int) -> Result<()> {
-        let r = unsafe { ffi::sqlite3_enable_load_extension(self.db, onoff) };
+    pub unsafe fn enable_load_extension(&mut self, onoff: c_int) -> Result<()> {
+        let r = ffi::sqlite3_enable_load_extension(self.db, onoff);
         self.decode_result(r)
     }
 
     #[cfg(feature = "load_extension")]
-    pub fn load_extension(&self, dylib_path: &Path, entry_point: Option<&str>) -> Result<()> {
+    pub unsafe fn load_extension(
+        &self,
+        dylib_path: &Path,
+        entry_point: Option<&str>,
+    ) -> Result<()> {
         let dylib_str = super::path_to_cstring(dylib_path)?;
-        unsafe {
-            let mut errmsg: *mut c_char = ptr::null_mut();
-            let r = if let Some(entry_point) = entry_point {
-                let c_entry = crate::str_to_cstring(entry_point)?;
-                ffi::sqlite3_load_extension(
-                    self.db,
-                    dylib_str.as_ptr(),
-                    c_entry.as_ptr(),
-                    &mut errmsg,
-                )
-            } else {
-                ffi::sqlite3_load_extension(self.db, dylib_str.as_ptr(), ptr::null(), &mut errmsg)
-            };
-            if r == ffi::SQLITE_OK {
-                Ok(())
-            } else {
-                let message = super::errmsg_to_string(errmsg);
-                ffi::sqlite3_free(errmsg as *mut ::std::os::raw::c_void);
-                Err(error_from_sqlite_code(r, Some(message)))
-            }
+        let mut errmsg: *mut c_char = ptr::null_mut();
+        let r = if let Some(entry_point) = entry_point {
+            let c_entry = crate::str_to_cstring(entry_point)?;
+            ffi::sqlite3_load_extension(self.db, dylib_str.as_ptr(), c_entry.as_ptr(), &mut errmsg)
+        } else {
+            ffi::sqlite3_load_extension(self.db, dylib_str.as_ptr(), ptr::null(), &mut errmsg)
+        };
+        if r == ffi::SQLITE_OK {
+            Ok(())
+        } else {
+            let message = super::errmsg_to_string(errmsg);
+            ffi::sqlite3_free(errmsg as *mut ::std::os::raw::c_void);
+            Err(error_from_sqlite_code(r, Some(message)))
         }
     }
 

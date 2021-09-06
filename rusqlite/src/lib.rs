@@ -721,34 +721,68 @@ impl Connection {
         r.map_err(move |err| (self, err))
     }
 
-    /// Enable loading of SQLite extensions.
-    /// Strongly consider using `LoadExtensionGuard` instead of this function.
+    /// Enable loading of SQLite extensions from both SQL queries and Rust.
     ///
-    /// ## Example
+    /// You must call [`Connection::load_extension_disable`] when you're
+    /// finished loading extensions (failure to call it can lead to bad things,
+    /// see "Safety"), so you should strongly consider using
+    /// [`LoadExtensionGuard`] instead of this function, automatically disables
+    /// extension loading when it goes out of scope.
+    ///
+    /// # Example
     ///
     /// ```rust,no_run
     /// # use rusqlite::{Connection, Result};
-    /// # use std::path::{Path};
     /// fn load_my_extension(conn: &Connection) -> Result<()> {
-    ///     conn.load_extension_enable()?;
-    ///     conn.load_extension(Path::new("my_sqlite_extension"), None)?;
-    ///     conn.load_extension_disable()
+    ///     // Safety: We fully trust the loaded extension and execute no untrusted SQL
+    ///     // while extension loading is enabled.
+    ///     unsafe {
+    ///         conn.load_extension_enable()?;
+    ///         let r = conn.load_extension("my/trusted/extension", None);
+    ///         conn.load_extension_disable()?;
+    ///         r
+    ///     }
     /// }
     /// ```
     ///
     /// # Failure
     ///
     /// Will return `Err` if the underlying SQLite call fails.
+    ///
+    /// # Safety
+    ///
+    /// TLDR: Don't execute any untrusted queries between this call and
+    /// [`Connection::load_extension_disable`].
+    ///
+    /// Perhaps surprisingly, this function does not only allow the use of
+    /// [`Connection::load_extension`] from Rust, but it also allows SQL queries
+    /// to perform [the same operation][loadext]. For example, in the period
+    /// between `load_extension_enable` and `load_extension_disable`, the
+    /// following operation will load and call some function in some dynamic
+    /// library:
+    ///
+    /// ```sql
+    /// SELECT load_extension('why_is_this_possible.dll', 'dubious_func');
+    /// ```
+    ///
+    /// This means that while this is enabled a carefully crafted SQL query can
+    /// be used to escalate a SQL injection attack into code execution.
+    ///
+    /// Safely using this function requires that you trust all SQL queries run
+    /// between when it is called, and when loading is disabled (by
+    /// [`Connection::load_extension_disable`]).
+    ///
+    /// [loadext]: https://www.sqlite.org/lang_corefunc.html#load_extension
     #[cfg(feature = "load_extension")]
     #[cfg_attr(docsrs, doc(cfg(feature = "load_extension")))]
     #[inline]
-    pub fn load_extension_enable(&self) -> Result<()> {
+    pub unsafe fn load_extension_enable(&self) -> Result<()> {
         self.db.borrow_mut().enable_load_extension(1)
     }
 
     /// Disable loading of SQLite extensions.
     ///
-    /// See `load_extension_enable` for an example.
+    /// See [`Connection::load_extension_enable`] for an example.
     ///
     /// # Failure
     ///
@@ -757,36 +791,49 @@ impl Connection {
     #[cfg_attr(docsrs, doc(cfg(feature = "load_extension")))]
     #[inline]
     pub fn load_extension_disable(&self) -> Result<()> {
-        self.db.borrow_mut().enable_load_extension(0)
+        // It's always safe to turn off extension loading.
+        unsafe { self.db.borrow_mut().enable_load_extension(0) }
     }
 
-    /// Load the SQLite extension at `dylib_path`.
-    /// `dylib_path` is passed through to `sqlite3_load_extension`, which may
-    /// attempt OS-specific modifications if the file cannot be loaded directly.
+    /// Load the SQLite extension at `dylib_path`. `dylib_path` is passed
+    /// through to `sqlite3_load_extension`, which may attempt OS-specific
+    /// modifications if the file cannot be loaded directly (for example
+    /// converting `"some/ext"` to `"some/ext.so"`, `"some\\ext.dll"`, ...).
     ///
-    /// If `entry_point` is `None`, SQLite will attempt to find the entry
-    /// point. If it is not `None`, the entry point will be passed through
-    /// to `sqlite3_load_extension`.
+    /// If `entry_point` is `None`, SQLite will attempt to find the entry point.
+    /// If it is not `None`, the entry point will be passed through to
+    /// `sqlite3_load_extension`.
     ///
     /// ## Example
     ///
     /// ```rust,no_run
     /// # use rusqlite::{Connection, Result, LoadExtensionGuard};
-    /// # use std::path::{Path};
     /// fn load_my_extension(conn: &Connection) -> Result<()> {
-    ///     let _guard = LoadExtensionGuard::new(conn)?;
-    ///
-    ///     conn.load_extension("my_sqlite_extension", None)
+    ///     // Safety: we don't execute any SQL statements while
+    ///     // extension loading is enabled.
+    ///     let _guard = unsafe { LoadExtensionGuard::new(conn)? };
+    ///     // Safety: `my_sqlite_extension` is highly trustworthy.
+    ///     unsafe { conn.load_extension("my_sqlite_extension", None) }
     /// }
     /// ```
     ///
     /// # Failure
     ///
     /// Will return `Err` if the underlying SQLite call fails.
+    ///
+    /// # Safety
+    ///
+    /// This is equivalent to performing a `dlopen`/`LoadLibrary` on a shared
+    /// library, and calling a function inside, and thus requires that you trust
+    /// the library that you're loading.
+    ///
+    /// That is to say: to safely use this, the code in the extension must be
+    /// sound, trusted, correctly use the SQLite APIs, and not contain any
+    /// memory or thread safety errors.
     #[cfg(feature = "load_extension")]
     #[cfg_attr(docsrs, doc(cfg(feature = "load_extension")))]
     #[inline]
-    pub fn load_extension<P: AsRef<Path>>(
+    pub unsafe fn load_extension<P: AsRef<Path>>(
         &self,
         dylib_path: P,
         entry_point: Option<&str>,

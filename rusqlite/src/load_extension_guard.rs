@@ -1,7 +1,6 @@
 use crate::{Connection, Result};
 
-/// RAII guard temporarily enabling SQLite
-/// extensions to be loaded.
+/// RAII guard temporarily enabling SQLite extensions to be loaded.
 ///
 /// ## Example
 ///
@@ -9,9 +8,10 @@ use crate::{Connection, Result};
 /// # use rusqlite::{Connection, Result, LoadExtensionGuard};
 /// # use std::path::{Path};
 /// fn load_my_extension(conn: &Connection) -> Result<()> {
-///     let _guard = LoadExtensionGuard::new(conn)?;
-///
-///     conn.load_extension(Path::new("my_sqlite_extension"), None)
+///     unsafe {
+///         let _guard = LoadExtensionGuard::new(conn)?;
+///         conn.load_extension("trusted/sqlite/extension", None)
+///     }
 /// }
 /// ```
 #[cfg_attr(docsrs, doc(cfg(feature = "load_extension")))]
@@ -23,8 +23,15 @@ impl LoadExtensionGuard<'_> {
     /// Attempt to enable loading extensions. Loading extensions will be
     /// disabled when this guard goes out of scope. Cannot be meaningfully
     /// nested.
+    ///
+    /// # Safety
+    ///
+    /// You must not run untrusted queries while extension loading is enabled.
+    ///
+    /// See the safety comment on [`Connection::load_extension_enable`] for more
+    /// details.
     #[inline]
-    pub fn new(conn: &Connection) -> Result<LoadExtensionGuard<'_>> {
+    pub unsafe fn new(conn: &Connection) -> Result<LoadExtensionGuard<'_>> {
         conn.load_extension_enable()
             .map(|_| LoadExtensionGuard { conn })
     }
