@@ -275,6 +275,11 @@ do_catchsql_test 5.1 {
   INSERT INTO t1 SELECT rowid FROM v1
 } {1 {query aborted}}
 
+do_catchsql_test 5.2 {
+  DELETE FROM t1 WHERE rowid>100;
+  INSERT INTO t1 SELECT randomblob(3000) FROM v1
+} {1 {query aborted}}
+
 
 finish_test
 

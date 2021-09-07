@@ -866,6 +866,8 @@ static void fts5StructureMakeWritable(int *pRc, Fts5Structure **pp){
         }
         memcpy(pLvl->aSeg, p->aLevel[i].aSeg, nByte);
       }
+      p->nRef--;
+      pNew->nRef = 1;
     }
     *pp = pNew;
   }
