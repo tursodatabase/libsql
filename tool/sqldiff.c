@@ -200,7 +200,7 @@ static void namelistFree(char **az){
 ** Primary key columns are listed first, followed by data columns.
 ** The number of columns in the primary key is returned in *pnPkey.
 **
-** Normally, the "primary key" in the previous sentence is the true
+** Normally [a], the "primary key" in the previous sentence is the true
 ** primary key - the rowid or INTEGER PRIMARY KEY for ordinary tables
 ** or the declared PRIMARY KEY for WITHOUT ROWID tables.  However, if
 ** the g.bSchemaPK flag is set, then the schema-defined PRIMARY KEY is
@@ -210,8 +210,9 @@ static void namelistFree(char **az){
 ** If the primary key for a table is the rowid but rowid is inaccessible,
 ** then this routine returns a NULL pointer.
 **
-** [a. If the named table is sqlite_schema, omits the "rootpage" column.]
-
+** [a. If the lone, named table is "sqlite_schema", "rootpage" column is
+**  omitted and the "type" and "name" columns are made to be the PK.]
+**
 ** Examples:
 **    CREATE TABLE t1(a INT UNIQUE, b INTEGER, c TEXT, PRIMARY KEY(c));
 **    *pnPKey = 1;
@@ -302,18 +303,32 @@ static char **columnNames(
     if( nPK==0 ) nPK = 1;
     truePk = 1;
   }
+  if( g.bSchemaCompare ){
+    assert( sqlite3_stricmp(zTab,"sqlite_schema")==0
+            || sqlite3_stricmp(zTab,"sqlite_master")==0 );
+    /* For sqlite_schema, will use type and name as the PK. */
+    nPK = 2;
+    truePk = 0;
+  }
   *pnPKey = nPK;
   naz = nPK;
   az = sqlite3_malloc( sizeof(char*)*(nPK+1) );
   if( az==0 ) runtimeError("out of memory");
   memset(az, 0, sizeof(char*)*(nPK+1));
+  if( g.bSchemaCompare ){
+    az[0] = sqlite3_mprintf("%s", "type");
+    az[1] = sqlite3_mprintf("%s", "name");
+  }
   while( SQLITE_ROW==sqlite3_step(pStmt) ){
     char * sid = safeId((char*)sqlite3_column_text(pStmt,1));
     int iPKey;
     if( truePk && (iPKey = sqlite3_column_int(pStmt,5))>0 ){
       az[iPKey-1] = sid;
     }else{
-      if( !g.bSchemaCompare || strcmp(sid,"rootpage")!=0 ){
+      if( !g.bSchemaCompare
+          || !(strcmp(sid,"rootpage")==0
+               ||strcmp(sid,"name")==0
+               ||strcmp(sid,"type")==0)){
         az = sqlite3_realloc(az, sizeof(char*)*(naz+2) );
         if( az==0 ) runtimeError("out of memory");
         az[naz++] = sid;
@@ -335,17 +350,13 @@ static char **columnNames(
   ** avoids extraneous diffs against the schemas due to rowid variance. */
   if( az[0]==0 ){
     const char *azRowid[] = { "rowid", "_rowid_", "oid" };
-    if( g.bSchemaCompare ){
-      az[0] = sqlite3_mprintf("%s", "name");
-    }else {
-      for(i=0; i<sizeof(azRowid)/sizeof(azRowid[0]); i++){
-        for(j=1; j<naz; j++){
-          if( sqlite3_stricmp(az[j], azRowid[i])==0 ) break;
-        }
-        if( j>=naz ){
-          az[0] = sqlite3_mprintf("%s", azRowid[i]);
-          break;
-        }
+    for(i=0; i<sizeof(azRowid)/sizeof(azRowid[0]); i++){
+      for(j=1; j<naz; j++){
+        if( sqlite3_stricmp(az[j], azRowid[i])==0 ) break;
+      }
+      if( j>=naz ){
+        az[0] = sqlite3_mprintf("%s", azRowid[i]);
+        break;
       }
     }
     if( az[0]==0 ){
@@ -1979,8 +1990,8 @@ int main(int argc, char **argv){
         if( i==argc-1 ) cmdlineError("missing argument to %s", argv[i]);
         zTab = argv[++i];
         g.bSchemaCompare =
-          sqlite3_stricmp(zTab, "sqlite_schema")
-          || sqlite3_stricmp(zTab, "sqlite_master");
+          sqlite3_stricmp(zTab, "sqlite_schema")==0
+          || sqlite3_stricmp(zTab, "sqlite_master")==0;
       }else
       if( strcmp(z,"transaction")==0 ){
         useTransaction = 1;
