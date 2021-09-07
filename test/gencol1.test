@@ -602,4 +602,15 @@ do_execsql_test gencol1-21.1 {
   SELECT name, type FROM pragma_table_xinfo('t1');
 } {a INTEGER b INT c TEXT d {} e INT}
 
+# 2021-09-07 forum https://sqlite.org/forum/forumpost/699b44b3ee
+#
+reset_db
+do_execsql_test gencol1-22.1 {
+  CREATE TABLE t0(a PRIMARY KEY,b TEXT AS ('2') UNIQUE);
+  INSERT INTO t0(a) VALUES(2);
+  SELECT * FROM t0 AS x JOIN t0 AS y
+   WHERE x.b='2'
+     AND (y.a=2 OR (x.b LIKE '2*' AND y.a=x.b));
+} {2 2 2 2}
+
 finish_test

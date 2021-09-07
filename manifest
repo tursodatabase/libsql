@@ -1,5 +1,5 @@
-C Fix\sa\suse-after-free\serror\sthat\scould\soccur\sif\san\sfts5\stable\sis\swritten\swhile\sscanning\sit\susing\san\sfts5vocab\scursor.
-D 2021-09-06T16:15:23.416
+C Fix\sa\spotential\sNULL\spointer\sdeference\sin\sthe\sLIKE\soptimization.\s\sThe\nproblem\swas\sintroduced\sby\sthe\saddition\sof\sgenerated\scolumns\nin\scheck-in\s[b855acf1831943b3]\s(SQLite\sversion\s3.31.0,\s2020-01-22).\nReported\sby\sWang\sKe\sin\n[forum/forumpost/699b44b3ee|forum\spost\s699b44b3ee].
+D 2021-09-07T15:41:25.656
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -634,7 +634,7 @@ F src/walker.c 7342becedf3f8a26f9817f08436bdf8b56ad69af83705f6b9320a0ad3092c2ac
 F src/where.c da3981a12e9eb5a71d32bab60ac1957fd4aa337aaea07ca8019b01f8788f442a
 F src/whereInt.h 9248161dd004f625ce5d3841ca9b99fed3fc8d61522cf76340fc5217dbe1375b
 F src/wherecode.c 0208553a0602146b5640747c0e3f7a8c785108c2d06a160b69f23491e9dc781e
-F src/whereexpr.c 3a9144a9d52e110efdc012a73b1574e7b2b4df4bf98949387cb620295eba0975
+F src/whereexpr.c e5fdac355deef93a821f03b90770f92f2be833e92bbdeff8ac1b6c2ae1f74356
 F src/window.c 420167512050a0dfc0f0115b9f0c7d299da9759c9bb2ae83a61fb8d730a5707f
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test ce1aafc86e110685b324e9a763eab4f2a73f737842ec3b687bd965867de90627
@@ -1062,7 +1062,7 @@ F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test f64c4aef4c9e9edf1d6dc0d3f1e65dcc81e67c996403c88d14f09b74807a42bc
 F test/gcfault.test dd28c228a38976d6336a3fc42d7e5f1ad060cb8c
-F test/gencol1.test 6912c4280d0ad26d6e3d133a93c5abd6db0e00bc5c95d6159131a62ab4e6f586
+F test/gencol1.test 1b63f8c00154e58714b1a04554304ffdaae0bac71a23935fe308fb1715068b6c
 F test/genesis.tcl 1e2e2e8e5cc4058549a154ff1892fe5c9de19f98
 F test/having.test a89236dd8d55aa50c4805f82ac9daf64d477a44d712d8209c118978d0ca21ec9
 F test/hexlit.test 4a6a5f46e3c65c4bf1fa06f5dd5a9507a5627751
@@ -1922,7 +1922,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6c3734edb2ecabd85a715c853ef58da39381af26d3dd32e53c068b4fcf6fb98f
-R b61370b93af0502187f5ca4ecbb0c1a4
-U dan
-Z 47ef5fcc5dc27245bda95f4b4ccf3ea9
+P e751c2ec786b5c1a1c9640fdc3fde036879a2c32db2bd67fe7c72604780f67b8
+R f37ba84945d9bce14013653d370e48c8
+U drh
+Z 4944ee0b1d475ff5a31f598f9aa7b030
