@@ -1,5 +1,5 @@
-C For\ssqldiff,\ssqlite_schema\scomparisons\smust\suse\scompound\s(synthesized)\sPK.
-D 2021-09-07T20:58:49.103
+C Fix\sPRAGMA\sintegrity_check\sso\sthat\sit\sdoes\snot\stry\sto\senforce\stypes\son\nANY\scolumns\sin\sa\sSTRICT\stable.
+D 2021-09-08T19:25:21.930
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -537,7 +537,7 @@ F src/parse.y 86aa016b281f61d7664dd8cb7808cab8114d14cfaf362a9b9fc9ead8f33546b7
 F src/pcache.c 084e638432c610f95aea72b8509f0845d2791293f39d1b82f0c0a7e089c3bb6b
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c 54881292a9a5db202b2c0ac541c5e3ef9a5e8c4f1c1383adb2601d5499a60e65
-F src/pragma.c c482a8d529d91e48ebdd5aa3bbbc15edd7f1cd4f4858613be9146866741ad2b8
+F src/pragma.c 2b31671ff0cc1653e5e0544adfc80f46a8165c3f6d1c014dfc62c922859df85a
 F src/pragma.h a11b4798f9c49f156f130e1f7041a9fcc9d316a64f3501b6013acdd2e4c6f549
 F src/prepare.c 0d53d20532aada295c1690792a125adbd6435f5ce703ff0adf1b9b3605238b67
 F src/printf.c 78fabb49b9ac9a12dd1c89d744abdc9b67fd3205e62967e158f78b965a29ec4b
@@ -1426,7 +1426,7 @@ F test/statfault.test f525a7bf633e50afd027700e9a486090684b1ac1
 F test/stmt.test 54ed2cc0764bf3e48a058331813c3dbd19fc1d0827c3d8369914a5d8f564ec75
 F test/stmtvtab1.test 6873dfb24f8e79cbb5b799b95c2e4349060eb7a3b811982749a84b359468e2d5
 F test/strict1.test 1e80c6ae71702c7cebacbc9c61d0c58e270b4cc8004c187296e39432015bf2be
-F test/strict2.test fe1928b3768f51b39774d753ac7e71727718d1c3305eead0e5ea60f75e9e6b4c
+F test/strict2.test e78cedd56eb1c3e0b09b16c594dbfcb7e95bc6d85f68f0fd6501c243be28e219
 F test/subjournal.test 8d4e2572c0ee9a15549f0d8e40863161295107e52f07a3e8012a2e1fdd093c49
 F test/subquery.test d7268d193dd33d5505df965399d3a594e76ae13f
 F test/subquery2.test 90cf944b9de8204569cf656028391e4af1ccc8c0cc02d4ef38ee3be8de1ffb12
@@ -1922,7 +1922,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 51e5aadafe1a4ba6a0be7fc1732d1ec940cbc5e23723b76267c2abf887d713ac
-R 17b6b23653b2d1c22cf2c809d09a9c4a
-U larrybr
-Z 07a4f44349ac85e50a32dd7e3855976b
+P 5bdd8466129b8e477c8349847f19f2a5adea3f650cca6dbafa3b835e5a538d09
+R 0519abc6cb0d46b652034c6e6c65f10c
+U drh
+Z a82d94c048de23aeaa07149c70618cf1
