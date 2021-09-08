@@ -10729,6 +10729,7 @@ static int process_input(ShellState *p){
   int rc;                   /* Error code */
   int errCnt = 0;           /* Number of errors seen */
   int startline = 0;        /* Line number for start of current input */
+  int bAllWhite = 1;        /* Accumulated line empty or all whitespace */
 
   p->lineno = 0;
   while( errCnt==0 || !bail_on_error || (p->in==0 && stdin_is_interactive) ){
@@ -10744,9 +10745,14 @@ static int process_input(ShellState *p){
       seenInterrupt = 0;
     }
     p->lineno++;
-    if( nSql==0 && _all_whitespace(zLine) ){
-      if( ShellHasFlag(p, SHFLG_Echo) ) printf("%s\n", zLine);
-      continue;
+    if( _all_whitespace(zLine) ){
+      if( nSql==0 ){
+        if( ShellHasFlag(p, SHFLG_Echo) )
+          printf("%s\n", zLine);
+        continue;
+      }
+    }else{
+      bAllWhite = 0;
     }
     if( zLine && (zLine[0]=='.' || zLine[0]=='#') && nSql==0 ){
       if( ShellHasFlag(p, SHFLG_Echo) ) printf("%s\n", zLine);
@@ -10765,7 +10771,8 @@ static int process_input(ShellState *p){
     }
     nLine = strlen30(zLine);
     if( nSql+nLine+2>=nAlloc ){
-      nAlloc = nSql+nLine+100;
+      /* Grow buffer by half-again increments when big. */
+      nAlloc = nSql+(nSql>>1)+nLine+100;
       zSql = realloc(zSql, nAlloc);
       if( zSql==0 ) shell_out_of_memory();
     }
@@ -10793,12 +10800,12 @@ static int process_input(ShellState *p){
         clearTempFile(p);
       }
       p->bSafeMode = p->bSafeModePersist;
-    }else if( nSql && _all_whitespace(zSql) ){
+    }else if( nSql && bAllWhite ){
       if( ShellHasFlag(p, SHFLG_Echo) ) printf("%s\n", zSql);
       nSql = 0;
     }
   }
-  if( nSql && !_all_whitespace(zSql) ){
+  if( nSql && !bAllWhite ){
     errCnt += runOneSqlLine(p, zSql, p->in, startline);
   }
   free(zSql);
