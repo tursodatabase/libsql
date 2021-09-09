@@ -1,5 +1,5 @@
-C Avoid\smasking\soff\san\sOOM\sfault\sin\srtreecheck().
-D 2021-09-09T18:06:07.044
+C Remove\sa\sNEVER()\sin\sbtree\sthat\sis\ssometimes\sreachable.\ndbsqlfuzz\sb9140023005430654c8fe544cf0a082ef8d561c1.
+D 2021-09-09T19:19:02.452
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -485,7 +485,7 @@ F src/auth.c f4fa91b6a90bbc8e0d0f738aa284551739c9543a367071f55574681e0f24f8cf
 F src/backup.c 3014889fa06e20e6adfa0d07b60097eec1f6e5b06671625f476a714d2356513d
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c ad8eacc83db82bb50665ea6ce4ac921e8b1e4bd796d17e5c0e4ef76f4daf450e
+F src/btree.c 742425ddcc06b2fef621b26edded28f77c7f9a9e96bdb3cb5217eb91444d99cf
 F src/btree.h 74d64b8f28cfa4a894d14d4ed64fa432cd697b98b61708d4351482ae15913e22
 F src/btreeInt.h 7bc15a24a02662409ebcd6aeaa1065522d14b7fda71573a2b0568b458f514ae0
 F src/build.c 8fa6deebf8726339a5aafb322e9d79c48950b994f33f17460c5393ef593d202e
@@ -1057,7 +1057,7 @@ F test/fuzzdata4.db b502c7d5498261715812dd8b3c2005bad08b3a26e6489414bd13926cd3e4
 F test/fuzzdata5.db e35f64af17ec48926481cfaf3b3855e436bd40d1cfe2d59a9474cb4b748a52a5
 F test/fuzzdata6.db 92a80e4afc172c24f662a10a612d188fb272de4a9bd19e017927c95f737de6d7
 F test/fuzzdata7.db 0166b56fd7a6b9636a1d60ef0a060f86ddaecf99400a666bb6e5bbd7199ad1f2
-F test/fuzzdata8.db 63809e2650b083f1d987649c9d00d554e493f5a4fb921e42ca3333966ac0e92d
+F test/fuzzdata8.db 270cbd5fc46e1bf05e1d8a9ca8a6283df2b9a6d204c6135b51a11f39db21e0da
 F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test f64c4aef4c9e9edf1d6dc0d3f1e65dcc81e67c996403c88d14f09b74807a42bc
@@ -1922,7 +1922,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 00286ca5d998d80214d5e8d501a3b305f432cda1c0ef67ca530e1219565909b7
-R 0666d4d2e0b84497831e127b6ace8fa3
+P 3ebfe7128a20b270de65ebf4620f62e34ea6cc46b472cc52aed96af504eb9637
+R 18891cf2bf7f46de337f5e14da9a6bc6
 U drh
-Z 57ed03abac45e02a29a971e69e4fb22a
+Z 418794be93dd5023a367639347086d0f
