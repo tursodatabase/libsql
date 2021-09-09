@@ -7327,6 +7327,7 @@ static int editPage(
 
   pData = &aData[get2byteNotZero(&aData[hdr+5])];
   if( pData<pBegin ) goto editpage_fail;
+  if( pData>pPg->aDataEnd ) goto editpage_fail;
 
   /* Add cells to the start of the page */
   if( iNew<iOld ){
