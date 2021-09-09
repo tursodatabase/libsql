@@ -1,5 +1,5 @@
-C Improved\sdatabase\scorruption\sdetection\sin\sthe\seditPage()\ssubroutine\nof\sthe\sbtree\srebalancer.\ndbsqlfuzz\sf035b1b5a100a5f0cffb95c958b6c67d7c5eaf1f.
-D 2021-09-09T14:03:55.844
+C Avoid\smasking\soff\san\sOOM\sfault\sin\srtreecheck().
+D 2021-09-09T18:06:07.044
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -393,7 +393,7 @@ F ext/repair/test/checkindex01.test b530f141413b587c9eb78ff734de6bb79bc3515c3350
 F ext/repair/test/test.tcl 686d76d888dffd021f64260abf29a55c57b2cedfa7fc69150b42b1d6119aac3c
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/geopoly.c 98d45533989e908bf65b43f36ff6eaad95a9ffe6f3b6b8658fbd47d45c58b10b
-F ext/rtree/rtree.c f1ce6a86f7cbff634900653bec2dfeba732dd4450eec921c0ac3851d41f462b9
+F ext/rtree/rtree.c 0d1ef309e2bfbe469e3ee363ff9ea0420d5f7b9fcf15b5d9abb9d48a789c26f5
 F ext/rtree/rtree.h 4a690463901cb5e6127cf05eb8e642f127012fd5003830dbc974eca5802d9412
 F ext/rtree/rtree1.test 00792b030a4e188ff1b22e8530e8aa0452bb5dd81c2b18cb004afc7dc63e040e
 F ext/rtree/rtree2.test 9d9deddbb16fd0c30c36e6b4fdc3ee3132d765567f0f9432ee71e1303d32603d
@@ -1922,7 +1922,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 729620c5c0c642243be2fdda98f18d04efaf78ce365092e655cf60c9fee0874f
-R d24f12b0a3a095265f0452c5add6ac01
+P 00286ca5d998d80214d5e8d501a3b305f432cda1c0ef67ca530e1219565909b7
+R 0666d4d2e0b84497831e127b6ace8fa3
 U drh
-Z bf88d01600b1449561c283b3d5c4c92b
+Z 57ed03abac45e02a29a971e69e4fb22a

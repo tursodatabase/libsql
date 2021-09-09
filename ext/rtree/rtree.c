@@ -4265,8 +4265,10 @@ static int rtreeCheckTable(
     if( pStmt ){
       nAux = sqlite3_column_count(pStmt) - 2;
       sqlite3_finalize(pStmt);
+    }else 
+    if( check.rc!=SQLITE_NOMEM ){
+      check.rc = SQLITE_OK;
     }
-    check.rc = SQLITE_OK;
   }
 
   /* Find number of dimensions in the rtree table. */
