@@ -10601,15 +10601,18 @@ meta_command_exit:
 /* Line scan result and intermediate states (supporting scan resumption)
 */
 typedef enum {
-  QSS_InPlain = 0, QSS_InString, QSS_InDquote,
-  QSS_InBlockComment, QSS_EndingSemi,
-  QSS_NoDark = 0,  QSS_HasDark = 1<<3, 
-  QSS_ScanMask = 0x7, QSS_DarkMask = 1<<3
+  QSS_InPlain = 0, QSS_InQuote = 1, QSS_InBlockComment = 2,
+  QSS_NoDark = 0,  QSS_HasDark = 1<<2, QSS_EndingSemi = 1<<3,
+  QSS_ScanMask = 0x3, QSS_DarkMask = 1<<2,
+  QSS_CharShift = 4,  QSS_StateMask = ((1<<QSS_CharShift)-1),
+  QSS_Start = 0
 } QuickScanState;
 #define QSS_STATE(qss) ((qss) & QSS_ScanMask)
-#define QSS_SETV(qss, newst) (newst | ((qss) & QSS_DarkMask))
-#define QSS_PLAINWHITE(qss) ((qss)==QSS_NoDark)
-#define QSS_PLAINDARK(qss) ((qss)==QSS_HasDark)
+#define QSS_SETV(qss, newst) (newst | ((qss) & (QSS_StateMask^QSS_ScanMask)))
+#define QSS_PLAINWHITE(qss) (((qss)&~QSS_EndingSemi)==QSS_NoDark)
+#define QSS_PLAINDARK(qss) (((qss)&~QSS_EndingSemi)==QSS_HasDark)
+#define QSS_SEMITERM(qss) \
+  (((qss)&(QSS_ScanMask|QSS_EndingSemi))==QSS_EndingSemi)
 
 /*
 ** Scan line for classification to guide shell's handling.
@@ -10629,14 +10632,16 @@ static QuickScanState quickscan(char *zLine, QuickScanState qss){
       switch (cin){
       case '-':
         if( *zLine=='-' ){
-          while(*++zLine!=0)
-            ;
+          while((cin = *++zLine)!=0 ){
+            if( cin=='\n')
+              continue;
+          }
           return qss;
         }
         break;
       case ';':
-        qss = QSS_SETV(qss, QSS_EndingSemi);
-        goto EndingSemi;
+        qss |= QSS_EndingSemi;
+        continue;
       case '/':
         if( *zLine=='*' ){
           ++zLine;
@@ -10644,38 +10649,25 @@ static QuickScanState quickscan(char *zLine, QuickScanState qss){
           goto InBlockComment;
         }
         break;
-      case '\'':
-        qss = QSS_SETV(qss, QSS_InString);
-        goto InString;
-      case '"':
-        qss = QSS_SETV(qss, QSS_InDquote);
-        goto InDquote;
+      case '[':
+        cin = ']';
+        /* fall thru */
+      case '`': case '\'': case '"':
+        qss = qss & ~QSS_EndingSemi | QSS_HasDark;
+        qss = QSS_SETV(qss, QSS_InQuote) | (cin<<QSS_CharShift);
+        goto InQuote;
       default:
         break;
       }
-      qss |= QSS_HasDark;
+      qss = qss & ~QSS_EndingSemi | QSS_HasDark;
     }
     break;
-  case QSS_InString:
-  InString:
-    while (cin = *zLine++){
-      if( cin=='\'' ){
-        if( *zLine!='\'' ){
+  case QSS_InQuote:
+  InQuote: {
+      char cLeave = qss >> QSS_CharShift;
+      while (cin = *zLine++){
+        if( cin==cLeave ){
           goto InPlainSet;
-        }else{
-          ++zLine;
-        }
-      }
-    }
-    break;
-  case QSS_InDquote:
-  InDquote:
-    while (cin = *zLine++){
-      if( cin=='"' ){
-        if( *zLine!='"' ){
-          goto InPlainSet;
-        }else{
-          ++zLine;
         }
       }
     }
@@ -10689,16 +10681,7 @@ static QuickScanState quickscan(char *zLine, QuickScanState qss){
       }
     }
     break;
-  case QSS_EndingSemi:
-  EndingSemi:
-    while (cin = *zLine++){
-      if( !IsSpace(cin) && cin!=';' ){
-        --zLine;
-        goto InPlain;
-      }
-    }
-    break;
-  default: assert(0);
+  default:;
   }
   return qss;
 }
@@ -10716,7 +10699,7 @@ static int line_is_command_terminator(char *zLine){
     zLine += 2; /* SQL Server */
   else
     return 0;
-  return quickscan(zLine,QSS_NoDark)==QSS_NoDark;
+  return quickscan(zLine,QSS_Start)==QSS_Start;
 }
 
 /*
@@ -10859,7 +10842,7 @@ static int process_input(ShellState *p){
       memcpy(zSql+nSql, zLine, nLine+1);
       nSql += nLine;
     }
-    if( nSql && QSS_STATE(qss)==QSS_EndingSemi && sqlite3_complete(zSql) ){
+    if( nSql && QSS_SEMITERM(qss) && sqlite3_complete(zSql) ){
       errCnt += runOneSqlLine(p, zSql, p->in, startline);
       nSql = 0;
       if( p->outCount ){
