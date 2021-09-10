@@ -534,6 +534,7 @@ struct Wal {
 #ifdef SQLITE_USE_SEH
   u32 lockMask;              /* Mask of locks held */
   void *pFree;               /* Pointer to sqlite3_free() if exception thrown */
+  int iSysErrno;             /* System error code following exception */
 #endif
 #ifdef SQLITE_DEBUG
   u8 lockError;              /* True if a locking error has occurred */
@@ -628,7 +629,7 @@ struct WalIterator {
 # define SEH_EXCEPT(X) \
    VVA_ONLY(pWal->nSehTry--); \
    assert( pWal->nSehTry==0 ); \
-   } __except( sehExceptionFilter(pWal, GetExceptionCode()) ){ X }
+   } __except( sehExceptionFilter(pWal, GetExceptionCode(), GetExceptionInformation() ) ){ X }
 
 # define SEH_INJECT_FAULT sehInjectFault(pWal) 
 
@@ -638,9 +639,12 @@ struct WalIterator {
 ** indicates that the exception may have been caused by accessing the *-shm 
 ** file mapping. Or EXCEPTION_CONTINUE_SEARCH otherwise.
 */
-static int sehExceptionFilter(Wal *pWal, int eCode){
+static int sehExceptionFilter(Wal *pWal, int eCode, EXCEPTION_POINTERS *p){
   VVA_ONLY(pWal->nSehTry--);
   if( eCode==EXCEPTION_IN_PAGE_ERROR ){
+    if( p && p->ExceptionRecord && p->ExceptionRecord->NumberParameters>=3 ){
+      pWal->iSysErrno = (int)p->ExceptionRecord->ExceptionInformation[2];
+    }
     return EXCEPTION_EXECUTE_HANDLER;
   }
   return EXCEPTION_CONTINUE_SEARCH;
@@ -653,10 +657,17 @@ static int sehExceptionFilter(Wal *pWal, int eCode){
 ** has been invalidated.
 */
 static void sehInjectFault(Wal *pWal){
- assert( pWal->nSehTry>0 );
- if( sqlite3FaultSim(650) ){
-   RaiseException(EXCEPTION_IN_PAGE_ERROR, 0, 0, NULL);
- }
+  int res;
+  assert( pWal->nSehTry>0 );
+
+  res = sqlite3FaultSim(650);
+  if( res!=0 ){
+    ULONG aArg[3];
+    aArg[0] = 0;
+    aArg[1] = 0;
+    aArg[2] = (ULONG)res;
+    RaiseException(EXCEPTION_IN_PAGE_ERROR, 0, 3, aArg);
+  }
 }
 
 /*
@@ -2353,7 +2364,7 @@ static int walHandleException(Wal *pWal){
   }
   sqlite3_free(pWal->pFree);
   pWal->pFree = 0;
-  return SQLITE_IOERR;
+  return SQLITE_IOERR_IN_PAGE;
 }
 
 /*
@@ -2379,6 +2390,20 @@ static int walAssertLockmask(Wal *pWal){
   }
   return 1;
 }
+
+/*
+** Return and zero the "system error" field set when an 
+** EXCEPTION_IN_PAGE_ERROR exception is caught.
+*/
+int sqlite3WalSystemErrno(Wal *pWal){
+  int iRet = 0;
+  if( pWal ){
+    iRet = pWal->iSysErrno;
+    pWal->iSysErrno = 0;
+  }
+  return iRet;
+}
+
 #else
 # define walAssertLockmask(x) 1
 #endif /* ifdef SQLITE_USE_SEH */
@@ -3151,7 +3176,7 @@ int sqlite3WalSnapshotRecover(Wal *pWal){
       SEH_TRY {
         rc = walSnapshotRecover(pWal, pBuf1, pBuf2);
       }
-      SEH_EXCEPT( rc = SQLITE_IOERR; )
+      SEH_EXCEPT( rc = SQLITE_IOERR_IN_PAGE; )
       pWal->ckptLock = 0;
     }
 
@@ -3436,7 +3461,7 @@ int sqlite3WalFindFrame(
   SEH_TRY {
     rc = walFindFrame(pWal, pgno, piRead);
   }
-  SEH_EXCEPT( rc = SQLITE_IOERR; )
+  SEH_EXCEPT( rc = SQLITE_IOERR_IN_PAGE; )
   return rc;
 }
 
@@ -3526,7 +3551,7 @@ int sqlite3WalBeginWriteTransaction(Wal *pWal){
       rc = SQLITE_BUSY_SNAPSHOT;
     }
   }
-  SEH_EXCEPT( rc = SQLITE_IOERR; )
+  SEH_EXCEPT( rc = SQLITE_IOERR_IN_PAGE; )
 
   if( rc!=SQLITE_OK ){
     walUnlockExclusive(pWal, WAL_WRITE_LOCK, 1);
@@ -3593,7 +3618,7 @@ int sqlite3WalUndo(Wal *pWal, int (*xUndo)(void *, Pgno), void *pUndoCtx){
       }
       if( iMax!=pWal->hdr.mxFrame ) walCleanupHash(pWal);
     }
-    SEH_EXCEPT( rc = SQLITE_IOERR; )
+    SEH_EXCEPT( rc = SQLITE_IOERR_IN_PAGE; )
   }
   return rc;
 }
@@ -3640,7 +3665,7 @@ int sqlite3WalSavepointUndo(Wal *pWal, u32 *aWalData){
     SEH_TRY {
       walCleanupHash(pWal);
     }
-    SEH_EXCEPT( rc = SQLITE_IOERR; )
+    SEH_EXCEPT( rc = SQLITE_IOERR_IN_PAGE; )
   }
 
   return rc;

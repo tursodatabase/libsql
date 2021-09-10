@@ -239,4 +239,8 @@ void sqlite3PagerRekey(DbPage*, Pgno, u16);
 # define enable_simulated_io_errors()
 #endif
 
+#ifdef SQLITE_USE_SEH
+int sqlite3PagerWalSystemErrno(Pager*);
+#endif
+
 #endif /* SQLITE_PAGER_H */

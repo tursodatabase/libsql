@@ -528,6 +528,7 @@ int sqlite3_exec(
 #define SQLITE_IOERR_ROLLBACK_ATOMIC   (SQLITE_IOERR | (31<<8))
 #define SQLITE_IOERR_DATA              (SQLITE_IOERR | (32<<8))
 #define SQLITE_IOERR_CORRUPTFS         (SQLITE_IOERR | (33<<8))
+#define SQLITE_IOERR_IN_PAGE           (SQLITE_IOERR | (34<<8))
 #define SQLITE_LOCKED_SHAREDCACHE      (SQLITE_LOCKED |  (1<<8))
 #define SQLITE_LOCKED_VTAB             (SQLITE_LOCKED |  (2<<8))
 #define SQLITE_BUSY_RECOVERY           (SQLITE_BUSY   |  (1<<8))
