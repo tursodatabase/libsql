@@ -1,5 +1,5 @@
-C Remove\sa\sNEVER()\sin\sbtree\sthat\sis\ssometimes\sreachable.\ndbsqlfuzz\sb9140023005430654c8fe544cf0a082ef8d561c1.
-D 2021-09-09T19:19:02.452
+C Speed-up\sCLI's\sprocessing\sfor\shuge\sblock\scomments,\sfor\sany\scontent
+D 2021-09-10T00:58:46.038
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -545,7 +545,7 @@ F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c 42b94d37a54200707a95566eff4f7e8a380e32d080016b699f23bd79a73a5028
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c b2c48dfc02b486fd2da2be1605503615958ba1997d40d994c2946975d0150a31
-F src/shell.c.in af6c3a4942c17a5e28cd47cc111d2f6d6946388c1ff0f5a402208e3f28b666bf
+F src/shell.c.in a9db850f1254f281a59042d180d2c6c8f3208cc8455e140600c3d95481c6c168
 F src/sqlite.h.in 4e977a5e2ed1a9e8987ff65a2cab5f99a4298ebf040ea5ff636e1753339ff45a
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h e97f4e9b509408fea4c4e9bef5a41608dfac343b4d3c7a990dedde1e19af9510
@@ -1922,7 +1922,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3ebfe7128a20b270de65ebf4620f62e34ea6cc46b472cc52aed96af504eb9637
-R 18891cf2bf7f46de337f5e14da9a6bc6
-U drh
-Z 418794be93dd5023a367639347086d0f
+P 6844ede29e1dac93a392dfb1e7e676bb9d0a2e7bbec0a4a5804ffc2025a99b66
+R 5477d1fa459b11493c202e9f0cfe1148
+T *branch * speedy_cli
+T *sym-speedy_cli *
+T -sym-trunk *
+U larrybr
+Z b7d7b6be2bca4895f81d545876286c4b
