@@ -1,5 +1,5 @@
-C When\sshowHeader\sset\sat\sCLI\sinvocation,\sdo\snot\sauto-set\sit\slater.
-D 2021-09-10T01:45:20.943
+C Fix\s(luckily\sharmless)\stypo\sin\smemdb.c\sper\shttps://sqlite.org/forum/forumpost/15af8872d5999df1
+D 2021-09-10T18:35:59.336
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -515,7 +515,7 @@ F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
 F src/mem2.c b93b8762ab999a29ae7751532dadf0a1ac78040308a5fb1d17fcc365171d67eb
 F src/mem3.c 30301196cace2a085cbedee1326a49f4b26deff0af68774ca82c1f7c06fda4f6
 F src/mem5.c 9bf955937b07f8c32541c8a9991f33ce3173d944
-F src/memdb.c 73622017aa03a3cabd1c4d6fca97eedada2155817dd0d74d6c1aeb42573b515d
+F src/memdb.c cd8cf3ee965db4a4ab4b5423b49a4ef810490b8ba828911e523325f2cce3ed1a
 F src/memjournal.c a85f0dc5c02a42453d0bc3819ecfb5666cb6433e5deefcd93ccbe05c9f088b83
 F src/msvc.h 3a15918220367a8876be3fa4f2abe423a861491e84b864fb2b7426bf022a28f8
 F src/mutex.c 5e3409715552348732e97b9194abe92fdfcd934cfb681df4ba0ab87ac6c18d25
@@ -1922,7 +1922,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 32210fa4ac4f06e1705ef808731c7be040a23f9a8630986440100c5d4e76dc07
-R f6c26ef1bf4f79ec99d050527daa9305
+P 733b7d4f95a4e2f0df323974f323c40c2486b188d442e74306a4b580fd8a8bd8
+R bf19e79ff40640b01f2973dda8410fff
 U larrybr
-Z d665dd22a5a71bf376be8412530b7279
+Z 5d6be29a69cdd0f15d2296fc562161c5
