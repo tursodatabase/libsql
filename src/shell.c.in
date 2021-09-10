@@ -1203,7 +1203,7 @@ struct ShellState {
 #define SHFLG_Newlines       0x00000010 /* .dump --newline flag */
 #define SHFLG_CountChanges   0x00000020 /* .changes setting */
 #define SHFLG_Echo           0x00000040 /* .echo or --echo setting */
-#define SHFLG_HeaderSet      0x00000080 /* .header has been used */
+#define SHFLG_HeaderSet      0x00000080 /* showHeader has been specified */
 #define SHFLG_DumpDataOnly   0x00000100 /* .dump show data only */
 #define SHFLG_DumpNoSys      0x00000200 /* .dump omits system tables */
 
@@ -11448,8 +11448,10 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
                        "%s",cmdline_option_value(argc,argv,++i));
     }else if( strcmp(z,"-header")==0 ){
       data.showHeader = 1;
-    }else if( strcmp(z,"-noheader")==0 ){
+      ShellSetFlag(&data, SHFLG_HeaderSet);
+     }else if( strcmp(z,"-noheader")==0 ){
       data.showHeader = 0;
+      ShellSetFlag(&data, SHFLG_HeaderSet);
     }else if( strcmp(z,"-echo")==0 ){
       ShellSetFlag(&data, SHFLG_Echo);
     }else if( strcmp(z,"-eqp")==0 ){
