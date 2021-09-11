@@ -97,8 +97,8 @@ do_faultsim_test 3 -faults seh -prep {
   execsql { SELECT * FROM t1 }
 } -test {
   faultsim_test_result {0 {1 2 3 4 5 6}} 
+  if {$testrc} { test_system_errno db $::seh_errno }
 }
-catch { db close }
 
 do_faultsim_test 4 -faults seh -prep {
   catch { db close }
@@ -109,6 +109,7 @@ do_faultsim_test 4 -faults seh -prep {
   execsql { SELECT * FROM t1 }
 } -test {
   faultsim_test_result {0 {1 2 3 4 7 8}} 
+  if {$testrc} { test_system_errno db $::seh_errno }
 }
 catch { db close }
 
@@ -127,6 +128,7 @@ do_faultsim_test 5 -faults seh -prep {
   execsql ROLLBACK
 } -test {
   faultsim_test_result {0 {}}
+  if {$testrc} { test_system_errno db $::seh_errno }
 }
 catch { db close }
 
@@ -139,6 +141,7 @@ do_faultsim_test 6 -faults seh -prep {
   execsql { SELECT * FROM t1 }
 } -test {
   faultsim_test_result {0 {1 2 3 4 7 8}} 
+  if {$testrc} { test_system_errno db $::seh_errno }
 }
 catch { db close }
 

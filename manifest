@@ -1,5 +1,5 @@
-C If\san\sEXCEPTION_IN_PAGE_ERROR\sexception\sis\scaught,\smake\sthe\sunderlying\sOS\serror\scode\savailable\svia\ssqlite3_system_errno().
-D 2021-09-10T21:28:56.797
+C Fix\sa\scase\swhere\sthe\ssystem\serror\swas\snot\sbeing\sset\scorrectly.
+D 2021-09-11T14:33:05.275
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -620,7 +620,7 @@ F src/vdbe.c e5cdac52d7163c032ae3c54f1cff9391acd23ba79cea0d5a9524c00cc0a856e8
 F src/vdbe.h 25dabb25c7e157b84e59260cfb5b466c3ac103ede9f36f4db371332c47601abe
 F src/vdbeInt.h 38206c8dd6b60ff03d9fd4f626b1b4fd0eef7cdc44f2fc2c1973b0f932a3f26b
 F src/vdbeapi.c aa5aaf2c37676b83af5724c6cd8207a3064ed46a217fd180957f75ac84f7a2a5
-F src/vdbeaux.c 2368a8888f17368d4040a05966f7d2a2276cac4eeeba50793828186d999e3c8f
+F src/vdbeaux.c 258c4ea5afea94b0d21aa9f46015769de7d7c9cf41b9d94672de74a6f4a3a241
 F src/vdbeblob.c 60a7694760e35b2bba166cf49eb6a1eb0b31581102b49de78008ca3032406065
 F src/vdbemem.c 53881aa0a7845922a075b3f375695588618098871a7a4120af4c297b80fa3e64
 F src/vdbesort.c cd5130f683706c1a43e165a74187745fb3351cb56052cf9dc91de820634bbde2
@@ -1739,7 +1739,7 @@ F test/walprotocol2.test 7d3b6b4bf0b12f8007121b1e6ef714bc99101fb3b48e46371df1db8
 F test/walro.test cb438d05ba0d191f10b688e39c4f0cd5b71569a1d1f4440e5bdf3c6880e08c20
 F test/walro2.test 0e79dd15cbdb4f482c01ea248373669c732414a726b357d04846a816afafb768
 F test/walrofault.test c70cb6e308c443867701856cce92ad8288cd99488fa52afab77cca6cfd51af68
-F test/walseh1.test 5a94409fb1a7029070040286336fef5ce61315121123e25cfb7e0622b017e59d
+F test/walseh1.test 82da37763b0d87942dccd191e58321532ce3d44b87ef36e04ff9ce13f382bbae
 F test/walsetlk.test 3185bebc90557e0d611442c8d64f7a0cb7b06f8e156eea37a4a7358f722715be
 F test/walshared.test 0befc811dcf0b287efae21612304d15576e35417
 F test/walslow.test c05c68d4dc2700a982f89133ce103a1a84cc285f
@@ -1921,7 +1921,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0c6ab539cfbc908550fa993a587e85d644b6335853ff9781caae860c461c045d
-R 33294cd0e1de3328b05fc8fdf4f59e56
+P fdb20e9ee48465b94aa6ac3c5e263ecaa7c3b10f4a193e79f965b7c35944b08b
+R 19613aef7c9a0f6d6a0d415bcd0e8fe9
 U dan
-Z ff4d8e1dd5c81ec2fdd90cee5190a162
+Z 115def4376f9950aab2266e8ac285bc1
