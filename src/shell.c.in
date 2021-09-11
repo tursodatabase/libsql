@@ -10625,7 +10625,6 @@ static QuickScanState quickscan(char *zLine, QuickScanState qss){
   case QSS_InPlain:
   InPlainSet:
     qss = QSS_SETV(qss, QSS_InPlain);
-  InPlain:
     while (cin = *zLine++){
       if( IsSpace(cin) )
         continue;
@@ -10667,7 +10666,10 @@ static QuickScanState quickscan(char *zLine, QuickScanState qss){
       char cLeave = qss >> QSS_CharShift;
       while (cin = *zLine++){
         if( cin==cLeave ){
-          goto InPlainSet;
+          if(*zLine==cLeave && cLeave!=']')
+            ++zLine;
+          else
+            goto InPlainSet;
         }
       }
     }
