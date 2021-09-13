@@ -347,6 +347,9 @@ static void addWhereTerm(
   pE2 = sqlite3CreateColumnExpr(db, pSrc, iRight, iColRight);
 
   pEq = sqlite3PExpr(pParse, TK_EQ, pE1, pE2);
+  assert( pE2!=0 || pEq==0 );  /* Due to db->mallocFailed test
+                               ** in sqlite3DbMallocRawNN() called from
+                               ** sqlite3PExpr(). */
   if( pEq && isOuterJoin ){
     ExprSetProperty(pEq, EP_FromJoin);
     assert( !ExprHasProperty(pEq, EP_TokenOnly|EP_Reduced) );
