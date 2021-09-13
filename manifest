@@ -1,5 +1,5 @@
-C Add\sassert()\sstatements\sto\srefute\s\n[forum:/forumpost/9f4e7f58fbb66ddd|forum\spost\s9f4e7f58fbb66ddd].
-D 2021-09-13T18:16:15.976
+C Add\stest\scases\sto\srtreedoc.test.
+D 2021-09-13T18:32:02.389
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -418,7 +418,7 @@ F ext/rtree/rtree_util.tcl db734b4c5e75fed6acc56d9701f2235345acfdec750b5fc7b5879
 F ext/rtree/rtreecheck.test d67d5b3e9e45bfa8cd90734e8e9302144ac415b8e9176c6f02d4f92892ee8a35
 F ext/rtree/rtreecirc.test aec664eb21ae943aeb344191407afff5d392d3ae9d12b9a112ced0d9c5de298e
 F ext/rtree/rtreeconnect.test 225ad3fcb483d36cbee423a25052a6bbae762c9576ae9268332360c68c170d3d
-F ext/rtree/rtreedoc.test 99e1bac95df108f3bdae6c09cd08c27eca20c20ed70d989a4df73799540305df
+F ext/rtree/rtreedoc.test a1e5199edd7ddb1f3ac20b720f908cffe85cbaa28924c50415de09ce01b478b7
 F ext/rtree/rtreefuzz001.test 0fc793f67897c250c5fde96cefee455a5e2fb92f4feeabde5b85ea02040790ee
 F ext/rtree/sqlite3rtree.h 03c8db3261e435fbddcfc961471795cbf12b24e03001d0015b2636b0f3881373
 F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
@@ -1923,7 +1923,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8c4b1482eeb31856bce20eda1ce74959e19da11962f74d406a608747a92fe429
-R 31122d38ddbc232dcbd8f2a1a089a76e
-U drh
-Z 2f8fa553907508fe78dd100f7c6194fd
+P 83a83475c5064ea62016a03e9173ecd2a1fec7f6296f1ee99896fa0a38b4196a
+R a1c3bdb5fd69f05f7096cf73daf4f563
+U dan
+Z 525d49d8fabd36744cc1fce5e4c65380

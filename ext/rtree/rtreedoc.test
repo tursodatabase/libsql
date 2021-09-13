@@ -27,11 +27,20 @@ proc column_count {db tbl} {
   return $nCol
 }
 
+proc column_name_list {db tbl} {
+  set lCol [list]
+  $db eval "PRAGMA table_info = $tbl" { 
+    lappend lCol $name
+  }
+  return $lCol
+}
+
 #-------------------------------------------------------------------------
 #-------------------------------------------------------------------------
 # Section 3 of documentation.
 #-------------------------------------------------------------------------
 #-------------------------------------------------------------------------
+set testprefix rtreedoc-1
 
 # EVIDENCE-OF: R-15060-13876 A 1-dimensional R*Tree thus has 3 columns.
 do_execsql_test 1.1.1 { CREATE VIRTUAL TABLE rt1 USING rtree(id, x1,x2) }
@@ -251,6 +260,171 @@ do_execsql_test 8.4 {
 
 
 #-------------------------------------------------------------------------
+#-------------------------------------------------------------------------
+# Section 3.1 of documentation.
+#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------
+set testprefix rtreedoc-2
+reset_db
+
+foreach {tn name clist} {
+  1 t1 "id x1 x2"
+  2 t2 "id x1 x2   y1 y2   z1 z2"
+} {
+# EVIDENCE-OF: R-15142-18077 A new R*Tree index is created as follows:
+# CREATE VIRTUAL TABLE <name> USING rtree(<column-names>);
+  do_execsql_test 1.$tn.1 "
+    CREATE VIRTUAL TABLE $name USING rtree([join $clist ,])
+  "
+
+# EVIDENCE-OF: R-51698-09302 The <name> is the name your
+# application chooses for the R*Tree index and <column-names> is a
+# comma separated list of between 3 and 11 columns.
+  do_test 1.$tn.2 { column_name_list db $name } [list {*}$clist]
+
+# EVIDENCE-OF: R-50130-53472 The virtual <name> table creates
+# three shadow tables to actually store its content.
+  do_execsql_test 1.$tn.3 {
+    SELECT count(*) FROM sqlite_schema
+  } [expr 1+3]
+
+# EVIDENCE-OF: R-45256-35998 The names of these shadow tables are:
+# <name>_node <name>_rowid <name>_parent
+  do_execsql_test 1.$tn.4 {
+    SELECT name FROM sqlite_schema WHERE rootpage>0 ORDER BY 1
+  } [list ${name}_node ${name}_parent ${name}_rowid]
+
+  do_execsql_test 1.$tn.5 "DROP TABLE $name"
+}
+
+# EVIDENCE-OF: R-11241-54478 As an example, consider creating a
+# two-dimensional R*Tree index for use in spatial queries: CREATE
+# VIRTUAL TABLE demo_index USING rtree( id, -- Integer primary key minX,
+# maxX, -- Minimum and maximum X coordinate minY, maxY -- Minimum and
+# maximum Y coordinate );
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE demo_index USING rtree(
+      id,              -- Integer primary key
+      minX, maxX,      -- Minimum and maximum X coordinate
+      minY, maxY       -- Minimum and maximum Y coordinate
+  );
+  INSERT INTO demo_index VALUES(1,2,3,4,5);
+  INSERT INTO demo_index VALUES(6,7,8,9,10);
+}
+
+# EVIDENCE-OF: R-02287-33529 The shadow tables are ordinary SQLite data
+# tables.
+#
+# Ordinary tables. With ordinary sqlite_schema entries.
+do_execsql_test 2.1 {
+  SELECT * FROM sqlite_schema WHERE sql NOT LIKE '%virtual%'
+} {
+  table demo_index_rowid demo_index_rowid 2 
+    {CREATE TABLE "demo_index_rowid"(rowid INTEGER PRIMARY KEY,nodeno)} 
+  table demo_index_node demo_index_node 3 
+    {CREATE TABLE "demo_index_node"(nodeno INTEGER PRIMARY KEY,data)} 
+  table demo_index_parent demo_index_parent 4 
+    {CREATE TABLE "demo_index_parent"(nodeno INTEGER PRIMARY KEY,parentnode)}
+}
+
+# EVIDENCE-OF: R-10863-13089 You can query them directly if you like,
+# though this unlikely to reveal anything particularly useful.
+#
+# Querying:
+do_execsql_test 2.2 {
+  SELECT count(*) FROM demo_index_node;
+  SELECT count(*) FROM demo_index_rowid;
+  SELECT count(*) FROM demo_index_parent;
+} {1 2 0}
+
+# EVIDENCE-OF: R-05650-46070 And you can UPDATE, DELETE, INSERT or even
+# DROP the shadow tables, though doing so will corrupt your R*Tree
+# index.
+do_execsql_test 2.3 {
+  DELETE FROM demo_index_rowid;
+  INSERT INTO demo_index_parent VALUES(2, 3);
+  UPDATE demo_index_node SET data = 'hello world'
+}
+do_catchsql_test 2.4 {
+  SELECT * FROM demo_index WHERE minX>10 AND maxX<30
+} {1 {database disk image is malformed}}
+do_execsql_test 2.5 {
+  DROP TABLE demo_index_rowid
+}
+
+#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------
+# Section 3.1.1 of documentation.
+#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------
+set testprefix rtreedoc-3
+reset_db
+
+# EVIDENCE-OF: R-44253-50720 In the argments to "rtree" in the CREATE
+# VIRTUAL TABLE statement, the names of the columns are taken from the
+# first token of each argument. All subsequent tokens within each
+# argument are silently ignored.
+#
+foreach {tn cols lCol} {
+  1 {(id TEXT, x1 TEXT, x2 TEXT, y1 TEXT, y2 TEXT)} {id x1 x2 y1 y2}
+  2 {(id TEXT, x1 UNIQUE, x2 TEXT, y1 NOT NULL, y2 TEXT)} {id x1 x2 y1 y2}
+  3 {(id, x1 DEFAULT 4, x2 TEXT, y1 NOT NULL, y2 TEXT)} {id x1 x2 y1 y2}
+} {
+  do_execsql_test 1.$tn.1 " CREATE VIRTUAL TABLE abc USING rtree $cols "
+  do_test 1.$tn.2 { column_name_list db abc } $lCol
+
+# EVIDENCE-OF: R-52032-06717 This means, for example, that if you try to
+# give a column a type affinity or add a constraint such as UNIQUE or
+# NOT NULL or DEFAULT to a column, those extra tokens are accepted as
+# valid, but they do not change the behavior of the rtree.
+
+  # Show there are no UNIQUE constraints
+  do_execsql_test 1.$tn.3 {
+    INSERT INTO abc VALUES(1, 10.0, 20.0, 10.0, 20.0);
+    INSERT INTO abc VALUES(2, 10.0, 20.0, 10.0, 20.0);
+  }
+
+  # Show the default values have not been modified
+  do_execsql_test 1.$tn.4 {
+    INSERT INTO abc DEFAULT VALUES;
+    SELECT * FROM abc WHERE rowid NOT IN (1,2)
+  } {3 0.0 0.0 0.0 0.0}
+
+  # Show that there are no NOT NULL constraints
+  do_execsql_test 1.$tn.5 {
+    INSERT INTO abc VALUES(NULL, NULL, NULL, NULL, NULL);
+    SELECT * FROM abc WHERE rowid NOT IN (1,2,3)
+  } {4 0.0 0.0 0.0 0.0}
+
+# EVIDENCE-OF: R-06893-30579 In an RTREE virtual table, the first column
+# always has a type affinity of INTEGER and all other data columns have
+# a type affinity of REAL.
+  do_execsql_test 1.$tn.5 {
+    INSERT INTO abc VALUES('5', '5', '5', '5', '5');
+    SELECT * FROM abc WHERE rowid NOT IN (1,2,3,4)
+  } {5 5.0 5.0 5.0 5.0}
+  do_execsql_test 1.$tn.6 {
+    SELECT type FROM pragma_table_info('abc') ORDER BY cid
+  } {INT REAL REAL REAL REAL}
+
+  do_execsql_test 1.$tn.7 " CREATE VIRTUAL TABLE abc2 USING rtree_i32 $cols "
+
+# EVIDENCE-OF: R-06224-52418 In an RTREE_I32 virtual table, all columns
+# have type affinity of INTEGER.
+  do_execsql_test 1.$tn.8 {
+    INSERT INTO abc2 VALUES('6.0', '6.0', '6.0', '6.0', '6.0');
+    SELECT * FROM abc2
+  } {6 6 6 6 6}
+  do_execsql_test 1.$tn.9 {
+    SELECT type FROM pragma_table_info('abc2') ORDER BY cid
+  } {INT INT INT INT INT}
+
+
+  do_execsql_test 1.$tn.10 {
+    DROP TABLE abc;
+    DROP TABLE abc2;
+  }
+}
 
 finish_test
 
