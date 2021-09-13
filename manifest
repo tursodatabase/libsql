@@ -1,5 +1,5 @@
-C Add\stest\scases\sto\srtreedoc.test.
-D 2021-09-13T18:32:02.389
+C Shell\sto\s.read\sany\snamed\scharacter\ssource\sfile/device\s(again.)
+D 2021-09-13T23:11:46.739
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -546,7 +546,7 @@ F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c 42b94d37a54200707a95566eff4f7e8a380e32d080016b699f23bd79a73a5028
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 030c3d07326708343208418c84da607752aebc13c92df929b7c68c7c08e7df54
-F src/shell.c.in 2c063d07127aa59e45806ae7911fa6963664901f9fdccfba71b926195d34be36
+F src/shell.c.in 714fb58faf675ec7cc1b84a3e15a0791a6e2e376784c4f8d8ddf2135b64476ee
 F src/sqlite.h.in 4e977a5e2ed1a9e8987ff65a2cab5f99a4298ebf040ea5ff636e1753339ff45a
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h e97f4e9b509408fea4c4e9bef5a41608dfac343b4d3c7a990dedde1e19af9510
@@ -1923,7 +1923,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 83a83475c5064ea62016a03e9173ecd2a1fec7f6296f1ee99896fa0a38b4196a
-R a1c3bdb5fd69f05f7096cf73daf4f563
-U dan
-Z 525d49d8fabd36744cc1fce5e4c65380
+P 4ee99d315487a3aa09911191a74c6a12693784c5359243eb1396d8868566e80a
+R 885748239c9ba7ea32d59abcd4f96e9c
+U larrybr
+Z 606740ffbbc223c1ab0dc9aba575ab96

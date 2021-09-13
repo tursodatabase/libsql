@@ -635,19 +635,22 @@ static int strlenChar(const char *z){
 }
 
 /*
-** Return true if zFile does not exist or if it is not an ordinary file.
+** Return true if zFile does not exist or if it is not either
+** an ordinary file or an openable character stream source.
 */
+static int notChrSource(const char *zFile){
 #ifdef _WIN32
-# define notNormalFile(X) 0
+  struct _stat x = {0};
+  int rc = _stat(zFile, &x);
+# define STAT_CHR_SRC(mode) ((mode & (_S_IFCHR|_S_IFIFO|_S_IFREG))!=0)
 #else
-static int notNormalFile(const char *zFile){
-  struct stat x;
-  int rc;
-  memset(&x, 0, sizeof(x));
-  rc = stat(zFile, &x);
-  return rc || !S_ISREG(x.st_mode);
-}
+  struct stat x = {0};
+  int rc = stat(zFile, &x);
+# define STAT_CHR_SRC(mode) (S_ISREG(mode)||S_ISFIFO(mode)||S_ISCHR(mode))
 #endif
+  return rc || !STAT_CHR_SRC(x.st_mode);
+#undef STAT_CHR_SRC
+}
 
 /*
 ** This routine reads a line of text from FILE in, stores
@@ -9239,7 +9242,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         pclose(p->in);
       }
 #endif
-    }else if( notNormalFile(azArg[1]) || (p->in = fopen(azArg[1], "rb"))==0 ){
+    }else if( notChrSource(azArg[1]) || (p->in = fopen(azArg[1], "rb"))==0 ){
       utf8_printf(stderr,"Error: cannot open \"%s\"\n", azArg[1]);
       rc = 1;
     }else{
