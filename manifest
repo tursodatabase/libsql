@@ -1,5 +1,5 @@
-C Fix\san\sincorrect\scomment\sand\spossible\sinteger\soverflow\sin\spager\nresulting\sfrom\scheck-in\s[23ca23894af352ea].\s\sProblem\sreported\sby\n[forum:/forumpost/e2ea1a3f61|forum\spost\se2ea1a3f61].\s\sAlso\schange\nthe\sdatatype\sof\sPager.pageSize\sto\si64\seven\sthough\spage\ssize\snever\nexceeds\s65536,\sin\sorder\sto\shelp\sprevent\sfuture\sproblems\sof\sthis\skind.
-D 2021-09-13T13:53:13.560
+C Add\snew\stest\sfile\srtreedoc.test.
+D 2021-09-13T16:36:20.763
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -418,6 +418,7 @@ F ext/rtree/rtree_util.tcl db734b4c5e75fed6acc56d9701f2235345acfdec750b5fc7b5879
 F ext/rtree/rtreecheck.test d67d5b3e9e45bfa8cd90734e8e9302144ac415b8e9176c6f02d4f92892ee8a35
 F ext/rtree/rtreecirc.test aec664eb21ae943aeb344191407afff5d392d3ae9d12b9a112ced0d9c5de298e
 F ext/rtree/rtreeconnect.test 225ad3fcb483d36cbee423a25052a6bbae762c9576ae9268332360c68c170d3d
+F ext/rtree/rtreedoc.test 99e1bac95df108f3bdae6c09cd08c27eca20c20ed70d989a4df73799540305df
 F ext/rtree/rtreefuzz001.test 0fc793f67897c250c5fde96cefee455a5e2fb92f4feeabde5b85ea02040790ee
 F ext/rtree/sqlite3rtree.h 03c8db3261e435fbddcfc961471795cbf12b24e03001d0015b2636b0f3881373
 F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
@@ -1922,7 +1923,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2dd61dd97b0326b59b0bc3c83b4d4b9acf811c5acae4d1003e7525ba7a26daf5
-R 66cc359b5bd82ddca4b6f4fbb9050fa7
-U drh
-Z 3e25a183a096e34ec8d9ba775c31b648
+P f4a552ed9f4ab35520b634954c39748cc7bda535f426280b79da1b99f70599ac
+R f99597bfa8634077950c96867f36ea09
+U dan
+Z 062a262734dac9852988b18115d599fe

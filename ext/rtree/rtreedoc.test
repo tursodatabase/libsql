@@ -1,0 +1,257 @@
+# 2021 September 13
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# The focus of this file is testing the r-tree extension.
+#
+
+if {![info exists testdir]} {
+  set testdir [file join [file dirname [info script]] .. .. test]
+}
+source [file join [file dirname [info script]] rtree_util.tcl]
+source $testdir/tester.tcl
+set testprefix rtreedoc
+
+# This command returns the number of columns in table $tbl within the
+# database opened by database handle $db
+proc column_count {db tbl} {
+  set nCol 0
+  $db eval "PRAGMA table_info = $tbl" { incr nCol }
+  return $nCol
+}
+
+#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------
+# Section 3 of documentation.
+#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------
+
+# EVIDENCE-OF: R-15060-13876 A 1-dimensional R*Tree thus has 3 columns.
+do_execsql_test 1.1.1 { CREATE VIRTUAL TABLE rt1 USING rtree(id, x1,x2) }
+do_test         1.1.2 { column_count db rt1 } 3
+
+# EVIDENCE-OF: R-19353-19546 A 2-dimensional R*Tree has 5 columns.
+do_execsql_test 1.2.1 { CREATE VIRTUAL TABLE rt2 USING rtree(id,x1,x2, y1,y2) }
+do_test         1.2.2 { column_count db rt2 } 5
+
+# EVIDENCE-OF: R-13615-19528 A 3-dimensional R*Tree has 7 columns.
+do_execsql_test 1.3.1 { 
+  CREATE VIRTUAL TABLE rt3 USING rtree(id, x1,x2, y1,y2, z1,z2) 
+}
+do_test         1.3.2 { column_count db rt3 } 7
+
+# EVIDENCE-OF: R-53479-41922 A 4-dimensional R*Tree has 9 columns.
+do_execsql_test 1.4.1 { 
+  CREATE VIRTUAL TABLE rt4 USING rtree(id, x1,x2, y1,y2, z1,z2, v1,v2) 
+}
+do_test         1.4.2 { column_count db rt4 } 9
+
+# EVIDENCE-OF: R-13981-28768 And a 5-dimensional R*Tree has 11 columns.
+do_execsql_test 1.5.1 { 
+  CREATE VIRTUAL TABLE rt5 USING rtree(id, x1,x2, y1,y2, z1,z2, v1,v2, w1,w2)
+}
+do_test         1.5.2 { column_count db rt5 } 11
+
+
+# Attempt to create r-tree tables with 6 and 7 dimensions.
+#
+# EVIDENCE-OF: R-61533-25862 The SQLite R*Tree implementation does not
+# support R*Trees wider than 5 dimensions.
+do_catchsql_test 2.1.1 { 
+  CREATE VIRTUAL TABLE rt6 USING rtree(
+    id, x1,x2, y1,y2, z1,z2, v1,v2, w1,w2, a1,a2
+  )
+} {1 {Too many columns for an rtree table}}
+do_catchsql_test 2.1.2 { 
+  CREATE VIRTUAL TABLE rt6 USING rtree(
+    id, x1,x2, y1,y2, z1,z2, v1,v2, w1,w2, a1,a2, b1, b2
+  )
+} {1 {Too many columns for an rtree table}}
+
+# Attempt to create r-tree tables with no columns, a single column, or
+# an even number of columns. This and the tests above establish that:
+#
+# EVIDENCE-OF: R-16717-50504 Each R*Tree index is a virtual table with
+# an odd number of columns between 3 and 11.
+foreach {tn cols err} {
+  1 ""                        "Too few columns for an rtree table"
+  2 "x"                       "Too few columns for an rtree table"
+  3 "x,y"                     "Too few columns for an rtree table"
+  4 "a,b,c,d"                 "Wrong number of columns for an rtree table"
+  5 "a,b,c,d,e,f"             "Wrong number of columns for an rtree table"
+  6 "a,b,c,d,e,f,g,h"         "Wrong number of columns for an rtree table"
+  7 "a,b,c,d,e,f,g,h,i,j"     "Wrong number of columns for an rtree table"
+  8 "a,b,c,d,e,f,g,h,i,j,k,l" "Too many columns for an rtree table"
+} {
+  do_catchsql_test 3.$tn "
+    CREATE VIRTUAL TABLE xyz USING rtree($cols)
+  " [list 1 $err]
+}
+
+# EVIDENCE-OF: R-46619-65417 The first column is always a 64-bit signed
+# integer primary key.
+#
+# EVIDENCE-OF: R-46866-24036 It may only store a 64-bit signed integer
+# value.
+#
+# EVIDENCE-OF: R-00250-64843 If an attempt is made to insert any other
+# non-integer value into this column, the r-tree module silently
+# converts it to an integer before writing it into the database.
+#
+do_execsql_test 4.0 { CREATE VIRTUAL TABLE rt USING rtree(id, x1, x2) }
+foreach {tn val res} {
+  1 10    10
+  2 10.6  10
+  3 10.99 10
+  4 '123' 123
+  5 X'313233'  123
+  6 -10   -10
+  7  9223372036854775807 9223372036854775807 
+  8 -9223372036854775808 -9223372036854775808 
+  9  '9223372036854775807' 9223372036854775807
+  10  '-9223372036854775808' -9223372036854775808
+  11  'hello+world' 0
+} {
+  do_execsql_test 4.$tn.1 "
+    DELETE FROM rt;
+    INSERT INTO rt VALUES($val, 10, 20);
+  "
+  do_execsql_test 4.$tn.2 {
+    SELECT typeof(id), id FROM rt
+  } [list integer $res]
+}
+
+# EVIDENCE-OF: R-15544-29079 Inserting a NULL value into this column
+# causes SQLite to automatically generate a new unique primary key
+# value.
+do_execsql_test 5.1 {
+  DELETE FROM rt;
+  INSERT INTO rt VALUES(100, 1, 2);
+  INSERT INTO rt VALUES(NULL, 1, 2);
+}
+do_execsql_test 5.2 { SELECT id FROM rt } {100 101}
+do_execsql_test 5.3 { 
+  INSERT INTO rt VALUES(9223372036854775807, 1, 2);
+  INSERT INTO rt VALUES(NULL, 1, 2);
+}
+do_execsql_test 5.4 {
+  SELECT count(*) FROM rt;
+} 4
+do_execsql_test 5.5 {
+  SELECT id IN(100, 101, 9223372036854775807) FROM rt ORDER BY 1;
+} {0 1 1 1}
+
+
+# EVIDENCE-OF: R-64317-38978 The other columns are pairs, one pair per
+# dimension, containing the minimum and maximum values for that
+# dimension, respectively.
+#
+# Show this by observing that attempts to insert rows with max>min fail.
+#
+do_execsql_test 6.1 {
+  CREATE VIRTUAL TABLE rtF USING rtree(id, x1,x2, y1,y2);
+  CREATE VIRTUAL TABLE rtI USING rtree_i32(id, x1,x2, y1,y2, z1,z2);
+}
+foreach {tn x1 x2 y1 y2 ok} {
+  1   10.3 20.1   30.9 40.2   1
+  2   10.3 20.1   40.2 30.9   0
+  3   10.3 30.9   20.1 40.2   1
+  4   20.1 10.3   30.9 40.2   0
+} {
+  do_test 6.2.$tn {
+    catch { db eval { INSERT INTO rtF VALUES(NULL, $x1, $x2, $y1, $y2) } }
+  } [expr $ok==0]
+}
+foreach {tn x1 x2 y1 y2 z1 z2 ok} {
+  1   10 20   30 40  50 60  1
+  2   10 20   30 40  60 50  0
+  3   10 20   30 50  40 60  1
+  4   10 20   40 30  50 60  0
+  5   10 30   20 40  50 60  1
+  6   20 10   30 40  50 60  0
+} {
+  do_test 6.3.$tn {
+    catch { db eval { INSERT INTO rtI VALUES(NULL,$x1,$x2,$y1,$y2,$z1,$z2) } }
+  } [expr $ok==0]
+}
+
+# EVIDENCE-OF: R-08054-15429 The min/max-value pair columns are stored
+# as 32-bit floating point values for "rtree" virtual tables or as
+# 32-bit signed integers in "rtree_i32" virtual tables.
+#
+# Show this by showing that large values are rounded in ways consistent
+# with those two 32-bit types.
+do_execsql_test 7.1 {
+  DELETE FROM rtI;
+  INSERT INTO rtI VALUES(
+    0, -2000000000, 2000000000, -5000000000, 5000000000,
+    -1000000000000, 10000000000000
+  );
+  SELECT * FROM rtI;
+} {
+  0 -2000000000 2000000000 -705032704 705032704 727379968 1316134912
+}
+do_execsql_test 7.2 {
+  DELETE FROM rtF;
+  INSERT INTO rtF VALUES(
+    0, -2000000000, 2000000000, 
+    -1000000000000, 10000000000000
+  );
+  SELECT * FROM rtF;
+} {
+  0 -2000000000.0 2000000000.0 -1000000126976.0 10000000876544.0
+}
+
+# EVIDENCE-OF: R-47371-54529 Unlike regular SQLite tables which can
+# store data in a variety of datatypes and formats, the R*Tree rigidly
+# enforce these storage types.
+#
+# EVIDENCE-OF: R-39153-14977 If any other type of value is inserted into
+# such a column, the r-tree module silently converts it to the required
+# type before writing the new record to the database.
+do_execsql_test 8.1 {
+  DELETE FROM rtI;
+  INSERT INTO rtI VALUES(
+    1, 'hello world', X'616263', NULL, 44.5, 1000, 9999.9999
+  );
+  SELECT * FROM rtI;
+} {
+  1   0 0    0 44    1000 9999
+}
+
+do_execsql_test 8.2 {
+  SELECT 
+    typeof(x1), typeof(x2), typeof(y1), typeof(y2), typeof(z1), typeof(z2)
+  FROM rtI
+} {integer integer integer integer integer integer}
+
+do_execsql_test 8.3 {
+  DELETE FROM rtF;
+  INSERT INTO rtF VALUES(
+    1, 'hello world', X'616263', NULL, 44
+  );
+  SELECT * FROM rtF;
+} {
+  1   0.0 0.0    0.0 44.0
+}
+do_execsql_test 8.4 {
+  SELECT 
+    typeof(x1), typeof(x2), typeof(y1), typeof(y2)
+  FROM rtF
+} {real real real real}
+
+
+
+
+#-------------------------------------------------------------------------
+
+finish_test
+
+
