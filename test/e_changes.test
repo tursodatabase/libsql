@@ -25,10 +25,10 @@ proc do_changes_test {tn sql res} {
 
 
 #--------------------------------------------------------------------------
-# EVIDENCE-OF: R-15996-49369 This function returns the number of rows
-# modified, inserted or deleted by the most recently completed INSERT,
-# UPDATE or DELETE statement on the database connection specified by the
-# only parameter.
+# EVIDENCE-OF: R-58361-29089 The changes() function returns the number
+# of database rows that were changed or inserted or deleted by the most
+# recently completed INSERT, DELETE, or UPDATE statement, exclusive of
+# statements in lower-level triggers.
 #
 do_execsql_test 1.0 {
   CREATE TABLE t1(a, b);
@@ -108,7 +108,7 @@ foreach {tn schema} {
 
 
 #--------------------------------------------------------------------------
-# EVIDENCE-OF: R-44877-05564 Executing any other type of SQL statement
+# X-EVIDENCE-OF: R-44877-05564 Executing any other type of SQL statement
 # does not modify the value returned by this function.
 #
 reset_db

@@ -32,10 +32,9 @@ do_execsql_test 1.0 {
 
 
 #--------------------------------------------------------------------------
-# EVIDENCE-OF: R-65438-26258 This function returns the total number of
-# rows inserted, modified or deleted by all INSERT, UPDATE or DELETE
-# statements completed since the database connection was opened,
-# including those executed as part of trigger programs.
+# EVIDENCE-OF: R-38914-26427 The total_changes() function returns the
+# number of row changes caused by INSERT, UPDATE or DELETE statements
+# since the current database connection was opened.
 #
 #   1.1.*: different types of I/U/D statements,
 #   1.2.*: trigger programs.
