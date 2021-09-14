@@ -426,6 +426,68 @@ foreach {tn cols lCol} {
   }
 }
 
+#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------
+# Section 3.2 of documentation.
+#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------
+set testprefix rtreedoc-4
+reset_db
+
+# EVIDENCE-OF: R-36195-31555 The usual INSERT, UPDATE, and DELETE
+# commands work on an R*Tree index just like on regular tables.
+#
+# Create a regular table and an rtree table. Perform INSERT, UPDATE and
+# DELETE operations, then observe that the contents of the two tables
+# are identical.
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE rt USING rtree(id, x1, x2);
+  CREATE TABLE t1(id INTEGER PRIMARY KEY, x1 REAL, x2 REAL);
+}
+foreach {tn sql} {
+  1 "INSERT INTO %TBL% VALUES(5, 11,12)"
+  2 "INSERT INTO %TBL% VALUES(11, -11,14.5)"
+  3 "UPDATE %TBL% SET x1=-99 WHERE id=11"
+  4 "DELETE FROM %TBL% WHERE x2=14.5"
+  5 "DELETE FROM %TBL%"
+} {
+  set sql1 [string map {%TBL% rt} $sql]
+  set sql2 [string map {%TBL% t1} $sql]
+  do_execsql_test 1.$tn.0 $sql1
+  do_execsql_test 1.$tn.1 $sql2
+
+  set data1 [execsql {SELECT * FROM rt ORDER BY 1}]
+  set data2 [execsql {SELECT * FROM t1 ORDER BY 1}]
+
+  set res [expr {$data1==$data2}]
+  do_test 1.$tn.2 {set res} 1 
+}
+
+# EVIDENCE-OF: R-56987-45305
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE demo_index USING rtree(
+      id,              -- Integer primary key
+      minX, maxX,      -- Minimum and maximum X coordinate
+      minY, maxY       -- Minimum and maximum Y coordinate
+  );
+
+  INSERT INTO demo_index VALUES
+    (28215, -80.781227, -80.604706, 35.208813, 35.297367),
+    (28216, -80.957283, -80.840599, 35.235920, 35.367825),
+    (28217, -80.960869, -80.869431, 35.133682, 35.208233),
+    (28226, -80.878983, -80.778275, 35.060287, 35.154446),
+    (28227, -80.745544, -80.555382, 35.130215, 35.236916),
+    (28244, -80.844208, -80.841988, 35.223728, 35.225471),
+    (28262, -80.809074, -80.682938, 35.276207, 35.377747),
+    (28269, -80.851471, -80.735718, 35.272560, 35.407925),
+    (28270, -80.794983, -80.728966, 35.059872, 35.161823),
+    (28273, -80.994766, -80.875259, 35.074734, 35.172836),
+    (28277, -80.876793, -80.767586, 35.001709, 35.101063),
+    (28278, -81.058029, -80.956375, 35.044701, 35.223812),
+    (28280, -80.844208, -80.841972, 35.225468, 35.227203),
+    (28282, -80.846382, -80.844193, 35.223972, 35.225655);
+}
+
 finish_test
 
 
