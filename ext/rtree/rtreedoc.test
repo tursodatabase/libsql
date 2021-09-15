@@ -1023,8 +1023,23 @@ proc rnode_contains {aData rowid} {
   return 0
 }
 
+proc rnode_replace_cell {aData iCell cell} {
+  set aCell [binary format WIIII {*}$cell]
+  set nDim 2
+  set nBytePerCell [expr (8 + 2*$nDim*4)]
+  set iOff [expr $iCell*$nBytePerCell+4]
+
+  set aNew [binary format a*a*a* \
+      [string range $aData 0 $iOff-1]     \
+      $aCell     \
+      [string range $aData $iOff+$nBytePerCell end] \
+  ]
+  return $aNew
+}
+
 db function rnode rnode
 db function rnode_contains rnode_contains
+db function rnode_replace_cell rnode_replace_cell
 
 foreach {tn nm} {
   1 x1
@@ -1136,6 +1151,10 @@ set testprefix rtreedoc-12
 reset_db
 forcedelete test.db2
 
+db function rnode rnode
+db function rnode_contains rnode_contains
+db function rnode_replace_cell rnode_replace_cell
+
 # EVIDENCE-OF: R-13571-45795 The scalar SQL function rtreecheck(R) or
 # rtreecheck(S,R) runs an integrity check on the rtree table named R
 # contained within database S.
@@ -1189,6 +1208,108 @@ do_execsql_test 2.2 {
   UPDATE demo_index_rowid SET nodeno=44 WHERE rowid=44;
   SELECT rtreecheck('demo_index');
 } {{Found (44 -> 44) in %_rowid table, expected (44 -> 4)}}
+
+
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE rt2 USING rtree_i32(id, a, b, c, d);
+  WITH s(i) AS (
+    VALUES(1) UNION ALL SELECT i+1 FROM s WHERE i<200
+  )
+  INSERT INTO rt2 SELECT i, i, i+2, i, i+2 FROM s;
+}
+
+# EVIDENCE-OF: R-02555-31045 for each dimension, (coord1 <= coord2).
+#
+execsql BEGIN
+do_test 3.1 {
+  set cell [
+    lindex [execsql {SELECT rnode(data) FROM rt2_node WHERE nodeno=3}] 0 3
+  ]
+  set cell [list [lindex $cell 0]       \
+    [lindex $cell 2] [lindex $cell 1]   \
+    [lindex $cell 3] [lindex $cell 4]   \
+  ]
+  execsql { 
+    UPDATE rt2_node SET data=rnode_replace_cell(data, 3, $cell) WHERE nodeno=3 
+  }
+  execsql { SELECT rtreecheck('rt2') }
+} {{Dimension 0 of cell 3 on node 3 is corrupt}}
+execsql ROLLBACK
+
+# EVIDENCE-OF: R-13844-15873 unless the cell is on the root node, that
+# the cell is bounded by the parent cell on the parent node.
+#
+execsql BEGIN
+do_test 3.2 {
+  set cell [
+    lindex [execsql {SELECT rnode(data) FROM rt2_node WHERE nodeno=3}] 0 3
+  ]
+  lset cell 3 450
+  lset cell 4 451
+  execsql { 
+    UPDATE rt2_node SET data=rnode_replace_cell(data, 3, $cell) WHERE nodeno=3 
+  }
+  execsql { SELECT rtreecheck('rt2') }
+} {{Dimension 1 of cell 3 on node 3 is corrupt relative to parent}}
+execsql ROLLBACK
+
+# EVIDENCE-OF: R-02505-03621 for leaf nodes, that there is an entry in
+# the %_rowid table corresponding to the cell's rowid value that points
+# to the correct node.
+#
+execsql BEGIN
+do_test 3.3 {
+  execsql { 
+    UPDATE rt2_rowid SET rowid=452 WHERE rowid=100
+  }
+  execsql { SELECT rtreecheck('rt2') }
+} {{Mapping (100 -> 6) missing from %_rowid table}}
+execsql ROLLBACK
+
+# EVIDENCE-OF: R-50927-02218 for cells on non-leaf nodes, that there is
+# an entry in the %_parent table mapping from the cell's child node to
+# the node that it resides on.
+#
+execsql BEGIN
+do_test 3.4.1 {
+  execsql { 
+    UPDATE rt2_parent SET parentnode=123 WHERE nodeno=3
+  }
+  execsql { SELECT rtreecheck('rt2') }
+} {{Found (3 -> 123) in %_parent table, expected (3 -> 1)}}
+execsql ROLLBACK
+execsql BEGIN
+do_test 3.4.2 {
+  execsql { 
+    UPDATE rt2_parent SET nodeno=123 WHERE nodeno=3
+  }
+  execsql { SELECT rtreecheck('rt2') }
+} {{Mapping (3 -> 1) missing from %_parent table}}
+execsql ROLLBACK
+
+# EVIDENCE-OF: R-23235-09153 That there are the same number of entries
+# in the %_rowid table as there are leaf cells in the r-tree structure,
+# and that there is a leaf cell that corresponds to each entry in the
+# %_rowid table.
+execsql BEGIN
+do_test 3.5 {
+  execsql { INSERT INTO rt2_rowid VALUES(1000, 1000) }
+  execsql { SELECT rtreecheck('rt2') }
+} {{Wrong number of entries in %_rowid table - expected 200, actual 201}}
+execsql ROLLBACK
+
+# EVIDENCE-OF: R-62800-43436 That there are the same number of entries
+# in the %_parent table as there are non-leaf cells in the r-tree
+# structure, and that there is a non-leaf cell that corresponds to each
+# entry in the %_parent table.
+execsql BEGIN
+do_test 3.6 {
+  execsql { INSERT INTO rt2_parent VALUES(1000, 1000) }
+  execsql { SELECT rtreecheck('rt2') }
+} {{Wrong number of entries in %_parent table - expected 9, actual 10}}
+execsql ROLLBACK
+
+
 
 finish_test
 

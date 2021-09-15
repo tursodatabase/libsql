@@ -1,5 +1,5 @@
-C Fix\snon-build\sfor\sa\stest\sconfiguration
-D 2021-09-15T14:48:02.836
+C Further\supdates\sto\srtreedoc.test.
+D 2021-09-15T15:53:01.779
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -418,7 +418,7 @@ F ext/rtree/rtree_util.tcl db734b4c5e75fed6acc56d9701f2235345acfdec750b5fc7b5879
 F ext/rtree/rtreecheck.test d67d5b3e9e45bfa8cd90734e8e9302144ac415b8e9176c6f02d4f92892ee8a35
 F ext/rtree/rtreecirc.test aec664eb21ae943aeb344191407afff5d392d3ae9d12b9a112ced0d9c5de298e
 F ext/rtree/rtreeconnect.test 225ad3fcb483d36cbee423a25052a6bbae762c9576ae9268332360c68c170d3d
-F ext/rtree/rtreedoc.test 91293ef6c10524d8c945ffc5be20732f62eb8b98f84615b44d46a20a74e9a561
+F ext/rtree/rtreedoc.test c914acfbb0b9ce23352c1d1218cb02ec0770db476af5e36d310a3a8d1950c5e1
 F ext/rtree/rtreefuzz001.test 0fc793f67897c250c5fde96cefee455a5e2fb92f4feeabde5b85ea02040790ee
 F ext/rtree/sqlite3rtree.h 03c8db3261e435fbddcfc961471795cbf12b24e03001d0015b2636b0f3881373
 F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
@@ -1923,7 +1923,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0c4f37aa475bd4bd17c20c02ab2d9f63d0a6a08b0e2bbfa559f7b972ece6f4fc
-R 95a882d3b488c7d33842ae8cf3c458d0
-U larrybr
-Z d4230adb6305c9ccf882c75e49e654d2
+P c9a4ab059050a83d811149ff196ff16ea9e4c301627482800982b87cd30ddbbc
+R 643f236de9623efc217e1a933b077826
+U dan
+Z e83a55511fb15637419b1c82774942f2
