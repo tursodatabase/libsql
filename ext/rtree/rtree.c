@@ -667,18 +667,6 @@ static void nodeBlobReset(Rtree *pRtree){
 }
 
 /*
-** Check to see if pNode is the same as pParent or any of the parents
-** of pParent.
-*/
-static int nodeInParentChain(const RtreeNode *pNode, const RtreeNode *pParent){
-  do{
-    if( pNode==pParent ) return 1;
-    pParent = pParent->pParent;
-  }while( pParent );
-  return 0;
-}
-
-/*
 ** Obtain a reference to an r-tree node.
 */
 static int nodeAcquire(
@@ -694,14 +682,7 @@ static int nodeAcquire(
   ** increase its reference count and return it.
   */
   if( (pNode = nodeHashLookup(pRtree, iNode))!=0 ){
-    if( pParent && !pNode->pParent ){
-      if( nodeInParentChain(pNode, pParent) ){
-        RTREE_IS_CORRUPT(pRtree);
-        return SQLITE_CORRUPT_VTAB;
-      }
-      pParent->nRef++;
-      pNode->pParent = pParent;
-    }else if( pParent && pNode->pParent && pParent!=pNode->pParent ){
+    if( pParent && pParent!=pNode->pParent ){
       RTREE_IS_CORRUPT(pRtree);
       return SQLITE_CORRUPT_VTAB;
     }
