@@ -64,7 +64,11 @@
 #endif
 int sqlite3GetToken(const unsigned char*,int*); /* In the SQLite core */
 
-#ifndef SQLITE_AMALGAMATION
+/*
+** If building separately, we will need some setup that is normally
+** found in sqliteInt.h
+*/
+#if !defined(SQLITE_AMALGAMATION)
 #include "sqlite3rtree.h"
 typedef sqlite3_int64 i64;
 typedef sqlite3_uint64 u64;
@@ -77,7 +81,17 @@ typedef unsigned int u32;
 #if defined(NDEBUG) && defined(SQLITE_DEBUG)
 # undef NDEBUG
 #endif
+#if defined(SQLITE_COVERAGE_TEST) || defined(SQLITE_MUTATION_TEST)
+# define ALWAYS(X)      (1)
+# define NEVER(X)       (0)
+#elif !defined(NDEBUG)
+# define ALWAYS(X)      ((X)?1:(assert(0),0))
+# define NEVER(X)       ((X)?(assert(0),1):0)
+#else
+# define ALWAYS(X)      (X)
+# define NEVER(X)       (X)
 #endif
+#endif /* !defined(SQLITE_AMALGAMATION) */
 
 #include <string.h>
 #include <stdio.h>
@@ -1346,11 +1360,12 @@ static int nodeRowidIndex(
 */
 static int nodeParentIndex(Rtree *pRtree, RtreeNode *pNode, int *piIndex){
   RtreeNode *pParent = pNode->pParent;
-  if( pParent ){
+  if( ALWAYS(pParent) ){
     return nodeRowidIndex(pRtree, pParent, pNode->iNode, piIndex);
+  }else{
+    *piIndex = -1;
+    return SQLITE_OK;
   }
-  *piIndex = -1;
-  return SQLITE_OK;
 }
 
 /*
@@ -1473,7 +1488,8 @@ static RtreeSearchPoint *rtreeSearchPointNew(
       pNew = rtreeEnqueue(pCur, rScore, iLevel);
       if( pNew==0 ) return 0;
       ii = (int)(pNew - pCur->aPoint) + 1;
-      if( ii<RTREE_CACHE_SZ ){
+      assert( ii==1 );
+      if( ALWAYS(ii<RTREE_CACHE_SZ) ){
         assert( pCur->aNode[ii]==0 );
         pCur->aNode[ii] = pCur->aNode[0];
       }else{
@@ -1534,7 +1550,7 @@ static void rtreeSearchPointPop(RtreeCursor *p){
   if( p->bPoint ){
     p->anQueue[p->sPoint.iLevel]--;
     p->bPoint = 0;
-  }else if( p->nPoint ){
+  }else if( ALWAYS(p->nPoint) ){
     p->anQueue[p->aPoint[0].iLevel]--;
     n = --p->nPoint;
     p->aPoint[0] = p->aPoint[n];
