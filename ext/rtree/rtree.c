@@ -1691,7 +1691,7 @@ static int rtreeRowid(sqlite3_vtab_cursor *pVtabCursor, sqlite_int64 *pRowid){
   RtreeSearchPoint *p = rtreeSearchPointFirst(pCsr);
   int rc = SQLITE_OK;
   RtreeNode *pNode = rtreeNodeOfFirstSearchPoint(pCsr, &rc);
-  if( rc==SQLITE_OK && p ){
+  if( rc==SQLITE_OK && ALWAYS(p) ){
     *pRowid = nodeGetRowid(RTREE_OF_CURSOR(pCsr), pNode, p->iCell);
   }
   return rc;
@@ -1709,7 +1709,7 @@ static int rtreeColumn(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int i){
   RtreeNode *pNode = rtreeNodeOfFirstSearchPoint(pCsr, &rc);
 
   if( rc ) return rc;
-  if( p==0 ) return SQLITE_OK;
+  if( NEVER(p==0) ) return SQLITE_OK;
   if( i==0 ){
     sqlite3_result_int64(ctx, nodeGetRowid(pRtree, pNode, p->iCell));
   }else if( i<=pRtree->nDim2 ){
@@ -2715,9 +2715,8 @@ static int fixLeafParent(Rtree *pRtree, RtreeNode *pLeaf){
       */
       iNode = sqlite3_column_int64(pRtree->pReadParent, 0);
       for(pTest=pLeaf; pTest && pTest->iNode!=iNode; pTest=pTest->pParent);
-      if( ALWAYS(pTest==0) ){
+      if( pTest==0 ){
         rc2 = nodeAcquire(pRtree, iNode, 0, &pChild->pParent);
-        assert( rc2==SQLITE_OK );
       }
     }
     rc = sqlite3_reset(pRtree->pReadParent);

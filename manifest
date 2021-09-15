@@ -1,5 +1,5 @@
-C Add\smore\sALWAYS()\smacros\son\sunreachable\sbranches\sin\srtree.c
-D 2021-09-15T19:13:24.273
+C In\srtree.c,\sremove\san\sincorrect\sALWAYS().\s\sAdd\sother\sALWAYS()\sand\sNEVER().
+D 2021-09-15T19:53:22.421
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -393,7 +393,7 @@ F ext/repair/test/checkindex01.test b530f141413b587c9eb78ff734de6bb79bc3515c3350
 F ext/repair/test/test.tcl 686d76d888dffd021f64260abf29a55c57b2cedfa7fc69150b42b1d6119aac3c
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/geopoly.c 98d45533989e908bf65b43f36ff6eaad95a9ffe6f3b6b8658fbd47d45c58b10b
-F ext/rtree/rtree.c d106f223d23401ec353531de2429b41e6bc9dfba85049d2bd4dec0e0f44316b3
+F ext/rtree/rtree.c 4470c4fd405c1ec35f7aac6ab0f59891f594683b0c4f83568ffddcef1dcf67b9
 F ext/rtree/rtree.h 4a690463901cb5e6127cf05eb8e642f127012fd5003830dbc974eca5802d9412
 F ext/rtree/rtree1.test 00792b030a4e188ff1b22e8530e8aa0452bb5dd81c2b18cb004afc7dc63e040e
 F ext/rtree/rtree2.test 9d9deddbb16fd0c30c36e6b4fdc3ee3132d765567f0f9432ee71e1303d32603d
@@ -1923,7 +1923,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c74c07cc86443057d34284ae31eb68470741592b0e61072fd5e120e82919169b
-R 4923ac24d6c3e1ab46abc7fb252aa8ec
+P fbba89dac9591c56da81bd0808910fbc64640f3ccfd95845ecab4d3aea46ca61
+R 2c69388bcd2c3f1462a992a8816f99b5
 U drh
-Z efd8646b80e7db2b7d1ed86dbeee5059
+Z c5f4368b0b32f822020a893f9117fc36
