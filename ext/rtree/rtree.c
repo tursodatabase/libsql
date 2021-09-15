@@ -1986,7 +1986,7 @@ static int rtreeBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
     struct sqlite3_index_constraint *p = &pIdxInfo->aConstraint[ii];
 
     if( bMatch==0 && p->usable 
-     && p->iColumn==0 && p->op==SQLITE_INDEX_CONSTRAINT_EQ 
+     && p->iColumn<=0 && p->op==SQLITE_INDEX_CONSTRAINT_EQ 
     ){
       /* We have an equality constraint on the rowid. Use strategy 1. */
       int jj;
