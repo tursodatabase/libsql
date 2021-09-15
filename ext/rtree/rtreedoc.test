@@ -19,6 +19,11 @@ source [file join [file dirname [info script]] rtree_util.tcl]
 source $testdir/tester.tcl
 set testprefix rtreedoc
 
+ifcapable !rtree {
+  finish_test
+  return
+}
+
 # This command returns the number of columns in table $tbl within the
 # database opened by database handle $db
 proc column_count {db tbl} {
@@ -1067,8 +1072,6 @@ do_execsql_test 2.1 {
   SELECT count(*) FROM r1_node;
 } 6
 
-do_execsql_test 2.2 { SELECT nodeno, rnode(data) FROM r1_node WHERE nodeno=1 } 6
-
 # EVIDENCE-OF: R-27261-09153 All nodes other than the root have an entry
 # in the %_parent shadow table that identifies the parent node.
 #
@@ -1124,6 +1127,68 @@ do_execsql_test 3.2 {
   hello world  123 456
 }
 
+#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------
+# Section 7.2 of documentation.
+#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------
+set testprefix rtreedoc-12
+reset_db
+forcedelete test.db2
+
+# EVIDENCE-OF: R-13571-45795 The scalar SQL function rtreecheck(R) or
+# rtreecheck(S,R) runs an integrity check on the rtree table named R
+# contained within database S.
+#
+# EVIDENCE-OF: R-36011-59963 The function returns a human-language
+# description of any problems found, or the string 'ok' if everything is
+# ok.
+#
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE rt1 USING rtree(id, a, b);
+  WITH s(i) AS (
+    VALUES(1) UNION ALL SELECT i+1 FROM s WHERE i<200
+  )
+  INSERT INTO rt1 SELECT i, i, i FROM s;
+
+  ATTACH 'test.db2' AS 'aux';
+  CREATE VIRTUAL TABLE aux.rt1 USING rtree(id, a, b);
+  INSERT INTO aux.rt1 SELECT * FROM rt1;
+}
+
+do_execsql_test 1.1.1 { SELECT rtreecheck('rt1'); } {ok}
+do_execsql_test 1.1.2 { SELECT rtreecheck('main', 'rt1'); } {ok}
+do_execsql_test 1.1.3 { SELECT rtreecheck('aux', 'rt1'); } {ok}
+do_catchsql_test 1.1.4 { 
+  SELECT rtreecheck('nosuchdb', 'rt1'); 
+} {1 {SQL logic error}}
+
+# Corrupt the table in database 'main':
+do_execsql_test 1.2.1 { UPDATE rt1_node SET nodeno=21 WHERE nodeno=3; }
+do_execsql_test 1.2.1 { SELECT rtreecheck('rt1')=='ok'; } {0}
+do_execsql_test 1.2.2 { SELECT rtreecheck('main', 'rt1')=='ok'; } {0}
+do_execsql_test 1.2.3 { SELECT rtreecheck('aux', 'rt1')=='ok'; } {1}
+do_execsql_test 1.2.4 { UPDATE rt1_node SET nodeno=3 WHERE nodeno=21; }
+
+# Corrupt the table in database 'aux':
+do_execsql_test 1.2.1 { UPDATE aux.rt1_node SET nodeno=21 WHERE nodeno=3; }
+do_execsql_test 1.2.1 { SELECT rtreecheck('rt1')=='ok'; } {1}
+do_execsql_test 1.2.2 { SELECT rtreecheck('main', 'rt1')=='ok'; } {1}
+do_execsql_test 1.2.3 { SELECT rtreecheck('aux', 'rt1')=='ok'; } {0}
+do_execsql_test 1.2.4 { UPDATE rt1_node SET nodeno=3 WHERE nodeno=21; }
+
+# EVIDENCE-OF: R-45759-33459 Example: To verify that an R*Tree named
+# "demo_index" is well-formed and internally consistent, run: SELECT
+# rtreecheck('demo_index');
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE demo_index USING rtree(id, x1,x2, y1,y2);
+  INSERT INTO demo_index SELECT id, a, b, a, b FROM rt1;
+}
+do_execsql_test 2.1 { SELECT rtreecheck('demo_index') } {ok}
+do_execsql_test 2.2 {
+  UPDATE demo_index_rowid SET nodeno=44 WHERE rowid=44;
+  SELECT rtreecheck('demo_index');
+} {{Found (44 -> 44) in %_rowid table, expected (44 -> 4)}}
 
 finish_test
 
