@@ -1,5 +1,5 @@
-C Ensure\srtreedoc.test\sis\snot\srun\sfor\sbuilds\swithout\sthe\srtree\sextension.
-D 2021-09-15T10:49:31.090
+C Squelch\sneedless\snarrowing\swarning.
+D 2021-09-15T11:15:03.010
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -532,7 +532,7 @@ F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c b11e4610769922253dec27d7af4a07ff84f65169d19bda5e9b12a152a706f7f5
 F src/os_win.c 77d39873836f1831a9b0b91894fec45ab0e9ca8e067dc8c549e1d1eca1566fe9
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c 1d22bb9081167b2e27a64bf49c7a22ad70b50dedeb78cf22cfe8d8370afa0be5
+F src/pager.c 1ba6a843148282895d800aa69919553079946ef9a198a97e5d7c64442d10ed4c
 F src/pager.h 4bf9b3213a4b2bebbced5eaa8b219cf25d4a82f385d093cd64b7e93e5285f66f
 F src/parse.y 86aa016b281f61d7664dd8cb7808cab8114d14cfaf362a9b9fc9ead8f33546b7
 F src/pcache.c 084e638432c610f95aea72b8509f0845d2791293f39d1b82f0c0a7e089c3bb6b
@@ -1923,7 +1923,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P afe0ec4d589d87a07c0daf3fc4de884b82a8bceed593ba4e44caa1cf033a6715
-R 728a755bef19edd9fdf994a23836ae11
-U dan
-Z 0702556107dd7dc6065447ebc315749b
+P 42dff223470e9c096b8486ef232ac41b70d0875d8ae07630bfaaea1515ffa8d0
+R cd2321accfa2a1c1c2cbd5bcccd763fe
+U larrybr
+Z 203491c4b5ae5f0ef9b8da4470751daa
