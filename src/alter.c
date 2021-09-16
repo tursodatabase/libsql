@@ -647,8 +647,7 @@ void sqlite3AlterRenameColumn(
       "UPDATE \"%w\"." DFLT_SCHEMA_TABLE " SET "
       "sql = sqlite_rename_column(sql, type, name, %Q, %Q, %d, %Q, %d, %d) "
       "WHERE name NOT LIKE 'sqliteX_%%' ESCAPE 'X' "
-      " AND (type != 'index' OR tbl_name = %Q)"
-      " AND sql NOT LIKE 'create virtual%%'",
+      " AND (type != 'index' OR tbl_name = %Q)",
       zDb,
       zDb, pTab->zName, iCol, zNew, bQuote, iSchema==1,
       pTab->zName
@@ -1498,7 +1497,7 @@ static void renameColumnFunc(
         sqlite3WalkSelect(&sWalker, pSelect);
       }
       if( rc!=SQLITE_OK ) goto renameColumnFunc_done;
-    }else if( ALWAYS(IsOrdinaryTable(sParse.pNewTable)) ){
+    }else if( IsOrdinaryTable(sParse.pNewTable) ){
       /* A regular table */
       int bFKOnly = sqlite3_stricmp(zTable, sParse.pNewTable->zName);
       FKey *pFKey;

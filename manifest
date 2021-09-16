@@ -1,5 +1,5 @@
-C Under\sSQLITE_DEBUG\swith\sPRAGMA\svdbe_trace=ON,\sshow\san\soutput\sline\sif\sthe\nVDBE\saborts\sfor\sany\sreason.
-D 2021-09-16T12:33:53.147
+C For\sALTER\sTABLE\sRENAME\sCOLUMN,\sdo\snot\stry\sto\sfilter\svirtual\stables\sout\sof\ncalls\sto\ssqlite_rename_column().\s\sLet\sthe\sfunction\sfilter\sthem\sitself.\nThe\sWHERE\sclause\scan\smistakenly\slet\svirtual\stables\sthrough\sif\sthe\nsqlite_schema\stable\sis\scorrupt.\s\sThe\ssqlite_rename_column()\sfunction\smust\ndeal\swith\sthem.\s\sWe\smight\sas\swell\slet\sit\sdeal\swith\sthem\salways.
+D 2021-09-16T13:20:29.202
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -479,7 +479,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
-F src/alter.c 38975b971a4c36dbcc8004c74b492213a851ab368d29238c531a22636508a5d4
+F src/alter.c a4e20094bb7e6ca5fa832779dc0b6aedfed4cab92144d3bc754fc6dfe6f26f34
 F src/analyze.c abbaaf7dca79d1c31c713500324fc0b55bf3eeac5b7b07001452a3d0f210de4f
 F src/attach.c a514e81758ba7b3a3a0501faf70af6cfc509de8810235db726cfc9f25165e929
 F src/auth.c f4fa91b6a90bbc8e0d0f738aa284551739c9543a367071f55574681e0f24f8cf
@@ -1923,7 +1923,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 06c329c17c2c2de8bc1ca7f3b0b929055675761a8be7a7e8b4a9fc5cca0d1679
-R 6dfcd8ffaed19859d868ffff4b66b890
+P 7e3d6810039ca4563aa68dfa3671f570792a10f75c8eea68aa7dfd02d17702ca
+R 378205b2666eaba7b023c1032e333fa8
 U drh
-Z b89610ebb549109e13a60adefcff4b4f
+Z 5124dd372b8dc8ce068a8819461c7507
