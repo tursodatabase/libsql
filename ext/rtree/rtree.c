@@ -149,7 +149,9 @@ struct Rtree {
   u8 nBytesPerCell;           /* Bytes consumed per cell */
   u8 inWrTrans;               /* True if inside write transaction */
   u8 nAux;                    /* # of auxiliary columns in %_rowid */
+#ifdef SQLITE_ENABLE_GEOPOLY
   u8 nAuxNotNull;             /* Number of initial not-null aux columns */
+#endif
 #ifdef SQLITE_DEBUG
   u8 bCorrupt;                /* Shadow table corruption detected */
 #endif
@@ -754,7 +756,7 @@ static int nodeAcquire(
   ** are the leaves, and so on. If the depth as specified on the root node
   ** is greater than RTREE_MAX_DEPTH, the r-tree structure must be corrupt.
   */
-  if( pNode && rc==SQLITE_OK && iNode==1 ){
+  if( rc==SQLITE_OK && pNode && iNode==1 ){
     pRtree->iDepth = readInt16(pNode->zData);
     if( pRtree->iDepth>RTREE_MAX_DEPTH ){
       rc = SQLITE_CORRUPT_VTAB;
@@ -3585,9 +3587,12 @@ static int rtreeSqlInit(
       sqlite3_str_appendf(p, "UPDATE \"%w\".\"%w_rowid\"SET ", zDb, zPrefix);
       for(ii=0; ii<pRtree->nAux; ii++){
         if( ii ) sqlite3_str_append(p, ",", 1);
+#ifdef SQLITE_ENABLE_GEOPOLY
         if( ii<pRtree->nAuxNotNull ){
           sqlite3_str_appendf(p,"a%d=coalesce(?%d,a%d)",ii,ii+2,ii);
-        }else{
+        }else
+#endif
+        {
           sqlite3_str_appendf(p,"a%d=?%d",ii,ii+2);
         }
       }
@@ -4526,7 +4531,10 @@ int sqlite3_rtree_query_callback(
 
   /* Allocate and populate the context object. */
   pGeomCtx = (RtreeGeomCallback *)sqlite3_malloc(sizeof(RtreeGeomCallback));
-  if( !pGeomCtx ) return SQLITE_NOMEM;
+  if( !pGeomCtx ){
+    if( xDestructor ) xDestructor(pContext);
+    return SQLITE_NOMEM;
+  }
   pGeomCtx->xGeom = 0;
   pGeomCtx->xQueryFunc = xQueryFunc;
   pGeomCtx->xDestructor = xDestructor;
