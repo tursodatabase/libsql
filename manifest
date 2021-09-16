@@ -1,5 +1,5 @@
-C Mark\san\sunreachable\sbranch\sin\srtree.
-D 2021-09-16T14:07:09.331
+C Add\sa\sreference\scounter\sto\sa\sstructure\sused\sinternally\sby\sthe\sTcl\sinterface\sso\sthat\sit\sdoes\snot\ssegfault\sif\sthe\sdatabase\sconnection\sis\sclosed\sfrom\sany\sof\sthe\svarious\scallback\sscripts\sthat\smay\sbe\sinvoked.
+D 2021-09-16T14:17:14.659
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -554,7 +554,7 @@ F src/sqliteInt.h b62ee1fc9da3634616b969abe8b55fafcb540e4e7e5637ee2a2bb5fa477f4a
 F src/sqliteLimit.h d7323ffea5208c6af2734574bae933ca8ed2ab728083caa117c9738581a31657
 F src/status.c 4b8bc2a6905163a38b739854a35b826c737333fab5b1f8e03fa7eb9a4799c4c1
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
-F src/tclsqlite.c 05663f6b5010b044eac0ef22fc8fb5ea3406d2502700a898261683258042c88b
+F src/tclsqlite.c 428e813dabf82804bc13196af35a0c3c6ef4347fe557fa6717c5c66bba6e8520
 F src/test1.c 63761c2be2607f1b425fde991beda48aed384f8d67f2b4ee549174c88b433009
 F src/test2.c 3efb99ab7f1fc8d154933e02ae1378bac9637da5
 F src/test3.c 61798bb0d38b915067a8c8e03f5a534b431181f802659a6616f9b4ff7d872644
@@ -1449,7 +1449,7 @@ F test/tabfunc01.test d6821e7042e5653104dac0c63d75eff24a2415ab1889fc68b5db7fde59
 F test/table.test eb3463b7add9f16a5bb836badf118cf391b809d09fdccd1f79684600d07ec132
 F test/tableapi.test ecbcc29c4ab62c1912c3717c48ea5c5e59f7d64e4a91034e6148bd2b82f177f4
 F test/tableopts.test dba698ba97251017b7c80d738c198d39ab747930
-F test/tclsqlite.test 316c96f974f0e6d7480186e3f5bb53413e5ee5480596544a97484888912a365c
+F test/tclsqlite.test 97cda6e4843e9f3e06c56f656d9b77ee0178fe1ee33fb09a6eeae8f125757ac1
 F test/tempdb.test 4cdaa23ddd8acb4d79cbb1b68ccdfd09b0537aaba909ca69a876157c2a2cbd08
 F test/tempdb2.test 353864e96fd3ae2f70773d0ffbf8b1fe48589b02c2ec05013b540879410c3440
 F test/tempfault.test 0c0d349c9a99bf5f374655742577f8712c647900
@@ -1923,7 +1923,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d26963a530ccbe36a174823d2f0bd7e06c6fca4f38ecdd04cd700c4000cc3719
-R 46d60b2ce92f695e97622b11cd163c23
-U drh
-Z bd29d46e35cb4f2d20bb44fb2445a352
+P e6c4afd5b365b8dea8c0742352a09029da0f9715dd2407d4ccf53f1e0a4ce625
+R 2bba8a7e10b47ebc6a75449daec54256
+U dan
+Z 6227cb06cae79681b47e5b13e50e774e
