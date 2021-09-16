@@ -1908,8 +1908,11 @@ static int rtreeFilter(
     }
     if( rc==SQLITE_OK ){
       RtreeSearchPoint *pNew;
+      assert( pCsr->bPoint==0 );  /* Due to the resetCursor() call above */
       pNew = rtreeSearchPointNew(pCsr, RTREE_ZERO, (u8)(pRtree->iDepth+1));
-      if( pNew==0 ) return SQLITE_NOMEM;
+      if( NEVER(pNew==0) ){       /* Because pCsr->bPoint was FALSE */
+        return SQLITE_NOMEM;
+      }
       pNew->id = 1;
       pNew->iCell = 0;
       pNew->eWithin = PARTLY_WITHIN;
