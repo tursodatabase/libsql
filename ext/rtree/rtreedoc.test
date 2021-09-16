@@ -109,6 +109,9 @@ foreach {tn cols err} {
   " [list 1 $err]
 }
 
+# EVIDENCE-OF: R-17874-21123 The first column of an SQLite R*Tree is
+# similar to an integer primary key column of a normal SQLite table.
+#
 # EVIDENCE-OF: R-46619-65417 The first column is always a 64-bit signed
 # integer primary key.
 #
@@ -499,9 +502,126 @@ do_execsql_test 2.0 {
 #-------------------------------------------------------------------------
 #-------------------------------------------------------------------------
 set testprefix rtreedoc-5
-reset_db
 
+do_execsql_test 1.0 {
+  INSERT INTO demo_index 
+    SELECT NULL, minX, maxX, minY+0.2, maxY+0.2 FROM demo_index;
+  INSERT INTO demo_index 
+    SELECT NULL, minX+0.2, maxX+0.2, minY, maxY FROM demo_index;
+  INSERT INTO demo_index 
+    SELECT NULL, minX, maxX, minY+0.4, maxY+0.4 FROM demo_index;
+  INSERT INTO demo_index 
+    SELECT NULL, minX+0.4, maxX+0.4, minY, maxY FROM demo_index;
+  INSERT INTO demo_index 
+    SELECT NULL, minX, maxX, minY+0.8, maxY+0.8 FROM demo_index;
+  INSERT INTO demo_index 
+    SELECT NULL, minX+0.8, maxX+0.8, minY, maxY FROM demo_index;
 
+  SELECT count(*) FROM demo_index;
+} {896}
+
+proc do_vmstep_test {tn sql expr} {
+  execsql $sql
+  set step [db status vmstep]
+  do_test $tn.$step "expr {[subst $expr]}" 1
+}
+
+# EVIDENCE-OF: R-45880-07724 Any valid query will work against an R*Tree
+# index.
+do_execsql_test 1.1.0 {
+  CREATE TABLE demo_tbl AS SELECT * FROM demo_index;
+}
+foreach {tn sql} {
+  1  {SELECT * FROM %TBL% ORDER BY 1}
+  2  {SELECT max(minX) FROM %TBL% ORDER BY 1}
+  3  {SELECT max(minX) FROM %TBL% GROUP BY round(minY) ORDER BY 1}
+} {
+  set sql1 [string map {%TBL% demo_index} $sql]
+  set sql2 [string map {%TBL% demo_tbl} $sql]
+
+  do_execsql_test 1.1.$tn $sql1 [execsql $sql2]
+}
+
+# EVIDENCE-OF: R-60814-18273 The R*Tree implementation just makes some
+# kinds of queries especially efficient.
+#
+# The second query is more efficient than the first.
+do_vmstep_test 1.2.1 {SELECT * FROM demo_index WHERE +rowid=28269} {$step>2000}
+do_vmstep_test 1.2.2 {SELECT * FROM demo_index WHERE rowid=28269} {$step<100}
+
+# EVIDENCE-OF: R-37800-50174 Queries against the primary key are
+# efficient: SELECT * FROM demo_index WHERE id=28269;
+do_vmstep_test 2.2 { SELECT * FROM demo_index WHERE id=28269 } {$step < 100}
+
+# EVIDENCE-OF: R-35847-18866 The big reason for using an R*Tree is so
+# that you can efficiently do range queries against the coordinate
+# ranges.
+#
+# EVIDENCE-OF: R-49927-54202
+do_vmstep_test 2.3 { 
+  SELECT id FROM demo_index
+    WHERE minX<=-80.77470 AND maxX>=-80.77470
+    AND minY<=35.37785  AND maxY>=35.37785;
+} {$step < 100}
+
+# EVIDENCE-OF: R-12823-37176 The query above will quickly locate all
+# zipcodes that contain the SQLite main office in their bounding box,
+# even if the R*Tree contains many entries.
+#
+do_execsql_test 2.4 { 
+  SELECT id FROM demo_index
+    WHERE minX<=-80.77470 AND maxX>=-80.77470
+    AND minY<=35.37785  AND maxY>=35.37785;
+} {
+  28322 28269 
+}
+
+# EVIDENCE-OF: R-07351-00257 For example, to find all zipcode bounding
+# boxes that overlap with the 28269 zipcode: SELECT A.id FROM demo_index
+# AS A, demo_index AS B WHERE A.maxX>=B.minX AND A.minX<=B.maxX
+# AND A.maxY>=B.minY AND A.minY<=B.maxY AND B.id=28269;
+#
+# Also check that it is efficient
+#
+# EVIDENCE-OF: R-39094-01937 This second query will find both 28269
+# entry (since every bounding box overlaps with itself) and also other
+# zipcode that is close enough to 28269 that their bounding boxes
+# overlap.
+#
+# 28269 is there in the result.
+#
+do_vmstep_test 2.5.1 {
+  SELECT A.id FROM demo_index AS A, demo_index AS B
+    WHERE A.maxX>=B.minX AND A.minX<=B.maxX
+    AND A.maxY>=B.minY AND A.minY<=B.maxY
+    AND B.id=28269
+} {$step < 100}
+do_execsql_test 2.5.2 {
+  SELECT A.id FROM demo_index AS A, demo_index AS B
+    WHERE A.maxX>=B.minX AND A.minX<=B.maxX
+    AND A.maxY>=B.minY AND A.minY<=B.maxY
+    AND B.id=28269;
+} {
+  28293 28216 28322 28286 28269 
+  28215 28336 28262 28291 28320 
+  28313 28298 28287
+}
+
+# EVIDENCE-OF: R-02723-34107 Note that it is not necessary for all
+# coordinates in an R*Tree index to be constrained in order for the
+# index search to be efficient.
+#
+# EVIDENCE-OF: R-22490-27246 One might, for example, want to query all
+# objects that overlap with the 35th parallel: SELECT id FROM demo_index
+# WHERE maxY>=35.0 AND minY<=35.0;
+do_vmstep_test 2.6.1 {
+  SELECT id FROM demo_index
+   WHERE maxY>=35.0  AND minY<=35.0;
+} {$step < 100}
+do_execsql_test 2.6.2 {
+  SELECT id FROM demo_index
+   WHERE maxY>=35.0  AND minY<=35.0;
+} {}
 
 
 #-------------------------------------------------------------------------
@@ -510,6 +630,7 @@ reset_db
 #-------------------------------------------------------------------------
 #-------------------------------------------------------------------------
 set testprefix rtreedoc-6
+reset_db
 
 # EVIDENCE-OF: R-08327-00674 By default, coordinates are stored in an
 # R*Tree using 32-bit floating point values.
@@ -718,6 +839,7 @@ do_test 8.2 {
 #-------------------------------------------------------------------------
 #-------------------------------------------------------------------------
 set testprefix rtreedoc-8
+reset_db
 
 # EVIDENCE-OF: R-21062-30088 For the example above, one might create an
 # auxiliary table as follows: CREATE TABLE demo_data( id INTEGER PRIMARY
@@ -734,6 +856,94 @@ do_execsql_test 1.0 {
       boundary BLOB            -- detailed boundary of object
   );
 }
+
+do_execsql_test 1.1 {
+  CREATE VIRTUAL TABLE demo_index USING rtree(
+      id,              -- Integer primary key
+      minX, maxX,      -- Minimum and maximum X coordinate
+      minY, maxY       -- Minimum and maximum Y coordinate
+  );
+
+  INSERT INTO demo_index VALUES
+    (28215, -80.781227, -80.604706, 35.208813, 35.297367),
+    (28216, -80.957283, -80.840599, 35.235920, 35.367825),
+    (28217, -80.960869, -80.869431, 35.133682, 35.208233),
+    (28226, -80.878983, -80.778275, 35.060287, 35.154446),
+    (28227, -80.745544, -80.555382, 35.130215, 35.236916),
+    (28244, -80.844208, -80.841988, 35.223728, 35.225471),
+    (28262, -80.809074, -80.682938, 35.276207, 35.377747),
+    (28269, -80.851471, -80.735718, 35.272560, 35.407925),
+    (28270, -80.794983, -80.728966, 35.059872, 35.161823),
+    (28273, -80.994766, -80.875259, 35.074734, 35.172836),
+    (28277, -80.876793, -80.767586, 35.001709, 35.101063),
+    (28278, -81.058029, -80.956375, 35.044701, 35.223812),
+    (28280, -80.844208, -80.841972, 35.225468, 35.227203),
+    (28282, -80.846382, -80.844193, 35.223972, 35.225655);
+
+  INSERT INTO demo_index 
+    SELECT NULL, minX, maxX, minY+0.2, maxY+0.2 FROM demo_index;
+  INSERT INTO demo_index 
+    SELECT NULL, minX+0.2, maxX+0.2, minY, maxY FROM demo_index;
+  INSERT INTO demo_index 
+    SELECT NULL, minX, maxX, minY+0.4, maxY+0.4 FROM demo_index;
+  INSERT INTO demo_index 
+    SELECT NULL, minX+0.4, maxX+0.4, minY, maxY FROM demo_index;
+  INSERT INTO demo_index 
+    SELECT NULL, minX, maxX, minY+0.8, maxY+0.8 FROM demo_index;
+  INSERT INTO demo_index 
+    SELECT NULL, minX+0.8, maxX+0.8, minY, maxY FROM demo_index;
+
+  INSERT INTO demo_data(id) SELECT id FROM demo_index;
+
+  SELECT count(*) FROM demo_index;
+} {896}
+
+set ::contained_in 0
+proc contained_in {args} {incr ::contained_in ; return 0}
+db func contained_in contained_in
+
+do_vmstep_test 1.2 {
+  SELECT objname FROM demo_data, demo_index
+    WHERE demo_data.id=demo_index.id
+    AND contained_in(demo_data.boundary, 35.37785, -80.77470)
+    AND minX<=-80.77470 AND maxX>=-80.77470
+    AND minY<=35.37785  AND maxY>=35.37785;
+} {$step<100}
+set ::contained_in1 $::contained_in
+
+# EVIDENCE-OF: R-32761-23915 One would get the same answer without the
+# use of the R*Tree index using the following simpler query: SELECT
+# objname FROM demo_data WHERE contained_in(demo_data.boundary,
+# 35.37785, -80.77470);
+set ::contained_in 0
+do_vmstep_test 1.3 {
+  SELECT objname FROM demo_data
+    WHERE contained_in(demo_data.boundary, 35.37785, -80.77470);
+} {$step>4000}
+
+# EVIDENCE-OF: R-40261-32799 The problem with this latter query is that
+# it must apply the contained_in() function to all entries in the
+# demo_data table.
+#
+# 896 of them, IIRC.
+do_test 1.4 {
+  set ::contained_in
+} 896
+
+# EVIDENCE-OF: R-24212-52761 The use of the R*Tree in the penultimate
+# query reduces the number of calls to contained_in() function to a
+# small subset of the entire table.
+#
+# 2 is a small subset of 896.
+#
+# EVIDENCE-OF: R-39057-63901 The R*Tree index did not find the exact
+# answer itself, it merely limited the search space.
+#
+# contained_in() filtered out those 2 rows.
+do_test 1.5 {
+  set ::contained_in1
+} {2}
+
 
 #-------------------------------------------------------------------------
 #-------------------------------------------------------------------------
@@ -889,6 +1099,53 @@ do_test 4.2 {
   }
   expr {$r1==$r2}
 } {1}
+
+# EVIDENCE-OF: R-26099-32169 SELECT objname FROM demo_index2 WHERE
+# contained_in(boundary, 35.37785, -80.77470) AND minX<=-80.77470 AND
+# maxX>=-80.77470 AND minY<=35.37785 AND maxY>=35.37785;
+do_execsql_test 4.3.1 {
+  DELETE FROM demo_index2;
+  INSERT INTO demo_index2(id,minX,maxX,minY,maxY) VALUES
+    (28215, -80.781227, -80.604706, 35.208813, 35.297367),
+    (28216, -80.957283, -80.840599, 35.235920, 35.367825),
+    (28217, -80.960869, -80.869431, 35.133682, 35.208233),
+    (28226, -80.878983, -80.778275, 35.060287, 35.154446),
+    (28227, -80.745544, -80.555382, 35.130215, 35.236916),
+    (28244, -80.844208, -80.841988, 35.223728, 35.225471),
+    (28262, -80.809074, -80.682938, 35.276207, 35.377747),
+    (28269, -80.851471, -80.735718, 35.272560, 35.407925),
+    (28270, -80.794983, -80.728966, 35.059872, 35.161823),
+    (28273, -80.994766, -80.875259, 35.074734, 35.172836),
+    (28277, -80.876793, -80.767586, 35.001709, 35.101063),
+    (28278, -81.058029, -80.956375, 35.044701, 35.223812),
+    (28280, -80.844208, -80.841972, 35.225468, 35.227203),
+    (28282, -80.846382, -80.844193, 35.223972, 35.225655);
+}
+set ::contained_in 0
+proc contained_in {args} {
+  incr ::contained_in
+  return 0
+}
+db func contained_in contained_in
+do_execsql_test 4.3.2 {
+  SELECT objname FROM demo_index2
+    WHERE contained_in(boundary, 35.37785, -80.77470)
+    AND minX<=-80.77470 AND maxX>=-80.77470
+    AND minY<=35.37785  AND maxY>=35.37785;
+}
+do_test 4.3.3 {
+  # Function invoked only once because r-tree filtering happened first.
+  set ::contained_in
+} 1
+set ::contained_in 0
+do_execsql_test 4.3.4 {
+  SELECT objname FROM demo_index2
+    WHERE contained_in(boundary, 35.37785, -80.77470)
+}
+do_test 4.3.3 {
+  # Function invoked 14 times because no r-tree filtering. Inefficient.
+  set ::contained_in
+} 14
 
 #-------------------------------------------------------------------------
 #-------------------------------------------------------------------------
