@@ -2802,9 +2802,7 @@ static int fixBoundingBox(Rtree *pRtree, RtreeNode *pNode){
     }
     box.iRowid = pNode->iNode;
     rc = nodeParentIndex(pRtree, pNode, &ii);
-    /*             When we are fixing up a bounding box, we've already
-    **  vvvvvv---  decended down through the tree so we know it is correct */
-    if( ALWAYS(rc==SQLITE_OK) ){
+    if( rc==SQLITE_OK ){
       nodeOverwriteCell(pRtree, pParent, &box, ii);
       rc = fixBoundingBox(pRtree, pParent);
     }
