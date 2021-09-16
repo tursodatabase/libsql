@@ -1,5 +1,5 @@
-C Simplify\sthe\sroutine\sthat\sattempts\sto\sestimate\sthe\ssize\sof\san\srtree\sindex\nby\slooking\sat\sthe\ssqlite_stat1\sentry\sfor\sthe\s%_rowid\stable.
-D 2021-09-16T07:32:24.179
+C Under\sSQLITE_DEBUG\swith\sPRAGMA\svdbe_trace=ON,\sshow\san\soutput\sline\sif\sthe\nVDBE\saborts\sfor\sany\sreason.
+D 2021-09-16T12:33:53.147
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -617,7 +617,7 @@ F src/upsert.c 8789047a8f0a601ea42fa0256d1ba3190c13746b6ba940fe2d25643a7e991937
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c 3f27a1eae01c8bbbb8cdef2f26bd8e6a2a7db08106ef7c3dcc990787a5da6e86
 F src/vacuum.c 454973a59fb20bb982efc2df568a098616db6328a0491b6e84e2e07f7333db45
-F src/vdbe.c 39755f468a623af5e805c65a9ad7edb7c45fd78239fd58a319c7db8dfacc302b
+F src/vdbe.c a4b6736b22ccb9e875dea4350ea1666276500b4d6a27eed9c7d000faa1fea163
 F src/vdbe.h 25dabb25c7e157b84e59260cfb5b466c3ac103ede9f36f4db371332c47601abe
 F src/vdbeInt.h 38206c8dd6b60ff03d9fd4f626b1b4fd0eef7cdc44f2fc2c1973b0f932a3f26b
 F src/vdbeapi.c aa5aaf2c37676b83af5724c6cd8207a3064ed46a217fd180957f75ac84f7a2a5
@@ -1923,7 +1923,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4fab9089868bbb05a192da09bc201f0a84c5b9bef39dcb063afc1d7658299fdd
-R 928648a0ed48b62d45ae4ba163d95e7e
+P 06c329c17c2c2de8bc1ca7f3b0b929055675761a8be7a7e8b4a9fc5cca0d1679
+R 6dfcd8ffaed19859d868ffff4b66b890
 U drh
-Z a20a445e37b9e3e0394873e1f6259d3c
+Z b89610ebb549109e13a60adefcff4b4f

@@ -8367,6 +8367,11 @@ abort_due_to_error:
     rc = SQLITE_CORRUPT_BKPT;
   }
   assert( rc );
+#ifdef SQLITE_DEBUG
+  if( db->flags & SQLITE_VdbeTrace ){
+     printf("ABORT-due-to-error.  rc=%d\n", rc);
+  }
+#endif
   if( p->zErrMsg==0 && rc!=SQLITE_IOERR_NOMEM ){
     sqlite3VdbeError(p, "%s", sqlite3ErrStr(rc));
   }
