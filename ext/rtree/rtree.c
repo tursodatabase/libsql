@@ -3078,7 +3078,7 @@ static int rtreeDeleteRowid(Rtree *pRtree, sqlite3_int64 iDelete){
     int rc2;
     RtreeNode *pChild = 0;
     i64 iChild = nodeGetRowid(pRtree, pRoot, 0);
-    rc = nodeAcquire(pRtree, iChild, pRoot, &pChild);
+    rc = nodeAcquire(pRtree, iChild, pRoot, &pChild);  /* tag-20210916a */
     if( rc==SQLITE_OK ){
       rc = removeNode(pRtree, pChild, pRtree->iDepth-1);
     }
