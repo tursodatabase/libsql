@@ -1691,7 +1691,7 @@ static int rtreeRowid(sqlite3_vtab_cursor *pVtabCursor, sqlite_int64 *pRowid){
   RtreeSearchPoint *p = rtreeSearchPointFirst(pCsr);
   int rc = SQLITE_OK;
   RtreeNode *pNode = rtreeNodeOfFirstSearchPoint(pCsr, &rc);
-  if( rc==SQLITE_OK && p ){
+  if( rc==SQLITE_OK && ALWAYS(p) ){
     *pRowid = nodeGetRowid(RTREE_OF_CURSOR(pCsr), pNode, p->iCell);
   }
   return rc;
@@ -1709,7 +1709,7 @@ static int rtreeColumn(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int i){
   RtreeNode *pNode = rtreeNodeOfFirstSearchPoint(pCsr, &rc);
 
   if( rc ) return rc;
-  if( p==0 ) return SQLITE_OK;
+  if( NEVER(p==0) ) return SQLITE_OK;
   if( i==0 ){
     sqlite3_result_int64(ctx, nodeGetRowid(pRtree, pNode, p->iCell));
   }else if( i<=pRtree->nDim2 ){
@@ -2239,12 +2239,19 @@ static int AdjustTree(
 ){
   RtreeNode *p = pNode;
   int cnt = 0;
+  int rc;
   while( p->pParent ){
     RtreeNode *pParent = p->pParent;
     RtreeCell cell;
     int iCell;
 
-    if( (++cnt)>1000 || nodeParentIndex(pRtree, p, &iCell)  ){
+    cnt++;
+    if( NEVER(cnt>100) ){
+      RTREE_IS_CORRUPT(pRtree);
+      return SQLITE_CORRUPT_VTAB;
+    }
+    rc = nodeParentIndex(pRtree, p, &iCell);
+    if( NEVER(rc!=SQLITE_OK) ){
       RTREE_IS_CORRUPT(pRtree);
       return SQLITE_CORRUPT_VTAB;
     }
@@ -2628,11 +2635,12 @@ static int SplitNode(
     RtreeNode *pParent = pLeft->pParent;
     int iCell;
     rc = nodeParentIndex(pRtree, pLeft, &iCell);
-    if( rc==SQLITE_OK ){
+    if( ALWAYS(rc==SQLITE_OK) ){
       nodeOverwriteCell(pRtree, pParent, &leftbbox, iCell);
       rc = AdjustTree(pRtree, pParent, &leftbbox);
+      assert( rc==SQLITE_OK );
     }
-    if( rc!=SQLITE_OK ){
+    if( NEVER(rc!=SQLITE_OK) ){
       goto splitnode_out;
     }
   }
@@ -2707,7 +2715,7 @@ static int fixLeafParent(Rtree *pRtree, RtreeNode *pLeaf){
       */
       iNode = sqlite3_column_int64(pRtree->pReadParent, 0);
       for(pTest=pLeaf; pTest && pTest->iNode!=iNode; pTest=pTest->pParent);
-      if( !pTest ){
+      if( pTest==0 ){
         rc2 = nodeAcquire(pRtree, iNode, 0, &pChild->pParent);
       }
     }
@@ -2734,13 +2742,14 @@ static int removeNode(Rtree *pRtree, RtreeNode *pNode, int iHeight){
 
   /* Remove the entry in the parent cell. */
   rc = nodeParentIndex(pRtree, pNode, &iCell);
-  if( rc==SQLITE_OK ){
+  if( ALWAYS(rc==SQLITE_OK) ){
     pParent = pNode->pParent;
     pNode->pParent = 0;
     rc = deleteCell(pRtree, pParent, iCell, iHeight+1);
+    assert( rc==SQLITE_OK );
   }
   rc2 = nodeRelease(pRtree, pParent);
-  if( rc==SQLITE_OK ){
+  if( ALWAYS(rc==SQLITE_OK) ){
     rc = rc2;
   }
   if( rc!=SQLITE_OK ){
@@ -2960,7 +2969,7 @@ static int rtreeInsertCell(
     }
   }else{
     rc = AdjustTree(pRtree, pNode, pCell);
-    if( rc==SQLITE_OK ){
+    if( ALWAYS(rc==SQLITE_OK) ){
       if( iHeight==0 ){
         rc = rowidWrite(pRtree, pCell->iRowid, pNode->iNode);
       }else{
