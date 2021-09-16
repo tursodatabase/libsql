@@ -2742,13 +2742,14 @@ static int removeNode(Rtree *pRtree, RtreeNode *pNode, int iHeight){
 
   /* Remove the entry in the parent cell. */
   rc = nodeParentIndex(pRtree, pNode, &iCell);
-  if( rc==SQLITE_OK ){
+  if( ALWAYS(rc==SQLITE_OK) ){
     pParent = pNode->pParent;
     pNode->pParent = 0;
     rc = deleteCell(pRtree, pParent, iCell, iHeight+1);
+    assert( rc==SQLITE_OK );
   }
   rc2 = nodeRelease(pRtree, pParent);
-  if( rc==SQLITE_OK ){
+  if( ALWAYS(rc==SQLITE_OK) ){
     rc = rc2;
   }
   if( rc!=SQLITE_OK ){
@@ -2968,7 +2969,7 @@ static int rtreeInsertCell(
     }
   }else{
     rc = AdjustTree(pRtree, pNode, pCell);
-    if( rc==SQLITE_OK ){
+    if( ALWAYS(rc==SQLITE_OK) ){
       if( iHeight==0 ){
         rc = rowidWrite(pRtree, pCell->iRowid, pNode->iNode);
       }else{
