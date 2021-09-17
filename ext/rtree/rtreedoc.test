@@ -902,6 +902,12 @@ set ::contained_in 0
 proc contained_in {args} {incr ::contained_in ; return 0}
 db func contained_in contained_in
 
+# EVIDENCE-OF: R-32671-43888 Then an efficient way to find the specific
+# ZIP code for the main SQLite office would be to run a query like this:
+# SELECT objname FROM demo_data, demo_index WHERE
+# demo_data.id=demo_index.id AND contained_in(demo_data.boundary,
+# 35.37785, -80.77470) AND minX<=-80.77470 AND maxX>=-80.77470 AND
+# minY<=35.37785 AND maxY>=35.37785;
 do_vmstep_test 1.2 {
   SELECT objname FROM demo_data, demo_index
     WHERE demo_data.id=demo_index.id
