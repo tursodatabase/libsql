@@ -3866,6 +3866,7 @@ static int exprCodeInlineFunction(
   ** Test-only SQL functions that are only usable if enabled
   ** via SQLITE_TESTCTRL_INTERNAL_FUNCTIONS
   */
+#if !defined(SQLITE_UNTESTABLE)
     case INLINEFUNC_expr_compare: {
       /* Compare two expressions using sqlite3ExprCompare() */
       assert( nFarg==2 );
@@ -3899,7 +3900,6 @@ static int exprCodeInlineFunction(
       break;
     }
 
-#ifdef SQLITE_DEBUG
     case INLINEFUNC_affinity: {
       /* The AFFINITY() function evaluates to a string that describes
       ** the type affinity of the argument.  This is used for testing of
@@ -3913,7 +3913,7 @@ static int exprCodeInlineFunction(
               (aff<=SQLITE_AFF_NONE) ? "none" : azAff[aff-SQLITE_AFF_BLOB]);
       break;
     }
-#endif
+#endif /* !defined(SQLITE_UNTESTABLE) */
   }
   return target;
 }
