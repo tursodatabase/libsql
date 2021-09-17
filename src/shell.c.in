@@ -635,20 +635,36 @@ static int strlenChar(const char *z){
 }
 
 /*
-** Return true if zFile does not exist or if it is not either
-** an ordinary file or an openable character stream source.
+** Return open FILE * if zFile exists, can be opened for read
+** and is an ordinary file or a character stream source.
+** Otherwise return 0.
 */
-static int notChrSource(const char *zFile){
+static FILE * openChrSource(const char *zFile){
 #ifdef _WIN32
   struct _stat x = {0};
-  int rc = _stat(zFile, &x);
 # define STAT_CHR_SRC(mode) ((mode & (_S_IFCHR|_S_IFIFO|_S_IFREG))!=0)
+  /* On Windows, open first, then check the stream nature. This order
+  ** is necessary because _stat() and sibs, when checking a named pipe,
+  ** effectively break the pipe as its supplier sees it. */
+  FILE *rv = fopen(zFile, "rb");
+  if( rv==0 ) return 0;
+  if( _fstat(_fileno(rv), &x) != 0
+      || !STAT_CHR_SRC(x.st_mode)){
+    fclose(rv);
+    rv = 0;
+  }
+  return rv;
 #else
   struct stat x = {0};
   int rc = stat(zFile, &x);
 # define STAT_CHR_SRC(mode) (S_ISREG(mode)||S_ISFIFO(mode)||S_ISCHR(mode))
+  if( rc!=0 ) return 0;
+  if( STAT_CHR_SRC(x.st_mode) ){
+    return fopen(zFile, "rb");
+  }else{
+    return 0;
+  }
 #endif
-  return rc || !STAT_CHR_SRC(x.st_mode);
 #undef STAT_CHR_SRC
 }
 
@@ -9242,7 +9258,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         pclose(p->in);
       }
 #endif
-    }else if( notChrSource(azArg[1]) || (p->in = fopen(azArg[1], "rb"))==0 ){
+    }else if( (p->in = openChrSource(azArg[1]))==0 ){
       utf8_printf(stderr,"Error: cannot open \"%s\"\n", azArg[1]);
       rc = 1;
     }else{
