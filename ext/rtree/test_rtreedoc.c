@@ -31,6 +31,13 @@ struct BoxGeomCtx {
   Tcl_Obj *pScript;
 };
 
+static void testDelUser(void *pCtx){
+  BoxGeomCtx *p = (BoxGeomCtx*)pCtx;
+  Tcl_EvalObjEx(p->interp, p->pScript, 0);
+  Tcl_DecrRefCount(p->pScript);
+  sqlite3_free(p);
+}
+
 static int invokeTclGeomCb(
   const char *zName, 
   sqlite3_rtree_geometry *p, 
@@ -47,6 +54,7 @@ static int invokeTclGeomCb(
     Tcl_Obj *pCoord = 0;
     int ii;
     Tcl_Obj *pRes;
+
 
     pScript = Tcl_DuplicateObj(pCtx->pScript);
     Tcl_IncrRefCount(pScript);
@@ -73,12 +81,41 @@ static int invokeTclGeomCb(
     Tcl_ListObjAppendElement(interp, pScript, Tcl_NewStringObj(aPtr,-1));
 
     rc = Tcl_EvalObjEx(interp, pScript, 0);
-    if( rc!=TCL_OK ) rc = SQLITE_ERROR;
+    if( rc!=TCL_OK ){
+      rc = SQLITE_ERROR;
+    }else{
+      int nObj = 0;
+      Tcl_Obj **aObj = 0;
 
-    pRes = Tcl_GetObjResult(interp);
-    if( 0==sqlite3_stricmp(Tcl_GetString(pRes), "zero") ){
-      p->aParam[0] = 0.0;
-      p->nParam = 1;
+      pRes = Tcl_GetObjResult(interp);
+      if( Tcl_ListObjGetElements(interp, pRes, &nObj, &aObj) ) return TCL_ERROR;
+      if( nObj>0 ){
+        const char *zCmd = Tcl_GetString(aObj[0]);
+        if( 0==sqlite3_stricmp(zCmd, "zero") ){
+          p->aParam[0] = 0.0;
+          p->nParam = 1;
+        }
+        else if( 0==sqlite3_stricmp(zCmd, "user") ){
+          if( p->pUser || p->xDelUser ){
+            rc = SQLITE_ERROR;
+          }else{
+            BoxGeomCtx *pCtx = sqlite3_malloc(sizeof(BoxGeomCtx));
+            if( pCtx==0 ){
+              rc = SQLITE_NOMEM;
+            }else{
+              pCtx->interp = interp;
+              pCtx->pScript = Tcl_DuplicateObj(pRes);
+              Tcl_IncrRefCount(pCtx->pScript);
+              Tcl_ListObjReplace(interp, pCtx->pScript, 0, 1, 0, 0);
+              p->pUser = (void*)pCtx;
+              p->xDelUser = testDelUser;
+            }
+          }
+        }
+        else if( 0==sqlite3_stricmp(zCmd, "user_is_zero") ){
+          if( p->pUser || p->xDelUser ) rc = SQLITE_ERROR;
+        }
+      }
     }
   }
   return rc;
@@ -140,7 +177,6 @@ static int SQLITE_TCLAPI register_box_geom(
   extern int getDbPointer(Tcl_Interp*, const char*, sqlite3**);
   extern const char *sqlite3ErrName(int);
   sqlite3 *db;
-  int rc;
   BoxGeomCtx *pCtx;
   char aPtr[64];
 
@@ -155,7 +191,7 @@ static int SQLITE_TCLAPI register_box_geom(
   pCtx->pScript = Tcl_DuplicateObj(objv[2]);
   Tcl_IncrRefCount(pCtx->pScript);
 
-  rc = sqlite3_rtree_geometry_callback(db, "box", box_geom, (void*)pCtx);
+  sqlite3_rtree_geometry_callback(db, "box", box_geom, (void*)pCtx);
 
   sqlite3_snprintf(64, aPtr, "%p", (void*)pCtx);
   Tcl_SetObjResult(interp, Tcl_NewStringObj(aPtr, -1));

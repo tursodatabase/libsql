@@ -242,7 +242,104 @@ foreach {tn q vals} {
   do_test 5.$tn.2 { set ::box_geom } $vals
 }
 
-  
+do_execsql_test 5.0 {
+  CREATE VIRTUAL TABLE myrtree USING rtree(id, x1,x2);
+  INSERT INTO myrtree VALUES(1, 1, 1);
+  INSERT INTO myrtree VALUES(2, 2, 2);
+  INSERT INTO myrtree VALUES(3, 3, 3);
+}
+
+# EVIDENCE-OF: R-44448-00687 The pUser and xDelUser members of the
+# sqlite3_rtree_geometry structure are initially set to NULL.
+set ::box_geom_calls 0
+proc box_geom {args} {
+  incr ::box_geom_calls
+  return user_is_zero
+}
+do_execsql_test 5.1.1 {
+  SELECT * FROM myrtree WHERE id MATCH box(4, 5);
+} 
+do_test 5.1.2 { set ::box_geom_calls } 3
+
+
+# EVIDENCE-OF: R-55837-00155 The pUser variable may be set by the
+# callback implementation to any arbitrary value that may be useful to
+# subsequent invocations of the callback within the same query (for
+# example, a pointer to a complicated data structure used to test for
+# region intersection).
+#
+# EVIDENCE-OF: R-34745-08839 If the xDelUser variable is set to a
+# non-NULL value, then after the query has finished running SQLite
+# automatically invokes it with the value of the pUser variable as the
+# only argument.
+#
+set ::box_geom_calls 0
+proc box_geom {args} {
+  incr ::box_geom_calls
+  switch -- $::box_geom_calls {
+    1 {
+      return user_is_zero
+    }
+    2 {
+      return [list user box_geom_finalizer]
+    }
+  }
+  return ""
+}
+proc box_geom_finalizer {} {
+  set ::box_geom_finalizer "::box_geom_calls is $::box_geom_calls"
+}
+do_execsql_test 5.1.1 {
+  SELECT * FROM myrtree WHERE id MATCH box(4, 5);
+} 
+do_test 5.1.2 { set ::box_geom_calls } 3
+do_test 5.1.3 {
+  set ::box_geom_finalizer
+} {::box_geom_calls is 3}
+ 
+
+# EVIDENCE-OF: R-28176-28813 The xGeom callback always does a
+# depth-first search of the r-tree.
+#
+# For a breadth first search, final test case would return "B L" only.
+#
+do_execsql_test 6.0 {
+  CREATE VIRTUAL TABLE xyz USING rtree(x, x1,x2, y1,y2);
+  WITH s(i) AS (
+    VALUES(1) UNION ALL SELECT i+1 FROM s WHERE i<15
+  )
+  INSERT INTO xyz SELECT NULL, one.i,one.i+1,  two.i,two.i+1 FROM s one, s two;
+}
+do_execsql_test 6.1 {
+  SELECT count(*) FROM xyz_node
+} {10}
+proc box_geom {args} {
+  set coords [lindex $args 3]
+  set area [expr {
+    ([lindex $coords 1]-[lindex $coords 0]) * 
+    ([lindex $coords 3]-[lindex $coords 2])
+  }]
+  if {$area==1} {
+    lappend ::box_geom_calls L
+  } else {
+    lappend ::box_geom_calls B
+  }
+}
+set ::box_geom_calls [list]
+do_execsql_test 6.2 {
+  SELECT count(*) FROM xyz WHERE x MATCH box(0,20,0,20)
+} 225
+do_test 6.3 {
+  set prev ""
+  set box_calls [list]
+  foreach c $::box_geom_calls {
+    if {$c!=$prev} {
+      lappend ::box_calls $c
+      set prev $c
+    }
+  }
+  set ::box_calls
+} {B L B L B L B L B L B L B L B L B L}
 
 
 finish_test

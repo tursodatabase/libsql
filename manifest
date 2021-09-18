@@ -1,5 +1,5 @@
-C Shell's\s.read\spipe\snow\sworks\sfor\sWindows\stoo.
-D 2021-09-17T21:12:47.392
+C Further\stests\sfor\slegacy\srtree\sgeom\scallbacks.
+D 2021-09-18T16:15:54.996
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -419,10 +419,10 @@ F ext/rtree/rtreecheck.test d67d5b3e9e45bfa8cd90734e8e9302144ac415b8e9176c6f02d4
 F ext/rtree/rtreecirc.test aec664eb21ae943aeb344191407afff5d392d3ae9d12b9a112ced0d9c5de298e
 F ext/rtree/rtreeconnect.test 225ad3fcb483d36cbee423a25052a6bbae762c9576ae9268332360c68c170d3d
 F ext/rtree/rtreedoc.test 243cd3fdee1cb89e290e908ddde0cc0cfda0ccb85473c6d1b3c43e6260b14cac
-F ext/rtree/rtreedoc2.test ae13849b390f6878434896ecee113cc44bb2bcbcd868f6c47b5d80a73e3e4ab1
+F ext/rtree/rtreedoc2.test 194ebb7d561452dcdc10bf03f44e30c082c2f0c14efeb07f5e02c7daf8284d93
 F ext/rtree/rtreefuzz001.test 0fc793f67897c250c5fde96cefee455a5e2fb92f4feeabde5b85ea02040790ee
 F ext/rtree/sqlite3rtree.h 03c8db3261e435fbddcfc961471795cbf12b24e03001d0015b2636b0f3881373
-F ext/rtree/test_rtreedoc.c 72f78e9930e861ba2a780f36cb6ecbf02ebda350111ecab9594c564c10a30b1c
+F ext/rtree/test_rtreedoc.c 216f988e0b56474a3d42905653777772d3bdd413a7fe09a79e466b19296853b0
 F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/util/randomshape.tcl 54ee03d0d4a1c621806f7f44d5b78d2db8fac26e0e8687c36c4bd0203b27dbff
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
@@ -1925,7 +1925,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6ad00e52eda5bc4cb8e6fffbd7538bcd4c6b22f84b837a746eba6bf8c91eb55a
-R 4272cac65b9ce52e86aa091f7c699703
-U larrybr
-Z f2dab7d439a0b553d4ffc2b434c528dd
+P 929bcc4098549692c573779d65c4c28027b0a2f48ebbf5b3f038deee24374b67
+R b53a2568f9f1adf1f421cbce84f79cd1
+U dan
+Z 0f8167edfa350ba64179ebda312bfead
