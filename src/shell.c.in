@@ -635,19 +635,38 @@ static int strlenChar(const char *z){
 }
 
 /*
-** Return true if zFile does not exist or if it is not an ordinary file.
+** Return open FILE * if zFile exists, can be opened for read
+** and is an ordinary file or a character stream source.
+** Otherwise return 0.
 */
+static FILE * openChrSource(const char *zFile){
 #ifdef _WIN32
-# define notNormalFile(X) 0
+  struct _stat x = {0};
+# define STAT_CHR_SRC(mode) ((mode & (_S_IFCHR|_S_IFIFO|_S_IFREG))!=0)
+  /* On Windows, open first, then check the stream nature. This order
+  ** is necessary because _stat() and sibs, when checking a named pipe,
+  ** effectively break the pipe as its supplier sees it. */
+  FILE *rv = fopen(zFile, "rb");
+  if( rv==0 ) return 0;
+  if( _fstat(_fileno(rv), &x) != 0
+      || !STAT_CHR_SRC(x.st_mode)){
+    fclose(rv);
+    rv = 0;
+  }
+  return rv;
 #else
-static int notNormalFile(const char *zFile){
-  struct stat x;
-  int rc;
-  memset(&x, 0, sizeof(x));
-  rc = stat(zFile, &x);
-  return rc || !S_ISREG(x.st_mode);
-}
+  struct stat x = {0};
+  int rc = stat(zFile, &x);
+# define STAT_CHR_SRC(mode) (S_ISREG(mode)||S_ISFIFO(mode)||S_ISCHR(mode))
+  if( rc!=0 ) return 0;
+  if( STAT_CHR_SRC(x.st_mode) ){
+    return fopen(zFile, "rb");
+  }else{
+    return 0;
+  }
 #endif
+#undef STAT_CHR_SRC
+}
 
 /*
 ** This routine reads a line of text from FILE in, stores
@@ -1203,7 +1222,7 @@ struct ShellState {
 #define SHFLG_Newlines       0x00000010 /* .dump --newline flag */
 #define SHFLG_CountChanges   0x00000020 /* .changes setting */
 #define SHFLG_Echo           0x00000040 /* .echo or --echo setting */
-#define SHFLG_HeaderSet      0x00000080 /* .header has been used */
+#define SHFLG_HeaderSet      0x00000080 /* showHeader has been specified */
 #define SHFLG_DumpDataOnly   0x00000100 /* .dump show data only */
 #define SHFLG_DumpNoSys      0x00000200 /* .dump omits system tables */
 
@@ -9239,7 +9258,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         pclose(p->in);
       }
 #endif
-    }else if( notNormalFile(azArg[1]) || (p->in = fopen(azArg[1], "rb"))==0 ){
+    }else if( (p->in = openChrSource(azArg[1]))==0 ){
       utf8_printf(stderr,"Error: cannot open \"%s\"\n", azArg[1]);
       rc = 1;
     }else{
@@ -10601,18 +10620,15 @@ meta_command_exit:
 /* Line scan result and intermediate states (supporting scan resumption)
 */
 typedef enum {
-  QSS_InPlain = 0, QSS_InQuote = 1, QSS_InBlockComment = 2,
-  QSS_NoDark = 0,  QSS_HasDark = 1<<2, QSS_EndingSemi = 1<<3,
-  QSS_ScanMask = 0x3, QSS_DarkMask = 1<<2,
-  QSS_CharShift = 4,  QSS_StateMask = ((1<<QSS_CharShift)-1),
+  QSS_HasDark = 1<<CHAR_BIT, QSS_EndingSemi = 2<<CHAR_BIT,
+  QSS_CharMask = (1<<CHAR_BIT)-1, QSS_ScanMask = 3<<CHAR_BIT,
   QSS_Start = 0
 } QuickScanState;
-#define QSS_STATE(qss) ((qss) & QSS_ScanMask)
-#define QSS_SETV(qss, newst) (newst | ((qss) & (QSS_StateMask^QSS_ScanMask)))
-#define QSS_PLAINWHITE(qss) (((qss)&~QSS_EndingSemi)==QSS_NoDark)
+#define QSS_SETV(qss, newst) ((newst) | ((qss) & QSS_ScanMask))
+#define QSS_INPLAIN(qss) (((qss)&QSS_CharMask)==QSS_Start)
+#define QSS_PLAINWHITE(qss) (((qss)&~QSS_EndingSemi)==QSS_Start)
 #define QSS_PLAINDARK(qss) (((qss)&~QSS_EndingSemi)==QSS_HasDark)
-#define QSS_SEMITERM(qss) \
-  (((qss)&(QSS_ScanMask|QSS_EndingSemi))==QSS_EndingSemi)
+#define QSS_SEMITERM(qss) (((qss)&~QSS_HasDark)==QSS_EndingSemi)
 
 /*
 ** Scan line for classification to guide shell's handling.
@@ -10621,69 +10637,69 @@ typedef enum {
 */
 static QuickScanState quickscan(char *zLine, QuickScanState qss){
   char cin;
-  switch( QSS_STATE(qss) ){
-  case QSS_InPlain:
-  InPlainSet:
-    qss = QSS_SETV(qss, QSS_InPlain);
+  char cWait = (char)qss; /* intentional narrowing loss */
+  if( cWait==0 ){
+  PlainScan:
     while (cin = *zLine++){
       if( IsSpace(cin) )
         continue;
       switch (cin){
       case '-':
-        if( *zLine=='-' ){
-          while((cin = *++zLine)!=0 ){
-            if( cin=='\n')
-              continue;
-          }
-          return qss;
-        }
-        break;
+        if( *zLine!='-' )
+          break;
+        while((cin = *++zLine)!=0 )
+          if( cin=='\n')
+            goto PlainScan;
+        return qss;
       case ';':
         qss |= QSS_EndingSemi;
         continue;
       case '/':
         if( *zLine=='*' ){
           ++zLine;
-          qss = QSS_SETV(qss, QSS_InBlockComment);
-          goto InBlockComment;
+          cWait = '*';
+          qss = QSS_SETV(qss, cWait);
+          goto TermScan;
         }
         break;
       case '[':
         cin = ']';
         /* fall thru */
       case '`': case '\'': case '"':
-        qss = qss & ~QSS_EndingSemi | QSS_HasDark;
-        qss = QSS_SETV(qss, QSS_InQuote) | (cin<<QSS_CharShift);
-        goto InQuote;
+        cWait = cin;
+        qss = QSS_HasDark | cWait;
+        goto TermScan;
       default:
         break;
       }
-      qss = qss & ~QSS_EndingSemi | QSS_HasDark;
+      qss = (qss & ~QSS_EndingSemi) | QSS_HasDark;
     }
-    break;
-  case QSS_InQuote:
-  InQuote: {
-      char cLeave = qss >> QSS_CharShift;
-      while (cin = *zLine++){
-        if( cin==cLeave ){
-          if(*zLine==cLeave && cLeave!=']')
+  }else{
+  TermScan:
+    while (cin = *zLine++){
+      if( cin==cWait ){
+        switch( cWait ){
+        case '*':
+          if( *zLine != '/' )
+            continue;
+          ++zLine;
+          cWait = 0;
+          qss = QSS_SETV(qss, 0);
+          goto PlainScan;
+        case '`': case '\'': case '"':
+          if(*zLine==cWait){
             ++zLine;
-          else
-            goto InPlainSet;
+            continue;
+          }
+          /* fall thru */
+        case ']':
+          cWait = 0;
+          qss = QSS_SETV(qss, 0);
+          goto PlainScan;
+        default: assert(0); 
         }
       }
     }
-    break;
-  case QSS_InBlockComment:
-  InBlockComment:
-    while (cin = *zLine++){
-      if( cin=='*' && *zLine=='/' ){
-        ++zLine;
-        goto InPlainSet;
-      }
-    }
-    break;
-  default:;
   }
   return qss;
 }
@@ -10784,7 +10800,7 @@ static int process_input(ShellState *p){
   int rc;                   /* Error code */
   int errCnt = 0;           /* Number of errors seen */
   int startline = 0;        /* Line number for start of current input */
-  QuickScanState qss = QSS_InPlain; /* Accumulated line status (so far) */
+  QuickScanState qss = QSS_Start; /* Accumulated line status (so far) */
 
   p->lineno = 0;
   while( errCnt==0 || !bail_on_error || (p->in==0 && stdin_is_interactive) ){
@@ -10800,7 +10816,7 @@ static int process_input(ShellState *p){
       seenInterrupt = 0;
     }
     p->lineno++;
-    if( QSS_STATE(qss)==QSS_InPlain
+    if( QSS_INPLAIN(qss)
         && line_is_command_terminator(zLine)
         && line_is_complete(zSql, nSql) ){
       memcpy(zLine,";",2);
@@ -11502,8 +11518,10 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
                        "%s",cmdline_option_value(argc,argv,++i));
     }else if( strcmp(z,"-header")==0 ){
       data.showHeader = 1;
-    }else if( strcmp(z,"-noheader")==0 ){
+      ShellSetFlag(&data, SHFLG_HeaderSet);
+     }else if( strcmp(z,"-noheader")==0 ){
       data.showHeader = 0;
+      ShellSetFlag(&data, SHFLG_HeaderSet);
     }else if( strcmp(z,"-echo")==0 ){
       ShellSetFlag(&data, SHFLG_Echo);
     }else if( strcmp(z,"-eqp")==0 ){

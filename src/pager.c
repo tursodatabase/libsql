@@ -679,8 +679,8 @@ struct Pager {
   i16 nReserve;               /* Number of unused bytes at end of each page */
   u32 vfsFlags;               /* Flags for sqlite3_vfs.xOpen() */
   u32 sectorSize;             /* Assumed sector size during rollback */
-  int pageSize;               /* Number of bytes in a page */
   Pgno mxPgno;                /* Maximum allowed size of the database */
+  i64 pageSize;               /* Number of bytes in a page */
   i64 journalSizeLimit;       /* Size limit for persistent journal files */
   char *zFilename;            /* Name of the database file */
   char *zJournal;             /* Name of the journal file */
@@ -6737,8 +6737,8 @@ int sqlite3PagerRefcount(Pager *pPager){
 ** used by the pager and its associated cache.
 */
 int sqlite3PagerMemUsed(Pager *pPager){
-  int perPageSize = pPager->pageSize + pPager->nExtra + sizeof(PgHdr)
-                                     + 5*sizeof(void*);
+  int perPageSize = pPager->pageSize + pPager->nExtra
+    + (int)(sizeof(PgHdr) + 5*sizeof(void*));
   return perPageSize*sqlite3PcachePagecount(pPager->pPCache)
            + sqlite3MallocSize(pPager)
            + pPager->pageSize;
@@ -6932,14 +6932,14 @@ int sqlite3PagerSavepoint(Pager *pPager, int op, int iSavepoint){
     }
     pPager->nSavepoint = nNew;
 
-    /* If this is a release of the outermost savepoint, truncate 
-    ** the sub-journal to zero bytes in size. */
+    /* Truncate the sub-journal so that it only includes the parts
+    ** that are still in use. */
     if( op==SAVEPOINT_RELEASE ){
       PagerSavepoint *pRel = &pPager->aSavepoint[nNew];
       if( pRel->bTruncateOnRelease && isOpen(pPager->sjfd) ){
         /* Only truncate if it is an in-memory sub-journal. */
         if( sqlite3JournalIsInMemory(pPager->sjfd) ){
-          i64 sz = (pPager->pageSize+4)*pRel->iSubRec;
+          i64 sz = (pPager->pageSize+4)*(i64)pRel->iSubRec;
           rc = sqlite3OsTruncate(pPager->sjfd, sz);
           assert( rc==SQLITE_OK );
         }

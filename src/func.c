@@ -571,9 +571,9 @@ static void last_insert_rowid(
 /*
 ** Implementation of the changes() SQL function.
 **
-** IMP: R-62073-11209 The changes() SQL function is a wrapper
-** around the sqlite3_changes64() C/C++ function and hence follows the same
-** rules for counting changes.
+** IMP: R-32760-32347 The changes() SQL function is a wrapper
+** around the sqlite3_changes64() C/C++ function and hence follows the
+** same rules for counting changes.
 */
 static void changes(
   sqlite3_context *context,
@@ -596,8 +596,8 @@ static void total_changes(
 ){
   sqlite3 *db = sqlite3_context_db_handle(context);
   UNUSED_PARAMETER2(NotUsed, NotUsed2);
-  /* IMP: R-52756-41993 This function was a wrapper around the
-  ** sqlite3_total_changes() C/C++ interface. */
+  /* IMP: R-11217-42568 This function is a wrapper around the
+  ** sqlite3_total_changes64() C/C++ interface. */
   sqlite3_result_int64(context, sqlite3_total_changes64(db));
 }
 
@@ -2123,12 +2123,12 @@ void sqlite3RegisterBuiltinFunctions(void){
   */
   static FuncDef aBuiltinFunc[] = {
 /***** Functions only available with SQLITE_TESTCTRL_INTERNAL_FUNCTIONS *****/
+#if !defined(SQLITE_UNTESTABLE)
     TEST_FUNC(implies_nonnull_row, 2, INLINEFUNC_implies_nonnull_row, 0),
     TEST_FUNC(expr_compare,        2, INLINEFUNC_expr_compare,        0),
     TEST_FUNC(expr_implies_expr,   2, INLINEFUNC_expr_implies_expr,   0),
-#ifdef SQLITE_DEBUG
-    TEST_FUNC(affinity,          1, INLINEFUNC_affinity, 0),
-#endif
+    TEST_FUNC(affinity,            1, INLINEFUNC_affinity,            0),
+#endif /* !defined(SQLITE_UNTESTABLE) */
 /***** Regular functions *****/
 #ifdef SQLITE_SOUNDEX
     FUNCTION(soundex,            1, 0, 0, soundexFunc      ),
