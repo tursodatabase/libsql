@@ -1,5 +1,5 @@
-C Sync\sw/trunk,\sfurther\sstreamline\sshell's\sresumable\sprescan.
-D 2021-09-18T21:35:22.366
+C Adjust\sshell\stests\sfor\s*Nix\sand\sWindows\stest\splatform\sanomaly
+D 2021-09-19T18:31:55.750
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1375,7 +1375,7 @@ F test/sharedB.test 16cc7178e20965d75278f410943109b77b2e645e
 F test/shared_err.test 32634e404a3317eeb94abc7a099c556a346fdb8fb3858dbe222a4cbb8926a939
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
 F test/shell1.test 56a7358a2a05e850e9e4aa24629db9c8975e8038dbe8debd2d95be22a5f03612
-F test/shell2.test e242a9912f44f4c23c3d1d802a83e934e84c853b
+F test/shell2.test a03b835a9e7dcc1f79b471e4d62e0c85bdc4cb954a00820702603f1409553caf
 F test/shell3.test 1586a163e7918775d3c25530bf84200453f30a77cc338490389114a67352f4d9
 F test/shell4.test 3ed6c4b42fd695efcbc25d69ef759dbb15855ca8e52ba6c5ee076f8b435f48be
 F test/shell5.test 84a30b55722a95a5b72989e691c469a999ca7591e7aa00b7fabc783ea5c9a6fe
@@ -1925,7 +1925,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 15b105c520968855ad960d8929f80af9e9bedc155237af9af1956f7b546947f2 99d6bb22e8735681443bfe67287aa15ce2c57d0d63e304abf8aa01fde50dd021
-R 49a56387d26f2bce27d3217e1e0550b1
+P 9e00f9f7c03c192a3fb6b22851db0626515c59daac5ce6520229c42c838bf5b7
+R a262f509a9bdc0e9fae37cb35e7b774a
 U larrybr
-Z f54f51b048cd8993f1718034d535befc
+Z c20e0c055c38369d11323498c4dfd701
