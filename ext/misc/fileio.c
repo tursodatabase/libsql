@@ -72,6 +72,11 @@
 **   $path is a relative path, then $path is interpreted relative to $dir. 
 **   And the paths returned in the "name" column of the table are also 
 **   relative to directory $dir.
+**
+** Notes on building this extension for Windows:
+**   Unless linked statically with the SQLite library, a preprocessor
+**   symbol, FILEIO_WIN32_DLL, must be #define'd to create a stand-alone
+**   DLL form of this extension for WIN32. See its use below for details.
 */
 #include "sqlite3ext.h"
 SQLITE_EXTENSION_INIT1
@@ -224,6 +229,22 @@ static sqlite3_uint64 fileTimeToUnixTime(
 
   return (fileIntervals.QuadPart - epochIntervals.QuadPart) / 10000000;
 }
+
+
+#if defined(FILEIO_WIN32_DLL) && (defined(_WIN32) || defined(WIN32))
+#  /* To allow a standalone DLL, use this next replacement function: */
+#  undef sqlite3_win32_utf8_to_unicode
+#  define sqlite3_win32_utf8_to_unicode utf8_to_utf16
+#
+LPWSTR utf8_to_utf16(const char *z){
+  int nAllot = MultiByteToWideChar(CP_UTF8, 0, z, -1, NULL, 0);
+  LPWSTR rv = malloc(nAllot * sizeof(WCHAR));
+  if( rv!=0 && 0 < MultiByteToWideChar(CP_UTF8, 0, z, -1, rv, nAllot) )
+    return rv;
+  free(rv);
+  return 0;
+}
+#endif
 
 /*
 ** This function attempts to normalize the time values found in the stat()
@@ -998,3 +1019,17 @@ int sqlite3_fileio_init(
   }
   return rc;
 }
+
+#if defined(FILEIO_WIN32_DLL) && (defined(_WIN32) || defined(WIN32))
+   /* To allow a standalone DLL, make test_windirent.c take these next
+    * 3 functions from C runtime instead of from SQLite library: */
+#  undef sqlite3_malloc
+#  define sqlite3_malloc malloc
+#  undef sqlite3_free
+#  define sqlite3_free free
+#  undef sqlite3_stricmp
+#  define sqlite3_stricmp stricmp
+   /* Just pull in this .c so above redefines take said effect. As a
+    * side-effect, this extension becomes a single translation unit. */
+#  include "test_windirent.c"
+#endif
