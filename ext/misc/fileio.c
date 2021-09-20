@@ -238,10 +238,10 @@ static sqlite3_uint64 fileTimeToUnixTime(
 #
 LPWSTR utf8_to_utf16(const char *z){
   int nAllot = MultiByteToWideChar(CP_UTF8, 0, z, -1, NULL, 0);
-  LPWSTR rv = malloc(nAllot * sizeof(WCHAR));
+  LPWSTR rv = sqlite3_malloc(nAllot * sizeof(WCHAR));
   if( rv!=0 && 0 < MultiByteToWideChar(CP_UTF8, 0, z, -1, rv, nAllot) )
     return rv;
-  free(rv);
+  sqlite3_free(rv);
   return 0;
 }
 #endif
@@ -1021,15 +1021,9 @@ int sqlite3_fileio_init(
 }
 
 #if defined(FILEIO_WIN32_DLL) && (defined(_WIN32) || defined(WIN32))
-   /* To allow a standalone DLL, make test_windirent.c take these next
-    * 3 functions from C runtime instead of from SQLite library: */
-#  undef sqlite3_malloc
-#  define sqlite3_malloc malloc
-#  undef sqlite3_free
-#  define sqlite3_free free
-#  undef sqlite3_stricmp
-#  define sqlite3_stricmp stricmp
-   /* Just pull in this .c so above redefines take said effect. As a
-    * side-effect, this extension becomes a single translation unit. */
+/* To allow a standalone DLL, make test_windirent.c use the same
+ * redefined SQLite API calls as the above extension code does.
+ * Just pull in this .c to accomplish this. As a beneficial side
+ * effect, this extension becomes a single translation unit. */
 #  include "test_windirent.c"
 #endif
