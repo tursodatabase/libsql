@@ -10617,38 +10617,91 @@ meta_command_exit:
   return rc;
 }
 
-/*
-** Return TRUE if a semicolon occurs anywhere in the first N characters
-** of string z[].
+/* Line scan result and intermediate states (supporting scan resumption)
 */
-static int line_contains_semicolon(const char *z, int N){
-  int i;
-  for(i=0; i<N; i++){  if( z[i]==';' ) return 1; }
-  return 0;
-}
+typedef enum {
+  QSS_HasDark = 1<<CHAR_BIT, QSS_EndingSemi = 2<<CHAR_BIT,
+  QSS_CharMask = (1<<CHAR_BIT)-1, QSS_ScanMask = 3<<CHAR_BIT,
+  QSS_Start = 0
+} QuickScanState;
+#define QSS_SETV(qss, newst) ((newst) | ((qss) & QSS_ScanMask))
+#define QSS_INPLAIN(qss) (((qss)&QSS_CharMask)==QSS_Start)
+#define QSS_PLAINWHITE(qss) (((qss)&~QSS_EndingSemi)==QSS_Start)
+#define QSS_PLAINDARK(qss) (((qss)&~QSS_EndingSemi)==QSS_HasDark)
+#define QSS_SEMITERM(qss) (((qss)&~QSS_HasDark)==QSS_EndingSemi)
 
 /*
-** Test to see if a line consists entirely of whitespace.
+** Scan line for classification to guide shell's handling.
+** The scan is resumable for subsequent lines when prior
+** return values are passed as the 2nd argument.
 */
-static int _all_whitespace(const char *z){
-  for(; *z; z++){
-    if( IsSpace(z[0]) ) continue;
-    if( *z=='/' && z[1]=='*' ){
-      z += 2;
-      while( *z && (*z!='*' || z[1]!='/') ){ z++; }
-      if( *z==0 ) return 0;
-      z++;
-      continue;
+static QuickScanState quickscan(char *zLine, QuickScanState qss){
+  char cin;
+  char cWait = (char)qss; /* intentional narrowing loss */
+  if( cWait==0 ){
+  PlainScan:
+    while (cin = *zLine++){
+      if( IsSpace(cin) )
+        continue;
+      switch (cin){
+      case '-':
+        if( *zLine!='-' )
+          break;
+        while((cin = *++zLine)!=0 )
+          if( cin=='\n')
+            goto PlainScan;
+        return qss;
+      case ';':
+        qss |= QSS_EndingSemi;
+        continue;
+      case '/':
+        if( *zLine=='*' ){
+          ++zLine;
+          cWait = '*';
+          qss = QSS_SETV(qss, cWait);
+          goto TermScan;
+        }
+        break;
+      case '[':
+        cin = ']';
+        /* fall thru */
+      case '`': case '\'': case '"':
+        cWait = cin;
+        qss = QSS_HasDark | cWait;
+        goto TermScan;
+      default:
+        break;
+      }
+      qss = (qss & ~QSS_EndingSemi) | QSS_HasDark;
     }
-    if( *z=='-' && z[1]=='-' ){
-      z += 2;
-      while( *z && *z!='\n' ){ z++; }
-      if( *z==0 ) return 1;
-      continue;
+  }else{
+  TermScan:
+    while (cin = *zLine++){
+      if( cin==cWait ){
+        switch( cWait ){
+        case '*':
+          if( *zLine != '/' )
+            continue;
+          ++zLine;
+          cWait = 0;
+          qss = QSS_SETV(qss, 0);
+          goto PlainScan;
+        case '`': case '\'': case '"':
+          if(*zLine==cWait){
+            ++zLine;
+            continue;
+          }
+          /* fall thru */
+        case ']':
+          cWait = 0;
+          qss = QSS_SETV(qss, 0);
+          goto PlainScan;
+        default: assert(0); 
+        }
+      }
     }
-    return 0;
   }
-  return 1;
+  return qss;
 }
 
 /*
@@ -10656,16 +10709,15 @@ static int _all_whitespace(const char *z){
 ** than a semi-colon.  The SQL Server style "go" command is understood
 ** as is the Oracle "/".
 */
-static int line_is_command_terminator(const char *zLine){
+static int line_is_command_terminator(char *zLine){
   while( IsSpace(zLine[0]) ){ zLine++; };
-  if( zLine[0]=='/' && _all_whitespace(&zLine[1]) ){
-    return 1;  /* Oracle */
-  }
-  if( ToLower(zLine[0])=='g' && ToLower(zLine[1])=='o'
-         && _all_whitespace(&zLine[2]) ){
-    return 1;  /* SQL Server */
-  }
-  return 0;
+  if( zLine[0]=='/' )
+    zLine += 1; /* Oracle */
+  else if ( ToLower(zLine[0])=='g' && ToLower(zLine[1])=='o' )
+    zLine += 2; /* SQL Server */
+  else
+    return 0;
+  return quickscan(zLine,QSS_Start)==QSS_Start;
 }
 
 /*
@@ -10748,7 +10800,7 @@ static int process_input(ShellState *p){
   int rc;                   /* Error code */
   int errCnt = 0;           /* Number of errors seen */
   int startline = 0;        /* Line number for start of current input */
-  int bAllWhite = 1;        /* Accumulated line empty or all whitespace */
+  QuickScanState qss = QSS_Start; /* Accumulated line status (so far) */
 
   p->lineno = 0;
   while( errCnt==0 || !bail_on_error || (p->in==0 && stdin_is_interactive) ){
@@ -10764,14 +10816,17 @@ static int process_input(ShellState *p){
       seenInterrupt = 0;
     }
     p->lineno++;
-    if( _all_whitespace(zLine) ){
-      if( nSql==0 ){
-        if( ShellHasFlag(p, SHFLG_Echo) )
-          printf("%s\n", zLine);
-        continue;
-      }
-    }else{
-      bAllWhite = 0;
+    if( QSS_INPLAIN(qss)
+        && line_is_command_terminator(zLine)
+        && line_is_complete(zSql, nSql) ){
+      memcpy(zLine,";",2);
+    }
+    qss = quickscan(zLine, qss);
+    if( QSS_PLAINWHITE(qss) && nSql==0 ){
+      if( ShellHasFlag(p, SHFLG_Echo) )
+        printf("%s\n", zLine);
+      /* Just swallow leading whitespace */
+      continue;
     }
     if( zLine && (zLine[0]=='.' || zLine[0]=='#') && nSql==0 ){
       if( ShellHasFlag(p, SHFLG_Echo) ) printf("%s\n", zLine);
@@ -10784,9 +10839,6 @@ static int process_input(ShellState *p){
         }
       }
       continue;
-    }
-    if( line_is_command_terminator(zLine) && line_is_complete(zSql, nSql) ){
-      memcpy(zLine,";",2);
     }
     nLine = strlen30(zLine);
     if( nSql+nLine+2>=nAlloc ){
@@ -10808,8 +10860,7 @@ static int process_input(ShellState *p){
       memcpy(zSql+nSql, zLine, nLine+1);
       nSql += nLine;
     }
-    if( nSql && line_contains_semicolon(&zSql[nSqlPrior], nSql-nSqlPrior)
-                && sqlite3_complete(zSql) ){
+    if( nSql && QSS_SEMITERM(qss) && sqlite3_complete(zSql) ){
       errCnt += runOneSqlLine(p, zSql, p->in, startline);
       nSql = 0;
       if( p->outCount ){
@@ -10819,12 +10870,12 @@ static int process_input(ShellState *p){
         clearTempFile(p);
       }
       p->bSafeMode = p->bSafeModePersist;
-    }else if( nSql && bAllWhite ){
+    }else if( nSql && QSS_PLAINWHITE(qss) ){
       if( ShellHasFlag(p, SHFLG_Echo) ) printf("%s\n", zSql);
       nSql = 0;
     }
   }
-  if( nSql && !bAllWhite ){
+  if( nSql && QSS_PLAINDARK(qss) ){
     errCnt += runOneSqlLine(p, zSql, p->in, startline);
   }
   free(zSql);
