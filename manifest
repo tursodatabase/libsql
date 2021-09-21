@@ -1,5 +1,5 @@
-C Speed\sand\s(slightly)\ssimplify\sshell's\sinput\sline\searly\sprocessing.
-D 2021-09-21T19:19:28.756
+C Fix\s.expert\sname\scollision\sbug\sreported\sat\shttps://sqlite.org/forum/forumpost/05e6f32984561f57?t=h
+D 2021-09-21T20:03:05.965
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -50,8 +50,8 @@ F ext/async/sqlite3async.c 6f247666b495c477628dd19364d279c78ea48cd90c72d9f9b98ad
 F ext/async/sqlite3async.h 46b47c79357b97ad85d20d2795942c0020dc20c532114a49808287f04aa5309a
 F ext/expert/README.md b321c2762bb93c18ea102d5a5f7753a4b8bac646cb392b3b437f633caf2020c3
 F ext/expert/expert.c d548d603a4cc9e61f446cc179c120c6713511c413f82a4a32b1e1e69d3f086a4
-F ext/expert/expert1.test 6703fd74711daf8230240680b0a348d0720e28819b602701adfbd32457fdcddd
-F ext/expert/sqlite3expert.c fdcd3bd969351c4e860a1368a6ab64bc4c94d2d89396805b28853a514d06fd92
+F ext/expert/expert1.test 3c642a4e7bbb14f21ddab595436fb465a4733f47a0fe5b2855e1d5ff900ef08e
+F ext/expert/sqlite3expert.c 396c9003d6fe94b6a82311bfe7c30fa430ec7efd56417bf6b32d11737c1624fb
 F ext/expert/sqlite3expert.h ca81efc2679a92373a13a3e76a6138d0310e32be53d6c3bfaedabd158ea8969b
 F ext/expert/test_expert.c d56c194b769bdc90cf829a14c9ecbc1edca9c850b837a4d0b13be14095c32a72
 F ext/fts1/README.txt 20ac73b006a70bcfd80069bdaf59214b6cf1db5e
@@ -1925,7 +1925,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2c0e7ae541e9ecb86aa58fa7e7057def8aac1b1af1af1aa80b8bf2d260f9a2f9 577544c5a2f193e00e5ca55b7feae96568198019573b9b0b37e2bf4300d6d524
-R 3f0f5d8f4d6753399cf7fbd70ddb9c72
+P a1c7f7f8e1b46440234be96e813e4c2c28150413dd95dcab5d13b9c80a202edf
+R 4025a996a7ae646cead16f1b9879d649
 U larrybr
-Z da72ab7831c9560c80854036f35fcf46
+Z c2e5ece08cc58eb5c76d74654bc5b60e
