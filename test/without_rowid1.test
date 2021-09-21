@@ -38,6 +38,9 @@ integrity_check without_rowid1-1.0ic
 do_execsql_test_if_vtab without_rowid1-1.0ixi {
   SELECT name, key FROM pragma_index_xinfo('t1');
 } {c 1 a 1 b 0 d 0}
+do_execsql_test_if_vtab without_rowid1-1.0tl {
+  SELECT wr FROM pragma_table_list('t1');
+} {1}
 
 do_execsql_test without_rowid1-1.1 {
   SELECT *, '|' FROM t1 ORDER BY +c, a;

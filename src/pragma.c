@@ -1194,6 +1194,54 @@ void sqlite3Pragma(
   }
   break;
 
+  /*
+  **   PRAGMA table_list
+  **
+  ** Return a single row for each table, virtual table, or view in the
+  ** entire schema.
+  **
+  ** schema:     Name of attached database hold this table
+  ** name:       Name of the table itself
+  ** type:       "table", "view", "virtual", "shadow"
+  ** ncol:       Number of columns
+  ** wr:         True for a WITHOUT ROWID table
+  ** strict:     True for a STRICT table
+  */
+  case PragTyp_TABLE_LIST: {
+    int ii;
+    pParse->nMem = 6;
+    sqlite3CodeVerifyNamedSchema(pParse, zDb);
+    for(ii=0; ii<db->nDb; ii++){
+      HashElem *k;
+      Hash *pHash;
+      if( zDb && sqlite3_stricmp(zDb, db->aDb[ii].zDbSName)!=0 ) continue;
+      pHash = &db->aDb[ii].pSchema->tblHash;
+      for(k=sqliteHashFirst(pHash); k; k=sqliteHashNext(k) ){
+        Table *pTab = sqliteHashData(k);
+        const char *zType;
+        if( zRight && sqlite3_stricmp(zRight, pTab->zName)!=0 ) continue;
+        if( IsView(pTab) ){
+          zType = "view";
+        }else if( IsVirtual(pTab) ){
+          zType = "virtual";
+        }else if( pTab->tabFlags & TF_Shadow ){
+          zType = "shadow";
+        }else{
+          zType = "table";
+        }
+        sqlite3VdbeMultiLoad(v, 1, "sssiii",
+           db->aDb[ii].zDbSName,
+           pTab->zName,
+           zType,
+           pTab->nCol,
+           (pTab->tabFlags & TF_WithoutRowid)!=0,
+           (pTab->tabFlags & TF_Strict)!=0
+        );
+      }
+    }
+  }
+  break;
+
 #ifdef SQLITE_DEBUG
   case PragTyp_STATS: {
     Index *pIdx;

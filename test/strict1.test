@@ -46,7 +46,8 @@ do_execsql_test strict1-2.0 {
     d TEXT,
     e REAL
   ) STRICT;
-} {}
+  SELECT strict FROM pragma_table_list('t1');
+} {1}
 do_catchsql_test strict1-2.1 {
   INSERT INTO t1(a) VALUES('xyz');
 } {1 {cannot store TEXT value in INT column t1.a}}
@@ -62,6 +63,7 @@ do_catchsql_test strict1-2.4 {
 do_catchsql_test strict1-2.5 {
   INSERT INTO t1(e) VALUES('xyz');
 } {1 {cannot store TEXT value in REAL column t1.e}}
+
 
 do_execsql_test strict1-3.1 {
   INSERT INTO t1(a, b) VALUES(1,2),('3','4'),(5.0, 6.0),(null,null);
