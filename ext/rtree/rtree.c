@@ -2751,7 +2751,7 @@ static int removeNode(Rtree *pRtree, RtreeNode *pNode, int iHeight){
     pParent = pNode->pParent;
     pNode->pParent = 0;
     rc = deleteCell(pRtree, pParent, iCell, iHeight+1);
-    assert( rc==SQLITE_OK );
+    testcase( rc!=SQLITE_OK );
   }
   rc2 = nodeRelease(pRtree, pParent);
   if( rc==SQLITE_OK ){
