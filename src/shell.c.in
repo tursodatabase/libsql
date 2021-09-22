@@ -10619,6 +10619,9 @@ meta_command_exit:
 
 /* Line scan result and intermediate states (supporting scan resumption)
 */
+#ifndef CHAR_BIT
+# define CHAR_BIT 8
+#endif
 typedef enum {
   QSS_HasDark = 1<<CHAR_BIT, QSS_EndingSemi = 2<<CHAR_BIT,
   QSS_CharMask = (1<<CHAR_BIT)-1, QSS_ScanMask = 3<<CHAR_BIT,
