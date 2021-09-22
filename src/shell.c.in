@@ -10640,7 +10640,7 @@ static QuickScanState quickscan(char *zLine, QuickScanState qss){
   char cWait = (char)qss; /* intentional narrowing loss */
   if( cWait==0 ){
   PlainScan:
-    while (cin = *zLine++){
+    while( (cin = *zLine++)!=0 ){
       if( IsSpace(cin) )
         continue;
       switch (cin){
@@ -10676,7 +10676,7 @@ static QuickScanState quickscan(char *zLine, QuickScanState qss){
     }
   }else{
   TermScan:
-    while (cin = *zLine++){
+    while( (cin = *zLine++)!=0 ){
       if( cin==cWait ){
         switch( cWait ){
         case '*':
@@ -10799,7 +10799,6 @@ static int process_input(ShellState *p){
   int nLine;                /* Length of current line */
   int nSql = 0;             /* Bytes of zSql[] used */
   int nAlloc = 0;           /* Allocated zSql[] space */
-  int nSqlPrior = 0;        /* Bytes of zSql[] used by prior line */
   int rc;                   /* Error code */
   int errCnt = 0;           /* Number of errors seen */
   int startline = 0;        /* Line number for start of current input */
@@ -10850,7 +10849,6 @@ static int process_input(ShellState *p){
       zSql = realloc(zSql, nAlloc);
       if( zSql==0 ) shell_out_of_memory();
     }
-    nSqlPrior = nSql;
     if( nSql==0 ){
       int i;
       for(i=0; zLine[i] && IsSpace(zLine[i]); i++){}

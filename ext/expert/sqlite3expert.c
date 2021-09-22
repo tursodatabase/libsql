@@ -920,7 +920,7 @@ static int idxFindCompatible(
  */
 static int countNonzeros(void* pCount, int nc,
                          char* azResults[], char* azColumns[]){
-  if( nc>0 && azResults[0][0]!='0' || azResults[0][1]!=0 ){
+  if( nc>0 && (azResults[0][0]!='0' || azResults[0][1]!=0) ){
     *((int *)pCount) += 1;
   }
   return 0;
