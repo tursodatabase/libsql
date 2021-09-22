@@ -855,7 +855,7 @@ static void fts5StructureMakeWritable(int *pRc, Fts5Structure **pp){
       for(i=0; i<p->nLevel; i++) pNew->aLevel[i].aSeg = 0;
       for(i=0; i<p->nLevel; i++){
         Fts5StructureLevel *pLvl = &pNew->aLevel[i];
-        int nByte = sizeof(Fts5StructureSegment) * pNew->aLevel[i].nSeg;
+        nByte = sizeof(Fts5StructureSegment) * pNew->aLevel[i].nSeg;
         pLvl->aSeg = (Fts5StructureSegment*)sqlite3Fts5MallocZero(pRc, nByte);
         if( pLvl->aSeg==0 ){
           for(i=0; i<p->nLevel; i++){
