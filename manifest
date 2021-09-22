@@ -1,5 +1,5 @@
-C Use\ssqlite3_snprintf()\sfor\sthe\s".changes"\soutput\sformatting\sin\sthe\sshell\nbecause\sit\snow\suses\s%lld,\sand\ssome\solder\sC\scompilers\sdo\snot\sunderstand\sthat\nconstruct.
-D 2021-09-22T10:28:50.658
+C Enhance\sthe\sTCL-based\stest\sharness\sso\sthat\sit\sis\spossible\sto\slist\smultiple\ntest\smodules\son\sthe\s"testfixture"\scommand-line\sand\shave\sthem\sall\srun.\nFor\sexample:\s"<tt>./testfixture\stest/shell*.test</tt>"
+D 2021-09-22T10:57:30.139
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1271,7 +1271,7 @@ F test/parser1.test 6ccdf5e459a5dc4673d3273dc311a7e9742ca952dd0551a6a6320d27035c
 F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
-F test/permutations.test 63da39a4234eed2ccd10bf7872de58e24d53a50d11014dc8a8ab9f252368e880
+F test/permutations.test dfdb3356ceb66e515193b12e3fd46706d28274142dc46fd37da63fda9cd4a68a
 F test/pg_common.tcl 3b27542224db1e713ae387459b5d117c836a5f6e328846922993b6d2b7640d9f
 F test/pragma.test 30d5bbebd5e9cb5383155cf3f3c81297b98f6642d152e9d4100cf6888630da2c
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
@@ -1459,7 +1459,7 @@ F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
 F test/temptable2.test d2940417496e2b9548e01d09990763fbe88c316504033256d51493e1f1a5ce6a
 F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
-F test/tester.tcl 0b7957eb669371250008a5e1fef5902257905fd6d560e8834be1ac4a0620063a
+F test/tester.tcl 9426f7385393fbb6ba90e12ca51d0caf65e48b6a98c0dd169676d93b8c79d34c
 F test/thread001.test b61a29dd87cf669f5f6ac96124a7c97d71b0c80d9012746072055877055cf9ef
 F test/thread002.test e630504f8a06c00bf8bbe68528774dd96aeb2e58
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
@@ -1925,7 +1925,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4a3f98ad0dd2a8c0370042611a041bed2bd8d9ca82d6706e2db349eb97aaf1f0
-R 51d44ac91d7412651fc030dfe8de96ff
+P 53dadf80672a4fe05341fe40873b6cfa73f6bc1e07cc41fcf10fe290c9156363
+R 5244f50bd3fe05d429a87a51b744ef41
 U drh
-Z 4a6f83300593abcce49be47ea108877f
+Z 29d5ac3e2534c1f9975002934557c543
