@@ -3205,6 +3205,7 @@ static int openDatabase(
   db->nextAutovac = -1;
   db->szMmap = sqlite3GlobalConfig.szMmap;
   db->nextPagesize = 0;
+  db->init.azInit = sqlite3StdType; /* Any array of string ptrs will do */
 #ifdef SQLITE_ENABLE_SORTER_MMAP
   /* Beginning with version 3.37.0, using the VFS xFetch() API to memory-map 
   ** the temporary files used to do external sorts (see code in vdbesort.c)
