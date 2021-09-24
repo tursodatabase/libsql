@@ -71,5 +71,13 @@ do_catchsql_test 210 {
 do_execsql_test 220 {
   SELECT * FROM t1;
 } {Ebed-malech}
+
+# Follow-on dbsqlfuzz a097eaad43c3c845b236126df92fb49b25449b0c
+reset_db
+do_catchsql_test 300 {
+  CREATE VIRTUAL TABLE t1 USING rtree(a,b,c);
+  CREATE TABLE t2(x);
+  ALTER TABLE t2 ADD d GENERATED ALWAYS AS (c IN (SELECT 1 FROM t1)) VIRTUAL;
+} {1 {error in table t2 after rename: subqueries prohibited in generated columns}}
   
 finish_test

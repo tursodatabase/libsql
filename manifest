@@ -1,5 +1,5 @@
-C Add\slots\sof\snew\s"const"\son\sinternal\sfunction\sparameters.\s\sThere\sis\sopportunity\nfor\smany\smore\s-\sthis\sis\sa\swork\sin\sprogress.
-D 2021-09-24T16:14:47.527
+C Dbsqlfuzz\s(a097eaad43c3c845b236126df92fb49b25449b0c)\sfound\sa\sway\sto\sreach\sthe\nassert()\sthat\swas\sadded\sto\ssqlite3_declare_vtab()\sby\s[eb94f4a8174436b1].\nThis\scheck-in\sfixes\sthe\sproblem.
+D 2021-09-24T19:57:32.264
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -545,7 +545,7 @@ F src/pragma.h b33c7a542ae7965c471f0d3c0565ce4d340c3f32cc162f44133539b6b0edb927
 F src/prepare.c 8f07616db04337057b8498b72d051ee90f73c54615c2e908c05404cef1e060b7
 F src/printf.c 78fabb49b9ac9a12dd1c89d744abdc9b67fd3205e62967e158f78b965a29ec4b
 F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
-F src/resolve.c 42b94d37a54200707a95566eff4f7e8a380e32d080016b699f23bd79a73a5028
+F src/resolve.c b9e60afa56d0484ee573aba54d9e73603736236df33d2ae3421b4cd0367d907d
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 030c3d07326708343208418c84da607752aebc13c92df929b7c68c7c08e7df54
 F src/shell.c.in 9df263dc0949698a8728ecc5bb826666ca8ced75201d5440a161b629455cd462
@@ -1709,7 +1709,7 @@ F test/vtabF.test 1918844c7c902f6a16c8dacf1ec8f84886d6e78b
 F test/vtabH.test 2efb5a24b0bb50796b21eca23032cfb77abfa4b0c03938e38ce5897abac404ca
 F test/vtabI.test 751b07636700dbdea328e4265b6077ccd6811a3f
 F test/vtabJ.test a6aef49d558af90fae10565b29501f82a95781cb4f797f2d13e2d19f9b6bc77b
-F test/vtabK.test b20e9ec57750a3e8adb4023510edc72f1880f18f0914bbc1f116a31cf6563a9f
+F test/vtabK.test d769aa2689999f510045c219ec45dc8db5266a9b3932bf47d49e1065e4261b69
 F test/vtab_alter.test 736e66fb5ec7b4fee58229aa3ada2f27ec58bc58c00edae4836890c3784c6783
 F test/vtab_err.test dcc8b7b9cb67522b3fe7a272c73856829dae4ab7fdb30399aea1b6981bda2b65
 F test/vtab_shared.test 5253bff2355a9a3f014c15337da7e177ab0ef8ad
@@ -1926,7 +1926,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P eb94f4a8174436b1f0deed0a43618a20018387bb815be658314ca6b454c446fb
-R db077a8e62b070323fd372dd7e91140d
+P a3c71a673ddd1c299bdae550fb955077b77088329a8ca2895dfb23538b524a8e
+R 18e1aa2d4fa26b1304d3b0868495907e
 U drh
-Z 4395f669ee70fc34c56697d082f33420
+Z c6e51dd68933de6b823f0292e322691d
