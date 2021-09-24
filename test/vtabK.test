@@ -56,4 +56,20 @@ do_execsql_test 170 {
   PRAGMA integrity_check;
 } {ok}
 
+# Follow-on dbsqlfuzz bc02a0cde82dee801a8d6f653d2831680f87dca1
+reset_db
+do_execsql_test 200 {
+  CREATE TABLE t1(a);
+  INSERT INTO t1 VALUES('Ebed-malech');
+  CREATE TABLE x(a);
+  PRAGMA writable_schema=ON;
+  CREATE VIRTUAL TABLE sqlite_stat1 USING fts5(a);
+} {}
+do_catchsql_test 210 {
+  CREATE VIRTUAL TABLE t2 USING rtree(id,x,y);
+} {1 {no such column: stat}}
+do_execsql_test 220 {
+  SELECT * FROM t1;
+} {Ebed-malech}
+  
 finish_test

@@ -1840,9 +1840,12 @@ static int loadStatTbl(
 */
 static int loadStat4(sqlite3 *db, const char *zDb){
   int rc = SQLITE_OK;             /* Result codes from subroutines */
+  const Table *pStat4;
 
   assert( db->lookaside.bDisable );
-  if( sqlite3FindTable(db, "sqlite_stat4", zDb) ){
+  if( (pStat4 = sqlite3FindTable(db, "sqlite_stat4", zDb))!=0
+   && IsOrdinaryTable(pStat4)
+  ){
     rc = loadStatTbl(db,
       "SELECT idx,count(*) FROM %Q.sqlite_stat4 GROUP BY idx", 
       "SELECT idx,neq,nlt,ndlt,sample FROM %Q.sqlite_stat4",
@@ -1879,6 +1882,7 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
   char *zSql;
   int rc = SQLITE_OK;
   Schema *pSchema = db->aDb[iDb].pSchema;
+  const Table *pStat1;
 
   assert( iDb>=0 && iDb<db->nDb );
   assert( db->aDb[iDb].pBt!=0 );
@@ -1901,7 +1905,9 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
   /* Load new statistics out of the sqlite_stat1 table */
   sInfo.db = db;
   sInfo.zDatabase = db->aDb[iDb].zDbSName;
-  if( sqlite3FindTable(db, "sqlite_stat1", sInfo.zDatabase)!=0 ){
+  if( (pStat1 = sqlite3FindTable(db, "sqlite_stat1", sInfo.zDatabase))
+   && IsOrdinaryTable(pStat1)
+  ){
     zSql = sqlite3MPrintf(db, 
         "SELECT tbl,idx,stat FROM %Q.sqlite_stat1", sInfo.zDatabase);
     if( zSql==0 ){
