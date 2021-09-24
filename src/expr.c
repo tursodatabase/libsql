@@ -21,7 +21,7 @@ static int exprCodeVector(Parse *pParse, Expr *p, int *piToFree);
 /*
 ** Return the affinity character for a single column of a table.
 */
-char sqlite3TableColumnAffinity(Table *pTab, int iCol){
+char sqlite3TableColumnAffinity(const Table *pTab, int iCol){
   assert( iCol<pTab->nCol );
   return iCol>=0 ? pTab->aCol[iCol].affinity : SQLITE_AFF_INTEGER;
 }
@@ -92,7 +92,7 @@ char sqlite3ExprAffinity(const Expr *pExpr){
 ** and the pExpr parameter is returned unchanged.
 */
 Expr *sqlite3ExprAddCollateToken(
-  Parse *pParse,           /* Parsing context */
+  const Parse *pParse,     /* Parsing context */
   Expr *pExpr,             /* Add the "COLLATE" clause to this expression */
   const Token *pCollName,  /* Name of collating sequence */
   int dequote              /* True to dequote pCollName */
@@ -107,7 +107,11 @@ Expr *sqlite3ExprAddCollateToken(
   }
   return pExpr;
 }
-Expr *sqlite3ExprAddCollateString(Parse *pParse, Expr *pExpr, const char *zC){
+Expr *sqlite3ExprAddCollateString(
+  const Parse *pParse,  /* Parsing context */
+  Expr *pExpr,          /* Add the "COLLATE" clause to this expression */
+  const char *zC        /* The collating sequence name */
+){
   Token s;
   assert( zC!=0 );
   sqlite3TokenInit(&s, (char*)zC);
@@ -409,7 +413,7 @@ static int codeCompare(
 ** But a TK_SELECT might be either a vector or a scalar. It is only
 ** considered a vector if it has two or more result columns.
 */
-int sqlite3ExprIsVector(Expr *pExpr){
+int sqlite3ExprIsVector(const Expr *pExpr){
   return sqlite3ExprVectorSize(pExpr)>1;
 }
 
@@ -419,7 +423,7 @@ int sqlite3ExprIsVector(Expr *pExpr){
 ** is a sub-select, return the number of columns in the sub-select. For
 ** any other type of expression, return 1.
 */
-int sqlite3ExprVectorSize(Expr *pExpr){
+int sqlite3ExprVectorSize(const Expr *pExpr){
   u8 op = pExpr->op;
   if( op==TK_REGISTER ) op = pExpr->op2;
   if( op==TK_VECTOR ){
@@ -707,14 +711,14 @@ int sqlite3ExprCheckHeight(Parse *pParse, int nHeight){
 ** to by pnHeight, the second parameter, then set *pnHeight to that
 ** value.
 */
-static void heightOfExpr(Expr *p, int *pnHeight){
+static void heightOfExpr(const Expr *p, int *pnHeight){
   if( p ){
     if( p->nHeight>*pnHeight ){
       *pnHeight = p->nHeight;
     }
   }
 }
-static void heightOfExprList(ExprList *p, int *pnHeight){
+static void heightOfExprList(const ExprList *p, int *pnHeight){
   if( p ){
     int i;
     for(i=0; i<p->nExpr; i++){
@@ -722,8 +726,8 @@ static void heightOfExprList(ExprList *p, int *pnHeight){
     }
   }
 }
-static void heightOfSelect(Select *pSelect, int *pnHeight){
-  Select *p;
+static void heightOfSelect(const Select *pSelect, int *pnHeight){
+  const Select *p;
   for(p=pSelect; p; p=p->pPrior){
     heightOfExpr(p->pWhere, pnHeight);
     heightOfExpr(p->pHaving, pnHeight);
@@ -775,7 +779,7 @@ void sqlite3ExprSetHeightAndFlags(Parse *pParse, Expr *p){
 ** Return the maximum height of any expression tree referenced
 ** by the select statement passed as an argument.
 */
-int sqlite3SelectExprHeight(Select *p){
+int sqlite3SelectExprHeight(const Select *p){
   int nHeight = 0;
   heightOfSelect(p, &nHeight);
   return nHeight;
@@ -1028,7 +1032,7 @@ Expr *sqlite3ExprAnd(Parse *pParse, Expr *pLeft, Expr *pRight){
 Expr *sqlite3ExprFunction(
   Parse *pParse,        /* Parsing context */
   ExprList *pList,      /* Argument list */
-  Token *pToken,        /* Name of the function */
+  const Token *pToken,  /* Name of the function */
   int eDistinct         /* SF_Distinct or SF_ALL or 0 */
 ){
   Expr *pNew;
@@ -1066,8 +1070,8 @@ Expr *sqlite3ExprFunction(
 */
 void sqlite3ExprFunctionUsable(
   Parse *pParse,         /* Parsing and code generating context */
-  Expr *pExpr,           /* The function invocation */
-  FuncDef *pDef          /* The function being invoked */
+  const Expr *pExpr,     /* The function invocation */
+  const FuncDef *pDef    /* The function being invoked */
 ){
   assert( !IN_RENAME_OBJECT );
   assert( (pDef->funcFlags & (SQLITE_FUNC_DIRECT|SQLITE_FUNC_UNSAFE))!=0 );
@@ -1247,7 +1251,7 @@ void sqlite3ExprUnmapAndDelete(Parse *pParse, Expr *p){
 ** passed as the first argument. This is always one of EXPR_FULLSIZE,
 ** EXPR_REDUCEDSIZE or EXPR_TOKENONLYSIZE.
 */
-static int exprStructSize(Expr *p){
+static int exprStructSize(const Expr *p){
   if( ExprHasProperty(p, EP_TokenOnly) ) return EXPR_TOKENONLYSIZE;
   if( ExprHasProperty(p, EP_Reduced) ) return EXPR_REDUCEDSIZE;
   return EXPR_FULLSIZE;
@@ -1287,7 +1291,7 @@ static int exprStructSize(Expr *p){
 ** of dupedExprStructSize() contain multiple assert() statements that attempt
 ** to enforce this constraint.
 */
-static int dupedExprStructSize(Expr *p, int flags){
+static int dupedExprStructSize(const Expr *p, int flags){
   int nSize;
   assert( flags==EXPRDUP_REDUCE || flags==0 ); /* Only one flag value allowed */
   assert( EXPR_FULLSIZE<=0xfff );
@@ -1318,7 +1322,7 @@ static int dupedExprStructSize(Expr *p, int flags){
 ** of the Expr structure and a copy of the Expr.u.zToken string (if that
 ** string is defined.)
 */
-static int dupedExprNodeSize(Expr *p, int flags){
+static int dupedExprNodeSize(const Expr *p, int flags){
   int nByte = dupedExprStructSize(p, flags) & 0xfff;
   if( !ExprHasProperty(p, EP_IntValue) && p->u.zToken ){
     nByte += sqlite3Strlen30NN(p->u.zToken)+1;
@@ -1339,7 +1343,7 @@ static int dupedExprNodeSize(Expr *p, int flags){
 ** and Expr.pRight variables (but not for any structures pointed to or 
 ** descended from the Expr.x.pList or Expr.x.pSelect variables).
 */
-static int dupedExprSize(Expr *p, int flags){
+static int dupedExprSize(const Expr *p, int flags){
   int nByte = 0;
   if( p ){
     nByte = dupedExprNodeSize(p, flags);
@@ -1358,7 +1362,7 @@ static int dupedExprSize(Expr *p, int flags){
 ** if any. Before returning, *pzBuffer is set to the first byte past the
 ** portion of the buffer copied into by this function.
 */
-static Expr *exprDup(sqlite3 *db, Expr *p, int dupFlags, u8 **pzBuffer){
+static Expr *exprDup(sqlite3 *db, const Expr *p, int dupFlags, u8 **pzBuffer){
   Expr *pNew;           /* Value to return */
   u8 *zAlloc;           /* Memory space from which to build Expr object */
   u32 staticFlag;       /* EP_Static if space not obtained from malloc */
@@ -1539,13 +1543,14 @@ static void gatherSelectWindows(Select *p){
 ** truncated version of the usual Expr structure that will be stored as
 ** part of the in-memory representation of the database schema.
 */
-Expr *sqlite3ExprDup(sqlite3 *db, Expr *p, int flags){
+Expr *sqlite3ExprDup(sqlite3 *db, const Expr *p, int flags){
   assert( flags==0 || flags==EXPRDUP_REDUCE );
   return p ? exprDup(db, p, flags, 0) : 0;
 }
-ExprList *sqlite3ExprListDup(sqlite3 *db, ExprList *p, int flags){
+ExprList *sqlite3ExprListDup(sqlite3 *db, const ExprList *p, int flags){
   ExprList *pNew;
-  struct ExprList_item *pItem, *pOldItem;
+  struct ExprList_item *pItem;
+  const struct ExprList_item *pOldItem;
   int i;
   Expr *pPriorSelectColOld = 0;
   Expr *pPriorSelectColNew = 0;
@@ -1597,7 +1602,7 @@ ExprList *sqlite3ExprListDup(sqlite3 *db, ExprList *p, int flags){
 */
 #if !defined(SQLITE_OMIT_VIEW) || !defined(SQLITE_OMIT_TRIGGER) \
  || !defined(SQLITE_OMIT_SUBQUERY)
-SrcList *sqlite3SrcListDup(sqlite3 *db, SrcList *p, int flags){
+SrcList *sqlite3SrcListDup(sqlite3 *db, const SrcList *p, int flags){
   SrcList *pNew;
   int i;
   int nByte;
@@ -1609,7 +1614,7 @@ SrcList *sqlite3SrcListDup(sqlite3 *db, SrcList *p, int flags){
   pNew->nSrc = pNew->nAlloc = p->nSrc;
   for(i=0; i<p->nSrc; i++){
     SrcItem *pNewItem = &pNew->a[i];
-    SrcItem *pOldItem = &p->a[i];
+    const SrcItem *pOldItem = &p->a[i];
     Table *pTab;
     pNewItem->pSchema = pOldItem->pSchema;
     pNewItem->zDatabase = sqlite3DbStrDup(db, pOldItem->zDatabase);
@@ -1641,7 +1646,7 @@ SrcList *sqlite3SrcListDup(sqlite3 *db, SrcList *p, int flags){
   }
   return pNew;
 }
-IdList *sqlite3IdListDup(sqlite3 *db, IdList *p){
+IdList *sqlite3IdListDup(sqlite3 *db, const IdList *p){
   IdList *pNew;
   int i;
   assert( db!=0 );
@@ -1665,11 +1670,11 @@ IdList *sqlite3IdListDup(sqlite3 *db, IdList *p){
   }
   return pNew;
 }
-Select *sqlite3SelectDup(sqlite3 *db, Select *pDup, int flags){
+Select *sqlite3SelectDup(sqlite3 *db, const Select *pDup, int flags){
   Select *pRet = 0;
   Select *pNext = 0;
   Select **pp = &pRet;
-  Select *p;
+  const Select *p;
 
   assert( db!=0 );
   for(p=pDup; p; p=p->pPrior){
@@ -1910,7 +1915,7 @@ void sqlite3ExprListSetSortOrder(ExprList *p, int iSortOrder, int eNulls){
 void sqlite3ExprListSetName(
   Parse *pParse,          /* Parsing context */
   ExprList *pList,        /* List to which to add the span. */
-  Token *pName,           /* Name to be added */
+  const Token *pName,     /* Name to be added */
   int dequote             /* True to cause the name to be dequoted */
 ){
   assert( pList!=0 || pParse->db->mallocFailed!=0 );
@@ -1928,7 +1933,7 @@ void sqlite3ExprListSetName(
       ** to the token-map.  */
       sqlite3Dequote(pItem->zEName);
       if( IN_RENAME_OBJECT ){
-        sqlite3RenameTokenMap(pParse, (void*)pItem->zEName, pName);
+        sqlite3RenameTokenMap(pParse, (const void*)pItem->zEName, pName);
       }
     }
   }
@@ -2356,7 +2361,7 @@ int sqlite3ExprContainsSubquery(Expr *p){
 ** in *pValue.  If the expression is not an integer or if it is too big
 ** to fit in a signed 32-bit integer, return 0 and leave *pValue unchanged.
 */
-int sqlite3ExprIsInteger(Expr *p, int *pValue){
+int sqlite3ExprIsInteger(const Expr *p, int *pValue){
   int rc = 0;
   if( NEVER(p==0) ) return 0;  /* Used to only happen following on OOM */
 
@@ -2489,7 +2494,7 @@ int sqlite3IsRowid(const char *z){
 ** table, then return NULL.
 */
 #ifndef SQLITE_OMIT_SUBQUERY
-static Select *isCandidateForInOpt(Expr *pX){
+static Select *isCandidateForInOpt(const Expr *pX){
   Select *p;
   SrcList *pSrc;
   ExprList *pEList;
@@ -2867,7 +2872,7 @@ int sqlite3FindInIndex(
 ** It is the responsibility of the caller to ensure that the returned
 ** string is eventually freed using sqlite3DbFree().
 */
-static char *exprINAffinity(Parse *pParse, Expr *pExpr){
+static char *exprINAffinity(Parse *pParse, const Expr *pExpr){
   Expr *pLeft = pExpr->pLeft;
   int nVal = sqlite3ExprVectorSize(pLeft);
   Select *pSelect = (pExpr->flags & EP_xIsSelect) ? pExpr->x.pSelect : 0;
