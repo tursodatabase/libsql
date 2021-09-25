@@ -314,10 +314,14 @@ static void statClearPage(StatPage *p){
 
 static void statResetCsr(StatCursor *pCsr){
   int i;
-  sqlite3_reset(pCsr->pStmt);
+  /* In some circumstances, specifically if an OOM has occurred, the call
+  ** to sqlite3_reset() may cause the pager to be reset (emptied). It is
+  ** important that statClearPage() is called to free any page refs before
+  ** this happens. dbsqlfuzz 9ed3e4e3816219d3509d711636c38542bf3f40b1. */
   for(i=0; i<ArraySize(pCsr->aPage); i++){
     statClearPage(&pCsr->aPage[i]);
   }
+  sqlite3_reset(pCsr->pStmt);
   pCsr->iPage = 0;
   sqlite3_free(pCsr->zPath);
   pCsr->zPath = 0;
