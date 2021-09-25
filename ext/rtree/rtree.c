@@ -2545,6 +2545,10 @@ static int updateMapping(
   xSetMapping = ((iHeight==0)?rowidWrite:parentWrite);
   if( iHeight>0 ){
     RtreeNode *pChild = nodeHashLookup(pRtree, iRowid);
+    RtreeNode *p;
+    for(p=pNode; p; p=p->pParent){
+      if( p==pChild ) return SQLITE_CORRUPT_VTAB;
+    }
     if( pChild ){
       nodeRelease(pRtree, pChild->pParent);
       nodeReference(pNode);
