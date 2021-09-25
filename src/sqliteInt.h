@@ -4110,7 +4110,7 @@ void sqlite3WindowListDelete(sqlite3 *db, Window *p);
 Window *sqlite3WindowAlloc(Parse*, int, int, Expr*, int , Expr*, u8);
 void sqlite3WindowAttach(Parse*, Expr*, Window*);
 void sqlite3WindowLink(Select *pSel, Window *pWin);
-int sqlite3WindowCompare(Parse*, Window*, Window*, int);
+int sqlite3WindowCompare(const Parse*, const Window*, const Window*, int);
 void sqlite3WindowCodeInit(Parse*, Select*);
 void sqlite3WindowCodeStep(Parse*, Select*, WhereInfo*, int, int);
 int sqlite3WindowRewrite(Parse*, Select*);
@@ -4573,10 +4573,10 @@ void sqlite3UnlinkAndDeleteIndex(sqlite3*,int,const char*);
 void sqlite3Vacuum(Parse*,Token*,Expr*);
 int sqlite3RunVacuum(char**, sqlite3*, int, sqlite3_value*);
 char *sqlite3NameFromToken(sqlite3*, const Token*);
-int sqlite3ExprCompare(Parse*,Expr*, Expr*, int);
-int sqlite3ExprCompareSkip(Expr*, Expr*, int);
-int sqlite3ExprListCompare(ExprList*, ExprList*, int);
-int sqlite3ExprImpliesExpr(Parse*,Expr*, Expr*, int);
+int sqlite3ExprCompare(const Parse*,const Expr*,const Expr*, int);
+int sqlite3ExprCompareSkip(Expr*,Expr*,int);
+int sqlite3ExprListCompare(const ExprList*,const ExprList*, int);
+int sqlite3ExprImpliesExpr(const Parse*,const Expr*,const Expr*, int);
 int sqlite3ExprImpliesNonNullRow(Expr*,int);
 void sqlite3AggInfoPersistWalkerInit(Walker*,Parse*);
 void sqlite3ExprAnalyzeAggregates(NameContext*, Expr*);
@@ -4835,7 +4835,7 @@ sqlite3_value *sqlite3ValueNew(sqlite3 *);
 #ifndef SQLITE_OMIT_UTF16
 char *sqlite3Utf16to8(sqlite3 *, const void*, int, u8);
 #endif
-int sqlite3ValueFromExpr(sqlite3 *, Expr *, u8, u8, sqlite3_value **);
+int sqlite3ValueFromExpr(sqlite3 *, const Expr *, u8, u8, sqlite3_value **);
 void sqlite3ValueApplyAffinity(sqlite3_value *, u8, u8);
 #ifndef SQLITE_AMALGAMATION
 extern const unsigned char sqlite3OpcodeProperty[];

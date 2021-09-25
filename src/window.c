@@ -1345,7 +1345,12 @@ void sqlite3WindowLink(Select *pSel, Window *pWin){
 ** different, or 2 if it cannot be determined if the objects are identical
 ** or not. Identical window objects can be processed in a single scan.
 */
-int sqlite3WindowCompare(Parse *pParse, Window *p1, Window *p2, int bFilter){
+int sqlite3WindowCompare(
+  const Parse *pParse,
+  const Window *p1,
+  const Window *p2,
+  int bFilter
+){
   int res;
   if( NEVER(p1==0) || NEVER(p2==0) ) return 1;
   if( p1->eFrmType!=p2->eFrmType ) return 1;

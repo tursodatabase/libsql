@@ -5329,7 +5329,11 @@ void sqlite3ExprIfFalseDup(Parse *pParse, Expr *pExpr, int dest,int jumpIfNull){
 ** Otherwise, if the values are not the same or if pExpr is not a simple
 ** SQL value, zero is returned.
 */
-static int exprCompareVariable(Parse *pParse, Expr *pVar, Expr *pExpr){
+static int exprCompareVariable(
+  const Parse *pParse,
+  const Expr *pVar,
+  const Expr *pExpr
+){
   int res = 0;
   int iVar;
   sqlite3_value *pL, *pR = 0;
@@ -5381,7 +5385,12 @@ static int exprCompareVariable(Parse *pParse, Expr *pVar, Expr *pExpr){
 ** Argument pParse should normally be NULL. If it is not NULL and pA or
 ** pB causes a return value of 2.
 */
-int sqlite3ExprCompare(Parse *pParse, Expr *pA, Expr *pB, int iTab){
+int sqlite3ExprCompare(
+  const Parse *pParse,
+  const Expr *pA,
+  const Expr *pB,
+  int iTab
+){
   u32 combinedFlags;
   if( pA==0 || pB==0 ){
     return pB==pA ? 0 : 2;
@@ -5465,7 +5474,7 @@ int sqlite3ExprCompare(Parse *pParse, Expr *pA, Expr *pB, int iTab){
 ** Two NULL pointers are considered to be the same.  But a NULL pointer
 ** always differs from a non-NULL pointer.
 */
-int sqlite3ExprListCompare(ExprList *pA, ExprList *pB, int iTab){
+int sqlite3ExprListCompare(const ExprList *pA, const ExprList *pB, int iTab){
   int i;
   if( pA==0 && pB==0 ) return 0;
   if( pA==0 || pB==0 ) return 1;
@@ -5484,7 +5493,7 @@ int sqlite3ExprListCompare(ExprList *pA, ExprList *pB, int iTab){
 ** Like sqlite3ExprCompare() except COLLATE operators at the top-level
 ** are ignored.
 */
-int sqlite3ExprCompareSkip(Expr *pA, Expr *pB, int iTab){
+int sqlite3ExprCompareSkip(Expr *pA,Expr *pB, int iTab){
   return sqlite3ExprCompare(0,
              sqlite3ExprSkipCollateAndLikely(pA),
              sqlite3ExprSkipCollateAndLikely(pB),
@@ -5498,9 +5507,9 @@ int sqlite3ExprCompareSkip(Expr *pA, Expr *pB, int iTab){
 ** non-NULL if pNN is not NULL
 */
 static int exprImpliesNotNull(
-  Parse *pParse,      /* Parsing context */
-  Expr *p,            /* The expression to be checked */
-  Expr *pNN,          /* The expression that is NOT NULL */
+  const Parse *pParse,/* Parsing context */
+  const Expr *p,      /* The expression to be checked */
+  const Expr *pNN,    /* The expression that is NOT NULL */
   int iTab,           /* Table being evaluated */
   int seenNot         /* Return true only if p can be any non-NULL value */
 ){
@@ -5593,7 +5602,12 @@ static int exprImpliesNotNull(
 ** improvement.  Returning false might cause a performance reduction, but
 ** it will always give the correct answer and is hence always safe.
 */
-int sqlite3ExprImpliesExpr(Parse *pParse, Expr *pE1, Expr *pE2, int iTab){
+int sqlite3ExprImpliesExpr(
+  const Parse *pParse,
+  const Expr *pE1,
+  const Expr *pE2,
+  int iTab
+){
   if( sqlite3ExprCompare(pParse, pE1, pE2, iTab)==0 ){
     return 1;
   }
