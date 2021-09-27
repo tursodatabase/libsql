@@ -221,6 +221,11 @@ mod build_bundled {
             cfg.flag("-fsanitize=address");
         }
 
+        // If explicitly requested: enable static linking against the Microsoft Visual C++ Runtime to avoid dependencies on vcruntime140.dll and similar libraries.
+        if cfg!(target_feature = "crt-static") && is_compiler("msvc") {
+            cfg.static_crt(true);
+        }
+
         // Older versions of visual studio don't support c99 (including isnan), which
         // causes a build failure when the linker fails to find the `isnan`
         // function. `sqlite` provides its own implementation, using the fact
