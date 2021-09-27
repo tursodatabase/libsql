@@ -1,5 +1,5 @@
-C Load\srecent\sdbsqlfuzz\scases\sinto\stest/fuzzdata8.db.
-D 2021-09-25T20:28:39.895
+C Fix\sa\sproblem\sin\sALTER\sTABLE\scausing\stable\sor\scolumn\sreferences\sin\ssub-selects\ston\sthe\sRHS\sof\sa\svector\sSET\sclause\sin\san\sUPDATE\swithin\sa\strigger\s(i.e.\s"SET\s(a,b)\s=\s(\s(SELECT...),\s<expr>\s)").
+D 2021-09-27T15:44:03.909
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -481,7 +481,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
-F src/alter.c a279ff8e6e079dcec20eb736d6399229f4b495f01e6da26052467c9963ead595
+F src/alter.c 7f31a2524b2597d60c723ea420fc3789d390f5d35cb01dfedf2e4c24e0f250f0
 F src/analyze.c 989eb1146f4a2c320623e190f8913bf1829fd8954a52dbfd0f792efc69db0e66
 F src/attach.c a514e81758ba7b3a3a0501faf70af6cfc509de8810235db726cfc9f25165e929
 F src/auth.c f4fa91b6a90bbc8e0d0f738aa284551739c9543a367071f55574681e0f24f8cf
@@ -499,7 +499,7 @@ F src/date.c e0632f335952b32401482d099321bbf12716b29d6e72836b53ae49683ebae4bf
 F src/dbpage.c 8a01e865bf8bc6d7b1844b4314443a6436c07c3efe1d488ed89e81719047833a
 F src/dbstat.c 14d9098266fa712472bed757986eee70eb3613e9ba6e55bddac6708acf8d2857
 F src/delete.c 3ce6af6b64c8b476de51ccc32da0cb3142d42e65754e1d8118addf65b8bcba15
-F src/expr.c 38597afb008db2e0a5f86a82827567acb98f502cab61663ef16bc688bc256803
+F src/expr.c f2e0f5dd07d1b202f700f26b0851f2ea485e36ec8f335b05aec2cd91cd08853f
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 1905af1821b88321e1bb9d6a69e704495b6844a9b6c29398d40117cc251e893c
 F src/func.c 812ac5383067bed7150d8597e83c47b714d73db0e62af55811d1a145243e58e1
@@ -659,7 +659,7 @@ F test/alterdropcol2.test 527fce683b200d620f560f666c44ae33e22728e990a10a48a54328
 F test/alterlegacy.test f38c6d06cda39e1f7b955bbce57f2e3ef5b7cb566d3d1234502093e228c15811
 F test/altermalloc.test 167a47de41b5c638f5f5c6efb59784002b196fff70f98d9b4ed3cd74a3fb80c9
 F test/altermalloc2.test ca3ebc01670d9313953a2b7628d8cc00dc5ea9988f229b3cbbbe1cca506dae45
-F test/altermalloc3.test 059841a3de6b6780efd9f0b30bf1d9b4443c555f68d39975cbcac2583167b239
+F test/altermalloc3.test 4660ac6240a8c82ba3947b927612dcc7c05a8eec3fe3c9f38e047ca69a789a33
 F test/alterqf.test 67568ad152db8c1187b15633b801242cf960f1beafc51261a3d1725d910baeb2
 F test/altertab.test a13e11cb1933575002367613b1094f0eeb31f493e4bd9ebeca73279fe00c85e7
 F test/altertab2.test b0d62f323ca5dab42b0bc028c52e310ebdd13e655e8fac070fe622bad7852c2b
@@ -1926,7 +1926,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 706322c2b5bb31e14c1120a94520b21fa623ff119e3890170e36b37d8bde721a
-R 29fc8916ca6b5a432d2826152a802182
-U drh
-Z 2df13617e37950dc266054e33266713a
+P 7a8fcf6d2c8e3c8f10ff515c8c00c761d15a28eef8e0e31e09e22feb06c9443b
+R 2a9beef8a41074983f454ce08ecf7909
+U dan
+Z 371a9c0c029e52ab1de450a489c6939c

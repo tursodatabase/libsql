@@ -831,6 +831,7 @@ static void renameWalkWith(Walker *pWalker, Select *pSelect){
       memset(&sNC, 0, sizeof(sNC));
       sNC.pParse = pParse;
       if( pCopy ) sqlite3SelectPrep(sNC.pParse, p, &sNC);
+      if( sNC.pParse->db->mallocFailed ) return;
       sqlite3WalkSelect(pWalker, p);
       sqlite3RenameExprlistUnmap(pParse, pWith->a[i].pCols);
     }
