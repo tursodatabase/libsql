@@ -1,5 +1,5 @@
-C Have\sthe\sdbstat\smodule\sarrange\sthings\sinternally\sso\sthat\sthere\sare\s256\saddressable\sbytes\sfollowing\seach\spage\sbuffer.\sThis\sway,\ssmall\sbuffer\soverreads\scaused\sby\scorrupt\sdatabase\spages\sdo\snot\slead\sto\sundefined\sbehaviour.
-D 2021-09-29T19:15:25.012
+C Fix\sa\stypo\sin\saltertab3.test.
+D 2021-09-29T19:18:53.042
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -665,7 +665,7 @@ F test/altermalloc3.test 4660ac6240a8c82ba3947b927612dcc7c05a8eec3fe3c9f38e047ca
 F test/alterqf.test 67568ad152db8c1187b15633b801242cf960f1beafc51261a3d1725d910baeb2
 F test/altertab.test a13e11cb1933575002367613b1094f0eeb31f493e4bd9ebeca73279fe00c85e7
 F test/altertab2.test b0d62f323ca5dab42b0bc028c52e310ebdd13e655e8fac070fe622bad7852c2b
-F test/altertab3.test 78372063fae383ba41d1ad0ff1446e148f3c96815e648f830a55ba33668b4a69
+F test/altertab3.test 5929f522fd6fd708396ad9f317d4af9ff1a93e460df85bb1d54d4499eeb94960
 F test/amatch1.test b5ae7065f042b7f4c1c922933f4700add50cdb9f
 F test/analyze.test 547bb700f903107b38611b014ca645d6b5bb819f5210d7bf39c40802aafeb7d7
 F test/analyze3.test 4440c4932247adb2b4e0c838f657c19dc7af4f56859255436dc4e855f39b9324
@@ -1928,7 +1928,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a0df216f7c3f8963efba0b1ffee65d6a63309d846ffdcf2d2932cb4f1d4967b7
-R 7f80422897fa74c39c1c69f1ebb4bc77
+P c4c705abc60624bf9ba4c1c05286b902b965f7ba9fd776c4ef8bc1fb78a4ccde
+R 101ffad09ce96f3ad73e2a23f6fa38ef
 U dan
-Z 911e4aa022339aecd631fddd7d57b6e4
+Z 18ffb816225f5288c5908f924863f1c9
