@@ -802,6 +802,7 @@ void sqlite3RenameTokenRemap(Parse *pParse, const void *pTo, const void *pFrom){
 static int renameUnmapExprCb(Walker *pWalker, Expr *pExpr){
   Parse *pParse = pWalker->pParse;
   sqlite3RenameTokenRemap(pParse, 0, (const void*)pExpr);
+  sqlite3RenameTokenRemap(pParse, 0, (const void*)&pExpr->y.pTab);
   return WRC_Continue;
 }
 
@@ -831,6 +832,7 @@ static void renameWalkWith(Walker *pWalker, Select *pSelect){
       memset(&sNC, 0, sizeof(sNC));
       sNC.pParse = pParse;
       if( pCopy ) sqlite3SelectPrep(sNC.pParse, p, &sNC);
+      if( sNC.pParse->db->mallocFailed ) return;
       sqlite3WalkSelect(pWalker, p);
       sqlite3RenameExprlistUnmap(pParse, pWith->a[i].pCols);
     }
