@@ -1,5 +1,5 @@
-C Load\srecent\sdbsqlfuzz\scases\sinto\stest/fuzzdata8.db.
-D 2021-09-25T20:28:39.895
+C Get\sgroup_concat()\sto\shandle\svarying\sseparator\slengths\swhen\swindowing
+D 2021-09-29T00:32:13.146
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -502,7 +502,7 @@ F src/delete.c 3ce6af6b64c8b476de51ccc32da0cb3142d42e65754e1d8118addf65b8bcba15
 F src/expr.c 38597afb008db2e0a5f86a82827567acb98f502cab61663ef16bc688bc256803
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 1905af1821b88321e1bb9d6a69e704495b6844a9b6c29398d40117cc251e893c
-F src/func.c 812ac5383067bed7150d8597e83c47b714d73db0e62af55811d1a145243e58e1
+F src/func.c c852d68d0a984263f969e3b84d602c6d821147a32905fecca65b1d86098367b4
 F src/global.c 612ea60c9acbcb45754c2ed659b4a56936a06814718e969636fedc7e3b889808
 F src/hash.c 8d7dda241d0ebdafb6ffdeda3149a412d7df75102cecfc1021c98d6219823b19
 F src/hash.h 9d56a9079d523b648774c1784b74b89bd93fac7b365210157482e4319a468f38
@@ -1797,7 +1797,7 @@ F test/window8.tcl 5e02e41d9d9a80f597063aed1a381eb19d1d0ef677a4f0df352c5365cf23f
 F test/window8.test 4ab16817414af0c904abe2ebdf88eb6c2b00058b84f9748c6174ff11fc45f1ed
 F test/window9.test 349c71eab4288a1ffc19e2f65872ec2c37e6cf8a1dda2ad300364b7450ae4836
 F test/windowA.test 6d63dc1260daa17141a55007600581778523a8b420629f1282d2acfc36af23be
-F test/windowB.test 6e601f8178ba8ba28b2f19e74fe613815084bb4a8d2ad942defc7d42e191e521
+F test/windowB.test b67bda5645f3226790e1a360c4225241840b84adb5aa2e69bfb0b27eef3b84d9
 F test/windowerr.tcl f5acd6fbc210d7b5546c0e879d157888455cd4a17a1d3f28f07c1c8a387019e0
 F test/windowerr.test a8b752402109c15aa1c5efe1b93ccb0ce1ef84fa964ae1cd6684dd0b3cc1819b
 F test/windowfault.test 21919e601f20b976ea2a73aa401220c89ed0e8d203c4f69476ea55bce3726496
@@ -1926,7 +1926,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 706322c2b5bb31e14c1120a94520b21fa623ff119e3890170e36b37d8bde721a
-R 29fc8916ca6b5a432d2826152a802182
-U drh
-Z 2df13617e37950dc266054e33266713a
+P 7a8fcf6d2c8e3c8f10ff515c8c00c761d15a28eef8e0e31e09e22feb06c9443b
+R f06fcf734c6cb0151864e67091ca6f93
+T *branch * group_concat_varsep
+T *sym-group_concat_varsep *
+T -sym-trunk *
+U larrybr
+Z a3e2174302f0231fe7e552f570c10b10
