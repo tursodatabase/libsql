@@ -518,7 +518,7 @@ Expr *sqlite3ExprForVectorField(
   }else{
     if( pVector->op==TK_VECTOR ) pVector = pVector->x.pList->a[iField].pExpr;
     pRet = sqlite3ExprDup(pParse->db, pVector, 0);
-    if( IN_RENAME_OBJECT && pRet ){
+    if( pRet && IN_RENAME_OBJECT ){
       SWAP(Expr, *pRet, *pVector);
       sqlite3RenameTokenRemap(pParse, pRet, pVector);
     }

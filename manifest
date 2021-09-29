@@ -1,5 +1,5 @@
-C Fix\san\sout-of-bounds\sread\sin\sfts5\sthat\scould\soccur\swhen\sprocessing\scorrupt\srecords.
-D 2021-09-29T13:36:58.216
+C Improved\stestability\sof\schanges\sfrom\scheck-in\s[255b0eeed113d83b].
+D 2021-09-29T14:01:44.665
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -500,7 +500,7 @@ F src/date.c e0632f335952b32401482d099321bbf12716b29d6e72836b53ae49683ebae4bf
 F src/dbpage.c 8a01e865bf8bc6d7b1844b4314443a6436c07c3efe1d488ed89e81719047833a
 F src/dbstat.c bea044cfe99eab6c527837e196a5335c128989bdb354cf1b4973b85ea561d66b
 F src/delete.c 3ce6af6b64c8b476de51ccc32da0cb3142d42e65754e1d8118addf65b8bcba15
-F src/expr.c f2e0f5dd07d1b202f700f26b0851f2ea485e36ec8f335b05aec2cd91cd08853f
+F src/expr.c 7628ab5359d7643bfd5b6027a7774419dd12bfbb2bc1f0d2a75bd12dd8c97304
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 1905af1821b88321e1bb9d6a69e704495b6844a9b6c29398d40117cc251e893c
 F src/func.c 812ac5383067bed7150d8597e83c47b714d73db0e62af55811d1a145243e58e1
@@ -1927,7 +1927,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P df0d7e36dbf98ab5405d8366ce92fb85176d4388b47a57b0ca1aa1ba6ae5212e
-R 4fb740a496089788306f88ca01646658
-U dan
-Z a52e95ecb0bcc637cb02a3ef17a54917
+P 9bbc01fb239b4aa752a56c584baa29655a3c845425d5c17d24a3939984d54fe2
+R c40e5ac53dc649361977b7f5af733d92
+U drh
+Z 737a81f3f3c6c485a35681c71272067e
