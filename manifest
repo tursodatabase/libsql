@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\saltertab3.test.
-D 2021-09-29T19:18:53.042
+C Add\sNEVER()\smacros\son\sbranches\sthat\sare\snot\sreachable\ssince\s[a0df216f7c3f8963].
+D 2021-09-29T20:17:19.536
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -483,7 +483,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
-F src/alter.c ad192981c345625621048ae1145ac7fc94b39912c44940e458f439627aa18137
+F src/alter.c a6afe961ef3544104fa635a0c3161bfe1a34382f32e2a28706993abadedbffed
 F src/analyze.c 989eb1146f4a2c320623e190f8913bf1829fd8954a52dbfd0f792efc69db0e66
 F src/attach.c a514e81758ba7b3a3a0501faf70af6cfc509de8810235db726cfc9f25165e929
 F src/auth.c f4fa91b6a90bbc8e0d0f738aa284551739c9543a367071f55574681e0f24f8cf
@@ -1928,7 +1928,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c4c705abc60624bf9ba4c1c05286b902b965f7ba9fd776c4ef8bc1fb78a4ccde
-R 101ffad09ce96f3ad73e2a23f6fa38ef
-U dan
-Z 18ffb816225f5288c5908f924863f1c9
+P 18d38b13104a9c3367ec205bfa17fbdc3d792ba68a369b1c6f046096ef6cc581
+R ac3aeeac6e684e9aed670c65bf106e47
+U drh
+Z 4b018556487da418a72f7b1ef9ffce10
