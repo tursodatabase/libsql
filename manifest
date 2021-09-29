@@ -1,5 +1,5 @@
-C Get\sgroup_concat()\sto\shandle\svarying\sseparator\slengths\swhen\swindowing
-D 2021-09-29T00:32:13.146
+C Add\sextra\stests\sfor\sthe\sgroup_concat()\sfix\son\sthis\sbranch.
+D 2021-09-29T14:14:16.714
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1798,9 +1798,10 @@ F test/window8.test 4ab16817414af0c904abe2ebdf88eb6c2b00058b84f9748c6174ff11fc45
 F test/window9.test 349c71eab4288a1ffc19e2f65872ec2c37e6cf8a1dda2ad300364b7450ae4836
 F test/windowA.test 6d63dc1260daa17141a55007600581778523a8b420629f1282d2acfc36af23be
 F test/windowB.test b67bda5645f3226790e1a360c4225241840b84adb5aa2e69bfb0b27eef3b84d9
+F test/windowC.test ecf1831b995408b03f708386b37ece7a05108faf2288c0c55cff873c100e145f
 F test/windowerr.tcl f5acd6fbc210d7b5546c0e879d157888455cd4a17a1d3f28f07c1c8a387019e0
 F test/windowerr.test a8b752402109c15aa1c5efe1b93ccb0ce1ef84fa964ae1cd6684dd0b3cc1819b
-F test/windowfault.test 21919e601f20b976ea2a73aa401220c89ed0e8d203c4f69476ea55bce3726496
+F test/windowfault.test 15094c1529424e62f798bc679e3fe9dfab6e8ba2f7dfe8c923b6248c31660a7c
 F test/windowpushd.test d8895d08870b7226f7693665bd292eb177e62ca06799184957b3ca7dc03067df
 F test/with1.test 7bc5abfe4c80c0cef8a90f5a66d60b9982e8ccd7350c8eb70611323a3b8e07ba
 F test/with2.test f803743b2c746ecdd0b638783c7235654b947b0f1c4bb551ca10e1d813317153
@@ -1926,10 +1927,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7a8fcf6d2c8e3c8f10ff515c8c00c761d15a28eef8e0e31e09e22feb06c9443b
-R f06fcf734c6cb0151864e67091ca6f93
-T *branch * group_concat_varsep
-T *sym-group_concat_varsep *
-T -sym-trunk *
-U larrybr
-Z a3e2174302f0231fe7e552f570c10b10
+P 98e0f2bf67cdee1da1edadeb54ff8564728b3f28fc821e46e8de201247c3fc87
+R 1629e1fee3aa6c55d78d8125420eddd7
+U dan
+Z 18e23ea62384af634dfba68431ad5780
