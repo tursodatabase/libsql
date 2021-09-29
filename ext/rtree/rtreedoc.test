@@ -1313,10 +1313,14 @@ foreach {tn nm} {
     CREATE VIRTUAL TABLE $nm USING rtree(a,b,c,d,e);
   "
 
-  # EVIDENCE-OF: R-37699-54000 This is their schema: CREATE TABLE
-  # %_node(nodeno INTEGER PRIMARY KEY, data BLOB) CREATE TABLE
-  # %_parent(nodeno INTEGER PRIMARY KEY, parentnode INTEGER) CREATE TABLE
-  # %_rowid(rowid INTEGER PRIMARY KEY, nodeno INTEGER)
+  # EVIDENCE-OF: R-33789-46762 The content of an R*Tree index is actually
+  # stored in three ordinary SQLite tables with names derived from the
+  # name of the R*Tree.
+  #
+  # EVIDENCE-OF: R-39849-06566 This is their schema: CREATE TABLE
+  # %_node(nodeno INTEGER PRIMARY KEY, data) CREATE TABLE %_parent(nodeno
+  # INTEGER PRIMARY KEY, parentnode) CREATE TABLE %_rowid(rowid INTEGER
+  # PRIMARY KEY, nodeno)
   #
   # EVIDENCE-OF: R-07489-10051 The "%" in the name of each shadow table is
   # replaced by the name of the R*Tree virtual table. So, if the name of

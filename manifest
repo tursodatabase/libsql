@@ -1,5 +1,5 @@
-C Improved\stestability\sof\schanges\sfrom\scheck-in\s[255b0eeed113d83b].
-D 2021-09-29T14:01:44.665
+C Add\snew\stest\sfile\srtreedoc3.test.
+D 2021-09-29T16:38:02.070
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -419,11 +419,12 @@ F ext/rtree/rtree_util.tcl db734b4c5e75fed6acc56d9701f2235345acfdec750b5fc7b5879
 F ext/rtree/rtreecheck.test d67d5b3e9e45bfa8cd90734e8e9302144ac415b8e9176c6f02d4f92892ee8a35
 F ext/rtree/rtreecirc.test aec664eb21ae943aeb344191407afff5d392d3ae9d12b9a112ced0d9c5de298e
 F ext/rtree/rtreeconnect.test 225ad3fcb483d36cbee423a25052a6bbae762c9576ae9268332360c68c170d3d
-F ext/rtree/rtreedoc.test 243cd3fdee1cb89e290e908ddde0cc0cfda0ccb85473c6d1b3c43e6260b14cac
+F ext/rtree/rtreedoc.test 9d59baa8bce94056c63f872ad99fd9eaed60105be432af55402777f8ce093fb0
 F ext/rtree/rtreedoc2.test 194ebb7d561452dcdc10bf03f44e30c082c2f0c14efeb07f5e02c7daf8284d93
+F ext/rtree/rtreedoc3.test 555a878c4d79c4e37fa439a1c3b02ee65d3ebaf75d9e8d96a9c55d66db3efbf8
 F ext/rtree/rtreefuzz001.test 0fc793f67897c250c5fde96cefee455a5e2fb92f4feeabde5b85ea02040790ee
 F ext/rtree/sqlite3rtree.h 03c8db3261e435fbddcfc961471795cbf12b24e03001d0015b2636b0f3881373
-F ext/rtree/test_rtreedoc.c 216f988e0b56474a3d42905653777772d3bdd413a7fe09a79e466b19296853b0
+F ext/rtree/test_rtreedoc.c e81d9bf69f7cbc8ba536458bbd8fc06a6f9ca93165f7d68832f588461e6a53cb
 F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/util/randomshape.tcl 54ee03d0d4a1c621806f7f44d5b78d2db8fac26e0e8687c36c4bd0203b27dbff
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
@@ -1927,7 +1928,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9bbc01fb239b4aa752a56c584baa29655a3c845425d5c17d24a3939984d54fe2
-R c40e5ac53dc649361977b7f5af733d92
-U drh
-Z 737a81f3f3c6c485a35681c71272067e
+P bbfd083c26086fb103fec88faa59a01e689e0b7fce38c09d8846bb472a0e6760
+R 1037eaccd5510af0a78ced89d8bc5f27
+U dan
+Z 19b69f1d272ce42a44f4a2c19e639601
