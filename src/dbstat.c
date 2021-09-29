@@ -26,6 +26,15 @@
     && !defined(SQLITE_OMIT_VIRTUALTABLE)
 
 /*
+** The pager and btree modules arrange objects in memory so that there are
+** always approximately 200 bytes of addressable memory following each page
+** buffer. This way small buffer overreads caused by corrupt database pages
+** do not cause undefined behaviour. This module pads each page buffer
+** by the following number of bytes for the same purpose.
+*/
+#define DBSTAT_PAGE_PADDING_BYTES 256
+
+/*
 ** Page paths:
 ** 
 **   The value of the 'path' column describes the path taken from the 
@@ -459,7 +468,7 @@ static int statDecodePage(Btree *pBt, StatPage *p){
         if( nPayload>(u32)nLocal ){
           int j;
           int nOvfl = ((nPayload - nLocal) + nUsable-4 - 1) / (nUsable - 4);
-          if( iOff+nLocal>nUsable || nPayload>0x7fffffff ){
+          if( iOff+nLocal+4>nUsable || nPayload>0x7fffffff ){
             goto statPageIsCorrupt;
           }
           pCell->nLastOvfl = (nPayload-nLocal) - (nOvfl-1) * (nUsable-4);
@@ -533,10 +542,11 @@ static int statGetPage(
   int rc;
 
   if( pPg->aPg==0 ){
-    pPg->aPg = (u8*)sqlite3_malloc(pgsz);
+    pPg->aPg = (u8*)sqlite3_malloc(pgsz + DBSTAT_PAGE_PADDING_BYTES);
     if( pPg->aPg==0 ){
       return SQLITE_NOMEM_BKPT;
     }
+    memset(&pPg->aPg[pgsz], 0, DBSTAT_PAGE_PADDING_BYTES);
   }
 
   rc = sqlite3PagerGet(sqlite3BtreePager(pBt), iPg, &pDbPage, 0);
