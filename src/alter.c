@@ -864,9 +864,7 @@ static int renameUnmapSelectCb(Walker *pWalker, Select *p){
   Parse *pParse = pWalker->pParse;
   int i;
   if( pParse->nErr ) return WRC_Abort;
-  if( p->selFlags & (SF_View|SF_CopyCte) ){
-    testcase( p->selFlags & SF_View );
-    testcase( p->selFlags & SF_CopyCte );
+  if( NEVER(p->selFlags & (SF_View|SF_CopyCte)) ){
     return WRC_Prune;
   }
   if( ALWAYS(p->pEList) ){
@@ -881,7 +879,7 @@ static int renameUnmapSelectCb(Walker *pWalker, Select *p){
     SrcList *pSrc = p->pSrc;
     for(i=0; i<pSrc->nSrc; i++){
       sqlite3RenameTokenRemap(pParse, 0, (void*)pSrc->a[i].zName);
-      if( sqlite3WalkExpr(pWalker, pSrc->a[i].pOn) ) return WRC_Abort;
+      sqlite3WalkExpr(pWalker, pSrc->a[i].pOn);
       unmapColumnIdlistNames(pParse, pSrc->a[i].pUsing);
     }
   }
