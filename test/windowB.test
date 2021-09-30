@@ -363,6 +363,6 @@ do_execsql_test 9.0 {
   SELECT group_concat('-', x)
     OVER ( ORDER BY x ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING )
   FROM seps;
-} {-22- -22-333- -333-4444- -4444-}
+} {-1- -1-22- -22-333- -333-}
 
 finish_test

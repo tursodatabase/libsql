@@ -1145,7 +1145,7 @@ do_test func-24.3 {
   execsql {
     SELECT group_concat(t1,' ' || rowid || ' ') FROM tbl1
   }
-} {{this 2 program 3 is 4 free 5 software}}
+} {{this 1 program 2 is 3 free 4 software}}
 do_test func-24.4 {
   execsql {
     SELECT group_concat(NULL,t1) FROM tbl1

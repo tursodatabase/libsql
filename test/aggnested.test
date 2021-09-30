@@ -44,7 +44,7 @@ do_test aggnested-1.4 {
   db eval {
     SELECT (SELECT group_concat(a1,b1) FROM t2) FROM t1;
   }
-} {151 252 353}
+} {141 242 343}
 
 
 # This test case is a copy of the one in
