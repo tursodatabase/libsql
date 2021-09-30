@@ -325,13 +325,13 @@ do_execsql_test 2.0 {
 #
 # Ordinary tables. With ordinary sqlite_schema entries.
 do_execsql_test 2.1 {
-  SELECT * FROM sqlite_schema WHERE sql NOT LIKE '%virtual%'
+  SELECT type, name, sql FROM sqlite_schema WHERE sql NOT LIKE '%virtual%'
 } {
-  table demo_index_rowid demo_index_rowid 2 
+  table demo_index_rowid 
     {CREATE TABLE "demo_index_rowid"(rowid INTEGER PRIMARY KEY,nodeno)} 
-  table demo_index_node demo_index_node 3 
+  table demo_index_node
     {CREATE TABLE "demo_index_node"(nodeno INTEGER PRIMARY KEY,data)} 
-  table demo_index_parent demo_index_parent 4 
+  table demo_index_parent
     {CREATE TABLE "demo_index_parent"(nodeno INTEGER PRIMARY KEY,parentnode)}
 }
 
