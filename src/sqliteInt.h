@@ -4933,6 +4933,7 @@ int sqlite3OpenTempDatabase(Parse *);
 
 void sqlite3StrAccumInit(StrAccum*, sqlite3*, char*, int, int);
 char *sqlite3StrAccumFinish(StrAccum*);
+void sqlite3StrAccumSetError(StrAccum*, u8);
 void sqlite3SelectDestInit(SelectDest*,int,int);
 Expr *sqlite3CreateColumnExpr(sqlite3 *, SrcList *, int, int);
 

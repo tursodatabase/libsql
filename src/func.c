@@ -1715,17 +1715,23 @@ static void minMaxFinalize(sqlite3_context *context){
 
 /*
 ** group_concat(EXPR, ?SEPARATOR?)
+**
+** The SEPARATOR goes before the EXPR string.  This is tragic.  The
+** groupConcatInverse() implementation would have been easier if the
+** SEPARATOR were appended after EXPR.  And the order is undocumented,
+** so we could change it, in theory.  But the old behavior has been
+** around for so long that we dare not, for fear of breaking something.
 */
 typedef struct {
   StrAccum str;          /* The accumulated concatenation */
 #ifndef SQLITE_OMIT_WINDOWFUNC
   int nAccum;            /* Number of strings presently concatenated */
-  int nFirstSepLength;    /* Used to detect separator length change */
+  int nFirstSepLength;   /* Used to detect separator length change */
   /* If pnSepLengths!=0, refs an array of inter-string separator lengths,
-   * stored as actually incorporated into presently accumulated result.
-   * (Hence, its slots in use number nAccum-1 between method calls.)
-   * If pnSepLengths==0, nFirstSepLength is the length used throughout.
-   */
+  ** stored as actually incorporated into presently accumulated result.
+  ** (Hence, its slots in use number nAccum-1 between method calls.)
+  ** If pnSepLengths==0, nFirstSepLength is the length used throughout.
+  */
   int *pnSepLengths;
 #endif
 } GroupConcatCtx;
@@ -1746,38 +1752,45 @@ static void groupConcatStep(
     sqlite3 *db = sqlite3_context_db_handle(context);
     int firstTerm = pGCC->str.mxAlloc==0;
     pGCC->str.mxAlloc = db->aLimit[SQLITE_LIMIT_LENGTH];
-    if( !firstTerm ){
-      if( argc==2 ){
-        zSep = (char*)sqlite3_value_text(argv[1]);
-        nSep = sqlite3_value_bytes(argv[1]);
-      }else{
-        zSep = ",";
-        nSep = 1;
+    if( argc==1 ){
+      if( !firstTerm ){
+        sqlite3_str_appendchar(&pGCC->str, 1, ',');
       }
-      if( zSep )
-	sqlite3_str_append(&pGCC->str, zSep, nSep);
 #ifndef SQLITE_OMIT_WINDOWFUNC
-      else
-	nSep = 0;
+      else{
+        pGCC->nFirstSepLength = 1;
+      }
+#endif
+    }else if( !firstTerm ){
+      zSep = (char*)sqlite3_value_text(argv[1]);
+      nSep = sqlite3_value_bytes(argv[1]);
+      if( zSep ){
+        sqlite3_str_append(&pGCC->str, zSep, nSep);
+      }
+#ifndef SQLITE_OMIT_WINDOWFUNC
+      else{
+        nSep = 0;
+      }
       if( nSep != pGCC->nFirstSepLength || pGCC->pnSepLengths != 0 ){
-	int * pnsl = pGCC->pnSepLengths;
-	if( pnsl == 0 ){
-	  /* First separator length variation seen, start tracking them. */
-	  pnsl = (int*)sqlite3_malloc64((pGCC->nAccum+1) * sizeof(int));
-	  if( pnsl!=0 ){
-	    int i = 0, nA = pGCC->nAccum-1;
-	    while( i<nA ) pnsl[i++] = pGCC->nFirstSepLength;
-	  }
-	}else{
-	  pnsl = (int*)sqlite3_realloc64(pnsl, pGCC->nAccum * sizeof(int));
-	}
-	if( pnsl!=0 ){
-	  if( pGCC->nAccum>0 )
-	    pnsl[pGCC->nAccum-1] = nSep;
-	  pGCC->pnSepLengths = pnsl;
-	}else{
-	  setStrAccumError(&pGCC->str, SQLITE_NOMEM);
-	}
+        int *pnsl = pGCC->pnSepLengths;
+        if( pnsl == 0 ){
+          /* First separator length variation seen, start tracking them. */
+          pnsl = (int*)sqlite3_malloc64((pGCC->nAccum+1) * sizeof(int));
+          if( pnsl!=0 ){
+            int i = 0, nA = pGCC->nAccum-1;
+            while( i<nA ) pnsl[i++] = pGCC->nFirstSepLength;
+          }
+        }else{
+          pnsl = (int*)sqlite3_realloc64(pnsl, pGCC->nAccum * sizeof(int));
+        }
+        if( pnsl!=0 ){
+          if( pGCC->nAccum>0 ){
+            pnsl[pGCC->nAccum-1] = nSep;
+          }
+          pGCC->pnSepLengths = pnsl;
+        }else{
+          sqlite3StrAccumSetError(&pGCC->str, SQLITE_NOMEM);
+        }
       }
 #endif
     }
@@ -1811,9 +1824,9 @@ static void groupConcatInverse(
     if( pGCC->pnSepLengths!=0 ){
       assert(pGCC->nAccum >= 0);
       if( pGCC->nAccum>0 ){
-	nVS += *pGCC->pnSepLengths;
-	memmove(pGCC->pnSepLengths, pGCC->pnSepLengths+1,
-		(pGCC->nAccum-1)*sizeof(int));
+        nVS += *pGCC->pnSepLengths;
+        memmove(pGCC->pnSepLengths, pGCC->pnSepLengths+1,
+               (pGCC->nAccum-1)*sizeof(int));
       }
     }else{
       /* If removing single accumulated string, harmlessly over-do. */
@@ -1844,8 +1857,9 @@ static void groupConcatFinalize(sqlite3_context *context){
       sqlite3_result_error_toobig(context);
     }else if( pAccum->accError==SQLITE_NOMEM ){
       sqlite3_result_error_nomem(context);
-    }else{    
-      sqlite3_result_text(context, sqlite3StrAccumFinish(pAccum), -1, 
+    }else{
+      int n = pAccum->nChar;
+      sqlite3_result_text(context, sqlite3StrAccumFinish(pAccum), n, 
                           sqlite3_free);
     }
 #ifndef SQLITE_OMIT_WINDOWFUNC
@@ -1865,7 +1879,7 @@ static void groupConcatValue(sqlite3_context *context){
       sqlite3_result_error_nomem(context);
     }else{    
       const char *zText = sqlite3_str_value(pAccum);
-      sqlite3_result_text(context, zText, -1, SQLITE_TRANSIENT);
+      sqlite3_result_text(context, zText, pAccum->nChar, SQLITE_TRANSIENT);
     }
   }
 }
