@@ -4469,7 +4469,7 @@ static unsigned char *readHexDb(ShellState *p, int *pnData){
                 &x[8], &x[9], &x[10], &x[11], &x[12], &x[13], &x[14], &x[15]);
     if( rc==17 ){
       k = iOffset+j;
-      if( k+16<=n ){
+      if( k+16<=n && k>=0 ){
         int ii;
         for(ii=0; ii<16; ii++) a[k+ii] = x[ii]&0xff;
       }

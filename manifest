@@ -1,5 +1,5 @@
-C Fix\sa\sbuffer\soverread\sin\sfts5\sthat\scould\soccur\swhen\sprocessing\san\s"ORDER\sBY\srowid\sDESC"\squery\sagainst\scorrupt\sdatabase\srecords.
-D 2021-10-01T15:05:19.078
+C Fix\sa\spotential\swrite\soutside\sof\sarray\sbounds\sin\sthe\s--hexdb\sdecoder\sof\sthe\nCLI\swhen\sgiven\scorrupt\sinput.
+D 2021-10-01T17:06:44.476
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -550,7 +550,7 @@ F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c b9e60afa56d0484ee573aba54d9e73603736236df33d2ae3421b4cd0367d907d
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 47a6e97bb04caeb71cc0b748b69d635eaa0aa765915d177949d21c386eb0cc97
-F src/shell.c.in 9df263dc0949698a8728ecc5bb826666ca8ced75201d5440a161b629455cd462
+F src/shell.c.in f9a13edb4d4cdbdfc161b0d200296c1dd9c492ad86dd73f4768ee841fec66578
 F src/sqlite.h.in 4e977a5e2ed1a9e8987ff65a2cab5f99a4298ebf040ea5ff636e1753339ff45a
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h e97f4e9b509408fea4c4e9bef5a41608dfac343b4d3c7a990dedde1e19af9510
@@ -1928,7 +1928,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6e791a24ce259ff6cc46a7c2188aea094a5021e154368f57019a0653c8a81217
-R 065cb78f289f9f988c06bfa64086f6c7
-U dan
-Z 769eaeb8fa8eb27acdd1e1a600d1548b
+P fe098a93340b8dac15752f1be4f681e2a591f7ae1a94b177f400ccd7ef638480
+R 77978b99526ec643e6ee046dad65d5ab
+U drh
+Z 7477ef1e574f4d90d4c36f8b8b9bf567
