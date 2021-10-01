@@ -679,7 +679,7 @@ impl Connection {
         stmt.check_no_tail()?;
         let mut rows = stmt.query(params)?;
 
-        rows.get_expected_row().map_err(E::from).and_then(|r| f(r))
+        rows.get_expected_row().map_err(E::from).and_then(f)
     }
 
     /// Prepare a SQL statement for execution.
@@ -1346,9 +1346,11 @@ mod test {
     fn test_execute_select() {
         let db = checked_memory_handle();
         let err = db.execute("SELECT 1 WHERE 1 < ?", [1i32]).unwrap_err();
-        if err != Error::ExecuteReturnedResults {
-            panic!("Unexpected error: {}", err);
-        }
+        assert!(
+            err == Error::ExecuteReturnedResults,
+            "Unexpected error: {}",
+            err
+        );
     }
 
     #[test]
