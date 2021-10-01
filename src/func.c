@@ -1784,7 +1784,7 @@ static void groupConcatStep(
           pnsl = (int*)sqlite3_realloc64(pnsl, pGCC->nAccum * sizeof(int));
         }
         if( pnsl!=0 ){
-          if( pGCC->nAccum>0 ){
+          if( ALWAYS(pGCC->nAccum>0) ){
             pnsl[pGCC->nAccum-1] = nSep;
           }
           pGCC->pnSepLengths = pnsl;
@@ -1796,7 +1796,7 @@ static void groupConcatStep(
     }
 #ifndef SQLITE_OMIT_WINDOWFUNC
     else{
-      pGCC->nFirstSepLength = (argc==2)? sqlite3_value_bytes(argv[1]) : 1;
+      pGCC->nFirstSepLength = sqlite3_value_bytes(argv[1]);
     }
     pGCC->nAccum += 1;
 #endif
