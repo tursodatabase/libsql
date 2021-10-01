@@ -670,8 +670,20 @@ do_execsql_test 27.4 {
   ALTER TABLE t0 DROP COLUMN c60;
 } {}
 
-finish_test
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 28.1 {
+  CREATE TABLE t1(a,b,c,d);
+  CREATE TRIGGER AFTER INSERT ON t1 BEGIN
+    UPDATE t1 SET (c,d)=(a,b);
+  END;
+  ALTER TABLE t1 RENAME TO t2;
+}
 
-
+do_execsql_test 28.2 {
+  SELECT sql FROM sqlite_schema WHERE type='trigger'
+} {{CREATE TRIGGER AFTER INSERT ON "t2" BEGIN
+    UPDATE "t2" SET (c,d)=(a,b);
+  END}}
 
 finish_test

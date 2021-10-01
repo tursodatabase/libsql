@@ -31,6 +31,12 @@ struct BoxGeomCtx {
   Tcl_Obj *pScript;
 };
 
+typedef struct BoxQueryCtx BoxQueryCtx;
+struct BoxQueryCtx {
+  Tcl_Interp *interp;
+  Tcl_Obj *pScript;
+};
+
 static void testDelUser(void *pCtx){
   BoxGeomCtx *p = (BoxGeomCtx*)pCtx;
   Tcl_EvalObjEx(p->interp, p->pScript, 0);
@@ -129,10 +135,6 @@ static int invokeTclGeomCb(
 # sqlite3_rtree_geometry structure which provides information about how
 # the SQL function was invoked.
 
-# EVIDENCE-OF: R-40260-16838 The number of coordinates is 2 for a
-# 1-dimensional R*Tree, 4 for a 2-dimensional R*Tree, 6 for a
-# 3-dimensional R*Tree, and so forth.
-
 # EVIDENCE-OF: R-00090-24248 The third argument, aCoord[], is an array
 # of nCoord coordinates that defines a bounding box to be tested.
 
@@ -198,6 +200,113 @@ static int SQLITE_TCLAPI register_box_geom(
   return TCL_OK;
 }
 
+static int box_query(sqlite3_rtree_query_info *pInfo){
+  const char *azParentWithin[] = {"not", "partly", "fully", 0};
+  BoxQueryCtx *pCtx = (BoxQueryCtx*)pInfo->pContext;
+  Tcl_Interp *interp = pCtx->interp;
+  Tcl_Obj *pEval;
+  Tcl_Obj *pArg;
+  Tcl_Obj *pTmp = 0;
+  int rc;
+  int ii;
+
+  pEval = Tcl_DuplicateObj(pCtx->pScript);
+  Tcl_IncrRefCount(pEval);
+  pArg = Tcl_NewObj();
+  Tcl_IncrRefCount(pArg);
+
+  /* aParam[] */
+  pTmp = Tcl_NewObj();
+  Tcl_IncrRefCount(pTmp);
+  for(ii=0; ii<pInfo->nParam; ii++){
+    Tcl_Obj *p = Tcl_NewDoubleObj(pInfo->aParam[ii]);
+    Tcl_ListObjAppendElement(interp, pTmp, p);
+  }
+  Tcl_ListObjAppendElement(interp, pArg, Tcl_NewStringObj("aParam", -1));
+  Tcl_ListObjAppendElement(interp, pArg, pTmp);
+  Tcl_DecrRefCount(pTmp);
+
+  /* aCoord[] */
+  pTmp = Tcl_NewObj();
+  Tcl_IncrRefCount(pTmp);
+  for(ii=0; ii<pInfo->nCoord; ii++){
+    Tcl_Obj *p = Tcl_NewDoubleObj(pInfo->aCoord[ii]);
+    Tcl_ListObjAppendElement(interp, pTmp, p);
+  }
+  Tcl_ListObjAppendElement(interp, pArg, Tcl_NewStringObj("aCoord", -1));
+  Tcl_ListObjAppendElement(interp, pArg, pTmp);
+  Tcl_DecrRefCount(pTmp);
+
+  /* anQueue[] */
+  pTmp = Tcl_NewObj();
+  Tcl_IncrRefCount(pTmp);
+  for(ii=0; ii<=pInfo->mxLevel; ii++){
+    Tcl_Obj *p = Tcl_NewIntObj((int)pInfo->anQueue[ii]);
+    Tcl_ListObjAppendElement(interp, pTmp, p);
+  }
+  Tcl_ListObjAppendElement(interp, pArg, Tcl_NewStringObj("anQueue", -1));
+  Tcl_ListObjAppendElement(interp, pArg, pTmp);
+  Tcl_DecrRefCount(pTmp);
+  
+  /* iLevel */
+  Tcl_ListObjAppendElement(interp, pArg, Tcl_NewStringObj("iLevel", -1));
+  Tcl_ListObjAppendElement(interp, pArg, Tcl_NewIntObj(pInfo->iLevel));
+
+  /* mxLevel */
+  Tcl_ListObjAppendElement(interp, pArg, Tcl_NewStringObj("mxLevel", -1));
+  Tcl_ListObjAppendElement(interp, pArg, Tcl_NewIntObj(pInfo->mxLevel));
+
+  /* iRowid */
+  Tcl_ListObjAppendElement(interp, pArg, Tcl_NewStringObj("iRowid", -1));
+  Tcl_ListObjAppendElement(interp, pArg, Tcl_NewWideIntObj(pInfo->iRowid));
+
+  /* rParentScore */
+  Tcl_ListObjAppendElement(interp, pArg, Tcl_NewStringObj("rParentScore", -1));
+  Tcl_ListObjAppendElement(interp, pArg, Tcl_NewDoubleObj(pInfo->rParentScore));
+
+  /* eParentWithin */
+  assert( pInfo->eParentWithin==0 
+       || pInfo->eParentWithin==1 
+       || pInfo->eParentWithin==2 
+  );
+  Tcl_ListObjAppendElement(interp, pArg, Tcl_NewStringObj("eParentWithin", -1));
+  Tcl_ListObjAppendElement(interp, pArg, 
+      Tcl_NewStringObj(azParentWithin[pInfo->eParentWithin], -1)
+  );
+
+  Tcl_ListObjAppendElement(interp, pEval, pArg);
+  rc = Tcl_EvalObjEx(interp, pEval, 0) ? SQLITE_ERROR : SQLITE_OK;
+
+  if( rc==SQLITE_OK ){
+    double rScore = 0.0;
+    int nObj = 0;
+    int eP = 0;
+    Tcl_Obj **aObj = 0;
+    Tcl_Obj *pRes = Tcl_GetObjResult(interp);
+
+    if( Tcl_ListObjGetElements(interp, pRes, &nObj, &aObj) 
+     || nObj!=2 
+     || Tcl_GetDoubleFromObj(interp, aObj[1], &rScore)
+     || Tcl_GetIndexFromObj(interp, aObj[0], azParentWithin, "value", 0, &eP)
+    ){
+      rc = SQLITE_ERROR;
+    }else{
+      pInfo->rScore = rScore;
+      pInfo->eParentWithin = eP;
+    }
+  }
+
+  Tcl_DecrRefCount(pArg);
+  Tcl_DecrRefCount(pEval);
+  return rc;
+}
+
+static void box_query_destroy(void *p){
+  BoxQueryCtx *pCtx = (BoxQueryCtx*)p;
+  Tcl_DecrRefCount(pCtx->pScript);
+  ckfree(pCtx);
+}
+
 static int SQLITE_TCLAPI register_box_query(
   void * clientData,
   Tcl_Interp *interp,
@@ -207,6 +316,7 @@ static int SQLITE_TCLAPI register_box_query(
   extern int getDbPointer(Tcl_Interp*, const char*, sqlite3**);
   extern const char *sqlite3ErrName(int);
   sqlite3 *db;
+  BoxQueryCtx *pCtx;
 
   if( objc!=3 ){
     Tcl_WrongNumArgs(interp, 1, objv, "DB SCRIPT");
@@ -214,6 +324,16 @@ static int SQLITE_TCLAPI register_box_query(
   }
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
 
+  pCtx = (BoxQueryCtx*)ckalloc(sizeof(BoxQueryCtx*));
+  pCtx->interp = interp;
+  pCtx->pScript = Tcl_DuplicateObj(objv[2]);
+  Tcl_IncrRefCount(pCtx->pScript);
+
+  sqlite3_rtree_query_callback(
+      db, "qbox", box_query, (void*)pCtx, box_query_destroy
+  );
+
+  Tcl_ResetResult(interp);
   return TCL_OK;
 }
 #endif /* SQLITE_ENABLE_RTREE */
@@ -226,3 +346,4 @@ int Sqlitetestrtreedoc_Init(Tcl_Interp *interp){
 #endif /* SQLITE_ENABLE_RTREE */
   return TCL_OK;
 }
+

@@ -5499,9 +5499,9 @@ static int selectExpander(Walker *pWalker, Select *p){
               pTab->zName);
           }
           pFrom->pSelect = sqlite3SelectDup(db, pTab->u.view.pSelect, 0);
-        }else
+        }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-        if( ALWAYS(IsVirtual(pTab))
+        else if( ALWAYS(IsVirtual(pTab))
          && pFrom->fg.fromDDL
          && ALWAYS(pTab->u.vtab.p!=0)
          && pTab->u.vtab.p->eVtabRisk > ((db->flags & SQLITE_TrustedSchema)!=0)

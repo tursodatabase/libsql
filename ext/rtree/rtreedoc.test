@@ -325,13 +325,13 @@ do_execsql_test 2.0 {
 #
 # Ordinary tables. With ordinary sqlite_schema entries.
 do_execsql_test 2.1 {
-  SELECT * FROM sqlite_schema WHERE sql NOT LIKE '%virtual%'
+  SELECT type, name, sql FROM sqlite_schema WHERE sql NOT LIKE '%virtual%'
 } {
-  table demo_index_rowid demo_index_rowid 2 
+  table demo_index_rowid 
     {CREATE TABLE "demo_index_rowid"(rowid INTEGER PRIMARY KEY,nodeno)} 
-  table demo_index_node demo_index_node 3 
+  table demo_index_node
     {CREATE TABLE "demo_index_node"(nodeno INTEGER PRIMARY KEY,data)} 
-  table demo_index_parent demo_index_parent 4 
+  table demo_index_parent
     {CREATE TABLE "demo_index_parent"(nodeno INTEGER PRIMARY KEY,parentnode)}
 }
 
@@ -925,7 +925,7 @@ set ::contained_in 0
 do_vmstep_test 1.3 {
   SELECT objname FROM demo_data
     WHERE contained_in(demo_data.boundary, 35.37785, -80.77470);
-} {$step>4000}
+} {$step>3200}
 
 # EVIDENCE-OF: R-40261-32799 The problem with this latter query is that
 # it must apply the contained_in() function to all entries in the
@@ -1313,10 +1313,14 @@ foreach {tn nm} {
     CREATE VIRTUAL TABLE $nm USING rtree(a,b,c,d,e);
   "
 
-  # EVIDENCE-OF: R-37699-54000 This is their schema: CREATE TABLE
-  # %_node(nodeno INTEGER PRIMARY KEY, data BLOB) CREATE TABLE
-  # %_parent(nodeno INTEGER PRIMARY KEY, parentnode INTEGER) CREATE TABLE
-  # %_rowid(rowid INTEGER PRIMARY KEY, nodeno INTEGER)
+  # EVIDENCE-OF: R-33789-46762 The content of an R*Tree index is actually
+  # stored in three ordinary SQLite tables with names derived from the
+  # name of the R*Tree.
+  #
+  # EVIDENCE-OF: R-39849-06566 This is their schema: CREATE TABLE
+  # %_node(nodeno INTEGER PRIMARY KEY, data) CREATE TABLE %_parent(nodeno
+  # INTEGER PRIMARY KEY, parentnode) CREATE TABLE %_rowid(rowid INTEGER
+  # PRIMARY KEY, nodeno)
   #
   # EVIDENCE-OF: R-07489-10051 The "%" in the name of each shadow table is
   # replaced by the name of the R*Tree virtual table. So, if the name of
