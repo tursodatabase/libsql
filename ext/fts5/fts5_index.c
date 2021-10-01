@@ -697,6 +697,7 @@ static Fts5Data *fts5DataRead(Fts5Index *p, i64 iRowid){
   return pRet;
 }
 
+
 /*
 ** Release a reference to data record returned by an earlier call to
 ** fts5DataRead().
@@ -2155,7 +2156,7 @@ static void fts5SegIterReverse(Fts5Index *p, Fts5SegIter *pIter){
   if( pDlidx ){
     int iSegid = pIter->pSeg->iSegid;
     pgnoLast = fts5DlidxIterPgno(pDlidx);
-    pLast = fts5DataRead(p, FTS5_SEGMENT_ROWID(iSegid, pgnoLast));
+    pLast = fts5LeafRead(p, FTS5_SEGMENT_ROWID(iSegid, pgnoLast));
   }else{
     Fts5Data *pLeaf = pIter->pLeaf;         /* Current leaf data */
 
@@ -2182,7 +2183,7 @@ static void fts5SegIterReverse(Fts5Index *p, Fts5SegIter *pIter){
       ** forward to find the page containing the last rowid.  */
       for(pgno=pIter->iLeafPgno+1; !p->rc && pgno<=pSeg->pgnoLast; pgno++){
         i64 iAbs = FTS5_SEGMENT_ROWID(pSeg->iSegid, pgno);
-        Fts5Data *pNew = fts5DataRead(p, iAbs);
+        Fts5Data *pNew = fts5LeafRead(p, iAbs);
         if( pNew ){
           int iRowid, bTermless;
           iRowid = fts5LeafFirstRowidOff(pNew);
