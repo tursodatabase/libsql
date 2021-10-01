@@ -4382,7 +4382,7 @@ exit_create_index:
     ** The list was already ordered when this routine was entered, so at this
     ** point at most a single index (the newly added index) will be out of
     ** order.  So we have to reorder at most one index. */
-    Index **ppFrom = &pTab->pIndex;
+    Index **ppFrom;
     Index *pThis;
     for(ppFrom=&pTab->pIndex; (pThis = *ppFrom)!=0; ppFrom=&pThis->pNext){
       Index *pNext;

@@ -433,7 +433,6 @@ static void statInit(
       + sizeof(tRowcnt)*3*nColUp*(nCol+mxSample);
   }
 #endif
-  db = sqlite3_context_db_handle(context);
   p = sqlite3DbMallocZero(db, n);
   if( p==0 ){
     sqlite3_result_error_nomem(context);

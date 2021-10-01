@@ -4858,6 +4858,7 @@ int sqlite3PagerOpen(
     pPager->zWal = 0;
   }
 #endif
+  (void)pPtr;  /* Suppress warning about unused pPtr value */
 
   if( nPathname ) sqlite3DbFree(0, zPathname);
   pPager->pVfs = pVfs;
