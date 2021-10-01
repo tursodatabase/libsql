@@ -587,20 +587,22 @@ do_execsql_test gencol1-20.2 {
 
 # 2021-07-30 forum https://sqlite.org/forum/forumpost/ff3ffe09251c105b?t=h
 #
+ifcapable vtab {
 reset_db
-do_execsql_test gencol1-21.1 {
-  CREATE TABLE t1(
-    a integer primary key,
-    b int generated always as (a+5),
-    c text    GENERATED   ALWAYS as (printf('%08x',a)),
-    d Generated
-      Always
-      AS ('xyzzy'),
-    e int                         Always default(5)
-  );
-  INSERT INTO t1(a) VALUES(5);
-  SELECT name, type FROM pragma_table_xinfo('t1');
-} {a INTEGER b INT c TEXT d {} e INT}
+  do_execsql_test gencol1-21.1 {
+    CREATE TABLE t1(
+      a integer primary key,
+      b int generated always as (a+5),
+      c text    GENERATED   ALWAYS as (printf('%08x',a)),
+      d Generated
+        Always
+        AS ('xyzzy'),
+      e int                         Always default(5)
+    );
+    INSERT INTO t1(a) VALUES(5);
+    SELECT name, type FROM pragma_table_xinfo('t1');
+  } {a INTEGER b INT c TEXT d {} e INT}
+}
 
 # 2021-09-07 forum https://sqlite.org/forum/forumpost/699b44b3ee
 #

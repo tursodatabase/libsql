@@ -46,8 +46,12 @@ do_execsql_test strict1-2.0 {
     d TEXT,
     e REAL
   ) STRICT;
-  SELECT strict FROM pragma_table_list('t1');
-} {1}
+} {}
+ifcapable vtab {
+  do_execsql_test strict1-2.0a {
+    SELECT strict FROM pragma_table_list('t1');
+  } {1}
+}
 do_catchsql_test strict1-2.1 {
   INSERT INTO t1(a) VALUES('xyz');
 } {1 {cannot store TEXT value in INT column t1.a}}

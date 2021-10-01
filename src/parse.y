@@ -1638,7 +1638,8 @@ cmd ::= ANALYZE nm(X) dbnm(Y).  {sqlite3Analyze(pParse, &X, &Y);}
 %endif
 
 //////////////////////// ALTER TABLE table ... ////////////////////////////////
-%ifndef SQLITE_OMIT_ALTERTABLE
+%ifndef SQLITE_OMIT_ALTERTABLE 
+%ifndef SQLITE_OMIT_VIRTUALTABLE
 cmd ::= ALTER TABLE fullname(X) RENAME TO nm(Z). {
   sqlite3AlterRenameTable(pParse,X,&Z);
 }
@@ -1662,7 +1663,8 @@ cmd ::= ALTER TABLE fullname(X) RENAME kwcolumn_opt nm(Y) TO nm(Z). {
 kwcolumn_opt ::= .
 kwcolumn_opt ::= COLUMNKW.
 
-%endif  SQLITE_OMIT_ALTERTABLE
+%endif SQLITE_OMIT_VIRTUALTABLE
+%endif SQLITE_OMIT_ALTERTABLE
 
 //////////////////////// CREATE VIRTUAL TABLE ... /////////////////////////////
 %ifndef SQLITE_OMIT_VIRTUALTABLE
