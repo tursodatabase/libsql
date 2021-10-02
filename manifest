@@ -1,5 +1,5 @@
-C Make\sthe\ssqlite3_filename_xxxx()\sinterfaces\srobust\sagainst\sNULL\spointer\narguments,\seven\sthough\sthe\sdocumentation\ssays\sthe\sbehavior\sis\sundefined\nin\sthat\scase.
-D 2021-10-02T17:12:58.929
+C Remove\san\sunnecessary\sstatic\sbuffer\sfrom\ssqlite3VdbeExpandSql().
+D 2021-10-02T17:34:28.966
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -629,7 +629,7 @@ F src/vdbeaux.c 2368a8888f17368d4040a05966f7d2a2276cac4eeeba50793828186d999e3c8f
 F src/vdbeblob.c 60a7694760e35b2bba166cf49eb6a1eb0b31581102b49de78008ca3032406065
 F src/vdbemem.c 0e830c2aab24241eed85bd4c8a5bd8c9b959081316477440bfffb35089ba7d0b
 F src/vdbesort.c cd5130f683706c1a43e165a74187745fb3351cb56052cf9dc91de820634bbde2
-F src/vdbetrace.c 666c6fd9f1b62be6999e072a45b913e3c2c3518bc60dfd4d54fe304130acb724
+F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf823
 F src/vdbevtab.c f99b275366c5fc5e2d99f734729880994ab9500bdafde7fae3b02d562b9d323c
 F src/vtab.c c289aa504f278f23b64cb33c95d284495c5f405bd363b419d31c92c61c14df1f
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
@@ -1929,7 +1929,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bdb9dc8a025b509960d08cdf0ff784dd075c156860548d7908de7d97e030701c
-R d05379f0eecffcb85b33e0b6c9d4d52f
+P dd64c60bab4e2b44419db6882dfcc80b73d733ebe3bea64a7588c33fbc428234
+R e771ef06e483311628276065877f4a87
 U drh
-Z ae6b1e556240082c07b6b21a5e0ef3b0
+Z 409febaf73a0d399cf250c72faf60d59
