@@ -4798,7 +4798,7 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr, int target){
   inReg = sqlite3ExprCodeTarget(pParse, pExpr, target);
   if( inReg!=target ){
     u8 op;
-    if( ExprHasProperty(pExpr,EP_Subquery) ){
+    if( ALWAYS(pExpr) && ExprHasProperty(pExpr,EP_Subquery) ){
       op = OP_Copy;
     }else{
       op = OP_SCopy;
