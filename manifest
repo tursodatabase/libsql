@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings
-D 2021-10-02T16:39:16.344
+C Make\sthe\ssqlite3_filename_xxxx()\sinterfaces\srobust\sagainst\sNULL\spointer\narguments,\seven\sthough\sthe\sdocumentation\ssays\sthe\sbehavior\sis\sundefined\nin\sthat\scase.
+D 2021-10-02T17:12:58.929
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -513,7 +513,7 @@ F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 16fa4b66709db6db5bb31475f2321d0a839269765aa2461a520c151c385e8b9d
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 0aa9e7f08e168e3874cb54984408e3976dafdf5616d511952c425b5ac088ea3e
-F src/main.c 9b99470c8bffc08b3758dca06a6af0961c919db554b58f2ffad51b05147f1186
+F src/main.c ff4c89bdfd980b59126d3f6ed4677b1e79fcb93fb72d09908019d533fd0ff134
 F src/malloc.c ef796bcc0e81d845d59a469f1cf235056caf9024172fd524e32136e65593647b
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
@@ -1929,7 +1929,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 928c2a34986644d34bcb5e8a1b2720f31cf703383f4ce75381faefca6f356d04
-R e85aa0a583053f59c7db0ebab1450d1b
+P bdb9dc8a025b509960d08cdf0ff784dd075c156860548d7908de7d97e030701c
+R d05379f0eecffcb85b33e0b6c9d4d52f
 U drh
-Z d1f68cf6d8948736d6cc86bb510479d1
+Z ae6b1e556240082c07b6b21a5e0ef3b0
