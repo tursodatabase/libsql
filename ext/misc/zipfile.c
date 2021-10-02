@@ -561,6 +561,7 @@ static u16 zipfileGetU16(const u8 *aBuf){
 ** Read and return a 32-bit little-endian unsigned integer from buffer aBuf.
 */
 static u32 zipfileGetU32(const u8 *aBuf){
+  if( aBuf==0 ) return 0;
   return ((u32)(aBuf[3]) << 24)
        + ((u32)(aBuf[2]) << 16)
        + ((u32)(aBuf[1]) <<  8)

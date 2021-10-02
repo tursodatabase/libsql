@@ -1,5 +1,5 @@
-C Fix\sCLI\sline\sprocessing.\s(back\sto\sstart\sstate\safter\smeta-command\sexecutes)
-D 2021-10-02T15:34:52.035
+C Fix\sharmless\scompiler\swarnings
+D 2021-10-02T16:39:16.344
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -320,7 +320,7 @@ F ext/misc/regexp.c 5853b0e5ed40c47f7ded2b0bf2ff73796f7cb21543089c5f07308e003264
 F ext/misc/remember.c add730f0f7e7436cd15ea3fd6a90fd83c3f706ab44169f7f048438b7d6baa69c
 F ext/misc/rot13.c 51ac5f51e9d5fd811db58a9c23c628ad5f333c173f1fc53c8491a3603d38556c
 F ext/misc/scrub.c 2a44b0d44c69584c0580ad2553f6290a307a49df4668941d2812135bfb96a946
-F ext/misc/series.c 233804fd4e07de94ecae42b487fb38bbd819b249114bb34bb46f227c8c7111df
+F ext/misc/series.c f9896e76b029e3c6553c520552555e803e26e7dfe1890d5866243cf072d938d0
 F ext/misc/sha1.c c8f2253c8792ffab9517695ea7d88c079f0395a5505eefef5c8198fe184ed5ac
 F ext/misc/shathree.c e984f31731de4cf302a0386be5fe664580f63d8204c47b9b41cc4b997745f9ec
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
@@ -338,7 +338,7 @@ F ext/misc/vfsstat.c 474d08efc697b8eba300082cb1eb74a5f0f3df31ed257db1cb07e72ab0e
 F ext/misc/vtablog.c 5538acd0c8ddaae372331bee11608d76973436b77d6a91e8635cfc9432fba5ae
 F ext/misc/vtshim.c 1976e6dd68dd0d64508c91a6dfab8e75f8aaf6cd
 F ext/misc/wholenumber.c a838d1bea913c514ff316c69695efbb49ea3b8cb37d22afc57f73b6b010b4546
-F ext/misc/zipfile.c f01cc496f082b361520223df1bbb685576c45539fd511ea50b2ed19ce7081111
+F ext/misc/zipfile.c 9078475440114135594322cdf137f5475acfca5ab22af21a3f3e65ba38d2de20
 F ext/misc/zorder.c b0ff58fa643afa1d846786d51ea8d5c4b6b35aa0254ab5a82617db92f3adda64
 F ext/rbu/rbu.c 801450b24eaf14440d8fd20385aacc751d5c9d6123398df41b1b5aa804bf4ce8
 F ext/rbu/rbu1.test c62904bd9526dcdc3496a21199aaf14ae191bbadbf67f076bf16be6b3f2115c2
@@ -529,7 +529,7 @@ F src/mutex_noop.c 9d4309c075ba9cc7249e19412d3d62f7f94839c4
 F src/mutex_unix.c dd2b3f1cc1863079bc1349ac0fec395a500090c4fe4e11ab775310a49f2f956d
 F src/mutex_w32.c caa50e1c0258ac4443f52e00fe8aaea73b6d0728bd8856bedfff822cae418541
 F src/notify.c 89a97dc854c3aa62ad5f384ef50c5a4a11d70fcc69f86de3e991573421130ed6
-F src/os.c 59ed1f503347e8b5434c0ce7d7d0f02a3f24a72fea8b26d0bba2de8dfaef778b
+F src/os.c 91fc69f95ef0528368174dca20f01e1d8f82934f719e1cb50fd0260b18c028a6
 F src/os.h 26890f540b475598cd9881dcc68931377b8d429d3ea3e2eeb64470cde64199f8
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
@@ -550,7 +550,7 @@ F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c b9e60afa56d0484ee573aba54d9e73603736236df33d2ae3421b4cd0367d907d
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 916d18b586d8efad5a46040e48405f42e7f90fff33bca1cfab040169515ec525
-F src/shell.c.in ed6eca3f048731abe688bbf656cc14522e6b8e80cd17b8542d789cf2e46a384e
+F src/shell.c.in 5a4ccff506efcc58b72df1bff13d9f54c1534887c93d42746d6f1ccf1d0a815a
 F src/sqlite.h.in 4e977a5e2ed1a9e8987ff65a2cab5f99a4298ebf040ea5ff636e1753339ff45a
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h e97f4e9b509408fea4c4e9bef5a41608dfac343b4d3c7a990dedde1e19af9510
@@ -1929,7 +1929,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f47f7f78227830c065d9ce715b8456eab81a38d680f76bf4ff08f298d84f9c7a
-R 62c6b6b7dfa60befa70e3fc7e7596c05
-U larrybr
-Z 00be79fd8f3326e4653e355698a3033c
+P 928c2a34986644d34bcb5e8a1b2720f31cf703383f4ce75381faefca6f356d04
+R e85aa0a583053f59c7db0ebab1450d1b
+U drh
+Z d1f68cf6d8948736d6cc86bb510479d1
