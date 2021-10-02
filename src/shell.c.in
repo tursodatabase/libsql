@@ -10845,6 +10845,7 @@ static int process_input(ShellState *p){
           errCnt++;
         }
       }
+      qss = QSS_Start;
       continue;
     }
     nLine = strlen30(zLine);

@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sgroup_concat()\swhen\sit\sis\sused\sas\sa\swindow\sfunction\swith\na\ssliding\swindow,\sas\sdescribed\sby\n[forum:/forumpost/f3eb24a6c0|forum\sthread\sf3eb24a6c0].
-D 2021-10-01T22:48:52.993
+C Fix\sCLI\sline\sprocessing.\s(back\sto\sstart\sstate\safter\smeta-command\sexecutes)
+D 2021-10-02T15:34:52.035
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -550,7 +550,7 @@ F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c b9e60afa56d0484ee573aba54d9e73603736236df33d2ae3421b4cd0367d907d
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 916d18b586d8efad5a46040e48405f42e7f90fff33bca1cfab040169515ec525
-F src/shell.c.in 928114971b558dc2e40a1afaf07e3e5e93558a77ecca95067c51e1f9d3c1441a
+F src/shell.c.in ed6eca3f048731abe688bbf656cc14522e6b8e80cd17b8542d789cf2e46a384e
 F src/sqlite.h.in 4e977a5e2ed1a9e8987ff65a2cab5f99a4298ebf040ea5ff636e1753339ff45a
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h e97f4e9b509408fea4c4e9bef5a41608dfac343b4d3c7a990dedde1e19af9510
@@ -1929,8 +1929,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 94b59691ee50a4666b25e36d1529fc52f714bbe94c3e8ccb35bf0a4ea11050db 8bd721c29e7a28cd75885dd80235e4e37aa0847229f769f49e01127f794fa63a
-R 755a222a3849cf0b99ca8b66d427fd7c
-T +closed 8bd721c29e7a28cd75885dd80235e4e37aa0847229f769f49e01127f794fa63a
-U drh
-Z d91f8598d681fe6b47f22c72a76f272f
+P f47f7f78227830c065d9ce715b8456eab81a38d680f76bf4ff08f298d84f9c7a
+R 62c6b6b7dfa60befa70e3fc7e7596c05
+U larrybr
+Z 00be79fd8f3326e4653e355698a3033c
