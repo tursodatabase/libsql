@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\sstatic-analyzer\swarning\sin\ssqlite3ExprCode().
-D 2021-10-02T17:46:24.515
+C Try\sto\sfix\sa\sharmless\sstatic-analyzer\swarning\sin\ssqlite3BtreeTransferRow().
+D 2021-10-02T18:22:24.853
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -490,7 +490,7 @@ F src/auth.c f4fa91b6a90bbc8e0d0f738aa284551739c9543a367071f55574681e0f24f8cf
 F src/backup.c 3014889fa06e20e6adfa0d07b60097eec1f6e5b06671625f476a714d2356513d
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c c97860dd57b01415b10ab9c976f52804d8cd914537465ca3b9fd52cab1321f2d
+F src/btree.c ced03fe226a3a42b77b504afcd0a9da14da39b42fac5935988243803cf03bc14
 F src/btree.h 74d64b8f28cfa4a894d14d4ed64fa432cd697b98b61708d4351482ae15913e22
 F src/btreeInt.h 7bc15a24a02662409ebcd6aeaa1065522d14b7fda71573a2b0568b458f514ae0
 F src/build.c ee6941680fa2ab0461d9be145a546f8659f6543af643ace0b44d08abdf85e001
@@ -1929,7 +1929,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 953a33b7f739bb39f4a0efedcad2236c09fb798da4a519f8e1049aebe3bbf3ff
-R eec41ce7eba3f81a969c5c018c3299c3
+P 918c22e82ae6e366ddd094d337ed73fd23878c51745045519ed700113832545c
+R 5781c21c06185469dcaa5dd85fb44478
 U drh
-Z ca31665b692f9e645cca03a4673a842f
+Z 74091180b7dd3dec2d49d6625f2783ff

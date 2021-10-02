@@ -9153,7 +9153,7 @@ int sqlite3BtreeTransferRow(BtCursor *pDest, BtCursor *pSrc, i64 iKey){
         }
       }while( rc==SQLITE_OK && nOut>0 );
   
-      if( rc==SQLITE_OK && nRem>0 ){
+      if( rc==SQLITE_OK && nRem>0 && ALWAYS(pPgnoOut) ){
         Pgno pgnoNew;
         MemPage *pNew = 0;
         rc = allocateBtreePage(pBt, &pNew, &pgnoNew, 0, 0);
