@@ -10832,7 +10832,8 @@ static int process_input(ShellState *p){
     if( QSS_PLAINWHITE(qss) && nSql==0 ){
       if( ShellHasFlag(p, SHFLG_Echo) )
         printf("%s\n", zLine);
-      /* Just swallow leading whitespace */
+      /* Just swallow single-line whitespace */
+      qss = QSS_Start;
       continue;
     }
     if( zLine && (zLine[0]=='.' || zLine[0]=='#') && nSql==0 ){
@@ -10848,6 +10849,7 @@ static int process_input(ShellState *p){
       qss = QSS_Start;
       continue;
     }
+    /* No single-line dispositions remain; accumulate line(s). */
     nLine = strlen30(zLine);
     if( nSql+nLine+2>=nAlloc ){
       /* Grow buffer by half-again increments when big. */
@@ -10877,9 +10879,11 @@ static int process_input(ShellState *p){
         clearTempFile(p);
       }
       p->bSafeMode = p->bSafeModePersist;
+      qss = QSS_Start;
     }else if( nSql && QSS_PLAINWHITE(qss) ){
       if( ShellHasFlag(p, SHFLG_Echo) ) printf("%s\n", zSql);
       nSql = 0;
+      qss = QSS_Start;
     }
   }
   if( nSql && QSS_PLAINDARK(qss) ){
