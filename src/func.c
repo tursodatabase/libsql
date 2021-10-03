@@ -1853,16 +1853,7 @@ static void groupConcatFinalize(sqlite3_context *context){
   GroupConcatCtx *pGCC
     = (GroupConcatCtx*)sqlite3_aggregate_context(context, 0);
   if( pGCC ){
-    StrAccum *pAccum = &pGCC->str;
-    if( pAccum->accError==SQLITE_TOOBIG ){
-      sqlite3_result_error_toobig(context);
-    }else if( pAccum->accError==SQLITE_NOMEM ){
-      sqlite3_result_error_nomem(context);
-    }else{
-      int n = pAccum->nChar;
-      sqlite3_result_text(context, sqlite3StrAccumFinish(pAccum), n, 
-                          sqlite3_free);
-    }
+    sqlite3ResultStrAccum(context, &pGCC->str);
 #ifndef SQLITE_OMIT_WINDOWFUNC
     sqlite3_free(pGCC->pnSepLengths);
 #endif

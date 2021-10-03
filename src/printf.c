@@ -1045,6 +1045,22 @@ char *sqlite3StrAccumFinish(StrAccum *p){
 }
 
 /*
+** Use the content of the StrAccum passed as the second argument
+** as the result of an SQL function.
+*/
+void sqlite3ResultStrAccum(sqlite3_context *pCtx, StrAccum *p){
+  if( p->accError ){
+    sqlite3_result_error_code(pCtx, p->accError);
+    sqlite3_str_reset(p);
+  }else if( isMalloced(p) ){
+    sqlite3_result_text(pCtx, p->zText, p->nChar, SQLITE_DYNAMIC);
+  }else{
+    sqlite3_result_text(pCtx, "", 0, SQLITE_STATIC);
+    sqlite3_str_reset(p);
+  }
+}
+
+/*
 ** This singleton is an sqlite3_str object that is returned if
 ** sqlite3_malloc() fails to provide space for a real one.  This
 ** sqlite3_str object accepts no new text and always returns
