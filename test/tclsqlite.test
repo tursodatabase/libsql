@@ -848,4 +848,40 @@ do_catchsql_test 19.911 {
 } {1 {invalid command name "bind_fallback_does_not_exist"}}
 db bind_fallback {}
 
+#-------------------------------------------------------------------------
+do_test 20.0 {
+  db transaction {
+    db close
+  }
+} {}
+
+do_test 20.1 {
+  sqlite3 db test.db
+  set rc [catch {
+    db eval {SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3} { db close }
+  } msg]
+  list $rc $msg
+} {1 {invalid command name "db"}}
+  
+
+proc closedb {} {
+  db close
+  return 10
+}
+proc func1 {} { return 1 }
+
+sqlite3 db test.db
+db func closedb closedb
+db func func1 func1
+
+do_test 20.2 {
+  set rc [catch {
+    db eval {
+      SELECT closedb(),func1() UNION ALL SELECT 20,30 UNION ALL SELECT 30,40
+    }
+  } msg]
+  list $rc $msg
+} {0 {10 1 20 30 30 40}}
+
 finish_test
+

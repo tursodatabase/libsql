@@ -87,6 +87,7 @@ const char *sqlite3TestInit(Tcl_Interp *interp){
   extern int Sqlitetestintarray_Init(Tcl_Interp*);
   extern int Sqlitetestvfs_Init(Tcl_Interp *);
   extern int Sqlitetestrtree_Init(Tcl_Interp*);
+  extern int Sqlitetestrtreedoc_Init(Tcl_Interp*);
   extern int Sqlitequota_Init(Tcl_Interp*);
   extern int Sqlitemultiplex_Init(Tcl_Interp*);
   extern int SqliteSuperlock_Init(Tcl_Interp*);
@@ -156,6 +157,7 @@ const char *sqlite3TestInit(Tcl_Interp *interp){
   Sqlitetestintarray_Init(interp);
   Sqlitetestvfs_Init(interp);
   Sqlitetestrtree_Init(interp);
+  Sqlitetestrtreedoc_Init(interp);
   Sqlitequota_Init(interp);
   Sqlitemultiplex_Init(interp);
   SqliteSuperlock_Init(interp);

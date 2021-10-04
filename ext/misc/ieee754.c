@@ -194,7 +194,11 @@ static void ieee754func(
     e += 1075;
     if( e<=0 ){
       /* Subnormal */
-      m >>= 1-e;
+      if( 1-e >= 64 ){
+        m = 0;
+      }else{
+        m >>= 1-e;
+      }
       e = 0;
     }else if( e>0x7ff ){
       e = 0x7ff;

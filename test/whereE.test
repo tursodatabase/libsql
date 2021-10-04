@@ -18,6 +18,12 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set ::testprefix whereE
 
+# If SQLITE_OMIT_ALTERTABLE is defined, omit this file.
+ifcapable !altertable {
+  finish_test
+  return
+}
+
 do_execsql_test 1.1 {
   CREATE TABLE t1(a,b);
   INSERT INTO t1 VALUES(1,10), (2,20), (3,30), (2,22), (3, 33);

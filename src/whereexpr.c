@@ -263,7 +263,7 @@ static int isLikeOrGlob(
         */
         if( pLeft->op!=TK_COLUMN 
          || sqlite3ExprAffinity(pLeft)!=SQLITE_AFF_TEXT 
-         || IsVirtual(pLeft->y.pTab)  /* Value might be numeric */
+         || (pLeft->y.pTab && IsVirtual(pLeft->y.pTab))  /* Might be numeric */
         ){
           int isNum;
           double rDummy;

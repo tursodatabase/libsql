@@ -17,6 +17,13 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set testprefix alterqf
 
+# If SQLITE_OMIT_ALTERTABLE is defined, omit this file.
+ifcapable !altertable {
+  finish_test
+  return
+}
+
+
 sqlite3_test_control SQLITE_TESTCTRL_INTERNAL_FUNCTIONS db
 
 do_execsql_test 1.0 {
