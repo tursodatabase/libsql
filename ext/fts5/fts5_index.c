@@ -1773,6 +1773,7 @@ static void fts5SegIterInit(
 
   if( p->rc==SQLITE_OK ){
     pIter->iLeafOffset = 4;
+    assert( pIter->pLeaf!=0 );
     assert_nc( pIter->pLeaf->nn>4 );
     assert_nc( fts5LeafFirstTermOff(pIter->pLeaf)==4 );
     pIter->iPgidxOff = pIter->pLeaf->szLeaf+1;
@@ -2733,7 +2734,7 @@ static void fts5SegIterGotoPage(
     fts5SegIterNextPage(p, pIter);
     assert( p->rc!=SQLITE_OK || pIter->iLeafPgno==iLeafPgno );
 
-    if( p->rc==SQLITE_OK ){
+    if( p->rc==SQLITE_OK && ALWAYS(pIter->pLeaf!=0) ){
       int iOff;
       u8 *a = pIter->pLeaf->p;
       int n = pIter->pLeaf->szLeaf;
@@ -4475,7 +4476,7 @@ static void fts5IndexAutomerge(
   Fts5Structure **ppStruct,       /* IN/OUT: Current structure of index */
   int nLeaf                       /* Number of output leaves just written */
 ){
-  if( p->rc==SQLITE_OK && p->pConfig->nAutomerge>0 ){
+  if( p->rc==SQLITE_OK && p->pConfig->nAutomerge>0 && ALWAYS((*ppStruct)!=0) ){
     Fts5Structure *pStruct = *ppStruct;
     u64 nWrite;                   /* Initial value of write-counter */
     int nWork;                    /* Number of work-quanta to perform */
@@ -5837,7 +5838,7 @@ static int fts5QueryCksum(
   Fts5IndexIter *pIter = 0;
   int rc = sqlite3Fts5IndexQuery(p, z, n, flags, 0, &pIter);
 
-  while( rc==SQLITE_OK && 0==sqlite3Fts5IterEof(pIter) ){
+  while( rc==SQLITE_OK && ALWAYS(pIter!=0) && 0==sqlite3Fts5IterEof(pIter) ){
     i64 rowid = pIter->iRowid;
 
     if( eDetail==FTS5_DETAIL_NONE ){

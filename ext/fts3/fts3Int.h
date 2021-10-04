@@ -151,17 +151,18 @@ extern int sqlite3_fts3_may_be_corrupt;
 ** Macros indicating that conditional expressions are always true or
 ** false.
 */
-#ifdef SQLITE_COVERAGE_TEST
-# define ALWAYS(x) (1)
-# define NEVER(X)  (0)
-#elif defined(SQLITE_DEBUG)
-# define ALWAYS(x) sqlite3Fts3Always((x)!=0)
-# define NEVER(x) sqlite3Fts3Never((x)!=0)
-int sqlite3Fts3Always(int b);
-int sqlite3Fts3Never(int b);
+#if defined(SQLITE_COVERAGE_TEST) || defined(SQLITE_MUTATION_TEST)
+# define SQLITE_OMIT_AUXILIARY_SAFETY_CHECKS 1
+#endif
+#if defined(SQLITE_OMIT_AUXILIARY_SAFETY_CHECKS)
+# define ALWAYS(X)      (1)
+# define NEVER(X)       (0)
+#elif !defined(NDEBUG)
+# define ALWAYS(X)      ((X)?1:(assert(0),0))
+# define NEVER(X)       ((X)?(assert(0),1):0)
 #else
-# define ALWAYS(x) (x)
-# define NEVER(x)  (x)
+# define ALWAYS(X)      (X)
+# define NEVER(X)       (X)
 #endif
 
 /*

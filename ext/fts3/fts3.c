@@ -313,13 +313,6 @@ static int fts3EvalStart(Fts3Cursor *pCsr);
 static int fts3TermSegReaderCursor(
     Fts3Cursor *, const char *, int, int, Fts3MultiSegReader **);
 
-#ifndef SQLITE_AMALGAMATION
-# if defined(SQLITE_DEBUG)
-int sqlite3Fts3Always(int b) { assert( b ); return b; }
-int sqlite3Fts3Never(int b)  { assert( !b ); return b; }
-# endif
-#endif
-
 /*
 ** This variable is set to false when running tests for which the on disk
 ** structures should not be corrupt. Otherwise, true. If it is false, extra

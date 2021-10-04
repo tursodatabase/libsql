@@ -470,6 +470,14 @@
 #endif
 
 /*
+** Disable ALWAYS() and NEVER() (make them pass-throughs) for coverage
+** and mutation testing
+*/
+#if defined(SQLITE_COVERATE_TEST) || defined(SQLITE_MUTATION_TEST)
+# define SQLITE_OMIT_AUXILIARY_SAFETY_CHECKS  1
+#endif
+
+/*
 ** The ALWAYS and NEVER macros surround boolean expressions which
 ** are intended to always be true or false, respectively.  Such
 ** expressions could be omitted from the code completely.  But they
@@ -484,7 +492,7 @@
 ** be true and false so that the unreachable code they specify will
 ** not be counted as untested code.
 */
-#if defined(SQLITE_COVERAGE_TEST) || defined(SQLITE_MUTATION_TEST)
+#if defined(SQLITE_OMIT_AUXILIARY_SAFETY_CHECKS)
 # define ALWAYS(X)      (1)
 # define NEVER(X)       (0)
 #elif !defined(NDEBUG)

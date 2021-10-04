@@ -856,7 +856,7 @@ static void appendText(ShellText *p, char const *zAppend, char quote){
     }
   }
 
-  if( p->n+len>=p->nAlloc ){
+  if( p->z==0 || p->n+len>=p->nAlloc ){
     p->nAlloc = p->nAlloc*2 + len + 20;
     p->z = realloc(p->z, p->nAlloc);
     if( p->z==0 ) shell_out_of_memory();
