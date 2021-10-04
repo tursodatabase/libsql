@@ -60,11 +60,21 @@ int sqlite3FaultSim(int iTest){
 #ifndef SQLITE_OMIT_FLOATING_POINT
 /*
 ** Return true if the floating point value is Not a Number (NaN).
+**
+** Use the math library isnan() function if compiled with SQLITE_HAVE_ISNAN.
+** Otherwise, we have our own implementation that works on most systems.
 */
 int sqlite3IsNaN(double x){
+  int rc;   /* The value return */
+#if !SQLITE_HAVE_ISNAN && !HAVE_ISNAN
   u64 y;
   memcpy(&y,&x,sizeof(y));
-  return IsNaN(y);
+  rc = IsNaN(y);
+#else
+  rc = isnan(x);
+#endif /* HAVE_ISNAN */
+  testcase( rc );
+  return rc;
 }
 #endif /* SQLITE_OMIT_FLOATING_POINT */
 
@@ -91,9 +101,9 @@ int sqlite3Strlen30(const char *z){
 char *sqlite3ColumnType(Column *pCol, char *zDflt){
   if( pCol->colFlags & COLFLAG_HASTYPE ){
     return pCol->zCnName + strlen(pCol->zCnName) + 1;
-  }else if( pCol->eType ){
-    assert( pCol->eType<=SQLITE_N_STDTYPE );
-    return (char*)sqlite3StdType[pCol->eType-1];
+  }else if( pCol->eCType ){
+    assert( pCol->eCType<=SQLITE_N_STDTYPE );
+    return (char*)sqlite3StdType[pCol->eCType-1];
   }else{
     return zDflt;
   }

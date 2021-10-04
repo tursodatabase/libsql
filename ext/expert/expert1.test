@@ -196,7 +196,7 @@ do_setup_rec_test $tn.9.1 {
 } {
   SELECT * FROM "t t" WHERE a=?
 } {
-  CREATE INDEX 't t_idx_00000061' ON 't t'(a);
+  CREATE INDEX "t t_idx_00000061" ON "t t"(a);
   SEARCH t t USING INDEX t t_idx_00000061 (a=?) 
 }
 
@@ -205,7 +205,7 @@ do_setup_rec_test $tn.9.2 {
 } {
   SELECT * FROM "t t" WHERE b BETWEEN ? AND ?
 } {
-  CREATE INDEX 't t_idx_00000062' ON 't t'(b);
+  CREATE INDEX "t t_idx_00000062" ON "t t"(b);
   SEARCH t t USING INDEX t t_idx_00000062 (b>? AND b<?)
 }
 

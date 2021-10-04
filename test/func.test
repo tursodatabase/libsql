@@ -1459,12 +1459,15 @@ do_execsql_test func-33.10 {
 do_catchsql_test func-33.11 {
   INSERT INTO t33a VALUES(1,2);
 } {1 {unsafe use of testdirectonly()}}
+
+ifcapable altertable {
 do_execsql_test func-33.20 {
   ALTER TABLE t33a RENAME COLUMN a TO aaa;
   SELECT sql FROM sqlite_master WHERE name='r1';
 } {{CREATE TRIGGER r1 AFTER INSERT ON t33a BEGIN
     INSERT INTO t33b(x,y) VALUES(testdirectonly(new.aaa),new.b);
   END}}
+}
 
 # 2020-01-09 Yongheng fuzzer find
 # The bug is in the register-validity debug logic, not in the SQLite core

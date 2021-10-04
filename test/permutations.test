@@ -1256,5 +1256,6 @@ if {[file tail $argv0] == "permutations.test"} {
     }
   }
   main $argv
+  set argv {}
   finish_test
 }

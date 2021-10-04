@@ -161,6 +161,7 @@ int sqlite3OsSectorSize(sqlite3_file *id){
   return (xSectorSize ? xSectorSize(id) : SQLITE_DEFAULT_SECTOR_SIZE);
 }
 int sqlite3OsDeviceCharacteristics(sqlite3_file *id){
+  if( NEVER(id->pMethods==0) ) return 0;
   return id->pMethods->xDeviceCharacteristics(id);
 }
 #ifndef SQLITE_OMIT_WAL

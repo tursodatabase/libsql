@@ -57,9 +57,12 @@ ifcapable !rtree {
 do_test rtree-1.1.1 {
   execsql { CREATE VIRTUAL TABLE t1 USING rtree(ii, x1, x2, y1, y2) }
 } {}
-do_test rtree-1.1.2 {
+do_test rtree-1.1.2a {
   execsql { SELECT name FROM sqlite_master ORDER BY name }
 } {t1 t1_node t1_parent t1_rowid}
+do_execsql_test rtree-1.1.2b {
+  SELECT name FROM pragma_table_list WHERE type='shadow' ORDER BY name;
+} {t1_node t1_parent t1_rowid}
 do_test rtree-1.1.3 {
   execsql { 
     DROP TABLE t1; 

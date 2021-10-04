@@ -3142,7 +3142,7 @@ static int lockBtree(BtShared *pBt){
       goto page1_init_failed;
     }
 
-    /* If the write version is set to 2, this database should be accessed
+    /* If the read version is set to 2, this database should be accessed
     ** in WAL mode. If the log is not already open, open it now. Then 
     ** return SQLITE_OK and return without populating BtShared.pPage1.
     ** The caller detects this and calls this function again. This is
@@ -5480,9 +5480,7 @@ int sqlite3BtreeTableMoveto(
           if( pCur->info.nKey==intKey ){
             return SQLITE_OK;
           }
-        }else if( rc==SQLITE_DONE ){
-          rc = SQLITE_OK;
-        }else{
+        }else if( rc!=SQLITE_DONE ){
           return rc;
         }
       }
@@ -7327,6 +7325,7 @@ static int editPage(
 
   pData = &aData[get2byteNotZero(&aData[hdr+5])];
   if( pData<pBegin ) goto editpage_fail;
+  if( NEVER(pData>pPg->aDataEnd) ) goto editpage_fail;
 
   /* Add cells to the start of the page */
   if( iNew<iOld ){
@@ -8732,7 +8731,7 @@ static int btreeOverwriteCell(BtCursor *pCur, const BtreePayload *pX){
   do{
     rc = btreeGetPage(pBt, ovflPgno, &pPage, 0);
     if( rc ) return rc;
-    if( sqlite3PagerPageRefcount(pPage->pDbPage)!=1 ){
+    if( sqlite3PagerPageRefcount(pPage->pDbPage)!=1 || pPage->isInit ){
       rc = SQLITE_CORRUPT_BKPT;
     }else{
       if( iOffset+ovflPageSize<(u32)nTotal ){
@@ -9154,7 +9153,7 @@ int sqlite3BtreeTransferRow(BtCursor *pDest, BtCursor *pSrc, i64 iKey){
         }
       }while( rc==SQLITE_OK && nOut>0 );
   
-      if( rc==SQLITE_OK && nRem>0 ){
+      if( rc==SQLITE_OK && nRem>0 && ALWAYS(pPgnoOut) ){
         Pgno pgnoNew;
         MemPage *pNew = 0;
         rc = allocateBtreePage(pBt, &pNew, &pgnoNew, 0, 0);

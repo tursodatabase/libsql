@@ -243,11 +243,14 @@ static int numberOfCachePages(PCache *p){
     ** suggested cache size is set to N. */
     return p->szCache;
   }else{
+    i64 n;
     /* IMPLEMANTATION-OF: R-59858-46238 If the argument N is negative, then the
     ** number of cache pages is adjusted to be a number of pages that would
     ** use approximately abs(N*1024) bytes of memory based on the current
     ** page size. */
-    return (int)((-1024*(i64)p->szCache)/(p->szPage+p->szExtra));
+    n = ((-1024*(i64)p->szCache)/(p->szPage+p->szExtra));
+    if( n>1000000000 ) n = 1000000000;
+    return (int)n;
   }
 }
 
