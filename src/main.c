@@ -1819,7 +1819,6 @@ int sqlite3CreateFunc(
   FuncDestructor *pDestructor
 ){
   FuncDef *p;
-  int nName;
   int extraFlags;
 
   assert( sqlite3_mutex_held(db->mutex) );
@@ -1829,7 +1828,7 @@ int sqlite3CreateFunc(
    || ((xFinal==0)!=(xStep==0))       /* Both or neither of xFinal and xStep */
    || ((xValue==0)!=(xInverse==0))    /* Both or neither of xValue, xInverse */
    || (nArg<-1 || nArg>SQLITE_MAX_FUNCTION_ARG)
-   || (255<(nName = sqlite3Strlen30( zFunctionName)))
+   || (255<sqlite3Strlen30(zFunctionName))
   ){
     return SQLITE_MISUSE_BKPT;
   }

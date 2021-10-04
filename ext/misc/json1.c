@@ -438,8 +438,9 @@ static void jsonRenderNode(
   JsonString *pOut,              /* Write JSON here */
   sqlite3_value **aReplace       /* Replacement values */
 ){
+  assert( pNode!=0 );
   if( pNode->jnFlags & (JNODE_REPLACE|JNODE_PATCH) ){
-    if( pNode->jnFlags & JNODE_REPLACE ){
+    if( (pNode->jnFlags & JNODE_REPLACE)!=0 && ALWAYS(aReplace!=0) ){
       jsonAppendValue(pOut, aReplace[pNode->u.iReplace]);
       return;
     }

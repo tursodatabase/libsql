@@ -1234,7 +1234,7 @@ static void whereIndexExprTrans(
   for(iIdxCol=0; iIdxCol<pIdx->nColumn; iIdxCol++){
     i16 iRef = pIdx->aiColumn[iIdxCol];
     if( iRef==XN_EXPR ){
-      assert( aColExpr->a[iIdxCol].pExpr!=0 );
+      assert( aColExpr!=0 && aColExpr->a[iIdxCol].pExpr!=0 );
       x.pIdxExpr = aColExpr->a[iIdxCol].pExpr;
       if( sqlite3ExprIsConstant(x.pIdxExpr) ) continue;
       w.xExprCallback = whereIndexExprTransNode;

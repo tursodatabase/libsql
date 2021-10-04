@@ -2200,7 +2200,7 @@ static int ChooseLeaf(
 
     int nCell = NCELL(pNode);
     RtreeCell cell;
-    RtreeNode *pChild;
+    RtreeNode *pChild = 0;
 
     RtreeCell *aCell = 0;
 
@@ -2558,6 +2558,7 @@ static int updateMapping(
       pChild->pParent = pNode;
     }
   }
+  if( NEVER(pNode==0) ) return SQLITE_ERROR;
   return xSetMapping(pRtree, iRowid, pNode->iNode);
 }
 

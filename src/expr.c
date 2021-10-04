@@ -4399,7 +4399,7 @@ expr_code_doover:
         sqlite3VdbeAddOp4(v, OP_CollSeq, 0, 0, 0, (char *)pColl, P4_COLLSEQ);
       }
 #ifdef SQLITE_ENABLE_OFFSET_SQL_FUNC
-      if( pDef->funcFlags & SQLITE_FUNC_OFFSET ){
+      if( (pDef->funcFlags & SQLITE_FUNC_OFFSET)!=0 && ALWAYS(pFarg!=0) ){
         Expr *pArg = pFarg->a[0].pExpr;
         if( pArg->op==TK_COLUMN ){
           sqlite3VdbeAddOp3(v, OP_Offset, pArg->iTable, pArg->iColumn, target);

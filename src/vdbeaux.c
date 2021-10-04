@@ -1487,7 +1487,7 @@ char *sqlite3VdbeDisplayComment(
   if( zOpName[nOpName+1] ){
     int seenCom = 0;
     char c;
-    zSynopsis = zOpName += nOpName + 1;
+    zSynopsis = zOpName + nOpName + 1;
     if( strncmp(zSynopsis,"IF ",3)==0 ){
       sqlite3_snprintf(sizeof(zAlt), zAlt, "if %s goto P2", zSynopsis+3);
       zSynopsis = zAlt;

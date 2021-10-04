@@ -346,9 +346,9 @@ static void codeAttach(
   sName.pParse = pParse;
 
   if( 
-      SQLITE_OK!=(rc = resolveAttachExpr(&sName, pFilename)) ||
-      SQLITE_OK!=(rc = resolveAttachExpr(&sName, pDbname)) ||
-      SQLITE_OK!=(rc = resolveAttachExpr(&sName, pKey))
+      SQLITE_OK!=resolveAttachExpr(&sName, pFilename) ||
+      SQLITE_OK!=resolveAttachExpr(&sName, pDbname) ||
+      SQLITE_OK!=resolveAttachExpr(&sName, pKey)
   ){
     goto attach_end;
   }

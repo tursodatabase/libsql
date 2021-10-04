@@ -3783,7 +3783,7 @@ static int nodeReaderNext(NodeReader *p){
       return FTS_CORRUPT_VTAB;
     }
     blobGrowBuffer(&p->term, nPrefix+nSuffix, &rc);
-    if( rc==SQLITE_OK ){
+    if( rc==SQLITE_OK && ALWAYS(p->term.a!=0) ){
       memcpy(&p->term.a[nPrefix], &p->aNode[p->iOff], nSuffix);
       p->term.n = nPrefix+nSuffix;
       p->iOff += nSuffix;
@@ -4177,7 +4177,11 @@ static int fts3TermCmp(
   int nCmp = MIN(nLhs, nRhs);
   int res;
 
-  res = (nCmp ? memcmp(zLhs, zRhs, nCmp) : 0);
+  if( nCmp && ALWAYS(zLhs) && ALWAYS(zRhs) ){
+    res = memcmp(zLhs, zRhs, nCmp);
+  }else{
+    res = 0;
+  }
   if( res==0 ) res = nLhs - nRhs;
 
   return res;
@@ -4821,7 +4825,7 @@ static int fts3IncrmergeHintLoad(Fts3Table *p, Blob *pHint){
       if( aHint ){
         blobGrowBuffer(pHint, nHint, &rc);
         if( rc==SQLITE_OK ){
-          memcpy(pHint->a, aHint, nHint);
+          if( ALWAYS(pHint->a!=0) ) memcpy(pHint->a, aHint, nHint);
           pHint->n = nHint;
         }
       }
