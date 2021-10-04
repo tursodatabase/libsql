@@ -1,5 +1,5 @@
-C Fix\sharmless\sstatic\sanalyzer\swarnings\sin\ssessions,\srtree,\sfts3\sand\sfts5.\nAdd\sthe\s-DSQLITE_OMIT_AUXILIARY_SAFETY_CHECKS\scompile-time\soption\sto\scause\nALWAYS()\sand\sNEVER()\smacros\sto\sbe\somitted\sfrom\sthe\sbuild.
-D 2021-10-04T18:21:14.780
+C Some\s#defines\ssomehow\sfailed\sto\sget\sset\scorrectly\sin\sthe\sprevious\scheck-in.\nFixed\shere.
+D 2021-10-04T18:57:42.757
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -113,7 +113,7 @@ F ext/fts3/unicode/mkunicode.tcl d5aebf022fa4577ee8cdf27468f0d847879993959101f6d
 F ext/fts3/unicode/parseunicode.tcl a981bd6466d12dd17967515801c3ff23f74a281be1a03cf1e6f52a6959fc77eb
 F ext/fts5/extract_api_docs.tcl a36e54ec777172ddd3f9a88daf593b00848368e0
 F ext/fts5/fts5.h c132a9323f22a972c4c93a8d5a3d901113a6e612faf30ca8e695788438c5ca2a
-F ext/fts5/fts5Int.h ff24689b6e641dd41c21e21d305edd2557a8dd3eb66d52463ed2a458f898d30e
+F ext/fts5/fts5Int.h a453bdbc5741c8e4014fa232f06a954f7bec4460f3d840aaac95404118436ddc
 F ext/fts5/fts5_aux.c f558e1fb9f0f86a4f7489e258c162e1f947de5ff2709087fbb465fddb7092f98
 F ext/fts5/fts5_buffer.c 89a51b37c4aa1c02c1ec24c18c55196c0693b29a752fedfd036938df59a1347f
 F ext/fts5/fts5_config.c 8336d0ff6db0933f63cfec8ae0ab76e68393259cbccc0b46e1f79f7fa1842ff3
@@ -1929,7 +1929,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f2f279b2cc1c8b3b162058c33956be4037cd519715ac0c4290f10c58d2528f0a
-R 3c35f5ee3afb57355fb7bdf18fbfd8fc
+P 1c67f957fc77e37ce8f0d447c41ca975e8e79a35d332739c24a633649b5b0387
+R e4fec384b9b81dd75f2f9dbefbf1c470
 U drh
-Z d5b73332feee812a90444e7b74de370f
+Z f3095bec1807bac205dafa906eef3829
