@@ -4594,6 +4594,7 @@ static int whereShortCut(WhereLoopBuilder *pBuilder){
   int j;
   Table *pTab;
   Index *pIdx;
+  WhereScan scan;
 
   pWInfo = pBuilder->pWInfo;
   if( pWInfo->wctrlFlags & WHERE_OR_SUBCLAUSE ) return 0;
@@ -4607,9 +4608,10 @@ static int whereShortCut(WhereLoopBuilder *pBuilder){
   pLoop = pBuilder->pNew;
   pLoop->wsFlags = 0;
   pLoop->nSkip = 0;
-  pTerm = sqlite3WhereFindTerm(pWC, iCur, -1, 0, WO_EQ|WO_IS, 0);
+  pTerm = whereScanInit(&scan, pWC, iCur, -1, WO_EQ|WO_IS, 0);
   if( pTerm ){
     testcase( pTerm->eOperator & WO_IS );
+    assert( pTerm->prereqRight==0 );
     pLoop->wsFlags = WHERE_COLUMN_EQ|WHERE_IPK|WHERE_ONEROW;
     pLoop->aLTerm[0] = pTerm;
     pLoop->nLTerm = 1;
@@ -4626,7 +4628,8 @@ static int whereShortCut(WhereLoopBuilder *pBuilder){
       ) continue;
       opMask = pIdx->uniqNotNull ? (WO_EQ|WO_IS) : WO_EQ;
       for(j=0; j<pIdx->nKeyCol; j++){
-        pTerm = sqlite3WhereFindTerm(pWC, iCur, j, 0, opMask, pIdx);
+        pTerm = whereScanInit(&scan, pWC, iCur, j, opMask, pIdx);
+        while( pTerm && pTerm->prereqRight ) pTerm = whereScanNext(&scan);
         if( pTerm==0 ) break;
         testcase( pTerm->eOperator & WO_IS );
         pLoop->aLTerm[j] = pTerm;
@@ -4655,8 +4658,14 @@ static int whereShortCut(WhereLoopBuilder *pBuilder){
     if( pWInfo->wctrlFlags & WHERE_WANT_DISTINCT ){
       pWInfo->eDistinct = WHERE_DISTINCT_UNIQUE;
     }
+    if( scan.iEquiv>1 ) pLoop->wsFlags |= WHERE_TRANSCONS;
 #ifdef SQLITE_DEBUG
     pLoop->cId = '0';
+#endif
+#ifdef WHERETRACE_ENABLED
+    if( sqlite3WhereTrace ){
+      sqlite3DebugPrintf("whereShortCut() used to compute solution\n");
+    }
 #endif
     return 1;
   }

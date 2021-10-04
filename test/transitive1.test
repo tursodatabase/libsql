@@ -398,4 +398,18 @@ do_execsql_test transitive1-720 {
   SELECT * FROM t1 CROSS JOIN t2 WHERE likely(t2.y=t1.a) AND unlikely(t1.a=t2.x)
 } {}
 
+# 2021-10-04 forum https://sqlite.org/forum/forumpost/a65cacbf5e1c41ba
+#
+reset_db
+do_execsql_test transitive1-800 {
+  CREATE TABLE t1(a INT);
+  INSERT INTO t1 VALUES(0),(3);
+  CREATE TABLE t2(b INT UNIQUE, c INT);
+  INSERT INTO t2 VALUES(1,4)	,(0,5);
+  SELECT * FROM t1 WHERE EXISTS (SELECT 1 FROM t2 WHERE c=a AND b IS a);
+  SELECT * FROM t1 WHERE EXISTS (SELECT 1 FROM t2 WHERE a=c AND a IS b);
+  SELECT * FROM t1 WHERE EXISTS (SELECT 1 FROM t2 WHERE a=c AND b IS a);
+  SELECT * FROM t1 WHERE EXISTS (SELECT 1 FROM t2 WHERE c=a AND a IS b);
+} {}
+
 finish_test
