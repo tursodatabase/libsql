@@ -241,8 +241,10 @@ int sqlite3VdbeAddOp3(Vdbe *p, int op, int p1, int p2, int p3){
   if( p->nOpAlloc<=i ){
     return growOp3(p, op, p1, p2, p3);
   }
+  assert( p->aOp!=0 );
   p->nOp++;
   pOp = &p->aOp[i];
+  assert( pOp!=0 );
   pOp->opcode = (u8)op;
   pOp->p5 = 0;
   pOp->p1 = p1;

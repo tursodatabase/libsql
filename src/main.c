@@ -3096,7 +3096,7 @@ int sqlite3ParseUri(
 */
 static const char *uriParameter(const char *zFilename, const char *zParam){
   zFilename += sqlite3Strlen30(zFilename) + 1;
-  while( zFilename[0] ){
+  while( ALWAYS(zFilename!=0) && zFilename[0] ){
     int x = strcmp(zFilename, zParam);
     zFilename += sqlite3Strlen30(zFilename) + 1;
     if( x==0 ) return zFilename;
@@ -4444,7 +4444,7 @@ const char *sqlite3_uri_key(const char *zFilename, int N){
   if( zFilename==0 || N<0 ) return 0;
   zFilename = databaseName(zFilename);
   zFilename += sqlite3Strlen30(zFilename) + 1;
-  while( zFilename[0] && (N--)>0 ){
+  while( ALWAYS(zFilename) && zFilename[0] && (N--)>0 ){
     zFilename += sqlite3Strlen30(zFilename) + 1;
     zFilename += sqlite3Strlen30(zFilename) + 1;
   }
@@ -4494,7 +4494,7 @@ const char *sqlite3_filename_journal(const char *zFilename){
   if( zFilename==0 ) return 0;
   zFilename = databaseName(zFilename);
   zFilename += sqlite3Strlen30(zFilename) + 1;
-  while( zFilename[0] ){
+  while( ALWAYS(zFilename) && zFilename[0] ){
     zFilename += sqlite3Strlen30(zFilename) + 1;
     zFilename += sqlite3Strlen30(zFilename) + 1;
   }

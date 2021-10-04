@@ -329,7 +329,8 @@ static WhereTerm *whereScanNext(WhereScan *pScan){
               }
             }
             if( (pTerm->eOperator & (WO_EQ|WO_IS))!=0
-             && (pX = pTerm->pExpr->pRight)->op==TK_COLUMN
+             && (pX = pTerm->pExpr->pRight, ALWAYS(pX!=0))
+             && pX->op==TK_COLUMN
              && pX->iTable==pScan->aiCur[0]
              && pX->iColumn==pScan->aiColumn[0]
             ){
@@ -4084,7 +4085,7 @@ static i8 wherePathSatisfiesOrderBy(
   if( obSat==obDone ) return (i8)nOrderBy;
   if( !isOrderDistinct ){
     for(i=nOrderBy-1; i>0; i--){
-      Bitmask m = MASKBIT(i) - 1;
+      Bitmask m = ALWAYS(i<BMS) ? MASKBIT(i) - 1 : 0;
       if( (obSat&m)==m ) return i;
     }
     return 0;

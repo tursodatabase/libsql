@@ -1112,10 +1112,12 @@ static int fts3MatchinfoLcsCb(
 ** position list for the next column.
 */
 static int fts3LcsIteratorAdvance(LcsIterator *pIter){
-  char *pRead = pIter->pRead;
+  char *pRead;
   sqlite3_int64 iRead;
   int rc = 0;
 
+  if( NEVER(pIter==0) ) return 1;
+  pRead = pIter->pRead;
   pRead += sqlite3Fts3GetVarint(pRead, &iRead);
   if( iRead==0 || iRead==1 ){
     pRead = 0;
