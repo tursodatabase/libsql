@@ -1138,11 +1138,11 @@ static int geopolyOverlap(GeoPoly *p1, GeoPoly *p2){
     }else{
       /* Remove a segment */
       if( pActive==pThisEvent->pSeg ){
-        pActive = pActive->pNext;
+        pActive = ALWAYS(pActive) ? pActive->pNext : 0;
       }else{
         for(pSeg=pActive; pSeg; pSeg=pSeg->pNext){
           if( pSeg->pNext==pThisEvent->pSeg ){
-            pSeg->pNext = pSeg->pNext->pNext;
+            pSeg->pNext = ALWAYS(pSeg->pNext) ? pSeg->pNext->pNext : 0;
             break;
           }
         }

@@ -434,6 +434,7 @@ static i64 fts5ExprSynonymRowid(Fts5ExprTerm *pTerm, int bDesc, int *pbEof){
   int bRetValid = 0;
   Fts5ExprTerm *p;
 
+  assert( pTerm );
   assert( pTerm->pSynonym );
   assert( bDesc==0 || bDesc==1 );
   for(p=pTerm; p; p=p->pSynonym){
