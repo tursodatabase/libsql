@@ -1587,6 +1587,7 @@ TESTEXT = \
   $(TOP)\ext\misc\totype.c \
   $(TOP)\ext\misc\unionvtab.c \
   $(TOP)\ext\misc\wholenumber.c \
+  $(TOP)\ext\rtree\test_rtreedoc.c \
   fts5.c
 
 # If use of zlib is enabled, add the "zipfile.c" source file.

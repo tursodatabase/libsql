@@ -170,7 +170,7 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
       }
     }
     db->init.orphanTrigger = 0;
-    db->init.azInit = argv;
+    db->init.azInit = (const char**)argv;
     pStmt = 0;
 #ifdef SQLITE_ENABLE_SHARED_SCHEMA
     TESTONLY(rcp = ) sqlite3LockAndPrepare(db, argv[4], -1, 0, 0, &pStmt, 0);
@@ -198,6 +198,7 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
         }
       }
     }
+    db->init.azInit = sqlite3StdType; /* Any array of string ptrs will do */
     sqlite3_finalize(pStmt);
   }else if( argv[1]==0 || (argv[4]!=0 && argv[4][0]!=0) ){
     corruptSchema(pData, argv, 0);

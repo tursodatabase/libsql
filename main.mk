@@ -388,7 +388,8 @@ TESTSRC += \
   $(TOP)/ext/misc/zipfile.c \
   $(TOP)/ext/fts5/fts5_tcl.c \
   $(TOP)/ext/fts5/fts5_test_mi.c \
-  $(TOP)/ext/fts5/fts5_test_tok.c
+  $(TOP)/ext/fts5/fts5_test_tok.c \
+  $(TOP)/ext/rtree/test_rtreedoc.c
 
 
 #TESTSRC += $(TOP)/ext/fts2/fts2_tokenizer.c

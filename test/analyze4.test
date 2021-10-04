@@ -20,6 +20,12 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+# If SQLITE_OMIT_ALTERTABLE is defined, omit this file.
+ifcapable !altertable {
+  finish_test
+  return
+}
+
 do_test analyze4-1.0 {
   db eval {
     CREATE TABLE t1(a,b);

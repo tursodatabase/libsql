@@ -3571,7 +3571,9 @@ PRIVATE int compute_action(struct lemon *lemp, struct action *ap)
       /* Since a SHIFT is inherient after a prior REDUCE, convert any
       ** SHIFTREDUCE action with a nonterminal on the LHS into a simple
       ** REDUCE action: */
-      if( ap->sp->index>=lemp->nterminal ){
+      if( ap->sp->index>=lemp->nterminal
+       && (lemp->errsym==0 || ap->sp->index!=lemp->errsym->index)
+      ){
         act = lemp->minReduce + ap->x.rp->iRule;
       }else{
         act = lemp->minShiftReduce + ap->x.rp->iRule;

@@ -619,16 +619,18 @@ do_test update-14.4 {
 # Ticket [https://www.sqlite.org/src/tktview/43107840f1c02] on 2014-10-29
 # An assertion fault on UPDATE
 #
-do_execsql_test update-15.1 {
-  CREATE TABLE t15(a INTEGER PRIMARY KEY, b);
-  INSERT INTO t15(a,b) VALUES(10,'abc'),(20,'def'),(30,'ghi');
-  ALTER TABLE t15 ADD COLUMN c;
-  CREATE INDEX t15c ON t15(c);
-  INSERT INTO t15(a,b)
-   VALUES(5,'zyx'),(15,'wvu'),(25,'tsr'),(35,'qpo');
-  UPDATE t15 SET c=printf("y%d",a) WHERE c IS NULL;
-  SELECT a,b,c,'|' FROM t15 ORDER BY a;
-} {5 zyx y5 | 10 abc y10 | 15 wvu y15 | 20 def y20 | 25 tsr y25 | 30 ghi y30 | 35 qpo y35 |}
+ifcapable altertable {
+  do_execsql_test update-15.1 {
+    CREATE TABLE t15(a INTEGER PRIMARY KEY, b);
+    INSERT INTO t15(a,b) VALUES(10,'abc'),(20,'def'),(30,'ghi');
+    ALTER TABLE t15 ADD COLUMN c;
+    CREATE INDEX t15c ON t15(c);
+    INSERT INTO t15(a,b)
+      VALUES(5,'zyx'),(15,'wvu'),(25,'tsr'),(35,'qpo');
+    UPDATE t15 SET c=printf("y%d",a) WHERE c IS NULL;
+    SELECT a,b,c,'|' FROM t15 ORDER BY a;
+  } {5 zyx y5 | 10 abc y10 | 15 wvu y15 | 20 def y20 | 25 tsr y25 | 30 ghi y30 | 35 qpo y35 |}
+}
 
 # Unreleased bug in UPDATE caused by the UPSERT changes.
 # Found by OSSFuzz as soon as the UPSERT changes landed on trunk.

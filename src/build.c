@@ -913,10 +913,10 @@ void sqlite3UnlinkAndDeleteTable(sqlite3 *db, int iDb, const char *zTabName){
 ** are not \000 terminated and are not persistent.  The returned string
 ** is \000 terminated and is persistent.
 */
-char *sqlite3NameFromToken(sqlite3 *db, Token *pName){
+char *sqlite3NameFromToken(sqlite3 *db, const Token *pName){
   char *zName;
   if( pName ){
-    zName = sqlite3DbStrNDup(db, (char*)pName->z, pName->n);
+    zName = sqlite3DbStrNDup(db, (const char*)pName->z, pName->n);
     sqlite3Dequote(zName);
   }else{
     zName = 0;
@@ -1579,7 +1579,7 @@ void sqlite3AddColumn(Parse *pParse, Token sName, Token sType){
     /* If there is no type specified, columns have the default affinity
     ** 'BLOB' with a default size of 4 bytes. */
     pCol->affinity = affinity;
-    pCol->eType = eType;
+    pCol->eCType = eType;
     pCol->szEst = szEst;
 #ifdef SQLITE_ENABLE_SORTER_REFERENCES
     if( affinity==SQLITE_AFF_BLOB ){
@@ -1874,7 +1874,7 @@ void sqlite3AddPrimaryKey(
   }
   if( nTerm==1
    && pCol
-   && pCol->eType==COLTYPE_INTEGER
+   && pCol->eCType==COLTYPE_INTEGER
    && sortOrder!=SQLITE_SO_DESC
   ){
     if( IN_RENAME_OBJECT && pList ){
@@ -2346,7 +2346,9 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
   */
   if( !db->init.imposterTable ){
     for(i=0; i<pTab->nCol; i++){
-      if( (pTab->aCol[i].colFlags & COLFLAG_PRIMKEY)!=0 ){
+      if( (pTab->aCol[i].colFlags & COLFLAG_PRIMKEY)!=0
+       && (pTab->aCol[i].notNull==OE_None)
+      ){
         pTab->aCol[i].notNull = OE_Abort;
       }
     }
@@ -2579,7 +2581,7 @@ void sqlite3EndTable(
   Parse *pParse,          /* Parse context */
   Token *pCons,           /* The ',' token after the last column defn. */
   Token *pEnd,            /* The ')' before options in the CREATE TABLE */
-  u8 tabOpts,             /* Extra table options. Usually 0. */
+  u32 tabOpts,            /* Extra table options. Usually 0. */
   Select *pSelect         /* Select from a "CREATE ... AS SELECT" */
 ){
   Table *p;                 /* The new table */
@@ -2613,6 +2615,44 @@ void sqlite3EndTable(
     }
     p->tnum = db->init.newTnum;
     if( p->tnum==1 ) p->tabFlags |= TF_Readonly;
+  }
+
+  /* Special processing for tables that include the STRICT keyword:
+  **
+  **   *  Do not allow custom column datatypes.  Every column must have
+  **      a datatype that is one of INT, INTEGER, REAL, TEXT, or BLOB.
+  **
+  **   *  If a PRIMARY KEY is defined, other than the INTEGER PRIMARY KEY,
+  **      then all columns of the PRIMARY KEY must have a NOT NULL
+  **      constraint.
+  */
+  if( tabOpts & TF_Strict ){
+    int ii;
+    p->tabFlags |= TF_Strict;
+    for(ii=0; ii<p->nCol; ii++){
+      Column *pCol = &p->aCol[ii];
+      if( pCol->eCType==COLTYPE_CUSTOM ){
+        if( pCol->colFlags & COLFLAG_HASTYPE ){
+          sqlite3ErrorMsg(pParse,
+            "unknown datatype for %s.%s: \"%s\"",
+            p->zName, pCol->zCnName, sqlite3ColumnType(pCol, "")
+          );
+        }else{
+          sqlite3ErrorMsg(pParse, "missing datatype for %s.%s",
+                          p->zName, pCol->zCnName);
+        }
+        return;
+      }else if( pCol->eCType==COLTYPE_ANY ){
+        pCol->affinity = SQLITE_AFF_BLOB;
+      }
+      if( (pCol->colFlags & COLFLAG_PRIMKEY)!=0
+       && p->iPKey!=ii
+       && pCol->notNull == OE_None
+      ){
+        pCol->notNull = OE_Abort;
+        p->tabFlags |= TF_HasNotNull;
+      }
+    }    
   }
 
   assert( (p->tabFlags & TF_HasPrimaryKey)==0
@@ -4368,7 +4408,7 @@ exit_create_index:
     ** The list was already ordered when this routine was entered, so at this
     ** point at most a single index (the newly added index) will be out of
     ** order.  So we have to reorder at most one index. */
-    Index **ppFrom = &pTab->pIndex;
+    Index **ppFrom;
     Index *pThis;
     for(ppFrom=&pTab->pIndex; (pThis = *ppFrom)!=0; ppFrom=&pThis->pNext){
       Index *pNext;

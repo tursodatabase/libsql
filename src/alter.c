@@ -647,8 +647,7 @@ void sqlite3AlterRenameColumn(
       "UPDATE \"%w\"." DFLT_SCHEMA_TABLE " SET "
       "sql = sqlite_rename_column(sql, type, name, %Q, %Q, %d, %Q, %d, %d) "
       "WHERE name NOT LIKE 'sqliteX_%%' ESCAPE 'X' "
-      " AND (type != 'index' OR tbl_name = %Q)"
-      " AND sql NOT LIKE 'create virtual%%'",
+      " AND (type != 'index' OR tbl_name = %Q)",
       zDb,
       zDb, pTab->zName, iCol, zNew, bQuote, iSchema==1,
       pTab->zName
@@ -690,7 +689,7 @@ void sqlite3AlterRenameColumn(
 ** the parse tree.
 */
 struct RenameToken {
-  void *p;               /* Parse tree element created by token t */
+  const void *p;         /* Parse tree element created by token t */
   Token t;               /* The token that created parse tree element p */
   RenameToken *pNext;    /* Next is a list of all RenameToken objects */
 };
@@ -732,9 +731,9 @@ struct RenameCtx {
 ** Technically, as x no longer points into a valid object or to the byte
 ** following a valid object, it may not be used in comparison operations.
 */
-static void renameTokenCheckAll(Parse *pParse, void *pPtr){
+static void renameTokenCheckAll(Parse *pParse, const void *pPtr){
   if( pParse->nErr==0 && pParse->db->mallocFailed==0 ){
-    RenameToken *p;
+    const RenameToken *p;
     u8 i = 0;
     for(p=pParse->pRename; p; p=p->pNext){
       if( p->p ){
@@ -760,7 +759,11 @@ static void renameTokenCheckAll(Parse *pParse, void *pPtr){
 ** with tail recursion in tokenExpr() routine, for a small performance
 ** improvement.
 */
-void *sqlite3RenameTokenMap(Parse *pParse, void *pPtr, Token *pToken){
+const void *sqlite3RenameTokenMap(
+  Parse *pParse,
+  const void *pPtr,
+  const Token *pToken
+){
   RenameToken *pNew;
   assert( pPtr || pParse->db->mallocFailed );
   renameTokenCheckAll(pParse, pPtr);
@@ -782,7 +785,7 @@ void *sqlite3RenameTokenMap(Parse *pParse, void *pPtr, Token *pToken){
 ** with parse tree element pFrom. This function remaps the associated token
 ** to parse tree element pTo.
 */
-void sqlite3RenameTokenRemap(Parse *pParse, void *pTo, void *pFrom){
+void sqlite3RenameTokenRemap(Parse *pParse, const void *pTo, const void *pFrom){
   RenameToken *p;
   renameTokenCheckAll(pParse, pTo);
   for(p=pParse->pRename; p; p=p->pNext){
@@ -798,7 +801,8 @@ void sqlite3RenameTokenRemap(Parse *pParse, void *pTo, void *pFrom){
 */
 static int renameUnmapExprCb(Walker *pWalker, Expr *pExpr){
   Parse *pParse = pWalker->pParse;
-  sqlite3RenameTokenRemap(pParse, 0, (void*)pExpr);
+  sqlite3RenameTokenRemap(pParse, 0, (const void*)pExpr);
+  sqlite3RenameTokenRemap(pParse, 0, (const void*)&pExpr->y.pTab);
   return WRC_Continue;
 }
 
@@ -828,6 +832,7 @@ static void renameWalkWith(Walker *pWalker, Select *pSelect){
       memset(&sNC, 0, sizeof(sNC));
       sNC.pParse = pParse;
       if( pCopy ) sqlite3SelectPrep(sNC.pParse, p, &sNC);
+      if( sNC.pParse->db->mallocFailed ) return;
       sqlite3WalkSelect(pWalker, p);
       sqlite3RenameExprlistUnmap(pParse, pWith->a[i].pCols);
     }
@@ -842,12 +847,12 @@ static void renameWalkWith(Walker *pWalker, Select *pSelect){
 */
 static void unmapColumnIdlistNames(
   Parse *pParse,
-  IdList *pIdList
+  const IdList *pIdList
 ){
   if( pIdList ){
     int ii;
     for(ii=0; ii<pIdList->nId; ii++){
-      sqlite3RenameTokenRemap(pParse, 0, (void*)pIdList->a[ii].zName);
+      sqlite3RenameTokenRemap(pParse, 0, (const void*)pIdList->a[ii].zName);
     }
   }
 }
@@ -859,9 +864,7 @@ static int renameUnmapSelectCb(Walker *pWalker, Select *p){
   Parse *pParse = pWalker->pParse;
   int i;
   if( pParse->nErr ) return WRC_Abort;
-  if( p->selFlags & (SF_View|SF_CopyCte) ){
-    testcase( p->selFlags & SF_View );
-    testcase( p->selFlags & SF_CopyCte );
+  if( NEVER(p->selFlags & (SF_View|SF_CopyCte)) ){
     return WRC_Prune;
   }
   if( ALWAYS(p->pEList) ){
@@ -876,7 +879,7 @@ static int renameUnmapSelectCb(Walker *pWalker, Select *p){
     SrcList *pSrc = p->pSrc;
     for(i=0; i<pSrc->nSrc; i++){
       sqlite3RenameTokenRemap(pParse, 0, (void*)pSrc->a[i].zName);
-      if( sqlite3WalkExpr(pWalker, pSrc->a[i].pOn) ) return WRC_Abort;
+      sqlite3WalkExpr(pWalker, pSrc->a[i].pOn);
       unmapColumnIdlistNames(pParse, pSrc->a[i].pUsing);
     }
   }
@@ -944,7 +947,7 @@ static void renameTokenFree(sqlite3 *db, RenameToken *pToken){
 static RenameToken *renameTokenFind(
   Parse *pParse, 
   struct RenameCtx *pCtx, 
-  void *pPtr
+  const void *pPtr
 ){
   RenameToken **pp;
   if( NEVER(pPtr==0) ){
@@ -1063,18 +1066,18 @@ static void renameColumnParseError(
 static void renameColumnElistNames(
   Parse *pParse, 
   RenameCtx *pCtx, 
-  ExprList *pEList, 
+  const ExprList *pEList, 
   const char *zOld
 ){
   if( pEList ){
     int i;
     for(i=0; i<pEList->nExpr; i++){
-      char *zName = pEList->a[i].zEName;
+      const char *zName = pEList->a[i].zEName;
       if( ALWAYS(pEList->a[i].eEName==ENAME_NAME)
        && ALWAYS(zName!=0)
        && 0==sqlite3_stricmp(zName, zOld)
       ){
-        renameTokenFind(pParse, pCtx, (void*)zName);
+        renameTokenFind(pParse, pCtx, (const void*)zName);
       }
     }
   }
@@ -1088,15 +1091,15 @@ static void renameColumnElistNames(
 static void renameColumnIdlistNames(
   Parse *pParse, 
   RenameCtx *pCtx, 
-  IdList *pIdList, 
+  const IdList *pIdList, 
   const char *zOld
 ){
   if( pIdList ){
     int i;
     for(i=0; i<pIdList->nId; i++){
-      char *zName = pIdList->a[i].zName;
+      const char *zName = pIdList->a[i].zName;
       if( 0==sqlite3_stricmp(zName, zOld) ){
-        renameTokenFind(pParse, pCtx, (void*)zName);
+        renameTokenFind(pParse, pCtx, (const void*)zName);
       }
     }
   }
@@ -1498,7 +1501,7 @@ static void renameColumnFunc(
         sqlite3WalkSelect(&sWalker, pSelect);
       }
       if( rc!=SQLITE_OK ) goto renameColumnFunc_done;
-    }else if( ALWAYS(IsOrdinaryTable(sParse.pNewTable)) ){
+    }else if( IsOrdinaryTable(sParse.pNewTable) ){
       /* A regular table */
       int bFKOnly = sqlite3_stricmp(zTable, sParse.pNewTable->zName);
       FKey *pFKey;
@@ -1796,7 +1799,7 @@ static void renameTableFunc(
 
 static int renameQuotefixExprCb(Walker *pWalker, Expr *pExpr){
   if( pExpr->op==TK_STRING && (pExpr->flags & EP_DblQuoted) ){
-    renameTokenFind(pWalker->pParse, pWalker->u.pRename, (void*)pExpr);
+    renameTokenFind(pWalker->pParse, pWalker->u.pRename, (const void*)pExpr);
   }
   return WRC_Continue;
 }
@@ -2066,7 +2069,7 @@ drop_column_done:
 ** statement. Argument pSrc contains the possibly qualified name of the
 ** table being edited, and token pName the name of the column to drop.
 */
-void sqlite3AlterDropColumn(Parse *pParse, SrcList *pSrc, Token *pName){
+void sqlite3AlterDropColumn(Parse *pParse, SrcList *pSrc, const Token *pName){
   sqlite3 *db = pParse->db;       /* Database handle */
   Table *pTab;                    /* Table to modify */
   int iDb;                        /* Index of db containing pTab in aDb[] */

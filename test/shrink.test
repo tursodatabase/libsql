@@ -24,7 +24,7 @@ do_test shrink-1.1 {
     CREATE TABLE t1(x,y);
     INSERT INTO t1 VALUES(randomblob(1000000),1);
   }
-  set ::baseline sqlite3_memory_used
+  set ::baseline [sqlite3_memory_used]
   # EVIDENCE-OF: R-58814-63508 The sqlite3_db_release_memory(D) interface
   # attempts to free as much heap memory as possible from database
   # connection D.

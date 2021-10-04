@@ -1940,20 +1940,22 @@ do_test pager1-18.4 {
 } {1 {database disk image is malformed}}
 db2 close
 extra_schema_checks 0
-do_test pager1-18.5 {
-  sqlite3 db ""
-  sqlite3_db_config db DEFENSIVE 0
-  execsql {
-    CREATE TABLE t1(a, b);
-    CREATE TABLE t2(a, b);
-    PRAGMA writable_schema = 1;
-    UPDATE sqlite_master SET rootpage=5 WHERE tbl_name = 't1';
-    PRAGMA writable_schema = 0;
-    ALTER TABLE t1 RENAME TO x1;
-  }
-  catchsql { SELECT * FROM x1 }
-} {1 {database disk image is malformed}}
-db close
+ifcapable altertable {
+  do_test pager1-18.5 {
+    sqlite3 db ""
+      sqlite3_db_config db DEFENSIVE 0
+      execsql {
+        CREATE TABLE t1(a, b);
+        CREATE TABLE t2(a, b);
+        PRAGMA writable_schema = 1;
+        UPDATE sqlite_master SET rootpage=5 WHERE tbl_name = 't1';
+        PRAGMA writable_schema = 0;
+        ALTER TABLE t1 RENAME TO x1;
+      }
+    catchsql { SELECT * FROM x1 }
+  } {1 {database disk image is malformed}}
+  db close
+}
 extra_schema_checks 1
 
 do_test pager1-18.6 {

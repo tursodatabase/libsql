@@ -35,6 +35,7 @@ struct GlobalVars {
   int bSchemaPK;            /* Use the schema-defined PK, not the true PK */
   int bHandleVtab;          /* Handle fts3, fts4, fts5 and rtree vtabs */
   unsigned fDebug;          /* Debug flags */
+  int bSchemaCompare;       /* Doing single-table sqlite_schema compare */
   sqlite3 *db;              /* The database connection */
 } g;
 
@@ -192,14 +193,14 @@ static void namelistFree(char **az){
 }
 
 /*
-** Return a list of column names for the table zDb.zTab.  Space to
+** Return a list of column names [a] for the table zDb.zTab.  Space to
 ** hold the list is obtained from sqlite3_malloc() and should released
 ** using namelistFree() when no longer needed.
 **
 ** Primary key columns are listed first, followed by data columns.
 ** The number of columns in the primary key is returned in *pnPkey.
 **
-** Normally, the "primary key" in the previous sentence is the true
+** Normally [a], the "primary key" in the previous sentence is the true
 ** primary key - the rowid or INTEGER PRIMARY KEY for ordinary tables
 ** or the declared PRIMARY KEY for WITHOUT ROWID tables.  However, if
 ** the g.bSchemaPK flag is set, then the schema-defined PRIMARY KEY is
@@ -208,6 +209,9 @@ static void namelistFree(char **az){
 **
 ** If the primary key for a table is the rowid but rowid is inaccessible,
 ** then this routine returns a NULL pointer.
+**
+** [a. If the lone, named table is "sqlite_schema", "rootpage" column is
+**  omitted and the "type" and "name" columns are made to be the PK.]
 **
 ** Examples:
 **    CREATE TABLE t1(a INT UNIQUE, b INTEGER, c TEXT, PRIMARY KEY(c));
@@ -299,19 +303,36 @@ static char **columnNames(
     if( nPK==0 ) nPK = 1;
     truePk = 1;
   }
+  if( g.bSchemaCompare ){
+    assert( sqlite3_stricmp(zTab,"sqlite_schema")==0
+            || sqlite3_stricmp(zTab,"sqlite_master")==0 );
+    /* For sqlite_schema, will use type and name as the PK. */
+    nPK = 2;
+    truePk = 0;
+  }
   *pnPKey = nPK;
   naz = nPK;
   az = sqlite3_malloc( sizeof(char*)*(nPK+1) );
   if( az==0 ) runtimeError("out of memory");
   memset(az, 0, sizeof(char*)*(nPK+1));
+  if( g.bSchemaCompare ){
+    az[0] = sqlite3_mprintf("%s", "type");
+    az[1] = sqlite3_mprintf("%s", "name");
+  }
   while( SQLITE_ROW==sqlite3_step(pStmt) ){
+    char * sid = safeId((char*)sqlite3_column_text(pStmt,1));
     int iPKey;
     if( truePk && (iPKey = sqlite3_column_int(pStmt,5))>0 ){
-      az[iPKey-1] = safeId((char*)sqlite3_column_text(pStmt,1));
+      az[iPKey-1] = sid;
     }else{
-      az = sqlite3_realloc(az, sizeof(char*)*(naz+2) );
-      if( az==0 ) runtimeError("out of memory");
-      az[naz++] = safeId((char*)sqlite3_column_text(pStmt,1));
+      if( !g.bSchemaCompare
+          || !(strcmp(sid,"rootpage")==0
+               ||strcmp(sid,"name")==0
+               ||strcmp(sid,"type")==0)){
+        az = sqlite3_realloc(az, sizeof(char*)*(naz+2) );
+        if( az==0 ) runtimeError("out of memory");
+        az[naz++] = sid;
+      }
     }
   }
   sqlite3_finalize(pStmt);
@@ -322,9 +343,11 @@ static char **columnNames(
   if( pbRowid ) *pbRowid = (az[0]==0);
 
   /* If this table has an implicit rowid for a PK, figure out how to refer
-  ** to it. There are three options - "rowid", "_rowid_" and "oid". Any
-  ** of these will work, unless the table has an explicit column of the
-  ** same name.  */
+  ** to it. There are usually three options - "rowid", "_rowid_" and "oid".
+  ** Any of these will work, unless the table has an explicit column of the
+  ** same name or the sqlite_schema tables are to be compared. In the latter
+  ** case, pretend that the "true" primary key is the name column, which
+  ** avoids extraneous diffs against the schemas due to rowid variance. */
   if( az[0]==0 ){
     const char *azRowid[] = { "rowid", "_rowid_", "oid" };
     for(i=0; i<sizeof(azRowid)/sizeof(azRowid[0]); i++){
@@ -494,7 +517,8 @@ static void dump_table(const char *zTab, FILE *out){
 
 
 /*
-** Compute all differences for a single table.
+** Compute all differences for a single table, except if the
+** table name is sqlite_schema, ignore the rootpage column.
 */
 static void diff_one_table(const char *zTab, FILE *out){
   char *zId = safeId(zTab); /* Name of table (translated for us in SQL) */
@@ -509,6 +533,8 @@ static void diff_one_table(const char *zTab, FILE *out){
   const char *zSep;         /* Separator string */
   Str sql;                  /* Comparison query */
   sqlite3_stmt *pStmt;      /* Query statement to do the diff */
+  const char *zLead =       /* Becomes line-comment for sqlite_schema */
+    (g.bSchemaCompare)? "-- " : "";
 
   strInit(&sql);
   if( g.fDebug==DEBUG_COLUMN_NAMES ){
@@ -529,19 +555,24 @@ static void diff_one_table(const char *zTab, FILE *out){
     }
     goto end_diff_one_table;
   }
-    
 
   if( sqlite3_table_column_metadata(g.db,"aux",zTab,0,0,0,0,0,0) ){
     if( !sqlite3_table_column_metadata(g.db,"main",zTab,0,0,0,0,0,0) ){
       /* Table missing from second database. */
-      fprintf(out, "DROP TABLE %s;\n", zId);
+      if( g.bSchemaCompare )
+        fprintf(out, "-- 2nd DB has no %s table\n", zTab);
+      else
+        fprintf(out, "DROP TABLE %s;\n", zId);
     }
     goto end_diff_one_table;
   }
 
   if( sqlite3_table_column_metadata(g.db,"main",zTab,0,0,0,0,0,0) ){
     /* Table missing from source */
-    dump_table(zTab, out);
+    if( g.bSchemaCompare )
+      fprintf(out, "-- 1st DB has no %s table\n", zTab);
+    else
+      dump_table(zTab, out);
     goto end_diff_one_table;
   }
 
@@ -558,7 +589,7 @@ static void diff_one_table(const char *zTab, FILE *out){
    || az[n]
   ){
     /* Schema mismatch */
-    fprintf(out, "DROP TABLE %s; -- due to schema mismatch\n", zId);
+    fprintf(out, "%sDROP TABLE %s; -- due to schema mismatch\n", zLead, zId);
     dump_table(zTab, out);
     goto end_diff_one_table;
   }
@@ -677,7 +708,7 @@ static void diff_one_table(const char *zTab, FILE *out){
       int iType = sqlite3_column_int(pStmt, nPk);
       if( iType==1 || iType==2 ){
         if( iType==1 ){       /* Change the content of a row */
-          fprintf(out, "UPDATE %s", zId);
+          fprintf(out, "%sUPDATE %s", zLead, zId);
           zSep = " SET";
           for(i=nPk+1; i<nQ; i+=2){
             if( sqlite3_column_int(pStmt,i)==0 ) continue;
@@ -686,7 +717,7 @@ static void diff_one_table(const char *zTab, FILE *out){
             printQuoted(out, sqlite3_column_value(pStmt,i+1));
           }
         }else{                /* Delete a row */
-          fprintf(out, "DELETE FROM %s", zId);
+          fprintf(out, "%sDELETE FROM %s", zLead, zId);
         }
         zSep = " WHERE";
         for(i=0; i<nPk; i++){
@@ -696,7 +727,7 @@ static void diff_one_table(const char *zTab, FILE *out){
         }
         fprintf(out, ";\n");
       }else{                  /* Insert a row */
-        fprintf(out, "INSERT INTO %s(%s", zId, az2[0]);
+        fprintf(out, "%sINSERT INTO %s(%s", zLead, zId, az2[0]);
         for(i=1; az2[i]; i++) fprintf(out, ",%s", az2[i]);
         fprintf(out, ") VALUES");
         zSep = "(";
@@ -1891,6 +1922,7 @@ static void showHelp(void){
 "  --table TAB           Show only differences in table TAB\n"
 "  --transaction         Show SQL output inside a transaction\n"
 "  --vtab                Handle fts3, fts4, fts5 and rtree tables\n"
+"See https://sqlite.org/sqldiff.html for detailed explanation.\n"
   );
 }
 
@@ -1957,6 +1989,9 @@ int main(int argc, char **argv){
       if( strcmp(z,"table")==0 ){
         if( i==argc-1 ) cmdlineError("missing argument to %s", argv[i]);
         zTab = argv[++i];
+        g.bSchemaCompare =
+          sqlite3_stricmp(zTab, "sqlite_schema")==0
+          || sqlite3_stricmp(zTab, "sqlite_master")==0;
       }else
       if( strcmp(z,"transaction")==0 ){
         useTransaction = 1;
@@ -1977,6 +2012,9 @@ int main(int argc, char **argv){
   }
   if( zDb2==0 ){
     cmdlineError("two database arguments required");
+  }
+  if( g.bSchemaOnly && g.bSchemaCompare ){
+    cmdlineError("The --schema option is useless with --table %s .", zTab);
   }
   rc = sqlite3_open(zDb1, &g.db);
   if( rc ){

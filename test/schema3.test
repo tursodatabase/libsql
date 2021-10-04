@@ -16,6 +16,12 @@ source $testdir/tester.tcl
 source $testdir/malloc_common.tcl
 source $testdir/lock_common.tcl
 
+# If SQLITE_OMIT_ALTERTABLE is defined, omit this file.
+ifcapable !altertable {
+  finish_test
+  return
+}
+
 # This block tests that if one client modifies the database schema, a
 # second client updates its internal cache of the database schema before
 # executing any queries. Specifically, it does not return a "no such column"
