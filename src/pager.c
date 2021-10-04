@@ -3024,6 +3024,7 @@ static int readDbPage(PgHdr *pPg){
 */
 static void pager_write_changecounter(PgHdr *pPg){
   u32 change_counter;
+  if( NEVER(pPg==0) ) return;
 
   /* Increment the value just read and write it back to byte 24. */
   change_counter = sqlite3Get4byte((u8*)pPg->pPager->dbFileVers)+1;

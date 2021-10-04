@@ -2983,6 +2983,7 @@ static int multiSelect(
     int nCol;                     /* Number of columns in result set */
 
     assert( p->pNext==0 );
+    assert( p->pEList!=0 );
     nCol = p->pEList->nExpr;
     pKeyInfo = sqlite3KeyInfoAlloc(db, nCol, 1);
     if( !pKeyInfo ){

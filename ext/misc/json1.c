@@ -759,7 +759,7 @@ static int jsonParseAddNode(
   const char *zContent      /* Content */
 ){
   JsonNode *p;
-  if( pParse->nNode>=pParse->nAlloc ){
+  if( pParse->aNode==0 || pParse->nNode>=pParse->nAlloc ){
     return jsonParseAddNodeExpand(pParse, eType, n, zContent);
   }
   p = &pParse->aNode[pParse->nNode];
