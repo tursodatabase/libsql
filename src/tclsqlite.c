@@ -181,6 +181,7 @@ struct SqliteDb {
   int nVMStep;               /* Another statistic for most recent operation */
   int nTransaction;          /* Number of nested [transaction] methods */
   int openFlags;             /* Flags used to open.  (SQLITE_OPEN_URI) */
+  int nRef;                  /* Delete object when this reaches 0 */
 #ifdef SQLITE_TEST
   int bLegacyPrepare;        /* True to use sqlite3_prepare() */
 #endif
@@ -518,63 +519,83 @@ static void flushStmtCache(SqliteDb *pDb){
 }
 
 /*
+** Increment the reference counter on the SqliteDb object. The reference
+** should be released by calling delDatabaseRef().
+*/
+static void addDatabaseRef(SqliteDb *pDb){
+  pDb->nRef++;
+}
+
+/*
+** Decrement the reference counter associated with the SqliteDb object.
+** If it reaches zero, delete the object.
+*/
+static void delDatabaseRef(SqliteDb *pDb){
+  assert( pDb->nRef>0 );
+  pDb->nRef--;
+  if( pDb->nRef==0 ){
+    flushStmtCache(pDb);
+    closeIncrblobChannels(pDb);
+    sqlite3_close(pDb->db);
+    while( pDb->pFunc ){
+      SqlFunc *pFunc = pDb->pFunc;
+      pDb->pFunc = pFunc->pNext;
+      assert( pFunc->pDb==pDb );
+      Tcl_DecrRefCount(pFunc->pScript);
+      Tcl_Free((char*)pFunc);
+    }
+    while( pDb->pCollate ){
+      SqlCollate *pCollate = pDb->pCollate;
+      pDb->pCollate = pCollate->pNext;
+      Tcl_Free((char*)pCollate);
+    }
+    if( pDb->zBusy ){
+      Tcl_Free(pDb->zBusy);
+    }
+    if( pDb->zTrace ){
+      Tcl_Free(pDb->zTrace);
+    }
+    if( pDb->zTraceV2 ){
+      Tcl_Free(pDb->zTraceV2);
+    }
+    if( pDb->zProfile ){
+      Tcl_Free(pDb->zProfile);
+    }
+    if( pDb->zBindFallback ){
+      Tcl_Free(pDb->zBindFallback);
+    }
+    if( pDb->zAuth ){
+      Tcl_Free(pDb->zAuth);
+    }
+    if( pDb->zNull ){
+      Tcl_Free(pDb->zNull);
+    }
+    if( pDb->pUpdateHook ){
+      Tcl_DecrRefCount(pDb->pUpdateHook);
+    }
+    if( pDb->pPreUpdateHook ){
+      Tcl_DecrRefCount(pDb->pPreUpdateHook);
+    }
+    if( pDb->pRollbackHook ){
+      Tcl_DecrRefCount(pDb->pRollbackHook);
+    }
+    if( pDb->pWalHook ){
+      Tcl_DecrRefCount(pDb->pWalHook);
+    }
+    if( pDb->pCollateNeeded ){
+      Tcl_DecrRefCount(pDb->pCollateNeeded);
+    }
+    Tcl_Free((char*)pDb);
+  }
+}
+
+/*
 ** TCL calls this procedure when an sqlite3 database command is
 ** deleted.
 */
 static void SQLITE_TCLAPI DbDeleteCmd(void *db){
   SqliteDb *pDb = (SqliteDb*)db;
-  flushStmtCache(pDb);
-  closeIncrblobChannels(pDb);
-  sqlite3_close(pDb->db);
-  while( pDb->pFunc ){
-    SqlFunc *pFunc = pDb->pFunc;
-    pDb->pFunc = pFunc->pNext;
-    assert( pFunc->pDb==pDb );
-    Tcl_DecrRefCount(pFunc->pScript);
-    Tcl_Free((char*)pFunc);
-  }
-  while( pDb->pCollate ){
-    SqlCollate *pCollate = pDb->pCollate;
-    pDb->pCollate = pCollate->pNext;
-    Tcl_Free((char*)pCollate);
-  }
-  if( pDb->zBusy ){
-    Tcl_Free(pDb->zBusy);
-  }
-  if( pDb->zTrace ){
-    Tcl_Free(pDb->zTrace);
-  }
-  if( pDb->zTraceV2 ){
-    Tcl_Free(pDb->zTraceV2);
-  }
-  if( pDb->zProfile ){
-    Tcl_Free(pDb->zProfile);
-  }
-  if( pDb->zBindFallback ){
-    Tcl_Free(pDb->zBindFallback);
-  }
-  if( pDb->zAuth ){
-    Tcl_Free(pDb->zAuth);
-  }
-  if( pDb->zNull ){
-    Tcl_Free(pDb->zNull);
-  }
-  if( pDb->pUpdateHook ){
-    Tcl_DecrRefCount(pDb->pUpdateHook);
-  }
-  if( pDb->pPreUpdateHook ){
-    Tcl_DecrRefCount(pDb->pPreUpdateHook);
-  }
-  if( pDb->pRollbackHook ){
-    Tcl_DecrRefCount(pDb->pRollbackHook);
-  }
-  if( pDb->pWalHook ){
-    Tcl_DecrRefCount(pDb->pWalHook);
-  }
-  if( pDb->pCollateNeeded ){
-    Tcl_DecrRefCount(pDb->pCollateNeeded);
-  }
-  Tcl_Free((char*)pDb);
+  delDatabaseRef(pDb);
 }
 
 /*
@@ -1246,6 +1267,7 @@ static int SQLITE_TCLAPI DbTransPostCmd(
   }
   pDb->disableAuth--;
 
+  delDatabaseRef(pDb);
   return rc;
 }
 
@@ -1579,6 +1601,7 @@ static void dbEvalInit(
     Tcl_IncrRefCount(pArray);
   }
   p->evalFlags = evalFlags;
+  addDatabaseRef(p->pDb);
 }
 
 /*
@@ -1719,6 +1742,7 @@ static void dbEvalFinalize(DbEvalContext *p){
   }
   Tcl_DecrRefCount(p->pSql);
   dbReleaseColumnNames(p);
+  delDatabaseRef(p->pDb);
 }
 
 /*
@@ -3435,6 +3459,7 @@ deserialize_error:
     ** opened above. If not using NRE, evaluate the script directly, then
     ** call function DbTransPostCmd() to commit (or rollback) the transaction
     ** or savepoint.  */
+    addDatabaseRef(pDb);          /* DbTransPostCmd() calls delDatabaseRef() */
     if( DbUseNre() ){
       Tcl_NRAddCallback(interp, DbTransPostCmd, cd, 0, 0, 0);
       (void)Tcl_NREvalObj(interp, pScript, 0);
@@ -3842,6 +3867,7 @@ static int SQLITE_TCLAPI DbMain(
   }else{
     Tcl_CreateObjCommand(interp, zArg, DbObjCmd, (char*)p, DbDeleteCmd);
   }
+  p->nRef = 1;
   return TCL_OK;
 }
 

@@ -648,4 +648,42 @@ do_catchsql_test 26.6 {
 } {1 {error in trigger xx: ambiguous column name: xx}}
 
 
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 27.1 {
+  CREATE TABLE t1(a, b AS ((WITH w1 (xyz) AS  ( SELECT t1.b FROM t1 )  SELECT 123) IN ()), c);
+}
+
+do_execsql_test 27.2 {
+  ALTER TABLE t1 DROP COLUMN c;
+  SELECT sql FROM sqlite_schema WHERE name = 't1';
+} {
+  {CREATE TABLE t1(a, b AS ((WITH w1 (xyz) AS  ( SELECT t1.b FROM t1 )  SELECT 123) IN ()))}
+}
+
+do_execsql_test 27.3 {
+  CREATE TABLE t0(c0 , c1 AS (CASE TRUE   NOT IN () WHEN NULL   THEN CASE + 0xa     ISNULL  WHEN NOT + 0x9     THEN t0.c1  ELSE CURRENT_TIME   LIKE CAST (t0.c1 REGEXP '-([1-9]\d*.\d*|0\.\d*[1-9]\d*)'ESCAPE (c1) COLLATE BINARY  BETWEEN c1  AND c1   NOT IN (WITH t4 (c0) AS  (WITH t3 (c0) AS NOT MATERIALIZED  (WITH RECURSIVE t2 (c0) AS  (WITH RECURSIVE t1 AS  (VALUES (x'717171ff71717171' )  )  SELECT DISTINCT t0.c0  FROM t0 NOT INDEXED  WHERE t0.c0 =t0.c0 GROUP BY 0x9      )  SELECT DISTINCT t0.c0  FROM t0 NOT INDEXED  WHERE t0.c0 =t0.c1   )  SELECT DISTINCT t0.c0  FROM t0 NOT INDEXED  WHERE t0.c0 =t0.c0 GROUP BY typeof(0x9   )    )  SELECT DISTINCT t0.c0  FROM t0 NOT INDEXED  WHERE t0.c0 =t0.c0 GROUP BY typeof(typeof(0x9    )  )    ) IN t0   BETWEEN typeof(typeof(typeof(hex(*) FILTER (WHERE + x'5ccd1e68'   )  )  )  )  AND 1   >0xa      AS BLOB (+4.4E4 , -0xe  ) )  END  <> c1  IN ()  END  ) VIRTUAL   , c35 PRIMARY KEY   ,  c60 , c64 NUMERIC (-6.8 , -0xE  )  ) WITHOUT ROWID ;
+} {}
+
+do_execsql_test 27.4 {
+  ALTER TABLE t0 DROP COLUMN c60;
+} {}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 28.1 {
+  CREATE TABLE t1(a,b,c,d);
+  CREATE TRIGGER AFTER INSERT ON t1 BEGIN
+    UPDATE t1 SET (c,d)=(a,b);
+  END;
+  ALTER TABLE t1 RENAME TO t2;
+}
+
+do_execsql_test 28.2 {
+  SELECT sql FROM sqlite_schema WHERE type='trigger'
+} {{CREATE TRIGGER AFTER INSERT ON "t2" BEGIN
+    UPDATE "t2" SET (c,d)=(a,b);
+  END}}
+
 finish_test

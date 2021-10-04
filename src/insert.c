@@ -110,28 +110,68 @@ const char *sqlite3IndexAffinityStr(sqlite3 *db, Index *pIdx){
 }
 
 /*
+** Make changes to the evolving bytecode to do affinity transformations
+** of values that are about to be gathered into a row for table pTab.
+**
+** For ordinary (legacy, non-strict) tables:
+** -----------------------------------------
+**
 ** Compute the affinity string for table pTab, if it has not already been
 ** computed.  As an optimization, omit trailing SQLITE_AFF_BLOB affinities.
 **
-** If the affinity exists (if it is not entirely SQLITE_AFF_BLOB values) and
-** if iReg>0 then code an OP_Affinity opcode that will set the affinities
-** for register iReg and following.  Or if affinities exists and iReg==0,
+** If the affinity string is empty (because it was all SQLITE_AFF_BLOB entries
+** which were then optimized out) then this routine becomes a no-op.
+**
+** Otherwise if iReg>0 then code an OP_Affinity opcode that will set the
+** affinities for register iReg and following.  Or if iReg==0,
 ** then just set the P4 operand of the previous opcode (which should  be
 ** an OP_MakeRecord) to the affinity string.
 **
 ** A column affinity string has one character per column:
 **
-**  Character      Column affinity
-**  ------------------------------
-**  'A'            BLOB
-**  'B'            TEXT
-**  'C'            NUMERIC
-**  'D'            INTEGER
-**  'E'            REAL
+**    Character      Column affinity
+**    ---------      ---------------
+**    'A'            BLOB
+**    'B'            TEXT
+**    'C'            NUMERIC
+**    'D'            INTEGER
+**    'E'            REAL
+**
+** For STRICT tables:
+** ------------------
+**
+** Generate an appropropriate OP_TypeCheck opcode that will verify the
+** datatypes against the column definitions in pTab.  If iReg==0, that
+** means an OP_MakeRecord opcode has already been generated and should be
+** the last opcode generated.  The new OP_TypeCheck needs to be inserted
+** before the OP_MakeRecord.  The new OP_TypeCheck should use the same
+** register set as the OP_MakeRecord.  If iReg>0 then register iReg is
+** the first of a series of registers that will form the new record.
+** Apply the type checking to that array of registers.
 */
 void sqlite3TableAffinity(Vdbe *v, Table *pTab, int iReg){
   int i, j;
-  char *zColAff = pTab->zColAff;
+  char *zColAff;
+  if( pTab->tabFlags & TF_Strict ){
+    if( iReg==0 ){
+      /* Move the previous opcode (which should be OP_MakeRecord) forward
+      ** by one slot and insert a new OP_TypeCheck where the current
+      ** OP_MakeRecord is found */
+      VdbeOp *pPrev;
+      sqlite3VdbeAppendP4(v, pTab, P4_TABLE);
+      pPrev = sqlite3VdbeGetOp(v, -1);
+      assert( pPrev!=0 );
+      assert( pPrev->opcode==OP_MakeRecord || sqlite3VdbeDb(v)->mallocFailed );
+      pPrev->opcode = OP_TypeCheck;
+      sqlite3VdbeAddOp3(v, OP_MakeRecord, pPrev->p1, pPrev->p2, pPrev->p3);
+    }else{
+      /* Insert an isolated OP_Typecheck */
+      sqlite3VdbeAddOp2(v, OP_TypeCheck, iReg, pTab->nNVCol);
+      sqlite3VdbeAppendP4(v, pTab, P4_TABLE);
+    }
+    return;
+  }
+  zColAff = pTab->zColAff;
   if( zColAff==0 ){
     sqlite3 *db = sqlite3VdbeDb(v);
     zColAff = (char *)sqlite3DbMallocRaw(0, pTab->nCol+1);
@@ -157,6 +197,8 @@ void sqlite3TableAffinity(Vdbe *v, Table *pTab, int iReg){
     if( iReg ){
       sqlite3VdbeAddOp4(v, OP_Affinity, iReg, i, 0, zColAff, i);
     }else{
+      assert( sqlite3VdbeGetOp(v, -1)->opcode==OP_MakeRecord
+              || sqlite3VdbeDb(v)->mallocFailed );
       sqlite3VdbeChangeP4(v, -1, zColAff, i);
     }
   }
@@ -2797,6 +2839,9 @@ static int xferOptimization(
   }
   if( pDest->iPKey!=pSrc->iPKey ){
     return 0;   /* Both tables must have the same INTEGER PRIMARY KEY */
+  }
+  if( (pDest->tabFlags & TF_Strict)!=0 && (pSrc->tabFlags & TF_Strict)==0 ){
+    return 0;   /* Cannot feed from a non-strict into a strict table */
   }
   for(i=0; i<pDest->nCol; i++){
     Column *pDestCol = &pDest->aCol[i];

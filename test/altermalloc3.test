@@ -43,5 +43,36 @@ do_faultsim_test 1 -prep {
   faultsim_test_result {0 {}}
 }
 
+#-------------------------------------------------------------------------
+# dbsqlfuzz e3dd84cda3848016a6a6024c7249d09bc2ef2615
+#
+reset_db
+do_execsql_test 2.0 {
+  CREATE TABLE t2(k,v);
+  CREATE TRIGGER r2 AFTER INSERT ON t2 BEGIN
+    UPDATE t2 SET (k,v)= (
+       (WITH cte1(a) AS ( SELECT 1 FROM ( SELECT * FROM t2 ) )
+       SELECT a FROM cte1
+    ), 1);
+  END;
+}
+
+faultsim_save_and_close
+faultsim_restore_and_reopen
+
+do_execsql_test 2.1 {
+  ALTER TABLE t2 RENAME TO t2x;
+}
+
+do_faultsim_test 2.2 -prep {
+  faultsim_restore_and_reopen
+  db eval { SELECT * FROM sqlite_master } 
+} -body {
+  execsql {
+    ALTER TABLE t2 RENAME TO t2x;
+  }
+} -test {
+  faultsim_test_result {0 {}}
+}
 
 finish_test

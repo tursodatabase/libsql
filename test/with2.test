@@ -552,63 +552,77 @@ do_execsql_test 10.1 {
 # 2021-05-21
 # Forum post https://sqlite.org/forum/forumpost/aa4a7a3980
 #
+ifcapable altertable {
 reset_db
-do_execsql_test 11.1 {
-  CREATE TABLE t1(a);
-  CREATE VIEW v2(c) AS
-      WITH x AS (
-        WITH y AS (
-           WITH z AS(SELECT * FROM t1)
-           SELECT * FROM v2
-        ) SELECT a
-      ) SELECT * from t1;
-  ALTER TABLE t1 RENAME COLUMN a TO b;
-  SELECT sql FROM sqlite_schema WHERE name='t1';
-} {{CREATE TABLE t1(b)}}
-do_catchsql_test 11.2 {
-  INSERT INTO t1 VALUES(55);
-  SELECT * FROM v2;
-} {0 55}
-do_catchsql_test 11.3 {
-  DROP VIEW v2;
-  CREATE VIEW v2(c) AS
-      WITH x AS (
-        WITH y AS (
-           WITH z AS(SELECT * FROM t1)
-           SELECT * FROM v2
-        ) SELECT a
-      ) SELECT * from t1, x;
-  SELECT * FROM v2;
-} {1 {no such column: a}}
-do_catchsql_test 11.4 {
-  DROP VIEW v2;
-  CREATE VIEW v2(c) AS
-      WITH x AS (
-        WITH y AS (
-           WITH z AS(SELECT * FROM t1)
-           SELECT * FROM v2
-        ) SELECT *
-      ) SELECT * from t1, x;
-  SELECT * FROM v2;
-} {1 {no tables specified}}
-do_catchsql_test 11.5 {
-  WITH x AS (
-    WITH y AS (
-       WITH z AS(SELECT * FROM t1)
-       SELECT * FROM no_such_table
-    ) SELECT a
-  ) SELECT * from t1;
-} {0 55}
+  do_execsql_test 11.1 {
+    CREATE TABLE t1(a);
+    CREATE VIEW v2(c) AS
+        WITH x AS (
+          WITH y AS (
+             WITH z AS(SELECT * FROM t1)
+             SELECT * FROM v2
+          ) SELECT a
+        ) SELECT * from t1;
+    ALTER TABLE t1 RENAME COLUMN a TO b;
+    SELECT sql FROM sqlite_schema WHERE name='t1';
+  } {{CREATE TABLE t1(b)}}
+  do_catchsql_test 11.2 {
+    INSERT INTO t1 VALUES(55);
+    SELECT * FROM v2;
+  } {0 55}
+  do_catchsql_test 11.3 {
+    DROP VIEW v2;
+    CREATE VIEW v2(c) AS
+        WITH x AS (
+          WITH y AS (
+             WITH z AS(SELECT * FROM t1)
+             SELECT * FROM v2
+          ) SELECT a
+        ) SELECT * from t1, x;
+    SELECT * FROM v2;
+  } {1 {no such column: a}}
+  do_catchsql_test 11.4 {
+    DROP VIEW v2;
+    CREATE VIEW v2(c) AS
+        WITH x AS (
+          WITH y AS (
+             WITH z AS(SELECT * FROM t1)
+             SELECT * FROM v2
+          ) SELECT *
+        ) SELECT * from t1, x;
+    SELECT * FROM v2;
+  } {1 {no tables specified}}
+  do_catchsql_test 11.5 {
+    WITH x AS (
+      WITH y AS (
+         WITH z AS(SELECT * FROM t1)
+         SELECT * FROM no_such_table
+      ) SELECT a
+    ) SELECT * from t1;
+  } {0 55}
+}
 
 # 2021-05-23 dbsqlfuzz 6b7a144674e215f06ddfeb9042c873d9ee956ac0 */
 reset_db
-do_execsql_test 12.1 {
-  CREATE TABLE t1(a);
-  INSERT INTO t1 VALUES(1),('hello'),(4.25),(NULL),(x'3c626c6f623e');
-  CREATE VIEW v2(c) AS WITH x AS (WITH y AS (WITH z AS(SELECT * FROM t1) SELECT * FROM v2) SELECT a) SELECT * from t1;
-  CREATE VIEW v3(c) AS WITH x AS (WITH y AS (WITH z AS(SELECT * FROM v2) SELECT * FROM v3) SELECT a) SELECT * from t1;
-  ALTER TABLE t1 RENAME TO t1x;
-  SELECT quote(c) FROM v3;
-} {1 'hello' 4.25 NULL X'3C626C6F623E'}
+ifcapable altertable {
+  do_execsql_test 12.1 {
+    CREATE TABLE t1(a);
+    INSERT INTO t1 VALUES(1),('hello'),(4.25),(NULL),(x'3c626c6f623e');
+    CREATE VIEW v2(c) AS WITH x AS (WITH y AS (WITH z AS(SELECT * FROM t1) SELECT * FROM v2) SELECT a) SELECT * from t1;
+    CREATE VIEW v3(c) AS WITH x AS (WITH y AS (WITH z AS(SELECT * FROM v2) SELECT * FROM v3) SELECT a) SELECT * from t1;
+    ALTER TABLE t1 RENAME TO t1x;
+    SELECT quote(c) FROM v3;
+  } {1 'hello' 4.25 NULL X'3C626C6F623E'}
+}
+
+# 2021-08-11 https://sqlite.org/forum/forumpost/d496c3d29bc93736
+reset_db
+do_execsql_test 13.1 {
+  WITH
+    t1(x) AS (SELECT 111),
+    t2(y) AS (SELECT 222),
+    t3(z) AS (SELECT * FROM t2 WHERE false UNION ALL SELECT * FROM t2)
+  SELECT * FROM t1, t3;
+} {111 222}
 
 finish_test

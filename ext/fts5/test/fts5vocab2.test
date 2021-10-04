@@ -255,6 +255,32 @@ do_test 5.1 {
 do_execsql_test 5.2 {
   SELECT * FROM t1
 } {one two three four five}
+
+#-------------------------------------------------------------------------
+# Check that the fts5 table cannot be written while there are vocab 
+# cursors open.
+reset_db
+do_execsql_test 5.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(a);
+  CREATE VIRTUAL TABLE v1 USING fts5vocab(t1, instance);
+  WITH s(i) AS (
+    VALUES(1) UNION ALL SELECT i+1 FROM s WHERE i<10000
+  )
+  INSERT INTO t1 SELECT 
+    'State Emergency Service (SES), Rural Fire Service (RFS) and Volunteers'
+  FROM s;
+}
+
+do_catchsql_test 5.1 {
+  INSERT INTO t1 SELECT rowid FROM v1
+} {1 {query aborted}}
+
+do_catchsql_test 5.2 {
+  DELETE FROM t1 WHERE rowid>100;
+  INSERT INTO t1 SELECT randomblob(3000) FROM v1
+} {1 {query aborted}}
+
+
 finish_test
 
 

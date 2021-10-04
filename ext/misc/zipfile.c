@@ -561,6 +561,7 @@ static u16 zipfileGetU16(const u8 *aBuf){
 ** Read and return a 32-bit little-endian unsigned integer from buffer aBuf.
 */
 static u32 zipfileGetU32(const u8 *aBuf){
+  if( aBuf==0 ) return 0;
   return ((u32)(aBuf[3]) << 24)
        + ((u32)(aBuf[2]) << 16)
        + ((u32)(aBuf[1]) <<  8)
@@ -863,7 +864,7 @@ static int zipfileGetEntry(
         aRead = (u8*)&aBlob[pNew->cds.iOffset];
       }
 
-      rc = zipfileReadLFH(aRead, &lfh);
+      if( rc==SQLITE_OK ) rc = zipfileReadLFH(aRead, &lfh);
       if( rc==SQLITE_OK ){
         pNew->iDataOff =  pNew->cds.iOffset + ZIPFILE_LFH_FIXED_SZ;
         pNew->iDataOff += lfh.nFile + lfh.nExtra;
@@ -1139,13 +1140,13 @@ static int zipfileReadEOCD(
   int nRead;                      /* Bytes to read from file */
   int rc = SQLITE_OK;
 
+  memset(pEOCD, 0, sizeof(ZipfileEOCD));
   if( aBlob==0 ){
     i64 iOff;                     /* Offset to read from */
     i64 szFile;                   /* Total size of file in bytes */
     fseek(pFile, 0, SEEK_END);
     szFile = (i64)ftell(pFile);
     if( szFile==0 ){
-      memset(pEOCD, 0, sizeof(ZipfileEOCD));
       return SQLITE_OK;
     }
     nRead = (int)(MIN(szFile, ZIPFILE_BUFFER_SIZE));

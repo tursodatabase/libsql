@@ -75,18 +75,20 @@ do_execsql_test indexexpr1-150eqp {
    ORDER BY +rowid;
 } {/USING INDEX t1abx/}
 
-do_execsql_test indexexpr1-160 {
-  ALTER TABLE t1 ADD COLUMN d;
-  UPDATE t1 SET d=length(a);
-  CREATE INDEX t1a2 ON t1(SUBSTR(a, 27, 3)) WHERE d>=29;
-  SELECT rowid, b, c FROM t1
-   WHERE substr(a,27,3)=='ord' AND d>=29;
-} {1 1 1}
-do_execsql_test indexexpr1-160eqp {
-  EXPLAIN QUERY PLAN
-  SELECT rowid, b, c FROM t1
-   WHERE substr(a,27,3)=='ord' AND d>=29;
-} {/USING INDEX t1a2/}
+ifcapable altertable {
+  do_execsql_test indexexpr1-160 {
+    ALTER TABLE t1 ADD COLUMN d;
+    UPDATE t1 SET d=length(a);
+    CREATE INDEX t1a2 ON t1(SUBSTR(a, 27, 3)) WHERE d>=29;
+    SELECT rowid, b, c FROM t1
+      WHERE substr(a,27,3)=='ord' AND d>=29;
+  } {1 1 1}
+  do_execsql_test indexexpr1-160eqp {
+    EXPLAIN QUERY PLAN
+      SELECT rowid, b, c FROM t1
+      WHERE substr(a,27,3)=='ord' AND d>=29;
+  } {/USING INDEX t1a2/}
+}
 
 # ORDER BY using an indexed expression
 #
@@ -166,18 +168,20 @@ do_execsql_test indexexpr1-250eqp {
    ORDER BY +id;
 } {/USING INDEX t1abx/}
 
-do_execsql_test indexexpr1-260 {
-  ALTER TABLE t1 ADD COLUMN d;
-  UPDATE t1 SET d=length(a);
-  CREATE INDEX t1a2 ON t1(SUBSTR(a, 27, 3)) WHERE d>=29;
-  SELECT id, b, c FROM t1
-   WHERE substr(a,27,3)=='ord' AND d>=29;
-} {1 1 1}
-do_execsql_test indexexpr1-260eqp {
-  EXPLAIN QUERY PLAN
-  SELECT id, b, c FROM t1
-   WHERE substr(a,27,3)=='ord' AND d>=29;
-} {/USING INDEX t1a2/}
+ifcapable altertable {
+  do_execsql_test indexexpr1-260 {
+    ALTER TABLE t1 ADD COLUMN d;
+    UPDATE t1 SET d=length(a);
+    CREATE INDEX t1a2 ON t1(SUBSTR(a, 27, 3)) WHERE d>=29;
+    SELECT id, b, c FROM t1
+      WHERE substr(a,27,3)=='ord' AND d>=29;
+  } {1 1 1}
+  do_execsql_test indexexpr1-260eqp {
+    EXPLAIN QUERY PLAN
+      SELECT id, b, c FROM t1
+      WHERE substr(a,27,3)=='ord' AND d>=29;
+  } {/USING INDEX t1a2/}
+}
 
 
 do_catchsql_test indexexpr1-300 {

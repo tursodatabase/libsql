@@ -84,12 +84,12 @@ db func regexp -argcount 2 regexfunc
 # in the documentation exist and that the relative precedences of the
 # operators are also as the documentation suggests.
 #
-# EVIDENCE-OF: R-15514-65163 SQLite understands the following binary
+# X-EVIDENCE-OF: R-15514-65163 SQLite understands the following binary
 # operators, in order from highest to lowest precedence: || * / % + -
 # << >> & | < <= > >= = == != <> IS IS
 # NOT IN LIKE GLOB MATCH REGEXP AND OR
 #
-# EVIDENCE-OF: R-38759-38789 Operators IS and IS NOT have the same
+# X-EVIDENCE-OF: R-38759-38789 Operators IS and IS NOT have the same
 # precedence as =.
 #
 
@@ -180,7 +180,7 @@ do_execsql_test e_expr-1.6 {
 # Check that the four unary prefix operators mentioned in the 
 # documentation exist.
 #
-# EVIDENCE-OF: R-13958-53419 Supported unary prefix operators are these:
+# X-EVIDENCE-OF: R-13958-53419 Supported unary prefix operators are these:
 # - + ~ NOT
 #
 do_execsql_test e_expr-2.1 { SELECT -   10   } {-10}
@@ -368,7 +368,7 @@ db collate reverse reverse_collate
 # EVIDENCE-OF: R-59577-33471 The COLLATE operator is a unary postfix
 # operator that assigns a collating sequence to an expression.
 #
-# EVIDENCE-OF: R-36231-30731 The COLLATE operator has a higher
+# X-EVIDENCE-OF: R-36231-30731 The COLLATE operator has a higher
 # precedence (binds more tightly) than any binary operator and any unary
 # prefix operator except "~".
 #
@@ -860,7 +860,7 @@ foreach {tn x expr res nEval} {
   } [list $nEval $res]
 }
 
-# EVIDENCE-OF: R-05155-34454 The precedence of the BETWEEN operator is
+# X-EVIDENCE-OF: R-05155-34454 The precedence of the BETWEEN operator is
 # the same as the precedence as operators == and != and LIKE and groups
 # left to right.
 # 

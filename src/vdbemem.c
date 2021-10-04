@@ -1388,7 +1388,7 @@ static sqlite3_value *valueNew(sqlite3 *db, struct ValueNewStat4Ctx *p){
 #ifdef SQLITE_ENABLE_STAT4
 static int valueFromFunction(
   sqlite3 *db,                    /* The database connection */
-  Expr *p,                        /* The expression to evaluate */
+  const Expr *p,                  /* The expression to evaluate */
   u8 enc,                         /* Encoding to use */
   u8 aff,                         /* Affinity to use */
   sqlite3_value **ppVal,          /* Write the new value here */
@@ -1482,7 +1482,7 @@ static int valueFromFunction(
 */
 static int valueFromExpr(
   sqlite3 *db,                    /* The database connection */
-  Expr *pExpr,                    /* The expression to evaluate */
+  const Expr *pExpr,              /* The expression to evaluate */
   u8 enc,                         /* Encoding to use */
   u8 affinity,                    /* Affinity to use */
   sqlite3_value **ppVal,          /* Write the new value here */
@@ -1637,7 +1637,7 @@ no_mem:
 */
 int sqlite3ValueFromExpr(
   sqlite3 *db,              /* The database connection */
-  Expr *pExpr,              /* The expression to evaluate */
+  const Expr *pExpr,        /* The expression to evaluate */
   u8 enc,                   /* Encoding to use */
   u8 affinity,              /* Affinity to use */
   sqlite3_value **ppVal     /* Write the new value here */

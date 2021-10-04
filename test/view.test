@@ -55,6 +55,11 @@ do_test view-1.1.110 {
     SELECT * FROM v1temp ORDER BY a;
   }
 } {0 {1 2 4 5 7 8 1 2 4 5 7 8}}
+ifcapable vtab {
+  do_execsql_test view-1.1.120 {
+    SELECT name, type FROM pragma_table_list('v1');
+  } {v1 view}
+}
 do_test view-1.2 {
   catchsql {
     ROLLBACK;
