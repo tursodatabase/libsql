@@ -115,18 +115,20 @@ do_test auth3-2.2 {
 # an authorizer failure during an ALTER TABLE.  The solution (I think) is
 # to disable the authorizer during schema parsing.
 #
-proc auth {code args} {
-  if {$code=="SQLITE_READ" && [regexp {DoNotRead} $args]} {
-    return SQLITE_DENY
+ifcapable altertable {
+  proc auth {code args} {
+    if {$code=="SQLITE_READ" && [regexp {DoNotRead} $args]} {
+      return SQLITE_DENY
+    }
+    return SQLITE_OK
   }
-  return SQLITE_OK
+  do_execsql_test auth3-3.0 {
+    CREATE TEMPORARY TABLE TempTable (
+        key TEXT NOT NULL ON CONFLICT FAIL UNIQUE ON CONFLICT REPLACE,
+        value TEXT NOT NULL ON CONFLICT FAIL);
+    ALTER TABLE TempTable RENAME TO DoNotRead;
+    SELECT name FROM temp.sqlite_master;
+  } {DoNotRead sqlite_autoindex_DoNotRead_1}
 }
-do_execsql_test auth3-3.0 {
-  CREATE TEMPORARY TABLE TempTable (
-      key TEXT NOT NULL ON CONFLICT FAIL UNIQUE ON CONFLICT REPLACE,
-      value TEXT NOT NULL ON CONFLICT FAIL);
-  ALTER TABLE TempTable RENAME TO DoNotRead;
-  SELECT name FROM temp.sqlite_master;
-} {DoNotRead sqlite_autoindex_DoNotRead_1}
 
 finish_test

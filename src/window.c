@@ -1066,6 +1066,9 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
        ("New window-function subquery in FROM clause of (%u/%p)\n",
        p->selId, p));
     p->pSrc = sqlite3SrcListAppend(pParse, 0, 0, 0);
+    assert( pSub!=0 || p->pSrc==0 ); /* Due to db->mallocFailed test inside
+                                     ** of sqlite3DbMallocRawNN() called from
+                                     ** sqlite3SrcListAppend() */
     if( p->pSrc ){
       Table *pTab2;
       p->pSrc->a[0].pSelect = pSub;
@@ -1342,7 +1345,12 @@ void sqlite3WindowLink(Select *pSel, Window *pWin){
 ** different, or 2 if it cannot be determined if the objects are identical
 ** or not. Identical window objects can be processed in a single scan.
 */
-int sqlite3WindowCompare(Parse *pParse, Window *p1, Window *p2, int bFilter){
+int sqlite3WindowCompare(
+  const Parse *pParse,
+  const Window *p1,
+  const Window *p2,
+  int bFilter
+){
   int res;
   if( NEVER(p1==0) || NEVER(p2==0) ) return 1;
   if( p1->eFrmType!=p2->eFrmType ) return 1;

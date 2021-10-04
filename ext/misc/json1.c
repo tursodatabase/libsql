@@ -605,7 +605,7 @@ static void jsonReturn(
       sqlite3_result_int64(pCtx, i);
       int_done:
       break;
-      int_as_real: i=0; /* no break */ deliberate_fall_through
+      int_as_real: ; /* no break */ deliberate_fall_through
     }
     case JSON_REAL: {
       double r;

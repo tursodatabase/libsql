@@ -20,8 +20,13 @@ if {![info exists testdir]} {
 source [file join [file dirname [info script]] session_common.tcl]
 source $testdir/tester.tcl
 ifcapable !session {finish_test; return}
-
 set testprefix sessionat
+
+# If SQLITE_OMIT_ALTERTABLE is defined, omit this file.
+ifcapable !altertable {
+  finish_test
+  return
+}
 
 db close
 sqlite3_shutdown

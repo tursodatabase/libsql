@@ -697,6 +697,7 @@ static Fts5Data *fts5DataRead(Fts5Index *p, i64 iRowid){
   return pRet;
 }
 
+
 /*
 ** Release a reference to data record returned by an earlier call to
 ** fts5DataRead().
@@ -838,6 +839,42 @@ int sqlite3Fts5StructureTest(Fts5Index *p, void *pStruct){
 }
 
 /*
+** Ensure that structure object (*pp) is writable.
+**
+** This function is a no-op if (*pRc) is not SQLITE_OK when it is called. If
+** an error occurs, (*pRc) is set to an SQLite error code before returning.
+*/
+static void fts5StructureMakeWritable(int *pRc, Fts5Structure **pp){
+  Fts5Structure *p = *pp;
+  if( *pRc==SQLITE_OK && p->nRef>1 ){
+    int nByte = sizeof(Fts5Structure)+(p->nLevel-1)*sizeof(Fts5StructureLevel);
+    Fts5Structure *pNew;
+    pNew = (Fts5Structure*)sqlite3Fts5MallocZero(pRc, nByte);
+    if( pNew ){
+      int i;
+      memcpy(pNew, p, nByte);
+      for(i=0; i<p->nLevel; i++) pNew->aLevel[i].aSeg = 0;
+      for(i=0; i<p->nLevel; i++){
+        Fts5StructureLevel *pLvl = &pNew->aLevel[i];
+        nByte = sizeof(Fts5StructureSegment) * pNew->aLevel[i].nSeg;
+        pLvl->aSeg = (Fts5StructureSegment*)sqlite3Fts5MallocZero(pRc, nByte);
+        if( pLvl->aSeg==0 ){
+          for(i=0; i<p->nLevel; i++){
+            sqlite3_free(pNew->aLevel[i].aSeg);
+          }
+          sqlite3_free(pNew);
+          return;
+        }
+        memcpy(pLvl->aSeg, p->aLevel[i].aSeg, nByte);
+      }
+      p->nRef--;
+      pNew->nRef = 1;
+    }
+    *pp = pNew;
+  }
+}
+
+/*
 ** Deserialize and return the structure record currently stored in serialized
 ** form within buffer pData/nData.
 **
@@ -938,9 +975,11 @@ static int fts5StructureDecode(
 }
 
 /*
-**
+** Add a level to the Fts5Structure.aLevel[] array of structure object
+** (*ppStruct).
 */
 static void fts5StructureAddLevel(int *pRc, Fts5Structure **ppStruct){
+  fts5StructureMakeWritable(pRc, ppStruct);
   if( *pRc==SQLITE_OK ){
     Fts5Structure *pStruct = *ppStruct;
     int nLevel = pStruct->nLevel;
@@ -2117,7 +2156,7 @@ static void fts5SegIterReverse(Fts5Index *p, Fts5SegIter *pIter){
   if( pDlidx ){
     int iSegid = pIter->pSeg->iSegid;
     pgnoLast = fts5DlidxIterPgno(pDlidx);
-    pLast = fts5DataRead(p, FTS5_SEGMENT_ROWID(iSegid, pgnoLast));
+    pLast = fts5LeafRead(p, FTS5_SEGMENT_ROWID(iSegid, pgnoLast));
   }else{
     Fts5Data *pLeaf = pIter->pLeaf;         /* Current leaf data */
 
@@ -2144,7 +2183,7 @@ static void fts5SegIterReverse(Fts5Index *p, Fts5SegIter *pIter){
       ** forward to find the page containing the last rowid.  */
       for(pgno=pIter->iLeafPgno+1; !p->rc && pgno<=pSeg->pgnoLast; pgno++){
         i64 iAbs = FTS5_SEGMENT_ROWID(pSeg->iSegid, pgno);
-        Fts5Data *pNew = fts5DataRead(p, iAbs);
+        Fts5Data *pNew = fts5LeafRead(p, iAbs);
         if( pNew ){
           int iRowid, bTermless;
           iRowid = fts5LeafFirstRowidOff(pNew);
@@ -2175,6 +2214,10 @@ static void fts5SegIterReverse(Fts5Index *p, Fts5SegIter *pIter){
     pIter->pLeaf = pLast;
     pIter->iLeafPgno = pgnoLast;
     iOff = fts5LeafFirstRowidOff(pLast);
+    if( iOff>pLast->szLeaf ){
+      p->rc = FTS5_CORRUPT;
+      return;
+    }
     iOff += fts5GetVarint(&pLast->p[iOff], (u64*)&pIter->iRowid);
     pIter->iLeafOffset = iOff;
 
@@ -2183,7 +2226,6 @@ static void fts5SegIterReverse(Fts5Index *p, Fts5SegIter *pIter){
     }else{
       pIter->iEndofDoclist = fts5LeafFirstTermOff(pLast);
     }
-
   }
 
   fts5SegIterReverseInitPage(p, pIter);

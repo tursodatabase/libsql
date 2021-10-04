@@ -32,10 +32,9 @@ do_execsql_test 1.0 {
 
 
 #--------------------------------------------------------------------------
-# EVIDENCE-OF: R-65438-26258 This function returns the total number of
-# rows inserted, modified or deleted by all INSERT, UPDATE or DELETE
-# statements completed since the database connection was opened,
-# including those executed as part of trigger programs.
+# EVIDENCE-OF: R-38914-26427 The total_changes() function returns the
+# number of row changes caused by INSERT, UPDATE or DELETE statements
+# since the current database connection was opened.
 #
 #   1.1.*: different types of I/U/D statements,
 #   1.2.*: trigger programs.
@@ -95,24 +94,26 @@ do_tc_test 1.2.2 {
 #--------------------------------------------------------------------------
 # EVIDENCE-OF: R-61766-15253 Executing any other type of SQL statement
 # does not affect the value returned by sqlite3_total_changes().
-do_tc_test 2.1 {
-  INSERT INTO t1 VALUES(1, 2), (3, 4);
-  INSERT INTO t2 VALUES(1, 2), (3, 4);
-} {15}
-do_tc_test 2.2 {
-  SELECT count(*) FROM t1;
-} {2 15}
-do_tc_test 2.3 {
-  CREATE TABLE t4(a, b);
-  ALTER TABLE t4 ADD COLUMN c;
-  CREATE INDEX i4 ON t4(c);
-  ALTER TABLE t4 RENAME TO t5;
-  ANALYZE;
-  BEGIN;
-  DROP TABLE t2;
-  ROLLBACK;
-  VACUUM;
-} {15}
+ifcapable altertable {
+  do_tc_test 2.1 {
+    INSERT INTO t1 VALUES(1, 2), (3, 4);
+    INSERT INTO t2 VALUES(1, 2), (3, 4);
+  } {15}
+  do_tc_test 2.2 {
+    SELECT count(*) FROM t1;
+  } {2 15}
+  do_tc_test 2.3 {
+    CREATE TABLE t4(a, b);
+    ALTER TABLE t4 ADD COLUMN c;
+    CREATE INDEX i4 ON t4(c);
+    ALTER TABLE t4 RENAME TO t5;
+    ANALYZE;
+    BEGIN;
+    DROP TABLE t2;
+    ROLLBACK;
+    VACUUM;
+  } {15}
+}
 
 
 #--------------------------------------------------------------------------
