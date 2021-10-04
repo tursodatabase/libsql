@@ -1119,9 +1119,11 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
         testcase( pNC->ncFlags & NC_PartIdx );
         testcase( pNC->ncFlags & NC_IdxExpr );
         testcase( pNC->ncFlags & NC_GenCol );
-        sqlite3ResolveNotValid(pParse, pNC, "subqueries",
-                 NC_IsCheck|NC_PartIdx|NC_IdxExpr|NC_GenCol, pExpr);
-        sqlite3WalkSelect(pWalker, pExpr->x.pSelect);
+        if( pNC->ncFlags & NC_SelfRef ){
+          notValidImpl(pParse, pNC, "subqueries", pExpr);
+        }else{
+          sqlite3WalkSelect(pWalker, pExpr->x.pSelect);
+        }
         assert( pNC->nRef>=nRef );
         if( nRef!=pNC->nRef ){
           ExprSetProperty(pExpr, EP_VarSelect);

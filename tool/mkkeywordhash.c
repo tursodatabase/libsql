@@ -52,7 +52,7 @@ struct Keyword {
 /*
 ** Define masks used to determine which keywords are allowed
 */
-#ifdef SQLITE_OMIT_ALTERTABLE
+#if defined(SQLITE_OMIT_ALTERTABLE) || defined(SQLITE_OMIT_VIRTUALTABLE)
 #  define ALTER      0
 #else
 #  define ALTER      0x00000001

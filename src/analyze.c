@@ -433,7 +433,6 @@ static void statInit(
       + sizeof(tRowcnt)*3*nColUp*(nCol+mxSample);
   }
 #endif
-  db = sqlite3_context_db_handle(context);
   p = sqlite3DbMallocZero(db, n);
   if( p==0 ){
     sqlite3_result_error_nomem(context);
@@ -852,28 +851,19 @@ static void statGet(
     **
     **        I = (K+D-1)/D
     */
-    char *z;
-    int i;
+    sqlite3_str sStat;   /* Text of the constructed "stat" line */
+    int i;               /* Loop counter */
 
-    char *zRet = sqlite3MallocZero( (p->nKeyCol+1)*25 );
-    if( zRet==0 ){
-      sqlite3_result_error_nomem(context);
-      return;
-    }
-
-    sqlite3_snprintf(24, zRet, "%llu", 
+    sqlite3StrAccumInit(&sStat, 0, 0, 0, (p->nKeyCol+1)*100);
+    sqlite3_str_appendf(&sStat, "%llu", 
         p->nSkipAhead ? (u64)p->nEst : (u64)p->nRow);
-    z = zRet + sqlite3Strlen30(zRet);
     for(i=0; i<p->nKeyCol; i++){
       u64 nDistinct = p->current.anDLt[i] + 1;
       u64 iVal = (p->nRow + nDistinct - 1) / nDistinct;
-      sqlite3_snprintf(24, z, " %llu", iVal);
-      z += sqlite3Strlen30(z);
+      sqlite3_str_appendf(&sStat, " %llu", iVal);
       assert( p->current.anEq[i] );
     }
-    assert( z[0]=='\0' && z>zRet );
-
-    sqlite3_result_text(context, zRet, -1, sqlite3_free);
+    sqlite3ResultStrAccum(context, &sStat);
   }
 #ifdef SQLITE_ENABLE_STAT4
   else if( eCall==STAT_GET_ROWID ){
@@ -892,6 +882,8 @@ static void statGet(
     }
   }else{
     tRowcnt *aCnt = 0;
+    sqlite3_str sStat;
+    int i;
 
     assert( p->iGet<p->nSample );
     switch( eCall ){
@@ -903,23 +895,12 @@ static void statGet(
         break;
       }
     }
-
-    {
-      char *zRet = sqlite3MallocZero(p->nCol * 25);
-      if( zRet==0 ){
-        sqlite3_result_error_nomem(context);
-      }else{
-        int i;
-        char *z = zRet;
-        for(i=0; i<p->nCol; i++){
-          sqlite3_snprintf(24, z, "%llu ", (u64)aCnt[i]);
-          z += sqlite3Strlen30(z);
-        }
-        assert( z[0]=='\0' && z>zRet );
-        z[-1] = '\0';
-        sqlite3_result_text(context, zRet, -1, sqlite3_free);
-      }
+    sqlite3StrAccumInit(&sStat, 0, 0, 0, p->nCol*100);
+    for(i=0; i<p->nCol; i++){
+      sqlite3_str_appendf(&sStat, "%llu ", (u64)aCnt[i]);
     }
+    if( sStat.nChar ) sStat.nChar--;
+    sqlite3ResultStrAccum(context, &sStat);
   }
 #endif /* SQLITE_ENABLE_STAT4 */
 #ifndef SQLITE_DEBUG
@@ -1840,9 +1821,12 @@ static int loadStatTbl(
 */
 static int loadStat4(sqlite3 *db, const char *zDb){
   int rc = SQLITE_OK;             /* Result codes from subroutines */
+  const Table *pStat4;
 
   assert( db->lookaside.bDisable );
-  if( sqlite3FindTable(db, "sqlite_stat4", zDb) ){
+  if( (pStat4 = sqlite3FindTable(db, "sqlite_stat4", zDb))!=0
+   && IsOrdinaryTable(pStat4)
+  ){
     rc = loadStatTbl(db,
       "SELECT idx,count(*) FROM %Q.sqlite_stat4 GROUP BY idx", 
       "SELECT idx,neq,nlt,ndlt,sample FROM %Q.sqlite_stat4",
@@ -1879,6 +1863,7 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
   char *zSql;
   int rc = SQLITE_OK;
   Schema *pSchema = db->aDb[iDb].pSchema;
+  const Table *pStat1;
 
   assert( iDb>=0 && iDb<db->nDb );
   assert( db->aDb[iDb].pBt!=0 );
@@ -1901,7 +1886,9 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
   /* Load new statistics out of the sqlite_stat1 table */
   sInfo.db = db;
   sInfo.zDatabase = db->aDb[iDb].zDbSName;
-  if( sqlite3FindTable(db, "sqlite_stat1", sInfo.zDatabase)!=0 ){
+  if( (pStat1 = sqlite3FindTable(db, "sqlite_stat1", sInfo.zDatabase))
+   && IsOrdinaryTable(pStat1)
+  ){
     zSql = sqlite3MPrintf(db, 
         "SELECT tbl,idx,stat FROM %Q.sqlite_stat1", sInfo.zDatabase);
     if( zSql==0 ){

@@ -9,6 +9,7 @@
 #
 #***********************************************************************
 # Test cases for RANGE BETWEEN and especially with NULLS LAST
+# and for varying separator handling by group_concat().
 #
 
 set testdir [file dirname $argv0]
@@ -356,5 +357,12 @@ do_execsql_test 8.1 {
   FROM t1;
 } {111 660 938 979}
 
+do_execsql_test 9.0 {
+  CREATE TABLE seps(x);
+  INSERT INTO seps(x) VALUES ('1'), ('22'), ('333'), ('4444');
+  SELECT group_concat('-', x)
+    OVER ( ORDER BY x ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING )
+  FROM seps;
+} {-22- -22-333- -333-4444- -4444-}
 
 finish_test

@@ -801,6 +801,7 @@ int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
   Table *pTab;
   char *zErr = 0;
   Parse sParse;
+  int initBusy;
 
 #ifdef SQLITE_ENABLE_API_ARMOR
   if( !sqlite3SafetyCheckOk(db) || zCreateTable==0 ){
@@ -820,6 +821,12 @@ int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
   memset(&sParse, 0, sizeof(sParse));
   sParse.eParseMode = PARSE_MODE_DECLARE_VTAB;
   sParse.db = db;
+  /* We should never be able to reach this point while loading the
+  ** schema.  Nevertheless, defend against that (turn off db->init.busy)
+  ** in case a bug arises. */
+  assert( db->init.busy==0 );
+  initBusy = db->init.busy;
+  db->init.busy = 0;
   sParse.nQueryLoop = 1;
   if( SQLITE_OK==sqlite3RunParser(&sParse, zCreateTable, &zErr) 
    && sParse.pNewTable
@@ -866,6 +873,7 @@ int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
   }
   sqlite3DeleteTable(db, sParse.pNewTable);
   sqlite3ParserReset(&sParse);
+  db->init.busy = initBusy;
 
   assert( (rc&0xff)==rc );
   rc = sqlite3ApiExit(db, rc);

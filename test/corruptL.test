@@ -1179,9 +1179,12 @@ do_catchsql_test 14.1 {
   PRAGMA integrity_check;
 } {1 {database disk image is malformed}}
 
-do_catchsql_test 14.2 {
-  ALTER TABLE t1 RENAME TO alkjalkjdfiiiwuer987lkjwer82mx97sf98788s9789s; 
-} {1 {database disk image is malformed}}
+# If SQLITE_OMIT_ALTERTABLE is defined, omit this file.
+ifcapable altertable {
+  do_catchsql_test 14.2 {
+    ALTER TABLE t1 RENAME TO alkjalkjdfiiiwuer987lkjwer82mx97sf98788s9789s; 
+  } {1 {database disk image is malformed}}
+}
 extra_schema_checks 1
 
 #-------------------------------------------------------------------------

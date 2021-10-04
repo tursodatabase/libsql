@@ -532,29 +532,31 @@ Page 6 is never used} {row 1 missing from index i2}}
 # Verify that PRAGMA integrity_check catches UNIQUE and NOT NULL
 # constraint violations.
 #
-sqlite3_db_config db DEFENSIVE 0
-do_execsql_test pragma-3.20 {
-  CREATE TABLE t1(a,b);
-  CREATE INDEX t1a ON t1(a);
-  INSERT INTO t1 VALUES(1,1),(2,2),(3,3),(2,4),(NULL,5),(NULL,6);
-  PRAGMA writable_schema=ON;
-  UPDATE sqlite_master SET sql='CREATE UNIQUE INDEX t1a ON t1(a)'
-   WHERE name='t1a';
-  UPDATE sqlite_master SET sql='CREATE TABLE t1(a NOT NULL,b)'
-   WHERE name='t1';
-  PRAGMA writable_schema=OFF;
-  ALTER TABLE t1 RENAME TO t1x;
-  PRAGMA integrity_check;
-} {{non-unique entry in index t1a} {NULL value in t1x.a} {non-unique entry in index t1a} {NULL value in t1x.a}}
-do_execsql_test pragma-3.21 {
-  PRAGMA integrity_check(3);
-} {{non-unique entry in index t1a} {NULL value in t1x.a} {non-unique entry in index t1a}}
-do_execsql_test pragma-3.22 {
-  PRAGMA integrity_check(2);
-} {{non-unique entry in index t1a} {NULL value in t1x.a}}
-do_execsql_test pragma-3.23 {
-  PRAGMA integrity_check(1);
-} {{non-unique entry in index t1a}}
+ifcapable altertable {
+  sqlite3_db_config db DEFENSIVE 0
+    do_execsql_test pragma-3.20 {
+      CREATE TABLE t1(a,b);
+      CREATE INDEX t1a ON t1(a);
+      INSERT INTO t1 VALUES(1,1),(2,2),(3,3),(2,4),(NULL,5),(NULL,6);
+      PRAGMA writable_schema=ON;
+      UPDATE sqlite_master SET sql='CREATE UNIQUE INDEX t1a ON t1(a)'
+        WHERE name='t1a';
+      UPDATE sqlite_master SET sql='CREATE TABLE t1(a NOT NULL,b)'
+        WHERE name='t1';
+      PRAGMA writable_schema=OFF;
+      ALTER TABLE t1 RENAME TO t1x;
+      PRAGMA integrity_check;
+    } {{non-unique entry in index t1a} {NULL value in t1x.a} {non-unique entry in index t1a} {NULL value in t1x.a}}
+  do_execsql_test pragma-3.21 {
+    PRAGMA integrity_check(3);
+  } {{non-unique entry in index t1a} {NULL value in t1x.a} {non-unique entry in index t1a}}
+  do_execsql_test pragma-3.22 {
+    PRAGMA integrity_check(2);
+  } {{non-unique entry in index t1a} {NULL value in t1x.a}}
+  do_execsql_test pragma-3.23 {
+    PRAGMA integrity_check(1);
+  } {{non-unique entry in index t1a}}
+}
 
 # PRAGMA integrity check (or more specifically the sqlite3BtreeCount()
 # interface) used to leave index cursors in an inconsistent state
@@ -564,7 +566,7 @@ do_execsql_test pragma-3.23 {
 # that problem has been fixed.
 #
 do_test pragma-3.30 {
-  db close
+  catch { db close }
   delete_file test.db
   sqlite3 db test.db
   db eval {
@@ -1957,14 +1959,16 @@ do_test 23.3 {
   capture_pragma db2 out {PRAGMA index_list(t1)}
   db2 eval {SELECT seq, name, "unique", origin, '|' FROM out ORDER BY seq}
 } {0 i3 0 c | 1 i2 0 c | 2 i2x 0 c | 3 i1 0 c |}
-do_test 23.4 {
-  db eval {
-    ALTER TABLE t1 ADD COLUMN e;
-  }
-  db2 eval {
-    PRAGMA table_info(t1);
-  }
-} {/4 e {} 0 {} 0/}
+ifcapable altertable {
+  do_test 23.4 {
+    db eval {
+      ALTER TABLE t1 ADD COLUMN e;
+    }
+    db2 eval {
+      PRAGMA table_info(t1);
+    }
+  } {/4 e {} 0 {} 0/}
+}
 do_test 23.5 {
   db eval {
     DROP TABLE t2;
