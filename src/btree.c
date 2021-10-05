@@ -8500,7 +8500,7 @@ static int balance_deeper(MemPage *pRoot, MemPage **ppChild){
 ** Return SQLITE_CORRUPT if any cursor other than pCur is currently valid
 ** on the same B-tree as pCur.
 **
-** This can if a database is corrupt with two or more SQL tables
+** This can occur if a database is corrupt with two or more SQL tables
 ** pointing to the same b-tree.  If an insert occurs on one SQL table
 ** and causes a BEFORE TRIGGER to do a secondary insert on the other SQL
 ** table linked to the same b-tree.  If the secondary insert causes a
