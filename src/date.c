@@ -1025,7 +1025,7 @@ static void strftimeFunc(
   computeYMD_HMS(&x);
   for(i=j=0; zFmt[i]; i++){
     if( zFmt[i]!='%' ) continue;
-    if( j<i ) sqlite3_str_append(&sRes, zFmt+j, i-j);
+    if( j<i ) sqlite3_str_append(&sRes, zFmt+j, (int)(i-j));
     i++;
     j = i + 1;
     switch( zFmt[i] ){
@@ -1101,7 +1101,7 @@ static void strftimeFunc(
       }
     }
   }
-  if( j<i ) sqlite3_str_append(&sRes, zFmt+j, i-j);
+  if( j<i ) sqlite3_str_append(&sRes, zFmt+j, (int)(i-j));
   sqlite3ResultStrAccum(context, &sRes);
 }
 

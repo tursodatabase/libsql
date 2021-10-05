@@ -425,6 +425,8 @@ static int fts5StorageDeleteFromIndex(
       }else if( ALWAYS(apVal) ){
         zText = (const char*)sqlite3_value_text(apVal[iCol-1]);
         nText = sqlite3_value_bytes(apVal[iCol-1]);
+      }else{
+        continue;
       }
       ctx.szCol = 0;
       rc = sqlite3Fts5Tokenize(pConfig, FTS5_TOKENIZE_DOCUMENT, 
