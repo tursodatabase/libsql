@@ -436,7 +436,12 @@ struct RtreeMatchArg {
 ** it is not, make it a no-op.
 */
 #ifndef SQLITE_AMALGAMATION
-# define testcase(X)
+# ifdef SQLITE_COVERAGE_TEST
+    unsigned int sqlite3RtreeTestcase = 0;
+#   define testcase(X)  if( X ){ sqlite3RtreeTestcase += __LINE__; }
+# else
+#   define testcase(X)
+# endif
 #endif
 
 /*

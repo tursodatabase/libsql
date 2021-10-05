@@ -305,13 +305,14 @@ static GeoPoly *geopolyFuncParam(
 ){
   GeoPoly *p = 0;
   int nByte;
+  testcase( pCtx==0 );
   if( sqlite3_value_type(pVal)==SQLITE_BLOB
    && (nByte = sqlite3_value_bytes(pVal))>=(4+6*sizeof(GeoCoord))
   ){
     const unsigned char *a = sqlite3_value_blob(pVal);
     int nVertex;
     if( a==0 ){
-      sqlite3_result_error_nomem(pCtx);
+      if( pCtx ) sqlite3_result_error_nomem(pCtx);
       return 0;
     }
     nVertex = (a[1]<<16) + (a[2]<<8) + a[3];
