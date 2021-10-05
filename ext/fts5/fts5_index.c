@@ -3166,7 +3166,11 @@ static void fts5SegiterPoslist(
   Fts5Colset *pColset,
   Fts5Buffer *pBuf
 ){
+  assert( pBuf!=0 );
+  assert( pSeg!=0 );
   if( 0==fts5BufferGrow(&p->rc, pBuf, pSeg->nPos+FTS5_DATA_ZERO_PADDING) ){
+    assert( pBuf->p!=0 );
+    assert( pBuf->nSpace >= pBuf->n+pSeg->nPos+FTS5_DATA_ZERO_PADDING );
     memset(&pBuf->p[pBuf->n+pSeg->nPos], 0, FTS5_DATA_ZERO_PADDING);
     if( pColset==0 ){
       fts5ChunkIterate(p, pSeg, (void*)pBuf, fts5PoslistCallback);
@@ -3580,7 +3584,8 @@ static void fts5MultiIterNew2(
 ** False otherwise.
 */
 static int fts5MultiIterEof(Fts5Index *p, Fts5Iter *pIter){
-  assert( p->rc 
+  assert( pIter!=0 || p->rc!=SQLITE_OK );
+  assert( p->rc!=SQLITE_OK
       || (pIter->aSeg[ pIter->aFirst[1].iFirst ].pLeaf==0)==pIter->base.bEof 
   );
   return (p->rc || pIter->base.bEof);
@@ -4384,6 +4389,7 @@ static void fts5IndexMergeLevel(
   ** and last leaf page number at the same time.  */
   fts5WriteFinish(p, &writer, &pSeg->pgnoLast);
 
+  assert( pIter!=0 || p->rc!=SQLITE_OK );
   if( fts5MultiIterEof(p, pIter) ){
     int i;
 
@@ -5594,11 +5600,15 @@ int sqlite3Fts5IndexQuery(
       /* Scan multiple terms in the main index */
       int bDesc = (flags & FTS5INDEX_QUERY_DESC)!=0;
       fts5SetupPrefixIter(p, bDesc, iPrefixIdx, buf.p, nToken+1, pColset,&pRet);
-      assert( p->rc!=SQLITE_OK || pRet->pColset==0 );
-      fts5IterSetOutputCb(&p->rc, pRet);
-      if( p->rc==SQLITE_OK ){
-        Fts5SegIter *pSeg = &pRet->aSeg[pRet->aFirst[1].iFirst];
-        if( pSeg->pLeaf ) pRet->xSetOutputs(pRet, pSeg);
+      if( pRet==0 ){
+        assert( p->rc!=SQLITE_OK );
+      }else{
+        assert( pRet->pColset==0 );
+        fts5IterSetOutputCb(&p->rc, pRet);
+        if( p->rc==SQLITE_OK ){
+          Fts5SegIter *pSeg = &pRet->aSeg[pRet->aFirst[1].iFirst];
+          if( pSeg->pLeaf ) pRet->xSetOutputs(pRet, pSeg);
+        }
       }
     }
 

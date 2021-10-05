@@ -417,10 +417,12 @@ static int fts5StorageDeleteFromIndex(
     if( pConfig->abUnindexed[iCol-1]==0 ){
       const char *zText;
       int nText;
+      assert( pSeek==0 || apVal==0 );
+      assert( pSeek!=0 || apVal!=0 );
       if( pSeek ){
         zText = (const char*)sqlite3_column_text(pSeek, iCol);
         nText = sqlite3_column_bytes(pSeek, iCol);
-      }else{
+      }else if( ALWAYS(apVal) ){
         zText = (const char*)sqlite3_value_text(apVal[iCol-1]);
         nText = sqlite3_value_bytes(apVal[iCol-1]);
       }
