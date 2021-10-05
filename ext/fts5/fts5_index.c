@@ -3390,6 +3390,7 @@ static void fts5IterSetOutputs_Full(Fts5Iter *pIter, Fts5SegIter *pSeg){
 }
 
 static void fts5IterSetOutputCb(int *pRc, Fts5Iter *pIter){
+  assert( pIter!=0 || (*pRc)!=SQLITE_OK );
   if( *pRc==SQLITE_OK ){
     Fts5Config *pConfig = pIter->pIndex->pConfig;
     if( pConfig->eDetail==FTS5_DETAIL_NONE ){
@@ -3461,7 +3462,10 @@ static void fts5MultiIterNew(
     }
   }
   *ppOut = pNew = fts5MultiIterAlloc(p, nSeg);
-  if( pNew==0 ) return;
+  if( pNew==0 ){
+    assert( p->rc!=SQLITE_OK );
+    goto fts5MultiIterNew_post_check;
+  }
   pNew->bRev = (0!=(flags & FTS5INDEX_QUERY_DESC));
   pNew->bSkipEmpty = (0!=(flags & FTS5INDEX_QUERY_SKIPEMPTY));
   pNew->pColset = pColset;
@@ -3525,6 +3529,10 @@ static void fts5MultiIterNew(
     fts5MultiIterFree(pNew);
     *ppOut = 0;
   }
+
+fts5MultiIterNew_post_check:
+  assert( (*ppOut)!=0 || p->rc!=SQLITE_OK );
+  return;
 }
 
 /*
@@ -6203,6 +6211,7 @@ int sqlite3Fts5IndexIntegrityCheck(Fts5Index *p, u64 cksum, int bUseCksum){
   Fts5Buffer poslist = {0,0,0};   /* Buffer used to hold a poslist */
   Fts5Iter *pIter;                /* Used to iterate through entire index */
   Fts5Structure *pStruct;         /* Index structure */
+  int iLvl, iSeg;
 
 #ifdef SQLITE_DEBUG
   /* Used by extra internal tests only run if NDEBUG is not defined */
@@ -6213,15 +6222,16 @@ int sqlite3Fts5IndexIntegrityCheck(Fts5Index *p, u64 cksum, int bUseCksum){
   
   /* Load the FTS index structure */
   pStruct = fts5StructureRead(p);
+  if( pStruct==0 ){
+    assert( p->rc!=SQLITE_OK );
+    return fts5IndexReturn(p);
+  }
 
   /* Check that the internal nodes of each segment match the leaves */
-  if( pStruct ){
-    int iLvl, iSeg;
-    for(iLvl=0; iLvl<pStruct->nLevel; iLvl++){
-      for(iSeg=0; iSeg<pStruct->aLevel[iLvl].nSeg; iSeg++){
-        Fts5StructureSegment *pSeg = &pStruct->aLevel[iLvl].aSeg[iSeg];
-        fts5IndexIntegrityCheckSegment(p, pSeg);
-      }
+  for(iLvl=0; iLvl<pStruct->nLevel; iLvl++){
+    for(iSeg=0; iSeg<pStruct->aLevel[iLvl].nSeg; iSeg++){
+      Fts5StructureSegment *pSeg = &pStruct->aLevel[iLvl].aSeg[iSeg];
+      fts5IndexIntegrityCheckSegment(p, pSeg);
     }
   }
 

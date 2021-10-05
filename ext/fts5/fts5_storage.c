@@ -1058,8 +1058,9 @@ int sqlite3Fts5StorageDocsize(Fts5Storage *p, i64 iRowid, int *aCol){
 
   assert( p->pConfig->bColumnsize );
   rc = fts5StorageGetStmt(p, FTS5_STMT_LOOKUP_DOCSIZE, &pLookup, 0);
-  if( rc==SQLITE_OK ){
+  if( pLookup ){
     int bCorrupt = 1;
+    assert( rc==SQLITE_OK );
     sqlite3_bind_int64(pLookup, 1, iRowid);
     if( SQLITE_ROW==sqlite3_step(pLookup) ){
       const u8 *aBlob = sqlite3_column_blob(pLookup, 0);
@@ -1072,6 +1073,8 @@ int sqlite3Fts5StorageDocsize(Fts5Storage *p, i64 iRowid, int *aCol){
     if( bCorrupt && rc==SQLITE_OK ){
       rc = FTS5_CORRUPT;
     }
+  }else{
+    assert( rc!=SQLITE_OK );
   }
 
   return rc;

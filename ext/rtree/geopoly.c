@@ -1387,6 +1387,7 @@ static int geopolyFilter(
       RtreeCoord bbox[4];
       RtreeConstraint *p;
       assert( argc==1 );
+      assert( argv[0]!=0 );
       geopolyBBox(0, argv[0], bbox, &rc);
       if( rc ){
         goto geopoly_filter_end;
@@ -1614,6 +1615,7 @@ static int geopolyUpdate(
         || !sqlite3_value_nochange(aData[2])  /* UPDATE _shape */
         || oldRowid!=newRowid)                /* Rowid change */
   ){
+    assert( aData[2]!=0 );
     geopolyBBox(0, aData[2], cell.aCoord, &rc);
     if( rc ){
       if( rc==SQLITE_ERROR ){
