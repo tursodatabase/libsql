@@ -1,5 +1,5 @@
-C Ensure\sthat\sgeopoly\sdoes\snot\sinvoke\ssqlite3_result_error_nomem()\swith\sa\nNULL\spointer.
-D 2021-10-05T12:34:54.148
+C Small\schange\sto\sFTS5\sto\shelp\sstatic\sanalyzers\sunderstand\sthat\sit\sis\snot\ndereferencing\sa\sNULL\spointer.
+D 2021-10-05T13:00:50.994
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -120,7 +120,7 @@ F ext/fts5/fts5_config.c 8336d0ff6db0933f63cfec8ae0ab76e68393259cbccc0b46e1f79f7
 F ext/fts5/fts5_expr.c 11cc2acd3d73fba0af0041a6887c49e8f54ac4d314fc3489cfdfc10836945ada
 F ext/fts5/fts5_hash.c 1aa93c9b5f461afba66701ee226297dc78402b3bdde81e90a10de5fe3df14959
 F ext/fts5/fts5_index.c 7d38db1d89cd1d0488d452c7eed725a612dec4df9346efec5dca76674e7ff1a0
-F ext/fts5/fts5_main.c 35ebbcae681a4a40027c47bc2e94d7e7c81e331dc406bb9b23c546454ee8f98a
+F ext/fts5/fts5_main.c 7c6092a53e6802962fa07b0fad3e61cb077b6c98b74b727d8d44ac2cf63bd914
 F ext/fts5/fts5_storage.c 58ba71e6cd3d43a5735815e7956ee167babb4d2cbfe206905174792af4d09d75
 F ext/fts5/fts5_tcl.c b1445cbe69908c411df8084a10b2485500ac70a9c747cdc8cda175a3da59d8ae
 F ext/fts5/fts5_test_mi.c 08c11ec968148d4cb4119d96d819f8c1f329812c568bac3684f5464be177d3ee
@@ -1929,7 +1929,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 91e3b98e06feaa5b70caf2266200d20d0ae4e432db147975c9f5959f93df7e7b
-R 50e6d5202614b0113708b86e660afec9
+P 2483310d15022b47109b44c86e100f5894be7a45a0568dfef6aea80e6c518654
+R 9285f1b08a8a281a7dc87624d697ac42
 U drh
-Z 4b50cc08c340a52012457074bd6d6040
+Z cf71305744e2964d45d264476deebc14
