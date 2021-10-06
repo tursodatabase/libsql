@@ -181,31 +181,23 @@ mod build_bundled {
 
             if cfg!(feature = "bundled-sqlcipher-vendored-openssl") {
                 cfg.include(std::env::var("DEP_OPENSSL_INCLUDE").unwrap());
-                println!("cargo:rustc-link-lib=static=crypto"); // cargo will
-                                                                // resolve downstream
-                                                                // to the static
-                                                                // lib in openssl-sys
+                // cargo will resolve downstream to the static lib in openssl-sys
             } else if is_windows {
-                // FIXME README says that bundled-sqlcipher is Unix only, and the sources are
-                // configured on a Unix machine. So maybe this should be made unreachable.
+                // Windows without `-vendored-openssl` takes this to link against a prebuilt OpenSSL lib
                 cfg.include(inc_dir.to_string_lossy().as_ref());
-                let mut lib = String::new();
-                lib.push_str(lib_dir.to_string_lossy().as_ref());
-                lib.push('\\');
-                lib.push_str("libeay32.lib");
-                cfg.flag(&lib);
+                let lib = lib_dir.join("libcrypto.lib");
+                cfg.flag(lib.to_string_lossy().as_ref());
             } else if use_openssl {
                 cfg.include(inc_dir.to_string_lossy().as_ref());
+                // branch not taken on Windows, just `crypto` is fine.
                 println!("cargo:rustc-link-lib=dylib=crypto");
-                println!(
-                    "cargo:rustc-link-search={}",
-                    lib_dir.to_string_lossy().as_ref()
-                );
+                println!("cargo:rustc-link-search={}", lib_dir.to_string_lossy());
             } else if is_apple {
                 cfg.flag("-DSQLCIPHER_CRYPTO_CC");
                 println!("cargo:rustc-link-lib=framework=SecurityFoundation");
                 println!("cargo:rustc-link-lib=framework=CoreFoundation");
             } else {
+                // branch not taken on Windows, just `crypto` is fine.
                 println!("cargo:rustc-link-lib=dylib=crypto");
             }
         }
