@@ -1,5 +1,5 @@
-C Once\scorner\scase\sfor\sthe\sfix\sat\s[8b24c177061c3836]\swas\snot\squite\sright.\nCaught\sovernight\sby\sboth\sOSSFuzz\sand\sdbsqlfuzz\sand\srepaired\shere.
-D 2021-10-06T10:04:04.566
+C Fix\sa\smacro\stypo\sintroduced\sby\s[5da112c02f9e8d0b]\sthat\sprevented\scoverage\ntests\sfrom\sworking.
+D 2021-10-06T10:36:56.583
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -554,7 +554,7 @@ F src/shell.c.in ac685e63c506fb2e39375c83347c88bff84dc48fa5d6a59f508d7d67951693a
 F src/sqlite.h.in 4e977a5e2ed1a9e8987ff65a2cab5f99a4298ebf040ea5ff636e1753339ff45a
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h e97f4e9b509408fea4c4e9bef5a41608dfac343b4d3c7a990dedde1e19af9510
-F src/sqliteInt.h ef9b68563e05d0da80cd291e7486bcc3ca7b787aae35b04b9285277957c2648a
+F src/sqliteInt.h 67d38ee799cc34c36cdb0e4faebf0810d2722d0e4c7bd6b2cc6e7ae54e7211e6
 F src/sqliteLimit.h d7323ffea5208c6af2734574bae933ca8ed2ab728083caa117c9738581a31657
 F src/status.c 4b8bc2a6905163a38b739854a35b826c737333fab5b1f8e03fa7eb9a4799c4c1
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -1929,7 +1929,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8ca0c7d826622c9660ecbd9664eba2bac9bb1b850f96f35d6c959d0acde2309b
-R a82f422056d918a0f8db241de201dfbf
+P 79e90a8225b90593e384eab49a8d1d3c93a3deaf2739dcc30f6c88852df80d04
+R 72dda00bb84c5fb21dc2438379b36ec1
 U drh
-Z 46af2b7b949b12f91845c5c99b37cb08
+Z f3fb5f8bb9c0563f6e2634c4bbe3df94

@@ -473,7 +473,7 @@
 ** Disable ALWAYS() and NEVER() (make them pass-throughs) for coverage
 ** and mutation testing
 */
-#if defined(SQLITE_COVERATE_TEST) || defined(SQLITE_MUTATION_TEST)
+#if defined(SQLITE_COVERAGE_TEST) || defined(SQLITE_MUTATION_TEST)
 # define SQLITE_OMIT_AUXILIARY_SAFETY_CHECKS  1
 #endif
 
