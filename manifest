@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\stypo\sin\sa\scomment.\s\n[forum:/forumpost/218c116fdf|forum\spost\s218c116fdf].
-D 2021-10-05T22:51:26.698
+C Once\scorner\scase\sfor\sthe\sfix\sat\s[8b24c177061c3836]\swas\snot\squite\sright.\nCaught\sovernight\sby\sboth\sOSSFuzz\sand\sdbsqlfuzz\sand\srepaired\shere.
+D 2021-10-06T10:04:04.566
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -636,7 +636,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 2be08331d798237ad5d7ae0b252700ffb2b63189cb18d993496d009a93e2f81c
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c 7342becedf3f8a26f9817f08436bdf8b56ad69af83705f6b9320a0ad3092c2ac
-F src/where.c 5d669d7c31f53d18a413eed69899f11d6e92a400a7c982d90eb6d8d301c73afb
+F src/where.c f71086505c5db78209574eaffdb01c4e7beb745873ccba2cfcd4822232ef4e39
 F src/whereInt.h 9248161dd004f625ce5d3841ca9b99fed3fc8d61522cf76340fc5217dbe1375b
 F src/wherecode.c af9bc0608f07f6582affb0e4f30f95815cca080feb5359c2acc4558b48500604
 F src/whereexpr.c e5fdac355deef93a821f03b90770f92f2be833e92bbdeff8ac1b6c2ae1f74356
@@ -1627,7 +1627,7 @@ F test/trace3.test ae2004df24b585fed9046cc0bae4601762bc6fc4aa321d475f1350bba5047
 F test/trans.test 45f6f9ab6f66a7b5744f1caac06b558f95da62501916906cf55586a896f9f439
 F test/trans2.test 62bd045bfc7a1c14c5ba83ba64d21ade31583f76
 F test/trans3.test 91a100e5412b488e22a655fe423a14c26403ab94
-F test/transitive1.test d75f4c919bdbee75cb3968fb614f74f4bbb2a71823c048b2042af682f08c56df
+F test/transitive1.test f8ee983600b33d167da1885657f064aec404e1c0d0bc8765fdf163f4c749237a
 F test/trigger1.test d30cd09ae8ac365a088f09daba583cc5c0b8fc7d4e1d70809d0b4be3bf6ae2ab
 F test/trigger2.test 6e35bd7321c49e63d540aee980eb95dec63e1d1caca175224101045bcc80871f
 F test/trigger3.test aa640bb2bbb03edd5ff69c055117ea088f121945
@@ -1929,7 +1929,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cddd3b382a118bb16be3a602ae711fe2c2a7d1c673dd30dd3977b67ee555e666
-R 66ab677fa1633c50595275342f29b7c2
+P 8ca0c7d826622c9660ecbd9664eba2bac9bb1b850f96f35d6c959d0acde2309b
+R a82f422056d918a0f8db241de201dfbf
 U drh
-Z f208508751d7387f0db721ec9058f7f0
+Z 46af2b7b949b12f91845c5c99b37cb08

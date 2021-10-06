@@ -411,5 +411,19 @@ do_execsql_test transitive1-800 {
   SELECT * FROM t1 WHERE EXISTS (SELECT 1 FROM t2 WHERE a=c AND b IS a);
   SELECT * FROM t1 WHERE EXISTS (SELECT 1 FROM t2 WHERE c=a AND a IS b);
 } {}
+do_execsql_test transitive1-810 {
+  CREATE TABLE t3(a INTEGER PRIMARY KEY,b);
+  INSERT INTO t3(a,b) VALUES(1,2),(5,5),(7,11);
+  SELECT * FROM t3 WHERE a=b AND a='5';
+} {5 5}
+do_execsql_test transitive1-811 {
+  SELECT * FROM t3 WHERE a=b AND a='4';
+} {}
+do_execsql_test transitive1-812 {
+  SELECT * FROM t3 WHERE a=b AND a='7';
+} {}
+do_execsql_test transitive1-813 {
+  SELECT * FROM t3 WHERE a=b AND a='5x';
+} {}
 
 finish_test

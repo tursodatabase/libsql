@@ -4610,9 +4610,9 @@ static int whereShortCut(WhereLoopBuilder *pBuilder){
   pLoop->wsFlags = 0;
   pLoop->nSkip = 0;
   pTerm = whereScanInit(&scan, pWC, iCur, -1, WO_EQ|WO_IS, 0);
+  while( pTerm && pTerm->prereqRight ) pTerm = whereScanNext(&scan);
   if( pTerm ){
     testcase( pTerm->eOperator & WO_IS );
-    assert( pTerm->prereqRight==0 );
     pLoop->wsFlags = WHERE_COLUMN_EQ|WHERE_IPK|WHERE_ONEROW;
     pLoop->aLTerm[0] = pTerm;
     pLoop->nLTerm = 1;
