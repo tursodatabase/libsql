@@ -39,7 +39,7 @@ wasm32-wasi-vfs = []
 winsqlite3 = ["min_sqlite_version_3_7_16"]
 
 [dependencies]
-openssl-sys = { version = "0.9.58", optional = true }
+openssl-sys = { version = "0.9", optional = true }
 
 [build-dependencies]
 bindgen = { version = "0.59", optional = true, default-features = false, features = ["runtime"] }
