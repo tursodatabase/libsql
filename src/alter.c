@@ -805,7 +805,9 @@ void sqlite3RenameTokenRemap(Parse *pParse, const void *pTo, const void *pFrom){
 static int renameUnmapExprCb(Walker *pWalker, Expr *pExpr){
   Parse *pParse = pWalker->pParse;
   sqlite3RenameTokenRemap(pParse, 0, (const void*)pExpr);
-  sqlite3RenameTokenRemap(pParse, 0, (const void*)&pExpr->y.pTab);
+  if( ExprUseYTab(pExpr) ){
+    sqlite3RenameTokenRemap(pParse, 0, (const void*)&pExpr->y.pTab);
+  }
   return WRC_Continue;
 }
 
@@ -1003,7 +1005,8 @@ static int renameColumnExprCb(Walker *pWalker, Expr *pExpr){
   ){
     renameTokenFind(pWalker->pParse, p, (void*)pExpr);
   }else if( pExpr->op==TK_COLUMN 
-   && pExpr->iColumn==p->iCol 
+   && pExpr->iColumn==p->iCol
+   && ALWAYS(ExprUseYTab(pExpr))
    && p->pTab==pExpr->y.pTab
   ){
     renameTokenFind(pWalker->pParse, p, (void*)pExpr);
@@ -1606,7 +1609,10 @@ renameColumnFunc_done:
 */
 static int renameTableExprCb(Walker *pWalker, Expr *pExpr){
   RenameCtx *p = pWalker->u.pRename;
-  if( pExpr->op==TK_COLUMN && p->pTab==pExpr->y.pTab ){
+  if( pExpr->op==TK_COLUMN
+   && ALWAYS(ExprUseYTab(pExpr))
+   && p->pTab==pExpr->y.pTab
+  ){
     renameTokenFind(pWalker->pParse, p, (void*)&pExpr->y.pTab);
   }
   return WRC_Continue;

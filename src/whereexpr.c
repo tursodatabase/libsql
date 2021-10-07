@@ -267,7 +267,9 @@ static int isLikeOrGlob(
         */
         if( pLeft->op!=TK_COLUMN 
          || sqlite3ExprAffinity(pLeft)!=SQLITE_AFF_TEXT 
-         || (pLeft->y.pTab && IsVirtual(pLeft->y.pTab))  /* Might be numeric */
+         || (ALWAYS( ExprUseYTab(pLeft) )
+             && pLeft->y.pTab
+             && IsVirtual(pLeft->y.pTab))  /* Might be numeric */
         ){
           int isNum;
           double rDummy;
@@ -383,6 +385,7 @@ static int isAuxiliaryVtabOperator(
     **       MATCH(expression,vtab_column)
     */
     pCol = pList->a[1].pExpr;
+    assert( pCol->op!=TK_COLUMN || ExprUseYTab(pCol) );
     testcase( pCol->op==TK_COLUMN && pCol->y.pTab==0 );
     if( ExprIsVtab(pCol) ){
       for(i=0; i<ArraySize(aOp); i++){
@@ -407,6 +410,7 @@ static int isAuxiliaryVtabOperator(
     ** with function names in an arbitrary case.
     */
     pCol = pList->a[0].pExpr;
+    assert( pCol->op!=TK_COLUMN || ExprUseYTab(pCol) );
     testcase( pCol->op==TK_COLUMN && pCol->y.pTab==0 );
     if( ExprIsVtab(pCol) ){
       sqlite3_vtab *pVtab;
@@ -432,10 +436,12 @@ static int isAuxiliaryVtabOperator(
     int res = 0;
     Expr *pLeft = pExpr->pLeft;
     Expr *pRight = pExpr->pRight;
+    assert( pLeft->op!=TK_COLUMN || ExprUseYTab(pLeft) );
     testcase( pLeft->op==TK_COLUMN && pLeft->y.pTab==0 );
     if( ExprIsVtab(pLeft) ){
       res++;
     }
+    assert( pRight==0 || pRight->op!=TK_COLUMN || ExprUseYTab(pRight) );
     testcase( pRight && pRight->op==TK_COLUMN && pRight->y.pTab==0 );
     if( pRight && ExprIsVtab(pRight) ){
       res++;
@@ -1558,7 +1564,8 @@ Bitmask sqlite3WhereExprUsageNN(WhereMaskSet *pMaskSet, Expr *p){
     mask |= sqlite3WhereExprListUsage(pMaskSet, p->x.pList);
   }
 #ifndef SQLITE_OMIT_WINDOWFUNC
-  if( (p->op==TK_FUNCTION || p->op==TK_AGG_FUNCTION) && p->y.pWin ){
+  if( (p->op==TK_FUNCTION || p->op==TK_AGG_FUNCTION) && ExprUseYWin(p) ){
+    assert( p->y.pWin!=0 );
     mask |= sqlite3WhereExprListUsage(pMaskSet, p->y.pWin->pPartition);
     mask |= sqlite3WhereExprListUsage(pMaskSet, p->y.pWin->pOrderBy);
     mask |= sqlite3WhereExprUsage(pMaskSet, p->y.pWin->pFilter);
@@ -1633,6 +1640,7 @@ void sqlite3WhereTabFuncArgs(
     if( pColRef==0 ) return;
     pColRef->iTable = pItem->iCursor;
     pColRef->iColumn = k++;
+    assert( ExprUseYTab(pColRef) );
     pColRef->y.pTab = pTab;
     pRhs = sqlite3PExpr(pParse, TK_UPLUS, 
         sqlite3ExprDup(pParse->db, pArgs->a[j].pExpr, 0), 0);

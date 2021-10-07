@@ -1175,10 +1175,10 @@ static int whereIndexExprTransNode(Walker *p, Expr *pExpr){
     pExpr->op = TK_COLUMN;
     pExpr->iTable = pX->iIdxCur;
     pExpr->iColumn = pX->iIdxCol;
-    pExpr->y.pTab = 0;
     testcase( ExprHasProperty(pExpr, EP_Skip) );
     testcase( ExprHasProperty(pExpr, EP_Unlikely) );
-    ExprClearProperty(pExpr, EP_Skip|EP_Unlikely);
+    ExprClearProperty(pExpr, EP_Skip|EP_Unlikely|EP_WinFunc|EP_Subrtn);
+    pExpr->y.pTab = 0;
     return WRC_Prune;
   }else{
     return WRC_Continue;
@@ -1193,7 +1193,7 @@ static int whereIndexExprTransColumn(Walker *p, Expr *pExpr){
   if( pExpr->op==TK_COLUMN ){
     IdxExprTrans *pX = p->u.pIdxTrans;
     if( pExpr->iTable==pX->iTabCur && pExpr->iColumn==pX->iTabCol ){
-      assert( pExpr->y.pTab!=0 );
+      assert( ExprUseYTab(pExpr) && pExpr->y.pTab!=0 );
       preserveExpr(pX, pExpr);
       pExpr->affExpr = sqlite3TableColumnAffinity(pExpr->y.pTab,pExpr->iColumn);
       pExpr->iTable = pX->iIdxCur;

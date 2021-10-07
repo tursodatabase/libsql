@@ -191,6 +191,7 @@ Bitmask sqlite3ExprColUsed(Expr *pExpr){
   Table *pExTab;
 
   n = pExpr->iColumn;
+  assert( ExprUseYTab(pExpr) );
   pExTab = pExpr->y.pTab;
   assert( pExTab!=0 );
   if( (pExTab->tabFlags & TF_HasGenerated)!=0
@@ -328,6 +329,7 @@ static int lookupName(
           if( sqlite3StrICmp(zTabName, zTab)!=0 ){
             continue;
           }
+          assert( ExprUseYTab(pExpr) );
           if( IN_RENAME_OBJECT && pItem->zAlias ){
             sqlite3RenameTokenRemap(pParse, 0, (void*)&pExpr->y.pTab);
           }
@@ -359,6 +361,7 @@ static int lookupName(
       }
       if( pMatch ){
         pExpr->iTable = pMatch->iCursor;
+        assert( ExprUseYTab(pExpr) );
         pExpr->y.pTab = pMatch->pTab;
         /* RIGHT JOIN not (yet) supported */
         assert( (pMatch->fg.jointype & JT_RIGHT)==0 );
@@ -432,6 +435,7 @@ static int lookupName(
 #ifndef SQLITE_OMIT_UPSERT
           if( pExpr->iTable==EXCLUDED_TABLE_NUMBER ){
             testcase( iCol==(-1) );
+            assert( ExprUseYTab(pExpr) );
             if( IN_RENAME_OBJECT ){
               pExpr->iColumn = iCol;
               pExpr->y.pTab = pTab;
@@ -444,6 +448,7 @@ static int lookupName(
           }else
 #endif /* SQLITE_OMIT_UPSERT */
           {
+            assert( ExprUseYTab(pExpr) );
             pExpr->y.pTab = pTab;
             if( pParse->bReturning ){
               eNewExprOp = TK_REGISTER;
@@ -591,7 +596,7 @@ static int lookupName(
       sqlite3VdbeAddDblquoteStr(db, pParse->pVdbe, zCol);
 #endif
       pExpr->op = TK_STRING;
-      pExpr->y.pTab = 0;
+      memset(&pExpr->y, 0, sizeof(pExpr->y));
       return WRC_Prune;
     }
     if( sqlite3ExprIdToTrueFalse(pExpr) ){
@@ -677,7 +682,9 @@ Expr *sqlite3CreateColumnExpr(sqlite3 *db, SrcList *pSrc, int iSrc, int iCol){
   Expr *p = sqlite3ExprAlloc(db, TK_COLUMN, 0, 0);
   if( p ){
     SrcItem *pItem = &pSrc->a[iSrc];
-    Table *pTab = p->y.pTab = pItem->pTab;
+    Table *pTab;
+    assert( ExprUseYTab(p) );
+    pTab = p->y.pTab = pItem->pTab;
     p->iTable = pItem->iCursor;
     if( p->y.pTab->iPKey==iCol ){
       p->iColumn = -1;
@@ -793,6 +800,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       assert( pSrcList && pSrcList->nSrc>=1 );
       pItem = pSrcList->a;
       pExpr->op = TK_COLUMN;
+      assert( ExprUseYTab(pExpr) );
       pExpr->y.pTab = pItem->pTab;
       pExpr->iTable = pItem->iCursor;
       pExpr->iColumn--;
@@ -879,10 +887,10 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
           pLeft = pRight->pLeft;
           pRight = pRight->pRight;
         }
-        assert( !ExprHasProperty(pLeft, EP_IntValue) );
+        assert( ExprUseUToken(pLeft) && ExprUseUToken(pRight) );
         zTable = pLeft->u.zToken;
-        assert( !ExprHasProperty(pRight, EP_IntValue) );
         zColumn = pRight->u.zToken;
+        assert( ExprUseYTab(pExpr) );
         if( IN_RENAME_OBJECT ){
           sqlite3RenameTokenRemap(pParse, (void*)pExpr, (void*)pRight);
           sqlite3RenameTokenRemap(pParse, (void*)&pExpr->y.pTab, (void*)pLeft);
@@ -1071,7 +1079,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
 #ifndef SQLITE_OMIT_WINDOWFUNC
         if( pWin ){
           Select *pSel = pNC->pWinSelect;
-          assert( pWin==pExpr->y.pWin );
+          assert( pWin==0 || (ExprUseYWin(pExpr) && pWin==pExpr->y.pWin) );
           if( IN_RENAME_OBJECT==0 ){
             sqlite3WindowUpdate(pParse, pSel ? pSel->pWinDefn : 0, pWin, pDef);
             if( pParse->db->mallocFailed ) break;

@@ -941,7 +941,9 @@ static void selectExprDefer(
     struct ExprList_item *pItem = &pEList->a[i];
     if( pItem->u.x.iOrderByCol==0 ){
       Expr *pExpr = pItem->pExpr;
-      Table *pTab = pExpr->y.pTab;
+      Table *pTab;
+      assert( ExprUseYTab(pExpr) );
+      pTab = pExpr->y.pTab;
       if( pExpr->op==TK_COLUMN && pExpr->iColumn>=0 && pTab && !IsVirtual(pTab)
        && (pTab->aCol[pExpr->iColumn].colFlags & COLFLAG_SORTERREF)
       ){
@@ -964,6 +966,7 @@ static void selectExprDefer(
               Expr *pNew = sqlite3PExpr(pParse, TK_COLUMN, 0, 0);
               if( pNew ){
                 pNew->iTable = pExpr->iTable;
+                assert( ExprUseYTab(pNew) );
                 pNew->y.pTab = pExpr->y.pTab;
                 pNew->iColumn = pPk ? pPk->aiColumn[k] : -1;
                 pExtra = sqlite3ExprListAppend(pParse, pExtra, pNew);
@@ -1812,7 +1815,7 @@ static const char *columnTypeImpl(
         break;
       }
 
-      assert( pTab && pExpr->y.pTab==pTab );
+      assert( pTab && ExprUseYTab(pExpr) && pExpr->y.pTab==pTab );
       if( pS ){
         /* The "table" is actually a sub-select or a view in the FROM clause
         ** of the SELECT statement. Return the declaration type and origin
@@ -2005,7 +2008,8 @@ void sqlite3GenerateColumnNames(
 
     assert( p!=0 );
     assert( p->op!=TK_AGG_COLUMN );  /* Agg processing has not run yet */
-    assert( p->op!=TK_COLUMN || p->y.pTab!=0 ); /* Covering idx not yet coded */
+    assert( p->op!=TK_COLUMN
+        || (ExprUseYTab(p) && p->y.pTab!=0) ); /* Covering idx not yet coded */
     if( pEList->a[i].zEName && pEList->a[i].eEName==ENAME_NAME ){
       /* An AS clause always takes first priority */
       char *zName = pEList->a[i].zEName;
@@ -2101,7 +2105,10 @@ int sqlite3ColumnsFromExprList(
         pColExpr = pColExpr->pRight;
         assert( pColExpr!=0 );
       }
-      if( pColExpr->op==TK_COLUMN && (pTab = pColExpr->y.pTab)!=0 ){
+      if( pColExpr->op==TK_COLUMN
+       && ALWAYS( ExprUseYTab(pColExpr) )
+       && (pTab = pColExpr->y.pTab)!=0
+      ){
         /* For columns use the column name name */
         int iCol = pColExpr->iColumn;
         if( iCol<0 ) iCol = pTab->iPKey;

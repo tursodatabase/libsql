@@ -442,6 +442,7 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
         sqlite3TreeViewLine(pView, "COLUMN(%d)%s%s",
                                     pExpr->iColumn, zFlgs, zOp2);
       }else{
+        assert( ExprUseYTab(pExpr) );
         sqlite3TreeViewLine(pView, "{%d:%d} pTab=%p%s",
                         pExpr->iTable, pExpr->iColumn,
                         pExpr->y.pTab, zFlgs);

@@ -2829,8 +2829,7 @@ struct Expr {
   } y;
 };
 
-/*
-** The following are the meanings of bits in the Expr.flags field.
+/* The following are the meanings of bits in the Expr.flags field.
 ** Value restrictions:
 **
 **          EP_Agg == NC_HasAgg == SF_HasAgg
@@ -2869,14 +2868,12 @@ struct Expr {
 #define EP_FromDDL  0x40000000 /* Originates from sqlite_schema */
                /*   0x80000000 // Available */
 
-/*
-** The EP_Propagate mask is a set of properties that automatically propagate
+/* The EP_Propagate mask is a set of properties that automatically propagate
 ** upwards into parent nodes.
 */
 #define EP_Propagate (EP_Collate|EP_Subquery|EP_HasFunc)
 
-/*
-** These macros can be used to test, set, or clear bits in the
+/* Macros can be used to test, set, or clear bits in the
 ** Expr.flags field.
 */
 #define ExprHasProperty(E,P)     (((E)->flags&(P))!=0)
@@ -2886,16 +2883,16 @@ struct Expr {
 #define ExprAlwaysTrue(E)   (((E)->flags&(EP_FromJoin|EP_IsTrue))==EP_IsTrue)
 #define ExprAlwaysFalse(E)  (((E)->flags&(EP_FromJoin|EP_IsFalse))==EP_IsFalse)
 
-/*
-** Macros used to ensure that the correct members of unions are accessed.
+/* Macros used to ensure that the correct members of unions are accessed
+** in Expr.
 */
-#define ExprUseUToken(E)        (((E)->flags&EP_IntValue)==0)
-#define ExprUseUValue(E)        (((E)->flags&EP_IntValue)!=0)
-#define ExprUseXList(E)         (((E)->flags&EP_xIsSelect)==0)
-#define ExprUseXSelect(E)       (((E)->flags&EP_xIsSelect)!=0)
-#define ExprUseYTab(E)          ((E)->op==TK_COLUMN)
-#define ExprUseYWin(E)          ((E)->flags&EP_WinFunc)!=0)
-#define ExprUseYSub(E)  ((E)->op==TK_IN||(E)->op==TK_SELECT||(E)->op==TK_EXISTS)
+#define ExprUseUToken(E)    (((E)->flags&EP_IntValue)==0)
+#define ExprUseUValue(E)    (((E)->flags&EP_IntValue)!=0)
+#define ExprUseXList(E)     (((E)->flags&EP_xIsSelect)==0)
+#define ExprUseXSelect(E)   (((E)->flags&EP_xIsSelect)!=0)
+#define ExprUseYTab(E)      (((E)->flags&(EP_WinFunc|EP_Subrtn))==0)
+#define ExprUseYWin(E)      (((E)->flags&EP_WinFunc)!=0)
+#define ExprUseYSub(E)      (((E)->flags&EP_Subrtn)!=0)
 
 /* Flags for use with Expr.vvaFlags
 */
