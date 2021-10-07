@@ -2419,9 +2419,12 @@ static int whereRangeVectorLen(
     char aff;                     /* Comparison affinity */
     char idxaff = 0;              /* Indexed columns affinity */
     CollSeq *pColl;               /* Comparison collation sequence */
-    Expr *pLhs = pTerm->pExpr->pLeft->x.pList->a[i].pExpr;
-    Expr *pRhs = pTerm->pExpr->pRight;
-    if( pRhs->flags & EP_xIsSelect ){
+    Expr *pLhs, *pRhs;
+
+    assert( ExprUseXList(pTerm->pExpr->pLeft) );
+    pLhs = pTerm->pExpr->pLeft->x.pList->a[i].pExpr;
+    pRhs = pTerm->pExpr->pRight;
+    if( ExprUseXSelect(pRhs) ){
       pRhs = pRhs->x.pSelect->pEList->a[i].pExpr;
     }else{
       pRhs = pRhs->x.pList->a[i].pExpr;
@@ -2582,7 +2585,7 @@ static int whereLoopAddBtreeIndex(
 
     if( eOp & WO_IN ){
       Expr *pExpr = pTerm->pExpr;
-      if( ExprHasProperty(pExpr, EP_xIsSelect) ){
+      if( ExprUseXSelect(pExpr) ){
         /* "x IN (SELECT ...)":  TUNING: the SELECT returns 25 rows */
         int i;
         nIn = 46;  assert( 46==sqlite3LogEst(25) );
@@ -2723,7 +2726,7 @@ static int whereLoopAddBtreeIndex(
         if( nInMul==0 
          && pProbe->nSample 
          && ALWAYS(pNew->u.btree.nEq<=pProbe->nSampleCol)
-         && ((eOp & WO_IN)==0 || !ExprHasProperty(pTerm->pExpr, EP_xIsSelect))
+         && ((eOp & WO_IN)==0 || ExprUseXList(pTerm->pExpr))
          && OptimizationEnabled(db, SQLITE_Stat4)
         ){
           Expr *pExpr = pTerm->pExpr;

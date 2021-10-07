@@ -2886,6 +2886,16 @@ struct Expr {
 #define ExprAlwaysTrue(E)   (((E)->flags&(EP_FromJoin|EP_IsTrue))==EP_IsTrue)
 #define ExprAlwaysFalse(E)  (((E)->flags&(EP_FromJoin|EP_IsFalse))==EP_IsFalse)
 
+/*
+** Macros used to ensure that the correct members of unions are accessed.
+*/
+#define ExprUseUToken(E)        (((E)->flags&EP_IntValue)==0)
+#define ExprUseUValue(E)        (((E)->flags&EP_IntValue)!=0)
+#define ExprUseXList(E)         (((E)->flags&EP_xIsSelect)==0)
+#define ExprUseXSelect(E)       (((E)->flags&EP_xIsSelect)!=0)
+#define ExprUseYTab(E)          ((E)->op==TK_COLUMN)
+#define ExprUseYWin(E)          ((E)->flags&EP_WinFunc)!=0)
+#define ExprUseYSub(E)  ((E)->op==TK_IN||(E)->op==TK_SELECT||(E)->op==TK_EXISTS)
 
 /* Flags for use with Expr.vvaFlags
 */

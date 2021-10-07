@@ -391,10 +391,13 @@ void sqlite3SetJoinExpr(Expr *p, int iTable){
     assert( !ExprHasProperty(p, EP_TokenOnly|EP_Reduced) );
     ExprSetVVAProperty(p, EP_NoReduce);
     p->iRightJoinTable = iTable;
-    if( p->op==TK_FUNCTION && p->x.pList ){
-      int i;
-      for(i=0; i<p->x.pList->nExpr; i++){
-        sqlite3SetJoinExpr(p->x.pList->a[i].pExpr, iTable);
+    if( p->op==TK_FUNCTION ){
+      assert( ExprUseXList(p) );
+      if( p->x.pList ){
+        int i;
+        for(i=0; i<p->x.pList->nExpr; i++){
+          sqlite3SetJoinExpr(p->x.pList->a[i].pExpr, iTable);
+        }
       }
     }
     sqlite3SetJoinExpr(p->pLeft, iTable);
@@ -417,10 +420,13 @@ static void unsetJoinExpr(Expr *p, int iTable){
     if( p->op==TK_COLUMN && p->iTable==iTable ){
       ExprClearProperty(p, EP_CanBeNull);
     }
-    if( p->op==TK_FUNCTION && p->x.pList ){
-      int i;
-      for(i=0; i<p->x.pList->nExpr; i++){
-        unsetJoinExpr(p->x.pList->a[i].pExpr, iTable);
+    if( p->op==TK_FUNCTION ){
+      assert( ExprUseXList(p) );
+      if( p->x.pList ){
+        int i;
+        for(i=0; i<p->x.pList->nExpr; i++){
+          unsetJoinExpr(p->x.pList->a[i].pExpr, iTable);
+        }
       }
     }
     unsetJoinExpr(p->pLeft, iTable);
@@ -1866,9 +1872,11 @@ static const char *columnTypeImpl(
       ** statement.
       */
       NameContext sNC;
-      Select *pS = pExpr->x.pSelect;
-      Expr *p = pS->pEList->a[0].pExpr;
-      assert( ExprHasProperty(pExpr, EP_xIsSelect) );
+      Select *pS;
+      Expr *p;
+      assert( ExprUseXSelect(pExpr) );
+      pS = pExpr->x.pSelect;
+      p = pS->pEList->a[0].pExpr;
       sNC.pSrcList = pS->pSrc;
       sNC.pNext = pNC;
       sNC.pParse = pNC->pParse;
@@ -3675,7 +3683,7 @@ static Expr *substExpr(
     }
     pExpr->pLeft = substExpr(pSubst, pExpr->pLeft);
     pExpr->pRight = substExpr(pSubst, pExpr->pRight);
-    if( ExprHasProperty(pExpr, EP_xIsSelect) ){
+    if( ExprUseXSelect(pExpr) ){
       substSelect(pSubst, pExpr->x.pSelect, 1);
     }else{
       substExprList(pSubst, pExpr->x.pList);
@@ -4886,7 +4894,7 @@ static int pushDownWhereTerms(
 */
 static u8 minMaxQuery(sqlite3 *db, Expr *pFunc, ExprList **ppMinMax){
   int eRet = WHERE_ORDERBY_NORMAL;      /* Return value */
-  ExprList *pEList = pFunc->x.pList;    /* Arguments to agg function */
+  ExprList *pEList;                     /* Arguments to agg function */
   const char *zFunc;                    /* Name of aggregate function pFunc */
   ExprList *pOrderBy;
   u8 sortFlags = 0;
@@ -4894,6 +4902,8 @@ static u8 minMaxQuery(sqlite3 *db, Expr *pFunc, ExprList **ppMinMax){
   assert( *ppMinMax==0 );
   assert( pFunc->op==TK_AGG_FUNCTION );
   assert( !IsWindowFunc(pFunc) );
+  assert( ExprUseXList(pFunc) );
+  pEList = pFunc->x.pList;
   if( pEList==0 
    || pEList->nExpr!=1
    || ExprHasProperty(pFunc, EP_WinFunc)
@@ -5870,7 +5880,7 @@ static void resetAccumulator(Parse *pParse, AggInfo *pAggInfo){
   for(pFunc=pAggInfo->aFunc, i=0; i<pAggInfo->nFunc; i++, pFunc++){
     if( pFunc->iDistinct>=0 ){
       Expr *pE = pFunc->pFExpr;
-      assert( !ExprHasProperty(pE, EP_xIsSelect) );
+      assert( ExprUseXList(pE) );
       if( pE->x.pList==0 || pE->x.pList->nExpr!=1 ){
         sqlite3ErrorMsg(pParse, "DISTINCT aggregates must have exactly one "
            "argument");
@@ -5895,8 +5905,9 @@ static void finalizeAggFunctions(Parse *pParse, AggInfo *pAggInfo){
   int i;
   struct AggInfo_func *pF;
   for(i=0, pF=pAggInfo->aFunc; i<pAggInfo->nFunc; i++, pF++){
-    ExprList *pList = pF->pFExpr->x.pList;
-    assert( !ExprHasProperty(pF->pFExpr, EP_xIsSelect) );
+    ExprList *pList;
+    assert( ExprUseXList(pF->pFExpr) );
+    pList = pF->pFExpr->x.pList;
     sqlite3VdbeAddOp2(v, OP_AggFinal, pF->iMem, pList ? pList->nExpr : 0);
     sqlite3VdbeAppendP4(v, pF->pFunc, P4_FUNCDEF);
   }
@@ -5930,9 +5941,10 @@ static void updateAccumulator(
     int nArg;
     int addrNext = 0;
     int regAgg;
-    ExprList *pList = pF->pFExpr->x.pList;
-    assert( !ExprHasProperty(pF->pFExpr, EP_xIsSelect) );
+    ExprList *pList;
+    assert( ExprUseXList(pF->pFExpr) );
     assert( !IsWindowFunc(pF->pFExpr) );
+    pList = pF->pFExpr->x.pList;
     if( ExprHasProperty(pF->pFExpr, EP_WinFunc) ){
       Expr *pFilter = pF->pFExpr->y.pWin->pFilter;
       if( pAggInfo->nAccumulator 
@@ -6178,8 +6190,9 @@ static int countOfViewOptimization(Parse *pParse, Select *p){
   if( p->pGroupBy ) return 0;
   pExpr = p->pEList->a[0].pExpr;
   if( pExpr->op!=TK_AGG_FUNCTION ) return 0;        /* Result is an aggregate */
-  assert( !ExprHasProperty(pExpr, EP_IntValue) );
+  assert( ExprUseUToken(pExpr) );
   if( sqlite3_stricmp(pExpr->u.zToken,"count") ) return 0;  /* Is count() */
+  assert( ExprUseXList(pExpr) );
   if( pExpr->x.pList!=0 ) return 0;                 /* Must be count(*) */
   if( p->pSrc->nSrc!=1 ) return 0;                  /* One table in FROM  */
   pSub = p->pSrc->a[0].pSelect;
@@ -6994,7 +7007,7 @@ int sqlite3Select(
     }
     for(i=0; i<pAggInfo->nFunc; i++){
       Expr *pExpr = pAggInfo->aFunc[i].pFExpr;
-      assert( !ExprHasProperty(pExpr, EP_xIsSelect) );
+      assert( ExprUseXList(pExpr) );
       sNC.ncFlags |= NC_InAggFunc;
       sqlite3ExprAnalyzeAggList(&sNC, pExpr->x.pList);
 #ifndef SQLITE_OMIT_WINDOWFUNC
@@ -7049,7 +7062,9 @@ int sqlite3Select(
 
       if( pAggInfo->nFunc==1 
        && pAggInfo->aFunc[0].iDistinct>=0
-       && pAggInfo->aFunc[0].pFExpr->x.pList
+       && ALWAYS(pAggInfo->aFunc[0].pFExpr!=0)
+       && ALWAYS(ExprUseXList(pAggInfo->aFunc[0].pFExpr))
+       && pAggInfo->aFunc[0].pFExpr->x.pList!=0
       ){
         Expr *pExpr = pAggInfo->aFunc[0].pFExpr->x.pList->a[0].pExpr;
         pExpr = sqlite3ExprDup(db, pExpr, 0);
@@ -7370,6 +7385,7 @@ int sqlite3Select(
             sqlite3VdbeAddOp2(v, OP_Integer, 0, regAcc);
           }
         }else if( pAggInfo->nFunc==1 && pAggInfo->aFunc[0].iDistinct>=0 ){
+          assert( ExprUseXList(pAggInfo->aFunc[0].pFExpr) );
           pDistinct = pAggInfo->aFunc[0].pFExpr->x.pList;
           distFlag = pDistinct ? (WHERE_WANT_DISTINCT|WHERE_AGG_DISTINCT) : 0;
         }

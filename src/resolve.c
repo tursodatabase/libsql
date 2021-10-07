@@ -518,8 +518,8 @@ static int lookupName(
         ){
           Expr *pOrig;
           assert( pExpr->pLeft==0 && pExpr->pRight==0 );
-          assert( pExpr->x.pList==0 );
-          assert( pExpr->x.pSelect==0 );
+          assert( ExprUseXList(pExpr)==0 || pExpr->x.pList==0 );
+          assert( ExprUseXSelect(pExpr)==0 || pExpr->x.pSelect==0 );
           pOrig = pEList->a[j].pExpr;
           if( (pNC->ncFlags&NC_AllowAgg)==0 && ExprHasProperty(pOrig, EP_Agg) ){
             sqlite3ErrorMsg(pParse, "misuse of aliased aggregate %s", zAs);
@@ -1120,7 +1120,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
 #endif
     case TK_IN: {
       testcase( pExpr->op==TK_IN );
-      if( ExprHasProperty(pExpr, EP_xIsSelect) ){
+      if( ExprUseXSelect(pExpr) ){
         int nRef = pNC->nRef;
         testcase( pNC->ncFlags & NC_IsCheck );
         testcase( pNC->ncFlags & NC_PartIdx );
@@ -1177,6 +1177,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       assert( pExpr->pLeft!=0 );
       nLeft = sqlite3ExprVectorSize(pExpr->pLeft);
       if( pExpr->op==TK_BETWEEN ){
+        assert( ExprUseXList(pExpr) );
         nRight = sqlite3ExprVectorSize(pExpr->x.pList->a[0].pExpr);
         if( nRight==nLeft ){
           nRight = sqlite3ExprVectorSize(pExpr->x.pList->a[1].pExpr);

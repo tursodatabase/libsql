@@ -57,7 +57,7 @@ char sqlite3ExprAffinity(const Expr *pExpr){
     return sqlite3TableColumnAffinity(pExpr->y.pTab, pExpr->iColumn);
   }
   if( op==TK_SELECT ){
-    assert( pExpr->flags&EP_xIsSelect );
+    assert( ExprUseXSelect(pExpr) );
     assert( pExpr->x.pSelect!=0 );
     assert( pExpr->x.pSelect->pEList!=0 );
     assert( pExpr->x.pSelect->pEList->a[0].pExpr!=0 );
@@ -70,7 +70,7 @@ char sqlite3ExprAffinity(const Expr *pExpr){
   }
 #endif
   if( op==TK_SELECT_COLUMN ){
-    assert( pExpr->pLeft->flags&EP_xIsSelect );
+    assert( pExpr->pLeft!=0 && ExprUseXSelect(pExpr->pLeft) );
     assert( pExpr->iColumn < pExpr->iTable );
     assert( pExpr->iTable==pExpr->pLeft->x.pSelect->pEList->nExpr );
     return sqlite3ExprAffinity(
@@ -78,6 +78,7 @@ char sqlite3ExprAffinity(const Expr *pExpr){
     );
   }
   if( op==TK_VECTOR ){
+    assert( ExprUseXList(pExpr) );
     return sqlite3ExprAffinity(pExpr->x.pList->a[0].pExpr);
   }
   return pExpr->affExpr;
@@ -137,7 +138,7 @@ Expr *sqlite3ExprSkipCollate(Expr *pExpr){
 Expr *sqlite3ExprSkipCollateAndLikely(Expr *pExpr){
   while( pExpr && ExprHasProperty(pExpr, EP_Skip|EP_Unlikely) ){
     if( ExprHasProperty(pExpr, EP_Unlikely) ){
-      assert( !ExprHasProperty(pExpr, EP_xIsSelect) );
+      assert( ExprUseXList(pExpr) );
       assert( pExpr->x.pList->nExpr>0 );
       assert( pExpr->op==TK_FUNCTION );
       pExpr = pExpr->x.pList->a[0].pExpr;
@@ -187,6 +188,7 @@ CollSeq *sqlite3ExprCollSeq(Parse *pParse, const Expr *pExpr){
       continue;
     }
     if( op==TK_VECTOR ){
+      assert( ExprUseXList(p) );
       p = p->x.pList->a[0].pExpr;
       continue;
     }
@@ -201,11 +203,9 @@ CollSeq *sqlite3ExprCollSeq(Parse *pParse, const Expr *pExpr){
       }else{
         Expr *pNext  = p->pRight;
         /* The Expr.x union is never used at the same time as Expr.pRight */
+        assert( ExprUseXList(p) );
         assert( p->x.pList==0 || p->pRight==0 );
-        if( p->x.pList!=0 
-         && !db->mallocFailed
-         && ALWAYS(!ExprHasProperty(p, EP_xIsSelect))
-        ){
+        if( p->x.pList!=0 && !db->mallocFailed ){
           int i;
           for(i=0; ALWAYS(i<p->x.pList->nExpr); i++){
             if( ExprHasProperty(p->x.pList->a[i].pExpr, EP_Collate) ){
@@ -288,7 +288,7 @@ static char comparisonAffinity(const Expr *pExpr){
   aff = sqlite3ExprAffinity(pExpr->pLeft);
   if( pExpr->pRight ){
     aff = sqlite3CompareAffinity(pExpr->pRight, aff);
-  }else if( ExprHasProperty(pExpr, EP_xIsSelect) ){
+  }else if( ExprUseXSelect(pExpr) ){
     aff = sqlite3CompareAffinity(pExpr->x.pSelect->pEList->a[0].pExpr, aff);
   }else if( aff==0 ){
     aff = SQLITE_AFF_BLOB;
@@ -428,8 +428,10 @@ int sqlite3ExprVectorSize(const Expr *pExpr){
   u8 op = pExpr->op;
   if( op==TK_REGISTER ) op = pExpr->op2;
   if( op==TK_VECTOR ){
+    assert( ExprUseXList(pExpr) );
     return pExpr->x.pList->nExpr;
   }else if( op==TK_SELECT ){
+    assert( ExprUseXSelect(pExpr) );
     return pExpr->x.pSelect->pEList->nExpr;
   }else{
     return 1;
@@ -456,8 +458,10 @@ Expr *sqlite3VectorFieldSubexpr(Expr *pVector, int i){
   if( sqlite3ExprIsVector(pVector) ){
     assert( pVector->op2==0 || pVector->op==TK_REGISTER );
     if( pVector->op==TK_SELECT || pVector->op2==TK_SELECT ){
+      assert( ExprUseXSelect(pVector) );
       return pVector->x.pSelect->pEList->a[i].pExpr;
     }else{
+      assert( ExprUseXList(pVector) );
       return pVector->x.pList->a[i].pExpr;
     }
   }
@@ -493,7 +497,7 @@ Expr *sqlite3ExprForVectorField(
 ){
   Expr *pRet;
   if( pVector->op==TK_SELECT ){
-    assert( pVector->flags & EP_xIsSelect );
+    assert( ExprUseXSelect(pVector) );
     /* The TK_SELECT_COLUMN Expr node:
     **
     ** pLeft:           pVector containing TK_SELECT.  Not deleted.
@@ -518,7 +522,9 @@ Expr *sqlite3ExprForVectorField(
     }
   }else{
     if( pVector->op==TK_VECTOR ){
-      Expr **ppVector = &pVector->x.pList->a[iField].pExpr;
+      Expr **ppVector;
+      assert( ExprUseXList(pVector) );
+      ppVector = &pVector->x.pList->a[iField].pExpr;
       pVector = *ppVector;
       if( IN_RENAME_OBJECT ){
         /* This must be a vector UPDATE inside a trigger */
@@ -582,10 +588,12 @@ static int exprVectorRegister(
     return pVector->iTable+iField;
   }
   if( op==TK_SELECT ){
+    assert( ExprUseXSelect(pVector) );
     *ppExpr = pVector->x.pSelect->pEList->a[iField].pExpr;
      return regSelect+iField;
   }
   if( op==TK_VECTOR ){
+    assert( ExprUseXList(pVector) );
     *ppExpr = pVector->x.pList->a[iField].pExpr;
     return sqlite3ExprCodeTemp(pParse, *ppExpr, pRegFree);
   }
@@ -760,7 +768,7 @@ static void exprSetHeight(Expr *p){
   int nHeight = 0;
   heightOfExpr(p->pLeft, &nHeight);
   heightOfExpr(p->pRight, &nHeight);
-  if( ExprHasProperty(p, EP_xIsSelect) ){
+  if( ExprUseXSelect(p) ){
     heightOfSelect(p->x.pSelect, &nHeight);
   }else if( p->x.pList ){
     heightOfExprList(p->x.pList, &nHeight);
@@ -799,7 +807,7 @@ int sqlite3SelectExprHeight(const Select *p){
 */
 void sqlite3ExprSetHeightAndFlags(Parse *pParse, Expr *p){
   if( pParse->nErr ) return;
-  if( p && p->x.pList && !ExprHasProperty(p, EP_xIsSelect) ){
+  if( p && ExprUseXList(p) && p->x.pList ){
     p->flags |= EP_Propagate & sqlite3ExprListFlags(p->x.pList);
   }
 }
@@ -983,13 +991,20 @@ Select *sqlite3ExprListToValues(Parse *pParse, int nElem, ExprList *pEList){
   for(ii=0; ii<pEList->nExpr; ii++){
     Select *pSel;
     Expr *pExpr = pEList->a[ii].pExpr;
-    int nExprElem = (pExpr->op==TK_VECTOR ? pExpr->x.pList->nExpr : 1);
+    int nExprElem;
+    if( pExpr->op==TK_VECTOR ){
+      assert( ExprUseXList(pExpr) );
+      nExprElem = pExpr->x.pList->nExpr;
+    }else{
+      nExprElem = 1;
+    }
     if( nExprElem!=nElem ){
       sqlite3ErrorMsg(pParse, "IN(...) element has %d term%s - expected %d", 
           nExprElem, nExprElem>1?"s":"", nElem
       );
       break;
     }
+    assert( ExprUseXList(pExpr) );
     pSel = sqlite3SelectNew(pParse, pExpr->x.pList, 0, 0, 0, 0, 0, SF_Values,0);
     pExpr->x.pList = 0;
     if( pSel ){
@@ -1059,7 +1074,7 @@ Expr *sqlite3ExprFunction(
   }
   pNew->x.pList = pList;
   ExprSetProperty(pNew, EP_HasFunc);
-  assert( !ExprHasProperty(pNew, EP_xIsSelect) );
+  assert( ExprUseXList(pNew) );
   sqlite3ExprSetHeightAndFlags(pParse, pNew);
   if( eDistinct==SF_Distinct ) ExprSetProperty(pNew, EP_Distinct);
   return pNew;
@@ -1195,17 +1210,18 @@ static SQLITE_NOINLINE void sqlite3ExprDeleteNN(sqlite3 *db, Expr *p){
   if( ExprHasProperty(p, EP_Leaf) && !ExprHasProperty(p, EP_TokenOnly) ){
     assert( p->pLeft==0 );
     assert( p->pRight==0 );
-    assert( p->x.pSelect==0 );
+    assert( !ExprUseXSelect(p) || p->x.pSelect==0 );
+    assert( !ExprUseXList(p) || p->x.pList==0 );
   }
 #endif
   if( !ExprHasProperty(p, (EP_TokenOnly|EP_Leaf)) ){
     /* The Expr.x union is never used at the same time as Expr.pRight */
-    assert( p->x.pList==0 || p->pRight==0 );
+    assert( (ExprUseXList(p) && p->x.pList==0) || p->pRight==0 );
     if( p->pLeft && p->op!=TK_SELECT_COLUMN ) sqlite3ExprDeleteNN(db, p->pLeft);
     if( p->pRight ){
       assert( !ExprHasProperty(p, EP_WinFunc) );
       sqlite3ExprDeleteNN(db, p->pRight);
-    }else if( ExprHasProperty(p, EP_xIsSelect) ){
+    }else if( ExprUseXSelect(p) ){
       assert( !ExprHasProperty(p, EP_WinFunc) );
       sqlite3SelectDelete(db, p->x.pSelect);
     }else{
@@ -1436,7 +1452,7 @@ static Expr *exprDup(sqlite3 *db, const Expr *p, int dupFlags, u8 **pzBuffer){
 
     if( 0==((p->flags|pNew->flags) & (EP_TokenOnly|EP_Leaf)) ){
       /* Fill in the pNew->x.pSelect or pNew->x.pList member. */
-      if( ExprHasProperty(p, EP_xIsSelect) ){
+      if( ExprUseXSelect(p) ){
         pNew->x.pSelect = sqlite3SelectDup(db, p->x.pSelect, dupFlags);
       }else{
         pNew->x.pList = sqlite3ExprListDup(db, p->x.pList, dupFlags);
@@ -2285,7 +2301,7 @@ static int exprNodeIsConstantOrGroupBy(Walker *pWalker, Expr *pExpr){
   }
 
   /* Check if pExpr is a sub-select. If so, consider it variable. */
-  if( ExprHasProperty(pExpr, EP_xIsSelect) ){
+  if( ExprUseXSelect(pExpr) ){
     pWalker->eCode = 0;
     return WRC_Abort;
   }
@@ -2512,7 +2528,7 @@ static Select *isCandidateForInOpt(const Expr *pX){
   ExprList *pEList;
   Table *pTab;
   int i;
-  if( !ExprHasProperty(pX, EP_xIsSelect) ) return 0;  /* Not a subquery */
+  if( !ExprUseXSelect(pX) ) return 0;                 /* Not a subquery */
   if( ExprHasProperty(pX, EP_VarSelect)  ) return 0;  /* Correlated subq */
   p = pX->x.pSelect;
   if( p->pPrior ) return 0;              /* Not a compound SELECT */
@@ -2683,7 +2699,7 @@ int sqlite3FindInIndex(
   ** or not NULL is actually possible (it may not be, for example, due 
   ** to NOT NULL constraints in the schema). If no NULL values are possible,
   ** set prRhsHasNull to 0 before continuing.  */
-  if( prRhsHasNull && (pX->flags & EP_xIsSelect) ){
+  if( prRhsHasNull && ExprUseXSelect(pX) ){
     int i;
     ExprList *pEList = pX->x.pSelect->pEList;
     for(i=0; i<pEList->nExpr; i++){
@@ -2839,7 +2855,7 @@ int sqlite3FindInIndex(
   */
   if( eType==0
    && (inFlags & IN_INDEX_NOOP_OK)
-   && !ExprHasProperty(pX, EP_xIsSelect)
+   && ExprUseXList(pX)
    && (!sqlite3InRhsIsConstant(pX) || pX->x.pList->nExpr<=2)
   ){
     eType = IN_INDEX_NOOP;
@@ -2887,7 +2903,7 @@ int sqlite3FindInIndex(
 static char *exprINAffinity(Parse *pParse, const Expr *pExpr){
   Expr *pLeft = pExpr->pLeft;
   int nVal = sqlite3ExprVectorSize(pLeft);
-  Select *pSelect = (pExpr->flags & EP_xIsSelect) ? pExpr->x.pSelect : 0;
+  Select *pSelect = ExprUseXSelect(pExpr) ? pExpr->x.pSelect : 0;
   char *zRet;
 
   assert( pExpr->op==TK_IN );
@@ -2937,7 +2953,7 @@ void sqlite3SubselectError(Parse *pParse, int nActual, int nExpect){
 */   
 void sqlite3VectorErrorMsg(Parse *pParse, Expr *pExpr){
 #ifndef SQLITE_OMIT_SUBQUERY
-  if( pExpr->flags & EP_xIsSelect ){
+  if( ExprUseXSelect(pExpr) ){
     sqlite3SubselectError(pParse, pExpr->x.pSelect->pEList->nExpr, 1);
   }else
 #endif
@@ -3001,7 +3017,7 @@ void sqlite3CodeRhsOfIN(
     */
     if( ExprHasProperty(pExpr, EP_Subrtn) ){
       addrOnce = sqlite3VdbeAddOp0(v, OP_Once); VdbeCoverage(v);
-      if( ExprHasProperty(pExpr, EP_xIsSelect) ){
+      if( ExprUseXSelect(pExpr) ){
         ExplainQueryPlan((pParse, 0, "REUSE LIST SUBQUERY %d",
               pExpr->x.pSelect->selId));
       }
@@ -3033,7 +3049,7 @@ void sqlite3CodeRhsOfIN(
   pExpr->iTable = iTab;
   addr = sqlite3VdbeAddOp2(v, OP_OpenEphemeral, pExpr->iTable, nVal);
 #ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
-  if( ExprHasProperty(pExpr, EP_xIsSelect) ){
+  if( ExprUseXSelect(pExpr) ){
     VdbeComment((v, "Result of SELECT %u", pExpr->x.pSelect->selId));
   }else{
     VdbeComment((v, "RHS of IN operator"));
@@ -3041,7 +3057,7 @@ void sqlite3CodeRhsOfIN(
 #endif
   pKeyInfo = sqlite3KeyInfoAlloc(pParse->db, nVal, 1);
 
-  if( ExprHasProperty(pExpr, EP_xIsSelect) ){
+  if( ExprUseXSelect(pExpr) ){
     /* Case 1:     expr IN (SELECT ...)
     **
     ** Generate code to write the results of the select into the temporary
@@ -3175,7 +3191,7 @@ int sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
   testcase( pExpr->op==TK_EXISTS );
   testcase( pExpr->op==TK_SELECT );
   assert( pExpr->op==TK_EXISTS || pExpr->op==TK_SELECT );
-  assert( ExprHasProperty(pExpr, EP_xIsSelect) );
+  assert( ExprUseXSelect(pExpr) );
   pSel = pExpr->x.pSelect;
 
   /* If this routine has already been coded, then invoke it as a
@@ -3283,7 +3299,7 @@ int sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
 */
 int sqlite3ExprCheckIN(Parse *pParse, Expr *pIn){
   int nVector = sqlite3ExprVectorSize(pIn->pLeft);
-  if( (pIn->flags & EP_xIsSelect)!=0 && !pParse->db->mallocFailed ){
+  if( ExprUseXSelect(pIn) && !pParse->db->mallocFailed ){
     if( nVector!=pIn->x.pSelect->pEList->nExpr ){
       sqlite3SubselectError(pParse, pIn->x.pSelect->pEList->nExpr, nVector);
       return 1;
@@ -3417,13 +3433,15 @@ static void sqlite3ExprCodeIN(
   ** This is step (1) in the in-operator.md optimized algorithm.
   */
   if( eType==IN_INDEX_NOOP ){
-    ExprList *pList = pExpr->x.pList;
-    CollSeq *pColl = sqlite3ExprCollSeq(pParse, pExpr->pLeft);
+    ExprList *pList;
+    CollSeq *pColl;
     int labelOk = sqlite3VdbeMakeLabel(pParse);
     int r2, regToFree;
     int regCkNull = 0;
     int ii;
-    assert( !ExprHasProperty(pExpr, EP_xIsSelect) );
+    assert( ExprUseXList(pExpr) );
+    pList = pExpr->x.pList;
+    pColl = sqlite3ExprCollSeq(pParse, pExpr->pLeft);
     if( destIfNull!=destIfFalse ){
       regCkNull = sqlite3GetTempReg(pParse);
       sqlite3VdbeAddOp3(v, OP_BitAnd, rLhs, rLhs, regCkNull);
@@ -3809,6 +3827,7 @@ static int exprCodeVector(Parse *pParse, Expr *p, int *piFreeable){
       int i;
       iResult = pParse->nMem+1;
       pParse->nMem += nResult;
+      assert( ExprUseXList(p) );
       for(i=0; i<nResult; i++){
         sqlite3ExprCodeFactorable(pParse, p->x.pList->a[i].pExpr, i+iResult);
       }
@@ -4315,8 +4334,8 @@ expr_code_doover:
         ** multiple times if we know they always give the same result */
         return sqlite3ExprCodeRunJustOnce(pParse, pExpr, -1);
       }
-      assert( !ExprHasProperty(pExpr, EP_xIsSelect) );
       assert( !ExprHasProperty(pExpr, EP_TokenOnly) );
+      assert( ExprUseXList(pExpr) );
       pFarg = pExpr->x.pList;
       nFarg = pFarg ? pFarg->nExpr : 0;
       assert( !ExprHasProperty(pExpr, EP_IntValue) );
@@ -4435,7 +4454,10 @@ expr_code_doover:
       testcase( op==TK_SELECT );
       if( pParse->db->mallocFailed ){
         return 0;
-      }else if( op==TK_SELECT && (nCol = pExpr->x.pSelect->pEList->nExpr)!=1 ){
+      }else if( op==TK_SELECT
+             && ALWAYS( ExprUseXSelect(pExpr) )
+             && (nCol = pExpr->x.pSelect->pEList->nExpr)!=1
+      ){
         sqlite3SubselectError(pParse, nCol, 1);
       }else{
         return sqlite3CodeSubselect(pParse, pExpr);
@@ -4607,7 +4629,7 @@ expr_code_doover:
       Expr *pDel = 0;
       sqlite3 *db = pParse->db;
 
-      assert( !ExprHasProperty(pExpr, EP_xIsSelect) && pExpr->x.pList );
+      assert( ExprUseXList(pExpr) && pExpr->x.pList!=0 );
       assert(pExpr->x.pList->nExpr > 0);
       pEList = pExpr->x.pList;
       aListelem = pEList->a;
@@ -4952,7 +4974,7 @@ static void exprCodeBetween(
   memset(&compRight, 0, sizeof(Expr));
   memset(&exprAnd, 0, sizeof(Expr));
 
-  assert( !ExprHasProperty(pExpr, EP_xIsSelect) );
+  assert( ExprUseXList(pExpr) );
   pDel = sqlite3ExprDup(db, pExpr->pLeft, 0);
   if( db->mallocFailed==0 ){
     exprAnd.op = TK_AND;
@@ -5539,12 +5561,13 @@ static int exprImpliesNotNull(
   switch( p->op ){
     case TK_IN: {
       if( seenNot && ExprHasProperty(p, EP_xIsSelect) ) return 0;
-      assert( ExprHasProperty(p,EP_xIsSelect)
-           || (p->x.pList!=0 && p->x.pList->nExpr>0) );
+      assert( ExprUseXSelect(p) || (p->x.pList!=0 && p->x.pList->nExpr>0) );
       return exprImpliesNotNull(pParse, p->pLeft, pNN, iTab, 1);
     }
     case TK_BETWEEN: {
-      ExprList *pList = p->x.pList;
+      ExprList *pList;
+      assert( ExprUseXList(p) );
+      pList = p->x.pList;
       assert( pList!=0 );
       assert( pList->nExpr==2 );
       if( seenNot ) return 0;
@@ -5908,6 +5931,7 @@ int sqlite3FunctionUsesThisSrc(Expr *pExpr, SrcList *pSrcList){
   cnt.iSrcInner = (pSrcList&&pSrcList->nSrc)?pSrcList->a[0].iCursor:0x7FFFFFFF;
   cnt.nThis = 0;
   cnt.nOther = 0;
+  assert( ExprUseXList(pExpr) );
   sqlite3WalkExprList(&w, pExpr->x.pList);
 #ifndef SQLITE_OMIT_WINDOWFUNC
   if( ExprHasProperty(pExpr, EP_WinFunc) ){
@@ -6112,7 +6136,7 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
             pItem = &pAggInfo->aFunc[i];
             pItem->pFExpr = pExpr;
             pItem->iMem = ++pParse->nMem;
-            assert( !ExprHasProperty(pExpr, EP_IntValue) );
+            assert( ExprUseUToken(pExpr) );
             pItem->pFunc = sqlite3FindFunction(pParse->db,
                    pExpr->u.zToken, 
                    pExpr->x.pList ? pExpr->x.pList->nExpr : 0, enc, 0);

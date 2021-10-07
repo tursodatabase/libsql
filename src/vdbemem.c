@@ -1418,6 +1418,7 @@ static int valueFromFunction(
 
   assert( pCtx!=0 );
   assert( (p->flags & EP_TokenOnly)==0 );
+  assert( ExprUseXList(p) );
   pList = p->x.pList;
   if( pList ) nVal = pList->nExpr;
   assert( !ExprHasProperty(p, EP_IntValue) );

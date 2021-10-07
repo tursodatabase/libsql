@@ -1935,10 +1935,10 @@ int sqlite3IsLikeFunction(sqlite3 *db, Expr *pExpr, int *pIsNocase, char *aWc){
   int nExpr;
   assert( pExpr!=0 );
   assert( pExpr->op==TK_FUNCTION );
+  assert( ExprUseXList(pExpr) );
   if( !pExpr->x.pList ){
     return 0;
   }
-  assert( !ExprHasProperty(pExpr, EP_xIsSelect) );
   nExpr = pExpr->x.pList->nExpr;
   assert( !ExprHasProperty(pExpr, EP_IntValue) );
   pDef = sqlite3FindFunction(db, pExpr->u.zToken, nExpr, SQLITE_UTF8, 0);

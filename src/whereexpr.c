@@ -195,6 +195,7 @@ static int isLikeOrGlob(
 #ifdef SQLITE_EBCDIC
   if( *pnoCase ) return 0;
 #endif
+  assert( ExprUseXList(pExpr) );
   pList = pExpr->x.pList;
   pLeft = pList->a[1].pExpr;
 
@@ -368,6 +369,7 @@ static int isAuxiliaryVtabOperator(
     Expr *pCol;                     /* Column reference */
     int i;
 
+    assert( ExprUseXList(pExpr) );
     pList = pExpr->x.pList;
     if( pList==0 || pList->nExpr!=2 ){
       return 0;
@@ -873,7 +875,7 @@ static void exprAnalyzeOrTerm(
       if( pNew ){
         int idxNew;
         transferJoinMarkings(pNew, pExpr);
-        assert( !ExprHasProperty(pNew, EP_xIsSelect) );
+        assert( ExprUseXList(pNew) );
         pNew->x.pList = pList;
         idxNew = whereClauseInsert(pWC, pNew, TERM_VIRTUAL|TERM_DYNAMIC);
         testcase( idxNew==0 );
@@ -1001,6 +1003,7 @@ static int exprMightBeIndexed(
   assert( TK_IS<TK_GE && TK_ISNULL<TK_GE && TK_IN<TK_GE );
   assert( op<=TK_GE );
   if( pExpr->op==TK_VECTOR && (op>=TK_GT && ALWAYS(op<=TK_GE)) ){
+    assert( ExprUseXList(pExpr) );
     pExpr = pExpr->x.pList->a[0].pExpr;
 
   }
@@ -1067,7 +1070,7 @@ static void exprAnalyze(
   if( op==TK_IN ){
     assert( pExpr->pRight==0 );
     if( sqlite3ExprCheckIN(pParse, pExpr) ) return;
-    if( ExprHasProperty(pExpr, EP_xIsSelect) ){
+    if( ExprUseXSelect(pExpr) ){
       pTerm->prereqRight = exprSelectUsage(pMaskSet, pExpr->x.pSelect);
     }else{
       pTerm->prereqRight = sqlite3WhereExprListUsage(pMaskSet, pExpr->x.pList);
@@ -1103,6 +1106,7 @@ static void exprAnalyze(
     if( pTerm->u.x.iField>0 ){
       assert( op==TK_IN );
       assert( pLeft->op==TK_VECTOR );
+      assert( ExprUseXList(pLeft) );
       pLeft = pLeft->x.pList->a[pTerm->u.x.iField-1].pExpr;
     }
 
@@ -1181,9 +1185,11 @@ static void exprAnalyze(
   ** BETWEEN term is skipped.
   */
   else if( pExpr->op==TK_BETWEEN && pWC->op==TK_AND ){
-    ExprList *pList = pExpr->x.pList;
+    ExprList *pList;
     int i;
     static const u8 ops[] = {TK_GE, TK_LE};
+    assert( ExprUseXList(pExpr) );
+    pList = pExpr->x.pList;
     assert( pList!=0 );
     assert( pList->nExpr==2 );
     for(i=0; i<2; i++){
@@ -1276,6 +1282,7 @@ static void exprAnalyze(
     const char *zCollSeqName;     /* Name of collating sequence */
     const u16 wtFlags = TERM_LIKEOPT | TERM_VIRTUAL | TERM_DYNAMIC;
 
+    assert( ExprUseXList(pExpr) );
     pLeft = pExpr->x.pList->a[1].pExpr;
     pStr2 = sqlite3ExprDup(db, pStr1, 0);
     assert( pStr1==0 || !ExprHasProperty(pStr1, EP_IntValue) );
@@ -1380,6 +1387,7 @@ static void exprAnalyze(
   else if( pExpr->op==TK_IN
    && pTerm->u.x.iField==0
    && pExpr->pLeft->op==TK_VECTOR
+   && ALWAYS( ExprUseXSelect(pExpr) )
    && pExpr->x.pSelect->pPrior==0
 #ifndef SQLITE_OMIT_WINDOWFUNC
    && pExpr->x.pSelect->pWin==0
@@ -1543,7 +1551,7 @@ Bitmask sqlite3WhereExprUsageNN(WhereMaskSet *pMaskSet, Expr *p){
   if( p->pRight ){
     mask |= sqlite3WhereExprUsageNN(pMaskSet, p->pRight);
     assert( p->x.pList==0 );
-  }else if( ExprHasProperty(p, EP_xIsSelect) ){
+  }else if( ExprUseXSelect(p) ){
     if( ExprHasProperty(p, EP_VarSelect) ) pMaskSet->bVarSelect = 1;
     mask |= exprSelectUsage(pMaskSet, p->x.pSelect);
   }else if( p->x.pList ){
