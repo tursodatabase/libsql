@@ -3002,6 +3002,7 @@ static int whereLoopAddBtree(
   assert( !IsVirtual(pSrc->pTab) );
 
   if( pSrc->fg.isIndexedBy ){
+    assert( pSrc->fg.isCte==0 );
     /* An INDEXED BY clause specifies a particular index to use */
     pProbe = pSrc->u2.pIBIndex;
   }else if( !HasRowid(pTab) ){

@@ -210,6 +210,7 @@ Expr *sqlite3LimitWhere(
   pSelectSrc = sqlite3SrcListDup(db, pSrc, 0);
   pSrc->a[0].pTab = pTab;
   if( pSrc->a[0].fg.isIndexedBy ){
+    assert( pSrc->a[0].fg.isCte==0 );
     pSrc->a[0].u2.pIBIndex = 0;
     pSrc->a[0].fg.isIndexedBy = 0;
     sqlite3DbFree(db, pSrc->a[0].u1.zIndexedBy);

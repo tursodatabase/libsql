@@ -4995,6 +4995,7 @@ int sqlite3IndexedByLookup(Parse *pParse, SrcItem *pFrom){
     pParse->checkSchema = 1;
     return SQLITE_ERROR;
   }
+  assert( pFrom->fg.isCte==0 );
   pFrom->u2.pIBIndex = pIdx;
   return SQLITE_OK;
 }
@@ -5252,6 +5253,7 @@ static int resolveFromTermToCte(
     if( db->mallocFailed ) return 2;
     pFrom->pSelect->selFlags |= SF_CopyCte;
     assert( pFrom->pSelect );
+    assert( pFrom->fg.isIndexedBy==0 ); /* Prevent collision in union u2 */
     pFrom->fg.isCte = 1;
     pFrom->u2.pCteUse = pCteUse;
     pCteUse->nUse++;

@@ -2975,11 +2975,12 @@ struct ExprList {
     unsigned bSorterRef :1; /* Defer evaluation until after sorting */
     unsigned bNulls: 1;     /* True if explicit "NULLS FIRST/LAST" */
     union {
-      struct {
+      struct {             /* Used by any ExprList other than Parse.pConsExpr */
         u16 iOrderByCol;      /* For ORDER BY, column number in result set */
         u16 iAlias;           /* Index into Parse.aAlias[] for zName */
       } x;
-      int iConstExprReg;      /* Register in which Expr value is cached */
+      int iConstExprReg;   /* Register in which Expr value is cached. Used only
+                           ** by Parse.pConstExpr */
     } u;
   } a[1];                  /* One slot for each expression in the list */
 };

@@ -4927,6 +4927,7 @@ void sqlite3SrcListIndexedBy(Parse *pParse, SrcList *p, Token *pIndexedBy){
     }else{
       pItem->u1.zIndexedBy = sqlite3NameFromToken(pParse->db, pIndexedBy);
       pItem->fg.isIndexedBy = 1;
+      assert( pItem->fg.isCte==0 );  /* No collision on union u2 */
     }
   }
 }
