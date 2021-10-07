@@ -1,5 +1,5 @@
-C Protect\sall\saccesses\sto\sthe\sFuncDef.u\sand\sExpr.u\sunions\susing\snearby\nassert()s\sor\sbranches.
-D 2021-10-07T13:40:29.653
+C Fix\san\sincorrect\sassert()\son\sPRAGMA\stable_xinfo\sadded\sby\sthe\sprevious\scheck-in.
+D 2021-10-07T14:19:32.259
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -542,7 +542,7 @@ F src/parse.y 82bdd593c50bddcc285a173e9788a20296103217f5f5290c9122abf8af71af62
 F src/pcache.c 084e638432c610f95aea72b8509f0845d2791293f39d1b82f0c0a7e089c3bb6b
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c 54881292a9a5db202b2c0ac541c5e3ef9a5e8c4f1c1383adb2601d5499a60e65
-F src/pragma.c 99feddb5e3dc249caa0b4725917209ad2a1976fd72a148cbff739dead0aff0ce
+F src/pragma.c a2458437f99b356681ff3d699943e7f0eeb7ad0a00abf00df60fd8132d41f1c1
 F src/pragma.h 87330ed2fbfa2a1274de93ca0ab850fba336189228cb256089202c3b52766fad
 F src/prepare.c 8f07616db04337057b8498b72d051ee90f73c54615c2e908c05404cef1e060b7
 F src/printf.c 5901672228f305f7d493cbc4e7d76a61a5caecdbc1cd06b1f9ec42ea4265cf8d
@@ -1929,7 +1929,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 50e08338aed7ac0cee600098d2ecd4b3b7bfd31a597bb26773badf3d2e2582c8
-R fc28982a1b3d34b40b6226fc2536da7e
+P 9af863f065e0bef491c2ab7525194505f9516f4e6dfc789d2e3a9d2c2438533a
+R eeba287e3c7adfad939bd3178ae64a7a
 U drh
-Z 0841762a805ab21d382c6e505c7a82c1
+Z ead3dbf79919d143e014b4c2002fbeb0

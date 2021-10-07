@@ -1180,7 +1180,8 @@ void sqlite3Pragma(
         }
         pColExpr = sqlite3ColumnExpr(pTab,pCol);
         assert( pColExpr==0 || pColExpr->op==TK_SPAN || isHidden>=2 );
-        assert( pColExpr==0 || !ExprHasProperty(pColExpr, EP_IntValue) );
+        assert( pColExpr==0 || !ExprHasProperty(pColExpr, EP_IntValue)
+                  || isHidden>=2 );
         sqlite3VdbeMultiLoad(v, 1, pPragma->iArg ? "issisii" : "issisi",
                i-nHidden,
                pCol->zCnName,
