@@ -683,7 +683,7 @@ void sqlite3ColumnSetExpr(
   Expr *pExpr       /* The new default expression */
 ){
   ExprList *pList;
-  assert( !IsVirtual(pTab) );
+  assert( IsOrdinaryTable(pTab) );
   pList = pTab->u.tab.pDfltList;
   if( pCol->iDflt==0
    || NEVER(pList==0)
@@ -704,7 +704,7 @@ void sqlite3ColumnSetExpr(
 */
 Expr *sqlite3ColumnExpr(Table *pTab, Column *pCol){
   if( pCol->iDflt==0 ) return 0;
-  if( NEVER(IsVirtual(pTab)) ) return 0;
+  if( NEVER(!IsOrdinaryTable(pTab)) ) return 0;
   if( NEVER(pTab->u.tab.pDfltList==0) ) return 0;
   if( NEVER(pTab->u.tab.pDfltList->nExpr<pCol->iDflt) ) return 0;
   return pTab->u.tab.pDfltList->a[pCol->iDflt-1].pExpr;
@@ -763,13 +763,13 @@ void sqlite3DeleteColumnNames(sqlite3 *db, Table *pTable){
       sqlite3DbFree(db, pCol->zCnName);
     }
     sqlite3DbFree(db, pTable->aCol);
-    if( !IsVirtual(pTable) ){
+    if( IsOrdinaryTable(pTable) ){
       sqlite3ExprListDelete(db, pTable->u.tab.pDfltList);
     }
     if( db==0 || db->pnBytesFreed==0 ){
       pTable->aCol = 0;
       pTable->nCol = 0;
-      if( !IsVirtual(pTable) ){
+      if( IsOrdinaryTable(pTable) ){
         pTable->u.tab.pDfltList = 0;
       }
     }
@@ -3549,6 +3549,7 @@ void sqlite3CreateForeignKey(
     goto fk_end;
   }
   pFKey->pFrom = p;
+  assert( IsOrdinaryTable(p) );
   pFKey->pNextFrom = p->u.tab.pFKey;
   z = (char*)&pFKey->aCol[nCol];
   pFKey->zTo = z;
@@ -3614,7 +3615,7 @@ void sqlite3CreateForeignKey(
 
   /* Link the foreign key to the table as the last step.
   */
-  assert( !IsVirtual(p) );
+  assert( IsOrdinaryTable(p) );
   p->u.tab.pFKey = pFKey;
   pFKey = 0;
 
@@ -3637,7 +3638,7 @@ void sqlite3DeferForeignKey(Parse *pParse, int isDeferred){
   Table *pTab;
   FKey *pFKey;
   if( (pTab = pParse->pNewTable)==0 ) return;
-  if( NEVER(IsVirtual(pTab)) ) return;
+  if( NEVER(!IsOrdinaryTable(pTab)) ) return;
   if( (pFKey = pTab->u.tab.pFKey)==0 ) return;
   assert( isDeferred==0 || isDeferred==1 ); /* EV: R-30323-21917 */
   pFKey->isDeferred = (u8)isDeferred;
