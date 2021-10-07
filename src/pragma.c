@@ -1157,6 +1157,7 @@ void sqlite3Pragma(
       sqlite3ViewGetColumnNames(pParse, pTab);
       for(i=0, pCol=pTab->aCol; i<pTab->nCol; i++, pCol++){
         int isHidden = 0;
+        const Expr *pColExpr;
         if( pCol->colFlags & COLFLAG_NOINSERT ){
           if( pPragma->iArg==0 ){
             nHidden++;
@@ -1177,16 +1178,15 @@ void sqlite3Pragma(
         }else{
           for(k=1; k<=pTab->nCol && pPk->aiColumn[k-1]!=i; k++){}
         }
-        assert( sqlite3ColumnExpr(pTab,pCol)==0
-             || sqlite3ColumnExpr(pTab,pCol)->op==TK_SPAN
-             || isHidden>=2 );
+        pColExpr = sqlite3ColumnExpr(pTab,pCol);
+        assert( pColExpr==0 || pColExpr->op==TK_SPAN || isHidden>=2 );
+        assert( pColExpr==0 || !ExprHasProperty(pColExpr, EP_IntValue) );
         sqlite3VdbeMultiLoad(v, 1, pPragma->iArg ? "issisii" : "issisi",
                i-nHidden,
                pCol->zCnName,
                sqlite3ColumnType(pCol,""),
                pCol->notNull ? 1 : 0,
-               isHidden>=2 || sqlite3ColumnExpr(pTab,pCol)==0 ? 0 :
-                          sqlite3ColumnExpr(pTab,pCol)->u.zToken,
+               (isHidden>=2 || pColExpr==0) ? 0 : pColExpr->u.zToken,
                k,
                isHidden);
       }
@@ -1370,11 +1370,13 @@ void sqlite3Pragma(
     pParse->nMem = 6;
     for(i=0; i<SQLITE_FUNC_HASH_SZ; i++){
       for(p=sqlite3BuiltinFunctions.a[i]; p; p=p->u.pHash ){
+        assert( p->funcFlags & SQLITE_FUNC_BUILTIN );
         pragmaFunclistLine(v, p, 1, showInternFunc);
       }
     }
     for(j=sqliteHashFirst(&db->aFunc); j; j=sqliteHashNext(j)){
       p = (FuncDef*)sqliteHashData(j);
+      assert( (p->funcFlags & SQLITE_FUNC_BUILTIN)==0 );
       pragmaFunclistLine(v, p, 0, showInternFunc);
     }
   }

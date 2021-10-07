@@ -1940,6 +1940,7 @@ int sqlite3IsLikeFunction(sqlite3 *db, Expr *pExpr, int *pIsNocase, char *aWc){
   }
   assert( !ExprHasProperty(pExpr, EP_xIsSelect) );
   nExpr = pExpr->x.pList->nExpr;
+  assert( !ExprHasProperty(pExpr, EP_IntValue) );
   pDef = sqlite3FindFunction(db, pExpr->u.zToken, nExpr, SQLITE_UTF8, 0);
 #ifdef SQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
   if( pDef==0 ) return 0;
@@ -1963,6 +1964,7 @@ int sqlite3IsLikeFunction(sqlite3 *db, Expr *pExpr, int *pIsNocase, char *aWc){
     Expr *pEscape = pExpr->x.pList->a[2].pExpr;
     char *zEscape;
     if( pEscape->op!=TK_STRING ) return 0;
+    assert( !ExprHasProperty(pEscape, EP_IntValue) );
     zEscape = pEscape->u.zToken;
     if( zEscape[0]==0 || zEscape[1]!=0 ) return 0;
     if( zEscape[0]==aWc[0] ) return 0;
@@ -2344,6 +2346,7 @@ void sqlite3RegisterBuiltinFunctions(void){
       for(p=sqlite3BuiltinFunctions.a[i]; p; p=p->u.pHash){
         int n = sqlite3Strlen30(p->zName);
         int h = p->zName[0] + n;
+        assert( p->funcFlags & SQLITE_FUNC_BUILTIN );
         printf(" %s(%d)", p->zName, h);
       }
       printf("\n");

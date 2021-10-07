@@ -191,6 +191,7 @@ CollSeq *sqlite3ExprCollSeq(Parse *pParse, const Expr *pExpr){
       continue;
     }
     if( op==TK_COLLATE ){
+      assert( !ExprHasProperty(p, EP_IntValue) );
       pColl = sqlite3GetCollSeq(pParse, ENC(db), 0, p->u.zToken);
       break;
     }
@@ -1216,7 +1217,10 @@ static SQLITE_NOINLINE void sqlite3ExprDeleteNN(sqlite3 *db, Expr *p){
 #endif
     }
   }
-  if( ExprHasProperty(p, EP_MemToken) ) sqlite3DbFree(db, p->u.zToken);
+  if( ExprHasProperty(p, EP_MemToken) ){
+    assert( !ExprHasProperty(p, EP_IntValue) );
+    sqlite3DbFree(db, p->u.zToken);
+  }
   if( !ExprHasProperty(p, EP_Static) ){
     sqlite3DbFreeNN(db, p);
   }
@@ -2059,7 +2063,7 @@ u32 sqlite3IsTrueOrFalse(const char *zIn){
 int sqlite3ExprIdToTrueFalse(Expr *pExpr){
   u32 v;
   assert( pExpr->op==TK_ID || pExpr->op==TK_STRING );
-  if( !ExprHasProperty(pExpr, EP_Quoted)
+  if( !ExprHasProperty(pExpr, EP_Quoted|EP_IntValue)
    && (v = sqlite3IsTrueOrFalse(pExpr->u.zToken))!=0
   ){
     pExpr->op = TK_TRUEFALSE;
@@ -2076,6 +2080,7 @@ int sqlite3ExprIdToTrueFalse(Expr *pExpr){
 int sqlite3ExprTruthValue(const Expr *pExpr){
   pExpr = sqlite3ExprSkipCollate((Expr*)pExpr);
   assert( pExpr->op==TK_TRUEFALSE );
+  assert( !ExprHasProperty(pExpr, EP_IntValue) );
   assert( sqlite3StrICmp(pExpr->u.zToken,"true")==0
        || sqlite3StrICmp(pExpr->u.zToken,"false")==0 );
   return pExpr->u.zToken[4]==0;
@@ -4142,6 +4147,7 @@ expr_code_doover:
         sqlite3VdbeAddOp2(v, OP_SCopy, inReg, target);
         inReg = target;
       }
+      assert( !ExprHasProperty(pExpr, EP_IntValue) );
       sqlite3VdbeAddOp2(v, OP_Cast, target,
                         sqlite3AffinityType(pExpr->u.zToken, 0));
       return inReg;
@@ -5421,7 +5427,12 @@ int sqlite3ExprCompare(
     }
     return 2;
   }
-  if( pA->op!=TK_COLUMN && pA->op!=TK_AGG_COLUMN && pA->u.zToken ){
+  if( pA->op!=TK_COLUMN
+   && pA->op!=TK_AGG_COLUMN
+   && ALWAYS(!ExprHasProperty(pA, EP_IntValue))
+   && pA->u.zToken
+  ){
+    assert( !ExprHasProperty(pB, EP_IntValue) );
     if( pA->op==TK_FUNCTION || pA->op==TK_AGG_FUNCTION ){
       if( sqlite3StrICmp(pA->u.zToken,pB->u.zToken)!=0 ) return 2;
 #ifndef SQLITE_OMIT_WINDOWFUNC

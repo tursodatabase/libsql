@@ -581,7 +581,7 @@ static void noopValueFunc(sqlite3_context *p){ UNUSED_PARAMETER(p); /*no-op*/ }
 /* Window functions that use all window interfaces: xStep, xFinal,
 ** xValue, and xInverse */
 #define WINDOWFUNCALL(name,nArg,extra) {                                   \
-  nArg, (SQLITE_UTF8|SQLITE_FUNC_WINDOW|extra), 0, 0,                      \
+  nArg, (SQLITE_FUNC_BUILTIN|SQLITE_UTF8|SQLITE_FUNC_WINDOW|extra), 0, 0,  \
   name ## StepFunc, name ## FinalizeFunc, name ## ValueFunc,               \
   name ## InvFunc, name ## Name, {0}                                       \
 }
@@ -589,7 +589,7 @@ static void noopValueFunc(sqlite3_context *p){ UNUSED_PARAMETER(p); /*no-op*/ }
 /* Window functions that are implemented using bytecode and thus have
 ** no-op routines for their methods */
 #define WINDOWFUNCNOOP(name,nArg,extra) {                                  \
-  nArg, (SQLITE_UTF8|SQLITE_FUNC_WINDOW|extra), 0, 0,                      \
+  nArg, (SQLITE_FUNC_BUILTIN|SQLITE_UTF8|SQLITE_FUNC_WINDOW|extra), 0, 0,  \
   noopStepFunc, noopValueFunc, noopValueFunc,                              \
   noopStepFunc, name ## Name, {0}                                          \
 }
@@ -598,7 +598,7 @@ static void noopValueFunc(sqlite3_context *p){ UNUSED_PARAMETER(p); /*no-op*/ }
 ** same routine for xFinalize and xValue and which never call
 ** xInverse. */
 #define WINDOWFUNCX(name,nArg,extra) {                                     \
-  nArg, (SQLITE_UTF8|SQLITE_FUNC_WINDOW|extra), 0, 0,                      \
+  nArg, (SQLITE_FUNC_BUILTIN|SQLITE_UTF8|SQLITE_FUNC_WINDOW|extra), 0, 0,  \
   name ## StepFunc, name ## ValueFunc, name ## ValueFunc,                  \
   noopStepFunc, name ## Name, {0}                                          \
 }
@@ -941,7 +941,8 @@ static int sqlite3WindowExtraAggFuncDepth(Walker *pWalker, Expr *pExpr){
 
 static int disallowAggregatesInOrderByCb(Walker *pWalker, Expr *pExpr){
   if( pExpr->op==TK_AGG_FUNCTION && pExpr->pAggInfo==0 ){
-    sqlite3ErrorMsg(pWalker->pParse,
+    assert( !ExprHasProperty(pExpr, EP_IntValue) );
+     sqlite3ErrorMsg(pWalker->pParse,
          "misuse of aggregate: %s()", pExpr->u.zToken);
   }
   return WRC_Continue;

@@ -461,11 +461,13 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
     }
 #ifndef SQLITE_OMIT_FLOATING_POINT
     case TK_FLOAT: {
+      assert( !ExprHasProperty(pExpr, EP_IntValue) );
       sqlite3TreeViewLine(pView,"%s", pExpr->u.zToken);
       break;
     }
 #endif
     case TK_STRING: {
+      assert( !ExprHasProperty(pExpr, EP_IntValue) );
       sqlite3TreeViewLine(pView,"%Q", pExpr->u.zToken);
       break;
     }
@@ -480,11 +482,13 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
     }
 #ifndef SQLITE_OMIT_BLOB_LITERAL
     case TK_BLOB: {
+      assert( !ExprHasProperty(pExpr, EP_IntValue) );
       sqlite3TreeViewLine(pView,"%s", pExpr->u.zToken);
       break;
     }
 #endif
     case TK_VARIABLE: {
+      assert( !ExprHasProperty(pExpr, EP_IntValue) );
       sqlite3TreeViewLine(pView,"VARIABLE(%s,%d)",
                           pExpr->u.zToken, pExpr->iColumn);
       break;
@@ -494,12 +498,14 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
       break;
     }
     case TK_ID: {
+      assert( !ExprHasProperty(pExpr, EP_IntValue) );
       sqlite3TreeViewLine(pView,"ID \"%w\"", pExpr->u.zToken);
       break;
     }
 #ifndef SQLITE_OMIT_CAST
     case TK_CAST: {
       /* Expressions of the form:   CAST(pLeft AS token) */
+      assert( !ExprHasProperty(pExpr, EP_IntValue) );
       sqlite3TreeViewLine(pView,"CAST %Q", pExpr->u.zToken);
       sqlite3TreeViewExpr(pView, pExpr->pLeft, 0);
       break;
@@ -549,6 +555,7 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
     }
 
     case TK_SPAN: {
+      assert( !ExprHasProperty(pExpr, EP_IntValue) );
       sqlite3TreeViewLine(pView, "SPAN %Q", pExpr->u.zToken);
       sqlite3TreeViewExpr(pView, pExpr->pLeft, 0);
       break;
@@ -560,6 +567,7 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
       ** up in the treeview output as "SOFT-COLLATE".  Explicit COLLATE
       ** operators that appear in the original SQL always have the
       ** EP_Collate bit set and appear in treeview output as just "COLLATE" */
+      assert( !ExprHasProperty(pExpr, EP_IntValue) );
       sqlite3TreeViewLine(pView, "%sCOLLATE %Q%s",
         !ExprHasProperty(pExpr, EP_Collate) ? "SOFT-" : "",
         pExpr->u.zToken, zFlgs);
@@ -582,6 +590,7 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
         pWin = 0;
 #endif 
       }
+      assert( !ExprHasProperty(pExpr, EP_IntValue) );
       if( pExpr->op==TK_AGG_FUNCTION ){
         sqlite3TreeViewLine(pView, "AGG_FUNCTION%d %Q%s agg=%d[%d]/%p",
                              pExpr->op2, pExpr->u.zToken, zFlgs,
@@ -682,6 +691,7 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
         case OE_Fail:       zType = "fail";      break;
         case OE_Ignore:     zType = "ignore";    break;
       }
+      assert( !ExprHasProperty(pExpr, EP_IntValue) );
       sqlite3TreeViewLine(pView, "RAISE %s(%Q)", zType, pExpr->u.zToken);
       break;
     }

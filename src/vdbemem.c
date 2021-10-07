@@ -1420,6 +1420,7 @@ static int valueFromFunction(
   assert( (p->flags & EP_TokenOnly)==0 );
   pList = p->x.pList;
   if( pList ) nVal = pList->nExpr;
+  assert( !ExprHasProperty(p, EP_IntValue) );
   pFunc = sqlite3FindFunction(db, p->u.zToken, nVal, enc, 0);
   assert( pFunc );
   if( (pFunc->funcFlags & (SQLITE_FUNC_CONSTANT|SQLITE_FUNC_SLOCHNG))==0 
@@ -1523,7 +1524,9 @@ static int valueFromExpr(
   assert( (pExpr->flags & EP_TokenOnly)==0 || pCtx==0 );
 
   if( op==TK_CAST ){
-    u8 aff = sqlite3AffinityType(pExpr->u.zToken,0);
+    u8 aff;
+    assert( !ExprHasProperty(pExpr, EP_IntValue) );
+    aff = sqlite3AffinityType(pExpr->u.zToken,0);
     rc = valueFromExpr(db, pExpr->pLeft, enc, aff, ppVal, pCtx);
     testcase( rc!=SQLITE_OK );
     if( *ppVal ){
@@ -1596,6 +1599,7 @@ static int valueFromExpr(
 #ifndef SQLITE_OMIT_BLOB_LITERAL
   else if( op==TK_BLOB ){
     int nVal;
+    assert( !ExprHasProperty(pExpr, EP_IntValue) );
     assert( pExpr->u.zToken[0]=='x' || pExpr->u.zToken[0]=='X' );
     assert( pExpr->u.zToken[1]=='\'' );
     pVal = valueNew(db, pCtx);
@@ -1613,6 +1617,7 @@ static int valueFromExpr(
   }
 #endif
   else if( op==TK_TRUEFALSE ){
+    assert( !ExprHasProperty(pExpr, EP_IntValue) );
     pVal = valueNew(db, pCtx);
     if( pVal ){
       pVal->flags = MEM_Int;

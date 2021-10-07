@@ -277,6 +277,7 @@ void sqlite3Dequote(char *z){
   z[j] = 0;
 }
 void sqlite3DequoteExpr(Expr *p){
+  assert( !ExprHasProperty(p, EP_IntValue) );
   assert( sqlite3Isquote(p->u.zToken[0]) );
   p->flags |= p->u.zToken[0]=='"' ? EP_Quoted|EP_DblQuoted : EP_Quoted;
   sqlite3Dequote(p->u.zToken);

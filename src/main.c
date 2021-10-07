@@ -1138,7 +1138,9 @@ void sqlite3CloseSavepoints(sqlite3 *db){
 ** with SQLITE_ANY as the encoding.
 */
 static void functionDestroy(sqlite3 *db, FuncDef *p){
-  FuncDestructor *pDestructor = p->u.pDestructor;
+  FuncDestructor *pDestructor;
+  assert( (p->funcFlags & SQLITE_FUNC_BUILTIN)==0 );
+  pDestructor = p->u.pDestructor;
   if( pDestructor ){
     pDestructor->nRef--;
     if( pDestructor->nRef==0 ){

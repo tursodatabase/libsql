@@ -4901,6 +4901,7 @@ static u8 minMaxQuery(sqlite3 *db, Expr *pFunc, ExprList **ppMinMax){
   ){
     return eRet;
   }
+  assert( !ExprHasProperty(pFunc, EP_IntValue) );
   zFunc = pFunc->u.zToken;
   if( sqlite3StrICmp(zFunc, "min")==0 ){
     eRet = WHERE_ORDERBY_MIN;
@@ -6177,6 +6178,7 @@ static int countOfViewOptimization(Parse *pParse, Select *p){
   if( p->pGroupBy ) return 0;
   pExpr = p->pEList->a[0].pExpr;
   if( pExpr->op!=TK_AGG_FUNCTION ) return 0;        /* Result is an aggregate */
+  assert( !ExprHasProperty(pExpr, EP_IntValue) );
   if( sqlite3_stricmp(pExpr->u.zToken,"count") ) return 0;  /* Is count() */
   if( pExpr->x.pList!=0 ) return 0;                 /* Must be count(*) */
   if( p->pSrc->nSrc!=1 ) return 0;                  /* One table in FROM  */

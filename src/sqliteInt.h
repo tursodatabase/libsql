@@ -1810,7 +1810,7 @@ struct FuncDef {
   union {
     FuncDef *pHash;      /* Next with a different name but the same hash */
     FuncDestructor *pDestructor;   /* Reference counted destructor function */
-  } u;
+  } u; /* pHash if SQLITE_FUNC_BUILTIN, pDestructor otherwise */
 };
 
 /*
@@ -1871,6 +1871,7 @@ struct FuncDestructor {
 #define SQLITE_FUNC_SUBTYPE  0x00100000 /* Result likely to have sub-type */
 #define SQLITE_FUNC_UNSAFE   0x00200000 /* Function has side effects */
 #define SQLITE_FUNC_INLINE   0x00400000 /* Functions implemented in-line */
+#define SQLITE_FUNC_BUILTIN  0x00800000 /* This is a built-in function */
 #define SQLITE_FUNC_ANYORDER 0x08000000 /* count/min/max aggregate */
 
 /* Identifier numbers for each in-line function */
@@ -1949,44 +1950,51 @@ struct FuncDestructor {
 **     parameter.
 */
 #define FUNCTION(zName, nArg, iArg, bNC, xFunc) \
-  {nArg, SQLITE_FUNC_CONSTANT|SQLITE_UTF8|(bNC*SQLITE_FUNC_NEEDCOLL), \
+  {nArg, SQLITE_FUNC_BUILTIN|\
+   SQLITE_FUNC_CONSTANT|SQLITE_UTF8|(bNC*SQLITE_FUNC_NEEDCOLL), \
    SQLITE_INT_TO_PTR(iArg), 0, xFunc, 0, 0, 0, #zName, {0} }
 #define VFUNCTION(zName, nArg, iArg, bNC, xFunc) \
-  {nArg, SQLITE_UTF8|(bNC*SQLITE_FUNC_NEEDCOLL), \
+  {nArg, SQLITE_FUNC_BUILTIN|SQLITE_UTF8|(bNC*SQLITE_FUNC_NEEDCOLL), \
    SQLITE_INT_TO_PTR(iArg), 0, xFunc, 0, 0, 0, #zName, {0} }
 #define SFUNCTION(zName, nArg, iArg, bNC, xFunc) \
-  {nArg, SQLITE_UTF8|SQLITE_DIRECTONLY|SQLITE_FUNC_UNSAFE, \
+  {nArg, SQLITE_FUNC_BUILTIN|SQLITE_UTF8|SQLITE_DIRECTONLY|SQLITE_FUNC_UNSAFE, \
    SQLITE_INT_TO_PTR(iArg), 0, xFunc, 0, 0, 0, #zName, {0} }
 #define MFUNCTION(zName, nArg, xPtr, xFunc) \
-  {nArg, SQLITE_FUNC_CONSTANT|SQLITE_UTF8, \
+  {nArg, SQLITE_FUNC_BUILTIN|SQLITE_FUNC_CONSTANT|SQLITE_UTF8, \
    xPtr, 0, xFunc, 0, 0, 0, #zName, {0} }
 #define INLINE_FUNC(zName, nArg, iArg, mFlags) \
-  {nArg, SQLITE_UTF8|SQLITE_FUNC_INLINE|SQLITE_FUNC_CONSTANT|(mFlags), \
+  {nArg, SQLITE_FUNC_BUILTIN|\
+   SQLITE_UTF8|SQLITE_FUNC_INLINE|SQLITE_FUNC_CONSTANT|(mFlags), \
    SQLITE_INT_TO_PTR(iArg), 0, noopFunc, 0, 0, 0, #zName, {0} }
 #define TEST_FUNC(zName, nArg, iArg, mFlags) \
-  {nArg, SQLITE_UTF8|SQLITE_FUNC_INTERNAL|SQLITE_FUNC_TEST| \
+  {nArg, SQLITE_FUNC_BUILTIN|\
+         SQLITE_UTF8|SQLITE_FUNC_INTERNAL|SQLITE_FUNC_TEST| \
          SQLITE_FUNC_INLINE|SQLITE_FUNC_CONSTANT|(mFlags), \
    SQLITE_INT_TO_PTR(iArg), 0, noopFunc, 0, 0, 0, #zName, {0} }
 #define DFUNCTION(zName, nArg, iArg, bNC, xFunc) \
-  {nArg, SQLITE_FUNC_SLOCHNG|SQLITE_UTF8, \
+  {nArg, SQLITE_FUNC_BUILTIN|SQLITE_FUNC_SLOCHNG|SQLITE_UTF8, \
    0, 0, xFunc, 0, 0, 0, #zName, {0} }
 #define PURE_DATE(zName, nArg, iArg, bNC, xFunc) \
-  {nArg, SQLITE_FUNC_SLOCHNG|SQLITE_UTF8|SQLITE_FUNC_CONSTANT, \
+  {nArg, SQLITE_FUNC_BUILTIN|\
+         SQLITE_FUNC_SLOCHNG|SQLITE_UTF8|SQLITE_FUNC_CONSTANT, \
    (void*)&sqlite3Config, 0, xFunc, 0, 0, 0, #zName, {0} }
 #define FUNCTION2(zName, nArg, iArg, bNC, xFunc, extraFlags) \
-  {nArg,SQLITE_FUNC_CONSTANT|SQLITE_UTF8|(bNC*SQLITE_FUNC_NEEDCOLL)|extraFlags,\
+  {nArg, SQLITE_FUNC_BUILTIN|\
+   SQLITE_FUNC_CONSTANT|SQLITE_UTF8|(bNC*SQLITE_FUNC_NEEDCOLL)|extraFlags,\
    SQLITE_INT_TO_PTR(iArg), 0, xFunc, 0, 0, 0, #zName, {0} }
 #define STR_FUNCTION(zName, nArg, pArg, bNC, xFunc) \
-  {nArg, SQLITE_FUNC_SLOCHNG|SQLITE_UTF8|(bNC*SQLITE_FUNC_NEEDCOLL), \
+  {nArg, SQLITE_FUNC_BUILTIN|\
+   SQLITE_FUNC_SLOCHNG|SQLITE_UTF8|(bNC*SQLITE_FUNC_NEEDCOLL), \
    pArg, 0, xFunc, 0, 0, 0, #zName, }
 #define LIKEFUNC(zName, nArg, arg, flags) \
-  {nArg, SQLITE_FUNC_CONSTANT|SQLITE_UTF8|flags, \
+  {nArg, SQLITE_FUNC_BUILTIN|SQLITE_FUNC_CONSTANT|SQLITE_UTF8|flags, \
    (void *)arg, 0, likeFunc, 0, 0, 0, #zName, {0} }
 #define WAGGREGATE(zName, nArg, arg, nc, xStep, xFinal, xValue, xInverse, f) \
-  {nArg, SQLITE_UTF8|(nc*SQLITE_FUNC_NEEDCOLL)|f, \
+  {nArg, SQLITE_FUNC_BUILTIN|SQLITE_UTF8|(nc*SQLITE_FUNC_NEEDCOLL)|f, \
    SQLITE_INT_TO_PTR(arg), 0, xStep,xFinal,xValue,xInverse,#zName, {0}}
 #define INTERNAL_FUNCTION(zName, nArg, xFunc) \
-  {nArg, SQLITE_FUNC_INTERNAL|SQLITE_UTF8|SQLITE_FUNC_CONSTANT, \
+  {nArg, SQLITE_FUNC_BUILTIN|\
+   SQLITE_FUNC_INTERNAL|SQLITE_UTF8|SQLITE_FUNC_CONSTANT, \
    0, 0, xFunc, 0, 0, 0, #zName, {0} }
 
 

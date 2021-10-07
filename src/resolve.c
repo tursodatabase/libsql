@@ -87,6 +87,7 @@ static void resolveAlias(
   }else{
     incrAggFunctionDepth(pDup, nSubquery);
     if( pExpr->op==TK_COLLATE ){
+      assert( !ExprHasProperty(pExpr, EP_IntValue) );
       pDup = sqlite3ExprAddCollateString(pParse, pDup, pExpr->u.zToken);
     }
 
@@ -743,6 +744,7 @@ static void notValidImpl(
 static int exprProbability(Expr *p){
   double r = -1.0;
   if( p->op!=TK_FLOAT ) return -1;
+  assert( !ExprHasProperty(p, EP_IntValue) );
   sqlite3AtoF(p->u.zToken, &r, sqlite3Strlen30(p->u.zToken), SQLITE_UTF8);
   assert( r>=0.0 );
   if( r>1.0 ) return -1;
@@ -823,6 +825,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       sqlite3WalkExpr(pWalker, pExpr->pLeft);
       if( 0==sqlite3ExprCanBeNull(pExpr->pLeft) && !IN_RENAME_OBJECT ){
         testcase( ExprHasProperty(pExpr, EP_FromJoin) );
+        assert( !ExprHasProperty(pExpr, EP_IntValue) );
         if( pExpr->op==TK_NOTNULL ){
           pExpr->u.zToken = "true";
           ExprSetProperty(pExpr, EP_IsTrue);
@@ -858,6 +861,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       if( pExpr->op==TK_ID ){
         zDb = 0;
         zTable = 0;
+        assert( !ExprHasProperty(pExpr, EP_IntValue) );
         zColumn = pExpr->u.zToken;
       }else{
         Expr *pLeft = pExpr->pLeft;
@@ -870,11 +874,14 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
           zDb = 0;
         }else{
           assert( pRight->op==TK_DOT );
+          assert( !ExprHasProperty(pRight, EP_IntValue) );
           zDb = pLeft->u.zToken;
           pLeft = pRight->pLeft;
           pRight = pRight->pRight;
         }
+        assert( !ExprHasProperty(pLeft, EP_IntValue) );
         zTable = pLeft->u.zToken;
+        assert( !ExprHasProperty(pRight, EP_IntValue) );
         zColumn = pRight->u.zToken;
         if( IN_RENAME_OBJECT ){
           sqlite3RenameTokenRemap(pParse, (void*)pExpr, (void*)pRight);
@@ -900,7 +907,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
 #ifndef SQLITE_OMIT_WINDOWFUNC
       Window *pWin = (IsWindowFunc(pExpr) ? pExpr->y.pWin : 0);
 #endif
-      assert( !ExprHasProperty(pExpr, EP_xIsSelect) );
+      assert( !ExprHasProperty(pExpr, EP_xIsSelect|EP_IntValue) );
       zId = pExpr->u.zToken;
       nId = sqlite3Strlen30(zId);
       pDef = sqlite3FindFunction(pParse->db, zId, n, enc, 0);
@@ -1218,7 +1225,9 @@ static int resolveAsName(
   UNUSED_PARAMETER(pParse);
 
   if( pE->op==TK_ID ){
-    char *zCol = pE->u.zToken;
+    const char *zCol;
+    assert( !ExprHasProperty(pE, EP_IntValue) );
+    zCol = pE->u.zToken;
     for(i=0; i<pEList->nExpr; i++){
       if( pEList->a[i].eEName==ENAME_NAME
        && sqlite3_stricmp(pEList->a[i].zEName, zCol)==0

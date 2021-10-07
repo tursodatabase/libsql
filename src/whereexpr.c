@@ -210,7 +210,8 @@ static int isLikeOrGlob(
     sqlite3VdbeSetVarmask(pParse->pVdbe, iCol);
     assert( pRight->op==TK_VARIABLE || pRight->op==TK_REGISTER );
   }else if( op==TK_STRING ){
-    z = (u8*)pRight->u.zToken;
+    assert( !ExprHasProperty(pRight, EP_IntValue) );
+     z = (u8*)pRight->u.zToken;
   }
   if( z ){
 
@@ -239,7 +240,9 @@ static int isLikeOrGlob(
       pPrefix = sqlite3Expr(db, TK_STRING, (char*)z);
       if( pPrefix ){
         int iFrom, iTo;
-        char *zNew = pPrefix->u.zToken;
+        char *zNew;
+        assert( !ExprHasProperty(pPrefix, EP_IntValue) );
+        zNew = pPrefix->u.zToken;
         zNew[cnt] = 0;
         for(iFrom=iTo=0; iFrom<cnt; iFrom++){
           if( zNew[iFrom]==wc[3] ) iFrom++;
@@ -291,6 +294,7 @@ static int isLikeOrGlob(
       if( op==TK_VARIABLE ){
         Vdbe *v = pParse->pVdbe;
         sqlite3VdbeSetVarmask(v, pRight->iColumn);
+        assert( !ExprHasProperty(pRight, EP_IntValue) );
         if( *pisComplete && pRight->u.zToken[1] ){
           /* If the rhs of the LIKE expression is a variable, and the current
           ** value of the variable means there is no need to invoke the LIKE
@@ -380,6 +384,7 @@ static int isAuxiliaryVtabOperator(
     testcase( pCol->op==TK_COLUMN && pCol->y.pTab==0 );
     if( ExprIsVtab(pCol) ){
       for(i=0; i<ArraySize(aOp); i++){
+        assert( !ExprHasProperty(pExpr, EP_IntValue) );
         if( sqlite3StrICmp(pExpr->u.zToken, aOp[i].zOp)==0 ){
           *peOp2 = aOp[i].eOp2;
           *ppRight = pList->a[0].pExpr;
@@ -409,7 +414,8 @@ static int isAuxiliaryVtabOperator(
       pVtab = sqlite3GetVTable(db, pCol->y.pTab)->pVtab;
       assert( pVtab!=0 );
       assert( pVtab->pModule!=0 );
-      pMod = (sqlite3_module *)pVtab->pModule;
+      assert( !ExprHasProperty(pExpr, EP_IntValue) );
+       pMod = (sqlite3_module *)pVtab->pModule;
       if( pMod->xFindFunction!=0 ){
         i = pMod->xFindFunction(pVtab,2, pExpr->u.zToken, &xNotUsed, &pNotUsed);
         if( i>=SQLITE_INDEX_CONSTRAINT_FUNCTION ){
@@ -1149,6 +1155,7 @@ static void exprAnalyze(
      && !ExprHasProperty(pExpr,EP_FromJoin)
      && 0==sqlite3ExprCanBeNull(pLeft)
     ){
+      assert( !ExprHasProperty(pExpr, EP_IntValue) );
       pExpr->op = TK_TRUEFALSE;
       pExpr->u.zToken = "false";
       ExprSetProperty(pExpr, EP_IsFalse);
@@ -1271,6 +1278,9 @@ static void exprAnalyze(
 
     pLeft = pExpr->x.pList->a[1].pExpr;
     pStr2 = sqlite3ExprDup(db, pStr1, 0);
+    assert( pStr1==0 || !ExprHasProperty(pStr1, EP_IntValue) );
+    assert( pStr2==0 || !ExprHasProperty(pStr2, EP_IntValue) );
+ 
 
     /* Convert the lower bound to upper-case and the upper bound to
     ** lower-case (upper-case is less than lower-case in ASCII) so that

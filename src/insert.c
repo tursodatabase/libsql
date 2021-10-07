@@ -2901,7 +2901,9 @@ static int xferOptimization(
       Expr *pDestExpr = sqlite3ColumnExpr(pDest, pDestCol);
       Expr *pSrcExpr = sqlite3ColumnExpr(pSrc, pSrcCol);
       assert( pDestExpr==0 || pDestExpr->op==TK_SPAN );
+      assert( pDestExpr==0 || !ExprHasProperty(pDestExpr, EP_IntValue) );
       assert( pSrcExpr==0 || pSrcExpr->op==TK_SPAN );
+      assert( pSrcExpr==0 || !ExprHasProperty(pSrcExpr, EP_IntValue) );
       if( (pDestExpr==0)!=(pSrcExpr==0) 
        || (pDestExpr!=0 && strcmp(pDestExpr->u.zToken,
                                        pSrcExpr->u.zToken)!=0)

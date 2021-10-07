@@ -1560,6 +1560,7 @@ static void displayP4Expr(StrAccum *p, Expr *pExpr){
   const char *zOp = 0;
   switch( pExpr->op ){
     case TK_STRING:
+      assert( !ExprHasProperty(pExpr, EP_IntValue) );
       sqlite3_str_appendf(p, "%Q", pExpr->u.zToken);
       break;
     case TK_INTEGER:
