@@ -1251,7 +1251,10 @@ coretestprogs:	$(TESTPROGS)
 testprogs:	coretestprogs srcck1$(BEXE) fuzzcheck$(TEXE) sessionfuzz$(TEXE)
 
 # A very detailed test running most or all test cases
-fulltest:	$(TESTPROGS) fuzztest
+fulltest:	alltest fuzztest
+
+# Run most or all tcl test cases
+alltest:	$(TESTPROGS)
 	./testfixture$(TEXE) $(TOP)/test/all.test $(TESTOPTS)
 
 # Really really long testing

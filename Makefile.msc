@@ -2437,7 +2437,9 @@ coretestprogs:	$(TESTPROGS)
 
 testprogs:	coretestprogs srcck1.exe fuzzcheck.exe sessionfuzz.exe
 
-fulltest:	$(TESTPROGS) fuzztest
+fulltest:	alltest fuzztest
+
+alltest:	$(TESTPROGS)
 	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\all.test $(TESTOPTS)
 
