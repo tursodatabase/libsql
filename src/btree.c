@@ -8969,7 +8969,10 @@ int sqlite3BtreeInsert(
   idx = pCur->ix;
   if( loc==0 ){
     CellInfo info;
-    assert( idx<pPage->nCell );
+    assert( idx>=0 );
+    if( idx>=pPage->nCell ){
+      return SQLITE_CORRUPT_BKPT;
+    }
     rc = sqlite3PagerWrite(pPage->pDbPage);
     if( rc ){
       goto end_insert;
