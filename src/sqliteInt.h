@@ -1571,10 +1571,10 @@ struct sqlite3 {
   int nExtension;               /* Number of loaded extensions */
   void **aExtension;            /* Array of shared library handles */
   union {
-    void (*xLegacy)(void*,const char*);     /* Legacy trace function */
-    int (*xV2)(u32,void*,void*,void*);      /* V2 Trace function */
+    void (*xLegacy)(void*,const char*);   /* mTrace==SQLITE_TRACE_LEGACY */
+    int (*xV2)(u32,void*,void*,void*);    /* All other mTrace values */
   } trace;
-  void *pTraceArg;                          /* Argument to the trace function */
+  void *pTraceArg;                        /* Argument to the trace function */
 #ifndef SQLITE_OMIT_DEPRECATED
   void (*xProfile)(void*,const char*,u64);  /* Profiling function */
   void *pProfileArg;                        /* Argument to profile function */
@@ -2717,10 +2717,10 @@ typedef int ynVar;
 ** tree.
 **
 ** If the expression is an SQL literal (TK_INTEGER, TK_FLOAT, TK_BLOB,
-** or TK_STRING), then Expr.token contains the text of the SQL literal. If
-** the expression is a variable (TK_VARIABLE), then Expr.token contains the
+** or TK_STRING), then Expr.u.zToken contains the text of the SQL literal. If
+** the expression is a variable (TK_VARIABLE), then Expr.u.zToken contains the
 ** variable name. Finally, if the expression is an SQL function (TK_FUNCTION),
-** then Expr.token contains the name of the function.
+** then Expr.u.zToken contains the name of the function.
 **
 ** Expr.pRight and Expr.pLeft are the left and right subexpressions of a
 ** binary operator. Either or both may be NULL.
@@ -2760,7 +2760,7 @@ typedef int ynVar;
 ** help reduce memory requirements, sometimes an Expr object will be
 ** truncated.  And to reduce the number of memory allocations, sometimes
 ** two or more Expr objects will be stored in a single memory allocation,
-** together with Expr.zToken strings.
+** together with Expr.u.zToken strings.
 **
 ** If the EP_Reduced and EP_TokenOnly flags are set when
 ** an Expr object is truncated.  When EP_Reduced is set, then all
@@ -3018,6 +3018,13 @@ struct IdList {
 /*
 ** The SrcItem object represents a single term in the FROM clause of a query.
 ** The SrcList object is mostly an array of SrcItems.
+**
+** Union member validity:
+**
+**    u1.zIndexedBy          fg.isIndexedBy && !fg.isTabFunc
+**    u1.pFuncArg            fg.isTabFunc   && !fg.isIndexedBy
+**    u2.pIBIndex            fg.isIndexedBy && !fg.isCte
+**    u2.pCteUse             fg.isCte       && !fg.isIndexedBy
 */
 struct SrcItem {
   Schema *pSchema;  /* Schema to which this item is fixed */
@@ -3612,6 +3619,8 @@ struct Parse {
 #endif
 };
 
+/* Allowed values for Parse.eParseMode
+*/
 #define PARSE_MODE_NORMAL        0
 #define PARSE_MODE_DECLARE_VTAB  1
 #define PARSE_MODE_RENAME        2
