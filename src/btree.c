@@ -5871,16 +5871,6 @@ static SQLITE_NOINLINE int btreeNext(BtCursor *pCur){
     return SQLITE_CORRUPT_BKPT;
   }
 
-  /* If the database file is corrupt, it is possible for the value of idx 
-  ** to be invalid here. This can only occur if a second cursor modifies
-  ** the page while cursor pCur is holding a reference to it. Which can
-  ** only happen if the database is corrupt in such a way as to link the
-  ** page into more than one b-tree structure.
-  **
-  ** Update 2019-12-23: appears to long longer be possible after the
-  ** addition of anotherValidCursor() condition on balance_deeper().  */
-  harmless( idx>pPage->nCell );
-
   if( idx>=pPage->nCell ){
     if( !pPage->leaf ){
       rc = moveToChild(pCur, get4byte(&pPage->aData[pPage->hdrOffset+8]));
