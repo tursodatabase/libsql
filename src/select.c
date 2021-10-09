@@ -5253,7 +5253,10 @@ static int resolveFromTermToCte(
     if( db->mallocFailed ) return 2;
     pFrom->pSelect->selFlags |= SF_CopyCte;
     assert( pFrom->pSelect );
-    assert( pFrom->fg.isIndexedBy==0 ); /* Prevent collision in union u2 */
+    if( pFrom->fg.isIndexedBy ){
+      sqlite3ErrorMsg(pParse, "no such index: \"%s\"", pFrom->u1.zIndexedBy);
+      return 2;
+    }
     pFrom->fg.isCte = 1;
     pFrom->u2.pCteUse = pCteUse;
     pCteUse->nUse++;
