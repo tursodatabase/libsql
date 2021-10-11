@@ -1714,7 +1714,7 @@ void sqlite3Pragma(
         int r1 = -1;
         int bStrict;
 
-        if( pTab->tnum<1 ) continue;  /* Skip VIEWs or VIRTUAL TABLEs */
+        if( !IsOrdinaryTable(pTab) ) continue;
         if( pObjTab && pObjTab!=pTab ) continue;
         pPk = HasRowid(pTab) ? 0 : sqlite3PrimaryKeyIndex(pTab);
         sqlite3OpenTableAndIndices(pParse, pTab, OP_OpenRead, 0,
