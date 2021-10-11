@@ -2586,7 +2586,7 @@ void sqlite3EndTable(
   ** table itself.  So mark it read-only.
   */
   if( db->init.busy ){
-    if( pSelect ){
+    if( pSelect || (!IsOrdinaryTable(p) && db->init.newTnum) ){
       sqlite3ErrorMsg(pParse, "");
       return;
     }
