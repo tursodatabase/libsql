@@ -1820,7 +1820,11 @@ static void groupConcatInverse(
   /* pGCC is always non-NULL since groupConcatStep() will have always
   ** run frist to initialize it */
   if( ALWAYS(pGCC) ){
-    int nVS = sqlite3_value_bytes(argv[0]);
+    int nVS;
+    /* Must call sqlite3_value_text() to convert the argument into text prior
+    ** to invoking sqlite3_value_bytes(), in case the text encoding is UTF16 */
+    (void)sqlite3_value_text(argv[0]);
+    nVS = sqlite3_value_bytes(argv[0]);
     pGCC->nAccum -= 1;
     if( pGCC->pnSepLengths!=0 ){
       assert(pGCC->nAccum >= 0);

@@ -1,5 +1,5 @@
-C Fix\san\sincorrect\sassert()\sin\sSQLITE_ENABLE_SORTER_REFERENCES\slogic\s-\sa\snew\nassert()\sintroduced\s5\sdays\sago\sby\s[87e2f5eb436fc448].
-D 2021-10-12T18:05:55.167
+C Fix\sthe\sgroup_concat()\sinverse\sfunction\simplementation\sso\sthat\sit\scorrectly\nhandles\sBLOB\sinputs\swhen\sdatabase\stext\sencoding\sis\sUTF16.
+D 2021-10-12T22:55:04.923
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -504,7 +504,7 @@ F src/delete.c 0c151975fa99560767d7747f9b60543d0093d9f8b89f13d2d6058e9c83ad19e7
 F src/expr.c 529f7eca2821e874a375b1b318e697d62cb28f56069677c93f587f2de5dceb54
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 187b67af20c5795953a592832c5d985e4313fe503ebd8f95e3e9e9ad5a730bb5
-F src/func.c 9577175a1459f65c9e3c4bbe7ed0bdf97ee928f693c81ee9f61e2642414c917c
+F src/func.c 1cfb09d7ffca81238eccefdb0293e1f5b7cfebbd1816dfad5ec6024742a7496b
 F src/global.c 612ea60c9acbcb45754c2ed659b4a56936a06814718e969636fedc7e3b889808
 F src/hash.c 8d7dda241d0ebdafb6ffdeda3149a412d7df75102cecfc1021c98d6219823b19
 F src/hash.h 9d56a9079d523b648774c1784b74b89bd93fac7b365210157482e4319a468f38
@@ -1800,7 +1800,7 @@ F test/window8.test 4ab16817414af0c904abe2ebdf88eb6c2b00058b84f9748c6174ff11fc45
 F test/window9.test 349c71eab4288a1ffc19e2f65872ec2c37e6cf8a1dda2ad300364b7450ae4836
 F test/windowA.test 6d63dc1260daa17141a55007600581778523a8b420629f1282d2acfc36af23be
 F test/windowB.test b67bda5645f3226790e1a360c4225241840b84adb5aa2e69bfb0b27eef3b84d9
-F test/windowC.test ecf1831b995408b03f708386b37ece7a05108faf2288c0c55cff873c100e145f
+F test/windowC.test 8799158a2a3ea365980371400f08fd4dff70eadffa5a1e45d42430246da70706
 F test/windowerr.tcl f5acd6fbc210d7b5546c0e879d157888455cd4a17a1d3f28f07c1c8a387019e0
 F test/windowerr.test a8b752402109c15aa1c5efe1b93ccb0ce1ef84fa964ae1cd6684dd0b3cc1819b
 F test/windowfault.test 15094c1529424e62f798bc679e3fe9dfab6e8ba2f7dfe8c923b6248c31660a7c
@@ -1929,7 +1929,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8124b2ceb71447157283b16f9a7fa6e250003b9ddf1c1b45f91db64aed79b5da
-R a825a5ddf8510781349a95abcba73170
+P 7cfc839e5f1f28514cba7d11b0c0eb56d5ea65caacb8893dcf9fcf2d409e2ba5
+R 872a60ea606b884508fe691c518ed856
 U drh
-Z df779db7cf34a78d9e65954cf5f5be50
+Z 816c0f947b8549463a54c2d75025fa43
