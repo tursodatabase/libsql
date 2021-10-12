@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\sin\sthe\sdebug\sbuild\sfor\sMSVC.
-D 2021-10-12T02:17:39.440
+C Fix\sanother\sharmless\scompiler\swarning\sfor\sMSVC.
+D 2021-10-12T02:26:32.225
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -517,7 +517,7 @@ F src/main.c d375bb6f761b3fa2cd2c1afaa5d4b282c7128a2c4d2fe7da6294fe8eaca9fa1a
 F src/malloc.c ef796bcc0e81d845d59a469f1cf235056caf9024172fd524e32136e65593647b
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
-F src/mem2.c a6b4c1b29bfaaf6ac87628643cc10ab11f16a9b8a5b5b75f0ba8142adbbfa3e7
+F src/mem2.c c8bfc9446fd0798bddd495eb5d9dbafa7d4b7287d8c22d50a83ac9daa26d8a75
 F src/mem3.c 30301196cace2a085cbedee1326a49f4b26deff0af68774ca82c1f7c06fda4f6
 F src/mem5.c 9bf955937b07f8c32541c8a9991f33ce3173d944
 F src/memdb.c cd8cf3ee965db4a4ab4b5423b49a4ef810490b8ba828911e523325f2cce3ed1a
@@ -1928,7 +1928,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 02656760406add06303afc94eaf9f2be021cbdbc7ac1ca79b139a7d2de9c0dc5
-R 6eba3cbabf6ac2a73d7123c6e6c0014f
+P 1ceb73f316ddc736aebd1e82ef3a0d9c173d025ac5b7fcfbde0a65a0eeb60a4b
+R 638916a5819730f8ce4b6f0dcd3abd60
 U mistachkin
-Z d951710d1eaf82a2a4e925900c6cc2a4
+Z cc9900a3def07dfadb4c80cb5f6cec6b

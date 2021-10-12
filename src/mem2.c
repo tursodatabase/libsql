@@ -149,7 +149,7 @@ static void adjustStats(int iSize, int increment){
 ** This routine checks the guards at either end of the allocation and
 ** if they are incorrect it asserts.
 */
-static struct MemBlockHdr *sqlite3MemsysGetHeader(void *pAllocation){
+static struct MemBlockHdr *sqlite3MemsysGetHeader(const void *pAllocation){
   struct MemBlockHdr *p;
   int *pInt;
   u8 *pU8;
