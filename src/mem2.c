@@ -396,7 +396,7 @@ void sqlite3MemdebugSetType(void *p, u8 eType){
 **
 **     assert( sqlite3MemdebugHasType(p, MEMTYPE_HEAP) );
 */
-int sqlite3MemdebugHasType(void *p, u8 eType){
+int sqlite3MemdebugHasType(const void *p, u8 eType){
   int rc = 1;
   if( p && sqlite3GlobalConfig.m.xFree==sqlite3MemFree ){
     struct MemBlockHdr *pHdr;
@@ -418,7 +418,7 @@ int sqlite3MemdebugHasType(void *p, u8 eType){
 **
 **     assert( sqlite3MemdebugNoType(p, MEMTYPE_LOOKASIDE) );
 */
-int sqlite3MemdebugNoType(void *p, u8 eType){
+int sqlite3MemdebugNoType(const void *p, u8 eType){
   int rc = 1;
   if( p && sqlite3GlobalConfig.m.xFree==sqlite3MemFree ){
     struct MemBlockHdr *pHdr;
