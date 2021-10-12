@@ -942,10 +942,12 @@ static void selectExprDefer(
     if( pItem->u.x.iOrderByCol==0 ){
       Expr *pExpr = pItem->pExpr;
       Table *pTab;
-      assert( ExprUseYTab(pExpr) );
-      pTab = pExpr->y.pTab;
-      if( pExpr->op==TK_COLUMN && pExpr->iColumn>=0 && pTab && !IsVirtual(pTab)
-       && (pTab->aCol[pExpr->iColumn].colFlags & COLFLAG_SORTERREF)
+      if( pExpr->op==TK_COLUMN
+       && pExpr->iColumn>=0
+       && ALWAYS( ExprUseYTab(pExpr) )
+       && (pTab = pExpr->y.pTab)!=0
+       && IsOrdinaryTable(pTab)
+       && (pTab->aCol[pExpr->iColumn].colFlags & COLFLAG_SORTERREF)!=0
       ){
         int j;
         for(j=0; j<nDefer; j++){
