@@ -1335,8 +1335,18 @@ static int fts3SegReaderNext(
         char *aCopy;
         PendingList *pList = (PendingList *)fts3HashData(pElem);
         int nCopy = pList->nData+1;
-        pReader->zTerm = (char *)fts3HashKey(pElem);
-        pReader->nTerm = fts3HashKeysize(pElem);
+
+        int nTerm = fts3HashKeysize(pElem);
+        if( (nTerm+1)>pReader->nTermAlloc ){
+          sqlite3_free(pReader->zTerm);
+          pReader->zTerm = (char*)sqlite3_malloc((nTerm+1)*2);
+          if( !pReader->zTerm ) return SQLITE_NOMEM;
+          pReader->nTermAlloc = (nTerm+1)*2;
+        }
+        memcpy(pReader->zTerm, fts3HashKey(pElem), nTerm);
+        pReader->zTerm[nTerm] = '\0';
+        pReader->nTerm = nTerm;
+
         aCopy = (char*)sqlite3_malloc(nCopy);
         if( !aCopy ) return SQLITE_NOMEM;
         memcpy(aCopy, pList->aData, nCopy);
@@ -1589,9 +1599,7 @@ int sqlite3Fts3MsrOvfl(
 */
 void sqlite3Fts3SegReaderFree(Fts3SegReader *pReader){
   if( pReader ){
-    if( !fts3SegReaderIsPending(pReader) ){
-      sqlite3_free(pReader->zTerm);
-    }
+    sqlite3_free(pReader->zTerm);
     if( !fts3SegReaderIsRootOnly(pReader) ){
       sqlite3_free(pReader->aNode);
     }
