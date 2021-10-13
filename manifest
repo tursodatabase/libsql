@@ -1,5 +1,5 @@
-C The\ssqlite3_result_text()\sroutine\s(and\ssimilar)\sshould\srecord\sOOM\serrors\nin\saddition\sto\sSQLITE_TOOBIG\serrors.\ndbsqlfuzz
-D 2021-10-13T13:00:34.679
+C Remove\sa\sNEVER()\smacro\sin\sALTER\sTABLE\sdue\sto\san\nobscure\scase\sof\sa\snested\sCTE\sinside\san\sUPDATE\swithin\sa\ntrigger.\s\sdbsqlfuzz\se89174cbfad2d904f06b5e24df0a22510b6a1c1e
+D 2021-10-13T14:01:44.495
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -483,7 +483,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
-F src/alter.c 9578c5a54027166688ec3e679ed10e85a3d08b986210e98d736f57aacc63335a
+F src/alter.c 9179b778315243bd2935f7f1564b1e72c723f049805105c1bb7125b5e4e4f90d
 F src/analyze.c 7518b99e07c5494111fe3bd867f28f804b6c5c1ad0703ec3d116de9bab3fa516
 F src/attach.c e3f9d9a2a4a844750f3f348f37afb244535f21382cbfcd840152cb21cb41cfaf
 F src/auth.c f4fa91b6a90bbc8e0d0f738aa284551739c9543a367071f55574681e0f24f8cf
@@ -648,7 +648,7 @@ F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test cc47afa5e11e0d6771a85a4993fa6ff721480ddb53ea538ec3fdbafb720bd505
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 2ecb8bbd52416642e41c9081182a8df05d42c75637afd4488aace78cc4b69e13
-F test/alter.test f53d8a4ecd35f051c07e54a36beec5d0a30d30a9d98bc723f6cde6afbfb3c5ca
+F test/alter.test 313073774ab5c3f2ef1d3f0d03757c9d3a81284ae7e1b4a6ca34db088f886896
 F test/alter2.test a966ccfcddf9ce0a4e0e6ff1aca9e6e7948e0e242cd7e43fc091948521807687
 F test/alter3.test ffc4ab29ce78a3517a66afd69b2730667e3471622509c283b2bd4c46f680fba3
 F test/alter4.test 716caa071dd8a3c6d57225778d15d3c3cbf5e34b2e84ae44199aeb2bbf50a707
@@ -1929,7 +1929,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 38a1326b4bd11bbe2846990d099c28520d17ab4cace1af67248c2472f89df929
-R 3ac35cfe1e440382b52029abbcbec3d1
+P eca434362652fe2edd6090b29417b35bc88a170609810aa9d266f6fc27baeab8
+R da7a34f7a690fe95abeb67fb64a7687a
 U drh
-Z a8a18ec99357f7bcf816519aebe60764
+Z 5d044be66ea45db93717f2c3818a48a4

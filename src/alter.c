@@ -869,7 +869,8 @@ static int renameUnmapSelectCb(Walker *pWalker, Select *p){
   Parse *pParse = pWalker->pParse;
   int i;
   if( pParse->nErr ) return WRC_Abort;
-  if( NEVER(p->selFlags & (SF_View|SF_CopyCte)) ){
+  assert( (p->selFlags & SF_View)==0 );
+  if( p->selFlags & (SF_View|SF_CopyCte) ){
     return WRC_Prune;
   }
   if( ALWAYS(p->pEList) ){
