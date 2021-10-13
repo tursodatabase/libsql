@@ -3161,6 +3161,7 @@ static int openDatabase(
   ** off all other flags.
   */
   flags &=  ~( SQLITE_OPEN_DELETEONCLOSE |
+               SQLITE_OPEN_EXCLUSIVE |
                SQLITE_OPEN_MAIN_DB |
                SQLITE_OPEN_TEMP_DB | 
                SQLITE_OPEN_TRANSIENT_DB | 
