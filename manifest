@@ -1,5 +1,5 @@
-C Fix\sthe\sgroup_concat()\sinverse\sfunction\simplementation\sso\sthat\sit\scorrectly\nhandles\sBLOB\sinputs\swhen\sdatabase\stext\sencoding\sis\sUTF16.
-D 2021-10-12T22:55:04.923
+C The\ssqlite3_result_text()\sroutine\s(and\ssimilar)\sshould\srecord\sOOM\serrors\nin\saddition\sto\sSQLITE_TOOBIG\serrors.\ndbsqlfuzz
+D 2021-10-13T13:00:34.679
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -624,7 +624,7 @@ F src/vacuum.c 454973a59fb20bb982efc2df568a098616db6328a0491b6e84e2e07f7333db45
 F src/vdbe.c b42cf4c8518ef237586258528cd7ecff14134e1ceee741e6f95b68848b844eff
 F src/vdbe.h 25dabb25c7e157b84e59260cfb5b466c3ac103ede9f36f4db371332c47601abe
 F src/vdbeInt.h 38206c8dd6b60ff03d9fd4f626b1b4fd0eef7cdc44f2fc2c1973b0f932a3f26b
-F src/vdbeapi.c aa5aaf2c37676b83af5724c6cd8207a3064ed46a217fd180957f75ac84f7a2a5
+F src/vdbeapi.c 7b83468feb1d42a09d4c2e5241a3eaa3d1f138e289a843cba9fd3f1dad95ca67
 F src/vdbeaux.c 897912feb91ec3cd8dedc3fce21d192fd6d37d299538a13d9d93100b22e4d4a0
 F src/vdbeblob.c 292e96c01c4219fca71d74e1002906d43eb232af4bd83f7552a3faec741f3eb8
 F src/vdbemem.c 8be0af1060012520381d3296fcb1718e80cd5b99ce04f51f7e1c4dba4072caac
@@ -1929,7 +1929,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7cfc839e5f1f28514cba7d11b0c0eb56d5ea65caacb8893dcf9fcf2d409e2ba5
-R 872a60ea606b884508fe691c518ed856
+P 38a1326b4bd11bbe2846990d099c28520d17ab4cace1af67248c2472f89df929
+R 3ac35cfe1e440382b52029abbcbec3d1
 U drh
-Z 816c0f947b8549463a54c2d75025fa43
+Z a8a18ec99357f7bcf816519aebe60764

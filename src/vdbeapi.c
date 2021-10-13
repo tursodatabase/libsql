@@ -362,8 +362,8 @@ void sqlite3_value_free(sqlite3_value *pOld){
 ** the function result.
 **
 ** The setStrOrError() function calls sqlite3VdbeMemSetStr() to store the
-** result as a string or blob but if the string or blob is too large, it
-** then sets the error code to SQLITE_TOOBIG
+** result as a string or blob.  Appropriate errors are set if the string/blob
+** is too big or if an OOM occurs.
 **
 ** The invokeValueDestructor(P,X) routine invokes destructor function X()
 ** on value P is not going to be used and need to be destroyed.
@@ -375,8 +375,16 @@ static void setResultStrOrError(
   u8 enc,                 /* Encoding of z.  0 for BLOBs */
   void (*xDel)(void*)     /* Destructor function */
 ){
-  if( sqlite3VdbeMemSetStr(pCtx->pOut, z, n, enc, xDel)==SQLITE_TOOBIG ){
-    sqlite3_result_error_toobig(pCtx);
+  int rc = sqlite3VdbeMemSetStr(pCtx->pOut, z, n, enc, xDel);
+  if( rc ){
+    if( rc==SQLITE_TOOBIG ){
+      sqlite3_result_error_toobig(pCtx);
+    }else{
+      /* The only errors possible from sqlite3VdbeMemSetStr are
+      ** SQLITE_TOOBIG and SQLITE_NOMEM */
+      assert( rc==SQLITE_NOMEM );
+      sqlite3_result_error_nomem(pCtx);
+    }
   }
 }
 static int invokeValueDestructor(
