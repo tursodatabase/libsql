@@ -1,5 +1,5 @@
-C Back\sout\sthe\sSQLITE_OPEN_EXCLUSIVE\schanges\sbecause\sit\sdoes\snot\swork\son\nWindows\sand\sit\sdoes\snot\swork\salways\son\sunix.
-D 2021-10-13T14:45:35.903
+C Attempt\sto\sclarify\sthe\ssqlite3_open_v2()\sdocumentation\sso\sthat\speople\sdo\snot\ncome\saway\swith\sthe\sidea\sthat\sSQLITE_OPEN_EXCLUSIVE\sis\san\sallowed\sbit\svalue\nfor\sthe\s3rd\sargument\sbitmask.
+D 2021-10-13T15:09:37.468
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -551,7 +551,7 @@ F src/resolve.c ae65c88f5d0d4bc0052b203773d407efa2387c2bd6b202f87178006c7bb8632c
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 32d25b5af6c708aa63373c78c2e59681910387a7a78c08ec3086cadc77d41627
 F src/shell.c.in e80fe5118fc3b942c1becc67ebfca6a887dbab9295e0bd5b6da61c4375baa637
-F src/sqlite.h.in ef6ece2096f7d94635d239376c6cda84a33b2534b61ddd77be9673a5e4b1a6bc
+F src/sqlite.h.in f0c1ecb5af508aa8e970cd8bc0ec851e6c380b81825038d458846c2fcdfcef50
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h e97f4e9b509408fea4c4e9bef5a41608dfac343b4d3c7a990dedde1e19af9510
 F src/sqliteInt.h 642c17df9e5a3517db452ac73a2b953143449a8bc2f6570c60de455a89a8571c
@@ -1929,8 +1929,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9e2f06b84f9942772c30bed2ac71b3296c9adf9661dbf8916d56996253ee8d28
-Q -d091150ff80709a1e50e0431aa33021f036979e4a88e9769eeec431dfad6d5f5
-R 0ec263c471728799142e5e4ea834f323
+P d008ad793dfb11c287f366377cbc561acedef6c9d08b1557f463484eda41a84e
+R 644c30e18e947a05fafdb5df2b0f8d2d
 U drh
-Z 15eb8964bd4da467af110c75425680d3
+Z e7301d7f781cb8ce94d114b2a893f0d7
