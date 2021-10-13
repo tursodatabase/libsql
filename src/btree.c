@@ -4836,7 +4836,9 @@ static int accessPayload(
   assert( pPage );
   assert( eOp==0 || eOp==1 );
   assert( pCur->eState==CURSOR_VALID );
-  assert( pCur->ix<pPage->nCell );
+  if( pCur->ix>=pPage->nCell ){
+    return SQLITE_CORRUPT_PAGE(pPage);
+  }
   assert( cursorHoldsMutex(pCur) );
 
   getCellInfo(pCur);
@@ -5023,7 +5025,6 @@ int sqlite3BtreePayload(BtCursor *pCur, u32 offset, u32 amt, void *pBuf){
   assert( cursorHoldsMutex(pCur) );
   assert( pCur->eState==CURSOR_VALID );
   assert( pCur->iPage>=0 && pCur->pPage );
-  assert( pCur->ix<pCur->pPage->nCell );
   return accessPayload(pCur, offset, amt, (unsigned char*)pBuf, 0);
 }
 
