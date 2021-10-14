@@ -1984,7 +1984,8 @@ static void whereInfoFree(sqlite3 *db, WhereInfo *pWInfo){
   assert( pWInfo!=0 );
   for(i=0; i<pWInfo->nLevel; i++){
     WhereLevel *pLevel = &pWInfo->a[i];
-    if( pLevel->pWLoop && (pLevel->pWLoop->wsFlags & WHERE_IN_ABLE) ){
+    if( pLevel->pWLoop && (pLevel->pWLoop->wsFlags & WHERE_IN_ABLE)!=0 ){
+      assert( (pLevel->pWLoop->wsFlags & WHERE_MULTI_OR)==0 );
       sqlite3DbFree(db, pLevel->u.in.aInLoop);
     }
   }
@@ -5473,7 +5474,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
     }else{
       sqlite3VdbeResolveLabel(v, pLevel->addrCont);
     }
-    if( pLoop->wsFlags & WHERE_IN_ABLE && pLevel->u.in.nIn>0 ){
+    if( (pLoop->wsFlags & WHERE_IN_ABLE)!=0 && pLevel->u.in.nIn>0 ){
       struct InLoop *pIn;
       int j;
       sqlite3VdbeResolveLabel(v, pLevel->addrNxt);
@@ -5542,10 +5543,10 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
         sqlite3VdbeAddOp1(v, OP_NullRow, pLevel->iTabCur);
       }
       if( (ws & WHERE_INDEXED) 
-       || ((ws & WHERE_MULTI_OR) && pLevel->u.pCovidx) 
+       || ((ws & WHERE_MULTI_OR) && pLevel->u.pCoveringIdx) 
       ){
         if( ws & WHERE_MULTI_OR ){
-          Index *pIx = pLevel->u.pCovidx;
+          Index *pIx = pLevel->u.pCoveringIdx;
           int iDb = sqlite3SchemaToIndex(db, pIx->pSchema);
           sqlite3VdbeAddOp3(v, OP_ReopenIdx, pLevel->iIdxCur, pIx->tnum, iDb);
           sqlite3VdbeSetP4KeyInfo(pParse, pIx);
@@ -5626,7 +5627,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
     if( pLoop->wsFlags & (WHERE_INDEXED|WHERE_IDX_ONLY) ){
       pIdx = pLoop->u.btree.pIndex;
     }else if( pLoop->wsFlags & WHERE_MULTI_OR ){
-      pIdx = pLevel->u.pCovidx;
+      pIdx = pLevel->u.pCoveringIdx;
     }
     if( pIdx
      && !db->mallocFailed

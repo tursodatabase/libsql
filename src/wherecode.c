@@ -567,8 +567,8 @@ static int codeEqualityTerm(
     sqlite3VdbeAddOp2(v, bRev ? OP_Last : OP_Rewind, iTab, 0);
     VdbeCoverageIf(v, bRev);
     VdbeCoverageIf(v, !bRev);
-    assert( (pLoop->wsFlags & WHERE_MULTI_OR)==0 );
 
+    assert( (pLoop->wsFlags & WHERE_MULTI_OR)==0 );
     pLoop->wsFlags |= WHERE_IN_ABLE;
     if( pLevel->u.in.nIn==0 ){
       pLevel->addrNxt = sqlite3VdbeMakeLabel(pParse);
@@ -1430,7 +1430,12 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     pLevel->p1 = iCur;
     pLevel->op = pWInfo->eOnePass ? OP_Noop : OP_VNext;
     pLevel->p2 = sqlite3VdbeCurrentAddr(v);
-    iIn = pLevel->u.in.nIn;
+    assert( (pLoop->wsFlags & WHERE_MULTI_OR)==0 );
+    if( pLoop->wsFlags & WHERE_IN_ABLE ){
+      iIn = pLevel->u.in.nIn;
+    }else{
+      iIn = 0;
+    }
     for(j=nConstraint-1; j>=0; j--){
       pTerm = pLoop->aLTerm[j];
       if( (pTerm->eOperator & WO_IN)!=0 ) iIn--;
@@ -2319,7 +2324,10 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       }
     }
     ExplainQueryPlanPop(pParse);
-    pLevel->u.pCovidx = pCov;
+    assert( pLevel->pWLoop==pLoop );
+    assert( (pLoop->wsFlags & WHERE_MULTI_OR)!=0 );
+    assert( (pLoop->wsFlags & WHERE_IN_ABLE)==0 );
+    pLevel->u.pCoveringIdx = pCov;
     if( pCov ) pLevel->iIdxCur = iCovCur;
     if( pAndExpr ){
       pAndExpr->pLeft = 0;
