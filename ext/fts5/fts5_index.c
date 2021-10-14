@@ -2278,21 +2278,20 @@ static void fts5LeafSeek(
   Fts5SegIter *pIter,             /* Iterator to seek */
   const u8 *pTerm, int nTerm      /* Term to search for */
 ){
-  int iOff;
+  u32 iOff;
   const u8 *a = pIter->pLeaf->p;
-  int szLeaf = pIter->pLeaf->szLeaf;
-  int n = pIter->pLeaf->nn;
+  u32 n = (u32)pIter->pLeaf->nn;
 
   u32 nMatch = 0;
   u32 nKeep = 0;
   u32 nNew = 0;
   u32 iTermOff;
-  int iPgidx;                     /* Current offset in pgidx */
+  u32 iPgidx;                     /* Current offset in pgidx */
   int bEndOfPage = 0;
 
   assert( p->rc==SQLITE_OK );
 
-  iPgidx = szLeaf;
+  iPgidx = (u32)pIter->pLeaf->szLeaf;
   iPgidx += fts5GetVarint32(&a[iPgidx], iTermOff);
   iOff = iTermOff;
   if( iOff>n ){
@@ -2358,15 +2357,15 @@ static void fts5LeafSeek(
       if( pIter->pLeaf==0 ) return;
       a = pIter->pLeaf->p;
       if( fts5LeafIsTermless(pIter->pLeaf)==0 ){
-        iPgidx = pIter->pLeaf->szLeaf;
+        iPgidx = (u32)pIter->pLeaf->szLeaf;
         iPgidx += fts5GetVarint32(&pIter->pLeaf->p[iPgidx], iOff);
-        if( iOff<4 || iOff>=pIter->pLeaf->szLeaf ){
+        if( iOff<4 || (i64)iOff>=pIter->pLeaf->szLeaf ){
           p->rc = FTS5_CORRUPT;
           return;
         }else{
           nKeep = 0;
           iTermOff = iOff;
-          n = pIter->pLeaf->nn;
+          n = (u32)pIter->pLeaf->nn;
           iOff += fts5GetVarint32(&a[iOff], nNew);
           break;
         }
