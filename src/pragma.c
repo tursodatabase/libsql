@@ -467,7 +467,11 @@ void sqlite3Pragma(
 
   /* Locate the pragma in the lookup table */
   pPragma = pragmaLocate(zLeft);
-  if( pPragma==0 ) goto pragma_out;
+  if( pPragma==0 ){
+    /* IMP: R-43042-22504 No error messages are generated if an
+    ** unknown pragma is issued. */
+    goto pragma_out;
+  }
 
   /* Make sure the database schema is loaded if the pragma requires that */
   if( (pPragma->mPragFlg & PragFlg_NeedSchema)!=0 ){
@@ -1120,9 +1124,9 @@ void sqlite3Pragma(
         if( (mask & SQLITE_WriteSchema)!=0
          && sqlite3_stricmp(zRight, "reset")==0
         ){
-          /* "PRAGMA writable_schema=RESET" turns schema writing off, just
-          ** like "PRAGMA writable_schema=OFF, but also causes the schema
-          ** to be reloaded. */
+          /* IMP: R-60817-01178 If the argument is "RESET" then schema
+          ** writing is disabled (as with "PRAGMA writable_schema=OFF") and,
+          ** in addition, the schema is reloaded. */
           sqlite3ResetAllSchemasOfConnection(db);
         }
       }
@@ -2309,12 +2313,12 @@ void sqlite3Pragma(
   case PragTyp_ANALYSIS_LIMIT: {
     sqlite3_int64 N;
     if( zRight
-     && sqlite3DecOrHexToI64(zRight, &N)==SQLITE_OK
+     && sqlite3DecOrHexToI64(zRight, &N)==SQLITE_OK /* IMP: R-40975-20399 */
      && N>=0
     ){
       db->nAnalysisLimit = (int)(N&0x7fffffff);
     }
-    returnSingleInt(v, db->nAnalysisLimit);
+    returnSingleInt(v, db->nAnalysisLimit); /* IMP: R-57594-65522 */
     break;
   }
 
