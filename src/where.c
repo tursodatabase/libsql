@@ -286,8 +286,10 @@ static WhereTerm *whereScanNext(WhereScan *pScan){
     iColumn = pScan->aiColumn[pScan->iEquiv-1];
     iCur = pScan->aiCur[pScan->iEquiv-1];
     assert( pWC!=0 );
+    assert( iCur>=0 );
     do{
       for(pTerm=pWC->a+k; k<pWC->nTerm; k++, pTerm++){
+        assert( (pTerm->eOperator & (WO_OR|WO_AND))==0 || pTerm->leftCursor<0 );
         if( pTerm->leftCursor==iCur
          && pTerm->u.x.leftColumn==iColumn
          && (iColumn!=XN_EXPR
@@ -727,6 +729,7 @@ static int termCanDriveIndex(
     return 0;
   }
   if( (pTerm->prereqRight & notReady)!=0 ) return 0;
+  assert( (pTerm->eOperator & (WO_OR|WO_AND))==0 );
   if( pTerm->u.x.leftColumn<0 ) return 0;
   aff = pSrc->pTab->aCol[pTerm->u.x.leftColumn].affinity;
   if( !sqlite3IndexAffinityOk(pTerm->pExpr, aff) ) return 0;
@@ -799,8 +802,11 @@ static void constructAutomaticIndex(
                                 sqlite3ExprDup(pParse->db, pExpr, 0));
     }
     if( termCanDriveIndex(pTerm, pSrc, notReady) ){
-      int iCol = pTerm->u.x.leftColumn;
-      Bitmask cMask = iCol>=BMS ? MASKBIT(BMS-1) : MASKBIT(iCol);
+      int iCol;
+      Bitmask cMask;
+      assert( (pTerm->eOperator & (WO_OR|WO_AND))==0 );
+      iCol = pTerm->u.x.leftColumn;
+      cMask = iCol>=BMS ? MASKBIT(BMS-1) : MASKBIT(iCol);
       testcase( iCol==BMS );
       testcase( iCol==BMS-1 );
       if( !sentWarning ){
@@ -852,8 +858,11 @@ static void constructAutomaticIndex(
   idxCols = 0;
   for(pTerm=pWC->a; pTerm<pWCEnd; pTerm++){
     if( termCanDriveIndex(pTerm, pSrc, notReady) ){
-      int iCol = pTerm->u.x.leftColumn;
-      Bitmask cMask = iCol>=BMS ? MASKBIT(BMS-1) : MASKBIT(iCol);
+      int iCol;
+      Bitmask cMask;
+      assert( (pTerm->eOperator & (WO_OR|WO_AND))==0 );
+      iCol = pTerm->u.x.leftColumn;
+      cMask = iCol>=BMS ? MASKBIT(BMS-1) : MASKBIT(iCol);
       testcase( iCol==BMS-1 );
       testcase( iCol==BMS );
       if( (idxCols & cMask)==0 ){
@@ -980,6 +989,7 @@ static sqlite3_index_info *allocateIndexInfo(
     testcase( pTerm->eOperator & WO_ALL );
     if( (pTerm->eOperator & ~(WO_EQUIV))==0 ) continue;
     if( pTerm->wtFlags & TERM_VNULL ) continue;
+    assert( (pTerm->eOperator & (WO_OR|WO_AND))==0 );
     assert( pTerm->u.x.leftColumn>=(-1) );
     nTerm++;
   }
@@ -1040,6 +1050,7 @@ static sqlite3_index_info *allocateIndexInfo(
     ){
       continue;
     }
+    assert( (pTerm->eOperator & (WO_OR|WO_AND))==0 );
     assert( pTerm->u.x.leftColumn>=(-1) );
     pIdxCons[j].iColumn = pTerm->u.x.leftColumn;
     pIdxCons[j].iTermOffset = i;
@@ -1803,6 +1814,7 @@ void sqlite3WhereTermPrint(WhereTerm *pTerm, int iTerm){
     if( ExprHasProperty(pTerm->pExpr, EP_FromJoin) ) zType[2] = 'L';
     if( pTerm->wtFlags & TERM_CODED  ) zType[3] = 'C';
     if( pTerm->eOperator & WO_SINGLE ){
+      assert( (pTerm->eOperator & (WO_OR|WO_AND))==0 );
       sqlite3_snprintf(sizeof(zLeft),zLeft,"left={%d:%d}",
                        pTerm->leftCursor, pTerm->u.x.leftColumn);
     }else if( (pTerm->eOperator & WO_OR)!=0 && pTerm->u.pOrInfo!=0 ){
@@ -1820,7 +1832,7 @@ void sqlite3WhereTermPrint(WhereTerm *pTerm, int iTerm){
       sqlite3DebugPrintf(" prob=%-3d prereq=%llx,%llx",
         pTerm->truthProb, (u64)pTerm->prereqAll, (u64)pTerm->prereqRight);
     }
-    if( pTerm->u.x.iField ){
+    if( (pTerm->eOperator & (WO_OR|WO_AND))==0 && pTerm->u.x.iField ){
       sqlite3DebugPrintf(" iField=%d", pTerm->u.x.iField);
     }
     if( pTerm->iParent>=0 ){

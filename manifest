@@ -1,5 +1,5 @@
-C Protect\sthe\sJsonNode.u\sunion\susing\snearby\sassert()s\sand\sbranches.
-D 2021-10-15T16:15:04.901
+C Protect\sthe\sWhereTerm.u\sunion\susing\snearby\sassert()s\sand/or\sbranches.
+D 2021-10-15T17:06:16.174
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -636,10 +636,10 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 2be08331d798237ad5d7ae0b252700ffb2b63189cb18d993496d009a93e2f81c
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
-F src/where.c 782d333e2102eaf965d42d7835672bd851b933c8b7b1e2d1e53213a746acaa3d
+F src/where.c ecabef93b0f14442a73eca205fc960428984d75fbdc7d60226b7fc9cac127187
 F src/whereInt.h 83877a75a1bce056ea44aff02f1dfa958ad1d6038c213ddadb8652003b45151d
-F src/wherecode.c 5a7d3c80d32a81c6d8a26e0d8554d3b61fcb4d94ae5b0809766080f95b1592a5
-F src/whereexpr.c 4514a162d878b6523a698fac1d760991b5728be0d7e2b2b0687aa175144dcf15
+F src/wherecode.c a1d79cc5a11f44b079bf2352e542ddb265f84cfa6c835d40a9f195dbe5fff83e
+F src/whereexpr.c 17bdbf4f5b490e70a18635498f0b910a558f953a9bf80af7f19cbde6e60e6825
 F src/window.c 0dff6fedf61493490d21ced5d7a7b4321d4c0db6c8123f0179c46080a860850a
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test ce1aafc86e110685b324e9a763eab4f2a73f737842ec3b687bd965867de90627
@@ -1929,7 +1929,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 69a3ff0cc159cdf84a5367eaf708882ddeda4fa65c96a5b546ae4a0114f02cb7
-R ede285ffb2c5c992e5f7bd66e443ce38
+P 7b8ea2298927fd34f27b3345add3ce751ed728387fe3d9207b601ba6449d5af9
+R f8f24b4e90ad954c123bdee77c1d3c2d
 U drh
-Z 01fdfdb7db3b89a4154d6f89726d1593
+Z 0a05442607cc8af1d2c0566962c413f4
