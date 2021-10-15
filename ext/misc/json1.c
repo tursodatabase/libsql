@@ -109,7 +109,21 @@ static const char jsonIsSpace[] = {
 #   define ALWAYS(X)      (X)
 #   define NEVER(X)       (X)
 # endif
+# define testcase(X)
 #endif
+#if defined(NDEBUG)
+#  define VVA(X)
+#else
+#  define VVA(X) X
+#endif
+
+/*
+** Some of the testcase() macros in this file are problematic for gcov
+** in that they generate false-miss errors randomly.  This is a gcov problem,
+** not a problem in this case.  But to work around it, we disable the
+** problematic test cases for production builds.
+*/
+#define json_testcase(X)
 
 /* Objects */
 typedef struct JsonString JsonString;
@@ -167,13 +181,14 @@ static const char * const jsonType[] = {
 struct JsonNode {
   u8 eType;              /* One of the JSON_ type values */
   u8 jnFlags;            /* JNODE flags */
+  u8 eU;                 /* Which union element to use */
   u32 n;                 /* Bytes of content, or number of sub-nodes */
   union {
-    const char *zJContent; /* Content for INT, REAL, and STRING */
-    u32 iAppend;           /* More terms for ARRAY and OBJECT */
-    u32 iKey;              /* Key for ARRAY objects in json_tree() */
-    u32 iReplace;          /* Replacement content for JNODE_REPLACE */
-    JsonNode *pPatch;      /* Node chain of patch for JNODE_PATCH */
+    const char *zJContent; /* 1: Content for INT, REAL, and STRING */
+    u32 iAppend;           /* 2: More terms for ARRAY and OBJECT */
+    u32 iKey;              /* 3: Key for ARRAY objects in json_tree() */
+    u32 iReplace;          /* 4: Replacement content for JNODE_REPLACE */
+    JsonNode *pPatch;      /* 5: Node chain of patch for JNODE_PATCH */
   } u;
 };
 
@@ -454,9 +469,11 @@ static void jsonRenderNode(
   assert( pNode!=0 );
   if( pNode->jnFlags & (JNODE_REPLACE|JNODE_PATCH) ){
     if( (pNode->jnFlags & JNODE_REPLACE)!=0 && ALWAYS(aReplace!=0) ){
+      assert( pNode->eU==4 );
       jsonAppendValue(pOut, aReplace[pNode->u.iReplace]);
       return;
     }
+    assert( pNode->eU==5 );
     pNode = pNode->u.pPatch;
   }
   switch( pNode->eType ){
@@ -475,6 +492,7 @@ static void jsonRenderNode(
     }
     case JSON_STRING: {
       if( pNode->jnFlags & JNODE_RAW ){
+        assert( pNode->eU==1 );
         jsonAppendString(pOut, pNode->u.zJContent, pNode->n);
         break;
       }
@@ -482,6 +500,7 @@ static void jsonRenderNode(
     }
     case JSON_REAL:
     case JSON_INT: {
+      assert( pNode->eU==1 );
       jsonAppendRaw(pOut, pNode->u.zJContent, pNode->n);
       break;
     }
@@ -497,6 +516,7 @@ static void jsonRenderNode(
           j += jsonNodeSize(&pNode[j]);
         }
         if( (pNode->jnFlags & JNODE_APPEND)==0 ) break;
+        assert( pNode->eU==2 );
         pNode = &pNode[pNode->u.iAppend];
         j = 1;
       }
@@ -517,6 +537,7 @@ static void jsonRenderNode(
           j += 1 + jsonNodeSize(&pNode[j+1]);
         }
         if( (pNode->jnFlags & JNODE_APPEND)==0 ) break;
+        assert( pNode->eU==2 );
         pNode = &pNode[pNode->u.iAppend];
         j = 1;
       }
@@ -596,7 +617,9 @@ static void jsonReturn(
     }
     case JSON_INT: {
       sqlite3_int64 i = 0;
-      const char *z = pNode->u.zJContent;
+      const char *z;
+      assert( pNode->eU==1 );
+      z = pNode->u.zJContent;
       if( z[0]=='-' ){ z++; }
       while( z[0]>='0' && z[0]<='9' ){
         unsigned v = *(z++) - '0';
@@ -624,9 +647,12 @@ static void jsonReturn(
     case JSON_REAL: {
       double r;
 #ifdef SQLITE_AMALGAMATION
-      const char *z = pNode->u.zJContent;
+      const char *z;
+      assert( pNode->eU==1 );
+      z = pNode->u.zJContent;
       sqlite3AtoF(z, &r, sqlite3Strlen30(z), SQLITE_UTF8);
 #else
+      assert( pNode->eU==1 );
       r = strtod(pNode->u.zJContent, 0);
 #endif
       sqlite3_result_double(pCtx, r);
@@ -637,6 +663,7 @@ static void jsonReturn(
       ** json_insert() and json_replace() and those routines do not
       ** call jsonReturn() */
       if( pNode->jnFlags & JNODE_RAW ){
+        assert( pNode->eU==1 );
         sqlite3_result_text(pCtx, pNode->u.zJContent, pNode->n,
                             SQLITE_TRANSIENT);
       }else 
@@ -644,15 +671,18 @@ static void jsonReturn(
       assert( (pNode->jnFlags & JNODE_RAW)==0 );
       if( (pNode->jnFlags & JNODE_ESCAPE)==0 ){
         /* JSON formatted without any backslash-escapes */
+        assert( pNode->eU==1 );
         sqlite3_result_text(pCtx, pNode->u.zJContent+1, pNode->n-2,
                             SQLITE_TRANSIENT);
       }else{
         /* Translate JSON formatted string into raw text */
         u32 i;
         u32 n = pNode->n;
-        const char *z = pNode->u.zJContent;
+        const char *z;
         char *zOut;
         u32 j;
+        assert( pNode->eU==1 );
+        z = pNode->u.zJContent;
         zOut = sqlite3_malloc( n+1 );
         if( zOut==0 ){
           sqlite3_result_error_nomem(pCtx);
@@ -779,6 +809,7 @@ static int jsonParseAddNode(
   p = &pParse->aNode[pParse->nNode];
   p->eType = (u8)eType;
   p->jnFlags = 0;
+  VVA( p->eU = zContent ? 1 : 0 );
   p->n = n;
   p->u.zJContent = zContent;
   return pParse->nNode++;
@@ -846,6 +877,7 @@ static int jsonParseValue(JsonParse *pParse, u32 i){
     /* Parse array */
     iThis = jsonParseAddNode(pParse, JSON_ARRAY, 0, 0);
     if( iThis<0 ) return -1;
+    memset(&pParse->aNode[iThis].u, 0, sizeof(pParse->aNode[iThis].u));
     for(j=i+1;;j++){
       while( safe_isspace(z[j]) ){ j++; }
       if( ++pParse->iDepth > JSON_MAX_DEPTH ) return -1;
@@ -1110,6 +1142,7 @@ static JsonParse *jsonParseCached(
 ** a match.
 */
 static int jsonLabelCompare(JsonNode *pNode, const char *zKey, u32 nKey){
+  assert( pNode->eU==1 );
   if( pNode->jnFlags & JNODE_RAW ){
     if( pNode->n!=nKey ) return 0;
     return strncmp(pNode->u.zJContent, zKey, nKey)==0;
@@ -1175,6 +1208,7 @@ static JsonNode *jsonLookupStep(
         j += jsonNodeSize(&pRoot[j]);
       }
       if( (pRoot->jnFlags & JNODE_APPEND)==0 ) break;
+      assert( pRoot->eU==2 );
       iRoot += pRoot->u.iAppend;
       pRoot = &pParse->aNode[iRoot];
       j = 1;
@@ -1189,8 +1223,10 @@ static JsonNode *jsonLookupStep(
       if( pParse->oom ) return 0;
       if( pNode ){
         pRoot = &pParse->aNode[iRoot];
+        assert( pRoot->eU==0 );
         pRoot->u.iAppend = iStart - iRoot;
         pRoot->jnFlags |= JNODE_APPEND;
+        VVA( pRoot->eU = 2 );
         pParse->aNode[iLabel].jnFlags |= JNODE_RAW;
       }
       return pNode;
@@ -1213,6 +1249,7 @@ static JsonNode *jsonLookupStep(
             j += jsonNodeSize(&pBase[j]);
           }
           if( (pBase->jnFlags & JNODE_APPEND)==0 ) break;
+          assert( pBase->eU==2 );
           iBase += pBase->u.iAppend;
           pBase = &pParse->aNode[iBase];
           j = 1;
@@ -1246,6 +1283,7 @@ static JsonNode *jsonLookupStep(
         j += jsonNodeSize(&pRoot[j]);
       }
       if( (pRoot->jnFlags & JNODE_APPEND)==0 ) break;
+      assert( pRoot->eU==2 );
       iRoot += pRoot->u.iAppend;
       pRoot = &pParse->aNode[iRoot];
       j = 1;
@@ -1261,8 +1299,10 @@ static JsonNode *jsonLookupStep(
       if( pParse->oom ) return 0;
       if( pNode ){
         pRoot = &pParse->aNode[iRoot];
+        assert( pRoot->eU==0 );
         pRoot->u.iAppend = iStart - iRoot;
         pRoot->jnFlags |= JNODE_APPEND;
+        VVA( pRoot->eU = 2 );
       }
       return pNode;
     }
@@ -1416,9 +1456,13 @@ static void jsonParseFunc(
     }
     jsonPrintf(100, &s,"node %3u: %7s n=%-4d up=%-4d",
                i, zType, x.aNode[i].n, x.aUp[i]);
+    assert( x.aNode[i].eU==0 || x.aNode[i].eU==1 );
     if( x.aNode[i].u.zJContent!=0 ){
+      assert( x.aNode[i].eU==1 );
       jsonAppendRaw(&s, " ", 1);
       jsonAppendRaw(&s, x.aNode[i].u.zJContent, x.aNode[i].n);
+    }else{
+      assert( x.aNode[i].eU==0 );
     }
     jsonAppendRaw(&s, "\n", 1);
   }
@@ -1601,6 +1645,7 @@ static JsonNode *jsonMergePatch(
     const char *zKey;
     assert( pPatch[i].eType==JSON_STRING );
     assert( pPatch[i].jnFlags & JNODE_LABEL );
+    assert( pPatch[i].eU==1 );
     nKey = pPatch[i].n;
     zKey = pPatch[i].u.zJContent;
     assert( (pPatch[i].jnFlags & JNODE_RAW)==0 );
@@ -1617,6 +1662,9 @@ static JsonNode *jsonMergePatch(
           if( pNew==0 ) return 0;
           pTarget = &pParse->aNode[iTarget];
           if( pNew!=&pTarget[j+1] ){
+            assert( pTarget[j+1].eU==0 || pTarget[j+1].eU==1 );
+            testcase( pTarget[j+1].eU==1 );
+            VVA( pTarget[j+1].eU = 5 );
             pTarget[j+1].u.pPatch = pNew;
             pTarget[j+1].jnFlags |= JNODE_PATCH;
           }
@@ -1632,9 +1680,13 @@ static JsonNode *jsonMergePatch(
       if( pParse->oom ) return 0;
       jsonRemoveAllNulls(pPatch);
       pTarget = &pParse->aNode[iTarget];
+      assert( pParse->aNode[iRoot].eU==0 );
       pParse->aNode[iRoot].jnFlags |= JNODE_APPEND;
+      VVA( pParse->aNode[iRoot].eU = 2 );
       pParse->aNode[iRoot].u.iAppend = iStart - iRoot;
       iRoot = iStart;
+      assert( pParse->aNode[iPatch].eU==0 );
+      VVA( pParse->aNode[iPatch].eU = 5 );
       pParse->aNode[iPatch].jnFlags |= JNODE_PATCH;
       pParse->aNode[iPatch].u.pPatch = &pPatch[i+1];
     }
@@ -1776,11 +1828,15 @@ static void jsonReplaceFunc(
     pNode = jsonLookup(&x, zPath, 0, ctx);
     if( x.nErr ) goto replace_err;
     if( pNode ){
+      assert( pNode->eU==0 || pNode->eU==1 || pNode->eU==4 );
+      json_testcase( pNode->eU!=0 && pNode->eU!=1 );
       pNode->jnFlags |= (u8)JNODE_REPLACE;
+      VVA( pNode->eU =  4 );
       pNode->u.iReplace = i + 1;
     }
   }
   if( x.aNode[0].jnFlags & JNODE_REPLACE ){
+    assert( x.aNode[0].eU==4 );
     sqlite3_result_value(ctx, argv[x.aNode[0].u.iReplace]);
   }else{
     jsonReturnJson(x.aNode, ctx, argv);
@@ -1830,11 +1886,15 @@ static void jsonSetFunc(
     }else if( x.nErr ){
       goto jsonSetDone;
     }else if( pNode && (bApnd || bIsSet) ){
+      json_testcase( pNode->eU!=0 && pNode->eU!=1 && pNode->eU!=4 );
+      assert( pNode->eU!=3 || pNode->eU!=5 );
+      VVA( pNode->eU = 4 );
       pNode->jnFlags |= (u8)JNODE_REPLACE;
       pNode->u.iReplace = i + 1;
     }
   }
   if( x.aNode[0].jnFlags & JNODE_REPLACE ){
+    assert( x.aNode[0].eU==4 );
     sqlite3_result_value(ctx, argv[x.aNode[0].u.iReplace]);
   }else{
     jsonReturnJson(x.aNode, ctx, argv);
@@ -2185,6 +2245,9 @@ static int jsonEachNext(sqlite3_vtab_cursor *cur){
       JsonNode *pUp = &p->sParse.aNode[iUp];
       p->eType = pUp->eType;
       if( pUp->eType==JSON_ARRAY ){
+        assert( pUp->eU==0 || pUp->eU==3 );
+        json_testcase( pUp->eU==3 );
+        VVA( pUp->eU = 3 );
         if( iUp==p->i-1 ){
           pUp->u.iKey = 0;
         }else{
@@ -2231,12 +2294,15 @@ static void jsonEachComputePath(
   pNode = &p->sParse.aNode[i];
   pUp = &p->sParse.aNode[iUp];
   if( pUp->eType==JSON_ARRAY ){
+    assert( pUp->eU==3 || (pUp->eU==0 && pUp->u.iKey==0) );
+    testcase( pUp->eU==0 );
     jsonPrintf(30, pStr, "[%d]", pUp->u.iKey);
   }else{
     assert( pUp->eType==JSON_OBJECT );
     if( (pNode->jnFlags & JNODE_LABEL)==0 ) pNode--;
     assert( pNode->eType==JSON_STRING );
     assert( pNode->jnFlags & JNODE_LABEL );
+    assert( pNode->eU==1 );
     jsonPrintf(pNode->n+1, pStr, ".%.*s", pNode->n-2, pNode->u.zJContent+1);
   }
 }
@@ -2258,6 +2324,7 @@ static int jsonEachColumn(
         u32 iKey;
         if( p->bRecursive ){
           if( p->iRowid==0 ) break;
+          assert( p->sParse.aNode[p->sParse.aUp[p->i]].eU==3 );
           iKey = p->sParse.aNode[p->sParse.aUp[p->i]].u.iKey;
         }else{
           iKey = p->iRowid;
@@ -2307,6 +2374,7 @@ static int jsonEachColumn(
         if( p->eType==JSON_ARRAY ){
           jsonPrintf(30, &x, "[%d]", p->iRowid);
         }else if( p->eType==JSON_OBJECT ){
+          assert( pThis->eU==1 );
           jsonPrintf(pThis->n, &x, ".%.*s", pThis->n-2, pThis->u.zJContent+1);
         }
       }
@@ -2374,6 +2442,7 @@ static int jsonEachBestIndex(
     if( pConstraint->iColumn < JEACH_JSON ) continue;
     iCol = pConstraint->iColumn - JEACH_JSON;
     assert( iCol==0 || iCol==1 );
+    testcase( iCol==0 );
     iMask = 1 << iCol;
     if( pConstraint->usable==0 ){
       unusableMask |= iMask;
@@ -2471,6 +2540,8 @@ static int jsonEachFilter(
     p->iBegin = p->i = (int)(pNode - p->sParse.aNode);
     p->eType = pNode->eType;
     if( p->eType>=JSON_ARRAY ){
+      assert( pNode->eU==0 );
+      VVA( pNode->eU = 3 );
       pNode->u.iKey = 0;
       p->iEnd = p->i + pNode->n + 1;
       if( p->bRecursive ){
