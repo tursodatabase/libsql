@@ -1565,6 +1565,9 @@ struct sqlite3 {
   void (*xRollbackCallback)(void*); /* Invoked at every commit. */
   void *pUpdateArg;
   void (*xUpdateCallback)(void*,int, const char*,const char*,sqlite_int64);
+  void *pAutovacPagesArg;           /* Client argument to autovac_pages */
+  void (*xAutovacDestr)(void*);     /* Destructor for pAutovacPAgesArg */
+  unsigned int (*xAutovacPages)(void*,const char*,u32,u32,u32);
   Parse *pParse;                /* Current parse */
 #ifdef SQLITE_ENABLE_PREUPDATE_HOOK
   void *pPreUpdateArg;          /* First argument to xPreUpdateCallback */

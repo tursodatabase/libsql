@@ -1403,6 +1403,9 @@ void sqlite3LeaveMutexAndCloseZombie(sqlite3 *db){
   ** structure?
   */
   sqlite3DbFree(db, db->aDb[1].pSchema);
+  if( db->xAutovacDestr ){
+    db->xAutovacDestr(db->pAutovacPagesArg);
+  }
   sqlite3_mutex_leave(db->mutex);
   db->eOpenState = SQLITE_STATE_CLOSED;
   sqlite3_mutex_free(db->mutex);
@@ -2303,6 +2306,34 @@ void *sqlite3_preupdate_hook(
   return pRet;
 }
 #endif /* SQLITE_ENABLE_PREUPDATE_HOOK */
+
+/*
+** Register a function to be invoked prior to each autovacuum that
+** determines the number of pages to vacuum.
+*/
+int sqlite3_autovacuum_pages(
+  sqlite3 *db,                 /* Attach the hook to this database */
+  unsigned int (*xCallback)(void*,const char*,u32,u32,u32), 
+  void *pArg,                  /* Argument to the function */
+  void (*xDestructor)(void*)   /* Destructor for pArg */
+){
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( !sqlite3SafetyCheckOk(db) ){
+    if( xDestructor ) xDestructor(pArg);
+    return SQLITE_MISUSE_BKPT;
+  }
+#endif
+  sqlite3_mutex_enter(db->mutex);
+  if( db->xAutovacDestr ){
+    db->xAutovacDestr(db->pAutovacPagesArg);
+  }
+  db->xAutovacPages = xCallback;
+  db->pAutovacPagesArg = pArg;
+  db->xAutovacDestr = xDestructor;
+  sqlite3_mutex_leave(db->mutex);
+  return SQLITE_OK;
+}
+
 
 #ifndef SQLITE_OMIT_WAL
 /*
