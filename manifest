@@ -1,5 +1,5 @@
-C Fix\san\sassert()\sin\sfts5\sthat\scould\sfail\swith\sa\scorrupt\sdatabase.
-D 2021-10-16T13:59:08.125
+C Have\sthe\sbtree\slayer\sdetect\swhen\sa\s"DELETE\sFROM\stbl"\sstatement\sis\sclearing\sa\sdatabase\spage\sthat\sis\sstill\sin\suse\s(due\sto\sdatabase\scorruption)\sand\sreport\sSQLITE_CORRUPT.
+D 2021-10-16T17:09:36.325
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -490,9 +490,9 @@ F src/auth.c f4fa91b6a90bbc8e0d0f738aa284551739c9543a367071f55574681e0f24f8cf
 F src/backup.c 3014889fa06e20e6adfa0d07b60097eec1f6e5b06671625f476a714d2356513d
 F src/bitvec.c 7c849aac407230278445cb069bebc5f89bf2ddd87c5ed9459b070a9175707b3d
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c 35782a608c940e219a01cf9d84de55e11668a42ede3b7b2d2fb4a6edb52e97e5
+F src/btree.c 91cc6d99b047c4d8672780ced92ad4ee45345fc92eef62f1b4193356d930f5f6
 F src/btree.h 74d64b8f28cfa4a894d14d4ed64fa432cd697b98b61708d4351482ae15913e22
-F src/btreeInt.h 7bc15a24a02662409ebcd6aeaa1065522d14b7fda71573a2b0568b458f514ae0
+F src/btreeInt.h ee9348c4cb9077243b049edc93a82c1f32ca48baeabf2140d41362b9f9139ff7
 F src/build.c f70d6375ea5b78daac5b1d24eab53ed7b81c3e68a17dff9581c50c0c06180e00
 F src/callback.c 106b585da1edd57d75fa579d823a5218e0bf37f191dbf7417eeb4a8a9a267dbc
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
@@ -808,7 +808,7 @@ F test/corruptJ.test 4d5ccc4bf959464229a836d60142831ef76a5aa4
 F test/corruptK.test 5b4212fe346699831c5ad559a62c54e11c0611bdde1ea8423a091f9c01aa32af
 F test/corruptL.test 7d3440831ca24ba64305583c4d4506d417d3f89f5775c0b7cc8102db078f8ff5
 F test/corruptM.test 7d574320e08c1b36caa3e47262061f186367d593a7e305d35f15289cc2c3e067
-F test/corruptN.test c2a96ff81386027f7d7e95858783aa36f82ba1532106969575e3c8f90903a5bb
+F test/corruptN.test 14962dc3f5567b5722a24d166bf143bec790673476f7b0932d82609210d1becd
 F test/cost.test b11cdbf9f11ffe8ef99c9881bf390e61fe92baf2182bad1dbe6de59a7295c576
 F test/count.test 5364003488249957750a5f15ee42ca1cd7b100b1131c2dc71fff266a1250bf55
 F test/countofview.test e17d6e6688cf74f22783c9ec6e788c0790ee4fbbaee713affd00b1ac0bb39b86
@@ -1929,7 +1929,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8a56de5b9c6f4522000f8d991373490b67b9e9d97f03c1ca2cf32816d84789ef
-R 4bcaeff59bcce0f4ef771608de87df49
+P e99979855de937ed5ee0994b180054501400bf8776fb70acd31786d2ba1ad49a
+R 3f77e71e98554900f2c6a9f0c33e3266
 U dan
-Z af80492fe37d3ad04ab438f47d1814c1
+Z ce8477010c93ae34e562deaff5d43b53
