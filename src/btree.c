@@ -6359,7 +6359,7 @@ static int freePage2(BtShared *pBt, MemPage *pMemPage, Pgno iPage){
   assert( CORRUPT_DB || iPage>1 );
   assert( !pMemPage || pMemPage->pgno==iPage );
 
-  if( iPage<2 || iPage>pBt->nPage ){
+  if( NEVER(iPage<2) || iPage>pBt->nPage ){
     return SQLITE_CORRUPT_BKPT;
   }
   if( pMemPage ){
@@ -9662,7 +9662,7 @@ static int btreeDropTable(Btree *p, Pgno iTable, int *piMoved){
   rc = sqlite3BtreeClearTable(p, iTable, 0);
   if( rc ) return rc;
   rc = btreeGetPage(pBt, (Pgno)iTable, &pPage, 0);
-  if( rc ){
+  if( NEVER(rc) ){
     releasePage(pPage);
     return rc;
   }

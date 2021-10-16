@@ -7129,7 +7129,7 @@ int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno, int isCommit){
   pPgOld = sqlite3PagerLookup(pPager, pgno);
   assert( !pPgOld || pPgOld->nRef==1 || CORRUPT_DB );
   if( pPgOld ){
-    if( pPgOld->nRef>1 ){
+    if( NEVER(pPgOld->nRef>1) ){
       sqlite3PagerUnrefNotNull(pPgOld);
       return SQLITE_CORRUPT_BKPT;
     }
