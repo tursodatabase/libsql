@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\sscan-build\swarning\sin\sFTS5.
-D 2021-10-16T19:50:03.158
+C Remove\san\sincorrect\sassert()\sadded\s4\sdays\sago\sby\scheck-in\s[9e2f06b84f994277].\nReplace\sit\swith\sa\stestcase()\smacro.
+D 2021-10-17T10:31:09.158
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -483,7 +483,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
-F src/alter.c 9179b778315243bd2935f7f1564b1e72c723f049805105c1bb7125b5e4e4f90d
+F src/alter.c d6b32481211fd5628b31d86329df6434bfc92e3372b53215339dc8cb47408644
 F src/analyze.c 7518b99e07c5494111fe3bd867f28f804b6c5c1ad0703ec3d116de9bab3fa516
 F src/attach.c e3f9d9a2a4a844750f3f348f37afb244535f21382cbfcd840152cb21cb41cfaf
 F src/auth.c f4fa91b6a90bbc8e0d0f738aa284551739c9543a367071f55574681e0f24f8cf
@@ -1929,7 +1929,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5fa272cc033216ed2d3b16078db58accf4d9a3d10e6dd64d362ef844b3e267b6
-R 253b84e46e82f850212fe6b6aecf2050
+P 0bf42bb5611dc3f672cb898b8be245fd25f7a3862c1e0734effd18d75e812f22
+R d4b6322f84cb79bf03b64299a4029b40
 U drh
-Z 5e7e4aad6178d4202688829dd46b80e2
+Z 3409a9b08242f867400967c13412f1bd
