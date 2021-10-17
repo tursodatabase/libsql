@@ -431,7 +431,7 @@ impl<'a> Iterator for IndexConstraintIter<'a> {
 
     #[inline]
     fn next(&mut self) -> Option<IndexConstraint<'a>> {
-        self.iter.next().map(|raw| IndexConstraint(raw))
+        self.iter.next().map(IndexConstraint)
     }
 
     #[inline]
@@ -492,7 +492,7 @@ impl<'a> Iterator for OrderByIter<'a> {
 
     #[inline]
     fn next(&mut self) -> Option<OrderBy<'a>> {
-        self.iter.next().map(|raw| OrderBy(raw))
+        self.iter.next().map(OrderBy)
     }
 
     #[inline]

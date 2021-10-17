@@ -85,10 +85,9 @@ mod build_bundled {
     pub fn main(out_dir: &str, out_path: &Path) {
         let lib_name = super::lib_name();
 
-        if cfg!(feature = "bundled-windows") && !cfg!(feature = "bundled") && !win_target() {
-            // This is just a sanity check, the top level `main` should ensure this.
-            panic!("This module should not be used: we're not on Windows and the bundled feature has not been enabled");
-        }
+        // This is just a sanity check, the top level `main` should ensure this.
+        assert!(!(cfg!(feature = "bundled-windows") && !cfg!(feature = "bundled") && !win_target()),
+            "This module should not be used: we're not on Windows and the bundled feature has not been enabled");
 
         #[cfg(feature = "buildtime_bindgen")]
         {
@@ -159,12 +158,11 @@ mod build_bundled {
                         let lib_dir = lib_dir.unwrap_or_else(|| openssl_dir.join("lib"));
                         let inc_dir = inc_dir.unwrap_or_else(|| openssl_dir.join("include"));
 
-                        if !Path::new(&lib_dir).exists() {
-                            panic!(
-                                "OpenSSL library directory does not exist: {}",
-                                lib_dir.to_string_lossy()
-                            );
-                        }
+                        assert!(
+                            Path::new(&lib_dir).exists(),
+                            "OpenSSL library directory does not exist: {}",
+                            lib_dir.to_string_lossy()
+                        );
 
                         if !Path::new(&inc_dir).exists() {
                             panic!(
@@ -213,7 +211,8 @@ mod build_bundled {
             cfg.flag("-fsanitize=address");
         }
 
-        // If explicitly requested: enable static linking against the Microsoft Visual C++ Runtime to avoid dependencies on vcruntime140.dll and similar libraries.
+        // If explicitly requested: enable static linking against the Microsoft Visual
+        // C++ Runtime to avoid dependencies on vcruntime140.dll and similar libraries.
         if cfg!(target_feature = "crt-static") && is_compiler("msvc") {
             cfg.static_crt(true);
         }
