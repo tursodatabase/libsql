@@ -1,5 +1,5 @@
-C Remove\san\sincorrect\sassert()\sadded\s4\sdays\sago\sby\scheck-in\s[9e2f06b84f994277].\nReplace\sit\swith\sa\stestcase()\smacro.
-D 2021-10-17T10:31:09.158
+C Update\stest\sscripts\sto\sunregister\sthe\stest\sdevsim\sVFS\safter\sit\sis\sused.
+D 2021-10-19T18:40:00.827
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1122,8 +1122,8 @@ F test/interrupt.test 16ea879ec728cb76414c148c5f24afd5d1f91054
 F test/interrupt2.test e4408ca770a6feafbadb0801e54a0dcd1a8d108d
 F test/intpkey.test aee694afed1a65c86c4e69ad030224b3fc268113d00685234d40079fca16bad3
 F test/intreal.test 2a87e85a5949bd55e41ef04c58f5800587c5380bdbc559ff1c79b614b0e6a533
-F test/io.test f95bca1783b01ea7761671560d023360d2dfa4cc
-F test/ioerr.test 470fcc78e9cd352d162baf782fe301ea807d764241f58a48fc58109c2dfcdb6b
+F test/io.test f138f3fe696d1ed8c51dfea5b325910d319a1b29e1d25ea57231a02092f02cca
+F test/ioerr.test 530d05801ff1b6327018b2e140da34a74effa2773a844ddb8dc79c32e9567318
 F test/ioerr2.test 2593563599e2cc6b6b4fcf5878b177bdd5d8df26
 F test/ioerr3.test d3cec5e1a11ad6d27527d0d38573fbff14c71bdd
 F test/ioerr4.test f130fe9e71008577b342b8874d52984bd04ede2c
@@ -1929,7 +1929,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0bf42bb5611dc3f672cb898b8be245fd25f7a3862c1e0734effd18d75e812f22
-R d4b6322f84cb79bf03b64299a4029b40
-U drh
-Z 3409a9b08242f867400967c13412f1bd
+P 03dff7196bb00f8e32f574f65745ceafb33ee3fdd169263121342859c362eca5
+R 228163c3c451593d7cb8cf696feda116
+U dan
+Z 8bc0ae3b5e97592532641791c4e91665
