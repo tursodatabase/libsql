@@ -1,5 +1,5 @@
-C Fix\spermutations.test\sso\sthat\sit\scan\sbe\scalled\swith\sa\stest\sfile\spattern\sthat\suses\ssquare\sbrackets.
-D 2021-10-19T18:53:30.600
+C Improved\scleanup\sin\sfinish_test\sso\sthat\sspecifying\smultiple\stest\smodules\non\sthe\s"./testfixture"\scommand-line\sis\smore\slikely\sto\swork.
+D 2021-10-19T18:59:10.277
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1461,7 +1461,7 @@ F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
 F test/temptable2.test d2940417496e2b9548e01d09990763fbe88c316504033256d51493e1f1a5ce6a
 F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
-F test/tester.tcl 9426f7385393fbb6ba90e12ca51d0caf65e48b6a98c0dd169676d93b8c79d34c
+F test/tester.tcl 2b55f29390d187026f187b5b82849a4001763960e5e90797ba2dc95c70fe77a6
 F test/thread001.test b61a29dd87cf669f5f6ac96124a7c97d71b0c80d9012746072055877055cf9ef
 F test/thread002.test e630504f8a06c00bf8bbe68528774dd96aeb2e58
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
@@ -1929,7 +1929,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bb0e18ae4a49c305dd8b26886a3a4f3c6dad380edca57af835da4ad470ca8eb6
-R e5353d6e7b1f6549937daad45541e7f2
-U dan
-Z 7e291cd2bd650eb18863b06f63575d0e
+P 55b6241871a3b52d835ebdc52a1ce6c736861cf7a03331391c5d6ffd39720514
+R cc426998f06e87a7bc21c105b31a88c7
+U drh
+Z 41e8af220976b65d8b8f69383f67a625
