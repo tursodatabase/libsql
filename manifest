@@ -1,5 +1,5 @@
-C Update\stest\sscripts\sto\sunregister\sthe\stest\sdevsim\sVFS\safter\sit\sis\sused.
-D 2021-10-19T18:40:00.827
+C Fix\spermutations.test\sso\sthat\sit\scan\sbe\scalled\swith\sa\stest\sfile\spattern\sthat\suses\ssquare\sbrackets.
+D 2021-10-19T18:53:30.600
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1274,7 +1274,7 @@ F test/parser1.test 6ccdf5e459a5dc4673d3273dc311a7e9742ca952dd0551a6a6320d27035c
 F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
-F test/permutations.test 536ab91e3d8fda6086ae6a3a0087d0750c95a412a9f3fb661e5a58de6d1b1224
+F test/permutations.test 68b6dcd2667acdc643140d502c0b6c503abe444495cf5d16aa3a4f0391604020
 F test/pg_common.tcl 3b27542224db1e713ae387459b5d117c836a5f6e328846922993b6d2b7640d9f
 F test/pragma.test cae534c12a033a5c319ccc94f50b32811acdef9f67bf19a82ff42697caccd69f
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
@@ -1929,7 +1929,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 03dff7196bb00f8e32f574f65745ceafb33ee3fdd169263121342859c362eca5
-R 228163c3c451593d7cb8cf696feda116
+P bb0e18ae4a49c305dd8b26886a3a4f3c6dad380edca57af835da4ad470ca8eb6
+R e5353d6e7b1f6549937daad45541e7f2
 U dan
-Z 8bc0ae3b5e97592532641791c4e91665
+Z 7e291cd2bd650eb18863b06f63575d0e
