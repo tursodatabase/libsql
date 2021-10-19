@@ -1219,6 +1219,7 @@ if {[file tail $argv0] == "permutations.test"} {
         set S $::testspec($suite)
         set i 1
       } else {
+        set suite default
         set S [list]
         set i 0
       }
@@ -1239,7 +1240,7 @@ if {[file tail $argv0] == "permutations.test"} {
         set extra [list -files $files]
       }
 
-      eval run_tests $suite $S $extra
+      eval [list run_tests $suite] $S $extra
     }
   }
   main $argv
