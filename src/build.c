@@ -2218,7 +2218,6 @@ static void estimateIndexWidth(Index *pIdx){
 */
 static int hasColumn(const i16 *aiCol, int nCol, int x){
   while( nCol-- > 0 ){
-    assert( aiCol[0]>=0 );
     if( x==*(aiCol++) ){
       return 1;
     }
