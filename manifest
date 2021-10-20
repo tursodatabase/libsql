@@ -1,5 +1,5 @@
-C Ensure\sthat\svalid\sbytecode\sis\sgenerated\sfor\sRETURNING\sclauses\seven\sif\nthe\sschema\sis\scorrupt\sand\sPRAGMA\swritable_schema\sis\sset\sso\sthat\sthe\nschema\sparse\sreturns\sno\serrors.\ndbsqlfuzz\scb21825bdcd6fdb4b686ce4f6e2f45e781d2f220
-D 2021-10-20T12:52:12.857
+C Fix\sa\sproblem\swith\sthe\sCARRAY\sextension\swhen\sthe\sSQLITE_TRANSIENT\sdestructor\nis\sused\sfor\snon-text\sarrays.\n[forum:/forumpost/48e525b266|Forum\sthread\s48e525b266].
+D 2021-10-20T13:48:12.145
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -290,7 +290,7 @@ F ext/misc/anycollseq.c 5ffdfde9829eeac52219136ad6aa7cd9a4edb3b15f4f2532de52f4a2
 F ext/misc/appendvfs.c 9642c7a194a2a25dca7ad3e36af24a0a46d7702168c4ad7e59c9f9b0e16a3824
 F ext/misc/blobio.c a867c4c4617f6ec223a307ebfe0eabb45e0992f74dd47722b96f3e631c0edb2a
 F ext/misc/btreeinfo.c d28ce349b40054eaa9473e835837bad7a71deec33ba13e39f963d50933bfa0f9
-F ext/misc/carray.c af9c4b3de67f87eb00644c3bb874b77e5917422b8d2c3ffc2853a118668501fa
+F ext/misc/carray.c b752f46411e4e47e34dce6f0c88bc8e51bb821ba9e49bfcd882506451c928f69
 F ext/misc/carray.h d2b1b12486d531367c37832d3d0dad34eea4bdd83ed839d445521ef01f0bc4e3
 F ext/misc/cksumvfs.c b42ef52eaaa510d54ec320c87bea149e934a3b06cd232be2093562bf669bd572
 F ext/misc/closure.c dbfd8543b2a017ae6b1a5843986b22ddf99ff126ec9634a2f4047cd14c85c243
@@ -758,7 +758,7 @@ F test/capi3b.test efb2b9cfd127efa84433cd7a2d72ce0454ae0dc4
 F test/capi3c.test 54e2dc0c8fd7c34ad1590d1be6864397da2438c95a9f5aee2f8fbc60c112e44b
 F test/capi3d.test aba917805573a03deed961a21f07a5a84505ad0a616f7e3fc1508844a15bccc4
 F test/capi3e.test 3d49c01ef2a1a55f41d73cba2b23b5059ec460fe
-F test/carray01.test 3f2658bbddd75a013735a296ae2178ff441aca3f00ba623cfbae00b732ede792
+F test/carray01.test d55d57bf66b1af1c7ac55fae66ff4910884a8f5d21a90a18797ce386212a2634
 F test/cast.test 336fa21989b5170ebcaf90c24266be22dd97b3e23d1fad5ecf6ad4efb04c4423
 F test/cffault.test 9d6b20606afe712374952eec4f8fd74b1a8097ef
 F test/changes.test 9dd8e597d84072122fc8a4fcdea837f4a54a461e6e536053ea984303e8ca937b
@@ -1929,7 +1929,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7b7d31a6153b1505288eb3e849d0d9ef9e88e961c7b2f918ef5582fd77990f6d
-R 7e4e37a135766c582a919f858b2a6a3d
+P 699117156e0b5a7beda606de56bd511af322e3efa4eee6e60f0a8d60561def64
+R cf56933f6006b45d93d99fc6072efe54
 U drh
-Z 17be0212b59eb5785076e1b476487655
+Z 590b76cfe5702e43cf5589b10e3b6679
