@@ -621,6 +621,7 @@ void sqlite3Fts3ExprFree(Fts3Expr *);
 int sqlite3Fts3ExprInitTestInterface(sqlite3 *db, Fts3Hash*);
 int sqlite3Fts3InitTerm(sqlite3 *db);
 #endif
+void *sqlite3Fts3MallocZero(i64 nByte);
 
 int sqlite3Fts3OpenTokenizer(sqlite3_tokenizer *, int, const char *, int,
   sqlite3_tokenizer_cursor **
