@@ -4093,7 +4093,7 @@ case OP_OpenEphemeral: {
     aMem[pOp->p3].z = "";
   }
   pCx = p->apCsr[pOp->p1];
-  if( pCx && !pCx->hasBeenDuped ){
+  if( pCx && !pCx->hasBeenDuped &&  ALWAYS(pOp->p2<=pCx->nField) ){
     /* If the ephermeral table is already open and has no duplicates from
     ** OP_OpenDup, then erase all existing content so that the table is
     ** empty again, rather than creating a new table. */
