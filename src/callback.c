@@ -337,6 +337,7 @@ FuncDef *sqlite3FunctionSearch(
 ){
   FuncDef *p;
   for(p=sqlite3BuiltinFunctions.a[h]; p; p=p->u.pHash){
+    assert( p->funcFlags & SQLITE_FUNC_BUILTIN );
     if( sqlite3StrICmp(p->zName, zFunc)==0 ){
       return p;
     }
@@ -358,6 +359,7 @@ void sqlite3InsertBuiltinFuncs(
     int nName = sqlite3Strlen30(zName);
     int h = SQLITE_FUNC_HASH(zName[0], nName);
     assert( zName[0]>='a' && zName[0]<='z' );
+    assert( aDef[i].funcFlags & SQLITE_FUNC_BUILTIN );
     pOther = sqlite3FunctionSearch(h, zName);
     if( pOther ){
       assert( pOther!=&aDef[i] && pOther->pNext!=&aDef[i] );

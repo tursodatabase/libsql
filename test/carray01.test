@@ -62,8 +62,32 @@ do_test 120 {
   sqlite3_carray_bind -int64 $STMT 3 1 2 3 4 5 6 7
   run_stmt $STMT 0
 } {1}
+do_test 121 {
+  sqlite3_carray_bind -int64 -transient $STMT 3 1 2 3 4 5 6 7
+  run_stmt $STMT 0
+} {1}
+do_test 122 {
+  sqlite3_carray_bind -int64 -static $STMT 3 1 2 3 4 5 6 7
+  run_stmt $STMT 0
+} {1}
+do_test 123 {
+  sqlite3_carray_bind -int32 -transient $STMT 3 1 2 3 4 5 6 7
+  run_stmt $STMT 0
+} {1}
+do_test 124 {
+  sqlite3_carray_bind -int32 -static $STMT 3 1 2 3 4 5 6 7
+  run_stmt $STMT 0
+} {1}
+do_test 125 {
+  sqlite3_carray_bind -int32 $STMT 3 1 2 3 4 5 6 7
+  run_stmt $STMT 0
+} {1}
 do_test 130 {
   sqlite3_carray_bind -int64 $STMT 3 1 2 3 4 6 7
+  run_stmt $STMT 0
+} {0}
+do_test 131 {
+  sqlite3_carray_bind -int64 -transient $STMT 3 1 2 3 4 6 7
   run_stmt $STMT 0
 } {0}
 do_test 131 {
@@ -72,6 +96,14 @@ do_test 131 {
 } {0}
 do_test 140 {
   sqlite3_carray_bind -double $STMT 3 1 2 3 4 5 6 7
+  run_stmt $STMT 0
+} {1}
+do_test 141 {
+  sqlite3_carray_bind -double -transient $STMT 3 1 2 3 4 5 6 7
+  run_stmt $STMT 0
+} {1}
+do_test 142 {
+  sqlite3_carray_bind -double -static $STMT 3 1 2 3 4 5 6 7
   run_stmt $STMT 0
 } {1}
 do_test 150 {

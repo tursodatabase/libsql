@@ -996,7 +996,7 @@ static void analyzeOneTable(
   if( v==0 || NEVER(pTab==0) ){
     return;
   }
-  if( pTab->tnum==0 ){
+  if( !IsOrdinaryTable(pTab) ){
     /* Do not gather statistics on views or virtual tables */
     return;
   }
