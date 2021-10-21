@@ -1,5 +1,5 @@
-C Fix\san\sincorrect\sJSON\sassert()\sthat\swas\sadded\s5\sdays\sago\sby\scheck-in\s[7b8ea2298927fd34].
-D 2021-10-20T20:22:37.259
+C Fix\sthe\snew\s"table_list"\spragma\sso\sthat\sit\sshows\sthe\scorrect\snumber\sof\ncolumns\sfor\sviews\sand\svirtual\stables\seven\swhen\sthe\sobject\shas\snot\sbeen\npreviously\sused.
+D 2021-10-21T17:01:10.549
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -542,7 +542,7 @@ F src/parse.y 0bd7971a7489bbf6c3726f1b50da6e508bdff8fa493e9cc3f5a96b12cbb2361e
 F src/pcache.c 084e638432c610f95aea72b8509f0845d2791293f39d1b82f0c0a7e089c3bb6b
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c 54881292a9a5db202b2c0ac541c5e3ef9a5e8c4f1c1383adb2601d5499a60e65
-F src/pragma.c 12760c6ae92a350f5924896644a3e58d969c7c78e346b8cb542f2a8cef7c45d1
+F src/pragma.c e98bdbaf4bbe13e1085e6713b4bf022a8091e279162fec96e5ea30b53b1851a3
 F src/pragma.h 87330ed2fbfa2a1274de93ca0ab850fba336189228cb256089202c3b52766fad
 F src/prepare.c 8f07616db04337057b8498b72d051ee90f73c54615c2e908c05404cef1e060b7
 F src/printf.c 5901672228f305f7d493cbc4e7d76a61a5caecdbc1cd06b1f9ec42ea4265cf8d
@@ -1929,7 +1929,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f52b84e69e5fcbe59ccc6163e7e78aa3822f2c354c88f8a76a2d1d4c90a99821
-R 670ebc316cf1a452957a2d11a7221cf2
+P e162da3ab4c183b67872be004035c48fc8f20084bc5757aec27410ce23a36631
+R 5b3b99f69598abd3ff48cb7e9e2a37d6
 U drh
-Z 70867d1471ed7c4b89f3d005caea5399
+Z fe3fae615e6e48414d5d1a1ec7e33318

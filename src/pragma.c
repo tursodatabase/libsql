@@ -1242,6 +1242,17 @@ void sqlite3Pragma(
         }else{
           zType = "table";
         }
+        if( zType[0]=='v' && pTab->nCol==0 ){
+          /* The number of columns is not known for views and virtual tables
+          ** until after the object is used at least once.  */
+          char *zSql = sqlite3MPrintf(db, "SELECT * FROM \"%w\"", pTab->zName);
+          if( zSql ){
+            sqlite3_stmt *pDummy = 0;
+            (void)sqlite3_prepare(db, zSql, -1, &pDummy, 0);
+            (void)sqlite3_finalize(pDummy);
+            sqlite3DbFree(db, zSql);
+          }
+        }
         sqlite3VdbeMultiLoad(v, 1, "sssiii",
            db->aDb[ii].zDbSName,
            pTab->zName,
