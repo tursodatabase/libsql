@@ -1822,7 +1822,11 @@ static void groupConcatInverse(
   /* pGCC is always non-NULL since groupConcatStep() will have always
   ** run frist to initialize it */
   if( ALWAYS(pGCC) ){
-    int nVS = sqlite3_value_bytes(argv[0]);
+    int nVS;
+    /* Must call sqlite3_value_text() to convert the argument into text prior
+    ** to invoking sqlite3_value_bytes(), in case the text encoding is UTF16 */
+    (void)sqlite3_value_text(argv[0]);
+    nVS = sqlite3_value_bytes(argv[0]);
     pGCC->nAccum -= 1;
     if( pGCC->pnSepLengths!=0 ){
       assert(pGCC->nAccum >= 0);
@@ -1937,11 +1941,12 @@ int sqlite3IsLikeFunction(sqlite3 *db, Expr *pExpr, int *pIsNocase, char *aWc){
   int nExpr;
   assert( pExpr!=0 );
   assert( pExpr->op==TK_FUNCTION );
+  assert( ExprUseXList(pExpr) );
   if( !pExpr->x.pList ){
     return 0;
   }
-  assert( !ExprHasProperty(pExpr, EP_xIsSelect) );
   nExpr = pExpr->x.pList->nExpr;
+  assert( !ExprHasProperty(pExpr, EP_IntValue) );
   pDef = sqlite3FindFunction(db, pExpr->u.zToken, nExpr, SQLITE_UTF8, 0);
 #ifdef SQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
   if( pDef==0 ) return 0;
@@ -1965,6 +1970,7 @@ int sqlite3IsLikeFunction(sqlite3 *db, Expr *pExpr, int *pIsNocase, char *aWc){
     Expr *pEscape = pExpr->x.pList->a[2].pExpr;
     char *zEscape;
     if( pEscape->op!=TK_STRING ) return 0;
+    assert( !ExprHasProperty(pEscape, EP_IntValue) );
     zEscape = pEscape->u.zToken;
     if( zEscape[0]==0 || zEscape[1]!=0 ) return 0;
     if( zEscape[0]==aWc[0] ) return 0;
@@ -2346,6 +2352,7 @@ void sqlite3RegisterBuiltinFunctions(void){
       for(p=sqlite3BuiltinFunctions.a[i]; p; p=p->u.pHash){
         int n = sqlite3Strlen30(p->zName);
         int h = p->zName[0] + n;
+        assert( p->funcFlags & SQLITE_FUNC_BUILTIN );
         printf(" %s(%d)", p->zName, h);
       }
       printf("\n");

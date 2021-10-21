@@ -464,7 +464,7 @@ SQLITE_API int sqlite3_carray_bind(
         z += n+1;
       }
     }else{
-      memcpy(pNew->aData, aData, sz*nData);
+      memcpy(pNew->aData, aData, sz);
     }
     pNew->xDel = sqlite3_free;
   }else{

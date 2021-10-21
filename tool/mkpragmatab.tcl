@@ -239,7 +239,7 @@ set pragma_def {
 
   NAME: table_list
   TYPE: TABLE_LIST
-  FLAG: NeedSchema Result1 SchemaOpt
+  FLAG: NeedSchema Result1
   COLS: schema name type ncol wr strict
   IF:   !defined(SQLITE_OMIT_SCHEMA_PRAGMAS)
 

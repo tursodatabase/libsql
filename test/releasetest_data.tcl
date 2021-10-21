@@ -22,14 +22,6 @@
 # "fulltest"). The program may be invoked as follows:
 #
 set USAGE {
-$argv0 platforms
-    List available platforms.
-
-$argv0 tests ?-nodebug? PLATFORM
-    List tests in a specified platform. If the -nodebug switch is 
-    specified, synthetic debug/ndebug configurations are omitted. Each
-    test is a combination of a configuration and a makefile target.
-
 $argv0 script ?-msvc? CONFIGURATION TARGET
     Given a configuration and make target, return a bash (or, if -msvc
     is specified, batch) script to execute the test. The first argument
@@ -37,6 +29,14 @@ $argv0 script ?-msvc? CONFIGURATION TARGET
 
 $argv0 configurations
     List available configurations.
+
+$argv0 platforms
+    List available platforms.
+
+$argv0 tests ?-nodebug? PLATFORM
+    List tests in a specified platform. If the -nodebug switch is 
+    specified, synthetic debug/ndebug configurations are omitted. Each
+    test is a combination of a configuration and a makefile target.
 }
 
 # Omit comments (text between # and \n) in a long multi-line string.
@@ -289,56 +289,56 @@ if {$tcl_platform(os)=="Darwin"} {
 
 array set ::Platforms [strip_comments {
   Linux-x86_64 {
-    "Check-Symbols*"          checksymbols
-    "Fast-One"                "QUICKTEST_INCLUDE=rbu.test fuzztest test"
-    "Debug-One"               "mptest test"
-    "Debug-Two"               "test"
-    "Have-Not"                test
-    "Secure-Delete"           test
-    "Unlock-Notify"           "QUICKTEST_INCLUDE=notify2.test test"
-    "User-Auth"               tcltest
-    "Update-Delete-Limit"     test
-    "Extra-Robustness"        test
-    "Device-Two"              "threadtest test"
-    "No-lookaside"            test
-    "Devkit"                  test
-    "Apple"                   test
-    "Sanitize"                test
-    "Device-One"              fulltest
-    "Default"                 "threadtest fulltest"
-    "Valgrind*"               valgrindtest
+    "Check-Symbols*"          "" checksymbols
+    "Fast-One"                QUICKTEST_INCLUDE=rbu.test "fuzztest test"
+    "Debug-One"               "" "mptest test"
+    "Debug-Two"               "" test
+    "Have-Not"                "" test
+    "Secure-Delete"           "" test
+    "Unlock-Notify"           QUICKTEST_INCLUDE=notify2.test test
+    "User-Auth"               "" tcltest
+    "Update-Delete-Limit"     "" test
+    "Extra-Robustness"        "" test
+    "Device-Two"              "" "threadtest test"
+    "No-lookaside"            "" test
+    "Devkit"                  "" test
+    "Apple"                   "" test
+    "Sanitize*"               "" test
+    "Device-One"              "" "fuzztest alltest"
+    "Default"                 "" "threadtest fuzztest alltest"
+    "Valgrind*"               "" valgrindtest
   }
   Linux-i686 {
-    "Devkit"                  test
-    "Have-Not"                test
-    "Unlock-Notify"           "QUICKTEST_INCLUDE=notify2.test test"
-    "Device-One"              test
-    "Device-Two"              test
-    "Default"                 "threadtest fulltest"
+    "Devkit"                  "" test
+    "Have-Not"                "" test
+    "Unlock-Notify"           QUICKTEST_INCLUDE=notify2.test test
+    "Device-One"              "" test
+    "Device-Two"              "" test
+    "Default"                 "" "threadtest fuzztest alltest"
   }
   Darwin-i386 {
-    "Locking-Style"           "mptest test"
-    "Have-Not"                test
-    "Apple"                   "threadtest fulltest"
+    "Locking-Style"           "" "mptest test"
+    "Have-Not"                "" test
+    "Apple"                   "" "threadtest fuzztest alltest"
   }
   Darwin-x86_64 {
-    "Locking-Style"           "mptest test"
-    "Have-Not"                test
-    "Apple"                   "threadtest fulltest"
+    "Locking-Style"           "" "mptest test"
+    "Have-Not"                "" test
+    "Apple"                   "" "threadtest fuzztest alltest"
   }
   "Windows NT-intel" {
-    "Stdcall"                 test
-    "Have-Not"                test
-    "Windows-Memdebug*"       test
-    "Windows-Win32Heap*"      test
-    "Default"                 "mptest fulltestonly"
+    "Stdcall"                 "" test
+    "Have-Not"                "" test
+    "Windows-Memdebug*"       "" test
+    "Windows-Win32Heap*"      "" test
+    "Default"                 "" "mptest fulltestonly"
   }
   "Windows NT-amd64" {
-    "Stdcall"                 test
-    "Have-Not"                test
-    "Windows-Memdebug*"       test
-    "Windows-Win32Heap*"      test
-    "Default"                 "mptest fulltestonly"
+    "Stdcall"                 "" test
+    "Have-Not"                "" test
+    "Windows-Memdebug*"       "" test
+    "Windows-Win32Heap*"      "" test
+    "Default"                 "" "mptest fulltestonly"
   }
 
   # The Failure-Detection platform runs various tests that deliberately
@@ -346,13 +346,13 @@ array set ::Platforms [strip_comments {
   # correctly identifies failures.
   #
   Failure-Detection {
-    Fail0*     "TEST_FAILURE=0 test"
-    Sanitize*  "TEST_FAILURE=1 test"
-    Fail2*     "TEST_FAILURE=2 valgrindtest"
-    Fail3*     "TEST_FAILURE=3 valgrindtest"
-    Fail4*     "TEST_FAILURE=4 test"
-    FuzzFail1* "TEST_FAILURE=5 test"
-    FuzzFail2* "TEST_FAILURE=5 valgrindtest"
+    Fail0*     "TEST_FAILURE=0" test
+    Sanitize*  "TEST_FAILURE=1" test
+    Fail2*     "TEST_FAILURE=2" valgrindtest
+    Fail3*     "TEST_FAILURE=3" valgrindtest
+    Fail4*     "TEST_FAILURE=4" test
+    FuzzFail1* "TEST_FAILURE=5" test
+    FuzzFail2* "TEST_FAILURE=5" valgrindtest
   }
 }]
 
@@ -368,7 +368,7 @@ array set ::Platforms [strip_comments {
 # specified for each platforms exists.
 #
 foreach {key value} [array get ::Platforms] {
-  foreach {v t} $value {
+  foreach {v vars t} $value {
     if {[string range $v end end]=="*"} {
       set v [string range $v 0 end-1]
     }
@@ -439,6 +439,7 @@ proc main_script {args} {
     lappend opts -DSQLITE_EXTRA_IFNULLROW
     set config [string range $config 0 end-6]
   }
+  regexp {^(.*)-[0-9]+} $config -> config
 
   # Ensure that the named configuration exists.
   #
@@ -474,6 +475,7 @@ proc main_script {args} {
     if {$bRemoveDebug} {
       if {$param=="-DSQLITE_DEBUG" || $param=="-DSQLITE_DEBUG=1"
        || $param=="-DSQLITE_MEMDEBUG" || $param=="-DSQLITE_MEMDEBUG=1"
+       || $param=="--enable-debug"
       } {
         continue
       }
@@ -586,32 +588,57 @@ proc main_tests {args} {
     exit 1
   }
 
-  foreach {config target} $::Platforms($p) {
-    set bNosynthetic 0
+  set lTest [list]
+
+  foreach {config vars target} $::Platforms($p) {
     if {[string range $config end end]=="*"} {
-      set bNosynthetic 1
       set config [string range $config 0 end-1]
-    }
-    puts "$config \"$target\""
-    if {$bNodebug==0 && $bNosynthetic==0} {
-      set iHas [string first SQLITE_DEBUG $::Configs($config)]
-      set dtarget [list]
-      set iQTI [lsearch -glob $target QUICKTEST_*]
-      if {$iQTI>=0} {
-        lappend dtarget [lindex $target $iQTI]
-      }
+    } elseif {$bNodebug==0} {
+      set dtarget test
       if {[lsearch $target tcltest]>=0} {
-        lappend dtarget tcltest
-      } else {
-        lappend dtarget test
+        set dtarget tcltest
       }
-      if {$iHas>=0} {
-        puts "$config-ndebug \"$dtarget\""
+      if {$vars!=""} { set dtarget "$vars $dtarget" }
+
+      if {[string first SQLITE_DEBUG $::Configs($config)]>=0
+       || [string first --enable-debug $::Configs($config)]>=0
+      } {
+        lappend lTest "$config-ndebug \"$dtarget\""
       } else {
-        puts "$config-debug \"$dtarget\""
+        lappend lTest "$config-debug \"$dtarget\""
+      }
+    }
+
+    if {[llength $target]==1
+     && [lsearch $target "valgrindtest"]<0
+     && [lsearch $target "alltest"]<0
+     && [lsearch $target "fulltestonly"]<0
+     && ![string match Sanitize* $config]
+    } {
+      if {$vars!=""} { set target "$vars $target" }
+      lappend lTest "$config \"$target\""
+    } else {
+      set idir -1
+      foreach t $target {
+        if {$t=="valgrindtest" || $t=="alltest" || $t=="fulltestonly"
+         || [string match Sanitize* $config]
+        } {
+          if {$vars!=""} { set t "$vars $t" }
+          for {set ii 1} {$ii<=4} {incr ii} {
+            lappend lTest "$config-[incr idir] \"TCLTEST_PART=$ii/4 $t\""
+          }
+        } else {
+          if {$vars!=""} { set t "$vars $t" }
+          lappend lTest "$config-[incr idir] \"$t\""
+        }
       }
     }
   }
+
+  foreach l $lTest {
+    puts $l
+  }
+
 }
 
 if {[llength $argv]==0} { usage }

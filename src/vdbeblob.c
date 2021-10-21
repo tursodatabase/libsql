@@ -212,7 +212,7 @@ int sqlite3_blob_open(
         ** key columns must be indexed. The check below will pick up this 
         ** case.  */
         FKey *pFKey;
-        assert( !IsVirtual(pTab) );
+        assert( IsOrdinaryTable(pTab) );
         for(pFKey=pTab->u.tab.pFKey; pFKey; pFKey=pFKey->pNextFrom){
           int j;
           for(j=0; j<pFKey->nCol; j++){
