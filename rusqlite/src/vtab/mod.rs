@@ -520,6 +520,8 @@ impl OrderBy<'_> {
 
 /// Virtual table cursor trait.
 ///
+/// # Safety
+///
 /// Implementations must be like:
 /// ```rust,ignore
 /// #[repr(C)]
