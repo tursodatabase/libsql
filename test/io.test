@@ -640,4 +640,6 @@ foreach {tn sql} {
 }
 
 sqlite3_simulate_device -char {} -sectorsize 0
+unregister_devsim
+
 finish_test

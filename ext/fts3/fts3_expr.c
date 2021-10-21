@@ -122,7 +122,7 @@ static int fts3isspace(char c){
 ** zero the memory before returning a pointer to it. If unsuccessful, 
 ** return NULL.
 */
-static void *fts3MallocZero(sqlite3_int64 nByte){
+void *sqlite3Fts3MallocZero(sqlite3_int64 nByte){
   void *pRet = sqlite3_malloc64(nByte);
   if( pRet ) memset(pRet, 0, nByte);
   return pRet;
@@ -203,7 +203,7 @@ static int getNextToken(
     rc = pModule->xNext(pCursor, &zToken, &nToken, &iStart, &iEnd, &iPosition);
     if( rc==SQLITE_OK ){
       nByte = sizeof(Fts3Expr) + sizeof(Fts3Phrase) + nToken;
-      pRet = (Fts3Expr *)fts3MallocZero(nByte);
+      pRet = (Fts3Expr *)sqlite3Fts3MallocZero(nByte);
       if( !pRet ){
         rc = SQLITE_NOMEM;
       }else{
@@ -458,7 +458,7 @@ static int getNextNode(
       if( fts3isspace(cNext) 
        || cNext=='"' || cNext=='(' || cNext==')' || cNext==0
       ){
-        pRet = (Fts3Expr *)fts3MallocZero(sizeof(Fts3Expr));
+        pRet = (Fts3Expr *)sqlite3Fts3MallocZero(sizeof(Fts3Expr));
         if( !pRet ){
           return SQLITE_NOMEM;
         }
@@ -637,7 +637,7 @@ static int fts3ExprParse(
             && p->eType==FTSQUERY_PHRASE && pParse->isNot 
         ){
           /* Create an implicit NOT operator. */
-          Fts3Expr *pNot = fts3MallocZero(sizeof(Fts3Expr));
+          Fts3Expr *pNot = sqlite3Fts3MallocZero(sizeof(Fts3Expr));
           if( !pNot ){
             sqlite3Fts3ExprFree(p);
             rc = SQLITE_NOMEM;
@@ -671,7 +671,7 @@ static int fts3ExprParse(
             /* Insert an implicit AND operator. */
             Fts3Expr *pAnd;
             assert( pRet && pPrev );
-            pAnd = fts3MallocZero(sizeof(Fts3Expr));
+            pAnd = sqlite3Fts3MallocZero(sizeof(Fts3Expr));
             if( !pAnd ){
               sqlite3Fts3ExprFree(p);
               rc = SQLITE_NOMEM;

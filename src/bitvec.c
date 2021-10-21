@@ -353,7 +353,7 @@ int sqlite3BitvecBuiltinTest(int sz, int *aOp){
   sqlite3BitvecClear(0, 1, pTmpSpace);
 
   /* Run the program */
-  pc = 0;
+  pc = i = 0;
   while( (op = aOp[pc])!=0 ){
     switch( op ){
       case 1:

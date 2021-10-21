@@ -82,6 +82,9 @@ typedef unsigned int u32;
 # undef NDEBUG
 #endif
 #if defined(SQLITE_COVERAGE_TEST) || defined(SQLITE_MUTATION_TEST)
+# define SQLITE_OMIT_AUXILIARY_SAFETY_CHECKS 1
+#endif
+#if defined(SQLITE_OMIT_AUXILIARY_SAFETY_CHECKS)
 # define ALWAYS(X)      (1)
 # define NEVER(X)       (0)
 #elif !defined(NDEBUG)
@@ -433,7 +436,12 @@ struct RtreeMatchArg {
 ** it is not, make it a no-op.
 */
 #ifndef SQLITE_AMALGAMATION
-# define testcase(X)
+# if defined(SQLITE_COVERAGE_TEST) || defined(SQLITE_DEBUG)
+    unsigned int sqlite3RtreeTestcase = 0;
+#   define testcase(X)  if( X ){ sqlite3RtreeTestcase += __LINE__; }
+# else
+#   define testcase(X)
+# endif
 #endif
 
 /*
@@ -2197,7 +2205,7 @@ static int ChooseLeaf(
 
     int nCell = NCELL(pNode);
     RtreeCell cell;
-    RtreeNode *pChild;
+    RtreeNode *pChild = 0;
 
     RtreeCell *aCell = 0;
 
@@ -2555,6 +2563,7 @@ static int updateMapping(
       pChild->pParent = pNode;
     }
   }
+  if( NEVER(pNode==0) ) return SQLITE_ERROR;
   return xSetMapping(pRtree, iRowid, pNode->iNode);
 }
 
@@ -3859,6 +3868,7 @@ static void rtreenode(sqlite3_context *ctx, int nArg, sqlite3_value **apArg){
   tree.nDim2 = tree.nDim*2;
   tree.nBytesPerCell = 8 + 8 * tree.nDim;
   node.zData = (u8 *)sqlite3_value_blob(apArg[1]);
+  if( node.zData==0 ) return;
   nData = sqlite3_value_bytes(apArg[1]);
   if( nData<4 ) return;
   if( nData<NCELL(&node)*tree.nBytesPerCell ) return;

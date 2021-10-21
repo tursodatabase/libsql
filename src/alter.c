@@ -367,6 +367,7 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
     if( pDflt && pDflt->pLeft->op==TK_NULL ){
       pDflt = 0;
     }
+    assert( IsOrdinaryTable(pNew) );
     if( (db->flags&SQLITE_ForeignKeys) && pNew->u.tab.pFKey && pDflt ){
       sqlite3ErrorIfNotEmpty(pParse, zDb, zTab,
           "Cannot add a REFERENCES column with non-NULL default value");
@@ -409,7 +410,8 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
     }
     /* substr() operations on characters, but addColOffset is in bytes. So we
     ** have to use printf() to translate between these units: */
-    assert( !IsVirtual(pTab) );
+    assert( IsOrdinaryTable(pTab) );
+    assert( IsOrdinaryTable(pNew) );
     sqlite3NestedParse(pParse, 
         "UPDATE \"%w\"." DFLT_SCHEMA_TABLE " SET "
           "sql = printf('%%.%ds, ',sql) || %Q"
@@ -503,6 +505,7 @@ void sqlite3AlterBeginAddColumn(Parse *pParse, SrcList *pSrc){
   }
 
   sqlite3MayAbort(pParse);
+  assert( IsOrdinaryTable(pTab) );
   assert( pTab->u.tab.addColOffset>0 );
   iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
 
@@ -533,7 +536,7 @@ void sqlite3AlterBeginAddColumn(Parse *pParse, SrcList *pSrc){
     pCol->zCnName = sqlite3DbStrDup(db, pCol->zCnName);
     pCol->hName = sqlite3StrIHash(pCol->zCnName);
   }
-  assert( !IsVirtual(pNew) );
+  assert( IsOrdinaryTable(pNew) );
   pNew->u.tab.pDfltList = sqlite3ExprListDup(db, pTab->u.tab.pDfltList, 0);
   pNew->pSchema = db->aDb[iDb].pSchema;
   pNew->u.tab.addColOffset = pTab->u.tab.addColOffset;
@@ -802,7 +805,9 @@ void sqlite3RenameTokenRemap(Parse *pParse, const void *pTo, const void *pFrom){
 static int renameUnmapExprCb(Walker *pWalker, Expr *pExpr){
   Parse *pParse = pWalker->pParse;
   sqlite3RenameTokenRemap(pParse, 0, (const void*)pExpr);
-  sqlite3RenameTokenRemap(pParse, 0, (const void*)&pExpr->y.pTab);
+  if( ExprUseYTab(pExpr) ){
+    sqlite3RenameTokenRemap(pParse, 0, (const void*)&pExpr->y.pTab);
+  }
   return WRC_Continue;
 }
 
@@ -864,7 +869,9 @@ static int renameUnmapSelectCb(Walker *pWalker, Select *p){
   Parse *pParse = pWalker->pParse;
   int i;
   if( pParse->nErr ) return WRC_Abort;
-  if( NEVER(p->selFlags & (SF_View|SF_CopyCte)) ){
+  testcase( p->selFlags & SF_View );
+  testcase( p->selFlags & SF_CopyCte );
+  if( p->selFlags & (SF_View|SF_CopyCte) ){
     return WRC_Prune;
   }
   if( ALWAYS(p->pEList) ){
@@ -1000,7 +1007,8 @@ static int renameColumnExprCb(Walker *pWalker, Expr *pExpr){
   ){
     renameTokenFind(pWalker->pParse, p, (void*)pExpr);
   }else if( pExpr->op==TK_COLUMN 
-   && pExpr->iColumn==p->iCol 
+   && pExpr->iColumn==p->iCol
+   && ALWAYS(ExprUseYTab(pExpr))
    && p->pTab==pExpr->y.pTab
   ){
     renameTokenFind(pWalker->pParse, p, (void*)pExpr);
@@ -1531,7 +1539,7 @@ static void renameColumnFunc(
 #endif
       }
 
-      assert( !IsVirtual(sParse.pNewTable) );
+      assert( IsOrdinaryTable(sParse.pNewTable) );
       for(pFKey=sParse.pNewTable->u.tab.pFKey; pFKey; pFKey=pFKey->pNextFrom){
         for(i=0; i<pFKey->nCol; i++){
           if( bFKOnly==0 && pFKey->aCol[i].iFrom==iCol ){
@@ -1603,7 +1611,10 @@ renameColumnFunc_done:
 */
 static int renameTableExprCb(Walker *pWalker, Expr *pExpr){
   RenameCtx *p = pWalker->u.pRename;
-  if( pExpr->op==TK_COLUMN && p->pTab==pExpr->y.pTab ){
+  if( pExpr->op==TK_COLUMN
+   && ALWAYS(ExprUseYTab(pExpr))
+   && p->pTab==pExpr->y.pTab
+  ){
     renameTokenFind(pWalker->pParse, p, (void*)&pExpr->y.pTab);
   }
   return WRC_Continue;
@@ -1721,7 +1732,7 @@ static void renameTableFunc(
            && !IsVirtual(pTab)
           ){
             FKey *pFKey;
-            assert( !IsVirtual(pTab) );
+            assert( IsOrdinaryTable(pTab) );
             for(pFKey=pTab->u.tab.pFKey; pFKey; pFKey=pFKey->pNextFrom){
               if( sqlite3_stricmp(pFKey->zTo, zOld)==0 ){
                 renameTokenFind(&sParse, &sCtx, (void*)pFKey->zTo);
@@ -2042,7 +2053,7 @@ static void dropColumnFunc(
     pEnd = renameTokenFind(&sParse, 0, (void*)pTab->aCol[iCol+1].zCnName);
     zEnd = (const char*)pEnd->t.z;
   }else{
-    assert( !IsVirtual(pTab) );
+    assert( IsOrdinaryTable(pTab) );
     zEnd = (const char*)&zSql[pTab->u.tab.addColOffset];
     while( ALWAYS(pCol->t.z[0]!=0) && pCol->t.z[0]!=',' ) pCol->t.z--;
   }

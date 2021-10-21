@@ -434,6 +434,7 @@ static i64 fts5ExprSynonymRowid(Fts5ExprTerm *pTerm, int bDesc, int *pbEof){
   int bRetValid = 0;
   Fts5ExprTerm *p;
 
+  assert( pTerm );
   assert( pTerm->pSynonym );
   assert( bDesc==0 || bDesc==1 );
   for(p=pTerm; p; p=p->pSynonym){
@@ -1874,7 +1875,7 @@ int sqlite3Fts5ExprClonePhrase(
     sCtx.pPhrase = sqlite3Fts5MallocZero(&rc, sizeof(Fts5ExprPhrase));
   }
 
-  if( rc==SQLITE_OK ){
+  if( rc==SQLITE_OK && ALWAYS(sCtx.pPhrase) ){
     /* All the allocations succeeded. Put the expression object together. */
     pNew->pIndex = pExpr->pIndex;
     pNew->pConfig = pExpr->pConfig;

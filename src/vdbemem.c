@@ -200,6 +200,7 @@ int sqlite3VdbeChangeEncoding(Mem *pMem, int desiredEnc){
 #ifndef SQLITE_OMIT_UTF16
   int rc;
 #endif
+  assert( pMem!=0 );
   assert( !sqlite3VdbeMemIsRowSet(pMem) );
   assert( desiredEnc==SQLITE_UTF8 || desiredEnc==SQLITE_UTF16LE
            || desiredEnc==SQLITE_UTF16BE );
@@ -332,6 +333,7 @@ static SQLITE_NOINLINE int vdbeMemAddTerminator(Mem *pMem){
 ** Return SQLITE_OK on success or SQLITE_NOMEM if malloc fails.
 */
 int sqlite3VdbeMemMakeWriteable(Mem *pMem){
+  assert( pMem!=0 );
   assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
   assert( !sqlite3VdbeMemIsRowSet(pMem) );
   if( (pMem->flags & (MEM_Str|MEM_Blob))!=0 ){
@@ -356,6 +358,7 @@ int sqlite3VdbeMemMakeWriteable(Mem *pMem){
 #ifndef SQLITE_OMIT_INCRBLOB
 int sqlite3VdbeMemExpandBlob(Mem *pMem){
   int nByte;
+  assert( pMem!=0 );
   assert( pMem->flags & MEM_Zero );
   assert( (pMem->flags&MEM_Blob)!=0 || MemNullNochng(pMem) );
   testcase( sqlite3_value_nochange(pMem) );
@@ -383,6 +386,7 @@ int sqlite3VdbeMemExpandBlob(Mem *pMem){
 ** Make sure the given Mem is \u0000 terminated.
 */
 int sqlite3VdbeMemNulTerminate(Mem *pMem){
+  assert( pMem!=0 );
   assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
   testcase( (pMem->flags & (MEM_Term|MEM_Str))==(MEM_Term|MEM_Str) );
   testcase( (pMem->flags & (MEM_Term|MEM_Str))==0 );
@@ -410,6 +414,7 @@ int sqlite3VdbeMemNulTerminate(Mem *pMem){
 int sqlite3VdbeMemStringify(Mem *pMem, u8 enc, u8 bForce){
   const int nByte = 32;
 
+  assert( pMem!=0 );
   assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
   assert( !(pMem->flags&MEM_Zero) );
   assert( !(pMem->flags&(MEM_Str|MEM_Blob)) );
@@ -445,6 +450,7 @@ int sqlite3VdbeMemFinalize(Mem *pMem, FuncDef *pFunc){
   sqlite3_context ctx;
   Mem t;
   assert( pFunc!=0 );
+  assert( pMem!=0 );
   assert( pFunc->xFinalize!=0 );
   assert( (pMem->flags & MEM_Null)!=0 || pFunc==pMem->u.pDef );
   assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
@@ -595,6 +601,7 @@ static SQLITE_NOINLINE i64 memIntValue(Mem *pMem){
 }
 i64 sqlite3VdbeIntValue(Mem *pMem){
   int flags;
+  assert( pMem!=0 );
   assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
   assert( EIGHT_BYTE_ALIGNMENT(pMem) );
   flags = pMem->flags;
@@ -623,6 +630,7 @@ static SQLITE_NOINLINE double memRealValue(Mem *pMem){
   return val;
 }
 double sqlite3VdbeRealValue(Mem *pMem){
+  assert( pMem!=0 );
   assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
   assert( EIGHT_BYTE_ALIGNMENT(pMem) );
   if( pMem->flags & MEM_Real ){
@@ -655,6 +663,7 @@ int sqlite3VdbeBooleanValue(Mem *pMem, int ifNull){
 */
 void sqlite3VdbeIntegerAffinity(Mem *pMem){
   i64 ix;
+  assert( pMem!=0 );
   assert( pMem->flags & MEM_Real );
   assert( !sqlite3VdbeMemIsRowSet(pMem) );
   assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
@@ -682,6 +691,7 @@ void sqlite3VdbeIntegerAffinity(Mem *pMem){
 ** Convert pMem to type integer.  Invalidate any prior representations.
 */
 int sqlite3VdbeMemIntegerify(Mem *pMem){
+  assert( pMem!=0 );
   assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
   assert( !sqlite3VdbeMemIsRowSet(pMem) );
   assert( EIGHT_BYTE_ALIGNMENT(pMem) );
@@ -696,6 +706,7 @@ int sqlite3VdbeMemIntegerify(Mem *pMem){
 ** Invalidate any prior representations.
 */
 int sqlite3VdbeMemRealify(Mem *pMem){
+  assert( pMem!=0 );
   assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
   assert( EIGHT_BYTE_ALIGNMENT(pMem) );
 
@@ -729,6 +740,7 @@ int sqlite3RealSameAsInt(double r1, sqlite3_int64 i){
 ** as much of the string as we can and ignore the rest.
 */
 int sqlite3VdbeMemNumerify(Mem *pMem){
+  assert( pMem!=0 );
   testcase( pMem->flags & MEM_Int );
   testcase( pMem->flags & MEM_Real );
   testcase( pMem->flags & MEM_IntReal );
@@ -1080,6 +1092,7 @@ int sqlite3VdbeMemSetStr(
   int iLimit;         /* Maximum allowed string or blob size */
   u16 flags = 0;      /* New value for pMem->flags */
 
+  assert( pMem!=0 );
   assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
   assert( !sqlite3VdbeMemIsRowSet(pMem) );
 
@@ -1405,8 +1418,10 @@ static int valueFromFunction(
 
   assert( pCtx!=0 );
   assert( (p->flags & EP_TokenOnly)==0 );
+  assert( ExprUseXList(p) );
   pList = p->x.pList;
   if( pList ) nVal = pList->nExpr;
+  assert( !ExprHasProperty(p, EP_IntValue) );
   pFunc = sqlite3FindFunction(db, p->u.zToken, nVal, enc, 0);
   assert( pFunc );
   if( (pFunc->funcFlags & (SQLITE_FUNC_CONSTANT|SQLITE_FUNC_SLOCHNG))==0 
@@ -1510,7 +1525,9 @@ static int valueFromExpr(
   assert( (pExpr->flags & EP_TokenOnly)==0 || pCtx==0 );
 
   if( op==TK_CAST ){
-    u8 aff = sqlite3AffinityType(pExpr->u.zToken,0);
+    u8 aff;
+    assert( !ExprHasProperty(pExpr, EP_IntValue) );
+    aff = sqlite3AffinityType(pExpr->u.zToken,0);
     rc = valueFromExpr(db, pExpr->pLeft, enc, aff, ppVal, pCtx);
     testcase( rc!=SQLITE_OK );
     if( *ppVal ){
@@ -1583,6 +1600,7 @@ static int valueFromExpr(
 #ifndef SQLITE_OMIT_BLOB_LITERAL
   else if( op==TK_BLOB ){
     int nVal;
+    assert( !ExprHasProperty(pExpr, EP_IntValue) );
     assert( pExpr->u.zToken[0]=='x' || pExpr->u.zToken[0]=='X' );
     assert( pExpr->u.zToken[1]=='\'' );
     pVal = valueNew(db, pCtx);
@@ -1600,6 +1618,7 @@ static int valueFromExpr(
   }
 #endif
   else if( op==TK_TRUEFALSE ){
+    assert( !ExprHasProperty(pExpr, EP_IntValue) );
     pVal = valueNew(db, pCtx);
     if( pVal ){
       pVal->flags = MEM_Int;

@@ -228,7 +228,10 @@ void sqlite3VtabUnlock(VTable *pVTab){
 */
 static VTable *vtabDisconnectAll(sqlite3 *db, Table *p){
   VTable *pRet = 0;
-  VTable *pVTable = p->u.vtab.p;
+  VTable *pVTable;
+
+  assert( IsVirtual(p) );
+  pVTable = p->u.vtab.p;
   p->u.vtab.p = 0;
 
   /* Assert that the mutex (if any) associated with the BtShared database 
@@ -336,6 +339,7 @@ void sqlite3VtabUnlockList(sqlite3 *db){
 ** database connection.
 */
 void sqlite3VtabClear(sqlite3 *db, Table *p){
+  assert( IsVirtual(p) );
   if( !db || db->pnBytesFreed==0 ) vtabDisconnectAll(0, p);
   if( p->u.vtab.azArg ){
     int i;
@@ -353,9 +357,12 @@ void sqlite3VtabClear(sqlite3 *db, Table *p){
 ** deleted.
 */
 static void addModuleArgument(Parse *pParse, Table *pTable, char *zArg){
-  sqlite3_int64 nBytes = sizeof(char *)*(2+pTable->u.vtab.nArg);
+  sqlite3_int64 nBytes;
   char **azModuleArg;
   sqlite3 *db = pParse->db;
+
+  assert( IsVirtual(pTable) );
+  nBytes = sizeof(char *)*(2+pTable->u.vtab.nArg);
   if( pTable->u.vtab.nArg+3>=db->aLimit[SQLITE_LIMIT_COLUMN] ){
     sqlite3ErrorMsg(pParse, "too many columns on %s", pTable->zName);
   }
@@ -442,6 +449,7 @@ void sqlite3VtabFinishParse(Parse *pParse, Token *pEnd){
   sqlite3 *db = pParse->db;         /* The database connection */
 
   if( pTab==0 ) return;
+  assert( IsVirtual(pTab) );
   addArgumentToVtab(pParse);
   pParse->sArg.z = 0;
   if( pTab->u.vtab.nArg<1 ) return;
@@ -559,12 +567,15 @@ static int vtabCallConstructor(
   VtabCtx sCtx;
   VTable *pVTable;
   int rc;
-  const char *const*azArg = (const char *const*)pTab->u.vtab.azArg;
+  const char *const*azArg;
   int nArg = pTab->u.vtab.nArg;
   char *zErr = 0;
   char *zModuleName;
   int iDb;
   VtabCtx *pCtx;
+
+  assert( IsVirtual(pTab) );
+  azArg = (const char *const*)pTab->u.vtab.azArg;
 
   /* Check that the virtual-table is not already being initialized */
   for(pCtx=db->pVtabCtx; pCtx; pCtx=pCtx->pPrior){
@@ -893,7 +904,7 @@ int sqlite3VtabCallDestroy(sqlite3 *db, int iDb, const char *zTab){
   Table *pTab;
 
   pTab = sqlite3FindTable(db, zTab, db->aDb[iDb].zDbSName);
-  if( pTab!=0 && ALWAYS(pTab->u.vtab.p!=0) ){
+  if( pTab!=0 && ALWAYS(IsVirtual(pTab)) && ALWAYS(pTab->u.vtab.p!=0) ){
     VTable *p;
     int (*xDestroy)(sqlite3_vtab *);
     for(p=pTab->u.vtab.p; p; p=p->pNext){
@@ -1126,6 +1137,7 @@ FuncDef *sqlite3VtabOverloadFunction(
   /* Check to see the left operand is a column in a virtual table */
   if( NEVER(pExpr==0) ) return pDef;
   if( pExpr->op!=TK_COLUMN ) return pDef;
+  assert( ExprUseYTab(pExpr) );
   pTab = pExpr->y.pTab;
   if( pTab==0 ) return pDef;
   if( !IsVirtual(pTab) ) return pDef;
