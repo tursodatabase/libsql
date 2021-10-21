@@ -3095,7 +3095,6 @@ static int lockBtree(BtShared *pBt){
   MemPage *pPage1;     /* Page 1 of the database file */
   u32 nPage;           /* Number of pages in the database */
   u32 nPageFile = 0;   /* Number of pages in the database file */
-  u32 nPageHeader;     /* Number of pages in the database according to hdr */
 
   assert( sqlite3_mutex_held(pBt->mutex) );
   assert( pBt->pPage1==0 );
@@ -3107,7 +3106,7 @@ static int lockBtree(BtShared *pBt){
   /* Do some checking to help insure the file we opened really is
   ** a valid database file. 
   */
-  nPage = nPageHeader = get4byte(28+(u8*)pPage1->aData);
+  nPage = get4byte(28+(u8*)pPage1->aData);
   sqlite3PagerPagecount(pBt->pPager, (int*)&nPageFile);
   if( nPage==0 || memcmp(24+(u8*)pPage1->aData, 92+(u8*)pPage1->aData,4)!=0 ){
     nPage = nPageFile;
@@ -4837,7 +4836,9 @@ static int accessPayload(
   assert( pPage );
   assert( eOp==0 || eOp==1 );
   assert( pCur->eState==CURSOR_VALID );
-  assert( pCur->ix<pPage->nCell );
+  if( pCur->ix>=pPage->nCell ){
+    return SQLITE_CORRUPT_PAGE(pPage);
+  }
   assert( cursorHoldsMutex(pCur) );
 
   getCellInfo(pCur);
@@ -5024,7 +5025,6 @@ int sqlite3BtreePayload(BtCursor *pCur, u32 offset, u32 amt, void *pBuf){
   assert( cursorHoldsMutex(pCur) );
   assert( pCur->eState==CURSOR_VALID );
   assert( pCur->iPage>=0 && pCur->pPage );
-  assert( pCur->ix<pCur->pPage->nCell );
   return accessPayload(pCur, offset, amt, (unsigned char*)pBuf, 0);
 }
 
@@ -5086,7 +5086,7 @@ static const void *fetchPayload(
   assert( pCur->eState==CURSOR_VALID );
   assert( sqlite3_mutex_held(pCur->pBtree->db->mutex) );
   assert( cursorOwnsBtShared(pCur) );
-  assert( pCur->ix<pCur->pPage->nCell );
+  assert( pCur->ix<pCur->pPage->nCell || CORRUPT_DB );
   assert( pCur->info.nSize>0 );
   assert( pCur->info.pPayload>pCur->pPage->aData || CORRUPT_DB );
   assert( pCur->info.pPayload<pCur->pPage->aDataEnd ||CORRUPT_DB);
@@ -5872,16 +5872,6 @@ static SQLITE_NOINLINE int btreeNext(BtCursor *pCur){
     return SQLITE_CORRUPT_BKPT;
   }
 
-  /* If the database file is corrupt, it is possible for the value of idx 
-  ** to be invalid here. This can only occur if a second cursor modifies
-  ** the page while cursor pCur is holding a reference to it. Which can
-  ** only happen if the database is corrupt in such a way as to link the
-  ** page into more than one b-tree structure.
-  **
-  ** Update 2019-12-23: appears to long longer be possible after the
-  ** addition of anotherValidCursor() condition on balance_deeper().  */
-  harmless( idx>pPage->nCell );
-
   if( idx>=pPage->nCell ){
     if( !pPage->leaf ){
       rc = moveToChild(pCur, get4byte(&pPage->aData[pPage->hdrOffset+8]));
@@ -6369,7 +6359,7 @@ static int freePage2(BtShared *pBt, MemPage *pMemPage, Pgno iPage){
   assert( CORRUPT_DB || iPage>1 );
   assert( !pMemPage || pMemPage->pgno==iPage );
 
-  if( iPage<2 || iPage>pBt->nPage ){
+  if( NEVER(iPage<2) || iPage>pBt->nPage ){
     return SQLITE_CORRUPT_BKPT;
   }
   if( pMemPage ){
@@ -7687,11 +7677,10 @@ static int balance_nonroot(
   Pgno aPgno[NB+2];            /* Page numbers of new pages before shuffling */
   Pgno aPgOrder[NB+2];         /* Copy of aPgno[] used for sorting pages */
   u16 aPgFlags[NB+2];          /* flags field of new pages before shuffling */
-  CellArray b;                  /* Parsed information on cells being balanced */
+  CellArray b;                 /* Parsed information on cells being balanced */
 
   memset(abDone, 0, sizeof(abDone));
-  b.nCell = 0;
-  b.apCell = 0;
+  memset(&b, 0, sizeof(b));
   pBt = pParent->pBt;
   assert( sqlite3_mutex_held(pBt->mutex) );
   assert( sqlite3PagerIswriteable(pParent->pDbPage) );
@@ -8502,7 +8491,7 @@ static int balance_deeper(MemPage *pRoot, MemPage **ppChild){
 ** Return SQLITE_CORRUPT if any cursor other than pCur is currently valid
 ** on the same B-tree as pCur.
 **
-** This can if a database is corrupt with two or more SQL tables
+** This can occur if a database is corrupt with two or more SQL tables
 ** pointing to the same b-tree.  If an insert occurs on one SQL table
 ** and causes a BEFORE TRIGGER to do a secondary insert on the other SQL
 ** table linked to the same b-tree.  If the secondary insert causes a
@@ -8971,7 +8960,10 @@ int sqlite3BtreeInsert(
   idx = pCur->ix;
   if( loc==0 ){
     CellInfo info;
-    assert( idx<pPage->nCell );
+    assert( idx>=0 );
+    if( idx>=pPage->nCell ){
+      return SQLITE_CORRUPT_BKPT;
+    }
     rc = sqlite3PagerWrite(pPage->pDbPage);
     if( rc ){
       goto end_insert;
@@ -9557,11 +9549,12 @@ static int clearDatabasePage(
   }
   rc = getAndInitPage(pBt, pgno, &pPage, 0, 0);
   if( rc ) return rc;
-  if( pPage->bBusy ){
+  if( (pBt->openFlags & BTREE_SINGLE)==0 
+   && sqlite3PagerPageRefcount(pPage->pDbPage)!=1
+  ){
     rc = SQLITE_CORRUPT_BKPT;
     goto cleardatabasepage_out;
   }
-  pPage->bBusy = 1;
   hdr = pPage->hdrOffset;
   for(i=0; i<pPage->nCell; i++){
     pCell = findCell(pPage, i);
@@ -9588,7 +9581,6 @@ static int clearDatabasePage(
   }
 
 cleardatabasepage_out:
-  pPage->bBusy = 0;
   releasePage(pPage);
   return rc;
 }
@@ -9667,10 +9659,10 @@ static int btreeDropTable(Btree *p, Pgno iTable, int *piMoved){
     return SQLITE_CORRUPT_BKPT;
   }
 
-  rc = btreeGetPage(pBt, (Pgno)iTable, &pPage, 0);
-  if( rc ) return rc;
   rc = sqlite3BtreeClearTable(p, iTable, 0);
-  if( rc ){
+  if( rc ) return rc;
+  rc = btreeGetPage(pBt, (Pgno)iTable, &pPage, 0);
+  if( NEVER(rc) ){
     releasePage(pPage);
     return rc;
   }

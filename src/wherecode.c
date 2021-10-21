@@ -416,16 +416,23 @@ static Expr *removeUnindexableInClauseTerms(
   Expr *pNew;
   pNew = sqlite3ExprDup(db, pX, 0);
   if( db->mallocFailed==0 ){
-    ExprList *pOrigRhs = pNew->x.pSelect->pEList;  /* Original unmodified RHS */
-    ExprList *pOrigLhs = pNew->pLeft->x.pList;     /* Original unmodified LHS */
+    ExprList *pOrigRhs;         /* Original unmodified RHS */
+    ExprList *pOrigLhs;         /* Original unmodified LHS */
     ExprList *pRhs = 0;         /* New RHS after modifications */
     ExprList *pLhs = 0;         /* New LHS after mods */
     int i;                      /* Loop counter */
     Select *pSelect;            /* Pointer to the SELECT on the RHS */
 
+    assert( ExprUseXSelect(pNew) );
+    pOrigRhs = pNew->x.pSelect->pEList;
+    assert( pNew->pLeft!=0 );
+    assert( ExprUseXList(pNew->pLeft) );
+    pOrigLhs = pNew->pLeft->x.pList;
     for(i=iEq; i<pLoop->nLTerm; i++){
       if( pLoop->aLTerm[i]->pExpr==pX ){
-        int iField = pLoop->aLTerm[i]->u.x.iField - 1;
+        int iField;
+        assert( (pLoop->aLTerm[i]->eOperator & (WO_OR|WO_AND))==0 );
+        iField = pLoop->aLTerm[i]->u.x.iField - 1;
         if( pOrigRhs->a[iField].pExpr==0 ) continue; /* Duplicate PK column */
         pRhs = sqlite3ExprListAppend(pParse, pRhs, pOrigRhs->a[iField].pExpr);
         pOrigRhs->a[iField].pExpr = 0;
@@ -540,7 +547,7 @@ static int codeEqualityTerm(
     }
 
     iTab = 0;
-    if( (pX->flags & EP_xIsSelect)==0 || pX->x.pSelect->pEList->nExpr==1 ){
+    if( !ExprUseXSelect(pX) || pX->x.pSelect->pEList->nExpr==1 ){
       eType = sqlite3FindInIndex(pParse, pX, IN_INDEX_LOOP, 0, 0, &iTab);
     }else{
       sqlite3 *db = pParse->db;
@@ -562,8 +569,8 @@ static int codeEqualityTerm(
     sqlite3VdbeAddOp2(v, bRev ? OP_Last : OP_Rewind, iTab, 0);
     VdbeCoverageIf(v, bRev);
     VdbeCoverageIf(v, !bRev);
-    assert( (pLoop->wsFlags & WHERE_MULTI_OR)==0 );
 
+    assert( (pLoop->wsFlags & WHERE_MULTI_OR)==0 );
     pLoop->wsFlags |= WHERE_IN_ABLE;
     if( pLevel->u.in.nIn==0 ){
       pLevel->addrNxt = sqlite3VdbeMakeLabel(pParse);
@@ -1105,7 +1112,7 @@ static void codeExprOrVector(Parse *pParse, Expr *p, int iReg, int nReg){
   assert( nReg>0 );
   if( p && sqlite3ExprIsVector(p) ){
 #ifndef SQLITE_OMIT_SUBQUERY
-    if( (p->flags & EP_xIsSelect) ){
+    if( ExprUseXSelect(p) ){
       Vdbe *v = pParse->pVdbe;
       int iSelect;
       assert( p->op==TK_SELECT );
@@ -1115,7 +1122,9 @@ static void codeExprOrVector(Parse *pParse, Expr *p, int iReg, int nReg){
 #endif
     {
       int i;
-      ExprList *pList = p->x.pList;
+      const ExprList *pList;
+      assert( ExprUseXList(p) );
+      pList = p->x.pList;
       assert( nReg<=pList->nExpr );
       for(i=0; i<nReg; i++){
         sqlite3ExprCode(pParse, pList->a[i].pExpr, iReg+i);
@@ -1168,10 +1177,10 @@ static int whereIndexExprTransNode(Walker *p, Expr *pExpr){
     pExpr->op = TK_COLUMN;
     pExpr->iTable = pX->iIdxCur;
     pExpr->iColumn = pX->iIdxCol;
-    pExpr->y.pTab = 0;
     testcase( ExprHasProperty(pExpr, EP_Skip) );
     testcase( ExprHasProperty(pExpr, EP_Unlikely) );
-    ExprClearProperty(pExpr, EP_Skip|EP_Unlikely);
+    ExprClearProperty(pExpr, EP_Skip|EP_Unlikely|EP_WinFunc|EP_Subrtn);
+    pExpr->y.pTab = 0;
     return WRC_Prune;
   }else{
     return WRC_Continue;
@@ -1186,7 +1195,7 @@ static int whereIndexExprTransColumn(Walker *p, Expr *pExpr){
   if( pExpr->op==TK_COLUMN ){
     IdxExprTrans *pX = p->u.pIdxTrans;
     if( pExpr->iTable==pX->iTabCur && pExpr->iColumn==pX->iTabCol ){
-      assert( pExpr->y.pTab!=0 );
+      assert( ExprUseYTab(pExpr) && pExpr->y.pTab!=0 );
       preserveExpr(pX, pExpr);
       pExpr->affExpr = sqlite3TableColumnAffinity(pExpr->y.pTab,pExpr->iColumn);
       pExpr->iTable = pX->iIdxCur;
@@ -1234,7 +1243,7 @@ static void whereIndexExprTrans(
   for(iIdxCol=0; iIdxCol<pIdx->nColumn; iIdxCol++){
     i16 iRef = pIdx->aiColumn[iIdxCol];
     if( iRef==XN_EXPR ){
-      assert( aColExpr->a[iIdxCol].pExpr!=0 );
+      assert( aColExpr!=0 && aColExpr->a[iIdxCol].pExpr!=0 );
       x.pIdxExpr = aColExpr->a[iIdxCol].pExpr;
       if( sqlite3ExprIsConstant(x.pIdxExpr) ) continue;
       w.xExprCallback = whereIndexExprTransNode;
@@ -1423,7 +1432,12 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     pLevel->p1 = iCur;
     pLevel->op = pWInfo->eOnePass ? OP_Noop : OP_VNext;
     pLevel->p2 = sqlite3VdbeCurrentAddr(v);
-    iIn = pLevel->u.in.nIn;
+    assert( (pLoop->wsFlags & WHERE_MULTI_OR)==0 );
+    if( pLoop->wsFlags & WHERE_IN_ABLE ){
+      iIn = pLevel->u.in.nIn;
+    }else{
+      iIn = 0;
+    }
     for(j=nConstraint-1; j>=0; j--){
       pTerm = pLoop->aLTerm[j];
       if( (pTerm->eOperator & WO_IN)!=0 ) iIn--;
@@ -2312,7 +2326,10 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       }
     }
     ExplainQueryPlanPop(pParse);
-    pLevel->u.pCovidx = pCov;
+    assert( pLevel->pWLoop==pLoop );
+    assert( (pLoop->wsFlags & WHERE_MULTI_OR)!=0 );
+    assert( (pLoop->wsFlags & WHERE_IN_ABLE)==0 );
+    pLevel->u.pCoveringIdx = pCov;
     if( pCov ) pLevel->iIdxCur = iCovCur;
     if( pAndExpr ){
       pAndExpr->pLeft = 0;
@@ -2456,12 +2473,13 @@ Bitmask sqlite3WhereCodeOneLoopStart(
 #endif
     assert( !ExprHasProperty(pE, EP_FromJoin) );
     assert( (pTerm->prereqRight & pLevel->notReady)!=0 );
+    assert( (pTerm->eOperator & (WO_OR|WO_AND))==0 );
     pAlt = sqlite3WhereFindTerm(pWC, iCur, pTerm->u.x.leftColumn, notReady,
                     WO_EQ|WO_IN|WO_IS, 0);
     if( pAlt==0 ) continue;
     if( pAlt->wtFlags & (TERM_CODED) ) continue;
     if( (pAlt->eOperator & WO_IN) 
-     && (pAlt->pExpr->flags & EP_xIsSelect)
+     && ExprUseXSelect(pAlt->pExpr)
      && (pAlt->pExpr->x.pSelect->pEList->nExpr>1)
     ){
       continue;

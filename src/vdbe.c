@@ -4093,7 +4093,7 @@ case OP_OpenEphemeral: {
     aMem[pOp->p3].z = "";
   }
   pCx = p->apCsr[pOp->p1];
-  if( pCx && !pCx->hasBeenDuped ){
+  if( pCx && !pCx->hasBeenDuped &&  ALWAYS(pOp->p2<=pCx->nField) ){
     /* If the ephermeral table is already open and has no duplicates from
     ** OP_OpenDup, then erase all existing content so that the table is
     ** empty again, rather than creating a new table. */
@@ -5256,7 +5256,7 @@ case OP_Insert: {
     assert( (pOp->p5 & OPFLAG_ISNOOP) || HasRowid(pTab) );
   }else{
     pTab = 0;
-    zDb = 0;  /* Not needed.  Silence a compiler warning. */
+    zDb = 0;
   }
 
 #ifdef SQLITE_ENABLE_PREUPDATE_HOOK
@@ -5409,13 +5409,14 @@ case OP_Delete: {
       pC->movetoTarget = sqlite3BtreeIntegerKey(pC->uc.pCursor);
     }
   }else{
-    zDb = 0;   /* Not needed.  Silence a compiler warning. */
-    pTab = 0;  /* Not needed.  Silence a compiler warning. */
+    zDb = 0;
+    pTab = 0;
   }
 
 #ifdef SQLITE_ENABLE_PREUPDATE_HOOK
   /* Invoke the pre-update-hook if required. */
-  if( db->xPreUpdateCallback && pOp->p4.pTab ){
+  assert( db->xPreUpdateCallback==0 || pTab==pOp->p4.pTab );
+  if( db->xPreUpdateCallback && pTab ){
     assert( !(opflags & OPFLAG_ISUPDATE) 
          || HasRowid(pTab)==0 
          || (aMem[pOp->p3].flags & MEM_Int) 
@@ -5456,7 +5457,7 @@ case OP_Delete: {
   /* Invoke the update-hook if required. */
   if( opflags & OPFLAG_NCHANGE ){
     p->nChange++;
-    if( db->xUpdateCallback && HasRowid(pTab) ){
+    if( db->xUpdateCallback && ALWAYS(pTab!=0) && HasRowid(pTab) ){
       db->xUpdateCallback(db->pUpdateArg, SQLITE_DELETE, zDb, pTab->zName,
           pC->movetoTarget);
       assert( pC->iDb>=0 );

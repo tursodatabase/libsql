@@ -3024,6 +3024,7 @@ static int readDbPage(PgHdr *pPg){
 */
 static void pager_write_changecounter(PgHdr *pPg){
   u32 change_counter;
+  if( NEVER(pPg==0) ) return;
 
   /* Increment the value just read and write it back to byte 24. */
   change_counter = sqlite3Get4byte((u8*)pPg->pPager->dbFileVers)+1;
@@ -7128,7 +7129,7 @@ int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno, int isCommit){
   pPgOld = sqlite3PagerLookup(pPager, pgno);
   assert( !pPgOld || pPgOld->nRef==1 || CORRUPT_DB );
   if( pPgOld ){
-    if( pPgOld->nRef>1 ){
+    if( NEVER(pPgOld->nRef>1) ){
       sqlite3PagerUnrefNotNull(pPgOld);
       return SQLITE_CORRUPT_BKPT;
     }

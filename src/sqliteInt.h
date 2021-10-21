@@ -437,9 +437,11 @@
 ** can insure that all cases are evaluated.
 **
 */
-#ifdef SQLITE_COVERAGE_TEST
-  void sqlite3Coverage(int);
-# define testcase(X)  if( X ){ sqlite3Coverage(__LINE__); }
+#if defined(SQLITE_COVERAGE_TEST) || defined(SQLITE_DEBUG)
+# ifndef SQLITE_AMALGAMATION
+    extern unsigned int sqlite3CoverageCounter;
+# endif
+# define testcase(X)  if( X ){ sqlite3CoverageCounter += (unsigned)__LINE__; }
 #else
 # define testcase(X)
 #endif
@@ -470,6 +472,14 @@
 #endif
 
 /*
+** Disable ALWAYS() and NEVER() (make them pass-throughs) for coverage
+** and mutation testing
+*/
+#if defined(SQLITE_COVERAGE_TEST) || defined(SQLITE_MUTATION_TEST)
+# define SQLITE_OMIT_AUXILIARY_SAFETY_CHECKS  1
+#endif
+
+/*
 ** The ALWAYS and NEVER macros surround boolean expressions which
 ** are intended to always be true or false, respectively.  Such
 ** expressions could be omitted from the code completely.  But they
@@ -484,7 +494,7 @@
 ** be true and false so that the unreachable code they specify will
 ** not be counted as untested code.
 */
-#if defined(SQLITE_COVERAGE_TEST) || defined(SQLITE_MUTATION_TEST)
+#if defined(SQLITE_OMIT_AUXILIARY_SAFETY_CHECKS)
 # define ALWAYS(X)      (1)
 # define NEVER(X)       (0)
 #elif !defined(NDEBUG)
@@ -493,26 +503,6 @@
 #else
 # define ALWAYS(X)      (X)
 # define NEVER(X)       (X)
-#endif
-
-/*
-** The harmless(X) macro indicates that expression X is usually false
-** but can be true without causing any problems, but we don't know of
-** any way to cause X to be true.
-**
-** In debugging and testing builds, this macro will abort if X is ever
-** true.  In this way, developers are alerted to a possible test case
-** that causes X to be true.  If a harmless macro ever fails, that is
-** an opportunity to change the macro into a testcase() and add a new
-** test case to the test suite.
-**
-** For normal production builds, harmless(X) is a no-op, since it does
-** not matter whether expression X is true or false.
-*/
-#ifdef SQLITE_DEBUG
-# define harmless(X)  assert(!(X));
-#else
-# define harmless(X)
 #endif
 
 /*
@@ -1571,10 +1561,10 @@ struct sqlite3 {
   int nExtension;               /* Number of loaded extensions */
   void **aExtension;            /* Array of shared library handles */
   union {
-    void (*xLegacy)(void*,const char*);     /* Legacy trace function */
-    int (*xV2)(u32,void*,void*,void*);      /* V2 Trace function */
+    void (*xLegacy)(void*,const char*);   /* mTrace==SQLITE_TRACE_LEGACY */
+    int (*xV2)(u32,void*,void*,void*);    /* All other mTrace values */
   } trace;
-  void *pTraceArg;                          /* Argument to the trace function */
+  void *pTraceArg;                        /* Argument to the trace function */
 #ifndef SQLITE_OMIT_DEPRECATED
   void (*xProfile)(void*,const char*,u64);  /* Profiling function */
   void *pProfileArg;                        /* Argument to profile function */
@@ -1819,7 +1809,7 @@ struct FuncDef {
   union {
     FuncDef *pHash;      /* Next with a different name but the same hash */
     FuncDestructor *pDestructor;   /* Reference counted destructor function */
-  } u;
+  } u; /* pHash if SQLITE_FUNC_BUILTIN, pDestructor otherwise */
 };
 
 /*
@@ -1880,6 +1870,7 @@ struct FuncDestructor {
 #define SQLITE_FUNC_SUBTYPE  0x00100000 /* Result likely to have sub-type */
 #define SQLITE_FUNC_UNSAFE   0x00200000 /* Function has side effects */
 #define SQLITE_FUNC_INLINE   0x00400000 /* Functions implemented in-line */
+#define SQLITE_FUNC_BUILTIN  0x00800000 /* This is a built-in function */
 #define SQLITE_FUNC_ANYORDER 0x08000000 /* count/min/max aggregate */
 
 /* Identifier numbers for each in-line function */
@@ -1958,44 +1949,51 @@ struct FuncDestructor {
 **     parameter.
 */
 #define FUNCTION(zName, nArg, iArg, bNC, xFunc) \
-  {nArg, SQLITE_FUNC_CONSTANT|SQLITE_UTF8|(bNC*SQLITE_FUNC_NEEDCOLL), \
+  {nArg, SQLITE_FUNC_BUILTIN|\
+   SQLITE_FUNC_CONSTANT|SQLITE_UTF8|(bNC*SQLITE_FUNC_NEEDCOLL), \
    SQLITE_INT_TO_PTR(iArg), 0, xFunc, 0, 0, 0, #zName, {0} }
 #define VFUNCTION(zName, nArg, iArg, bNC, xFunc) \
-  {nArg, SQLITE_UTF8|(bNC*SQLITE_FUNC_NEEDCOLL), \
+  {nArg, SQLITE_FUNC_BUILTIN|SQLITE_UTF8|(bNC*SQLITE_FUNC_NEEDCOLL), \
    SQLITE_INT_TO_PTR(iArg), 0, xFunc, 0, 0, 0, #zName, {0} }
 #define SFUNCTION(zName, nArg, iArg, bNC, xFunc) \
-  {nArg, SQLITE_UTF8|SQLITE_DIRECTONLY|SQLITE_FUNC_UNSAFE, \
+  {nArg, SQLITE_FUNC_BUILTIN|SQLITE_UTF8|SQLITE_DIRECTONLY|SQLITE_FUNC_UNSAFE, \
    SQLITE_INT_TO_PTR(iArg), 0, xFunc, 0, 0, 0, #zName, {0} }
 #define MFUNCTION(zName, nArg, xPtr, xFunc) \
-  {nArg, SQLITE_FUNC_CONSTANT|SQLITE_UTF8, \
+  {nArg, SQLITE_FUNC_BUILTIN|SQLITE_FUNC_CONSTANT|SQLITE_UTF8, \
    xPtr, 0, xFunc, 0, 0, 0, #zName, {0} }
 #define INLINE_FUNC(zName, nArg, iArg, mFlags) \
-  {nArg, SQLITE_UTF8|SQLITE_FUNC_INLINE|SQLITE_FUNC_CONSTANT|(mFlags), \
+  {nArg, SQLITE_FUNC_BUILTIN|\
+   SQLITE_UTF8|SQLITE_FUNC_INLINE|SQLITE_FUNC_CONSTANT|(mFlags), \
    SQLITE_INT_TO_PTR(iArg), 0, noopFunc, 0, 0, 0, #zName, {0} }
 #define TEST_FUNC(zName, nArg, iArg, mFlags) \
-  {nArg, SQLITE_UTF8|SQLITE_FUNC_INTERNAL|SQLITE_FUNC_TEST| \
+  {nArg, SQLITE_FUNC_BUILTIN|\
+         SQLITE_UTF8|SQLITE_FUNC_INTERNAL|SQLITE_FUNC_TEST| \
          SQLITE_FUNC_INLINE|SQLITE_FUNC_CONSTANT|(mFlags), \
    SQLITE_INT_TO_PTR(iArg), 0, noopFunc, 0, 0, 0, #zName, {0} }
 #define DFUNCTION(zName, nArg, iArg, bNC, xFunc) \
-  {nArg, SQLITE_FUNC_SLOCHNG|SQLITE_UTF8, \
+  {nArg, SQLITE_FUNC_BUILTIN|SQLITE_FUNC_SLOCHNG|SQLITE_UTF8, \
    0, 0, xFunc, 0, 0, 0, #zName, {0} }
 #define PURE_DATE(zName, nArg, iArg, bNC, xFunc) \
-  {nArg, SQLITE_FUNC_SLOCHNG|SQLITE_UTF8|SQLITE_FUNC_CONSTANT, \
+  {nArg, SQLITE_FUNC_BUILTIN|\
+         SQLITE_FUNC_SLOCHNG|SQLITE_UTF8|SQLITE_FUNC_CONSTANT, \
    (void*)&sqlite3Config, 0, xFunc, 0, 0, 0, #zName, {0} }
 #define FUNCTION2(zName, nArg, iArg, bNC, xFunc, extraFlags) \
-  {nArg,SQLITE_FUNC_CONSTANT|SQLITE_UTF8|(bNC*SQLITE_FUNC_NEEDCOLL)|extraFlags,\
+  {nArg, SQLITE_FUNC_BUILTIN|\
+   SQLITE_FUNC_CONSTANT|SQLITE_UTF8|(bNC*SQLITE_FUNC_NEEDCOLL)|extraFlags,\
    SQLITE_INT_TO_PTR(iArg), 0, xFunc, 0, 0, 0, #zName, {0} }
 #define STR_FUNCTION(zName, nArg, pArg, bNC, xFunc) \
-  {nArg, SQLITE_FUNC_SLOCHNG|SQLITE_UTF8|(bNC*SQLITE_FUNC_NEEDCOLL), \
+  {nArg, SQLITE_FUNC_BUILTIN|\
+   SQLITE_FUNC_SLOCHNG|SQLITE_UTF8|(bNC*SQLITE_FUNC_NEEDCOLL), \
    pArg, 0, xFunc, 0, 0, 0, #zName, }
 #define LIKEFUNC(zName, nArg, arg, flags) \
-  {nArg, SQLITE_FUNC_CONSTANT|SQLITE_UTF8|flags, \
+  {nArg, SQLITE_FUNC_BUILTIN|SQLITE_FUNC_CONSTANT|SQLITE_UTF8|flags, \
    (void *)arg, 0, likeFunc, 0, 0, 0, #zName, {0} }
 #define WAGGREGATE(zName, nArg, arg, nc, xStep, xFinal, xValue, xInverse, f) \
-  {nArg, SQLITE_UTF8|(nc*SQLITE_FUNC_NEEDCOLL)|f, \
+  {nArg, SQLITE_FUNC_BUILTIN|SQLITE_UTF8|(nc*SQLITE_FUNC_NEEDCOLL)|f, \
    SQLITE_INT_TO_PTR(arg), 0, xStep,xFinal,xValue,xInverse,#zName, {0}}
 #define INTERNAL_FUNCTION(zName, nArg, xFunc) \
-  {nArg, SQLITE_FUNC_INTERNAL|SQLITE_UTF8|SQLITE_FUNC_CONSTANT, \
+  {nArg, SQLITE_FUNC_BUILTIN|\
+   SQLITE_FUNC_INTERNAL|SQLITE_UTF8|SQLITE_FUNC_CONSTANT, \
    0, 0, xFunc, 0, 0, 0, #zName, {0} }
 
 
@@ -2721,10 +2719,10 @@ typedef int ynVar;
 ** tree.
 **
 ** If the expression is an SQL literal (TK_INTEGER, TK_FLOAT, TK_BLOB,
-** or TK_STRING), then Expr.token contains the text of the SQL literal. If
-** the expression is a variable (TK_VARIABLE), then Expr.token contains the
+** or TK_STRING), then Expr.u.zToken contains the text of the SQL literal. If
+** the expression is a variable (TK_VARIABLE), then Expr.u.zToken contains the
 ** variable name. Finally, if the expression is an SQL function (TK_FUNCTION),
-** then Expr.token contains the name of the function.
+** then Expr.u.zToken contains the name of the function.
 **
 ** Expr.pRight and Expr.pLeft are the left and right subexpressions of a
 ** binary operator. Either or both may be NULL.
@@ -2764,7 +2762,7 @@ typedef int ynVar;
 ** help reduce memory requirements, sometimes an Expr object will be
 ** truncated.  And to reduce the number of memory allocations, sometimes
 ** two or more Expr objects will be stored in a single memory allocation,
-** together with Expr.zToken strings.
+** together with Expr.u.zToken strings.
 **
 ** If the EP_Reduced and EP_TokenOnly flags are set when
 ** an Expr object is truncated.  When EP_Reduced is set, then all
@@ -2833,8 +2831,7 @@ struct Expr {
   } y;
 };
 
-/*
-** The following are the meanings of bits in the Expr.flags field.
+/* The following are the meanings of bits in the Expr.flags field.
 ** Value restrictions:
 **
 **          EP_Agg == NC_HasAgg == SF_HasAgg
@@ -2873,14 +2870,12 @@ struct Expr {
 #define EP_FromDDL  0x40000000 /* Originates from sqlite_schema */
                /*   0x80000000 // Available */
 
-/*
-** The EP_Propagate mask is a set of properties that automatically propagate
+/* The EP_Propagate mask is a set of properties that automatically propagate
 ** upwards into parent nodes.
 */
 #define EP_Propagate (EP_Collate|EP_Subquery|EP_HasFunc)
 
-/*
-** These macros can be used to test, set, or clear bits in the
+/* Macros can be used to test, set, or clear bits in the
 ** Expr.flags field.
 */
 #define ExprHasProperty(E,P)     (((E)->flags&(P))!=0)
@@ -2890,6 +2885,16 @@ struct Expr {
 #define ExprAlwaysTrue(E)   (((E)->flags&(EP_FromJoin|EP_IsTrue))==EP_IsTrue)
 #define ExprAlwaysFalse(E)  (((E)->flags&(EP_FromJoin|EP_IsFalse))==EP_IsFalse)
 
+/* Macros used to ensure that the correct members of unions are accessed
+** in Expr.
+*/
+#define ExprUseUToken(E)    (((E)->flags&EP_IntValue)==0)
+#define ExprUseUValue(E)    (((E)->flags&EP_IntValue)!=0)
+#define ExprUseXList(E)     (((E)->flags&EP_xIsSelect)==0)
+#define ExprUseXSelect(E)   (((E)->flags&EP_xIsSelect)!=0)
+#define ExprUseYTab(E)      (((E)->flags&(EP_WinFunc|EP_Subrtn))==0)
+#define ExprUseYWin(E)      (((E)->flags&EP_WinFunc)!=0)
+#define ExprUseYSub(E)      (((E)->flags&EP_Subrtn)!=0)
 
 /* Flags for use with Expr.vvaFlags
 */
@@ -2972,11 +2977,12 @@ struct ExprList {
     unsigned bSorterRef :1; /* Defer evaluation until after sorting */
     unsigned bNulls: 1;     /* True if explicit "NULLS FIRST/LAST" */
     union {
-      struct {
+      struct {             /* Used by any ExprList other than Parse.pConsExpr */
         u16 iOrderByCol;      /* For ORDER BY, column number in result set */
         u16 iAlias;           /* Index into Parse.aAlias[] for zName */
       } x;
-      int iConstExprReg;      /* Register in which Expr value is cached */
+      int iConstExprReg;   /* Register in which Expr value is cached. Used only
+                           ** by Parse.pConstExpr */
     } u;
   } a[1];                  /* One slot for each expression in the list */
 };
@@ -3014,6 +3020,13 @@ struct IdList {
 /*
 ** The SrcItem object represents a single term in the FROM clause of a query.
 ** The SrcList object is mostly an array of SrcItems.
+**
+** Union member validity:
+**
+**    u1.zIndexedBy          fg.isIndexedBy && !fg.isTabFunc
+**    u1.pFuncArg            fg.isTabFunc   && !fg.isIndexedBy
+**    u2.pIBIndex            fg.isIndexedBy && !fg.isCte
+**    u2.pCteUse             fg.isCte       && !fg.isIndexedBy
 */
 struct SrcItem {
   Schema *pSchema;  /* Schema to which this item is fixed */
@@ -3607,6 +3620,8 @@ struct Parse {
 #endif
 };
 
+/* Allowed values for Parse.eParseMode
+*/
 #define PARSE_MODE_NORMAL        0
 #define PARSE_MODE_DECLARE_VTAB  1
 #define PARSE_MODE_RENAME        2
@@ -5290,8 +5305,8 @@ SQLITE_API SQLITE_EXTERN void (SQLITE_CDECL *sqlite3IoTrace)(const char*,...);
 */
 #ifdef SQLITE_MEMDEBUG
   void sqlite3MemdebugSetType(void*,u8);
-  int sqlite3MemdebugHasType(void*,u8);
-  int sqlite3MemdebugNoType(void*,u8);
+  int sqlite3MemdebugHasType(const void*,u8);
+  int sqlite3MemdebugNoType(const void*,u8);
 #else
 # define sqlite3MemdebugSetType(X,Y)  /* no-op */
 # define sqlite3MemdebugHasType(X,Y)  1
