@@ -1,5 +1,5 @@
-C Fix\sthe\snew\s"table_list"\spragma\sso\sthat\sit\sshows\sthe\scorrect\snumber\sof\ncolumns\sfor\sviews\sand\svirtual\stables\seven\swhen\sthe\sobject\shas\snot\sbeen\npreviously\sused.
-D 2021-10-21T17:01:10.549
+C Fix\sthe\sprevious\scheck-in\sso\sthat\sit\sworks\swith\svirtual\stables\sthat\sadd\snew\nshadow\stables\sthe\sfirst\stime\sthey\sare\sreferenced.
+D 2021-10-21T19:48:14.633
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -507,7 +507,7 @@ F src/fkey.c 187b67af20c5795953a592832c5d985e4313fe503ebd8f95e3e9e9ad5a730bb5
 F src/func.c 1cfb09d7ffca81238eccefdb0293e1f5b7cfebbd1816dfad5ec6024742a7496b
 F src/global.c 59bfd5705a623f0b45e91622699953cfd1be2c176e78d8ff610463f2ea4ec51b
 F src/hash.c 8d7dda241d0ebdafb6ffdeda3149a412d7df75102cecfc1021c98d6219823b19
-F src/hash.h 9d56a9079d523b648774c1784b74b89bd93fac7b365210157482e4319a468f38
+F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h cb1d7e3e1ed94b7aa6fde95ae2c2daccc3df826be26fc9ed7fd90d1750ae6144
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c b32e2dcbca838cb8acd4777a59243db4bcea53089e3181b0ea3e4dc75b43aeff
@@ -542,7 +542,7 @@ F src/parse.y 0bd7971a7489bbf6c3726f1b50da6e508bdff8fa493e9cc3f5a96b12cbb2361e
 F src/pcache.c 084e638432c610f95aea72b8509f0845d2791293f39d1b82f0c0a7e089c3bb6b
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c 54881292a9a5db202b2c0ac541c5e3ef9a5e8c4f1c1383adb2601d5499a60e65
-F src/pragma.c e98bdbaf4bbe13e1085e6713b4bf022a8091e279162fec96e5ea30b53b1851a3
+F src/pragma.c fc4c772d25766f7440dff6bf352e8c66981f92c80689d1a0fe229d39a38f69a5
 F src/pragma.h 87330ed2fbfa2a1274de93ca0ab850fba336189228cb256089202c3b52766fad
 F src/prepare.c 8f07616db04337057b8498b72d051ee90f73c54615c2e908c05404cef1e060b7
 F src/printf.c 5901672228f305f7d493cbc4e7d76a61a5caecdbc1cd06b1f9ec42ea4265cf8d
@@ -1063,7 +1063,7 @@ F test/fuzzdata4.db b502c7d5498261715812dd8b3c2005bad08b3a26e6489414bd13926cd3e4
 F test/fuzzdata5.db e35f64af17ec48926481cfaf3b3855e436bd40d1cfe2d59a9474cb4b748a52a5
 F test/fuzzdata6.db 92a80e4afc172c24f662a10a612d188fb272de4a9bd19e017927c95f737de6d7
 F test/fuzzdata7.db 0166b56fd7a6b9636a1d60ef0a060f86ddaecf99400a666bb6e5bbd7199ad1f2
-F test/fuzzdata8.db 62c5303ef5a570b1a302d7e495ecfaf007dd4752618ed6378913df671fd0cb2a
+F test/fuzzdata8.db e12b57c30566b9511ed8760eeccfb23e6361db9c43092032252e922ed942d67c
 F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test f64c4aef4c9e9edf1d6dc0d3f1e65dcc81e67c996403c88d14f09b74807a42bc
@@ -1929,7 +1929,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e162da3ab4c183b67872be004035c48fc8f20084bc5757aec27410ce23a36631
-R 5b3b99f69598abd3ff48cb7e9e2a37d6
+P fb0ed8c55f6362d2639687392a72cc3ed9dc318929e11893edd2a0f023929f7e
+R d9d7a435d8b8a1837f287c26685a733e
 U drh
-Z fe3fae615e6e48414d5d1a1ec7e33318
+Z b3b900615c7f934236b8d70c4ffaa098
