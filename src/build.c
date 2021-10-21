@@ -170,17 +170,21 @@ void sqlite3FinishCoding(Parse *pParse){
       int i;
       int reg;
 
-      addrRewind =
-         sqlite3VdbeAddOp1(v, OP_Rewind, pReturning->iRetCur);
-      VdbeCoverage(v);
-      reg = pReturning->iRetReg;
-      for(i=0; i<pReturning->nRetCol; i++){
-        sqlite3VdbeAddOp3(v, OP_Column, pReturning->iRetCur, i, reg+i);
+      if( pReturning->nRetCol==0 ){
+        assert( CORRUPT_DB );
+      }else{
+        addrRewind =
+           sqlite3VdbeAddOp1(v, OP_Rewind, pReturning->iRetCur);
+        VdbeCoverage(v);
+        reg = pReturning->iRetReg;
+        for(i=0; i<pReturning->nRetCol; i++){
+          sqlite3VdbeAddOp3(v, OP_Column, pReturning->iRetCur, i, reg+i);
+        }
+        sqlite3VdbeAddOp2(v, OP_ResultRow, reg, i);
+        sqlite3VdbeAddOp2(v, OP_Next, pReturning->iRetCur, addrRewind+1);
+        VdbeCoverage(v);
+        sqlite3VdbeJumpHere(v, addrRewind);
       }
-      sqlite3VdbeAddOp2(v, OP_ResultRow, reg, i);
-      sqlite3VdbeAddOp2(v, OP_Next, pReturning->iRetCur, addrRewind+1);
-      VdbeCoverage(v);
-      sqlite3VdbeJumpHere(v, addrRewind);
     }
     sqlite3VdbeAddOp0(v, OP_Halt);
 
@@ -261,7 +265,11 @@ void sqlite3FinishCoding(Parse *pParse){
 
       if( pParse->bReturning ){
         Returning *pRet = pParse->u1.pReturning;
-        sqlite3VdbeAddOp2(v, OP_OpenEphemeral, pRet->iRetCur, pRet->nRetCol);
+        if( pRet->nRetCol==0 ){
+          assert( CORRUPT_DB );
+        }else{
+          sqlite3VdbeAddOp2(v, OP_OpenEphemeral, pRet->iRetCur, pRet->nRetCol);
+        }
       }
 
       /* Finally, jump back to the beginning of the executable code. */
@@ -683,7 +691,7 @@ void sqlite3ColumnSetExpr(
   Expr *pExpr       /* The new default expression */
 ){
   ExprList *pList;
-  assert( !IsVirtual(pTab) );
+  assert( IsOrdinaryTable(pTab) );
   pList = pTab->u.tab.pDfltList;
   if( pCol->iDflt==0
    || NEVER(pList==0)
@@ -704,7 +712,7 @@ void sqlite3ColumnSetExpr(
 */
 Expr *sqlite3ColumnExpr(Table *pTab, Column *pCol){
   if( pCol->iDflt==0 ) return 0;
-  if( NEVER(IsVirtual(pTab)) ) return 0;
+  if( NEVER(!IsOrdinaryTable(pTab)) ) return 0;
   if( NEVER(pTab->u.tab.pDfltList==0) ) return 0;
   if( NEVER(pTab->u.tab.pDfltList->nExpr<pCol->iDflt) ) return 0;
   return pTab->u.tab.pDfltList->a[pCol->iDflt-1].pExpr;
@@ -763,13 +771,13 @@ void sqlite3DeleteColumnNames(sqlite3 *db, Table *pTable){
       sqlite3DbFree(db, pCol->zCnName);
     }
     sqlite3DbFree(db, pTable->aCol);
-    if( !IsVirtual(pTable) ){
+    if( IsOrdinaryTable(pTable) ){
       sqlite3ExprListDelete(db, pTable->u.tab.pDfltList);
     }
     if( db==0 || db->pnBytesFreed==0 ){
       pTable->aCol = 0;
       pTable->nCol = 0;
-      if( !IsVirtual(pTable) ){
+      if( IsOrdinaryTable(pTable) ){
         pTable->u.tab.pDfltList = 0;
       }
     }
@@ -1836,7 +1844,9 @@ void sqlite3AddPrimaryKey(
       assert( pCExpr!=0 );
       sqlite3StringToId(pCExpr);
       if( pCExpr->op==TK_ID ){
-        const char *zCName = pCExpr->u.zToken;
+        const char *zCName;
+        assert( !ExprHasProperty(pCExpr, EP_IntValue) );
+        zCName = pCExpr->u.zToken;
         for(iCol=0; iCol<pTab->nCol; iCol++){
           if( sqlite3StrICmp(zCName, pTab->aCol[iCol].zCnName)==0 ){
             pCol = &pTab->aCol[iCol];
@@ -2208,7 +2218,6 @@ static void estimateIndexWidth(Index *pIdx){
 */
 static int hasColumn(const i16 *aiCol, int nCol, int x){
   while( nCol-- > 0 ){
-    assert( aiCol[0]>=0 );
     if( x==*(aiCol++) ){
       return 1;
     }
@@ -2584,7 +2593,7 @@ void sqlite3EndTable(
   ** table itself.  So mark it read-only.
   */
   if( db->init.busy ){
-    if( pSelect ){
+    if( pSelect || (!IsOrdinaryTable(p) && db->init.newTnum) ){
       sqlite3ErrorMsg(pParse, "");
       return;
     }
@@ -3549,6 +3558,7 @@ void sqlite3CreateForeignKey(
     goto fk_end;
   }
   pFKey->pFrom = p;
+  assert( IsOrdinaryTable(p) );
   pFKey->pNextFrom = p->u.tab.pFKey;
   z = (char*)&pFKey->aCol[nCol];
   pFKey->zTo = z;
@@ -3614,7 +3624,7 @@ void sqlite3CreateForeignKey(
 
   /* Link the foreign key to the table as the last step.
   */
-  assert( !IsVirtual(p) );
+  assert( IsOrdinaryTable(p) );
   p->u.tab.pFKey = pFKey;
   pFKey = 0;
 
@@ -3637,7 +3647,7 @@ void sqlite3DeferForeignKey(Parse *pParse, int isDeferred){
   Table *pTab;
   FKey *pFKey;
   if( (pTab = pParse->pNewTable)==0 ) return;
-  if( NEVER(IsVirtual(pTab)) ) return;
+  if( NEVER(!IsOrdinaryTable(pTab)) ) return;
   if( (pFKey = pTab->u.tab.pFKey)==0 ) return;
   assert( isDeferred==0 || isDeferred==1 ); /* EV: R-30323-21917 */
   pFKey->isDeferred = (u8)isDeferred;
@@ -4039,6 +4049,7 @@ void sqlite3CreateIndex(
     Expr *pExpr = pList->a[i].pExpr;
     assert( pExpr!=0 );
     if( pExpr->op==TK_COLLATE ){
+      assert( !ExprHasProperty(pExpr, EP_IntValue) );
       nExtra += (1 + sqlite3Strlen30(pExpr->u.zToken));
     }
   }
@@ -4134,6 +4145,7 @@ void sqlite3CreateIndex(
     zColl = 0;
     if( pListItem->pExpr->op==TK_COLLATE ){
       int nColl;
+      assert( !ExprHasProperty(pListItem->pExpr, EP_IntValue) );
       zColl = pListItem->pExpr->u.zToken;
       nColl = sqlite3Strlen30(zColl) + 1;
       assert( nExtra>=nColl );
@@ -4922,6 +4934,7 @@ void sqlite3SrcListIndexedBy(Parse *pParse, SrcList *p, Token *pIndexedBy){
     }else{
       pItem->u1.zIndexedBy = sqlite3NameFromToken(pParse->db, pIndexedBy);
       pItem->fg.isIndexedBy = 1;
+      assert( pItem->fg.isCte==0 );  /* No collision on union u2 */
     }
   }
 }

@@ -298,6 +298,12 @@ SQLITE_WSD struct Sqlite3Config sqlite3Config = {
 */
 FuncDefHash sqlite3BuiltinFunctions;
 
+/*
+** Counter used for coverage testing.  Does not come into play for
+** release builds.
+*/
+unsigned int sqlite3CoverageCounter;
+
 #ifdef VDBE_PROFILE
 /*
 ** The following performance counter can be used in place of
