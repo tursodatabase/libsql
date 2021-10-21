@@ -1,11 +1,11 @@
-C Fix\sthe\sprevious\scheck-in\sso\sthat\sit\sworks\swith\svirtual\stables\sthat\sadd\snew\nshadow\stables\sthe\sfirst\stime\sthey\sare\sreferenced.
-D 2021-10-21T19:48:14.633
+C Enable\sFTS5\sfor\sfuzzcheck.
+D 2021-10-21T20:08:00.665
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in 457a0f10540bd18a700c9d45add8dcc06e040bc9d1e948c9816b9b6eab1de384
+F Makefile.in 0e91c42a1dd13a569b1fa4f4dfb7d3632f3164a1c05c71341533d67db5b641dd
 F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
-F Makefile.msc fef1e54f1a2138aa2de79ad8a928f1711106d082e6a35cdfbbfec9e8fd0c59c3
+F Makefile.msc 5904e640ee2f577bcd137b9b5393895be3a1602d1e2b8c99e356f569d96ad98b
 F README.md 27fb76aa7eb57ed63a53bbba7292b6bf71f51125554f79f16b5d040edd1e6110
 F VERSION c6595fef606851f2bc3ebed6a7386c73751835fc909feab7c093739fa4b3c1d1
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -1929,7 +1929,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fb0ed8c55f6362d2639687392a72cc3ed9dc318929e11893edd2a0f023929f7e
-R d9d7a435d8b8a1837f287c26685a733e
+P f73b499e539b9551a70deecec4fc10c3a4af3830324977861cd0558f9782a1d3
+R c12908b5ad7e1daca726d21d0e808b76
 U drh
-Z b3b900615c7f934236b8d70c4ffaa098
+Z 8f7717d9b592fff6ee99b8fe013f83fa
