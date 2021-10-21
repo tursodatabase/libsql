@@ -427,7 +427,7 @@ static int sessionSerializeValue(
   
         if( aBuf ){
           sessionVarintPut(&aBuf[1], n);
-          if( n ) memcpy(&aBuf[nVarint + 1], z, n);
+          if( n>0 ) memcpy(&aBuf[nVarint + 1], z, n);
         }
   
         nByte = 1 + nVarint + n;
@@ -1032,16 +1032,32 @@ static int sessionTableInfo(
     }else if( rc==SQLITE_ERROR ){
       zPragma = sqlite3_mprintf("");
     }else{
+      *pazCol = 0;
+      *pabPK = 0;
+      *pnCol = 0;
+      if( pzTab ) *pzTab = 0;
       return rc;
     }
   }else{
     zPragma = sqlite3_mprintf("PRAGMA '%q'.table_info('%q')", zDb, zThis);
   }
-  if( !zPragma ) return SQLITE_NOMEM;
+  if( !zPragma ){
+    *pazCol = 0;
+    *pabPK = 0;
+    *pnCol = 0;
+    if( pzTab ) *pzTab = 0;
+    return SQLITE_NOMEM;
+  }
 
   rc = sqlite3_prepare_v2(db, zPragma, -1, &pStmt, 0);
   sqlite3_free(zPragma);
-  if( rc!=SQLITE_OK ) return rc;
+  if( rc!=SQLITE_OK ){
+    *pazCol = 0;
+    *pabPK = 0;
+    *pnCol = 0;
+    if( pzTab ) *pzTab = 0;
+    return rc;
+  }
 
   nByte = nThis + 1;
   while( SQLITE_ROW==sqlite3_step(pStmt) ){
@@ -1459,7 +1475,11 @@ static int sessionFindTable(
     ){
       rc = sqlite3session_attach(pSession, zName);
       if( rc==SQLITE_OK ){
-        for(pRet=pSession->pTable; pRet->pNext; pRet=pRet->pNext);
+        pRet = pSession->pTable;
+        while( ALWAYS(pRet) && pRet->pNext ){
+          pRet = pRet->pNext;
+        }
+        assert( pRet!=0 );
         assert( 0==sqlite3_strnicmp(pRet->zName, zName, nName+1) );
       }
     }
@@ -2232,6 +2252,7 @@ static int sessionAppendUpdate(
   int i;                        /* Used to iterate through columns */
   u8 *pCsr = p->aRecord;        /* Used to iterate through old.* values */
 
+  assert( abPK!=0 );
   sessionAppendByte(pBuf, SQLITE_UPDATE, &rc);
   sessionAppendByte(pBuf, p->bIndirect, &rc);
   for(i=0; i<sqlite3_column_count(pStmt); i++){
@@ -2536,12 +2557,14 @@ static int sessionGenerateChangeset(
   SessionBuffer buf = {0,0,0};    /* Buffer in which to accumlate changeset */
   int rc;                         /* Return code */
 
-  assert( xOutput==0 || (pnChangeset==0 && ppChangeset==0 ) );
+  assert( xOutput==0 || (pnChangeset==0 && ppChangeset==0) );
+  assert( xOutput!=0 || (pnChangeset!=0 && ppChangeset!=0) );
 
   /* Zero the output variables in case an error occurs. If this session
   ** object is already in the error state (sqlite3_session.rc != SQLITE_OK),
   ** this call will be a no-op.  */
   if( xOutput==0 ){
+    assert( pnChangeset!=0  && ppChangeset!=0 );
     *pnChangeset = 0;
     *ppChangeset = 0;
   }
@@ -2555,8 +2578,8 @@ static int sessionGenerateChangeset(
   for(pTab=pSession->pTable; rc==SQLITE_OK && pTab; pTab=pTab->pNext){
     if( pTab->nEntry ){
       const char *zName = pTab->zName;
-      int nCol;                   /* Number of columns in table */
-      u8 *abPK;                   /* Primary key array */
+      int nCol = 0;               /* Number of columns in table */
+      u8 *abPK = 0;               /* Primary key array */
       const char **azCol = 0;     /* Table columns */
       int i;                      /* Used to iterate through hash buckets */
       sqlite3_stmt *pSel = 0;     /* SELECT statement to query table pTab */
@@ -2594,6 +2617,7 @@ static int sessionGenerateChangeset(
                 sessionAppendCol(&buf, pSel, iCol, &rc);
               }
             }else{
+              assert( abPK!=0 );  /* Because sessionSelectStmt() returned ok */
               rc = sessionAppendUpdate(&buf, ePatchset, pSel, p, abPK);
             }
           }else if( p->op!=SQLITE_INSERT ){
@@ -2654,7 +2678,10 @@ int sqlite3session_changeset(
   int *pnChangeset,               /* OUT: Size of buffer at *ppChangeset */
   void **ppChangeset              /* OUT: Buffer containing changeset */
 ){
-  int rc = sessionGenerateChangeset(
+  int rc;
+
+  if( pnChangeset==0 || ppChangeset==0 ) return SQLITE_MISUSE;
+  rc = sessionGenerateChangeset(
       pSession, SESSIONS_CHANGESET, 0, 0, pnChangeset, ppChangeset);
   assert( rc || pnChangeset==0 
        || pSession->bEnableSize==0 || *pnChangeset<=pSession->nMaxChangesetSize 
@@ -2670,6 +2697,7 @@ int sqlite3session_changeset_strm(
   int (*xOutput)(void *pOut, const void *pData, int nData),
   void *pOut
 ){
+  if( xOutput==0 ) return SQLITE_MISUSE;
   return sessionGenerateChangeset(
       pSession, SESSIONS_CHANGESET, xOutput, pOut, 0, 0);
 }
@@ -2682,6 +2710,7 @@ int sqlite3session_patchset_strm(
   int (*xOutput)(void *pOut, const void *pData, int nData),
   void *pOut
 ){
+  if( xOutput==0 ) return SQLITE_MISUSE;
   return sessionGenerateChangeset(
       pSession, SESSIONS_PATCHSET, xOutput, pOut, 0, 0);
 }
@@ -2698,6 +2727,7 @@ int sqlite3session_patchset(
   int *pnPatchset,                /* OUT: Size of buffer at *ppChangeset */
   void **ppPatchset               /* OUT: Buffer containing changeset */
 ){
+  if( pnPatchset==0 || ppPatchset==0 ) return SQLITE_MISUSE;
   return sessionGenerateChangeset(
       pSession, SESSIONS_PATCHSET, 0, 0, pnPatchset, ppPatchset);
 }
@@ -3672,11 +3702,11 @@ static int sessionChangesetInvert(
   }
 
   assert( rc==SQLITE_OK );
-  if( pnInverted ){
+  if( pnInverted && ALWAYS(ppInverted) ){
     *pnInverted = sOut.nBuf;
     *ppInverted = sOut.aBuf;
     sOut.aBuf = 0;
-  }else if( sOut.nBuf>0 ){
+  }else if( sOut.nBuf>0 && ALWAYS(xOutput!=0) ){
     rc = xOutput(pOut, sOut.aBuf, sOut.nBuf);
   }
 
@@ -4132,7 +4162,7 @@ static int sessionBindRow(
 
   for(i=0; rc==SQLITE_OK && i<nCol; i++){
     if( !abPK || abPK[i] ){
-      sqlite3_value *pVal;
+      sqlite3_value *pVal = 0;
       (void)xValue(pIter, i, &pVal);
       if( pVal==0 ){
         /* The value in the changeset was "undefined". This indicates a
@@ -5276,9 +5306,9 @@ static int sessionChangegroupOutput(
   if( rc==SQLITE_OK ){
     if( xOutput ){
       if( buf.nBuf>0 ) rc = xOutput(pOut, buf.aBuf, buf.nBuf);
-    }else{
+    }else if( ppOut ){
       *ppOut = buf.aBuf;
-      *pnOut = buf.nBuf;
+      if( pnOut ) *pnOut = buf.nBuf;
       buf.aBuf = 0;
     }
   }
@@ -5678,7 +5708,7 @@ static int sessionRebase(
       if( sOut.nBuf>0 ){
         rc = xOutput(pOut, sOut.aBuf, sOut.nBuf);
       }
-    }else{
+    }else if( ppOut ){
       *ppOut = (void*)sOut.aBuf;
       *pnOut = sOut.nBuf;
       sOut.aBuf = 0;

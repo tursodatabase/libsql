@@ -442,6 +442,7 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
         sqlite3TreeViewLine(pView, "COLUMN(%d)%s%s",
                                     pExpr->iColumn, zFlgs, zOp2);
       }else{
+        assert( ExprUseYTab(pExpr) );
         sqlite3TreeViewLine(pView, "{%d:%d} pTab=%p%s",
                         pExpr->iTable, pExpr->iColumn,
                         pExpr->y.pTab, zFlgs);
@@ -461,11 +462,13 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
     }
 #ifndef SQLITE_OMIT_FLOATING_POINT
     case TK_FLOAT: {
+      assert( !ExprHasProperty(pExpr, EP_IntValue) );
       sqlite3TreeViewLine(pView,"%s", pExpr->u.zToken);
       break;
     }
 #endif
     case TK_STRING: {
+      assert( !ExprHasProperty(pExpr, EP_IntValue) );
       sqlite3TreeViewLine(pView,"%Q", pExpr->u.zToken);
       break;
     }
@@ -480,11 +483,13 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
     }
 #ifndef SQLITE_OMIT_BLOB_LITERAL
     case TK_BLOB: {
+      assert( !ExprHasProperty(pExpr, EP_IntValue) );
       sqlite3TreeViewLine(pView,"%s", pExpr->u.zToken);
       break;
     }
 #endif
     case TK_VARIABLE: {
+      assert( !ExprHasProperty(pExpr, EP_IntValue) );
       sqlite3TreeViewLine(pView,"VARIABLE(%s,%d)",
                           pExpr->u.zToken, pExpr->iColumn);
       break;
@@ -494,12 +499,14 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
       break;
     }
     case TK_ID: {
+      assert( !ExprHasProperty(pExpr, EP_IntValue) );
       sqlite3TreeViewLine(pView,"ID \"%w\"", pExpr->u.zToken);
       break;
     }
 #ifndef SQLITE_OMIT_CAST
     case TK_CAST: {
       /* Expressions of the form:   CAST(pLeft AS token) */
+      assert( !ExprHasProperty(pExpr, EP_IntValue) );
       sqlite3TreeViewLine(pView,"CAST %Q", pExpr->u.zToken);
       sqlite3TreeViewExpr(pView, pExpr->pLeft, 0);
       break;
@@ -549,6 +556,7 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
     }
 
     case TK_SPAN: {
+      assert( !ExprHasProperty(pExpr, EP_IntValue) );
       sqlite3TreeViewLine(pView, "SPAN %Q", pExpr->u.zToken);
       sqlite3TreeViewExpr(pView, pExpr->pLeft, 0);
       break;
@@ -560,6 +568,7 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
       ** up in the treeview output as "SOFT-COLLATE".  Explicit COLLATE
       ** operators that appear in the original SQL always have the
       ** EP_Collate bit set and appear in treeview output as just "COLLATE" */
+      assert( !ExprHasProperty(pExpr, EP_IntValue) );
       sqlite3TreeViewLine(pView, "%sCOLLATE %Q%s",
         !ExprHasProperty(pExpr, EP_Collate) ? "SOFT-" : "",
         pExpr->u.zToken, zFlgs);
@@ -575,6 +584,7 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
         pFarg = 0;
         pWin = 0;
       }else{
+        assert( ExprUseXList(pExpr) );
         pFarg = pExpr->x.pList;
 #ifndef SQLITE_OMIT_WINDOWFUNC
         pWin = ExprHasProperty(pExpr, EP_WinFunc) ? pExpr->y.pWin : 0;
@@ -582,6 +592,7 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
         pWin = 0;
 #endif 
       }
+      assert( !ExprHasProperty(pExpr, EP_IntValue) );
       if( pExpr->op==TK_AGG_FUNCTION ){
         sqlite3TreeViewLine(pView, "AGG_FUNCTION%d %Q%s agg=%d[%d]/%p",
                              pExpr->op2, pExpr->u.zToken, zFlgs,
@@ -613,11 +624,13 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
     }
 #ifndef SQLITE_OMIT_SUBQUERY
     case TK_EXISTS: {
+      assert( ExprUseXSelect(pExpr) );
       sqlite3TreeViewLine(pView, "EXISTS-expr flags=0x%x", pExpr->flags);
       sqlite3TreeViewSelect(pView, pExpr->x.pSelect, 0);
       break;
     }
     case TK_SELECT: {
+      assert( ExprUseXSelect(pExpr) );
       sqlite3TreeViewLine(pView, "subquery-expr flags=0x%x", pExpr->flags);
       sqlite3TreeViewSelect(pView, pExpr->x.pSelect, 0);
       break;
@@ -625,7 +638,7 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
     case TK_IN: {
       sqlite3TreeViewLine(pView, "IN flags=0x%x", pExpr->flags);
       sqlite3TreeViewExpr(pView, pExpr->pLeft, 1);
-      if( ExprHasProperty(pExpr, EP_xIsSelect) ){
+      if( ExprUseXSelect(pExpr) ){
         sqlite3TreeViewSelect(pView, pExpr->x.pSelect, 0);
       }else{
         sqlite3TreeViewExprList(pView, pExpr->x.pList, 0, 0);
@@ -646,9 +659,12 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
     ** Z is stored in pExpr->pList->a[1].pExpr.
     */
     case TK_BETWEEN: {
-      Expr *pX = pExpr->pLeft;
-      Expr *pY = pExpr->x.pList->a[0].pExpr;
-      Expr *pZ = pExpr->x.pList->a[1].pExpr;
+      const Expr *pX, *pY, *pZ;
+      pX = pExpr->pLeft;
+      assert( ExprUseXList(pExpr) );
+      assert( pExpr->x.pList->nExpr==2 );
+      pY = pExpr->x.pList->a[0].pExpr;
+      pZ = pExpr->x.pList->a[1].pExpr;
       sqlite3TreeViewLine(pView, "BETWEEN");
       sqlite3TreeViewExpr(pView, pX, 1);
       sqlite3TreeViewExpr(pView, pY, 1);
@@ -670,6 +686,7 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
     case TK_CASE: {
       sqlite3TreeViewLine(pView, "CASE");
       sqlite3TreeViewExpr(pView, pExpr->pLeft, 1);
+      assert( ExprUseXList(pExpr) );
       sqlite3TreeViewExprList(pView, pExpr->x.pList, 0, 0);
       break;
     }
@@ -682,6 +699,7 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
         case OE_Fail:       zType = "fail";      break;
         case OE_Ignore:     zType = "ignore";    break;
       }
+      assert( !ExprHasProperty(pExpr, EP_IntValue) );
       sqlite3TreeViewLine(pView, "RAISE %s(%Q)", zType, pExpr->u.zToken);
       break;
     }
@@ -694,6 +712,7 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
     }
     case TK_VECTOR: {
       char *z = sqlite3_mprintf("VECTOR%s",zFlgs);
+      assert( ExprUseXList(pExpr) );
       sqlite3TreeViewBareExprList(pView, pExpr->x.pList, z);
       sqlite3_free(z);
       break;
@@ -702,6 +721,7 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
       sqlite3TreeViewLine(pView, "SELECT-COLUMN %d of [0..%d]%s",
               pExpr->iColumn, pExpr->iTable-1,
               pExpr->pRight==pExpr->pLeft ? " (SELECT-owner)" : "");
+      assert( ExprUseXSelect(pExpr->pLeft) );
       sqlite3TreeViewSelect(pView, pExpr->pLeft->x.pSelect, 0);
       break;
     }

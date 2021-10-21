@@ -856,7 +856,7 @@ static void appendText(ShellText *p, char const *zAppend, char quote){
     }
   }
 
-  if( p->n+len>=p->nAlloc ){
+  if( p->z==0 || p->n+len>=p->nAlloc ){
     p->nAlloc = p->nAlloc*2 + len + 20;
     p->z = realloc(p->z, p->nAlloc);
     if( p->z==0 ) shell_out_of_memory();
@@ -8904,8 +8904,6 @@ static int do_meta_command(char *zLine, ShellState *p){
         p->openMode = SHELL_OPEN_READONLY;
       }else if( optionMatch(z, "nofollow") ){
         p->openFlags |= SQLITE_OPEN_NOFOLLOW;
-      }else if( optionMatch(z, "excl") ){
-        p->openFlags |= SQLITE_OPEN_EXCLUSIVE;
 #ifndef SQLITE_OMIT_DESERIALIZE
       }else if( optionMatch(z, "deserialize") ){
         p->openMode = SHELL_OPEN_DESERIALIZE;

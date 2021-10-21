@@ -22,16 +22,6 @@
 #endif
 
 /*
-** Routine needed to support the testcase() macro.
-*/
-#ifdef SQLITE_COVERAGE_TEST
-void sqlite3Coverage(int x){
-  static unsigned dummy = 0;
-  dummy += (unsigned)x;
-}
-#endif
-
-/*
 ** Calls to sqlite3FaultSim() are used to simulate a failure during testing,
 ** or to bypass normal error detection during testing in order to let 
 ** execute proceed futher downstream.
@@ -277,6 +267,7 @@ void sqlite3Dequote(char *z){
   z[j] = 0;
 }
 void sqlite3DequoteExpr(Expr *p){
+  assert( !ExprHasProperty(p, EP_IntValue) );
   assert( sqlite3Isquote(p->u.zToken[0]) );
   p->flags |= p->u.zToken[0]=='"' ? EP_Quoted|EP_DblQuoted : EP_Quoted;
   sqlite3Dequote(p->u.zToken);
