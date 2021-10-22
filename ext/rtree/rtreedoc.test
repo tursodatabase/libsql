@@ -39,6 +39,7 @@ proc column_name_list {db tbl} {
   }
   return $lCol
 }
+unset -nocomplain res
 
 #-------------------------------------------------------------------------
 #-------------------------------------------------------------------------
@@ -792,6 +793,7 @@ do_execsql_test 3.0 {
   INSERT INTO x1 VALUES(4, 4, 4);
 }
 do_test 3.1 {
+  unset -nocomplain res
   set res [list]
   db eval { SELECT * FROM x1 } {
     lappend res $a $b $c
@@ -1579,4 +1581,3 @@ execsql ROLLBACK
 
 
 finish_test
-
