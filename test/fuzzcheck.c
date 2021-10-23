@@ -762,7 +762,10 @@ static int block_troublesome_sql(
       oomCounter = atoi(zArg2);
     }
   }else if( eCode==SQLITE_ATTACH ){
-    if( zArg1==0 || (zArg1[0]!=0 && strcmp(zArg1,":memory:")!=0) ){
+    if( zArg1==0 ) return SQLITE_DENY;
+    if( strcmp(zArg1,":memory:")!=0
+     && sqlite3_strglob("file:*[?]vfs=memdb", zArg1)!=0
+    ){
       return SQLITE_DENY;
     }
   }
@@ -1503,6 +1506,7 @@ int main(int argc, char **argv){
   int nV;                      /* How much to increase verbosity with -vvvv */
   sqlite3_int64 tmStart;       /* Start of each test */
 
+  sqlite3_config(SQLITE_CONFIG_URI,1);
   registerOomSimulator();
   sqlite3_initialize();
   iBegin = timeOfDay();
