@@ -1,5 +1,5 @@
-C Update\sfuzzcheck\sso\sthat\sit\sallows\sATTACH\sstatements\swith\smemdb\sfilenames.
-D 2021-10-23T11:30:35.169
+C Fix\sthe\smemdb\sVFS\sso\sthat\sit\sdoes\snot\sallow\smmap\sif\sit\sis\sresizable,\sand\sso\nthat\sit\snever\sopens\sa\sdisk\sfile\sfor\sany\sreason.
+D 2021-10-23T17:46:00.160
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -520,7 +520,7 @@ F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
 F src/mem2.c c8bfc9446fd0798bddd495eb5d9dbafa7d4b7287d8c22d50a83ac9daa26d8a75
 F src/mem3.c 30301196cace2a085cbedee1326a49f4b26deff0af68774ca82c1f7c06fda4f6
 F src/mem5.c 9bf955937b07f8c32541c8a9991f33ce3173d944
-F src/memdb.c cd8cf3ee965db4a4ab4b5423b49a4ef810490b8ba828911e523325f2cce3ed1a
+F src/memdb.c ca36b36c497558abe8bf1fa6b6ad974db2275312ce30fc44e578e160688a7503
 F src/memjournal.c a85f0dc5c02a42453d0bc3819ecfb5666cb6433e5deefcd93ccbe05c9f088b83
 F src/msvc.h 3a15918220367a8876be3fa4f2abe423a861491e84b864fb2b7426bf022a28f8
 F src/mutex.c 5e3409715552348732e97b9194abe92fdfcd934cfb681df4ba0ab87ac6c18d25
@@ -628,7 +628,7 @@ F src/vdbeapi.c 7b83468feb1d42a09d4c2e5241a3eaa3d1f138e289a843cba9fd3f1dad95ca67
 F src/vdbeaux.c a57c760d1897f1b72f6fae26983df363db7a2c42d88721187e907f2c84862b42
 F src/vdbeblob.c 292e96c01c4219fca71d74e1002906d43eb232af4bd83f7552a3faec741f3eb8
 F src/vdbemem.c 8be0af1060012520381d3296fcb1718e80cd5b99ce04f51f7e1c4dba4072caac
-F src/vdbesort.c cd5130f683706c1a43e165a74187745fb3351cb56052cf9dc91de820634bbde2
+F src/vdbesort.c 04292f8c569dc9ad2afc1d56d118f2cfab36ca65a3f02eef0b5b92bda01560be
 F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf823
 F src/vdbevtab.c f99b275366c5fc5e2d99f734729880994ab9500bdafde7fae3b02d562b9d323c
 F src/vtab.c d07cc24dd84b0b51bf05adb187b0d2e6b0cac56cfbc0197995a26d4f8fa5c7e2
@@ -1929,7 +1929,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1a038242dc6c0cab97dd9375acfce62aa1c386debc36aaed388d366b87ddd931
-R 34386e9b5caf945336fe068df17fa91d
+P 31671237e560b52dc27f707309269069a6bdcd017df9844908e77b57dc11f180
+R 444deadb002e60bf5ed2135691fd7c7f
 U drh
-Z fe79b53e74aa12c3b50f43764f01d9e9
+Z aa0780d26c17b9f3da4ad58aee5df686
