@@ -762,12 +762,16 @@ static int block_troublesome_sql(
       oomCounter = atoi(zArg2);
     }
   }else if( eCode==SQLITE_ATTACH ){
+    /* Deny the ATTACH if it is attaching anything other than an in-memory
+    ** database. */
     if( zArg1==0 ) return SQLITE_DENY;
-    if( strcmp(zArg1,":memory:")!=0
-     && sqlite3_strglob("file:*[?]vfs=memdb", zArg1)!=0
+    if( strcmp(zArg1,":memory:")==0 ) return SQLITE_OK;
+    if( sqlite3_strglob("file:*[?]vfs=memdb", zArg1)==0
+     && sqlite3_strglob("file:*[^/a-zA-Z0-9_.]*[?]vfs=memdb", zArg1)!=0
     ){
-      return SQLITE_DENY;
+      return SQLITE_OK;
     }
+    return SQLITE_DENY;
   }
   return SQLITE_OK;
 }
