@@ -750,7 +750,11 @@ static int block_troublesome_sql(
   (void)zArg3;
   (void)zArg4;
   if( eCode==SQLITE_PRAGMA ){
-   if( eVerbosity==0 ){
+    if( sqlite3_stricmp("busy_timeout",zArg1)==0
+     && (zArg2==0 || atoi(zArg2)>100)
+    ){
+      return SQLITE_DENY;
+    }else if( eVerbosity==0 ){
       if( sqlite3_strnicmp("vdbe_", zArg1, 5)==0
        || sqlite3_stricmp("parser_trace", zArg1)==0
        || sqlite3_stricmp("temp_store_directory", zArg1)==0
