@@ -2727,7 +2727,7 @@ static RbuState *rbuLoadState(sqlite3rbu *p){
         break;
 
       case RBU_STATE_OALSZ:
-        pRet->iOalSz = (u32)sqlite3_column_int64(pStmt, 1);
+        pRet->iOalSz = sqlite3_column_int64(pStmt, 1);
         break;
 
       case RBU_STATE_PHASEONESTEP:
