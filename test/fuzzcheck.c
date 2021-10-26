@@ -302,6 +302,37 @@ static VFile *createVFile(const char *zName, int sz, unsigned char *pData){
   return pNew;
 }
 
+/*
+** Read the complete content of a file into memory.  Add a 0x00 terminator
+** and return a pointer to the result.
+**
+** The file content is held in memory obtained from sqlite_malloc64() which
+** should be freed by the caller.
+*/
+static char *readFile(const char *zFilename, long *sz){
+  FILE *in;
+  long nIn;
+  unsigned char *pBuf;
+
+  *sz = 0;
+  if( zFilename==0 ) return 0;
+  in = fopen(zFilename, "rb");
+  if( in==0 ) return 0;
+  fseek(in, 0, SEEK_END);
+  *sz = nIn = ftell(in);
+  rewind(in);
+  pBuf = sqlite3_malloc64( nIn+1 );
+  if( pBuf && 1==fread(pBuf, nIn, 1, in) ){
+    pBuf[nIn] = 0;
+    fclose(in);
+    return pBuf;
+  }  
+  sqlite3_free(pBuf);
+  *sz = 0;
+  fclose(in);
+  return 0;
+}
+
 
 /*
 ** Implementation of the "readfile(X)" SQL function.  The entire content
@@ -313,25 +344,15 @@ static void readfileFunc(
   int argc,
   sqlite3_value **argv
 ){
-  const char *zName;
-  FILE *in;
   long nIn;
   void *pBuf;
+  const char *zName = (const char*)sqlite3_value_text(argv[0]);
 
-  zName = (const char*)sqlite3_value_text(argv[0]);
   if( zName==0 ) return;
-  in = fopen(zName, "rb");
-  if( in==0 ) return;
-  fseek(in, 0, SEEK_END);
-  nIn = ftell(in);
-  rewind(in);
-  pBuf = sqlite3_malloc64( nIn );
-  if( pBuf && 1==fread(pBuf, nIn, 1, in) ){
+  pBuf = readFile(zName, &nIn);
+  if( pBuf ){
     sqlite3_result_blob(context, pBuf, nIn, sqlite3_free);
-  }else{
-    sqlite3_free(pBuf);
   }
-  fclose(in);
 }
 
 /*
@@ -1690,12 +1711,21 @@ int main(int argc, char **argv){
 
   /* Process each source database separately */
   for(iSrcDb=0; iSrcDb<nSrcDb; iSrcDb++){
+    char *zRawData = 0;
+    long nRawData = 0;
     g.zDbFile = azSrcDb[iSrcDb];
     rc = sqlite3_open_v2(azSrcDb[iSrcDb], &db,
                          openFlags4Data, pDfltVfs->zName);
+    if( rc==SQLITE_OK ){
+      rc = sqlite3_exec(db, "SELECT count(*) FROM sqlite_schema", 0, 0, 0);
+    }
     if( rc ){
-      fatalError("cannot open source database %s - %s",
-      azSrcDb[iSrcDb], sqlite3_errmsg(db));
+      sqlite3_close(db);
+      zRawData = readFile(azSrcDb[iSrcDb], &nRawData);
+      if( zRawData==0 ){
+        fatalError("input file \"%s\" is not recognized\n", azSrcDb[iSrcDb]);
+      }
+      sqlite3_open(":memory:", &db);
     }
 
     /* Print the description, if there is one */
@@ -1730,6 +1760,7 @@ int main(int argc, char **argv){
       sqlite3_finalize(pStmt);
       printf("\n");
       sqlite3_close(db);
+      sqlite3_free(zRawData);
       continue;
     }
 
@@ -1753,6 +1784,21 @@ int main(int argc, char **argv){
       rc = sqlite3_exec(db, zSql, 0, 0, 0);
       sqlite3_free(zSql);
       if( rc ) fatalError("cannot change description: %s", sqlite3_errmsg(db));
+    }
+    if( zRawData ){
+      zInsSql = "INSERT INTO xsql(sqltext) VALUES(?1)";
+      rc = sqlite3_prepare_v2(db, zInsSql, -1, &pStmt, 0);
+      if( rc ) fatalError("cannot prepare statement [%s]: %s",
+                          zInsSql, sqlite3_errmsg(db));
+      sqlite3_bind_text(pStmt, 1, zRawData, nRawData, SQLITE_STATIC);
+      sqlite3_step(pStmt);
+      rc = sqlite3_reset(pStmt);
+      if( rc ) fatalError("insert failed for %s", argv[i]);
+      sqlite3_finalize(pStmt);
+      rebuild_database(db, dbSqlOnly);
+      zInsSql = 0;
+      sqlite3_free(zRawData);
+      zRawData = 0;
     }
     ossFuzzThisDb = ossFuzz;
 
