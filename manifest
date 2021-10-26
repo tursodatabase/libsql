@@ -1,5 +1,5 @@
-C Fix\sthe\sbusy_timeout\srestriction\son\sfuzzcheck\sso\sthat\sit\scan\sdeal\swith\nhexadecimal\sinteger\sliterals.
-D 2021-10-26T09:53:51.938
+C Add\sphase\sand\serror\snumber\sto\sCLI\serror\smessages.
+D 2021-10-26T16:57:09.903
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -550,7 +550,7 @@ F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c ae65c88f5d0d4bc0052b203773d407efa2387c2bd6b202f87178006c7bb8632c
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 32d25b5af6c708aa63373c78c2e59681910387a7a78c08ec3086cadc77d41627
-F src/shell.c.in e80fe5118fc3b942c1becc67ebfca6a887dbab9295e0bd5b6da61c4375baa637
+F src/shell.c.in 6aefb37d9c87da9e33ae7d3541d07a24c8b74a4bc7b805a2a367d92fe5709108
 F src/sqlite.h.in f0c1ecb5af508aa8e970cd8bc0ec851e6c380b81825038d458846c2fcdfcef50
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h e97f4e9b509408fea4c4e9bef5a41608dfac343b4d3c7a990dedde1e19af9510
@@ -1376,9 +1376,9 @@ F test/sharedA.test 49d87ec54ab640fbbc3786ee3c01de94aaa482a3a9f834ad3fe92770eb69
 F test/sharedB.test 16cc7178e20965d75278f410943109b77b2e645e
 F test/shared_err.test 32634e404a3317eeb94abc7a099c556a346fdb8fb3858dbe222a4cbb8926a939
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
-F test/shell1.test d014dc15876233d06df1eaf5a22275653a1d391abf1ca28df5ef3ac688df72e9
-F test/shell2.test a03b835a9e7dcc1f79b471e4d62e0c85bdc4cb954a00820702603f1409553caf
-F test/shell3.test 1586a163e7918775d3c25530bf84200453f30a77cc338490389114a67352f4d9
+F test/shell1.test c354008b27c904f0166c2138abd7382013ea070b41114114ecbdfb32c726a807
+F test/shell2.test f00a0501c00583cbc46f7510e1d713366326b2b3e63d06d15937284171a8787c
+F test/shell3.test cb4b835a901742c9719437a89171172ecc4a8823ad97349af8e4e841e6f82566
 F test/shell4.test 3ed6c4b42fd695efcbc25d69ef759dbb15855ca8e52ba6c5ee076f8b435f48be
 F test/shell5.test 84a30b55722a95a5b72989e691c469a999ca7591e7aa00b7fabc783ea5c9a6fe
 F test/shell6.test 1ceb51b2678c472ba6cf1e5da96679ce8347889fe2c3bf93a0e0fa73f00b00d3
@@ -1929,7 +1929,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ac3f617827e06800d26ef688c5f5480b9621676f141d2eac134f877e0c454149
-R aaa4122ff484e5344bdfc79be4d2bdda
-U drh
-Z 44dd105d0edba620f6048dd47ca2265d
+P 4b41535b096dec4b15a85e657102a72d4288728da6103f3fdcbe0e6f244c673a
+R 0e943f95c783da0ea080484e06b0d01a
+T *branch * detail_cli_errors
+T *sym-detail_cli_errors *
+T -sym-trunk *
+U larrybr
+Z 75e901f51a636f4c844fe34247eb3a80
