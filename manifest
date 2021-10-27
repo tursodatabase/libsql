@@ -1,5 +1,5 @@
-C Enhance\sfuzzcheck\sso\sthat\sif\san\sargument\sis\san\sordinary\sdisk\sfile\s(not\na\sdatabase)\sit\sis\sread\sin\sand\sprocessed\sas\sa\sscript.
-D 2021-10-26T22:36:41.583
+C Add\sthe\s--script\soption\sto\sfuzzcheck.
+D 2021-10-27T12:05:28.928
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1055,7 +1055,7 @@ F test/fuzz3.test 9c813e6613b837cb7a277b0383cd66bfa07042b4cf0317157c35852f30043c
 F test/fuzz4.test c229bcdb45518a89e1d208a21343e061503460ac69fae1539320a89f572eb634
 F test/fuzz_common.tcl b7197de6ed1ee8250a4f82d67876f4561b42ee8cbbfc6160dcb66331bad3f830
 F test/fuzz_malloc.test f348276e732e814802e39f042b1f6da6362a610af73a528d8f76898fde6b22f2
-F test/fuzzcheck.c b19baffbde9f6b8b3084b8ac3d73bf51a6918078eced6df36d8e0138c91bc4f8
+F test/fuzzcheck.c c466c078af4476a4f9c6193a9bad5b16966e55bc3c5717b6aa638dea8308c08a
 F test/fuzzdata1.db d36e88741b4f23bcbaaf55b006290669d03c6c891cf13c7b3a53bc1b097b693f
 F test/fuzzdata2.db 128b3feeb78918d075c9b14b48610145a0dd4c8d6f1ca7c2870c7e425f5bf31f
 F test/fuzzdata3.db c6586d3e3cef0fbc18108f9bb649aa77bfc38aba
@@ -1929,7 +1929,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8443a2724f463bd2e14ea3aa337e8987104f63365767ca2b0993f3f3196cff95
-R da5eebcdd2e37607fde1f372cc816cab
+P 978dc89df521f5855678128b3c0eb503c67c1b97ddb297076e5f2c03d6297605
+R 8173569b9fa9f89185b2af54915c96dd
 U drh
-Z ca83264146ee66b96c9f2eb230ec2598
+Z 551daae1722bbf6ff67f95bde9dbd7dc

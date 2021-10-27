@@ -302,6 +302,77 @@ static VFile *createVFile(const char *zName, int sz, unsigned char *pData){
   return pNew;
 }
 
+/* Return true if the line is all zeros */
+static int allZero(unsigned char *aLine){
+  int i;
+  for(i=0; i<16 && aLine[i]==0; i++){}
+  return i==16;
+}
+
+/*
+** Render a database and query as text that can be input into
+** the CLI.
+*/
+static void renderDbSqlForCLI(
+  FILE *out,             /* Write to this file */
+  const char *zFile,     /* Name of the database file */
+  unsigned char *aDb,    /* Database content */
+  int nDb,               /* Number of bytes in aDb[] */
+  unsigned char *zSql,   /* SQL content */
+  int nSql               /* Bytes of SQL */
+){
+  fprintf(out, ".print ******* %s *******\n", zFile);
+  if( nDb>100 ){
+    int i, j;                   /* Loop counters */
+    int pgsz;                   /* Size of each page */
+    int lastPage = 0;           /* Last page number shown */
+    int iPage;                  /* Current page number */
+    unsigned char *aLine;       /* Single line to display */
+    unsigned char buf[16];      /* Fake line */
+    unsigned char bShow[256];   /* Characters ok to display */
+
+    memset(bShow, '.', sizeof(bShow));
+    for(i=' '; i<='~'; i++){
+      if( i!='{' && i!='}' && i!='"' && i!='\\' ) bShow[i] = i;
+    }
+    pgsz = (aDb[16]<<8) | aDb[17];
+    if( pgsz==0 ) pgsz = 65536;
+    if( pgsz<512 || (pgsz&(pgsz-1))!=0 ) pgsz = 4096;
+    fprintf(out,".open --hexdb\n");
+    fprintf(out,"| size %d pagesize %d filename %s\n",nDb,pgsz,zFile);
+    for(i=0; i<nDb; i += 16){
+      if( i+16>nDb ){
+        memset(buf, 0, sizeof(buf));
+        memcpy(buf, aDb+i, nDb-i);
+        aLine = buf;
+      }else{
+        aLine = aDb + i;
+      }
+      if( allZero(aLine) ) continue;
+      iPage = i/pgsz + 1;
+      if( lastPage!=iPage ){
+        fprintf(out,"| page %d offset %d\n", iPage, (iPage-1)*pgsz);
+        lastPage = iPage;
+      }
+      fprintf(out,"|  %5d:", i-(iPage-1)*pgsz);
+      for(j=0; j<16; j++) fprintf(out," %02x", aLine[j]);
+      fprintf(out,"   ");
+      for(j=0; j<16; j++){
+        unsigned char c = (unsigned char)aLine[j];
+        fputc( bShow[c], stdout);
+      }
+      fputc('\n', stdout);
+    }
+    fprintf(out,"| end %s\n", zFile);
+  }else{
+    fprintf(out,".open :memory:\n");
+  }
+  fprintf(out,".testctrl prng_seed 1 db\n");
+  fprintf(out,".testctrl internal_functions\n");
+  fprintf(out,"%.*s", nSql, zSql);
+  if( nSql>0 && zSql[nSql-1]!='\n' ) fprintf(out, "\n");
+}
+
 /*
 ** Read the complete content of a file into memory.  Add a 0x00 terminator
 ** and return a pointer to the result.
@@ -325,7 +396,7 @@ static char *readFile(const char *zFilename, long *sz){
   if( pBuf && 1==fread(pBuf, nIn, 1, in) ){
     pBuf[nIn] = 0;
     fclose(in);
-    return pBuf;
+    return (char*)pBuf;
   }  
   sqlite3_free(pBuf);
   *sz = 0;
@@ -876,7 +947,13 @@ static int runDbSql(sqlite3 *db, const char *zSql){
 }
 
 /* Invoke this routine to run a single test case */
-int runCombinedDbSqlInput(const uint8_t *aData, size_t nByte, int iTimeout){
+int runCombinedDbSqlInput(
+  const uint8_t *aData,      /* Combined DB+SQL content */
+  size_t nByte,              /* Size of aData in bytes */
+  int iTimeout,              /* Use this timeout */
+  int bScript,               /* If true, just render CLI output */
+  int iSqlId                 /* SQL identifier */
+){
   int rc;                    /* SQLite API return value */
   int iSql;                  /* Index in aData[] of start of SQL */
   unsigned char *aDb = 0;    /* Decoded database content */
@@ -902,6 +979,14 @@ int runCombinedDbSqlInput(const uint8_t *aData, size_t nByte, int iTimeout){
   iSql = decodeDatabase((unsigned char*)aData, (int)nByte, &aDb, &nDb);
   if( iSql<0 ) return 0;
   nSql = (int)(nByte - iSql);
+  if( bScript ){
+    char zName[100];
+    sqlite3_snprintf(sizeof(zName),zName,"dbsql%06d.db",iSqlId);
+    renderDbSqlForCLI(stdout, zName, aDb, nDb,
+                      (unsigned char*)(aData+iSql), nSql);
+    sqlite3_free(aDb);
+    return 0;
+  }
   if( eVerbosity>=3 ){
     printf(
       "****** %d-byte input, %d-byte database, %d-byte script "
@@ -1005,7 +1090,7 @@ testrun_finished:
   if( rc!=SQLITE_OK ){
     fprintf(stdout, "sqlite3_close() returns %d\n", rc);
   }
-  if( eVerbosity>=2 ){
+  if( eVerbosity>=2 && !bScript ){
     fprintf(stdout, "Peak memory usages: %f MB\n",
        sqlite3_memory_highwater(1) / 1000000.0);
   }
@@ -1479,6 +1564,7 @@ static void showHelp(void){
 "  -q|--quiet           Reduced output\n"
 "  --rebuild            Rebuild and vacuum the database file\n"
 "  --result-trace       Show the results of each SQL command\n"
+"  --script             Output CLI script instead of running tests\n"
 "  --skip N             Skip the first N test cases\n"
 "  --spinner            Use a spinner to show progress\n"
 "  --sqlid N            Use only SQL where sqlid=N\n"
@@ -1508,6 +1594,7 @@ int main(int argc, char **argv){
   int vdbeLimitFlag = 0;       /* --limit-vdbe */
   int infoFlag = 0;            /* --info */
   int nSkip = 0;               /* --skip */
+  int bScript = 0;             /* --script */
   int bSpinner = 0;            /* True for --spinner */
   int timeoutTest = 0;         /* undocumented --timeout-test flag */
   int runFlags = 0;            /* Flags sent to runSql() */
@@ -1641,6 +1728,9 @@ int main(int argc, char **argv){
       }else
       if( strcmp(z,"result-trace")==0 ){
         runFlags |= SQL_OUTPUT;
+      }else
+      if( strcmp(z,"script")==0 ){
+        bScript = 1;
       }else
       if( strcmp(z,"skip")==0 ){
         if( i>=argc-1 ) fatalError("missing arguments on %s", argv[i]);
@@ -1930,7 +2020,7 @@ int main(int argc, char **argv){
     }
   
     /* Print the description, if there is one */
-    if( !quietFlag ){
+    if( !quietFlag && !bScript ){
       zDbName = azSrcDb[iSrcDb];
       i = (int)strlen(zDbName) - 1;
       while( i>0 && zDbName[i-1]!='/' && zDbName[i-1]!='\\' ){ i--; }
@@ -1987,12 +2077,16 @@ int main(int argc, char **argv){
     
     /* Run a test using each SQL script against each database.
     */
-    if( !verboseFlag && !quietFlag && !bSpinner ) printf("%s:", zDbName);
+    if( !verboseFlag && !quietFlag && !bSpinner && !bScript ){
+      printf("%s:", zDbName);
+    }
     for(pSql=g.pFirstSql; pSql; pSql=pSql->pNext){
       tmStart = timeOfDay();
       if( isDbSql(pSql->a, pSql->sz) ){
         sqlite3_snprintf(sizeof(g.zTestName), g.zTestName, "sqlid=%d",pSql->id);
-        if( bSpinner ){
+        if( bScript ){
+          /* No progress output */
+        }else if( bSpinner ){
           int nTotal =g.nSql;
           int idx = pSql->seq;
           printf("\r%s: %d/%d   ", zDbName, idx, nTotal);
@@ -2013,10 +2107,10 @@ int main(int argc, char **argv){
         if( nSkip>0 ){
           nSkip--;
         }else{
-          runCombinedDbSqlInput(pSql->a, pSql->sz, iTimeout);
+          runCombinedDbSqlInput(pSql->a, pSql->sz, iTimeout, bScript, pSql->id);
         }
         nTest++;
-        if( bTimer ){
+        if( bTimer && !bScript ){
           sqlite3_int64 tmEnd = timeOfDay();
           printf("%lld %s\n", tmEnd - tmStart, g.zTestName);
         }
@@ -2029,7 +2123,9 @@ int main(int argc, char **argv){
         const char *zVfs = "inmem";
         sqlite3_snprintf(sizeof(g.zTestName), g.zTestName, "sqlid=%d,dbid=%d",
                          pSql->id, pDb->id);
-        if( bSpinner ){
+        if( bScript ){
+          /* No progress output */
+        }else if( bSpinner ){
           int nTotal = g.nDb*g.nSql;
           int idx = pSql->seq*g.nDb + pDb->id - 1;
           printf("\r%s: %d/%d   ", zDbName, idx, nTotal);
@@ -2049,6 +2145,14 @@ int main(int argc, char **argv){
         }
         if( nSkip>0 ){
           nSkip--;
+          continue;
+        }
+        if( bScript ){
+          char zName[100];
+          sqlite3_snprintf(sizeof(zName), zName, "db%06d.db", 
+                           pDb->id>1 ? pDb->id : pSql->id);
+          renderDbSqlForCLI(stdout, zName,
+             pDb->a, pDb->sz, pSql->a, pSql->sz);
           continue;
         }
         createVFile("main.db", pDb->sz, pDb->a);
@@ -2123,7 +2227,9 @@ int main(int argc, char **argv){
         }
       }
     }
-    if( bSpinner ){
+    if( bScript ){
+      /* No progress output */
+    }else if( bSpinner ){
       int nTotal = g.nDb*g.nSql;
       printf("\r%s: %d/%d   \n", zDbName, nTotal, nTotal);
     }else if( !quietFlag && !verboseFlag ){
@@ -2139,7 +2245,7 @@ int main(int argc, char **argv){
  
   } /* End loop over all source databases */
 
-  if( !quietFlag ){
+  if( !quietFlag && !bScript ){
     sqlite3_int64 iElapse = timeOfDay() - iBegin;
     printf("fuzzcheck: 0 errors out of %d tests in %d.%03d seconds\n"
            "SQLite %s %s\n",
