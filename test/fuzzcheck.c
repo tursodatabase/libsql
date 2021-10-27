@@ -1693,7 +1693,7 @@ int main(int argc, char **argv){
       }else
       if( strcmp(z,"load-dbsql")==0 ){
         zInsSql = "INSERT INTO xsql(sqltext)"
-                  "VALUES(CAST(readtextfile(?1) AS text))";
+                  "VALUES(readfile(?1))";
         iFirstInsArg = i+1;
         openFlags4Data = SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE;
         dbSqlOnly = 1;
@@ -1779,6 +1779,16 @@ int main(int argc, char **argv){
           printf("%s\n", zz);
         }
         return 0;
+      }else
+      if( strcmp(z,"is-dbsql")==0 ){
+        i++;
+        for(i++; i<argc; i++){
+          long nData;
+          char *aData = readFile(argv[i], &nData);
+          printf("%d %s\n", isDbSql(aData,nData), argv[i]);
+          sqlite3_free(aData);
+        }
+        exit(0);
       }else
       {
         fatalError("unknown option: %s", argv[i]);
