@@ -505,6 +505,7 @@ static int memdbOpen(
   MemFile *pFile = (MemFile*)pFd;
   MemStore *p = 0;
   int szName;
+  UNUSED_PARAMETER(pVfs);
 
   memset(pFile, 0, sizeof(*pFile));
   szName = sqlite3Strlen30(zName);

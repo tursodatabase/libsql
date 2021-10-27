@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\scompiler\swarning\sin\sfuzzcheck.
-D 2021-10-27T15:16:30.612
+C Fix\sa\sharmless\scompiler\swarning\sin\smemdb.c.
+D 2021-10-27T15:19:01.315
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -520,7 +520,7 @@ F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
 F src/mem2.c c8bfc9446fd0798bddd495eb5d9dbafa7d4b7287d8c22d50a83ac9daa26d8a75
 F src/mem3.c 30301196cace2a085cbedee1326a49f4b26deff0af68774ca82c1f7c06fda4f6
 F src/mem5.c 9bf955937b07f8c32541c8a9991f33ce3173d944
-F src/memdb.c ca36b36c497558abe8bf1fa6b6ad974db2275312ce30fc44e578e160688a7503
+F src/memdb.c a6c2bb1257c3398b4dd058f81888d647472b140bb1d262d47be50606eed75d55
 F src/memjournal.c a85f0dc5c02a42453d0bc3819ecfb5666cb6433e5deefcd93ccbe05c9f088b83
 F src/msvc.h 3a15918220367a8876be3fa4f2abe423a861491e84b864fb2b7426bf022a28f8
 F src/mutex.c 5e3409715552348732e97b9194abe92fdfcd934cfb681df4ba0ab87ac6c18d25
@@ -1929,7 +1929,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c87a2426b81f22bd21543aa2408625ae472d8fe6cbe6b04145937066e61123c9
-R 03053c57e10c09eb198ca9ed884c519a
+P 1cfb7e8a095e1e24df5117aa7be97470d8ce91837ff83dabebac53fafee0b09c
+R b45ae9ac354d606f769be528b5f7b109
 U drh
-Z 65fd4279cd2fff966b4135294c4a57dc
+Z 52325743b236752bc1fb158c9a88c470
