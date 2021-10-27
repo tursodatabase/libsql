@@ -620,9 +620,13 @@ struct WalIterator {
 ** so.  It is safe to enlarge the wal-index if pWal->writeLock is true
 ** or pWal->exclusiveMode==WAL_HEAPMEMORY_MODE.
 **
-** If this call is successful, *ppPage is set to point to the wal-index
-** page and SQLITE_OK is returned. If an error (an OOM or VFS error) occurs,
-** then an SQLite error code is returned and *ppPage is set to 0.
+** Three possible result scenarios:
+**
+**   (1)  rc==SQLITE_OK    and *ppPage==Requested-Wal-Index-Page
+**   (2)  rc>=SQLITE_ERROR and *ppPage==NULL
+**   (3)  rc==SQLITE_OK    and *ppPage==NULL  // only if iPage==0 
+**
+** Scenario (3) can only occur when pWal->writeLock is false and iPage==0
 */
 static SQLITE_NOINLINE int walIndexPageRealloc(
   Wal *pWal,               /* The WAL context */
@@ -655,7 +659,9 @@ static SQLITE_NOINLINE int walIndexPageRealloc(
     rc = sqlite3OsShmMap(pWal->pDbFd, iPage, WALINDEX_PGSZ, 
         pWal->writeLock, (void volatile **)&pWal->apWiData[iPage]
     );
-    assert( pWal->apWiData[iPage]!=0 || rc!=SQLITE_OK || pWal->writeLock==0 );
+    assert( pWal->apWiData[iPage]!=0
+         || rc!=SQLITE_OK
+         || (pWal->writeLock==0 && iPage==0) );
     testcase( pWal->apWiData[iPage]==0 && rc==SQLITE_OK );
     if( rc==SQLITE_OK ){
       if( iPage>0 && sqlite3FaultSim(600) ) rc = SQLITE_NOMEM;

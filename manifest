@@ -1,5 +1,5 @@
-C New\sassert()s\sto\shelp\sprove\scorrectness\sin\ssqlite3VdbeMemExpandBlob().
-D 2021-10-27T19:05:04.804
+C Improve\sthe\scomment\son\swalIndexPage()\sto\smore\saccurately\sdescribe\sthe\npost-conditions.
+D 2021-10-27T19:57:59.451
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -633,7 +633,7 @@ F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf8
 F src/vdbevtab.c f99b275366c5fc5e2d99f734729880994ab9500bdafde7fae3b02d562b9d323c
 F src/vtab.c d07cc24dd84b0b51bf05adb187b0d2e6b0cac56cfbc0197995a26d4f8fa5c7e2
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 2be08331d798237ad5d7ae0b252700ffb2b63189cb18d993496d009a93e2f81c
+F src/wal.c 2bf6d846140a3ef6ac4dae85e993e98dd304e03641ccef65904744eb85e65e2e
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
 F src/where.c ecabef93b0f14442a73eca205fc960428984d75fbdc7d60226b7fc9cac127187
@@ -1929,7 +1929,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 947805719bc8629619af5358ad50a6365c01f8d9ceabfe8e4df947696d3819b3
-R 25804e35f2af1022a83cf075d76b7647
+P 7238d58051bfdcea8f7a4aeab89145849d0659c987df9063aacafe97be6657fe
+R d7b0bf6adaa4481b0cdf4adead947bd2
+T *branch * wal-tuneup
+T *sym-wal-tuneup *
+T -sym-trunk *
 U drh
-Z 847be2825d463962a46d3dd1feb437b1
+Z 903a3bc4a6ff5101d13b9fbd42b22ae8
