@@ -1013,7 +1013,7 @@ static int walHashGet(
   rc = walIndexPage(pWal, iHash, &pLoc->aPgno);
   assert( rc==SQLITE_OK || iHash>0 );
 
-  if( rc==SQLITE_OK ){
+  if( pLoc->aPgno ){
     pLoc->aHash = (volatile ht_slot *)&pLoc->aPgno[HASHTABLE_NPAGE];
     if( iHash==0 ){
       pLoc->aPgno = &pLoc->aPgno[WALINDEX_HDR_SIZE/sizeof(u32)];
@@ -1021,6 +1021,8 @@ static int walHashGet(
     }else{
       pLoc->iZero = HASHTABLE_NPAGE_ONE + (iHash-1)*HASHTABLE_NPAGE;
     }
+  }else if( NEVER(rc==SQLITE_OK) ){
+    rc = SQLITE_ERROR;
   }
   return rc;
 }
@@ -1323,7 +1325,8 @@ static int walIndexRecover(Wal *pWal){
       u32 iFirst = 1 + (iPg==0?0:HASHTABLE_NPAGE_ONE+(iPg-1)*HASHTABLE_NPAGE);
       u32 nHdr, nHdr32;
       rc = walIndexPage(pWal, iPg, (volatile u32**)&aShare);
-      if( rc ) break;
+      assert( aShare!=0 || rc!=SQLITE_OK );
+      if( aShare==0 ) break;
       pWal->apWiData[iPg] = aPrivate;
       
       for(iFrame=iFirst; iFrame<=iLast; iFrame++){
