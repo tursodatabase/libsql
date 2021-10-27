@@ -374,6 +374,8 @@ int sqlite3VdbeMemExpandBlob(Mem *pMem){
   if( sqlite3VdbeMemGrow(pMem, nByte, 1) ){
     return SQLITE_NOMEM_BKPT;
   }
+  assert( pMem->z!=0 );
+  assert( sqlite3DbMallocSize(pMem->db,pMem->z) >= nByte );
 
   memset(&pMem->z[pMem->n], 0, pMem->u.nZero);
   pMem->n += pMem->u.nZero;

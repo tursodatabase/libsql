@@ -1,5 +1,5 @@
-C Fix\sthe\sbuild\sfor\svarious\sthe\sOMIT-everything\scompile-time\soption.\s\sNo\simpact\non\sregular\sbuilds.
-D 2021-10-27T17:15:08.514
+C New\sassert()s\sto\shelp\sprove\scorrectness\sin\ssqlite3VdbeMemExpandBlob().
+D 2021-10-27T19:05:04.804
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -627,7 +627,7 @@ F src/vdbeInt.h 38206c8dd6b60ff03d9fd4f626b1b4fd0eef7cdc44f2fc2c1973b0f932a3f26b
 F src/vdbeapi.c 7b83468feb1d42a09d4c2e5241a3eaa3d1f138e289a843cba9fd3f1dad95ca67
 F src/vdbeaux.c a57c760d1897f1b72f6fae26983df363db7a2c42d88721187e907f2c84862b42
 F src/vdbeblob.c 292e96c01c4219fca71d74e1002906d43eb232af4bd83f7552a3faec741f3eb8
-F src/vdbemem.c 8be0af1060012520381d3296fcb1718e80cd5b99ce04f51f7e1c4dba4072caac
+F src/vdbemem.c 71a449c57be10a66a8a5620e5c5a67ebb9ca70121556dc631ffd4c4458708d8c
 F src/vdbesort.c 04292f8c569dc9ad2afc1d56d118f2cfab36ca65a3f02eef0b5b92bda01560be
 F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf823
 F src/vdbevtab.c f99b275366c5fc5e2d99f734729880994ab9500bdafde7fae3b02d562b9d323c
@@ -1929,7 +1929,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 22fdc658a7cc6d2c50957f92c19de74c9ac7d7d3498731d73e035b99a82bc406
-R 443ce04155b2c98d2803e4679dccac9d
+P 947805719bc8629619af5358ad50a6365c01f8d9ceabfe8e4df947696d3819b3
+R 25804e35f2af1022a83cf075d76b7647
 U drh
-Z ee620333c98e156ed73754087d493167
+Z 847be2825d463962a46d3dd1feb437b1
