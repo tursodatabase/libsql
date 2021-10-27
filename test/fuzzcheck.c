@@ -1785,7 +1785,7 @@ int main(int argc, char **argv){
         for(i++; i<argc; i++){
           long nData;
           char *aData = readFile(argv[i], &nData);
-          printf("%d %s\n", isDbSql(aData,nData), argv[i]);
+          printf("%d %s\n", isDbSql((unsigned char*)aData,nData), argv[i]);
           sqlite3_free(aData);
         }
         exit(0);
