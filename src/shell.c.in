@@ -8282,6 +8282,11 @@ static int do_meta_command(char *zLine, ShellState *p){
 
     failIfSafeMode(p, "cannot run .import in safe mode");
     memset(&sCtx, 0, sizeof(sCtx));
+    sCtx.z = sqlite3_malloc64(120);
+    if( sCtx.z==0 ){
+      import_cleanup(&sCtx);
+      shell_out_of_memory();
+    }
     if( p->mode==MODE_Ascii ){
       xRead = ascii_read_one_field;
     }else{
