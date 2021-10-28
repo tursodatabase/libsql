@@ -2007,6 +2007,7 @@ static int vdbeIncrMergerNew(
     vdbeMergeEngineFree(pMerger);
     rc = SQLITE_NOMEM_BKPT;
   }
+  assert( *ppOut!=0 || rc!=SQLITE_OK );
   return rc;
 }
 
