@@ -1,5 +1,5 @@
-C Add\spragmas\s"multiplex_enabled",\s"multiplex_chunksize",\sand\s"multiplex_filecount"\sto\sthe\smultiplexer\simplementation.
-D 2021-10-29T12:29:22.568
+C Allow\s"VACUUM\sINTO"\sto\schange\sthe\spage_size\sof\sa\sdatabase\seven\sif\sthe\noriginal\sdatabase\sis\sin\sWAL\smode.\s\sEnhancement\ssuggested\sby\n[forum:/forumpost/033f2c9d1f|forum\spost\s033f2c9d1f].
+D 2021-10-29T13:10:02.528
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -620,7 +620,7 @@ F src/update.c 69c4c10bc6873a80c0a77cb578f9fc60ee90003d03f9530bc3370fa24615772d
 F src/upsert.c 8789047a8f0a601ea42fa0256d1ba3190c13746b6ba940fe2d25643a7e991937
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c 30df8356e231dad33be10bb27897655002668343280004ba28c734489414a167
-F src/vacuum.c 454973a59fb20bb982efc2df568a098616db6328a0491b6e84e2e07f7333db45
+F src/vacuum.c 6c38ddc52f0619865c91dae9c441d4d48bf3040d7dc1bc5b22da1e45547ed0b3
 F src/vdbe.c daa876fbf9331a8b776696903877353bc352c9e30f5260c465386f2b29dfc4cf
 F src/vdbe.h 25dabb25c7e157b84e59260cfb5b466c3ac103ede9f36f4db371332c47601abe
 F src/vdbeInt.h 38206c8dd6b60ff03d9fd4f626b1b4fd0eef7cdc44f2fc2c1973b0f932a3f26b
@@ -1681,7 +1681,7 @@ F test/uri.test 3481026f00ade6dfe8adb7acb6e1e47b04369568
 F test/uri2.test 9d3ba7a53ee167572d53a298ee4a5d38ec4a8fb7
 F test/userauth01.test e740a2697a7b40d7c5003a7d7edaee16acd349a9
 F test/utf16align.test 54cd35a27c005a9b6e7815d887718780b6a462ae
-F test/vacuum-into.test 48f4cec354fb6f27c98ef58d2fe49a11b71ff131af0cd9140efacc9858b9f670
+F test/vacuum-into.test c4c25dcf8ca909e33c1f5f0bb0f54b990c2c1dcbee7a4995843e79e40681a894
 F test/vacuum.test ce91c39f7f91a4273bf620efad21086b5aa6ef1d
 F test/vacuum2.test 9fd45ce6ce29f5614c249e03938d3567c06a9e772d4f155949f8eafe2d8af520
 F test/vacuum3.test 77ecdd54592b45a0bcb133339f99f1ae0ae94d0d
@@ -1929,7 +1929,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5374226df4a2c1b59258839532b67a399c447ac8ec1408fdf2dffb9c41e1349e
-R db79de1638e0749eebe4d5bf88ced051
+P 39c5e80dbf94ac3079b3e0c2c3e6608ac366e3f3de3cea4f4947addc3f52bc36
+R d68f81b39f86cb06b4a36b68798fdf37
 U drh
-Z ec23d72770cad137c5e9586cf56e39f9
+Z df8c8b91d90a62fffcb8772ebdcbd4b6
