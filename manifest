@@ -1,5 +1,5 @@
-C Fix\sthe\sOP_Transaction\sopcode\sso\sthat\sif\san\serror\sother\sthan\sSQLITE_SCHEMA\noccurs\sfirst,\sthe\soriginal\serror\sis\snot\soverwritten\sby\sSQLITE_SCHEMA.\ndbsqlfuzz\s85bf7e262017c6c7bddb03ff6d8541511985d36c.
-D 2021-10-29T09:59:06.437
+C Add\spragmas\s"multiplex_enabled",\s"multiplex_chunksize",\sand\s"multiplex_filecount"\sto\sthe\smultiplexer\simplementation.
+D 2021-10-29T12:29:22.568
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -588,7 +588,7 @@ F src/test_journal.c a0b9709b2f12b1ec819eea8a1176f283bca6d688a6d4a502bd6fd79786f
 F src/test_loadext.c 337056bae59f80b9eb00ba82088b39d0f4fe6dfd
 F src/test_malloc.c 21121ea85b49ec0bdb69995847cef9036ef9beca3ce63bbb776e4ea2ecc44b97
 F src/test_md5.c 7268e1e8c399d4a5e181b64ac20e1e6f3bc4dd9fc87abac02db145a3d951fa8c
-F src/test_multiplex.c 2ccf35551c094e353af20b0cdfac053a37bf3e96e10e7cf9f4abd1d279890a78
+F src/test_multiplex.c 1b23782212a01349fac382913ef82b8de4ae8a4cb46556602c2ee733edabbbc9
 F src/test_multiplex.h 5436d03f2d0501d04f3ed50a75819e190495b635
 F src/test_mutex.c abf486e91bd65e2448027d4bb505e7cce6ba110e1afb9bd348d1996961cadf0d
 F src/test_onefile.c f31e52e891c5fef6709b9fcef54ce660648a34172423a9cbdf4cbce3ba0049f4
@@ -1222,7 +1222,7 @@ F test/mmap3.test b3c297e78e6a8520aafcc1a8f140535594c9086e
 F test/mmap4.test 2e2b4e32555b58da15176e6fe750f17c9dcf7f93
 F test/mmapfault.test d4c9eff9cd8c2dc14bc43e71e042f175b0a26fe3
 F test/mmapwarm.test 2272005969cd17a910077bd5082f70bc1fefad9a875afec7fc9af483898ecaf3
-F test/multiplex.test dc0d67b66f84b484a83cb8bbdf3f0a7f49562ccd
+F test/multiplex.test d74c034e52805f6de8cc5432cef8c9eb774bb64ec29b83a22effc8ca4dac1f08
 F test/multiplex2.test 580ca5817c7edbe4cc68fa150609c9473393003a
 F test/multiplex3.test d228f59eac91839a977eac19f21d053f03e4d101
 F test/multiplex4.test e8ae4c4bd70606a5727743241f13b5701990abe4
@@ -1929,7 +1929,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3aadbe17edc1efc7fa6c9600de84e23242ba7866d2dcef2189afd7ba4c97979f
-R 8b39a8898084dde2064094959fc37e70
+P 5374226df4a2c1b59258839532b67a399c447ac8ec1408fdf2dffb9c41e1349e
+R db79de1638e0749eebe4d5bf88ced051
 U drh
-Z 822067d590d9e99496c15dedcdb68543
+Z ec23d72770cad137c5e9586cf56e39f9
