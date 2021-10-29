@@ -3700,10 +3700,10 @@ case OP_Transaction: {
     }
   }
   assert( pOp->p5==0 || pOp->p4type==P4_INT32 );
-  if( pOp->p5
+  if( rc==SQLITE_OK
+   && pOp->p5
    && (iMeta!=pOp->p3
       || db->aDb[pOp->p1].pSchema->iGeneration!=pOp->p4.i)
-   && rc==SQLITE_OK
   ){
     /*
     ** IMPLEMENTATION-OF: R-03189-51135 As each SQL statement runs, the schema
