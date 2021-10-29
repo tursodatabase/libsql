@@ -1,5 +1,5 @@
-C Fix\s.import\s-skip\sissue\sreported\sat\shttps://sqlite.org/forum/forumpost/4c0816c24fc9d16f?t=h
-D 2021-10-28T19:49:23.955
+C Fix\sthe\sOP_Transaction\sopcode\sso\sthat\sif\san\serror\sother\sthan\sSQLITE_SCHEMA\noccurs\sfirst,\sthe\soriginal\serror\sis\snot\soverwritten\sby\sSQLITE_SCHEMA.\ndbsqlfuzz\s85bf7e262017c6c7bddb03ff6d8541511985d36c.
+D 2021-10-29T09:59:06.437
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -621,7 +621,7 @@ F src/upsert.c 8789047a8f0a601ea42fa0256d1ba3190c13746b6ba940fe2d25643a7e991937
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c 30df8356e231dad33be10bb27897655002668343280004ba28c734489414a167
 F src/vacuum.c 454973a59fb20bb982efc2df568a098616db6328a0491b6e84e2e07f7333db45
-F src/vdbe.c a80943ed189ed5f4215636bde0aa7901319b051baffc0706f93a786bdf49ffcf
+F src/vdbe.c daa876fbf9331a8b776696903877353bc352c9e30f5260c465386f2b29dfc4cf
 F src/vdbe.h 25dabb25c7e157b84e59260cfb5b466c3ac103ede9f36f4db371332c47601abe
 F src/vdbeInt.h 38206c8dd6b60ff03d9fd4f626b1b4fd0eef7cdc44f2fc2c1973b0f932a3f26b
 F src/vdbeapi.c 7b83468feb1d42a09d4c2e5241a3eaa3d1f138e289a843cba9fd3f1dad95ca67
@@ -1929,7 +1929,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ba4104aa02625b51113978c1bb540b75bd88cb1959c7e9bfb4113db4159df5d4
-R 94b406dcc0f783386fbc1fd7aca47850
-U larrybr
-Z a41ac8d69ba1283362a2564021d5a0c2
+P 3aadbe17edc1efc7fa6c9600de84e23242ba7866d2dcef2189afd7ba4c97979f
+R 8b39a8898084dde2064094959fc37e70
+U drh
+Z 822067d590d9e99496c15dedcdb68543
