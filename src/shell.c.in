@@ -2607,17 +2607,16 @@ static int run_table_dump_query(
 }
 
 /*
-** Allocate space and save off current error string.
+** Allocate space and save off string indicating current error.
 */
 static char *save_err_msg(
-  sqlite3 *db            /* Database to query */
+  sqlite3 *db,           /* Database to query */
+  const char *zWhen,     /* Qualifier (format) wrapper */
+  int rc                 /* Error code returned from API */
 ){
-  int nErrMsg = 1+strlen30(sqlite3_errmsg(db));
-  char *zErrMsg = sqlite3_malloc64(nErrMsg);
-  if( zErrMsg ){
-    memcpy(zErrMsg, sqlite3_errmsg(db), nErrMsg);
-  }
-  return zErrMsg;
+  if( zWhen==0 )
+    zWhen = "%s (%d)";
+  return sqlite3_mprintf(zWhen, sqlite3_errmsg(db), rc);
 }
 
 #ifdef __linux__
@@ -3539,7 +3538,7 @@ static int shell_exec(
     rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, &zLeftover);
     if( SQLITE_OK != rc ){
       if( pzErrMsg ){
-        *pzErrMsg = save_err_msg(db);
+        *pzErrMsg = save_err_msg(db, "in prepare, %s (%d)", rc);
       }
     }else{
       if( !pStmt ){
@@ -3653,7 +3652,7 @@ static int shell_exec(
         zSql = zLeftover;
         while( IsSpace(zSql[0]) ) zSql++;
       }else if( pzErrMsg ){
-        *pzErrMsg = save_err_msg(db);
+        *pzErrMsg = save_err_msg(db, "stepping, %s (%d)", rc);
       }
 
       /* clear saved stmt handle */
@@ -8526,6 +8525,11 @@ static int do_meta_command(char *zLine, ShellState *p){
 
     failIfSafeMode(p, "cannot run .import in safe mode");
     memset(&sCtx, 0, sizeof(sCtx));
+    sCtx.z = sqlite3_malloc64(120);
+    if( sCtx.z==0 ){
+      import_cleanup(&sCtx);
+      shell_out_of_memory();
+    }
     if( p->mode==MODE_Ascii ){
       xRead = ascii_read_one_field;
     }else{

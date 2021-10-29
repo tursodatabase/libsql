@@ -435,7 +435,6 @@
 ** is significant and used at least once.  On switch statements
 ** where multiple cases go to the same block of code, testcase()
 ** can insure that all cases are evaluated.
-**
 */
 #if defined(SQLITE_COVERAGE_TEST) || defined(SQLITE_DEBUG)
 # ifndef SQLITE_AMALGAMATION
