@@ -1680,7 +1680,8 @@ static JsonNode *jsonMergePatch(
       if( pParse->oom ) return 0;
       jsonRemoveAllNulls(pPatch);
       pTarget = &pParse->aNode[iTarget];
-      assert( pParse->aNode[iRoot].eU==0 );
+      assert( pParse->aNode[iRoot].eU==0 || pParse->aNode[iRoot].eU==2 );
+      testcase( pParse->aNode[iRoot].eU==2 );
       pParse->aNode[iRoot].jnFlags |= JNODE_APPEND;
       VVA( pParse->aNode[iRoot].eU = 2 );
       pParse->aNode[iRoot].u.iAppend = iStart - iRoot;

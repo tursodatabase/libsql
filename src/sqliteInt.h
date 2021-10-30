@@ -435,11 +435,12 @@
 ** is significant and used at least once.  On switch statements
 ** where multiple cases go to the same block of code, testcase()
 ** can insure that all cases are evaluated.
-**
 */
-#ifdef SQLITE_COVERAGE_TEST
-  void sqlite3Coverage(int);
-# define testcase(X)  if( X ){ sqlite3Coverage(__LINE__); }
+#if defined(SQLITE_COVERAGE_TEST) || defined(SQLITE_DEBUG)
+# ifndef SQLITE_AMALGAMATION
+    extern unsigned int sqlite3CoverageCounter;
+# endif
+# define testcase(X)  if( X ){ sqlite3CoverageCounter += (unsigned)__LINE__; }
 #else
 # define testcase(X)
 #endif

@@ -22,16 +22,6 @@
 #endif
 
 /*
-** Routine needed to support the testcase() macro.
-*/
-#ifdef SQLITE_COVERAGE_TEST
-void sqlite3Coverage(int x){
-  static unsigned dummy = 0;
-  dummy += (unsigned)x;
-}
-#endif
-
-/*
 ** Calls to sqlite3FaultSim() are used to simulate a failure during testing,
 ** or to bypass normal error detection during testing in order to let 
 ** execute proceed futher downstream.

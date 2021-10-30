@@ -5337,8 +5337,8 @@ static void fts3EvalNextRow(
         Fts3Expr *pRight = pExpr->pRight;
         sqlite3_int64 iCmp = DOCID_CMP(pLeft->iDocid, pRight->iDocid);
 
-        assert( pLeft->bStart || pLeft->iDocid==pRight->iDocid );
-        assert( pRight->bStart || pLeft->iDocid==pRight->iDocid );
+        assert_fts3_nc( pLeft->bStart || pLeft->iDocid==pRight->iDocid );
+        assert_fts3_nc( pRight->bStart || pLeft->iDocid==pRight->iDocid );
 
         if( pRight->bEof || (pLeft->bEof==0 && iCmp<0) ){
           fts3EvalNextRow(pCsr, pLeft, pRc);

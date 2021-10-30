@@ -1209,9 +1209,9 @@ proc finish_test_precleanup {} {
   catch {db1 close}
   catch {db2 close}
   catch {db3 close}
-  unregister_devsim
-  unregister_jt_vfs
-  unregister_demovfs
+  catch {unregister_devsim}
+  catch {unregister_jt_vfs}
+  catch {unregister_demovfs}
 }
 
 # Run this routine last

@@ -298,6 +298,18 @@ SQLITE_WSD struct Sqlite3Config sqlite3Config = {
 */
 FuncDefHash sqlite3BuiltinFunctions;
 
+#if defined(SQLITE_COVERAGE_TEST) || defined(SQLITE_DEBUG)
+/*
+** Counter used for coverage testing.  Does not come into play for
+** release builds.
+**
+** Access to this global variable is not mutex protected.  This might
+** result in TSAN warnings.  But as the variable does not exist in
+** release builds, that should not be a concern.
+*/
+unsigned int sqlite3CoverageCounter;
+#endif /* SQLITE_COVERAGE_TEST || SQLITE_DEBUG */
+
 #ifdef VDBE_PROFILE
 /*
 ** The following performance counter can be used in place of
