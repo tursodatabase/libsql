@@ -8292,27 +8292,25 @@ static int SQLITE_TCLAPI test_autovacuum_pages(
   sqlite3 *db;
   int rc;
   const char *zScript;
-  size_t nScript;
   if( objc!=2 && objc!=3 ){
     Tcl_WrongNumArgs(interp, 1, objv, "DB ?SCRIPT?");
     return TCL_ERROR;
   }
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
   zScript = objc==3 ? Tcl_GetString(objv[2]) : 0;
-  nScript = zScript ? strlen(zScript) : 0;
-  pData = sqlite3_malloc64( sizeof(*pData) + nScript + 1 );
-  if( pData==0 ){
-    Tcl_AppendResult(interp, "out of memory", (void*)0);
-    return TCL_ERROR;
-  }
-  pData->interp = interp;
   if( zScript ){
+    size_t nScript = strlen(zScript);
+    pData = sqlite3_malloc64( sizeof(*pData) + nScript + 1 );
+    if( pData==0 ){
+      Tcl_AppendResult(interp, "out of memory", (void*)0);
+      return TCL_ERROR;
+    }
+    pData->interp = interp;
     pData->zScript = (char*)&pData[1];
     memcpy(pData->zScript, zScript, nScript+1);
     rc = sqlite3_autovacuum_pages(db,test_autovacuum_pages_callback,
                                   pData, sqlite3_free);
   }else{
-    pData->zScript = 0;
     rc = sqlite3_autovacuum_pages(db, 0, 0, 0);
   }
   if( rc ){
