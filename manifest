@@ -1,5 +1,5 @@
-C Reorder\sa\stest\sadd\searlier\stoday\sto\sOP_Transaction\sfor\seasier\stesting.
-D 2021-10-29T16:19:03.333
+C Fix\san\sincorrect\sassert()\sstatement\sin\ssqlite3GenerateConstraintChecks().\ndbsqlfuzz\s4190cff310aeab359a55f354e560db95d3a6f47d
+D 2021-10-30T18:17:59.636
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -510,7 +510,7 @@ F src/hash.c 8d7dda241d0ebdafb6ffdeda3149a412d7df75102cecfc1021c98d6219823b19
 F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h cb1d7e3e1ed94b7aa6fde95ae2c2daccc3df826be26fc9ed7fd90d1750ae6144
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c 137038155adad9f00ba4e2c2602eec0335d6ef5ff0c3958c02f778657006dc59
+F src/insert.c 3f2892de7820d8e0b34a90bff8a3e2f879bc528683fa2ebb9e779ae56b64b741
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 0aa9e7f08e168e3874cb54984408e3976dafdf5616d511952c425b5ac088ea3e
 F src/main.c bfe067d61ebbd0e6eb023f1fb6b353021e621cf1657e061d629064a740bfbf6f
@@ -1929,7 +1929,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P efc7e8c99a86e9d9eb81655ce96353847bd2cca64eb8f8d10e297f6f4d38e563
-R 946767be3c5aa505f601226a0027015d
+P 8ba73b3cadb72ffcf176d19f9f946c1b90b224e5ab9a0e9eb9a83affa7476d23
+R b527768918a8e4077efc0dd96c45874f
 U drh
-Z 818395ff90b7bf4ecce02cad13dcc7aa
+Z ea8a849e6713aaef4d0e7842051d5f8f

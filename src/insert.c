@@ -2327,7 +2327,8 @@ void sqlite3GenerateConstraintChecks(
 
         assert( onError==OE_Replace );
         nConflictCk = sqlite3VdbeCurrentAddr(v) - addrConflictCk;
-        assert( nConflictCk>0 );
+        assert( nConflictCk>0 || db->mallocFailed );
+        testcase( nConflictCk<=0 );
         testcase( nConflictCk>1 );
         if( regTrigCnt ){
           sqlite3MultiWrite(pParse);
