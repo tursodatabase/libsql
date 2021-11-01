@@ -6189,7 +6189,7 @@ static int arErrorMsg(ArCommand *pAr, const char *zFmt, ...){
 #define AR_SWITCH_FILE        9
 #define AR_SWITCH_DIRECTORY  10
 #define AR_SWITCH_APPEND     11
-#define AR_SWITCH_DRYRUN     12 
+#define AR_SWITCH_DRYRUN     12
 
 static int arProcessSwitch(ArCommand *pAr, int eSwitch, const char *zArg){
   switch( eSwitch ){

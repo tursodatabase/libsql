@@ -1,5 +1,5 @@
-C Add\sa\stest\sfor\s.ar\s-r\sand\sfix\sa\suse-of-uninitialized-variable\sbug
-D 2021-11-01T22:30:24.815
+C zap\strailing\swhitespace
+D 2021-11-01T22:33:20.802
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -550,7 +550,7 @@ F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c ae65c88f5d0d4bc0052b203773d407efa2387c2bd6b202f87178006c7bb8632c
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 32d25b5af6c708aa63373c78c2e59681910387a7a78c08ec3086cadc77d41627
-F src/shell.c.in f2360d089ec7f5cca14a76f3a6f3f26fc349d97b8570edcc81522e7db9454262
+F src/shell.c.in 74dc1a088b1840b89615e99da33c3419f2808ce213f809006accce890c1ed99b
 F src/sqlite.h.in 99786216caf1c57aa3d70f95a7f84566dff6a9eeb50174799ea3b387eafd2a22
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h d8f6f67ae9ad990a70dd03c093bcdc8883e159ff4bfd16a496f8fb80c6840b5a
@@ -1930,7 +1930,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 23525449b883ae6e1d62100bdbc9ff2ca788f67e8ae7d7e4b1a770413a70a7f0
-R 4c2f7fc16891edd4989a0a95daa18865
+P 978d5ed4379b631a79cd46a75d9b5b403f3ec4ce7d9d52ed36a5678cdf04f7f2
+R aa5d515bd539d5a906c526319f66022b
 U larrybr
-Z 406c0509493a4f18fbe952af95b3e75b
+Z 19de7df3053f6a11c3c0364e259c1387
