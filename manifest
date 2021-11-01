@@ -1,5 +1,5 @@
-C The\sVVA()\smacro\sin\sjson1.c\smust\sbe\sactive\sduring\sSQLITE_COVERAGE_TEST\sbecause\nit\saffects\sthe\soutcome\sof\stestcase()\smacros.
-D 2021-11-01T12:53:01.613
+C Add\s--remove\ssubcommand\sto\sshell's\s.archive\scommand
+D 2021-11-01T17:22:52.884
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -550,7 +550,7 @@ F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c ae65c88f5d0d4bc0052b203773d407efa2387c2bd6b202f87178006c7bb8632c
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 32d25b5af6c708aa63373c78c2e59681910387a7a78c08ec3086cadc77d41627
-F src/shell.c.in 185e4b905c3a399e9376597a04cf668f6f992513290978ac978cf4991954d89f
+F src/shell.c.in a91cf2a1e3987e769e2286c4835d3f18b3c2d21cc9405699d2e4a2b06dc65c20
 F src/sqlite.h.in 99786216caf1c57aa3d70f95a7f84566dff6a9eeb50174799ea3b387eafd2a22
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h d8f6f67ae9ad990a70dd03c093bcdc8883e159ff4bfd16a496f8fb80c6840b5a
@@ -1930,7 +1930,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ca2703c339f76101f25051a2ed380398b018782883bfee68b5f2d69a1de9091a
-R 588c2ceaec3a392d5b7d700177ec9bbe
-U drh
-Z 9b594d25e284ecd39d9843606ef5aab4
+P 92c3d253797f9bde4670984d60bbd50b7b28540d2b5f503f318843580bab8765
+R b00d6d0ab1960f3d74e9a78eaa3a2c49
+T *branch * archive_remove
+T *sym-archive_remove *
+T -sym-trunk *
+U larrybr
+Z 7d1554c5ac914a1993ecf6506b6cbae4
