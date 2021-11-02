@@ -2856,6 +2856,15 @@ struct Fts5PoslistPopulator {
   int bMiss;
 };
 
+/*
+** Clear the position lists associated with all phrases in the expression
+** passed as the first argument. Argument bLive is true if the expression
+** might be pointing to a real entry, otherwise it has just been reset.
+**
+** At present this function is only used for detail=col and detail=none
+** fts5 tables. This implies that all phrases must be at most 1 token
+** in size, as phrase matches are not supported without detail=full.
+*/
 Fts5PoslistPopulator *sqlite3Fts5ExprClearPoslists(Fts5Expr *pExpr, int bLive){
   Fts5PoslistPopulator *pRet;
   pRet = sqlite3_malloc64(sizeof(Fts5PoslistPopulator)*pExpr->nPhrase);
@@ -2865,7 +2874,7 @@ Fts5PoslistPopulator *sqlite3Fts5ExprClearPoslists(Fts5Expr *pExpr, int bLive){
     for(i=0; i<pExpr->nPhrase; i++){
       Fts5Buffer *pBuf = &pExpr->apExprPhrase[i]->poslist;
       Fts5ExprNode *pNode = pExpr->apExprPhrase[i]->pNode;
-      assert( pExpr->apExprPhrase[i]->nTerm==1 );
+      assert( pExpr->apExprPhrase[i]->nTerm<=1 );
       if( bLive && 
           (pBuf->n==0 || pNode->iRowid!=pExpr->pRoot->iRowid || pNode->bEof)
       ){
