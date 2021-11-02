@@ -3973,6 +3973,7 @@ static const char *(azHelp[]) = {
   "     -f FILE, --file FILE       Use archive FILE (default is current db)",
   "     -a FILE, --append FILE     Open FILE using the apndvfs VFS",
   "     -C DIR, --directory DIR    Read/extract files from directory DIR",
+  "     -g, --glob                 Use glob matching for names in archive",
   "     -n, --dryrun               Show the SQL that would have occurred",
   "   Examples:",
   "     .ar -cf ARCHIVE foo bar  # Create ARCHIVE from files foo and bar",
@@ -6133,6 +6134,7 @@ struct ArCommand {
   u8 bZip;                        /* True if the archive is a ZIP */
   u8 bDryRun;                     /* True if --dry-run */
   u8 bAppend;                     /* True if --append */
+  u8 bGlob;                       /* True if --glob */
   u8 fromCmdLine;                 /* Run from -A instead of .archive */
   int nArg;                       /* Number of command arguments */
   char *zSrcTable;                /* "sqlar", "zipfile($file)" or "zip" */
@@ -6190,6 +6192,7 @@ static int arErrorMsg(ArCommand *pAr, const char *zFmt, ...){
 #define AR_SWITCH_DIRECTORY  10
 #define AR_SWITCH_APPEND     11
 #define AR_SWITCH_DRYRUN     12
+#define AR_SWITCH_GLOB       13
 
 static int arProcessSwitch(ArCommand *pAr, int eSwitch, const char *zArg){
   switch( eSwitch ){
@@ -6208,6 +6211,9 @@ static int arProcessSwitch(ArCommand *pAr, int eSwitch, const char *zArg){
 
     case AR_SWITCH_DRYRUN:
       pAr->bDryRun = 1;
+      break;
+    case AR_SWITCH_GLOB:
+      pAr->bGlob = 1;
       break;
     case AR_SWITCH_VERBOSE:
       pAr->bVerbose = 1;
@@ -6255,6 +6261,7 @@ static int arParseCommand(
     { "append",    'a', AR_SWITCH_APPEND,    1 },
     { "directory", 'C', AR_SWITCH_DIRECTORY, 1 },
     { "dryrun",    'n', AR_SWITCH_DRYRUN,    0 },
+    { "glob",      'g', AR_SWITCH_GLOB,      0 },
   };
   int nSwitch = sizeof(aSwitch) / sizeof(struct ArSwitch);
   struct ArSwitch *pEnd = &aSwitch[nSwitch];
@@ -6372,10 +6379,12 @@ static int arParseCommand(
 /*
 ** This function assumes that all arguments within the ArCommand.azArg[]
 ** array refer to archive members, as for the --extract, --list or --remove
-** commands. It checks that each of them are present. If any specified file
-** is not present in the archive, an error is printed to stderr and an
+** commands. It checks that each of them are "present". If any specified
+** file is not present in the archive, an error is printed to stderr and an
 ** error code returned. Otherwise, if all specified arguments are present
-** in the archive, SQLITE_OK is returned.
+** in the archive, SQLITE_OK is returned. Here, "present" means either an
+** exact equality when pAr->bGlob is false or a "name GLOB pattern" match
+*  when pAr->bGlob is true.
 **
 ** This function strips any trailing '/' characters from each argument.
 ** This is consistent with the way the [tar] command seems to work on
@@ -6386,11 +6395,11 @@ static int arCheckEntries(ArCommand *pAr){
   if( pAr->nArg ){
     int i, j;
     sqlite3_stmt *pTest = 0;
+    const char *zSel = (pAr->bGlob)
+      ? "SELECT name FROM %s WHERE glob($name,name)"
+      : "SELECT name FROM %s WHERE name=$name";
 
-    shellPreparePrintf(pAr->db, &rc, &pTest,
-        "SELECT name FROM %s WHERE name=$name", 
-        pAr->zSrcTable
-    );
+    shellPreparePrintf(pAr->db, &rc, &pTest, zSel, pAr->zSrcTable);
     j = sqlite3_bind_parameter_index(pTest, "$name");
     for(i=0; i<pAr->nArg && rc==SQLITE_OK; i++){
       char *z = pAr->azArg[i];
@@ -6418,14 +6427,16 @@ static int arCheckEntries(ArCommand *pAr){
 ** identify all archive members that match the command arguments held
 ** in (*pAr). Leave this WHERE clause in (*pzWhere) before returning.
 ** The caller is responsible for eventually calling sqlite3_free() on
-** any non-NULL (*pzWhere) value.
+** any non-NULL (*pzWhere) value. Here, "match" means strict equality
+** when pAr->bGlob is false and GLOB match when pAr->bGlob is true.
 */
 static void arWhereClause(
   int *pRc, 
-  ArCommand *pAr, 
+  ArCommand *pAr,
   char **pzWhere                  /* OUT: New WHERE clause */
 ){
   char *zWhere = 0;
+  const char *zSameOp = (pAr->bGlob)? "GLOB" : "=";
   if( *pRc==SQLITE_OK ){
     if( pAr->nArg==0 ){
       zWhere = sqlite3_mprintf("1");
@@ -6435,8 +6446,8 @@ static void arWhereClause(
       for(i=0; i<pAr->nArg; i++){
         const char *z = pAr->azArg[i];
         zWhere = sqlite3_mprintf(
-          "%z%s name = '%q' OR substr(name,1,%d) = '%q/'", 
-          zWhere, zSep, z, strlen30(z)+1, z
+          "%z%s name %s '%q' OR substr(name,1,%d) %s '%q/'", 
+          zWhere, zSep, zSameOp, z, strlen30(z)+1, zSameOp, z
         );
         if( zWhere==0 ){
           *pRc = SQLITE_NOMEM;
