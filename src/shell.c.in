@@ -6384,7 +6384,7 @@ static int arParseCommand(
 ** error code returned. Otherwise, if all specified arguments are present
 ** in the archive, SQLITE_OK is returned. Here, "present" means either an
 ** exact equality when pAr->bGlob is false or a "name GLOB pattern" match
-*  when pAr->bGlob is true.
+** when pAr->bGlob is true.
 **
 ** This function strips any trailing '/' characters from each argument.
 ** This is consistent with the way the [tar] command seems to work on
