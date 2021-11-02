@@ -1333,6 +1333,9 @@ static int renameResolveTrigger(Parse *pParse){
             }
           }
         }
+        if( rc==SQLITE_OK && db->mallocFailed ){
+          rc = SQLITE_NOMEM;
+        }
         sNC.pSrcList = pSrc;
         if( rc==SQLITE_OK && pStep->pWhere ){
           rc = sqlite3ResolveExprNames(&sNC, pStep->pWhere);
