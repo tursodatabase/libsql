@@ -8456,6 +8456,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     if( sCtx.in==0 ){
       utf8_printf(stderr, "Error: cannot open \"%s\"\n", zFile);
       rc = 1;
+      import_cleanup(&sCtx);
       goto meta_command_exit;
     }
     if( eVerbose>=2 || (eVerbose>=1 && useOutputMode) ){

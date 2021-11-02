@@ -304,7 +304,7 @@ array set ::Platforms [strip_comments {
     "Devkit"                  "" test
     "Apple"                   "" test
     "Sanitize*"               "" test
-    "Device-One"              "" "fuzztest alltest"
+    "Device-One"              "" alltest
     "Default"                 "" "threadtest fuzztest alltest"
     "Valgrind*"               "" valgrindtest
   }
