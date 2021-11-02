@@ -1,5 +1,5 @@
-C Add\srecent\sdbsqlfuzz\scases\sto\stest/fuzzdata8.db.
-D 2021-11-02T10:47:20.363
+C Add\s#ifdef\slogic\sto\sos_unix.c\sso\sthat\sit\sbuilds\swith\sSQLITE_OMIT_WAL\sdefined.
+D 2021-11-02T11:09:24.625
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -533,7 +533,7 @@ F src/os.c b1c4f2d485961e9a5b6b648c36687d25047c252222e9660b7cc25a6e1ea436ab
 F src/os.h 26890f540b475598cd9881dcc68931377b8d429d3ea3e2eeb64470cde64199f8
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
-F src/os_unix.c f445ad0597184e27f225bfc3d327dee32b49f7918d6eda9c921369b5060d96ef
+F src/os_unix.c 8e14b40fd02f70e234030c2bee45215ff8835293adc13a08e9718c29bff61401
 F src/os_win.c 77d39873836f1831a9b0b91894fec45ab0e9ca8e067dc8c549e1d1eca1566fe9
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c bc10c191d18bffd3d76eda5f162799e43a9f875ecfe7c4869f752e2ddef87ea2
@@ -1930,7 +1930,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0a5b94b99cf45df759a59cb5fc62da111ca33f8c2614769a81930d72b51f093a
-R 62fd224b940dabced520e214f563bdab
-U drh
-Z ba8f00524c3aa0304d043d5aeeb07d3d
+P 8c3f2536d2853acef05c4e8c07f301abb0687402c56ded5ff8614e79fb049423
+R 8b376094a1e25df4570f2864eb07a1ac
+U dan
+Z 94bd6fda7f782c0744099483ca9f3618
