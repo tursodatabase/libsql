@@ -282,24 +282,32 @@ void sqlite3ComputeGeneratedColumns(
   ** that appropriate affinity has been applied to the regular columns
   */
   sqlite3TableAffinity(pParse->pVdbe, pTab, iRegStore);
-  if( (pTab->tabFlags & TF_HasStored)!=0
-   && (pOp = sqlite3VdbeGetOp(pParse->pVdbe,-1))->opcode==OP_Affinity
-  ){
-    /* Change the OP_Affinity argument to '@' (NONE) for all stored
-    ** columns.  '@' is the no-op affinity and those columns have not
-    ** yet been computed. */
-    int ii, jj;
-    char *zP4 = pOp->p4.z;
-    assert( zP4!=0 );
-    assert( pOp->p4type==P4_DYNAMIC );
-    for(ii=jj=0; zP4[jj]; ii++){
-      if( pTab->aCol[ii].colFlags & COLFLAG_VIRTUAL ){
-        continue;
+  if( (pTab->tabFlags & TF_HasStored)!=0 ){
+    pOp = sqlite3VdbeGetOp(pParse->pVdbe,-1);
+    if( pOp->opcode==OP_Affinity ){
+      /* Change the OP_Affinity argument to '@' (NONE) for all stored
+      ** columns.  '@' is the no-op affinity and those columns have not
+      ** yet been computed. */
+      int ii, jj;
+      char *zP4 = pOp->p4.z;
+      assert( zP4!=0 );
+      assert( pOp->p4type==P4_DYNAMIC );
+      assert( (pTab->tabFlags & TF_Strict)==0 );
+      for(ii=jj=0; zP4[jj]; ii++){
+        if( pTab->aCol[ii].colFlags & COLFLAG_VIRTUAL ){
+          continue;
+        }
+        if( pTab->aCol[ii].colFlags & COLFLAG_STORED ){
+          zP4[jj] = SQLITE_AFF_NONE;
+        }
+        jj++;
       }
-      if( pTab->aCol[ii].colFlags & COLFLAG_STORED ){
-        zP4[jj] = SQLITE_AFF_NONE;
-      }
-      jj++;
+    }else if( pOp->opcode==OP_TypeCheck ){
+      /* If an OP_TypeCheck was generated because the table is STRICT,
+      ** then set the P3 operand to indicate that generated columns should
+      ** not be checked */
+      assert( pTab->tabFlags & TF_Strict );
+      pOp->p3 = 1;
     }
   }
 
