@@ -292,7 +292,6 @@ void sqlite3ComputeGeneratedColumns(
       char *zP4 = pOp->p4.z;
       assert( zP4!=0 );
       assert( pOp->p4type==P4_DYNAMIC );
-      assert( (pTab->tabFlags & TF_Strict)==0 );
       for(ii=jj=0; zP4[jj]; ii++){
         if( pTab->aCol[ii].colFlags & COLFLAG_VIRTUAL ){
           continue;
@@ -306,7 +305,6 @@ void sqlite3ComputeGeneratedColumns(
       /* If an OP_TypeCheck was generated because the table is STRICT,
       ** then set the P3 operand to indicate that generated columns should
       ** not be checked */
-      assert( pTab->tabFlags & TF_Strict );
       pOp->p3 = 1;
     }
   }

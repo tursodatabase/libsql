@@ -1,5 +1,5 @@
-C Improved\sthe\serror\smessage\sthat\sresults\swhen\sa\sschema\sparse\sfails\safter\nALTER\sTABLE\sADD\sCOLUMN.
-D 2021-11-03T15:59:17.767
+C Remove\stwo\sincorrect\sassert()\sstatements\sadded\sby\sa\scheck-in\sfrom\searlier\ntoday.
+D 2021-11-03T16:35:23.811
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -510,7 +510,7 @@ F src/hash.c 8d7dda241d0ebdafb6ffdeda3149a412d7df75102cecfc1021c98d6219823b19
 F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h cb1d7e3e1ed94b7aa6fde95ae2c2daccc3df826be26fc9ed7fd90d1750ae6144
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c 3ed9d945e4773483c7a1e60719b8fffa214bd6833421d0b89a644de146b3e50e
+F src/insert.c 7fcbbe9114ac402ea3c0c6a3810f13fc89cae8131ea1659ec472be7caac10192
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c e1dcff1c916bf6834e150b492eddda5d9792453182d2ad64294d2266b6e93c4c
 F src/main.c 546dd2418c4f5d59aced76c68e55290735feb420ee305051fbd55ab8fff0d255
@@ -1930,7 +1930,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 24285d913678853213532d61aba077d576e3cd7629159e0a75dc3c16e54e2662
-R c65dc02471c3bd0a2fb7b99a1bdfeb55
+P b007a39dd3a46d13fe06f2a1eeb4e3fd4cad1a77892be6d175b31db1edd6f6a8
+R 336f4dbfa0d3239ff6d22097056aa24f
 U drh
-Z 4361cb2bc45addecc76fa216d9bd6573
+Z da24b11e81afda71f53eb048fa69e639
