@@ -439,7 +439,7 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
     sqlite3ReleaseTempReg(pParse, r1);
 
     /* Reload the table definition */
-    renameReloadSchema(pParse, iDb, INITFLAG_AlterRename);
+    renameReloadSchema(pParse, iDb, INITFLAG_AlterAdd);
 
     /* Verify that constraints are still satisfied */
     if( pNew->pCheck!=0

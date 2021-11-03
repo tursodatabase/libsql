@@ -126,5 +126,11 @@ do_execsql_test strict1-7.1 {
   INSERT INTO t4(c) VALUES(1);
   SELECT * FROM t4;
 } {4 2 1}
+do_catchsql_test strict-7.2 {
+  ALTER TABLE t4 ADD COLUMN d VARCHAR;
+} {1 {error in table t4 after add column: unknown datatype for t4.d: "VARCHAR"}}
+do_catchsql_test strict-7.3 {
+  ALTER TABLE t4 ADD COLUMN d;
+} {1 {error in table t4 after add column: missing datatype for t4.d}}
 
 finish_test

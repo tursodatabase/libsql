@@ -3826,8 +3826,10 @@ typedef struct {
 /*
 ** Allowed values for mInitFlags
 */
+#define INITFLAG_AlterMask     0x0003  /* Types of ALTER */
 #define INITFLAG_AlterRename   0x0001  /* Reparse after a RENAME */
 #define INITFLAG_AlterDrop     0x0002  /* Reparse after a DROP COLUMN */
+#define INITFLAG_AlterAdd      0x0003  /* Reparse after an ADD COLUMN */
 
 /* Tuning parameters are set using SQLITE_TESTCTRL_TUNE and are controlled
 ** on debug-builds of the CLI using ".testctrl tune ID VALUE".  Tuning
