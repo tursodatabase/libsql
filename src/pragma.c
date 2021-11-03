@@ -1786,7 +1786,7 @@ void sqlite3Pragma(
             zErr = sqlite3MPrintf(db, "NULL value in %s.%s", pTab->zName,
                                 pCol->zCnName);
             sqlite3VdbeAddOp4(v, OP_String8, 0, 3, 0, zErr, P4_DYNAMIC);
-            if( bStrict ){
+            if( bStrict && pCol->eCType!=COLTYPE_ANY ){
               sqlite3VdbeGoto(v, doError);
             }else{
               integrityCheckResultRow(v);

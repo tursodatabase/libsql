@@ -1,5 +1,5 @@
-C Correctly\shandle\sSeekScan\son\san\sIN\soperator\sof\sthe\smiddle\sterm\sof\san\sindex\nwhen\sthe\sright-most\sterm\sis\sa\srange\sconstraint.\nFix\sfor\sticket\s[5981a8c041a3c2f3].
-D 2021-11-02T22:24:19.545
+C Fix\san\sissue\sin\sPRAGMA\sintegrity_check\sassociated\sreporting\sNULL\svalues\sin\na\sNOT\sNULL\scolumn\sof\stype\sANY\sin\sa\sSTRICT\stable.
+D 2021-11-03T11:43:09.793
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -542,7 +542,7 @@ F src/parse.y 0bd7971a7489bbf6c3726f1b50da6e508bdff8fa493e9cc3f5a96b12cbb2361e
 F src/pcache.c 084e638432c610f95aea72b8509f0845d2791293f39d1b82f0c0a7e089c3bb6b
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c 54881292a9a5db202b2c0ac541c5e3ef9a5e8c4f1c1383adb2601d5499a60e65
-F src/pragma.c fc4c772d25766f7440dff6bf352e8c66981f92c80689d1a0fe229d39a38f69a5
+F src/pragma.c c5fc9c849baa32e716c5ed1ae55237913461fffd886dba4380e31132ca960ed6
 F src/pragma.h 87330ed2fbfa2a1274de93ca0ab850fba336189228cb256089202c3b52766fad
 F src/prepare.c 8f07616db04337057b8498b72d051ee90f73c54615c2e908c05404cef1e060b7
 F src/printf.c 5901672228f305f7d493cbc4e7d76a61a5caecdbc1cd06b1f9ec42ea4265cf8d
@@ -1432,7 +1432,7 @@ F test/statfault.test 55f86055f9cd7b2d962a621b8a04215c1cebd4eaaecde92d279442327f
 F test/stmt.test 54ed2cc0764bf3e48a058331813c3dbd19fc1d0827c3d8369914a5d8f564ec75
 F test/stmtvtab1.test 6873dfb24f8e79cbb5b799b95c2e4349060eb7a3b811982749a84b359468e2d5
 F test/strict1.test 2e590641b1f26f9ff0db5b785df07f932988af1ab6ccab792b792ebb8405d657
-F test/strict2.test e78cedd56eb1c3e0b09b16c594dbfcb7e95bc6d85f68f0fd6501c243be28e219
+F test/strict2.test b22c7a98b5000aef937f1990776497f0e979b1a23bc4f63e2d53b00e59b20070
 F test/subjournal.test 8d4e2572c0ee9a15549f0d8e40863161295107e52f07a3e8012a2e1fdd093c49
 F test/subquery.test d7268d193dd33d5505df965399d3a594e76ae13f
 F test/subquery2.test 90cf944b9de8204569cf656028391e4af1ccc8c0cc02d4ef38ee3be8de1ffb12
@@ -1930,8 +1930,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1d9004cd015073853ce0ca811a68ea5411733eedee993b97a38a42ba139d7590 266e9cbada531716c908c21d60a6038109722e3dd040237679ac0240fb5020ea
-R c61e36c2c71ed29e0021479206aa1f46
-T +closed 266e9cbada531716c908c21d60a6038109722e3dd040237679ac0240fb5020ea
+P aa24660e76681d164b1948621d3dbd0f620c72c6bca636d35a9eed73ab7593fa
+R ed1f910913097204dd97cf8ac0d8fefb
 U drh
-Z 49ea952deb1273256cba2a3e904b3452
+Z 54927dfeb8aafb58d9448f3796b194b8
