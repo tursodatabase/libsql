@@ -653,7 +653,7 @@ typedef int (*sqlite3_loadext_entry)(
 /* Version 3.36.1 and later */
 #define sqlite3_changes64              sqlite3_api->changes64
 #define sqlite3_total_changes64        sqlite3_api->total_changes64
-* Version 3.37.0 and later */
+/* Version 3.37.0 and later */
 #define sqlite3_autovacuum_pages       sqlite3_api->autovacuum_pages
 #endif /* !defined(SQLITE_CORE) && !defined(SQLITE_OMIT_LOAD_EXTENSION) */
 
