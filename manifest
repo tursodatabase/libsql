@@ -1,5 +1,5 @@
-C Update\sa\stest\scase\sin\scorruptN.test\sto\saccount\sfor\sthe\sfact\sthat\sif\swritable_schema=1\sis\sset,\sno\serror\sis\sraised\sif\sa\sDELETE\sstatement\sfinds\sthat\san\sindex\sentry\sis\smissing\s([19e56291a7344c7a]).
-D 2021-11-04T16:15:46.189
+C Fix\scorruptN.test\sso\sthat\sit\sworks\swith\sSQLITE_DEFAULT_AUTOVACUUM=1\sbuilds.
+D 2021-11-04T16:25:47.339
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -809,7 +809,7 @@ F test/corruptJ.test 4d5ccc4bf959464229a836d60142831ef76a5aa4
 F test/corruptK.test 5b4212fe346699831c5ad559a62c54e11c0611bdde1ea8423a091f9c01aa32af
 F test/corruptL.test 7d3440831ca24ba64305583c4d4506d417d3f89f5775c0b7cc8102db078f8ff5
 F test/corruptM.test 7d574320e08c1b36caa3e47262061f186367d593a7e305d35f15289cc2c3e067
-F test/corruptN.test e792cf031ed5e05ad9e93243e2e5acea4150d652a9770823aaa7c5589565e99c
+F test/corruptN.test 60b5a62944b4f0029ba07edaa5fd8e670539d6b0a8d99db26c068d435675cbfe
 F test/cost.test b11cdbf9f11ffe8ef99c9881bf390e61fe92baf2182bad1dbe6de59a7295c576
 F test/count.test 5364003488249957750a5f15ee42ca1cd7b100b1131c2dc71fff266a1250bf55
 F test/countofview.test e17d6e6688cf74f22783c9ec6e788c0790ee4fbbaee713affd00b1ac0bb39b86
@@ -1930,7 +1930,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 53ee208d4ee8db1499a63b6652a8c5269e8fe85a75376adffdb912094ac1a681
-R 99b62699020e5a538102bb7a624faa97
+P a90c5f0b5ba1ef0f41449cee10a65beb8b55b09fd1976e0e35814b1848979416
+R b3e19aad9c686341c0bd3536e3b0d92d
 U dan
-Z 73ab17c6a4906043004c3643a18761a0
+Z c2dab8d56ec44ce6f6b981aca51dffc5
