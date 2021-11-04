@@ -387,17 +387,17 @@ Table *sqlite3FindTable(sqlite3 *db, const char *zName, const char *zDatabase){
     p = sqlite3HashFind(&db->aDb[i].pSchema->tblHash, zName);
     if( p==0 && sqlite3StrNICmp(zName, "sqlite_", 7)==0 ){
       if( i==1 ){
-        if( sqlite3StrICmp(zName+7, &ALT_TEMP_SCHEMA_TABLE[7])==0
-         || sqlite3StrICmp(zName+7, &ALT_SCHEMA_TABLE[7])==0
-         || sqlite3StrICmp(zName+7, &DFLT_SCHEMA_TABLE[7])==0
+        if( sqlite3StrICmp(zName+7, &PREFERRED_TEMP_SCHEMA_TABLE[7])==0
+         || sqlite3StrICmp(zName+7, &PREFERRED_SCHEMA_TABLE[7])==0
+         || sqlite3StrICmp(zName+7, &LEGACY_SCHEMA_TABLE[7])==0
         ){
           p = sqlite3HashFind(&db->aDb[1].pSchema->tblHash, 
-                              DFLT_TEMP_SCHEMA_TABLE);
+                              LEGACY_TEMP_SCHEMA_TABLE);
         }
       }else{
-        if( sqlite3StrICmp(zName+7, &ALT_SCHEMA_TABLE[7])==0 ){
+        if( sqlite3StrICmp(zName+7, &PREFERRED_SCHEMA_TABLE[7])==0 ){
           p = sqlite3HashFind(&db->aDb[i].pSchema->tblHash,
-                              DFLT_SCHEMA_TABLE);
+                              LEGACY_SCHEMA_TABLE);
         }
       }
     }
@@ -415,11 +415,11 @@ Table *sqlite3FindTable(sqlite3 *db, const char *zName, const char *zDatabase){
       if( p ) break;
     }
     if( p==0 && sqlite3StrNICmp(zName, "sqlite_", 7)==0 ){
-      if( sqlite3StrICmp(zName+7, &ALT_SCHEMA_TABLE[7])==0 ){
-        p = sqlite3HashFind(&db->aDb[0].pSchema->tblHash, DFLT_SCHEMA_TABLE);
-      }else if( sqlite3StrICmp(zName+7, &ALT_TEMP_SCHEMA_TABLE[7])==0 ){
+      if( sqlite3StrICmp(zName+7, &PREFERRED_SCHEMA_TABLE[7])==0 ){
+        p = sqlite3HashFind(&db->aDb[0].pSchema->tblHash, LEGACY_SCHEMA_TABLE);
+      }else if( sqlite3StrICmp(zName+7, &PREFERRED_TEMP_SCHEMA_TABLE[7])==0 ){
         p = sqlite3HashFind(&db->aDb[1].pSchema->tblHash, 
-                            DFLT_TEMP_SCHEMA_TABLE);
+                            LEGACY_TEMP_SCHEMA_TABLE);
       }
     }
   }
@@ -513,6 +513,22 @@ Table *sqlite3LocateTableItem(
     zDb = p->zDatabase;
   }
   return sqlite3LocateTable(pParse, flags, p->zName, zDb);
+}
+
+/*
+** Return the preferred table name for system tables.  Translate legacy
+** names into the new preferred names, as appropriate.
+*/
+const char *sqlite3PreferredTableName(const char *zName){
+  if( sqlite3StrNICmp(zName, "sqlite_", 7)==0 ){
+    if( sqlite3StrICmp(zName+7, &LEGACY_SCHEMA_TABLE[7])==0 ){
+      return PREFERRED_SCHEMA_TABLE;
+    }
+    if( sqlite3StrICmp(zName+7, &LEGACY_TEMP_SCHEMA_TABLE[7])==0 ){
+      return PREFERRED_TEMP_SCHEMA_TABLE;
+    }
+  }
+  return zName;
 }
 
 /*
@@ -913,7 +929,7 @@ char *sqlite3NameFromToken(sqlite3 *db, const Token *pName){
 */
 void sqlite3OpenSchemaTable(Parse *p, int iDb){
   Vdbe *v = sqlite3GetVdbe(p);
-  sqlite3TableLock(p, iDb, SCHEMA_ROOT, 1, DFLT_SCHEMA_TABLE);
+  sqlite3TableLock(p, iDb, SCHEMA_ROOT, 1, LEGACY_SCHEMA_TABLE);
   sqlite3VdbeAddOp4Int(v, OP_OpenWrite, 0, SCHEMA_ROOT, iDb, 5);
   if( p->nTab==0 ){
     p->nTab = 1;
@@ -2854,7 +2870,7 @@ void sqlite3EndTable(
     ** the information we've collected.
     */
     sqlite3NestedParse(pParse,
-      "UPDATE %Q." DFLT_SCHEMA_TABLE
+      "UPDATE %Q." LEGACY_SCHEMA_TABLE
       " SET type='%s', name=%Q, tbl_name=%Q, rootpage=#%d, sql=%Q"
       " WHERE rowid=#%d",
       db->aDb[iDb].zDbSName,
@@ -3233,7 +3249,7 @@ static void destroyRootPage(Parse *pParse, int iTable, int iDb){
   ** token for additional information.
   */
   sqlite3NestedParse(pParse, 
-     "UPDATE %Q." DFLT_SCHEMA_TABLE
+     "UPDATE %Q." LEGACY_SCHEMA_TABLE
      " SET rootpage=%d WHERE #%d AND rootpage=#%d",
      pParse->db->aDb[iDb].zDbSName, iTable, r1, r1);
 #endif
@@ -3368,7 +3384,7 @@ void sqlite3CodeDropTable(Parse *pParse, Table *pTab, int iDb, int isView){
   ** database.
   */
   sqlite3NestedParse(pParse, 
-      "DELETE FROM %Q." DFLT_SCHEMA_TABLE
+      "DELETE FROM %Q." LEGACY_SCHEMA_TABLE
       " WHERE tbl_name=%Q and type!='trigger'",
       pDb->zDbSName, pTab->zName);
   if( !isView && !IsVirtual(pTab) ){
@@ -4385,7 +4401,7 @@ void sqlite3CreateIndex(
       /* Add an entry in sqlite_schema for this index
       */
       sqlite3NestedParse(pParse, 
-          "INSERT INTO %Q." DFLT_SCHEMA_TABLE " VALUES('index',%Q,%Q,#%d,%Q);",
+          "INSERT INTO %Q." LEGACY_SCHEMA_TABLE " VALUES('index',%Q,%Q,#%d,%Q);",
           db->aDb[iDb].zDbSName,
           pIndex->zName,
           pTab->zName,
@@ -4571,7 +4587,7 @@ void sqlite3DropIndex(Parse *pParse, SrcList *pName, int ifExists){
   if( v ){
     sqlite3BeginWriteOperation(pParse, 1, iDb);
     sqlite3NestedParse(pParse,
-       "DELETE FROM %Q." DFLT_SCHEMA_TABLE " WHERE name=%Q AND type='index'",
+       "DELETE FROM %Q." LEGACY_SCHEMA_TABLE " WHERE name=%Q AND type='index'",
        db->aDb[iDb].zDbSName, pIndex->zName
     );
     sqlite3ClearStatTables(pParse, iDb, "idx", pIndex->zName);

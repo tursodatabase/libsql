@@ -6515,7 +6515,7 @@ case OP_ParseSchema: {
   }else
 #endif
   {
-    zSchema = DFLT_SCHEMA_TABLE;
+    zSchema = LEGACY_SCHEMA_TABLE;
     initData.db = db;
     initData.iDb = iDb;
     initData.pzErrMsg = &p->zErrMsg;

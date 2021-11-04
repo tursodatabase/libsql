@@ -485,7 +485,7 @@ void sqlite3VtabFinishParse(Parse *pParse, Token *pEnd){
     */
     iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
     sqlite3NestedParse(pParse,
-      "UPDATE %Q." DFLT_SCHEMA_TABLE " "
+      "UPDATE %Q." LEGACY_SCHEMA_TABLE " "
          "SET type='table', name=%Q, tbl_name=%Q, rootpage=0, sql=%Q "
        "WHERE rowid=#%d",
       db->aDb[iDb].zDbSName,

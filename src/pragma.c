@@ -1271,7 +1271,7 @@ void sqlite3Pragma(
         }
         sqlite3VdbeMultiLoad(v, 1, "sssiii",
            db->aDb[ii].zDbSName,
-           pTab->zName,
+           sqlite3PreferredTableName(pTab->zName),
            zType,
            pTab->nCol,
            (pTab->tabFlags & TF_WithoutRowid)!=0,
@@ -1291,7 +1291,7 @@ void sqlite3Pragma(
     for(i=sqliteHashFirst(&pDb->pSchema->tblHash); i; i=sqliteHashNext(i)){
       Table *pTab = sqliteHashData(i);
       sqlite3VdbeMultiLoad(v, 1, "ssiii",
-           pTab->zName,
+           sqlite3PreferredTableName(pTab->zName),
            0,
            pTab->szTabRow,
            pTab->nRowLogEst,
