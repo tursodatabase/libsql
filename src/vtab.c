@@ -696,7 +696,8 @@ int sqlite3VtabCallConnect(Parse *pParse, Table *pTab){
   int rc;
 
   assert( pTab );
-  if( !IsVirtual(pTab) || sqlite3GetVTable(db, pTab) ){
+  assert( IsVirtual(pTab) );
+  if( sqlite3GetVTable(db, pTab) ){
     return SQLITE_OK;
   }
 

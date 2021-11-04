@@ -1,5 +1,5 @@
-C First\sthe\sshadow\stable\smechanism\sso\sthat\sit\sworks\seven\sif\sthe\sshadow\stable\ncomes\sbefore\sthe\svirtual\stable\sin\sthe\ssqlite_schema\stable,\sas\scan\shappen\nafter\sa\sVACUUM.
-D 2021-11-04T00:51:53.284
+C Change\sa\sbranch\smade\sunreachable\sby\sthe\sprevious\scheck-in\sinto\san\sassert().
+D 2021-11-04T11:34:04.310
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -631,7 +631,7 @@ F src/vdbemem.c 71a449c57be10a66a8a5620e5c5a67ebb9ca70121556dc631ffd4c4458708d8c
 F src/vdbesort.c 513b481c8bab4a6578c92194a60cf3bc3b48736e4a53f8d2d7918121c5b594e7
 F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf823
 F src/vdbevtab.c f99b275366c5fc5e2d99f734729880994ab9500bdafde7fae3b02d562b9d323c
-F src/vtab.c a380a5eed772917dec6b2e8a771c8b3f582424294316c6392fdf1ed68c7e6d84
+F src/vtab.c 66d76837d7e30a301954caa0a52fef458b9530aae9d4a063bf7decd0bbb5a9e6
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 6ae14d4797f31c67fc2be659d24fbc6e1a6f5f423bdfb5ef831ea171bce42320
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
@@ -1930,7 +1930,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3206edff947b9edb485466f05b2baadf725d798229630c7e83e88c0b9ae278ca
-R 8f5be0e60c11f630170e85314040c5d7
+P 005a8642773556825fe4c5d0b2c12517d35289308a30df0151ef7f080acb0172
+R ad439cb6de03d60098cfb15c4c6d5c5f
 U drh
-Z adc67823b696bff12115917b3784aff0
+Z 3ac3a88921e3dc242eca758dc886565c
