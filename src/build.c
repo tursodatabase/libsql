@@ -2494,6 +2494,40 @@ int sqlite3IsShadowTableOf(sqlite3 *db, Table *pTab, const char *zName){
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 /*
+** Table pTab is a virtual table.  If it the virtual table implementation
+** exists and has an xShadowName method, then loop over all other ordinary
+** tables within the same schema looking for shadow tables of pTab, and mark
+** any shadow tables seen using the TF_Shadow flag.
+*/
+void sqlite3MarkAllShadowTablesOf(sqlite3 *db, Table *pTab){
+  int nName;                    /* Length of pTab->zName */
+  Module *pMod;                 /* Module for the virtual table */
+  HashElem *k;                  /* For looping through the symbol table */
+
+  assert( IsVirtual(pTab) );
+  pMod = (Module*)sqlite3HashFind(&db->aModule, pTab->u.vtab.azArg[0]);
+  if( pMod==0 ) return;
+  if( NEVER(pMod->pModule==0) ) return;
+  if( pMod->pModule->xShadowName==0 ) return;
+  assert( pTab->zName!=0 );
+  nName = sqlite3Strlen30(pTab->zName);
+  for(k=sqliteHashFirst(&pTab->pSchema->tblHash); k; k=sqliteHashNext(k)){
+    Table *pOther = sqliteHashData(k);
+    assert( pOther->zName!=0 );
+    if( !IsOrdinaryTable(pOther) ) continue;
+    if( pOther->tabFlags & TF_Shadow ) continue;
+    if( sqlite3StrNICmp(pOther->zName, pTab->zName, nName)==0
+     && pOther->zName[nName]=='_'
+     && pMod->pModule->xShadowName(pOther->zName+nName+1)
+    ){
+      pOther->tabFlags |= TF_Shadow;
+    }
+  }
+}
+#endif /* ifndef SQLITE_OMIT_VIRTUALTABLE */
+
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+/*
 ** Return true if zName is a shadow table name in the current database
 ** connection.
 **
@@ -3006,13 +3040,12 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
   assert( pTable );
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-  db->nSchemaLock++;
-  rc = sqlite3VtabCallConnect(pParse, pTable);
-  db->nSchemaLock--;
-  if( rc ){
-    return 1;
+  if( IsVirtual(pTable) ){
+    db->nSchemaLock++;
+    rc = sqlite3VtabCallConnect(pParse, pTable);
+    db->nSchemaLock--;
+    return rc;
   }
-  if( IsVirtual(pTable) ) return 0;
 #endif
 
 #ifndef SQLITE_OMIT_VIEW

@@ -5050,9 +5050,11 @@ int sqlite3ReadOnlyShadowTables(sqlite3 *db);
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   int sqlite3ShadowTableName(sqlite3 *db, const char *zName);
   int sqlite3IsShadowTableOf(sqlite3*,Table*,const char*);
+  void sqlite3MarkAllShadowTablesOf(sqlite3*, Table*);
 #else
 # define sqlite3ShadowTableName(A,B) 0
 # define sqlite3IsShadowTableOf(A,B,C) 0
+# define sqlite3MarkAllShadowTablesOf(A,B)
 #endif
 int sqlite3VtabEponymousTableInit(Parse*,Module*);
 void sqlite3VtabEponymousTableClear(sqlite3*,Module*);
