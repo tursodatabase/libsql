@@ -2513,9 +2513,11 @@ proc test_efkey_6 {tn zAlter isError} {
 
 }
 
-test_efkey_6 1 "ALTER TABLE tbl ADD COLUMN c REFERENCES xx" 0
-test_efkey_6 2 "ALTER TABLE tbl ADD COLUMN c DEFAULT NULL REFERENCES xx" 0
-test_efkey_6 3 "ALTER TABLE tbl ADD COLUMN c DEFAULT 0 REFERENCES xx" 1
+ifcapable altertable {
+  test_efkey_6 1 "ALTER TABLE tbl ADD COLUMN c REFERENCES xx" 0
+  test_efkey_6 2 "ALTER TABLE tbl ADD COLUMN c DEFAULT NULL REFERENCES xx" 0
+  test_efkey_6 3 "ALTER TABLE tbl ADD COLUMN c DEFAULT 0 REFERENCES xx" 1
+}
 
 #-------------------------------------------------------------------------
 # Test that ALTER TABLE adjusts REFERENCES clauses when the parent table
@@ -2532,6 +2534,7 @@ test_efkey_6 3 "ALTER TABLE tbl ADD COLUMN c DEFAULT 0 REFERENCES xx" 1
 # statement or statements stored in the sqlite_schema table are modified
 # to reflect the new parent table name.
 #
+ifcapable altertable {
 do_test e_fkey-56.1 {
   drop_all_tables
   execsql {
@@ -2569,6 +2572,7 @@ do_test e_fkey-56.4 {
   {CREATE TABLE c2(e, f, FOREIGN KEY(f) REFERENCES "p" ON UPDATE CASCADE)}  \
   {CREATE TABLE c3(e, 'f col 2', FOREIGN KEY('f col 2') REFERENCES "p" ON UPDATE CASCADE)} \
 ]
+}
 
 #-------------------------------------------------------------------------
 # Check that a DROP TABLE does an implicit DELETE FROM. Which does not
@@ -2769,6 +2773,7 @@ do_test e_fkey-60.6 {
 # EVIDENCE-OF: R-54142-41346 The properties of the DROP TABLE and ALTER
 # TABLE commands described above only apply if foreign keys are enabled.
 #
+ifcapable altertable {
 do_test e_fkey-61.1.1 {
   drop_all_tables
   execsql { CREATE TABLE t1(a, b) ; INSERT INTO t1 VALUES(1, 2) }
@@ -2830,6 +2835,7 @@ do_test e_fkey-61.3.2 {
 do_test e_fkey-61.3.3 {
   execsql { PRAGMA foreign_keys = ON }
 } {}
+}
 
 ###########################################################################
 ### SECTION 6: Limits and Unsupported Features
