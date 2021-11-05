@@ -1,5 +1,5 @@
-C Remove\san\sincorrect\sNEVER()\sreported\sat\n[forum:/forumpost/5bbabfb7ce|forum\spost\s5bbabfb7ce].\s\sAlso\suse\sthis\nopportunity\sto\simprove\sthe\sisSimpleCount()\sfunction\swith\sbetter\sformatting,\nan\sexpanded\sheader\scomment,\sand\ssome\sextra\sassert()\sand\stextcase()\smacros.
-D 2021-11-05T11:52:33.612
+C Use\sthe\sFTS_CORRUPT_VTAB\smacro\srather\sthan\sa\sdirect\scall\sto\nsqlite3Fts3Corrupt()\sin\s[2fad2a89527757b3]\sso\sthat\sthe\sbuild\sworks\nin\sall\scases.
+D 2021-11-05T12:34:06.422
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -84,7 +84,7 @@ F ext/fts3/README.content b9078d0843a094d86af0d48dffbff13c906702b4c3558012e67b9c
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers b92bdeb8b46503f0dd301d364efc5ef59ef9fa8e2758b8e742f39fa93a2e422d
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 27c9167817c509a80da9ea16a70923dbb34a68d8767d6f43971062f54a4c6dbe
+F ext/fts3/fts3.c da41de21622774b1cb8c3415e8d2a6961ad7c978ab534f2a54434f76a5c4dfbc
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h cff59b8b13dafe9d59924a5d710f771ed8b121a55cccbc99b6e2a723fcde14dc
 F ext/fts3/fts3_aux.c 1af58af8f2b00a49f4fb1c2602f8da2054ad60076f46c8ebf85c5410eccccb65
@@ -1930,7 +1930,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 07cca2fa891e9a60ea128a4b96ee407e9dd0f2b9e31fcffbfc2ac594a0e1ffe6
-R 24f43c36076d7077b334333b0946f5fd
+P 2927185be81a5aa0dce70dd06040d05c2816a4d18b5094a6f709732cfd6968dc
+R 31a5d1c00785c38024ae3ddc3e69a97d
 U drh
-Z 57a888b10205bac6b59e83da3e3ff9b2
+Z b7c5d7b858dc3dc0475d30f599b50bf5

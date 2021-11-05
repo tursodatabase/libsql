@@ -5977,7 +5977,7 @@ int sqlite3Fts3EvalPhrasePoslist(
       }
       assert( rc!=SQLITE_OK || pPhrase->bIncr==0 );
       if( rc==SQLITE_OK && pNear->bEof!=bEofSave ){
-        rc = sqlite3Fts3Corrupt();
+        rc = FTS_CORRUPT_VTAB;
       }
     }
     if( bTreeEof ){
