@@ -1167,6 +1167,17 @@ static void disconnectAllVtab(sqlite3 *db){
         if( IsVirtual(pTab) ) sqlite3VtabDisconnect(db, pTab);
       }
     }
+#ifdef SQLITE_ENABLE_SHARED_SCHEMA
+    if( IsSharedSchema(db) && i!=1 ){
+      VTable *pVTable;
+      VTable *pNext;
+      for(pVTable=db->aDb[i].pVTable; pVTable; pVTable=pNext){
+        pNext = pVTable->pNext;
+        sqlite3VtabUnlock(pVTable);
+      }
+      db->aDb[i].pVTable = 0;
+    }
+#endif /* ifdef SQLITE_ENABLE_SHARED_SCHEMA */
   }
   for(p=sqliteHashFirst(&db->aModule); p; p=sqliteHashNext(p)){
     Module *pMod = (Module *)sqliteHashData(p);
@@ -1335,6 +1346,7 @@ void sqlite3LeaveMutexAndCloseZombie(sqlite3 *db){
       sqlite3BtreeClose(pDb->pBt);
       pDb->pBt = 0;
       if( j!=1 ){
+        (void)sqlite3SchemaDisconnect(db, j, 0);
         pDb->pSchema = 0;
       }
     }
@@ -3744,7 +3756,7 @@ int sqlite3_table_column_metadata(
   int *pPrimaryKey,           /* OUTPUT: True if column part of PK */
   int *pAutoinc               /* OUTPUT: True if column is auto-increment */
 ){
-  int rc;
+  int rc = SQLITE_OK;
   char *zErrMsg = 0;
   Table *pTab = 0;
   Column *pCol = 0;
@@ -3754,7 +3766,7 @@ int sqlite3_table_column_metadata(
   int notnull = 0;
   int primarykey = 0;
   int autoinc = 0;
-
+  int bUnlock;
 
 #ifdef SQLITE_ENABLE_API_ARMOR
   if( !sqlite3SafetyCheckOk(db) || zTableName==0 ){
@@ -3764,14 +3776,29 @@ int sqlite3_table_column_metadata(
 
   /* Ensure the database schema has been loaded */
   sqlite3_mutex_enter(db->mutex);
+  bUnlock = sqlite3LockReusableSchema(db);
   sqlite3BtreeEnterAll(db);
-  rc = sqlite3Init(db, &zErrMsg);
-  if( SQLITE_OK!=rc ){
-    goto error_out;
+  if( IsSharedSchema(db)==0 ){
+    rc = sqlite3Init(db, &zErrMsg);
   }
 
   /* Locate the table in question */
-  pTab = sqlite3FindTable(db, zTableName, zDbName);
+  if( rc==SQLITE_OK ){
+#ifdef SQLITE_ENABLE_SHARED_SCHEMA
+    Parse sParse;                   /* Fake Parse object for FindTable */
+    Parse *pSaved = db->pParse;
+    memset(&sParse, 0, sizeof(sParse));
+    db->pParse = &sParse;
+#endif
+    pTab = sqlite3FindTable(db, zTableName, zDbName);
+#ifdef SQLITE_ENABLE_SHARED_SCHEMA
+    sqlite3_free(sParse.zErrMsg);
+    rc = sParse.rc;
+    db->pParse = pSaved;
+#endif
+  }
+  if( SQLITE_OK!=rc ) goto error_out;
+
   if( !pTab || IsView(pTab) ){
     pTab = 0;
     goto error_out;
@@ -3844,6 +3871,7 @@ error_out:
   sqlite3ErrorWithMsg(db, rc, (zErrMsg?"%s":0), zErrMsg);
   sqlite3DbFree(db, zErrMsg);
   rc = sqlite3ApiExit(db, rc);
+  sqlite3UnlockReusableSchema(db, bUnlock);
   sqlite3_mutex_leave(db->mutex);
   return rc;
 }

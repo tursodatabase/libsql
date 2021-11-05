@@ -140,6 +140,7 @@ GCOV_LDFLAGS1 = -lgcov
 USE_GCOV = @USE_GCOV@
 LTCOMPILE_EXTRAS += $(GCOV_CFLAGS$(USE_GCOV))
 LTLINK_EXTRAS += $(GCOV_LDFLAGS$(USE_GCOV))
+LTCOMPILE_EXTRAS += -DSQLITE_ENABLE_SHARED_SCHEMA
 
 
 # The directory into which to store package information for
@@ -419,6 +420,7 @@ TESTSRC = \
   $(TOP)/src/test_quota.c \
   $(TOP)/src/test_rtree.c \
   $(TOP)/src/test_schema.c \
+  $(TOP)/src/test_schemapool.c \
   $(TOP)/src/test_server.c \
   $(TOP)/src/test_superlock.c \
   $(TOP)/src/test_syscall.c \
@@ -479,6 +481,7 @@ TESTSRC2 = \
   $(TOP)/src/bitvec.c \
   $(TOP)/src/btree.c \
   $(TOP)/src/build.c \
+  $(TOP)/src/callback.c \
   $(TOP)/src/ctime.c \
   $(TOP)/src/date.c \
   $(TOP)/src/dbpage.c \

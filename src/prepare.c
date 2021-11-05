@@ -43,6 +43,11 @@ static void corruptSchema(
     pData->rc = SQLITE_ERROR;
   }else if( db->flags & SQLITE_WriteSchema ){
     pData->rc = SQLITE_CORRUPT_BKPT;
+  }else if( IsSharedSchema(db) 
+         && 0==sqlite3StrNICmp(zExtra, "malformed database schema", 17)
+  ){
+    pData->rc = SQLITE_CORRUPT_BKPT;
+    *pData->pzErrMsg = sqlite3DbStrDup(db, zExtra);
   }else{
     char *z;
     const char *zObj = azObj[1] ? azObj[1] : "?";
@@ -52,6 +57,28 @@ static void corruptSchema(
     pData->rc = SQLITE_CORRUPT_BKPT;
   }
 }
+
+#ifdef SQLITE_ENABLE_SHARED_SCHEMA
+/*
+** Update the Schema.cksum checksum to account for the database object
+** specified by the three arguments following the first.
+*/
+static void schemaUpdateChecksum(
+  InitData *pData,                /* Schema parse context */
+  const char *zName,              /* Name of new database object */
+  const char *zRoot,              /* Root page of new database object */
+  const char *zSql                /* SQL used to create new database object */
+){
+  int i;
+  u64 cksum = pData->cksum;
+  if( zName ){
+    for(i=0; zName[i]; i++) cksum += (cksum<<3) + zName[i];
+  }
+  if( zRoot ) for(i=0; zRoot[i]; i++) cksum += (cksum<<3) + zRoot[i];
+  if( zSql ) for(i=0; zSql[i]; i++) cksum += (cksum<<3) + zSql[i];
+  pData->cksum = cksum;
+}
+#endif /* ifdef SQLITE_ENABLE_SHARED_SCHEMA */
 
 /*
 ** Check to see if any sibling index (another index on the same table)
@@ -68,6 +95,15 @@ int sqlite3IndexHasDuplicateRootPage(Index *pIndex){
 
 /* forward declaration */
 static int sqlite3Prepare(
+  sqlite3 *db,              /* Database handle. */
+  const char *zSql,         /* UTF-8 encoded SQL statement. */
+  int nBytes,               /* Length of zSql in bytes. */
+  u32 prepFlags,            /* Zero or more SQLITE_PREPARE_* flags */
+  Vdbe *pReprepare,         /* VM being reprepared */
+  sqlite3_stmt **ppStmt,    /* OUT: A pointer to the prepared statement */
+  const char **pzTail       /* OUT: End of parsed string */
+);
+static int sqlite3LockAndPrepare(
   sqlite3 *db,              /* Database handle. */
   const char *zSql,         /* UTF-8 encoded SQL statement. */
   int nBytes,               /* Length of zSql in bytes. */
@@ -141,7 +177,11 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
     db->init.orphanTrigger = 0;
     db->init.azInit = (const char**)argv;
     pStmt = 0;
+#ifdef SQLITE_ENABLE_SHARED_SCHEMA
+    TESTONLY(rcp = ) sqlite3LockAndPrepare(db, argv[4], -1, 0, 0, &pStmt, 0);
+#else
     TESTONLY(rcp = ) sqlite3Prepare(db, argv[4], -1, 0, 0, &pStmt, 0);
+#endif
     rc = db->errCode;
     assert( (rc&0xFF)==(rcp&0xFF) );
     db->init.iDb = saved_iDb;
@@ -153,7 +193,12 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
         if( rc > pData->rc ) pData->rc = rc;
         if( rc==SQLITE_NOMEM ){
           sqlite3OomFault(db);
-        }else if( rc!=SQLITE_INTERRUPT && (rc&0xFF)!=SQLITE_LOCKED ){
+        }else if( rc!=SQLITE_INTERRUPT 
+#ifdef SQLITE_ENABLE_SHARED_SCHEMA
+               && (rc&0xFF)!=SQLITE_LOCKED 
+               && (rc&0xFF)!=SQLITE_IOERR
+#endif
+        ){
           corruptSchema(pData, argv, sqlite3_errmsg(db));
         }
       }
@@ -184,6 +229,12 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
       }
     }
   }
+
+#ifdef SQLITE_ENABLE_SHARED_SCHEMA
+  if( IsSharedSchema(db) && iDb!=1 ){
+    schemaUpdateChecksum(pData, argv[0], argv[1], argv[2]);
+  }
+#endif
   return 0;
 }
 
@@ -211,9 +262,27 @@ int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg, u32 mFlags){
 
   assert( (db->mDbFlags & DBFLAG_SchemaKnownOk)==0 );
   assert( iDb>=0 && iDb<db->nDb );
-  assert( db->aDb[iDb].pSchema );
+  assert( db->aDb[iDb].pSchema || (IsSharedSchema(db) && iDb!=1) );
   assert( sqlite3_mutex_held(db->mutex) );
   assert( iDb==1 || sqlite3BtreeHoldsMutex(db->aDb[iDb].pBt) );
+
+  pDb = &db->aDb[iDb];
+#ifdef SQLITE_ENABLE_SHARED_SCHEMA
+  assert( pDb->pSPool==0 || IsSharedSchema(db) );
+  if( pDb->pSPool ){
+    /* See if there is a free schema object in the schema-pool. If not,
+    ** disconnect from said schema pool and continue. This function will
+    ** connect to a (possibly different) schema-pool before returning. */
+    Schema *pNew = sqlite3SchemaExtract(pDb->pSPool);
+    if( pNew ){
+      pDb->pSchema = pNew;
+      return SQLITE_OK;
+    }
+    rc = sqlite3SchemaDisconnect(db, iDb, 1);
+    if( rc!=SQLITE_OK ) goto error_out;
+    assert( pDb->pSchema && pDb->pSPool==0 );
+  }
+#endif
 
   db->init.busy = 1;
 
@@ -235,6 +304,7 @@ int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg, u32 mFlags){
   initData.pzErrMsg = pzErrMsg;
   initData.mInitFlags = mFlags;
   initData.nInitRow = 0;
+  initData.cksum = 0;
   initData.mxPage = 0;
   sqlite3InitCallback(&initData, 5, (char **)azArg, 0);
   db->mDbFlags &= mask;
@@ -245,7 +315,6 @@ int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg, u32 mFlags){
 
   /* Create a cursor to hold the database open
   */
-  pDb = &db->aDb[iDb];
   if( pDb->pBt==0 ){
     assert( iDb==1 );
     DbSetProperty(db, 1, DB_SchemaLoaded);
@@ -404,6 +473,10 @@ int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg, u32 mFlags){
     rc = SQLITE_OK;
   }
 
+  if( rc==SQLITE_OK && iDb!=1 && IsSharedSchema(db) ){
+    rc = sqlite3SchemaConnect(db, iDb, initData.cksum);
+  }
+
   /* Jump here for an error that occurs after successfully allocating
   ** curMain and calling sqlite3BtreeEnter(). For an error that occurs
   ** before that point, jump to error_out.
@@ -425,6 +498,35 @@ error_out:
   return rc;
 }
 
+
+#ifdef SQLITE_ENABLE_SHARED_SCHEMA
+/*
+** If this is a SHARED_SCHEMA connection and the DBFLAG_SchemaInUse flag
+** is not currently set, set it and return non-zero. Otherwise, return 0.
+*/
+int sqlite3LockReusableSchema(sqlite3 *db){
+  if( IsSharedSchema(db) && (db->mDbFlags & DBFLAG_SchemaInuse)==0 ){
+    db->mDbFlags |= DBFLAG_SchemaInuse;
+    return 1;
+  }
+  return 0;
+}
+#endif /* ifdef SQLITE_ENABLE_SHARED_SCHEMA */
+
+#ifdef SQLITE_ENABLE_SHARED_SCHEMA
+/*
+** This function is a no-op for non-SHARED_SCHEMA connections, or if bRelease
+** is zero. Otherwise, clear the DBFLAG_SchemaInuse flag and release all
+** schema references currently held.
+*/
+void sqlite3UnlockReusableSchema(sqlite3 *db, int bRelease){
+  if( bRelease ){
+    db->mDbFlags &= ~DBFLAG_SchemaInuse;
+    sqlite3SchemaReleaseAll(db);
+  }
+}
+#endif /* ifdef SQLITE_ENABLE_SHARED_SCHEMA */
+
 /*
 ** Initialize all database files - the main database file, the file
 ** used to store temporary tables, and any additional database files
@@ -435,8 +537,12 @@ error_out:
 ** bit is set in the flags field of the Db structure. 
 */
 int sqlite3Init(sqlite3 *db, char **pzErrMsg){
-  int i, rc;
+  int rc = SQLITE_OK;
+  int bReleaseSchema;
+  int i;
   int commit_internal = !(db->mDbFlags&DBFLAG_SchemaChange);
+
+  bReleaseSchema = sqlite3LockReusableSchema(db);
   
   assert( sqlite3_mutex_held(db->mutex) );
   assert( sqlite3BtreeHoldsMutex(db->aDb[0].pBt) );
@@ -446,20 +552,19 @@ int sqlite3Init(sqlite3 *db, char **pzErrMsg){
   /* Do the main schema first */
   if( !DbHasProperty(db, 0, DB_SchemaLoaded) ){
     rc = sqlite3InitOne(db, 0, pzErrMsg, 0);
-    if( rc ) return rc;
   }
   /* All other schemas after the main schema. The "temp" schema must be last */
-  for(i=db->nDb-1; i>0; i--){
+  for(i=db->nDb-1; rc==SQLITE_OK && i>0; i--){
     assert( i==1 || sqlite3BtreeHoldsMutex(db->aDb[i].pBt) );
     if( !DbHasProperty(db, i, DB_SchemaLoaded) ){
       rc = sqlite3InitOne(db, i, pzErrMsg, 0);
-      if( rc ) return rc;
     }
   }
-  if( commit_internal ){
+  if( rc==SQLITE_OK && commit_internal ){
     sqlite3CommitInternalChanges(db);
   }
-  return SQLITE_OK;
+  sqlite3UnlockReusableSchema(db, bReleaseSchema);
+  return rc;
 }
 
 /*
@@ -471,11 +576,12 @@ int sqlite3ReadSchema(Parse *pParse){
   sqlite3 *db = pParse->db;
   assert( sqlite3_mutex_held(db->mutex) );
   if( !db->init.busy ){
+    db->mDbFlags |= DBFLAG_FreeSchema;      /* For sharable-schema mode */
     rc = sqlite3Init(db, &pParse->zErrMsg);
     if( rc!=SQLITE_OK ){
       pParse->rc = rc;
       pParse->nErr++;
-    }else if( db->noSharedCache ){
+    }else if( db->noSharedCache && !IsSharedSchema(db) ){
       db->mDbFlags |= DBFLAG_SchemaKnownOk;
     }
   }
@@ -500,6 +606,10 @@ static void schemaIsValid(Parse *pParse){
     int openedTransaction = 0;         /* True if a transaction is opened */
     Btree *pBt = db->aDb[iDb].pBt;     /* Btree database to read cookie from */
     if( pBt==0 ) continue;
+
+#ifdef SQLITE_ENABLE_SHARED_SCHEMA
+    if( IsSharedSchema(db) && iDb!=1 && db->aDb[iDb].pSPool==0 ) continue;
+#endif
 
     /* If there is not already a read-only (or read-write) transaction opened
     ** on the b-tree database, open one now. If a transaction is opened, it 
@@ -792,6 +902,7 @@ static int sqlite3LockAndPrepare(
 ){
   int rc;
   int cnt = 0;
+  int bReleaseSchema = 0;
 
 #ifdef SQLITE_ENABLE_API_ARMOR
   if( ppStmt==0 ) return SQLITE_MISUSE_BKPT;
@@ -801,6 +912,7 @@ static int sqlite3LockAndPrepare(
     return SQLITE_MISUSE_BKPT;
   }
   sqlite3_mutex_enter(db->mutex);
+  bReleaseSchema = sqlite3LockReusableSchema(db);
   sqlite3BtreeEnterAll(db);
   do{
     /* Make multiple attempts to compile the SQL, until it either succeeds
@@ -810,7 +922,11 @@ static int sqlite3LockAndPrepare(
     assert( rc==SQLITE_OK || *ppStmt==0 );
   }while( rc==SQLITE_ERROR_RETRY
        || (rc==SQLITE_SCHEMA && (sqlite3ResetOneSchema(db,-1), cnt++)==0) );
+
   sqlite3BtreeLeaveAll(db);
+
+  sqlite3UnlockReusableSchema(db, bReleaseSchema);
+
   rc = sqlite3ApiExit(db, rc);
   assert( (rc&db->errMask)==rc );
   db->busyHandler.nBusy = 0;

@@ -19,7 +19,7 @@ static char *create_drop_index_thread(int iTid, void *pArg){
   Sqlite db = {0};                /* SQLite database connection */
 
   while( !timetostop(&err) ){
-    opendb(&err, &db, "test.db", 0);
+    opendb(&err, &db, "test.db", 0, 0);
 
     sql_script(&err, &db, 
       "DROP INDEX IF EXISTS i1;"
@@ -51,7 +51,7 @@ static void create_drop_index_1(int nMs){
   Sqlite db = {0};
   Threadset threads = {0};
 
-  opendb(&err, &db, "test.db", 1);
+  opendb(&err, &db, "test.db", 1, 0);
   sql_script(&err, &db, 
      "CREATE TABLE t11(a, b, c, d);"
      "WITH data(x) AS (SELECT 1 UNION ALL SELECT x+1 FROM data WHERE x<100) "

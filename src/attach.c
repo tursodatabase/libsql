@@ -205,14 +205,14 @@ static void attachFunc(
   ** way we found it.
   */
   if( rc==SQLITE_OK ){
-    sqlite3BtreeEnterAll(db);
     db->init.iDb = 0;
     db->mDbFlags &= ~(DBFLAG_SchemaKnownOk);
-    if( !REOPEN_AS_MEMDB(db) ){
+    if( !IsSharedSchema(db) && !REOPEN_AS_MEMDB(db) ){
+      sqlite3BtreeEnterAll(db);
       rc = sqlite3Init(db, &zErrDyn);
+      sqlite3BtreeLeaveAll(db);
+      assert( zErrDyn==0 || rc!=SQLITE_OK );
     }
-    sqlite3BtreeLeaveAll(db);
-    assert( zErrDyn==0 || rc!=SQLITE_OK );
   }
 #ifdef SQLITE_USER_AUTHENTICATION
   if( rc==SQLITE_OK && !REOPEN_AS_MEMDB(db) ){
@@ -312,6 +312,7 @@ static void detachFunc(
     pEntry = sqliteHashNext(pEntry);
   }
 
+  (void)sqlite3SchemaDisconnect(db, i, 0);
   sqlite3BtreeClose(pDb->pBt);
   pDb->pBt = 0;
   pDb->pSchema = 0;

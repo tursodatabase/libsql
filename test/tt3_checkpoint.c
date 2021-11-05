@@ -70,7 +70,7 @@ static char *checkpoint_starvation_reader(int iTid, void *pArg){
   Error err = {0};
   Sqlite db = {0};
 
-  opendb(&err, &db, "test.db", 0);
+  opendb(&err, &db, "test.db", 0, 0);
   while( !timetostop(&err) ){
     i64 iCount1, iCount2;
     sql_script(&err, &db, "BEGIN");
@@ -96,7 +96,7 @@ static void checkpoint_starvation_main(int nMs, CheckpointStarvationCtx *p){
   int nInsert = 0;
   int i;
 
-  opendb(&err, &db, "test.db", 1);
+  opendb(&err, &db, "test.db", 1, 0);
   sql_script(&err, &db, 
       "PRAGMA page_size = 1024;"
       "PRAGMA journal_mode = WAL;"

@@ -1,0 +1,355 @@
+# 2019 February 12
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+#
+
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix reuse3
+
+ifcapable !sharedschema {
+  finish_test
+  return
+}
+
+do_execsql_test 1.0 {
+  CREATE TABLE t1(x INTEGER PRIMARY KEY, y UNIQUE, z);
+  CREATE INDEX i1 ON t1(z);
+  CREATE TABLE t2(a);
+} {}
+
+db close
+sqlite3 db test.db -shared-schema 1
+
+do_execsql_test 1.1 {
+  CREATE TEMP VIEW v1 AS SELECT * FROM t1;
+  SELECT * FROM v1;
+}
+
+do_execsql_test 1.2 {
+  CREATE TEMP TRIGGER tr1 AFTER INSERT ON t1 BEGIN
+    INSERT INTO t2 VALUES(new.x);
+  END;
+}
+
+do_execsql_test 1.3 {
+  INSERT INTO t1 VALUES(1, 2, 3);
+}
+
+do_execsql_test 1.4 {
+  SELECT * FROM t2
+} {1}
+
+do_execsql_test 1.5 {
+  SELECT * FROM v1
+} {1 2 3}
+
+do_execsql_test 1.6 {
+  BEGIN;
+    DROP TRIGGER tr1;
+  ROLLBACK;
+}
+
+do_execsql_test 1.7 {
+  SELECT * FROM v1
+} {1 2 3}
+
+do_execsql_test 1.8 {
+  INSERT INTO t1 VALUES(4, 5, 6);
+  SELECT * FROM t2
+} {1 4}
+
+do_execsql_test 1.9 {
+  SELECT * FROM v1
+} {1 2 3 4 5 6}
+
+#-------------------------------------------------------------------------
+# Test error messages when parsing the schema with a REUSE_SCHEMA 
+# connection.
+reset_db
+do_execsql_test 2.0 {
+  CREATE TABLE x1(a, b, c);
+  CREATE TABLE y1(d, e, f);
+  PRAGMA writable_schema = 1;
+  UPDATE sqlite_master SET sql = 'CREATE TBL y1(d, e, f)' WHERE name = 'y1';
+}
+db close
+
+sqlite3 db test.db -shared-schema 1
+do_catchsql_test 2.1 {
+  SELECT * FROM x1;
+} {1 {malformed database schema (y1) - near "TBL": syntax error}}
+
+do_catchsql_test 2.2 {
+  SELECT * FROM x1;
+} {1 {malformed database schema (y1) - near "TBL": syntax error}}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 3.0 {
+  CREATE TABLE x1(a, b, c);
+  CREATE INDEX i1 ON x1(a, b, c);
+  CREATE TRIGGER tr1 AFTER INSERT ON x1 BEGIN
+    SELECT 1, 2, 3, 4, 5;
+  END;
+  INSERT INTO x1 VALUES(1, 2, 3);
+}
+sqlite3 db1 test.db -shared-schema 1
+
+do_test 3.1 {
+  execsql { SELECT * FROM x1 } db1
+  set N [lindex [sqlite3_db_status db1 SCHEMA_USED 0] 1]
+  expr $N==$N
+} 1
+
+sqlite3 db2 test.db -shared-schema 1
+do_test 3.2 {
+  execsql { SELECT * FROM x1 } db2
+  set N2 [lindex [sqlite3_db_status db2 SCHEMA_USED 0] 1]
+  expr $N2>($N/2) && $N2<($N/2)+400
+} 1
+
+sqlite3 db3 test.db -shared-schema 1
+sqlite3 db4 test.db -shared-schema 1
+do_test 3.3 {
+  execsql { SELECT * FROM x1 } db3
+  execsql { SELECT * FROM x1 } db4
+  set N4 [lindex [sqlite3_db_status db2 SCHEMA_USED 0] 1]
+  set M [expr 2*($N-$N2)]
+  set {} {}
+} {}
+do_test 3.3.1 { expr {(($M / 4) + $N-$M)} } "#/$N4/"
+
+catch { db1 close }
+catch { db2 close }
+catch { db3 close }
+catch { db4 close }
+
+#-------------------------------------------------------------------------
+# 4.1 Test the REINDEX command.
+# 4.2 Test CREATE TEMP ... commands.
+#
+reset_db
+do_execsql_test 4.1.0 {
+  CREATE TABLE x1(a, b, c);
+  CREATE INDEX x1a ON x1(a);
+  CREATE INDEX x1b ON x1(b);
+  CREATE INDEX x1c ON x1(c);
+}
+db close
+sqlite3 db test.db -shared-schema 1
+
+do_execsql_test 4.1.1 {
+  REINDEX x1;
+  REINDEX x1a;
+  REINDEX x1b;
+  REINDEX x1c;
+  REINDEX;
+}
+
+do_test 4.1.2 {
+  for {set i 1} {$i < 5} {incr i} {
+    forcedelete test.db${i} test.db${i}-wal test.db${i}-journal
+    forcecopy test.db test.db${i}
+    execsql "ATTACH 'test.db${i}' AS db${i}"
+  }
+  register_schemapool_module db
+  set {} {}
+  execsql { 
+    SELECT 'nref=' || nRef, 'nschema=' || nSchema, 'ndelete=' || nDelete 
+    FROM schemapool 
+  }
+} {nref=5 nschema=1 ndelete=0}
+
+do_execsql_test 4.1.3 {
+  REINDEX  x1;
+  REINDEX  x1a;
+  REINDEX  x1b;
+  REINDEX  x1c;
+  REINDEX  db1.x1a;
+  REINDEX  db2.x1b;
+  REINDEX  db3.x1c;
+}
+
+do_execsql_test 4.1.4 {
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema, 'ndelete=' || nDelete 
+    FROM schemapool 
+} {nref=5 nschema=1 ndelete=28}
+
+#-------------------------------------------------------------------------
+db close
+sqlite3 db test.db -shared-schema 1
+register_schemapool_module db
+do_execsql_test 4.2.0 {
+  ATTACH 'test.db1' AS db1;
+  ATTACH 'test.db2' AS db2;
+  ATTACH 'test.db3' AS db3;
+  ATTACH 'test.db4' AS db4;
+
+  SELECT * FROM db1.x1;
+  SELECT * FROM db2.x1;
+  SELECT * FROM db3.x1;
+  SELECT * FROM db4.x1;
+}
+
+do_execsql_test 4.2.1 {
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema, 'ndelete=' || nDelete 
+    FROM schemapool; 
+} {nref=5 nschema=1 ndelete=0}
+
+do_execsql_test 4.2.2 {
+  CREATE TEMP TABLE t1(a, b, c);
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema, 'ndelete=' || nDelete 
+    FROM schemapool; 
+} {nref=5 nschema=1 ndelete=0}
+
+do_execsql_test 4.2.3 {
+  CREATE INDEX t1a ON t1(a);
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema, 'ndelete=' || nDelete 
+    FROM schemapool; 
+} {nref=5 nschema=1 ndelete=0}
+
+do_execsql_test 4.2.4 {
+  CREATE TRIGGER tr1 AFTER INSERT ON t1 BEGIN
+    SELECT 1,2,3,4;
+  END;
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema, 'ndelete=' || nDelete 
+    FROM schemapool; 
+} {nref=5 nschema=1 ndelete=0}
+
+do_execsql_test 4.2.5 {
+  DROP TABLE t1;
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema, 'ndelete=' || nDelete 
+    FROM schemapool; 
+} {nref=5 nschema=1 ndelete=0}
+
+do_execsql_test 4.2.6 {
+  CREATE TEMP TRIGGER tr1 AFTER INSERT ON db2.x1 BEGIN
+    SELECT 1,2,3,4;
+  END;
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema, 'ndelete=' || nDelete 
+    FROM schemapool; 
+} {nref=5 nschema=1 ndelete=0}
+
+do_execsql_test 4.2.7 {
+  DROP TRIGGER tr1;
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema, 'ndelete=' || nDelete 
+    FROM schemapool; 
+} {nref=5 nschema=1 ndelete=4}
+
+#--------------------------------------------------------------------------
+reset_db
+do_execsql_test 5.0 {
+  CREATE TABLE t1(a, b);
+  CREATE TABLE t2(a, b);
+  CREATE TABLE t3(a, b);
+}
+
+sqlite3 db2 test.db -shared-schema 1
+register_schemapool_module db2
+
+do_execsql_test 5.1 {
+  PRAGMA writable_schema = 1;
+  UPDATE sqlite_master SET sql='CREATE TABLE t3 a,b' WHERE name = 't3';
+}
+
+do_test 5.2 { 
+  catchsql { SELECT * FROM t1 } db2
+} {1 {malformed database schema (t3) - near "a": syntax error}}
+
+do_test 5.3 { 
+  catchsql { SELECT nref,nschema FROM schemapool } db2
+} {1 {vtable constructor failed: schemapool}}
+
+do_execsql_test 5.4 {
+  PRAGMA writable_schema = 1;
+  UPDATE sqlite_master SET sql='CREATE TABLE t3(a,b)' WHERE name = 't3';
+}
+
+do_test 5.5 { 
+  catchsql { SELECT nref,nschema FROM schemapool } db2
+} {0 {1 1}}
+
+db2 close
+db close
+do_test 5.6.1 {
+  forcedelete test.db2 test.db2-wal test.db2-journal
+  forcecopy test.db test.db2
+  sqlite3 db test.db
+  sqlite3 db2 test.db  -shared-schema 1
+  sqlite3 db3 test.db2 -shared-schema 1
+  register_schemapool_module db
+} {}
+
+do_execsql_test -db db2 5.6.2 { SELECT * FROM t1 }
+do_execsql_test -db db3 5.6.3 { SELECT * FROM t1 }
+do_execsql_test 5.6.4 {
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool; 
+  CREATE TABLE t4(x);
+  DROP TABLE t4;
+} {nref=2 nschema=1}
+do_execsql_test -db db2 5.6.5 { SELECT * FROM t1 }
+do_execsql_test -db db3 5.6.6 { SELECT * FROM t1 }
+do_execsql_test 5.6.7 {
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool; 
+  ATTACH 'test.db2' AS db2;
+  CREATE TABLE db2.t4(x);
+  DROP TABLE db2.t4;
+} {nref=1 nschema=1 nref=1 nschema=1}
+do_execsql_test -db db2 5.6.8 { SELECT * FROM t1 }
+do_execsql_test -db db3 5.6.9 { SELECT * FROM t1 }
+do_execsql_test 5.6.10 {
+  SELECT 'nref=' || nRef, 'nschema=' || nSchema FROM schemapool; 
+} {nref=2 nschema=1}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 6.0 {
+  CREATE TABLE t1(a, b);
+  CREATE TABLE t2(a, b);
+  CREATE TABLE t3(a, b);
+}
+
+do_test 6.1 {
+  db close
+  sqlite3 db test.db -shared-schema 1
+  for {set i 1} {$i < 5} {incr i} {
+    set base "test.db$i"
+    set nm "aux$i"
+    forcedelete $base $base-wal $base-journal
+    forcecopy test.db $base
+    execsql "ATTACH '$base' AS $nm"
+  }
+} {}
+
+do_test 6.2 {
+  set N1 [lindex [sqlite3_db_status db SCHEMA_USED 0] 1]
+  set N2 [lindex [sqlite3_db_status db SCHEMA_USED 0] 1]
+  expr ($N1==0 && $N2==0)
+} {1}
+
+do_test 6.3 {
+  execsql { SELECT * FROM main.t1 }
+  set N1 [lindex [sqlite3_db_status db SCHEMA_USED 0] 1]
+  set N2 [lindex [sqlite3_db_status db SCHEMA_USED 0] 1]
+  expr {$N1>0 && $N2>0 && $N1==$N2}
+} {1}
+
+do_test 6.4 {
+  execsql { SELECT * FROM aux1.t1 }
+  set N3 [lindex [sqlite3_db_status db SCHEMA_USED 0] 1]
+  set N4 [lindex [sqlite3_db_status db SCHEMA_USED 0] 1]
+  list $N3 $N4
+} "#/$N1 $N1/"
+
+finish_test
+

@@ -3691,6 +3691,9 @@ static int sqliteCmdUsage(
     "HANDLE ?FILENAME? ?-vfs VFSNAME? ?-readonly BOOLEAN? ?-create BOOLEAN?"
     " ?-nofollow BOOLEAN?"
     " ?-nomutex BOOLEAN? ?-fullmutex BOOLEAN? ?-uri BOOLEAN?"
+#ifdef SQLITE_ENABLE_SHARED_SCHEMA
+    " ?-shared-schema BOOLEAN?"
+#endif
   );
   return TCL_ERROR;
 }
@@ -3822,6 +3825,16 @@ static int SQLITE_TCLAPI DbMain(
       }else{
         flags &= ~SQLITE_OPEN_URI;
       }
+#ifdef SQLITE_ENABLE_SHARED_SCHEMA
+    }else if( strcmp(zArg, "-shared-schema")==0 ){
+      int b;
+      if( Tcl_GetBooleanFromObj(interp, objv[i], &b) ) return TCL_ERROR;
+      if( b ){
+        flags |= SQLITE_OPEN_SHARED_SCHEMA;
+      }else{
+        flags &= ~SQLITE_OPEN_SHARED_SCHEMA;
+      }
+#endif /* ifdef SQLITE_ENABLE_SHARED_SCHEMA */
     }else if( strcmp(zArg, "-translatefilename")==0 ){
       if( Tcl_GetBooleanFromObj(interp, objv[i], &bTranslateFileName) ){
         return TCL_ERROR;

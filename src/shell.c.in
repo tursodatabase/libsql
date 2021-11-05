@@ -1191,13 +1191,14 @@ struct ShellState {
 
 /* Allowed values for ShellState.openMode
 */
-#define SHELL_OPEN_UNSPEC      0      /* No open-mode specified */
-#define SHELL_OPEN_NORMAL      1      /* Normal database file */
-#define SHELL_OPEN_APPENDVFS   2      /* Use appendvfs */
-#define SHELL_OPEN_ZIPFILE     3      /* Use the zipfile virtual table */
-#define SHELL_OPEN_READONLY    4      /* Open a normal database read-only */
-#define SHELL_OPEN_DESERIALIZE 5      /* Open using sqlite3_deserialize() */
-#define SHELL_OPEN_HEXDB       6      /* Use "dbtotxt" output as data source */
+#define SHELL_OPEN_UNSPEC       0     /* No open-mode specified */
+#define SHELL_OPEN_NORMAL       1     /* Normal database file */
+#define SHELL_OPEN_APPENDVFS    2     /* Use appendvfs */
+#define SHELL_OPEN_ZIPFILE      3     /* Use the zipfile virtual table */
+#define SHELL_OPEN_READONLY     4     /* Open a normal database read-only */
+#define SHELL_OPEN_DESERIALIZE  5     /* Open using sqlite3_deserialize() */
+#define SHELL_OPEN_HEXDB        6     /* Use "dbtotxt" output as data source */
+#define SHELL_OPEN_SHAREDSCHEMA 7     /* Open for schema reuse */
 
 /* Allowed values for ShellState.eTraceType
 */
@@ -4160,6 +4161,12 @@ static const char *(azHelp[]) = {
   "      --sha3-384            Use the sha3-384 algorithm",
   "      --sha3-512            Use the sha3-512 algorithm",
   "    Any other argument is a LIKE pattern for tables to hash",
+#if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_ENABLE_DBPAGE_VTAB)
+  ".shared-schema CMD DB1 DB2 ...",
+  "    Commands:",
+  "       check                Determine if DB1, DB2, etc have identical schemas",
+  "       fix                  Attempt to make DB1, DB2, etc compatible",
+#endif
 #ifndef SQLITE_NOHAVE_SYSTEM
   ".shell CMD ARGS...       Run CMD ARGS... in a system shell",
 #endif
@@ -4697,6 +4704,11 @@ static void open_db(ShellState *p, int openFlags){
       case SHELL_OPEN_READONLY: {
         sqlite3_open_v2(zDbFilename, &p->db,
             SQLITE_OPEN_READONLY|p->openFlags, 0);
+        break;
+      }
+      case SHELL_OPEN_SHAREDSCHEMA: {
+        sqlite3_open_v2(p->pAuxDb->zDbFilename, &p->db,
+          SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE|SQLITE_OPEN_SHARED_SCHEMA,0);
         break;
       }
       case SHELL_OPEN_UNSPEC:
@@ -6954,6 +6966,237 @@ static char *shellMPrintf(int *pRc, const char *zFmt, ...){
   }
   return z;
 }
+static int sharedSchemaFix(ShellState *pState, const char *zDb, int eFix){
+  int rc = SQLITE_OK;
+  i64 iLast = 0;
+  int iCookie = 0;
+  int iAutoVacuum = 0;
+  sqlite3_stmt *pStmt = 0;
+
+  shellExecPrintf(pState->db, &rc, "ATTACH '%q' AS _shared_schema_tmp", zDb);
+  shellExecPrintf(pState->db, &rc, "PRAGMA writable_schema = 1");
+  shellExecPrintf(pState->db, &rc, "BEGIN");
+  shellPreparePrintf(pState->db, &rc, &pStmt, 
+      "SELECT max(rowid) FROM _shared_schema_tmp.sqlite_master"
+  );
+  sqlite3_step(pStmt);
+  iLast = sqlite3_column_int64(pStmt, 0);
+  shellFinalize(&rc, pStmt);
+  shellPreparePrintf(pState->db, &rc, &pStmt,
+      "INSERT INTO _shared_schema_tmp.sqlite_master SELECT "
+      "  type, name, tbl_name, ("
+      "    SELECT rootpage FROM _shared_schema_tmp.sqlite_master WHERE "
+      "      type IS o.type AND name IS o.name AND rowid<=?"
+      "  ), sql FROM main.sqlite_master AS o"
+  );
+  sqlite3_bind_int64(pStmt, 1, iLast);
+  sqlite3_step(pStmt);
+  shellFinalize(&rc, pStmt);
+
+  shellExecPrintf(pState->db, &rc,
+      "DELETE FROM _shared_schema_tmp.sqlite_master WHERE rowid<=%lld",
+      iLast
+  );
+  shellExecPrintf(pState->db, &rc, "COMMIT");
+  sqlite3_exec(pState->db, "PRAGMA writable_schema = 0", 0, 0, 0);
+
+  /* Copy the auto-vacuum setting from main to the target db */
+  shellPreparePrintf(pState->db, &rc, &pStmt, "PRAGMA main.auto_vacuum");
+  sqlite3_step(pStmt);
+  iAutoVacuum = sqlite3_column_int(pStmt, 0);
+  shellFinalize(&rc, pStmt);
+  shellExecPrintf(pState->db, &rc, 
+      "PRAGMA _shared_schema_tmp.auto_vacuum = %d", iAutoVacuum
+  );
+
+  /* Vacuum the db in order to standardize the rootpage numbers. */
+  shellExecPrintf(pState->db, &rc, "VACUUM _shared_schema_tmp");
+
+  /* Set the schema-cookie value to the same as database "main" */
+  shellPreparePrintf(pState->db, &rc, &pStmt, "PRAGMA main.schema_version");
+  sqlite3_step(pStmt);
+  iCookie = sqlite3_column_int(pStmt, 0);
+  shellFinalize(&rc, pStmt);
+  shellExecPrintf(pState->db, &rc, 
+      "PRAGMA _shared_schema_tmp.schema_version = %d", iCookie
+  );
+
+  sqlite3_exec(pState->db, "DETACH _shared_schema_tmp", 0, 0, 0);
+  return rc;
+}
+
+static int sharedSchemaCheck(ShellState *pState, const char *zDb, int *peFix){
+  int rc = SQLITE_OK;
+  int bFailed = 0;
+  sqlite3_stmt *pStmt = 0;
+
+  if( peFix ) *peFix = 0;
+  shellExecPrintf(pState->db, &rc, "ATTACH '%q' AS _shared_schema_tmp", zDb);
+
+  /* Check if this database has the same set of objects as the current db */
+  shellPreparePrintf(pState->db, &rc, &pStmt, 
+    "SELECT type, name FROM _shared_schema_tmp.sqlite_master AS o "
+    "WHERE NOT EXISTS ("
+    "  SELECT 1 FROM main.sqlite_master "
+    "    WHERE name IS o.name AND type IS o.type"
+    ")"
+    " UNION ALL "
+    "SELECT type, name FROM main.sqlite_master AS o "
+    "WHERE NOT EXISTS ("
+    "  SELECT 1 FROM _shared_schema_tmp.sqlite_master "
+    "    WHERE name IS o.name AND type IS o.type"
+    ")"
+  );
+  if( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pStmt) ){
+    utf8_printf(pState->out, "%s is NOT compatible (objects)\n", zDb);
+    bFailed = 1;
+  }
+  shellFinalize(&rc, pStmt);
+
+  /* Check if this database has the same set of SQL statements as the 
+  ** current db. */
+  if( bFailed==0 ){
+    shellPreparePrintf(pState->db, &rc, &pStmt, 
+        "SELECT 1 FROM _shared_schema_tmp.sqlite_master AS o "
+        "WHERE sql IS NOT ("
+        "  SELECT sql FROM main.sqlite_master "
+        "    WHERE name IS o.name AND type IS o.type"
+        ")"
+    );
+    if( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pStmt) ){
+      utf8_printf(pState->out, "%s is NOT compatible (SQL)\n", zDb);
+      bFailed = 1;
+    }
+    shellFinalize(&rc, pStmt);
+  }
+
+  /* Check if this database has the same set of root pages as the current 
+  ** db. */
+  if( bFailed==0 ){
+    shellPreparePrintf(pState->db, &rc, &pStmt, 
+        "SELECT 1 FROM _shared_schema_tmp.sqlite_master AS o "
+        "WHERE rootpage IS NOT ("
+        "  SELECT rootpage FROM main.sqlite_master "
+        "    WHERE name IS o.name AND type IS o.type"
+        ")"
+    );
+    if( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pStmt) ){
+      if( peFix==0 ){
+        utf8_printf(pState->out, "%s is NOT compatible (root pages)\n", zDb);
+      }
+      bFailed = 1;
+      if( peFix ) *peFix = 1;
+    }
+    shellFinalize(&rc, pStmt);
+  }
+
+  if( bFailed==0 ){
+    shellPreparePrintf(pState->db, &rc, &pStmt, 
+        "SELECT 1 WHERE ("
+        "  SELECT group_concat(rootpage || '.' || name || '.' || sql, '.') "
+        "  FROM _shared_schema_tmp.sqlite_master"
+        ") IS NOT ("
+        "  SELECT group_concat(rootpage || '.' || name || '.' || sql, '.') "
+        "  FROM main.sqlite_master"
+        ")"
+    );
+    if( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pStmt) ){
+      if( peFix==0 ){
+        utf8_printf(pState->out, 
+            "%s is NOT compatible (order of sqlite_master rows)\n", zDb
+        );
+      }
+      bFailed = 1;
+      if( peFix ) *peFix = 2;
+    }
+    shellFinalize(&rc, pStmt);
+  }
+
+  if( bFailed==0 ){
+    int iMain = -1;
+    int iNew = +1;
+    shellPreparePrintf(pState->db, &rc, &pStmt, 
+        "PRAGMA main.schema_version"
+    );
+    if( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pStmt) ){
+      iMain = sqlite3_column_int(pStmt, 0);
+    }
+    shellFinalize(&rc, pStmt);
+    shellPreparePrintf(pState->db, &rc, &pStmt, 
+        "PRAGMA _shared_schema_tmp.schema_version"
+    );
+    if( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pStmt) ){
+      iNew = sqlite3_column_int(pStmt, 0);
+    }
+    shellFinalize(&rc, pStmt);
+    if( rc==SQLITE_OK && iMain!=iNew ){
+      if( peFix==0 ){
+        utf8_printf(pState->out, 
+            "%s is NOT compatible (schema cookie)\n", zDb
+        );
+      }
+      bFailed = 1;
+      if( peFix ) *peFix = 3;
+    }
+  }
+
+  if( rc==SQLITE_OK && bFailed==0 ){
+    utf8_printf(pState->out, "%s is compatible\n", zDb);
+  }
+
+  sqlite3_exec(pState->db, "DETACH _shared_schema_tmp", 0, 0, 0);
+  return rc;
+}
+
+/*
+** .shared-schema check|fix DB1 DB2...
+*/
+static int sharedSchemaDotCommand(
+  ShellState *pState,             /* Current shell tool state */
+  char **azArg,                   /* Array of arguments passed to dot command */
+  int nArg                        /* Number of entries in azArg[] */
+){
+  int rc = SQLITE_OK;
+  int bFix = 0;                   /* Fix databases if possible */
+  int n1;
+  int i;
+  if( nArg<3 ){
+    goto shared_schema_usage;
+  }
+
+  n1 = (int)strlen(azArg[1]);
+  if( n1>0 && n1<=3 && memcmp("fix", azArg[1], n1)==0 ){
+    bFix = 1;
+  }else if( n1==0 || n1>5 || memcmp("check", azArg[1], n1) ){
+    goto shared_schema_usage;
+  }
+
+  for(i=2; rc==SQLITE_OK && i<nArg; i++){
+    int eFix = 0;
+    rc = sharedSchemaCheck(pState, azArg[i], bFix ? &eFix : 0);
+    if( rc==SQLITE_OK && bFix && eFix ){
+      utf8_printf(pState->out, "Fixing %s... ", azArg[i]);
+      fflush(pState->out);
+      rc = sharedSchemaFix(pState, azArg[i], eFix);
+      if( rc==SQLITE_OK ){
+        rc = sharedSchemaCheck(pState, azArg[i], &eFix);
+        if( rc==SQLITE_OK && eFix ){
+          utf8_printf(pState->out, "VACUUMing main... ");
+          fflush(pState->out);
+          rc = sqlite3_exec(pState->db, "VACUUM main", 0, 0, 0);
+          if( rc==SQLITE_OK ){
+            rc = sharedSchemaCheck(pState, azArg[i], 0);
+          }
+        }
+      }
+    }
+  }
+
+  return rc;
+ shared_schema_usage:
+  raw_printf(stderr, "usage: .shared-schema check|fix DB1 DB2...\n");
+  return SQLITE_ERROR;
+}
 
 /*
 ** When running the ".recover" command, each output table, and the special
@@ -8967,6 +9210,8 @@ static int do_meta_command(char *zLine, ShellState *p){
         p->openMode = SHELL_OPEN_APPENDVFS;
       }else if( optionMatch(z, "readonly") ){
         p->openMode = SHELL_OPEN_READONLY;
+      }else if( optionMatch(z, "sharedschema") ){
+        p->openMode = SHELL_OPEN_SHAREDSCHEMA;
       }else if( optionMatch(z, "nofollow") ){
         p->openFlags |= SQLITE_OPEN_NOFOLLOW;
 #ifndef SQLITE_OMIT_DESERIALIZE
@@ -9996,6 +10241,13 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
     sqlite3_free(zSql);
   }else
+
+#if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_ENABLE_DBPAGE_VTAB)
+  if( c=='s' && strncmp(azArg[0], "shared-schema", n)==0 ){
+    open_db(p, 0);
+    sharedSchemaDotCommand(p, azArg, nArg);
+  }else
+#endif
 
 #ifndef SQLITE_NOHAVE_SYSTEM
   if( c=='s'
@@ -11449,6 +11701,8 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 #endif
     }else if( strcmp(z,"-readonly")==0 ){
       data.openMode = SHELL_OPEN_READONLY;
+    }else if( strcmp(z,"-sharedschema")==0 ){
+      data.openMode = SHELL_OPEN_SHAREDSCHEMA;
     }else if( strcmp(z,"-nofollow")==0 ){
       data.openFlags = SQLITE_OPEN_NOFOLLOW;
 #if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_HAVE_ZLIB)
@@ -11571,6 +11825,8 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 #endif
     }else if( strcmp(z,"-readonly")==0 ){
       data.openMode = SHELL_OPEN_READONLY;
+    }else if( strcmp(z,"-sharedschema")==0 ){
+      data.openMode = SHELL_OPEN_SHAREDSCHEMA;
     }else if( strcmp(z,"-nofollow")==0 ){
       data.openFlags |= SQLITE_OPEN_NOFOLLOW;
     }else if( strcmp(z,"-ascii")==0 ){

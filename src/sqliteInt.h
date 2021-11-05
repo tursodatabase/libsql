@@ -1164,6 +1164,7 @@ typedef struct CteUse CteUse;
 typedef struct Db Db;
 typedef struct DbFixer DbFixer;
 typedef struct Schema Schema;
+typedef struct SchemaPool SchemaPool;
 typedef struct Expr Expr;
 typedef struct ExprList ExprList;
 typedef struct FKey FKey;
@@ -1300,6 +1301,10 @@ struct Db {
   u8 safety_level;     /* How aggressive at syncing data to disk */
   u8 bSyncSet;         /* True if "PRAGMA synchronous=N" has been run */
   Schema *pSchema;     /* Pointer to database schema (possibly shared) */
+#ifdef SQLITE_ENABLE_SHARED_SCHEMA
+  SchemaPool *pSPool;  /* For REUSE_SCHEMA mode */
+  VTable *pVTable;     /* List of all VTable objects (REUSE_SCHEMA mode only) */
+#endif
 };
 
 /*
@@ -1331,6 +1336,9 @@ struct Schema {
   u8 enc;              /* Text encoding used by this database */
   u16 schemaFlags;     /* Flags associated with this schema */
   int cache_size;      /* Number of pages to use in the cache */
+#ifdef SQLITE_ENABLE_SHARED_SCHEMA
+  Schema *pNext;       /* Next Schema object SchemaPool (REUSE_SCHEMA) */
+#endif
 };
 
 /*
@@ -1654,6 +1662,12 @@ struct sqlite3 {
 #endif
 };
 
+#ifdef SQLITE_ENABLE_SHARED_SCHEMA
+# define IsSharedSchema(db) (((db)->openFlags & SQLITE_OPEN_SHARED_SCHEMA)!=0)
+#else
+# define IsSharedSchema(db) 0
+#endif
+
 /*
 ** A macro to discover the encoding of a database.
 */
@@ -1733,6 +1747,9 @@ struct sqlite3 {
 #define DBFLAG_SchemaKnownOk  0x0010  /* Schema is known to be valid */
 #define DBFLAG_InternalFunc   0x0020  /* Allow use of internal functions */
 #define DBFLAG_EncodingFixed  0x0040  /* No longer possible to change enc. */
+
+#define DBFLAG_SchemaInuse    0x0080  /* Do not release sharable schemas */
+#define DBFLAG_FreeSchema     0x0100  /* Free extra shared schemas on release */
 
 /*
 ** Bits of the sqlite3.dbOptFlags field that are used by the
@@ -2221,6 +2238,9 @@ struct VTable {
   u8 eVtabRisk;             /* Riskiness of allowing hacker access */
   int iSavepoint;           /* Depth of the SAVEPOINT stack */
   VTable *pNext;            /* Next in linked list (see above) */
+#ifdef SQLITE_ENABLE_SHARED_SCHEMA
+  char *zName;              /* Table name (REUSE_SCHEMA mode) */
+#endif
 };
 
 /* Allowed values for VTable.eVtabRisk
@@ -3554,7 +3574,6 @@ struct Parse {
   AutoincInfo *pAinc;  /* Information about AUTOINCREMENT counters */
   Parse *pToplevel;    /* Parse structure for main program (or NULL) */
   Table *pTriggerTab;  /* Table triggers are being coded for */
-  Parse *pParentParse; /* Parent parser if this parser is nested */
   union {
     int addrCrTab;         /* Address of OP_CreateBtree on CREATE TABLE */
     Returning *pReturning; /* The RETURNING clause */
@@ -3723,6 +3742,9 @@ struct Trigger {
   Schema *pTabSchema;     /* Schema containing the table */
   TriggerStep *step_list; /* Link list of trigger program steps             */
   Trigger *pNext;         /* Next trigger associated with the table */
+#ifdef SQLITE_ENABLE_SHARED_SCHEMA
+  char *zTabSchema;       /* Temp triggers in IsSharedSchema() dbs only */
+#endif
 };
 
 /*
@@ -3834,6 +3856,7 @@ typedef struct {
   int rc;             /* Result code stored here */
   u32 mInitFlags;     /* Flags controlling error messages */
   u32 nInitRow;       /* Number of rows processed */
+  u64 cksum;          /* Schema checksum for REUSE_SCHEMA mode */
   Pgno mxPage;        /* Maximum page number.  0 for no limit. */
 } InitData;
 
@@ -4945,6 +4968,29 @@ void sqlite3DefaultRowEst(Index*);
 void sqlite3RegisterLikeFunctions(sqlite3*, int);
 int sqlite3IsLikeFunction(sqlite3*,Expr*,int*,char*);
 void sqlite3SchemaClear(void *);
+void sqlite3SchemaClearOrDisconnect(sqlite3*, int);
+
+#ifdef SQLITE_ENABLE_SHARED_SCHEMA 
+int sqlite3SchemaConnect(sqlite3*, int, u64);
+int sqlite3SchemaDisconnect(sqlite3 *, int, int);
+Schema *sqlite3SchemaExtract(SchemaPool*);
+int sqlite3SchemaLoad(sqlite3*, int, int*, char**);
+void sqlite3SchemaReleaseAll(sqlite3*);
+void sqlite3SchemaRelease(sqlite3*, int);
+void sqlite3SchemaAdjustUsed(sqlite3*, int, int, int*);
+void sqlite3SchemaWritable(Parse*, int);
+void sqlite3UnlockReusableSchema(sqlite3 *db, int bRelease);
+int sqlite3LockReusableSchema(sqlite3 *db);
+#else
+# define sqlite3SchemaWritable(x,y)
+# define sqlite3UnlockReusableSchema(x,y)
+# define sqlite3LockReusableSchema(x) 0
+# define sqlite3SchemaDisconnect(x,y,z) SQLITE_OK
+# define sqlite3SchemaLoad(w,x,y,z) SQLITE_OK
+# define sqlite3SchemaRelease(y,z)
+# define sqlite3SchemaConnect(x,y,z) SQLITE_OK
+#endif
+
 Schema *sqlite3SchemaGet(sqlite3 *, Btree *);
 int sqlite3SchemaToIndex(sqlite3 *db, Schema *);
 KeyInfo *sqlite3KeyInfoAlloc(sqlite3*,int,int);

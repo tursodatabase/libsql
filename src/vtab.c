@@ -192,6 +192,24 @@ void sqlite3VtabLock(VTable *pVTab){
 VTable *sqlite3GetVTable(sqlite3 *db, Table *pTab){
   VTable *pVtab;
   assert( IsVirtual(pTab) );
+#ifdef SQLITE_ENABLE_SHARED_SCHEMA
+  if( IsSharedSchema(db) ){
+    int iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
+    if( iDb!=1 ){
+      VTable **pp;
+      for(pp=&db->aDb[iDb].pVTable; *pp; pp=&(*pp)->pNext){
+        if( sqlite3StrICmp(pTab->zName, (*pp)->zName)==0 ) break;
+      }
+      pVtab = *pp;
+      if( pVtab && pTab->nCol<=0 ){
+        *pp = pVtab->pNext;
+        sqlite3VtabUnlock(pVtab);
+        pVtab = 0;
+      }
+      return pVtab;
+    }
+  }
+#endif /* ifdef SQLITE_ENABLE_SHARED_SCHEMA */
   for(pVtab=pTab->u.vtab.p; pVtab && pVtab->db!=db; pVtab=pVtab->pNext);
   return pVtab;
 }
@@ -499,7 +517,7 @@ void sqlite3VtabFinishParse(Parse *pParse, Token *pEnd){
 
     sqlite3VdbeAddOp0(v, OP_Expire);
     zWhere = sqlite3MPrintf(db, "name=%Q AND sql=%Q", pTab->zName, zStmt);
-    sqlite3VdbeAddParseSchemaOp(v, iDb, zWhere, 0);
+    sqlite3VdbeAddParseSchemaOp(pParse, iDb, zWhere, 0);
     sqlite3DbFree(db, zStmt);
 
     iReg = ++pParse->nMem;
@@ -569,6 +587,7 @@ static int vtabCallConstructor(
   char *zModuleName;
   int iDb;
   VtabCtx *pCtx;
+  int nByte;                      /* Bytes of space to allocate */
 
   assert( IsVirtual(pTab) );
   azArg = (const char *const*)pTab->u.vtab.azArg;
@@ -588,7 +607,11 @@ static int vtabCallConstructor(
     return SQLITE_NOMEM_BKPT;
   }
 
-  pVTable = sqlite3MallocZero(sizeof(VTable));
+  nByte = sizeof(VTable);
+#ifdef SQLITE_ENABLE_SHARED_SCHEMA
+  nByte += sqlite3Strlen30(pTab->zName) + 1;
+#endif
+  pVTable = (VTable*)sqlite3MallocZero(nByte);
   if( !pVTable ){
     sqlite3OomFault(db);
     sqlite3DbFree(db, zModuleName);
@@ -596,6 +619,10 @@ static int vtabCallConstructor(
   }
   pVTable->db = db;
   pVTable->pMod = pMod;
+#ifdef SQLITE_ENABLE_SHARED_SCHEMA
+  pVTable->zName = (char*)&pVTable[1];
+  memcpy(pVTable->zName, pTab->zName, nByte-sizeof(VTable));
+#endif
   pVTable->eVtabRisk = SQLITE_VTABRISK_Normal;
 
   iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
@@ -638,12 +665,23 @@ static int vtabCallConstructor(
       int iCol;
       u16 oooHidden = 0;
       /* If everything went according to plan, link the new VTable structure
-      ** into the linked list headed by pTab->u.vtab.p. Then loop through the 
-      ** columns of the table to see if any of them contain the token "hidden".
-      ** If so, set the Column COLFLAG_HIDDEN flag and remove the token from
-      ** the type string.  */
-      pVTable->pNext = pTab->u.vtab.p;
-      pTab->u.vtab.p = pVTable;
+      ** into the linked list headed by pTab->u.vtab.p. Or, if this is a
+      ** reusable schema, into the linked list headed by Db.pVTable.
+      **
+      ** Then loop through the columns of the table to see if any of them
+      ** contain the token "hidden". If so, set the Column COLFLAG_HIDDEN flag
+      ** and remove the token from the type string.  */
+#ifdef SQLITE_ENABLE_SHARED_SCHEMA
+      if( IsSharedSchema(db) && iDb!=1 ){
+        pVTable->pNext = db->aDb[iDb].pVTable;
+        db->aDb[iDb].pVTable = pVTable;
+      }else
+#endif /* ifdef SQLITE_ENABLE_SHARED_SCHEMA */
+      {
+        assert( IsVirtual(pTab) );
+        pVTable->pNext = pTab->u.vtab.p;
+        pTab->u.vtab.p = pVTable;
+      }
 
       for(iCol=0; iCol<pTab->nCol; iCol++){
         char *zType = sqlite3ColumnType(&pTab->aCol[iCol], "");
@@ -698,6 +736,7 @@ int sqlite3VtabCallConnect(Parse *pParse, Table *pTab){
   assert( pTab );
   assert( IsVirtual(pTab) );
   if( sqlite3GetVTable(db, pTab) ){
+    assert( !IsVirtual(pTab) || pTab->nCol>0 );
     return SQLITE_OK;
   }
 

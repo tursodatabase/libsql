@@ -22,7 +22,7 @@ static char *lookaside1_thread_reader(int iTid, void *pArg){
   Error err = {0};                /* Error code and message */
   Sqlite db = {0};                /* SQLite database connection */
 
-  opendb(&err, &db, "test.db", 0);
+  opendb(&err, &db, "test.db", 0, 0);
 
   while( !timetostop(&err) ){
     sqlite3_stmt *pStmt = 0;
@@ -47,7 +47,7 @@ static char *lookaside1_thread_writer(int iTid, void *pArg){
   Error err = {0};                /* Error code and message */
   Sqlite db = {0};                /* SQLite database connection */
 
-  opendb(&err, &db, "test.db", 0);
+  opendb(&err, &db, "test.db", 0, 0);
 
   do{
     sql_script(&err, &db, 
@@ -68,7 +68,7 @@ static void lookaside1(int nMs){
   Sqlite db = {0};
   Threadset threads = {0};
 
-  opendb(&err, &db, "test.db", 1);
+  opendb(&err, &db, "test.db", 1, 0);
   sql_script(&err, &db, 
      "CREATE TABLE t1(x PRIMARY KEY) WITHOUT ROWID;"
      "WITH data(x,y) AS ("

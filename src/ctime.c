@@ -311,6 +311,9 @@ static const char * const sqlite3azCompileOpt[] = {
 #ifdef SQLITE_ENABLE_SESSION
   "ENABLE_SESSION",
 #endif
+#if SQLITE_ENABLE_SHARED_SCHEMA
+  "ENABLE_SHARED_SCHEMA",
+#endif
 #ifdef SQLITE_ENABLE_SNAPSHOT
   "ENABLE_SNAPSHOT",
 #endif

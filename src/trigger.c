@@ -52,6 +52,14 @@ Trigger *sqlite3TriggerList(Parse *pParse, Table *pTab){
   Trigger *pList;           /* List of triggers to return */
   HashElem *p;              /* Loop variable for TEMP triggers */
 
+#ifdef SQLITE_ENABLE_SHARED_SCHEMA
+  char *zSchema = 0;
+  sqlite3 *db = pParse->db;
+  if( IsSharedSchema(db) ){
+    zSchema = db->aDb[sqlite3SchemaToIndex(db, pTab->pSchema)].zDbSName;
+  }
+#endif
+
   if( pParse->disableTriggers ){
     return 0;
   }
@@ -60,7 +68,20 @@ Trigger *sqlite3TriggerList(Parse *pParse, Table *pTab){
   pList = pTab->pTrigger;
   while( p ){
     Trigger *pTrig = (Trigger *)sqliteHashData(p);
-    if( pTrig->pTabSchema==pTab->pSchema
+
+    int bSchemaMatch;
+#ifdef SQLITE_ENABLE_SHARED_SCHEMA
+    if( zSchema ){
+      /* Shared-schema */
+      bSchemaMatch = (0==sqlite3StrICmp(pTrig->zTabSchema, zSchema));
+    }else
+#endif
+    {
+      /* Non-shared-schema */
+      bSchemaMatch = (pTrig->pTabSchema==pTab->pSchema);
+    }
+
+    if( bSchemaMatch
      && pTrig->table
      && 0==sqlite3StrICmp(pTrig->table, pTab->zName)
      && pTrig->pTabSchema!=pTmpSchema
@@ -70,7 +91,7 @@ Trigger *sqlite3TriggerList(Parse *pParse, Table *pTab){
     }else if( pTrig->op==TK_RETURNING
 #ifndef SQLITE_OMIT_VIRTUALTABLE
               && pParse->db->pVtabCtx==0
-#endif
+#endif 
     ){
       assert( pParse->bReturning );
       assert( &(pParse->u1.pReturning->retTrig) == pTrig );
@@ -261,6 +282,12 @@ void sqlite3BeginTrigger(
   pTrigger->zName = zName;
   zName = 0;
   pTrigger->table = sqlite3DbStrDup(db, pTableName->a[0].zName);
+#ifdef SQLITE_ENABLE_SHARED_SCHEMA
+  if( IsSharedSchema(db) && iDb==1 ){
+    int iTabDb = sqlite3SchemaToIndex(db, pTab->pSchema);
+    pTrigger->zTabSchema = sqlite3DbStrDup(db, db->aDb[iTabDb].zDbSName);
+  }
+#endif /* ifdef SQLITE_ENABLE_SHARED_SCHEMA */
   pTrigger->pSchema = db->aDb[iDb].pSchema;
   pTrigger->pTabSchema = pTab->pSchema;
   pTrigger->op = (u8)op;
@@ -367,7 +394,7 @@ void sqlite3FinishTrigger(
        pTrig->table, z);
     sqlite3DbFree(db, z);
     sqlite3ChangeCookie(pParse, iDb);
-    sqlite3VdbeAddParseSchemaOp(v, iDb,
+    sqlite3VdbeAddParseSchemaOp(pParse, iDb,
         sqlite3MPrintf(db, "type='trigger' AND name='%q'", zName), 0);
   }
 
@@ -585,6 +612,9 @@ void sqlite3DeleteTrigger(sqlite3 *db, Trigger *pTrigger){
   sqlite3DeleteTriggerStep(db, pTrigger->step_list);
   sqlite3DbFree(db, pTrigger->zName);
   sqlite3DbFree(db, pTrigger->table);
+#ifdef SQLITE_ENABLE_SHARED_SCHEMA
+  sqlite3DbFree(db, pTrigger->zTabSchema);
+#endif
   sqlite3ExprDelete(db, pTrigger->pWhen);
   sqlite3IdListDelete(db, pTrigger->pColumns);
   sqlite3DbFree(db, pTrigger);
@@ -656,6 +686,7 @@ void sqlite3DropTriggerPtr(Parse *pParse, Trigger *pTrigger){
 
   iDb = sqlite3SchemaToIndex(pParse->db, pTrigger->pSchema);
   assert( iDb>=0 && iDb<db->nDb );
+  sqlite3SchemaWritable(pParse, iDb);
   pTable = tableOfTrigger(pTrigger);
   assert( (pTable && pTable->pSchema==pTrigger->pSchema) || iDb==1 );
 #ifndef SQLITE_OMIT_AUTHORIZATION
@@ -1107,7 +1138,9 @@ static TriggerPrg *codeRowTrigger(
   Parse *pSubParse;           /* Parse context for sub-vdbe */
   int iEndTrigger = 0;        /* Label to jump to if WHEN is false */
 
-  assert( pTrigger->zName==0 || pTab==tableOfTrigger(pTrigger) );
+  assert( pTrigger->zName==0 || IsSharedSchema(pParse->db)
+      || pTab==tableOfTrigger(pTrigger)
+  );
   assert( pTop->pVdbe );
 
   /* Allocate the TriggerPrg and SubProgram objects. To ensure that they
@@ -1215,7 +1248,9 @@ static TriggerPrg *getRowTrigger(
   Parse *pRoot = sqlite3ParseToplevel(pParse);
   TriggerPrg *pPrg;
 
-  assert( pTrigger->zName==0 || pTab==tableOfTrigger(pTrigger) );
+  assert( pTrigger->zName==0 || IsSharedSchema(pParse->db)
+      || pTab==tableOfTrigger(pTrigger) 
+  );
 
   /* It may be that this trigger has already been coded (or is in the
   ** process of being coded). If this is the case, then an entry with

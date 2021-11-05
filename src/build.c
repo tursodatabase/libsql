@@ -346,6 +346,39 @@ int sqlite3UserAuthTable(const char *zTable){
 }
 #endif
 
+#ifdef SQLITE_ENABLE_SHARED_SCHEMA
+/*
+** If this database connection was opened with the SQLITE_OPEN_SHARED_SCHEMA
+** flag specified, then ensure that the database schema for database iDb
+** is loaded. Either by obtaining a Schema object from the schema-pool, or
+** by reading the contents of the sqlite_master table. Unless it is NULL, 
+** the location indicated by parameter pbUnload is set to 1 if a shared-schema 
+** is loaded.
+**
+** If the database handle was not opened with SQLITE_OPEN_SHARED_SCHEMA, or
+** if the schema for database iDb is already loaded, this function is a no-op.
+**
+** SQLITE_OK is returned if successful, or an SQLite error code otherwise. If
+** an error code is returned, (*pzErr) may be set to point to a buffer
+** containing an error message. It is the responsibility of the caller to
+** eventually free this buffer using sqlite3_free().
+*/
+int sqlite3SchemaLoad(sqlite3 *db, int iDb, int *pbUnload, char **pzErr){
+  int rc = SQLITE_OK;
+  if( IsSharedSchema(db) 
+      && DbHasProperty(db, iDb, DB_SchemaLoaded)==0 
+      && (db->init.busy==0 || (iDb!=1 && db->init.iDb==1))
+  ){
+    struct sqlite3InitInfo sv = db->init;
+    memset(&db->init, 0, sizeof(struct sqlite3InitInfo));
+    rc = sqlite3InitOne(db, iDb, pzErr, 0);
+    db->init = sv;
+    if( pbUnload && rc==SQLITE_OK && iDb!=1 ) *pbUnload = 1;
+  }
+  return rc;
+}
+#endif
+
 /*
 ** Locate the in-memory structure that describes a particular database
 ** table given the name of that table and (optionally) the name of the
@@ -371,59 +404,41 @@ Table *sqlite3FindTable(sqlite3 *db, const char *zName, const char *zDatabase){
     return 0;
   }
 #endif
-  if( zDatabase ){
-    for(i=0; i<db->nDb; i++){
-      if( sqlite3StrICmp(zDatabase, db->aDb[i].zDbSName)==0 ) break;
-    }
-    if( i>=db->nDb ){
-      /* No match against the official names.  But always match "main"
-      ** to schema 0 as a legacy fallback. */
-      if( sqlite3StrICmp(zDatabase,"main")==0 ){
-        i = 0;
-      }else{
-        return 0;
-      }
-    }
-    p = sqlite3HashFind(&db->aDb[i].pSchema->tblHash, zName);
-    if( p==0 && sqlite3StrNICmp(zName, "sqlite_", 7)==0 ){
-      if( i==1 ){
-        if( sqlite3StrICmp(zName+7, &PREFERRED_TEMP_SCHEMA_TABLE[7])==0
-         || sqlite3StrICmp(zName+7, &PREFERRED_SCHEMA_TABLE[7])==0
-         || sqlite3StrICmp(zName+7, &LEGACY_SCHEMA_TABLE[7])==0
-        ){
-          p = sqlite3HashFind(&db->aDb[1].pSchema->tblHash, 
-                              LEGACY_TEMP_SCHEMA_TABLE);
+  while(1){
+    for(i=OMIT_TEMPDB; i<db->nDb; i++){
+      int j = (i<2) ? i^1 : i;   /* Search TEMP before MAIN */
+      if( zDatabase==0 || sqlite3DbIsNamed(db, j, zDatabase) ){
+        int bUnload = 0;
+        assert( sqlite3SchemaMutexHeld(db, j, 0) );
+        if( IsSharedSchema(db) ){
+          Parse *pParse = db->pParse;
+          if( pParse && pParse->nErr==0 ){
+            pParse->rc = sqlite3SchemaLoad(db, j, &bUnload, &pParse->zErrMsg);
+            if( pParse->rc ) pParse->nErr++;
+          }
         }
-      }else{
-        if( sqlite3StrICmp(zName+7, &PREFERRED_SCHEMA_TABLE[7])==0 ){
-          p = sqlite3HashFind(&db->aDb[i].pSchema->tblHash,
-                              LEGACY_SCHEMA_TABLE);
+        p = sqlite3HashFind(&db->aDb[j].pSchema->tblHash, zName);
+        if( p ) return p;
+        if( bUnload ){
+          sqlite3SchemaRelease(db, j);
         }
       }
     }
-  }else{
-    /* Match against TEMP first */
-    p = sqlite3HashFind(&db->aDb[1].pSchema->tblHash, zName);
-    if( p ) return p;
-    /* The main database is second */
-    p = sqlite3HashFind(&db->aDb[0].pSchema->tblHash, zName);
-    if( p ) return p;
-    /* Attached databases are in order of attachment */
-    for(i=2; i<db->nDb; i++){
-      assert( sqlite3SchemaMutexHeld(db, i, 0) );
-      p = sqlite3HashFind(&db->aDb[i].pSchema->tblHash, zName);
-      if( p ) break;
+    /* Not found.  If the name we were looking for was temp.sqlite_master
+    ** then change the name to sqlite_temp_master and try again. */
+    if( sqlite3StrICmp(zName, PREFERRED_SCHEMA_TABLE)==0 ){
+      zName = LEGACY_SCHEMA_TABLE;
+      continue;
     }
-    if( p==0 && sqlite3StrNICmp(zName, "sqlite_", 7)==0 ){
-      if( sqlite3StrICmp(zName+7, &PREFERRED_SCHEMA_TABLE[7])==0 ){
-        p = sqlite3HashFind(&db->aDb[0].pSchema->tblHash, LEGACY_SCHEMA_TABLE);
-      }else if( sqlite3StrICmp(zName+7, &PREFERRED_TEMP_SCHEMA_TABLE[7])==0 ){
-        p = sqlite3HashFind(&db->aDb[1].pSchema->tblHash, 
-                            LEGACY_TEMP_SCHEMA_TABLE);
-      }
+    if( sqlite3StrICmp(zName, PREFERRED_TEMP_SCHEMA_TABLE)==0 ){
+      zName = LEGACY_TEMP_SCHEMA_TABLE;
+      continue;
     }
+    if( sqlite3StrICmp(zName, LEGACY_SCHEMA_TABLE)!=0 ) break;
+    if( sqlite3_stricmp(zDatabase, db->aDb[1].zDbSName)!=0 ) break;
+    zName = LEGACY_TEMP_SCHEMA_TABLE;
   }
-  return p;
+  return 0;
 }
 
 /*
@@ -448,6 +463,7 @@ Table *sqlite3LocateTable(
   /* Read the database schema. If an error occurs, leave an error message
   ** and code in pParse and return NULL. */
   if( (db->mDbFlags & DBFLAG_SchemaKnownOk)==0 
+   && !IsSharedSchema(db)
    && SQLITE_OK!=sqlite3ReadSchema(pParse)
   ){
     return 0;
@@ -464,9 +480,20 @@ Table *sqlite3LocateTable(
       if( pMod==0 && sqlite3_strnicmp(zName, "pragma_", 7)==0 ){
         pMod = sqlite3PragmaVtabRegister(db, zName);
       }
-      if( pMod && sqlite3VtabEponymousTableInit(pParse, pMod) ){
-        testcase( pMod->pEpoTab==0 );
-        return pMod->pEpoTab;
+      if( pMod ){
+        if( IsSharedSchema(db) && pParse->nErr==0 ){
+          int bDummy = 0;
+          pParse->rc = sqlite3SchemaLoad(db, 0, &bDummy, &pParse->zErrMsg);
+          if( pParse->rc ) pParse->nErr++;
+        }
+        if( sqlite3VtabEponymousTableInit(pParse, pMod) ){
+          Table *pEpoTab = pMod->pEpoTab;
+          if( pEpoTab ){
+            assert( IsSharedSchema(db)||pEpoTab->pSchema==db->aDb[0].pSchema );
+            pEpoTab->pSchema = db->aDb[0].pSchema;  /* For SHARED_SCHEMA mode */
+          }
+          return pEpoTab;
+        }
       }
     }
 #endif
@@ -476,15 +503,13 @@ Table *sqlite3LocateTable(
     p = 0;
   }
 
-  if( p==0 ){
+  if( p==0 && (!IsSharedSchema(db) || pParse->nErr==0) ){
     const char *zMsg = flags & LOCATE_VIEW ? "no such view" : "no such table";
     if( zDbase ){
       sqlite3ErrorMsg(pParse, "%s: %s.%s", zMsg, zDbase, zName);
     }else{
       sqlite3ErrorMsg(pParse, "%s: %s", zMsg, zName);
     }
-  }else{
-    assert( HasRowid(p) || p->iPKey<0 );
   }
 
   return p;
@@ -653,11 +678,10 @@ void sqlite3ResetOneSchema(sqlite3 *db, int iDb){
     DbSetProperty(db, 1, DB_ResetWanted);
     db->mDbFlags &= ~DBFLAG_SchemaKnownOk;
   }
-
   if( db->nSchemaLock==0 ){
     for(i=0; i<db->nDb; i++){
       if( DbHasProperty(db, i, DB_ResetWanted) ){
-        sqlite3SchemaClear(db->aDb[i].pSchema);
+        sqlite3SchemaClearOrDisconnect(db, i);
       }
     }
   }
@@ -670,16 +694,17 @@ void sqlite3ResetOneSchema(sqlite3 *db, int iDb){
 void sqlite3ResetAllSchemasOfConnection(sqlite3 *db){
   int i;
   sqlite3BtreeEnterAll(db);
-  for(i=0; i<db->nDb; i++){
+  for(i=0; i<db->nDb; i=(i?i+1:2)){
     Db *pDb = &db->aDb[i];
     if( pDb->pSchema ){
       if( db->nSchemaLock==0 ){
-        sqlite3SchemaClear(pDb->pSchema);
+        sqlite3SchemaClearOrDisconnect(db, i);
       }else{
         DbSetProperty(db, i, DB_ResetWanted);
       }
     }
   }
+  sqlite3SchemaClear(db->aDb[1].pSchema);
   db->mDbFlags &= ~(DBFLAG_SchemaChange|DBFLAG_SchemaKnownOk);
   sqlite3VtabUnlockList(db);
   sqlite3BtreeLeaveAll(db);
@@ -1284,7 +1309,7 @@ void sqlite3StartTable(
   */
   if( !IN_SPECIAL_PARSE ){
     char *zDb = db->aDb[iDb].zDbSName;
-    if( SQLITE_OK!=sqlite3ReadSchema(pParse) ){
+    if( !IsSharedSchema(db) && SQLITE_OK!=sqlite3ReadSchema(pParse) ){
       goto begin_table_error;
     }
     pTable = sqlite3FindTable(db, zName, zDb);
@@ -2901,7 +2926,7 @@ void sqlite3EndTable(
 #endif
 
     /* Reparse everything to update our internal data structures */
-    sqlite3VdbeAddParseSchemaOp(v, iDb,
+    sqlite3VdbeAddParseSchemaOp(pParse, iDb,
            sqlite3MPrintf(db, "tbl_name='%q' AND type!='trigger'", p->zName),0);
   }
 
@@ -3450,7 +3475,7 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView, int noErr){
   }
   assert( pParse->nErr==0 );
   assert( pName->nSrc==1 );
-  if( sqlite3ReadSchema(pParse) ) goto exit_drop_table;
+  if( !IsSharedSchema(db) && sqlite3ReadSchema(pParse) ) goto exit_drop_table;
   if( noErr ) db->suppressErr++;
   assert( isView==0 || isView==LOCATE_VIEW );
   pTab = sqlite3LocateTableItem(pParse, isView, &pName->a[0]);
@@ -3465,6 +3490,7 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView, int noErr){
   }
   iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
   assert( iDb>=0 && iDb<db->nDb );
+  sqlite3SchemaWritable(pParse, iDb);
 
   /* If pTab is a virtual table, call ViewGetColumnNames() to ensure
   ** it is initialized.
@@ -3917,7 +3943,7 @@ void sqlite3CreateIndex(
   if( IN_DECLARE_VTAB && idxType!=SQLITE_IDXTYPE_PRIMARYKEY ){
     goto exit_create_index;
   }
-  if( SQLITE_OK!=sqlite3ReadSchema(pParse) ){
+  if( !IsSharedSchema(db) && SQLITE_OK!=sqlite3ReadSchema(pParse) ){
     goto exit_create_index;
   }
   if( sqlite3HasExplicitNulls(pParse, pList) ){
@@ -4416,7 +4442,7 @@ void sqlite3CreateIndex(
       if( pTblName ){
         sqlite3RefillIndex(pParse, pIndex, iMem);
         sqlite3ChangeCookie(pParse, iDb);
-        sqlite3VdbeAddParseSchemaOp(v, iDb,
+        sqlite3VdbeAddParseSchemaOp(pParse, iDb,
             sqlite3MPrintf(db, "name='%q' AND type='index'", pIndex->zName), 0);
         sqlite3VdbeAddOp2(v, OP_Expire, 0, 1);
       }
@@ -4566,6 +4592,7 @@ void sqlite3DropIndex(Parse *pParse, SrcList *pName, int ifExists){
     goto exit_drop_index;
   }
   iDb = sqlite3SchemaToIndex(db, pIndex->pSchema);
+  sqlite3SchemaWritable(pParse, iDb);
 #ifndef SQLITE_OMIT_AUTHORIZATION
   {
     int code = SQLITE_DROP_INDEX;
