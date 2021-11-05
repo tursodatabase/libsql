@@ -3188,8 +3188,8 @@ static int openDatabase(
   ** dealt with in the previous code block.  Besides these, the only
   ** valid input flags for sqlite3_open_v2() are SQLITE_OPEN_READONLY,
   ** SQLITE_OPEN_READWRITE, SQLITE_OPEN_CREATE, SQLITE_OPEN_SHAREDCACHE,
-  ** SQLITE_OPEN_PRIVATECACHE, and some reserved bits.  Silently mask
-  ** off all other flags.
+  ** SQLITE_OPEN_PRIVATECACHE, SQLITE_OPEN_EXRESCODE, and some reserved
+  ** bits.  Silently mask off all other flags.
   */
   flags &=  ~( SQLITE_OPEN_DELETEONCLOSE |
                SQLITE_OPEN_EXCLUSIVE |
@@ -3224,7 +3224,7 @@ static int openDatabase(
     }
   }
   sqlite3_mutex_enter(db->mutex);
-  db->errMask = 0xff;
+  db->errMask = (flags & SQLITE_OPEN_EXRESCODE)!=0 ? 0xffffffff : 0xff;
   db->nDb = 2;
   db->eOpenState = SQLITE_STATE_BUSY;
   db->aDb = db->aDbStatic;
@@ -3457,7 +3457,7 @@ opendb_out:
   }
   rc = sqlite3_errcode(db);
   assert( db!=0 || rc==SQLITE_NOMEM );
-  if( rc==SQLITE_NOMEM ){
+  if( (rc&0xff)==SQLITE_NOMEM ){
     sqlite3_close(db);
     db = 0;
   }else if( rc!=SQLITE_OK ){
@@ -3472,7 +3472,7 @@ opendb_out:
   }
 #endif
   sqlite3_free_filename(zOpen);
-  return rc & 0xff;
+  return rc;
 }
 
 
