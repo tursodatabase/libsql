@@ -1,0 +1,207 @@
+# 2021 November 06
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+
+source [file join [file dirname [info script]] rbu_common.tcl]
+set ::testprefix rbuexlock
+
+db close
+sqlite3_shutdown
+sqlite3_config_uri 1
+
+# Create a simple RBU database. That expects to write to a table:
+#
+#   CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
+#
+proc create_rbu {filename} {
+  forcedelete $filename
+  sqlite3 rbu1 $filename  
+  rbu1 eval {
+    CREATE TABLE data_t1(a, b, c, rbu_control);
+    INSERT INTO data_t1 VALUES(10, random(), random(), 0);
+    INSERT INTO data_t1 VALUES(20, random(), random(), 0);
+    INSERT INTO data_t1 VALUES(30, random(), random(), 0);
+    INSERT INTO data_t1 VALUES(40, random(), random(), 0);
+    INSERT INTO data_t1 VALUES(50, random(), random(), 0);
+    INSERT INTO data_t1 VALUES(60, random(), random(), 0);
+    INSERT INTO data_t1 VALUES(70, random(), random(), 0);
+    INSERT INTO data_t1 VALUES(80, random(), random(), 0);
+  }
+  rbu1 close
+  return $filename
+}
+
+reset_db
+
+do_execsql_test 1.0 {
+  CREATE TABLE t1(a PRIMARY KEY, b INT, c INT);
+  CREATE INDEX t1b ON t1(b);
+  CREATE INDEX t1c ON t1(c);
+  INSERT INTO t1 VALUES(1, 2, 3);
+}
+create_rbu rbu1.db
+
+do_test 1.1.0 {
+  sqlite3rbu rbu file:test.db?rbu_exclusive_checkpoint=1 rbu1.db
+  rbu step
+} SQLITE_OK
+do_catchsql_test 1.1.1 { SELECT * FROM t1 } {0 {1 2 3}}
+
+do_test 1.2.0 {
+  for {set ii 0} {$ii < 10} {incr ii} {
+    rbu step
+  }
+  rbu step
+} SQLITE_OK
+do_catchsql_test 1.2.1 { SELECT * FROM t1 } {0 {1 2 3}}
+do_test 1.2.2 {
+  db eval {PRAGMA journal_mode}
+} {delete}
+
+do_test 1.3.0 {
+  while {[file exists test.db-wal]==0} {
+    rbu step
+  }
+} {}
+do_catchsql_test 1.3.1 { SELECT * FROM t1 } {1 {database is locked}}
+do_test 1.3.2 {
+  db eval {PRAGMA journal_mode}
+} {delete}
+
+
+do_test 1.4.0 {
+  rbu step
+} SQLITE_OK
+do_catchsql_test 1.4.1 { SELECT * FROM t1 } {1 {database is locked}}
+do_test 1.4.2 {
+  db eval {PRAGMA journal_mode}
+} {delete}
+
+
+rbu close
+
+do_test 1.5.0 {
+  file exists test.db-wal
+} {1}
+do_test 1.5.1 {
+  sqlite3rbu rbu file:test.db?rbu_exclusive_checkpoint=1 rbu1.db
+  file exists test.db-wal
+} 1
+do_catchsql_test 1.5.2 { SELECT * FROM t1 } {1 {database is locked}}
+do_test 1.5.2 {
+  db eval {PRAGMA journal_mode}
+} {delete}
+
+
+do_test 1.6.0 {
+  rbu step
+} SQLITE_OK
+do_catchsql_test 1.6.1 { SELECT * FROM t1 } {1 {database is locked}}
+do_test 1.6.2 {
+  db eval {PRAGMA journal_mode}
+} {delete}
+
+do_test 1.7.0 {
+  while {[rbu step]=="SQLITE_OK"} {}
+  rbu close
+} SQLITE_DONE
+do_catchsql_test 1.7.2 { SELECT count(*) FROM t1 } {0 9}
+do_test 1.7.2 {
+  db eval {PRAGMA journal_mode}
+} {delete}
+
+reset_db
+do_execsql_test 2.0 {
+  CREATE TABLE t1(a PRIMARY KEY, b INT, c INT);
+  CREATE INDEX t1b ON t1(b);
+  CREATE INDEX t1c ON t1(c);
+  INSERT INTO t1 VALUES(1, 2, 3);
+}
+create_rbu rbu1.db
+
+do_test 2.1.0 {
+  sqlite3rbu rbu file:test.db?rbu_exclusive_checkpoint=0 rbu1.db
+  rbu step
+} SQLITE_OK
+do_catchsql_test 2.1.1 { SELECT * FROM t1 } {0 {1 2 3}}
+
+do_test 2.2.0 {
+  for {set ii 0} {$ii < 10} {incr ii} {
+    rbu step
+  }
+  rbu step
+} SQLITE_OK
+do_catchsql_test 2.2.1 { SELECT * FROM t1 } {0 {1 2 3}}
+
+do_test 2.3.0 {
+  while {[file exists test.db-wal]==0} {
+    rbu step
+  }
+} {}
+do_test 2.3.1 {
+  llength [db eval {SELECT * FROM t1}]
+} {27}
+do_test 2.3.2 {
+  db eval {PRAGMA journal_mode}
+} {wal}
+
+do_test 2.4.0 {
+  rbu step
+} SQLITE_OK
+do_test 2.4.1 {
+  llength [db eval  {SELECT * FROM t1}]
+} {27}
+do_test 2.4.2 {
+  db eval {PRAGMA journal_mode}
+} {wal}
+
+rbu close
+
+do_test 2.5.0 {
+  db eval {PRAGMA journal_mode}
+} {wal}
+do_execsql_test 2.5.1 {
+  DELETE FROM t1;
+} {}
+
+create_rbu rbu1.db
+do_test 3.1.0 {
+  sqlite3rbu rbu file:test.db?rbu_exclusive_checkpoint=0 rbu1.db
+  rbu step
+} SQLITE_ERROR
+
+do_test 3.1.1 {
+  set rc [catch {rbu close} msg]
+  lappend rc $msg
+} {1 {SQLITE_ERROR - cannot update wal mode database}}
+db eval {PRAGMA journal_mode=DELETE}
+
+create_rbu rbu1.db
+do_test 3.2.0 {
+  sqlite3rbu rbu file:test.db?rbu_exclusive_checkpoint=0 rbu1.db
+  rbu step
+} SQLITE_OK
+
+do_test 3.3.1 {
+  set rc [catch {rbu close} msg]
+  lappend rc $msg
+} {0 SQLITE_OK}
+
+db close
+create_rbu rbu1.db
+do_test 3.4.0 {
+  sqlite3rbu rbu file:test.db?rbu_exclusive_checkpoint=0 rbu1.db
+  rbu step
+} SQLITE_OK
+rbu close
+
+
+finish_test
