@@ -1,5 +1,5 @@
-C Fix\svacuum3.test\sso\sthat\sit\sworks\swith\sSQLITE_OMIT_ALTERTABLE\sbuilds.
-D 2021-11-05T11:26:00.176
+C Remove\san\sincorrect\sNEVER()\sreported\sat\n[forum:/forumpost/5bbabfb7ce|forum\spost\s5bbabfb7ce].\s\sAlso\suse\sthis\nopportunity\sto\simprove\sthe\sisSimpleCount()\sfunction\swith\sbetter\sformatting,\nan\sexpanded\sheader\scomment,\sand\ssome\sextra\sassert()\sand\stextcase()\smacros.
+D 2021-11-05T11:52:33.612
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -549,7 +549,7 @@ F src/printf.c 5901672228f305f7d493cbc4e7d76a61a5caecdbc1cd06b1f9ec42ea4265cf8d
 F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c ae65c88f5d0d4bc0052b203773d407efa2387c2bd6b202f87178006c7bb8632c
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c 32d25b5af6c708aa63373c78c2e59681910387a7a78c08ec3086cadc77d41627
+F src/select.c b4b3a0f32e70d93efbb357783846853dbd8b266ec0d7035aa0a245c33eecf72d
 F src/shell.c.in f8854bcb0d14707d661732698d5210d7f01694000c46e8014b323ad18f575be6
 F src/sqlite.h.in 99786216caf1c57aa3d70f95a7f84566dff6a9eeb50174799ea3b387eafd2a22
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1930,7 +1930,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f474ac370accc5c780e7cb3e11c35f2b6104df929d3394a27db00c6b995e71b3
-R d472d5f4c4a70c2b03acf7fb61015f81
-U dan
-Z 6ca495915fbad8bb4582199d2e90b2c0
+P 07cca2fa891e9a60ea128a4b96ee407e9dd0f2b9e31fcffbfc2ac594a0e1ffe6
+R 24f43c36076d7077b334333b0946f5fd
+U drh
+Z 57a888b10205bac6b59e83da3e3ff9b2
