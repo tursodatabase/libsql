@@ -1,5 +1,5 @@
-C Fix\sa\scouple\sof\sproblems\swith\stest\sscripts\sand\sSQLITE_OMIT_ALTERTABLE\sbuilds.
-D 2021-11-05T10:43:14.088
+C \s\sUpdate\sa\stest\scase\sin\ssqllimits1.test\sto\saccount\sfor\sthe\supdated\simplementation\sof\sSQL\sfunction\sstrftime().
+D 2021-11-05T11:18:31.203
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1424,7 +1424,7 @@ F test/spellfix2.test dfc8f519a3fc204cb2dfa8b4f29821ae90f6f8c3
 F test/spellfix3.test 0f9efaaa502a0e0a09848028518a6fb096c8ad33
 F test/spellfix4.test 51c7c26514ade169855c66bcf130bd5acfb4d7fd090cc624645ab275ae6a41fb
 F test/sqldiff1.test 182058e09c7082de5c6a470ff9c291337bbeb650052c2cc68fbb3d7e25861d91
-F test/sqllimits1.test 3f9030e5d35375ad3b912b4908094aa806335c8e9d804b8ffff70c5e9c664ab2
+F test/sqllimits1.test daa412e62f445f1e24fa5b25e662f3571f88a4e811ad4dc3d29388bca83c0a8b
 F test/sqllog.test 6af6cb0b09f4e44e1917e06ce85be7670302517a
 F test/startup.c 1beb5ca66fcc0fce95c3444db9d1674f90fc605499a574ae2434dcfc10d22805
 F test/stat.test 15a3106eddedfc882f64bc09f237b4169be4b92dd57c93031b8ff8b13af3e7c5
@@ -1930,7 +1930,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2fad2a89527757b3956538a6bf91ebebe9c483f22f94e889e8b50c58f5100c5c
-R b61948e5ebb227c64278c60c06073f16
+P 3ab5414d337536acad5675a3f1ca10e1ca925f0e7182def604b8b7a8fb53bf5a
+R 3ec118e8c0aa32c6fe31f14dfd2d4399
 U dan
-Z c466bc44461f7c44de2cd00615a82a91
+Z d7eaef35ef577a70aab0f4e971afdca5

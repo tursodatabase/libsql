@@ -293,8 +293,14 @@ do_test sqllimits1-5.9 {
 } {1 {string or blob too big}}
 
 do_test sqllimits1-5.10 {
-  set ::str [string repeat %J 2100]
-  catchsql { SELECT strftime($::str, '2003-10-31') }
+  # Prior to 3.37.0 strftime() allocated a large static buffer into
+  # which to format its output. Using that strategy, 2100 repeats was
+  # enough to exceed 100KiB and provoke the error. As of 3.37.0 strftime()
+  # uses the StrAccum functions, so it requires 12100 to fail.
+  #
+  # set ::str [string repeat %J 2100]
+  set ::str [string repeat %J 12100]
+  catchsql { SELECT length(strftime($::str, '2003-10-31')) }
 } {1 {string or blob too big}}
 
 do_test sqllimits1-5.11 {
