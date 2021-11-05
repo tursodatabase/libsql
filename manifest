@@ -1,5 +1,5 @@
-C Update\ssqllimits1.test\sto\saccount\sfor\srecent\schanges\sto\sSQL\sfunction\sstrftime().
-D 2021-11-05T14:13:12.260
+C If\sthe\starget\sdatabase\sURI\spassed\sto\ssqlite3rbu_open()\sis\scontains\sthe\soption\s"rbu_exclusive_checkpoint=1",\shold\san\sexclusive\slock\sfor\sthe\sduration\sof\sany\sincremental\scheckpoint\soperation.
+D 2021-11-05T19:04:01.138
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -362,6 +362,7 @@ F ext/rbu/rbucrash.test 000981a1fe8a6e4d9a684232f6a129e66a3ef595f5ed74655e2f9c68
 F ext/rbu/rbucrash2.test efa143cc94228eb0266d3f1abfbee60a5838a84cef7cc3fcb8c145b74d96fd41
 F ext/rbu/rbudiff.test abe895a8d479e4d33acb40e244e3d8e2cd25f55a18dfa8b9f83e13d00073f600
 F ext/rbu/rbudor.test e3e8623926012f43eebe51fedf06a102df2640750d971596b052495f2536db20
+F ext/rbu/rbuexlock.test ce99289f37d43553aaae5bf9b0bb6f37015ffcc98a9c561ef597151f522bd3cb
 F ext/rbu/rbuexpr.test 10d0420537c3bc7666e576d72adeffe7e86cfbb00dcc30aa9ce096c042415190
 F ext/rbu/rbufault.test 2d7f567b79d558f6e093c58808cab4354f8a174e3802f69e7790a9689b3c09f8
 F ext/rbu/rbufault2.test c81327a3ac2c385b9b954db3644d4e0df93eeebfc3de9f1f29975a1e73fd3d0c
@@ -380,7 +381,7 @@ F ext/rbu/rbuvacuum.test 55e101e90168c2b31df6c9638fe73dc7f7cc666b6142266d1563697
 F ext/rbu/rbuvacuum2.test b8e5b51dc8b2c0153373d024c0936be3f66f9234acbd6d0baab0869d56b14e6b
 F ext/rbu/rbuvacuum3.test 8addd82e4b83b4c93fa47428eae4fd0dbf410f8512c186f38e348feb49ba03dc
 F ext/rbu/rbuvacuum4.test a78898e438a44803eb2bc897ba3323373c9f277418e2d6d76e90f2f1dbccfd10
-F ext/rbu/sqlite3rbu.c d020eda938e3ed1c5227a7e1425751a9870f5d143542d806f8098c8cfa2eafa0
+F ext/rbu/sqlite3rbu.c 3658f1c6603955c7426952b74a6896337b1f672d326cd565e5af20e18d5744f0
 F ext/rbu/sqlite3rbu.h 1dc88ab7bd32d0f15890ea08d23476c4198d3da3056985403991f8c9cd389812
 F ext/rbu/test_rbu.c 03f6f177096a5f822d68d8e4069ad8907fe572c62ff2d19b141f59742821828a
 F ext/repair/README.md 92f5e8aae749a4dae14f02eea8e1bb42d4db2b6ce5e83dbcdd6b1446997e0c15
@@ -1930,7 +1931,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 029c59cdf9e7dbb431f5d110bc69c3597458edc9b6b009b2e91422de705a19fa
-R 15a965cec05acb9aa4a49131dbd146c1
+P 7bba415f91884a20f665e982376c2c5e91a4431e218c8eefe275be3684f2e59a
+R e2424ac8d0557dd9d5d724897de5e654
 U dan
-Z 1ded954f2120e1480d077b81f101d3f7
+Z 27db83bf4d55dcba53397a29f8b19719
