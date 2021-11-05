@@ -1,5 +1,5 @@
-C If\sthe\starget\sdatabase\sURI\spassed\sto\ssqlite3rbu_open()\sis\scontains\sthe\soption\s"rbu_exclusive_checkpoint=1",\shold\san\sexclusive\slock\sfor\sthe\sduration\sof\sany\sincremental\scheckpoint\soperation.
-D 2021-11-05T19:04:01.138
+C New\stest\scases\sfor\srbu_exclusive_checkpoint\squery\sparameter.
+D 2021-11-05T22:23:17.942
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -362,7 +362,7 @@ F ext/rbu/rbucrash.test 000981a1fe8a6e4d9a684232f6a129e66a3ef595f5ed74655e2f9c68
 F ext/rbu/rbucrash2.test efa143cc94228eb0266d3f1abfbee60a5838a84cef7cc3fcb8c145b74d96fd41
 F ext/rbu/rbudiff.test abe895a8d479e4d33acb40e244e3d8e2cd25f55a18dfa8b9f83e13d00073f600
 F ext/rbu/rbudor.test e3e8623926012f43eebe51fedf06a102df2640750d971596b052495f2536db20
-F ext/rbu/rbuexlock.test ce99289f37d43553aaae5bf9b0bb6f37015ffcc98a9c561ef597151f522bd3cb
+F ext/rbu/rbuexlock.test 4634a5526d02bf80b0c563f95774bd5af5783e3219ddeb30e413753c9a65510c
 F ext/rbu/rbuexpr.test 10d0420537c3bc7666e576d72adeffe7e86cfbb00dcc30aa9ce096c042415190
 F ext/rbu/rbufault.test 2d7f567b79d558f6e093c58808cab4354f8a174e3802f69e7790a9689b3c09f8
 F ext/rbu/rbufault2.test c81327a3ac2c385b9b954db3644d4e0df93eeebfc3de9f1f29975a1e73fd3d0c
@@ -1931,7 +1931,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7bba415f91884a20f665e982376c2c5e91a4431e218c8eefe275be3684f2e59a
-R e2424ac8d0557dd9d5d724897de5e654
-U dan
-Z 27db83bf4d55dcba53397a29f8b19719
+P 7cb77296a22a87e7ed4c3544792f0204f704f01f384590c32c256bec4517c9bc
+R 08dbedf050be2c4881195e0dd45c9bb5
+U drh
+Z 1433471f7df716422bf5765d068b69b8
