@@ -1289,7 +1289,7 @@ static void vdbeSorterExtendFile(sqlite3 *db, sqlite3_file *pFd, i64 nByte){
     sqlite3OsFileControlHint(pFd, SQLITE_FCNTL_CHUNK_SIZE, &chunksize);
     sqlite3OsFileControlHint(pFd, SQLITE_FCNTL_SIZE_HINT, &nByte);
     sqlite3OsFetch(pFd, 0, (int)nByte, &p);
-    sqlite3OsUnfetch(pFd, 0, p);
+    if( p ) sqlite3OsUnfetch(pFd, 0, p);
   }
 }
 #else
