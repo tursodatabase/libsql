@@ -1,5 +1,5 @@
-C Merge\schanges\sfrom\strunk\sinto\sthis\sbranch.
-D 2021-11-06T16:10:10.217
+C Merge\schange\s[6979efbf07d93e7a]\sfrom\strunk\sto\sthis\sbranch.
+D 2021-11-06T16:36:30.666
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -635,7 +635,7 @@ F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf8
 F src/vdbevtab.c f99b275366c5fc5e2d99f734729880994ab9500bdafde7fae3b02d562b9d323c
 F src/vtab.c d07cc24dd84b0b51bf05adb187b0d2e6b0cac56cfbc0197995a26d4f8fa5c7e2
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c cf63450f720845d309b4c6050b59861c423c71fbc86c6dd853dfb5ce274ffa9e
+F src/wal.c b4b8fa75897fe5229cc30725345db656e122b65c394dfc5d279bf49e422481ed
 F src/wal.h d01234e828943e002040c22a7e017642962f9fd9b2dc142fa599769ae4e459e9
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
 F src/where.c ecabef93b0f14442a73eca205fc960428984d75fbdc7d60226b7fc9cac127187
@@ -1941,7 +1941,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7e2bc836f6aedfd69588f5723f8797f11ee6437d3b63ffc43c88d40e3baadb1c 7238d58051bfdcea8f7a4aeab89145849d0659c987df9063aacafe97be6657fe
-R 958432f8e903781491ddd95858915d61
+P 52667bce485354ee4fee87f19015845baef12adf2674127f8c6f1bac1ccf3b7d 6979efbf07d93e7afad508165df684dcc6fe33b91ca772397c8afa00d16d1a0d
+R d08ac1bd1a069bc290b94d8879d538c8
 U dan
-Z b88f4550c8f1a7eb32fef38df24556c5
+Z cdeeb26f2bf3f011e17f433f6b261bdc
