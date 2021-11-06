@@ -1,5 +1,5 @@
-C Return\san\serror\sif\san\sattempt\sis\smade\sto\sdrop\san\seponymous\svirtual\stable.
-D 2021-11-06T18:22:50.946
+C Add\sALWAYS()\sto\sa\sbranch\smade\sunreachable\sby\sthe\sprevious\scheck-in.
+D 2021-11-06T20:25:29.499
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -632,7 +632,7 @@ F src/vdbemem.c 71a449c57be10a66a8a5620e5c5a67ebb9ca70121556dc631ffd4c4458708d8c
 F src/vdbesort.c 513b481c8bab4a6578c92194a60cf3bc3b48736e4a53f8d2d7918121c5b594e7
 F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf823
 F src/vdbevtab.c f99b275366c5fc5e2d99f734729880994ab9500bdafde7fae3b02d562b9d323c
-F src/vtab.c 721f0dffc4d0a7b40ec6d07fd4e071005aed6aa2f55360850bbf11a80c273cb8
+F src/vtab.c 9d5c3f49d3a6959b6eef287bb8fa773563102a80a835c3314c57144412709e78
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 6ae14d4797f31c67fc2be659d24fbc6e1a6f5f423bdfb5ef831ea171bce42320
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
@@ -1931,7 +1931,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a024764cef955099b498ea120d4127144880db6da411f074cf0fd1276989204e
-R 3cee4f4974b0c4d48afa8eb0aa557749
-U dan
-Z 641c886b99e3b9b9640a900dc2910c8b
+P 889dea52de874cd3bda9e811ef1e4ca53ab794ecabc65e9c780d9fb01eff3b2c
+R b7f3dbf4aa3ab116609f25aa04ff3b7f
+U drh
+Z af0aaea1a241abdce4f9e26f2ae32159
