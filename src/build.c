@@ -2549,6 +2549,7 @@ void sqlite3MarkAllShadowTablesOf(sqlite3 *db, Table *pTab){
   pMod = (Module*)sqlite3HashFind(&db->aModule, pTab->u.vtab.azArg[0]);
   if( pMod==0 ) return;
   if( NEVER(pMod->pModule==0) ) return;
+  if( pMod->pModule->iVersion<3 ) return;
   if( pMod->pModule->xShadowName==0 ) return;
   assert( pTab->zName!=0 );
   nName = sqlite3Strlen30(pTab->zName);
