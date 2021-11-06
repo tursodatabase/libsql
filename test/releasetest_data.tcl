@@ -304,7 +304,7 @@ array set ::Platforms [strip_comments {
     "Devkit"                  "" test
     "Apple"                   "" test
     "Sanitize*"               "" test
-    "Device-One"              "" "fuzztest alltest"
+    "Device-One"              "" alltest
     "Default"                 "" "threadtest fuzztest alltest"
     "Valgrind*"               "" valgrindtest
   }
@@ -595,7 +595,7 @@ proc main_tests {args} {
       set config [string range $config 0 end-1]
     } elseif {$bNodebug==0} {
       set dtarget test
-      if {[lsearch $target tcltest]>=0} {
+      if {[lsearch $target fuzztest]<0 && [lsearch $target test]<0} {
         set dtarget tcltest
       }
       if {$vars!=""} { set dtarget "$vars $dtarget" }

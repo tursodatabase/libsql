@@ -165,7 +165,7 @@ do_execsql_test 4.0 {
 }
 
 do_execsql_test 5.0 {
-  CREATE VIRTUAL TABLE p1 USING fts5(a, b);
+  CREATE VIRTUAL TABLE p1 USING fts5(a, b, detail=%DETAIL%);
   INSERT INTO p1 VALUES(
     'x a a a a a a a a a a',
     'a a a a a a a a a a a a a a a a a a a x'
@@ -183,6 +183,12 @@ do_execsql_test 5.3 {
 } {{x] a a a a a...}}
 do_execsql_test 5.4 {
   SELECT snippet(p1, 0, '[', NULL, '...', 6) FROM p1('x');
+} {{[x a a a a a...}}
+do_execsql_test 5.5 {
+  SELECT snippet(p1, 0, '[', NULL, '...', 6) FROM p1('x OR ""');
+} {{[x a a a a a...}}
+do_execsql_test 5.6 {
+  SELECT snippet(p1, 0, '[', NULL, '...', 6) FROM p1('x OR ' || x'DB');
 } {{[x a a a a a...}}
 
 } ;# foreach_detail_mode 

@@ -78,6 +78,6 @@ do_catchsql_test 300 {
   CREATE VIRTUAL TABLE t1 USING rtree(a,b,c);
   CREATE TABLE t2(x);
   ALTER TABLE t2 ADD d GENERATED ALWAYS AS (c IN (SELECT 1 FROM t1)) VIRTUAL;
-} {1 {error in table t2 after rename: subqueries prohibited in generated columns}}
+} {1 {error in table t2 after add column: subqueries prohibited in generated columns}}
   
 finish_test

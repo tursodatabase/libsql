@@ -1052,11 +1052,25 @@ struct BusyHandler {
 
 /*
 ** Name of table that holds the database schema.
+**
+** The PREFERRED names are used whereever possible.  But LEGACY is also
+** used for backwards compatibility.
+**
+**  1.  Queries can use either the PREFERRED or the LEGACY names
+**  2.  The sqlite3_set_authorizer() callback uses the LEGACY name
+**  3.  The PRAGMA table_list statement uses the PREFERRED name
+**
+** The LEGACY names are stored in the internal symbol hash table
+** in support of (2).  Names are translated using sqlite3PreferredTableName()
+** for (3).  The sqlite3FindTable() function takes care of translating
+** names for (1).
+**
+** Note that "sqlite_temp_schema" can also be called "temp.sqlite_schema".
 */
-#define DFLT_SCHEMA_TABLE          "sqlite_master"
-#define DFLT_TEMP_SCHEMA_TABLE     "sqlite_temp_master"
-#define ALT_SCHEMA_TABLE           "sqlite_schema"
-#define ALT_TEMP_SCHEMA_TABLE      "sqlite_temp_schema"
+#define LEGACY_SCHEMA_TABLE          "sqlite_master"
+#define LEGACY_TEMP_SCHEMA_TABLE     "sqlite_temp_master"
+#define PREFERRED_SCHEMA_TABLE       "sqlite_schema"
+#define PREFERRED_TEMP_SCHEMA_TABLE  "sqlite_temp_schema"
 
 
 /*
@@ -1068,7 +1082,7 @@ struct BusyHandler {
 ** The name of the schema table.  The name is different for TEMP.
 */
 #define SCHEMA_TABLE(x) \
-    ((!OMIT_TEMPDB)&&(x==1)?DFLT_TEMP_SCHEMA_TABLE:DFLT_SCHEMA_TABLE)
+    ((!OMIT_TEMPDB)&&(x==1)?LEGACY_TEMP_SCHEMA_TABLE:LEGACY_SCHEMA_TABLE)
 
 /*
 ** A convenience macro that returns the number of elements in
@@ -1566,6 +1580,9 @@ struct sqlite3 {
   void (*xRollbackCallback)(void*); /* Invoked at every commit. */
   void *pUpdateArg;
   void (*xUpdateCallback)(void*,int, const char*,const char*,sqlite_int64);
+  void *pAutovacPagesArg;           /* Client argument to autovac_pages */
+  void (*xAutovacDestr)(void*);     /* Destructor for pAutovacPAgesArg */
+  unsigned int (*xAutovacPages)(void*,const char*,u32,u32,u32);
   Parse *pParse;                /* Current parse */
 #ifdef SQLITE_ENABLE_PREUPDATE_HOOK
   void *pPreUpdateArg;          /* First argument to xPreUpdateCallback */
@@ -3823,8 +3840,10 @@ typedef struct {
 /*
 ** Allowed values for mInitFlags
 */
+#define INITFLAG_AlterMask     0x0003  /* Types of ALTER */
 #define INITFLAG_AlterRename   0x0001  /* Reparse after a RENAME */
 #define INITFLAG_AlterDrop     0x0002  /* Reparse after a DROP COLUMN */
+#define INITFLAG_AlterAdd      0x0003  /* Reparse after an ADD COLUMN */
 
 /* Tuning parameters are set using SQLITE_TESTCTRL_TUNE and are controlled
 ** on debug-builds of the CLI using ".testctrl tune ID VALUE".  Tuning
@@ -4587,6 +4606,7 @@ Table *sqlite3FindTable(sqlite3*,const char*, const char*);
 #define LOCATE_VIEW    0x01
 #define LOCATE_NOERR   0x02
 Table *sqlite3LocateTable(Parse*,u32 flags,const char*, const char*);
+const char *sqlite3PreferredTableName(const char*);
 Table *sqlite3LocateTableItem(Parse*,u32 flags,SrcItem *);
 Index *sqlite3FindIndex(sqlite3*,const char*, const char*);
 void sqlite3UnlinkAndDeleteTable(sqlite3*,int,const char*);
@@ -5045,9 +5065,11 @@ int sqlite3ReadOnlyShadowTables(sqlite3 *db);
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   int sqlite3ShadowTableName(sqlite3 *db, const char *zName);
   int sqlite3IsShadowTableOf(sqlite3*,Table*,const char*);
+  void sqlite3MarkAllShadowTablesOf(sqlite3*, Table*);
 #else
 # define sqlite3ShadowTableName(A,B) 0
 # define sqlite3IsShadowTableOf(A,B,C) 0
+# define sqlite3MarkAllShadowTablesOf(A,B)
 #endif
 int sqlite3VtabEponymousTableInit(Parse*,Module*);
 void sqlite3VtabEponymousTableClear(sqlite3*,Module*);

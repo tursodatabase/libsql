@@ -2899,7 +2899,7 @@ op_column_corrupt:
   }
 }
 
-/* Opcode: TypeCheck P1 P2 * P4 *
+/* Opcode: TypeCheck P1 P2 P3 P4 *
 ** Synopsis: typecheck(r[P1@P2])
 **
 ** Apply affinities to the range of P2 registers beginning with P1.
@@ -2909,6 +2909,11 @@ op_column_corrupt:
 ** This opcode is similar to OP_Affinity except that this opcode
 ** forces the register type to the Table column type.  This is used
 ** to implement "strict affinity".
+**
+** GENERATED ALWAYS AS ... STATIC columns are only checked if P3
+** is zero.  When P3 is non-zero, no type checking occurs for
+** static generated columns.  Virtual columns are computed at query time
+** and so they are never checked.
 **
 ** Preconditions:
 **
@@ -2932,7 +2937,10 @@ case OP_TypeCheck: {
   aCol = pTab->aCol;
   pIn1 = &aMem[pOp->p1];
   for(i=0; i<pTab->nCol; i++){
-    if( aCol[i].colFlags & COLFLAG_VIRTUAL ) continue;
+    if( aCol[i].colFlags & COLFLAG_GENERATED ){
+      if( aCol[i].colFlags & COLFLAG_VIRTUAL ) continue;
+      if( pOp->p3 ){ pIn1++; continue; }
+    }
     assert( pIn1 < &aMem[pOp->p1+pOp->p2] );
     applyAffinity(pIn1, aCol[i].affinity, encoding);
     if( (pIn1->flags & MEM_Null)==0 ){
@@ -3656,6 +3664,7 @@ case OP_Transaction: {
   assert( pOp->p2>=0 && pOp->p2<=2 );
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
   assert( DbMaskTest(p->btreeMask, pOp->p1) );
+  assert( rc==SQLITE_OK );
   if( pOp->p2 && (db->flags & SQLITE_QueryOnly)!=0 ){
     rc = SQLITE_READONLY;
     goto abort_due_to_error;
@@ -3699,7 +3708,8 @@ case OP_Transaction: {
     }
   }
   assert( pOp->p5==0 || pOp->p4type==P4_INT32 );
-  if( pOp->p5
+  if( rc==SQLITE_OK
+   && pOp->p5
    && (iMeta!=pOp->p3
       || db->aDb[pOp->p1].pSchema->iGeneration!=pOp->p4.i)
   ){
@@ -6505,7 +6515,7 @@ case OP_ParseSchema: {
   }else
 #endif
   {
-    zSchema = DFLT_SCHEMA_TABLE;
+    zSchema = LEGACY_SCHEMA_TABLE;
     initData.db = db;
     initData.iDb = iDb;
     initData.pzErrMsg = &p->zErrMsg;
