@@ -22,8 +22,8 @@ static int exprCodeVector(Parse *pParse, Expr *p, int *piToFree);
 ** Return the affinity character for a single column of a table.
 */
 char sqlite3TableColumnAffinity(const Table *pTab, int iCol){
-  assert( iCol<pTab->nCol );
-  return iCol>=0 ? pTab->aCol[iCol].affinity : SQLITE_AFF_INTEGER;
+  if( iCol<0 || NEVER(iCol>=pTab->nCol) ) return SQLITE_AFF_INTEGER;
+  return pTab->aCol[iCol].affinity;
 }
 
 /*

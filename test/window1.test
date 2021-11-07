@@ -2191,5 +2191,17 @@ do_execsql_test 70.2 {
   SELECT substr(a,4,lag(a,7) OVER(PARTITION BY 'cf23' ORDER BY likely(2))) AS ca0 FROM t1 ORDER BY ca0;
 }
 
+# 2021-11-07
+# Bug report from Wang Ke
+# https://sqlite.org/forum/forumpost/9ba4f60ff8
+reset_db
+do_catchsql_test 71.0 {
+  CREATE TABLE t0(a);
+  SELECT a FROM t0, (SELECT a AS b FROM t0)
+   WHERE (a,1)=(SELECT 2,2 UNION SELECT sum(b),max(b) OVER(ORDER BY b) ORDER BY 2)
+     AND b=4
+   ORDER BY b;
+} {/1 {.*}/}
+
 
 finish_test

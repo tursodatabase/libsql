@@ -1099,7 +1099,11 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
       sqlite3SelectDelete(db, pSub);
     }
     if( db->mallocFailed ) rc = SQLITE_NOMEM;
-    sqlite3DbFree(db, pTab);
+
+    /* Defer deleting the temporary table pTab because if an error occurred,
+    ** there could still be references to that table embedded in the
+    ** result-set or ORDER BY clause of the SELECT statement p.  */
+    sqlite3ParserAddCleanup(pParse, sqlite3DbFree, pTab);
   }
 
   if( rc ){
