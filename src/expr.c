@@ -5878,6 +5878,62 @@ int sqlite3ExprCoveredByIndex(
   return !w.eCode;
 }
 
+#ifdef SQLITE_DEBUG
+/* Walker callback for recursion in sqlite3WellOrderedCursors()
+*/
+static int wellOrderedCursors(Walker *pWalker, Select *pSel){
+  pWalker->eCode =
+    sqlite3WellOrderedCursors(pWalker->pParse, pSel, pWalker->u.iCur);
+  return WRC_Abort;
+}
+
+/*
+** Check every cursor number in pSelect.  Return false (zero) if any cursor
+** number is less than or equal to iLowerBound.  Return true if all cursors
+** number are greater than iLowerBound.
+**
+** Repeat this check recursively on subqueries.
+**
+** Use this routine inside of an assert() to verify that every subquery
+** cursor number is greater than the cursor numbers in all outer queries.
+** This cursor number invariant is required for scoping of aggregate
+** functions.  tag-20211108
+*/
+int sqlite3WellOrderedCursors(Parse *pParse, Select *pSelect, int iLowerBound){
+  Walker w;
+  SrcList *pSrc;
+  int i;
+  int mx = 0;
+
+  pSrc = pSelect->pSrc;
+  assert( pSrc!=0 );
+  for(i=0; i<pSrc->nSrc; i++){
+    int iThis = pSrc->a[i].iCursor;
+    if( iThis<=iLowerBound ){
+      SELECTTRACE(1,pParse,pSelect,
+         ("Cursor %d less than cursor %d in outer query\n",iThis, iLowerBound));
+      return 0;
+    }
+    if( iThis>mx ){
+      mx = iThis;
+    }
+  }
+  memset(&w, 0, sizeof(w));
+  w.pParse = pParse;
+  w.xSelectCallback = wellOrderedCursors;
+  w.xExprCallback = sqlite3ExprWalkNoop;
+  w.eCode = 1;
+  w.u.iCur = mx;
+  while( w.eCode ){
+    sqlite3WalkSelectExpr(&w, pSelect);
+    if( w.eCode==0 ) break;
+    sqlite3WalkSelectFrom(&w, pSelect);
+    pSelect = pSelect->pPrior;
+    if( pSelect==0 ) break;
+  }
+  return w.eCode;
+}
+#endif /* SQLITE_DEBUG */
 
 /*
 ** An instance of the following structure is used by the tree walker
@@ -5929,7 +5985,9 @@ static int exprSrcCount(Walker *pWalker, Expr *pExpr){
     }else if( pExpr->iTable<p->iSrcInner ){
       /* In a well-formed parse tree (no name resolution errors),
       ** TK_COLUMN nodes with smaller Expr.iTable values are in an
-      ** outer context.  Those are the only ones to count as "other" */
+      ** outer context.  Those are the only ones to count as "other"
+      ** See tag-20211108
+      */
       p->nOther++;
     }
   }

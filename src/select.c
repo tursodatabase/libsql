@@ -6404,6 +6404,7 @@ int sqlite3Select(
     sqlite3TreeViewSelect(0, p, 0);
   }
 #endif
+  assert( sqlite3WellOrderedCursors(pParse, p, -1) );
 #endif /* SQLITE_OMIT_WINDOWFUNC */
   pTabList = p->pSrc;
   isAgg = (p->selFlags & SF_Aggregate)!=0;
@@ -6522,6 +6523,7 @@ int sqlite3Select(
       if( pParse->nErr ) goto select_end;
       /* This subquery can be absorbed into its parent. */
       i = -1;
+      assert( sqlite3WellOrderedCursors(pParse, p, -1) );
     }
     pTabList = p->pSrc;
     if( db->mallocFailed ) goto select_end;
