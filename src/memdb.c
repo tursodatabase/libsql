@@ -331,8 +331,9 @@ static int memdbTruncate(sqlite3_file *pFile, sqlite_int64 size){
   MemStore *p = ((MemFile*)pFile)->pStore;
   int rc = SQLITE_OK;
   memdbEnter(p);
-  if( NEVER(size>p->sz) ){
-    rc = SQLITE_FULL;
+  if( size>p->sz ){
+    /* This can only happen with a corrupt wal mode db */
+    rc = SQLITE_CORRUPT;
   }else{
     p->sz = size; 
   }
