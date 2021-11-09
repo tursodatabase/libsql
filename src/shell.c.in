@@ -2606,17 +2606,16 @@ static int run_table_dump_query(
 }
 
 /*
-** Allocate space and save off current error string.
+** Allocate space and save off string indicating current error.
 */
 static char *save_err_msg(
-  sqlite3 *db            /* Database to query */
+  sqlite3 *db,           /* Database to query */
+  const char *zWhen,     /* Qualifier (format) wrapper */
+  int rc                 /* Error code returned from API */
 ){
-  int nErrMsg = 1+strlen30(sqlite3_errmsg(db));
-  char *zErrMsg = sqlite3_malloc64(nErrMsg);
-  if( zErrMsg ){
-    memcpy(zErrMsg, sqlite3_errmsg(db), nErrMsg);
-  }
-  return zErrMsg;
+  if( zWhen==0 )
+    zWhen = "%s (%d)";
+  return sqlite3_mprintf(zWhen, sqlite3_errmsg(db), rc);
 }
 
 #ifdef __linux__
@@ -3538,7 +3537,7 @@ static int shell_exec(
     rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, &zLeftover);
     if( SQLITE_OK != rc ){
       if( pzErrMsg ){
-        *pzErrMsg = save_err_msg(db);
+        *pzErrMsg = save_err_msg(db, "in prepare, %s (%d)", rc);
       }
     }else{
       if( !pStmt ){
@@ -3652,7 +3651,7 @@ static int shell_exec(
         zSql = zLeftover;
         while( IsSpace(zSql[0]) ) zSql++;
       }else if( pzErrMsg ){
-        *pzErrMsg = save_err_msg(db);
+        *pzErrMsg = save_err_msg(db, "stepping, %s (%d)", rc);
       }
 
       /* clear saved stmt handle */
@@ -3966,6 +3965,7 @@ static const char *(azHelp[]) = {
   "     -c, --create               Create a new archive",
   "     -u, --update               Add or update files with changed mtime",
   "     -i, --insert               Like -u but always add even if unchanged",
+  "     -r, --remove               Remove files from archive",
   "     -t, --list                 List contents of archive",
   "     -x, --extract              Extract files from archive",
   "   Optional arguments:",
@@ -3973,6 +3973,7 @@ static const char *(azHelp[]) = {
   "     -f FILE, --file FILE       Use archive FILE (default is current db)",
   "     -a FILE, --append FILE     Open FILE using the apndvfs VFS",
   "     -C DIR, --directory DIR    Read/extract files from directory DIR",
+  "     -g, --glob                 Use glob matching for names in archive",
   "     -n, --dryrun               Show the SQL that would have occurred",
   "   Examples:",
   "     .ar -cf ARCHIVE foo bar  # Create ARCHIVE from files foo and bar",
@@ -6133,6 +6134,7 @@ struct ArCommand {
   u8 bZip;                        /* True if the archive is a ZIP */
   u8 bDryRun;                     /* True if --dry-run */
   u8 bAppend;                     /* True if --append */
+  u8 bGlob;                       /* True if --glob */
   u8 fromCmdLine;                 /* Run from -A instead of .archive */
   int nArg;                       /* Number of command arguments */
   char *zSrcTable;                /* "sqlar", "zipfile($file)" or "zip" */
@@ -6180,21 +6182,24 @@ static int arErrorMsg(ArCommand *pAr, const char *zFmt, ...){
 #define AR_CMD_EXTRACT      4
 #define AR_CMD_LIST         5
 #define AR_CMD_HELP         6
+#define AR_CMD_REMOVE       7
 
 /*
 ** Other (non-command) switches.
 */
-#define AR_SWITCH_VERBOSE     7
-#define AR_SWITCH_FILE        8
-#define AR_SWITCH_DIRECTORY   9
-#define AR_SWITCH_APPEND     10
-#define AR_SWITCH_DRYRUN     11
+#define AR_SWITCH_VERBOSE     8
+#define AR_SWITCH_FILE        9
+#define AR_SWITCH_DIRECTORY  10
+#define AR_SWITCH_APPEND     11
+#define AR_SWITCH_DRYRUN     12
+#define AR_SWITCH_GLOB       13
 
 static int arProcessSwitch(ArCommand *pAr, int eSwitch, const char *zArg){
   switch( eSwitch ){
     case AR_CMD_CREATE:
     case AR_CMD_EXTRACT:
     case AR_CMD_LIST:
+    case AR_CMD_REMOVE:
     case AR_CMD_UPDATE:
     case AR_CMD_INSERT:
     case AR_CMD_HELP:
@@ -6206,6 +6211,9 @@ static int arProcessSwitch(ArCommand *pAr, int eSwitch, const char *zArg){
 
     case AR_SWITCH_DRYRUN:
       pAr->bDryRun = 1;
+      break;
+    case AR_SWITCH_GLOB:
+      pAr->bGlob = 1;
       break;
     case AR_SWITCH_VERBOSE:
       pAr->bVerbose = 1;
@@ -6245,6 +6253,7 @@ static int arParseCommand(
     { "extract",   'x', AR_CMD_EXTRACT,      0 },
     { "insert",    'i', AR_CMD_INSERT,       0 },
     { "list",      't', AR_CMD_LIST,         0 },
+    { "remove",    'r', AR_CMD_REMOVE,       0 },
     { "update",    'u', AR_CMD_UPDATE,       0 },
     { "help",      'h', AR_CMD_HELP,         0 },
     { "verbose",   'v', AR_SWITCH_VERBOSE,   0 },
@@ -6252,6 +6261,7 @@ static int arParseCommand(
     { "append",    'a', AR_SWITCH_APPEND,    1 },
     { "directory", 'C', AR_SWITCH_DIRECTORY, 1 },
     { "dryrun",    'n', AR_SWITCH_DRYRUN,    0 },
+    { "glob",      'g', AR_SWITCH_GLOB,      0 },
   };
   int nSwitch = sizeof(aSwitch) / sizeof(struct ArSwitch);
   struct ArSwitch *pEnd = &aSwitch[nSwitch];
@@ -6368,11 +6378,13 @@ static int arParseCommand(
 
 /*
 ** This function assumes that all arguments within the ArCommand.azArg[]
-** array refer to archive members, as for the --extract or --list commands. 
-** It checks that each of them are present. If any specified file is not
-** present in the archive, an error is printed to stderr and an error
-** code returned. Otherwise, if all specified arguments are present in
-** the archive, SQLITE_OK is returned.
+** array refer to archive members, as for the --extract, --list or --remove
+** commands. It checks that each of them are "present". If any specified
+** file is not present in the archive, an error is printed to stderr and an
+** error code returned. Otherwise, if all specified arguments are present
+** in the archive, SQLITE_OK is returned. Here, "present" means either an
+** exact equality when pAr->bGlob is false or a "name GLOB pattern" match
+** when pAr->bGlob is true.
 **
 ** This function strips any trailing '/' characters from each argument.
 ** This is consistent with the way the [tar] command seems to work on
@@ -6383,11 +6395,11 @@ static int arCheckEntries(ArCommand *pAr){
   if( pAr->nArg ){
     int i, j;
     sqlite3_stmt *pTest = 0;
+    const char *zSel = (pAr->bGlob)
+      ? "SELECT name FROM %s WHERE glob($name,name)"
+      : "SELECT name FROM %s WHERE name=$name";
 
-    shellPreparePrintf(pAr->db, &rc, &pTest,
-        "SELECT name FROM %s WHERE name=$name", 
-        pAr->zSrcTable
-    );
+    shellPreparePrintf(pAr->db, &rc, &pTest, zSel, pAr->zSrcTable);
     j = sqlite3_bind_parameter_index(pTest, "$name");
     for(i=0; i<pAr->nArg && rc==SQLITE_OK; i++){
       char *z = pAr->azArg[i];
@@ -6415,14 +6427,16 @@ static int arCheckEntries(ArCommand *pAr){
 ** identify all archive members that match the command arguments held
 ** in (*pAr). Leave this WHERE clause in (*pzWhere) before returning.
 ** The caller is responsible for eventually calling sqlite3_free() on
-** any non-NULL (*pzWhere) value.
+** any non-NULL (*pzWhere) value. Here, "match" means strict equality
+** when pAr->bGlob is false and GLOB match when pAr->bGlob is true.
 */
 static void arWhereClause(
   int *pRc, 
-  ArCommand *pAr, 
+  ArCommand *pAr,
   char **pzWhere                  /* OUT: New WHERE clause */
 ){
   char *zWhere = 0;
+  const char *zSameOp = (pAr->bGlob)? "GLOB" : "=";
   if( *pRc==SQLITE_OK ){
     if( pAr->nArg==0 ){
       zWhere = sqlite3_mprintf("1");
@@ -6432,8 +6446,8 @@ static void arWhereClause(
       for(i=0; i<pAr->nArg; i++){
         const char *z = pAr->azArg[i];
         zWhere = sqlite3_mprintf(
-          "%z%s name = '%q' OR substr(name,1,%d) = '%q/'", 
-          zWhere, zSep, z, strlen30(z)+1, z
+          "%z%s name %s '%q' OR substr(name,1,%d) %s '%q/'", 
+          zWhere, zSep, zSameOp, z, strlen30(z)+1, zSameOp, z
         );
         if( zWhere==0 ){
           *pRc = SQLITE_NOMEM;
@@ -6486,6 +6500,47 @@ static int arListCommand(ArCommand *pAr){
   return rc;
 }
 
+
+/*
+** Implementation of .ar "Remove" command.
+*/
+static int arRemoveCommand(ArCommand *pAr){
+  int rc = 0;
+  char *zSql = 0;
+  char *zWhere = 0;
+
+  if( pAr->nArg ){
+    /* Verify that args actually exist within the archive before proceeding.
+    ** And formulate a WHERE clause to match them.  */
+    rc = arCheckEntries(pAr);
+    arWhereClause(&rc, pAr, &zWhere);
+  }
+  if( rc==SQLITE_OK ){
+    zSql = sqlite3_mprintf("DELETE FROM %s WHERE %s;",
+                           pAr->zSrcTable, zWhere);
+    if( pAr->bDryRun ){
+      utf8_printf(pAr->p->out, "%s\n", zSql);
+    }else{
+      char *zErr = 0;
+      rc = sqlite3_exec(pAr->db, "SAVEPOINT ar;", 0, 0, 0);
+      if( rc==SQLITE_OK ){
+        rc = sqlite3_exec(pAr->db, zSql, 0, 0, &zErr);
+        if( rc!=SQLITE_OK ){
+          sqlite3_exec(pAr->db, "ROLLBACK TO ar; RELEASE ar;", 0, 0, 0);
+        }else{
+          rc = sqlite3_exec(pAr->db, "RELEASE ar;", 0, 0, 0);
+        }
+      }
+      if( zErr ){
+        utf8_printf(stdout, "ERROR: %s\n", zErr);
+        sqlite3_free(zErr);
+      }
+    }
+  }
+  sqlite3_free(zWhere);
+  sqlite3_free(zSql);
+  return rc;
+}
 
 /*
 ** Implementation of .ar "eXtract" command. 
@@ -6739,7 +6794,7 @@ static int arDotCommand(
       int flags;
       if( cmd.bAppend ) eDbType = SHELL_OPEN_APPENDVFS;
       if( cmd.eCmd==AR_CMD_CREATE || cmd.eCmd==AR_CMD_INSERT 
-           || cmd.eCmd==AR_CMD_UPDATE ){
+           || cmd.eCmd==AR_CMD_REMOVE || cmd.eCmd==AR_CMD_UPDATE ){
         flags = SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE;
       }else{
         flags = SQLITE_OPEN_READONLY;
@@ -6793,6 +6848,10 @@ static int arDotCommand(
 
       case AR_CMD_INSERT:
         rc = arCreateOrUpdateCommand(&cmd, 1, 0);
+        break;
+
+      case AR_CMD_REMOVE:
+        rc = arRemoveCommand(&cmd);
         break;
 
       default:
@@ -8283,6 +8342,11 @@ static int do_meta_command(char *zLine, ShellState *p){
 
     failIfSafeMode(p, "cannot run .import in safe mode");
     memset(&sCtx, 0, sizeof(sCtx));
+    sCtx.z = sqlite3_malloc64(120);
+    if( sCtx.z==0 ){
+      import_cleanup(&sCtx);
+      shell_out_of_memory();
+    }
     if( p->mode==MODE_Ascii ){
       xRead = ascii_read_one_field;
     }else{
@@ -8392,6 +8456,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     if( sCtx.in==0 ){
       utf8_printf(stderr, "Error: cannot open \"%s\"\n", zFile);
       rc = 1;
+      import_cleanup(&sCtx);
       goto meta_command_exit;
     }
     if( eVerbose>=2 || (eVerbose>=1 && useOutputMode) ){

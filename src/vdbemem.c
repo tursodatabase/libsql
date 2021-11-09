@@ -374,6 +374,8 @@ int sqlite3VdbeMemExpandBlob(Mem *pMem){
   if( sqlite3VdbeMemGrow(pMem, nByte, 1) ){
     return SQLITE_NOMEM_BKPT;
   }
+  assert( pMem->z!=0 );
+  assert( sqlite3DbMallocSize(pMem->db,pMem->z) >= nByte );
 
   memset(&pMem->z[pMem->n], 0, pMem->u.nZero);
   pMem->n += pMem->u.nZero;
@@ -850,6 +852,7 @@ void sqlite3ValueSetNull(sqlite3_value *p){
 ** Delete any previous value and set the value to be a BLOB of length
 ** n containing all zeros.
 */
+#ifndef SQLITE_OMIT_INCRBLOB
 void sqlite3VdbeMemSetZeroBlob(Mem *pMem, int n){
   sqlite3VdbeMemRelease(pMem);
   pMem->flags = MEM_Blob|MEM_Zero;
@@ -859,6 +862,21 @@ void sqlite3VdbeMemSetZeroBlob(Mem *pMem, int n){
   pMem->enc = SQLITE_UTF8;
   pMem->z = 0;
 }
+#else
+int sqlite3VdbeMemSetZeroBlob(Mem *pMem, int n){
+  int nByte = n>0?n:1;
+  if( sqlite3VdbeMemGrow(pMem, nByte, 0) ){
+    return SQLITE_NOMEM_BKPT;
+  }
+  assert( pMem->z!=0 );
+  assert( sqlite3DbMallocSize(pMem->db, pMem->z)>=nByte );
+  memset(pMem->z, 0, nByte);
+  pMem->n = n>0?n:0;
+  pMem->flags = MEM_Blob;
+  pMem->enc = SQLITE_UTF8;
+  return SQLITE_OK;
+}
+#endif
 
 /*
 ** The pMem is known to contain content that needs to be destroyed prior

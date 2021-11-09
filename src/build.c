@@ -387,17 +387,17 @@ Table *sqlite3FindTable(sqlite3 *db, const char *zName, const char *zDatabase){
     p = sqlite3HashFind(&db->aDb[i].pSchema->tblHash, zName);
     if( p==0 && sqlite3StrNICmp(zName, "sqlite_", 7)==0 ){
       if( i==1 ){
-        if( sqlite3StrICmp(zName+7, &ALT_TEMP_SCHEMA_TABLE[7])==0
-         || sqlite3StrICmp(zName+7, &ALT_SCHEMA_TABLE[7])==0
-         || sqlite3StrICmp(zName+7, &DFLT_SCHEMA_TABLE[7])==0
+        if( sqlite3StrICmp(zName+7, &PREFERRED_TEMP_SCHEMA_TABLE[7])==0
+         || sqlite3StrICmp(zName+7, &PREFERRED_SCHEMA_TABLE[7])==0
+         || sqlite3StrICmp(zName+7, &LEGACY_SCHEMA_TABLE[7])==0
         ){
           p = sqlite3HashFind(&db->aDb[1].pSchema->tblHash, 
-                              DFLT_TEMP_SCHEMA_TABLE);
+                              LEGACY_TEMP_SCHEMA_TABLE);
         }
       }else{
-        if( sqlite3StrICmp(zName+7, &ALT_SCHEMA_TABLE[7])==0 ){
+        if( sqlite3StrICmp(zName+7, &PREFERRED_SCHEMA_TABLE[7])==0 ){
           p = sqlite3HashFind(&db->aDb[i].pSchema->tblHash,
-                              DFLT_SCHEMA_TABLE);
+                              LEGACY_SCHEMA_TABLE);
         }
       }
     }
@@ -415,11 +415,11 @@ Table *sqlite3FindTable(sqlite3 *db, const char *zName, const char *zDatabase){
       if( p ) break;
     }
     if( p==0 && sqlite3StrNICmp(zName, "sqlite_", 7)==0 ){
-      if( sqlite3StrICmp(zName+7, &ALT_SCHEMA_TABLE[7])==0 ){
-        p = sqlite3HashFind(&db->aDb[0].pSchema->tblHash, DFLT_SCHEMA_TABLE);
-      }else if( sqlite3StrICmp(zName+7, &ALT_TEMP_SCHEMA_TABLE[7])==0 ){
+      if( sqlite3StrICmp(zName+7, &PREFERRED_SCHEMA_TABLE[7])==0 ){
+        p = sqlite3HashFind(&db->aDb[0].pSchema->tblHash, LEGACY_SCHEMA_TABLE);
+      }else if( sqlite3StrICmp(zName+7, &PREFERRED_TEMP_SCHEMA_TABLE[7])==0 ){
         p = sqlite3HashFind(&db->aDb[1].pSchema->tblHash, 
-                            DFLT_TEMP_SCHEMA_TABLE);
+                            LEGACY_TEMP_SCHEMA_TABLE);
       }
     }
   }
@@ -513,6 +513,22 @@ Table *sqlite3LocateTableItem(
     zDb = p->zDatabase;
   }
   return sqlite3LocateTable(pParse, flags, p->zName, zDb);
+}
+
+/*
+** Return the preferred table name for system tables.  Translate legacy
+** names into the new preferred names, as appropriate.
+*/
+const char *sqlite3PreferredTableName(const char *zName){
+  if( sqlite3StrNICmp(zName, "sqlite_", 7)==0 ){
+    if( sqlite3StrICmp(zName+7, &LEGACY_SCHEMA_TABLE[7])==0 ){
+      return PREFERRED_SCHEMA_TABLE;
+    }
+    if( sqlite3StrICmp(zName+7, &LEGACY_TEMP_SCHEMA_TABLE[7])==0 ){
+      return PREFERRED_TEMP_SCHEMA_TABLE;
+    }
+  }
+  return zName;
 }
 
 /*
@@ -913,7 +929,7 @@ char *sqlite3NameFromToken(sqlite3 *db, const Token *pName){
 */
 void sqlite3OpenSchemaTable(Parse *p, int iDb){
   Vdbe *v = sqlite3GetVdbe(p);
-  sqlite3TableLock(p, iDb, SCHEMA_ROOT, 1, DFLT_SCHEMA_TABLE);
+  sqlite3TableLock(p, iDb, SCHEMA_ROOT, 1, LEGACY_SCHEMA_TABLE);
   sqlite3VdbeAddOp4Int(v, OP_OpenWrite, 0, SCHEMA_ROOT, iDb, 5);
   if( p->nTab==0 ){
     p->nTab = 1;
@@ -2494,6 +2510,41 @@ int sqlite3IsShadowTableOf(sqlite3 *db, Table *pTab, const char *zName){
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 /*
+** Table pTab is a virtual table.  If it the virtual table implementation
+** exists and has an xShadowName method, then loop over all other ordinary
+** tables within the same schema looking for shadow tables of pTab, and mark
+** any shadow tables seen using the TF_Shadow flag.
+*/
+void sqlite3MarkAllShadowTablesOf(sqlite3 *db, Table *pTab){
+  int nName;                    /* Length of pTab->zName */
+  Module *pMod;                 /* Module for the virtual table */
+  HashElem *k;                  /* For looping through the symbol table */
+
+  assert( IsVirtual(pTab) );
+  pMod = (Module*)sqlite3HashFind(&db->aModule, pTab->u.vtab.azArg[0]);
+  if( pMod==0 ) return;
+  if( NEVER(pMod->pModule==0) ) return;
+  if( pMod->pModule->iVersion<3 ) return;
+  if( pMod->pModule->xShadowName==0 ) return;
+  assert( pTab->zName!=0 );
+  nName = sqlite3Strlen30(pTab->zName);
+  for(k=sqliteHashFirst(&pTab->pSchema->tblHash); k; k=sqliteHashNext(k)){
+    Table *pOther = sqliteHashData(k);
+    assert( pOther->zName!=0 );
+    if( !IsOrdinaryTable(pOther) ) continue;
+    if( pOther->tabFlags & TF_Shadow ) continue;
+    if( sqlite3StrNICmp(pOther->zName, pTab->zName, nName)==0
+     && pOther->zName[nName]=='_'
+     && pMod->pModule->xShadowName(pOther->zName+nName+1)
+    ){
+      pOther->tabFlags |= TF_Shadow;
+    }
+  }
+}
+#endif /* ifndef SQLITE_OMIT_VIRTUALTABLE */
+
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+/*
 ** Return true if zName is a shadow table name in the current database
 ** connection.
 **
@@ -2820,7 +2871,7 @@ void sqlite3EndTable(
     ** the information we've collected.
     */
     sqlite3NestedParse(pParse,
-      "UPDATE %Q." DFLT_SCHEMA_TABLE
+      "UPDATE %Q." LEGACY_SCHEMA_TABLE
       " SET type='%s', name=%Q, tbl_name=%Q, rootpage=#%d, sql=%Q"
       " WHERE rowid=#%d",
       db->aDb[iDb].zDbSName,
@@ -3006,13 +3057,12 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
   assert( pTable );
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-  db->nSchemaLock++;
-  rc = sqlite3VtabCallConnect(pParse, pTable);
-  db->nSchemaLock--;
-  if( rc ){
-    return 1;
+  if( IsVirtual(pTable) ){
+    db->nSchemaLock++;
+    rc = sqlite3VtabCallConnect(pParse, pTable);
+    db->nSchemaLock--;
+    return rc;
   }
-  if( IsVirtual(pTable) ) return 0;
 #endif
 
 #ifndef SQLITE_OMIT_VIEW
@@ -3200,7 +3250,7 @@ static void destroyRootPage(Parse *pParse, int iTable, int iDb){
   ** token for additional information.
   */
   sqlite3NestedParse(pParse, 
-     "UPDATE %Q." DFLT_SCHEMA_TABLE
+     "UPDATE %Q." LEGACY_SCHEMA_TABLE
      " SET rootpage=%d WHERE #%d AND rootpage=#%d",
      pParse->db->aDb[iDb].zDbSName, iTable, r1, r1);
 #endif
@@ -3335,7 +3385,7 @@ void sqlite3CodeDropTable(Parse *pParse, Table *pTab, int iDb, int isView){
   ** database.
   */
   sqlite3NestedParse(pParse, 
-      "DELETE FROM %Q." DFLT_SCHEMA_TABLE
+      "DELETE FROM %Q." LEGACY_SCHEMA_TABLE
       " WHERE tbl_name=%Q and type!='trigger'",
       pDb->zDbSName, pTab->zName);
   if( !isView && !IsVirtual(pTab) ){
@@ -3381,6 +3431,9 @@ static int tableMayNotBeDropped(sqlite3 *db, Table *pTab){
     return 1;
   }
   if( (pTab->tabFlags & TF_Shadow)!=0 && sqlite3ReadOnlyShadowTables(db) ){
+    return 1;
+  }
+  if( pTab->tabFlags & TF_Eponymous ){
     return 1;
   }
   return 0;
@@ -4352,7 +4405,7 @@ void sqlite3CreateIndex(
       /* Add an entry in sqlite_schema for this index
       */
       sqlite3NestedParse(pParse, 
-          "INSERT INTO %Q." DFLT_SCHEMA_TABLE " VALUES('index',%Q,%Q,#%d,%Q);",
+          "INSERT INTO %Q." LEGACY_SCHEMA_TABLE " VALUES('index',%Q,%Q,#%d,%Q);",
           db->aDb[iDb].zDbSName,
           pIndex->zName,
           pTab->zName,
@@ -4538,7 +4591,7 @@ void sqlite3DropIndex(Parse *pParse, SrcList *pName, int ifExists){
   if( v ){
     sqlite3BeginWriteOperation(pParse, 1, iDb);
     sqlite3NestedParse(pParse,
-       "DELETE FROM %Q." DFLT_SCHEMA_TABLE " WHERE name=%Q AND type='index'",
+       "DELETE FROM %Q." LEGACY_SCHEMA_TABLE " WHERE name=%Q AND type='index'",
        db->aDb[iDb].zDbSName, pIndex->zName
     );
     sqlite3ClearStatTables(pParse, iDb, "idx", pIndex->zName);

@@ -118,6 +118,18 @@ do_execsql_test 1.4.1 {
   1 {(A) (B) (C)}
 }
 
+do_execsql_test 1.5.0 {
+  CREATE VIRTUAL TABLE x1 USING fts3(x);
+  INSERT INTO x1 VALUES('A A A');
+  INSERT INTO x1 VALUES('A A A');
+}
+do_execsql_test 1.5.1 {
+  SELECT offsets(x1) FROM x1 WHERE x1 MATCH 'a OR b AND c NEAR d'
+} {
+  {0 0 0 1 0 0 2 1 0 0 4 1} 
+  {0 0 0 1 0 0 2 1 0 0 4 1}
+}
+
 
 set sqlite_fts3_enable_parentheses 0
 finish_test

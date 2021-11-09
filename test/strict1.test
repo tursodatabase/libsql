@@ -116,4 +116,23 @@ do_catchsql_test strict1-6.3 {
   INSERT INTO t1(e) VALUES(x'3456');
 } {1 {cannot store BLOB value in REAL column t1.e}}
 
+ifcapable altertable {
+  do_execsql_test strict1-7.1 {
+    DROP TABLE IF EXISTS t4;
+    CREATE TABLE t4(
+      a INT AS (b*2) VIRTUAL,
+      b INT AS (c*2) STORED,
+      c INT PRIMARY KEY
+    ) STRICT;
+    INSERT INTO t4(c) VALUES(1);
+    SELECT * FROM t4;
+  } {4 2 1}
+  do_catchsql_test strict1-7.2 {
+    ALTER TABLE t4 ADD COLUMN d VARCHAR;
+  } {1 {error in table t4 after add column: unknown datatype for t4.d: "VARCHAR"}}
+  do_catchsql_test strict1-7.3 {
+    ALTER TABLE t4 ADD COLUMN d;
+  } {1 {error in table t4 after add column: missing datatype for t4.d}}
+}
+
 finish_test

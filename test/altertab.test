@@ -540,6 +540,7 @@ ifcapable fts3 {
 
   do_execsql_test 16.0 {
     CREATE VIRTUAL TABLE y1 USING fts3;
+    VACUUM;
   }
 
   do_catchsql_test 16.10 {

@@ -1092,7 +1092,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
         }else
 #endif /* SQLITE_OMIT_WINDOWFUNC */
         {
-          NameContext *pNC2 = pNC;
+          NameContext *pNC2;          /* For looping up thru outer contexts */
           pExpr->op = TK_AGG_FUNCTION;
           pExpr->op2 = 0;
 #ifndef SQLITE_OMIT_WINDOWFUNC
@@ -1100,7 +1100,10 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
             sqlite3WalkExpr(pWalker, pExpr->y.pWin->pFilter);
           }
 #endif
-          while( pNC2 && !sqlite3FunctionUsesThisSrc(pExpr, pNC2->pSrcList) ){
+          pNC2 = pNC;
+          while( pNC2 
+              && sqlite3ReferencesSrcList(pParse, pExpr, pNC2->pSrcList)==0
+          ){
             pExpr->op2++;
             pNC2 = pNC2->pNext;
           }

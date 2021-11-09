@@ -293,8 +293,14 @@ do_test sqllimits1-5.9 {
 } {1 {string or blob too big}}
 
 do_test sqllimits1-5.10 {
-  set ::str [string repeat %J 2100]
-  catchsql { SELECT strftime($::str, '2003-10-31') }
+  # Prior to 3.37.0 strftime() allocated a large static buffer into
+  # which to format its output. Using that strategy, 2100 repeats was
+  # enough to exceed 100KiB and provoke the error. As of 3.37.0 strftime()
+  # uses the StrAccum functions, so it requires 12100 to fail.
+  #
+  # set ::str [string repeat %J 2100]
+  set ::str [string repeat %J 12100]
+  catchsql { SELECT length(strftime($::str, '2003-10-31')) }
 } {1 {string or blob too big}}
 
 do_test sqllimits1-5.11 {
@@ -395,7 +401,7 @@ do_test sqllimits1-5.19 {
 unset blobvalue
 
 ifcapable datetime {
-  set strvalue [string repeat D [expr {$SQLITE_LIMIT_LENGTH-12}]]
+  set strvalue [string repeat D [expr {$SQLITE_LIMIT_LENGTH-11}]]
   do_test sqllimits1-5.20 {
     catchsql {SELECT strftime('%Y ' || $::strvalue, '2008-01-02')}
   } [list 0 [list "2008 $strvalue"]]
@@ -863,16 +869,21 @@ do_test sqllimits1-15.2 {
 # This test case doesn't really belong with the other limits tests.
 # It is in this file because it is taxing to run, like the limits tests.
 #
-do_test sqllimits1-16.1 {
-  set ::N [expr int(([expr pow(2,32)]/50) + 1)]
-  expr (($::N*50) & 0xffffffff)<55
-} {1}
-do_test sqllimits1-16.2 {
-  set ::format "[string repeat A 60][string repeat "%J" $::N]"
-  catchsql {
-    SELECT strftime($::format, 1);
-  }
-} {1 {string or blob too big}}
+# Update for 3.37.0: strftime() used to allocate a large static buffer
+# into which it would write its result. With that implementation, the
+# following would trigger an SQLITE_TOOBIG error. But strftime() now
+# uses the StrAccum functions, causing this test to fail.
+#
+#do_test sqllimits1-16.1 {
+#  set ::N [expr int(([expr pow(2,32)]/50) + 1)]
+#  expr (($::N*50) & 0xffffffff)<55
+#} {1}
+#do_test sqllimits1-16.2 {
+#  set ::format "[string repeat A 60][string repeat "%J" $::N]"
+#  catchsql {
+#    SELECT strftime($::format, 1);
+#  }
+#} {1 {string or blob too big}}
 
 do_catchsql_test sqllimits1.17.0 {
   SELECT *,*,*,*,*,*,*,* FROM (

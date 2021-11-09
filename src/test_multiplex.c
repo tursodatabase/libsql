@@ -962,26 +962,79 @@ static int multiplexFileControl(sqlite3_file *pConn, int op, void *pArg){
       ** element is the argument to the pragma or NULL if the pragma has no
       ** argument.
       */
-      if( aFcntl[1] && sqlite3_stricmp(aFcntl[1],"multiplex_truncate")==0 ){
-        if( aFcntl[2] && aFcntl[2][0] ){
-          if( sqlite3_stricmp(aFcntl[2], "on")==0
-           || sqlite3_stricmp(aFcntl[2], "1")==0 ){
-            pGroup->bTruncate = 1;
-          }else
-          if( sqlite3_stricmp(aFcntl[2], "off")==0
-           || sqlite3_stricmp(aFcntl[2], "0")==0 ){
-            pGroup->bTruncate = 0;
-          }
-        }
-        /* EVIDENCE-OF: R-27806-26076 The handler for an SQLITE_FCNTL_PRAGMA
-        ** file control can optionally make the first element of the char**
-        ** argument point to a string obtained from sqlite3_mprintf() or the
-        ** equivalent and that string will become the result of the pragma
-        ** or the error message if the pragma fails.
+      if( aFcntl[1] && sqlite3_strnicmp(aFcntl[1],"multiplex_",10)==0 ){
+        sqlite3_int64 sz = 0;
+        (void)multiplexFileSize(pConn, &sz);
+        /*
+        ** PRAGMA multiplex_truncate=BOOLEAN;
+        ** PRAGMA multiplex_truncate;
+        **
+        ** Turn the multiplexor truncate feature on or off.  Return either
+        ** "on" or "off" to indicate the new setting.  If the BOOLEAN argument
+        ** is omitted, just return the current value for the truncate setting.
         */
-        aFcntl[0] = sqlite3_mprintf(pGroup->bTruncate ? "on" : "off");
-        rc = SQLITE_OK;
-        break;
+        if( sqlite3_stricmp(aFcntl[1],"multiplex_truncate")==0 ){
+          if( aFcntl[2] && aFcntl[2][0] ){
+            if( sqlite3_stricmp(aFcntl[2], "on")==0
+             || sqlite3_stricmp(aFcntl[2], "1")==0 ){
+              pGroup->bTruncate = 1;
+            }else
+            if( sqlite3_stricmp(aFcntl[2], "off")==0
+             || sqlite3_stricmp(aFcntl[2], "0")==0 ){
+              pGroup->bTruncate = 0;
+            }
+          }
+          /* EVIDENCE-OF: R-27806-26076 The handler for an SQLITE_FCNTL_PRAGMA
+          ** file control can optionally make the first element of the char**
+          ** argument point to a string obtained from sqlite3_mprintf() or the
+          ** equivalent and that string will become the result of the pragma
+          ** or the error message if the pragma fails.
+          */
+          aFcntl[0] = sqlite3_mprintf(pGroup->bTruncate ? "on" : "off");
+          rc = SQLITE_OK;
+          break;
+        }
+        /*
+        ** PRAGMA multiplex_enabled;
+        **
+        ** Return 0 or 1 depending on whether the multiplexor is enabled or
+        ** disabled, respectively.
+        */
+        if( sqlite3_stricmp(aFcntl[1],"multiplex_enabled")==0 ){
+          aFcntl[0] = sqlite3_mprintf("%d", pGroup->bEnabled!=0);
+          rc = SQLITE_OK;
+          break;
+        }
+        /*
+        ** PRAGMA multiplex_chunksize;
+        **
+        ** Return the chunksize for the multiplexor, or no-op if the 
+        ** multiplexor is not active.
+        */
+        if( sqlite3_stricmp(aFcntl[1],"multiplex_chunksize")==0
+         && pGroup->bEnabled
+        ){
+          aFcntl[0] = sqlite3_mprintf("%u", pGroup->szChunk);
+          rc = SQLITE_OK;
+          break;
+        }
+        /*
+        ** PRAGMA multiplex_filecount;
+        **
+        ** Return the number of disk files currently in use by the
+        ** multiplexor.  This should be the total database size size
+        ** divided by the chunksize and rounded up.
+        */
+        if( sqlite3_stricmp(aFcntl[1],"multiplex_filecount")==0 ){
+          int n = 0;
+          int ii;
+          for(ii=0; ii<pGroup->nReal; ii++){
+            if( pGroup->aReal[ii].p!=0 ) n++;
+          }
+          aFcntl[0] = sqlite3_mprintf("%d", n);
+          rc = SQLITE_OK;
+          break;
+        }
       }
       /* If the multiplexor does not handle the pragma, pass it through
       ** into the default case. */

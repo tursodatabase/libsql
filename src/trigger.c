@@ -361,7 +361,7 @@ void sqlite3FinishTrigger(
     z = sqlite3DbStrNDup(db, (char*)pAll->z, pAll->n);
     testcase( z==0 );
     sqlite3NestedParse(pParse,
-       "INSERT INTO %Q." DFLT_SCHEMA_TABLE
+       "INSERT INTO %Q." LEGACY_SCHEMA_TABLE
        " VALUES('trigger',%Q,%Q,0,'CREATE TRIGGER %q')",
        db->aDb[iDb].zDbSName, zName,
        pTrig->table, z);
@@ -675,7 +675,7 @@ void sqlite3DropTriggerPtr(Parse *pParse, Trigger *pTrigger){
   */
   if( (v = sqlite3GetVdbe(pParse))!=0 ){
     sqlite3NestedParse(pParse,
-       "DELETE FROM %Q." DFLT_SCHEMA_TABLE " WHERE name=%Q AND type='trigger'",
+       "DELETE FROM %Q." LEGACY_SCHEMA_TABLE " WHERE name=%Q AND type='trigger'",
        db->aDb[iDb].zDbSName, pTrigger->zName
     );
     sqlite3ChangeCookie(pParse, iDb);
