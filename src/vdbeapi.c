@@ -541,8 +541,12 @@ int sqlite3_result_zeroblob64(sqlite3_context *pCtx, u64 n){
   if( n>(u64)pOut->db->aLimit[SQLITE_LIMIT_LENGTH] ){
     return SQLITE_TOOBIG;
   }
+#ifndef SQLITE_OMIT_INCRBLOB
   sqlite3VdbeMemSetZeroBlob(pCtx->pOut, (int)n);
   return SQLITE_OK;
+#else
+  return sqlite3VdbeMemSetZeroBlob(pCtx->pOut, (int)n);
+#endif
 }
 void sqlite3_result_error_code(sqlite3_context *pCtx, int errCode){
   pCtx->isError = errCode ? errCode : -1;
@@ -1554,7 +1558,11 @@ int sqlite3_bind_zeroblob(sqlite3_stmt *pStmt, int i, int n){
   Vdbe *p = (Vdbe *)pStmt;
   rc = vdbeUnbind(p, i);
   if( rc==SQLITE_OK ){
+#ifndef SQLITE_OMIT_INCRBLOB
     sqlite3VdbeMemSetZeroBlob(&p->aVar[i-1], n);
+#else
+    rc = sqlite3VdbeMemSetZeroBlob(&p->aVar[i-1], n);
+#endif
     sqlite3_mutex_leave(p->db->mutex);
   }
   return rc;

@@ -3458,6 +3458,9 @@ static int tableMayNotBeDropped(sqlite3 *db, Table *pTab){
   if( (pTab->tabFlags & TF_Shadow)!=0 && sqlite3ReadOnlyShadowTables(db) ){
     return 1;
   }
+  if( pTab->tabFlags & TF_Eponymous ){
+    return 1;
+  }
   return 0;
 }
 

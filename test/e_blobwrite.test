@@ -14,6 +14,11 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set testprefix e_blobwrite
 
+ifcapable !incrblob {
+  finish_test
+  return
+}
+
 #--------------------------------------------------------------------------
 # EVIDENCE-OF: R-62898-22698 This function is used to write data into an
 # open BLOB handle from a caller-supplied buffer. N bytes of data are

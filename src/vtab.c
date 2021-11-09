@@ -940,7 +940,10 @@ int sqlite3VtabCallDestroy(sqlite3 *db, int iDb, const char *zTab){
   Table *pTab;
 
   pTab = sqlite3FindTable(db, zTab, db->aDb[iDb].zDbSName);
-  if( pTab!=0 && ALWAYS(IsVirtual(pTab)) && ALWAYS(pTab->u.vtab.p!=0) ){
+  if( ALWAYS(pTab!=0)
+   && ALWAYS(IsVirtual(pTab))
+   && ALWAYS(pTab->u.vtab.p!=0)
+  ){
     VTable *p;
     int (*xDestroy)(sqlite3_vtab *);
     for(p=pTab->u.vtab.p; p; p=p->pNext){
