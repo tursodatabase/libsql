@@ -1,5 +1,5 @@
-C Fix\slempar.c\sso\sthat\sLemon\scan\scompile\swith\sNDEBUG\sdefined.\n[forum:/forumpost/f331adca0b|Forum\spost\sf331adca0b]
-D 2021-11-09T01:48:15.568
+C Change\stest\scase\serror\smessage\stext\sto\smatch\sthe\scurrent\simplementation.
+D 2021-11-09T13:31:42.748
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1428,7 +1428,7 @@ F test/sqldiff1.test 182058e09c7082de5c6a470ff9c291337bbeb650052c2cc68fbb3d7e258
 F test/sqllimits1.test f46f405d754e702227dcdf5b73f94fffcd48c676e845afa37329e4ce2e32ccbf
 F test/sqllog.test 6af6cb0b09f4e44e1917e06ce85be7670302517a
 F test/startup.c 1beb5ca66fcc0fce95c3444db9d1674f90fc605499a574ae2434dcfc10d22805
-F test/stat.test dbbb71a8fb91efb449d7dd751ba6a98ce82dc20712dcf52604e53cee3eb78933
+F test/stat.test c95e5f293d47a8b447642343b0806689065e1e5a7d2fe9ba31a430ff78ada3bb
 F test/statfault.test 55f86055f9cd7b2d962a621b8a04215c1cebd4eaaecde92d279442327fe648a0
 F test/stmt.test 54ed2cc0764bf3e48a058331813c3dbd19fc1d0827c3d8369914a5d8f564ec75
 F test/stmtvtab1.test 6873dfb24f8e79cbb5b799b95c2e4349060eb7a3b811982749a84b359468e2d5
@@ -1932,7 +1932,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 74aec5dd1df95b5635f4da1f13753f113ea1d61de3dc3a1523ba51089c1900e4
-R 925cf5395b8a97a099d37adde7db5eb4
+P ba4fb51853fbcb8c142a350b4db0d59153f28ba0a63ad9a2d6fea7096d3dd544
+R 53a575150d86630b94dc195691567d17
 U drh
-Z 9cd7239f131956f4eba0564446f661b7
+Z 2471e2a59037263eea8aada9ef5e2a3c
