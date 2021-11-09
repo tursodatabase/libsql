@@ -6175,6 +6175,11 @@ static int unixOpen(
   }
   memset(p, 0, sizeof(unixFile));
 
+#ifdef SQLITE_ASSERT_NO_FILES
+  /* Applications that never read or write a persistent disk files */
+  assert( zName==0 );
+#endif
+
   if( eType==SQLITE_OPEN_MAIN_DB ){
     UnixUnusedFd *pUnused;
     pUnused = findReusableFd(zName, flags);
