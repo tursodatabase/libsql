@@ -223,9 +223,9 @@ struct yyParser {
 };
 typedef struct yyParser yyParser;
 
+#include <assert.h>
 #ifndef NDEBUG
 #include <stdio.h>
-#include <assert.h>
 static FILE *yyTraceFILE = 0;
 static char *yyTracePrompt = 0;
 #endif /* NDEBUG */
@@ -882,8 +882,8 @@ void Parse(
     yyact = yy_find_shift_action((YYCODETYPE)yymajor,yyact);
     if( yyact >= YY_MIN_REDUCE ){
       unsigned int yyruleno = yyact - YY_MIN_REDUCE; /* Reduce by this rule */
-      assert( yyruleno<(int)(sizeof(yyRuleName)/sizeof(yyRuleName[0])) );
 #ifndef NDEBUG
+      assert( yyruleno<(int)(sizeof(yyRuleName)/sizeof(yyRuleName[0])) );
       if( yyTraceFILE ){
         int yysize = yyRuleInfoNRhs[yyruleno];
         if( yysize ){

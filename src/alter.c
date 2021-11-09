@@ -60,7 +60,7 @@ static void renameTestSchema(
   pParse->colNamesSet = 1;
   sqlite3NestedParse(pParse, 
       "SELECT 1 "
-      "FROM \"%w\"." DFLT_SCHEMA_TABLE " "
+      "FROM \"%w\"." LEGACY_SCHEMA_TABLE " "
       "WHERE name NOT LIKE 'sqliteX_%%' ESCAPE 'X'"
       " AND sql NOT LIKE 'create virtual%%'"
       " AND sqlite_rename_test(%Q, sql, type, name, %d, %Q, %d)=NULL ",
@@ -71,7 +71,7 @@ static void renameTestSchema(
   if( bTemp==0 ){
     sqlite3NestedParse(pParse, 
         "SELECT 1 "
-        "FROM temp." DFLT_SCHEMA_TABLE " "
+        "FROM temp." LEGACY_SCHEMA_TABLE " "
         "WHERE name NOT LIKE 'sqliteX_%%' ESCAPE 'X'"
         " AND sql NOT LIKE 'create virtual%%'"
         " AND sqlite_rename_test(%Q, sql, type, name, 1, %Q, %d)=NULL ",
@@ -89,14 +89,14 @@ static void renameTestSchema(
 */
 static void renameFixQuotes(Parse *pParse, const char *zDb, int bTemp){
   sqlite3NestedParse(pParse, 
-      "UPDATE \"%w\"." DFLT_SCHEMA_TABLE 
+      "UPDATE \"%w\"." LEGACY_SCHEMA_TABLE 
       " SET sql = sqlite_rename_quotefix(%Q, sql)"
       "WHERE name NOT LIKE 'sqliteX_%%' ESCAPE 'X'"
       " AND sql NOT LIKE 'create virtual%%'" , zDb, zDb
   );
   if( bTemp==0 ){
     sqlite3NestedParse(pParse, 
-      "UPDATE temp." DFLT_SCHEMA_TABLE
+      "UPDATE temp." LEGACY_SCHEMA_TABLE
       " SET sql = sqlite_rename_quotefix('temp', sql)"
       "WHERE name NOT LIKE 'sqliteX_%%' ESCAPE 'X'"
       " AND sql NOT LIKE 'create virtual%%'"
@@ -214,7 +214,7 @@ void sqlite3AlterRenameTable(
   /* Rewrite all CREATE TABLE, INDEX, TRIGGER or VIEW statements in
   ** the schema to use the new table name.  */
   sqlite3NestedParse(pParse, 
-      "UPDATE \"%w\"." DFLT_SCHEMA_TABLE " SET "
+      "UPDATE \"%w\"." LEGACY_SCHEMA_TABLE " SET "
       "sql = sqlite_rename_table(%Q, type, name, sql, %Q, %Q, %d) "
       "WHERE (type!='index' OR tbl_name=%Q COLLATE nocase)"
       "AND   name NOT LIKE 'sqliteX_%%' ESCAPE 'X'"
@@ -224,7 +224,7 @@ void sqlite3AlterRenameTable(
   /* Update the tbl_name and name columns of the sqlite_schema table
   ** as required.  */
   sqlite3NestedParse(pParse,
-      "UPDATE %Q." DFLT_SCHEMA_TABLE " SET "
+      "UPDATE %Q." LEGACY_SCHEMA_TABLE " SET "
           "tbl_name = %Q, "
           "name = CASE "
             "WHEN type='table' THEN %Q "
@@ -413,7 +413,7 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
     assert( IsOrdinaryTable(pTab) );
     assert( IsOrdinaryTable(pNew) );
     sqlite3NestedParse(pParse, 
-        "UPDATE \"%w\"." DFLT_SCHEMA_TABLE " SET "
+        "UPDATE \"%w\"." LEGACY_SCHEMA_TABLE " SET "
           "sql = printf('%%.%ds, ',sql) || %Q"
           " || substr(sql,1+length(printf('%%.%ds',sql))) "
         "WHERE type = 'table' AND name = %Q", 
@@ -439,7 +439,7 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
     sqlite3ReleaseTempReg(pParse, r1);
 
     /* Reload the table definition */
-    renameReloadSchema(pParse, iDb, INITFLAG_AlterRename);
+    renameReloadSchema(pParse, iDb, INITFLAG_AlterAdd);
 
     /* Verify that constraints are still satisfied */
     if( pNew->pCheck!=0
@@ -647,7 +647,7 @@ void sqlite3AlterRenameColumn(
   assert( pNew->n>0 );
   bQuote = sqlite3Isquote(pNew->z[0]);
   sqlite3NestedParse(pParse, 
-      "UPDATE \"%w\"." DFLT_SCHEMA_TABLE " SET "
+      "UPDATE \"%w\"." LEGACY_SCHEMA_TABLE " SET "
       "sql = sqlite_rename_column(sql, type, name, %Q, %Q, %d, %Q, %d, %d) "
       "WHERE name NOT LIKE 'sqliteX_%%' ESCAPE 'X' "
       " AND (type != 'index' OR tbl_name = %Q)",
@@ -657,7 +657,7 @@ void sqlite3AlterRenameColumn(
   );
 
   sqlite3NestedParse(pParse, 
-      "UPDATE temp." DFLT_SCHEMA_TABLE " SET "
+      "UPDATE temp." LEGACY_SCHEMA_TABLE " SET "
       "sql = sqlite_rename_column(sql, type, name, %Q, %Q, %d, %Q, %d, 1) "
       "WHERE type IN ('trigger', 'view')",
       zDb, pTab->zName, iCol, zNew, bQuote
@@ -1332,6 +1332,9 @@ static int renameResolveTrigger(Parse *pParse){
               rc = sqlite3ViewGetColumnNames(pParse, p->pTab);
             }
           }
+        }
+        if( rc==SQLITE_OK && db->mallocFailed ){
+          rc = SQLITE_NOMEM;
         }
         sNC.pSrcList = pSrc;
         if( rc==SQLITE_OK && pStep->pWhere ){
@@ -2135,7 +2138,7 @@ void sqlite3AlterDropColumn(Parse *pParse, SrcList *pSrc, const Token *pName){
   renameTestSchema(pParse, zDb, iDb==1, "", 0);
   renameFixQuotes(pParse, zDb, iDb==1);
   sqlite3NestedParse(pParse, 
-      "UPDATE \"%w\"." DFLT_SCHEMA_TABLE " SET "
+      "UPDATE \"%w\"." LEGACY_SCHEMA_TABLE " SET "
       "sql = sqlite_drop_column(%d, sql, %d) "
       "WHERE (type=='table' AND tbl_name=%Q COLLATE nocase)"
       , zDb, iDb, iCol, pTab->zName

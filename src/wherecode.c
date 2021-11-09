@@ -1885,8 +1885,19 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     ** range (if any).
     */
     nConstraint = nEq;
+    assert( pLevel->p2==0 );
     if( pRangeEnd ){
       Expr *pRight = pRangeEnd->pExpr->pRight;
+      if( addrSeekScan ){
+        /* For a seek-scan that has a range on the lowest term of the index,
+        ** we have to make the top of the loop be code that sets the end
+        ** condition of the range.  Otherwise, the OP_SeekScan might jump
+        ** over that initialization, leaving the range-end value set to the
+        ** range-start value, resulting in a wrong answer.
+        ** See ticket 5981a8c041a3c2f3 (2021-11-02).
+        */
+        pLevel->p2 = sqlite3VdbeCurrentAddr(v);
+      }
       codeExprOrVector(pParse, pRight, regBase+nEq, nTop);
       whereLikeOptimizationStringFixup(v, pLevel, pRangeEnd);
       if( (pRangeEnd->wtFlags & TERM_VNULL)==0
@@ -1920,7 +1931,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     sqlite3DbFree(db, zEndAff);
 
     /* Top of the loop body */
-    pLevel->p2 = sqlite3VdbeCurrentAddr(v);
+    if( pLevel->p2==0 ) pLevel->p2 = sqlite3VdbeCurrentAddr(v);
 
     /* Check if the index cursor is past the end of the range. */
     if( nConstraint ){

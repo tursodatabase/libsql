@@ -22,8 +22,8 @@ static int exprCodeVector(Parse *pParse, Expr *p, int *piToFree);
 ** Return the affinity character for a single column of a table.
 */
 char sqlite3TableColumnAffinity(const Table *pTab, int iCol){
-  assert( iCol<pTab->nCol );
-  return iCol>=0 ? pTab->aCol[iCol].affinity : SQLITE_AFF_INTEGER;
+  if( iCol<0 || NEVER(iCol>=pTab->nCol) ) return SQLITE_AFF_INTEGER;
+  return pTab->aCol[iCol].affinity;
 }
 
 /*
@@ -1748,7 +1748,7 @@ Select *sqlite3SelectDup(sqlite3 *db, const Select *pDup, int flags){
   return pRet;
 }
 #else
-Select *sqlite3SelectDup(sqlite3 *db, Select *p, int flags){
+Select *sqlite3SelectDup(sqlite3 *db, const Select *p, int flags){
   assert( p==0 );
   return 0;
 }
@@ -5879,81 +5879,109 @@ int sqlite3ExprCoveredByIndex(
 }
 
 
-/*
-** An instance of the following structure is used by the tree walker
-** to count references to table columns in the arguments of an 
-** aggregate function, in order to implement the
-** sqlite3FunctionThisSrc() routine.
+/* Structure used to pass information throught the Walker in order to
+** implement sqlite3ReferencesSrcList().
 */
-struct SrcCount {
-  SrcList *pSrc;   /* One particular FROM clause in a nested query */
-  int iSrcInner;   /* Smallest cursor number in this context */
-  int nThis;       /* Number of references to columns in pSrcList */
-  int nOther;      /* Number of references to columns in other FROM clauses */
+struct RefSrcList {
+  sqlite3 *db;         /* Database connection used for sqlite3DbRealloc() */
+  SrcList *pRef;       /* Looking for references to these tables */
+  int nExclude;        /* Number of tables to exclude from the search */
+  int *aiExclude;      /* Cursor IDs for tables to exclude from the search */
 };
 
 /*
-** xSelect callback for sqlite3FunctionUsesThisSrc(). If this is the first
-** SELECT with a FROM clause encountered during this iteration, set
-** SrcCount.iSrcInner to the cursor number of the leftmost object in
-** the FROM cause.
+** Walker SELECT callbacks for sqlite3ReferencesSrcList().
+**
+** When entering a new subquery on the pExpr argument, add all FROM clause
+** entries for that subquery to the exclude list.
+**
+** When leaving the subquery, remove those entries from the exclude list.
 */
-static int selectSrcCount(Walker *pWalker, Select *pSel){
-  struct SrcCount *p = pWalker->u.pSrcCount;
-  if( p->iSrcInner==0x7FFFFFFF && ALWAYS(pSel->pSrc) && pSel->pSrc->nSrc ){
-    pWalker->u.pSrcCount->iSrcInner = pSel->pSrc->a[0].iCursor;
+static int selectRefEnter(Walker *pWalker, Select *pSelect){
+  struct RefSrcList *p = pWalker->u.pRefSrcList;
+  SrcList *pSrc = pSelect->pSrc;
+  int i, j, *piNew;
+  if( pSrc->nSrc==0 ) return WRC_Continue;
+  j = p->nExclude;
+  p->nExclude += pSrc->nSrc;
+  piNew = sqlite3DbRealloc(p->db, p->aiExclude, p->nExclude*sizeof(int));
+  if( piNew==0 ){
+    p->nExclude = 0;
+    return WRC_Abort;
+  }else{
+    p->aiExclude = piNew;
+  }
+  for(i=0; i<pSrc->nSrc; i++, j++){
+     p->aiExclude[j] = pSrc->a[i].iCursor;
   }
   return WRC_Continue;
 }
+static void selectRefLeave(Walker *pWalker, Select *pSelect){
+  struct RefSrcList *p = pWalker->u.pRefSrcList;
+  SrcList *pSrc = pSelect->pSrc;
+  if( p->nExclude ){
+    assert( p->nExclude>=pSrc->nSrc );
+    p->nExclude -= pSrc->nSrc;
+  }
+}
 
-/*
-** Count the number of references to columns.
+/* This is the Walker EXPR callback for sqlite3ReferencesSrcList().
+** 
+** Set the 0x01 bit of pWalker->eCode if there is a reference to any
+** of the tables shown in RefSrcList.pRef.
+**
+** Set the 0x02 bit of pWalker->eCode if there is a reference to a
+** table is in neither RefSrcList.pRef nor RefSrcList.aiExclude.
 */
-static int exprSrcCount(Walker *pWalker, Expr *pExpr){
-  /* There was once a NEVER() on the second term on the grounds that
-  ** sqlite3FunctionUsesThisSrc() was always called before 
-  ** sqlite3ExprAnalyzeAggregates() and so the TK_COLUMNs have not yet 
-  ** been converted into TK_AGG_COLUMN. But this is no longer true due
-  ** to window functions - sqlite3WindowRewrite() may now indirectly call
-  ** FunctionUsesThisSrc() when creating a new sub-select. */
-  if( pExpr->op==TK_COLUMN || pExpr->op==TK_AGG_COLUMN ){
+static int exprRefToSrcList(Walker *pWalker, Expr *pExpr){
+  if( pExpr->op==TK_COLUMN
+   || pExpr->op==TK_AGG_COLUMN
+  ){
     int i;
-    struct SrcCount *p = pWalker->u.pSrcCount;
-    SrcList *pSrc = p->pSrc;
+    struct RefSrcList *p = pWalker->u.pRefSrcList;
+    SrcList *pSrc = p->pRef;
     int nSrc = pSrc ? pSrc->nSrc : 0;
     for(i=0; i<nSrc; i++){
-      if( pExpr->iTable==pSrc->a[i].iCursor ) break;
+      if( pExpr->iTable==pSrc->a[i].iCursor ){
+        pWalker->eCode |= 1;
+        return WRC_Continue;
+      }
     }
-    if( i<nSrc ){
-      p->nThis++;
-    }else if( pExpr->iTable<p->iSrcInner ){
-      /* In a well-formed parse tree (no name resolution errors),
-      ** TK_COLUMN nodes with smaller Expr.iTable values are in an
-      ** outer context.  Those are the only ones to count as "other" */
-      p->nOther++;
+    for(i=0; i<p->nExclude && p->aiExclude[i]!=pExpr->iTable; i++){}
+    if( i>=p->nExclude ){
+      pWalker->eCode |= 2;
     }
   }
   return WRC_Continue;
 }
 
 /*
-** Determine if any of the arguments to the pExpr Function reference
-** pSrcList.  Return true if they do.  Also return true if the function
-** has no arguments or has only constant arguments.  Return false if pExpr
-** references columns but not columns of tables found in pSrcList.
+** Check to see if pExpr references any tables in pSrcList.
+** Possible return values:
+**
+**    1         pExpr does references a table in pSrcList.
+**
+**    0         pExpr references some table that is not defined in either
+**              pSrcList or in subqueries of pExpr itself.
+**
+**   -1         pExpr only references no tables at all, or it only
+**              references tables defined in subqueries of pExpr itself.
+**
+** As currently used, pExpr is always an aggregate function call.  That
+** fact is exploited for efficiency.
 */
-int sqlite3FunctionUsesThisSrc(Expr *pExpr, SrcList *pSrcList){
+int sqlite3ReferencesSrcList(Parse *pParse, Expr *pExpr, SrcList *pSrcList){
   Walker w;
-  struct SrcCount cnt;
-  assert( pExpr->op==TK_AGG_FUNCTION );
+  struct RefSrcList x;
   memset(&w, 0, sizeof(w));
-  w.xExprCallback = exprSrcCount;
-  w.xSelectCallback = selectSrcCount;
-  w.u.pSrcCount = &cnt;
-  cnt.pSrc = pSrcList;
-  cnt.iSrcInner = (pSrcList&&pSrcList->nSrc)?pSrcList->a[0].iCursor:0x7FFFFFFF;
-  cnt.nThis = 0;
-  cnt.nOther = 0;
+  memset(&x, 0, sizeof(x));
+  w.xExprCallback = exprRefToSrcList;
+  w.xSelectCallback = selectRefEnter;
+  w.xSelectCallback2 = selectRefLeave;
+  w.u.pRefSrcList = &x;
+  x.db = pParse->db;
+  x.pRef = pSrcList;
+  assert( pExpr->op==TK_AGG_FUNCTION );
   assert( ExprUseXList(pExpr) );
   sqlite3WalkExprList(&w, pExpr->x.pList);
 #ifndef SQLITE_OMIT_WINDOWFUNC
@@ -5961,7 +5989,14 @@ int sqlite3FunctionUsesThisSrc(Expr *pExpr, SrcList *pSrcList){
     sqlite3WalkExpr(&w, pExpr->y.pWin->pFilter);
   }
 #endif
-  return cnt.nThis>0 || cnt.nOther==0;
+  sqlite3DbFree(pParse->db, x.aiExclude);
+  if( w.eCode & 0x01 ){
+    return 1;
+  }else if( w.eCode ){
+    return 0;
+  }else{
+    return -1;
+  }
 }
 
 /*

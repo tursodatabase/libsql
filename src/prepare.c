@@ -29,10 +29,15 @@ static void corruptSchema(
     pData->rc = SQLITE_NOMEM_BKPT;
   }else if( pData->pzErrMsg[0]!=0 ){
     /* A error message has already been generated.  Do not overwrite it */
-  }else if( pData->mInitFlags & (INITFLAG_AlterRename|INITFLAG_AlterDrop) ){
+  }else if( pData->mInitFlags & (INITFLAG_AlterMask) ){
+    static const char *azAlterType[] = {
+       "rename",
+       "drop column",
+       "add column"
+    };
     *pData->pzErrMsg = sqlite3MPrintf(db, 
         "error in %s %s after %s: %s", azObj[0], azObj[1], 
-        (pData->mInitFlags & INITFLAG_AlterRename) ? "rename" : "drop column",
+        azAlterType[(pData->mInitFlags&INITFLAG_AlterMask)-1], 
         zExtra
     );
     pData->rc = SQLITE_ERROR;

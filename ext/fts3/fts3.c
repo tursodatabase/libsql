@@ -5976,6 +5976,9 @@ int sqlite3Fts3EvalPhrasePoslist(
         if( bEofSave==0 && pNear->iDocid==iDocid ) break;
       }
       assert( rc!=SQLITE_OK || pPhrase->bIncr==0 );
+      if( rc==SQLITE_OK && pNear->bEof!=bEofSave ){
+        rc = FTS_CORRUPT_VTAB;
+      }
     }
     if( bTreeEof ){
       while( rc==SQLITE_OK && !pNear->bEof ){

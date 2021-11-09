@@ -1632,13 +1632,13 @@ void sqlite3Fts3Offsets(
     const char *zDoc;
     int nDoc;
 
-    /* Initialize the contents of sCtx.aTerm[] for column iCol. There is 
-    ** no way that this operation can fail, so the return code from
-    ** fts3ExprIterate() can be discarded.
+    /* Initialize the contents of sCtx.aTerm[] for column iCol. This 
+    ** operation may fail if the database contains corrupt records.
     */
     sCtx.iCol = iCol;
     sCtx.iTerm = 0;
-    (void)fts3ExprIterate(pCsr->pExpr, fts3ExprTermOffsetInit, (void*)&sCtx);
+    rc = fts3ExprIterate(pCsr->pExpr, fts3ExprTermOffsetInit, (void*)&sCtx);
+    if( rc!=SQLITE_OK ) goto offsets_out;
 
     /* Retreive the text stored in column iCol. If an SQL NULL is stored 
     ** in column iCol, jump immediately to the next iteration of the loop.
