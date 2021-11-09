@@ -316,12 +316,15 @@ int sqlite3OsOpenMalloc(
     rc = sqlite3OsOpen(pVfs, zFile, pFile, flags, pOutFlags);
     if( rc!=SQLITE_OK ){
       sqlite3_free(pFile);
+      *ppFile = 0;
     }else{
       *ppFile = pFile;
     }
   }else{
+    *ppFile = 0;
     rc = SQLITE_NOMEM_BKPT;
   }
+  assert( *ppFile!=0 || rc!=SQLITE_OK );
   return rc;
 }
 void sqlite3OsCloseFree(sqlite3_file *pFile){

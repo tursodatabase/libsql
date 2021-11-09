@@ -485,7 +485,7 @@ void sqlite3VtabFinishParse(Parse *pParse, Token *pEnd){
     */
     iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
     sqlite3NestedParse(pParse,
-      "UPDATE %Q." DFLT_SCHEMA_TABLE " "
+      "UPDATE %Q." LEGACY_SCHEMA_TABLE " "
          "SET type='table', name=%Q, tbl_name=%Q, rootpage=0, sql=%Q "
        "WHERE rowid=#%d",
       db->aDb[iDb].zDbSName,
@@ -505,18 +505,14 @@ void sqlite3VtabFinishParse(Parse *pParse, Token *pEnd){
     iReg = ++pParse->nMem;
     sqlite3VdbeLoadString(v, iReg, pTab->zName);
     sqlite3VdbeAddOp2(v, OP_VCreate, iDb, iReg);
-  }
-
-  /* If we are rereading the sqlite_schema table create the in-memory
-  ** record of the table. The xConnect() method is not called until
-  ** the first time the virtual table is used in an SQL statement. This
-  ** allows a schema that contains virtual tables to be loaded before
-  ** the required virtual table implementations are registered.  */
-  else {
+  }else{
+    /* If we are rereading the sqlite_schema table create the in-memory
+    ** record of the table. */
     Table *pOld;
     Schema *pSchema = pTab->pSchema;
     const char *zName = pTab->zName;
-    assert( sqlite3SchemaMutexHeld(db, 0, pSchema) );
+    assert( zName!=0 );
+    sqlite3MarkAllShadowTablesOf(db, pTab);
     pOld = sqlite3HashInsert(&pSchema->tblHash, zName, pTab);
     if( pOld ){
       sqlite3OomFault(db);
@@ -700,7 +696,8 @@ int sqlite3VtabCallConnect(Parse *pParse, Table *pTab){
   int rc;
 
   assert( pTab );
-  if( !IsVirtual(pTab) || sqlite3GetVTable(db, pTab) ){
+  assert( IsVirtual(pTab) );
+  if( sqlite3GetVTable(db, pTab) ){
     return SQLITE_OK;
   }
 
@@ -904,7 +901,10 @@ int sqlite3VtabCallDestroy(sqlite3 *db, int iDb, const char *zTab){
   Table *pTab;
 
   pTab = sqlite3FindTable(db, zTab, db->aDb[iDb].zDbSName);
-  if( pTab!=0 && ALWAYS(IsVirtual(pTab)) && ALWAYS(pTab->u.vtab.p!=0) ){
+  if( ALWAYS(pTab!=0)
+   && ALWAYS(IsVirtual(pTab))
+   && ALWAYS(pTab->u.vtab.p!=0)
+  ){
     VTable *p;
     int (*xDestroy)(sqlite3_vtab *);
     for(p=pTab->u.vtab.p; p; p=p->pNext){

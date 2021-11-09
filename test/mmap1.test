@@ -12,7 +12,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-ifcapable !mmap {
+ifcapable !mmap||!incrblob {
   finish_test
   return
 }

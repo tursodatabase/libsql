@@ -81,7 +81,17 @@ do_test vacuum3-2.1 {
   execsql {
     PRAGMA page_size = 1024;
     VACUUM;
-    ALTER TABLE t1 ADD COLUMN d;
+  }
+  ifcapable altertable {
+    execsql { ALTER TABLE t1 ADD COLUMN d; }
+  } else {
+    execsql {
+      DROP TABLE t1;
+      CREATE TABLE t1(a, b, c, d);
+      INSERT INTO t1 VALUES(1, 2, 3, NULL);
+    }
+  }
+  execsql {
     UPDATE t1 SET d = randomblob(1000);
   }
   file size test.db

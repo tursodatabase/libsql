@@ -282,24 +282,30 @@ void sqlite3ComputeGeneratedColumns(
   ** that appropriate affinity has been applied to the regular columns
   */
   sqlite3TableAffinity(pParse->pVdbe, pTab, iRegStore);
-  if( (pTab->tabFlags & TF_HasStored)!=0
-   && (pOp = sqlite3VdbeGetOp(pParse->pVdbe,-1))->opcode==OP_Affinity
-  ){
-    /* Change the OP_Affinity argument to '@' (NONE) for all stored
-    ** columns.  '@' is the no-op affinity and those columns have not
-    ** yet been computed. */
-    int ii, jj;
-    char *zP4 = pOp->p4.z;
-    assert( zP4!=0 );
-    assert( pOp->p4type==P4_DYNAMIC );
-    for(ii=jj=0; zP4[jj]; ii++){
-      if( pTab->aCol[ii].colFlags & COLFLAG_VIRTUAL ){
-        continue;
+  if( (pTab->tabFlags & TF_HasStored)!=0 ){
+    pOp = sqlite3VdbeGetOp(pParse->pVdbe,-1);
+    if( pOp->opcode==OP_Affinity ){
+      /* Change the OP_Affinity argument to '@' (NONE) for all stored
+      ** columns.  '@' is the no-op affinity and those columns have not
+      ** yet been computed. */
+      int ii, jj;
+      char *zP4 = pOp->p4.z;
+      assert( zP4!=0 );
+      assert( pOp->p4type==P4_DYNAMIC );
+      for(ii=jj=0; zP4[jj]; ii++){
+        if( pTab->aCol[ii].colFlags & COLFLAG_VIRTUAL ){
+          continue;
+        }
+        if( pTab->aCol[ii].colFlags & COLFLAG_STORED ){
+          zP4[jj] = SQLITE_AFF_NONE;
+        }
+        jj++;
       }
-      if( pTab->aCol[ii].colFlags & COLFLAG_STORED ){
-        zP4[jj] = SQLITE_AFF_NONE;
-      }
-      jj++;
+    }else if( pOp->opcode==OP_TypeCheck ){
+      /* If an OP_TypeCheck was generated because the table is STRICT,
+      ** then set the P3 operand to indicate that generated columns should
+      ** not be checked */
+      pOp->p3 = 1;
     }
   }
 
@@ -2327,7 +2333,8 @@ void sqlite3GenerateConstraintChecks(
 
         assert( onError==OE_Replace );
         nConflictCk = sqlite3VdbeCurrentAddr(v) - addrConflictCk;
-        assert( nConflictCk>0 );
+        assert( nConflictCk>0 || db->mallocFailed );
+        testcase( nConflictCk<=0 );
         testcase( nConflictCk>1 );
         if( regTrigCnt ){
           sqlite3MultiWrite(pParse);
@@ -2613,8 +2620,9 @@ int sqlite3OpenTableAndIndices(
   assert( op==OP_OpenWrite || p5==0 );
   if( IsVirtual(pTab) ){
     /* This routine is a no-op for virtual tables. Leave the output
-    ** variables *piDataCur and *piIdxCur uninitialized so that valgrind
-    ** can detect if they are used by mistake in the caller. */
+    ** variables *piDataCur and *piIdxCur set to illegal cursor numbers
+    ** for improved error detection. */
+    *piDataCur = *piIdxCur = -999;
     return 0;
   }
   iDb = sqlite3SchemaToIndex(pParse->db, pTab->pSchema);
