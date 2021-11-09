@@ -3964,8 +3964,8 @@ struct Walker {
     int n;                                    /* A counter */
     int iCur;                                 /* A cursor number */
     SrcList *pSrcList;                        /* FROM clause */
-    struct SrcCount *pSrcCount;               /* Counting column references */
     struct CCurHint *pCCurHint;               /* Used by codeCursorHint() */
+    struct RefSrcList *pRefSrcList;           /* sqlite3ReferencesSrcList() */
     int *aiCol;                               /* array of column indexes */
     struct IdxCover *pIdxCover;               /* Check for index coverage */
     struct IdxExprTrans *pIdxTrans;           /* Convert idxed expr to column */
@@ -4623,7 +4623,7 @@ void sqlite3AggInfoPersistWalkerInit(Walker*,Parse*);
 void sqlite3ExprAnalyzeAggregates(NameContext*, Expr*);
 void sqlite3ExprAnalyzeAggList(NameContext*,ExprList*);
 int sqlite3ExprCoveredByIndex(Expr*, int iCur, Index *pIdx);
-int sqlite3FunctionUsesThisSrc(Expr*, SrcList*);
+int sqlite3ReferencesSrcList(Parse*, Expr*, SrcList*);
 Vdbe *sqlite3GetVdbe(Parse*);
 #ifndef SQLITE_UNTESTABLE
 void sqlite3PrngSaveState(void);

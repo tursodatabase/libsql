@@ -19,10 +19,7 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set testprefix zeroblob
 
-ifcapable !incrblob {
-  finish_test
-  return
-}
+# ifcapable !incrblob { finish_test return }
 
 test_set_config_pagecache 0 0
 
@@ -42,12 +39,17 @@ do_test zeroblob-1.1 {
   execsql {
     INSERT INTO t1 VALUES(2,3,4,zeroblob(1000000));
   }
-  set ::sqlite3_max_blobsize
-} {10}
+} {}
 
-do_test zeroblob-1.1.1 {
-  expr {[sqlite3_memory_highwater]<$::memused+35000}
-} {1}
+ifcapable incrblob {
+  do_test zeroblob-1.1.1 {
+    set ::sqlite3_max_blobsize
+  } {10}
+  do_test zeroblob-1.1.2 {
+    expr {[sqlite3_memory_highwater]<$::memused+35000}
+  } {1}
+}
+
 do_test zeroblob-1.2 {
   execsql {
     SELECT length(d) FROM t1
@@ -78,8 +80,12 @@ do_test zeroblob-1.5 {
   execsql {
     INSERT INTO t1 VALUES(4,5,zeroblob(10000),zeroblob(10000));
   }
-  set ::sqlite3_max_blobsize
-} {11}
+} {}
+ifcapable incrblob {
+  do_test zeroblob-1.5.1 {
+    set ::sqlite3_max_blobsize
+  } {11}
+}
 do_test zeroblob-1.6 {
   execsql {
     SELECT length(c), length(d) FROM t1
@@ -94,8 +100,12 @@ do_test zeroblob-1.7 {
   execsql {
     INSERT INTO t1 VALUES(5,zeroblob(10000),NULL,zeroblob(10000));
   }
-  set ::sqlite3_max_blobsize
-} {10}
+} {}
+ifcapable incrblob {
+  do_test zeroblob-1.7.1 {
+    set ::sqlite3_max_blobsize
+  } {10}
+}
 do_test zeroblob-1.8 {
   execsql {
     SELECT length(b), length(d) FROM t1 WHERE a=5
@@ -214,12 +224,14 @@ do_test zeroblob-7.2 {
 do_test zeroblob-7.3 {
   sqlite3_finalize $::STMT
 } {SQLITE_OK}
-do_test zeroblob-7.4 {
-  set ::sqlite3_max_blobsize
-} {0}
-do_test zeroblob-7.5 {
-  expr {[sqlite3_memory_highwater]<$::memused+10000}
-} {1}
+ifcapable incrblob {
+  do_test zeroblob-7.4 {
+    set ::sqlite3_max_blobsize
+  } {0}
+  do_test zeroblob-7.5 {
+    expr {[sqlite3_memory_highwater]<$::memused+10000}
+  } {1}
+}
 
 # Test that MakeRecord can handle a value with some real content
 # and a zero-blob tail.
