@@ -44,6 +44,10 @@ proc populate_dir {dirname spec} {
   }
 }
 
+proc dir_content {dirname} {
+  lsort [glob -nocomplain $dirname/*]
+}
+
 proc dir_to_list {dirname {n -1}} {
   if {$n<0} {set n [llength [file split $dirname]]}
 
@@ -170,8 +174,23 @@ foreach {tn tcl} {
   }
 }
 
-finish_test
-
-
+do_test 2.1.1 {
+  populate_dir ar2 {
+    file1 "abcd" 
+    file2 "efgh"
+    junk1 "j1"
+    junk2 "j2"
+    dir1/file3 "ijkl"
+  }
+  populate_dir ar4 {
+    file2 "efgh"
+  }
+  catchcmd shell8.db {.ar -c}
+  catchcmd shell8.db {.ar -C ar2 -i .}
+  catchcmd shell8.db {.ar -r ./file2 ./dir1}
+  catchcmd shell8.db {.ar -g -r ./ju*2}
+  catchcmd shell8.db {.ar -C ar4 -x .}
+  regsub -all {ar4} [dir_content ar4] ar2
+} {ar2/file1 ar2/file2 ar2/junk1}
 
 finish_test

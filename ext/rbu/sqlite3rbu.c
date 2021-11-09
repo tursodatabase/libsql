@@ -111,6 +111,13 @@
 #endif
 
 /*
+** Name of the URI option that causes RBU to take an exclusive lock as
+** part of the incremental checkpoint operation.
+*/
+#define RBU_EXCLUSIVE_CHECKPOINT "rbu_exclusive_checkpoint"
+
+
+/*
 ** The rbu_state table is used to save the state of a partially applied
 ** update so that it can be resumed later. The table consists of integer
 ** keys mapped to values as follows:
@@ -2756,13 +2763,19 @@ static RbuState *rbuLoadState(sqlite3rbu *p){
 /*
 ** Open the database handle and attach the RBU database as "rbu". If an
 ** error occurs, leave an error code and message in the RBU handle.
+**
+** If argument dbMain is not NULL, then it is a database handle already
+** open on the target database. Use this handle instead of opening a new
+** one.
 */
-static void rbuOpenDatabase(sqlite3rbu *p, int *pbRetry){
+static void rbuOpenDatabase(sqlite3rbu *p, sqlite3 *dbMain, int *pbRetry){
   assert( p->rc || (p->dbMain==0 && p->dbRbu==0) );
   assert( p->rc || rbuIsVacuum(p) || p->zTarget!=0 );
+  assert( dbMain==0 || rbuIsVacuum(p)==0 );
 
   /* Open the RBU database */
   p->dbRbu = rbuOpenDbhandle(p, p->zRbu, 1);
+  p->dbMain = dbMain;
 
   if( p->rc==SQLITE_OK && rbuIsVacuum(p) ){
     sqlite3_file_control(p->dbRbu, "main", SQLITE_FCNTL_RBUCNT, (void*)p);
@@ -3128,15 +3141,31 @@ static void rbuCheckpointFrame(sqlite3rbu *p, RbuFrame *pFrame){
 
 
 /*
-** Take an EXCLUSIVE lock on the database file.
+** Take an EXCLUSIVE lock on the database file. Return SQLITE_OK if
+** successful, or an SQLite error code otherwise.
 */
-static void rbuLockDatabase(sqlite3rbu *p){
-  sqlite3_file *pReal = p->pTargetFd->pReal;
-  assert( p->rc==SQLITE_OK );
-  p->rc = pReal->pMethods->xLock(pReal, SQLITE_LOCK_SHARED);
-  if( p->rc==SQLITE_OK ){
-    p->rc = pReal->pMethods->xLock(pReal, SQLITE_LOCK_EXCLUSIVE);
+static int rbuLockDatabase(sqlite3 *db){
+  int rc = SQLITE_OK;
+  sqlite3_file *fd = 0;
+  sqlite3_file_control(db, "main", SQLITE_FCNTL_FILE_POINTER, &fd);
+
+  if( fd->pMethods ){
+    rc = fd->pMethods->xLock(fd, SQLITE_LOCK_SHARED);
+    if( rc==SQLITE_OK ){
+      rc = fd->pMethods->xLock(fd, SQLITE_LOCK_EXCLUSIVE);
+    }
   }
+  return rc;
+}
+
+/*
+** Return true if the database handle passed as the only argument
+** was opened with the rbu_exclusive_checkpoint=1 URI parameter
+** specified. Or false otherwise.
+*/
+static int rbuExclusiveCheckpoint(sqlite3 *db){
+  const char *zUri = sqlite3_db_filename(db, 0);
+  return sqlite3_uri_boolean(zUri, RBU_EXCLUSIVE_CHECKPOINT, 0);
 }
 
 #if defined(_WIN32_WCE)
@@ -3194,18 +3223,24 @@ static void rbuMoveOalFile(sqlite3rbu *p){
     ** In order to ensure that there are no database readers, an EXCLUSIVE
     ** lock is obtained here before the *-oal is moved to *-wal.
     */
-    rbuLockDatabase(p);
+    sqlite3 *dbMain = 0;
+    rbuFileSuffix3(zBase, zWal);
+    rbuFileSuffix3(zBase, zOal);
+
+    /* Re-open the databases. */
+    rbuObjIterFinalize(&p->objiter);
+    sqlite3_close(p->dbRbu);
+    sqlite3_close(p->dbMain);
+    p->dbMain = 0;
+    p->dbRbu = 0;
+
+    dbMain = rbuOpenDbhandle(p, p->zTarget, 1);
+    if( dbMain ){
+      assert( p->rc==SQLITE_OK );
+      p->rc = rbuLockDatabase(dbMain);
+    }
+
     if( p->rc==SQLITE_OK ){
-      rbuFileSuffix3(zBase, zWal);
-      rbuFileSuffix3(zBase, zOal);
-
-      /* Re-open the databases. */
-      rbuObjIterFinalize(&p->objiter);
-      sqlite3_close(p->dbRbu);
-      sqlite3_close(p->dbMain);
-      p->dbMain = 0;
-      p->dbRbu = 0;
-
 #if defined(_WIN32_WCE)
       {
         LPWSTR zWideOal;
@@ -3232,11 +3267,19 @@ static void rbuMoveOalFile(sqlite3rbu *p){
 #else
       p->rc = rename(zOal, zWal) ? SQLITE_IOERR : SQLITE_OK;
 #endif
+    }
 
-      if( p->rc==SQLITE_OK ){
-        rbuOpenDatabase(p, 0);
-        rbuSetupCheckpoint(p, 0);
-      }
+    if( p->rc!=SQLITE_OK 
+     || rbuIsVacuum(p) 
+     || rbuExclusiveCheckpoint(dbMain)==0 
+    ){
+      sqlite3_close(dbMain);
+      dbMain = 0;
+    }
+
+    if( p->rc==SQLITE_OK ){
+      rbuOpenDatabase(p, dbMain, 0);
+      rbuSetupCheckpoint(p, 0);
     }
   }
 
@@ -3987,9 +4030,9 @@ static sqlite3rbu *openRbuHandle(
       ** If this is the case, it will have been checkpointed and deleted
       ** when the handle was closed and a second attempt to open the 
       ** database may succeed.  */
-      rbuOpenDatabase(p, &bRetry);
+      rbuOpenDatabase(p, 0, &bRetry);
       if( bRetry ){
-        rbuOpenDatabase(p, 0);
+        rbuOpenDatabase(p, 0, 0);
       }
     }
 
@@ -4084,6 +4127,14 @@ static sqlite3rbu *openRbuHandle(
       }else if( p->eStage==RBU_STAGE_MOVE ){
         /* no-op */
       }else if( p->eStage==RBU_STAGE_CKPT ){
+        if( !rbuIsVacuum(p) && rbuExclusiveCheckpoint(p->dbMain) ){
+          /* If the rbu_exclusive_checkpoint=1 URI parameter was specified
+          ** and an incremental checkpoint is being resumed, attempt an
+          ** exclusive lock on the db file. If this fails, so be it.  */
+          p->eStage = RBU_STAGE_DONE;
+          rbuLockDatabase(p->dbMain);
+          p->eStage = RBU_STAGE_CKPT;
+        }
         rbuSetupCheckpoint(p, pState);
       }else if( p->eStage==RBU_STAGE_DONE ){
         p->rc = SQLITE_DONE;
@@ -4121,7 +4172,6 @@ sqlite3rbu *sqlite3rbu_open(
   const char *zState
 ){
   if( zTarget==0 || zRbu==0 ){ return rbuMisuseError(); }
-  /* TODO: Check that zTarget and zRbu are non-NULL */
   return openRbuHandle(zTarget, zRbu, zState);
 }
 

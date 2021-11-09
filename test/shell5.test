@@ -456,4 +456,19 @@ CREATE TABLE t7(a, b, c);
   db eval { SELECT * FROM t7 ORDER BY a }
 } {1 2 3 4 5 {} 6 7 8}
 
+do_test shell5-4.3 {
+  forcedelete shell5.csv
+  set fd [open shell5.csv w]
+  puts $fd ",,"
+  puts $fd "1,2,3"
+  close $fd
+  catchcmd test.db [string trim {
+.mode csv
+CREATE TABLE t8(a, b, c);
+.import -skip 1 shell5.csv t8
+.nullvalue #
+  }]
+  db eval { SELECT * FROM t8 }
+} {1 2 3}
+
 finish_test

@@ -111,7 +111,7 @@ static const char jsonIsSpace[] = {
 # endif
 # define testcase(X)
 #endif
-#if defined(NDEBUG)
+#if !defined(SQLITE_DEBUG) && !defined(SQLITE_COVERAGE_TEST)
 #  define VVA(X)
 #else
 #  define VVA(X) X

@@ -526,7 +526,11 @@ void sqlite3VdbeMemSetInt64(Mem*, i64);
 void sqlite3VdbeMemSetPointer(Mem*, void*, const char*, void(*)(void*));
 void sqlite3VdbeMemInit(Mem*,sqlite3*,u16);
 void sqlite3VdbeMemSetNull(Mem*);
+#ifndef SQLITE_OMIT_INCRBLOB
 void sqlite3VdbeMemSetZeroBlob(Mem*,int);
+#else
+int sqlite3VdbeMemSetZeroBlob(Mem*,int);
+#endif
 #ifdef SQLITE_DEBUG
 int sqlite3VdbeMemIsRowSet(const Mem*);
 #endif
