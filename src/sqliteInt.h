@@ -1712,6 +1712,7 @@ struct sqlite3 {
 #define SQLITE_CountRows      HI(0x00001) /* Count rows changed by INSERT, */
                                           /*   DELETE, or UPDATE and return */
                                           /*   the count using a callback. */
+#define SQLITE_CorruptRdOnly  HI(0x00002) /* Prohibit writes due to error */
 
 /* Flags used only if debugging */
 #ifdef SQLITE_DEBUG

@@ -3604,6 +3604,7 @@ case OP_AutoCommit: {
     sqlite3CloseSavepoints(db);
     if( p->rc==SQLITE_OK ){
       rc = SQLITE_DONE;
+      if( db->autoCommit ) db->flags &= ~SQLITE_CorruptRdOnly;
     }else{
       rc = SQLITE_ERROR;
     }
@@ -3665,8 +3666,15 @@ case OP_Transaction: {
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
   assert( DbMaskTest(p->btreeMask, pOp->p1) );
   assert( rc==SQLITE_OK );
-  if( pOp->p2 && (db->flags & SQLITE_QueryOnly)!=0 ){
-    rc = SQLITE_READONLY;
+  if( pOp->p2 && (db->flags & (SQLITE_QueryOnly|SQLITE_CorruptRdOnly))!=0 ){
+    if( db->flags & SQLITE_QueryOnly ){
+      /* Writes prohibited by the "PRAGMA query_only=TRUE" statement */
+      rc = SQLITE_READONLY;
+    }else{
+      /* Writes prohibited due to a prior SQLITE_CORRUPT in the current
+      ** transaction */
+      rc = SQLITE_CORRUPT;
+    }
     goto abort_due_to_error;
   }
   pBt = db->aDb[pOp->p1].pBt;
@@ -8391,6 +8399,9 @@ abort_due_to_error:
                    (int)(pOp - aOp), p->zSql, p->zErrMsg);
   sqlite3VdbeHalt(p);
   if( rc==SQLITE_IOERR_NOMEM ) sqlite3OomFault(db);
+  if( rc==SQLITE_CORRUPT && db->autoCommit==0 ){
+    db->flags |= SQLITE_CorruptRdOnly;
+  }
   rc = SQLITE_ERROR;
   if( resetSchemaOnFault>0 ){
     sqlite3ResetOneSchema(db, resetSchemaOnFault-1);
