@@ -1,5 +1,5 @@
-C Make\sSQLITE_CORRUPT\ssticky:\s\sIf\sa\sCORRUPT\serror\sis\sreturned,\sall\ssubsequent\nwrite\sstatements\swithin\sthe\ssame\stransaction\salso\sfail\searly\swith\nSQLITE_CORRUPT.
-D 2021-11-10T10:59:10.748
+C Load\snew\stest\scases\sinto\stest/fuzzdata8.db
+D 2021-11-10T15:23:00.325
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1065,7 +1065,7 @@ F test/fuzzdata4.db b502c7d5498261715812dd8b3c2005bad08b3a26e6489414bd13926cd3e4
 F test/fuzzdata5.db e35f64af17ec48926481cfaf3b3855e436bd40d1cfe2d59a9474cb4b748a52a5
 F test/fuzzdata6.db 92a80e4afc172c24f662a10a612d188fb272de4a9bd19e017927c95f737de6d7
 F test/fuzzdata7.db 0166b56fd7a6b9636a1d60ef0a060f86ddaecf99400a666bb6e5bbd7199ad1f2
-F test/fuzzdata8.db b0e8db9e34a52e97e6df2101e445e0d9780a1dbd772137de71c5c9def63e3ee0
+F test/fuzzdata8.db 9dfcee537307260af05cfa72ffdb8ffd4920fd6a774229b7459fe8bd2fe90817
 F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test f64c4aef4c9e9edf1d6dc0d3f1e65dcc81e67c996403c88d14f09b74807a42bc
@@ -1932,7 +1932,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P de10795a1cf70925088e9652998e813665b2e147ffa4a4edab18c7e2c66bf5ae
-R e127d9e9bc185c201fc0d430c0552522
+P 3feb0f1c3840904d28fc9a61262820e2b9b764addc1dd178aecc2cd0f952042c
+R 1cdf4bc20eaeb0eb0948586b5fb86978
 U drh
-Z 644a270e60b1b5e3bf9aa34104968aa1
+Z 87340a94cc4e7d9e4722384f4b564545
