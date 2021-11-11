@@ -8747,7 +8747,7 @@ static int btreeOverwriteCell(BtCursor *pCur, const BtreePayload *pX){
   do{
     rc = btreeGetPage(pBt, ovflPgno, &pPage, 0);
     if( rc ) return rc;
-    if( sqlite3PagerPageRefcount(pPage->pDbPage)!=1 || NEVER(pPage->isInit) ){
+    if( sqlite3PagerPageRefcount(pPage->pDbPage)!=1 || pPage->isInit ){
       rc = SQLITE_CORRUPT_BKPT;
     }else{
       if( iOffset+ovflPageSize<(u32)nTotal ){
