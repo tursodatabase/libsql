@@ -1,5 +1,5 @@
-C Remove\sa\sNEVER()\sthat\swas\sadd\syesterday.\s\sThe\sfuzzer\sfound\sa\snew\stest\scase\nto\smake\sit\shappen.
-D 2021-11-11T16:26:46.155
+C Make\ssure\sthe\srowid\svalue\sreturned\sby\sthe\sVUpdate\sopcode\sis\salways\sinitialized.
+D 2021-11-11T23:52:44.183
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -622,7 +622,7 @@ F src/upsert.c 8789047a8f0a601ea42fa0256d1ba3190c13746b6ba940fe2d25643a7e991937
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c 30df8356e231dad33be10bb27897655002668343280004ba28c734489414a167
 F src/vacuum.c 6c38ddc52f0619865c91dae9c441d4d48bf3040d7dc1bc5b22da1e45547ed0b3
-F src/vdbe.c 81edf086e4884f99e03231ec3bfe78c90c94ea4f13a0a492efc7339178c4fd47
+F src/vdbe.c bd7efb299299ad3f9d272adf75afd4b985096583b4c4d797d13ea6b9fb5329ae
 F src/vdbe.h 25dabb25c7e157b84e59260cfb5b466c3ac103ede9f36f4db371332c47601abe
 F src/vdbeInt.h 31fbabdc1ed61d9695337dfe5269ea94e1cf615c17f5cafeaa1bb01066820bab
 F src/vdbeapi.c 22c79072ae7d8a01e9bcae8ba16e918d60d202eaa9553b5fda38f99f7464d99a
@@ -1932,7 +1932,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7cee62f77a9e7c3cf886f136e75a93c3bbbb88e48b66035883bea5503d9fc03c
-R a7cf2a119263d3bc8f43e4fc93371ff4
+P 83e6ac71073edfa0cd73788c30bdd5f09cb04c8a6a7d5123123dbcd354f430b8
+R 644c566293a1fbdf23cc26ec0bb862f7
 U drh
-Z 327ac6f3eb951d7d7c5741ef57de279f
+Z 85ba657b24546f78f23e11e2342a59c2

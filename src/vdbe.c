@@ -7942,7 +7942,7 @@ case OP_VUpdate: {
   const sqlite3_module *pModule;
   int nArg;
   int i;
-  sqlite_int64 rowid;
+  sqlite_int64 rowid = 0;
   Mem **apArg;
   Mem *pX;
 
