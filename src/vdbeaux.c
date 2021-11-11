@@ -5214,6 +5214,8 @@ void sqlite3VdbePreUpdateHook(
     }
   }
 
+  assert( pCsr!=0 );
+  assert( pCsr->eCurType==CURTYPE_BTREE );
   assert( pCsr->nField==pTab->nCol 
        || (pCsr->nField==pTab->nCol+1 && op==SQLITE_DELETE && iReg==-1)
   );

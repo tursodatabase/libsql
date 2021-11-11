@@ -7743,6 +7743,7 @@ case OP_VFilter: {   /* jump */
   pCur = p->apCsr[pOp->p1];
   assert( memIsValid(pQuery) );
   REGISTER_TRACE(pOp->p3, pQuery);
+  assert( pCur!=0 );
   assert( pCur->eCurType==CURTYPE_VTAB );
   pVCur = pCur->uc.pVCur;
   pVtab = pVCur->pVtab;
@@ -7791,6 +7792,7 @@ case OP_VColumn: {
   sqlite3_context sContext;
 
   VdbeCursor *pCur = p->apCsr[pOp->p1];
+  assert( pCur!=0 );
   assert( pCur->eCurType==CURTYPE_VTAB );
   assert( pOp->p3>0 && pOp->p3<=(p->nMem+1 - p->nCursor) );
   pDest = &aMem[pOp->p3];
@@ -7844,6 +7846,7 @@ case OP_VNext: {   /* jump */
   VdbeCursor *pCur;
 
   pCur = p->apCsr[pOp->p1];
+  assert( pCur!=0 );
   assert( pCur->eCurType==CURTYPE_VTAB );
   if( pCur->nullRow ){
     break;
