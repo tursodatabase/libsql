@@ -145,13 +145,26 @@ impl FromSql for DateTime<Local> {
     }
 }
 
+/// RFC3339 ("YYYY-MM-DD HH:MM:SS.SSS[+-]HH:MM") into `DateTime<FixedOffset>`.
+impl FromSql for DateTime<FixedOffset> {
+    #[inline]
+    fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
+        let s = String::column_result(value)?;
+        Self::parse_from_rfc3339(s.as_str())
+            .or_else(|_| Self::parse_from_str(s.as_str(), "%F %T%.f%:z"))
+            .map_err(|e| FromSqlError::Other(Box::new(e)))
+    }
+}
+
 #[cfg(test)]
 mod test {
     use crate::{
         types::{FromSql, ValueRef},
         Connection, Result,
     };
-    use chrono::{DateTime, Duration, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
+    use chrono::{
+        DateTime, Duration, FixedOffset, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc,
+    };
 
     fn checked_memory_handle() -> Result<Connection> {
         let db = Connection::open_in_memory()?;
@@ -264,7 +277,8 @@ mod test {
         let s: String = db.query_row("SELECT t FROM foo", [], |r| r.get(0))?;
         assert!(s.ends_with("+04:00"));
 
-        let v: DateTime<Local> = db.query_row("SELECT t FROM foo", [], |r| r.get(0))?;
+        let v: DateTime<FixedOffset> = db.query_row("SELECT t FROM foo", [], |r| r.get(0))?;
+        assert_eq!(time.offset(), v.offset());
         assert_eq!(time, v);
         Ok(())
     }
