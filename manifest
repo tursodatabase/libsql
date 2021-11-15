@@ -1,5 +1,5 @@
-C Fix\sa\sfaulty\sJSON\sassert()\sadded\s30\sdays\sago\sby\scheck-in\s[7b8ea2298927fd34].\ndbsqlfuzz\sf30366e7b02562398a387ddcc681422fd4251190.
-D 2021-11-15T01:45:11.575
+C Improved\scontext\sshown\sfor\sthe\s"ABORT-due-to-error"\soutput\sline\swhen\susing\n"PRAGMA\svdbe_debug=on"\sin\san\sSQLITE_DEBUG\sbuild.
+D 2021-11-15T13:22:42.150
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -622,7 +622,7 @@ F src/upsert.c 8789047a8f0a601ea42fa0256d1ba3190c13746b6ba940fe2d25643a7e991937
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c 30df8356e231dad33be10bb27897655002668343280004ba28c734489414a167
 F src/vacuum.c 6c38ddc52f0619865c91dae9c441d4d48bf3040d7dc1bc5b22da1e45547ed0b3
-F src/vdbe.c bd7efb299299ad3f9d272adf75afd4b985096583b4c4d797d13ea6b9fb5329ae
+F src/vdbe.c bd1cd776d9eb9cc94aa91d10b5ef9f1f88749bc4f88bdf76133c7fff579de79d
 F src/vdbe.h 25dabb25c7e157b84e59260cfb5b466c3ac103ede9f36f4db371332c47601abe
 F src/vdbeInt.h 31fbabdc1ed61d9695337dfe5269ea94e1cf615c17f5cafeaa1bb01066820bab
 F src/vdbeapi.c 22c79072ae7d8a01e9bcae8ba16e918d60d202eaa9553b5fda38f99f7464d99a
@@ -1932,7 +1932,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5995dd4de4997c43b43befc1281ef6378f33f781134c7f368299d64db2344f1d
-R e485cb8d82384b30dcd2186c506d1700
+P 0e0c23fcc493a5d6beb6ab9554981bbc36ba1554fea0f8ba78dc41738f4bd1c2
+R 339b48aa5ef26ccfb084541f653c0517
 U drh
-Z 311485b1fa0a63f2008cf2b78c6fc705
+Z 3b67cc05d03160af201256c3a06eb0ac

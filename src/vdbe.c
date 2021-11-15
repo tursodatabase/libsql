@@ -8389,7 +8389,14 @@ abort_due_to_error:
   assert( rc );
 #ifdef SQLITE_DEBUG
   if( db->flags & SQLITE_VdbeTrace ){
-     printf("ABORT-due-to-error.  rc=%d\n", rc);
+    const char *zTrace = p->zSql;
+    if( zTrace==0 ){
+      if( aOp[0].opcode==OP_Trace ){
+        zTrace = aOp[0].p4.z;
+      }
+      if( zTrace==0 ) zTrace = "???";
+    }
+    printf("ABORT-due-to-error (rc=%d): %s\n", rc, zTrace);
   }
 #endif
   if( p->zErrMsg==0 && rc!=SQLITE_IOERR_NOMEM ){
