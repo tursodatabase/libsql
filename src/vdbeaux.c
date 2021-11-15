@@ -3116,6 +3116,9 @@ int sqlite3VdbeHalt(Vdbe *p){
             return SQLITE_ERROR;
           }
           rc = SQLITE_CONSTRAINT_FOREIGNKEY;
+        }else if( db->flags & SQLITE_CorruptRdOnly ){
+          rc = SQLITE_CORRUPT;
+          db->flags &= ~SQLITE_CorruptRdOnly;
         }else{ 
           /* The auto-commit flag is true, the vdbe program was successful 
           ** or hit an 'OR FAIL' constraint and there are no deferred foreign

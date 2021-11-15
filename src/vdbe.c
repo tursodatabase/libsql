@@ -3604,7 +3604,6 @@ case OP_AutoCommit: {
     sqlite3CloseSavepoints(db);
     if( p->rc==SQLITE_OK ){
       rc = SQLITE_DONE;
-      if( db->autoCommit ) db->flags &= ~SQLITE_CorruptRdOnly;
     }else{
       rc = SQLITE_ERROR;
     }

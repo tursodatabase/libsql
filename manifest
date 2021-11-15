@@ -1,5 +1,5 @@
-C Small\sperformance\soptimization\sin\ssqlite3VdbeHalt().
-D 2021-11-15T18:50:02.793
+C Strengthen\sthe\ssticky-CORRUPT\sidea\sof\scheck-in\s[3feb0f1c3840904d]\sby\nautomatically\schanging\sthe\sfirst\sCOMMIT\safter\san\sSQLITE_CORRUPT\serror\sinto\na\sROLLBACK.
+D 2021-11-15T19:10:13.878
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -622,11 +622,11 @@ F src/upsert.c 8789047a8f0a601ea42fa0256d1ba3190c13746b6ba940fe2d25643a7e991937
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c 30df8356e231dad33be10bb27897655002668343280004ba28c734489414a167
 F src/vacuum.c 6c38ddc52f0619865c91dae9c441d4d48bf3040d7dc1bc5b22da1e45547ed0b3
-F src/vdbe.c bd1cd776d9eb9cc94aa91d10b5ef9f1f88749bc4f88bdf76133c7fff579de79d
+F src/vdbe.c e98f1baf54a00db2c4669dbd04f8bbc89b5909a5b43e76fbbbf1a97007adba2b
 F src/vdbe.h 25dabb25c7e157b84e59260cfb5b466c3ac103ede9f36f4db371332c47601abe
 F src/vdbeInt.h 31fbabdc1ed61d9695337dfe5269ea94e1cf615c17f5cafeaa1bb01066820bab
 F src/vdbeapi.c 22c79072ae7d8a01e9bcae8ba16e918d60d202eaa9553b5fda38f99f7464d99a
-F src/vdbeaux.c 1a405561e5d181ec16f6e3e00ccc75bb6b134e408f11975bf19d7b39adf1ea7e
+F src/vdbeaux.c 21db442d159fd745a7693d157b5f998260b6af4ca60de559fa3b7b68c7405af2
 F src/vdbeblob.c 29c4118f7ee615cdee829e8401f6ead1b96b95d545b4de0042f6de39c962c652
 F src/vdbemem.c a3d91dc9bb9ef725db77e4e9de7e1acef43192c9f8406c307665d503e3c2837c
 F src/vdbesort.c 513b481c8bab4a6578c92194a60cf3bc3b48736e4a53f8d2d7918121c5b594e7
@@ -1932,7 +1932,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e30917278c0ec750b1756ddc5e32d65c55464531d6ef64d2e72a412dfe634f58
-R 8f9f088ac95915690504584acdead8cf
+P 9e1ecf438cb01d3d76950bcce1b3e4df29bedbb8176c8cede27e66f8e53e2098
+R 8502cb577f96122347daa35ce5c6ba62
 U drh
-Z 4d0d9cdd2d0e0ce70ad4e3a4aadf572b
+Z 8ae9bdb2af913bcacdf4433e1e237b15
