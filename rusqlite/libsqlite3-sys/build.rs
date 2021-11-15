@@ -192,7 +192,7 @@ mod build_bundled {
                 println!("cargo:rustc-link-search={}", lib_dir.to_string_lossy());
             } else if is_apple {
                 cfg.flag("-DSQLCIPHER_CRYPTO_CC");
-                println!("cargo:rustc-link-lib=framework=SecurityFoundation");
+                println!("cargo:rustc-link-lib=framework=Security");
                 println!("cargo:rustc-link-lib=framework=CoreFoundation");
             } else {
                 // branch not taken on Windows, just `crypto` is fine.
