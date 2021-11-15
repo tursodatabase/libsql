@@ -1,5 +1,5 @@
-C Improved\scontext\sshown\sfor\sthe\s"ABORT-due-to-error"\soutput\sline\swhen\susing\n"PRAGMA\svdbe_debug=on"\sin\san\sSQLITE_DEBUG\sbuild.
-D 2021-11-15T13:22:42.150
+C Fix\sa\sproblem\scausing\sthe\scount(*)\soptimization\sto\sbe\smisapplied\sin\ssome\scases\swhere\san\saggregate\ssub-query\suses\sa\scount()\sexpression\sthat\sis\saggregated\sagainst\sthe\souter\squery.
+D 2021-11-15T14:11:23.319
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -550,7 +550,7 @@ F src/printf.c 5901672228f305f7d493cbc4e7d76a61a5caecdbc1cd06b1f9ec42ea4265cf8d
 F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c 4a1db4aadd802683db40ca2dbbb268187bd195f10cbdb7206dbd8ac988795571
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c 7fa20486dd1c372fd59ebf7642e279f76432f77875c9ab88f0331256ddae2f12
+F src/select.c 187e57a53c747e4d05b5751b133434574e333b512a5c89773d33cac06860f412
 F src/shell.c.in f8854bcb0d14707d661732698d5210d7f01694000c46e8014b323ad18f575be6
 F src/sqlite.h.in 5cd209ac7dc4180f0e19292846f40440b8488015849ca0110c70b906b57d68f0
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -812,7 +812,7 @@ F test/corruptL.test 7d3440831ca24ba64305583c4d4506d417d3f89f5775c0b7cc8102db078
 F test/corruptM.test 7d574320e08c1b36caa3e47262061f186367d593a7e305d35f15289cc2c3e067
 F test/corruptN.test 60b5a62944b4f0029ba07edaa5fd8e670539d6b0a8d99db26c068d435675cbfe
 F test/cost.test b11cdbf9f11ffe8ef99c9881bf390e61fe92baf2182bad1dbe6de59a7295c576
-F test/count.test 5364003488249957750a5f15ee42ca1cd7b100b1131c2dc71fff266a1250bf55
+F test/count.test 013d64569c15563c59472d17ec4ddc681034aaee65e8b01880bc88315fd4c673
 F test/countofview.test e17d6e6688cf74f22783c9ec6e788c0790ee4fbbaee713affd00b1ac0bb39b86
 F test/coveridxscan.test f35c7208dedc4f98e471c569df64c0f95a49f6e072d8dc7c8f99bdee2697de1b
 F test/crash.test fb9dc4a02dcba30d4aa5c2c226f98b220b2b959f
@@ -1932,7 +1932,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0e0c23fcc493a5d6beb6ab9554981bbc36ba1554fea0f8ba78dc41738f4bd1c2
-R 339b48aa5ef26ccfb084541f653c0517
-U drh
-Z 3b67cc05d03160af201256c3a06eb0ac
+P c7776369bcd0dbeb418b14d5dc681a81ee426234cc3f4f79a3c899d7892e1560
+R 89129d825b239a2fc17c1c7959a81b46
+U dan
+Z e4b6089fb1e945dc9b3ae4589bd1374c

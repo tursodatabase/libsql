@@ -4980,6 +4980,7 @@ static Table *isSimpleCount(Select *p, AggInfo *pAggInfo){
   pExpr = p->pEList->a[0].pExpr;
   assert( pExpr!=0 );
   if( pExpr->op!=TK_AGG_FUNCTION ) return 0;
+  if( pExpr->pAggInfo!=pAggInfo ) return 0;
   if( (pAggInfo->aFunc[0].pFunc->funcFlags&SQLITE_FUNC_COUNT)==0 ) return 0;
   assert( pAggInfo->aFunc[0].pFExpr==pExpr );
   testcase( ExprHasProperty(pExpr, EP_Distinct) );
