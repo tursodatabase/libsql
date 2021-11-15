@@ -3056,9 +3056,15 @@ int sqlite3VdbeHalt(Vdbe *p){
     sqlite3VdbeEnter(p);
 
     /* Check for one of the special errors */
-    mrc = p->rc & 0xff;
-    isSpecialError = mrc==SQLITE_NOMEM || mrc==SQLITE_IOERR
-                     || mrc==SQLITE_INTERRUPT || mrc==SQLITE_FULL;
+    if( p->rc ){
+      mrc = p->rc & 0xff;
+      isSpecialError = mrc==SQLITE_NOMEM
+                    || mrc==SQLITE_IOERR
+                    || mrc==SQLITE_INTERRUPT
+                    || mrc==SQLITE_FULL;
+    }else{
+      mrc = isSpecialError = 0;
+    }
     if( isSpecialError ){
       /* If the query was read-only and the error code is SQLITE_INTERRUPT, 
       ** no rollback is necessary. Otherwise, at least a savepoint 
