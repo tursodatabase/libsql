@@ -1,5 +1,5 @@
-C Strengthen\sthe\ssticky-CORRUPT\sidea\sof\scheck-in\s[3feb0f1c3840904d]\sby\nautomatically\schanging\sthe\sfirst\sCOMMIT\safter\san\sSQLITE_CORRUPT\serror\sinto\na\sROLLBACK.
-D 2021-11-15T19:10:13.878
+C Fix\sa\sproblem\scausing\san\sOOM\swithin\san\sALTER\sTABLE\sADD\sCOLUMN\scommand\sthat\sadds\sa\scolumn\swith\sa\sCHECK\sconstraint\sto\sgo\sunreported.
+D 2021-11-16T13:36:50.684
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -555,7 +555,7 @@ F src/shell.c.in f8854bcb0d14707d661732698d5210d7f01694000c46e8014b323ad18f575be
 F src/sqlite.h.in 5cd209ac7dc4180f0e19292846f40440b8488015849ca0110c70b906b57d68f0
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8ff2fd2c166150b2e48639f5e506fb44e29f1a3f65031710b9e89d1c126ac839
-F src/sqliteInt.h c36cdf01fcd624f9988305158e89bf1d7246b3a05f0fe578bc7dd2507e53e59d
+F src/sqliteInt.h 42c8f4c05ddbe8214d439aa80d98914d1883104f8f518820ce2e9e4e183c31fb
 F src/sqliteLimit.h d7323ffea5208c6af2734574bae933ca8ed2ab728083caa117c9738581a31657
 F src/status.c 4b8bc2a6905163a38b739854a35b826c737333fab5b1f8e03fa7eb9a4799c4c1
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -614,7 +614,7 @@ F src/test_windirent.h 90dfbe95442c9762357fe128dc7ae3dc199d006de93eb33ba3972e0a9
 F src/test_window.c cdae419fdcea5bad6dcd9368c685abdad6deb59e9fc8b84b153de513d394ba3f
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
-F src/tokenize.c bae853ad129d1129c063de8630a3e99e306283bc40146f359b1bb91be2c08f1e
+F src/tokenize.c 865911afa00fed589cd03b25c140ca88544842aaef7b81f7d41ed769a7a54120
 F src/treeview.c 9dfdb7ff7f6645d0a6458dbdf4ffac041c071c4533a6db8bb6e502b979ac67bc
 F src/trigger.c 2ef56f0b7b75349a5557d0604b475126329c2e1a02432e7d49c4c710613e8254
 F src/update.c 69c4c10bc6873a80c0a77cb578f9fc60ee90003d03f9530bc3370fa24615772d
@@ -659,6 +659,7 @@ F test/altercol.test b11fa1b131e80ab5b6ecfb3b725fb0419c14ca6efba5adb57aeabfc9baa
 F test/altercorrupt.test 2e1d705342cf9d7de884518ddbb053fd52d7e60d2b8869b7b63b2fda68435c12
 F test/alterdropcol.test a653a3945f964d26845ec0cd0a8e74189f46de3119a984c5bc45457da392612e
 F test/alterdropcol2.test 527fce683b200d620f560f666c44ae33e22728e990a10a48a543280dfd4b4d41
+F test/alterfault.test 2a19a9b8d4e42e2915ea82598341f089c2c16bb55b3f474572c9176eba0b9bc1
 F test/alterlegacy.test f38c6d06cda39e1f7b955bbce57f2e3ef5b7cb566d3d1234502093e228c15811
 F test/altermalloc.test 167a47de41b5c638f5f5c6efb59784002b196fff70f98d9b4ed3cd74a3fb80c9
 F test/altermalloc2.test ca3ebc01670d9313953a2b7628d8cc00dc5ea9988f229b3cbbbe1cca506dae45
@@ -1932,7 +1933,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9e1ecf438cb01d3d76950bcce1b3e4df29bedbb8176c8cede27e66f8e53e2098
-R 8502cb577f96122347daa35ce5c6ba62
-U drh
-Z 8ae9bdb2af913bcacdf4433e1e237b15
+P bd66ab8a1bc3c43a57c7caff5f54545b0feb0177f1f51492f30d308c123c43ba
+R 8e910d7ef9b9683ef8c5339395ac64ec
+U dan
+Z ce8501e7bda0295d8dc505431c6919db
