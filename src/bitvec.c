@@ -299,6 +299,82 @@ u32 sqlite3BitvecSize(Bitvec *p){
   return p->iSize;
 }
 
+static int bitvecCount(Bitvec *p){
+  int nRet = 0;
+  if( p ){
+    if( p->iDivisor ){
+      int i;
+      for(i=0; i<BITVEC_NPTR; i++){
+        nRet += bitvecCount(p->u.apSub[i]);
+      }
+    }else if( p->iSize<=BITVEC_NBIT ){
+      int i;
+      for(i=0; i<BITVEC_NELEM; i++){
+        BITVEC_TELEM x = p->u.aBitmap[i];
+        assert( sizeof(x)==1 );
+        if( x & 0x80 ) nRet++;
+        if( x & 0x40 ) nRet++;
+        if( x & 0x20 ) nRet++;
+        if( x & 0x10 ) nRet++;
+        if( x & 0x08 ) nRet++;
+        if( x & 0x04 ) nRet++;
+        if( x & 0x02 ) nRet++;
+        if( x & 0x01 ) nRet++;
+      }
+    }else{
+      nRet += p->nSet;
+    }
+  }
+  return nRet;
+}
+
+static int bitvecArray(Bitvec *p, u32 *aElem, u32 iOff){
+  int nRet = 0;
+  if( p ){
+    if( p->iDivisor ){
+      int i;
+      for(i=0; i<BITVEC_NPTR; i++){
+        nRet += bitvecArray(p->u.apSub[i], &aElem[nRet], i*p->iDivisor + iOff);
+      }
+    }else if( p->iSize<=BITVEC_NBIT ){
+      int i;
+      for(i=0; i<BITVEC_NELEM; i++){
+        BITVEC_TELEM x = p->u.aBitmap[i];
+        assert( sizeof(x)==1 );
+        if( x & 0x01 ){ aElem[nRet++] = iOff + i*8 + 0; }
+        if( x & 0x02 ){ aElem[nRet++] = iOff + i*8 + 1; }
+        if( x & 0x04 ){ aElem[nRet++] = iOff + i*8 + 2; }
+        if( x & 0x08 ){ aElem[nRet++] = iOff + i*8 + 3; }
+        if( x & 0x10 ){ aElem[nRet++] = iOff + i*8 + 4; }
+        if( x & 0x20 ){ aElem[nRet++] = iOff + i*8 + 5; }
+        if( x & 0x40 ){ aElem[nRet++] = iOff + i*8 + 6; }
+        if( x & 0x80 ){ aElem[nRet++] = iOff + i*8 + 7; }
+      }
+    }else{
+      int i;
+      for(i=0; i<BITVEC_NINT; i++){
+        if( p->u.aHash[i] ){
+          aElem[nRet++] = p->u.aHash[i]+iOff-1;
+        }
+      }
+      assert( nRet==p->nSet );
+    }
+  }
+  return nRet;
+}
+
+int sqlite3BitvecArray(Bitvec *p, u32 **pa, int *pn){
+  int nElem;
+  u32 *aElem;
+  nElem = bitvecCount(p);
+  aElem = sqlite3MallocZero(nElem*sizeof(u32));
+  if( aElem==0 ) return SQLITE_NOMEM;
+  bitvecArray(p, aElem, 1);
+  *pa = aElem;
+  *pn = nElem;
+  return SQLITE_OK;
+}
+
 #ifndef SQLITE_UNTESTABLE
 /*
 ** Let V[] be an array of unsigned characters sufficient to hold

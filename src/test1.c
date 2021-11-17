@@ -8116,6 +8116,53 @@ static int SQLITE_TCLAPI test_mmap_warm(
 }
 
 /*
+** Usage:  sqlite3_begin_concurrent_report DB
+*/
+static int SQLITE_TCLAPI test_begin_concurrent_report(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  const char *zReport = 0;
+  sqlite3 *db;
+
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB");
+    return TCL_ERROR;
+  }
+
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+  zReport = sqlite3_begin_concurrent_report(db);
+  Tcl_SetObjResult(interp, Tcl_NewStringObj(zReport?zReport:"", -1));
+  return TCL_OK;
+}
+
+/*
+** Usage:  sqlite3_begin_concurrent_report_enable DB ENABLE
+*/
+static int SQLITE_TCLAPI test_begin_concurrent_report_enable(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3 *db;
+  int iVal;
+
+  if( objc!=3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB ENABLE");
+    return TCL_ERROR;
+  }
+
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[2], &iVal) ) return TCL_ERROR;
+  sqlite3_begin_concurrent_report_enable(db, iVal);
+  Tcl_ResetResult(interp);
+  return TCL_OK;
+}
+
+/*
 ** Usage:  test_write_db DB OFFSET DATA
 **
 ** Obtain the sqlite3_file* object for the database file for the "main" db
@@ -8653,6 +8700,8 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_config_sorterref", test_config_sorterref,   0 },
      { "sqlite3_autovacuum_pages", test_autovacuum_pages,   0 },
      { "decode_hexdb",             test_decode_hexdb,       0 },
+     { "sqlite3_begin_concurrent_report", test_begin_concurrent_report, 0 },
+     { "sqlite3_begin_concurrent_report_enable", test_begin_concurrent_report_enable, 0 },
      { "test_write_db",            test_write_db,           0 },
      { "sqlite3_register_cksumvfs", test_register_cksumvfs,  0 },
      { "sqlite3_unregister_cksumvfs", test_unregister_cksumvfs,  0 },

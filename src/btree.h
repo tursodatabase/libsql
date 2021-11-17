@@ -410,4 +410,22 @@ int sqlite3BtreeTransferRow(BtCursor*, BtCursor*, i64);
 # define sqlite3SchemaMutexHeld(X,Y,Z) 1
 #endif
 
+int sqlite3BtreeScanStart(
+  BtCursor *pCsr, 
+  UnpackedRecord *pKey, 
+  i64 iKey,
+  int opcode,
+  int eqOnly
+);
+int sqlite3BtreeScanLimit(
+  BtCursor *pCsr, 
+  UnpackedRecord *pKey, 
+  i64 iKey,
+  int opcode
+);
+int sqlite3BtreeScanWrite(BtCursor *pCsr, int op, i64 id, const u8 *a, int n);
+typedef struct PgHdr PgHdr;
+int sqlite3BtreeScanDirty(Btree *pBtree, Bitvec *pRead, PgHdr *pList);
+
+
 #endif /* SQLITE_BTREE_H */

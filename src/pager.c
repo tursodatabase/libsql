@@ -6463,6 +6463,10 @@ int sqlite3PagerExclusiveLock(Pager *pPager, PgHdr *pPage1, Pgno *piConflict){
 }
 
 #ifndef SQLITE_OMIT_CONCURRENT
+void sqlite3PagerScanFailure(Btree *pBt, Pager *pPager){
+  sqlite3BtreeScanDirty(pBt, pPager->pAllRead, 0);
+}
+
 /*
 ** This function is called as part of committing an CONCURRENT transaction.
 ** At this point the wal WRITER lock is held, and all pages in the cache 
@@ -6536,6 +6540,7 @@ void sqlite3PagerDropExclusiveLock(Pager *pPager){
 */
 int sqlite3PagerCommitPhaseOne(
   Pager *pPager,                  /* Pager object */
+  Btree *pBtree,
   const char *zSuper,            /* If not NULL, the super-journal name */
   int noSync                      /* True to omit the xSync on the db file */
 ){
@@ -6582,6 +6587,9 @@ int sqlite3PagerCommitPhaseOne(
       assert( rc==SQLITE_OK );
       if( ALWAYS(pList) ){
         rc = pagerWalFrames(pPager, pList, pPager->dbSize, 1);
+      }
+      if( rc==SQLITE_OK ){
+        rc = sqlite3BtreeScanDirty(pBtree, pPager->pAllRead, pList);
       }
       sqlite3PagerUnref(pPageOne);
       if( rc==SQLITE_OK ){

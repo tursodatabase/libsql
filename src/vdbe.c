@@ -91,7 +91,7 @@ static void updateMaxBlobsize(Mem *p){
 ** hook are enabled for database connect DB.
 */
 #ifdef SQLITE_ENABLE_PREUPDATE_HOOK
-# define HAS_UPDATE_HOOK(DB) ((DB)->xPreUpdateCallback||(DB)->xUpdateCallback)
+# define HAS_UPDATE_HOOK(DB) ((DB)->xPreUpdateCallback||(DB)->xUpdateCallback||(DB)->eConcurrent)
 #else
 # define HAS_UPDATE_HOOK(DB) ((DB)->xUpdateCallback)
 #endif
@@ -2060,6 +2060,11 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
   if( (flags1 & flags3 & MEM_Int)!=0 ){
     assert( (pOp->p5 & SQLITE_AFF_MASK)!=SQLITE_AFF_TEXT || CORRUPT_DB );
     /* Common case of comparison of two integers */
+    if( pOp->p4type==P4_INT32 ){
+      sqlite3BtreeScanLimit(
+          p->apCsr[pOp->p4.i]->uc.pCursor, 0, pIn1->u.i, pOp->opcode
+      );
+    }
     if( pIn3->u.i > pIn1->u.i ){
       iCompare = +1;
       if( sqlite3aGTb[pOp->opcode] ){
@@ -2145,8 +2150,8 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
         flags3 = (pIn3->flags & ~MEM_TypeMask) | (flags3 & MEM_TypeMask);
       }
     }
-    assert( pOp->p4type==P4_COLLSEQ || pOp->p4.pColl==0 );
-    res = sqlite3MemCompare(pIn3, pIn1, pOp->p4.pColl);
+    /* assert( pOp->p4type==P4_COLLSEQ || pOp->p4.pColl==0 ); */
+    res = sqlite3MemCompare(pIn3,pIn1,pOp->p4type==P4_COLLSEQ?pOp->p4.pColl:0);
   }
 
   /* At this point, res is negative, zero, or positive if reg[P1] is
@@ -3609,6 +3614,10 @@ case OP_AutoCommit: {
     }else if( (rc = sqlite3VdbeCheckFk(p, 1))!=SQLITE_OK ){
       goto vdbe_return;
     }else{
+      if( desiredAutoCommit==0 ){
+        sqlite3BtreeScanDerefList(db->pCScanList);
+        db->pCScanList = 0;
+      }
       db->autoCommit = (u8)desiredAutoCommit;
     }
     hrc = sqlite3VdbeHalt(p);
@@ -4481,6 +4490,7 @@ case OP_SeekGT: {       /* jump, in3, group */
       }
     }
     rc = sqlite3BtreeTableMoveto(pC->uc.pCursor, (u64)iKey, 0, &res);
+    sqlite3BtreeScanStart(pC->uc.pCursor, 0, iKey, pOp->opcode, 0);
     pC->movetoTarget = iKey;  /* Used by OP_Delete */
     if( rc!=SQLITE_OK ){
       goto abort_due_to_error;
@@ -4528,6 +4538,7 @@ case OP_SeekGT: {       /* jump, in3, group */
 #endif
     r.eqSeen = 0;
     rc = sqlite3BtreeIndexMoveto(pC->uc.pCursor, &r, &res);
+    sqlite3BtreeScanStart(pC->uc.pCursor, &r, 0, pOp->opcode, eqOnly);
     if( rc!=SQLITE_OK ){
       goto abort_due_to_error;
     }
@@ -5056,6 +5067,7 @@ notExistsWithKey:
   assert( pCrsr!=0 );
   res = 0;
   rc = sqlite3BtreeTableMoveto(pCrsr, iKey, 0, &res);
+  sqlite3BtreeScanStart(pCrsr, 0, iKey, pOp->opcode, 0);
   assert( rc==SQLITE_OK || res==0 );
   pC->movetoTarget = iKey;  /* Used by OP_Delete */
   pC->nullRow = 0;
@@ -5308,6 +5320,9 @@ case OP_Insert: {
 #ifdef SQLITE_ENABLE_PREUPDATE_HOOK
   /* Invoke the pre-update hook, if any */
   if( pTab ){
+    sqlite3BtreeScanWrite(
+        pC->uc.pCursor, SQLITE_INSERT, pC->movetoTarget, (u8*)pData->z, pData->n
+    );
     if( db->xPreUpdateCallback && !(pOp->p5 & OPFLAG_ISUPDATE) ){
       sqlite3VdbePreUpdateHook(p,pC,SQLITE_INSERT,zDb,pTab,x.nKey,pOp->p2,-1);
     }
@@ -5461,17 +5476,20 @@ case OP_Delete: {
 
 #ifdef SQLITE_ENABLE_PREUPDATE_HOOK
   /* Invoke the pre-update-hook if required. */
-  assert( db->xPreUpdateCallback==0 || pTab==pOp->p4.pTab );
-  if( db->xPreUpdateCallback && pTab ){
-    assert( !(opflags & OPFLAG_ISUPDATE) 
-         || HasRowid(pTab)==0 
-         || (aMem[pOp->p3].flags & MEM_Int) 
-    );
-    sqlite3VdbePreUpdateHook(p, pC,
-        (opflags & OPFLAG_ISUPDATE) ? SQLITE_UPDATE : SQLITE_DELETE, 
-        zDb, pTab, pC->movetoTarget,
-        pOp->p3, -1
-    );
+  if( pOp->p4.pTab ){
+    rc = sqlite3BtreeScanWrite(pC->uc.pCursor, 0, pC->movetoTarget, 0, 0);
+    if( rc ) goto abort_due_to_error;
+    if( db->xPreUpdateCallback ){
+      assert( !(opflags & OPFLAG_ISUPDATE) 
+           || HasRowid(pTab)==0 
+           || (aMem[pOp->p3].flags & MEM_Int) 
+      );
+      sqlite3VdbePreUpdateHook(p, pC,
+          (opflags & OPFLAG_ISUPDATE) ? SQLITE_UPDATE : SQLITE_DELETE, 
+          zDb, pTab, pC->movetoTarget,
+          pOp->p3, -1
+      );
+    }
   }
   if( opflags & OPFLAG_ISNOOP ) break;
 #endif
@@ -5773,6 +5791,7 @@ case OP_Last: {        /* jump */
     }
   }
   rc = sqlite3BtreeLast(pCrsr, &res);
+  sqlite3BtreeScanStart(pCrsr, 0, 0, pOp->opcode, 0);
   pC->nullRow = (u8)res;
   pC->deferredMoveto = 0;
   pC->cacheStatus = CACHE_STALE;
@@ -5876,6 +5895,7 @@ case OP_Rewind: {        /* jump */
     pCrsr = pC->uc.pCursor;
     assert( pCrsr );
     rc = sqlite3BtreeFirst(pCrsr, &res);
+    sqlite3BtreeScanStart(pCrsr, 0, 0, OP_Rewind, 0);
     pC->deferredMoveto = 0;
     pC->cacheStatus = CACHE_STALE;
   }
@@ -6333,6 +6353,7 @@ case OP_IdxGE:  {       /* jump */
   }
   /* End of inlined sqlite3VdbeIdxKeyCompare() */
 
+  sqlite3BtreeScanLimit(pC->uc.pCursor, &r, 0, pOp->opcode);
   assert( (OP_IdxLE&1)==(OP_IdxLT&1) && (OP_IdxGE&1)==(OP_IdxGT&1) );
   if( (pOp->opcode&1)==(OP_IdxLT&1) ){
     assert( pOp->opcode==OP_IdxLE || pOp->opcode==OP_IdxLT );
@@ -6343,7 +6364,9 @@ case OP_IdxGE:  {       /* jump */
   }
   VdbeBranchTaken(res>0,2);
   assert( rc==SQLITE_OK );
-  if( res>0 ) goto jump_to_p2;
+  if( res>0 ){
+    goto jump_to_p2;
+  }
   break;
 }
 

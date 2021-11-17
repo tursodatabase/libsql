@@ -147,7 +147,7 @@ static int SQLITE_TCLAPI pager_commit(
     return TCL_ERROR;
   }
   pPager = sqlite3TestTextToPtr(argv[1]);
-  rc = sqlite3PagerCommitPhaseOne(pPager, 0, 0);
+  rc = sqlite3PagerCommitPhaseOne(pPager, 0, 0, 0);
   if( rc!=SQLITE_OK ){
     Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
     return TCL_ERROR;

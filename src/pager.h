@@ -42,6 +42,8 @@ typedef struct Pager Pager;
 */
 typedef struct PgHdr DbPage;
 
+typedef struct Btree Btree;
+
 /*
 ** Page number PAGER_MJ_PGNO is never used in an SQLite database (it is
 ** reserved for working around a windows/posix incompatibility). It is
@@ -178,7 +180,7 @@ void *sqlite3PagerGetExtra(DbPage *);
 /* Functions used to manage pager transactions and savepoints. */
 void sqlite3PagerPagecount(Pager*, int*);
 int sqlite3PagerBegin(Pager*, int exFlag, int);
-int sqlite3PagerCommitPhaseOne(Pager*,const char *zSuper, int);
+int sqlite3PagerCommitPhaseOne(Pager*,Btree*,const char *zSuper, int);
 int sqlite3PagerExclusiveLock(Pager*, DbPage *pPage1, Pgno*);
 int sqlite3PagerSync(Pager *pPager, const char *zSuper);
 int sqlite3PagerCommitPhaseTwo(Pager*);
@@ -249,6 +251,7 @@ void sqlite3PagerDropExclusiveLock(Pager*);
 int sqlite3PagerUpgradeSnapshot(Pager *pPager, DbPage*);
 void sqlite3PagerSetDbsize(Pager *pPager, Pgno);
 int sqlite3PagerIsWal(Pager*);
+void sqlite3PagerScanFailure(Btree *pBt, Pager *pPager);
 #else
 # define sqlite3PagerEndConcurrent(x)
 #endif

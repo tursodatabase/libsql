@@ -1318,6 +1318,10 @@ void sqlite3LeaveMutexAndCloseZombie(sqlite3 *db){
   ** passed to sqlite3_close (meaning that it is a zombie).  Therefore,
   ** go ahead and free all resources.
   */
+  sqlite3BtreeScanDerefList(db->pCScanList);
+  db->pCScanList = 0;
+  sqlite3DbFree(db, db->zBCReport);
+  db->zBCReport = 0;
 
   /* If a transaction is open, roll it back. This also ensures that if
   ** any database schemas have been modified by an uncommitted transaction

@@ -1513,6 +1513,37 @@ void sqlite3CryptFunc(sqlite3_context*,int,sqlite3_value**);
 #endif /* SQLITE_OMIT_DEPRECATED */
 #define SQLITE_TRACE_NONLEGACY_MASK  0x0f     /* Normal flags */
 
+#define CURSORSCAN_WRITE      0x0001
+#define CURSORSCAN_MINVALID   0x0002
+#define CURSORSCAN_MAXVALID   0x0004
+#define CURSORSCAN_REVERSE    0x0008
+#define CURSORSCAN_MININCL    0x0010
+#define CURSORSCAN_MAXINCL    0x0020
+
+#define CURSORSCAN_LIMITVALID 0x0040
+#define CURSORSCAN_LIMITINCL  0x0080
+#define CURSORSCAN_LIMITMAX   0x0100
+
+#define CURSORSCAN_OOM        0x0200
+#define CURSORSCAN_PGWRITE    0x0400
+#define CURSORSCAN_PGFAIL     0x0800
+
+typedef struct CursorScan CursorScan;
+struct CursorScan {
+  int tnum;                     /* Root page of scanned b-tree */
+  int flags;                    /* Mask of CURSORSCAN_* flags */
+  i64 iMin;
+  i64 iMax;
+  i64 iLimit;
+  u8 *aMin;
+  u8 *aMax;
+  u8 *aLimit;
+  int nRef;                     /* Number of pointers to this structure */
+  KeyInfo *pKeyInfo;            /* KeyInfo structure for indexes */
+  CursorScan *pNext;            /* Next CursorScan object in list */
+};
+
+
 /*
 ** Maximum number of sqlite3.aDb[] entries.  This is the number of attached
 ** databases plus 2 for "main" and "temp".
@@ -1542,6 +1573,9 @@ struct sqlite3 {
   u8 enc;                       /* Text encoding */
   u8 autoCommit;                /* The auto-commit flag. */
   u8 eConcurrent;               /* CONCURRENT_* value */
+  u8 bConcurrentReport;         /* Concurrent transaction reports enabled */
+  CursorScan *pCScanList;
+  char *zBCReport;
   u8 temp_store;                /* 1: file 2: memory 0: default */
   u8 mallocFailed;              /* True if we have seen a malloc failure */
   u8 bBenignMalloc;             /* Do not require OOMs if true */
@@ -4516,6 +4550,7 @@ int sqlite3BitvecSet(Bitvec*, u32);
 void sqlite3BitvecClear(Bitvec*, u32, void*);
 void sqlite3BitvecDestroy(Bitvec*);
 u32 sqlite3BitvecSize(Bitvec*);
+int sqlite3BitvecArray(Bitvec*, u32 **pa, int *pn);
 #ifndef SQLITE_UNTESTABLE
 int sqlite3BitvecBuiltinTest(int,int*);
 #endif
@@ -5336,5 +5371,7 @@ void sqlite3VectorErrorMsg(Parse*, Expr*);
 #ifndef SQLITE_OMIT_COMPILEOPTION_DIAGS
 const char **sqlite3CompileOptions(int *pnOpt);
 #endif
+
+void sqlite3BtreeScanDerefList(CursorScan*);
 
 #endif /* SQLITEINT_H */
