@@ -1,5 +1,5 @@
-C Improve\sCSV\squoting\sin\sthe\sCLI\susing\sthe\sstrstr()\sfunction.
-D 2021-11-18T15:40:05.165
+C Fix\sa\sproblem\sslowing\sdown\sthe\shandling\sof\s==\sconstraints\sin\sthe\srtree\smodule.
+D 2021-11-18T19:15:40.541
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -395,7 +395,7 @@ F ext/repair/test/checkindex01.test b530f141413b587c9eb78ff734de6bb79bc3515c3350
 F ext/repair/test/test.tcl 686d76d888dffd021f64260abf29a55c57b2cedfa7fc69150b42b1d6119aac3c
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/geopoly.c a7021cb524621573ccda213a35b0339371849dd4acc4909f689786ee1f964b7f
-F ext/rtree/rtree.c a602c5ba860c93a3087ec0c41ad4c4c0c2e9ba2f0008617d4b444200e3b3625d
+F ext/rtree/rtree.c c1731f33253199ede524592d0fbbd2220ac7cc3c1dcd3b5d08b68b7dcf8b7f2c
 F ext/rtree/rtree.h 4a690463901cb5e6127cf05eb8e642f127012fd5003830dbc974eca5802d9412
 F ext/rtree/rtree1.test 35c3bc0def71317b7601ee0d1149e7df2cd8fc4f13ec89a64761ac3f46ca123f
 F ext/rtree/rtree2.test 9d9deddbb16fd0c30c36e6b4fdc3ee3132d765567f0f9432ee71e1303d32603d
@@ -1933,7 +1933,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 38a9b660214c06aa6650c6bb11a429a8c74c09f1e0e5c18d691e36de4af7af71
-R 2ee5b92e6ce9847c1776b48a09f2609c
-U drh
-Z a0f452e68984f34f7588f861e0269864
+P b7927bf91049c903730a280484bbcdcdedc259a31fbcc3d3b0c7d046ec321633
+R bc14a509a5e37dbab8e0eef05b4363ac
+U dan
+Z 827b0b30e8a22a49654c8ffaf9e8d5f4

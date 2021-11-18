@@ -1285,14 +1285,20 @@ static void rtreeNonleafConstraint(
       || p->op==RTREE_FALSE );
   assert( ((((char*)pCellData) - (char*)0)&3)==0 );  /* 4-byte aligned */
   switch( p->op ){
-    case RTREE_TRUE:  return;   /* Always satisfied */
-    case RTREE_FALSE: break;    /* Never satisfied */
+    case RTREE_TRUE:           /* Always satisfied */
+      break;
+    case RTREE_FALSE:          /* Never satisfied */ 
+      *peWithin = NOT_WITHIN; 
+      break;
     case RTREE_LE:
     case RTREE_LT:
     case RTREE_EQ:
       RTREE_DECODE_COORD(eInt, pCellData, val);
       /* val now holds the lower bound of the coordinate pair */
-      if( p->u.rValue>=val ) return;
+      if( p->u.rValue<val ){ 
+        *peWithin = NOT_WITHIN; 
+        break; 
+      }
       if( p->op!=RTREE_EQ ) break;  /* RTREE_LE and RTREE_LT end here */
       /* Fall through for the RTREE_EQ case */
 
@@ -1300,9 +1306,11 @@ static void rtreeNonleafConstraint(
       pCellData += 4;
       RTREE_DECODE_COORD(eInt, pCellData, val);
       /* val now holds the upper bound of the coordinate pair */
-      if( p->u.rValue<=val ) return;
+      if( p->u.rValue>val ){
+        *peWithin = NOT_WITHIN;
+      }
+      break;
   }
-  *peWithin = NOT_WITHIN;
 }
 
 /*
