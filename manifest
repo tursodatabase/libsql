@@ -1,5 +1,5 @@
-C Fix\san\sobscure\sproblem\sassociated\swith\squoting\sof\sCSV\soutput\sin\sthe\sCLI.
-D 2021-11-18T13:25:31.636
+C Improve\sCSV\squoting\sin\sthe\sCLI\susing\sthe\sstrstr()\sfunction.
+D 2021-11-18T15:40:05.165
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -551,7 +551,7 @@ F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c 4a1db4aadd802683db40ca2dbbb268187bd195f10cbdb7206dbd8ac988795571
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 187e57a53c747e4d05b5751b133434574e333b512a5c89773d33cac06860f412
-F src/shell.c.in 110c63de78d63a678e9b46e376ea6b8498ab62726dc84dca32161fe88acf325e
+F src/shell.c.in 975f268ef261773fcbed1e519dfa10c4f33e8b1cffc12120563e61857fff07c6
 F src/sqlite.h.in 5cd209ac7dc4180f0e19292846f40440b8488015849ca0110c70b906b57d68f0
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8ff2fd2c166150b2e48639f5e506fb44e29f1a3f65031710b9e89d1c126ac839
@@ -1933,7 +1933,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a33f5e93ecb7d84291f6fecc7b60f0c555034aa47e24584c63c78d8a94710d82
-R 5b5c595cccff4840ecd5a386ffa8a172
+P 38a9b660214c06aa6650c6bb11a429a8c74c09f1e0e5c18d691e36de4af7af71
+R 2ee5b92e6ce9847c1776b48a09f2609c
 U drh
-Z 83dd77702836190e973908b753380a9f
+Z a0f452e68984f34f7588f861e0269864
