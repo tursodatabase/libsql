@@ -1764,10 +1764,12 @@ static void output_csv(ShellState *p, const char *z, int bSep){
   }else{
     int i;
     int nSep = strlen30(p->colSeparator);
-    for(i=0; z[i]; i++){
+    int n = strlen30(z);
+    for(i=0; i<n; i++){
       if( needCsvQuote[((unsigned char*)z)[i]]
-         || (z[i]==p->colSeparator[0] &&
-             (nSep==1 || memcmp(z, p->colSeparator, nSep)==0)) ){
+       || (z[i]==p->colSeparator[0] &&
+             (nSep==1 || (i+nSep<n && memcmp(z+i, p->colSeparator, nSep)==0)))
+      ){
         i = 0;
         break;
       }
