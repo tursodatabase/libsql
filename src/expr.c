@@ -5469,12 +5469,9 @@ int sqlite3ExprCompare(
     }
     return 2;
   }
-  if( pA->op!=TK_COLUMN
-   && pA->op!=TK_AGG_COLUMN
-   && ALWAYS(!ExprHasProperty(pA, EP_IntValue))
-   && pA->u.zToken
-  ){
-    assert( !ExprHasProperty(pB, EP_IntValue) );
+  assert( !ExprHasProperty(pA, EP_IntValue) );
+  assert( !ExprHasProperty(pB, EP_IntValue) );
+  if( pA->u.zToken ){
     if( pA->op==TK_FUNCTION || pA->op==TK_AGG_FUNCTION ){
       if( sqlite3StrICmp(pA->u.zToken,pB->u.zToken)!=0 ) return 2;
 #ifndef SQLITE_OMIT_WINDOWFUNC
@@ -5492,7 +5489,12 @@ int sqlite3ExprCompare(
       return 0;
     }else if( pA->op==TK_COLLATE ){
       if( sqlite3_stricmp(pA->u.zToken,pB->u.zToken)!=0 ) return 2;
-    }else if( ALWAYS(pB->u.zToken!=0) && strcmp(pA->u.zToken,pB->u.zToken)!=0 ){
+    }else 
+    if( pB->u.zToken!=0
+     && pA->op!=TK_COLUMN
+     && pA->op!=TK_AGG_COLUMN
+     && strcmp(pA->u.zToken,pB->u.zToken)!=0
+    ){
       return 2;
     }
   }
