@@ -1,5 +1,5 @@
-C Small\sperformance\sincrease\sand\ssize\sreduction\sfor\ssqlite3ExprCompare().\nThis\schange\salso\shandles\ssome\scorner\scases\swithout\sthe\sneed\sfor\sALWAYS().
-D 2021-11-19T19:11:58.858
+C New\stest\scases\sfor\sSTRICT\sand\sNOT\sNULL\sin\sPRIMARY\sKEY.
+D 2021-11-20T13:30:03.615
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -862,7 +862,7 @@ F test/e_blobclose.test 692fc02a058476c2222a63d97e3f3b2b809c1842e5525ded7f854d54
 F test/e_blobopen.test 29f6055ee453b8e679fe9570c4d3acfedbef821622c5dad16875148c5952ef50
 F test/e_blobwrite.test 3075ff539827576d9a34cbb5a2ac75eb65fb49cd5aadc27686b0719fbf99c156
 F test/e_changes.test 0f8c3e6aab7335cb772d5a3ea34ca4c82f98d0eb896e2eb3add971c16984b405
-F test/e_createtable.test 7997c0106c181243e0ac7db7ba8b9ae7233d0bfb0188605650322a7a02ea326e
+F test/e_createtable.test 04c50b7fe41c12ed9cd88fbbc09b4900bcfc66f98ad198874fc993a2771f3913
 F test/e_delete.test ab39084f26ae1f033c940b70ebdbbd523dc4962e
 F test/e_droptrigger.test 235c610f8bf8ec44513e222b9085c7e49fad65ad0c1975ac2577109dd06fd8fa
 F test/e_dropview.test 74e405df7fa0f762e0c9445b166fe03955856532e2bb234c372f7c51228d75e7
@@ -1933,7 +1933,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 95806ac1dabe4598170061d903ae30f09bafac149ff6696963a7e056ac846cdb
-R 0db7fc688bd69b655cfa0f3bed689f81
+P d814ba6effc7c5b021ff625b57371627f3ee326687c508da99f78bc164386b7e
+R b4ad209c907e3449339c5f32dea41ff4
 U drh
-Z e3e9adffefbcbe1772add8e69eede097
+Z c8a41b263c4adfdb01ebfdbdc9f72a97
