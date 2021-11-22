@@ -125,6 +125,9 @@ do_execsql_test json104-313 {
 do_execsql_test json104-314 {
   SELECT json_patch('{}','{"a":{"bb":{"ccc":null}}}');
 } {{{"a":{"bb":{}}}}}
+do_execsql_test json104-320 {
+  SELECT json_patch('{"x":{"one":1}}','{"x":{"two":2},"x":"three"}');
+} {{{"x":"three"}}}
 
 #-------------------------------------------------------------------------
 

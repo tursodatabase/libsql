@@ -1272,9 +1272,10 @@ do_createtable_tests 4.4 {
   14   "INSERT INTO t2 VALUES(NULL, NULL)"           {}
 }
 
-# EVIDENCE-OF: R-35113-43214 Unless the column is an INTEGER PRIMARY KEY
-# or the table is a WITHOUT ROWID table or the column is declared NOT
-# NULL, SQLite allows NULL values in a PRIMARY KEY column.
+# EVIDENCE-OF: R-40010-16873 Unless the column is an INTEGER PRIMARY KEY
+# or the table is a WITHOUT ROWID table or a STRICT table or the column
+# is declared NOT NULL, SQLite allows NULL values in a PRIMARY KEY
+# column.
 #
 #     If the column is an integer primary key, attempting to insert a NULL
 #     into the column triggers the auto-increment behavior. Attempting
@@ -1304,6 +1305,14 @@ do_catchsql_test 4.5.5 {
   CREATE TABLE t5(s, u INT PRIMARY KEY NOT NULL, v);
   INSERT INTO t5 VALUES(1, NULL, 2);
 } {1 {NOT NULL constraint failed: t5.u}}
+do_catchsql_test 4.5.6 {
+  CREATE TABLE t6(s INT, u INT PRIMARY KEY, v INT) STRICT;
+  INSERT INTO t6 VALUES(1, NULL, 2);
+} {1 {NOT NULL constraint failed: t6.u}}
+do_catchsql_test 4.5.7 {
+  CREATE TABLE t7(s INT, u INT PRIMARY KEY NOT NULL, v INT) STRICT;
+  INSERT INTO t7 VALUES(1, NULL, 2);
+} {1 {NOT NULL constraint failed: t7.u}}
 
 # EVIDENCE-OF: R-00227-21080 A UNIQUE constraint is similar to a PRIMARY
 # KEY constraint, except that a single table may have any number of

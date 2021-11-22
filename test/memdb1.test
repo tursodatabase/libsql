@@ -235,7 +235,7 @@ ifcapable vtab {
 #
 reset_db
 do_execsql_test 800 {
-  PRAGMA autovacuum = 0;
+  PRAGMA auto_vacuum = 0;
   PRAGMA page_size = 8192;
   PRAGMA journal_mode = wal;
   CREATE TABLE t1(x, y);
