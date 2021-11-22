@@ -1,5 +1,5 @@
-C There\sare\stwo\spossible\serror\smessages\sfrom\sstat-9.1,\sdepending\son\ncompile-time\soptions.\s\sAdjust\sthe\stest\scase\sto\saccept\seither\sone.
-D 2021-11-22T16:06:57.238
+C Fix\sa\stypo\sin\smemdb1.test\spreventing\stests\sfrom\spassing\swith\s-DSQLITE_DEFAULT_AUTOVACUUM=1\sbuilds.
+D 2021-11-22T16:27:36.788
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1200,7 +1200,7 @@ F test/malloctraceviewer.tcl b7a54595270c1d201abf1c3f3d461f27eaf24cdef623ad08a0f
 F test/manydb.test 28385ae2087967aa05c38624cec7d96ec74feb3e
 F test/mem5.test c6460fba403c5703141348cd90de1c294188c68f
 F test/memdb.test c1f2a343ad14398d5d6debda6ea33e80d0dafcc7
-F test/memdb1.test ddc9ca6528fa1248b0fe76009e70a903f0e88065192a1f23199c6861b5758940
+F test/memdb1.test 6abe1eb18ded9cadf3c01044ef3fb97d98e6c9736d3609410312026820f16c4e
 F test/memjournal.test 70f3a00c7f84ee2978ad14e831231caa1e7f23915a2c54b4f775a021d5740c6c
 F test/memleak.test 10b9c6c57e19fc68c32941495e9ba1c50123f6e2
 F test/memsubsys1.test 9e7555a22173b8f1c96c281ce289b338fcba2abe8b157f8798ca195bbf1d347e
@@ -1933,7 +1933,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3024d7ca03541a6fe3d264fdc82dd49f8f6b51d2fbeec4dfc9c6dd72806b271a
-R 0d7e20b9fee8f4bd8569a9dc127a9c80
-U drh
-Z c579d8f4509caa56c7634f72d0f68d5b
+P 0f567b61072e214c40cae1441889f83622a975f429b41803dfbed687718731c8
+R e6e93a3640a0508d4351f1900ca6e978
+U dan
+Z 49b3684566eccc72791d638cff91caf3
