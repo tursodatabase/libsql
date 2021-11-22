@@ -513,7 +513,7 @@ impl Connection {
     /// ### With positional params of varying types
     ///
     /// ```rust,no_run
-    /// # use rusqlite::{Connection};
+    /// # use rusqlite::{params, Connection};
     /// fn update_rows(conn: &Connection) {
     ///     match conn.execute("UPDATE foo SET bar = 'baz' WHERE qux = ?1 AND quux = ?2", params![1i32, 1.5f64]) {
     ///         Ok(updated) => println!("{} rows were updated", updated),
