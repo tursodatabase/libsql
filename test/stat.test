@@ -323,6 +323,6 @@ breakpoint
 do_catchsql_test 9.1 {
   CREATE TABLE dbstat(x, y);
   DROP TABLE nosuchdb.dbstat;
-} {1 {no such table: nosuchdb.dbstat}}
+} {/1 {(no such table: nosuchdb.dbstat|table dbstat may not be dropped)}/}
 
 finish_test

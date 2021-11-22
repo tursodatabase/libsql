@@ -1850,6 +1850,7 @@ int sqlite3_preupdate_old(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
     u32 nRec;
     u8 *aRec;
 
+    assert( p->pCsr->eCurType==CURTYPE_BTREE );
     nRec = sqlite3BtreePayloadSize(p->pCsr->uc.pCursor);
     aRec = sqlite3DbMallocRaw(db, nRec);
     if( !aRec ) goto preupdate_old_out;
