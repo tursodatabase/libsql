@@ -297,6 +297,7 @@ static int fts3auxNextMethod(sqlite3_vtab_cursor *pCursor){
     if( fts3auxGrowStatArray(pCsr, 2) ) return SQLITE_NOMEM;
     memset(pCsr->aStat, 0, sizeof(struct Fts3auxColstats) * pCsr->nStat);
     iCol = 0;
+    rc = SQLITE_OK;
 
     while( i<nDoclist ){
       sqlite3_int64 v = 0;
@@ -352,7 +353,6 @@ static int fts3auxNextMethod(sqlite3_vtab_cursor *pCursor){
     }
 
     pCsr->iCol = 0;
-    rc = SQLITE_OK;
   }else{
     pCsr->isEof = 1;
   }
