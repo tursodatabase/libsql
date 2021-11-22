@@ -843,7 +843,7 @@ static int block_troublesome_sql(
   (void)zArg4;
   if( eCode==SQLITE_PRAGMA ){
     if( sqlite3_stricmp("busy_timeout",zArg1)==0
-     && (zArg2==0 || strtoll(zArg2,0,0)>100)
+     && (zArg2==0 || strtoll(zArg2,0,0)>100 || strtoll(zArg2,0,10)>100)
     ){
       return SQLITE_DENY;
     }else if( eVerbosity==0 ){
