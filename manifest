@@ -1,5 +1,5 @@
-C In\sfuzzcheck,\simprove\sthe\sdefense\sagainst\slong\sdelays\sdue\sto\s\nrogue\sbusy_timeout\smacros\sin\sfuzzer-generated\sscripts.
-D 2021-11-22T13:59:06.242
+C There\sare\stwo\spossible\serror\smessages\sfrom\sstat-9.1,\sdepending\son\ncompile-time\soptions.\s\sAdjust\sthe\stest\scase\sto\saccept\seither\sone.
+D 2021-11-22T16:06:57.238
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1429,7 +1429,7 @@ F test/sqldiff1.test 182058e09c7082de5c6a470ff9c291337bbeb650052c2cc68fbb3d7e258
 F test/sqllimits1.test f46f405d754e702227dcdf5b73f94fffcd48c676e845afa37329e4ce2e32ccbf
 F test/sqllog.test 6af6cb0b09f4e44e1917e06ce85be7670302517a
 F test/startup.c 1beb5ca66fcc0fce95c3444db9d1674f90fc605499a574ae2434dcfc10d22805
-F test/stat.test c95e5f293d47a8b447642343b0806689065e1e5a7d2fe9ba31a430ff78ada3bb
+F test/stat.test 123212a20ceb496893d5254a5f6c76442ce549fdc08d1702d8288a2bbaac8408
 F test/statfault.test 55f86055f9cd7b2d962a621b8a04215c1cebd4eaaecde92d279442327fe648a0
 F test/stmt.test 54ed2cc0764bf3e48a058331813c3dbd19fc1d0827c3d8369914a5d8f564ec75
 F test/stmtvtab1.test 6873dfb24f8e79cbb5b799b95c2e4349060eb7a3b811982749a84b359468e2d5
@@ -1933,7 +1933,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d7ef96bae459f800241483fe8784552d18ee7f92f408f6453ac687de5530bbb9
-R 11b44234bac388e17f8ad6bfd1668b2e
+P 3024d7ca03541a6fe3d264fdc82dd49f8f6b51d2fbeec4dfc9c6dd72806b271a
+R 0d7e20b9fee8f4bd8569a9dc127a9c80
 U drh
-Z b4ee0248beb1997226750d4c0ca87d1d
+Z c579d8f4509caa56c7634f72d0f68d5b
