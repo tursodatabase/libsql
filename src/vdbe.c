@@ -3665,8 +3665,15 @@ case OP_Transaction: {
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
   assert( DbMaskTest(p->btreeMask, pOp->p1) );
   assert( rc==SQLITE_OK );
-  if( pOp->p2 && (db->flags & SQLITE_QueryOnly)!=0 ){
-    rc = SQLITE_READONLY;
+  if( pOp->p2 && (db->flags & (SQLITE_QueryOnly|SQLITE_CorruptRdOnly))!=0 ){
+    if( db->flags & SQLITE_QueryOnly ){
+      /* Writes prohibited by the "PRAGMA query_only=TRUE" statement */
+      rc = SQLITE_READONLY;
+    }else{
+      /* Writes prohibited due to a prior SQLITE_CORRUPT in the current
+      ** transaction */
+      rc = SQLITE_CORRUPT;
+    }
     goto abort_due_to_error;
   }
   pBt = db->aDb[pOp->p1].pBt;
@@ -7747,6 +7754,7 @@ case OP_VFilter: {   /* jump */
   pCur = p->apCsr[pOp->p1];
   assert( memIsValid(pQuery) );
   REGISTER_TRACE(pOp->p3, pQuery);
+  assert( pCur!=0 );
   assert( pCur->eCurType==CURTYPE_VTAB );
   pVCur = pCur->uc.pVCur;
   pVtab = pVCur->pVtab;
@@ -7795,6 +7803,7 @@ case OP_VColumn: {
   sqlite3_context sContext;
 
   VdbeCursor *pCur = p->apCsr[pOp->p1];
+  assert( pCur!=0 );
   assert( pCur->eCurType==CURTYPE_VTAB );
   assert( pOp->p3>0 && pOp->p3<=(p->nMem+1 - p->nCursor) );
   pDest = &aMem[pOp->p3];
@@ -7848,6 +7857,7 @@ case OP_VNext: {   /* jump */
   VdbeCursor *pCur;
 
   pCur = p->apCsr[pOp->p1];
+  assert( pCur!=0 );
   assert( pCur->eCurType==CURTYPE_VTAB );
   if( pCur->nullRow ){
     break;
@@ -7943,7 +7953,7 @@ case OP_VUpdate: {
   const sqlite3_module *pModule;
   int nArg;
   int i;
-  sqlite_int64 rowid;
+  sqlite_int64 rowid = 0;
   Mem **apArg;
   Mem *pX;
 
@@ -8390,7 +8400,14 @@ abort_due_to_error:
   assert( rc );
 #ifdef SQLITE_DEBUG
   if( db->flags & SQLITE_VdbeTrace ){
-     printf("ABORT-due-to-error.  rc=%d\n", rc);
+    const char *zTrace = p->zSql;
+    if( zTrace==0 ){
+      if( aOp[0].opcode==OP_Trace ){
+        zTrace = aOp[0].p4.z;
+      }
+      if( zTrace==0 ) zTrace = "???";
+    }
+    printf("ABORT-due-to-error (rc=%d): %s\n", rc, zTrace);
   }
 #endif
   if( p->zErrMsg==0 && rc!=SQLITE_IOERR_NOMEM ){
@@ -8403,6 +8420,9 @@ abort_due_to_error:
                    (int)(pOp - aOp), p->zSql, p->zErrMsg);
   sqlite3VdbeHalt(p);
   if( rc==SQLITE_IOERR_NOMEM ) sqlite3OomFault(db);
+  if( rc==SQLITE_CORRUPT && db->autoCommit==0 ){
+    db->flags |= SQLITE_CorruptRdOnly;
+  }
   rc = SQLITE_ERROR;
   if( resetSchemaOnFault>0 ){
     sqlite3ResetOneSchema(db, resetSchemaOnFault-1);

@@ -3056,9 +3056,15 @@ int sqlite3VdbeHalt(Vdbe *p){
     sqlite3VdbeEnter(p);
 
     /* Check for one of the special errors */
-    mrc = p->rc & 0xff;
-    isSpecialError = mrc==SQLITE_NOMEM || mrc==SQLITE_IOERR
-                     || mrc==SQLITE_INTERRUPT || mrc==SQLITE_FULL;
+    if( p->rc ){
+      mrc = p->rc & 0xff;
+      isSpecialError = mrc==SQLITE_NOMEM
+                    || mrc==SQLITE_IOERR
+                    || mrc==SQLITE_INTERRUPT
+                    || mrc==SQLITE_FULL;
+    }else{
+      mrc = isSpecialError = 0;
+    }
     if( isSpecialError ){
       /* If the query was read-only and the error code is SQLITE_INTERRUPT, 
       ** no rollback is necessary. Otherwise, at least a savepoint 
@@ -3110,6 +3116,9 @@ int sqlite3VdbeHalt(Vdbe *p){
             return SQLITE_ERROR;
           }
           rc = SQLITE_CONSTRAINT_FOREIGNKEY;
+        }else if( db->flags & SQLITE_CorruptRdOnly ){
+          rc = SQLITE_CORRUPT;
+          db->flags &= ~SQLITE_CorruptRdOnly;
         }else{ 
           /* The auto-commit flag is true, the vdbe program was successful 
           ** or hit an 'OR FAIL' constraint and there are no deferred foreign
@@ -5214,6 +5223,8 @@ void sqlite3VdbePreUpdateHook(
     }
   }
 
+  assert( pCsr!=0 );
+  assert( pCsr->eCurType==CURTYPE_BTREE );
   assert( pCsr->nField==pTab->nCol 
        || (pCsr->nField==pTab->nCol+1 && op==SQLITE_DELETE && iReg==-1)
   );

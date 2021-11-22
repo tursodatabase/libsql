@@ -1287,20 +1287,29 @@ static void rtreeNonleafConstraint(
   switch( p->op ){
     case RTREE_TRUE:  return;   /* Always satisfied */
     case RTREE_FALSE: break;    /* Never satisfied */
-    case RTREE_LE:
-    case RTREE_LT:
     case RTREE_EQ:
       RTREE_DECODE_COORD(eInt, pCellData, val);
       /* val now holds the lower bound of the coordinate pair */
+      if( p->u.rValue>=val ){
+        pCellData += 4;
+        RTREE_DECODE_COORD(eInt, pCellData, val);
+        /* val now holds the upper bound of the coordinate pair */
+        if( p->u.rValue<=val ) return;
+      }
+      break;
+    case RTREE_LE:
+    case RTREE_LT:
+      RTREE_DECODE_COORD(eInt, pCellData, val);
+      /* val now holds the lower bound of the coordinate pair */
       if( p->u.rValue>=val ) return;
-      if( p->op!=RTREE_EQ ) break;  /* RTREE_LE and RTREE_LT end here */
-      /* Fall through for the RTREE_EQ case */
+      break;
 
-    default: /* RTREE_GT or RTREE_GE,  or fallthrough of RTREE_EQ */
+    default:
       pCellData += 4;
       RTREE_DECODE_COORD(eInt, pCellData, val);
       /* val now holds the upper bound of the coordinate pair */
       if( p->u.rValue<=val ) return;
+      break;
   }
   *peWithin = NOT_WITHIN;
 }

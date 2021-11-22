@@ -1712,6 +1712,7 @@ struct sqlite3 {
 #define SQLITE_CountRows      HI(0x00001) /* Count rows changed by INSERT, */
                                           /*   DELETE, or UPDATE and return */
                                           /*   the count using a callback. */
+#define SQLITE_CorruptRdOnly  HI(0x00002) /* Prohibit writes due to error */
 
 /* Flags used only if debugging */
 #ifdef SQLITE_DEBUG
@@ -3554,7 +3555,6 @@ struct Parse {
   AutoincInfo *pAinc;  /* Information about AUTOINCREMENT counters */
   Parse *pToplevel;    /* Parse structure for main program (or NULL) */
   Table *pTriggerTab;  /* Table triggers are being coded for */
-  Parse *pParentParse; /* Parent parser if this parser is nested */
   union {
     int addrCrTab;         /* Address of OP_CreateBtree on CREATE TABLE */
     Returning *pReturning; /* The RETURNING clause */
@@ -5112,7 +5112,7 @@ const char *sqlite3JournalModename(int);
 # define sqlite3CteDelete(D,C)
 # define sqlite3CteWithAdd(P,W,C) ((void*)0)
 # define sqlite3WithDelete(x,y)
-# define sqlite3WithPush(x,y,z)
+# define sqlite3WithPush(x,y,z) ((void*)0)
 #endif
 #ifndef SQLITE_OMIT_UPSERT
   Upsert *sqlite3UpsertNew(sqlite3*,ExprList*,Expr*,ExprList*,Expr*,Upsert*);
