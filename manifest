@@ -1,5 +1,5 @@
-C New\stest\scases\sfor\sSTRICT\sand\sNOT\sNULL\sin\sPRIMARY\sKEY.
-D 2021-11-20T13:30:03.615
+C Fix\sa\scrash\sin\sthe\sfts3aux\scode\sthat\scould\soccur\shandling\scorrupt\srecords.
+D 2021-11-22T08:12:14.863
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -87,7 +87,7 @@ F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
 F ext/fts3/fts3.c da41de21622774b1cb8c3415e8d2a6961ad7c978ab534f2a54434f76a5c4dfbc
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h cff59b8b13dafe9d59924a5d710f771ed8b121a55cccbc99b6e2a723fcde14dc
-F ext/fts3/fts3_aux.c 1af58af8f2b00a49f4fb1c2602f8da2054ad60076f46c8ebf85c5410eccccb65
+F ext/fts3/fts3_aux.c e0588984d16449bd1a5334606627a9db79913bb0f6003efded166a67cae7b2ed
 F ext/fts3/fts3_expr.c 903bfb9433109fffb10e910d7066c49cbf8eeae316adc93f0499c4da7dfc932a
 F ext/fts3/fts3_hash.c 8b6e31bfb0844c27dc6092c2620bdb1fca17ed613072db057d96952c6bdb48b7
 F ext/fts3/fts3_hash.h 39cf6874dc239d6b4e30479b1975fe5b22a3caaf
@@ -981,7 +981,7 @@ F test/fts3conf.test c84bbaec81281c1788aa545ac6e78a6bd6cde2bdbbce2da261690e3659f
 F test/fts3corrupt.test 79a32ffdcd5254e2f7fa121d9656e61949ad049c3c6554229911b7ceac37c9c6
 F test/fts3corrupt2.test e318f0676e5e78d5a4b702637e2bb25265954c08a1b1e4aaf93c7880bb0c67d0
 F test/fts3corrupt3.test 0d5b69a0998b4adf868cc301fc78f3d0707745f1d984ce044c205cdb764b491f
-F test/fts3corrupt4.test c0f71af1c5a5b73d66f2ab86be94190ba75576d22a3945fd8edc5aaf35e0b376
+F test/fts3corrupt4.test 799ff994b964fed7201be6b6b62c7ff2ef7bb3da6c02b9eaf0d96a5a4d9b6ca3
 F test/fts3corrupt5.test 0549f85ec4bd22e992f645f13c59b99d652f2f5e643dac75568bfd23a6db7ed5
 F test/fts3corrupt6.test 657b4b8e5791d8d4adc93c90588fb25f1c7346544dd877c6c298a0746749146d
 F test/fts3cov.test 7eacdbefd756cfa4dc2241974e3db2834e9b372ca215880e00032222f32194cf
@@ -1933,7 +1933,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d814ba6effc7c5b021ff625b57371627f3ee326687c508da99f78bc164386b7e
-R b4ad209c907e3449339c5f32dea41ff4
-U drh
-Z c8a41b263c4adfdb01ebfdbdc9f72a97
+P 0eafbc2f31b83f48833b19894ff3252a63c319ff501506ef9f744cca813a3a24
+R c8d194f01ea70c0f8e9ded20e982f86d
+U dan
+Z 5b833fcd8d1687ed54ab4812425b362e
