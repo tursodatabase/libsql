@@ -1,5 +1,5 @@
-C Fix\sthe\sbuild\sfor\sSQLITE_OMIT_CTE.
-D 2021-11-22T13:35:40.091
+C In\sfuzzcheck,\simprove\sthe\sdefense\sagainst\slong\sdelays\sdue\sto\s\nrogue\sbusy_timeout\smacros\sin\sfuzzer-generated\sscripts.
+D 2021-11-22T13:59:06.242
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1058,7 +1058,7 @@ F test/fuzz3.test 9c813e6613b837cb7a277b0383cd66bfa07042b4cf0317157c35852f30043c
 F test/fuzz4.test c229bcdb45518a89e1d208a21343e061503460ac69fae1539320a89f572eb634
 F test/fuzz_common.tcl b7197de6ed1ee8250a4f82d67876f4561b42ee8cbbfc6160dcb66331bad3f830
 F test/fuzz_malloc.test f348276e732e814802e39f042b1f6da6362a610af73a528d8f76898fde6b22f2
-F test/fuzzcheck.c 7a07718e3c017f31e88b56a891bb79a3eb42a413a811fd65b89a7b09fdd1adbd
+F test/fuzzcheck.c bdb852815048a0beebbe5768bca61e75295324a811a8d7216f97b96501befd1e
 F test/fuzzdata1.db d36e88741b4f23bcbaaf55b006290669d03c6c891cf13c7b3a53bc1b097b693f
 F test/fuzzdata2.db 128b3feeb78918d075c9b14b48610145a0dd4c8d6f1ca7c2870c7e425f5bf31f
 F test/fuzzdata3.db c6586d3e3cef0fbc18108f9bb649aa77bfc38aba
@@ -1933,7 +1933,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 396688ae5c10b9e7df1c76a3c6f548abf7a7ddad50c25fb23e194201dbb2e857
-R 130700c2b8fec194a6351fb9cbd33306
+P d7ef96bae459f800241483fe8784552d18ee7f92f408f6453ac687de5530bbb9
+R 11b44234bac388e17f8ad6bfd1668b2e
 U drh
-Z 8be64a1a6d76669a25afb7588f5f68ce
+Z b4ee0248beb1997226750d4c0ca87d1d
