@@ -1763,17 +1763,14 @@ static void output_csv(ShellState *p, const char *z, int bSep){
   if( z==0 ){
     utf8_printf(out,"%s",p->nullValue);
   }else{
-    int i;
-    int nSep = strlen30(p->colSeparator);
+    unsigned i;
     for(i=0; z[i]; i++){
-      if( needCsvQuote[((unsigned char*)z)[i]]
-         || (z[i]==p->colSeparator[0] &&
-             (nSep==1 || memcmp(z, p->colSeparator, nSep)==0)) ){
+      if( needCsvQuote[((unsigned char*)z)[i]] ){
         i = 0;
         break;
       }
     }
-    if( i==0 ){
+    if( i==0 || strstr(z, p->colSeparator)!=0 ){
       char *zQuoted = sqlite3_mprintf("\"%w\"", z);
       utf8_printf(out, "%s", zQuoted);
       sqlite3_free(zQuoted);

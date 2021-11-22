@@ -573,7 +573,7 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   int lastTokenParsed = -1;       /* type of the previous token */
   sqlite3 *db = pParse->db;       /* The database connection */
   int mxSqlLen;                   /* Max length of an SQL string */
-  Parse *pParentParse = db->pParse;
+  Parse *pParentParse = 0;        /* Outer parse context, if any */
 #ifdef sqlite3Parser_ENGINEALWAYSONSTACK
   yyParser sEngine;    /* Space to hold the Lemon-generated Parser object */
 #endif
@@ -609,6 +609,7 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   assert( pParse->pNewTrigger==0 );
   assert( pParse->nVar==0 );
   assert( pParse->pVList==0 );
+  pParentParse = db->pParse;
   db->pParse = pParse;
   while( 1 ){
     n = sqlite3GetToken((u8*)zSql, &tokenType);
