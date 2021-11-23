@@ -1,5 +1,5 @@
-C Omit\swal\smode\stests\sin\smemdb1.test\sfor\sbuilds\sand\sconfigurations\sthat\sdo\snot\ssupport\swal\smode.
-D 2021-11-22T16:50:41.322
+C Exclude\stwo\srecently\sadded\stests\sin\swhere.test\sfrom\svalgrind\sruns.\sThey\sfail\sdue\sto\sthe\ssubtly\sdifferent\shandling\sof\sreal\snumbers\sunder\svalgrind.
+D 2021-11-23T11:34:43.025
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1757,7 +1757,7 @@ F test/walthread.test 14b20fcfa6ae152f5d8e12f5dc8a8a724b7ef189f5d8ef1e2ceab79f2a
 F test/walvfs.test bccb3e0d235ef85e276f491d34db32c9ada1ea67be8d9f10aabe7b30319ec656
 F test/wapp.tcl b440cd8cf57953d3a49e7ee81e6a18f18efdaf113b69f7d8482b0710a64566ec
 F test/wapptest.tcl 899594e25684861d5b0c0880fb012364def50ef8097041b8ddf74be5ba7fa270 x
-F test/where.test 0be35396a509439d1c38919381feaed3d1e820e08254d246f96e499c5cbf8565
+F test/where.test f114842c1851d257a26770f2ad55119b084001c0e1b8c214f886f45152d37cd8
 F test/where2.test 03c21a11e7b90e2845fc3c8b4002fc44cc2797fa74c86ee47d70bd7ea4f29ed6
 F test/where3.test 5b4ffc0ac2ea0fe92f02b1244b7531522fe4d7bccf6fa8741d54e82c10e67753
 F test/where4.test 4a371bfcc607f41d233701bdec33ac2972908ba8
@@ -1933,7 +1933,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 65de17635468791678b9d205552a4faec2d6c3b7d330c559b6f81ab072254533
-R 8138fe107618e89498a671585c9ae9b7
+P 0f13c0d9fd7757c6e0b845a285c0047d2c60293354335660d19d80ad799646fc
+R f60884d62bb25298a64f9712ad12dc92
 U dan
-Z 5f6fb8081b4198ed8d1b17c8740a8365
+Z 9710f33c315072a8b33301964ded28a1
