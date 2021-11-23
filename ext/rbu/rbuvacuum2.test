@@ -198,7 +198,11 @@ if {$::tcl_platform(platform)=="unix"} {
     } {SQLITE_OK}
 
     do_test 5.$tn.2 { file exists test.db-vacuum } 1
-    do_test 5.$tn.3 { file attributes test.db-vacuum -permissions} $perm
+    # The result pattern might be 00xxx or 0oxxx depending on which
+    # version of TCL is being used.  So make perm2 into a regexp that
+    # will match either
+    regsub {^00} $perm {0.} perm2
+    do_test 5.$tn.3 { file attributes test.db-vacuum -permissions} /$perm2/
     rbu close
   }
 }
