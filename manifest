@@ -1,5 +1,5 @@
-C Exclude\stwo\srecently\sadded\stests\sin\swhere.test\sfrom\svalgrind\sruns.\sThey\sfail\sdue\sto\sthe\ssubtly\sdifferent\shandling\sof\sreal\snumbers\sunder\svalgrind.
-D 2021-11-23T11:34:43.025
+C Fix\sa\scompiler\swarning\sin\sthe\sdbserialize\smethod\sof\sthe\sTCL\sinterface.
+D 2021-11-23T12:59:25.402
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -559,7 +559,7 @@ F src/sqliteInt.h 524adaf6fe699cea554987647392baa2f7ee35df840c79245b8059ebc58831
 F src/sqliteLimit.h d7323ffea5208c6af2734574bae933ca8ed2ab728083caa117c9738581a31657
 F src/status.c 4b8bc2a6905163a38b739854a35b826c737333fab5b1f8e03fa7eb9a4799c4c1
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
-F src/tclsqlite.c 50c2b759f4a918e41ed7a038baaef087ff264c7b3adddf39741315a53fd92e47
+F src/tclsqlite.c 48f291e1a7e672a7204884d4c164a8ed3a522ff087c361ada2991f5d54e987f6
 F src/test1.c d6c945a8bb211ed72ea515f0b9743caeaf38c66da6418a7b1dcf3764e1368bbb
 F src/test2.c 3efb99ab7f1fc8d154933e02ae1378bac9637da5
 F src/test3.c 61798bb0d38b915067a8c8e03f5a534b431181f802659a6616f9b4ff7d872644
@@ -1933,7 +1933,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0f13c0d9fd7757c6e0b845a285c0047d2c60293354335660d19d80ad799646fc
-R f60884d62bb25298a64f9712ad12dc92
-U dan
-Z 9710f33c315072a8b33301964ded28a1
+P e842d2085b295ef1c927611f5d3b211fb6b513ca2676c074fe90331da81734eb
+R 84e34ff7b8bc6c0f74939a771980f470
+U drh
+Z 7d98b1bd0552ee1a94c0194eec3dc3d7
