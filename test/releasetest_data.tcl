@@ -609,12 +609,12 @@ proc main_tests {args} {
       }
     }
 
-    if {[llength $target]==1
-     && [lsearch $target "valgrindtest"]<0
+    if {[llength $target]==1 && ([string match "*TEST_FAILURE*" $vars] || (
+        [lsearch $target "valgrindtest"]<0
      && [lsearch $target "alltest"]<0
      && [lsearch $target "fulltestonly"]<0
      && ![string match Sanitize* $config]
-    } {
+    ))} {
       if {$vars!=""} { set target "$vars $target" }
       lappend lTest "$config \"$target\""
     } else {
