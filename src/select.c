@@ -4953,11 +4953,11 @@ static u8 minMaxQuery(sqlite3 *db, Expr *pFunc, ExprList **ppMinMax){
 ** does match this pattern, then a pointer to the Table object representing
 ** <tbl> is returned. Otherwise, NULL is returned.
 **
-** This routine a condition for the count optimization.  A correct answer
-** is obtained (though perhaps more slowly) if this routine returns NULL when
-** it could have returned a table pointer.  But returning the pointer when
-** NULL should have been returned can result in incorrect answers and/or
-** crashes.  So, when in doubt, return NULL.
+** This routine checks to see if it is safe to use the count optimization.
+** A correct answer is still obtained (though perhaps more slowly) if
+** this routine returns NULL when it could have returned a table pointer.
+** But returning the pointer when NULL should have been returned can
+** result in incorrect answers and/or crashes.  So, when in doubt, return NULL.
 */
 static Table *isSimpleCount(Select *p, AggInfo *pAggInfo){
   Table *pTab;
