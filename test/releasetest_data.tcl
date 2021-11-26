@@ -326,6 +326,11 @@ array set ::Platforms [strip_comments {
     "Have-Not"                "" test
     "Apple"                   "" "threadtest fuzztest alltest"
   }
+  Darwin-arm64 {
+    "Locking-Style"           "" "mptest test"
+    "Have-Not"                "" test
+    "Apple"                   "" "threadtest fuzztest alltest"
+  }
   "Windows NT-intel" {
     "Stdcall"                 "" test
     "Have-Not"                "" test
