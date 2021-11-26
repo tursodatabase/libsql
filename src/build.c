@@ -742,8 +742,8 @@ void sqlite3ColumnSetColl(
   Column *pCol,
   const char *zColl
 ){
-  int nColl;
-  int n;
+  i64 nColl;
+  i64 n;
   char *zNew;
   assert( zColl!=0 );
   n = sqlite3Strlen30(pCol->zCnName) + 1;
@@ -1548,7 +1548,7 @@ void sqlite3AddColumn(Parse *pParse, Token sName, Token sType){
     }
   }
 
-  z = sqlite3DbMallocRaw(db, sName.n + 1 + sType.n + (sType.n>0) );
+  z = sqlite3DbMallocRaw(db, (i64)sName.n + 1 + (i64)sType.n + (sType.n>0) );
   if( z==0 ) return;
   if( IN_RENAME_OBJECT ) sqlite3RenameTokenMap(pParse, (void*)z, &sName);
   memcpy(z, sName.z, sName.n);
@@ -1562,7 +1562,7 @@ void sqlite3AddColumn(Parse *pParse, Token sName, Token sType){
       return;
     }
   }
-  aNew = sqlite3DbRealloc(db,p->aCol,(p->nCol+1)*sizeof(p->aCol[0]));
+  aNew = sqlite3DbRealloc(db,p->aCol,((i64)p->nCol+1)*sizeof(p->aCol[0]));
   if( aNew==0 ){
     sqlite3DbFree(db, z);
     return;
@@ -3575,7 +3575,7 @@ void sqlite3CreateForeignKey(
   FKey *pFKey = 0;
   FKey *pNextTo;
   Table *p = pParse->pNewTable;
-  int nByte;
+  i64 nByte;
   int i;
   int nCol;
   char *z;
