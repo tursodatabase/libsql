@@ -2647,8 +2647,10 @@ static int SQLITE_TCLAPI DbObjCmd(
     for(i=2; i<objc-1; i++){
       const char *z = Tcl_GetString(objv[i]);
       if( strcmp(z,"-maxsize")==0 && i<objc-2 ){
-        rc = Tcl_GetWideIntFromObj(interp, objv[++i], &mxSize);
+        Tcl_WideInt x;
+        rc = Tcl_GetWideIntFromObj(interp, objv[++i], &x);
         if( rc ) goto deserialize_error;
+        mxSize = x;
         continue;
       }
       if( strcmp(z,"-readonly")==0 && i<objc-2 ){

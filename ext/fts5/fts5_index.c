@@ -850,7 +850,7 @@ int sqlite3Fts5StructureTest(Fts5Index *p, void *pStruct){
 static void fts5StructureMakeWritable(int *pRc, Fts5Structure **pp){
   Fts5Structure *p = *pp;
   if( *pRc==SQLITE_OK && p->nRef>1 ){
-    int nByte = sizeof(Fts5Structure)+(p->nLevel-1)*sizeof(Fts5StructureLevel);
+    i64 nByte = sizeof(Fts5Structure)+(p->nLevel-1)*sizeof(Fts5StructureLevel);
     Fts5Structure *pNew;
     pNew = (Fts5Structure*)sqlite3Fts5MallocZero(pRc, nByte);
     if( pNew ){

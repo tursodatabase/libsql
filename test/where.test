@@ -1576,14 +1576,22 @@ do_execsql_test where-26.8 {
 # floating point values that are near 9223372036854775807 in the
 # OP_SeekGE opcode (and similar).
 #
-reset_db
-do_execsql_test where-27.1 {
-  CREATE TABLE t1(a INTEGER PRIMARY KEY);
-  INSERT INTO t1(a) VALUES(9223372036854775807);
-  SELECT 1 FROM t1 WHERE a>=(9223372036854775807+1);
-} {}
-do_execsql_test where-27.2 {
-  SELECT a>=9223372036854775807+1 FROM t1;
-} {0}
+# Valgrind documentation acknowledges that under valgrind, FP calculations
+# may not be as accurate as on x86/amd64 hardware. This seems to be causing
+# these tests to fail.
+#
+#   https://valgrind.org/docs/manual/manual-core.html#manual-core.limits
+#
+if {[permutation]!="valgrind"} {
+  reset_db
+  do_execsql_test where-27.1 {
+    CREATE TABLE t1(a INTEGER PRIMARY KEY);
+    INSERT INTO t1(a) VALUES(9223372036854775807);
+    SELECT 1 FROM t1 WHERE a>=(9223372036854775807+1);
+  } {}
+  do_execsql_test where-27.2 {
+    SELECT a>=9223372036854775807+1 FROM t1;
+  } {0}
+}
 
 finish_test

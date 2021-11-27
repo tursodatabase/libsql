@@ -233,36 +233,38 @@ ifcapable vtab {
 #-------------------------------------------------------------------------
 # dbsqlfuzz  0a13dfb474d4f2f11a48a2ea57075c96fb456dd7
 #
-reset_db
-do_execsql_test 800 {
-  PRAGMA auto_vacuum = 0;
-  PRAGMA page_size = 8192;
-  PRAGMA journal_mode = wal;
-  CREATE TABLE t1(x, y);
-  INSERT INTO t1 VALUES(1, 2);
-  CREATE TABLE t2(x, y);
-} {wal}
-db close
-
-set fd [open test.db]
-fconfigure $fd -translation binary -encoding binary
-set data [read $fd [expr 20*1024]]
-
-sqlite3 db ""
-db deserialize $data
-
-do_execsql_test 810 {
-  PRAGMA locking_mode = exclusive;
-  SELECT * FROM t1
-} {exclusive 1 2}
-
-do_execsql_test 820 {
-  INSERT INTO t1 VALUES(3, 4);
-  SELECT * FROM t1;
-} {1 2 3 4}
-
-do_catchsql_test 830 {
-  PRAGMA wal_checkpoint;
-} {1 {database disk image is malformed}}
+if {[wal_is_capable]} {
+  reset_db
+  do_execsql_test 800 {
+    PRAGMA auto_vacuum = 0;
+    PRAGMA page_size = 8192;
+    PRAGMA journal_mode = wal;
+    CREATE TABLE t1(x, y);
+    INSERT INTO t1 VALUES(1, 2);
+    CREATE TABLE t2(x, y);
+  } {wal}
+  db close
+  
+  set fd [open test.db]
+  fconfigure $fd -translation binary -encoding binary
+  set data [read $fd [expr 20*1024]]
+  
+  sqlite3 db ""
+  db deserialize $data
+  
+  do_execsql_test 810 {
+    PRAGMA locking_mode = exclusive;
+    SELECT * FROM t1
+  } {exclusive 1 2}
+  
+  do_execsql_test 820 {
+    INSERT INTO t1 VALUES(3, 4);
+    SELECT * FROM t1;
+  } {1 2 3 4}
+  
+  do_catchsql_test 830 {
+    PRAGMA wal_checkpoint;
+  } {1 {database disk image is malformed}}
+}
 
 finish_test
