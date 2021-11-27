@@ -2196,7 +2196,7 @@ void sqlite3SelectAddColumnTypeAndCollation(
   a = pSelect->pEList->a;
   for(i=0, pCol=pTab->aCol; i<pTab->nCol; i++, pCol++){
     const char *zType;
-    int n, m;
+    i64 n, m;
     pTab->tabFlags |= (pCol->colFlags & COLFLAG_NOINSERT);
     p = a[i].pExpr;
     zType = columnType(&sNC, p, 0, 0, 0);
@@ -4182,7 +4182,7 @@ static int flattenSubquery(
 
     if( pSrc->nSrc>1 ){
       if( pParse->nSelect>500 ) return 0;
-      aCsrMap = sqlite3DbMallocZero(db, (pParse->nTab+1)*sizeof(int));
+      aCsrMap = sqlite3DbMallocZero(db, ((i64)pParse->nTab+1)*sizeof(int));
       if( aCsrMap ) aCsrMap[0] = pParse->nTab;
     }
   }
@@ -4953,11 +4953,11 @@ static u8 minMaxQuery(sqlite3 *db, Expr *pFunc, ExprList **ppMinMax){
 ** does match this pattern, then a pointer to the Table object representing
 ** <tbl> is returned. Otherwise, NULL is returned.
 **
-** This routine a condition for the count optimization.  A correct answer
-** is obtained (though perhaps more slowly) if this routine returns NULL when
-** it could have returned a table pointer.  But returning the pointer when
-** NULL should have been returned can result in incorrect answers and/or
-** crashes.  So, when in doubt, return NULL.
+** This routine checks to see if it is safe to use the count optimization.
+** A correct answer is still obtained (though perhaps more slowly) if
+** this routine returns NULL when it could have returned a table pointer.
+** But returning the pointer when NULL should have been returned can
+** result in incorrect answers and/or crashes.  So, when in doubt, return NULL.
 */
 static Table *isSimpleCount(Select *p, AggInfo *pAggInfo){
   Table *pTab;
