@@ -374,7 +374,7 @@ static int fts5VocabOpenMethod(
   }
 
   if( rc==SQLITE_OK ){
-    int nByte = pFts5->pConfig->nCol * sizeof(i64)*2 + sizeof(Fts5VocabCursor);
+    i64 nByte = pFts5->pConfig->nCol * sizeof(i64)*2 + sizeof(Fts5VocabCursor);
     pCsr = (Fts5VocabCursor*)sqlite3Fts5MallocZero(&rc, nByte);
   }
 
