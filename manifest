@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\scomment\stypo.
-D 2021-11-27T12:03:51.433
+C Version\s3.37.0
+D 2021-11-27T14:13:22.430
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1933,7 +1933,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1d5c9aacb8ab6349935561cc12734cf348c12c86e4663ddc7af113b3ed0f6186
+P 7c567338ae4dd31097e9ae5c693b84369c35c5a52534797e8186b4be7297ba78
 R 1bdaa083fa0abfc53c61429627c688f2
+T +sym-major-release *
+T +sym-release *
+T +sym-version-3.37.0 *
 U drh
-Z 6bb715314405fbb31595fee3cd761ae8
+Z 6f6dbee10adfe1c5275055f73bc6984f
