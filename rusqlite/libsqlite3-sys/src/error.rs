@@ -183,6 +183,7 @@ const SQLITE_CONSTRAINT_UNIQUE: c_int = super::SQLITE_CONSTRAINT | (8 << 8);
 const SQLITE_CONSTRAINT_VTAB: c_int = super::SQLITE_CONSTRAINT | (9 << 8);
 const SQLITE_CONSTRAINT_ROWID: c_int = super::SQLITE_CONSTRAINT | (10 << 8);
 const SQLITE_CONSTRAINT_PINNED: c_int = super::SQLITE_CONSTRAINT | (11 << 8);
+const SQLITE_CONSTRAINT_DATATYPE: c_int = super::SQLITE_CONSTRAINT | (12 << 8);
 
 const SQLITE_NOTICE_RECOVER_WAL: c_int = SQLITE_NOTICE | (1 << 8);
 const SQLITE_NOTICE_RECOVER_ROLLBACK: c_int = SQLITE_NOTICE | (2 << 8);
@@ -299,6 +300,7 @@ pub fn code_to_str(code: c_int) -> &'static str {
         SQLITE_CONSTRAINT_VTAB         => "An application-defined virtual table error occurred",
         SQLITE_CONSTRAINT_ROWID        => "A non-unique rowid occurred",
         SQLITE_CONSTRAINT_PINNED        => "SQLITE_CONSTRAINT_PINNED",
+        SQLITE_CONSTRAINT_DATATYPE        => "SQLITE_CONSTRAINT_DATATYPE",
 
         SQLITE_NOTICE_RECOVER_WAL      => "A WAL mode database file was recovered",
         SQLITE_NOTICE_RECOVER_ROLLBACK => "Hot journal was rolled back",
