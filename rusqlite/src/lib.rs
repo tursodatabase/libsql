@@ -1020,6 +1020,8 @@ bitflags::bitflags! {
         const SQLITE_OPEN_PRIVATE_CACHE = 0x0004_0000;
         /// The database filename is not allowed to be a symbolic link.
         const SQLITE_OPEN_NOFOLLOW = 0x0100_0000;
+        /// Extended result codes.
+        const SQLITE_OPEN_EXRESCODE = 0x0200_0000;
     }
 }
 
