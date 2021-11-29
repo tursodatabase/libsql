@@ -1,5 +1,5 @@
-C Following\sa\sprior\serror,\san\sALWAYS()\sin\ssqlite3ExprCanBeNull()\smight\sbe\sfalse.\ndbsqlfuzz\s5dbec6678a20e7595a34dfdd869a3b9722b3ca43.
-D 2021-11-28T19:54:38.307
+C Add\sthe\sunixepoch()\sfunction\sand\sthe\s'auto'\sand\s'julianday'\smodifiers.
+D 2021-11-29T17:23:27.456
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -498,7 +498,7 @@ F src/build.c c46bd4f5a69f398410c4472f7c1c4291fb8078d2c9758a2dad5916edd1d30ecc
 F src/callback.c 106b585da1edd57d75fa579d823a5218e0bf37f191dbf7417eeb4a8a9a267dbc
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 8159d5f706551861c18ec6c8f6bdf105e15ea00367f05d9ab65d31a1077facc1
-F src/date.c fa928630fecf1d436cdc7a7a5c950c781709023ca782c21b7a43cc7361a9451e
+F src/date.c d0f09f7924a27e0d8a41b41a781ccc680b102c35b5e9a94d129d58ba9d849ff2
 F src/dbpage.c 8a01e865bf8bc6d7b1844b4314443a6436c07c3efe1d488ed89e81719047833a
 F src/dbstat.c 861e08690fcb0f2ee1165eff0060ea8d4f3e2ea10f80dab7d32ad70443a6ff2d
 F src/delete.c 0c151975fa99560767d7747f9b60543d0093d9f8b89f13d2d6058e9c83ad19e7
@@ -1933,7 +1933,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bd41822c7424d393a30e92ff6cb254d25c26769889c1499a18a0b9339f5d6c8a
-R ee6ac26534b5f5e3f1e9b2504f0fbd97
+P 4e207401acce1bdc17025f2d55bd94234b435e286cd43e1eda03b6949a2a91d3
+R b11e280e59fe4b6e2248a7ea61ef7371
+T *branch * unixepoch
+T *sym-unixepoch *
+T -sym-trunk *
 U drh
-Z 9896c4e7bad9bcf4c4f3ad7c3deddb22
+Z 331f65dd5ca8ead7ee1403436d508d31
