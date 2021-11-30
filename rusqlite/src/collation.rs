@@ -16,9 +16,9 @@ unsafe extern "C" fn free_boxed_value<T>(p: *mut c_void) {
 impl Connection {
     /// Add or modify a collation.
     #[inline]
-    pub fn create_collation<'c, C>(&'c self, collation_name: &str, x_compare: C) -> Result<()>
+    pub fn create_collation<C>(&self, collation_name: &str, x_compare: C) -> Result<()>
     where
-        C: Fn(&str, &str) -> Ordering + Send + UnwindSafe + 'c,
+        C: Fn(&str, &str) -> Ordering + Send + UnwindSafe + 'static,
     {
         self.db
             .borrow_mut()
@@ -42,9 +42,9 @@ impl Connection {
 }
 
 impl InnerConnection {
-    fn create_collation<'c, C>(&'c mut self, collation_name: &str, x_compare: C) -> Result<()>
+    fn create_collation<C>(&mut self, collation_name: &str, x_compare: C) -> Result<()>
     where
-        C: Fn(&str, &str) -> Ordering + Send + UnwindSafe + 'c,
+        C: Fn(&str, &str) -> Ordering + Send + UnwindSafe + 'static,
     {
         unsafe extern "C" fn call_boxed_closure<C>(
             arg1: *mut c_void,

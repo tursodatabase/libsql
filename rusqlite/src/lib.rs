@@ -159,9 +159,11 @@ pub const NO_PARAMS: &[&dyn ToSql] = &[];
 /// }
 ///
 /// fn add_person(conn: &Connection, person: &Person) -> Result<()> {
-///     conn.execute("INSERT INTO person (name, age_in_years, data)
+///     conn.execute(
+///         "INSERT INTO person (name, age_in_years, data)
 ///                   VALUES (?1, ?2, ?3)",
-///                  params![person.name, person.age_in_years, person.data])?;
+///         params![person.name, person.age_in_years, person.data],
+///     )?;
 ///     Ok(())
 /// }
 /// ```
@@ -193,11 +195,11 @@ macro_rules! params {
 ///     conn.execute(
 ///         "INSERT INTO person (name, age_in_years, data)
 ///          VALUES (:name, :age, :data)",
-///         named_params!{
+///         named_params! {
 ///             ":name": person.name,
 ///             ":age": person.age_in_years,
 ///             ":data": person.data,
-///         }
+///         },
 ///     )?;
 ///     Ok(())
 /// }
@@ -462,10 +464,11 @@ impl Connection {
     /// ```rust,no_run
     /// # use rusqlite::{Connection, Result};
     /// fn create_tables(conn: &Connection) -> Result<()> {
-    ///     conn.execute_batch("BEGIN;
-    ///                         CREATE TABLE foo(x INTEGER);
-    ///                         CREATE TABLE bar(y TEXT);
-    ///                         COMMIT;",
+    ///     conn.execute_batch(
+    ///         "BEGIN;
+    ///          CREATE TABLE foo(x INTEGER);
+    ///          CREATE TABLE bar(y TEXT);
+    ///          COMMIT;",
     ///     )
     /// }
     /// ```
@@ -515,7 +518,10 @@ impl Connection {
     /// ```rust,no_run
     /// # use rusqlite::{params, Connection};
     /// fn update_rows(conn: &Connection) {
-    ///     match conn.execute("UPDATE foo SET bar = 'baz' WHERE qux = ?1 AND quux = ?2", params![1i32, 1.5f64]) {
+    ///     match conn.execute(
+    ///         "UPDATE foo SET bar = 'baz' WHERE qux = ?1 AND quux = ?2",
+    ///         params![1i32, 1.5f64],
+    ///     ) {
     ///         Ok(updated) => println!("{} rows were updated", updated),
     ///         Err(err) => println!("update failed: {}", err),
     ///     }

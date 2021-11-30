@@ -179,9 +179,11 @@ mod build_bundled {
 
             if cfg!(feature = "bundled-sqlcipher-vendored-openssl") {
                 cfg.include(std::env::var("DEP_OPENSSL_INCLUDE").unwrap());
-                // cargo will resolve downstream to the static lib in openssl-sys
+                // cargo will resolve downstream to the static lib in
+                // openssl-sys
             } else if is_windows {
-                // Windows without `-vendored-openssl` takes this to link against a prebuilt OpenSSL lib
+                // Windows without `-vendored-openssl` takes this to link against a prebuilt
+                // OpenSSL lib
                 cfg.include(inc_dir.to_string_lossy().as_ref());
                 let lib = lib_dir.join("libcrypto.lib");
                 cfg.flag(lib.to_string_lossy().as_ref());

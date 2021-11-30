@@ -116,7 +116,7 @@ use sealed::Sealed;
 /// fn insert(conn: &Connection) -> Result<()> {
 ///     let mut stmt = conn.prepare("INSERT INTO test (key, value) VALUES (:key, :value)")?;
 ///     // Using `rusqlite::params!`:
-///     stmt.execute(named_params!{ ":key": "one", ":val": 2 })?;
+///     stmt.execute(named_params! { ":key": "one", ":val": 2 })?;
 ///     // Alternatively:
 ///     stmt.execute(&[(":key", "three"), (":val", "four")])?;
 ///     // Or:
@@ -251,7 +251,7 @@ impl_for_array_ref!(
 /// ## Basic usage
 ///
 /// ```rust,no_run
-/// use rusqlite::{Connection, Result, params_from_iter};
+/// use rusqlite::{params_from_iter, Connection, Result};
 /// use std::collections::BTreeSet;
 ///
 /// fn query(conn: &Connection, ids: &BTreeSet<String>) -> Result<()> {

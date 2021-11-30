@@ -55,7 +55,7 @@ impl Statement<'_> {
     ///     // The `rusqlite::named_params!` macro (like `params!`) is useful for heterogeneous
     ///     // sets of parameters (where all parameters are not the same type), or for queries
     ///     // with many (more than 32) statically known parameters.
-    ///     stmt.execute(named_params!{ ":key": "one", ":val": 2 })?;
+    ///     stmt.execute(named_params! { ":key": "one", ":val": 2 })?;
     ///     // However, named parameters can also be passed like:
     ///     stmt.execute(&[(":key", "three"), (":val", "four")])?;
     ///     // Or even: (note that a &T is required for the value type, currently)
@@ -208,7 +208,7 @@ impl Statement<'_> {
     /// # use rusqlite::{Connection, Result, named_params};
     /// fn query(conn: &Connection) -> Result<()> {
     ///     let mut stmt = conn.prepare("SELECT * FROM test where name = :name")?;
-    ///     let mut rows = stmt.query(named_params!{ ":name": "one" })?;
+    ///     let mut rows = stmt.query(named_params! { ":name": "one" })?;
     ///     while let Some(row) = rows.next()? {
     ///         // ...
     ///     }
@@ -346,13 +346,12 @@ impl Statement<'_> {
     ///
     /// fn name_to_person(name: String) -> Result<Person> {
     ///     // ... check for valid name
-    ///     Ok(Person { name: name })
+    ///     Ok(Person { name })
     /// }
     ///
     /// fn get_names(conn: &Connection) -> Result<Vec<Person>> {
     ///     let mut stmt = conn.prepare("SELECT name FROM people WHERE id = :id")?;
-    ///     let rows =
-    ///         stmt.query_and_then(&[(":id", "one")], |row| name_to_person(row.get(0)?))?;
+    ///     let rows = stmt.query_and_then(&[(":id", "one")], |row| name_to_person(row.get(0)?))?;
     ///
     ///     let mut persons = Vec::new();
     ///     for person_result in rows {

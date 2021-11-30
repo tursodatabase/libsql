@@ -345,9 +345,9 @@ impl Connection {
     ///
     /// The callback returns `true` to rollback.
     #[inline]
-    pub fn commit_hook<'c, F>(&'c self, hook: Option<F>)
+    pub fn commit_hook<F>(&self, hook: Option<F>)
     where
-        F: FnMut() -> bool + Send + 'c,
+        F: FnMut() -> bool + Send + 'static,
     {
         self.db.borrow_mut().commit_hook(hook);
     }
@@ -357,9 +357,9 @@ impl Connection {
     ///
     /// The callback returns `true` to rollback.
     #[inline]
-    pub fn rollback_hook<'c, F>(&'c self, hook: Option<F>)
+    pub fn rollback_hook<F>(&self, hook: Option<F>)
     where
-        F: FnMut() + Send + 'c,
+        F: FnMut() + Send + 'static,
     {
         self.db.borrow_mut().rollback_hook(hook);
     }
@@ -375,9 +375,9 @@ impl Connection {
     /// - the name of the table that is updated,
     /// - the ROWID of the row that is updated.
     #[inline]
-    pub fn update_hook<'c, F>(&'c self, hook: Option<F>)
+    pub fn update_hook<F>(&self, hook: Option<F>)
     where
-        F: FnMut(Action, &str, &str, i64) + Send + 'c,
+        F: FnMut(Action, &str, &str, i64) + Send + 'static,
     {
         self.db.borrow_mut().update_hook(hook);
     }
@@ -418,9 +418,9 @@ impl InnerConnection {
         self.authorizer(None::<fn(AuthContext<'_>) -> Authorization>);
     }
 
-    fn commit_hook<'c, F>(&'c mut self, hook: Option<F>)
+    fn commit_hook<F>(&mut self, hook: Option<F>)
     where
-        F: FnMut() -> bool + Send + 'c,
+        F: FnMut() -> bool + Send + 'static,
     {
         unsafe extern "C" fn call_boxed_closure<F>(p_arg: *mut c_void) -> c_int
         where
@@ -467,9 +467,9 @@ impl InnerConnection {
         self.free_commit_hook = free_commit_hook;
     }
 
-    fn rollback_hook<'c, F>(&'c mut self, hook: Option<F>)
+    fn rollback_hook<F>(&mut self, hook: Option<F>)
     where
-        F: FnMut() + Send + 'c,
+        F: FnMut() + Send + 'static,
     {
         unsafe extern "C" fn call_boxed_closure<F>(p_arg: *mut c_void)
         where
@@ -508,9 +508,9 @@ impl InnerConnection {
         self.free_rollback_hook = free_rollback_hook;
     }
 
-    fn update_hook<'c, F>(&'c mut self, hook: Option<F>)
+    fn update_hook<F>(&mut self, hook: Option<F>)
     where
-        F: FnMut(Action, &str, &str, i64) + Send + 'c,
+        F: FnMut(Action, &str, &str, i64) + Send + 'static,
     {
         unsafe extern "C" fn call_boxed_closure<F>(
             p_arg: *mut c_void,
@@ -698,13 +698,13 @@ mod test {
     fn test_commit_hook() -> Result<()> {
         let db = Connection::open_in_memory()?;
 
-        let mut called = false;
+        static CALLED: AtomicBool = AtomicBool::new(false);
         db.commit_hook(Some(|| {
-            called = true;
+            CALLED.store(true, Ordering::Relaxed);
             false
         }));
         db.execute_batch("BEGIN; CREATE TABLE foo (t TEXT); COMMIT;")?;
-        assert!(called);
+        assert!(CALLED.load(Ordering::Relaxed));
         Ok(())
     }
 
@@ -726,12 +726,12 @@ mod test {
     fn test_rollback_hook() -> Result<()> {
         let db = Connection::open_in_memory()?;
 
-        let mut called = false;
+        static CALLED: AtomicBool = AtomicBool::new(false);
         db.rollback_hook(Some(|| {
-            called = true;
+            CALLED.store(true, Ordering::Relaxed);
         }));
         db.execute_batch("BEGIN; CREATE TABLE foo (t TEXT); ROLLBACK;")?;
-        assert!(called);
+        assert!(CALLED.load(Ordering::Relaxed));
         Ok(())
     }
 
@@ -739,17 +739,17 @@ mod test {
     fn test_update_hook() -> Result<()> {
         let db = Connection::open_in_memory()?;
 
-        let mut called = false;
+        static CALLED: AtomicBool = AtomicBool::new(false);
         db.update_hook(Some(|action, db: &str, tbl: &str, row_id| {
             assert_eq!(Action::SQLITE_INSERT, action);
             assert_eq!("main", db);
             assert_eq!("foo", tbl);
             assert_eq!(1, row_id);
-            called = true;
+            CALLED.store(true, Ordering::Relaxed);
         }));
         db.execute_batch("CREATE TABLE foo (t TEXT)")?;
         db.execute_batch("INSERT INTO foo VALUES ('lisa')")?;
-        assert!(called);
+        assert!(CALLED.load(Ordering::Relaxed));
         Ok(())
     }
 
