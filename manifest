@@ -1,5 +1,5 @@
-C Merge\sin\sthe\sproposed\sdate/time\sfunction\senhancements:\s\s(1)\sAdd\sthe\nunixepoch()\sfunction,\s(2)\sthe\s'auto'\smodifier\sand\s(3)\sthe\s'julianday'\smodifier.
-D 2021-11-29T18:09:54.447
+C In\sthe\sautomatic\sindex\sgenerator\slogic,\sbe\smore\sprecise\sabout\swhen\sa\npartial\sautomatic\sindex\sis\sallowed\sin\sorder\sto\scapture\smore\scases\swhere\sit\nis\slegal\sto\suse\sa\spartial\sautomatic\sindex.
+D 2021-11-30T14:07:58.372
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -637,7 +637,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c ed0398a7adf02c31e34aada42cc86c58f413a7afe5f741a5d373ad087abde028
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
-F src/where.c de0d4ff409c7b62a8803f9f267cc2c7fedddbc00de9ab7b5382c507383c18665
+F src/where.c 4b276017881185d0e1dc984df66c835cde6faf03834ef9ff34f48653f9144dec
 F src/whereInt.h 83877a75a1bce056ea44aff02f1dfa958ad1d6038c213ddadb8652003b45151d
 F src/wherecode.c 1f5b62f46d284c8886945eb7438415bc27e23e87bb60b9ee468fa6bd31268f33
 F src/whereexpr.c 17bdbf4f5b490e70a18635498f0b910a558f953a9bf80af7f19cbde6e60e6825
@@ -705,7 +705,7 @@ F test/autoinc.test 997d6f185f138229dc4251583a1d04816423dddc2fc034871a01aeb1d728
 F test/autoindex1.test fe27af92eaf884bd9c38f94be3e8afa04ec494e5eefb189902026181a6175f5e
 F test/autoindex2.test 12ef578928102baaa0dc23ad397601a2f4ecb0df
 F test/autoindex3.test 2d13958a5617e987624a428d7aed91bf51f322b49b476e3573fadec697ce6da5
-F test/autoindex4.test 49d3cd791a9baa16fb461d7ea3de80d019a819cf
+F test/autoindex4.test 75cb1191a552b8201351f5a50d160fcb9387a0fbbfb820c77798bfee7da3f8cf
 F test/autoindex5.test 2ee94f033b87ca0160e08d81034c507aff8e230df2627f0304fa309b2fee19a3
 F test/autovacuum.test 00671369bbf96c6a49989a9425f5b78b94075d6a4b031e5e00000c2c32f365df
 F test/autovacuum2.test 76f7eb4fe6a6bf6d33a196a7141dba98886d2fb53a268d7feca285d5da4759d7
@@ -1933,8 +1933,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8ad1fcaa1b734e32d8d67c4cca7a23d2b9717ae5c7c2c5ad5a3411a503ee23ae 559fdc0aa76f4c207f99f7b0cee42043b402dc388165817529d9963b115a798c
-R ff09119d5c0ee6b5a0429abffd206856
-T +closed 559fdc0aa76f4c207f99f7b0cee42043b402dc388165817529d9963b115a798c
+P 19c51b46e4095ee28badb10f4e08bbd330bda320c9a8806e93b8fc60ba211a2e
+R 0fbfb4a13255ae0bad405a99d2bdf9ec
 U drh
-Z 24b943d8efa351054aa299f0bcbeffcd
+Z 511f59b4656ae7d0825d672340080bad

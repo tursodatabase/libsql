@@ -791,13 +791,13 @@ static void constructAutomaticIndex(
   idxCols = 0;
   for(pTerm=pWC->a; pTerm<pWCEnd; pTerm++){
     Expr *pExpr = pTerm->pExpr;
-    assert( !ExprHasProperty(pExpr, EP_FromJoin)    /* prereq always non-zero */
-         || pExpr->iRightJoinTable!=pSrc->iCursor   /*   for the right-hand   */
-         || pLoop->prereq!=0 );                     /*   table of a LEFT JOIN */
-    if( pLoop->prereq==0
-     && (pTerm->wtFlags & TERM_VIRTUAL)==0
-     && !ExprHasProperty(pExpr, EP_FromJoin)
-     && sqlite3ExprIsTableConstant(pExpr, pSrc->iCursor) ){
+    /* Make the automatic index a partial index if there are terms in the
+    ** WHERE clause (or the ON clause of a LEFT join) that constrain which
+    ** rows of the target table (pSrc) that can be used. */
+    if( (pTerm->wtFlags & TERM_VIRTUAL)==0
+     && ((pSrc->fg.jointype&JT_LEFT)==0 || ExprHasProperty(pExpr,EP_FromJoin))
+     && sqlite3ExprIsTableConstant(pExpr, pSrc->iCursor)
+    ){
       pPartial = sqlite3ExprAnd(pParse, pPartial,
                                 sqlite3ExprDup(pParse->db, pExpr, 0));
     }
