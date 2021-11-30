@@ -412,7 +412,7 @@ impl Connection {
     ) -> Result<()>
     where
         A: RefUnwindSafe + UnwindSafe,
-        D: Aggregate<A, T>,
+        D: Aggregate<A, T> + 'static,
         T: ToSql,
     {
         self.db
@@ -437,7 +437,7 @@ impl Connection {
     ) -> Result<()>
     where
         A: RefUnwindSafe + UnwindSafe,
-        W: WindowAggregate<A, T>,
+        W: WindowAggregate<A, T> + 'static,
         T: ToSql,
     {
         self.db
