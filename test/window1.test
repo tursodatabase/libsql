@@ -1267,13 +1267,15 @@ do_catchsql_test 31.3 {
 } {1 {frame ending offset must be a non-negative integer}}
 
 # 2019-11-16 chromium issue 1025467
-db close
-sqlite3 db :memory:
-do_catchsql_test 32.10 {
-  CREATE VIEW a AS SELECT NULL INTERSECT SELECT NULL ORDER BY s() OVER R;
-  CREATE TABLE a0 AS SELECT 0;
-  ALTER TABLE a0 RENAME TO S;
-} {1 {error in view a: 1st ORDER BY term does not match any column in the result set}}
+ifcapable altertable {
+  db close
+  sqlite3 db :memory:
+  do_catchsql_test 32.10 {
+    CREATE VIEW a AS SELECT NULL INTERSECT SELECT NULL ORDER BY s() OVER R;
+    CREATE TABLE a0 AS SELECT 0;
+    ALTER TABLE a0 RENAME TO S;
+  } {1 {error in view a: 1st ORDER BY term does not match any column in the result set}}
+}
 
 reset_db
 do_execsql_test 33.1 {
@@ -2188,6 +2190,18 @@ do_execsql_test 70.1 {
 do_execsql_test 70.2 {
   SELECT substr(a,4,lag(a,7) OVER(PARTITION BY 'cf23' ORDER BY likely(2))) AS ca0 FROM t1 ORDER BY ca0;
 }
+
+# 2021-11-07
+# Bug report from Wang Ke
+# https://sqlite.org/forum/forumpost/9ba4f60ff8
+reset_db
+do_catchsql_test 71.0 {
+  CREATE TABLE t0(a);
+  SELECT a FROM t0, (SELECT a AS b FROM t0)
+   WHERE (a,1)=(SELECT 2,2 UNION SELECT sum(b),max(b) OVER(ORDER BY b) ORDER BY 2)
+     AND b=4
+   ORDER BY b;
+} {/1 {.*}/}
 
 
 finish_test

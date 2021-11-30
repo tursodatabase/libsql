@@ -25,6 +25,7 @@ proc parse_uri {uri} {
   set ::uri_open [list]
   set DB [sqlite3_open_v2 $uri {
     SQLITE_OPEN_READWRITE SQLITE_OPEN_CREATE SQLITE_OPEN_WAL
+    SQLITE_OPEN_EXRESCODE
   } tvfs]
   set fileName [sqlite3_db_filename $DB main]
   sqlite3_close $DB

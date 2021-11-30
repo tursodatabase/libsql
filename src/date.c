@@ -1009,131 +1009,100 @@ static void strftimeFunc(
   sqlite3_value **argv
 ){
   DateTime x;
-  u64 n;
   size_t i,j;
-  char *z;
   sqlite3 *db;
   const char *zFmt;
-  char zBuf[100];
+  sqlite3_str sRes;
+
+
   if( argc==0 ) return;
   zFmt = (const char*)sqlite3_value_text(argv[0]);
   if( zFmt==0 || isDate(context, argc-1, argv+1, &x) ) return;
   db = sqlite3_context_db_handle(context);
-  for(i=0, n=1; zFmt[i]; i++, n++){
-    if( zFmt[i]=='%' ){
-      switch( zFmt[i+1] ){
-        case 'd':
-        case 'H':
-        case 'm':
-        case 'M':
-        case 'S':
-        case 'W':
-          n++;
-          /* fall thru */
-        case 'w':
-        case '%':
-          break;
-        case 'f':
-          n += 8;
-          break;
-        case 'j':
-          n += 3;
-          break;
-        case 'Y':
-          n += 8;
-          break;
-        case 's':
-        case 'J':
-          n += 50;
-          break;
-        default:
-          return;  /* ERROR.  return a NULL */
-      }
-      i++;
-    }
-  }
-  testcase( n==sizeof(zBuf)-1 );
-  testcase( n==sizeof(zBuf) );
-  testcase( n==(u64)db->aLimit[SQLITE_LIMIT_LENGTH]+1 );
-  testcase( n==(u64)db->aLimit[SQLITE_LIMIT_LENGTH] );
-  if( n<sizeof(zBuf) ){
-    z = zBuf;
-  }else if( n>(u64)db->aLimit[SQLITE_LIMIT_LENGTH] ){
-    sqlite3_result_error_toobig(context);
-    return;
-  }else{
-    z = sqlite3DbMallocRawNN(db, (int)n);
-    if( z==0 ){
-      sqlite3_result_error_nomem(context);
-      return;
-    }
-  }
+  sqlite3StrAccumInit(&sRes, 0, 0, 0, db->aLimit[SQLITE_LIMIT_LENGTH]);
+
   computeJD(&x);
   computeYMD_HMS(&x);
   for(i=j=0; zFmt[i]; i++){
-    if( zFmt[i]!='%' ){
-      z[j++] = zFmt[i];
-    }else{
-      i++;
-      switch( zFmt[i] ){
-        case 'd':  sqlite3_snprintf(3, &z[j],"%02d",x.D); j+=2; break;
-        case 'f': {
-          double s = x.s;
-          if( s>59.999 ) s = 59.999;
-          sqlite3_snprintf(7, &z[j],"%06.3f", s);
-          j += sqlite3Strlen30(&z[j]);
-          break;
+    if( zFmt[i]!='%' ) continue;
+    if( j<i ) sqlite3_str_append(&sRes, zFmt+j, (int)(i-j));
+    i++;
+    j = i + 1;
+    switch( zFmt[i] ){
+      case 'd': {
+        sqlite3_str_appendf(&sRes, "%02d", x.D);
+        break;
+      }
+      case 'f': {
+        double s = x.s;
+        if( s>59.999 ) s = 59.999;
+        sqlite3_str_appendf(&sRes, "%06.3f", s);
+        break;
+      }
+      case 'H': {
+        sqlite3_str_appendf(&sRes, "%02d", x.h);
+        break;
+      }
+      case 'W': /* Fall thru */
+      case 'j': {
+        int nDay;             /* Number of days since 1st day of year */
+        DateTime y = x;
+        y.validJD = 0;
+        y.M = 1;
+        y.D = 1;
+        computeJD(&y);
+        nDay = (int)((x.iJD-y.iJD+43200000)/86400000);
+        if( zFmt[i]=='W' ){
+          int wd;   /* 0=Monday, 1=Tuesday, ... 6=Sunday */
+          wd = (int)(((x.iJD+43200000)/86400000)%7);
+          sqlite3_str_appendf(&sRes,"%02d",(nDay+7-wd)/7);
+        }else{
+          sqlite3_str_appendf(&sRes,"%03d",nDay+1);
         }
-        case 'H':  sqlite3_snprintf(3, &z[j],"%02d",x.h); j+=2; break;
-        case 'W': /* Fall thru */
-        case 'j': {
-          int nDay;             /* Number of days since 1st day of year */
-          DateTime y = x;
-          y.validJD = 0;
-          y.M = 1;
-          y.D = 1;
-          computeJD(&y);
-          nDay = (int)((x.iJD-y.iJD+43200000)/86400000);
-          if( zFmt[i]=='W' ){
-            int wd;   /* 0=Monday, 1=Tuesday, ... 6=Sunday */
-            wd = (int)(((x.iJD+43200000)/86400000)%7);
-            sqlite3_snprintf(3, &z[j],"%02d",(nDay+7-wd)/7);
-            j += 2;
-          }else{
-            sqlite3_snprintf(4, &z[j],"%03d",nDay+1);
-            j += 3;
-          }
-          break;
-        }
-        case 'J': {
-          sqlite3_snprintf(20, &z[j],"%.16g",x.iJD/86400000.0);
-          j+=sqlite3Strlen30(&z[j]);
-          break;
-        }
-        case 'm':  sqlite3_snprintf(3, &z[j],"%02d",x.M); j+=2; break;
-        case 'M':  sqlite3_snprintf(3, &z[j],"%02d",x.m); j+=2; break;
-        case 's': {
-          i64 iS = (i64)(x.iJD/1000 - 21086676*(i64)10000);
-          sqlite3Int64ToText(iS, &z[j]);
-          j += sqlite3Strlen30(&z[j]);
-          break;
-        }
-        case 'S':  sqlite3_snprintf(3,&z[j],"%02d",(int)x.s); j+=2; break;
-        case 'w': {
-          z[j++] = (char)(((x.iJD+129600000)/86400000) % 7) + '0';
-          break;
-        }
-        case 'Y': {
-          sqlite3_snprintf(5,&z[j],"%04d",x.Y); j+=sqlite3Strlen30(&z[j]);
-          break;
-        }
-        default:   z[j++] = '%'; break;
+        break;
+      }
+      case 'J': {
+        sqlite3_str_appendf(&sRes,"%.16g",x.iJD/86400000.0);
+        break;
+      }
+      case 'm': {
+        sqlite3_str_appendf(&sRes,"%02d",x.M);
+        break;
+      }
+      case 'M': {
+        sqlite3_str_appendf(&sRes,"%02d",x.m);
+        break;
+      }
+      case 's': {
+        i64 iS = (i64)(x.iJD/1000 - 21086676*(i64)10000);
+        sqlite3_str_appendf(&sRes,"%lld",iS);
+        break;
+      }
+      case 'S': {
+        sqlite3_str_appendf(&sRes,"%02d",(int)x.s);
+        break;
+      }
+      case 'w': {
+        sqlite3_str_appendchar(&sRes, 1,
+                       (char)(((x.iJD+129600000)/86400000) % 7) + '0');
+        break;
+      }
+      case 'Y': {
+        sqlite3_str_appendf(&sRes,"%04d",x.Y);
+        break;
+      }
+      case '%': {
+        sqlite3_str_appendchar(&sRes, 1, '%');
+        break;
+      }
+      default: {
+        sqlite3_str_reset(&sRes);
+        return;
       }
     }
   }
-  z[j] = 0;
-  sqlite3_result_text(context, z, -1,
-                      z==zBuf ? SQLITE_TRANSIENT : SQLITE_DYNAMIC);
+  if( j<i ) sqlite3_str_append(&sRes, zFmt+j, (int)(i-j));
+  sqlite3ResultStrAccum(context, &sRes);
 }
 
 /*

@@ -29,10 +29,15 @@ static void corruptSchema(
     pData->rc = SQLITE_NOMEM_BKPT;
   }else if( pData->pzErrMsg[0]!=0 ){
     /* A error message has already been generated.  Do not overwrite it */
-  }else if( pData->mInitFlags & (INITFLAG_AlterRename|INITFLAG_AlterDrop) ){
+  }else if( pData->mInitFlags & (INITFLAG_AlterMask) ){
+    static const char *azAlterType[] = {
+       "rename",
+       "drop column",
+       "add column"
+    };
     *pData->pzErrMsg = sqlite3MPrintf(db, 
         "error in %s %s after %s: %s", azObj[0], azObj[1], 
-        (pData->mInitFlags & INITFLAG_AlterRename) ? "rename" : "drop column",
+        azAlterType[(pData->mInitFlags&INITFLAG_AlterMask)-1], 
         zExtra
     );
     pData->rc = SQLITE_ERROR;
@@ -134,7 +139,7 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
       }
     }
     db->init.orphanTrigger = 0;
-    db->init.azInit = argv;
+    db->init.azInit = (const char**)argv;
     pStmt = 0;
     TESTONLY(rcp = ) sqlite3Prepare(db, argv[4], -1, 0, 0, &pStmt, 0);
     rc = db->errCode;
@@ -153,6 +158,7 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
         }
       }
     }
+    db->init.azInit = sqlite3StdType; /* Any array of string ptrs will do */
     sqlite3_finalize(pStmt);
   }else if( argv[1]==0 || (argv[4]!=0 && argv[4][0]!=0) ){
     corruptSchema(pData, argv, 0);

@@ -89,6 +89,9 @@
 #      verbose
 #
 
+# Only run this script once.  If sourced a second time, make it a no-op
+if {[info exists ::tester_tcl_has_run]} return
+
 # Set the precision of FP arithmatic used by the interpreter. And
 # configure SQLite to take database file locks on the page that begins
 # 64KB into the database file instead of the one 1GB in. This means
@@ -1200,13 +1203,36 @@ proc speed_trial_summary {name} {
   }
 }
 
-# Run this routine last
+# Clear out left-over configuration setup from the end of a test
 #
-proc finish_test {} {
-  catch {db close}
+proc finish_test_precleanup {} {
   catch {db1 close}
   catch {db2 close}
   catch {db3 close}
+  catch {unregister_devsim}
+  catch {unregister_jt_vfs}
+  catch {unregister_demovfs}
+}
+
+# Run this routine last
+#
+proc finish_test {} {
+  global argv
+  finish_test_precleanup
+  if {[llength $argv]>0} {
+    # If additional test scripts are specified on the command-line, 
+    # run them also, before quitting.
+    proc finish_test {} {
+      finish_test_precleanup
+      return
+    }
+    foreach extra $argv {
+      puts "Running \"$extra\""
+      db_delete_and_reopen
+      uplevel #0 source $extra
+    }
+  }
+  catch {db close}
   if {0==[info exists ::SLAVE]} { finalize_testing }
 }
 proc finalize_testing {} {
@@ -2497,3 +2523,5 @@ extra_schema_checks 1
 
 source $testdir/thread_common.tcl
 source $testdir/malloc_common.tcl
+
+set tester_tcl_has_run 1

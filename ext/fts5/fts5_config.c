@@ -562,6 +562,7 @@ int sqlite3Fts5ConfigParse(
     z = fts5ConfigSkipWhitespace(z);
     if( z && *z=='=' ){
       bOption = 1;
+      assert( zOne!=0 );
       z++;
       if( bMustBeCol ) z = 0;
     }
@@ -578,7 +579,11 @@ int sqlite3Fts5ConfigParse(
         rc = SQLITE_ERROR;
       }else{
         if( bOption ){
-          rc = fts5ConfigParseSpecial(pGlobal, pRet, zOne, zTwo?zTwo:"", pzErr);
+          rc = fts5ConfigParseSpecial(pGlobal, pRet, 
+            ALWAYS(zOne)?zOne:"",
+            zTwo?zTwo:"",
+            pzErr
+          );
         }else{
           rc = fts5ConfigParseColumn(pRet, zOne, zTwo, pzErr);
           zOne = 0;

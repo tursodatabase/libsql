@@ -1,0 +1,1583 @@
+# 2021 September 13
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# The focus of this file is testing the r-tree extension.
+#
+
+if {![info exists testdir]} {
+  set testdir [file join [file dirname [info script]] .. .. test]
+}
+source [file join [file dirname [info script]] rtree_util.tcl]
+source $testdir/tester.tcl
+set testprefix rtreedoc
+
+ifcapable !rtree {
+  finish_test
+  return
+}
+
+# This command returns the number of columns in table $tbl within the
+# database opened by database handle $db
+proc column_count {db tbl} {
+  set nCol 0
+  $db eval "PRAGMA table_info = $tbl" { incr nCol }
+  return $nCol
+}
+
+proc column_name_list {db tbl} {
+  set lCol [list]
+  $db eval "PRAGMA table_info = $tbl" { 
+    lappend lCol $name
+  }
+  return $lCol
+}
+unset -nocomplain res
+
+#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------
+# Section 3 of documentation.
+#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------
+set testprefix rtreedoc-1
+
+# EVIDENCE-OF: R-15060-13876 A 1-dimensional R*Tree thus has 3 columns.
+do_execsql_test 1.1.1 { CREATE VIRTUAL TABLE rt1 USING rtree(id, x1,x2) }
+do_test         1.1.2 { column_count db rt1 } 3
+
+# EVIDENCE-OF: R-19353-19546 A 2-dimensional R*Tree has 5 columns.
+do_execsql_test 1.2.1 { CREATE VIRTUAL TABLE rt2 USING rtree(id,x1,x2, y1,y2) }
+do_test         1.2.2 { column_count db rt2 } 5
+
+# EVIDENCE-OF: R-13615-19528 A 3-dimensional R*Tree has 7 columns.
+do_execsql_test 1.3.1 { 
+  CREATE VIRTUAL TABLE rt3 USING rtree(id, x1,x2, y1,y2, z1,z2) 
+}
+do_test         1.3.2 { column_count db rt3 } 7
+
+# EVIDENCE-OF: R-53479-41922 A 4-dimensional R*Tree has 9 columns.
+do_execsql_test 1.4.1 { 
+  CREATE VIRTUAL TABLE rt4 USING rtree(id, x1,x2, y1,y2, z1,z2, v1,v2) 
+}
+do_test         1.4.2 { column_count db rt4 } 9
+
+# EVIDENCE-OF: R-13981-28768 And a 5-dimensional R*Tree has 11 columns.
+do_execsql_test 1.5.1 { 
+  CREATE VIRTUAL TABLE rt5 USING rtree(id, x1,x2, y1,y2, z1,z2, v1,v2, w1,w2)
+}
+do_test         1.5.2 { column_count db rt5 } 11
+
+
+# Attempt to create r-tree tables with 6 and 7 dimensions.
+#
+# EVIDENCE-OF: R-61533-25862 The SQLite R*Tree implementation does not
+# support R*Trees wider than 5 dimensions.
+do_catchsql_test 2.1.1 { 
+  CREATE VIRTUAL TABLE rt6 USING rtree(
+    id, x1,x2, y1,y2, z1,z2, v1,v2, w1,w2, a1,a2
+  )
+} {1 {Too many columns for an rtree table}}
+do_catchsql_test 2.1.2 { 
+  CREATE VIRTUAL TABLE rt6 USING rtree(
+    id, x1,x2, y1,y2, z1,z2, v1,v2, w1,w2, a1,a2, b1, b2
+  )
+} {1 {Too many columns for an rtree table}}
+
+# Attempt to create r-tree tables with no columns, a single column, or
+# an even number of columns. This and the tests above establish that:
+#
+# EVIDENCE-OF: R-16717-50504 Each R*Tree index is a virtual table with
+# an odd number of columns between 3 and 11.
+foreach {tn cols err} {
+  1 ""                        "Too few columns for an rtree table"
+  2 "x"                       "Too few columns for an rtree table"
+  3 "x,y"                     "Too few columns for an rtree table"
+  4 "a,b,c,d"                 "Wrong number of columns for an rtree table"
+  5 "a,b,c,d,e,f"             "Wrong number of columns for an rtree table"
+  6 "a,b,c,d,e,f,g,h"         "Wrong number of columns for an rtree table"
+  7 "a,b,c,d,e,f,g,h,i,j"     "Wrong number of columns for an rtree table"
+  8 "a,b,c,d,e,f,g,h,i,j,k,l" "Too many columns for an rtree table"
+} {
+  do_catchsql_test 3.$tn "
+    CREATE VIRTUAL TABLE xyz USING rtree($cols)
+  " [list 1 $err]
+}
+
+# EVIDENCE-OF: R-17874-21123 The first column of an SQLite R*Tree is
+# similar to an integer primary key column of a normal SQLite table.
+#
+# EVIDENCE-OF: R-46619-65417 The first column is always a 64-bit signed
+# integer primary key.
+#
+# EVIDENCE-OF: R-46866-24036 It may only store a 64-bit signed integer
+# value.
+#
+# EVIDENCE-OF: R-00250-64843 If an attempt is made to insert any other
+# non-integer value into this column, the r-tree module silently
+# converts it to an integer before writing it into the database.
+#
+do_execsql_test 4.0 { CREATE VIRTUAL TABLE rt USING rtree(id, x1, x2) }
+foreach {tn val res} {
+  1 10    10
+  2 10.6  10
+  3 10.99 10
+  4 '123' 123
+  5 X'313233'  123
+  6 -10   -10
+  7  9223372036854775807 9223372036854775807 
+  8 -9223372036854775808 -9223372036854775808 
+  9  '9223372036854775807' 9223372036854775807
+  10  '-9223372036854775808' -9223372036854775808
+  11  'hello+world' 0
+} {
+  do_execsql_test 4.$tn.1 "
+    DELETE FROM rt;
+    INSERT INTO rt VALUES($val, 10, 20);
+  "
+  do_execsql_test 4.$tn.2 {
+    SELECT typeof(id), id FROM rt
+  } [list integer $res]
+}
+
+# EVIDENCE-OF: R-15544-29079 Inserting a NULL value into this column
+# causes SQLite to automatically generate a new unique primary key
+# value.
+do_execsql_test 5.1 {
+  DELETE FROM rt;
+  INSERT INTO rt VALUES(100, 1, 2);
+  INSERT INTO rt VALUES(NULL, 1, 2);
+}
+do_execsql_test 5.2 { SELECT id FROM rt } {100 101}
+do_execsql_test 5.3 { 
+  INSERT INTO rt VALUES(9223372036854775807, 1, 2);
+  INSERT INTO rt VALUES(NULL, 1, 2);
+}
+do_execsql_test 5.4 {
+  SELECT count(*) FROM rt;
+} 4
+do_execsql_test 5.5 {
+  SELECT id IN(100, 101, 9223372036854775807) FROM rt ORDER BY 1;
+} {0 1 1 1}
+
+
+# EVIDENCE-OF: R-64317-38978 The other columns are pairs, one pair per
+# dimension, containing the minimum and maximum values for that
+# dimension, respectively.
+#
+# Show this by observing that attempts to insert rows with max>min fail.
+#
+do_execsql_test 6.1 {
+  CREATE VIRTUAL TABLE rtF USING rtree(id, x1,x2, y1,y2);
+  CREATE VIRTUAL TABLE rtI USING rtree_i32(id, x1,x2, y1,y2, z1,z2);
+}
+foreach {tn x1 x2 y1 y2 ok} {
+  1   10.3 20.1   30.9 40.2   1
+  2   10.3 20.1   40.2 30.9   0
+  3   10.3 30.9   20.1 40.2   1
+  4   20.1 10.3   30.9 40.2   0
+} {
+  do_test 6.2.$tn {
+    catch { db eval { INSERT INTO rtF VALUES(NULL, $x1, $x2, $y1, $y2) } }
+  } [expr $ok==0]
+}
+foreach {tn x1 x2 y1 y2 z1 z2 ok} {
+  1   10 20   30 40  50 60  1
+  2   10 20   30 40  60 50  0
+  3   10 20   30 50  40 60  1
+  4   10 20   40 30  50 60  0
+  5   10 30   20 40  50 60  1
+  6   20 10   30 40  50 60  0
+} {
+  do_test 6.3.$tn {
+    catch { db eval { INSERT INTO rtI VALUES(NULL,$x1,$x2,$y1,$y2,$z1,$z2) } }
+  } [expr $ok==0]
+}
+
+# EVIDENCE-OF: R-08054-15429 The min/max-value pair columns are stored
+# as 32-bit floating point values for "rtree" virtual tables or as
+# 32-bit signed integers in "rtree_i32" virtual tables.
+#
+# Show this by showing that large values are rounded in ways consistent
+# with those two 32-bit types.
+do_execsql_test 7.1 {
+  DELETE FROM rtI;
+  INSERT INTO rtI VALUES(
+    0, -2000000000, 2000000000, -5000000000, 5000000000,
+    -1000000000000, 10000000000000
+  );
+  SELECT * FROM rtI;
+} {
+  0 -2000000000 2000000000 -705032704 705032704 727379968 1316134912
+}
+do_execsql_test 7.2 {
+  DELETE FROM rtF;
+  INSERT INTO rtF VALUES(
+    0, -2000000000, 2000000000, 
+    -1000000000000, 10000000000000
+  );
+  SELECT * FROM rtF;
+} {
+  0 -2000000000.0 2000000000.0 -1000000126976.0 10000000876544.0
+}
+
+# EVIDENCE-OF: R-47371-54529 Unlike regular SQLite tables which can
+# store data in a variety of datatypes and formats, the R*Tree rigidly
+# enforce these storage types.
+#
+# EVIDENCE-OF: R-39153-14977 If any other type of value is inserted into
+# such a column, the r-tree module silently converts it to the required
+# type before writing the new record to the database.
+do_execsql_test 8.1 {
+  DELETE FROM rtI;
+  INSERT INTO rtI VALUES(
+    1, 'hello world', X'616263', NULL, 44.5, 1000, 9999.9999
+  );
+  SELECT * FROM rtI;
+} {
+  1   0 0    0 44    1000 9999
+}
+
+do_execsql_test 8.2 {
+  SELECT 
+    typeof(x1), typeof(x2), typeof(y1), typeof(y2), typeof(z1), typeof(z2)
+  FROM rtI
+} {integer integer integer integer integer integer}
+
+do_execsql_test 8.3 {
+  DELETE FROM rtF;
+  INSERT INTO rtF VALUES(
+    1, 'hello world', X'616263', NULL, 44
+  );
+  SELECT * FROM rtF;
+} {
+  1   0.0 0.0    0.0 44.0
+}
+do_execsql_test 8.4 {
+  SELECT 
+    typeof(x1), typeof(x2), typeof(y1), typeof(y2)
+  FROM rtF
+} {real real real real}
+
+
+
+
+#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------
+# Section 3.1 of documentation.
+#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------
+set testprefix rtreedoc-2
+reset_db
+
+foreach {tn name clist} {
+  1 t1 "id x1 x2"
+  2 t2 "id x1 x2   y1 y2   z1 z2"
+} {
+# EVIDENCE-OF: R-15142-18077 A new R*Tree index is created as follows:
+# CREATE VIRTUAL TABLE <name> USING rtree(<column-names>);
+  do_execsql_test 1.$tn.1 "
+    CREATE VIRTUAL TABLE $name USING rtree([join $clist ,])
+  "
+
+# EVIDENCE-OF: R-51698-09302 The <name> is the name your
+# application chooses for the R*Tree index and <column-names> is a
+# comma separated list of between 3 and 11 columns.
+  do_test 1.$tn.2 { column_name_list db $name } [list {*}$clist]
+
+# EVIDENCE-OF: R-50130-53472 The virtual <name> table creates
+# three shadow tables to actually store its content.
+  do_execsql_test 1.$tn.3 {
+    SELECT count(*) FROM sqlite_schema
+  } [expr 1+3]
+
+# EVIDENCE-OF: R-45256-35998 The names of these shadow tables are:
+# <name>_node <name>_rowid <name>_parent
+  do_execsql_test 1.$tn.4 {
+    SELECT name FROM sqlite_schema WHERE rootpage>0 ORDER BY 1
+  } [list ${name}_node ${name}_parent ${name}_rowid]
+
+  do_execsql_test 1.$tn.5 "DROP TABLE $name"
+}
+
+# EVIDENCE-OF: R-11241-54478 As an example, consider creating a
+# two-dimensional R*Tree index for use in spatial queries: CREATE
+# VIRTUAL TABLE demo_index USING rtree( id, -- Integer primary key minX,
+# maxX, -- Minimum and maximum X coordinate minY, maxY -- Minimum and
+# maximum Y coordinate );
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE demo_index USING rtree(
+      id,              -- Integer primary key
+      minX, maxX,      -- Minimum and maximum X coordinate
+      minY, maxY       -- Minimum and maximum Y coordinate
+  );
+  INSERT INTO demo_index VALUES(1,2,3,4,5);
+  INSERT INTO demo_index VALUES(6,7,8,9,10);
+}
+
+# EVIDENCE-OF: R-02287-33529 The shadow tables are ordinary SQLite data
+# tables.
+#
+# Ordinary tables. With ordinary sqlite_schema entries.
+do_execsql_test 2.1 {
+  SELECT type, name, sql FROM sqlite_schema WHERE sql NOT LIKE '%virtual%'
+} {
+  table demo_index_rowid 
+    {CREATE TABLE "demo_index_rowid"(rowid INTEGER PRIMARY KEY,nodeno)} 
+  table demo_index_node
+    {CREATE TABLE "demo_index_node"(nodeno INTEGER PRIMARY KEY,data)} 
+  table demo_index_parent
+    {CREATE TABLE "demo_index_parent"(nodeno INTEGER PRIMARY KEY,parentnode)}
+}
+
+# EVIDENCE-OF: R-10863-13089 You can query them directly if you like,
+# though this unlikely to reveal anything particularly useful.
+#
+# Querying:
+do_execsql_test 2.2 {
+  SELECT count(*) FROM demo_index_node;
+  SELECT count(*) FROM demo_index_rowid;
+  SELECT count(*) FROM demo_index_parent;
+} {1 2 0}
+
+# EVIDENCE-OF: R-05650-46070 And you can UPDATE, DELETE, INSERT or even
+# DROP the shadow tables, though doing so will corrupt your R*Tree
+# index.
+do_execsql_test 2.3 {
+  DELETE FROM demo_index_rowid;
+  INSERT INTO demo_index_parent VALUES(2, 3);
+  UPDATE demo_index_node SET data = 'hello world'
+}
+do_catchsql_test 2.4 {
+  SELECT * FROM demo_index WHERE minX>10 AND maxX<30
+} {1 {database disk image is malformed}}
+do_execsql_test 2.5 {
+  DROP TABLE demo_index_rowid
+}
+
+#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------
+# Section 3.1.1 of documentation.
+#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------
+set testprefix rtreedoc-3
+reset_db
+
+# EVIDENCE-OF: R-44253-50720 In the argments to "rtree" in the CREATE
+# VIRTUAL TABLE statement, the names of the columns are taken from the
+# first token of each argument. All subsequent tokens within each
+# argument are silently ignored.
+#
+foreach {tn cols lCol} {
+  1 {(id TEXT, x1 TEXT, x2 TEXT, y1 TEXT, y2 TEXT)} {id x1 x2 y1 y2}
+  2 {(id TEXT, x1 UNIQUE, x2 TEXT, y1 NOT NULL, y2 TEXT)} {id x1 x2 y1 y2}
+  3 {(id, x1 DEFAULT 4, x2 TEXT, y1 NOT NULL, y2 TEXT)} {id x1 x2 y1 y2}
+} {
+  do_execsql_test 1.$tn.1 " CREATE VIRTUAL TABLE abc USING rtree $cols "
+  do_test 1.$tn.2 { column_name_list db abc } $lCol
+
+# EVIDENCE-OF: R-52032-06717 This means, for example, that if you try to
+# give a column a type affinity or add a constraint such as UNIQUE or
+# NOT NULL or DEFAULT to a column, those extra tokens are accepted as
+# valid, but they do not change the behavior of the rtree.
+
+  # Show there are no UNIQUE constraints
+  do_execsql_test 1.$tn.3 {
+    INSERT INTO abc VALUES(1, 10.0, 20.0, 10.0, 20.0);
+    INSERT INTO abc VALUES(2, 10.0, 20.0, 10.0, 20.0);
+  }
+
+  # Show the default values have not been modified
+  do_execsql_test 1.$tn.4 {
+    INSERT INTO abc DEFAULT VALUES;
+    SELECT * FROM abc WHERE rowid NOT IN (1,2)
+  } {3 0.0 0.0 0.0 0.0}
+
+  # Show that there are no NOT NULL constraints
+  do_execsql_test 1.$tn.5 {
+    INSERT INTO abc VALUES(NULL, NULL, NULL, NULL, NULL);
+    SELECT * FROM abc WHERE rowid NOT IN (1,2,3)
+  } {4 0.0 0.0 0.0 0.0}
+
+# EVIDENCE-OF: R-06893-30579 In an RTREE virtual table, the first column
+# always has a type affinity of INTEGER and all other data columns have
+# a type affinity of REAL.
+  do_execsql_test 1.$tn.5 {
+    INSERT INTO abc VALUES('5', '5', '5', '5', '5');
+    SELECT * FROM abc WHERE rowid NOT IN (1,2,3,4)
+  } {5 5.0 5.0 5.0 5.0}
+  do_execsql_test 1.$tn.6 {
+    SELECT type FROM pragma_table_info('abc') ORDER BY cid
+  } {INT REAL REAL REAL REAL}
+
+  do_execsql_test 1.$tn.7 " CREATE VIRTUAL TABLE abc2 USING rtree_i32 $cols "
+
+# EVIDENCE-OF: R-06224-52418 In an RTREE_I32 virtual table, all columns
+# have type affinity of INTEGER.
+  do_execsql_test 1.$tn.8 {
+    INSERT INTO abc2 VALUES('6.0', '6.0', '6.0', '6.0', '6.0');
+    SELECT * FROM abc2
+  } {6 6 6 6 6}
+  do_execsql_test 1.$tn.9 {
+    SELECT type FROM pragma_table_info('abc2') ORDER BY cid
+  } {INT INT INT INT INT}
+
+
+  do_execsql_test 1.$tn.10 {
+    DROP TABLE abc;
+    DROP TABLE abc2;
+  }
+}
+
+#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------
+# Section 3.2 of documentation.
+#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------
+set testprefix rtreedoc-4
+reset_db
+
+# EVIDENCE-OF: R-36195-31555 The usual INSERT, UPDATE, and DELETE
+# commands work on an R*Tree index just like on regular tables.
+#
+# Create a regular table and an rtree table. Perform INSERT, UPDATE and
+# DELETE operations, then observe that the contents of the two tables
+# are identical.
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE rt USING rtree(id, x1, x2);
+  CREATE TABLE t1(id INTEGER PRIMARY KEY, x1 REAL, x2 REAL);
+}
+foreach {tn sql} {
+  1 "INSERT INTO %TBL% VALUES(5, 11,12)"
+  2 "INSERT INTO %TBL% VALUES(11, -11,14.5)"
+  3 "UPDATE %TBL% SET x1=-99 WHERE id=11"
+  4 "DELETE FROM %TBL% WHERE x2=14.5"
+  5 "DELETE FROM %TBL%"
+} {
+  set sql1 [string map {%TBL% rt} $sql]
+  set sql2 [string map {%TBL% t1} $sql]
+  do_execsql_test 1.$tn.0 $sql1
+  do_execsql_test 1.$tn.1 $sql2
+
+  set data1 [execsql {SELECT * FROM rt ORDER BY 1}]
+  set data2 [execsql {SELECT * FROM t1 ORDER BY 1}]
+
+  set res [expr {$data1==$data2}]
+  do_test 1.$tn.2 {set res} 1 
+}
+
+# EVIDENCE-OF: R-56987-45305
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE demo_index USING rtree(
+      id,              -- Integer primary key
+      minX, maxX,      -- Minimum and maximum X coordinate
+      minY, maxY       -- Minimum and maximum Y coordinate
+  );
+
+  INSERT INTO demo_index VALUES
+    (28215, -80.781227, -80.604706, 35.208813, 35.297367),
+    (28216, -80.957283, -80.840599, 35.235920, 35.367825),
+    (28217, -80.960869, -80.869431, 35.133682, 35.208233),
+    (28226, -80.878983, -80.778275, 35.060287, 35.154446),
+    (28227, -80.745544, -80.555382, 35.130215, 35.236916),
+    (28244, -80.844208, -80.841988, 35.223728, 35.225471),
+    (28262, -80.809074, -80.682938, 35.276207, 35.377747),
+    (28269, -80.851471, -80.735718, 35.272560, 35.407925),
+    (28270, -80.794983, -80.728966, 35.059872, 35.161823),
+    (28273, -80.994766, -80.875259, 35.074734, 35.172836),
+    (28277, -80.876793, -80.767586, 35.001709, 35.101063),
+    (28278, -81.058029, -80.956375, 35.044701, 35.223812),
+    (28280, -80.844208, -80.841972, 35.225468, 35.227203),
+    (28282, -80.846382, -80.844193, 35.223972, 35.225655);
+}
+
+#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------
+# Section 3.3 of documentation.
+#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------
+set testprefix rtreedoc-5
+
+do_execsql_test 1.0 {
+  INSERT INTO demo_index 
+    SELECT NULL, minX, maxX, minY+0.2, maxY+0.2 FROM demo_index;
+  INSERT INTO demo_index 
+    SELECT NULL, minX+0.2, maxX+0.2, minY, maxY FROM demo_index;
+  INSERT INTO demo_index 
+    SELECT NULL, minX, maxX, minY+0.4, maxY+0.4 FROM demo_index;
+  INSERT INTO demo_index 
+    SELECT NULL, minX+0.4, maxX+0.4, minY, maxY FROM demo_index;
+  INSERT INTO demo_index 
+    SELECT NULL, minX, maxX, minY+0.8, maxY+0.8 FROM demo_index;
+  INSERT INTO demo_index 
+    SELECT NULL, minX+0.8, maxX+0.8, minY, maxY FROM demo_index;
+
+  SELECT count(*) FROM demo_index;
+} {896}
+
+proc do_vmstep_test {tn sql expr} {
+  execsql $sql
+  set step [db status vmstep]
+  do_test $tn.$step "expr {[subst $expr]}" 1
+}
+
+# EVIDENCE-OF: R-45880-07724 Any valid query will work against an R*Tree
+# index.
+do_execsql_test 1.1.0 {
+  CREATE TABLE demo_tbl AS SELECT * FROM demo_index;
+}
+foreach {tn sql} {
+  1  {SELECT * FROM %TBL% ORDER BY 1}
+  2  {SELECT max(minX) FROM %TBL% ORDER BY 1}
+  3  {SELECT max(minX) FROM %TBL% GROUP BY round(minY) ORDER BY 1}
+} {
+  set sql1 [string map {%TBL% demo_index} $sql]
+  set sql2 [string map {%TBL% demo_tbl} $sql]
+
+  do_execsql_test 1.1.$tn $sql1 [execsql $sql2]
+}
+
+# EVIDENCE-OF: R-60814-18273 The R*Tree implementation just makes some
+# kinds of queries especially efficient.
+#
+# The second query is more efficient than the first.
+do_vmstep_test 1.2.1 {SELECT * FROM demo_index WHERE +rowid=28269} {$step>2000}
+do_vmstep_test 1.2.2 {SELECT * FROM demo_index WHERE rowid=28269} {$step<100}
+
+# EVIDENCE-OF: R-37800-50174 Queries against the primary key are
+# efficient: SELECT * FROM demo_index WHERE id=28269;
+do_vmstep_test 2.2 { SELECT * FROM demo_index WHERE id=28269 } {$step < 100}
+
+# EVIDENCE-OF: R-35847-18866 The big reason for using an R*Tree is so
+# that you can efficiently do range queries against the coordinate
+# ranges.
+#
+# EVIDENCE-OF: R-49927-54202
+do_vmstep_test 2.3 { 
+  SELECT id FROM demo_index
+    WHERE minX<=-80.77470 AND maxX>=-80.77470
+    AND minY<=35.37785  AND maxY>=35.37785;
+} {$step < 100}
+
+# EVIDENCE-OF: R-12823-37176 The query above will quickly locate all
+# zipcodes that contain the SQLite main office in their bounding box,
+# even if the R*Tree contains many entries.
+#
+do_execsql_test 2.4 { 
+  SELECT id FROM demo_index
+    WHERE minX<=-80.77470 AND maxX>=-80.77470
+    AND minY<=35.37785  AND maxY>=35.37785;
+} {
+  28322 28269 
+}
+
+# EVIDENCE-OF: R-07351-00257 For example, to find all zipcode bounding
+# boxes that overlap with the 28269 zipcode: SELECT A.id FROM demo_index
+# AS A, demo_index AS B WHERE A.maxX>=B.minX AND A.minX<=B.maxX
+# AND A.maxY>=B.minY AND A.minY<=B.maxY AND B.id=28269;
+#
+# Also check that it is efficient
+#
+# EVIDENCE-OF: R-39094-01937 This second query will find both 28269
+# entry (since every bounding box overlaps with itself) and also other
+# zipcode that is close enough to 28269 that their bounding boxes
+# overlap.
+#
+# 28269 is there in the result.
+#
+do_vmstep_test 2.5.1 {
+  SELECT A.id FROM demo_index AS A, demo_index AS B
+    WHERE A.maxX>=B.minX AND A.minX<=B.maxX
+    AND A.maxY>=B.minY AND A.minY<=B.maxY
+    AND B.id=28269
+} {$step < 100}
+do_execsql_test 2.5.2 {
+  SELECT A.id FROM demo_index AS A, demo_index AS B
+    WHERE A.maxX>=B.minX AND A.minX<=B.maxX
+    AND A.maxY>=B.minY AND A.minY<=B.maxY
+    AND B.id=28269;
+} {
+  28293 28216 28322 28286 28269 
+  28215 28336 28262 28291 28320 
+  28313 28298 28287
+}
+
+# EVIDENCE-OF: R-02723-34107 Note that it is not necessary for all
+# coordinates in an R*Tree index to be constrained in order for the
+# index search to be efficient.
+#
+# EVIDENCE-OF: R-22490-27246 One might, for example, want to query all
+# objects that overlap with the 35th parallel: SELECT id FROM demo_index
+# WHERE maxY>=35.0 AND minY<=35.0;
+do_vmstep_test 2.6.1 {
+  SELECT id FROM demo_index
+   WHERE maxY>=35.0  AND minY<=35.0;
+} {$step < 100}
+do_execsql_test 2.6.2 {
+  SELECT id FROM demo_index
+   WHERE maxY>=35.0  AND minY<=35.0;
+} {}
+
+
+#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------
+# Section 3.4 of documentation.
+#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------
+set testprefix rtreedoc-6
+reset_db
+
+# EVIDENCE-OF: R-08327-00674 By default, coordinates are stored in an
+# R*Tree using 32-bit floating point values.
+#
+# EVIDENCE-OF: R-22000-53613 The default virtual table ("rtree") stores
+# coordinates as single-precision (4-byte) floating point numbers.
+#
+# Show this by showing that rounding is consistent with 32-bit float
+# rounding.
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE rt USING rtree(id, a,b);
+}
+do_execsql_test 1.1 {
+  INSERT INTO rt VALUES(14, -1000000000000, 1000000000000);
+  SELECT * FROM rt;
+} {14 -1000000126976.0 1000000126976.0}
+
+# EVIDENCE-OF: R-39127-51288 When a coordinate cannot be exactly
+# represented by a 32-bit floating point number, the lower-bound
+# coordinates are rounded down and the upper-bound coordinates are
+# rounded up.
+foreach {tn val} {
+  1 100000000000
+  2 200000000000
+  3 300000000000
+  4 400000000000
+
+  5 -100000000000
+  6 -200000000000
+  7 -300000000000
+  8 -400000000000
+} {
+  set val [expr $val]
+  do_execsql_test 2.$tn.0 {DELETE FROM rt}
+  do_execsql_test 2.$tn.1 {INSERT INTO rt VALUES(23, $val, $val)}
+  do_execsql_test 2.$tn.2 {
+    SELECT $val>=a, $val<=b, a!=b FROM rt
+  } {1 1 1}
+}
+
+do_execsql_test 3.0 {
+  DROP TABLE rt;
+  CREATE VIRTUAL TABLE rt USING rtree(id, x1,x2, y1,y2);
+}
+
+# EVIDENCE-OF: R-45870-62834 Thus, bounding boxes might be slightly
+# larger than specified, but will never be any smaller.
+foreach {tn x1 x2 y1 y2} {
+  1 100000000000 200000000000 300000000000 400000000000
+} {
+  set val [expr $val]
+  do_execsql_test 3.$tn.0 {DELETE FROM rt}
+  do_execsql_test 3.$tn.1 {INSERT INTO rt VALUES(23, $x1, $x2, $y1, $y2)}
+  do_execsql_test 3.$tn.2 {
+    SELECT (x2-x1)*(y2-y1) >= ($x2-$x1)*($y2-$y1) FROM rt
+  } {1}
+}
+
+#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------
+# Section 3.5 of documentation.
+#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------
+set testprefix rtreedoc-7
+reset_db
+
+# EVIDENCE-OF: R-55979-39402 It is the nature of the Guttman R-Tree
+# algorithm that any write might radically restructure the tree, and in
+# the process change the scan order of the nodes.
+#
+# In the test below, the INSERT marked "THIS INSERT!!" does not affect
+# the results of queries with an ORDER BY, but does affect the results
+# of one without an ORDER BY. Therefore the INSERT changed the scan 
+# order.
+do_execsql_test 1.0 { 
+  CREATE VIRTUAL TABLE rt USING rtree(id, minX, maxX);
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<51
+  )
+  INSERT INTO rt SELECT NULL, i%10, (i%10)+5 FROM s
+}
+do_execsql_test 1.1 { SELECT count(*) FROM rt_node } 1
+do_test 1.2 {
+  set res1 [db eval {SELECT * FROM rt WHERE maxX < 30}]
+  set res1o [db eval {SELECT * FROM rt WHERE maxX < 30 ORDER BY +id}]
+
+  db eval { INSERT INTO rt VALUES(NULL, 50, 50) }   ;# THIS INSERT!!
+
+  set res2 [db eval {SELECT * FROM rt WHERE maxX < 30}]
+  set res2o [db eval {SELECT * FROM rt WHERE maxX < 30 ORDER BY +id}]
+  list [expr {$res1==$res2}] [expr {$res1o==$res2o}]
+} {0 1}
+
+do_execsql_test 1.3 { SELECT count(*) FROM rt_node } 3
+
+# EVIDENCE-OF: R-00683-48865 For this reason, it is not generally
+# possible to modify the R-Tree in the middle of a query of the R-Tree.
+# Attempts to do so will fail with a SQLITE_LOCKED "database table is
+# locked" error.
+#
+# SQLITE_LOCKED==6
+#
+do_test 1.4 {
+  set nCnt 3
+  db eval { SELECT * FROM rt WHERE minX>0 AND maxX<12 } {
+    incr nCnt -1
+    if {$nCnt==0} {
+      set rc [catch {db eval {
+        INSERT INTO rt VALUES(NULL, 51, 51);
+      }} msg]
+      set errorcode [db errorcode]
+      break
+    }
+  }
+
+  list $errorcode $rc $msg
+} {6 1 {database table is locked}}
+
+# EVIDENCE-OF: R-19740-29710 So, for example, suppose an application
+# runs one query against an R-Tree like this: SELECT id FROM demo_index
+# WHERE maxY>=35.0 AND minY<=35.0; Then for each "id" value
+# returned, suppose the application creates an UPDATE statement like the
+# following and binds the "id" value returned against the "?1"
+# parameter: UPDATE demo_index SET maxY=maxY+0.5 WHERE id=?1;
+#
+# EVIDENCE-OF: R-52919-32711 Then the UPDATE might fail with an
+# SQLITE_LOCKED error.
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE demo_index USING rtree(
+      id,              -- Integer primary key
+      minX, maxX,      -- Minimum and maximum X coordinate
+      minY, maxY       -- Minimum and maximum Y coordinate
+  );
+  INSERT INTO demo_index VALUES
+    (28215, -80.781227, -80.604706, 35.208813, 35.297367),
+    (28216, -80.957283, -80.840599, 35.235920, 35.367825),
+    (28217, -80.960869, -80.869431, 35.133682, 35.208233),
+    (28226, -80.878983, -80.778275, 35.060287, 35.154446);
+}
+do_test 2.1 {
+  db eval { SELECT id FROM demo_index WHERE maxY>=35.0  AND minY<=35.0 } {
+    set rc [catch { 
+      db eval { UPDATE demo_index SET maxY=maxY+0.5 WHERE id=$id } 
+    } msg]
+    set errorcode [db errorcode]
+    break
+  }
+  list $errorcode $rc $msg
+} {6 1 {database table is locked}}
+
+# EVIDENCE-OF: R-32604-49843 Ordinary tables in SQLite are able to read
+# and write at the same time.
+#
+do_execsql_test 3.0 {
+  CREATE TABLE x1(a INTEGER PRIMARY KEY, b, c);
+  INSERT INTO x1 VALUES(1, 1, 1);
+  INSERT INTO x1 VALUES(2, 2, 2);
+  INSERT INTO x1 VALUES(3, 3, 3);
+  INSERT INTO x1 VALUES(4, 4, 4);
+}
+do_test 3.1 {
+  unset -nocomplain res
+  set res [list]
+  db eval { SELECT * FROM x1 } {
+    lappend res $a $b $c
+    switch -- $a {
+      1 {
+        db eval { INSERT INTO x1 VALUES(5, 5, 5) }
+      }
+      2 {
+        db eval { UPDATE x1 SET c=20 WHERE a=2 }
+      }
+      3 {
+        db eval { DELETE FROM x1 WHERE c IN (3,4) }
+      }
+    }
+  }
+  set res
+} {1 1 1 2 2 2 3 3 3 5 5 5}
+do_execsql_test 3.2 {
+  SELECT * FROM x1
+} {1 1 1  2 2 20  5 5 5}
+
+# EVIDENCE-OF: R-06177-00576 And R-Tree can appear to read and write at
+# the same time in some circumstances, if it can figure out how to
+# reliably run the query to completion before starting the update.
+#
+# In 8.2, it can, it 8.1, it cannot.
+do_test 8.1 {
+  db eval { SELECT * FROM rt } {
+    set rc [catch { db eval { INSERT INTO rt VALUES(53,53,53) } } msg]
+    break;
+  }
+  list $rc $msg
+} {1 {database table is locked}}
+do_test 8.2 {
+  db eval { SELECT * FROM rt ORDER BY +id } {
+    set rc [catch { db eval { INSERT INTO rt VALUES(53,53,53) } } msg]
+    break
+  }
+  list $rc $msg
+} {0 {}}
+
+#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------
+# Section 4 of documentation.
+#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------
+set testprefix rtreedoc-8
+reset_db
+
+# EVIDENCE-OF: R-21062-30088 For the example above, one might create an
+# auxiliary table as follows: CREATE TABLE demo_data( id INTEGER PRIMARY
+# KEY, -- primary key objname TEXT, -- name of the object objtype TEXT,
+# -- object type boundary BLOB -- detailed boundary of object );
+#
+# One might.
+#
+do_execsql_test 1.0 {
+  CREATE TABLE demo_data(
+      id INTEGER PRIMARY KEY,  -- primary key
+      objname TEXT,            -- name of the object
+      objtype TEXT,            -- object type
+      boundary BLOB            -- detailed boundary of object
+  );
+}
+
+do_execsql_test 1.1 {
+  CREATE VIRTUAL TABLE demo_index USING rtree(
+      id,              -- Integer primary key
+      minX, maxX,      -- Minimum and maximum X coordinate
+      minY, maxY       -- Minimum and maximum Y coordinate
+  );
+
+  INSERT INTO demo_index VALUES
+    (28215, -80.781227, -80.604706, 35.208813, 35.297367),
+    (28216, -80.957283, -80.840599, 35.235920, 35.367825),
+    (28217, -80.960869, -80.869431, 35.133682, 35.208233),
+    (28226, -80.878983, -80.778275, 35.060287, 35.154446),
+    (28227, -80.745544, -80.555382, 35.130215, 35.236916),
+    (28244, -80.844208, -80.841988, 35.223728, 35.225471),
+    (28262, -80.809074, -80.682938, 35.276207, 35.377747),
+    (28269, -80.851471, -80.735718, 35.272560, 35.407925),
+    (28270, -80.794983, -80.728966, 35.059872, 35.161823),
+    (28273, -80.994766, -80.875259, 35.074734, 35.172836),
+    (28277, -80.876793, -80.767586, 35.001709, 35.101063),
+    (28278, -81.058029, -80.956375, 35.044701, 35.223812),
+    (28280, -80.844208, -80.841972, 35.225468, 35.227203),
+    (28282, -80.846382, -80.844193, 35.223972, 35.225655);
+
+  INSERT INTO demo_index 
+    SELECT NULL, minX, maxX, minY+0.2, maxY+0.2 FROM demo_index;
+  INSERT INTO demo_index 
+    SELECT NULL, minX+0.2, maxX+0.2, minY, maxY FROM demo_index;
+  INSERT INTO demo_index 
+    SELECT NULL, minX, maxX, minY+0.4, maxY+0.4 FROM demo_index;
+  INSERT INTO demo_index 
+    SELECT NULL, minX+0.4, maxX+0.4, minY, maxY FROM demo_index;
+  INSERT INTO demo_index 
+    SELECT NULL, minX, maxX, minY+0.8, maxY+0.8 FROM demo_index;
+  INSERT INTO demo_index 
+    SELECT NULL, minX+0.8, maxX+0.8, minY, maxY FROM demo_index;
+
+  INSERT INTO demo_data(id) SELECT id FROM demo_index;
+
+  SELECT count(*) FROM demo_index;
+} {896}
+
+set ::contained_in 0
+proc contained_in {args} {incr ::contained_in ; return 0}
+db func contained_in contained_in
+
+# EVIDENCE-OF: R-32671-43888 Then an efficient way to find the specific
+# ZIP code for the main SQLite office would be to run a query like this:
+# SELECT objname FROM demo_data, demo_index WHERE
+# demo_data.id=demo_index.id AND contained_in(demo_data.boundary,
+# 35.37785, -80.77470) AND minX<=-80.77470 AND maxX>=-80.77470 AND
+# minY<=35.37785 AND maxY>=35.37785;
+do_vmstep_test 1.2 {
+  SELECT objname FROM demo_data, demo_index
+    WHERE demo_data.id=demo_index.id
+    AND contained_in(demo_data.boundary, 35.37785, -80.77470)
+    AND minX<=-80.77470 AND maxX>=-80.77470
+    AND minY<=35.37785  AND maxY>=35.37785;
+} {$step<100}
+set ::contained_in1 $::contained_in
+
+# EVIDENCE-OF: R-32761-23915 One would get the same answer without the
+# use of the R*Tree index using the following simpler query: SELECT
+# objname FROM demo_data WHERE contained_in(demo_data.boundary,
+# 35.37785, -80.77470);
+set ::contained_in 0
+do_vmstep_test 1.3 {
+  SELECT objname FROM demo_data
+    WHERE contained_in(demo_data.boundary, 35.37785, -80.77470);
+} {$step>3200}
+
+# EVIDENCE-OF: R-40261-32799 The problem with this latter query is that
+# it must apply the contained_in() function to all entries in the
+# demo_data table.
+#
+# 896 of them, IIRC.
+do_test 1.4 {
+  set ::contained_in
+} 896
+
+# EVIDENCE-OF: R-24212-52761 The use of the R*Tree in the penultimate
+# query reduces the number of calls to contained_in() function to a
+# small subset of the entire table.
+#
+# 2 is a small subset of 896.
+#
+# EVIDENCE-OF: R-39057-63901 The R*Tree index did not find the exact
+# answer itself, it merely limited the search space.
+#
+# contained_in() filtered out those 2 rows.
+do_test 1.5 {
+  set ::contained_in1
+} {2}
+
+
+#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------
+# Section 4.1 of documentation.
+#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------
+set testprefix rtreedoc-9
+reset_db
+
+# EVIDENCE-OF: R-46566-43213 Beginning with SQLite version 3.24.0
+# (2018-06-04), r-tree tables can have auxiliary columns that store
+# arbitrary data. Auxiliary columns can be used in place of secondary
+# tables such as "demo_data".
+#
+# EVIDENCE-OF: R-41287-48160 Auxiliary columns are marked with a "+"
+# symbol before the column name.
+#
+# This interface cannot conveniently be used to prove anything about 
+# versions of SQLite prior to 3.24.0.
+#
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE rta USING rtree(
+    id, u1,u2,  v1,v2,   +aux
+  );
+
+  INSERT INTO rta(aux) VALUES(NULL);
+  INSERT INTO rta(aux) VALUES(45);
+  INSERT INTO rta(aux) VALUES(22.3);
+  INSERT INTO rta(aux) VALUES('hello');
+  INSERT INTO rta(aux) VALUES(X'ABCD');
+
+  SELECT typeof(aux), quote(aux) FROM rta;
+} {
+  null NULL
+  integer 45
+  real 22.3
+  text 'hello'
+  blob X'ABCD'
+}
+
+# EVIDENCE-OF: R-30514-26093 Auxiliary columns must come after all of
+# the coordinate boundary columns.
+foreach {tn cols} {
+  1 "id x1,x2, +extra,  y1,y2"
+  2 "extra, +id x1,x2, y1,y2"
+  3 "id, x1,+x2, extra, y1,y2"
+} {
+  do_catchsql_test 2.$tn "
+    CREATE VIRTUAL TABLE rrr USING rtree($cols)
+  " {1 {Auxiliary rtree columns must be last}}
+}
+do_catchsql_test 3.0 {
+  CREATE VIRTUAL TABLE rrr USING rtree(+id, extra, x1, x2);
+} {1 {near "+": syntax error}}
+
+# EVIDENCE-OF: R-01280-03635 An RTREE table can have no more than 100
+# columns total. In other words, the count of columns including the
+# integer primary key column, the coordinate boundary columns, and all
+# auxiliary columns must be 100 or less.
+do_catchsql_test 3.1 {
+  CREATE VIRTUAL TABLE r1 USING rtree(intid, u1,u2,
+    +c00, +c01, +c02, +c03, +c04, +c05, +c06, +c07, +c08, +c09,
+    +c10, +c11, +c12, +c13, +c14, +c15, +c16, +c17, +c18, +c19,
+    +c20, +c21, +c22, +c23, +c24, +c25, +c26, +c27, +c28, +c29,
+    +c30, +c31, +c32, +c33, +c34, +c35, +c36, +c37, +c38, +c39,
+    +c40, +c41, +c42, +c43, +c44, +c45, +c46, +c47, +c48, +c49,
+    +c50, +c51, +c52, +c53, +c54, +c55, +c56, +c57, +c58, +c59,
+    +c60, +c61, +c62, +c63, +c64, +c65, +c66, +c67, +c68, +c69,
+    +c70, +c71, +c72, +c73, +c74, +c75, +c76, +c77, +c78, +c79,
+    +c80, +c81, +c82, +c83, +c84, +c85, +c86, +c87, +c88, +c89,
+    +c90, +c91, +c92, +c93, +c94, +c95, +c96
+  );
+} {0 {}}
+do_catchsql_test 3.2 {
+  DROP TABLE r1;
+  CREATE VIRTUAL TABLE r1 USING rtree(intid, u1,u2,
+    +c00, +c01, +c02, +c03, +c04, +c05, +c06, +c07, +c08, +c09,
+    +c10, +c11, +c12, +c13, +c14, +c15, +c16, +c17, +c18, +c19,
+    +c20, +c21, +c22, +c23, +c24, +c25, +c26, +c27, +c28, +c29,
+    +c30, +c31, +c32, +c33, +c34, +c35, +c36, +c37, +c38, +c39,
+    +c40, +c41, +c42, +c43, +c44, +c45, +c46, +c47, +c48, +c49,
+    +c50, +c51, +c52, +c53, +c54, +c55, +c56, +c57, +c58, +c59,
+    +c60, +c61, +c62, +c63, +c64, +c65, +c66, +c67, +c68, +c69,
+    +c70, +c71, +c72, +c73, +c74, +c75, +c76, +c77, +c78, +c79,
+    +c80, +c81, +c82, +c83, +c84, +c85, +c86, +c87, +c88, +c89,
+    +c90, +c91, +c92, +c93, +c94, +c95, +c96, +c97
+  );
+} {1 {Too many columns for an rtree table}}
+do_catchsql_test 3.3 {
+  CREATE VIRTUAL TABLE r1 USING rtree(intid, u1,u2, v1,v2,
+    +c00, +c01, +c02, +c03, +c04, +c05, +c06, +c07, +c08, +c09,
+    +c10, +c11, +c12, +c13, +c14, +c15, +c16, +c17, +c18, +c19,
+    +c20, +c21, +c22, +c23, +c24, +c25, +c26, +c27, +c28, +c29,
+    +c30, +c31, +c32, +c33, +c34, +c35, +c36, +c37, +c38, +c39,
+    +c40, +c41, +c42, +c43, +c44, +c45, +c46, +c47, +c48, +c49,
+    +c50, +c51, +c52, +c53, +c54, +c55, +c56, +c57, +c58, +c59,
+    +c60, +c61, +c62, +c63, +c64, +c65, +c66, +c67, +c68, +c69,
+    +c70, +c71, +c72, +c73, +c74, +c75, +c76, +c77, +c78, +c79,
+    +c80, +c81, +c82, +c83, +c84, +c85, +c86, +c87, +c88, +c89,
+    +c90, +c91, +c92, +c93, +c94,
+  );
+} {0 {}}
+do_catchsql_test 3.4 {
+  DROP TABLE r1;
+  CREATE VIRTUAL TABLE r1 USING rtree(intid, u1,u2, v1,v2,
+    +c00, +c01, +c02, +c03, +c04, +c05, +c06, +c07, +c08, +c09,
+    +c10, +c11, +c12, +c13, +c14, +c15, +c16, +c17, +c18, +c19,
+    +c20, +c21, +c22, +c23, +c24, +c25, +c26, +c27, +c28, +c29,
+    +c30, +c31, +c32, +c33, +c34, +c35, +c36, +c37, +c38, +c39,
+    +c40, +c41, +c42, +c43, +c44, +c45, +c46, +c47, +c48, +c49,
+    +c50, +c51, +c52, +c53, +c54, +c55, +c56, +c57, +c58, +c59,
+    +c60, +c61, +c62, +c63, +c64, +c65, +c66, +c67, +c68, +c69,
+    +c70, +c71, +c72, +c73, +c74, +c75, +c76, +c77, +c78, +c79,
+    +c80, +c81, +c82, +c83, +c84, +c85, +c86, +c87, +c88, +c89,
+    +c90, +c91, +c92, +c93, +c94, +c95,
+  );
+} {1 {Too many columns for an rtree table}}
+
+# EVIDENCE-OF: R-05552-15084
+do_execsql_test 4.0 {
+  CREATE VIRTUAL TABLE demo_index2 USING rtree(
+      id,              -- Integer primary key
+      minX, maxX,      -- Minimum and maximum X coordinate
+      minY, maxY,      -- Minimum and maximum Y coordinate
+      +objname TEXT,   -- name of the object
+      +objtype TEXT,   -- object type
+      +boundary BLOB   -- detailed boundary of object
+  );
+}
+do_execsql_test 4.1 {
+  CREATE VIRTUAL TABLE demo_index USING rtree(
+      id,              -- Integer primary key
+      minX, maxX,      -- Minimum and maximum X coordinate
+      minY, maxY       -- Minimum and maximum Y coordinate
+  );
+  CREATE TABLE demo_data(
+      id INTEGER PRIMARY KEY,  -- primary key
+      objname TEXT,            -- name of the object
+      objtype TEXT,            -- object type
+      boundary BLOB            -- detailed boundary of object
+  );
+
+  INSERT INTO demo_index2(id) VALUES(1);
+  INSERT INTO demo_index(id) VALUES(1);
+  INSERT INTO demo_data(id) VALUES(1);
+}
+do_test 4.2 {
+  catch { array unset R }
+  db eval {SELECT * FROM demo_index2} R { set r1 [array names R] }
+  catch { array unset R }
+  db eval {SELECT * FROM demo_index NATURAL JOIN demo_data } R { 
+    set r2 [array names R] 
+  }
+  expr {$r1==$r2}
+} {1}
+
+# EVIDENCE-OF: R-26099-32169 SELECT objname FROM demo_index2 WHERE
+# contained_in(boundary, 35.37785, -80.77470) AND minX<=-80.77470 AND
+# maxX>=-80.77470 AND minY<=35.37785 AND maxY>=35.37785;
+do_execsql_test 4.3.1 {
+  DELETE FROM demo_index2;
+  INSERT INTO demo_index2(id,minX,maxX,minY,maxY) VALUES
+    (28215, -80.781227, -80.604706, 35.208813, 35.297367),
+    (28216, -80.957283, -80.840599, 35.235920, 35.367825),
+    (28217, -80.960869, -80.869431, 35.133682, 35.208233),
+    (28226, -80.878983, -80.778275, 35.060287, 35.154446),
+    (28227, -80.745544, -80.555382, 35.130215, 35.236916),
+    (28244, -80.844208, -80.841988, 35.223728, 35.225471),
+    (28262, -80.809074, -80.682938, 35.276207, 35.377747),
+    (28269, -80.851471, -80.735718, 35.272560, 35.407925),
+    (28270, -80.794983, -80.728966, 35.059872, 35.161823),
+    (28273, -80.994766, -80.875259, 35.074734, 35.172836),
+    (28277, -80.876793, -80.767586, 35.001709, 35.101063),
+    (28278, -81.058029, -80.956375, 35.044701, 35.223812),
+    (28280, -80.844208, -80.841972, 35.225468, 35.227203),
+    (28282, -80.846382, -80.844193, 35.223972, 35.225655);
+}
+set ::contained_in 0
+proc contained_in {args} {
+  incr ::contained_in
+  return 0
+}
+db func contained_in contained_in
+do_execsql_test 4.3.2 {
+  SELECT objname FROM demo_index2
+    WHERE contained_in(boundary, 35.37785, -80.77470)
+    AND minX<=-80.77470 AND maxX>=-80.77470
+    AND minY<=35.37785  AND maxY>=35.37785;
+}
+do_test 4.3.3 {
+  # Function invoked only once because r-tree filtering happened first.
+  set ::contained_in
+} 1
+set ::contained_in 0
+do_execsql_test 4.3.4 {
+  SELECT objname FROM demo_index2
+    WHERE contained_in(boundary, 35.37785, -80.77470)
+}
+do_test 4.3.3 {
+  # Function invoked 14 times because no r-tree filtering. Inefficient.
+  set ::contained_in
+} 14
+
+#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------
+# Section 4.1.1 of documentation.
+#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------
+set testprefix rtreedoc-9
+reset_db
+
+# EVIDENCE-OF: R-24021-02490 For auxiliary columns, only the name of the
+# column matters. The type affinity is ignored.
+#
+# EVIDENCE-OF: R-39906-44154 Constraints such as NOT NULL, UNIQUE,
+# REFERENCES, or CHECK are also ignored.
+do_execsql_test 1.0 { PRAGMA foreign_keys = on }
+foreach {tn auxcol nm} {
+  1 "+extra INTEGER" extra
+  2 "+extra TEXT"    extra
+  3 "+extra BLOB"    extra
+  4 "+extra REAL"    extra
+
+  5 "+col NOT NULL"                 col
+  6 "+col CHECK (col IS NOT NULL)"  col
+  7 "+col REFERENCES tbl(x)"        col
+} {
+  do_execsql_test 1.$tn.1 "
+    CREATE VIRTUAL TABLE rt USING rtree_i32(k, a,b, $auxcol)
+  "
+
+  # Check that the aux column has no affinity. Or NOT NULL constraint.
+  # And that the aux column is the child key of an FK constraint.
+  #
+  do_execsql_test 1.$tn.2 "
+    INSERT INTO rt($nm) VALUES(NULL), (45), (-123.2), ('456'), (X'ABCD');
+    SELECT typeof($nm), quote($nm) FROM rt;
+  " {
+    null NULL
+    integer 45
+    real -123.2
+    text '456'
+    blob X'ABCD'
+  }
+
+  # Check that there is no UNIQUE constraint either.
+  #
+  do_execsql_test 1.$tn.3 "
+    INSERT INTO rt($nm) VALUES('xyz'), ('xyz'), ('xyz');
+  "
+
+  do_execsql_test 1.$tn.2 {
+    DROP TABLE rt
+  }
+}
+
+#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------
+# Section 5 of documentation.
+#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------
+set testprefix rtreedoc-10
+
+# EVIDENCE-OF: R-21011-43790 If integer coordinates are desired, declare
+# the table using "rtree_i32" instead: CREATE VIRTUAL TABLE intrtree
+# USING rtree_i32(id,x0,x1,y0,y1,z0,z1);
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE intrtree USING rtree_i32(id,x0,x1,y0,y1,z0,z1);
+  INSERT INTO intrtree DEFAULT VALUES;
+  SELECT typeof(x0) FROM intrtree;
+} {integer}
+
+# EVIDENCE-OF: R-09193-49806 An rtree_i32 stores coordinates as 32-bit
+# signed integers.
+#
+# Show that coordinates are cast in a way consistent with casting to
+# a signed 32-bit integer.
+do_execsql_test 1.1 {
+  DELETE FROM intrtree;
+  INSERT INTO intrtree VALUES(333,
+      1<<44, (1<<44)+1,
+      10000000000, 10000000001,
+      -10000000001, -10000000000
+  );
+  SELECT * FROM intrtree;
+} {
+  333 0 1 1410065408 1410065409 -1410065409 -1410065408
+}
+
+#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------
+# Section 7.1 of documentation.
+#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------
+set testprefix rtreedoc-11
+reset_db
+
+# This command assumes that the argument is a node blob for a 2 dimensional
+# i32 r-tree table. It decodes and returns a list of cells from the node
+# as a list. Each cell is itself a list of the following form:
+#
+#    {$rowid $minX $maxX $minY $maxY}
+#
+# For internal (non-leaf) nodes, the rowid is replaced by the child node
+# number.
+#
+proc rnode {aData} {
+  set nDim 2
+
+  set nData [string length $aData]
+  set nBytePerCell [expr (8 + 2*$nDim*4)]
+  binary scan [string range $aData 2 3] S nCell
+
+  set res [list]
+  for {set i 0} {$i < $nCell} {incr i} {
+    set iOff [expr $i*$nBytePerCell+4]
+    set cell [string range $aData $iOff [expr $iOff+$nBytePerCell-1]]
+    binary scan $cell WIIII rowid x1 x2 y1 y2
+    lappend res [list $rowid $x1 $x2 $y1 $y2]
+  }
+
+  return $res
+}
+
+# aData must be a node blob. This command returns true if the node contains
+# rowid $rowid, or false otherwise.
+#
+proc rnode_contains {aData rowid} {
+  set L [rnode $aData]
+  foreach cell $L {
+    set r [lindex $cell 0]
+    if {$r==$rowid} { return 1 }
+  }
+  return 0
+}
+
+proc rnode_replace_cell {aData iCell cell} {
+  set aCell [binary format WIIII {*}$cell]
+  set nDim 2
+  set nBytePerCell [expr (8 + 2*$nDim*4)]
+  set iOff [expr $iCell*$nBytePerCell+4]
+
+  set aNew [binary format a*a*a* \
+      [string range $aData 0 $iOff-1]     \
+      $aCell     \
+      [string range $aData $iOff+$nBytePerCell end] \
+  ]
+  return $aNew
+}
+
+db function rnode rnode
+db function rnode_contains rnode_contains
+db function rnode_replace_cell rnode_replace_cell
+
+foreach {tn nm} {
+  1 x1
+  2 asdfghjkl
+  3 hello_world
+} {
+  do_execsql_test 1.$tn.1 "
+    CREATE VIRTUAL TABLE $nm USING rtree(a,b,c,d,e);
+  "
+
+  # EVIDENCE-OF: R-33789-46762 The content of an R*Tree index is actually
+  # stored in three ordinary SQLite tables with names derived from the
+  # name of the R*Tree.
+  #
+  # EVIDENCE-OF: R-39849-06566 This is their schema: CREATE TABLE
+  # %_node(nodeno INTEGER PRIMARY KEY, data) CREATE TABLE %_parent(nodeno
+  # INTEGER PRIMARY KEY, parentnode) CREATE TABLE %_rowid(rowid INTEGER
+  # PRIMARY KEY, nodeno)
+  #
+  # EVIDENCE-OF: R-07489-10051 The "%" in the name of each shadow table is
+  # replaced by the name of the R*Tree virtual table. So, if the name of
+  # the R*Tree table is "xyz" then the three shadow tables would be
+  # "xyz_node", "xyz_parent", and "xyz_rowid".
+  do_execsql_test 1.$tn.2 {
+    SELECT sql FROM sqlite_schema WHERE name!=$nm ORDER BY 1
+  } [string map [list % $nm] "
+    {CREATE TABLE \"%_node\"(nodeno INTEGER PRIMARY KEY,data)}
+    {CREATE TABLE \"%_parent\"(nodeno INTEGER PRIMARY KEY,parentnode)}
+    {CREATE TABLE \"%_rowid\"(rowid INTEGER PRIMARY KEY,nodeno)}
+  "]
+
+  do_execsql_test 1.$tn "DROP TABLE $nm"
+}
+
+
+# EVIDENCE-OF: R-51070-59303 There is one entry in the %_node table for
+# each R*Tree node.
+#
+# The following creates a 6 node r-tree structure.
+#
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE r1 USING rtree_i32(i, x1,x2, y1,y2);
+  WITH t(i) AS (
+    VALUES(1) UNION SELECT i+1 FROM t WHERE i<110
+  )
+  INSERT INTO r1 SELECT i, (i%10), (i%10)+2, (i%6), (i%7)+6 FROM t;
+}
+do_execsql_test 2.1 {
+  SELECT count(*) FROM r1_node;
+} 6
+
+# EVIDENCE-OF: R-27261-09153 All nodes other than the root have an entry
+# in the %_parent shadow table that identifies the parent node.
+#
+# In this case nodes 2-6 are the children of node 1.
+#
+do_execsql_test 2.3 {
+  SELECT nodeno, parentnode FROM r1_parent
+} {2 1  3 1  4 1  5 1  6 1}
+
+# EVIDENCE-OF: R-02358-35037 The %_rowid shadow table maps entry rowids
+# to the node that contains that entry.
+#
+do_execsql_test 2.4 {
+  SELECT 'failed' FROM r1_rowid WHERE 0==rnode_contains(
+    (SELECT data FROM r1_node WHERE nodeno=r1_rowid.nodeno), rowid
+  )
+}
+do_test 2.5 {
+  db eval { SELECT nodeno, data FROM r1_node WHERE nodeno!=1 } {
+    set L [rnode $data]
+    foreach cell $L {
+      set rowid [lindex $cell 0]
+      set rowid_nodeno 0
+      db eval {SELECT nodeno AS rowid_nodeno FROM r1_rowid WHERE rowid=$rowid} {
+        break
+      }
+      if {$rowid_nodeno!=$nodeno} { error "data mismatch!" }
+    }
+  }
+} {}
+
+# EVIDENCE-OF: R-65201-22208 Extra columns appended to the %_rowid table
+# hold the content of auxiliary columns.
+#
+# EVIDENCE-OF: R-44161-28345 The names of these extra %_rowid columns
+# are probably not the same as the actual auxiliary column names.
+#
+# In this case, the auxiliary columns are named "e1" and "e2". The
+# extra %_rowid columns are named "a0" and "a1".
+#
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE rtaux USING rtree(id, x1,x2, y1,y2, +e1, +e2);
+  SELECT sql FROM sqlite_schema WHERE name='rtaux_rowid';
+} {
+  {CREATE TABLE "rtaux_rowid"(rowid INTEGER PRIMARY KEY,nodeno,a0,a1)}
+}
+do_execsql_test 3.1 {
+  INSERT INTO rtaux(e1, e2) VALUES('hello', 'world'), (123, 456);
+}
+do_execsql_test 3.2 {
+  SELECT a0, a1 FROM rtaux_rowid;
+} {
+  hello world  123 456
+}
+
+#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------
+# Section 7.2 of documentation.
+#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------
+set testprefix rtreedoc-12
+reset_db
+forcedelete test.db2
+
+db function rnode rnode
+db function rnode_contains rnode_contains
+db function rnode_replace_cell rnode_replace_cell
+
+# EVIDENCE-OF: R-13571-45795 The scalar SQL function rtreecheck(R) or
+# rtreecheck(S,R) runs an integrity check on the rtree table named R
+# contained within database S.
+#
+# EVIDENCE-OF: R-36011-59963 The function returns a human-language
+# description of any problems found, or the string 'ok' if everything is
+# ok.
+#
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE rt1 USING rtree(id, a, b);
+  WITH s(i) AS (
+    VALUES(1) UNION ALL SELECT i+1 FROM s WHERE i<200
+  )
+  INSERT INTO rt1 SELECT i, i, i FROM s;
+
+  ATTACH 'test.db2' AS 'aux';
+  CREATE VIRTUAL TABLE aux.rt1 USING rtree(id, a, b);
+  INSERT INTO aux.rt1 SELECT * FROM rt1;
+}
+
+do_execsql_test 1.1.1 { SELECT rtreecheck('rt1'); } {ok}
+do_execsql_test 1.1.2 { SELECT rtreecheck('main', 'rt1'); } {ok}
+do_execsql_test 1.1.3 { SELECT rtreecheck('aux', 'rt1'); } {ok}
+do_catchsql_test 1.1.4 { 
+  SELECT rtreecheck('nosuchdb', 'rt1'); 
+} {1 {SQL logic error}}
+
+# Corrupt the table in database 'main':
+do_execsql_test 1.2.1 { UPDATE rt1_node SET nodeno=21 WHERE nodeno=3; }
+do_execsql_test 1.2.1 { SELECT rtreecheck('rt1')=='ok'; } {0}
+do_execsql_test 1.2.2 { SELECT rtreecheck('main', 'rt1')=='ok'; } {0}
+do_execsql_test 1.2.3 { SELECT rtreecheck('aux', 'rt1')=='ok'; } {1}
+do_execsql_test 1.2.4 { UPDATE rt1_node SET nodeno=3 WHERE nodeno=21; }
+
+# Corrupt the table in database 'aux':
+do_execsql_test 1.2.1 { UPDATE aux.rt1_node SET nodeno=21 WHERE nodeno=3; }
+do_execsql_test 1.2.1 { SELECT rtreecheck('rt1')=='ok'; } {1}
+do_execsql_test 1.2.2 { SELECT rtreecheck('main', 'rt1')=='ok'; } {1}
+do_execsql_test 1.2.3 { SELECT rtreecheck('aux', 'rt1')=='ok'; } {0}
+do_execsql_test 1.2.4 { UPDATE rt1_node SET nodeno=3 WHERE nodeno=21; }
+
+# EVIDENCE-OF: R-45759-33459 Example: To verify that an R*Tree named
+# "demo_index" is well-formed and internally consistent, run: SELECT
+# rtreecheck('demo_index');
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE demo_index USING rtree(id, x1,x2, y1,y2);
+  INSERT INTO demo_index SELECT id, a, b, a, b FROM rt1;
+}
+do_execsql_test 2.1 { SELECT rtreecheck('demo_index') } {ok}
+do_execsql_test 2.2 {
+  UPDATE demo_index_rowid SET nodeno=44 WHERE rowid=44;
+  SELECT rtreecheck('demo_index');
+} {{Found (44 -> 44) in %_rowid table, expected (44 -> 4)}}
+
+
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE rt2 USING rtree_i32(id, a, b, c, d);
+  WITH s(i) AS (
+    VALUES(1) UNION ALL SELECT i+1 FROM s WHERE i<200
+  )
+  INSERT INTO rt2 SELECT i, i, i+2, i, i+2 FROM s;
+}
+
+# EVIDENCE-OF: R-02555-31045 for each dimension, (coord1 <= coord2).
+#
+execsql BEGIN
+do_test 3.1 {
+  set cell [
+    lindex [execsql {SELECT rnode(data) FROM rt2_node WHERE nodeno=3}] 0 3
+  ]
+  set cell [list [lindex $cell 0]       \
+    [lindex $cell 2] [lindex $cell 1]   \
+    [lindex $cell 3] [lindex $cell 4]   \
+  ]
+  execsql { 
+    UPDATE rt2_node SET data=rnode_replace_cell(data, 3, $cell) WHERE nodeno=3 
+  }
+  execsql { SELECT rtreecheck('rt2') }
+} {{Dimension 0 of cell 3 on node 3 is corrupt}}
+execsql ROLLBACK
+
+# EVIDENCE-OF: R-13844-15873 unless the cell is on the root node, that
+# the cell is bounded by the parent cell on the parent node.
+#
+execsql BEGIN
+do_test 3.2 {
+  set cell [
+    lindex [execsql {SELECT rnode(data) FROM rt2_node WHERE nodeno=3}] 0 3
+  ]
+  lset cell 3 450
+  lset cell 4 451
+  execsql { 
+    UPDATE rt2_node SET data=rnode_replace_cell(data, 3, $cell) WHERE nodeno=3 
+  }
+  execsql { SELECT rtreecheck('rt2') }
+} {{Dimension 1 of cell 3 on node 3 is corrupt relative to parent}}
+execsql ROLLBACK
+
+# EVIDENCE-OF: R-02505-03621 for leaf nodes, that there is an entry in
+# the %_rowid table corresponding to the cell's rowid value that points
+# to the correct node.
+#
+execsql BEGIN
+do_test 3.3 {
+  execsql { 
+    UPDATE rt2_rowid SET rowid=452 WHERE rowid=100
+  }
+  execsql { SELECT rtreecheck('rt2') }
+} {{Mapping (100 -> 6) missing from %_rowid table}}
+execsql ROLLBACK
+
+# EVIDENCE-OF: R-50927-02218 for cells on non-leaf nodes, that there is
+# an entry in the %_parent table mapping from the cell's child node to
+# the node that it resides on.
+#
+execsql BEGIN
+do_test 3.4.1 {
+  execsql { 
+    UPDATE rt2_parent SET parentnode=123 WHERE nodeno=3
+  }
+  execsql { SELECT rtreecheck('rt2') }
+} {{Found (3 -> 123) in %_parent table, expected (3 -> 1)}}
+execsql ROLLBACK
+execsql BEGIN
+do_test 3.4.2 {
+  execsql { 
+    UPDATE rt2_parent SET nodeno=123 WHERE nodeno=3
+  }
+  execsql { SELECT rtreecheck('rt2') }
+} {{Mapping (3 -> 1) missing from %_parent table}}
+execsql ROLLBACK
+
+# EVIDENCE-OF: R-23235-09153 That there are the same number of entries
+# in the %_rowid table as there are leaf cells in the r-tree structure,
+# and that there is a leaf cell that corresponds to each entry in the
+# %_rowid table.
+execsql BEGIN
+do_test 3.5 {
+  execsql { INSERT INTO rt2_rowid VALUES(1000, 1000) }
+  execsql { SELECT rtreecheck('rt2') }
+} {{Wrong number of entries in %_rowid table - expected 200, actual 201}}
+execsql ROLLBACK
+
+# EVIDENCE-OF: R-62800-43436 That there are the same number of entries
+# in the %_parent table as there are non-leaf cells in the r-tree
+# structure, and that there is a non-leaf cell that corresponds to each
+# entry in the %_parent table.
+execsql BEGIN
+do_test 3.6 {
+  execsql { INSERT INTO rt2_parent VALUES(1000, 1000) }
+  execsql { SELECT rtreecheck('rt2') }
+} {{Wrong number of entries in %_parent table - expected 9, actual 10}}
+execsql ROLLBACK
+
+
+
+finish_test

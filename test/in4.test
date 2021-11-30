@@ -496,4 +496,25 @@ do_execsql_test 12.1 {
       OR (b = 1119 AND c IN (1115, 1023));
 } {56 1119 1115}
 
+# 2021-11-02 ticket 5981a8c041a3c2f3
+# Another OP_SeekScan problem.
+#
+reset_db
+do_execsql_test 13.0 {
+  CREATE TABLE t1(id INTEGER PRIMARY KEY, a INT, b INT, c INT);
+  INSERT INTO t1 VALUES(10,1,2,5);
+  INSERT INTO t1 VALUES(20,1,3,5);
+  INSERT INTO t1 VALUES(30,1,2,4);
+  INSERT INTO t1 VALUES(40,1,3,4);
+  ANALYZE sqlite_master;
+  INSERT INTO sqlite_stat1 VALUES('t1','t1x','84000 3 2 1');
+  CREATE INDEX t1x ON t1(a,b,c);
+  PRAGMA writable_schema=RESET;
+  SELECT * FROM t1
+   WHERE a=1
+     AND b IN (2,3)
+     AND c BETWEEN 4 AND 5
+   ORDER BY +id;
+} {10 1 2 5 20 1 3 5 30 1 2 4 40 1 3 4}
+
 finish_test

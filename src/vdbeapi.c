@@ -362,8 +362,8 @@ void sqlite3_value_free(sqlite3_value *pOld){
 ** the function result.
 **
 ** The setStrOrError() function calls sqlite3VdbeMemSetStr() to store the
-** result as a string or blob but if the string or blob is too large, it
-** then sets the error code to SQLITE_TOOBIG
+** result as a string or blob.  Appropriate errors are set if the string/blob
+** is too big or if an OOM occurs.
 **
 ** The invokeValueDestructor(P,X) routine invokes destructor function X()
 ** on value P is not going to be used and need to be destroyed.
@@ -375,8 +375,16 @@ static void setResultStrOrError(
   u8 enc,                 /* Encoding of z.  0 for BLOBs */
   void (*xDel)(void*)     /* Destructor function */
 ){
-  if( sqlite3VdbeMemSetStr(pCtx->pOut, z, n, enc, xDel)==SQLITE_TOOBIG ){
-    sqlite3_result_error_toobig(pCtx);
+  int rc = sqlite3VdbeMemSetStr(pCtx->pOut, z, n, enc, xDel);
+  if( rc ){
+    if( rc==SQLITE_TOOBIG ){
+      sqlite3_result_error_toobig(pCtx);
+    }else{
+      /* The only errors possible from sqlite3VdbeMemSetStr are
+      ** SQLITE_TOOBIG and SQLITE_NOMEM */
+      assert( rc==SQLITE_NOMEM );
+      sqlite3_result_error_nomem(pCtx);
+    }
   }
 }
 static int invokeValueDestructor(
@@ -533,8 +541,12 @@ int sqlite3_result_zeroblob64(sqlite3_context *pCtx, u64 n){
   if( n>(u64)pOut->db->aLimit[SQLITE_LIMIT_LENGTH] ){
     return SQLITE_TOOBIG;
   }
+#ifndef SQLITE_OMIT_INCRBLOB
   sqlite3VdbeMemSetZeroBlob(pCtx->pOut, (int)n);
   return SQLITE_OK;
+#else
+  return sqlite3VdbeMemSetZeroBlob(pCtx->pOut, (int)n);
+#endif
 }
 void sqlite3_result_error_code(sqlite3_context *pCtx, int errCode){
   pCtx->isError = errCode ? errCode : -1;
@@ -1546,7 +1558,11 @@ int sqlite3_bind_zeroblob(sqlite3_stmt *pStmt, int i, int n){
   Vdbe *p = (Vdbe *)pStmt;
   rc = vdbeUnbind(p, i);
   if( rc==SQLITE_OK ){
+#ifndef SQLITE_OMIT_INCRBLOB
     sqlite3VdbeMemSetZeroBlob(&p->aVar[i-1], n);
+#else
+    rc = sqlite3VdbeMemSetZeroBlob(&p->aVar[i-1], n);
+#endif
     sqlite3_mutex_leave(p->db->mutex);
   }
   return rc;
@@ -1834,6 +1850,7 @@ int sqlite3_preupdate_old(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
     u32 nRec;
     u8 *aRec;
 
+    assert( p->pCsr->eCurType==CURTYPE_BTREE );
     nRec = sqlite3BtreePayloadSize(p->pCsr->uc.pCursor);
     aRec = sqlite3DbMallocRaw(db, nRec);
     if( !aRec ) goto preupdate_old_out;

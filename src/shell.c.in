@@ -637,19 +637,38 @@ static int strlenChar(const char *z){
 }
 
 /*
-** Return true if zFile does not exist or if it is not an ordinary file.
+** Return open FILE * if zFile exists, can be opened for read
+** and is an ordinary file or a character stream source.
+** Otherwise return 0.
 */
+static FILE * openChrSource(const char *zFile){
 #ifdef _WIN32
-# define notNormalFile(X) 0
+  struct _stat x = {0};
+# define STAT_CHR_SRC(mode) ((mode & (_S_IFCHR|_S_IFIFO|_S_IFREG))!=0)
+  /* On Windows, open first, then check the stream nature. This order
+  ** is necessary because _stat() and sibs, when checking a named pipe,
+  ** effectively break the pipe as its supplier sees it. */
+  FILE *rv = fopen(zFile, "rb");
+  if( rv==0 ) return 0;
+  if( _fstat(_fileno(rv), &x) != 0
+      || !STAT_CHR_SRC(x.st_mode)){
+    fclose(rv);
+    rv = 0;
+  }
+  return rv;
 #else
-static int notNormalFile(const char *zFile){
-  struct stat x;
-  int rc;
-  memset(&x, 0, sizeof(x));
-  rc = stat(zFile, &x);
-  return rc || !S_ISREG(x.st_mode);
-}
+  struct stat x = {0};
+  int rc = stat(zFile, &x);
+# define STAT_CHR_SRC(mode) (S_ISREG(mode)||S_ISFIFO(mode)||S_ISCHR(mode))
+  if( rc!=0 ) return 0;
+  if( STAT_CHR_SRC(x.st_mode) ){
+    return fopen(zFile, "rb");
+  }else{
+    return 0;
+  }
 #endif
+#undef STAT_CHR_SRC
+}
 
 /*
 ** This routine reads a line of text from FILE in, stores
@@ -839,7 +858,7 @@ static void appendText(ShellText *p, char const *zAppend, char quote){
     }
   }
 
-  if( p->n+len>=p->nAlloc ){
+  if( p->z==0 || p->n+len>=p->nAlloc ){
     p->nAlloc = p->nAlloc*2 + len + 20;
     p->z = realloc(p->z, p->nAlloc);
     if( p->z==0 ) shell_out_of_memory();
@@ -1205,7 +1224,7 @@ struct ShellState {
 #define SHFLG_Newlines       0x00000010 /* .dump --newline flag */
 #define SHFLG_CountChanges   0x00000020 /* .changes setting */
 #define SHFLG_Echo           0x00000040 /* .echo or --echo setting */
-#define SHFLG_HeaderSet      0x00000080 /* .header has been used */
+#define SHFLG_HeaderSet      0x00000080 /* showHeader has been specified */
 #define SHFLG_DumpDataOnly   0x00000100 /* .dump show data only */
 #define SHFLG_DumpNoSys      0x00000200 /* .dump omits system tables */
 
@@ -1436,10 +1455,7 @@ static void editFunc(
     sqlite3_result_blob64(context, p, sz, sqlite3_free);
   }else{
     sqlite3_int64 i, j;
-    if( hasCRNL ){
-      /* If the original contains \r\n then do no conversions back to \n */
-      j = sz;
-    }else{
+    if( !hasCRNL ){
       /* If the file did not originally contain \r\n then convert any new
       ** \r\n back into \n */
       for(i=j=0; i<sz; i++){
@@ -1746,17 +1762,14 @@ static void output_csv(ShellState *p, const char *z, int bSep){
   if( z==0 ){
     utf8_printf(out,"%s",p->nullValue);
   }else{
-    int i;
-    int nSep = strlen30(p->colSeparator);
+    unsigned i;
     for(i=0; z[i]; i++){
-      if( needCsvQuote[((unsigned char*)z)[i]]
-         || (z[i]==p->colSeparator[0] &&
-             (nSep==1 || memcmp(z, p->colSeparator, nSep)==0)) ){
+      if( needCsvQuote[((unsigned char*)z)[i]] ){
         i = 0;
         break;
       }
     }
-    if( i==0 ){
+    if( i==0 || strstr(z, p->colSeparator)!=0 ){
       char *zQuoted = sqlite3_mprintf("\"%w\"", z);
       utf8_printf(out, "%s", zQuoted);
       sqlite3_free(zQuoted);
@@ -2590,17 +2603,15 @@ static int run_table_dump_query(
 }
 
 /*
-** Allocate space and save off current error string.
+** Allocate space and save off string indicating current error.
 */
 static char *save_err_msg(
-  sqlite3 *db            /* Database to query */
+  sqlite3 *db,           /* Database to query */
+  const char *zWhat,     /* Doing what qualifier */
+  int rc                 /* Error code returned from API */
 ){
-  int nErrMsg = 1+strlen30(sqlite3_errmsg(db));
-  char *zErrMsg = sqlite3_malloc64(nErrMsg);
-  if( zErrMsg ){
-    memcpy(zErrMsg, sqlite3_errmsg(db), nErrMsg);
-  }
-  return zErrMsg;
+  if( zWhat==0 ) zWhat = "?";
+  return sqlite3_mprintf("in %s, %s (%d)", zWhat, sqlite3_errmsg(db), rc);
 }
 
 #ifdef __linux__
@@ -3167,9 +3178,9 @@ static void exec_prepared_stmt_columnar(
       z = (const char*)sqlite3_column_text(pStmt,i);
       azData[nRow*nColumn + i] = z ? strdup(z) : 0;
     }
-  }while( (rc = sqlite3_step(pStmt))==SQLITE_ROW );
+  }while( sqlite3_step(pStmt)==SQLITE_ROW );
   if( nColumn>p->nWidth ){
-    p->colWidth = realloc(p->colWidth, nColumn*2*sizeof(int));
+    p->colWidth = realloc(p->colWidth, (nColumn+1)*2*sizeof(int));
     if( p->colWidth==0 ) shell_out_of_memory();
     for(i=p->nWidth; i<nColumn; i++) p->colWidth[i] = 0;
     p->nWidth = nColumn;
@@ -3311,7 +3322,7 @@ static void exec_prepared_stmt(
     int nCol = sqlite3_column_count(pStmt);
     void *pData = sqlite3_malloc64(3*nCol*sizeof(const char*) + 1);
     if( !pData ){
-      rc = SQLITE_NOMEM;
+      shell_out_of_memory();
     }else{
       char **azCols = (char **)pData;      /* Names of result columns */
       char **azVals = &azCols[nCol];       /* Results */
@@ -3525,7 +3536,7 @@ static int shell_exec(
     rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, &zLeftover);
     if( SQLITE_OK != rc ){
       if( pzErrMsg ){
-        *pzErrMsg = save_err_msg(db);
+        *pzErrMsg = save_err_msg(db, "prepare", rc);
       }
     }else{
       if( !pStmt ){
@@ -3639,7 +3650,7 @@ static int shell_exec(
         zSql = zLeftover;
         while( IsSpace(zSql[0]) ) zSql++;
       }else if( pzErrMsg ){
-        *pzErrMsg = save_err_msg(db);
+        *pzErrMsg = save_err_msg(db,"stepping",rc);
       }
 
       /* clear saved stmt handle */
@@ -4212,7 +4223,7 @@ static unsigned char *readHexDb(ShellState *p, int *pnData){
                 &x[8], &x[9], &x[10], &x[11], &x[12], &x[13], &x[14], &x[15]);
     if( rc==17 ){
       k = iOffset+j;
-      if( k+16<=n ){
+      if( k+16<=n && k>=0 ){
         int ii;
         for(ii=0; ii<16; ii++) a[k+ii] = x[ii]&0xff;
       }
@@ -5102,7 +5113,7 @@ static void tryToCloneSchema(
                     zQuery);
     goto end_schema_xfer;
   }
-  while( (rc = sqlite3_step(pQuery))==SQLITE_ROW ){
+  while( sqlite3_step(pQuery)==SQLITE_ROW ){
     zName = sqlite3_column_text(pQuery, 0);
     zSql = sqlite3_column_text(pQuery, 1);
     printf("%s... ", zName); fflush(stdout);
@@ -5517,8 +5528,7 @@ static void newTempFile(ShellState *p, const char *zSuffix){
     p->zTempFile = sqlite3_mprintf("%z.%s", p->zTempFile, zSuffix);
   }
   if( p->zTempFile==0 ){
-    raw_printf(stderr, "out of memory\n");
-    exit(1);
+    shell_out_of_memory();
   }
 }
 
@@ -5859,6 +5869,7 @@ struct ArCommand {
   u8 bZip;                        /* True if the archive is a ZIP */
   u8 bDryRun;                     /* True if --dry-run */
   u8 bAppend;                     /* True if --append */
+  u8 bGlob;                       /* True if --glob */
   u8 fromCmdLine;                 /* Run from -A instead of .archive */
   int nArg;                       /* Number of command arguments */
   char *zSrcTable;                /* "sqlar", "zipfile($file)" or "zip" */
@@ -5906,21 +5917,24 @@ static int arErrorMsg(ArCommand *pAr, const char *zFmt, ...){
 #define AR_CMD_EXTRACT      4
 #define AR_CMD_LIST         5
 #define AR_CMD_HELP         6
+#define AR_CMD_REMOVE       7
 
 /*
 ** Other (non-command) switches.
 */
-#define AR_SWITCH_VERBOSE     7
-#define AR_SWITCH_FILE        8
-#define AR_SWITCH_DIRECTORY   9
-#define AR_SWITCH_APPEND     10
-#define AR_SWITCH_DRYRUN     11
+#define AR_SWITCH_VERBOSE     8
+#define AR_SWITCH_FILE        9
+#define AR_SWITCH_DIRECTORY  10
+#define AR_SWITCH_APPEND     11
+#define AR_SWITCH_DRYRUN     12
+#define AR_SWITCH_GLOB       13
 
 static int arProcessSwitch(ArCommand *pAr, int eSwitch, const char *zArg){
   switch( eSwitch ){
     case AR_CMD_CREATE:
     case AR_CMD_EXTRACT:
     case AR_CMD_LIST:
+    case AR_CMD_REMOVE:
     case AR_CMD_UPDATE:
     case AR_CMD_INSERT:
     case AR_CMD_HELP:
@@ -5932,6 +5946,9 @@ static int arProcessSwitch(ArCommand *pAr, int eSwitch, const char *zArg){
 
     case AR_SWITCH_DRYRUN:
       pAr->bDryRun = 1;
+      break;
+    case AR_SWITCH_GLOB:
+      pAr->bGlob = 1;
       break;
     case AR_SWITCH_VERBOSE:
       pAr->bVerbose = 1;
@@ -5971,6 +5988,7 @@ static int arParseCommand(
     { "extract",   'x', AR_CMD_EXTRACT,      0 },
     { "insert",    'i', AR_CMD_INSERT,       0 },
     { "list",      't', AR_CMD_LIST,         0 },
+    { "remove",    'r', AR_CMD_REMOVE,       0 },
     { "update",    'u', AR_CMD_UPDATE,       0 },
     { "help",      'h', AR_CMD_HELP,         0 },
     { "verbose",   'v', AR_SWITCH_VERBOSE,   0 },
@@ -5978,6 +5996,7 @@ static int arParseCommand(
     { "append",    'a', AR_SWITCH_APPEND,    1 },
     { "directory", 'C', AR_SWITCH_DIRECTORY, 1 },
     { "dryrun",    'n', AR_SWITCH_DRYRUN,    0 },
+    { "glob",      'g', AR_SWITCH_GLOB,      0 },
   };
   int nSwitch = sizeof(aSwitch) / sizeof(struct ArSwitch);
   struct ArSwitch *pEnd = &aSwitch[nSwitch];
@@ -6094,11 +6113,13 @@ static int arParseCommand(
 
 /*
 ** This function assumes that all arguments within the ArCommand.azArg[]
-** array refer to archive members, as for the --extract or --list commands. 
-** It checks that each of them are present. If any specified file is not
-** present in the archive, an error is printed to stderr and an error
-** code returned. Otherwise, if all specified arguments are present in
-** the archive, SQLITE_OK is returned.
+** array refer to archive members, as for the --extract, --list or --remove
+** commands. It checks that each of them are "present". If any specified
+** file is not present in the archive, an error is printed to stderr and an
+** error code returned. Otherwise, if all specified arguments are present
+** in the archive, SQLITE_OK is returned. Here, "present" means either an
+** exact equality when pAr->bGlob is false or a "name GLOB pattern" match
+** when pAr->bGlob is true.
 **
 ** This function strips any trailing '/' characters from each argument.
 ** This is consistent with the way the [tar] command seems to work on
@@ -6109,11 +6130,11 @@ static int arCheckEntries(ArCommand *pAr){
   if( pAr->nArg ){
     int i, j;
     sqlite3_stmt *pTest = 0;
+    const char *zSel = (pAr->bGlob)
+      ? "SELECT name FROM %s WHERE glob($name,name)"
+      : "SELECT name FROM %s WHERE name=$name";
 
-    shellPreparePrintf(pAr->db, &rc, &pTest,
-        "SELECT name FROM %s WHERE name=$name", 
-        pAr->zSrcTable
-    );
+    shellPreparePrintf(pAr->db, &rc, &pTest, zSel, pAr->zSrcTable);
     j = sqlite3_bind_parameter_index(pTest, "$name");
     for(i=0; i<pAr->nArg && rc==SQLITE_OK; i++){
       char *z = pAr->azArg[i];
@@ -6141,14 +6162,17 @@ static int arCheckEntries(ArCommand *pAr){
 ** identify all archive members that match the command arguments held
 ** in (*pAr). Leave this WHERE clause in (*pzWhere) before returning.
 ** The caller is responsible for eventually calling sqlite3_free() on
-** any non-NULL (*pzWhere) value.
+** any non-NULL (*pzWhere) value. Here, "match" means strict equality
+** when pAr->bGlob is false and GLOB match when pAr->bGlob is true.
+
 */
 static void arWhereClause(
   int *pRc, 
-  ArCommand *pAr, 
+  ArCommand *pAr,
   char **pzWhere                  /* OUT: New WHERE clause */
 ){
   char *zWhere = 0;
+  const char *zSameOp = (pAr->bGlob)? "GLOB" : "=";
   if( *pRc==SQLITE_OK ){
     if( pAr->nArg==0 ){
       zWhere = sqlite3_mprintf("1");
@@ -6158,8 +6182,8 @@ static void arWhereClause(
       for(i=0; i<pAr->nArg; i++){
         const char *z = pAr->azArg[i];
         zWhere = sqlite3_mprintf(
-          "%z%s name = '%q' OR substr(name,1,%d) = '%q/'", 
-          zWhere, zSep, z, strlen30(z)+1, z
+          "%z%s name %s '%q' OR substr(name,1,%d) %s '%q/'", 
+          zWhere, zSep, zSameOp, z, strlen30(z)+1, zSameOp, z
         );
         if( zWhere==0 ){
           *pRc = SQLITE_NOMEM;
@@ -6212,6 +6236,47 @@ static int arListCommand(ArCommand *pAr){
   return rc;
 }
 
+
+/*
+** Implementation of .ar "Remove" command.
+*/
+static int arRemoveCommand(ArCommand *pAr){
+  int rc = 0;
+  char *zSql = 0;
+  char *zWhere = 0;
+
+  if( pAr->nArg ){
+    /* Verify that args actually exist within the archive before proceeding.
+    ** And formulate a WHERE clause to match them.  */
+    rc = arCheckEntries(pAr);
+    arWhereClause(&rc, pAr, &zWhere);
+  }
+  if( rc==SQLITE_OK ){
+    zSql = sqlite3_mprintf("DELETE FROM %s WHERE %s;",
+                           pAr->zSrcTable, zWhere);
+    if( pAr->bDryRun ){
+      utf8_printf(pAr->p->out, "%s\n", zSql);
+    }else{
+      char *zErr = 0;
+      rc = sqlite3_exec(pAr->db, "SAVEPOINT ar;", 0, 0, 0);
+      if( rc==SQLITE_OK ){
+        rc = sqlite3_exec(pAr->db, zSql, 0, 0, &zErr);
+        if( rc!=SQLITE_OK ){
+          sqlite3_exec(pAr->db, "ROLLBACK TO ar; RELEASE ar;", 0, 0, 0);
+        }else{
+          rc = sqlite3_exec(pAr->db, "RELEASE ar;", 0, 0, 0);
+        }
+      }
+      if( zErr ){
+        utf8_printf(stdout, "ERROR: %s\n", zErr);
+        sqlite3_free(zErr);
+      }
+    }
+  }
+  sqlite3_free(zWhere);
+  sqlite3_free(zSql);
+  return rc;
+}
 
 /*
 ** Implementation of .ar "eXtract" command. 
@@ -6465,7 +6530,7 @@ static int arDotCommand(
       int flags;
       if( cmd.bAppend ) eDbType = SHELL_OPEN_APPENDVFS;
       if( cmd.eCmd==AR_CMD_CREATE || cmd.eCmd==AR_CMD_INSERT 
-           || cmd.eCmd==AR_CMD_UPDATE ){
+           || cmd.eCmd==AR_CMD_REMOVE || cmd.eCmd==AR_CMD_UPDATE ){
         flags = SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE;
       }else{
         flags = SQLITE_OPEN_READONLY;
@@ -6519,6 +6584,10 @@ static int arDotCommand(
 
       case AR_CMD_INSERT:
         rc = arCreateOrUpdateCommand(&cmd, 1, 0);
+        break;
+
+      case AR_CMD_REMOVE:
+        rc = arRemoveCommand(&cmd);
         break;
 
       default:
@@ -7021,6 +7090,7 @@ COLLECT_HELP_TEXT[
   "     -c, --create               Create a new archive",
   "     -u, --update               Add or update files with changed mtime",
   "     -i, --insert               Like -u but always add even if unchanged",
+  "     -r, --remove               Remove files from archive",
   "     -t, --list                 List contents of archive",
   "     -x, --extract              Extract files from archive",
   "   Optional arguments:",
@@ -7028,6 +7098,7 @@ COLLECT_HELP_TEXT[
   "     -f FILE, --file FILE       Use archive FILE (default is current db)",
   "     -a FILE, --append FILE     Open FILE using the apndvfs VFS",
   "     -C DIR, --directory DIR    Read/extract files from directory DIR",
+  "     -g, --glob                 Use glob matching for names in archive",
   "     -n, --dryrun               Show the SQL that would have occurred",
   "   Examples:",
   "     .ar -cf ARCHIVE foo bar  # Create ARCHIVE from files foo and bar",
@@ -7931,6 +8002,10 @@ DISPATCHABLE_COMMAND( import ? 3 7 ){
 
   failIfSafeMode(p, "cannot run .import in safe mode");
   memset(&sCtx, 0, sizeof(sCtx));
+  if( 0==(sCtx.z = sqlite3_malloc64(120)) ){
+    shell_out_of_memory();
+  }
+
   if( p->mode==MODE_Ascii ){
     xRead = ascii_read_one_field;
   }else{
@@ -8031,6 +8106,7 @@ DISPATCHABLE_COMMAND( import ? 3 7 ){
   }
   if( sCtx.in==0 ){
     utf8_printf(stderr, "Error: cannot open \"%s\"\n", zFile);
+    import_cleanup(&sCtx);
     return 1;
   }
   if( eVerbose>=2 || (eVerbose>=1 && useOutputMode) ){
@@ -8240,7 +8316,7 @@ DISPATCHABLE_COMMAND( imposter ? 3 3 ){
   rc = sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
   sqlite3_free(zSql);
   i = 0;
-  while( sqlite3_step(pStmt)==SQLITE_ROW ){
+  while( rc==SQLITE_OK && sqlite3_step(pStmt)==SQLITE_ROW ){
     char zLabel[20];
     const char *zCol = (const char*)sqlite3_column_text(pStmt,2);
     i++;
@@ -8567,8 +8643,6 @@ DISPATCHABLE_COMMAND( open 3 1 0 ){
       p->openMode = SHELL_OPEN_READONLY;
     }else if( optionMatch(z, "nofollow") ){
       p->openFlags |= SQLITE_OPEN_NOFOLLOW;
-    }else if( optionMatch(z, "excl") ){
-      p->openFlags |= SQLITE_OPEN_EXCLUSIVE;
 #ifndef SQLITE_OMIT_DESERIALIZE
     }else if( optionMatch(z, "deserialize") ){
       p->openMode = SHELL_OPEN_DESERIALIZE;
@@ -8675,7 +8749,7 @@ DISPATCHABLE_COMMAND( parameter 4 2 4 ){
       rx = sqlite3_prepare_v2(p->db,
                               "SELECT key, quote(value) "
                               "FROM temp.sqlite_parameters;", -1, &pStmt, 0);
-      while( sqlite3_step(pStmt)==SQLITE_ROW ){
+      while( rx==SQLITE_OK && sqlite3_step(pStmt)==SQLITE_ROW ){
         utf8_printf(p->out, "%-*s %s\n", len, sqlite3_column_text(pStmt,0),
                     sqlite3_column_text(pStmt,1));
       }
@@ -8859,7 +8933,7 @@ DISPATCHABLE_COMMAND( read 3 2 2 ){
       pclose(p->in);
     }
 #endif
-  }else if( notNormalFile(azArg[1]) || (p->in = fopen(azArg[1], "rb"))==0 ){
+  }else if( (p->in = openChrSource(azArg[1]))==0 ){
     utf8_printf(stderr,"Error: cannot open \"%s\"\n", azArg[1]);
     rc = 1;
   }else{
@@ -10032,8 +10106,10 @@ static int showTableLike(char *azArg[], int nArg, ShellState *p, char ot){
     appendText(&s, zSystem, 0);
   }
   rc = sqlite3_finalize(pStmt);
-  appendText(&s, " ORDER BY 1", 0);
-  rc = sqlite3_prepare_v2(p->db, s.z, -1, &pStmt, 0);
+  if( rc==SQLITE_OK ){
+    appendText(&s, " ORDER BY 1", 0);
+    rc = sqlite3_prepare_v2(p->db, s.z, -1, &pStmt, 0);
+  }
   freeText(&s);
   if( rc ) return shellDatabaseError(p->db);
 
@@ -10622,7 +10698,7 @@ DISPATCHABLE_COMMAND( width ? 1 0 ){
   int j;
   assert( nArg<=ArraySize(azArg) );
   p->nWidth = nArg-1;
-  p->colWidth = realloc(p->colWidth, p->nWidth*sizeof(int)*2);
+  p->colWidth = realloc(p->colWidth, (p->nWidth+1)*sizeof(int)*2);
   if( p->colWidth==0 && p->nWidth>0 ) shell_out_of_memory();
   if( p->nWidth ) p->actualWidth = &p->colWidth[p->nWidth];
   for(j=1; j<nArg; j++){
@@ -10847,38 +10923,98 @@ meta_command_exit:
   return rc;
 }
 
-/*
-** Return TRUE if a semicolon occurs anywhere in the first N characters
-** of string z[].
+/* Line scan result and intermediate states (supporting scan resumption)
 */
-static int line_contains_semicolon(const char *z, int N){
-  int i;
-  for(i=0; i<N; i++){  if( z[i]==';' ) return 1; }
-  return 0;
-}
 
-/*
-** Test to see if a line consists entirely of whitespace.
+#ifndef CHAR_BIT
+# define CHAR_BIT 8
+#endif
+
+typedef enum {
+  QSS_HasDark = 1<<CHAR_BIT, QSS_EndingSemi = 2<<CHAR_BIT,
+  QSS_CharMask = (1<<CHAR_BIT)-1, QSS_ScanMask = 3<<CHAR_BIT,
+  QSS_Start = 0
+} QuickScanState;
+#define QSS_SETV(qss, newst) ((newst) | ((qss) & QSS_ScanMask))
+#define QSS_INPLAIN(qss) (((qss)&QSS_CharMask)==QSS_Start)
+#define QSS_PLAINWHITE(qss) (((qss)&~QSS_EndingSemi)==QSS_Start)
+#define QSS_PLAINDARK(qss) (((qss)&~QSS_EndingSemi)==QSS_HasDark)
+#define QSS_SEMITERM(qss) (((qss)&~QSS_HasDark)==QSS_EndingSemi)
+
+** Scan line for classification to guide shell's handling.
+** The scan is resumable for subsequent lines when prior
+** return values are passed as the 2nd argument.
 */
-static int _all_whitespace(const char *z){
-  for(; *z; z++){
-    if( IsSpace(z[0]) ) continue;
-    if( *z=='/' && z[1]=='*' ){
-      z += 2;
-      while( *z && (*z!='*' || z[1]!='/') ){ z++; }
-      if( *z==0 ) return 0;
-      z++;
-      continue;
+static QuickScanState quickscan(char *zLine, QuickScanState qss){
+  char cin;
+  char cWait = (char)qss; /* intentional narrowing loss */
+  if( cWait==0 ){
+  PlainScan:
+    assert( cWait==0 );
+    while( (cin = *zLine++)!=0 ){
+      if( IsSpace(cin) )
+        continue;
+      switch (cin){
+      case '-':
+        if( *zLine!='-' )
+          break;
+        while((cin = *++zLine)!=0 )
+          if( cin=='\n')
+            goto PlainScan;
+        return qss;
+      case ';':
+        qss |= QSS_EndingSemi;
+        continue;
+      case '/':
+        if( *zLine=='*' ){
+          ++zLine;
+          cWait = '*';
+          qss = QSS_SETV(qss, cWait);
+          goto TermScan;
+        }
+        break;
+
+      case '[':
+        cin = ']';
+        /* fall thru */
+      case '`': case '\'': case '"':
+        cWait = cin;
+        qss = QSS_HasDark | cWait;
+        goto TermScan;
+      default:
+        break;
+      }
+      qss = (qss & ~QSS_EndingSemi) | QSS_HasDark;
     }
-    if( *z=='-' && z[1]=='-' ){
-      z += 2;
-      while( *z && *z!='\n' ){ z++; }
-      if( *z==0 ) return 1;
-      continue;
+  }else{
+  TermScan:
+    while( (cin = *zLine++)!=0 ){
+      if( cin==cWait ){
+        switch( cWait ){
+        case '*':
+          if( *zLine != '/' )
+            continue;
+          ++zLine;
+          cWait = 0;
+
+          qss = QSS_SETV(qss, 0);
+          goto PlainScan;
+        case '`': case '\'': case '"':
+          if(*zLine==cWait){
+            ++zLine;
+            continue;
+          }
+          /* fall thru */
+        case ']':
+          cWait = 0;
+          qss = QSS_SETV(qss, 0);
+          goto PlainScan;
+        default: assert(0); 
+        }
+      }
     }
-    return 0;
   }
-  return 1;
+  return qss;
 }
 
 /*
@@ -10886,16 +11022,15 @@ static int _all_whitespace(const char *z){
 ** than a semi-colon.  The SQL Server style "go" command is understood
 ** as is the Oracle "/".
 */
-static int line_is_command_terminator(const char *zLine){
+static int line_is_command_terminator(char *zLine){
   while( IsSpace(zLine[0]) ){ zLine++; };
-  if( zLine[0]=='/' && _all_whitespace(&zLine[1]) ){
-    return 1;  /* Oracle */
-  }
-  if( ToLower(zLine[0])=='g' && ToLower(zLine[1])=='o'
-         && _all_whitespace(&zLine[2]) ){
-    return 1;  /* SQL Server */
-  }
-  return 0;
+  if( zLine[0]=='/' )
+    zLine += 1; /* Oracle */
+  else if ( ToLower(zLine[0])=='g' && ToLower(zLine[1])=='o' )
+    zLine += 2; /* SQL Server */
+  else
+    return 0;
+  return quickscan(zLine,QSS_Start)==QSS_Start;
 }
 
 /*
@@ -10952,8 +11087,11 @@ static int runOneSqlLine(ShellState *p, char *zSql, FILE *in, int startline){
     }
     return 1;
   }else if( ShellHasFlag(p, SHFLG_CountChanges) ){
-    raw_printf(p->out, "changes: %3lld   total_changes: %lld\n",
+    char zLineBuf[2000];
+    sqlite3_snprintf(sizeof(zLineBuf), zLineBuf,
+            "changes: %lld   total_changes: %lld",
             sqlite3_changes64(p->db), sqlite3_total_changes64(p->db));
+    raw_printf(p->out, "%s\n", zLineBuf);
   }
   return 0;
 }
@@ -10974,10 +11112,10 @@ static int process_input(ShellState *p){
   int nLine;                /* Length of current line */
   int nSql = 0;             /* Bytes of zSql[] used */
   int nAlloc = 0;           /* Allocated zSql[] space */
-  int nSqlPrior = 0;        /* Bytes of zSql[] used by prior line */
   int rc;                   /* Error code */
   int errCnt = 0;           /* Number of errors seen */
   int startline = 0;        /* Line number for start of current input */
+  QuickScanState qss = QSS_Start; /* Accumulated line status (so far) */
 
   p->lineno = 0;
   while( errCnt==0 || !bail_on_error || (p->in==0 && stdin_is_interactive) ){
@@ -10993,8 +11131,17 @@ static int process_input(ShellState *p){
       seenInterrupt = 0;
     }
     p->lineno++;
-    if( nSql==0 && _all_whitespace(zLine) ){
-      if( ShellHasFlag(p, SHFLG_Echo) ) printf("%s\n", zLine);
+    if( QSS_INPLAIN(qss)
+        && line_is_command_terminator(zLine)
+        && line_is_complete(zSql, nSql) ){
+      memcpy(zLine,";",2);
+    }
+    qss = quickscan(zLine, qss);
+    if( QSS_PLAINWHITE(qss) && nSql==0 ){
+      if( ShellHasFlag(p, SHFLG_Echo) )
+        printf("%s\n", zLine);
+      /* Just swallow single-line whitespace */
+      qss = QSS_Start;
       continue;
     }
     if( zLine && (zLine[0]=='.' || zLine[0]=='#') && nSql==0 ){
@@ -11007,18 +11154,17 @@ static int process_input(ShellState *p){
           errCnt++;
         }
       }
+      qss = QSS_Start;
       continue;
     }
-    if( line_is_command_terminator(zLine) && line_is_complete(zSql, nSql) ){
-      memcpy(zLine,";",2);
-    }
+    /* No single-line dispositions remain; accumulate line(s). */
     nLine = strlen30(zLine);
     if( nSql+nLine+2>=nAlloc ){
-      nAlloc = nSql+nLine+100;
+      /* Grow buffer by half-again increments when big. */
+      nAlloc = nSql+(nSql>>1)+nLine+100;
       zSql = realloc(zSql, nAlloc);
       if( zSql==0 ) shell_out_of_memory();
     }
-    nSqlPrior = nSql;
     if( nSql==0 ){
       int i;
       for(i=0; zLine[i] && IsSpace(zLine[i]); i++){}
@@ -11031,8 +11177,7 @@ static int process_input(ShellState *p){
       memcpy(zSql+nSql, zLine, nLine+1);
       nSql += nLine;
     }
-    if( nSql && line_contains_semicolon(&zSql[nSqlPrior], nSql-nSqlPrior)
-                && sqlite3_complete(zSql) ){
+    if( nSql && QSS_SEMITERM(qss) && sqlite3_complete(zSql) ){
       errCnt += runOneSqlLine(p, zSql, p->in, startline);
       nSql = 0;
       if( p->outCount ){
@@ -11041,13 +11186,15 @@ static int process_input(ShellState *p){
       }else{
         clearTempFile(p);
       }
-      p->bSafeMode = p->bSafeModeFuture!= 1;
-    }else if( nSql && _all_whitespace(zSql) ){
+      p->bSafeMode = p->bSafeModeFuture!=1;
+      qss = QSS_Start;
+    }else if( nSql && QSS_PLAINWHITE(qss) ){
       if( ShellHasFlag(p, SHFLG_Echo) ) printf("%s\n", zSql);
       nSql = 0;
+      qss = QSS_Start;
     }
   }
-  if( nSql && !_all_whitespace(zSql) ){
+  if( nSql && QSS_PLAINDARK(qss) ){
     errCnt += runOneSqlLine(p, zSql, p->in, startline);
   }
   free(zSql);
@@ -11690,8 +11837,10 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
                        "%s",cmdline_option_value(argc,argv,++i));
     }else if( strcmp(z,"-header")==0 ){
       data.showHeader = 1;
+      ShellSetFlag(&data, SHFLG_HeaderSet);
     }else if( strcmp(z,"-noheader")==0 ){
       data.showHeader = 0;
+      ShellSetFlag(&data, SHFLG_HeaderSet);
     }else if( strcmp(z,"-echo")==0 ){
       ShellSetFlag(&data, SHFLG_Echo);
     }else if( strcmp(z,"-eqp")==0 ){

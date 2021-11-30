@@ -380,4 +380,50 @@ do_execsql_test transitive1-630 {
   SELECT ALL * FROM t1,t0 WHERE (likely(t1.c0=t0.c1) AND t1.c0=t0.c0);
 } {}
 
+#-------------------------------------------------------------------------
+# 2021-08-31 forum https://sqlite.org/forum/forumpost/8d1b58f112
+reset_db
+do_execsql_test transitive1-700 {
+  CREATE TABLE t1(a INT PRIMARY KEY);
+  INSERT INTO t1(a) VALUES(1),(2),(3);
+  CREATE TABLE t2(x INTEGER PRIMARY KEY,y INT);
+  INSERT INTO t2(y) VALUES(2),(3);
+}
+
+do_execsql_test transitive1-710 {
+  SELECT * FROM t1 CROSS JOIN t2 WHERE t2.y=t1.a AND t1.a=t2.x
+} {}
+
+do_execsql_test transitive1-720 {
+  SELECT * FROM t1 CROSS JOIN t2 WHERE likely(t2.y=t1.a) AND unlikely(t1.a=t2.x)
+} {}
+
+# 2021-10-04 forum https://sqlite.org/forum/forumpost/a65cacbf5e1c41ba
+#
+reset_db
+do_execsql_test transitive1-800 {
+  CREATE TABLE t1(a INT);
+  INSERT INTO t1 VALUES(0),(3);
+  CREATE TABLE t2(b INT UNIQUE, c INT);
+  INSERT INTO t2 VALUES(1,4)	,(0,5);
+  SELECT * FROM t1 WHERE EXISTS (SELECT 1 FROM t2 WHERE c=a AND b IS a);
+  SELECT * FROM t1 WHERE EXISTS (SELECT 1 FROM t2 WHERE a=c AND a IS b);
+  SELECT * FROM t1 WHERE EXISTS (SELECT 1 FROM t2 WHERE a=c AND b IS a);
+  SELECT * FROM t1 WHERE EXISTS (SELECT 1 FROM t2 WHERE c=a AND a IS b);
+} {}
+do_execsql_test transitive1-810 {
+  CREATE TABLE t3(a INTEGER PRIMARY KEY,b);
+  INSERT INTO t3(a,b) VALUES(1,2),(5,5),(7,11);
+  SELECT * FROM t3 WHERE a=b AND a='5';
+} {5 5}
+do_execsql_test transitive1-811 {
+  SELECT * FROM t3 WHERE a=b AND a='4';
+} {}
+do_execsql_test transitive1-812 {
+  SELECT * FROM t3 WHERE a=b AND a='7';
+} {}
+do_execsql_test transitive1-813 {
+  SELECT * FROM t3 WHERE a=b AND a='5x';
+} {}
+
 finish_test

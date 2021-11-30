@@ -1138,7 +1138,14 @@ proc run_tests {name args} {
   set ::G(perm:dbconfig)     $options(-dbconfig)
   set ::G(perm:presql)       $options(-presql)
 
-  foreach file [lsort $options(-files)] {
+  set filelist [lsort $options(-files)]
+  if {[info exists ::env(TCLTEST_PART)]} {
+    regexp {^([0-9]*)/([0-9]*)$} $::env(TCLTEST_PART) -> A B
+    set nFile [expr {([llength $filelist]+$B-1)/$B}]
+    set filelist [lrange $filelist [expr ($A-1)*$nFile] [expr $A*$nFile-1]]
+  }
+
+  foreach file $filelist {
     if {[file tail $file] == $file} { set file [file join $::testdir $file] }
 
     if {[info exists ::env(SQLITE_TEST_PATTERN_LIST)]} {
@@ -1212,6 +1219,7 @@ if {[file tail $argv0] == "permutations.test"} {
         set S $::testspec($suite)
         set i 1
       } else {
+        set suite default
         set S [list]
         set i 0
       }
@@ -1232,9 +1240,10 @@ if {[file tail $argv0] == "permutations.test"} {
         set extra [list -files $files]
       }
 
-      eval run_tests $suite $S $extra
+      eval [list run_tests $suite] $S $extra
     }
   }
   main $argv
+  set argv {}
   finish_test
 }

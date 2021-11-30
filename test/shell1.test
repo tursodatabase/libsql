@@ -18,6 +18,8 @@
 #   shell1-1.*: Basic command line option handling.
 #   shell1-2.*: Basic "dot" command token parsing.
 #   shell1-3.*: Basic test that "dot" command can be called.
+#   shell1-{4-8}.*: Test various "dot" commands's functionality.
+#   shell1-9.*: Basic test that "dot" commands and SQL intermix ok.
 #
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -51,7 +53,7 @@ do_test shell1-1.1.2 {
 # error on extra options
 do_test shell1-1.1.3 {
   catchcmd "test.db FOO test.db BAD" ".quit"
-} {1 {Error: near "FOO": syntax error}}
+} {1 {Error: in prepare, near "FOO": syntax error (1)}}
 
 # -help
 do_test shell1-1.2.1 {
@@ -76,7 +78,7 @@ do_test shell1-1.3.2 {
 } {0 {}}
 do_test shell1-1.3.3 {
   catchcmd "-init FOO test.db BAD .quit" ""
-} {1 {Error: near "BAD": syntax error}}
+} {1 {Error: in prepare, near "BAD": syntax error (1)}}
 
 # -echo                print commands before execution
 do_test shell1-1.4.1 {
@@ -1223,5 +1225,23 @@ do_test shell1-8.4 {
 +------------------+-----+
 | 6683623321994527 | -47 |
 +------------------+-----+}}
+
+#----------------------------------------------------------------------------
+# Test cases shell1-9.*: Basic test that "dot" commands and SQL intermix ok.
+#
+do_test shell1-9.1 {
+  catchcmd :memory: {
+.mode csv
+/*
+x */ select 1,2; --x
+ -- .nada
+;
+.mode csv
+--x
+select 2,1; select 3,4;
+}
+} {0 {1,2
+2,1
+3,4}}
 
 finish_test

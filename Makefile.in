@@ -468,7 +468,8 @@ TESTSRC += \
   $(TOP)/ext/misc/unionvtab.c \
   $(TOP)/ext/misc/wholenumber.c \
   $(TOP)/ext/misc/zipfile.c \
-  $(TOP)/ext/userauth/userauth.c
+  $(TOP)/ext/userauth/userauth.c \
+  $(TOP)/ext/rtree/test_rtreedoc.c
 
 # Source code to the library files needed by the test fixture
 #
@@ -623,7 +624,7 @@ FUZZCHECK_OPT += -DSQLITE_MAX_MEMORY=50000000
 FUZZCHECK_OPT += -DSQLITE_PRINTF_PRECISION_LIMIT=1000
 FUZZCHECK_OPT += -DSQLITE_ENABLE_FTS4
 FUZZCHECK_OPT += -DSQLITE_ENABLE_FTS3_PARENTHESIS
-#FUZZCHECK_OPT += -DSQLITE_ENABLE_FTS5
+FUZZCHECK_OPT += -DSQLITE_ENABLE_FTS5
 FUZZCHECK_OPT += -DSQLITE_ENABLE_RTREE
 FUZZCHECK_OPT += -DSQLITE_ENABLE_GEOPOLY
 FUZZCHECK_OPT += -DSQLITE_ENABLE_DBSTAT_VTAB
@@ -1250,7 +1251,10 @@ coretestprogs:	$(TESTPROGS)
 testprogs:	coretestprogs srcck1$(BEXE) fuzzcheck$(TEXE) sessionfuzz$(TEXE)
 
 # A very detailed test running most or all test cases
-fulltest:	$(TESTPROGS) fuzztest
+fulltest:	alltest fuzztest
+
+# Run most or all tcl test cases
+alltest:	$(TESTPROGS)
 	./testfixture$(TEXE) $(TOP)/test/all.test $(TESTOPTS)
 
 # Really really long testing

@@ -110,28 +110,68 @@ const char *sqlite3IndexAffinityStr(sqlite3 *db, Index *pIdx){
 }
 
 /*
+** Make changes to the evolving bytecode to do affinity transformations
+** of values that are about to be gathered into a row for table pTab.
+**
+** For ordinary (legacy, non-strict) tables:
+** -----------------------------------------
+**
 ** Compute the affinity string for table pTab, if it has not already been
 ** computed.  As an optimization, omit trailing SQLITE_AFF_BLOB affinities.
 **
-** If the affinity exists (if it is not entirely SQLITE_AFF_BLOB values) and
-** if iReg>0 then code an OP_Affinity opcode that will set the affinities
-** for register iReg and following.  Or if affinities exists and iReg==0,
+** If the affinity string is empty (because it was all SQLITE_AFF_BLOB entries
+** which were then optimized out) then this routine becomes a no-op.
+**
+** Otherwise if iReg>0 then code an OP_Affinity opcode that will set the
+** affinities for register iReg and following.  Or if iReg==0,
 ** then just set the P4 operand of the previous opcode (which should  be
 ** an OP_MakeRecord) to the affinity string.
 **
 ** A column affinity string has one character per column:
 **
-**  Character      Column affinity
-**  ------------------------------
-**  'A'            BLOB
-**  'B'            TEXT
-**  'C'            NUMERIC
-**  'D'            INTEGER
-**  'E'            REAL
+**    Character      Column affinity
+**    ---------      ---------------
+**    'A'            BLOB
+**    'B'            TEXT
+**    'C'            NUMERIC
+**    'D'            INTEGER
+**    'E'            REAL
+**
+** For STRICT tables:
+** ------------------
+**
+** Generate an appropropriate OP_TypeCheck opcode that will verify the
+** datatypes against the column definitions in pTab.  If iReg==0, that
+** means an OP_MakeRecord opcode has already been generated and should be
+** the last opcode generated.  The new OP_TypeCheck needs to be inserted
+** before the OP_MakeRecord.  The new OP_TypeCheck should use the same
+** register set as the OP_MakeRecord.  If iReg>0 then register iReg is
+** the first of a series of registers that will form the new record.
+** Apply the type checking to that array of registers.
 */
 void sqlite3TableAffinity(Vdbe *v, Table *pTab, int iReg){
   int i, j;
-  char *zColAff = pTab->zColAff;
+  char *zColAff;
+  if( pTab->tabFlags & TF_Strict ){
+    if( iReg==0 ){
+      /* Move the previous opcode (which should be OP_MakeRecord) forward
+      ** by one slot and insert a new OP_TypeCheck where the current
+      ** OP_MakeRecord is found */
+      VdbeOp *pPrev;
+      sqlite3VdbeAppendP4(v, pTab, P4_TABLE);
+      pPrev = sqlite3VdbeGetOp(v, -1);
+      assert( pPrev!=0 );
+      assert( pPrev->opcode==OP_MakeRecord || sqlite3VdbeDb(v)->mallocFailed );
+      pPrev->opcode = OP_TypeCheck;
+      sqlite3VdbeAddOp3(v, OP_MakeRecord, pPrev->p1, pPrev->p2, pPrev->p3);
+    }else{
+      /* Insert an isolated OP_Typecheck */
+      sqlite3VdbeAddOp2(v, OP_TypeCheck, iReg, pTab->nNVCol);
+      sqlite3VdbeAppendP4(v, pTab, P4_TABLE);
+    }
+    return;
+  }
+  zColAff = pTab->zColAff;
   if( zColAff==0 ){
     sqlite3 *db = sqlite3VdbeDb(v);
     zColAff = (char *)sqlite3DbMallocRaw(0, pTab->nCol+1);
@@ -157,6 +197,8 @@ void sqlite3TableAffinity(Vdbe *v, Table *pTab, int iReg){
     if( iReg ){
       sqlite3VdbeAddOp4(v, OP_Affinity, iReg, i, 0, zColAff, i);
     }else{
+      assert( sqlite3VdbeGetOp(v, -1)->opcode==OP_MakeRecord
+              || sqlite3VdbeDb(v)->mallocFailed );
       sqlite3VdbeChangeP4(v, -1, zColAff, i);
     }
   }
@@ -240,24 +282,30 @@ void sqlite3ComputeGeneratedColumns(
   ** that appropriate affinity has been applied to the regular columns
   */
   sqlite3TableAffinity(pParse->pVdbe, pTab, iRegStore);
-  if( (pTab->tabFlags & TF_HasStored)!=0
-   && (pOp = sqlite3VdbeGetOp(pParse->pVdbe,-1))->opcode==OP_Affinity
-  ){
-    /* Change the OP_Affinity argument to '@' (NONE) for all stored
-    ** columns.  '@' is the no-op affinity and those columns have not
-    ** yet been computed. */
-    int ii, jj;
-    char *zP4 = pOp->p4.z;
-    assert( zP4!=0 );
-    assert( pOp->p4type==P4_DYNAMIC );
-    for(ii=jj=0; zP4[jj]; ii++){
-      if( pTab->aCol[ii].colFlags & COLFLAG_VIRTUAL ){
-        continue;
+  if( (pTab->tabFlags & TF_HasStored)!=0 ){
+    pOp = sqlite3VdbeGetOp(pParse->pVdbe,-1);
+    if( pOp->opcode==OP_Affinity ){
+      /* Change the OP_Affinity argument to '@' (NONE) for all stored
+      ** columns.  '@' is the no-op affinity and those columns have not
+      ** yet been computed. */
+      int ii, jj;
+      char *zP4 = pOp->p4.z;
+      assert( zP4!=0 );
+      assert( pOp->p4type==P4_DYNAMIC );
+      for(ii=jj=0; zP4[jj]; ii++){
+        if( pTab->aCol[ii].colFlags & COLFLAG_VIRTUAL ){
+          continue;
+        }
+        if( pTab->aCol[ii].colFlags & COLFLAG_STORED ){
+          zP4[jj] = SQLITE_AFF_NONE;
+        }
+        jj++;
       }
-      if( pTab->aCol[ii].colFlags & COLFLAG_STORED ){
-        zP4[jj] = SQLITE_AFF_NONE;
-      }
-      jj++;
+    }else if( pOp->opcode==OP_TypeCheck ){
+      /* If an OP_TypeCheck was generated because the table is STRICT,
+      ** then set the P3 operand to indicate that generated columns should
+      ** not be checked */
+      pOp->p3 = 1;
     }
   }
 
@@ -2177,7 +2225,8 @@ void sqlite3GenerateConstraintChecks(
     **
     ** This is not possible for ENABLE_PREUPDATE_HOOK builds, as the row
     ** must be explicitly deleted in order to ensure any pre-update hook
-    ** is invoked.  */ 
+    ** is invoked.  */
+    assert( IsOrdinaryTable(pTab) );
 #ifndef SQLITE_ENABLE_PREUPDATE_HOOK
     if( (ix==0 && pIdx->pNext==0)                   /* Condition 3 */
      && pPk==pIdx                                   /* Condition 2 */
@@ -2284,7 +2333,8 @@ void sqlite3GenerateConstraintChecks(
 
         assert( onError==OE_Replace );
         nConflictCk = sqlite3VdbeCurrentAddr(v) - addrConflictCk;
-        assert( nConflictCk>0 );
+        assert( nConflictCk>0 || db->mallocFailed );
+        testcase( nConflictCk<=0 );
         testcase( nConflictCk>1 );
         if( regTrigCnt ){
           sqlite3MultiWrite(pParse);
@@ -2570,8 +2620,9 @@ int sqlite3OpenTableAndIndices(
   assert( op==OP_OpenWrite || p5==0 );
   if( IsVirtual(pTab) ){
     /* This routine is a no-op for virtual tables. Leave the output
-    ** variables *piDataCur and *piIdxCur uninitialized so that valgrind
-    ** can detect if they are used by mistake in the caller. */
+    ** variables *piDataCur and *piIdxCur set to illegal cursor numbers
+    ** for improved error detection. */
+    *piDataCur = *piIdxCur = -999;
     return 0;
   }
   iDb = sqlite3SchemaToIndex(pParse->db, pTab->pSchema);
@@ -2795,6 +2846,9 @@ static int xferOptimization(
   if( pDest->iPKey!=pSrc->iPKey ){
     return 0;   /* Both tables must have the same INTEGER PRIMARY KEY */
   }
+  if( (pDest->tabFlags & TF_Strict)!=0 && (pSrc->tabFlags & TF_Strict)==0 ){
+    return 0;   /* Cannot feed from a non-strict into a strict table */
+  }
   for(i=0; i<pDest->nCol; i++){
     Column *pDestCol = &pDest->aCol[i];
     Column *pSrcCol = &pSrc->aCol[i];
@@ -2855,7 +2909,9 @@ static int xferOptimization(
       Expr *pDestExpr = sqlite3ColumnExpr(pDest, pDestCol);
       Expr *pSrcExpr = sqlite3ColumnExpr(pSrc, pSrcCol);
       assert( pDestExpr==0 || pDestExpr->op==TK_SPAN );
+      assert( pDestExpr==0 || !ExprHasProperty(pDestExpr, EP_IntValue) );
       assert( pSrcExpr==0 || pSrcExpr->op==TK_SPAN );
+      assert( pSrcExpr==0 || !ExprHasProperty(pSrcExpr, EP_IntValue) );
       if( (pDestExpr==0)!=(pSrcExpr==0) 
        || (pDestExpr!=0 && strcmp(pDestExpr->u.zToken,
                                        pSrcExpr->u.zToken)!=0)
@@ -2895,6 +2951,7 @@ static int xferOptimization(
   ** the extra complication to make this rule less restrictive is probably
   ** not worth the effort.  Ticket [6284df89debdfa61db8073e062908af0c9b6118e]
   */
+  assert( IsOrdinaryTable(pDest) );
   if( (db->flags & SQLITE_ForeignKeys)!=0 && pDest->u.tab.pFKey!=0 ){
     return 0;
   }

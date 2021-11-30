@@ -15,6 +15,10 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+ifcapable !incrblob {
+  finish_test
+  return
+}
 
 # EVIDENCE-OF: R-36924-43758 By default, every row in SQLite has a
 # special column, usually called the "rowid", that uniquely identifies
@@ -185,6 +189,87 @@ do_catchsql_test without_rowid5-5.8 {
 do_execsql_test without_rowid5-5.9 {
   SELECT count(*) FROM nnw;
 } {1}
+
+# Ticket f2be158c57aaa8c6 (2021-08-18)
+# NOT NULL ON CONFLICT clauses work on WITHOUT ROWID tables now.
+# 
+do_test without_rowid5-5.100 {
+  db eval {
+    DROP TABLE IF EXISTS t5;
+    CREATE TABLE t5(
+      a INT NOT NULL ON CONFLICT ROLLBACK,
+      b TEXT,
+      c TEXT,
+      PRIMARY KEY(a,b)
+    ) WITHOUT ROWID;
+    BEGIN;
+    INSERT INTO t5(a,b,c) VALUES(1,2,3);
+  }
+  catch {db eval {INSERT INTO t5(a,b,c) VALUES(NULL,6,7);}}
+  db eval {
+    SELECT * FROM t5;
+  }
+} {}
+do_test without_rowid5-5.101 {
+  db eval {
+    DROP TABLE IF EXISTS t5;
+    CREATE TABLE t5(
+      a INT NOT NULL ON CONFLICT ABORT,
+      b TEXT,
+      c TEXT,
+      PRIMARY KEY(a,b)
+    ) WITHOUT ROWID;
+    BEGIN;
+    INSERT INTO t5(a,b,c) VALUES(1,2,3);
+  }
+  catch {db eval {INSERT INTO t5(a,b,c) VALUES(NULL,6,7);}}
+  db eval {
+    COMMIT;
+    SELECT * FROM t5;
+  }
+} {1 2 3}
+do_test without_rowid5-5.102 {
+  db eval {
+    DROP TABLE IF EXISTS t5;
+    CREATE TABLE t5(
+      a INT NOT NULL ON CONFLICT FAIL,
+      b TEXT,
+      c TEXT,
+      PRIMARY KEY(a,b)
+    ) WITHOUT ROWID;
+  }
+  catch {db eval {INSERT INTO t5(a,b,c) VALUES(1,2,3),(NULL,4,5),(6,7,8);}}
+  db eval {
+    SELECT * FROM t5;
+  }
+} {1 2 3}
+do_test without_rowid5-5.103 {
+  db eval {
+    DROP TABLE IF EXISTS t5;
+    CREATE TABLE t5(
+      a INT NOT NULL ON CONFLICT IGNORE,
+      b TEXT,
+      c TEXT,
+      PRIMARY KEY(a,b)
+    ) WITHOUT ROWID;
+    INSERT INTO t5(a,b,c) VALUES(1,2,3),(NULL,4,5),(6,7,8);
+    SELECT * FROM t5;
+  }
+} {1 2 3 6 7 8}
+do_test without_rowid5-5.104 {
+  db eval {
+    DROP TABLE IF EXISTS t5;
+    CREATE TABLE t5(
+      a INT NOT NULL ON CONFLICT REPLACE DEFAULT 3,
+      b TEXT,
+      c TEXT,
+      PRIMARY KEY(a,b)
+    ) WITHOUT ROWID;
+    INSERT INTO t5(a,b,c) VALUES(1,2,3),(NULL,4,5),(6,7,8);
+    SELECT * FROM t5;
+  }
+} {1 2 3 3 4 5 6 7 8}
+
 
 # EVIDENCE-OF: R-12643-30541 The incremental blob I/O mechanism does not
 # work for WITHOUT ROWID tables.

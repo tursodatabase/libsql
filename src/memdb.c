@@ -272,7 +272,7 @@ static int memdbRead(
 */
 static int memdbEnlarge(MemStore *p, sqlite3_int64 newSz){
   unsigned char *pNew;
-  if( (p->mFlags & SQLITE_DESERIALIZE_RESIZEABLE)==0 || p->nMmap>0 ){
+  if( (p->mFlags & SQLITE_DESERIALIZE_RESIZEABLE)==0 || NEVER(p->nMmap>0) ){
     return SQLITE_FULL;
   }
   if( newSz>p->szMax ){
@@ -331,8 +331,9 @@ static int memdbTruncate(sqlite3_file *pFile, sqlite_int64 size){
   MemStore *p = ((MemFile*)pFile)->pStore;
   int rc = SQLITE_OK;
   memdbEnter(p);
-  if( NEVER(size>p->sz) ){
-    rc = SQLITE_FULL;
+  if( size>p->sz ){
+    /* This can only happen with a corrupt wal mode db */
+    rc = SQLITE_CORRUPT;
   }else{
     p->sz = size; 
   }
@@ -471,7 +472,7 @@ static int memdbFetch(
 ){
   MemStore *p = ((MemFile*)pFile)->pStore;
   memdbEnter(p);
-  if( iOfst+iAmt>p->sz ){
+  if( iOfst+iAmt>p->sz || (p->mFlags & SQLITE_DESERIALIZE_RESIZEABLE)!=0 ){
     *pp = 0;
   }else{
     p->nMmap++;
@@ -505,10 +506,9 @@ static int memdbOpen(
   MemFile *pFile = (MemFile*)pFd;
   MemStore *p = 0;
   int szName;
-  if( (flags & SQLITE_OPEN_MAIN_DB)==0 ){
-    return ORIGVFS(pVfs)->xOpen(ORIGVFS(pVfs), zName, pFd, flags, pOutFlags);
-  }
-  memset(pFile, 0, sizeof(*p));
+  UNUSED_PARAMETER(pVfs);
+
+  memset(pFile, 0, sizeof(*pFile));
   szName = sqlite3Strlen30(zName);
   if( szName>1 && zName[0]=='/' ){
     int i;
@@ -567,8 +567,9 @@ static int memdbOpen(
     p->szMax = sqlite3GlobalConfig.mxMemdbSize;
   }
   pFile->pStore = p;
-  assert( pOutFlags!=0 );  /* True because flags==SQLITE_OPEN_MAIN_DB */
-  *pOutFlags = flags | SQLITE_OPEN_MEMORY;
+  if( pOutFlags!=0 ){
+    *pOutFlags = flags | SQLITE_OPEN_MEMORY;
+  }
   pFd->pMethods = &memdb_io_methods;
   memdbLeave(p);
   return SQLITE_OK;

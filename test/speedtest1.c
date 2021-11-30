@@ -34,6 +34,7 @@ static const char zHelp[] =
   "  --sqlonly           No-op.  Only show the SQL that would have been run.\n"
   "  --shrink-memory     Invoke sqlite3_db_release_memory() frequently.\n"
   "  --size N            Relative test size.  Default=100\n"
+  "  --strict            Use STRICT table where appropriate\n"
   "  --stats             Show statistics at the end\n"
   "  --temp N            N from 0 to 9.  0: no temp table. 9: all temp tables\n"
   "  --testset T         Run test-set T (main, cte, rtree, orm, fp, debug)\n"
@@ -947,7 +948,7 @@ void testset_main(void){
 
 
   speedtest1_begin_test(210, "ALTER TABLE ADD COLUMN, and query");
-  speedtest1_exec("ALTER TABLE z2 ADD COLUMN d DEFAULT 123");
+  speedtest1_exec("ALTER TABLE z2 ADD COLUMN d INT DEFAULT 123");
   speedtest1_exec("SELECT sum(d) FROM z2");
   speedtest1_end_test();
 
@@ -2317,8 +2318,22 @@ int main(int argc, char **argv){
         if( i>=argc-1 ) fatal_error("missing argument on %s\n", argv[i]);
         g.nReserve = atoi(argv[++i]);
       }else if( strcmp(z,"without-rowid")==0 ){
-        g.zWR = "WITHOUT ROWID";
+        if( strstr(g.zWR,"WITHOUT")!=0 ){
+          /* no-op */
+        }else if( strstr(g.zWR,"STRICT")!=0 ){
+          g.zWR = "WITHOUT ROWID,STRICT";
+        }else{
+          g.zWR = "WITHOUT ROWID";
+        }
         g.zPK = "PRIMARY KEY";
+      }else if( strcmp(z,"strict")==0 ){
+        if( strstr(g.zWR,"STRICT")!=0 ){
+          /* no-op */
+        }else if( strstr(g.zWR,"WITHOUT")!=0 ){
+          g.zWR = "WITHOUT ROWID,STRICT";
+        }else{
+          g.zWR = "STRICT";
+        }
       }else if( strcmp(z, "help")==0 || strcmp(z,"?")==0 ){
         printf(zHelp, argv[0]);
         exit(0);

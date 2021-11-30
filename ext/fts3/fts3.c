@@ -313,13 +313,6 @@ static int fts3EvalStart(Fts3Cursor *pCsr);
 static int fts3TermSegReaderCursor(
     Fts3Cursor *, const char *, int, int, Fts3MultiSegReader **);
 
-#ifndef SQLITE_AMALGAMATION
-# if defined(SQLITE_DEBUG)
-int sqlite3Fts3Always(int b) { assert( b ); return b; }
-int sqlite3Fts3Never(int b)  { assert( !b ); return b; }
-# endif
-#endif
-
 /*
 ** This variable is set to false when running tests for which the on disk
 ** structures should not be corrupt. Otherwise, true. If it is false, extra
@@ -5344,8 +5337,8 @@ static void fts3EvalNextRow(
         Fts3Expr *pRight = pExpr->pRight;
         sqlite3_int64 iCmp = DOCID_CMP(pLeft->iDocid, pRight->iDocid);
 
-        assert( pLeft->bStart || pLeft->iDocid==pRight->iDocid );
-        assert( pRight->bStart || pLeft->iDocid==pRight->iDocid );
+        assert_fts3_nc( pLeft->bStart || pLeft->iDocid==pRight->iDocid );
+        assert_fts3_nc( pRight->bStart || pLeft->iDocid==pRight->iDocid );
 
         if( pRight->bEof || (pLeft->bEof==0 && iCmp<0) ){
           fts3EvalNextRow(pCsr, pLeft, pRc);
@@ -5983,6 +5976,9 @@ int sqlite3Fts3EvalPhrasePoslist(
         if( bEofSave==0 && pNear->iDocid==iDocid ) break;
       }
       assert( rc!=SQLITE_OK || pPhrase->bIncr==0 );
+      if( rc==SQLITE_OK && pNear->bEof!=bEofSave ){
+        rc = FTS_CORRUPT_VTAB;
+      }
     }
     if( bTreeEof ){
       while( rc==SQLITE_OK && !pNear->bEof ){

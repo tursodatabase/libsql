@@ -75,7 +75,10 @@ static int blobSeekToRow(Incrblob *p, sqlite3_int64 iRow, char **pzErr){
   }
   if( rc==SQLITE_ROW ){
     VdbeCursor *pC = v->apCsr[0];
-    u32 type = pC->nHdrParsed>p->iCol ? pC->aType[p->iCol] : 0;
+    u32 type;
+    assert( pC!=0 );
+    assert( pC->eCurType==CURTYPE_BTREE );
+    type = pC->nHdrParsed>p->iCol ? pC->aType[p->iCol] : 0;
     testcase( pC->nHdrParsed==p->iCol );
     testcase( pC->nHdrParsed==p->iCol+1 );
     if( type<12 ){
@@ -212,7 +215,7 @@ int sqlite3_blob_open(
         ** key columns must be indexed. The check below will pick up this 
         ** case.  */
         FKey *pFKey;
-        assert( !IsVirtual(pTab) );
+        assert( IsOrdinaryTable(pTab) );
         for(pFKey=pTab->u.tab.pFKey; pFKey; pFKey=pFKey->pNextFrom){
           int j;
           for(j=0; j<pFKey->nCol; j++){
@@ -420,6 +423,8 @@ static int blobReadWrite(
       */
       sqlite3_int64 iKey;
       iKey = sqlite3BtreeIntegerKey(p->pCsr);
+      assert( v->apCsr[0]!=0 );
+      assert( v->apCsr[0]->eCurType==CURTYPE_BTREE );
       sqlite3VdbePreUpdateHook(
           v, v->apCsr[0], SQLITE_DELETE, p->zDb, p->pTab, iKey, -1, p->iCol
       );

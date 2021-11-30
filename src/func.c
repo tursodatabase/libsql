@@ -571,9 +571,9 @@ static void last_insert_rowid(
 /*
 ** Implementation of the changes() SQL function.
 **
-** IMP: R-62073-11209 The changes() SQL function is a wrapper
-** around the sqlite3_changes64() C/C++ function and hence follows the same
-** rules for counting changes.
+** IMP: R-32760-32347 The changes() SQL function is a wrapper
+** around the sqlite3_changes64() C/C++ function and hence follows the
+** same rules for counting changes.
 */
 static void changes(
   sqlite3_context *context,
@@ -596,8 +596,8 @@ static void total_changes(
 ){
   sqlite3 *db = sqlite3_context_db_handle(context);
   UNUSED_PARAMETER2(NotUsed, NotUsed2);
-  /* IMP: R-52756-41993 This function was a wrapper around the
-  ** sqlite3_total_changes() C/C++ interface. */
+  /* IMP: R-11217-42568 This function is a wrapper around the
+  ** sqlite3_total_changes64() C/C++ interface. */
   sqlite3_result_int64(context, sqlite3_total_changes64(db));
 }
 
@@ -1715,97 +1715,167 @@ static void minMaxFinalize(sqlite3_context *context){
 
 /*
 ** group_concat(EXPR, ?SEPARATOR?)
+**
+** The SEPARATOR goes before the EXPR string.  This is tragic.  The
+** groupConcatInverse() implementation would have been easier if the
+** SEPARATOR were appended after EXPR.  And the order is undocumented,
+** so we could change it, in theory.  But the old behavior has been
+** around for so long that we dare not, for fear of breaking something.
 */
+typedef struct {
+  StrAccum str;          /* The accumulated concatenation */
+#ifndef SQLITE_OMIT_WINDOWFUNC
+  int nAccum;            /* Number of strings presently concatenated */
+  int nFirstSepLength;   /* Used to detect separator length change */
+  /* If pnSepLengths!=0, refs an array of inter-string separator lengths,
+  ** stored as actually incorporated into presently accumulated result.
+  ** (Hence, its slots in use number nAccum-1 between method calls.)
+  ** If pnSepLengths==0, nFirstSepLength is the length used throughout.
+  */
+  int *pnSepLengths;
+#endif
+} GroupConcatCtx;
+
 static void groupConcatStep(
   sqlite3_context *context,
   int argc,
   sqlite3_value **argv
 ){
   const char *zVal;
-  StrAccum *pAccum;
+  GroupConcatCtx *pGCC;
   const char *zSep;
   int nVal, nSep;
   assert( argc==1 || argc==2 );
   if( sqlite3_value_type(argv[0])==SQLITE_NULL ) return;
-  pAccum = (StrAccum*)sqlite3_aggregate_context(context, sizeof(*pAccum));
-
-  if( pAccum ){
+  pGCC = (GroupConcatCtx*)sqlite3_aggregate_context(context, sizeof(*pGCC));
+  if( pGCC ){
     sqlite3 *db = sqlite3_context_db_handle(context);
-    int firstTerm = pAccum->mxAlloc==0;
-    pAccum->mxAlloc = db->aLimit[SQLITE_LIMIT_LENGTH];
-    if( !firstTerm ){
-      if( argc==2 ){
-        zSep = (char*)sqlite3_value_text(argv[1]);
-        nSep = sqlite3_value_bytes(argv[1]);
-      }else{
-        zSep = ",";
-        nSep = 1;
+    int firstTerm = pGCC->str.mxAlloc==0;
+    pGCC->str.mxAlloc = db->aLimit[SQLITE_LIMIT_LENGTH];
+    if( argc==1 ){
+      if( !firstTerm ){
+        sqlite3_str_appendchar(&pGCC->str, 1, ',');
       }
-      if( zSep ) sqlite3_str_append(pAccum, zSep, nSep);
+#ifndef SQLITE_OMIT_WINDOWFUNC
+      else{
+        pGCC->nFirstSepLength = 1;
+      }
+#endif
+    }else if( !firstTerm ){
+      zSep = (char*)sqlite3_value_text(argv[1]);
+      nSep = sqlite3_value_bytes(argv[1]);
+      if( zSep ){
+        sqlite3_str_append(&pGCC->str, zSep, nSep);
+      }
+#ifndef SQLITE_OMIT_WINDOWFUNC
+      else{
+        nSep = 0;
+      }
+      if( nSep != pGCC->nFirstSepLength || pGCC->pnSepLengths != 0 ){
+        int *pnsl = pGCC->pnSepLengths;
+        if( pnsl == 0 ){
+          /* First separator length variation seen, start tracking them. */
+          pnsl = (int*)sqlite3_malloc64((pGCC->nAccum+1) * sizeof(int));
+          if( pnsl!=0 ){
+            int i = 0, nA = pGCC->nAccum-1;
+            while( i<nA ) pnsl[i++] = pGCC->nFirstSepLength;
+          }
+        }else{
+          pnsl = (int*)sqlite3_realloc64(pnsl, pGCC->nAccum * sizeof(int));
+        }
+        if( pnsl!=0 ){
+          if( ALWAYS(pGCC->nAccum>0) ){
+            pnsl[pGCC->nAccum-1] = nSep;
+          }
+          pGCC->pnSepLengths = pnsl;
+        }else{
+          sqlite3StrAccumSetError(&pGCC->str, SQLITE_NOMEM);
+        }
+      }
+#endif
     }
+#ifndef SQLITE_OMIT_WINDOWFUNC
+    else{
+      pGCC->nFirstSepLength = sqlite3_value_bytes(argv[1]);
+    }
+    pGCC->nAccum += 1;
+#endif
     zVal = (char*)sqlite3_value_text(argv[0]);
     nVal = sqlite3_value_bytes(argv[0]);
-    if( zVal ) sqlite3_str_append(pAccum, zVal, nVal);
+    if( zVal ) sqlite3_str_append(&pGCC->str, zVal, nVal);
   }
 }
+
 #ifndef SQLITE_OMIT_WINDOWFUNC
 static void groupConcatInverse(
   sqlite3_context *context,
   int argc,
   sqlite3_value **argv
 ){
-  int n;
-  StrAccum *pAccum;
+  GroupConcatCtx *pGCC;
   assert( argc==1 || argc==2 );
+  (void)argc;  /* Suppress unused parameter warning */
   if( sqlite3_value_type(argv[0])==SQLITE_NULL ) return;
-  pAccum = (StrAccum*)sqlite3_aggregate_context(context, sizeof(*pAccum));
-  /* pAccum is always non-NULL since groupConcatStep() will have always
+  pGCC = (GroupConcatCtx*)sqlite3_aggregate_context(context, sizeof(*pGCC));
+  /* pGCC is always non-NULL since groupConcatStep() will have always
   ** run frist to initialize it */
-  if( ALWAYS(pAccum) ){
-    n = sqlite3_value_bytes(argv[0]);
-    if( argc==2 ){
-      n += sqlite3_value_bytes(argv[1]);
+  if( ALWAYS(pGCC) ){
+    int nVS;
+    /* Must call sqlite3_value_text() to convert the argument into text prior
+    ** to invoking sqlite3_value_bytes(), in case the text encoding is UTF16 */
+    (void)sqlite3_value_text(argv[0]);
+    nVS = sqlite3_value_bytes(argv[0]);
+    pGCC->nAccum -= 1;
+    if( pGCC->pnSepLengths!=0 ){
+      assert(pGCC->nAccum >= 0);
+      if( pGCC->nAccum>0 ){
+        nVS += *pGCC->pnSepLengths;
+        memmove(pGCC->pnSepLengths, pGCC->pnSepLengths+1,
+               (pGCC->nAccum-1)*sizeof(int));
+      }
     }else{
-      n++;
+      /* If removing single accumulated string, harmlessly over-do. */
+      nVS += pGCC->nFirstSepLength;
     }
-    if( n>=(int)pAccum->nChar ){
-      pAccum->nChar = 0;
+    if( nVS>=(int)pGCC->str.nChar ){
+      pGCC->str.nChar = 0;
     }else{
-      pAccum->nChar -= n;
-      memmove(pAccum->zText, &pAccum->zText[n], pAccum->nChar);
+      pGCC->str.nChar -= nVS;
+      memmove(pGCC->str.zText, &pGCC->str.zText[nVS], pGCC->str.nChar);
     }
-    if( pAccum->nChar==0 ) pAccum->mxAlloc = 0;
+    if( pGCC->str.nChar==0 ){
+      pGCC->str.mxAlloc = 0;
+      sqlite3_free(pGCC->pnSepLengths);
+      pGCC->pnSepLengths = 0;
+    }
   }
 }
 #else
 # define groupConcatInverse 0
 #endif /* SQLITE_OMIT_WINDOWFUNC */
 static void groupConcatFinalize(sqlite3_context *context){
-  StrAccum *pAccum;
-  pAccum = sqlite3_aggregate_context(context, 0);
-  if( pAccum ){
-    if( pAccum->accError==SQLITE_TOOBIG ){
-      sqlite3_result_error_toobig(context);
-    }else if( pAccum->accError==SQLITE_NOMEM ){
-      sqlite3_result_error_nomem(context);
-    }else{    
-      sqlite3_result_text(context, sqlite3StrAccumFinish(pAccum), -1, 
-                          sqlite3_free);
-    }
+  GroupConcatCtx *pGCC
+    = (GroupConcatCtx*)sqlite3_aggregate_context(context, 0);
+  if( pGCC ){
+    sqlite3ResultStrAccum(context, &pGCC->str);
+#ifndef SQLITE_OMIT_WINDOWFUNC
+    sqlite3_free(pGCC->pnSepLengths);
+#endif
   }
 }
 #ifndef SQLITE_OMIT_WINDOWFUNC
 static void groupConcatValue(sqlite3_context *context){
-  sqlite3_str *pAccum;
-  pAccum = (sqlite3_str*)sqlite3_aggregate_context(context, 0);
-  if( pAccum ){
+  GroupConcatCtx *pGCC
+    = (GroupConcatCtx*)sqlite3_aggregate_context(context, 0);
+  if( pGCC ){
+    StrAccum *pAccum = &pGCC->str;
     if( pAccum->accError==SQLITE_TOOBIG ){
       sqlite3_result_error_toobig(context);
     }else if( pAccum->accError==SQLITE_NOMEM ){
       sqlite3_result_error_nomem(context);
     }else{    
       const char *zText = sqlite3_str_value(pAccum);
-      sqlite3_result_text(context, zText, -1, SQLITE_TRANSIENT);
+      sqlite3_result_text(context, zText, pAccum->nChar, SQLITE_TRANSIENT);
     }
   }
 }
@@ -1869,11 +1939,12 @@ int sqlite3IsLikeFunction(sqlite3 *db, Expr *pExpr, int *pIsNocase, char *aWc){
   int nExpr;
   assert( pExpr!=0 );
   assert( pExpr->op==TK_FUNCTION );
+  assert( ExprUseXList(pExpr) );
   if( !pExpr->x.pList ){
     return 0;
   }
-  assert( !ExprHasProperty(pExpr, EP_xIsSelect) );
   nExpr = pExpr->x.pList->nExpr;
+  assert( !ExprHasProperty(pExpr, EP_IntValue) );
   pDef = sqlite3FindFunction(db, pExpr->u.zToken, nExpr, SQLITE_UTF8, 0);
 #ifdef SQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
   if( pDef==0 ) return 0;
@@ -1897,6 +1968,7 @@ int sqlite3IsLikeFunction(sqlite3 *db, Expr *pExpr, int *pIsNocase, char *aWc){
     Expr *pEscape = pExpr->x.pList->a[2].pExpr;
     char *zEscape;
     if( pEscape->op!=TK_STRING ) return 0;
+    assert( !ExprHasProperty(pEscape, EP_IntValue) );
     zEscape = pEscape->u.zToken;
     if( zEscape[0]==0 || zEscape[1]!=0 ) return 0;
     if( zEscape[0]==aWc[0] ) return 0;
@@ -2123,12 +2195,12 @@ void sqlite3RegisterBuiltinFunctions(void){
   */
   static FuncDef aBuiltinFunc[] = {
 /***** Functions only available with SQLITE_TESTCTRL_INTERNAL_FUNCTIONS *****/
+#if !defined(SQLITE_UNTESTABLE)
     TEST_FUNC(implies_nonnull_row, 2, INLINEFUNC_implies_nonnull_row, 0),
     TEST_FUNC(expr_compare,        2, INLINEFUNC_expr_compare,        0),
     TEST_FUNC(expr_implies_expr,   2, INLINEFUNC_expr_implies_expr,   0),
-#ifdef SQLITE_DEBUG
-    TEST_FUNC(affinity,          1, INLINEFUNC_affinity, 0),
-#endif
+    TEST_FUNC(affinity,            1, INLINEFUNC_affinity,            0),
+#endif /* !defined(SQLITE_UNTESTABLE) */
 /***** Regular functions *****/
 #ifdef SQLITE_SOUNDEX
     FUNCTION(soundex,            1, 0, 0, soundexFunc      ),
@@ -2278,6 +2350,7 @@ void sqlite3RegisterBuiltinFunctions(void){
       for(p=sqlite3BuiltinFunctions.a[i]; p; p=p->u.pHash){
         int n = sqlite3Strlen30(p->zName);
         int h = p->zName[0] + n;
+        assert( p->funcFlags & SQLITE_FUNC_BUILTIN );
         printf(" %s(%d)", p->zName, h);
       }
       printf("\n");

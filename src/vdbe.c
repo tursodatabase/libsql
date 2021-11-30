@@ -671,6 +671,19 @@ static Mem *out2Prerelease(Vdbe *p, VdbeOp *pOp){
   }
 }
 
+/*
+** Return the symbolic name for the data type of a pMem
+*/
+static const char *vdbeMemTypeName(Mem *pMem){
+  static const char *azTypes[] = {
+      /* SQLITE_INTEGER */ "INT",
+      /* SQLITE_FLOAT   */ "REAL",
+      /* SQLITE_TEXT    */ "TEXT",
+      /* SQLITE_BLOB    */ "BLOB",
+      /* SQLITE_NULL    */ "NULL"
+  };
+  return azTypes[sqlite3_value_type(pMem)-1];
+}
 
 /*
 ** Execute as much of a VDBE program as we can.
@@ -2502,6 +2515,22 @@ case OP_IsNull: {            /* same as TK_ISNULL, jump, in1 */
   break;
 }
 
+/* Opcode: IsNullOrType P1 P2 P3 * *
+** Synopsis: if typeof(r[P1]) IN (P3,5) goto P2
+**
+** Jump to P2 if the value in register P1 is NULL or has a datatype P3.
+** P3 is an integer which should be one of SQLITE_INTEGER, SQLITE_FLOAT,
+** SQLITE_BLOB, SQLITE_NULL, or SQLITE_TEXT.
+*/
+case OP_IsNullOrType: {      /* jump, in1 */
+  int doTheJump;
+  pIn1 = &aMem[pOp->p1];
+  doTheJump = (pIn1->flags & MEM_Null)!=0 || sqlite3_value_type(pIn1)==pOp->p3;
+  VdbeBranchTaken( doTheJump, 2);
+  if( doTheJump ) goto jump_to_p2;
+  break;
+}
+
 /* Opcode: ZeroOrNull P1 P2 P3 * *
 ** Synopsis: r[P2] = 0 OR NULL
 **
@@ -2868,6 +2897,108 @@ op_column_corrupt:
     rc = SQLITE_CORRUPT_BKPT;
     goto abort_due_to_error;
   }
+}
+
+/* Opcode: TypeCheck P1 P2 P3 P4 *
+** Synopsis: typecheck(r[P1@P2])
+**
+** Apply affinities to the range of P2 registers beginning with P1.
+** Take the affinities from the Table object in P4.  If any value
+** cannot be coerced into the correct type, then raise an error.
+**
+** This opcode is similar to OP_Affinity except that this opcode
+** forces the register type to the Table column type.  This is used
+** to implement "strict affinity".
+**
+** GENERATED ALWAYS AS ... STATIC columns are only checked if P3
+** is zero.  When P3 is non-zero, no type checking occurs for
+** static generated columns.  Virtual columns are computed at query time
+** and so they are never checked.
+**
+** Preconditions:
+**
+** <ul>
+** <li> P2 should be the number of non-virtual columns in the
+**      table of P4.
+** <li> Table P4 should be a STRICT table.
+** </ul>
+**
+** If any precondition is false, an assertion fault occurs.
+*/
+case OP_TypeCheck: {
+  Table *pTab;
+  Column *aCol;
+  int i;
+
+  assert( pOp->p4type==P4_TABLE );
+  pTab = pOp->p4.pTab;
+  assert( pTab->tabFlags & TF_Strict );
+  assert( pTab->nNVCol==pOp->p2 );
+  aCol = pTab->aCol;
+  pIn1 = &aMem[pOp->p1];
+  for(i=0; i<pTab->nCol; i++){
+    if( aCol[i].colFlags & COLFLAG_GENERATED ){
+      if( aCol[i].colFlags & COLFLAG_VIRTUAL ) continue;
+      if( pOp->p3 ){ pIn1++; continue; }
+    }
+    assert( pIn1 < &aMem[pOp->p1+pOp->p2] );
+    applyAffinity(pIn1, aCol[i].affinity, encoding);
+    if( (pIn1->flags & MEM_Null)==0 ){
+      switch( aCol[i].eCType ){
+        case COLTYPE_BLOB: {
+          if( (pIn1->flags & MEM_Blob)==0 ) goto vdbe_type_error;
+          break;
+        }
+        case COLTYPE_INTEGER:
+        case COLTYPE_INT: {
+          if( (pIn1->flags & MEM_Int)==0 ) goto vdbe_type_error;
+          break;
+        }
+        case COLTYPE_TEXT: {
+          if( (pIn1->flags & MEM_Str)==0 ) goto vdbe_type_error;
+          break;
+        }
+        case COLTYPE_REAL: {
+          if( pIn1->flags & MEM_Int ){
+            /* When applying REAL affinity, if the result is still an MEM_Int
+            ** that will fit in 6 bytes, then change the type to MEM_IntReal
+            ** so that we keep the high-resolution integer value but know that
+            ** the type really wants to be REAL. */
+            testcase( pIn1->u.i==140737488355328LL );
+            testcase( pIn1->u.i==140737488355327LL );
+            testcase( pIn1->u.i==-140737488355328LL );
+            testcase( pIn1->u.i==-140737488355329LL );
+            if( pIn1->u.i<=140737488355327LL && pIn1->u.i>=-140737488355328LL){
+              pIn1->flags |= MEM_IntReal;
+              pIn1->flags &= ~MEM_Int;
+            }else{
+              pIn1->u.r = (double)pIn1->u.i;
+              pIn1->flags |= MEM_Real;
+              pIn1->flags &= ~MEM_Int;
+            }
+          }else if( (pIn1->flags & MEM_Real)==0 ){
+            goto vdbe_type_error;
+          }
+          break;
+        }
+        default: {
+          /* COLTYPE_ANY.  Accept anything. */
+          break;
+        }
+      }
+    }
+    REGISTER_TRACE((int)(pIn1-aMem), pIn1);
+    pIn1++;
+  }
+  assert( pIn1 == &aMem[pOp->p1+pOp->p2] );
+  break;
+
+vdbe_type_error:
+  sqlite3VdbeError(p, "cannot store %s value in %s column %s.%s",
+     vdbeMemTypeName(pIn1), sqlite3StdType[aCol[i].eCType-1],
+     pTab->zName, aCol[i].zCnName);
+  rc = SQLITE_CONSTRAINT_DATATYPE;
+  goto abort_due_to_error;
 }
 
 /* Opcode: Affinity P1 P2 * P4 *
@@ -3533,8 +3664,16 @@ case OP_Transaction: {
   assert( pOp->p2>=0 && pOp->p2<=2 );
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
   assert( DbMaskTest(p->btreeMask, pOp->p1) );
-  if( pOp->p2 && (db->flags & SQLITE_QueryOnly)!=0 ){
-    rc = SQLITE_READONLY;
+  assert( rc==SQLITE_OK );
+  if( pOp->p2 && (db->flags & (SQLITE_QueryOnly|SQLITE_CorruptRdOnly))!=0 ){
+    if( db->flags & SQLITE_QueryOnly ){
+      /* Writes prohibited by the "PRAGMA query_only=TRUE" statement */
+      rc = SQLITE_READONLY;
+    }else{
+      /* Writes prohibited due to a prior SQLITE_CORRUPT in the current
+      ** transaction */
+      rc = SQLITE_CORRUPT;
+    }
     goto abort_due_to_error;
   }
   pBt = db->aDb[pOp->p1].pBt;
@@ -3576,7 +3715,8 @@ case OP_Transaction: {
     }
   }
   assert( pOp->p5==0 || pOp->p4type==P4_INT32 );
-  if( pOp->p5
+  if( rc==SQLITE_OK
+   && pOp->p5
    && (iMeta!=pOp->p3
       || db->aDb[pOp->p1].pSchema->iGeneration!=pOp->p4.i)
   ){
@@ -3970,7 +4110,7 @@ case OP_OpenEphemeral: {
     aMem[pOp->p3].z = "";
   }
   pCx = p->apCsr[pOp->p1];
-  if( pCx && !pCx->hasBeenDuped ){
+  if( pCx && !pCx->hasBeenDuped &&  ALWAYS(pOp->p2<=pCx->nField) ){
     /* If the ephermeral table is already open and has no duplicates from
     ** OP_OpenDup, then erase all existing content so that the table is
     ** empty again, rather than creating a new table. */
@@ -5133,7 +5273,7 @@ case OP_Insert: {
     assert( (pOp->p5 & OPFLAG_ISNOOP) || HasRowid(pTab) );
   }else{
     pTab = 0;
-    zDb = 0;  /* Not needed.  Silence a compiler warning. */
+    zDb = 0;
   }
 
 #ifdef SQLITE_ENABLE_PREUPDATE_HOOK
@@ -5286,13 +5426,14 @@ case OP_Delete: {
       pC->movetoTarget = sqlite3BtreeIntegerKey(pC->uc.pCursor);
     }
   }else{
-    zDb = 0;   /* Not needed.  Silence a compiler warning. */
-    pTab = 0;  /* Not needed.  Silence a compiler warning. */
+    zDb = 0;
+    pTab = 0;
   }
 
 #ifdef SQLITE_ENABLE_PREUPDATE_HOOK
   /* Invoke the pre-update-hook if required. */
-  if( db->xPreUpdateCallback && pOp->p4.pTab ){
+  assert( db->xPreUpdateCallback==0 || pTab==pOp->p4.pTab );
+  if( db->xPreUpdateCallback && pTab ){
     assert( !(opflags & OPFLAG_ISUPDATE) 
          || HasRowid(pTab)==0 
          || (aMem[pOp->p3].flags & MEM_Int) 
@@ -5333,7 +5474,7 @@ case OP_Delete: {
   /* Invoke the update-hook if required. */
   if( opflags & OPFLAG_NCHANGE ){
     p->nChange++;
-    if( db->xUpdateCallback && HasRowid(pTab) ){
+    if( db->xUpdateCallback && ALWAYS(pTab!=0) && HasRowid(pTab) ){
       db->xUpdateCallback(db->pUpdateArg, SQLITE_DELETE, zDb, pTab->zName,
           pC->movetoTarget);
       assert( pC->iDb>=0 );
@@ -5920,7 +6061,8 @@ case OP_SorterInsert: {     /* in2 */
 ** an UPDATE or DELETE statement and the index entry to be updated
 ** or deleted is not found.  For some uses of IdxDelete
 ** (example:  the EXCEPT operator) it does not matter that no matching
-** entry is found.  For those cases, P5 is zero.
+** entry is found.  For those cases, P5 is zero.  Also, do not raise
+** this (self-correcting and non-critical) error if in writable_schema mode.
 */
 case OP_IdxDelete: {
   VdbeCursor *pC;
@@ -5946,7 +6088,7 @@ case OP_IdxDelete: {
   if( res==0 ){
     rc = sqlite3BtreeDelete(pCrsr, BTREE_AUXDELETE);
     if( rc ) goto abort_due_to_error;
-  }else if( pOp->p5 ){
+  }else if( pOp->p5 && !sqlite3WritableSchema(db) ){
     rc = sqlite3ReportError(SQLITE_CORRUPT_INDEX, __LINE__, "index corruption");
     goto abort_due_to_error;
   }
@@ -6380,7 +6522,7 @@ case OP_ParseSchema: {
   }else
 #endif
   {
-    zSchema = DFLT_SCHEMA_TABLE;
+    zSchema = LEGACY_SCHEMA_TABLE;
     initData.db = db;
     initData.iDb = iDb;
     initData.pzErrMsg = &p->zErrMsg;
@@ -7600,6 +7742,7 @@ case OP_VFilter: {   /* jump */
   pCur = p->apCsr[pOp->p1];
   assert( memIsValid(pQuery) );
   REGISTER_TRACE(pOp->p3, pQuery);
+  assert( pCur!=0 );
   assert( pCur->eCurType==CURTYPE_VTAB );
   pVCur = pCur->uc.pVCur;
   pVtab = pVCur->pVtab;
@@ -7611,7 +7754,6 @@ case OP_VFilter: {   /* jump */
   iQuery = (int)pQuery->u.i;
 
   /* Invoke the xFilter method */
-  res = 0;
   apArg = p->apArg;
   for(i = 0; i<nArg; i++){
     apArg[i] = &pArgc[i+1];
@@ -7649,6 +7791,7 @@ case OP_VColumn: {
   sqlite3_context sContext;
 
   VdbeCursor *pCur = p->apCsr[pOp->p1];
+  assert( pCur!=0 );
   assert( pCur->eCurType==CURTYPE_VTAB );
   assert( pOp->p3>0 && pOp->p3<=(p->nMem+1 - p->nCursor) );
   pDest = &aMem[pOp->p3];
@@ -7701,8 +7844,8 @@ case OP_VNext: {   /* jump */
   int res;
   VdbeCursor *pCur;
 
-  res = 0;
   pCur = p->apCsr[pOp->p1];
+  assert( pCur!=0 );
   assert( pCur->eCurType==CURTYPE_VTAB );
   if( pCur->nullRow ){
     break;
@@ -7798,7 +7941,7 @@ case OP_VUpdate: {
   const sqlite3_module *pModule;
   int nArg;
   int i;
-  sqlite_int64 rowid;
+  sqlite_int64 rowid = 0;
   Mem **apArg;
   Mem *pX;
 
@@ -8243,6 +8386,18 @@ abort_due_to_error:
     rc = SQLITE_CORRUPT_BKPT;
   }
   assert( rc );
+#ifdef SQLITE_DEBUG
+  if( db->flags & SQLITE_VdbeTrace ){
+    const char *zTrace = p->zSql;
+    if( zTrace==0 ){
+      if( aOp[0].opcode==OP_Trace ){
+        zTrace = aOp[0].p4.z;
+      }
+      if( zTrace==0 ) zTrace = "???";
+    }
+    printf("ABORT-due-to-error (rc=%d): %s\n", rc, zTrace);
+  }
+#endif
   if( p->zErrMsg==0 && rc!=SQLITE_IOERR_NOMEM ){
     sqlite3VdbeError(p, "%s", sqlite3ErrStr(rc));
   }
@@ -8253,6 +8408,9 @@ abort_due_to_error:
                    (int)(pOp - aOp), p->zSql, p->zErrMsg);
   sqlite3VdbeHalt(p);
   if( rc==SQLITE_IOERR_NOMEM ) sqlite3OomFault(db);
+  if( rc==SQLITE_CORRUPT && db->autoCommit==0 ){
+    db->flags |= SQLITE_CorruptRdOnly;
+  }
   rc = SQLITE_ERROR;
   if( resetSchemaOnFault>0 ){
     sqlite3ResetOneSchema(db, resetSchemaOnFault-1);

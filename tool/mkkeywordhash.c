@@ -52,7 +52,7 @@ struct Keyword {
 /*
 ** Define masks used to determine which keywords are allowed
 */
-#ifdef SQLITE_OMIT_ALTERTABLE
+#if defined(SQLITE_OMIT_ALTERTABLE) || defined(SQLITE_OMIT_VIRTUALTABLE)
 #  define ALTER      0
 #else
 #  define ALTER      0x00000001
@@ -513,6 +513,7 @@ int main(int argc, char **argv){
   bestSize = nKeyword;
   bestCount = nKeyword*nKeyword;
   for(i=nKeyword/2; i<=2*nKeyword; i++){
+    if( i<=0 ) continue;
     for(j=0; j<i; j++) aKWHash[j] = 0;
     for(j=0; j<nKeyword; j++){
       h = aKeywordTable[j].hash % i;

@@ -170,17 +170,21 @@ void sqlite3FinishCoding(Parse *pParse){
       int i;
       int reg;
 
-      addrRewind =
-         sqlite3VdbeAddOp1(v, OP_Rewind, pReturning->iRetCur);
-      VdbeCoverage(v);
-      reg = pReturning->iRetReg;
-      for(i=0; i<pReturning->nRetCol; i++){
-        sqlite3VdbeAddOp3(v, OP_Column, pReturning->iRetCur, i, reg+i);
+      if( pReturning->nRetCol==0 ){
+        assert( CORRUPT_DB );
+      }else{
+        addrRewind =
+           sqlite3VdbeAddOp1(v, OP_Rewind, pReturning->iRetCur);
+        VdbeCoverage(v);
+        reg = pReturning->iRetReg;
+        for(i=0; i<pReturning->nRetCol; i++){
+          sqlite3VdbeAddOp3(v, OP_Column, pReturning->iRetCur, i, reg+i);
+        }
+        sqlite3VdbeAddOp2(v, OP_ResultRow, reg, i);
+        sqlite3VdbeAddOp2(v, OP_Next, pReturning->iRetCur, addrRewind+1);
+        VdbeCoverage(v);
+        sqlite3VdbeJumpHere(v, addrRewind);
       }
-      sqlite3VdbeAddOp2(v, OP_ResultRow, reg, i);
-      sqlite3VdbeAddOp2(v, OP_Next, pReturning->iRetCur, addrRewind+1);
-      VdbeCoverage(v);
-      sqlite3VdbeJumpHere(v, addrRewind);
     }
     sqlite3VdbeAddOp0(v, OP_Halt);
 
@@ -261,7 +265,11 @@ void sqlite3FinishCoding(Parse *pParse){
 
       if( pParse->bReturning ){
         Returning *pRet = pParse->u1.pReturning;
-        sqlite3VdbeAddOp2(v, OP_OpenEphemeral, pRet->iRetCur, pRet->nRetCol);
+        if( pRet->nRetCol==0 ){
+          assert( CORRUPT_DB );
+        }else{
+          sqlite3VdbeAddOp2(v, OP_OpenEphemeral, pRet->iRetCur, pRet->nRetCol);
+        }
       }
 
       /* Finally, jump back to the beginning of the executable code. */
@@ -379,17 +387,17 @@ Table *sqlite3FindTable(sqlite3 *db, const char *zName, const char *zDatabase){
     p = sqlite3HashFind(&db->aDb[i].pSchema->tblHash, zName);
     if( p==0 && sqlite3StrNICmp(zName, "sqlite_", 7)==0 ){
       if( i==1 ){
-        if( sqlite3StrICmp(zName+7, &ALT_TEMP_SCHEMA_TABLE[7])==0
-         || sqlite3StrICmp(zName+7, &ALT_SCHEMA_TABLE[7])==0
-         || sqlite3StrICmp(zName+7, &DFLT_SCHEMA_TABLE[7])==0
+        if( sqlite3StrICmp(zName+7, &PREFERRED_TEMP_SCHEMA_TABLE[7])==0
+         || sqlite3StrICmp(zName+7, &PREFERRED_SCHEMA_TABLE[7])==0
+         || sqlite3StrICmp(zName+7, &LEGACY_SCHEMA_TABLE[7])==0
         ){
           p = sqlite3HashFind(&db->aDb[1].pSchema->tblHash, 
-                              DFLT_TEMP_SCHEMA_TABLE);
+                              LEGACY_TEMP_SCHEMA_TABLE);
         }
       }else{
-        if( sqlite3StrICmp(zName+7, &ALT_SCHEMA_TABLE[7])==0 ){
+        if( sqlite3StrICmp(zName+7, &PREFERRED_SCHEMA_TABLE[7])==0 ){
           p = sqlite3HashFind(&db->aDb[i].pSchema->tblHash,
-                              DFLT_SCHEMA_TABLE);
+                              LEGACY_SCHEMA_TABLE);
         }
       }
     }
@@ -407,11 +415,11 @@ Table *sqlite3FindTable(sqlite3 *db, const char *zName, const char *zDatabase){
       if( p ) break;
     }
     if( p==0 && sqlite3StrNICmp(zName, "sqlite_", 7)==0 ){
-      if( sqlite3StrICmp(zName+7, &ALT_SCHEMA_TABLE[7])==0 ){
-        p = sqlite3HashFind(&db->aDb[0].pSchema->tblHash, DFLT_SCHEMA_TABLE);
-      }else if( sqlite3StrICmp(zName+7, &ALT_TEMP_SCHEMA_TABLE[7])==0 ){
+      if( sqlite3StrICmp(zName+7, &PREFERRED_SCHEMA_TABLE[7])==0 ){
+        p = sqlite3HashFind(&db->aDb[0].pSchema->tblHash, LEGACY_SCHEMA_TABLE);
+      }else if( sqlite3StrICmp(zName+7, &PREFERRED_TEMP_SCHEMA_TABLE[7])==0 ){
         p = sqlite3HashFind(&db->aDb[1].pSchema->tblHash, 
-                            DFLT_TEMP_SCHEMA_TABLE);
+                            LEGACY_TEMP_SCHEMA_TABLE);
       }
     }
   }
@@ -505,6 +513,22 @@ Table *sqlite3LocateTableItem(
     zDb = p->zDatabase;
   }
   return sqlite3LocateTable(pParse, flags, p->zName, zDb);
+}
+
+/*
+** Return the preferred table name for system tables.  Translate legacy
+** names into the new preferred names, as appropriate.
+*/
+const char *sqlite3PreferredTableName(const char *zName){
+  if( sqlite3StrNICmp(zName, "sqlite_", 7)==0 ){
+    if( sqlite3StrICmp(zName+7, &LEGACY_SCHEMA_TABLE[7])==0 ){
+      return PREFERRED_SCHEMA_TABLE;
+    }
+    if( sqlite3StrICmp(zName+7, &LEGACY_TEMP_SCHEMA_TABLE[7])==0 ){
+      return PREFERRED_TEMP_SCHEMA_TABLE;
+    }
+  }
+  return zName;
 }
 
 /*
@@ -683,7 +707,7 @@ void sqlite3ColumnSetExpr(
   Expr *pExpr       /* The new default expression */
 ){
   ExprList *pList;
-  assert( !IsVirtual(pTab) );
+  assert( IsOrdinaryTable(pTab) );
   pList = pTab->u.tab.pDfltList;
   if( pCol->iDflt==0
    || NEVER(pList==0)
@@ -704,7 +728,7 @@ void sqlite3ColumnSetExpr(
 */
 Expr *sqlite3ColumnExpr(Table *pTab, Column *pCol){
   if( pCol->iDflt==0 ) return 0;
-  if( NEVER(IsVirtual(pTab)) ) return 0;
+  if( NEVER(!IsOrdinaryTable(pTab)) ) return 0;
   if( NEVER(pTab->u.tab.pDfltList==0) ) return 0;
   if( NEVER(pTab->u.tab.pDfltList->nExpr<pCol->iDflt) ) return 0;
   return pTab->u.tab.pDfltList->a[pCol->iDflt-1].pExpr;
@@ -763,13 +787,13 @@ void sqlite3DeleteColumnNames(sqlite3 *db, Table *pTable){
       sqlite3DbFree(db, pCol->zCnName);
     }
     sqlite3DbFree(db, pTable->aCol);
-    if( !IsVirtual(pTable) ){
+    if( IsOrdinaryTable(pTable) ){
       sqlite3ExprListDelete(db, pTable->u.tab.pDfltList);
     }
     if( db==0 || db->pnBytesFreed==0 ){
       pTable->aCol = 0;
       pTable->nCol = 0;
-      if( !IsVirtual(pTable) ){
+      if( IsOrdinaryTable(pTable) ){
         pTable->u.tab.pDfltList = 0;
       }
     }
@@ -888,10 +912,10 @@ void sqlite3UnlinkAndDeleteTable(sqlite3 *db, int iDb, const char *zTabName){
 ** are not \000 terminated and are not persistent.  The returned string
 ** is \000 terminated and is persistent.
 */
-char *sqlite3NameFromToken(sqlite3 *db, Token *pName){
+char *sqlite3NameFromToken(sqlite3 *db, const Token *pName){
   char *zName;
   if( pName ){
-    zName = sqlite3DbStrNDup(db, (char*)pName->z, pName->n);
+    zName = sqlite3DbStrNDup(db, (const char*)pName->z, pName->n);
     sqlite3Dequote(zName);
   }else{
     zName = 0;
@@ -905,7 +929,7 @@ char *sqlite3NameFromToken(sqlite3 *db, Token *pName){
 */
 void sqlite3OpenSchemaTable(Parse *p, int iDb){
   Vdbe *v = sqlite3GetVdbe(p);
-  sqlite3TableLock(p, iDb, SCHEMA_ROOT, 1, DFLT_SCHEMA_TABLE);
+  sqlite3TableLock(p, iDb, SCHEMA_ROOT, 1, LEGACY_SCHEMA_TABLE);
   sqlite3VdbeAddOp4Int(v, OP_OpenWrite, 0, SCHEMA_ROOT, iDb, 5);
   if( p->nTab==0 ){
     p->nTab = 1;
@@ -1554,7 +1578,7 @@ void sqlite3AddColumn(Parse *pParse, Token sName, Token sType){
     /* If there is no type specified, columns have the default affinity
     ** 'BLOB' with a default size of 4 bytes. */
     pCol->affinity = affinity;
-    pCol->eType = eType;
+    pCol->eCType = eType;
     pCol->szEst = szEst;
 #ifdef SQLITE_ENABLE_SORTER_REFERENCES
     if( affinity==SQLITE_AFF_BLOB ){
@@ -1836,7 +1860,9 @@ void sqlite3AddPrimaryKey(
       assert( pCExpr!=0 );
       sqlite3StringToId(pCExpr);
       if( pCExpr->op==TK_ID ){
-        const char *zCName = pCExpr->u.zToken;
+        const char *zCName;
+        assert( !ExprHasProperty(pCExpr, EP_IntValue) );
+        zCName = pCExpr->u.zToken;
         for(iCol=0; iCol<pTab->nCol; iCol++){
           if( sqlite3StrICmp(zCName, pTab->aCol[iCol].zCnName)==0 ){
             pCol = &pTab->aCol[iCol];
@@ -1849,7 +1875,7 @@ void sqlite3AddPrimaryKey(
   }
   if( nTerm==1
    && pCol
-   && pCol->eType==COLTYPE_INTEGER
+   && pCol->eCType==COLTYPE_INTEGER
    && sortOrder!=SQLITE_SO_DESC
   ){
     if( IN_RENAME_OBJECT && pList ){
@@ -2208,7 +2234,6 @@ static void estimateIndexWidth(Index *pIdx){
 */
 static int hasColumn(const i16 *aiCol, int nCol, int x){
   while( nCol-- > 0 ){
-    assert( aiCol[0]>=0 );
     if( x==*(aiCol++) ){
       return 1;
     }
@@ -2321,7 +2346,9 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
   */
   if( !db->init.imposterTable ){
     for(i=0; i<pTab->nCol; i++){
-      if( (pTab->aCol[i].colFlags & COLFLAG_PRIMKEY)!=0 ){
+      if( (pTab->aCol[i].colFlags & COLFLAG_PRIMKEY)!=0
+       && (pTab->aCol[i].notNull==OE_None)
+      ){
         pTab->aCol[i].notNull = OE_Abort;
       }
     }
@@ -2483,6 +2510,41 @@ int sqlite3IsShadowTableOf(sqlite3 *db, Table *pTab, const char *zName){
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 /*
+** Table pTab is a virtual table.  If it the virtual table implementation
+** exists and has an xShadowName method, then loop over all other ordinary
+** tables within the same schema looking for shadow tables of pTab, and mark
+** any shadow tables seen using the TF_Shadow flag.
+*/
+void sqlite3MarkAllShadowTablesOf(sqlite3 *db, Table *pTab){
+  int nName;                    /* Length of pTab->zName */
+  Module *pMod;                 /* Module for the virtual table */
+  HashElem *k;                  /* For looping through the symbol table */
+
+  assert( IsVirtual(pTab) );
+  pMod = (Module*)sqlite3HashFind(&db->aModule, pTab->u.vtab.azArg[0]);
+  if( pMod==0 ) return;
+  if( NEVER(pMod->pModule==0) ) return;
+  if( pMod->pModule->iVersion<3 ) return;
+  if( pMod->pModule->xShadowName==0 ) return;
+  assert( pTab->zName!=0 );
+  nName = sqlite3Strlen30(pTab->zName);
+  for(k=sqliteHashFirst(&pTab->pSchema->tblHash); k; k=sqliteHashNext(k)){
+    Table *pOther = sqliteHashData(k);
+    assert( pOther->zName!=0 );
+    if( !IsOrdinaryTable(pOther) ) continue;
+    if( pOther->tabFlags & TF_Shadow ) continue;
+    if( sqlite3StrNICmp(pOther->zName, pTab->zName, nName)==0
+     && pOther->zName[nName]=='_'
+     && pMod->pModule->xShadowName(pOther->zName+nName+1)
+    ){
+      pOther->tabFlags |= TF_Shadow;
+    }
+  }
+}
+#endif /* ifndef SQLITE_OMIT_VIRTUALTABLE */
+
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+/*
 ** Return true if zName is a shadow table name in the current database
 ** connection.
 **
@@ -2554,7 +2616,7 @@ void sqlite3EndTable(
   Parse *pParse,          /* Parse context */
   Token *pCons,           /* The ',' token after the last column defn. */
   Token *pEnd,            /* The ')' before options in the CREATE TABLE */
-  u8 tabOpts,             /* Extra table options. Usually 0. */
+  u32 tabOpts,            /* Extra table options. Usually 0. */
   Select *pSelect         /* Select from a "CREATE ... AS SELECT" */
 ){
   Table *p;                 /* The new table */
@@ -2582,12 +2644,50 @@ void sqlite3EndTable(
   ** table itself.  So mark it read-only.
   */
   if( db->init.busy ){
-    if( pSelect ){
+    if( pSelect || (!IsOrdinaryTable(p) && db->init.newTnum) ){
       sqlite3ErrorMsg(pParse, "");
       return;
     }
     p->tnum = db->init.newTnum;
     if( p->tnum==1 ) p->tabFlags |= TF_Readonly;
+  }
+
+  /* Special processing for tables that include the STRICT keyword:
+  **
+  **   *  Do not allow custom column datatypes.  Every column must have
+  **      a datatype that is one of INT, INTEGER, REAL, TEXT, or BLOB.
+  **
+  **   *  If a PRIMARY KEY is defined, other than the INTEGER PRIMARY KEY,
+  **      then all columns of the PRIMARY KEY must have a NOT NULL
+  **      constraint.
+  */
+  if( tabOpts & TF_Strict ){
+    int ii;
+    p->tabFlags |= TF_Strict;
+    for(ii=0; ii<p->nCol; ii++){
+      Column *pCol = &p->aCol[ii];
+      if( pCol->eCType==COLTYPE_CUSTOM ){
+        if( pCol->colFlags & COLFLAG_HASTYPE ){
+          sqlite3ErrorMsg(pParse,
+            "unknown datatype for %s.%s: \"%s\"",
+            p->zName, pCol->zCnName, sqlite3ColumnType(pCol, "")
+          );
+        }else{
+          sqlite3ErrorMsg(pParse, "missing datatype for %s.%s",
+                          p->zName, pCol->zCnName);
+        }
+        return;
+      }else if( pCol->eCType==COLTYPE_ANY ){
+        pCol->affinity = SQLITE_AFF_BLOB;
+      }
+      if( (pCol->colFlags & COLFLAG_PRIMKEY)!=0
+       && p->iPKey!=ii
+       && pCol->notNull == OE_None
+      ){
+        pCol->notNull = OE_Abort;
+        p->tabFlags |= TF_HasNotNull;
+      }
+    }    
   }
 
   assert( (p->tabFlags & TF_HasPrimaryKey)==0
@@ -2771,7 +2871,7 @@ void sqlite3EndTable(
     ** the information we've collected.
     */
     sqlite3NestedParse(pParse,
-      "UPDATE %Q." DFLT_SCHEMA_TABLE
+      "UPDATE %Q." LEGACY_SCHEMA_TABLE
       " SET type='%s', name=%Q, tbl_name=%Q, rootpage=#%d, sql=%Q"
       " WHERE rowid=#%d",
       db->aDb[iDb].zDbSName,
@@ -2957,13 +3057,12 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
   assert( pTable );
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-  db->nSchemaLock++;
-  rc = sqlite3VtabCallConnect(pParse, pTable);
-  db->nSchemaLock--;
-  if( rc ){
-    return 1;
+  if( IsVirtual(pTable) ){
+    db->nSchemaLock++;
+    rc = sqlite3VtabCallConnect(pParse, pTable);
+    db->nSchemaLock--;
+    return rc;
   }
-  if( IsVirtual(pTable) ) return 0;
 #endif
 
 #ifndef SQLITE_OMIT_VIEW
@@ -3151,7 +3250,7 @@ static void destroyRootPage(Parse *pParse, int iTable, int iDb){
   ** token for additional information.
   */
   sqlite3NestedParse(pParse, 
-     "UPDATE %Q." DFLT_SCHEMA_TABLE
+     "UPDATE %Q." LEGACY_SCHEMA_TABLE
      " SET rootpage=%d WHERE #%d AND rootpage=#%d",
      pParse->db->aDb[iDb].zDbSName, iTable, r1, r1);
 #endif
@@ -3286,7 +3385,7 @@ void sqlite3CodeDropTable(Parse *pParse, Table *pTab, int iDb, int isView){
   ** database.
   */
   sqlite3NestedParse(pParse, 
-      "DELETE FROM %Q." DFLT_SCHEMA_TABLE
+      "DELETE FROM %Q." LEGACY_SCHEMA_TABLE
       " WHERE tbl_name=%Q and type!='trigger'",
       pDb->zDbSName, pTab->zName);
   if( !isView && !IsVirtual(pTab) ){
@@ -3332,6 +3431,9 @@ static int tableMayNotBeDropped(sqlite3 *db, Table *pTab){
     return 1;
   }
   if( (pTab->tabFlags & TF_Shadow)!=0 && sqlite3ReadOnlyShadowTables(db) ){
+    return 1;
+  }
+  if( pTab->tabFlags & TF_Eponymous ){
     return 1;
   }
   return 0;
@@ -3509,6 +3611,7 @@ void sqlite3CreateForeignKey(
     goto fk_end;
   }
   pFKey->pFrom = p;
+  assert( IsOrdinaryTable(p) );
   pFKey->pNextFrom = p->u.tab.pFKey;
   z = (char*)&pFKey->aCol[nCol];
   pFKey->zTo = z;
@@ -3574,7 +3677,7 @@ void sqlite3CreateForeignKey(
 
   /* Link the foreign key to the table as the last step.
   */
-  assert( !IsVirtual(p) );
+  assert( IsOrdinaryTable(p) );
   p->u.tab.pFKey = pFKey;
   pFKey = 0;
 
@@ -3597,7 +3700,7 @@ void sqlite3DeferForeignKey(Parse *pParse, int isDeferred){
   Table *pTab;
   FKey *pFKey;
   if( (pTab = pParse->pNewTable)==0 ) return;
-  if( NEVER(IsVirtual(pTab)) ) return;
+  if( NEVER(!IsOrdinaryTable(pTab)) ) return;
   if( (pFKey = pTab->u.tab.pFKey)==0 ) return;
   assert( isDeferred==0 || isDeferred==1 ); /* EV: R-30323-21917 */
   pFKey->isDeferred = (u8)isDeferred;
@@ -3999,6 +4102,7 @@ void sqlite3CreateIndex(
     Expr *pExpr = pList->a[i].pExpr;
     assert( pExpr!=0 );
     if( pExpr->op==TK_COLLATE ){
+      assert( !ExprHasProperty(pExpr, EP_IntValue) );
       nExtra += (1 + sqlite3Strlen30(pExpr->u.zToken));
     }
   }
@@ -4094,6 +4198,7 @@ void sqlite3CreateIndex(
     zColl = 0;
     if( pListItem->pExpr->op==TK_COLLATE ){
       int nColl;
+      assert( !ExprHasProperty(pListItem->pExpr, EP_IntValue) );
       zColl = pListItem->pExpr->u.zToken;
       nColl = sqlite3Strlen30(zColl) + 1;
       assert( nExtra>=nColl );
@@ -4300,7 +4405,7 @@ void sqlite3CreateIndex(
       /* Add an entry in sqlite_schema for this index
       */
       sqlite3NestedParse(pParse, 
-          "INSERT INTO %Q." DFLT_SCHEMA_TABLE " VALUES('index',%Q,%Q,#%d,%Q);",
+          "INSERT INTO %Q." LEGACY_SCHEMA_TABLE " VALUES('index',%Q,%Q,#%d,%Q);",
           db->aDb[iDb].zDbSName,
           pIndex->zName,
           pTab->zName,
@@ -4342,7 +4447,7 @@ exit_create_index:
     ** The list was already ordered when this routine was entered, so at this
     ** point at most a single index (the newly added index) will be out of
     ** order.  So we have to reorder at most one index. */
-    Index **ppFrom = &pTab->pIndex;
+    Index **ppFrom;
     Index *pThis;
     for(ppFrom=&pTab->pIndex; (pThis = *ppFrom)!=0; ppFrom=&pThis->pNext){
       Index *pNext;
@@ -4486,7 +4591,7 @@ void sqlite3DropIndex(Parse *pParse, SrcList *pName, int ifExists){
   if( v ){
     sqlite3BeginWriteOperation(pParse, 1, iDb);
     sqlite3NestedParse(pParse,
-       "DELETE FROM %Q." DFLT_SCHEMA_TABLE " WHERE name=%Q AND type='index'",
+       "DELETE FROM %Q." LEGACY_SCHEMA_TABLE " WHERE name=%Q AND type='index'",
        db->aDb[iDb].zDbSName, pIndex->zName
     );
     sqlite3ClearStatTables(pParse, iDb, "idx", pIndex->zName);
@@ -4882,6 +4987,7 @@ void sqlite3SrcListIndexedBy(Parse *pParse, SrcList *p, Token *pIndexedBy){
     }else{
       pItem->u1.zIndexedBy = sqlite3NameFromToken(pParse->db, pIndexedBy);
       pItem->fg.isIndexedBy = 1;
+      assert( pItem->fg.isCte==0 );  /* No collision on union u2 */
     }
   }
 }

@@ -15,6 +15,23 @@
 #include <string.h>
 #include <stdio.h>
 
+#if !defined(SQLITE_AMALGAMATION)
+#if defined(SQLITE_COVERAGE_TEST) || defined(SQLITE_MUTATION_TEST)
+# define SQLITE_OMIT_AUXILIARY_SAFETY_CHECKS 1
+#endif
+#if defined(SQLITE_OMIT_AUXILIARY_SAFETY_CHECKS)
+# define ALWAYS(X)      (1)
+# define NEVER(X)       (0)
+#elif !defined(NDEBUG)
+# define ALWAYS(X)      ((X)?1:(assert(0),0))
+# define NEVER(X)       ((X)?(assert(0),1):0)
+#else
+# define ALWAYS(X)      (X)
+# define NEVER(X)       (X)
+#endif
+#endif /* !defined(SQLITE_AMALGAMATION) */
+
+
 #ifndef SQLITE_OMIT_VIRTUALTABLE 
 
 typedef sqlite3_int64 i64;
@@ -741,9 +758,9 @@ static int idxGetTableInfo(
   if( rc!=SQLITE_OK ){
     sqlite3_free(pNew);
     pNew = 0;
-  }else{
+  }else if( ALWAYS(pNew!=0) ){
     pNew->zName = pCsr;
-    memcpy(pNew->zName, zTab, nTab+1);
+    if( ALWAYS(pNew->zName!=0) ) memcpy(pNew->zName, zTab, nTab+1);
   }
 
   *ppOut = pNew;
@@ -914,6 +931,19 @@ static int idxFindCompatible(
   return 0;
 }
 
+/* Callback for sqlite3_exec() with query with leading count(*) column.
+ * The first argument is expected to be an int*, referent to be incremented
+ * if that leading column is not exactly '0'.
+ */
+static int countNonzeros(void* pCount, int nc,
+                         char* azResults[], char* azColumns[]){
+  (void)azColumns;  /* Suppress unused parameter warning */
+  if( nc>0 && (azResults[0][0]!='0' || azResults[0][1]!=0) ){
+    *((int *)pCount) += 1;
+  }
+  return 0;
+}
+
 static int idxCreateFromCons(
   sqlite3expert *p,
   IdxScan *pScan,
@@ -940,17 +970,40 @@ static int idxCreateFromCons(
     if( rc==SQLITE_OK ){
       /* Hash the list of columns to come up with a name for the index */
       const char *zTable = pScan->pTab->zName;
-      char *zName;                /* Index name */
-      int i;
-      for(i=0; zCols[i]; i++){
-        h += ((h<<3) + zCols[i]);
-      }
-      zName = sqlite3_mprintf("%s_idx_%08x", zTable, h);
-      if( zName==0 ){ 
+      int quoteTable = idxIdentifierRequiresQuotes(zTable);
+      char *zName = 0;          /* Index name */
+      int collisions = 0;
+      do{
+        int i;
+        char *zFind;
+        for(i=0; zCols[i]; i++){
+          h += ((h<<3) + zCols[i]);
+        }
+        sqlite3_free(zName);
+        zName = sqlite3_mprintf("%s_idx_%08x", zTable, h);
+        if( zName==0 ) break;
+        /* Is is unique among table, view and index names? */
+        zFmt = "SELECT count(*) FROM sqlite_schema WHERE name=%Q"
+          " AND type in ('index','table','view')";
+        zFind = sqlite3_mprintf(zFmt, zName);
+        i = 0;
+        rc = sqlite3_exec(dbm, zFind, countNonzeros, &i, 0);
+        assert(rc==SQLITE_OK);
+        sqlite3_free(zFind);
+        if( i==0 ){
+          collisions = 0;
+          break;
+        }
+        ++collisions;
+      }while( collisions<50 && zName!=0 );
+      if( collisions ){
+        /* This return means "Gave up trying to find a unique index name." */
+        rc = SQLITE_BUSY_TIMEOUT;
+      }else if( zName==0 ){
         rc = SQLITE_NOMEM;
       }else{
-        if( idxIdentifierRequiresQuotes(zTable) ){
-          zFmt = "CREATE INDEX '%q' ON %Q(%s)";
+        if( quoteTable ){
+          zFmt = "CREATE INDEX \"%w\" ON \"%w\"(%s)";
         }else{
           zFmt = "CREATE INDEX %s ON %s(%s)";
         }
@@ -959,7 +1012,11 @@ static int idxCreateFromCons(
           rc = SQLITE_NOMEM;
         }else{
           rc = sqlite3_exec(dbm, zIdx, 0, 0, p->pzErrmsg);
-          idxHashAdd(&rc, &p->hIdx, zName, zIdx);
+          if( rc!=SQLITE_OK ){
+            rc = SQLITE_BUSY_TIMEOUT;
+          }else{
+            idxHashAdd(&rc, &p->hIdx, zName, zIdx);
+          }
         }
         sqlite3_free(zName);
         sqlite3_free(zIdx);
@@ -1883,6 +1940,10 @@ int sqlite3_expert_analyze(sqlite3expert *p, char **pzErr){
   /* Create candidate indexes within the in-memory database file */
   if( rc==SQLITE_OK ){
     rc = idxCreateCandidates(p);
+  }else if ( rc==SQLITE_BUSY_TIMEOUT ){
+    if( pzErr )
+      *pzErr = sqlite3_mprintf("Cannot find a unique index name to propose.");
+    return rc;
   }
 
   /* Generate the stat1 data */
