@@ -1,5 +1,5 @@
-C Merge\sin\s3.37\srelease
-D 2021-11-30T23:00:23.356
+C Extensible\sshell\sbuilder\schanges\sin\sprep\sfor\sactual\sextension\sload
+D 2021-12-01T17:46:53.986
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1868,7 +1868,7 @@ F tool/mkopcodec.tcl 33d20791e191df43209b77d37f0ff0904620b28465cca6990cf8d60da61
 F tool/mkopcodeh.tcl 130b88697da6ec5b89b41844d955d08fb62c2552e889dec8c7bcecb28d8f50bd
 F tool/mkopts.tcl 680f785fdb09729fd9ac50632413da4eadbdf9071535e3f26d03795828ab07fa
 F tool/mkpragmatab.tcl de206c64b6e9ac8cd5e3cbd0ffe456f07d5710605ef8385d677e60ce3335ea12
-F tool/mkshellc.tcl 1f6105dc731a32eb49c76fc60672bb1de3f3e1f44d632094e5ee4249bf51b28d
+F tool/mkshellc.tcl 005d8c68e4d22bf6739f6f95f61e269e2fa1d3c33596fb08e027acbd79c9e053
 F tool/mksourceid.c 36aa8020014aed0836fd13c51d6dc9219b0df1761d6b5f58ff5b616211b079b9
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl 4f7cfef5152b0c91920355cbfc1d608a4ad242cb819f1aea07f6d0274f584a7f
@@ -1934,7 +1934,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bfa94f3d1fef1ea855e4fce978cf9c7c3c13becf3f7bc0b8795adc6aebe80d0e bd41822c7424d393a30e92ff6cb254d25c26769889c1499a18a0b9339f5d6c8a
-R a16448c70272152456e9a0e08de83505
+P 15780cb2bb1e992665a0a7a51206d11d8656d64917d0cf8cc4d72e1005531591
+R 8865642b7dda3fedc9c2b82ba1b01b39
 U larrybr
-Z 600acad55455254daf8d8e7b43c21a14
+Z dcd83e606bd8e5971182d44ac0acaf16

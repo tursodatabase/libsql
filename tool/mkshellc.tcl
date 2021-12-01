@@ -35,14 +35,15 @@ set ::help {
 
  The -source-tags option sets the degree of #line directive emission via
  the <tags_degree> value. 0 turns tagging off. 1, which is the default,
- yields tagging only on non-macro code as it is scanned. 2 adds much more
- tagging, (about 3x), on individual dispatch and help table entries, and
- on conditional compilation preprocessor directives.
+ yields tagging only on source file switching. 2 also produces tagging in
+ places where intra-source line tracking would become invalid otherwise.
+ 3 yields much more tagging, (about 3x), on individual dispatch and help
+ table entries, and on conditional compilation preprocessor directives.
 
  Input files may include macro lines or line sequences matching any of:
   INCUDE <file_name>\
 }
-# MACRO_DOSTUFF ...
+
 set ::helpMore {
  Use --details option for detailed effects of these macros.
  Use --parameters option for CONFIGURE_DISPATCH parameter names and effects.
@@ -70,32 +71,34 @@ set ::headComment {/* DO NOT EDIT!
 
 set ::headCommentLines [expr 1+[regexp -all "\n" $::headComment]]
 
-set ::topdir [file dir [file dir [file normal $argv0]]]
+set ::topDir [file dir [file dir [file normal $argv0]]]
 set runMode normal
-set ::lineDirectives 1
+
+set ::lineTags 1 ; # 0 => none, 1 => source change, 2 => line syncs, 3 => more
+
 set ::tclGenerate 0
 set ::verbosity 0
-set infiles {}
-array set ::incTypes [list "*" "$::topdir/src/shell.c.in"]
+set ::inFiles {}
+array set ::incTypes [list "*" "$::topDir/src/shell.c.in"]
 array set ::ignoringCommands [list]
 
 while  {[llength $argv] > 0} {
-  set argv [lassign $argv opt]
+  foreach {opt} $arv { set argv [lreplace $argv 1 end] ; break }
   if {[regexp {^-{1,2}((help)|(details)|(parameters))$} $opt ma ho]} {
     set runMode $ho
   } elseif {[regexp {^-it$} $opt]} {
-    set argv [lassign $argv nextOpt]
+    foreach {nextOpt} $arv { set argv [lreplace $argv 1 end] ; break }
     if {![regexp {^(\w+)=(.+)$} $nextOpt ma k v]} {
       puts stderr "Get help with --help."
       exit 1 
     }
     set ::incTypes($k) $v
   } elseif {$opt eq "-top-dir"} {
-    set argv [lassign $argv ::topdir]
-    if {::topdir eq ""} { set ::topdir . }
+    foreach {::topDir} $arv { set argv [lreplace $argv 1 end] ; break }
+    if {::topDir eq ""} { set ::topDir . }
   } elseif {$opt eq "-source-tags"} {
-    set argv [lassign $argv nextOpt]
-    if {![regexp {^\d$} $nextOpt ::lineDirectives]} {
+    foreach {nextOpt} $arv { set argv [lreplace $argv 1 end] ; break }
+    if {![regexp {^\d$} $nextOpt ::lineTags]} {
       puts stderr "Argument following -source-tags must be a digit."
     }
   } elseif {$opt eq "-tcl"} {
@@ -104,36 +107,103 @@ while  {[llength $argv] > 0} {
   } elseif {$opt eq "-v"} {
     incr ::verbosity
   } elseif {[regexp {^[^-]} $opt]} {
-    lappend infiles $opt
+    lappend ::inFiles $opt
   } else {
     puts stderr "Skipping unknown option: $opt"
   }
 }
 if {$runMode eq "normal"} {
-  if {[llength $infiles] == 0} {
-    lappend infiles $::incTypes(*)
+  if {[llength $::inFiles] == 0} {
+    lappend ::inFiles $::incTypes(*)
   }
   fconfigure stdout -translation {auto lf}
-  set out stdout
+  set ::outStrm stdout
 }
-fconfigure $in -translation auto
 
-if {$::lineDirectives >= 2} {
-  # These k/v stores hold {filename lineNum} lists keyed by meta-command,
-  # used to get #line directives on all dispatch and help table entries,
-  # and any conditionals affecting their compilation.
+# Given a path relative to <project>/src, return its full pathname.
+proc project_path {relPath} {
+  return "$::topDir/src/$relPath"
+}
+
+if {$::lineTags >= 3} {
+  # These k/v stores hold {lineNum filename} lists keyed by meta-command,
+  # which are used to get #line directives on all dispatch and help table
+  # entries, and any conditionals affecting their compilation.
   array set ::cmd_help_tags {}
   array set ::cmd_dispatch_tags {}
   array set ::cmd_conditional_tags {}
 }
-proc lineDirective {filename lineNum} {return "#line $lineNum \"${filename}\""}
+
+# Set one of above k/v stores, (help, dispatch, conditional) for given
+# cmd from members of inSrc triple {filename istrm lineNumber}.
+proc set_src_tags {which cmd inSrc} {
+  if {$::lineTags >= 3} {
+    foreach {filename _ lineNumber} $inSrc break
+    set [subst ::cmd_${which}_tags]($cmd) [list $lineNumber $filename]
+  }
+}
+# Return pair {lineNumber fileName} from one of above k/v stores,
+# (help, dispatch, conditional) for given cmd, or get empty list.
+# The empty list indicates either not keeping such k/v, or there
+# is not one for the given cmd
+proc get_src_tags {which cmd} {
+  if {$::lineTags >= 3 && [info exists [subst ::cmd_${which}_tags]($cmd)]} {
+    return [subst "\$[subst ::cmd_${which}_tags]($cmd)"]
+  }
+  return {}
+}
+
+# To faciliate non-excessive line tagging, track these values before emits:
+# These 2 variables are set/used only by procs line_tag and emit_sync .
+set ::apparentSrcFile ""
+set ::apparentSrcPrecLines $::headCommentLines
+
+# Maybe put a #line directive if ::lineTags not 0. Directive style depends
+# on its value and whether srcFile input is provided as follows:
+# 1 => just file changes, 2 => line syncs too if srcFile not empty.
+# A #line directive is only emitted if its kind is enabled
+# All #line emits pass through this proc.
+proc line_tag { ostrm srcPrecLines {srcFile ""} } {
+  if {$::lineTags == 0} return
+  set sayLine [expr {$srcPrecLines + 1}]
+  if {$srcFile ne ""} {
+    set ::apparentSrcFile $srcFile
+    puts $ostrm "#line $sayLine \"$::apparentSrcFile\""
+  } elseif {$::lineTags > 1} {
+    puts $ostrm "#line $sayLine"
+  }
+  set ::apparentSrcPrecLines $srcPrecLines
+}
+
+# Put a #line directive only if needed to resynchronize compiler's
+# notion of source line location with actual source line location.
+# And do this only if about to emit some line(s). Then emit them.
+# This proc is used for all output emits (to make this work.)
+# The precLines input is the number of source lines preceding the
+# one to be represented (via #line ...) as producing next output.
+proc emit_sync { lines ostrm precLines {fromFile ""} } {
+  if {$::lineTags > 0} {
+    if {$fromFile ne "" && $fromFile ne $::apparentSrcFile} {
+      line_tag $ostrm $precLines $fromFile
+    } elseif {$::lineTags > 1
+              && $precLines != $::apparentSrcPrecLines
+              && $lines ne {}} {
+      line_tag $ostrm $precLines
+    }
+  }
+  foreach line $lines {
+    puts $ostrm $line
+    incr ::apparentSrcPrecLines
+  }
+}
 
 array set ::cmd_help {}
 array set ::cmd_dispatch {}
 array set ::cmd_condition {}
 array set ::inc_type_files {}
 set ::iShuffleErrors 0
-regexp {(\{)(\})} "{}" ma ::lb ::rb ; # Ease use of { and } in literals.
+# Ease use of { and } in literals. Instead, $::lb and $::rb can be used.
+regexp {(\{)(\})} "{}" ma ::lb ::rb
 
 # Setup dispatching function signature and table entry struct .
 # The effect of these key/value pairs is as this --parameters output says:
@@ -175,50 +245,25 @@ array set ::dispCfg [list \
 # Variables $cmd and $arg# (where # = 0 .. DC_ARG_COUNT-1) have values
 # when ARGS_SIGNATURE, DISPATCH_ENTRY, and DISPATCHEE_NAME are evaluated.
 
-proc condition_command {cmd pp_expr} {
-  if {[regexp {^(!)?defined\(\s*(\w+)\s*\)} $pp_expr ma bang pp_var]} {
-    if {$bang eq "!"} {
-      set pp_expr "#ifndef $pp_var"
-    } else {
-      set pp_expr "#ifdef $pp_var"
-    }
-  } else {
-    set pp_expr "#if [string trim $pp_expr]"
-  }
-  set ::cmd_condition($cmd) $pp_expr
-}
-
-proc emit_conditionally {cmd lines ostrm {indent ""} {cmdTagStore {}}} {
+proc emit_conditionally {cmd lines inSrc ostrm {indent ""} {cmdTagStore {}}} {
+  foreach {fname _ lnum} $inSrc break
   set wrapped [info exists ::cmd_condition($cmd)]
-  set iPut 0
   if {$wrapped} {
-    if {$::lineDirectives >= 2} {
-      puts $ostrm [lineDirective $::cmd_conditional_tags($cmd)]
-      incr iPut
-    }
-    puts $ostrm $::cmd_condition($cmd)
-    incr iPut
-  }
-  if {$::lineDirectives >= 2} {
-
-    set fnln subst[[subst "\$$cmdTagStore(\$cmd)"]]
-    puts $ostrm [lineDirective {*}$fnln]
-    incr iPut
+    emit_sync [list $::cmd_condition($cmd)] $ostrm $lnum $fname
+    incr lnum
   }
   if {[regexp {^\s*(\d+)\s*$} $indent ma inum]} {
     set lead [string repeat " " $inum]
-    foreach line $lines {
-      puts $ostrm "$lead[string trimleft $line]"
-    }
-  } else {
-    puts $ostrm [join $lines "\n"]
+    set ilines [list]
+    foreach line $lines { lappend ilines "$lead[string trimleft $line]" }
+    set lines $ilines
   }
-  incr iPut [llength $lines]
+  emit_sync $lines $ostrm $lnum $fname
+  incr lnum [llength $lines]
   if {$wrapped} {
-    puts $ostrm "#endif"
-    incr iPut
+    emit_sync [list "#endif"] $ostrm $lnum $fname
+    incr lnum
   }
-  return $iPut
 }
 
 # Coalesce secondary help text lines using C's string literal concatenation
@@ -332,67 +377,23 @@ array set ::macroUsages [list \
 set ::macroKeywordTailRE \
  {^\s{0,8}((?:(?:CO)|(?:DI)|(?:EM)|(?:IN)|(?:SK))[A-Z_]+)\M(.+)$}
 
-# RE to recognize macros which may emit and probably will.
-set ::emitterMacrosRE {^[DEI]}
-# RE to recognize macros which certainly will not emit.
-set ::consumerMacrosRE {^[CS]}
-# RE to recognize macros which have gather/scatter operation, and will emit.
-set ::shufflerMacrosRE {^E}
-# Above 3 RE's are used to trigger needed #line emits and avoid useless ones.
-
-set ::splat15 [string repeat * 15]
-set ::sharp15 "//[string repeat # 13]"
-
-# Put marker and possibly a #line directive signifying end of an inclusion.
-# Return number of lines emitted.
-proc includeEnd {fromFile returnFile lineNum ostrm} {
-  if {$returnFile eq ""} {
-  } else {
-    set rsay ", resume $returnFile"
-  }
-  if {$::tclGenerate} {
-    puts $ostrm "$::sharp15 End $fromFile$rsay $::sharp15"
-  } else {
-    puts $ostrm "/$::splat15 End $fromFile$rsay ${::splat15}/"
-  }
-  # Skip #line directives if not doing them, at end of outer includer,
-  # or processing Tcl. (At end of outer includer, #line is pointless.)
-  if {$::lineDirectives && !$::tclGenerate && $returnFile ne ""} {
-    puts $ostrm "#line $lineNum \"${returnFile}\""
-    return 2
-  }
-  return 1
-}
-# Possibly put a #line directive within the middle of an includee's output,
-# whether during input scan or upon deferred output.
-# Return number of lines emitted.
-proc includeMiddle {withinFile lineNum ostrm} {
-  if {$::lineDirectives && !$::tclGenerate} {
-    puts "#line $lineNum \"${withinFile}\""
-    return 1
-  }
-  return 0
-}
-# Put marker and possibly a #line directive signifying top of an inclusion.
-# Return number of lines emitted.
-proc includeBegin {startFile ostrm} {
-  if {$::tclGenerate} {
-    puts $ostrm "$::sharp25 Begin $startFile $::sharp25"
-  } else {
-    puts $ostrm "/$::splat25 Begin $startFile ${::splat25}/"
-  }
-  if {$::lineDirectives && !$::tclGenerate} {
-    puts $ostrm "#line 1 \"${startFile}\""
-    return 2
-  }
-  return 1
-}
+########
+# Macro procs, general signature and usage:
+# inSrc is a triple, { input_filename open_input_stream input_lines_consumed }.
+# Arg 2 is the macro tail as RE-captured by one of ::macroTailREs .
+# ostrm is the open output stream for all regular output.
+# The number of input lines consumed, including macro invocation, is returned.
+#
+# These procs may consume additional input, leave side-effects, or emit
+# output to ostrm (via emit_sync), as individually documented.
+# Their names always exactly match the invocation identifier.
 
 proc IGNORED_COMMANDS {inSrc tcSignedCmdGlom ostrm} {
   # Cause the listed commands to be ignored or allowed to generate, as set
   # by a preceeding + or - respectively in the list. This may be useful
   # when statically extending the shell to avoid duplicate implementation.
   # Commands never mentioned within this macro are allowed to generate.
+  # TBD WIP
   set sign ""
   foreach {. o} [regexp -inline -all {\s*([\-\+]|[\w]+)\s*} $tcSignedCmdGlom] {
     if {![regexp {[\+\-\?]} $o . sign]} {
@@ -401,15 +402,14 @@ proc IGNORED_COMMANDS {inSrc tcSignedCmdGlom ostrm} {
       }
     }
   }
-  return [list 0 0]
-  
+  return 1
 }
 
 proc COLLECT_DISPATCH {inSrc tailCaptureCmdOrStar ostrm} {
   # Collect dispatch table entries, along with cmd(s) as ordering info.
   foreach {infile istrm inLineNum} $inSrc {}
   foreach {cmd} $tailCaptureCmdOrStar {}
-  set iAte 0
+  set iAte 2
   set lx [gets $istrm]
   set disp_frag {}
   while {![eof $istrm] && ![regexp {^\s*\];} $lx]} {
@@ -423,69 +423,93 @@ proc COLLECT_DISPATCH {inSrc tailCaptureCmdOrStar ostrm} {
       incr ::iShuffleErrors
     } else {
       set ::cmd_dispatch($dcmd) [list $lx]
+      set_src_tags dispatch $dcmd $inSrc
     }
     set lx [gets $istrm]
     incr iAte
   }
-  incr iAte
-  return [list $iAte 0]
+  return $iAte
 }
 
-proc COMMENT {hFile tailCaptureIgnore ostrm} {
+proc COMMENT {inSrc tailCaptureIgnore ostrm} {
   # Allow comments in an input file which have no effect on output.
   return 1
 }
 
-proc INCLUDE {hFile tailCaptureIncType ostrm} {
+proc INCLUDE {inSrc tailCaptureIncType ostrm} {
   # If invoked with a bare filename, include the named file. If invoked
   # with the parenthesized word form, include a file named by means of
   # the '-it <inc_type>=filename' command line option, provided that the
   # word matches a specified <inc_type>. Otherwise, do nothing.
-  set it [lindex $tailCaptureIncType 0]
-  if {[regexp {\s*([a-zA-Z\._\\/]+)\s*} $it ma it]} {
+  foreach {it rfpath} $tailCaptureIncType break
+  foreach { srcFile istrm srcPrecLines } $inSrc break
+  set saySkip ""
+  if {$it ne ""} {
     if {[info exists ::incTypes($it)]} {
-      set fname $::incTypes($it)
-      puts $ostrm "/* INCLUDE($it), of \"$fname\" skipped. */"
-      # ToDo: Get including done with a proc so it can be done from here.
-      # This will support emitting #line directives to aid debugging.
+      set rfpath $::incTypes($it)
+      if {![file exists [project_path $rfpath]]} {
+        set saySkip "/* INCLUDE($it), of missing \"$rfpath\" skipped. */"
+      }
+    } else {
+      set saySkip "/* INCLUDE($it), undefined and skipped. */"
     }
+  }
+  if {$saySkip ne ""} {
+    emit_sync [list $saySkip] $ostrm $srcPrecLines $srcFile
+  } else {
+    process_file [project_path $rfpath] $ostrm
+    incr srcPrecLines
+    emit_sync {} $ostrm $srcPrecLines $srcFile
   }
   return 1
 }
 
-proc COLLECT_HELP_TEXT {hFile tailCaptureEmpty ostrm} {
+proc COLLECT_HELP_TEXT {inSrc tailCaptureEmpty ostrm} {
   # Collect help text table values, along with ordering info.
-  set iAte 0
+  foreach { srcFile istrm srcPrecLines } $inSrc break
+  set iAte 2
   set help_frag {}
-  set lx [gets $hFile]
-  while {![eof $hFile] && ![regexp {^\s*\];} $lx]} {
+  set lx [gets $istrm]
+  while {![eof $istrm] && ![regexp {^\s*\];} $lx]} {
     lappend help_frag $lx
-    set lx [gets $hFile]
+    set lx [gets $istrm]
     incr iAte
   }
-  incr iAte
-  array set ::cmd_help [chunkify_help $help_frag]
+  set chunked_help [chunkify_help $help_frag]
+  array set ::cmd_help $chunked_help
+  foreach {cmd _} $chunked_help { set_src_tags help $cmd $inSrc }
   return $iAte
 }
 
-proc CONDITION_COMMAND {hFile tailCap ostrm} {
+proc CONDITION_COMMAND {inSrc tailCap ostrm} {
   # Name a command to be conditionally available, with the condition.
-  condition_command [lindex $tailCap 0] [string trim [lindex $tailCap 1]]
-  return 0
+  foreach {cmd pp_expr} $tailCap { set pp_expr [string trim $pp_expr] ; break }
+  if {[regexp {^(!)?defined\(\s*(\w+)\s*\)} $pp_expr ma bang pp_var]} {
+    if {$bang eq "!"} {
+      set pp_expr "#ifndef $pp_var"
+    } else {
+      set pp_expr "#ifdef $pp_var"
+    }
+  } else {
+    set pp_expr "#if [string trim $pp_expr]"
+  }
+  set ::cmd_condition($cmd) $pp_expr
+  set_src_tags conditional $cmd $inSrc
+  return 1
 }
 
-proc DISPATCH_CONFIG {hFile tailCaptureEmpty ostrm} {
+proc DISPATCH_CONFIG {inSrc tailCaptureEmpty ostrm} {
+  foreach { srcFile istrm srcPrecLines } $inSrc break
   # Set parameters affecting generated dispatchable command function
   # signatures and generated dispatch table entries.
-  set iAte 0
+  set iAte 2
   set def_disp {}
-  set lx [gets $hFile]
-  while {![eof $hFile] && ![regexp {^\s*\];} $lx]} {
+  set lx [gets $istrm]
+  while {![eof $istrm] && ![regexp {^\s*\];} $lx]} {
     lappend def_disp $lx
-    set lx [gets $hFile]
+    set lx [gets $istrm]
     incr iAte
   }
-  incr iAte
   foreach line $def_disp {
     if {[regexp {^\s*(\w+)=(.+)$} $line ma k v]} {
       set ::dispCfg($k) $v
@@ -494,10 +518,11 @@ proc DISPATCH_CONFIG {hFile tailCaptureEmpty ostrm} {
   return $iAte
 }
 
-proc DISPATCHABLE_COMMAND {hFile tailCapture ostrm} {
+proc DISPATCHABLE_COMMAND {inSrc tailCapture ostrm} {
   # Generate and emit a function definition, maybe wrapped as set by
   # CONDITION_COMMAND(), and generate/collect its dispatch table entry,
   # as determined by its actual arguments and DISPATCH_CONFIG parameters.
+  foreach { srcFile istrm srcPrecLines } $inSrc break
   set args [lindex $tailCapture 0]
   set tc [lindex $tailCapture 1]
   if {$tc ne $::lb} {
@@ -505,9 +530,8 @@ proc DISPATCHABLE_COMMAND {hFile tailCapture ostrm} {
     incr $::iShuffleErrors
     return 0
   }
-  set iAte 0
+  set iAte 1
   set args [split [regsub {\s+} [string trim $args] " "]]
-  incr iAte
   set na [llength $args]
   set cmd [lindex $args 0]
   set naPass $::dispCfg(DC_ARG_COUNT)
@@ -526,8 +550,8 @@ proc DISPATCHABLE_COMMAND {hFile tailCapture ostrm} {
       incr na
     }
     set body {}
-    while {![eof $hFile]} {
-      set bl [gets $hFile]
+    while {![eof $istrm]} {
+      set bl [gets $istrm]
       incr iAte
       lappend body $bl
       if {[regexp "^$::rb\\s*\$" $bl]} { break }
@@ -548,29 +572,30 @@ proc DISPATCHABLE_COMMAND {hFile tailCapture ostrm} {
       set fname [subst $::dispCfg(DISPATCHEE_NAME)]
       set funcOpen "$rsct $fname\($argexp\)$::lb"
       set dispEntry [subst $::dispCfg(DISPATCH_ENTRY)]
-      emit_conditionally $cmd [linsert $body 0 $funcOpen] $ostrm
+      emit_conditionally $cmd [linsert $body 0 $funcOpen] $inSrc $ostrm
       set ::cmd_dispatch($cmd) [list $dispEntry]
+      set_src_tags dispatch $cmd $inSrc
     }
   }
   return $iAte
 }
 
-proc EMIT_DISPATCH {hFile tailCap ostrm} {
+proc EMIT_DISPATCH {inSrc tailCap ostrm} {
   # Emit the collected dispatch table entries, in command order, maybe
   # wrapped with a conditional construct as set by CONDITION_COMMAND().
   foreach cmd [lsort [array names ::cmd_dispatch]] {
-    emit_conditionally $cmd $::cmd_dispatch($cmd) $ostrm $tailCap
+    emit_conditionally $cmd $::cmd_dispatch($cmd) $inSrc $ostrm $tailCap
   }
-  return 0
+  return 1
 }
 
-proc EMIT_HELP_TEXT {hFile tailCap ostrm} {
+proc EMIT_HELP_TEXT {inSrc tailCap ostrm} {
   # Emit the collected help text table entries, in command order, maybe
   # wrapped with a conditional construct as set by CONDITION_COMMAND().
   foreach htc [lsort [array names ::cmd_help]] {
-    emit_conditionally $htc $::cmd_help($htc) $ostrm $tailCap
+    emit_conditionally $htc $::cmd_help($htc) $inSrc $ostrm $tailCap
   }
-  return 0
+  return 1
 }
 
 proc say_usage {macros {extra {}}} {
@@ -582,53 +607,96 @@ proc yap_usage {got macro} {
   say_usage $macro
 }
 
-# Perform any input collection or deferred output emits.
-# This function may consume additional lines via hFile.
-# Return number of lines absorbed. A 0 return means the
-# input line lx had no meaning to the shuffle processing,
-# in which case it is emitted as-is.
-proc do_shuffle {hFile lx ostrm} {
-  set iAte 0
+# Perform any input collection or deferred output emits specified by a macro.
+# Return number of input lines consumed, or 0 if not a recognized macro.
+# This function may consume additional lines via triple inSrc.
+proc do_macro {inSrc lx ostrm} {
   if {![regexp $::macroKeywordTailRE $lx ma macro tail] \
           || ![info exists ::macroTailREs($macro)]} {
-    puts $ostrm $lx
-  } else {
-    # It's an attempted macro invocation line. Process or fail and yap.
-    incr iAte ; # Eat the macro and whatever it swallows (if invoked).
-    set tailCap [regexp -inline $::macroTailREs($macro) $tail]
-    if {[llength $tailCap]>0} {
-      # Call like-named proc with any args captured by the corresponding RE.
-      incr iAte [$macro $hFile [lrange $tailCap 1 end] $ostrm]
-    } else {
-      # ToDo: complain
-      incr $::iShuffleErrors
-    }
+    return 0
   }
-  return $iAte
+  # It's an attempted macro invocation line. Process or fail and yap.
+  set tailCap [regexp -inline $::macroTailREs($macro) $tail]
+  # Call like-named proc with any args captured by the corresponding RE.
+  return [$macro $inSrc [lrange $tailCap 1 end] $ostrm]
 }
 
-# Filter redundant typedefs and certain includes and qualifiers.
-proc transform_line {line nesting} {
-  global typedef_seen
+array set ::typedefsSeen {}
+
+# Filter redundant typedefs and certain includes and qualifiers, in place.
+# Return whether anything changed.
+proc transform_line {lineVar nesting} {
+  upvar $lineVar line
   if {[regexp {^typedef .*;} $line]} {
-    if {[info exists typedef_seen($line)]} {
-      return "/* $line */"
+    if {[info exists ::typedefsSeen($line)]} {
+      set line "/* $line */"
+      return 1
     }
-    set typedef_seen($line) 1
-    return $line
+    set ::typedefsSeen($line) 1
+    return 0
   } elseif {$nesting == 0} {
-    return $line
+    return 0
   }
-  if {[regexp {^#include "sqlite.*"} $line]} {
-    return "/* $line */"
+  if {[regexp {^#include "sqlite.*"} $line]
+    || [regexp {^# *include "test_windirent.h"} $line]} {
+    set line "/* $line */"
+    return 1
   }
-  if {[regexp {^# *include "test_windirent.h"} $line]} {
-    return "/* $line */"
+  if {[string first "__declspec(dllexport)" $line] >= 0} {
+    set line [string map [list __declspec(dllexport) {}] $line]
+    return 1
   }
-  return [string map [list __declspec(dllexport) {}] $line]
+  return 0
 }
 
-if {$customRun == 2} {
+
+set ::incFileStack {}
+
+# Read a named file and process its content to given output stream.
+# Global ::incStack is maintained to support diagnostics.
+# There is no (meaningful) return.
+#
+proc process_file { inFilepath ostrm } {
+  set linesRead 0
+  if { [catch {set istrm [open $inFilepath r]}] } {
+    return -code error "Cannot read $inFilepath"
+  } else {
+    fconfigure $istrm -translation auto
+    set nesting [llength $::incFileStack]
+    lappend ::incFileStack $inFilepath
+    set inFns [list $inFilepath $istrm]
+    if {$nesting > 0} {
+      set sayPath [string map [list \
+                               "$::topDir/src/.." <projectDir> \
+                               "$::topDir/src" <projectDir>/src \
+                              ] $inFilepath]
+      set splats [string repeat * [expr {33 - [string length $sayPath]/2 }]]
+      set sayFile [list "/*$splats Begin $sayPath $splats*/"]
+    } else { set sayFile {} }
+    emit_sync $sayFile $ostrm $linesRead $inFilepath
+    while {1} {
+      set lin [gets $istrm]
+      if {[eof $istrm]} break
+      if {![transform_line lin $nesting]} {
+        set ni [do_macro [concat $inFns $linesRead] $lin $ostrm]
+        if {$ni > 0} {
+          incr linesRead $ni
+          continue
+        }
+      }
+      emit_sync [list $lin] $ostrm $linesRead
+      incr linesRead
+    }
+    if {$nesting > 0} {
+      set sayFile [list "/**$splats End $sayPath $splats**/"]
+      emit_sync $sayFile $ostrm $linesRead $inFilepath
+    }
+    set ::incFileStack [lrange $::incFileStack 0 end-1]
+    close $istrm
+  }
+}
+
+if {$runMode == "help"} {
   # Show options and usage
   say_usage [lsort [array names ::macroUsages]] {
  mkshellc.tcl <options>
@@ -648,7 +716,7 @@ if {$customRun == 2} {
  Use --parameters option for DISPATCH_CONFIG parameter names and effects.
   }
   exit 0
-} elseif {$customRun == 3} {
+} elseif {$runMode == "details"} {
   set sfd [open $argv0 r]
   array set macdos [list]
   while {![eof $sfd]} {
@@ -667,45 +735,18 @@ if {$customRun == 2} {
     puts stderr "\nThe $m macro will:\n $macdos($m)"
   }
   exit 0
-} elseif {$customRun == 4} {
+} elseif {$runMode == "parameters"} {
   puts stderr $::parametersHelp
   exit 0
 }
 
-fconfigure stdout -translation {auto lf}
-if {$customRun == 0} {
-  puts $out $headComment
-}
-
-set iLine 0
-while {1} {
-  set lx [transform_line [gets $in] 0]
-  if {[eof $in]} break;
-  incr iLine
-  if {[regexp {^INCLUDE } $lx]} {
-    set cfile [lindex $lx 1]
-    puts $out "/************************* Begin $cfile ******************/"
-#   puts $out "#line 1 \"$cfile\""
-    set in2 [open $topdir/src/$cfile r]
-    fconfigure $in2 -translation auto
-    while {![eof $in2]} {
-      set lx [transform_line [gets $in2] 1]
-      do_shuffle $in2 $lx $out
-    }
-    close $in2
-    puts $out "/************************* End $cfile ********************/"
-#   puts $out "#line [expr $iLine+1] \"shell.c.in\""
-    continue
+if {$runMode == "normal"} {
+  fconfigure $outStrm -translation {auto lf}
+  emit_sync [list $::headComment] $outStrm $::headCommentLines
+  foreach {f} $::inFiles {
+    process_file $f $outStrm
   }
-  set iAte [do_shuffle $in $lx $out]
-  if {$iAte > 0} {
-    incr iLine [expr {$iAte - 1}]
-  }
-
+  close $outStrm
 }
-if {$customRun < 2} {
-  close $in
-}
-close $out
 
 exit $::iShuffleErrors
