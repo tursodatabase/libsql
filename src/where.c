@@ -904,6 +904,10 @@ static void constructAutomaticIndex(
   sqlite3VdbeAddOp2(v, OP_OpenAutoindex, pLevel->iIdxCur, nKeyCol+1);
   sqlite3VdbeSetP4KeyInfo(pParse, pIdx);
   VdbeComment((v, "for %s", pTable->zName));
+  if( OptimizationEnabled(pParse->db, SQLITE_BloomFilter) ){
+    pLevel->regFilter = ++pParse->nMem;
+    sqlite3VdbeAddOp1(v, OP_FilterInit, pLevel->regFilter);
+  }
 
   /* Fill the automatic index with content */
   pTabItem = &pWC->pWInfo->pTabList->a[pLevel->iFrom];
@@ -926,6 +930,10 @@ static void constructAutomaticIndex(
   regBase = sqlite3GenerateIndexKey(
       pParse, pIdx, pLevel->iTabCur, regRecord, 0, 0, 0, 0
   );
+  if( pLevel->regFilter ){
+    sqlite3VdbeAddOp4Int(v, OP_FilterAdd, pLevel->regFilter, 0,
+                         regBase, pLoop->u.btree.nEq);
+  }
   sqlite3VdbeAddOp2(v, OP_IdxInsert, pLevel->iIdxCur, regRecord);
   sqlite3VdbeChangeP5(v, OPFLAG_USESEEKRESULT);
   if( pPartial ) sqlite3VdbeResolveLabel(v, iContinue);

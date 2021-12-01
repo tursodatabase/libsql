@@ -1511,6 +1511,10 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     iRowidReg = codeEqualityTerm(pParse, pTerm, pLevel, 0, bRev, iReleaseReg);
     if( iRowidReg!=iReleaseReg ) sqlite3ReleaseTempReg(pParse, iReleaseReg);
     addrNxt = pLevel->addrNxt;
+    if( pLevel->regFilter ){
+      sqlite3VdbeAddOp4Int(v, OP_Filter, pLevel->regFilter, addrNxt,
+                           iRowidReg, 1);
+    }
     sqlite3VdbeAddOp3(v, OP_SeekRowid, iCur, addrNxt, iRowidReg);
     VdbeCoverage(v);
     pLevel->op = OP_Noop;
@@ -1835,6 +1839,10 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       if( regBignull ){
         sqlite3VdbeAddOp2(v, OP_Integer, 1, regBignull);
         VdbeComment((v, "NULL-scan pass ctr"));
+      }
+      if( pLevel->regFilter ){
+        sqlite3VdbeAddOp4Int(v, OP_Filter, pLevel->regFilter, addrNxt,
+                             regBase, nConstraint);
       }
 
       op = aStartOp[(start_constraints<<2) + (startEq<<1) + bRev];
