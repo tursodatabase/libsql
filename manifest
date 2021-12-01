@@ -1,5 +1,5 @@
-C In\sthe\sautomatic\sindex\sgenerator\slogic,\sbe\smore\sprecise\sabout\swhen\sa\npartial\sautomatic\sindex\sis\sallowed\sin\sorder\sto\scapture\smore\scases\swhere\sit\nis\slegal\sto\suse\sa\spartial\sautomatic\sindex.
-D 2021-11-30T14:07:58.372
+C Add\sthe\s"static"\squalifier\sto\ssome\sinternal\sfunctions\sin\scode\sfor\svarious\sSQLite\sextensions.
+D 2021-12-01T11:03:50.030
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -51,7 +51,7 @@ F ext/async/sqlite3async.h 46b47c79357b97ad85d20d2795942c0020dc20c532114a4980828
 F ext/expert/README.md b321c2762bb93c18ea102d5a5f7753a4b8bac646cb392b3b437f633caf2020c3
 F ext/expert/expert.c d548d603a4cc9e61f446cc179c120c6713511c413f82a4a32b1e1e69d3f086a4
 F ext/expert/expert1.test 3c642a4e7bbb14f21ddab595436fb465a4733f47a0fe5b2855e1d5ff900ef08e
-F ext/expert/sqlite3expert.c 921a00823a826150cbb9a3341285a8edec7533480b71281e77737f19559b4b14
+F ext/expert/sqlite3expert.c f09943e849d603a0c001471e229b2522bae7a70a77a5e28b16429ca2bb4240dc
 F ext/expert/sqlite3expert.h ca81efc2679a92373a13a3e76a6138d0310e32be53d6c3bfaedabd158ea8969b
 F ext/expert/test_expert.c d56c194b769bdc90cf829a14c9ecbc1edca9c850b837a4d0b13be14095c32a72
 F ext/fts1/README.txt 20ac73b006a70bcfd80069bdaf59214b6cf1db5e
@@ -321,7 +321,7 @@ F ext/misc/remember.c add730f0f7e7436cd15ea3fd6a90fd83c3f706ab44169f7f048438b7d6
 F ext/misc/rot13.c 51ac5f51e9d5fd811db58a9c23c628ad5f333c173f1fc53c8491a3603d38556c
 F ext/misc/scrub.c 2a44b0d44c69584c0580ad2553f6290a307a49df4668941d2812135bfb96a946
 F ext/misc/series.c f9896e76b029e3c6553c520552555e803e26e7dfe1890d5866243cf072d938d0
-F ext/misc/sha1.c c8f2253c8792ffab9517695ea7d88c079f0395a5505eefef5c8198fe184ed5ac
+F ext/misc/sha1.c 4011aef176616872b2a0d5bccf0ecfb1f7ce3fe5c3d107f3a8e949d8e1e3f08d
 F ext/misc/shathree.c e984f31731de4cf302a0386be5fe664580f63d8204c47b9b41cc4b997745f9ec
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
 F ext/misc/spellfix.c 94df9bbfa514a563c1484f684a2df3d128a2f7209a84ca3ca100c68a0163e29f
@@ -338,7 +338,7 @@ F ext/misc/vfsstat.c 474d08efc697b8eba300082cb1eb74a5f0f3df31ed257db1cb07e72ab0e
 F ext/misc/vtablog.c 5538acd0c8ddaae372331bee11608d76973436b77d6a91e8635cfc9432fba5ae
 F ext/misc/vtshim.c 1976e6dd68dd0d64508c91a6dfab8e75f8aaf6cd
 F ext/misc/wholenumber.c a838d1bea913c514ff316c69695efbb49ea3b8cb37d22afc57f73b6b010b4546
-F ext/misc/zipfile.c 5dcbbdae13ba45db5d3843b6f32a8f99df7ab0349a704857a3000618f9ea9ecb
+F ext/misc/zipfile.c 238ccb990ed45a74e24d0fbb449d7752a568c2b7c1d5b255d451f11703ced592
 F ext/misc/zorder.c b0ff58fa643afa1d846786d51ea8d5c4b6b35aa0254ab5a82617db92f3adda64
 F ext/rbu/rbu.c 801450b24eaf14440d8fd20385aacc751d5c9d6123398df41b1b5aa804bf4ce8
 F ext/rbu/rbu1.test c62904bd9526dcdc3496a21199aaf14ae191bbadbf67f076bf16be6b3f2115c2
@@ -381,7 +381,7 @@ F ext/rbu/rbuvacuum.test 55e101e90168c2b31df6c9638fe73dc7f7cc666b6142266d1563697
 F ext/rbu/rbuvacuum2.test 886add83fd74bcb02e6dd016ae5b585367bd58c5d0694c9d9ca7bdb1d1f578c2
 F ext/rbu/rbuvacuum3.test 8addd82e4b83b4c93fa47428eae4fd0dbf410f8512c186f38e348feb49ba03dc
 F ext/rbu/rbuvacuum4.test a78898e438a44803eb2bc897ba3323373c9f277418e2d6d76e90f2f1dbccfd10
-F ext/rbu/sqlite3rbu.c 3658f1c6603955c7426952b74a6896337b1f672d326cd565e5af20e18d5744f0
+F ext/rbu/sqlite3rbu.c 8737cabdfbee84bb25a7851ecef8b1312be332761238da9be6ddb10c62ad4291
 F ext/rbu/sqlite3rbu.h 1dc88ab7bd32d0f15890ea08d23476c4198d3da3056985403991f8c9cd389812
 F ext/rbu/test_rbu.c 03f6f177096a5f822d68d8e4069ad8907fe572c62ff2d19b141f59742821828a
 F ext/repair/README.md 92f5e8aae749a4dae14f02eea8e1bb42d4db2b6ce5e83dbcdd6b1446997e0c15
@@ -1933,7 +1933,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 19c51b46e4095ee28badb10f4e08bbd330bda320c9a8806e93b8fc60ba211a2e
-R 0fbfb4a13255ae0bad405a99d2bdf9ec
-U drh
-Z 511f59b4656ae7d0825d672340080bad
+P 664b461bb5063d98047fc2e51a3827235cd9f55ca2e23cb66e719eac53fb5437
+R d309262586a9f358c551d21c41a37e90
+U dan
+Z 906fededd9ee4cd9607f33e04b9150f2
