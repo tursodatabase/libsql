@@ -333,4 +333,17 @@ do_execsql_test 13.1 {
 } {{}}
 } ;# end ifcapable rtree
 
+# 2021-12-01 Forum post https://sqlite.org/forum/forumpost/793beaf322
+# Need to report foreign key constraint errors prior to RETURNING
+#
+reset_db
+do_execsql_test 14.0 {
+  PRAGMA foreign_keys(1);
+  CREATE TABLE Parent(id INTEGER PRIMARY KEY);
+  CREATE TABLE Child(id INTEGER PRIMARY KEY, parent_id INTEGER REFERENCES Parent(id));
+} {}
+do_catchsql_test 14.1 {
+  INSERT INTO child(parent_id) VALUES(123) RETURNING id;
+} {1 {FOREIGN KEY constraint failed}}
+
 finish_test

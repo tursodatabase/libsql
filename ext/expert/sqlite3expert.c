@@ -1168,7 +1168,7 @@ static void idxWriteFree(IdxWrite *pTab){
 ** runs all the queries to see which indexes they prefer, and populates
 ** IdxStatement.zIdx and IdxStatement.zEQP with the results.
 */
-int idxFindIndexes(
+static int idxFindIndexes(
   sqlite3expert *p,
   char **pzErr                         /* OUT: Error message (sqlite3_malloc) */
 ){
