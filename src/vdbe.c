@@ -1479,24 +1479,22 @@ case OP_IntCopy: {            /* out2 */
   break;
 }
 
-/* Opcode: ChngCntRow P1 P2 * * *
-** Synopsis: output=r[P1]
+/* Opcode: FkCheck * * * * *
 **
-** Output value in register P1 as the chance count for a DML statement,
-** due to the "PRAGMA count_changes=ON" setting.  Or, if there was a
-** foreign key error in the statement, trigger the error now.
+** Halt with an SQLITE_CONSTRAINT error if there are any unresolved
+** foreign key constraint violations.  If there are no foreign key
+** constraint violations, this is a no-op.
 **
-** This opcode is a variant of OP_ResultRow that checks the foreign key
-** immediate constraint count and throws an error if the count is
-** non-zero.  The P2 opcode must be 1.
+** FK constraint violations are also checked when the prepared statement
+** exits.  This opcode is used to raise foreign key constraint errors prior
+** to returning results such as a row change count or the result of a 
+** RETURNING clause.
 */
-case OP_ChngCntRow: {
-  assert( pOp->p2==1 );
+case OP_FkCheck: {
   if( (rc = sqlite3VdbeCheckFk(p,0))!=SQLITE_OK ){
     goto abort_due_to_error;
   }
-  /* Fall through to the next case, OP_ResultRow */
-  /* no break */ deliberate_fall_through
+  break;
 }
 
 /* Opcode: ResultRow P1 P2 * * *

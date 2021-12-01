@@ -173,6 +173,7 @@ void sqlite3FinishCoding(Parse *pParse){
       if( pReturning->nRetCol==0 ){
         assert( CORRUPT_DB );
       }else{
+        sqlite3VdbeAddOp0(v, OP_FkCheck);
         addrRewind =
            sqlite3VdbeAddOp1(v, OP_Rewind, pReturning->iRetCur);
         VdbeCoverage(v);
