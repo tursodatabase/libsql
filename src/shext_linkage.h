@@ -161,12 +161,12 @@ typedef struct ShellExtensionLink {
  */
 #define DEFINE_SHDB_TO_SHEXT_API(func_name) \
  static ShellExtensionLink * func_name(sqlite3 * db){ \
-  ShellExtensionLink *rv; sqlite3_stmt *pStmt; \
-  if( SQLITE_OK!=sqlite3_prepare(db,"SELECT shext_pointer(0)",-1,&pStmt,0) \
-      || SQLITE_ROW != sqlite3_step(pStmt) )  return 0; \
-  rv = (ShellExtensionLink *)sqlite3_value_pointer \
-    (sqlite3_column_value(pStmt, 0), SHELLEXT_API_POINTERS); \
-  sqlite3_finalize(pStmt);  return rv; \
+  ShellExtensionLink *rv = 0; sqlite3_stmt *pStmt = 0; \
+  if( SQLITE_OK==sqlite3_prepare(db,"SELECT shext_pointer(0)",-1,&pStmt,0) \
+      && SQLITE_ROW == sqlite3_step(pStmt) ) \
+    rv = (ShellExtensionLink *)sqlite3_value_pointer \
+     (sqlite3_column_value(pStmt, 0), SHELLEXT_API_POINTERS); \
+  sqlite3_finalize(pStmt); return rv; \
  }
 
 #endif /* !defined(SQLITE3SHX_H) */

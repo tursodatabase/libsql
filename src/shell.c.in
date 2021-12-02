@@ -10944,6 +10944,7 @@ typedef enum {
 #define QSS_PLAINDARK(qss) (((qss)&~QSS_EndingSemi)==QSS_HasDark)
 #define QSS_SEMITERM(qss) (((qss)&~QSS_HasDark)==QSS_EndingSemi)
 
+/*
 ** Scan line for classification to guide shell's handling.
 ** The scan is resumable for subsequent lines when prior
 ** return values are passed as the 2nd argument.
@@ -11319,7 +11320,7 @@ static void process_sqliterc(
 /*
 ** Show available command line options
 */
-static const char zOptions[] =
+static const char *zOptions =
 #if defined(SQLITE_HAVE_ZLIB) && !defined(SQLITE_OMIT_VIRTUALTABLE)
   "   -A ARGS...           run \".archive ARGS\" and exit\n"
 #endif
