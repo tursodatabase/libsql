@@ -232,13 +232,15 @@ whereOrInsert_done:
 ** iCursor is not in the set.
 */
 Bitmask sqlite3WhereGetMask(WhereMaskSet *pMaskSet, int iCursor){
-  int i;
+  int i = 0;
   assert( pMaskSet->n<=(int)sizeof(Bitmask)*8 );
-  for(i=0; i<pMaskSet->n; i++){
+  assert( pMaskSet->n>0 || pMaskSet->ix[0]<0 );
+  assert( iCursor>=-1 );
+  do{
     if( pMaskSet->ix[i]==iCursor ){
       return MASKBIT(i);
     }
-  }
+  }while( (++i)<pMaskSet->n );
   return 0;
 }
 
@@ -4926,7 +4928,8 @@ WhereInfo *sqlite3WhereBegin(
   /* Split the WHERE clause into separate subexpressions where each
   ** subexpression is separated by an AND operator.
   */
-  initMaskSet(pMaskSet);
+  pMaskSet->n = 0;
+  pMaskSet->ix[0] = -99;
   sqlite3WhereClauseInit(&pWInfo->sWC, pWInfo);
   sqlite3WhereSplit(&pWInfo->sWC, pWhere, TK_AND);
     

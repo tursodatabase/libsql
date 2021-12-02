@@ -292,11 +292,11 @@ struct WhereScan {
   WhereClause *pWC;          /* WhereClause currently being scanned */
   const char *zCollName;     /* Required collating sequence, if not NULL */
   Expr *pIdxExpr;            /* Search for this index expression */
-  char idxaff;               /* Must match this affinity, if zCollName!=NULL */
-  unsigned char nEquiv;      /* Number of entries in aiCur[] and aiColumn[] */
-  unsigned char iEquiv;      /* Next unused slot in aiCur[] and aiColumn[] */
-  u32 opMask;                /* Acceptable operators */
   int k;                     /* Resume scanning at this->pWC->a[this->k] */
+  u32 opMask;                /* Acceptable operators */
+  char idxaff;               /* Must match this affinity, if zCollName!=NULL */
+  unsigned char iEquiv;      /* Current slot in aiCur[] and aiColumn[] */
+  unsigned char nEquiv;      /* Number of entries in aiCur[] and aiColumn[] */
   int aiCur[11];             /* Cursors in the equivalence class */
   i16 aiColumn[11];          /* Corresponding column number in the eq-class */
 };
@@ -376,11 +376,6 @@ struct WhereMaskSet {
   int n;                        /* Number of assigned cursor values */
   int ix[BMS];                  /* Cursor assigned to each bit */
 };
-
-/*
-** Initialize a WhereMaskSet object
-*/
-#define initMaskSet(P)  (P)->n=0
 
 /*
 ** This object is a convenience wrapper holding all information needed
