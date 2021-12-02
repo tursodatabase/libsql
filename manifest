@@ -1,5 +1,5 @@
-C Move\sthe\sTK_IS\stoken\sso\sthat\sit\sis\sadjacent\sto\sthe\sTK_IN\stoken,\sas\sthis\nallows\sthe\sC\scompiler\sto\soptimize\sbetter,\sresulting\sin\sa\sslightly\ssmaller\nand\sfaster\sexecutable.
-D 2021-12-02T14:28:36.785
+C Optimizations\sto\sexprAnalyze()\sand\ssqlite3WhereExprUsage()\ssave\sabout\s1.5\nmillion\sCPU\scycles\sfor\sspeedtest1,\sand\sresult\sin\sa\ssmaller\sbinary.
+D 2021-12-02T18:15:16.866
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -640,7 +640,7 @@ F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
 F src/where.c b50391df607937593596fbb8ea39f673d9a3715a65750567b442d22dd20720ca
 F src/whereInt.h 1630d9418512b080598e9a72b8af6b8bd1b9ab13fee1458f151762b6df206791
 F src/wherecode.c 1f5b62f46d284c8886945eb7438415bc27e23e87bb60b9ee468fa6bd31268f33
-F src/whereexpr.c da93d2227cc5246fe4a79d130f2a1a215017e12d76a035434145c443abd6f64b
+F src/whereexpr.c ac082ec617802e7fc9c190aa0819696a7144a8aa0cad91948323b83720e5105c
 F src/window.c 5d3b397b0c026d0ff5890244ac41359e524c01ae31e78782e1ff418c3e271a9e
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test ce1aafc86e110685b324e9a763eab4f2a73f737842ec3b687bd965867de90627
@@ -1933,7 +1933,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fcc509d325dabe06275e7804183bb8b4ba6470a45b443bc8292eecd0974e6367
-R 888c8c19b41c8406ec3840142d61350f
+P 8832fa9088414a8d285a457a4effad0b7d610a87ca73cfb5c5812e784649761e
+R 7228b3364cf2efa906def2eee014e4fe
 U drh
-Z 0b6dacbe87596435aee017d0aa63fe31
+Z 0ddb7e6cff00de145e1d39d556b5aab6
