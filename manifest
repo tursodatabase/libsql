@@ -1,5 +1,5 @@
-C In\sthe\sshell\stool,\savoid\smodifying\sinternal\sdata\sstructures\suntil\safter\sthe\sarguments\sto\s".open"\shave\sbeen\sparsed.
-D 2021-12-02T14:16:30.751
+C Move\sthe\sTK_IS\stoken\sso\sthat\sit\sis\sadjacent\sto\sthe\sTK_IN\stoken,\sas\sthis\nallows\sthe\sC\scompiler\sto\soptimize\sbetter,\sresulting\sin\sa\sslightly\ssmaller\nand\sfaster\sexecutable.
+D 2021-12-02T14:28:36.785
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -539,7 +539,7 @@ F src/os_win.c 77d39873836f1831a9b0b91894fec45ab0e9ca8e067dc8c549e1d1eca1566fe9
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c bc10c191d18bffd3d76eda5f162799e43a9f875ecfe7c4869f752e2ddef87ea2
 F src/pager.h 4bf9b3213a4b2bebbced5eaa8b219cf25d4a82f385d093cd64b7e93e5285f66f
-F src/parse.y 0bd7971a7489bbf6c3726f1b50da6e508bdff8fa493e9cc3f5a96b12cbb2361e
+F src/parse.y 761b5d30a7ea9bd2db3b3571438cfcceb5f7dbf4fcad6881c8de65bdda07135a
 F src/pcache.c 084e638432c610f95aea72b8509f0845d2791293f39d1b82f0c0a7e089c3bb6b
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c 54881292a9a5db202b2c0ac541c5e3ef9a5e8c4f1c1383adb2601d5499a60e65
@@ -1933,7 +1933,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3312be1db3519074393573265459f6a1eeabce541a9ef4d93689529ea2b8f739
-R 7b39f65268d7d5d5ddeb7e728b46cc8a
-U dan
-Z 6583dbaeea3c12c619555be53ea08d30
+P fcc509d325dabe06275e7804183bb8b4ba6470a45b443bc8292eecd0974e6367
+R 888c8c19b41c8406ec3840142d61350f
+U drh
+Z 0b6dacbe87596435aee017d0aa63fe31
