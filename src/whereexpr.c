@@ -1070,9 +1070,11 @@ static void exprAnalyze(
   if( db->mallocFailed ){
     return;
   }
+  assert( pWC->nTerm > idxTerm );
   pTerm = &pWC->a[idxTerm];
   pMaskSet = &pWInfo->sMaskSet;
   pExpr = pTerm->pExpr;
+  assert( pExpr!=0 ); /* Because malloc() has not failed */
   assert( pExpr->op!=TK_AS && pExpr->op!=TK_COLLATE );
   prereqLeft = sqlite3WhereExprUsage(pMaskSet, pExpr->pLeft);
   op = pExpr->op;
@@ -1084,8 +1086,6 @@ static void exprAnalyze(
     }else{
       pTerm->prereqRight = sqlite3WhereExprListUsage(pMaskSet, pExpr->x.pList);
     }
-  }else if( op==TK_ISNULL ){
-    pTerm->prereqRight = 0;
   }else{
     pTerm->prereqRight = sqlite3WhereExprUsage(pMaskSet, pExpr->pRight);
   }

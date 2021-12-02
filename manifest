@@ -1,5 +1,5 @@
-C Small\sperformance\soptimization\sin\ssqlite3WhereClauseClear().
-D 2021-12-02T12:55:05.367
+C Remove\san\sunnecessary\sbranch\sfrom\sexprAnalyze(),\sresulting\sin\sa\ssmall\nperformance\sgain.
+D 2021-12-02T13:45:10.819
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -640,7 +640,7 @@ F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
 F src/where.c b50391df607937593596fbb8ea39f673d9a3715a65750567b442d22dd20720ca
 F src/whereInt.h 1630d9418512b080598e9a72b8af6b8bd1b9ab13fee1458f151762b6df206791
 F src/wherecode.c 1f5b62f46d284c8886945eb7438415bc27e23e87bb60b9ee468fa6bd31268f33
-F src/whereexpr.c 5780201555e62250ae176d40a1b840f63a3ab4fc015f286ac7e3dbea53c0b486
+F src/whereexpr.c da93d2227cc5246fe4a79d130f2a1a215017e12d76a035434145c443abd6f64b
 F src/window.c 5d3b397b0c026d0ff5890244ac41359e524c01ae31e78782e1ff418c3e271a9e
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test ce1aafc86e110685b324e9a763eab4f2a73f737842ec3b687bd965867de90627
@@ -1933,7 +1933,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3de2c557d915d1b4a9b0e540d5e80ffb243e7123d0ec65c5052f4d6f1cce56b2
-R 8a54b72f0460bed9e312d2981e2b1a82
+P 080b35e62e5c6bb4ea162bc75232b81e54da5e3e01e762127e228400e8afef1d
+R a7ab895f8cfffd485e37af57ff425c88
 U drh
-Z f5838c1c1adaaaafa1d74530a9dc2af4
+Z 5fe3f769c9fffb4907c1638f83e89ed7
