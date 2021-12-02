@@ -8941,16 +8941,8 @@ static int do_meta_command(char *zLine, ShellState *p){
     char *zNewFilename = 0;  /* Name of the database file to open */
     int iName = 1;           /* Index in azArg[] of the filename */
     int newFlag = 0;         /* True to delete file before opening */
-    /* Close the existing database */
-    session_close_all(p, -1);
-    close_db(p->db);
-    p->db = 0;
-    p->pAuxDb->zDbFilename = 0;
-    sqlite3_free(p->pAuxDb->zFreeOnClose);
-    p->pAuxDb->zFreeOnClose = 0;
-    p->openMode = SHELL_OPEN_UNSPEC;
-    p->openFlags = 0;
-    p->szMax = 0;
+    int openMode = SHELL_OPEN_UNSPEC;
+
     /* Check for command-line arguments */
     for(iName=1; iName<nArg; iName++){
       const char *z = azArg[iName];
@@ -8958,19 +8950,19 @@ static int do_meta_command(char *zLine, ShellState *p){
         newFlag = 1;
 #ifdef SQLITE_HAVE_ZLIB
       }else if( optionMatch(z, "zip") ){
-        p->openMode = SHELL_OPEN_ZIPFILE;
+        openMode = SHELL_OPEN_ZIPFILE;
 #endif
       }else if( optionMatch(z, "append") ){
-        p->openMode = SHELL_OPEN_APPENDVFS;
+        openMode = SHELL_OPEN_APPENDVFS;
       }else if( optionMatch(z, "readonly") ){
-        p->openMode = SHELL_OPEN_READONLY;
+        openMode = SHELL_OPEN_READONLY;
       }else if( optionMatch(z, "nofollow") ){
         p->openFlags |= SQLITE_OPEN_NOFOLLOW;
 #ifndef SQLITE_OMIT_DESERIALIZE
       }else if( optionMatch(z, "deserialize") ){
-        p->openMode = SHELL_OPEN_DESERIALIZE;
+        openMode = SHELL_OPEN_DESERIALIZE;
       }else if( optionMatch(z, "hexdb") ){
-        p->openMode = SHELL_OPEN_HEXDB;
+        openMode = SHELL_OPEN_HEXDB;
       }else if( optionMatch(z, "maxsize") && iName+1<nArg ){
         p->szMax = integerValue(azArg[++iName]);
 #endif /* SQLITE_OMIT_DESERIALIZE */
@@ -8986,6 +8978,18 @@ static int do_meta_command(char *zLine, ShellState *p){
         zNewFilename = sqlite3_mprintf("%s", z);
       }
     }
+
+    /* Close the existing database */
+    session_close_all(p, -1);
+    close_db(p->db);
+    p->db = 0;
+    p->pAuxDb->zDbFilename = 0;
+    sqlite3_free(p->pAuxDb->zFreeOnClose);
+    p->pAuxDb->zFreeOnClose = 0;
+    p->openMode = openMode;
+    p->openFlags = 0;
+    p->szMax = 0;
+
     /* If a filename is specified, try to open it first */
     if( zNewFilename || p->openMode==SHELL_OPEN_HEXDB ){
       if( newFlag && !p->bSafeMode ) shellDeleteFile(zNewFilename);
