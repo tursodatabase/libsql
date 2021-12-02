@@ -44,6 +44,16 @@ Table *sqlite3SrcListLookup(Parse *pParse, SrcList *pSrc){
   return pTab;
 }
 
+/* Generate byte-code that will report the number of rows modified 
+** by a DELETE, INSERT, or UPDATE statement.
+*/
+void sqlite3CodeChangeCount(Vdbe *v, int regCounter, const char *zColName){
+  sqlite3VdbeAddOp0(v, OP_FkCheck);
+  sqlite3VdbeAddOp2(v, OP_ResultRow, regCounter, 1);
+  sqlite3VdbeSetNumCols(v, 1);
+  sqlite3VdbeSetColName(v, 0, COLNAME_NAME, zColName, SQLITE_STATIC);
+}
+
 /* Return true if table pTab is read-only.
 **
 ** A table is read-only if any of the following are true:
@@ -619,9 +629,7 @@ void sqlite3DeleteFrom(
   ** invoke the callback function.
   */
   if( memCnt ){
-    sqlite3VdbeAddOp2(v, OP_ChngCntRow, memCnt, 1);
-    sqlite3VdbeSetNumCols(v, 1);
-    sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "rows deleted", SQLITE_STATIC);
+    sqlite3CodeChangeCount(v, memCnt, "rows deleted");
   }
 
 delete_from_cleanup:

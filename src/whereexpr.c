@@ -1070,9 +1070,11 @@ static void exprAnalyze(
   if( db->mallocFailed ){
     return;
   }
+  assert( pWC->nTerm > idxTerm );
   pTerm = &pWC->a[idxTerm];
   pMaskSet = &pWInfo->sMaskSet;
   pExpr = pTerm->pExpr;
+  assert( pExpr!=0 ); /* Because malloc() has not failed */
   assert( pExpr->op!=TK_AS && pExpr->op!=TK_COLLATE );
   prereqLeft = sqlite3WhereExprUsage(pMaskSet, pExpr->pLeft);
   op = pExpr->op;
@@ -1084,8 +1086,6 @@ static void exprAnalyze(
     }else{
       pTerm->prereqRight = sqlite3WhereExprListUsage(pMaskSet, pExpr->x.pList);
     }
-  }else if( op==TK_ISNULL ){
-    pTerm->prereqRight = 0;
   }else{
     pTerm->prereqRight = sqlite3WhereExprUsage(pMaskSet, pExpr->pRight);
   }
@@ -1525,17 +1525,25 @@ void sqlite3WhereClauseInit(
 ** sqlite3WhereClauseInit().
 */
 void sqlite3WhereClauseClear(WhereClause *pWC){
-  int i;
-  WhereTerm *a;
   sqlite3 *db = pWC->pWInfo->pParse->db;
-  for(i=pWC->nTerm-1, a=pWC->a; i>=0; i--, a++){
-    if( a->wtFlags & TERM_DYNAMIC ){
-      sqlite3ExprDelete(db, a->pExpr);
-    }
-    if( a->wtFlags & TERM_ORINFO ){
-      whereOrInfoDelete(db, a->u.pOrInfo);
-    }else if( a->wtFlags & TERM_ANDINFO ){
-      whereAndInfoDelete(db, a->u.pAndInfo);
+  if( pWC->nTerm>0 ){
+    WhereTerm *a = pWC->a;
+    WhereTerm *aLast = &pWC->a[pWC->nTerm-1];
+    while(1){
+      if( a->wtFlags & TERM_DYNAMIC ){
+        sqlite3ExprDelete(db, a->pExpr);
+      }
+      if( a->wtFlags & (TERM_ORINFO|TERM_ANDINFO) ){
+        if( a->wtFlags & TERM_ORINFO ){
+          assert( (a->wtFlags & TERM_ANDINFO)==0 );
+          whereOrInfoDelete(db, a->u.pOrInfo);
+        }else{
+          assert( (a->wtFlags & TERM_ANDINFO)!=0 );
+          whereAndInfoDelete(db, a->u.pAndInfo);
+        }
+      }
+      if( a==aLast ) break;
+      a++;
     }
   }
   if( pWC->a!=pWC->aStatic ){

@@ -234,7 +234,12 @@ whereOrInsert_done:
 Bitmask sqlite3WhereGetMask(WhereMaskSet *pMaskSet, int iCursor){
   int i;
   assert( pMaskSet->n<=(int)sizeof(Bitmask)*8 );
-  for(i=0; i<pMaskSet->n; i++){
+  assert( pMaskSet->n>0 || pMaskSet->ix[0]<0 );
+  assert( iCursor>=-1 );
+  if( pMaskSet->ix[0]==iCursor ){
+    return 1;
+  }
+  for(i=1; i<pMaskSet->n; i++){
     if( pMaskSet->ix[i]==iCursor ){
       return MASKBIT(i);
     }
@@ -419,16 +424,16 @@ static WhereTerm *whereScanInit(
   if( pIdx ){
     int j = iColumn;
     iColumn = pIdx->aiColumn[j];
-    if( iColumn==XN_EXPR ){
-      pScan->pIdxExpr = pIdx->aColExpr->a[j].pExpr;
-      pScan->zCollName = pIdx->azColl[j];
-      pScan->aiColumn[0] = XN_EXPR;
-      return whereScanInitIndexExpr(pScan);
-    }else if( iColumn==pIdx->pTable->iPKey ){
+    if( iColumn==pIdx->pTable->iPKey ){
       iColumn = XN_ROWID;
     }else if( iColumn>=0 ){
       pScan->idxaff = pIdx->pTable->aCol[iColumn].affinity;
       pScan->zCollName = pIdx->azColl[j];
+    }else if( iColumn==XN_EXPR ){
+      pScan->pIdxExpr = pIdx->aColExpr->a[j].pExpr;
+      pScan->zCollName = pIdx->azColl[j];
+      pScan->aiColumn[0] = XN_EXPR;
+      return whereScanInitIndexExpr(pScan);
     }
   }else if( iColumn==XN_EXPR ){
     return 0;
@@ -791,13 +796,13 @@ static void constructAutomaticIndex(
   idxCols = 0;
   for(pTerm=pWC->a; pTerm<pWCEnd; pTerm++){
     Expr *pExpr = pTerm->pExpr;
-    assert( !ExprHasProperty(pExpr, EP_FromJoin)    /* prereq always non-zero */
-         || pExpr->iRightJoinTable!=pSrc->iCursor   /*   for the right-hand   */
-         || pLoop->prereq!=0 );                     /*   table of a LEFT JOIN */
-    if( pLoop->prereq==0
-     && (pTerm->wtFlags & TERM_VIRTUAL)==0
-     && !ExprHasProperty(pExpr, EP_FromJoin)
-     && sqlite3ExprIsTableConstant(pExpr, pSrc->iCursor) ){
+    /* Make the automatic index a partial index if there are terms in the
+    ** WHERE clause (or the ON clause of a LEFT join) that constrain which
+    ** rows of the target table (pSrc) that can be used. */
+    if( (pTerm->wtFlags & TERM_VIRTUAL)==0
+     && ((pSrc->fg.jointype&JT_LEFT)==0 || ExprHasProperty(pExpr,EP_FromJoin))
+     && sqlite3ExprIsTableConstant(pExpr, pSrc->iCursor)
+    ){
       pPartial = sqlite3ExprAnd(pParse, pPartial,
                                 sqlite3ExprDup(pParse->db, pExpr, 0));
     }
@@ -4868,12 +4873,6 @@ WhereInfo *sqlite3WhereBegin(
   if( pOrderBy && pOrderBy->nExpr>=BMS ) pOrderBy = 0;
   sWLB.pOrderBy = pOrderBy;
 
-  /* Disable the DISTINCT optimization if SQLITE_DistinctOpt is set via
-  ** sqlite3_test_ctrl(SQLITE_TESTCTRL_OPTIMIZATIONS,...) */
-  if( OptimizationDisabled(db, SQLITE_DistinctOpt) ){
-    wctrlFlags &= ~WHERE_WANT_DISTINCT;
-  }
-
   /* The number of tables in the FROM clause is limited by the number of
   ** bits in a Bitmask 
   */
@@ -4920,6 +4919,10 @@ WhereInfo *sqlite3WhereBegin(
   memset(&pWInfo->a[0], 0, sizeof(WhereLoop)+nTabList*sizeof(WhereLevel));
   assert( pWInfo->eOnePass==ONEPASS_OFF );  /* ONEPASS defaults to OFF */
   pMaskSet = &pWInfo->sMaskSet;
+  pMaskSet->n = 0;
+  pMaskSet->ix[0] = -99; /* Initialize ix[0] to a value that can never be
+                         ** a valid cursor number, to avoid an initial
+                         ** test for pMaskSet->n==0 in sqlite3WhereGetMask() */
   sWLB.pWInfo = pWInfo;
   sWLB.pWC = &pWInfo->sWC;
   sWLB.pNew = (WhereLoop*)(((char*)pWInfo)+nByteWInfo);
@@ -4932,7 +4935,6 @@ WhereInfo *sqlite3WhereBegin(
   /* Split the WHERE clause into separate subexpressions where each
   ** subexpression is separated by an AND operator.
   */
-  initMaskSet(pMaskSet);
   sqlite3WhereClauseInit(&pWInfo->sWC, pWInfo);
   sqlite3WhereSplit(&pWInfo->sWC, pWhere, TK_AND);
     
@@ -4940,7 +4942,9 @@ WhereInfo *sqlite3WhereBegin(
   */
   if( nTabList==0 ){
     if( pOrderBy ) pWInfo->nOBSat = pOrderBy->nExpr;
-    if( wctrlFlags & WHERE_WANT_DISTINCT ){
+    if( (wctrlFlags & WHERE_WANT_DISTINCT)!=0
+     && OptimizationEnabled(db, SQLITE_DistinctOpt)
+    ){
       pWInfo->eDistinct = WHERE_DISTINCT_UNIQUE;
     }
     ExplainQueryPlan((pParse, 0, "SCAN CONSTANT ROW"));
@@ -5001,7 +5005,12 @@ WhereInfo *sqlite3WhereBegin(
   }
 
   if( wctrlFlags & WHERE_WANT_DISTINCT ){
-    if( isDistinctRedundant(pParse, pTabList, &pWInfo->sWC, pResultSet) ){
+    if( OptimizationDisabled(db, SQLITE_DistinctOpt) ){
+      /* Disable the DISTINCT optimization if SQLITE_DistinctOpt is set via
+      ** sqlite3_test_ctrl(SQLITE_TESTCTRL_OPTIMIZATIONS,...) */
+      wctrlFlags &= ~WHERE_WANT_DISTINCT;
+      pWInfo->wctrlFlags &= ~WHERE_WANT_DISTINCT;
+    }else if( isDistinctRedundant(pParse, pTabList, &pWInfo->sWC, pResultSet) ){
       /* The DISTINCT marking is pointless.  Ignore it. */
       pWInfo->eDistinct = WHERE_DISTINCT_UNIQUE;
     }else if( pOrderBy==0 ){

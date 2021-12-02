@@ -79,5 +79,98 @@ do_execsql_test autoindex4-3.1 {
     ORDER BY Items.ItemName;
 } {Item1 Item2}
 
+# 2021-11-30 - Enhancement to help the automatic index mechanism to
+# create a partial index more often.
+#
+unset -nocomplain id data1 data2 jointype onclause whereclause answer
+foreach {id data1 data2 jointype onclause whereclause answer} {
+  1
+  VALUES(1,2),(3,4)
+  VALUES(1,2),(3,4)
+  {LEFT JOIN}
+  a=x
+  {y=4 OR y IS NULL}
+  {3 4 3 4}
+
+  2
+  VALUES(1,2),(3,4)
+  VALUES(1,2),(3,4)
+  {LEFT JOIN}
+  {a=x AND y=4}
+  {coalesce(y,4)==4}
+  {1 2 {} {} 3 4 3 4}
+
+  3
+  VALUES(1,2),(3,4)
+  VALUES(1,2),(3,4)
+  {JOIN}
+  {a=x}
+  {y=4 OR y IS NULL}
+  {3 4 3 4}
+
+  4
+  VALUES(1,2),(3,4)
+  VALUES(1,2),(3,4)
+  {JOIN}
+  {a=x AND y=4}
+  {coalesce(y,4)==4}
+  {3 4 3 4}
+
+  5
+  VALUES(1,2),(3,4),(NULL,4)
+  VALUES(1,2),(3,4)
+  {LEFT JOIN}
+  a=x
+  {y=4 OR y IS NULL}
+  {3 4 3 4 {} 4 {} {}}
+
+  6
+  VALUES(1,2),(3,4)
+  VALUES(1,2),(3,4),(NULL,4)
+  {LEFT JOIN}
+  {a=x AND y=4}
+  {coalesce(y,4)==4}
+  {1 2 {} {} 3 4 3 4}
+
+  7
+  VALUES(1,2),(3,4),(NULL,4)
+  VALUES(1,2),(3,4),(NULL,4)
+  {JOIN}
+  {a=x}
+  {y=4 OR y IS NULL}
+  {3 4 3 4}
+
+  8
+  VALUES(1,2),(3,4)
+  VALUES(1,2),(3,4)
+  {JOIN}
+  {a=x AND y=4}
+  {coalesce(y,4)==4}
+  {3 4 3 4}
+} {
+  do_test autoindex4-4.$id.0 {
+    db eval {
+       DROP TABLE IF EXISTS t1;
+       CREATE TABLE t1(a INT, b INT);
+       DROP TABLE IF EXISTS t2;
+       CREATE TABLE t2(x INT, y INT);
+    }
+    db eval "INSERT INTO t1(a,b) $data1;"
+    db eval "INSERT INTO t2(x,y) $data2;"
+  } {}
+  set sql "SELECT * FROM t1 $jointype t2 ON $onclause WHERE $whereclause"
+  # puts "sql = $sql"
+  do_test autoindex4-4.$id.1 {
+    db eval {PRAGMA automatic_index=ON;}
+    db eval $sql
+  } $answer
+  do_test autoindex4-4.$id.2 {
+    db eval {PRAGMA automatic_index=OFF;}
+    db eval $sql
+  } $answer
+}
+
+
+
 
 finish_test
