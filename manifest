@@ -1,5 +1,5 @@
-C Small\sperformance\soptimization\sin\ssqlite3WhereGetMask().
-D 2021-12-02T04:00:45.798
+C More\ssmall\sperformance\soptimizations\sfor\ssqlite3WhereGetMask().
+D 2021-12-02T12:34:05.331
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -637,7 +637,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c ed0398a7adf02c31e34aada42cc86c58f413a7afe5f741a5d373ad087abde028
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
-F src/where.c 90903cab02f03aded5019e45cd1dec6adf307291a6af0e55fce5111e84cc9115
+F src/where.c b50391df607937593596fbb8ea39f673d9a3715a65750567b442d22dd20720ca
 F src/whereInt.h 1630d9418512b080598e9a72b8af6b8bd1b9ab13fee1458f151762b6df206791
 F src/wherecode.c 1f5b62f46d284c8886945eb7438415bc27e23e87bb60b9ee468fa6bd31268f33
 F src/whereexpr.c 17bdbf4f5b490e70a18635498f0b910a558f953a9bf80af7f19cbde6e60e6825
@@ -1933,7 +1933,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ed84e124c6097b756ca687ac64df7ee801d14b16c835f1a9e8b336f785157d85
-R 4968f927e754c905a194070e8df46560
+P 7edec54ab045c0493fc5d27d47d7bf0e08d3b0b298f428646fd3f0ee24dfcade
+R 1c3ef5334121101d82935d790fc38231
 U drh
-Z 0a6600fef45926158d5c9c07197fe75a
+Z 3bbf6be35a1404f46b703105b00b0544

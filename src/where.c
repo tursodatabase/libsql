@@ -232,15 +232,18 @@ whereOrInsert_done:
 ** iCursor is not in the set.
 */
 Bitmask sqlite3WhereGetMask(WhereMaskSet *pMaskSet, int iCursor){
-  int i = 0;
+  int i;
   assert( pMaskSet->n<=(int)sizeof(Bitmask)*8 );
   assert( pMaskSet->n>0 || pMaskSet->ix[0]<0 );
   assert( iCursor>=-1 );
-  do{
+  if( pMaskSet->ix[0]==iCursor ){
+    return 1;
+  }
+  for(i=1; i<pMaskSet->n; i++){
     if( pMaskSet->ix[i]==iCursor ){
       return MASKBIT(i);
     }
-  }while( (++i)<pMaskSet->n );
+  }
   return 0;
 }
 
@@ -4916,6 +4919,10 @@ WhereInfo *sqlite3WhereBegin(
   memset(&pWInfo->a[0], 0, sizeof(WhereLoop)+nTabList*sizeof(WhereLevel));
   assert( pWInfo->eOnePass==ONEPASS_OFF );  /* ONEPASS defaults to OFF */
   pMaskSet = &pWInfo->sMaskSet;
+  pMaskSet->n = 0;
+  pMaskSet->ix[0] = -99; /* Initialize ix[0] to a value that can never be
+                         ** a valid cursor number, to avoid an initial
+                         ** test for pMaskSet->n==0 in sqlite3WhereGetMask() */
   sWLB.pWInfo = pWInfo;
   sWLB.pWC = &pWInfo->sWC;
   sWLB.pNew = (WhereLoop*)(((char*)pWInfo)+nByteWInfo);
@@ -4928,8 +4935,6 @@ WhereInfo *sqlite3WhereBegin(
   /* Split the WHERE clause into separate subexpressions where each
   ** subexpression is separated by an AND operator.
   */
-  pMaskSet->n = 0;
-  pMaskSet->ix[0] = -99;
   sqlite3WhereClauseInit(&pWInfo->sWC, pWInfo);
   sqlite3WhereSplit(&pWInfo->sWC, pWhere, TK_AND);
     
