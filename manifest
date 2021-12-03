@@ -1,5 +1,5 @@
-C Performance\soptimization\sin\sthe\sB-Tree\scursor\sallocator\sbtreeCursor(),\smaking\nit\sabout\s800K\sCPU\scycles\sfaster\sin\sspeedtest1,\sand\sreducing\sthe\sexecutable\nsize\sby\sabout\s100\sbytes.
-D 2021-12-03T13:42:41.900
+C Fix\san\sover-length\ssource\scode\sline\sin\sbuild.c.\s\sNo\slogic\schanges.
+D 2021-12-03T14:43:49.562
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -494,7 +494,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c be33f2b299c2d1dcdd6c033368731b81c13c2dbc72fe15af64a43871f6cdb437
 F src/btree.h 74d64b8f28cfa4a894d14d4ed64fa432cd697b98b61708d4351482ae15913e22
 F src/btreeInt.h ee9348c4cb9077243b049edc93a82c1f32ca48baeabf2140d41362b9f9139ff7
-F src/build.c 179b11b07484497052096d88b953b9a6c22cbb0c23ba75c4347e9a99dae4a6c0
+F src/build.c 70759481a346322934332485381805c9ba9442bbe7959bf40bdc14140c832517
 F src/callback.c 106b585da1edd57d75fa579d823a5218e0bf37f191dbf7417eeb4a8a9a267dbc
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 8159d5f706551861c18ec6c8f6bdf105e15ea00367f05d9ab65d31a1077facc1
@@ -1933,7 +1933,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1f2252e65dc5847c82246fab87dcad035bf594ba7c45362de87a009b7ebcf2d6
-R 8e0c1c78e15dfcc0933f0a89f97b367f
+P 9df939716ace8cfe60340bbe83fc52d452ea40c29c856c588f9a1b8973282391
+R 9393106c7ba9e646319a5d3ddfef6c69
 U drh
-Z 5947065c8f3472b5a2f6d47907db0ceb
+Z 97067e9e4125723429bb82f48b4944e2
