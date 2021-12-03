@@ -2693,30 +2693,38 @@ static int removeFromSharingList(BtShared *pBt){
 ** MX_CELL_SIZE(pBt) bytes with a 4-byte prefix for a left-child
 ** pointer.
 */
-static void allocateTempSpace(BtShared *pBt){
-  if( !pBt->pTmpSpace ){
-    pBt->pTmpSpace = sqlite3PageMalloc( pBt->pageSize );
-
-    /* One of the uses of pBt->pTmpSpace is to format cells before
-    ** inserting them into a leaf page (function fillInCell()). If
-    ** a cell is less than 4 bytes in size, it is rounded up to 4 bytes
-    ** by the various routines that manipulate binary cells. Which
-    ** can mean that fillInCell() only initializes the first 2 or 3
-    ** bytes of pTmpSpace, but that the first 4 bytes are copied from
-    ** it into a database page. This is not actually a problem, but it
-    ** does cause a valgrind error when the 1 or 2 bytes of unitialized 
-    ** data is passed to system call write(). So to avoid this error,
-    ** zero the first 4 bytes of temp space here.
-    **
-    ** Also:  Provide four bytes of initialized space before the
-    ** beginning of pTmpSpace as an area available to prepend the
-    ** left-child pointer to the beginning of a cell.
-    */
-    if( pBt->pTmpSpace ){
-      memset(pBt->pTmpSpace, 0, 8);
-      pBt->pTmpSpace += 4;
-    }
+static SQLITE_NOINLINE int allocateTempSpace(BtShared *pBt){
+  assert( pBt!=0 );
+  assert( pBt->pTmpSpace==0 );
+  /* This routine is called only by btreeCursor() when allocating the
+  ** first write cursor for the BtShared object */
+  assert( pBt->pCursor!=0 && (pBt->pCursor->curFlags & BTCF_WriteFlag)!=0 );
+  pBt->pTmpSpace = sqlite3PageMalloc( pBt->pageSize );
+  if( pBt->pTmpSpace==0 ){
+    BtCursor *pCur = pBt->pCursor;
+    pBt->pCursor = pCur->pNext;  /* Unlink the cursor */
+    memset(pCur, 0, sizeof(*pCur));
+    return SQLITE_NOMEM_BKPT;
   }
+
+  /* One of the uses of pBt->pTmpSpace is to format cells before
+  ** inserting them into a leaf page (function fillInCell()). If
+  ** a cell is less than 4 bytes in size, it is rounded up to 4 bytes
+  ** by the various routines that manipulate binary cells. Which
+  ** can mean that fillInCell() only initializes the first 2 or 3
+  ** bytes of pTmpSpace, but that the first 4 bytes are copied from
+  ** it into a database page. This is not actually a problem, but it
+  ** does cause a valgrind error when the 1 or 2 bytes of unitialized 
+  ** data is passed to system call write(). So to avoid this error,
+  ** zero the first 4 bytes of temp space here.
+  **
+  ** Also:  Provide four bytes of initialized space before the
+  ** beginning of pTmpSpace as an area available to prepend the
+  ** left-child pointer to the beginning of a cell.
+  */
+  memset(pBt->pTmpSpace, 0, 8);
+  pBt->pTmpSpace += 4;
+  return SQLITE_OK;
 }
 
 /*
@@ -4457,10 +4465,6 @@ static int btreeCursor(
   assert( pBt->pPage1 && pBt->pPage1->aData );
   assert( wrFlag==0 || (pBt->btsFlags & BTS_READ_ONLY)==0 );
 
-  if( wrFlag ){
-    allocateTempSpace(pBt);
-    if( pBt->pTmpSpace==0 ) return SQLITE_NOMEM_BKPT;
-  }
   if( iTable<=1 ){
     if( iTable<1 ){
       return SQLITE_CORRUPT_BKPT;
@@ -4477,19 +4481,25 @@ static int btreeCursor(
   pCur->pKeyInfo = pKeyInfo;
   pCur->pBtree = p;
   pCur->pBt = pBt;
-  pCur->curFlags = wrFlag ? BTCF_WriteFlag : 0;
-  pCur->curPagerFlags = wrFlag ? 0 : PAGER_GET_READONLY;
+  pCur->curFlags = 0;
   /* If there are two or more cursors on the same btree, then all such
   ** cursors *must* have the BTCF_Multiple flag set. */
   for(pX=pBt->pCursor; pX; pX=pX->pNext){
     if( pX->pgnoRoot==iTable ){
       pX->curFlags |= BTCF_Multiple;
-      pCur->curFlags |= BTCF_Multiple;
+      pCur->curFlags = BTCF_Multiple;
     }
   }
+  pCur->eState = CURSOR_INVALID;
   pCur->pNext = pBt->pCursor;
   pBt->pCursor = pCur;
-  pCur->eState = CURSOR_INVALID;
+  if( wrFlag ){
+    pCur->curFlags |= BTCF_WriteFlag;
+    pCur->curPagerFlags = 0;
+    if( pBt->pTmpSpace==0 ) return allocateTempSpace(pBt);
+  }else{
+    pCur->curPagerFlags = PAGER_GET_READONLY;
+  }
   return SQLITE_OK;
 }
 static int btreeCursorWithLock(
