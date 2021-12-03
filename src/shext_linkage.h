@@ -2,7 +2,51 @@
 #define SQLITE3SHX_H
 #include "sqlite3ext.h"
 
-typedef struct ShellState ShellState;
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* Convey data to, from and/or between I/O handlers and meta-commands. */
+typedef struct {
+  /* A semi-transient holder of arbitrary data used during operations
+   * not interrupted by meta-command invocations. Any not-null pointer
+   * left after a meta-command has completed is, by contract, to be
+   * freeable using sqlite3_free(). It is otherwise unconstrained.
+   */
+  void *pvHandlerData;
+  /* The output stream to which meta-command output is to be written */
+  FILE *pCurrentOutputStream;
+  /* The number of lines written during a query result output */
+  int resultCount;
+  /* Whether to show column names for certain output modes */
+  int showHeader;
+  /* Column separator character for some modes */
+  char *zFieldSeparator;
+  /* Row separator character for some modes (MODE_Ascii) */
+  char *zRecordSeparator;
+  /* Row set prefix for some modes */
+  char *zRecordLead;
+  /* Row set suffix for some modes */
+  char *zRecordTrail;
+  /* Text to represent a NULL value in external formats */
+  char *zNullValue;
+  /* The number of column widths presently desired or tracked */
+  int  numWidths;
+  /* The column widths last specified via .width */
+  int  *pWantWidths;
+  /* The column widths last observed in results */
+  int  *pHaveWidths;
+} FormatXfrInfo;
+
+/* The shell's state, shared among meta-command implementations.
+ * The ShellState object includes a private partition whose content
+ * and usage are opaque to shell extensions compiled separately
+ * from the shell.c core. (As defined here, it is wholly opaque.)
+ */
+typedef struct ShellStateX {
+  FormatXfrInfo fxi;
+  struct ShellState * pSS;
+} ShellStateX;
 
 /* This function pointer has the same signature as the sqlite3_X_init()
  * function that is called as SQLite3 completes loading an extension.
@@ -23,28 +67,20 @@ typedef struct MetaCommandVtable {
   void (*destruct_free)(MetaCommand *);
   const char * (*name)(MetaCommand *);
   const char * (*help)(MetaCommand *, int more);
-  void (*argsRange)(MetaCommand *, int * pMinArgs, int * pMaxArgs);
+  struct {unsigned minArgs; unsigned maxArgs;} (*argsRange)(MetaCommand *);
   int (*execute)
-    (MetaCommand *, ShellState *, char **pzErrMsg, char *azArgs[], int nArgs);
+    (MetaCommand *, ShellStateX *, char **pzErrMsg, int nArgs, char *azArgs[]);
 } MetaCommandVtable;
 
-/* See "Shell Extensions, Programming" for purposes and usage of the following
+/* Define an error code to be returned either by a meta-command during its
+ * own argument checking or by the dispatcher for bad argument counts.
+ */
+#define SHELL_INVALID_ARGS SQLITE_MISUSE
+
+/*****************
+ * See "Shell Extensions, Programming" for purposes and usage of the following
  * structs supporting extended meta-commands and import and output modes.
  */
-
-/* Convey data to, from and/or between I/O handlers. */
-typedef struct {
-  char *zFieldSeparator;
-  char *zRecordSeparator;
-  char *zRecordLead;
-  char *zRecordTrail;
-  char *zNullValue;
-  char *zSQL;
-  int  numWidths;
-  int  *pWantWidths;
-  int  *pHaveWidths;
-  void *pvHandlerData; /* Lifetime is from mid-openX() to mid-closeX(). */
-} FormatInfo;
 
 /* An instance of below struct, possibly extended/subclassed, is registered
  * with the shell to make new or altered output modes available to it.
@@ -58,19 +94,19 @@ typedef struct OutModeHandlerVtable {
   const char * (*name)(OutModeHandler *);
   const char * (*help)(OutModeHandler *, int more);
   int (*openResultsOutStream)
-    (OutModeHandler * pROS, FormatInfo *pFI, char **pzErr,
-     const char * zLocus, const char * zName);
+    (OutModeHandler * pROS, FormatXfrInfo *pFI, char **pzErr,
+     int numArgs, char *azArgs[], const char * zName);
   int (*prependResultsOut)
-    (OutModeHandler * pROS, FormatInfo *pFI, char **pzErr,
+    (OutModeHandler * pROS, FormatXfrInfo *pFI, char **pzErr,
      sqlite3_stmt * pStmt);
   int (*rowResultsOut)
-    (OutModeHandler * pROS, FormatInfo *pFI, char **pzErr,
+    (OutModeHandler * pROS, FormatXfrInfo *pFI, char **pzErr,
      sqlite3_stmt * pStmt);
   int (*appendResultsOut)
-    (OutModeHandler * pROS, FormatInfo *pFI, char **pzErr,
+    (OutModeHandler * pROS, FormatXfrInfo *pFI, char **pzErr,
      sqlite3_stmt * pStmt);
-  int (*closeResultsOutStream)
-    (OutModeHandler * pROS, FormatInfo *pFI, char **pzErr);
+  void (*closeResultsOutStream)
+    (OutModeHandler * pROS, FormatXfrInfo *pFI, char **pzErr);
 } OutModeHandlerVtable;
 
 /* An instance of below struct, possibly extended/subclassed, is registered
@@ -85,16 +121,19 @@ typedef struct ImportHandlerVtable {
   const char * (*name)(ImportHandler *);
   const char * (*help)(ImportHandler *, int more);
   int (*openDataInStream)
-    (ImportHandler *pIH, FormatInfo *pFI, char **pzErr,
-     const char * zLocus, const char * zName);
+    (ImportHandler *pIH, FormatXfrInfo *pFI, char **pzErr,
+     int numArgs, char *azArgs[], const char * zName);
   int (*prepareDataInput)
-    (ImportHandler *pIH, FormatInfo *pFI, char **pzErr, sqlite3_stmt * pStmt);
+    (ImportHandler *pIH, FormatXfrInfo *pFI, char **pzErr,
+     sqlite3_stmt * *ppStmt);
   int (*rowDataInput)
-    (ImportHandler *pIH, FormatInfo *pFI, char **pzErr, sqlite3_stmt * pStmt);
+    (ImportHandler *pIH, FormatXfrInfo *pFI, char **pzErr,
+     sqlite3_stmt *pStmt);
   int (*finishDataInput)
-    (ImportHandler *pIH, FormatInfo *pFI, char **pzErr, sqlite3_stmt * pStmt);
-  int (*closeDataInStream)
-    (ImportHandler *pIH, FormatInfo *pFI, char **pzErr);
+    (ImportHandler *pIH, FormatXfrInfo *pFI, char **pzErr,
+     sqlite3_stmt *pStmt);
+  void (*closeDataInStream)
+    (ImportHandler *pIH, FormatXfrInfo *pFI, char **pzErr);
 } ImportHandlerVtable;
 
 #define SHELLEXT_VALIDITY_MARK "ExtensibleShell"
@@ -135,7 +174,7 @@ typedef struct ShellExtensionLink {
 
 /* Test whether a char ** references a ShellExtensionLink instance's
  * validityMark, and if so return the instance's address, else return 0.
- * This macro may be used from a shell extension's sqlite3_X_init() function
+ * This macro may be used by a shell extension's sqlite3_X_init() function
  * to obtain a pointer to the ShellExtensionLink struct, derived from the
  * error message pointer (pzErrMsg) passed as the 2nd argument. This enables
  * the extension to incorporate its features into a running shell process.
@@ -168,5 +207,9 @@ typedef struct ShellExtensionLink {
      (sqlite3_column_value(pStmt, 0), SHELLEXT_API_POINTERS); \
   sqlite3_finalize(pStmt); return rv; \
  }
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif /* !defined(SQLITE3SHX_H) */
