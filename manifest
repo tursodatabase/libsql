@@ -1,5 +1,5 @@
-C Optimizations\sto\sexprAnalyze()\sand\ssqlite3WhereExprUsage()\ssave\sabout\s1.5\nmillion\sCPU\scycles\sfor\sspeedtest1,\sand\sresult\sin\sa\ssmaller\sbinary.
-D 2021-12-02T18:15:16.866
+C Performance\soptimization\sin\sthe\sB-Tree\scursor\sallocator\sbtreeCursor(),\smaking\nit\sabout\s800K\sCPU\scycles\sfaster\sin\sspeedtest1,\sand\sreducing\sthe\sexecutable\nsize\sby\sabout\s100\sbytes.
+D 2021-12-03T13:42:41.900
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -491,7 +491,7 @@ F src/auth.c f4fa91b6a90bbc8e0d0f738aa284551739c9543a367071f55574681e0f24f8cf
 F src/backup.c 3014889fa06e20e6adfa0d07b60097eec1f6e5b06671625f476a714d2356513d
 F src/bitvec.c 7c849aac407230278445cb069bebc5f89bf2ddd87c5ed9459b070a9175707b3d
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c 13b965a0f3cd57221e3b4e61e24452ec264a5b163de347b03b5039ddcd95cd54
+F src/btree.c be33f2b299c2d1dcdd6c033368731b81c13c2dbc72fe15af64a43871f6cdb437
 F src/btree.h 74d64b8f28cfa4a894d14d4ed64fa432cd697b98b61708d4351482ae15913e22
 F src/btreeInt.h ee9348c4cb9077243b049edc93a82c1f32ca48baeabf2140d41362b9f9139ff7
 F src/build.c 179b11b07484497052096d88b953b9a6c22cbb0c23ba75c4347e9a99dae4a6c0
@@ -1933,7 +1933,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8832fa9088414a8d285a457a4effad0b7d610a87ca73cfb5c5812e784649761e
-R 7228b3364cf2efa906def2eee014e4fe
+P 1f2252e65dc5847c82246fab87dcad035bf594ba7c45362de87a009b7ebcf2d6
+R 8e0c1c78e15dfcc0933f0a89f97b367f
 U drh
-Z 0ddb7e6cff00de145e1d39d556b5aab6
+Z 5947065c8f3472b5a2f6d47907db0ceb
