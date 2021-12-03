@@ -1,5 +1,5 @@
-C Merge\srecent\strunk\senhancements\sinto\sthe\sbloom-filter\sbranch.
-D 2021-12-03T16:02:05.551
+C Merge\sthe\ssqlite3WhereBegin()\ssimplification\sfrom\strunk.
+D 2021-12-03T19:10:17.141
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -637,7 +637,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c ed0398a7adf02c31e34aada42cc86c58f413a7afe5f741a5d373ad087abde028
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
-F src/where.c c04c4108028513cf2f264505f2bc3e861c2ed96985d7a5feead4cf76fe057dc1
+F src/where.c a0787ad0a3447685e553725dab50e52c9763b5f10e2506255713dbd736c89998
 F src/whereInt.h 83ae6f7d0fce8b5164d97698790e0005a909b3d06d73df86a4a6bb0d9411861e
 F src/wherecode.c 620e81077588a727876a86f87aab310c02fc4e4960691e48153d8a87ca1fa453
 F src/whereexpr.c 19394cb463003e9cc9305730b1508b8817a22bb7247170d81234b691a7f05b89
@@ -1933,7 +1933,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0864bfbf079a98beaa484911edb17c3dc728e78eca231d4247b282fd824cc098 8029e6bab508bf0b8ec1df00a829c5d4de2a84d66dc56b9ff03da879ceef7788
-R 62eaa6fad42f4285b48b7186b5cb4970
+P 11d97fb8be6b5155f38df130d7e828edd0f381e32f651458939b1cb9cb973fff 6225e9abcb0261fefca4a26530524ffc449f937f8ae1ece718af2c3c3d73d78d
+R 91b705f2730ed0122ffcaf8efbe0af73
 U drh
-Z 2d614121b81c56be6760e2166ceb6c54
+Z dab48a2f628412943ed7bfde21b0a086
