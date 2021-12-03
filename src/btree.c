@@ -2722,10 +2722,8 @@ static SQLITE_NOINLINE int allocateTempSpace(BtShared *pBt){
   ** beginning of pTmpSpace as an area available to prepend the
   ** left-child pointer to the beginning of a cell.
   */
-  if( pBt->pTmpSpace ){
-    memset(pBt->pTmpSpace, 0, 8);
-    pBt->pTmpSpace += 4;
-  }
+  memset(pBt->pTmpSpace, 0, 8);
+  pBt->pTmpSpace += 4;
   return SQLITE_OK;
 }
 

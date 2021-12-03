@@ -1090,7 +1090,7 @@ static void exprAnalyze(
     prereqAll = prereqLeft | pTerm->prereqRight;
   }else{
     pTerm->prereqRight = sqlite3WhereExprUsage(pMaskSet, pExpr->pRight);
-    if( pExpr->pLeft==0 || ExprUseXSelect(pExpr) || pExpr->x.pList!=0 ){
+    if( pExpr->pLeft==0 || NEVER(ExprUseXSelect(pExpr)) || pExpr->x.pList!=0 ){
       prereqAll = sqlite3WhereExprUsageNN(pMaskSet, pExpr);
     }else{
       prereqAll = prereqLeft | pTerm->prereqRight;
