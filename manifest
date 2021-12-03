@@ -1,5 +1,5 @@
-C Fix\sexprAnalyze()\safter\srecent\sperformance\senhancements\sso\sthat\sit\sis\sable\nto\shandle\sIF_NULL_ROW\sopcode\scorrectly,\sagain.
-D 2021-12-03T15:48:42.503
+C Factor\sthe\snoop-join-elimination\soptimization\sout\sof\sthe\ssqlite3WhereBegin()\nroutine\sand\sinto\sa\sseparate\s"no-inline"\ssubroutine,\sin\sorder\sto\sreduce\sthe\ncomplexity\sof\ssqlite3WhereBegin()\sand\sthereby\sencourage\sC\scompilers\sto\ninline\ssqlite3WhereCodeOneLoopStart().
+D 2021-12-03T18:53:53.434
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -637,7 +637,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c ed0398a7adf02c31e34aada42cc86c58f413a7afe5f741a5d373ad087abde028
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
-F src/where.c b50391df607937593596fbb8ea39f673d9a3715a65750567b442d22dd20720ca
+F src/where.c 5bd26902ddf3e385c0df9429b10e7358bbd0430c470ec1d2a53065723c4a55d2
 F src/whereInt.h 1630d9418512b080598e9a72b8af6b8bd1b9ab13fee1458f151762b6df206791
 F src/wherecode.c 1f5b62f46d284c8886945eb7438415bc27e23e87bb60b9ee468fa6bd31268f33
 F src/whereexpr.c 19394cb463003e9cc9305730b1508b8817a22bb7247170d81234b691a7f05b89
@@ -1933,7 +1933,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f3d6853ee80be2dc6d7236d98b850beb0e1931a624d4f5b194c8db742cde7ec5
-R f7c21b32b86d486ed00c79fd5643ce8f
+P 8029e6bab508bf0b8ec1df00a829c5d4de2a84d66dc56b9ff03da879ceef7788
+R 963c220f26757d3ffbc2edfb4f7e86f0
 U drh
-Z 7b145c2e945c01598a45c251b2a2a878
+Z 180dbfc838231c2ae95c395bdf32b1d2

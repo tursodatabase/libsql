@@ -4743,6 +4743,96 @@ static void showAllWhereLoops(WhereInfo *pWInfo, WhereClause *pWC){
 # define WHERETRACE_ALL_LOOPS(W,C)
 #endif
 
+/* Attempt to omit tables from a join that do not affect the result.
+** For a table to not affect the result, the following must be true:
+**
+**   1) The query must not be an aggregate.
+**   2) The table must be the RHS of a LEFT JOIN.
+**   3) Either the query must be DISTINCT, or else the ON or USING clause
+**      must contain a constraint that limits the scan of the table to 
+**      at most a single row.
+**   4) The table must not be referenced by any part of the query apart
+**      from its own USING or ON clause.
+**
+** For example, given:
+**
+**     CREATE TABLE t1(ipk INTEGER PRIMARY KEY, v1);
+**     CREATE TABLE t2(ipk INTEGER PRIMARY KEY, v2);
+**     CREATE TABLE t3(ipk INTEGER PRIMARY KEY, v3);
+**
+** then table t2 can be omitted from the following:
+**
+**     SELECT v1, v3 FROM t1 
+**       LEFT JOIN t2 ON (t1.ipk=t2.ipk)
+**       LEFT JOIN t3 ON (t1.ipk=t3.ipk)
+**
+** or from:
+**
+**     SELECT DISTINCT v1, v3 FROM t1 
+**       LEFT JOIN t2
+**       LEFT JOIN t3 ON (t1.ipk=t3.ipk)
+*/
+static SQLITE_NOINLINE Bitmask whereOmitNoopJoin(
+  WhereInfo *pWInfo,
+  Bitmask notReady
+){
+  int i;
+  Bitmask tabUsed;
+
+  /* Preconditions checked by the caller */
+  assert( pWInfo->nLevel>=2 );
+  assert( OptimizationEnabled(pWInfo->pParse->db, SQLITE_OmitNoopJoin) );
+
+  /* These two preconditions checked by the caller combine to guarantee
+  ** condition (1) of the header comment */
+  assert( pWInfo->pResultSet!=0 );
+  assert( 0==(pWInfo->wctrlFlags & WHERE_AGG_DISTINCT) );
+
+  tabUsed = sqlite3WhereExprListUsage(&pWInfo->sMaskSet, pWInfo->pResultSet);
+  if( pWInfo->pOrderBy ){
+    tabUsed |= sqlite3WhereExprListUsage(&pWInfo->sMaskSet, pWInfo->pOrderBy);
+  }
+  for(i=pWInfo->nLevel-1; i>=1; i--){
+    WhereTerm *pTerm, *pEnd;
+    SrcItem *pItem;
+    WhereLoop *pLoop;
+    pLoop = pWInfo->a[i].pWLoop;
+    pItem = &pWInfo->pTabList->a[pLoop->iTab];
+    if( (pItem->fg.jointype & JT_LEFT)==0 ) continue;
+    if( (pWInfo->wctrlFlags & WHERE_WANT_DISTINCT)==0
+     && (pLoop->wsFlags & WHERE_ONEROW)==0
+    ){
+      continue;
+    }
+    if( (tabUsed & pLoop->maskSelf)!=0 ) continue;
+    pEnd = pWInfo->sWC.a + pWInfo->sWC.nTerm;
+    for(pTerm=pWInfo->sWC.a; pTerm<pEnd; pTerm++){
+      if( (pTerm->prereqAll & pLoop->maskSelf)!=0 ){
+        if( !ExprHasProperty(pTerm->pExpr, EP_FromJoin)
+         || pTerm->pExpr->iRightJoinTable!=pItem->iCursor
+        ){
+          break;
+        }
+      }
+    }
+    if( pTerm<pEnd ) continue;
+    WHERETRACE(0xffff, ("-> drop loop %c not used\n", pLoop->cId));
+    notReady &= ~pLoop->maskSelf;
+    for(pTerm=pWInfo->sWC.a; pTerm<pEnd; pTerm++){
+      if( (pTerm->prereqAll & pLoop->maskSelf)!=0 ){
+        pTerm->wtFlags |= TERM_CODED;
+      }
+    }
+    if( i!=pWInfo->nLevel-1 ){
+      int nByte = (pWInfo->nLevel-1-i) * sizeof(WhereLevel);
+      memmove(&pWInfo->a[i], &pWInfo->a[i+1], nByte);
+    }
+    pWInfo->nLevel--;
+    assert( pWInfo->nLevel>0 );
+  }
+  return notReady;
+}
+
 /*
 ** Generate the beginning of the loop used for WHERE clause processing.
 ** The return value is a pointer to an opaque structure that contains
@@ -5111,34 +5201,15 @@ WhereInfo *sqlite3WhereBegin(
   }
 #endif
 
-  /* Attempt to omit tables from the join that do not affect the result.
-  ** For a table to not affect the result, the following must be true:
+  /* Attempt to omit tables from a join that do not affect the result.
+  ** See the comment on whereOmitNoopJoin() for further information.
   **
-  **   1) The query must not be an aggregate.
-  **   2) The table must be the RHS of a LEFT JOIN.
-  **   3) Either the query must be DISTINCT, or else the ON or USING clause
-  **      must contain a constraint that limits the scan of the table to 
-  **      at most a single row.
-  **   4) The table must not be referenced by any part of the query apart
-  **      from its own USING or ON clause.
-  **
-  ** For example, given:
-  **
-  **     CREATE TABLE t1(ipk INTEGER PRIMARY KEY, v1);
-  **     CREATE TABLE t2(ipk INTEGER PRIMARY KEY, v2);
-  **     CREATE TABLE t3(ipk INTEGER PRIMARY KEY, v3);
-  **
-  ** then table t2 can be omitted from the following:
-  **
-  **     SELECT v1, v3 FROM t1 
-  **       LEFT JOIN t2 ON (t1.ipk=t2.ipk)
-  **       LEFT JOIN t3 ON (t1.ipk=t3.ipk)
-  **
-  ** or from:
-  **
-  **     SELECT DISTINCT v1, v3 FROM t1 
-  **       LEFT JOIN t2
-  **       LEFT JOIN t3 ON (t1.ipk=t3.ipk)
+  ** This query optimization is factored out into a separate "no-inline"
+  ** procedure to keep the sqlite3WhereBegin() procedure from becoming
+  ** too large.  If sqlite3WhereBegin() becomes too large, that prevents
+  ** some C-compiler optimizers from in-lining the 
+  ** sqlite3WhereCodeOneLoopStart() procedure, and it is important to
+  ** in-line sqlite3WhereCodeOneLoopStart() for performance reasons.
   */
   notReady = ~(Bitmask)0;
   if( pWInfo->nLevel>=2
@@ -5146,49 +5217,11 @@ WhereInfo *sqlite3WhereBegin(
    && 0==(wctrlFlags & WHERE_AGG_DISTINCT)  /* condition (1) above */
    && OptimizationEnabled(db, SQLITE_OmitNoopJoin)
   ){
-    int i;
-    Bitmask tabUsed = sqlite3WhereExprListUsage(pMaskSet, pResultSet);
-    if( sWLB.pOrderBy ){
-      tabUsed |= sqlite3WhereExprListUsage(pMaskSet, sWLB.pOrderBy);
-    }
-    for(i=pWInfo->nLevel-1; i>=1; i--){
-      WhereTerm *pTerm, *pEnd;
-      SrcItem *pItem;
-      pLoop = pWInfo->a[i].pWLoop;
-      pItem = &pWInfo->pTabList->a[pLoop->iTab];
-      if( (pItem->fg.jointype & JT_LEFT)==0 ) continue;
-      if( (wctrlFlags & WHERE_WANT_DISTINCT)==0
-       && (pLoop->wsFlags & WHERE_ONEROW)==0
-      ){
-        continue;
-      }
-      if( (tabUsed & pLoop->maskSelf)!=0 ) continue;
-      pEnd = sWLB.pWC->a + sWLB.pWC->nTerm;
-      for(pTerm=sWLB.pWC->a; pTerm<pEnd; pTerm++){
-        if( (pTerm->prereqAll & pLoop->maskSelf)!=0 ){
-          if( !ExprHasProperty(pTerm->pExpr, EP_FromJoin)
-           || pTerm->pExpr->iRightJoinTable!=pItem->iCursor
-          ){
-            break;
-          }
-        }
-      }
-      if( pTerm<pEnd ) continue;
-      WHERETRACE(0xffff, ("-> drop loop %c not used\n", pLoop->cId));
-      notReady &= ~pLoop->maskSelf;
-      for(pTerm=sWLB.pWC->a; pTerm<pEnd; pTerm++){
-        if( (pTerm->prereqAll & pLoop->maskSelf)!=0 ){
-          pTerm->wtFlags |= TERM_CODED;
-        }
-      }
-      if( i!=pWInfo->nLevel-1 ){
-        int nByte = (pWInfo->nLevel-1-i) * sizeof(WhereLevel);
-        memmove(&pWInfo->a[i], &pWInfo->a[i+1], nByte);
-      }
-      pWInfo->nLevel--;
-      nTabList--;
-    }
+    notReady = whereOmitNoopJoin(pWInfo, notReady);
+    nTabList = pWInfo->nLevel;
+    assert( nTabList>0 );
   }
+
 #if defined(WHERETRACE_ENABLED)
   if( sqlite3WhereTrace & 0x100 ){ /* Display all terms of the WHERE clause */
     sqlite3DebugPrintf("---- WHERE clause at end of analysis:\n");
