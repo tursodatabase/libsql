@@ -717,9 +717,9 @@ static void whereTraceIndexInfoOutputs(sqlite3_index_info *p){
 ** index existed.
 */
 static int termCanDriveIndex(
-  WhereTerm *pTerm,              /* WHERE clause term to check */
-  SrcItem *pSrc,                 /* Table we are trying to access */
-  Bitmask notReady               /* Tables in outer loops of the join */
+  const WhereTerm *pTerm,        /* WHERE clause term to check */
+  const SrcItem *pSrc,           /* Table we are trying to access */
+  const Bitmask notReady         /* Tables in outer loops of the join */
 ){
   char aff;
   if( pTerm->leftCursor!=pSrc->iCursor ) return 0;
@@ -752,9 +752,9 @@ static int termCanDriveIndex(
 */
 static SQLITE_NOINLINE void constructAutomaticIndex(
   Parse *pParse,              /* The parsing context */
-  WhereClause *pWC,           /* The WHERE clause */
-  SrcItem *pSrc,              /* The FROM clause term to get the next index */
-  Bitmask notReady,           /* Mask of cursors that are not available */
+  const WhereClause *pWC,     /* The WHERE clause */
+  const SrcItem *pSrc,        /* The FROM clause term to get the next index */
+  const Bitmask notReady,     /* Mask of cursors that are not available */
   WhereLevel *pLevel          /* Write new index here */
 ){
   int nKeyCol;                /* Number of columns in the constructed index */
@@ -969,16 +969,16 @@ end_auto_index_create:
 ** Create a Bloom filter for the WhereLevel in the parameter.
 */
 static SQLITE_NOINLINE void constructBloomFilter(
-  WhereInfo *pWInfo,          /* The WHERE clause */
+  const WhereInfo *pWInfo,    /* The WHERE clause */
   WhereLevel *pLevel          /* Make a Bloom filter for this FROM term */
 ){
   int addrTop;
   int addrCont;
-  WhereTerm *pTerm;
-  WhereTerm *pWCEnd;
+  const WhereTerm *pTerm;
+  const WhereTerm *pWCEnd;
   Parse *pParse = pWInfo->pParse;
   Vdbe *v = pParse->pVdbe;
-  WhereLoop *pLoop = pLevel->pWLoop;
+  const WhereLoop *pLoop = pLevel->pWLoop;
   int iCur;
   
 
@@ -4915,21 +4915,20 @@ static SQLITE_NOINLINE Bitmask whereOmitNoopJoin(
 ** down where the code for each WhereLoop is generated.
 */
 static SQLITE_NOINLINE void whereCheckIfBloomFilterIsUseful(
-  WhereInfo *pWInfo,
-  sqlite3 *db
+  const WhereInfo *pWInfo
 ){
   int i;
   LogEst nSearch;
   SrcItem *pItem;
 
   assert( pWInfo->nLevel>=2 );
-  assert( OptimizationEnabled(db, SQLITE_BloomFilter) );
+  assert( OptimizationEnabled(pWInfo->pParse->db, SQLITE_BloomFilter) );
   nSearch = pWInfo->a[0].pWLoop->nOut;
   for(i=1; i<pWInfo->nLevel; i++){
     WhereLoop *pLoop = pWInfo->a[i].pWLoop;
-    if( (pLoop->wsFlags & (WHERE_IPK|WHERE_INDEXED))!=0
+    if( pLoop->nOut<0
+     && (pLoop->wsFlags & (WHERE_IPK|WHERE_INDEXED))!=0
      && (pLoop->wsFlags & WHERE_COLUMN_EQ)!=0
-     && pLoop->nOut<0
      && nSearch > (pItem = &pWInfo->pTabList->a[pLoop->iTab])->pTab->nRowLogEst
      && (pItem->fg.jointype & JT_LEFT)==0
     ){
@@ -5336,7 +5335,7 @@ WhereInfo *sqlite3WhereBegin(
   if( pWInfo->nLevel>=2
    && OptimizationEnabled(db, SQLITE_BloomFilter)
   ){
-    whereCheckIfBloomFilterIsUseful(pWInfo, db);
+    whereCheckIfBloomFilterIsUseful(pWInfo);
   }
 
 #if defined(WHERETRACE_ENABLED)
