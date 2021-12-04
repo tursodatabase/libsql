@@ -1517,6 +1517,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     if( pLevel->regFilter ){
       sqlite3VdbeAddOp4Int(v, OP_Filter, pLevel->regFilter, addrNxt,
                            iRowidReg, 1);
+      VdbeCoverage(v);
     }
     sqlite3VdbeAddOp3(v, OP_SeekRowid, iCur, addrNxt, iRowidReg);
     VdbeCoverage(v);
@@ -1846,6 +1847,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       if( pLevel->regFilter ){
         sqlite3VdbeAddOp4Int(v, OP_Filter, pLevel->regFilter, addrNxt,
                              regBase, nEq);
+        VdbeCoverage(v);
       }
 
       op = aStartOp[(start_constraints<<2) + (startEq<<1) + bRev];

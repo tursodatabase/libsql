@@ -695,6 +695,7 @@ static unsigned int filterHash(const Mem *aMem, const Op *pOp){
       h += (u32)(sqlite3VdbeIntValue(p)&0xffffffff);
     }else if( p->flags & (MEM_Str|MEM_Blob) ){
       h += p->n;
+      if( p->flags & MEM_Zero ) h += p->u.nZero;
     }
   }
   return h % (SQLITE_BLOOM_SZ*8);
@@ -8229,7 +8230,12 @@ case OP_Filter: {          /* jump */
   }
 #endif
   assert( h>=0 && h<SQLITE_BLOOM_SZ*8 );
-  if( (pIn1->z[h/8] & (1<<(h&7)))==0 ) goto jump_to_p2;
+  if( (pIn1->z[h/8] & (1<<(h&7)))==0 ){
+    VdbeBranchTaken(1, 2);
+    goto jump_to_p2;
+  }else{
+    VdbeBranchTaken(0, 2);
+  }
   break;
 }
 
