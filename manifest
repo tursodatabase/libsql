@@ -1,5 +1,5 @@
-C Extension\sinterface\stweaks\sin\ssupport\sof\splanned\susage
-D 2021-12-03T19:27:06.906
+C Add\sdesign\sdoc\sfor\sshell\sextensibility
+D 2021-12-04T18:40:51.887
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -40,6 +40,7 @@ F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/F2FS.txt c1d4a0ae9711cfe0e1d8b019d154f1c29e0d3abfe820787ba1e9ed7691160fcd
 F doc/lemon.html efc0cd2345d66905505d98f862e1c571512def0ceb5b016cb658fd4918eb76a3
 F doc/pager-invariants.txt 27fed9a70ddad2088750c4a2b493b63853da2710
+F doc/shell_extend.html b369e9dc53b7d07e2fc8e4acdf3183784826c522a0111960026f6058081c1a98
 F doc/trusted-schema.md 33625008620e879c7bcfbbfa079587612c434fa094d338b08242288d358c3e8a
 F doc/vdbesort-memory.md 4da2639c14cd24a31e0af694b1a8dd37eaf277aff3867e9a8cc14046bc49df56
 F doc/vfs-shm.txt e101f27ea02a8387ce46a05be2b1a902a021d37a
@@ -1934,7 +1935,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P eab1e1af5b51eb267e9bceaf6412d2be12b8f3deb435631e55291211099720ff
-R d47b4cfbdf90e9b5dfc09603b7ee76a8
+P ce2a91438a3403f55cddc6c5e26db292bf6dd10e805f55416063a63986d28740
+R e58755c0a075efc772ebe9b493832561
 U larrybr
-Z 1371e2d598bc40c6fc66804e5df68b0c
+Z 7adbcc5b389a42b1ea01dd812dbf6613
