@@ -1006,7 +1006,7 @@ static SQLITE_NOINLINE void constructBloomFilter(
   }else{
     Index *pIdx = pLoop->u.btree.pIndex;
     int r1 = sqlite3GetTempRange(pParse, pIdx->nKeyCol);
-    int n = pIdx->nKeyCol;
+    int n = pLoop->u.btree.nEq;
     int jj;
     for(jj=0; jj<n; jj++){
       int iCol = pIdx->aiColumn[jj];

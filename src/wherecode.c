@@ -1845,7 +1845,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       }
       if( pLevel->regFilter ){
         sqlite3VdbeAddOp4Int(v, OP_Filter, pLevel->regFilter, addrNxt,
-                             regBase, nConstraint);
+                             regBase, nEq);
       }
 
       op = aStartOp[(start_constraints<<2) + (startEq<<1) + bRev];

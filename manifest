@@ -1,5 +1,5 @@
-C Add\sthe\s"WITH\sBLOOM\sFILTER"\sclause\sto\sthe\sEXPLAIN\sQUERY\sPLAN\soutput\sfor\ncases\swere\sa\sBloom\sfilter\sis\sused.
-D 2021-12-04T13:52:08.699
+C Apply\sthe\sBloom\sfilter\sonly\son\sthose\sterms\sof\san\sindex\sthat\shave\sequality\nconstraints.
+D 2021-12-04T14:24:30.524
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -637,9 +637,9 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c ed0398a7adf02c31e34aada42cc86c58f413a7afe5f741a5d373ad087abde028
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
-F src/where.c e9cfeae040b60c21244f40fed1a3473f048ee20cb2fb987d5028350e4bead886
+F src/where.c d203a7acda584940eee49d80e38067ba354410ca08782792bdf4d6f56ca20aa3
 F src/whereInt.h 2c9d149b1b41c59f977deb1882e95632800946fcf15c83eaffb227afece04e51
-F src/wherecode.c 26b0cbc985deafe702037ed00bcf40857d129be0d80d198ac87644777b59984d
+F src/wherecode.c ab83c1f7c593ab5e9268c51dde80f478e48468e8c1e25866a4f445e7b4282b78
 F src/whereexpr.c 19394cb463003e9cc9305730b1508b8817a22bb7247170d81234b691a7f05b89
 F src/window.c 5d3b397b0c026d0ff5890244ac41359e524c01ae31e78782e1ff418c3e271a9e
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1933,7 +1933,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 28161fba9bcde5ae4b36b22d766c881b795af111a3a323c90f6149d0fea9297d
-R 6eeaa3a323a583fb23be16ffd26ce73a
+P 8e078c0e404fe4b3661dd4a11a992a8914c99e2a144cecc417421cbd68fa08cc
+R a78591e6ea873c8de7a64c271c45d204
 U drh
-Z a160cdc5e20e6c677a6900e142dccac2
+Z 73637cbd9e62c30bcdc98bccabee0c03
