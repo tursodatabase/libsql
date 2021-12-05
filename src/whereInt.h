@@ -484,6 +484,7 @@ struct WhereInfo {
 ** where.c:
 */
 Bitmask sqlite3WhereGetMask(WhereMaskSet*,int);
+void sqlite3ConstructBloomFilter(const WhereInfo*, WhereLevel*);
 #ifdef WHERETRACE_ENABLED
 void sqlite3WhereClausePrint(WhereClause *pWC);
 void sqlite3WhereTermPrint(WhereTerm *pTerm, int iTerm);

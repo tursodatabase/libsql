@@ -1304,6 +1304,60 @@ static void whereApplyPartialIndexConstraints(
   }
 }
 
+#if 1
+/*
+** An OP_Filter has just been generated, but the corresponding
+** index search has not yet been performed.  This routine
+** checks to see if there are additional WHERE_BLOOMFILTER in
+** inner loops that can be evaluated right away, and if there are,
+** it evaluates those filters as well, and removes the WHERE_BLOOMFILTER
+** tag.
+*/
+static SQLITE_NOINLINE void filterPullDown(
+  Parse *pParse,       /* Parsing context */
+  WhereInfo *pWInfo,   /* Complete information about the WHERE clause */
+  int iLevel,          /* Which level of pWInfo->a[] should be coded */
+  int addrNxt,         /* Jump here to bypass inner loops */
+  Bitmask notReady     /* Loops that are not ready */
+){
+  while( ++iLevel < pWInfo->nLevel ){
+    WhereLevel *pLevel = &pWInfo->a[iLevel];
+    WhereLoop *pLoop = pLevel->pWLoop;
+    if( (pLoop->wsFlags & WHERE_BLOOMFILTER)==0 ) continue;
+    if( pLoop->prereq & notReady ) continue;
+    sqlite3ConstructBloomFilter(pWInfo, &pWInfo->a[iLevel]);
+    if( pLoop->wsFlags & WHERE_IPK ){
+      WhereTerm *pTerm = pLoop->aLTerm[0];
+      int r1, regRowid;
+      assert( pTerm!=0 );
+      assert( pTerm->pExpr!=0 );
+      testcase( pTerm->wtFlags & TERM_VIRTUAL );
+      r1 = sqlite3GetTempReg(pParse);
+      regRowid = codeEqualityTerm(pParse, pTerm, pLevel, 0, 0, r1);
+      if( regRowid!=r1 ) sqlite3ReleaseTempReg(pParse, r1);
+      sqlite3VdbeAddOp4Int(pParse->pVdbe, OP_Filter, pLevel->regFilter,
+                           addrNxt, regRowid, 1);
+      VdbeCoverage(pParse->pVdbe);
+    }else{
+      u16 nEq = pLoop->u.btree.nEq;
+      int r1;
+      char *zStartAff;
+
+      assert( pLoop->wsFlags & WHERE_INDEXED );
+      r1 = codeAllEqualityTerms(pParse,pLevel,0,0,&zStartAff);
+      codeApplyAffinity(pParse, r1, nEq, zStartAff);
+      sqlite3DbFree(pParse->db, zStartAff);
+      sqlite3VdbeAddOp4Int(pParse->pVdbe, OP_Filter, pLevel->regFilter,
+                           addrNxt, r1, nEq);
+      VdbeCoverage(pParse->pVdbe);
+    }
+    pLoop->wsFlags &= ~WHERE_BLOOMFILTER;
+  }
+}
+#else
+#define filterPullDown(A,B,C,D,E)
+#endif
+
 /*
 ** Generate code for the start of the iLevel-th loop in the WHERE clause
 ** implementation described by pWInfo.
@@ -1518,6 +1572,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       sqlite3VdbeAddOp4Int(v, OP_Filter, pLevel->regFilter, addrNxt,
                            iRowidReg, 1);
       VdbeCoverage(v);
+      filterPullDown(pParse, pWInfo, iLevel, addrNxt, notReady);
     }
     sqlite3VdbeAddOp3(v, OP_SeekRowid, iCur, addrNxt, iRowidReg);
     VdbeCoverage(v);
@@ -1848,6 +1903,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         sqlite3VdbeAddOp4Int(v, OP_Filter, pLevel->regFilter, addrNxt,
                              regBase, nEq);
         VdbeCoverage(v);
+        filterPullDown(pParse, pWInfo, iLevel, addrNxt, notReady);
       }
 
       op = aStartOp[(start_constraints<<2) + (startEq<<1) + bRev];

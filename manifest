@@ -1,5 +1,5 @@
-C Miscellaneous\scleanup\sof\sthe\snew\sBloom-filter\scode.
-D 2021-12-04T21:11:18.037
+C Try\sto\srun\sall\sBloom\sfilters\sbefore\sany\sSeeks.\s\sThis\sgives\sa\ssmall\sperformance\ngain\son\sthe\sStar-Schema\sBenchmark.
+D 2021-12-05T00:45:55.528
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -637,9 +637,9 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c ed0398a7adf02c31e34aada42cc86c58f413a7afe5f741a5d373ad087abde028
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
-F src/where.c 957543456a7d1683d21ed8c890bcdaa6414716082dfb076bb43decdc0f87909e
-F src/whereInt.h 2c9d149b1b41c59f977deb1882e95632800946fcf15c83eaffb227afece04e51
-F src/wherecode.c 2253f91bcded8932a4211238fa7dcf6ab40ff68dbd4c2d88eb4411f12b19552c
+F src/where.c 3d29b27e345a28f76ecb20b0c789a224e9dc74534363c3ddbc44c283eb4cb708
+F src/whereInt.h 3c634e184de128d99c2b017f899f2309c77330de54193ff970597e9acdeaff3b
+F src/wherecode.c 48b456c910d552e1edf098071546c523837356ba0e3703d7b8fd9fc819da1c9b
 F src/whereexpr.c 19394cb463003e9cc9305730b1508b8817a22bb7247170d81234b691a7f05b89
 F src/window.c 5d3b397b0c026d0ff5890244ac41359e524c01ae31e78782e1ff418c3e271a9e
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1933,7 +1933,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 629ee2e3e3125bfd2af435c6713d49e46691213ad15db0a5e93a63a77f1130c2
-R 5366235cd370e2a6adf5aabc2d25d6ed
+P 201b6dd875b0ae2bbc9969b098e88abfc09e37b59e857decd41f2dcbeeb13e01
+R 8ad2d75d69a2ffc06bdf1b52eb7537e1
 U drh
-Z ab3ac181064c99ca5c8ac656f604bf60
+Z 42400fd1219d022ab29b577e6d964b89

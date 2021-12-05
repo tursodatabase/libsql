@@ -968,7 +968,7 @@ end_auto_index_create:
 /*
 ** Create a Bloom filter for the WhereLevel in the parameter.
 */
-static SQLITE_NOINLINE void constructBloomFilter(
+SQLITE_NOINLINE void sqlite3ConstructBloomFilter(
   const WhereInfo *pWInfo,    /* The WHERE clause */
   WhereLevel *pLevel          /* Make a Bloom filter for this FROM term */
 ){
@@ -1003,16 +1003,18 @@ static SQLITE_NOINLINE void constructBloomFilter(
     int r1 = sqlite3GetTempReg(pParse);
     sqlite3VdbeAddOp2(v, OP_Rowid, iCur, r1);
     sqlite3VdbeAddOp4Int(v, OP_FilterAdd, pLevel->regFilter, 0, r1, 1);
+    sqlite3ReleaseTempReg(pParse, r1);
   }else{
     Index *pIdx = pLoop->u.btree.pIndex;
-    int r1 = sqlite3GetTempRange(pParse, pIdx->nKeyCol);
     int n = pLoop->u.btree.nEq;
+    int r1 = sqlite3GetTempRange(pParse, n);
     int jj;
     for(jj=0; jj<n; jj++){
       int iCol = pIdx->aiColumn[jj];
       sqlite3ExprCodeGetColumnOfTable(v, pIdx->pTable, iCur, iCol,r1+jj);
     }
     sqlite3VdbeAddOp4Int(v, OP_FilterAdd, pLevel->regFilter, 0, r1, n);
+    sqlite3ReleaseTempRange(pParse, r1, n);
   }
   sqlite3VdbeResolveLabel(v, addrCont);
   sqlite3VdbeAddOp2(v, OP_Next, pLevel->iTabCur, addrTop+3);
@@ -5533,7 +5535,7 @@ WhereInfo *sqlite3WhereBegin(
                   &pTabList->a[pLevel->iFrom], notReady, pLevel);
 #endif
       }else{
-        constructBloomFilter(pWInfo, pLevel);
+        sqlite3ConstructBloomFilter(pWInfo, pLevel);
       }
       if( db->mallocFailed ) goto whereBeginError;
     }
