@@ -484,7 +484,6 @@ struct WhereInfo {
 ** where.c:
 */
 Bitmask sqlite3WhereGetMask(WhereMaskSet*,int);
-void sqlite3ConstructBloomFilter(const WhereInfo*, WhereLevel*);
 #ifdef WHERETRACE_ENABLED
 void sqlite3WhereClausePrint(WhereClause *pWC);
 void sqlite3WhereTermPrint(WhereTerm *pTerm, int iTerm);
@@ -507,8 +506,14 @@ int sqlite3WhereExplainOneScan(
   WhereLevel *pLevel,             /* Scan to write OP_Explain opcode for */
   u16 wctrlFlags                  /* Flags passed to sqlite3WhereBegin() */
 );
+int sqlite3WhereExplainBloomFilter(
+  const Parse *pParse,            /* Parse context */
+  const WhereInfo *pWInfo,        /* WHERE clause */
+  const WhereLevel *pLevel        /* Bloom filter on this level */
+);
 #else
 # define sqlite3WhereExplainOneScan(u,v,w,x) 0
+# define sqlite3WhereExplainBloomFilter(u,v,w) 0
 #endif /* SQLITE_OMIT_EXPLAIN */
 #ifdef SQLITE_ENABLE_STMT_SCANSTATUS
 void sqlite3WhereAddScanStatus(

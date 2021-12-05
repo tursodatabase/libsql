@@ -1762,6 +1762,7 @@ struct sqlite3 {
 #define SQLITE_OmitOrderBy    0x00040000 /* Omit pointless ORDER BY */
    /* TH3 expects this value  ^^^^^^^^^^ to be 0x40000. Coordinate any change */
 #define SQLITE_BloomFilter    0x00080000 /* Use a Bloom filter on searches */
+#define SQLITE_BloomPulldown  0x00100000 /* Run Bloom filters early */
 #define SQLITE_AllOpts        0xffffffff /* All optimizations */
 
 /*

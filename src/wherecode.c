@@ -196,9 +196,6 @@ int sqlite3WhereExplainOneScan(
                   pLoop->u.vtab.idxNum, pLoop->u.vtab.idxStr);
     }
 #endif
-    if( flags & WHERE_BLOOMFILTER ){
-      sqlite3_str_appendf(&str, " WITH BLOOM FILTER");
-    }
 #ifdef SQLITE_EXPLAIN_ESTIMATED_ROWS
     if( pLoop->nOut>=10 ){
       sqlite3_str_appendf(&str, " (~%llu rows)",
@@ -209,6 +206,52 @@ int sqlite3WhereExplainOneScan(
 #endif
     zMsg = sqlite3StrAccumFinish(&str);
     sqlite3ExplainBreakpoint("",zMsg);
+    ret = sqlite3VdbeAddOp4(v, OP_Explain, sqlite3VdbeCurrentAddr(v),
+                            pParse->addrExplain, 0, zMsg,P4_DYNAMIC);
+  }
+  return ret;
+}
+
+/*
+** Add a single OP_Explain opcode that describes a Bloom filter.
+**
+** Or if not processing EXPLAIN QUERY PLAN and not in a SQLITE_DEBUG and/or
+** SQLITE_ENABLE_STMT_SCANSTATUS build, then OP_Explain opcodes are not
+** required and this routine is a no-op.
+**
+** If an OP_Explain opcode is added to the VM, its address is returned.
+** Otherwise, if no OP_Explain is coded, zero is returned.
+*/
+int sqlite3WhereExplainBloomFilter(
+  const Parse *pParse,               /* Parse context */
+  const WhereInfo *pWInfo,           /* WHERE clause */
+  const WhereLevel *pLevel           /* Bloom filter on this level */
+){
+  int ret = 0;
+#if !defined(SQLITE_DEBUG) && !defined(SQLITE_ENABLE_STMT_SCANSTATUS)
+  if( sqlite3ParseToplevel(pParse)->explain==2 )
+#endif
+  {
+    SrcItem *pItem = &pWInfo->pTabList->a[pLevel->iFrom];
+    Vdbe *v = pParse->pVdbe;      /* VM being constructed */
+    sqlite3 *db = pParse->db;     /* Database handle */
+    char *zMsg;                   /* Text to add to EQP output */
+    int i;                        /* Loop counter */
+    WhereLoop *pLoop;             /* The where loop */
+    StrAccum str;                 /* EQP output string */
+    char zBuf[100];               /* Initial space for EQP output string */
+
+    sqlite3StrAccumInit(&str, db, zBuf, sizeof(zBuf), SQLITE_MAX_LENGTH);
+    str.printfFlags = SQLITE_PRINTF_INTERNAL;
+    sqlite3_str_appendf(&str, "BLOOM FILTER ON %S(", pItem);
+    pLoop = pLevel->pWLoop;
+    for(i=pLoop->nSkip; i<pLoop->u.btree.nEq; i++){
+      const char *z = pItem->pTab->aCol[i].zCnName;
+      if( i>pLoop->nSkip ) sqlite3_str_append(&str, " AND ", 5);
+      sqlite3_str_appendf(&str, "%s=?", z);
+    }
+    sqlite3_str_append(&str, ")", 1);
+    zMsg = sqlite3StrAccumFinish(&str);
     ret = sqlite3VdbeAddOp4(v, OP_Explain, sqlite3VdbeCurrentAddr(v),
                             pParse->addrExplain, 0, zMsg,P4_DYNAMIC);
   }
@@ -1304,14 +1347,20 @@ static void whereApplyPartialIndexConstraints(
   }
 }
 
-#if 1
 /*
-** An OP_Filter has just been generated, but the corresponding
-** index search has not yet been performed.  This routine
-** checks to see if there are additional WHERE_BLOOMFILTER in
-** inner loops that can be evaluated right away, and if there are,
-** it evaluates those filters as well, and removes the WHERE_BLOOMFILTER
-** tag.
+** This routine is called right after An OP_Filter has been generated and
+** before the corresponding index search has been performed.  This routine
+** checks to see if there are additional Bloom filters in inner loops that
+** can be checked prior to doing the index lookup.  If there are available
+** inner-loop Bloom filters, then evaluate those filters now, before the
+** index lookup.  The idea is that a Bloom filter check is way faster than
+** an index lookup, and the Bloom filter might return false, meaning that
+** the index lookup can be skipped.
+**
+** We know that an inner loop uses a Bloom filter because it has the
+** WhereLevel.regFilter set.  If an inner-loop Bloom filter is checked,
+** then clear the WhereLoeve.regFilter value to prevent the Bloom filter
+** from being checked a second time when the inner loop is evaluated.
 */
 static SQLITE_NOINLINE void filterPullDown(
   Parse *pParse,       /* Parsing context */
@@ -1323,9 +1372,8 @@ static SQLITE_NOINLINE void filterPullDown(
   while( ++iLevel < pWInfo->nLevel ){
     WhereLevel *pLevel = &pWInfo->a[iLevel];
     WhereLoop *pLoop = pLevel->pWLoop;
-    if( (pLoop->wsFlags & WHERE_BLOOMFILTER)==0 ) continue;
+    if( pLevel->regFilter==0 ) continue;
     if( pLoop->prereq & notReady ) continue;
-    sqlite3ConstructBloomFilter(pWInfo, &pWInfo->a[iLevel]);
     if( pLoop->wsFlags & WHERE_IPK ){
       WhereTerm *pTerm = pLoop->aLTerm[0];
       int r1, regRowid;
@@ -1351,12 +1399,9 @@ static SQLITE_NOINLINE void filterPullDown(
                            addrNxt, r1, nEq);
       VdbeCoverage(pParse->pVdbe);
     }
-    pLoop->wsFlags &= ~WHERE_BLOOMFILTER;
+    pLevel->regFilter = 0;
   }
 }
-#else
-#define filterPullDown(A,B,C,D,E)
-#endif
 
 /*
 ** Generate code for the start of the iLevel-th loop in the WHERE clause

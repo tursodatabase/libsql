@@ -966,61 +966,92 @@ end_auto_index_create:
 #endif /* SQLITE_OMIT_AUTOMATIC_INDEX */
 
 /*
-** Create a Bloom filter for the WhereLevel in the parameter.
+** Generate bytecode that will initialize a Bloom filter that is appropriate
+** for pLevel.
+**
+** If there are inner loops within pLevel that have the WHERE_BLOOMFILTER
+** flag set, initialize a Bloomfilter for them as well.  Except don't do
+** this recursive initialization if the SQLITE_BloomPulldown optimization has
+** been turned off.
+**
+** When the Bloom filter is initialized, the WHERE_BLOOMFILTER flag is cleared
+** from the loop, but the regFilter value is set to a register that implements
+** the Bloom filter.  When regFilter is positive, the
+** sqlite3WhereCodeOneLoopStart() will generate code to test the Bloom filter
+** and skip the subsequence B-Tree seek if the Bloom filter indicates that
+** no matching rows exist.
+**
+** This routine may only be called if it has previously been determined that
+** the loop would benefit from a Bloom filter, and the WHERE_BLOOMFILTER bit
+** is set.
 */
-SQLITE_NOINLINE void sqlite3ConstructBloomFilter(
-  const WhereInfo *pWInfo,    /* The WHERE clause */
-  WhereLevel *pLevel          /* Make a Bloom filter for this FROM term */
+static SQLITE_NOINLINE void constructBloomFilter(
+  WhereInfo *pWInfo,    /* The WHERE clause */
+  int iLevel,           /* Index in pWInfo->a[] that is pLevel */
+  WhereLevel *pLevel    /* Make a Bloom filter for this FROM term */
 ){
-  int addrTop;
-  int addrCont;
-  const WhereTerm *pTerm;
-  const WhereTerm *pWCEnd;
-  Parse *pParse = pWInfo->pParse;
-  Vdbe *v = pParse->pVdbe;
-  const WhereLoop *pLoop = pLevel->pWLoop;
-  int iCur;
-  
+  int addrOnce;                        /* Address of opening OP_Once */
+  int addrTop;                         /* Address of OP_Rewind */
+  int addrCont;                        /* Jump here to skip a row */
+  const WhereTerm *pTerm;              /* For looping over WHERE clause terms */
+  const WhereTerm *pWCEnd;             /* Last WHERE clause term */
+  Parse *pParse = pWInfo->pParse;      /* Parsing context */
+  Vdbe *v = pParse->pVdbe;             /* VDBE under construction */
+  WhereLoop *pLoop = pLevel->pWLoop;   /* The loop being coded */
+  int iCur;                            /* Cursor for table getting the filter */
 
   assert( pLoop!=0 );
   assert( v!=0 );
-  iCur = pLevel->iTabCur;
-  addrCont = sqlite3VdbeMakeLabel(pParse);
-  addrTop = sqlite3VdbeAddOp0(v, OP_Once); VdbeCoverage(v);
-  pLevel->regFilter = ++pParse->nMem;
-  sqlite3VdbeAddOp1(v, OP_FilterInit, pLevel->regFilter);
-  sqlite3VdbeAddOp1(v, OP_Rewind, iCur); VdbeCoverage(v);
-  pWCEnd = &pWInfo->sWC.a[pWInfo->sWC.nTerm];
-  for(pTerm=pWInfo->sWC.a; pTerm<pWCEnd; pTerm++){
-    Expr *pExpr = pTerm->pExpr;
-    if( (pTerm->wtFlags & TERM_VIRTUAL)==0
-     && sqlite3ExprIsTableConstant(pExpr, iCur)
-    ){
-      sqlite3ExprIfFalse(pParse, pTerm->pExpr, addrCont, SQLITE_JUMPIFNULL);
+  assert( pLoop->wsFlags & WHERE_BLOOMFILTER );
+
+  addrOnce = sqlite3VdbeAddOp0(v, OP_Once); VdbeCoverage(v);
+  do{
+    sqlite3WhereExplainBloomFilter(pParse, pWInfo, pLevel);
+    addrCont = sqlite3VdbeMakeLabel(pParse);
+    iCur = pLevel->iTabCur;
+    pLevel->regFilter = ++pParse->nMem;
+    sqlite3VdbeAddOp1(v, OP_FilterInit, pLevel->regFilter);
+    addrTop = sqlite3VdbeAddOp1(v, OP_Rewind, iCur); VdbeCoverage(v);
+    pWCEnd = &pWInfo->sWC.a[pWInfo->sWC.nTerm];
+    for(pTerm=pWInfo->sWC.a; pTerm<pWCEnd; pTerm++){
+      Expr *pExpr = pTerm->pExpr;
+      if( (pTerm->wtFlags & TERM_VIRTUAL)==0
+       && sqlite3ExprIsTableConstant(pExpr, iCur)
+      ){
+        sqlite3ExprIfFalse(pParse, pTerm->pExpr, addrCont, SQLITE_JUMPIFNULL);
+      }
     }
-  }
-  if( pLoop->wsFlags & WHERE_IPK ){
-    int r1 = sqlite3GetTempReg(pParse);
-    sqlite3VdbeAddOp2(v, OP_Rowid, iCur, r1);
-    sqlite3VdbeAddOp4Int(v, OP_FilterAdd, pLevel->regFilter, 0, r1, 1);
-    sqlite3ReleaseTempReg(pParse, r1);
-  }else{
-    Index *pIdx = pLoop->u.btree.pIndex;
-    int n = pLoop->u.btree.nEq;
-    int r1 = sqlite3GetTempRange(pParse, n);
-    int jj;
-    for(jj=0; jj<n; jj++){
-      int iCol = pIdx->aiColumn[jj];
-      sqlite3ExprCodeGetColumnOfTable(v, pIdx->pTable, iCur, iCol,r1+jj);
+    if( pLoop->wsFlags & WHERE_IPK ){
+      int r1 = sqlite3GetTempReg(pParse);
+      sqlite3VdbeAddOp2(v, OP_Rowid, iCur, r1);
+      sqlite3VdbeAddOp4Int(v, OP_FilterAdd, pLevel->regFilter, 0, r1, 1);
+      sqlite3ReleaseTempReg(pParse, r1);
+    }else{
+      Index *pIdx = pLoop->u.btree.pIndex;
+      int n = pLoop->u.btree.nEq;
+      int r1 = sqlite3GetTempRange(pParse, n);
+      int jj;
+      for(jj=0; jj<n; jj++){
+        int iCol = pIdx->aiColumn[jj];
+        sqlite3ExprCodeGetColumnOfTable(v, pIdx->pTable, iCur, iCol,r1+jj);
+      }
+      sqlite3VdbeAddOp4Int(v, OP_FilterAdd, pLevel->regFilter, 0, r1, n);
+      sqlite3ReleaseTempRange(pParse, r1, n);
     }
-    sqlite3VdbeAddOp4Int(v, OP_FilterAdd, pLevel->regFilter, 0, r1, n);
-    sqlite3ReleaseTempRange(pParse, r1, n);
-  }
-  sqlite3VdbeResolveLabel(v, addrCont);
-  sqlite3VdbeAddOp2(v, OP_Next, pLevel->iTabCur, addrTop+3);
-  VdbeCoverage(v);
-  sqlite3VdbeJumpHere(v, addrTop);
-  sqlite3VdbeJumpHere(v, addrTop+2);
+    sqlite3VdbeResolveLabel(v, addrCont);
+    sqlite3VdbeAddOp2(v, OP_Next, pLevel->iTabCur, addrTop+1);
+    VdbeCoverage(v);
+    sqlite3VdbeJumpHere(v, addrTop);
+    pLoop->wsFlags &= ~WHERE_BLOOMFILTER;
+    if( OptimizationDisabled(pParse->db, SQLITE_BloomPulldown) ) break;
+    while( iLevel < pWInfo->nLevel ){
+      iLevel++;
+      pLevel = &pWInfo->a[iLevel];
+      pLoop = pLevel->pWLoop;
+      if( pLoop && pLoop->wsFlags & WHERE_BLOOMFILTER ) break;
+    }
+  }while( iLevel < pWInfo->nLevel );
+  sqlite3VdbeJumpHere(v, addrOnce);
 }
 
 
@@ -5535,7 +5566,7 @@ WhereInfo *sqlite3WhereBegin(
                   &pTabList->a[pLevel->iFrom], notReady, pLevel);
 #endif
       }else{
-        sqlite3ConstructBloomFilter(pWInfo, pLevel);
+        constructBloomFilter(pWInfo, ii, pLevel);
       }
       if( db->mallocFailed ) goto whereBeginError;
     }
