@@ -1,0 +1,54 @@
+# 2015 Apr 24
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# This file tests that FTS5 handles corrupt databases (i.e. internal
+# inconsistencies in the backing tables) correctly. In this case 
+# "correctly" means without crashing.
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+set testprefix fts5corrupt6
+
+# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+ifcapable !fts5 {
+  finish_test
+  return
+}
+sqlite3_fts5_may_be_corrupt 1
+database_may_be_corrupt
+
+proc editblock {block} {
+  binary format Sa* 20000 [string range $block 2 end]
+}
+db func editblock editblock
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(abc, def);
+  WITH a(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM a WHERE i<1000
+  )
+  INSERT INTO ft SELECT 
+      'abc abc abc abc abc abc abc abc abc abc',
+      'def def def def def def def def def def'
+  FROM a;
+  UPDATE ft_data SET block = editblock(block) WHERE id=(
+    SELECT id FROM ft_data ORDER BY id LIMIT 1 OFFSET 5
+  );
+}
+
+do_catchsql_test 1.1 {
+  SELECT rowid FROM ft('def') ORDER BY rowid DESC LIMIT 1 OFFSET 9999;
+} {1 {database disk image is malformed}}
+
+
+sqlite3_fts5_may_be_corrupt 0
+finish_test
+
