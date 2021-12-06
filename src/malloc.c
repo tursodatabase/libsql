@@ -212,6 +212,25 @@ sqlite3_int64 sqlite3_memory_highwater(int resetFlag){
 }
 
 /*
+** Return an estimate of the amount of unallocated memory.
+**
+** This the hard heap limit minus the current memory usage.  It might
+** not be possible to allocate this much memory all at once.  This is
+** only an estimate.
+*/
+sqlite3_int64 sqlite3EstMemoryAvailable(void){
+  sqlite3_int64 n;
+  sqlite3_mutex_enter(mem0.mutex);
+  n = mem0.alarmThreshold;
+  if( n<=0 ) n = mem0.hardLimit;
+  sqlite3_mutex_leave(mem0.mutex);
+  if( n<=0 ) n = LARGEST_INT64;
+  n -= sqlite3_memory_used();
+  if( n<0 ) n = 0;
+  return n;
+}
+
+/*
 ** Trigger the alarm 
 */
 static void sqlite3MallocAlarm(int nByte){

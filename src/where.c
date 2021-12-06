@@ -1010,8 +1010,9 @@ static SQLITE_NOINLINE void constructBloomFilter(
     addrCont = sqlite3VdbeMakeLabel(pParse);
     iCur = pLevel->iTabCur;
     pLevel->regFilter = ++pParse->nMem;
-    sqlite3VdbeAddOp1(v, OP_FilterInit, pLevel->regFilter);
     addrTop = sqlite3VdbeAddOp1(v, OP_Rewind, iCur); VdbeCoverage(v);
+    sqlite3VdbeAddOp3(v, OP_Count, iCur, pLevel->regFilter, 1);
+    sqlite3VdbeAddOp2(v, OP_FilterInit, pLevel->regFilter, pLevel->regFilter);
     pWCEnd = &pWInfo->sWC.a[pWInfo->sWC.nTerm];
     for(pTerm=pWInfo->sWC.a; pTerm<pWCEnd; pTerm++){
       Expr *pExpr = pTerm->pExpr;
@@ -1039,7 +1040,7 @@ static SQLITE_NOINLINE void constructBloomFilter(
       sqlite3ReleaseTempRange(pParse, r1, n);
     }
     sqlite3VdbeResolveLabel(v, addrCont);
-    sqlite3VdbeAddOp2(v, OP_Next, pLevel->iTabCur, addrTop+1);
+    sqlite3VdbeAddOp2(v, OP_Next, pLevel->iTabCur, addrTop+3);
     VdbeCoverage(v);
     sqlite3VdbeJumpHere(v, addrTop);
     pLoop->wsFlags &= ~WHERE_BLOOMFILTER;

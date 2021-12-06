@@ -4293,6 +4293,7 @@ void sqlite3MemSetDefault(void);
 void sqlite3BenignMallocHooks(void (*)(void), void (*)(void));
 #endif
 int sqlite3HeapNearlyFull(void);
+sqlite3_int64 sqlite3EstMemoryAvailable(void);
 
 /*
 ** On systems with ample stack space and that support alloca(), make
