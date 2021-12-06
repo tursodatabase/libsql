@@ -1,5 +1,5 @@
-C Omit\sthe\sOP_FilterInit\sopcode.\s\sUse\sOP_Blob\sto\sinitialize\seach\sBloom\sfilter\ninstead.\s\sSize\sthe\sBloom\sfilter\sbased\son\ssqlite_stat1\ssize\sestimates\srather\nthan\sa\srun-time\smeasurement\sfor\simproved\stestability.
-D 2021-12-06T20:16:53.814
+C Add\sSQLITE_STMTSTATUS_FILTER_HIT\sand\s_MISS\sfor\stracking\sthe\seffectiveness\nof\sBloom\sfilters.
+D 2021-12-06T21:45:31.659
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -552,8 +552,8 @@ F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c 4a1db4aadd802683db40ca2dbbb268187bd195f10cbdb7206dbd8ac988795571
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c a7a3d9f54eb24821ec5f67f2e5589b68a5d42d46fc5849d7376886777d93a85a
-F src/shell.c.in 1458b700144c8326fda2514aaddeda49d6f01f1d1ccf7b9b696c53a3535a119c
-F src/sqlite.h.in 5cd209ac7dc4180f0e19292846f40440b8488015849ca0110c70b906b57d68f0
+F src/shell.c.in cda1eaf0292259b4b0721a5e03af9701fd482ebc37ce6a86ddc94cd9a38bb826
+F src/sqlite.h.in bb56040e3c498711c9f77727e477674395a50931ccba8095cfef5c8fb3c3e138
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8ff2fd2c166150b2e48639f5e506fb44e29f1a3f65031710b9e89d1c126ac839
 F src/sqliteInt.h f4fbb14ea32d57b813aabf82f586d2ac042234dd89df1c03281f557907745b98
@@ -623,9 +623,9 @@ F src/upsert.c 8789047a8f0a601ea42fa0256d1ba3190c13746b6ba940fe2d25643a7e991937
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c 6dfbd0bd1954e9531e1c511e5d20390d7dab9ffbf1e20a37c960d1aaf8582b46
 F src/vacuum.c 6c38ddc52f0619865c91dae9c441d4d48bf3040d7dc1bc5b22da1e45547ed0b3
-F src/vdbe.c 9cc221ebae54417b0b47b4ce6aa6eba7e919153f8ae6307f8d18a6749d453f9c
+F src/vdbe.c fd8542b7131f299659871535a41ea732764fb25e4d2931965c97fa36658c50d7
 F src/vdbe.h 25dabb25c7e157b84e59260cfb5b466c3ac103ede9f36f4db371332c47601abe
-F src/vdbeInt.h fd1103c7ecec8c84164038c8eacaa4a633cb3c10a2f725aae7bd865d4a4fcceb
+F src/vdbeInt.h 910985ac2783fe0938b314d811759d53fd25caf215810f62ca1ff068d6d60d7b
 F src/vdbeapi.c 22c79072ae7d8a01e9bcae8ba16e918d60d202eaa9553b5fda38f99f7464d99a
 F src/vdbeaux.c 21db442d159fd745a7693d157b5f998260b6af4ca60de559fa3b7b68c7405af2
 F src/vdbeblob.c 29c4118f7ee615cdee829e8401f6ead1b96b95d545b4de0042f6de39c962c652
@@ -1934,7 +1934,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P edacf8034dc6bd892038c220c480ea512dbb4005db2a6b1f8e679e8a4929c6ed
-R 933b551d7a60e6c29e7de8b534d33928
+P 8a9036ee617a6ad93bfe827b0789773c49d3d45b085cb76fa4b9b20a41b79b97
+R ec73578237c4366b7d0d282bfae04830
 U drh
-Z ded7cd3093221f3f9f8f684eb1a7389d
+Z e55f2c8840b9a35831f295372358b466

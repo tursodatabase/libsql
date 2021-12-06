@@ -8239,8 +8239,10 @@ case OP_Filter: {          /* jump */
   h %= pIn1->n;
   if( (pIn1->z[h/8] & (1<<(h&7)))==0 ){
     VdbeBranchTaken(1, 2);
+    p->aCounter[SQLITE_STMTSTATUS_FILTER_HIT]++;
     goto jump_to_p2;
   }else{
+    p->aCounter[SQLITE_STMTSTATUS_FILTER_MISS]++;
     VdbeBranchTaken(0, 2);
   }
   break;
