@@ -1,5 +1,5 @@
-C Do\snot\sallow\scertain\sdangerous\s".testctrl"\scommands\sin\ssafe\smode.
-D 2021-12-06T15:24:36.293
+C Do\snot\sallow\sSQLITE_LIMIT_LENGTH\sto\sbe\sset\slower\sthan\s1\sas\san\s\nSQLITE_LIMIT_LENGTH\sof\s0\scauses\slots\sof\sunnecessary\sproblems\sfor\nusers\sof\sthe\ssqlite3_str\sobject.
+D 2021-12-06T15:40:24.187
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -514,7 +514,7 @@ F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c e0293a6f686e18cb2c9dd0619a731518e0109d7e1f1db1932974659e7843cfd1
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c e1dcff1c916bf6834e150b492eddda5d9792453182d2ad64294d2266b6e93c4c
-F src/main.c e94230dba03f44b73c52abc8b814468a0cb6d4a66d71af33452edd78ed1b1228
+F src/main.c 1ea70751e6005ab6a9f784730fa0919efaa6639440a287deb73cb711e5aae57a
 F src/malloc.c ef796bcc0e81d845d59a469f1cf235056caf9024172fd524e32136e65593647b
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
@@ -1933,7 +1933,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2d9a45ab10aaad681e11d639195430c0988b6ca1b96db6bf0b31b889e88a5430
-R 169bd6ff0c0343d681f5647183dbf9fb
+P 080e72d119b836c49916201bf135445aa7d53cefe40a47437a93448c4d0f41cd
+R c4a19d6efe230f8d42eba90fbf4c1b2a
 U drh
-Z c109fbe5b7da812b5ec8b08a3717b168
+Z 860c42735bbc5c02ee56a87604c8521a
