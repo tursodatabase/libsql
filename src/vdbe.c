@@ -1367,12 +1367,18 @@ case OP_SoftNull: {
 ** Synopsis: r[P2]=P4 (len=P1)
 **
 ** P4 points to a blob of data P1 bytes long.  Store this
-** blob in register P2.
+** blob in register P2.  If P4 is a NULL pointer, then construct
+** a zero-filled blob that is P1 bytes long in P2.
 */
 case OP_Blob: {                /* out2 */
   assert( pOp->p1 <= SQLITE_MAX_LENGTH );
   pOut = out2Prerelease(p, pOp);
-  sqlite3VdbeMemSetStr(pOut, pOp->p4.z, pOp->p1, 0, 0);
+  if( pOp->p4.z==0 ){
+    sqlite3VdbeMemSetZeroBlob(pOut, pOp->p1);
+    if( sqlite3VdbeMemExpandBlob(pOut) ) goto no_mem;
+  }else{
+    sqlite3VdbeMemSetStr(pOut, pOp->p4.z, pOp->p1, 0, 0);
+  }
   pOut->enc = encoding;
   UPDATE_MAX_BLOBSIZE(pOut);
   break;
@@ -3383,7 +3389,7 @@ case OP_MakeRecord: {
   break;
 }
 
-/* Opcode: Count P1 P2 p3 * *
+/* Opcode: Count P1 P2 P3 * *
 ** Synopsis: r[P2]=count()
 **
 ** Store the number of entries (an integer value) in the table or index 
@@ -8166,48 +8172,6 @@ case OP_Function: {            /* group */
 
   REGISTER_TRACE(pOp->p3, pOut);
   UPDATE_MAX_BLOBSIZE(pOut);
-  break;
-}
-
-/* Opcode: FilterInit P1 P2 * * *
-**
-** Initialize register P1 so that is an empty bloom filter.
-**
-** If P2 is positive, it is a register that holds an estimate on
-** the number of entries to be added to the Bloom filter.  The
-** Bloom filter is sized accordingly.  If P2 is zero or negative,
-** then a default-size Bloom filter is created.
-**
-** It is ok for P1 and P2 to be the same register.  In that case the
-** integer value originally in that register will be overwritten
-** with the new empty bloom filter.
-*/
-case OP_FilterInit: {
-  i64 n, mx;
-  assert( pOp->p1>0 && pOp->p1<=(p->nMem+1 - p->nCursor) );
-  pIn1 = &aMem[pOp->p1];
-  if( pOp->p2>0 ){
-    assert( pOp->p2<=(p->nMem+1 - p->nCursor) );
-    n = sqlite3VdbeIntValue(&aMem[pOp->p2]);
-    if( n<SQLITE_BLOOM_MIN ){
-      n = SQLITE_BLOOM_MIN;
-    }else if( n>SQLITE_BLOOM_MAX ){
-      n = SQLITE_BLOOM_MAX;
-    }
-  }else{
-    n = SQLITE_BLOOM_MIN;
-  }
-  mx = sqlite3EstMemoryAvailable()/2;
-  if( n>mx && mx>SQLITE_BLOOM_MIN ){
-    n = mx;
-  }
-#ifdef SQLITE_DEBUG
-  if( db->flags&SQLITE_VdbeTrace ){
-    printf("Bloom-filter size: %llu bytes\n", n);
-  }
-#endif
-  sqlite3VdbeMemSetZeroBlob(pIn1, n);
-  if( sqlite3VdbeMemExpandBlob(pIn1) ) goto no_mem;
   break;
 }
 

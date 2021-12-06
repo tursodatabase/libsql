@@ -211,6 +211,7 @@ sqlite3_int64 sqlite3_memory_highwater(int resetFlag){
   return mx;
 }
 
+#if 0
 /*
 ** Return an estimate of the amount of unallocated memory.
 **
@@ -229,6 +230,7 @@ sqlite3_int64 sqlite3EstMemoryAvailable(void){
   if( n<0 ) n = 0;
   return n;
 }
+#endif
 
 /*
 ** Trigger the alarm 

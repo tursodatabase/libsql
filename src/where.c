@@ -911,7 +911,7 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
   VdbeComment((v, "for %s", pTable->zName));
   if( OptimizationEnabled(pParse->db, SQLITE_BloomFilter) ){
     pLevel->regFilter = ++pParse->nMem;
-    sqlite3VdbeAddOp1(v, OP_FilterInit, pLevel->regFilter);
+    sqlite3VdbeAddOp2(v, OP_Blob, 10000, pLevel->regFilter);
   }
 
   /* Fill the automatic index with content */
@@ -1006,13 +1006,39 @@ static SQLITE_NOINLINE void constructBloomFilter(
 
   addrOnce = sqlite3VdbeAddOp0(v, OP_Once); VdbeCoverage(v);
   do{
+    const SrcItem *pItem;
+    const Table *pTab;
+    int sz;
     sqlite3WhereExplainBloomFilter(pParse, pWInfo, pLevel);
     addrCont = sqlite3VdbeMakeLabel(pParse);
     iCur = pLevel->iTabCur;
     pLevel->regFilter = ++pParse->nMem;
+
+    /* The Bloom filter is a Blob held in a register.  Initialize it
+    ** to zero-filled blob of at least 80K bits, but maybe more if the
+    ** estimated size of the table is larger.  We could actually
+    ** measure the size of the table at run-time using OP_Count with
+    ** P3==1 and use that value to initialize the blob.  But that makes
+    ** testing complicated.  By basing the blob size on the value in the
+    ** sqlite_stat1 table, testing is much easier.
+    */
+    pItem = &pWInfo->pTabList->a[pLevel->iFrom];
+    assert( pItem!=0 );
+    pTab = pItem->pTab;
+    assert( pTab!=0 );
+    if( pTab->tabFlags & TF_HasStat1 ){
+      sz = sqlite3LogEstToInt(pItem->pTab->nRowLogEst);
+      if( sz<10000 ){
+        sz = 10000;
+      }else if( sz>10000000 ){
+        sz = 10000000;
+      }
+    }else{
+      sz = 10000;
+    }
+    sqlite3VdbeAddOp2(v, OP_Blob, sz, pLevel->regFilter);
+
     addrTop = sqlite3VdbeAddOp1(v, OP_Rewind, iCur); VdbeCoverage(v);
-    sqlite3VdbeAddOp3(v, OP_Count, iCur, pLevel->regFilter, 1);
-    sqlite3VdbeAddOp2(v, OP_FilterInit, pLevel->regFilter, pLevel->regFilter);
     pWCEnd = &pWInfo->sWC.a[pWInfo->sWC.nTerm];
     for(pTerm=pWInfo->sWC.a; pTerm<pWCEnd; pTerm++){
       Expr *pExpr = pTerm->pExpr;
@@ -1034,13 +1060,14 @@ static SQLITE_NOINLINE void constructBloomFilter(
       int jj;
       for(jj=0; jj<n; jj++){
         int iCol = pIdx->aiColumn[jj];
+        assert( pIdx->pTable==pItem->pTab );
         sqlite3ExprCodeGetColumnOfTable(v, pIdx->pTable, iCur, iCol,r1+jj);
       }
       sqlite3VdbeAddOp4Int(v, OP_FilterAdd, pLevel->regFilter, 0, r1, n);
       sqlite3ReleaseTempRange(pParse, r1, n);
     }
     sqlite3VdbeResolveLabel(v, addrCont);
-    sqlite3VdbeAddOp2(v, OP_Next, pLevel->iTabCur, addrTop+3);
+    sqlite3VdbeAddOp2(v, OP_Next, pLevel->iTabCur, addrTop+1);
     VdbeCoverage(v);
     sqlite3VdbeJumpHere(v, addrTop);
     pLoop->wsFlags &= ~WHERE_BLOOMFILTER;
