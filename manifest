@@ -1,5 +1,5 @@
-C Add\sSQLITE_STMTSTATUS_FILTER_HIT\sand\s_MISS\sfor\stracking\sthe\seffectiveness\nof\sBloom\sfilters.
-D 2021-12-06T21:45:31.659
+C Improved\sEXPLAIN\sQUERY\sPLAN\soutput\sfor\sBloom\sfilters.
+D 2021-12-06T23:07:59.482
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -640,7 +640,7 @@ F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
 F src/where.c 21bd1078837afb127827243d7ad549a4b47022ffaa43c5baa74dcac7f89809a7
 F src/whereInt.h 5c6601d6d0b7b8936482506d2d835981cc6efcd8e106a829893a27a14cfb10b8
-F src/wherecode.c fa667db48db1077b42731bfd97e9181b39409ffdc7051162ecae6895ca71ad2c
+F src/wherecode.c f82a322a8849a0290587d968f5c1c71b0d5018e078f43ea732a4cdbf837ed42b
 F src/whereexpr.c 19394cb463003e9cc9305730b1508b8817a22bb7247170d81234b691a7f05b89
 F src/window.c 5d3b397b0c026d0ff5890244ac41359e524c01ae31e78782e1ff418c3e271a9e
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1934,7 +1934,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8a9036ee617a6ad93bfe827b0789773c49d3d45b085cb76fa4b9b20a41b79b97
-R ec73578237c4366b7d0d282bfae04830
+P 24ba535d200fc8a99dd8e66c6d100b5f6ae442098bafb152008429398eefe3e7
+R 7eae2a1d2a9d2b173d70c0467bdac4ba
 U drh
-Z e55f2c8840b9a35831f295372358b466
+Z 477e7fdac36f7f761dc02a6457a5f233

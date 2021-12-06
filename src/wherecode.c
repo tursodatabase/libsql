@@ -176,19 +176,27 @@ int sqlite3WhereExplainOneScan(
         explainIndexRange(&str, pLoop);
       }
     }else if( (flags & WHERE_IPK)!=0 && (flags & WHERE_CONSTRAINT)!=0 ){
-      const char *zRangeOp;
+      char cRangeOp;
+#if 0  /* Better output, but breaks many tests */
+      const Table *pTab = pItem->pTab;
+      const char *zRowid = pTab->iPKey>=0 ? pTab->aCol[pTab->iPKey].zCnName:
+                              "rowid";
+#else
+      const char *zRowid = "rowid";
+#endif
+      sqlite3_str_appendf(&str, " USING INTEGER PRIMARY KEY (%s", zRowid);
       if( flags&(WHERE_COLUMN_EQ|WHERE_COLUMN_IN) ){
-        zRangeOp = "=";
+        cRangeOp = '=';
       }else if( (flags&WHERE_BOTH_LIMIT)==WHERE_BOTH_LIMIT ){
-        zRangeOp = ">? AND rowid<";
+        sqlite3_str_appendf(&str, ">? AND %s", zRowid);
+        cRangeOp = '<';
       }else if( flags&WHERE_BTM_LIMIT ){
-        zRangeOp = ">";
+        cRangeOp = '>';
       }else{
         assert( flags&WHERE_TOP_LIMIT);
-        zRangeOp = "<";
+        cRangeOp = '<';
       }
-      sqlite3_str_appendf(&str, 
-          " USING INTEGER PRIMARY KEY (rowid%s?)",zRangeOp);
+      sqlite3_str_appendf(&str, "%c?)", cRangeOp);
     }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
     else if( (flags & WHERE_VIRTUALTABLE)!=0 ){
@@ -243,12 +251,21 @@ int sqlite3WhereExplainBloomFilter(
 
     sqlite3StrAccumInit(&str, db, zBuf, sizeof(zBuf), SQLITE_MAX_LENGTH);
     str.printfFlags = SQLITE_PRINTF_INTERNAL;
-    sqlite3_str_appendf(&str, "BLOOM FILTER ON %S(", pItem);
+    sqlite3_str_appendf(&str, "BLOOM FILTER ON %S (", pItem);
     pLoop = pLevel->pWLoop;
-    for(i=pLoop->nSkip; i<pLoop->u.btree.nEq; i++){
-      const char *z = pItem->pTab->aCol[i].zCnName;
-      if( i>pLoop->nSkip ) sqlite3_str_append(&str, " AND ", 5);
-      sqlite3_str_appendf(&str, "%s=?", z);
+    if( pLoop->wsFlags & WHERE_IPK ){
+      const Table *pTab = pItem->pTab;
+      if( pTab->iPKey>=0 ){
+        sqlite3_str_appendf(&str, "%s=?", pTab->aCol[pTab->iPKey].zCnName);
+      }else{
+        sqlite3_str_appendf(&str, "rowid=?");
+      }
+    }else{
+      for(i=pLoop->nSkip; i<pLoop->u.btree.nEq; i++){
+        const char *z = explainIndexColumnName(pLoop->u.btree.pIndex, i);
+        if( i>pLoop->nSkip ) sqlite3_str_append(&str, " AND ", 5);
+        sqlite3_str_appendf(&str, "%s=?", z);
+      }
     }
     sqlite3_str_append(&str, ")", 1);
     zMsg = sqlite3StrAccumFinish(&str);
