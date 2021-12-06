@@ -1076,6 +1076,7 @@ static void exprAnalyze(
   pExpr = pTerm->pExpr;
   assert( pExpr!=0 ); /* Because malloc() has not failed */
   assert( pExpr->op!=TK_AS && pExpr->op!=TK_COLLATE );
+  pMaskSet->bVarSelect = 0;
   prereqLeft = sqlite3WhereExprUsage(pMaskSet, pExpr->pLeft);
   op = pExpr->op;
   if( op==TK_IN ){
@@ -1086,12 +1087,28 @@ static void exprAnalyze(
     }else{
       pTerm->prereqRight = sqlite3WhereExprListUsage(pMaskSet, pExpr->x.pList);
     }
+    prereqAll = prereqLeft | pTerm->prereqRight;
   }else{
     pTerm->prereqRight = sqlite3WhereExprUsage(pMaskSet, pExpr->pRight);
+    if( pExpr->pLeft==0
+     || ExprHasProperty(pExpr, EP_xIsSelect|EP_IfNullRow)
+     || pExpr->x.pList!=0
+    ){
+      prereqAll = sqlite3WhereExprUsageNN(pMaskSet, pExpr);
+    }else{
+      prereqAll = prereqLeft | pTerm->prereqRight;
+    }
   }
-  pMaskSet->bVarSelect = 0;
-  prereqAll = sqlite3WhereExprUsageNN(pMaskSet, pExpr);
   if( pMaskSet->bVarSelect ) pTerm->wtFlags |= TERM_VARSELECT;
+
+#ifdef SQLITE_DEBUG
+  if( prereqAll!=sqlite3WhereExprUsageNN(pMaskSet, pExpr) ){
+    printf("\n*** Incorrect prereqAll computed for:\n");
+    sqlite3TreeViewExpr(0,pExpr,0);
+    abort();
+  }
+#endif
+
   if( ExprHasProperty(pExpr, EP_FromJoin) ){
     Bitmask x = sqlite3WhereGetMask(pMaskSet, pExpr->iRightJoinTable);
     prereqAll |= x;
@@ -1556,15 +1573,38 @@ void sqlite3WhereClauseClear(WhereClause *pWC){
 ** These routines walk (recursively) an expression tree and generate
 ** a bitmask indicating which tables are used in that expression
 ** tree.
+**
+** sqlite3WhereExprUsage(MaskSet, Expr) ->
+**
+**       Return a Bitmask of all tables referenced by Expr.  Expr can be
+**       be NULL, in which case 0 is returned.
+**
+** sqlite3WhereExprUsageNN(MaskSet, Expr) ->
+**
+**       Same as sqlite3WhereExprUsage() except that Expr must not be
+**       NULL.  The "NN" suffix on the name stands for "Not Null".
+**
+** sqlite3WhereExprListUsage(MaskSet, ExprList) ->
+**
+**       Return a Bitmask of all tables referenced by every expression
+**       in the expression list ExprList.  ExprList can be NULL, in which
+**       case 0 is returned.
+**
+** sqlite3WhereExprUsageFull(MaskSet, ExprList) ->
+**
+**       Internal use only.  Called only by sqlite3WhereExprUsageNN() for
+**       complex expressions that require pushing register values onto
+**       the stack.  Many calls to sqlite3WhereExprUsageNN() do not need
+**       the more complex analysis done by this routine.  Hence, the
+**       computations done by this routine are broken out into a separate
+**       "no-inline" function to avoid the stack push overhead in the
+**       common case where it is not needed.
 */
-Bitmask sqlite3WhereExprUsageNN(WhereMaskSet *pMaskSet, Expr *p){
+static SQLITE_NOINLINE Bitmask sqlite3WhereExprUsageFull(
+  WhereMaskSet *pMaskSet,
+  Expr *p
+){
   Bitmask mask;
-  if( p->op==TK_COLUMN && !ExprHasProperty(p, EP_FixedCol) ){
-    return sqlite3WhereGetMask(pMaskSet, p->iTable);
-  }else if( ExprHasProperty(p, EP_TokenOnly|EP_Leaf) ){
-    assert( p->op!=TK_IF_NULL_ROW );
-    return 0;
-  }
   mask = (p->op==TK_IF_NULL_ROW) ? sqlite3WhereGetMask(pMaskSet, p->iTable) : 0;
   if( p->pLeft ) mask |= sqlite3WhereExprUsageNN(pMaskSet, p->pLeft);
   if( p->pRight ){
@@ -1585,6 +1625,15 @@ Bitmask sqlite3WhereExprUsageNN(WhereMaskSet *pMaskSet, Expr *p){
   }
 #endif
   return mask;
+}
+Bitmask sqlite3WhereExprUsageNN(WhereMaskSet *pMaskSet, Expr *p){
+  if( p->op==TK_COLUMN && !ExprHasProperty(p, EP_FixedCol) ){
+    return sqlite3WhereGetMask(pMaskSet, p->iTable);
+  }else if( ExprHasProperty(p, EP_TokenOnly|EP_Leaf) ){
+    assert( p->op!=TK_IF_NULL_ROW );
+    return 0;
+  }
+  return sqlite3WhereExprUsageFull(pMaskSet, p);
 }
 Bitmask sqlite3WhereExprUsage(WhereMaskSet *pMaskSet, Expr *p){
   return p ? sqlite3WhereExprUsageNN(pMaskSet,p) : 0;
