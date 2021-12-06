@@ -1,5 +1,5 @@
-C Attempt\sto\svary\sthe\ssize\sof\sBloom\sfilters\sbased\son\san\sestimate\sof\show\smany\nkeys\sthe\sfilter\swill\shold.
-D 2021-12-06T13:07:28.112
+C Merge\strunk\sfixes\sinto\sthe\sbloom-filter\sbranch.
+D 2021-12-06T19:11:31.036
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -119,7 +119,7 @@ F ext/fts5/fts5_buffer.c 3001fbabb585d6de52947b44b455235072b741038391f830d6b7292
 F ext/fts5/fts5_config.c 501e7d3566bc92766b0e11c0109a7c5a6146bc41144195459af5422f6c2078aa
 F ext/fts5/fts5_expr.c fcd0770d53028c2b53a15d0f53bf6d0e01b1bf3dd97630b9fedf0801f03aa3ec
 F ext/fts5/fts5_hash.c d4fb70940359f2120ccd1de7ffe64cc3efe65de9e8995b822cd536ff64c96982
-F ext/fts5/fts5_index.c a3ada4897c3b14b8a15a8695d2cb3a46b5761137aae0964fc44efe96a877ddd0
+F ext/fts5/fts5_index.c b1b2e5d4a9e3b54c740d8354cc47e3fa879f54c2176de55e0b882dab45ab7b07
 F ext/fts5/fts5_main.c 7c6092a53e6802962fa07b0fad3e61cb077b6c98b74b727d8d44ac2cf63bd914
 F ext/fts5/fts5_storage.c 76c6085239eb44424004c022e9da17a5ecd5aaec859fba90ad47d3b08f4c8082
 F ext/fts5/fts5_tcl.c b1445cbe69908c411df8084a10b2485500ac70a9c747cdc8cda175a3da59d8ae
@@ -163,6 +163,7 @@ F ext/fts5/test/fts5corrupt2.test 7453752ba12ce91690c469a6449d412561cc604b1dec99
 F ext/fts5/test/fts5corrupt3.test 0e473620582a53ac61f468f364db8a151c1e18d2a879b16439d172c12c4c9828
 F ext/fts5/test/fts5corrupt4.test f4c08e2182a48d8b70975fd869ee5391855c06d8a0ff87b6a2529e7c5a88a1d3
 F ext/fts5/test/fts5corrupt5.test 550d0884c14424f9acad051a741f1dd99ec9342277d938e91ff3daf9123d1209
+F ext/fts5/test/fts5corrupt6.test bf8eeae07825b088b9665d9d8e4accbd8dc9bf3cb85b6c64cf6c9e18ccc420a4
 F ext/fts5/test/fts5delete.test 619295b20dbc1d840b403ee07c878f52378849c3c02e44f2ee143b3e978a0aa7
 F ext/fts5/test/fts5detail.test 54015e9c43ec4ba542cfb93268abdf280e0300f350efd08ee411284b03595cc4
 F ext/fts5/test/fts5determin.test 1b77879b2ae818b5b71c859e534ee334dac088b7cf3ff3bf76a2c82b1c788d11
@@ -514,7 +515,7 @@ F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c e0293a6f686e18cb2c9dd0619a731518e0109d7e1f1db1932974659e7843cfd1
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c e1dcff1c916bf6834e150b492eddda5d9792453182d2ad64294d2266b6e93c4c
-F src/main.c 7bd4fdc41ef53535271a1816ff043ba153cda03842b444b6e2f57b27b2cb9090
+F src/main.c 1ea70751e6005ab6a9f784730fa0919efaa6639440a287deb73cb711e5aae57a
 F src/malloc.c 183c2bf45cee1589254e4047e220f1ffbcc0a3bc8e4fe46fe64ba5db447a79af
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
@@ -551,7 +552,7 @@ F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c 4a1db4aadd802683db40ca2dbbb268187bd195f10cbdb7206dbd8ac988795571
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c a7a3d9f54eb24821ec5f67f2e5589b68a5d42d46fc5849d7376886777d93a85a
-F src/shell.c.in e7ee6517544d075d9f06ee2571567026b89cf9fbeef16a74918019b1cb425764
+F src/shell.c.in 1458b700144c8326fda2514aaddeda49d6f01f1d1ccf7b9b696c53a3535a119c
 F src/sqlite.h.in 5cd209ac7dc4180f0e19292846f40440b8488015849ca0110c70b906b57d68f0
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8ff2fd2c166150b2e48639f5e506fb44e29f1a3f65031710b9e89d1c126ac839
@@ -1933,7 +1934,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 06f6fefd67086896bc49272c6319545ff6c6792f18babe23aced27b60b032119
-R 5f90145148ed31800619d7b25d77beb7
+P a7adcf69088cba4b86cc5731a45c9a5263af4355bc0a38f5225cab421c915f7f bb9b1a15f7e80483162049dfd981d059dc69d03348b521f7ac164a8cd3ae3cc4
+R 0f448dc1f18098ffcb6b2fdc27d44d39
 U drh
-Z 3013773c2d9a03770ac02d1fdd22abd3
+Z a01a7e207ad8c3ff4f1aefb648f1cc10
