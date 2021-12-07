@@ -29,6 +29,8 @@
      content: counter(section) "." counter(h2counter) "." counter(h3counter) "." counter(h4counter) " ";
    }
    </style>
+<img class="logo" src="https://sqlite.org/images/sqlite370_banner.gif"
+     alt="SQLite" border="0"/>
 
     <h1>CLI Shell Extensibility</h1>
     <hr/>
@@ -59,14 +61,14 @@
       <h3>New or Revised Import Modes</h3>
     <p>The ways in which data may be imported to a DB table
       may be augmented or overriden. Once that is done, the .import
-      meta-command will either have a new option to specify a new
-      import handler or an existing .import option can be used for this.
+      meta-command will either have a new option to specify a new import
+      handler or an existing .import option can be overridden for this.
 
       <h3>New or Revised Query Result Handling</h3>
     <p>The display formatting or other disposition of query results
       may be augmented or overriden. Once that is done, the .mode
-      meta-command will either have a new option to specify a new
-      result handler or an existing .mode option can be used for this.
+      meta-command will either have a new option to specify a new result
+      handler or an existing .mode option can be overridden for this.
 
       <h3>Generalized Import Modes and Query Result Handling</h3>
     <p>New handlers added via extension are not restricted to
@@ -122,14 +124,15 @@
       and shell extensions written in C/C++.
       Comments in that header tersely summarize these explanations:
 
-      <h3>struct ShellStateX</h3>
-    <p>This struct consists of a public portion, which is available and
+      <h3>struct ShellStateX and ShellExState</h3>
+    <p>The ShellStateX object, (maintained by the shell and known as
+      shellState), consists of a public portion, which is available and
       stable for use in shell/extension interactions, and a private
       portion which may not be stable. Shell extension code used only for
       build-time extension might use the private part, (to which it has
       access because such code is compiled within the same translation unit
       as the core shell code), but such usage generally precludes (or makes
-      hazardous) use of a runtime loadable extension built from the same code.
+      hazardous) use of runtime loadable extensions built from such code.
 
       <h3>ExtensionId typedef and eid Member</h3>
     <p>An object of this type serves to uniquely identify an extension
@@ -138,23 +141,50 @@
       by the sqlite3_X_init() function if the extension DLL is ever
       to be unloaded during that shell session.
 
-      <h3>extensionDtor member</h3>
+      <h3>ShellExState typedef</h3>
+    <p>An object of this type is passed between the shell core and its
+      import or query result handlers to: (1) convey or keep parameters and
+      data related to formatting or parsing data rows in an external form;
+      (2) keep state associated with the progression of an import or result
+      handling operation from initiation to completion; (3) to facilitate
+      access to exposed shell state generally useful to such handlers or
+      meta-commands; or (4) to provide for abnormal shell exits.
+    <p>The shell core .mode and .import implementations also use the same
+      instance of this type to affect result output and import operations.
+      That instance resides in a ShellStateX object kept by the shell so
+      that extension meta-commands can access it, possibly to change it.
+      Meta-commands or handlers which alter this instance for their own
+      purposes (rather than for intended effect) should take care to
+      restore its prior value as the operation completes.
+
+      <h3>extensionDestruct member</h3>
     <p>The function addressed by this member will be called prior to
       the extension being unloaded (if the pointer is non-zero.)
       This is an out parameter from the sqlite3_X_init() function.
       It may perform any cleanup or deallocations necessitated by
-      successful initialization (and will never be called after
-      failed initialization.)
+      successful initialization generally (and will never be called
+      after failed initialization.)
 
       <h3>Notes Regarding Object Interfaces for C vs C++ Writers</h3>
     <p>The objects registered with the shell core to provided extension
       functionality may be implemented in C or C++ (or anything else
       producing the same ABI.) In the below descriptions of their
       interfaces, it should be understood that: C++ implementations
-      will not need to explicitly deal with anything like a WhatsitVtable
+      need not explicitly deal with anything like a Whatsit_Vtable
       struct and will refer to the object pointer, passed implicitly,
       as "this"; and C implementations will need to populate a static
-      WhatsitVtable and refer to the initial object pointer as "pThis".
+      Whatsit_Vtable and refer to the initial object pointer as "pThis".
+    <p>All shell extension interfaces have a method, destruct(), which
+      is (or may be) called by the shell core prior to deactivating any
+      registered meta-command, output result or import handler.
+      This call will be made in addition to any automatic (or implicit)
+      takedown that may occur due to atexit() or C++ destructor calls,
+      so destruct()'s responsibility should be limited to reversing
+      the per-registered-object effects of sqlite3_X_init().
+    <p>A registered object is deactivated when either: the extension
+      is immanently going to be unloaded; or the registered object is
+      being overridden by some like-named object (such that it can no
+      longer be reached by the core shell.)
 
       <h3>MetaCommand typedef</h3>
     <p>These objects represent an extension meta-command, including a
@@ -163,16 +193,17 @@
       by extensions and passed to the core shell only by reference.
       They are made known to the shell core via registerMetaCommand() calls.
 
-      <h3>MetaCommandVtable typedef</h3>
+      <h3>MetaCommand_Vtable typedef</h3>
     <p>These objects represent the dispatch table of a MetaCommand object.
     <p>All methods are given the same leading (or lone) argument:<br>
       (1) the address of the registered MetaCommand object.
 
-      <h4>destruct_free method</h4>
+      <h4>destruct method</h4>
     <p>This method is called prior to unloading a runtime extension
       for any registered MetaCommand object, provided its dispatch
       table entry is non-zero.
-      It should free resources allocated during the sqlite3_X_init() call.
+      It should free resources allocated during the sqlite3_X_init() call
+      associated with creation or preparation of the object.
 
       <h4>name method</h4>
     <p>This method returns the name of the meta-command (sans leading '.'.)
@@ -221,19 +252,6 @@
       from the dispatcher.) If the output error message is set, it will
       be issued in lieu of the standard error message for invalid calls.
 
-      <h3>FormatXfrInfo typedef</h3>
-    <p>An object of this type is passed between the shell core and its
-      import or query result handlers to convey or keep parameters and data
-      related to formatting or parsing data rows in an external form,
-      or to keep state associated with the progression of an import or result
-      handling operation from initiation to completion.
-    <p>The shell core .mode and .import implementations also use
-      an instance of this type to affect result output and import operations.
-      That instance resides in the ShellStateX so that extension meta-commands
-      can access it, possibly to change it. Meta-commands which alter this
-      instance for their own purposes (rather than for intended effect)
-      should take care to restore its value as the meta-command completes.
-
       <h3>OutModeHandler typedef</h3>
     <p>These objects represent an extension query result handler, including
       a dispatch table for the public interface and any accompanying
@@ -241,22 +259,23 @@
       by extensions and passed to the core shell only by reference.
       They are made known to the shell core via registerOutMode() calls.
 
-      <h3>OutModeHandlerVtable typedef</h3>
+      <h3>OutModeHandler_Vtable typedef</h3>
     <p>These objects represent the dispatch table of an OutModeHandler object.
       All methods in the dispatch table are given at
       least this leading argument:<br>
       (1) The OutModeHandler address registered via registerOutMode();<br>
 
-      <h4>destruct_free method</h4>
+      <h4>destruct method</h4>
     <p>This method is called prior to unloading a runtime extension
       for any registered OutModeHandler object, provided its dispatch
       table entry is non-zero.
-      It should free resources allocated during the sqlite3_X_init() call.
+      It should free resources allocated during the sqlite3_X_init() call
+      associated with creation or preparation of the object.
 
       <h4>name method</h4>
     <p>This method returns the name of the OutModeHandler, which users
-      specify to the .mode command (as the mode) to designate use of the
-      registered OutModeHandler for subsequent query results.
+      specify to the .mode command (as the mode's name) to designate use
+      of the registered OutModeHandler for subsequent query results.
       The returned pointer must remain valid throughout the lifetime of
       the registered MetaCommand object.
 
@@ -275,8 +294,8 @@
 
       <h4>Common arguments</h4>
     <p>The following methods are given these 2 additional arguments:<br>
-      (2) A FormatXfrInfo object passed by reference; and<br>
-      (3) An error message pointer, passed by reference, to receive errors.<br>
+      (2) A ShellExState object passed by reference; and<br>
+      (3) An error message pointer, passed by reference, to receive errors.
 
       <h4>openResultsOutStream method</h4>
     <p>This method is called when a query output is setup,
@@ -340,16 +359,17 @@
       by extensions and passed to the core shell only by reference.
       They are made known to the shell core via registerImporter() calls.
 
-      <h3>ImportHandlerVtable typedef</h3>
+      <h3>ImportHandler_Vtable typedef</h3>
     <p>These objects represent the dispatch table of an ImportHandler object.
       All methods in the dispatch table are given this 1 leading argument:<br>
       (1) The ImportHandler address registered via registerImporter().
 
-      <h4>destruct_free method</h4>
+      <h4>destruct method</h4>
     <p>This method is called prior to unloading a runtime extension
       for any registered OutModeHandler object, provided its dispatch
       table entry is non-zero.
-      It should free resources allocated during the sqlite3_X_init() call.
+      It should free resources allocated during the sqlite3_X_init() call
+      associated with creation or preparation of the object.
 
       <h4>name method</h4>
     <p>This method returns the name of the importer, which is to
@@ -373,7 +393,7 @@
 
       <h4>Common arguments</h4>
     <p>The following methods are given these 2 additional arguments:<br>
-      (2) A FormatXfrInfo object passed by reference; and<br>
+      (2) A ShellExState object passed by reference; and<br>
       (3) An error message pointer, passed by reference, to receive errors.
 
       <h4>openDataInStream method</h4>
@@ -416,7 +436,7 @@
       by this method specifically for the single import operation.
     <p>The prepared statement should, in some manner wholly determined
       by the extension handler, incorporate compiled SQL (possibly with
-      as-yet unbound parameters) which will produce a result set.
+      as-yet unbound parameters) which will (or may) produce a result set.
       (This may be no more than a query such as "SELECT @1 as one, ...",
       or could be a SELECT from a temporary table used for buffering.)
     <p>The return should be SQLITE_OK upon success, in which case the
@@ -434,8 +454,6 @@
       This prepared statement can have values bound to it or be reset as
       necessary to return some or more data. However, it must remain the
       same sqlite3_statement instance returned by prepareDataInput().
-    <p>It is given 1 additional argument:<br>
-      (4) the prepared statement (pointer) returned by prepareDataInput().
     <p>The return should be SQLITE_DONE when no more data is available,
       or SQLITE_ROW to indicate that more data is or might be available.
       Any other return (including SQLITE_OK) indicates a condition which
@@ -448,7 +466,7 @@
     <p>It is given 1 additional argument:<br>
       (4) the prepared statement (pointer) returned by prepareDataInput().<br>
       This prepared statement should be finalized by this method. Other
-      cleanup or import closing related to the transfer may also be performed.
+      cleanup or import wrap-up related to the transfer may also be performed.
 
       <h4>closeDataInStream method</h4>
     <p>This method is called as a .import command which specified this
@@ -486,8 +504,8 @@
       a C macro, DEFINE_SHDB_TO_SHEXT_API(function_name),
       in the extension source to define a function named per
       the macro argument. Then that function may be called with its
-      lone argument being the sqlite3 * (db) pointer passed as the
-      1st argument to sqlite3_X_init().
+      lone argument being the sqlite3 * (db) pointer which was passed
+      as the 1st argument to sqlite3_X_init().
     <p>Either means will return (or yield) either a null pointer
       or a verified ShellExtensionLink pointer. In the former
       case, sqlite3_X_init() may return SHELL_INVALID_ARGS to induce
@@ -521,14 +539,13 @@
       .output and .once commands; the currently open user DB (if any);
       the dedicated shell DB; and the data related to formatting
       and transfer of data in external forms. This data resides in the
-      ShellState object as a FormatXfrInfo struct.
-    <p>As shell extensibility evolves, additional data items may need
-      to be moved into the publicly exposed portion of ShellState, either
-      directly (via exposed data members) or by means of some additional
+      ShellStateX object as a ShellExState struct.
+    <p>As shell extensibility evolves, additional data items may need to
+      move into the publicly exposed portion of the ShellStateX object,
+      either directly (via exposed data members) or by means of additional
       extension APIs defined in the ShellExtensionLink object (which has
       been defined to accommodate growth of its function pointer list in
       a backwards-compatible manner.)
 
   </body>
 </html>
-
