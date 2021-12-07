@@ -988,7 +988,8 @@ end_auto_index_create:
 static SQLITE_NOINLINE void constructBloomFilter(
   WhereInfo *pWInfo,    /* The WHERE clause */
   int iLevel,           /* Index in pWInfo->a[] that is pLevel */
-  WhereLevel *pLevel    /* Make a Bloom filter for this FROM term */
+  WhereLevel *pLevel,   /* Make a Bloom filter for this FROM term */
+  Bitmask notReady      /* Loops that are not ready */
 ){
   int addrOnce;                        /* Address of opening OP_Once */
   int addrTop;                         /* Address of OP_Rewind */
@@ -1076,7 +1077,9 @@ static SQLITE_NOINLINE void constructBloomFilter(
       iLevel++;
       pLevel = &pWInfo->a[iLevel];
       pLoop = pLevel->pWLoop;
-      if( pLoop && pLoop->wsFlags & WHERE_BLOOMFILTER ) break;
+      if( pLoop==0 ) continue;
+      if( pLoop->prereq & notReady ) continue;
+      if( pLoop->wsFlags & WHERE_BLOOMFILTER ) break;
     }
   }while( iLevel < pWInfo->nLevel );
   sqlite3VdbeJumpHere(v, addrOnce);
@@ -5594,7 +5597,7 @@ WhereInfo *sqlite3WhereBegin(
                   &pTabList->a[pLevel->iFrom], notReady, pLevel);
 #endif
       }else{
-        constructBloomFilter(pWInfo, ii, pLevel);
+        constructBloomFilter(pWInfo, ii, pLevel, notReady);
       }
       if( db->mallocFailed ) goto whereBeginError;
     }
