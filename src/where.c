@@ -2361,11 +2361,11 @@ static void whereLoopOutputAdjust(
   LogEst iReduce = 0;    /* pLoop->nOut should not exceed nRow-iReduce */
 
   assert( (pLoop->wsFlags & WHERE_AUTO_INDEX)==0 );
-  for(i=pWC->nTerm, pTerm=pWC->a; i>0; i--, pTerm++){
+  for(i=pWC->nBase, pTerm=pWC->a; i>0; i--, pTerm++){
     assert( pTerm!=0 );
-    if( (pTerm->wtFlags & TERM_VIRTUAL)!=0 ) break;
-    if( (pTerm->prereqAll & pLoop->maskSelf)==0 ) continue;
     if( (pTerm->prereqAll & notAllowed)!=0 ) continue;
+    if( (pTerm->prereqAll & pLoop->maskSelf)==0 ) continue;
+    if( (pTerm->wtFlags & TERM_VIRTUAL)!=0 ) continue;
     for(j=pLoop->nLTerm-1; j>=0; j--){
       pX = pLoop->aLTerm[j];
       if( pX==0 ) continue;
@@ -3636,6 +3636,7 @@ static int whereLoopAddOr(
           tempWC.pOuter = pWC;
           tempWC.op = TK_AND;
           tempWC.nTerm = 1;
+          tempWC.nBase = 1;
           tempWC.a = pOrTerm;
           sSubBuild.pWC = &tempWC;
         }else{
@@ -5085,7 +5086,7 @@ WhereInfo *sqlite3WhereBegin(
   **   FROM ... WHERE random()>0;           -- eval random() once per row
   **   FROM ... WHERE (SELECT random())>0;  -- eval random() once overall
   */
-  for(ii=0; ii<sWLB.pWC->nTerm; ii++){
+  for(ii=0; ii<sWLB.pWC->nBase; ii++){
     WhereTerm *pT = &sWLB.pWC->a[ii];
     if( pT->wtFlags & TERM_VIRTUAL ) continue;
     if( pT->prereqAll==0 && (nTabList==0 || exprIsDeterministic(pT->pExpr)) ){

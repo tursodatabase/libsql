@@ -79,6 +79,7 @@ static int whereClauseInsert(WhereClause *pWC, Expr *p, u16 wtFlags){
     pWC->nSlot = sqlite3DbMallocSize(db, pWC->a)/sizeof(pWC->a[0]);
   }
   pTerm = &pWC->a[idx = pWC->nTerm++];
+  if( (wtFlags & TERM_VIRTUAL)==0 ) pWC->nBase = pWC->nTerm;
   if( p && ExprHasProperty(p, EP_Unlikely) ){
     pTerm->truthProb = sqlite3LogEst(p->iTable) - 270;
   }else{
@@ -1532,6 +1533,7 @@ void sqlite3WhereClauseInit(
   pWC->hasOr = 0;
   pWC->pOuter = 0;
   pWC->nTerm = 0;
+  pWC->nBase = 0;
   pWC->nSlot = ArraySize(pWC->aStatic);
   pWC->a = pWC->aStatic;
 }
@@ -1543,9 +1545,17 @@ void sqlite3WhereClauseInit(
 */
 void sqlite3WhereClauseClear(WhereClause *pWC){
   sqlite3 *db = pWC->pWInfo->pParse->db;
+  assert( pWC->nTerm>=pWC->nBase );
   if( pWC->nTerm>0 ){
     WhereTerm *a = pWC->a;
     WhereTerm *aLast = &pWC->a[pWC->nTerm-1];
+#ifdef SQLITE_DEBUG
+    int i;
+    /* Verify that every term past pWC->nBase is virtual */
+    for(i=pWC->nBase; i<pWC->nTerm; i++){
+      assert( (pWC->a[i].wtFlags & TERM_VIRTUAL)!=0 );
+    }
+#endif
     while(1){
       if( a->wtFlags & TERM_DYNAMIC ){
         sqlite3ExprDelete(db, a->pExpr);
