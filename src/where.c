@@ -2028,9 +2028,9 @@ void sqlite3WhereLoopPrint(WhereLoop *p, WhereClause *pWC){
     sqlite3_free(z);
   }
   if( p->wsFlags & WHERE_SKIPSCAN ){
-    sqlite3DebugPrintf(" f %05x %d-%d", p->wsFlags, p->nLTerm,p->nSkip);
+    sqlite3DebugPrintf(" f %06x %d-%d", p->wsFlags, p->nLTerm,p->nSkip);
   }else{
-    sqlite3DebugPrintf(" f %05x N %d", p->wsFlags, p->nLTerm);
+    sqlite3DebugPrintf(" f %06x N %d", p->wsFlags, p->nLTerm);
   }
   sqlite3DebugPrintf(" cost %d,%d,%d\n", p->rSetup, p->rRun, p->nOut);
   if( p->nLTerm && (sqlite3WhereTrace & 0x100)!=0 ){
@@ -2502,6 +2502,9 @@ static void whereLoopOutputAdjust(
       if( pX->iParent>=0 && (&pWC->a[pX->iParent])==pTerm ) break;
     }
     if( j<0 ){
+      if( pLoop->maskSelf==pTerm->prereqAll ){
+        pLoop->wsFlags |= WHERE_CULLED;
+      }
       if( pTerm->truthProb<=0 ){
         /* If a truth probability is specified using the likelihood() hints,
         ** then use the probability provided by the application. */
@@ -2529,7 +2532,9 @@ static void whereLoopOutputAdjust(
       }
     }
   }
-  if( pLoop->nOut > nRow-iReduce )  pLoop->nOut = nRow - iReduce;
+  if( pLoop->nOut > nRow-iReduce ){
+    pLoop->nOut = nRow - iReduce;
+  }
 }
 
 /* 
@@ -4984,22 +4989,30 @@ static SQLITE_NOINLINE void whereCheckIfBloomFilterIsUseful(
 ){
   int i;
   LogEst nSearch;
-  SrcItem *pItem;
 
   assert( pWInfo->nLevel>=2 );
   assert( OptimizationEnabled(pWInfo->pParse->db, SQLITE_BloomFilter) );
   nSearch = pWInfo->a[0].pWLoop->nOut;
   for(i=1; i<pWInfo->nLevel; i++){
     WhereLoop *pLoop = pWInfo->a[i].pWLoop;
-    if( pLoop->nOut<0
+    const int reqFlags = (WHERE_CULLED|WHERE_COLUMN_EQ);
+    if( (pLoop->wsFlags & reqFlags)==reqFlags
      && (pLoop->wsFlags & (WHERE_IPK|WHERE_INDEXED))!=0
-     && (pLoop->wsFlags & WHERE_COLUMN_EQ)!=0
-     && nSearch > (pItem = &pWInfo->pTabList->a[pLoop->iTab])->pTab->nRowLogEst
-     && (pItem->fg.jointype & JT_LEFT)==0
     ){
-      pLoop->wsFlags |= WHERE_BLOOMFILTER;
-      pLoop->wsFlags &= ~WHERE_IDX_ONLY;
-      WHERETRACE(0xffff, ("-> use Bloom-filter on loop %c\n", pLoop->cId));
+      SrcItem *pItem = &pWInfo->pTabList->a[pLoop->iTab];
+      Table *pTab = pItem->pTab;
+      pTab->tabFlags |= TF_StatsUsed;
+      if( nSearch > pTab->nRowLogEst
+       && (pItem->fg.jointype & JT_LEFT)==0
+      ){
+        pLoop->wsFlags |= WHERE_BLOOMFILTER;
+        pLoop->wsFlags &= ~WHERE_IDX_ONLY;
+        WHERETRACE(0xffff, (
+           "-> use Bloom-filter on loop %c because there are ~%.1e "
+           "lookups into %s which has only ~%.1e rows\n",
+           pLoop->cId, (double)sqlite3LogEstToInt(nSearch), pTab->zName,
+           (double)sqlite3LogEstToInt(pTab->nRowLogEst)));
+      }
     }
     nSearch += pLoop->nOut;
   }

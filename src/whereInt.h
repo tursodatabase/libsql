@@ -608,5 +608,6 @@ void sqlite3WhereTabFuncArgs(Parse*, SrcItem*, WhereClause*);
 #define WHERE_IN_SEEKSCAN  0x00100000  /* Seek-scan optimization for IN */
 #define WHERE_TRANSCONS    0x00200000  /* Uses a transitive constraint */
 #define WHERE_BLOOMFILTER  0x00400000  /* Consider using a Bloom-filter */
+#define WHERE_CULLED       0x00800000  /* nOut reduced by extra WHERE terms */
 
 #endif /* !defined(SQLITE_WHEREINT_H) */
