@@ -1,5 +1,5 @@
-C In\sthe\sWhereClause\sobject,\sdo\snot\sassume\sthat\sall\sTERM_VIRTUAL\sterms\sappear\nat\sthe\send\sof\sthe\slist,\sbecause\sthat\sis\sno\slonger\strue.\s\sInstead,\skeep\sa\nseparate\snBase\scount\sthat\sis\sthe\ssize\sof\sthe\slist\sexcluding\sthe\stail\sof\nvirtual\sterms.\s\sUse\snBase\sinstead\sof\snTerm\swhen\sscanning\sterms\sthat\sare\snot\nvirtual.\s\sAdd\sassert()s\sto\svalidate\scorrectness\sof\sWhereClause.
-D 2021-12-08T16:07:22.778
+C Enhance\sthe\ssqlite3SrcListAppendFromTerm()\sroutine\sso\sthat\sit\ssets\sthe\nParser\serror\son\san\sOOM,\scausing\san\searlier\sunwind\sof\sthe\sstack.
+D 2021-12-08T18:50:30.727
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -495,7 +495,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c 81feddbcc60d524518a7afc713b6dab0ad7caadb7370433f117c8c557dcdc889
 F src/btree.h 74d64b8f28cfa4a894d14d4ed64fa432cd697b98b61708d4351482ae15913e22
 F src/btreeInt.h ee9348c4cb9077243b049edc93a82c1f32ca48baeabf2140d41362b9f9139ff7
-F src/build.c 70759481a346322934332485381805c9ba9442bbe7959bf40bdc14140c832517
+F src/build.c 86a15afda3a8c01de8f9671b4e5a54e1102976052a055e73cc4832e2044091f5
 F src/callback.c 106b585da1edd57d75fa579d823a5218e0bf37f191dbf7417eeb4a8a9a267dbc
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 8159d5f706551861c18ec6c8f6bdf105e15ea00367f05d9ab65d31a1077facc1
@@ -1934,7 +1934,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bb9b1a15f7e80483162049dfd981d059dc69d03348b521f7ac164a8cd3ae3cc4
-R 2e19e97323a5794a031526354d3fd247
+P 6024682ca467fa4fe49608772b0bbfa2f8a419b32cebfa715941073c8b29da49
+R 7bf3b67c1460c7978720979a3b51c559
 U drh
-Z 8c650a14815db39748cc380bbb1958b3
+Z b61f652f2f5aa07cb62f1c8531dfb3ea
