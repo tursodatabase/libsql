@@ -1,5 +1,5 @@
-C Enhance\sthe\ssqlite3SrcListAppendFromTerm()\sroutine\sso\sthat\sit\ssets\sthe\nParser\serror\son\san\sOOM,\scausing\san\searlier\sunwind\sof\sthe\sstack.
-D 2021-12-08T18:50:30.727
+C Clarity\stweak\sfor\sdate.c
+D 2021-12-08T20:36:08.193
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -499,7 +499,7 @@ F src/build.c 86a15afda3a8c01de8f9671b4e5a54e1102976052a055e73cc4832e2044091f5
 F src/callback.c 106b585da1edd57d75fa579d823a5218e0bf37f191dbf7417eeb4a8a9a267dbc
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 8159d5f706551861c18ec6c8f6bdf105e15ea00367f05d9ab65d31a1077facc1
-F src/date.c d0f09f7924a27e0d8a41b41a781ccc680b102c35b5e9a94d129d58ba9d849ff2
+F src/date.c b49c12c7564ddd7f1922f76e7a086a6db5b91aa0e729b180cd433e22bab37be0
 F src/dbpage.c 8a01e865bf8bc6d7b1844b4314443a6436c07c3efe1d488ed89e81719047833a
 F src/dbstat.c 861e08690fcb0f2ee1165eff0060ea8d4f3e2ea10f80dab7d32ad70443a6ff2d
 F src/delete.c 19814f621cde10b1771a0dea7fe25d3d7d39975b8d4be4888537d30860e7c08c
@@ -1934,7 +1934,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6024682ca467fa4fe49608772b0bbfa2f8a419b32cebfa715941073c8b29da49
-R 7bf3b67c1460c7978720979a3b51c559
-U drh
-Z b61f652f2f5aa07cb62f1c8531dfb3ea
+P fee469925231d074c17b948605143cfbb2e9595851a797995e7331f1ab2a61ca
+R a155c96fa61b0490e6fe4dac239420d6
+U larrybr
+Z 91a082ea2c3f2144aa72dff5c2fe9b69

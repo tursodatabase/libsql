@@ -523,7 +523,9 @@ static int osLocaltime(time_t *t, struct tm *pTm){
   if( sqlite3GlobalConfig.bLocaltimeFault ) pX = 0;
 #endif
   if( pX ) *pTm = *pX;
+#if SQLITE_THREADSAFE>0
   sqlite3_mutex_leave(mutex);
+#endif
   rc = pX==0;
 #else
 #ifndef SQLITE_UNTESTABLE
