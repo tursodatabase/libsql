@@ -1,5 +1,5 @@
-C Add\sSQLITE_TESTCTRL_LOGEST\sand\senhance\sthe\sLogEst\sutility\sprogram.\nImprovements\sto\stestability\sof\sbloom\sfilters.
-D 2021-12-09T01:28:15.168
+C Add\s".mode\soff"\sand\s".mode\scount"\sto\sthe\sCLI.
+D 2021-12-09T16:17:43.145
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -552,7 +552,7 @@ F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c 4a1db4aadd802683db40ca2dbbb268187bd195f10cbdb7206dbd8ac988795571
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c a7a3d9f54eb24821ec5f67f2e5589b68a5d42d46fc5849d7376886777d93a85a
-F src/shell.c.in cda1eaf0292259b4b0721a5e03af9701fd482ebc37ce6a86ddc94cd9a38bb826
+F src/shell.c.in 239bee1085d94964f02582b0714dc3fc85cfc16e27e95813e4dbc24bb215a7e0
 F src/sqlite.h.in 50c8f27251b11f1c89b06abc6e4085fce15151bcbd355a44609ecb2ba5424841
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8ff2fd2c166150b2e48639f5e506fb44e29f1a3f65031710b9e89d1c126ac839
@@ -1934,7 +1934,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0fb2a4e08f518cb38ea3edc6a084d1e4874fd622ba3cf9101b49b3e7dc1a3f2b
-R 13197c53db0503b249bb051590a0a6df
+P 88b43d798cc5aa59855e92d3e658aee9f0a5def6ffbc5db77af048d75ecdf8cc
+R 9caa791b08a3199a0c8bfc0ce172ce1a
 U drh
-Z 80d7c2199cca2c3c9ca5b22286927a11
+Z 89026152bfb77d836155ab364d1ebd27

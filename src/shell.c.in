@@ -1253,6 +1253,8 @@ struct ShellState {
 #define MODE_Markdown 14 /* Markdown formatting */
 #define MODE_Table   15  /* MySQL-style table formatting */
 #define MODE_Box     16  /* Unicode box-drawing characters */
+#define MODE_Count   17  /* Output only a count of the rows of output */
+#define MODE_Off     18  /* No query output shown */
 
 static const char *modeDescr[] = {
   "line",
@@ -1271,7 +1273,9 @@ static const char *modeDescr[] = {
   "json",
   "markdown",
   "table",
-  "box"
+  "box",
+  "count",
+  "off"
 };
 
 /*
@@ -2093,6 +2097,10 @@ static int shell_callback(
 
   if( azArg==0 ) return 0;
   switch( p->cMode ){
+    case MODE_Count:
+    case MODE_Off: {
+      break;
+    }
     case MODE_Line: {
       int w = 5;
       if( azArg==0 ) break;
@@ -3310,6 +3318,7 @@ static void exec_prepared_stmt(
   sqlite3_stmt *pStmt                              /* Statment to run */
 ){
   int rc;
+  sqlite3_uint64 nRow = 0;
 
   if( pArg->cMode==MODE_Column
    || pArg->cMode==MODE_Table
@@ -3342,6 +3351,7 @@ static void exec_prepared_stmt(
         azCols[i] = (char *)sqlite3_column_name(pStmt, i);
       }
       do{
+        nRow++;
         /* extract the data and data types */
         for(i=0; i<nCol; i++){
           aiTypes[i] = x = sqlite3_column_type(pStmt, i);
@@ -3369,6 +3379,8 @@ static void exec_prepared_stmt(
       sqlite3_free(pData);
       if( pArg->cMode==MODE_Json ){
         fputs("]\n", pArg->out);
+      }else if( pArg->cMode==MODE_Count ){
+        printf("%llu row%s\n", nRow, nRow!=1 ? "s" : "");
       }
     }
   }
@@ -8879,6 +8891,10 @@ static int do_meta_command(char *zLine, ShellState *p){
       p->mode = MODE_Table;
     }else if( c2=='b' && strncmp(azArg[1],"box",n2)==0 ){
       p->mode = MODE_Box;
+    }else if( c2=='c' && strncmp(azArg[1],"count",n2)==0 ){
+      p->mode = MODE_Count;
+    }else if( c2=='o' && strncmp(azArg[1],"off",n2)==0 ){
+      p->mode = MODE_Off;
     }else if( c2=='j' && strncmp(azArg[1],"json",n2)==0 ){
       p->mode = MODE_Json;
     }else if( nArg==1 ){
