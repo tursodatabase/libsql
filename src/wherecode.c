@@ -1371,7 +1371,7 @@ static void whereApplyPartialIndexConstraints(
 **
 ** We know that an inner loop uses a Bloom filter because it has the
 ** WhereLevel.regFilter set.  If an inner-loop Bloom filter is checked,
-** then clear the WhereLoeve.regFilter value to prevent the Bloom filter
+** then clear the WhereLevel.regFilter value to prevent the Bloom filter
 ** from being checked a second time when the inner loop is evaluated.
 */
 static SQLITE_NOINLINE void filterPullDown(

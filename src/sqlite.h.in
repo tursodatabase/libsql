@@ -8468,12 +8468,15 @@ int sqlite3_stmt_status(sqlite3_stmt*, int op,int resetFlg);
 ** The counter is incremented on the first [sqlite3_step()] call of each
 ** cycle.
 **
-** [[SQLITE_STMTSTATUS_FILTER HIT]] <dt>SQLITE_STMTSTATUS_FILTER_HIT</dt>
-** <dd>^This is the number of times that a join step was bypassed because
-** a Bloom filtered returned non-found.  The corresponding
-** SQLITE_STMTSTATUS_FILTER_MISS value is the number of times that the
-** Bloom filter returned a find, and thus the join step had to be processed
-** as normal.
+** [[SQLITE_STMTSTATUS_FILTER_MISS]]
+** [[SQLITE_STMTSTATUS_FILTER HIT]] 
+** <dt>SQLITE_STMTSTATUS_FILTER_HIT<br>
+** SQLITE_STMTSTATUS_FILTER_MISS</dt>
+** <dd>^SQLITE_STMTSTATUS_FILTER_HIT is the number of times that a join
+** step was bypassed because a Bloom filter returned not-found.  The
+** corresponding SQLITE_STMTSTATUS_FILTER_MISS value is the number of
+** times that the Bloom filter returned a find, and thus the join step
+** had to be processed as normal.
 **
 ** [[SQLITE_STMTSTATUS_MEMUSED]] <dt>SQLITE_STMTSTATUS_MEMUSED</dt>
 ** <dd>^This is the approximate number of bytes of heap memory

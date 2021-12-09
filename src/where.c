@@ -4977,10 +4977,9 @@ static SQLITE_NOINLINE Bitmask whereOmitNoopJoin(
 **        filter.
 **   (2)  Some searches are expected to find zero rows.  (This is determined
 **        by the WHERE_SELFCULL flag on the term.)
-**   (3)  The table being searched is not the right table of a LEFT JOIN
-**   (4)  Bloom-filter processing is not disabled.  (Checked by the
+**   (3)  Bloom-filter processing is not disabled.  (Checked by the
 **        caller.)
-**   (5)  The size of the table being searched is known by ANALYZE.
+**   (4)  The size of the table being searched is known by ANALYZE.
 **
 ** This block of code merely checks to see if a Bloom filter would be
 ** appropriate, and if so sets the WHERE_BLOOMFILTER flag on the
@@ -5000,6 +4999,7 @@ static SQLITE_NOINLINE void whereCheckIfBloomFilterIsUseful(
     WhereLoop *pLoop = pWInfo->a[i].pWLoop;
     const int reqFlags = (WHERE_SELFCULL|WHERE_COLUMN_EQ);
     if( (pLoop->wsFlags & reqFlags)==reqFlags
+     /* vvvvvv--- Always the case if WHERE_COLUMN_EQ is defined */
      && ALWAYS((pLoop->wsFlags & (WHERE_IPK|WHERE_INDEXED))!=0)
     ){
       SrcItem *pItem = &pWInfo->pTabList->a[pLoop->iTab];

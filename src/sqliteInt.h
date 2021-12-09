@@ -3927,7 +3927,6 @@ struct Sqlite3Config {
   int iOnceResetThreshold;          /* When to reset OP_Once counters */
   u32 szSorterRef;                  /* Min size in bytes to use sorter-refs */
   unsigned int iPrngSeed;           /* Alternative fixed seed for the PRNG */
-  int iEstCountScale;               /* Multiple RowCountEst() by this amount */
   /* vvvv--- must be last ---vvv */
 #ifdef SQLITE_DEBUG
   sqlite3_int64 aTune[SQLITE_NTUNE]; /* Tuning parameters */
@@ -4294,9 +4293,6 @@ void sqlite3MemSetDefault(void);
 void sqlite3BenignMallocHooks(void (*)(void), void (*)(void));
 #endif
 int sqlite3HeapNearlyFull(void);
-#if 0
-sqlite3_int64 sqlite3EstMemoryAvailable(void);
-#endif
 
 /*
 ** On systems with ample stack space and that support alloca(), make

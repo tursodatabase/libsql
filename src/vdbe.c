@@ -672,23 +672,6 @@ static Mem *out2Prerelease(Vdbe *p, VdbeOp *pOp){
 }
 
 /*
-** The minimum size (in bytes) for a Bloom filter.
-**
-** No Bloom filter will be smaller than this many bytes.  But they
-** may be larger.
-*/
-#ifndef SQLITE_BLOOM_MIN
-# define SQLITE_BLOOM_MIN 10000
-#endif
-
-/*
-** The maximum size (in bytes) for a Bloom filter.
-*/
-#ifndef SQLITE_BLOOM_MAX
-# define SQLITE_BLOOM_MAX 1000000
-#endif
-
-/*
 ** Compute a bloom filter hash using pOp->p4.i registers from aMem[] beginning
 ** with pOp->p3.  Return the hash.
 */
