@@ -1,5 +1,5 @@
-C Clarity\stweak\sfor\sdate.c
-D 2021-12-08T20:36:08.193
+C Do\snot\sattempt\sto\sreprepare\sa\sprepared\sstatement\sthat\sreturns\sSQLITE_SCHEMA\nif\sthere\swas\san\sOOM.\s\sThis\senhancement\ssupercedes\scheck-in\n[fee469925231d074].
+D 2021-12-09T14:09:47.530
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -495,7 +495,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c 81feddbcc60d524518a7afc713b6dab0ad7caadb7370433f117c8c557dcdc889
 F src/btree.h 74d64b8f28cfa4a894d14d4ed64fa432cd697b98b61708d4351482ae15913e22
 F src/btreeInt.h ee9348c4cb9077243b049edc93a82c1f32ca48baeabf2140d41362b9f9139ff7
-F src/build.c 86a15afda3a8c01de8f9671b4e5a54e1102976052a055e73cc4832e2044091f5
+F src/build.c 107e1ecc98ca8965c2e08fc283a06067a1d829b1a82531a6f0a0e0fa60e7b0c1
 F src/callback.c 106b585da1edd57d75fa579d823a5218e0bf37f191dbf7417eeb4a8a9a267dbc
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 8159d5f706551861c18ec6c8f6bdf105e15ea00367f05d9ab65d31a1077facc1
@@ -546,7 +546,7 @@ F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c 54881292a9a5db202b2c0ac541c5e3ef9a5e8c4f1c1383adb2601d5499a60e65
 F src/pragma.c c536665ce8431c8b1efbf7e0a5c01852f49f7bf28f1954f8118b2d28e4a3797f
 F src/pragma.h 87330ed2fbfa2a1274de93ca0ab850fba336189228cb256089202c3b52766fad
-F src/prepare.c 7520a371f1de8a53e3023eba75bc0d3473196833c6363d285cad8d002eabef0b
+F src/prepare.c 40961a1170a4c4151a90dae29dd00fc6c155f1af8246abeeeb8f0a10b3fb9719
 F src/printf.c 5901672228f305f7d493cbc4e7d76a61a5caecdbc1cd06b1f9ec42ea4265cf8d
 F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c 4a1db4aadd802683db40ca2dbbb268187bd195f10cbdb7206dbd8ac988795571
@@ -1934,7 +1934,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fee469925231d074c17b948605143cfbb2e9595851a797995e7331f1ab2a61ca
-R a155c96fa61b0490e6fe4dac239420d6
-U larrybr
-Z 91a082ea2c3f2144aa72dff5c2fe9b69
+P db58b2def014bdb146751110488a088767530ca2557baf73d6181a2558bbe6d3
+R 55b31a86584594f0db916a3c47bba8ab
+U drh
+Z 92ddcb516729f4a545eea1159efb8c91

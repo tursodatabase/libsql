@@ -4962,7 +4962,6 @@ SrcList *sqlite3SrcListAppendFromTerm(
 
 append_from_error:
   assert( p==0 );
-  if( pParse->nErr==0 ) sqlite3ErrorMsg(pParse, "out of memory");
   sqlite3ExprDelete(db, pOn);
   sqlite3IdListDelete(db, pUsing);
   sqlite3SelectDelete(db, pSubquery);
