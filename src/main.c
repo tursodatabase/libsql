@@ -4347,6 +4347,26 @@ int sqlite3_test_control(int op, ...){
        break;
     }
 
+    /* sqlite3_test_control(SQLITE_TESTCTRL_LOGEST,
+    **      double fIn,     // Input value
+    **      int *pLogEst,   // sqlite3LogEstFromDouble(fIn)
+    **      u64 *pInt,      // sqlite3LogEstToInt(*pLogEst)
+    **      int *pLogEst2   // sqlite3LogEst(*pInt)
+    ** );
+    **
+    ** Test access for the LogEst conversion routines.
+    */
+    case SQLITE_TESTCTRL_LOGEST: {
+      double rIn = va_arg(ap, double);
+      LogEst rLogEst = sqlite3LogEstFromDouble(rIn);
+      u64 iInt = sqlite3LogEstToInt(rLogEst);
+      va_arg(ap, int*)[0] = rLogEst;
+      va_arg(ap, u64*)[0] = iInt;
+      va_arg(ap, int*)[0] = sqlite3LogEst(iInt);
+      break;
+    }
+ 
+
 #if defined(SQLITE_DEBUG) && !defined(SQLITE_OMIT_WSD)
     /* sqlite3_test_control(SQLITE_TESTCTRL_TUNE, id, *piValue)
     **

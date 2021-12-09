@@ -430,7 +430,7 @@ struct Vdbe {
   bft bIsReader:1;        /* True for statements that read */
   yDbMask btreeMask;      /* Bitmask of db->aDb[] entries referenced */
   yDbMask lockMask;       /* Subset of btreeMask that requires a lock */
-  u32 aCounter[7];        /* Counters used by sqlite3_stmt_status() */
+  u32 aCounter[9];        /* Counters used by sqlite3_stmt_status() */
   char *zSql;             /* Text of the SQL statement that generated this */
 #ifdef SQLITE_ENABLE_NORMALIZE
   char *zNormSql;         /* Normalization of the associated SQL statement */
@@ -538,7 +538,7 @@ int sqlite3VdbeMemSetRowSet(Mem*);
 int sqlite3VdbeMemMakeWriteable(Mem*);
 int sqlite3VdbeMemStringify(Mem*, u8, u8);
 int sqlite3IntFloatCompare(i64,double);
-i64 sqlite3VdbeIntValue(Mem*);
+i64 sqlite3VdbeIntValue(const Mem*);
 int sqlite3VdbeMemIntegerify(Mem*);
 double sqlite3VdbeRealValue(Mem*);
 int sqlite3VdbeBooleanValue(Mem*, int ifNull);

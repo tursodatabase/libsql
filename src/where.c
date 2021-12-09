@@ -717,9 +717,9 @@ static void whereTraceIndexInfoOutputs(sqlite3_index_info *p){
 ** index existed.
 */
 static int termCanDriveIndex(
-  WhereTerm *pTerm,              /* WHERE clause term to check */
-  SrcItem *pSrc,                 /* Table we are trying to access */
-  Bitmask notReady               /* Tables in outer loops of the join */
+  const WhereTerm *pTerm,        /* WHERE clause term to check */
+  const SrcItem *pSrc,           /* Table we are trying to access */
+  const Bitmask notReady         /* Tables in outer loops of the join */
 ){
   char aff;
   if( pTerm->leftCursor!=pSrc->iCursor ) return 0;
@@ -750,11 +750,11 @@ static int termCanDriveIndex(
 ** and to set up the WhereLevel object pLevel so that the code generator
 ** makes use of the automatic index.
 */
-static void constructAutomaticIndex(
+static SQLITE_NOINLINE void constructAutomaticIndex(
   Parse *pParse,              /* The parsing context */
-  WhereClause *pWC,           /* The WHERE clause */
-  SrcItem *pSrc,              /* The FROM clause term to get the next index */
-  Bitmask notReady,           /* Mask of cursors that are not available */
+  const WhereClause *pWC,     /* The WHERE clause */
+  const SrcItem *pSrc,        /* The FROM clause term to get the next index */
+  const Bitmask notReady,     /* Mask of cursors that are not available */
   WhereLevel *pLevel          /* Write new index here */
 ){
   int nKeyCol;                /* Number of columns in the constructed index */
@@ -909,6 +909,10 @@ static void constructAutomaticIndex(
   sqlite3VdbeAddOp2(v, OP_OpenAutoindex, pLevel->iIdxCur, nKeyCol+1);
   sqlite3VdbeSetP4KeyInfo(pParse, pIdx);
   VdbeComment((v, "for %s", pTable->zName));
+  if( OptimizationEnabled(pParse->db, SQLITE_BloomFilter) ){
+    pLevel->regFilter = ++pParse->nMem;
+    sqlite3VdbeAddOp2(v, OP_Blob, 10000, pLevel->regFilter);
+  }
 
   /* Fill the automatic index with content */
   pTabItem = &pWC->pWInfo->pTabList->a[pLevel->iFrom];
@@ -931,6 +935,10 @@ static void constructAutomaticIndex(
   regBase = sqlite3GenerateIndexKey(
       pParse, pIdx, pLevel->iTabCur, regRecord, 0, 0, 0, 0
   );
+  if( pLevel->regFilter ){
+    sqlite3VdbeAddOp4Int(v, OP_FilterAdd, pLevel->regFilter, 0,
+                         regBase, pLoop->u.btree.nEq);
+  }
   sqlite3VdbeAddOp2(v, OP_IdxInsert, pLevel->iIdxCur, regRecord);
   sqlite3VdbeChangeP5(v, OPFLAG_USESEEKRESULT);
   if( pPartial ) sqlite3VdbeResolveLabel(v, iContinue);
@@ -956,6 +964,123 @@ end_auto_index_create:
   sqlite3ExprDelete(pParse->db, pPartial);
 }
 #endif /* SQLITE_OMIT_AUTOMATIC_INDEX */
+
+/*
+** Generate bytecode that will initialize a Bloom filter that is appropriate
+** for pLevel.
+**
+** If there are inner loops within pLevel that have the WHERE_BLOOMFILTER
+** flag set, initialize a Bloomfilter for them as well.  Except don't do
+** this recursive initialization if the SQLITE_BloomPulldown optimization has
+** been turned off.
+**
+** When the Bloom filter is initialized, the WHERE_BLOOMFILTER flag is cleared
+** from the loop, but the regFilter value is set to a register that implements
+** the Bloom filter.  When regFilter is positive, the
+** sqlite3WhereCodeOneLoopStart() will generate code to test the Bloom filter
+** and skip the subsequence B-Tree seek if the Bloom filter indicates that
+** no matching rows exist.
+**
+** This routine may only be called if it has previously been determined that
+** the loop would benefit from a Bloom filter, and the WHERE_BLOOMFILTER bit
+** is set.
+*/
+static SQLITE_NOINLINE void constructBloomFilter(
+  WhereInfo *pWInfo,    /* The WHERE clause */
+  int iLevel,           /* Index in pWInfo->a[] that is pLevel */
+  WhereLevel *pLevel,   /* Make a Bloom filter for this FROM term */
+  Bitmask notReady      /* Loops that are not ready */
+){
+  int addrOnce;                        /* Address of opening OP_Once */
+  int addrTop;                         /* Address of OP_Rewind */
+  int addrCont;                        /* Jump here to skip a row */
+  const WhereTerm *pTerm;              /* For looping over WHERE clause terms */
+  const WhereTerm *pWCEnd;             /* Last WHERE clause term */
+  Parse *pParse = pWInfo->pParse;      /* Parsing context */
+  Vdbe *v = pParse->pVdbe;             /* VDBE under construction */
+  WhereLoop *pLoop = pLevel->pWLoop;   /* The loop being coded */
+  int iCur;                            /* Cursor for table getting the filter */
+
+  assert( pLoop!=0 );
+  assert( v!=0 );
+  assert( pLoop->wsFlags & WHERE_BLOOMFILTER );
+
+  addrOnce = sqlite3VdbeAddOp0(v, OP_Once); VdbeCoverage(v);
+  do{
+    const SrcItem *pItem;
+    const Table *pTab;
+    u64 sz;
+    sqlite3WhereExplainBloomFilter(pParse, pWInfo, pLevel);
+    addrCont = sqlite3VdbeMakeLabel(pParse);
+    iCur = pLevel->iTabCur;
+    pLevel->regFilter = ++pParse->nMem;
+
+    /* The Bloom filter is a Blob held in a register.  Initialize it
+    ** to zero-filled blob of at least 80K bits, but maybe more if the
+    ** estimated size of the table is larger.  We could actually
+    ** measure the size of the table at run-time using OP_Count with
+    ** P3==1 and use that value to initialize the blob.  But that makes
+    ** testing complicated.  By basing the blob size on the value in the
+    ** sqlite_stat1 table, testing is much easier.
+    */
+    pItem = &pWInfo->pTabList->a[pLevel->iFrom];
+    assert( pItem!=0 );
+    pTab = pItem->pTab;
+    assert( pTab!=0 );
+    sz = sqlite3LogEstToInt(pTab->nRowLogEst);
+    if( sz<10000 ){
+      sz = 10000;
+    }else if( sz>10000000 ){
+      sz = 10000000;
+    }
+    sqlite3VdbeAddOp2(v, OP_Blob, (int)sz, pLevel->regFilter);
+
+    addrTop = sqlite3VdbeAddOp1(v, OP_Rewind, iCur); VdbeCoverage(v);
+    pWCEnd = &pWInfo->sWC.a[pWInfo->sWC.nTerm];
+    for(pTerm=pWInfo->sWC.a; pTerm<pWCEnd; pTerm++){
+      Expr *pExpr = pTerm->pExpr;
+      if( (pTerm->wtFlags & TERM_VIRTUAL)==0
+       && sqlite3ExprIsTableConstant(pExpr, iCur)
+      ){
+        sqlite3ExprIfFalse(pParse, pTerm->pExpr, addrCont, SQLITE_JUMPIFNULL);
+      }
+    }
+    if( pLoop->wsFlags & WHERE_IPK ){
+      int r1 = sqlite3GetTempReg(pParse);
+      sqlite3VdbeAddOp2(v, OP_Rowid, iCur, r1);
+      sqlite3VdbeAddOp4Int(v, OP_FilterAdd, pLevel->regFilter, 0, r1, 1);
+      sqlite3ReleaseTempReg(pParse, r1);
+    }else{
+      Index *pIdx = pLoop->u.btree.pIndex;
+      int n = pLoop->u.btree.nEq;
+      int r1 = sqlite3GetTempRange(pParse, n);
+      int jj;
+      for(jj=0; jj<n; jj++){
+        int iCol = pIdx->aiColumn[jj];
+        assert( pIdx->pTable==pItem->pTab );
+        sqlite3ExprCodeGetColumnOfTable(v, pIdx->pTable, iCur, iCol,r1+jj);
+      }
+      sqlite3VdbeAddOp4Int(v, OP_FilterAdd, pLevel->regFilter, 0, r1, n);
+      sqlite3ReleaseTempRange(pParse, r1, n);
+    }
+    sqlite3VdbeResolveLabel(v, addrCont);
+    sqlite3VdbeAddOp2(v, OP_Next, pLevel->iTabCur, addrTop+1);
+    VdbeCoverage(v);
+    sqlite3VdbeJumpHere(v, addrTop);
+    pLoop->wsFlags &= ~WHERE_BLOOMFILTER;
+    if( OptimizationDisabled(pParse->db, SQLITE_BloomPulldown) ) break;
+    while( iLevel < pWInfo->nLevel ){
+      iLevel++;
+      pLevel = &pWInfo->a[iLevel];
+      pLoop = pLevel->pWLoop;
+      if( pLoop==0 ) continue;
+      if( pLoop->prereq & notReady ) continue;
+      if( pLoop->wsFlags & WHERE_BLOOMFILTER ) break;
+    }
+  }while( iLevel < pWInfo->nLevel );
+  sqlite3VdbeJumpHere(v, addrOnce);
+}
+
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 /*
@@ -1899,9 +2024,9 @@ void sqlite3WhereLoopPrint(WhereLoop *p, WhereClause *pWC){
     sqlite3_free(z);
   }
   if( p->wsFlags & WHERE_SKIPSCAN ){
-    sqlite3DebugPrintf(" f %05x %d-%d", p->wsFlags, p->nLTerm,p->nSkip);
+    sqlite3DebugPrintf(" f %06x %d-%d", p->wsFlags, p->nLTerm,p->nSkip);
   }else{
-    sqlite3DebugPrintf(" f %05x N %d", p->wsFlags, p->nLTerm);
+    sqlite3DebugPrintf(" f %06x N %d", p->wsFlags, p->nLTerm);
   }
   sqlite3DebugPrintf(" cost %d,%d,%d\n", p->rSetup, p->rRun, p->nOut);
   if( p->nLTerm && (sqlite3WhereTrace & 0x100)!=0 ){
@@ -2373,6 +2498,13 @@ static void whereLoopOutputAdjust(
       if( pX->iParent>=0 && (&pWC->a[pX->iParent])==pTerm ) break;
     }
     if( j<0 ){
+      if( pLoop->maskSelf==pTerm->prereqAll ){
+        /* If there are extra terms in the WHERE clause not used by an index
+        ** that depend only on the table being scanned, and that will tend to
+        ** cause many rows to be omitted, then mark that table as
+        ** "self-culling". */
+        pLoop->wsFlags |= WHERE_SELFCULL;
+      }
       if( pTerm->truthProb<=0 ){
         /* If a truth probability is specified using the likelihood() hints,
         ** then use the probability provided by the application. */
@@ -2400,7 +2532,9 @@ static void whereLoopOutputAdjust(
       }
     }
   }
-  if( pLoop->nOut > nRow-iReduce )  pLoop->nOut = nRow - iReduce;
+  if( pLoop->nOut > nRow-iReduce ){
+    pLoop->nOut = nRow - iReduce;
+  }
 }
 
 /* 
@@ -4835,6 +4969,60 @@ static SQLITE_NOINLINE Bitmask whereOmitNoopJoin(
 }
 
 /*
+** Check to see if there are any SEARCH loops that might benefit from
+** using a Bloom filter.  Consider a Bloom filter if:
+**
+**   (1)  The SEARCH happens more than N times where N is the number
+**        of rows in the table that is being considered for the Bloom
+**        filter.
+**   (2)  Some searches are expected to find zero rows.  (This is determined
+**        by the WHERE_SELFCULL flag on the term.)
+**   (3)  Bloom-filter processing is not disabled.  (Checked by the
+**        caller.)
+**   (4)  The size of the table being searched is known by ANALYZE.
+**
+** This block of code merely checks to see if a Bloom filter would be
+** appropriate, and if so sets the WHERE_BLOOMFILTER flag on the
+** WhereLoop.  The implementation of the Bloom filter comes further
+** down where the code for each WhereLoop is generated.
+*/
+static SQLITE_NOINLINE void whereCheckIfBloomFilterIsUseful(
+  const WhereInfo *pWInfo
+){
+  int i;
+  LogEst nSearch;
+
+  assert( pWInfo->nLevel>=2 );
+  assert( OptimizationEnabled(pWInfo->pParse->db, SQLITE_BloomFilter) );
+  nSearch = pWInfo->a[0].pWLoop->nOut;
+  for(i=1; i<pWInfo->nLevel; i++){
+    WhereLoop *pLoop = pWInfo->a[i].pWLoop;
+    const int reqFlags = (WHERE_SELFCULL|WHERE_COLUMN_EQ);
+    if( (pLoop->wsFlags & reqFlags)==reqFlags
+     /* vvvvvv--- Always the case if WHERE_COLUMN_EQ is defined */
+     && ALWAYS((pLoop->wsFlags & (WHERE_IPK|WHERE_INDEXED))!=0)
+    ){
+      SrcItem *pItem = &pWInfo->pTabList->a[pLoop->iTab];
+      Table *pTab = pItem->pTab;
+      pTab->tabFlags |= TF_StatsUsed;
+      if( nSearch > pTab->nRowLogEst
+       && (pTab->tabFlags & TF_HasStat1)!=0
+      ){
+        testcase( pItem->fg.jointype & JT_LEFT );
+        pLoop->wsFlags |= WHERE_BLOOMFILTER;
+        pLoop->wsFlags &= ~WHERE_IDX_ONLY;
+        WHERETRACE(0xffff, (
+           "-> use Bloom-filter on loop %c because there are ~%.1e "
+           "lookups into %s which has only ~%.1e rows\n",
+           pLoop->cId, (double)sqlite3LogEstToInt(nSearch), pTab->zName,
+           (double)sqlite3LogEstToInt(pTab->nRowLogEst)));
+      }
+    }
+    nSearch += pLoop->nOut;
+  }
+}
+
+/*
 ** Generate the beginning of the loop used for WHERE clause processing.
 ** The return value is a pointer to an opaque structure that contains
 ** information needed to terminate the loop.  Later, the calling routine
@@ -5223,6 +5411,15 @@ WhereInfo *sqlite3WhereBegin(
     assert( nTabList>0 );
   }
 
+  /* Check to see if there are any SEARCH loops that might benefit from
+  ** using a Bloom filter.
+  */
+  if( pWInfo->nLevel>=2
+   && OptimizationEnabled(db, SQLITE_BloomFilter)
+  ){
+    whereCheckIfBloomFilterIsUseful(pWInfo);
+  }
+
 #if defined(WHERETRACE_ENABLED)
   if( sqlite3WhereTrace & 0x100 ){ /* Display all terms of the WHERE clause */
     sqlite3DebugPrintf("---- WHERE clause at end of analysis:\n");
@@ -5411,13 +5608,17 @@ WhereInfo *sqlite3WhereBegin(
     if( pParse->nErr ) goto whereBeginError;
     pLevel = &pWInfo->a[ii];
     wsFlags = pLevel->pWLoop->wsFlags;
+    if( (wsFlags & (WHERE_AUTO_INDEX|WHERE_BLOOMFILTER))!=0 ){
+      if( (wsFlags & WHERE_AUTO_INDEX)!=0 ){
 #ifndef SQLITE_OMIT_AUTOMATIC_INDEX
-    if( (pLevel->pWLoop->wsFlags & WHERE_AUTO_INDEX)!=0 ){
-      constructAutomaticIndex(pParse, &pWInfo->sWC,
-                &pTabList->a[pLevel->iFrom], notReady, pLevel);
+        constructAutomaticIndex(pParse, &pWInfo->sWC,
+                  &pTabList->a[pLevel->iFrom], notReady, pLevel);
+#endif
+      }else{
+        constructBloomFilter(pWInfo, ii, pLevel, notReady);
+      }
       if( db->mallocFailed ) goto whereBeginError;
     }
-#endif
     addrExplain = sqlite3WhereExplainOneScan(
         pParse, pTabList, pLevel, wctrlFlags
     );

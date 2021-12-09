@@ -596,12 +596,12 @@ static SQLITE_NOINLINE i64 doubleToInt64(double r){
 **
 ** If pMem represents a string value, its encoding might be changed.
 */
-static SQLITE_NOINLINE i64 memIntValue(Mem *pMem){
+static SQLITE_NOINLINE i64 memIntValue(const Mem *pMem){
   i64 value = 0;
   sqlite3Atoi64(pMem->z, &value, pMem->n, pMem->enc);
   return value;
 }
-i64 sqlite3VdbeIntValue(Mem *pMem){
+i64 sqlite3VdbeIntValue(const Mem *pMem){
   int flags;
   assert( pMem!=0 );
   assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
