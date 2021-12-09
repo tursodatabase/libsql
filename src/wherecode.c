@@ -1393,13 +1393,12 @@ static SQLITE_NOINLINE void filterPullDown(
     if( pLoop->prereq & notReady ) continue;
     if( pLoop->wsFlags & WHERE_IPK ){
       WhereTerm *pTerm = pLoop->aLTerm[0];
-      int r1, regRowid;
+      int regRowid;
       assert( pTerm!=0 );
       assert( pTerm->pExpr!=0 );
       testcase( pTerm->wtFlags & TERM_VIRTUAL );
-      r1 = sqlite3GetTempReg(pParse);
-      regRowid = codeEqualityTerm(pParse, pTerm, pLevel, 0, 0, r1);
-      if( regRowid!=r1 ) sqlite3ReleaseTempReg(pParse, r1);
+      regRowid = sqlite3GetTempReg(pParse);
+      regRowid = codeEqualityTerm(pParse, pTerm, pLevel, 0, 0, regRowid);
       sqlite3VdbeAddOp4Int(pParse->pVdbe, OP_Filter, pLevel->regFilter,
                            addrNxt, regRowid, 1);
       VdbeCoverage(pParse->pVdbe);

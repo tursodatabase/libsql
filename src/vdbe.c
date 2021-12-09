@@ -8222,10 +8222,8 @@ case OP_Filter: {          /* jump */
 
   assert( pOp->p1>0 && pOp->p1<=(p->nMem+1 - p->nCursor) );
   pIn1 = &aMem[pOp->p1];
-  if( (pIn1->flags & MEM_Blob)==0 || NEVER(pIn1->n<=0) ){
-    VdbeBranchTaken(0, 2);
-    break;
-  }
+  assert( (pIn1->flags & MEM_Blob)!=0 );
+  assert( pIn1->n >= 1 );
   h = filterHash(aMem, pOp);
 #ifdef SQLITE_DEBUG
   if( db->flags&SQLITE_VdbeTrace ){

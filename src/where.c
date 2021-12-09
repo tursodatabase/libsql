@@ -1009,7 +1009,7 @@ static SQLITE_NOINLINE void constructBloomFilter(
   do{
     const SrcItem *pItem;
     const Table *pTab;
-    int sz;
+    u64 sz;
     sqlite3WhereExplainBloomFilter(pParse, pWInfo, pLevel);
     addrCont = sqlite3VdbeMakeLabel(pParse);
     iCur = pLevel->iTabCur;
@@ -1027,17 +1027,13 @@ static SQLITE_NOINLINE void constructBloomFilter(
     assert( pItem!=0 );
     pTab = pItem->pTab;
     assert( pTab!=0 );
-    if( pTab->tabFlags & TF_HasStat1 ){
-      sz = sqlite3LogEstToInt(pItem->pTab->nRowLogEst);
-      if( sz<10000 ){
-        sz = 10000;
-      }else if( sz>10000000 ){
-        sz = 10000000;
-      }
-    }else{
+    sz = sqlite3LogEstToInt(pTab->nRowLogEst);
+    if( sz<10000 ){
       sz = 10000;
+    }else if( sz>10000000 ){
+      sz = 10000000;
     }
-    sqlite3VdbeAddOp2(v, OP_Blob, sz, pLevel->regFilter);
+    sqlite3VdbeAddOp2(v, OP_Blob, (int)sz, pLevel->regFilter);
 
     addrTop = sqlite3VdbeAddOp1(v, OP_Rewind, iCur); VdbeCoverage(v);
     pWCEnd = &pWInfo->sWC.a[pWInfo->sWC.nTerm];
@@ -2503,7 +2499,11 @@ static void whereLoopOutputAdjust(
     }
     if( j<0 ){
       if( pLoop->maskSelf==pTerm->prereqAll ){
-        pLoop->wsFlags |= WHERE_CULLED;
+        /* If there are extra terms in the WHERE clause not used by an index
+        ** that depend only on the table being scanned, and that will tend to
+        ** cause many rows to be omitted, then mark that table as
+        ** "self-culling". */
+        pLoop->wsFlags |= WHERE_SELFCULL;
       }
       if( pTerm->truthProb<=0 ){
         /* If a truth probability is specified using the likelihood() hints,
@@ -4974,10 +4974,13 @@ static SQLITE_NOINLINE Bitmask whereOmitNoopJoin(
 **
 **   (1)  The SEARCH happens more than N times where N is the number
 **        of rows in the table that is being considered for the Bloom
-**        filter.  (TO DO:  Make this condition more precise.)
-**   (2)  Most searches are expected to find zero rows
+**        filter.
+**   (2)  Some searches are expected to find zero rows.  (This is determined
+**        by the WHERE_SELFCULL flag on the term.)
 **   (3)  The table being searched is not the right table of a LEFT JOIN
-**   (4)  Bloom-filter processing is not disabled
+**   (4)  Bloom-filter processing is not disabled.  (Checked by the
+**        caller.)
+**   (5)  The size of the table being searched is known by ANALYZE.
 **
 ** This block of code merely checks to see if a Bloom filter would be
 ** appropriate, and if so sets the WHERE_BLOOMFILTER flag on the
@@ -4995,7 +4998,7 @@ static SQLITE_NOINLINE void whereCheckIfBloomFilterIsUseful(
   nSearch = pWInfo->a[0].pWLoop->nOut;
   for(i=1; i<pWInfo->nLevel; i++){
     WhereLoop *pLoop = pWInfo->a[i].pWLoop;
-    const int reqFlags = (WHERE_CULLED|WHERE_COLUMN_EQ);
+    const int reqFlags = (WHERE_SELFCULL|WHERE_COLUMN_EQ);
     if( (pLoop->wsFlags & reqFlags)==reqFlags
      && (pLoop->wsFlags & (WHERE_IPK|WHERE_INDEXED))!=0
     ){
@@ -5004,6 +5007,7 @@ static SQLITE_NOINLINE void whereCheckIfBloomFilterIsUseful(
       pTab->tabFlags |= TF_StatsUsed;
       if( nSearch > pTab->nRowLogEst
        && (pItem->fg.jointype & JT_LEFT)==0
+       && (pTab->tabFlags & TF_HasStat1)!=0
       ){
         pLoop->wsFlags |= WHERE_BLOOMFILTER;
         pLoop->wsFlags &= ~WHERE_IDX_ONLY;

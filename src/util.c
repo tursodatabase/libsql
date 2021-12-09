@@ -1586,7 +1586,6 @@ LogEst sqlite3LogEst(u64 x){
   return a[x&7] + y - 10;
 }
 
-#ifndef SQLITE_OMIT_VIRTUALTABLE
 /*
 ** Convert a double into a LogEst
 ** In other words, compute an approximation for 10*log2(x).
@@ -1601,7 +1600,6 @@ LogEst sqlite3LogEstFromDouble(double x){
   e = (a>>52) - 1022;
   return e*10;
 }
-#endif /* SQLITE_OMIT_VIRTUALTABLE */
 
 /*
 ** Convert a LogEst into an integer.
