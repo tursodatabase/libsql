@@ -1,5 +1,5 @@
-C Do\snot\sattempt\sto\sreprepare\sa\sprepared\sstatement\sthat\sreturns\sSQLITE_SCHEMA\nif\sthere\swas\san\sOOM.\s\sThis\senhancement\ssupercedes\scheck-in\n[fee469925231d074].
-D 2021-12-09T14:09:47.530
+C New\stest\scases\sadded\sto\stest/fuzzdata8.db
+D 2021-12-09T14:15:39.430
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1067,7 +1067,7 @@ F test/fuzzdata4.db b502c7d5498261715812dd8b3c2005bad08b3a26e6489414bd13926cd3e4
 F test/fuzzdata5.db e35f64af17ec48926481cfaf3b3855e436bd40d1cfe2d59a9474cb4b748a52a5
 F test/fuzzdata6.db 92a80e4afc172c24f662a10a612d188fb272de4a9bd19e017927c95f737de6d7
 F test/fuzzdata7.db 0166b56fd7a6b9636a1d60ef0a060f86ddaecf99400a666bb6e5bbd7199ad1f2
-F test/fuzzdata8.db ef4d280ee69d6da0ebda7f81c0c66839fa577a97b29cc5790a564fde88be7183
+F test/fuzzdata8.db a0c7af954bcbb226ed7ae087b3b6d6e48eaac8fac5671150ffd23c35b55bffe6
 F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test f64c4aef4c9e9edf1d6dc0d3f1e65dcc81e67c996403c88d14f09b74807a42bc
@@ -1934,7 +1934,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P db58b2def014bdb146751110488a088767530ca2557baf73d6181a2558bbe6d3
-R 55b31a86584594f0db916a3c47bba8ab
+P 94fdbeffaf501daf30dc7fae7cef5c2bfdb3a9b055562adfc04374a9fc899c8d
+R 038bdb896bed6cf3889d86d96df22335
 U drh
-Z 92ddcb516729f4a545eea1159efb8c91
+Z 9371649fa5af3eb0258d92eb2e10b334
