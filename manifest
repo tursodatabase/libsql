@@ -1,5 +1,5 @@
-C Add\s".mode\soff"\sand\s".mode\scount"\sto\sthe\sCLI.
-D 2021-12-09T16:17:43.145
+C Enable\sbloom\sfilters\sfor\sthe\sright\stable\sof\sa\sLEFT\sJOIN.\s\sFix\sunreachable\nbranches.
+D 2021-12-09T18:44:03.070
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -638,9 +638,9 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c ed0398a7adf02c31e34aada42cc86c58f413a7afe5f741a5d373ad087abde028
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
-F src/where.c 4946af4e7d073fd35c97ffce4c4b4f3d84f6a0c9e5cb20342560cfaf072ef3a6
+F src/where.c abd620b4823c0c72322ad5307805d0a350e808bd2424e3e00a1c3ecae32b8a09
 F src/whereInt.h e83f7ba73db5b1b2685118fad67d178fbe04751a25419f0f6ff73e58b4807325
-F src/wherecode.c 560424f5845ec4ef1e36e8a6a066cc497aaf8163fef29fa18a0317e1e14ba9b7
+F src/wherecode.c c2324c3204b7f51648cc71aa0c98bff3c72c96c2e0c2169809a921febef7e5e1
 F src/whereexpr.c 791544603b254cf11f8e84e3b50b0863c57322e9f213b828680f658e232ebc57
 F src/window.c 5d3b397b0c026d0ff5890244ac41359e524c01ae31e78782e1ff418c3e271a9e
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1138,7 +1138,7 @@ F test/join.test 25da4f53523a4aa17c893134b47fba6aa4799bb33350517b157785878290e23
 F test/join2.test 9bdc615841b91c97a16d68bad9508aea11fa0c6b34e5689847bcc4dac70e4990
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
 F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
-F test/join5.test f418fccdfefa41f1659663463aa517431ddcf3e30ccbb80e64173b7d615a03f4
+F test/join5.test d22395f7d4020a58cabbc8316f300a5cfef84aee9e8ba7ce79b33cc43a3e1e2e
 F test/join6.test f809c025fa253f9e150c0e9afd4cef8813257bceeb6f46e04041228c9403cc2c
 F test/journal1.test c7b768041b7f494471531e17abc2f4f5ebf9e5096984f43ed17c4eb80ba34497
 F test/journal2.test 9dac6b4ba0ca79c3b21446bbae993a462c2397c4
@@ -1934,7 +1934,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 88b43d798cc5aa59855e92d3e658aee9f0a5def6ffbc5db77af048d75ecdf8cc
-R 9caa791b08a3199a0c8bfc0ce172ce1a
+P b11f4d080aa9e6f694e2ec401e871f42bf25997e8e8bf77fa9b6014a50466e3c
+R e684e836076af2e815def08dd3898cfa
 U drh
-Z 89026152bfb77d836155ab364d1ebd27
+Z 309930b0d62304a131a19ba2d8419e5a

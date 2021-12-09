@@ -5000,15 +5000,15 @@ static SQLITE_NOINLINE void whereCheckIfBloomFilterIsUseful(
     WhereLoop *pLoop = pWInfo->a[i].pWLoop;
     const int reqFlags = (WHERE_SELFCULL|WHERE_COLUMN_EQ);
     if( (pLoop->wsFlags & reqFlags)==reqFlags
-     && (pLoop->wsFlags & (WHERE_IPK|WHERE_INDEXED))!=0
+     && ALWAYS((pLoop->wsFlags & (WHERE_IPK|WHERE_INDEXED))!=0)
     ){
       SrcItem *pItem = &pWInfo->pTabList->a[pLoop->iTab];
       Table *pTab = pItem->pTab;
       pTab->tabFlags |= TF_StatsUsed;
       if( nSearch > pTab->nRowLogEst
-       && (pItem->fg.jointype & JT_LEFT)==0
        && (pTab->tabFlags & TF_HasStat1)!=0
       ){
+        testcase( pItem->fg.jointype & JT_LEFT );
         pLoop->wsFlags |= WHERE_BLOOMFILTER;
         pLoop->wsFlags &= ~WHERE_IDX_ONLY;
         WHERETRACE(0xffff, (
