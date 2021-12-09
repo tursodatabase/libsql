@@ -32,19 +32,19 @@ forcedelete test.db test.db-journal test.db-wal
 # .import FILE TABLE     Import data from FILE into TABLE
 do_test shell5-1.1.1 {
   catchcmd "test.db" ".import"
-} {/1 .ERROR: missing FILE argument.*/}
+} {1 {Error: invalid arguments for ".import"}}
 do_test shell5-1.1.2 {
   catchcmd "test.db" ".import FOO"
-} {/1 .ERROR: missing TABLE argument.*/}
+} {1 {Error: invalid arguments for ".import"}}
 do_test shell5-1.1.3 {
   # too many arguments
   catchcmd "test.db" ".import FOO BAR BAD"
-} {/1 .ERROR: extra argument.*/}
+} {1 {Error: invalid arguments for ".import"}}
 
 # .separator STRING      Change separator used by output mode and .import
 do_test shell5-1.2.1 {
   catchcmd "test.db" ".separator"
-} {1 {Usage: .separator COL ?ROW?}}
+} {1 {Error: invalid arguments for ".separator"}}
 do_test shell5-1.2.2 {
   catchcmd "test.db" ".separator ONE"
 } {0 {}}
@@ -54,7 +54,7 @@ do_test shell5-1.2.3 {
 do_test shell5-1.2.4 {
   # too many arguments
   catchcmd "test.db" ".separator ONE TWO THREE"
-} {1 {Usage: .separator COL ?ROW?}}
+} {1 {Error: invalid arguments for ".separator"}}
 
 # column separator should default to "|"
 do_test shell5-1.3.1.1 {

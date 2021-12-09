@@ -63,9 +63,7 @@ do_test shell2-1.3 {
 
     UPDATE OR REPLACE t5 SET a = 4 WHERE a = 1;
   }
-} {1 {Error: near line 9: stepping, too many levels of trigger recursion (1)}}
-
-
+} {1 {Error: near line 9: in stepping, too many levels of trigger recursion (1)}}
 
 # Shell not echoing all commands with echo on.
 # Ticket [eb620916be].

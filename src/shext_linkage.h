@@ -4,6 +4,10 @@
 
 #include "obj_interfaces.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Convey data to, from and/or between I/O handlers and meta-commands. */
 typedef struct {
   /* A semi-transient holder of arbitrary data used during operations
@@ -80,10 +84,11 @@ PURE_VMETHOD(int, execute, MetaCommand,
              4,(ShellStateX *, char **pzErrMsg, int nArgs, char *azArgs[]));
 INTERFACE_END( MetaCommand );
 
-/* Define an error code to be returned either by a meta-command during its
- * own argument checking or by the dispatcher for bad argument counts.
+/* Define error codes to be returned either by a meta-command during
+ * its own checking or by the dispatcher for bad argument counts.
  */
 #define SHELL_INVALID_ARGS SQLITE_MISUSE
+#define SHELL_FORBIDDEN_OP 0x7ffe /* Action disallowed under --safe.*/
 
 /* An object implementing below interface is registered with the
  * shell to make new or overriding output modes available to it.
@@ -127,8 +132,9 @@ typedef struct {
   int helperCount;
   union ExtHelp {
     struct {
+      void (*failIfSafeMode)(ShellStateX *p, const char *zErrMsg, ...);
     } named ;
-    void (*nameless[1])(); /* Same as named but anonymous plus a sentinel. */
+    void (*nameless[2])(); /* Same as named but anonymous plus a sentinel. */
   } helpers;
 } ExtensionHelpers;
 
