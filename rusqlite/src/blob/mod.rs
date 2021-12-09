@@ -272,6 +272,7 @@ impl Blob<'_> {
     /// Return the current size in bytes of the BLOB.
     #[inline]
     pub fn len(&self) -> usize {
+        use std::convert::TryInto;
         self.size().try_into().unwrap()
     }
 

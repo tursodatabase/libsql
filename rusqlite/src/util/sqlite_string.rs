@@ -103,6 +103,7 @@ impl SqliteMallocString {
     /// This means it's safe to use in extern "C" functions even outside of
     /// catch_unwind.
     pub(crate) fn from_str(s: &str) -> Self {
+        use std::convert::TryFrom;
         let s = if s.as_bytes().contains(&0) {
             std::borrow::Cow::Owned(make_nonnull(s))
         } else {
