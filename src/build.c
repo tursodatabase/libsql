@@ -4960,7 +4960,7 @@ SrcList *sqlite3SrcListAppendFromTerm(
   pItem->pUsing = pUsing;
   return p;
 
- append_from_error:
+append_from_error:
   assert( p==0 );
   sqlite3ExprDelete(db, pOn);
   sqlite3IdListDelete(db, pUsing);

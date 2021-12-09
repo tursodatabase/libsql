@@ -320,6 +320,7 @@ struct WhereClause {
   u8 hasOr;                /* True if any a[].eOperator is WO_OR */
   int nTerm;               /* Number of terms */
   int nSlot;               /* Number of entries in a[] */
+  int nBase;               /* Number of terms through the last non-Virtual */
   WhereTerm *a;            /* Each a[] describes a term of the WHERE cluase */
 #if defined(SQLITE_SMALL_STACK)
   WhereTerm aStatic[1];    /* Initial static space for a[] */

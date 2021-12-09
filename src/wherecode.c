@@ -970,7 +970,7 @@ static void codeCursorHint(
   sWalker.pParse = pParse;
   sWalker.u.pCCurHint = &sHint;
   pWC = &pWInfo->sWC;
-  for(i=0; i<pWC->nTerm; i++){
+  for(i=0; i<pWC->nBase; i++){
     pTerm = &pWC->a[i];
     if( pTerm->wtFlags & (TERM_VIRTUAL|TERM_CODED) ) continue;
     if( pTerm->prereqAll & pLevel->notReady ) continue;
@@ -2467,7 +2467,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
   ** then we cannot use the "t1.a=t2.b" constraint, but we can code
   ** the implied "t1.a=123" constraint.
   */
-  for(pTerm=pWC->a, j=pWC->nTerm; j>0; j--, pTerm++){
+  for(pTerm=pWC->a, j=pWC->nBase; j>0; j--, pTerm++){
     Expr *pE, sEAlt;
     WhereTerm *pAlt;
     if( pTerm->wtFlags & (TERM_VIRTUAL|TERM_CODED) ) continue;
@@ -2512,7 +2512,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     pLevel->addrFirst = sqlite3VdbeCurrentAddr(v);
     sqlite3VdbeAddOp2(v, OP_Integer, 1, pLevel->iLeftJoin);
     VdbeComment((v, "record LEFT JOIN hit"));
-    for(pTerm=pWC->a, j=0; j<pWC->nTerm; j++, pTerm++){
+    for(pTerm=pWC->a, j=0; j<pWC->nBase; j++, pTerm++){
       testcase( pTerm->wtFlags & TERM_VIRTUAL );
       testcase( pTerm->wtFlags & TERM_CODED );
       if( pTerm->wtFlags & (TERM_VIRTUAL|TERM_CODED) ) continue;
