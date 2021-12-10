@@ -1586,7 +1586,6 @@ LogEst sqlite3LogEst(u64 x){
   return a[x&7] + y - 10;
 }
 
-#ifndef SQLITE_OMIT_VIRTUALTABLE
 /*
 ** Convert a double into a LogEst
 ** In other words, compute an approximation for 10*log2(x).
@@ -1601,16 +1600,9 @@ LogEst sqlite3LogEstFromDouble(double x){
   e = (a>>52) - 1022;
   return e*10;
 }
-#endif /* SQLITE_OMIT_VIRTUALTABLE */
 
-#if defined(SQLITE_ENABLE_STMT_SCANSTATUS) || \
-    defined(SQLITE_ENABLE_STAT4) || \
-    defined(SQLITE_EXPLAIN_ESTIMATED_ROWS)
 /*
 ** Convert a LogEst into an integer.
-**
-** Note that this routine is only used when one or more of various
-** non-standard compile-time options is enabled.
 */
 u64 sqlite3LogEstToInt(LogEst x){
   u64 n;
@@ -1618,17 +1610,9 @@ u64 sqlite3LogEstToInt(LogEst x){
   x /= 10;
   if( n>=5 ) n -= 2;
   else if( n>=1 ) n -= 1;
-#if defined(SQLITE_ENABLE_STMT_SCANSTATUS) || \
-    defined(SQLITE_EXPLAIN_ESTIMATED_ROWS)
   if( x>60 ) return (u64)LARGEST_INT64;
-#else
-  /* If only SQLITE_ENABLE_STAT4 is on, then the largest input
-  ** possible to this routine is 310, resulting in a maximum x of 31 */
-  assert( x<=60 );
-#endif
   return x>=3 ? (n+8)<<(x-3) : (n+8)>>(3-x);
 }
-#endif /* defined SCANSTAT or STAT4 or ESTIMATED_ROWS */
 
 /*
 ** Add a new name/number pair to a VList.  This might require that the

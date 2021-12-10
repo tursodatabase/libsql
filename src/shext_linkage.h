@@ -13,17 +13,19 @@ typedef struct {
   /* A semi-transient holder of arbitrary data used during operations
    * not interrupted by meta-command invocations. Any not-null pointer
    * left after a meta-command has completed is, by contract, to be
-   * freeable using sqlite3_free(). It is otherwise unconstrained.
-   */
+   * freeable using sqlite3_free(). It is otherwise unconstrained. */
   void *pvHandlerData;
+
   /* The user's currently open and primary DB connection */
   sqlite3 *db;
   /* The DB connection used for shell's dynamical data */
   sqlite3 *dbShell;
+
+  /* Input stream providing shell's command or query input */
+  FILE *pCurrentInputStream;
   /* Output stream to which shell's text output to be written */
   FILE *pCurrentOutputStream;
-  /* Number of lines written during a query result output */
-  int resultCount;
+
   /* Whether to exit as command completes.
    * 0 => no exit
    * ~0 => a non-error (0) exit
@@ -31,6 +33,9 @@ typedef struct {
    * For embedded shell, "exit" means "return from REPL".
    */
   int shellExit;
+
+  /* Number of lines written during a query result output */
+  int resultCount;
   /* Whether to show column names for certain output modes */
   int showHeader;
   /* Column separator character for some modes */

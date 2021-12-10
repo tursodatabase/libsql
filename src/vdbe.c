@@ -672,6 +672,31 @@ static Mem *out2Prerelease(Vdbe *p, VdbeOp *pOp){
 }
 
 /*
+** Compute a bloom filter hash using pOp->p4.i registers from aMem[] beginning
+** with pOp->p3.  Return the hash.
+*/
+static u64 filterHash(const Mem *aMem, const Op *pOp){
+  int i, mx;
+  u64 h = 0;
+
+  i = pOp->p3;
+  assert( pOp->p4type==P4_INT32 );
+  mx = i + pOp->p4.i;
+  for(i=pOp->p3, mx=i+pOp->p4.i; i<mx; i++){
+    const Mem *p = &aMem[i];
+    if( p->flags & (MEM_Int|MEM_IntReal) ){
+      h += p->u.i;
+    }else if( p->flags & MEM_Real ){
+      h += sqlite3VdbeIntValue(p);
+    }else if( p->flags & (MEM_Str|MEM_Blob) ){
+      h += p->n;
+      if( p->flags & MEM_Zero ) h += p->u.nZero;
+    }
+  }
+  return h;
+}
+
+/*
 ** Return the symbolic name for the data type of a pMem
 */
 static const char *vdbeMemTypeName(Mem *pMem){
@@ -1325,12 +1350,18 @@ case OP_SoftNull: {
 ** Synopsis: r[P2]=P4 (len=P1)
 **
 ** P4 points to a blob of data P1 bytes long.  Store this
-** blob in register P2.
+** blob in register P2.  If P4 is a NULL pointer, then construct
+** a zero-filled blob that is P1 bytes long in P2.
 */
 case OP_Blob: {                /* out2 */
   assert( pOp->p1 <= SQLITE_MAX_LENGTH );
   pOut = out2Prerelease(p, pOp);
-  sqlite3VdbeMemSetStr(pOut, pOp->p4.z, pOp->p1, 0, 0);
+  if( pOp->p4.z==0 ){
+    sqlite3VdbeMemSetZeroBlob(pOut, pOp->p1);
+    if( sqlite3VdbeMemExpandBlob(pOut) ) goto no_mem;
+  }else{
+    sqlite3VdbeMemSetStr(pOut, pOp->p4.z, pOp->p1, 0, 0);
+  }
   pOut->enc = encoding;
   UPDATE_MAX_BLOBSIZE(pOut);
   break;
@@ -3341,7 +3372,7 @@ case OP_MakeRecord: {
   break;
 }
 
-/* Opcode: Count P1 P2 p3 * *
+/* Opcode: Count P1 P2 P3 * *
 ** Synopsis: r[P2]=count()
 **
 ** Store the number of entries (an integer value) in the table or index 
@@ -8124,6 +8155,77 @@ case OP_Function: {            /* group */
 
   REGISTER_TRACE(pOp->p3, pOut);
   UPDATE_MAX_BLOBSIZE(pOut);
+  break;
+}
+
+/* Opcode: FilterAdd P1 * P3 P4 *
+** Synopsis: filter(P1) += key(P3@P4)
+**
+** Compute a hash on the P4 registers starting with r[P3] and
+** add that hash to the bloom filter contained in r[P1].
+*/
+case OP_FilterAdd: {
+  u64 h;
+
+  assert( pOp->p1>0 && pOp->p1<=(p->nMem+1 - p->nCursor) );
+  pIn1 = &aMem[pOp->p1];
+  assert( pIn1->flags & MEM_Blob );
+  assert( pIn1->n>0 );
+  h = filterHash(aMem, pOp);
+#ifdef SQLITE_DEBUG
+  if( db->flags&SQLITE_VdbeTrace ){
+    int ii;
+    for(ii=pOp->p3; ii<pOp->p3+pOp->p4.i; ii++){
+      registerTrace(ii, &aMem[ii]);
+    }
+    printf("hash: %llu modulo %d -> %u\n", h, pIn1->n, (int)(h%pIn1->n));
+  }
+#endif
+  h %= pIn1->n;
+  pIn1->z[h/8] |= 1<<(h&7);
+  break;
+}
+
+/* Opcode: Filter P1 P2 P3 P4 *
+** Synopsis: if key(P3@P4) not in filter(P1) goto P2
+**
+** Compute a hash on the key contained in the P4 registers starting
+** with r[P3].  Check to see if that hash is found in the
+** bloom filter hosted by register P1.  If it is not present then
+** maybe jump to P2.  Otherwise fall through.
+**
+** False negatives are harmless.  It is always safe to fall through,
+** even if the value is in the bloom filter.  A false negative causes
+** more CPU cycles to be used, but it should still yield the correct
+** answer.  However, an incorrect answer may well arise from a
+** false positive - if the jump is taken when it should fall through.
+*/
+case OP_Filter: {          /* jump */
+  u64 h;
+
+  assert( pOp->p1>0 && pOp->p1<=(p->nMem+1 - p->nCursor) );
+  pIn1 = &aMem[pOp->p1];
+  assert( (pIn1->flags & MEM_Blob)!=0 );
+  assert( pIn1->n >= 1 );
+  h = filterHash(aMem, pOp);
+#ifdef SQLITE_DEBUG
+  if( db->flags&SQLITE_VdbeTrace ){
+    int ii;
+    for(ii=pOp->p3; ii<pOp->p3+pOp->p4.i; ii++){
+      registerTrace(ii, &aMem[ii]);
+    }
+    printf("hash: %llu modulo %d -> %u\n", h, pIn1->n, (int)(h%pIn1->n));
+  }
+#endif
+  h %= pIn1->n;
+  if( (pIn1->z[h/8] & (1<<(h&7)))==0 ){
+    VdbeBranchTaken(1, 2);
+    p->aCounter[SQLITE_STMTSTATUS_FILTER_HIT]++;
+    goto jump_to_p2;
+  }else{
+    p->aCounter[SQLITE_STMTSTATUS_FILTER_MISS]++;
+    VdbeBranchTaken(0, 2);
+  }
   break;
 }
 

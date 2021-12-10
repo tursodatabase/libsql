@@ -439,6 +439,7 @@ static int stdout_is_console = 1;
 ** by the SIGINT handler to interrupt database processing.
 */
 static sqlite3 *globalDb = 0;
+static sqlite3_mutex *pGlobalDbLock = 0;
 
 /*
 ** True if an interrupt (Control-C) has been received.
@@ -499,10 +500,21 @@ void utf8_printf(FILE *out, const char *zFormat, ...){
 # define raw_printf fprintf
 #endif
 
+/*
+** Provide a way for embedding apps to handle OOP condition their way.
+** This is crude, and using it will undoubtedly leak memory and handles.
+** The alternative is extensive recoding of the shell, (not for today.)
+** This could become a longjump(...) (paired with app's setjump(...).)
+*/
+#ifndef SHELL_OOM_EXIT
+# define SHELL_OOM_EXIT exit(1)
+#endif
 /* Indicate out-of-memory and exit. */
 static void shell_out_of_memory(void){
   raw_printf(STD_ERR,"Error: out of memory\n");
-  exit(1);
+  sqlite3_mutex_free(pGlobalDbLock); 
+  pGlobalDbLock = 0;
+  SHELL_OOM_EXIT;
 }
 
 #ifdef SQLITE_DEBUG
@@ -687,17 +699,25 @@ static FILE * openChrSource(const char *zFile){
 }
 
 /*
-** This routine reads a line of text from FILE in, stores
-** the text in memory obtained from malloc() and returns a pointer
-** to the text.  NULL is returned at end of file, or if malloc()
-** fails.
+** This routine reads a line of text from FILE in, stores it in
+** memory obtained from malloc() and returns a pointer to it.
+** NULL is returned at end of file, or if malloc() fails.
 **
-** If zLine is not NULL then it is a malloced buffer returned from
-** a previous call to this routine that may be reused.
+** If zLine is not NULL then it is (and must be) a malloced buffer
+** returned from a previous call to this routine that may be reused.
 */
 static char *local_getline(char *zLine, FILE *in){
-  int nLine = zLine==0 ? 0 : 100;
-  int n = 0;
+#ifdef SQLITE_DEBUG
+  static char *zLinePrior = 0;
+  /* If zLine is passed in, not for the first time, it *must* be prior return,
+  ** otherwise the assumption made here as to its allocated size is shaky. */
+  assert(zLine==0 || zLinePrior==0 || zLine==zLinePrior);
+# define ZLINE_PRIOR(z) zLinePrior = z
+#else
+# define ZLINE_PRIOR(z)
+#endif
+  int nLine = zLine==0 ? 0 : 100; /* Length now (or to be)allocated */
+  int n = 0; /* Count of chars accumulated now */
 
   while( 1 ){
     if( n+100>nLine ){
@@ -707,16 +727,24 @@ static char *local_getline(char *zLine, FILE *in){
     }
     if( fgets(&zLine[n], nLine - n, in)==0 ){
       if( n==0 ){
+        /* Empty (EOF) input and zip accumulated. Return so. */
         free(zLine);
+        ZLINE_PRIOR(0);
         return 0;
       }
+      /* NUL-terminate presently obtained input (and done.) */
       zLine[n] = 0;
       break;
     }
+    /* Note non-NUL chars added in this loop. (Tough if input had NULs.) */
     while( zLine[n] ) n++;
-    if( n>0 && zLine[n-1]=='\n' ){
+    /* Replace final line-end with NUL. */
+    while( n>0 && (zLine[n-1]=='\n' || zLine[n-1]=='\r') ){
       n--;
-      if( n>0 && zLine[n-1]=='\r' ) n--;
+    }
+    if( zLine[n]==0 ){
+      continue;
+    }else{
       zLine[n] = 0;
       break;
     }
@@ -730,6 +758,7 @@ static char *local_getline(char *zLine, FILE *in){
       int nTrans = strlen30(zTrans)+1;
       if( nTrans>nLine ){
         zLine = realloc(zLine, nTrans);
+        ZLINE_PRIOR(zLine);
         if( zLine==0 ) shell_out_of_memory();
       }
       memcpy(zLine, zTrans, nTrans);
@@ -737,6 +766,7 @@ static char *local_getline(char *zLine, FILE *in){
     }
   }
 #endif /* defined(_WIN32) || defined(WIN32) */
+  ZLINE_PRIOR(zLine);
   return zLine;
 }
 
@@ -773,7 +803,6 @@ static char *one_input_line(FILE *in, char *zPrior, int isContinuation){
   }
   return zResult;
 }
-
 
 /*
 ** Return the value of a hexadecimal digit.  Return -1 if the input
@@ -1132,6 +1161,7 @@ struct EQPGraph {
 typedef struct ShellState ShellState;
 struct ShellState {
   sqlite3 *db;           /* The database */
+  int abruptExit;        /* Flag for immediate shell exit, exit code */
   u8 autoExplain;        /* Automatically turn on .explain mode */
   u8 autoEQP;            /* Run EXPLAIN QUERY PLAN prior to seach SQL stmt */
   u8 autoEQPtest;        /* autoEQP is in test mode */
@@ -1142,7 +1172,7 @@ struct ShellState {
   u8 nEqpLevel;          /* Depth of the EQP output graph */
   u8 eTraceType;         /* SHELL_TRACE_* value for type of trace */
   u8 bSafeMode;          /* True when unsafe operations are prohibited */
-  u8 bSafeModeFuture;    /* Next bSafeMode - 0, 1 or suspending downto 1 */
+  u8 bSafeModeFuture;    /* See updateSafeMode regarding use of this. */
   unsigned statsOn;      /* True to display memory stats before each finalize */
   unsigned mEqpLines;    /* Mask of veritical lines in the EQP output graph */
   int outCount;          /* Revert to stdout when reaching zero */
@@ -1194,11 +1224,33 @@ struct ShellState {
   int *aiIndent;         /* Array of indents used in MODE_Explain */
   int nIndent;           /* Size of array aiIndent[] */
   int iIndent;           /* Index of current op in aiIndent[] */
-  char *zNonce;          /* Nonce for temporary safe-mode excapes */
+  char *zNonce;          /* Nonce for temporary safe-mode suspension */
   EQPGraph sGraph;       /* Information for the graphical EXPLAIN QUERY PLAN */
   ExpertInfo expert;     /* Valid if previous command was ".expert OPT..." */
 };
 
+/* 
+** This procedure updates the bSafeMode flag after completion of any
+** operation (meta-command or SQL submission) that counts as one for
+** which safe mode might be suspended.
+** bSafeModeFuture has 3 states salient here:
+** equal 0 => Safe mode is and will remain inactive.
+** equal 1 => Safe mode is and will remain active.
+** N > 1 => Safe mode is suspended for N-1 operations.
+*/
+static void updateSafeMode(ShellState *pSS){
+  switch( pSS->bSafeModeFuture ){
+  case 2:
+  default:
+    --pSS->bSafeModeFuture;
+    /* Fall thru, suspension is in effect. */
+  case 0:
+    pSS->bSafeMode = 0;
+    break;
+  case 1:
+    pSS->bSafeMode = 1;
+  }
+}
 
 /* Allowed values for ShellState.autoEQP
 */
@@ -1342,11 +1394,13 @@ static void shellPutsFunc(
 ** immediately, as a process exit, for normal shell builds. When the
 ** shell is built with options to use it embedded, control returns to
 ** the caller of the shell's main, "do shell things" entry point.
-** (TBD: Embedded exit arrangement)
+**
 ** It is an error, (perhaps with only minor effect such as memory leak),
 ** for a meta-command to call this function while it holds resources.
+**
+** The return is true if failing, 0 otherwise.
 */
-static void failIfSafeMode(
+static int failIfSafeMode(
   ShellState *p,
   const char *zErrMsg,
   ...
@@ -1359,8 +1413,10 @@ static void failIfSafeMode(
     va_end(ap);
     raw_printf(STD_ERR, "line %d: ", p->lineno);
     utf8_printf(STD_ERR, "%s\n", zMsg);
-    exit(1);
+    p->abruptExit = 3;
+    return 1;
   }
+  return 0;
 }
 
 /*
@@ -1810,12 +1866,20 @@ static void output_csv(ShellState *p, const char *z, int bSep){
 
 /*
 ** This routine runs when the user presses Ctrl-C
+** TBD: It will need some changes for embedability.
 */
 static void interrupt_handler(int NotUsed){
   UNUSED_PARAMETER(NotUsed);
   seenInterrupt++;
-  if( seenInterrupt>2 ) exit(1);
-  if( globalDb ) sqlite3_interrupt(globalDb);
+  if( seenInterrupt>2 ){
+    sqlite3_mutex_free(pGlobalDbLock);
+    exit(1);
+  }
+  if( globalDb ){
+    sqlite3_mutex_enter(pGlobalDbLock);
+    sqlite3_interrupt(globalDb);
+    sqlite3_mutex_leave(pGlobalDbLock);
+  }
 }
 
 #if (defined(_WIN32) || defined(WIN32)) && !defined(_WIN32_WCE)
@@ -1860,15 +1924,17 @@ static int safeModeAuth(
   UNUSED_PARAMETER(zA4);
   switch( op ){
     case SQLITE_ATTACH: {
-      failIfSafeMode(p, "cannot run ATTACH in safe mode");
+      if ( failIfSafeMode(p, "cannot run ATTACH in safe mode") )
+        return SQLITE_ERROR;
       break;
     }
     case SQLITE_FUNCTION: {
       int i;
       for(i=0; i<ArraySize(azProhibitedFunctions); i++){
         if( sqlite3_stricmp(zA1, azProhibitedFunctions[i])==0 ){
-          failIfSafeMode(p, "cannot use the %s() function in safe mode",
-                         azProhibitedFunctions[i]);
+          if( failIfSafeMode(p, "cannot use the %s() function in safe mode",
+                             azProhibitedFunctions[i]) )
+            return SQLITE_ERROR;
         }
       }
       break;
@@ -2819,6 +2885,7 @@ static int display_stats(
   }
 
   if( pArg->pStmt ){
+    int iHit, iMiss;
     iCur = sqlite3_stmt_status(pArg->pStmt, SQLITE_STMTSTATUS_FULLSCAN_STEP,
                                bReset);
     raw_printf(pArg->out, "Fullscan Steps:                      %d\n", iCur);
@@ -2826,6 +2893,12 @@ static int display_stats(
     raw_printf(pArg->out, "Sort Operations:                     %d\n", iCur);
     iCur = sqlite3_stmt_status(pArg->pStmt, SQLITE_STMTSTATUS_AUTOINDEX,bReset);
     raw_printf(pArg->out, "Autoindex Inserts:                   %d\n", iCur);
+    iHit = sqlite3_stmt_status(pArg->pStmt, SQLITE_STMTSTATUS_FILTER_HIT, bReset);
+    iMiss = sqlite3_stmt_status(pArg->pStmt, SQLITE_STMTSTATUS_FILTER_MISS, bReset);
+    if( iHit || iMiss ){
+      raw_printf(pArg->out, "Bloom filter bypass taken:           %d/%d\n",
+            iHit, iHit+iMiss);
+    }
     iCur = sqlite3_stmt_status(pArg->pStmt, SQLITE_STMTSTATUS_VM_STEP, bReset);
     raw_printf(pArg->out, "Virtual Machine Steps:               %d\n", iCur);
     iCur = sqlite3_stmt_status(pArg->pStmt, SQLITE_STMTSTATUS_REPREPARE,bReset);
@@ -4594,7 +4667,15 @@ static void open_db(ShellState *p, int openFlags){
 ** Attempt to close the databaes connection.  Report errors.
 */
 void close_db(sqlite3 *db){
-  int rc = sqlite3_close(db);
+  int rc;
+  if( db==globalDb ){
+    sqlite3_mutex_enter(pGlobalDbLock);
+    globalDb = 0;
+    rc = sqlite3_close(db);
+    sqlite3_mutex_leave(pGlobalDbLock);
+  }else{
+    rc = sqlite3_close(db);
+  }
   if( rc ){
     utf8_printf(STD_ERR, "Error: sqlite3_close() returns %d: %s\n",
         rc, sqlite3_errmsg(db));
@@ -8297,6 +8378,44 @@ DISPATCHABLE_COMMAND( import ? 3 7 ){
   return 0;
 }
 
+/*****************
+ * The .keyword command
+ */
+CONDITION_COMMAND( keyword !defined(NO_KEYWORD_COMMAND) );
+COLLECT_HELP_TEXT[
+  ".keyword ?KW?            List keywords, or say whether KW is one.",
+];
+DISPATCHABLE_COMMAND( keyword ? 1 2 ){
+  if( nArg<2 ){
+    int i = 0;
+    int nk = sqlite3_keyword_count();
+    int nCol = 0;
+    int szKW;
+    while( i<nk ){
+      const char *zKW = 0;
+      if( SQLITE_OK==sqlite3_keyword_name(i++, &zKW, &szKW) ){
+        char kwBuf[50];
+        if( szKW < sizeof(kwBuf) ){
+          const char *zSep = " ";
+          if( (nCol += (1+szKW))>75){
+            zSep = "\n";
+            nCol = 0;
+          }
+          memcpy(kwBuf, zKW, szKW);
+          kwBuf[szKW] = 0;
+          utf8_printf(p->out, "%s%s", kwBuf, zSep);
+        }
+      }
+    }
+    if( nCol>0 ) utf8_printf(p->out, "\n");
+  }else{
+    int szKW = strlen30(azArg[1]);
+    int isKeyword = sqlite3_keyword_check(azArg[1], szKW);
+    utf8_printf(p->out, "%s is%s a keyword\n",
+                azArg[1], (isKeyword)? "" : " not");
+  }
+  return 0;
+}
 
 /*****************
  * The .imposter, .iotrace, limit, lint, .load and .log commands
@@ -8534,12 +8653,14 @@ COLLECT_HELP_TEXT[
   "     box       Tables using unicode box-drawing characters",
   "     csv       Comma-separated values",
   "     column    Output in columns.  (See .width)",
+  "     count     Output only result row count",
   "     html      HTML <table> code",
   "     insert    SQL insert statements for TABLE",
   "     json      Results in a JSON array",
   "     line      One value per line",
   "     list      Values delimited by \"|\"",
   "     markdown  Markdown table format",
+  "     off       Query output suppressed",
   "     quote     Escape answers as for SQL",
   "     table     ASCII-art table",
   "     tabs      Tab-separated values",
@@ -9618,32 +9739,36 @@ DISPATCHABLE_COMMAND( session 3 2 0 ){
     */
     if( strcmp(azCmd[0],"changeset")==0 || strcmp(azCmd[0],"patchset")==0 ){
       FILE *out = 0;
-      failIfSafeMode(p, "cannot run \".session %s\" in safe mode", azCmd[0]);
-      if( nCmd!=2 ) goto session_syntax_error;
-      if( pSession->p==0 ) goto session_not_open;
-      out = fopen(azCmd[1], "wb");
-      if( out==0 ){
-        *pzErr = sqlite3_mprintf
-          ("ERROR: cannot open \"%s\" for writing\n", azCmd[1]);
-        rc = 1;
+      if( failIfSafeMode
+          (p, "cannot run \".session %s\" in safe mode", azCmd[0]) ){
+        rc = SHELL_FORBIDDEN_OP;
       }else{
-        int szChng;
-        void *pChng;
-        if( azCmd[0][0]=='c' ){
-          rc = sqlite3session_changeset(pSession->p, &szChng, &pChng);
+        if( nCmd!=2 ) goto session_syntax_error;
+        if( pSession->p==0 ) goto session_not_open;
+        out = fopen(azCmd[1], "wb");
+        if( out==0 ){
+          *pzErr = sqlite3_mprintf
+            ("ERROR: cannot open \"%s\" for writing\n", azCmd[1]);
+          rc = 1;
         }else{
-          rc = sqlite3session_patchset(pSession->p, &szChng, &pChng);
+          int szChng;
+          void *pChng;
+          if( azCmd[0][0]=='c' ){
+            rc = sqlite3session_changeset(pSession->p, &szChng, &pChng);
+          }else{
+            rc = sqlite3session_patchset(pSession->p, &szChng, &pChng);
+          }
+          if( rc ){
+            fprintf(STD_OUT, "Error: error code %d\n", rc);
+            rc = 0;
+          }
+          if( pChng && fwrite(pChng, szChng, 1, out)!=1 ){
+            raw_printf(STD_ERR, "ERROR: Failed to write entire %d-byte output\n",
+                       szChng);
+          }
+          sqlite3_free(pChng);
+          fclose(out);
         }
-        if( rc ){
-          fprintf(STD_OUT, "Error: error code %d\n", rc);
-          rc = 0;
-        }
-        if( pChng && fwrite(pChng, szChng, 1, out)!=1 ){
-          raw_printf(STD_ERR, "ERROR: Failed to write entire %d-byte output\n",
-                     szChng);
-        }
-        sqlite3_free(pChng);
-        fclose(out);
       }
     }else
 
@@ -10872,7 +10997,6 @@ int dispatchCommand(char *azArg[], int nArg, ShellState *pSS, char **pzErr){
   return (pci->cmdDoer)(azArg, nArg, pSS, pzErr);
 }
 
-
 /*
 ** If an input line begins with "." then invoke this routine to
 ** process that line.
@@ -10928,7 +11052,8 @@ static int do_meta_command(char *zLine, ShellState *p){
   */
 
   if( c=='e' && strncmp(azArg[0], "exit", n)==0 ){
-    if( nArg>1 && (rc = (int)integerValue(azArg[1]))!=0 ) exit(rc);
+    if( nArg>1 && (rc = (int)integerValue(azArg[1]))!=0 )
+      p->abruptExit = rc;
     rc = 2;
   }else
 
@@ -10964,6 +11089,9 @@ static int do_meta_command(char *zLine, ShellState *p){
   {
     char *zErr = 0;
     int dispatchResult = dispatchCommand(azArg, nArg, p, &zErr);
+    if( p->abruptExit!=0 ){
+      dispatchResult = SHELL_FORBIDDEN_OP;
+    }
     switch( dispatchResult ){
     case NO_SUCH_COMMAND:
       utf8_printf(STD_ERR, "Error: unknown command: \"%s\"\n", azArg[0]);
@@ -10993,7 +11121,8 @@ static int do_meta_command(char *zLine, ShellState *p){
         utf8_printf(STD_ERR,
                     "Error: \".%s\" forbidden in --safe mode\n", azArg[0]);
       }
-      exit(1);
+      p->abruptExit = 3;
+      rc = 2;
     default:
       if( 0!=dispatchResult ) rc = 1;
       if( zErr!=0 ){
@@ -11008,16 +11137,7 @@ meta_command_exit:
     p->outCount--;
     if( p->outCount==0 ) output_reset(p);
   }
-  switch( p->bSafeModeFuture ){
-  default:
-    --p->bSafeModeFuture;
-    /* fall thru */
-  case 0:
-    p->bSafeMode = 0;
-    break;
-  case 1:
-    p->bSafeMode = 1;
-  }
+  updateSafeMode(p);
   return rc;
 }
 
@@ -11203,7 +11323,8 @@ static int runOneSqlLine(ShellState *p, char *zSql, FILE *in, int startline){
 ** is saved only if input is interactive.  An interrupt signal will
 ** cause this routine to exit immediately, unless input is interactive.
 **
-** Return the number of errors.
+** Normally return (number_of_errors > 0),
+** but return SHELL_FORBIDDEN_OP for immediate shell exit.
 */
 static int process_input(ShellState *p){
   char *zLine = 0;          /* A single input line */
@@ -11211,13 +11332,15 @@ static int process_input(ShellState *p){
   int nLine;                /* Length of current line */
   int nSql = 0;             /* Bytes of zSql[] used */
   int nAlloc = 0;           /* Allocated zSql[] space */
-  int rc;                   /* Error code */
+  int rc = 0;               /* Error or exit code */
   int errCnt = 0;           /* Number of errors seen */
   int startline = 0;        /* Line number for start of current input */
   QuickScanState qss = QSS_Start; /* Accumulated line status (so far) */
 
   p->lineno = 0;
-  while( errCnt==0 || !bail_on_error || (p->in==0 && stdin_is_interactive) ){
+  while( rc<2
+         &&
+         (errCnt==0 || !bail_on_error || (p->in==0 && stdin_is_interactive)) ){
     fflush(p->out);
     zLine = one_input_line(p->in, zLine, nSql>0);
     if( zLine==0 ){
@@ -11247,7 +11370,7 @@ static int process_input(ShellState *p){
       if( ShellHasFlag(p, SHFLG_Echo) ) fprintf(STD_OUT, "%s\n", zLine);
       if( zLine[0]=='.' ){
         rc = do_meta_command(zLine, p);
-        if( rc==2 ){ /* exit requested */
+        if( rc==2 || p->abruptExit!=0 ){ /* exit requested */
           break;
         }else if( rc ){
           errCnt++;
@@ -11285,7 +11408,7 @@ static int process_input(ShellState *p){
       }else{
         clearTempFile(p);
       }
-      p->bSafeMode = p->bSafeModeFuture!=1;
+      updateSafeMode(p);
       qss = QSS_Start;
     }else if( nSql && QSS_PLAINWHITE(qss) ){
       if( ShellHasFlag(p, SHFLG_Echo) ) fprintf(STD_OUT, "%s\n", zSql);
@@ -11295,10 +11418,11 @@ static int process_input(ShellState *p){
   }
   if( nSql && QSS_PLAINDARK(qss) ){
     errCnt += runOneSqlLine(p, zSql, p->in, startline);
+    updateSafeMode(p);
   }
   free(zSql);
   free(zLine);
-  return errCnt>0;
+  return (p->abruptExit)? SHELL_FORBIDDEN_OP : errCnt>0;
 }
 
 /*
@@ -11371,12 +11495,36 @@ static char *find_home_dir(int clearFlag){
 }
 
 /*
+** Run a single query.
+** This is a convenience function, used in several places, all of
+** demand a shell exit upon failure, which leads to return 2.
+ */
+static int run_single_query(ShellState *p, char *zSql){
+  char *zErrMsg = 0;
+  int rc;
+  open_db(p, 0);
+  rc = shell_exec(p, zSql, &zErrMsg);
+  if( zErrMsg!=0 || rc>0 ){
+    /* Some kind of error, to result in exit before REPL. */
+    if( zErrMsg!=0 ){
+      utf8_printf(STD_ERR,"Error: %s\n", zErrMsg);
+      free(zErrMsg);
+    }else{
+      utf8_printf(STD_ERR,"Error: unable to process SQL \"%s\"\n", zSql);
+    }
+    p->abruptExit = (rc==0)? 1 : rc;
+    rc = 2;
+  }
+  return rc;
+}
+
+
+/*
 ** Read input from the file given by sqliterc_override.  Or if that
 ** parameter is NULL, take input from ~/.sqliterc
-**
-** Returns the number of errors.
+** The return is similar to process_input() (0 success, 1 error, x abort)
 */
-static void process_sqliterc(
+static int process_sqliterc(
   ShellState *p,                  /* Configuration data */
   const char *sqliterc_override   /* Name of config file. NULL to use default */
 ){
@@ -11385,13 +11533,14 @@ static void process_sqliterc(
   char *zBuf = 0;
   FILE *inSaved = p->in;
   int savedLineno = p->lineno;
+  int rc;
 
   if (sqliterc == NULL) {
     home_dir = find_home_dir(0);
     if( home_dir==0 ){
       raw_printf(STD_ERR, "-- warning: cannot find home directory;"
                       " cannot read ~/.sqliterc\n");
-      return;
+      return 1;
     }
     zBuf = sqlite3_mprintf("%s/.sqliterc",home_dir);
     sqliterc = zBuf;
@@ -11401,15 +11550,18 @@ static void process_sqliterc(
     if( stdin_is_interactive ){
       utf8_printf(STD_ERR,"-- Loading resources from %s\n",sqliterc);
     }
-    if( process_input(p) && bail_on_error ) exit(1);
+    rc = process_input(p);
     fclose(p->in);
   }else if( sqliterc_override!=0 ){
     utf8_printf(STD_ERR,"cannot open: \"%s\"\n", sqliterc);
-    if( bail_on_error ) exit(1);
+    rc = 1;
+  }else{
+    rc = 0;
   }
   p->in = inSaved;
   p->lineno = savedLineno;
   sqlite3_free(zBuf);
+  return rc;
 }
 
 /*
@@ -11581,7 +11733,6 @@ int SQLITE_CDECL SHELL_MAIN(int argc, char **argv){
 int SQLITE_CDECL SHELL_MAIN(int argc, wchar_t **wargv){
   char **argv;
 #endif
-  char *zErrMsg = 0;
   ShellState data;
   const char *zInitFile = 0;
   int i;
@@ -11595,7 +11746,6 @@ int SQLITE_CDECL SHELL_MAIN(int argc, wchar_t **wargv){
   char **argvToFree = 0;
   int argcToFree = 0;
 #endif
-
   setBinaryMode(STD_IN, 0);
   setvbuf(STD_ERR, 0, _IONBF, 0); /* Make sure stderr is unbuffered */
   stdin_is_interactive = isatty(0);
@@ -11664,15 +11814,6 @@ int SQLITE_CDECL SHELL_MAIN(int argc, wchar_t **wargv){
   assert( argc>=1 && argv && argv[0] );
   Argv0 = argv[0];
 
-  /* Make sure we have a valid signal handler early, before anything
-  ** else is done.
-  */
-#ifdef SIGINT
-  signal(SIGINT, interrupt_handler);
-#elif (defined(_WIN32) || defined(WIN32)) && !defined(_WIN32_WCE)
-  SetConsoleCtrlHandler(ConsoleCtrlHandler, TRUE);
-#endif
-
 #ifdef SQLITE_SHELL_DBNAME_PROC
   {
     /* If the SQLITE_SHELL_DBNAME_PROC macro is defined, then it is the name
@@ -11691,7 +11832,7 @@ int SQLITE_CDECL SHELL_MAIN(int argc, wchar_t **wargv){
   ** and the first command to execute.
   */
   verify_uninitialized();
-  for(i=1; i<argc; i++){
+  for(i=1; i<argc && rc<2; i++){
     char *z;
     z = argv[i];
     if( z[0]!='-' ){
@@ -11818,11 +11959,10 @@ int SQLITE_CDECL SHELL_MAIN(int argc, wchar_t **wargv){
       free(data.zNonce);
       data.zNonce = strdup(argv[++i]);
     }else if( strcmp(z,"-safe")==0 ){
-      /* no-op - catch this on the second pass */
+      /* catch this on the second pass (Unsafe is fine on invocation.) */
     }
   }
   verify_uninitialized();
-
 
 #ifdef SQLITE_SHELL_INIT_PROC
   {
@@ -11839,13 +11979,24 @@ int SQLITE_CDECL SHELL_MAIN(int argc, wchar_t **wargv){
   sqlite3_initialize();
 #endif
 
+  /* Register the control-C (SIGINT) handler.
+  ** Make sure we have a valid signal handler early, before anything
+  ** is done that might take long. */
+  pGlobalDbLock = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
+#ifdef SIGINT
+  signal(SIGINT, interrupt_handler);
+#elif (defined(_WIN32) || defined(WIN32)) && !defined(_WIN32_WCE)
+  SetConsoleCtrlHandler(ConsoleCtrlHandler, TRUE);
+#endif
+
   if( zVfs ){
     sqlite3_vfs *pVfs = sqlite3_vfs_find(zVfs);
     if( pVfs ){
       sqlite3_vfs_register(pVfs, 1);
     }else{
       utf8_printf(STD_ERR, "no such VFS: \"%s\"\n", argv[i]);
-      exit(1);
+      rc = 1;
+      goto shell_bail;
     }
   }
 
@@ -11855,7 +12006,8 @@ int SQLITE_CDECL SHELL_MAIN(int argc, wchar_t **wargv){
     warnInmemoryDb = argc==1;
 #else
     utf8_printf(STD_ERR,"%s: Error: no database filename specified\n", Argv0);
-    return 1;
+    rc = 1;
+    goto shell_bail;
 #endif
   }
   data.out = STD_OUT;
@@ -11874,14 +12026,17 @@ int SQLITE_CDECL SHELL_MAIN(int argc, wchar_t **wargv){
   ** is given on the command line, look for a file named ~/.sqliterc and
   ** try to process it.
   */
-  process_sqliterc(&data,zInitFile);
+  rc = process_sqliterc(&data,zInitFile);
+  if( rc>1 || (rc!=0 && bail_on_error) ){
+    goto shell_bail;
+  }
 
   /* Make a second pass through the command-line argument and set
   ** options.  This second pass is delayed until after the initialization
   ** file is processed so that the command-line arguments will override
   ** settings in the initialization file.
   */
-  for(i=1; i<argc; i++){
+  for(i=1; i<argc && rc<2; i++){
     char *z = argv[i];
     if( z[0]!='-' ) continue;
     if( z[1]=='-' ){ z++; }
@@ -11970,7 +12125,7 @@ int SQLITE_CDECL SHELL_MAIN(int argc, wchar_t **wargv){
       /* No-op.  The bail_on_error flag should already be set. */
     }else if( strcmp(z,"-version")==0 ){
       fprintf(STD_OUT, "%s %s\n", sqlite3_libversion(), sqlite3_sourceid());
-      return 0;
+      rc = 2;
     }else if( strcmp(z,"-interactive")==0 ){
       stdin_is_interactive = 1;
     }else if( strcmp(z,"-batch")==0 ){
@@ -12014,31 +12169,28 @@ int SQLITE_CDECL SHELL_MAIN(int argc, wchar_t **wargv){
       z = cmdline_option_value(argc,argv,++i);
       if( z[0]=='.' ){
         rc = do_meta_command(z, &data);
-        if( rc && bail_on_error ) return rc==2 ? 0 : rc;
-      }else{
-        open_db(&data, 0);
-        rc = shell_exec(&data, z, &zErrMsg);
-        if( zErrMsg!=0 ){
-          utf8_printf(STD_ERR,"Error: %s\n", zErrMsg);
-          if( bail_on_error ) return rc!=0 ? rc : 1;
-        }else if( rc!=0 ){
-          utf8_printf(STD_ERR,"Error: unable to process SQL \"%s\"\n", z);
-          if( bail_on_error ) return rc;
+        if( rc && bail_on_error ){
+          data.abruptExit = rc;
+          rc = 2;
+          goto shell_bail;
         }
+      }else{
+        rc = run_single_query(&data, z);
       }
 #if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_HAVE_ZLIB)
     }else if( strncmp(z, "-A", 2)==0 ){
       if( nCmd>0 ){
         utf8_printf(STD_ERR, "Error: cannot mix regular SQL or dot-commands"
                             " with \"%s\"\n", z);
-        return 1;
+        rc = 1;
+        goto shell_bail;
       }
       open_db(&data, OPEN_DB_ZIPFILE);
       if( z[2] ){
         argv[i] = &z[2];
-        arDotCommand(&data, 1, argv+(i-1), argc-(i-1));
+        rc = arDotCommand(&data, 1, argv+(i-1), argc-(i-1));
       }else{
-        arDotCommand(&data, 1, argv+i, argc-i);
+        rc = arDotCommand(&data, 1, argv+i, argc-i);
       }
       readStdin = 0;
       break;
@@ -12048,7 +12200,7 @@ int SQLITE_CDECL SHELL_MAIN(int argc, wchar_t **wargv){
     }else{
       utf8_printf(STD_ERR,"%s: Error: unknown option: %s\n", Argv0, z);
       raw_printf(STD_ERR,"Use -help for a list of options.\n");
-      return 1;
+      rc = 2;
     }
     data.cMode = data.mode;
   }
@@ -12058,26 +12210,14 @@ int SQLITE_CDECL SHELL_MAIN(int argc, wchar_t **wargv){
     ** command-line inputs, except for the argToSkip argument which contains
     ** the database filename.
     */
-    for(i=0; i<nCmd; i++){
+    for(i=0; i<nCmd && rc<2; i++){
       if( azCmd[i][0]=='.' ){
         rc = do_meta_command(azCmd[i], &data);
-        if( rc ){
-          free(azCmd);
-          return rc==2 ? 0 : rc;
+        if( rc && bail_on_error ){
+          goto shell_bail;
         }
       }else{
-        open_db(&data, 0);
-        rc = shell_exec(&data, azCmd[i], &zErrMsg);
-        if( zErrMsg || rc ){
-          if( zErrMsg!=0 ){
-            utf8_printf(STD_ERR,"Error: %s\n", zErrMsg);
-          }else{
-            utf8_printf(STD_ERR,"Error: unable to process SQL: %s\n", azCmd[i]);
-          }
-          sqlite3_free(zErrMsg);
-          free(azCmd);
-          return rc!=0 ? rc : 1;
-        }
+        rc = run_single_query(&data, azCmd[i]);
       }
     }
   }else{
@@ -12125,12 +12265,14 @@ int SQLITE_CDECL SHELL_MAIN(int argc, wchar_t **wargv){
       rc = process_input(&data);
     }
   }
-  free(azCmd);
+ shell_bail:
   set_table_name(&data, 0);
   if( data.db ){
     session_close_all(&data, -1);
     close_db(data.db);
   }
+  sqlite3_mutex_free(pGlobalDbLock);
+  pGlobalDbLock = 0;
   for(i=0; i<ArraySize(data.aAuxDb); i++){
     sqlite3_free(data.aAuxDb[i].zFreeOnClose);
     if( data.aAuxDb[i].db ){
@@ -12148,8 +12290,21 @@ int SQLITE_CDECL SHELL_MAIN(int argc, wchar_t **wargv){
 #endif
   free(data.colWidth);
   free(data.zNonce);
-  /* Clear the global data structure so that valgrind will detect memory
-  ** leaks */
+  /* Freed ShellState objects so that valgrind detects real memory leaks. */
+  free(azCmd);
+  /* Process exit codes to yield single shell exit code. 
+   * rc == 2 is a quit signal, resulting in no error by itself.
+   * data.bAbruptExit conveys either an normal (success or error) exit
+   * code or an abnormal exit code. Its abnormal values take priority.
+   */
+  /* Check for an abnormal exit, and issue error if so. */
+  if( rc>2 || data.abruptExit>1 ){
+    rc = (rc<data.abruptExit)? data.abruptExit : rc;
+    raw_printf(STD_ERR, "Abnormal exit (%d)\n", data.abruptExit);
+  }else{
+    /* rc is one of 0,1,2, mapping to 0,1,0 shellexit codes. */
+    rc &= ~1;
+  }
   memset(&data, 0, sizeof(data));
   return rc;
 }

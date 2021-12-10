@@ -64,6 +64,7 @@ struct WhereLevel {
   u32 iLikeRepCntr;     /* LIKE range processing counter register (times 2) */
   int addrLikeRep;      /* LIKE range processing address */
 #endif
+  int regFilter;        /* Bloom filter */
   u8 iFrom;             /* Which entry in the FROM clause */
   u8 op, p3, p5;        /* Opcode, P3 & P5 of the opcode that ends the loop */
   int p1, p2;           /* Operands of the opcode used to end the loop */
@@ -506,8 +507,14 @@ int sqlite3WhereExplainOneScan(
   WhereLevel *pLevel,             /* Scan to write OP_Explain opcode for */
   u16 wctrlFlags                  /* Flags passed to sqlite3WhereBegin() */
 );
+int sqlite3WhereExplainBloomFilter(
+  const Parse *pParse,            /* Parse context */
+  const WhereInfo *pWInfo,        /* WHERE clause */
+  const WhereLevel *pLevel        /* Bloom filter on this level */
+);
 #else
 # define sqlite3WhereExplainOneScan(u,v,w,x) 0
+# define sqlite3WhereExplainBloomFilter(u,v,w) 0
 #endif /* SQLITE_OMIT_EXPLAIN */
 #ifdef SQLITE_ENABLE_STMT_SCANSTATUS
 void sqlite3WhereAddScanStatus(
@@ -600,5 +607,7 @@ void sqlite3WhereTabFuncArgs(Parse*, SrcItem*, WhereClause*);
 #define WHERE_BIGNULL_SORT 0x00080000  /* Column nEq of index is BIGNULL */
 #define WHERE_IN_SEEKSCAN  0x00100000  /* Seek-scan optimization for IN */
 #define WHERE_TRANSCONS    0x00200000  /* Uses a transitive constraint */
+#define WHERE_BLOOMFILTER  0x00400000  /* Consider using a Bloom-filter */
+#define WHERE_SELFCULL     0x00800000  /* nOut reduced by extra WHERE terms */
 
 #endif /* !defined(SQLITE_WHEREINT_H) */

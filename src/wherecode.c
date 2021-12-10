@@ -176,19 +176,27 @@ int sqlite3WhereExplainOneScan(
         explainIndexRange(&str, pLoop);
       }
     }else if( (flags & WHERE_IPK)!=0 && (flags & WHERE_CONSTRAINT)!=0 ){
-      const char *zRangeOp;
+      char cRangeOp;
+#if 0  /* Better output, but breaks many tests */
+      const Table *pTab = pItem->pTab;
+      const char *zRowid = pTab->iPKey>=0 ? pTab->aCol[pTab->iPKey].zCnName:
+                              "rowid";
+#else
+      const char *zRowid = "rowid";
+#endif
+      sqlite3_str_appendf(&str, " USING INTEGER PRIMARY KEY (%s", zRowid);
       if( flags&(WHERE_COLUMN_EQ|WHERE_COLUMN_IN) ){
-        zRangeOp = "=";
+        cRangeOp = '=';
       }else if( (flags&WHERE_BOTH_LIMIT)==WHERE_BOTH_LIMIT ){
-        zRangeOp = ">? AND rowid<";
+        sqlite3_str_appendf(&str, ">? AND %s", zRowid);
+        cRangeOp = '<';
       }else if( flags&WHERE_BTM_LIMIT ){
-        zRangeOp = ">";
+        cRangeOp = '>';
       }else{
         assert( flags&WHERE_TOP_LIMIT);
-        zRangeOp = "<";
+        cRangeOp = '<';
       }
-      sqlite3_str_appendf(&str, 
-          " USING INTEGER PRIMARY KEY (rowid%s?)",zRangeOp);
+      sqlite3_str_appendf(&str, "%c?)", cRangeOp);
     }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
     else if( (flags & WHERE_VIRTUALTABLE)!=0 ){
@@ -209,6 +217,56 @@ int sqlite3WhereExplainOneScan(
     ret = sqlite3VdbeAddOp4(v, OP_Explain, sqlite3VdbeCurrentAddr(v),
                             pParse->addrExplain, 0, zMsg,P4_DYNAMIC);
   }
+  return ret;
+}
+
+/*
+** Add a single OP_Explain opcode that describes a Bloom filter.
+**
+** Or if not processing EXPLAIN QUERY PLAN and not in a SQLITE_DEBUG and/or
+** SQLITE_ENABLE_STMT_SCANSTATUS build, then OP_Explain opcodes are not
+** required and this routine is a no-op.
+**
+** If an OP_Explain opcode is added to the VM, its address is returned.
+** Otherwise, if no OP_Explain is coded, zero is returned.
+*/
+int sqlite3WhereExplainBloomFilter(
+  const Parse *pParse,               /* Parse context */
+  const WhereInfo *pWInfo,           /* WHERE clause */
+  const WhereLevel *pLevel           /* Bloom filter on this level */
+){
+  int ret = 0;
+  SrcItem *pItem = &pWInfo->pTabList->a[pLevel->iFrom];
+  Vdbe *v = pParse->pVdbe;      /* VM being constructed */
+  sqlite3 *db = pParse->db;     /* Database handle */
+  char *zMsg;                   /* Text to add to EQP output */
+  int i;                        /* Loop counter */
+  WhereLoop *pLoop;             /* The where loop */
+  StrAccum str;                 /* EQP output string */
+  char zBuf[100];               /* Initial space for EQP output string */
+
+  sqlite3StrAccumInit(&str, db, zBuf, sizeof(zBuf), SQLITE_MAX_LENGTH);
+  str.printfFlags = SQLITE_PRINTF_INTERNAL;
+  sqlite3_str_appendf(&str, "BLOOM FILTER ON %S (", pItem);
+  pLoop = pLevel->pWLoop;
+  if( pLoop->wsFlags & WHERE_IPK ){
+    const Table *pTab = pItem->pTab;
+    if( pTab->iPKey>=0 ){
+      sqlite3_str_appendf(&str, "%s=?", pTab->aCol[pTab->iPKey].zCnName);
+    }else{
+      sqlite3_str_appendf(&str, "rowid=?");
+    }
+  }else{
+    for(i=pLoop->nSkip; i<pLoop->u.btree.nEq; i++){
+      const char *z = explainIndexColumnName(pLoop->u.btree.pIndex, i);
+      if( i>pLoop->nSkip ) sqlite3_str_append(&str, " AND ", 5);
+      sqlite3_str_appendf(&str, "%s=?", z);
+    }
+  }
+  sqlite3_str_append(&str, ")", 1);
+  zMsg = sqlite3StrAccumFinish(&str);
+  ret = sqlite3VdbeAddOp4(v, OP_Explain, sqlite3VdbeCurrentAddr(v),
+                          pParse->addrExplain, 0, zMsg,P4_DYNAMIC);
   return ret;
 }
 #endif /* SQLITE_OMIT_EXPLAIN */
@@ -1302,6 +1360,63 @@ static void whereApplyPartialIndexConstraints(
 }
 
 /*
+** This routine is called right after An OP_Filter has been generated and
+** before the corresponding index search has been performed.  This routine
+** checks to see if there are additional Bloom filters in inner loops that
+** can be checked prior to doing the index lookup.  If there are available
+** inner-loop Bloom filters, then evaluate those filters now, before the
+** index lookup.  The idea is that a Bloom filter check is way faster than
+** an index lookup, and the Bloom filter might return false, meaning that
+** the index lookup can be skipped.
+**
+** We know that an inner loop uses a Bloom filter because it has the
+** WhereLevel.regFilter set.  If an inner-loop Bloom filter is checked,
+** then clear the WhereLevel.regFilter value to prevent the Bloom filter
+** from being checked a second time when the inner loop is evaluated.
+*/
+static SQLITE_NOINLINE void filterPullDown(
+  Parse *pParse,       /* Parsing context */
+  WhereInfo *pWInfo,   /* Complete information about the WHERE clause */
+  int iLevel,          /* Which level of pWInfo->a[] should be coded */
+  int addrNxt,         /* Jump here to bypass inner loops */
+  Bitmask notReady     /* Loops that are not ready */
+){
+  while( ++iLevel < pWInfo->nLevel ){
+    WhereLevel *pLevel = &pWInfo->a[iLevel];
+    WhereLoop *pLoop = pLevel->pWLoop;
+    if( pLevel->regFilter==0 ) continue;
+    /*         ,--- Because constructBloomFilter() has will not have set
+    **  vvvvv--'    pLevel->regFilter if this were true. */
+    if( NEVER(pLoop->prereq & notReady) ) continue;
+    if( pLoop->wsFlags & WHERE_IPK ){
+      WhereTerm *pTerm = pLoop->aLTerm[0];
+      int regRowid;
+      assert( pTerm!=0 );
+      assert( pTerm->pExpr!=0 );
+      testcase( pTerm->wtFlags & TERM_VIRTUAL );
+      regRowid = sqlite3GetTempReg(pParse);
+      regRowid = codeEqualityTerm(pParse, pTerm, pLevel, 0, 0, regRowid);
+      sqlite3VdbeAddOp4Int(pParse->pVdbe, OP_Filter, pLevel->regFilter,
+                           addrNxt, regRowid, 1);
+      VdbeCoverage(pParse->pVdbe);
+    }else{
+      u16 nEq = pLoop->u.btree.nEq;
+      int r1;
+      char *zStartAff;
+
+      assert( pLoop->wsFlags & WHERE_INDEXED );
+      r1 = codeAllEqualityTerms(pParse,pLevel,0,0,&zStartAff);
+      codeApplyAffinity(pParse, r1, nEq, zStartAff);
+      sqlite3DbFree(pParse->db, zStartAff);
+      sqlite3VdbeAddOp4Int(pParse->pVdbe, OP_Filter, pLevel->regFilter,
+                           addrNxt, r1, nEq);
+      VdbeCoverage(pParse->pVdbe);
+    }
+    pLevel->regFilter = 0;
+  }
+}
+
+/*
 ** Generate code for the start of the iLevel-th loop in the WHERE clause
 ** implementation described by pWInfo.
 */
@@ -1511,6 +1626,12 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     iRowidReg = codeEqualityTerm(pParse, pTerm, pLevel, 0, bRev, iReleaseReg);
     if( iRowidReg!=iReleaseReg ) sqlite3ReleaseTempReg(pParse, iReleaseReg);
     addrNxt = pLevel->addrNxt;
+    if( pLevel->regFilter ){
+      sqlite3VdbeAddOp4Int(v, OP_Filter, pLevel->regFilter, addrNxt,
+                           iRowidReg, 1);
+      VdbeCoverage(v);
+      filterPullDown(pParse, pWInfo, iLevel, addrNxt, notReady);
+    }
     sqlite3VdbeAddOp3(v, OP_SeekRowid, iCur, addrNxt, iRowidReg);
     VdbeCoverage(v);
     pLevel->op = OP_Noop;
@@ -1835,6 +1956,12 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       if( regBignull ){
         sqlite3VdbeAddOp2(v, OP_Integer, 1, regBignull);
         VdbeComment((v, "NULL-scan pass ctr"));
+      }
+      if( pLevel->regFilter ){
+        sqlite3VdbeAddOp4Int(v, OP_Filter, pLevel->regFilter, addrNxt,
+                             regBase, nEq);
+        VdbeCoverage(v);
+        filterPullDown(pParse, pWInfo, iLevel, addrNxt, notReady);
       }
 
       op = aStartOp[(start_constraints<<2) + (startEq<<1) + bRev];

@@ -2,8 +2,9 @@
 #define OBJIFACE_H
 
 /* This header defines macros to aid declaration of object interfaces
- * used for shell extension. These macros are suitable for either C
- * or C++ implementations. For C implementations, an extra struct is
+ * used for shell extension, and to support convenient implementation
+ * of those interfaces.[a] These macros are suitable for either C or
+ * C++ implementations. For C implementations, an extra struct is
  * defined, whose typename is <InterfaceName>_Vtable, which will need
  * to be instantiated and populated with function pointers having the
  * same order and signatures as those declared for the interface. For
@@ -16,10 +17,10 @@
  *     INTERFACE_BEGIN( InterfaceName )
  *     PURE_VMETHOD( returnType, methodName, InterfaceName, argCount, args )
  *     INTERFACE_END( InterfaceName )
- *     IMPLEMENTING( returnType, methodName, ClassName, argCount, args ) [a]
+ *     IMPLEMENTING( returnType, methodName, ClassName, argCount, args ) [b]
  *   (for C implementations only)
- *     VTABLE_NAME( ClassName ) [b]
- *   (for C++ implementations only [c])
+ *     VTABLE_NAME( ClassName ) [c]
+ *   (for C++ implementations only [d])
  *     CONCRETE_BEGIN( InterfaceName, DerivedName )
  *     CONCRETE_METHOD( returnType, methodName, ClassName, argCount, args )
  *     CONCRETE_END( DerivedName )
@@ -34,11 +35,13 @@
  *   4. A leading method, named "destruct" without additional arguments
  *     and returning void, is declared for all interfaces. This is not
  *     the C++ destructor. (It might delegate to a destructor.)
- *   [a. This macro may be useful for function/method definitions which
+ *   [a. The convenience is that the signatures from the interface may
+ *     be reused for method implementations with a copy and paste. ]
+ *   [b. This macro may be useful for function/method definitions which
  *     implement methods in an INTERFACE_{BEGIN,...,END} sequence. ]
- *   [b. This macro is useful for populating a C dispatch table whose
+ *   [c. This macro is useful for populating a C dispatch table whose
  *    layout is declared in the INTERFACE_{BEGIN,...,END} sequence. ]
- *   [c. These macros are useful for declaring instantiatable classes
+ *   [d. These macros are useful for declaring instantiatable classes
  *    derived from an abstract base class via INTERFACE_{BEGIN,END}. ]
  */
 

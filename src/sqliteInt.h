@@ -1761,6 +1761,8 @@ struct sqlite3 {
 #define SQLITE_SeekScan       0x00020000 /* The OP_SeekScan optimization */
 #define SQLITE_OmitOrderBy    0x00040000 /* Omit pointless ORDER BY */
    /* TH3 expects this value  ^^^^^^^^^^ to be 0x40000. Coordinate any change */
+#define SQLITE_BloomFilter    0x00080000 /* Use a Bloom filter on searches */
+#define SQLITE_BloomPulldown  0x00100000 /* Run Bloom filters early */
 #define SQLITE_AllOpts        0xffffffff /* All optimizations */
 
 /*
@@ -4774,14 +4776,8 @@ int sqlite3Utf8CharLen(const char *pData, int nByte);
 u32 sqlite3Utf8Read(const u8**);
 LogEst sqlite3LogEst(u64);
 LogEst sqlite3LogEstAdd(LogEst,LogEst);
-#ifndef SQLITE_OMIT_VIRTUALTABLE
 LogEst sqlite3LogEstFromDouble(double);
-#endif
-#if defined(SQLITE_ENABLE_STMT_SCANSTATUS) || \
-    defined(SQLITE_ENABLE_STAT4) || \
-    defined(SQLITE_EXPLAIN_ESTIMATED_ROWS)
 u64 sqlite3LogEstToInt(LogEst);
-#endif
 VList *sqlite3VListAdd(sqlite3*,VList*,const char*,int,int);
 const char *sqlite3VListNumToName(VList*,int);
 int sqlite3VListNameToNum(VList*,const char*,int);
