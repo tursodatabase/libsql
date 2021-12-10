@@ -1,5 +1,5 @@
-C Add\ssupport\sfor\sBloom-filters\sas\sa\sperformance\soptimization\sfor\sjoins.
-D 2021-12-09T20:06:18.928
+C Rename\sthe\sinternal\sroutine\sconstructBloomFilter()\sto\nsqlite3ConstructBloomFilter().\sOSSFuzz\sis\sreporting\sa\scrash\swith\sa\sgarbled\nstack\sthat\swe\scannot\sreproduce.\sPerhaps\sthe\soriginal\s"constructBloomFilter()"\nname\sis\scolliding\swith\ssome\sinternal\sname\sused\sby\sOSSFuzz.\sWe'll\ssee\sif\sthis\nrename\sclears\sthe\sproblem.
+D 2021-12-10T17:36:16.695
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -638,9 +638,9 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c ed0398a7adf02c31e34aada42cc86c58f413a7afe5f741a5d373ad087abde028
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
-F src/where.c 71bbbac8748ddd470dd3c4213342dce2e39c2c0aa84f9b03d80bbc075fb7c502
+F src/where.c 179e0376b8fa1a9ac9671cd7382d88aef547a4c6a7cc2833f57011990e826956
 F src/whereInt.h e83f7ba73db5b1b2685118fad67d178fbe04751a25419f0f6ff73e58b4807325
-F src/wherecode.c 98ec56212ea7c0993f5eb808c515076d42c814f833c1641022927903cef0e811
+F src/wherecode.c 47311c0a64e9038c8f52f889558bdbe93f8b105a5517f05bef4260bd8c35e66d
 F src/whereexpr.c 791544603b254cf11f8e84e3b50b0863c57322e9f213b828680f658e232ebc57
 F src/window.c 5d3b397b0c026d0ff5890244ac41359e524c01ae31e78782e1ff418c3e271a9e
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1934,8 +1934,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1eefd957ff35e961685db565f7ef116c566a04574c5bedad7298b3cc69dd72d2 ce42039f5647b1f276acf5d9911528ecb47df1544a587def72c8cd6b2f664289
-R c6e1a17bdb20d0994b97369ef3d14311
-T +closed ce42039f5647b1f276acf5d9911528ecb47df1544a587def72c8cd6b2f664289
+P 633bfeeea2bccdd44126acf3f61ecca163c9d933bdc787a2c18a697dc9406882
+R 2727e42f3726d0bce34928653c056def
 U drh
-Z 2960f76524291316688b632931fc780c
+Z 81c6addbec75f6f350e0d3032a7fdc73

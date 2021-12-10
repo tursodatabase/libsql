@@ -985,7 +985,7 @@ end_auto_index_create:
 ** the loop would benefit from a Bloom filter, and the WHERE_BLOOMFILTER bit
 ** is set.
 */
-static SQLITE_NOINLINE void constructBloomFilter(
+static SQLITE_NOINLINE void sqlite3ConstructBloomFilter(
   WhereInfo *pWInfo,    /* The WHERE clause */
   int iLevel,           /* Index in pWInfo->a[] that is pLevel */
   WhereLevel *pLevel,   /* Make a Bloom filter for this FROM term */
@@ -5615,7 +5615,7 @@ WhereInfo *sqlite3WhereBegin(
                   &pTabList->a[pLevel->iFrom], notReady, pLevel);
 #endif
       }else{
-        constructBloomFilter(pWInfo, ii, pLevel, notReady);
+        sqlite3ConstructBloomFilter(pWInfo, ii, pLevel, notReady);
       }
       if( db->mallocFailed ) goto whereBeginError;
     }
