@@ -1075,7 +1075,12 @@ static SQLITE_NOINLINE void sqlite3ConstructBloomFilter(
       pLoop = pLevel->pWLoop;
       if( pLoop==0 ) continue;
       if( pLoop->prereq & notReady ) continue;
-      if( pLoop->wsFlags & WHERE_BLOOMFILTER ) break;
+      if( (pLoop->wsFlags & (WHERE_BLOOMFILTER|WHERE_COLUMN_IN))==WHERE_BLOOMFILTER ){
+        /* This is a candidate for bloom-filter pull-down (early evaluation).
+        ** The test that WHERE_COLUMN_IN is omitted is important, as we are not able
+        ** to do early evaluation of bloom filters that make use of the IN operator */
+        break;
+      }
     }
   }while( iLevel < pWInfo->nLevel );
   sqlite3VdbeJumpHere(v, addrOnce);

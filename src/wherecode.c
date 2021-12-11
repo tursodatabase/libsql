@@ -1405,6 +1405,7 @@ static SQLITE_NOINLINE void filterPullDown(
       char *zStartAff;
 
       assert( pLoop->wsFlags & WHERE_INDEXED );
+      assert( (pLoop->wsFlags & WHERE_COLUMN_IN)==0 );
       r1 = codeAllEqualityTerms(pParse,pLevel,0,0,&zStartAff);
       codeApplyAffinity(pParse, r1, nEq, zStartAff);
       sqlite3DbFree(pParse->db, zStartAff);

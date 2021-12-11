@@ -1,5 +1,5 @@
-C Factor\sout\sthe\slogic\sthat\sdoes\squoting\sfor\sthe\sSQL\squote()\sfunction,\sso\sthat\nit\smight\sbe\sreused\sfor\sother\spurposes.
-D 2021-12-10T21:01:24.675
+C Do\snot\sallow\searly\sevaluation\sof\sBloom\sfilters\sthat\suse\sthe\sIN\soperator\sas\nthe\smachinery\sto\sdeal\swith\sthe\sIN\soperator\sis\snot\savailable.\ndbsqlfuzz\s5b51c247518278f79a45cea978702e86e86cd4f9.
+D 2021-12-11T17:10:58.929
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -638,9 +638,9 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c ed0398a7adf02c31e34aada42cc86c58f413a7afe5f741a5d373ad087abde028
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
-F src/where.c 179e0376b8fa1a9ac9671cd7382d88aef547a4c6a7cc2833f57011990e826956
+F src/where.c f92862c2d7b9dd6524b10c4ad1f1b30d9cd6724b93077550ad8ebe4a74810458
 F src/whereInt.h e83f7ba73db5b1b2685118fad67d178fbe04751a25419f0f6ff73e58b4807325
-F src/wherecode.c 47311c0a64e9038c8f52f889558bdbe93f8b105a5517f05bef4260bd8c35e66d
+F src/wherecode.c 6a594ed25bfbeb60d455868b7be62637575e4f1949152de4336e4825e0c54ba6
 F src/whereexpr.c 791544603b254cf11f8e84e3b50b0863c57322e9f213b828680f658e232ebc57
 F src/window.c 5d3b397b0c026d0ff5890244ac41359e524c01ae31e78782e1ff418c3e271a9e
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1934,7 +1934,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 403e7312dd9a3fe493a21aceb82e387d6f152622d66c1b403c881597713e8cc3
-R 4fa3f8129d17f257f0557369c327b148
+P 8e98ba1eeb1a5a61b7cb2de337ef8bca3d07494266a50d62b9c6bc60ad0a955f
+R 593507c8b07b9c8531bd64e8d5ab1fc4
 U drh
-Z 1eec60e7fbec94682a3271bf749ce5cf
+Z a179a37fd038e80569064057605d6e4f
