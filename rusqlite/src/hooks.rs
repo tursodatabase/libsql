@@ -354,8 +354,6 @@ impl Connection {
 
     /// Register a callback function to be invoked whenever
     /// a transaction is committed.
-    ///
-    /// The callback returns `true` to rollback.
     #[inline]
     pub fn rollback_hook<F>(&self, hook: Option<F>)
     where
