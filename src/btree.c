@@ -5274,7 +5274,7 @@ static int moveToRoot(BtCursor *pCur){
       while( --pCur->iPage ){
         releasePageNotNull(pCur->apPage[pCur->iPage]);
       }
-      pCur->pPage = pCur->apPage[0];
+      pRoot = pCur->pPage = pCur->apPage[0];
       goto skip_init;
     }
   }else if( pCur->pgnoRoot==0 ){
@@ -5321,7 +5321,6 @@ skip_init:
   pCur->info.nSize = 0;
   pCur->curFlags &= ~(BTCF_AtLast|BTCF_ValidNKey|BTCF_ValidOvfl);
 
-  pRoot = pCur->pPage;
   if( pRoot->nCell>0 ){
     pCur->eState = CURSOR_VALID;
   }else if( !pRoot->leaf ){
