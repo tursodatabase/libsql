@@ -1,5 +1,5 @@
-C Do\snot\sallow\searly\sevaluation\sof\sBloom\sfilters\sthat\suse\sthe\sIN\soperator\sas\nthe\smachinery\sto\sdeal\swith\sthe\sIN\soperator\sis\snot\savailable.\ndbsqlfuzz\s5b51c247518278f79a45cea978702e86e86cd4f9.
-D 2021-12-11T17:10:58.929
+C Remove\sunused\scode.
+D 2021-12-13T00:02:59.146
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -623,7 +623,7 @@ F src/upsert.c 8789047a8f0a601ea42fa0256d1ba3190c13746b6ba940fe2d25643a7e991937
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c 569349b0bddcbfbc661856f446adb92e1b0a47b3cbef548da9fc5aa639d7964c
 F src/vacuum.c 6c38ddc52f0619865c91dae9c441d4d48bf3040d7dc1bc5b22da1e45547ed0b3
-F src/vdbe.c 5c05b1149a930851f36b29172002dfa56ce703e13f82d5bb4242a29dc144e350
+F src/vdbe.c b63594839cbf770a29e2b3b81570971a3d2c1c995c0586aade09bb548142113a
 F src/vdbe.h 25dabb25c7e157b84e59260cfb5b466c3ac103ede9f36f4db371332c47601abe
 F src/vdbeInt.h 910985ac2783fe0938b314d811759d53fd25caf215810f62ca1ff068d6d60d7b
 F src/vdbeapi.c 22c79072ae7d8a01e9bcae8ba16e918d60d202eaa9553b5fda38f99f7464d99a
@@ -1934,7 +1934,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8e98ba1eeb1a5a61b7cb2de337ef8bca3d07494266a50d62b9c6bc60ad0a955f
-R 593507c8b07b9c8531bd64e8d5ab1fc4
+P 799db7cb2e0d73031182d26a0e5919368f9f9823df81cb2863bfe79eca344f5c
+R 443c4836c6ff4faa05c5e5c0f674c8e4
 U drh
-Z a179a37fd038e80569064057605d6e4f
+Z fcc54c34db6e9396cb50523f7150424b
