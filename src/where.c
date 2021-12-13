@@ -1072,7 +1072,7 @@ static SQLITE_NOINLINE void sqlite3ConstructBloomFilter(
     while( ++iLevel < pWInfo->nLevel ){
       pLevel = &pWInfo->a[iLevel];
       pLoop = pLevel->pWLoop;
-      if( pLoop==0 ) continue;
+      if( NEVER(pLoop==0) ) continue;
       if( pLoop->prereq & notReady ) continue;
       if( (pLoop->wsFlags & (WHERE_BLOOMFILTER|WHERE_COLUMN_IN))
                  ==WHERE_BLOOMFILTER
