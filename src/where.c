@@ -1114,6 +1114,10 @@ static sqlite3_index_info *allocateIndexInfo(
   sqlite3_index_info *pIdxInfo;
   u16 mNoOmit = 0;
 
+  assert( pSrc!=0 );
+  assert( pSrc->pTab!=0 );
+  assert( IsVirtual(pSrc->pTab) );
+
   /* Count the number of possible WHERE clause constraints referring
   ** to this virtual table */
   for(i=nTerm=0, pTerm=pWC->a; i<pWC->nTerm; i++, pTerm++){
@@ -1140,8 +1144,36 @@ static sqlite3_index_info *allocateIndexInfo(
     int n = pOrderBy->nExpr;
     for(i=0; i<n; i++){
       Expr *pExpr = pOrderBy->a[i].pExpr;
-      if( pExpr->op!=TK_COLUMN || pExpr->iTable!=pSrc->iCursor ) break;
+      Expr *pE2;
+
+      /* Virtual tables are unable to deal with NULLS FIRST */
       if( pOrderBy->a[i].sortFlags & KEYINFO_ORDER_BIGNULL ) break;
+
+      /* First case - a direct column references without a COLLATE operator */
+      if( pExpr->op==TK_COLUMN && pExpr->iTable==pSrc->iCursor ){
+        assert( pExpr->iColumn>=XN_ROWID && pExpr->iColumn<pSrc->pTab->nCol );
+        continue;
+      }
+
+      /* 2nd case - a column reference with a COLLATE operator.  Only match
+      ** of the COLLATE operator matches the collation of the column. */
+      if( pExpr->op==TK_COLLATE
+       && (pE2 = pExpr->pLeft)->op==TK_COLUMN
+       && pE2->iTable==pSrc->iCursor
+      ){
+        const char *zColl;  /* The collating sequence name */
+        assert( !ExprHasProperty(pExpr, EP_IntValue) );
+        assert( pExpr->u.zToken!=0 );
+        assert( pE2->iColumn>=XN_ROWID && pE2->iColumn<pSrc->pTab->nCol );
+        pExpr->iColumn = pE2->iColumn;
+        if( pE2->iColumn<0 ) continue;  /* Collseq does not matter for rowid */
+        zColl = sqlite3ColumnColl(&pSrc->pTab->aCol[pE2->iColumn]);
+        if( zColl==0 ) zColl = sqlite3StrBINARY;
+        if( sqlite3_stricmp(pExpr->u.zToken, zColl)==0 ) continue;
+      }
+
+      /* No matches cause a break out of the loop */
+      break;
     }
     if( i==n){
       nOrderBy = n;
@@ -1228,6 +1260,9 @@ static sqlite3_index_info *allocateIndexInfo(
   pIdxInfo->nConstraint = j;
   for(i=0; i<nOrderBy; i++){
     Expr *pExpr = pOrderBy->a[i].pExpr;
+    assert( pExpr->op==TK_COLUMN
+         || (pExpr->op==TK_COLLATE && pExpr->pLeft->op==TK_COLUMN
+              && pExpr->iColumn==pExpr->pLeft->iColumn) );
     pIdxOrderBy[i].iColumn = pExpr->iColumn;
     pIdxOrderBy[i].desc = pOrderBy->a[i].sortFlags & KEYINFO_ORDER_DESC;
   }

@@ -145,6 +145,23 @@ do_eqp_test tabfunc01-3.13 {
 }
 
 
+do_eqp_test tabfunc01-3.20 {
+  WITH t1(a) AS (
+    SELECT value FROM generate_series(0,10,2)
+    UNION ALL
+    SELECT value FROM generate_series(9,18,3)
+  )
+  SELECT * FROM t1 ORDER BY a;
+} {
+  QUERY PLAN
+  `--MERGE (UNION ALL)
+     |--LEFT
+     |  `--SCAN generate_series VIRTUAL TABLE INDEX 23:
+     `--RIGHT
+        `--SCAN generate_series VIRTUAL TABLE INDEX 23:
+}
+  
+
 # Eponymous virtual table exists in all schemas.
 #
 do_execsql_test tabfunc01-4.1 {
