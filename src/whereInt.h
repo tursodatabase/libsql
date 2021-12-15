@@ -270,7 +270,7 @@ struct WhereTerm {
 #define TERM_COPIED     0x0008 /* Has a child */
 #define TERM_ORINFO     0x0010 /* Need to free the WhereTerm.u.pOrInfo object */
 #define TERM_ANDINFO    0x0020 /* Need to free the WhereTerm.u.pAndInfo obj */
-#define TERM_OR_OK      0x0040 /* Used during OR-clause processing */
+#define TERM_OK         0x0040 /* Used during OR-clause processing */
 #define TERM_VNULL      0x0080 /* Manufactured x>NULL or x<=NULL term */
 #define TERM_LIKEOPT    0x0100 /* Virtual terms from the LIKE optimization */
 #define TERM_LIKECOND   0x0200 /* Conditionally this LIKE operator term */

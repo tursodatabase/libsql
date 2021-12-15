@@ -796,7 +796,7 @@ static void exprAnalyzeOrTerm(
       pOrTerm = pOrWc->a;
       for(i=pOrWc->nTerm-1; i>=0; i--, pOrTerm++){
         assert( pOrTerm->eOperator & WO_EQ );
-        pOrTerm->wtFlags &= ~TERM_OR_OK;
+        pOrTerm->wtFlags &= ~TERM_OK;
         if( pOrTerm->leftCursor==iCursor ){
           /* This is the 2-bit case and we are on the second iteration and
           ** current term is from the first iteration.  So skip this term. */
@@ -837,7 +837,7 @@ static void exprAnalyzeOrTerm(
         assert( pOrTerm->eOperator & WO_EQ );
         assert( (pOrTerm->eOperator & (WO_OR|WO_AND))==0 );
         if( pOrTerm->leftCursor!=iCursor ){
-          pOrTerm->wtFlags &= ~TERM_OR_OK;
+          pOrTerm->wtFlags &= ~TERM_OK;
         }else if( pOrTerm->u.x.leftColumn!=iColumn || (iColumn==XN_EXPR 
                && sqlite3ExprCompare(pParse, pOrTerm->pExpr->pLeft, pLeft, -1)
         )){
@@ -853,7 +853,7 @@ static void exprAnalyzeOrTerm(
           if( affRight!=0 && affRight!=affLeft ){
             okToChngToIN = 0;
           }else{
-            pOrTerm->wtFlags |= TERM_OR_OK;
+            pOrTerm->wtFlags |= TERM_OK;
           }
         }
       }
@@ -870,7 +870,7 @@ static void exprAnalyzeOrTerm(
       Expr *pNew;            /* The complete IN operator */
 
       for(i=pOrWc->nTerm-1, pOrTerm=pOrWc->a; i>=0; i--, pOrTerm++){
-        if( (pOrTerm->wtFlags & TERM_OR_OK)==0 ) continue;
+        if( (pOrTerm->wtFlags & TERM_OK)==0 ) continue;
         assert( pOrTerm->eOperator & WO_EQ );
         assert( (pOrTerm->eOperator & (WO_OR|WO_AND))==0 );
         assert( pOrTerm->leftCursor==iCursor );
