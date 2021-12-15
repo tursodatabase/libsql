@@ -361,23 +361,23 @@ do_test 7.3.1 {
       SELECT count(*) FROM t1;
   } db2
   list [file size test.db-wal] [file size test.db-wal2] [file size test.db]
-} {12608 3176 11264}
+} {12608 3176 12288}
 do_test 7.3.2 {
   execsql { PRAGMA wal_checkpoint }
   list [file size test.db-wal] [file size test.db-wal2] [file size test.db]
-} {12608 3176 21504}
+} {12608 3176 22528}
 do_test 7.3.3 {
   execsql { 
     INSERT INTO t1 VALUES(randomblob(10000));
     INSERT INTO t1 VALUES(randomblob(500));
   }
   list [file size test.db-wal] [file size test.db-wal2] [file size test.db]
-} {12608 18896 21504}
+} {12608 18896 22528}
 do_test 7.3.4 {
   execsql END db2
   execsql { INSERT INTO t1 VALUES(randomblob(5000)); }
   list [file size test.db-wal] [file size test.db-wal2] [file size test.db]
-} {12608 18896 21504}
+} {12608 18896 22528}
 
 # Connection db2 is holding a PART2 lock. 
 #
@@ -406,22 +406,22 @@ do_test 7.4.1 {
       SELECT count(*) FROM t1;
   } db2
   list [file size test.db-wal] [file size test.db-wal2] [file size test.db]
-} {12608 12608 44032}
+} {12608 12608 50176}
 do_test 7.4.2 {
   execsql { 
     INSERT INTO t1 VALUES(randomblob(5000));
   }
   list [file size test.db-wal] [file size test.db-wal2] [file size test.db]
-} {12608 12608 44032}
+} {12608 12608 50176}
 do_test 7.4.3 {
   execsql { PRAGMA wal_checkpoint }
   list [file size test.db-wal] [file size test.db-wal2] [file size test.db]
-} {12608 12608 44032}
+} {12608 12608 50176}
 do_test 7.4.4 {
   execsql END db2
   execsql { PRAGMA wal_checkpoint }
   list [file size test.db-wal] [file size test.db-wal2] [file size test.db]
-} {12608 12608 54272}
+} {12608 12608 60416}
 
 # Connection db2 is holding a PART1_FULL2 lock. 
 #
@@ -451,24 +451,24 @@ do_test 7.5.1 {
       SELECT count(*) FROM t1;
   } db2
   list [file size test.db-wal] [file size test.db-wal2] [file size test.db]
-} {12608 12608 64512}
+} {12608 12608 76800}
 do_test 7.5.2 {
   execsql { PRAGMA wal_checkpoint }
   list [file size test.db-wal] [file size test.db-wal2] [file size test.db]
-} {12608 12608 75776}
+} {12608 12608 87040}
 do_test 7.5.3.1 {
   execsql { INSERT INTO t1 VALUES(randomblob(5000)) }
   list [file size test.db-wal] [file size test.db-wal2] [file size test.db]
-} {14704 12608 75776}
+} {14704 12608 87040}
 do_test 7.5.3.2 {
   execsql { INSERT INTO t1 VALUES(randomblob(5000)) }
   list [file size test.db-wal] [file size test.db-wal2] [file size test.db]
-} {22040 12608 75776}
+} {22040 12608 87040}
 do_test 7.5.4 {
   execsql END db2
   execsql { INSERT INTO t1 VALUES(randomblob(5000)) }
   list [file size test.db-wal] [file size test.db-wal2] [file size test.db]
-} {22040 12608 75776}
+} {22040 12608 87040}
 
 
 finish_test
