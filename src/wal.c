@@ -797,6 +797,7 @@ struct Wal {
 #ifdef SQLITE_ENABLE_SNAPSHOT
   WalIndexHdr *pSnapshot;    /* Start transaction here if not NULL */
 #endif
+  int bClosing;              /* Set to true at start of sqlite3WalClose() */
   int bWal2;                 /* bWal2 flag passed to WalOpen() */
 #ifdef SQLITE_ENABLE_SETLK_TIMEOUT
   sqlite3 *db;
@@ -2854,6 +2855,7 @@ int sqlite3WalClose(
   int rc = SQLITE_OK;
   if( pWal ){
     int isDelete = 0;             /* True to unlink wal and wal-index files */
+    pWal->bClosing = 1;
 
     /* If an EXCLUSIVE lock can be obtained on the database file (using the
     ** ordinary, rollback-mode locking methods, this guarantees that the
@@ -5068,13 +5070,17 @@ int sqlite3WalCheckpoint(
     }
   }
 
-  if( isChanged ){
+  if( isChanged && pWal->bClosing==0 ){
     /* If a new wal-index header was loaded before the checkpoint was 
     ** performed, then the pager-cache associated with pWal is now
     ** out of date. So zero the cached wal-index header to ensure that
     ** next time the pager opens a snapshot on this database it knows that
     ** the cache needs to be reset.
-    */
+    **
+    ** Except, do not do this if the wal is being closed. In this case
+    ** the caller needs the wal-index header to check if the database is
+    ** in wal2 mode and the "other" wal file also needs to be checkpointed.
+    ** Besides, the pager cache will not be used again in this case. */
     memset(&pWal->hdr, 0, sizeof(WalIndexHdr));
   }
 

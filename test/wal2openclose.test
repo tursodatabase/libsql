@@ -1,0 +1,81 @@
+# 2017 September 19
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing the operation of the library in
+# "PRAGMA journal_mode=WAL2" mode.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+source $testdir/lock_common.tcl
+source $testdir/malloc_common.tcl
+source $testdir/wal_common.tcl
+
+set testprefix wal2openclose
+ifcapable !wal {finish_test ; return }
+
+do_execsql_test 1.0 {
+  CREATE TABLE t1(a, b, c);
+  PRAGMA journal_mode = wal2;
+  PRAGMA wal_autocheckpoint = 0;
+  PRAGMA journal_size_limit = 75000;
+} {wal2 0 75000}
+
+do_test 1.1 {
+  for {set ii 1} {$ii <= 200} {incr ii} {
+    execsql {
+      INSERT INTO t1 VALUES($ii, $ii, $ii);
+    }
+  }
+  expr ([file size test.db-wal2] - 75000) > 30000
+} {1}
+
+do_test 1.2 {
+  db close
+  list [file exists test.db-wal] [file exists test.db-wal2]
+} {0 0}
+
+sqlite3 db test.db
+do_execsql_test 1.3 {
+  SELECT sum(c) FROM t1
+} {20100}
+db close
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 2.0 {
+  CREATE TABLE t1(a, b, c);
+  PRAGMA journal_mode = wal2;
+  INSERT INTO t1 VALUES(1, 2, 3);
+} {wal2}
+db_save_and_close
+
+db_restore_and_reopen
+do_execsql_test 2.1 {
+  SELECT * FROM t1;
+} {1 2 3}
+
+do_test 2.2 {
+  sqlite3 db2 test.db
+  db2 eval {INSERT INTO t1 VALUES(4, 5, 6)}
+  db2 close
+} {}
+
+breakpoint
+db close
+sqlite3 db test.db
+do_execsql_test 2.2 {
+  SELECT * FROM t1;
+} {1 2 3 4 5 6}
+
+
+
+finish_test
