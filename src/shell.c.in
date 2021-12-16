@@ -961,9 +961,11 @@ static void shellModuleSchema(
   int nVal,
   sqlite3_value **apVal
 ){
-  const char *zName = (const char*)sqlite3_value_text(apVal[0]);
-  char *zFake = shellFakeSchema(sqlite3_context_db_handle(pCtx), 0, zName);
+  const char *zName;
+  char *zFake;
   UNUSED_PARAMETER(nVal);
+  zName = (const char*)sqlite3_value_text(apVal[0]);
+  zFake = zName ? shellFakeSchema(sqlite3_context_db_handle(pCtx), 0, zName) : 0;
   if( zFake ){
     sqlite3_result_text(pCtx, sqlite3_mprintf("/* %s */", zFake),
                         -1, sqlite3_free);
