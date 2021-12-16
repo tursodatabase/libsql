@@ -938,6 +938,7 @@ static char *shellFakeSchema(
     nRow++;
     appendText(&s, zDiv, 0);
     zDiv = ",";
+    if( zCol==0 ) zCol = "";
     cQuote = quoteChar(zCol);
     appendText(&s, zCol, cQuote);
   }
@@ -4617,7 +4618,7 @@ static void shellEscapeCrnl(
 ){
   const char *zText = (const char*)sqlite3_value_text(argv[0]);
   UNUSED_PARAMETER(argc);
-  if( zText[0]=='\'' ){
+  if( zText && zText[0]=='\'' ){
     int nText = sqlite3_value_bytes(argv[0]);
     int i;
     char zBuf1[20];
@@ -4857,7 +4858,8 @@ static char *readline_completion_generator(const char *text, int state){
     sqlite3_free(zSql);
   }
   if( sqlite3_step(pStmt)==SQLITE_ROW ){
-    zRet = strdup((const char*)sqlite3_column_text(pStmt, 0));
+    const char *z = (const char*)sqlite3_column_text(pStmt,0);
+    zRet = z ? strdup(z) : 0;
   }else{
     sqlite3_finalize(pStmt);
     pStmt = 0;
@@ -4897,7 +4899,7 @@ static void linenoise_completion(const char *zLine, linenoiseCompletions *lc){
   while( sqlite3_step(pStmt)==SQLITE_ROW ){
     const char *zCompletion = (const char*)sqlite3_column_text(pStmt, 0);
     int nCompletion = sqlite3_column_bytes(pStmt, 0);
-    if( iStart+nCompletion < sizeof(zBuf)-1 ){
+    if( iStart+nCompletion < sizeof(zBuf)-1 && zCompletion ){
       memcpy(zBuf+iStart, zCompletion, nCompletion+1);
       linenoiseAddCompletion(lc, zBuf);
     }
@@ -5405,6 +5407,7 @@ static void tryToCloneSchema(
   while( (rc = sqlite3_step(pQuery))==SQLITE_ROW ){
     zName = sqlite3_column_text(pQuery, 0);
     zSql = sqlite3_column_text(pQuery, 1);
+    if( zName==0 || zSql==0 ) continue;
     printf("%s... ", zName); fflush(stdout);
     sqlite3_exec(newDb, (const char*)zSql, 0, 0, &zErrMsg);
     if( zErrMsg ){
@@ -5433,6 +5436,7 @@ static void tryToCloneSchema(
     while( sqlite3_step(pQuery)==SQLITE_ROW ){
       zName = sqlite3_column_text(pQuery, 0);
       zSql = sqlite3_column_text(pQuery, 1);
+      if( zName==0 || zSql==0 ) continue;
       printf("%s... ", zName); fflush(stdout);
       sqlite3_exec(newDb, (const char*)zSql, 0, 0, &zErrMsg);
       if( zErrMsg ){
@@ -5998,14 +6002,14 @@ static int lintFkeyIndexes(
       const char *zCI = (const char*)sqlite3_column_text(pSql, 4);
       const char *zParent = (const char*)sqlite3_column_text(pSql, 5);
 
+      if( zEQP==0 ) continue;
+      if( zGlob==0 ) continue;
       rc = sqlite3_prepare_v2(db, zEQP, -1, &pExplain, 0);
       if( rc!=SQLITE_OK ) break;
       if( SQLITE_ROW==sqlite3_step(pExplain) ){
         const char *zPlan = (const char*)sqlite3_column_text(pExplain, 3);
-        res = (
-              0==sqlite3_strglob(zGlob, zPlan)
-           || 0==sqlite3_strglob(zGlobIPK, zPlan)
-        );
+        res = zPlan!=0 && (  0==sqlite3_strglob(zGlob, zPlan)
+                          || 0==sqlite3_strglob(zGlobIPK, zPlan));
       }
       rc = sqlite3_finalize(pExplain);
       if( rc!=SQLITE_OK ) break;
@@ -7110,6 +7114,7 @@ static RecoverTable *recoverNewTable(
         if( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pPkFinder) ){
           pTab->iPk = sqlite3_column_int(pPkFinder, 0);
           zPk = (const char*)sqlite3_column_text(pPkFinder, 1);
+          if( zPk==0 ){ zPk = "_";  /* Defensive.  Should never happen */ }
         }
       }
 
@@ -7194,8 +7199,10 @@ static RecoverTable *recoverFindTable(
     if( sqlite3_stricmp(zType, "table")==0 ){
       zName = (const char*)sqlite3_column_text(pStmt, 1);
       zSql = (const char*)sqlite3_column_text(pStmt, 2);
-      pRet = recoverNewTable(pRc, zName, zSql, bIntkey, nCol);
-      break;
+      if( zName!=0 && zSql!=0 ){
+        pRet = recoverNewTable(pRc, zName, zSql, bIntkey, nCol);
+        break;
+      }
     }
   }
 
@@ -7889,6 +7896,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       while( sqlite3_step(pStmt)==SQLITE_ROW ){
         const char *zSchema = (const char *)sqlite3_column_text(pStmt,1);
         const char *zFile = (const char*)sqlite3_column_text(pStmt,2);
+        if( zSchema==0 || zFile==0 ) continue;
         azName = sqlite3_realloc(azName, (nName+1)*2*sizeof(char*));
         shell_check_oom(azName);
         azName[nName*2] = strdup(zSchema);
@@ -9889,6 +9897,9 @@ static int do_meta_command(char *zLine, ShellState *p){
         const char *zSql = (const char*)sqlite3_column_text(pStmt, 2);
         const char *zAns = (const char*)sqlite3_column_text(pStmt, 3);
 
+        if( zOp==0 ) continue;
+        if( zSql==0 ) continue;
+        if( zAns==0 ) continue;
         k = 0;
         if( bVerbose>0 ){
           printf("%d: %s %s\n", tno, zOp, zSql);
@@ -10009,6 +10020,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     zSep = "VALUES(";
     while( SQLITE_ROW==sqlite3_step(pStmt) ){
       const char *zTab = (const char*)sqlite3_column_text(pStmt,0);
+      if( zTab==0 ) continue;
       if( zLike && sqlite3_strlike(zLike, zTab, 0)!=0 ) continue;
       if( strncmp(zTab, "sqlite_",7)!=0 ){
         appendText(&sQuery,"SELECT * FROM ", 0);

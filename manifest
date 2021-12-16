@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\sthe\sresult\sof\sone\sof\sthe\snew\stest\scases.
-D 2021-12-16T17:21:34.554
+C New\sdefenses\sagainst\sOOM\sand\scorrupt\sdatabase\sproblems\sin\sthe\sCLI.
+D 2021-12-16T17:35:27.612
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -303,7 +303,7 @@ F ext/misc/dbdump.c b8592f6f2da292c62991a13864a60d6c573c47a9cc58362131b9e6a64f82
 F ext/misc/decimal.c 09f967dcf4a1ee35a76309829308ec278d3648168733f4a1147820e11ebefd12
 F ext/misc/eval.c 04bc9aada78c888394204b4ed996ab834b99726fb59603b0ee3ed6e049755dc1
 F ext/misc/explain.c 0086fab288d4352ea638cf40ac382aad3b0dc5e845a1ea829a694c015fd970fe
-F ext/misc/fileio.c 57fefd0efc535e62bb8b07fa146875171481da81a759bbfbe2fc91bab90058e0
+F ext/misc/fileio.c 4e7f7cd30de8df4820c552f14af3c9ca451c5ffe1f2e7bef34d598a12ebfb720
 F ext/misc/fossildelta.c 1240b2d3e52eab1d50c160c7fe1902a9bd210e052dc209200a750bbf885402d5
 F ext/misc/fuzzer.c eae560134f66333e9e1ca4c8ffea75df42056e2ce8456734565dbe1c2a92bf3d
 F ext/misc/ieee754.c 91a5594071143a4ab79c638fe9f059af1db09932faf2e704c3e29216a7d4f511
@@ -323,7 +323,7 @@ F ext/misc/rot13.c 51ac5f51e9d5fd811db58a9c23c628ad5f333c173f1fc53c8491a3603d385
 F ext/misc/scrub.c 2a44b0d44c69584c0580ad2553f6290a307a49df4668941d2812135bfb96a946
 F ext/misc/series.c 8d79354f2c3d46b95ee21272a07cf0bcabb58d1f2b06d9e7b8a31dca1dacb3e5
 F ext/misc/sha1.c 4011aef176616872b2a0d5bccf0ecfb1f7ce3fe5c3d107f3a8e949d8e1e3f08d
-F ext/misc/shathree.c e984f31731de4cf302a0386be5fe664580f63d8204c47b9b41cc4b997745f9ec
+F ext/misc/shathree.c 9b6fce315bf8b37bd72786086d1f0974701f651e83022a93244e0e8f56f98a45
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
 F ext/misc/spellfix.c 94df9bbfa514a563c1484f684a2df3d128a2f7209a84ca3ca100c68a0163e29f
 F ext/misc/sqlar.c 0ace5d3c10fe736dc584bf1159a36b8e2e60fab309d310cd8a0eecd9036621b6
@@ -552,7 +552,7 @@ F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c 4a1db4aadd802683db40ca2dbbb268187bd195f10cbdb7206dbd8ac988795571
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c a7a3d9f54eb24821ec5f67f2e5589b68a5d42d46fc5849d7376886777d93a85a
-F src/shell.c.in 0c68cd37963afef2086fddc61a282df448d911fdf7d960817eaebe4e0fa4b38a
+F src/shell.c.in 3f53d10076f3d0a7f993a03edec15d0ddad236536f300578cadd536e1a5b2d8c
 F src/sqlite.h.in 5999d6db0e65afbd686b76cddc385b310aa3815624edba43987913067f50e209
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8ff2fd2c166150b2e48639f5e506fb44e29f1a3f65031710b9e89d1c126ac839
@@ -1935,7 +1935,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a0a8d6c9f0e91996003626e4f80dfac278e3c5bddd9ace5d442061e6c95e49dc
-R cf0f5fd610bdee3d3f0b634a51bd7d90
+P 4d02a129c4781c97981748f3c69564e1320d8085dfba4c207e54793390cd64ab
+R d166a1375475e15d05923fef18bf064e
 U drh
-Z cd128a421a3db385221a4ff48ec0de2b
+Z 5bfe5520d7a9e1ead42448469dfb8bb8
