@@ -1,5 +1,5 @@
-C Simplify\sthe\sgeneration\sof\sthe\ssqlite3_index_info\sobject\sduring\squery\splanning\nfor\svirtual\stables.
-D 2021-12-15T20:48:15.594
+C Add\smore\stests\sfor\sOOM\sconditions\sin\sthe\sCLI.
+D 2021-12-16T13:29:28.610
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -552,7 +552,7 @@ F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c 4a1db4aadd802683db40ca2dbbb268187bd195f10cbdb7206dbd8ac988795571
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c a7a3d9f54eb24821ec5f67f2e5589b68a5d42d46fc5849d7376886777d93a85a
-F src/shell.c.in 239bee1085d94964f02582b0714dc3fc85cfc16e27e95813e4dbc24bb215a7e0
+F src/shell.c.in 487402a1242eda123a7765415765c2ba5fd80b251af968ac5cd753a21361dca7
 F src/sqlite.h.in 5999d6db0e65afbd686b76cddc385b310aa3815624edba43987913067f50e209
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8ff2fd2c166150b2e48639f5e506fb44e29f1a3f65031710b9e89d1c126ac839
@@ -1934,7 +1934,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5c3d398d20b86a1558720e995eddf11403aec2d160590571fa9525fe8f6efff9
-R 508a1ec856c9c59ad14d9d50f3ec0f6a
+P 241dc0428a6e0238c57e2449e98ea60047e777e29c83a4ebe6da16f7cba40e19
+R c242be18b9914b844987d57ba93b7d7b
 U drh
-Z 7cfa744adc9adca884cde06b49136ec0
+Z 275dad0e920745aee275fd4bee05334a
