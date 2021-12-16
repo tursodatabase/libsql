@@ -8987,6 +8987,7 @@ static int do_meta_command(char *zLine, ShellState *p){
 #endif /* SQLITE_DEBUG */
 
   if( c=='o' && strncmp(azArg[0], "open", n)==0 && n>=2 ){
+    const char *zFN = 0;     /* Pointer to constant filename */
     char *zNewFilename = 0;  /* Name of the database file to open */
     int iName = 1;           /* Index in azArg[] of the filename */
     int newFlag = 0;         /* True to delete file before opening */
@@ -9019,12 +9020,12 @@ static int do_meta_command(char *zLine, ShellState *p){
         utf8_printf(stderr, "unknown option: %s\n", z);
         rc = 1;
         goto meta_command_exit;
-      }else if( zNewFilename ){
+      }else if( zFN ){
         utf8_printf(stderr, "extra argument: \"%s\"\n", z);
         rc = 1;
         goto meta_command_exit;
       }else{
-        zNewFilename = sqlite3_mprintf("%s", z);
+        zFN = z;
       }
     }
 
@@ -9040,7 +9041,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     p->szMax = 0;
 
     /* If a filename is specified, try to open it first */
-    if( zNewFilename || p->openMode==SHELL_OPEN_HEXDB ){
+    if( zFN || p->openMode==SHELL_OPEN_HEXDB ){
       if( newFlag && !p->bSafeMode ) shellDeleteFile(zNewFilename);
       if( p->bSafeMode
        && p->openMode!=SHELL_OPEN_HEXDB
@@ -9048,6 +9049,12 @@ static int do_meta_command(char *zLine, ShellState *p){
        && strcmp(zNewFilename,":memory:")!=0
       ){
         failIfSafeMode(p, "cannot open disk-based database files in safe mode");
+      }
+      if( zFN ){
+        zNewFilename = sqlite3_mprintf("%s", zFN);
+        shell_check_oom(zNewFilename);
+      }else{
+        zNewFilename = 0;
       }
       p->pAuxDb->zDbFilename = zNewFilename;
       open_db(p, OPEN_DB_KEEPALIVE);

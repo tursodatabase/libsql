@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarning\sin\sthe\snew\sBloom\sfilter\slogic.
-D 2021-12-16T14:36:36.423
+C Fix\sa\smemory\sleak\sin\sthe\sCLI\sthat\soccurs\safter\san\serror\sin\sthe\s".open"\scommand.
+D 2021-12-16T14:59:25.008
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -552,7 +552,7 @@ F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c 4a1db4aadd802683db40ca2dbbb268187bd195f10cbdb7206dbd8ac988795571
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c a7a3d9f54eb24821ec5f67f2e5589b68a5d42d46fc5849d7376886777d93a85a
-F src/shell.c.in e1c8a1ce01c8d70e530919978b28419ab68c9d643a3de39049fa2ed0a8a655e5
+F src/shell.c.in 0c68cd37963afef2086fddc61a282df448d911fdf7d960817eaebe4e0fa4b38a
 F src/sqlite.h.in 5999d6db0e65afbd686b76cddc385b310aa3815624edba43987913067f50e209
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8ff2fd2c166150b2e48639f5e506fb44e29f1a3f65031710b9e89d1c126ac839
@@ -1934,7 +1934,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e732c429bafeffaf7e0f458213089c073c262a39eabb41b291e5006078ca7f98
-R 720cf5f28e762396fb457a8dae05b590
+P 9406d95d3fbaf0d8e65623adb790845f78a7456fb32aafd7fa4f74eda2f2dacc
+R e0df8ce6fe4f8339b59c88c348589e55
 U drh
-Z a0a1b2f028aa9dcc9dce157f74e8589a
+Z 6900fb872cf581b1501f7decf3624ec2
