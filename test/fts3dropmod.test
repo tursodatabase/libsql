@@ -39,6 +39,6 @@ do_execsql_test 2.0 {
 } 
 do_catchsql_test 2.1 {
   CREATE VIRTUAL TABLE t2 USING fts3(x);
-} {1 {no such module: fts4}}
+} {1 {no such module: fts3}}
 
 finish_test
