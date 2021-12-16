@@ -1301,7 +1301,7 @@ do_test vtab1-17.2 {
 unset -nocomplain echo_module_begin_fail
 
 do_execsql_test 18.1.0 {
-  CREATE TABLE t6(a, b TEXT);
+  CREATE TABLE t6(a, b TEXT COLLATE nocase);
   CREATE INDEX i6 ON t6(b, a);
   INSERT INTO t6 VALUES(1, 'Peter');
   INSERT INTO t6 VALUES(2, 'Andrew');
@@ -1335,7 +1335,20 @@ ifcapable !icu {
   }
 }
 
-do_execsql_test 18.2.0 {  PRAGMA case_sensitive_like = ON }
+do_execsql_test 18.2.0 {
+  DROP TABLE t6;
+  DROP TABLE e6;
+  CREATE TABLE t6(a, b TEXT COLLATE binary);
+  CREATE INDEX i6 ON t6(b, a);
+  INSERT INTO t6 VALUES(1, 'Peter');
+  INSERT INTO t6 VALUES(2, 'Andrew');
+  INSERT INTO t6 VALUES(3, '8James');
+  INSERT INTO t6 VALUES(4, '8John');
+  INSERT INTO t6 VALUES(5, 'Phillip');
+  INSERT INTO t6 VALUES(6, 'Bartholomew');
+  CREATE VIRTUAL TABLE e6 USING echo(t6);
+  PRAGMA case_sensitive_like = ON;
+}
 foreach {tn sql res filter} {
   2.1 "SELECT a FROM e6 WHERE b LIKE '8%'" {3 4}
     {xFilter {SELECT rowid, a, b FROM 't6' WHERE b like ?} 8%}

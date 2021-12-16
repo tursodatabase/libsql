@@ -578,6 +578,7 @@ void sqlite3WhereTabFuncArgs(Parse*, SrcItem*, WhereClause*);
 
 #define WO_ALL    0x1fff       /* Mask of all possible WO_* values */
 #define WO_SINGLE 0x01ff       /* Mask of all non-compound WO_* values */
+#define WO_CMP    0x00bf       /* Comparison ops: IN = < > <= >= IS */
 
 /*
 ** These are definitions of bits in the WhereLoop.wsFlags field.

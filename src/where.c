@@ -1125,6 +1125,8 @@ static sqlite3_index_info *allocateIndexInfo(
   ** terms found.
   */
   for(i=nTerm=0, pTerm=pWC->a; i<pWC->nTerm; i++, pTerm++){
+    const char *zColl;
+    const CollSeq *pColl;
     pTerm->wtFlags &= ~TERM_OK;
     if( pTerm->leftCursor != pSrc->iCursor ) continue;
     if( pTerm->prereqRight & mUnusable ) continue;
@@ -1147,6 +1149,22 @@ static sqlite3_index_info *allocateIndexInfo(
     ){
       continue;
     }
+
+    if( pTerm->u.x.leftColumn>=0 && (pTerm->eOperator & WO_CMP)!=0 ){
+      /* Verify compatible collating sequences on comparison operators */
+      zColl = sqlite3ColumnColl(&pTab->aCol[pTerm->u.x.leftColumn]);
+      if( zColl==0 ){
+        zColl = sqlite3StrBINARY;
+      }
+      pColl = sqlite3ExprCompareCollSeq(pParse, pTerm->pExpr);
+      if( pColl==0 ){
+        pColl = pParse->db->pDfltColl;
+      }
+      if( sqlite3StrICmp(zColl, pColl->zName)!=0 ){
+        continue;
+      }
+    }
+
     nTerm++;
     pTerm->wtFlags |= TERM_OK;
   }
@@ -1172,7 +1190,12 @@ static sqlite3_index_info *allocateIndexInfo(
       }
 
       /* 2nd case - a column reference with a COLLATE operator.  Only match
-      ** of the COLLATE operator matches the collation of the column. */
+      ** if the COLLATE operator matches the collation of the column.  This
+      ** is different from WHERE clause constraints.  WHERE clause constraints
+      ** are always passed in even if the collating sequence does not match,
+      ** and it is the responsibility of the underlying xBestIndex() method
+      ** to check for compatible constraints using sqlite3_vtab_collation()
+      */
       if( pExpr->op==TK_COLLATE
        && (pE2 = pExpr->pLeft)->op==TK_COLUMN
        && pE2->iTable==pSrc->iCursor

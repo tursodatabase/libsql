@@ -9472,8 +9472,17 @@ int sqlite3_vtab_nochange(sqlite3_context*);
 ** structure passed to xBestIndex. This function returns a pointer to a buffer 
 ** containing the name of the collation sequence for the corresponding
 ** constraint.
+**
+** In older versions of SQLite, it was the responsibility of the [xBestIndex]
+** method in the [virtual table] implementation to verify that constraints
+** used the correct collating sequence.  This method was required in order
+** for the xBestIndex method to accomplish that.  But, beginning with
+** SQLite 3.38.0 ([dateof:3.38.0]), the query planner will only populate
+** the sqlite3_index_info object with constraint for which the collating
+** sequence has already been verified.  This routine has become
+** superfluous and is therefore deprecated.
 */
-SQLITE_EXPERIMENTAL const char *sqlite3_vtab_collation(sqlite3_index_info*,int);
+SQLITE_DEPRECATED const char *sqlite3_vtab_collation(sqlite3_index_info*,int);
 
 /*
 ** CAPI3REF: Conflict resolution modes
