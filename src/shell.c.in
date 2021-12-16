@@ -3519,7 +3519,7 @@ static int expertDotCommand(
   if( rc==SQLITE_OK ){
     pState->expert.pExpert = sqlite3_expert_new(pState->db, &zErr);
     if( pState->expert.pExpert==0 ){
-      raw_printf(stderr, "sqlite3_expert_new: %s\n", zErr);
+      raw_printf(stderr, "sqlite3_expert_new: %s\n", zErr ? zErr : "out of memory");
       rc = SQLITE_ERROR;
     }else{
       sqlite3_expert_config(
@@ -3527,6 +3527,7 @@ static int expertDotCommand(
       );
     }
   }
+  sqlite3_free(zErr);
 
   return rc;
 }
