@@ -1,5 +1,5 @@
-C In\sthe\sCLI,\somit\sthe\s".oom"\scommand\s(only\savailable\sin\sdebug\sbuilds)\sand\ndisable\sthe\sexperimental\s".expert"\scommmand\sin\s--safe\smode.
-D 2021-12-16T17:57:21.780
+C Give\sthe\scorrect\sprefix\sto\stests\sin\sthe\swindowC.test\smodule.
+D 2021-12-16T19:43:16.431
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1805,7 +1805,7 @@ F test/window8.test 4ab16817414af0c904abe2ebdf88eb6c2b00058b84f9748c6174ff11fc45
 F test/window9.test 349c71eab4288a1ffc19e2f65872ec2c37e6cf8a1dda2ad300364b7450ae4836
 F test/windowA.test 6d63dc1260daa17141a55007600581778523a8b420629f1282d2acfc36af23be
 F test/windowB.test b67bda5645f3226790e1a360c4225241840b84adb5aa2e69bfb0b27eef3b84d9
-F test/windowC.test 8799158a2a3ea365980371400f08fd4dff70eadffa5a1e45d42430246da70706
+F test/windowC.test 7d3753c5fd780935a01c9ff30f3585da52e4c7f062a1eb8d442096cecab3041e
 F test/windowerr.tcl f5acd6fbc210d7b5546c0e879d157888455cd4a17a1d3f28f07c1c8a387019e0
 F test/windowerr.test a8b752402109c15aa1c5efe1b93ccb0ce1ef84fa964ae1cd6684dd0b3cc1819b
 F test/windowfault.test 15094c1529424e62f798bc679e3fe9dfab6e8ba2f7dfe8c923b6248c31660a7c
@@ -1935,7 +1935,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5c9fd7fde16d8e335488b8bf5c691961d2636201b034d1f29d25de8708de291d
-R 7feb81258c8f4748886f602fc3eeba00
+P 5cda1f7da885afdfda8683c59e78fec8da1a05c7a4fde573e89db5f872fcfb20
+R 7915650a4719e50f82fc587e7854cb64
 U drh
-Z 8a322aaf96dc4e6ca11de1635edd3a36
+Z f56385933405d75be2428da5c2eab0e1
