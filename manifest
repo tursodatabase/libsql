@@ -1,5 +1,5 @@
-C New\sdefenses\sagainst\sOOM\sand\scorrupt\sdatabase\sproblems\sin\sthe\sCLI.
-D 2021-12-16T17:35:27.612
+C In\sthe\sCLI,\somit\sthe\s".oom"\scommand\s(only\savailable\sin\sdebug\sbuilds)\sand\ndisable\sthe\sexperimental\s".expert"\scommmand\sin\s--safe\smode.
+D 2021-12-16T17:57:21.780
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -552,7 +552,7 @@ F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c 4a1db4aadd802683db40ca2dbbb268187bd195f10cbdb7206dbd8ac988795571
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c a7a3d9f54eb24821ec5f67f2e5589b68a5d42d46fc5849d7376886777d93a85a
-F src/shell.c.in 3f53d10076f3d0a7f993a03edec15d0ddad236536f300578cadd536e1a5b2d8c
+F src/shell.c.in 6d2c65052522d964dd09c937820e6b618ee6d6f12be524390dd82c2a57b9abfd
 F src/sqlite.h.in 5999d6db0e65afbd686b76cddc385b310aa3815624edba43987913067f50e209
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8ff2fd2c166150b2e48639f5e506fb44e29f1a3f65031710b9e89d1c126ac839
@@ -1935,7 +1935,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4d02a129c4781c97981748f3c69564e1320d8085dfba4c207e54793390cd64ab
-R d166a1375475e15d05923fef18bf064e
+P 5c9fd7fde16d8e335488b8bf5c691961d2636201b034d1f29d25de8708de291d
+R 7feb81258c8f4748886f602fc3eeba00
 U drh
-Z 5bfe5520d7a9e1ead42448469dfb8bb8
+Z 8a322aaf96dc4e6ca11de1635edd3a36

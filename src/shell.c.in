@@ -427,15 +427,6 @@ static sqlite3 *globalDb = 0;
 */
 static volatile int seenInterrupt = 0;
 
-#ifdef SQLITE_DEBUG
-/*
-** Out-of-memory simulator variables
-*/
-static unsigned int oomCounter = 0;    /* Simulate OOM when equals 1 */
-static unsigned int oomRepeat = 0;     /* Number of OOMs in a row */
-static void*(*defaultMalloc)(int) = 0; /* The low-level malloc routine */
-#endif /* SQLITE_DEBUG */
-
 /*
 ** This is the name of our program. It is set in main(), used
 ** in a number of other places, mostly for error messages.
@@ -493,49 +484,6 @@ static void shell_out_of_memory(void){
 static void shell_check_oom(void *p){
   if( p==0 ) shell_out_of_memory();
 }
-
-#ifdef SQLITE_DEBUG
-/* This routine is called when a simulated OOM occurs.  It is broken
-** out as a separate routine to make it easy to set a breakpoint on
-** the OOM
-*/
-void shellOomFault(void){
-  if( oomRepeat>0 ){
-    oomRepeat--;
-  }else{
-    oomCounter--;
-  }
-}
-#endif /* SQLITE_DEBUG */
-
-#ifdef SQLITE_DEBUG
-/* This routine is a replacement malloc() that is used to simulate
-** Out-Of-Memory (OOM) errors for testing purposes.
-*/
-static void *oomMalloc(int nByte){
-  if( oomCounter ){
-    if( oomCounter==1 ){
-      shellOomFault();
-      return 0;
-    }else{
-      oomCounter--;
-    }
-  }
-  return defaultMalloc(nByte);
-}
-#endif /* SQLITE_DEBUG */
-
-#ifdef SQLITE_DEBUG
-/* Register the OOM simulator.  This must occur before any memory
-** allocations */
-static void registerOomSimulator(void){
-  sqlite3_mem_methods mem;
-  sqlite3_config(SQLITE_CONFIG_GETMALLOC, &mem);
-  defaultMalloc = mem.xMalloc;
-  mem.xMalloc = oomMalloc;
-  sqlite3_config(SQLITE_CONFIG_MALLOC, &mem);
-}
-#endif
 
 /*
 ** Write I/O traces to the following stream.
@@ -4117,9 +4065,6 @@ static const char *(azHelp[]) = {
   "       --bom  Put a UTF8 byte-order mark at the beginning",
   "       -e     Send output to the system text editor",
   "       -x     Send output as CSV to a spreadsheet (same as \".excel\")",
-#ifdef SQLITE_DEBUG
-  ".oom ?--repeat M? ?N?    Simulate an OOM error on the N-th allocation",
-#endif 
   ".open ?OPTIONS? ?FILE?   Close existing database and reopen FILE",
   "     Options:",
   "        --append        Use appendvfs to append database to the end of FILE",
@@ -8154,8 +8099,15 @@ static int do_meta_command(char *zLine, ShellState *p){
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   if( c=='e' && strncmp(azArg[0], "expert", n)==0 ){
-    open_db(p, 0);
-    expertDotCommand(p, azArg, nArg);
+    if( p->bSafeMode ){
+      raw_printf(stderr, 
+        "Cannot run experimental commands such as \"%s\" in safe mode\n",
+        azArg[0]);
+      rc = 1;
+    }else{
+      open_db(p, 0);
+      expertDotCommand(p, azArg, nArg);
+    }
   }else
 #endif
 
@@ -8947,7 +8899,8 @@ static int do_meta_command(char *zLine, ShellState *p){
       raw_printf(stderr, "Usage: .nonce NONCE\n");
       rc = 1;
     }else if( p->zNonce==0 || strcmp(azArg[1],p->zNonce)!=0 ){
-      raw_printf(stderr, "line %d: incorrect nonce: \"%s\"\n", p->lineno, azArg[1]);
+      raw_printf(stderr, "line %d: incorrect nonce: \"%s\"\n",
+                 p->lineno, azArg[1]);
       exit(1);
     }else{
       p->bSafeMode = 0;
@@ -8965,34 +8918,6 @@ static int do_meta_command(char *zLine, ShellState *p){
       rc = 1;
     }
   }else
-
-#ifdef SQLITE_DEBUG
-  if( c=='o' && strcmp(azArg[0],"oom")==0 ){
-    int i;
-    for(i=1; i<nArg; i++){
-      const char *z = azArg[i];
-      if( z[0]=='-' && z[1]=='-' ) z++;
-      if( strcmp(z,"-repeat")==0 ){
-        if( i==nArg-1 ){
-          raw_printf(p->out, "missing argument on \"%s\"\n", azArg[i]);
-          rc = 1;
-        }else{
-          oomRepeat = (int)integerValue(azArg[++i]);
-        }
-      }else if( IsDigit(z[0]) ){
-        oomCounter = (int)integerValue(azArg[i]);
-      }else{
-        raw_printf(p->out, "unknown argument: \"%s\"\n", azArg[i]);
-        raw_printf(p->out, "Usage: .oom [--repeat N] [M]\n");
-        rc = 1;
-      }
-    }
-    if( rc==0 ){
-      raw_printf(p->out, "oomCounter = %d\n", oomCounter);
-      raw_printf(p->out, "oomRepeat  = %d\n", oomRepeat);
-    }
-  }else
-#endif /* SQLITE_DEBUG */
 
   if( c=='o' && strncmp(azArg[0], "open", n)==0 && n>=2 ){
     const char *zFN = 0;     /* Pointer to constant filename */
@@ -11329,10 +11254,6 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   setvbuf(stderr, 0, _IONBF, 0); /* Make sure stderr is unbuffered */
   stdin_is_interactive = isatty(0);
   stdout_is_console = isatty(1);
-
-#ifdef SQLITE_DEBUG
-  registerOomSimulator();
-#endif
 
 #if !defined(_WIN32_WCE)
   if( getenv("SQLITE_DEBUG_BREAK") ){
