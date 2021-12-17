@@ -9464,14 +9464,33 @@ int sqlite3_vtab_nochange(sqlite3_context*);
 ** CAPI3REF: Determine The Collation For a Virtual Table Constraint
 **
 ** This function may only be called from within a call to the [xBestIndex]
-** method of a [virtual table]. 
+** method of a [virtual table].  This function returns a pointer to a string
+** that is the name of the appropriate collation sequence to use for text
+** comparisons on the constraint identified by its arguments.
 **
-** The first argument must be the sqlite3_index_info object that is the
-** first parameter to the xBestIndex() method. The second argument must be
-** an index into the aConstraint[] array belonging to the sqlite3_index_info
-** structure passed to xBestIndex. This function returns a pointer to a buffer 
-** containing the name of the collation sequence for the corresponding
-** constraint.
+** The first argument must be the pointer to the sqlite3_index_info object
+** that is the first parameter to the xBestIndex() method. The second argument
+** must be an index into the aConstraint[] array belonging to the
+** sqlite3_index_info structure passed to xBestIndex.
+**
+** Important:
+** The first parameter must be the same pointer that is passed into the
+** xBestMethod() method.  The first parameter may not be a pointer to a
+** different sqlite3_index_info object, even an exact copy.
+**
+** The return value is computed as follows:
+**
+** <ol>
+** <li><p> If the constraint comes from a WHERE clause expression that contains
+**         a [COLLATE operator], then the name of the collation specified by
+**         that COLLATE operator is returned.
+** <li><p> If there is no COLLATE operator, but the column that is the subject
+**         of the constraint specifies an alternative collating sequence via
+**         a [COLLATE clause] on the column definition within the CREATE TABLE
+**         statement that was passed into [sqlite3_declare_vtab()], then the
+**         name of that alternative collating sequence is returned.
+** <li><p> Otherwise, "BINARY" is returned.
+** </ol>
 */
 SQLITE_EXPERIMENTAL const char *sqlite3_vtab_collation(sqlite3_index_info*,int);
 

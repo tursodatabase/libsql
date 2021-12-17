@@ -676,12 +676,14 @@ static void whereTraceIndexInfoInputs(sqlite3_index_info *p){
   int i;
   if( !sqlite3WhereTrace ) return;
   for(i=0; i<p->nConstraint; i++){
-    sqlite3DebugPrintf("  constraint[%d]: col=%d termid=%d op=%d usabled=%d\n",
+    sqlite3DebugPrintf(
+       "  constraint[%d]: col=%d termid=%d op=%d usabled=%d collseq=%s\n",
        i,
        p->aConstraint[i].iColumn,
        p->aConstraint[i].iTermOffset,
        p->aConstraint[i].op,
-       p->aConstraint[i].usable);
+       p->aConstraint[i].usable,
+       sqlite3_vtab_collation(p,i));
   }
   for(i=0; i<p->nOrderBy; i++){
     sqlite3DebugPrintf("  orderby[%d]: col=%d desc=%d\n",
@@ -3595,11 +3597,19 @@ static int whereLoopAddVirtualOne(
 }
 
 /*
-** If this function is invoked from within an xBestIndex() callback, it
-** returns a pointer to a buffer containing the name of the collation
-** sequence associated with element iCons of the sqlite3_index_info.aConstraint
-** array. Or, if iCons is out of range or there is no active xBestIndex
-** call, return NULL.
+** Return the collating sequence for a constraint passed into xBestIndex.
+**
+** pIdxInfo must be an sqlite3_index_info structure passed into xBestIndex.
+** This routine depends on there being a HiddenIndexInfo structure immediately
+** following the sqlite3_index_info structure.
+**
+** Return a pointer to the collation name:
+**
+**    1. If there is an explicit COLLATE operator on the constaint, return it.
+**
+**    2. Else, if the column has an alternative collation, return that.
+**
+**    3. Otherwise, return "BINARY".
 */
 const char *sqlite3_vtab_collation(sqlite3_index_info *pIdxInfo, int iCons){
   HiddenIndexInfo *pHidden = (HiddenIndexInfo*)&pIdxInfo[1];

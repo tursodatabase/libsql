@@ -1,5 +1,5 @@
-C Fix\swindowC\stests\sto\sspecify\slittle-endian\sor\sbig-endian\sUTF16,\sfor\ncross-platform\sportability.\n[forum\spost\s559b84a5c6|forum:/forumpost/559b84a5c6]
-D 2021-12-16T19:50:02.315
+C Improved\sdocumentation\sfor\sthe\ssqlite3_vtab_collation()\sinterface.
+D 2021-12-17T23:56:43.941
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -553,7 +553,7 @@ F src/resolve.c 4a1db4aadd802683db40ca2dbbb268187bd195f10cbdb7206dbd8ac988795571
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c a7a3d9f54eb24821ec5f67f2e5589b68a5d42d46fc5849d7376886777d93a85a
 F src/shell.c.in 6d2c65052522d964dd09c937820e6b618ee6d6f12be524390dd82c2a57b9abfd
-F src/sqlite.h.in 5999d6db0e65afbd686b76cddc385b310aa3815624edba43987913067f50e209
+F src/sqlite.h.in 5124aa99d3eb9b6a4e5030cb035076ed060d2dac020cd8fc8fba3022725d54af
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8ff2fd2c166150b2e48639f5e506fb44e29f1a3f65031710b9e89d1c126ac839
 F src/sqliteInt.h e7dd69a85c53461c937d50c97f8efd9761b14f9bcfb63450809e85c100c08538
@@ -638,7 +638,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c ed0398a7adf02c31e34aada42cc86c58f413a7afe5f741a5d373ad087abde028
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
-F src/where.c d47e14778162f00b732a74fc0b45a92be1b4d5cda3d11876901a3d54a367f5ec
+F src/where.c 18d32aa675078a6e3b181138c59d70c07c0f8b8f439124991f95bb6a84fab1d8
 F src/whereInt.h 91865afa4a3540bb3bd643619acc56fbceff7defeb8f249b8e157fd5325d88be
 F src/wherecode.c 6a594ed25bfbeb60d455868b7be62637575e4f1949152de4336e4825e0c54ba6
 F src/whereexpr.c 9f64c39e53070584e99e4d20c1dd3397e125fabbae8fd414ffec574c410ac7d3
@@ -1935,7 +1935,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fb43456324c26879767b08febf1b5a2b46a289f25398a3872f81d845afd5d84e
-R 378abf936c7f697eae5ac7ce982ddcfc
+P adf3a1e6f7575964e467f6813ff980e802cf5a37aaa9e1736af702c493f276b1
+R 14747f133cdcf1f7cf5355ca59ba5e4d
 U drh
-Z 33f9b55eaded7b5ef1cb8f803d4888ec
+Z ab5d47a9bb7bb00af7ed6678c976d522
