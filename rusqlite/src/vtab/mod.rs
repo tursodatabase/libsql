@@ -730,7 +730,7 @@ impl InnerConnection {
 pub fn escape_double_quote(identifier: &str) -> Cow<'_, str> {
     if identifier.contains('"') {
         // escape quote by doubling them
-        Owned(identifier.replace("\"", "\"\""))
+        Owned(identifier.replace('"', "\"\""))
     } else {
         Borrowed(identifier)
     }

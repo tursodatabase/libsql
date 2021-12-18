@@ -289,7 +289,7 @@ mod build_bundled {
     }
 
     fn env(name: &str) -> Option<OsString> {
-        let prefix = env::var("TARGET").unwrap().to_uppercase().replace("-", "_");
+        let prefix = env::var("TARGET").unwrap().to_uppercase().replace('-', "_");
         let prefixed = format!("{}_{}", prefix, name);
         let var = env::var_os(&prefixed);
 
