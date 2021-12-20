@@ -678,9 +678,6 @@ sqlite3-all.c:	sqlite3.c $(TOP)/tool/split-sqlite3c.tcl
 fts2amal.c:	target_source $(TOP)/ext/fts2/mkfts2amal.tcl
 	tclsh $(TOP)/ext/fts2/mkfts2amal.tcl
 
-fts3amal.c:	target_source $(TOP)/ext/fts3/mkfts3amal.tcl
-	tclsh $(TOP)/ext/fts3/mkfts3amal.tcl
-
 # Rules to build the LEMON compiler generator
 #
 lemon:	$(TOP)/tool/lemon.c $(TOP)/tool/lempar.c
@@ -929,12 +926,6 @@ amalgamation-testfixture$(EXE): sqlite3.c $(TESTSRC) $(TOP)/src/tclsqlite.c  \
 	$(TCCX) $(TCL_FLAGS) $(TESTFIXTURE_FLAGS)                            \
 		$(TESTSRC) $(TOP)/src/tclsqlite.c sqlite3.c                  \
 		$(TOP)/ext/session/test_session.c                            \
-		-o testfixture$(EXE) $(LIBTCL) $(THREADLIB)
-
-fts3-testfixture$(EXE): sqlite3.c fts3amal.c $(TESTSRC) $(TOP)/src/tclsqlite.c
-	$(TCCX) $(TCL_FLAGS) $(TESTFIXTURE_FLAGS)                            \
-	-DSQLITE_ENABLE_FTS3=1                                               \
-		$(TESTSRC) $(TOP)/src/tclsqlite.c sqlite3.c fts3amal.c       \
 		-o testfixture$(EXE) $(LIBTCL) $(THREADLIB)
 
 coretestprogs:	$(TESTPROGS)
