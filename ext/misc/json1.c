@@ -26,6 +26,15 @@
 #include "sqlite3ext.h"
 #endif
 SQLITE_EXTENSION_INIT1
+
+/* If compiling this extension separately (why would anybody do that when
+** it is built into the amalgamation?) we must set NDEBUG if SQLITE_DEBUG
+** is not defined *before* including <assert.h>, in order to disable asserts().
+*/
+#if !defined(SQLITE_AMALGAMATION) && !defined(SQLITE_DEBUG)
+#  define NDEBUG 1
+#endif
+
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>

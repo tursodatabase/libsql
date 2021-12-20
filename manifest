@@ -1,5 +1,5 @@
-C Remove\sold\sscript\sext/fts3/mkfts3amal.tcl,\sas\sit\sdoesn't\swork.
-D 2021-12-20T17:00:42.392
+C In\sthe\sjson1\sextension,\swhich\scompiling\sit\sseparately,\sensure\sthat\seither\nSQLITE_DEBUG\smacro\sor\sthe\sNDEBUG\smacro\sis\sset\sprior\sto\sincluding\sassert.h.\nIf\sneither\smacro\sis\sdefined,\sthen\sassert()\sstatement\sdo\sgenerate\scode\sbut\nVVA()\sstatements\sdo\snot,\sand\sthat\sis\sa\sdeadly\scombination.\n[forum:/forumpost/858dee399e|forum\spost\s858dee399e]
+D 2021-12-20T23:46:44.985
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -306,7 +306,7 @@ F ext/misc/fileio.c 4e7f7cd30de8df4820c552f14af3c9ca451c5ffe1f2e7bef34d598a12ebf
 F ext/misc/fossildelta.c 1240b2d3e52eab1d50c160c7fe1902a9bd210e052dc209200a750bbf885402d5
 F ext/misc/fuzzer.c eae560134f66333e9e1ca4c8ffea75df42056e2ce8456734565dbe1c2a92bf3d
 F ext/misc/ieee754.c 91a5594071143a4ab79c638fe9f059af1db09932faf2e704c3e29216a7d4f511
-F ext/misc/json1.c 89a988f06dcb3da0d0af9fdb2b09892452ad12dfd8f432600ee6437a6dcac310
+F ext/misc/json1.c a4ea54d9b228901695a7f51df338dddb29a2a574b870d0c0cb58539cc90e9a31
 F ext/misc/memstat.c 3017a0832c645c0f8c773435620d663855f04690172316bd127270d1a7523d4d
 F ext/misc/memtrace.c 7c0d115d2ef716ad0ba632c91e05bd119cb16c1aedf3bec9f06196ead2d5537b
 F ext/misc/memvfs.c 7dffa8cc89c7f2d73da4bd4ccea1bcbd2bd283e3bb4cea398df7c372a197291b
@@ -1934,7 +1934,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 826f84a92d3b1f760560bff72c911a2c664737820af0c9114eb3494df7b8e878
-R 1a8968caa97e9985e6bb05a7e129d767
-U dan
-Z d65382ca9147f68f2405c8ceb9d8b3f8
+P 9e33ee24b3793b3d7faf7421279d16217f8b09b1e92bfdc771f902f2f1e1b7d6
+R c2fe6fb3b4bbdde0430d16a68d16873f
+U drh
+Z f951da4ac66930095755e6f72f9aabea
