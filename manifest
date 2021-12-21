@@ -1,12 +1,12 @@
-C In\sthe\sjson1\sextension,\swhich\scompiling\sit\sseparately,\sensure\sthat\seither\nSQLITE_DEBUG\smacro\sor\sthe\sNDEBUG\smacro\sis\sset\sprior\sto\sincluding\sassert.h.\nIf\sneither\smacro\sis\sdefined,\sthen\sassert()\sstatement\sdo\sgenerate\scode\sbut\nVVA()\sstatements\sdo\snot,\sand\sthat\sis\sa\sdeadly\scombination.\n[forum:/forumpost/858dee399e|forum\spost\s858dee399e]
-D 2021-12-20T23:46:44.985
+C Update\sthe\sREADME.md\sto\sinstruct\sthe\suser\sto\sremove\sthe\sfinal\scomment\sline\nfrom\sthe\s"manifest"\sfile\sbefore\susing\sit\sto\scompute\sthe\scheck-in\shash.
+D 2021-12-21T16:59:45.424
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
 F Makefile.in 0e91c42a1dd13a569b1fa4f4dfb7d3632f3164a1c05c71341533d67db5b641dd
 F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
 F Makefile.msc 88f05063ee36a5fb77d69b877ef824d0743b5325c95bfbf74d6ff17bd1c9fb1f
-F README.md 27fb76aa7eb57ed63a53bbba7292b6bf71f51125554f79f16b5d040edd1e6110
+F README.md 2dd87a5c1d108b224921f3dd47dea567973f706e1f6959386282a626f459a70c
 F VERSION 392c2f83569705069415a5d98b1c138ec8fe8a56a663a0d94cea019e806537b2
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
@@ -1934,7 +1934,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9e33ee24b3793b3d7faf7421279d16217f8b09b1e92bfdc771f902f2f1e1b7d6
-R c2fe6fb3b4bbdde0430d16a68d16873f
+P d9f814a6402ca7fd999bbb847dc354b52ab9b97cae0c932344584d26c9430f24
+R db9606205e7c40e39afd2f95792c8925
 U drh
-Z f951da4ac66930095755e6f72f9aabea
+Z c2c3d0387ea5fddc68383e50b25ca47d
