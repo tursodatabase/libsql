@@ -38,7 +38,7 @@ bitflags::bitflags! {
         const STEP  = 4;
         // output in descending order
         const DESC  = 8;
-        // output in descending order
+        // output in ascending order
         const ASC  = 16;
         // Both start and stop
         const BOTH  = QueryPlanFlags::START.bits | QueryPlanFlags::STOP.bits;
@@ -123,12 +123,16 @@ unsafe impl<'vtab> VTab<'vtab> for SeriesTab {
             let order_by_consumed = {
                 let mut order_bys = info.order_bys();
                 if let Some(order_by) = order_bys.next() {
-                    if order_by.is_order_by_desc() {
-                        idx_num |= QueryPlanFlags::DESC;
+                    if order_by.column() == 0 {
+                        if order_by.is_order_by_desc() {
+                            idx_num |= QueryPlanFlags::DESC;
+                        } else {
+                            idx_num |= QueryPlanFlags::ASC;
+                        }
+                        true
                     } else {
-                        idx_num |= QueryPlanFlags::ASC;
+                        false
                     }
-                    true
                 } else {
                     false
                 }
