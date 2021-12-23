@@ -1,5 +1,5 @@
-C Update\sthe\sREADME.md\sto\sinstruct\sthe\suser\sto\sremove\sthe\sfinal\scomment\sline\nfrom\sthe\s"manifest"\sfile\sbefore\susing\sit\sto\scompute\sthe\scheck-in\shash.
-D 2021-12-21T16:59:45.424
+C Reduce\sthe\ssize\sof\sthe\scompiled\sbinary\sby\sa\scouple\sof\shundred\sbytes\sby\nusing\sa\sthigher\spacking\sof\sa\stransformation\stable\sin\sdate.c.\nSuggested\sby\s[forum:/forumpost/4f6efbb2a9|forum\spost\s4f6efbb2a9].
+D 2021-12-23T00:16:06.350
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -498,7 +498,7 @@ F src/build.c 107e1ecc98ca8965c2e08fc283a06067a1d829b1a82531a6f0a0e0fa60e7b0c1
 F src/callback.c 106b585da1edd57d75fa579d823a5218e0bf37f191dbf7417eeb4a8a9a267dbc
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 8159d5f706551861c18ec6c8f6bdf105e15ea00367f05d9ab65d31a1077facc1
-F src/date.c b49c12c7564ddd7f1922f76e7a086a6db5b91aa0e729b180cd433e22bab37be0
+F src/date.c ab8e01d928f201f5dee0bc6d54d6702fdcec96dff4d58c387447671f6a46d191
 F src/dbpage.c 8a01e865bf8bc6d7b1844b4314443a6436c07c3efe1d488ed89e81719047833a
 F src/dbstat.c 861e08690fcb0f2ee1165eff0060ea8d4f3e2ea10f80dab7d32ad70443a6ff2d
 F src/delete.c 19814f621cde10b1771a0dea7fe25d3d7d39975b8d4be4888537d30860e7c08c
@@ -1934,7 +1934,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d9f814a6402ca7fd999bbb847dc354b52ab9b97cae0c932344584d26c9430f24
-R db9606205e7c40e39afd2f95792c8925
+P 7b4f9d95a95f685ea4ee045e43c67b1a5c70e908e357b0b41d522699255663ce
+R 7b101808d3a49cd62c69eb0ecccc8da0
 U drh
-Z c2c3d0387ea5fddc68383e50b25ca47d
+Z 7db45fce779218ebd5032a4f8090eaaf
+# Remove this line to create a well-formed Fossil manifest.
