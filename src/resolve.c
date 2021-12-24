@@ -320,8 +320,9 @@ static int lookupName(
           }
           if( hit || zTab==0 ) continue;
         }
-        if( zDb && pTab->pSchema!=pSchema ){
-          continue;
+        if( zDb ){
+          if( pTab->pSchema!=pSchema ) continue;
+          if( pSchema==0 && strcmp(zDb,"*")!=0 ) continue;
         }
         if( zTab ){
           const char *zTabName = pItem->zAlias ? pItem->zAlias : pTab->zName;
