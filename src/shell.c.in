@@ -8975,11 +8975,11 @@ static int do_meta_command(char *zLine, ShellState *p){
 
     /* If a filename is specified, try to open it first */
     if( zFN || p->openMode==SHELL_OPEN_HEXDB ){
-      if( newFlag && !p->bSafeMode ) shellDeleteFile(zNewFilename);
+      if( newFlag && zFN && !p->bSafeMode ) shellDeleteFile(zFN);
       if( p->bSafeMode
        && p->openMode!=SHELL_OPEN_HEXDB
-       && zNewFilename
-       && strcmp(zNewFilename,":memory:")!=0
+       && zFN
+       && strcmp(zFN,":memory:")!=0
       ){
         failIfSafeMode(p, "cannot open disk-based database files in safe mode");
       }
