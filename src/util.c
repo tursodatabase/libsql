@@ -117,7 +117,11 @@ static SQLITE_NOINLINE void  sqlite3ErrorFinish(sqlite3 *db, int err_code){
 void sqlite3Error(sqlite3 *db, int err_code){
   assert( db!=0 );
   db->errCode = err_code;
-  if( err_code || db->pErr ) sqlite3ErrorFinish(db, err_code);
+  if( err_code || db->pErr ){
+    sqlite3ErrorFinish(db, err_code);
+  }else{
+    db->errByteOffset = -1;
+  }
 }
 
 /*
@@ -127,6 +131,7 @@ void sqlite3Error(sqlite3 *db, int err_code){
 void sqlite3ErrorClear(sqlite3 *db){
   assert( db!=0 );
   db->errCode = SQLITE_OK;
+  db->errByteOffset = -1;
   if( db->pErr ) sqlite3ValueSetNull(db->pErr);
 }
 
@@ -147,17 +152,8 @@ void sqlite3SystemError(sqlite3 *db, int rc){
 ** handle "db". The error code is set to "err_code".
 **
 ** If it is not NULL, string zFormat specifies the format of the
-** error string in the style of the printf functions: The following
-** format characters are allowed:
-**
-**      %s      Insert a string
-**      %z      A string that should be freed after use
-**      %d      Insert an integer
-**      %T      Insert a token
-**      %S      Insert the first element of a SrcList
-**
-** zFormat and any string tokens that follow it are assumed to be
-** encoded in UTF-8.
+** error string.  zFormat and any string tokens that follow it are
+** assumed to be encoded in UTF-8.
 **
 ** To clear the most recent error for sqlite handle "db", sqlite3Error
 ** should be called with err_code set to SQLITE_OK and zFormat set
@@ -181,13 +177,6 @@ void sqlite3ErrorWithMsg(sqlite3 *db, int err_code, const char *zFormat, ...){
 
 /*
 ** Add an error message to pParse->zErrMsg and increment pParse->nErr.
-** The following formatting characters are allowed:
-**
-**      %s      Insert a string
-**      %z      A string that should be freed after use
-**      %d      Insert an integer
-**      %T      Insert a token
-**      %S      Insert the first element of a SrcList
 **
 ** This function should be used to report any error that occurs while
 ** compiling an SQL statement (i.e. within sqlite3_prepare()). The
@@ -200,9 +189,11 @@ void sqlite3ErrorMsg(Parse *pParse, const char *zFormat, ...){
   char *zMsg;
   va_list ap;
   sqlite3 *db = pParse->db;
+  db->errByteOffset = -2;
   va_start(ap, zFormat);
   zMsg = sqlite3VMPrintf(db, zFormat, ap);
   va_end(ap);
+  if( db->errByteOffset<-1 ) db->errByteOffset = -1;
   if( db->suppressErr ){
     sqlite3DbFree(db, zMsg);
   }else{
