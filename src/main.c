@@ -2597,6 +2597,19 @@ const char *sqlite3_errmsg(sqlite3 *db){
   return z;
 }
 
+/*
+** Return the byte offset of the most recent error
+*/
+int sqlite3_error_offset(sqlite3 *db){
+  int iOffset = -1;
+  if( db && sqlite3SafetyCheckSickOrOk(db) && db->errCode ){
+    sqlite3_mutex_enter(db->mutex);
+    iOffset = db->errByteOffset;
+    sqlite3_mutex_leave(db->mutex);
+  }
+  return iOffset;
+}
+
 #ifndef SQLITE_OMIT_UTF16
 /*
 ** Return UTF-16 encoded English language explanation of the most recent

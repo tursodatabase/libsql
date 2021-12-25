@@ -855,6 +855,7 @@ void sqlite3_str_vappendf(
         assert( bArgList==0 );
         if( pToken && pToken->n ){
           sqlite3_str_append(pAccum, (const char*)pToken->z, pToken->n);
+          sqlite3RecordErrorByteOffset(pAccum->db, pToken->z);
         }
         length = width = 0;
         break;
@@ -908,6 +909,30 @@ void sqlite3_str_vappendf(
     }
   }/* End for loop over the format string */
 } /* End of function */
+
+
+/*
+** The z string points to the first character of a token that is
+** associated with an error.  If db does not already have an error
+** byte offset recorded, try to compute the error byte offset for
+** z and set the error byte offset in db.
+*/
+void sqlite3RecordErrorByteOffset(sqlite3 *db, const char *z){
+  const Parse *pParse;
+  const char *zText;
+  const char *zEnd;
+  assert( z!=0 );
+  if( NEVER(db==0) ) return;
+  if( db->errByteOffset!=(-2) ) return;
+  pParse = db->pParse;
+  if( NEVER(pParse==0) ) return;
+  zText =pParse->zTail;
+  if( NEVER(zText==0) ) return;
+  zEnd = &zText[strlen(zText)];
+  if( SQLITE_WITHIN(z,zText,zEnd) ){
+    db->errByteOffset = (int)(z-zText);
+  }
+}
 
 /*
 ** Enlarge the memory allocation on a StrAccum object so that it is
