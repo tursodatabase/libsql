@@ -2602,7 +2602,7 @@ const char *sqlite3_errmsg(sqlite3 *db){
 */
 int sqlite3_error_offset(sqlite3 *db){
   int iOffset = -1;
-  if( db && sqlite3SafetyCheckSickOrOk(db) ){
+  if( db && sqlite3SafetyCheckSickOrOk(db) && db->errCode ){
     sqlite3_mutex_enter(db->mutex);
     iOffset = db->errByteOffset;
     sqlite3_mutex_leave(db->mutex);
