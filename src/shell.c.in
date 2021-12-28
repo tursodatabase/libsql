@@ -4147,7 +4147,8 @@ static const char *(azHelp[]) = {
 #endif
   ".prompt MAIN CONTINUE    Replace the standard prompts",
   ".quit                    Exit this program",
-  ".read FILE               Read input from FILE",
+  ".read FILE               Read input from FILE or command output",
+  "    If FILE begins with \"|\", it is a command that generates the input.",
 #if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_ENABLE_DBPAGE_VTAB)
   ".recover                 Recover as much data as possible from corrupt db.",
   "   --freelist-corrupt       Assume the freelist is corrupt",

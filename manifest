@@ -1,5 +1,5 @@
-C Change\san\sassert()\sin\sFTS3\sinto\sassert_fts3_nc(),\ssince\sit\sis\sa\sharmless\ncondition\sthat\scan\soccur\swhen\sprocessing\sa\scorrupt\sdatabase\sfile.
-D 2021-12-25T23:59:54.620
+C Make\s.read's\shelp\stell\sof\spiped\sinput
+D 2021-12-28T05:08:38.128
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -551,7 +551,7 @@ F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c 6144db65157ff96fe27e3e6f784ab331b3de35db233cd0a6e93278a5d23fcf06
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c a7a3d9f54eb24821ec5f67f2e5589b68a5d42d46fc5849d7376886777d93a85a
-F src/shell.c.in c2f60a11f4a0720cd952d14ec20331543fb185a982e10a2385c5715e129369fd
+F src/shell.c.in 41b0e1f3a0c2443cb0a8d25e5d40529c911c574b5fe5a91dc54e19f90947a359
 F src/sqlite.h.in a5e0d6bd47e67aabf1475986d36bdcc7bfa9e06566790ebf8e3aa7fa551c9f99
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 01eb85e4f2759a5ee79c183f4b2877889d4ffdc49d27ae74529c9579e3c8c0ef
@@ -1934,8 +1934,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7fa20ca4c09ab0249de0363691541fa836120ec277e72feb0e1516b9bfbdd97a
-R 2b2719b5920685e35cd64747f22d50b0
-U drh
-Z 595d1de7ae7f6fab7b1ff88e1ba1b7f2
+P c03205aee9015fd886b8db02c8190899cee699255ca370f939e547deaf5ba9e8
+R 035fc7ecc447249d615762da61b11d6c
+U larrybr
+Z a3c99601a959abd1cb8e7bea62bdef11
 # Remove this line to create a well-formed Fossil manifest.
