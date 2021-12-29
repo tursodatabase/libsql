@@ -1,5 +1,5 @@
-C Change\san\sassert()\sin\sFTS3\sinto\sassert_fts3_nc(),\ssince\sit\sis\sa\sharmless\ncondition\sthat\scan\soccur\swhen\sprocessing\sa\scorrupt\sdatabase\sfile.
-D 2021-12-29T04:10:03.195
+C Make\s.read's\shelp\stell\sof\spiped\sinput
+D 2021-12-29T04:10:49.377
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -551,7 +551,7 @@ F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c 6144db65157ff96fe27e3e6f784ab331b3de35db233cd0a6e93278a5d23fcf06
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c a7a3d9f54eb24821ec5f67f2e5589b68a5d42d46fc5849d7376886777d93a85a
-F src/shell.c.in 1b567fc5463470fb22f3e45a5dbf05ee2ce9dd9066b2973c4a2bdd7daa74bb5f
+F src/shell.c.in a1e82e4fa3a357debe3a5e19766064339e45a7b94382abd7553fcf36cd6edbc6
 F src/sqlite.h.in 5124aa99d3eb9b6a4e5030cb035076ed060d2dac020cd8fc8fba3022725d54af
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8ff2fd2c166150b2e48639f5e506fb44e29f1a3f65031710b9e89d1c126ac839
@@ -1934,9 +1934,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 37e6e10f4364f556c7503c80408fc62895cdccdd0372fb2b63aaca02c3a1ee30
-Q +c03205aee9015fd886b8db02c8190899cee699255ca370f939e547deaf5ba9e8
-R b29f920038d17a9c6443057c1293e2bc
+P e773d6219bded9a5dfa9930882682dadaa7f1c6be344dbde904c9477a89f2d2c
+Q +e4ddcd8aa582c1130c34e9f05cd3e5f96ebf03c97a36c09ca442e3612fee4a20
+R 14c1f60040b224770372f56c44f369ea
 U drh
-Z f41176ae032dbd299c6d7102c4fb4542
+Z b1b19652da5b10420ed86fb57926a031
 # Remove this line to create a well-formed Fossil manifest.
