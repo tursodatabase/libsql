@@ -2519,6 +2519,47 @@ static void set_table_name(ShellState *p, const char *zName){
   z[n] = 0;
 }
 
+/*
+** Maybe construct two lines of text that point out the position of a
+** syntax error.  Return a pointer to the text, in memory obtained from
+** sqlite3_malloc().  Or, if the most recent error does not involve a
+** specific token that we can point to, return an empty string.
+**
+** In all cases, the memory returned is obtained from sqlite3_malloc64()
+** and should be released by the caller invoking sqlite3_free().
+*/
+static char *shell_error_context(const char *zSql, sqlite3 *db){
+  int iOffset;
+  size_t len;
+  char *zCode;
+  char *zMsg;
+  int i;
+  if( db==0
+   || zSql==0
+   || (iOffset = sqlite3_error_offset(db))<0
+  ){
+    return sqlite3_mprintf("");
+  }
+  while( iOffset>50 ){
+    iOffset--;
+    zSql++;
+    while( (zSql[0]&0xc0)==0x80 ){ zSql++; iOffset--; }
+  }
+  len = strlen(zSql);
+  if( len>78 ){
+    len = 78;
+    while( (zSql[len]&0xc0)==0x80 ) len--;
+  }
+  zCode = sqlite3_mprintf("%.*s", len, zSql);
+  for(i=0; zCode[i]; i++){ if( IsSpace(zSql[i]) ) zCode[i] = ' '; }
+  if( iOffset<25 ){
+    zMsg = sqlite3_mprintf("\n  %z\n  %*s^--- error here", zCode, iOffset, "");
+  }else{
+    zMsg = sqlite3_mprintf("\n  %z\n  %*serror here ---^", zCode, iOffset-14, "");
+  }
+  return zMsg;
+}
+
 
 /*
 ** Execute a query statement that will generate SQL output.  Print
@@ -2541,8 +2582,10 @@ static int run_table_dump_query(
   const char *z;
   rc = sqlite3_prepare_v2(p->db, zSelect, -1, &pSelect, 0);
   if( rc!=SQLITE_OK || !pSelect ){
-    utf8_printf(p->out, "/**** ERROR: (%d) %s *****/\n", rc,
-                sqlite3_errmsg(p->db));
+    char *zContext = shell_error_context(zSelect, p->db);
+    utf8_printf(p->out, "/**** ERROR: (%d) %s *****/\n%s", rc,
+                sqlite3_errmsg(p->db), zContext);
+    sqlite3_free(zContext);
     if( (rc&0xff)!=SQLITE_CORRUPT ) p->nErr++;
     return rc;
   }
@@ -2578,12 +2621,16 @@ static int run_table_dump_query(
 static char *save_err_msg(
   sqlite3 *db,           /* Database to query */
   const char *zWhen,     /* Qualifier (format) wrapper */
-  int rc                 /* Error code returned from API */
+  int rc,                /* Error code returned from API */
+  const char *zSql       /* SQL string, or NULL */
 ){
   char *zErr;
-  if( zWhen==0 ) zWhen = "%s (%d)";
-  zErr = sqlite3_mprintf(zWhen, sqlite3_errmsg(db), rc);
+  char *zContext;
+  if( zWhen==0 ) zWhen = "%s (%d)%s";
+  zContext = shell_error_context(zSql, db);
+  zErr = sqlite3_mprintf(zWhen, sqlite3_errmsg(db), rc, zContext);
   shell_check_oom(zErr);
+  sqlite3_free(zContext);
   return zErr;
 }
 
@@ -3518,7 +3565,7 @@ static int shell_exec(
     rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, &zLeftover);
     if( SQLITE_OK != rc ){
       if( pzErrMsg ){
-        *pzErrMsg = save_err_msg(db, "in prepare, %s (%d)", rc);
+        *pzErrMsg = save_err_msg(db, "in prepare, %s (%d)%s", rc, zSql);
       }
     }else{
       if( !pStmt ){
@@ -3634,7 +3681,7 @@ static int shell_exec(
         zSql = zLeftover;
         while( IsSpace(zSql[0]) ) zSql++;
       }else if( pzErrMsg ){
-        *pzErrMsg = save_err_msg(db, "stepping, %s (%d)", rc);
+        *pzErrMsg = save_err_msg(db, "stepping, %s (%d)", rc, 0);
       }
 
       /* clear saved stmt handle */

@@ -4366,6 +4366,34 @@ static int SQLITE_TCLAPI test_errmsg(
   return TCL_OK;
 }
 
+
+/*
+** Usage:   sqlite3_error_offset DB
+**
+** Return the byte offset into the input UTF8 SQL for the most recent
+** error, or -1 of the error does not refer to a specific token.
+*/
+static int SQLITE_TCLAPI test_error_offset(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3 *db;
+  int iByteOffset;
+
+  if( objc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", 
+       Tcl_GetString(objv[0]), " DB", 0);
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+
+  iByteOffset = sqlite3_error_offset(db);
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(iByteOffset));
+  return TCL_OK;
+}
+
 /*
 ** Usage:   test_errmsg16 DB
 **
@@ -8422,6 +8450,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_errcode",               test_errcode       ,0 },
      { "sqlite3_extended_errcode",      test_ex_errcode    ,0 },
      { "sqlite3_errmsg",                test_errmsg        ,0 },
+     { "sqlite3_error_offset",          test_error_offset  ,0 },
      { "sqlite3_errmsg16",              test_errmsg16      ,0 },
      { "sqlite3_open",                  test_open          ,0 },
      { "sqlite3_open16",                test_open16        ,0 },
