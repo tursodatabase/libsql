@@ -1,5 +1,5 @@
-C Make\s.read's\shelp\stell\sof\spiped\sinput
-D 2021-12-28T05:08:38.128
+C Fix\sthe\sbuild-breaker\sbug\sin\stest1.c\sintroduced\sby\scheck-in\s[7fa20ca4c09ab024].
+D 2021-12-29T04:08:11.285
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -560,7 +560,7 @@ F src/sqliteLimit.h d7323ffea5208c6af2734574bae933ca8ed2ab728083caa117c9738581a3
 F src/status.c 4b8bc2a6905163a38b739854a35b826c737333fab5b1f8e03fa7eb9a4799c4c1
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
 F src/tclsqlite.c 48f291e1a7e672a7204884d4c164a8ed3a522ff087c361ada2991f5d54e987f6
-F src/test1.c c24fe3a13ff78f5cbc29ac7049123e03ee1f33c6601646a45766c5f8d5db7f92
+F src/test1.c a02b46f382baadfdfb1a541caf55a26aae44619ad0cff4f6d27eeca84594636a
 F src/test2.c 3efb99ab7f1fc8d154933e02ae1378bac9637da5
 F src/test3.c 61798bb0d38b915067a8c8e03f5a534b431181f802659a6616f9b4ff7d872644
 F src/test4.c 7c4420e01c577b5c4add2cb03119743b1a357543d347773b9e717195ea967159
@@ -1934,8 +1934,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c03205aee9015fd886b8db02c8190899cee699255ca370f939e547deaf5ba9e8
-R 035fc7ecc447249d615762da61b11d6c
-U larrybr
-Z a3c99601a959abd1cb8e7bea62bdef11
+P e4ddcd8aa582c1130c34e9f05cd3e5f96ebf03c97a36c09ca442e3612fee4a20
+R 258b3a6c81183d6fd1aebc821d3d480b
+U drh
+Z c81e1f18d29297bc5455db4d8770f644
 # Remove this line to create a well-formed Fossil manifest.

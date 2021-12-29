@@ -4390,7 +4390,7 @@ static int SQLITE_TCLAPI test_error_offset(
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
 
   iByteOffset = sqlite3_error_offset(db);
-  Tcl_SetObjResult(interp, Tcl_NewIntObj(zErr, -1));
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(iByteOffset));
   return TCL_OK;
 }
 
