@@ -1,5 +1,5 @@
-C Add\sthe\ssqlite3_error_offset()\sinterface.\sUse\sit\sto\senhance\serror\sreporting\nin\sthe\sCLI.
-D 2021-12-29T04:13:37.296
+C Ensure\sthat\sthe\saffinity\sof\scolumns\sis\shonored\sin\sthe\sRETURNING\sclause.\nSee\s[forum:/forumpost/e0c7574ab2|forum\spost\se0c7574ab2]\sfor\sthe\sbug\sreport.
+D 2021-12-29T04:31:54.399
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -548,7 +548,7 @@ F src/pragma.h 87330ed2fbfa2a1274de93ca0ab850fba336189228cb256089202c3b52766fad
 F src/prepare.c 40961a1170a4c4151a90dae29dd00fc6c155f1af8246abeeeb8f0a10b3fb9719
 F src/printf.c 975f1f5417f2526365b6e6d7f22332e3e11806dad844701d92846292b654ba9a
 F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
-F src/resolve.c 6144db65157ff96fe27e3e6f784ab331b3de35db233cd0a6e93278a5d23fcf06
+F src/resolve.c 359bc0e445d427583d2ab6110433a5dc777f64a0ecdf8d24826d8b475233ead9
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c a7a3d9f54eb24821ec5f67f2e5589b68a5d42d46fc5849d7376886777d93a85a
 F src/shell.c.in 41b0e1f3a0c2443cb0a8d25e5d40529c911c574b5fe5a91dc54e19f90947a359
@@ -616,7 +616,7 @@ F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 865911afa00fed589cd03b25c140ca88544842aaef7b81f7d41ed769a7a54120
 F src/treeview.c 9dfdb7ff7f6645d0a6458dbdf4ffac041c071c4533a6db8bb6e502b979ac67bc
-F src/trigger.c 2ef56f0b7b75349a5557d0604b475126329c2e1a02432e7d49c4c710613e8254
+F src/trigger.c eaaba4e34cdce18bf6c633a4536d35e93c62684d3107d5563f0eae209640860c
 F src/update.c d6f5c7b9e072660757ac7d58175aca11c07cb95ebbb297ae7f38853700f52328
 F src/upsert.c 8789047a8f0a601ea42fa0256d1ba3190c13746b6ba940fe2d25643a7e991937
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
@@ -1309,7 +1309,7 @@ F test/reindex.test cd9d6021729910ece82267b4f5e1b5ac2911a7566c43b43c176a6a4732e2
 F test/releasetest_data.tcl 7cea6c852ae6bb3a9ff1a2b910e4dd13c16a05f74443984dfd52159b0b01ea55
 F test/resetdb.test 8062cf10a09d8c048f8de7711e94571c38b38168db0e5877ba7561789e5eeb2b
 F test/resolver01.test f4022acafda7f4d40eca94dbf16bc5fc4ac30ceb
-F test/returning1.test 76e4e8016e92a6abeaf15503fbf36deabbdc8b988d11edc2f7f82e18a56e35bd
+F test/returning1.test ee0b115162b17f59fe486767899596b1e8290bcd845db05d7d1d9e6c2dad1b8b
 F test/rollback.test 06680159bc6746d0f26276e339e3ae2f951c64812468308838e0a3362d911eaa
 F test/rollback2.test 3f3a4e20401825017df7e7671e9f31b6de5fae5620c2b9b49917f52f8c160a8f
 F test/rollbackfault.test 0e646aeab8840c399cfbfa43daab46fd609cf04a
@@ -1934,9 +1934,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 155c3e9c7ccd6fd644cc64b027cf460112c491e5f9202dd76cefe2000936ad80 5f804da1820c98e7ff5c377e57e30b5154844b92ce622ed2ff888fe2c887e1ca
-R 258b3a6c81183d6fd1aebc821d3d480b
-T +closed 5f804da1820c98e7ff5c377e57e30b5154844b92ce622ed2ff888fe2c887e1ca
+P 416602a85101c2cd1705eb5306a8933e54cb05ae1562400395ec2769173dec01
+R f4950d8eb5e68670553d3ef4a059c1eb
 U drh
-Z 52cc78f07738120203d38f1772740b4b
+Z dbbd31fc9de5d8d6d989728469f60373
 # Remove this line to create a well-formed Fossil manifest.

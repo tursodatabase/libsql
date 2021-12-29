@@ -953,7 +953,12 @@ static void codeReturningTrigger(
       pReturning->iRetReg = reg;
       for(i=0; i<nCol; i++){
         Expr *pCol = pNew->a[i].pExpr;
+        assert( pCol!=0 || pParse->db->mallocFailed );
+        if( pCol==0 ) continue;
         sqlite3ExprCodeFactorable(pParse, pCol, reg+i);
+        if( sqlite3ExprAffinity(pCol)==SQLITE_AFF_REAL ){
+          sqlite3VdbeAddOp1(v, OP_RealAffinity, reg+i);
+        }
       }
       sqlite3VdbeAddOp3(v, OP_MakeRecord, reg, i, reg+i);
       sqlite3VdbeAddOp2(v, OP_NewRowid, pReturning->iRetCur, reg+i+1);

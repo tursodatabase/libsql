@@ -346,4 +346,20 @@ do_catchsql_test 14.1 {
   INSERT INTO child(parent_id) VALUES(123) RETURNING id;
 } {1 {FOREIGN KEY constraint failed}}
 
+# 2021-12-28 Forum post https://sqlite.org/forum/forumpost/e0c7574ab2
+# Incorrect affinity for REAL values that can be represented as integers.
+#
+reset_db
+sqlite3_test_control SQLITE_TESTCTRL_INTERNAL_FUNCTIONS db
+do_execsql_test 15.0 {
+  CREATE TABLE t1(x REAL);
+  INSERT INTO t1(x) VALUES(5.0) RETURNING x, affinity(x);
+} {5.0 real}
+do_execsql_test 15.1 {
+  UPDATE t1 SET x=x+1 RETURNING x, affinity(x);
+} {6.0 real}
+do_execsql_test 15.2 {
+  DELETE FROM t1 RETURNING x, affinity(x);
+} {6.0 real}
+
 finish_test
