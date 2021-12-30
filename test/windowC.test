@@ -13,7 +13,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-set testprefix windowB
+set testprefix windowC
 
 ifcapable !windowfunc {
   finish_test
@@ -67,11 +67,19 @@ foreach {tn bBlob seps} {
 #
 reset_db
 do_execsql_test 2.0 {
-  PRAGMA encoding=UTF16;
+  PRAGMA encoding=UTF16le;
   WITH separator(x) AS (VALUES(',a,'),(',bc,')),
        value(y) AS (VALUES(1),(x'5585d09013455178cd11ce4a'))
   SELECT group_concat(y,x) OVER (ORDER BY x ROWS BETWEEN 1 PRECEDING AND 1 PRECEDING)
   FROM separator, value;
 } {{} 1 蕕郐䔓硑ᇍ䫎 1}
+reset_db
+do_execsql_test 2.1 {
+  PRAGMA encoding=UTF16be;
+  WITH separator(x) AS (VALUES(',a,'),(',bc,')),
+       value(y) AS (VALUES(1),(x'5585d09013455178cd11ce4a'))
+  SELECT group_concat(y,x) OVER (ORDER BY x ROWS BETWEEN 1 PRECEDING AND 1 PRECEDING)
+  FROM separator, value;
+} {{} 1 喅킐ፅ典촑칊 1}
 
 finish_test

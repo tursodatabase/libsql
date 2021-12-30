@@ -791,6 +791,17 @@ else
 fi
 AC_SUBST(USE_GCOV)
 
+#########
+# Enable/disabled amalagamation line macros
+########
+AMALGAMATION_LINE_MACROS=--linemacros=0
+if test "${amalgamation_line_macros}" = "yes" ; then
+  AMALGAMATION_LINE_MACROS=--linemacros=1
+fi
+if test "${amalgamation_line_macros}" = "no" ; then
+  AMALGAMATION_LINE_MACROS=--linemacros=0
+fi
+AC_SUBST(AMALGAMATION_LINE_MACROS)
 
 #########
 # Output the config header
