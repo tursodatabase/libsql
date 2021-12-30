@@ -3438,12 +3438,8 @@ static int multiSelectOrderBy(
   assert( p->pOrderBy == pOrderBy );
   assert( pOrderBy!=0 || db->mallocFailed );
   pPrior->pOrderBy = sqlite3ExprListDup(pParse->db, pOrderBy, 0);
-  if( p->pPrior==0 ){
-    sqlite3ResolveOrderGroupBy(pParse, p, p->pOrderBy, "ORDER");
-  }
-  if( pPrior->pPrior==0 ){
-    sqlite3ResolveOrderGroupBy(pParse, pPrior, pPrior->pOrderBy, "ORDER");
-  }
+  sqlite3ResolveOrderGroupBy(pParse, p, p->pOrderBy, "ORDER");
+  sqlite3ResolveOrderGroupBy(pParse, pPrior, pPrior->pOrderBy, "ORDER");
 
   /* Compute the limit registers */
   computeLimitRegisters(pParse, p, labelEnd);
