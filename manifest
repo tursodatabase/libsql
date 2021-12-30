@@ -1,5 +1,5 @@
-C Fix\sa\sminor\sissue\sin\sthe\sconfigure\sscript.
-D 2021-12-30T03:56:30.496
+C Change\san\sassert()\sin\sFTS3\sinto\sassert_fts3_nc(),\ssince\sit\sis\sa\sharmless\ncondition\sthat\scan\soccur\swhen\sprocessing\sa\scorrupt\sdatabase\sfile.
+D 2021-12-30T11:13:44.239
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -84,7 +84,7 @@ F ext/fts3/README.content b9078d0843a094d86af0d48dffbff13c906702b4c3558012e67b9c
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers b92bdeb8b46503f0dd301d364efc5ef59ef9fa8e2758b8e742f39fa93a2e422d
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c da41de21622774b1cb8c3415e8d2a6961ad7c978ab534f2a54434f76a5c4dfbc
+F ext/fts3/fts3.c 6bfdc941372ee431e3d362986674a8708eb0e700b28c3d35d46d953a9351155f
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h cff59b8b13dafe9d59924a5d710f771ed8b121a55cccbc99b6e2a723fcde14dc
 F ext/fts3/fts3_aux.c f0dc9bd98582615b7750218899bd0c729879b6bbf94d1be57ca1833ff49afc6f
@@ -1934,8 +1934,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b33e47709a2eb56b543ee3a34af201cd05e316bde8dcf45cebcf4e157d728508
-R 4e80605c01a2de9eb11cd0893e085b06
+P 0413d37e327525d7747d9f9643eb73197a83d9e810bcdc3e0cd35762a94ba22b
+Q +e773d6219bded9a5dfa9930882682dadaa7f1c6be344dbde904c9477a89f2d2c
+R d08b440cf09b997cf0a2ac4ea84184a3
 U drh
-Z 0d7fa1ebbc0cdecbad587ee34951d57d
+Z 92b86f3d18a222dca5f5b54143c88a87
 # Remove this line to create a well-formed Fossil manifest.
