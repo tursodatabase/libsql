@@ -378,8 +378,8 @@ impl Connection {
     ///
     /// The transaction defaults to rolling back when it is dropped. If you
     /// want the transaction to commit, you must call
-    /// [`commit`](Transaction::commit) or [`set_drop_behavior(DropBehavior:
-    /// :Commit)`](Transaction::set_drop_behavior).
+    /// [`commit`](Transaction::commit) or
+    /// [`set_drop_behavior(DropBehavior::Commit)`](Transaction::set_drop_behavior).
     ///
     /// ## Example
     ///
