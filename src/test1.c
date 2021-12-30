@@ -7512,6 +7512,7 @@ static int SQLITE_TCLAPI optimization_control(
     { "stat4",               SQLITE_Stat4          },
     { "skip-scan",           SQLITE_SkipScan       },
     { "push-down",           SQLITE_PushDown       },
+    { "balanced-merge",      SQLITE_BalancedMerge  },
   };
 
   if( objc!=4 ){
