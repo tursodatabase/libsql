@@ -1164,6 +1164,11 @@ static sqlite3_index_info *allocateIndexInfo(
       Expr *pExpr = pOrderBy->a[i].pExpr;
       Expr *pE2;
 
+      /* Skip over constant terms in the ORDER BY clause */
+      if( sqlite3ExprIsConstant(pExpr) ){
+        continue;
+      }
+
       /* Virtual tables are unable to deal with NULLS FIRST */
       if( pOrderBy->a[i].sortFlags & KEYINFO_ORDER_BIGNULL ) break;
 
@@ -1211,7 +1216,6 @@ static sqlite3_index_info *allocateIndexInfo(
   pIdxCons = (struct sqlite3_index_constraint*)&pHidden[1];
   pIdxOrderBy = (struct sqlite3_index_orderby*)&pIdxCons[nTerm];
   pUsage = (struct sqlite3_index_constraint_usage*)&pIdxOrderBy[nOrderBy];
-  pIdxInfo->nOrderBy = nOrderBy;
   pIdxInfo->aConstraint = pIdxCons;
   pIdxInfo->aOrderBy = pIdxOrderBy;
   pIdxInfo->aConstraintUsage = pUsage;
@@ -1258,14 +1262,17 @@ static sqlite3_index_info *allocateIndexInfo(
   }
   assert( j==nTerm );
   pIdxInfo->nConstraint = j;
-  for(i=0; i<nOrderBy; i++){
+  for(i=j=0; i<nOrderBy; i++){
     Expr *pExpr = pOrderBy->a[i].pExpr;
+    if( sqlite3ExprIsConstant(pExpr) ) continue;
     assert( pExpr->op==TK_COLUMN
          || (pExpr->op==TK_COLLATE && pExpr->pLeft->op==TK_COLUMN
               && pExpr->iColumn==pExpr->pLeft->iColumn) );
-    pIdxOrderBy[i].iColumn = pExpr->iColumn;
-    pIdxOrderBy[i].desc = pOrderBy->a[i].sortFlags & KEYINFO_ORDER_DESC;
+    pIdxOrderBy[j].iColumn = pExpr->iColumn;
+    pIdxOrderBy[j].desc = pOrderBy->a[i].sortFlags & KEYINFO_ORDER_DESC;
+    j++;
   }
+  pIdxInfo->nOrderBy = j;
 
   *pmNoOmit = mNoOmit;
   return pIdxInfo;
