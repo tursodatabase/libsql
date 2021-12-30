@@ -1,5 +1,5 @@
-C Fix\swindowC\stests\sto\sspecify\slittle-endian\sor\sbig-endian\sUTF16,\sfor\scross-platform\sportability.\s[forum\spost\s559b84a5c6|forum:/forumpost/559b84a5c6].\s\sAnd\ngive\sthe\scorrect\sprefix\sto\stests\sin\sthe\swindowC.test\smodule.
-D 2021-12-30T11:35:38.305
+C Disable\sthe\satoi1.test\stest\smodule\son\snon-x64\shardware.
+D 2021-12-30T12:26:16.459
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -689,7 +689,7 @@ F test/async2.test c0a9bd20816d7d6a2ceca7b8c03d3d69c28ffb8b
 F test/async3.test d73a062002376d7edc1fe3edff493edbec1fc2f7
 F test/async4.test 1787e3952128aa10238bf39945126de7ca23685a
 F test/async5.test 383ab533fdb9f7ad228cc99ee66e1acb34cc0dc0
-F test/atof1.test 10049623e77006691c4c2978c1dc8a3f75276377a53417811aa85bda7493f963
+F test/atof1.test 77e8517df10cb39f2e4e65dbefe1e81c8d8e65f29f68b09265ca6e534c68227e
 F test/atomic.test 065a453dde33c77ff586d91ccaa6ed419829d492dbb1a5694b8a09f3f9d7d061
 F test/atomic2.test b6863b4aa552543874f80b42fb3063f1c8c2e3d8e56b6562f00a3cc347b5c1da
 F test/atrc.c c388fac43dbba05c804432a7135ae688b32e8f25818e9994ffba4b64cf60c27c
@@ -1934,10 +1934,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 103f95db3e17d7d021b489c160b84e66c630b4f13516be11d10fffe2b42599fa
-Q +adf3a1e6f7575964e467f6813ff980e802cf5a37aaa9e1736af702c493f276b1
-Q +fb43456324c26879767b08febf1b5a2b46a289f25398a3872f81d845afd5d84e
-R 735729ed1dd528b1833df911de4b51c9
+P 8af7cb2a3e7ca778695a7a44359537457bf57dc8bdad9b2b4d20a73385c028d8
+R 6693a475946c1486ee6fea9335c37ae8
 U drh
-Z 06a68db535c004a4f614268f0fa96a9f
+Z fea361e0670d77fc216a84308b91e7a4
 # Remove this line to create a well-formed Fossil manifest.
