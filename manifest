@@ -1,5 +1,5 @@
-C When\simplementing\sa\smulti-way\scompound\sSELECT\susing\smerge,\stry\sto\sbalance\nthe\smerge\stree.
-D 2021-12-30T00:37:11.863
+C When\sa\stable\shas\san\sINTEGER\sPRIMARY\sKEY\sON\sCONFLICT\sREPLACE\sand\ssome\sother\nuniqueness\sconstraint,\sand\sit\sparticipates\sin\san\supsert\son\sthat\sother\nconstraint,\sensure\sthat\scode\sthat\schecks\sfor\sconflicts\son\sthe\sINTEGER\sPRIMARY\nKEY\sis\swell-formed.\s\sFix\sfor\sthe\sproblem\sreported\sby\n[forum:/forumpost/06b16b8b29f8c8c3|forum\spost\s06b16b8b29f8c8c3].
+D 2021-12-30T02:38:43.462
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -511,7 +511,7 @@ F src/hash.c 8d7dda241d0ebdafb6ffdeda3149a412d7df75102cecfc1021c98d6219823b19
 F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h cb1d7e3e1ed94b7aa6fde95ae2c2daccc3df826be26fc9ed7fd90d1750ae6144
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c e0293a6f686e18cb2c9dd0619a731518e0109d7e1f1db1932974659e7843cfd1
+F src/insert.c 89c51ecb327d83a5eaf6e781aec8c77e2daec8777ca19781a1258bdafbe67de6
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 95db1fe62c5973f1c5d9c53f6083e21a73ece14cdd47eeca0639691332e85c4d
 F src/main.c aa24539f6c26460543d51027ea14b79cad35e34bc9d4907bc349b52b71066644
@@ -1676,7 +1676,7 @@ F test/upfrom1.test 8cb06689e99cd707d884faa16da0e8eb26ff658bb01c47ddf72fadade666
 F test/upfrom2.test 88d39cb755db5789541e645d4e2764abc697a56958f28a3f8451a0e9342bbd6b
 F test/upfrom3.test 6130f24ebf97f5ea865e5d2a14a2d543fe5428a62e87cc60f62d875e45c1f5f0
 F test/upfromfault.test 3a10075a0043f0c4fad6614b2c371f88a8ba5a4acab68b907438413865d6a8d6
-F test/upsert1.test 88f9e258c6a0eeeb85937b08831e8daad440ba41f125af48439e9d33f266fb18
+F test/upsert1.test b0ae2f58680c5205b4bc1cdeed3c3d444057c506f6c44494fa3eac60731d68a2
 F test/upsert2.test 9c3cdbb1a890227f6504ce4b0e3de68f4cdfa16bb21d8641208a9239896c5a09
 F test/upsert3.test 88d7d590a1948a9cb6eac1b54b0642f67a9f35a1fc0f19b200e97d5d39e3179c
 F test/upsert4.test 25d2a1da92f149331ae0c51ca6e3eee78189577585eab92de149900d62994fa5
@@ -1935,8 +1935,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d4870c08893ea9984b1fa1c3a7d04893ad5ed4a2130e9287d169a306cc8ef0a4
-R 92d42c20b7697c4ca818b90b713774b8
+P bb8522fe0dc54282ec13672eba9b44ee08f9cb55c1663f1699a61bf96ec1fd04
+R b0ae1f32fc54818f4c3193bd26e96d2b
 U drh
-Z 36a1d0b63e6b59c361f9d34272782b8a
+Z 676489b32b06402ed90daf3898799cb4
 # Remove this line to create a well-formed Fossil manifest.
