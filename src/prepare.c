@@ -808,6 +808,7 @@ static int sqlite3LockAndPrepare(
     ** reset is considered a permanent error. */
     rc = sqlite3Prepare(db, zSql, nBytes, prepFlags, pOld, ppStmt, pzTail);
     assert( rc==SQLITE_OK || *ppStmt==0 );
+    if( rc==SQLITE_OK || db->mallocFailed ) break;
   }while( rc==SQLITE_ERROR_RETRY
        || (rc==SQLITE_SCHEMA && (sqlite3ResetOneSchema(db,-1), cnt++)==0) );
   sqlite3BtreeLeaveAll(db);
