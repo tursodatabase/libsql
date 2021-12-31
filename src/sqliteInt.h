@@ -4406,7 +4406,7 @@ void sqlite3DequoteExpr(Expr*);
 void sqlite3DequoteToken(Token*);
 void sqlite3TokenInit(Token*,char*);
 int sqlite3KeywordCode(const unsigned char*, int);
-int sqlite3RunParser(Parse*, const char*, char **);
+int sqlite3RunParser(Parse*, const char*);
 void sqlite3FinishCoding(Parse*);
 int sqlite3GetTempReg(Parse*);
 void sqlite3ReleaseTempReg(Parse*,int);

@@ -653,7 +653,6 @@ static int sqlite3Prepare(
   sqlite3_stmt **ppStmt,    /* OUT: A pointer to the prepared statement */
   const char **pzTail       /* OUT: End of parsed string */
 ){
-  char *zErrMsg = 0;        /* Error message */
   int rc = SQLITE_OK;       /* Result code */
   int i;                    /* Loop counter */
   Parse sParse;             /* Parsing context */
@@ -728,14 +727,14 @@ static int sqlite3Prepare(
     }
     zSqlCopy = sqlite3DbStrNDup(db, zSql, nBytes);
     if( zSqlCopy ){
-      sqlite3RunParser(&sParse, zSqlCopy, &zErrMsg);
+      sqlite3RunParser(&sParse, zSqlCopy);
       sParse.zTail = &zSql[sParse.zTail-zSqlCopy];
       sqlite3DbFree(db, zSqlCopy);
     }else{
       sParse.zTail = &zSql[nBytes];
     }
   }else{
-    sqlite3RunParser(&sParse, zSql, &zErrMsg);
+    sqlite3RunParser(&sParse, zSql);
   }
   assert( 0==sParse.nQueryLoop );
 
@@ -759,14 +758,14 @@ static int sqlite3Prepare(
     }
     assert( 0==(*ppStmt) );
     rc = sParse.rc;
-    if( zErrMsg ){
-      sqlite3ErrorWithMsg(db, rc, "%s", zErrMsg);
-      sqlite3DbFree(db, zErrMsg);
+    if( sParse.zErrMsg ){
+      sqlite3ErrorWithMsg(db, rc, "%s", sParse.zErrMsg);
+      sqlite3DbFree(db, sParse.zErrMsg);
     }else{
       sqlite3Error(db, rc);
     }
   }else{
-    assert( zErrMsg==0 );
+    assert( sParse.zErrMsg==0 );
     *ppStmt = (sqlite3_stmt*)sParse.pVdbe;
     rc = SQLITE_OK;
     sqlite3ErrorClear(db);
