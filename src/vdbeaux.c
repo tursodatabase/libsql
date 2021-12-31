@@ -4936,7 +4936,7 @@ int sqlite3VdbeIdxRowid(sqlite3 *db, BtCursor *pCur, i64 *rowid){
   /* The index entry must begin with a header size */
   getVarint32NR((u8*)m.z, szHdr);
   testcase( szHdr==3 );
-  testcase( szHdr==m.n );
+  testcase( szHdr==(u32)m.n );
   testcase( szHdr>0x7fffffff );
   assert( m.n>=0 );
   if( unlikely(szHdr<3 || szHdr>(unsigned)m.n) ){
