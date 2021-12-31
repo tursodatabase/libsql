@@ -3391,7 +3391,10 @@ static void exec_prepared_stmt(
       if( pArg->cMode==MODE_Json ){
         fputs("]\n", pArg->out);
       }else if( pArg->cMode==MODE_Count ){
-        printf("%llu row%s\n", nRow, nRow!=1 ? "s" : "");
+        char zBuf[200];
+        sqlite3_snprintf(sizeof(zBuf), zBuf, "%llu row%s\n",
+                         nRow, nRow!=1 ? "s" : "");
+        printf("%s", zBuf);
       }
     }
   }
@@ -9538,9 +9541,10 @@ static int do_meta_command(char *zLine, ShellState *p){
       appendText(&sSelect, ") WHERE ", 0);
       if( zName ){
         char *zQarg = sqlite3_mprintf("%Q", zName);
+        int bGlob;
         shell_check_oom(zQarg);
-        int bGlob = strchr(zName, '*') != 0 || strchr(zName, '?') != 0 ||
-                    strchr(zName, '[') != 0;
+        bGlob = strchr(zName, '*') != 0 || strchr(zName, '?') != 0 ||
+                strchr(zName, '[') != 0;
         if( strchr(zName, '.') ){
           appendText(&sSelect, "lower(printf('%s.%s',sname,tbl_name))", 0);
         }else{
