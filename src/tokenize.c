@@ -686,11 +686,11 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   if( db->mallocFailed ){
     pParse->rc = SQLITE_NOMEM_BKPT;
   }
-  if( pParse->rc!=SQLITE_OK && pParse->rc!=SQLITE_DONE && pParse->zErrMsg==0 ){
-    pParse->zErrMsg = sqlite3MPrintf(db, "%s", sqlite3ErrStr(pParse->rc));
-  }
   assert( pzErrMsg!=0 );
-  if( pParse->zErrMsg ){
+  if( pParse->zErrMsg || (pParse->rc!=SQLITE_OK && pParse->rc!=SQLITE_DONE) ){
+    if( pParse->zErrMsg==0 ){
+      pParse->zErrMsg = sqlite3MPrintf(db, "%s", sqlite3ErrStr(pParse->rc));
+    }
     *pzErrMsg = pParse->zErrMsg;
     sqlite3_log(pParse->rc, "%s in \"%s\"", 
                 *pzErrMsg, pParse->zTail);
@@ -698,29 +698,18 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
     nErr++;
   }
   pParse->zTail = zSql;
-  if( pParse->pVdbe && pParse->nErr>0 && pParse->nested==0 ){
-    sqlite3VdbeDelete(pParse->pVdbe);
-    pParse->pVdbe = 0;
-  }
-#ifndef SQLITE_OMIT_SHARED_CACHE
-  if( pParse->nested==0 ){
-    sqlite3DbFree(db, pParse->aTableLock);
-    pParse->aTableLock = 0;
-    pParse->nTableLock = 0;
-  }
-#endif
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   sqlite3_free(pParse->apVtabLock);
 #endif
 
-  if( !IN_SPECIAL_PARSE ){
+  if( pParse->pNewTable && !IN_SPECIAL_PARSE ){
     /* If the pParse->declareVtab flag is set, do not delete any table 
     ** structure built up in pParse->pNewTable. The calling code (see vtab.c)
     ** will take responsibility for freeing the Table structure.
     */
     sqlite3DeleteTable(db, pParse->pNewTable);
   }
-  if( !IN_RENAME_OBJECT ){
+  if( pParse->pNewTrigger && !IN_RENAME_OBJECT ){
     sqlite3DeleteTrigger(db, pParse->pNewTrigger);
   }
   sqlite3DbFree(db, pParse->pVList);

@@ -837,8 +837,8 @@ int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
   db->init.busy = 0;
   sParse.nQueryLoop = 1;
   if( SQLITE_OK==sqlite3RunParser(&sParse, zCreateTable, &zErr) 
-   && sParse.pNewTable
-   && !db->mallocFailed
+   && ALWAYS(sParse.pNewTable!=0)
+   && ALWAYS(!db->mallocFailed)
    && IsOrdinaryTable(sParse.pNewTable)
   ){
     if( !pTab->aCol ){

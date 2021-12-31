@@ -570,6 +570,10 @@ int sqlite3SchemaToIndex(sqlite3 *db, Schema *pSchema){
 */
 void sqlite3ParserReset(Parse *pParse){
   sqlite3 *db = pParse->db;
+  assert( pParse->nested==0 );
+#ifndef SQLITE_OMIT_SHARED_CACHE
+  sqlite3DbFree(db, pParse->aTableLock);
+#endif
   while( pParse->pCleanup ){
     ParseCleanup *pCleanup = pParse->pCleanup;
     pParse->pCleanup = pCleanup->pNext;
