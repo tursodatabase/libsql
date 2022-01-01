@@ -1,5 +1,5 @@
-C Fix\san\sobscure\sproblem\swith\sreleasing\ssavepoints\sstored\sin\san\sin-memory\sjournal\sthat\scould\scause\ssubsequent\ssavepoint\srollback\sto\sfail.
-D 2022-01-01T19:29:50.963
+C Attempt\sto\sfix\sa\sharmless\scompiler\swarning\sin\sFTS5.
+D 2022-01-01T19:55:29.471
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -118,7 +118,7 @@ F ext/fts5/fts5_buffer.c 3001fbabb585d6de52947b44b455235072b741038391f830d6b7292
 F ext/fts5/fts5_config.c 501e7d3566bc92766b0e11c0109a7c5a6146bc41144195459af5422f6c2078aa
 F ext/fts5/fts5_expr.c fcd0770d53028c2b53a15d0f53bf6d0e01b1bf3dd97630b9fedf0801f03aa3ec
 F ext/fts5/fts5_hash.c d4fb70940359f2120ccd1de7ffe64cc3efe65de9e8995b822cd536ff64c96982
-F ext/fts5/fts5_index.c b1b2e5d4a9e3b54c740d8354cc47e3fa879f54c2176de55e0b882dab45ab7b07
+F ext/fts5/fts5_index.c fdfbc8a62827ec1d1b6f207a1e59c1c4986c3ce245592b5128ffe738867cfcd1
 F ext/fts5/fts5_main.c 7c6092a53e6802962fa07b0fad3e61cb077b6c98b74b727d8d44ac2cf63bd914
 F ext/fts5/fts5_storage.c 76c6085239eb44424004c022e9da17a5ecd5aaec859fba90ad47d3b08f4c8082
 F ext/fts5/fts5_tcl.c b1445cbe69908c411df8084a10b2485500ac70a9c747cdc8cda175a3da59d8ae
@@ -1936,8 +1936,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c76a4c0b3cb625017ba09c8bccfcf1b5826df6873f1d3705d3345716079d5ec9
-R f593fb4a8952c091aa397b2514cd432f
-U dan
-Z 6c6040c92604f299f7398e773f45f985
+P 73c2b50211d3ae26aeb89976ec7b9fcd7de9f152b283ec7d0809ad18bddc603e
+R 81090d8353ee3f936c93337e56dfc232
+U drh
+Z 765a5c4cd45e00d0f6e7d0350955b24c
 # Remove this line to create a well-formed Fossil manifest.
