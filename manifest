@@ -1,5 +1,5 @@
-C Attempt\sto\sfix\sa\sharmless\scompiler\swarning\sin\sFTS5.
-D 2022-01-01T19:55:29.471
+C Fix\san\sassert()\sin\spager.c\sto\savoid\sthe\spossibility\sof\sside-effects.
+D 2022-01-01T20:02:58.185
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -537,7 +537,7 @@ F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c f5ad51cfd024116db8531feab9efd831c2621436dca1464e4ff1e8af9bf3252e
 F src/os_win.c 77d39873836f1831a9b0b91894fec45ab0e9ca8e067dc8c549e1d1eca1566fe9
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c b0f75fde773ad69da997fe57153cdef53c5f0bcf4cd4c7dda19f5fd8e7fb488b
+F src/pager.c dda556cb412e66c3d4016214ef2dd63d9019ad24d1ceff871b79dcb860981f77
 F src/pager.h 4bf9b3213a4b2bebbced5eaa8b219cf25d4a82f385d093cd64b7e93e5285f66f
 F src/parse.y 761b5d30a7ea9bd2db3b3571438cfcceb5f7dbf4fcad6881c8de65bdda07135a
 F src/pcache.c 084e638432c610f95aea72b8509f0845d2791293f39d1b82f0c0a7e089c3bb6b
@@ -1936,8 +1936,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 73c2b50211d3ae26aeb89976ec7b9fcd7de9f152b283ec7d0809ad18bddc603e
-R 81090d8353ee3f936c93337e56dfc232
-U drh
-Z 765a5c4cd45e00d0f6e7d0350955b24c
+P 8e619c21e2326be1538b60908e7cd211558ec840835c6eb69e768eb190e1fd0b
+R 6db54dc637e31deb110e7ca557bebf75
+U dan
+Z 3630f18f1280e005938a7d4c214cb21c
 # Remove this line to create a well-formed Fossil manifest.
