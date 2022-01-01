@@ -3917,7 +3917,7 @@ static int pager_wait_on_lock(Pager *pPager, int locktype){
 #if defined(SQLITE_DEBUG)
 static void assertTruncateConstraintCb(PgHdr *pPg){
   assert( pPg->flags&PGHDR_DIRTY );
-  assert( !subjRequiresPage(pPg) || pPg->pgno<=pPg->pPager->dbSize );
+  assert( pPg->pgno<=pPg->pPager->dbSize || !subjRequiresPage(pPg) );
 }
 static void assertTruncateConstraint(Pager *pPager){
   sqlite3PcacheIterateDirty(pPager->pPCache, assertTruncateConstraintCb);

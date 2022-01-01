@@ -1,5 +1,5 @@
-C Remove\san\sobsolete\sassert()\sstatement\sthat\sno\slonger\sdoes\sanything\suseful\nand\swhich\sis\snot\salways\strue.\s\sFix\sfor\sPoC\s#1\sof\n[forum:/forumpost/b03d86f951|forum\spost\sb03d86f951].
-D 2022-01-01T17:21:55.030
+C Fix\san\sobscure\sproblem\swith\sreleasing\ssavepoints\sstored\sin\san\sin-memory\sjournal\sthat\scould\scause\ssubsequent\ssavepoint\srollback\sto\sfail.
+D 2022-01-01T19:29:50.963
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -522,7 +522,7 @@ F src/mem2.c c8bfc9446fd0798bddd495eb5d9dbafa7d4b7287d8c22d50a83ac9daa26d8a75
 F src/mem3.c 30301196cace2a085cbedee1326a49f4b26deff0af68774ca82c1f7c06fda4f6
 F src/mem5.c 9bf955937b07f8c32541c8a9991f33ce3173d944
 F src/memdb.c c2dc88f97c410eb68a24468344b65526685e18354ddfd15906750c1eaf9dc2dd
-F src/memjournal.c a85f0dc5c02a42453d0bc3819ecfb5666cb6433e5deefcd93ccbe05c9f088b83
+F src/memjournal.c ff4336a98b05ede2adee7595f22d6f7d1cdc6bf0f0a5c3d77b0acdf017b2e8b2
 F src/msvc.h 3a15918220367a8876be3fa4f2abe423a861491e84b864fb2b7426bf022a28f8
 F src/mutex.c 5e3409715552348732e97b9194abe92fdfcd934cfb681df4ba0ab87ac6c18d25
 F src/mutex.h a7b2293c48db5f27007c3bdb21d438873637d12658f5a0bf8ad025bb96803c4a
@@ -537,7 +537,7 @@ F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c f5ad51cfd024116db8531feab9efd831c2621436dca1464e4ff1e8af9bf3252e
 F src/os_win.c 77d39873836f1831a9b0b91894fec45ab0e9ca8e067dc8c549e1d1eca1566fe9
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c bc10c191d18bffd3d76eda5f162799e43a9f875ecfe7c4869f752e2ddef87ea2
+F src/pager.c b0f75fde773ad69da997fe57153cdef53c5f0bcf4cd4c7dda19f5fd8e7fb488b
 F src/pager.h 4bf9b3213a4b2bebbced5eaa8b219cf25d4a82f385d093cd64b7e93e5285f66f
 F src/parse.y 761b5d30a7ea9bd2db3b3571438cfcceb5f7dbf4fcad6881c8de65bdda07135a
 F src/pcache.c 084e638432c610f95aea72b8509f0845d2791293f39d1b82f0c0a7e089c3bb6b
@@ -1203,6 +1203,7 @@ F test/mem5.test c6460fba403c5703141348cd90de1c294188c68f
 F test/memdb.test c1f2a343ad14398d5d6debda6ea33e80d0dafcc7
 F test/memdb1.test 2c4e9cc10d21c6bf4e217d72b7f6b8ba9b2605971bb2c5e6df76018e189f98f5
 F test/memjournal.test 70f3a00c7f84ee2978ad14e831231caa1e7f23915a2c54b4f775a021d5740c6c
+F test/memjournal2.test 89a4e0d1084170a281efa4d54c2677599f986f44227f98f7dfae282802737b65
 F test/memleak.test 10b9c6c57e19fc68c32941495e9ba1c50123f6e2
 F test/memsubsys1.test 9e7555a22173b8f1c96c281ce289b338fcba2abe8b157f8798ca195bbf1d347e
 F test/memsubsys2.test 3e4a8d0c05fd3e5fa92017c64666730a520c7e08
@@ -1935,8 +1936,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0dd6b5fccd554ebe4c0b081601863acd7b6ea81b51e14b508b23244f2a570e7e
-R 93fe07409816797ce5872fd05e1ee3e9
-U drh
-Z 59c1a6b5d78ba93ba2850de6200793f1
+P c76a4c0b3cb625017ba09c8bccfcf1b5826df6873f1d3705d3345716079d5ec9
+R f593fb4a8952c091aa397b2514cd432f
+U dan
+Z 6c6040c92604f299f7398e773f45f985
 # Remove this line to create a well-formed Fossil manifest.
