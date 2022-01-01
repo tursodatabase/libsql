@@ -750,7 +750,7 @@ static int sqlite3Prepare(
     sParse.checkSchema = 0;
   }
   if( sParse.rc!=SQLITE_OK && sParse.rc!=SQLITE_DONE ){
-    if( sParse.checkSchema ){
+    if( sParse.checkSchema && db->init.busy==0 ){
       schemaIsValid(&sParse);
     }
     if( sParse.pVdbe ){

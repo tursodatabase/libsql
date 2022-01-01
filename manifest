@@ -1,5 +1,5 @@
-C Fix\san\sassert()\sin\spager.c\sto\savoid\sthe\spossibility\sof\sside-effects.
-D 2022-01-01T20:02:58.185
+C Do\snot\sraise\san\sSQLITE_SCHEMA\serror\sif\sin\ssqlite3Init().\s\sFix\sfor\sPoC\s#2\sin\n[forum:/forumpost/b03d86f951|forum\spost\sb03d86f951].\s\sSee\sTH3\sfor\stest\ncases.
+D 2022-01-01T22:55:31.616
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -545,7 +545,7 @@ F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c 54881292a9a5db202b2c0ac541c5e3ef9a5e8c4f1c1383adb2601d5499a60e65
 F src/pragma.c c536665ce8431c8b1efbf7e0a5c01852f49f7bf28f1954f8118b2d28e4a3797f
 F src/pragma.h 87330ed2fbfa2a1274de93ca0ab850fba336189228cb256089202c3b52766fad
-F src/prepare.c 4c1c54616073050a1e03336355962103289db3b8ecbb233ae08c25b7f9324ab2
+F src/prepare.c 45fe7408eb78d80eca8392669070a6e5caf231b09e5c7b1ff65c1ad64a3734c5
 F src/printf.c 975f1f5417f2526365b6e6d7f22332e3e11806dad844701d92846292b654ba9a
 F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c 359bc0e445d427583d2ab6110433a5dc777f64a0ecdf8d24826d8b475233ead9
@@ -1936,8 +1936,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8e619c21e2326be1538b60908e7cd211558ec840835c6eb69e768eb190e1fd0b
-R 6db54dc637e31deb110e7ca557bebf75
-U dan
-Z 3630f18f1280e005938a7d4c214cb21c
+P 1d1fe03c752267f03f015ada975876f65e2a7b967e19f057b5c73f95d7df8a9c
+R f15a1845feed9e7d6592a8459d433a16
+U drh
+Z c10bc7ddd6a7f2304a3228c439a3f0e6
 # Remove this line to create a well-formed Fossil manifest.
