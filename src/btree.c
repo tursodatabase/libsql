@@ -6810,13 +6810,15 @@ static void dropCell(MemPage *pPage, int idx, int sz, int *pRC){
   int hdr;        /* Beginning of the header.  0 most pages.  100 page 1 */
 
   if( *pRC ) return;
-  assert( idx>=0 && idx<pPage->nCell );
+  assert( idx>=0 );
+  assert( idx<pPage->nCell );
   assert( CORRUPT_DB || sz==cellSize(pPage, idx) );
   assert( sqlite3PagerIswriteable(pPage->pDbPage) );
   assert( sqlite3_mutex_held(pPage->pBt->mutex) );
   assert( pPage->nFree>=0 );
   data = pPage->aData;
   ptr = &pPage->aCellIdx[2*idx];
+  assert( pPage->pBt->usableSize > (int)(ptr-data) );
   pc = get2byte(ptr);
   hdr = pPage->hdrOffset;
   testcase( pc==(u32)get2byte(&data[hdr+5]) );
@@ -9245,7 +9247,12 @@ int sqlite3BtreeDelete(BtCursor *pCur, u8 flags){
   iCellIdx = pCur->ix;
   pPage = pCur->pPage;
   pCell = findCell(pPage, iCellIdx);
-  if( pPage->nFree<0 && btreeComputeFreeSpace(pPage) ) return SQLITE_CORRUPT;
+  if( pPage->nFree<0 && btreeComputeFreeSpace(pPage) ){
+    return SQLITE_CORRUPT_BKPT;
+  }
+  if( pPage->nCell<=iCellIdx ){
+    return SQLITE_CORRUPT_BKPT;
+  }
 
   /* If the bPreserve flag is set to true, then the cursor position must
   ** be preserved following this delete operation. If the current delete
