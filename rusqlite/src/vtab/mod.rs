@@ -600,6 +600,9 @@ impl Values<'_> {
             FromSqlError::Other(err) => {
                 Error::FromSqlConversionFailure(idx, value.data_type(), err)
             }
+            FromSqlError::InvalidSize(_, _) => {
+                Error::FromSqlConversionFailure(idx, value.data_type(), Box::new(err))
+            }
             FromSqlError::OutOfRange(i) => Error::IntegralValueOutOfRange(idx, i),
             #[cfg(feature = "i128_blob")]
             #[cfg_attr(docsrs, doc(cfg(feature = "i128_blob")))]

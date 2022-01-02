@@ -290,6 +290,9 @@ impl<'stmt> Row<'stmt> {
             FromSqlError::Other(err) => {
                 Error::FromSqlConversionFailure(idx as usize, value.data_type(), err)
             }
+            FromSqlError::InvalidSize(_, _) => {
+                Error::FromSqlConversionFailure(idx as usize, value.data_type(), Box::new(err))
+            }
             #[cfg(feature = "i128_blob")]
             FromSqlError::InvalidI128Size(_) => Error::InvalidColumnType(
                 idx,

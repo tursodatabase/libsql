@@ -224,6 +224,13 @@ impl ToSql for Vec<u8> {
     }
 }
 
+impl<const N: usize> ToSql for [u8; N] {
+    #[inline]
+    fn to_sql(&self) -> Result<ToSqlOutput<'_>> {
+        Ok(ToSqlOutput::from(&self[..]))
+    }
+}
+
 impl ToSql for [u8] {
     #[inline]
     fn to_sql(&self) -> Result<ToSqlOutput<'_>> {
@@ -263,6 +270,15 @@ mod test {
         is_to_sql::<u8>();
         is_to_sql::<u16>();
         is_to_sql::<u32>();
+    }
+
+    #[test]
+    fn test_u8_array() {
+        let a: [u8; 99] = [0u8; 99];
+        let _a: &[&dyn ToSql] = crate::params![a];
+        let r = ToSql::to_sql(&a);
+
+        assert!(r.is_ok());
     }
 
     #[test]

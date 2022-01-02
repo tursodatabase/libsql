@@ -15,6 +15,10 @@ pub enum FromSqlError {
     /// requested type.
     OutOfRange(i64),
 
+    /// Error when the blob result returned by SQLite cannot be stored into the
+    /// requested type due to a size mismatch. (type size, blob size)
+    InvalidSize(usize, usize),
+
     /// Error returned when reading an `i128` from a
     /// blob with a size other than 16. Only available when the `i128_blob`
     /// feature is enabled.
@@ -51,6 +55,9 @@ impl fmt::Display for FromSqlError {
         match *self {
             FromSqlError::InvalidType => write!(f, "Invalid type"),
             FromSqlError::OutOfRange(i) => write!(f, "Value {} out of range", i),
+            FromSqlError::InvalidSize(i, j) => {
+                write!(f, "Cannot read {} byte value out of {} byte blob", i, j)
+            }
             #[cfg(feature = "i128_blob")]
             FromSqlError::InvalidI128Size(s) => {
                 write!(f, "Cannot read 128bit value out of {} byte blob", s)
@@ -174,6 +181,16 @@ impl FromSql for Vec<u8> {
     #[inline]
     fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
         value.as_blob().map(|b| b.to_vec())
+    }
+}
+
+impl<const N: usize> FromSql for [u8; N] {
+    #[inline]
+    fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
+        let slice = value.as_blob()?;
+        slice
+            .try_into()
+            .map_err(|_| FromSqlError::InvalidSize(N, slice.len()))
     }
 }
 
