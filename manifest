@@ -1,5 +1,5 @@
-C Clear\sthe\scache\sof\striggers\sused\sto\simplement\sCASCADE\sforeign\skey\sconstraints\nwhenever\sthe\sschema\schanges.\s\sFix\sfor\sthe\sproblem\sidentified\sby\n[forum:/forumpost/2831335356|forum\spost\s2831335356].
-D 2022-01-02T12:01:03.636
+C Small\sperformance\soptimization\sand\ssize\sreduction\sin\ssqlite3BtreeDelete().
+D 2022-01-02T14:55:43.095
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -491,7 +491,7 @@ F src/auth.c f4fa91b6a90bbc8e0d0f738aa284551739c9543a367071f55574681e0f24f8cf
 F src/backup.c 3014889fa06e20e6adfa0d07b60097eec1f6e5b06671625f476a714d2356513d
 F src/bitvec.c 7c849aac407230278445cb069bebc5f89bf2ddd87c5ed9459b070a9175707b3d
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c fab3d2a9e2a187373c393b9f35e68e996010a1aae1354763f7c5846915a99b83
+F src/btree.c d4b6e026d85b47018dd4c31b42dd490ed22d4320917e705d6502e589d1a8227d
 F src/btree.h 74d64b8f28cfa4a894d14d4ed64fa432cd697b98b61708d4351482ae15913e22
 F src/btreeInt.h ee9348c4cb9077243b049edc93a82c1f32ca48baeabf2140d41362b9f9139ff7
 F src/build.c 6e16f7b539bfc55149a039bf0cda26b089640339df6147070b072df2d1c4f771
@@ -1936,8 +1936,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 13e9ff9e84a114374b49986484dbee05953a496f3017dd5089fba6f495a17c40
-R 55a4ceae34dc12d0aa858af0c296a260
+P 5232c9777fe4fb13e1ecfe5b5d644e2c45d0514f95884dbed49a03fb9b67304c
+R aa110e7b5297811807e4f693fefdef54
 U drh
-Z 356b59ab85226987dbc745e5cdcb40e4
+Z a31d2467491c7884583c9d9e2a7c5425
 # Remove this line to create a well-formed Fossil manifest.

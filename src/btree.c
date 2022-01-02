@@ -9229,14 +9229,13 @@ int sqlite3BtreeTransferRow(BtCursor *pDest, BtCursor *pSrc, i64 iKey){
 int sqlite3BtreeDelete(BtCursor *pCur, u8 flags){
   Btree *p = pCur->pBtree;
   BtShared *pBt = p->pBt;              
-  int rc;                              /* Return code */
-  MemPage *pPage;                      /* Page to delete cell from */
-  unsigned char *pCell;                /* Pointer to cell to delete */
-  int iCellIdx;                        /* Index of cell to delete */
-  int iCellDepth;                      /* Depth of node containing pCell */ 
-  CellInfo info;                       /* Size of the cell being deleted */
-  int bSkipnext = 0;                   /* Leaf cursor in SKIPNEXT state */
-  u8 bPreserve = flags & BTREE_SAVEPOSITION;  /* Keep cursor valid */
+  int rc;                    /* Return code */
+  MemPage *pPage;            /* Page to delete cell from */
+  unsigned char *pCell;      /* Pointer to cell to delete */
+  int iCellIdx;              /* Index of cell to delete */
+  int iCellDepth;            /* Depth of node containing pCell */ 
+  CellInfo info;             /* Size of the cell being deleted */
+  u8 bPreserve;              /* Keep cursor valid.  2 for CURSOR_SKIPNEXT */
 
   assert( cursorOwnsBtShared(pCur) );
   assert( pBt->inTransaction==TRANS_WRITE );
@@ -9255,23 +9254,31 @@ int sqlite3BtreeDelete(BtCursor *pCur, u8 flags){
   iCellDepth = pCur->iPage;
   iCellIdx = pCur->ix;
   pPage = pCur->pPage;
+  if( pPage->nCell<=iCellIdx ){
+    return SQLITE_CORRUPT_BKPT;
+  }
   pCell = findCell(pPage, iCellIdx);
   if( pPage->nFree<0 && btreeComputeFreeSpace(pPage) ){
     return SQLITE_CORRUPT_BKPT;
   }
-  if( pPage->nCell<=iCellIdx ){
-    return SQLITE_CORRUPT_BKPT;
-  }
 
-  /* If the bPreserve flag is set to true, then the cursor position must
+  /* If the BTREE_SAVEPOSITION bit is on, then the cursor position must
   ** be preserved following this delete operation. If the current delete
   ** will cause a b-tree rebalance, then this is done by saving the cursor
   ** key and leaving the cursor in CURSOR_REQUIRESEEK state before 
   ** returning. 
   **
-  ** Or, if the current delete will not cause a rebalance, then the cursor
+  ** If the current delete will not cause a rebalance, then the cursor
   ** will be left in CURSOR_SKIPNEXT state pointing to the entry immediately
-  ** before or after the deleted entry. In this case set bSkipnext to true.  */
+  ** before or after the deleted entry.
+  **
+  ** The bPreserve value records which path is required:
+  **
+  **    bPreserve==0         Not necessary to save the cursor position
+  **    bPreserve==1         Use CURSOR_REQUIRESEEK to save the cursor position
+  **    bPreserve==2         Cursor won't move.  Set CURSOR_SKIPNEXT.
+  */
+  bPreserve = (flags & BTREE_SAVEPOSITION)!=0;
   if( bPreserve ){
     if( !pPage->leaf 
      || (pPage->nFree+cellSizePtr(pPage,pCell)+2)>(int)(pBt->usableSize*2/3)
@@ -9282,7 +9289,7 @@ int sqlite3BtreeDelete(BtCursor *pCur, u8 flags){
       rc = saveCursorKey(pCur);
       if( rc ) return rc;
     }else{
-      bSkipnext = 1;
+      bPreserve = 2;
     }
   }
 
@@ -9382,8 +9389,8 @@ int sqlite3BtreeDelete(BtCursor *pCur, u8 flags){
   }
 
   if( rc==SQLITE_OK ){
-    if( bSkipnext ){
-      assert( bPreserve && (pCur->iPage==iCellDepth || CORRUPT_DB) );
+    if( bPreserve>1 ){
+      assert( (pCur->iPage==iCellDepth || CORRUPT_DB) );
       assert( pPage==pCur->pPage || CORRUPT_DB );
       assert( (pPage->nCell>0 || CORRUPT_DB) && iCellIdx<=pPage->nCell );
       pCur->eState = CURSOR_SKIPNEXT;
