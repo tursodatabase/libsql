@@ -1225,18 +1225,32 @@ static void btreeParseCellPtr(
   **
   **     pIter += getVarint(pIter, (u64*)&pInfo->nKey);
   **
-  ** The code is inlined to avoid a function call.
+  ** The code is inlined and the loop is unrolled for performance.
+  ** This routine is a high-runner.
   */
   iKey = *pIter;
   if( iKey>=0x80 ){
-    u8 *pEnd = &pIter[7];
-    iKey &= 0x7f;
-    while(1){
-      iKey = (iKey<<7) | (*++pIter & 0x7f);
-      if( (*pIter)<0x80 ) break;
-      if( pIter>=pEnd ){
-        iKey = (iKey<<8) | *++pIter;
-        break;
+    u8 x;
+    iKey = ((iKey&0x7f)<<7) | ((x = *++pIter) & 0x7f);
+    if( x>=0x80 ){
+      iKey = (iKey<<7) | ((x =*++pIter) & 0x7f);
+      if( x>=0x80 ){
+        iKey = (iKey<<7) | ((x = *++pIter) & 0x7f);
+        if( x>=0x80 ){
+          iKey = (iKey<<7) | ((x = *++pIter) & 0x7f);
+          if( x>=0x80 ){
+            iKey = (iKey<<7) | ((x = *++pIter) & 0x7f);
+            if( x>=0x80 ){
+              iKey = (iKey<<7) | ((x = *++pIter) & 0x7f);
+              if( x>=0x80 ){
+                iKey = (iKey<<7) | ((x = *++pIter) & 0x7f);
+                if( x>=0x80 ){
+                  iKey = (iKey<<8) | (*++pIter);
+                }
+              }
+            }
+          }
+        }
       }
     }
   }
