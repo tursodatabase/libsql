@@ -1,5 +1,5 @@
-C Performance\soptimization\sin\sbtreeParseCellPtr()\sby\sunrolling\sthe\sloop\sthat\ndecodes\sthe\srowid.
-D 2022-01-02T16:48:00.312
+C Improve\sformatting\sof\san\sassert().\s\sNo\sfunctional\schanges.
+D 2022-01-02T19:10:49.431
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -537,7 +537,7 @@ F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c f5ad51cfd024116db8531feab9efd831c2621436dca1464e4ff1e8af9bf3252e
 F src/os_win.c 77d39873836f1831a9b0b91894fec45ab0e9ca8e067dc8c549e1d1eca1566fe9
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c dda556cb412e66c3d4016214ef2dd63d9019ad24d1ceff871b79dcb860981f77
+F src/pager.c a860d7c8540d0fa67796a8d23bc3e7fd81275040281dafa708040818147a44c9
 F src/pager.h 4bf9b3213a4b2bebbced5eaa8b219cf25d4a82f385d093cd64b7e93e5285f66f
 F src/parse.y 761b5d30a7ea9bd2db3b3571438cfcceb5f7dbf4fcad6881c8de65bdda07135a
 F src/pcache.c 084e638432c610f95aea72b8509f0845d2791293f39d1b82f0c0a7e089c3bb6b
@@ -1936,8 +1936,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P da0af4dd9ba4180a16543fac1549fd4ccecdc66dcf6d275f77de21fd80708882
-R 8e54a2cff16f34421db02383c81bf96e
+P fef72368a2eef5cb68ffc56e4f01be212d5e3318ebdb56a23ab26e1ef454272e
+R 7fdca3ee0f8febfdbd8987229e4c3537
 U drh
-Z 07304ae249bd8afb301d4ea202109e15
+Z 58fdfe0ec8d3b58e9bcfff6359000f66
 # Remove this line to create a well-formed Fossil manifest.

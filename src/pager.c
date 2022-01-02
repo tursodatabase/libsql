@@ -7272,12 +7272,12 @@ int sqlite3PagerSetJournalMode(Pager *pPager, int eMode){
   u8 eOld = pPager->journalMode;    /* Prior journalmode */
 
   /* The eMode parameter is always valid */
-  assert(      eMode==PAGER_JOURNALMODE_DELETE
-            || eMode==PAGER_JOURNALMODE_TRUNCATE
-            || eMode==PAGER_JOURNALMODE_PERSIST
-            || eMode==PAGER_JOURNALMODE_OFF 
-            || eMode==PAGER_JOURNALMODE_WAL 
-            || eMode==PAGER_JOURNALMODE_MEMORY );
+  assert(      eMode==PAGER_JOURNALMODE_DELETE    /* 0 */
+            || eMode==PAGER_JOURNALMODE_PERSIST   /* 1 */
+            || eMode==PAGER_JOURNALMODE_OFF       /* 2 */
+            || eMode==PAGER_JOURNALMODE_TRUNCATE  /* 3 */
+            || eMode==PAGER_JOURNALMODE_MEMORY    /* 4 */
+            || eMode==PAGER_JOURNALMODE_WAL       /* 5 */ );
 
   /* This routine is only called from the OP_JournalMode opcode, and
   ** the logic there will never allow a temporary file to be changed
@@ -7314,7 +7314,6 @@ int sqlite3PagerSetJournalMode(Pager *pPager, int eMode){
 
     assert( isOpen(pPager->fd) || pPager->exclusiveMode );
     if( !pPager->exclusiveMode && (eOld & 5)==1 && (eMode & 1)==0 ){
-
       /* In this case we would like to delete the journal file. If it is
       ** not possible, then that is not a problem. Deleting the journal file
       ** here is an optimization only.
