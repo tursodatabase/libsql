@@ -1,5 +1,5 @@
-C Earlier\sdetection\sof\scorruption\sin\ssqlite3BtreeDelete().\s\sFix\sfor\nthe\sassertion\sfault\sreported\sby\n[forum:/forumpost/9d78389221|forum\spost\s9d78389221].
-D 2022-01-02T11:25:51.036
+C Clear\sthe\scache\sof\striggers\sused\sto\simplement\sCASCADE\sforeign\skey\sconstraints\nwhenever\sthe\sschema\schanges.\s\sFix\sfor\sthe\sproblem\sidentified\sby\n[forum:/forumpost/2831335356|forum\spost\s2831335356].
+D 2022-01-02T12:01:03.636
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -504,7 +504,7 @@ F src/dbstat.c 861e08690fcb0f2ee1165eff0060ea8d4f3e2ea10f80dab7d32ad70443a6ff2d
 F src/delete.c 19814f621cde10b1771a0dea7fe25d3d7d39975b8d4be4888537d30860e7c08c
 F src/expr.c 827179c78d2ca7cc318392811de8151c60eacf7ce804b13e61bb7ef38f954846
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
-F src/fkey.c 187b67af20c5795953a592832c5d985e4313fe503ebd8f95e3e9e9ad5a730bb5
+F src/fkey.c 5b73f7a7c00f06017531a5bd258cbc2c7a294e55a7f84a729fe27aa525242560
 F src/func.c 0f576a0c102485676266e63a796223e63c3cdb04baf3678ccc8bfeedba4a6fd4
 F src/global.c 1f56aead86e8a18c4415638f5e6c4d0a0550427f4b3f5d065ba5164cc09c22e8
 F src/hash.c 8d7dda241d0ebdafb6ffdeda3149a412d7df75102cecfc1021c98d6219823b19
@@ -555,7 +555,7 @@ F src/shell.c.in de39d52ee7e8e09522c13ac2321616708f10ebe959b668da012ae8489cb7d1d
 F src/sqlite.h.in a5e0d6bd47e67aabf1475986d36bdcc7bfa9e06566790ebf8e3aa7fa551c9f99
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 01eb85e4f2759a5ee79c183f4b2877889d4ffdc49d27ae74529c9579e3c8c0ef
-F src/sqliteInt.h 66637abecd93d743bea7a728d92c2eb5005dc838b203d676f008173a9c55c167
+F src/sqliteInt.h 9782b7b22a9b10e43b7f375dcdfb93cd1ed7797d831122a07d065efacf9af668
 F src/sqliteLimit.h d7323ffea5208c6af2734574bae933ca8ed2ab728083caa117c9738581a31657
 F src/status.c 4b8bc2a6905163a38b739854a35b826c737333fab5b1f8e03fa7eb9a4799c4c1
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -622,7 +622,7 @@ F src/upsert.c 8789047a8f0a601ea42fa0256d1ba3190c13746b6ba940fe2d25643a7e991937
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c 89e51820bcb468ff3877a8d942f5cc807208087f021227e0927693e928a195bc
 F src/vacuum.c 6c38ddc52f0619865c91dae9c441d4d48bf3040d7dc1bc5b22da1e45547ed0b3
-F src/vdbe.c b63594839cbf770a29e2b3b81570971a3d2c1c995c0586aade09bb548142113a
+F src/vdbe.c 05c8fd957820626aae224656b3db272fb4e69bf000e7bcdf62d00307cc9be873
 F src/vdbe.h 25dabb25c7e157b84e59260cfb5b466c3ac103ede9f36f4db371332c47601abe
 F src/vdbeInt.h a7f01b0cd0dcb496343eacd37b0839250f9a718199ab6096e3995db42dec3ec8
 F src/vdbeapi.c 22c79072ae7d8a01e9bcae8ba16e918d60d202eaa9553b5fda38f99f7464d99a
@@ -1936,8 +1936,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e199a851e316bd471bfc54204b8c250d3ae93b829261214158a2c74acad4093e
-R c8fd3582e0c7f6d2a8919913e7670fb0
+P 13e9ff9e84a114374b49986484dbee05953a496f3017dd5089fba6f495a17c40
+R 55a4ceae34dc12d0aa858af0c296a260
 U drh
-Z 02df45f52682e2fefdb79cf7aae0eb67
+Z 356b59ab85226987dbc745e5cdcb40e4
 # Remove this line to create a well-formed Fossil manifest.

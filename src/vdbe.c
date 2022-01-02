@@ -3841,6 +3841,7 @@ case OP_SetCookie: {
     /* When the schema cookie changes, record the new cookie internally */
     pDb->pSchema->schema_cookie = pOp->p3 - pOp->p5;
     db->mDbFlags |= DBFLAG_SchemaChange;
+    sqlite3FkClearTriggerCache(db, pOp->p1);
   }else if( pOp->p2==BTREE_FILE_FORMAT ){
     /* Record changes in the file format */
     pDb->pSchema->file_format = pOp->p3;

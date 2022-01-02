@@ -5147,6 +5147,7 @@ const char *sqlite3JournalModename(int);
   int sqlite3FkRequired(Parse*, Table*, int*, int);
   u32 sqlite3FkOldmask(Parse*, Table*);
   FKey *sqlite3FkReferences(Table *);
+  void sqlite3FkClearTriggerCache(sqlite3*,int);
 #else
   #define sqlite3FkActions(a,b,c,d,e,f)
   #define sqlite3FkCheck(a,b,c,d,e,f)
@@ -5154,6 +5155,7 @@ const char *sqlite3JournalModename(int);
   #define sqlite3FkOldmask(a,b)         0
   #define sqlite3FkRequired(a,b,c,d)    0
   #define sqlite3FkReferences(a)        0
+  #define sqlite3FkClearTriggerCache(a,b)
 #endif
 #ifndef SQLITE_OMIT_FOREIGN_KEY
   void sqlite3FkDelete(sqlite3 *, Table*);
