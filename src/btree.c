@@ -5575,7 +5575,6 @@ int sqlite3BtreeTableMoveto(
     upr = pPage->nCell-1;
     assert( biasRight==0 || biasRight==1 );
     idx = upr>>(1-biasRight); /* idx = biasRight ? upr : (lwr+upr)/2; */
-    pCur->ix = (u16)idx;
     for(;;){
       i64 nCellKey;
       pCell = findCellPastPtr(pPage, idx);
@@ -5717,7 +5716,6 @@ int sqlite3BtreeIndexMoveto(
     lwr = 0;
     upr = pPage->nCell-1;
     idx = upr>>1; /* idx = (lwr+upr)/2; */
-    pCur->ix = (u16)idx;
     for(;;){
       int nCell;  /* Size of the pCell cell in bytes */
       pCell = findCellPastPtr(pPage, idx);
