@@ -559,13 +559,9 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
 }
 
 /*
-** Run the parser on the given SQL string.  The parser structure is
-** passed in.  An SQLITE_ status code is returned.  If an error occurs
-** then an and attempt is made to write an error message into 
-** memory obtained from sqlite3_malloc() and to make *pzErrMsg point to that
-** error message.
+** Run the parser on the given SQL string.
 */
-int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
+int sqlite3RunParser(Parse *pParse, const char *zSql){
   int nErr = 0;                   /* Number of errors encountered */
   void *pEngine;                  /* The LEMON-generated LALR(1) parser */
   int n = 0;                      /* Length of the next token token */
@@ -586,7 +582,6 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   }
   pParse->rc = SQLITE_OK;
   pParse->zTail = zSql;
-  assert( pzErrMsg!=0 );
 #ifdef SQLITE_DEBUG
   if( db->flags & SQLITE_ParserTrace ){
     printf("parser: [[[%s]]]\n", zSql);
@@ -629,6 +624,7 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
 #endif /* SQLITE_OMIT_WINDOWFUNC */
       if( AtomicLoad(&db->u1.isInterrupted) ){
         pParse->rc = SQLITE_INTERRUPT;
+        pParse->nErr++;
         break;
       }
       if( tokenType==TK_SPACE ){
@@ -686,41 +682,26 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   if( db->mallocFailed ){
     pParse->rc = SQLITE_NOMEM_BKPT;
   }
-  if( pParse->rc!=SQLITE_OK && pParse->rc!=SQLITE_DONE && pParse->zErrMsg==0 ){
-    pParse->zErrMsg = sqlite3MPrintf(db, "%s", sqlite3ErrStr(pParse->rc));
-  }
-  assert( pzErrMsg!=0 );
-  if( pParse->zErrMsg ){
-    *pzErrMsg = pParse->zErrMsg;
-    sqlite3_log(pParse->rc, "%s in \"%s\"", 
-                *pzErrMsg, pParse->zTail);
-    pParse->zErrMsg = 0;
+  if( pParse->zErrMsg || (pParse->rc!=SQLITE_OK && pParse->rc!=SQLITE_DONE) ){
+    if( pParse->zErrMsg==0 ){
+      pParse->zErrMsg = sqlite3MPrintf(db, "%s", sqlite3ErrStr(pParse->rc));
+    }
+    sqlite3_log(pParse->rc, "%s in \"%s\"", pParse->zErrMsg, pParse->zTail);
     nErr++;
   }
   pParse->zTail = zSql;
-  if( pParse->pVdbe && pParse->nErr>0 && pParse->nested==0 ){
-    sqlite3VdbeDelete(pParse->pVdbe);
-    pParse->pVdbe = 0;
-  }
-#ifndef SQLITE_OMIT_SHARED_CACHE
-  if( pParse->nested==0 ){
-    sqlite3DbFree(db, pParse->aTableLock);
-    pParse->aTableLock = 0;
-    pParse->nTableLock = 0;
-  }
-#endif
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   sqlite3_free(pParse->apVtabLock);
 #endif
 
-  if( !IN_SPECIAL_PARSE ){
+  if( pParse->pNewTable && !IN_SPECIAL_PARSE ){
     /* If the pParse->declareVtab flag is set, do not delete any table 
     ** structure built up in pParse->pNewTable. The calling code (see vtab.c)
     ** will take responsibility for freeing the Table structure.
     */
     sqlite3DeleteTable(db, pParse->pNewTable);
   }
-  if( !IN_RENAME_OBJECT ){
+  if( pParse->pNewTrigger && !IN_RENAME_OBJECT ){
     sqlite3DeleteTrigger(db, pParse->pNewTrigger);
   }
   sqlite3DbFree(db, pParse->pVList);

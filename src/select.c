@@ -3296,6 +3296,8 @@ static int multiSelectOrderBy(
 ){
   int i, j;             /* Loop counters */
   Select *pPrior;       /* Another SELECT immediately to our left */
+  Select *pSplit;       /* Left-most SELECT in the right-hand group */
+  int nSelect;          /* Number of SELECT statements in the compound */
   Vdbe *v;              /* Generate code to this VDBE */
   SelectDest destA;     /* Destination for coroutine A */
   SelectDest destB;     /* Destination for coroutine B */
@@ -3341,8 +3343,7 @@ static int multiSelectOrderBy(
   /* Patch up the ORDER BY clause
   */
   op = p->op;  
-  pPrior = p->pPrior;
-  assert( pPrior->pOrderBy==0 );
+  assert( p->pPrior->pOrderBy==0 );
   pOrderBy = p->pOrderBy;
   assert( pOrderBy );
   nOrderBy = pOrderBy->nExpr;
@@ -3392,11 +3393,6 @@ static int multiSelectOrderBy(
     pKeyMerge = 0;
   }
 
-  /* Reattach the ORDER BY clause to the query.
-  */
-  p->pOrderBy = pOrderBy;
-  pPrior->pOrderBy = sqlite3ExprListDup(pParse->db, pOrderBy, 0);
-
   /* Allocate a range of temporary registers and the KeyInfo needed
   ** for the logic that removes duplicate result rows when the
   ** operator is UNION, EXCEPT, or INTERSECT (but not UNION ALL).
@@ -3421,12 +3417,29 @@ static int multiSelectOrderBy(
  
   /* Separate the left and the right query from one another
   */
-  p->pPrior = 0;
-  pPrior->pNext = 0;
-  sqlite3ResolveOrderGroupBy(pParse, p, p->pOrderBy, "ORDER");
-  if( pPrior->pPrior==0 ){
-    sqlite3ResolveOrderGroupBy(pParse, pPrior, pPrior->pOrderBy, "ORDER");
+  nSelect = 1;
+  if( (op==TK_ALL || op==TK_UNION)
+   && OptimizationEnabled(db, SQLITE_BalancedMerge)
+  ){
+    for(pSplit=p; pSplit->pPrior!=0 && pSplit->op==op; pSplit=pSplit->pPrior){
+      nSelect++;
+      assert( pSplit->pPrior->pNext==pSplit );
+    }
   }
+  if( nSelect<=3 ){
+    pSplit = p;
+  }else{
+    pSplit = p;
+    for(i=2; i<nSelect; i+=2){ pSplit = pSplit->pPrior; }
+  }
+  pPrior = pSplit->pPrior;
+  pSplit->pPrior = 0;
+  pPrior->pNext = 0;
+  assert( p->pOrderBy == pOrderBy );
+  assert( pOrderBy!=0 || db->mallocFailed );
+  pPrior->pOrderBy = sqlite3ExprListDup(pParse->db, pOrderBy, 0);
+  sqlite3ResolveOrderGroupBy(pParse, p, p->pOrderBy, "ORDER");
+  sqlite3ResolveOrderGroupBy(pParse, pPrior, pPrior->pOrderBy, "ORDER");
 
   /* Compute the limit registers */
   computeLimitRegisters(pParse, p, labelEnd);
@@ -3577,12 +3590,11 @@ static int multiSelectOrderBy(
 
   /* Reassembly the compound query so that it will be freed correctly
   ** by the calling function */
-  if( p->pPrior ){
-    sqlite3SelectDelete(db, p->pPrior);
+  if( pSplit->pPrior ){
+    sqlite3SelectDelete(db, pSplit->pPrior);
   }
-  p->pPrior = pPrior;
-  pPrior->pNext = p;
-
+  pSplit->pPrior = pPrior;
+  pPrior->pNext = pSplit;
   sqlite3ExprListDelete(db, pPrior->pOrderBy);
   pPrior->pOrderBy = 0;
 

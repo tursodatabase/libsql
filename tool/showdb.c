@@ -726,7 +726,7 @@ static void decode_btree_page(
   }
   if( showMap ){
     printf("Page map:  (H=header P=cell-index 1=page-1-header .=free-space)\n");
-    for(i=0; i<g.pagesize; i+=64){
+    for(i=0; (u32)i<g.pagesize; i+=64){
       printf(" %03x: %.64s\n", i, &zMap[i]);
     }
     sqlite3_free(zMap);
@@ -861,7 +861,7 @@ static int allZero(unsigned char *a, int n){
 */
 static void page_usage_btree(
   u32 pgno,             /* Page to describe */
-  u32 parent,           /* Parent of this page.  0 for root pages */
+  int parent,           /* Parent of this page.  0 for root pages */
   int idx,              /* Which child of the parent */
   const char *zName     /* Name of the table */
 ){
@@ -954,7 +954,7 @@ static void page_usage_freelist(u32 pgno){
   int iNext;
   int parent = 1;
 
-  while( pgno>0 && pgno<=g.mxPage && (cnt++)<g.mxPage ){
+  while( pgno>0 && pgno<=g.mxPage && (u32)(cnt++)<g.mxPage ){
     page_usage_msg(pgno, "freelist trunk #%d child of %d", cnt, parent);
     a = fileRead((pgno-1)*g.pagesize, g.pagesize);
     iNext = decodeInt32(a);

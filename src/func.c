@@ -1027,39 +1027,42 @@ static const char hexdigits[] = {
 };
 
 /*
-** Implementation of the QUOTE() function.  This function takes a single
-** argument.  If the argument is numeric, the return value is the same as
-** the argument.  If the argument is NULL, the return value is the string
-** "NULL".  Otherwise, the argument is enclosed in single quotes with
-** single-quote escapes.
+** Append to pStr text that is the SQL literal representation of the
+** value contained in pValue.
 */
-static void quoteFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
-  assert( argc==1 );
-  UNUSED_PARAMETER(argc);
-  switch( sqlite3_value_type(argv[0]) ){
+void sqlite3QuoteValue(StrAccum *pStr, sqlite3_value *pValue){
+  /* As currently implemented, the string must be initially empty.
+  ** we might relax this requirement in the future, but that will
+  ** require enhancements to the implementation. */
+  assert( pStr!=0 && pStr->nChar==0 );
+
+  switch( sqlite3_value_type(pValue) ){
     case SQLITE_FLOAT: {
       double r1, r2;
-      char zBuf[50];
-      r1 = sqlite3_value_double(argv[0]);
-      sqlite3_snprintf(sizeof(zBuf), zBuf, "%!.15g", r1);
-      sqlite3AtoF(zBuf, &r2, 20, SQLITE_UTF8);
-      if( r1!=r2 ){
-        sqlite3_snprintf(sizeof(zBuf), zBuf, "%!.20e", r1);
+      const char *zVal;
+      r1 = sqlite3_value_double(pValue);
+      sqlite3_str_appendf(pStr, "%!.15g", r1);
+      zVal = sqlite3_str_value(pStr);
+      if( zVal ){
+        sqlite3AtoF(zVal, &r2, pStr->nChar, SQLITE_UTF8);
+        if( r1!=r2 ){
+          sqlite3_str_reset(pStr);
+          sqlite3_str_appendf(pStr, "%!.20e", r1);
+        }
       }
-      sqlite3_result_text(context, zBuf, -1, SQLITE_TRANSIENT);
       break;
     }
     case SQLITE_INTEGER: {
-      sqlite3_result_value(context, argv[0]);
+      sqlite3_str_appendf(pStr, "%lld", sqlite3_value_int64(pValue));
       break;
     }
     case SQLITE_BLOB: {
-      char *zText = 0;
-      char const *zBlob = sqlite3_value_blob(argv[0]);
-      int nBlob = sqlite3_value_bytes(argv[0]);
-      assert( zBlob==sqlite3_value_blob(argv[0]) ); /* No encoding change */
-      zText = (char *)contextMalloc(context, (2*(i64)nBlob)+4); 
-      if( zText ){
+      char const *zBlob = sqlite3_value_blob(pValue);
+      int nBlob = sqlite3_value_bytes(pValue);
+      assert( zBlob==sqlite3_value_blob(pValue) ); /* No encoding change */
+      sqlite3StrAccumEnlarge(pStr, nBlob*2 + 4);
+      if( pStr->accError==0 ){
+        char *zText = pStr->zText;
         int i;
         for(i=0; i<nBlob; i++){
           zText[(i*2)+2] = hexdigits[(zBlob[i]>>4)&0x0F];
@@ -1069,39 +1072,44 @@ static void quoteFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
         zText[(nBlob*2)+3] = '\0';
         zText[0] = 'X';
         zText[1] = '\'';
-        sqlite3_result_text(context, zText, -1, SQLITE_TRANSIENT);
-        sqlite3_free(zText);
+        pStr->nChar = nBlob*2 + 3;
       }
       break;
     }
     case SQLITE_TEXT: {
-      int i,j;
-      u64 n;
-      const unsigned char *zArg = sqlite3_value_text(argv[0]);
-      char *z;
-
-      if( zArg==0 ) return;
-      for(i=0, n=0; zArg[i]; i++){ if( zArg[i]=='\'' ) n++; }
-      z = contextMalloc(context, ((i64)i)+((i64)n)+3);
-      if( z ){
-        z[0] = '\'';
-        for(i=0, j=1; zArg[i]; i++){
-          z[j++] = zArg[i];
-          if( zArg[i]=='\'' ){
-            z[j++] = '\'';
-          }
-        }
-        z[j++] = '\'';
-        z[j] = 0;
-        sqlite3_result_text(context, z, j, sqlite3_free);
-      }
+      const unsigned char *zArg = sqlite3_value_text(pValue);
+      sqlite3_str_appendf(pStr, "%Q", zArg);
       break;
     }
     default: {
-      assert( sqlite3_value_type(argv[0])==SQLITE_NULL );
-      sqlite3_result_text(context, "NULL", 4, SQLITE_STATIC);
+      assert( sqlite3_value_type(pValue)==SQLITE_NULL );
+      sqlite3_str_append(pStr, "NULL", 4);
       break;
     }
+  }
+}
+
+/*
+** Implementation of the QUOTE() function.  
+**
+** The quote(X) function returns the text of an SQL literal which is the
+** value of its argument suitable for inclusion into an SQL statement.
+** Strings are surrounded by single-quotes with escapes on interior quotes
+** as needed. BLOBs are encoded as hexadecimal literals. Strings with
+** embedded NUL characters cannot be represented as string literals in SQL
+** and hence the returned string literal is truncated prior to the first NUL.
+*/
+static void quoteFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
+  sqlite3_str str;
+  sqlite3 *db = sqlite3_context_db_handle(context);
+  assert( argc==1 );
+  UNUSED_PARAMETER(argc);
+  sqlite3StrAccumInit(&str, db, 0, 0, db->aLimit[SQLITE_LIMIT_LENGTH]);
+  sqlite3QuoteValue(&str,argv[0]);
+  sqlite3_result_text(context, sqlite3StrAccumFinish(&str), str.nChar,
+                      SQLITE_DYNAMIC);
+  if( str.accError==SQLITE_NOMEM ){
+    sqlite3_result_error_nomem(context);
   }
 }
 

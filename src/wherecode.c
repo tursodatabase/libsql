@@ -1385,7 +1385,7 @@ static SQLITE_NOINLINE void filterPullDown(
     WhereLevel *pLevel = &pWInfo->a[iLevel];
     WhereLoop *pLoop = pLevel->pWLoop;
     if( pLevel->regFilter==0 ) continue;
-    /*         ,--- Because constructBloomFilter() has will not have set
+    /*         ,--- Because sqlite3ConstructBloomFilter() has will not have set
     **  vvvvv--'    pLevel->regFilter if this were true. */
     if( NEVER(pLoop->prereq & notReady) ) continue;
     if( pLoop->wsFlags & WHERE_IPK ){
@@ -1405,6 +1405,7 @@ static SQLITE_NOINLINE void filterPullDown(
       char *zStartAff;
 
       assert( pLoop->wsFlags & WHERE_INDEXED );
+      assert( (pLoop->wsFlags & WHERE_COLUMN_IN)==0 );
       r1 = codeAllEqualityTerms(pParse,pLevel,0,0,&zStartAff);
       codeApplyAffinity(pParse, r1, nEq, zStartAff);
       sqlite3DbFree(pParse->db, zStartAff);

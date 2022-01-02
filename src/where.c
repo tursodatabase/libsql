@@ -676,12 +676,14 @@ static void whereTraceIndexInfoInputs(sqlite3_index_info *p){
   int i;
   if( !sqlite3WhereTrace ) return;
   for(i=0; i<p->nConstraint; i++){
-    sqlite3DebugPrintf("  constraint[%d]: col=%d termid=%d op=%d usabled=%d\n",
+    sqlite3DebugPrintf(
+       "  constraint[%d]: col=%d termid=%d op=%d usabled=%d collseq=%s\n",
        i,
        p->aConstraint[i].iColumn,
        p->aConstraint[i].iTermOffset,
        p->aConstraint[i].op,
-       p->aConstraint[i].usable);
+       p->aConstraint[i].usable,
+       sqlite3_vtab_collation(p,i));
   }
   for(i=0; i<p->nOrderBy; i++){
     sqlite3DebugPrintf("  orderby[%d]: col=%d desc=%d\n",
@@ -985,7 +987,7 @@ end_auto_index_create:
 ** the loop would benefit from a Bloom filter, and the WHERE_BLOOMFILTER bit
 ** is set.
 */
-static SQLITE_NOINLINE void constructBloomFilter(
+static SQLITE_NOINLINE void sqlite3ConstructBloomFilter(
   WhereInfo *pWInfo,    /* The WHERE clause */
   int iLevel,           /* Index in pWInfo->a[] that is pLevel */
   WhereLevel *pLevel,   /* Make a Bloom filter for this FROM term */
@@ -1069,13 +1071,20 @@ static SQLITE_NOINLINE void constructBloomFilter(
     sqlite3VdbeJumpHere(v, addrTop);
     pLoop->wsFlags &= ~WHERE_BLOOMFILTER;
     if( OptimizationDisabled(pParse->db, SQLITE_BloomPulldown) ) break;
-    while( iLevel < pWInfo->nLevel ){
-      iLevel++;
+    while( ++iLevel < pWInfo->nLevel ){
       pLevel = &pWInfo->a[iLevel];
       pLoop = pLevel->pWLoop;
-      if( pLoop==0 ) continue;
+      if( NEVER(pLoop==0) ) continue;
       if( pLoop->prereq & notReady ) continue;
-      if( pLoop->wsFlags & WHERE_BLOOMFILTER ) break;
+      if( (pLoop->wsFlags & (WHERE_BLOOMFILTER|WHERE_COLUMN_IN))
+                 ==WHERE_BLOOMFILTER
+      ){
+        /* This is a candidate for bloom-filter pull-down (early evaluation).
+        ** The test that WHERE_COLUMN_IN is omitted is important, as we are
+        ** not able to do early evaluation of bloom filters that make use of
+        ** the IN operator */
+        break;
+      }
     }
   }while( iLevel < pWInfo->nLevel );
   sqlite3VdbeJumpHere(v, addrOnce);
@@ -1106,10 +1115,19 @@ static sqlite3_index_info *allocateIndexInfo(
   int nOrderBy;
   sqlite3_index_info *pIdxInfo;
   u16 mNoOmit = 0;
+  const Table *pTab;
 
-  /* Count the number of possible WHERE clause constraints referring
-  ** to this virtual table */
+  assert( pSrc!=0 );
+  pTab = pSrc->pTab;
+  assert( pTab!=0 );
+  assert( IsVirtual(pTab) );
+
+  /* Find all WHERE clause constraints referring to this virtual table.
+  ** Mark each term with the TERM_OK flag.  Set nTerm to the number of
+  ** terms found.
+  */
   for(i=nTerm=0, pTerm=pWC->a; i<pWC->nTerm; i++, pTerm++){
+    pTerm->wtFlags &= ~TERM_OK;
     if( pTerm->leftCursor != pSrc->iCursor ) continue;
     if( pTerm->prereqRight & mUnusable ) continue;
     assert( IsPowerOfTwo(pTerm->eOperator & ~WO_EQUIV) );
@@ -1120,8 +1138,19 @@ static sqlite3_index_info *allocateIndexInfo(
     if( (pTerm->eOperator & ~(WO_EQUIV))==0 ) continue;
     if( pTerm->wtFlags & TERM_VNULL ) continue;
     assert( (pTerm->eOperator & (WO_OR|WO_AND))==0 );
-    assert( pTerm->u.x.leftColumn>=(-1) );
+    assert( pTerm->u.x.leftColumn>=XN_ROWID );
+    assert( pTerm->u.x.leftColumn<pTab->nCol );
+
+    /* tag-20191211-002: WHERE-clause constraints are not useful to the
+    ** right-hand table of a LEFT JOIN.  See tag-20191211-001 for the
+    ** equivalent restriction for ordinary tables. */
+    if( (pSrc->fg.jointype & JT_LEFT)!=0
+     && !ExprHasProperty(pTerm->pExpr, EP_FromJoin)
+    ){
+      continue;
+    }
     nTerm++;
+    pTerm->wtFlags |= TERM_OK;
   }
 
   /* If the ORDER BY clause contains only columns in the current 
@@ -1133,8 +1162,41 @@ static sqlite3_index_info *allocateIndexInfo(
     int n = pOrderBy->nExpr;
     for(i=0; i<n; i++){
       Expr *pExpr = pOrderBy->a[i].pExpr;
-      if( pExpr->op!=TK_COLUMN || pExpr->iTable!=pSrc->iCursor ) break;
+      Expr *pE2;
+
+      /* Skip over constant terms in the ORDER BY clause */
+      if( sqlite3ExprIsConstant(pExpr) ){
+        continue;
+      }
+
+      /* Virtual tables are unable to deal with NULLS FIRST */
       if( pOrderBy->a[i].sortFlags & KEYINFO_ORDER_BIGNULL ) break;
+
+      /* First case - a direct column references without a COLLATE operator */
+      if( pExpr->op==TK_COLUMN && pExpr->iTable==pSrc->iCursor ){
+        assert( pExpr->iColumn>=XN_ROWID && pExpr->iColumn<pTab->nCol );
+        continue;
+      }
+
+      /* 2nd case - a column reference with a COLLATE operator.  Only match
+      ** of the COLLATE operator matches the collation of the column. */
+      if( pExpr->op==TK_COLLATE
+       && (pE2 = pExpr->pLeft)->op==TK_COLUMN
+       && pE2->iTable==pSrc->iCursor
+      ){
+        const char *zColl;  /* The collating sequence name */
+        assert( !ExprHasProperty(pExpr, EP_IntValue) );
+        assert( pExpr->u.zToken!=0 );
+        assert( pE2->iColumn>=XN_ROWID && pE2->iColumn<pTab->nCol );
+        pExpr->iColumn = pE2->iColumn;
+        if( pE2->iColumn<0 ) continue;  /* Collseq does not matter for rowid */
+        zColl = sqlite3ColumnColl(&pTab->aCol[pE2->iColumn]);
+        if( zColl==0 ) zColl = sqlite3StrBINARY;
+        if( sqlite3_stricmp(pExpr->u.zToken, zColl)==0 ) continue;
+      }
+
+      /* No matches cause a break out of the loop */
+      break;
     }
     if( i==n){
       nOrderBy = n;
@@ -1154,7 +1216,6 @@ static sqlite3_index_info *allocateIndexInfo(
   pIdxCons = (struct sqlite3_index_constraint*)&pHidden[1];
   pIdxOrderBy = (struct sqlite3_index_orderby*)&pIdxCons[nTerm];
   pUsage = (struct sqlite3_index_constraint_usage*)&pIdxOrderBy[nOrderBy];
-  pIdxInfo->nOrderBy = nOrderBy;
   pIdxInfo->aConstraint = pIdxCons;
   pIdxInfo->aOrderBy = pIdxOrderBy;
   pIdxInfo->aConstraintUsage = pUsage;
@@ -1162,26 +1223,7 @@ static sqlite3_index_info *allocateIndexInfo(
   pHidden->pParse = pParse;
   for(i=j=0, pTerm=pWC->a; i<pWC->nTerm; i++, pTerm++){
     u16 op;
-    if( pTerm->leftCursor != pSrc->iCursor ) continue;
-    if( pTerm->prereqRight & mUnusable ) continue;
-    assert( IsPowerOfTwo(pTerm->eOperator & ~WO_EQUIV) );
-    testcase( pTerm->eOperator & WO_IN );
-    testcase( pTerm->eOperator & WO_IS );
-    testcase( pTerm->eOperator & WO_ISNULL );
-    testcase( pTerm->eOperator & WO_ALL );
-    if( (pTerm->eOperator & ~(WO_EQUIV))==0 ) continue;
-    if( pTerm->wtFlags & TERM_VNULL ) continue;
-
-    /* tag-20191211-002: WHERE-clause constraints are not useful to the
-    ** right-hand table of a LEFT JOIN.  See tag-20191211-001 for the
-    ** equivalent restriction for ordinary tables. */
-    if( (pSrc->fg.jointype & JT_LEFT)!=0
-     && !ExprHasProperty(pTerm->pExpr, EP_FromJoin)
-    ){
-      continue;
-    }
-    assert( (pTerm->eOperator & (WO_OR|WO_AND))==0 );
-    assert( pTerm->u.x.leftColumn>=(-1) );
+    if( (pTerm->wtFlags & TERM_OK)==0 ) continue;
     pIdxCons[j].iColumn = pTerm->u.x.leftColumn;
     pIdxCons[j].iTermOffset = i;
     op = pTerm->eOperator & WO_ALL;
@@ -1218,12 +1260,19 @@ static sqlite3_index_info *allocateIndexInfo(
 
     j++;
   }
+  assert( j==nTerm );
   pIdxInfo->nConstraint = j;
-  for(i=0; i<nOrderBy; i++){
+  for(i=j=0; i<nOrderBy; i++){
     Expr *pExpr = pOrderBy->a[i].pExpr;
-    pIdxOrderBy[i].iColumn = pExpr->iColumn;
-    pIdxOrderBy[i].desc = pOrderBy->a[i].sortFlags & KEYINFO_ORDER_DESC;
+    if( sqlite3ExprIsConstant(pExpr) ) continue;
+    assert( pExpr->op==TK_COLUMN
+         || (pExpr->op==TK_COLLATE && pExpr->pLeft->op==TK_COLUMN
+              && pExpr->iColumn==pExpr->pLeft->iColumn) );
+    pIdxOrderBy[j].iColumn = pExpr->iColumn;
+    pIdxOrderBy[j].desc = pOrderBy->a[i].sortFlags & KEYINFO_ORDER_DESC;
+    j++;
   }
+  pIdxInfo->nOrderBy = j;
 
   *pmNoOmit = mNoOmit;
   return pIdxInfo;
@@ -3555,11 +3604,19 @@ static int whereLoopAddVirtualOne(
 }
 
 /*
-** If this function is invoked from within an xBestIndex() callback, it
-** returns a pointer to a buffer containing the name of the collation
-** sequence associated with element iCons of the sqlite3_index_info.aConstraint
-** array. Or, if iCons is out of range or there is no active xBestIndex
-** call, return NULL.
+** Return the collating sequence for a constraint passed into xBestIndex.
+**
+** pIdxInfo must be an sqlite3_index_info structure passed into xBestIndex.
+** This routine depends on there being a HiddenIndexInfo structure immediately
+** following the sqlite3_index_info structure.
+**
+** Return a pointer to the collation name:
+**
+**    1. If there is an explicit COLLATE operator on the constaint, return it.
+**
+**    2. Else, if the column has an alternative collation, return that.
+**
+**    3. Otherwise, return "BINARY".
 */
 const char *sqlite3_vtab_collation(sqlite3_index_info *pIdxInfo, int iCons){
   HiddenIndexInfo *pHidden = (HiddenIndexInfo*)&pIdxInfo[1];
@@ -4997,7 +5054,7 @@ static SQLITE_NOINLINE void whereCheckIfBloomFilterIsUseful(
   nSearch = pWInfo->a[0].pWLoop->nOut;
   for(i=1; i<pWInfo->nLevel; i++){
     WhereLoop *pLoop = pWInfo->a[i].pWLoop;
-    const int reqFlags = (WHERE_SELFCULL|WHERE_COLUMN_EQ);
+    const unsigned int reqFlags = (WHERE_SELFCULL|WHERE_COLUMN_EQ);
     if( (pLoop->wsFlags & reqFlags)==reqFlags
      /* vvvvvv--- Always the case if WHERE_COLUMN_EQ is defined */
      && ALWAYS((pLoop->wsFlags & (WHERE_IPK|WHERE_INDEXED))!=0)
@@ -5615,7 +5672,7 @@ WhereInfo *sqlite3WhereBegin(
                   &pTabList->a[pLevel->iFrom], notReady, pLevel);
 #endif
       }else{
-        constructBloomFilter(pWInfo, ii, pLevel, notReady);
+        sqlite3ConstructBloomFilter(pWInfo, ii, pLevel, notReady);
       }
       if( db->mallocFailed ) goto whereBeginError;
     }

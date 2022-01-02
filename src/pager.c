@@ -3900,8 +3900,7 @@ static int pager_wait_on_lock(Pager *pPager, int locktype){
 **      current database image, in pages, OR
 **
 **   b) if the page content were written at this time, it would not
-**      be necessary to write the current content out to the sub-journal
-**      (as determined by function subjRequiresPage()).
+**      be necessary to write the current content out to the sub-journal.
 **
 ** If the condition asserted by this function were not true, and the
 ** dirty page were to be discarded from the cache via the pagerStress()
@@ -3916,8 +3915,16 @@ static int pager_wait_on_lock(Pager *pPager, int locktype){
 */
 #if defined(SQLITE_DEBUG)
 static void assertTruncateConstraintCb(PgHdr *pPg){
+  Pager *pPager = pPg->pPager;
   assert( pPg->flags&PGHDR_DIRTY );
-  assert( !subjRequiresPage(pPg) || pPg->pgno<=pPg->pPager->dbSize );
+  if( pPg->pgno>pPager->dbSize ){      /* if (a) is false */
+    Pgno pgno = pPg->pgno;
+    int i;
+    for(i=0; i<pPg->pPager->nSavepoint; i++){
+      PagerSavepoint *p = &pPager->aSavepoint[i];
+      assert( p->nOrig<pgno || sqlite3BitvecTestNotNull(p->pInSavepoint,pgno) );
+    }
+  }
 }
 static void assertTruncateConstraint(Pager *pPager){
   sqlite3PcacheIterateDirty(pPager->pPCache, assertTruncateConstraintCb);
