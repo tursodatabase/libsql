@@ -1,5 +1,5 @@
-C Clear\sthe\scache\sof\striggers\sused\sto\simplement\sCASCADE\sforeign\skey\sconstraints\nwhenever\sthe\sschema\schanges.\s\sFix\sfor\sthe\sproblem\sidentified\sby\n[forum:/forumpost/2831335356|forum\spost\s2831335356].
-D 2022-01-02T18:10:48.363
+C Do\snot\sopen\sa\srollback\sjournal\sfile\swhen\sthe\sjournal_mode\sis\sOFF,\seven\sif\nsuch\sa\sfile\sexists\son\sdisk.\sSee\n[forum/forumpost/ec2a102440|forum\spost\sec2a102440]\sfor\sa\sdescription.\s\sI\sso\nfar\shave\sbeen\sunable\sto\sfind\sany\sharm\sto\scome\sof\sthe\sproblem,\sother\sthan\sthe\nassertion\sfault\swhen\sin\sDEBUG\smode.
+D 2022-01-02T19:43:58.162
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -538,7 +538,7 @@ F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c f5ad51cfd024116db8531feab9efd831c2621436dca1464e4ff1e8af9bf3252e
 F src/os_win.c 77d39873836f1831a9b0b91894fec45ab0e9ca8e067dc8c549e1d1eca1566fe9
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c b0f75fde773ad69da997fe57153cdef53c5f0bcf4cd4c7dda19f5fd8e7fb488b
+F src/pager.c 5b79a1c09bc19628a763c822ef96326832090703a6608c64dc5fc166ab8dda79
 F src/pager.h 4bf9b3213a4b2bebbced5eaa8b219cf25d4a82f385d093cd64b7e93e5285f66f
 F src/parse.y 0bd7971a7489bbf6c3726f1b50da6e508bdff8fa493e9cc3f5a96b12cbb2361e
 F src/pcache.c 084e638432c610f95aea72b8509f0845d2791293f39d1b82f0c0a7e089c3bb6b
@@ -1935,9 +1935,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P eb07219965721e0a2017d0462747b07178c23f51e3333036e0cb8f5b4751f404
-Q +5232c9777fe4fb13e1ecfe5b5d644e2c45d0514f95884dbed49a03fb9b67304c
-R c7b1ef8a68b04d531afec49469052d40
+P 4f1313c67f8c3025ed15793e370617d14e950c13217f179bfb01f8f48fbbead9
+Q +fdf9ed665b2fb07d26f3852bfd2170f2fb56851edd2851d47672116a8ea58463
+R be15978c5dfb71320ab748cb75f0fcc7
 U drh
-Z e0164e9906d72f9b8fdce406798e46c9
+Z afd6b74f765b467100558a150b612382
 # Remove this line to create a well-formed Fossil manifest.

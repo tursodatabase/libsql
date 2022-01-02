@@ -5258,7 +5258,7 @@ int sqlite3PagerSharedLock(Pager *pPager){
       ** may mean that the pager was in the error-state when this
       ** function was called and the journal file does not exist.
       */
-      if( !isOpen(pPager->jfd) ){
+      if( !isOpen(pPager->jfd) && pPager->journalMode!=PAGER_JOURNALMODE_OFF ){
         sqlite3_vfs * const pVfs = pPager->pVfs;
         int bExists;              /* True if journal file exists */
         rc = sqlite3OsAccess(
