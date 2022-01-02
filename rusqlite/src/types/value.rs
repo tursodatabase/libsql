@@ -45,12 +45,9 @@ impl From<isize> for Value {
 impl From<i128> for Value {
     #[inline]
     fn from(i: i128) -> Value {
-        use byteorder::{BigEndian, ByteOrder};
-        let mut buf = vec![0u8; 16];
         // We store these biased (e.g. with the most significant bit flipped)
         // so that comparisons with negative numbers work properly.
-        BigEndian::write_i128(&mut buf, i ^ (1i128 << 127));
-        Value::Blob(buf)
+        Value::Blob(i128::to_be_bytes(i ^ (1i128 << 127)).to_vec())
     }
 }
 

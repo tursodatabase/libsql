@@ -16,21 +16,13 @@ pub enum FromSqlError {
     OutOfRange(i64),
 
     /// Error when the blob result returned by SQLite cannot be stored into the
-    /// requested type due to a size mismatch. (type size, blob size)
-    InvalidSize(usize, usize),
-
-    /// Error returned when reading an `i128` from a
-    /// blob with a size other than 16. Only available when the `i128_blob`
-    /// feature is enabled.
-    #[cfg(feature = "i128_blob")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "i128_blob")))]
-    InvalidI128Size(usize),
-
-    /// Error returned when reading a `uuid` from a blob with
-    /// a size other than 16. Only available when the `uuid` feature is enabled.
-    #[cfg(feature = "uuid")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "uuid")))]
-    InvalidUuidSize(usize),
+    /// requested type due to a size mismatch.
+    InvalidBlobSize {
+        /// The expected size of the blob.
+        expected_size: usize,
+        /// The actual size of the blob that was returned.
+        blob_size: usize,
+    },
 
     /// An error case available for implementors of the [`FromSql`] trait.
     Other(Box<dyn Error + Send + Sync + 'static>),
@@ -41,10 +33,16 @@ impl PartialEq for FromSqlError {
         match (self, other) {
             (FromSqlError::InvalidType, FromSqlError::InvalidType) => true,
             (FromSqlError::OutOfRange(n1), FromSqlError::OutOfRange(n2)) => n1 == n2,
-            #[cfg(feature = "i128_blob")]
-            (FromSqlError::InvalidI128Size(s1), FromSqlError::InvalidI128Size(s2)) => s1 == s2,
-            #[cfg(feature = "uuid")]
-            (FromSqlError::InvalidUuidSize(s1), FromSqlError::InvalidUuidSize(s2)) => s1 == s2,
+            (
+                FromSqlError::InvalidBlobSize {
+                    expected_size: es1,
+                    blob_size: bs1,
+                },
+                FromSqlError::InvalidBlobSize {
+                    expected_size: es2,
+                    blob_size: bs2,
+                },
+            ) => es1 == es2 && bs1 == bs2,
             (..) => false,
         }
     }
@@ -55,16 +53,15 @@ impl fmt::Display for FromSqlError {
         match *self {
             FromSqlError::InvalidType => write!(f, "Invalid type"),
             FromSqlError::OutOfRange(i) => write!(f, "Value {} out of range", i),
-            FromSqlError::InvalidSize(i, j) => {
-                write!(f, "Cannot read {} byte value out of {} byte blob", i, j)
-            }
-            #[cfg(feature = "i128_blob")]
-            FromSqlError::InvalidI128Size(s) => {
-                write!(f, "Cannot read 128bit value out of {} byte blob", s)
-            }
-            #[cfg(feature = "uuid")]
-            FromSqlError::InvalidUuidSize(s) => {
-                write!(f, "Cannot read UUID value out of {} byte blob", s)
+            FromSqlError::InvalidBlobSize {
+                expected_size,
+                blob_size,
+            } => {
+                write!(
+                    f,
+                    "Cannot read {} byte value out of {} byte blob",
+                    expected_size, blob_size
+                )
             }
             FromSqlError::Other(ref err) => err.fmt(f),
         }
@@ -188,9 +185,10 @@ impl<const N: usize> FromSql for [u8; N] {
     #[inline]
     fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
         let slice = value.as_blob()?;
-        slice
-            .try_into()
-            .map_err(|_| FromSqlError::InvalidSize(N, slice.len()))
+        slice.try_into().map_err(|_| FromSqlError::InvalidBlobSize {
+            expected_size: N,
+            blob_size: slice.len(),
+        })
     }
 }
 
@@ -199,15 +197,8 @@ impl<const N: usize> FromSql for [u8; N] {
 impl FromSql for i128 {
     #[inline]
     fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
-        use byteorder::{BigEndian, ByteOrder};
-
-        value.as_blob().and_then(|bytes| {
-            if bytes.len() == 16 {
-                Ok(BigEndian::read_i128(bytes) ^ (1i128 << 127))
-            } else {
-                Err(FromSqlError::InvalidI128Size(bytes.len()))
-            }
-        })
+        let bytes = <[u8; 16]>::column_result(value)?;
+        Ok(i128::from_be_bytes(bytes) ^ (1i128 << 127))
     }
 }
 
@@ -216,13 +207,8 @@ impl FromSql for i128 {
 impl FromSql for uuid::Uuid {
     #[inline]
     fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
-        value
-            .as_blob()
-            .and_then(|bytes| {
-                uuid::Builder::from_slice(bytes)
-                    .map_err(|_| FromSqlError::InvalidUuidSize(bytes.len()))
-            })
-            .map(|mut builder| builder.build())
+        let bytes = <[u8; 16]>::column_result(value)?;
+        Ok(uuid::Uuid::from_u128(u128::from_be_bytes(bytes)))
     }
 }
 

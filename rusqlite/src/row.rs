@@ -288,23 +288,11 @@ impl<'stmt> Row<'stmt> {
             ),
             FromSqlError::OutOfRange(i) => Error::IntegralValueOutOfRange(idx, i),
             FromSqlError::Other(err) => {
-                Error::FromSqlConversionFailure(idx as usize, value.data_type(), err)
+                Error::FromSqlConversionFailure(idx, value.data_type(), err)
             }
-            FromSqlError::InvalidSize(_, _) => {
-                Error::FromSqlConversionFailure(idx as usize, value.data_type(), Box::new(err))
+            FromSqlError::InvalidBlobSize { .. } => {
+                Error::FromSqlConversionFailure(idx, value.data_type(), Box::new(err))
             }
-            #[cfg(feature = "i128_blob")]
-            FromSqlError::InvalidI128Size(_) => Error::InvalidColumnType(
-                idx,
-                self.stmt.column_name_unwrap(idx).into(),
-                value.data_type(),
-            ),
-            #[cfg(feature = "uuid")]
-            FromSqlError::InvalidUuidSize(_) => Error::InvalidColumnType(
-                idx,
-                self.stmt.column_name_unwrap(idx).into(),
-                value.data_type(),
-            ),
         })
     }
 

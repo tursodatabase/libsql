@@ -39,7 +39,7 @@ bundled-sqlcipher-vendored-openssl = ["libsqlite3-sys/bundled-sqlcipher-vendored
 buildtime_bindgen = ["libsqlite3-sys/buildtime_bindgen"]
 limits = []
 hooks = []
-i128_blob = ["byteorder"]
+i128_blob = []
 sqlcipher = ["libsqlite3-sys/sqlcipher"]
 unlock_notify = ["libsqlite3-sys/unlock_notify"]
 # xSavepoint, xRelease and xRollbackTo: 3.7.7 (2011-06-23)
@@ -105,7 +105,6 @@ serde_json = { version = "1.0", optional = true }
 csv = { version = "1.1", optional = true }
 url = { version = "2.1", optional = true }
 lazy_static = { version = "1.4", optional = true }
-byteorder = { version = "1.3", features = ["i128"], optional = true }
 fallible-iterator = "0.2"
 fallible-streaming-iterator = "0.1"
 memchr = "2.3"
