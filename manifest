@@ -1,5 +1,5 @@
-C Small\sperformance\sand\ssize\soptimization\sto\sallocateCursor().
-D 2022-01-03T01:43:28.096
+C Test\s.mode\squote\sblob\soutput
+D 2022-01-03T19:33:44.186
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1382,7 +1382,7 @@ F test/sharedA.test 49d87ec54ab640fbbc3786ee3c01de94aaa482a3a9f834ad3fe92770eb69
 F test/sharedB.test 16cc7178e20965d75278f410943109b77b2e645e
 F test/shared_err.test 32634e404a3317eeb94abc7a099c556a346fdb8fb3858dbe222a4cbb8926a939
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
-F test/shell1.test e6c8fb4b710f29239392876c72ecc5a7f1d5d23e1f23838e5a6a2ccc9903d74f
+F test/shell1.test 70f46b5d07776a107335c3c2c9cbd0431d44637bfeae1f6b9ded5e33b4c7c0bf
 F test/shell2.test f00a0501c00583cbc46f7510e1d713366326b2b3e63d06d15937284171a8787c
 F test/shell3.test cb4b835a901742c9719437a89171172ecc4a8823ad97349af8e4e841e6f82566
 F test/shell4.test 3ed6c4b42fd695efcbc25d69ef759dbb15855ca8e52ba6c5ee076f8b435f48be
@@ -1936,8 +1936,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 01bd266eb682feed901a0995c2232b62d8444d19dbb227095dfbfe8edeaa5d88
-R 8bbbbc86742a232c4562b5ad64d27946
-U drh
-Z 57988afa28021d7cb9d1163c06091947
+P 23f042669aff535afa6ee9de367656848d01e90a1c9dab9359fa938a615b4195
+R dc74bbd43cff3bf3754c71889c919686
+U larrybr
+Z ad2e9814bd694aca1391f041108f6f60
 # Remove this line to create a well-formed Fossil manifest.

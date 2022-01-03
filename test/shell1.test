@@ -1024,6 +1024,12 @@ do_test shell1-4.6 {
 ";"
 "$"} 7}
 
+# Test the output of ".mode quote"
+#
+do_test shell1-4.7 {
+  catchcmd test.db ".mode quote\nselect x'0123456789ABCDEF';"
+} {0 X'0123456789abcdef'}
+
 # Test using arbitrary byte data with the shell via standard input/output.
 #
 do_test shell1-5.0 {
