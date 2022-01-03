@@ -75,7 +75,7 @@ typedef struct AuxData AuxData;
 typedef struct VdbeCursor VdbeCursor;
 struct VdbeCursor {
   u8 eCurType;            /* One of the CURTYPE_* values above */
-  i8 iDb;                 /* Index of cursor database in db->aDb[] (or -1) */
+  i8 iDb;                 /* Index of cursor database in db->aDb[] */
   u8 nullRow;             /* True if pointing to a row with no data */
   u8 deferredMoveto;      /* A call to sqlite3BtreeMoveto() is needed */
   u8 isTable;             /* True for rowid tables.  False for indexes */
@@ -88,9 +88,11 @@ struct VdbeCursor {
   Bool isOrdered:1;       /* True if the table is not BTREE_UNORDERED */
   Bool hasBeenDuped:1;    /* This cursor was source or target of OP_OpenDup */
   u16 seekHit;            /* See the OP_SeekHit and OP_IfNoHope opcodes */
-  Btree *pBtx;            /* Separate file holding temporary table */
+  union {                 /* pBtx for isEphermeral.  pAltMap otherwise */
+    Btree *pBtx;            /* Separate file holding temporary table */
+    u32 *aAltMap;           /* Mapping from table to index column numbers */
+  } ub;
   i64 seqCount;           /* Sequence counter */
-  u32 *aAltMap;           /* Mapping from table to index column numbers */
 
   /* Cached OP_Column parse information is only valid if cacheStatus matches
   ** Vdbe.cacheCtr.  Vdbe.cacheCtr will never take on the value of

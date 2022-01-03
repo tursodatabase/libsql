@@ -1,5 +1,5 @@
-C Remove\sunnecessary\sassignment\soperations\sin\sthe\sbtree\ssearch\salgorithm,\nfor\sa\ssmall\ssize\sreduction\sand\sperformance\sincrease.
-D 2022-01-02T21:53:54.680
+C Small\sperformance\sand\ssize\soptimization\sto\sallocateCursor().
+D 2022-01-03T01:43:28.096
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -622,14 +622,14 @@ F src/upsert.c 8789047a8f0a601ea42fa0256d1ba3190c13746b6ba940fe2d25643a7e991937
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c 89e51820bcb468ff3877a8d942f5cc807208087f021227e0927693e928a195bc
 F src/vacuum.c 6c38ddc52f0619865c91dae9c441d4d48bf3040d7dc1bc5b22da1e45547ed0b3
-F src/vdbe.c 05c8fd957820626aae224656b3db272fb4e69bf000e7bcdf62d00307cc9be873
+F src/vdbe.c 23116cc5d99ada73e8e11addabc380c27758688a16d84d0efa6dbe94c1293a4f
 F src/vdbe.h 25dabb25c7e157b84e59260cfb5b466c3ac103ede9f36f4db371332c47601abe
-F src/vdbeInt.h a7f01b0cd0dcb496343eacd37b0839250f9a718199ab6096e3995db42dec3ec8
+F src/vdbeInt.h d89d5d2150500cfb08615329fd20aea9d746bba5f2c3ecb8a17e2d2d9be029e5
 F src/vdbeapi.c 22c79072ae7d8a01e9bcae8ba16e918d60d202eaa9553b5fda38f99f7464d99a
-F src/vdbeaux.c 44b4c238425726a7e790ce54dc4aef3be3fb7ef46a70f09adb5e84c0361824ec
+F src/vdbeaux.c c1b452cc17f5887b3d36bc277a2181914d6bed508ea45827b5f348160491e6a6
 F src/vdbeblob.c 29c4118f7ee615cdee829e8401f6ead1b96b95d545b4de0042f6de39c962c652
 F src/vdbemem.c da4d594084d581be6436582bb44bb128feeb138a3e6c313eda6749ebdc3a65ec
-F src/vdbesort.c 513b481c8bab4a6578c92194a60cf3bc3b48736e4a53f8d2d7918121c5b594e7
+F src/vdbesort.c 43756031ca7430f7aec3ef904824a7883c4ede783e51f280d99b9b65c0796e35
 F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf823
 F src/vdbevtab.c f99b275366c5fc5e2d99f734729880994ab9500bdafde7fae3b02d562b9d323c
 F src/vtab.c a47cc12ebaa350800c0c87b6b0095debbb5a6ed32727bcab9d82ad070a81b738
@@ -1936,8 +1936,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 728e9dcc6d211acd787837c41cb62275284b5e02f55bd28bf5a44e233bcb057a
-R 8e972dcab3c6d036a102fca8bdbc15cf
+P 01bd266eb682feed901a0995c2232b62d8444d19dbb227095dfbfe8edeaa5d88
+R 8bbbbc86742a232c4562b5ad64d27946
 U drh
-Z 70eaf19d957dcced1788f060f027844f
+Z 57988afa28021d7cb9d1163c06091947
 # Remove this line to create a well-formed Fossil manifest.
