@@ -1,5 +1,5 @@
-C Test\s.mode\squote\sblob\soutput
-D 2022-01-03T19:33:44.186
+C Improved\shandling\sof\sOOM\serrors\sin\ssqlite3ExpandReturning().\ndbsqlfuzz\s1040b720f0bbc3bdcfe7336acffbf71517e3ef82.
+D 2022-01-05T11:49:58.515
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -616,7 +616,7 @@ F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c dc5367c6d42336b35d55f96d2f04cd6256e92bc6ecf74ed5d855d24e43343aff
 F src/treeview.c 9dfdb7ff7f6645d0a6458dbdf4ffac041c071c4533a6db8bb6e502b979ac67bc
-F src/trigger.c eaaba4e34cdce18bf6c633a4536d35e93c62684d3107d5563f0eae209640860c
+F src/trigger.c ad65f2dae751e8ee59d61f35e0fc624ec5f264964fbf2d1c23041535b6850083
 F src/update.c d6f5c7b9e072660757ac7d58175aca11c07cb95ebbb297ae7f38853700f52328
 F src/upsert.c 8789047a8f0a601ea42fa0256d1ba3190c13746b6ba940fe2d25643a7e991937
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
@@ -1936,8 +1936,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 23f042669aff535afa6ee9de367656848d01e90a1c9dab9359fa938a615b4195
-R dc74bbd43cff3bf3754c71889c919686
-U larrybr
-Z ad2e9814bd694aca1391f041108f6f60
+P ef4dcd1080241a62a50eff28ef12c49da0116032f10843aaf048ae7ad3cdfd0e
+R 4941045e693d9c4d50be43c3ecb13482
+U drh
+Z 2349087c33b28fcb010dc116adddeda9
 # Remove this line to create a well-formed Fossil manifest.
