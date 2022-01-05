@@ -63,6 +63,7 @@ pub struct Error {
 }
 
 impl Error {
+    #[must_use]
     pub fn new(result_code: c_int) -> Error {
         let code = match result_code & 0xff {
             super::SQLITE_INTERNAL => ErrorCode::InternalMalfunction,
@@ -192,6 +193,7 @@ const SQLITE_WARNING_AUTOINDEX: c_int = SQLITE_WARNING | (1 << 8);
 
 const SQLITE_AUTH_USER: c_int = super::SQLITE_AUTH | (1 << 8);
 
+#[must_use]
 pub fn code_to_str(code: c_int) -> &'static str {
     match code {
         super::SQLITE_OK        => "Successful result",

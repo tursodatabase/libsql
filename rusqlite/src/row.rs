@@ -80,6 +80,7 @@ impl<'stmt> Rows<'stmt> {
     }
 
     /// Give access to the underlying statement
+    #[must_use]
     pub fn as_ref(&self) -> Option<&Statement<'stmt>> {
         self.stmt
     }

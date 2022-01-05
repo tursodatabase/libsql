@@ -129,6 +129,7 @@ where
 impl Value {
     /// Returns SQLite fundamental datatype.
     #[inline]
+    #[must_use]
     pub fn data_type(&self) -> Type {
         match *self {
             Value::Null => Type::Null,

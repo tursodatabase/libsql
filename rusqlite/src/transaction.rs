@@ -169,6 +169,7 @@ impl Transaction<'_> {
     /// Get the current setting for what happens to the transaction when it is
     /// dropped.
     #[inline]
+    #[must_use]
     pub fn drop_behavior(&self) -> DropBehavior {
         self.drop_behavior
     }
@@ -296,6 +297,7 @@ impl Savepoint<'_> {
     /// Get the current setting for what happens to the savepoint when it is
     /// dropped.
     #[inline]
+    #[must_use]
     pub fn drop_behavior(&self) -> DropBehavior {
         self.drop_behavior
     }

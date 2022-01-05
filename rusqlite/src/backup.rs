@@ -231,6 +231,7 @@ impl Backup<'_, '_> {
     /// Gets the progress of the backup as of the last call to
     /// [`step`](Backup::step).
     #[inline]
+    #[must_use]
     pub fn progress(&self) -> Progress {
         unsafe {
             Progress {

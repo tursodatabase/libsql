@@ -114,12 +114,14 @@ pub struct Context<'a> {
 impl Context<'_> {
     /// Returns the number of arguments to the function.
     #[inline]
+    #[must_use]
     pub fn len(&self) -> usize {
         self.args.len()
     }
 
     /// Returns `true` when there is no argument.
     #[inline]
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.args.is_empty()
     }
@@ -157,6 +159,7 @@ impl Context<'_> {
     /// Will panic if `idx` is greater than or equal to
     /// [`self.len()`](Context::len).
     #[inline]
+    #[must_use]
     pub fn get_raw(&self, idx: usize) -> ValueRef<'_> {
         let arg = self.args[idx];
         unsafe { ValueRef::from_value(arg) }
