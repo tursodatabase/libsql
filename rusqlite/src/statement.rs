@@ -717,7 +717,7 @@ impl Statement<'_> {
                     ffi::sqlite3_bind_blob(
                         ptr,
                         col as c_int,
-                        b.as_ptr() as *const c_void,
+                        b.as_ptr().cast::<c_void>(),
                         length,
                         ffi::SQLITE_TRANSIENT(),
                     )
@@ -875,7 +875,7 @@ impl Statement<'_> {
                         !text.is_null(),
                         "unexpected SQLITE_TEXT column type with NULL data"
                     );
-                    from_raw_parts(text as *const u8, len as usize)
+                    from_raw_parts(text.cast::<u8>(), len as usize)
                 };
 
                 ValueRef::Text(s)
@@ -897,7 +897,7 @@ impl Statement<'_> {
                         !blob.is_null(),
                         "unexpected SQLITE_BLOB column type with NULL data"
                     );
-                    ValueRef::Blob(unsafe { from_raw_parts(blob as *const u8, len as usize) })
+                    ValueRef::Blob(unsafe { from_raw_parts(blob.cast::<u8>(), len as usize) })
                 } else {
                     // The return value from sqlite3_column_blob() for a zero-length BLOB
                     // is a NULL pointer.

@@ -425,7 +425,7 @@ impl InnerConnection {
             F: FnMut() -> bool,
         {
             let r = catch_unwind(|| {
-                let boxed_hook: *mut F = p_arg as *mut F;
+                let boxed_hook: *mut F = p_arg.cast::<F>();
                 (*boxed_hook)()
             });
             if let Ok(true) = r {
@@ -451,7 +451,7 @@ impl InnerConnection {
                     ffi::sqlite3_commit_hook(
                         self.db(),
                         Some(call_boxed_closure::<F>),
-                        boxed_hook as *mut _,
+                        boxed_hook.cast(),
                     )
                 }
             }
@@ -473,8 +473,8 @@ impl InnerConnection {
         where
             F: FnMut(),
         {
-            let _ = catch_unwind(|| {
-                let boxed_hook: *mut F = p_arg as *mut F;
+            drop(catch_unwind(|| {
+                let boxed_hook: *mut F = p_arg.cast::<F>();
                 (*boxed_hook)();
             });
         }
@@ -492,7 +492,7 @@ impl InnerConnection {
                     ffi::sqlite3_rollback_hook(
                         self.db(),
                         Some(call_boxed_closure::<F>),
-                        boxed_hook as *mut _,
+                        boxed_hook.cast(),
                     )
                 }
             }
@@ -520,8 +520,8 @@ impl InnerConnection {
             F: FnMut(Action, &str, &str, i64),
         {
             let action = Action::from(action_code);
-            let _ = catch_unwind(|| {
-                let boxed_hook: *mut F = p_arg as *mut F;
+            drop(catch_unwind(|| {
+                let boxed_hook: *mut F = p_arg.cast::<F>();
                 (*boxed_hook)(
                     action,
                     expect_utf8(p_db_name, "database name"),
@@ -544,7 +544,7 @@ impl InnerConnection {
                     ffi::sqlite3_update_hook(
                         self.db(),
                         Some(call_boxed_closure::<F>),
-                        boxed_hook as *mut _,
+                        boxed_hook.cast(),
                     )
                 }
             }
@@ -567,7 +567,7 @@ impl InnerConnection {
             F: FnMut() -> bool,
         {
             let r = catch_unwind(|| {
-                let boxed_handler: *mut F = p_arg as *mut F;
+                let boxed_handler: *mut F = p_arg.cast::<F>();
                 (*boxed_handler)()
             });
             if let Ok(true) = r {
@@ -626,7 +626,7 @@ impl InnerConnection {
                         "accessor (inner-most trigger or view)",
                     ),
                 };
-                let boxed_hook: *mut F = p_arg as *mut F;
+                let boxed_hook: *mut F = p_arg.cast::<F>();
                 (*boxed_hook)(auth_ctx)
             })
             .map(Authorization::into_raw)
@@ -666,7 +666,7 @@ impl InnerConnection {
 }
 
 unsafe fn free_boxed_hook<F>(p: *mut c_void) {
-    drop(Box::from_raw(p as *mut F));
+    drop(Box::from_raw(p.cast::<F>()));
 }
 
 unsafe fn expect_utf8<'a>(p_str: *const c_char, description: &'static str) -> &'a str {

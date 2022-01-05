@@ -318,8 +318,7 @@ impl io::Read for Blob<'_> {
         if n <= 0 {
             return Ok(0);
         }
-        let rc =
-            unsafe { ffi::sqlite3_blob_read(self.blob, buf.as_mut_ptr() as *mut _, n, self.pos) };
+        let rc = unsafe { ffi::sqlite3_blob_read(self.blob, buf.as_mut_ptr().cast(), n, self.pos) };
         self.conn
             .decode_result(rc)
             .map(|_| {

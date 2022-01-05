@@ -120,7 +120,7 @@ impl SqliteMallocString {
                     // `>` because we added 1.
                     debug_assert!(len_to_alloc > 0);
                     debug_assert_eq!((len_to_alloc - 1) as usize, src_len);
-                    NonNull::new(ffi::sqlite3_malloc(len_to_alloc) as *mut c_char)
+                    NonNull::new(ffi::sqlite3_malloc(len_to_alloc).cast::<c_char>())
                 })
                 .unwrap_or_else(|| {
                     use std::alloc::{handle_alloc_error, Layout};
@@ -138,7 +138,7 @@ impl SqliteMallocString {
                     // Note: This call does not return.
                     handle_alloc_error(layout);
                 });
-            let buf: *mut c_char = res_ptr.as_ptr() as *mut c_char;
+            let buf: *mut c_char = res_ptr.as_ptr().cast::<c_char>();
             src_ptr.copy_to_nonoverlapping(buf, src_len);
             buf.add(src_len).write(0);
             debug_assert_eq!(std::ffi::CStr::from_ptr(res_ptr.as_ptr()).to_bytes(), bytes);
