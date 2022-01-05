@@ -945,7 +945,9 @@ static void codeReturningTrigger(
     sNC.ncFlags = NC_UBaseReg;
     pParse->eTriggerOp = pTrigger->op;
     pParse->pTriggerTab = pTab;
-    if( sqlite3ResolveExprListNames(&sNC, pNew)==SQLITE_OK ){
+    if( sqlite3ResolveExprListNames(&sNC, pNew)==SQLITE_OK
+     && !db->mallocFailed
+    ){
       int i;
       int nCol = pNew->nExpr;
       int reg = pParse->nMem+1;
@@ -953,8 +955,7 @@ static void codeReturningTrigger(
       pReturning->iRetReg = reg;
       for(i=0; i<nCol; i++){
         Expr *pCol = pNew->a[i].pExpr;
-        assert( pCol!=0 || pParse->db->mallocFailed );
-        if( NEVER(pCol==0) ) continue;
+        assert( pCol!=0 ); /* Due to !db->mallocFailed ~9 lines above */
         sqlite3ExprCodeFactorable(pParse, pCol, reg+i);
       }
       sqlite3VdbeAddOp3(v, OP_MakeRecord, reg, i, reg+i);
