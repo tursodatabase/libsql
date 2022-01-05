@@ -10,7 +10,13 @@ on:
   schedule:
     - cron: "00 01 * * *"
 env:
-  RUST_BACKTRACE: 1
+  RUST_BACKTRACE: short
+  # CI builds don't benefit very much from this.
+  CARGO_INCREMENTAL: 0
+  # We can't use a debugger in CI, and this makes builds faster and the cache
+  # smaller. (TODO: use -Cdebuginfo=0 if it doesn't make backtraces useless)
+  RUSTFLAGS: -Cdebuginfo=1
+
 jobs:
   test:
     name: Test ${{ matrix.target }}
@@ -23,11 +29,9 @@ jobs:
           - { target: x86_64-pc-windows-msvc, os: windows-latest }
           - { target: x86_64-unknown-linux-gnu, os: ubuntu-latest }
           - { target: x86_64-apple-darwin, os: macos-latest }
-          - {
-              target: x86_64-pc-windows-gnu,
-              os: windows-latest,
-              host: -x86_64-pc-windows-gnu,
-            }
+          - target: x86_64-pc-windows-gnu
+            os: windows-latest
+            host: -x86_64-pc-windows-gnu
 
     runs-on: ${{ matrix.os }}
 
@@ -39,6 +43,8 @@ jobs:
         with:
           rust-version: stable${{ matrix.host }}
           targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v1
+        with: { sharedKey: fullTests }
 
       - run: cargo build --features bundled --workspace --all-targets --verbose
       - run: cargo test --features bundled --workspace --all-targets --verbose
@@ -51,11 +57,12 @@ jobs:
           cargo test --features 'bundled-full session buildtime_bindgen' --all-targets --workspace --verbose
           cargo test --features 'bundled-full session buildtime_bindgen' --doc --workspace --verbose
 
+      # TODO: move into own action for better caching
       - name: Static build
         # Do we expect this to work / should we test with gnu toolchain?
         if: matrix.os == 'x86_64-pc-windows-msvc'
         env:
-          RUSTFLAGS: -Ctarget-feature=+crt-static
+          RUSTFLAGS: -Ctarget-feature=+crt-static -Cdebuginfo=1
         run: cargo build --features bundled
 
   test-sqlcipher-bundled:
@@ -75,6 +82,8 @@ jobs:
         with:
           rust-version: stable${{ matrix.host }}
           targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v1
+        with: { sharedKey: fullTests }
 
       - run: cargo test --features 'bundled-sqlcipher' --workspace --all-targets --verbose
       - run: cargo test --features 'bundled-sqlcipher' --workspace --doc --verbose
@@ -100,6 +109,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: hecrj/setup-rust-action@v1
+      - uses: Swatinem/rust-cache@v1
       # TODO: Should this test GNU toolchain? What about +crt-static?
       # TODO: Is it worth testing other features?
       - run: cargo build --features winsqlite3 --workspace --all-targets --verbose
@@ -111,6 +121,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: hecrj/setup-rust-action@v1
+      - uses: Swatinem/rust-cache@v1
       - run: sudo apt-get install sqlcipher libsqlcipher-dev
       - run: sqlcipher --version
       # TODO: Is it worth testing other features?
@@ -127,9 +138,10 @@ jobs:
         with:
           rust-version: nightly
           components: rust-src
+      - uses: Swatinem/rust-cache@v1
       - name: Tests with asan
         env:
-          RUSTFLAGS: -Zsanitizer=address
+          RUSTFLAGS: -Zsanitizer=address -Cdebuginfo=0
           RUSTDOCFLAGS: -Zsanitizer=address
           ASAN_OPTIONS: "detect_stack_use_after_return=1:detect_leaks=0"
           # Work around https://github.com/rust-lang/rust/issues/59125 by
@@ -148,6 +160,7 @@ jobs:
       - uses: hecrj/setup-rust-action@v1
         with:
           components: clippy
+      - uses: Swatinem/rust-cache@v1
       - run: cargo clippy --all-targets --workspace --features bundled -- -D warnings
       # Clippy with all non-conflicting features
       - run: cargo clippy --all-targets --workspace --features 'bundled-full session buildtime_bindgen' -- -D warnings
