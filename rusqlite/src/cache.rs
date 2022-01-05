@@ -46,13 +46,13 @@ impl Connection {
     /// can set the capacity manually using this method.
     #[inline]
     pub fn set_prepared_statement_cache_capacity(&self, capacity: usize) {
-        self.cache.set_capacity(capacity)
+        self.cache.set_capacity(capacity);
     }
 
     /// Remove/finalize all prepared statements currently in the cache.
     #[inline]
     pub fn flush_prepared_statement_cache(&self) {
-        self.cache.flush()
+        self.cache.flush();
     }
 }
 
@@ -122,7 +122,7 @@ impl StatementCache {
 
     #[inline]
     fn set_capacity(&self, capacity: usize) {
-        self.0.borrow_mut().set_capacity(capacity)
+        self.0.borrow_mut().set_capacity(capacity);
     }
 
     // Search the cache for a prepared-statement object that implements `sql`.
@@ -169,7 +169,7 @@ impl StatementCache {
     #[inline]
     fn flush(&self) {
         let mut cache = self.0.borrow_mut();
-        cache.clear()
+        cache.clear();
     }
 }
 

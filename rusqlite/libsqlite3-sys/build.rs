@@ -46,9 +46,9 @@ fn main() {
                 features 'bundled' and 'bundled-windows'. If you want a bundled build of
                 SQLCipher (available for the moment only on Unix), use feature 'bundled-sqlcipher'
                 or 'bundled-sqlcipher-vendored-openssl' to also bundle OpenSSL crypto."
-            )
+            );
         }
-        build_linked::main(&out_dir, &out_path)
+        build_linked::main(&out_dir, &out_path);
     } else if cfg!(feature = "bundled")
         || (win_target() && cfg!(feature = "bundled-windows"))
         || cfg!(feature = "bundled-sqlcipher")
@@ -66,7 +66,7 @@ fn main() {
         )))]
         panic!("The runtime test should not run this branch, which has not compiled any logic.")
     } else {
-        build_linked::main(&out_dir, &out_path)
+        build_linked::main(&out_dir, &out_path);
     }
 }
 
@@ -168,7 +168,7 @@ mod build_bundled {
                             panic!(
                                 "OpenSSL include directory does not exist: {}",
                                 inc_dir.to_string_lossy()
-                            )
+                            );
                         }
 
                         use_openssl = true;

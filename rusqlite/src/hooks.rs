@@ -402,7 +402,7 @@ impl Connection {
     where
         F: for<'r> FnMut(AuthContext<'r>) -> Authorization + Send + RefUnwindSafe + 'static,
     {
-        self.db.borrow_mut().authorizer(hook)
+        self.db.borrow_mut().authorizer(hook);
     }
 }
 

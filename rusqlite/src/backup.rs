@@ -297,7 +297,7 @@ impl Backup<'_, '_> {
         loop {
             let r = self.step(pages_per_step)?;
             if let Some(progress) = progress {
-                progress(self.progress())
+                progress(self.progress());
             }
             match r {
                 More | Busy | Locked => thread::sleep(pause_between_pages),
