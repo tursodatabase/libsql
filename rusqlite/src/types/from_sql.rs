@@ -177,7 +177,7 @@ impl FromSql for std::sync::Arc<str> {
 impl FromSql for Vec<u8> {
     #[inline]
     fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
-        value.as_blob().map(|b| b.to_vec())
+        value.as_blob().map(<[u8]>::to_vec)
     }
 }
 
