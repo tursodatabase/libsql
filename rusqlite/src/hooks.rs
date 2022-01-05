@@ -473,10 +473,10 @@ impl InnerConnection {
         where
             F: FnMut(),
         {
-            let _ = catch_unwind(|| {
+            drop(catch_unwind(|| {
                 let boxed_hook: *mut F = p_arg as *mut F;
                 (*boxed_hook)();
-            });
+            }));
         }
 
         let free_rollback_hook = if hook.is_some() {
@@ -520,7 +520,7 @@ impl InnerConnection {
             F: FnMut(Action, &str, &str, i64),
         {
             let action = Action::from(action_code);
-            let _ = catch_unwind(|| {
+            drop(catch_unwind(|| {
                 let boxed_hook: *mut F = p_arg as *mut F;
                 (*boxed_hook)(
                     action,
@@ -528,7 +528,7 @@ impl InnerConnection {
                     expect_utf8(p_table_name, "table name"),
                     row_id,
                 );
-            });
+            }));
         }
 
         let free_update_hook = if hook.is_some() {

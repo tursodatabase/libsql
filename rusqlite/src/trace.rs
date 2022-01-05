@@ -31,7 +31,7 @@ pub unsafe fn config_log(callback: Option<fn(c_int, &str)>) -> Result<()> {
         let callback: fn(c_int, &str) = unsafe { mem::transmute(p_arg) };
 
         let s = String::from_utf8_lossy(c_slice);
-        let _ = catch_unwind(|| callback(err, &s));
+        drop(catch_unwind(|| callback(err, &s)));
     }
 
     let rc = match callback {
@@ -75,7 +75,7 @@ impl Connection {
             let trace_fn: fn(&str) = mem::transmute(p_arg);
             let c_slice = CStr::from_ptr(z_sql).to_bytes();
             let s = String::from_utf8_lossy(c_slice);
-            let _ = catch_unwind(|| trace_fn(&s));
+            drop(catch_unwind(|| trace_fn(&s)));
         }
 
         let c = self.db.borrow_mut();
@@ -109,7 +109,7 @@ impl Connection {
                 nanoseconds / NANOS_PER_SEC,
                 (nanoseconds % NANOS_PER_SEC) as u32,
             );
-            let _ = catch_unwind(|| profile_fn(&s, duration));
+            drop(catch_unwind(|| profile_fn(&s, duration)));
         }
 
         let c = self.db.borrow_mut();
