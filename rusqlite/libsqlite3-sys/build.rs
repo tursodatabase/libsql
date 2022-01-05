@@ -429,26 +429,23 @@ mod build_linked {
         }
 
         // See if pkg-config can do everything for us.
-        match pkg_config::Config::new()
+        if let Ok(mut lib) = pkg_config::Config::new()
             .print_system_libs(false)
             .probe(link_lib)
         {
-            Ok(mut lib) => {
-                if let Some(mut header) = lib.include_paths.pop() {
-                    header.push("sqlite3.h");
-                    HeaderLocation::FromPath(header.to_string_lossy().into())
-                } else {
-                    HeaderLocation::Wrapper
-                }
-            }
-            Err(_) => {
-                // No env var set and pkg-config couldn't help; just output the link-lib
-                // request and hope that the library exists on the system paths. We used to
-                // output /usr/lib explicitly, but that can introduce other linking problems;
-                // see https://github.com/rusqlite/rusqlite/issues/207.
-                println!("cargo:rustc-link-lib={}={}", find_link_mode(), link_lib);
+            if let Some(mut header) = lib.include_paths.pop() {
+                header.push("sqlite3.h");
+                HeaderLocation::FromPath(header.to_string_lossy().into())
+            } else {
                 HeaderLocation::Wrapper
             }
+        } else {
+            // No env var set and pkg-config couldn't help; just output the link-lib
+            // request and hope that the library exists on the system paths. We used to
+            // output /usr/lib explicitly, but that can introduce other linking problems;
+            // see https://github.com/rusqlite/rusqlite/issues/207.
+            println!("cargo:rustc-link-lib={}={}", find_link_mode(), link_lib);
+            HeaderLocation::Wrapper
         }
     }
 

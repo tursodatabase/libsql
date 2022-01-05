@@ -210,8 +210,8 @@ impl<'stmt> FallibleStreamingIterator for Rows<'stmt> {
 
     #[inline]
     fn advance(&mut self) -> Result<()> {
-        match self.stmt {
-            Some(stmt) => match stmt.step() {
+        if let Some(stmt) = self.stmt {
+            match stmt.step() {
                 Ok(true) => {
                     self.row = Some(Row { stmt });
                     Ok(())
@@ -226,11 +226,10 @@ impl<'stmt> FallibleStreamingIterator for Rows<'stmt> {
                     self.row = None;
                     Err(e)
                 }
-            },
-            None => {
-                self.row = None;
-                Ok(())
             }
+        } else {
+            self.row = None;
+            Ok(())
         }
     }
 

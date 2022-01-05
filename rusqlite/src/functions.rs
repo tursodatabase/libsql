@@ -84,18 +84,15 @@ unsafe fn report_error(ctx: *mut sqlite3_context, err: &Error) {
         ffi::SQLITE_CONSTRAINT
     }
 
-    match *err {
-        Error::SqliteFailure(ref err, ref s) => {
-            ffi::sqlite3_result_error_code(ctx, err.extended_code);
-            if let Some(Ok(cstr)) = s.as_ref().map(|s| str_to_cstring(s)) {
-                ffi::sqlite3_result_error(ctx, cstr.as_ptr(), -1);
-            }
+    if let Error::SqliteFailure(ref err, ref s) = *err {
+        ffi::sqlite3_result_error_code(ctx, err.extended_code);
+        if let Some(Ok(cstr)) = s.as_ref().map(|s| str_to_cstring(s)) {
+            ffi::sqlite3_result_error(ctx, cstr.as_ptr(), -1);
         }
-        _ => {
-            ffi::sqlite3_result_error_code(ctx, constraint_error_code());
-            if let Ok(cstr) = str_to_cstring(&err.to_string()) {
-                ffi::sqlite3_result_error(ctx, cstr.as_ptr(), -1);
-            }
+    } else {
+        ffi::sqlite3_result_error_code(ctx, constraint_error_code());
+        if let Ok(cstr) = str_to_cstring(&err.to_string()) {
+            ffi::sqlite3_result_error(ctx, cstr.as_ptr(), -1);
         }
     }
 }
@@ -203,7 +200,7 @@ impl Context<'_> {
                 arg,
                 raw as *mut _,
                 Some(free_boxed_value::<AuxInner>),
-            )
+            );
         };
         Ok(orig)
     }
@@ -620,12 +617,11 @@ unsafe extern "C" fn call_boxed_step<A, D, T>(
     D: Aggregate<A, T>,
     T: ToSql,
 {
-    let pac = match aggregate_context(ctx, ::std::mem::size_of::<*mut A>()) {
-        Some(pac) => pac,
-        None => {
-            ffi::sqlite3_result_error_nomem(ctx);
-            return;
-        }
+    let pac = if let Some(pac) = aggregate_context(ctx, ::std::mem::size_of::<*mut A>()) {
+        pac
+    } else {
+        ffi::sqlite3_result_error_nomem(ctx);
+        return;
     };
 
     let r = catch_unwind(|| {
@@ -668,12 +664,11 @@ unsafe extern "C" fn call_boxed_inverse<A, W, T>(
     W: WindowAggregate<A, T>,
     T: ToSql,
 {
-    let pac = match aggregate_context(ctx, ::std::mem::size_of::<*mut A>()) {
-        Some(pac) => pac,
-        None => {
-            ffi::sqlite3_result_error_nomem(ctx);
-            return;
-        }
+    let pac = if let Some(pac) = aggregate_context(ctx, ::std::mem::size_of::<*mut A>()) {
+        pac
+    } else {
+        ffi::sqlite3_result_error_nomem(ctx);
+        return;
     };
 
     let r = catch_unwind(|| {

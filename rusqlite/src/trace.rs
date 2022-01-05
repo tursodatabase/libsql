@@ -34,16 +34,15 @@ pub unsafe fn config_log(callback: Option<fn(c_int, &str)>) -> Result<()> {
         drop(catch_unwind(|| callback(err, &s)));
     }
 
-    let rc = match callback {
-        Some(f) => ffi::sqlite3_config(
+    let rc = if let Some(f) = callback {
+        ffi::sqlite3_config(
             ffi::SQLITE_CONFIG_LOG,
             log_callback as extern "C" fn(_, _, _),
             f as *mut c_void,
-        ),
-        None => {
-            let nullptr: *mut c_void = ptr::null_mut();
-            ffi::sqlite3_config(ffi::SQLITE_CONFIG_LOG, nullptr, nullptr)
-        }
+        )
+    } else {
+        let nullptr: *mut c_void = ptr::null_mut();
+        ffi::sqlite3_config(ffi::SQLITE_CONFIG_LOG, nullptr, nullptr)
     };
 
     if rc == ffi::SQLITE_OK {
