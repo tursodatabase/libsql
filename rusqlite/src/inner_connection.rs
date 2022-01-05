@@ -13,7 +13,6 @@ use super::{Connection, InterruptHandle, OpenFlags, Result};
 use crate::error::{error_from_handle, error_from_sqlite_code, Error};
 use crate::raw_statement::RawStatement;
 use crate::statement::Statement;
-use crate::unlock_notify;
 use crate::version::version_number;
 
 pub struct InnerConnection {
@@ -223,35 +222,37 @@ impl InnerConnection {
         let mut c_stmt = ptr::null_mut();
         let (c_sql, len, _) = str_for_sqlite(sql.as_bytes())?;
         let mut c_tail = ptr::null();
+        #[cfg(not(feature = "unlock_notify"))]
         let r = unsafe {
-            if cfg!(feature = "unlock_notify") {
-                let mut rc;
-                loop {
-                    rc = ffi::sqlite3_prepare_v2(
-                        self.db(),
-                        c_sql,
-                        len,
-                        &mut c_stmt as *mut *mut ffi::sqlite3_stmt,
-                        &mut c_tail as *mut *const c_char,
-                    );
-                    if !unlock_notify::is_locked(self.db, rc) {
-                        break;
-                    }
-                    rc = unlock_notify::wait_for_unlock_notify(self.db);
-                    if rc != ffi::SQLITE_OK {
-                        break;
-                    }
-                }
-                rc
-            } else {
-                ffi::sqlite3_prepare_v2(
+            ffi::sqlite3_prepare_v2(
+                self.db(),
+                c_sql,
+                len,
+                &mut c_stmt as *mut *mut ffi::sqlite3_stmt,
+                &mut c_tail as *mut *const c_char,
+            )
+        };
+        #[cfg(feature = "unlock_notify")]
+        let r = unsafe {
+            use crate::unlock_notify;
+            let mut rc;
+            loop {
+                rc = ffi::sqlite3_prepare_v2(
                     self.db(),
                     c_sql,
                     len,
                     &mut c_stmt as *mut *mut ffi::sqlite3_stmt,
                     &mut c_tail as *mut *const c_char,
-                )
+                );
+                if !unlock_notify::is_locked(self.db, rc) {
+                    break;
+                }
+                rc = unlock_notify::wait_for_unlock_notify(self.db);
+                if rc != ffi::SQLITE_OK {
+                    break;
+                }
             }
+            rc
         };
         // If there is an error, *ppStmt is set to NULL.
         self.decode_result(r)?;

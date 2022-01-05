@@ -125,6 +125,7 @@ mod statement;
 pub mod trace;
 mod transaction;
 pub mod types;
+#[cfg(feature = "unlock_notify")]
 mod unlock_notify;
 mod version;
 #[cfg(feature = "vtab")]
