@@ -5,7 +5,7 @@
 [![Build Status](https://github.com/rusqlite/rusqlite/workflows/CI/badge.svg)](https://github.com/rusqlite/rusqlite/actions)
 [![dependency status](https://deps.rs/repo/github/rusqlite/rusqlite/status.svg)](https://deps.rs/repo/github/rusqlite/rusqlite)
 [![Latest Version](https://img.shields.io/crates/v/rusqlite.svg)](https://crates.io/crates/rusqlite)
-[![Gitter](https://badges.gitter.im/rusqlite.svg)](https://gitter.im/rusqlite/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+[![Discord Chat](https://img.shields.io/discord/927966344266256434.svg?logo=discord)](https://discord.gg/G6Se6Yzw)
 [![Docs](https://docs.rs/rusqlite/badge.svg)](https://docs.rs/rusqlite)
 [![codecov](https://codecov.io/gh/rusqlite/rusqlite/branch/master/graph/badge.svg)](https://codecov.io/gh/rusqlite/rusqlite)
 
@@ -212,7 +212,7 @@ here: https://github.com/rusqlite/rusqlite/graphs/contributors
 
 ## Community
 
-Currently there's a gitter channel set up for rusqlite [here](https://gitter.im/rusqlite/community).
+Feel free to join the [Rusqlite Discord Server](https://discord.gg/G6Se6Yzw) to discuss or get help with `rusqlite` or `libsqlite3-sys`.
 
 ## License
 
