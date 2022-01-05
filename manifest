@@ -1,5 +1,5 @@
-C Improved\shandling\sof\sOOM\serrors\sin\ssqlite3ExpandReturning().\ndbsqlfuzz\s1040b720f0bbc3bdcfe7336acffbf71517e3ef82.
-D 2022-01-05T11:49:58.515
+C Fix\san\sassert()\sfailure\sthat\scould\sfollow\san\sOOM\swhen\scoding\sa\sRETURNING\strigger.\sdbsqlfuzz\scase\s5d3e2438f15dc32b473d9f29413157857efa1212.
+D 2022-01-05T15:54:02.738
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -616,7 +616,7 @@ F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c dc5367c6d42336b35d55f96d2f04cd6256e92bc6ecf74ed5d855d24e43343aff
 F src/treeview.c 9dfdb7ff7f6645d0a6458dbdf4ffac041c071c4533a6db8bb6e502b979ac67bc
-F src/trigger.c ad65f2dae751e8ee59d61f35e0fc624ec5f264964fbf2d1c23041535b6850083
+F src/trigger.c 40e7c3dcff57a770d5fa38ba21ed4725572fd2e224c58af61eb980598b60f9c8
 F src/update.c d6f5c7b9e072660757ac7d58175aca11c07cb95ebbb297ae7f38853700f52328
 F src/upsert.c 8789047a8f0a601ea42fa0256d1ba3190c13746b6ba940fe2d25643a7e991937
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
@@ -1312,6 +1312,7 @@ F test/releasetest_data.tcl 7cea6c852ae6bb3a9ff1a2b910e4dd13c16a05f74443984dfd52
 F test/resetdb.test 8062cf10a09d8c048f8de7711e94571c38b38168db0e5877ba7561789e5eeb2b
 F test/resolver01.test f4022acafda7f4d40eca94dbf16bc5fc4ac30ceb
 F test/returning1.test ee0b115162b17f59fe486767899596b1e8290bcd845db05d7d1d9e6c2dad1b8b
+F test/returningfault.test ae4c4b5e8745813287a359d9ccdb9d5c883c2e68afb18fb0767937d5de5692a4
 F test/rollback.test 06680159bc6746d0f26276e339e3ae2f951c64812468308838e0a3362d911eaa
 F test/rollback2.test 3f3a4e20401825017df7e7671e9f31b6de5fae5620c2b9b49917f52f8c160a8f
 F test/rollbackfault.test 0e646aeab8840c399cfbfa43daab46fd609cf04a
@@ -1936,8 +1937,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ef4dcd1080241a62a50eff28ef12c49da0116032f10843aaf048ae7ad3cdfd0e
-R 4941045e693d9c4d50be43c3ecb13482
-U drh
-Z 2349087c33b28fcb010dc116adddeda9
+P 33c6b8e94bda12df13b4d2dd782b3120c3628596b86ef531d20b3100bf159b50
+R a91b1eccec18d8badfaa5b59ed7bab51
+U dan
+Z a0129ada76a11e9feee65928113d1cba
 # Remove this line to create a well-formed Fossil manifest.
