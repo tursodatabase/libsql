@@ -629,8 +629,7 @@ impl InnerConnection {
                 let boxed_hook: *mut F = p_arg as *mut F;
                 (*boxed_hook)(auth_ctx)
             })
-            .map(Authorization::into_raw)
-            .unwrap_or_else(|_| ffi::SQLITE_ERROR)
+            .map_or_else(|_| ffi::SQLITE_ERROR, Authorization::into_raw)
         }
 
         let callback_fn = authorizer
@@ -644,8 +643,7 @@ impl InnerConnection {
                 callback_fn,
                 boxed_authorizer
                     .as_ref()
-                    .map(|f| &**f as *const F as *mut _)
-                    .unwrap_or_else(ptr::null_mut),
+                    .map_or_else(ptr::null_mut, |f| &**f as *const F as *mut _),
             )
         } {
             ffi::SQLITE_OK => {
