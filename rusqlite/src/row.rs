@@ -187,7 +187,7 @@ where
 
 /// `FallibleStreamingIterator` differs from the standard library's `Iterator`
 /// in two ways:
-/// * each call to `next` (sqlite3_step) can fail.
+/// * each call to `next` (`sqlite3_step`) can fail.
 /// * returned `Row` is valid until `next` is called again or `Statement` is
 ///   reset or finalized.
 ///

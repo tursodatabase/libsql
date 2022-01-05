@@ -450,7 +450,7 @@ impl Connection {
     ///
     /// # Failure
     ///
-    /// Will return `Err` if vfs` cannot be converted to a C-compatible
+    /// Will return `Err` if `vfs` cannot be converted to a C-compatible
     /// string or if the underlying SQLite open call fails.
     #[inline]
     pub fn open_in_memory_with_flags_and_vfs(flags: OpenFlags, vfs: &str) -> Result<Connection> {

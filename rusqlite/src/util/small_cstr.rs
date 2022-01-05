@@ -1,7 +1,7 @@
 use smallvec::{smallvec, SmallVec};
 use std::ffi::{CStr, CString, NulError};
 
-/// Similar to std::ffi::CString, but avoids heap allocating if the string is
+/// Similar to `std::ffi::CString`, but avoids heap allocating if the string is
 /// small enough. Also guarantees it's input is UTF-8 -- used for cases where we
 /// need to pass a NUL-terminated string to SQLite, and we have a `&str`.
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -31,7 +31,7 @@ impl SmallCString {
     /// Get the bytes not including the NUL terminator. E.g. the bytes which
     /// make up our `str`:
     /// - `SmallCString::new("foo").as_bytes_without_nul() == b"foo"`
-    /// - `SmallCString::new("foo").as_bytes_with_nul() == b"foo\0"
+    /// - `SmallCString::new("foo").as_bytes_with_nul() == b"foo\0"`
     #[inline]
     pub fn as_bytes_without_nul(&self) -> &[u8] {
         self.debug_checks();

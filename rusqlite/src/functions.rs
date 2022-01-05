@@ -287,7 +287,7 @@ where
     fn finalize(&self, _: &mut Context<'_>, _: Option<A>) -> Result<T>;
 }
 
-/// WindowAggregate is the callback interface for
+/// `WindowAggregate` is the callback interface for
 /// user-defined aggregate window function.
 #[cfg(feature = "window")]
 #[cfg_attr(docsrs, doc(cfg(feature = "window")))]

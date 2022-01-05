@@ -193,7 +193,7 @@ impl VTabConnection {
 ///
 /// # Safety
 ///
-/// The first item in a struct implementing VTab must be
+/// The first item in a struct implementing `VTab` must be
 /// `rusqlite::sqlite3_vtab`, and the struct must be `#[repr(C)]`.
 ///
 /// ```rust,ignore
