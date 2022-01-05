@@ -107,7 +107,7 @@ impl Connection {
         let restore = Backup::new_with_names(&src, DatabaseName::Main, self, name)?;
 
         let mut r = More;
-        let mut busy_count = 0i32;
+        let mut busy_count = 0_i32;
         'restore_loop: while r == More || r == Busy {
             r = restore.step(100)?;
             if let Some(ref f) = progress {

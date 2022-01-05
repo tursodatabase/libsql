@@ -79,7 +79,7 @@ union ModuleZeroHack {
 // structs are allowed to be zeroed.
 const ZERO_MODULE: ffi::sqlite3_module = unsafe {
     ModuleZeroHack {
-        bytes: [0u8; std::mem::size_of::<ffi::sqlite3_module>()],
+        bytes: [0_u8; std::mem::size_of::<ffi::sqlite3_module>()],
     }
     .module
 };

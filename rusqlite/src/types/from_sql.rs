@@ -198,7 +198,7 @@ impl FromSql for i128 {
     #[inline]
     fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
         let bytes = <[u8; 16]>::column_result(value)?;
-        Ok(i128::from_be_bytes(bytes) ^ (1i128 << 127))
+        Ok(i128::from_be_bytes(bytes) ^ (1_i128 << 127))
     }
 }
 

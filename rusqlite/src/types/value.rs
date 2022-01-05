@@ -47,7 +47,7 @@ impl From<i128> for Value {
     fn from(i: i128) -> Value {
         // We store these biased (e.g. with the most significant bit flipped)
         // so that comparisons with negative numbers work properly.
-        Value::Blob(i128::to_be_bytes(i ^ (1i128 << 127)).to_vec())
+        Value::Blob(i128::to_be_bytes(i ^ (1_i128 << 127)).to_vec())
     }
 }
 

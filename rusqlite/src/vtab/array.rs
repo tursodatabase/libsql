@@ -106,11 +106,11 @@ unsafe impl<'vtab> VTab<'vtab> for ArrayTab {
             }
         }
         if ptr_idx {
-            info.set_estimated_cost(1f64);
+            info.set_estimated_cost(1_f64);
             info.set_estimated_rows(100);
             info.set_idx_num(1);
         } else {
-            info.set_estimated_cost(2_147_483_647f64);
+            info.set_estimated_cost(2_147_483_647_f64);
             info.set_estimated_rows(2_147_483_647);
             info.set_idx_num(0);
         }
