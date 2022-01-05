@@ -933,7 +933,7 @@ static void codeReturningTrigger(
   }
   sqlite3ExprListDelete(db, sSelect.pEList);
   pNew = sqlite3ExpandReturning(pParse, pReturning->pReturnEL, pTab);
-  if( pNew ){
+  if( !db->mallocFailed ){
     NameContext sNC;
     memset(&sNC, 0, sizeof(sNC));
     if( pReturning->nRetCol==0 ){
@@ -953,16 +953,18 @@ static void codeReturningTrigger(
       pReturning->iRetReg = reg;
       for(i=0; i<nCol; i++){
         Expr *pCol = pNew->a[i].pExpr;
+        assert( pCol!=0 || pParse->db->mallocFailed );
+        if( NEVER(pCol==0) ) continue;
         sqlite3ExprCodeFactorable(pParse, pCol, reg+i);
       }
       sqlite3VdbeAddOp3(v, OP_MakeRecord, reg, i, reg+i);
       sqlite3VdbeAddOp2(v, OP_NewRowid, pReturning->iRetCur, reg+i+1);
       sqlite3VdbeAddOp3(v, OP_Insert, pReturning->iRetCur, reg+i, reg+i+1);
     }
-    sqlite3ExprListDelete(db, pNew);
-    pParse->eTriggerOp = 0;
-    pParse->pTriggerTab = 0;
   }
+  sqlite3ExprListDelete(db, pNew);
+  pParse->eTriggerOp = 0;
+  pParse->pTriggerTab = 0;
 }
 
 
