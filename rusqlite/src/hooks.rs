@@ -476,7 +476,7 @@ impl InnerConnection {
             drop(catch_unwind(|| {
                 let boxed_hook: *mut F = p_arg.cast::<F>();
                 (*boxed_hook)();
-            });
+            }));
         }
 
         let free_rollback_hook = if hook.is_some() {
@@ -528,7 +528,7 @@ impl InnerConnection {
                     expect_utf8(p_table_name, "table name"),
                     row_id,
                 );
-            });
+            }));
         }
 
         let free_update_hook = if hook.is_some() {
