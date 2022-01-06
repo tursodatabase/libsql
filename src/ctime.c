@@ -179,6 +179,11 @@ static const char * const sqlite3azCompileOpt[] = {
 #ifdef SQLITE_DISABLE_INTRINSIC
   "DISABLE_INTRINSIC",
 #endif
+#ifdef SQLITE_DISABLE_JSON
+  "DISABLE_JSON",
+#else
+  "ENABLE_JSON1",  /* Legacy */
+#endif
 #ifdef SQLITE_DISABLE_LFS
   "DISABLE_LFS",
 #endif
@@ -256,9 +261,6 @@ static const char * const sqlite3azCompileOpt[] = {
 #endif
 #ifdef SQLITE_ENABLE_IOTRACE
   "ENABLE_IOTRACE",
-#endif
-#ifdef SQLITE_ENABLE_JSON1
-  "ENABLE_JSON1",
 #endif
 #ifdef SQLITE_ENABLE_LOAD_EXTENSION
   "ENABLE_LOAD_EXTENSION",
