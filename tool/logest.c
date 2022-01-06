@@ -75,6 +75,9 @@ static sqlite3_uint64 logEstToInt(LogEst x){
   x /= 10;
   if( n>=5 ) n -= 2;
   else if( n>=1 ) n -= 1;
+  if( x>60 ){
+    return (((sqlite3_uint64)0xffffffff)<<32)+(sqlite3_uint64)0xffffffff;
+  }
   if( x>=3 ) return (n+8)<<(x-3);
   return (n+8)>>(3-x);
 }
