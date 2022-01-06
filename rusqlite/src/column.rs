@@ -12,12 +12,14 @@ pub struct Column<'stmt> {
 impl Column<'_> {
     /// Returns the name of the column.
     #[inline]
+    #[must_use]
     pub fn name(&self) -> &str {
         self.name
     }
 
     /// Returns the type of the column (`None` for expression).
     #[inline]
+    #[must_use]
     pub fn decl_type(&self) -> Option<&str> {
         self.decl_type
     }

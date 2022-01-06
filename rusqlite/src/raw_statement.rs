@@ -1,5 +1,6 @@
 use super::ffi;
 use super::StatementStatus;
+use crate::util::ParamIndexCache;
 #[cfg(feature = "modern_sqlite")]
 use crate::util::SqliteMallocString;
 use std::ffi::CStr;
@@ -13,7 +14,7 @@ pub struct RawStatement {
     ptr: *mut ffi::sqlite3_stmt,
     tail: usize,
     // Cached indices of named parameters, computed on the fly.
-    cache: crate::util::ParamIndexCache,
+    cache: ParamIndexCache,
     // Cached SQL (trimmed) that we use as the key when we're in the statement
     // cache. This is None for statements which didn't come from the statement
     // cache.
@@ -33,7 +34,7 @@ impl RawStatement {
         RawStatement {
             ptr: stmt,
             tail,
-            cache: Default::default(),
+            cache: ParamIndexCache::default(),
             statement_cache_key: None,
         }
     }

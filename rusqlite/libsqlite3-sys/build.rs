@@ -46,9 +46,9 @@ fn main() {
                 features 'bundled' and 'bundled-windows'. If you want a bundled build of
                 SQLCipher (available for the moment only on Unix), use feature 'bundled-sqlcipher'
                 or 'bundled-sqlcipher-vendored-openssl' to also bundle OpenSSL crypto."
-            )
+            );
         }
-        build_linked::main(&out_dir, &out_path)
+        build_linked::main(&out_dir, &out_path);
     } else if cfg!(feature = "bundled")
         || (win_target() && cfg!(feature = "bundled-windows"))
         || cfg!(feature = "bundled-sqlcipher")
@@ -66,7 +66,7 @@ fn main() {
         )))]
         panic!("The runtime test should not run this branch, which has not compiled any logic.")
     } else {
-        build_linked::main(&out_dir, &out_path)
+        build_linked::main(&out_dir, &out_path);
     }
 }
 
@@ -168,7 +168,7 @@ mod build_bundled {
                             panic!(
                                 "OpenSSL include directory does not exist: {}",
                                 inc_dir.to_string_lossy()
-                            )
+                            );
                         }
 
                         use_openssl = true;
@@ -429,26 +429,23 @@ mod build_linked {
         }
 
         // See if pkg-config can do everything for us.
-        match pkg_config::Config::new()
+        if let Ok(mut lib) = pkg_config::Config::new()
             .print_system_libs(false)
             .probe(link_lib)
         {
-            Ok(mut lib) => {
-                if let Some(mut header) = lib.include_paths.pop() {
-                    header.push("sqlite3.h");
-                    HeaderLocation::FromPath(header.to_string_lossy().into())
-                } else {
-                    HeaderLocation::Wrapper
-                }
-            }
-            Err(_) => {
-                // No env var set and pkg-config couldn't help; just output the link-lib
-                // request and hope that the library exists on the system paths. We used to
-                // output /usr/lib explicitly, but that can introduce other linking problems;
-                // see https://github.com/rusqlite/rusqlite/issues/207.
-                println!("cargo:rustc-link-lib={}={}", find_link_mode(), link_lib);
+            if let Some(mut header) = lib.include_paths.pop() {
+                header.push("sqlite3.h");
+                HeaderLocation::FromPath(header.to_string_lossy().into())
+            } else {
                 HeaderLocation::Wrapper
             }
+        } else {
+            // No env var set and pkg-config couldn't help; just output the link-lib
+            // request and hope that the library exists on the system paths. We used to
+            // output /usr/lib explicitly, but that can introduce other linking problems;
+            // see https://github.com/rusqlite/rusqlite/issues/207.
+            println!("cargo:rustc-link-lib={}={}", find_link_mode(), link_lib);
+            HeaderLocation::Wrapper
         }
     }
 

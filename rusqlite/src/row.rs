@@ -80,6 +80,7 @@ impl<'stmt> Rows<'stmt> {
     }
 
     /// Give access to the underlying statement
+    #[must_use]
     pub fn as_ref(&self) -> Option<&Statement<'stmt>> {
         self.stmt
     }
@@ -187,7 +188,7 @@ where
 
 /// `FallibleStreamingIterator` differs from the standard library's `Iterator`
 /// in two ways:
-/// * each call to `next` (sqlite3_step) can fail.
+/// * each call to `next` (`sqlite3_step`) can fail.
 /// * returned `Row` is valid until `next` is called again or `Statement` is
 ///   reset or finalized.
 ///
@@ -209,8 +210,8 @@ impl<'stmt> FallibleStreamingIterator for Rows<'stmt> {
 
     #[inline]
     fn advance(&mut self) -> Result<()> {
-        match self.stmt {
-            Some(stmt) => match stmt.step() {
+        if let Some(stmt) = self.stmt {
+            match stmt.step() {
                 Ok(true) => {
                     self.row = Some(Row { stmt });
                     Ok(())
@@ -225,11 +226,10 @@ impl<'stmt> FallibleStreamingIterator for Rows<'stmt> {
                     self.row = None;
                     Err(e)
                 }
-            },
-            None => {
-                self.row = None;
-                Ok(())
             }
+        } else {
+            self.row = None;
+            Ok(())
         }
     }
 

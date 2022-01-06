@@ -169,6 +169,7 @@ impl Transaction<'_> {
     /// Get the current setting for what happens to the transaction when it is
     /// dropped.
     #[inline]
+    #[must_use]
     pub fn drop_behavior(&self) -> DropBehavior {
         self.drop_behavior
     }
@@ -177,7 +178,7 @@ impl Transaction<'_> {
     /// dropped.
     #[inline]
     pub fn set_drop_behavior(&mut self, drop_behavior: DropBehavior) {
-        self.drop_behavior = drop_behavior
+        self.drop_behavior = drop_behavior;
     }
 
     /// A convenience method which consumes and commits a transaction.
@@ -296,6 +297,7 @@ impl Savepoint<'_> {
     /// Get the current setting for what happens to the savepoint when it is
     /// dropped.
     #[inline]
+    #[must_use]
     pub fn drop_behavior(&self) -> DropBehavior {
         self.drop_behavior
     }
@@ -304,7 +306,7 @@ impl Savepoint<'_> {
     /// dropped.
     #[inline]
     pub fn set_drop_behavior(&mut self, drop_behavior: DropBehavior) {
-        self.drop_behavior = drop_behavior
+        self.drop_behavior = drop_behavior;
     }
 
     /// A convenience method which consumes and commits a savepoint.

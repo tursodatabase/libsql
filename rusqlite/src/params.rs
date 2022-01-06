@@ -99,7 +99,7 @@ use sealed::Sealed;
 ///
 /// - As a slice of `&[(&str, &dyn ToSql)]`. This is what essentially all of
 ///   these boil down to in the end, conceptually at least. In theory you can
-///   pass this as `stmt.
+///   pass this as `stmt`.
 ///
 /// - As array references, similar to the positional params. This looks like
 ///   `thing.query(&[(":foo", &1i32), (":bar", &2i32)])` or

@@ -58,7 +58,7 @@ pub(super) unsafe fn set_result(ctx: *mut sqlite3_context, result: &ToSqlOutput<
             if length > c_int::max_value() as usize {
                 ffi::sqlite3_result_error_toobig(ctx);
             } else if length == 0 {
-                ffi::sqlite3_result_zeroblob(ctx, 0)
+                ffi::sqlite3_result_zeroblob(ctx, 0);
             } else {
                 ffi::sqlite3_result_blob(
                     ctx,

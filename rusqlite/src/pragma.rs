@@ -143,7 +143,7 @@ impl Sql {
             if ch == quote {
                 self.buf.push(ch);
             }
-            self.buf.push(ch)
+            self.buf.push(ch);
         }
         self.buf.push(quote);
     }

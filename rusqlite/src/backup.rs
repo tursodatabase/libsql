@@ -107,7 +107,7 @@ impl Connection {
         let restore = Backup::new_with_names(&src, DatabaseName::Main, self, name)?;
 
         let mut r = More;
-        let mut busy_count = 0i32;
+        let mut busy_count = 0_i32;
         'restore_loop: while r == More || r == Busy {
             r = restore.step(100)?;
             if let Some(ref f) = progress {
@@ -231,6 +231,7 @@ impl Backup<'_, '_> {
     /// Gets the progress of the backup as of the last call to
     /// [`step`](Backup::step).
     #[inline]
+    #[must_use]
     pub fn progress(&self) -> Progress {
         unsafe {
             Progress {
@@ -296,7 +297,7 @@ impl Backup<'_, '_> {
         loop {
             let r = self.step(pages_per_step)?;
             if let Some(progress) = progress {
-                progress(self.progress())
+                progress(self.progress());
             }
             match r {
                 More | Busy | Locked => thread::sleep(pause_between_pages),

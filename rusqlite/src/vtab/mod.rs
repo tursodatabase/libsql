@@ -79,7 +79,7 @@ union ModuleZeroHack {
 // structs are allowed to be zeroed.
 const ZERO_MODULE: ffi::sqlite3_module = unsafe {
     ModuleZeroHack {
-        bytes: [0u8; std::mem::size_of::<ffi::sqlite3_module>()],
+        bytes: [0_u8; std::mem::size_of::<ffi::sqlite3_module>()],
     }
     .module
 };
@@ -87,6 +87,7 @@ const ZERO_MODULE: ffi::sqlite3_module = unsafe {
 /// Create a read-only virtual table implementation.
 ///
 /// Step 2 of [Creating New Virtual Table Implementations](https://sqlite.org/vtab.html#creating_new_virtual_table_implementations).
+#[must_use]
 pub fn read_only_module<'vtab, T: CreateVTab<'vtab>>() -> &'static Module<'vtab, T> {
     // The xConnect and xCreate methods do the same thing, but they must be
     // different so that the virtual table is not an eponymous virtual table.
@@ -126,6 +127,7 @@ pub fn read_only_module<'vtab, T: CreateVTab<'vtab>>() -> &'static Module<'vtab,
 /// Create an eponymous only virtual table implementation.
 ///
 /// Step 2 of [Creating New Virtual Table Implementations](https://sqlite.org/vtab.html#creating_new_virtual_table_implementations).
+#[must_use]
 pub fn eponymous_only_module<'vtab, T: VTab<'vtab>>() -> &'static Module<'vtab, T> {
     // A virtual table is eponymous if its xCreate method is the exact same function
     // as the xConnect method For eponymous-only virtual tables, the xCreate
@@ -193,7 +195,7 @@ impl VTabConnection {
 ///
 /// # Safety
 ///
-/// The first item in a struct implementing VTab must be
+/// The first item in a struct implementing `VTab` must be
 /// `rusqlite::sqlite3_vtab`, and the struct must be `#[repr(C)]`.
 ///
 /// ```rust,ignore
@@ -326,6 +328,7 @@ impl IndexInfo {
 
     /// Record WHERE clause constraints.
     #[inline]
+    #[must_use]
     pub fn constraints(&self) -> IndexConstraintIter<'_> {
         let constraints =
             unsafe { slice::from_raw_parts((*self.0).aConstraint, (*self.0).nConstraint as usize) };
@@ -336,6 +339,7 @@ impl IndexInfo {
 
     /// Information about the ORDER BY clause.
     #[inline]
+    #[must_use]
     pub fn order_bys(&self) -> OrderByIter<'_> {
         let order_bys =
             unsafe { slice::from_raw_parts((*self.0).aOrderBy, (*self.0).nOrderBy as usize) };
@@ -346,6 +350,7 @@ impl IndexInfo {
 
     /// Number of terms in the ORDER BY clause
     #[inline]
+    #[must_use]
     pub fn num_of_order_by(&self) -> usize {
         unsafe { (*self.0).nOrderBy as usize }
     }
@@ -448,18 +453,21 @@ pub struct IndexConstraint<'a>(&'a ffi::sqlite3_index_constraint);
 impl IndexConstraint<'_> {
     /// Column constrained.  -1 for ROWID
     #[inline]
+    #[must_use]
     pub fn column(&self) -> c_int {
         self.0.iColumn
     }
 
     /// Constraint operator
     #[inline]
+    #[must_use]
     pub fn operator(&self) -> IndexConstraintOp {
         IndexConstraintOp::from(self.0.op)
     }
 
     /// True if this constraint is usable
     #[inline]
+    #[must_use]
     pub fn is_usable(&self) -> bool {
         self.0.usable != 0
     }
@@ -509,12 +517,14 @@ pub struct OrderBy<'a>(&'a ffi::sqlite3_index_info_sqlite3_index_orderby);
 impl OrderBy<'_> {
     /// Column number
     #[inline]
+    #[must_use]
     pub fn column(&self) -> c_int {
         self.0.iColumn
     }
 
     /// True for DESC.  False for ASC.
     #[inline]
+    #[must_use]
     pub fn is_order_by_desc(&self) -> bool {
         self.0.desc != 0
     }
@@ -581,12 +591,14 @@ pub struct Values<'a> {
 impl Values<'_> {
     /// Returns the number of values.
     #[inline]
+    #[must_use]
     pub fn len(&self) -> usize {
         self.args.len()
     }
 
     /// Returns `true` if there is no value.
     #[inline]
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.args.is_empty()
     }
@@ -629,6 +641,7 @@ impl Values<'_> {
 
     /// Turns `Values` into an iterator.
     #[inline]
+    #[must_use]
     pub fn iter(&self) -> ValueIter<'_> {
         ValueIter {
             iter: self.args.iter(),
@@ -720,6 +733,7 @@ impl InnerConnection {
 
 /// Escape double-quote (`"`) character occurrences by
 /// doubling them (`""`).
+#[must_use]
 pub fn escape_double_quote(identifier: &str) -> Cow<'_, str> {
     if identifier.contains('"') {
         // escape quote by doubling them
@@ -729,6 +743,7 @@ pub fn escape_double_quote(identifier: &str) -> Cow<'_, str> {
     }
 }
 /// Dequote string
+#[must_use]
 pub fn dequote(s: &str) -> &str {
     if s.len() < 2 {
         return s;
@@ -746,6 +761,7 @@ pub fn dequote(s: &str) -> &str {
 /// 1 yes true on
 /// 0 no false off
 /// ```
+#[must_use]
 pub fn parse_boolean(s: &str) -> Option<bool> {
     if s.eq_ignore_ascii_case("yes")
         || s.eq_ignore_ascii_case("on")
@@ -919,7 +935,7 @@ where
     let vt = vtab.cast::<T>();
     match (*vt).destroy() {
         Ok(_) => {
-            let _: Box<T> = Box::from_raw(vt);
+            drop(Box::from_raw(vt));
             ffi::SQLITE_OK
         }
         Err(Error::SqliteFailure(err, s)) => {

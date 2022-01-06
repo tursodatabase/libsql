@@ -367,8 +367,8 @@ impl Connection {
     ///
     /// The callback parameters are:
     ///
-    /// - the type of database update (SQLITE_INSERT, SQLITE_UPDATE or
-    /// SQLITE_DELETE),
+    /// - the type of database update (`SQLITE_INSERT`, `SQLITE_UPDATE` or
+    /// `SQLITE_DELETE`),
     /// - the name of the database ("main", "temp", ...),
     /// - the name of the table that is updated,
     /// - the ROWID of the row that is updated.
@@ -402,7 +402,7 @@ impl Connection {
     where
         F: for<'r> FnMut(AuthContext<'r>) -> Authorization + Send + RefUnwindSafe + 'static,
     {
-        self.db.borrow_mut().authorizer(hook)
+        self.db.borrow_mut().authorizer(hook);
     }
 }
 
@@ -577,23 +577,20 @@ impl InnerConnection {
             }
         }
 
-        match handler {
-            Some(handler) => {
-                let boxed_handler = Box::new(handler);
-                unsafe {
-                    ffi::sqlite3_progress_handler(
-                        self.db(),
-                        num_ops,
-                        Some(call_boxed_closure::<F>),
-                        &*boxed_handler as *const F as *mut _,
-                    )
-                }
-                self.progress_handler = Some(boxed_handler);
+        if let Some(handler) = handler {
+            let boxed_handler = Box::new(handler);
+            unsafe {
+                ffi::sqlite3_progress_handler(
+                    self.db(),
+                    num_ops,
+                    Some(call_boxed_closure::<F>),
+                    &*boxed_handler as *const F as *mut _,
+                );
             }
-            _ => {
-                unsafe { ffi::sqlite3_progress_handler(self.db(), num_ops, None, ptr::null_mut()) }
-                self.progress_handler = None;
-            }
+            self.progress_handler = Some(boxed_handler);
+        } else {
+            unsafe { ffi::sqlite3_progress_handler(self.db(), num_ops, None, ptr::null_mut()) }
+            self.progress_handler = None;
         };
     }
 
@@ -629,8 +626,7 @@ impl InnerConnection {
                 let boxed_hook: *mut F = p_arg.cast::<F>();
                 (*boxed_hook)(auth_ctx)
             })
-            .map(Authorization::into_raw)
-            .unwrap_or_else(|_| ffi::SQLITE_ERROR)
+            .map_or_else(|_| ffi::SQLITE_ERROR, Authorization::into_raw)
         }
 
         let callback_fn = authorizer
@@ -644,8 +640,7 @@ impl InnerConnection {
                 callback_fn,
                 boxed_authorizer
                     .as_ref()
-                    .map(|f| &**f as *const F as *mut _)
-                    .unwrap_or_else(ptr::null_mut),
+                    .map_or_else(ptr::null_mut, |f| &**f as *const F as *mut _),
             )
         } {
             ffi::SQLITE_OK => {
