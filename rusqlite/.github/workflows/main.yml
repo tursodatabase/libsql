@@ -50,12 +50,12 @@ jobs:
       - run: cargo test --features bundled --workspace --all-targets --verbose
       - run: cargo test --features bundled --workspace --doc --verbose
 
-      - name: Test Features
-        # TODO: clang is installed on these -- but `bindgen` can't find it...
-        if: matrix.os != 'windows-latest'
-        run: |
-          cargo test --features 'bundled-full session buildtime_bindgen' --all-targets --workspace --verbose
-          cargo test --features 'bundled-full session buildtime_bindgen' --doc --workspace --verbose
+      - name: Add llvm path on Windows
+        if: matrix.os == 'windows-latest'
+        run: echo "C:\msys64\mingw64\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - run: cargo test --features 'bundled-full session buildtime_bindgen' --all-targets --workspace --verbose
+      - run: cargo test --features 'bundled-full session buildtime_bindgen' --doc --workspace --verbose
 
       # TODO: move into own action for better caching
       - name: Static build
@@ -97,11 +97,12 @@ jobs:
       - run: cargo test --features 'modern-full bundled-sqlcipher-vendored-openssl' --all-targets --workspace --verbose
       - run: cargo test --features 'modern-full bundled-sqlcipher-vendored-openssl' --doc --workspace --verbose
 
-      - name: Test Features
-        if: matrix.os != 'windows-latest'
-        run: |
-          cargo test --features 'bundled-full session buildtime_bindgen' --all-targets --workspace --verbose
-          cargo test --features 'bundled-full session buildtime_bindgen' --doc --workspace --verbose
+      - name: Add llvm path on Windows
+        if: matrix.os == 'windows-latest'
+        run: echo "C:\msys64\mingw64\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - run: cargo test --features 'bundled-full session buildtime_bindgen' --all-targets --workspace --verbose
+      - run: cargo test --features 'bundled-full session buildtime_bindgen' --doc --workspace --verbose
 
   winsqlite3:
     name: Test with winsqlite3
