@@ -1,11 +1,11 @@
-C Remove\stwo\sNEVER()\smacros\sthat\scan\ssometimes\sbe\strue\sif\sthe\sdatabase\sis\ncorrupt.\s\sdbsqlfuzz\s0414d2c18290fc80fd5fb540def7d3e46c1ae9c6.
-D 2022-01-05T21:01:26.927
+C Add\sthe\s'-guard:cf'\scompiler\soption\sfor\sWindows\s10,\sper\s[forum:/forumpost/8d3b4ad694|forum\spost\s8d3b4ad694].
+D 2022-01-06T17:13:56.835
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
 F Makefile.in 0e91c42a1dd13a569b1fa4f4dfb7d3632f3164a1c05c71341533d67db5b641dd
 F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
-F Makefile.msc 88f05063ee36a5fb77d69b877ef824d0743b5325c95bfbf74d6ff17bd1c9fb1f
+F Makefile.msc 517f22463b99b56f6c4c81afcf09c7bf3a0289d08f2dadcc0d5322819dbd6017
 F README.md 2dd87a5c1d108b224921f3dd47dea567973f706e1f6959386282a626f459a70c
 F VERSION 392c2f83569705069415a5d98b1c138ec8fe8a56a663a0d94cea019e806537b2
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -15,7 +15,7 @@ F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am a8d1d24affe52ebf8d7ddcf91aa973fa0316618ab95bb68c87cabf8faf527dc8
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
-F autoconf/Makefile.msc d146a08ebbdf7f881ba600a49cd8dce40c4c807addcdb4b9b6a507e4b40ce837
+F autoconf/Makefile.msc 262dad10223b39a6853c4faefadb0f71931ca55c742fa285f8ee8d56b7543ddc
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
 F autoconf/README.txt 4f04b0819303aabaa35fff5f7b257fb0c1ef95f1
 F autoconf/configure.ac a8ba2a9e61216f5093d44f3b7d2cb8fe1890d6b7dc330a02f802d8efaa1fdc79
@@ -1937,8 +1937,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7ae596dd4a73a09585c5dc9f4faf75d126d0733fc2fb32c1de64126a1088d967
-R 7175e1e9a16516f1ab12321ca929e683
-U drh
-Z 45714cdd1039a8cc38c8df2ff917256e
+P b6a82f3c3b9d89fdf628c7f117b6a4a64383a36c84fe84d47c80e845c9bd8a4f
+R 77a4280a2931dd249bcf6514bda5d68b
+U mistachkin
+Z 912599d00221acb9d08acd46c2ac9173
 # Remove this line to create a well-formed Fossil manifest.
