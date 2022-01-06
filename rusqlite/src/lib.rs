@@ -258,10 +258,10 @@ fn str_to_cstring(s: &str) -> Result<SmallCString> {
 fn str_for_sqlite(s: &[u8]) -> Result<(*const c_char, c_int, ffi::sqlite3_destructor_type)> {
     let len = len_as_c_int(s.len())?;
     let (ptr, dtor_info) = if len != 0 {
-        (s.as_ptr() as *const c_char, ffi::SQLITE_TRANSIENT())
+        (s.as_ptr().cast::<c_char>(), ffi::SQLITE_TRANSIENT())
     } else {
         // Return a pointer guaranteed to live forever
-        ("".as_ptr() as *const c_char, ffi::SQLITE_STATIC())
+        ("".as_ptr().cast::<c_char>(), ffi::SQLITE_STATIC())
     };
     Ok((ptr, len, dtor_info))
 }

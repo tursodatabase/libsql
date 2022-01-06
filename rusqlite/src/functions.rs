@@ -98,7 +98,7 @@ unsafe fn report_error(ctx: *mut sqlite3_context, err: &Error) {
 }
 
 unsafe extern "C" fn free_boxed_value<T>(p: *mut c_void) {
-    drop(Box::from_raw(p as *mut T));
+    drop(Box::from_raw(p.cast::<T>()));
 }
 
 /// Context is a wrapper for the SQLite function
@@ -198,7 +198,7 @@ impl Context<'_> {
             ffi::sqlite3_set_auxdata(
                 self.ctx,
                 arg,
-                raw as *mut _,
+                raw.cast(),
                 Some(free_boxed_value::<AuxInner>),
             );
         };
@@ -477,7 +477,7 @@ impl InnerConnection {
             T: ToSql,
         {
             let r = catch_unwind(|| {
-                let boxed_f: *mut F = ffi::sqlite3_user_data(ctx) as *mut F;
+                let boxed_f: *mut F = ffi::sqlite3_user_data(ctx).cast::<F>();
                 assert!(!boxed_f.is_null(), "Internal error - null function pointer");
                 let ctx = Context {
                     ctx,
@@ -509,7 +509,7 @@ impl InnerConnection {
                 c_name.as_ptr(),
                 n_arg,
                 flags.bits(),
-                boxed_f as *mut c_void,
+                boxed_f.cast::<c_void>(),
                 Some(call_boxed_closure::<F, T>),
                 None,
                 None,
@@ -539,7 +539,7 @@ impl InnerConnection {
                 c_name.as_ptr(),
                 n_arg,
                 flags.bits(),
-                boxed_aggr as *mut c_void,
+                boxed_aggr.cast::<c_void>(),
                 None,
                 Some(call_boxed_step::<A, D, T>),
                 Some(call_boxed_final::<A, D, T>),
@@ -570,7 +570,7 @@ impl InnerConnection {
                 c_name.as_ptr(),
                 n_arg,
                 flags.bits(),
-                boxed_aggr as *mut c_void,
+                boxed_aggr.cast::<c_void>(),
                 Some(call_boxed_step::<A, W, T>),
                 Some(call_boxed_final::<A, W, T>),
                 Some(call_boxed_value::<A, W, T>),
@@ -625,7 +625,7 @@ unsafe extern "C" fn call_boxed_step<A, D, T>(
     };
 
     let r = catch_unwind(|| {
-        let boxed_aggr: *mut D = ffi::sqlite3_user_data(ctx) as *mut D;
+        let boxed_aggr: *mut D = ffi::sqlite3_user_data(ctx).cast::<D>();
         assert!(
             !boxed_aggr.is_null(),
             "Internal error - null aggregate pointer"
@@ -672,7 +672,7 @@ unsafe extern "C" fn call_boxed_inverse<A, W, T>(
     };
 
     let r = catch_unwind(|| {
-        let boxed_aggr: *mut W = ffi::sqlite3_user_data(ctx) as *mut W;
+        let boxed_aggr: *mut W = ffi::sqlite3_user_data(ctx).cast::<W>();
         assert!(
             !boxed_aggr.is_null(),
             "Internal error - null aggregate pointer"
@@ -717,7 +717,7 @@ where
     };
 
     let r = catch_unwind(|| {
-        let boxed_aggr: *mut D = ffi::sqlite3_user_data(ctx) as *mut D;
+        let boxed_aggr: *mut D = ffi::sqlite3_user_data(ctx).cast::<D>();
         assert!(
             !boxed_aggr.is_null(),
             "Internal error - null aggregate pointer"
@@ -762,7 +762,7 @@ where
     };
 
     let r = catch_unwind(|| {
-        let boxed_aggr: *mut W = ffi::sqlite3_user_data(ctx) as *mut W;
+        let boxed_aggr: *mut W = ffi::sqlite3_user_data(ctx).cast::<W>();
         assert!(
             !boxed_aggr.is_null(),
             "Internal error - null aggregate pointer"

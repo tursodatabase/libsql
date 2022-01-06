@@ -47,7 +47,7 @@ impl<'conn> Blob<'conn> {
         self.conn.decode_result(unsafe {
             ffi::sqlite3_blob_write(
                 self.blob,
-                buf.as_ptr() as *const _,
+                buf.as_ptr().cast(),
                 buf.len() as i32,
                 write_start as i32,
             )
@@ -84,7 +84,7 @@ impl<'conn> Blob<'conn> {
         // Safety: this is safe because `raw_read_at` never stores uninitialized
         // data into `as_uninit`.
         let as_uninit: &mut [MaybeUninit<u8>] =
-            unsafe { from_raw_parts_mut(buf.as_mut_ptr() as *mut _, buf.len()) };
+            unsafe { from_raw_parts_mut(buf.as_mut_ptr().cast(), buf.len()) };
         self.raw_read_at(as_uninit, read_start).map(|s| s.len())
     }
 
@@ -119,7 +119,7 @@ impl<'conn> Blob<'conn> {
             // We could return `Ok(&mut [])`, but it seems confusing that the
             // pointers don't match, so fabricate a empty slice of u8 with the
             // same base pointer as `buf`.
-            let empty = unsafe { from_raw_parts_mut(buf.as_mut_ptr() as *mut u8, 0) };
+            let empty = unsafe { from_raw_parts_mut(buf.as_mut_ptr().cast::<u8>(), 0) };
             return Ok(empty);
         }
 
@@ -152,12 +152,12 @@ impl<'conn> Blob<'conn> {
         unsafe {
             self.conn.decode_result(ffi::sqlite3_blob_read(
                 self.blob,
-                buf.as_mut_ptr() as *mut _,
+                buf.as_mut_ptr().cast(),
                 read_len as i32,
                 read_start as i32,
             ))?;
 
-            Ok(from_raw_parts_mut(buf.as_mut_ptr() as *mut u8, read_len))
+            Ok(from_raw_parts_mut(buf.as_mut_ptr().cast::<u8>(), read_len))
         }
     }
 

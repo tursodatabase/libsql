@@ -229,7 +229,7 @@ impl<'a> ValueRef<'a> {
                     !text.is_null(),
                     "unexpected SQLITE_TEXT value type with NULL data"
                 );
-                let s = from_raw_parts(text as *const u8, len as usize);
+                let s = from_raw_parts(text.cast::<u8>(), len as usize);
                 ValueRef::Text(s)
             }
             ffi::SQLITE_BLOB => {
@@ -247,7 +247,7 @@ impl<'a> ValueRef<'a> {
                         !blob.is_null(),
                         "unexpected SQLITE_BLOB value type with NULL data"
                     );
-                    ValueRef::Blob(from_raw_parts(blob as *const u8, len as usize))
+                    ValueRef::Blob(from_raw_parts(blob.cast::<u8>(), len as usize))
                 } else {
                     // The return value from sqlite3_value_blob() for a zero-length BLOB
                     // is a NULL pointer.

@@ -208,7 +208,7 @@ impl InnerConnection {
             Ok(())
         } else {
             let message = super::errmsg_to_string(errmsg);
-            ffi::sqlite3_free(errmsg as *mut ::std::os::raw::c_void);
+            ffi::sqlite3_free(errmsg.cast::<::std::os::raw::c_void>());
             Err(error_from_sqlite_code(r, Some(message)))
         }
     }

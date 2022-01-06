@@ -62,7 +62,7 @@ pub(super) unsafe fn set_result(ctx: *mut sqlite3_context, result: &ToSqlOutput<
             } else {
                 ffi::sqlite3_result_blob(
                     ctx,
-                    b.as_ptr() as *const c_void,
+                    b.as_ptr().cast::<c_void>(),
                     length as c_int,
                     ffi::SQLITE_TRANSIENT(),
                 );

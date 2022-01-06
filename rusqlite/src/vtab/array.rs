@@ -41,7 +41,7 @@ use crate::{Connection, Result};
 
 // http://sqlite.org/bindptr.html
 
-pub(crate) const ARRAY_TYPE: *const c_char = b"rarray\0" as *const u8 as *const c_char;
+pub(crate) const ARRAY_TYPE: *const c_char = (b"rarray\0" as *const u8).cast::<c_char>();
 
 pub(crate) unsafe extern "C" fn free_array(p: *mut c_void) {
     drop(Rc::from_raw(p as *const Vec<Value>));
