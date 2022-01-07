@@ -290,6 +290,9 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
         for(i=2; (c=z[i])!=0 && c!='\n'; i++){}
         *tokenType = TK_SPACE;   /* IMP: R-22934-25134 */
         return i;
+      }else if( z[1]=='>' ){
+        *tokenType = TK_PTR;
+        return 2 + (z[2]=='>');
       }
       *tokenType = TK_MINUS;
       return 1;

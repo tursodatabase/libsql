@@ -1507,4 +1507,19 @@ do_execsql_test func-35.200 {
   PRAGMA integrity_check;
 } {ok}
 
+# 2021-01-07:  The -> and ->> operators.
+#
+proc ptr1 {a b} { return "$a->$b" }
+db func -> ptr1
+proc ptr2 {a b} { return "$a->>$b" }
+db func ->> ptr2
+do_execsql_test func-36.100 {
+  SELECT 123 -> 456
+} {123->456}
+do_execsql_test func-36.110 {
+  SELECT 123 ->> 456
+} {123->>456}
+
+
+
 finish_test

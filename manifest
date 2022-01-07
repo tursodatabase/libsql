@@ -1,5 +1,5 @@
-C Add\sthe\s'-guard:cf'\scompiler\soption\sfor\sWindows\s10,\sper\s[forum:/forumpost/8d3b4ad694|forum\spost\s8d3b4ad694].
-D 2022-01-06T17:13:56.835
+C Add\snew\sbinary\soperators\s"->"\sand\s"->>"\sto\sthe\sparser\sthat\sevaluate\sto\n2-argument\sSQL\sfunctions\sby\sthe\ssame\sname.\s\sAdd\snew\s"->"\sand\s"->>"\sfunctions\nto\sthe\sJSON\sextension\sthat\sare\saliases\sfor\sjson_extract().
+D 2022-01-07T14:58:47.701
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -306,7 +306,7 @@ F ext/misc/fileio.c 4e7f7cd30de8df4820c552f14af3c9ca451c5ffe1f2e7bef34d598a12ebf
 F ext/misc/fossildelta.c 1240b2d3e52eab1d50c160c7fe1902a9bd210e052dc209200a750bbf885402d5
 F ext/misc/fuzzer.c eae560134f66333e9e1ca4c8ffea75df42056e2ce8456734565dbe1c2a92bf3d
 F ext/misc/ieee754.c 91a5594071143a4ab79c638fe9f059af1db09932faf2e704c3e29216a7d4f511
-F ext/misc/json1.c a4ea54d9b228901695a7f51df338dddb29a2a574b870d0c0cb58539cc90e9a31
+F ext/misc/json1.c ee5d8250f78d598e0c8b81fc37e8fa1b52098e5f7bb71f0db3cd39c1acc4ca78
 F ext/misc/memstat.c 3017a0832c645c0f8c773435620d663855f04690172316bd127270d1a7523d4d
 F ext/misc/memtrace.c 7c0d115d2ef716ad0ba632c91e05bd119cb16c1aedf3bec9f06196ead2d5537b
 F ext/misc/memvfs.c 7dffa8cc89c7f2d73da4bd4ccea1bcbd2bd283e3bb4cea398df7c372a197291b
@@ -539,7 +539,7 @@ F src/os_win.c 77d39873836f1831a9b0b91894fec45ab0e9ca8e067dc8c549e1d1eca1566fe9
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 55a9a8c745c47a49e6541b1d634f6152e3f72f76c6dbb04fe24413986a928091
 F src/pager.h 4bf9b3213a4b2bebbced5eaa8b219cf25d4a82f385d093cd64b7e93e5285f66f
-F src/parse.y 761b5d30a7ea9bd2db3b3571438cfcceb5f7dbf4fcad6881c8de65bdda07135a
+F src/parse.y 04f61db1cdd7036c6d74baad1c342d3e3110cb0765c48fcfd3bdf4e974a1e5bb
 F src/pcache.c 084e638432c610f95aea72b8509f0845d2791293f39d1b82f0c0a7e089c3bb6b
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c 54881292a9a5db202b2c0ac541c5e3ef9a5e8c4f1c1383adb2601d5499a60e65
@@ -614,7 +614,7 @@ F src/test_windirent.h 90dfbe95442c9762357fe128dc7ae3dc199d006de93eb33ba3972e0a9
 F src/test_window.c cdae419fdcea5bad6dcd9368c685abdad6deb59e9fc8b84b153de513d394ba3f
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
-F src/tokenize.c dc5367c6d42336b35d55f96d2f04cd6256e92bc6ecf74ed5d855d24e43343aff
+F src/tokenize.c b74d878aa7c82ec8460779468061a96185e22257f68ab785b69abce354b70446
 F src/treeview.c 9dfdb7ff7f6645d0a6458dbdf4ffac041c071c4533a6db8bb6e502b979ac67bc
 F src/trigger.c 40e7c3dcff57a770d5fa38ba21ed4725572fd2e224c58af61eb980598b60f9c8
 F src/update.c d6f5c7b9e072660757ac7d58175aca11c07cb95ebbb297ae7f38853700f52328
@@ -1045,7 +1045,7 @@ F test/fts4umlaut.test fcaca4471de7e78c9d1f7e8976e3e8704d7d8ad979d57a739d00f3f75
 F test/fts4unicode.test 82a9c16b68ba2f358a856226bb2ee02f81583797bc4744061c54401bf1a0f4c9
 F test/fts4upfrom.test f25835162c989dffd5e2ef91ec24c4848cc9973093e2d492d1c7b32afac1b49d
 F test/full.test 6b3c8fb43c6beab6b95438c1675374b95fab245d
-F test/func.test 3a65ddb6c1998f71aa86492501a6be87904197e62bfb5b70b2493552b558abd1
+F test/func.test 0a305e88a4fbdce6be8c6f4863d6dab9ecb2975b95e94734621e2c900779b712
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
 F test/func3.test 600a632c305a88f3946d38f9a51efe145c989b2e13bd2b2a488db47fe76bab6a
 F test/func4.test 2285fb5792d593fef442358763f0fd9de806eda47dbc7a5934df57ffdc484c31
@@ -1937,8 +1937,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b6a82f3c3b9d89fdf628c7f117b6a4a64383a36c84fe84d47c80e845c9bd8a4f
-R 77a4280a2931dd249bcf6514bda5d68b
-U mistachkin
-Z 912599d00221acb9d08acd46c2ac9173
+P 2d6a16caa7d28ad5c766036b2eb6c2020683fcc9389b3c7df2013739929dd36f
+R a976b35db7b5d2f5710ec976fab3e1b7
+T *branch * json-enhancements
+T *sym-json-enhancements *
+T -sym-trunk *
+U drh
+Z e4a5223ea04d8f66a6958c2ae1a2641b
 # Remove this line to create a well-formed Fossil manifest.
