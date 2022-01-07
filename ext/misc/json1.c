@@ -2691,7 +2691,7 @@ int sqlite3Json1Init(sqlite3 *db){
     { "json_array_length",    2, 0,   jsonArrayLengthFunc   },
     { "json_extract",        -1, 0,   jsonExtractFunc       },
     { "json_nextract",       -1, 1,   jsonExtractFunc       },
-    { "->",                   2, 3,   jsonExtractFunc       },
+    { "->",                   2, 2,   jsonExtractFunc       },
     { "->>",                  2, 3,   jsonExtractFunc       },
     { "json_insert",         -1, 0,   jsonSetFunc           },
     { "json_ntype",           1, 1,   jsonTypeFunc          },
