@@ -72,6 +72,9 @@ do_execsql_test json102-250 {
   SELECT json_extract('{"a":2,"c":[4,5,{"f":7}]}', '$');
 } {{{"a":2,"c":[4,5,{"f":7}]}}}
 do_execsql_test json102-251 {
+  SELECT json_nextract('{"a":2,"c":[4,5,{"f":7}]}', '$');
+} {{{"a":2,"c":[4,5,{"f":7}]}}}
+do_execsql_test json102-252 {
   SELECT '{"a":2,"c":[4,5,{"f":7}]}' -> '$';
 } {{{"a":2,"c":[4,5,{"f":7}]}}}
 do_execsql_test json102-260 {
@@ -83,6 +86,22 @@ do_execsql_test json102-261 {
 do_execsql_test json102-262 {
   SELECT '{"a":2,"c":[4,5,{"f":7}]}' -> 'c';
 } {{[4,5,{"f":7}]}}
+do_catchsql_test json102-265 {
+  SELECT json_extract('[1,2,3', '$[2]');
+} {1 {malformed JSON}}
+do_catchsql_test json102-266 {
+  SELECT json_nextract('[1,2,3', '$[2]');
+} {0 {{}}}
+do_catchsql_test json102-267 {
+  SELECT json_extract('[1,2,3', '$');
+} {1 {malformed JSON}}
+do_catchsql_test json102-268 {
+  SELECT json_nextract('[1,2,3', '$');
+} {0 {{"[1,2,3"}}}
+do_catchsql_test json102-269 {
+  SELECT '[1,2,3' ->> '$';
+} {0 {{"[1,2,3"}}}
+
 do_execsql_test json102-270 {
   SELECT json_extract('{"a":2,"c":[4,5,{"f":7}]}', '$.c[2]');
 } {{{"f":7}}}

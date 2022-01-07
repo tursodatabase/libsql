@@ -1597,17 +1597,27 @@ static void jsonExtractFunc(
   JsonParse *p;          /* The parse */
   JsonNode *pNode;
   const char *zPath;
+  int flags = *(int*)sqlite3_user_data(ctx);
   JsonString jx;
 
   if( argc<2 ) return;
-  p = jsonParseCached(ctx, argv, ctx);
-  if( p==0 ) return;
+  p = jsonParseCached(ctx, argv, (flags & 1)!=0 ? 0 : ctx);
+  if( p==0 ){
+    /* If the form is "json_nextract(IN,'$')" and IN is not well-formed JSON,
+    ** then return IN as a quoted JSON string. */
+    if( (flags & 1)!=0
+     && argc==2
+     && (zPath = (const char*)sqlite3_value_text(argv[1]))!=0
+     && zPath[0]=='$' && zPath[1]==0
+    ){
+      jsonQuoteFunc(ctx, argc, argv);
+    }
+    return;
+  }
   if( argc==2 ){
     /* With a single PATH argument, the return is the unquoted SQL value */
     zPath = (const char*)sqlite3_value_text(argv[1]);
-    if( zPath && zPath[0]!='$' && zPath[0]!=0
-     && *(int*)sqlite3_user_data(ctx)
-    ){
+    if( zPath && zPath[0]!='$' && zPath[0]!=0 && (flags & 2)!=0 ){
       /* The -> and ->> operators accept abbreviated PATH arguments:
       **     NUMBER   ==>  $[NUMBER]
       **     LABEL    ==>  $.LABEL
@@ -2680,8 +2690,9 @@ int sqlite3Json1Init(sqlite3 *db){
     { "json_array_length",    1, 0,   jsonArrayLengthFunc   },
     { "json_array_length",    2, 0,   jsonArrayLengthFunc   },
     { "json_extract",        -1, 0,   jsonExtractFunc       },
-    { "->",                   2, 1,   jsonExtractFunc       },
-    { "->>",                  2, 1,   jsonExtractFunc       },
+    { "json_nextract",       -1, 1,   jsonExtractFunc       },
+    { "->",                   2, 3,   jsonExtractFunc       },
+    { "->>",                  2, 3,   jsonExtractFunc       },
     { "json_insert",         -1, 0,   jsonSetFunc           },
     { "json_ntype",           1, 1,   jsonTypeFunc          },
     { "json_object",         -1, 0,   jsonObjectFunc        },
