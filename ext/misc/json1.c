@@ -1598,34 +1598,62 @@ static void jsonExtractFunc(
   JsonNode *pNode;
   const char *zPath;
   JsonString jx;
-  int i;
 
   if( argc<2 ) return;
   p = jsonParseCached(ctx, argv, ctx);
   if( p==0 ) return;
-  jsonInit(&jx, ctx);
-  jsonAppendChar(&jx, '[');
-  for(i=1; i<argc; i++){
-    zPath = (const char*)sqlite3_value_text(argv[i]);
-    pNode = jsonLookup(p, zPath, 0, ctx);
-    if( p->nErr ) break;
-    if( argc>2 ){
+  if( argc==2 ){
+    /* With a single PATH argument, the return is the unquoted SQL value */
+    zPath = (const char*)sqlite3_value_text(argv[1]);
+    if( zPath && zPath[0]!='$' && zPath[0]!=0
+     && *(int*)sqlite3_user_data(ctx)
+    ){
+      /* The -> and ->> operators accept abbreviated PATH arguments:
+      **     NUMBER   ==>  $[NUMBER]
+      **     LABEL    ==>  $.LABEL
+      **     [NUMBER] ==>  $[NUMBER]
+      */
+      jsonInit(&jx, ctx);
+      if( safe_isdigit(zPath[0]) ){
+        jsonAppendRaw(&jx, "$[", 2);
+        jsonAppendRaw(&jx, zPath, (int)strlen(zPath));
+        jsonAppendRaw(&jx, "]", 2);
+      }else{
+        jsonAppendRaw(&jx, "$.", 1 + (zPath[0]!='['));
+        jsonAppendRaw(&jx, zPath, (int)strlen(zPath));
+        jsonAppendChar(&jx, 0);
+      }
+      pNode = jsonLookup(p, jx.zBuf, 0, ctx);
+      jsonReset(&jx);
+    }else{
+      pNode = jsonLookup(p, zPath, 0, ctx);
+    }
+    if( p->nErr ) return;
+    if( pNode ) jsonReturn(pNode, ctx, 0);
+  }else{
+    /* Two or more PATH arguments results in a JSON array with each
+    ** element of the array being the value selected by one of the PATHs */
+    int i;
+    jsonInit(&jx, ctx);
+    jsonAppendChar(&jx, '[');
+    for(i=1; i<argc; i++){
+      zPath = (const char*)sqlite3_value_text(argv[i]);
+      pNode = jsonLookup(p, zPath, 0, ctx);
+      if( p->nErr ) break;
       jsonAppendSeparator(&jx);
       if( pNode ){
         jsonRenderNode(pNode, &jx, 0);
       }else{
         jsonAppendRaw(&jx, "null", 4);
       }
-    }else if( pNode ){
-      jsonReturn(pNode, ctx, 0);
     }
+    if( i==argc ){
+      jsonAppendChar(&jx, ']');
+      jsonResult(&jx);
+      sqlite3_result_subtype(ctx, JSON_SUBTYPE);
+    }
+    jsonReset(&jx);
   }
-  if( argc>2 && i==argc ){
-    jsonAppendChar(&jx, ']');
-    jsonResult(&jx);
-    sqlite3_result_subtype(ctx, JSON_SUBTYPE);
-  }
-  jsonReset(&jx);
 }
 
 /* This is the RFC 7396 MergePatch algorithm.
