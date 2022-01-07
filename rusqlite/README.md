@@ -6,7 +6,7 @@
 [![Build Status (AppVeyor)](https://ci.appveyor.com/api/projects/status/github/rusqlite/rusqlite?branch=master&svg=true)](https://ci.appveyor.com/project/rusqlite/rusqlite)
 [![Code Coverage](https://codecov.io/gh/rusqlite/rusqlite/branch/master/graph/badge.svg)](https://codecov.io/gh/rusqlite/rusqlite)
 [![Dependency Status](https://deps.rs/repo/github/rusqlite/rusqlite/status.svg)](https://deps.rs/repo/github/rusqlite/rusqlite)
-[![Discord Chat](https://img.shields.io/discord/927966344266256434.svg?logo=discord)](https://discord.gg/G6Se6Yzw)
+[![Discord Chat](https://img.shields.io/discord/927966344266256434.svg?logo=discord)](https://discord.gg/nFYfGPB8g4)
 
 Rusqlite is an ergonomic wrapper for using SQLite from Rust. It attempts to expose
 an interface similar to [rust-postgres](https://github.com/sfackler/rust-postgres).
@@ -211,7 +211,7 @@ here: https://github.com/rusqlite/rusqlite/graphs/contributors
 
 ## Community
 
-Feel free to join the [Rusqlite Discord Server](https://discord.gg/G6Se6Yzw) to discuss or get help with `rusqlite` or `libsqlite3-sys`.
+Feel free to join the [Rusqlite Discord Server](https://discord.gg/nFYfGPB8g4) to discuss or get help with `rusqlite` or `libsqlite3-sys`.
 
 ## License
 
