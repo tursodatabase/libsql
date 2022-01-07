@@ -184,11 +184,10 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: hecrj/setup-rust-action@v1
-        with:
-          rust-version: nightly
-      # Need to use `cargo rustdoc` to actually get it to respect -D
-      # warnings... Note: this also requires nightly.
-      - run: cargo rustdoc --features 'bundled-full session buildtime_bindgen' -- -D warnings
+      - uses: Swatinem/rust-cache@v1
+        with: { sharedKey: fullTests }
+      - run: cargo doc --features 'bundled-full session buildtime_bindgen' --no-deps
+        env: { RUSTDOCFLAGS: -Dwarnings }
 
   codecov:
     name: Generate code coverage
