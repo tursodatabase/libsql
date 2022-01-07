@@ -304,7 +304,7 @@ static int box_query(sqlite3_rtree_query_info *pInfo){
 static void box_query_destroy(void *p){
   BoxQueryCtx *pCtx = (BoxQueryCtx*)p;
   Tcl_DecrRefCount(pCtx->pScript);
-  ckfree(pCtx);
+  ckfree((char*)pCtx);
 }
 
 static int SQLITE_TCLAPI register_box_query(

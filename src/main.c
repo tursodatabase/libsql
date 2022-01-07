@@ -2857,6 +2857,8 @@ int sqlite3_limit(sqlite3 *db, int limitId, int newLimit){
   if( newLimit>=0 ){                   /* IMP: R-52476-28732 */
     if( newLimit>aHardLimit[limitId] ){
       newLimit = aHardLimit[limitId];  /* IMP: R-51463-25634 */
+    }else if( newLimit<1 && limitId==SQLITE_LIMIT_LENGTH ){
+      newLimit = 1;
     }
     db->aLimit[limitId] = newLimit;
   }
@@ -4260,12 +4262,16 @@ int sqlite3_test_control(int op, ...){
     */
     case SQLITE_TESTCTRL_IMPOSTER: {
       sqlite3 *db = va_arg(ap, sqlite3*);
+      int iDb;
       sqlite3_mutex_enter(db->mutex);
-      db->init.iDb = sqlite3FindDbName(db, va_arg(ap,const char*));
-      db->init.busy = db->init.imposterTable = va_arg(ap,int);
-      db->init.newTnum = va_arg(ap,int);
-      if( db->init.busy==0 && db->init.newTnum>0 ){
-        sqlite3ResetAllSchemasOfConnection(db);
+      iDb = sqlite3FindDbName(db, va_arg(ap,const char*));
+      if( iDb>=0 ){
+        db->init.iDb = iDb;
+        db->init.busy = db->init.imposterTable = va_arg(ap,int);
+        db->init.newTnum = va_arg(ap,int);
+        if( db->init.busy==0 && db->init.newTnum>0 ){
+          sqlite3ResetAllSchemasOfConnection(db);
+        }
       }
       sqlite3_mutex_leave(db->mutex);
       break;
