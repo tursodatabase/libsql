@@ -11,6 +11,15 @@ keywords = ["sqlite", "database", "ffi"]
 license = "MIT"
 categories = ["database"]
 
+exclude = [
+  "/.github/*",
+  "/.gitattributes",
+  "/appveyor.yml",
+  "/Changelog.md",
+  "/clippy.toml",
+  "/codecov.yml",
+]
+
 [badges]
 appveyor = { repository = "rusqlite/rusqlite" }
 codecov = { repository = "rusqlite/rusqlite" }
