@@ -624,7 +624,8 @@ proc do_macro {inSrc lx ostrm} {
 array set ::typedefsSeen {}
 
 # Filter redundant typedefs and certain includes and qualifiers, in place.
-# Return whether anything changed.
+# Return 1 if line can be emitted as-is, 0 if to be processed further.
+# In either case, the line named by $lineVar may have been changed.
 proc transform_line {lineVar nesting} {
   upvar $lineVar line
   if {[regexp {^typedef .*;} $line]} {
@@ -641,6 +642,15 @@ proc transform_line {lineVar nesting} {
     || [regexp {^# *include "test_windirent.h"} $line]} {
     set line "/* $line */"
     return 1
+  }
+  if {$nesting > 0 && [regexp {^#include "([\w\.]+)"} $line _ incRelPath]} {
+    set fromPath [lindex $::incFileStack end]
+    set incPath [file join [file dirname $fromPath] $incRelPath]
+    set inTree [file exists $incPath]
+    if {$inTree} {
+      set line "INCLUDE $incRelPath"
+      return 0
+    }
   }
   if {[string first "__declspec(dllexport)" $line] >= 0} {
     set line [string map [list __declspec(dllexport) {}] $line]
