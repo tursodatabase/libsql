@@ -170,7 +170,7 @@ void sqlite3FinishCoding(Parse *pParse){
       int i;
       int reg;
 
-      if( pReturning->nRetCol==0 ){
+      if( NEVER(pReturning->nRetCol==0) ){
         assert( CORRUPT_DB );
       }else{
         sqlite3VdbeAddOp0(v, OP_FkCheck);
@@ -266,7 +266,7 @@ void sqlite3FinishCoding(Parse *pParse){
 
       if( pParse->bReturning ){
         Returning *pRet = pParse->u1.pReturning;
-        if( pRet->nRetCol==0 ){
+        if( NEVER(pRet->nRetCol==0) ){
           assert( CORRUPT_DB );
         }else{
           sqlite3VdbeAddOp2(v, OP_OpenEphemeral, pRet->iRetCur, pRet->nRetCol);
