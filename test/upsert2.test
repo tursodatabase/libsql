@@ -72,7 +72,7 @@ do_execsql_test upsert2-300 {
   CREATE TABLE record(x TEXT, y TEXT);
   CREATE TRIGGER r1 BEFORE INSERT ON t1 BEGIN
     INSERT INTO record(x,y)
-        VALUES('before-insert',printf('%d,%d,%d',new.a,new.b,new.c));
+        VALUES('before-insert',format('%d,%d,%d',new.a,new.b,new.c));
   END;
   CREATE TRIGGER r2 AFTER INSERT ON t1 BEGIN
     INSERT INTO record(x,y)
@@ -80,7 +80,7 @@ do_execsql_test upsert2-300 {
   END;
   CREATE TRIGGER r3 BEFORE UPDATE ON t1 BEGIN
     INSERT INTO record(x,y)
-        VALUES('before-update',printf('%d,%d,%d/%d,%d,%d',
+        VALUES('before-update',format('%d,%d,%d/%d,%d,%d',
                                       old.a,old.b,old.c,new.a,new.b,new.c));
   END;
   CREATE TRIGGER r4 AFTER UPDATE ON t1 BEGIN
@@ -123,7 +123,7 @@ do_execsql_test upsert2-400 {
   CREATE TABLE t1(a INT PRIMARY KEY, b int, c DEFAULT 0) WITHOUT ROWID;
   CREATE TRIGGER r1 BEFORE INSERT ON t1 BEGIN
     INSERT INTO record(x,y)
-        VALUES('before-insert',printf('%d,%d,%d',new.a,new.b,new.c));
+        VALUES('before-insert',format('%d,%d,%d',new.a,new.b,new.c));
   END;
   CREATE TRIGGER r2 AFTER INSERT ON t1 BEGIN
     INSERT INTO record(x,y)
@@ -131,7 +131,7 @@ do_execsql_test upsert2-400 {
   END;
   CREATE TRIGGER r3 BEFORE UPDATE ON t1 BEGIN
     INSERT INTO record(x,y)
-        VALUES('before-update',printf('%d,%d,%d/%d,%d,%d',
+        VALUES('before-update',format('%d,%d,%d/%d,%d,%d',
                                       old.a,old.b,old.c,new.a,new.b,new.c));
   END;
   CREATE TRIGGER r4 AFTER UPDATE ON t1 BEGIN
