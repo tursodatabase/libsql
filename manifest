@@ -1,5 +1,5 @@
-C Notes\son\sthe\sJSON\senhancement\sproposals.
-D 2022-01-07T18:09:56.414
+C Improved\scommenting\sof\schanges\sin\sthe\sjson1.c\sextension.
+D 2022-01-08T15:05:53.556
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -307,7 +307,7 @@ F ext/misc/fileio.c 4e7f7cd30de8df4820c552f14af3c9ca451c5ffe1f2e7bef34d598a12ebf
 F ext/misc/fossildelta.c 1240b2d3e52eab1d50c160c7fe1902a9bd210e052dc209200a750bbf885402d5
 F ext/misc/fuzzer.c eae560134f66333e9e1ca4c8ffea75df42056e2ce8456734565dbe1c2a92bf3d
 F ext/misc/ieee754.c 91a5594071143a4ab79c638fe9f059af1db09932faf2e704c3e29216a7d4f511
-F ext/misc/json1.c bfee5581c6f8443d2b4d73939c1aaad887111b7bb5f3a8c5dbd1572f627de83c
+F ext/misc/json1.c a35ebe08f25515e4ab03c4ac7e06dd8a837c461f96df040ef7566a6ee4edbb84
 F ext/misc/memstat.c 3017a0832c645c0f8c773435620d663855f04690172316bd127270d1a7523d4d
 F ext/misc/memtrace.c 7c0d115d2ef716ad0ba632c91e05bd119cb16c1aedf3bec9f06196ead2d5537b
 F ext/misc/memvfs.c 7dffa8cc89c7f2d73da4bd4ccea1bcbd2bd283e3bb4cea398df7c372a197291b
@@ -1938,8 +1938,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 85f8170555ee0d4d28cb7e120a7062e9f64c331a936fdfa29fc0e67224eea7c6
-R f0bbc4fbd1752207d287e4842cece932
+P 18160985ea6b2bbf27de25e0f4f3a1ebcdb079a36af039fc06e37a834e49e772
+R ea25b8b6843a230f65190e794ee89370
 U drh
-Z d04dbd17b8376af71e0674b428869308
+Z 72ca0ba8118c37c05f41d020549c1f4e
 # Remove this line to create a well-formed Fossil manifest.

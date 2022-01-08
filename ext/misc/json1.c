@@ -1582,12 +1582,43 @@ static void jsonArrayLengthFunc(
 }
 
 /*
+** Bit values for the flags passed into jsonExtractFunc() or
+** jsonSetFunc() via the user-data value.
+*/
+#define JSON_NULLERR   0x01        /* Return NULL if input is not JSON */
+#define JSON_ABPATH    0x02        /* Allow abbreviated JSON path specs */
+#define JSON_ISSET     0x04        /* json_set(), not json_insert() */
+
+/*
 ** json_extract(JSON, PATH, ...)
+** json_nextract(JSON, PATH, ...)
+** "->"(JSON,PATH)
+** "->>"(JSON,PATH)
 **
-** Return the element described by PATH.  Return NULL if there is no
-** PATH element.  If there are multiple PATHs, then return a JSON array
-** with the result from each path.  Throw an error if the JSON or any PATH
-** is malformed.
+** Return the element described by PATH.  Return NULL if that PATH element
+** is not found.  For leaf nodes of the JSON, the value returned is a pure
+** SQL value.  In other words, quotes have been removed from strings.
+**
+** If there are multiple PATHs, then the value returned is a JSON array
+** with one entry in the array for each PATH term.
+**
+** Throw an error if any PATH is malformed.
+**
+** If JSON is not well-formed JSON then:
+**
+**    (1) raise an error if the JSON_NULLERR flag is not set.
+**
+**    (2) Otherwise (if the JSON_NULLERR flags is set and) if there
+**        is a single PATH argument with the value '$', simply quote
+**        the JSON input as if by json_quote().  In other words, treat
+**        the JSON input as a string and convert it into a valid JSON
+**        string.
+**
+**    (3) Otherwise (if JSON_NULLERR is set and the PATH is not '$')
+**        return NULL
+**
+** If the JSON_ABPATH flag is set and there is only a single PATH, then
+** allow abbreviated PATH specs that omit the leading "$".
 */
 static void jsonExtractFunc(
   sqlite3_context *ctx,
@@ -1601,11 +1632,11 @@ static void jsonExtractFunc(
   JsonString jx;
 
   if( argc<2 ) return;
-  p = jsonParseCached(ctx, argv, (flags & 1)!=0 ? 0 : ctx);
+  p = jsonParseCached(ctx, argv, (flags & JSON_NULLERR)!=0 ? 0 : ctx);
   if( p==0 ){
     /* If the form is "json_nextract(IN,'$')" and IN is not well-formed JSON,
     ** then return IN as a quoted JSON string. */
-    if( (flags & 1)!=0
+    if( (flags & JSON_NULLERR)!=0
      && argc==2
      && (zPath = (const char*)sqlite3_value_text(argv[1]))!=0
      && zPath[0]=='$' && zPath[1]==0
@@ -1617,11 +1648,13 @@ static void jsonExtractFunc(
   if( argc==2 ){
     /* With a single PATH argument, the return is the unquoted SQL value */
     zPath = (const char*)sqlite3_value_text(argv[1]);
-    if( zPath && zPath[0]!='$' && zPath[0]!=0 && (flags & 2)!=0 ){
-      /* The -> and ->> operators accept abbreviated PATH arguments:
-      **     NUMBER   ==>  $[NUMBER]
-      **     LABEL    ==>  $.LABEL
-      **     [NUMBER] ==>  $[NUMBER]
+    if( zPath && zPath[0]!='$' && zPath[0]!=0  && (flags & JSON_ABPATH)!=0 ){
+      /* The -> and ->> operators accept abbreviated PATH arguments.  This
+      ** is mostly for compatibility with PostgreSQL, but also for convenience.
+      **
+      **     NUMBER   ==>  $[NUMBER]     // PG compatible
+      **     LABEL    ==>  $.LABEL       // PG compatible
+      **     [NUMBER] ==>  $[NUMBER]     // Not PG.  Purely for convenience
       */
       jsonInit(&jx, ctx);
       if( safe_isdigit(zPath[0]) ){
@@ -1633,7 +1666,7 @@ static void jsonExtractFunc(
         jsonAppendRaw(&jx, zPath, (int)strlen(zPath));
         jsonAppendChar(&jx, 0);
       }
-      pNode = jsonLookup(p, jx.zBuf, 0, ctx);
+      pNode = jx.bErr ? 0 : jsonLookup(p, jx.zBuf, 0, ctx);
       jsonReset(&jx);
     }else{
       pNode = jsonLookup(p, zPath, 0, ctx);
@@ -1895,6 +1928,7 @@ static void jsonReplaceFunc(
 replace_err:
   jsonParseReset(&x);
 }
+
 
 /*
 ** json_set(JSON, PATH, VALUE, ...)
@@ -2681,34 +2715,34 @@ int sqlite3Json1Init(sqlite3 *db){
   unsigned int i;
   static const struct {
      const char *zName;
+     void (*xFunc)(sqlite3_context*,int,sqlite3_value**);
      int nArg;
      int flag;
-     void (*xFunc)(sqlite3_context*,int,sqlite3_value**);
   } aFunc[] = {
-    { "json",                 1, 0,   jsonRemoveFunc        },
-    { "json_array",          -1, 0,   jsonArrayFunc         },
-    { "json_array_length",    1, 0,   jsonArrayLengthFunc   },
-    { "json_array_length",    2, 0,   jsonArrayLengthFunc   },
-    { "json_extract",        -1, 0,   jsonExtractFunc       },
-    { "json_nextract",       -1, 1,   jsonExtractFunc       },
-    { "->",                   2, 3,   jsonExtractFunc       },
-    { "->>",                  2, 2,   jsonExtractFunc       },
-    { "json_insert",         -1, 0,   jsonSetFunc           },
-    { "json_ntype",           1, 1,   jsonTypeFunc          },
-    { "json_object",         -1, 0,   jsonObjectFunc        },
-    { "json_patch",           2, 0,   jsonPatchFunc         },
-    { "json_quote",           1, 0,   jsonQuoteFunc         },
-    { "json_remove",         -1, 0,   jsonRemoveFunc        },
-    { "json_replace",        -1, 0,   jsonReplaceFunc       },
-    { "json_set",            -1, 1,   jsonSetFunc           },
-    { "json_type",            1, 0,   jsonTypeFunc          },
-    { "json_type",            2, 0,   jsonTypeFunc          },
-    { "json_valid",           1, 0,   jsonValidFunc         },
+    { "json",              jsonRemoveFunc,      1, 0                          },
+    { "json_array",        jsonArrayFunc,      -1, 0                          },
+    { "json_array_length", jsonArrayLengthFunc, 1, 0                          },
+    { "json_array_length", jsonArrayLengthFunc, 2, 0                          },
+    { "json_extract",      jsonExtractFunc,    -1, 0                          },
+    { "json_nextract",     jsonExtractFunc,    -1, JSON_NULLERR               },
+    { "->",                jsonExtractFunc,     2, JSON_NULLERR|JSON_ABPATH   },
+    { "->>",               jsonExtractFunc,     2, JSON_ABPATH                },
+    { "json_insert",       jsonSetFunc,        -1, 0                          },
+    { "json_object",       jsonObjectFunc,     -1, 0                          },
+    { "json_patch",        jsonPatchFunc,       2, 0                          },
+    { "json_quote",        jsonQuoteFunc,       1, 0                          },
+    { "json_remove",       jsonRemoveFunc,     -1, 0                          },
+    { "json_replace",      jsonReplaceFunc,    -1, 0                          },
+    { "json_set",          jsonSetFunc,        -1, JSON_ISSET                 },
+    { "json_type",         jsonTypeFunc,        1, 0                          },
+    { "json_ntype",        jsonTypeFunc,        1, JSON_NULLERR               },
+    { "json_type",         jsonTypeFunc,        2, 0                          },
+    { "json_valid",        jsonValidFunc,       1, 0                          },
 
 #if SQLITE_DEBUG
     /* DEBUG and TESTING functions */
-    { "json_parse",           1, 0,   jsonParseFunc         },
-    { "json_test1",           1, 0,   jsonTest1Func         },
+    { "json_parse",        jsonParseFunc,       1, 0                          },
+    { "json_test1",        jsonTest1Func,       1, 0                          },
 #endif
   };
   static const struct {
