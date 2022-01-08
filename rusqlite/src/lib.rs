@@ -1064,21 +1064,6 @@ pub unsafe fn bypass_sqlite_initialization() {
     BYPASS_SQLITE_INIT.store(true, Ordering::Relaxed);
 }
 
-/// rusqlite performs a one-time check that the runtime SQLite version is at
-/// least as new as the version of SQLite found when rusqlite was built.
-/// Bypassing this check may be dangerous; e.g., if you use features of SQLite
-/// that are not present in the runtime version.
-///
-/// # Safety
-///
-/// If you are sure the runtime version is compatible with the
-/// build-time version for your usage, you can bypass the version check by
-/// calling this function before your first connection attempt.
-pub unsafe fn bypass_sqlite_version_check() {
-    #[cfg(not(feature = "bundled"))]
-    inner_connection::BYPASS_VERSION_CHECK.store(true, Ordering::Relaxed);
-}
-
 /// Allows interrupting a long-running computation.
 pub struct InterruptHandle {
     db_lock: Arc<Mutex<*mut ffi::sqlite3>>,
