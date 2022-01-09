@@ -1,5 +1,5 @@
-C Do\snot\senclude\sENABLE_JSON1\sin\sthe\scompile-time\soptions.
-D 2022-01-09T19:44:36.695
+C Update\sthe\sdoc/json-enhancements.md\sdocument\sto\sbetter\sexplain\sthe\sfeatures\nof\sthis\sbranch.
+D 2022-01-09T20:42:55.486
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -38,7 +38,7 @@ F configure a2877fe63cc821af0df41abe70f1f7c4e97cb7e23a42e0a1402e8a2f55a88aa2 x
 F configure.ac 3ef6eeff4387585bfcab76b0c3f6e15a0618587bb90245dd5d44e4378141bb35
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/F2FS.txt c1d4a0ae9711cfe0e1d8b019d154f1c29e0d3abfe820787ba1e9ed7691160fcd
-F doc/json-enhancements.md b026346e18a18a90d84dbda457e3127282468ad26baaefc005a1656429fa4232
+F doc/json-enhancements.md 07822849342a976455b8d9c7d564d347b97e13ca8f7444388312a8f7a0d5e846
 F doc/lemon.html efc0cd2345d66905505d98f862e1c571512def0ceb5b016cb658fd4918eb76a3
 F doc/pager-invariants.txt 27fed9a70ddad2088750c4a2b493b63853da2710
 F doc/trusted-schema.md 33625008620e879c7bcfbbfa079587612c434fa094d338b08242288d358c3e8a
@@ -1938,8 +1938,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ea755771699dcbffe0ddfd204d42fae9b6e79e107485c725b8eb6caab92aacb8
-R 70859f0c399b3e8f43d2059a10792076
+P 8bf41bc5cb19fcde569ed2c788553a848ebd9c79065bd3d2aa99e5a6bfed9696
+R 83ea098ded25ea5f04c457b4cfe21d79
 U drh
-Z f2d44a3082cc3593041829311c626937
+Z b469d7ebc54649e5bb73aa5daf50477b
 # Remove this line to create a well-formed Fossil manifest.
