@@ -1,5 +1,5 @@
-C Merge\sthe\sJSON\sfunction\senhancements\sfrom\sthe\sjson-enhancements\sbranch\sinto\njson-in-core.
-D 2022-01-08T15:37:13.201
+C Add\sa\snew\sbuilt-in\ssubtype()\sfunction.
+D 2022-01-09T16:54:02.203
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -505,7 +505,7 @@ F src/delete.c 19814f621cde10b1771a0dea7fe25d3d7d39975b8d4be4888537d30860e7c08c
 F src/expr.c 827179c78d2ca7cc318392811de8151c60eacf7ce804b13e61bb7ef38f954846
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 5b73f7a7c00f06017531a5bd258cbc2c7a294e55a7f84a729fe27aa525242560
-F src/func.c 67944b79d9c06fcb86a2944082ca1dd9d46eed7bd5c6721bcb19094dd7f81358
+F src/func.c 76a9ac772f67be5af9476e02ae0866f4919d1981f97ff16dedfe37a1c62cbf8e
 F src/global.c 1f56aead86e8a18c4415638f5e6c4d0a0550427f4b3f5d065ba5164cc09c22e8
 F src/hash.c 8d7dda241d0ebdafb6ffdeda3149a412d7df75102cecfc1021c98d6219823b19
 F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
@@ -1938,8 +1938,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 583b47d865fb8d2c9ae4d3a4e70356a8a758978efb0a282f6b19775bf41fb748 4d81425e1bf2cff6fa961d0a7936b5f62d3f8ffe9bffea89c1e8b8ddf8fad6f4
-R 9de2cc0789b4af5e569fa6f6937afbf5
+P e116501c2f0e594eb7a3dd804daa943cc508f32ded3078aed21b695ec83bcd4c
+R 28e65f1e2d788c0c1b31d4dbdc4f0a91
 U drh
-Z 5d4090391a2a7b92e27e5b55336ae1bf
+Z fde45050a7eb088af98952ef4d939a27
 # Remove this line to create a well-formed Fossil manifest.
