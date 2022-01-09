@@ -14,7 +14,7 @@ early 2022.
 ## 2.0 The **json_nextract()** function.
 
 The new **json_nextract()** function works like **json_extract()** with
-one exception: if the input text in first argument is not well-formed
+one exception: if the input text in the first argument is not well-formed
 JSON, then json_nextract() returns NULL whereas json_extract() raises
 an error.  The extra "n" in the name of json_nextract() can be throught
 of as meaning "null-if-error".
