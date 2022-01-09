@@ -269,7 +269,7 @@ endInstrOOM:
 }
 
 /*
-** Implementation of the printf() function.
+** Implementation of the printf() (a.k.a. format()) SQL function.
 */
 static void printfFunc(
   sqlite3_context *context,
@@ -2261,6 +2261,7 @@ void sqlite3RegisterBuiltinFunctions(void){
     FUNCTION2(length,            1, 0, 0, lengthFunc,  SQLITE_FUNC_LENGTH),
     FUNCTION(instr,              2, 0, 0, instrFunc        ),
     FUNCTION(printf,            -1, 0, 0, printfFunc       ),
+    FUNCTION(format,            -1, 0, 0, printfFunc       ),
     FUNCTION(unicode,            1, 0, 0, unicodeFunc      ),
     FUNCTION(char,              -1, 0, 0, charFunc         ),
     FUNCTION(abs,                1, 0, 0, absFunc          ),
