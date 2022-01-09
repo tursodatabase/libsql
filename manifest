@@ -1,5 +1,5 @@
-C Merge\strunk\senhancements\sinto\sthe\sjson-in-core\sbranch.
-D 2022-01-09T19:36:39.850
+C Do\snot\senclude\sENABLE_JSON1\sin\sthe\scompile-time\soptions.
+D 2022-01-09T19:44:36.695
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -497,7 +497,7 @@ F src/btreeInt.h ee9348c4cb9077243b049edc93a82c1f32ca48baeabf2140d41362b9f9139ff
 F src/build.c c72407a27a28982a384cd453a3a6b6992a1ceae8bd8d95e96d7fb9c0d645a32f
 F src/callback.c 4c19af69835787bfe790ac560f3071a824eb629f34e41f97b52ce5235c77de1c
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
-F src/ctime.c b09ce320b78718d5e0c4a7a59b8705abe8ee4683d9fa4b33768fe347e1b2a42a
+F src/ctime.c 638e75c9a02b276c782cb27f59f3abf2ab94a33514107ffd165b2f69d1bc2aaa
 F src/date.c ab8e01d928f201f5dee0bc6d54d6702fdcec96dff4d58c387447671f6a46d191
 F src/dbpage.c 8a01e865bf8bc6d7b1844b4314443a6436c07c3efe1d488ed89e81719047833a
 F src/dbstat.c 861e08690fcb0f2ee1165eff0060ea8d4f3e2ea10f80dab7d32ad70443a6ff2d
@@ -1938,8 +1938,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a25f4ce255c034fc694c33728aedb98289ebccda9c48920829ef780b92b8faee 71272caff5874137ad0b1ddfc22ced4bb66e6c97f7868fdae0347a186f589b38
-R 49fcbfca4503349519b1d6e2c92f7acf
+P ea755771699dcbffe0ddfd204d42fae9b6e79e107485c725b8eb6caab92aacb8
+R 70859f0c399b3e8f43d2059a10792076
 U drh
-Z 4bb2ffcd67d474872b040ea5d2948b38
+Z f2d44a3082cc3593041829311c626937
 # Remove this line to create a well-formed Fossil manifest.

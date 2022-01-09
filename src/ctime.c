@@ -181,8 +181,6 @@ static const char * const sqlite3azCompileOpt[] = {
 #endif
 #ifdef SQLITE_DISABLE_JSON
   "DISABLE_JSON",
-#else
-  "ENABLE_JSON1",  /* Legacy */
 #endif
 #ifdef SQLITE_DISABLE_LFS
   "DISABLE_LFS",
