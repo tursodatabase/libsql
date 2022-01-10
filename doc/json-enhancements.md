@@ -70,7 +70,7 @@ in a bold font.
 <tr><td> **'{"a":4.5}'**     <td>'$.a'<td> **'4.5'**     <td> '4.5'          <td> 4.5           <td> 4.5
 <tr><td> **'{"a":"xyz"}'**   <td>'$.a'<td> **'"xyz"'**   <td> 'xyz'          <td> 'xyz'         <td> 'xyz'
 <tr><td> **'{"a":null}'**    <td>'$.a'<td> **'null'**    <td> NULL           <td> NULL          <td> NULL
-<tr><td> **'{"a":[6,7,8]}'** <td>'$.a'<td> **'[6,7,8]'** <td> '[6,7,8]'      <td> '[6,7,8]'     <td> **'[6,7,9]'**
+<tr><td> **'{"a":[6,7,8]}'** <td>'$.a'<td> **'[6,7,8]'** <td> '[6,7,8]'      <td> '[6,7,8]'     <td> **'[6,7,8]'**
 <tr><td> **'{"a":{"x":9}}'** <td>'$.a'<td> **'{"x":9}'** <td> '{"x":9}'      <td> '{"x":9}'     <td> **'{"x":9}'**
 <tr><td> **'{"b":999}'**     <td>'$.a'<td> NULL          <td> NULL           <td> NULL          <td> NULL
 </table>
