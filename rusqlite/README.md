@@ -115,7 +115,7 @@ features](https://doc.rust-lang.org/cargo/reference/manifest.html#the-features-s
 * `extra_check` fail when a query passed to execute is readonly or has a column count > 0.
 * `column_decltype` provides `columns()` method for Statements and Rows; omit if linking to a version of SQLite/SQLCipher compiled with `-DSQLITE_OMIT_DECLTYPE`.
 * `collation` exposes [`sqlite3_create_collation_v2`](https://sqlite.org/c3ref/create_collation.html).
-* [`winsqlite3`](https://blogs.windows.com/windowsdeveloper/2017/02/06/using-sqlite-databases-uwp-apps/) allows linking against the SQLite present in newer versions of Windows
+* `winsqlite3` allows linking against the SQLite present in newer versions of Windows
 
 ## Notes on building rusqlite and libsqlite3-sys
 
