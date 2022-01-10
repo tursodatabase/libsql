@@ -1506,40 +1506,30 @@ static void jsonArrayLengthFunc(
 ** Bit values for the flags passed into jsonExtractFunc() or
 ** jsonSetFunc() via the user-data value.
 */
-#define JSON_NULLERR   0x01        /* Return NULL if input is not JSON */
-#define JSON_ABPATH    0x02        /* Allow abbreviated JSON path specs */
+#define JSON_JSON      0x01        /* Result is always JSON */
+#define JSON_SQL       0x02        /* Result is always SQL */
+#define JSON_ABPATH    0x03        /* Allow abbreviated JSON path specs */
 #define JSON_ISSET     0x04        /* json_set(), not json_insert() */
 
 /*
 ** json_extract(JSON, PATH, ...)
-** json_nextract(JSON, PATH, ...)
 ** "->"(JSON,PATH)
 ** "->>"(JSON,PATH)
 **
 ** Return the element described by PATH.  Return NULL if that PATH element
-** is not found.  For leaf nodes of the JSON, the value returned is a pure
-** SQL value.  In other words, quotes have been removed from strings.
+** is not found.
 **
-** If there are multiple PATHs, then the value returned is a JSON array
-** with one entry in the array for each PATH term.
+** If JSON_JSON is set or if more that one PATH argument is supplied then
+** always return a JSON representation of the result.  If JSON_SQL is set,
+** then always return an SQL representation of the result.  If neither flag
+** is present and argc==2, then return JSON for objects and arrays and SQL
+** for all other values.
 **
-** Throw an error if any PATH is malformed.
+** When multiple PATH arguments are supplied, the result is a JSON array
+** containing the result of each PATH.
 **
-** If JSON is not well-formed JSON then:
-**
-**    (1) raise an error if the JSON_NULLERR flag is not set.
-**
-**    (2) Otherwise (if the JSON_NULLERR flags is set and) if there
-**        is a single PATH argument with the value '$', simply quote
-**        the JSON input as if by json_quote().  In other words, treat
-**        the JSON input as a string and convert it into a valid JSON
-**        string.
-**
-**    (3) Otherwise (if JSON_NULLERR is set and the PATH is not '$')
-**        return NULL
-**
-** If the JSON_ABPATH flag is set and there is only a single PATH, then
-** allow abbreviated PATH specs that omit the leading "$".
+** Abbreviated JSON path expressions are allows if JSON_ABPATH, for
+** compatibility with PG.
 */
 static void jsonExtractFunc(
   sqlite3_context *ctx,
@@ -1553,23 +1543,13 @@ static void jsonExtractFunc(
   JsonString jx;
 
   if( argc<2 ) return;
-  p = jsonParseCached(ctx, argv, (flags & JSON_NULLERR)!=0 ? 0 : ctx);
-  if( p==0 ){
-    /* If the form is "json_nextract(IN,'$')" and IN is not well-formed JSON,
-    ** then return IN as a quoted JSON string. */
-    if( (flags & JSON_NULLERR)!=0
-     && argc==2
-     && (zPath = (const char*)sqlite3_value_text(argv[1]))!=0
-     && zPath[0]=='$' && zPath[1]==0
-    ){
-      jsonQuoteFunc(ctx, argc, argv);
-    }
-    return;
-  }
+  p = jsonParseCached(ctx, argv, ctx);
+  if( p==0 ) return;
   if( argc==2 ){
-    /* With a single PATH argument, the return is the unquoted SQL value */
+    /* With a single PATH argument */
     zPath = (const char*)sqlite3_value_text(argv[1]);
-    if( zPath && zPath[0]!='$' && zPath[0]!=0  && (flags & JSON_ABPATH)!=0 ){
+    if( zPath==0 ) return;
+    if( zPath[0]!='$' && (flags & JSON_ABPATH)!=0 ){
       /* The -> and ->> operators accept abbreviated PATH arguments.  This
       ** is mostly for compatibility with PostgreSQL, but also for convenience.
       **
@@ -1587,13 +1567,22 @@ static void jsonExtractFunc(
         jsonAppendRaw(&jx, zPath, (int)strlen(zPath));
         jsonAppendChar(&jx, 0);
       }
-      pNode = jx.bErr ? 0 : jsonLookup(p, jx.zBuf, 0, ctx);
+      if( jx.bErr==0 ){
+        pNode = jsonLookup(p, jx.zBuf, 0, ctx);
+        if( pNode==0 ){
+          /* No-op.  jsonLookup will have left an error for us */
+        }else if( flags & JSON_JSON ){
+          jsonReturnJson(pNode, ctx, 0);
+        }else{
+          jsonReturn(pNode, ctx, 0);
+          sqlite3_result_subtype(ctx, 0);
+        }
+      }
       jsonReset(&jx);
     }else{
       pNode = jsonLookup(p, zPath, 0, ctx);
+      if( p->nErr==0 && pNode ) jsonReturn(pNode, ctx, 0);
     }
-    if( p->nErr ) return;
-    if( pNode ) jsonReturn(pNode, ctx, 0);
   }else{
     /* Two or more PATH arguments results in a JSON array with each
     ** element of the array being the value selected by one of the PATHs */
@@ -2637,11 +2626,9 @@ void sqlite3RegisterJsonFunctions(void){
     JFUNCTION(json_array_length,  1, 0,  jsonArrayLengthFunc),
     JFUNCTION(json_array_length,  2, 0,  jsonArrayLengthFunc),
     JFUNCTION(json_extract,      -1, 0,  jsonExtractFunc),
-    JFUNCTION(json_nextract,     -1, JSON_NULLERR, jsonExtractFunc),
-    JFUNCTION(->,                 2, JSON_NULLERR|JSON_ABPATH, jsonExtractFunc),
-    JFUNCTION(->>,                2, JSON_ABPATH, jsonExtractFunc),
+    JFUNCTION(->,                 2, JSON_JSON, jsonExtractFunc),
+    JFUNCTION(->>,                2, JSON_SQL, jsonExtractFunc),
     JFUNCTION(json_insert,       -1, 0,  jsonSetFunc),
-    JFUNCTION(json_ntype,         1, JSON_NULLERR, jsonTypeFunc),
     JFUNCTION(json_object,       -1, 0,  jsonObjectFunc),
     JFUNCTION(json_patch,         2, 0,  jsonPatchFunc),
     JFUNCTION(json_quote,         1, 0,  jsonQuoteFunc),
