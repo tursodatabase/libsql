@@ -1549,36 +1549,39 @@ static void jsonExtractFunc(
     /* With a single PATH argument */
     zPath = (const char*)sqlite3_value_text(argv[1]);
     if( zPath==0 ) return;
-    if( zPath[0]!='$' && (flags & JSON_ABPATH)!=0 ){
-      /* The -> and ->> operators accept abbreviated PATH arguments.  This
-      ** is mostly for compatibility with PostgreSQL, but also for convenience.
-      **
-      **     NUMBER   ==>  $[NUMBER]     // PG compatible
-      **     LABEL    ==>  $.LABEL       // PG compatible
-      **     [NUMBER] ==>  $[NUMBER]     // Not PG.  Purely for convenience
-      */
-      jsonInit(&jx, ctx);
-      if( sqlite3Isdigit(zPath[0]) ){
-        jsonAppendRaw(&jx, "$[", 2);
-        jsonAppendRaw(&jx, zPath, (int)strlen(zPath));
-        jsonAppendRaw(&jx, "]", 2);
+    if( flags & JSON_ABPATH ){
+      if( zPath[0]!='$' ){
+        /* The -> and ->> operators accept abbreviated PATH arguments.  This
+        ** is mostly for compatibility with PostgreSQL, but also for
+        ** convenience.
+        **
+        **     NUMBER   ==>  $[NUMBER]     // PG compatible
+        **     LABEL    ==>  $.LABEL       // PG compatible
+        **     [NUMBER] ==>  $[NUMBER]     // Not PG.  Purely for convenience
+        */
+        jsonInit(&jx, ctx);
+        if( sqlite3Isdigit(zPath[0]) ){
+          jsonAppendRaw(&jx, "$[", 2);
+          jsonAppendRaw(&jx, zPath, (int)strlen(zPath));
+          jsonAppendRaw(&jx, "]", 2);
+        }else{
+          jsonAppendRaw(&jx, "$.", 1 + (zPath[0]!='['));
+          jsonAppendRaw(&jx, zPath, (int)strlen(zPath));
+          jsonAppendChar(&jx, 0);
+        }
+        pNode = jx.bErr ? 0 : jsonLookup(p, jx.zBuf, 0, ctx);
+        jsonReset(&jx);
       }else{
-        jsonAppendRaw(&jx, "$.", 1 + (zPath[0]!='['));
-        jsonAppendRaw(&jx, zPath, (int)strlen(zPath));
-        jsonAppendChar(&jx, 0);
+        pNode = jsonLookup(p, zPath, 0, ctx);
       }
-      if( jx.bErr==0 ){
-        pNode = jsonLookup(p, jx.zBuf, 0, ctx);
-        if( pNode==0 ){
-          /* No-op.  jsonLookup will have left an error for us */
-        }else if( flags & JSON_JSON ){
+      if( pNode ){
+        if( flags & JSON_JSON ){
           jsonReturnJson(pNode, ctx, 0);
         }else{
           jsonReturn(pNode, ctx, 0);
           sqlite3_result_subtype(ctx, 0);
         }
       }
-      jsonReset(&jx);
     }else{
       pNode = jsonLookup(p, zPath, 0, ctx);
       if( p->nErr==0 && pNode ) jsonReturn(pNode, ctx, 0);
