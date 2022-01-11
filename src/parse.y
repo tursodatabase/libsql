@@ -236,7 +236,7 @@ columnname(A) ::= nm(A) typetoken(Y). {sqlite3AddColumn(pParse,A,Y);}
 //
 %token ABORT ACTION AFTER ANALYZE ASC ATTACH BEFORE BEGIN BY CASCADE CAST.
 %token CONFLICT DATABASE DEFERRED DESC DETACH EACH END EXCLUSIVE EXPLAIN FAIL.
-%token OR AND NOT MATCH LIKE_KW BETWEEN IS IN ISNULL NOTNULL NE EQ.
+%token OR AND NOT IS MATCH LIKE_KW BETWEEN IN ISNULL NOTNULL NE EQ.
 %token GT LE LT GE ESCAPE.
 
 // The following directive causes tokens ABORT, AFTER, ASC, etc. to
@@ -286,7 +286,7 @@ columnname(A) ::= nm(A) typetoken(Y). {sqlite3AddColumn(pParse,A,Y);}
 %left BITAND BITOR LSHIFT RSHIFT.
 %left PLUS MINUS.
 %left STAR SLASH REM.
-%left CONCAT.
+%left CONCAT PTR.
 %left COLLATE.
 %right BITNOT.
 %nonassoc ON.
@@ -1233,6 +1233,12 @@ expr(A) ::= BITNOT(B) expr(X).
 expr(A) ::= PLUS|MINUS(B) expr(X). [BITNOT] {
   A = sqlite3PExpr(pParse, @B==TK_PLUS ? TK_UPLUS : TK_UMINUS, X, 0);
   /*A-overwrites-B*/
+}
+
+expr(A) ::= expr(B) PTR(C) expr(D). {
+  ExprList *pList = sqlite3ExprListAppend(pParse, 0, B);
+  pList = sqlite3ExprListAppend(pParse, pList, D);
+  A = sqlite3ExprFunction(pParse, pList, &C, 0);
 }
 
 %type between_op {int}

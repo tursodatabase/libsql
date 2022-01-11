@@ -64,7 +64,7 @@ LIBOBJ+= vdbe.o parse.o \
          fts3_tokenize_vtab.o \
 	 fts3_unicode.o fts3_unicode2.o \
          fts3_write.o fts5.o func.o global.o hash.o \
-         icu.o insert.o json1.o legacy.o loadext.o \
+         icu.o insert.o json.o legacy.o loadext.o \
          main.o malloc.o mem0.o mem1.o mem2.o mem3.o mem5.o \
          memdb.o memjournal.o \
          mutex.o mutex_noop.o mutex_unix.o mutex_w32.o \
@@ -111,6 +111,7 @@ SRC = \
   $(TOP)/src/hash.h \
   $(TOP)/src/hwtime.h \
   $(TOP)/src/insert.c \
+  $(TOP)/src/json.c \
   $(TOP)/src/legacy.c \
   $(TOP)/src/loadext.c \
   $(TOP)/src/main.c \
@@ -244,7 +245,6 @@ SRC += \
   $(TOP)/ext/rbu/sqlite3rbu.c \
   $(TOP)/ext/rbu/sqlite3rbu.h
 SRC += \
-  $(TOP)/ext/misc/json1.c \
   $(TOP)/ext/misc/stmt.c
 
 
@@ -827,9 +827,6 @@ fts3_write.o:	$(TOP)/ext/fts3/fts3_write.c $(HDR) $(EXTHDR)
 
 fts5.o:	fts5.c  sqlite3ext.h sqlite3.h
 	$(TCCX) -DSQLITE_CORE -c fts5.c
-
-json1.o:	$(TOP)/ext/misc/json1.c sqlite3ext.h sqlite3.h
-	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/misc/json1.c
 
 stmt.o:	$(TOP)/ext/misc/stmt.c sqlite3ext.h sqlite3.h
 	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/misc/stmt.c

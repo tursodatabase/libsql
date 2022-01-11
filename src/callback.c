@@ -358,7 +358,6 @@ void sqlite3InsertBuiltinFuncs(
     const char *zName = aDef[i].zName;
     int nName = sqlite3Strlen30(zName);
     int h = SQLITE_FUNC_HASH(zName[0], nName);
-    assert( zName[0]>='a' && zName[0]<='z' );
     assert( aDef[i].funcFlags & SQLITE_FUNC_BUILTIN );
     pOther = sqlite3FunctionSearch(h, zName);
     if( pOther ){
