@@ -1903,13 +1903,10 @@ jsonSetDone:
 
 /*
 ** json_type(JSON)
-** json_ntype(JSON)
 ** json_type(JSON, PATH)
 **
 ** Return the top-level "type" of a JSON string.  json_type() raises an
-** error if either the JSON or PATH inputs are not well-formed.  json_ntype()
-** works like the one-argument version of json_type() except that it
-** returns NULL if the JSON argument is not well-formed.
+** error if either the JSON or PATH inputs are not well-formed.
 */
 static void jsonTypeFunc(
   sqlite3_context *ctx,
@@ -1920,7 +1917,7 @@ static void jsonTypeFunc(
   const char *zPath;
   JsonNode *pNode;
 
-  p = jsonParseCached(ctx, argv, sqlite3_user_data(ctx)!=0 ? 0 : ctx);
+  p = jsonParseCached(ctx, argv, ctx);
   if( p==0 ) return;
   if( argc==2 ){
     zPath = (const char*)sqlite3_value_text(argv[1]);

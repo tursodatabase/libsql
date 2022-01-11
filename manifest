@@ -1,5 +1,5 @@
-C Fix\sthe\sPG-compatible\s->\sand\s->>\spath\sparsing.
-D 2022-01-11T18:01:17.466
+C Remove\svestigial\straces\sof\sjson_ntype().
+D 2022-01-11T22:06:25.550
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -512,7 +512,7 @@ F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h cb1d7e3e1ed94b7aa6fde95ae2c2daccc3df826be26fc9ed7fd90d1750ae6144
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c e528416ff5d86fc5d656ea6a26f03fde39836b6175f93048c32a03cb2ee16743
-F src/json.c 5dee750a85262600817f20e3ced050f9c2a47d8c3db77f31f4ee379c0f843a8a
+F src/json.c f3bbaf6a4df6f5ada5b71e01666f5cd67642c616cd8be47dbfa5b5768dfa71d4
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 95db1fe62c5973f1c5d9c53f6083e21a73ece14cdd47eeca0639691332e85c4d
 F src/main.c 2b6b0dbfeb14d4bb57e368604b0736b2aa42b51b00339d399b01d6b1fc9b4960
@@ -1938,8 +1938,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P feba24ef774d80ebbaf87a93fc106cb7e482edcc3f237edd4c9d4e918ffb3131
-R 0007d377d0ed1c0dc1f81b209b625ab0
+P 22d5138315fb77eeea1c7e66ccc4190bcae18d058a99aa37ddd119e54b52f723
+R 4fe2152bcfc77f35d559181df42337b8
 U drh
-Z e45b9675c3fefc0ecfe81398e8f3bbb1
+Z 2256adb4b917a0fe76784837651ce52b
 # Remove this line to create a well-formed Fossil manifest.
