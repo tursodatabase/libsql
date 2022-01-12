@@ -6839,7 +6839,7 @@ static void dropCell(MemPage *pPage, int idx, int sz, int *pRC){
   assert( pPage->nFree>=0 );
   data = pPage->aData;
   ptr = &pPage->aCellIdx[2*idx];
-  assert( pPage->pBt->usableSize > (int)(ptr-data) );
+  assert( pPage->pBt->usableSize > (u32)(ptr-data) );
   pc = get2byte(ptr);
   hdr = pPage->hdrOffset;
   testcase( pc==(u32)get2byte(&data[hdr+5]) );
