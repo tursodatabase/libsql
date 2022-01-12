@@ -179,9 +179,6 @@ static const char * const sqlite3azCompileOpt[] = {
 #ifdef SQLITE_DISABLE_INTRINSIC
   "DISABLE_INTRINSIC",
 #endif
-#ifdef SQLITE_DISABLE_JSON
-  "DISABLE_JSON",
-#endif
 #ifdef SQLITE_DISABLE_LFS
   "DISABLE_LFS",
 #endif
@@ -582,6 +579,9 @@ static const char * const sqlite3azCompileOpt[] = {
 #endif
 #ifdef SQLITE_OMIT_INTROSPECTION_PRAGMAS
   "OMIT_INTROSPECTION_PRAGMAS",
+#endif
+#ifdef SQLITE_OMIT_JSON
+  "OMIT_JSON",
 #endif
 #ifdef SQLITE_OMIT_LIKE_OPTIMIZATION
   "OMIT_LIKE_OPTIMIZATION",
