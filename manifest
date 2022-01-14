@@ -1,5 +1,5 @@
-C For\s.import\sschema,\squote\sit\sas\sfor\sother\sidentifiers.
-D 2022-01-14T16:29:45.154
+C Fix\sa\sNEVER()\sin\sthe\sbyte-code\sengine\sthat\scan\ssometimes\sbe\strue.\nTest\scase\sin\sTH3.
+D 2022-01-14T21:34:49.566
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -623,7 +623,7 @@ F src/upsert.c 8789047a8f0a601ea42fa0256d1ba3190c13746b6ba940fe2d25643a7e991937
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c 89e51820bcb468ff3877a8d942f5cc807208087f021227e0927693e928a195bc
 F src/vacuum.c 6c38ddc52f0619865c91dae9c441d4d48bf3040d7dc1bc5b22da1e45547ed0b3
-F src/vdbe.c 23116cc5d99ada73e8e11addabc380c27758688a16d84d0efa6dbe94c1293a4f
+F src/vdbe.c 93b2403c28a9b902da1bc4dff82350c72eeb982976c95afca32b660a2dd33273
 F src/vdbe.h 25dabb25c7e157b84e59260cfb5b466c3ac103ede9f36f4db371332c47601abe
 F src/vdbeInt.h d89d5d2150500cfb08615329fd20aea9d746bba5f2c3ecb8a17e2d2d9be029e5
 F src/vdbeapi.c 22c79072ae7d8a01e9bcae8ba16e918d60d202eaa9553b5fda38f99f7464d99a
@@ -1938,8 +1938,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 38d9dbca166078013a44214c88805fc7cca578976ceed9fc62f5159a38ec96a7
-R e7948e84541b04c653db4c07ea64a3d2
-U larrybr
-Z de2e0419e48292104e905a3447c66b63
+P bff9153ceedcc7be77f2daf5139fee29c2fab742ff1fce49877965423a7d4be3
+R 2f1d0218c0e4dfbf854acd661cc4df02
+U drh
+Z e916f24e97798ecb1bcf0d0b63bac360
 # Remove this line to create a well-formed Fossil manifest.
