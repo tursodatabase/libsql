@@ -37,6 +37,8 @@ pub struct InnerConnection {
     owned: bool,
 }
 
+unsafe impl Send for InnerConnection {}
+
 impl InnerConnection {
     #[allow(clippy::mutex_atomic)]
     #[inline]

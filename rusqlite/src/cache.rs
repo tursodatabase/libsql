@@ -60,6 +60,9 @@ impl Connection {
 // #[derive(Debug)] // FIXME: https://github.com/kyren/hashlink/pull/4
 pub struct StatementCache(RefCell<LruCache<Arc<str>, RawStatement>>);
 
+#[allow(clippy::non_send_fields_in_send_ty)]
+unsafe impl Send for StatementCache {}
+
 /// Cacheable statement.
 ///
 /// Statement will return automatically to the cache by default.
