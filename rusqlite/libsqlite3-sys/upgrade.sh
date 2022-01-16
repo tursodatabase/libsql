@@ -1,7 +1,6 @@
-#!/bin/bash -e
+#!/bin/sh -e
 
-SCRIPT_DIR=$(cd "$(dirname "$_")" && pwd)
-CUR_DIR=$(pwd -P)
+SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 echo "$SCRIPT_DIR"
 cd "$SCRIPT_DIR" || { echo "fatal error" >&2; exit 1; }
 cargo clean
