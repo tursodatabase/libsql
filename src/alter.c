@@ -450,7 +450,7 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
         " THEN raise(ABORT,'CHECK constraint failed')"
         " ELSE raise(ABORT,'NOT NULL constraint failed')"
         " END"
-        "  FROM pragma_quick_check(\"%w\",\"%w\")"
+        "  FROM pragma_quick_check(%Q,%Q)"
         " WHERE quick_check GLOB 'CHECK*' OR quick_check GLOB 'NULL*'",
         zTab, zDb
       );
