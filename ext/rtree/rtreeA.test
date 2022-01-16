@@ -165,7 +165,7 @@ do_corruption_tests rtreeA-3.1 {
 }
 
 do_execsql_test rtreeA-3.1.0.3 {
-  SELECT rtreecheck('main', 't1')!="ok"
+  SELECT rtreecheck('main', 't1')!='ok'
 } {1}
 
 do_test rtreeA-3.2.0 { set_tree_depth t1 1000 } {1000}
@@ -221,7 +221,7 @@ do_corruption_tests rtreeA-5.1 {
 }
 
 do_execsql_test rtreeA-5.2 {
-  SELECT rtreecheck('main', 't1')!="ok"
+  SELECT rtreecheck('main', 't1')!='ok'
 } {1}
 
 #-------------------------------------------------------------------------
@@ -238,7 +238,7 @@ do_corruption_tests rtreeA-6.1 {
 }
 
 do_execsql_test rtreeA-6.2 {
-  SELECT rtreecheck('main', 't1')!="ok"
+  SELECT rtreecheck('main', 't1')!='ok'
 } {1}
 
 #-------------------------------------------------------------------------

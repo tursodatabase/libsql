@@ -439,6 +439,7 @@ do_test join-5.1 {
 # A test for ticket #247.
 #
 do_test join-7.1 {
+  sqlite3_db_config db SQLITE_DBCONFIG_DQS_DML 1
   execsql {
     CREATE TABLE t7 (x, y);
     INSERT INTO t7 VALUES ("pa1", 1);
