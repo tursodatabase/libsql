@@ -31,7 +31,9 @@ pub enum DbConfig {
     /// Includes or excludes output for any operations performed by trigger
     /// programs from the output of EXPLAIN QUERY PLAN commands.
     SQLITE_DBCONFIG_TRIGGER_EQP = 1008, // 3.22.0
-    //SQLITE_DBCONFIG_RESET_DATABASE = 1009,
+    /// Activates or deactivates the "reset" flag for a database connection.
+    /// Run VACUUM with this flag set to reset the database.
+    SQLITE_DBCONFIG_RESET_DATABASE = 1009,
     /// Activates or deactivates the "defensive" flag for a database connection.
     SQLITE_DBCONFIG_DEFENSIVE = 1010, // 3.26.0
     /// Activates or deactivates the "writable_schema" flag.
