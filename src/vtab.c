@@ -807,7 +807,6 @@ int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
   VtabCtx *pCtx;
   int rc = SQLITE_OK;
   Table *pTab;
-  char *zErr = 0;
   Parse sParse;
   int initBusy;
 
@@ -836,11 +835,12 @@ int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
   initBusy = db->init.busy;
   db->init.busy = 0;
   sParse.nQueryLoop = 1;
-  if( SQLITE_OK==sqlite3RunParser(&sParse, zCreateTable, &zErr) 
-   && sParse.pNewTable
-   && !db->mallocFailed
+  if( SQLITE_OK==sqlite3RunParser(&sParse, zCreateTable) 
+   && ALWAYS(sParse.pNewTable!=0)
+   && ALWAYS(!db->mallocFailed)
    && IsOrdinaryTable(sParse.pNewTable)
   ){
+    assert( sParse.zErrMsg==0 );
     if( !pTab->aCol ){
       Table *pNew = sParse.pNewTable;
       Index *pIdx;
@@ -870,8 +870,9 @@ int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
     }
     pCtx->bDeclared = 1;
   }else{
-    sqlite3ErrorWithMsg(db, SQLITE_ERROR, (zErr ? "%s" : 0), zErr);
-    sqlite3DbFree(db, zErr);
+    sqlite3ErrorWithMsg(db, SQLITE_ERROR,
+          (sParse.zErrMsg ? "%s" : 0), sParse.zErrMsg);
+    sqlite3DbFree(db, sParse.zErrMsg);
     rc = SQLITE_ERROR;
   }
   sParse.eParseMode = PARSE_MODE_NORMAL;

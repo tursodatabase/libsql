@@ -180,7 +180,7 @@ LIBOBJS0 = alter.lo analyze.lo attach.lo auth.lo \
          fts3_unicode.lo fts3_unicode2.lo fts3_write.lo \
 	 fts5.lo \
          func.lo global.lo hash.lo \
-         icu.lo insert.lo json1.lo legacy.lo loadext.lo \
+         icu.lo insert.lo json.lo legacy.lo loadext.lo \
          main.lo malloc.lo mem0.lo mem1.lo mem2.lo mem3.lo mem5.lo \
          memdb.lo memjournal.lo \
          mutex.lo mutex_noop.lo mutex_unix.lo mutex_w32.lo \
@@ -234,6 +234,7 @@ SRC = \
   $(TOP)/src/hash.h \
   $(TOP)/src/hwtime.h \
   $(TOP)/src/insert.c \
+  $(TOP)/src/json.c \
   $(TOP)/src/legacy.c \
   $(TOP)/src/loadext.c \
   $(TOP)/src/main.c \
@@ -366,7 +367,6 @@ SRC += \
   $(TOP)/ext/rbu/sqlite3rbu.h \
   $(TOP)/ext/rbu/sqlite3rbu.c
 SRC += \
-  $(TOP)/ext/misc/json1.c \
   $(TOP)/ext/misc/stmt.c
 
 # Generated source code files
@@ -875,6 +875,9 @@ hash.lo:	$(TOP)/src/hash.c $(HDR)
 insert.lo:	$(TOP)/src/insert.c $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/insert.c
 
+json.lo:	$(TOP)/src/json.c
+	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/json.c
+
 legacy.lo:	$(TOP)/src/legacy.c $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/legacy.c
 
@@ -1177,9 +1180,6 @@ userauth.lo:	$(TOP)/ext/userauth/userauth.c $(HDR) $(EXTHDR)
 
 sqlite3session.lo:	$(TOP)/ext/session/sqlite3session.c $(HDR) $(EXTHDR)
 	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/session/sqlite3session.c
-
-json1.lo:	$(TOP)/ext/misc/json1.c
-	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/misc/json1.c
 
 stmt.lo:	$(TOP)/ext/misc/stmt.c
 	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/misc/stmt.c

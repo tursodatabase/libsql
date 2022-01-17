@@ -117,13 +117,13 @@ sqlite3_db_config db DEFENSIVE 0
 do_execsql_test 3.2 {
   BEGIN;
     UPDATE r2_node SET data = X'123456';
-    SELECT rtreecheck('r2')!="ok";
+    SELECT rtreecheck('r2')!='ok';
 } {1}
 
 do_execsql_test 3.3 {
   ROLLBACK;
   UPDATE r2_node SET data = X'00001234';
-  SELECT rtreecheck('r2')!="ok";
+  SELECT rtreecheck('r2')!='ok';
 } {1}
 
 do_execsql_test 4.0 {

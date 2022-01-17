@@ -25,6 +25,8 @@ ifcapable !altertable {
 
 
 sqlite3_test_control SQLITE_TESTCTRL_INTERNAL_FUNCTIONS db
+sqlite3_db_config db SQLITE_DBCONFIG_DQS_DDL 1
+sqlite3_db_config db SQLITE_DBCONFIG_DQS_DML 1
 
 do_execsql_test 1.0 {
   CREATE TABLE t1(a, b, c);
@@ -89,6 +91,8 @@ foreach {tn before after} {
 
 #-------------------------------------------------------------------------
 reset_db
+sqlite3_db_config db SQLITE_DBCONFIG_DQS_DDL 1
+sqlite3_db_config db SQLITE_DBCONFIG_DQS_DML 1
 do_execsql_test 2.0 {
   CREATE TABLE x1(
       one, two, three, PRIMARY KEY(one), 

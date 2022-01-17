@@ -320,8 +320,9 @@ static int lookupName(
           }
           if( hit || zTab==0 ) continue;
         }
-        if( zDb && pTab->pSchema!=pSchema ){
-          continue;
+        if( zDb ){
+          if( pTab->pSchema!=pSchema ) continue;
+          if( pSchema==0 && strcmp(zDb,"*")!=0 ) continue;
         }
         if( zTab ){
           const char *zTabName = pItem->zAlias ? pItem->zAlias : pTab->zName;
@@ -452,6 +453,7 @@ static int lookupName(
             pExpr->y.pTab = pTab;
             if( pParse->bReturning ){
               eNewExprOp = TK_REGISTER;
+              pExpr->op2 = TK_COLUMN;
               pExpr->iTable = pNC->uNC.iBaseReg + (pTab->nCol+1)*pExpr->iTable +
                  sqlite3TableColumnToStorage(pTab, iCol) + 1;
             }else{

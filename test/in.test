@@ -281,12 +281,13 @@ do_test in-7.8.2 {
   db status step
 } {0}
 
-do_test in-8.1 {
+do_test in-8.3 {
   execsql {
     SELECT b FROM t1 WHERE a IN ('hello','there')
   }
 } {world}
-do_test in-8.2 {
+do_test in-8.4 {
+  sqlite3_db_config db SQLITE_DBCONFIG_DQS_DML 1
   execsql {
     SELECT b FROM t1 WHERE a IN ("hello",'there')
   }

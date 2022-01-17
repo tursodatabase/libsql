@@ -436,6 +436,7 @@ static void SHA3Update(
   unsigned int nData
 ){
   unsigned int i = 0;
+  if( aData==0 ) return;
 #if SHA3_BYTEORDER==1234
   if( (p->nLoaded % 8)==0 && ((aData - (const unsigned char*)0)&7)==0 ){
     for(; i+7<nData; i+=8){

@@ -64,6 +64,7 @@ struct WhereLevel {
   u32 iLikeRepCntr;     /* LIKE range processing counter register (times 2) */
   int addrLikeRep;      /* LIKE range processing address */
 #endif
+  int regFilter;        /* Bloom filter */
   u8 iFrom;             /* Which entry in the FROM clause */
   u8 op, p3, p5;        /* Opcode, P3 & P5 of the opcode that ends the loop */
   int p1, p2;           /* Operands of the opcode used to end the loop */
@@ -269,7 +270,7 @@ struct WhereTerm {
 #define TERM_COPIED     0x0008 /* Has a child */
 #define TERM_ORINFO     0x0010 /* Need to free the WhereTerm.u.pOrInfo object */
 #define TERM_ANDINFO    0x0020 /* Need to free the WhereTerm.u.pAndInfo obj */
-#define TERM_OR_OK      0x0040 /* Used during OR-clause processing */
+#define TERM_OK         0x0040 /* Used during OR-clause processing */
 #define TERM_VNULL      0x0080 /* Manufactured x>NULL or x<=NULL term */
 #define TERM_LIKEOPT    0x0100 /* Virtual terms from the LIKE optimization */
 #define TERM_LIKECOND   0x0200 /* Conditionally this LIKE operator term */
@@ -292,11 +293,11 @@ struct WhereScan {
   WhereClause *pWC;          /* WhereClause currently being scanned */
   const char *zCollName;     /* Required collating sequence, if not NULL */
   Expr *pIdxExpr;            /* Search for this index expression */
-  char idxaff;               /* Must match this affinity, if zCollName!=NULL */
-  unsigned char nEquiv;      /* Number of entries in aiCur[] and aiColumn[] */
-  unsigned char iEquiv;      /* Next unused slot in aiCur[] and aiColumn[] */
-  u32 opMask;                /* Acceptable operators */
   int k;                     /* Resume scanning at this->pWC->a[this->k] */
+  u32 opMask;                /* Acceptable operators */
+  char idxaff;               /* Must match this affinity, if zCollName!=NULL */
+  unsigned char iEquiv;      /* Current slot in aiCur[] and aiColumn[] */
+  unsigned char nEquiv;      /* Number of entries in aiCur[] and aiColumn[] */
   int aiCur[11];             /* Cursors in the equivalence class */
   i16 aiColumn[11];          /* Corresponding column number in the eq-class */
 };
@@ -320,6 +321,7 @@ struct WhereClause {
   u8 hasOr;                /* True if any a[].eOperator is WO_OR */
   int nTerm;               /* Number of terms */
   int nSlot;               /* Number of entries in a[] */
+  int nBase;               /* Number of terms through the last non-Virtual */
   WhereTerm *a;            /* Each a[] describes a term of the WHERE cluase */
 #if defined(SQLITE_SMALL_STACK)
   WhereTerm aStatic[1];    /* Initial static space for a[] */
@@ -376,11 +378,6 @@ struct WhereMaskSet {
   int n;                        /* Number of assigned cursor values */
   int ix[BMS];                  /* Cursor assigned to each bit */
 };
-
-/*
-** Initialize a WhereMaskSet object
-*/
-#define initMaskSet(P)  (P)->n=0
 
 /*
 ** This object is a convenience wrapper holding all information needed
@@ -510,8 +507,14 @@ int sqlite3WhereExplainOneScan(
   WhereLevel *pLevel,             /* Scan to write OP_Explain opcode for */
   u16 wctrlFlags                  /* Flags passed to sqlite3WhereBegin() */
 );
+int sqlite3WhereExplainBloomFilter(
+  const Parse *pParse,            /* Parse context */
+  const WhereInfo *pWInfo,        /* WHERE clause */
+  const WhereLevel *pLevel        /* Bloom filter on this level */
+);
 #else
 # define sqlite3WhereExplainOneScan(u,v,w,x) 0
+# define sqlite3WhereExplainBloomFilter(u,v,w) 0
 #endif /* SQLITE_OMIT_EXPLAIN */
 #ifdef SQLITE_ENABLE_STMT_SCANSTATUS
 void sqlite3WhereAddScanStatus(
@@ -604,5 +607,7 @@ void sqlite3WhereTabFuncArgs(Parse*, SrcItem*, WhereClause*);
 #define WHERE_BIGNULL_SORT 0x00080000  /* Column nEq of index is BIGNULL */
 #define WHERE_IN_SEEKSCAN  0x00100000  /* Seek-scan optimization for IN */
 #define WHERE_TRANSCONS    0x00200000  /* Uses a transitive constraint */
+#define WHERE_BLOOMFILTER  0x00400000  /* Consider using a Bloom-filter */
+#define WHERE_SELFCULL     0x00800000  /* nOut reduced by extra WHERE terms */
 
 #endif /* !defined(SQLITE_WHEREINT_H) */
