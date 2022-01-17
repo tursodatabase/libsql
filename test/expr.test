@@ -970,6 +970,7 @@ do_realnum_test expr-13.7 {
   }
 } {9.22337203685478e+18}
 
+sqlite3_db_config db SQLITE_DBCONFIG_DQS_DML 1
 do_execsql_test expr-13.8 {
   SELECT "" <= '';
 } {1}

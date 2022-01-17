@@ -838,6 +838,8 @@ do_execsql_test 22.0 {
 #-------------------------------------------------------------------------
 #
 reset_db
+sqlite3_db_config db SQLITE_DBCONFIG_DQS_DDL 1
+sqlite3_db_config db SQLITE_DBCONFIG_DQS_DML 1
 do_execsql_test 22.0 {
   CREATE TABLE t1(a, b);
   CREATE INDEX x1 on t1("c"=b);

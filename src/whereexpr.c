@@ -79,6 +79,7 @@ static int whereClauseInsert(WhereClause *pWC, Expr *p, u16 wtFlags){
     pWC->nSlot = sqlite3DbMallocSize(db, pWC->a)/sizeof(pWC->a[0]);
   }
   pTerm = &pWC->a[idx = pWC->nTerm++];
+  if( (wtFlags & TERM_VIRTUAL)==0 ) pWC->nBase = pWC->nTerm;
   if( p && ExprHasProperty(p, EP_Unlikely) ){
     pTerm->truthProb = sqlite3LogEst(p->iTable) - 270;
   }else{
@@ -795,7 +796,7 @@ static void exprAnalyzeOrTerm(
       pOrTerm = pOrWc->a;
       for(i=pOrWc->nTerm-1; i>=0; i--, pOrTerm++){
         assert( pOrTerm->eOperator & WO_EQ );
-        pOrTerm->wtFlags &= ~TERM_OR_OK;
+        pOrTerm->wtFlags &= ~TERM_OK;
         if( pOrTerm->leftCursor==iCursor ){
           /* This is the 2-bit case and we are on the second iteration and
           ** current term is from the first iteration.  So skip this term. */
@@ -836,7 +837,7 @@ static void exprAnalyzeOrTerm(
         assert( pOrTerm->eOperator & WO_EQ );
         assert( (pOrTerm->eOperator & (WO_OR|WO_AND))==0 );
         if( pOrTerm->leftCursor!=iCursor ){
-          pOrTerm->wtFlags &= ~TERM_OR_OK;
+          pOrTerm->wtFlags &= ~TERM_OK;
         }else if( pOrTerm->u.x.leftColumn!=iColumn || (iColumn==XN_EXPR 
                && sqlite3ExprCompare(pParse, pOrTerm->pExpr->pLeft, pLeft, -1)
         )){
@@ -852,7 +853,7 @@ static void exprAnalyzeOrTerm(
           if( affRight!=0 && affRight!=affLeft ){
             okToChngToIN = 0;
           }else{
-            pOrTerm->wtFlags |= TERM_OR_OK;
+            pOrTerm->wtFlags |= TERM_OK;
           }
         }
       }
@@ -869,7 +870,7 @@ static void exprAnalyzeOrTerm(
       Expr *pNew;            /* The complete IN operator */
 
       for(i=pOrWc->nTerm-1, pOrTerm=pOrWc->a; i>=0; i--, pOrTerm++){
-        if( (pOrTerm->wtFlags & TERM_OR_OK)==0 ) continue;
+        if( (pOrTerm->wtFlags & TERM_OK)==0 ) continue;
         assert( pOrTerm->eOperator & WO_EQ );
         assert( (pOrTerm->eOperator & (WO_OR|WO_AND))==0 );
         assert( pOrTerm->leftCursor==iCursor );
@@ -1070,10 +1071,13 @@ static void exprAnalyze(
   if( db->mallocFailed ){
     return;
   }
+  assert( pWC->nTerm > idxTerm );
   pTerm = &pWC->a[idxTerm];
   pMaskSet = &pWInfo->sMaskSet;
   pExpr = pTerm->pExpr;
+  assert( pExpr!=0 ); /* Because malloc() has not failed */
   assert( pExpr->op!=TK_AS && pExpr->op!=TK_COLLATE );
+  pMaskSet->bVarSelect = 0;
   prereqLeft = sqlite3WhereExprUsage(pMaskSet, pExpr->pLeft);
   op = pExpr->op;
   if( op==TK_IN ){
@@ -1084,14 +1088,28 @@ static void exprAnalyze(
     }else{
       pTerm->prereqRight = sqlite3WhereExprListUsage(pMaskSet, pExpr->x.pList);
     }
-  }else if( op==TK_ISNULL ){
-    pTerm->prereqRight = 0;
+    prereqAll = prereqLeft | pTerm->prereqRight;
   }else{
     pTerm->prereqRight = sqlite3WhereExprUsage(pMaskSet, pExpr->pRight);
+    if( pExpr->pLeft==0
+     || ExprHasProperty(pExpr, EP_xIsSelect|EP_IfNullRow)
+     || pExpr->x.pList!=0
+    ){
+      prereqAll = sqlite3WhereExprUsageNN(pMaskSet, pExpr);
+    }else{
+      prereqAll = prereqLeft | pTerm->prereqRight;
+    }
   }
-  pMaskSet->bVarSelect = 0;
-  prereqAll = sqlite3WhereExprUsageNN(pMaskSet, pExpr);
   if( pMaskSet->bVarSelect ) pTerm->wtFlags |= TERM_VARSELECT;
+
+#ifdef SQLITE_DEBUG
+  if( prereqAll!=sqlite3WhereExprUsageNN(pMaskSet, pExpr) ){
+    printf("\n*** Incorrect prereqAll computed for:\n");
+    sqlite3TreeViewExpr(0,pExpr,0);
+    abort();
+  }
+#endif
+
   if( ExprHasProperty(pExpr, EP_FromJoin) ){
     Bitmask x = sqlite3WhereGetMask(pMaskSet, pExpr->iRightJoinTable);
     prereqAll |= x;
@@ -1515,6 +1533,7 @@ void sqlite3WhereClauseInit(
   pWC->hasOr = 0;
   pWC->pOuter = 0;
   pWC->nTerm = 0;
+  pWC->nBase = 0;
   pWC->nSlot = ArraySize(pWC->aStatic);
   pWC->a = pWC->aStatic;
 }
@@ -1525,17 +1544,33 @@ void sqlite3WhereClauseInit(
 ** sqlite3WhereClauseInit().
 */
 void sqlite3WhereClauseClear(WhereClause *pWC){
-  int i;
-  WhereTerm *a;
   sqlite3 *db = pWC->pWInfo->pParse->db;
-  for(i=pWC->nTerm-1, a=pWC->a; i>=0; i--, a++){
-    if( a->wtFlags & TERM_DYNAMIC ){
-      sqlite3ExprDelete(db, a->pExpr);
+  assert( pWC->nTerm>=pWC->nBase );
+  if( pWC->nTerm>0 ){
+    WhereTerm *a = pWC->a;
+    WhereTerm *aLast = &pWC->a[pWC->nTerm-1];
+#ifdef SQLITE_DEBUG
+    int i;
+    /* Verify that every term past pWC->nBase is virtual */
+    for(i=pWC->nBase; i<pWC->nTerm; i++){
+      assert( (pWC->a[i].wtFlags & TERM_VIRTUAL)!=0 );
     }
-    if( a->wtFlags & TERM_ORINFO ){
-      whereOrInfoDelete(db, a->u.pOrInfo);
-    }else if( a->wtFlags & TERM_ANDINFO ){
-      whereAndInfoDelete(db, a->u.pAndInfo);
+#endif
+    while(1){
+      if( a->wtFlags & TERM_DYNAMIC ){
+        sqlite3ExprDelete(db, a->pExpr);
+      }
+      if( a->wtFlags & (TERM_ORINFO|TERM_ANDINFO) ){
+        if( a->wtFlags & TERM_ORINFO ){
+          assert( (a->wtFlags & TERM_ANDINFO)==0 );
+          whereOrInfoDelete(db, a->u.pOrInfo);
+        }else{
+          assert( (a->wtFlags & TERM_ANDINFO)!=0 );
+          whereAndInfoDelete(db, a->u.pAndInfo);
+        }
+      }
+      if( a==aLast ) break;
+      a++;
     }
   }
   if( pWC->a!=pWC->aStatic ){
@@ -1548,15 +1583,38 @@ void sqlite3WhereClauseClear(WhereClause *pWC){
 ** These routines walk (recursively) an expression tree and generate
 ** a bitmask indicating which tables are used in that expression
 ** tree.
+**
+** sqlite3WhereExprUsage(MaskSet, Expr) ->
+**
+**       Return a Bitmask of all tables referenced by Expr.  Expr can be
+**       be NULL, in which case 0 is returned.
+**
+** sqlite3WhereExprUsageNN(MaskSet, Expr) ->
+**
+**       Same as sqlite3WhereExprUsage() except that Expr must not be
+**       NULL.  The "NN" suffix on the name stands for "Not Null".
+**
+** sqlite3WhereExprListUsage(MaskSet, ExprList) ->
+**
+**       Return a Bitmask of all tables referenced by every expression
+**       in the expression list ExprList.  ExprList can be NULL, in which
+**       case 0 is returned.
+**
+** sqlite3WhereExprUsageFull(MaskSet, ExprList) ->
+**
+**       Internal use only.  Called only by sqlite3WhereExprUsageNN() for
+**       complex expressions that require pushing register values onto
+**       the stack.  Many calls to sqlite3WhereExprUsageNN() do not need
+**       the more complex analysis done by this routine.  Hence, the
+**       computations done by this routine are broken out into a separate
+**       "no-inline" function to avoid the stack push overhead in the
+**       common case where it is not needed.
 */
-Bitmask sqlite3WhereExprUsageNN(WhereMaskSet *pMaskSet, Expr *p){
+static SQLITE_NOINLINE Bitmask sqlite3WhereExprUsageFull(
+  WhereMaskSet *pMaskSet,
+  Expr *p
+){
   Bitmask mask;
-  if( p->op==TK_COLUMN && !ExprHasProperty(p, EP_FixedCol) ){
-    return sqlite3WhereGetMask(pMaskSet, p->iTable);
-  }else if( ExprHasProperty(p, EP_TokenOnly|EP_Leaf) ){
-    assert( p->op!=TK_IF_NULL_ROW );
-    return 0;
-  }
   mask = (p->op==TK_IF_NULL_ROW) ? sqlite3WhereGetMask(pMaskSet, p->iTable) : 0;
   if( p->pLeft ) mask |= sqlite3WhereExprUsageNN(pMaskSet, p->pLeft);
   if( p->pRight ){
@@ -1577,6 +1635,15 @@ Bitmask sqlite3WhereExprUsageNN(WhereMaskSet *pMaskSet, Expr *p){
   }
 #endif
   return mask;
+}
+Bitmask sqlite3WhereExprUsageNN(WhereMaskSet *pMaskSet, Expr *p){
+  if( p->op==TK_COLUMN && !ExprHasProperty(p, EP_FixedCol) ){
+    return sqlite3WhereGetMask(pMaskSet, p->iTable);
+  }else if( ExprHasProperty(p, EP_TokenOnly|EP_Leaf) ){
+    assert( p->op!=TK_IF_NULL_ROW );
+    return 0;
+  }
+  return sqlite3WhereExprUsageFull(pMaskSet, p);
 }
 Bitmask sqlite3WhereExprUsage(WhereMaskSet *pMaskSet, Expr *p){
   return p ? sqlite3WhereExprUsageNN(pMaskSet,p) : 0;
