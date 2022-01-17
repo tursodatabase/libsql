@@ -3235,9 +3235,13 @@ static int lockBtree(BtShared *pBt){
                                    pageSize-usableSize);
       return rc;
     }
-    if( sqlite3WritableSchema(pBt->db)==0 && nPage>nPageFile ){
-      rc = SQLITE_CORRUPT_BKPT;
-      goto page1_init_failed;
+    if( nPage>nPageFile ){
+      if( sqlite3WritableSchema(pBt->db)==0 ){
+        rc = SQLITE_CORRUPT_BKPT;
+        goto page1_init_failed;
+      }else{
+        nPage = nPageFile;
+      }
     }
     /* EVIDENCE-OF: R-28312-64704 However, the usable size is not allowed to
     ** be less than 480. In other words, if the page size is 512, then the
