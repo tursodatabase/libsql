@@ -470,5 +470,20 @@ ifcapable altertable {
     EXPLAIN QUERY PLAN SELECT * FROM dual, t1 WHERE a=10 AND b=10;
   } {~/b=/}
 }
-  
+
+# 2022-01-01 https://sqlite.org/forum/forumpost/b03d86f951 PoC #1
+# Omit an assert() from 2013 that no longer serves any purpose and
+# is no longer always true.
+#
+reset_db
+do_execsql_test 15.1 {
+  PRAGMA writable_schema=ON;
+  CREATE TABLE sqlite_sequence (name PRIMARY KEY) WITHOUT ROWID;
+  PRAGMA writable_schema=OFF;
+  CREATE TABLE c1(x);
+  INSERT INTO sqlite_sequence(name) VALUES('c0'),('c1'),('c2');
+  ALTER TABLE c1 RENAME TO a;
+  SELECT name FROM sqlite_sequence ORDER BY +name;
+} {a c0 c2}
+
 finish_test

@@ -127,8 +127,13 @@ void sqlite3FastPrngInit(FastPrng *pPrng){
 void sqlite3FastRandomness(FastPrng *pPrng, int N, void *P){
   unsigned char *pOut = (unsigned char*)P;
   while( N-->0 ){
-    pPrng->x = ((pPrng->x)>>1) ^ ((1+~((pPrng->x)&1)) & 0xd0000001);
-    pPrng->y = (pPrng->y)*1103515245 + 12345;
+    /* "x" is a variant of LFSR called "Xorshift" by George Marsaglia */
+    pPrng->x ^= pPrng->x <<13;
+    pPrng->x ^= pPrng->x >>7;
+    pPrng->x ^= pPrng->x <<17;
+    /* "y" is a LCG using Don Kunth's constants from MMIX */
+    pPrng->y = (pPrng->y)*6364136223846793005LL + 1442695040888963407LL;
+    /* XOR the two streams together to give the final result */
     *(pOut++) = (pPrng->x ^ pPrng->y) & 0xff;
   }
 }

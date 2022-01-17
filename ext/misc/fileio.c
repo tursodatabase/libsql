@@ -368,10 +368,11 @@ static int writeFile(
   mode_t mode,                    /* MODE parameter passed to writefile() */
   sqlite3_int64 mtime             /* MTIME parameter (or -1 to not set time) */
 ){
+  if( zFile==0 ) return 1;
 #if !defined(_WIN32) && !defined(WIN32)
   if( S_ISLNK(mode) ){
     const char *zTo = (const char*)sqlite3_value_text(pData);
-    if( symlink(zTo, zFile)<0 ) return 1;
+    if( zTo==0 || symlink(zTo, zFile)<0 ) return 1;
   }else
 #endif
   {

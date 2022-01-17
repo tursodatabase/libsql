@@ -1563,7 +1563,7 @@ static char *rbuVacuumTableStart(
 ** the caller has to use an OFFSET clause to extract only the required 
 ** rows from the sourct table, just as it does for an RBU update operation.
 */
-char *rbuVacuumIndexStart(
+static char *rbuVacuumIndexStart(
   sqlite3rbu *p,                  /* RBU handle */
   RbuObjIter *pIter               /* RBU iterator object */
 ){

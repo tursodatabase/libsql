@@ -450,7 +450,7 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
         " THEN raise(ABORT,'CHECK constraint failed')"
         " ELSE raise(ABORT,'NOT NULL constraint failed')"
         " END"
-        "  FROM pragma_quick_check(\"%w\",\"%w\")"
+        "  FROM pragma_quick_check(%Q,%Q)"
         " WHERE quick_check GLOB 'CHECK*' OR quick_check GLOB 'NULL*'",
         zTab, zDb
       );
@@ -1126,7 +1126,6 @@ static int renameParseSql(
   int bTemp                       /* True if SQL is from temp schema */
 ){
   int rc;
-  char *zErr = 0;
 
   db->init.iDb = bTemp ? 1 : sqlite3FindDbName(db, zDb);
 
@@ -1137,10 +1136,7 @@ static int renameParseSql(
   p->eParseMode = PARSE_MODE_RENAME;
   p->db = db;
   p->nQueryLoop = 1;
-  rc = zSql ? sqlite3RunParser(p, zSql, &zErr) : SQLITE_NOMEM;
-  assert( p->zErrMsg==0 );
-  assert( rc!=SQLITE_OK || zErr==0 );
-  p->zErrMsg = zErr;
+  rc = zSql ? sqlite3RunParser(p, zSql) : SQLITE_NOMEM;
   if( db->mallocFailed ) rc = SQLITE_NOMEM;
   if( rc==SQLITE_OK 
    && p->pNewTable==0 && p->pNewIndex==0 && p->pNewTrigger==0 

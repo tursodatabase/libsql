@@ -22,6 +22,7 @@ ifcapable !subquery {
   return
 }
 
+sqlite3_db_config db SQLITE_DBCONFIG_DQS_DML 1
 do_test tkt3841.1 {
   execsql {
     CREATE TABLE table2 (key TEXT, x TEXT);
