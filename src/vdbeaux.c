@@ -2470,8 +2470,6 @@ void sqlite3VdbeFreeCursor(Vdbe *p, VdbeCursor *pCx){
   if( pCx==0 ){
     return;
   }
-  assert( pCx->pBtx==0 || pCx->eCurType==CURTYPE_BTREE );
-  assert( pCx->pBtx==0 || pCx->isEphemeral );
   switch( pCx->eCurType ){
     case CURTYPE_SORTER: {
       sqlite3VdbeSorterClose(p->db, pCx);
@@ -3573,7 +3571,7 @@ int sqlite3VdbeCursorMoveto(VdbeCursor **pp, u32 *piCol){
   if( p->deferredMoveto ){
     u32 iMap;
     assert( !p->isEphemeral );
-    if( p->aAltMap && (iMap = p->aAltMap[1+*piCol])>0 && !p->nullRow ){
+    if( p->ub.aAltMap && (iMap = p->ub.aAltMap[1+*piCol])>0 && !p->nullRow ){
       *pp = p->pAltCursor;
       *piCol = iMap - 1;
       return SQLITE_OK;
@@ -3851,14 +3849,14 @@ u32 sqlite3VdbeSerialPut(u8 *buf, Mem *pMem, u32 serial_type){
 
 /*
 ** Deserialize the data blob pointed to by buf as serial type serial_type
-** and store the result in pMem.  Return the number of bytes read.
+** and store the result in pMem.
 **
 ** This function is implemented as two separate routines for performance.
 ** The few cases that require local variables are broken out into a separate
 ** routine so that in most cases the overhead of moving the stack pointer
 ** is avoided.
 */ 
-static u32 serialGet(
+static void serialGet(
   const unsigned char *buf,     /* Buffer to deserialize from */
   u32 serial_type,              /* Serial type to deserialize */
   Mem *pMem                     /* Memory cell to write value into */
@@ -3892,9 +3890,8 @@ static u32 serialGet(
     memcpy(&pMem->u.r, &x, sizeof(x));
     pMem->flags = IsNaN(x) ? MEM_Null : MEM_Real;
   }
-  return 8;
 }
-u32 sqlite3VdbeSerialGet(
+void sqlite3VdbeSerialGet(
   const unsigned char *buf,     /* Buffer to deserialize from */
   u32 serial_type,              /* Serial type to deserialize */
   Mem *pMem                     /* Memory cell to write value into */
@@ -3905,13 +3902,13 @@ u32 sqlite3VdbeSerialGet(
       pMem->flags = MEM_Null|MEM_Zero;
       pMem->n = 0;
       pMem->u.nZero = 0;
-      break;
+      return;
     }
     case 11:   /* Reserved for future use */
     case 0: {  /* Null */
       /* EVIDENCE-OF: R-24078-09375 Value is a NULL. */
       pMem->flags = MEM_Null;
-      break;
+      return;
     }
     case 1: {
       /* EVIDENCE-OF: R-44885-25196 Value is an 8-bit twos-complement
@@ -3919,7 +3916,7 @@ u32 sqlite3VdbeSerialGet(
       pMem->u.i = ONE_BYTE_INT(buf);
       pMem->flags = MEM_Int;
       testcase( pMem->u.i<0 );
-      return 1;
+      return;
     }
     case 2: { /* 2-byte signed integer */
       /* EVIDENCE-OF: R-49794-35026 Value is a big-endian 16-bit
@@ -3927,7 +3924,7 @@ u32 sqlite3VdbeSerialGet(
       pMem->u.i = TWO_BYTE_INT(buf);
       pMem->flags = MEM_Int;
       testcase( pMem->u.i<0 );
-      return 2;
+      return;
     }
     case 3: { /* 3-byte signed integer */
       /* EVIDENCE-OF: R-37839-54301 Value is a big-endian 24-bit
@@ -3935,7 +3932,7 @@ u32 sqlite3VdbeSerialGet(
       pMem->u.i = THREE_BYTE_INT(buf);
       pMem->flags = MEM_Int;
       testcase( pMem->u.i<0 );
-      return 3;
+      return;
     }
     case 4: { /* 4-byte signed integer */
       /* EVIDENCE-OF: R-01849-26079 Value is a big-endian 32-bit
@@ -3947,7 +3944,7 @@ u32 sqlite3VdbeSerialGet(
 #endif
       pMem->flags = MEM_Int;
       testcase( pMem->u.i<0 );
-      return 4;
+      return;
     }
     case 5: { /* 6-byte signed integer */
       /* EVIDENCE-OF: R-50385-09674 Value is a big-endian 48-bit
@@ -3955,13 +3952,14 @@ u32 sqlite3VdbeSerialGet(
       pMem->u.i = FOUR_BYTE_UINT(buf+2) + (((i64)1)<<32)*TWO_BYTE_INT(buf);
       pMem->flags = MEM_Int;
       testcase( pMem->u.i<0 );
-      return 6;
+      return;
     }
     case 6:   /* 8-byte signed integer */
     case 7: { /* IEEE floating point */
       /* These use local variables, so do them in a separate routine
       ** to avoid having to move the frame pointer in the common case */
-      return serialGet(buf,serial_type,pMem);
+      serialGet(buf,serial_type,pMem);
+      return;
     }
     case 8:    /* Integer 0 */
     case 9: {  /* Integer 1 */
@@ -3969,7 +3967,7 @@ u32 sqlite3VdbeSerialGet(
       /* EVIDENCE-OF: R-18143-12121 Value is the integer 1. */
       pMem->u.i = serial_type-8;
       pMem->flags = MEM_Int;
-      return 0;
+      return;
     }
     default: {
       /* EVIDENCE-OF: R-14606-31564 Value is a BLOB that is (N-12)/2 bytes in
@@ -3980,10 +3978,10 @@ u32 sqlite3VdbeSerialGet(
       pMem->z = (char *)buf;
       pMem->n = (serial_type-12)/2;
       pMem->flags = aFlag[serial_type&1];
-      return pMem->n;
+      return;
     }
   }
-  return 0;
+  return;
 }
 /*
 ** This routine is used to allocate sufficient space for an UnpackedRecord
@@ -4046,7 +4044,8 @@ void sqlite3VdbeRecordUnpack(
     /* pMem->flags = 0; // sqlite3VdbeSerialGet() will set this for us */
     pMem->szMalloc = 0;
     pMem->z = 0;
-    d += sqlite3VdbeSerialGet(&aKey[d], serial_type, pMem);
+    sqlite3VdbeSerialGet(&aKey[d], serial_type, pMem);
+    d += sqlite3VdbeSerialTypeLen(serial_type);
     pMem++;
     if( (++u)>=p->nField ) break;
   }
@@ -4130,7 +4129,8 @@ static int vdbeRecordCompareDebug(
 
     /* Extract the values to be compared.
     */
-    d1 += sqlite3VdbeSerialGet(&aKey1[d1], serial_type1, &mem1);
+    sqlite3VdbeSerialGet(&aKey1[d1], serial_type1, &mem1);
+    d1 += sqlite3VdbeSerialTypeLen(serial_type1);
 
     /* Do the comparison
     */
@@ -4934,7 +4934,7 @@ int sqlite3VdbeIdxRowid(sqlite3 *db, BtCursor *pCur, i64 *rowid){
   /* The index entry must begin with a header size */
   getVarint32NR((u8*)m.z, szHdr);
   testcase( szHdr==3 );
-  testcase( szHdr==m.n );
+  testcase( szHdr==(u32)m.n );
   testcase( szHdr>0x7fffffff );
   assert( m.n>=0 );
   if( unlikely(szHdr<3 || szHdr>(unsigned)m.n) ){

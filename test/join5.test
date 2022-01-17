@@ -303,6 +303,7 @@ do_eqp_test 7.4 {
 } {
   QUERY PLAN
   |--SCAN t3
+  |--BLOOM FILTER ON t4 (x=?)
   `--SEARCH t4 USING INDEX t4xz (x=?)
 } 
 

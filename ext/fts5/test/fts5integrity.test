@@ -188,11 +188,11 @@ foreach {tn pgsz} {
     INSERT INTO hh(hh, rank) VALUES('pgsz', $pgsz);
 
     WITH s(i) AS (SELECT 0 UNION ALL SELECT i+1 FROM s WHERE i<999)
-     INSERT INTO hh SELECT printf("%.3d%.3d%.3d %.3d%.3d%.3d",i,i,i,i+1,i+1,i+1)
+     INSERT INTO hh SELECT printf('%.3d%.3d%.3d %.3d%.3d%.3d',i,i,i,i+1,i+1,i+1)
      FROM s;
 
     WITH s(i) AS (SELECT 0 UNION ALL SELECT i+1 FROM s WHERE i<999)
-     INSERT INTO hh SELECT printf("%.3d%.3d%.3d %.3d%.3d%.3d",i,i,i,i+1,i+1,i+1)
+     INSERT INTO hh SELECT printf('%.3d%.3d%.3d %.3d%.3d%.3d',i,i,i,i+1,i+1,i+1)
      FROM s;
 
     INSERT INTO hh(hh) VALUES('optimize');

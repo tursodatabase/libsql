@@ -178,7 +178,7 @@ do_catchsql_test 6.10 {
   INSERT INTO f_segments (blockid) values (16);
   INSERT INTO f_segments values (0, x'');
   INSERT INTO f_stat VALUES (1,x'cf0f01');
-  INSERT INTO f(f) VALUES ("merge=1");
+  INSERT INTO f(f) VALUES ('merge=1');
 } {1 {database disk image is malformed}}
 
 # 2020-03-02 https://bugs.chromium.org/p/chromium/issues/detail?id=1057441
