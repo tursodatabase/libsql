@@ -1884,8 +1884,8 @@ static void jsonSetFunc(
     }else if( x.nErr ){
       goto jsonSetDone;
     }else if( pNode && (bApnd || bIsSet) ){
-      testcase( pNode->eU!=0 && pNode->eU!=1 && pNode->eU!=4 );
-      assert( pNode->eU!=3 || pNode->eU!=5 );
+      testcase( pNode->eU!=0 && pNode->eU!=1 );
+      assert( pNode->eU!=3 && pNode->eU!=5 );
       VVA( pNode->eU = 4 );
       pNode->jnFlags |= (u8)JNODE_REPLACE;
       pNode->u.iReplace = i + 1;
