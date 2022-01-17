@@ -74,7 +74,7 @@ set ::headCommentLines [expr 1+[regexp -all "\n" $::headComment]]
 set ::topDir [file dir [file dir [file normal $argv0]]]
 set runMode normal
 
-set ::lineTags 1 ; # 0 => none, 1 => source change, 2 => line syncs, 3 => more
+set ::lineTags 0 ; # 0 => none, 1 => source change, 2 => line syncs, 3 => more
 
 set ::tclGenerate 0
 set ::verbosity 0

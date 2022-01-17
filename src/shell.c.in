@@ -7282,7 +7282,7 @@ COLLECT_HELP_TEXT[
   "   See also:",
   "      http://sqlite.org/cli.html#sqlite_archive_support",
 ];
-DISPATCHABLE_COMMAND( archive ? 3 0 azArg nArg p ){
+DISPATCHABLE_COMMAND( archive ? 0 0 azArg nArg p ){
   open_db(p, 0);
   if( p->bSafeMode ) return SHELL_FORBIDDEN_OP;
   return arDotCommand(p, 0, azArg, nArg);
@@ -10928,7 +10928,6 @@ COLLECT_HELP_TEXT[
 ];
 DISPATCHABLE_COMMAND( width ? 1 0 ){
   int j;
-  assert( nArg<=ArraySize(azArg) );
   p->nWidth = nArg-1;
   p->colWidth = realloc(p->colWidth, (p->nWidth+1)*sizeof(int)*2);
   if( p->colWidth==0 && p->nWidth>0 ) shell_out_of_memory();
