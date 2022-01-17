@@ -451,6 +451,17 @@ void sqlite3Update(
   */
   chngRowid = chngPk = 0;
   for(i=0; i<pChanges->nExpr; i++){
+#if defined(SQLITE_ENABLE_NOOP_UPDATE) && !defined(SQLITE_OMIT_FLAG_PRAGMAS)
+    if( db->flags & SQLITE_NoopUpdate ){
+      Token x;
+      sqlite3ExprDelete(db, pChanges->a[i].pExpr);
+      x.z = pChanges->a[i].zEName;
+      x.n = sqlite3Strlen30(x.z);
+      pChanges->a[i].pExpr =
+        sqlite3PExpr(pParse, TK_UPLUS, sqlite3ExprAlloc(db, TK_ID, &x, 0), 0);
+      if( db->mallocFailed ) goto update_cleanup;
+    }
+#endif
     u8 hCol = sqlite3StrIHash(pChanges->a[i].zEName);
     /* If this is an UPDATE with a FROM clause, do not resolve expressions
     ** here. The call to sqlite3Select() below will do that. */

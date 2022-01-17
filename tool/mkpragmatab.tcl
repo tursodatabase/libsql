@@ -107,6 +107,12 @@ set pragma_def {
   IF:   !defined(SQLITE_OMIT_FLAG_PRAGMAS)
   IF:   defined(SQLITE_DEBUG)
 
+  NAME: noop_update
+  TYPE: FLAG
+  ARG:  SQLITE_NoopUpdate
+  IF:   !defined(SQLITE_OMIT_FLAG_PRAGMAS)
+  IF:   defined(SQLITE_ENABLE_NOOP_UPDATE)
+
   NAME: ignore_check_constraints
   TYPE: FLAG
   ARG:  SQLITE_IgnoreChecks

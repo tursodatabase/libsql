@@ -1732,6 +1732,9 @@ struct sqlite3 {
                                           /*   the count using a callback. */
 #define SQLITE_CorruptRdOnly  HI(0x00002) /* Prohibit writes due to error */
 
+/* Flags used by the Pragma noop_update enhancement */
+#define SQLITE_NoopUpdate     HI(0x0001000) /* UPDATE operations are no-ops */
+
 /* Flags used only if debugging */
 #ifdef SQLITE_DEBUG
 #define SQLITE_SqlTrace       HI(0x0100000) /* Debug print SQL as it executes */
