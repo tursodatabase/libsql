@@ -933,7 +933,7 @@ static void codeReturningTrigger(
   }
   sqlite3ExprListDelete(db, sSelect.pEList);
   pNew = sqlite3ExpandReturning(pParse, pReturning->pReturnEL, pTab);
-  if( pNew ){
+  if( !db->mallocFailed ){
     NameContext sNC;
     memset(&sNC, 0, sizeof(sNC));
     if( pReturning->nRetCol==0 ){
@@ -945,7 +945,9 @@ static void codeReturningTrigger(
     sNC.ncFlags = NC_UBaseReg;
     pParse->eTriggerOp = pTrigger->op;
     pParse->pTriggerTab = pTab;
-    if( sqlite3ResolveExprListNames(&sNC, pNew)==SQLITE_OK ){
+    if( sqlite3ResolveExprListNames(&sNC, pNew)==SQLITE_OK
+     && !db->mallocFailed
+    ){
       int i;
       int nCol = pNew->nExpr;
       int reg = pParse->nMem+1;
@@ -953,8 +955,7 @@ static void codeReturningTrigger(
       pReturning->iRetReg = reg;
       for(i=0; i<nCol; i++){
         Expr *pCol = pNew->a[i].pExpr;
-        assert( pCol!=0 || pParse->db->mallocFailed );
-        if( pCol==0 ) continue;
+        assert( pCol!=0 ); /* Due to !db->mallocFailed ~9 lines above */
         sqlite3ExprCodeFactorable(pParse, pCol, reg+i);
         if( sqlite3ExprAffinity(pCol)==SQLITE_AFF_REAL ){
           sqlite3VdbeAddOp1(v, OP_RealAffinity, reg+i);
@@ -964,10 +965,10 @@ static void codeReturningTrigger(
       sqlite3VdbeAddOp2(v, OP_NewRowid, pReturning->iRetCur, reg+i+1);
       sqlite3VdbeAddOp3(v, OP_Insert, pReturning->iRetCur, reg+i, reg+i+1);
     }
-    sqlite3ExprListDelete(db, pNew);
-    pParse->eTriggerOp = 0;
-    pParse->pTriggerTab = 0;
   }
+  sqlite3ExprListDelete(db, pNew);
+  pParse->eTriggerOp = 0;
+  pParse->pTriggerTab = 0;
 }
 
 

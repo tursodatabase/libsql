@@ -627,7 +627,7 @@ ifcapable altertable {
     CREATE INDEX t15c ON t15(c);
     INSERT INTO t15(a,b)
       VALUES(5,'zyx'),(15,'wvu'),(25,'tsr'),(35,'qpo');
-    UPDATE t15 SET c=printf("y%d",a) WHERE c IS NULL;
+    UPDATE t15 SET c=printf('y%d',a) WHERE c IS NULL;
     SELECT a,b,c,'|' FROM t15 ORDER BY a;
   } {5 zyx y5 | 10 abc y10 | 15 wvu y15 | 20 def y20 | 25 tsr y25 | 30 ghi y30 | 35 qpo y35 |}
 }

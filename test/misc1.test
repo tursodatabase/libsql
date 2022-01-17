@@ -652,7 +652,7 @@ do_catchsql_test misc1-21.2 {
 
 # 2015-04-15
 do_execsql_test misc1-22.1 {
-  SELECT ""+3 FROM (SELECT ""+5);
+  SELECT ''+3 FROM (SELECT ''+5);
 } {3}
 
 # 2015-04-19: NULL pointer dereference on a corrupt schema

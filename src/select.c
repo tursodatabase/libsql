@@ -1575,6 +1575,9 @@ static void generateSortTail(
 
   iTab = pSort->iECursor;
   if( eDest==SRT_Output || eDest==SRT_Coroutine || eDest==SRT_Mem ){
+    if( eDest==SRT_Mem && p->iOffset ){
+      sqlite3VdbeAddOp2(v, OP_Null, 0, pDest->iSdst);
+    }
     regRowid = 0;
     regRow = pDest->iSdst;
   }else{

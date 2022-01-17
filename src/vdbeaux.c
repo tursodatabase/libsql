@@ -2470,8 +2470,6 @@ void sqlite3VdbeFreeCursor(Vdbe *p, VdbeCursor *pCx){
   if( pCx==0 ){
     return;
   }
-  assert( pCx->pBtx==0 || pCx->eCurType==CURTYPE_BTREE );
-  assert( pCx->pBtx==0 || pCx->isEphemeral );
   switch( pCx->eCurType ){
     case CURTYPE_SORTER: {
       sqlite3VdbeSorterClose(p->db, pCx);
@@ -3573,7 +3571,7 @@ int sqlite3VdbeCursorMoveto(VdbeCursor **pp, u32 *piCol){
   if( p->deferredMoveto ){
     u32 iMap;
     assert( !p->isEphemeral );
-    if( p->aAltMap && (iMap = p->aAltMap[1+*piCol])>0 && !p->nullRow ){
+    if( p->ub.aAltMap && (iMap = p->ub.aAltMap[1+*piCol])>0 && !p->nullRow ){
       *pp = p->pAltCursor;
       *piCol = iMap - 1;
       return SQLITE_OK;

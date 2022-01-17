@@ -97,6 +97,17 @@ static void typeofFunc(
   sqlite3_result_text(context, azType[i], -1, SQLITE_STATIC);
 }
 
+/* subtype(X)
+**
+** Return the subtype of X
+*/
+static void subtypeFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  sqlite3_result_int(context, sqlite3_value_subtype(argv[0]));
+}
 
 /*
 ** Implementation of the length() function
@@ -258,7 +269,7 @@ endInstrOOM:
 }
 
 /*
-** Implementation of the printf() function.
+** Implementation of the printf() (a.k.a. format()) SQL function.
 */
 static void printfFunc(
   sqlite3_context *context,
@@ -2246,9 +2257,11 @@ void sqlite3RegisterBuiltinFunctions(void){
     WAGGREGATE(max, 1, 1, 1, minmaxStep, minMaxFinalize, minMaxValue, 0,
                                  SQLITE_FUNC_MINMAX|SQLITE_FUNC_ANYORDER ),
     FUNCTION2(typeof,            1, 0, 0, typeofFunc,  SQLITE_FUNC_TYPEOF),
+    FUNCTION2(subtype,           1, 0, 0, subtypeFunc, SQLITE_FUNC_TYPEOF),
     FUNCTION2(length,            1, 0, 0, lengthFunc,  SQLITE_FUNC_LENGTH),
     FUNCTION(instr,              2, 0, 0, instrFunc        ),
     FUNCTION(printf,            -1, 0, 0, printfFunc       ),
+    FUNCTION(format,            -1, 0, 0, printfFunc       ),
     FUNCTION(unicode,            1, 0, 0, unicodeFunc      ),
     FUNCTION(char,              -1, 0, 0, charFunc         ),
     FUNCTION(abs,                1, 0, 0, absFunc          ),
@@ -2347,6 +2360,7 @@ void sqlite3RegisterBuiltinFunctions(void){
 #endif
   sqlite3WindowFunctions();
   sqlite3RegisterDateTimeFunctions();
+  sqlite3RegisterJsonFunctions();
   sqlite3InsertBuiltinFuncs(aBuiltinFunc, ArraySize(aBuiltinFunc));
 
 #if 0  /* Enable to print out how the built-in functions are hashed */

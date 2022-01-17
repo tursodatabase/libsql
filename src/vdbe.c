@@ -241,7 +241,6 @@ static VdbeCursor *allocateCursor(
   Vdbe *p,              /* The virtual machine */
   int iCur,             /* Index of the new VdbeCursor */
   int nField,           /* Number of fields in the table or index */
-  int iDb,              /* Database the cursor belongs to, or -1 */
   u8 eCurType           /* Type of the new cursor */
 ){
   /* Find the memory cell that will be used to store the blob of memory
@@ -298,7 +297,6 @@ static VdbeCursor *allocateCursor(
   p->apCsr[iCur] = pCx = (VdbeCursor*)pMem->zMalloc;
   memset(pCx, 0, offsetof(VdbeCursor,pAltCursor));
   pCx->eCurType = eCurType;
-  pCx->iDb = iDb;
   pCx->nField = nField;
   pCx->aOffset = &pCx->aType[nField];
   if( eCurType==CURTYPE_BTREE ){
@@ -2162,7 +2160,7 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
         sqlite3VdbeMemStringify(pIn1, encoding, 1);
         testcase( (flags1&MEM_Dyn) != (pIn1->flags&MEM_Dyn) );
         flags1 = (pIn1->flags & ~MEM_TypeMask) | (flags1 & MEM_TypeMask);
-        if( NEVER(pIn1==pIn3) ) flags3 = flags1 | MEM_Str;
+        if( pIn1==pIn3 ) flags3 = flags1 | MEM_Str;
       }
       if( (flags3 & MEM_Str)==0 && (flags3&(MEM_Int|MEM_Real|MEM_IntReal))!=0 ){
         testcase( pIn3->flags & MEM_Int );
@@ -2692,6 +2690,7 @@ case OP_Column: {
   assert( pC!=0 );
   assert( p2<(u32)pC->nField );
   aOffset = pC->aOffset;
+  assert( aOffset==pC->aType+pC->nField );
   assert( pC->eCurType!=CURTYPE_VTAB );
   assert( pC->eCurType!=CURTYPE_PSEUDO || pC->nullRow );
   assert( pC->eCurType!=CURTYPE_SORTER );
@@ -3841,6 +3840,7 @@ case OP_SetCookie: {
     /* When the schema cookie changes, record the new cookie internally */
     pDb->pSchema->schema_cookie = pOp->p3 - pOp->p5;
     db->mDbFlags |= DBFLAG_SchemaChange;
+    sqlite3FkClearTriggerCache(db, pOp->p1);
   }else if( pOp->p2==BTREE_FILE_FORMAT ){
     /* Record changes in the file format */
     pDb->pSchema->file_format = pOp->p3;
@@ -4018,8 +4018,9 @@ case OP_OpenWrite:
   assert( pOp->p1>=0 );
   assert( nField>=0 );
   testcase( nField==0 );  /* Table with INTEGER PRIMARY KEY and nothing else */
-  pCur = allocateCursor(p, pOp->p1, nField, iDb, CURTYPE_BTREE);
+  pCur = allocateCursor(p, pOp->p1, nField, CURTYPE_BTREE);
   if( pCur==0 ) goto no_mem;
+  pCur->iDb = iDb;
   pCur->nullRow = 1;
   pCur->isOrdered = 1;
   pCur->pgnoRoot = p2;
@@ -4061,7 +4062,7 @@ case OP_OpenDup: {
   assert( pOrig );
   assert( pOrig->isEphemeral );  /* Only ephemeral cursors can be duplicated */
 
-  pCx = allocateCursor(p, pOp->p1, pOrig->nField, -1, CURTYPE_BTREE);
+  pCx = allocateCursor(p, pOp->p1, pOrig->nField, CURTYPE_BTREE);
   if( pCx==0 ) goto no_mem;
   pCx->nullRow = 1;
   pCx->isEphemeral = 1;
@@ -4069,10 +4070,10 @@ case OP_OpenDup: {
   pCx->isTable = pOrig->isTable;
   pCx->pgnoRoot = pOrig->pgnoRoot;
   pCx->isOrdered = pOrig->isOrdered;
-  pCx->pBtx = pOrig->pBtx;
+  pCx->ub.pBtx = pOrig->ub.pBtx;
   pCx->hasBeenDuped = 1;
   pOrig->hasBeenDuped = 1;
-  rc = sqlite3BtreeCursor(pCx->pBtx, pCx->pgnoRoot, BTREE_WRCSR, 
+  rc = sqlite3BtreeCursor(pCx->ub.pBtx, pCx->pgnoRoot, BTREE_WRCSR, 
                           pCx->pKeyInfo, pCx->uc.pCursor);
   /* The sqlite3BtreeCursor() routine can only fail for the first cursor
   ** opened for a database.  Since there is already an open cursor when this
@@ -4145,16 +4146,16 @@ case OP_OpenEphemeral: {
     assert( pCx->isEphemeral );
     pCx->seqCount = 0;
     pCx->cacheStatus = CACHE_STALE;
-    rc = sqlite3BtreeClearTable(pCx->pBtx, pCx->pgnoRoot, 0);
+    rc = sqlite3BtreeClearTable(pCx->ub.pBtx, pCx->pgnoRoot, 0);
   }else{
-    pCx = allocateCursor(p, pOp->p1, pOp->p2, -1, CURTYPE_BTREE);
+    pCx = allocateCursor(p, pOp->p1, pOp->p2, CURTYPE_BTREE);
     if( pCx==0 ) goto no_mem;
     pCx->isEphemeral = 1;
-    rc = sqlite3BtreeOpen(db->pVfs, 0, db, &pCx->pBtx, 
+    rc = sqlite3BtreeOpen(db->pVfs, 0, db, &pCx->ub.pBtx, 
                           BTREE_OMIT_JOURNAL | BTREE_SINGLE | pOp->p5,
                           vfsFlags);
     if( rc==SQLITE_OK ){
-      rc = sqlite3BtreeBeginTrans(pCx->pBtx, 1, 0);
+      rc = sqlite3BtreeBeginTrans(pCx->ub.pBtx, 1, 0);
       if( rc==SQLITE_OK ){
         /* If a transient index is required, create it by calling
         ** sqlite3BtreeCreateTable() with the BTREE_BLOBKEY flag before
@@ -4163,26 +4164,26 @@ case OP_OpenEphemeral: {
         */
         if( (pCx->pKeyInfo = pKeyInfo = pOp->p4.pKeyInfo)!=0 ){
           assert( pOp->p4type==P4_KEYINFO );
-          rc = sqlite3BtreeCreateTable(pCx->pBtx, &pCx->pgnoRoot,
+          rc = sqlite3BtreeCreateTable(pCx->ub.pBtx, &pCx->pgnoRoot,
               BTREE_BLOBKEY | pOp->p5); 
           if( rc==SQLITE_OK ){
             assert( pCx->pgnoRoot==SCHEMA_ROOT+1 );
             assert( pKeyInfo->db==db );
             assert( pKeyInfo->enc==ENC(db) );
-            rc = sqlite3BtreeCursor(pCx->pBtx, pCx->pgnoRoot, BTREE_WRCSR,
+            rc = sqlite3BtreeCursor(pCx->ub.pBtx, pCx->pgnoRoot, BTREE_WRCSR,
                 pKeyInfo, pCx->uc.pCursor);
           }
           pCx->isTable = 0;
         }else{
           pCx->pgnoRoot = SCHEMA_ROOT;
-          rc = sqlite3BtreeCursor(pCx->pBtx, SCHEMA_ROOT, BTREE_WRCSR,
+          rc = sqlite3BtreeCursor(pCx->ub.pBtx, SCHEMA_ROOT, BTREE_WRCSR,
               0, pCx->uc.pCursor);
           pCx->isTable = 1;
         }
       }
       pCx->isOrdered = (pOp->p5!=BTREE_UNORDERED);
       if( rc ){
-        sqlite3BtreeClose(pCx->pBtx);
+        sqlite3BtreeClose(pCx->ub.pBtx);
       }
     }
   }
@@ -4206,7 +4207,7 @@ case OP_SorterOpen: {
 
   assert( pOp->p1>=0 );
   assert( pOp->p2>=0 );
-  pCx = allocateCursor(p, pOp->p1, pOp->p2, -1, CURTYPE_SORTER);
+  pCx = allocateCursor(p, pOp->p1, pOp->p2, CURTYPE_SORTER);
   if( pCx==0 ) goto no_mem;
   pCx->pKeyInfo = pOp->p4.pKeyInfo;
   assert( pCx->pKeyInfo->db==db );
@@ -4255,7 +4256,7 @@ case OP_OpenPseudo: {
 
   assert( pOp->p1>=0 );
   assert( pOp->p3>=0 );
-  pCx = allocateCursor(p, pOp->p1, pOp->p3, -1, CURTYPE_PSEUDO);
+  pCx = allocateCursor(p, pOp->p1, pOp->p3, CURTYPE_PSEUDO);
   if( pCx==0 ) goto no_mem;
   pCx->nullRow = 1;
   pCx->seekResult = pOp->p2;
@@ -6195,9 +6196,9 @@ case OP_IdxRowid: {           /* out2 */
       pTabCur->movetoTarget = rowid;
       pTabCur->deferredMoveto = 1;
       assert( pOp->p4type==P4_INTARRAY || pOp->p4.ai==0 );
-      pTabCur->aAltMap = pOp->p4.ai;
-      assert( !pC->isEphemeral );
       assert( !pTabCur->isEphemeral );
+      pTabCur->ub.aAltMap = pOp->p4.ai;
+      assert( !pC->isEphemeral );
       pTabCur->pAltCursor = pC;
     }else{
       pOut = out2Prerelease(p, pOp);
@@ -7719,7 +7720,7 @@ case OP_VOpen: {
   pVCur->pVtab = pVtab;
 
   /* Initialize vdbe cursor object */
-  pCur = allocateCursor(p, pOp->p1, 0, -1, CURTYPE_VTAB);
+  pCur = allocateCursor(p, pOp->p1, 0, CURTYPE_VTAB);
   if( pCur ){
     pCur->uc.pVCur = pVCur;
     pVtab->nRef++;

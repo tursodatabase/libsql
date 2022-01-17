@@ -605,12 +605,24 @@ else
   AC_SEARCH_LIBS(ceil, m)
 fi
 
+##########
+# Do we want to support JSON functions
+#
+AC_ARG_ENABLE(json, 
+AC_HELP_STRING([--disable-json],[Disable JSON functions]))
+AC_MSG_CHECKING([whether to support JSON functions])
+if test "$enable_json" = "no"; then
+  AC_MSG_RESULT([no])
+  OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_OMIT_JSON"
+else
+  AC_MSG_RESULT([yes])
+fi
 
 ########
 # The --enable-all argument is short-hand to enable
 # multiple extensions.
 AC_ARG_ENABLE(all, AC_HELP_STRING([--enable-all],
-      [Enable FTS4, FTS5, Geopoly, JSON, RTree, Sessions]))
+      [Enable FTS4, FTS5, Geopoly, RTree, Sessions]))
 
 ##########
 # Do we want to support memsys3 and/or memsys5
@@ -662,17 +674,6 @@ if test "${enable_fts5}" = "yes" -o "${enable_all}" = "yes" ; then
   AC_MSG_RESULT([yes])
   OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_FTS5"
   AC_SEARCH_LIBS([log],[m])
-else
-  AC_MSG_RESULT([no])
-fi
-
-#########
-# See whether we should enable JSON1
-AC_ARG_ENABLE(json1, AC_HELP_STRING([--enable-json1],[Enable the JSON1 extension]))
-AC_MSG_CHECKING([whether to support JSON])
-if test "${enable_json1}" = "yes" -o "${enable_all}" = "yes" ; then
-  OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_JSON1"
-  AC_MSG_RESULT([yes])
 else
   AC_MSG_RESULT([no])
 fi
