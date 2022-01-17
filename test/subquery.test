@@ -477,7 +477,7 @@ do_test subquery-5.1 {
     INSERT INTO t5 VALUES(3,33);
     INSERT INTO t5 VALUES(4,44);
     SELECT b FROM t5 WHERE a IN 
-       (SELECT callcnt(y)+0 FROM t4 WHERE x="two")
+       (SELECT callcnt(y)+0 FROM t4 WHERE x='two')
   }
 } {22}
 do_test subquery-5.2 {
@@ -593,5 +593,24 @@ do_execsql_test subquery-8.1 {
   SELECT (SELECT 0 FROM (SELECT * FROM t1)) AS x WHERE x;
   SELECT (SELECT 0 FROM (SELECT * FROM (SELECT 0))) AS x WHERE x;
 } {}
+
+# 2022-01-12 https://sqlite.org/forum/forumpost/0ec80f12d02acb3f
+# 
+reset_db
+do_execsql_test subquery-9.1 {
+  CREATE TABLE t1(x);
+  INSERT INTO t1 VALUES(1),(1),(1);
+  SELECT (SELECT DISTINCT x FROM t1 ORDER BY +x LIMIT 1 OFFSET 100) FROM t1;
+} {{} {} {}}
+do_execsql_test subquery-9.2 {
+  SELECT (SELECT DISTINCT x FROM t1 ORDER BY +x LIMIT 1 OFFSET 0) FROM t1;
+} {1 1 1}
+do_execsql_test subquery-9.3 {
+  INSERT INTO t1 VALUES(2);
+  SELECT (SELECT DISTINCT x FROM t1 ORDER BY +x LIMIT 1 OFFSET 1) FROM t1;
+} {2 2 2 2}
+do_execsql_test subquery-9.4 {
+  SELECT (SELECT DISTINCT x FROM t1 ORDER BY +x LIMIT 1 OFFSET 2) FROM t1;
+} {{} {} {} {}}
 
 finish_test

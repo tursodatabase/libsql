@@ -172,9 +172,10 @@ void sqlite3FinishCoding(Parse *pParse){
       int i;
       int reg;
 
-      if( pReturning->nRetCol==0 ){
+      if( NEVER(pReturning->nRetCol==0) ){
         assert( CORRUPT_DB );
       }else{
+        sqlite3VdbeAddOp0(v, OP_FkCheck);
         addrRewind =
            sqlite3VdbeAddOp1(v, OP_Rewind, pReturning->iRetCur);
         VdbeCoverage(v);
@@ -267,7 +268,7 @@ void sqlite3FinishCoding(Parse *pParse){
 
       if( pParse->bReturning ){
         Returning *pRet = pParse->u1.pReturning;
-        if( pRet->nRetCol==0 ){
+        if( NEVER(pRet->nRetCol==0) ){
           assert( CORRUPT_DB );
         }else{
           sqlite3VdbeAddOp2(v, OP_OpenEphemeral, pRet->iRetCur, pRet->nRetCol);
@@ -308,7 +309,6 @@ void sqlite3FinishCoding(Parse *pParse){
 void sqlite3NestedParse(Parse *pParse, const char *zFormat, ...){
   va_list ap;
   char *zSql;
-  char *zErrMsg = 0;
   sqlite3 *db = pParse->db;
   u32 savedDbFlags = db->mDbFlags;
   char saveBuf[PARSE_TAIL_SZ];
@@ -330,9 +330,8 @@ void sqlite3NestedParse(Parse *pParse, const char *zFormat, ...){
   memcpy(saveBuf, PARSE_TAIL(pParse), PARSE_TAIL_SZ);
   memset(PARSE_TAIL(pParse), 0, PARSE_TAIL_SZ);
   db->mDbFlags |= DBFLAG_PreferBuiltin;
-  sqlite3RunParser(pParse, zSql, &zErrMsg);
+  sqlite3RunParser(pParse, zSql);
   db->mDbFlags = savedDbFlags;
-  sqlite3DbFree(db, zErrMsg);
   sqlite3DbFree(db, zSql);
   memcpy(PARSE_TAIL(pParse), saveBuf, PARSE_TAIL_SZ);
   pParse->nested--;
@@ -4407,13 +4406,13 @@ void sqlite3CreateIndex(
       /* Add an entry in sqlite_schema for this index
       */
       sqlite3NestedParse(pParse, 
-          "INSERT INTO %Q." LEGACY_SCHEMA_TABLE " VALUES('index',%Q,%Q,#%d,%Q);",
-          db->aDb[iDb].zDbSName,
-          pIndex->zName,
-          pTab->zName,
-          iMem,
-          zStmt
-          );
+         "INSERT INTO %Q." LEGACY_SCHEMA_TABLE " VALUES('index',%Q,%Q,#%d,%Q);",
+         db->aDb[iDb].zDbSName,
+         pIndex->zName,
+         pTab->zName,
+         iMem,
+         zStmt
+      );
       sqlite3DbFree(db, zStmt);
 
       /* Fill the index with data and reparse the schema. Code an OP_Expire
@@ -4961,7 +4960,7 @@ SrcList *sqlite3SrcListAppendFromTerm(
   pItem->pUsing = pUsing;
   return p;
 
- append_from_error:
+append_from_error:
   assert( p==0 );
   sqlite3ExprDelete(db, pOn);
   sqlite3IdListDelete(db, pUsing);

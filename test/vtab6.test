@@ -351,6 +351,7 @@ do_test vtab6-4.10 {
 # A test for ticket #247.
 #
 do_test vtab6-7.1 {
+  sqlite3_db_config db SQLITE_DBCONFIG_DQS_DML 1
   execsql {
     INSERT INTO t7 VALUES ("pa1", 1);
     INSERT INTO t7 VALUES ("pa2", NULL);

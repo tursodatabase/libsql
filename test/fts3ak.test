@@ -21,17 +21,17 @@ ifcapable !fts3 {
 
 db eval {
   CREATE VIRTUAL TABLE t1 USING fts3(content);
-  INSERT INTO t1 (rowid, content) VALUES(1, "hello world");
-  INSERT INTO t1 (rowid, content) VALUES(2, "hello there");
-  INSERT INTO t1 (rowid, content) VALUES(3, "cruel world");
+  INSERT INTO t1 (rowid, content) VALUES(1, 'hello world');
+  INSERT INTO t1 (rowid, content) VALUES(2, 'hello there');
+  INSERT INTO t1 (rowid, content) VALUES(3, 'cruel world');
 }
 
 # Test that possibly-buffered inserts went through after commit.
 do_test fts3ak-1.1 {
   execsql {
     BEGIN TRANSACTION;
-    INSERT INTO t1 (rowid, content) VALUES(4, "false world");
-    INSERT INTO t1 (rowid, content) VALUES(5, "false door");
+    INSERT INTO t1 (rowid, content) VALUES(4, 'false world');
+    INSERT INTO t1 (rowid, content) VALUES(5, 'false door');
     COMMIT TRANSACTION;
     SELECT rowid FROM t1 WHERE t1 MATCH 'world';
   }
@@ -42,8 +42,8 @@ do_test fts3ak-1.1 {
 do_test fts3ak-1.2 {
   execsql {
     BEGIN TRANSACTION;
-    INSERT INTO t1 (rowid, content) VALUES(6, "another world");
-    INSERT INTO t1 (rowid, content) VALUES(7, "another test");
+    INSERT INTO t1 (rowid, content) VALUES(6, 'another world');
+    INSERT INTO t1 (rowid, content) VALUES(7, 'another test');
     SELECT rowid FROM t1 WHERE t1 MATCH 'world';
     COMMIT TRANSACTION;
   }
@@ -54,8 +54,8 @@ do_test fts3ak-1.2 {
 do_test fts3ak-1.3 {
   execsql {
     BEGIN TRANSACTION;
-    INSERT INTO t1 (rowid, content) VALUES(8, "second world");
-    INSERT INTO t1 (rowid, content) VALUES(9, "second sight");
+    INSERT INTO t1 (rowid, content) VALUES(8, 'second world');
+    INSERT INTO t1 (rowid, content) VALUES(9, 'second sight');
     SELECT rowid FROM t1 WHERE t1 MATCH 'world';
     ROLLBACK TRANSACTION;
   }
@@ -73,8 +73,8 @@ do_test fts3ak-1.4 {
 do_test fts3ak-1.5 {
   execsql {
     BEGIN TRANSACTION;
-    INSERT INTO t1 (rowid, content) VALUES(10, "second world");
-    INSERT INTO t1 (rowid, content) VALUES(11, "second sight");
+    INSERT INTO t1 (rowid, content) VALUES(10, 'second world');
+    INSERT INTO t1 (rowid, content) VALUES(11, 'second sight');
     ROLLBACK TRANSACTION;
     SELECT rowid FROM t1 WHERE t1 MATCH 'world';
   }
@@ -84,7 +84,7 @@ do_test fts3ak-1.5 {
 do_test fts3ak-1.6 {
   execsql {
     BEGIN;
-    INSERT INTO t1 (rowid, content) VALUES(12, "third world");
+    INSERT INTO t1 (rowid, content) VALUES(12, 'third world');
     COMMIT;
     SELECT rowid FROM t1 WHERE t1 MATCH 'third';
   }
@@ -95,7 +95,7 @@ do_test fts3ak-1.6 {
 do_test fts3ak-1.7 {
   execsql {
     BEGIN;
-    INSERT INTO t1 (rowid, content) VALUES(13, "third dimension");
+    INSERT INTO t1 (rowid, content) VALUES(13, 'third dimension');
     CREATE TABLE x (c);
     COMMIT;
     SELECT rowid FROM t1 WHERE t1 MATCH 'dimension';

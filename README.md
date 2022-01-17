@@ -309,9 +309,11 @@ describes its purpose and role within the larger system.
 The `manifest` file at the root directory of the source tree
 contains either a SHA3-256 hash (for newer files) or a SHA1 hash (for 
 older files) for every source file in the repository.
-The SHA3-256 hash of the `manifest`
-file itself is the official name of the version of the source tree that you
-have. The `manifest.uuid` file should contain the SHA3-256 hash of the
+The name of the version of the entire source tree is just the
+SHA3-256 hash of the `manifest` file itself, possibly with the
+last line of that file omitted if the last line begins with
+"`# Remove this line`".
+The `manifest.uuid` file should contain the SHA3-256 hash of the
 `manifest` file. If all of the above hash comparisons are correct, then
 you can be confident that your source tree is authentic and unadulterated.
 

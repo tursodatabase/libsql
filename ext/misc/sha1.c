@@ -71,7 +71,7 @@ struct SHA1Context {
 /*
  * Hash a single 512-bit block. This is the core of the algorithm.
  */
-void SHA1Transform(unsigned int state[5], const unsigned char buffer[64]){
+static void SHA1Transform(unsigned int state[5], const unsigned char buffer[64]){
   unsigned int qq[5]; /* a, b, c, d, e; */
   static int one = 1;
   unsigned int block[16];

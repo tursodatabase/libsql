@@ -75,6 +75,7 @@ static sqlite3_uint64 logEstToInt(LogEst x){
   x /= 10;
   if( n>=5 ) n -= 2;
   else if( n>=1 ) n -= 1;
+  if( x>60 ) return (((sqlite3_uint64)0xffffffff)<<32)+(sqlite3_uint64)0xffffffff;
   if( x>=3 ) return (n+8)<<(x-3);
   return (n+8)>>(3-x);
 }
@@ -149,7 +150,7 @@ int main(int argc, char **argv){
     }else if( z[0]=='^' ){
       a[n++] = (LogEst)atoi(z+1);
     }else if( isInteger(z) ){
-      a[n++] = logEstFromInteger(atoi(z));
+      a[n++] = logEstFromInteger(atoll(z));
     }else if( isFloat(z) && z[0]!='-' ){
       a[n++] = logEstFromDouble(atof(z));
     }else{
@@ -161,6 +162,8 @@ int main(int argc, char **argv){
       printf("%5d (%f)\n", a[i], 1.0/(double)logEstToInt(-a[i]));
     }else if( a[i]<10 ){
       printf("%5d (%f)\n", a[i], logEstToInt(a[i]+100)/1024.0);
+    }else if( a[i]>100 ){
+      printf("%5d (%lld)\n", a[i], logEstToInt(a[i]));
     }else{
       sqlite3_uint64 x = logEstToInt(a[i]+100)*100/1024;
       printf("%5d (%lld.%02lld)\n", a[i], x/100, x%100);

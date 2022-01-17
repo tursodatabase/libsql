@@ -169,7 +169,6 @@ do_test select6-3.2 {
        FROM (SELECT count(*) as p , b as q FROM t2 GROUP BY q) AS a,
             (SELECT max(a) as r, b as s FROM t2 GROUP BY s) as b
        WHERE a.q=b.s ORDER BY a.q)
-    ORDER BY "a.q"
   }
 } {1 1 1 2 2 3 3 4 7 4 8 15 5 5 20}
 do_test select6-3.3 {
