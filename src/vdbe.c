@@ -2986,6 +2986,8 @@ case OP_TypeCheck: {
           break;
         }
         case COLTYPE_REAL: {
+          testcase( (pIn1->flags & (MEM_Real|MEM_IntReal))==MEM_Real );
+          testcase( (pIn1->flags & (MEM_Real|MEM_IntReal))==MEM_IntReal );
           if( pIn1->flags & MEM_Int ){
             /* When applying REAL affinity, if the result is still an MEM_Int
             ** that will fit in 6 bytes, then change the type to MEM_IntReal
@@ -3003,7 +3005,7 @@ case OP_TypeCheck: {
               pIn1->flags |= MEM_Real;
               pIn1->flags &= ~MEM_Int;
             }
-          }else if( (pIn1->flags & MEM_Real)==0 ){
+          }else if( (pIn1->flags & (MEM_Real|MEM_IntReal))==0 ){
             goto vdbe_type_error;
           }
           break;
