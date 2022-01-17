@@ -8157,6 +8157,7 @@ COLLECT_HELP_TEXT[
   "     --ascii               Use \\037 and \\036 as column and row separators",
   "     --csv                 Use , and \\n as column and row separators",
   "     --skip N              Skip the first N rows of input",
+  "     --schema S            Target table to be S.TABLE",
   "     -v                    \"Verbose\" - increase auxiliary output",
   "   Notes:",
   "     *  If TABLE does not exist, it is created.  The first row of input",
@@ -8168,6 +8169,7 @@ COLLECT_HELP_TEXT[
 ];
 DISPATCHABLE_COMMAND( import ? 3 7 ){
   char *zTable = 0;           /* Insert data into this table */
+  char *zSchema = "main";     /* within this schema */
   char *zFile = 0;            /* Name of file to extra content from */
   sqlite3_stmt *pStmt = NULL; /* A statement */
   int nCol;                   /* Number of columns in the table */
@@ -8208,6 +8210,8 @@ DISPATCHABLE_COMMAND( import ? 3 7 ){
       }
     }else if( strcmp(z,"-v")==0 ){
       eVerbose++;
+    }else if( strcmp(z,"-schema")==0 && i<nArg-1 ){
+      zSchema = azArg[++i];
     }else if( strcmp(z,"-skip")==0 && i<nArg-1 ){
       nSkip = integerValue(azArg[++i]);
     }else if( strcmp(z,"-ascii")==0 ){
@@ -8288,6 +8292,7 @@ DISPATCHABLE_COMMAND( import ? 3 7 ){
     import_cleanup(&sCtx);
     return 1;
   }
+  /* Below, resources must be freed before exit. */
   if( eVerbose>=2 || (eVerbose>=1 && useOutputMode) ){
     char zSep[2];
     zSep[1] = 0;
@@ -8302,7 +8307,7 @@ DISPATCHABLE_COMMAND( import ? 3 7 ){
   while( (nSkip--)>0 ){
     while( xRead(&sCtx) && sCtx.cTerm==sCtx.cColSep ){}
   }
-  zSql = sqlite3_mprintf("SELECT * FROM \"%w\"", zTable);
+  zSql = sqlite3_mprintf("SELECT * FROM \"%w\".\"%w\"", zSchema, zTable);
   if( zSql==0 ){
     import_cleanup(&sCtx);
     shell_out_of_memory();
@@ -8311,7 +8316,8 @@ DISPATCHABLE_COMMAND( import ? 3 7 ){
   rc = sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
   import_append_char(&sCtx, 0);    /* To ensure sCtx.z is allocated */
   if( rc && sqlite3_strglob("no such table: *", sqlite3_errmsg(p->db))==0 ){
-    char *zCreate = sqlite3_mprintf("CREATE TABLE \"%w\"", zTable);
+    char *zCreate = sqlite3_mprintf("CREATE TABLE \"%w\".\"%w\"",
+                                    zSchema, zTable);
     char cSep = '(';
     while( xRead(&sCtx) ){
       zCreate = sqlite3_mprintf("%z%c\n  \"%w\" TEXT", zCreate, cSep, sCtx.z);
@@ -8329,13 +8335,13 @@ DISPATCHABLE_COMMAND( import ? 3 7 ){
       utf8_printf(p->out, "%s\n", zCreate);
     }
     rc = sqlite3_exec(p->db, zCreate, 0, 0, 0);
-    sqlite3_free(zCreate);
     if( rc ){
-      *pzErr = shellMPrintf(0,"CREATE TABLE \"%s\"(...) failed: %s\n",
-                               zTable, sqlite3_errmsg(p->db));
+      utf8_printf(stderr, "%s failed:\n%s\n", zCreate, sqlite3_errmsg(p->db));
+      sqlite3_free(zCreate);
       import_cleanup(&sCtx);
       return 1;
     }
+    sqlite3_free(zCreate);
     rc = sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
   }
   sqlite3_free(zSql);
@@ -8354,7 +8360,8 @@ DISPATCHABLE_COMMAND( import ? 3 7 ){
     import_cleanup(&sCtx);
     shell_out_of_memory();
   }
-  sqlite3_snprintf(nByte+20, zSql, "INSERT INTO \"%w\" VALUES(?", zTable);
+  sqlite3_snprintf(nByte+20, zSql, "INSERT INTO \"%w\".\"%w\" VALUES(?",
+                   zSchema, zTable);
   j = strlen30(zSql);
   for(i=1; i<nCol; i++){
     zSql[j++] = ',';

@@ -88,8 +88,9 @@ do_test shell5-1.4.2 {
   forcedelete shell5.csv
   set in [open shell5.csv w]
   close $in
-  set res [catchcmd "test.db" {.import shell5.csv t1
-SELECT COUNT(*) FROM t1;}]
+  set res [catchcmd ":memory:" {ATTACH 'test.db' AS test;
+.import -schema test shell5.csv t1
+SELECT COUNT(*) FROM test.t1;}]
 } {0 0}
 
 # import file with 1 row, 1 column (expecting 2 cols)
@@ -97,7 +98,8 @@ do_test shell5-1.4.3 {
   set in [open shell5.csv w]
   puts $in "1"
   close $in
-  set res [catchcmd "test.db" {.import shell5.csv t1}]
+  set res [catchcmd ":memory:" {ATTACH 'test.db' AS test;
+.import -schema test shell5.csv t1}]
 } {1 {shell5.csv:1: expected 2 columns but found 1 - filling the rest with NULL}}
 
 # import file with 1 row, 3 columns (expecting 2 cols)
@@ -105,7 +107,8 @@ do_test shell5-1.4.4 {
   set in [open shell5.csv w]
   puts $in "1|2|3"
   close $in
-  set res [catchcmd "test.db" {.import shell5.csv t1}]
+  set res [catchcmd ":memory:" {ATTACH 'test.db' AS test;
+.import --schema test shell5.csv t1}]
 } {1 {shell5.csv:1: expected 2 columns but found 3 - extras ignored}}
 
 # import file with 1 row, 2 columns
@@ -126,8 +129,9 @@ do_test shell5-1.4.6 {
   puts $in "2|3"
   puts $in "3|4"
   close $in
-  set res [catchcmd "test.db" {.import shell5.csv t1
-SELECT COUNT(*) FROM t1;}]
+  set res [catchcmd ":memory:" {ATTACH 'test.db' AS test;
+.import -schema test shell5.csv t1
+SELECT COUNT(*) FROM test.t1;}]
 } {0 3}
 
 # import file with 1 row, 2 columns, using a comma
@@ -135,9 +139,10 @@ do_test shell5-1.4.7 {
   set in [open shell5.csv w]
   puts $in "4,5"
   close $in
-  set res [catchcmd "test.db" {.separator ,
-.import shell5.csv t1
-SELECT COUNT(*) FROM t1;}]
+  set res [catchcmd ":memory:" {ATTACH 'test.db' AS test;
+.separator ,
+.import --schema test shell5.csv t1
+SELECT COUNT(*) FROM test.t1;}]
 } {0 4}
 
 # import file with 1 row, 2 columns, text data

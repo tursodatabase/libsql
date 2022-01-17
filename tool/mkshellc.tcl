@@ -622,6 +622,7 @@ proc do_macro {inSrc lx ostrm} {
 }
 
 array set ::typedefsSeen {}
+array set ::includesDone {}
 
 # Filter redundant typedefs and certain includes and qualifiers, in place.
 # Return 1 if line can be emitted as-is, 0 if to be processed further.
@@ -648,8 +649,14 @@ proc transform_line {lineVar nesting} {
     set incPath [file join [file dirname $fromPath] $incRelPath]
     set inTree [file exists $incPath]
     if {$inTree} {
-      set line "INCLUDE $incRelPath"
-      return 0
+      if {[info exists ::includesDone($incPath)]} {
+        set line "/* $line */"
+        return 1
+      } else {
+        set line "INCLUDE $incRelPath"
+        set ::includesDone($incPath) 1
+        return 0
+      }
     }
   }
   if {[string first "__declspec(dllexport)" $line] >= 0} {
