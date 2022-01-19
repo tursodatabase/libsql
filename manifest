@@ -1,5 +1,5 @@
-C Fix\sALTER\sTABLE\sDROP\sCOLUMN\sso\sthat\sit\sinvokes\sthe\sauthorizer.\sFix\sfor\n[forum:/forumpost/fd82b85947541dec|forum\spost\sfd82b85947541dec].
-D 2022-01-18T16:16:32.786
+C Fix\sa\stest\sresult\sfor\salterauth2.test\sdue\sto\sthe\srecent\sfix\sto\sauthorizer\ncalls\sfor\sALTER\sTABLE\sDROP\sCOLUMN.
+D 2022-01-19T18:31:43.542
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -655,7 +655,7 @@ F test/alter2.test a966ccfcddf9ce0a4e0e6ff1aca9e6e7948e0e242cd7e43fc091948521807
 F test/alter3.test ffc4ab29ce78a3517a66afd69b2730667e3471622509c283b2bd4c46f680fba3
 F test/alter4.test 716caa071dd8a3c6d57225778d15d3c3cbf5e34b2e84ae44199aeb2bbf50a707
 F test/alterauth.test 63442ba61ceb0c1eeb63aac1f4f5cebfa509d352276059d27106ae256bafc959
-F test/alterauth2.test 381b1ab603c9ef96314a3158528ea17f7964449385a28eeaf8191120b2e24a8d
+F test/alterauth2.test 48967abae0494d9a300d1c92473d99fcb66edfcc23579c89322f033f49410adc
 F test/altercol.test 9471187fe155d9c4211ae185e104ff48ce8f114262ee1256cf1e110b339c725f
 F test/altercorrupt.test 2e1d705342cf9d7de884518ddbb053fd52d7e60d2b8869b7b63b2fda68435c12
 F test/alterdropcol.test a653a3945f964d26845ec0cd0a8e74189f46de3119a984c5bc45457da392612e
@@ -1938,8 +1938,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1ec44d55da2ced1a1b0b78b489caff628652464f5709ee827e35409eb20ea794
-R 95e7a59705503a6dcb60422114f45f3f
+P aca6c61d79215519fb006af19d9011029df68f195a4ce65aff7a1bf4e36efb94
+R 49af707cd669468ece46f1dd370b2f63
 U drh
-Z 5be66cdbe738584adde3523c6d04c88d
+Z 256bb3763483caaf79af6f149c662bf0
 # Remove this line to create a well-formed Fossil manifest.
