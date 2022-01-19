@@ -1,5 +1,5 @@
-C Fix\sa\stest\sresult\sfor\salterauth2.test\sdue\sto\sthe\srecent\sfix\sto\sauthorizer\ncalls\sfor\sALTER\sTABLE\sDROP\sCOLUMN.
-D 2022-01-19T18:31:43.542
+C Initial\shelp\schanges\sfor\s.script\s(and\senhanced\s.parameter)
+D 2022-01-19T21:11:23.464
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -552,7 +552,7 @@ F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c 359bc0e445d427583d2ab6110433a5dc777f64a0ecdf8d24826d8b475233ead9
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c a4a23a70f0a24a1103ac9698f6be181a6ec7ff6c19e03e8899c43cb6d2af09d6
-F src/shell.c.in 4690f216dc4da0c104a8fd9f9e12bec0483242e630324aa7a3ccd155922e346e
+F src/shell.c.in 89463e86281322630ff531bd6a44f4d53f939b336d879394bc7adfad20f6fb37
 F src/sqlite.h.in a5e0d6bd47e67aabf1475986d36bdcc7bfa9e06566790ebf8e3aa7fa551c9f99
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 01eb85e4f2759a5ee79c183f4b2877889d4ffdc49d27ae74529c9579e3c8c0ef
@@ -1938,8 +1938,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P aca6c61d79215519fb006af19d9011029df68f195a4ce65aff7a1bf4e36efb94
-R 49af707cd669468ece46f1dd370b2f63
-U drh
-Z 256bb3763483caaf79af6f149c662bf0
+P e799a35f2bf85ce43b476738bfbd9b6b378bbf02fa0708dda0deba71dd37f608
+R 64292f6d5c9ab9e96ed89164c0ac1a9a
+U larrybr
+Z 69f6a83be4ba8df24b2fde157c9e5bc8
 # Remove this line to create a well-formed Fossil manifest.
