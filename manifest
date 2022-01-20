@@ -1,5 +1,5 @@
-C Fix\sa\stest\sresult\sfor\salterauth2.test\sdue\sto\sthe\srecent\sfix\sto\sauthorizer\ncalls\sfor\sALTER\sTABLE\sDROP\sCOLUMN.
-D 2022-01-19T18:31:43.542
+C Fix\sthe\sability\sto\sread\sread-only\sWAL-mode\sdatabase\swhen\s-shm\sis\spresent,\n([00ec95fcd02bb415|check-in\s00ec95fcd02bb415])\sso\sthat\sit\sworks\nfor\sthe\scase\sof\s64K\spage\ssize.
+D 2022-01-20T02:04:53.654
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -635,7 +635,7 @@ F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf8
 F src/vdbevtab.c f99b275366c5fc5e2d99f734729880994ab9500bdafde7fae3b02d562b9d323c
 F src/vtab.c a47cc12ebaa350800c0c87b6b0095debbb5a6ed32727bcab9d82ad070a81b738
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c ed0398a7adf02c31e34aada42cc86c58f413a7afe5f741a5d373ad087abde028
+F src/wal.c c55ef660f9ee91e1331ced61f312aae81179ff9ec8632639136bcb252ce86e1b
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
 F src/where.c eedf0311d59095bcd8523bd13bf25865e1caf1fab9beddbff9093340a1a409c7
@@ -1753,7 +1753,7 @@ F test/walpersist.test 8c6b7e3ec1ba91b5e4dc4e0921d6d3f87cd356a6
 F test/walprotocol.test 1b3f922125e341703f6e946d77fdc564d38fb3e07a9385cfdc6c99cac1ecf878
 F test/walprotocol2.test 7d3b6b4bf0b12f8007121b1e6ef714bc99101fb3b48e46371df1db868eebc131
 F test/walro.test cb438d05ba0d191f10b688e39c4f0cd5b71569a1d1f4440e5bdf3c6880e08c20
-F test/walro2.test 0e79dd15cbdb4f482c01ea248373669c732414a726b357d04846a816afafb768
+F test/walro2.test 33955a6fd874dd9724005e17f77fef89d334b3171454a1256fe4941a96766cdc
 F test/walrofault.test c70cb6e308c443867701856cce92ad8288cd99488fa52afab77cca6cfd51af68
 F test/walsetlk.test 3185bebc90557e0d611442c8d64f7a0cb7b06f8e156eea37a4a7358f722715be
 F test/walshared.test 0befc811dcf0b287efae21612304d15576e35417
@@ -1938,8 +1938,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P aca6c61d79215519fb006af19d9011029df68f195a4ce65aff7a1bf4e36efb94
-R 49af707cd669468ece46f1dd370b2f63
+P e799a35f2bf85ce43b476738bfbd9b6b378bbf02fa0708dda0deba71dd37f608
+R a570f2b782808526402854b4e442ef9f
 U drh
-Z 256bb3763483caaf79af6f149c662bf0
+Z ad5c72d40960b0db8c967cbfe55162e8
 # Remove this line to create a well-formed Fossil manifest.
