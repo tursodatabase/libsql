@@ -3436,6 +3436,7 @@ static int multiSelectOrderBy(
     for(i=2; i<nSelect; i+=2){ pSplit = pSplit->pPrior; }
   }
   pPrior = pSplit->pPrior;
+  assert( pPrior!=0 );
   pSplit->pPrior = 0;
   pPrior->pNext = 0;
   assert( p->pOrderBy == pOrderBy );

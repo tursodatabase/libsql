@@ -677,7 +677,6 @@ static u64 filterHash(const Mem *aMem, const Op *pOp){
   int i, mx;
   u64 h = 0;
 
-  i = pOp->p3;
   assert( pOp->p4type==P4_INT32 );
   for(i=pOp->p3, mx=i+pOp->p4.i; i<mx; i++){
     const Mem *p = &aMem[i];
