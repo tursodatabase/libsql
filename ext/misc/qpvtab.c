@@ -16,18 +16,50 @@
 **
 ** The schema of the virtual table is this:
 **
-**    CREATE TABLE qpvtab(a,b,c,d,e, f,g,h,i,j, k,l,m,n,o, p,q,r,s,t);
+**    CREATE TABLE qpvtab(
+**      vn     TEXT,           -- Name of an sqlite3_index_info field
+**      ix     INTEGER,        -- Array index or value
+**      cn     TEXT,           -- Column name
+**      op     INTEGER,        -- operator
+**      ux     BOOLEAN,        -- "usable" field
+**      rhs    TEXT,           -- sqlite3_vtab_rhs_value()
 **
-** There is also a HIDDEN column "flags".
+**      a, b, c, d, e,         -- Extra columns to attach constraints to
 **
-** All columns except column "a" have a value that is either TEXT that
-** is there name, or INTEGER which is their index (b==1).  TEXT is the
-** default, but INTEGER is used of there is a constraint on flags where the
-** right-hand side is an integer that includes the 1 bit.
+**      flags    INTEGER HIDDEN  -- control flags
+**    );
 **
-** The "a" column returns text that describes one of the parameters that
-** xBestIndex was called with.  A completely query of the table should 
-** show all details of how xBestIndex was called.
+** The virtual table returns a description of the sqlite3_index_info object
+** that was provided to the (successful) xBestIndex method.  There is one
+** row in the result table for each field in the sqlite3_index_info object.
+**
+** The values of the "a" through "e" columns are one of:
+**
+**    1.   TEXT - the same as the column name
+**    2.   INTEGER - 1 for "a", 2 for "b", and so forth
+**
+** Option 1 is the default behavior.  2 is use if there is a usable
+** constraint on "flags" with an integer right-hand side that where the
+** value of the right-hand side has its 0x01 bit set.
+**
+** All constraints on columns "a" through "e" are marked as "omit".
+**
+** If there is a usable constraint on "flags" that has a RHS value that
+** is an integer and that integer has its 0x02 bit set, then the
+** orderByConsumed flag is set.
+**
+** COMPILE:
+**
+**   gcc -Wall -g -shared -fPIC -I. qpvtab.c -o qqvtab.so
+**
+** EXAMPLE USAGE:
+**
+**   .load ./qpvtab
+**   SELECT rowid, *, flags FROM qpvtab(102)
+**    WHERE a=19
+**      AND b BETWEEN 4.5 and 'hello'
+**      AND c<>x'aabbcc'
+**    ORDER BY d, e DESC;
 */
 #if !defined(SQLITEINT_H)
 #include "sqlite3ext.h"
@@ -35,6 +67,7 @@
 SQLITE_EXTENSION_INIT1
 #include <string.h>
 #include <assert.h>
+#include <stdlib.h>
 
 #if !defined(SQLITE_OMIT_VIRTUALTABLE)
 
@@ -60,6 +93,20 @@ struct qpvtab_cursor {
 };
 
 /*
+** Names of columns
+*/
+static const char *azColname[] = {
+  "vn",
+  "ix",
+  "cn",
+  "op",
+  "ux",
+  "rhs",
+  "a", "b", "c", "d", "e",
+  "flags"
+};
+
+/*
 ** The qpvtabConnect() method is invoked to create a new
 ** qpvtab virtual table.
 */
@@ -74,13 +121,28 @@ static int qpvtabConnect(
   int rc;
 
   rc = sqlite3_declare_vtab(db,
-         "CREATE TABLE x(a,b,c,d,e, f,g,h,i,j, k,l,m,n,o, p,q,r,s,t,"
-         " flags HIDDEN)"
+         "CREATE TABLE x("
+         " vn TEXT,"
+         " ix INT,"
+         " cn TEXT,"
+         " op INT,"
+         " ux BOOLEAN,"
+         " rhs TEXT,"
+         " a, b, c, d, e,"
+         " flags INT HIDDEN)"
        );
-#define QPVTAB_A       0
-#define QPVTAB_B       1
-#define QPVTAB_T       19
-#define QPVTAB_FLAGS   20
+#define QPVTAB_VN      0
+#define QPVTAB_IX      1
+#define QPVTAB_CN      2
+#define QPVTAB_OP      3
+#define QPVTAB_UX      4
+#define QPVTAB_RHS     5
+#define QPVTAB_A       6
+#define QPVTAB_B       7
+#define QPVTAB_C       8
+#define QPVTAB_D       9
+#define QPVTAB_E      10
+#define QPVTAB_FLAGS  11
   if( rc==SQLITE_OK ){
     pNew = sqlite3_malloc( sizeof(*pNew) );
     *ppVtab = (sqlite3_vtab*)pNew;
@@ -126,10 +188,12 @@ static int qpvtabClose(sqlite3_vtab_cursor *cur){
 */
 static int qpvtabNext(sqlite3_vtab_cursor *cur){
   qpvtab_cursor *pCur = (qpvtab_cursor*)cur;
-  while( pCur->iRowid<pCur->nData && pCur->zData[pCur->iRowid]!='\n' ){
-    pCur->iRowid++;
+  if( pCur->iRowid<pCur->nData ){
+    const char *z = &pCur->zData[pCur->iRowid];
+    const char *zEnd = strchr(z, '\n');
+    if( zEnd ) zEnd++;
+    pCur->iRowid = (int)(zEnd - pCur->zData);
   }
-  if( pCur->zData[pCur->iRowid]=='\n' ) pCur->iRowid++;
   return SQLITE_OK;
 }
 
@@ -143,16 +207,29 @@ static int qpvtabColumn(
   int i                       /* Which column to return */
 ){
   qpvtab_cursor *pCur = (qpvtab_cursor*)cur;
-  if( i==0 && pCur->iRowid<pCur->nData ){
+  if( i>=QPVTAB_VN && i<=QPVTAB_RHS && pCur->iRowid<pCur->nData ){
+    const char *z = &pCur->zData[pCur->iRowid];
+    const char *zEnd;
     int j;
-    for(j=pCur->iRowid; j<pCur->nData && pCur->zData[j]!='\n'; j++){}
-    sqlite3_result_text64(ctx, &pCur->zData[pCur->iRowid], j-pCur->iRowid,
-                          SQLITE_TRANSIENT, SQLITE_UTF8);
-  }else if( i>=QPVTAB_B && i<=QPVTAB_T ){
-    if( pCur->flags & 1 ){
-      sqlite3_result_int(ctx, i);
+    j = QPVTAB_VN;
+    while(1){
+      zEnd = strchr(z, j==QPVTAB_RHS ? '\n' : ',');
+      if( j==i || zEnd==0 ) break;
+      z = zEnd+1;
+      j++;
+    }
+    if( zEnd==z ){
+      sqlite3_result_null(ctx);
+    }else if( i==QPVTAB_IX || i==QPVTAB_OP || i==QPVTAB_UX ){
+      sqlite3_result_int(ctx, atoi(z));
     }else{
-      char x = 'a'+i;
+      sqlite3_result_text64(ctx, z, zEnd-z, SQLITE_TRANSIENT, SQLITE_UTF8);
+    }
+  }else if( i>=QPVTAB_A && i<=QPVTAB_E ){
+    if( pCur->flags & 1 ){
+      sqlite3_result_int(ctx, i-QPVTAB_A+1);
+    }else{
+      char x = 'a'+i-QPVTAB_A;
       sqlite3_result_text64(ctx, &x, 1, SQLITE_TRANSIENT, SQLITE_UTF8);
     }
   }else if( i==QPVTAB_FLAGS ){
@@ -216,9 +293,20 @@ static void qpvtabStrAppendValue(
     case SQLITE_FLOAT:
       sqlite3_str_appendf(pStr, "%f", sqlite3_value_double(pVal));
       break;
-    case SQLITE_TEXT:
-      sqlite3_str_appendf(pStr, "%Q", sqlite3_value_text(pVal));
+    case SQLITE_TEXT: {
+      int i;
+      const char *a = (const char*)sqlite3_value_text(pVal);
+      int n = sqlite3_value_bytes(pVal);
+      sqlite3_str_append(pStr, "'", 1);
+      for(i=0; i<n; i++){
+        char c = a[i];
+        if( c=='\n' ) c = ' ';
+        sqlite3_str_append(pStr, &c, 1);
+        if( c=='\'' ) sqlite3_str_append(pStr, &c, 1);
+      }
+      sqlite3_str_append(pStr, "'", 1);
       break;
+    }
     case SQLITE_BLOB: {
       int i;
       const unsigned char *a = sqlite3_value_blob(pVal);
@@ -245,44 +333,49 @@ static int qpvtabBestIndex(
 ){
   sqlite3_str *pStr = sqlite3_str_new(0);
   int i, k = 0;
-  sqlite3_str_appendf(pStr, "nConstraint=%d\n", pIdxInfo->nConstraint);
+  sqlite3_str_appendf(pStr, "nConstraint,%d,,,,\n", pIdxInfo->nConstraint);
   for(i=0; i<pIdxInfo->nConstraint; i++){
     sqlite3_value *pVal;
     int iCol = pIdxInfo->aConstraint[i].iColumn;
-    char zCol[8];
-    if( iCol==QPVTAB_FLAGS ){
-      strcpy(zCol, "flags");
-      if( pIdxInfo->aConstraint[i].usable ){
-        pVal = 0;
-        sqlite3_vtab_rhs_value(pIdxInfo, i, &pVal);
-        if( pVal ){
-          pIdxInfo->idxNum = sqlite3_value_int(pVal);
-        }
+    if( iCol==QPVTAB_FLAGS &&  pIdxInfo->aConstraint[i].usable ){
+      pVal = 0;
+      sqlite3_vtab_rhs_value(pIdxInfo, i, &pVal);
+      if( pVal ){
+        pIdxInfo->idxNum = sqlite3_value_int(pVal);
+        if( pIdxInfo->idxNum & 2 ) pIdxInfo->orderByConsumed = 1;
       }
-    }else{
-      zCol[0] = iCol+'a';
-      zCol[1] = 0;
     }
-    sqlite3_str_appendf(pStr,"aConstraint[%d]: iColumn=%s op=%d usable=%d",
+    sqlite3_str_appendf(pStr,"aConstraint,%d,%s,%d,%d,",
        i,
-       zCol,
+       azColname[iCol],
        pIdxInfo->aConstraint[i].op,
        pIdxInfo->aConstraint[i].usable);
     pVal = 0;
     sqlite3_vtab_rhs_value(pIdxInfo, i, &pVal);
     if( pVal ){
-      sqlite3_str_appendf(pStr, " value=");
       qpvtabStrAppendValue(pStr, pVal);
     }
     sqlite3_str_append(pStr, "\n", 1);
-    if( pIdxInfo->aConstraint[i].usable ){
+    if( iCol>=QPVTAB_A && pIdxInfo->aConstraint[i].usable ){
       pIdxInfo->aConstraintUsage[i].argvIndex = ++k;   
       pIdxInfo->aConstraintUsage[i].omit = 1;
     }
   }
+  sqlite3_str_appendf(pStr, "nOrderBy,%d,,,,\n", pIdxInfo->nOrderBy);
+  for(i=0; i<pIdxInfo->nOrderBy; i++){
+    int iCol = pIdxInfo->aOrderBy[i].iColumn;
+    sqlite3_str_appendf(pStr, "aOrderBy,%d,%s,%d,,\n",i,
+      iCol>=0 ? azColname[iCol] : "rowid",
+      pIdxInfo->aOrderBy[i].desc
+    );
+  }
+  sqlite3_str_appendf(pStr, "idxFlags,%d,,,,\n", pIdxInfo->idxFlags);
+  sqlite3_str_appendf(pStr, "colUsed,%d,,,,\n", (int)pIdxInfo->colUsed);
   pIdxInfo->estimatedCost = (double)10;
   pIdxInfo->estimatedRows = 10;
-  sqlite3_str_appendf(pStr, "idxNum=%d\n", pIdxInfo->idxNum);
+  sqlite3_str_appendf(pStr, "idxNum,%d,,,,\n", pIdxInfo->idxNum);
+  sqlite3_str_appendf(pStr, "orderByConsumed,%d,,,,\n",
+                      pIdxInfo->orderByConsumed);
   pIdxInfo->idxStr = sqlite3_str_finish(pStr);
   pIdxInfo->needToFreeIdxStr = 1;
   return SQLITE_OK;
