@@ -1109,6 +1109,7 @@ struct ShellState {
   sqlite3_int64 szMax;   /* --maxsize argument to .open */
   char *zDestTable;      /* Name of destination table when MODE_Insert */
   char *zTempFile;       /* Temporary file that might need deleting */
+  char *zEditor;         /* Name of editor if non-zero, then deletable*/
   char zTestcase[30];    /* Name of current test case */
   char colSeparator[20]; /* Column separator character for several modes */
   char rowSeparator[20]; /* Row separator character for MODE_Ascii */
@@ -3029,8 +3030,14 @@ static void restore_debug_trace_modes(void){
   sqlite3_test_control(SQLITE_TESTCTRL_TRACEFLAGS, 3, &savedWhereTrace);
 }
 
-/* Create the TEMP table used to store parameter bindings */
-static void bind_table_init(ShellState *p){
+/* Partition the temp.sqlite_parameters key namespace according to use. */
+enum ParamTableUses { PTU_Binding = 0, PTU_Script = 1 };
+#define PARAM_TABLE_NAME "sqlite_parameters"
+#define PARAM_TABLE_SCHEMA "temp"
+#define PARAM_TABLE_SNAME PARAM_TABLE_SCHEMA"."PARAM_TABLE_NAME
+
+/* Create the TEMP table used to store parameter bindings and SQL statements */
+static void param_table_init(ShellState *p){
   int wrSchema = 0;
   int defensiveMode = 0;
   sqlite3_db_config(p->db, SQLITE_DBCONFIG_DEFENSIVE, -1, &defensiveMode);
@@ -3040,7 +3047,8 @@ static void bind_table_init(ShellState *p){
   sqlite3_exec(p->db,
     "CREATE TABLE IF NOT EXISTS temp.sqlite_parameters(\n"
     "  key TEXT PRIMARY KEY,\n"
-    "  value\n"
+    "  value,\n"
+    "  uses INT DEFAULT (0)" /* aka PTU_Binding */
     ") WITHOUT ROWID;",
     0, 0, 0);
   sqlite3_db_config(p->db, SQLITE_DBCONFIG_WRITABLE_SCHEMA, wrSchema, 0);
@@ -3052,12 +3060,14 @@ static void bind_table_init(ShellState *p){
 **
 ** Parameter bindings are taken from a TEMP table of the form:
 **
-**    CREATE TEMP TABLE sqlite_parameters(key TEXT PRIMARY KEY, value)
+**    CREATE TEMP TABLE
+**    sqlite_parameters(key TEXT PRIMARY KEY, value, uses INT)
 **    WITHOUT ROWID;
 **
 ** No bindings occur if this table does not exist.  The name of the table
 ** begins with "sqlite_" so that it will not collide with ordinary application
-** tables.  The table must be in the TEMP schema.
+** tables.  The table must be in the TEMP schema. Only rows with
+** uses=PTU_Binding are eligible for parameter binding.
 */
 static void bind_prepared_stmt(ShellState *pArg, sqlite3_stmt *pStmt){
   int nVar;
@@ -3073,8 +3083,9 @@ static void bind_prepared_stmt(ShellState *pArg, sqlite3_stmt *pStmt){
   }
   rc = sqlite3_prepare_v2(pArg->db,
           "SELECT value FROM temp.sqlite_parameters"
-          " WHERE key=?1", -1, &pQ, 0);
+          " WHERE key=?1 AND uses=0", -1, &pQ, 0);
   if( rc || pQ==0 ) return;
+  assert( PTU_Binding==0 ); /* instead of working symbol value into query */
   for(i=1; i<=nVar; i++){
     char zNum[30];
     const char *zVar = sqlite3_bind_parameter_name(pStmt, i);
@@ -7615,6 +7626,79 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
 }
 #endif /* !(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_ENABLE_DBPAGE_VTAB) */
 
+struct param_row { char * value; int uses; int hits; };
+
+static int param_find_callback(void *pData, int nc, char **pV, char **pC){
+  assert(nc>=1);
+  assert(strcmp(pC[0],"value")==0);
+  struct param_row *pParam = (struct param_row *)pData;
+  assert(pParam->value==0); /* key values are supposedly unique. */
+  if( pParam->value!=0 ) sqlite3_free( pParam->value );
+  pParam->value = sqlite3_mprintf("%s", pV[0]); /* source owned by statement */
+  if( nc>1 ) pParam->uses = (int)integerValue(pV[1]);
+  ++pParam->hits;
+  return 0;
+}
+/* Edit one named parameter in the parameters table. If it does not
+ * yet exist, create it. If eval is true, the value is treated as a
+ * bare expression, otherwise it is a text value. The uses argument
+ * sets the 3rd column in the parameters table, and may also serve
+ * to partition the key namespace. (This is not done now.)
+ */
+static int edit_one_param(sqlite3 *db, char *name, int eval,
+                          int uses, const char * zEditor){
+  struct param_row paramVU = {0,0,0};
+  char * zSql = sqlite3_mprintf
+    ("SELECT value, uses FROM " PARAM_TABLE_SNAME " WHERE key=%Q", name);
+  shell_check_oom(zSql);
+  sqlite3_exec(db, zSql, param_find_callback, &paramVU, 0);
+  sqlite3_free(zSql);
+  assert(paramVU.hits<2);
+  if( eval!=0 ){
+    /* ToDo: Run an eval-like update, leaving as-is if it's a bad expr. */
+    // int rv = edit_one_param(db, name, 0, uses);
+  }
+  if( paramVU.hits==1 && paramVU.uses==uses){
+    /* Editing an existing value of same kind. */
+    sqlite3_free(paramVU.value);
+    zSql = sqlite3_mprintf
+      ("UPDATE "PARAM_TABLE_SNAME" SET value=edit(value, %Q) WHERE"
+       " key=%Q AND uses=%d", zEditor, name, uses);
+  }else{
+    /* Editing a new value of same kind. */
+    assert(paramVU.value==0);
+    zSql = sqlite3_mprintf
+      ("INSERT INTO "PARAM_TABLE_SNAME"(key,value,uses)"
+       " VALUES (%Q,edit('-- %q%s', %Q),%d)",
+       name, name, "\n", zEditor, uses);
+  }
+  shell_check_oom(zSql);
+  sqlite3_exec(db, zSql, 0, 0, 0);
+  sqlite3_free(zSql);
+  return 0; /* ToDo: add some error checks */
+}
+
+static void append_in_clause(sqlite3_str *pStr, char **azBeg, char **azLim){
+  /* An empty IN list is the same as always true (for non-NULL LHS)
+   * for this clause, which assumes a trailing LHS operand and space.
+   * If that is not the right result, guard the call against it.
+   * This is used for .parameter and .script ?NAMES? options,
+   * where a missing list means all the qualifying entries.
+   */
+  if( azBeg==azLim ) sqlite3_str_appendf(pStr, "NOT NULL");
+  else{
+    char cSep = '(';
+    sqlite3_str_appendf(pStr, "IN");
+    while( azBeg<azLim ){
+      sqlite3_str_appendf(pStr, "%c%Q", cSep, *azBeg);
+      cSep = ',';
+      ++azBeg;
+    }
+    sqlite3_str_appendf(pStr, ")");
+  }
+}
+
+
 /*
 ** If an input line begins with "." then invoke this routine to
 ** process that line.
@@ -9200,12 +9284,79 @@ static int do_meta_command(char *zLine, ShellState *p){
     open_db(p,0);
     if( nArg<=1 ) goto parameter_syntax_error;
 
-    /* .parameter clear
-    ** Clear all bind parameters by dropping the TEMP table that holds them.
+    /* .parameter clear ?NAMES?
+    **  Delete some or all bind parameters from the TEMP table that holds them.
     */
-    if( nArg==2 && strcmp(azArg[1],"clear")==0 ){
-      sqlite3_exec(p->db, "DROP TABLE IF EXISTS temp.sqlite_parameters;",
-                   0, 0, 0);
+    if( nArg>=2 && strcmp(azArg[1],"clear")==0
+        &&
+        sqlite3_table_column_metadata
+        (p->db, PARAM_TABLE_SCHEMA, PARAM_TABLE_NAME,
+         0, 0, 0, 0, 0, 0)==SQLITE_OK ){
+      sqlite3_str *sbDML = sqlite3_str_new(p->db);
+      char *zSql;
+      sqlite3_str_appendf
+        (sbDML, "DELETE FROM "PARAM_TABLE_SNAME" WHERE uses=0 AND key ");
+      append_in_clause(sbDML, &azArg[2], &azArg[nArg]);
+      zSql = sqlite3_str_finish(sbDML);
+      shell_check_oom(zSql);
+      sqlite3_exec(p->db, zSql, 0, 0, 0);
+      sqlite3_free(zSql);
+    }else
+
+    /* .parameter edit ?NAMES?
+    ** Edit the named bind parameters. Any that do not exist are created.
+    */
+    if( nArg>=2 && strcmp(azArg[1],"edit")==0 ){
+      int ia = 2;
+      int eval = 0;
+      param_table_init(p);
+      if( p->zEditor==0 ){
+        const char *zE = getenv("VISUAL");
+        if( zE!=0 ) p->zEditor = sqlite3_mprintf("%s", zE);
+      }
+      if( nArg>=3 && azArg[2][0]=='-' ){
+        char *zArg = (azArg[2][1]=='-')? azArg[2]+2 : azArg[2]+1;
+        if( strncmp(zArg,"editor=",7)==0 ){
+          sqlite3_free(p->zEditor);
+          /* Accept an initial -editor=? option. */
+          p->zEditor = sqlite3_mprintf("%s", zArg+7);
+          ++ia;
+        }
+      }
+      if( p->zEditor==0 ){
+        /* This is klutzy, but edit is for interactive use. So this
+         * problem, due to not heeding the .parameter doc, can be
+         * fixed with a modest inconvenience to the casual user.
+         */
+        utf8_printf(stderr,
+                    "Either set env-var VISUAL to name an"
+                    " editor and restart, or rerun\n "
+                    ".parameter edit with an initial "
+                    "edit option, --editor=EDITOR_NAME .\n");
+        rc = 1;
+        goto meta_command_exit;
+      }
+      /* ToDo: Allow an option whereby new value can be evaluated
+       * the way that .parameter set ... does.
+       */
+      while( ia < nArg ){
+        char cf = (azArg[ia][0]=='-')? azArg[ia][1] : 0;
+        if( cf!=0 && azArg[ia][2]==0 ){
+          ++ia;
+          switch( cf ){
+          case 'e': eval = 1; continue;
+          case 't': eval = 0; continue;
+          default:
+            utf8_printf(stderr, "Error: bad .parameter name: %s\n",
+                        azArg[--ia]);
+            rc = 1;
+            goto meta_command_exit;
+          }
+        }
+        rc = edit_one_param(p->db, azArg[ia], eval, PTU_Binding, p->zEditor);
+        ++ia;
+        if( rc!=0 ) goto meta_command_exit;
+      }
     }else
 
     /* .parameter list
@@ -9241,7 +9392,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     ** Create it if necessary.
     */
     if( nArg==2 && strcmp(azArg[1],"init")==0 ){
-      bind_table_init(p);
+      param_table_init(p);
     }else
 
     /* .parameter set NAME VALUE
@@ -9256,7 +9407,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       sqlite3_stmt *pStmt;
       const char *zKey = azArg[2];
       const char *zValue = azArg[3];
-      bind_table_init(p);
+      param_table_init(p);
       zSql = sqlite3_mprintf(
                   "REPLACE INTO temp.sqlite_parameters(key,value)"
                   "VALUES(%Q,%s);", zKey, zValue);
@@ -11872,6 +12023,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   output_reset(&data);
   data.doXdgOpen = 0;
   clearTempFile(&data);
+  sqlite3_free(data.zEditor);
 #if !SQLITE_SHELL_IS_UTF8
   for(i=0; i<argcToFree; i++) free(argvToFree[i]);
   free(argvToFree);
