@@ -291,7 +291,7 @@ static void qpvtabStrAppendValue(
       sqlite3_str_appendf(pStr, "%lld", sqlite3_value_int64(pVal));
       break;
     case SQLITE_FLOAT:
-      sqlite3_str_appendf(pStr, "%f", sqlite3_value_double(pVal));
+      sqlite3_str_appendf(pStr, "%!f", sqlite3_value_double(pVal));
       break;
     case SQLITE_TEXT: {
       int i;
