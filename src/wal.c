@@ -2520,7 +2520,6 @@ static int walBeginShmUnreliable(Wal *pWal, int *pChanged){
   volatile void *pDummy;          /* Dummy argument for xShmMap */
   int rc;                         /* Return code */
   u32 aSaveCksum[2];              /* Saved copy of pWal->hdr.aFrameCksum */
-  int szPage;                     /* Page size */
 
   assert( pWal->bShmUnreliable );
   assert( pWal->readOnly & WAL_SHM_RDONLY );
@@ -2604,8 +2603,9 @@ static int walBeginShmUnreliable(Wal *pWal, int *pChanged){
   }
 
   /* Allocate a buffer to read frames into */
-  szPage = walPagesize(pWal);
-  szFrame = szPage + WAL_FRAME_HDRSIZE;
+  assert( (pWal->szPage & (pWal->szPage-1))==0 );
+  assert( pWal->szPage>=512 && pWal->szPage<=65536 );
+  szFrame = pWal->szPage + WAL_FRAME_HDRSIZE;
   aFrame = (u8 *)sqlite3_malloc64(szFrame);
   if( aFrame==0 ){
     rc = SQLITE_NOMEM_BKPT;
@@ -2619,7 +2619,7 @@ static int walBeginShmUnreliable(Wal *pWal, int *pChanged){
   ** the caller.  */
   aSaveCksum[0] = pWal->hdr.aFrameCksum[0];
   aSaveCksum[1] = pWal->hdr.aFrameCksum[1];
-  for(iOffset=walFrameOffset(pWal->hdr.mxFrame+1, szPage); 
+  for(iOffset=walFrameOffset(pWal->hdr.mxFrame+1, pWal->szPage); 
       iOffset+szFrame<=szWal; 
       iOffset+=szFrame
   ){
