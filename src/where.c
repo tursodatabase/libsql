@@ -3684,7 +3684,7 @@ int sqlite3_vtab_rhs_value(
   }
   *ppVal = pVal;
 
-  if( rc==SQLITE_OK && pVal==0 ){  /* IMP: R-60459-24801 */
+  if( rc==SQLITE_OK && pVal==0 ){  /* IMP: R-19933-32160 */
     rc = SQLITE_NOTFOUND;          /* IMP: R-36424-56542 */
   }
 

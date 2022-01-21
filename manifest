@@ -1,5 +1,5 @@
-C When\scomputing\sa\svector\sto\sbe\sused\sas\sa\skey\sfor\san\sindex\slookup,\sdo\snot\ncheck\sfor\sNULL\svalues\sand\sabort\suntil\safter\sall\skey\svalues\shave\sbeen\ncomputed,\sin\scase\sone\sof\sthe\slater\skey\svalues\sinvolves\ssome\sinitialization\nthat\sis\sneeded\sby\sa\sLEFT\sJOIN.\s\sFix\sfor\sthe\sproblem\sidentified\sby\n[forum:/forumpost/ab95010d410a0a55|Forum\spost\sab95010d410a0a55].
-D 2022-01-21T16:41:11.844
+C Fix\ssome\sof\sthe\snew\sdate/time\sfunction\sfeatures\sto\scomply\swith\sthe\sspec.\nUpdate\srequirement\smarks.
+D 2022-01-21T18:57:30.991
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -499,7 +499,7 @@ F src/build.c c72407a27a28982a384cd453a3a6b6992a1ceae8bd8d95e96d7fb9c0d645a32f
 F src/callback.c 4c19af69835787bfe790ac560f3071a824eb629f34e41f97b52ce5235c77de1c
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 2cce39df1a13e05b7633e6d21b651f21492471f991dd7b323a4ee4e7b7f0b7f1
-F src/date.c ab8e01d928f201f5dee0bc6d54d6702fdcec96dff4d58c387447671f6a46d191
+F src/date.c e25773f06a8f9043bfa1e5fa0bee93483c41933adfff0891752f00eadd12ab1c
 F src/dbpage.c 8a01e865bf8bc6d7b1844b4314443a6436c07c3efe1d488ed89e81719047833a
 F src/dbstat.c 861e08690fcb0f2ee1165eff0060ea8d4f3e2ea10f80dab7d32ad70443a6ff2d
 F src/delete.c 19814f621cde10b1771a0dea7fe25d3d7d39975b8d4be4888537d30860e7c08c
@@ -639,7 +639,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c b9df133a705093da8977da5eb202eaadb844839f1c7297c08d33471f5491843d
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
-F src/where.c 6b4cd84869dafc250d2b0f47a2c190759904a4bb6a31fc930bc8e6a9fd9a8d77
+F src/where.c eb54405957c295e0706cbaea74f9e7cbb3d3dfdefe35d243440d2b4cbf601f0c
 F src/whereInt.h 91865afa4a3540bb3bd643619acc56fbceff7defeb8f249b8e157fd5325d88be
 F src/wherecode.c a0a5138b28550dd95916435283c507aa6bf24607ef38a0a18011e6626684330a
 F src/whereexpr.c 9f64c39e53070584e99e4d20c1dd3397e125fabbae8fd414ffec574c410ac7d3
@@ -1292,7 +1292,7 @@ F test/pragma5.test 7b33fc43e2e41abf17f35fb73f71b49671a380ea92a6c94b6ce530a25f8d
 F test/pragmafault.test 275edaf3161771d37de60e5c2b412627ac94cef11739236bec12ed1258b240f8
 F test/prefixes.test b524a1c44bffec225b9aec98bd728480352aa8532ac4c15771fb85e8beef65d9
 F test/printf.test 390d0d7fcffc3c4ea3c1bb4cbb267444e32b33b048ae21895f23a291844fe1da
-F test/printf2.test 30b5dd0b4b992dc5626496846ecce17ff592cacbcb11c3e589f3ac4d7e129dae
+F test/printf2.test 3f55c1871a5a65507416076f6eb97e738d5210aeda7595a74ee895f2224cce60
 F test/progress.test ebab27f670bd0d4eb9d20d49cef96e68141d92fb
 F test/ptrchng.test ef1aa72d6cf35a2bbd0869a649b744e9d84977fc
 F test/pushdown.test 5e72c51c5e33253ed639ccee1e01ce62d62b6eee5ca893cd82334e4ee7b1d7fc
@@ -1940,8 +1940,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e19a0b132a641f0e9f3d72586af538b95b4db8665b1555f84bc0a291bf1a4056
-R 3ccffcbe5ebff55f0ce3325fb7a3c810
+P 4db5217a28ce767fa14ddfe51cf3ca25eceb72079d46a2fc00f7d6b8ae9abe0b
+R 24d2bd64e4649dfdcb9c37612f05fb9b
 U drh
-Z c6c4905bc0565a74c6f262fe9b11d1a3
+Z 2f4202747416d6f8106ca71a5cd08950
 # Remove this line to create a well-formed Fossil manifest.
