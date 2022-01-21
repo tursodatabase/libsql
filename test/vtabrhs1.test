@@ -22,6 +22,14 @@ ifcapable !vtab {
 }
 load_static_extension db qpvtab
 
+# EVIDENCE-OF: R-12211-29175 When the sqlite3_vtab_rhs_value(P,J,V)
+# interface is invoked from within the xBestIndex method of a virtual
+# table implementation, with P being a copy of the sqlite3_index_info
+# object pointer passed into xBestIndex and J being a 0-based index into
+# P->aConstraint[], then this routine attempts to set *V to be the
+# value on the right-hand side of that constraint if the right-hand side
+# is a known constant.
+#
 do_execsql_test 1.1 {
   SELECT rhs FROM qpvtab
    WHERE cn='a'
@@ -48,4 +56,21 @@ do_execsql_test 1.5 {
      AND a GLOB x'0123'
 } {x'0123'}
 
+# EVIDENCE-OF: R-29440-53190 If the right-hand side of the constraint is
+# not known, then *V is set to a NULL pointer.
+#
+do_execsql_test 2.1 {
+  SELECT typeof(rhs) FROM qpvtab WHERE cn='a' AND a=format('abc');
+} {null}
+do_execsql_test 2.2 {
+  SELECT typeof(rhs) FROM qpvtab WHERE cn='a' AND a=?2
+} {null}
+
+# EVIDENCE-OF: R-14553-25174 When xBestIndex returns, the sqlite3_value
+# object returned by sqlite3_vtab_rhs_value() is automatically
+# deallocated.
+#
+# Where this not the case, the following "finish_test" statement would
+# report a memory leak.
+#
 finish_test

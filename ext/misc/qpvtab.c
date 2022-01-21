@@ -333,13 +333,15 @@ static int qpvtabBestIndex(
 ){
   sqlite3_str *pStr = sqlite3_str_new(0);
   int i, k = 0;
+  int rc;
   sqlite3_str_appendf(pStr, "nConstraint,%d,,,,\n", pIdxInfo->nConstraint);
   for(i=0; i<pIdxInfo->nConstraint; i++){
     sqlite3_value *pVal;
     int iCol = pIdxInfo->aConstraint[i].iColumn;
     if( iCol==QPVTAB_FLAGS &&  pIdxInfo->aConstraint[i].usable ){
       pVal = 0;
-      sqlite3_vtab_rhs_value(pIdxInfo, i, &pVal);
+      rc = sqlite3_vtab_rhs_value(pIdxInfo, i, &pVal);
+      assert( rc==SQLITE_OK || pVal==0 );
       if( pVal ){
         pIdxInfo->idxNum = sqlite3_value_int(pVal);
         if( pIdxInfo->idxNum & 2 ) pIdxInfo->orderByConsumed = 1;
@@ -351,7 +353,8 @@ static int qpvtabBestIndex(
        pIdxInfo->aConstraint[i].op,
        pIdxInfo->aConstraint[i].usable);
     pVal = 0;
-    sqlite3_vtab_rhs_value(pIdxInfo, i, &pVal);
+    rc = sqlite3_vtab_rhs_value(pIdxInfo, i, &pVal);
+    assert( rc==SQLITE_OK || pVal==0 );
     if( pVal ){
       qpvtabStrAppendValue(pStr, pVal);
     }

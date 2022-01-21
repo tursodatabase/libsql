@@ -1,5 +1,5 @@
-C Test\scases\sfor\ssqlite3_vtab_rhs_value()\sbased\son\sthe\sqpvtab\sextension.
-D 2022-01-20T19:00:48.033
+C Add\srequirements\smarks\sand\stuning.
+D 2022-01-21T00:38:49.617
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -316,7 +316,7 @@ F ext/misc/noop.c 81efe4cad9ec740e64388b14281cb983e6e2c223fed43eb77ab3e34946e0c1
 F ext/misc/normalize.c bd84355c118e297522aba74de34a4fd286fc775524e0499b14473918d09ea61f
 F ext/misc/percentile.c b9086e223d583bdaf8cb73c98a6539d501a2fc4282654adbfea576453d82e691
 F ext/misc/prefixes.c 0f4f8cff5aebc00a7e3ac4021fd59cfe1a8e17c800ceaf592859ecb9cbc38196
-F ext/misc/qpvtab.c 69667dfc5c0417c1d2352e2cf0f3abdfd65919a423a07083952e27f3a30bf717
+F ext/misc/qpvtab.c d40b07a8c341d16629010c3e8d8801f1477f70d6257e052973a8ddf14c07cd8d
 F ext/misc/regexp.c b267fd05ff8d38b22f4c2809d7b7a2c61d522e9faf2feb928dbb9662e4a3a386
 F ext/misc/remember.c add730f0f7e7436cd15ea3fd6a90fd83c3f706ab44169f7f048438b7d6baa69c
 F ext/misc/rot13.c 51ac5f51e9d5fd811db58a9c23c628ad5f333c173f1fc53c8491a3603d38556c
@@ -554,7 +554,7 @@ F src/resolve.c 359bc0e445d427583d2ab6110433a5dc777f64a0ecdf8d24826d8b475233ead9
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c ab5717255420972e69b9b9ce4d1c4730fe82cfbdc14b7743e389a8bdb79ca027
 F src/shell.c.in 4690f216dc4da0c104a8fd9f9e12bec0483242e630324aa7a3ccd155922e346e
-F src/sqlite.h.in 9257b85dd160fda70e12727881e6c48be0f21ab0d149fa27446505fec5fa4fca
+F src/sqlite.h.in 67e49a50bb29e3af86d2b3606af6b3fe20a0d09cf326cc574d632d878c0696d6
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 234b5ff5c20512a116b14d6d08e23caeb68667749f8a94117779a9d38afc7e5c
 F src/sqliteInt.h 21a31abf60222f50c1d654cdc27ad9d4040249f0341129dd8286b8b5b32bcd30
@@ -639,7 +639,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c b9df133a705093da8977da5eb202eaadb844839f1c7297c08d33471f5491843d
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
-F src/where.c 9f8a9c1c18ab37bbb32ea82c322b09c72e237a89e9005b30089273c6efa5d406
+F src/where.c 6b4cd84869dafc250d2b0f47a2c190759904a4bb6a31fc930bc8e6a9fd9a8d77
 F src/whereInt.h 91865afa4a3540bb3bd643619acc56fbceff7defeb8f249b8e157fd5325d88be
 F src/wherecode.c 6a594ed25bfbeb60d455868b7be62637575e4f1949152de4336e4825e0c54ba6
 F src/whereexpr.c 9f64c39e53070584e99e4d20c1dd3397e125fabbae8fd414ffec574c410ac7d3
@@ -1725,7 +1725,7 @@ F test/vtab_alter.test 736e66fb5ec7b4fee58229aa3ada2f27ec58bc58c00edae4836890c37
 F test/vtab_err.test dcc8b7b9cb67522b3fe7a272c73856829dae4ab7fdb30399aea1b6981bda2b65
 F test/vtab_shared.test 5253bff2355a9a3f014c15337da7e177ab0ef8ad
 F test/vtabdrop.test 65d4cf6722972e5499bdaf0c0d70ee3b8133944a4e4bc31862563f32a7edca12
-F test/vtabrhs1.test 5205e3f662c35f75101520f882bf7d6abe0f5126f05b775ad2cbb13c9da1172f
+F test/vtabrhs1.test c138346be341916ecc9d918dcfc2657d27bce211a350a82b01d62d224b167b56
 F test/wal.test b7cc6984709f54afbf8441747ced1f646af120bf0c1b1d847bfa39306fbea089
 F test/wal2.test 31f6e2c404b9f2cdf9ca19b105a1742fdc19653c2c936da39e3658c617524046
 F test/wal3.test 2a93004bc0fb2b5c29888964024695bade278ab2
@@ -1940,8 +1940,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 850efc4cf3d136fba9173c380e9417b43bb93c050f7eeb85d07fd39a4b1cc6aa
-R 3ecb930f6cfc60c294bf42c3052a9c99
+P 577d3d66558368c34acab8a9e552957cf3fa054c348f1383a9121de6e8b281b7
+R 90012b52ae4dda5b0e0f59cd4c524b70
 U drh
-Z e518270449fd92d31e3cdea40bbeb849
+Z 0ca7e1064e9e25edf7c6ed09bdf60dba
 # Remove this line to create a well-formed Fossil manifest.
