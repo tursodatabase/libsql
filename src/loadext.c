@@ -487,6 +487,7 @@ static const sqlite3_api_routines sqlite3Apis = {
   sqlite3_autovacuum_pages,
   /* Version 3.38.0 and later */
   sqlite3_error_offset,
+  sqlite3_vtab_rhs_value,
 };
 
 /* True if x is the directory separator character
