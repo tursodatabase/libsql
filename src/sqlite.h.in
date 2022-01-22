@@ -9471,13 +9471,14 @@ int sqlite3_vtab_nochange(sqlite3_context*);
 
 /*
 ** CAPI3REF: Determine The Collation For a Virtual Table Constraint
+** METHOD: sqlite3_index_info
 **
 ** This function may only be called from within a call to the [xBestIndex]
 ** method of a [virtual table].  This function returns a pointer to a string
 ** that is the name of the appropriate collation sequence to use for text
 ** comparisons on the constraint identified by its arguments.
 **
-** The first argument must be the pointer to the sqlite3_index_info object
+** The first argument must be the pointer to the [sqlite3_index_info] object
 ** that is the first parameter to the xBestIndex() method. The second argument
 ** must be an index into the aConstraint[] array belonging to the
 ** sqlite3_index_info structure passed to xBestIndex.
@@ -9485,7 +9486,7 @@ int sqlite3_vtab_nochange(sqlite3_context*);
 ** Important:
 ** The first parameter must be the same pointer that is passed into the
 ** xBestMethod() method.  The first parameter may not be a pointer to a
-** different sqlite3_index_info object, even an exact copy.
+** different [sqlite3_index_info] object, even an exact copy.
 **
 ** The return value is computed as follows:
 **
@@ -9504,6 +9505,71 @@ int sqlite3_vtab_nochange(sqlite3_context*);
 SQLITE_EXPERIMENTAL const char *sqlite3_vtab_collation(sqlite3_index_info*,int);
 
 /*
+** CAPI3REF: Determine if a virtual table query is DISTINCT
+** METHOD: sqlite3_index_info
+**
+** This API may only be used from within an xBestIndex() callback. The
+** results of calling it from outside of an xBestIndex() callback are
+** undefined and probably harmful.
+**
+** ^The sqlite3_vtab_distinct() returns an integer that is either 0, 1, or
+** 2.  The integer returned by sqlite3_vtab_distinct() gives the virtual table
+** additional information about how the query planner wants the output to be
+** ordered.  As long as the virtual table can meet the ordering requirements
+** of the query planner, it may set the "orderByConsumed" flag.
+**
+** <ol><li value="0"><p>
+** ^If the sqlite3_vtab_distinct() interface returns 0, that means
+** that the query planner needs the virtual table to return all rows in the
+** sort order defined by the "nOrderBy" and "aOrderBy" fields of the
+** [sqlite3_index_info] object.  This is the default expectation.  If the
+** virtual table outputs all rows in sorted order, then it is always safe for
+** the xBestIndex method to set the "orderByConsumed" flag, regardless of
+** what the return value from sqlite3_vtab_distinct().
+** <li value="1"><p>
+** ^(If the sqlite3_vtab_distinct() interface returns 1, that means
+** that the query planner does not need the rows to be returned in sorted order
+** as long as all rows with the same values in all columns identified by the
+** "aOrderBy" field are adjacent.)^  This mode is used when the query planner
+** is doing a GROUP BY.
+** <li value="2"><p>
+** ^(If the sqlite3_vtab_distinct() interface returns 2, that means
+** that the query planner does not need the rows returned in any particular
+** order, as long as rows with the same values in all "aOrderBy" columns
+** are adjacent.)^  ^(Furthermore, only a single row for each particular
+** combination of values in the columns identified by the "aOrderBy" field
+** needs to be returned.)^  ^It is ok always for two or more rows with the same
+** values in all "aOrderBy" columns to be returned, as long as all such rows
+** are adjacent.  ^The virtual table may, if it chooses, omit extra rows
+** that have the same value for all columns identified by "aOrderBy".
+** ^However omitting the extra rows is optional.
+** This mode is used for a DISTINCT query.
+** </ol>
+**
+** ^For the purposes of comparing virtual table output values to see if the
+** values are same value for sorting purposes, two NULL values are considered
+** to be the same.  In other words, the comparison operator is "IS"
+** (or "IS NOT DISTINCT FROM") and not "==".
+**
+** If a virtual table implementation is unable to meet the requirements
+** specified above, then it must not set the "orderByConsumed" flag in the
+** [sqlite3_index_info] object or an incorrect answer may result.
+**
+** ^A virtual table implementation is always free to return rows in any order
+** it wants, as long as the "orderByConsumed" flag is not set.  ^When the
+** the "orderByConsumed" flag is unset, the query planner will add extra
+** [bytecode] to ensure that the final results returned by the SQL query are
+** ordered correctly.  The use of the "orderByConsumed" flag and the
+** sqlite3_vtab_distinct() interface is merely an optimization.  ^Careful
+** use of the sqlite3_vtab_distinct() interface and the "orderByConsumed"
+** flag might help queries against a virtual table to run faster.  Being
+** overly aggressive and setting the "orderByConsumed" flag when it is not
+** valid to do so, on the other hand, might cause SQLite to return incorrect
+** results.
+*/
+int sqlite3_vtab_distinct(sqlite3_index_info*);
+
+/*
 ** CAPI3REF: Constraint values in xBestIndex()
 ** METHOD: sqlite3_index_info
 **
@@ -9513,7 +9579,7 @@ SQLITE_EXPERIMENTAL const char *sqlite3_vtab_collation(sqlite3_index_info*,int);
 **
 ** ^When the sqlite3_vtab_rhs_value(P,J,V) interface is invoked from within
 ** the [xBestIndex] method of a [virtual table] implementation, with P being
-** a copy of the sqlite3_index_info object pointer passed into xBestIndex and
+** a copy of the [sqlite3_index_info] object pointer passed into xBestIndex and
 ** J being a 0-based index into P->aConstraint[], then this routine
 ** attempts to set *V to be the value on the right-hand side of
 ** that constraint if the right-hand side is a known constant.  ^If the

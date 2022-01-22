@@ -372,6 +372,8 @@ static int qpvtabBestIndex(
       pIdxInfo->aOrderBy[i].desc
     );
   }
+  sqlite3_str_appendf(pStr, "sqlite3_vtab_distinct,%d,,,,\n", 
+                      sqlite3_vtab_distinct(pIdxInfo));
   sqlite3_str_appendf(pStr, "idxFlags,%d,,,,\n", pIdxInfo->idxFlags);
   sqlite3_str_appendf(pStr, "colUsed,%d,,,,\n", (int)pIdxInfo->colUsed);
   pIdxInfo->estimatedCost = (double)10;

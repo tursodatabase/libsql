@@ -32,6 +32,7 @@ typedef struct HiddenIndexInfo HiddenIndexInfo;
 struct HiddenIndexInfo {
   WhereClause *pWC;        /* The Where clause being analyzed */
   Parse *pParse;           /* The parsing context */
+  int eDistinct;           /* Value to return from sqlite3_vtab_distinct() */
   sqlite3_value *aRhs[1];  /* RHS values for constraints. MUST BE LAST
                            ** because extra space is allocated to hold up
                            ** to nTerm such values */
@@ -1101,15 +1102,15 @@ static SQLITE_NOINLINE void sqlite3ConstructBloomFilter(
 ** by passing the pointer returned by this function to freeIndexInfo().
 */
 static sqlite3_index_info *allocateIndexInfo(
-  Parse *pParse,                  /* The parsing context */
+  WhereInfo *pWInfo,              /* The WHERE clause */
   WhereClause *pWC,               /* The WHERE clause being analyzed */
   Bitmask mUnusable,              /* Ignore terms with these prereqs */
   SrcItem *pSrc,                  /* The FROM clause term that is the vtab */
-  ExprList *pOrderBy,             /* The ORDER BY clause */
   u16 *pmNoOmit                   /* Mask of terms not to omit */
 ){
   int i, j;
   int nTerm;
+  Parse *pParse = pWInfo->pParse;
   struct sqlite3_index_constraint *pIdxCons;
   struct sqlite3_index_orderby *pIdxOrderBy;
   struct sqlite3_index_constraint_usage *pUsage;
@@ -1119,7 +1120,9 @@ static sqlite3_index_info *allocateIndexInfo(
   sqlite3_index_info *pIdxInfo;
   u16 mNoOmit = 0;
   const Table *pTab;
-
+  int eDistinct = 0;
+  ExprList *pOrderBy = pWInfo->pOrderBy;
+ 
   assert( pSrc!=0 );
   pTab = pSrc->pTab;
   assert( pTab!=0 );
@@ -1203,6 +1206,9 @@ static sqlite3_index_info *allocateIndexInfo(
     }
     if( i==n){
       nOrderBy = n;
+      if( (pWInfo->wctrlFlags & (WHERE_GROUPBY|WHERE_DISTINCTBY)) ){
+        eDistinct = 1 + ((pWInfo->wctrlFlags & WHERE_DISTINCTBY)!=0);
+      }
     }
   }
 
@@ -1225,6 +1231,7 @@ static sqlite3_index_info *allocateIndexInfo(
   pIdxInfo->aConstraintUsage = pUsage;
   pHidden->pWC = pWC;
   pHidden->pParse = pParse;
+  pHidden->eDistinct = eDistinct;
   for(i=j=0, pTerm=pWC->a; i<pWC->nTerm; i++, pTerm++){
     u16 op;
     if( (pTerm->wtFlags & TERM_OK)==0 ) continue;
@@ -3691,6 +3698,18 @@ int sqlite3_vtab_rhs_value(
   return rc;
 }
 
+
+/*
+** Return true if ORDER BY clause may be handled as DISTINCT.
+*/
+int sqlite3_vtab_distinct(sqlite3_index_info *pIdxInfo){
+  HiddenIndexInfo *pHidden = (HiddenIndexInfo*)&pIdxInfo[1];
+  assert( pHidden->eDistinct==0
+       || pHidden->eDistinct==1
+       || pHidden->eDistinct==2 );
+  return pHidden->eDistinct;
+}
+
 /*
 ** Add all WhereLoop objects for a table of the join identified by
 ** pBuilder->pNew->iTab.  That table is guaranteed to be a virtual table.
@@ -3740,8 +3759,7 @@ static int whereLoopAddVirtual(
   pNew = pBuilder->pNew;
   pSrc = &pWInfo->pTabList->a[pNew->iTab];
   assert( IsVirtual(pSrc->pTab) );
-  p = allocateIndexInfo(pParse, pWC, mUnusable, pSrc, pBuilder->pOrderBy, 
-      &mNoOmit);
+  p = allocateIndexInfo(pWInfo, pWC, mUnusable, pSrc, &mNoOmit);
   if( p==0 ) return SQLITE_NOMEM_BKPT;
   pNew->rSetup = 0;
   pNew->wsFlags = WHERE_VIRTUALTABLE;
@@ -3873,7 +3891,6 @@ static int whereLoopAddOr(
       int i, j;
     
       sSubBuild = *pBuilder;
-      sSubBuild.pOrderBy = 0;
       sSubBuild.pOrSet = &sCur;
 
       WHERETRACE(0x200, ("Begin processing OR-clause %p\n", pTerm));
@@ -5265,7 +5282,6 @@ WhereInfo *sqlite3WhereBegin(
   /* An ORDER/GROUP BY clause of more than 63 terms cannot be optimized */
   testcase( pOrderBy && pOrderBy->nExpr==BMS-1 );
   if( pOrderBy && pOrderBy->nExpr>=BMS ) pOrderBy = 0;
-  sWLB.pOrderBy = pOrderBy;
 
   /* The number of tables in the FROM clause is limited by the number of
   ** bits in a Bitmask 
