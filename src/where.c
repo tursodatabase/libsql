@@ -1206,8 +1206,8 @@ static sqlite3_index_info *allocateIndexInfo(
     }
     if( i==n){
       nOrderBy = n;
-      if( (pWInfo->wctrlFlags & WHERE_DISTINCTBY) ){
-        eDistinct = 1;
+      if( (pWInfo->wctrlFlags & (WHERE_GROUPBY|WHERE_DISTINCTBY)) ){
+        eDistinct = 1 + ((pWInfo->wctrlFlags & WHERE_DISTINCTBY)!=0);
       }
     }
   }
