@@ -9504,6 +9504,28 @@ int sqlite3_vtab_nochange(sqlite3_context*);
 SQLITE_EXPERIMENTAL const char *sqlite3_vtab_collation(sqlite3_index_info*,int);
 
 /*
+** CAPI3REF: Determine if virtual table query is DISTINCT
+** METHOD: sqlite3_index_info
+**
+** This API may only be used from within an xBestIndex() callback. The
+** results of calling it from outside of an xBestIndex() callback are
+** undefined and probably harmful.
+**
+** ^The sqlite3_vtab_distinct() returns an integer that is either 0, 1, or
+** 2.  ^The sqlite3_vtab_distinct() interface returns 0 if SQLite needs the
+** output rows sorted as defined by the nOrderBy and aOrderBy fields of the
+** [sqlite3_index_info] object P.  ^The sqlite3_vtab_distinct() interface
+** returns 1 if SQLite needs all rows to be returned and for equivalent rows
+** to be adjacent to one another, but if it does not require that the rows
+** be sorted.  ^The sqlite3_vtab_distinct() interface returns 2 if SQLite only
+** needs the virtual table to return rows that are distinct for the columns
+** identified by the nOrderBy and aOrderBy fields of the [sqlite3_index_info]
+** object.  If rows are returned that differ in any of the columns identified
+** by the nOrderBy and aOrderBy fields, then all such rows should be adjacent.
+*/
+int sqlite3_vtab_distinct(sqlite3_index_info*);
+
+/*
 ** CAPI3REF: Constraint values in xBestIndex()
 ** METHOD: sqlite3_index_info
 **

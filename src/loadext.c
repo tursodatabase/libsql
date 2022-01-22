@@ -488,6 +488,7 @@ static const sqlite3_api_routines sqlite3Apis = {
   /* Version 3.38.0 and later */
   sqlite3_error_offset,
   sqlite3_vtab_rhs_value,
+  sqlite3_vtab_distinct,
 };
 
 /* True if x is the directory separator character
