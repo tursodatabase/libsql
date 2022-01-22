@@ -3891,7 +3891,6 @@ static int whereLoopAddOr(
       int i, j;
     
       sSubBuild = *pBuilder;
-      sSubBuild.pOrderBy = 0;
       sSubBuild.pOrSet = &sCur;
 
       WHERETRACE(0x200, ("Begin processing OR-clause %p\n", pTerm));
@@ -5283,7 +5282,6 @@ WhereInfo *sqlite3WhereBegin(
   /* An ORDER/GROUP BY clause of more than 63 terms cannot be optimized */
   testcase( pOrderBy && pOrderBy->nExpr==BMS-1 );
   if( pOrderBy && pOrderBy->nExpr>=BMS ) pOrderBy = 0;
-  sWLB.pOrderBy = pOrderBy;
 
   /* The number of tables in the FROM clause is limited by the number of
   ** bits in a Bitmask 
