@@ -3029,22 +3029,38 @@ static void restore_debug_trace_modes(void){
   sqlite3_test_control(SQLITE_TESTCTRL_TRACEFLAGS, 3, &savedWhereTrace);
 }
 
+/* DB schema protection for use by next two utility functions */
+typedef struct DbProtectState {
+  int wrSchema;
+  int defensiveMode;
+} DbProtectState;
+
+/* Allow system (sqlite_*) schema changes, return prior protection state. */
+static DbProtectState allow_sys_schema_change(sqlite3 *db){
+  DbProtectState rv;
+  sqlite3_db_config(db, SQLITE_DBCONFIG_DEFENSIVE, -1, &rv.defensiveMode);
+  sqlite3_db_config(db, SQLITE_DBCONFIG_DEFENSIVE, 0, 0);
+  sqlite3_db_config(db, SQLITE_DBCONFIG_WRITABLE_SCHEMA, -1, &rv.wrSchema);
+  sqlite3_db_config(db, SQLITE_DBCONFIG_WRITABLE_SCHEMA, 1, 0);
+  return rv;
+}
+
+/* Restore protection state using allow_sys_schema_change() return. */
+static void restore_sys_schema_protection( sqlite3 *db, DbProtectState *pPS ){
+  sqlite3_db_config(db, SQLITE_DBCONFIG_WRITABLE_SCHEMA, pPS->wrSchema, 0);
+  sqlite3_db_config(db, SQLITE_DBCONFIG_DEFENSIVE, pPS->defensiveMode, 0);
+}
+
 /* Create the TEMP table used to store parameter bindings */
 static void bind_table_init(ShellState *p){
-  int wrSchema = 0;
-  int defensiveMode = 0;
-  sqlite3_db_config(p->db, SQLITE_DBCONFIG_DEFENSIVE, -1, &defensiveMode);
-  sqlite3_db_config(p->db, SQLITE_DBCONFIG_DEFENSIVE, 0, 0);
-  sqlite3_db_config(p->db, SQLITE_DBCONFIG_WRITABLE_SCHEMA, -1, &wrSchema);
-  sqlite3_db_config(p->db, SQLITE_DBCONFIG_WRITABLE_SCHEMA, 1, 0);
+  DbProtectState dps = allow_sys_schema_change(p->db);
   sqlite3_exec(p->db,
     "CREATE TABLE IF NOT EXISTS temp.sqlite_parameters(\n"
     "  key TEXT PRIMARY KEY,\n"
     "  value\n"
     ") WITHOUT ROWID;",
     0, 0, 0);
-  sqlite3_db_config(p->db, SQLITE_DBCONFIG_WRITABLE_SCHEMA, wrSchema, 0);
-  sqlite3_db_config(p->db, SQLITE_DBCONFIG_DEFENSIVE, defensiveMode, 0);
+  restore_sys_schema_protection( p->db, &dps );
 }
 
 /*

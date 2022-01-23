@@ -1,5 +1,5 @@
-C Shell\srefinements,\sseeargs,\sbooleans,\sundocumented\scommands
-D 2022-01-23T04:19:52.352
+C Factor\sout\sDB\sprotection\slift\sand\srestore\sin\sCLI
+D 2022-01-23T20:54:25.776
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -553,7 +553,7 @@ F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c 359bc0e445d427583d2ab6110433a5dc777f64a0ecdf8d24826d8b475233ead9
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c ab5717255420972e69b9b9ce4d1c4730fe82cfbdc14b7743e389a8bdb79ca027
-F src/shell.c.in 606bfe3ca0483b06c850da59b4fb4f47e16dfbee49422214267dd7c268d26fbf
+F src/shell.c.in 8c152178d813b1565d13e01a4e9f48a75185b11756dafc36c353aaff2fff68a8
 F src/sqlite.h.in 31c2c8d737814369bd3b71f3849c4a97ef7ede0aa3ce976ecb11632fa5f1f863
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 5d54cf13d3406d8eb65d921a0d3c349de6126b732e695e79ecd4830ce86b4f8a
@@ -1941,8 +1941,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3f13df296b7d623085d2abb1a84fb9117f79f8e653a35956266da83727eeecba
-R 1835fab59c38083072a9387a8873dd19
+P 8735caf13fc7e30da2fc5dc90921acbb3109f965c63dbf69fa70ef19c02308c0
+R 6253b464049656a2fb8c9361c4f1fbc9
 U larrybr
-Z 6bc6450e96a876f9bc34f811c8b01b49
+Z 54f5d49a44974e01c687a7b7befc32d9
 # Remove this line to create a well-formed Fossil manifest.
