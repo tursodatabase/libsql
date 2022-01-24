@@ -681,27 +681,82 @@ static char *local_getline(char *zLine, FILE *in){
 ** Arrange for shell input from either a FILE or a string.
 ** See getline_from(...) for applicable invariants. It is
 ** the only modifier of data within this struct, except for
-** initialization which is either {0, zS, 0} or {pF, 0, 0},
-** left to whatever routine is switching input sources.
+** initialization which is either {0, zS} or {pF, 0}, (with
+** the iReadOffset always 0-initialized), left to whatever
+** routine is switching input sources.
 */
 typedef struct InSource {
-  FILE *inFile;    /* Will be 0 when input is to be taken from string. */
-  char *zStrIn;    /* Will be 0 when no input is available from string. */
-  int iReadOffset; /* Offset into ZStrIn where next "read" to be done. */
+  FILE *inFile;     /* Will be 0 when input is to be taken from string. */
+  char *zStrIn;     /* Will be 0 when no input is available from string. */
+  int iReadOffset;  /* Offset into ZStrIn where next "read" to be done. */
+  const char *zSourceSay; /* For complaints, keep a name for this source. */
 } InSource;
 
 /*
 ** Read single lines of input text from source selected by pInSource.
 ** This function presents an interface similar to local_getline(...),
 ** to which it defers for FILE input. (This function may be considered
-** to be an adapter except for the source parameter.)
+** to be an adapter except for the source parameter. With a rewrite,
+** it and local_getline can merge, saving most of 26 LOC. )
 */
-static char *getline_from( char *zPrior, InSource *pSource ){
-  char *zResult = 0;
+static char *getline_from( char *zLine, InSource *pSource ){
   if( pSource->inFile!=0 ){
-    zResult = local_getline(zPrior, pSource->inFile);
+    return local_getline(zLine, pSource->inFile);
+  }else if( pSource->zStrIn!=0
+            && pSource->zStrIn[pSource->iReadOffset]!=0 ){
+    /* This code mostly copied from local_getline(); It begs for refactor. */
+    int nLine = zLine==0 ? 0 : 100;
+    int n = 0;
+
+    while( 1 ){
+      if( n+100>nLine ){
+        nLine = nLine*2 + 100;
+        zLine = realloc(zLine, nLine);
+        shell_check_oom(zLine);
+      }
+      {
+        /* This block is where fgets() became "read string". */
+        char *zBegin = pSource->zStrIn + pSource->iReadOffset;
+        int iTake = 0;
+        char c = zBegin[iTake];
+        if( c==0 ){
+          if( n==0 ){
+            free(zLine);
+            return 0;
+          }
+          zLine[n] = 0;
+          break;
+        }else{
+          while( iTake<nLine-n-1 && c!=0 ){
+            zLine[n+iTake++] = c;
+            if( c=='\n' ) break;
+            c = zBegin[iTake];
+          }
+          zLine[n+iTake] = 0;
+          pSource->iReadOffset += iTake;
+        }
+      }
+      /* Above block replaced this commented code: */
+      /* if( fgets(&zLine[n], nLine - n, in)==0 ){ */
+      /*   if( n==0 ){ */
+      /*     free(zLine); */
+      /*     return 0; */
+      /*   } */
+      /*   zLine[n] = 0; */
+      /*   break; */
+      /* } */
+      while( zLine[n] ) n++;
+      if( n>0 && zLine[n-1]=='\n' ){
+        n--;
+        if( n>0 && zLine[n-1]=='\r' ) n--;
+        zLine[n] = 0;
+        break;
+      }
+    }
+    return zLine;
+  }else{
+    return 0;
   }
-  return zResult;
 }
 
 /*
@@ -722,7 +777,7 @@ static char *one_input_line(InSource *pInSrc, char *zPrior, int isContinuation){
   char *zPrompt;
   char *zResult;
   if( pInSrc!=0 ){
-    zResult = local_getline(zPrior, pInSrc->inFile);
+    zResult = getline_from(zPrior, pInSrc);
   }else{
     zPrompt = isContinuation ? continuePrompt : mainPrompt;
 #if SHELL_USE_LOCAL_GETLINE
@@ -4284,7 +4339,9 @@ static const char *(azHelp[]) = {
   ".vfslist                 List all available VFSes",
   ".vfsname ?AUX?           Print the name of the VFS stack",
   ".width NUM1 NUM2 ...     Set minimum column widths for columnar output",
-  "     Negative values right-justify",
+  "   Negative values right-justify",
+  ".x NAME ...              Excecute content of some .param set variable(s)",
+  "   Only variables whose name begins with a letter are eligible for this."
 };
 
 /* Like azHelp[], but for undocumented commands. */
@@ -7669,6 +7726,66 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
 }
 #endif /* !(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_ENABLE_DBPAGE_VTAB) */
 
+static int execute_variables(char *azArg[], int nArg, ShellState *p){
+  int ia, rc, nErrors = 0;
+  sqlite3_stmt *pStmt = 0;
+  open_db(p, 0);
+  if( p->db==0 ){
+    utf8_printf(stderr, ".x can only be done with a database open.\n");
+    return 1;
+  }
+  if( sqlite3_table_column_metadata(p->db, "TEMP", "sqlite_parameters",
+                                    "key", 0, 0, 0, 0, 0)!=SQLITE_OK ){
+    utf8_printf(stderr, "No temp.sqlite_parameters table exists.\n");
+    return 1;
+  }
+  rc = sqlite3_prepare_v2
+    (p->db, "SELECT value FROM temp.sqlite_parameters WHERE key=$1",
+     -1, &pStmt, 0);
+  if( rc!=SQLITE_OK ){
+    utf8_printf(stderr, "temp.sqlite_parameters is wrongly created.\n");
+    return 1;
+  }
+  for( ia=1; ia < nArg; ++ia ){
+    if( isalpha(azArg[ia][0]) ){
+      rc = sqlite3_reset(pStmt);
+      rc = sqlite3_bind_text(pStmt, 1, azArg[ia], -1, 0);
+      rc = sqlite3_step(pStmt);
+      if( rc==SQLITE_ROW ){
+        const unsigned char *zValue = sqlite3_column_text(pStmt, 0);
+        int nb = sqlite3_column_bytes(pStmt, 0);
+        /* If it's empty, just silently pretend to execute it. */
+        if( nb==0 ) continue;
+        while( IsSpace(zValue[nb-1]) ) --nb;
+        if( nb>0 ){
+          char *zSubmit = sqlite3_mprintf( "%.*s\n", nb, zValue );
+          InSource inSourceDivert = {0, zSubmit, 0, azArg[ia]};
+          InSource *pInSrcSave = p->pInSource;
+          int savedLineno = p->lineno;
+          shell_check_oom(zSubmit);
+          p->pInSource = &inSourceDivert;
+          rc = process_input(p);
+          sqlite3_free(zSubmit);
+          p->pInSource = pInSrcSave;
+          p->lineno = savedLineno;
+        }else{
+          continue; /* All white, ignore. */
+        }
+      }else{
+        utf8_printf(stderr,
+                    "Skipping parameter '%s' (not set.)\n", azArg[ia]);
+        ++nErrors;
+      }
+    }else{
+      utf8_printf(stderr,
+                  "Skipping badly named %s. Run \".help x\"\n", azArg[ia]);
+      ++nErrors;
+    }
+  }
+  sqlite3_finalize(pStmt);
+  return nErrors>0;
+}
+
 /*
 ** If an input line begins with "." then invoke this routine to
 ** process that line.
@@ -9462,7 +9579,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     if( inUse!=0 ){
       InSource *pInSrcSave = p->pInSource;
       int savedLineno = p->lineno;
-      InSource inSourceDivert = {inUse, 0, 0};
+      InSource inSourceDivert = {inUse, 0, 0, azArg[1]};
       p->pInSource = &inSourceDivert;
       rc = process_input(p);
       assert(fCloser!=0);
@@ -10827,6 +10944,10 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
   }else
 
+  if( c=='x' && n==1 ){ /* "x" */
+    rc = execute_variables(azArg, nArg, p);
+  }else
+
   {
     utf8_printf(stderr, "Error: unknown command or invalid arguments: "
       " \"%s\". Enter \".help\" for help\n", azArg[0]);
@@ -11220,7 +11341,7 @@ static void process_sqliterc(
   if( inUse!=0 ){
     InSource *pInSrcSave = p->pInSource;
     int savedLineno = p->lineno;
-    InSource inSourceDivert = {inUse, 0, 0};
+    InSource inSourceDivert = {inUse, 0, 0, sqliterc};
     int rc;
     p->pInSource = &inSourceDivert;
     if( stdin_is_interactive ){
@@ -11400,7 +11521,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 #endif
   char *zErrMsg = 0;
   ShellState data;
-  InSource inputSource = { stdin, 0, 0};
+  InSource inputSource = { stdin, 0, 0, "stdin"};
   const char *zInitFile = 0;
   int i;
   int rc = 0;
