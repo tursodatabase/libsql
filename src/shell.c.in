@@ -1086,6 +1086,7 @@ struct ShellState {
   u8 bSafeModePersist;   /* The long-term value of bSafeMode */
   unsigned statsOn;      /* True to display memory stats before each finalize */
   unsigned mEqpLines;    /* Mask of veritical lines in the EQP output graph */
+  int inputNesting;      /* Track nesting level of .read and other redirects */
   int outCount;          /* Revert to stdout when reaching zero */
   int cnt;               /* Number of records displayed so far */
   int lineno;            /* Line number of last line read from in */
@@ -1249,6 +1250,12 @@ static const char *modeDescr[] = {
 #define SEP_CrLf      "\r\n"
 #define SEP_Unit      "\x1F"
 #define SEP_Record    "\x1E"
+
+/*
+** Limit input nesting via .read or any other input redirect.
+** It's not too expensive, so a generous allowance can be made.
+*/
+#define MAX_INPUT_NESTING 25
 
 /*
 ** A callback for the sqlite3_log() interface.
@@ -10940,6 +10947,13 @@ static int process_input(ShellState *p){
   int startline = 0;        /* Line number for start of current input */
   QuickScanState qss = QSS_Start; /* Accumulated line status (so far) */
 
+  if( p->inputNesting==MAX_INPUT_NESTING ){
+    /* This will be more informative in a later version. */
+    utf8_printf(stderr,"Input nesting limit (%d) reached at line %d."
+                " Check recursion.\n", MAX_INPUT_NESTING, p->lineno);
+    return 1;
+  }
+  ++p->inputNesting;
   p->lineno = 0;
   while( errCnt==0 || !bail_on_error || (p->in==0 && stdin_is_interactive) ){
     fflush(p->out);
@@ -11022,6 +11036,7 @@ static int process_input(ShellState *p){
   }
   free(zSql);
   free(zLine);
+  --p->inputNesting;
   return errCnt>0;
 }
 
