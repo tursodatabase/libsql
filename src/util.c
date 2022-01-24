@@ -198,6 +198,10 @@ void sqlite3ErrorMsg(Parse *pParse, const char *zFormat, ...){
   if( db->errByteOffset<-1 ) db->errByteOffset = -1;
   if( db->suppressErr ){
     sqlite3DbFree(db, zMsg);
+    if( db->mallocFailed ){
+      pParse->nErr++;
+      pParse->rc = SQLITE_NOMEM;
+    }
   }else{
     pParse->nErr++;
     sqlite3DbFree(db, pParse->zErrMsg);

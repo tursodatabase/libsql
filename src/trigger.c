@@ -918,6 +918,7 @@ static void codeReturningTrigger(
 
   assert( v!=0 );
   assert( pParse->bReturning );
+  assert( db->pParse==pParse );
   pReturning = pParse->u1.pReturning;
   assert( pTrigger == &(pReturning->retTrig) );
   memset(&sSelect, 0, sizeof(sSelect));
@@ -928,7 +929,8 @@ static void codeReturningTrigger(
   sFrom.a[0].pTab = pTab;
   sFrom.a[0].iCursor = -1;
   sqlite3SelectPrep(pParse, &sSelect, 0);
-  if( db->mallocFailed==0 && pParse->nErr==0 ){
+  if( pParse->nErr==0 ){
+    assert( db->mallocFailed==0 );
     sqlite3GenerateColumnNames(pParse, &sSelect);
   }
   sqlite3ExprListDelete(db, sSelect.pEList);
@@ -1186,7 +1188,8 @@ static TriggerPrg *codeRowTrigger(
     VdbeComment((v, "End: %s.%s", pTrigger->zName, onErrorText(orconf)));
     transferParseError(pParse, &sSubParse);
 
-    if( db->mallocFailed==0 && pParse->nErr==0 ){
+    if( pParse->nErr==0 ){
+      assert( db->mallocFailed==0 );
       pProgram->aOp = sqlite3VdbeTakeOpArray(v, &pProgram->nOp, &pTop->nMaxArg);
     }
     pProgram->nMem = sSubParse.nMem;
@@ -1195,6 +1198,8 @@ static TriggerPrg *codeRowTrigger(
     pPrg->aColmask[0] = sSubParse.oldmask;
     pPrg->aColmask[1] = sSubParse.newmask;
     sqlite3VdbeDelete(v);
+  }else{
+    transferParseError(pParse, &sSubParse);
   }
 
   assert( !sSubParse.pTriggerPrg && !sSubParse.nMaxArg );
@@ -1253,7 +1258,7 @@ void sqlite3CodeRowTriggerDirect(
   Vdbe *v = sqlite3GetVdbe(pParse); /* Main VM */
   TriggerPrg *pPrg;
   pPrg = getRowTrigger(pParse, p, pTab, orconf);
-  assert( pPrg || pParse->nErr || pParse->db->mallocFailed );
+  assert( pPrg || pParse->nErr );
 
   /* Code the OP_Program opcode in the parent VDBE. P4 of the OP_Program 
   ** is a pointer to the sub-vdbe containing the trigger program.  */

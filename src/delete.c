@@ -293,9 +293,11 @@ void sqlite3DeleteFrom(
 
   memset(&sContext, 0, sizeof(sContext));
   db = pParse->db;
-  if( pParse->nErr || db->mallocFailed ){
+  assert( db->pParse==pParse );
+  if( pParse->nErr ){
     goto delete_from_cleanup;
   }
+  assert( db->mallocFailed==0 );
   assert( pTabList->nSrc==1 );
 
 

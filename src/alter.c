@@ -324,7 +324,9 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
   int r1;                   /* Temporary registers */
 
   db = pParse->db;
-  if( pParse->nErr || db->mallocFailed ) return;
+  assert( db->pParse==pParse );
+  if( pParse->nErr ) return;
+  assert( db->mallocFailed==0 );
   pNew = pParse->pNewTable;
   assert( pNew );
 
@@ -735,7 +737,9 @@ struct RenameCtx {
 ** following a valid object, it may not be used in comparison operations.
 */
 static void renameTokenCheckAll(Parse *pParse, const void *pPtr){
-  if( pParse->nErr==0 && pParse->db->mallocFailed==0 ){
+  assert( pParse==pParse->db->pParse );
+  assert( pParse->db->mallocFailed==0 || pParse->nErr!=0 );
+  if( pParse->nErr==0 ){
     const RenameToken *p;
     u8 i = 0;
     for(p=pParse->pRename; p; p=p->pNext){
