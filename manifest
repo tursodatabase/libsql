@@ -1,5 +1,5 @@
-C Limit\sCLI\sinput\sredirect\snesting
-D 2022-01-24T06:36:16.156
+C Ensure\sthat\sany\serror\sencountered\swhile\scoding\sa\strigger\sprogram\sis\stransfered\sto\sthe\smain\sParse\sstructure\sbefore\sit\sis\sused\swith\sany\sother\sroutine\sthat\smight\sset\sthe\serror\scode.
+D 2022-01-24T11:25:42.955
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -618,7 +618,7 @@ F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c b74d878aa7c82ec8460779468061a96185e22257f68ab785b69abce354b70446
 F src/treeview.c 9dfdb7ff7f6645d0a6458dbdf4ffac041c071c4533a6db8bb6e502b979ac67bc
-F src/trigger.c 40e7c3dcff57a770d5fa38ba21ed4725572fd2e224c58af61eb980598b60f9c8
+F src/trigger.c d10464bac5f1a54479be3976c9e3cbc5b5385608c2aa9c880938dbef88cd0289
 F src/update.c d6f5c7b9e072660757ac7d58175aca11c07cb95ebbb297ae7f38853700f52328
 F src/upsert.c 8789047a8f0a601ea42fa0256d1ba3190c13746b6ba940fe2d25643a7e991937
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
@@ -1941,8 +1941,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e4caf1e3932b1bd0dea072df7fc9458aed98c84ea397b6948b89292603949c41
-R 3ff059f17b79f35a7110343334a8c695
-U larrybr
-Z 22bca9d238f29be7cbeeb6418fbc3f83
+P 7a073931752d16ba71f1a606091461e427ca5ccf4d135d3c5141bfdd4e67e2d5
+R 2c794efafa2baf650e28d5560fcf6b32
+U dan
+Z 46c0ff7b58abcbc9cadf1ff176f24b16
 # Remove this line to create a well-formed Fossil manifest.

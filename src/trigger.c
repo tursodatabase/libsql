@@ -1179,6 +1179,7 @@ static TriggerPrg *codeRowTrigger(
 
     /* Code the trigger program into the sub-vdbe. */
     codeTriggerProgram(pSubParse, pTrigger->step_list, orconf);
+    transferParseError(pParse, pSubParse);
 
     /* Insert an OP_Halt at the end of the sub-program. */
     if( iEndTrigger ){
@@ -1187,7 +1188,6 @@ static TriggerPrg *codeRowTrigger(
     sqlite3VdbeAddOp0(v, OP_Halt);
     VdbeComment((v, "End: %s.%s", pTrigger->zName, onErrorText(orconf)));
 
-    transferParseError(pParse, pSubParse);
     if( db->mallocFailed==0 && pParse->nErr==0 ){
       pProgram->aOp = sqlite3VdbeTakeOpArray(v, &pProgram->nOp, &pTop->nMaxArg);
     }
