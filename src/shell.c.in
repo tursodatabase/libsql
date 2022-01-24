@@ -689,7 +689,8 @@ typedef struct InSource {
   FILE *inFile;     /* Will be 0 when input is to be taken from string. */
   char *zStrIn;     /* Will be 0 when no input is available from string. */
   int iReadOffset;  /* Offset into ZStrIn where next "read" to be done. */
-  const char *zSourceSay; /* For complaints, keep a name for this source. */
+  const char *zSourceSay; /* For complaints, keep a name for this source */
+  struct InSource *pFrom; /* and redirect tracking to aid unraveling. */
 } InSource;
 
 /*
@@ -1171,6 +1172,7 @@ struct ShellState {
   u8 bSafeModePersist;   /* The long-term value of bSafeMode */
   unsigned statsOn;      /* True to display memory stats before each finalize */
   unsigned mEqpLines;    /* Mask of veritical lines in the EQP output graph */
+  int inputNesting;      /* Track nesting level of .read and other redirects */
   int outCount;          /* Revert to stdout when reaching zero */
   int cnt;               /* Number of records displayed so far */
   int lineno;            /* Line number of last line read from in */
@@ -1334,6 +1336,12 @@ static const char *modeDescr[] = {
 #define SEP_CrLf      "\r\n"
 #define SEP_Unit      "\x1F"
 #define SEP_Record    "\x1E"
+
+/*
+** Limit input nesting via .read or any other input redirect.
+** It's not too expensive, so a generous allowance can be made.
+*/
+#define MAX_INPUT_NESTING 25
 
 /*
 ** A callback for the sqlite3_log() interface.
@@ -7759,7 +7767,8 @@ static int execute_variables(char *azArg[], int nArg, ShellState *p){
         while( IsSpace(zValue[nb-1]) ) --nb;
         if( nb>0 ){
           char *zSubmit = sqlite3_mprintf( "%.*s\n", nb, zValue );
-          InSource inSourceDivert = {0, zSubmit, 0, azArg[ia]};
+          InSource inSourceDivert =
+            {0, zSubmit, 0, azArg[ia], p->pInSource };
           InSource *pInSrcSave = p->pInSource;
           int savedLineno = p->lineno;
           shell_check_oom(zSubmit);
@@ -9579,7 +9588,8 @@ static int do_meta_command(char *zLine, ShellState *p){
     if( inUse!=0 ){
       InSource *pInSrcSave = p->pInSource;
       int savedLineno = p->lineno;
-      InSource inSourceDivert = {inUse, 0, 0, azArg[1]};
+      InSource inSourceDivert =
+        {inUse, 0, 0, azArg[1], p->pInSource};
       p->pInSource = &inSourceDivert;
       rc = process_input(p);
       assert(fCloser!=0);
@@ -11155,6 +11165,18 @@ static int process_input(ShellState *p){
   int startline = 0;        /* Line number for start of current input */
   QuickScanState qss = QSS_Start; /* Accumulated line status (so far) */
 
+  if( p->inputNesting==MAX_INPUT_NESTING ){
+    InSource *pInSrc = p->pInSource;
+    utf8_printf
+      (stderr,
+       "Input nesting limit (%d) reached, from line %d of \"%s\",\n",
+       MAX_INPUT_NESTING, p->lineno-1, pInSrc->zSourceSay);
+    for( rc=0; rc<3 && (pInSrc=pInSrc->pFrom)!=0; ++rc )
+      utf8_printf(stderr, " from \"%s\"", pInSrc->zSourceSay);
+    utf8_printf(stderr, " ...\nCheck recursion.\n");
+    return 1;
+  }
+  ++p->inputNesting;
   p->lineno = 0;
   while( errCnt==0
          || !bail_on_error
@@ -11239,6 +11261,7 @@ static int process_input(ShellState *p){
   }
   free(zSql);
   free(zLine);
+  --p->inputNesting;
   return errCnt>0;
 }
 
@@ -11341,7 +11364,7 @@ static void process_sqliterc(
   if( inUse!=0 ){
     InSource *pInSrcSave = p->pInSource;
     int savedLineno = p->lineno;
-    InSource inSourceDivert = {inUse, 0, 0, sqliterc};
+    InSource inSourceDivert = {inUse, 0, 0, sqliterc, p->pInSource};
     int rc;
     p->pInSource = &inSourceDivert;
     if( stdin_is_interactive ){
