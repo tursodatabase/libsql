@@ -1132,7 +1132,7 @@ static int renameParseSql(
   /* Parse the SQL statement passed as the first argument. If no error
   ** occurs and the parse does not result in a new table, index or
   ** trigger object, the database must be corrupt. */
-  memset(p, 0, sizeof(Parse));
+  sqlite3ParseObjectInit(p, db);
   p->eParseMode = PARSE_MODE_RENAME;
   p->db = db;
   p->nQueryLoop = 1;
@@ -1417,7 +1417,7 @@ static void renameParseCleanup(Parse *pParse){
   sqlite3DeleteTrigger(db, pParse->pNewTrigger);
   sqlite3DbFree(db, pParse->zErrMsg);
   renameTokenFree(db, pParse->pRename);
-  sqlite3ParserReset(pParse);
+  sqlite3ParseObjectReset(pParse);
 }
 
 /*

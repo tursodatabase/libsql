@@ -1110,8 +1110,8 @@ static TriggerPrg *codeRowTrigger(
   Vdbe *v;                    /* Temporary VM */
   NameContext sNC;            /* Name context for sub-vdbe */
   SubProgram *pProgram = 0;   /* Sub-vdbe for trigger program */
-  Parse *pSubParse;           /* Parse context for sub-vdbe */
   int iEndTrigger = 0;        /* Label to jump to if WHEN is false */
+  Parse sSubParse;            /* Parse context for sub-vdbe */
 
   assert( pTrigger->zName==0 || pTab==tableOfTrigger(pTrigger) );
   assert( pTop->pVdbe );
@@ -1133,19 +1133,17 @@ static TriggerPrg *codeRowTrigger(
 
   /* Allocate and populate a new Parse context to use for coding the 
   ** trigger sub-program.  */
-  pSubParse = sqlite3StackAllocZero(db, sizeof(Parse));
-  if( !pSubParse ) return 0;
+  sqlite3ParseObjectInit(&sSubParse, db);
   memset(&sNC, 0, sizeof(sNC));
-  sNC.pParse = pSubParse;
-  pSubParse->db = db;
-  pSubParse->pTriggerTab = pTab;
-  pSubParse->pToplevel = pTop;
-  pSubParse->zAuthContext = pTrigger->zName;
-  pSubParse->eTriggerOp = pTrigger->op;
-  pSubParse->nQueryLoop = pParse->nQueryLoop;
-  pSubParse->disableVtab = pParse->disableVtab;
+  sNC.pParse = &sSubParse;
+  sSubParse.pTriggerTab = pTab;
+  sSubParse.pToplevel = pTop;
+  sSubParse.zAuthContext = pTrigger->zName;
+  sSubParse.eTriggerOp = pTrigger->op;
+  sSubParse.nQueryLoop = pParse->nQueryLoop;
+  sSubParse.disableVtab = pParse->disableVtab;
 
-  v = sqlite3GetVdbe(pSubParse);
+  v = sqlite3GetVdbe(&sSubParse);
   if( v ){
     VdbeComment((v, "Start: %s.%s (%s %s%s%s ON %s)", 
       pTrigger->zName, onErrorText(orconf),
@@ -1171,15 +1169,14 @@ static TriggerPrg *codeRowTrigger(
       if( db->mallocFailed==0
        && SQLITE_OK==sqlite3ResolveExprNames(&sNC, pWhen) 
       ){
-        iEndTrigger = sqlite3VdbeMakeLabel(pSubParse);
-        sqlite3ExprIfFalse(pSubParse, pWhen, iEndTrigger, SQLITE_JUMPIFNULL);
+        iEndTrigger = sqlite3VdbeMakeLabel(&sSubParse);
+        sqlite3ExprIfFalse(&sSubParse, pWhen, iEndTrigger, SQLITE_JUMPIFNULL);
       }
       sqlite3ExprDelete(db, pWhen);
     }
 
     /* Code the trigger program into the sub-vdbe. */
-    codeTriggerProgram(pSubParse, pTrigger->step_list, orconf);
-    transferParseError(pParse, pSubParse);
+    codeTriggerProgram(&sSubParse, pTrigger->step_list, orconf);
 
     /* Insert an OP_Halt at the end of the sub-program. */
     if( iEndTrigger ){
@@ -1187,22 +1184,21 @@ static TriggerPrg *codeRowTrigger(
     }
     sqlite3VdbeAddOp0(v, OP_Halt);
     VdbeComment((v, "End: %s.%s", pTrigger->zName, onErrorText(orconf)));
+    transferParseError(pParse, &sSubParse);
 
     if( db->mallocFailed==0 && pParse->nErr==0 ){
       pProgram->aOp = sqlite3VdbeTakeOpArray(v, &pProgram->nOp, &pTop->nMaxArg);
     }
-    pProgram->nMem = pSubParse->nMem;
-    pProgram->nCsr = pSubParse->nTab;
+    pProgram->nMem = sSubParse.nMem;
+    pProgram->nCsr = sSubParse.nTab;
     pProgram->token = (void *)pTrigger;
-    pPrg->aColmask[0] = pSubParse->oldmask;
-    pPrg->aColmask[1] = pSubParse->newmask;
+    pPrg->aColmask[0] = sSubParse.oldmask;
+    pPrg->aColmask[1] = sSubParse.newmask;
     sqlite3VdbeDelete(v);
   }
 
-  assert( !pSubParse->pTriggerPrg && !pSubParse->nMaxArg );
-  sqlite3ParserReset(pSubParse);
-  sqlite3StackFree(db, pSubParse);
-
+  assert( !sSubParse.pTriggerPrg && !sSubParse.nMaxArg );
+  sqlite3ParseObjectReset(&sSubParse);
   return pPrg;
 }
     
