@@ -209,7 +209,7 @@ CollSeq *sqlite3ExprCollSeq(Parse *pParse, const Expr *pExpr){
         /* The Expr.x union is never used at the same time as Expr.pRight */
         assert( ExprUseXList(p) );
         assert( p->x.pList==0 || p->pRight==0 );
-        if( p->x.pList!=0 && !db->mallocFailed ){
+        if( p->x.pList!=0 && ALWAYS(!db->mallocFailed) ){
           int i;
           for(i=0; ALWAYS(i<p->x.pList->nExpr); i++){
             if( ExprHasProperty(p->x.pList->a[i].pExpr, EP_Collate) ){
@@ -3279,10 +3279,8 @@ int sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
   }
   pSel->iLimit = 0;
   if( sqlite3Select(pParse, pSel, &dest) ){
-    if( pParse->nErr ){
-      pExpr->op2 = pExpr->op;
-      pExpr->op = TK_ERROR;
-    }
+    pExpr->op2 = pExpr->op;
+    pExpr->op = TK_ERROR;
     return 0;
   }
   pExpr->iTable = rReg = dest.iSDParm;
@@ -3499,10 +3497,10 @@ static void sqlite3ExprCodeIN(
   }else{
     destStep2 = destStep6 = sqlite3VdbeMakeLabel(pParse);
   }
-  if( pParse->nErr ) goto sqlite3ExprCodeIN_finished;
+//  if( pParse->nErr ) goto sqlite3ExprCodeIN_finished;
   for(i=0; i<nVector; i++){
     Expr *p = sqlite3VectorFieldSubexpr(pExpr->pLeft, i);
-    if( pParse->db->mallocFailed ) goto sqlite3ExprCodeIN_oom_error;
+    if( pParse->nErr ) goto sqlite3ExprCodeIN_oom_error;
     if( sqlite3ExprCanBeNull(p) ){
       sqlite3VdbeAddOp2(v, OP_IsNull, rLhs+i, destStep2);
       VdbeCoverage(v);

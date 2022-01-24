@@ -948,7 +948,7 @@ static void codeReturningTrigger(
     pParse->eTriggerOp = pTrigger->op;
     pParse->pTriggerTab = pTab;
     if( sqlite3ResolveExprListNames(&sNC, pNew)==SQLITE_OK
-     && !db->mallocFailed
+     && ALWAYS(!db->mallocFailed)
     ){
       int i;
       int nCol = pNew->nExpr;

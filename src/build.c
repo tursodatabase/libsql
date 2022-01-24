@@ -146,7 +146,7 @@ void sqlite3FinishCoding(Parse *pParse){
   assert( db->pParse==pParse );
   if( pParse->nested ) return;
   if( pParse->nErr ){
-    if( pParse->rc==SQLITE_OK ) pParse->rc = SQLITE_ERROR;
+    if( NEVER(pParse->rc==SQLITE_OK) ) pParse->rc = SQLITE_ERROR;
     return;
   }
   assert( db->mallocFailed==0 );
@@ -282,7 +282,9 @@ void sqlite3FinishCoding(Parse *pParse){
 
   /* Get the VDBE program ready for execution
   */
-  if( pParse->nErr==0 && ALWAYS(v) && ALWAYS(!db->mallocFailed) ){
+  assert( v!=0 || pParse->nErr );
+  assert( db->mallocFailed==0 || pParse->nErr );
+  if( pParse->nErr==0 ){
     /* A minimum of one cursor is required if autoincrement is used
     *  See ticket [a696379c1f08866] */
     assert( pParse->pAinc==0 || pParse->nTab>0 );

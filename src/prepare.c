@@ -570,6 +570,8 @@ int sqlite3SchemaToIndex(sqlite3 *db, Schema *pSchema){
 */
 void sqlite3ParseObjectReset(Parse *pParse){
   sqlite3 *db = pParse->db;
+  assert( db!=0 );
+  assert( db->pParse==pParse );
   assert( pParse->nested==0 );
 #ifndef SQLITE_OMIT_SHARED_CACHE
   sqlite3DbFree(db, pParse->aTableLock);
@@ -584,14 +586,12 @@ void sqlite3ParseObjectReset(Parse *pParse){
   if( pParse->pConstExpr ){
     sqlite3ExprListDelete(db, pParse->pConstExpr);
   }
-  if( db ){
-    assert( db->lookaside.bDisable >= pParse->disableLookaside );
-    db->lookaside.bDisable -= pParse->disableLookaside;
-    db->lookaside.sz = db->lookaside.bDisable ? 0 : db->lookaside.szTrue;
-    assert( pParse->db->pParse==pParse );
-    db->pParse = pParse->pOuterParse;
-    pParse->db = 0;
-  }
+  assert( db->lookaside.bDisable >= pParse->disableLookaside );
+  db->lookaside.bDisable -= pParse->disableLookaside;
+  db->lookaside.sz = db->lookaside.bDisable ? 0 : db->lookaside.szTrue;
+  assert( pParse->db->pParse==pParse );
+  db->pParse = pParse->pOuterParse;
+  pParse->db = 0;
   pParse->disableLookaside = 0;
 }
 
