@@ -3987,7 +3987,6 @@ void sqlite3CreateIndex(
   pDb = &db->aDb[iDb];
 
   assert( pTab!=0 );
-  assert( pParse->nErr==0 );
   if( sqlite3StrNICmp(pTab->zName, "sqlite_", 7)==0 
        && db->init.busy==0
        && pTblName!=0
