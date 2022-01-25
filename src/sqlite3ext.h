@@ -346,6 +346,8 @@ struct sqlite3_api_routines {
      void*, void(*)(void*));
   /* Version 3.38.0 and later */
   int (*error_offset)(sqlite3*);
+  int (*vtab_rhs_value)(sqlite3_index_info*,int,sqlite3_value**);
+  int (*vtab_distinct)(sqlite3_index_info*);
 };
 
 /*
@@ -659,6 +661,8 @@ typedef int (*sqlite3_loadext_entry)(
 #define sqlite3_autovacuum_pages       sqlite3_api->autovacuum_pages
 /* Version 3.38.0 and later */
 #define sqlite3_error_offset           sqlite3_api->error_offset
+#define sqlite3_vtab_rhs_value         sqlite3_api->vtab_rhs_value
+#define sqlite3_vtab_distinct          sqlite3_api->vtab_distinct
 #endif /* !defined(SQLITE_CORE) && !defined(SQLITE_OMIT_LOAD_EXTENSION) */
 
 #if !defined(SQLITE_CORE) && !defined(SQLITE_OMIT_LOAD_EXTENSION)

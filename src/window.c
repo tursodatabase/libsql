@@ -1106,12 +1106,7 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
     sqlite3ParserAddCleanup(pParse, sqlite3DbFree, pTab);
   }
 
-  if( rc ){
-    if( pParse->nErr==0 ){
-      assert( pParse->db->mallocFailed );
-      sqlite3ErrorToParser(pParse->db, SQLITE_NOMEM);
-    }
-  }
+  assert( rc==SQLITE_OK || pParse->nErr!=0 );
   return rc;
 }
 
