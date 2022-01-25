@@ -824,6 +824,9 @@ static int codeAllEqualityTerms(
         sqlite3VdbeAddOp2(v, OP_Copy, r1, regBase+j);
       }
     }
+  }
+  for(j=nSkip; j<nEq; j++){
+    pTerm = pLoop->aLTerm[j];
     if( pTerm->eOperator & WO_IN ){
       if( pTerm->pExpr->flags & EP_xIsSelect ){
         /* No affinity ever needs to be (or should be) applied to a value
@@ -838,7 +841,8 @@ static int codeAllEqualityTerms(
         sqlite3VdbeAddOp2(v, OP_IsNull, regBase+j, pLevel->addrBrk);
         VdbeCoverage(v);
       }
-      if( pParse->db->mallocFailed==0 && pParse->nErr==0 ){
+      if( pParse->nErr==0 ){
+        assert( pParse->db->mallocFailed==0 );
         if( sqlite3CompareAffinity(pRight, zAff[j])==SQLITE_AFF_BLOB ){
           zAff[j] = SQLITE_AFF_BLOB;
         }
@@ -2357,7 +2361,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         WHERETRACE(0xffff, ("Subplan for OR-clause:\n"));
         pSubWInfo = sqlite3WhereBegin(pParse, pOrTab, pOrExpr, 0, 0,
                                       WHERE_OR_SUBCLAUSE, iCovCur);
-        assert( pSubWInfo || pParse->nErr || db->mallocFailed );
+        assert( pSubWInfo || pParse->nErr );
         if( pSubWInfo ){
           WhereLoop *pSubLoop;
           int addrExplain = sqlite3WhereExplainOneScan(

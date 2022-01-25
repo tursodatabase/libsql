@@ -715,9 +715,11 @@ void sqlite3Insert(
 #endif
 
   db = pParse->db;
-  if( pParse->nErr || db->mallocFailed ){
+  assert( db->pParse==pParse );
+  if( pParse->nErr ){
     goto insert_cleanup;
   }
+  assert( db->mallocFailed==0 );
   dest.iSDParm = 0;  /* Suppress a harmless compiler warning */
 
   /* If the Select object is really just a simple VALUES() list with a
@@ -893,7 +895,9 @@ void sqlite3Insert(
     dest.nSdst = pTab->nCol;
     rc = sqlite3Select(pParse, pSelect, &dest);
     regFromSelect = dest.iSdst;
-    if( rc || db->mallocFailed || pParse->nErr ) goto insert_cleanup;
+    assert( db->pParse==pParse );
+    if( rc || pParse->nErr ) goto insert_cleanup;
+    assert( db->mallocFailed==0 );
     sqlite3VdbeEndCoroutine(v, regYield);
     sqlite3VdbeJumpHere(v, addrTop - 1);                       /* label B: */
     assert( pSelect->pEList );

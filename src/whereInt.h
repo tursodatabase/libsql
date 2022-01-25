@@ -386,7 +386,6 @@ struct WhereMaskSet {
 struct WhereLoopBuilder {
   WhereInfo *pWInfo;        /* Information about this WHERE */
   WhereClause *pWC;         /* WHERE clause terms */
-  ExprList *pOrderBy;       /* ORDER BY clause */
   WhereLoop *pNew;          /* Template WhereLoop */
   WhereOrSet *pOrSet;       /* Record best loops here, if not NULL */
 #ifdef SQLITE_ENABLE_STAT4

@@ -2803,8 +2803,7 @@ int sqlite3FindInIndex(
             CollSeq *pReq = sqlite3BinaryCompareCollSeq(pParse, pLhs, pRhs);
             int j;
   
-            assert( pReq!=0 || pRhs->iColumn==XN_ROWID 
-                   || pParse->nErr || db->mallocFailed );
+            assert( pReq!=0 || pRhs->iColumn==XN_ROWID || pParse->nErr );
             for(j=0; j<nExpr; j++){
               if( pIdx->aiColumn[j]!=pRhs->iColumn ) continue;
               assert( pIdx->azColl[j] );
@@ -3280,10 +3279,8 @@ int sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
   }
   pSel->iLimit = 0;
   if( sqlite3Select(pParse, pSel, &dest) ){
-    if( pParse->nErr ){
-      pExpr->op2 = pExpr->op;
-      pExpr->op = TK_ERROR;
-    }
+    pExpr->op2 = pExpr->op;
+    pExpr->op = TK_ERROR;
     return 0;
   }
   pExpr->iTable = rReg = dest.iSDParm;
@@ -3500,10 +3497,10 @@ static void sqlite3ExprCodeIN(
   }else{
     destStep2 = destStep6 = sqlite3VdbeMakeLabel(pParse);
   }
-  if( pParse->nErr ) goto sqlite3ExprCodeIN_finished;
+//  if( pParse->nErr ) goto sqlite3ExprCodeIN_finished;
   for(i=0; i<nVector; i++){
     Expr *p = sqlite3VectorFieldSubexpr(pExpr->pLeft, i);
-    if( pParse->db->mallocFailed ) goto sqlite3ExprCodeIN_oom_error;
+    if( pParse->nErr ) goto sqlite3ExprCodeIN_oom_error;
     if( sqlite3ExprCanBeNull(p) ){
       sqlite3VdbeAddOp2(v, OP_IsNull, rLhs+i, destStep2);
       VdbeCoverage(v);
