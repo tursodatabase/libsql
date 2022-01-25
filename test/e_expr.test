@@ -265,13 +265,10 @@ do_execsql_test e_expr-6.4 {SELECT -72%5}  {-2}
 do_execsql_test e_expr-6.5 {SELECT 72.35%5} {2.0}
 
 #-------------------------------------------------------------------------
-# Test that the results of all binary operators are either numeric or 
-# NULL, except for the || operator, which may evaluate to either a text
-# value or NULL.
-#
-# EVIDENCE-OF: R-20665-17792 The result of any binary operator is either
-# a numeric value or NULL, except for the || concatenation operator
-# which always evaluates to either NULL or a text value.
+# EVIDENCE-OF: R-15904-00746 The result of any binary operator is either
+# a numeric value or NULL, except for the || concatenation operator, and
+# the -> and ->> extract operators which evaluate to either
+# NULL or a text value.
 #
 set literals {
   1 'abc'        2 'hexadecimal'       3 ''

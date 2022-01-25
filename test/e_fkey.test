@@ -48,9 +48,9 @@ proc do_detail_test {tn sql res} {
 ###########################################################################
 
 #-------------------------------------------------------------------------
-# EVIDENCE-OF: R-33710-56344 In order to use foreign key constraints in
+# EVIDENCE-OF: R-37672-59189 In order to use foreign key constraints in
 # SQLite, the library must be compiled with neither
-# SQLITE_OMIT_FOREIGN_KEY or SQLITE_OMIT_TRIGGER defined.
+# SQLITE_OMIT_FOREIGN_KEY nor SQLITE_OMIT_TRIGGER defined.
 #
 ifcapable trigger&&foreignkey {
   do_test e_fkey-1 {

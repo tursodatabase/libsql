@@ -1214,7 +1214,8 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       break; 
     }
   }
-  return (pParse->nErr || pParse->db->mallocFailed) ? WRC_Abort : WRC_Continue;
+  assert( pParse->db->mallocFailed==0 || pParse->nErr!=0 );
+  return pParse->nErr ? WRC_Abort : WRC_Continue;
 }
 
 /*
@@ -1628,7 +1629,7 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
   */
   if( (p->selFlags & SF_Expanded)==0 ){
     sqlite3SelectPrep(pParse, p, pOuterNC);
-    return (pParse->nErr || db->mallocFailed) ? WRC_Abort : WRC_Prune;
+    return pParse->nErr ? WRC_Abort : WRC_Prune;
   }
 
   isCompound = p->pPrior!=0;
@@ -1676,7 +1677,8 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
         if( pItem->zName ) pParse->zAuthContext = pItem->zName;
         sqlite3ResolveSelectNames(pParse, pItem->pSelect, pOuterNC);
         pParse->zAuthContext = zSavedContext;
-        if( pParse->nErr || db->mallocFailed ) return WRC_Abort;
+        if( pParse->nErr ) return WRC_Abort;
+        assert( db->mallocFailed==0 );
 
         /* If the number of references to the outer context changed when
         ** expressions in the sub-select were resolved, the sub-select

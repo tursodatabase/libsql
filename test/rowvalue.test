@@ -692,6 +692,21 @@ do_execsql_test 30.3 {
   UPDATE t2 SET (d,d,a)=(SELECT EXISTS(SELECT 1 IN(SELECT max( 1 IN(SELECT x ORDER BY 1)) OVER(PARTITION BY sum((SELECT y FROM t1 UNION SELECT x ORDER BY 1)))INTERSECT SELECT EXISTS(SELECT 1 FROM t1 UNION SELECT x ORDER BY 1) ORDER BY 1) ORDERa)|9 AS blob, 2, 3) FROM t1 WHERE x<a;
 }
 
+# 2022-01-21 https://sqlite.org/forum/forumpost/ab95010d410a0a55
+reset_db
+do_execsql_test 31.1 {
+  CREATE TABLE a(a1 PRIMARY KEY,a2);
+  INSERT INTO a VALUES(1,5);
+  CREATE TABLE b(b1 UNIQUE,b2);
+  SELECT * FROM a LEFT JOIN b ON b2=NULL AND b2=5 WHERE (b1,substr(b.b1,1,1))==(SELECT 1024,'b');
+} {}
+do_execsql_test 31.2 {
+  CREATE TABLE t1(a);
+  INSERT INTO t1 VALUES(0);
+  CREATE TABLE t2(b,c,d);
+  INSERT INTO t2 VALUES(NULL,123,456);
+  SELECT * FROM t1 LEFT JOIN t2 ON b=NULL WHERE (c,d)==(SELECT 123, 456+a);
+} {}
 
 
 finish_test
