@@ -30,8 +30,12 @@
 */
 typedef struct HiddenIndexInfo HiddenIndexInfo;
 struct HiddenIndexInfo {
-  WhereClause *pWC;   /* The Where clause being analyzed */
-  Parse *pParse;      /* The parsing context */
+  WhereClause *pWC;        /* The Where clause being analyzed */
+  Parse *pParse;           /* The parsing context */
+  int eDistinct;           /* Value to return from sqlite3_vtab_distinct() */
+  sqlite3_value *aRhs[1];  /* RHS values for constraints. MUST BE LAST
+                           ** because extra space is allocated to hold up
+                           ** to nTerm such values */
 };
 
 /* Forward declaration of methods */
@@ -1095,18 +1099,18 @@ static SQLITE_NOINLINE void sqlite3ConstructBloomFilter(
 /*
 ** Allocate and populate an sqlite3_index_info structure. It is the 
 ** responsibility of the caller to eventually release the structure
-** by passing the pointer returned by this function to sqlite3_free().
+** by passing the pointer returned by this function to freeIndexInfo().
 */
 static sqlite3_index_info *allocateIndexInfo(
-  Parse *pParse,                  /* The parsing context */
+  WhereInfo *pWInfo,              /* The WHERE clause */
   WhereClause *pWC,               /* The WHERE clause being analyzed */
   Bitmask mUnusable,              /* Ignore terms with these prereqs */
   SrcItem *pSrc,                  /* The FROM clause term that is the vtab */
-  ExprList *pOrderBy,             /* The ORDER BY clause */
   u16 *pmNoOmit                   /* Mask of terms not to omit */
 ){
   int i, j;
   int nTerm;
+  Parse *pParse = pWInfo->pParse;
   struct sqlite3_index_constraint *pIdxCons;
   struct sqlite3_index_orderby *pIdxOrderBy;
   struct sqlite3_index_constraint_usage *pUsage;
@@ -1116,7 +1120,9 @@ static sqlite3_index_info *allocateIndexInfo(
   sqlite3_index_info *pIdxInfo;
   u16 mNoOmit = 0;
   const Table *pTab;
-
+  int eDistinct = 0;
+  ExprList *pOrderBy = pWInfo->pOrderBy;
+ 
   assert( pSrc!=0 );
   pTab = pSrc->pTab;
   assert( pTab!=0 );
@@ -1200,6 +1206,9 @@ static sqlite3_index_info *allocateIndexInfo(
     }
     if( i==n){
       nOrderBy = n;
+      if( (pWInfo->wctrlFlags & (WHERE_GROUPBY|WHERE_DISTINCTBY)) ){
+        eDistinct = 1 + ((pWInfo->wctrlFlags & WHERE_DISTINCTBY)!=0);
+      }
     }
   }
 
@@ -1207,13 +1216,14 @@ static sqlite3_index_info *allocateIndexInfo(
   */
   pIdxInfo = sqlite3DbMallocZero(pParse->db, sizeof(*pIdxInfo)
                            + (sizeof(*pIdxCons) + sizeof(*pUsage))*nTerm
-                           + sizeof(*pIdxOrderBy)*nOrderBy + sizeof(*pHidden) );
+                           + sizeof(*pIdxOrderBy)*nOrderBy + sizeof(*pHidden)
+                           + sizeof(sqlite3_value*)*nTerm );
   if( pIdxInfo==0 ){
     sqlite3ErrorMsg(pParse, "out of memory");
     return 0;
   }
   pHidden = (struct HiddenIndexInfo*)&pIdxInfo[1];
-  pIdxCons = (struct sqlite3_index_constraint*)&pHidden[1];
+  pIdxCons = (struct sqlite3_index_constraint*)&pHidden->aRhs[nTerm];
   pIdxOrderBy = (struct sqlite3_index_orderby*)&pIdxCons[nTerm];
   pUsage = (struct sqlite3_index_constraint_usage*)&pIdxOrderBy[nOrderBy];
   pIdxInfo->aConstraint = pIdxCons;
@@ -1221,6 +1231,7 @@ static sqlite3_index_info *allocateIndexInfo(
   pIdxInfo->aConstraintUsage = pUsage;
   pHidden->pWC = pWC;
   pHidden->pParse = pParse;
+  pHidden->eDistinct = eDistinct;
   for(i=j=0, pTerm=pWC->a; i<pWC->nTerm; i++, pTerm++){
     u16 op;
     if( (pTerm->wtFlags & TERM_OK)==0 ) continue;
@@ -1276,6 +1287,24 @@ static sqlite3_index_info *allocateIndexInfo(
 
   *pmNoOmit = mNoOmit;
   return pIdxInfo;
+}
+
+/*
+** Free an sqlite3_index_info structure allocated by allocateIndexInfo()
+** and possibly modified by xBestIndex methods.
+*/
+static void freeIndexInfo(sqlite3 *db, sqlite3_index_info *pIdxInfo){
+  HiddenIndexInfo *pHidden;
+  int i;
+  assert( pIdxInfo!=0 );
+  pHidden = (HiddenIndexInfo*)&pIdxInfo[1];
+  assert( pHidden->pParse!=0 );
+  assert( pHidden->pParse->db==db );
+  for(i=0; i<pIdxInfo->nConstraint; i++){
+    sqlite3ValueFree(pHidden->aRhs[i]); /* IMP: R-14553-25174 */
+    pHidden->aRhs[i] = 0;
+  }
+  sqlite3DbFree(db, pIdxInfo);
 }
 
 /*
@@ -3634,6 +3663,54 @@ const char *sqlite3_vtab_collation(sqlite3_index_info *pIdxInfo, int iCons){
 }
 
 /*
+** This interface is callable from within the xBestIndex callback only.
+**
+** If possible, set (*ppVal) to point to an object containing the value 
+** on the right-hand-side of constraint iCons.
+*/
+int sqlite3_vtab_rhs_value(
+  sqlite3_index_info *pIdxInfo,   /* Copy of first argument to xBestIndex */
+  int iCons,                      /* Constraint for which RHS is wanted */
+  sqlite3_value **ppVal           /* Write value extracted here */
+){
+  HiddenIndexInfo *pH = (HiddenIndexInfo*)&pIdxInfo[1];
+  sqlite3_value *pVal = 0;
+  int rc = SQLITE_OK;
+  if( iCons<0 || iCons>=pIdxInfo->nConstraint ){
+    rc = SQLITE_MISUSE; /* EV: R-30545-25046 */
+  }else{
+    if( pH->aRhs[iCons]==0 ){
+      WhereTerm *pTerm = &pH->pWC->a[pIdxInfo->aConstraint[iCons].iTermOffset];
+      rc = sqlite3ValueFromExpr(
+          pH->pParse->db, pTerm->pExpr->pRight, ENC(pH->pParse->db),
+          SQLITE_AFF_BLOB, &pH->aRhs[iCons]
+      );
+      testcase( rc!=SQLITE_OK );
+    }
+    pVal = pH->aRhs[iCons];
+  }
+  *ppVal = pVal;
+
+  if( rc==SQLITE_OK && pVal==0 ){  /* IMP: R-19933-32160 */
+    rc = SQLITE_NOTFOUND;          /* IMP: R-36424-56542 */
+  }
+
+  return rc;
+}
+
+
+/*
+** Return true if ORDER BY clause may be handled as DISTINCT.
+*/
+int sqlite3_vtab_distinct(sqlite3_index_info *pIdxInfo){
+  HiddenIndexInfo *pHidden = (HiddenIndexInfo*)&pIdxInfo[1];
+  assert( pHidden->eDistinct==0
+       || pHidden->eDistinct==1
+       || pHidden->eDistinct==2 );
+  return pHidden->eDistinct;
+}
+
+/*
 ** Add all WhereLoop objects for a table of the join identified by
 ** pBuilder->pNew->iTab.  That table is guaranteed to be a virtual table.
 **
@@ -3682,8 +3759,7 @@ static int whereLoopAddVirtual(
   pNew = pBuilder->pNew;
   pSrc = &pWInfo->pTabList->a[pNew->iTab];
   assert( IsVirtual(pSrc->pTab) );
-  p = allocateIndexInfo(pParse, pWC, mUnusable, pSrc, pBuilder->pOrderBy, 
-      &mNoOmit);
+  p = allocateIndexInfo(pWInfo, pWC, mUnusable, pSrc, &mNoOmit);
   if( p==0 ) return SQLITE_NOMEM_BKPT;
   pNew->rSetup = 0;
   pNew->wsFlags = WHERE_VIRTUALTABLE;
@@ -3691,7 +3767,7 @@ static int whereLoopAddVirtual(
   pNew->u.vtab.needFree = 0;
   nConstraint = p->nConstraint;
   if( whereLoopResize(pParse->db, pNew, nConstraint) ){
-    sqlite3DbFree(pParse->db, p);
+    freeIndexInfo(pParse->db, p);
     return SQLITE_NOMEM_BKPT;
   }
 
@@ -3771,7 +3847,7 @@ static int whereLoopAddVirtual(
   }
 
   if( p->needToFreeIdxStr ) sqlite3_free(p->idxStr);
-  sqlite3DbFreeNN(pParse->db, p);
+  freeIndexInfo(pParse->db, p);
   WHERETRACE(0x800, ("END %s.addVirtual(), rc=%d\n", pSrc->pTab->zName, rc));
   return rc;
 }
@@ -3815,7 +3891,6 @@ static int whereLoopAddOr(
       int i, j;
     
       sSubBuild = *pBuilder;
-      sSubBuild.pOrderBy = 0;
       sSubBuild.pOrSet = &sCur;
 
       WHERETRACE(0x200, ("Begin processing OR-clause %p\n", pTerm));
@@ -5207,7 +5282,6 @@ WhereInfo *sqlite3WhereBegin(
   /* An ORDER/GROUP BY clause of more than 63 terms cannot be optimized */
   testcase( pOrderBy && pOrderBy->nExpr==BMS-1 );
   if( pOrderBy && pOrderBy->nExpr>=BMS ) pOrderBy = 0;
-  sWLB.pOrderBy = pOrderBy;
 
   /* The number of tables in the FROM clause is limited by the number of
   ** bits in a Bitmask 
@@ -5417,9 +5491,10 @@ WhereInfo *sqlite3WhereBegin(
   if( pWInfo->pOrderBy==0 && (db->flags & SQLITE_ReverseOrder)!=0 ){
      pWInfo->revMask = ALLBITS;
   }
-  if( pParse->nErr || db->mallocFailed ){
+  if( pParse->nErr ){
     goto whereBeginError;
   }
+  assert( db->mallocFailed==0 );
 #ifdef WHERETRACE_ENABLED
   if( sqlite3WhereTrace ){
     sqlite3DebugPrintf("---- Solution nRow=%d", pWInfo->nRowOut);

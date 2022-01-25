@@ -135,4 +135,31 @@ ifcapable altertable {
   } {1 {error in table t4 after add column: missing datatype for t4.d}}
 }
 
+# 2022-01-17 https://sqlite.org/forum/forumpost/fa012c77796d9399
+# 
+reset_db
+do_execsql_test strict1-8.1 {
+  CREATE TABLE csv_import_table (
+    "debit" TEXT,
+    "credit" TEXT
+  );
+  INSERT INTO csv_import_table VALUES ('', '250.00');
+  CREATE TABLE IF NOT EXISTS transactions (
+      debit REAL,
+      credit REAL,
+      amount REAL GENERATED ALWAYS AS (ifnull(credit, 0.0) - ifnull(debit, 0.0))
+  ) STRICT;
+  INSERT INTO transactions
+  SELECT
+      nullif(debit, '') AS debit,
+      nullif(credit, '') AS credit
+  FROM csv_import_table;
+  SELECT * FROM transactions;
+} {{} 250.0 250.0}
+do_execsql_test strict1-8.2 {
+  CREATE TABLE t1(x REAL, y REAL AS (x)) STRICT;
+  INSERT INTO t1 VALUES(5),(4611686018427387904);
+  SELECT *, '|' FROM t1;
+} {/5.0 5.0 4.6116\d*e\+18 4.6116\d+e\+18 |/}
+
 finish_test

@@ -658,7 +658,8 @@ static int parseModifier(
   sqlite3_context *pCtx,      /* Function context */
   const char *z,              /* The text of the modifier */
   int n,                      /* Length of zMod in bytes */
-  DateTime *p                 /* The date/time value to be modified */
+  DateTime *p,                /* The date/time value to be modified */
+  int idx                     /* Parameter index of the modifier */
 ){
   int rc = 1;
   double r;
@@ -671,6 +672,7 @@ static int parseModifier(
       ** a unix timestamp, depending on its magnitude.
       */
       if( sqlite3_stricmp(z, "auto")==0 ){
+        if( idx>1 ) return 1; /* IMP: R-33611-57934 */
         if( !p->rawS || p->validJD ){
           rc = 0;
           p->rawS = 0;
@@ -695,6 +697,7 @@ static int parseModifier(
       ** SQLite (0..5373484.5) then the result will be NULL.
       */
       if( sqlite3_stricmp(z, "julianday")==0 ){
+        if( idx>1 ) return 1;
         if( p->validJD && p->rawS ){
           rc = 0;
           p->rawS = 0;
@@ -938,7 +941,7 @@ static int isDate(
   for(i=1; i<argc; i++){
     z = sqlite3_value_text(argv[i]);
     n = sqlite3_value_bytes(argv[i]);
-    if( z==0 || parseModifier(context, (char*)z, n, p) ) return 1;
+    if( z==0 || parseModifier(context, (char*)z, n, p, i) ) return 1;
   }
   computeJD(p);
   if( p->isError || !validJulianDay(p->iJD) ) return 1;

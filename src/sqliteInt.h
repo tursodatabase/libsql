@@ -3604,6 +3604,7 @@ struct Parse {
   **************************************************************************/
 
   int aTempReg[8];        /* Holding area for temporary registers */
+  Parse *pOuterParse;     /* Outer Parse object when nested */
   Token sNameToken;       /* Token with unqualified schema object name */
 
   /************************************************************************
@@ -3654,7 +3655,8 @@ struct Parse {
 /*
 ** Sizes and pointers of various parts of the Parse object.
 */
-#define PARSE_HDR_SZ offsetof(Parse,aTempReg) /* Recursive part w/o aColCache*/
+#define PARSE_HDR(X)  (((char*)(X))+offsetof(Parse,zErrMsg))
+#define PARSE_HDR_SZ (offsetof(Parse,aTempReg)-offsetof(Parse,zErrMsg)) /* Recursive part w/o aColCache*/
 #define PARSE_RECURSE_SZ offsetof(Parse,sLastToken)    /* Recursive part */
 #define PARSE_TAIL_SZ (sizeof(Parse)-PARSE_RECURSE_SZ) /* Non-recursive part */
 #define PARSE_TAIL(X) (((char*)(X))+PARSE_RECURSE_SZ)  /* Pointer to tail */
@@ -4996,7 +4998,7 @@ int sqlite3CreateFunc(sqlite3 *, const char *, int, int, void *,
   FuncDestructor *pDestructor
 );
 void sqlite3NoopDestructor(void*);
-void sqlite3OomFault(sqlite3*);
+void *sqlite3OomFault(sqlite3*);
 void sqlite3OomClear(sqlite3*);
 int sqlite3ApiExit(sqlite3 *db, int);
 int sqlite3OpenTempDatabase(Parse *);
@@ -5117,7 +5119,8 @@ FuncDef *sqlite3VtabOverloadFunction(sqlite3 *,FuncDef*, int nArg, Expr*);
 sqlite3_int64 sqlite3StmtCurrentTime(sqlite3_context*);
 int sqlite3VdbeParameterIndex(Vdbe*, const char*, int);
 int sqlite3TransferBindings(sqlite3_stmt *, sqlite3_stmt *);
-void sqlite3ParserReset(Parse*);
+void sqlite3ParseObjectInit(Parse*,sqlite3*);
+void sqlite3ParseObjectReset(Parse*);
 void *sqlite3ParserAddCleanup(Parse*,void(*)(sqlite3*,void*),void*);
 #ifdef SQLITE_ENABLE_NORMALIZE
 char *sqlite3Normalize(Vdbe*, const char*);

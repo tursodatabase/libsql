@@ -347,9 +347,11 @@ void sqlite3Update(
 
   memset(&sContext, 0, sizeof(sContext));
   db = pParse->db;
-  if( pParse->nErr || db->mallocFailed ){
+  assert( db->pParse==pParse );
+  if( pParse->nErr ){
     goto update_cleanup;
   }
+  assert( db->mallocFailed==0 );
 
   /* Locate the table which we want to update. 
   */

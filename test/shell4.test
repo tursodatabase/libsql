@@ -19,6 +19,7 @@
 #   shell4-1.*: Basic tests specific to the "stats" command.
 #   shell4-2.*: Basic tests for ".trace"
 #   shell4-3.*: The ".read" command takes the shell out of interactive mode
+#   shell4-4.*: Input redirects cannot recurse too much
 #
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -137,5 +138,12 @@ do_test shell4-3.2 {
   close $fd
   exec $::CLI :memory: --interactive ".read t1.txt"
 } {pound: £}
+
+do_test shell4-4.1 {
+  set fd [open t1.txt wb]
+  puts $fd ".read t1.txt"
+  close $fd
+  catchcmd ":memory:" ".read t1.txt"
+} {1 {Input nesting limit (25) reached at line 1. Check recursion.}}
 
 finish_test

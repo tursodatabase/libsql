@@ -143,11 +143,13 @@ void sqlite3FinishCoding(Parse *pParse){
 
   assert( pParse->pToplevel==0 );
   db = pParse->db;
+  assert( db->pParse==pParse );
   if( pParse->nested ) return;
-  if( db->mallocFailed || pParse->nErr ){
-    if( pParse->rc==SQLITE_OK ) pParse->rc = SQLITE_ERROR;
+  if( pParse->nErr ){
+    if( db->mallocFailed ) pParse->rc = SQLITE_NOMEM;
     return;
   }
+  assert( db->mallocFailed==0 );
 
   /* Begin by generating some termination code at the end of the
   ** vdbe program
@@ -280,7 +282,9 @@ void sqlite3FinishCoding(Parse *pParse){
 
   /* Get the VDBE program ready for execution
   */
-  if( v && pParse->nErr==0 && !db->mallocFailed ){
+  assert( v!=0 || pParse->nErr );
+  assert( db->mallocFailed==0 || pParse->nErr );
+  if( pParse->nErr==0 ){
     /* A minimum of one cursor is required if autoincrement is used
     *  See ticket [a696379c1f08866] */
     assert( pParse->pAinc==0 || pParse->nTab>0 );
@@ -2384,10 +2388,11 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
     pTab->iPKey = -1;
     sqlite3CreateIndex(pParse, 0, 0, 0, pList, pTab->keyConf, 0, 0, 0, 0,
                        SQLITE_IDXTYPE_PRIMARYKEY);
-    if( db->mallocFailed || pParse->nErr ){
+    if( pParse->nErr ){
       pTab->tabFlags &= ~TF_WithoutRowid;
       return;
     }
+    assert( db->mallocFailed==0 );
     pPk = sqlite3PrimaryKeyIndex(pTab);
     assert( pPk->nKeyCol==1 );
   }else{
@@ -3128,10 +3133,10 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
       */
       sqlite3ColumnsFromExprList(pParse, pTable->pCheck, 
                                  &pTable->nCol, &pTable->aCol);
-      if( db->mallocFailed==0 
-       && pParse->nErr==0
+      if( pParse->nErr==0
        && pTable->nCol==pSel->pEList->nExpr
       ){
+        assert( db->mallocFailed==0 );
         sqlite3SelectAddColumnTypeAndCollation(pParse, pTable, pSel,
                                                SQLITE_AFF_NONE);
       }
@@ -3750,7 +3755,7 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
     tnum = pIndex->tnum;
   }
   pKey = sqlite3KeyInfoOfIndex(pParse, pIndex);
-  assert( pKey!=0 || db->mallocFailed || pParse->nErr );
+  assert( pKey!=0 || pParse->nErr );
 
   /* Open the sorter cursor if we are to use one. */
   iSorter = pParse->nTab++;
@@ -3914,9 +3919,11 @@ void sqlite3CreateIndex(
   char *zExtra = 0;                /* Extra space after the Index object */
   Index *pPk = 0;      /* PRIMARY KEY index for WITHOUT ROWID tables */
 
-  if( db->mallocFailed || pParse->nErr>0 ){
+  assert( db->pParse==pParse );
+  if( pParse->nErr ){
     goto exit_create_index;
   }
+  assert( db->mallocFailed==0 );
   if( IN_DECLARE_VTAB && idxType!=SQLITE_IDXTYPE_PRIMARYKEY ){
     goto exit_create_index;
   }
@@ -3980,7 +3987,6 @@ void sqlite3CreateIndex(
   pDb = &db->aDb[iDb];
 
   assert( pTab!=0 );
-  assert( pParse->nErr==0 );
   if( sqlite3StrNICmp(pTab->zName, "sqlite_", 7)==0 
        && db->init.busy==0
        && pTblName!=0
@@ -4544,10 +4550,10 @@ void sqlite3DropIndex(Parse *pParse, SrcList *pName, int ifExists){
   sqlite3 *db = pParse->db;
   int iDb;
 
-  assert( pParse->nErr==0 );   /* Never called with prior errors */
   if( db->mallocFailed ){
     goto exit_drop_index;
   }
+  assert( pParse->nErr==0 );   /* Never called with prior non-OOM errors */
   assert( pName->nSrc==1 );
   if( SQLITE_OK!=sqlite3ReadSchema(pParse) ){
     goto exit_drop_index;
