@@ -146,7 +146,7 @@ void sqlite3FinishCoding(Parse *pParse){
   assert( db->pParse==pParse );
   if( pParse->nested ) return;
   if( pParse->nErr ){
-    if( NEVER(pParse->rc==SQLITE_OK) ) pParse->rc = SQLITE_ERROR;
+    if( db->mallocFailed ) pParse->rc = SQLITE_NOMEM;
     return;
   }
   assert( db->mallocFailed==0 );
