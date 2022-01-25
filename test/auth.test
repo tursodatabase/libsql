@@ -2069,6 +2069,15 @@ ifcapable {altertable} {
   do_test auth-1.302 {
     set authargs
   } {main t5 {} {}}
+  db eval BEGIN
+  set authargs {}
+  do_execsql_test auth-1.302-drop-1 {
+    ALTER TABLE t5 DROP COLUMN new_col_1;
+  } {}
+  db eval ROLLBACK
+  do_test auth-1.302-drop-2 {
+    set authargs
+  } {main t5 new_col_1 {}}
   do_test auth-1.303 {
     proc auth {code arg1 arg2 arg3 arg4 args} {
       if {$code=="SQLITE_ALTER_TABLE"} {
@@ -2088,6 +2097,16 @@ ifcapable {altertable} {
   do_test auth-1.305 {
     set authargs
   } {main t5 {} {}}
+  db eval BEGIN
+  set authargs {}
+  do_execsql_test auth-1.305-drop-1 {
+     ALTER TABLE t5 DROP COLUMN new_col_1;
+     SELECT 1 FROM sqlite_schema WHERE name='t5' AND sql LIKE '%new_col_1%';
+  } {1}
+  db eval ROLLBACK
+  do_test auth-1.305-drop-2 {
+    set authargs
+  } {main t5 new_col_1 {}}
   do_test auth-1.306 {
     proc auth {code arg1 arg2 arg3 arg4 args} {
       if {$code=="SQLITE_ALTER_TABLE"} {
@@ -2104,10 +2123,22 @@ ifcapable {altertable} {
     set x [execsql {SELECT sql FROM temp.sqlite_master WHERE type='t5'}]
     regexp new_col_3 $x
   } {0}
-
   do_test auth-1.308 {
     set authargs
   } {main t5 {} {}}
+  db eval BEGIN
+  set authargs {}
+  do_catchsql_test auth-1.308-drop-1 {
+    ALTER TABLE t5 DROP COLUMN new_col_1;
+  } {1 {not authorized}}
+  do_execsql_test auth-1.308-drop-2 {
+    SELECT 1 FROM sqlite_schema WHERE name='t5' AND sql LIKE '%new_col_1%';
+  } {1}
+  do_test auth-1.308-drop-3 {
+    set authargs
+  } {main t5 new_col_1 {}}
+  db eval ROLLBACK
+
   execsql {DROP TABLE t5}
 } ;# ifcapable altertable
 
@@ -2159,7 +2190,7 @@ ifcapable {cte} {
 #    MAIN: CREATE TABLE t1(a,b);
 #
 ifcapable altertable&&vtab {
-  do_test 1.350 {
+  do_test auth-1.350 {
     proc auth {code arg1 arg2 arg3 arg4 args} {
       if {$code=="SQLITE_ALTER_TABLE"} {
         set ::authargs [list $arg1 $arg2 $arg3 $arg4]
@@ -2177,7 +2208,7 @@ ifcapable altertable&&vtab {
   do_test auth-1.352 {
     set authargs
   } {main t1 {} {}}
-  do_test 1.353 {
+  do_test auth-1.353 {
     proc auth {code arg1 arg2 arg3 arg4 args} {
       if {$code=="SQLITE_ALTER_TABLE"} {
         set ::authargs [list $arg1 $arg2 $arg3 $arg4]
@@ -2195,7 +2226,7 @@ ifcapable altertable&&vtab {
   do_test auth-1.355 {
     set authargs
   } {main t1 {} {}}
-  do_test 1.356 {
+  do_test auth-1.356 {
     proc auth {code arg1 arg2 arg3 arg4 args} {
       if {$code=="SQLITE_ALTER_TABLE"} {
         set ::authargs [list $arg1 $arg2 $arg3 $arg4]
@@ -2207,10 +2238,10 @@ ifcapable altertable&&vtab {
       ALTER TABLE t1 RENAME COLUMN bcdefg TO b;
     }
   } {1 {not authorized}}
-  do_execsql_test auth-1.356 {
+  do_execsql_test auth-1.357 {
     SELECT name FROM pragma_table_info('t1') ORDER BY cid;
   } {a bcdefg}
-  do_test auth-1.357 {
+  do_test auth-1.358 {
     set authargs
   } {main t1 {} {}}
 }

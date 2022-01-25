@@ -355,7 +355,7 @@ static void codeAttach(
   }
 
 #ifndef SQLITE_OMIT_AUTHORIZATION
-  if( pAuthArg ){
+  if( ALWAYS(pAuthArg) ){
     char *zAuthArg;
     if( pAuthArg->op==TK_STRING ){
       assert( !ExprHasProperty(pAuthArg, EP_IntValue) );
