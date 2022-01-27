@@ -103,7 +103,8 @@ static const char *azColname[] = {
   "ux",
   "rhs",
   "a", "b", "c", "d", "e",
-  "flags"
+  "flags",
+  ""
 };
 
 /*
@@ -143,6 +144,7 @@ static int qpvtabConnect(
 #define QPVTAB_D       9
 #define QPVTAB_E      10
 #define QPVTAB_FLAGS  11
+#define QPVTAB_NONE   12
   if( rc==SQLITE_OK ){
     pNew = sqlite3_malloc( sizeof(*pNew) );
     *ppVtab = (sqlite3_vtab*)pNew;
@@ -338,6 +340,7 @@ static int qpvtabBestIndex(
   for(i=0; i<pIdxInfo->nConstraint; i++){
     sqlite3_value *pVal;
     int iCol = pIdxInfo->aConstraint[i].iColumn;
+    int op = pIdxInfo->aConstraint[i].op;
     if( iCol==QPVTAB_FLAGS &&  pIdxInfo->aConstraint[i].usable ){
       pVal = 0;
       rc = sqlite3_vtab_rhs_value(pIdxInfo, i, &pVal);
@@ -347,10 +350,15 @@ static int qpvtabBestIndex(
         if( pIdxInfo->idxNum & 2 ) pIdxInfo->orderByConsumed = 1;
       }
     }
+    if( op==SQLITE_INDEX_CONSTRAINT_LIMIT
+     || op==SQLITE_INDEX_CONSTRAINT_OFFSET
+    ){
+      iCol = QPVTAB_NONE;
+    }
     sqlite3_str_appendf(pStr,"aConstraint,%d,%s,%d,%d,",
        i,
        azColname[iCol],
-       pIdxInfo->aConstraint[i].op,
+       op,
        pIdxInfo->aConstraint[i].usable);
     pVal = 0;
     rc = sqlite3_vtab_rhs_value(pIdxInfo, i, &pVal);

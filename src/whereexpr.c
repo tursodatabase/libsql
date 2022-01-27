@@ -1523,6 +1523,80 @@ void sqlite3WhereSplit(WhereClause *pWC, Expr *pExpr, u8 op){
 }
 
 /*
+** Add either a LIMIT (if eMatchOp==SQLITE_INDEX_CONSTRAINT_LIMIT) or 
+** OFFSET (if eMatchOp==SQLITE_INDEX_CONSTRAINT_OFFSET) term to the 
+** where-clause passed as the first argument. The value for the term
+** is found in register iReg.
+*/
+void whereAddLimitExpr(WhereClause *pWC, int iReg, int iCsr, int eMatchOp){
+  Parse *pParse = pWC->pWInfo->pParse;
+  sqlite3 *db = pParse->db;
+  Expr *pExpr;
+
+  pExpr = sqlite3PExpr(pParse, TK_MATCH, 0, sqlite3Expr(db,TK_REGISTER,0));
+  if( pExpr ){
+    WhereTerm *pTerm;
+    int idx;
+    pExpr->pRight->iTable = iReg;
+    idx = whereClauseInsert(pWC, pExpr, TERM_DYNAMIC|TERM_VIRTUAL);
+    pTerm = &pWC->a[idx];
+    pTerm->leftCursor = iCsr;
+    pTerm->eOperator = WO_AUX;
+    pTerm->eMatchOp = eMatchOp;
+  }
+}
+
+/*
+** Possibly add terms corresponding to the LIMIT and OFFSET clauses of the
+** SELECT statement passed as the second argument. These terms are only
+** added if:
+**
+**   1. The SELECT statement has a LIMIT clause, and
+**   2. The SELECT statement is not an aggregate or DISTINCT query, and
+**   3. The SELECT statement has exactly one object in its from clause, and
+**      that object is a virtual table, and
+**   4. There are no terms in the WHERE clause that will not be passed
+**      to the virtual table xBestIndex method.
+**   5. The ORDER BY clause, if any, will be made available to the xBestIndex
+**      method.
+**
+** LIMIT and OFFSET terms are ignored by most of the planner code. They
+** exist only so that they may be passed to the xBestIndex method of the
+** single virtual table in the FROM clause of the SELECT.
+*/
+void sqlite3WhereAddLimit(WhereClause *pWC, Select *p){
+  assert( p==0 || (p->pGroupBy==0 && (p->selFlags & SF_Aggregate)==0) );
+  if( (p && p->pLimit)                                          /* 1 */
+   && (p->selFlags & (SF_Distinct|SF_Aggregate))==0             /* 2 */
+   && (p->pSrc->nSrc==1 && IsVirtual(p->pSrc->a[0].pTab))       /* 3 */
+  ){
+    ExprList *pOrderBy = p->pOrderBy;
+    int iCsr = p->pSrc->a[0].iCursor;
+    int ii;
+
+    /* Check condition (4). Return early if it is not met. */
+    for(ii=0; ii<pWC->nTerm; ii++){
+      if( pWC->a[ii].leftCursor!=iCsr ) return;
+    }
+
+    /* Check condition (5). Return early if it is not met. */
+    if( pOrderBy ){
+      for(ii=0; ii<pOrderBy->nExpr; ii++){
+        Expr *pExpr = pOrderBy->a[ii].pExpr;
+        if( pExpr->op!=TK_COLUMN || pExpr->iTable!=iCsr ) return;
+        if( pOrderBy->a[ii].sortFlags & KEYINFO_ORDER_BIGNULL ) return;
+      }
+    }
+
+    /* All conditions are met. Add the terms to the where-clause object. */
+    whereAddLimitExpr(pWC, p->iLimit, iCsr, SQLITE_INDEX_CONSTRAINT_LIMIT);
+    if( p->iOffset>0 ){
+      whereAddLimitExpr(pWC, p->iOffset, iCsr, SQLITE_INDEX_CONSTRAINT_OFFSET);
+    }
+  }
+}
+
+/*
 ** Initialize a preallocated WhereClause structure.
 */
 void sqlite3WhereClauseInit(
