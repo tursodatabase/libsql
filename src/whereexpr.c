@@ -1656,6 +1656,7 @@ void sqlite3WhereClauseClear(WhereClause *pWC){
     }
 #endif
     while(1){
+      assert( a->eMatchOp==0 || a->eOperator==WO_AUX );
       if( a->wtFlags & TERM_DYNAMIC ){
         sqlite3ExprDelete(db, a->pExpr);
       }

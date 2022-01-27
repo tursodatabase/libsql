@@ -1,5 +1,5 @@
-C Make\sLIMIT\sand\sOFFSET\svalues\savailable\sto\ssqlite3_vtab_rhs_value().
-D 2022-01-27T18:45:26.825
+C Query\splanner\salways\shonors\sthe\saConstraintUsage[].omit\sflag\sfor\sthe\nSQLITE_INDEX_CONSTRAINT_OFFSET\sconstraint.
+D 2022-01-27T21:18:14.656
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -316,7 +316,7 @@ F ext/misc/noop.c 81efe4cad9ec740e64388b14281cb983e6e2c223fed43eb77ab3e34946e0c1
 F ext/misc/normalize.c bd84355c118e297522aba74de34a4fd286fc775524e0499b14473918d09ea61f
 F ext/misc/percentile.c b9086e223d583bdaf8cb73c98a6539d501a2fc4282654adbfea576453d82e691
 F ext/misc/prefixes.c 0f4f8cff5aebc00a7e3ac4021fd59cfe1a8e17c800ceaf592859ecb9cbc38196
-F ext/misc/qpvtab.c 03986dca441274933dd924170ceee50ad248d24a4cd6a686ff45d5e65e5deac4
+F ext/misc/qpvtab.c 09738419e25f603a35c0ac8bd0a04daab794f48d08a9bc07a6085b9057b99009
 F ext/misc/regexp.c b267fd05ff8d38b22f4c2809d7b7a2c61d522e9faf2feb928dbb9662e4a3a386
 F ext/misc/remember.c add730f0f7e7436cd15ea3fd6a90fd83c3f706ab44169f7f048438b7d6baa69c
 F ext/misc/rot13.c 51ac5f51e9d5fd811db58a9c23c628ad5f333c173f1fc53c8491a3603d38556c
@@ -639,10 +639,10 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c b9df133a705093da8977da5eb202eaadb844839f1c7297c08d33471f5491843d
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
-F src/where.c f89c21296cdf23bbc73333c77a01e0bfdccc9d1a767d38a145e3a8658456b66c
-F src/whereInt.h e23780eb06810dc8bd7d855c97a667bf116cb929d8aa107ce1db91df8e47aaa8
-F src/wherecode.c 37878a0a6f790b77f41e7b3d77c42f14bded09aef3d363eaf19b3ee02e765666
-F src/whereexpr.c 455b5eeef49693ac6f7303e4529bb997fd4e0f0bd594a6f8e49c0ea7e399368f
+F src/where.c f61ca6dbb4bbb7171aa5f5459982d8d98aac24852572bcee250f9c469a1963ba
+F src/whereInt.h 0748a6fce98b41862445906922a809146ff7ef4de16ed9022b0bc4e5c43aa60a
+F src/wherecode.c c313ccf5ed13dc7e88c64f93733f414dee369a212508a866878696d83c64fc36
+F src/whereexpr.c 391d04108e4a5a701d2fad374ff54db8629bce12b55a7ee30a478d440ea4bfe0
 F src/window.c dfaec4abc6012cbc18e4a202ca3a5d5a0efcc4011d86a06d882ddaab8aedee4d
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test ce1aafc86e110685b324e9a763eab4f2a73f737842ec3b687bd965867de90627
@@ -1942,8 +1942,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 74fa5757ee0a8499bcd6546dac1a3ecc6048ba9cff9e3e574e28e6e82e894a3d
-R 4f1dec533377c1a483f6b7fee31b9110
+P b2d37c086c87fe4aee013bba4eab26f642207cd2a797fe4888a6ef868884c191
+R 87c4173ca514b2a053765a7d35c4d8eb
 U drh
-Z 8464b51a4c3f5e11d93482ca57b3dd6d
+Z 05d67635fa5a91d132911c78dd294cd6
 # Remove this line to create a well-formed Fossil manifest.

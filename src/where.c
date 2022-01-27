@@ -3463,10 +3463,9 @@ static int whereLoopAddBtree(
 ** Return true if pTerm is a virtual table LIMIT or OFFSET term.
 */
 static int isLimitTerm(WhereTerm *pTerm){
-  return pTerm->eOperator==WO_AUX && (
-       pTerm->eMatchOp==SQLITE_INDEX_CONSTRAINT_LIMIT 
-    || pTerm->eMatchOp==SQLITE_INDEX_CONSTRAINT_OFFSET
-  );
+  assert( pTerm->eOperator==WO_AUX || pTerm->eMatchOp==0 );
+  return pTerm->eMatchOp>=SQLITE_INDEX_CONSTRAINT_LIMIT 
+      && pTerm->eMatchOp<=SQLITE_INDEX_CONSTRAINT_OFFSET;
 }
 
 /*
@@ -3555,8 +3554,8 @@ static int whereLoopAddVirtualOne(
 
   mxTerm = -1;
   assert( pNew->nLSlot>=nConstraint );
-  for(i=0; i<nConstraint; i++) pNew->aLTerm[i] = 0;
-  pNew->u.vtab.omitMask = 0;
+  memset(pNew->aLTerm, 0, sizeof(pNew->aLTerm[0])*nConstraint );
+  memset(&pNew->u.vtab, 0, sizeof(pNew->u.vtab));
   pIdxCons = *(struct sqlite3_index_constraint**)&pIdxInfo->aConstraint;
   for(i=0; i<nConstraint; i++, pIdxCons++){
     int iTerm;
@@ -3589,6 +3588,9 @@ static int whereLoopAddVirtualOne(
           pNew->u.vtab.omitMask |= 1<<iTerm;
         }else{
           testcase( i!=iTerm );
+        }
+        if( pTerm->eMatchOp==SQLITE_INDEX_CONSTRAINT_OFFSET ){
+          pNew->u.vtab.bOmitOffset = 1;
         }
       }
       if( (pTerm->eOperator & WO_IN)!=0 ){
