@@ -1,5 +1,5 @@
-C Give\sthe\svirtual\stable\sxBestIndex\smethod\saccess\sto\s(some)\sOFFSET\sand\sLIMIT\nclauses.
-D 2022-01-27T16:14:50.962
+C Make\sLIMIT\sand\sOFFSET\svalues\savailable\sto\ssqlite3_vtab_rhs_value().
+D 2022-01-27T18:45:26.825
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -642,7 +642,7 @@ F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
 F src/where.c f89c21296cdf23bbc73333c77a01e0bfdccc9d1a767d38a145e3a8658456b66c
 F src/whereInt.h e23780eb06810dc8bd7d855c97a667bf116cb929d8aa107ce1db91df8e47aaa8
 F src/wherecode.c 37878a0a6f790b77f41e7b3d77c42f14bded09aef3d363eaf19b3ee02e765666
-F src/whereexpr.c 50b09b3583301d0a5aef0e5b5d225f4d2b0eba2e36e3f9d0b914e110d4b2f6ce
+F src/whereexpr.c 455b5eeef49693ac6f7303e4529bb997fd4e0f0bd594a6f8e49c0ea7e399368f
 F src/window.c dfaec4abc6012cbc18e4a202ca3a5d5a0efcc4011d86a06d882ddaab8aedee4d
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test ce1aafc86e110685b324e9a763eab4f2a73f737842ec3b687bd965867de90627
@@ -1942,11 +1942,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 64fa9e8c87179211cec248e6dfd7578502e6e969a19e91a4f0e21ed9b972a6bc
-R c3554501c3177117c353a66ed5c4eb7c
-T *branch * vtab-limit-offset
-T *sym-vtab-limit-offset *
-T -sym-trunk *
+P 74fa5757ee0a8499bcd6546dac1a3ecc6048ba9cff9e3e574e28e6e82e894a3d
+R 4f1dec533377c1a483f6b7fee31b9110
 U drh
-Z 853246eb39d3c5347b902f7c653bc6b9
+Z 8464b51a4c3f5e11d93482ca57b3dd6d
 # Remove this line to create a well-formed Fossil manifest.

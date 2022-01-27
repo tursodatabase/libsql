@@ -1527,18 +1527,40 @@ void sqlite3WhereSplit(WhereClause *pWC, Expr *pExpr, u8 op){
 ** OFFSET (if eMatchOp==SQLITE_INDEX_CONSTRAINT_OFFSET) term to the 
 ** where-clause passed as the first argument. The value for the term
 ** is found in register iReg.
+**
+** In the common case where the value is a simple integer 
+** (example: "LIMIT 5 OFFSET 10") then the expression codes as a
+** TK_INTEGER so that it will be available to sqlite3_vtab_rhs_value().
+** If not, then it codes as a TK_REGISTER expression.
 */
-void whereAddLimitExpr(WhereClause *pWC, int iReg, int iCsr, int eMatchOp){
+void whereAddLimitExpr(
+  WhereClause *pWC,   /* Add the constraint to this WHERE clause */
+  int iReg,           /* Register that will hold value of the limit/offset */
+  Expr *pExpr,        /* Expression that defines the limit/offset */
+  int iCsr,           /* Cursor to which the constraint applies */
+  int eMatchOp        /* SQLITE_INDEX_CONSTRAINT_LIMIT or _OFFSET */
+){
   Parse *pParse = pWC->pWInfo->pParse;
   sqlite3 *db = pParse->db;
-  Expr *pExpr;
+  Expr *pNew;
+  int iVal = 0;
 
-  pExpr = sqlite3PExpr(pParse, TK_MATCH, 0, sqlite3Expr(db,TK_REGISTER,0));
-  if( pExpr ){
+  if( sqlite3ExprIsInteger(pExpr, &iVal) ){
+    Expr *pVal = sqlite3Expr(db, TK_INTEGER, 0);
+    if( pVal==0 ) return;
+    ExprSetProperty(pVal, EP_IntValue);
+    pVal->u.iValue = iVal;
+    pNew = sqlite3PExpr(pParse, TK_MATCH, 0, pVal);
+  }else{
+    Expr *pVal = sqlite3Expr(db, TK_REGISTER, 0);
+    if( pVal==0 ) return;
+    pVal->iTable = iReg;
+    pNew = sqlite3PExpr(pParse, TK_MATCH, 0, pVal);
+  }
+  if( pNew ){
     WhereTerm *pTerm;
     int idx;
-    pExpr->pRight->iTable = iReg;
-    idx = whereClauseInsert(pWC, pExpr, TERM_DYNAMIC|TERM_VIRTUAL);
+    idx = whereClauseInsert(pWC, pNew, TERM_DYNAMIC|TERM_VIRTUAL);
     pTerm = &pWC->a[idx];
     pTerm->leftCursor = iCsr;
     pTerm->eOperator = WO_AUX;
@@ -1589,9 +1611,12 @@ void sqlite3WhereAddLimit(WhereClause *pWC, Select *p){
     }
 
     /* All conditions are met. Add the terms to the where-clause object. */
-    whereAddLimitExpr(pWC, p->iLimit, iCsr, SQLITE_INDEX_CONSTRAINT_LIMIT);
+    assert( p->pLimit->op==TK_LIMIT );
+    whereAddLimitExpr(pWC, p->iLimit, p->pLimit->pLeft,
+                      iCsr, SQLITE_INDEX_CONSTRAINT_LIMIT);
     if( p->iOffset>0 ){
-      whereAddLimitExpr(pWC, p->iOffset, iCsr, SQLITE_INDEX_CONSTRAINT_OFFSET);
+      whereAddLimitExpr(pWC, p->iOffset, p->pLimit->pRight,
+                        iCsr, SQLITE_INDEX_CONSTRAINT_OFFSET);
     }
   }
 }
