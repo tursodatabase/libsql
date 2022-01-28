@@ -3460,6 +3460,15 @@ static int whereLoopAddBtree(
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 
 /*
+** Return true if pTerm is a virtual table LIMIT or OFFSET term.
+*/
+static int isLimitTerm(WhereTerm *pTerm){
+  assert( pTerm->eOperator==WO_AUX || pTerm->eMatchOp==0 );
+  return pTerm->eMatchOp>=SQLITE_INDEX_CONSTRAINT_LIMIT 
+      && pTerm->eMatchOp<=SQLITE_INDEX_CONSTRAINT_OFFSET;
+}
+
+/*
 ** Argument pIdxInfo is already populated with all constraints that may
 ** be used by the virtual table identified by pBuilder->pNew->iTab. This
 ** function marks a subset of those constraints usable, invokes the
@@ -3486,7 +3495,8 @@ static int whereLoopAddVirtualOne(
   u16 mExclude,                   /* Exclude terms using these operators */
   sqlite3_index_info *pIdxInfo,   /* Populated object for xBestIndex */
   u16 mNoOmit,                    /* Do not omit these constraints */
-  int *pbIn                       /* OUT: True if plan uses an IN(...) op */
+  int *pbIn,                      /* OUT: True if plan uses an IN(...) op */
+  int *pbRetryLimit               /* OUT: Retry without LIMIT/OFFSET */
 ){
   WhereClause *pWC = pBuilder->pWC;
   struct sqlite3_index_constraint *pIdxCons;
@@ -3511,6 +3521,7 @@ static int whereLoopAddVirtualOne(
     pIdxCons->usable = 0;
     if( (pTerm->prereqRight & mUsable)==pTerm->prereqRight 
      && (pTerm->eOperator & mExclude)==0
+     && (pbRetryLimit || !isLimitTerm(pTerm))
     ){
       pIdxCons->usable = 1;
     }
@@ -3543,8 +3554,8 @@ static int whereLoopAddVirtualOne(
 
   mxTerm = -1;
   assert( pNew->nLSlot>=nConstraint );
-  for(i=0; i<nConstraint; i++) pNew->aLTerm[i] = 0;
-  pNew->u.vtab.omitMask = 0;
+  memset(pNew->aLTerm, 0, sizeof(pNew->aLTerm[0])*nConstraint );
+  memset(&pNew->u.vtab, 0, sizeof(pNew->u.vtab));
   pIdxCons = *(struct sqlite3_index_constraint**)&pIdxInfo->aConstraint;
   for(i=0; i<nConstraint; i++, pIdxCons++){
     int iTerm;
@@ -3578,6 +3589,9 @@ static int whereLoopAddVirtualOne(
         }else{
           testcase( i!=iTerm );
         }
+        if( pTerm->eMatchOp==SQLITE_INDEX_CONSTRAINT_OFFSET ){
+          pNew->u.vtab.bOmitOffset = 1;
+        }
       }
       if( (pTerm->eOperator & WO_IN)!=0 ){
         /* A virtual table that is constrained by an IN clause may not
@@ -3588,6 +3602,21 @@ static int whereLoopAddVirtualOne(
         pIdxInfo->orderByConsumed = 0;
         pIdxInfo->idxFlags &= ~SQLITE_INDEX_SCAN_UNIQUE;
         *pbIn = 1; assert( (mExclude & WO_IN)==0 );
+      }
+
+      if( isLimitTerm(pTerm) && *pbIn ){
+        /* If there is an IN(...) term handled as an == (separate call to
+        ** xFilter for each value on the RHS of the IN) and a LIMIT or
+        ** OFFSET term handled as well, the plan is unusable. Set output
+        ** variable *pbRetryLimit to true to tell the caller to retry with
+        ** LIMIT and OFFSET disabled. */
+        if( pIdxInfo->needToFreeIdxStr ){
+          sqlite3_free(pIdxInfo->idxStr);
+          pIdxInfo->idxStr = 0;
+          pIdxInfo->needToFreeIdxStr = 0;
+        }
+        *pbRetryLimit = 1;
+        return SQLITE_OK;
       }
     }
   }
@@ -3751,6 +3780,7 @@ static int whereLoopAddVirtual(
   WhereLoop *pNew;
   Bitmask mBest;               /* Tables used by best possible plan */
   u16 mNoOmit;
+  int bRetry = 0;              /* True to retry with LIMIT/OFFSET disabled */
 
   assert( (mPrereq & mUnusable)==0 );
   pWInfo = pBuilder->pWInfo;
@@ -3774,7 +3804,15 @@ static int whereLoopAddVirtual(
   /* First call xBestIndex() with all constraints usable. */
   WHERETRACE(0x800, ("BEGIN %s.addVirtual()\n", pSrc->pTab->zName));
   WHERETRACE(0x40, ("  VirtualOne: all usable\n"));
-  rc = whereLoopAddVirtualOne(pBuilder, mPrereq, ALLBITS, 0, p, mNoOmit, &bIn);
+  rc = whereLoopAddVirtualOne(
+      pBuilder, mPrereq, ALLBITS, 0, p, mNoOmit, &bIn, &bRetry
+  );
+  if( bRetry ){
+    assert( rc==SQLITE_OK );
+    rc = whereLoopAddVirtualOne(
+        pBuilder, mPrereq, ALLBITS, 0, p, mNoOmit, &bIn, 0
+    );
+  }
 
   /* If the call to xBestIndex() with all terms enabled produced a plan
   ** that does not require any source tables (IOW: a plan with mBest==0)
@@ -3792,7 +3830,7 @@ static int whereLoopAddVirtual(
     if( bIn ){
       WHERETRACE(0x40, ("  VirtualOne: all usable w/o IN\n"));
       rc = whereLoopAddVirtualOne(
-          pBuilder, mPrereq, ALLBITS, WO_IN, p, mNoOmit, &bIn);
+          pBuilder, mPrereq, ALLBITS, WO_IN, p, mNoOmit, &bIn, 0);
       assert( bIn==0 );
       mBestNoIn = pNew->prereq & ~mPrereq;
       if( mBestNoIn==0 ){
@@ -3819,7 +3857,7 @@ static int whereLoopAddVirtual(
       WHERETRACE(0x40, ("  VirtualOne: mPrev=%04llx mNext=%04llx\n",
                        (sqlite3_uint64)mPrev, (sqlite3_uint64)mNext));
       rc = whereLoopAddVirtualOne(
-          pBuilder, mPrereq, mNext|mPrereq, 0, p, mNoOmit, &bIn);
+          pBuilder, mPrereq, mNext|mPrereq, 0, p, mNoOmit, &bIn, 0);
       if( pNew->prereq==mPrereq ){
         seenZero = 1;
         if( bIn==0 ) seenZeroNoIN = 1;
@@ -3832,7 +3870,7 @@ static int whereLoopAddVirtual(
     if( rc==SQLITE_OK && seenZero==0 ){
       WHERETRACE(0x40, ("  VirtualOne: all disabled\n"));
       rc = whereLoopAddVirtualOne(
-          pBuilder, mPrereq, mPrereq, 0, p, mNoOmit, &bIn);
+          pBuilder, mPrereq, mPrereq, 0, p, mNoOmit, &bIn, 0);
       if( bIn==0 ) seenZeroNoIN = 1;
     }
 
@@ -3842,7 +3880,7 @@ static int whereLoopAddVirtual(
     if( rc==SQLITE_OK && seenZeroNoIN==0 ){
       WHERETRACE(0x40, ("  VirtualOne: all disabled and w/o IN\n"));
       rc = whereLoopAddVirtualOne(
-          pBuilder, mPrereq, mPrereq, WO_IN, p, mNoOmit, &bIn);
+          pBuilder, mPrereq, mPrereq, WO_IN, p, mNoOmit, &bIn, 0);
     }
   }
 
@@ -5248,6 +5286,7 @@ WhereInfo *sqlite3WhereBegin(
   Expr *pWhere,           /* The WHERE clause */
   ExprList *pOrderBy,     /* An ORDER BY (or GROUP BY) clause, or NULL */
   ExprList *pResultSet,   /* Query result set.  Req'd for DISTINCT */
+  Select *pLimit,         /* Use this LIMIT/OFFSET clause, if any */
   u16 wctrlFlags,         /* The WHERE_* flags defined in sqliteInt.h */
   int iAuxArg             /* If WHERE_OR_SUBCLAUSE is set, index cursor number
                           ** If WHERE_USE_LIMIT, then the limit amount */
@@ -5324,6 +5363,9 @@ WhereInfo *sqlite3WhereBegin(
   pWInfo->wctrlFlags = wctrlFlags;
   pWInfo->iLimit = iAuxArg;
   pWInfo->savedNQueryLoop = pParse->nQueryLoop;
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+  pWInfo->pLimit = pLimit;
+#endif
   memset(&pWInfo->nOBSat, 0, 
          offsetof(WhereInfo,sWC) - offsetof(WhereInfo,nOBSat));
   memset(&pWInfo->a[0], 0, sizeof(WhereLoop)+nTabList*sizeof(WhereLevel));
@@ -5392,6 +5434,7 @@ WhereInfo *sqlite3WhereBegin(
   
   /* Analyze all of the subexpressions. */
   sqlite3WhereExprAnalyze(pTabList, &pWInfo->sWC);
+  sqlite3WhereAddLimit(&pWInfo->sWC, pLimit);
   if( db->mallocFailed ) goto whereBeginError;
 
   /* Special case: WHERE terms that do not refer to any tables in the join

@@ -424,6 +424,10 @@ static int tclBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
         zOp = "isnull"; break;
       case SQLITE_INDEX_CONSTRAINT_IS:
         zOp = "is"; break;
+      case SQLITE_INDEX_CONSTRAINT_LIMIT:
+        zOp = "limit"; break;
+      case SQLITE_INDEX_CONSTRAINT_OFFSET:
+        zOp = "offset"; break;
     }
 
     Tcl_ListObjAppendElement(0, pElem, Tcl_NewStringObj("op", -1));

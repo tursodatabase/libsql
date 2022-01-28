@@ -123,7 +123,8 @@ struct WhereLoop {
     } btree;
     struct {               /* Information for virtual tables */
       int idxNum;            /* Index number */
-      u8 needFree;           /* True if sqlite3_free(idxStr) is needed */
+      u8 needFree : 1;       /* True if sqlite3_free(idxStr) is needed */
+      u8 bOmitOffset : 1;    /* True to let virtual table handle offset */
       i8 isOrdered;          /* True if satisfies ORDER BY */
       u16 omitMask;          /* Terms that may be omitted */
       char *idxStr;          /* Index identifier string */
@@ -453,6 +454,9 @@ struct WhereInfo {
   ExprList *pOrderBy;       /* The ORDER BY clause or NULL */
   ExprList *pResultSet;     /* Result set of the query */
   Expr *pWhere;             /* The complete WHERE clause */
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+  Select *pLimit;           /* Used to access LIMIT expr/registers for vtabs */
+#endif
   int aiCurOnePass[2];      /* OP_OpenWrite cursors for the ONEPASS opt */
   int iContinue;            /* Jump here to continue with next record */
   int iBreak;               /* Jump here to break out of the loop */
@@ -538,6 +542,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
 void sqlite3WhereClauseInit(WhereClause*,WhereInfo*);
 void sqlite3WhereClauseClear(WhereClause*);
 void sqlite3WhereSplit(WhereClause*,Expr*,u8);
+void sqlite3WhereAddLimit(WhereClause*, Select*);
 Bitmask sqlite3WhereExprUsage(WhereMaskSet*, Expr*);
 Bitmask sqlite3WhereExprUsageNN(WhereMaskSet*, Expr*);
 Bitmask sqlite3WhereExprListUsage(WhereMaskSet*, ExprList*);
@@ -608,5 +613,6 @@ void sqlite3WhereTabFuncArgs(Parse*, SrcItem*, WhereClause*);
 #define WHERE_TRANSCONS    0x00200000  /* Uses a transitive constraint */
 #define WHERE_BLOOMFILTER  0x00400000  /* Consider using a Bloom-filter */
 #define WHERE_SELFCULL     0x00800000  /* nOut reduced by extra WHERE terms */
+#define WHERE_OMIT_OFFSET  0x01000000  /* Set offset counter to zero */
 
 #endif /* !defined(SQLITE_WHEREINT_H) */

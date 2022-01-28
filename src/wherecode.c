@@ -1537,6 +1537,15 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       }else{
         Expr *pRight = pTerm->pExpr->pRight;
         codeExprOrVector(pParse, pRight, iTarget, 1);
+        if( pTerm->eMatchOp==SQLITE_INDEX_CONSTRAINT_OFFSET
+         && pLoop->u.vtab.bOmitOffset
+        ){
+          assert( pTerm->eOperator==WO_AUX );
+          assert( pWInfo->pLimit!=0 );
+          assert( pWInfo->pLimit->iOffset>0 );
+          sqlite3VdbeAddOp2(v, OP_Integer, 0, pWInfo->pLimit->iOffset);
+          VdbeComment((v,"Zero OFFSET counter"));
+        }
       }
     }
     sqlite3VdbeAddOp2(v, OP_Integer, pLoop->u.vtab.idxNum, iReg);
@@ -2358,7 +2367,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         /* Loop through table entries that match term pOrTerm. */
         ExplainQueryPlan((pParse, 1, "INDEX %d", ii+1));
         WHERETRACE(0xffff, ("Subplan for OR-clause:\n"));
-        pSubWInfo = sqlite3WhereBegin(pParse, pOrTab, pOrExpr, 0, 0,
+        pSubWInfo = sqlite3WhereBegin(pParse, pOrTab, pOrExpr, 0, 0, 0,
                                       WHERE_OR_SUBCLAUSE, iCovCur);
         assert( pSubWInfo || pParse->nErr );
         if( pSubWInfo ){
