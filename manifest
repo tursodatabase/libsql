@@ -1,5 +1,5 @@
-C Query\splanner\salways\shonors\sthe\saConstraintUsage[].omit\sflag\sfor\sthe\nSQLITE_INDEX_CONSTRAINT_OFFSET\sconstraint.
-D 2022-01-27T21:18:14.656
+C Enable\sSQLITE_INDEX_CONSTRAINT_LIMIT/OFFSET\seven\sif\sthere\sare\svector\ncomparison\soperators\sin\sthe\sWHERE\sclause.\s\sAlso:\s\sDo\snot\senable\nsqlite3_vtab_rhs_value()\sfor\sLIMIT/OFFSET\sif\sthe\svalue\sis\snegative,\sas\sthis\nviolates\san\sinvariant\son\sExpr.u.iValue.
+D 2022-01-28T13:18:40.313
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -642,7 +642,7 @@ F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
 F src/where.c f61ca6dbb4bbb7171aa5f5459982d8d98aac24852572bcee250f9c469a1963ba
 F src/whereInt.h 0748a6fce98b41862445906922a809146ff7ef4de16ed9022b0bc4e5c43aa60a
 F src/wherecode.c c313ccf5ed13dc7e88c64f93733f414dee369a212508a866878696d83c64fc36
-F src/whereexpr.c 391d04108e4a5a701d2fad374ff54db8629bce12b55a7ee30a478d440ea4bfe0
+F src/whereexpr.c 869596d69a498604fe3e00ff06475038560732227bc42de0cf5dc92248740a4f
 F src/window.c dfaec4abc6012cbc18e4a202ca3a5d5a0efcc4011d86a06d882ddaab8aedee4d
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test ce1aafc86e110685b324e9a763eab4f2a73f737842ec3b687bd965867de90627
@@ -1942,8 +1942,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b2d37c086c87fe4aee013bba4eab26f642207cd2a797fe4888a6ef868884c191
-R 87c4173ca514b2a053765a7d35c4d8eb
+P 38c5151eb8cc789ad082a1b40d16b2ddb55454219bd685b6e420995af6a15f55
+R 05c94023401bdef7db1e43fcf139e4c2
 U drh
-Z 05d67635fa5a91d132911c78dd294cd6
+Z b99686de01cbc6d8d45082533904b9d3
 # Remove this line to create a well-formed Fossil manifest.

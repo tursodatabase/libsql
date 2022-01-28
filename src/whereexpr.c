@@ -1379,7 +1379,10 @@ static void exprAnalyze(
   ** no longer used.
   **
   ** This is only required if at least one side of the comparison operation
-  ** is not a sub-select.  */
+  ** is not a sub-select.
+  **
+  ** tag-20220128a
+  */
   if( (pExpr->op==TK_EQ || pExpr->op==TK_IS)
    && (nLeft = sqlite3ExprVectorSize(pExpr->pLeft))>1
    && sqlite3ExprVectorSize(pExpr->pRight)==nLeft
@@ -1545,7 +1548,7 @@ void whereAddLimitExpr(
   Expr *pNew;
   int iVal = 0;
 
-  if( sqlite3ExprIsInteger(pExpr, &iVal) ){
+  if( sqlite3ExprIsInteger(pExpr, &iVal) && iVal>=0 ){
     Expr *pVal = sqlite3Expr(db, TK_INTEGER, 0);
     if( pVal==0 ) return;
     ExprSetProperty(pVal, EP_IntValue);
@@ -1598,6 +1601,13 @@ void sqlite3WhereAddLimit(WhereClause *pWC, Select *p){
 
     /* Check condition (4). Return early if it is not met. */
     for(ii=0; ii<pWC->nTerm; ii++){
+      if( pWC->a[ii].wtFlags & TERM_CODED ){
+        /* This term is a vector operation that has been decomposed into
+        ** other, subsequent terms.  It can be ignored. See tag-20220128a */
+        assert( pWC->a[ii].wtFlags & TERM_VIRTUAL );
+        assert( pWC->a[ii].eOperator==0 );
+        continue;
+      }
       if( pWC->a[ii].leftCursor!=iCsr ) return;
     }
 
