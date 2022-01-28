@@ -1,5 +1,5 @@
-C Remove\sa\sNEVER()\sthat\shas\sbecome\sreachable\snow\sthat\swe\shave\sthe\nsqlite3_vtab_rhs_value()\sinterface.
-D 2022-01-28T18:43:33.716
+C Include\shidden\scolumns\sof\stable\svalued\sfunctions\sthat\sare\sconstrained\nby\sthe\sfunction\sarguments\sin\sthe\scolUsed\sbitmask.
+D 2022-01-28T19:53:37.840
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -642,7 +642,7 @@ F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
 F src/where.c f61ca6dbb4bbb7171aa5f5459982d8d98aac24852572bcee250f9c469a1963ba
 F src/whereInt.h 0748a6fce98b41862445906922a809146ff7ef4de16ed9022b0bc4e5c43aa60a
 F src/wherecode.c c313ccf5ed13dc7e88c64f93733f414dee369a212508a866878696d83c64fc36
-F src/whereexpr.c 869596d69a498604fe3e00ff06475038560732227bc42de0cf5dc92248740a4f
+F src/whereexpr.c 42195849443c3648fa9900c82837b7592c91bd43934ad9369d30f5d55d7fe19e
 F src/window.c dfaec4abc6012cbc18e4a202ca3a5d5a0efcc4011d86a06d882ddaab8aedee4d
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test ce1aafc86e110685b324e9a763eab4f2a73f737842ec3b687bd965867de90627
@@ -1942,8 +1942,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 140480b3ec5466513b165d4818f1180cff6e4a5edcd47efb54cbff74a7107507
-R b5457dcd74cf42bf2b317f01e195dfec
+P c4c30df7cd858315359bd9bfa90a07152d87a2301eaec865c5bc1c65e272eec8
+R b21847307144bd6983c5bb4141c2b106
 U drh
-Z 9ee62f5941b268da60926e062d6f8568
+Z c180a25bc067b4731882777cea55422e
 # Remove this line to create a well-formed Fossil manifest.
