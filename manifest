@@ -1,5 +1,5 @@
-C Add\sthe\sSQLITE_INDEX_CONSTRAINT_LIMIT\sand\sSQLITE_INDEX_CONSTRAINT_OFFSET\nconstraints\sto\sthe\ssqlite3_index_info\sfor\sthe\sxBestIndex\smethod\sof\svirtual\ntables.
-D 2022-01-28T23:44:27.760
+C Documentation\senhancements.\s\sNo\scode\schanges.
+D 2022-01-29T21:41:15.826
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -554,7 +554,7 @@ F src/resolve.c 24032ae57aec10df2f3fa2e20be0aae7d256bc704124b76c52d763440c7c0fe9
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c a6d2d4bed279d7fe4fcedaf297eaf6441e8e17c6e3947a32d24d23be52ac02f2
 F src/shell.c.in e80a140e92e342e2f92d405a77155c8e3a67c9b1d0bdbacb92885960cd4fc8f2
-F src/sqlite.h.in da0e94f140f3f054f0eca8fc4a183167bedc7ae9c51822390c62369455eae5f8
+F src/sqlite.h.in eaade58049152dac850d57415bcced885ca27ae9582f8aea2cfb7f1db78a521b
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 5d54cf13d3406d8eb65d921a0d3c349de6126b732e695e79ecd4830ce86b4f8a
 F src/sqliteInt.h 8ef2996e02476f73e41ba977f819bda0cc68b7ce238cf404b9b8930df57bc1d0
@@ -1942,9 +1942,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ae088cbc968a565c3e0a8dd74ce150cac4a87978b593a3204f475fa196f1603c 388926254b9da6169da7267bd4d5a1a66a26576be435c88269ab8db9eaedc079
-R 9225571e858504f378a02e825bc79ee6
-T +closed 388926254b9da6169da7267bd4d5a1a66a26576be435c88269ab8db9eaedc079
+P 1e227ad9f413227f767b45b91e5439b82c98a3368fb20643414dab5c0f4818c6
+R f13cee5dfcfac643ce5de584b78c3f4d
 U drh
-Z b46b82d7c9b67bbb72c40f2f1d6b1914
+Z 04ccdcba53141070401957d8ba0c3d32
 # Remove this line to create a well-formed Fossil manifest.
