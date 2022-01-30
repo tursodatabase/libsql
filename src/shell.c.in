@@ -3164,6 +3164,75 @@ static void print_box_row_separator(
   fputs("\n", p->out);
 }
 
+/*
+** z[] is a line of text that is to be displayed the .mode box or table or
+** similar tabular formats.  z[] might contain control characters such
+** as \n, \t, \f, or \r.
+**
+** Compute characters to display on the first line of z[].  Stop at the
+** first \r, \n, or \f.  Expand \t into spaces.  Return a copy (obtained
+** from malloc()) of that first line.  Write anything to display
+** on the next line into *pzTail.  If this is the last line, write a NULL
+** into *pzTail.
+*/
+static char *translateForDisplayAndDup(
+  const unsigned char *z,
+  const unsigned char **pzTail,
+  int mxWidth
+){
+  int i, n;
+  unsigned char *zOut;
+  if( z==0 ){
+    *pzTail = 0;
+    return 0;
+  }
+  if( mxWidth<0 ) mxWidth = -mxWidth;
+  if( mxWidth==0 ) mxWidth = 1000000;
+  i = n = 0;
+  while( n<mxWidth ){
+    if( z[i]>=' ' ){
+      n++;
+      i++;
+      continue;
+    }
+    if( z[i]=='\t' ){
+      n += 8;
+      n &= ~7;
+      i++;
+      continue;
+    }
+    break;
+  }
+  if( n>=mxWidth && z[i]>=' ' ){
+   *pzTail = &z[i];
+  }else if( z[i]=='\r' && z[i+1]=='\n' ){
+    *pzTail = z[i+2] ? &z[i+2] : 0;
+  }else if( z[i]==0 ){
+    *pzTail = 0;
+  }else{
+    *pzTail = &z[i+1];
+  }
+  zOut = malloc( n+1 );
+  shell_check_oom(zOut);
+  i = n = 0;
+  while( n<mxWidth ){
+    if( z[i]>=' ' ){
+      zOut[n++] = z[i++];
+      continue;
+    }
+    if( z[i]=='\t' ){
+      do{
+        zOut[n++] = ' ';
+      }while( (n&7)!=0 && n<mxWidth );
+      i++;
+      continue;
+    }
+    break;
+  }
+  zOut[n] = 0;
+  return (char*)zOut;  
+}
+
 
 
 /*
@@ -3184,12 +3253,17 @@ static void exec_prepared_stmt_columnar(
   int nColumn = 0;
   char **azData = 0;
   sqlite3_int64 nAlloc = 0;
+  char *abRowDiv = 0;
+  const unsigned char *uz;
   const char *z;
   int rc;
   sqlite3_int64 i, nData;
   int j, nTotal, w, n;
   const char *colSep = 0;
   const char *rowSep = 0;
+  const unsigned char **azNextLine = 0;
+  int bNextLine = 0;
+  int bMultiLineRowExists = 0;
 
   rc = sqlite3_step(pStmt);
   if( rc!=SQLITE_ROW ) return;
@@ -3198,21 +3272,11 @@ static void exec_prepared_stmt_columnar(
   if( nAlloc<=0 ) nAlloc = 1;
   azData = sqlite3_malloc64( nAlloc*sizeof(char*) );
   shell_check_oom(azData);
-  for(i=0; i<nColumn; i++){
-    azData[i] = strdup(sqlite3_column_name(pStmt,i));
-  }
-  do{
-    if( (nRow+2)*nColumn >= nAlloc ){
-      nAlloc *= 2;
-      azData = sqlite3_realloc64(azData, nAlloc*sizeof(char*));
-      shell_check_oom(azData);
-    }
-    nRow++;
-    for(i=0; i<nColumn; i++){
-      z = (const char*)sqlite3_column_text(pStmt,i);
-      azData[nRow*nColumn + i] = z ? strdup(z) : 0;
-    }
-  }while( sqlite3_step(pStmt)==SQLITE_ROW );
+  azNextLine = sqlite3_malloc64( nColumn*sizeof(char*) );
+  shell_check_oom(azNextLine);
+  memset(azNextLine, 0, nColumn*sizeof(char*) );
+  abRowDiv = sqlite3_malloc64( nAlloc/nColumn );
+  shell_check_oom(abRowDiv);
   if( nColumn>p->nWidth ){
     p->colWidth = realloc(p->colWidth, (nColumn+1)*2*sizeof(int));
     shell_check_oom(p->colWidth);
@@ -3226,6 +3290,36 @@ static void exec_prepared_stmt_columnar(
     if( w<0 ) w = -w;
     p->actualWidth[i] = w;
   }
+  for(i=0; i<nColumn; i++){
+    azData[i] = strdup(sqlite3_column_name(pStmt,i));
+  }
+  do{
+    int useNextLine = bNextLine;
+    bNextLine = 0;
+    if( (nRow+2)*nColumn >= nAlloc ){
+      nAlloc *= 2;
+      azData = sqlite3_realloc64(azData, nAlloc*sizeof(char*));
+      shell_check_oom(azData);
+      abRowDiv = sqlite3_realloc64(abRowDiv, nAlloc/nColumn);
+      shell_check_oom(abRowDiv);
+    }
+    abRowDiv[nRow] = 1;
+    nRow++;
+    for(i=0; i<nColumn; i++){
+      if( useNextLine ){
+        uz = azNextLine[i];
+      }else{
+        uz = (const unsigned char*)sqlite3_column_text(pStmt,i);
+      }
+      azData[nRow*nColumn + i] =
+         translateForDisplayAndDup(uz, &azNextLine[i], p->colWidth[i]);
+      if( azNextLine[i] ){
+        bNextLine = 1;
+        abRowDiv[nRow-1] = 0;
+        bMultiLineRowExists = 1;
+      }
+    }
+  }while( bNextLine || sqlite3_step(pStmt)==SQLITE_ROW );
   nTotal = nColumn*(nRow+1);
   for(i=0; i<nTotal; i++){
     z = azData[i];
@@ -3308,6 +3402,13 @@ static void exec_prepared_stmt_columnar(
     utf8_width_print(p->out, w, z);
     if( j==nColumn-1 ){
       utf8_printf(p->out, "%s", rowSep);
+      if( bMultiLineRowExists && abRowDiv[i/nColumn-1] && i+1<nTotal ){
+        if( p->cMode==MODE_Table ){
+          print_row_separator(p, nColumn, "+");
+        }else if( p->cMode==MODE_Box ){
+          print_box_row_separator(p, nColumn, BOX_123, BOX_1234, BOX_134);
+        }
+      }
       j = -1;
       if( seenInterrupt ) goto columnar_end;
     }else{
@@ -3326,6 +3427,8 @@ columnar_end:
   nData = (nRow+1)*nColumn;
   for(i=0; i<nData; i++) free(azData[i]);
   sqlite3_free(azData);
+  sqlite3_free(azNextLine);
+  sqlite3_free(abRowDiv);
 }
 
 /*
