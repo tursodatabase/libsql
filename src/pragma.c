@@ -1250,6 +1250,10 @@ void sqlite3Pragma(
               (void)sqlite3_finalize(pDummy);
               sqlite3DbFree(db, zSql);
             }
+            if( db->mallocFailed ){
+              sqlite3ErrorMsg(db->pParse, "out of memory");
+              db->pParse->rc = SQLITE_NOMEM_BKPT;
+            }
             pHash = &db->aDb[ii].pSchema->tblHash;
             break;
           }

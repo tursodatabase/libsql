@@ -1379,7 +1379,10 @@ static void exprAnalyze(
   ** no longer used.
   **
   ** This is only required if at least one side of the comparison operation
-  ** is not a sub-select.  */
+  ** is not a sub-select.
+  **
+  ** tag-20220128a
+  */
   if( (pExpr->op==TK_EQ || pExpr->op==TK_IS)
    && (nLeft = sqlite3ExprVectorSize(pExpr->pLeft))>1
    && sqlite3ExprVectorSize(pExpr->pRight)==nLeft
@@ -1523,6 +1526,113 @@ void sqlite3WhereSplit(WhereClause *pWC, Expr *pExpr, u8 op){
 }
 
 /*
+** Add either a LIMIT (if eMatchOp==SQLITE_INDEX_CONSTRAINT_LIMIT) or 
+** OFFSET (if eMatchOp==SQLITE_INDEX_CONSTRAINT_OFFSET) term to the 
+** where-clause passed as the first argument. The value for the term
+** is found in register iReg.
+**
+** In the common case where the value is a simple integer 
+** (example: "LIMIT 5 OFFSET 10") then the expression codes as a
+** TK_INTEGER so that it will be available to sqlite3_vtab_rhs_value().
+** If not, then it codes as a TK_REGISTER expression.
+*/
+void whereAddLimitExpr(
+  WhereClause *pWC,   /* Add the constraint to this WHERE clause */
+  int iReg,           /* Register that will hold value of the limit/offset */
+  Expr *pExpr,        /* Expression that defines the limit/offset */
+  int iCsr,           /* Cursor to which the constraint applies */
+  int eMatchOp        /* SQLITE_INDEX_CONSTRAINT_LIMIT or _OFFSET */
+){
+  Parse *pParse = pWC->pWInfo->pParse;
+  sqlite3 *db = pParse->db;
+  Expr *pNew;
+  int iVal = 0;
+
+  if( sqlite3ExprIsInteger(pExpr, &iVal) && iVal>=0 ){
+    Expr *pVal = sqlite3Expr(db, TK_INTEGER, 0);
+    if( pVal==0 ) return;
+    ExprSetProperty(pVal, EP_IntValue);
+    pVal->u.iValue = iVal;
+    pNew = sqlite3PExpr(pParse, TK_MATCH, 0, pVal);
+  }else{
+    Expr *pVal = sqlite3Expr(db, TK_REGISTER, 0);
+    if( pVal==0 ) return;
+    pVal->iTable = iReg;
+    pNew = sqlite3PExpr(pParse, TK_MATCH, 0, pVal);
+  }
+  if( pNew ){
+    WhereTerm *pTerm;
+    int idx;
+    idx = whereClauseInsert(pWC, pNew, TERM_DYNAMIC|TERM_VIRTUAL);
+    pTerm = &pWC->a[idx];
+    pTerm->leftCursor = iCsr;
+    pTerm->eOperator = WO_AUX;
+    pTerm->eMatchOp = eMatchOp;
+  }
+}
+
+/*
+** Possibly add terms corresponding to the LIMIT and OFFSET clauses of the
+** SELECT statement passed as the second argument. These terms are only
+** added if:
+**
+**   1. The SELECT statement has a LIMIT clause, and
+**   2. The SELECT statement is not an aggregate or DISTINCT query, and
+**   3. The SELECT statement has exactly one object in its from clause, and
+**      that object is a virtual table, and
+**   4. There are no terms in the WHERE clause that will not be passed
+**      to the virtual table xBestIndex method.
+**   5. The ORDER BY clause, if any, will be made available to the xBestIndex
+**      method.
+**
+** LIMIT and OFFSET terms are ignored by most of the planner code. They
+** exist only so that they may be passed to the xBestIndex method of the
+** single virtual table in the FROM clause of the SELECT.
+*/
+void sqlite3WhereAddLimit(WhereClause *pWC, Select *p){
+  assert( p==0 || (p->pGroupBy==0 && (p->selFlags & SF_Aggregate)==0) );
+  if( (p && p->pLimit)                                          /* 1 */
+   && (p->selFlags & (SF_Distinct|SF_Aggregate))==0             /* 2 */
+   && (p->pSrc->nSrc==1 && IsVirtual(p->pSrc->a[0].pTab))       /* 3 */
+  ){
+    ExprList *pOrderBy = p->pOrderBy;
+    int iCsr = p->pSrc->a[0].iCursor;
+    int ii;
+
+    /* Check condition (4). Return early if it is not met. */
+    for(ii=0; ii<pWC->nTerm; ii++){
+      if( pWC->a[ii].wtFlags & TERM_CODED ){
+        /* This term is a vector operation that has been decomposed into
+        ** other, subsequent terms.  It can be ignored. See tag-20220128a */
+        assert( pWC->a[ii].wtFlags & TERM_VIRTUAL );
+        assert( pWC->a[ii].eOperator==0 );
+        continue;
+      }
+      if( pWC->a[ii].leftCursor!=iCsr ) return;
+    }
+
+    /* Check condition (5). Return early if it is not met. */
+    if( pOrderBy ){
+      for(ii=0; ii<pOrderBy->nExpr; ii++){
+        Expr *pExpr = pOrderBy->a[ii].pExpr;
+        if( pExpr->op!=TK_COLUMN ) return;
+        if( NEVER(pExpr->iTable!=iCsr) ) return;
+        if( pOrderBy->a[ii].sortFlags & KEYINFO_ORDER_BIGNULL ) return;
+      }
+    }
+
+    /* All conditions are met. Add the terms to the where-clause object. */
+    assert( p->pLimit->op==TK_LIMIT );
+    whereAddLimitExpr(pWC, p->iLimit, p->pLimit->pLeft,
+                      iCsr, SQLITE_INDEX_CONSTRAINT_LIMIT);
+    if( p->iOffset>0 ){
+      whereAddLimitExpr(pWC, p->iOffset, p->pLimit->pRight,
+                        iCsr, SQLITE_INDEX_CONSTRAINT_OFFSET);
+    }
+  }
+}
+
+/*
 ** Initialize a preallocated WhereClause structure.
 */
 void sqlite3WhereClauseInit(
@@ -1557,6 +1667,7 @@ void sqlite3WhereClauseClear(WhereClause *pWC){
     }
 #endif
     while(1){
+      assert( a->eMatchOp==0 || a->eOperator==WO_AUX );
       if( a->wtFlags & TERM_DYNAMIC ){
         sqlite3ExprDelete(db, a->pExpr);
       }
@@ -1714,6 +1825,7 @@ void sqlite3WhereTabFuncArgs(
     pColRef->iColumn = k++;
     assert( ExprUseYTab(pColRef) );
     pColRef->y.pTab = pTab;
+    pItem->colUsed |= sqlite3ExprColUsed(pColRef);
     pRhs = sqlite3PExpr(pParse, TK_UPLUS, 
         sqlite3ExprDup(pParse->db, pArgs->a[j].pExpr, 0), 0);
     pTerm = sqlite3PExpr(pParse, TK_EQ, pColRef, pRhs);
