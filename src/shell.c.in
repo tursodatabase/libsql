@@ -629,6 +629,8 @@ static FILE * openChrSource(const char *zFile){
 ** to the text.  NULL is returned at end of file, or if malloc()
 ** fails.
 **
+** The trailing newline (or other line-end chars) are stripped.
+**
 ** If zLine is not NULL then it is a malloced buffer returned from
 ** a previous call to this routine that may be reused.
 */
@@ -772,7 +774,14 @@ static char *getline_from( char *zLine, InSource *pSource ){
 **
 ** The result is stored in space obtained from malloc() and must either
 ** be freed by the caller or else passed back into this routine via the
-** zPrior argument for reuse (and eventual free by the caller.)
+** zPrior argument for reuse.
+**
+** If this function is called until it returns NULL, and the prior return
+** has been passed in for resuse,  then the caller need not free it.
+** Otherwise, (in case of an early termination of reading from the given
+** input), the caller is responsible for freeing a prior, non-NULL return.
+**
+** The trailing newline (or its ilk), if any, is trimmed.
 */
 static char *one_input_line(InSource *pInSrc, char *zPrior, int isContinuation){
   char *zPrompt;
@@ -1170,6 +1179,13 @@ struct ShellState {
   u8 eTraceType;         /* SHELL_TRACE_* value for type of trace */
   u8 bSafeMode;          /* True to prohibit unsafe operations */
   u8 bSafeModePersist;   /* The long-term value of bSafeMode */
+#ifndef SHELL_OMIT_EXTENDED_PARSING
+  u8 bExtendedDotCmds;   /* True if dot-command parsing extensions enabled */
+# define SHEXT_PARSING_MASK 1
+# define SHEXT_PARSING(pSS) (pSS->bExtendedDotCmds & SHEXT_PARSING_MASK !=0)
+#else
+# define SHEXT_PARSING(pSS) 0
+#endif
   unsigned statsOn;      /* True to display memory stats before each finalize */
   unsigned mEqpLines;    /* Mask of veritical lines in the EQP output graph */
   int inputNesting;      /* Track nesting level of .read and other redirects */
@@ -3644,6 +3660,16 @@ static int expertDotCommand(
 }
 #endif /* ifndef SQLITE_OMIT_VIRTUALTABLE */
 
+/* This saves little code and source volume, but provides a nice breakpoint.
+** It is called when input is ready to be run, (or would be run if it was
+** not about to dumped as a no-op. For shell # comments, "processable" is a
+** slight misnomer.) Someday, a tracing facility may enhance this function's
+** output to show where and at what line input has originated.
+*/
+static void echo_processable_input(ShellState *p, const char *zDo){
+  if( ShellHasFlag(p, SHFLG_Echo) ) printf("%s\n", zDo);
+}
+
 /*
 ** Execute a statement or set of statements.  Print
 ** any result rows/columns depending on the current mode
@@ -3700,9 +3726,7 @@ static int shell_exec(
       }
 
       /* echo the sql statement if echo on */
-      if( pArg && ShellHasFlag(pArg, SHFLG_Echo) ){
-        utf8_printf(pArg->out, "%s\n", zStmtSql ? zStmtSql : zSql);
-      }
+      if( pArg ) echo_processable_input( pArg, zStmtSql ? zStmtSql : zSql);
 
       /* Show the EXPLAIN QUERY PLAN if .eqp is on */
       if( pArg && pArg->autoEQP && sqlite3_stmt_isexplain(pStmt)==0 ){
@@ -4311,6 +4335,10 @@ static const char *(azHelp[]) = {
 #ifndef SQLITE_NOHAVE_SYSTEM
   ".shell CMD ARGS...       Run CMD ARGS... in a system shell",
 #endif
+#ifndef SHELL_OMIT_EXTENSIONS
+  ".shxopts ?SIGNED_OPTS?   Show or alter shell extension options",
+  "   Run without arguments to see their self-descriptive names",
+#endif
   ".show                    Show the current values for various settings",
   ".stats ?ARG?             Show stats or turn stats on or off",
   "   off                      Turn off automatic stat display",
@@ -4437,7 +4465,7 @@ static int showHelp(FILE *out, const char *zPattern){
       if( azHelpText[i][0]=='.' ) j = i;
       if( sqlite3_strlike(zPat, azHelpText[i], 0)==0 ){
         utf8_printf(out, "%s\n", azHelpText[j]);
-        while( j<nHelp-1 && azHelpText[j+1][0]=='.' ){
+        while( j<nHelp-1 && azHelpText[j+1][0]!='.' ){
           j++;
           utf8_printf(out, "%s\n", azHelpText[j]);
         }
@@ -7734,6 +7762,47 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
 }
 #endif /* !(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_ENABLE_DBPAGE_VTAB) */
 
+#ifndef SHELL_OMIT_EXTENSIONS
+static int shxoptsCommand(char *azArg[], int nArg, ShellState *p, char **pzE){
+  static struct { const char *name; u8 mask; } shopts[] = {
+    {"parsing", SHEXT_PARSING_MASK}
+  };
+  const char *zMoan = 0, *zAbout = 0;
+  int ia, io;
+  if( nArg>1 ){
+    for( ia=1; ia<nArg; ++ia ){
+      char cs = azArg[ia][0];
+      if( cs!='+' && cs!='-' ){
+        zMoan = "arguments must have a sign prefix.";
+        zAbout = azArg[0];
+        goto moan_error;
+      }
+      for( io=0; io<ArraySize(shopts); ++io ){
+        if( strcmp(azArg[ia]+1, shopts[io].name)==0 ){
+          if( cs=='+' ) p->bExtendedDotCmds |= shopts[io].mask;
+          else p->bExtendedDotCmds &= ~shopts[io].mask;
+          break;
+        }
+      }
+      if( io==ArraySize(shopts) ){
+        zAbout = azArg[ia];
+        zMoan = "is not a recognized option name";
+        goto moan_error;
+      }
+    }
+  }else{
+    for( io=0; io<ArraySize(shopts); ++io ){
+      unsigned m = p->bExtendedDotCmds&shopts[io].mask;
+      raw_printf(p->out, " %8s: %2X (-shxopts %02X)\n", shopts[io].name,  m, m);
+    }
+  }
+  return 0;
+ moan_error:
+  raw_printf(stderr, "Error: %s %s\n", zAbout, zMoan);
+  return 1;
+}
+#endif
+
 static int execute_variables(char *azArg[], int nArg, ShellState *p){
   int ia, rc, nErrors = 0;
   sqlite3_stmt *pStmt = 0;
@@ -7762,10 +7831,14 @@ static int execute_variables(char *azArg[], int nArg, ShellState *p){
       if( rc==SQLITE_ROW ){
         const unsigned char *zValue = sqlite3_column_text(pStmt, 0);
         int nb = sqlite3_column_bytes(pStmt, 0);
-        /* If it's empty, just silently pretend to execute it. */
-        if( nb==0 ) continue;
-        while( IsSpace(zValue[nb-1]) ) --nb;
+        while( nb>0 && IsSpace(zValue[nb-1]) ) --nb;
         if( nb>0 ){
+          /* The trailing newline (or some other placeholder) is important
+           * because it or some other character is likely to be put in its
+           * place during process_input() line or group handling, along
+           * with a terminating NUL character. Without it, the NULL could
+           * land past the end of the allocation made at this next line.
+           */
           char *zSubmit = sqlite3_mprintf( "%.*s\n", nb, zValue );
           InSource inSourceDivert =
             {0, zSubmit, 0, azArg[ia], p->pInSource };
@@ -7792,7 +7865,7 @@ static int execute_variables(char *azArg[], int nArg, ShellState *p){
     }
   }
   sqlite3_finalize(pStmt);
-  return nErrors>0;
+  return (rc==2)? 2 : nErrors>0;
 }
 
 /*
@@ -9384,7 +9457,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     sqlite3_free(zFile);
   }else
 
-  if( c=='p' && n>=3 && strncmp(azArg[0], "parameter", n)==0 ){
+  if( c=='p' && n>=2 && strncmp(azArg[0], "parameter", n)==0 ){
     open_db(p,0);
     if( nArg<=1 ) goto parameter_syntax_error;
 
@@ -10344,7 +10417,11 @@ static int do_meta_command(char *zLine, ShellState *p){
     utf8_printf(p->out, "%12.12s: %s\n", "filename",
                 p->pAuxDb->zDbFilename ? p->pAuxDb->zDbFilename : "");
   }else
-
+#ifndef SHELL_OMIT_EXTENSIONS
+  if( c=='s' && strncmp(azArg[0], "shxopts", n)==0 ){
+    rc = shxoptsCommand(azArg, nArg, p, 0);
+  }else
+#endif
   if( c=='s' && strncmp(azArg[0], "stats", n)==0 ){
     if( nArg==2 ){
       if( strcmp(azArg[1],"stmt")==0 ){
@@ -11065,19 +11142,19 @@ static QuickScanState quickscan(char *zLine, QuickScanState qss){
 }
 
 /*
-** Return TRUE if the line typed in is an SQL command terminator other
-** than a semi-colon.  The SQL Server style "go" command is understood
-** as is the Oracle "/".
+** If the line typed in is an SQL command terminator other than ';',
+** return a pointer to the terminator. Otherwise return 0.
+** The SQL Server style "go" command and Oracle "/" are understood.
 */
-static int line_is_command_terminator(char *zLine){
+static char *line_is_command_terminator(char *zLine){
+  int iSkip = 0;
   while( IsSpace(zLine[0]) ){ zLine++; };
   if( zLine[0]=='/' )
-    zLine += 1; /* Oracle */
+    iSkip = 1; /* Oracle */
   else if ( ToLower(zLine[0])=='g' && ToLower(zLine[1])=='o' )
-    zLine += 2; /* SQL Server */
-  else
-    return 0;
-  return quickscan(zLine,QSS_Start)==QSS_Start;
+    iSkip = 2; /* SQL Server */
+  if( iSkip>0 && quickscan(zLine+iSkip,QSS_Start)==QSS_Start ) return zLine;
+  else return 0;
 }
 
 /*
@@ -11144,125 +11221,418 @@ static int runOneSqlLine(ShellState *p, char *zSql, int bAltIn, int startline){
   return 0;
 }
 
+#ifndef SHELL_OMIT_EXTENDED_PARSING
+/* Resumable line classsifier for dot-commands
+**
+** Determines if a dot-command is open, having either an unclosed
+** quoted argument or an escape sequence opener ('\') at its end.
+**
+** The FSM design/behavior assumes/requires that a terminating '\'
+** is not part of the character sequence being classified -- that
+** it represents an escaped newline which is removed as physical
+** lines are spliced to accumulate logical lines.
+**
+** The line or added line-portion is passed as zCmd.
+** The pScanState pointer must reference an (opaque) DCmd_ScanState,
+** which must be set to DCSS_Start to initialize the scanner state.
+** Resumed scanning should always be done with zCmd logically just
+** past the last non-0 char of the text previously passed in, with
+** any previously scanned, trailing newline escape first trimmed.
+** Returns are: 0 => not open (aka complete), 1 => is open (incomplete)
+** The following macros may be applied to the scan state:
+*/
+#define DCSS_InDarkArg(dcss) ((dcss)&argPosMask==inDqArg)
+#define DCSS_EndEscaped(dcss) (((dcss)&endEscaped)!=0)
+#define DCSS_IsOpen(dcss) (((dcss) & isOpenMask)!=0)
+typedef enum {
+  DCSS_Start = 0,
+  twixtArgs = 0, inSqArg = 1, inDarkArg = 2, inDqArg = 3, /* ordered */
+  endEscaped = 4, /* bit used */
+  argPosMask = 3, /* bits used */
+  isOpenMask = 1|4 /* bit test */
+} DCmd_ScanState;
+
+static int dot_command_open(char *zCmd, DCmd_ScanState *pScanState){
+  DCmd_ScanState ss = *pScanState & ~endEscaped;
+  char c = (ss&isOpenMask)? 1 : *zCmd++;
+  while( c!=0 ){
+    switch( ss ){
+    twixt:
+    case twixtArgs:
+      while( IsSpace(c) ){
+        if( (c=*zCmd++)==0 ) goto atEnd; 
+      }
+      switch( c ){
+      case '\\':
+        if( *zCmd==0 ){
+          ss |= endEscaped;
+          goto atEnd;
+        }else goto inDark;
+      case '\'': ss = inSqArg; goto inSq;
+      case '"': ss = inDqArg; goto inDq;
+      default: ss = inDarkArg; goto inDark;
+      }
+    inSq:
+    case inSqArg:
+      while( (c=*zCmd++)!='\'' ){
+        if( c==0 ) goto atEnd;
+        if( c=='\\' && *zCmd==0 ){
+          ss |= endEscaped;
+          goto atEnd;
+        }
+      }
+      ss = twixtArgs;
+      c = *zCmd++;
+      continue;
+    inDq:
+    case inDqArg:
+      do {
+        if( (c=*zCmd++)==0 ) goto atEnd;
+        if( c=='\\' ){
+          if( (c=*zCmd++)==0 ){
+            ss |= endEscaped;
+            goto atEnd;
+          }
+          if( (c=*zCmd++)==0 ) goto atEnd;
+        }
+      } while( c!='"' );
+      ss = twixtArgs;
+      c = *zCmd++;
+      continue;
+    inDark:
+    case inDarkArg:
+      while( !IsSpace(c) ){
+        if( c=='\\' && *zCmd==0 ){
+          ss |= endEscaped;
+          goto atEnd;
+        }
+        if( (c=*zCmd++)==0 ) goto atEnd; 
+      }
+      ss = twixtArgs;
+      c = *zCmd++;
+      continue;
+    }
+  }
+ atEnd:
+  *pScanState = ss;
+  return DCSS_IsOpen(ss);
+}
+#else
+# define dot_command_open(x)
+#endif /* !defined(SHELL_OMIT_EXTENDED_PARSING) */
+
+/* Utility functions for process_input. */
+
+static char *skipWhite( char *z ){
+  while( IsSpace(*z) ) ++z;
+  return z;
+}
+
+static void grow_line_buffer(char **pz, int *pna, int ncNeed){
+  if( ncNeed > *pna ){
+    *pna += *pna + (*pna>>1) + 100;
+    *pz = realloc(*pz, *pna);
+    shell_check_oom(*pz);
+  }
+}
 
 /*
-** Read input from *in and process it.  If *in==0 then input
-** is interactive - the user is typing it it.  Otherwise, input
-** is coming from a file or device.  A prompt is issued and history
-** is saved only if input is interactive.  An interrupt signal will
-** cause this routine to exit immediately, unless input is interactive.
+** Read input from designated source (p->pInSource) and process it.
+** If pInSource==0 then input is interactive - the user is typing it.
+** Otherwise, input is coming from a file, stream device or string.
+** Prompts issue and history is saved only for interactive input.
+** An interrupt signal will cause this routine to exit immediately,
+** with "exit demanded" code returned, unless input is interactive.
 **
-** Return the number of errors.
+** Returns: 0 => no errors, 1 => errors>0, 2 => exit demanded.
 */
 static int process_input(ShellState *p){
-  char *zLine = 0;          /* A single input line */
-  char *zSql = 0;           /* Accumulated SQL text */
-  int nLine;                /* Length of current line */
-  int nSql = 0;             /* Bytes of zSql[] used */
-  int nAlloc = 0;           /* Allocated zSql[] space */
-  int rc;                   /* Error code */
-  int errCnt = 0;           /* Number of errors seen */
-  int startline = 0;        /* Line number for start of current input */
-  QuickScanState qss = QSS_Start; /* Accumulated line status (so far) */
+  char *zLineInput = 0;  /* a line-at-a-time input buffer or usable result */
+  char *zLineAccum = 0;  /* accumulation buffer, used for multi-line input */
+  /* Above two pointers could be local to the group handling loop, but are
+   * not so that the number of memory allocations can be reduced. They are
+   * reused from one incoming group to another, realloc()'ed as needed. */
+  int naAccum = 0;       /* tracking how big zLineAccum buffer has become */
+  /* Some flags for ending the overall group processing loop */
+  u8 bErrorBail=0, bInputEnd=0, bExitDemand=0, bInterrupted=0;
+  /* Flag to affect prompting and interrupt action */
+  u8 bInteractive = (p->pInSource==0 && stdin_is_interactive);
+  int nErrors = 0;       /* count of errors during execution or its prep */
 
+  /* Block overly-recursive or absurdly nested input redirects. */
   if( p->inputNesting==MAX_INPUT_NESTING ){
     InSource *pInSrc = p->pInSource;
+    int i;
     utf8_printf
-      (stderr,
-       "Input nesting limit (%d) reached, from line %d of \"%s\",\n",
-       MAX_INPUT_NESTING, p->lineno-1, pInSrc->zSourceSay);
-    for( rc=0; rc<3 && (pInSrc=pInSrc->pFrom)!=0; ++rc )
+      (stderr, "Input nesting limit (%d) reached, from line %d of \"%s\",\n",
+       MAX_INPUT_NESTING, p->lineno, pInSrc->zSourceSay);
+    for( i=0; i<3 && (pInSrc=pInSrc->pFrom)!=0; ++i )
       utf8_printf(stderr, " from \"%s\"", pInSrc->zSourceSay);
-    utf8_printf(stderr, " ...\nCheck recursion.\n");
+    utf8_printf(stderr, " ...\nERROR: Check recursion.\n");
     return 1;
   }
   ++p->inputNesting;
   p->lineno = 0;
-  while( errCnt==0
-         || !bail_on_error
-         || (p->pInSource==0 && stdin_is_interactive) ){
+
+  /* line-group processing loop (per SQL block, dot-command or comment) */
+  while( !bErrorBail && !bInputEnd && !bExitDemand && !bInterrupted ){
+    int nGroupLines = 0;  /* count of lines belonging to this group */
+    int ncLineIn = 0;     /* how many (non-zero) chars are in zLineInput  */
+    int ncLineAcc = 0;    /* how many (non-zero) chars are in zLineAccum  */
+    int iLastLine = 0;    /* index of last accumulated line start */
+    /* Initialize resumable scanner(s). */
+    QuickScanState qss = QSS_Start; /* for SQL scan */
+#ifndef SHELL_OMIT_EXTENDED_PARSING
+    DCmd_ScanState dcScanState = DCSS_Start;  /* for dot-command scan */
+    int ndcLeadWhite = 0; /* for skip over initial whitespace to . or # */
+    char cLineEnd = '\n'; /* May be swallowed or replaced with space. */
+#else
+# define ndcLeadWhite 0   /* For legacy parsing, no white before . or # . */
+# define cLineEnd '\n'    /* For legacy parsing, this always joins lines. */
+#endif
+    /* An ordered enum to record kind of incoming line group. Its ordering
+     * means than a value greater than Comment implies something runnable.
+     */
+    enum { Tbd = 0, Eof, Comment, Sql, Cmd /*, Tcl */ } inKind = Tbd;
+    /* An enum signifying the group disposition state */
+    enum {
+      Incoming, Runnable, Dumpable, Erroneous, Ignore
+    } disposition = Incoming;
+    char **pzLineUse = &zLineInput;   /* line to be processed */
+    int iStartline = 0;               /* starting line number of group */
+
     fflush(p->out);
-    zLine = one_input_line(p->pInSource, zLine, nSql>0);
-    if( zLine==0 ){
-      /* End of input */
-      if( p->pInSource==0 && stdin_is_interactive ) printf("\n");
-      break;
-    }
-    if( seenInterrupt ){
-      if( p->pInSource!=0 ) break;
-      seenInterrupt = 0;
-    }
-    p->lineno++;
-    if( QSS_INPLAIN(qss)
-        && line_is_command_terminator(zLine)
-        && line_is_complete(zSql, nSql) ){
-      memcpy(zLine,";",2);
-    }
-    qss = quickscan(zLine, qss);
-    if( QSS_PLAINWHITE(qss) && nSql==0 ){
-      if( ShellHasFlag(p, SHFLG_Echo) )
-        printf("%s\n", zLine);
-      /* Just swallow single-line whitespace */
-      qss = QSS_Start;
-      continue;
-    }
-    if( zLine && (zLine[0]=='.' || zLine[0]=='#') && nSql==0 ){
-      if( ShellHasFlag(p, SHFLG_Echo) ) printf("%s\n", zLine);
-      if( zLine[0]=='.' ){
-        rc = do_meta_command(zLine, p);
-        if( rc==2 ){ /* exit requested */
-          break;
-        }else if( rc ){
-          errCnt++;
-        }
-      }
-      qss = QSS_Start;
-      continue;
-    }
-    /* No single-line dispositions remain; accumulate line(s). */
-    nLine = strlen30(zLine);
-    if( nSql+nLine+2>=nAlloc ){
-      /* Grow buffer by half-again increments when big. */
-      nAlloc = nSql+(nSql>>1)+nLine+100;
-      zSql = realloc(zSql, nAlloc);
-      shell_check_oom(zSql);
-    }
-    if( nSql==0 ){
-      int i;
-      for(i=0; zLine[i] && IsSpace(zLine[i]); i++){}
-      assert( nAlloc>0 && zSql!=0 );
-      memcpy(zSql, zLine+i, nLine+1-i);
-      startline = p->lineno;
-      nSql = nLine-i;
+    zLineInput = one_input_line(p->pInSource, zLineInput, nGroupLines>0);
+    if( zLineInput==0 ){
+      bInputEnd = 1;
+      inKind = Eof;
+      disposition = Ignore;
+      if( bInteractive ) printf("\n");
     }else{
-      zSql[nSql++] = '\n';
-      memcpy(zSql+nSql, zLine, nLine+1);
-      nSql += nLine;
-    }
-    if( nSql && QSS_SEMITERM(qss) && sqlite3_complete(zSql) ){
-      errCnt += runOneSqlLine(p, zSql, p->pInSource!=0, startline);
-      nSql = 0;
-      if( p->outCount ){
-        output_reset(p);
-        p->outCount = 0;
-      }else{
-        clearTempFile(p);
+      ++nGroupLines;
+      p->lineno++;
+      iStartline = p->lineno;
+      ncLineIn = strlen30(zLineInput);
+      if( seenInterrupt ){
+        if( p->pInSource!=0 ) break;
+        bInterrupted = 1; /* This will be honored, or not, later. */
+        seenInterrupt = 0;
+        disposition = Dumpable;
       }
-      p->bSafeMode = p->bSafeModePersist;
-      qss = QSS_Start;
-    }else if( nSql && QSS_PLAINWHITE(qss) ){
-      if( ShellHasFlag(p, SHFLG_Echo) ) printf("%s\n", zSql);
-      nSql = 0;
-      qss = QSS_Start;
+      /* Classify and check for single-line dispositions, prep for more. */
+#ifndef SHELL_OMIT_EXTENDED_PARSING
+      ndcLeadWhite = (SHEXT_PARSING(p))
+        ? skipWhite(zLineInput)-zLineInput
+        : 0; /* Disallow leading whitespace for . or # in legacy mode. */
+#endif
+      switch( zLineInput[ndcLeadWhite] ){
+      case '.':
+        inKind = Cmd;
+        dot_command_open(zLineInput+ndcLeadWhite, &dcScanState);
+        break;
+      case '#':
+        inKind = Comment;
+        disposition = Dumpable;
+        break;
+      default:
+        {
+          /* Might be SQL, or a swallowable whole SQL comment. */
+          qss = quickscan(zLineInput, qss);
+          if( QSS_PLAINWHITE(qss) ){
+            /* It's either all blank or a whole SQL comment. Swallow it. */
+            inKind = Comment;
+            disposition = Dumpable;
+          }else{
+            /* Something dark, not a # comment or dot-command. Must be SQL. */
+            inKind = Sql;
+          }
+        }
+        break;
+      } /* end classification switch */
+    } /* end read/classify initial group input line */
+
+    /* Here, if not at end of input, the initial line of group is in, and
+     * it has been scanned and classified. Next, do the processing needed
+     * to recognize whether the initial line or accumulated group so far
+     * is complete such that it may be run, and perform joining of more
+     * lines into the group if it is not so complete. This loop finishes
+     * with the input group line(s) ready to be run, or if the input ends
+     * before it is ready, issues an error instead of marking it as ready.
+     */
+    while( disposition==Incoming ){
+      /* Check whether more to accumulate, or ready for final disposition. */
+      switch( inKind ){
+      case Comment:
+        /* This is almost redundant, but for open SQL comments being closed. */
+        disposition = Dumpable;
+        continue;
+      case Cmd:
+        {
+#ifndef SHELL_OMIT_EXTENDED_PARSING
+          if( SHEXT_PARSING(p) ){
+            /* It's ready only if has no open argument or escaped newline. */
+            int bOpen = DCSS_IsOpen(dcScanState);
+            int bEscNewline = DCSS_EndEscaped(dcScanState);
+            switch( bEscNewline<<1 | bOpen ){
+            case 0: /* neither */
+              /* It's ready to run as-is. */
+              disposition = Runnable;
+              cLineEnd = '\n';
+              break;
+            case 1: /* only an open argument */
+              /* Open argument, without escaped newline. 
+               * Newline becomes part of the quoted argument. */
+              cLineEnd = '\n';
+              break;
+            case 2: /* only escaped newline */
+              /* Escaped newline but otherwise ready. 
+               * Handle these two cases:
+               * a. The linebreak terminates an unquoted argument
+               * b. The linebreak follows some whitespace. */
+              if( DCSS_InDarkArg(dcScanState) ){
+                /* case a, swallow the newline, splicing lines */
+                cLineEnd = 0;
+              }else{
+                /* case b, replace the newline with a space. */
+                cLineEnd = ' ';
+              }
+              break;
+            case 3: /* both */
+              /* Escaped newline within a quoted argument.
+               * Newline is to be incorporated into the argument. */
+              cLineEnd = '\n';
+              break;
+            }
+            if( bEscNewline ){
+              /* Swallow the trailing escape character. */
+              (*pzLineUse)[--ncLineIn] = 0;
+            }
+          }else
+#endif
+          {
+            /* In legacy parsing, any dot-command line is deemed ready. */
+            assert(cLineEnd=='\n');
+            disposition = Runnable;
+          }
+        }
+        break;
+      case Sql:
+        {
+          /* Check to see if it is complete and ready to run. */
+          if( QSS_SEMITERM(qss) && sqlite3_complete(*pzLineUse)){
+            disposition = Runnable;
+          }else if( QSS_PLAINWHITE(qss) ){
+            /* It's a single-line or multi-line comment. */
+            disposition = Runnable;
+            inKind = Comment;
+          }else{
+            char *zT = line_is_command_terminator(zLineInput);
+            if( zT!=0  ){
+              /* Last line is a lone go or / -- prep for running it. */
+              if( nGroupLines>1 ){
+                disposition = Runnable;
+                memcpy(*pzLineUse+iLastLine,";\n",3);
+                ncLineAcc = iLastLine + 2;
+              }else{
+                /* Unless nothing preceded it, then dump it. */
+                disposition = Dumpable;
+              }
+            }
+          }
+        }
+        break;
+      } /* end switch on inKind */
+      /* Collect and accumulate more input if not yet a complete group. */
+      if( disposition==Incoming ){
+        grow_line_buffer(&zLineAccum, &naAccum, ncLineAcc+ncLineIn+2);
+        if( nGroupLines==1 ){
+          /* Copy line just input */
+          iLastLine = ncLineAcc;
+          memcpy(zLineAccum, zLineInput, ncLineIn);
+          ncLineAcc = ncLineIn;
+          if( cLineEnd!=0 ) zLineAccum[ncLineAcc++] = cLineEnd;
+          zLineAccum[ncLineAcc] = 0;
+          pzLineUse = &zLineAccum;
+        }
+        /* Read in next line of group, (if available.) */
+        zLineInput = one_input_line(p->pInSource, zLineInput, nGroupLines>0);
+        if( zLineInput==0 ){
+          bInputEnd = 1;
+          inKind = Eof;
+          disposition = Erroneous;
+          if( bInteractive ) printf("\n");
+          continue;
+        }
+        ++nGroupLines;
+        p->lineno++;
+        ncLineIn = strlen30(zLineInput);
+        /* Scan line just input (if needed) and append to accumulation. */
+        switch( inKind ){
+        case Cmd:
+          dot_command_open(zLineInput, &dcScanState);
+          break;
+        case Sql:
+          qss = quickscan(zLineInput, qss);
+          break;
+        }
+        grow_line_buffer(&zLineAccum, &naAccum, ncLineAcc+ncLineIn+2);
+        iLastLine = ncLineAcc;
+        memcpy(zLineAccum+ncLineAcc, zLineInput, ncLineIn);
+        ncLineAcc += ncLineIn;
+        if( cLineEnd!=0 ) zLineAccum[ncLineAcc++] = cLineEnd;
+        zLineAccum[ncLineAcc] = 0;
+      }
+    } /* end group collection loop */
+    /* Here, the group is fully collected or known to be incomplete forever. */
+    switch( disposition ){
+    case Dumpable:
+      echo_processable_input(p, *pzLineUse);
+      break;
+    case Runnable:
+      switch( inKind ){
+      case Sql:
+        nErrors += runOneSqlLine(p, *pzLineUse, p->pInSource!=0, iStartline);
+        if( bail_on_error && nErrors>0 ) bErrorBail = 1;
+        break;
+      case Cmd:
+        {
+          int rc;
+          echo_processable_input(p, *pzLineUse);
+          rc = do_meta_command(*pzLineUse, p);
+          if( rc==2 ){ /* exit requested */
+            bExitDemand = 1;
+          }else if( rc!=0 ){
+            if( bail_on_error ) bErrorBail = 1;
+            ++nErrors;
+          }
+        }
+        break;
+      default:
+        assert(inKind!=Tbd);
+        break;
+      }
+      break;
+    case Erroneous:
+      {
+        const char *zSrc = (p->pInSource!=0)
+          ? p->pInSource->zSourceSay : "<stdin>";
+        utf8_printf(stderr, "Error: Input incomplete at line %d of \"%s\"\n",
+                    p->lineno, zSrc);
+        if( bail_on_error ) bErrorBail = 1;
+        ++nErrors;
+      }
+      break;
+    case Ignore:
+      break;
+    default: assert(0);
     }
-  }
-  if( nSql && QSS_PLAINDARK(qss) ){
-    errCnt += runOneSqlLine(p, zSql, p->pInSource!=0, startline);
-  }
-  free(zSql);
-  free(zLine);
-  --p->inputNesting;
-  return errCnt>0;
+  } /* end group consume/prep/(run or dump) loop */
+
+  /* Cleanup and determine return value based on flags and error count. */
+  free(zLineInput);
+  free(zLineAccum);
+
+  return bErrorBail? 2 : (nErrors>0)? 1 : 0;
 }
 
 /*
@@ -11431,6 +11801,7 @@ static const char zOptions[] =
   "   -readonly            open the database read-only\n"
   "   -safe                enable safe-mode\n"
   "   -separator SEP       set output column separator. Default: '|'\n"
+  "   -shxopts BMASK       enable shell extensions and options\n"
 #ifdef SQLITE_ENABLE_SORTER_REFERENCES
   "   -sorterref SIZE      sorter references threshold size\n"
 #endif
@@ -11772,6 +12143,10 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       sqlite3MemTraceActivate(stderr);
     }else if( strcmp(z,"-bail")==0 ){
       bail_on_error = 1;
+#ifndef SHELL_OMIT_EXTENSIONS
+    }else if( strcmp(z,"-shxopts")==0 ){
+      data.bExtendedDotCmds = (u8)integerValue(argv[++i]);
+#endif
     }else if( strcmp(z,"-nonce")==0 ){
       free(data.zNonce);
       data.zNonce = strdup(argv[++i]);
@@ -11926,6 +12301,10 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       ShellSetFlag(&data, SHFLG_Backslash);
     }else if( strcmp(z,"-bail")==0 ){
       /* No-op.  The bail_on_error flag should already be set. */
+#ifndef SHELL_OMIT_EXTENSIONS
+    }else if( strcmp(z,"-shxopts")==0 ){
+      i++; /* Handled on first pass. */
+#endif
     }else if( strcmp(z,"-version")==0 ){
       printf("%s %s\n", sqlite3_libversion(), sqlite3_sourceid());
       return 0;

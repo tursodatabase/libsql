@@ -144,8 +144,8 @@ do_test shell4-4.1 {
   puts $fd ".read t1.txt"
   close $fd
   catchcmd ":memory:" ".read t1.txt"
-} {1 {Input nesting limit (25) reached, from line 0 of "t1.txt",
+} {1 {Input nesting limit (25) reached, from line 1 of "t1.txt",
  from "t1.txt" from "t1.txt" from "t1.txt" ...
-Check recursion.}}
+ERROR: Check recursion.}}
 
 finish_test
