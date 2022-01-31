@@ -1,5 +1,5 @@
-C Fix\san\sobscure\sproblem\sin\ssqlite3_backup_init()\scaused\sby\n[6a45d8fe8bfbc11a|check-in\s6a45d8fe8bfbc11a].\s\sSee\n[forum:/forumpost/8b39fbf3e7b5c278|forum\spost\s8b39fbf3e7]\sfor\nthe\soriginal\sbug\sreport.
-D 2022-01-31T12:29:14.283
+C CLI:\sEnhancements\sto\scolumnar\soutput\smodes.\s\s(See\n[forum/forumpost/5b53cd851f66441f9|forum\spost\s5b53cd851]\sfor\sdiscussion.)\nNew\soutput\smode\s"qbox".\s\sNew\soutput\soptions\s"--quote"\sand\s"--wrap\sN".
+D 2022-01-31T14:14:29.581
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -553,7 +553,7 @@ F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c 24032ae57aec10df2f3fa2e20be0aae7d256bc704124b76c52d763440c7c0fe9
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c a6d2d4bed279d7fe4fcedaf297eaf6441e8e17c6e3947a32d24d23be52ac02f2
-F src/shell.c.in c0fa21db3a4b0f6204b5cc6b14eb452933f5588ae0b4840144380ebd876e8e90
+F src/shell.c.in d53f77fd4733a6cada8e0d2eb2936fcae3fbe885ac08e48d1e525f22206bf579
 F src/sqlite.h.in eaade58049152dac850d57415bcced885ca27ae9582f8aea2cfb7f1db78a521b
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 5d54cf13d3406d8eb65d921a0d3c349de6126b732e695e79ecd4830ce86b4f8a
@@ -1386,7 +1386,7 @@ F test/sharedA.test 49d87ec54ab640fbbc3786ee3c01de94aaa482a3a9f834ad3fe92770eb69
 F test/sharedB.test 16cc7178e20965d75278f410943109b77b2e645e
 F test/shared_err.test 32634e404a3317eeb94abc7a099c556a346fdb8fb3858dbe222a4cbb8926a939
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
-F test/shell1.test 70f46b5d07776a107335c3c2c9cbd0431d44637bfeae1f6b9ded5e33b4c7c0bf
+F test/shell1.test ce2f370886645f38fabdde44976c14a004400f166edea8fdd9741079b645fef6
 F test/shell2.test f00a0501c00583cbc46f7510e1d713366326b2b3e63d06d15937284171a8787c
 F test/shell3.test cb4b835a901742c9719437a89171172ecc4a8823ad97349af8e4e841e6f82566
 F test/shell4.test 8f6c0fce4abed19a8a7f7262517149812a04caa905d01bdc8f5e92573504b759
@@ -1942,8 +1942,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 454af48724c78bf8e06379a426e01b1597f56fcc83211ee062ff0dbeb6a140b1
-R 20eccfa39f79364ced00d16db0de3987
+P 639fc7633bd740421d6b48617b9f68e6be525107e4049673fe720ea6158a393f
+R fd24c84f38ee6d8d42b7ffa22962306f
 U drh
-Z 97bbf817faea1d9cef9cd8d644f59252
+Z 929d8043c6f32e2330ec9eb4d8badd53
 # Remove this line to create a well-formed Fossil manifest.
