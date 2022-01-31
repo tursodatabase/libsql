@@ -5681,6 +5681,7 @@ WhereInfo *sqlite3WhereBegin(
       if( pWInfo->eOnePass==ONEPASS_OFF 
        && pTab->nCol<BMS
        && (pTab->tabFlags & (TF_HasGenerated|TF_WithoutRowid))==0
+       && (pLoop->wsFlags & (WHERE_AUTO_INDEX|WHERE_BLOOMFILTER))==0
       ){
         /* If we know that only a prefix of the record will be used,
         ** it is advantageous to reduce the "column count" field in
