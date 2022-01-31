@@ -3202,8 +3202,6 @@ static char *translateForDisplayAndDup(
         n++;
         j++;
       }while( (n&7)!=0 && n<mxWidth );
-      n += 8;
-      n &= ~7;
       i++;
       continue;
     }
