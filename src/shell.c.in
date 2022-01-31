@@ -3333,7 +3333,12 @@ static void exec_prepared_stmt_columnar(
     p->actualWidth[i] = w;
   }
   for(i=0; i<nColumn; i++){
-    azData[i] = strdup(sqlite3_column_name(pStmt,i));
+    const unsigned char *zNotUsed;
+    int wx = p->colWidth[i];
+    if( wx==0 ) wx = p->iWrap;
+    if( wx<0 ) wx = -wx;
+    uz = (const unsigned char*)sqlite3_column_name(pStmt,i);
+    azData[i] = translateForDisplayAndDup(uz, &zNotUsed, wx);
   }
   do{
     int useNextLine = bNextLine;
@@ -3350,6 +3355,7 @@ static void exec_prepared_stmt_columnar(
     for(i=0; i<nColumn; i++){
       int wx = p->colWidth[i];
       if( wx==0 ) wx = p->iWrap;
+      if( wx<0 ) wx = -wx;
       if( useNextLine ){
         uz = azNextLine[i];
       }else if( p->bQuote ){
@@ -4257,7 +4263,7 @@ static const char *(azHelp[]) = {
   ".load FILE ?ENTRY?       Load an extension library",
 #endif
   ".log FILE|off            Turn logging on or off.  FILE can be stderr/stdout",
-  ".mode MODE ?TABLE? ?OPTIONS?      Set output mode",
+  ".mode MODE ?OPTIONS?     Set output mode",
   "   MODE is one of:",
   "     ascii       Columns/rows delimited by 0x1F and 0x1E",
   "     box         Tables using unicode box-drawing characters",
@@ -4278,6 +4284,7 @@ static const char *(azHelp[]) = {
   "     --wrap N    Wrap output lines longer than N character",
   "     --quote     Quote output text as SQL literals",
   "     --noquote   Do not quote output text",
+  "     TABLE       The name of SQL table used for \"insert\" mode",
   ".nonce STRING            Disable safe mode for one command if the nonce matches",
   ".nullvalue STRING        Use STRING in place of NULL values",
   ".once ?OPTIONS? ?FILE?   Output for the next SQL command only to FILE",
