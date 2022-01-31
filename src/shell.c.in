@@ -3180,7 +3180,7 @@ static char *translateForDisplayAndDup(
   const unsigned char **pzTail,
   int mxWidth
 ){
-  int i, n;
+  int i, j, n;
   unsigned char *zOut;
   if( z==0 ){
     *pzTail = 0;
@@ -3188,14 +3188,18 @@ static char *translateForDisplayAndDup(
   }
   if( mxWidth<0 ) mxWidth = -mxWidth;
   if( mxWidth==0 ) mxWidth = 1000000;
-  i = n = 0;
+  i = j= n = 0;
   while( n<mxWidth ){
     if( z[i]>=' ' ){
       n++;
-      i++;
+      do{ i++; j++; }while( (z[i]&0xc0)==0x80 );
       continue;
     }
     if( z[i]=='\t' ){
+      do{
+        n++;
+        j++;
+      }while( (n&7)!=0 && n<mxWidth );
       n += 8;
       n &= ~7;
       i++;
@@ -3207,29 +3211,31 @@ static char *translateForDisplayAndDup(
    *pzTail = &z[i];
   }else if( z[i]=='\r' && z[i+1]=='\n' ){
     *pzTail = z[i+2] ? &z[i+2] : 0;
-  }else if( z[i]==0 ){
+  }else if( z[i]==0 || z[i+1]==0 ){
     *pzTail = 0;
   }else{
     *pzTail = &z[i+1];
   }
-  zOut = malloc( n+1 );
+  zOut = malloc( j+1 );
   shell_check_oom(zOut);
-  i = n = 0;
+  i = j = n = 0;
   while( n<mxWidth ){
     if( z[i]>=' ' ){
-      zOut[n++] = z[i++];
+      n++;
+      do{ zOut[j++] = z[i++]; }while( (z[i]&0xc0)==0x80 );
       continue;
     }
     if( z[i]=='\t' ){
       do{
-        zOut[n++] = ' ';
+        n++;
+        zOut[j++] = ' ';
       }while( (n&7)!=0 && n<mxWidth );
       i++;
       continue;
     }
     break;
   }
-  zOut[n] = 0;
+  zOut[j] = 0;
   return (char*)zOut;  
 }
 
