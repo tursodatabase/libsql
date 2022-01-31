@@ -3312,8 +3312,8 @@ static void exec_prepared_stmt_columnar(
   azData = sqlite3_malloc64( nAlloc*sizeof(char*) );
   shell_check_oom(azData);
   azNextLine = sqlite3_malloc64( nColumn*sizeof(char*) );
-  shell_check_oom(azNextLine);
-  memset(azNextLine, 0, nColumn*sizeof(char*) );
+  shell_check_oom((void*)azNextLine);
+  memset((void*)azNextLine, 0, nColumn*sizeof(char*) );
   if( p->bQuote ){
     azQuoted = sqlite3_malloc64( nColumn*sizeof(char*) );
     shell_check_oom(azQuoted);
@@ -3350,8 +3350,8 @@ static void exec_prepared_stmt_columnar(
     abRowDiv[nRow] = 1;
     nRow++;
     for(i=0; i<nColumn; i++){
-      int w = p->colWidth[i];
-      if( w==0 ) w = p->iWrap;
+      int wx = p->colWidth[i];
+      if( wx==0 ) wx = p->iWrap;
       if( useNextLine ){
         uz = azNextLine[i];
       }else if( p->bQuote ){
@@ -3361,7 +3361,7 @@ static void exec_prepared_stmt_columnar(
       }else{
         uz = (const unsigned char*)sqlite3_column_text(pStmt,i);
       }
-      azData[nRow*nColumn + i] = translateForDisplayAndDup(uz, &azNextLine[i], w);
+      azData[nRow*nColumn + i] = translateForDisplayAndDup(uz, &azNextLine[i], wx);
       if( azNextLine[i] ){
         bNextLine = 1;
         abRowDiv[nRow-1] = 0;
@@ -3476,7 +3476,7 @@ columnar_end:
   nData = (nRow+1)*nColumn;
   for(i=0; i<nData; i++) free(azData[i]);
   sqlite3_free(azData);
-  sqlite3_free(azNextLine);
+  sqlite3_free((void*)azNextLine);
   sqlite3_free(abRowDiv);
   if( azQuoted ){
     for(i=0; i<nColumn; i++) sqlite3_free(azQuoted[i]);
