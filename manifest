@@ -1,5 +1,5 @@
-C Add\s"--wordwrap\son/off"\soption\sfor\sCLI\scolumnar\smodes,\sqwbox\sshortcut
-D 2022-02-01T02:50:45.569
+C CLI:\sAdd\sthe\s--ww\soption\sas\san\salias\sfor\s--wordwrap.\s\sImprove\sthe\swordwrap\nalgorithm\sso\sthat\sit\sbreaks\sat\spunctuation\sif\sit\scannot\sfind\sspace.\s\sAlways\nwordwrap\swith\s--ww\seven\sif\sthere\sis\sa\s.width\ssetting\sfor\sthe\scolumn.
+D 2022-02-01T12:28:17.432
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -553,7 +553,7 @@ F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c 24032ae57aec10df2f3fa2e20be0aae7d256bc704124b76c52d763440c7c0fe9
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c a6d2d4bed279d7fe4fcedaf297eaf6441e8e17c6e3947a32d24d23be52ac02f2
-F src/shell.c.in 4f5e0a9f38aa648ca529efb66f338308262b47a72b6c5c95a1f704619fa1aef0
+F src/shell.c.in b701feb3867d8293aafbb7164d3fd09f76c07a99184bfcac719351976b19e0ef
 F src/sqlite.h.in eaade58049152dac850d57415bcced885ca27ae9582f8aea2cfb7f1db78a521b
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 5d54cf13d3406d8eb65d921a0d3c349de6126b732e695e79ecd4830ce86b4f8a
@@ -1386,7 +1386,7 @@ F test/sharedA.test 49d87ec54ab640fbbc3786ee3c01de94aaa482a3a9f834ad3fe92770eb69
 F test/sharedB.test 16cc7178e20965d75278f410943109b77b2e645e
 F test/shared_err.test 32634e404a3317eeb94abc7a099c556a346fdb8fb3858dbe222a4cbb8926a939
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
-F test/shell1.test 1859ba21623b6a804ab2527b2a7c10b54513e8c4e40cec2b462d0e9f082d4fec
+F test/shell1.test ce2f370886645f38fabdde44976c14a004400f166edea8fdd9741079b645fef6
 F test/shell2.test f00a0501c00583cbc46f7510e1d713366326b2b3e63d06d15937284171a8787c
 F test/shell3.test cb4b835a901742c9719437a89171172ecc4a8823ad97349af8e4e841e6f82566
 F test/shell4.test 8f6c0fce4abed19a8a7f7262517149812a04caa905d01bdc8f5e92573504b759
@@ -1942,9 +1942,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fd42f4c304079356358e606dd96d4b84cf211c4334c586118b99fe9ad20e20ea
-Q +f51a17b6271a8dd7c48725e4ec2df1fde0460866c81c7225dc27216ab389591e
-R 9664e5ccc659386bbaeacc1cefed4830
-U larrybr
-Z c1cf64e5874e5b6ab186498f765ac9eb
+P 10dbc278708cd2cce7fef90738082dbe31750d93e44b5fa5413a9a32dae7703a
+R 69e29afaa5f754bae2ca14b8682cbcc3
+U drh
+Z 4e6f65c63d4836409df930e76a99a677
 # Remove this line to create a well-formed Fossil manifest.
