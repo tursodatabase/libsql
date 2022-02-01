@@ -888,21 +888,21 @@ static int vtabInLoadValue(sqlite3_value *pVal, sqlite3_value **ppOut){
 ** sqlite3_vtab_in_next() (if bNext!=0).
 */
 static int vtabInOp(sqlite3_value *pVal, sqlite3_value **ppOut, int bNext){
-  int rc = SQLITE_OK;
+  int rc;
+  BtCursor *pCsr;
   *ppOut = 0;
-  if( pVal && pVal->uTemp==SQLITE_VTAB_IN_MAGIC ){
-    BtCursor *pCsr = (BtCursor*)pVal->z;
-
-    if( bNext ){
-      rc = sqlite3BtreeNext(pCsr, 0);
-    }else{
-      int dummy = 0;
-      rc = sqlite3BtreeFirst(pCsr, &dummy);
-    }
-
-    if( rc==SQLITE_OK && sqlite3BtreeEof(pCsr)==0 ){
-      rc = vtabInLoadValue(pVal, ppOut);
-    }
+  if( pVal==0 ) return SQLITE_MISUSE;
+  if( pVal->uTemp!=SQLITE_VTAB_IN_MAGIC ) return SQLITE_MISUSE;
+  pCsr = (BtCursor*)pVal->z;
+  if( bNext ){
+    rc = sqlite3BtreeNext(pCsr, 0);
+  }else{
+    int dummy = 0;
+    rc = sqlite3BtreeFirst(pCsr, &dummy);
+    if( rc==SQLITE_OK && sqlite3BtreeEof(pCsr) ) rc = SQLITE_DONE;
+  }
+  if( rc==SQLITE_OK ){
+    rc = vtabInLoadValue(pVal, ppOut);
   }
   return rc;
 }

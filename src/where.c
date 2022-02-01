@@ -3605,7 +3605,7 @@ static int whereLoopAddVirtualOne(
         }
       }
       if( SMASKBIT32(i) & pHidden->mHandleIn ){ 
-        pNew->u.vtab.mHandleIn |= SMASKBIT32(iTerm);
+        pNew->u.vtab.mHandleIn |= MASKBIT32(iTerm);
       }else if( (pTerm->eOperator & WO_IN)!=0 ){
         /* A virtual table that is constrained by an IN clause may not
         ** consume the ORDER BY clause because (1) the order of IN terms
@@ -3715,7 +3715,7 @@ int sqlite3_vtab_in(sqlite3_index_info *pIdxInfo, int iCons, int bHandle){
   if( m & pHidden->mIn ){
     if( bHandle==0 ){ 
       pHidden->mHandleIn &= ~m;
-    }else{
+    }else if( bHandle>0 ){
       pHidden->mHandleIn |= m;
     }
     return 1;
