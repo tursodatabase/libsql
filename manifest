@@ -1,5 +1,5 @@
-C Add\snew\sinterfaces\sto\senable\svirtual\stable\sto\sprocess\sIN\soperator\sconstraints\nall\sat\sonce,\srather\sthan\sone\selement\sat\sa\stime.
-D 2022-02-01T14:58:29.660
+C Index\sin\s2nd\sargument\sto\ssqlite3_vtab_in()\sshould\sbe\son\sthe\saConstraint[]\narray,\snot\sthe\sinternal\sarray\sof\sall\sconstraints.
+D 2022-02-01T16:30:57.444
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -639,7 +639,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c b9df133a705093da8977da5eb202eaadb844839f1c7297c08d33471f5491843d
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
-F src/where.c 45173f696570d3bc5a939c80c147afe7b79763c6402d3ba7f0dc5477153afa59
+F src/where.c cbf02091ed71784f7972ca39aaecb22822781f3b96905ece1a30e80161629769
 F src/whereInt.h 1d821657238a0bd12b3c8f2926c7f8f9294bc5efe20af53c7c50d53a0a026cb9
 F src/wherecode.c 5879604677f0bdfb8d95ff616d834daecc12256346b7d9ad96a7e84a1cb08fdc
 F src/whereexpr.c ddb6ab49f745154c37dbdb291433c933e00175929647290a11f487af701d0392
@@ -1942,11 +1942,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 00b1b7020a564976da3237532434e47ccf17eb5d620e6ac45f3e70b5d5739200
-R c34f556d2df8080b897efb591747c003
-T *branch * batch-in-operator
-T *sym-batch-in-operator *
-T -sym-trunk *
+P eb84b80e1f6d8c32bf0c9e1731f0233de0160a13f714f766779ae01fdf504e7b
+R 320e3be3dedfcb44854348cea4a95b96
 U drh
-Z 972db892fdcb2bcf2d566ac41a6d13d0
+Z 4a8e49183eb36a5777c7e6fa2fd8d0f2
 # Remove this line to create a well-formed Fossil manifest.
