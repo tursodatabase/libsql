@@ -1066,6 +1066,16 @@ struct EQPGraph {
   char zPrefix[100];    /* Graph prefix */
 };
 
+/* Parameters affecting columnar mode result display (defaulting together) */
+typedef struct ColModeOpts {
+  int iWrap;            /* In columnar modes, wrap lines reaching this limit */
+  u8 bQuote;            /* Quote results for .mode box and table */
+  u8 bWordWrap;         /* In columnar modes, wrap at word boundaries  */
+} ColModeOpts;
+#define ColModeOpts_default { 60, 0, 0 }
+#define ColModeOpts_default_qbox { 60, 1, 0 }
+#define ColModeOpts_default_qwbox { 60, 1, 1 }
+
 /*
 ** State information about the database connection is contained in an
 ** instance of the following structure.
@@ -1084,8 +1094,7 @@ struct ShellState {
   u8 eTraceType;         /* SHELL_TRACE_* value for type of trace */
   u8 bSafeMode;          /* True to prohibit unsafe operations */
   u8 bSafeModePersist;   /* The long-term value of bSafeMode */
-  u8 bQuote;             /* Quote results for .mode box and table */
-  int iWrap;             /* Wrap lines this long or longer in some output modes */
+  ColModeOpts cmOpts;    /* Option values affecting columnar mode output */
   unsigned statsOn;      /* True to display memory stats before each finalize */
   unsigned mEqpLines;    /* Mask of veritical lines in the EQP output graph */
   int inputNesting;      /* Track nesting level of .read and other redirects */
@@ -3173,16 +3182,18 @@ static void print_box_row_separator(
 **
 ** Compute characters to display on the first line of z[].  Stop at the
 ** first \r, \n, or \f.  Expand \t into spaces.  Return a copy (obtained
-** from malloc()) of that first line.  Write anything to display
-** on the next line into *pzTail.  If this is the last line, write a NULL
-** into *pzTail.
+** from malloc()) of that first line, which caller should free sometime.
+** Write anything to display on the next line into *pzTail.  If this is
+** the last line, write a NULL into *pzTail. (*pzTail is not allocated.)
 */
 static char *translateForDisplayAndDup(
   const unsigned char *z,
   const unsigned char **pzTail,
-  int mxWidth
+  int mxWidth,
+  u8 bWordWrap
 ){
-  int i, j, n;
+  int i, j, n; /* in-index, code-skip, code-count */
+  int iLastWhite = 0, nLastWhite = 0;
   unsigned char *zOut;
   if( z==0 ){
     *pzTail = 0;
@@ -3194,6 +3205,10 @@ static char *translateForDisplayAndDup(
   while( n<mxWidth ){
     if( z[i]>=' ' ){
       n++;
+      if( IsSpace(z[i]) ){
+        iLastWhite = i;
+        nLastWhite = n;
+      }
       do{ i++; j++; }while( (z[i]&0xc0)==0x80 );
       continue;
     }
@@ -3206,6 +3221,11 @@ static char *translateForDisplayAndDup(
       continue;
     }
     break;
+  }
+  if( bWordWrap && iLastWhite>0 && n>=mxWidth ){
+    /* Will word wrap only if it is requested and can do any good. */
+    mxWidth = nLastWhite;
+    i = iLastWhite;
   }
   if( n>=mxWidth && z[i]>=' ' ){
    *pzTail = &z[i];
@@ -3312,7 +3332,7 @@ static void exec_prepared_stmt_columnar(
   azNextLine = sqlite3_malloc64( nColumn*sizeof(char*) );
   shell_check_oom((void*)azNextLine);
   memset((void*)azNextLine, 0, nColumn*sizeof(char*) );
-  if( p->bQuote ){
+  if( p->cmOpts.bQuote ){
     azQuoted = sqlite3_malloc64( nColumn*sizeof(char*) );
     shell_check_oom(azQuoted);
     memset(azQuoted, 0, nColumn*sizeof(char*) );
@@ -3334,11 +3354,15 @@ static void exec_prepared_stmt_columnar(
   }
   for(i=0; i<nColumn; i++){
     const unsigned char *zNotUsed;
+    u8 bw = 0;
     int wx = p->colWidth[i];
-    if( wx==0 ) wx = p->iWrap;
+    if( wx==0 ){
+      wx = p->cmOpts.iWrap;
+      bw = p->cmOpts.bWordWrap;
+    }
     if( wx<0 ) wx = -wx;
     uz = (const unsigned char*)sqlite3_column_name(pStmt,i);
-    azData[i] = translateForDisplayAndDup(uz, &zNotUsed, wx);
+    azData[i] = translateForDisplayAndDup(uz, &zNotUsed, wx, bw);
   }
   do{
     int useNextLine = bNextLine;
@@ -3353,19 +3377,24 @@ static void exec_prepared_stmt_columnar(
     abRowDiv[nRow] = 1;
     nRow++;
     for(i=0; i<nColumn; i++){
+      u8 bw = 0;
       int wx = p->colWidth[i];
-      if( wx==0 ) wx = p->iWrap;
+      if( wx==0 ){
+        wx = p->cmOpts.iWrap;
+        bw = p->cmOpts.bWordWrap;
+      }
       if( wx<0 ) wx = -wx;
       if( useNextLine ){
         uz = azNextLine[i];
-      }else if( p->bQuote ){
+      }else if( p->cmOpts.bQuote ){
         sqlite3_free(azQuoted[i]);
         azQuoted[i] = quoted_column(pStmt,i);
         uz = (const unsigned char*)azQuoted[i];
       }else{
         uz = (const unsigned char*)sqlite3_column_text(pStmt,i);
       }
-      azData[nRow*nColumn + i] = translateForDisplayAndDup(uz, &azNextLine[i], wx);
+      azData[nRow*nColumn + i]
+        = translateForDisplayAndDup(uz, &azNextLine[i], wx, bw);
       if( azNextLine[i] ){
         bNextLine = 1;
         abRowDiv[nRow-1] = 0;
@@ -4278,16 +4307,18 @@ static const char *(azHelp[]) = {
   "     list        Values delimited by \"|\"",
   "     markdown    Markdown table format",
   "     qbox        Shorthand for \"box --width 60 --quote\"",
+  "     qwbox       Shorthand for \"box --width 60 --wordwrap on --quote\"",
   "     quote       Escape answers as for SQL",
   "     table       ASCII-art table",
   "     tabs        Tab-separated values",
   "     tcl         TCL list elements",
-  "   OPTIONS: (value for columnar modes only):",
-  "     --wrap N    Wrap output lines longer than N character",
-  "     --quote     Quote output text as SQL literals",
-  "     --noquote   Do not quote output text",
-  "     TABLE       The name of SQL table used for \"insert\" mode",
-  ".nonce STRING            Disable safe mode for one command if the nonce matches",
+  "   OPTIONS: (for columnar modes or insert mode):",
+  "     --wrap N       Wrap output lines to no longer than N characters",
+  "     --wordwrap B   Wrap or not at word boundaries per B (on/off) ",
+  "     --quote        Quote output text as SQL literals",
+  "     --noquote      Do not quote output text",
+  "     TABLE          The name of SQL table used for \"insert\" mode",
+  ".nonce STRING            Suspend safe mode for one command if nonce matches",
   ".nullvalue STRING        Use STRING in place of NULL values",
   ".once ?OPTIONS? ?FILE?   Output for the next SQL command only to FILE",
   "     If FILE begins with '|' then open as a pipe",
@@ -9070,21 +9101,31 @@ static int do_meta_command(char *zLine, ShellState *p){
     const char *zMode = 0;
     const char *zTabname = 0;
     int i, n2;
-    int bQuoteChng = 0;
-    int bWrapChng = 0;
+    ColModeOpts cmOpts = ColModeOpts_default;
     for(i=1; i<nArg; i++){
       const char *z = azArg[i];
       if( optionMatch(z,"wrap") && i+1<nArg ){
-        p->iWrap = integerValue(azArg[++i]);
-        bWrapChng = 1;
+        cmOpts.iWrap = integerValue(azArg[++i]);
+      }else if( optionMatch(z,"wordwrap") && i+1<nArg ){
+        cmOpts.bWordWrap = (u8)booleanValue(azArg[++i]);
       }else if( optionMatch(z,"quote") ){
-        p->bQuote = 1;
-        bQuoteChng = 1;
+        cmOpts.bQuote = 1;
       }else if( optionMatch(z,"noquote") ){
-        p->bQuote = 0;
-        bQuoteChng = 1;
+        cmOpts.bQuote = 0;
       }else if( zMode==0 ){
         zMode = z;
+        /* Apply defaults for qbox and qwbox pseudo-modes. If that
+         * overwrites already-set values, user was informed of this.
+         */
+        if( strcmp(z, "qbox")==0 ){
+          ColModeOpts cmo = ColModeOpts_default_qbox;
+          zMode = "box";
+          cmOpts = cmo;
+        }else if( strcmp(z, "qwbox")==0 ){
+          ColModeOpts cmo = ColModeOpts_default_qwbox;
+          zMode = "box";
+          cmOpts = cmo;
+        }
       }else if( zTabname==0 ){
         zTabname = z;
       }else if( z[0]=='-' ){
@@ -9092,6 +9133,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         utf8_printf(stderr, "options:\n"
                             "  --noquote\n"
                             "  --quote\n"
+                            "  --wordwrap on/off\n"
                             "  --wrap N\n");
         rc = 1;
         goto meta_command_exit;
@@ -9105,12 +9147,15 @@ static int do_meta_command(char *zLine, ShellState *p){
       if( p->mode==MODE_Column
        || (p->mode>=MODE_Markdown && p->mode<=MODE_Box)
       ){
-        raw_printf(p->out, "current output mode: %s --wrap %d --%squote\n",
-                   modeDescr[p->mode], p->iWrap, p->bQuote ? "" : "no");
+        raw_printf
+          (p->out,
+           "current output mode: %s --wrap %d --wordwrap %s --%squote\n",
+           modeDescr[p->mode], p->cmOpts.iWrap,
+           p->cmOpts.bWordWrap ? "on" : "off",
+           p->cmOpts.bQuote ? "" : "no");
       }else{
         raw_printf(p->out, "current output mode: %s\n", modeDescr[p->mode]);
       }
-      bWrapChng = bQuoteChng = 1;
       zMode = modeDescr[p->mode];
     }
     n2 = strlen30(zMode);
@@ -9123,8 +9168,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         p->showHeader = 1;
       }
       sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Row);
-      if( !bWrapChng ) p->iWrap = 0;
-      if( !bQuoteChng ) p->bQuote = 0;
+      p->cmOpts = cmOpts;
     }else if( strncmp(zMode,"list",n2)==0 ){
       p->mode = MODE_List;
       sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, SEP_Column);
@@ -9155,20 +9199,13 @@ static int do_meta_command(char *zLine, ShellState *p){
       sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Record);
     }else if( strncmp(zMode,"markdown",n2)==0 ){
       p->mode = MODE_Markdown;
-      if( !bWrapChng ) p->iWrap = 0;
-      if( !bQuoteChng ) p->bQuote = 0;
+      p->cmOpts = cmOpts;
     }else if( strncmp(zMode,"table",n2)==0 ){
       p->mode = MODE_Table;
-      if( !bWrapChng ) p->iWrap = 0;
-      if( !bQuoteChng ) p->bQuote = 0;
+      p->cmOpts = cmOpts;
     }else if( strncmp(zMode,"box",n2)==0 ){
       p->mode = MODE_Box;
-      if( !bWrapChng ) p->iWrap = 0;
-      if( !bQuoteChng ) p->bQuote = 0;
-    }else if( strcmp(zMode,"qbox")==0 ){
-      p->mode = MODE_Box;
-      if( !bWrapChng ) p->iWrap = 60;
-      if( !bQuoteChng ) p->bQuote = 1;
+      p->cmOpts = cmOpts;
     }else if( strncmp(zMode,"count",n2)==0 ){
       p->mode = MODE_Count;
     }else if( strncmp(zMode,"off",n2)==0 ){
@@ -9178,7 +9215,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     }else{
       raw_printf(stderr, "Error: mode should be one of: "
          "ascii box column csv html insert json line list markdown "
-         "qbox quote table tabs tcl\n");
+         "qbox quote qwbox table tabs tcl\n");
       rc = 1;
     }
     p->cMode = p->mode;
@@ -10329,8 +10366,11 @@ static int do_meta_command(char *zLine, ShellState *p){
     if( p->mode==MODE_Column
      || (p->mode>=MODE_Markdown && p->mode<=MODE_Box)
     ){
-      utf8_printf(p->out, "%12.12s: %s --wrap %d --%squote\n", "mode",
-                  modeDescr[p->mode], p->iWrap, p->bQuote ? "" : "no");
+      utf8_printf
+        (p->out, "%12.12s: %s --wrap %d --wordwrap %s --%squote\n", "mode",
+         modeDescr[p->mode], p->cmOpts.iWrap,
+         p->cmOpts.bWordWrap ? "on" : "off",
+         p->cmOpts.bQuote ? "" : "no");
     }else{
       utf8_printf(p->out, "%12.12s: %s\n","mode", modeDescr[p->mode]);
     }
