@@ -3227,7 +3227,7 @@ static char *translateForDisplayAndDup(
     }
     if( k<=i/2 ){
       for(k=i; k>i/2; k--){
-        if( isalnum(z[k-1])!=isalnum(z[k]) ) break;
+        if( isalnum(z[k-1])!=isalnum(z[k]) && (z[k]&0xc0)!=0x80 ) break;
       }
     }
     if( k<=i/2 ){
