@@ -3460,6 +3460,8 @@ static void exec_prepared_stmt_columnar(
           print_row_separator(p, nColumn, "+");
         }else if( p->cMode==MODE_Box ){
           print_box_row_separator(p, nColumn, BOX_123, BOX_1234, BOX_134);
+        }else if( p->cMode==MODE_Column ){
+          raw_printf(p->out, "\n");
         }
       }
       j = -1;
