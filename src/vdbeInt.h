@@ -195,6 +195,12 @@ struct VdbeFrame {
 */
 #define VdbeFrameMem(p) ((Mem *)&((u8 *)p)[ROUND8(sizeof(VdbeFrame))])
 
+/* Magic number for Mem.uTemp when it is acting as as the cache for the
+** IN(...) iterator for sqlite3_vtab_in_next()
+*/
+#define SQLITE_VTAB_IN_MAGIC 0xd3ab12ec
+
+
 /*
 ** Internally, the vdbe manipulates nearly all SQL values as Mem
 ** structures. Each Mem struct may cache multiple representations (string,
@@ -207,6 +213,7 @@ struct sqlite3_value {
     int nZero;          /* Extra zero bytes when MEM_Zero and MEM_Blob set */
     const char *zPType; /* Pointer type when MEM_Term|MEM_Subtype|MEM_Null */
     FuncDef *pDef;      /* Used only when flags==MEM_Agg */
+    sqlite3_value *pVal;/* Current value for xFilter IN(...) iterator */
   } u;
   u16 flags;          /* Some combination of MEM_Null, MEM_Str, MEM_Dyn, etc. */
   u8  enc;            /* SQLITE_UTF8, SQLITE_UTF16BE, SQLITE_UTF16LE */

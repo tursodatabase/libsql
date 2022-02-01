@@ -7735,6 +7735,27 @@ case OP_VOpen: {
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
+/* Opcode: VInitIn P1 P2 P3 * *
+** Synopsis: r[P2]=cursor over eph table P1.
+**
+** Initialize register P2 as a value that can be used as an iterator over
+** the contents of ephemeral table P1 by an xFilter callback implementation.
+** Register P3 is used as a cache by the iterator.
+*/
+case OP_VInitIn: {        /* out2 */
+  VdbeCursor *pC;
+  pC = p->apCsr[pOp->p1];
+  pOut = out2Prerelease(p, pOp);
+  pOut->z = (char*)(pC->uc.pCursor);
+  pOut->u.pVal = &aMem[pOp->p3];
+  pOut->uTemp = SQLITE_VTAB_IN_MAGIC;
+  pOut->flags = MEM_Null;
+  break;
+}
+#endif /* SQLITE_OMIT_VIRTUALTABLE */
+
+
+#ifndef SQLITE_OMIT_VIRTUALTABLE
 /* Opcode: VFilter P1 P2 P3 P4 *
 ** Synopsis: iplan=r[P3] zplan='P4'
 **

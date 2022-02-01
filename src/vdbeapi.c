@@ -847,6 +847,83 @@ int sqlite3_vtab_nochange(sqlite3_context *p){
 }
 
 /*
+** The first argument is an iterator value created by VDBE instruction
+** OP_VInitIn. The iterator is guaranteed to point to a valid entry. This 
+** function attempts to load the current value from the iterator into 
+** object pVal->u.pVal. If successful, (*ppOut) is set to point to 
+** pVal->u.pVal and SQLITE_OK is returned. Otherwise, if an error
+** occurs, an SQLite error code is returned and (*ppOut) is left unchanged.
+*/
+static int vtabInLoadValue(sqlite3_value *pVal, sqlite3_value **ppOut){
+  BtCursor *pCsr = (BtCursor*)pVal->z;
+  sqlite3_value *pOut = pVal->u.pVal;
+  int sz;
+  int rc;
+
+  sz = (int)sqlite3BtreePayloadSize(pCsr);
+  if( sz>pVal->szMalloc ){
+    if( pVal->szMalloc==0 ) pVal->zMalloc = 0;
+    pVal->zMalloc = sqlite3DbReallocOrFree(pVal->db, pVal->zMalloc, sz*2);
+    if( pVal->zMalloc ){
+      pVal->szMalloc = sqlite3DbMallocSize(pVal->db, pVal->zMalloc);
+    }else{
+      pVal->szMalloc = 0;
+      return SQLITE_NOMEM_BKPT;
+    }
+  }
+
+  rc = sqlite3BtreePayload(pCsr, 0, sz, pVal->zMalloc);
+  if( rc==SQLITE_OK ){
+    u32 iSerial;
+    int iOff = 1 + getVarint32((const u8*)&pVal->zMalloc[1], iSerial);
+    sqlite3VdbeSerialGet((const u8*)&pVal->zMalloc[iOff], iSerial, pOut);
+    pOut->enc = ENC(pVal->db);
+    *ppOut = pOut;
+  }
+  return rc;
+}
+
+/*
+** Implementation of sqlite3_vtab_in_first() (if bNext==0) and
+** sqlite3_vtab_in_next() (if bNext!=0).
+*/
+static int vtabInOp(sqlite3_value *pVal, sqlite3_value **ppOut, int bNext){
+  int rc = SQLITE_OK;
+  *ppOut = 0;
+  if( pVal && pVal->uTemp==SQLITE_VTAB_IN_MAGIC ){
+    BtCursor *pCsr = (BtCursor*)pVal->z;
+
+    if( bNext ){
+      rc = sqlite3BtreeNext(pCsr, 0);
+    }else{
+      int dummy = 0;
+      rc = sqlite3BtreeFirst(pCsr, &dummy);
+    }
+
+    if( rc==SQLITE_OK && sqlite3BtreeEof(pCsr)==0 ){
+      rc = vtabInLoadValue(pVal, ppOut);
+    }
+  }
+  return rc;
+}
+
+/*
+** Set the iterator value pVal to point to the first value in the set.
+** Set (*ppOut) to point to this value before returning.
+*/
+int sqlite3_vtab_in_first(sqlite3_value *pVal, sqlite3_value **ppOut){
+  return vtabInOp(pVal, ppOut, 0);
+}
+
+/*
+** Set the iterator value pVal to point to the next value in the set.
+** Set (*ppOut) to point to this value before returning.
+*/
+int sqlite3_vtab_in_next(sqlite3_value *pVal, sqlite3_value **ppOut){
+  return vtabInOp(pVal, ppOut, 1);
+}
+
+/*
 ** Return the current time for a statement.  If the current time
 ** is requested more than once within the same run of a single prepared
 ** statement, the exact same time is returned for each invocation regardless

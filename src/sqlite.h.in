@@ -9605,6 +9605,90 @@ SQLITE_EXPERIMENTAL const char *sqlite3_vtab_collation(sqlite3_index_info*,int);
 int sqlite3_vtab_distinct(sqlite3_index_info*);
 
 /*
+** CAPI3REF: Identify and handle IN(...) constraints in xBestIndex
+**
+** This API may only be used from within an xBestIndex() callback. The
+** results of calling it from outside of an xBestIndex() callback are
+** undefined.
+**
+** When a column of a virtual table is subject to a "col IN (...)" 
+** constraint, this is passed through to the xBestIndex method of the
+** virtual table as an SQLITE_INDEX_CONSTRAINT_EQ constraint. Then, if
+** the virtual table indicates that it can handle the constraint, SQLite
+** uses the xFilter and xNext methods of the virtual table to query
+** separately for each distinct element in RHS of the IN(...) expression.
+** This API allows a virtual table implementation to determine which 
+** SQLITE_INDEX_CONSTRAINT_EQ constraints are actually IN(...) constraints,
+** and to handle them using a single xFilter scan.
+** 
+** If the second argument passed to this function is not the index of an
+** SQLITE_INDEX_CONSTRAINT_EQ constraint in the aConstraint[] array of the
+** sqlite3_index_info object, or if the SQLITE_INDEX_CONSTRAINT_EQ is not
+** really an IN(...) expression, then this function is a no-op. Zero is
+** returned in this case.
+**
+** Otherwise, if parameter iCons is the index of an SQLITE_INDEX_CONSTRAINT_EQ
+** constraint that is really an IN(...) expression, then this function
+** returns non-zero. In this case, the call also specifies whether SQLite 
+** should invoke xFilter() once for each element on the RHS of the IN(...)
+** expression (the default, if bHandle is zero), or just once for the entire
+** list (if bHandle is non-zero), should the associated 
+** aConstraintUsage[].argvIndex variable be set by xBestIndex.
+**
+** In cases where the list on the RHS of an IN(...) constraint is passed to a
+** single xFilter() call, the (sqlite3_value*) passed appears in most
+** respects to be a NULL value. Except, it may be used with the
+** sqlite3_vtab_in_first() and sqlite3_vtab_in_next() APIs to interate through
+** the list of values.
+*/
+int sqlite3_vtab_in(sqlite3_index_info*, int iCons, int bHandle);
+
+/*
+** CAPI3REF: Visit the first element of an IN(...) list passed to xFilter
+**
+** This API may only be used from within an xFilter() callback. The
+** results of calling it from outside of an xFilter() callback are
+** undefined.
+**
+** If the (sqlite3_value*) passed as the first argument to this function
+** is not a value representing the RHS of an IN(...) operator (see
+** API function sqlite3_vtab_in()), of if the RHS of the IN(...) operator
+** is an empty set, this function sets (*ppOut) to NULL and returns 
+** SQLITE_OK. 
+**
+** Otherwise, if no error occurs, it sets (*ppOut) to point to an object
+** containing the first value in the list and returns SQLITE_OK. The
+** pointer is valid until either the xFilter() call returns or until the 
+** next call to sqlite3_vtab_in_first() or sqlite3_vtab_in_next() with
+** the same first argument.
+**
+** If an error occurs, (*ppOut) is set to NULL and an SQLite error code
+** returned.
+*/
+int sqlite3_vtab_in_first(sqlite3_value *pVal, sqlite3_value **ppOut);
+
+/*
+** CAPI3REF: Visit the next element of an IN(...) list passed to xFilter
+**
+** This function is called after a successful call to sqlite3_vtab_in_first()
+** to visit the next and subsequent elements of an IN(...) list passed
+** to an xFilter callback. Example usage:
+**
+** <pre>
+**   for(rc=sqlite3_vtab_in_first(pList, &pVal);
+**       rc==SQLITE_OK && pVal
+**       rc=sqlite3_vtab_in_next(pList, &pVal)
+**   ){
+**     // do something with pVal
+**   }
+**   if( rc!=SQLITE_OK ){
+**     // an error has occurred
+**   }
+** </pre>
+*/
+int sqlite3_vtab_in_next(sqlite3_value *pVal, sqlite3_value **ppOut);
+
+/*
 ** CAPI3REF: Constraint values in xBestIndex()
 ** METHOD: sqlite3_index_info
 **
