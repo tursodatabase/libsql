@@ -49,7 +49,7 @@ proc vtab_command {src method args} {
       } {
         lappend ret orderby 1
         lappend ret idxnum 1
-        #puts "ORDER-BY-CONSUMED"
+        set ::lOrderByConsumed 1
       }
       return $ret
     }
@@ -78,22 +78,22 @@ do_execsql_test 1.0 {
   INSERT INTO t0(c0) VALUES (1), (0);
 }
 
-foreach {tn sql bDistinct idxinsert res} {
-  1 "SELECT a, b FROM vt1"                              0 0 {a b c d a b c d}
-  2 "SELECT DISTINCT a, b FROM vt1"                     2 1 {a b c d}
-  3 "SELECT DISTINCT a FROM vt1"                        2 1 {a c}
-  4 "SELECT DISTINCT b FROM vt1"                        2 1 {b d}
-  5 "SELECT DISTINCT b FROM vt1 ORDER BY a"             0 1 {b d}
-  6 "SELECT DISTINCT t0.c0 FROM vt1, t0 ORDER BY vt1.a" 0 1 {1 0}
-  7 "SELECT DISTINCT a, b FROM vt1 ORDER BY a, b"       1 0 {a b c d}
-  8 "SELECT DISTINCT a, b FROM vt1 ORDER BY a"          0 1 {a b c d}
-  9 "SELECT DISTINCT a FROM vt1 ORDER BY a, b"          0 1 {a c}
+foreach {tn sql bDistinct idxinsert bConsumed res} {
+  1 "SELECT a, b FROM vt1"                              0 0 0 {a b c d a b c d}
+  2 "SELECT DISTINCT a, b FROM vt1"                     2 1 1 {a b c d}
+  3 "SELECT DISTINCT a FROM vt1"                        2 1 1 {a c}
+  4 "SELECT DISTINCT b FROM vt1"                        2 1 0 {b d}
+  5 "SELECT DISTINCT b FROM vt1 ORDER BY a"             0 1 1 {b d}
+  6 "SELECT DISTINCT t0.c0 FROM vt1, t0 ORDER BY vt1.a" 0 1 1 {1 0}
+  7 "SELECT DISTINCT a, b FROM vt1 ORDER BY a, b"       1 0 1 {a b c d}
+  8 "SELECT DISTINCT a, b FROM vt1 ORDER BY a"          0 1 1 {a b c d}
+  9 "SELECT DISTINCT a FROM vt1 ORDER BY a, b"          0 1 1 {a c}
 
- 10 "SELECT DISTINCT a, b FROM vt1 WHERE b='b'"         2 1 {a b}
- 11 "SELECT DISTINCT a, b FROM vt1 WHERE +b='b'"        2 1 {a b}
+ 10 "SELECT DISTINCT a, b FROM vt1 WHERE b='b'"         2 1 1 {a b}
+ 11 "SELECT DISTINCT a, b FROM vt1 WHERE +b='b'"        2 1 1 {a b}
 } {
   set ::lBestIndexDistinct ""
-if {$tn==10} breakpoint
+  set ::lOrderByConsumed 0
   do_execsql_test 1.$tn.1 $sql $res
   do_test 1.$tn.2 {
     set ::lBestIndexDistinct
@@ -101,6 +101,9 @@ if {$tn==10} breakpoint
   do_test 1.$tn.3 {
     expr {[lsearch [execsql "explain $sql"] IdxInsert]>=0}
   } $idxinsert
+  do_test 1.$tn.4 {
+    set ::lOrderByConsumed
+  } $bConsumed
 }
 
 #-------------------------------------------------------------------------
