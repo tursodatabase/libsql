@@ -1,5 +1,5 @@
-C Add\sthe\ssqlite3_vtab_in()\sinterface\sthat\sallows\svirtual\stables\sto\sprocess\nIN\sconstraints\sall\sat\sonce,\srather\sthan\sone\svalue\sat\sa\stime.
-D 2022-02-02T19:51:44.684
+C Improvement\sto\sthe\ssqlite3_vtab_in_first()\sdocumentation.
+D 2022-02-02T21:06:40.067
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -554,7 +554,7 @@ F src/resolve.c 24032ae57aec10df2f3fa2e20be0aae7d256bc704124b76c52d763440c7c0fe9
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c a6d2d4bed279d7fe4fcedaf297eaf6441e8e17c6e3947a32d24d23be52ac02f2
 F src/shell.c.in 2f58e6aa6b3d2012db32f1c5fa4591e9d12fd582904632b4fc8f57a382b98fd3
-F src/sqlite.h.in a6e6fd9defb576af6444a85f446aaa738dea3384c48db4fe9007fb8ff954b7c5
+F src/sqlite.h.in d4daed3b2deb2e43df7f12be119b1b17a2954feadc33d521565bacbd072bfcb6
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h a95cb9ed106e3d39e2118e4dcc15a14faec3fa50d0093425083d340d9dfd96e6
 F src/sqliteInt.h 838df3e9ba9390058076d2f50c7efde9e0e8747303e788cf5bbe05402ab10924
@@ -1943,9 +1943,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 41d8d26e48a440da44582763f6b0c097febe3b8ac16adb662f688c3662c301bf 733d81c3a6a513b0b893a7d14894f36aebbbca9da375c326db8a72df4f0c6238
-R bea83344da84fc60a55eb54290dfe95b
-T +closed 733d81c3a6a513b0b893a7d14894f36aebbbca9da375c326db8a72df4f0c6238
+P 52559af093809b572082b5ebaacf97b727ee1860ae118530761b62e937545163
+R 36ca82b24ac7898d0154e5e4119378ab
 U drh
-Z 2ffca9e5143ef0b555ac148560cccc3c
+Z 3656a02abcf77fbfe8a689ff58f19714
 # Remove this line to create a well-formed Fossil manifest.

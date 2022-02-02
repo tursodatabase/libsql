@@ -9721,7 +9721,7 @@ int sqlite3_vtab_in(sqlite3_index_info*, int iCons, int bHandle);
 ** next call to either of these routines or until the end of the xFilter
 ** method from which these routines were called.  If the virtual table
 ** implementation needs to retain the *ppOut values for longer, it must make
-** copies.
+** copies.  The *ppOut values are [protected sqlite3_value|protected].
 */
 int sqlite3_vtab_in_first(sqlite3_value *pVal, sqlite3_value **ppOut);
 int sqlite3_vtab_in_next(sqlite3_value *pVal, sqlite3_value **ppOut);
