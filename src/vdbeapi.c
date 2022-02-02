@@ -881,6 +881,7 @@ static int valueFromValueList(
       sqlite3_value *pOut = pRhs->pOut;
       int iOff = 1 + getVarint32(&zBuf[1], iSerial);
       sqlite3VdbeSerialGet(&zBuf[iOff], iSerial, pOut);
+      pOut->enc = ENC(pOut->db);
       if( (pOut->flags & MEM_Ephem)!=0 && sqlite3VdbeMemMakeWriteable(pOut) ){
         rc = SQLITE_NOMEM;
       }else{
