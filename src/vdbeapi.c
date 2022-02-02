@@ -847,62 +847,47 @@ int sqlite3_vtab_nochange(sqlite3_context *p){
 }
 
 /*
-** The first argument is an iterator value created by VDBE instruction
-** OP_VInitIn. The iterator is guaranteed to point to a valid entry. This 
-** function attempts to load the current value from the iterator into 
-** object pVal->u.pVal. If successful, (*ppOut) is set to point to 
-** pVal->u.pVal and SQLITE_OK is returned. Otherwise, if an error
-** occurs, an SQLite error code is returned and (*ppOut) is left unchanged.
-*/
-static int vtabInLoadValue(sqlite3_value *pVal, sqlite3_value **ppOut){
-  BtCursor *pCsr = (BtCursor*)pVal->z;
-  sqlite3_value *pOut = pVal->u.pVal;
-  int sz;
-  int rc;
-
-  sz = (int)sqlite3BtreePayloadSize(pCsr);
-  if( sz>pVal->szMalloc ){
-    if( pVal->szMalloc==0 ) pVal->zMalloc = 0;
-    pVal->zMalloc = sqlite3DbReallocOrFree(pVal->db, pVal->zMalloc, sz*2);
-    if( pVal->zMalloc ){
-      pVal->szMalloc = sqlite3DbMallocSize(pVal->db, pVal->zMalloc);
-    }else{
-      pVal->szMalloc = 0;
-      return SQLITE_NOMEM_BKPT;
-    }
-  }
-
-  rc = sqlite3BtreePayload(pCsr, 0, sz, pVal->zMalloc);
-  if( rc==SQLITE_OK ){
-    u32 iSerial;
-    int iOff = 1 + getVarint32((const u8*)&pVal->zMalloc[1], iSerial);
-    sqlite3VdbeSerialGet((const u8*)&pVal->zMalloc[iOff], iSerial, pOut);
-    pOut->enc = ENC(pVal->db);
-    *ppOut = pOut;
-  }
-  return rc;
-}
-
-/*
 ** Implementation of sqlite3_vtab_in_first() (if bNext==0) and
 ** sqlite3_vtab_in_next() (if bNext!=0).
 */
-static int vtabInOp(sqlite3_value *pVal, sqlite3_value **ppOut, int bNext){
+static int valueFromValueList(
+  sqlite3_value *pVal,        /* Pointer to the ValueList object */
+  sqlite3_value **ppOut,      /* Store the next value from the list here */
+  int bNext                   /* 1 for _next(). 0 for _first() */
+){
   int rc;
-  BtCursor *pCsr;
+  ValueList *pRhs;
+
   *ppOut = 0;
   if( pVal==0 ) return SQLITE_MISUSE;
-  if( pVal->uTemp!=SQLITE_VTAB_IN_MAGIC ) return SQLITE_MISUSE;
-  pCsr = (BtCursor*)pVal->z;
+  pRhs = (ValueList*)sqlite3_value_pointer(pVal, "ValueList");
+  if( pRhs==0 ) return SQLITE_MISUSE;
   if( bNext ){
-    rc = sqlite3BtreeNext(pCsr, 0);
+    rc = sqlite3BtreeNext(pRhs->pCsr, 0);
   }else{
     int dummy = 0;
-    rc = sqlite3BtreeFirst(pCsr, &dummy);
-    if( rc==SQLITE_OK && sqlite3BtreeEof(pCsr) ) rc = SQLITE_DONE;
+    rc = sqlite3BtreeFirst(pRhs->pCsr, &dummy);
+    if( rc==SQLITE_OK && sqlite3BtreeEof(pRhs->pCsr) ) rc = SQLITE_DONE;
   }
   if( rc==SQLITE_OK ){
-    rc = vtabInLoadValue(pVal, ppOut);
+    u32 sz;       /* Size of current row in bytes */
+    Mem sMem;     /* Raw content of current row */
+    memset(&sMem, 0, sizeof(sMem));
+    sz = sqlite3BtreePayloadSize(pRhs->pCsr);
+    rc = sqlite3VdbeMemFromBtreeZeroOffset(pRhs->pCsr,(int)sz,&sMem);
+    if( rc==SQLITE_OK ){
+      u8 *zBuf = (u8*)sMem.z;
+      u32 iSerial;
+      sqlite3_value *pOut = pRhs->pOut;
+      int iOff = 1 + getVarint32(&zBuf[1], iSerial);
+      sqlite3VdbeSerialGet(&zBuf[iOff], iSerial, pOut);
+      if( (pOut->flags & MEM_Ephem)!=0 && sqlite3VdbeMemMakeWriteable(pOut) ){
+        rc = SQLITE_NOMEM;
+      }else{
+        *ppOut = pOut;
+      }
+    }
+    sqlite3VdbeMemRelease(&sMem);
   }
   return rc;
 }
@@ -912,7 +897,7 @@ static int vtabInOp(sqlite3_value *pVal, sqlite3_value **ppOut, int bNext){
 ** Set (*ppOut) to point to this value before returning.
 */
 int sqlite3_vtab_in_first(sqlite3_value *pVal, sqlite3_value **ppOut){
-  return vtabInOp(pVal, ppOut, 0);
+  return valueFromValueList(pVal, ppOut, 0);
 }
 
 /*
@@ -920,7 +905,7 @@ int sqlite3_vtab_in_first(sqlite3_value *pVal, sqlite3_value **ppOut){
 ** Set (*ppOut) to point to this value before returning.
 */
 int sqlite3_vtab_in_next(sqlite3_value *pVal, sqlite3_value **ppOut){
-  return vtabInOp(pVal, ppOut, 1);
+  return valueFromValueList(pVal, ppOut, 1);
 }
 
 /*
