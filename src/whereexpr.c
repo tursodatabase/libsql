@@ -422,7 +422,7 @@ static int isAuxiliaryVtabOperator(
       assert( pVtab!=0 );
       assert( pVtab->pModule!=0 );
       assert( !ExprHasProperty(pExpr, EP_IntValue) );
-       pMod = (sqlite3_module *)pVtab->pModule;
+      pMod = (sqlite3_module *)pVtab->pModule;
       if( pMod->xFindFunction!=0 ){
         i = pMod->xFindFunction(pVtab,2, pExpr->u.zToken, &xNotUsed, &pNotUsed);
         if( i>=SQLITE_INDEX_CONSTRAINT_FUNCTION ){
