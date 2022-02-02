@@ -867,7 +867,8 @@ static int valueFromValueList(
   }else{
     int dummy = 0;
     rc = sqlite3BtreeFirst(pRhs->pCsr, &dummy);
-    if( rc==SQLITE_OK && sqlite3BtreeEof(pRhs->pCsr) ) rc = SQLITE_DONE;
+    assert( rc==SQLITE_OK || sqlite3BtreeEof(pRhs->pCsr) );
+    if( sqlite3BtreeEof(pRhs->pCsr) ) rc = SQLITE_DONE;
   }
   if( rc==SQLITE_OK ){
     u32 sz;       /* Size of current row in bytes */
