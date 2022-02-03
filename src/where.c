@@ -33,6 +33,8 @@ struct HiddenIndexInfo {
   WhereClause *pWC;        /* The Where clause being analyzed */
   Parse *pParse;           /* The parsing context */
   int eDistinct;           /* Value to return from sqlite3_vtab_distinct() */
+  u32 mIn;                 /* Mask of terms that are <col> IN (...) */
+  u32 mHandleIn;           /* Terms that vtab will handle as <col> IN (...) */
   sqlite3_value *aRhs[1];  /* RHS values for constraints. MUST BE LAST
                            ** because extra space is allocated to hold up
                            ** to nTerm such values */
@@ -1143,6 +1145,7 @@ static sqlite3_index_info *allocateIndexInfo(
     testcase( pTerm->eOperator & WO_ALL );
     if( (pTerm->eOperator & ~(WO_EQUIV))==0 ) continue;
     if( pTerm->wtFlags & TERM_VNULL ) continue;
+
     assert( (pTerm->eOperator & (WO_OR|WO_AND))==0 );
     assert( pTerm->u.x.leftColumn>=XN_ROWID );
     assert( pTerm->u.x.leftColumn<pTab->nCol );
@@ -1204,7 +1207,7 @@ static sqlite3_index_info *allocateIndexInfo(
       /* No matches cause a break out of the loop */
       break;
     }
-    if( i==n){
+    if( i==n ){
       nOrderBy = n;
       if( (pWInfo->wctrlFlags & (WHERE_GROUPBY|WHERE_DISTINCTBY)) ){
         eDistinct = 1 + ((pWInfo->wctrlFlags & WHERE_DISTINCTBY)!=0);
@@ -1232,13 +1235,17 @@ static sqlite3_index_info *allocateIndexInfo(
   pHidden->pWC = pWC;
   pHidden->pParse = pParse;
   pHidden->eDistinct = eDistinct;
+  pHidden->mIn = 0;
   for(i=j=0, pTerm=pWC->a; i<pWC->nTerm; i++, pTerm++){
     u16 op;
     if( (pTerm->wtFlags & TERM_OK)==0 ) continue;
     pIdxCons[j].iColumn = pTerm->u.x.leftColumn;
     pIdxCons[j].iTermOffset = i;
     op = pTerm->eOperator & WO_ALL;
-    if( op==WO_IN ) op = WO_EQ;
+    if( op==WO_IN ){
+      pHidden->mIn |= SMASKBIT32(j);
+      op = WO_EQ;
+    }
     if( op==WO_AUX ){
       pIdxCons[j].op = pTerm->eMatchOp;
     }else if( op & (WO_ISNULL|WO_IS) ){
@@ -1328,7 +1335,9 @@ static int vtabBestIndex(Parse *pParse, Table *pTab, sqlite3_index_info *p){
   int rc;
 
   whereTraceIndexInfoInputs(p);
+  pParse->db->nSchemaLock++;
   rc = pVtab->pModule->xBestIndex(pVtab, p);
+  pParse->db->nSchemaLock--;
   whereTraceIndexInfoOutputs(p);
 
   if( rc!=SQLITE_OK && rc!=SQLITE_CONSTRAINT ){
@@ -3499,6 +3508,7 @@ static int whereLoopAddVirtualOne(
   int *pbRetryLimit               /* OUT: Retry without LIMIT/OFFSET */
 ){
   WhereClause *pWC = pBuilder->pWC;
+  HiddenIndexInfo *pHidden = (HiddenIndexInfo*)&pIdxInfo[1];
   struct sqlite3_index_constraint *pIdxCons;
   struct sqlite3_index_constraint_usage *pUsage = pIdxInfo->aConstraintUsage;
   int i;
@@ -3537,6 +3547,7 @@ static int whereLoopAddVirtualOne(
   pIdxInfo->estimatedRows = 25;
   pIdxInfo->idxFlags = 0;
   pIdxInfo->colUsed = (sqlite3_int64)pSrc->colUsed;
+  pHidden->mHandleIn = 0;
 
   /* Invoke the virtual table xBestIndex() method */
   rc = vtabBestIndex(pParse, pSrc->pTab, pIdxInfo);
@@ -3593,7 +3604,9 @@ static int whereLoopAddVirtualOne(
           pNew->u.vtab.bOmitOffset = 1;
         }
       }
-      if( (pTerm->eOperator & WO_IN)!=0 ){
+      if( SMASKBIT32(i) & pHidden->mHandleIn ){ 
+        pNew->u.vtab.mHandleIn |= MASKBIT32(iTerm);
+      }else if( (pTerm->eOperator & WO_IN)!=0 ){
         /* A virtual table that is constrained by an IN clause may not
         ** consume the ORDER BY clause because (1) the order of IN terms
         ** is not necessarily related to the order of output terms and
@@ -3689,6 +3702,25 @@ const char *sqlite3_vtab_collation(sqlite3_index_info *pIdxInfo, int iCons){
     zRet = (pC ? pC->zName : sqlite3StrBINARY);
   }
   return zRet;
+}
+
+/*
+** Return true if constraint iCons is really an IN(...) constraint, or
+** false otherwise. If iCons is an IN(...) constraint, set (if bHandle!=0)
+** or clear (if bHandle==0) the flag to handle it using an iterator.
+*/
+int sqlite3_vtab_in(sqlite3_index_info *pIdxInfo, int iCons, int bHandle){
+  HiddenIndexInfo *pHidden = (HiddenIndexInfo*)&pIdxInfo[1];
+  u32 m = SMASKBIT32(iCons);
+  if( m & pHidden->mIn ){
+    if( bHandle==0 ){ 
+      pHidden->mHandleIn &= ~m;
+    }else if( bHandle>0 ){
+      pHidden->mHandleIn |= m;
+    }
+    return 1;
+  }
+  return 0;
 }
 
 /*

@@ -1,0 +1,463 @@
+# 2020-01-29
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# 
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix bestindex8
+
+ifcapable !vtab {
+  finish_test
+  return
+}
+
+register_tcl_module db
+
+proc vtab_command {src method args} {
+  switch -- $method {
+    xConnect {
+      return "CREATE TABLE xxx(a, b)"
+    }
+
+    xBestIndex {
+      set hdl [lindex $args 0]
+      set clist [$hdl constraints]
+      set orderby [$hdl orderby]
+      lappend ::lBestIndexDistinct [$hdl distinct]
+
+      #puts "ORDERBY: $orderby" 
+      set iCons 0
+      set ret [list]
+      foreach cons $clist {
+        catch { array unset C }
+        array set C $cons
+        if {$C(usable)} {
+          lappend ret use $iCons
+        }
+        incr iCons
+      }
+      if {$orderby=="{column 0 desc 0} {column 1 desc 0}"
+       || $orderby=="{column 0 desc 0}"
+      } {
+        lappend ret orderby 1
+        lappend ret idxnum 1
+        set ::lOrderByConsumed 1
+      }
+      return $ret
+    }
+
+    xFilter {
+      set idxnum [lindex $args 0]
+      if {$idxnum} {
+        return [list sql "SELECT rowid, a, b FROM $src order by 2, 3"]
+      }
+      return [list sql "SELECT rowid, a, b FROM $src"]
+    }
+
+  }
+
+  return {}
+}
+
+do_execsql_test 1.0 {
+  CREATE TABLE t1(a, b);
+  CREATE INDEX i1 ON t1(a, b);
+  INSERT INTO t1 VALUES('a', 'b'), ('c', 'd');
+  INSERT INTO t1 VALUES('a', 'b'), ('c', 'd');
+  CREATE VIRTUAL TABLE vt1 USING tcl(vtab_command t1);
+
+  CREATE TABLE t0(c0);
+  INSERT INTO t0(c0) VALUES (1), (0);
+}
+
+foreach {tn sql bDistinct idxinsert bConsumed res} {
+  1 "SELECT a, b FROM vt1"                              0 0 0 {a b c d a b c d}
+  2 "SELECT DISTINCT a, b FROM vt1"                     2 1 1 {a b c d}
+  3 "SELECT DISTINCT a FROM vt1"                        2 1 1 {a c}
+  4 "SELECT DISTINCT b FROM vt1"                        2 1 0 {b d}
+  5 "SELECT DISTINCT b FROM vt1 ORDER BY a"             0 1 1 {b d}
+  6 "SELECT DISTINCT t0.c0 FROM vt1, t0 ORDER BY vt1.a" 0 1 1 {1 0}
+  7 "SELECT DISTINCT a, b FROM vt1 ORDER BY a, b"       1 0 1 {a b c d}
+  8 "SELECT DISTINCT a, b FROM vt1 ORDER BY a"          0 1 1 {a b c d}
+  9 "SELECT DISTINCT a FROM vt1 ORDER BY a, b"          0 1 1 {a c}
+
+ 10 "SELECT DISTINCT a, b FROM vt1 WHERE b='b'"         2 1 1 {a b}
+ 11 "SELECT DISTINCT a, b FROM vt1 WHERE +b='b'"        2 1 1 {a b}
+} {
+  set ::lBestIndexDistinct ""
+  set ::lOrderByConsumed 0
+  do_execsql_test 1.$tn.1 $sql $res
+  do_test 1.$tn.2 {
+    set ::lBestIndexDistinct
+  } $bDistinct
+  do_test 1.$tn.3 {
+    expr {[lsearch [execsql "explain $sql"] IdxInsert]>=0}
+  } $idxinsert
+  do_test 1.$tn.4 {
+    set ::lOrderByConsumed
+  } $bConsumed
+}
+
+#-------------------------------------------------------------------------
+reset_db
+register_tcl_module db
+
+proc vtab_command {src method args} {
+  switch -- $method {
+    xConnect {
+      return "CREATE TABLE xxx(a, b)"
+    }
+
+    xBestIndex {
+      set hdl [lindex $args 0]
+      set ret [list]
+
+      set iCons 0
+      foreach cons [$hdl constraints] {
+        array set C $cons
+        if {($C(op)=="limit" || $C(op)=="offset") && $C(usable)} {
+          lappend ret use $iCons
+        }
+        incr iCons
+      }
+
+      return $ret
+    }
+
+    xFilter {
+      lappend ::lFilterArgs [lindex $args 2]
+      return [list sql "SELECT rowid, a, b FROM $src"]
+    }
+
+  }
+
+  return {}
+}
+
+do_execsql_test 2.0 {
+  CREATE TABLE t1(a, b);
+  CREATE INDEX i1 ON t1(a, b);
+  CREATE VIRTUAL TABLE vt1 USING tcl(vtab_command t1);
+}
+
+do_test 2.1 {
+  set ::lFilterArgs [list]
+  execsql { SELECT * FROM vt1 LIMIT 10 }
+  set ::lFilterArgs
+} {10}
+
+do_test 2.2 {
+  set ::lFilterArgs [list]
+  execsql { SELECT * FROM vt1 LIMIT 5 OFFSET 50 }
+  set ::lFilterArgs
+} {{5 50}}
+
+do_test 2.3 {
+  set ::lFilterArgs [list]
+  execsql { SELECT * FROM vt1 ORDER BY a, b LIMIT 1 OFFSET 1 }
+  set ::lFilterArgs
+} {{1 1}}
+
+do_test 2.4 {
+  set ::lFilterArgs [list]
+  execsql { SELECT * FROM vt1 ORDER BY a, +b LIMIT 1 OFFSET 1 }
+  set ::lFilterArgs
+} {{}}
+
+#-------------------------------------------------------------------------
+reset_db
+register_tcl_module db
+
+proc vtab_command {src method args} {
+  switch -- $method {
+    xConnect {
+      return "CREATE TABLE xxx(a, b)"
+    }
+
+    xBestIndex {
+      set hdl [lindex $args 0]
+      set lCons [$hdl constraints]
+
+      set ret [list]
+      for {set i 0} {$i < [llength $lCons]} {incr i} {
+        array set C [lindex $lCons $i]
+        if {$C(usable)} {
+          lappend ret use $i
+          $hdl in $i 1
+        }
+      }
+      return $ret
+    }
+
+    xFilter {
+      set lArg [lindex $args 2]
+      lappend ::lFilterArg {*}$lArg
+      return [list sql "SELECT rowid, a, b FROM $src"]
+    }
+
+  }
+
+  return {}
+}
+
+do_execsql_test 3.0 {
+  CREATE TABLE t1(a, b);
+  CREATE INDEX i1 ON t1(a, b);
+  CREATE VIRTUAL TABLE vt1 USING tcl(vtab_command t1);
+}
+
+foreach {tn sql lfa} {
+  1 "SELECT * FROM vt1 WHERE b IN (10, 20, 30)" {{10 20 30}}
+  2 "SELECT * FROM vt1 WHERE b IN ('abc', 'def')" {{abc def}}
+  3 "SELECT * FROM vt1 WHERE a IS NULL AND b IN ('abc', 'def')" {{} {abc def}}
+  4 "SELECT * FROM vt1 WHERE a IN (1,2,3) AND b IN ('abc', 'def')" 
+     {{1 2 3} {abc def}}
+
+  5 "SELECT * FROM vt1 
+     WHERE a IN (SELECT 1 UNION SELECT 2) AND b IN ('abc', 'def')"
+     {{1 2} {abc def}}
+
+  6 "SELECT * FROM vt1 
+     WHERE b IN ('abc', 'def') AND a IN (SELECT 1 UNION SELECT 2)"
+     {{abc def} {1 2}}
+} {
+  do_test 3.$tn {
+    set ::lFilterArg [list]
+    execsql $sql
+    set ::lFilterArg
+  } $lfa
+}
+
+#explain_i { SELECT * FROM vt1 WHERE b IN (10, 20, 30) }
+
+#-------------------------------------------------------------------------
+reset_db
+register_tcl_module db
+
+proc vtab_command {src method args} {
+  switch -- $method {
+    xConnect {
+      return "CREATE TABLE xxx(a, b, c)"
+    }
+
+    xBestIndex {
+      set hdl [lindex $args 0]
+      set lCons [$hdl constraints]
+
+      set ret [list]
+      for {set i 0} {$i < [llength $lCons]} {incr i} {
+        lappend ::lBestIndexRhs [$hdl rhs_value $i -]
+      }
+      return $ret
+    }
+
+    xFilter {
+      return [list sql "SELECT rowid, a, b, c FROM $src"]
+    }
+
+  }
+
+  return {}
+}
+
+do_execsql_test 4.0 {
+  CREATE TABLE t1(a, b, c);
+  CREATE VIRTUAL TABLE vt1 USING tcl(vtab_command t1);
+}
+
+foreach {tn sql lbir} {
+  1 "SELECT * FROM vt1 WHERE b = 10" {10}
+  2 "SELECT * FROM vt1 WHERE a = 'abc' AND b < 30" {abc 30}
+  3 "SELECT * FROM vt1 WHERE a = 'abc' AND b < 30+2" {abc -}
+  4 "SELECT * FROM vt1 WHERE a IN (1,2,3) AND b < 30+2" {- -}
+  5 "SELECT * FROM vt1 WHERE a IS 111 AND b < 30+2" {111 -}
+} {
+  do_test 4.$tn {
+    set ::lBestIndexRhs [list]
+    execsql $sql
+    set ::lBestIndexRhs
+  } $lbir
+}
+
+#-------------------------------------------------------------------------
+reset_db
+db cache size 0
+register_tcl_module db
+
+set ::vtab_handle_in 1
+proc vtab_command {src method args} {
+  switch -- $method {
+    xConnect {
+      return "CREATE TABLE xxx(a, b, c)"
+    }
+
+    xBestIndex {
+      set lCols [list a b c]
+
+      set hdl [lindex $args 0]
+      set lCons [$hdl constraints]
+      set lOrder [$hdl order]
+
+      set L ""
+      set O ""
+      set W [list]
+      set a 0
+      for {set i 0} {$i < [llength $lCons]} {incr i} {
+        array set C [lindex $lCons $i]
+        if {$C(usable)} {
+          if { $C(op)=="eq" } {
+            set bIn 0
+            if {$::vtab_handle_in} { set bIn [$hdl in $i 1] }
+            if {$bIn} {
+              lappend W "[lindex $lCols $C(column)] IN (%I$a%)"
+            } else {
+              lappend W "[lindex $lCols $C(column)] = %$a%"
+            }
+            lappend ret omit $i
+          }
+          if { $C(op)=="limit"  } { set L " LIMIT %$a%"  ; lappend ret use $i }
+          if { $C(op)=="offset" } { set O " OFFSET %$a%" ; lappend ret use $i }
+          incr a
+        }
+      }
+
+      set order ""
+      set selectlist "rowid, a, b, c"
+      if {[llength $lOrder]} {
+        array set sl [list]
+        set lO [list]
+        foreach s $lOrder {
+          array set C $s
+          set ad ""
+          if {$C(desc)} { set ad " DESC" }
+          lappend lO "[lindex $lCols $C(column)]$ad"
+          set sl($C(column)) 1
+        }
+        if {[$hdl distinct]==2} {
+          set selectlist "DISTINCT 0"
+          foreach i {0 1 2} {
+            if {[info exists sl($i)]} {
+              append selectlist ", [lindex $lCols $i]"
+            } else {
+              append selectlist ", 0"
+            }
+          }
+        } else {
+          set order " ORDER BY [join $lO ,]"
+        }
+      }
+
+      set where ""
+      if {[llength $W]} { set where " WHERE [join $W { AND }]" }
+      set sql "SELECT $selectlist FROM $src$where$order$L$O"
+
+      lappend ret idxStr $sql
+      return $ret
+    }
+
+    xFilter {
+      foreach {idxnum idxstr lArg} $args {}
+      set ii 0
+      set sql $idxstr
+      foreach a $lArg {
+        set sql [string map [list %$ii% $a] $sql]
+        set sql [string map [list %I$ii% [join $a ,]] $sql]
+        incr ii
+      }
+      lappend ::lFilterSql $sql
+
+      if {[regexp {OFFSET (.*)$} $sql -> off]} {
+        set real_sql "
+          WITH c(i) AS ( SELECT 1 UNION ALL SELECT i+1 FROM c WHERE i<$off )
+          SELECT 0,0,0,0 FROM c
+          UNION ALL SELECT * FROM (
+            $sql
+          )
+        "
+      } else {
+        set real_sql $sql
+      }
+
+      return [list sql $real_sql]
+    }
+
+  }
+
+  return {}
+}
+
+do_execsql_test 5.0 {
+  CREATE TABLE t1(a, b, c);
+  CREATE VIRTUAL TABLE vt1 USING tcl(vtab_command t1);
+  INSERT INTO t1 VALUES(1, 2, 3);
+  INSERT INTO t1 VALUES(2, 3, 4);
+  INSERT INTO t1 VALUES(3, 4, 5);
+  INSERT INTO t1 VALUES(1, 5, 6);
+  INSERT INTO t1 VALUES(2, 6, 7);
+  INSERT INTO t1 VALUES(3, 7, 8);
+  INSERT INTO t1 VALUES(1, 8, 9);
+  INSERT INTO t1 VALUES(2, 9, 0);
+}
+
+proc do_vtab_test {tn sql vtsql {res {}}} {
+  set ::lFilterSql [list]
+  uplevel [list do_execsql_test $tn.1 $sql $res]
+  uplevel [list do_test $tn.2 {set ::lFilterSql} [list {*}$vtsql]]
+}
+
+do_vtab_test 5.1.1 {
+  SELECT DISTINCT a FROM vt1
+} {
+  {SELECT DISTINCT 0, a, 0, 0 FROM t1}
+} {1 2 3}
+
+do_vtab_test 5.1.2 {
+  SELECT DISTINCT a FROM vt1 ORDER BY a
+} {
+  {SELECT rowid, a, b, c FROM t1 ORDER BY a}
+} {1 2 3}
+
+do_vtab_test 5.1.3 {
+  SELECT DISTINCT a FROM vt1 WHERE c IN (4,5,6,7,8)
+} {
+  {SELECT DISTINCT 0, a, 0, 0 FROM t1 WHERE c IN (4,5,6,7,8)}
+} {2 3 1}
+
+set ::vtab_handle_in 0
+do_vtab_test 5.1.4 {
+  SELECT  DISTINCT a FROM vt1 WHERE c IN (4,5,6,7,8)
+} {
+  {SELECT DISTINCT 0, a, 0, 0 FROM t1 WHERE c = 4}
+  {SELECT DISTINCT 0, a, 0, 0 FROM t1 WHERE c = 5}
+  {SELECT DISTINCT 0, a, 0, 0 FROM t1 WHERE c = 6}
+  {SELECT DISTINCT 0, a, 0, 0 FROM t1 WHERE c = 7}
+  {SELECT DISTINCT 0, a, 0, 0 FROM t1 WHERE c = 8}
+} {2 3 1}
+
+set ::vtab_handle_in 1
+do_vtab_test 5.1.5a {
+  SELECT a, b, c FROM vt1 WHERE c IN (4,5,6,7,8) LIMIT 2 OFFSET 2
+} {
+  {SELECT rowid, a, b, c FROM t1 WHERE c IN (4,5,6,7,8) LIMIT 2 OFFSET 2}
+} {1 5 6 2 6 7}
+
+set ::vtab_handle_in 0
+do_vtab_test 5.1.5b {
+  SELECT a, b, c FROM vt1 WHERE c IN (4,5,6,7,8) LIMIT 2 OFFSET 2
+} {
+  {SELECT rowid, a, b, c FROM t1 WHERE c = 4}
+  {SELECT rowid, a, b, c FROM t1 WHERE c = 5}
+  {SELECT rowid, a, b, c FROM t1 WHERE c = 6}
+  {SELECT rowid, a, b, c FROM t1 WHERE c = 7}
+} {1 5 6 2 6 7}
+set ::vtab_handle_in 1
+
+finish_test
