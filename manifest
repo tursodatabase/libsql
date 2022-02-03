@@ -1,5 +1,5 @@
-C Do\snot\sallow\sthe\svdbe-compress.tcl\sscript\sto\sgenerate\sstructures\snamed\n"do"\sor\s"if".
-D 2022-02-03T14:37:06.680
+C Minor\stypo\sfix\sin\scomment.\sNo\scode\schanges.
+D 2022-02-03T18:14:22.642
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -550,7 +550,7 @@ F src/pragma.h 87330ed2fbfa2a1274de93ca0ab850fba336189228cb256089202c3b52766fad
 F src/prepare.c a187dade741c1f09ae118fcbbf0302511807bfc0355880927d7152eb75b8260d
 F src/printf.c 975f1f5417f2526365b6e6d7f22332e3e11806dad844701d92846292b654ba9a
 F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
-F src/resolve.c 24032ae57aec10df2f3fa2e20be0aae7d256bc704124b76c52d763440c7c0fe9
+F src/resolve.c 0dd8e23fda88411d63b2e6650f2380fdb08e88112e9a095fc23d5a08de4b2641
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c a6d2d4bed279d7fe4fcedaf297eaf6441e8e17c6e3947a32d24d23be52ac02f2
 F src/shell.c.in 2f58e6aa6b3d2012db32f1c5fa4591e9d12fd582904632b4fc8f57a382b98fd3
@@ -1943,8 +1943,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bb0f056b3f2ecc3893e5e48e99c060788550ea6a8ed02b715953af051bafbad0
-R b66cc5b551133399f9bcd1024e701d2a
+P e35ab16dd0fd40b07a71d26e1cdb19ef664a2a628a4abcb2e130f5e555de8ca9
+R 20ef9d61f41a89bdff8a0b9888d3988c
 U drh
-Z 9f9648682364ae609fa9e4c552fa2be1
+Z bc10ba616693d19ec8e6518f2199687e
 # Remove this line to create a well-formed Fossil manifest.
