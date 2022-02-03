@@ -17,6 +17,10 @@
 #define _CRT_SECURE_NO_WARNINGS
 #endif
 
+/* Define stringification of a bare word (or anything without commas.) */
+# define SHELL_STRINGIFY_(f) #f
+# define SHELL_STRINGIFY(f) SHELL_STRINGIFY_(f)
+
 /*
 ** Optionally #include a user-defined header, whereby compilation options
 ** may be set prior to where they take effect, but after platform setup. 
@@ -24,9 +28,7 @@
 ** file. Note that this macro has a like effect on sqlite3.c compilation.
 */
 #ifdef SQLITE_CUSTOM_INCLUDE
-# define INC_STRINGIFY_(f) #f
-# define INC_STRINGIFY(f) INC_STRINGIFY_(f)
-# include INC_STRINGIFY(SQLITE_CUSTOM_INCLUDE)
+# include SHELL_STRINGIFY(SQLITE_CUSTOM_INCLUDE)
 #endif
 
 /*
@@ -403,7 +405,7 @@ static void endTimer(void){
 static int bail_on_error = 0;
 
 /*
-** Threat stdin as an interactive input if the following variable
+** Treat stdin as an interactive input if the following variable
 ** is true.  Otherwise, assume stdin is connected to a file or pipe.
 */
 static int stdin_is_interactive = 1;
@@ -624,17 +626,78 @@ static FILE * openChrSource(const char *zFile){
 }
 
 /*
-** This routine reads a line of text from FILE in, stores
-** the text in memory obtained from malloc() and returns a pointer
-** to the text.  NULL is returned at end of file, or if malloc()
-** fails.
+** Arrange for shell input from either a FILE or a string.
+** For applicable invariants, see str_line_get(...) which is
+** the only modifier of this struct. (3rd and 4th members)
+** All other members are simply initialized to select the
+** input stream and track input sources, set by whatever
+** routines redirect the input.
+*/
+typedef struct InSource {
+  FILE *inFile;     /* Will be 0 when input is to be taken from string.  */
+  char *zStrIn;     /* Will be 0 when no input is available from string. */
+  int iReadOffset;  /* Offset into zStrIn where next "read" to be done.  */
+  int lineno;       /* How many lines have been read from this source    */
+  const char *zSourceSay; /* For complaints, keep a name for this source */
+  struct InSource *pFrom; /* and redirect tracking to aid unraveling.    */
+} InSource;
+#define INSOURCE_STR_REDIR(str, tagTo, isFrom) {0, str, 0, 0, tagTo, isFrom}
+#define INSOURCE_FILE_REDIR(fh, tagTo, isFrom) {fh, 0, 0, 0, tagTo, isFrom}
+#define INSOURCE_IS_INTERACTIVE(pIS) \
+  ((pIS)==&termInSource && stdin_is_interactive )
+
+/* This instance's address is taken as part of interactive input test. */
+static InSource termInSource = { 0 /*stdin*/, 0, 0, 0, "<terminal>", 0};
+static InSource stdInSource = { 0 /*stdin*/, 0, 0, 0, "<stdin>", 0};
+static void init_std_inputs( FILE *pIn ){
+  termInSource.inFile = pIn;
+  stdInSource.inFile = pIn;
+}
+
+static char *str_line_get( char *zBuf, int ncMax, InSource *pInSrc){
+  if( pInSrc->inFile!=0 ){
+    char *zRet = fgets(zBuf, ncMax, pInSrc->inFile );
+    if( zRet!=0 ){
+      int iRead = strlen30(zRet);
+      if( iRead>0 && zRet[iRead-1]=='\n' ) ++pInSrc->lineno;
+      /* Consider: record line length to avoid rescan for it. */
+      return zRet;
+    }
+  }
+  else if( pInSrc->zStrIn!=0 ){
+    char *zBegin = pInSrc->zStrIn + pInSrc->iReadOffset;
+    if( *zBegin!=0 ){
+      int iTake = 0;
+      char c;
+      ncMax -= 1;
+      while( iTake<ncMax && (c=zBegin[iTake])!=0 ){
+        zBuf[iTake++] = c;
+        if( c=='\n' ){
+          ++pInSrc->lineno;
+          break;
+        }
+      }
+      if( ncMax>=0 ) zBuf[iTake] = 0;
+      pInSrc->iReadOffset += iTake;
+      /* Consider: record line length to avoid rescan for it. */
+      return zBuf;
+    }
+  }
+  return 0;
+}
+
+/*
+** This routine reads a line of text from designated stream source,
+** stores the text in memory obtained from malloc() and returns a
+** pointer to the text.  NULL is returned at end of file.
+** There will be no return if malloc() fails.
 **
 ** The trailing newline (or other line-end chars) are stripped.
 **
 ** If zLine is not NULL then it is a malloced buffer returned from
 ** a previous call to this routine that may be reused.
 */
-static char *local_getline(char *zLine, FILE *in){
+static char *local_getline(char *zLine, InSource *pInSrc){
   int nLine = zLine==0 ? 0 : 100;
   int n = 0;
 
@@ -644,7 +707,7 @@ static char *local_getline(char *zLine, FILE *in){
       zLine = realloc(zLine, nLine);
       shell_check_oom(zLine);
     }
-    if( fgets(&zLine[n], nLine - n, in)==0 ){
+    if( str_line_get(&zLine[n], nLine - n, pInSrc)==0 ){
       if( n==0 ){
         free(zLine);
         return 0;
@@ -663,7 +726,7 @@ static char *local_getline(char *zLine, FILE *in){
 #if defined(_WIN32) || defined(WIN32)
   /* For interactive input on Windows systems, translate the
   ** multi-byte characterset characters into UTF-8. */
-  if( stdin_is_interactive && in==stdin ){
+  if( stdin_is_interactive && pInSrc==&stdInSource) ){
     char *zTrans = sqlite3_win32_mbcs_to_utf8_v2(zLine, 0);
     if( zTrans ){
       int nTrans = strlen30(zTrans)+1;
@@ -679,95 +742,13 @@ static char *local_getline(char *zLine, FILE *in){
   return zLine;
 }
 
-/*
-** Arrange for shell input from either a FILE or a string.
-** See getline_from(...) for applicable invariants. It is
-** the only modifier of data within this struct, except for
-** initialization which is either {0, zS} or {pF, 0}, (with
-** the iReadOffset always 0-initialized), left to whatever
-** routine is switching input sources.
-*/
-typedef struct InSource {
-  FILE *inFile;     /* Will be 0 when input is to be taken from string. */
-  char *zStrIn;     /* Will be 0 when no input is available from string. */
-  int iReadOffset;  /* Offset into ZStrIn where next "read" to be done. */
-  const char *zSourceSay; /* For complaints, keep a name for this source */
-  struct InSource *pFrom; /* and redirect tracking to aid unraveling. */
-} InSource;
 
 /*
-** Read single lines of input text from source selected by pInSource.
-** This function presents an interface similar to local_getline(...),
-** to which it defers for FILE input. (This function may be considered
-** to be an adapter except for the source parameter. With a rewrite,
-** it and local_getline can merge, saving most of 26 LOC. )
-*/
-static char *getline_from( char *zLine, InSource *pSource ){
-  if( pSource->inFile!=0 ){
-    return local_getline(zLine, pSource->inFile);
-  }else if( pSource->zStrIn!=0
-            && pSource->zStrIn[pSource->iReadOffset]!=0 ){
-    /* This code mostly copied from local_getline(); It begs for refactor. */
-    int nLine = zLine==0 ? 0 : 100;
-    int n = 0;
-
-    while( 1 ){
-      if( n+100>nLine ){
-        nLine = nLine*2 + 100;
-        zLine = realloc(zLine, nLine);
-        shell_check_oom(zLine);
-      }
-      {
-        /* This block is where fgets() became "read string". */
-        char *zBegin = pSource->zStrIn + pSource->iReadOffset;
-        int iTake = 0;
-        char c = zBegin[iTake];
-        if( c==0 ){
-          if( n==0 ){
-            free(zLine);
-            return 0;
-          }
-          zLine[n] = 0;
-          break;
-        }else{
-          while( iTake<nLine-n-1 && c!=0 ){
-            zLine[n+iTake++] = c;
-            if( c=='\n' ) break;
-            c = zBegin[iTake];
-          }
-          zLine[n+iTake] = 0;
-          pSource->iReadOffset += iTake;
-        }
-      }
-      /* Above block replaced this commented code: */
-      /* if( fgets(&zLine[n], nLine - n, in)==0 ){ */
-      /*   if( n==0 ){ */
-      /*     free(zLine); */
-      /*     return 0; */
-      /*   } */
-      /*   zLine[n] = 0; */
-      /*   break; */
-      /* } */
-      while( zLine[n] ) n++;
-      if( n>0 && zLine[n-1]=='\n' ){
-        n--;
-        if( n>0 && zLine[n-1]=='\r' ) n--;
-        zLine[n] = 0;
-        break;
-      }
-    }
-    return zLine;
-  }else{
-    return 0;
-  }
-}
-
-/*
-** Retrieve a single line of input text.
+** Retrieve a single line of input text from designated input source.
 **
-** If in==0 then read from standard input and prompt before each line.
-** If isContinuation is true, then a continuation prompt is appropriate.
-** If isContinuation is zero, then the main prompt should be used.
+** If the input is interactive, then issue either the continuation prompt
+** or the main prompt, per isContinuation, before reading a line from
+** standard input. Otherwise, just read a line from the specified source.
 **
 ** If zPrior is not NULL then it is a buffer from a prior call to this
 ** routine that can be reused.
@@ -777,30 +758,31 @@ static char *getline_from( char *zLine, InSource *pSource ){
 ** zPrior argument for reuse.
 **
 ** If this function is called until it returns NULL, and the prior return
-** has been passed in for resuse,  then the caller need not free it.
+** has been passed in for resuse, then the caller need/must not free it.
 ** Otherwise, (in case of an early termination of reading from the given
 ** input), the caller is responsible for freeing a prior, non-NULL return.
 **
 ** The trailing newline (or its ilk), if any, is trimmed.
+** The input line number is adjusted (via delegation or directly.)
 */
 static char *one_input_line(InSource *pInSrc, char *zPrior, int isContinuation){
-  char *zPrompt;
-  char *zResult;
-  if( pInSrc!=0 ){
-    zResult = getline_from(zPrior, pInSrc);
+  if( !INSOURCE_IS_INTERACTIVE(pInSrc) ){
+    return local_getline(zPrior, pInSrc);
   }else{
-    zPrompt = isContinuation ? continuePrompt : mainPrompt;
+    char *zPrompt = isContinuation ? continuePrompt : mainPrompt;
 #if SHELL_USE_LOCAL_GETLINE
     printf("%s", zPrompt);
     fflush(stdout);
-    zResult = local_getline(zPrior, stdin);
+    return local_getline(zPrior, pInSrc);
 #else
+    char *zResult;
     free(zPrior);
     zResult = shell_readline(zPrompt);
+    ++pInSrc->lineno;
     if( zResult && *zResult ) shell_add_history(zResult);
+    return zResult;
 #endif
   }
-  return zResult;
 }
 
 
@@ -1006,7 +988,7 @@ static void shellModuleSchema(
   char *zFake;
   UNUSED_PARAMETER(nVal);
   zName = (const char*)sqlite3_value_text(apVal[0]);
-  zFake = zName ? shellFakeSchema(sqlite3_context_db_handle(pCtx), 0, zName) : 0;
+  zFake = zName? shellFakeSchema(sqlite3_context_db_handle(pCtx), 0, zName) : 0;
   if( zFake ){
     sqlite3_result_text(pCtx, sqlite3_mprintf("/* %s */", zFake),
                         -1, sqlite3_free);
@@ -1158,9 +1140,6 @@ struct EQPGraph {
   char zPrefix[100];    /* Graph prefix */
 };
 
-/* Input source switching is done through one of these (defined below) */
-typedef struct InSource InSource;
-
 /* Selectively omit features with one PP variable. Value is true iff
 ** either x is not defined or defined with 0 in bitnum bit position.
 */
@@ -1237,7 +1216,6 @@ struct ShellState {
   int inputNesting;      /* Track nesting level of .read and other redirects */
   int outCount;          /* Revert to stdout when reaching zero */
   int cnt;               /* Number of records displayed so far */
-  int lineno;            /* Line number of last line read from in */
   int openFlags;         /* Additional flags to open.  (SQLITE_OPEN_NOFOLLOW) */
   InSource *pInSource;   /* Read commands and SQL from this stream source */
   FILE *out;             /* Write results here */
@@ -1258,6 +1236,7 @@ struct ShellState {
   sqlite3_int64 szMax;   /* --maxsize argument to .open */
   char *zDestTable;      /* Name of destination table when MODE_Insert */
   char *zTempFile;       /* Temporary file that might need deleting */
+  char *zEditor;         /* Name of editor if non-zero, then deletable*/
   char zTestcase[30];    /* Name of current test case */
   char colSeparator[20]; /* Column separator character for several modes */
   char rowSeparator[20]; /* Row separator character for MODE_Ascii */
@@ -1447,7 +1426,7 @@ static void failIfSafeMode(
     va_start(ap, zErrMsg);
     zMsg = sqlite3_vmprintf(zErrMsg, ap);
     va_end(ap);
-    raw_printf(stderr, "line %d: ", p->lineno);
+    raw_printf(stderr, "line %d: ", p->pInSource->lineno);
     utf8_printf(stderr, "%s\n", zMsg);
     exit(1);
   }
@@ -2716,9 +2695,11 @@ static char *shell_error_context(const char *zSql, sqlite3 *db){
   zCode = sqlite3_mprintf("%.*s", len, zSql);
   for(i=0; zCode[i]; i++){ if( IsSpace(zSql[i]) ) zCode[i] = ' '; }
   if( iOffset<25 ){
-    zMsg = sqlite3_mprintf("\n  %z\n  %*s^--- error here", zCode, iOffset, "");
+    zMsg = sqlite3_mprintf("\n  %z\n  %*s^--- error here",
+                           zCode, iOffset, "");
   }else{
-    zMsg = sqlite3_mprintf("\n  %z\n  %*serror here ---^", zCode, iOffset-14, "");
+    zMsg = sqlite3_mprintf("\n  %z\n  %*serror here ---^",
+                           zCode, iOffset-14, "");
   }
   return zMsg;
 }
@@ -3214,13 +3195,20 @@ static void restore_sys_schema_protection( sqlite3 *db, DbProtectState *pPS ){
   sqlite3_db_config(db, SQLITE_DBCONFIG_DEFENSIVE, pPS->defensiveMode, 0);
 }
 
-/* Create the TEMP table used to store parameter bindings */
-static void bind_table_init(ShellState *p){
+/* Partition the temp.sqlite_parameters key namespace according to use. */
+typedef enum { PTU_Binding = 0, PTU_Script, PTU_Source } ParamTableUse;
+#define PARAM_TABLE_NAME "sqlite_parameters"
+#define PARAM_TABLE_SCHEMA "temp"
+#define PARAM_TABLE_SNAME PARAM_TABLE_SCHEMA"."PARAM_TABLE_NAME
+
+/* Create the TEMP table used to store parameter bindings and SQL statements */
+static void param_table_init(ShellState *p){
   DbProtectState dps = allow_sys_schema_change(p->db);
   sqlite3_exec(p->db,
-    "CREATE TABLE IF NOT EXISTS temp.sqlite_parameters(\n"
+    "CREATE TABLE IF NOT EXISTS "PARAM_TABLE_SNAME"(\n"
     "  key TEXT PRIMARY KEY,\n"
-    "  value\n"
+    "  value,\n"
+    "  uses INT DEFAULT (0)" /* aka PTU_Binding */
     ") WITHOUT ROWID;",
     0, 0, 0);
   restore_sys_schema_protection( p->db, &dps );
@@ -3231,12 +3219,14 @@ static void bind_table_init(ShellState *p){
 **
 ** Parameter bindings are taken from a TEMP table of the form:
 **
-**    CREATE TEMP TABLE sqlite_parameters(key TEXT PRIMARY KEY, value)
+**    CREATE TEMP TABLE
+**    sqlite_parameters(key TEXT PRIMARY KEY, value, uses INT)
 **    WITHOUT ROWID;
 **
 ** No bindings occur if this table does not exist.  The name of the table
 ** begins with "sqlite_" so that it will not collide with ordinary application
-** tables.  The table must be in the TEMP schema.
+** tables.  The table must be in the TEMP schema. Only rows with
+** uses=PTU_Binding are eligible for parameter binding.
 */
 static void bind_prepared_stmt(ShellState *pArg, sqlite3_stmt *pStmt){
   int nVar;
@@ -3246,14 +3236,16 @@ static void bind_prepared_stmt(ShellState *pArg, sqlite3_stmt *pStmt){
 
   nVar = sqlite3_bind_parameter_count(pStmt);
   if( nVar==0 ) return;  /* Nothing to do */
-  if( sqlite3_table_column_metadata(pArg->db, "TEMP", "sqlite_parameters",
+  if( sqlite3_table_column_metadata(pArg->db, PARAM_TABLE_SCHEMA,
+                                    PARAM_TABLE_NAME,
                                     "key", 0, 0, 0, 0, 0)!=SQLITE_OK ){
     return; /* Parameter table does not exist */
   }
   rc = sqlite3_prepare_v2(pArg->db,
-          "SELECT value FROM temp.sqlite_parameters"
-          " WHERE key=?1", -1, &pQ, 0);
+          "SELECT value FROM "PARAM_TABLE_SNAME
+          " WHERE key=?1 AND uses=0", -1, &pQ, 0);
   if( rc || pQ==0 ) return;
+  assert( PTU_Binding==0 ); /* instead of working symbol value into query */
   for(i=1; i<=nVar; i++){
     char zNum[30];
     const char *zVar = sqlite3_bind_parameter_name(pStmt, i);
@@ -3281,7 +3273,7 @@ static void bind_prepared_stmt(ShellState *pArg, sqlite3_stmt *pStmt){
 **           |
 **           3
 **
-** Each box characters has between 2 and 4 of the lines leading from
+** Each box character has between 2 and 4 of the lines leading from
 ** the center.  The characters are here identified by the numbers of
 ** their corresponding lines.
 */
@@ -4520,12 +4512,16 @@ static const char *(azHelp[]) = {
   "     -e                    Send output to the system text editor",
   "     -x                    Send output as CSV to a spreadsheet",
   ".parameter CMD ...       Manage SQL parameter bindings",
-  "   clear                   Erase all bindings",
+  "   clear ?NAMES?           Erase some or all parameter bindings",
+  "   edit NAME               Use edit() to create or alter parameter NAME",
   "   init                    Initialize the TEMP table that holds bindings",
   "   list                    List the current parameter bindings",
-  "   set PARAMETER VALUE     Given SQL parameter PARAMETER a value of VALUE",
-  "                           PARAMETER should start with one of: $ : @ ?",
-  "   unset PARAMETER         Remove PARAMETER from the binding table",
+  "   load FILE ?NAMES?       Load some or all parameter bindings from FILE",
+  "   save FILE ?NAMES?       Save some or all parameter bindings into FILE",
+  "   set NAME VALUE          Give SQL parameter NAME a value of VALUE",
+  "                           NAME should start with one of: $ : @ ?, and the",
+  "                           value is space-joined, following argument list",
+  "   unset ?NAMES?           Remove named parameter(s) from the binding table",
   ".print STRING...         Print literal STRING",
 #ifndef SQLITE_OMIT_PROGRESS_CALLBACK
   ".progress N              Invoke progress handler after every N opcodes",
@@ -4553,6 +4549,18 @@ static const char *(azHelp[]) = {
   "   Options:",
   "      --indent             Try to pretty-print the schema",
   "      --nosys              Omit objects whose names start with \"sqlite_\"",
+  ".script CMD ...            Manage and use SQL statement store (some TBD)",
+  "   clear ?NAMES?           Erase some or all stored SQL statements",
+  "   edit NAME               Use edit() to create or alter statement NAME",
+  "   execute ?NAMES?         Execute the named SQL statements in order",
+  "   init                    Initialize the TEMP table that holds statements",
+  "   list                    List the currently stored statements",
+  "   load FILE ?NAMES?       Load some or all SQL statements from FILE",
+  "   save FILE ?NAMES?       Save some or all SQL statements into FILE",
+  "   set NAME VALUE          Give SQL statement NAME a value of VALUE",
+  "                           NAME must start with a letter, and effective",
+  "                           value is space-joined, following argument list",
+  "   unset ?NAMES?           Remove NAMES from statement store",
   ".selftest ?OPTIONS?      Run tests defined in the SELFTEST table",
   "    Options:",
   "       --init               Create a new SELFTEST table",
@@ -4640,9 +4648,11 @@ static const char *(azHelpUndoc[]) = {
   ".testcase NAME     Begin output redirect to 'testcase-out.txt'",
   ".testctrl CMD ...  Run various sqlite3_test_control() operations",
   "   Run \".testctrl\" with no arguments for details",
+  ".x ?NAMES?               Execute the named stored SQL statements in order",
+  "   This is merely a shorter alias for .script execute ?NAMES?"
 };
 
-/* This literal's value and address is used for help's workings. */
+/* This literal's value AND address are used for help's workings. */
 static const char *zHelpAll = "-all";
 
 /*
@@ -4863,36 +4873,38 @@ int deduceDatabaseType(const char *zName, int dfltZip){
 /*
 ** Reconstruct an in-memory database using the output from the "dbtotxt"
 ** program.  Read content from the file in p->aAuxDb[].zDbFilename.
-** If p->aAuxDb[].zDbFilename is 0, then read from either the present
-** input file, or standard input if there is no file open for input.
+** If p->aAuxDb[].zDbFilename is 0, then read from the present input.
 */
 static unsigned char *readHexDb(ShellState *p, int *pnData){
   unsigned char *a = 0;
-  int nLine;
   int n = 0;
   int pgsz = 0;
   int iOffset = 0;
-  int j, k;
+  int j, k, nlError;
   int rc;
-  FILE *in = 0;
+  static const char *zEndMarker = "| end ";
   const char *zDbFilename = p->pAuxDb->zDbFilename;
+  /* Need next two objects only if redirecting input to get the hex. */
+  InSource inRedir = INSOURCE_FILE_REDIR(0, zDbFilename, p->pInSource);
   unsigned int x[16];
   char zLine[1000];
   if( zDbFilename ){
-    in = fopen(zDbFilename, "r");
-    if( in==0 ){
+    inRedir.inFile = fopen(zDbFilename, "r");
+    if( inRedir.inFile==0 ){
       utf8_printf(stderr, "cannot open \"%s\" for reading\n", zDbFilename);
       return 0;
     }
-    nLine = 0;
+    p->pInSource = &inRedir;
   }else{
-    if( p->pInSource!=0 ) in = p->pInSource->inFile;
-    nLine = p->lineno;
-    if( in==0 ) in = stdin;
+    /* Will read hex DB lines inline from present input, without redirect. */
+    if( INSOURCE_IS_INTERACTIVE(p->pInSource) ){
+      printf("Reading hex DB from \"%s\", until end-marker input like:\n%s\n",
+             p->pInSource->zSourceSay, zEndMarker);
+      fflush(stdout);
+    }
   }
   *pnData = 0;
-  nLine++;
-  if( fgets(zLine, sizeof(zLine), in)==0 ) goto readHexDb_error;
+  if( str_line_get(zLine,sizeof(zLine), p->pInSource)==0 ) goto readHexDb_error;
   rc = sscanf(zLine, "| size %d pagesize %d", &n, &pgsz);
   if( rc!=2 ) goto readHexDb_error;
   if( n<0 ) goto readHexDb_error;
@@ -4905,13 +4917,13 @@ static unsigned char *readHexDb(ShellState *p, int *pnData){
     utf8_printf(stderr, "invalid pagesize\n");
     goto readHexDb_error;
   }
-  for(nLine++; fgets(zLine, sizeof(zLine), in)!=0; nLine++){
+  while( str_line_get(zLine,sizeof(zLine), p->pInSource)!=0 ){
     rc = sscanf(zLine, "| page %d offset %d", &j, &k);
     if( rc==2 ){
       iOffset = k;
       continue;
     }
-    if( strncmp(zLine, "| end ", 6)==0 ){
+    if( strncmp(zLine, zEndMarker, 6)==0 ){
       break;
     }
     rc = sscanf(zLine,"| %d: %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x",
@@ -4925,25 +4937,26 @@ static unsigned char *readHexDb(ShellState *p, int *pnData){
       }
     }
   }
-  *pnData = n;
-  if( zDbFilename ) fclose(in);
-  else p->lineno = nLine;
+  *pnData = n; /* Record success and size. */
+ readHexDb_cleanup:
+  if( p->pInSource==&inRedir ){
+    fclose( inRedir.inFile );
+    p->pInSource = inRedir.pFrom;
+  }
   return a;
 
-readHexDb_error:
-  if( zDbFilename ){
-    fclose(in);
-  }else{
-    int nLinePass = nLine;
-    while( fgets(zLine, sizeof(zLine), in)!=0 ){
-      nLinePass++;
-      if(strncmp(zLine, "| end ", 6)==0 ) break;
+ readHexDb_error:
+  nlError = p->pInSource->lineno;
+  if( p->pInSource!=&inRedir ){
+    /* Since taking input inline, consume through its end marker. */
+    while( str_line_get(zLine, sizeof(zLine), p->pInSource)!=0 ){
+      if(strncmp(zLine, zEndMarker, 6)==0 ) break;
     }
-    p->lineno = nLinePass;
   }
   sqlite3_free(a);
-  utf8_printf(stderr,"Error on line %d of --hexdb input\n", nLine);
-  return 0;
+  a = 0;
+  utf8_printf(stderr,"Error on line %d within --hexdb input\n", nlError);
+  goto readHexDb_cleanup;
 }
 #endif /* SQLITE_OMIT_DESERIALIZE */
 
@@ -5401,7 +5414,7 @@ static int booleanValue(const char *zArg){
     if( sqlite3_stricmp(zArg, zBoolNames[i])==0 ) return i&1;
   }
   utf8_printf(stderr, "ERROR: Not a boolean value: \"%s\". Assuming \"no\".\n",
-          zArg);
+              zArg);
   return 0;
 }
 
@@ -6509,7 +6522,7 @@ static void shellPrepare(
 /*
 ** Create a prepared statement using printf-style arguments for the SQL.
 **
-** This routine is could be marked "static".  But it is not always used,
+** This routine could be marked "static".  But it is not always used,
 ** depending on compile-time options.  By omitting the "static", we avoid
 ** nuisance compiler warnings about "defined but not used".
 */
@@ -8010,6 +8023,9 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
 }
 #endif /* !(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_ENABLE_DBPAGE_VTAB) */
 
+/* 
+** The .shxopts command, for setting or listing shell extension options.
+ */
 #if SHELL_EXTENSIONS
 static int shxoptsCommand(char *azArg[], int nArg, ShellState *p, char **pzE){
   static struct { const char *name; u8 mask; } shopts[] = {
@@ -8074,16 +8090,18 @@ static int execute_variables(char *azArg[], int nArg, ShellState *p){
     utf8_printf(stderr, ".x can only be done with a database open.\n");
     return 1;
   }
-  if( sqlite3_table_column_metadata(p->db, "TEMP", "sqlite_parameters",
+  if( sqlite3_table_column_metadata(p->db, PARAM_TABLE_SCHEMA,
+                                    PARAM_TABLE_NAME,
                                     "key", 0, 0, 0, 0, 0)!=SQLITE_OK ){
-    utf8_printf(stderr, "No temp.sqlite_parameters table exists.\n");
+    utf8_printf(stderr, "No "PARAM_TABLE_SNAME" table exists.\n");
     return 1;
   }
   rc = sqlite3_prepare_v2
-    (p->db, "SELECT value FROM temp.sqlite_parameters WHERE key=$1",
+    (p->db, "SELECT value FROM "PARAM_TABLE_SNAME
+     " WHERE key=$1 AND uses=1",
      -1, &pStmt, 0);
   if( rc!=SQLITE_OK ){
-    utf8_printf(stderr, "temp.sqlite_parameters is wrongly created.\n");
+    utf8_printf(stderr, PARAM_TABLE_SNAME" is wrongly created.\n");
     return 1;
   }
   for( ia=1; ia < nArg; ++ia ){
@@ -8097,23 +8115,20 @@ static int execute_variables(char *azArg[], int nArg, ShellState *p){
         while( nb>0 && IsSpace(zValue[nb-1]) ) --nb;
         if( nb>0 ){
           /* The trailing newline (or some other placeholder) is important
-           * because it or some other character is likely to be put in its
-           * place during process_input() line or group handling, along
+           * because one (or some other character) will likely be put in
+           * its place during process_input() line/group handling, along
            * with a terminating NUL character. Without it, the NULL could
-           * land past the end of the allocation made at this next line.
+           * land past the end of the allocation made just below.
            */
           int nle = zValue[nb-1]=='\n';
           char *zSubmit = sqlite3_mprintf( "%.*s%s", nb, zValue, "\n"+nle );
-          InSource inSourceDivert =
-            {0, zSubmit, 0, azArg[ia], p->pInSource };
-          InSource *pInSrcSave = p->pInSource;
-          int savedLineno = p->lineno;
+          InSource inRedir
+            = INSOURCE_STR_REDIR(zSubmit, azArg[ia], p->pInSource);
           shell_check_oom(zSubmit);
-          p->pInSource = &inSourceDivert;
+          p->pInSource = &inRedir;
           rc = process_input(p);
           sqlite3_free(zSubmit);
-          p->pInSource = pInSrcSave;
-          p->lineno = savedLineno;
+          p->pInSource = inRedir.pFrom;
         }else{
           continue; /* All white, ignore. */
         }
@@ -8130,6 +8145,80 @@ static int execute_variables(char *azArg[], int nArg, ShellState *p){
   }
   sqlite3_finalize(pStmt);
   return (rc==2)? 2 : nErrors>0;
+}
+
+struct param_row { char * value; int uses; int hits; };
+
+static int param_find_callback(void *pData, int nc, char **pV, char **pC){
+  assert(nc>=1);
+  assert(strcmp(pC[0],"value")==0);
+  struct param_row *pParam = (struct param_row *)pData;
+  assert(pParam->value==0); /* key values are supposedly unique. */
+  if( pParam->value!=0 ) sqlite3_free( pParam->value );
+  pParam->value = sqlite3_mprintf("%s", pV[0]); /* source owned by statement */
+  if( nc>1 ) pParam->uses = (int)integerValue(pV[1]);
+  ++pParam->hits;
+  return 0;
+}
+
+/*
+ * Edit one named parameter in the parameters table. If it does not
+ * yet exist, create it. If eval is true, the value is treated as a
+ * bare expression, otherwise it is a text value. The uses argument
+ * sets the 3rd column in the parameters table, and may also serve
+ * to partition the key namespace. (This is not done now.)
+ */
+static int edit_one_param(sqlite3 *db, char *name, int eval,
+                          int uses, const char * zEditor){
+  struct param_row paramVU = {0,0,0};
+  char * zSql = sqlite3_mprintf
+    ("SELECT value, uses FROM " PARAM_TABLE_SNAME " WHERE key=%Q", name);
+  shell_check_oom(zSql);
+  sqlite3_exec(db, zSql, param_find_callback, &paramVU, 0);
+  sqlite3_free(zSql);
+  assert(paramVU.hits<2);
+  if( eval!=0 ){
+    /* ToDo: Run an eval-like update, leaving as-is if it's a bad expr. */
+    // int rv = edit_one_param(db, name, 0, uses);
+  }
+  if( paramVU.hits==1 && paramVU.uses==uses){
+    /* Editing an existing value of same kind. */
+    sqlite3_free(paramVU.value);
+    zSql = sqlite3_mprintf
+      ("UPDATE "PARAM_TABLE_SNAME" SET value=edit(value, %Q) WHERE"
+       " key=%Q AND uses=%d", zEditor, name, uses);
+  }else{
+    /* Editing a new value of same kind. */
+    assert(paramVU.value==0);
+    zSql = sqlite3_mprintf
+      ("INSERT INTO "PARAM_TABLE_SNAME"(key,value,uses)"
+       " VALUES (%Q,edit('-- %q%s', %Q),%d)",
+       name, name, "\n", zEditor, uses);
+  }
+  shell_check_oom(zSql);
+  sqlite3_exec(db, zSql, 0, 0, 0);
+  sqlite3_free(zSql);
+  return 0; /* ToDo: add some error checks */
+}
+
+static void append_in_clause(sqlite3_str *pStr, char **azBeg, char **azLim){
+  /* An empty IN list is the same as always true (for non-NULL LHS)
+   * for this clause, which assumes a trailing LHS operand and space.
+   * If that is not the right result, guard the call against it.
+   * This is used for .parameter and .script ?NAMES? options,
+   * where a missing list means all the qualifying entries.
+   */
+  if( azBeg==azLim ) sqlite3_str_appendf(pStr, "NOT NULL");
+  else{
+    char cSep = '(';
+    sqlite3_str_appendf(pStr, "IN");
+    while( azBeg<azLim ){
+      sqlite3_str_appendf(pStr, "%c%Q", cSep, *azBeg);
+      cSep = ',';
+      ++azBeg;
+    }
+    sqlite3_str_appendf(pStr, ")");
+  }
 }
 
 /*
@@ -9567,7 +9656,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       rc = 1;
     }else if( p->zNonce==0 || strcmp(azArg[1],p->zNonce)!=0 ){
       raw_printf(stderr, "line %d: incorrect nonce: \"%s\"\n",
-                 p->lineno, azArg[1]);
+                 p->pInSource->lineno, azArg[1]);
       exit(1);
     }else{
       p->bSafeMode = 0;
@@ -9673,8 +9762,8 @@ static int do_meta_command(char *zLine, ShellState *p){
   }else
 
   if( (c=='o'
-        && (strncmp(azArg[0], "output", n)==0||strncmp(azArg[0], "once", n)==0))
-   || (c=='e' && n==5 && strcmp(azArg[0],"excel")==0)
+       && (strncmp(azArg[0], "output", n)==0||strncmp(azArg[0], "once", n)==0))
+      || (c=='e' && n==5 && strcmp(azArg[0],"excel")==0)
   ){
     char *zFile = 0;
     int bTxtMode = 0;
@@ -9788,12 +9877,79 @@ static int do_meta_command(char *zLine, ShellState *p){
     open_db(p,0);
     if( nArg<=1 ) goto parameter_syntax_error;
 
-    /* .parameter clear
-    ** Clear all bind parameters by dropping the TEMP table that holds them.
+    /* .parameter clear ?NAMES?
+    **  Delete some or all bind parameters from the TEMP table that holds them.
     */
-    if( nArg==2 && strcmp(azArg[1],"clear")==0 ){
-      sqlite3_exec(p->db, "DROP TABLE IF EXISTS temp.sqlite_parameters;",
-                   0, 0, 0);
+    if( nArg>=2 && strcmp(azArg[1],"clear")==0
+        &&
+        sqlite3_table_column_metadata
+        (p->db, PARAM_TABLE_SCHEMA, PARAM_TABLE_NAME,
+         0, 0, 0, 0, 0, 0)==SQLITE_OK ){
+      sqlite3_str *sbDML = sqlite3_str_new(p->db);
+      char *zSql;
+      sqlite3_str_appendf
+        (sbDML, "DELETE FROM "PARAM_TABLE_SNAME" WHERE uses=0 AND key ");
+      append_in_clause(sbDML, &azArg[2], &azArg[nArg]);
+      zSql = sqlite3_str_finish(sbDML);
+      shell_check_oom(zSql);
+      sqlite3_exec(p->db, zSql, 0, 0, 0);
+      sqlite3_free(zSql);
+    }else
+
+    /* .parameter edit ?NAMES?
+    ** Edit the named bind parameters. Any that do not exist are created.
+    */
+    if( nArg>=2 && strcmp(azArg[1],"edit")==0 ){
+      int ia = 2;
+      int eval = 0;
+      param_table_init(p);
+      if( p->zEditor==0 ){
+        const char *zE = getenv("VISUAL");
+        if( zE!=0 ) p->zEditor = sqlite3_mprintf("%s", zE);
+      }
+      if( nArg>=3 && azArg[2][0]=='-' ){
+        char *zArg = (azArg[2][1]=='-')? azArg[2]+2 : azArg[2]+1;
+        if( strncmp(zArg,"editor=",7)==0 ){
+          sqlite3_free(p->zEditor);
+          /* Accept an initial -editor=? option. */
+          p->zEditor = sqlite3_mprintf("%s", zArg+7);
+          ++ia;
+        }
+      }
+      if( p->zEditor==0 ){
+        /* This is klutzy, but edit is for interactive use. So this
+         * problem, due to not heeding the .parameter doc, can be
+         * fixed with a modest inconvenience to the casual user.
+         */
+        utf8_printf(stderr,
+                    "Either set env-var VISUAL to name an"
+                    " editor and restart, or rerun\n "
+                    ".parameter edit with an initial "
+                    "edit option, --editor=EDITOR_NAME .\n");
+        rc = 1;
+        goto meta_command_exit;
+      }
+      /* ToDo: Allow an option whereby new value can be evaluated
+       * the way that .parameter set ... does.
+       */
+      while( ia < nArg ){
+        char cf = (azArg[ia][0]=='-')? azArg[ia][1] : 0;
+        if( cf!=0 && azArg[ia][2]==0 ){
+          ++ia;
+          switch( cf ){
+          case 'e': eval = 1; continue;
+          case 't': eval = 0; continue;
+          default:
+            utf8_printf(stderr, "Error: bad .parameter name: %s\n",
+                        azArg[--ia]);
+            rc = 1;
+            goto meta_command_exit;
+          }
+        }
+        rc = edit_one_param(p->db, azArg[ia], eval, PTU_Binding, p->zEditor);
+        ++ia;
+        if( rc!=0 ) goto meta_command_exit;
+      }
     }else
 
     /* .parameter list
@@ -9805,7 +9961,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       int len = 0;
       rx = sqlite3_prepare_v2(p->db,
              "SELECT max(length(key)) "
-             "FROM temp.sqlite_parameters;", -1, &pStmt, 0);
+             "FROM "PARAM_TABLE_SNAME, -1, &pStmt, 0);
       if( rx==SQLITE_OK && sqlite3_step(pStmt)==SQLITE_ROW ){
         len = sqlite3_column_int(pStmt, 0);
         if( len>40 ) len = 40;
@@ -9814,11 +9970,13 @@ static int do_meta_command(char *zLine, ShellState *p){
       pStmt = 0;
       if( len ){
         rx = sqlite3_prepare_v2(p->db,
-             "SELECT key, quote(value) "
-             "FROM temp.sqlite_parameters;", -1, &pStmt, 0);
+             "SELECT key, quote(value), uses "
+             "FROM "PARAM_TABLE_SNAME, -1, &pStmt, 0);
         while( rx==SQLITE_OK && sqlite3_step(pStmt)==SQLITE_ROW ){
-          utf8_printf(p->out, "%-*s %s\n", len, sqlite3_column_text(pStmt,0),
-                      sqlite3_column_text(pStmt,1));
+          utf8_printf(p->out, "%-*s %s %d\n", len,
+                      sqlite3_column_text(pStmt,0),
+                      sqlite3_column_text(pStmt,1),
+                      sqlite3_column_int(pStmt,2));
         }
         sqlite3_finalize(pStmt);
       }
@@ -9829,7 +9987,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     ** Create it if necessary.
     */
     if( nArg==2 && strcmp(azArg[1],"init")==0 ){
-      bind_table_init(p);
+      param_table_init(p);
     }else
 
     /* .parameter set NAME VALUE
@@ -9844,10 +10002,11 @@ static int do_meta_command(char *zLine, ShellState *p){
       sqlite3_stmt *pStmt;
       const char *zKey = azArg[2];
       const char *zValue = azArg[3];
-      bind_table_init(p);
+      u8 ptu = isalpha(*zKey)? PTU_Script : PTU_Binding;
+      param_table_init(p);
       zSql = sqlite3_mprintf(
-                  "REPLACE INTO temp.sqlite_parameters(key,value)"
-                  "VALUES(%Q,%s);", zKey, zValue);
+                  "REPLACE INTO "PARAM_TABLE_SNAME"(key,value,uses)"
+                  "VALUES(%Q,%s,%d);", zKey, zValue, ptu);
       shell_check_oom(zSql);
       pStmt = 0;
       rx = sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
@@ -9856,8 +10015,8 @@ static int do_meta_command(char *zLine, ShellState *p){
         sqlite3_finalize(pStmt);
         pStmt = 0;
         zSql = sqlite3_mprintf(
-                   "REPLACE INTO temp.sqlite_parameters(key,value)"
-                   "VALUES(%Q,%Q);", zKey, zValue);
+                   "REPLACE INTO "PARAM_TABLE_SNAME"(key,value,uses)"
+                   "VALUES(%Q,%Q,%d);", zKey, zValue, ptu);
         shell_check_oom(zSql);
         rx = sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
         sqlite3_free(zSql);
@@ -9878,7 +10037,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     */
     if( nArg==3 && strcmp(azArg[1],"unset")==0 ){
       char *zSql = sqlite3_mprintf(
-          "DELETE FROM temp.sqlite_parameters WHERE key=%Q", azArg[2]);
+          "DELETE FROM "PARAM_TABLE_SNAME" WHERE key=%Q", azArg[2]);
       shell_check_oom(zSql);
       sqlite3_exec(p->db, zSql, 0, 0, 0);
       sqlite3_free(zSql);
@@ -9986,16 +10145,13 @@ static int do_meta_command(char *zLine, ShellState *p){
       fCloser = fclose;
     }
     if( inUse!=0 ){
-      InSource *pInSrcSave = p->pInSource;
-      int savedLineno = p->lineno;
-      InSource inSourceDivert =
-        {inUse, 0, 0, azArg[1], p->pInSource};
-      p->pInSource = &inSourceDivert;
+      InSource inSourceRedir
+        = INSOURCE_FILE_REDIR(inUse, azArg[1], p->pInSource);
+      p->pInSource = &inSourceRedir;
       rc = process_input(p);
       assert(fCloser!=0);
       fCloser(inUse);
-      p->pInSource = pInSrcSave;
-      p->lineno = savedLineno;
+      p->pInSource = p->pInSource->pFrom;
     }
   }else
 
@@ -10093,7 +10249,8 @@ static int do_meta_command(char *zLine, ShellState *p){
       }else if( zName==0 ){
         zName = azArg[ii];
       }else{
-        raw_printf(stderr, "Usage: .schema ?--indent? ?--nosys? ?LIKE-PATTERN?\n");
+        raw_printf(stderr,
+                   "Usage: .schema ?--indent? ?--nosys? ?LIKE-PATTERN?\n");
         rc = 1;
         goto meta_command_exit;
       }
@@ -10157,9 +10314,9 @@ static int do_meta_command(char *zLine, ShellState *p){
 #ifndef SQLITE_OMIT_INTROSPECTION_PRAGMAS
       if( zName ){
         appendText(&sSelect,
-           " UNION ALL SELECT shell_module_schema(name),"
-           " 'table', name, name, name, 9e+99, 'main' FROM pragma_module_list",
-        0);
+                   " UNION ALL SELECT shell_module_schema(name),"
+                   " 'table', name, name, name, 9e+99, 'main'"
+                   " FROM pragma_module_list", 0);
       }
 #endif
       appendText(&sSelect, ") WHERE ", 0);
@@ -10213,7 +10370,8 @@ static int do_meta_command(char *zLine, ShellState *p){
   }else
 
   if( c=='s' && n==11 && strncmp(azArg[0], "selecttrace", n)==0 ){
-    unsigned int x = nArg>=2 ? (unsigned int)integerValue(azArg[1]) : 0xffffffff;
+    unsigned int x
+      = nArg>=2 ? (unsigned int)integerValue(azArg[1]) : 0xffffffff;
     sqlite3_test_control(SQLITE_TESTCTRL_TRACEFLAGS, 1, &x);
   }else
 
@@ -10396,7 +10554,8 @@ static int do_meta_command(char *zLine, ShellState *p){
         }
       }
       if( pAuxDb->nSession>=ArraySize(pAuxDb->aSession) ){
-        raw_printf(stderr, "Maximum of %d sessions\n", ArraySize(pAuxDb->aSession));
+        raw_printf(stderr, "Maximum of %d sessions\n",
+                   ArraySize(pAuxDb->aSession));
         goto meta_command_exit;
       }
       pSession = &pAuxDb->aSession[pAuxDb->nSession];
@@ -10978,7 +11137,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     }else if( aCtrl[iCtrl].unSafe && p->bSafeMode ){
       utf8_printf(stderr,
          "line %d: \".testctrl %s\" may not be used in safe mode\n",
-         p->lineno, aCtrl[iCtrl].zCtrlName);
+         p->pInSource->lineno, aCtrl[iCtrl].zCtrlName);
       exit(1);
     }else{
       switch(testctrl){
@@ -11352,7 +11511,8 @@ static int do_meta_command(char *zLine, ShellState *p){
   }else
 
   if( c=='w' && strncmp(azArg[0], "wheretrace", n)==0 ){
-    unsigned int x = nArg>=2 ? (unsigned int)integerValue(azArg[1]) : 0xffffffff;
+    unsigned int x
+      = nArg>=2 ? (unsigned int)integerValue(azArg[1]) : 0xffffffff;
     sqlite3_test_control(SQLITE_TESTCTRL_TRACEFLAGS, 3, &x);
   }else
 
@@ -11386,7 +11546,7 @@ meta_command_exit:
   p->bSafeMode = p->bSafeModePersist;
 #if SHELL_VARIABLE_EXPANSION
   if( bExpVars ){
-    /* Free any arguments that had to be allocated rather than tokenized in place. */
+    /* Free any arguments that are allocated rather than tokenized in place. */
     for( n=1; n<nArg; ++n ){
       int iArgOffset = azArg[n]-zLine;
       u8 bInPlace = iArgOffset>0 && iArgOffset<ncLineIn;
@@ -11738,23 +11898,27 @@ static int process_input(ShellState *p){
   /* Some flags for ending the overall group processing loop, always 1 or 0 */
   u8 bErrorBail=0, bInputEnd=0, bExitDemand=0, bInterrupted=0;
   /* Flag to affect prompting and interrupt action */
-  u8 bInteractive = (p->pInSource==0 && stdin_is_interactive);
+  u8 bInteractive = (p->pInSource==&stdInSource && stdin_is_interactive);
   int nErrors = 0;       /* count of errors during execution or its prep */
 
   /* Block overly-recursive or absurdly nested input redirects. */
   if( p->inputNesting==MAX_INPUT_NESTING ){
-    InSource *pInSrc = p->pInSource;
-    int i;
-    utf8_printf
-      (stderr, "Input nesting limit (%d) reached, from line %d of \"%s\",\n",
-       MAX_INPUT_NESTING, p->lineno, pInSrc->zSourceSay);
-    for( i=0; i<3 && (pInSrc=pInSrc->pFrom)!=0; ++i )
-      utf8_printf(stderr, " from \"%s\"", pInSrc->zSourceSay);
+    InSource *pInSrc = p->pInSource->pFrom;
+    const char *zLead = "Input nesting limit ("
+      SHELL_STRINGIFY(MAX_INPUT_NESTING)") reached,";
+    int i = 3;
+    assert(pInSrc!=0 && MAX_INPUT_NESTING>0);
+    while( i-->0 && pInSrc!=0 ){
+      utf8_printf(stderr,
+                  "%s from line %d of \"%s\"",
+                  zLead, pInSrc->lineno, pInSrc->zSourceSay);
+      zLead = (i%2==0)? "\n" : "";
+      pInSrc=pInSrc->pFrom;
+    }
     utf8_printf(stderr, " ...\nERROR: Check recursion.\n");
     return 1;
   }
   ++p->inputNesting;
-  p->lineno = 0;
 
   /* line-group processing loop (per SQL block, dot-command or comment) */
   while( !bErrorBail && !bInputEnd && !bExitDemand && !bInterrupted ){
@@ -11793,8 +11957,7 @@ static int process_input(ShellState *p){
       if( bInteractive ) printf("\n");
     }else{
       ++nGroupLines;
-      p->lineno++;
-      iStartline = p->lineno;
+      iStartline = p->pInSource->lineno;
       ncLineIn = strlen30(zLineInput);
       if( seenInterrupt ){
         if( p->pInSource!=0 ) break;
@@ -11897,7 +12060,6 @@ static int process_input(ShellState *p){
           continue;
         }
         ++nGroupLines;
-        p->lineno++;
         ncLineIn = strlen30(zLineInput);
         /* Scan line just input (if needed) and append to accumulation. */
         switch( inKind ){
@@ -11929,7 +12091,9 @@ static int process_input(ShellState *p){
       switch( inKind ){
       case Sql:
         /* runOneSqlLine() does its own echo when requested. */
-        nErrors += runOneSqlLine(p, *pzLineUse, p->pInSource!=0, iStartline);
+        nErrors += runOneSqlLine(p, *pzLineUse,
+                                 INSOURCE_IS_INTERACTIVE(p->pInSource),
+                                 iStartline);
         if( bail_on_error && nErrors>0 ) bErrorBail = 1;
         break;
       case Cmd:
@@ -11947,8 +12111,7 @@ static int process_input(ShellState *p){
       break;
     case Erroneous:
       utf8_printf(stderr, "Error: Input incomplete at line %d of \"%s\"\n",
-                  p->lineno,
-                  (p->pInSource!=0)? p->pInSource->zSourceSay : "<stdin>");
+                  p->pInSource->lineno, p->pInSource->zSourceSay);
       ++nErrors;
       break;
     case Ignore:
@@ -12062,18 +12225,16 @@ static void process_sqliterc(
   }
   inUse = fopen(sqliterc,"rb");
   if( inUse!=0 ){
-    InSource *pInSrcSave = p->pInSource;
-    int savedLineno = p->lineno;
-    InSource inSourceDivert = {inUse, 0, 0, sqliterc, p->pInSource};
+    InSource inSourceRedir
+      = INSOURCE_FILE_REDIR(inUse, sqliterc, p->pInSource);
     int rc;
-    p->pInSource = &inSourceDivert;
+    p->pInSource = &inSourceRedir;
     if( stdin_is_interactive ){
       utf8_printf(stderr,"-- Loading resources from %s\n",sqliterc);
     }
     rc = process_input(p);
     fclose(inUse);
-    p->pInSource = pInSrcSave;
-    p->lineno = savedLineno;
+    p->pInSource = inSourceRedir.pFrom; /* 0 when called by main() */
     if( rc!=0 && bail_on_error ) exit(1);
   }else if( sqliterc_override!=0 ){
     utf8_printf(stderr,"cannot open: \"%s\"\n", sqliterc);
@@ -12189,8 +12350,9 @@ static void main_init(ShellState *data) {
   sqlite3_config(SQLITE_CONFIG_URI, 1);
   sqlite3_config(SQLITE_CONFIG_LOG, shellLog, data);
   sqlite3_config(SQLITE_CONFIG_MULTITHREAD);
-  sqlite3_snprintf(sizeof(mainPrompt), mainPrompt,"sqlite> ");
+  sqlite3_snprintf(sizeof(mainPrompt), mainPrompt,        "sqlite> ");
   sqlite3_snprintf(sizeof(continuePrompt), continuePrompt,"   ...> ");
+  init_std_inputs(stdin);
 }
 
 /*
@@ -12247,7 +12409,6 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 #endif
   char *zErrMsg = 0;
   ShellState data;
-  InSource inputSource = { stdin, 0, 0, "stdin"};
   const char *zInitFile = 0;
   int i;
   int rc = 0;
@@ -12537,7 +12698,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 
   /* Process the initialization file if there is one.  If no -init option
   ** is given on the command line, look for a file named ~/.sqliterc and
-  ** try to process it.
+  ** try to process it, without any quitting or bail-on-error.
   */
   process_sqliterc(&data,zInitFile);
 
@@ -12594,7 +12755,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
     }else if( strcmp(z,"-ascii")==0 ){
       data.mode = MODE_Ascii;
       sqlite3_snprintf(sizeof(data.colSeparator), data.colSeparator, SEP_Unit);
-      sqlite3_snprintf(sizeof(data.rowSeparator), data.rowSeparator, SEP_Record);
+      sqlite3_snprintf(sizeof(data.rowSeparator),data.rowSeparator, SEP_Record);
     }else if( strcmp(z,"-tabs")==0 ){
       data.mode = MODE_List;
       sqlite3_snprintf(sizeof(data.colSeparator), data.colSeparator, SEP_Tab);
@@ -12789,7 +12950,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 #elif HAVE_LINENOISE
       linenoiseSetCompletionCallback(linenoise_completion);
 #endif
-      data.pInSource = 0; /* read from stdin interactively */
+      data.pInSource = &termInSource; /* read from stdin interactively */
       rc = process_input(&data);
       if( zHistory ){
         shell_stifle_history(2000);
@@ -12797,7 +12958,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
         free(zHistory);
       }
     }else{
-      data.pInSource = &inputSource; /* read from stdin without prompts */
+      data.pInSource = &stdInSource; /* read from stdin without prompts */
       rc = process_input(&data);
     }
   }
@@ -12818,6 +12979,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   output_reset(&data);
   data.doXdgOpen = 0;
   clearTempFile(&data);
+  sqlite3_free(data.zEditor);
 #if !SQLITE_SHELL_IS_UTF8
   for(i=0; i<argcToFree; i++) free(argvToFree[i]);
   free(argvToFree);
