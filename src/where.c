@@ -1335,7 +1335,9 @@ static int vtabBestIndex(Parse *pParse, Table *pTab, sqlite3_index_info *p){
   int rc;
 
   whereTraceIndexInfoInputs(p);
+  pParse->db->nSchemaLock++;
   rc = pVtab->pModule->xBestIndex(pVtab, p);
+  pParse->db->nSchemaLock--;
   whereTraceIndexInfoOutputs(p);
 
   if( rc!=SQLITE_OK && rc!=SQLITE_CONSTRAINT ){
