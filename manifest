@@ -1,5 +1,5 @@
-C Prohibit\sschema\schanges\swithin\sxBestIndex\scallbacks.
-D 2022-02-03T14:19:26.747
+C Do\snot\sallow\sthe\svdbe-compress.tcl\sscript\sto\sgenerate\sstructures\snamed\n"do"\sor\s"if".
+D 2022-02-03T14:37:06.680
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1917,7 +1917,7 @@ F tool/stack_usage.tcl f8e71b92cdb099a147dad572375595eae55eca43
 F tool/symbols-mingw.sh 4dbcea7e74768305384c9fd2ed2b41bbf9f0414d
 F tool/symbols.sh 1612bd947750e21e7b47befad5f6b3825b06cce0705441f903bf35ced65ae9b9
 F tool/varint.c 5d94cb5003db9dbbcbcc5df08d66f16071aee003
-F tool/vdbe-compress.tcl 5926c71f9c12d2ab73ef35c29376e756eb68361c
+F tool/vdbe-compress.tcl 1dcb7632e57cf57105248029e6e162fddaf6c0fccb3bb9e6215603752c5a2d4a
 F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 09311479bdc290e20ec8e35a3d1b14b096bbd96222277cfd6274c3a99b3d012f
@@ -1943,8 +1943,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 403e7ac900e53407282393747b784dc0cd4303958394534e3936fce138bc1bc5
-R 41eaf90a96fe65f5bd93b76bd7a9c7b0
+P bb0f056b3f2ecc3893e5e48e99c060788550ea6a8ed02b715953af051bafbad0
+R b66cc5b551133399f9bcd1024e701d2a
 U drh
-Z 4e2814b092bdcbebe8f5fecedd9981df
+Z 9f9648682364ae609fa9e4c552fa2be1
 # Remove this line to create a well-formed Fossil manifest.
