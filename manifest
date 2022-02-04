@@ -1,5 +1,5 @@
-C Fix\svarious\sharmless\scompiler\swarnings.
-D 2022-02-04T13:15:01.508
+C Add\sa\scompile-time\soption\sto\sinclude\svt02.c\sin\sfuzzcheck.
+D 2022-02-04T19:13:18.472
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1063,7 +1063,7 @@ F test/fuzz3.test 9c813e6613b837cb7a277b0383cd66bfa07042b4cf0317157c35852f30043c
 F test/fuzz4.test c229bcdb45518a89e1d208a21343e061503460ac69fae1539320a89f572eb634
 F test/fuzz_common.tcl b7197de6ed1ee8250a4f82d67876f4561b42ee8cbbfc6160dcb66331bad3f830
 F test/fuzz_malloc.test f348276e732e814802e39f042b1f6da6362a610af73a528d8f76898fde6b22f2
-F test/fuzzcheck.c bdb852815048a0beebbe5768bca61e75295324a811a8d7216f97b96501befd1e
+F test/fuzzcheck.c e34696a5db46738118b2efd14fb71f8458ecf0f482df8bbae18fa1d64db9ab7b
 F test/fuzzdata1.db d36e88741b4f23bcbaaf55b006290669d03c6c891cf13c7b3a53bc1b097b693f
 F test/fuzzdata2.db 128b3feeb78918d075c9b14b48610145a0dd4c8d6f1ca7c2870c7e425f5bf31f
 F test/fuzzdata3.db c6586d3e3cef0fbc18108f9bb649aa77bfc38aba
@@ -1943,8 +1943,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9f67ad00cd38b7c5ec6d14b379e1a611777bbdf6901d843a80712ba7d94d6d33
-R ed2fd6b08e6120318ad847a61dee5a51
+P 70049342d5ad57ea3e863bba19253934b868bacdd1c26c9371bac024a829badf
+R 7698284cef9bf4071c753bc4d6dcc55e
 U drh
-Z 871646465b8062211df8c4f3cf586a8c
+Z f337e6cf2658096055fbff9c10758499
 # Remove this line to create a well-formed Fossil manifest.
