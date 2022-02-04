@@ -1532,11 +1532,27 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       pTerm = pLoop->aLTerm[j];
       if( NEVER(pTerm==0) ) continue;
       if( pTerm->eOperator & WO_IN ){
-        codeEqualityTerm(pParse, pTerm, pLevel, j, bRev, iTarget);
-        addrNotFound = pLevel->addrNxt;
+        if( SMASKBIT32(j) & pLoop->u.vtab.mHandleIn ){
+          int iTab = pParse->nTab++;
+          int iCache = ++pParse->nMem;
+          sqlite3CodeRhsOfIN(pParse, pTerm->pExpr, iTab);
+          sqlite3VdbeAddOp3(v, OP_VInitIn, iTab, iTarget, iCache);
+        }else{
+          codeEqualityTerm(pParse, pTerm, pLevel, j, bRev, iTarget);
+          addrNotFound = pLevel->addrNxt;
+        }
       }else{
         Expr *pRight = pTerm->pExpr->pRight;
         codeExprOrVector(pParse, pRight, iTarget, 1);
+        if( pTerm->eMatchOp==SQLITE_INDEX_CONSTRAINT_OFFSET
+         && pLoop->u.vtab.bOmitOffset
+        ){
+          assert( pTerm->eOperator==WO_AUX );
+          assert( pWInfo->pLimit!=0 );
+          assert( pWInfo->pLimit->iOffset>0 );
+          sqlite3VdbeAddOp2(v, OP_Integer, 0, pWInfo->pLimit->iOffset);
+          VdbeComment((v,"Zero OFFSET counter"));
+        }
       }
     }
     sqlite3VdbeAddOp2(v, OP_Integer, pLoop->u.vtab.idxNum, iReg);
@@ -1559,13 +1575,19 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       iIn = 0;
     }
     for(j=nConstraint-1; j>=0; j--){
+      int bIn;     /* True to generate byte code to loop over RHS IN values */
       pTerm = pLoop->aLTerm[j];
-      if( (pTerm->eOperator & WO_IN)!=0 ) iIn--;
+      if( (pTerm->eOperator & WO_IN)!=0
+       && (SMASKBIT32(j) & pLoop->u.vtab.mHandleIn)==0
+      ){
+        bIn = 1;
+      }else{
+        bIn = 0;
+      }
+      if( bIn ) iIn--;
       if( j<16 && (pLoop->u.vtab.omitMask>>j)&1 ){
         disableTerm(pLevel, pTerm);
-      }else if( (pTerm->eOperator & WO_IN)!=0
-        && sqlite3ExprVectorSize(pTerm->pExpr->pLeft)==1
-      ){
+      }else if( bIn && sqlite3ExprVectorSize(pTerm->pExpr->pLeft)==1 ){
         Expr *pCompare;  /* The comparison operator */
         Expr *pRight;    /* RHS of the comparison */
         VdbeOp *pOp;     /* Opcode to access the value of the IN constraint */
@@ -2296,7 +2318,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     iRetInit = sqlite3VdbeAddOp2(v, OP_Integer, 0, regReturn);
 
     /* If the original WHERE clause is z of the form:  (x1 OR x2 OR ...) AND y
-    ** Then for every term xN, evaluate as the subexpression: xN AND z
+    ** Then for every term xN, evaluate as the subexpression: xN AND y
     ** That way, terms in y that are factored into the disjunction will
     ** be picked up by the recursive calls to sqlite3WhereBegin() below.
     **
@@ -2308,6 +2330,12 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     ** This optimization also only applies if the (x1 OR x2 OR ...) term
     ** is not contained in the ON clause of a LEFT JOIN.
     ** See ticket http://www.sqlite.org/src/info/f2369304e4
+    **
+    ** 2022-02-04:  Do not push down slices of a row-value comparison.
+    ** In other words, "w" or "y" may not be a slice of a vector.  Otherwise,
+    ** the initialization of the right-hand operand of the vector comparison
+    ** might not occur, or might occur only in an OR branch that is not
+    ** taken.  dbsqlfuzz 80a9fade844b4fb43564efc972bcb2c68270f5d1.
     */
     if( pWC->nTerm>1 ){
       int iTerm;
@@ -2316,7 +2344,10 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         if( &pWC->a[iTerm] == pTerm ) continue;
         testcase( pWC->a[iTerm].wtFlags & TERM_VIRTUAL );
         testcase( pWC->a[iTerm].wtFlags & TERM_CODED );
-        if( (pWC->a[iTerm].wtFlags & (TERM_VIRTUAL|TERM_CODED))!=0 ) continue;
+        testcase( pWC->a[iTerm].wtFlags & TERM_SLICE );
+        if( (pWC->a[iTerm].wtFlags & (TERM_VIRTUAL|TERM_CODED|TERM_SLICE))!=0 ){
+          continue;
+        }
         if( (pWC->a[iTerm].eOperator & WO_ALL)==0 ) continue;
         testcase( pWC->a[iTerm].wtFlags & TERM_ORINFO );
         pExpr = sqlite3ExprDup(db, pExpr, 0);
@@ -2359,7 +2390,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         /* Loop through table entries that match term pOrTerm. */
         ExplainQueryPlan((pParse, 1, "INDEX %d", ii+1));
         WHERETRACE(0xffff, ("Subplan for OR-clause:\n"));
-        pSubWInfo = sqlite3WhereBegin(pParse, pOrTab, pOrExpr, 0, 0,
+        pSubWInfo = sqlite3WhereBegin(pParse, pOrTab, pOrExpr, 0, 0, 0,
                                       WHERE_OR_SUBCLAUSE, iCovCur);
         assert( pSubWInfo || pParse->nErr );
         if( pSubWInfo ){

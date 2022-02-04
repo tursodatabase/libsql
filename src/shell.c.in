@@ -1066,6 +1066,15 @@ struct EQPGraph {
   char zPrefix[100];    /* Graph prefix */
 };
 
+/* Parameters affecting columnar mode result display (defaulting together) */
+typedef struct ColModeOpts {
+  int iWrap;            /* In columnar modes, wrap lines reaching this limit */
+  u8 bQuote;            /* Quote results for .mode box and table */
+  u8 bWordWrap;         /* In columnar modes, wrap at word boundaries  */
+} ColModeOpts;
+#define ColModeOpts_default { 60, 0, 0 }
+#define ColModeOpts_default_qbox { 60, 1, 0 }
+
 /*
 ** State information about the database connection is contained in an
 ** instance of the following structure.
@@ -1084,6 +1093,7 @@ struct ShellState {
   u8 eTraceType;         /* SHELL_TRACE_* value for type of trace */
   u8 bSafeMode;          /* True to prohibit unsafe operations */
   u8 bSafeModePersist;   /* The long-term value of bSafeMode */
+  ColModeOpts cmOpts;    /* Option values affecting columnar mode output */
   unsigned statsOn;      /* True to display memory stats before each finalize */
   unsigned mEqpLines;    /* Mask of veritical lines in the EQP output graph */
   int inputNesting;      /* Track nesting level of .read and other redirects */
@@ -3164,7 +3174,134 @@ static void print_box_row_separator(
   fputs("\n", p->out);
 }
 
+/*
+** z[] is a line of text that is to be displayed the .mode box or table or
+** similar tabular formats.  z[] might contain control characters such
+** as \n, \t, \f, or \r.
+**
+** Compute characters to display on the first line of z[].  Stop at the
+** first \r, \n, or \f.  Expand \t into spaces.  Return a copy (obtained
+** from malloc()) of that first line, which caller should free sometime.
+** Write anything to display on the next line into *pzTail.  If this is
+** the last line, write a NULL into *pzTail. (*pzTail is not allocated.)
+*/
+static char *translateForDisplayAndDup(
+  const unsigned char *z,            /* Input text to be transformed */
+  const unsigned char **pzTail,      /* OUT: Tail of the input for next line */
+  int mxWidth,                       /* Max width.  0 means no limit */
+  u8 bWordWrap                       /* If true, avoid breaking mid-word */
+){
+  int i;                 /* Input bytes consumed */
+  int j;                 /* Output bytes generated */
+  int k;                 /* Input bytes to be displayed */
+  int n;                 /* Output column number */
+  unsigned char *zOut;   /* Output text */
 
+  if( z==0 ){
+    *pzTail = 0;
+    return 0;
+  }
+  if( mxWidth<0 ) mxWidth = -mxWidth;
+  if( mxWidth==0 ) mxWidth = 1000000;
+  i = j = n = 0;
+  while( n<mxWidth ){
+    if( z[i]>=' ' ){
+      n++;
+      do{ i++; j++; }while( (z[i]&0xc0)==0x80 );
+      continue;
+    }
+    if( z[i]=='\t' ){
+      do{
+        n++;
+        j++;
+      }while( (n&7)!=0 && n<mxWidth );
+      i++;
+      continue;
+    }
+    break;
+  }
+  if( n>=mxWidth && bWordWrap  ){
+    /* Perhaps try to back up to a better place to break the line */
+    for(k=i; k>i/2; k--){
+      if( isspace(z[k-1]) ) break;
+    }
+    if( k<=i/2 ){
+      for(k=i; k>i/2; k--){
+        if( isalnum(z[k-1])!=isalnum(z[k]) && (z[k]&0xc0)!=0x80 ) break;
+      }
+    }
+    if( k<=i/2 ){
+      k = i;
+    }else{
+      i = k;
+      while( z[i]==' ' ) i++;
+    }
+  }else{
+    k = i;
+  }
+  if( n>=mxWidth && z[i]>=' ' ){
+   *pzTail = &z[i];
+  }else if( z[i]=='\r' && z[i+1]=='\n' ){
+    *pzTail = z[i+2] ? &z[i+2] : 0;
+  }else if( z[i]==0 || z[i+1]==0 ){
+    *pzTail = 0;
+  }else{
+    *pzTail = &z[i+1];
+  }
+  zOut = malloc( j+1 );
+  shell_check_oom(zOut);
+  i = j = n = 0;
+  while( i<k ){
+    if( z[i]>=' ' ){
+      n++;
+      do{ zOut[j++] = z[i++]; }while( (z[i]&0xc0)==0x80 );
+      continue;
+    }
+    if( z[i]=='\t' ){
+      do{
+        n++;
+        zOut[j++] = ' ';
+      }while( (n&7)!=0 && n<mxWidth );
+      i++;
+      continue;
+    }
+    break;
+  }
+  zOut[j] = 0;
+  return (char*)zOut;  
+}
+
+/* Extract the value of the i-th current column for pStmt as an SQL literal
+** value.  Memory is obtained from sqlite3_malloc64() and must be freed by
+** the caller.
+*/
+static char *quoted_column(sqlite3_stmt *pStmt, int i){
+  switch( sqlite3_column_type(pStmt, i) ){
+    case SQLITE_NULL: {
+      return sqlite3_mprintf("NULL");
+    }
+    case SQLITE_INTEGER:
+    case SQLITE_FLOAT: {
+      return sqlite3_mprintf("%s",sqlite3_column_text(pStmt,i));
+    }
+    case SQLITE_TEXT: {
+      return sqlite3_mprintf("%Q",sqlite3_column_text(pStmt,i));
+    }
+    case SQLITE_BLOB: {
+      int j;
+      sqlite3_str *pStr = sqlite3_str_new(0);
+      const unsigned char *a = sqlite3_column_blob(pStmt,i);
+      int n = sqlite3_column_bytes(pStmt,i);
+      sqlite3_str_append(pStr, "x'", 2);
+      for(j=0; j<n; j++){
+        sqlite3_str_appendf(pStr, "%02x", a[j]);
+      }
+      sqlite3_str_append(pStr, "'", 1);
+      return sqlite3_str_finish(pStr);
+    }
+  }
+  return 0; /* Not reached */
+}
 
 /*
 ** Run a prepared statement and output the result in one of the
@@ -3184,12 +3321,19 @@ static void exec_prepared_stmt_columnar(
   int nColumn = 0;
   char **azData = 0;
   sqlite3_int64 nAlloc = 0;
+  char *abRowDiv = 0;
+  const unsigned char *uz;
   const char *z;
+  char **azQuoted = 0;
   int rc;
   sqlite3_int64 i, nData;
   int j, nTotal, w, n;
   const char *colSep = 0;
   const char *rowSep = 0;
+  const unsigned char **azNextLine = 0;
+  int bNextLine = 0;
+  int bMultiLineRowExists = 0;
+  int bw = p->cmOpts.bWordWrap;
 
   rc = sqlite3_step(pStmt);
   if( rc!=SQLITE_ROW ) return;
@@ -3198,21 +3342,16 @@ static void exec_prepared_stmt_columnar(
   if( nAlloc<=0 ) nAlloc = 1;
   azData = sqlite3_malloc64( nAlloc*sizeof(char*) );
   shell_check_oom(azData);
-  for(i=0; i<nColumn; i++){
-    azData[i] = strdup(sqlite3_column_name(pStmt,i));
+  azNextLine = sqlite3_malloc64( nColumn*sizeof(char*) );
+  shell_check_oom((void*)azNextLine);
+  memset((void*)azNextLine, 0, nColumn*sizeof(char*) );
+  if( p->cmOpts.bQuote ){
+    azQuoted = sqlite3_malloc64( nColumn*sizeof(char*) );
+    shell_check_oom(azQuoted);
+    memset(azQuoted, 0, nColumn*sizeof(char*) );
   }
-  do{
-    if( (nRow+2)*nColumn >= nAlloc ){
-      nAlloc *= 2;
-      azData = sqlite3_realloc64(azData, nAlloc*sizeof(char*));
-      shell_check_oom(azData);
-    }
-    nRow++;
-    for(i=0; i<nColumn; i++){
-      z = (const char*)sqlite3_column_text(pStmt,i);
-      azData[nRow*nColumn + i] = z ? strdup(z) : 0;
-    }
-  }while( sqlite3_step(pStmt)==SQLITE_ROW );
+  abRowDiv = sqlite3_malloc64( nAlloc/nColumn );
+  shell_check_oom(abRowDiv);
   if( nColumn>p->nWidth ){
     p->colWidth = realloc(p->colWidth, (nColumn+1)*2*sizeof(int));
     shell_check_oom(p->colWidth);
@@ -3226,6 +3365,52 @@ static void exec_prepared_stmt_columnar(
     if( w<0 ) w = -w;
     p->actualWidth[i] = w;
   }
+  for(i=0; i<nColumn; i++){
+    const unsigned char *zNotUsed;
+    int wx = p->colWidth[i];
+    if( wx==0 ){
+      wx = p->cmOpts.iWrap;
+    }
+    if( wx<0 ) wx = -wx;
+    uz = (const unsigned char*)sqlite3_column_name(pStmt,i);
+    azData[i] = translateForDisplayAndDup(uz, &zNotUsed, wx, bw);
+  }
+  do{
+    int useNextLine = bNextLine;
+    bNextLine = 0;
+    if( (nRow+2)*nColumn >= nAlloc ){
+      nAlloc *= 2;
+      azData = sqlite3_realloc64(azData, nAlloc*sizeof(char*));
+      shell_check_oom(azData);
+      abRowDiv = sqlite3_realloc64(abRowDiv, nAlloc/nColumn);
+      shell_check_oom(abRowDiv);
+    }
+    abRowDiv[nRow] = 1;
+    nRow++;
+    for(i=0; i<nColumn; i++){
+      int wx = p->colWidth[i];
+      if( wx==0 ){
+        wx = p->cmOpts.iWrap;
+      }
+      if( wx<0 ) wx = -wx;
+      if( useNextLine ){
+        uz = azNextLine[i];
+      }else if( p->cmOpts.bQuote ){
+        sqlite3_free(azQuoted[i]);
+        azQuoted[i] = quoted_column(pStmt,i);
+        uz = (const unsigned char*)azQuoted[i];
+      }else{
+        uz = (const unsigned char*)sqlite3_column_text(pStmt,i);
+      }
+      azData[nRow*nColumn + i]
+        = translateForDisplayAndDup(uz, &azNextLine[i], wx, bw);
+      if( azNextLine[i] ){
+        bNextLine = 1;
+        abRowDiv[nRow-1] = 0;
+        bMultiLineRowExists = 1;
+      }
+    }
+  }while( bNextLine || sqlite3_step(pStmt)==SQLITE_ROW );
   nTotal = nColumn*(nRow+1);
   for(i=0; i<nTotal; i++){
     z = azData[i];
@@ -3308,6 +3493,15 @@ static void exec_prepared_stmt_columnar(
     utf8_width_print(p->out, w, z);
     if( j==nColumn-1 ){
       utf8_printf(p->out, "%s", rowSep);
+      if( bMultiLineRowExists && abRowDiv[i/nColumn-1] && i+1<nTotal ){
+        if( p->cMode==MODE_Table ){
+          print_row_separator(p, nColumn, "+");
+        }else if( p->cMode==MODE_Box ){
+          print_box_row_separator(p, nColumn, BOX_123, BOX_1234, BOX_134);
+        }else if( p->cMode==MODE_Column ){
+          raw_printf(p->out, "\n");
+        }
+      }
       j = -1;
       if( seenInterrupt ) goto columnar_end;
     }else{
@@ -3326,6 +3520,12 @@ columnar_end:
   nData = (nRow+1)*nColumn;
   for(i=0; i<nData; i++) free(azData[i]);
   sqlite3_free(azData);
+  sqlite3_free((void*)azNextLine);
+  sqlite3_free(abRowDiv);
+  if( azQuoted ){
+    for(i=0; i<nColumn; i++) sqlite3_free(azQuoted[i]);
+    sqlite3_free(azQuoted);
+  }
 }
 
 /*
@@ -4103,23 +4303,31 @@ static const char *(azHelp[]) = {
   ".load FILE ?ENTRY?       Load an extension library",
 #endif
   ".log FILE|off            Turn logging on or off.  FILE can be stderr/stdout",
-  ".mode MODE ?TABLE?       Set output mode",
+  ".mode MODE ?OPTIONS?     Set output mode",
   "   MODE is one of:",
-  "     ascii     Columns/rows delimited by 0x1F and 0x1E",
-  "     box       Tables using unicode box-drawing characters",
-  "     csv       Comma-separated values",
-  "     column    Output in columns.  (See .width)",
-  "     html      HTML <table> code",
-  "     insert    SQL insert statements for TABLE",
-  "     json      Results in a JSON array",
-  "     line      One value per line",
-  "     list      Values delimited by \"|\"",
-  "     markdown  Markdown table format",
-  "     quote     Escape answers as for SQL",
-  "     table     ASCII-art table",
-  "     tabs      Tab-separated values",
-  "     tcl       TCL list elements",
-  ".nonce STRING            Disable safe mode for one command if the nonce matches",
+  "     ascii       Columns/rows delimited by 0x1F and 0x1E",
+  "     box         Tables using unicode box-drawing characters",
+  "     csv         Comma-separated values",
+  "     column      Output in columns.  (See .width)",
+  "     html        HTML <table> code",
+  "     insert      SQL insert statements for TABLE",
+  "     json        Results in a JSON array",
+  "     line        One value per line",
+  "     list        Values delimited by \"|\"",
+  "     markdown    Markdown table format",
+  "     qbox        Shorthand for \"box --width 60 --quote\"",
+  "     quote       Escape answers as for SQL",
+  "     table       ASCII-art table",
+  "     tabs        Tab-separated values",
+  "     tcl         TCL list elements",
+  "   OPTIONS: (for columnar modes or insert mode):",
+  "     --wrap N       Wrap output lines to no longer than N characters",
+  "     --wordwrap B   Wrap or not at word boundaries per B (on/off)",
+  "     --ww           Shorthand for \"--wordwrap 1\"",
+  "     --quote        Quote output text as SQL literals",
+  "     --noquote      Do not quote output text",
+  "     TABLE          The name of SQL table used for \"insert\" mode",
+  ".nonce STRING            Suspend safe mode for one command if nonce matches",
   ".nullvalue STRING        Use STRING in place of NULL values",
   ".once ?OPTIONS? ?FILE?   Output for the next SQL command only to FILE",
   "     If FILE begins with '|' then open as a pipe",
@@ -8899,64 +9107,123 @@ static int do_meta_command(char *zLine, ShellState *p){
   }else
 
   if( c=='m' && strncmp(azArg[0], "mode", n)==0 ){
-    const char *zMode = nArg>=2 ? azArg[1] : "";
-    int n2 = strlen30(zMode);
-    int c2 = zMode[0];
-    if( c2=='l' && n2>2 && strncmp(azArg[1],"lines",n2)==0 ){
+    const char *zMode = 0;
+    const char *zTabname = 0;
+    int i, n2;
+    ColModeOpts cmOpts = ColModeOpts_default;
+    for(i=1; i<nArg; i++){
+      const char *z = azArg[i];
+      if( optionMatch(z,"wrap") && i+1<nArg ){
+        cmOpts.iWrap = integerValue(azArg[++i]);
+      }else if( optionMatch(z,"ww") ){
+        cmOpts.bWordWrap = 1;
+      }else if( optionMatch(z,"wordwrap") && i+1<nArg ){
+        cmOpts.bWordWrap = (u8)booleanValue(azArg[++i]);
+      }else if( optionMatch(z,"quote") ){
+        cmOpts.bQuote = 1;
+      }else if( optionMatch(z,"noquote") ){
+        cmOpts.bQuote = 0;
+      }else if( zMode==0 ){
+        zMode = z;
+        /* Apply defaults for qbox pseudo-mods. If that
+         * overwrites already-set values, user was informed of this.
+         */
+        if( strcmp(z, "qbox")==0 ){
+          ColModeOpts cmo = ColModeOpts_default_qbox;
+          zMode = "box";
+          cmOpts = cmo;
+        }
+      }else if( zTabname==0 ){
+        zTabname = z;
+      }else if( z[0]=='-' ){
+        utf8_printf(stderr, "unknown option: %s\n", z);
+        utf8_printf(stderr, "options:\n"
+                            "  --noquote\n"
+                            "  --quote\n"
+                            "  --wordwrap on/off\n"
+                            "  --wrap N\n"
+                            "  --ww\n");
+        rc = 1;
+        goto meta_command_exit;
+      }else{
+        utf8_printf(stderr, "extra argument: \"%s\"\n", z);
+        rc = 1;
+        goto meta_command_exit;
+      }
+    }
+    if( zMode==0 ){
+      if( p->mode==MODE_Column
+       || (p->mode>=MODE_Markdown && p->mode<=MODE_Box)
+      ){
+        raw_printf
+          (p->out,
+           "current output mode: %s --wrap %d --wordwrap %s --%squote\n",
+           modeDescr[p->mode], p->cmOpts.iWrap,
+           p->cmOpts.bWordWrap ? "on" : "off",
+           p->cmOpts.bQuote ? "" : "no");
+      }else{
+        raw_printf(p->out, "current output mode: %s\n", modeDescr[p->mode]);
+      }
+      zMode = modeDescr[p->mode];
+    }
+    n2 = strlen30(zMode);
+    if( strncmp(zMode,"lines",n2)==0 ){
       p->mode = MODE_Line;
       sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Row);
-    }else if( c2=='c' && strncmp(azArg[1],"columns",n2)==0 ){
+    }else if( strncmp(zMode,"columns",n2)==0 ){
       p->mode = MODE_Column;
       if( (p->shellFlgs & SHFLG_HeaderSet)==0 ){
         p->showHeader = 1;
       }
       sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Row);
-    }else if( c2=='l' && n2>2 && strncmp(azArg[1],"list",n2)==0 ){
+      p->cmOpts = cmOpts;
+    }else if( strncmp(zMode,"list",n2)==0 ){
       p->mode = MODE_List;
       sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, SEP_Column);
       sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Row);
-    }else if( c2=='h' && strncmp(azArg[1],"html",n2)==0 ){
+    }else if( strncmp(zMode,"html",n2)==0 ){
       p->mode = MODE_Html;
-    }else if( c2=='t' && strncmp(azArg[1],"tcl",n2)==0 ){
+    }else if( strncmp(zMode,"tcl",n2)==0 ){
       p->mode = MODE_Tcl;
       sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, SEP_Space);
       sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Row);
-    }else if( c2=='c' && strncmp(azArg[1],"csv",n2)==0 ){
+    }else if( strncmp(zMode,"csv",n2)==0 ){
       p->mode = MODE_Csv;
       sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, SEP_Comma);
       sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_CrLf);
-    }else if( c2=='t' && strncmp(azArg[1],"tabs",n2)==0 ){
+    }else if( strncmp(zMode,"tabs",n2)==0 ){
       p->mode = MODE_List;
       sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, SEP_Tab);
-    }else if( c2=='i' && strncmp(azArg[1],"insert",n2)==0 ){
+    }else if( strncmp(zMode,"insert",n2)==0 ){
       p->mode = MODE_Insert;
-      set_table_name(p, nArg>=3 ? azArg[2] : "table");
-    }else if( c2=='q' && strncmp(azArg[1],"quote",n2)==0 ){
+      set_table_name(p, zTabname ? zTabname : "table");
+    }else if( strncmp(zMode,"quote",n2)==0 ){
       p->mode = MODE_Quote;
       sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, SEP_Comma);
       sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Row);
-    }else if( c2=='a' && strncmp(azArg[1],"ascii",n2)==0 ){
+    }else if( strncmp(zMode,"ascii",n2)==0 ){
       p->mode = MODE_Ascii;
       sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, SEP_Unit);
       sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Record);
-    }else if( c2=='m' && strncmp(azArg[1],"markdown",n2)==0 ){
+    }else if( strncmp(zMode,"markdown",n2)==0 ){
       p->mode = MODE_Markdown;
-    }else if( c2=='t' && strncmp(azArg[1],"table",n2)==0 ){
+      p->cmOpts = cmOpts;
+    }else if( strncmp(zMode,"table",n2)==0 ){
       p->mode = MODE_Table;
-    }else if( c2=='b' && strncmp(azArg[1],"box",n2)==0 ){
+      p->cmOpts = cmOpts;
+    }else if( strncmp(zMode,"box",n2)==0 ){
       p->mode = MODE_Box;
-    }else if( c2=='c' && strncmp(azArg[1],"count",n2)==0 ){
+      p->cmOpts = cmOpts;
+    }else if( strncmp(zMode,"count",n2)==0 ){
       p->mode = MODE_Count;
-    }else if( c2=='o' && strncmp(azArg[1],"off",n2)==0 ){
+    }else if( strncmp(zMode,"off",n2)==0 ){
       p->mode = MODE_Off;
-    }else if( c2=='j' && strncmp(azArg[1],"json",n2)==0 ){
+    }else if( strncmp(zMode,"json",n2)==0 ){
       p->mode = MODE_Json;
-    }else if( nArg==1 ){
-      raw_printf(p->out, "current output mode: %s\n", modeDescr[p->mode]);
     }else{
       raw_printf(stderr, "Error: mode should be one of: "
          "ascii box column csv html insert json line list markdown "
-         "quote table tabs tcl\n");
+         "qbox quote table tabs tcl\n");
       rc = 1;
     }
     p->cMode = p->mode;
@@ -10104,7 +10371,17 @@ static int do_meta_command(char *zLine, ShellState *p){
     utf8_printf(p->out, "%12.12s: %s\n","explain",
          p->mode==MODE_Explain ? "on" : p->autoExplain ? "auto" : "off");
     utf8_printf(p->out,"%12.12s: %s\n","headers", azBool[p->showHeader!=0]);
-    utf8_printf(p->out, "%12.12s: %s\n","mode", modeDescr[p->mode]);
+    if( p->mode==MODE_Column
+     || (p->mode>=MODE_Markdown && p->mode<=MODE_Box)
+    ){
+      utf8_printf
+        (p->out, "%12.12s: %s --wrap %d --wordwrap %s --%squote\n", "mode",
+         modeDescr[p->mode], p->cmOpts.iWrap,
+         p->cmOpts.bWordWrap ? "on" : "off",
+         p->cmOpts.bQuote ? "" : "no");
+    }else{
+      utf8_printf(p->out, "%12.12s: %s\n","mode", modeDescr[p->mode]);
+    }
     utf8_printf(p->out, "%12.12s: ", "nullvalue");
       output_c_string(p->out, p->nullValue);
       raw_printf(p->out, "\n");
