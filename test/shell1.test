@@ -205,10 +205,10 @@ do_test shell1-2.2.4 {
 } {0 {}}
 do_test shell1-2.2.5 {
   catchcmd "test.db" ".mode \"insert FOO"
-} {1 {Error: mode should be one of: ascii box column csv html insert json line list markdown quote table tabs tcl}}
+} {1 {Error: mode should be one of: ascii box column csv html insert json line list markdown qbox quote table tabs tcl}}
 do_test shell1-2.2.6 {
   catchcmd "test.db" ".mode \'insert FOO"
-} {1 {Error: mode should be one of: ascii box column csv html insert json line list markdown quote table tabs tcl}}
+} {1 {Error: mode should be one of: ascii box column csv html insert json line list markdown qbox quote table tabs tcl}}
 
 # check multiple tokens, and quoted tokens
 do_test shell1-2.3.1 {
@@ -236,7 +236,7 @@ do_test shell1-2.3.7 {
 # check quoted args are unquoted
 do_test shell1-2.4.1 {
   catchcmd "test.db" ".mode FOO"
-} {1 {Error: mode should be one of: ascii box column csv html insert json line list markdown quote table tabs tcl}}
+} {1 {Error: mode should be one of: ascii box column csv html insert json line list markdown qbox quote table tabs tcl}}
 do_test shell1-2.4.2 {
   catchcmd "test.db" ".mode csv"
 } {0 {}}
@@ -437,7 +437,7 @@ do_test shell1-3.13.1 {
 } {0 {current output mode: list}}
 do_test shell1-3.13.2 {
   catchcmd "test.db" ".mode FOO"
-} {1 {Error: mode should be one of: ascii box column csv html insert json line list markdown quote table tabs tcl}}
+} {1 {Error: mode should be one of: ascii box column csv html insert json line list markdown qbox quote table tabs tcl}}
 do_test shell1-3.13.3 {
   catchcmd "test.db" ".mode csv"
 } {0 {}}
@@ -465,17 +465,6 @@ do_test shell1-3.13.10 {
 do_test shell1-3.13.11 {
   # extra arguments ignored
   catchcmd "test.db" ".mode tcl BAD"
-} {0 {}}
-
-# don't allow partial mode type matches
-do_test shell1-3.13.12 {
-  catchcmd "test.db" ".mode l"
-} {1 {Error: mode should be one of: ascii box column csv html insert json line list markdown quote table tabs tcl}}
-do_test shell1-3.13.13 {
-  catchcmd "test.db" ".mode li"
-} {1 {Error: mode should be one of: ascii box column csv html insert json line list markdown quote table tabs tcl}}
-do_test shell1-3.13.14 {
-  catchcmd "test.db" ".mode lin"
 } {0 {}}
 
 # .nullvalue STRING      Print STRING in place of NULL values

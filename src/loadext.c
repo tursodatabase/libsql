@@ -489,6 +489,9 @@ static const sqlite3_api_routines sqlite3Apis = {
   sqlite3_error_offset,
   sqlite3_vtab_rhs_value,
   sqlite3_vtab_distinct,
+  sqlite3_vtab_in,
+  sqlite3_vtab_in_first,
+  sqlite3_vtab_in_next
 };
 
 /* True if x is the directory separator character

@@ -7788,6 +7788,34 @@ case OP_VOpen: {
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
+/* Opcode: VInitIn P1 P2 P3 * *
+** Synopsis: r[P2]=ValueList(P1,P3)
+**
+** Set register P2 to be a pointer to a ValueList object for cursor P1
+** with cache register P3 and output register P3+1.  This ValueList object
+** can be used as the first argument to sqlite3_vtab_in_first() and
+** sqlite3_vtab_in_next() to extract all of the values stored in the P1
+** cursor.  Register P3 is used to hold the values returned by
+** sqlite3_vtab_in_first() and sqlite3_vtab_in_next().
+*/
+case OP_VInitIn: {        /* out2 */
+  VdbeCursor *pC;         /* The cursor containing the RHS values */
+  ValueList *pRhs;        /* New ValueList object to put in reg[P2] */
+
+  pC = p->apCsr[pOp->p1];
+  pRhs = sqlite3_malloc64( sizeof(*pRhs) );
+  if( pRhs==0 ) goto no_mem;
+  pRhs->pCsr = pC->uc.pCursor;
+  pRhs->pOut = &aMem[pOp->p3];
+  pOut = out2Prerelease(p, pOp);
+  pOut->flags = MEM_Null;
+  sqlite3VdbeMemSetPointer(pOut, pRhs, "ValueList", sqlite3_free);
+  break;
+}
+#endif /* SQLITE_OMIT_VIRTUALTABLE */
+
+
+#ifndef SQLITE_OMIT_VIRTUALTABLE
 /* Opcode: VFilter P1 P2 P3 P4 *
 ** Synopsis: iplan=r[P3] zplan='P4'
 **
