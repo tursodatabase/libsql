@@ -697,7 +697,7 @@ static int parseModifier(
       ** SQLite (0..5373484.5) then the result will be NULL.
       */
       if( sqlite3_stricmp(z, "julianday")==0 ){
-        if( idx>1 ) return 1;
+        if( idx>1 ) return 1;  /* IMP: R-31176-64601 */
         if( p->validJD && p->rawS ){
           rc = 0;
           p->rawS = 0;
@@ -728,6 +728,7 @@ static int parseModifier(
       ** seconds since 1970.  Convert to a real julian day number.
       */
       if( sqlite3_stricmp(z, "unixepoch")==0 && p->rawS ){
+        if( idx>1 ) return 1;  /* IMP: R-49255-55373 */
         r = p->s*1000.0 + 210866760000000.0;
         if( r>=0.0 && r<464269060800000.0 ){
           clearYMD_HMS_TZ(p);

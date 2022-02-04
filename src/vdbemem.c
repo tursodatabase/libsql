@@ -1530,11 +1530,7 @@ static int valueFromExpr(
 
   assert( pExpr!=0 );
   while( (op = pExpr->op)==TK_UPLUS || op==TK_SPAN ) pExpr = pExpr->pLeft;
-#if defined(SQLITE_ENABLE_STAT4)
   if( op==TK_REGISTER ) op = pExpr->op2;
-#else
-  if( NEVER(op==TK_REGISTER) ) op = pExpr->op2;
-#endif
 
   /* Compressed expressions only appear when parsing the DEFAULT clause
   ** on a table column definition, and hence only when pCtx==0.  This

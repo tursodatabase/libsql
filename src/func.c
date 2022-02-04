@@ -106,6 +106,7 @@ static void subtypeFunc(
   int argc,
   sqlite3_value **argv
 ){
+  UNUSED_PARAMETER(argc);
   sqlite3_result_int(context, sqlite3_value_subtype(argv[0]));
 }
 
