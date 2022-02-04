@@ -299,7 +299,21 @@ static int tclFilter(
     const char *zVal = (const char*)sqlite3_value_text(argv[ii]);
     Tcl_Obj *pVal;
     if( zVal==0 ){
+      sqlite3_value *pMem;
       pVal = Tcl_NewObj();
+      for(rc=sqlite3_vtab_in_first(argv[ii], &pMem); 
+          rc==SQLITE_OK && pMem;
+          rc=sqlite3_vtab_in_next(argv[ii], &pMem)
+      ){
+        Tcl_Obj *pVal2 = 0;
+        zVal = (const char*)sqlite3_value_text(pMem);
+        if( zVal ){
+          pVal2 = Tcl_NewStringObj(zVal, -1);
+        }else{
+          pVal2 = Tcl_NewObj();
+        }
+        Tcl_ListObjAppendElement(interp, pVal, pVal2);
+      }
     }else{
       pVal = Tcl_NewStringObj(zVal, -1);
     }
@@ -374,20 +388,13 @@ static int tclEof(sqlite3_vtab_cursor *pVtabCursor){
   return (pCsr->pStmt==0);
 }
 
-static int tclBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
-  tcl_vtab *pTab = (tcl_vtab*)tab;
-  Tcl_Interp *interp = pTab->interp;
-  Tcl_Obj *pArg;
-  Tcl_Obj *pScript;
+static void testBestIndexObjConstraints(
+  Tcl_Interp *interp, 
+  sqlite3_index_info *pIdxInfo
+){
   int ii;
-  int rc = SQLITE_OK;
-
-  pScript = Tcl_DuplicateObj(pTab->pCmd);
-  Tcl_IncrRefCount(pScript);
-  Tcl_ListObjAppendElement(interp, pScript, Tcl_NewStringObj("xBestIndex", -1));
-
-  pArg = Tcl_NewObj();
-  Tcl_IncrRefCount(pArg);
+  Tcl_Obj *pRes = Tcl_NewObj();
+  Tcl_IncrRefCount(pRes);
   for(ii=0; ii<pIdxInfo->nConstraint; ii++){
     struct sqlite3_index_constraint const *pCons = &pIdxInfo->aConstraint[ii];
     Tcl_Obj *pElem = Tcl_NewObj();
@@ -424,6 +431,10 @@ static int tclBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
         zOp = "isnull"; break;
       case SQLITE_INDEX_CONSTRAINT_IS:
         zOp = "is"; break;
+      case SQLITE_INDEX_CONSTRAINT_LIMIT:
+        zOp = "limit"; break;
+      case SQLITE_INDEX_CONSTRAINT_OFFSET:
+        zOp = "offset"; break;
     }
 
     Tcl_ListObjAppendElement(0, pElem, Tcl_NewStringObj("op", -1));
@@ -433,15 +444,21 @@ static int tclBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
     Tcl_ListObjAppendElement(0, pElem, Tcl_NewStringObj("usable", -1));
     Tcl_ListObjAppendElement(0, pElem, Tcl_NewIntObj(pCons->usable));
 
-    Tcl_ListObjAppendElement(0, pArg, pElem);
+    Tcl_ListObjAppendElement(0, pRes, pElem);
     Tcl_DecrRefCount(pElem);
   }
 
-  Tcl_ListObjAppendElement(0, pScript, pArg);
-  Tcl_DecrRefCount(pArg);
+  Tcl_SetObjResult(interp, pRes);
+  Tcl_DecrRefCount(pRes);
+}
 
-  pArg = Tcl_NewObj();
-  Tcl_IncrRefCount(pArg);
+static void testBestIndexObjOrderby(
+  Tcl_Interp *interp, 
+  sqlite3_index_info *pIdxInfo
+){
+  int ii;
+  Tcl_Obj *pRes = Tcl_NewObj();
+  Tcl_IncrRefCount(pRes);
   for(ii=0; ii<pIdxInfo->nOrderBy; ii++){
     struct sqlite3_index_orderby const *pOrder = &pIdxInfo->aOrderBy[ii];
     Tcl_Obj *pElem = Tcl_NewObj();
@@ -452,17 +469,150 @@ static int tclBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
     Tcl_ListObjAppendElement(0, pElem, Tcl_NewStringObj("desc", -1));
     Tcl_ListObjAppendElement(0, pElem, Tcl_NewIntObj(pOrder->desc));
 
-    Tcl_ListObjAppendElement(0, pArg, pElem);
+    Tcl_ListObjAppendElement(0, pRes, pElem);
     Tcl_DecrRefCount(pElem);
   }
 
-  Tcl_ListObjAppendElement(0, pScript, pArg);
-  Tcl_DecrRefCount(pArg);
+  Tcl_SetObjResult(interp, pRes);
+  Tcl_DecrRefCount(pRes);
+}
 
-  Tcl_ListObjAppendElement(0, pScript, Tcl_NewWideIntObj(pIdxInfo->colUsed));
+/*
+** Implementation of the handle passed to each xBestIndex callback. This
+** object features the following sub-commands:
+**
+**    $hdl constraints
+**    $hdl orderby
+**    $hdl mask
+**
+**    $hdl distinct
+**      Return the result (an integer) of calling sqlite3_vtab_distinct()
+**      on the index-info structure.
+**
+**    $hdl in IDX BOOLEAN
+**      Wrapper around sqlite3_vtab_in(). Returns an integer.
+**
+**    $hdl rhs_value IDX ?DEFAULT?
+**      Wrapper around sqlite3_vtab_rhs_value().
+*/
+static int SQLITE_TCLAPI testBestIndexObj(
+  ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  const char *azSub[] = {
+    "constraints",                /* 0 */
+    "orderby",                    /* 1 */
+    "mask",                       /* 2 */
+    "distinct",                   /* 3 */
+    "in",                         /* 4 */
+    "rhs_value",                  /* 5 */
+    0
+  };
+  int ii;
+  sqlite3_index_info *pIdxInfo = (sqlite3_index_info*)clientData;
 
+  if( objc<2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "SUB-COMMAND");
+    return TCL_ERROR;
+  }
+  if( Tcl_GetIndexFromObj(interp, objv[1], azSub, "sub-command", 0, &ii) ){
+    return TCL_ERROR;
+  }
+
+  if( ii<4 && objc!=2 ){
+    Tcl_WrongNumArgs(interp, 2, objv, "");
+    return TCL_ERROR;
+  }
+  if( ii==4 && objc!=4 ){
+    Tcl_WrongNumArgs(interp, 2, objv, "INDEX BOOLEAN");
+    return TCL_ERROR;
+  }
+  if( ii==5 && objc!=3 && objc!=4 ){
+    Tcl_WrongNumArgs(interp, 2, objv, "INDEX ?DEFAULT?");
+    return TCL_ERROR;
+  }
+
+  switch( ii ){
+    case 0: assert( sqlite3_stricmp(azSub[ii], "constraints")==0 );
+      testBestIndexObjConstraints(interp, pIdxInfo);
+      break;
+
+    case 1: assert( sqlite3_stricmp(azSub[ii], "orderby")==0 );
+      testBestIndexObjOrderby(interp, pIdxInfo);
+      break;
+
+    case 2: assert( sqlite3_stricmp(azSub[ii], "mask")==0 );
+      Tcl_SetObjResult(interp, Tcl_NewWideIntObj(pIdxInfo->colUsed));
+      break;
+
+    case 3: assert( sqlite3_stricmp(azSub[ii], "distinct")==0 ); {
+      int bDistinct = sqlite3_vtab_distinct(pIdxInfo);
+      Tcl_SetObjResult(interp, Tcl_NewIntObj(bDistinct));
+      break;
+    }
+
+    case 4: assert( sqlite3_stricmp(azSub[ii], "in")==0 ); {
+      int iCons;
+      int bHandle;
+      if( Tcl_GetIntFromObj(interp, objv[2], &iCons) 
+       || Tcl_GetBooleanFromObj(interp, objv[3], &bHandle) 
+      ){
+        return TCL_ERROR;
+      }
+      Tcl_SetObjResult(interp, 
+          Tcl_NewIntObj(sqlite3_vtab_in(pIdxInfo, iCons, bHandle))
+      );
+      break;
+    }
+
+    case 5: assert( sqlite3_stricmp(azSub[ii], "rhs_value")==0 ); {
+      int iCons = 0;
+      int rc;
+      sqlite3_value *pVal = 0;
+      const char *zVal = "";
+      if( Tcl_GetIntFromObj(interp, objv[2], &iCons) ){
+        return TCL_ERROR;
+      }
+      rc = sqlite3_vtab_rhs_value(pIdxInfo, iCons, &pVal);
+      if( rc!=SQLITE_OK && rc!=SQLITE_NOTFOUND ){
+        Tcl_SetResult(interp, (char *)sqlite3ErrName(rc), TCL_VOLATILE);
+        return TCL_ERROR;
+      }
+      if( pVal ){
+        zVal = (const char*)sqlite3_value_text(pVal);
+      }else if( objc==4 ){
+        zVal = Tcl_GetString(objv[3]);
+      }
+      Tcl_SetObjResult(interp, Tcl_NewStringObj(zVal, -1));
+      break;
+    }
+  }
+
+  return TCL_OK;
+}
+
+static int tclBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
+  tcl_vtab *pTab = (tcl_vtab*)tab;
+  Tcl_Interp *interp = pTab->interp;
+  int rc = SQLITE_OK;
+
+  static int iNext = 43;
+  char zHdl[24];
+  Tcl_Obj *pScript;
+
+  pScript = Tcl_DuplicateObj(pTab->pCmd);
+  Tcl_IncrRefCount(pScript);
+  Tcl_ListObjAppendElement(interp, pScript, Tcl_NewStringObj("xBestIndex", -1));
+
+  sqlite3_snprintf(sizeof(zHdl), zHdl, "bestindex%d", iNext++);
+  Tcl_CreateObjCommand(interp, zHdl, testBestIndexObj, pIdxInfo, 0);
+  Tcl_ListObjAppendElement(interp, pScript, Tcl_NewStringObj(zHdl, -1));
   rc = Tcl_EvalObjEx(interp, pScript, TCL_EVAL_GLOBAL);
+  Tcl_DeleteCommand(interp, zHdl);
   Tcl_DecrRefCount(pScript);
+
   if( rc!=TCL_OK ){
     const char *zErr = Tcl_GetStringResult(interp);
     rc = SQLITE_ERROR;
@@ -489,6 +639,7 @@ static int tclBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
       rc = SQLITE_ERROR;
       pTab->base.zErrMsg = sqlite3_mprintf("%s", zErr);
     }else{
+      int ii;
       int iArgv = 1;
       for(ii=0; rc==SQLITE_OK && ii<nElem; ii+=2){
         const char *zCmd = Tcl_GetString(apElem[ii]);

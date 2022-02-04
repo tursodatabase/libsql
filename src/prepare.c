@@ -660,6 +660,7 @@ void sqlite3ParseObjectInit(Parse *pParse, sqlite3 *db){
   pParse->pOuterParse = db->pParse;
   db->pParse = pParse;
   pParse->db = db;
+  if( db->mallocFailed ) sqlite3ErrorMsg(pParse, "out of memory");
 }
 
 /*
@@ -686,7 +687,7 @@ static int sqlite3Prepare(
   sParse.db = db;
   sParse.pReprepare = pReprepare;
   assert( ppStmt && *ppStmt==0 );
-  /* assert( !db->mallocFailed ); // not true with SQLITE_USE_ALLOCA */
+  if( db->mallocFailed ) sqlite3ErrorMsg(&sParse, "out of memory");
   assert( sqlite3_mutex_held(db->mutex) );
 
   /* For a long-term use prepared statement avoid the use of

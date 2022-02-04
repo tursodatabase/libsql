@@ -47,7 +47,10 @@ proc vtab_cmd {tbl cols method args} {
       return "CREATE TABLE $tbl ([join $cols ,])"
     }
     xBestIndex {
-      foreach {clist orderby mask} $args {}
+      set hdl [lindex $args 0]
+      set clist [$hdl constraints]
+      set orderby [$hdl orderby]
+      set mask [$hdl mask]
 
       set cons [list]
       set used [list]

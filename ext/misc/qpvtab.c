@@ -40,13 +40,19 @@
 **
 ** Option 1 is the default behavior.  2 is use if there is a usable
 ** constraint on "flags" with an integer right-hand side that where the
-** value of the right-hand side has its 0x01 bit set.
+** value of the right-hand side has its 0x001 bit set.
 **
 ** All constraints on columns "a" through "e" are marked as "omit".
 **
 ** If there is a usable constraint on "flags" that has a RHS value that
 ** is an integer and that integer has its 0x02 bit set, then the
 ** orderByConsumed flag is set.
+**
+** FLAGS SUMMARY:
+**
+**   0x001               Columns 'a' through 'e' have INT values
+**   0x002               orderByConsumed is set
+**   0x004               OFFSET and LIMIT have omit set
 **
 ** COMPILE:
 **
@@ -103,7 +109,8 @@ static const char *azColname[] = {
   "ux",
   "rhs",
   "a", "b", "c", "d", "e",
-  "flags"
+  "flags",
+  ""
 };
 
 /*
@@ -143,6 +150,7 @@ static int qpvtabConnect(
 #define QPVTAB_D       9
 #define QPVTAB_E      10
 #define QPVTAB_FLAGS  11
+#define QPVTAB_NONE   12
   if( rc==SQLITE_OK ){
     pNew = sqlite3_malloc( sizeof(*pNew) );
     *ppVtab = (sqlite3_vtab*)pNew;
@@ -226,7 +234,7 @@ static int qpvtabColumn(
       sqlite3_result_text64(ctx, z, zEnd-z, SQLITE_TRANSIENT, SQLITE_UTF8);
     }
   }else if( i>=QPVTAB_A && i<=QPVTAB_E ){
-    if( pCur->flags & 1 ){
+    if( pCur->flags & 0x001 ){
       sqlite3_result_int(ctx, i-QPVTAB_A+1);
     }else{
       char x = 'a'+i-QPVTAB_A;
@@ -338,19 +346,25 @@ static int qpvtabBestIndex(
   for(i=0; i<pIdxInfo->nConstraint; i++){
     sqlite3_value *pVal;
     int iCol = pIdxInfo->aConstraint[i].iColumn;
+    int op = pIdxInfo->aConstraint[i].op;
     if( iCol==QPVTAB_FLAGS &&  pIdxInfo->aConstraint[i].usable ){
       pVal = 0;
       rc = sqlite3_vtab_rhs_value(pIdxInfo, i, &pVal);
       assert( rc==SQLITE_OK || pVal==0 );
       if( pVal ){
         pIdxInfo->idxNum = sqlite3_value_int(pVal);
-        if( pIdxInfo->idxNum & 2 ) pIdxInfo->orderByConsumed = 1;
+        if( pIdxInfo->idxNum & 0x002 ) pIdxInfo->orderByConsumed = 1;
       }
+    }
+    if( op==SQLITE_INDEX_CONSTRAINT_LIMIT
+     || op==SQLITE_INDEX_CONSTRAINT_OFFSET
+    ){
+      iCol = QPVTAB_NONE;
     }
     sqlite3_str_appendf(pStr,"aConstraint,%d,%s,%d,%d,",
        i,
        azColname[iCol],
-       pIdxInfo->aConstraint[i].op,
+       op,
        pIdxInfo->aConstraint[i].usable);
     pVal = 0;
     rc = sqlite3_vtab_rhs_value(pIdxInfo, i, &pVal);
@@ -359,9 +373,20 @@ static int qpvtabBestIndex(
       qpvtabStrAppendValue(pStr, pVal);
     }
     sqlite3_str_append(pStr, "\n", 1);
+  }
+  for(i=0; i<pIdxInfo->nConstraint; i++){
+    int iCol = pIdxInfo->aConstraint[i].iColumn;
+    int op = pIdxInfo->aConstraint[i].op;
+    if( op==SQLITE_INDEX_CONSTRAINT_LIMIT
+     || op==SQLITE_INDEX_CONSTRAINT_OFFSET
+    ){
+      iCol = QPVTAB_NONE;
+    }
     if( iCol>=QPVTAB_A && pIdxInfo->aConstraint[i].usable ){
-      pIdxInfo->aConstraintUsage[i].argvIndex = ++k;   
-      pIdxInfo->aConstraintUsage[i].omit = 1;
+      pIdxInfo->aConstraintUsage[i].argvIndex = ++k;
+      if( iCol<=QPVTAB_FLAGS || (pIdxInfo->idxNum & 0x004)!=0 ){
+        pIdxInfo->aConstraintUsage[i].omit = 1;
+      }
     }
   }
   sqlite3_str_appendf(pStr, "nOrderBy,%d,,,,\n", pIdxInfo->nOrderBy);
