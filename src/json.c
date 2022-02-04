@@ -2666,7 +2666,7 @@ int sqlite3JsonTableFunctions(sqlite3 *db){
     { "json_each",            &jsonEachModule               },
     { "json_tree",            &jsonTreeModule               },
   };
-  int i;
+  unsigned int i;
   for(i=0; i<sizeof(aMod)/sizeof(aMod[0]) && rc==SQLITE_OK; i++){
     rc = sqlite3_create_module(db, aMod[i].zName, aMod[i].pModule, 0);
   }
