@@ -1207,6 +1207,7 @@ struct ShellState {
   u8 eTraceType;         /* SHELL_TRACE_* value for type of trace */
   u8 bSafeMode;          /* True to prohibit unsafe operations */
   u8 bSafeModePersist;   /* The long-term value of bSafeMode */
+  u8 bAllowSysDump;      /* Allow .dump use for sqlite_* tables. */
   u8 bExtendedDotCmds;   /* Bits set to enable various shell extensions */
   ColModeOpts cmOpts;    /* Option values affecting columnar mode output */
   unsigned statsOn;      /* True to display memory stats before each finalize */
@@ -1236,7 +1237,7 @@ struct ShellState {
   sqlite3_int64 szMax;   /* --maxsize argument to .open */
   char *zDestTable;      /* Name of destination table when MODE_Insert */
   char *zTempFile;       /* Temporary file that might need deleting */
-  char *zEditor;         /* Name of editor if non-zero, then deletable*/
+  char *zEditor;         /* Name of editor if non-zero, then deletable */
   char zTestcase[30];    /* Name of current test case */
   char colSeparator[20]; /* Column separator character for several modes */
   char rowSeparator[20]; /* Row separator character for MODE_Ascii */
@@ -1245,8 +1246,7 @@ struct ShellState {
   int *colWidth;         /* Requested width of each column in columnar modes */
   int *actualWidth;      /* Actual width of each column */
   int nWidth;            /* Number of slots in colWidth[] and actualWidth[] */
-  char nullValue[20];    /* The text to print when a NULL comes back from
-                         ** the database */
+  char nullValue[20];    /* Text to print for NULL retrieved from database */
   char outfile[FILENAME_MAX]; /* Filename for *out */
   sqlite3_stmt *pStmt;   /* Current statement if any. */
   FILE *pLog;            /* Write log output here */
@@ -3212,6 +3212,16 @@ static ParamTableUse classify_param_name( const char *zName ){
 #define PARAM_TABLE_SCHEMA "temp"
 #define PARAM_TABLE_SNAME PARAM_TABLE_SCHEMA"."PARAM_TABLE_NAME
 
+#ifndef PARAM_STORE_NAME
+/* Name for table keeping user's saved parameters */
+# define PARAM_STORE_NAME "SQLiteShellParameters"
+#endif
+#ifndef PARAM_STORE_SCHEMA
+/* Schema name used to attach saved parameters DB during load/save */
+# define PARAM_STORE_SCHEMA "SQLiteShell"
+#endif
+#define PARAM_STORE_SNAME PARAM_STORE_SCHEMA"."PARAM_STORE_NAME
+
 /* Create the TEMP table used to store parameter bindings and SQL statements */
 static void param_table_init(ShellState *p){
   DbProtectState dps = allow_sys_schema_change(p->db);
@@ -3223,6 +3233,12 @@ static void param_table_init(ShellState *p){
     ") WITHOUT ROWID;",
     0, 0, 0);
   restore_sys_schema_protection( p->db, &dps );
+}
+
+/* Tell whether the above-created table exists, return true iff exists. */
+static int param_table_exists( sqlite3 *db ){
+  return sqlite3_table_column_metadata
+    (db, PARAM_TABLE_SCHEMA, PARAM_TABLE_NAME, 0, 0, 0, 0, 0, 0)==SQLITE_OK;
 }
 
 /*
@@ -3246,12 +3262,7 @@ static void bind_prepared_stmt(ShellState *pArg, sqlite3_stmt *pStmt){
   sqlite3_stmt *pQ = 0;
 
   nVar = sqlite3_bind_parameter_count(pStmt);
-  if( nVar==0 ) return;  /* Nothing to do */
-  if( sqlite3_table_column_metadata(pArg->db, PARAM_TABLE_SCHEMA,
-                                    PARAM_TABLE_NAME,
-                                    "key", 0, 0, 0, 0, 0)!=SQLITE_OK ){
-    return; /* Parameter table does not exist */
-  }
+  if( nVar==0 || !param_table_exists(pArg->db) ) return;  /* Nothing to do */
   rc = sqlite3_prepare_v2(pArg->db,
           "SELECT value FROM "PARAM_TABLE_SNAME
           " WHERE key=?1 AND uses=0", -1, &pQ, 0);
@@ -4237,7 +4248,7 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azNotUsed){
     if( !dataOnly ) raw_printf(p->out, "DELETE FROM sqlite_sequence;\n");
   }else if( sqlite3_strglob("sqlite_stat?", zTable)==0 && !noSys ){
     if( !dataOnly ) raw_printf(p->out, "ANALYZE sqlite_schema;\n");
-  }else if( strncmp(zTable, "sqlite_", 7)==0 ){
+  }else if( p->bAllowSysDump==0 && strncmp(zTable, "sqlite_", 7)==0 ){
     return 0;
   }else if( dataOnly ){
     /* no-op */
@@ -4420,6 +4431,7 @@ static const char *(azHelp[]) = {
   "     --newlines             Allow unescaped newline characters in output",
   "     --nosys                Omit system tables (ex: \"sqlite_stat1\")",
   "     --preserve-rowids      Include ROWID values in the output",
+  "     --schema SCHEMA        Dump table(s) from given SCHEMA",
   "   OBJECTS is a LIKE pattern for tables, indexes, triggers or views to dump",
   "   Additional LIKE patterns can be given in subsequent arguments",
   ".echo on|off             Turn command echo on or off",
@@ -4524,16 +4536,20 @@ static const char *(azHelp[]) = {
   "     -x                    Send output as CSV to a spreadsheet",
   ".parameter CMD ...       Manage SQL parameter bindings",
   "   clear ?NAMES?           Erase some or all parameter bindings",
+#ifndef SQLITE_NOHAVE_SYSTEM
   "   edit NAME               Use edit() to create or alter parameter NAME",
+#endif
   "   init                    Initialize the TEMP table that holds bindings",
   "   list                    List the current parameter bindings",
   "   load FILE ?NAMES?       Load some or all parameter bindings from FILE",
   "   save FILE ?NAMES?       Save some or all parameter bindings into FILE",
-  "   set NAME VALUE          Give SQL parameter NAME a value of VALUE",
-  "                           NAME should start with one of: $ : @ ?, and the",
-  "                           value is space-joined, following argument list",
+  "   set ?TOPT? NAME VALUE   Give SQL parameter NAME a value of VALUE",
+  "      NAME must begin with $,:,@, or ? for bindings, or a letter to be",
+  "      executable; the value is following argument list, space-joined.",
+  "      Option TOPT may be one of {-b -i -n -r -t} to cast effective value",
+  "      to BLOB, INT, NUMERIC, REAL or TEXT respectively.",
   "   unset ?NAMES?           Remove named parameter(s) from the binding table",
-  ".print STRING...         Print literal STRING",
+  ".print STRING...         Print literal STRING, then a newline",
 #ifndef SQLITE_OMIT_PROGRESS_CALLBACK
   ".progress N              Invoke progress handler after every N opcodes",
   "   --limit N                 Interrupt after N progress callbacks",
@@ -4560,6 +4576,7 @@ static const char *(azHelp[]) = {
   "   Options:",
   "      --indent             Try to pretty-print the schema",
   "      --nosys              Omit objects whose names start with \"sqlite_\"",
+#if 0 /* .script is soon to vanish, or be implemented. */
   ".script CMD ...            Manage and use SQL statement store (some TBD)",
   "   clear ?NAMES?           Erase some or all stored SQL statements",
   "   edit NAME               Use edit() to create or alter statement NAME",
@@ -4572,6 +4589,7 @@ static const char *(azHelp[]) = {
   "                           NAME must start with a letter, and effective",
   "                           value is space-joined, following argument list",
   "   unset ?NAMES?           Remove NAMES from statement store",
+#endif
   ".selftest ?OPTIONS?      Run tests defined in the SELFTEST table",
   "    Options:",
   "       --init               Create a new SELFTEST table",
@@ -4644,7 +4662,7 @@ static const char *(azHelp[]) = {
   ".vfsname ?AUX?           Print the name of the VFS stack",
   ".width NUM1 NUM2 ...     Set minimum column widths for columnar output",
   "   Negative values right-justify",
-  ".x NAME ...              Excecute content of some .param set variable(s)",
+  ".x NAMES ...             Excecute content of some .param set variable(s)",
   "   Only variables whose name begins with a letter are eligible for this."
 };
 
@@ -4659,8 +4677,6 @@ static const char *(azHelpUndoc[]) = {
   ".testcase NAME     Begin output redirect to 'testcase-out.txt'",
   ".testctrl CMD ...  Run various sqlite3_test_control() operations",
   "   Run \".testctrl\" with no arguments for details",
-  ".x ?NAMES?               Execute the named stored SQL statements in order",
-  "   This is merely a shorter alias for .script execute ?NAMES?"
 };
 
 /* This literal's value AND address are used for help's workings. */
@@ -8145,7 +8161,8 @@ static int execute_variables(char *azArg[], int nArg, ShellState *p){
         }
       }else{
         utf8_printf(stderr,
-                    "Skipping parameter '%s' (not set.)\n", azArg[ia]);
+                    "Skipping parameter '%s' (not set and executable.)\n",
+                    azArg[ia]);
         ++nErrors;
       }
     }else{
@@ -8172,6 +8189,164 @@ static int param_find_callback(void *pData, int nc, char **pV, char **pC){
   return 0;
 }
 
+static void append_in_clause(sqlite3_str *pStr,
+                             const char **azBeg, const char **azLim);
+static char *find_home_dir(int clearFlag);
+
+/* Create a home-relative pathname from ~ prefixed path.
+ * Return it, or 0 for any error.
+ * Caller must sqlite3_free() it.
+ */
+static char *home_based_path( const char *zPath ){
+  char *zHome = find_home_dir(0);
+  char *zErr = 0;
+  assert( zPath[0]=='~' );
+  if( zHome==0 ){
+    zErr = "Cannot find home directory.";
+  }else if( zPath[0]==0 || (zPath[1]!='/'
+#if defined(_WIN32) || defined(WIN32)
+                            && zPath[1]!='\\'
+#endif
+                            ) ){
+    zErr = "Malformed pathname";
+  }else{
+    return sqlite3_mprintf("%s%s", zHome, zPath+1);
+  }
+  utf8_printf(stderr, "Error: %s\n", zErr);
+  return 0;
+}
+
+/* Transfer selected parameters between two parameter tables, for save/load.
+ * Argument bSaveNotLoad determines transfer direction and other actions.
+ * If it is true, the store DB will be created if not existent, and its
+ * table for keeping parameters will be created. Or failure is returned.
+ * If it is false, the store DB will be opened for read and its presumed
+ * table for keeping parameters will be read. Or failure is returned.
+ *
+ * Arguments azNames and nNames reference the ?NAMES? save/load arguments.
+ * If it is an empty list, all parameters will be saved or loaded.
+ * Otherwise, only the named parameters are transferred, if they exist. 
+ * It is not an error to specify a name that cannot be transferred
+ * because it does not exist in the source table.
+ *
+ * Returns are SQLITE_OK for success, or other codes for failure.
+ */
+static int param_xfr_table(sqlite3 *db, const char *zStoreDbName,
+                           int bSaveNotLoad, const char *azNames[], int nNames){
+  int rc = 0;
+  char *zSql = 0; /* to be sqlite3_free()'ed */
+  sqlite3_str *sbCopy = 0;
+  const char *zHere = PARAM_TABLE_SNAME;
+  const char *zThere = PARAM_STORE_SNAME;
+  const char *zTo = (bSaveNotLoad)? zThere : zHere;
+  const char *zFrom = (bSaveNotLoad)? zHere : zThere;
+  sqlite3 *dbStore = 0;
+  int openFlags = (bSaveNotLoad)
+    ? SQLITE_OPEN_URI|SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE
+    : SQLITE_OPEN_READONLY;
+
+  /* Ensure store DB can be opened and/or created appropriately. */
+  rc = sqlite3_open_v2(zStoreDbName, &dbStore, openFlags, 0);
+  if( rc!=SQLITE_OK ){
+    utf8_printf(stderr, "Error: Cannot %s parameter store DB %s\n",
+                bSaveNotLoad? "open/create" : "read", zStoreDbName);
+    return rc;
+  }
+  /* Ensure it has the parameter store table, or handle its absence. */
+  assert(dbStore!=0);
+  if( sqlite3_table_column_metadata
+      (dbStore, "main", PARAM_STORE_NAME, 0, 0, 0, 0, 0, 0)!=SQLITE_OK ){
+    if( !bSaveNotLoad ){
+      utf8_printf(stderr, "Error: No parameters ever stored in DB %s\n",
+                  zStoreDbName);
+      rc = 1;
+    }else{
+      /* The saved parameters table is not there yet; create it. */
+      const char *zCT =
+        "CREATE TABLE IF NOT EXISTS "PARAM_STORE_NAME"(\n"
+        "  key TEXT PRIMARY KEY,\n"
+        "  value,\n"
+        "  uses INT\n"
+        ") WITHOUT ROWID;";
+      rc = sqlite3_exec(dbStore, zCT, 0, 0, 0);
+      if( rc!=SQLITE_OK ){
+        utf8_printf(stderr, "Cannot create table %s. Nothing saved.", zThere);
+      }
+    }
+  }
+  sqlite3_close(dbStore);
+  if( rc!=0 ) return rc;
+
+  zSql = sqlite3_mprintf("ATTACH %Q AS %s;", zStoreDbName, PARAM_STORE_SCHEMA);
+  shell_check_oom(zSql);
+  rc = sqlite3_exec(db, zSql, 0, 0, 0);
+  sqlite3_free(zSql);
+  if( rc!=SQLITE_OK ) return rc;
+
+  sbCopy = sqlite3_str_new(db);
+  sqlite3_str_appendf
+      (sbCopy, "INSERT OR REPLACE INTO %s(key,value,uses)"
+       "SELECT key, value, uses FROM %s WHERE key ", zTo, zFrom);
+  append_in_clause(sbCopy, azNames, azNames+nNames);
+  zSql = sqlite3_str_finish(sbCopy);
+  shell_check_oom(zSql);
+  rc = sqlite3_exec(db, zSql, 0, 0, 0);
+  sqlite3_free(zSql);
+
+  sqlite3_exec(db, "DETACH "PARAM_STORE_SCHEMA";", 0, 0, 0);
+  return rc;
+}
+
+/* Default location of parameters store DB for .parameters save/load. */
+static const char *zDefaultParamStore = "~/sqlite_params.sdb";
+
+/* Possibly generate a derived path from input spec, with defaulting
+ * and conversion of leading (or only) tilde as home directory.
+ * The above-set default is used for zSpec NULL, "" or "~".
+ * When return is 0, there is an error; what needs doing cannnot be done.
+ * If the return is exactly the input, it must not be sqlite3_free()'ed.
+ * If the return differs from the input, it must be sqlite3_free()'ed.
+ */
+static const char *params_store_path(const char *zSpec){
+  if( zSpec==0 || zSpec[0]==0 || strcmp(zSpec,"~")==0 ){
+    return home_based_path(zDefaultParamStore);
+  }else if ( zSpec[0]=='~' ){
+    return home_based_path(zSpec);
+  }
+  return zSpec;
+}
+
+/* Load some or all parameters. Arguments are "load FILE ?NAMES?". */
+static int parameters_load(sqlite3 *db, const char *azArg[], int nArg){
+  const char *zStore = params_store_path((nArg>1)? azArg[1] : 0);
+  if( zStore==0 ){
+    utf8_printf(stderr, "Cannot form parameter load path. Nothing loaded.\n");
+    return 1;
+  }else{
+    const char **pzFirst = (nArg>2)? azArg+2 : 0;
+    int nNames = (nArg>2)? nArg-2 : 0;
+    int rc = param_xfr_table(db, zStore, 0, pzFirst, nNames);
+    if( nArg>1 && zStore!=azArg[1] ) sqlite3_free((void*)zStore);
+    return rc;
+  }
+}
+
+/* Save some or all parameters. Arguments are "save FILE ?NAMES?". */
+static int parameters_save(sqlite3 *db, const char *azArg[], int nArg){
+  const char *zStore = params_store_path((nArg>1)? azArg[1] : 0);
+  if( zStore==0 ){
+    utf8_printf(stderr, "Cannot form parameter save path. Nothing saved.\n");
+    return 1;
+  }else{
+    const char **pzFirst = (nArg>2)? azArg+2 : 0;
+    int nNames = (nArg>2)? nArg-2 : 0;
+    int rc = param_xfr_table(db, zStore, 1, pzFirst, nNames);
+    if( nArg>1 && zStore!=azArg[1] ) sqlite3_free((void*)zStore);
+    return rc;
+  }
+}
+
+#ifndef SQLITE_NOHAVE_SYSTEM
 /*
  * Edit one named parameter in the parameters table. If it does not
  * yet exist, create it. If eval is true, the value is treated as a
@@ -8180,7 +8355,7 @@ static int param_find_callback(void *pData, int nc, char **pV, char **pC){
  * to partition the key namespace. (This is not done now.)
  */
 static int edit_one_param(sqlite3 *db, char *name, int eval,
-                          int uses, const char * zEditor){
+                          ParamTableUse uses, const char * zEditor){
   struct param_row paramVU = {0,0,0};
   char * zSql = sqlite3_mprintf
     ("SELECT value, uses FROM " PARAM_TABLE_SNAME " WHERE key=%Q", name);
@@ -8211,14 +8386,161 @@ static int edit_one_param(sqlite3 *db, char *name, int eval,
   sqlite3_free(zSql);
   return 0; /* ToDo: add some error checks */
 }
+#endif
 
-static void append_in_clause(sqlite3_str *pStr, char **azBeg, char **azLim){
-  /* An empty IN list is the same as always true (for non-NULL LHS)
-   * for this clause, which assumes a trailing LHS operand and space.
-   * If that is not the right result, guard the call against it.
-   * This is used for .parameter and .script ?NAMES? options,
-   * where a missing list means all the qualifying entries.
-   */
+/* Space-join values in an argument list. *valLim is not included. */
+char *values_join( char **valBeg, char **valLim ){
+  char *z = 0;
+  const char *zSep = 0;
+  while( valBeg < valLim ){
+    z = sqlite3_mprintf("%z%s%s", z, zSep, *valBeg);
+    zSep = " ";
+    ++valBeg;
+  }
+  return z;
+}
+
+/* Get a named parameter value in form of stepped prepared statement,
+ * ready to have its value taken from the 0th column. If the name
+ * cannot be found for the given ParamTableUse, 0 is returned.
+ * The caller is responsible for calling sqlite3_finalize(pStmt),
+ * where pStmt is the return from this function.
+ */
+static sqlite3_stmt *get_param_value(sqlite3 *db, char *name,
+                                     ParamTableUse ptu){
+  sqlite3_stmt *rv = 0;
+  int rc;
+  char *zSql = sqlite3_mprintf
+    ( "SELECT value FROM "PARAM_TABLE_SNAME
+      " WHERE key=%Q AND uses=%d", name, ptu );
+  shell_check_oom(zSql);
+  rc = sqlite3_prepare_v2(db, zSql, -1, &rv, 0);
+  sqlite3_free(zSql);
+  if( SQLITE_OK==rc ){
+    if( SQLITE_ROW==sqlite3_step(rv) ) return rv;
+    sqlite3_finalize(rv);
+  }
+  return 0;
+}
+
+static struct ParamSetOpts {
+  const char cCast;
+  const char *zTypename;
+  int evalKind;
+} param_set_opts[] = {
+  /* { 'q', 0, 2 }, */
+  /* { 'x', 0, 1 }, */
+  { 'i', "INT", 1 },
+  { 'r', "REAL", 1 },
+  { 'b', "BLOB", 1 },
+  { 't', "TEXT", 0 },
+  { 'n', "NUMERIC", 1 }
+};
+
+/* Return an option character if it is single and prefixed by - or --,
+ * else return 0.
+ */
+static char option_char(char *zArg){
+  if( zArg[0]=='-' ){
+    ++zArg;
+    if( zArg[0]=='-' ) ++zArg;
+    if( zArg[0]!=0 && zArg[1]==0 ) return zArg[0];
+  }
+  return 0;
+}
+
+static int param_set(sqlite3 *db, char cCast,
+                     char *name, char **valBeg, char **valLim,
+                     ParamTableUse ptu){
+  char *zSql = 0;
+  int rc = SQLITE_OK, retries = 0, needsEval = 1;
+  char *zValGlom = (valLim-valBeg>1)? values_join(valBeg, valLim) : 0;
+  sqlite3_stmt *pStmtSet = 0;
+  const char *zCastTo = 0;
+  char *zValue = (zValGlom==0)? *valBeg : zValGlom;
+  if( cCast ){
+    struct ParamSetOpts *pSO = param_set_opts;
+    for(; param_set_opts-pSO < ArraySize(param_set_opts); ++pSO ){
+      if( cCast==pSO->cCast ){
+        zCastTo = pSO->zTypename;
+        needsEval = pSO->evalKind > 0;
+        break;
+      }
+    }
+  }
+  if( needsEval ){
+    if( zCastTo!=0 ){
+      zSql = sqlite3_mprintf
+        ( "REPLACE INTO "PARAM_TABLE_SNAME"(key,value,uses)"
+          " VALUES(%Q,CAST((%s) AS %s),%d);", name, zValue, zCastTo, ptu );
+    }else{
+      zSql = sqlite3_mprintf
+        ( "REPLACE INTO "PARAM_TABLE_SNAME"(key,value,uses)"
+          "VALUES(%Q,(%s),%d);", name, zValue, ptu );
+    }
+    shell_check_oom(zSql);
+    rc = sqlite3_prepare_v2(db, zSql, -1, &pStmtSet, 0);
+    sqlite3_free(zSql);
+  }
+  if( !needsEval || rc!=SQLITE_OK ){
+    /* Reach here when value either requested to be cast to text, or must be. */
+    sqlite3_finalize(pStmtSet);
+    pStmtSet = 0;
+    zSql = sqlite3_mprintf
+      ( "REPLACE INTO "PARAM_TABLE_SNAME"(key,value,uses)"
+        "VALUES(%Q,%Q,%d);", name, zValue, ptu );
+    shell_check_oom(zSql);
+    rc = sqlite3_prepare_v2(db, zSql, -1, &pStmtSet, 0);
+    assert(rc==SQLITE_OK);
+    sqlite3_free(zSql);
+  }
+  sqlite3_step(pStmtSet);
+  sqlite3_finalize(pStmtSet);
+  sqlite3_free(zValGlom);
+  return rc;
+}
+
+/* list subcommand for .parameter dot-command */
+static void list_params(ShellState *p, ParamTableUse ptu){
+  sqlite3_stmt *pStmt = 0;
+  int len = 0;
+  int rc = sqlite3_prepare_v2
+    (p->db, "SELECT max(length(key)) FROM "
+     PARAM_TABLE_SNAME" WHERE ?1=3 OR uses=?1", -1, &pStmt, 0);
+  if( rc==SQLITE_OK ){
+    sqlite3_bind_int(pStmt, 1, ptu);
+    if( sqlite3_step(pStmt)==SQLITE_ROW ){
+      len = sqlite3_column_int(pStmt, 0);
+      if( len>40 ) len = 40;
+    }
+  }
+  sqlite3_finalize(pStmt);
+  pStmt = 0;
+  if( len ){
+    rc = sqlite3_prepare_v2
+      (p->db, "SELECT key, quote(value) FROM "
+       PARAM_TABLE_SNAME" WHERE ?1=3 OR uses=?1", -1, &pStmt, 0);
+    sqlite3_bind_int(pStmt, 1, ptu);
+    while( rc==SQLITE_OK && sqlite3_step(pStmt)==SQLITE_ROW ){
+      utf8_printf(p->out, "%-*s %s\n", len, sqlite3_column_text(pStmt,0),
+                  sqlite3_column_text(pStmt,1));
+    }
+    sqlite3_finalize(pStmt);
+  }
+}  
+
+/* Append either an IN clause or an always true test to some SQL.
+ *
+ * An empty IN list is the same as always true (for non-NULL LHS)
+ * for this clause, which assumes a trailing LHS operand and space.
+ * If that is not the right result, guard the call against it.
+ * This is used for ".parameter dostuff ?NAMES?" options,
+ * where a missing list means all the qualifying entries.
+ *
+ * The empty list may be signified by azBeg and azLim both 0.
+ */
+static void append_in_clause(sqlite3_str *pStr,
+                             const char **azBeg, const char **azLim){
   if( azBeg==azLim ) sqlite3_str_appendf(pStr, "NOT NULL");
   else{
     char cSep = '(';
@@ -8612,6 +8934,7 @@ static int do_meta_command(char *zLine, ShellState *p){
 
   if( c=='d' && strncmp(azArg[0], "dump", n)==0 ){
     char *zLike = 0;
+    char *zSchema = "main";
     char *zSql;
     int i;
     int savedShowHeader = p->showHeader;
@@ -8642,6 +8965,8 @@ static int do_meta_command(char *zLine, ShellState *p){
         }else
         if( strcmp(z,"nosys")==0 ){
           ShellSetFlag(p, SHFLG_DumpNoSys);
+        }else if( strcmp(z,"schema")==0 && ++i<nArg ){
+          zSchema = azArg[i];
         }else
         {
           raw_printf(stderr, "Unknown option \"%s\" on \".dump\"\n", azArg[i]);
@@ -8657,11 +8982,11 @@ static int do_meta_command(char *zLine, ShellState *p){
         */
         char *zExpr = sqlite3_mprintf(
             "name LIKE %Q ESCAPE '\\' OR EXISTS ("
-            "  SELECT 1 FROM sqlite_schema WHERE "
+            "  SELECT 1 FROM %w.sqlite_schema WHERE "
             "    name LIKE %Q ESCAPE '\\' AND"
             "    sql LIKE 'CREATE VIRTUAL TABLE%%' AND"
             "    substr(o.name, 1, length(name)+1) == (name||'_')"
-            ")", azArg[i], azArg[i]
+            ")", azArg[i], zSchema, azArg[i]
         );
       
         if( zLike ){
@@ -8690,20 +9015,20 @@ static int do_meta_command(char *zLine, ShellState *p){
     p->nErr = 0;
     if( zLike==0 ) zLike = sqlite3_mprintf("true");
     zSql = sqlite3_mprintf(
-      "SELECT name, type, sql FROM sqlite_schema AS o "
+      "SELECT name, type, sql FROM %w.sqlite_schema AS o "
       "WHERE (%s) AND type=='table'"
       "  AND sql NOT NULL"
       " ORDER BY tbl_name='sqlite_sequence', rowid",
-      zLike
+      zSchema, zLike
     );
     run_schema_dump_query(p,zSql);
     sqlite3_free(zSql);
     if( (p->shellFlgs & SHFLG_DumpDataOnly)==0 ){
       zSql = sqlite3_mprintf(
-        "SELECT sql FROM sqlite_schema AS o "
+        "SELECT sql FROM %w.sqlite_schema AS o "
         "WHERE (%s) AND sql NOT NULL"
         "  AND type IN ('index','trigger','view')",
-        zLike
+        zSchema, zLike
       );
       run_table_dump_query(p, zSql);
       sqlite3_free(zSql);
@@ -9888,31 +10213,39 @@ static int do_meta_command(char *zLine, ShellState *p){
     open_db(p,0);
     if( nArg<=1 ) goto parameter_syntax_error;
 
-    /* .parameter clear ?NAMES?
+    /* .parameter clear  and  .parameter unset ?NAMES?
     **  Delete some or all bind parameters from the TEMP table that holds them.
+    **  Without any arguments, clear deletes them all and unset does nothing.
     */
-    if( nArg>=2 && strcmp(azArg[1],"clear")==0
-        &&
-        sqlite3_table_column_metadata
-        (p->db, PARAM_TABLE_SCHEMA, PARAM_TABLE_NAME,
-         0, 0, 0, 0, 0, 0)==SQLITE_OK ){
-      sqlite3_str *sbDML = sqlite3_str_new(p->db);
-      char *zSql;
-      sqlite3_str_appendf
-        (sbDML, "DELETE FROM "PARAM_TABLE_SNAME" WHERE uses=0 AND key ");
-      append_in_clause(sbDML, &azArg[2], &azArg[nArg]);
-      zSql = sqlite3_str_finish(sbDML);
-      shell_check_oom(zSql);
-      sqlite3_exec(p->db, zSql, 0, 0, 0);
-      sqlite3_free(zSql);
+    if( strcmp(azArg[1],"clear")==0 || strcmp(azArg[1],"unset")==0 ){
+      if( param_table_exists(p->db) && (nArg>2 || azArg[1][0]=='c') ){
+        sqlite3_str *sbZap = sqlite3_str_new(p->db);
+        char *zSql;
+        sqlite3_str_appendf
+          (sbZap, "DELETE FROM "PARAM_TABLE_SNAME" WHERE key ");
+        append_in_clause(sbZap,
+                         (const char **)&azArg[2], (const char **)&azArg[nArg]);
+        zSql = sqlite3_str_finish(sbZap);
+        shell_check_oom(zSql);
+        sqlite3_exec(p->db, zSql, 0, 0, 0);
+        sqlite3_free(zSql);
+      }
     }else
 
+#ifndef SQLITE_NOHAVE_SYSTEM
     /* .parameter edit ?NAMES?
-    ** Edit the named bind parameters. Any that do not exist are created.
+    ** Edit the named parameters. Any that do not exist are created.
+    ** New ones get a uses tag auto-selected by their leading char.
     */
-    if( nArg>=2 && strcmp(azArg[1],"edit")==0 ){
+    if( strcmp(azArg[1],"edit")==0 ){
       int ia = 2;
       int eval = 0;
+      if( !INSOURCE_IS_INTERACTIVE(p->pInSource) ){
+        utf8_printf(stderr, "Error: "
+                    ".parameter edit can only be used interactively.\n");
+        rc = 1;
+        goto meta_command_exit;
+      }
       param_table_init(p);
       if( p->zEditor==0 ){
         const char *zE = getenv("VISUAL");
@@ -9940,7 +10273,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         rc = 1;
         goto meta_command_exit;
       }
-      /* ToDo: Allow an option whereby new value can be evaluated
+      /* Future: Allow an option whereby new value can be evaluated
        * the way that .parameter set ... does.
        */
       while( ia < nArg ){
@@ -9959,42 +10292,18 @@ static int do_meta_command(char *zLine, ShellState *p){
           }
         }
         ptu = classify_param_name(azArg[ia]);
+        if( ptu==PTU_Nil ){
+          utf8_printf(stderr, "Error: %s cannot be a binding or executable"
+                      " parameter name.\n", azArg[ia]);
+          rc = 1;
+          goto meta_command_exit;
+        }
         rc = edit_one_param(p->db, azArg[ia], eval, ptu, p->zEditor);
         ++ia;
         if( rc!=0 ) goto meta_command_exit;
       }
     }else
-
-    /* .parameter list
-    ** List all bind parameters.
-    */
-    if( nArg==2 && strcmp(azArg[1],"list")==0 ){
-      sqlite3_stmt *pStmt = 0;
-      int rx;
-      int len = 0;
-      rx = sqlite3_prepare_v2(p->db,
-             "SELECT max(length(key)) "
-             "FROM "PARAM_TABLE_SNAME, -1, &pStmt, 0);
-      if( rx==SQLITE_OK && sqlite3_step(pStmt)==SQLITE_ROW ){
-        len = sqlite3_column_int(pStmt, 0);
-        if( len>40 ) len = 40;
-      }
-      sqlite3_finalize(pStmt);
-      pStmt = 0;
-      if( len ){
-        rx = sqlite3_prepare_v2(p->db,
-             "SELECT key, quote(value), uses "
-             "FROM "PARAM_TABLE_SNAME, -1, &pStmt, 0);
-        while( rx==SQLITE_OK && sqlite3_step(pStmt)==SQLITE_ROW ){
-          utf8_printf(p->out, "%-*s %s %d\n", len,
-                      sqlite3_column_text(pStmt,0),
-                      sqlite3_column_text(pStmt,1),
-                      sqlite3_column_int(pStmt,2));
-        }
-        sqlite3_finalize(pStmt);
-      }
-    }else
-
+#endif
     /* .parameter init
     ** Make sure the TEMP table used to hold bind parameters exists.
     ** Create it if necessary.
@@ -10003,58 +10312,54 @@ static int do_meta_command(char *zLine, ShellState *p){
       param_table_init(p);
     }else
 
+    /* .parameter list
+    ** List all bind parameters.
+    */
+    if( nArg==2 && strcmp(azArg[1],"list")==0 ){
+      /* Future: Allow selection of categories. */
+      list_params(p, PTU_Nil);
+    }else
+
+    /* .parameter load
+    ** Load all or named parameters from specified or default (DB) file.
+    */
+    if( strcmp(azArg[1],"load")==0 ){
+      param_table_init(p);
+      rc = parameters_load(p->db, (const char **)azArg+1, nArg-1);
+    }else
+
+    /* .parameter save
+    ** Save all or named parameters into specified or default (DB) file.
+    */
+    if( strcmp(azArg[1],"save")==0 ){
+      rc = parameters_save(p->db, (const char **)azArg+1, nArg-1);
+    }else
+
     /* .parameter set NAME VALUE
     ** Set or reset a bind parameter.  NAME should be the full parameter
     ** name exactly as it appears in the query.  (ex: $abc, @def).  The
     ** VALUE can be in either SQL literal notation, or if not it will be
     ** understood to be a text string.
     */
-    if( nArg==4 && strcmp(azArg[1],"set")==0 ){
-      int rx;
-      char *zSql;
-      sqlite3_stmt *pStmt;
-      const char *zKey = azArg[2];
-      const char *zValue = azArg[3];
-      u8 ptu = isalpha(*zKey)? PTU_Script : PTU_Binding;
-      param_table_init(p);
-      zSql = sqlite3_mprintf(
-                  "REPLACE INTO "PARAM_TABLE_SNAME"(key,value,uses)"
-                  "VALUES(%Q,%s,%d);", zKey, zValue, ptu);
-      shell_check_oom(zSql);
-      pStmt = 0;
-      rx = sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
-      sqlite3_free(zSql);
-      if( rx!=SQLITE_OK ){
-        sqlite3_finalize(pStmt);
-        pStmt = 0;
-        zSql = sqlite3_mprintf(
-                   "REPLACE INTO "PARAM_TABLE_SNAME"(key,value,uses)"
-                   "VALUES(%Q,%Q,%d);", zKey, zValue, ptu);
-        shell_check_oom(zSql);
-        rx = sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
-        sqlite3_free(zSql);
-        if( rx!=SQLITE_OK ){
+    if( nArg>=4 && strcmp(azArg[1],"set")==0 ){
+      char cCast = option_char(azArg[2]);
+      int inv = 2 + (cCast != 0);
+      ParamTableUse ptu = classify_param_name(azArg[inv]);
+      if( ptu==PTU_Nil ){
+        utf8_printf(stderr,
+                    "Error: %s is not a usable parameter name.\n", azArg[inv]);
+        rc = 1;
+      }else{
+        param_table_init(p);
+        rc = param_set(p->db, cCast, azArg[inv],
+                       &azArg[inv+1], &azArg[nArg], ptu); 
+        if( rc!=SQLITE_OK ){
           utf8_printf(p->out, "Error: %s\n", sqlite3_errmsg(p->db));
-          sqlite3_finalize(pStmt);
-          pStmt = 0;
           rc = 1;
         }
       }
-      sqlite3_step(pStmt);
-      sqlite3_finalize(pStmt);
     }else
 
-    /* .parameter unset NAME
-    ** Remove the NAME binding from the parameter binding table, if it
-    ** exists.
-    */
-    if( nArg==3 && strcmp(azArg[1],"unset")==0 ){
-      char *zSql = sqlite3_mprintf(
-          "DELETE FROM "PARAM_TABLE_SNAME" WHERE key=%Q", azArg[2]);
-      shell_check_oom(zSql);
-      sqlite3_exec(p->db, zSql, 0, 0, 0);
-      sqlite3_free(zSql);
-    }else
     /* If no command name matches, show a syntax error */
     parameter_syntax_error:
     showHelp(p->out, "parameter");

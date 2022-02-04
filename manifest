@@ -1,5 +1,5 @@
-C Fix\s.param\sedit\sunable\sto\sedit\sscript\svars\s(bad\sassert)
-D 2022-02-04T09:39:30.490
+C CLI\s.param\ssave/load\sdone;\smany\sother\ssmall\srefinements
+D 2022-02-04T21:49:47.692
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -553,7 +553,7 @@ F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c 0dd8e23fda88411d63b2e6650f2380fdb08e88112e9a095fc23d5a08de4b2641
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c a6d2d4bed279d7fe4fcedaf297eaf6441e8e17c6e3947a32d24d23be52ac02f2
-F src/shell.c.in e41dd781a9d11a200d3deb77d0af7983898ad41a49aa0e6d9d183d3559a8d7c4
+F src/shell.c.in 0f82e96ec4b2c5701c581114a6cb9987983cb5fbc5b60d3fe34123ccaa453c9f x
 F src/sqlite.h.in d4daed3b2deb2e43df7f12be119b1b17a2954feadc33d521565bacbd072bfcb6
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h a95cb9ed106e3d39e2118e4dcc15a14faec3fa50d0093425083d340d9dfd96e6
@@ -1943,8 +1943,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 79275b81dcd0c7d18b83614f42a0878fb30d93408e599574b61510fc8afa8c80
-R dab9597db7d14def1c5128b9e3768e23
+P 62d212d0da93102dd3b7dc4368a0c8acf2469a7f8ef8fcf60e57e69fe028600e
+R b76f1d9304bd6e797f5b019c4f944ad0
 U larrybr
-Z 4f2eaf0d0483689e49386676cb02b212
+Z 4329007f8b9bbf62cbca025566949b18
 # Remove this line to create a well-formed Fossil manifest.
