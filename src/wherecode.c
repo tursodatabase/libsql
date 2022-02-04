@@ -2317,7 +2317,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     iRetInit = sqlite3VdbeAddOp2(v, OP_Integer, 0, regReturn);
 
     /* If the original WHERE clause is z of the form:  (x1 OR x2 OR ...) AND y
-    ** Then for every term xN, evaluate as the subexpression: xN AND z
+    ** Then for every term xN, evaluate as the subexpression: xN AND y
     ** That way, terms in y that are factored into the disjunction will
     ** be picked up by the recursive calls to sqlite3WhereBegin() below.
     **
@@ -2329,6 +2329,12 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     ** This optimization also only applies if the (x1 OR x2 OR ...) term
     ** is not contained in the ON clause of a LEFT JOIN.
     ** See ticket http://www.sqlite.org/src/info/f2369304e4
+    **
+    ** 2022-02-04:  Do not push down slices of a row-value comparison.
+    ** In other words, "w" or "y" may not be a slice of a vector.  Otherwise,
+    ** the initialization of the right-hand operand of the vector comparison
+    ** might not occur, or might occur only in an OR branch that is not
+    ** taken.  dbsqlfuzz 80a9fade844b4fb43564efc972bcb2c68270f5d1.
     */
     if( pWC->nTerm>1 ){
       int iTerm;
@@ -2337,7 +2343,10 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         if( &pWC->a[iTerm] == pTerm ) continue;
         testcase( pWC->a[iTerm].wtFlags & TERM_VIRTUAL );
         testcase( pWC->a[iTerm].wtFlags & TERM_CODED );
-        if( (pWC->a[iTerm].wtFlags & (TERM_VIRTUAL|TERM_CODED))!=0 ) continue;
+        testcase( pWC->a[iTerm].wtFlags & TERM_SLICE );
+        if( (pWC->a[iTerm].wtFlags & (TERM_VIRTUAL|TERM_CODED|TERM_SLICE))!=0 ){
+          continue;
+        }
         if( (pWC->a[iTerm].eOperator & WO_ALL)==0 ) continue;
         testcase( pWC->a[iTerm].wtFlags & TERM_ORINFO );
         pExpr = sqlite3ExprDup(db, pExpr, 0);

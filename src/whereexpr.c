@@ -1399,7 +1399,7 @@ static void exprAnalyze(
 
       pNew = sqlite3PExpr(pParse, pExpr->op, pLeft, pRight);
       transferJoinMarkings(pNew, pExpr);
-      idxNew = whereClauseInsert(pWC, pNew, TERM_DYNAMIC);
+      idxNew = whereClauseInsert(pWC, pNew, TERM_DYNAMIC|TERM_SLICE);
       exprAnalyze(pSrc, pWC, idxNew);
     }
     pTerm = &pWC->a[idxTerm];

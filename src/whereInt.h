@@ -285,6 +285,7 @@ struct WhereTerm {
 #else
 #  define TERM_HIGHTRUTH  0      /* Only used with STAT4 */
 #endif
+#define TERM_SLICE      0x8000 /* One slice of a row-value/vector comparison */
 
 /*
 ** An instance of the WhereScan object is used as an iterator for locating

@@ -1,5 +1,5 @@
-C Minor\stypo\sfix\sin\scomment.\sNo\scode\schanges.
-D 2022-02-03T18:14:22.642
+C For\sthe\sMULTI-INDEX-OR\soptimization,\swhen\spushing\sdown\sWHERE\sclause\sterms\sfrom\nthe\smain\squery\sinto\sthe\svarious\sOR-term\ssubqueries,\sdo\snot\spush\sdown\sslices\nof\sa\svector\scomparison,\ssince\sthe\sright-hand\soperand\sof\sthe\scomparison\smight\nhave\sonly\sbeen\sinitialized\sin\sa\sdifferent\sOR\sbranch\sthat\swas\snot\staken.\ndbsqlfuzz\s80a9fade844b4fb43564efc972bcb2c68270f5d1.
+D 2022-02-04T13:05:29.719
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -640,9 +640,9 @@ F src/wal.c b9df133a705093da8977da5eb202eaadb844839f1c7297c08d33471f5491843d
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
 F src/where.c 31bc1f43b0bf679e93c3e7a7d67cbcaddc7ae746694b149b282427d337b06caa
-F src/whereInt.h 1d821657238a0bd12b3c8f2926c7f8f9294bc5efe20af53c7c50d53a0a026cb9
-F src/wherecode.c 5879604677f0bdfb8d95ff616d834daecc12256346b7d9ad96a7e84a1cb08fdc
-F src/whereexpr.c fa8017f9fed4b50c59b4f105139679dd59ed7fea43179ebb0f6b8b5796a30515
+F src/whereInt.h 099c7fa273f34afa5adc7f25dcacc48df70392ce224089b641b1c9c5b01d5598
+F src/wherecode.c 4a0dd0403e1c9b628a420eefbe1d60da0003356de6ee18e6707480c9b995bae7
+F src/whereexpr.c 2da56404a024dc8dc41a31d8b498eed2c7c6b0bb412150d88cb3327516aa3b9f
 F src/window.c dfaec4abc6012cbc18e4a202ca3a5d5a0efcc4011d86a06d882ddaab8aedee4d
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test ce1aafc86e110685b324e9a763eab4f2a73f737842ec3b687bd965867de90627
@@ -1324,7 +1324,7 @@ F test/round1.test 768018b04522ca420b1aba8a24bd76091d269f3bce3902af3ec6ebcee41ab
 F test/rowallock.test 3f88ec6819489d0b2341c7a7528ae17c053ab7cc
 F test/rowhash.test 0bc1d31415e4575d10cacf31e1a66b5cc0f8be81
 F test/rowid.test e29025be95baf6b32f0d5edef59a7633028325896a98f1caa8019559ca910350
-F test/rowvalue.test 02214016f747854ef636e64ff204778649937aa801ca78e2495a960f8e0d509d
+F test/rowvalue.test 228b312f8526ed000ecda559a6a9adf30aa2d79dcb12afa5c04eebaafcf55eae
 F test/rowvalue2.test 060d238b7e5639a7c5630cb5e63e311b44efef2b
 F test/rowvalue3.test 3068f508753af69884b12125995f023da0dbb256
 F test/rowvalue4.test 441e7e366ac6d939a3a95a574031c56ec2a854077a91d66eee5ff1d86cb5be58
@@ -1943,8 +1943,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e35ab16dd0fd40b07a71d26e1cdb19ef664a2a628a4abcb2e130f5e555de8ca9
-R 20ef9d61f41a89bdff8a0b9888d3988c
+P f9b763042c5c4446115c5375a8e4731e522e36ad9fc53e9ef775de9bc297ea19
+R 928b302c497557d2f34fa5bbc849c67c
 U drh
-Z bc10ba616693d19ec8e6518f2199687e
+Z 80d96bf6fd3b06fc995fb22f494a3906
 # Remove this line to create a well-formed Fossil manifest.
