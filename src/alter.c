@@ -1796,7 +1796,9 @@ static void renameTableFunc(
       rc = renameEditSql(context, &sCtx, zInput, zNew, bQuote);
     }
     if( rc!=SQLITE_OK ){
-      if( sParse.zErrMsg ){
+      if( sqlite3WritableSchema(db) ){
+        sqlite3_result_value(context, argv[3]);
+      }else if( sParse.zErrMsg ){
         renameColumnParseError(context, "", argv[1], argv[2], &sParse);
       }else{
         sqlite3_result_error_code(context, rc);
