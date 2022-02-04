@@ -1,5 +1,5 @@
-C One\smore\scase\sof\sdisabling\serrors\sfor\sALTER\sTABLE\sRENAME\swhen\nwritable_schema=ON.
-D 2022-02-04T20:07:24.664
+C Test\scase\sfor\spermissive\sALTER\sTABLE\sRENAME\swhen\swritable_schema=ON.
+D 2022-02-04T20:16:00.842
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -657,7 +657,7 @@ F test/alter3.test ffc4ab29ce78a3517a66afd69b2730667e3471622509c283b2bd4c46f680f
 F test/alter4.test 716caa071dd8a3c6d57225778d15d3c3cbf5e34b2e84ae44199aeb2bbf50a707
 F test/alterauth.test 63442ba61ceb0c1eeb63aac1f4f5cebfa509d352276059d27106ae256bafc959
 F test/alterauth2.test 48967abae0494d9a300d1c92473d99fcb66edfcc23579c89322f033f49410adc
-F test/altercol.test d4f25038a7a72c38267f99ff7c0153d720c0a908321bbbf0639c301e6ea1c57c
+F test/altercol.test 8465ca659c2c55a359cf16cc261df4fcb5c45a5f104a50827c337ae66c09dc15
 F test/altercorrupt.test 2e1d705342cf9d7de884518ddbb053fd52d7e60d2b8869b7b63b2fda68435c12
 F test/alterdropcol.test a653a3945f964d26845ec0cd0a8e74189f46de3119a984c5bc45457da392612e
 F test/alterdropcol2.test 527fce683b200d620f560f666c44ae33e22728e990a10a48a543280dfd4b4d41
@@ -1943,8 +1943,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 197cbabf1767d0603928462fb75cf8100f6999f725e0db60d096c7ca20e3da28
-R 6e6953a314ca3fd9224d68be73afce7b
+P c52d0dd8f4f8fab4c3f33cbd26b4012569e76562282e85654018c836dca7b564
+R 1c6dd2835590d26c0e3077ae9f27c2cc
 U drh
-Z 4d8bc85d83a2c54196b606a1a5f7ecb7
+Z 70501401ac6ff085442e81208283c214
 # Remove this line to create a well-formed Fossil manifest.
