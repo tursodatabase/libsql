@@ -3196,7 +3196,18 @@ static void restore_sys_schema_protection( sqlite3 *db, DbProtectState *pPS ){
 }
 
 /* Partition the temp.sqlite_parameters key namespace according to use. */
-typedef enum { PTU_Binding = 0, PTU_Script, PTU_Source } ParamTableUse;
+typedef enum {
+  PTU_Binding = 0, PTU_Script, PTU_Source, PTU_Nil
+} ParamTableUse;
+
+static ParamTableUse classify_param_name( const char *zName ){
+  char c = *zName;
+  switch( c ){
+  case '$': case ':': case '@': case '?': return PTU_Binding;
+  default: return isalpha(c)? PTU_Script : PTU_Nil;
+  }
+}
+
 #define PARAM_TABLE_NAME "sqlite_parameters"
 #define PARAM_TABLE_SCHEMA "temp"
 #define PARAM_TABLE_SNAME PARAM_TABLE_SCHEMA"."PARAM_TABLE_NAME
@@ -8189,7 +8200,7 @@ static int edit_one_param(sqlite3 *db, char *name, int eval,
        " key=%Q AND uses=%d", zEditor, name, uses);
   }else{
     /* Editing a new value of same kind. */
-    assert(paramVU.value==0);
+    assert(paramVU.value==0 || paramVU.uses!=uses);
     zSql = sqlite3_mprintf
       ("INSERT INTO "PARAM_TABLE_SNAME"(key,value,uses)"
        " VALUES (%Q,edit('-- %q%s', %Q),%d)",
@@ -9933,6 +9944,7 @@ static int do_meta_command(char *zLine, ShellState *p){
        * the way that .parameter set ... does.
        */
       while( ia < nArg ){
+        ParamTableUse ptu;
         char cf = (azArg[ia][0]=='-')? azArg[ia][1] : 0;
         if( cf!=0 && azArg[ia][2]==0 ){
           ++ia;
@@ -9946,7 +9958,8 @@ static int do_meta_command(char *zLine, ShellState *p){
             goto meta_command_exit;
           }
         }
-        rc = edit_one_param(p->db, azArg[ia], eval, PTU_Binding, p->zEditor);
+        ptu = classify_param_name(azArg[ia]);
+        rc = edit_one_param(p->db, azArg[ia], eval, ptu, p->zEditor);
         ++ia;
         if( rc!=0 ) goto meta_command_exit;
       }
