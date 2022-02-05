@@ -1,5 +1,5 @@
-C Add\sa\scompile-time\soption\sto\sinclude\svt02.c\sin\sfuzzcheck.
-D 2022-02-04T19:13:18.472
+C Typo\sfixes\sin\sdocumentation.
+D 2022-02-05T01:01:07.934
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -554,7 +554,7 @@ F src/resolve.c 0dd8e23fda88411d63b2e6650f2380fdb08e88112e9a095fc23d5a08de4b2641
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c a6d2d4bed279d7fe4fcedaf297eaf6441e8e17c6e3947a32d24d23be52ac02f2
 F src/shell.c.in 2f58e6aa6b3d2012db32f1c5fa4591e9d12fd582904632b4fc8f57a382b98fd3
-F src/sqlite.h.in d4daed3b2deb2e43df7f12be119b1b17a2954feadc33d521565bacbd072bfcb6
+F src/sqlite.h.in 5299fd65b0adbc1564c5b9577c3f7c2c5b76ac30d15de66513c87dfa97da69f6
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h a95cb9ed106e3d39e2118e4dcc15a14faec3fa50d0093425083d340d9dfd96e6
 F src/sqliteInt.h 838df3e9ba9390058076d2f50c7efde9e0e8747303e788cf5bbe05402ab10924
@@ -1943,8 +1943,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 70049342d5ad57ea3e863bba19253934b868bacdd1c26c9371bac024a829badf
-R 7698284cef9bf4071c753bc4d6dcc55e
+P c404c8c72600c11b181519d269bf949aff304eaafb90a50d1415c6fe84d2b092
+R d5f3752b899689a9bd8557b55cf80474
 U drh
-Z f337e6cf2658096055fbff9c10758499
+Z 2780746ce8640dfd4abd7ce98a4b92f4
 # Remove this line to create a well-formed Fossil manifest.
