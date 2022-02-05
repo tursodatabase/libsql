@@ -1141,6 +1141,11 @@ struct EQPGraph {
   char zPrefix[100];    /* Graph prefix */
 };
 
+/* By default, omit the extension options that are not done yet. */
+#ifndef SHELL_OMIT_EXTENSIONS
+# define SHELL_OMIT_EXTENSIONS 6
+#endif
+
 /* Selectively omit features with one PP variable. Value is true iff
 ** either x is not defined or defined with 0 in bitnum bit position.
 */
@@ -1190,14 +1195,21 @@ typedef struct ColModeOpts {
 #define ColModeOpts_default { 60, 0, 0 }
 #define ColModeOpts_default_qbox { 60, 1, 0 }
 
-typedef struct OutModeState {
-  u8 showHeader;         /* True to show column names in List or Column mode */
-  u8 mode;               /* An output mode setting */
-  u16 shellFlgs;         /* Various flags */
-  ColModeOpts cmOpts;    /* Option values affecting columnar mode output */
-  char colSeparator[20]; /* Column separator character for several modes */
-  char rowSeparator[20]; /* Row separator character for MODE_Ascii */
-} OutModeState;
+/*
+** Stored output mode state, for partial save and later restore.
+** Returned by:
+**   outputModeSave *outputModeSave(ShellState *p, SaveModeWhat ws).
+** Accepted by: 
+**   outputModeRestore(ShellState *p, OutputModeSave *pSaved).
+** See enum SaveWhatMode regarding what to save and restore.
+** Also see outputModePush(...), outputModePushSome(...) and
+** outputModePop(...) for usages spanning more than one call.
+*/
+typedef struct OutputModeSave{
+  u16 what;           /* Set upon creation. See SaveWhatMode for values. */
+  char itsValues[1];  /* This size is inaccurate unless nothing is saved. */
+} OutputModeSave;
+#define MODE_STACK_MAX 3 /* How many levels of saved output mode to allow. */
 
 /*
 ** State information about the database connection is contained in an
@@ -1206,13 +1218,13 @@ typedef struct OutModeState {
 typedef struct ShellState ShellState;
 struct ShellState {
   sqlite3 *db;           /* The database */
+  int openFlags;         /* Additional flags to open. (SQLITE_OPEN_NOFOLLOW) */
+  u8 openMode;           /* SHELL_OPEN_NORMAL, _APPENDVFS, or _ZIPFILE */
   u8 autoExplain;        /* Automatically turn on .explain mode */
   u8 autoEQP;            /* Run EXPLAIN QUERY PLAN prior to seach SQL stmt */
   u8 autoEQPtest;        /* autoEQP is in test mode */
   u8 autoEQPtrace;       /* autoEQP is in trace mode */
   u8 scanstatsOn;        /* True to display scan stats before each finalize */
-  u8 openMode;           /* SHELL_OPEN_NORMAL, _APPENDVFS, or _ZIPFILE */
-  int openFlags;         /* Additional flags to open.  (SQLITE_OPEN_NOFOLLOW) */
   u8 doXdgOpen;          /* Invoke start/open/xdg-open in output_reset() */
   u8 nEqpLevel;          /* Depth of the EQP output graph */
   u8 eTraceType;         /* SHELL_TRACE_* value for type of trace */
@@ -1220,19 +1232,19 @@ struct ShellState {
   u8 bSafeModePersist;   /* The long-term value of bSafeMode */
   u8 bAllowSysDump;      /* Allow .dump use for sqlite_* tables. */
   u8 bExtendedDotCmds;   /* Bits set to enable various shell extensions */
-
+  /* Output mode state subject to systematic save/restore: (See OM_STATE.) */
   u8 showHeader;         /* True to show column names in List or Column mode */
   u16 shellFlgs;         /* Various flags */
-  u16 priorShFlgs;       /* Saved copy of flags */
   u8 mode;               /* An output mode setting */
-  u8 modePrior;          /* Saved mode */
-  u8 cMode;              /* temporary output mode for the current query */
-  u8 normalMode;         /* Output mode before ".explain on" */
   ColModeOpts cmOpts;    /* Option values affecting columnar mode output */
   char colSeparator[20]; /* Column separator character for several modes */
-  char colSepPrior[20];  /* Saved column separator */
   char rowSeparator[20]; /* Row separator character for MODE_Ascii */
-  char rowSepPrior[20];  /* Saved row separator */
+  /* Output mode state-keep for systematic save/restore: (See OM_STATE.) */
+  u8 nSavedModes;        /* number of valid items in next array */
+  OutputModeSave *pModeStack[MODE_STACK_MAX]; /* saved mode data buffers */
+  /* Output mode state-keep for certain ad-hoc save/restore ops: */
+  u8 cMode;              /* temporary output mode for the current query */
+  u8 normalMode;         /* Output mode before ".explain on" */
 
   int *colWidth;         /* Requested width of each column in columnar modes */
   int *actualWidth;      /* Actual width of each column */
@@ -1587,19 +1599,97 @@ edit_func_end:
 #endif /* SQLITE_NOHAVE_SYSTEM */
 
 /*
-** Save or restore the current output mode
+** Save or restore the current output mode, partially per spec. (OM_STATE)
 */
+typedef enum {
+  SWM_showHeader = 1, SWM_shellFlags = 2, SWM_mode = 4, SWM_cmOpts = 8,
+  SWM_colSeparator = 0x10, SWM_rowSeparator = 0x20, SWM_everything = 0x3F,
+  SWM_CountOf = 6
+} SaveWhatMode;
+
+/* This is available in most C89+ C compilers as offsetof(...), but since we
+ * cater to the most arcane C89-like compilers around, define it for sure:
+ */
+#define MEMBER_OFFSET(stype, member) ((size_t)&(((stype*)0)->member))
+#define MEMBER_SIZEOF(stype, member) (sizeof(((stype*)0)->member))
+static struct {
+  size_t offset;
+  size_t size;
+} outputModeCopy[] = {
+#define SS_MEMBER_COPY(mn) \
+  { MEMBER_OFFSET(ShellState,mn), MEMBER_SIZEOF(ShellState,mn) }
+  SS_MEMBER_COPY(showHeader), SS_MEMBER_COPY(shellFlgs),
+  SS_MEMBER_COPY(mode), SS_MEMBER_COPY(cmOpts),
+  SS_MEMBER_COPY(colSeparator), SS_MEMBER_COPY(rowSeparator)
+#undef SS_MEMBER_COPY
+};
+
+/* Allocate a buffer, copy requested output mode data to it, and return it. */
+static OutputModeSave *outputModeSave(ShellState *p, SaveWhatMode w){
+  u16 what = (u16)w;
+  int i, nAlloc = sizeof(what)+1, mask = 1;
+  char *pSaved = 0, *pFill;
+  for( i=0; i<SWM_CountOf; mask<<=1, ++i ){
+    if( (what & mask)!=0 ) nAlloc += (int)outputModeCopy[i].size;
+  }
+  assert(i==ArraySize(outputModeCopy));
+  pSaved = sqlite3_malloc(nAlloc);
+  if( pSaved==0 ) return 0;
+  *(u16 *)pSaved = what;
+  pFill = pSaved + sizeof(what);
+  for( mask=1, i=0; i<SWM_CountOf; mask<<=1, ++i ){
+    if( (what & mask)!=0 ){
+      size_t nb = outputModeCopy[i].size;
+      memcpy(pFill, (char*)p+outputModeCopy[i].offset, nb);
+      pFill += nb;
+    }
+  }
+  *pFill = 0xA5;
+  return (OutputModeSave *)pSaved;
+}
+
+/* From a buffer returned by outputModeSave, restore output mode data.
+ * The buffer is freed and its pointer is invalidated. 
+ * If called with some other buffer, results are undefined, likely bad.
+ */
+static void outputModeRestore(ShellState *p, OutputModeSave *pSaved){
+  sqlite3_uint64 nA = sqlite3_msize(pSaved);
+  u16 what = (nA>sizeof(what))? *((u16 *)pSaved) : 0;
+  int i, nAlloc = sizeof(what)+1, mask = 1;
+  char *pTake = (char *)pSaved + sizeof(what);
+  for( i=0; i<SWM_CountOf && nAlloc<nA; mask<<=1, ++i ){
+    if( (what & mask)!=0 ){
+      size_t nb = outputModeCopy[i].size;
+      memcpy((char*)p+outputModeCopy[i].offset, pTake, nb);
+      pTake += nb;
+    }
+  }
+  assert(*pTake==0xA5);
+  sqlite3_free(pSaved);
+}
+
+/*
+** Save or restore the current output mode, in whole or in part.
+*/
+static void outputModePushSome(ShellState *p, SaveWhatMode w){
+  OutputModeSave *pOMS;
+  assert(p->nSavedModes<MODE_STACK_MAX); /* Fail hard for this logic error. */
+  if( p->nSavedModes>=MODE_STACK_MAX ) return;
+  pOMS = outputModeSave(p, w);
+  shell_check_oom(pOMS);
+  p->pModeStack[p->nSavedModes++] = pOMS;
+}
 static void outputModePush(ShellState *p){
-  p->modePrior = p->mode;
-  p->priorShFlgs = p->shellFlgs;
-  memcpy(p->colSepPrior, p->colSeparator, sizeof(p->colSeparator));
-  memcpy(p->rowSepPrior, p->rowSeparator, sizeof(p->rowSeparator));
+  outputModePushSome(p, SWM_everything);
 }
 static void outputModePop(ShellState *p){
-  p->mode = p->modePrior;
-  p->shellFlgs = p->priorShFlgs;
-  memcpy(p->colSeparator, p->colSepPrior, sizeof(p->colSeparator));
-  memcpy(p->rowSeparator, p->rowSepPrior, sizeof(p->rowSeparator));
+  OutputModeSave *pOMS;
+  assert(p->nSavedModes>0); /* Should not be here unless something pushed. */
+  if( p->nSavedModes==0 ) return;
+  pOMS = p->pModeStack[--p->nSavedModes];
+  assert(pOMS!=0);
+  p->pModeStack[p->nSavedModes] = 0;
+  outputModeRestore(p, pOMS);
 }
 
 /*
@@ -8525,18 +8615,27 @@ static void list_params(ShellState *p, ParamTableUse ptu){
     if( sqlite3_step(pStmt)==SQLITE_ROW ){
       len = sqlite3_column_int(pStmt, 0);
       if( len>40 ) len = 40;
+      if( len<4 ) len = 4;
     }
   }
   sqlite3_finalize(pStmt);
   pStmt = 0;
   if( len ){
+    utf8_printf(p->out, "%-*s %-8s %s\n", len, "name", "usage", "value");
     rc = sqlite3_prepare_v2
-      (p->db, "SELECT key, quote(value) FROM "
+      (p->db, "SELECT key, uses, quote(value) FROM "
        PARAM_TABLE_SNAME" WHERE ?1=3 OR uses=?1", -1, &pStmt, 0);
     sqlite3_bind_int(pStmt, 1, ptu);
     while( rc==SQLITE_OK && sqlite3_step(pStmt)==SQLITE_ROW ){
-      utf8_printf(p->out, "%-*s %s\n", len, sqlite3_column_text(pStmt,0),
-                  sqlite3_column_text(pStmt,1));
+      ParamTableUse ptux = sqlite3_column_int(pStmt,1);
+      const char *zUse;
+      switch( ptux ){
+      case PTU_Binding: zUse = "binding"; break;
+      case PTU_Script:  zUse = "script"; break;
+      default:          zUse = "unknown";
+      }
+      utf8_printf(p->out, "%-*s %-8s %s\n", len, sqlite3_column_text(pStmt,0),
+                  zUse, sqlite3_column_text(pStmt,2));
     }
     sqlite3_finalize(pStmt);
   }
@@ -13316,6 +13415,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 #endif
   free(data.colWidth);
   free(data.zNonce);
+  for(i=0; i<data.nSavedModes; ++i) sqlite3_free(data.pModeStack[i]);
   /* Clear the global data structure so that valgrind will detect memory
   ** leaks */
   memset(&data, 0, sizeof(data));

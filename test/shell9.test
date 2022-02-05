@@ -1,0 +1,69 @@
+# 2022 Feb 5
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# The focus of this file is testing the CLI shell tool enhanced parsing,
+# new .parameter subcommands and uses, and the new .x meta-command.
+#
+#
+
+# Test plan:
+#
+#   shell9-1.*: command line parsing and acting accordingly
+#   shell9-2.*: Basic "dot" command, cross-line token parsing
+#   shell9-3.*: .parameter set options and types
+#   shell9-4.*: .parameter save/load operation
+#   shell9-5.*: Ensure "dot" commands and SQL intermix ok.
+#   shell9-6.*: .x command operation and refusal
+#
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set CLI [test_find_cli]
+db close
+forcedelete test.db test.db-journal test.db-wal
+sqlite3 db test.db
+
+#----------------------------------------------------------------------------
+# Test cases shell9-1.*: command line parsing and acting accordingly
+
+do_test shell9-1.1 {
+  set res [catchcmd ":memory: -cmd .quit" ""]
+} {0 {}}
+
+do_test shell9-1.2 {
+  set res [catchcmd ":memory: -shxopts 1 -cmd .shxopts -cmd .quit" ""]
+} {0 {     name    value  "-shxopts set"
+   --------  -----  ---------------
+    parsing    1    "-shxopts 0x01"
+   all_opts    0    "-shxopts 0x07"}}
+
+do_test shell9-1.3 {
+  set res [catchcmd ":memory: -cmd .shxopts -cmd .quit" ""]
+} {0 {     name    value  "-shxopts set"
+   --------  -----  ---------------
+    parsing    0    "-shxopts 0x01"
+   all_opts    0    "-shxopts 0x07"}}
+
+#----------------------------------------------------------------------------
+# Test cases shell9-2.*: Basic "dot" command, cross-line token parsing
+
+#----------------------------------------------------------------------------
+# Test cases shell9-3.*: .parameter set options and types
+
+#----------------------------------------------------------------------------
+# Test cases shell9-4.*: .parameter save/load operation
+
+#----------------------------------------------------------------------------
+# Test cases shell9-5.*: Ensure "dot" commands and SQL intermix ok.
+
+#----------------------------------------------------------------------------
+# Test cases shell9-6.*: .x command operation and refusal
+
+finish_test
