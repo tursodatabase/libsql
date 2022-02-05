@@ -38,7 +38,14 @@ proc omit_redundant_typedefs {line} {
     if {[info exists typedef_seen($line)]} {
       return "/* $line */"
     }
-    set typedef_seen($line) 1
+    if {[regexp {\s(\w+)\s*;} $line _ tdname]} {
+      if {[info exists typedef_seen($tdname)]} {
+        return "/* [regsub {;} $line {; **/}]"
+      }
+      set typedef_seen($tdname) 1
+    } else {
+      set typedef_seen($line) 1
+    }
   }
   return $line
 }
