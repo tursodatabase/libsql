@@ -2014,7 +2014,7 @@ static void renameTableTest(
       }
     }
 
-    if( rc!=SQLITE_OK && !sqlite3WritableSchema(db) ){
+    if( rc!=SQLITE_OK && zWhen && !sqlite3WritableSchema(db) ){
       /* Output case A */
       renameColumnParseError(context, zWhen, argv[2], argv[3],&sParse);
     }
