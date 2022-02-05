@@ -7211,7 +7211,7 @@ struct sqlite3_index_info {
 ** destructor.
 **
 ** ^If the third parameter (the pointer to the sqlite3_module object) is
-** NULL then no new module is create and any existing modules with the
+** NULL then no new module is created and any existing modules with the
 ** same name are dropped.
 **
 ** See also: [sqlite3_drop_modules()]
