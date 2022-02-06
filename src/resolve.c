@@ -729,7 +729,8 @@ static void notValidImpl(
    Parse *pParse,       /* Leave error message here */
    NameContext *pNC,    /* The name context */
    const char *zMsg,    /* Type of error */
-   Expr *pExpr          /* Invalidate this expression on error */
+   Expr *pExpr,         /* Invalidate this expression on error */
+   Expr *pError         /* Associate error with this expression */
 ){
   const char *zIn = "partial index WHERE clauses";
   if( pNC->ncFlags & NC_IdxExpr )      zIn = "index expressions";
@@ -741,10 +742,11 @@ static void notValidImpl(
 #endif
   sqlite3ErrorMsg(pParse, "%s prohibited in %s", zMsg, zIn);
   if( pExpr ) pExpr->op = TK_NULL;
+  sqlite3RecordErrorOffsetOfExpr(pParse->db, pError);
 }
-#define sqlite3ResolveNotValid(P,N,M,X,E) \
+#define sqlite3ResolveNotValid(P,N,M,X,E,R) \
   assert( ((X)&~(NC_IsCheck|NC_PartIdx|NC_IdxExpr|NC_GenCol))==0 ); \
-  if( ((N)->ncFlags & (X))!=0 ) notValidImpl(P,N,M,E);
+  if( ((N)->ncFlags & (X))!=0 ) notValidImpl(P,N,M,E,R);
 
 /*
 ** Expression p should encode a floating point value between 1.0 and 0.0.
@@ -879,7 +881,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
         testcase( pNC->ncFlags & NC_IdxExpr );
         testcase( pNC->ncFlags & NC_GenCol );
         sqlite3ResolveNotValid(pParse, pNC, "the \".\" operator",
-                               NC_IdxExpr|NC_GenCol, 0);
+                               NC_IdxExpr|NC_GenCol, 0, pExpr);
         pRight = pExpr->pRight;
         if( pRight->op==TK_ID ){
           zDb = 0;
@@ -910,7 +912,6 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       int no_such_func = 0;       /* True if no such function exists */
       int wrong_num_args = 0;     /* True if wrong number of arguments */
       int is_agg = 0;             /* True if is an aggregate function */
-      int nId;                    /* Number of characters in function name */
       const char *zId;            /* The function name. */
       FuncDef *pDef;              /* Information about the function */
       u8 enc = ENC(pParse->db);   /* The database encoding */
@@ -920,7 +921,6 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
 #endif
       assert( !ExprHasProperty(pExpr, EP_xIsSelect|EP_IntValue) );
       zId = pExpr->u.zToken;
-      nId = sqlite3Strlen30(zId);
       pDef = sqlite3FindFunction(pParse->db, zId, n, enc, 0);
       if( pDef==0 ){
         pDef = sqlite3FindFunction(pParse->db, zId, -2, enc, 0);
@@ -937,8 +937,8 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
             pExpr->iTable = exprProbability(pList->a[1].pExpr);
             if( pExpr->iTable<0 ){
               sqlite3ErrorMsg(pParse,
-                "second argument to likelihood() must be a "
-                "constant between 0.0 and 1.0");
+                "second argument to %#T() must be a "
+                "constant between 0.0 and 1.0", pExpr);
               pNC->nNcErr++;
             }
           }else{
@@ -959,8 +959,8 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
           int auth = sqlite3AuthCheck(pParse, SQLITE_FUNCTION, 0,pDef->zName,0);
           if( auth!=SQLITE_OK ){
             if( auth==SQLITE_DENY ){
-              sqlite3ErrorMsg(pParse, "not authorized to use function: %s",
-                                      pDef->zName);
+              sqlite3ErrorMsg(pParse, "not authorized to use function: %#T",
+                                      pExpr);
               pNC->nNcErr++;
             }
             pExpr->op = TK_NULL;
@@ -983,7 +983,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
           ** in a CHECK constraint.  SQLServer, MySQL, and PostgreSQL all
           ** all this. */
           sqlite3ResolveNotValid(pParse, pNC, "non-deterministic functions",
-                                 NC_IdxExpr|NC_PartIdx|NC_GenCol, 0);
+                                 NC_IdxExpr|NC_PartIdx|NC_GenCol, 0, pExpr);
         }else{
           assert( (NC_SelfRef & 0xff)==NC_SelfRef ); /* Must fit in 8 bits */
           pExpr->op2 = pNC->ncFlags & NC_SelfRef;
@@ -1015,7 +1015,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
         );
         if( pDef && pDef->xValue==0 && pWin ){
           sqlite3ErrorMsg(pParse, 
-              "%.*s() may not be used as a window function", nId, zId
+              "%#T() may not be used as a window function", pExpr
           );
           pNC->nNcErr++;
         }else if( 
@@ -1029,13 +1029,13 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
           }else{
             zType = "aggregate";
           }
-          sqlite3ErrorMsg(pParse, "misuse of %s function %.*s()",zType,nId,zId);
+          sqlite3ErrorMsg(pParse, "misuse of %s function %#T()",zType,pExpr);
           pNC->nNcErr++;
           is_agg = 0;
         }
 #else
         if( (is_agg && (pNC->ncFlags & NC_AllowAgg)==0) ){
-          sqlite3ErrorMsg(pParse,"misuse of aggregate function %.*s()",nId,zId);
+          sqlite3ErrorMsg(pParse,"misuse of aggregate function %#T()",pExpr);
           pNC->nNcErr++;
           is_agg = 0;
         }
@@ -1045,18 +1045,18 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
                   && pParse->explain==0
 #endif
         ){
-          sqlite3ErrorMsg(pParse, "no such function: %.*s", nId, zId);
+          sqlite3ErrorMsg(pParse, "no such function: %#T", pExpr);
           pNC->nNcErr++;
         }else if( wrong_num_args ){
-          sqlite3ErrorMsg(pParse,"wrong number of arguments to function %.*s()",
-               nId, zId);
+          sqlite3ErrorMsg(pParse,"wrong number of arguments to function %#T()",
+               pExpr);
           pNC->nNcErr++;
         }
 #ifndef SQLITE_OMIT_WINDOWFUNC
         else if( is_agg==0 && ExprHasProperty(pExpr, EP_WinFunc) ){
           sqlite3ErrorMsg(pParse, 
-              "FILTER may not be used with non-aggregate %.*s()", 
-              nId, zId
+              "FILTER may not be used with non-aggregate %#T()",
+              pExpr
           );
           pNC->nNcErr++;
         }
@@ -1141,7 +1141,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
         testcase( pNC->ncFlags & NC_IdxExpr );
         testcase( pNC->ncFlags & NC_GenCol );
         if( pNC->ncFlags & NC_SelfRef ){
-          notValidImpl(pParse, pNC, "subqueries", pExpr);
+          notValidImpl(pParse, pNC, "subqueries", pExpr, pExpr);
         }else{
           sqlite3WalkSelect(pWalker, pExpr->x.pSelect);
         }
@@ -1159,7 +1159,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       testcase( pNC->ncFlags & NC_IdxExpr );
       testcase( pNC->ncFlags & NC_GenCol );
       sqlite3ResolveNotValid(pParse, pNC, "parameters",
-               NC_IsCheck|NC_PartIdx|NC_IdxExpr|NC_GenCol, pExpr);
+               NC_IsCheck|NC_PartIdx|NC_IdxExpr|NC_GenCol, pExpr, pExpr);
       break;
     }
     case TK_IS:
@@ -1211,6 +1211,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
         testcase( pExpr->op==TK_ISNOT );
         testcase( pExpr->op==TK_BETWEEN );
         sqlite3ErrorMsg(pParse, "row value misused");
+        sqlite3RecordErrorOffsetOfExpr(pParse->db, pExpr);
       }
       break; 
     }
@@ -1324,11 +1325,13 @@ static void resolveOutOfRangeError(
   Parse *pParse,         /* The error context into which to write the error */
   const char *zType,     /* "ORDER" or "GROUP" */
   int i,                 /* The index (1-based) of the term out of range */
-  int mx                 /* Largest permissible value of i */
+  int mx,                /* Largest permissible value of i */
+  Expr *pError           /* Associate the error with the expression */
 ){
   sqlite3ErrorMsg(pParse, 
     "%r %s BY term out of range - should be "
     "between 1 and %d", i, zType, mx);
+  sqlite3RecordErrorOffsetOfExpr(pParse->db, pError);
 }
 
 /*
@@ -1384,7 +1387,7 @@ static int resolveCompoundOrderBy(
       if( NEVER(pE==0) ) continue;
       if( sqlite3ExprIsInteger(pE, &iCol) ){
         if( iCol<=0 || iCol>pEList->nExpr ){
-          resolveOutOfRangeError(pParse, "ORDER", i+1, pEList->nExpr);
+          resolveOutOfRangeError(pParse, "ORDER", i+1, pEList->nExpr, pE);
           return 1;
         }
       }else{
@@ -1480,7 +1483,7 @@ int sqlite3ResolveOrderGroupBy(
   for(i=0, pItem=pOrderBy->a; i<pOrderBy->nExpr; i++, pItem++){
     if( pItem->u.x.iOrderByCol ){
       if( pItem->u.x.iOrderByCol>pEList->nExpr ){
-        resolveOutOfRangeError(pParse, zType, i+1, pEList->nExpr);
+        resolveOutOfRangeError(pParse, zType, i+1, pEList->nExpr, 0);
         return 1;
       }
       resolveAlias(pParse, pEList, pItem->u.x.iOrderByCol-1, pItem->pExpr,0);
@@ -1572,7 +1575,7 @@ static int resolveOrderGroupBy(
       ** number so that sqlite3ResolveOrderGroupBy() will convert the
       ** order-by term to a copy of the result-set expression */
       if( iCol<1 || iCol>0xffff ){
-        resolveOutOfRangeError(pParse, zType, i+1, nResult);
+        resolveOutOfRangeError(pParse, zType, i+1, nResult, pE2);
         return 1;
       }
       pItem->u.x.iOrderByCol = (u16)iCol;
