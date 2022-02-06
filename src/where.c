@@ -1243,7 +1243,9 @@ static sqlite3_index_info *allocateIndexInfo(
     pIdxCons[j].iTermOffset = i;
     op = pTerm->eOperator & WO_ALL;
     if( op==WO_IN ){
-      pHidden->mIn |= SMASKBIT32(j);
+      if( (pTerm->wtFlags & TERM_SLICE)==0 ){
+        pHidden->mIn |= SMASKBIT32(j);
+      }
       op = WO_EQ;
     }
     if( op==WO_AUX ){

@@ -1429,7 +1429,7 @@ static void exprAnalyze(
     int i;
     for(i=0; i<sqlite3ExprVectorSize(pExpr->pLeft); i++){
       int idxNew;
-      idxNew = whereClauseInsert(pWC, pExpr, TERM_VIRTUAL);
+      idxNew = whereClauseInsert(pWC, pExpr, TERM_VIRTUAL|TERM_SLICE);
       pWC->a[idxNew].u.x.iField = i+1;
       exprAnalyze(pSrc, pWC, idxNew);
       markTermAsChild(pWC, idxNew, idxTerm);
