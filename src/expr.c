@@ -769,9 +769,8 @@ static void heightOfSelect(const Select *pSelect, int *pnHeight){
 ** if appropriate.
 */
 static void exprSetHeight(Expr *p){
-  int nHeight = 0;
-  heightOfExpr(p->pLeft, &nHeight);
-  heightOfExpr(p->pRight, &nHeight);
+  int nHeight = p->pLeft ? p->pLeft->nHeight : 0;
+  if( p->pRight && p->pRight->nHeight>nHeight ) nHeight = p->pRight->nHeight;
   if( ExprUseXSelect(p) ){
     heightOfSelect(p->x.pSelect, &nHeight);
   }else if( p->x.pList ){
