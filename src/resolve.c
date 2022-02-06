@@ -620,6 +620,7 @@ static int lookupName(
     }else{
       sqlite3ErrorMsg(pParse, "%s: %s", zErr, zCol);
     }
+    sqlite3RecordErrorOffsetOfExpr(pParse->db, pExpr);
     pParse->checkSchema = 1;
     pTopNC->nNcErr++;
   }

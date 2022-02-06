@@ -157,6 +157,14 @@ static struct GlobalVars {
 } g;
 
 /*
+** Include the external vt02.c module, if requested by compile-time
+** options.
+*/
+#ifdef VT02_SOURCES
+# include "vt02.c"
+#endif
+
+/*
 ** Print an error message and quit.
 */
 static void fatalError(const char *zFormat, ...){
@@ -1051,6 +1059,10 @@ int runCombinedDbSqlInput(
   /* Block debug pragmas and ATTACH/DETACH.  But wait until after
   ** deserialize to do this because deserialize depends on ATTACH */
   sqlite3_set_authorizer(cx.db, block_troublesome_sql, 0);
+
+#ifdef VT02_SOURCES
+  sqlite3_vt02_init(cx.db, 0, 0);
+#endif
 
   /* Consistent PRNG seed */
 #ifdef SQLITE_TESTCTRL_PRNG_SEED

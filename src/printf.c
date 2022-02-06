@@ -935,6 +935,19 @@ void sqlite3RecordErrorByteOffset(sqlite3 *db, const char *z){
 }
 
 /*
+** If pExpr has a byte offset for the start of a token, record that as
+** as the error offset.
+*/
+void sqlite3RecordErrorOffsetOfExpr(sqlite3 *db, const Expr *pExpr){
+  if( db->errByteOffset>=0 ) return;
+  while( pExpr && (ExprHasProperty(pExpr,EP_FromJoin) || pExpr->w.iOfst<=0) ){
+    pExpr = pExpr->pLeft;
+  }
+  if( pExpr==0 ) return;
+  db->errByteOffset = pExpr->w.iOfst;
+}
+
+/*
 ** Enlarge the memory allocation on a StrAccum object so that it is
 ** able to accept at least N more bytes of text.
 **

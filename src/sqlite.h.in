@@ -7211,7 +7211,7 @@ struct sqlite3_index_info {
 ** destructor.
 **
 ** ^If the third parameter (the pointer to the sqlite3_module object) is
-** NULL then no new module is create and any existing modules with the
+** NULL then no new module is created and any existing modules with the
 ** same name are dropped.
 **
 ** See also: [sqlite3_drop_modules()]
@@ -9642,7 +9642,7 @@ int sqlite3_vtab_distinct(sqlite3_index_info*);
 **   to SQLite that the virtual table does or does not want to process
 **   the IN operator all-at-once, respectively.  ^Thus when the third
 **   parameter (F) is non-negative, this interface is the mechanism by
-**   which the virtual table tells SQLite how it wants to process in
+**   which the virtual table tells SQLite how it wants to process the
 **   IN operator.
 ** </ol>
 **
@@ -9668,7 +9668,7 @@ int sqlite3_vtab_distinct(sqlite3_index_info*);
 ** </ol>)^
 ** 
 ** ^If either or both of the conditions above are false, then SQLite uses
-** the traditional one-at-a-time processing strategy for IN constraint.
+** the traditional one-at-a-time processing strategy for the IN constraint.
 ** ^If both conditions are true, then the argvIndex-th parameter to the
 ** xFilter method will be an [sqlite3_value] that appears to be NULL,
 ** but which can be passed to [sqlite3_vtab_in_first()] and

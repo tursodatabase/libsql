@@ -3497,7 +3497,6 @@ static void sqlite3ExprCodeIN(
   }else{
     destStep2 = destStep6 = sqlite3VdbeMakeLabel(pParse);
   }
-//  if( pParse->nErr ) goto sqlite3ExprCodeIN_finished;
   for(i=0; i<nVector; i++){
     Expr *p = sqlite3VectorFieldSubexpr(pExpr->pLeft, i);
     if( pParse->nErr ) goto sqlite3ExprCodeIN_oom_error;

@@ -123,8 +123,8 @@ struct WhereLoop {
     } btree;
     struct {               /* Information for virtual tables */
       int idxNum;            /* Index number */
-      u8 needFree : 1;       /* True if sqlite3_free(idxStr) is needed */
-      u8 bOmitOffset : 1;    /* True to let virtual table handle offset */
+      u32 needFree : 1;      /* True if sqlite3_free(idxStr) is needed */
+      u32 bOmitOffset : 1;   /* True to let virtual table handle offset */
       i8 isOrdered;          /* True if satisfies ORDER BY */
       u16 omitMask;          /* Terms that may be omitted */
       char *idxStr;          /* Index identifier string */
@@ -285,6 +285,7 @@ struct WhereTerm {
 #else
 #  define TERM_HIGHTRUTH  0      /* Only used with STAT4 */
 #endif
+#define TERM_SLICE      0x8000 /* One slice of a row-value/vector comparison */
 
 /*
 ** An instance of the WhereScan object is used as an iterator for locating
