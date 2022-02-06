@@ -853,7 +853,7 @@ void sqlite3_str_vappendf(
         if( flag_alternateform ){
           /* %#T means an Expr pointer that uses Expr.u.zToken */
           Expr *pExpr = va_arg(ap,Expr*);
-          if( pExpr && ALWAYS(!ExprHasProperty(pExpr,EP_IntValue)) ){
+          if( ALWAYS(pExpr) && ALWAYS(!ExprHasProperty(pExpr,EP_IntValue)) ){
             sqlite3_str_appendall(pAccum, (const char*)pExpr->u.zToken);
             sqlite3RecordErrorOffsetOfExpr(pAccum->db, pExpr);
           }
@@ -948,7 +948,6 @@ void sqlite3RecordErrorByteOffset(sqlite3 *db, const char *z){
 ** as the error offset.
 */
 void sqlite3RecordErrorOffsetOfExpr(sqlite3 *db, const Expr *pExpr){
-  if( db->errByteOffset>=0 ) return;
   while( pExpr && (ExprHasProperty(pExpr,EP_FromJoin) || pExpr->w.iOfst<=0) ){
     pExpr = pExpr->pLeft;
   }

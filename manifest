@@ -1,5 +1,5 @@
-C The\ssqlite3_vtab_in()\sinterface\sshould\sreturn\sfalse\sfor\sa\svector\sIN\sconstraint.
-D 2022-02-06T22:13:35.128
+C Fix\sunreachable\sbranches\sin\sthe\ssqlite3_error_offset()\slogic.
+D 2022-02-06T23:54:41.225
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -548,7 +548,7 @@ F src/pcache1.c 54881292a9a5db202b2c0ac541c5e3ef9a5e8c4f1c1383adb2601d5499a60e65
 F src/pragma.c 7c024d690a3dc93f61830f11f900e4af2357f31d081b0c79099ca5e28919cba7
 F src/pragma.h 87330ed2fbfa2a1274de93ca0ab850fba336189228cb256089202c3b52766fad
 F src/prepare.c a187dade741c1f09ae118fcbbf0302511807bfc0355880927d7152eb75b8260d
-F src/printf.c 88a96f8d7bedee6fa73f6be21a70c21089e772d88d32994b04d50e0bf0f38066
+F src/printf.c 05d8dfd2018bc4fc3ddb8b37eb97ccef7abf985643fa1caebdcf2916ca90fa32
 F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c ea935b87d6fb36c78b70cdc7b28561dc8f33f2ef37048389549c7b5ef9b0ba5e
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
@@ -1943,8 +1943,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 36653ccef68cf61b6001000a713b06e951cb6fddced6b6a906c3b17d70a8af87
-R 2c6e3c8c02d87fe3f6bdd0197c360efb
+P 245d0241c78870c6a41af3e02b82b13151472e2102fbd62989672f8122feca73
+R f27f31134c575573feedb0c68f8b8983
 U drh
-Z 3c1d1faab1829af80ee7493bf7d43807
+Z d799ecdde692015cac6cb18f2e6222d0
 # Remove this line to create a well-formed Fossil manifest.
