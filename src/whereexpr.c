@@ -1536,7 +1536,7 @@ void sqlite3WhereSplit(WhereClause *pWC, Expr *pExpr, u8 op){
 ** TK_INTEGER so that it will be available to sqlite3_vtab_rhs_value().
 ** If not, then it codes as a TK_REGISTER expression.
 */
-void whereAddLimitExpr(
+static void whereAddLimitExpr(
   WhereClause *pWC,   /* Add the constraint to this WHERE clause */
   int iReg,           /* Register that will hold value of the limit/offset */
   Expr *pExpr,        /* Expression that defines the limit/offset */
