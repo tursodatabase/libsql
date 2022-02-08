@@ -1,5 +1,5 @@
-C Provide\ssqlite3_error_offset()\sdata\sfor\ssome\snew\serrors.
-D 2022-02-08T13:41:23.557
+C Writes\sto\sthe\ssubjournal\sshould\sbe\sall-or-nothing.\s\sFix\sfor\ndbsqlfuzz\sfe3c397fb90029313446c4e0f4a6cd0c81dd9621.
+D 2022-02-08T15:14:18.391
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -539,7 +539,7 @@ F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c f5ad51cfd024116db8531feab9efd831c2621436dca1464e4ff1e8af9bf3252e
 F src/os_win.c 77d39873836f1831a9b0b91894fec45ab0e9ca8e067dc8c549e1d1eca1566fe9
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c f6183fb7370425cd8642759693d9994649217cf7111caef89bc2c4946afbc36d
+F src/pager.c 29e4d6d8e0a6d092644c58109a36293d1ea6fd2e1e7a26042f5462fd819493b7
 F src/pager.h 4bf9b3213a4b2bebbced5eaa8b219cf25d4a82f385d093cd64b7e93e5285f66f
 F src/parse.y b34d4eb8105271ea0d577ef165bb7b2a2b70e03b2e694e68e2e43b76389bf660
 F src/pcache.c 084e638432c610f95aea72b8509f0845d2791293f39d1b82f0c0a7e089c3bb6b
@@ -1943,8 +1943,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f815cf4a5f97778f177d373814700e8f2f6429dc467b68b799b5b349cc00b7a2
-R fd8b14f575f1729559b78f644e2a52b1
+P 1269206db810460e55a52e178ba3332add42a11f66c5f292f8f0d29ccd61a4b8
+R 152bd288ae589530fc2745d322f45fd2
 U drh
-Z 80dfb50ad6c629f674e4115839a969e6
+Z b4c4dbfb44e2c416fb7b7bc180b39619
 # Remove this line to create a well-formed Fossil manifest.
