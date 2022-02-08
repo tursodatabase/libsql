@@ -1,5 +1,5 @@
-C comment-only\schange\sto\ssqlite3.h
-D 2022-02-08T12:24:43.731
+C Provide\ssqlite3_error_offset()\sdata\sfor\ssome\snew\serrors.
+D 2022-02-08T13:41:23.557
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -485,7 +485,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
-F src/alter.c b62636548008957337b73ff9f1f5294ca9793e5b01e986ecb56cfafd58ba78f2
+F src/alter.c e31cae888bc3077e34f9a82c6b4a96e4e44d37861eeb6472d68a378f1e8e46ba
 F src/analyze.c 7518b99e07c5494111fe3bd867f28f804b6c5c1ad0703ec3d116de9bab3fa516
 F src/attach.c f26d400f3ffe2cdca01406bca70e5f58c5488bf165b4fc37c228136dfcf1b583
 F src/auth.c f4fa91b6a90bbc8e0d0f738aa284551739c9543a367071f55574681e0f24f8cf
@@ -616,7 +616,7 @@ F src/test_windirent.h 90dfbe95442c9762357fe128dc7ae3dc199d006de93eb33ba3972e0a9
 F src/test_window.c cdae419fdcea5bad6dcd9368c685abdad6deb59e9fc8b84b153de513d394ba3f
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
-F src/tokenize.c b74d878aa7c82ec8460779468061a96185e22257f68ab785b69abce354b70446
+F src/tokenize.c 6661a9fa660ecbd3ac0df1acd2ec788b3a8122b4316022bcdaf476ea6754a8de
 F src/treeview.c a84b57d15e46007d8b1ae249344b3f0b7f3c62def908b98baaa54935a57c8476
 F src/trigger.c 19fc6fe696a2409b04496df1ff044e6a942dad6ed3b6e897b1c9093b88cc2c62
 F src/update.c f875b0d59da5c3055a0b2ac20560e1650229c6787e78de5e9836267b5cbb8359
@@ -1943,8 +1943,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b471601892df98c5103bb55132bbdecf3e4dfc428aaecc47bfec1e1d51e583c7
-R 216a9e9f0137c027640b115510205767
-U larrybr
-Z ba0661aaf8ad11d442f297a11f155ebe
+P f815cf4a5f97778f177d373814700e8f2f6429dc467b68b799b5b349cc00b7a2
+R fd8b14f575f1729559b78f644e2a52b1
+U drh
+Z 80dfb50ad6c629f674e4115839a969e6
 # Remove this line to create a well-formed Fossil manifest.
