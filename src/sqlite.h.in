@@ -566,7 +566,7 @@ int sqlite3_exec(
 #define SQLITE_WARNING_AUTOINDEX       (SQLITE_WARNING | (1<<8))
 #define SQLITE_AUTH_USER               (SQLITE_AUTH | (1<<8))
 #define SQLITE_OK_LOAD_PERMANENTLY     (SQLITE_OK | (1<<8))
-#define SQLITE_OK_SYMLINK              (SQLITE_OK | (2<<8))
+#define SQLITE_OK_SYMLINK              (SQLITE_OK | (2<<8)) /* internal use only */
 
 /*
 ** CAPI3REF: Flags For File Open Operations
