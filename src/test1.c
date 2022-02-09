@@ -3977,6 +3977,100 @@ static int SQLITE_TCLAPI test_bind_blob(
   return TCL_OK;
 }
 
+/*
+** Usage:   sqlite3_bind_value_from_preupdate STMT N NEW|OLD IDX
+**
+** Test the sqlite3_bind_value interface using sqlite3_value objects
+** obtained from either sqlite3_preupdate_new() (if arg[3]=="new") or
+** sqlite3_preupdate_old() if (arg[3]=="old"). IDX is the index to
+** pass to the sqlite3_preupdate_xxx() function.
+*/
+static int SQLITE_TCLAPI test_bind_value_from_preupdate(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3_stmt *pStmt;
+  int idx;
+  int bidx;
+  const char *z3 = 0;
+  sqlite3 *db = 0;
+  sqlite3_value *pVal = 0;
+
+  if( objc!=5 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "STMT N NEW|OLD IDX");
+    return TCL_ERROR;
+  }
+
+  if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[2], &idx) ) return TCL_ERROR;
+  z3 = Tcl_GetString(objv[3]);
+  if( Tcl_GetIntFromObj(interp, objv[4], &bidx) ) return TCL_ERROR;
+  db = sqlite3_db_handle(pStmt);
+
+  if( z3[0]=='n' ){
+    sqlite3_preupdate_new(db, bidx, &pVal);
+  }else if( z3[0]=='o' ){
+    sqlite3_preupdate_old(db, bidx, &pVal);
+  }else{
+    Tcl_AppendResult(interp, "expected new or old, got: ", z3, (char*)0);
+    return TCL_ERROR;
+  }
+  sqlite3_bind_value(pStmt, idx, pVal);
+
+  return TCL_OK;
+}
+
+/*
+** Usage:   sqlite3_bind_value_from_select STMT N SELECT
+**
+** Test the sqlite3_bind_value interface.  STMT is a prepared statement.
+** N is the index of a wildcard in the prepared statement. 
+*/
+static int SQLITE_TCLAPI test_bind_value_from_select(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3_stmt *pStmt;
+  sqlite3_stmt *pStmt2;
+  int idx;
+  const char *zSql = 0;
+  sqlite3 *db = 0;
+  int rc = SQLITE_OK;
+
+  if( objc!=4 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "STMT N SELECT");
+    return TCL_ERROR;
+  }
+
+  if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[2], &idx) ) return TCL_ERROR;
+  zSql = Tcl_GetString(objv[3]);
+  db = sqlite3_db_handle(pStmt);
+
+  rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt2, 0);
+  if( rc!=SQLITE_OK ){
+    Tcl_AppendResult(interp, "error in SQL: ", sqlite3_errmsg(db), (char*)0);
+    return TCL_ERROR;
+  }
+  if( sqlite3_step(pStmt2)==SQLITE_ROW ){
+    sqlite3_value *pVal = sqlite3_column_value(pStmt2, 0);
+    sqlite3_bind_value(pStmt, idx, pVal);
+  }
+  rc = sqlite3_finalize(pStmt2);
+  if( rc!=SQLITE_OK ){
+    Tcl_AppendResult(interp, 
+        "error runnning SQL: ", sqlite3_errmsg(db), (char*)0
+    );
+    return TCL_ERROR;
+  }
+
+  return TCL_OK;
+}
+
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 /*
@@ -8442,6 +8536,8 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_bind_text",             test_bind_text     ,0 },
      { "sqlite3_bind_text16",           test_bind_text16   ,0 },
      { "sqlite3_bind_blob",             test_bind_blob     ,0 },
+     { "sqlite3_bind_value_from_select",test_bind_value_from_select ,0 },
+     { "sqlite3_bind_value_from_preupdate",test_bind_value_from_preupdate ,0 },
 #ifndef SQLITE_OMIT_VIRTUALTABLE
      { "sqlite3_carray_bind",           test_carray_bind   ,0 },
 #endif

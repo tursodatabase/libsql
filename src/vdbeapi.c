@@ -1594,7 +1594,7 @@ int sqlite3_bind_value(sqlite3_stmt *pStmt, int i, const sqlite3_value *pValue){
       break;
     }
     case SQLITE_FLOAT: {
-      rc = sqlite3_bind_double(pStmt, i, pValue->u.r);
+      rc = sqlite3_bind_double(pStmt, i, sqlite3VdbeRealValue((Mem*)pValue));
       break;
     }
     case SQLITE_BLOB: {
