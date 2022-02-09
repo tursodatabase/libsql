@@ -3580,6 +3580,7 @@ struct Parse {
   u8 bReturning;       /* Coding a RETURNING trigger */
   u8 eOrconf;          /* Default ON CONFLICT policy for trigger steps */
   u8 disableTriggers;  /* True to disable triggers */
+  u8 ifNotExists;      /* IF NOT EXISTS flag on ALTER TABLE ADD COLUMN */
 
   /**************************************************************************
   ** Fields above must be initialized to zero.  The fields that follow,
@@ -4478,6 +4479,7 @@ i16 sqlite3TableColumnToIndex(Index*, i16);
   i16 sqlite3TableColumnToStorage(Table*, i16);
   i16 sqlite3StorageColumnToTable(Table*, i16);
 #endif
+void sqlite3ForceNotReadOnly(Parse*);
 void sqlite3StartTable(Parse*,Token*,Token*,int,int,int,int);
 #if SQLITE_ENABLE_HIDDEN_COLUMNS
   void sqlite3ColumnPropertiesFromName(Table*, Column*);
@@ -4917,8 +4919,8 @@ extern sqlite3_uint64 sqlite3NProfileCnt;
 void sqlite3RootPageMoved(sqlite3*, int, Pgno, Pgno);
 void sqlite3Reindex(Parse*, Token*, Token*);
 void sqlite3AlterFunctions(void);
-void sqlite3AlterRenameTable(Parse*, SrcList*, Token*);
-void sqlite3AlterRenameColumn(Parse*, SrcList*, Token*, Token*);
+void sqlite3AlterRenameTable(Parse*, SrcList*, Token*, int);
+void sqlite3AlterRenameColumn(Parse*, SrcList*, Token*, Token*,int,int);
 int sqlite3GetToken(const unsigned char *, int *);
 void sqlite3NestedParse(Parse*, const char*, ...);
 void sqlite3ExpirePreparedStatements(sqlite3*, int);
@@ -4942,8 +4944,8 @@ int sqlite3ResolveSelfReference(Parse*,Table*,int,Expr*,ExprList*);
 int sqlite3ResolveOrderGroupBy(Parse*, Select*, ExprList*, const char*);
 void sqlite3ColumnDefault(Vdbe *, Table *, int, int);
 void sqlite3AlterFinishAddColumn(Parse *, Token *);
-void sqlite3AlterBeginAddColumn(Parse *, SrcList *);
-void sqlite3AlterDropColumn(Parse*, SrcList*, const Token*);
+void sqlite3AlterBeginAddColumn(Parse *, SrcList *,int,int);
+void sqlite3AlterDropColumn(Parse*, SrcList*, const Token*, int, int);
 const void *sqlite3RenameTokenMap(Parse*, const void*, const Token*);
 void sqlite3RenameTokenRemap(Parse*, const void *pTo, const void *pFrom);
 void sqlite3RenameExprUnmap(Parse*, Expr*);

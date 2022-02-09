@@ -1189,7 +1189,7 @@ i16 sqlite3TableColumnToStorage(Table *pTab, i16 iCol){
 ** will return false for sqlite3_stmt_readonly() even if that statement
 ** is a read-only no-op.
 */
-static void sqlite3ForceNotReadOnly(Parse *pParse){
+void sqlite3ForceNotReadOnly(Parse *pParse){
   int iReg = ++pParse->nMem;
   Vdbe *v = sqlite3GetVdbe(pParse);
   if( v ){
@@ -1561,7 +1561,11 @@ void sqlite3AddColumn(Parse *pParse, Token sName, Token sType){
   hName = sqlite3StrIHash(z);
   for(i=0; i<p->nCol; i++){
     if( p->aCol[i].hName==hName && sqlite3StrICmp(z, p->aCol[i].zCnName)==0 ){
-      sqlite3ErrorMsg(pParse, "duplicate column name: %s", z);
+      if( pParse->ifNotExists ){
+        pParse->ifNotExists = 2;
+      }else{
+        sqlite3ErrorMsg(pParse, "duplicate column name: %s", z);
+      }
       sqlite3DbFree(db, z);
       return;
     }

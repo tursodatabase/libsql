@@ -124,7 +124,8 @@ static void renameReloadSchema(Parse *pParse, int iDb, u16 p5){
 void sqlite3AlterRenameTable(
   Parse *pParse,            /* Parser context. */
   SrcList *pSrc,            /* The table to rename. */
-  Token *pName              /* The new table name. */
+  Token *pName,             /* The new table name. */
+  int noErr                 /* Suppress "no such table" errors */
 ){
   int iDb;                  /* Database that contains the table */
   char *zDb;                /* Name of database iDb */
@@ -140,8 +141,16 @@ void sqlite3AlterRenameTable(
   assert( pSrc->nSrc==1 );
   assert( sqlite3BtreeHoldsAllMutexes(pParse->db) );
 
+  if( noErr ) db->suppressErr++;
   pTab = sqlite3LocateTableItem(pParse, 0, &pSrc->a[0]);
-  if( !pTab ) goto exit_rename_table;
+  if( noErr ) db->suppressErr--;
+  if( !pTab ){
+    if( noErr ){
+      sqlite3CodeVerifyNamedSchema(pParse, pSrc->a[0].zDatabase);
+      sqlite3ForceNotReadOnly(pParse);
+    }
+    goto exit_rename_table;
+  }
   iDb = sqlite3SchemaToIndex(pParse->db, pTab->pSchema);
   zDb = db->aDb[iDb].zDbSName;
 
@@ -328,7 +337,7 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
   if( pParse->nErr ) return;
   assert( db->mallocFailed==0 );
   pNew = pParse->pNewTable;
-  assert( pNew );
+  if( pNew==0 ) return;  /* ALTER TABLE IF EXISTS and it does not exist */
 
   assert( sqlite3BtreeHoldsAllMutexes(db) );
   iDb = sqlite3SchemaToIndex(db, pNew->pSchema);
@@ -338,6 +347,12 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
   pDflt = sqlite3ColumnExpr(pNew, pCol);
   pTab = sqlite3FindTable(db, zTab, zDb);
   assert( pTab );
+  if( pParse->ifNotExists>=2 ){
+    sqlite3CodeVerifyNamedSchema(pParse, zDb);
+    sqlite3ForceNotReadOnly(pParse);
+    return;
+  }
+
 
 #ifndef SQLITE_OMIT_AUTHORIZATION
   /* Invoke the authorization callback. */
@@ -475,7 +490,12 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
 ** Routine sqlite3AlterFinishAddColumn() will be called to complete
 ** coding the "ALTER TABLE ... ADD" statement.
 */
-void sqlite3AlterBeginAddColumn(Parse *pParse, SrcList *pSrc){
+void sqlite3AlterBeginAddColumn(
+  Parse *pParse,
+  SrcList *pSrc,
+  int ifExists,          /* ALTER TABLE IF EXISTS... */
+  int ifNotExists        /* ... ADD COLUMN IF NOT EXISTS .... */
+){
   Table *pNew;
   Table *pTab;
   int iDb;
@@ -485,10 +505,21 @@ void sqlite3AlterBeginAddColumn(Parse *pParse, SrcList *pSrc){
 
   /* Look up the table being altered. */
   assert( pParse->pNewTable==0 );
+  assert( ifExists==0 || ifExists==1 );
+  assert( ifNotExists==0 || ifNotExists==1 );
   assert( sqlite3BtreeHoldsAllMutexes(db) );
   if( db->mallocFailed ) goto exit_begin_add_column;
+  db->suppressErr += ifExists;
   pTab = sqlite3LocateTableItem(pParse, 0, &pSrc->a[0]);
-  if( !pTab ) goto exit_begin_add_column;
+  db->suppressErr -= ifExists;
+  if( !pTab ){
+    if( ifExists ){
+      sqlite3CodeVerifyNamedSchema(pParse, pSrc->a[0].zDatabase);
+      sqlite3ForceNotReadOnly(pParse);
+    }
+    goto exit_begin_add_column;
+  }
+  pParse->ifNotExists = ifNotExists;
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   if( IsVirtual(pTab) ){
@@ -592,7 +623,9 @@ void sqlite3AlterRenameColumn(
   Parse *pParse,                  /* Parsing context */
   SrcList *pSrc,                  /* Table being altered.  pSrc->nSrc==1 */
   Token *pOld,                    /* Name of column being changed */
-  Token *pNew                     /* New column name */
+  Token *pNew,                    /* New column name */
+  int ifExistsTable,              /* IF EXISTS on table */
+  int ifExistsCol                 /* IF EXISTS on the column */
 ){
   sqlite3 *db = pParse->db;       /* Database connection */
   Table *pTab;                    /* Table being updated */
@@ -604,8 +637,16 @@ void sqlite3AlterRenameColumn(
   int bQuote;                     /* True to quote the new name */
 
   /* Locate the table to be altered */
+  db->suppressErr += ifExistsTable;
   pTab = sqlite3LocateTableItem(pParse, 0, &pSrc->a[0]);
-  if( !pTab ) goto exit_rename_column;
+  db->suppressErr -= ifExistsTable;
+  if( !pTab ){
+    if( ifExistsTable ){
+      sqlite3CodeVerifyNamedSchema(pParse, pSrc->a[0].zDatabase);
+      sqlite3ForceNotReadOnly(pParse);
+    }
+    goto exit_rename_column;
+  }
 
   /* Cannot alter a system table */
   if( SQLITE_OK!=isAlterableTable(pParse, pTab) ) goto exit_rename_column;
@@ -631,7 +672,12 @@ void sqlite3AlterRenameColumn(
     if( 0==sqlite3StrICmp(pTab->aCol[iCol].zCnName, zOld) ) break;
   }
   if( iCol==pTab->nCol ){
-    sqlite3ErrorMsg(pParse, "no such column: \"%T\"", pOld);
+    if( ifExistsCol ){
+      sqlite3CodeVerifyNamedSchema(pParse, pSrc->a[0].zDatabase);
+      sqlite3ForceNotReadOnly(pParse);
+    }else{
+      sqlite3ErrorMsg(pParse, "no such column: \"%T\"", pOld);
+    }
     goto exit_rename_column;
   }
 
@@ -2103,7 +2149,13 @@ drop_column_done:
 ** statement. Argument pSrc contains the possibly qualified name of the
 ** table being edited, and token pName the name of the column to drop.
 */
-void sqlite3AlterDropColumn(Parse *pParse, SrcList *pSrc, const Token *pName){
+void sqlite3AlterDropColumn(
+  Parse *pParse,                  /* Parsing context */
+  SrcList *pSrc,                  /* Table to be altered */
+  const Token *pName,             /* Name of column to be dropped */
+  int ifExistsTable,              /* IF EXISTS flag on the table */
+  int ifExistsColumn              /* IF EXISTS flags on the column */
+){
   sqlite3 *db = pParse->db;       /* Database handle */
   Table *pTab;                    /* Table to modify */
   int iDb;                        /* Index of db containing pTab in aDb[] */
@@ -2115,8 +2167,16 @@ void sqlite3AlterDropColumn(Parse *pParse, SrcList *pSrc, const Token *pName){
   assert( pParse->pNewTable==0 );
   assert( sqlite3BtreeHoldsAllMutexes(db) );
   if( NEVER(db->mallocFailed) ) goto exit_drop_column;
+  db->suppressErr += ifExistsTable;
   pTab = sqlite3LocateTableItem(pParse, 0, &pSrc->a[0]);
-  if( !pTab ) goto exit_drop_column;
+  db->suppressErr -= ifExistsTable;
+  if( !pTab ){
+    if( ifExistsTable ){
+      sqlite3CodeVerifyNamedSchema(pParse, pSrc->a[0].zDatabase);
+      sqlite3ForceNotReadOnly(pParse);
+    }
+    goto exit_drop_column;
+  }
 
   /* Make sure this is not an attempt to ALTER a view, virtual table or 
   ** system table. */
@@ -2131,7 +2191,12 @@ void sqlite3AlterDropColumn(Parse *pParse, SrcList *pSrc, const Token *pName){
   }
   iCol = sqlite3ColumnIndex(pTab, zCol);
   if( iCol<0 ){
-    sqlite3ErrorMsg(pParse, "no such column: \"%T\"", pName);
+    if( ifExistsColumn ){
+      sqlite3CodeVerifyNamedSchema(pParse, pSrc->a[0].zDatabase);
+      sqlite3ForceNotReadOnly(pParse);
+    }else{
+      sqlite3ErrorMsg(pParse, "no such column: \"%T\"", pName);
+    }
     goto exit_drop_column;
   }
 

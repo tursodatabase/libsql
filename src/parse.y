@@ -1637,24 +1637,24 @@ cmd ::= ANALYZE nm(X) dbnm(Y).  {sqlite3Analyze(pParse, &X, &Y);}
 //////////////////////// ALTER TABLE table ... ////////////////////////////////
 %ifndef SQLITE_OMIT_ALTERTABLE 
 %ifndef SQLITE_OMIT_VIRTUALTABLE
-cmd ::= ALTER TABLE fullname(X) RENAME TO nm(Z). {
-  sqlite3AlterRenameTable(pParse,X,&Z);
+cmd ::= ALTER TABLE ifexists(E) fullname(X) RENAME TO nm(Z). {
+  sqlite3AlterRenameTable(pParse,X,&Z,E);
 }
-cmd ::= ALTER TABLE add_column_fullname
-        ADD kwcolumn_opt columnname(Y) carglist. {
+cmd ::= ALTER TABLE add_column_fullname columnname(Y) carglist. {
   Y.n = (int)(pParse->sLastToken.z-Y.z) + pParse->sLastToken.n;
   sqlite3AlterFinishAddColumn(pParse, &Y);
 }
-cmd ::= ALTER TABLE fullname(X) DROP kwcolumn_opt nm(Y). {
-  sqlite3AlterDropColumn(pParse, X, &Y);
+cmd ::= ALTER TABLE ifexists(E1) fullname(X) DROP kwcolumn_opt ifexists(E2) nm(Y). {
+  sqlite3AlterDropColumn(pParse, X, &Y, E1, E2);
 }
 
-add_column_fullname ::= fullname(X). {
+add_column_fullname ::= ifexists(E1) fullname(X) ADD kwcolumn_opt ifnotexists(E2). {
   disableLookaside(pParse);
-  sqlite3AlterBeginAddColumn(pParse, X);
+  sqlite3AlterBeginAddColumn(pParse, X, E1, E2);
 }
-cmd ::= ALTER TABLE fullname(X) RENAME kwcolumn_opt nm(Y) TO nm(Z). {
-  sqlite3AlterRenameColumn(pParse, X, &Y, &Z);
+cmd ::= ALTER TABLE ifexists(E1) fullname(X)
+        RENAME kwcolumn_opt ifexists(E2) nm(Y) TO nm(Z). {
+  sqlite3AlterRenameColumn(pParse, X, &Y, &Z, E1, E2);
 }
 
 kwcolumn_opt ::= .
