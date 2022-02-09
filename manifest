@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\susing\ssqlite3_bind_value()\swith\ssqlite3_value\sobjects\sobtained\sfrom\ssqlite3_preupdate_new()\swhen\san\sinteger\svalue\sis\swritten\sto\sa\scolumn\swith\sreal\saffinity.
-D 2022-02-09T18:42:15.785
+C When\sprocess\sfirst\smoves\sa\sdatabase\sinto\sWAL\smode\sand\sthen\stries\sto\srun\nsqlite3_wal_checkpoint()\swithout\sfirst\sperforming\sa\stransaction,\sfirst\ntry\sto\srun\sa\ssynthesized\stransaction\sto\sget\sthe\sPager\scaught\sup\sbefore\nattemptingn\sthe\scheckpoint.\n[forum:/forumpost/fd0f19d229156939|forum\spost\sfd0f19d229156939].
+D 2022-02-09T18:47:09.644
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -539,7 +539,7 @@ F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c f5ad51cfd024116db8531feab9efd831c2621436dca1464e4ff1e8af9bf3252e
 F src/os_win.c 77d39873836f1831a9b0b91894fec45ab0e9ca8e067dc8c549e1d1eca1566fe9
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c 29e4d6d8e0a6d092644c58109a36293d1ea6fd2e1e7a26042f5462fd819493b7
+F src/pager.c 0c028c10e73b496ed9f5ecda50e814e99999e97c9e483b3d6d5be54cc39ddffc
 F src/pager.h 4bf9b3213a4b2bebbced5eaa8b219cf25d4a82f385d093cd64b7e93e5285f66f
 F src/parse.y b34d4eb8105271ea0d577ef165bb7b2a2b70e03b2e694e68e2e43b76389bf660
 F src/pcache.c 084e638432c610f95aea72b8509f0845d2791293f39d1b82f0c0a7e089c3bb6b
@@ -1944,8 +1944,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 22cc55e84f67f6f39b7dba07a4ef7ae958b2d926633faec91a278922053e50c6
-R 17abaf30f93ccdc5511b2021ebdd531b
-U dan
-Z a19c7c2fd597f947d750ad2fbbbad2d2
+P c006515ae6faff6525d589827d99092b06004472e32b7f586845c00c4732d695
+R c1881e04118d51a511fc401c0e6b0886
+U drh
+Z 5678d609cce97b340251791cc3933b65
 # Remove this line to create a well-formed Fossil manifest.
