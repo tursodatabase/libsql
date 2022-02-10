@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\sdocumentation.\s\sNo\scode\schanges.
-D 2022-02-10T01:01:31.410
+C Create\snew\sbranch\snamed\s"auto-column"
+D 2022-02-10T02:09:43.272
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1944,8 +1944,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P eee6de1967609f0b590ee4dbec088c3e7b03b08753267ed2909c5b03d60a0e18
+P e97c6ad4c915c82c2f0b347a0cdc8f80942c345194675a88174047ce0d0a43ad
 R 8f64a3cecc6fb60a0d94c857cb63d5b6
-U drh
-Z 2035d73285acce911b104c752355bc0e
+T *branch * auto-column
+T *sym-auto-column *
+T -sym-trunk *
+U larrybr
+Z ac5c8b1c3b5d3e8ba3b923c1ff1fbc55
 # Remove this line to create a well-formed Fossil manifest.
