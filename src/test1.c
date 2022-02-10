@@ -7258,7 +7258,7 @@ static int SQLITE_TCLAPI test_test_control(
         return TCL_ERROR;
       }
       if( Tcl_GetBooleanFromObj(interp, objv[2], &val) ) return TCL_ERROR;
-      sqlite3_test_control(iFlag, val);
+      sqlite3_test_control(iFlag, val!=0);
       break;
     }
 

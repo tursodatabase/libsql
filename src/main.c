@@ -4161,13 +4161,27 @@ int sqlite3_test_control(int op, ...){
       break;
     }
 
-    /*   sqlite3_test_control(SQLITE_TESTCTRL_LOCALTIME_FAULT, int onoff);
+    /*   sqlite3_test_control(SQLITE_TESTCTRL_LOCALTIME_FAULT, onoff, xAlt);
     **
-    ** If parameter onoff is non-zero, subsequent calls to localtime()
-    ** and its variants fail. If onoff is zero, undo this setting.
+    ** If parameter onoff is 1, subsequent calls to localtime() fail.
+    ** If 2, then invoke xAlt() instead of localtime().  If 0, normal
+    ** processing.
+    **
+    ** xAlt arguments are void pointers, but they really want to be:
+    **
+    **    int xAlt(const time_t*, struct tm*);
+    **
+    ** xAlt should write results in to struct tm object of its 2nd argument
+    ** and return zero on success, or return non-zero on failure.
     */
     case SQLITE_TESTCTRL_LOCALTIME_FAULT: {
       sqlite3GlobalConfig.bLocaltimeFault = va_arg(ap, int);
+      if( sqlite3GlobalConfig.bLocaltimeFault==2 ){
+        sqlite3GlobalConfig.xAltLocaltime = 
+           va_arg(ap, int(*)(const void*,void*));
+      }else{
+        sqlite3GlobalConfig.xAltLocaltime = 0;
+      }
       break;
     }
 

@@ -503,8 +503,10 @@ static void clearYMD_HMS_TZ(DateTime *p){
 ** is available.  This routine returns 0 on success and
 ** non-zero on any kind of error.
 **
-** If the sqlite3GlobalConfig.bLocaltimeFault variable is true then this
-** routine will always fail.
+** If the sqlite3GlobalConfig.bLocaltimeFault variable is non-zero then this
+** routine will always fail.  If bLocaltimeFault is nonzero and
+** sqlite3GlobalConfig.xAltLocaltime is not NULL, then xAltLocaltime() is
+** invoked in place of the OS-defined localtime() function.
 **
 ** EVIDENCE-OF: R-62172-00036 In this implementation, the standard C
 ** library function localtime_r() is used to assist in the calculation of
@@ -520,7 +522,13 @@ static int osLocaltime(time_t *t, struct tm *pTm){
   sqlite3_mutex_enter(mutex);
   pX = localtime(t);
 #ifndef SQLITE_UNTESTABLE
-  if( sqlite3GlobalConfig.bLocaltimeFault ) pX = 0;
+  if( sqlite3GlobalConfig.bLocaltimeFault ){
+    if( sqlite3GlobalConfig.xAltLocaltime!=0 ){
+      return sqlite3GlobalConfig.xAltLocaltime((const void*)t,(void*)pTm);
+    }else{
+      pX = 0;
+    }
+  }
 #endif
   if( pX ) *pTm = *pX;
 #if SQLITE_THREADSAFE>0
@@ -529,7 +537,13 @@ static int osLocaltime(time_t *t, struct tm *pTm){
   rc = pX==0;
 #else
 #ifndef SQLITE_UNTESTABLE
-  if( sqlite3GlobalConfig.bLocaltimeFault ) return 1;
+  if( sqlite3GlobalConfig.bLocaltimeFault ){
+    if( sqlite3GlobalConfig.xAltLocaltime!=0 ){
+      return sqlite3GlobalConfig.xAltLocaltime((const void*)t,(void*)pTm);
+    }else{
+      return 1;
+    }
+  }
 #endif
 #if HAVE_LOCALTIME_R
   rc = localtime_r(t, pTm)==0;
