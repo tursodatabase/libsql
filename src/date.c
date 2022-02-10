@@ -523,8 +523,10 @@ static int osLocaltime(time_t *t, struct tm *pTm){
   pX = localtime(t);
 #ifndef SQLITE_UNTESTABLE
   if( sqlite3GlobalConfig.bLocaltimeFault ){
-    if( sqlite3GlobalConfig.xAltLocaltime!=0 ){
-      return sqlite3GlobalConfig.xAltLocaltime((const void*)t,(void*)pTm);
+    if( sqlite3GlobalConfig.xAltLocaltime!=0
+     && 0==sqlite3GlobalConfig.xAltLocaltime((const void*)t,(void*)pTm)
+    ){
+      pX = pTm;
     }else{
       pX = 0;
     }

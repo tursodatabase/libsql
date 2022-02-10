@@ -1,5 +1,5 @@
-C Enhance\sSQLITE_TESTCTRL_LOCALTIME_FAULT\sso\sthat\sis\sable\sto\sinstall\san\nalternative\slocaltime()\sinterface\sso\sthat\sthe\slocaltime\slogic\san\sbe\sbetter\ntested.
-D 2022-02-10T21:26:53.735
+C Fix\sSQLITE_TESTCTRL_LOCALTIME_FAULT\sso\sthat\sit\sworks\seven\sif\smutexes\sare\nenabled.
+D 2022-02-10T23:12:58.018
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -499,7 +499,7 @@ F src/build.c b59ff41525c10b429adc277d3bca6e433b09d055b0df8c1529385763cea8bb04
 F src/callback.c 4c19af69835787bfe790ac560f3071a824eb629f34e41f97b52ce5235c77de1c
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 2cce39df1a13e05b7633e6d21b651f21492471f991dd7b323a4ee4e7b7f0b7f1
-F src/date.c 4088c042680ecc5ea1b7d5bfa67b91e7d0f48e91de2d2c5244852250ae86a2cb
+F src/date.c 1fcc64294b0e81cc9fa05cf8f773e862dd004f74d023544d43edeeacbcfde7e5
 F src/dbpage.c 8a01e865bf8bc6d7b1844b4314443a6436c07c3efe1d488ed89e81719047833a
 F src/dbstat.c 861e08690fcb0f2ee1165eff0060ea8d4f3e2ea10f80dab7d32ad70443a6ff2d
 F src/delete.c b5f1716b4d723db48254ee0f896e362cd029e865e05414139ea7f539f3884e1d
@@ -1944,8 +1944,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 85cb6014751a0572d28ebd839331d5d7a78de45c9e522adcd834a8a85746f32e
-R 223a6ad4591810b91660311766f1accb
+P 6e25cb0890e8cdc63c9a21e841844d066267fc32ad143527843f7c8d05612b53
+R b4c18325e5e30dde4c5cbc5a73cdd599
 U drh
-Z aed68e242e6b8ba2c978ed50de469779
+Z b3ec0930c208b299317e22009860377e
 # Remove this line to create a well-formed Fossil manifest.
