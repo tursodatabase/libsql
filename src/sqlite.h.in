@@ -3850,7 +3850,7 @@ void sqlite3_free_filename(char*);
 ** SQL, the sqlite3_error_offset() interface returns the byte offset
 ** of the start of that token.  ^The byte offset returned by
 ** sqlite3_error_offset() assumes that the input SQL is UTF8.
-** ^If the most error does not reference a specific token in the input
+** ^If the most recent error does not reference a specific token in the input
 ** SQL, then the sqlite3_error_offset() function returns -1.
 **
 ** When the serialized [threading mode] is in use, it might be the
