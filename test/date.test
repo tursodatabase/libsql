@@ -332,9 +332,9 @@ if {$tzoffset_new==4} {
   }
   datetest 6.7.2 {datetime('2007-03-11 01:59:00','utc')} {2007-03-11 06:59:00}
 
-  datetest 6.8 {datetime('2000-04-02 02:00:00','utc')} {2000-04-02 06:00:00}
-  datetest 6.8.1 {datetime('2006-04-02 02:00:00','utc')} {2006-04-02 06:00:00}
-  datetest 6.8.2 {datetime('2007-03-11 02:00:00','utc')} {2007-03-11 06:00:00}
+  datetest 6.8 {datetime('2000-04-02 02:00:00','utc')} {2000-04-02 07:00:00}
+  datetest 6.8.1 {datetime('2006-04-02 02:00:00','utc')} {2006-04-02 07:00:00}
+  datetest 6.8.2 {datetime('2007-03-11 02:00:00','utc')} {2007-03-11 07:00:00}
 
   # The 'utc' modifier is a no-op if the LHS is known to already be in UTC
   datetest 6.9.1 {datetime('2015-12-23 12:00:00','utc')} {2015-12-23 17:00:00}
@@ -353,10 +353,10 @@ if {$tzoffset_new==4} {
       {2039-01-01 07:00:00}
   datetest 6.13 {datetime('2000-07-01 12:00:00','localtime')} \
       {2000-07-01 08:00:00}
-  datetest 6.14 {datetime('1969-07-01 12:00:00','localtime')} \
-      {1969-07-01 07:00:00}
-  datetest 6.15 {datetime('2039-07-01 12:00:00','localtime')} \
-      {2039-07-01 07:00:00}
+  datetest 6.14 {datetime('1969-11-01 12:00:00','localtime')} \
+      {1969-11-01 07:00:00}
+  datetest 6.15 {datetime('2039-02-01 12:00:00','localtime')} \
+      {2039-02-01 07:00:00}
   set sqlite_current_time \
      [db eval {SELECT strftime('%s','2000-07-01 12:34:56')}]
   datetest 6.16 {datetime('now','localtime')} {2000-07-01 08:34:56}
