@@ -4009,6 +4009,7 @@ static int SQLITE_TCLAPI test_bind_value_from_preupdate(
   if( Tcl_GetIntFromObj(interp, objv[4], &bidx) ) return TCL_ERROR;
   db = sqlite3_db_handle(pStmt);
 
+#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
   if( z3[0]=='n' ){
     sqlite3_preupdate_new(db, bidx, &pVal);
   }else if( z3[0]=='o' ){
@@ -4018,6 +4019,7 @@ static int SQLITE_TCLAPI test_bind_value_from_preupdate(
     return TCL_ERROR;
   }
   sqlite3_bind_value(pStmt, idx, pVal);
+#endif
 
   return TCL_OK;
 }

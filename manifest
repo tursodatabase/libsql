@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\sdocumentation.\s\sNo\scode\schanges.
-D 2022-02-10T01:01:31.410
+C Fix\sthe\stest\sharness\sso\sthat\sit\sbuilds\swithout\sSQLITE_ENABLE_PREUPDATE_HOOK.\nHas\sbeen\sbroken\ssince\s[c006515ae6faff65].
+D 2022-02-10T12:31:37.892
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -562,7 +562,7 @@ F src/sqliteLimit.h d7323ffea5208c6af2734574bae933ca8ed2ab728083caa117c9738581a3
 F src/status.c 4b8bc2a6905163a38b739854a35b826c737333fab5b1f8e03fa7eb9a4799c4c1
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
 F src/tclsqlite.c 48f291e1a7e672a7204884d4c164a8ed3a522ff087c361ada2991f5d54e987f6
-F src/test1.c ac0e7eeea18230c9c315abedd5a91db7bea91743880d9371b60d3bf2b40c9796
+F src/test1.c ce2a866f6977d4016e5801ab58b21dc06459a4c304d95961a662645e7364361f
 F src/test2.c 3efb99ab7f1fc8d154933e02ae1378bac9637da5
 F src/test3.c 61798bb0d38b915067a8c8e03f5a534b431181f802659a6616f9b4ff7d872644
 F src/test4.c 7c4420e01c577b5c4add2cb03119743b1a357543d347773b9e717195ea967159
@@ -1944,8 +1944,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P eee6de1967609f0b590ee4dbec088c3e7b03b08753267ed2909c5b03d60a0e18
-R 8f64a3cecc6fb60a0d94c857cb63d5b6
+P e97c6ad4c915c82c2f0b347a0cdc8f80942c345194675a88174047ce0d0a43ad
+R d61adca3b531e3867be427e74f9a778b
 U drh
-Z 2035d73285acce911b104c752355bc0e
+Z 34460101605bb1e673848aeae36b08e4
 # Remove this line to create a well-formed Fossil manifest.
