@@ -4033,6 +4033,8 @@ int sqlite3_test_control(int op, ...){
       ** types in the second argument to va_arg().  Work around the problem
       ** using a typedef.
       ** http://support.microsoft.com/kb/47961  <-- dead hyperlink
+      ** Search at http://web.archive.org/ to find the 2015-03-16 archive
+      ** of the link above to see the original text.
       ** sqlite3GlobalConfig.xTestCallback = va_arg(ap, int(*)(int));
       */
       typedef int(*sqlite3FaultFuncType)(int);
