@@ -1,5 +1,5 @@
-C Load\srecent\sdbsqlfuzz\sfinds\sinto\stest/fuzzdata8.db.
-D 2022-02-11T17:47:58.782
+C Update\ssome\sOOM\stests\sof\sthe\sALTER\sTABLE\scommand\sto\saccount\sfor\san\serror\smessage\swhich\smay\sbe\sreturned\sif\sopening\sthe\stemp\sdb\sfails.
+D 2022-02-11T19:41:03.848
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -664,8 +664,8 @@ F test/alterdropcol2.test 527fce683b200d620f560f666c44ae33e22728e990a10a48a54328
 F test/alterfault.test 289067108947bedca27534edd4ff251bcd298cf84402d7b24eaa3749305418c6
 F test/alterlegacy.test f38c6d06cda39e1f7b955bbce57f2e3ef5b7cb566d3d1234502093e228c15811
 F test/altermalloc.test 167a47de41b5c638f5f5c6efb59784002b196fff70f98d9b4ed3cd74a3fb80c9
-F test/altermalloc2.test ca3ebc01670d9313953a2b7628d8cc00dc5ea9988f229b3cbbbe1cca506dae45
-F test/altermalloc3.test 4660ac6240a8c82ba3947b927612dcc7c05a8eec3fe3c9f38e047ca69a789a33
+F test/altermalloc2.test 17fb3724c4b004c469c27dc4ef181608aa644555fbd3f3236767584f73747c81
+F test/altermalloc3.test 55e606edf4b0acfbbd851ddfe93cfdddfae43d103644dcfd6008ae4ab3c44adf
 F test/alterqf.test 3008318ba9e16b4ac0b5f83cf7683caa4b0a3154aafe3b4099838a250d4ba74a
 F test/altertab.test 7273b8506eab46342be016af78028df49f3bd99037412f997a8f1011b37a6912
 F test/altertab2.test 62597b6fd08feaba1b6bfe7d31dac6117c67e06dc9ce9c478a3abe75b5926de0
@@ -1944,8 +1944,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ab1a9b5b78de7c00b38357b1df08e82ce5608a14f8c675ac20c5f2dad5212f50
-R 3c0b7fe68f1994f5b25e0793fbe9ed85
-U drh
-Z 1a8e88290e38fd7fb987aae4e5fe24f2
+P b275ad250d8aa286829647967ab7e75fcd2b5674caab1a34eab59d8486a34cd5
+R ab60919561ef0e99edc2361b1091371b
+U dan
+Z 0db8909dc048078c264e1babf0e1620f
 # Remove this line to create a well-formed Fossil manifest.
