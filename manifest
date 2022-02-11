@@ -1,5 +1,5 @@
-C Fix\sSQLITE_TESTCTRL_LOCALTIME_FAULT\sso\sthat\sit\sworks\seven\sif\smutexes\sare\nenabled.
-D 2022-02-10T23:12:58.018
+C Work\saround\sthe\sMSVC\sbug\sthat\sprevents\sthe\suse\sof\sfunction\spointer\stypes\sin\nthe\ssecond\sargument\sof\sva_arg()\sby\sadding\sa\stypedef.
+D 2022-02-11T11:37:12.491
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -516,7 +516,7 @@ F src/insert.c 1eea44389de3768ac98588c1410171cd53e7c6ad1af74049983dcbac82093de0
 F src/json.c 225b00422112ecd7094a555f3ace16b25d7d5894062b823269ed03899907c2a2
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c aa919a6a7884f8b34d7b791841b24d14b1b0ab43f45b3940f4851043b2855c0c
-F src/main.c 911a4d673782df8f53838f779291de9059f1d00adb506a3c2c758bbd6231a5d3
+F src/main.c b2a12cd5866c588e94759578306dd9dccfce7952a09c42c88aacb7a124f31fd1
 F src/malloc.c fec841aa0a0400a6f7d20706178a5d8e8219a6bf562b6fe712c17f6c26813266
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
@@ -1944,8 +1944,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6e25cb0890e8cdc63c9a21e841844d066267fc32ad143527843f7c8d05612b53
-R b4c18325e5e30dde4c5cbc5a73cdd599
+P 64537a0669553e8a6b610b9e9703ec084472516c86cfc22a7a6c73b6c66131ee
+R 69d39cc2a2c0b0bff918307a67a5ff96
 U drh
-Z b3ec0930c208b299317e22009860377e
+Z 143ea0bc38b583b5551b8d361444e012
 # Remove this line to create a well-formed Fossil manifest.
