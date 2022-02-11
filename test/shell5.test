@@ -476,4 +476,27 @@ CREATE TABLE t8(a, b, c);
   db eval { SELECT * FROM t8 }
 } {1 2 3}
 
+#----------------------------------------------------------------------------
+# Tests for the shell automatic column rename.
+#
+
+# Import columns containing duplicates
+do_test shell5-5.1 {
+  set out [open shell5.csv w]
+  fconfigure $out -translation lf
+  puts $out {"","x","x","y","z","z_0"}
+  puts $out {0,"ex2","ex3","wye4","zee5","zee6"}
+  close $out
+  forcedelete test.db
+  catchcmd test.db {.import -csv shell5.csv t1
+.mode line
+SELECT * FROM t1;}
+} {1 {    ? = 0
+  x_2 = ex2
+  x_3 = ex3
+    y = wye4
+  z_5 = zee5
+  z_6 = zee6
+Columns renamed during .import shell5.csv due to duplicates.}}
+
 finish_test

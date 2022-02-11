@@ -7225,13 +7225,16 @@ static char *shellMPrintf(int *pRc, const char *zFmt, ...){
 
 
 /* 
- * zAutoColumn(zCol, &db) => Maybe init db, add column zCol to it.
- * zAutoColumn(0, &db) => (db!=0) Form columns spec for CREATE TABLE,
+ * zAutoColumn(zCol, &db, ?) => Maybe init db, add column zCol to it.
+ * zAutoColumn(0, &db, ?) => (db!=0) Form columns spec for CREATE TABLE,
  *   close db and set it to 0, and return the columns spec, to later
  *   be sqlite3_free()'ed by the caller.
  * The return is 0 when either:
  *   (a) The db was not initialized and zCol==0 (There are no columns.)
  *   (b) zCol!=0  (Column was added, db initialized as needed.)
+ * The 3rd argument, pRenamed, references an out parameter. If the
+ * pointer is non-zero, its referent will be set to 1 if renaming was
+ * necessary, or set to 0 if none was done.
  */
 #ifdef SHELL_DEBUG
 #define rc_err_oom_die(rc) \
@@ -7251,7 +7254,7 @@ static char zCOL_DB[] = SHELL_COLFIX_DB;
 static const char *zCOL_DB = ":memory:";
 #endif
 
-static char *zAutoColumn(const char *zColNew, sqlite3 **pDb){
+static char *zAutoColumn(const char *zColNew, sqlite3 **pDb, int *pRenamed){
   /* Queries and D{D,M}L used here */
   static const char const *zTabMake = "\
 CREATE TABLE ColNames(\
@@ -7373,6 +7376,7 @@ FROM (\
     }else{
       zColsSpec = 0;
     }
+    if( pRenamed!=0 ) *pRenamed = hasDupes;
     sqlite3_finalize(pStmt);
     sqlite3_close(*pDb);
     *pDb = 0;
@@ -8926,12 +8930,18 @@ static int do_meta_command(char *zLine, ShellState *p){
       char *zCreate = sqlite3_mprintf("CREATE TABLE \"%w\".\"%w\"",
                                       zSchema, zTable);
       sqlite3 *dbCols = 0;
+      int renamed = 0;
       char *zColDefs;
       while( xRead(&sCtx) ){
-        zAutoColumn(sCtx.z, &dbCols);
+        zAutoColumn(sCtx.z, &dbCols, 0);
         if( sCtx.cTerm!=sCtx.cColSep ) break;
       }
-      zColDefs = zAutoColumn(0, &dbCols);
+      zColDefs = zAutoColumn(0, &dbCols, &renamed);
+      if( renamed!=0 ){
+        utf8_printf((stdin_is_interactive && p->in==stdin)? p->out : stderr,
+                    "Columns renamed during .import %s due to duplicates.\n",
+                    sCtx.zFile);
+      }
       assert(dbCols==0);
       if( zColDefs==0 ){
         sqlite3_free(zCreate);
