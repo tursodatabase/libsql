@@ -1,5 +1,5 @@
-C Work\saround\sthe\sMSVC\sbug\sthat\sprevents\sthe\suse\sof\sfunction\spointer\stypes\sin\nthe\ssecond\sargument\sof\sva_arg()\sby\sadding\sa\stypedef.
-D 2022-02-11T11:37:12.491
+C Fix\sthe\sbind2.test\stest\sscript\sso\sthat\sit\sworks\seven\sif\nSQLITE_ENABLE_PREUPDATE_HOOK\sis\snot\sdefined.\nFix\sfor\stest-case\sbreakage\sfrom\scheck-in\s[c006515ae6faff65].
+D 2022-02-11T12:06:37.779
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -739,7 +739,7 @@ F test/bigmmap.test b820c234daa56d24bc3bf006e3ac7aa9d9623c8ac656a38f59063b444a2d
 F test/bigrow.test f0aeb7573dcb8caaafea76454be3ade29b7fc747
 F test/bigsort.test 8299fa9298f4f1e02fc7d2712e8b77d6cd60e5a2
 F test/bind.test 1e136709b306f7ed3192d349c2930d89df6ab621654ad6f1a72381d3fe76f483
-F test/bind2.test ce26f19475c933e59e80028fc44073b84c2aba8650dadfdfbd057a4c5adbeb3a
+F test/bind2.test 918bc35135f4141809ead7585909cde57d44db90a7a62aef540127148f91aab7
 F test/bindxfer.test efecd12c580c14df5f4ad3b3e83c667744a4f7e0
 F test/bitvec.test 75894a880520164d73b1305c1c3f96882615e142
 F test/blob.test e7ac6c7d3a985cc4678c64f325292529a69ae252
@@ -1944,8 +1944,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 64537a0669553e8a6b610b9e9703ec084472516c86cfc22a7a6c73b6c66131ee
-R 69d39cc2a2c0b0bff918307a67a5ff96
+P eae3ab0a050079d050f339b2510eebd55afe4464e9b410ddacb7523f89981144
+R 79f6972005a4c1979207db9e22e0082a
 U drh
-Z 143ea0bc38b583b5551b8d361444e012
+Z da1ae444693eca5c95a17e499729f262
 # Remove this line to create a well-formed Fossil manifest.
