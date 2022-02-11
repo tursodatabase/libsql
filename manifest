@@ -1,5 +1,5 @@
-C Reference\sthe\swayback\smachine\sfor\sthe\sdead\shyperlink\sto\sthe\sMS\ssupport\npage\sin\sthe\scomments\sabout\swhy\sthe\sextra\stypedef\sfor\sva_arg().\s\sNo\scode\nchanges.
-D 2022-02-11T17:47:25.368
+C Load\srecent\sdbsqlfuzz\sfinds\sinto\stest/fuzzdata8.db.
+D 2022-02-11T17:47:58.782
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1072,7 +1072,7 @@ F test/fuzzdata4.db b502c7d5498261715812dd8b3c2005bad08b3a26e6489414bd13926cd3e4
 F test/fuzzdata5.db e35f64af17ec48926481cfaf3b3855e436bd40d1cfe2d59a9474cb4b748a52a5
 F test/fuzzdata6.db 92a80e4afc172c24f662a10a612d188fb272de4a9bd19e017927c95f737de6d7
 F test/fuzzdata7.db 0166b56fd7a6b9636a1d60ef0a060f86ddaecf99400a666bb6e5bbd7199ad1f2
-F test/fuzzdata8.db 738ed275638f2423cdef240a44eba3b9bc272eec619e68b00429d4575a15e50b
+F test/fuzzdata8.db ca9a97f401b06b0d5376139ec7e1f9e773e13345a9a2d9ccc0032cdbfedea230
 F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test f64c4aef4c9e9edf1d6dc0d3f1e65dcc81e67c996403c88d14f09b74807a42bc
@@ -1944,8 +1944,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a51402e8c29fad2b24e32de55b10691fb0ebd6c2cebac941e43e54be211d5d39
-R 20eead42bad3445f6e92d102d7410997
+P ab1a9b5b78de7c00b38357b1df08e82ce5608a14f8c675ac20c5f2dad5212f50
+R 3c0b7fe68f1994f5b25e0793fbe9ed85
 U drh
-Z adcaf83dd936d55d3827cdbf801eb9c8
+Z 1a8e88290e38fd7fb987aae4e5fe24f2
 # Remove this line to create a well-formed Fossil manifest.
