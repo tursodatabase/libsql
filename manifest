@@ -1,5 +1,5 @@
-C Use\sthe\senhanced\sSQLITE_TESTCTRL_LOCALTIME_FAULT\s(2)\scapability\sto\sdo\sbetter\ntesting\sof\sthe\s'localtime'\sand\s'utc'\smodifiers\sto\sdate/time\sfunctions.
-D 2022-02-11T14:08:05.256
+C Fix\sa\sproblem\sin\s[c006515ae6faff65]\scausing\san\sassert()\sto\sfail\swith\ssome\sbuild\sconfigurations.
+D 2022-02-11T16:10:18.625
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -627,7 +627,7 @@ F src/vacuum.c 6c38ddc52f0619865c91dae9c441d4d48bf3040d7dc1bc5b22da1e45547ed0b3
 F src/vdbe.c 13a4de20ee07bdfb3dc74ab49b7912208e309caf762a8d1678fb111e2223af35
 F src/vdbe.h 25dabb25c7e157b84e59260cfb5b466c3ac103ede9f36f4db371332c47601abe
 F src/vdbeInt.h b45599a2b59f1ce042512ab6786b0b82a8cf3002f6b0fa60b4834e2cd3ac61d8
-F src/vdbeapi.c c38f1642bb2e31a3e2f1bbd185984455e277022bdd618698a036557686721e8a
+F src/vdbeapi.c 8863ffb5a7bac42fe9a68aaa3526ee29fc18fb02a9b27188b756de41e33856e9
 F src/vdbeaux.c 0d7659fe8cb38ce86092b9bc5131c99a834a04eb78745e54acb77d79d7af2fb5
 F src/vdbeblob.c 5e61ce31aca17db8fb60395407457a8c1c7fb471dde405e0cd675974611dcfcd
 F src/vdbemem.c eb6042667c02c3ef1f968235b4a170e31b23a4b6a57f65a8454eab4d36f14b7f
@@ -1944,8 +1944,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 937d3a45b3fef354dbdea2085fbb7d9c752a96e8ebb62f61931deb5a64132946
-R a16f91be526745131b2dd2bc3f00c944
-U drh
-Z 614bb1714108c365812b64395ec64ab7
+P f38071946ac2e5bb61e6c0620507e4c94464999ac700d86c1a704b94eb1c009a
+R c307ea0ca335d4fa864c98350426e969
+U dan
+Z 7c3d6912f6e9bdfd9499001351fd962e
 # Remove this line to create a well-formed Fossil manifest.
