@@ -36,6 +36,11 @@ do_test 1.1 {
 } {42.0}
 sqlite3_finalize $stmt
 
+ifcapable !preupdate {
+  finish_test
+  return
+}
+
 proc preup {args} {
   set stmt [sqlite3_prepare db "SELECT ?" -1 tail]
   sqlite3_bind_value_from_preupdate $stmt 1 old 0

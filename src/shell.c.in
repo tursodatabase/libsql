@@ -23,10 +23,10 @@
 ** If SQLITE_CUSTOM_INCLUDE=? is defined, its value names the #include
 ** file. Note that this macro has a like effect on sqlite3.c compilation.
 */
+# define SHELL_STRINGIFY_(f) #f
+# define SHELL_STRINGIFY(f) SHELL_STRINGIFY_(f)
 #ifdef SQLITE_CUSTOM_INCLUDE
-# define INC_STRINGIFY_(f) #f
-# define INC_STRINGIFY(f) INC_STRINGIFY_(f)
-# include INC_STRINGIFY(SQLITE_CUSTOM_INCLUDE)
+# include SHELL_STRINGIFY(SQLITE_CUSTOM_INCLUDE)
 #endif
 
 /*
@@ -7254,6 +7254,17 @@ static char zCOL_DB[] = SHELL_COLFIX_DB;
 static const char *zCOL_DB = ":memory:";
 #endif
 
+/* Define character (as C string) to separate generated column ordinal
+ * from protected part of incoming column names. This defaults to "_"
+ * so that incoming column identifiers that did not need not be quoted
+ * remain usable without being quoted. It must be one character.
+ */
+#ifndef SHELL_AUTOCOLUMN_SEP
+# define AUTOCOLUMN_SEP "_"
+#else
+# define AUTOCOLUMN_SEP SHELL_STRINGIFY(SHELL_AUTOCOLUMN_SEP)
+#endif
+
 static char *zAutoColumn(const char *zColNew, sqlite3 **pDb, int *pRenamed){
   /* Queries and D{D,M}L used here */
   static const char const *zTabMake = "\
@@ -7282,12 +7293,14 @@ WITH chopped AS ( \
       FROM choppable \
       WHERE substring(name, nc, 1) BETWEEN '0' AND '9'\
      ) SELECT cpos /*name*/ FROM choppable \
-       WHERE nc<length(name) and substring(name, nc, 1)='_'\
+       WHERE nc<length(name) and \
+         substring(name, nc, 1)='"AUTOCOLUMN_SEP"'\
   )\
   UNION ALL\
   SELECT cpos, name, chop+1 AS chop, nlen \
   FROM chopping \
-  WHERE instr('_0123456789', substring(name, nlen-chop, 1))>0 \
+  WHERE \
+   instr('"AUTOCOLUMN_SEP"0123456789', substring(name, nlen-chop, 1))>0 \
  )\
  SELECT cpos, name, max(chop) AS chop FROM chopping s \
  GROUP BY cpos \
@@ -7306,7 +7319,8 @@ SELECT CAST(ceil(log(count(*)+0.5)) AS INT) FROM ColNames \
 ";
 #endif
   static const char const *zRenameRank = "\
-UPDATE ColNames AS t SET suff=iif(reps>1, printf('_%0*d', $1, cpos), '')\
+UPDATE ColNames AS t SET \
+ suff=iif(reps>1, printf('"AUTOCOLUMN_SEP"%0*d', $1, cpos), '')\
 ";
   static const char const *zCollectVar = "\
 SELECT\

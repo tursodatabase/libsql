@@ -4009,6 +4009,7 @@ static int SQLITE_TCLAPI test_bind_value_from_preupdate(
   if( Tcl_GetIntFromObj(interp, objv[4], &bidx) ) return TCL_ERROR;
   db = sqlite3_db_handle(pStmt);
 
+#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
   if( z3[0]=='n' ){
     sqlite3_preupdate_new(db, bidx, &pVal);
   }else if( z3[0]=='o' ){
@@ -4018,6 +4019,7 @@ static int SQLITE_TCLAPI test_bind_value_from_preupdate(
     return TCL_ERROR;
   }
   sqlite3_bind_value(pStmt, idx, pVal);
+#endif
 
   return TCL_OK;
 }
@@ -7205,6 +7207,55 @@ static int SQLITE_TCLAPI test_print_eqp(
 }
 #endif /* SQLITE_OMIT_EXPLAIN */
 
+#include <time.h>
+/*
+** This is an alternative localtime_r() implementation used for testing
+** the 'localtime' and 'utc' modifiers of date-time functions.  Because
+** the OS-supplied localtime_r() is locale-dependent, this alternative is
+** provided as a stable test platform.
+**
+** Operation:
+**
+**     (1)  Localtime is 30 minutes earlier than (west of) UTC on
+**          even days (counting from 1970-01-01)
+**
+**     (2)  Localtime is 30 minutes later than (east of) UTC on odd days.
+**
+**     (3)  The function fails for the specific date/time value
+**          of 2000-05-29 14:16:00 in order to test the ability of
+**          SQLite to deal with localtime_r() failures.
+*/
+static int testLocaltime(const void *aliasT, void *aliasTM){
+  const time_t t = *(const time_t*)aliasT;
+  struct tm *pTm = (struct tm *)aliasTM;
+  time_t altT;
+  sqlite3_int64 iJD;
+  int Z, A, B, C, D, E, X1, S;
+
+  if( (t/86400) & 1 ){
+    altT = t + 1800;  /* 30 minutes later on odd days */
+  }else{
+    altT = t - 1800;  /* 30 minutes earlier on even days */
+  }
+  iJD = (sqlite3_int64)(altT + 210866760000);
+  Z = (int)((iJD + 43200)/86400);
+  A = (int)((Z - 1867216.25)/36524.25);
+  A = Z + 1 + A - (A/4);
+  B = A + 1524;
+  C = (int)((B - 122.1)/365.25);
+  D = (36525*(C&32767))/100;
+  E = (int)((B-D)/30.6001);
+  X1 = (int)(30.6001*E);
+  pTm->tm_mday = B - D - X1;
+  pTm->tm_mon = E<14 ? E-2 : E-14;
+  pTm->tm_year = (pTm->tm_mon>1 ? C - 4716 : C - 4715) - 1900;
+  S = (int)((iJD + 43200)%86400);
+  pTm->tm_hour = S/3600;
+  pTm->tm_min = (S/60)%60;
+  pTm->tm_sec = S % 60;
+  return t==959609760; /* Special case: 2000-05-29 14:16:00 fails */
+}
+
 /*
 ** sqlite3_test_control VERB ARGS...
 */
@@ -7252,11 +7303,11 @@ static int SQLITE_TCLAPI test_test_control(
     case SQLITE_TESTCTRL_LOCALTIME_FAULT: {
       int val;
       if( objc!=3 ){
-        Tcl_WrongNumArgs(interp, 2, objv, "ONOFF");
+        Tcl_WrongNumArgs(interp, 2, objv, "0|1|2");
         return TCL_ERROR;
       }
-      if( Tcl_GetBooleanFromObj(interp, objv[2], &val) ) return TCL_ERROR;
-      sqlite3_test_control(iFlag, val);
+      if( Tcl_GetIntFromObj(interp, objv[2], &val) ) return TCL_ERROR;
+      sqlite3_test_control(iFlag, val, testLocaltime);
       break;
     }
 
