@@ -1,5 +1,5 @@
-C Avoid\sdropping\sSQLITE_TOOBIG\serrors\sin\sthe\squote()\sfunction.
-D 2022-02-12T13:37:27.925
+C Update\sfuzz.test\sto\saccount\sfor\sa\schange\sin\serror\smessage\smade\sin\sthe\score.
+D 2022-02-12T13:45:02.416
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1058,7 +1058,7 @@ F test/func5.test 863e6d1bd0013d09c17236f8a13ea34008dd857d87d85a13a673960e4c25d8
 F test/func6.test 90e42b64c4f9fb6f04f44cb8a1da586c8542502e926b19c76504fe74ff2a9b7c
 F test/func7.test b9e2a1a30a8562b00841b4a21a5d2d81754fa3ab99275fd71fd5279287b44b1c
 F test/fuzz-oss1.test 514dcabb24687818ea949fa6760229eaacad74ca70157743ef36d35bbe01ffb0
-F test/fuzz.test 96083052bf5765e4518c1ba686ce2bab785670d1
+F test/fuzz.test 4608c1310cff4c3014a84bcced6278139743e080046e5f6784b0de7b069371d8
 F test/fuzz2.test 76dc35b32b6d6f965259508508abce75a6c4d7e1
 F test/fuzz3.test 9c813e6613b837cb7a277b0383cd66bfa07042b4cf0317157c35852f30043c31
 F test/fuzz4.test c229bcdb45518a89e1d208a21343e061503460ac69fae1539320a89f572eb634
@@ -1944,8 +1944,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ca22a64e6f05a6688974f4cff1a0ff2c873aad1947f3cf6ffaeee8bb074b2627
-R 2e6d581fd6e56ff441925392bf096f8f
+P 115c3051a1ff7567e84f14fc4c49efe61bc2850248533449b0195c305ab6516e
+R 1731f084452458b9d05eee60f181d7b7
 U dan
-Z 130ae51273ca1e2d6d860abf05c086cc
+Z 9b6392ca101801cd901345406912d710
 # Remove this line to create a well-formed Fossil manifest.
