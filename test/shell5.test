@@ -499,4 +499,20 @@ SELECT * FROM t1;}
   z_6 = zee6
 Columns renamed during .import shell5.csv due to duplicates.}}
 
+do_test shell5-5.1 {
+  set out [open shell5.csv w]
+  fconfigure $out -translation lf
+  puts $out {"COW","cow","CoW","cOw"}
+  puts $out {"uuu","lll","ulu","lul"}
+  close $out
+  forcedelete test.db
+  catchcmd test.db {.import -csv shell5.csv t1
+.mode line
+SELECT * FROM t1;}
+} {1 {COW_1 = uuu
+cow_2 = lll
+CoW_3 = ulu
+cOw_4 = lul
+Columns renamed during .import shell5.csv due to duplicates.}}
+
 finish_test

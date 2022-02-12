@@ -7277,7 +7277,7 @@ INSERT INTO ColNames(name,nlen,chop,reps,suff)\
  VALUES(iif(length(?1)>0,?1,'?'),max(length(?1),1),0,0,'')\
 ";
   static const char const *zHasDupes = "\
-SELECT count(DISTINCT substring(name,1,nlen-chop)||suff)\
+SELECT count(DISTINCT (substring(name,1,nlen-chop)||suff) COLLATE NOCASE)\
  <count(name) FROM ColNames\
 ";
   static const char const *zDedoctor = "\
@@ -7311,6 +7311,7 @@ WITH chopped AS ( \
 UPDATE ColNames AS t SET reps=\
 (SELECT count(*) FROM ColNames d \
  WHERE substring(t.name,1,t.nlen-t.chop)=substring(d.name,1,d.nlen-d.chop)\
+ COLLATE NOCASE\
 )\
 ";
 #ifdef SQLITE_ENABLE_MATH_FUNCTIONS
