@@ -1,5 +1,5 @@
-C Fix\sauto-column\sbug\snoted\sby\spost\shttps://sqlite.org/forum/forumpost/d102c15d63
-D 2022-02-12T10:48:42.243
+C For\s.import\sauto-column,\said\sbuild-time\soverride\sof\srename\sdecoration.
+D 2022-02-12T13:12:03.134
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -553,7 +553,7 @@ F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c ea935b87d6fb36c78b70cdc7b28561dc8f33f2ef37048389549c7b5ef9b0ba5e
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 3baa9dd8cf240654773c7974e2bcce398ac9dd24419c36684156963defe43b35
-F src/shell.c.in b4ef80a729f82ad5cedda0e283e551d879412eb5009b10f45072293fdaa31c78 x
+F src/shell.c.in c2a03469e2f6f694878bdbee0e99f428c7bd2db104d54bd818f8834419ed666a x
 F src/sqlite.h.in 7047c4b60fa550264d6363bb1d983540e7828fb19d2d1e5aa43b52ca13144807
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h a95cb9ed106e3d39e2118e4dcc15a14faec3fa50d0093425083d340d9dfd96e6
@@ -1944,8 +1944,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P caaef4c592c980889efb349fa73b61303ec493172d90cd67d54ffde0855e4138
-R eb64a5c15c31ec1dd30354269699f3b9
+P 689137e1b5bc78b0f16e5db86d16415b9fa77d22ded59e93d75e7033b465e673
+R c9aa492d97b18dedc9e846ae1794f2b1
 U larrybr
-Z da19ff331b971aff319325862b93569d
+Z f9350e44002aa6905f87e93f2aa43b9c
 # Remove this line to create a well-formed Fossil manifest.

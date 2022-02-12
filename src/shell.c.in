@@ -7319,10 +7319,14 @@ UPDATE ColNames AS t SET reps=\
 SELECT CAST(ceil(log(count(*)+0.5)) AS INT) FROM ColNames \
 ";
 #endif
-  static const char const *zRenameRank = "\
-UPDATE ColNames AS t SET \
- suff=iif(reps>1, printf('"AUTOCOLUMN_SEP"%0*d', $1, cpos), '')\
-";
+  static const char const *zRenameRank =
+#ifndef SHELL_COLUMN_RENAME_DML
+    "UPDATE ColNames AS t SET suff="
+    "iif(reps>1, printf('%c%0*d', '"AUTOCOLUMN_SEP"', $1, cpos), '')"
+#else
+    SHELL_COLUMN_RENAME_DML
+#endif
+    ;
   static const char const *zCollectVar = "\
 SELECT\
  '('||\
