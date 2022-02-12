@@ -1,5 +1,5 @@
-C Update\sfuzz.test\sto\saccount\sfor\sa\schange\sin\serror\smessage\smade\sin\sthe\score.
-D 2022-02-12T13:45:02.416
+C Fix\sa\spossible\suser-after-free\sin\sALTER\sTABLE\sfound\sby\sasan.
+D 2022-02-12T16:02:37.221
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -541,7 +541,7 @@ F src/os_win.c 77d39873836f1831a9b0b91894fec45ab0e9ca8e067dc8c549e1d1eca1566fe9
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 66bc54c37448c562950e28783e49c7697ea79d1e85136d0e4a915d3a7f9feb5b
 F src/pager.h 4bf9b3213a4b2bebbced5eaa8b219cf25d4a82f385d093cd64b7e93e5285f66f
-F src/parse.y b34d4eb8105271ea0d577ef165bb7b2a2b70e03b2e694e68e2e43b76389bf660
+F src/parse.y 0f02b27cdaa334441463153fff3ceb780fea006ab53ffd6ef566d4468f93e924
 F src/pcache.c 084e638432c610f95aea72b8509f0845d2791293f39d1b82f0c0a7e089c3bb6b
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c 54881292a9a5db202b2c0ac541c5e3ef9a5e8c4f1c1383adb2601d5499a60e65
@@ -1944,8 +1944,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 115c3051a1ff7567e84f14fc4c49efe61bc2850248533449b0195c305ab6516e
-R 1731f084452458b9d05eee60f181d7b7
+P c57601b51f9b59e9d8f0eb06580fa14f49525e56bd0190c02865e478bd1f48e7
+R d2a62b8276aa68cab3c9ab07a64e195d
 U dan
-Z 9b6392ca101801cd901345406912d710
+Z 7c02332c554dccceaabe14199f7f2d03
 # Remove this line to create a well-formed Fossil manifest.
