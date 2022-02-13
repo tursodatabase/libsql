@@ -7224,186 +7224,6 @@ static char *shellMPrintf(int *pRc, const char *zFmt, ...){
 }
 
 
-/* 
- * zAutoColumn(zCol, &db, ?) => Maybe init db, add column zCol to it.
- * zAutoColumn(0, &db, ?) => (db!=0) Form columns spec for CREATE TABLE,
- *   close db and set it to 0, and return the columns spec, to later
- *   be sqlite3_free()'ed by the caller.
- * The return is 0 when either:
- *   (a) The db was not initialized and zCol==0 (There are no columns.)
- *   (b) zCol!=0  (Column was added, db initialized as needed.)
- * The 3rd argument, pRenamed, references an out parameter. If the
- * pointer is non-zero, its referent will be set to 1 if renaming was
- * necessary, or set to 0 if none was done.
- */
-#ifdef SHELL_DEBUG
-#define rc_err_oom_die(rc) \
-  if( rc==SQLITE_NOMEM ) shell_check_oom(0); \
-  else if(!(rc==SQLITE_OK||rc==SQLITE_DONE)) \
-    fprintf(stderr,"E:%d\n",rc), assert(0)
-#else
-static void rc_err_oom_die(int rc){
-  if( rc==SQLITE_NOMEM ) shell_check_oom(0);
-  assert(rc==SQLITE_OK||rc==SQLITE_DONE);
-}
-#endif
-
-#ifdef SHELL_COLFIX_DB /* If this is set, the DB can be in a file. */
-static char zCOL_DB[] = SHELL_COLFIX_DB;
-#else  /* Otherwise, memory is faster/better for the transient DB. */
-static const char *zCOL_DB = ":memory:";
-#endif
-
-/* Define character (as C string) to separate generated column ordinal
- * from protected part of incoming column names. This defaults to "_"
- * so that incoming column identifiers that did not need not be quoted
- * remain usable without being quoted. It must be one character.
- */
-#ifndef SHELL_AUTOCOLUMN_SEP
-# define AUTOCOLUMN_SEP "_"
-#else
-# define AUTOCOLUMN_SEP SHELL_STRINGIFY(SHELL_AUTOCOLUMN_SEP)
-#endif
-
-static char *zAutoColumn(const char *zColNew, sqlite3 **pDb, int *pRenamed){
-  /* Queries and D{D,M}L used here */
-  static const char const *zTabMake = "\
-CREATE TABLE ColNames(\
- cpos INTEGER PRIMARY KEY,\
- name TEXT, nlen INT, chop INT, reps INT, suff TEXT)\
-";
-  static const char const *zTabFill = "\
-INSERT INTO ColNames(name,nlen,chop,reps,suff)\
- VALUES(iif(length(?1)>0,?1,'?'),max(length(?1),1),0,0,'')\
-";
-  static const char const *zHasDupes = "\
-SELECT count(DISTINCT (substring(name,1,nlen-chop)||suff) COLLATE NOCASE)\
- <count(name) FROM ColNames\
-";
-  static const char const *zDedoctor = "\
-WITH chopped AS ( \
- WITH RECURSIVE chopping(cpos, name, chop, nlen) AS ( \
-  SELECT cpos, name, 0, nlen FROM ColNames \
-  WHERE cpos IN ( \
-    WITH RECURSIVE choppable(nc, name, cpos) AS \
-     (SELECT nlen AS nc, name, cpos \
-      FROM ColNames \
-      UNION ALL \
-      SELECT nc-1 AS nc, name, cpos \
-      FROM choppable \
-      WHERE substring(name, nc, 1) BETWEEN '0' AND '9'\
-     ) SELECT cpos /*name*/ FROM choppable \
-       WHERE nc<length(name) and \
-         substring(name, nc, 1)='"AUTOCOLUMN_SEP"'\
-  )\
-  UNION ALL\
-  SELECT cpos, name, chop+1 AS chop, nlen \
-  FROM chopping \
-  WHERE \
-   instr('"AUTOCOLUMN_SEP"0123456789', substring(name, nlen-chop, 1))>0 \
- )\
- SELECT cpos, name, max(chop) AS chop FROM chopping s \
- GROUP BY cpos \
-) UPDATE ColNames AS c \
-  SET chop=n.chop FROM chopped n WHERE c.cpos=n.cpos \
-";
-  static const char const *zSetReps = "\
-UPDATE ColNames AS t SET reps=\
-(SELECT count(*) FROM ColNames d \
- WHERE substring(t.name,1,t.nlen-t.chop)=substring(d.name,1,d.nlen-d.chop)\
- COLLATE NOCASE\
-)\
-";
-#ifdef SQLITE_ENABLE_MATH_FUNCTIONS
-  static const char const *zColDigits = "\
-SELECT CAST(ceil(log(count(*)+0.5)) AS INT) FROM ColNames \
-";
-#endif
-  static const char const *zRenameRank =
-#ifndef SHELL_COLUMN_RENAME_DML
-    "UPDATE ColNames AS t SET suff="
-    "iif(reps>1, printf('%c%0*d', '"AUTOCOLUMN_SEP"', $1, cpos), '')"
-#else
-    SHELL_COLUMN_RENAME_DML
-#endif
-    ;
-  static const char const *zCollectVar = "\
-SELECT\
- '('||\
- group_concat(\
-  cname||' TEXT',\
-  ','||iif((cpos-1)%4>0, ' ', x'0a'||' '))\
- ||')' AS ColsSpec \
-FROM (\
- SELECT cpos, printf('\"%w\"',printf('%.*s%s', nlen-chop,name,suff)) AS cname \
- FROM ColNames ORDER BY cpos\
-)";
-
-  int rc;
-  sqlite3_stmt *pStmt = 0;
-  assert(pDb!=0);
-  if( zColNew ){
-    /* Add initial or additional column. Init db if necessary. */
-    if( *pDb==0 ){
-      if( SQLITE_OK!=sqlite3_open(zCOL_DB, pDb) ) return 0;
-#ifdef SHELL_COLFIX_DB
-      if(*zCOL_DB!=':')
-        sqlite3_exec(*pDb,"drop table if exists ColNames",0,0,0);
-#endif
-      rc = sqlite3_exec(*pDb, zTabMake, 0, 0, 0);
-      rc_err_oom_die(rc);
-    }
-    assert(*pDb!=0);
-    rc = sqlite3_prepare_v2(*pDb, zTabFill, -1, &pStmt, 0);
-    rc_err_oom_die(rc);
-    rc = sqlite3_bind_text(pStmt, 1, zColNew, -1, 0);
-    rc_err_oom_die(rc);
-    rc = sqlite3_step(pStmt);
-    rc_err_oom_die(rc);
-    sqlite3_finalize(pStmt);
-    return 0;
-  }else if( *pDb==0 ){
-    return 0;
-  }else{
-    /* Formulate the columns spec, close the DB, zero *pDb. */
-    char *zColsSpec = 0;
-    int hasDupes = db_int(*pDb, zHasDupes);
-#ifdef SQLITE_ENABLE_MATH_FUNCTIONS
-    int nDigits = (hasDupes)? db_int(*pDb, zColDigits) : 0;
-#else
-# define nDigits 2
-#endif
-    if( hasDupes ){
-      rc = sqlite3_exec(*pDb, zDedoctor, 0, 0, 0);
-      rc_err_oom_die(rc);
-      rc = sqlite3_exec(*pDb, zSetReps, 0, 0, 0);
-      rc_err_oom_die(rc);
-      rc = sqlite3_prepare_v2(*pDb, zRenameRank, -1, &pStmt, 0);
-      rc_err_oom_die(rc);
-      rc = sqlite3_bind_int(pStmt, 1, nDigits);
-      rc_err_oom_die(rc);
-      rc = sqlite3_step(pStmt);
-      sqlite3_finalize(pStmt);
-      assert(rc==SQLITE_DONE);
-    }
-    assert(db_int(*pDb, zHasDupes)==0); /* Consider: remove this */
-    rc = sqlite3_prepare_v2(*pDb, zCollectVar, -1, &pStmt, 0);
-    rc_err_oom_die(rc);
-    rc = sqlite3_step(pStmt);
-    if( rc==SQLITE_ROW ){
-      zColsSpec = sqlite3_mprintf("%s", sqlite3_column_text(pStmt, 0));
-    }else{
-      zColsSpec = 0;
-    }
-    if( pRenamed!=0 ) *pRenamed = hasDupes;
-    sqlite3_finalize(pStmt);
-    sqlite3_close(*pDb);
-    *pDb = 0;
-    return zColsSpec;
-  }
-}
-
-
 /*
 ** When running the ".recover" command, each output table, and the special
 ** orphaned row table if it is required, is represented by an instance
@@ -7999,6 +7819,166 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
   return rc;
 }
 #endif /* !(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_ENABLE_DBPAGE_VTAB) */
+
+
+/* 
+ * zAutoColumn(zCol, &db, ?) => Maybe init db, add column zCol to it.
+ * zAutoColumn(0, &db, ?) => (db!=0) Form columns spec for CREATE TABLE,
+ *   close db and set it to 0, and return the columns spec, to later
+ *   be sqlite3_free()'ed by the caller.
+ * The return is 0 when either:
+ *   (a) The db was not initialized and zCol==0 (There are no columns.)
+ *   (b) zCol!=0  (Column was added, db initialized as needed.)
+ * The 3rd argument, pRenamed, references an out parameter. If the
+ * pointer is non-zero, its referent will be set to 1 if renaming was
+ * necessary, or set to 0 if none was done.
+ */
+#ifdef SHELL_DEBUG
+#define rc_err_oom_die(rc) \
+  if( rc==SQLITE_NOMEM ) shell_check_oom(0); \
+  else if(!(rc==SQLITE_OK||rc==SQLITE_DONE)) \
+    fprintf(stderr,"E:%d\n",rc), assert(0)
+#else
+static void rc_err_oom_die(int rc){
+  if( rc==SQLITE_NOMEM ) shell_check_oom(0);
+  assert(rc==SQLITE_OK||rc==SQLITE_DONE);
+}
+#endif
+
+#ifdef SHELL_COLFIX_DB /* If this is set, the DB can be in a file. */
+static char zCOL_DB[] = SHELL_STRINGIFY(SHELL_COLFIX_DB);
+#else  /* Otherwise, memory is faster/better for the transient DB. */
+static const char *zCOL_DB = ":memory:";
+#endif
+
+/* Define character (as C string) to separate generated column ordinal
+ * from protected part of incoming column names. This defaults to "_"
+ * so that incoming column identifiers that did not need not be quoted
+ * remain usable without being quoted. It must be one character.
+ */
+#ifndef SHELL_AUTOCOLUMN_SEP
+# define AUTOCOLUMN_SEP "_"
+#else
+# define AUTOCOLUMN_SEP SHELL_STRINGIFY(SHELL_AUTOCOLUMN_SEP)
+#endif
+
+static char *zAutoColumn(const char *zColNew, sqlite3 **pDb, int *pRenamed){
+  /* Queries and D{D,M}L used here */
+  static const char * const zTabMake = "\
+CREATE TABLE ColNames(\
+ cpos INTEGER PRIMARY KEY,\
+ name TEXT, nlen INT, chop INT, reps INT, suff TEXT)\
+";
+  static const char * const zTabFill = "\
+INSERT INTO ColNames(name,nlen,chop,reps,suff)\
+ VALUES(iif(length(?1)>0,?1,'?'),max(length(?1),1),0,0,'')\
+";
+  static const char * const zHasDupes = "\
+SELECT count(DISTINCT (substring(name,1,nlen-chop)||suff) COLLATE NOCASE)\
+ <count(name) FROM ColNames\
+";
+  static const char * const zDedoctor = "\
+UPDATE ColNames SET chop=iif(\
+  (substring(name,nlen,1) BETWEEN '0' AND '9')\
+  AND (rtrim(name,'0123456790') glob '*"AUTOCOLUMN_SEP"'),\
+ nlen-length(rtrim(name, '"AUTOCOLUMN_SEP"0123456789')),\
+ 0\
+)\
+";
+  static const char * const zSetReps = "\
+UPDATE ColNames AS t SET reps=\
+(SELECT count(*) FROM ColNames d \
+ WHERE substring(t.name,1,t.nlen-t.chop)=substring(d.name,1,d.nlen-d.chop)\
+ COLLATE NOCASE\
+)\
+";
+#ifdef SQLITE_ENABLE_MATH_FUNCTIONS
+  static const char * const zColDigits = "\
+SELECT CAST(ceil(log(count(*)+0.5)) AS INT) FROM ColNames \
+";
+#endif
+  static const char * const zRenameRank =
+#ifndef SHELL_COLUMN_RENAME_DML
+    "UPDATE ColNames AS t SET suff="
+    "iif(reps>1, printf('%c%0*d', '"AUTOCOLUMN_SEP"', $1, cpos), '')"
+#else
+    SHELL_COLUMN_RENAME_DML
+#endif
+    ;
+  static const char * const zCollectVar = "\
+SELECT\
+ '('||x'0a'\
+ || group_concat(\
+  cname||' TEXT',\
+  ','||iif((cpos-1)%4>0, ' ', x'0a'||' '))\
+ ||')' AS ColsSpec \
+FROM (\
+ SELECT cpos, printf('\"%w\"',printf('%.*s%s', nlen-chop,name,suff)) AS cname \
+ FROM ColNames ORDER BY cpos\
+)";
+
+  int rc;
+  sqlite3_stmt *pStmt = 0;
+  assert(pDb!=0);
+  if( zColNew ){
+    /* Add initial or additional column. Init db if necessary. */
+    if( *pDb==0 ){
+      if( SQLITE_OK!=sqlite3_open(zCOL_DB, pDb) ) return 0;
+#ifdef SHELL_COLFIX_DB
+      if(*zCOL_DB!=':')
+        sqlite3_exec(*pDb,"drop table if exists ColNames",0,0,0);
+#endif
+      rc = sqlite3_exec(*pDb, zTabMake, 0, 0, 0);
+      rc_err_oom_die(rc);
+    }
+    assert(*pDb!=0);
+    rc = sqlite3_prepare_v2(*pDb, zTabFill, -1, &pStmt, 0);
+    rc_err_oom_die(rc);
+    rc = sqlite3_bind_text(pStmt, 1, zColNew, -1, 0);
+    rc_err_oom_die(rc);
+    rc = sqlite3_step(pStmt);
+    rc_err_oom_die(rc);
+    sqlite3_finalize(pStmt);
+    return 0;
+  }else if( *pDb==0 ){
+    return 0;
+  }else{
+    /* Formulate the columns spec, close the DB, zero *pDb. */
+    char *zColsSpec = 0;
+    int hasDupes = db_int(*pDb, zHasDupes);
+#ifdef SQLITE_ENABLE_MATH_FUNCTIONS
+    int nDigits = (hasDupes)? db_int(*pDb, zColDigits) : 0;
+#else
+# define nDigits 2
+#endif
+    if( hasDupes ){
+      rc = sqlite3_exec(*pDb, zDedoctor, 0, 0, 0);
+      rc_err_oom_die(rc);
+      rc = sqlite3_exec(*pDb, zSetReps, 0, 0, 0);
+      rc_err_oom_die(rc);
+      rc = sqlite3_prepare_v2(*pDb, zRenameRank, -1, &pStmt, 0);
+      rc_err_oom_die(rc);
+      sqlite3_bind_int(pStmt, 1, nDigits);
+      rc = sqlite3_step(pStmt);
+      sqlite3_finalize(pStmt);
+      assert(rc==SQLITE_DONE);
+    }
+    assert(db_int(*pDb, zHasDupes)==0); /* Consider: remove this */
+    rc = sqlite3_prepare_v2(*pDb, zCollectVar, -1, &pStmt, 0);
+    rc_err_oom_die(rc);
+    rc = sqlite3_step(pStmt);
+    if( rc==SQLITE_ROW ){
+      zColsSpec = sqlite3_mprintf("%s", sqlite3_column_text(pStmt, 0));
+    }else{
+      zColsSpec = 0;
+    }
+    if( pRenamed!=0 ) *pRenamed = hasDupes;
+    sqlite3_finalize(pStmt);
+    sqlite3_close(*pDb);
+    *pDb = 0;
+    return zColsSpec;
+  }
+}
 
 /*
 ** If an input line begins with "." then invoke this routine to

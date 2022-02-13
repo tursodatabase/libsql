@@ -1075,6 +1075,9 @@ expr(A) ::= nm(X) DOT nm(Y) DOT nm(Z). {
   Expr *temp2 = tokenExpr(pParse,TK_ID,Y);
   Expr *temp3 = tokenExpr(pParse,TK_ID,Z);
   Expr *temp4 = sqlite3PExpr(pParse, TK_DOT, temp2, temp3);
+  if( IN_RENAME_OBJECT ){
+    sqlite3RenameTokenRemap(pParse, 0, temp1);
+  }
   A = sqlite3PExpr(pParse, TK_DOT, temp1, temp4);
 }
 term(A) ::= NULL|FLOAT|BLOB(X). {A=tokenExpr(pParse,@X,X); /*A-overwrites-X*/}
