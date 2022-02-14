@@ -484,20 +484,26 @@ CREATE TABLE t8(a, b, c);
 do_test shell5-5.1 {
   set out [open shell5.csv w]
   fconfigure $out -translation lf
-  puts $out {"","x","x","y","z","z_0"}
-  puts $out {0,"ex2","ex3","wye4","zee5","zee6"}
+  puts $out {"","x","x","y","z","z_0","z_5","z"}
+  puts $out {0,"x2","x3","y4","z5","z6","z7","z8"}
   close $out
   forcedelete test.db
   catchcmd test.db {.import -csv shell5.csv t1
 .mode line
 SELECT * FROM t1;}
 } {1 {    ? = 0
-  x_2 = ex2
-  x_3 = ex3
-    y = wye4
-  z_5 = zee5
-  z_6 = zee6
-Columns renamed during .import shell5.csv due to duplicates.}}
+ x_02 = x2
+ x_03 = x3
+    y = y4
+ z_05 = z5
+  z_0 = z6
+  z_5 = z7
+ z_08 = z8
+Columns renamed during .import shell5.csv due to duplicates:
+"x" to "x_02",
+"x" to "x_03",
+"z" to "z_05",
+"z" to "z_08"}}
 
 do_test shell5-5.1 {
   set out [open shell5.csv w]
@@ -513,6 +519,10 @@ SELECT * FROM t1;}
 cow_2 = lll
 CoW_3 = ulu
 cOw_4 = lul
-Columns renamed during .import shell5.csv due to duplicates.}}
+Columns renamed during .import shell5.csv due to duplicates:
+"COW" to "COW_1",
+"cow" to "cow_2",
+"CoW" to "CoW_3",
+"cOw" to "cOw_4"}}
 
 finish_test

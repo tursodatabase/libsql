@@ -7830,8 +7830,9 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
  *   (a) The db was not initialized and zCol==0 (There are no columns.)
  *   (b) zCol!=0  (Column was added, db initialized as needed.)
  * The 3rd argument, pRenamed, references an out parameter. If the
- * pointer is non-zero, its referent will be set to 1 if renaming was
- * necessary, or set to 0 if none was done.
+ * pointer is non-zero, its referent will be set to a summary of renames
+ * done if renaming was necessary, or set to 0 if none was done. The out
+ * string (if any) must be sqlite3_free()'ed by the caller.
  */
 #ifdef SHELL_DEBUG
 #define rc_err_oom_die(rc) \
@@ -7862,12 +7863,17 @@ static const char *zCOL_DB = ":memory:";
 # define AUTOCOLUMN_SEP SHELL_STRINGIFY(SHELL_AUTOCOLUMN_SEP)
 #endif
 
-static char *zAutoColumn(const char *zColNew, sqlite3 **pDb, int *pRenamed){
+static char *zAutoColumn(const char *zColNew, sqlite3 **pDb, char **pzRenamed){
   /* Queries and D{D,M}L used here */
   static const char * const zTabMake = "\
 CREATE TABLE ColNames(\
  cpos INTEGER PRIMARY KEY,\
- name TEXT, nlen INT, chop INT, reps INT, suff TEXT)\
+ name TEXT, nlen INT, chop INT, reps INT, suff TEXT);\
+CREATE VIEW RepeatedNames AS \
+SELECT DISTINCT t.name FROM ColNames t \
+WHERE t.name COLLATE NOCASE IN (\
+ SELECT o.name FROM ColNames o WHERE o.cpos<>t.cpos\
+);\
 ";
   static const char * const zTabFill = "\
 INSERT INTO ColNames(name,nlen,chop,reps,suff)\
@@ -7877,6 +7883,7 @@ INSERT INTO ColNames(name,nlen,chop,reps,suff)\
 SELECT count(DISTINCT (substring(name,1,nlen-chop)||suff) COLLATE NOCASE)\
  <count(name) FROM ColNames\
 ";
+#ifdef SHELL_COLUMN_RENAME_CLEAN
   static const char * const zDedoctor = "\
 UPDATE ColNames SET chop=iif(\
   (substring(name,nlen,1) BETWEEN '0' AND '9')\
@@ -7885,6 +7892,7 @@ UPDATE ColNames SET chop=iif(\
  0\
 )\
 ";
+#endif
   static const char * const zSetReps = "\
 UPDATE ColNames AS t SET reps=\
 (SELECT count(*) FROM ColNames d \
@@ -7898,11 +7906,40 @@ SELECT CAST(ceil(log(count(*)+0.5)) AS INT) FROM ColNames \
 ";
 #endif
   static const char * const zRenameRank =
-#ifndef SHELL_COLUMN_RENAME_DML
+#ifdef SHELL_COLUMN_RENAME_CLEAN
     "UPDATE ColNames AS t SET suff="
     "iif(reps>1, printf('%c%0*d', '"AUTOCOLUMN_SEP"', $1, cpos), '')"
-#else
-    SHELL_COLUMN_RENAME_DML
+#else /* ...RENAME_MINIMAL_ONE_PASS */
+"WITH Lzn(nlz) AS (" /* Find minimum extraneous leading 0's for uniqueness */
+"  SELECT 0 AS nlz"
+"  UNION"
+"  SELECT nlz+1 AS nlz FROM Lzn"
+"  WHERE EXISTS("
+"   SELECT 1"
+"   FROM ColNames t, ColNames o"
+"   WHERE"
+"    iif(t.name IN (SELECT * FROM RepeatedNames),"
+"     printf('%s"AUTOCOLUMN_SEP"%s',"
+"      t.name, substring(printf('%.*c%0.*d',nlz+1,'0',$1,t.cpos),2)),"
+"     t.name"
+"    )"
+"    ="
+"    iif(o.name IN (SELECT * FROM RepeatedNames),"
+"     printf('%s"AUTOCOLUMN_SEP"%s',"
+"      o.name, substring(printf('%.*c%0.*d',nlz+1,'0',$1,o.cpos),2)),"
+"     o.name"
+"    )"
+"    COLLATE NOCASE"
+"    AND o.cpos<>t.cpos"
+"   GROUP BY t.cpos"
+"  )"
+") UPDATE Colnames AS t SET"
+" chop = 0," /* No chopping, never touch incoming names. */
+" suff = iif(name IN (SELECT * FROM RepeatedNames),"
+"  printf('"AUTOCOLUMN_SEP"%s', substring("
+"   printf('%.*c%0.*d',(SELECT max(nlz) FROM Lzn)+1,'0',1,t.cpos),2)),"
+"  ''"
+" )"
 #endif
     ;
   static const char * const zCollectVar = "\
@@ -7916,7 +7953,12 @@ FROM (\
  SELECT cpos, printf('\"%w\"',printf('%.*s%s', nlen-chop,name,suff)) AS cname \
  FROM ColNames ORDER BY cpos\
 )";
-
+  static const char * const zRenamesDone =
+    "SELECT group_concat("
+    " printf('\"%w\" to \"%w\"',name,printf('%.*s%s', nlen-chop, name, suff)),"
+    " ','||x'0a')"
+    "FROM ColNames WHERE suff<>'' OR chop!=0"
+    ;
   int rc;
   sqlite3_stmt *pStmt = 0;
   assert(pDb!=0);
@@ -7926,7 +7968,8 @@ FROM (\
       if( SQLITE_OK!=sqlite3_open(zCOL_DB, pDb) ) return 0;
 #ifdef SHELL_COLFIX_DB
       if(*zCOL_DB!=':')
-        sqlite3_exec(*pDb,"drop table if exists ColNames",0,0,0);
+        sqlite3_exec(*pDb,"drop table if exists ColNames;"
+                     "drop view if exists RepeatedNames;",0,0,0);
 #endif
       rc = sqlite3_exec(*pDb, zTabMake, 0, 0, 0);
       rc_err_oom_die(rc);
@@ -7952,8 +7995,10 @@ FROM (\
 # define nDigits 2
 #endif
     if( hasDupes ){
+#ifdef SHELL_COLUMN_RENAME_CLEAN
       rc = sqlite3_exec(*pDb, zDedoctor, 0, 0, 0);
       rc_err_oom_die(rc);
+#endif
       rc = sqlite3_exec(*pDb, zSetReps, 0, 0, 0);
       rc_err_oom_die(rc);
       rc = sqlite3_prepare_v2(*pDb, zRenameRank, -1, &pStmt, 0);
@@ -7972,7 +8017,17 @@ FROM (\
     }else{
       zColsSpec = 0;
     }
-    if( pRenamed!=0 ) *pRenamed = hasDupes;
+    if( pzRenamed!=0 ){
+      if( !hasDupes ) *pzRenamed = 0;
+      else{
+        sqlite3_finalize(pStmt);
+        if( SQLITE_OK==sqlite3_prepare_v2(*pDb, zRenamesDone, -1, &pStmt, 0)
+            && SQLITE_ROW==sqlite3_step(pStmt) ){
+          *pzRenamed = sqlite3_mprintf("%s", sqlite3_column_text(pStmt, 0));
+        }else
+          *pzRenamed = 0;
+      }
+    }
     sqlite3_finalize(pStmt);
     sqlite3_close(*pDb);
     *pDb = 0;
@@ -8929,17 +8984,18 @@ static int do_meta_command(char *zLine, ShellState *p){
       char *zCreate = sqlite3_mprintf("CREATE TABLE \"%w\".\"%w\"",
                                       zSchema, zTable);
       sqlite3 *dbCols = 0;
-      int renamed = 0;
+      char *zRenames = 0;
       char *zColDefs;
       while( xRead(&sCtx) ){
         zAutoColumn(sCtx.z, &dbCols, 0);
         if( sCtx.cTerm!=sCtx.cColSep ) break;
       }
-      zColDefs = zAutoColumn(0, &dbCols, &renamed);
-      if( renamed!=0 ){
+      zColDefs = zAutoColumn(0, &dbCols, &zRenames);
+      if( zRenames!=0 ){
         utf8_printf((stdin_is_interactive && p->in==stdin)? p->out : stderr,
-                    "Columns renamed during .import %s due to duplicates.\n",
-                    sCtx.zFile);
+                    "Columns renamed during .import %s due to duplicates:\n"
+                    "%s\n", sCtx.zFile, zRenames);
+        sqlite3_free(zRenames);
       }
       assert(dbCols==0);
       if( zColDefs==0 ){
