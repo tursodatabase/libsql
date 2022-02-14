@@ -1782,7 +1782,7 @@ static int freeSpace(MemPage *pPage, u16 iStart, u16 iSize){
     if( iFreeBlk>pPage->pBt->usableSize-4 ){ /* TH3: corrupt081.100 */
       return SQLITE_CORRUPT_PAGE(pPage);
     }
-    assert( iFreeBlk>iPtr || iFreeBlk==0 );
+    assert( iFreeBlk>iPtr || iFreeBlk==0 || CORRUPT_DB );
   
     /* At this point:
     **    iFreeBlk:   First freeblock after iStart, or zero if none
@@ -6846,6 +6846,12 @@ static void dropCell(MemPage *pPage, int idx, int sz, int *pRC){
   assert( pPage->pBt->usableSize > (u32)(ptr-data) );
   pc = get2byte(ptr);
   hdr = pPage->hdrOffset;
+#if 0  /* Not required.  Omit for efficiency */
+  if( pc<hdr+pPage->nCell*2 ){
+    *pRC = SQLITE_CORRUPT_BKPT;
+    return;
+  }
+#endif
   testcase( pc==(u32)get2byte(&data[hdr+5]) );
   testcase( pc+sz==pPage->pBt->usableSize );
   if( pc+sz > pPage->pBt->usableSize ){
