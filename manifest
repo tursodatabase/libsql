@@ -1,5 +1,5 @@
-C Fix\sa\sbad\sassert()\s(it\sneeds\san\s"||CORRUPT_DB"\sterm)\sin\sb-tree,\sdiscovered\nby\sdbsqlfuzz.
-D 2022-02-14T13:53:49.894
+C Minor\scorrection\sto\sthe\searly\scorruption\sdetection\sadded\sby\n[a6fda39e81d0da98|check-in\sa6fda39e81d0da98]\sso\sthat\sit\sworks\seven\sif\nthe\spage\sbeing\scleared\sin\spage\s1\sof\sthe\sdatabase.
+D 2022-02-14T18:18:56.749
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -492,7 +492,7 @@ F src/auth.c f4fa91b6a90bbc8e0d0f738aa284551739c9543a367071f55574681e0f24f8cf
 F src/backup.c a2891172438e385fdbe97c11c9745676bec54f518d4447090af97189fd8e52d7
 F src/bitvec.c 7c849aac407230278445cb069bebc5f89bf2ddd87c5ed9459b070a9175707b3d
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c 36171a7ac65de459a46fc5c058469e312675b6607c77ae352720f29a4c3aec99
+F src/btree.c 117808943727d27e38c69de4e79237e52c89ee40f6f1a70de4e6e14b5e596cbc
 F src/btree.h 74d64b8f28cfa4a894d14d4ed64fa432cd697b98b61708d4351482ae15913e22
 F src/btreeInt.h ee9348c4cb9077243b049edc93a82c1f32ca48baeabf2140d41362b9f9139ff7
 F src/build.c b59ff41525c10b429adc277d3bca6e433b09d055b0df8c1529385763cea8bb04
@@ -1944,8 +1944,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bf8dbfd499e732f14c7a8efee527e8ce155937dbb2a3e85213f8aa64ac497189
-R eb064779415a6eb9ec1638908fc5d28d
+P f5f263cc626d6a8bea3e85e28bb716e3eac0d9cd199cc060c0c8b0c77b280a45
+R f1974ee7ab7b76ebb9cb6d119b1ea037
 U drh
-Z 1f402c75824ae1ac218e657bf4bc7a68
+Z 9c489509c54e68b7fa1df2f79cfd8e24
 # Remove this line to create a well-formed Fossil manifest.

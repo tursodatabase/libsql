@@ -6411,7 +6411,7 @@ static int freePage2(BtShared *pBt, MemPage *pMemPage, Pgno iPage){
   assert( CORRUPT_DB || iPage>1 );
   assert( !pMemPage || pMemPage->pgno==iPage );
 
-  if( NEVER(iPage<2) || iPage>pBt->nPage ){
+  if( iPage<2 || iPage>pBt->nPage ){
     return SQLITE_CORRUPT_BKPT;
   }
   if( pMemPage ){
@@ -9622,7 +9622,7 @@ static int clearDatabasePage(
   rc = getAndInitPage(pBt, pgno, &pPage, 0, 0);
   if( rc ) return rc;
   if( (pBt->openFlags & BTREE_SINGLE)==0 
-   && sqlite3PagerPageRefcount(pPage->pDbPage)!=1
+   && sqlite3PagerPageRefcount(pPage->pDbPage) != (1 + (pgno==1))
   ){
     rc = SQLITE_CORRUPT_BKPT;
     goto cleardatabasepage_out;
