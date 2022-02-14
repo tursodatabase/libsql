@@ -4497,12 +4497,6 @@ static int subjournalPage(PgHdr *pPg){
       if( rc==SQLITE_OK ){
         rc = sqlite3OsWrite(pPager->sjfd, pData2, pPager->pageSize, offset+4);
       }
-      if( rc!=SQLITE_OK ){
-        /* Subjournal writes should be "atomic" in the sense that we should
-        ** never allow a partial write.  If anything goes wrong, make sure
-        ** to roll back any partial writes that may have occurred */
-        (void)sqlite3OsTruncate(pPager->sjfd, offset);
-      }
     }
   }
   if( rc==SQLITE_OK ){

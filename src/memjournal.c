@@ -178,6 +178,9 @@ static int memjrnlCreateFile(MemJournal *p){
 }
 
 
+/* Forward reference */
+static int memjrnlTruncate(sqlite3_file *pJfd, sqlite_int64 size);
+
 /*
 ** Write data to the file.
 */
@@ -207,18 +210,15 @@ static int memjrnlWrite(
     ** access writes are not required. The only exception to this is when
     ** the in-memory journal is being used by a connection using the
     ** atomic-write optimization. In this case the first 28 bytes of the
-    ** journal file may be written as part of committing the transaction. */ 
-    assert( iOfst==p->endpoint.iOffset || iOfst==0 );
-#if defined(SQLITE_ENABLE_ATOMIC_WRITE) \
- || defined(SQLITE_ENABLE_BATCH_ATOMIC_WRITE)
+    ** journal file may be written as part of committing the transaction. */
+    assert( iOfst<=p->endpoint.iOffset );
+    if( iOfst>0 && iOfst!=p->endpoint.iOffset ){
+      memjrnlTruncate(pJfd, iOfst);
+    }
     if( iOfst==0 && p->pFirst ){
       assert( p->nChunkSize>iAmt );
       memcpy((u8*)p->pFirst->zChunk, zBuf, iAmt);
-    }else
-#else
-    assert( iOfst>0 || p->pFirst==0 );
-#endif
-    {
+    }else{
       while( nWrite>0 ){
         FileChunk *pChunk = p->endpoint.pChunk;
         int iChunkOffset = (int)(p->endpoint.iOffset%p->nChunkSize);

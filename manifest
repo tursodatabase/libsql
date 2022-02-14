@@ -1,5 +1,5 @@
-C CLI\s.import\scan\sauto-rename\snon-unique\scolumn\snames\swhen\sit\screates\sa\snew\stable
-D 2022-02-14T18:55:19.467
+C Generalize\sthe\sin-memory\sjournal\sso\sthat\sit\sis\sable\sto\saccept\swrites\sthat\nbegin\sat\sany\soffset\sless\sthan\sor\sequal\sto\sthe\scurrent\sfile\ssize.
+D 2022-02-14T21:11:17.224
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -524,7 +524,7 @@ F src/mem2.c c8bfc9446fd0798bddd495eb5d9dbafa7d4b7287d8c22d50a83ac9daa26d8a75
 F src/mem3.c 30301196cace2a085cbedee1326a49f4b26deff0af68774ca82c1f7c06fda4f6
 F src/mem5.c 9bf955937b07f8c32541c8a9991f33ce3173d944
 F src/memdb.c c2dc88f97c410eb68a24468344b65526685e18354ddfd15906750c1eaf9dc2dd
-F src/memjournal.c ff4336a98b05ede2adee7595f22d6f7d1cdc6bf0f0a5c3d77b0acdf017b2e8b2
+F src/memjournal.c 8e7e9a2acfbf221a48a48b9fea3020e8a397c748aec1c68fe42cd9c59b6e2e7d
 F src/msvc.h 3a15918220367a8876be3fa4f2abe423a861491e84b864fb2b7426bf022a28f8
 F src/mutex.c 5e3409715552348732e97b9194abe92fdfcd934cfb681df4ba0ab87ac6c18d25
 F src/mutex.h a7b2293c48db5f27007c3bdb21d438873637d12658f5a0bf8ad025bb96803c4a
@@ -539,7 +539,7 @@ F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c f5ad51cfd024116db8531feab9efd831c2621436dca1464e4ff1e8af9bf3252e
 F src/os_win.c 77d39873836f1831a9b0b91894fec45ab0e9ca8e067dc8c549e1d1eca1566fe9
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c 66bc54c37448c562950e28783e49c7697ea79d1e85136d0e4a915d3a7f9feb5b
+F src/pager.c cda9e2d1df7c5fb4d777d09e23e69d78c518550d8873ed08b4a66c41d8cf2543
 F src/pager.h 4bf9b3213a4b2bebbced5eaa8b219cf25d4a82f385d093cd64b7e93e5285f66f
 F src/parse.y 0f02b27cdaa334441463153fff3ceb780fea006ab53ffd6ef566d4468f93e924
 F src/pcache.c 084e638432c610f95aea72b8509f0845d2791293f39d1b82f0c0a7e089c3bb6b
@@ -1944,8 +1944,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a5ec16907ef6ab50e041101d87c5756c71469923872a86c3ab383f188673d7a5 c626cff7f99ec502ebd46f9cdafc3d088697544ef5d6559b6b3ae85679b4f9fa
-R fc0b65531de2bbc57c9c5e7f31f08c34
-U larrybr
-Z 8dea9c58dd0e5cd023b89765b4d0e4ae
+P 4b5d07ea7e6f5d6f1279c88bc474ee4bc8bd2cebe38a268f211f47e44569e4b1
+Q -22cc55e84f67f6f39b7dba07a4ef7ae958b2d926633faec91a278922053e50c6
+R 2cd64e949014532c1efa0ff8ea4a6e54
+U drh
+Z 2566cca627eb8b963ea71c4eec4c4180
 # Remove this line to create a well-formed Fossil manifest.
