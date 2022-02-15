@@ -63,7 +63,7 @@ do_test shell2-1.3 {
 
     UPDATE OR REPLACE t5 SET a = 4 WHERE a = 1;
   }
-} {1 {Error: near line 9: stepping, too many levels of trigger recursion (1)}}
+} {1 {Runtime error near line 9: too many levels of trigger recursion}}
 
 
 

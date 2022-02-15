@@ -3269,6 +3269,7 @@ int sqlite3VdbeTransferError(Vdbe *p){
     sqlite3ValueSetNull(db->pErr);
   }
   db->errCode = rc;
+  db->errByteOffset = -1;
   return rc;
 }
 

@@ -239,138 +239,70 @@ datetest 5.13 {datetime('1994-04-16 14:00:00Zulu')} NULL
 datetest 5.14 {datetime('1994-04-16 14:00:00Z +05:00')} NULL
 datetest 5.15 {datetime('1994-04-16 14:00:00 +05:00 Z')} NULL
 
-# localtime->utc and utc->localtime conversions.  These tests only work
-# if the localtime is in the US Eastern Time (the time in Charlotte, NC
-# and in New York.)
+# localtime->utc and utc->localtime conversions.
 #
-# On non-Vista Windows platform, '2006-03-31' is treated incorrectly as being
-# in DST giving a 4 hour offset instead of 5.  In 2007, DST was extended to 
-# start three weeks earlier (second Sunday in March) and end one week
-# later (first Sunday in November).  Older Windows systems apply this
-# new rule incorrectly to dates prior to 2007.
+# Use SQLITE_TESTCTRL_LOCALTIME_FAULT=2 to set an alternative localtime_r()
+# implementation that is not locale-dependent.  This testing localtime_r()
+# operates as follows:
 #
-# It might be argued that this is masking a problem on non-Vista Windows
-# platform.  A ticket has already been opened for this issue 
-# (http://www.sqlite.org/cvstrac/tktview?tn=2322).  This is just to prevent
-# more confusion/reports of the issue.
+#     (1)  Localtime is 30 minutes earlier than (west of) UTC on
+#          even days (counting from 1970-01-01)
 #
-
-# $tzoffset_old should be 5 if DST is working correctly.
-set tzoffset_old [db one {
-  SELECT CAST(24*(julianday('2006-03-31') -
-                  julianday('2006-03-31','localtime'))+0.5
-              AS INT)
-}]
-
-# $tzoffset_new should be 4 if DST is working correctly.
-set tzoffset_new [db one {
-  SELECT CAST(24*(julianday('2007-03-31') -
-                  julianday('2007-03-31','localtime'))+0.5
-              AS INT)
-}]
-
-# Warn about possibly broken Windows DST implementations.
-if {$::tcl_platform(platform)=="windows" && $tzoffset_new==4 && $tzoffset_old==4} {
-  puts "******************************************************************"
-  puts "N.B.:  The DST support provided by your current O/S seems to be"
-  puts "suspect in that it is reporting incorrect DST values for dates"
-  puts "prior to 2007.  This is the known case for most (all?) non-Vista"
-  puts "Windows versions.  Please see ticket #2322 for more information."
-  puts "******************************************************************"
+#     (2)  Localtime is 30 minutes later than (east of) UTC on odd days.
+#
+#     (3)  The function fails for the specific date/time value
+#          of 2000-05-29 14:16:00 in order to test the ability of
+#          SQLite to deal with localtime_r() failures.
+#
+proc local_to_utc {tn utc local} {
+  do_execsql_test date-$tn "SELECT datetime('$utc','localtime')" [list $local]
+}
+proc utc_to_local {tn local utc} {
+  do_execsql_test date-$tn "SELECT datetime('$local','utc')" [list $utc]
 }
 
-if {$tzoffset_new==4} {
-  datetest 6.1 {datetime('2000-10-29 05:59:00','localtime')}\
-      {2000-10-29 01:59:00}
-  datetest 6.1.1 {datetime('2006-10-29 05:59:00','localtime')}\
-      {2006-10-29 01:59:00}
-  datetest 6.1.2 {datetime('2007-11-04 05:59:00','localtime')}\
-      {2007-11-04 01:59:00}
+sqlite3_test_control SQLITE_TESTCTRL_LOCALTIME_FAULT 2
+local_to_utc 6.1  {2000-10-29 12:00:00} {2000-10-29 12:30:00}
+utc_to_local 6.2  {2000-10-29 12:30:00} {2000-10-29 12:00:00}
+local_to_utc 6.3  {2000-10-30 12:00:00} {2000-10-30 11:30:00}
+utc_to_local 6.4  {2000-10-30 11:30:00} {2000-10-30 12:00:00}
 
-  # If the new and old DST rules seem to be working correctly...
-  if {$tzoffset_new==4 && $tzoffset_old==5} {
-    datetest 6.2 {datetime('2000-10-29 06:00:00','localtime')}\
-        {2000-10-29 01:00:00}
-    datetest 6.2.1 {datetime('2006-10-29 06:00:00','localtime')}\
-        {2006-10-29 01:00:00}
-  }
-  datetest 6.2.2 {datetime('2007-11-04 06:00:00','localtime')}\
-      {2007-11-04 01:00:00}
+local_to_utc 6.5  {2000-10-28 23:59:59} {2000-10-28 23:29:59}
+local_to_utc 6.6  {2000-10-29 00:00:00} {2000-10-29 00:30:00}
 
-  # If the new and old DST rules seem to be working correctly...
-  if {$tzoffset_new==4 && $tzoffset_old==5} {
-    datetest 6.3 {datetime('2000-04-02 06:59:00','localtime')}\
-        {2000-04-02 01:59:00}
-    datetest 6.3.1 {datetime('2006-04-02 06:59:00','localtime')}\
-        {2006-04-02 01:59:00}
-  }
-  datetest 6.3.2 {datetime('2007-03-11 07:00:00','localtime')}\
-      {2007-03-11 03:00:00}
-
-  datetest 6.4 {datetime('2000-04-02 07:00:00','localtime')}\
-      {2000-04-02 03:00:00}
-  datetest 6.4.1 {datetime('2006-04-02 07:00:00','localtime')}\
-      {2006-04-02 03:00:00}
-  datetest 6.4.2 {datetime('2007-03-11 07:00:00','localtime')}\
-      {2007-03-11 03:00:00}
-      
-  datetest 6.5 {datetime('2000-10-29 01:59:00','utc')} {2000-10-29 05:59:00}
-  datetest 6.5.1 {datetime('2006-10-29 01:59:00','utc')} {2006-10-29 05:59:00}
-  datetest 6.5.2 {datetime('2007-11-04 01:59:00','utc')} {2007-11-04 05:59:00}
-
-  # If the new and old DST rules seem to be working correctly...
-  if {$tzoffset_new==4 && $tzoffset_old==5} {
-    datetest 6.6 {datetime('2000-10-29 02:00:00','utc')} {2000-10-29 07:00:00}
-    datetest 6.6.1 {datetime('2006-10-29 02:00:00','utc')} {2006-10-29 07:00:00}
-  }
-  datetest 6.6.2 {datetime('2007-11-04 02:00:00','utc')} {2007-11-04 07:00:00}
-
-  # If the new and old DST rules seem to be working correctly...
-  if {$tzoffset_new==4 && $tzoffset_old==5} {
-    datetest 6.7 {datetime('2000-04-02 01:59:00','utc')} {2000-04-02 06:59:00}
-    datetest 6.7.1 {datetime('2006-04-02 01:59:00','utc')} {2006-04-02 06:59:00}
-  }
-  datetest 6.7.2 {datetime('2007-03-11 01:59:00','utc')} {2007-03-11 06:59:00}
-
-  datetest 6.8 {datetime('2000-04-02 02:00:00','utc')} {2000-04-02 06:00:00}
-  datetest 6.8.1 {datetime('2006-04-02 02:00:00','utc')} {2006-04-02 06:00:00}
-  datetest 6.8.2 {datetime('2007-03-11 02:00:00','utc')} {2007-03-11 06:00:00}
-
-  # The 'utc' modifier is a no-op if the LHS is known to already be in UTC
-  datetest 6.9.1 {datetime('2015-12-23 12:00:00','utc')} {2015-12-23 17:00:00}
-  datetest 6.9.2 {datetime('2015-12-23 12:00:00z','utc')} {2015-12-23 12:00:00}
-  datetest 6.9.3 {datetime('2015-12-23 12:00:00-03:00','utc')} \
-         {2015-12-23 15:00:00}
-  datetest 6.9.4 {datetime('2015-12-23 12:00:00','utc','utc','utc')} \
-         {2015-12-23 17:00:00}
-
-
-  datetest 6.10 {datetime('2000-01-01 12:00:00','localtime')} \
-      {2000-01-01 07:00:00}
-  datetest 6.11 {datetime('1969-01-01 12:00:00','localtime')} \
-      {1969-01-01 07:00:00}
-  datetest 6.12 {datetime('2039-01-01 12:00:00','localtime')} \
-      {2039-01-01 07:00:00}
-  datetest 6.13 {datetime('2000-07-01 12:00:00','localtime')} \
-      {2000-07-01 08:00:00}
-  datetest 6.14 {datetime('1969-07-01 12:00:00','localtime')} \
-      {1969-07-01 07:00:00}
-  datetest 6.15 {datetime('2039-07-01 12:00:00','localtime')} \
-      {2039-07-01 07:00:00}
-  set sqlite_current_time \
-     [db eval {SELECT strftime('%s','2000-07-01 12:34:56')}]
-  datetest 6.16 {datetime('now','localtime')} {2000-07-01 08:34:56}
-  datetest 6.17 {datetime('now','localtimex')} NULL
-  datetest 6.18 {datetime('now','localtim')} NULL
-  set sqlite_current_time 0
-}
-
-# These two are a bit of a scam. They are added to ensure that 100% of
-# the date.c file is covered by testing, even when the time-zone
-# is not -0400 (the condition for running of the block of tests above).
+# The previous two cases establish that no such localtime as
+# 2000-10-29 00:10:00 exists.  Verify that we get a reasonable
+# answer if we try to convert this non-existant localtime to utc?
 #
-datetest 6.19 {datetime('2039-07-01 12:00:00','localtime',null)} NULL
-datetest 6.20 {datetime('2039-07-01 12:00:00','utc',null)} NULL
+utc_to_local 6.7  {2000-10-29 00:10:00} {2000-10-28 23:40:00}
+
+local_to_utc 6.8  {2022-02-10 23:59:59} {2022-02-11 00:29:59}
+local_to_utc 6.9  {2022-02-11 00:00:00} {2022-02-10 23:30:00}
+local_to_utc 6.10 {2022-02-10 23:45:00} {2022-02-11 00:15:00}
+local_to_utc 6.11 {2022-02-11 00:45:00} {2022-02-11 00:15:00}
+
+# The previous two cases show that two different UTC values give
+# the same localtime of 2022-02-11 00:15:00.  When converting from
+# that localtime back to UTC, we should get one or the other of
+# the two UTC values.
+#
+utc_to_local 6.12 {2022-02-11 00:15:00} {2022-02-11 00:45:00}
+
+# If localtime_r() fails, the datetime() SQL function should raise an error
+#
+do_catchsql_test date-6.20 {
+  SELECT datetime('2000-05-29 14:16:00','localtime');
+} {1 {local time unavailable}}
+
+# Modifiers work for dates that are way out of band for localtime_r()
+#
+local_to_utc 6.21 {1800-10-29 12:00:00} {1800-10-29 12:30:00}
+utc_to_local 6.22 {1800-10-29 12:30:00} {1800-10-29 12:00:00}
+local_to_utc 6.23 {3000-10-30 12:00:00} {3000-10-30 11:30:00}
+utc_to_local 6.24 {3000-10-30 11:30:00} {3000-10-30 12:00:00}
+
+# Restore the use of the OS localtime_r() before going on...
+sqlite3_test_control SQLITE_TESTCTRL_LOCALTIME_FAULT 0
 
 # Date-time functions that contain NULL arguments return a NULL
 # result.
