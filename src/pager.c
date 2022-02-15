@@ -4007,7 +4007,7 @@ static void assertTruncateConstraint(Pager *pPager){
 ** then continue writing to the database.
 */
 void sqlite3PagerTruncateImage(Pager *pPager, Pgno nPage){
-  assert( pPager->dbSize>=nPage );
+  assert( pPager->dbSize>=nPage || CORRUPT_DB );
   assert( pPager->eState>=PAGER_WRITER_CACHEMOD );
   pPager->dbSize = nPage;
 
@@ -7587,6 +7587,18 @@ int sqlite3PagerCheckpoint(
   int *pnCkpt                     /* OUT: Final number of checkpointed frames */
 ){
   int rc = SQLITE_OK;
+  if( pPager->pWal==0 && pPager->journalMode==PAGER_JOURNALMODE_WAL ){
+    /* This only happens when a database file is zero bytes in size opened and
+    ** then "PRAGMA journal_mode=WAL" is run and then sqlite3_wal_checkpoint()
+    ** is invoked without any intervening transactions.  We need to start
+    ** a transaction to initialize pWal.  The PRAGMA table_list statement is
+    ** used for this since it starts transactions on every database file,
+    ** including all ATTACHed databases.  This seems expensive for a single
+    ** sqlite3_wal_checkpoint() call, but it happens very rarely.
+    ** https://sqlite.org/forum/forumpost/fd0f19d229156939
+    */
+    sqlite3_exec(db, "PRAGMA table_list",0,0,0);
+  }
   if( pPager->pWal ){
     rc = sqlite3WalCheckpoint(pPager->pWal, db, eMode,
         (eMode==SQLITE_CHECKPOINT_PASSIVE ? 0 : pPager->xBusyHandler),

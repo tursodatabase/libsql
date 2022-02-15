@@ -657,7 +657,10 @@ int sqlite3RunParser(Parse *pParse, const char *zSql){
         tokenType = analyzeFilterKeyword((const u8*)&zSql[6], lastTokenParsed);
 #endif /* SQLITE_OMIT_WINDOWFUNC */
       }else{
-        sqlite3ErrorMsg(pParse, "unrecognized token: \"%.*s\"", n, zSql);
+        Token x;
+        x.z = zSql;
+        x.n = n;
+        sqlite3ErrorMsg(pParse, "unrecognized token: \"%T\"", &x);
         break;
       }
     }

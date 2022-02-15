@@ -16,6 +16,11 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set testprefix merge1
 
+ifcapable !vtab {
+  finish_test
+  return
+}
+
 load_static_extension db series
 
 

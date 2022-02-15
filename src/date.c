@@ -503,8 +503,10 @@ static void clearYMD_HMS_TZ(DateTime *p){
 ** is available.  This routine returns 0 on success and
 ** non-zero on any kind of error.
 **
-** If the sqlite3GlobalConfig.bLocaltimeFault variable is true then this
-** routine will always fail.
+** If the sqlite3GlobalConfig.bLocaltimeFault variable is non-zero then this
+** routine will always fail.  If bLocaltimeFault is nonzero and
+** sqlite3GlobalConfig.xAltLocaltime is not NULL, then xAltLocaltime() is
+** invoked in place of the OS-defined localtime() function.
 **
 ** EVIDENCE-OF: R-62172-00036 In this implementation, the standard C
 ** library function localtime_r() is used to assist in the calculation of
@@ -520,7 +522,15 @@ static int osLocaltime(time_t *t, struct tm *pTm){
   sqlite3_mutex_enter(mutex);
   pX = localtime(t);
 #ifndef SQLITE_UNTESTABLE
-  if( sqlite3GlobalConfig.bLocaltimeFault ) pX = 0;
+  if( sqlite3GlobalConfig.bLocaltimeFault ){
+    if( sqlite3GlobalConfig.xAltLocaltime!=0
+     && 0==sqlite3GlobalConfig.xAltLocaltime((const void*)t,(void*)pTm)
+    ){
+      pX = pTm;
+    }else{
+      pX = 0;
+    }
+  }
 #endif
   if( pX ) *pTm = *pX;
 #if SQLITE_THREADSAFE>0
@@ -529,7 +539,13 @@ static int osLocaltime(time_t *t, struct tm *pTm){
   rc = pX==0;
 #else
 #ifndef SQLITE_UNTESTABLE
-  if( sqlite3GlobalConfig.bLocaltimeFault ) return 1;
+  if( sqlite3GlobalConfig.bLocaltimeFault ){
+    if( sqlite3GlobalConfig.xAltLocaltime!=0 ){
+      return sqlite3GlobalConfig.xAltLocaltime((const void*)t,(void*)pTm);
+    }else{
+      return 1;
+    }
+  }
 #endif
 #if HAVE_LOCALTIME_R
   rc = localtime_r(t, pTm)==0;
@@ -544,67 +560,56 @@ static int osLocaltime(time_t *t, struct tm *pTm){
 
 #ifndef SQLITE_OMIT_LOCALTIME
 /*
-** Compute the difference (in milliseconds) between localtime and UTC
-** (a.k.a. GMT) for the time value p where p is in UTC. If no error occurs,
-** return this value and set *pRc to SQLITE_OK. 
-**
-** Or, if an error does occur, set *pRc to SQLITE_ERROR. The returned value
-** is undefined in this case.
+** Assuming the input DateTime is UTC, move it to its localtime equivalent.
 */
-static sqlite3_int64 localtimeOffset(
-  DateTime *p,                    /* Date at which to calculate offset */
-  sqlite3_context *pCtx,          /* Write error here if one occurs */
-  int *pRc                        /* OUT: Error code. SQLITE_OK or ERROR */
+static int toLocaltime(
+  DateTime *p,                   /* Date at which to calculate offset */
+  sqlite3_context *pCtx          /* Write error here if one occurs */
 ){
-  DateTime x, y;
   time_t t;
   struct tm sLocal;
+  int iYearDiff;
 
   /* Initialize the contents of sLocal to avoid a compiler warning. */
   memset(&sLocal, 0, sizeof(sLocal));
 
-  x = *p;
-  computeYMD_HMS(&x);
-  if( x.Y<1971 || x.Y>=2038 ){
+  computeJD(p);
+  if( p->iJD<21086676000*(i64)10000 /* 1970-01-01 */
+   || p->iJD>21301414560*(i64)10000 /* 2038-01-18 */
+  ){
     /* EVIDENCE-OF: R-55269-29598 The localtime_r() C function normally only
     ** works for years between 1970 and 2037. For dates outside this range,
     ** SQLite attempts to map the year into an equivalent year within this
     ** range, do the calculation, then map the year back.
     */
-    x.Y = 2000;
-    x.M = 1;
-    x.D = 1;
-    x.h = 0;
-    x.m = 0;
-    x.s = 0.0;
-  } else {
-    int s = (int)(x.s + 0.5);
-    x.s = s;
+    DateTime x = *p;
+    computeYMD_HMS(&x);
+    iYearDiff = (2000 + x.Y%4) - x.Y;
+    x.Y += iYearDiff;
+    x.validJD = 0;
+    computeJD(&x);
+    t = (time_t)(x.iJD/1000 -  21086676*(i64)10000);
+  }else{
+    iYearDiff = 0;
+    t = (time_t)(p->iJD/1000 -  21086676*(i64)10000);
   }
-  x.tz = 0;
-  x.validJD = 0;
-  computeJD(&x);
-  t = (time_t)(x.iJD/1000 - 21086676*(i64)10000);
   if( osLocaltime(&t, &sLocal) ){
     sqlite3_result_error(pCtx, "local time unavailable", -1);
-    *pRc = SQLITE_ERROR;
-    return 0;
+    return SQLITE_ERROR;
   }
-  y.Y = sLocal.tm_year + 1900;
-  y.M = sLocal.tm_mon + 1;
-  y.D = sLocal.tm_mday;
-  y.h = sLocal.tm_hour;
-  y.m = sLocal.tm_min;
-  y.s = sLocal.tm_sec;
-  y.validYMD = 1;
-  y.validHMS = 1;
-  y.validJD = 0;
-  y.rawS = 0;
-  y.validTZ = 0;
-  y.isError = 0;
-  computeJD(&y);
-  *pRc = SQLITE_OK;
-  return y.iJD - x.iJD;
+  p->Y = sLocal.tm_year + 1900 - iYearDiff;
+  p->M = sLocal.tm_mon + 1;
+  p->D = sLocal.tm_mday;
+  p->h = sLocal.tm_hour;
+  p->m = sLocal.tm_min;
+  p->s = sLocal.tm_sec;
+  p->validYMD = 1;
+  p->validHMS = 1;
+  p->validJD = 0;
+  p->rawS = 0;
+  p->validTZ = 0;
+  p->isError = 0;
+  return SQLITE_OK;
 }
 #endif /* SQLITE_OMIT_LOCALTIME */
 
@@ -713,9 +718,7 @@ static int parseModifier(
       ** show local time.
       */
       if( sqlite3_stricmp(z, "localtime")==0 && sqlite3NotPureFunc(pCtx) ){
-        computeJD(p);
-        p->iJD += localtimeOffset(p, pCtx, &rc);
-        clearYMD_HMS_TZ(p);
+        rc = toLocaltime(p, pCtx);
       }
       break;
     }
@@ -741,18 +744,31 @@ static int parseModifier(
 #ifndef SQLITE_OMIT_LOCALTIME
       else if( sqlite3_stricmp(z, "utc")==0 && sqlite3NotPureFunc(pCtx) ){
         if( p->tzSet==0 ){
-          sqlite3_int64 c1;
+          i64 iOrigJD;              /* Original localtime */
+          i64 iGuess;               /* Guess at the corresponding utc time */
+          int cnt = 0;              /* Safety to prevent infinite loop */
+          int iErr;                 /* Guess is off by this much */
+
           computeJD(p);
-          c1 = localtimeOffset(p, pCtx, &rc);
-          if( rc==SQLITE_OK ){
-            p->iJD -= c1;
-            clearYMD_HMS_TZ(p);
-            p->iJD += c1 - localtimeOffset(p, pCtx, &rc);
-          }
+          iGuess = iOrigJD = p->iJD;
+          iErr = 0;
+          do{
+            DateTime new;
+            memset(&new, 0, sizeof(new));
+            iGuess -= iErr;
+            new.iJD = iGuess;
+            new.validJD = 1;
+            rc = toLocaltime(&new, pCtx);
+            if( rc ) return rc;
+            computeJD(&new);
+            iErr = new.iJD - iOrigJD;
+          }while( iErr && cnt++<3 );
+          memset(p, 0, sizeof(*p));
+          p->iJD = iGuess;
+          p->validJD = 1;
           p->tzSet = 1;
-        }else{
-          rc = SQLITE_OK;
         }
+        rc = SQLITE_OK;
       }
 #endif
       break;
@@ -1002,11 +1018,38 @@ static void datetimeFunc(
 ){
   DateTime x;
   if( isDate(context, argc, argv, &x)==0 ){
-    char zBuf[100];
+    int Y, s;
+    char zBuf[24];
     computeYMD_HMS(&x);
-    sqlite3_snprintf(sizeof(zBuf), zBuf, "%04d-%02d-%02d %02d:%02d:%02d",
-                     x.Y, x.M, x.D, x.h, x.m, (int)(x.s));
-    sqlite3_result_text(context, zBuf, -1, SQLITE_TRANSIENT);
+    Y = x.Y;
+    if( Y<0 ) Y = -Y;
+    zBuf[1] = '0' + (Y/1000)%10;
+    zBuf[2] = '0' + (Y/100)%10;
+    zBuf[3] = '0' + (Y/10)%10;
+    zBuf[4] = '0' + (Y)%10;
+    zBuf[5] = '-';
+    zBuf[6] = '0' + (x.M/10)%10;
+    zBuf[7] = '0' + (x.M)%10;
+    zBuf[8] = '-';
+    zBuf[9] = '0' + (x.D/10)%10;
+    zBuf[10] = '0' + (x.D)%10;
+    zBuf[11] = ' ';
+    zBuf[12] = '0' + (x.h/10)%10;
+    zBuf[13] = '0' + (x.h)%10;
+    zBuf[14] = ':';
+    zBuf[15] = '0' + (x.m/10)%10;
+    zBuf[16] = '0' + (x.m)%10;
+    zBuf[17] = ':';
+    s = (int)x.s;
+    zBuf[18] = '0' + (s/10)%10;
+    zBuf[19] = '0' + (s)%10;
+    zBuf[20] = 0;
+    if( x.Y<0 ){
+      zBuf[0] = '-';
+      sqlite3_result_text(context, zBuf, 20, SQLITE_TRANSIENT);
+    }else{
+      sqlite3_result_text(context, &zBuf[1], 19, SQLITE_TRANSIENT);
+    }
   }
 }
 
@@ -1022,10 +1065,20 @@ static void timeFunc(
 ){
   DateTime x;
   if( isDate(context, argc, argv, &x)==0 ){
-    char zBuf[100];
+    int s;
+    char zBuf[16];
     computeHMS(&x);
-    sqlite3_snprintf(sizeof(zBuf), zBuf, "%02d:%02d:%02d", x.h, x.m, (int)x.s);
-    sqlite3_result_text(context, zBuf, -1, SQLITE_TRANSIENT);
+    zBuf[0] = '0' + (x.h/10)%10;
+    zBuf[1] = '0' + (x.h)%10;
+    zBuf[2] = ':';
+    zBuf[3] = '0' + (x.m/10)%10;
+    zBuf[4] = '0' + (x.m)%10;
+    zBuf[5] = ':';
+    s = (int)x.s;
+    zBuf[6] = '0' + (s/10)%10;
+    zBuf[7] = '0' + (s)%10;
+    zBuf[8] = 0;
+    sqlite3_result_text(context, zBuf, 8, SQLITE_TRANSIENT);
   }
 }
 
@@ -1041,10 +1094,28 @@ static void dateFunc(
 ){
   DateTime x;
   if( isDate(context, argc, argv, &x)==0 ){
-    char zBuf[100];
+    int Y;
+    char zBuf[16];
     computeYMD(&x);
-    sqlite3_snprintf(sizeof(zBuf), zBuf, "%04d-%02d-%02d", x.Y, x.M, x.D);
-    sqlite3_result_text(context, zBuf, -1, SQLITE_TRANSIENT);
+    Y = x.Y;
+    if( Y<0 ) Y = -Y;
+    zBuf[1] = '0' + (Y/1000)%10;
+    zBuf[2] = '0' + (Y/100)%10;
+    zBuf[3] = '0' + (Y/10)%10;
+    zBuf[4] = '0' + (Y)%10;
+    zBuf[5] = '-';
+    zBuf[6] = '0' + (x.M/10)%10;
+    zBuf[7] = '0' + (x.M)%10;
+    zBuf[8] = '-';
+    zBuf[9] = '0' + (x.D/10)%10;
+    zBuf[10] = '0' + (x.D)%10;
+    zBuf[11] = 0;
+    if( x.Y<0 ){
+      zBuf[0] = '-';
+      sqlite3_result_text(context, zBuf, 11, SQLITE_TRANSIENT);
+    }else{
+      sqlite3_result_text(context, &zBuf[1], 10, SQLITE_TRANSIENT);
+    }
   }
 }
 

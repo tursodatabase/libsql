@@ -1293,7 +1293,8 @@ void sqlite3StartTable(
     pTable = sqlite3FindTable(db, zName, zDb);
     if( pTable ){
       if( !noErr ){
-        sqlite3ErrorMsg(pParse, "table %T already exists", pName);
+        sqlite3ErrorMsg(pParse, "%s %T already exists",
+                        (IsView(pTable)? "view" : "table"), pName);
       }else{
         assert( !db->init.busy || CORRUPT_DB );
         sqlite3CodeVerifySchema(pParse, iDb);
