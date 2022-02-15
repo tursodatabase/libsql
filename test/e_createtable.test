@@ -493,10 +493,10 @@ do_execsql_test e_createtable-1.7.0 {
 do_createtable_tests 1.7.1 -error { %s } {
   1    "CREATE TABLE t1(a, b)"   {{table t1 already exists}}
   2    "CREATE TABLE i1(a, b)"   {{there is already an index named i1}}
-  3    "CREATE TABLE v1(a, b)"   {{table v1 already exists}}
+  3    "CREATE TABLE v1(a, b)"   {{view v1 already exists}}
   4    "CREATE TABLE auxa.tbl1(a, b)"   {{table tbl1 already exists}}
   5    "CREATE TABLE auxa.idx1(a, b)"   {{there is already an index named idx1}}
-  6    "CREATE TABLE auxa.view1(a, b)"  {{table view1 already exists}}
+  6    "CREATE TABLE auxa.view1(a, b)"  {{view view1 already exists}}
 }
 do_createtable_tests 1.7.2 {
   1    "CREATE TABLE auxa.t1(a, b)"   {}
