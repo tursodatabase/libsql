@@ -224,6 +224,7 @@ static int memjrnlWrite(
         int iChunkOffset = (int)(p->endpoint.iOffset%p->nChunkSize);
         int iSpace = MIN(nWrite, p->nChunkSize - iChunkOffset);
 
+        assert( pChunk!=0 || iChunkOffset==0 );
         if( iChunkOffset==0 ){
           /* New chunk is required to extend the file. */
           FileChunk *pNew = sqlite3_malloc(fileChunkSize(p->nChunkSize));
@@ -238,10 +239,11 @@ static int memjrnlWrite(
             assert( !p->pFirst );
             p->pFirst = pNew;
           }
-          p->endpoint.pChunk = pNew;
+          pChunk = p->endpoint.pChunk = pNew;
         }
 
-        memcpy((u8*)p->endpoint.pChunk->zChunk + iChunkOffset, zWrite, iSpace);
+        assert( pChunk!=0 );
+        memcpy((u8*)pChunk->zChunk + iChunkOffset, zWrite, iSpace);
         zWrite += iSpace;
         nWrite -= iSpace;
         p->endpoint.iOffset += iSpace;
