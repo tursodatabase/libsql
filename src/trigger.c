@@ -1236,6 +1236,7 @@ static TriggerPrg *getRowTrigger(
   /* If an existing TriggerPrg could not be located, create a new one. */
   if( !pPrg ){
     pPrg = codeRowTrigger(pParse, pTrigger, pTab, orconf);
+    pParse->db->errByteOffset = -1;
   }
 
   return pPrg;

@@ -176,13 +176,17 @@ if {$::tcl_platform(platform)=="unix"} {
 
 if {[set_ed @name]} {
   set cmds {
-   .pa set @name Fido
-   .pa edit -t dog
-   .x dog
-}
+.pa set @name Fido
+.pa edit -t dog
+.x dog
+  }
   do_test shell9-3.4 {
     set res [catchcmd ":memory: -quiet 1 -shxopts 1 -interactive" $cmds]
-  } {0 Fido}
+  } {0 {.pa set @name Fido
+.pa edit -t dog
+.x dog
+Fido
+  }}
 }
 
 #----------------------------------------------------------------------------

@@ -631,7 +631,7 @@ void sqlite3AlterRenameColumn(
     if( 0==sqlite3StrICmp(pTab->aCol[iCol].zCnName, zOld) ) break;
   }
   if( iCol==pTab->nCol ){
-    sqlite3ErrorMsg(pParse, "no such column: \"%s\"", zOld);
+    sqlite3ErrorMsg(pParse, "no such column: \"%T\"", pOld);
     goto exit_rename_column;
   }
 
@@ -1061,12 +1061,12 @@ static void renameColumnParseError(
   const char *zN = (const char*)sqlite3_value_text(pObject);
   char *zErr;
 
-  zErr = sqlite3_mprintf("error in %s %s%s%s: %s", 
+  zErr = sqlite3MPrintf(pParse->db, "error in %s %s%s%s: %s", 
       zT, zN, (zWhen[0] ? " " : ""), zWhen,
       pParse->zErrMsg
   );
   sqlite3_result_error(pCtx, zErr, -1);
-  sqlite3_free(zErr);
+  sqlite3DbFree(pParse->db, zErr);
 }
 
 /*
@@ -1595,7 +1595,7 @@ static void renameColumnFunc(
 
 renameColumnFunc_done:
   if( rc!=SQLITE_OK ){
-    if( sqlite3WritableSchema(db) ){
+    if( rc==SQLITE_ERROR && sqlite3WritableSchema(db) ){
       sqlite3_result_value(context, argv[0]);
     }else if( sParse.zErrMsg ){
       renameColumnParseError(context, "", argv[1], argv[2], &sParse);
@@ -1796,7 +1796,7 @@ static void renameTableFunc(
       rc = renameEditSql(context, &sCtx, zInput, zNew, bQuote);
     }
     if( rc!=SQLITE_OK ){
-      if( sqlite3WritableSchema(db) ){
+      if( rc==SQLITE_ERROR && sqlite3WritableSchema(db) ){
         sqlite3_result_value(context, argv[3]);
       }else if( sParse.zErrMsg ){
         renameColumnParseError(context, "", argv[1], argv[2], &sParse);
@@ -1923,7 +1923,7 @@ static void renameQuotefixFunc(
       renameTokenFree(db, sCtx.pList);
     }
     if( rc!=SQLITE_OK ){
-      if( sqlite3WritableSchema(db) ){
+      if( sqlite3WritableSchema(db) && rc==SQLITE_ERROR ){
         sqlite3_result_value(context, argv[1]);
       }else{
         sqlite3_result_error_code(context, rc);
@@ -2131,7 +2131,7 @@ void sqlite3AlterDropColumn(Parse *pParse, SrcList *pSrc, const Token *pName){
   }
   iCol = sqlite3ColumnIndex(pTab, zCol);
   if( iCol<0 ){
-    sqlite3ErrorMsg(pParse, "no such column: \"%s\"", zCol);
+    sqlite3ErrorMsg(pParse, "no such column: \"%T\"", pName);
     goto exit_drop_column;
   }
 

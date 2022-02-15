@@ -849,13 +849,22 @@ void sqlite3_str_vappendf(
         goto adjust_width_for_utf8;
       }
       case etTOKEN: {
-        Token *pToken;
         if( (pAccum->printfFlags & SQLITE_PRINTF_INTERNAL)==0 ) return;
-        pToken = va_arg(ap, Token*);
-        assert( bArgList==0 );
-        if( pToken && pToken->n ){
-          sqlite3_str_append(pAccum, (const char*)pToken->z, pToken->n);
-          sqlite3RecordErrorByteOffset(pAccum->db, pToken->z);
+        if( flag_alternateform ){
+          /* %#T means an Expr pointer that uses Expr.u.zToken */
+          Expr *pExpr = va_arg(ap,Expr*);
+          if( ALWAYS(pExpr) && ALWAYS(!ExprHasProperty(pExpr,EP_IntValue)) ){
+            sqlite3_str_appendall(pAccum, (const char*)pExpr->u.zToken);
+            sqlite3RecordErrorOffsetOfExpr(pAccum->db, pExpr);
+          }
+        }else{
+          /* %T means a Token pointer */
+          Token *pToken = va_arg(ap, Token*);
+          assert( bArgList==0 );
+          if( pToken && pToken->n ){
+            sqlite3_str_append(pAccum, (const char*)pToken->z, pToken->n);
+            sqlite3RecordErrorByteOffset(pAccum->db, pToken->z);
+          }
         }
         length = width = 0;
         break;
@@ -939,7 +948,6 @@ void sqlite3RecordErrorByteOffset(sqlite3 *db, const char *z){
 ** as the error offset.
 */
 void sqlite3RecordErrorOffsetOfExpr(sqlite3 *db, const Expr *pExpr){
-  if( db->errByteOffset>=0 ) return;
   while( pExpr && (ExprHasProperty(pExpr,EP_FromJoin) || pExpr->w.iOfst<=0) ){
     pExpr = pExpr->pLeft;
   }
