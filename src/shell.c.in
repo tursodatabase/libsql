@@ -2311,7 +2311,12 @@ static int shell_callback(
           }else if( ur==0xfff0000000000000LL ){
             raw_printf(p->out, "-1e999");
           }else{
-            sqlite3_snprintf(50,z,"%!.20g", r);
+            sqlite3_int64 ir = (sqlite3_int64)r;
+            if( r==(double)ir ){
+              sqlite3_snprintf(50,z,"%lld.0", ir);
+            }else{
+              sqlite3_snprintf(50,z,"%!.20g", r);
+            }
             raw_printf(p->out, "%s", z);
           }
         }else if( aiType && aiType[i]==SQLITE_BLOB && p->pStmt ){
