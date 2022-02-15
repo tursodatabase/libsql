@@ -2844,7 +2844,10 @@ struct Expr {
                          ** TK_VARIABLE: variable number (always >= 1).
                          ** TK_SELECT_COLUMN: column of the result vector */
   i16 iAgg;              /* Which entry in pAggInfo->aCol[] or ->aFunc[] */
-  int iRightJoinTable;   /* If EP_FromJoin, the right table of the join */
+  union {
+    int iRightJoinTable;   /* If EP_FromJoin, the right table of the join */
+    int iOfst;             /* else: start of token from start of statement */
+  } w;
   AggInfo *pAggInfo;     /* Used by TK_AGG_COLUMN and TK_AGG_FUNCTION */
   union {
     Table *pTab;           /* TK_COLUMN: Table containing column. Can be NULL
@@ -3957,6 +3960,7 @@ struct Sqlite3Config {
   int (*xTestCallback)(int);        /* Invoked by sqlite3FaultSim() */
 #endif
   int bLocaltimeFault;              /* True to fail localtime() calls */
+  int (*xAltLocaltime)(const void*,void*); /* Alternative localtime() routine */
   int iOnceResetThreshold;          /* When to reset OP_Once counters */
   u32 szSorterRef;                  /* Min size in bytes to use sorter-refs */
   unsigned int iPrngSeed;           /* Alternative fixed seed for the PRNG */
@@ -5039,6 +5043,7 @@ void sqlite3ResultStrAccum(sqlite3_context*,StrAccum*);
 void sqlite3SelectDestInit(SelectDest*,int,int);
 Expr *sqlite3CreateColumnExpr(sqlite3 *, SrcList *, int, int);
 void sqlite3RecordErrorByteOffset(sqlite3*,const char*);
+void sqlite3RecordErrorOffsetOfExpr(sqlite3*,const Expr*);
 
 void sqlite3BackupRestart(sqlite3_backup *);
 void sqlite3BackupUpdate(sqlite3_backup *, Pgno, const u8 *);

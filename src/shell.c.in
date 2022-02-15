@@ -23,10 +23,10 @@
 ** If SQLITE_CUSTOM_INCLUDE=? is defined, its value names the #include
 ** file. Note that this macro has a like effect on sqlite3.c compilation.
 */
+# define SHELL_STRINGIFY_(f) #f
+# define SHELL_STRINGIFY(f) SHELL_STRINGIFY_(f)
 #ifdef SQLITE_CUSTOM_INCLUDE
-# define INC_STRINGIFY_(f) #f
-# define INC_STRINGIFY(f) INC_STRINGIFY_(f)
-# include INC_STRINGIFY(SQLITE_CUSTOM_INCLUDE)
+# include SHELL_STRINGIFY(SQLITE_CUSTOM_INCLUDE)
 #endif
 
 /*
@@ -2312,7 +2312,12 @@ static int shell_callback(
           }else if( ur==0xfff0000000000000LL ){
             raw_printf(p->out, "-1e999");
           }else{
-            sqlite3_snprintf(50,z,"%!.20g", r);
+            sqlite3_int64 ir = (sqlite3_int64)r;
+            if( r==(double)ir ){
+              sqlite3_snprintf(50,z,"%lld.0", ir);
+            }else{
+              sqlite3_snprintf(50,z,"%!.20g", r);
+            }
             raw_printf(p->out, "%s", z);
           }
         }else if( aiType && aiType[i]==SQLITE_BLOB && p->pStmt ){
@@ -2638,17 +2643,24 @@ static int run_table_dump_query(
 */
 static char *save_err_msg(
   sqlite3 *db,           /* Database to query */
-  const char *zWhen,     /* Qualifier (format) wrapper */
+  const char *zPhase,    /* When the error occcurs */
   int rc,                /* Error code returned from API */
   const char *zSql       /* SQL string, or NULL */
 ){
   char *zErr;
   char *zContext;
-  if( zWhen==0 ) zWhen = "%s (%d)%s";
+  sqlite3_str *pStr = sqlite3_str_new(0);
+  sqlite3_str_appendf(pStr, "%s, %s", zPhase, sqlite3_errmsg(db));
+  if( rc>1 ){
+    sqlite3_str_appendf(pStr, " (%d)", rc);
+  }
   zContext = shell_error_context(zSql, db);
-  zErr = sqlite3_mprintf(zWhen, sqlite3_errmsg(db), rc, zContext);
+  if( zContext ){
+    sqlite3_str_appendall(pStr, zContext);
+    sqlite3_free(zContext);
+  }
+  zErr = sqlite3_str_finish(pStr);
   shell_check_oom(zErr);
-  sqlite3_free(zContext);
   return zErr;
 }
 
@@ -3779,7 +3791,7 @@ static int shell_exec(
     rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, &zLeftover);
     if( SQLITE_OK != rc ){
       if( pzErrMsg ){
-        *pzErrMsg = save_err_msg(db, "in prepare, %s (%d)%s", rc, zSql);
+        *pzErrMsg = save_err_msg(db, "in prepare", rc, zSql);
       }
     }else{
       if( !pStmt ){
@@ -3895,7 +3907,7 @@ static int shell_exec(
         zSql = zLeftover;
         while( IsSpace(zSql[0]) ) zSql++;
       }else if( pzErrMsg ){
-        *pzErrMsg = save_err_msg(db, "stepping, %s (%d)", rc, 0);
+        *pzErrMsg = save_err_msg(db, "stepping", rc, 0);
       }
 
       /* clear saved stmt handle */
@@ -5756,10 +5768,10 @@ static void output_reset(ShellState *p){
 /*
 ** Run an SQL command and return the single integer result.
 */
-static int db_int(ShellState *p, const char *zSql){
+static int db_int(sqlite3 *db, const char *zSql){
   sqlite3_stmt *pStmt;
   int res = 0;
-  sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
+  sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
   if( pStmt && sqlite3_step(pStmt)==SQLITE_ROW ){
     res = sqlite3_column_int(pStmt,0);
   }
@@ -5864,7 +5876,7 @@ static int shell_dbinfo_command(ShellState *p, int nArg, char **azArg){
   }
   for(i=0; i<ArraySize(aQuery); i++){
     char *zSql = sqlite3_mprintf(aQuery[i].zSql, zSchemaTab);
-    int val = db_int(p, zSql);
+    int val = db_int(p->db, zSql);
     sqlite3_free(zSql);
     utf8_printf(p->out, "%-20s %d\n", aQuery[i].zName, val);
   }
@@ -7459,6 +7471,7 @@ static int sharedSchemaDotCommand(
   return SQLITE_ERROR;
 }
 
+
 /*
 ** When running the ".recover" command, each output table, and the special
 ** orphaned row table if it is required, is represented by an instance
@@ -8054,6 +8067,221 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
   return rc;
 }
 #endif /* !(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_ENABLE_DBPAGE_VTAB) */
+
+
+/* 
+ * zAutoColumn(zCol, &db, ?) => Maybe init db, add column zCol to it.
+ * zAutoColumn(0, &db, ?) => (db!=0) Form columns spec for CREATE TABLE,
+ *   close db and set it to 0, and return the columns spec, to later
+ *   be sqlite3_free()'ed by the caller.
+ * The return is 0 when either:
+ *   (a) The db was not initialized and zCol==0 (There are no columns.)
+ *   (b) zCol!=0  (Column was added, db initialized as needed.)
+ * The 3rd argument, pRenamed, references an out parameter. If the
+ * pointer is non-zero, its referent will be set to a summary of renames
+ * done if renaming was necessary, or set to 0 if none was done. The out
+ * string (if any) must be sqlite3_free()'ed by the caller.
+ */
+#ifdef SHELL_DEBUG
+#define rc_err_oom_die(rc) \
+  if( rc==SQLITE_NOMEM ) shell_check_oom(0); \
+  else if(!(rc==SQLITE_OK||rc==SQLITE_DONE)) \
+    fprintf(stderr,"E:%d\n",rc), assert(0)
+#else
+static void rc_err_oom_die(int rc){
+  if( rc==SQLITE_NOMEM ) shell_check_oom(0);
+  assert(rc==SQLITE_OK||rc==SQLITE_DONE);
+}
+#endif
+
+#ifdef SHELL_COLFIX_DB /* If this is set, the DB can be in a file. */
+static char zCOL_DB[] = SHELL_STRINGIFY(SHELL_COLFIX_DB);
+#else  /* Otherwise, memory is faster/better for the transient DB. */
+static const char *zCOL_DB = ":memory:";
+#endif
+
+/* Define character (as C string) to separate generated column ordinal
+ * from protected part of incoming column names. This defaults to "_"
+ * so that incoming column identifiers that did not need not be quoted
+ * remain usable without being quoted. It must be one character.
+ */
+#ifndef SHELL_AUTOCOLUMN_SEP
+# define AUTOCOLUMN_SEP "_"
+#else
+# define AUTOCOLUMN_SEP SHELL_STRINGIFY(SHELL_AUTOCOLUMN_SEP)
+#endif
+
+static char *zAutoColumn(const char *zColNew, sqlite3 **pDb, char **pzRenamed){
+  /* Queries and D{D,M}L used here */
+  static const char * const zTabMake = "\
+CREATE TABLE ColNames(\
+ cpos INTEGER PRIMARY KEY,\
+ name TEXT, nlen INT, chop INT, reps INT, suff TEXT);\
+CREATE VIEW RepeatedNames AS \
+SELECT DISTINCT t.name FROM ColNames t \
+WHERE t.name COLLATE NOCASE IN (\
+ SELECT o.name FROM ColNames o WHERE o.cpos<>t.cpos\
+);\
+";
+  static const char * const zTabFill = "\
+INSERT INTO ColNames(name,nlen,chop,reps,suff)\
+ VALUES(iif(length(?1)>0,?1,'?'),max(length(?1),1),0,0,'')\
+";
+  static const char * const zHasDupes = "\
+SELECT count(DISTINCT (substring(name,1,nlen-chop)||suff) COLLATE NOCASE)\
+ <count(name) FROM ColNames\
+";
+#ifdef SHELL_COLUMN_RENAME_CLEAN
+  static const char * const zDedoctor = "\
+UPDATE ColNames SET chop=iif(\
+  (substring(name,nlen,1) BETWEEN '0' AND '9')\
+  AND (rtrim(name,'0123456790') glob '*"AUTOCOLUMN_SEP"'),\
+ nlen-length(rtrim(name, '"AUTOCOLUMN_SEP"0123456789')),\
+ 0\
+)\
+";
+#endif
+  static const char * const zSetReps = "\
+UPDATE ColNames AS t SET reps=\
+(SELECT count(*) FROM ColNames d \
+ WHERE substring(t.name,1,t.nlen-t.chop)=substring(d.name,1,d.nlen-d.chop)\
+ COLLATE NOCASE\
+)\
+";
+#ifdef SQLITE_ENABLE_MATH_FUNCTIONS
+  static const char * const zColDigits = "\
+SELECT CAST(ceil(log(count(*)+0.5)) AS INT) FROM ColNames \
+";
+#endif
+  static const char * const zRenameRank =
+#ifdef SHELL_COLUMN_RENAME_CLEAN
+    "UPDATE ColNames AS t SET suff="
+    "iif(reps>1, printf('%c%0*d', '"AUTOCOLUMN_SEP"', $1, cpos), '')"
+#else /* ...RENAME_MINIMAL_ONE_PASS */
+"WITH Lzn(nlz) AS (" /* Find minimum extraneous leading 0's for uniqueness */
+"  SELECT 0 AS nlz"
+"  UNION"
+"  SELECT nlz+1 AS nlz FROM Lzn"
+"  WHERE EXISTS("
+"   SELECT 1"
+"   FROM ColNames t, ColNames o"
+"   WHERE"
+"    iif(t.name IN (SELECT * FROM RepeatedNames),"
+"     printf('%s"AUTOCOLUMN_SEP"%s',"
+"      t.name, substring(printf('%.*c%0.*d',nlz+1,'0',$1,t.cpos),2)),"
+"     t.name"
+"    )"
+"    ="
+"    iif(o.name IN (SELECT * FROM RepeatedNames),"
+"     printf('%s"AUTOCOLUMN_SEP"%s',"
+"      o.name, substring(printf('%.*c%0.*d',nlz+1,'0',$1,o.cpos),2)),"
+"     o.name"
+"    )"
+"    COLLATE NOCASE"
+"    AND o.cpos<>t.cpos"
+"   GROUP BY t.cpos"
+"  )"
+") UPDATE Colnames AS t SET"
+" chop = 0," /* No chopping, never touch incoming names. */
+" suff = iif(name IN (SELECT * FROM RepeatedNames),"
+"  printf('"AUTOCOLUMN_SEP"%s', substring("
+"   printf('%.*c%0.*d',(SELECT max(nlz) FROM Lzn)+1,'0',1,t.cpos),2)),"
+"  ''"
+" )"
+#endif
+    ;
+  static const char * const zCollectVar = "\
+SELECT\
+ '('||x'0a'\
+ || group_concat(\
+  cname||' TEXT',\
+  ','||iif((cpos-1)%4>0, ' ', x'0a'||' '))\
+ ||')' AS ColsSpec \
+FROM (\
+ SELECT cpos, printf('\"%w\"',printf('%.*s%s', nlen-chop,name,suff)) AS cname \
+ FROM ColNames ORDER BY cpos\
+)";
+  static const char * const zRenamesDone =
+    "SELECT group_concat("
+    " printf('\"%w\" to \"%w\"',name,printf('%.*s%s', nlen-chop, name, suff)),"
+    " ','||x'0a')"
+    "FROM ColNames WHERE suff<>'' OR chop!=0"
+    ;
+  int rc;
+  sqlite3_stmt *pStmt = 0;
+  assert(pDb!=0);
+  if( zColNew ){
+    /* Add initial or additional column. Init db if necessary. */
+    if( *pDb==0 ){
+      if( SQLITE_OK!=sqlite3_open(zCOL_DB, pDb) ) return 0;
+#ifdef SHELL_COLFIX_DB
+      if(*zCOL_DB!=':')
+        sqlite3_exec(*pDb,"drop table if exists ColNames;"
+                     "drop view if exists RepeatedNames;",0,0,0);
+#endif
+      rc = sqlite3_exec(*pDb, zTabMake, 0, 0, 0);
+      rc_err_oom_die(rc);
+    }
+    assert(*pDb!=0);
+    rc = sqlite3_prepare_v2(*pDb, zTabFill, -1, &pStmt, 0);
+    rc_err_oom_die(rc);
+    rc = sqlite3_bind_text(pStmt, 1, zColNew, -1, 0);
+    rc_err_oom_die(rc);
+    rc = sqlite3_step(pStmt);
+    rc_err_oom_die(rc);
+    sqlite3_finalize(pStmt);
+    return 0;
+  }else if( *pDb==0 ){
+    return 0;
+  }else{
+    /* Formulate the columns spec, close the DB, zero *pDb. */
+    char *zColsSpec = 0;
+    int hasDupes = db_int(*pDb, zHasDupes);
+#ifdef SQLITE_ENABLE_MATH_FUNCTIONS
+    int nDigits = (hasDupes)? db_int(*pDb, zColDigits) : 0;
+#else
+# define nDigits 2
+#endif
+    if( hasDupes ){
+#ifdef SHELL_COLUMN_RENAME_CLEAN
+      rc = sqlite3_exec(*pDb, zDedoctor, 0, 0, 0);
+      rc_err_oom_die(rc);
+#endif
+      rc = sqlite3_exec(*pDb, zSetReps, 0, 0, 0);
+      rc_err_oom_die(rc);
+      rc = sqlite3_prepare_v2(*pDb, zRenameRank, -1, &pStmt, 0);
+      rc_err_oom_die(rc);
+      sqlite3_bind_int(pStmt, 1, nDigits);
+      rc = sqlite3_step(pStmt);
+      sqlite3_finalize(pStmt);
+      assert(rc==SQLITE_DONE);
+    }
+    assert(db_int(*pDb, zHasDupes)==0); /* Consider: remove this */
+    rc = sqlite3_prepare_v2(*pDb, zCollectVar, -1, &pStmt, 0);
+    rc_err_oom_die(rc);
+    rc = sqlite3_step(pStmt);
+    if( rc==SQLITE_ROW ){
+      zColsSpec = sqlite3_mprintf("%s", sqlite3_column_text(pStmt, 0));
+    }else{
+      zColsSpec = 0;
+    }
+    if( pzRenamed!=0 ){
+      if( !hasDupes ) *pzRenamed = 0;
+      else{
+        sqlite3_finalize(pStmt);
+        if( SQLITE_OK==sqlite3_prepare_v2(*pDb, zRenamesDone, -1, &pStmt, 0)
+            && SQLITE_ROW==sqlite3_step(pStmt) ){
+          *pzRenamed = sqlite3_mprintf("%s", sqlite3_column_text(pStmt, 0));
+        }else
+          *pzRenamed = 0;
+      }
+    }
+    sqlite3_finalize(pStmt);
+    sqlite3_close(*pDb);
+    *pDb = 0;
+    return zColsSpec;
+  }
+}
 
 /*
 ** If an input line begins with "." then invoke this routine to
@@ -9003,20 +9231,29 @@ static int do_meta_command(char *zLine, ShellState *p){
     if( rc && sqlite3_strglob("no such table: *", sqlite3_errmsg(p->db))==0 ){
       char *zCreate = sqlite3_mprintf("CREATE TABLE \"%w\".\"%w\"",
                                       zSchema, zTable);
-      char cSep = '(';
+      sqlite3 *dbCols = 0;
+      char *zRenames = 0;
+      char *zColDefs;
       while( xRead(&sCtx) ){
-        zCreate = sqlite3_mprintf("%z%c\n  \"%w\" TEXT", zCreate, cSep, sCtx.z);
-        cSep = ',';
+        zAutoColumn(sCtx.z, &dbCols, 0);
         if( sCtx.cTerm!=sCtx.cColSep ) break;
       }
-      if( cSep=='(' ){
+      zColDefs = zAutoColumn(0, &dbCols, &zRenames);
+      if( zRenames!=0 ){
+        utf8_printf((stdin_is_interactive && p->in==stdin)? p->out : stderr,
+                    "Columns renamed during .import %s due to duplicates:\n"
+                    "%s\n", sCtx.zFile, zRenames);
+        sqlite3_free(zRenames);
+      }
+      assert(dbCols==0);
+      if( zColDefs==0 ){
         sqlite3_free(zCreate);
         import_cleanup(&sCtx);
         utf8_printf(stderr,"%s: empty file\n", sCtx.zFile);
         rc = 1;
         goto meta_command_exit;
       }
-      zCreate = sqlite3_mprintf("%z\n)", zCreate);
+      zCreate = sqlite3_mprintf("%z%z\n", zCreate, zColDefs);
       if( eVerbose>=1 ){
         utf8_printf(p->out, "%s\n", zCreate);
       }
@@ -11429,19 +11666,30 @@ static int runOneSqlLine(ShellState *p, char *zSql, FILE *in, int startline){
   END_TIMER;
   if( rc || zErrMsg ){
     char zPrefix[100];
+    const char *zErrorTail;
+    const char *zErrorType;
+    if( zErrMsg==0 ){
+      zErrorType = "Error";
+      zErrorTail = sqlite3_errmsg(p->db);
+    }else if( strncmp(zErrMsg, "in prepare, ",12)==0 ){
+      zErrorType = "Parse error";
+      zErrorTail = &zErrMsg[12];
+    }else if( strncmp(zErrMsg, "stepping, ", 10)==0 ){
+      zErrorType = "Runtime error";
+      zErrorTail = &zErrMsg[10];
+    }else{
+      zErrorType = "Error";
+      zErrorTail = zErrMsg;
+    }
     if( in!=0 || !stdin_is_interactive ){
       sqlite3_snprintf(sizeof(zPrefix), zPrefix,
-                       "Error: near line %d:", startline);
+                       "%s near line %d:", zErrorType, startline);
     }else{
-      sqlite3_snprintf(sizeof(zPrefix), zPrefix, "Error:");
+      sqlite3_snprintf(sizeof(zPrefix), zPrefix, "%s:", zErrorType);
     }
-    if( zErrMsg!=0 ){
-      utf8_printf(stderr, "%s %s\n", zPrefix, zErrMsg);
-      sqlite3_free(zErrMsg);
-      zErrMsg = 0;
-    }else{
-      utf8_printf(stderr, "%s %s\n", zPrefix, sqlite3_errmsg(p->db));
-    }
+    utf8_printf(stderr, "%s %s\n", zPrefix, zErrorTail);
+    sqlite3_free(zErrMsg);
+    zErrMsg = 0;
     return 1;
   }else if( ShellHasFlag(p, SHFLG_CountChanges) ){
     char zLineBuf[2000];
