@@ -22,13 +22,13 @@ ifcapable !vtab {
 }
 load_static_extension db qpvtab
 
-# EVIDENCE-OF: R-12211-29175 When the sqlite3_vtab_rhs_value(P,J,V)
+# EVIDENCE-OF: R-60223-49197 When the sqlite3_vtab_rhs_value(P,J,V)
 # interface is invoked from within the xBestIndex method of a virtual
 # table implementation, with P being a copy of the sqlite3_index_info
 # object pointer passed into xBestIndex and J being a 0-based index into
-# P->aConstraint[], then this routine attempts to set *V to be the
-# value on the right-hand side of that constraint if the right-hand side
-# is a known constant.
+# P->aConstraint[], then this routine attempts to set *V to the value
+# of the right-hand operand of that constraint if the right-hand operand
+# is known.
 #
 do_execsql_test 1.1 {
   SELECT rhs FROM qpvtab
@@ -56,8 +56,8 @@ do_execsql_test 1.5 {
      AND a GLOB x'0123'
 } {x'0123'}
 
-# EVIDENCE-OF: R-29440-53190 If the right-hand side of the constraint is
-# not known, then *V is set to a NULL pointer.
+# EVIDENCE-OF: R-37799-62852 If the right-hand operand is not known,
+# then *V is set to a NULL pointer.
 #
 do_execsql_test 2.1 {
   SELECT typeof(rhs) FROM qpvtab WHERE cn='a' AND a=format('abc');

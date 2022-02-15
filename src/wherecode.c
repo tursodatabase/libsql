@@ -1062,7 +1062,7 @@ static void codeCursorHint(
     if( pTabItem->fg.jointype & JT_LEFT ){
       Expr *pExpr = pTerm->pExpr;
       if( !ExprHasProperty(pExpr, EP_FromJoin) 
-       || pExpr->iRightJoinTable!=pTabItem->iCursor
+       || pExpr->w.iRightJoinTable!=pTabItem->iCursor
       ){
         sWalker.eCode = 0;
         sWalker.xExprCallback = codeCursorHintIsOrFunction;
