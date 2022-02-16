@@ -1,5 +1,5 @@
-C Improved\srendering\sof\sfloating\spoint\snumbers\swithout\sa\sfractional\spart\sin\n".dump"\soutput\sfrom\sthe\sCLI.\n[forum:/forumpost/550d877659f37cb2|Forum\spost\s550d877659f37cb2].
-D 2022-02-15T13:23:09.386
+C Make\sthe\ssqlite3_error_offset()\sinterface\saccessible\sfrom\sTCL\susing\sthe\nnew\s"erroroffset"\smethod\son\sthe\ssqlite3\sobject.
+D 2022-02-16T15:11:01.014
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -561,7 +561,7 @@ F src/sqliteInt.h f8814239fb1f95056555e2d7fa475750e64681cac4221fb03610d1fde0b79d
 F src/sqliteLimit.h d7323ffea5208c6af2734574bae933ca8ed2ab728083caa117c9738581a31657
 F src/status.c 4b8bc2a6905163a38b739854a35b826c737333fab5b1f8e03fa7eb9a4799c4c1
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
-F src/tclsqlite.c 48f291e1a7e672a7204884d4c164a8ed3a522ff087c361ada2991f5d54e987f6
+F src/tclsqlite.c 1f6673991147bc2cecc08a40d22f9803b84c805b24b499fe727f392256f73474
 F src/test1.c 87fda59eea3ac1eba1baef37c1967565cb1b8d6d264649f2e57f252ca5989914
 F src/test2.c 3efb99ab7f1fc8d154933e02ae1378bac9637da5
 F src/test3.c 61798bb0d38b915067a8c8e03f5a534b431181f802659a6616f9b4ff7d872644
@@ -1465,7 +1465,7 @@ F test/tabfunc01.test 241425ce3998687ab24adba09cb95e8012e17499b84a0ed47e128ab45e
 F test/table.test eb3463b7add9f16a5bb836badf118cf391b809d09fdccd1f79684600d07ec132
 F test/tableapi.test ecbcc29c4ab62c1912c3717c48ea5c5e59f7d64e4a91034e6148bd2b82f177f4
 F test/tableopts.test dba698ba97251017b7c80d738c198d39ab747930
-F test/tclsqlite.test 97cda6e4843e9f3e06c56f656d9b77ee0178fe1ee33fb09a6eeae8f125757ac1
+F test/tclsqlite.test ad0bbd92edabe64cc91d990a0748142fe5ab962d74ac71fa3bfa94d50d2f4c87
 F test/tempdb.test 4cdaa23ddd8acb4d79cbb1b68ccdfd09b0537aaba909ca69a876157c2a2cbd08
 F test/tempdb2.test 353864e96fd3ae2f70773d0ffbf8b1fe48589b02c2ec05013b540879410c3440
 F test/tempfault.test 0c0d349c9a99bf5f374655742577f8712c647900
@@ -1944,8 +1944,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d74ec88c2f9b9e056988add8322186750229e14a609d1a6969ba393a5b8c5174
-R d44a4dfcecd9d59ae3b06dca8b590f27
+P 9edaeed56f2282fd4da935454178c38ab49d259aed96d4e720aae09050a53006
+R 50c370b3d9d14ff830ffc7f797dcfa74
 U drh
-Z 28d22f7919d651ae0bfc81a1c20dfd1c
+Z 91ac5b55b4df8ebe715787c15b76f001
 # Remove this line to create a well-formed Fossil manifest.
