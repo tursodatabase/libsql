@@ -1,5 +1,5 @@
-C Make\sthe\ssqlite3_error_offset()\sinterface\saccessible\sfrom\sTCL\susing\sthe\nnew\s"erroroffset"\smethod\son\sthe\ssqlite3\sobject.
-D 2022-02-16T15:11:01.014
+C Fix\sa\stesting\serror\son\sWindows\sthat\swas\srecently\sadded\sto\sshell5.test.
+D 2022-02-17T14:29:39.586
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1392,7 +1392,7 @@ F test/shell1.test b224e0793c5f48aa3749e65d8c64b93a30731bd206f2e41e6c5f1bee1bdb1
 F test/shell2.test 89e4b2db062d52baed75022227b462d085cff495809de1699652779d8e0257d6
 F test/shell3.test a50628ab1d78d90889d9d3f32fb2c084ee15674771e96afe954aaa0accd1de3c
 F test/shell4.test 8f6c0fce4abed19a8a7f7262517149812a04caa905d01bdc8f5e92573504b759
-F test/shell5.test 3be444397eb1e91619ce289a6216a8df9ac690cc45d5e9595f60e750a944161f
+F test/shell5.test 2b521446f55146c9aafccd0946bdb44ae288b0d25bd48f722e041974fdeeb04a
 F test/shell6.test 1ceb51b2678c472ba6cf1e5da96679ce8347889fe2c3bf93a0e0fa73f00b00d3
 F test/shell7.test 115132f66d0463417f408562cc2cf534f6bbc6d83a6d50f0072a9eb171bae97f
 F test/shell8.test 388471d16e4de767333107e30653983f186232c0e863f4490bb230419e830aae
@@ -1944,8 +1944,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9edaeed56f2282fd4da935454178c38ab49d259aed96d4e720aae09050a53006
-R 50c370b3d9d14ff830ffc7f797dcfa74
+P 3454a1222bedefba527af98c0284ed0bfbd28dd941885d9a0ac9a44aea2fc8ec
+R 0e4bf2f7117a92dae18da02a084f350a
 U drh
-Z 91ac5b55b4df8ebe715787c15b76f001
+Z aaf6628a887fb8adb33b2fa446f7e8f2
 # Remove this line to create a well-formed Fossil manifest.
