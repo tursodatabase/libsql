@@ -1,5 +1,5 @@
-C Remove\sreferences\sto\sthe\snow-defunct\sSQLITE_ENABLE_JSON1\scompile-time\soption.
-D 2022-02-17T14:33:13.716
+C Enhance\sthe\sdocumentation\son\ssqlite3_stmt_readonly()\sto\sexplain\sthat\nEXPLAIN\sand\sEXPLAIN\sQUERY\sPLAN\sdo\snot\saffect\sthe\sreturn\svalue.\s\sAdd\stest\ncases\sto\sverify\sthis.\s\sAdd\snew\stest\scases\sand\srequirements\smarks\sfor\ncomplete\srequirements\stest\scoverage\son\sthis\sinterface.
+D 2022-02-17T17:24:39.996
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -554,7 +554,7 @@ F src/resolve.c ea935b87d6fb36c78b70cdc7b28561dc8f33f2ef37048389549c7b5ef9b0ba5e
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 3baa9dd8cf240654773c7974e2bcce398ac9dd24419c36684156963defe43b35
 F src/shell.c.in b5b44c2ebfd3942e60dbcc47b94a74337a482a5f1c3766fbfb9f578a605ecf50
-F src/sqlite.h.in 7047c4b60fa550264d6363bb1d983540e7828fb19d2d1e5aa43b52ca13144807
+F src/sqlite.h.in e30cedf008d9c51511f4027a3739b727a588da553424748b48d2393f85dbde41
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h a95cb9ed106e3d39e2118e4dcc15a14faec3fa50d0093425083d340d9dfd96e6
 F src/sqliteInt.h f8814239fb1f95056555e2d7fa475750e64681cac4221fb03610d1fde0b79d53
@@ -763,7 +763,7 @@ F test/capi2.test 4ee545824adc3eb33bf57ef89f77440b28188ec3da72e5425ff0fcdba32e8d
 F test/capi3.test 3910a73c38ac76d69778dd9eb481ab7cd6ed59117fc047b4f6056a5c72529de1
 F test/capi3b.test efb2b9cfd127efa84433cd7a2d72ce0454ae0dc4
 F test/capi3c.test 54e2dc0c8fd7c34ad1590d1be6864397da2438c95a9f5aee2f8fbc60c112e44b
-F test/capi3d.test aba917805573a03deed961a21f07a5a84505ad0a616f7e3fc1508844a15bccc4
+F test/capi3d.test 8b778794af891b0dca3d900bd345fbc8ebd2aa2aae425a9dccdd10d5233dfbde
 F test/capi3e.test 3d49c01ef2a1a55f41d73cba2b23b5059ec460fe
 F test/carray01.test d55d57bf66b1af1c7ac55fae66ff4910884a8f5d21a90a18797ce386212a2634
 F test/cast.test 336fa21989b5170ebcaf90c24266be22dd97b3e23d1fad5ecf6ad4efb04c4423
@@ -1944,8 +1944,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6cace54320997dcbbdd49017f20eecafa88ebcc4b264ee800954f25d9605023d
-R e53902f2dbf0ae77be8f56d67e9a648c
+P db950192c93db7f5eb4ffcce41d0ea374c58450405945cfb8ebe0c93070b7c48
+R 523f364c921f1f1a1af91e70e24a8c4e
 U drh
-Z 6e5356ac204fb51a4444299256d4bb22
+Z a1a8fedeb890f7339edc06cd1f9179a9
 # Remove this line to create a well-formed Fossil manifest.
