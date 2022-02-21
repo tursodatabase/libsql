@@ -1,5 +1,5 @@
-C Do\snot\sallow\serror\smessages\sfrom\ssqlite3NestedParse()\sto\sleak\sup\sinto\sthe\nmain\sparse.
-D 2022-02-21T00:23:49.892
+C Add\sSQLITE_OMIT_JSON\sto\sthe\scompile-time\soption\stest\ssequence.
+D 2022-02-21T13:02:23.169
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1887,7 +1887,7 @@ F tool/mksqlite3h.tcl 1f5e4a1dbbbc43c83cc6e74fe32c6c620502240b66c7c0f33a51378e78
 F tool/mksqlite3internalh.tcl eb994013e833359137eb53a55acdad0b5ae1049b
 F tool/mkvsix.tcl b9e0777a213c23156b6542842c238479e496ebf5
 F tool/offsets.c 8ed2b344d33f06e71366a9b93ccedaa38c096cc1dbd4c3c26ad08c6115285845
-F tool/omittest.tcl 3d222272b1d840b4e3d67bff0cb743ce3f633faddadb3702b2056b726775db8f
+F tool/omittest.tcl 3bc9609aceea871e1ca6ed6749df9ce79b89369d22b492f6ce6078f40647cc3f
 F tool/opcodesum.tcl 740ed206ba8c5040018988129abbf3089a0ccf4a
 F tool/pagesig.c ff0ca355fd3c2398e933da5e22439bbff89b803b
 F tool/replace.tcl 937c931ad560688e85bdd6258bdc754371bb1e2732e1fb28ef441e44c9228fce
@@ -1944,8 +1944,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 741651fd4b1b776b4dea156cdc987f426f7c668ece203bda6654b2c7117c8933
-R e58f244b851f39804e3706c333ceac19
+P 9c4e21abdca664d6b7bcf0043fe9ec05ef8b2949ba6ee7208abaaec1ff4ed679
+R 605f35793af6c6c5c05c40e106a2aaf9
 U drh
-Z 4d37dc9349c7c233094d1c870b4b22d9
+Z 505632ad7d9e98bb700e59017aab91f9
 # Remove this line to create a well-formed Fossil manifest.
