@@ -1,5 +1,5 @@
-C Add\sSQLITE_OMIT_JSON\sto\sthe\scompile-time\soption\stest\ssequence.
-D 2022-02-21T13:02:23.169
+C Remove\sstray\stab\scharacters\sfrom\sauxiliary\ssource\scode\sfiles.
+D 2022-02-21T13:44:51.801
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -280,7 +280,7 @@ F ext/lsm1/lsm_str.c 65e361b488c87b10bf3e5c0070b14ffc602cf84f094880bece77bbf6678
 F ext/lsm1/lsm_tree.c 682679d7ef2b8b6f2fe77aeb532c8d29695bca671c220b0abac77069de5fb9fb
 F ext/lsm1/lsm_unix.c 11e0a5c19d754a4e1d93dfad06de8cc201f10f886b8e61a4c599ed34e334fc24
 F ext/lsm1/lsm_varint.c 43f954af668a66c7928b81597c14d6ad4be9fedbc276bbd80f52fa28a02fdb62
-F ext/lsm1/lsm_vtab.c 169bfe7ef8e6c9de9c77e17c4c50c9ae55fb0167d80be3d1be82c991184b6f35
+F ext/lsm1/lsm_vtab.c e57aa3eb456bf2b98064014027e097c9402d6dec7b59564ddbfa1c0ead8f96c5
 F ext/lsm1/lsm_win32.c 0a4acbd7e8d136dd3a5753f0a9e7a9802263a9d96cef3278cf120bcaa724db7c
 F ext/lsm1/test/lsm1_common.tcl 5ed4bab07c93be2e4f300ebe46007ecf4b3e20bc5fbe1dedaf04a8774a6d8d82
 F ext/lsm1/test/lsm1_simple.test a04d08e8661ae6fc53786c67f0bd102c6692f003e859dde03ed9ac3f12e066e5
@@ -297,7 +297,7 @@ F ext/misc/cksumvfs.c b42ef52eaaa510d54ec320c87bea149e934a3b06cd232be2093562bf66
 F ext/misc/closure.c dbfd8543b2a017ae6b1a5843986b22ddf99ff126ec9634a2f4047cd14c85c243
 F ext/misc/completion.c 6dafd7f4348eecc7be9e920d4b419d1fb2af75d938cd9c59a20cfe8beb2f22b9
 F ext/misc/compress.c 3354c77a7c8e86e07d849916000cdac451ed96500bfb5bd83b20eb61eee012c9
-F ext/misc/csv.c 53b3338d4fa812eda51a2637df30233a4dae16b964ee5666e2051b9672ed8bb4
+F ext/misc/csv.c d14709096280dc0e20c533f184568952bf4b8022ea80afc4aa9fec5ab3637bb3
 F ext/misc/dbdata.c e316fba936571584e55abd5b974a32a191727a6b746053a0c9d439bd2cf93940
 F ext/misc/dbdump.c b8592f6f2da292c62991a13864a60d6c573c47a9cc58362131b9e6a64f823e01
 F ext/misc/decimal.c 09f967dcf4a1ee35a76309829308ec278d3648168733f4a1147820e11ebefd12
@@ -306,7 +306,7 @@ F ext/misc/explain.c 0086fab288d4352ea638cf40ac382aad3b0dc5e845a1ea829a694c015fd
 F ext/misc/fileio.c 4e7f7cd30de8df4820c552f14af3c9ca451c5ffe1f2e7bef34d598a12ebfb720
 F ext/misc/fossildelta.c 1240b2d3e52eab1d50c160c7fe1902a9bd210e052dc209200a750bbf885402d5
 F ext/misc/fuzzer.c eae560134f66333e9e1ca4c8ffea75df42056e2ce8456734565dbe1c2a92bf3d
-F ext/misc/ieee754.c 91a5594071143a4ab79c638fe9f059af1db09932faf2e704c3e29216a7d4f511
+F ext/misc/ieee754.c 984d51fe23e956484ec1049df6f5257002e3ab338cabceb39761c2e80ad10bf4
 F ext/misc/memstat.c 3017a0832c645c0f8c773435620d663855f04690172316bd127270d1a7523d4d
 F ext/misc/memtrace.c 7c0d115d2ef716ad0ba632c91e05bd119cb16c1aedf3bec9f06196ead2d5537b
 F ext/misc/memvfs.c 7dffa8cc89c7f2d73da4bd4ccea1bcbd2bd283e3bb4cea398df7c372a197291b
@@ -1909,7 +1909,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 7ce07da76b5e745783e703a834417d725b7d45fd
 F tool/split-sqlite3c.tcl 3efcd4240b738f6bb2b5af0aea7e1e0ef9bc1c61654f645076cec883030b710c
-F tool/sqldiff.c 9c639de9fa541a947ea9776435c84adf00f43945e262556e15219ef09f0d912c
+F tool/sqldiff.c 4f967c199c5f93eec64978e3a625d6c07fb1162212b1d48f65740d9eb4607eee
 F tool/sqlite3_analyzer.c.in f88615bf33098945e0a42f17733f472083d150b58bdaaa5555a7129d0a51621c
 F tool/sqltclsh.c.in 1bcc2e9da58fadf17b0bf6a50e68c1159e602ce057210b655d50bad5aaaef898
 F tool/sqltclsh.tcl 862f4cf1418df5e1315b5db3b5ebe88969e2a784525af5fbf9596592f14ed848
@@ -1944,8 +1944,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9c4e21abdca664d6b7bcf0043fe9ec05ef8b2949ba6ee7208abaaec1ff4ed679
-R 605f35793af6c6c5c05c40e106a2aaf9
+P f36325a6e21c4d3b6ab48ebfb2efabda089281344d1e61949d1c9290e88395b1
+R 9b73a3299298da08d030294b07937ddc
 U drh
-Z 505632ad7d9e98bb700e59017aab91f9
+Z c883394327385fdc334da2f7b46c6fac
 # Remove this line to create a well-formed Fossil manifest.
