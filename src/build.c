@@ -333,6 +333,8 @@ void sqlite3NestedParse(Parse *pParse, const char *zFormat, ...){
   memset(PARSE_TAIL(pParse), 0, PARSE_TAIL_SZ);
   db->mDbFlags |= DBFLAG_PreferBuiltin;
   sqlite3RunParser(pParse, zSql);
+  sqlite3DbFree(db, pParse->zErrMsg);
+  pParse->zErrMsg = 0;
   db->mDbFlags = savedDbFlags;
   sqlite3DbFree(db, zSql);
   memcpy(PARSE_TAIL(pParse), saveBuf, PARSE_TAIL_SZ);
