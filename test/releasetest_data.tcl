@@ -99,7 +99,6 @@ array set ::Configs [strip_comments {
     -DSQLITE_ENABLE_STMT_SCANSTATUS
     -DSQLITE_LIKE_DOESNT_MATCH_BLOBS
     -DSQLITE_ENABLE_CURSOR_HINTS
-    --enable-json1
   }
   "Check-Symbols" {
     -DSQLITE_MEMDEBUG=1
@@ -117,7 +116,7 @@ array set ::Configs [strip_comments {
     -DSQLITE_ENABLE_OVERSIZE_CELL_CHECK=1
     -DSQLITE_ENABLE_STAT4
     -DSQLITE_ENABLE_STMT_SCANSTATUS
-    --enable-json1 --enable-fts5 --enable-session
+    --enable-fts5 --enable-session
   }
   "Debug-One" {
     --disable-shared
@@ -134,7 +133,7 @@ array set ::Configs [strip_comments {
     -DSQLITE_ENABLE_HIDDEN_COLUMNS
     -DSQLITE_MAX_ATTACHED=125
     -DSQLITE_MUTATION_TEST
-    --enable-fts5 --enable-json1
+    --enable-fts5
   }
   "Debug-Two" {
     -DSQLITE_DEFAULT_MEMSTATUS=0
@@ -170,7 +169,6 @@ array set ::Configs [strip_comments {
     -DSQLITE_OMIT_VIRTUALTABLE=1
     -DSQLITE_ENABLE_HIDDEN_COLUMNS
     -DSQLITE_TEMP_STORE=3
-    --enable-json1
   }
   "Device-Two" {
     -DSQLITE_4_BYTE_ALIGNED_MALLOC=1
@@ -188,7 +186,7 @@ array set ::Configs [strip_comments {
     -DSQLITE_OMIT_TRACE=1
     -DSQLITE_TEMP_STORE=3
     -DSQLITE_THREADSAFE=2
-    --enable-json1 --enable-fts5 --enable-session
+    --enable-fts5 --enable-session
   }
   "Locking-Style" {
     -O2
@@ -232,7 +230,7 @@ array set ::Configs [strip_comments {
     -DSQLITE_WRITE_WALFRAME_PREBUFFERED=1
     -DUSE_GUARDED_FD=1
     -DUSE_PREAD=1
-    --enable-json1 --enable-fts5
+    --enable-fts5
   }
   "Extra-Robustness" {
     -DSQLITE_ENABLE_OVERSIZE_CELL_CHECK=1
@@ -247,7 +245,7 @@ array set ::Configs [strip_comments {
     -DSQLITE_ENABLE_FTS4_PARENTHESIS
     -DSQLITE_DISABLE_FTS4_DEFERRED
     -DSQLITE_ENABLE_RTREE
-    --enable-json1 --enable-fts5
+    --enable-fts5
   }
   "No-lookaside" {
     -DSQLITE_TEST_REALLOC_STRESS=1
@@ -259,7 +257,6 @@ array set ::Configs [strip_comments {
     -DSQLITE_ENABLE_RTREE
     -DSQLITE_ENABLE_HIDDEN_COLUMNS
     -DCONFIG_SLOWDOWN_FACTOR=8.0
-    --enable-json1
   }
 
   "Windows-Memdebug" {
@@ -502,9 +499,6 @@ proc main_script {args} {
           }
           --enable-fts5 {
             lappend opts -DSQLITE_ENABLE_FTS5
-          } 
-          --enable-json1 {
-            lappend opts -DSQLITE_ENABLE_JSON1
           } 
           --enable-shared {
             lappend makeOpts USE_CRT_DLL=1 DYNAMIC_SHELL=1
