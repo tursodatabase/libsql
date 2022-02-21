@@ -574,8 +574,8 @@ static int toLocaltime(
   memset(&sLocal, 0, sizeof(sLocal));
 
   computeJD(p);
-  if( p->iJD<21086676000*(i64)10000 /* 1970-01-01 */
-   || p->iJD>21301414560*(i64)10000 /* 2038-01-18 */
+  if( p->iJD<2108667600*(i64)100000 /* 1970-01-01 */
+   || p->iJD>2130141456*(i64)100000 /* 2038-01-18 */
   ){
     /* EVIDENCE-OF: R-55269-29598 The localtime_r() C function normally only
     ** works for years between 1970 and 2037. For dates outside this range,
@@ -681,7 +681,9 @@ static int parseModifier(
         if( !p->rawS || p->validJD ){
           rc = 0;
           p->rawS = 0;
-        }else if( p->s>=-210866760000 && p->s<=253402300799 ){
+        }else if( p->s>=-21086676*(i64)10000        /* -4713-11-24 12:00:00 */
+               && p->s<=(25340230*(i64)10000)+799   /*  9999-12-31 23:59:59 */
+        ){
           r = p->s*1000.0 + 210866760000000.0;
           clearYMD_HMS_TZ(p);
           p->iJD = (sqlite3_int64)(r + 0.5);

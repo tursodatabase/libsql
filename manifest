@@ -1,5 +1,5 @@
-C Remove\sstray\stab\scharacters\sfrom\sauxiliary\ssource\scode\sfiles.
-D 2022-02-21T13:44:51.801
+C Fix\scompiler\swarnings\sfor\solder\scompilers\s(ex:\sgcc\s4.0.1\spowerpc-apple-darwin).
+D 2022-02-21T14:30:59.112
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -499,7 +499,7 @@ F src/build.c 9891c2160886cf7e344d7e8f1f7177f9612916c7c67ffeacd64cb34a92d387a8
 F src/callback.c 4c19af69835787bfe790ac560f3071a824eb629f34e41f97b52ce5235c77de1c
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 2cce39df1a13e05b7633e6d21b651f21492471f991dd7b323a4ee4e7b7f0b7f1
-F src/date.c 1fcc64294b0e81cc9fa05cf8f773e862dd004f74d023544d43edeeacbcfde7e5
+F src/date.c 1abbd739ae1d3fc8e0aaff995f57332af10d0b332728e4d3f241c494515495f0
 F src/dbpage.c 8a01e865bf8bc6d7b1844b4314443a6436c07c3efe1d488ed89e81719047833a
 F src/dbstat.c 861e08690fcb0f2ee1165eff0060ea8d4f3e2ea10f80dab7d32ad70443a6ff2d
 F src/delete.c b5f1716b4d723db48254ee0f896e362cd029e865e05414139ea7f539f3884e1d
@@ -624,7 +624,7 @@ F src/upsert.c 8789047a8f0a601ea42fa0256d1ba3190c13746b6ba940fe2d25643a7e991937
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c 602fe229f32a96ceccae4f40824129669582096f7c355f53dbac156c9fecef23
 F src/vacuum.c 6c38ddc52f0619865c91dae9c441d4d48bf3040d7dc1bc5b22da1e45547ed0b3
-F src/vdbe.c 13a4de20ee07bdfb3dc74ab49b7912208e309caf762a8d1678fb111e2223af35
+F src/vdbe.c e179d2d6551c6cc3dda7f6f233f9fe3d3c8da2f9bfc46eaabb4b54dc4337d3cf
 F src/vdbe.h 25dabb25c7e157b84e59260cfb5b466c3ac103ede9f36f4db371332c47601abe
 F src/vdbeInt.h b45599a2b59f1ce042512ab6786b0b82a8cf3002f6b0fa60b4834e2cd3ac61d8
 F src/vdbeapi.c 8863ffb5a7bac42fe9a68aaa3526ee29fc18fb02a9b27188b756de41e33856e9
@@ -1944,8 +1944,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f36325a6e21c4d3b6ab48ebfb2efabda089281344d1e61949d1c9290e88395b1
-R 9b73a3299298da08d030294b07937ddc
+P e25e33582b69289a2c3a6bc403e3911de22a3b529db1a565efb9f1af01b9e382
+R 1bf4b4ff22c1879fe76eac8c2b94a531
 U drh
-Z c883394327385fdc334da2f7b46c6fac
+Z 346e276610f450eefee83609bdbf0861
 # Remove this line to create a well-formed Fossil manifest.
