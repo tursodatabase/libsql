@@ -3243,7 +3243,7 @@ case OP_MakeRecord: {
       testcase( uu==127 );               testcase( uu==128 );
       testcase( uu==32767 );             testcase( uu==32768 );
       testcase( uu==8388607 );           testcase( uu==8388608 );
-      testcase( uu==2147483647 );        testcase( uu==2147483648 );
+      testcase( uu==2147483647 );        testcase( uu==2147483648LL );
       testcase( uu==140737488355327LL ); testcase( uu==140737488355328LL );
       if( uu<=127 ){
         if( (i&1)==i && file_format>=4 ){

@@ -324,7 +324,7 @@ static int SQLITE_TCLAPI register_box_query(
   }
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
 
-  pCtx = (BoxQueryCtx*)ckalloc(sizeof(BoxQueryCtx*));
+  pCtx = (BoxQueryCtx*)ckalloc(sizeof(BoxQueryCtx));
   pCtx->interp = interp;
   pCtx->pScript = Tcl_DuplicateObj(objv[2]);
   Tcl_IncrRefCount(pCtx->pScript);

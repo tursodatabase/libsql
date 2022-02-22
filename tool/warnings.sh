@@ -20,7 +20,7 @@ echo '********** No optimizations.  Includes FTS4/5, GEOPOLY, JSON1 ***'
 echo '**********    ' Options: $WARNING_OPTS
 gcc -c $WARNING_OPTS -std=c89 \
       -ansi -DHAVE_STDINT_H -DSQLITE_ENABLE_FTS4 -DSQLITE_ENABLE_GEOPOLY \
-      -DSQLITE_ENABLE_FTS5 -DSQLITE_ENABLE_JSON1 \
+      -DSQLITE_ENABLE_FTS5 \
       sqlite3.c
 if test x`uname` = 'xLinux'; then
 echo '********** Android configuration ******************************'
@@ -56,5 +56,5 @@ echo '********** Optimized -O3.  Includes FTS4/5, GEOPOLY, JSON1 ******'
 echo '**********    ' Options: $WARNING_OPTS
 gcc -O3 -c $WARNING_OPTS -std=c89 \
       -ansi -DHAVE_STDINT_H -DSQLITE_ENABLE_FTS4 -DSQLITE_ENABLE_GEOPOLY \
-      -DSQLITE_ENABLE_FTS5 -DSQLITE_ENABLE_JSON1 \
+      -DSQLITE_ENABLE_FTS5 \
       sqlite3.c
