@@ -479,6 +479,7 @@ CREATE TABLE t8(a, b, c);
 #----------------------------------------------------------------------------
 # Tests for the shell automatic column rename.
 #
+db close
 
 # Import columns containing duplicates
 do_test shell5-5.1 {
