@@ -4529,6 +4529,7 @@ static const char *(azHelp[]) = {
   ".auth ON|OFF             Show authorizer callbacks",
 #endif
   ".backup ?DB? FILE        Backup DB (default \"main\") to FILE",
+  "   Options:",
   "       --append            Use the appendvfs",
   "       --async             Write to FILE without journal and fsync()",
   ".bail on|off             Stop after hitting an error.  Default OFF",
@@ -4656,7 +4657,8 @@ static const char *(azHelp[]) = {
   "      OPT may be -t or -e to use edited value as text or evaluate it first.",
 #endif
   "   init                    Initialize TEMP table for bindings and scripts",
-  "   list                    List parameters table binding and script values",
+  "   list ?PATTERNS?         List parameters table binding and script values",
+  "      Alternatively, to list just some or all names: ls ?PATTERNS?",
   "   load ?FILE? ?NAMES?     Load some or all named parameters from FILE",
   "      If FILE missing, empty or '~', it defaults to ~/sqlite_params.sdb",
   "   save ?FILE? ?NAMES?     Save some or all named parameters into FILE",
@@ -4688,7 +4690,7 @@ static const char *(azHelp[]) = {
   "                            that are not also INTEGER PRIMARY KEYs",
 #endif
   ".restore ?DB? FILE       Restore content of DB (default \"main\") from FILE",
-  ".save FILE               Write in-memory database into FILE",
+  ".save ?OPTIONS? FILE     Write database to FILE (an alias for .backup ...)",
   ".scanstats on|off        Turn sqlite3_stmt_scanstatus() metrics on or off",
   ".schema ?PATTERN?        Show the CREATE statements matching PATTERN",
   "   Options:",
@@ -8331,6 +8333,8 @@ static int param_find_callback(void *pData, int nc, char **pV, char **pC){
 
 static void append_in_clause(sqlite3_str *pStr,
                              const char **azBeg, const char **azLim);
+static void append_glob_terms(sqlite3_str *pStr, const char *zColName,
+                              const char **azBeg, const char **azLim);
 static char *find_home_dir(int clearFlag);
 
 /* Create a home-relative pathname from ~ prefixed path.
@@ -8663,13 +8667,23 @@ static int param_set(sqlite3 *db, char cCast,
   return rc;
 }
 
-/* list subcommand for .parameter dot-command */
-static void list_params(ShellState *p, ParamTableUse ptu){
+/* list or ls subcommand for .parameter dot-command */
+static void list_params(ShellState *p, ParamTableUse ptu, u8 bShort,
+                        char **pzArgs, int nArg){
   sqlite3_stmt *pStmt = 0;
-  int len = 0;
-  int rc = sqlite3_prepare_v2
-    (p->db, "SELECT max(length(key)) FROM "
-     PARAM_TABLE_SNAME" WHERE ?1=3 OR uses=?1", -1, &pStmt, 0);
+  sqlite3_str *sbList = sqlite3_str_new(p->db);
+  int len = 0, rc;
+  char *zFromWhere = 0;
+  char *zSql = 0;
+  sqlite3_str_appendf(sbList, "FROM "PARAM_TABLE_SNAME
+                      " WHERE (?1=3 OR uses=?1) AND ");
+  append_glob_terms(sbList, "key",
+                    (const char **)pzArgs, (const char **)pzArgs+nArg);
+  zFromWhere = sqlite3_str_finish(sbList);
+  shell_check_oom(zFromWhere);
+  zSql = sqlite3_mprintf("SELECT max(length(key)) %s", zFromWhere);
+  shell_check_oom(zSql);
+  rc = sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
   if( rc==SQLITE_OK ){
     sqlite3_bind_int(pStmt, 1, ptu);
     if( sqlite3_step(pStmt)==SQLITE_ROW ){
@@ -8681,23 +8695,69 @@ static void list_params(ShellState *p, ParamTableUse ptu){
   sqlite3_finalize(pStmt);
   pStmt = 0;
   if( len ){
-    utf8_printf(p->out, "%-*s %-8s %s\n", len, "name", "usage", "value");
-    rc = sqlite3_prepare_v2
-      (p->db, "SELECT key, uses, quote(value) FROM " PARAM_TABLE_SNAME
-       " WHERE ?1=3 OR uses=?1 ORDER BY key", -1, &pStmt, 0);
-    sqlite3_bind_int(pStmt, 1, ptu);
-    while( rc==SQLITE_OK && sqlite3_step(pStmt)==SQLITE_ROW ){
-      ParamTableUse ptux = sqlite3_column_int(pStmt,1);
-      const char *zUse;
-      switch( ptux ){
-      case PTU_Binding: zUse = "binding"; break;
-      case PTU_Script:  zUse = "script"; break;
-      default:          zUse = "unknown";
+    sqlite3_free(zSql);
+    if( !bShort ){
+      int nBindings = 0, nScripts = 0;
+      zSql = sqlite3_mprintf("SELECT key, uses, iif(uses, value, quote(value))"
+                             " %z ORDER BY uses, key", zFromWhere);
+      shell_check_oom(zSql);
+      rc = sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
+      sqlite3_bind_int(pStmt, 1, ptu);
+      while( rc==SQLITE_OK && sqlite3_step(pStmt)==SQLITE_ROW ){
+        ParamTableUse ptux = sqlite3_column_int(pStmt,1);
+        switch( ptux ){
+        case PTU_Binding:
+          if( nBindings++ == 0 ){
+            utf8_printf(p->out, "Binding Values:\n%-*s %s\n",
+                        len, "name", "value");
+          }
+          utf8_printf(p->out, "%-*s %s\n", len, sqlite3_column_text(pStmt,0),
+                      sqlite3_column_text(pStmt,2));
+          break;
+        case PTU_Script:
+          if( nScripts++ == 0 ){
+            utf8_printf(p->out, "Scripts\n%-*s %s\n", len, "name", "value");
+          }
+          utf8_printf(p->out, "%-*s %s\n", len, sqlite3_column_text(pStmt,0),
+                      sqlite3_column_text(pStmt,2));
+          break;
+        default: break; /* Ignore */
+        }
       }
-      utf8_printf(p->out, "%-*s %-8s %s\n", len, sqlite3_column_text(pStmt,0),
-                  zUse, sqlite3_column_text(pStmt,2));
+    }else{
+      int nc = 0, ncw = 78/(len+2);
+      zSql = sqlite3_mprintf("SELECT key %z ORDER BY key", zFromWhere);
+      shell_check_oom(zSql);
+      rc = sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
+      sqlite3_bind_int(pStmt, 1, ptu);
+      while( rc==SQLITE_OK && sqlite3_step(pStmt)==SQLITE_ROW ){
+        utf8_printf(p->out, "%s  %-*s", ((++nc%ncw==0)? "\n" : ""),
+                    len, sqlite3_column_text(pStmt,0));
+      }
+      if( nc>0 ) utf8_printf(p->out, "\n");
     }
     sqlite3_finalize(pStmt);
+  }else{
+    sqlite3_free(zFromWhere);
+  }
+  sqlite3_free(zSql);
+}
+
+/* Append an OR'ed series of GLOB terms comparing a given column
+ * name to a series of patterns. Result is an appended expression.
+ * For an empty pattern series, expression is true for non-NULL.
+ */
+static void append_glob_terms(sqlite3_str *pStr, const char *zColName,
+                              const char **azBeg, const char **azLim){
+  if( azBeg==azLim ) sqlite3_str_appendf(pStr, "%s NOT NULL", zColName);
+  else{
+    char *zSep = "(";
+    while( azBeg<azLim ){
+      sqlite3_str_appendf(pStr, "%sglob(%Q,%s)", zSep, *azBeg, zColName);
+      zSep = " OR ";
+      ++azBeg;
+    }
+    sqlite3_str_appendf(pStr, ")");
   }
 }
 
@@ -10708,12 +10768,14 @@ static int do_meta_command(char *zLine, ShellState *p){
       param_table_init(p);
     }else
 
-    /* .parameter list
-    ** List all bind parameters.
+    /* .parameter list|ls
+    ** List all or selected bind parameters.
+    ** list displays names, values and uses.
+    ** ls displays just the names.
     */
-    if( nArg==2 && strcmp(azArg[1],"list")==0 ){
-      /* Future: Allow selection of categories. */
-      list_params(p, PTU_Nil);
+    if( nArg>=2 && ((strcmp(azArg[1],"list")==0)
+                    || (strcmp(azArg[1],"ls")==0)) ){
+      list_params(p, PTU_Nil, azArg[1][1]=='s', azArg+2, nArg-2);
     }else
 
     /* .parameter load

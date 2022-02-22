@@ -284,7 +284,7 @@ int sqlite3_ieee_init(
   SQLITE_EXTENSION_INIT2(pApi);
   (void)pzErrMsg;  /* Unused parameter */
   for(i=0; i<sizeof(aFunc)/sizeof(aFunc[0]) && rc==SQLITE_OK; i++){
-    rc = sqlite3_create_function(db, aFunc[i].zFName, aFunc[i].nArg,	
+    rc = sqlite3_create_function(db, aFunc[i].zFName, aFunc[i].nArg,
                                SQLITE_UTF8|SQLITE_INNOCUOUS,
                                (void*)&aFunc[i].iAux,
                                aFunc[i].xFunc, 0, 0);

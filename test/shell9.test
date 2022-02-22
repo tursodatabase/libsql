@@ -124,10 +124,11 @@ set cmds {
 }
 do_test shell9-3.2 {
   set res [catchcmd ":memory:" $cmds]
-} {0 {name  usage    value
-expr  script   7
-text  script   '1 + 2*3'
-ttext script   '1 + 2*3'}}
+} {0 {Scripts
+name  value
+expr  7
+text  1 + 2*3
+ttext 1 + 2*3}}
 
 set cmds {
 .pa set a "'a'"
@@ -148,17 +149,18 @@ set cmds {
 }
 do_test shell9-3.3 {
   set res [catchcmd ":memory:" $cmds]
-} {0 {name usage    value
-a    script   'a'
-b    script   'b'
-c    script   'c'
-name usage    value
-b    script   'b'
-c    script   'c'
-name usage    value
-c    script   'c'
-name usage    value
-name usage    value}}
+} {0 {Scripts
+name value
+a    a
+b    b
+c    c
+Scripts
+name value
+b    b
+c    c
+Scripts
+name value
+c    c}}
 
 if {$::tcl_platform(platform)=="unix"} {
   proc set_ed {sayWhat} {
@@ -209,13 +211,18 @@ set cmds {
 }
 do_test shell9-4.1 {
   set res [catchcmd ":memory: -shxopts 1" $cmds]
-} {0 {name usage    value
-$n   binding  7
-x    script   '.print Ex'
-name usage    value
-x    script   '.print Ex'
-name usage    value
-$n   binding  7}}
+} {0 {Binding Values:
+name value
+$n   7
+Scripts
+name value
+x    .print Ex
+Scripts
+name value
+x    .print Ex
+Binding Values:
+name value
+$n   7}}
 
 forcedelete x.db xn.db
 

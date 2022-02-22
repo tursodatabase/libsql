@@ -1645,7 +1645,7 @@ static int valueFromExpr(
 
 no_mem:
 #ifdef SQLITE_ENABLE_STAT4
-  if( pCtx==0 || pCtx->pParse->nErr==0 )
+  if( pCtx==0 || NEVER(pCtx->pParse->nErr==0) )
 #endif
     sqlite3OomFault(db);
   sqlite3DbFree(db, zVal);
