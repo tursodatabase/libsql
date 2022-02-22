@@ -26,7 +26,7 @@
 **
 ** The virtual table contains read-only hidden columns:
 **
-**     lsm1_key	      A BLOB which is the raw LSM key.  If the "keytype"
+**     lsm1_key       A BLOB which is the raw LSM key.  If the "keytype"
 **                    is BLOB or TEXT then this column is exactly the
 **                    same as the key.  For the UINT keytype, this column
 **                    will be a variable-length integer encoding of the key.
