@@ -1943,15 +1943,16 @@ static int SQLITE_TCLAPI DbObjCmd(
     "close",                  "collate",               "collation_needed",
     "commit_hook",            "complete",              "config",
     "copy",                   "deserialize",           "enable_load_extension",
-    "errorcode",              "eval",                  "exists",
-    "function",               "incrblob",              "interrupt",
-    "last_insert_rowid",      "nullvalue",             "onecolumn",
-    "preupdate",              "profile",               "progress",
-    "rekey",                  "restore",               "rollback_hook",
-    "serialize",              "status",                "timeout",
-    "total_changes",          "trace",                 "trace_v2",
-    "transaction",            "unlock_notify",         "update_hook",
-    "version",                "wal_hook",              0
+    "errorcode",              "erroroffset",           "eval",
+    "exists",                 "function",              "incrblob",
+    "interrupt",              "last_insert_rowid",     "nullvalue",
+    "onecolumn",              "preupdate",             "profile",
+    "progress",               "rekey",                 "restore",
+    "rollback_hook",          "serialize",             "status",
+    "timeout",                "total_changes",         "trace",
+    "trace_v2",               "transaction",           "unlock_notify",
+    "update_hook",            "version",               "wal_hook",
+    0                        
   };
   enum DB_enum {
     DB_AUTHORIZER,            DB_BACKUP,               DB_BIND_FALLBACK,
@@ -1959,15 +1960,15 @@ static int SQLITE_TCLAPI DbObjCmd(
     DB_CLOSE,                 DB_COLLATE,              DB_COLLATION_NEEDED,
     DB_COMMIT_HOOK,           DB_COMPLETE,             DB_CONFIG,
     DB_COPY,                  DB_DESERIALIZE,          DB_ENABLE_LOAD_EXTENSION,
-    DB_ERRORCODE,             DB_EVAL,                 DB_EXISTS,
-    DB_FUNCTION,              DB_INCRBLOB,             DB_INTERRUPT,
-    DB_LAST_INSERT_ROWID,     DB_NULLVALUE,            DB_ONECOLUMN,
-    DB_PREUPDATE,             DB_PROFILE,              DB_PROGRESS,
-    DB_REKEY,                 DB_RESTORE,              DB_ROLLBACK_HOOK,
-    DB_SERIALIZE,             DB_STATUS,               DB_TIMEOUT,
-    DB_TOTAL_CHANGES,         DB_TRACE,                DB_TRACE_V2,
-    DB_TRANSACTION,           DB_UNLOCK_NOTIFY,        DB_UPDATE_HOOK,
-    DB_VERSION,               DB_WAL_HOOK             
+    DB_ERRORCODE,             DB_ERROROFFSET,          DB_EVAL,
+    DB_EXISTS,                DB_FUNCTION,             DB_INCRBLOB,
+    DB_INTERRUPT,             DB_LAST_INSERT_ROWID,    DB_NULLVALUE,
+    DB_ONECOLUMN,             DB_PREUPDATE,            DB_PROFILE,
+    DB_PROGRESS,              DB_REKEY,                DB_RESTORE,
+    DB_ROLLBACK_HOOK,         DB_SERIALIZE,            DB_STATUS,
+    DB_TIMEOUT,               DB_TOTAL_CHANGES,        DB_TRACE,
+    DB_TRACE_V2,              DB_TRANSACTION,          DB_UNLOCK_NOTIFY,
+    DB_UPDATE_HOOK,           DB_VERSION,              DB_WAL_HOOK,
   };
   /* don't leave trailing commas on DB_enum, it confuses the AIX xlc compiler */
 
@@ -2727,6 +2728,17 @@ deserialize_error:
   */
   case DB_ERRORCODE: {
     Tcl_SetObjResult(interp, Tcl_NewIntObj(sqlite3_errcode(pDb->db)));
+    break;
+  }
+
+  /*
+  **    $db erroroffset
+  **
+  ** Return the numeric error code that was returned by the most recent
+  ** call to sqlite3_exec().
+  */
+  case DB_ERROROFFSET: {
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(sqlite3_error_offset(pDb->db)));
     break;
   }
 

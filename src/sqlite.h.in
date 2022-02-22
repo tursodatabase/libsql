@@ -4284,6 +4284,10 @@ const char *sqlite3_normalized_sql(sqlite3_stmt *pStmt);
 ** be false.  ^Similarly, a CREATE TABLE IF NOT EXISTS statement is a
 ** read-only no-op if the table already exists, but 
 ** sqlite3_stmt_readonly() still returns false for such a statement.
+**
+** ^If prepared statement X is an [EXPLAIN] or [EXPLAIN QUERY PLAN]
+** statement, then sqlite3_stmt_readonly(X) returns the same value as
+** if the EXPLAIN or EXPLAIN QUERY PLAN prefix were omitted.
 */
 int sqlite3_stmt_readonly(sqlite3_stmt *pStmt);
 
