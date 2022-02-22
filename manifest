@@ -1,5 +1,5 @@
-C Version\s3.38.0
-D 2022-02-22T18:58:40.488
+C For\sthe\s"PRAGMA\sdatabase_list"\sstatement,\sdo\snot\scheck\sto\ssee\sif\sthe\sschema\nis\sup-to-date\sand\sdo\snot\stry\sto\sreload\sthe\sschema.
+D 2022-02-22T20:29:31.035
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -546,7 +546,7 @@ F src/pcache.c 084e638432c610f95aea72b8509f0845d2791293f39d1b82f0c0a7e089c3bb6b
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c 54881292a9a5db202b2c0ac541c5e3ef9a5e8c4f1c1383adb2601d5499a60e65
 F src/pragma.c 7c024d690a3dc93f61830f11f900e4af2357f31d081b0c79099ca5e28919cba7
-F src/pragma.h 87330ed2fbfa2a1274de93ca0ab850fba336189228cb256089202c3b52766fad
+F src/pragma.h e690a356c18e98414d2e870ea791c1be1545a714ba623719deb63f7f226d8bb7
 F src/prepare.c a187dade741c1f09ae118fcbbf0302511807bfc0355880927d7152eb75b8260d
 F src/printf.c 05d8dfd2018bc4fc3ddb8b37eb97ccef7abf985643fa1caebdcf2916ca90fa32
 F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
@@ -1877,7 +1877,7 @@ F tool/mkmsvcmin.tcl 6ecab9fe22c2c8de4d82d4c46797bda3d2deac8e763885f5a38d0c44a89
 F tool/mkopcodec.tcl 33d20791e191df43209b77d37f0ff0904620b28465cca6990cf8d60da61a07ef
 F tool/mkopcodeh.tcl 130b88697da6ec5b89b41844d955d08fb62c2552e889dec8c7bcecb28d8f50bd
 F tool/mkopts.tcl 680f785fdb09729fd9ac50632413da4eadbdf9071535e3f26d03795828ab07fa
-F tool/mkpragmatab.tcl de206c64b6e9ac8cd5e3cbd0ffe456f07d5710605ef8385d677e60ce3335ea12
+F tool/mkpragmatab.tcl bd07bd59d45d0f3448e123d6937e9811195f9908a51e09d774609883055bfd3d
 F tool/mkshellc.tcl df5d249617f9cc94d5c48eb0401673eb3f31f383ecbc54e8a13ca3dd97e89450
 F tool/mksourceid.c 36aa8020014aed0836fd13c51d6dc9219b0df1761d6b5f58ff5b616211b079b9
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
@@ -1944,10 +1944,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7e3c9594390ac8defaf9825e14b4c19ef8c123b747971dd3d4df16110f443d3b
-R 2222d568cabc2aa5ac864df535d62eb2
-T +sym-release *
-T +sym-version-3.38.0 *
+P 40fa792d359f84c3b9e9d6623743e1a59826274e221df1bde8f47086968a1bab
+R 8e774d76a97f244938c2cd31e6e650dd
 U drh
-Z 2297eaa4fd3e9ed1fd7ae8af6c650431
+Z 87215546f30ba5e5b58306e47d0efae5
 # Remove this line to create a well-formed Fossil manifest.
