@@ -1,5 +1,5 @@
-C Fix\scompiler\swarnings\sfor\solder\scompilers\s(ex:\sgcc\s4.0.1\spowerpc-apple-darwin).
-D 2022-02-21T14:30:59.112
+C Fix\san\sundersized\smemory\sallocation\sin\sthe\stest\sharness\sfor\sRTREE.\s\sThis\nerror\swas\sin\stest\slogic\sonly,\snot\sin\sthe\sSQLite\slibrary\sitself.\n[forum:/forumpost/35470a0a72a005e1|forum\spost\s35470a0a72a005e1]
+D 2022-02-22T15:47:55.824
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -426,7 +426,7 @@ F ext/rtree/rtreedoc2.test 194ebb7d561452dcdc10bf03f44e30c082c2f0c14efeb07f5e02c
 F ext/rtree/rtreedoc3.test 555a878c4d79c4e37fa439a1c3b02ee65d3ebaf75d9e8d96a9c55d66db3efbf8
 F ext/rtree/rtreefuzz001.test 0fc793f67897c250c5fde96cefee455a5e2fb92f4feeabde5b85ea02040790ee
 F ext/rtree/sqlite3rtree.h 03c8db3261e435fbddcfc961471795cbf12b24e03001d0015b2636b0f3881373
-F ext/rtree/test_rtreedoc.c 5ad4029d6804eb9efafcac1598a9e0582f6119e48f818854f5b4db1788ca8bd4
+F ext/rtree/test_rtreedoc.c de76b3472bc74b788d079342fdede22ff598796dd3d97acffe46e09228af83a3
 F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/util/randomshape.tcl 54ee03d0d4a1c621806f7f44d5b78d2db8fac26e0e8687c36c4bd0203b27dbff
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
@@ -1944,8 +1944,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e25e33582b69289a2c3a6bc403e3911de22a3b529db1a565efb9f1af01b9e382
-R 1bf4b4ff22c1879fe76eac8c2b94a531
+P 5c188243d769681c68938c8e432155c8ec838d9e32fe8d1b12286ebc9d0e87f1
+R 2222d568cabc2aa5ac864df535d62eb2
 U drh
-Z 346e276610f450eefee83609bdbf0861
+Z c4afefbbe430e7376459c5fabd916f1b
 # Remove this line to create a well-formed Fossil manifest.
