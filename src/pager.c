@@ -5491,7 +5491,6 @@ static int getPageNormal(
   assert( assert_pager_state(pPager) );
   assert( pPager->hasHeldSharedLock==1 );
 
-  if( pgno==0 ) return SQLITE_CORRUPT_BKPT;
   pBase = sqlite3PcacheFetch(pPager->pPCache, pgno, 3);
   if( pBase==0 ){
     pPg = 0;
@@ -5519,10 +5518,10 @@ static int getPageNormal(
     /* The pager cache has created a new page. Its content needs to 
     ** be initialized. But first some error checks:
     **
-    ** (*) obsolete.  Was: maximum page number is 2^31
-    ** (2) Never try to fetch the locking page
+    ** (1) Never try to fetch the locking page
+    ** (2) Never try to fetch page 0, which does not exist
     */
-    if( pgno==PAGER_SJ_PGNO(pPager) ){
+    if( pgno==PAGER_SJ_PGNO(pPager) || pgno==0 ){
       rc = SQLITE_CORRUPT_BKPT;
       goto pager_acquire_err;
     }
