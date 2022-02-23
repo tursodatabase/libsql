@@ -1,5 +1,5 @@
-C Defer\sthe\scheck\sfor\serror\scheck\sPgno\szero\suntil\safter\sthe\spage\sfetch\smisses,\nto\sgain\sa\sfew\sCPU\scycles\sand\sa\ssmall\ssize\sreduction.
-D 2022-02-23T17:16:30.735
+C Optimize\scalls\sto\sget2byte()\sin\sbtree.c\sfor\salmost\sa\sone-million\scycle\nperformance\sgain\sand\sa\sfew\sbytes\sless\scode.
+D 2022-02-23T18:23:15.914
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -492,7 +492,7 @@ F src/auth.c f4fa91b6a90bbc8e0d0f738aa284551739c9543a367071f55574681e0f24f8cf
 F src/backup.c a2891172438e385fdbe97c11c9745676bec54f518d4447090af97189fd8e52d7
 F src/bitvec.c 7c849aac407230278445cb069bebc5f89bf2ddd87c5ed9459b070a9175707b3d
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c 117808943727d27e38c69de4e79237e52c89ee40f6f1a70de4e6e14b5e596cbc
+F src/btree.c 35870e7059b2b5bd90b0e1ac482b632b41a81dbb9b466bc7c9f3e4086571391c
 F src/btree.h 74d64b8f28cfa4a894d14d4ed64fa432cd697b98b61708d4351482ae15913e22
 F src/btreeInt.h 7282a6e77775f93a6eb78d3a41dab372a01a4ec1d93d3b4728d191d15fda42e2
 F src/build.c 9891c2160886cf7e344d7e8f1f7177f9612916c7c67ffeacd64cb34a92d387a8
@@ -1944,8 +1944,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5aa9c3eb45514d5eb7b32696d25a9aeb7dad485e1ea5adb833fac6d1f2105f1a
-R 4a7be174abec3b1bd75c937cba4c1ec2
+P ece326db50201937eb688809df39edc7fb97413b4614d2e2e783418192f7b02a
+R 1c57a2dcd8f8c477175cc03c1d736930
 U drh
-Z 8b433f90acbe3d610b55829e1edc78df
+Z 34e99039e8cc6255862cb2a477919b3e
 # Remove this line to create a well-formed Fossil manifest.
