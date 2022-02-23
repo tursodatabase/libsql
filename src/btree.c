@@ -1327,6 +1327,7 @@ static void btreeParseCell(
 ** the space used by the cell pointer.
 **
 ** cellSizePtrNoPayload()    =>   table internal nodes
+** cellSizePtrTableLeaf()    =>   table leaf nodes
 ** cellSizePtr()             =>   all index nodes & table leaf nodes
 */
 static u16 cellSizePtr(MemPage *pPage, u8 *pCell){
@@ -1352,13 +1353,6 @@ static u16 cellSizePtr(MemPage *pPage, u8 *pCell){
     }while( *(pIter)>=0x80 && pIter<pEnd );
   }
   pIter++;
-  if( pPage->intKey ){
-    /* pIter now points at the 64-bit integer key value, a variable length 
-    ** integer. The following block moves pIter to point at the first byte
-    ** past the end of the key value. */
-    pEnd = &pIter[9];
-    while( (*pIter++)&0x80 && pIter<pEnd );
-  }
   testcase( nSize==pPage->maxLocal );
   testcase( nSize==(u32)pPage->maxLocal+1 );
   if( nSize<=pPage->maxLocal ){
@@ -1397,6 +1391,58 @@ static u16 cellSizePtrNoPayload(MemPage *pPage, u8 *pCell){
   while( (*pIter++)&0x80 && pIter<pEnd );
   assert( debuginfo.nSize==(u16)(pIter - pCell) || CORRUPT_DB );
   return (u16)(pIter - pCell);
+}
+static u16 cellSizePtrTableLeaf(MemPage *pPage, u8 *pCell){
+  u8 *pIter = pCell;   /* For looping over bytes of pCell */
+  u8 *pEnd;            /* End mark for a varint */
+  u32 nSize;           /* Size value to return */
+
+#ifdef SQLITE_DEBUG
+  /* The value returned by this function should always be the same as
+  ** the (CellInfo.nSize) value found by doing a full parse of the
+  ** cell. If SQLITE_DEBUG is defined, an assert() at the bottom of
+  ** this function verifies that this invariant is not violated. */
+  CellInfo debuginfo;
+  pPage->xParseCell(pPage, pCell, &debuginfo);
+#endif
+
+  nSize = *pIter;
+  if( nSize>=0x80 ){
+    pEnd = &pIter[8];
+    nSize &= 0x7f;
+    do{
+      nSize = (nSize<<7) | (*++pIter & 0x7f);
+    }while( *(pIter)>=0x80 && pIter<pEnd );
+  }
+  pIter++;
+  /* pIter now points at the 64-bit integer key value, a variable length 
+  ** integer. The following block moves pIter to point at the first byte
+  ** past the end of the key value. */
+  if( (*pIter++)&0x80
+   && (*pIter++)&0x80
+   && (*pIter++)&0x80
+   && (*pIter++)&0x80
+   && (*pIter++)&0x80
+   && (*pIter++)&0x80
+   && (*pIter++)&0x80
+   && (*pIter++)&0x80 ){ pIter++; }
+  testcase( nSize==pPage->maxLocal );
+  testcase( nSize==(u32)pPage->maxLocal+1 );
+  if( nSize<=pPage->maxLocal ){
+    nSize += (u32)(pIter - pCell);
+    if( nSize<4 ) nSize = 4;
+  }else{
+    int minLocal = pPage->minLocal;
+    nSize = minLocal + (nSize - minLocal) % (pPage->pBt->usableSize - 4);
+    testcase( nSize==pPage->maxLocal );
+    testcase( nSize==(u32)pPage->maxLocal+1 );
+    if( nSize>pPage->maxLocal ){
+      nSize = minLocal;
+    }
+    nSize += 4 + (u16)(pIter - pCell);
+  }
+  assert( nSize==debuginfo.nSize || CORRUPT_DB );
+  return (u16)nSize;
 }
 
 
@@ -1880,6 +1926,7 @@ static int decodeFlags(MemPage *pPage, int flagByte){
     pPage->intKey = 1;
     if( pPage->leaf ){
       pPage->intKeyLeaf = 1;
+      pPage->xCellSize = cellSizePtrTableLeaf;
       pPage->xParseCell = btreeParseCellPtr;
     }else{
       pPage->intKeyLeaf = 0;
@@ -9310,7 +9357,7 @@ int sqlite3BtreeDelete(BtCursor *pCur, u8 flags){
   bPreserve = (flags & BTREE_SAVEPOSITION)!=0;
   if( bPreserve ){
     if( !pPage->leaf 
-     || (pPage->nFree+cellSizePtr(pPage,pCell)+2)>(int)(pBt->usableSize*2/3)
+     || (pPage->nFree+pPage->xCellSize(pPage,pCell)+2)>(int)(pBt->usableSize*2/3)
      || pPage->nCell==1  /* See dbfuzz001.test for a test case */
     ){
       /* A b-tree rebalance will be required after deleting this entry.
