@@ -1782,7 +1782,7 @@ static int freeSpace(MemPage *pPage, u16 iStart, u16 iSize){
     if( iFreeBlk>pPage->pBt->usableSize-4 ){ /* TH3: corrupt081.100 */
       return SQLITE_CORRUPT_PAGE(pPage);
     }
-    assert( iFreeBlk>iPtr || iFreeBlk==0 );
+    assert( iFreeBlk>iPtr || iFreeBlk==0 || CORRUPT_DB );
   
     /* At this point:
     **    iFreeBlk:   First freeblock after iStart, or zero if none
@@ -3235,9 +3235,13 @@ static int lockBtree(BtShared *pBt){
                                    pageSize-usableSize);
       return rc;
     }
-    if( sqlite3WritableSchema(pBt->db)==0 && nPage>nPageFile ){
-      rc = SQLITE_CORRUPT_BKPT;
-      goto page1_init_failed;
+    if( nPage>nPageFile ){
+      if( sqlite3WritableSchema(pBt->db)==0 ){
+        rc = SQLITE_CORRUPT_BKPT;
+        goto page1_init_failed;
+      }else{
+        nPage = nPageFile;
+      }
     }
     /* EVIDENCE-OF: R-28312-64704 However, the usable size is not allowed to
     ** be less than 480. In other words, if the page size is 512, then the
@@ -6407,7 +6411,7 @@ static int freePage2(BtShared *pBt, MemPage *pMemPage, Pgno iPage){
   assert( CORRUPT_DB || iPage>1 );
   assert( !pMemPage || pMemPage->pgno==iPage );
 
-  if( NEVER(iPage<2) || iPage>pBt->nPage ){
+  if( iPage<2 || iPage>pBt->nPage ){
     return SQLITE_CORRUPT_BKPT;
   }
   if( pMemPage ){
@@ -6842,6 +6846,12 @@ static void dropCell(MemPage *pPage, int idx, int sz, int *pRC){
   assert( pPage->pBt->usableSize > (u32)(ptr-data) );
   pc = get2byte(ptr);
   hdr = pPage->hdrOffset;
+#if 0  /* Not required.  Omit for efficiency */
+  if( pc<hdr+pPage->nCell*2 ){
+    *pRC = SQLITE_CORRUPT_BKPT;
+    return;
+  }
+#endif
   testcase( pc==(u32)get2byte(&data[hdr+5]) );
   testcase( pc+sz==pPage->pBt->usableSize );
   if( pc+sz > pPage->pBt->usableSize ){
@@ -9612,7 +9622,7 @@ static int clearDatabasePage(
   rc = getAndInitPage(pBt, pgno, &pPage, 0, 0);
   if( rc ) return rc;
   if( (pBt->openFlags & BTREE_SINGLE)==0 
-   && sqlite3PagerPageRefcount(pPage->pDbPage)!=1
+   && sqlite3PagerPageRefcount(pPage->pDbPage) != (1 + (pgno==1))
   ){
     rc = SQLITE_CORRUPT_BKPT;
     goto cleardatabasepage_out;

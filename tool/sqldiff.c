@@ -407,31 +407,31 @@ static void printQuoted(FILE *out, sqlite3_value *X){
       if( zArg==0 ){
         fprintf(out, "NULL");
       }else{
-	int inctl = 0;
-	int i, j;
+        int inctl = 0;
+        int i, j;
         fprintf(out, "'");
-	for(i=j=0; zArg[i]; i++){
-	  char c = zArg[i];
-	  int ctl = iscntrl(c);
-	  if( ctl>inctl ){
-	    inctl = ctl;
-	    fprintf(out, "%.*s'||X'%02x", i-j, &zArg[j], c);
-	    j = i+1;
-	  }else if( ctl ){
-	    fprintf(out, "%02x", c);
-	    j = i+1;
-	  }else{
-	    if( inctl ){
-	      inctl = 0;
-	      fprintf(out, "'\n||'");
-	    }
-	    if( c=='\'' ){
-	      fprintf(out, "%.*s'", i-j+1, &zArg[j]);
-	      j = i+1;
-	    }
-	  }
-	}
-	fprintf(out, "%s'", &zArg[j]);
+        for(i=j=0; zArg[i]; i++){
+          char c = zArg[i];
+          int ctl = iscntrl(c);
+          if( ctl>inctl ){
+            inctl = ctl;
+            fprintf(out, "%.*s'||X'%02x", i-j, &zArg[j], c);
+            j = i+1;
+          }else if( ctl ){
+            fprintf(out, "%02x", c);
+            j = i+1;
+          }else{
+            if( inctl ){
+              inctl = 0;
+              fprintf(out, "'\n||'");
+            }
+            if( c=='\'' ){
+              fprintf(out, "%.*s'", i-j+1, &zArg[j]);
+              j = i+1;
+            }
+          }
+        }
+        fprintf(out, "%s'", &zArg[j]);
       }
       break;
     }

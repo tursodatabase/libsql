@@ -29,7 +29,10 @@ proc vtab_command {method args} {
     }
 
     xBestIndex {
-      set clist [lindex $args 0]
+      set hdl [lindex $args 0]
+      set clist [$hdl constraints]
+      set orderby [$hdl orderby]
+      
       if {[llength $clist]!=1} { error "unexpected constraint list" }
       catch { array unset C }
       array set C [lindex $clist 0]
@@ -76,10 +79,13 @@ proc t1_vtab {mode method args} {
     }
 
     xBestIndex {
+      set hdl [lindex $args 0]
+      set clist [$hdl constraints]
+      set orderby [$hdl orderby]
+
       set SQL_FILTER {SELECT * FROM t1x WHERE a='%1%'}
       set SQL_SCAN   {SELECT * FROM t1x}
 
-      set clist [lindex $args 0]
       set idx 0
       for {set idx 0} {$idx < [llength $clist]} {incr idx} {
         array unset C
@@ -177,7 +183,10 @@ proc vtab_command {method args} {
     }
 
     xBestIndex {
-      set clist [lindex $args 0]
+      set hdl [lindex $args 0]
+      set clist [$hdl constraints]
+      set orderby [$hdl orderby]
+      
       #puts $clist
       set W [list]
       set U [list]
@@ -287,12 +296,17 @@ proc vtab_command {method args} {
     }
 
     xBestIndex {
-      set clist [lindex $args 0]
+      set hdl [lindex $args 0]
+      set clist [$hdl constraints]
+      set orderby [$hdl orderby]
+      
       lappend ::bestindex_calls $clist
       set ret "cost 1000000 idxnum 555"
       for {set i 0} {$i < [llength $clist]} {incr i} {
         array set C [lindex $clist $i]
-        if {$C(usable)} { lappend ret use $i }
+        if {$C(usable)} { 
+          lappend ret use $i 
+        }
       }
       return $ret
     }

@@ -15,11 +15,6 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-ifcapable !json1 {
-  finish_test
-  return
-}
-
 do_execsql_test json101-1.1.00 {
   SELECT json_array(1,2.5,null,'hello');
 } {[1,2.5,null,"hello"]}
@@ -846,5 +841,13 @@ do_execsql_test json-16.30 {
   SELECT unicode(json_extract('"\uD834\uDD1E"','$'));
 } {119070}
 
+# 2022-01-30 dbsqlfuzz 4678cf825d27f87c9b8343720121e12cf944b71a
+do_execsql_test json-17.1 {
+  DROP TABLE IF EXISTS t1;
+  DROP TABLE IF EXISTS t2;
+  CREATE TABLE t1(a,b,c);
+  CREATE TABLE t2(d);
+  SELECT * FROM t1 LEFT JOIN t2 ON (SELECT b FROM json_each ORDER BY 1);
+} {}
 
 finish_test

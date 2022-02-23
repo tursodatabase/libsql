@@ -106,6 +106,7 @@ static void subtypeFunc(
   int argc,
   sqlite3_value **argv
 ){
+  UNUSED_PARAMETER(argc);
   sqlite3_result_int(context, sqlite3_value_subtype(argv[0]));
 }
 
@@ -1119,8 +1120,9 @@ static void quoteFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   sqlite3QuoteValue(&str,argv[0]);
   sqlite3_result_text(context, sqlite3StrAccumFinish(&str), str.nChar,
                       SQLITE_DYNAMIC);
-  if( str.accError==SQLITE_NOMEM ){
-    sqlite3_result_error_nomem(context);
+  if( str.accError!=SQLITE_OK ){
+    sqlite3_result_null(context);
+    sqlite3_result_error_code(context, str.accError);
   }
 }
 

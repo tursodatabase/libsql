@@ -354,14 +354,14 @@ static void addWhereTerm(
     ExprSetProperty(pEq, EP_FromJoin);
     assert( !ExprHasProperty(pEq, EP_TokenOnly|EP_Reduced) );
     ExprSetVVAProperty(pEq, EP_NoReduce);
-    pEq->iRightJoinTable = pE2->iTable;
+    pEq->w.iRightJoinTable = pE2->iTable;
   }
   *ppWhere = sqlite3ExprAnd(pParse, *ppWhere, pEq);
 }
 
 /*
 ** Set the EP_FromJoin property on all terms of the given expression.
-** And set the Expr.iRightJoinTable to iTable for every term in the
+** And set the Expr.w.iRightJoinTable to iTable for every term in the
 ** expression.
 **
 ** The EP_FromJoin property is used on terms of an expression to tell
@@ -371,8 +371,8 @@ static void addWhereTerm(
 ** WHERE clause during join processing but we need to remember that they
 ** originated in the ON or USING clause.
 **
-** The Expr.iRightJoinTable tells the WHERE clause processing that the
-** expression depends on table iRightJoinTable even if that table is not
+** The Expr.w.iRightJoinTable tells the WHERE clause processing that the
+** expression depends on table w.iRightJoinTable even if that table is not
 ** explicitly mentioned in the expression.  That information is needed
 ** for cases like this:
 **
@@ -390,7 +390,7 @@ void sqlite3SetJoinExpr(Expr *p, int iTable){
     ExprSetProperty(p, EP_FromJoin);
     assert( !ExprHasProperty(p, EP_TokenOnly|EP_Reduced) );
     ExprSetVVAProperty(p, EP_NoReduce);
-    p->iRightJoinTable = iTable;
+    p->w.iRightJoinTable = iTable;
     if( p->op==TK_FUNCTION ){
       assert( ExprUseXList(p) );
       if( p->x.pList ){
@@ -406,7 +406,7 @@ void sqlite3SetJoinExpr(Expr *p, int iTable){
 }
 
 /* Undo the work of sqlite3SetJoinExpr(). In the expression p, convert every
-** term that is marked with EP_FromJoin and iRightJoinTable==iTable into
+** term that is marked with EP_FromJoin and w.iRightJoinTable==iTable into
 ** an ordinary term that omits the EP_FromJoin mark.
 **
 ** This happens when a LEFT JOIN is simplified into an ordinary JOIN.
@@ -414,7 +414,7 @@ void sqlite3SetJoinExpr(Expr *p, int iTable){
 static void unsetJoinExpr(Expr *p, int iTable){
   while( p ){
     if( ExprHasProperty(p, EP_FromJoin)
-     && (iTable<0 || p->iRightJoinTable==iTable) ){
+     && (iTable<0 || p->w.iRightJoinTable==iTable) ){
       ExprClearProperty(p, EP_FromJoin);
     }
     if( p->op==TK_COLUMN && p->iTable==iTable ){
@@ -1404,7 +1404,7 @@ KeyInfo *sqlite3KeyInfoAlloc(sqlite3 *db, int N, int X){
     p->nRef = 1;
     memset(&p[1], 0, nExtra);
   }else{
-    sqlite3OomFault(db);
+    return (KeyInfo*)sqlite3OomFault(db);
   }
   return p;
 }
@@ -3436,6 +3436,7 @@ static int multiSelectOrderBy(
     for(i=2; i<nSelect; i+=2){ pSplit = pSplit->pPrior; }
   }
   pPrior = pSplit->pPrior;
+  assert( pPrior!=0 );
   pSplit->pPrior = 0;
   pPrior->pNext = 0;
   assert( p->pOrderBy == pOrderBy );
@@ -3647,9 +3648,9 @@ static Expr *substExpr(
 ){
   if( pExpr==0 ) return 0;
   if( ExprHasProperty(pExpr, EP_FromJoin)
-   && pExpr->iRightJoinTable==pSubst->iTable
+   && pExpr->w.iRightJoinTable==pSubst->iTable
   ){
-    pExpr->iRightJoinTable = pSubst->iNewTable;
+    pExpr->w.iRightJoinTable = pSubst->iNewTable;
   }
   if( pExpr->op==TK_COLUMN
    && pExpr->iTable==pSubst->iTable
@@ -3688,7 +3689,7 @@ static Expr *substExpr(
           ExprSetProperty(pNew, EP_CanBeNull);
         }
         if( ExprHasProperty(pExpr,EP_FromJoin) ){
-          sqlite3SetJoinExpr(pNew, pExpr->iRightJoinTable);
+          sqlite3SetJoinExpr(pNew, pExpr->w.iRightJoinTable);
         }
         sqlite3ExprDelete(db, pExpr);
         pExpr = pNew;
@@ -3853,7 +3854,7 @@ static int renumberCursorsCb(Walker *pWalker, Expr *pExpr){
     renumberCursorDoMapping(pWalker, &pExpr->iTable);
   }
   if( ExprHasProperty(pExpr, EP_FromJoin) ){
-    renumberCursorDoMapping(pWalker, &pExpr->iRightJoinTable);
+    renumberCursorDoMapping(pWalker, &pExpr->w.iRightJoinTable);
   }
   return WRC_Continue;
 }
@@ -4863,11 +4864,13 @@ static int pushDownWhereTerms(
   }
   if( isLeftJoin
    && (ExprHasProperty(pWhere,EP_FromJoin)==0
-         || pWhere->iRightJoinTable!=iCursor)
+         || pWhere->w.iRightJoinTable!=iCursor)
   ){
     return 0; /* restriction (4) */
   }
-  if( ExprHasProperty(pWhere,EP_FromJoin) && pWhere->iRightJoinTable!=iCursor ){
+  if( ExprHasProperty(pWhere,EP_FromJoin)
+   && pWhere->w.iRightJoinTable!=iCursor 
+  ){
     return 0; /* restriction (5) */
   }
   if( sqlite3ExprIsTableConstant(pWhere, iCursor) ){
@@ -5587,7 +5590,8 @@ static int selectExpander(Walker *pWalker, Select *p){
 
   /* Process NATURAL keywords, and ON and USING clauses of joins.
   */
-  if( pParse->nErr || db->mallocFailed || sqliteProcessJoin(pParse, p) ){
+  assert( db->mallocFailed==0 || pParse->nErr!=0 );
+  if( pParse->nErr || sqliteProcessJoin(pParse, p) ){
     return WRC_Abort;
   }
 
@@ -5884,12 +5888,13 @@ void sqlite3SelectPrep(
   NameContext *pOuterNC  /* Name context for container */
 ){
   assert( p!=0 || pParse->db->mallocFailed );
+  assert( pParse->db->pParse==pParse );
   if( pParse->db->mallocFailed ) return;
   if( p->selFlags & SF_HasTypeInfo ) return;
   sqlite3SelectExpand(pParse, p);
-  if( pParse->nErr || pParse->db->mallocFailed ) return;
+  if( pParse->nErr ) return;
   sqlite3ResolveSelectNames(pParse, p, pOuterNC);
-  if( pParse->nErr || pParse->db->mallocFailed ) return;
+  if( pParse->nErr ) return;
   sqlite3SelectAddTypeInfo(pParse, p);
 }
 
@@ -5906,8 +5911,10 @@ static void resetAccumulator(Parse *pParse, AggInfo *pAggInfo){
   int i;
   struct AggInfo_func *pFunc;
   int nReg = pAggInfo->nFunc + pAggInfo->nColumn;
+  assert( pParse->db->pParse==pParse );
+  assert( pParse->db->mallocFailed==0 || pParse->nErr!=0 );
   if( nReg==0 ) return;
-  if( pParse->nErr || pParse->db->mallocFailed ) return;
+  if( pParse->nErr ) return;
 #ifdef SQLITE_DEBUG
   /* Verify that all AggInfo registers are within the range specified by
   ** AggInfo.mnReg..AggInfo.mxReg */
@@ -6330,10 +6337,12 @@ int sqlite3Select(
   u8 minMaxFlag;                 /* Flag for min/max queries */
 
   db = pParse->db;
+  assert( pParse==db->pParse );
   v = sqlite3GetVdbe(pParse);
-  if( p==0 || db->mallocFailed || pParse->nErr ){
+  if( p==0 || pParse->nErr ){
     return 1;
   }
+  assert( db->mallocFailed==0 );
   if( sqlite3AuthCheck(pParse, SQLITE_SELECT, 0, 0, 0) ) return 1;
 #if SELECTTRACE_ENABLED
   SELECTTRACE(1,pParse,p, ("begin processing:\n", pParse->addrExplain));
@@ -6368,9 +6377,10 @@ int sqlite3Select(
     p->selFlags |= SF_NoopOrderBy;
   }
   sqlite3SelectPrep(pParse, p, 0);
-  if( pParse->nErr || db->mallocFailed ){
+  if( pParse->nErr ){
     goto select_end;
   }
+  assert( db->mallocFailed==0 );
   assert( p->pEList!=0 );
 #if SELECTTRACE_ENABLED
   if( sqlite3SelectTrace & 0x104 ){
@@ -6414,7 +6424,7 @@ int sqlite3Select(
 
 #ifndef SQLITE_OMIT_WINDOWFUNC
   if( sqlite3WindowRewrite(pParse, p) ){
-    assert( db->mallocFailed || pParse->nErr>0 );
+    assert( pParse->nErr );
     goto select_end;
   }
 #if SELECTTRACE_ENABLED
@@ -6890,7 +6900,7 @@ int sqlite3Select(
     /* Begin the database scan. */
     SELECTTRACE(1,pParse,p,("WhereBegin\n"));
     pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, sSort.pOrderBy,
-                               p->pEList, wctrlFlags, p->nSelectRow);
+                               p->pEList, p, wctrlFlags, p->nSelectRow);
     if( pWInfo==0 ) goto select_end;
     if( sqlite3WhereOutputRowCount(pWInfo) < p->nSelectRow ){
       p->nSelectRow = sqlite3WhereOutputRowCount(pWInfo);
@@ -7154,7 +7164,7 @@ int sqlite3Select(
       sqlite3VdbeAddOp2(v, OP_Gosub, regReset, addrReset);
       SELECTTRACE(1,pParse,p,("WhereBegin\n"));
       pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, pGroupBy, pDistinct,
-          WHERE_GROUPBY | (orderByGrp ? WHERE_SORTBYGROUP : 0) | distFlag, 0
+          0, (WHERE_GROUPBY|(orderByGrp ? WHERE_SORTBYGROUP : 0)|distFlag), 0
       );
       if( pWInfo==0 ){
         sqlite3ExprListDelete(db, pDistinct);
@@ -7452,7 +7462,7 @@ int sqlite3Select(
 
         SELECTTRACE(1,pParse,p,("WhereBegin\n"));
         pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, pMinMaxOrderBy,
-                                   pDistinct, minMaxFlag|distFlag, 0);
+                                   pDistinct, 0, minMaxFlag|distFlag, 0);
         if( pWInfo==0 ){
           goto select_end;
         }
@@ -7509,7 +7519,7 @@ int sqlite3Select(
   */
 select_end:
   assert( db->mallocFailed==0 || db->mallocFailed==1 );
-  pParse->nErr += db->mallocFailed;
+  assert( db->mallocFailed==0 || pParse->nErr!=0 );
   sqlite3ExprListDelete(db, pMinMaxOrderBy);
 #ifdef SQLITE_DEBUG
   if( pAggInfo && !db->mallocFailed ){

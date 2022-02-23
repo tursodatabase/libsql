@@ -105,7 +105,7 @@ may be specified in this manner as some require the amalgamation to be built
 with them enabled (see http://www.sqlite.org/compile.html). For example, the
 following will work:
 
-  "OPTS=-DSQLITE_ENABLE_STAT4=1 -DSQLITE_ENABLE_JSON1=1"
+  "OPTS=-DSQLITE_ENABLE_STAT4=1 -DSQLITE_OMIT_JSON=1"
 
 However, the following will not compile unless the amalgamation was built
 with it enabled:

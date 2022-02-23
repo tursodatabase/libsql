@@ -1231,10 +1231,11 @@ typedef struct With With;
 /*
 ** A bit in a Bitmask
 */
-#define MASKBIT(n)   (((Bitmask)1)<<(n))
-#define MASKBIT64(n) (((u64)1)<<(n))
-#define MASKBIT32(n) (((unsigned int)1)<<(n))
-#define ALLBITS      ((Bitmask)-1)
+#define MASKBIT(n)    (((Bitmask)1)<<(n))
+#define MASKBIT64(n)  (((u64)1)<<(n))
+#define MASKBIT32(n)  (((unsigned int)1)<<(n))
+#define SMASKBIT32(n) ((n)<=31?((unsigned int)1)<<(n):0)
+#define ALLBITS       ((Bitmask)-1)
 
 /* A VList object records a mapping between parameters/variables/wildcards
 ** in the SQL statement (such as $abc, @pqr, or :xyz) and the integer
@@ -2823,7 +2824,10 @@ struct Expr {
                          ** TK_VARIABLE: variable number (always >= 1).
                          ** TK_SELECT_COLUMN: column of the result vector */
   i16 iAgg;              /* Which entry in pAggInfo->aCol[] or ->aFunc[] */
-  int iRightJoinTable;   /* If EP_FromJoin, the right table of the join */
+  union {
+    int iRightJoinTable;   /* If EP_FromJoin, the right table of the join */
+    int iOfst;             /* else: start of token from start of statement */
+  } w;
   AggInfo *pAggInfo;     /* Used by TK_AGG_COLUMN and TK_AGG_FUNCTION */
   union {
     Table *pTab;           /* TK_COLUMN: Table containing column. Can be NULL
@@ -3585,6 +3589,7 @@ struct Parse {
   **************************************************************************/
 
   int aTempReg[8];        /* Holding area for temporary registers */
+  Parse *pOuterParse;     /* Outer Parse object when nested */
   Token sNameToken;       /* Token with unqualified schema object name */
 
   /************************************************************************
@@ -3635,7 +3640,8 @@ struct Parse {
 /*
 ** Sizes and pointers of various parts of the Parse object.
 */
-#define PARSE_HDR_SZ offsetof(Parse,aTempReg) /* Recursive part w/o aColCache*/
+#define PARSE_HDR(X)  (((char*)(X))+offsetof(Parse,zErrMsg))
+#define PARSE_HDR_SZ (offsetof(Parse,aTempReg)-offsetof(Parse,zErrMsg)) /* Recursive part w/o aColCache*/
 #define PARSE_RECURSE_SZ offsetof(Parse,sLastToken)    /* Recursive part */
 #define PARSE_TAIL_SZ (sizeof(Parse)-PARSE_RECURSE_SZ) /* Non-recursive part */
 #define PARSE_TAIL(X) (((char*)(X))+PARSE_RECURSE_SZ)  /* Pointer to tail */
@@ -3930,6 +3936,7 @@ struct Sqlite3Config {
   int (*xTestCallback)(int);        /* Invoked by sqlite3FaultSim() */
 #endif
   int bLocaltimeFault;              /* True to fail localtime() calls */
+  int (*xAltLocaltime)(const void*,void*); /* Alternative localtime() routine */
   int iOnceResetThreshold;          /* When to reset OP_Once counters */
   u32 szSorterRef;                  /* Min size in bytes to use sorter-refs */
   unsigned int iPrngSeed;           /* Alternative fixed seed for the PRNG */
@@ -4575,7 +4582,8 @@ void sqlite3CodeChangeCount(Vdbe*,int,const char*);
 void sqlite3DeleteFrom(Parse*, SrcList*, Expr*, ExprList*, Expr*);
 void sqlite3Update(Parse*, SrcList*, ExprList*,Expr*,int,ExprList*,Expr*,
                    Upsert*);
-WhereInfo *sqlite3WhereBegin(Parse*,SrcList*,Expr*,ExprList*,ExprList*,u16,int);
+WhereInfo *sqlite3WhereBegin(Parse*,SrcList*,Expr*,ExprList*,
+                             ExprList*,Select*,u16,int);
 void sqlite3WhereEnd(WhereInfo*);
 LogEst sqlite3WhereOutputRowCount(WhereInfo*);
 int sqlite3WhereIsDistinct(WhereInfo*);
@@ -4975,7 +4983,7 @@ int sqlite3CreateFunc(sqlite3 *, const char *, int, int, void *,
   FuncDestructor *pDestructor
 );
 void sqlite3NoopDestructor(void*);
-void sqlite3OomFault(sqlite3*);
+void *sqlite3OomFault(sqlite3*);
 void sqlite3OomClear(sqlite3*);
 int sqlite3ApiExit(sqlite3 *db, int);
 int sqlite3OpenTempDatabase(Parse *);
@@ -4988,6 +4996,7 @@ void sqlite3ResultStrAccum(sqlite3_context*,StrAccum*);
 void sqlite3SelectDestInit(SelectDest*,int,int);
 Expr *sqlite3CreateColumnExpr(sqlite3 *, SrcList *, int, int);
 void sqlite3RecordErrorByteOffset(sqlite3*,const char*);
+void sqlite3RecordErrorOffsetOfExpr(sqlite3*,const Expr*);
 
 void sqlite3BackupRestart(sqlite3_backup *);
 void sqlite3BackupUpdate(sqlite3_backup *, Pgno, const u8 *);
@@ -5096,7 +5105,8 @@ FuncDef *sqlite3VtabOverloadFunction(sqlite3 *,FuncDef*, int nArg, Expr*);
 sqlite3_int64 sqlite3StmtCurrentTime(sqlite3_context*);
 int sqlite3VdbeParameterIndex(Vdbe*, const char*, int);
 int sqlite3TransferBindings(sqlite3_stmt *, sqlite3_stmt *);
-void sqlite3ParserReset(Parse*);
+void sqlite3ParseObjectInit(Parse*,sqlite3*);
+void sqlite3ParseObjectReset(Parse*);
 void *sqlite3ParserAddCleanup(Parse*,void(*)(sqlite3*,void*),void*);
 #ifdef SQLITE_ENABLE_NORMALIZE
 char *sqlite3Normalize(Vdbe*, const char*);

@@ -677,7 +677,6 @@ static u64 filterHash(const Mem *aMem, const Op *pOp){
   int i, mx;
   u64 h = 0;
 
-  i = pOp->p3;
   assert( pOp->p4type==P4_INT32 );
   for(i=pOp->p3, mx=i+pOp->p4.i; i<mx; i++){
     const Mem *p = &aMem[i];
@@ -2986,6 +2985,8 @@ case OP_TypeCheck: {
           break;
         }
         case COLTYPE_REAL: {
+          testcase( (pIn1->flags & (MEM_Real|MEM_IntReal))==MEM_Real );
+          testcase( (pIn1->flags & (MEM_Real|MEM_IntReal))==MEM_IntReal );
           if( pIn1->flags & MEM_Int ){
             /* When applying REAL affinity, if the result is still an MEM_Int
             ** that will fit in 6 bytes, then change the type to MEM_IntReal
@@ -3003,7 +3004,7 @@ case OP_TypeCheck: {
               pIn1->flags |= MEM_Real;
               pIn1->flags &= ~MEM_Int;
             }
-          }else if( (pIn1->flags & MEM_Real)==0 ){
+          }else if( (pIn1->flags & (MEM_Real|MEM_IntReal))==0 ){
             goto vdbe_type_error;
           }
           break;
@@ -3242,7 +3243,7 @@ case OP_MakeRecord: {
       testcase( uu==127 );               testcase( uu==128 );
       testcase( uu==32767 );             testcase( uu==32768 );
       testcase( uu==8388607 );           testcase( uu==8388608 );
-      testcase( uu==2147483647 );        testcase( uu==2147483648 );
+      testcase( uu==2147483647 );        testcase( uu==2147483648LL );
       testcase( uu==140737488355327LL ); testcase( uu==140737488355328LL );
       if( uu<=127 ){
         if( (i&1)==i && file_format>=4 ){
@@ -7732,6 +7733,34 @@ case OP_VOpen: {
   break;
 }
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
+
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+/* Opcode: VInitIn P1 P2 P3 * *
+** Synopsis: r[P2]=ValueList(P1,P3)
+**
+** Set register P2 to be a pointer to a ValueList object for cursor P1
+** with cache register P3 and output register P3+1.  This ValueList object
+** can be used as the first argument to sqlite3_vtab_in_first() and
+** sqlite3_vtab_in_next() to extract all of the values stored in the P1
+** cursor.  Register P3 is used to hold the values returned by
+** sqlite3_vtab_in_first() and sqlite3_vtab_in_next().
+*/
+case OP_VInitIn: {        /* out2 */
+  VdbeCursor *pC;         /* The cursor containing the RHS values */
+  ValueList *pRhs;        /* New ValueList object to put in reg[P2] */
+
+  pC = p->apCsr[pOp->p1];
+  pRhs = sqlite3_malloc64( sizeof(*pRhs) );
+  if( pRhs==0 ) goto no_mem;
+  pRhs->pCsr = pC->uc.pCursor;
+  pRhs->pOut = &aMem[pOp->p3];
+  pOut = out2Prerelease(p, pOp);
+  pOut->flags = MEM_Null;
+  sqlite3VdbeMemSetPointer(pOut, pRhs, "ValueList", sqlite3_free);
+  break;
+}
+#endif /* SQLITE_OMIT_VIRTUALTABLE */
+
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 /* Opcode: VFilter P1 P2 P3 P4 *

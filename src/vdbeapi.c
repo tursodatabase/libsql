@@ -847,6 +847,70 @@ int sqlite3_vtab_nochange(sqlite3_context *p){
 }
 
 /*
+** Implementation of sqlite3_vtab_in_first() (if bNext==0) and
+** sqlite3_vtab_in_next() (if bNext!=0).
+*/
+static int valueFromValueList(
+  sqlite3_value *pVal,        /* Pointer to the ValueList object */
+  sqlite3_value **ppOut,      /* Store the next value from the list here */
+  int bNext                   /* 1 for _next(). 0 for _first() */
+){
+  int rc;
+  ValueList *pRhs;
+
+  *ppOut = 0;
+  if( pVal==0 ) return SQLITE_MISUSE;
+  pRhs = (ValueList*)sqlite3_value_pointer(pVal, "ValueList");
+  if( pRhs==0 ) return SQLITE_MISUSE;
+  if( bNext ){
+    rc = sqlite3BtreeNext(pRhs->pCsr, 0);
+  }else{
+    int dummy = 0;
+    rc = sqlite3BtreeFirst(pRhs->pCsr, &dummy);
+    assert( rc==SQLITE_OK || sqlite3BtreeEof(pRhs->pCsr) );
+    if( sqlite3BtreeEof(pRhs->pCsr) ) rc = SQLITE_DONE;
+  }
+  if( rc==SQLITE_OK ){
+    u32 sz;       /* Size of current row in bytes */
+    Mem sMem;     /* Raw content of current row */
+    memset(&sMem, 0, sizeof(sMem));
+    sz = sqlite3BtreePayloadSize(pRhs->pCsr);
+    rc = sqlite3VdbeMemFromBtreeZeroOffset(pRhs->pCsr,(int)sz,&sMem);
+    if( rc==SQLITE_OK ){
+      u8 *zBuf = (u8*)sMem.z;
+      u32 iSerial;
+      sqlite3_value *pOut = pRhs->pOut;
+      int iOff = 1 + getVarint32(&zBuf[1], iSerial);
+      sqlite3VdbeSerialGet(&zBuf[iOff], iSerial, pOut);
+      pOut->enc = ENC(pOut->db);
+      if( (pOut->flags & MEM_Ephem)!=0 && sqlite3VdbeMemMakeWriteable(pOut) ){
+        rc = SQLITE_NOMEM;
+      }else{
+        *ppOut = pOut;
+      }
+    }
+    sqlite3VdbeMemRelease(&sMem);
+  }
+  return rc;
+}
+
+/*
+** Set the iterator value pVal to point to the first value in the set.
+** Set (*ppOut) to point to this value before returning.
+*/
+int sqlite3_vtab_in_first(sqlite3_value *pVal, sqlite3_value **ppOut){
+  return valueFromValueList(pVal, ppOut, 0);
+}
+
+/*
+** Set the iterator value pVal to point to the next value in the set.
+** Set (*ppOut) to point to this value before returning.
+*/
+int sqlite3_vtab_in_next(sqlite3_value *pVal, sqlite3_value **ppOut){
+  return valueFromValueList(pVal, ppOut, 1);
+}
+
+/*
 ** Return the current time for a statement.  If the current time
 ** is requested more than once within the same run of a single prepared
 ** statement, the exact same time is returned for each invocation regardless
@@ -1530,7 +1594,10 @@ int sqlite3_bind_value(sqlite3_stmt *pStmt, int i, const sqlite3_value *pValue){
       break;
     }
     case SQLITE_FLOAT: {
-      rc = sqlite3_bind_double(pStmt, i, pValue->u.r);
+      assert( pValue->flags & (MEM_Real|MEM_IntReal) );
+      rc = sqlite3_bind_double(pStmt, i, 
+          (pValue->flags & MEM_Real) ? pValue->u.r : (double)pValue->u.i
+      );
       break;
     }
     case SQLITE_BLOB: {
