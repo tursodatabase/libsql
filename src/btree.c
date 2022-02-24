@@ -2303,7 +2303,9 @@ getAndInitPage_error1:
     pCur->pPage = pCur->apPage[pCur->iPage];
   }
   testcase( pgno==0 );
-  assert( pgno!=0 || rc==SQLITE_CORRUPT );
+  assert( pgno!=0 || rc==SQLITE_CORRUPT 
+                  || rc==SQLITE_IOERR_NOMEM
+                  || rc==SQLITE_NOMEM );
   return rc;
 }
 
