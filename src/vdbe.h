@@ -63,7 +63,6 @@ struct VdbeOp {
 #ifdef SQLITE_ENABLE_CURSOR_HINTS
     Expr *pExpr;           /* Used when p4type is P4_EXPR */
 #endif
-    int (*xAdvance)(BtCursor *, int);
   } p4;
 #ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
   char *zComment;          /* Comment to improve readability */
@@ -114,7 +113,7 @@ typedef struct VdbeOpList VdbeOpList;
 #define P4_COLLSEQ    (-2)  /* P4 is a pointer to a CollSeq structure */
 #define P4_INT32      (-3)  /* P4 is a 32-bit signed integer */
 #define P4_SUBPROGRAM (-4)  /* P4 is a pointer to a SubProgram structure */
-#define P4_ADVANCE    (-5)  /* P4 is a pointer to BtreeNext() or BtreePrev() */
+/*                    (-5)  // Available for reuse.  Was P4_ADVANCE */
 #define P4_TABLE      (-6)  /* P4 is a pointer to a Table structure */
 /* Above do not own any resources.  Must free those below */
 #define P4_FREE_IF_LE (-7)
