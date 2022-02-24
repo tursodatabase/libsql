@@ -190,7 +190,7 @@ do_test shell1-2.1.3 {
   catchcmd "test.db" ".\'foo OFF\'"
 } {1 {Error: unknown command: "foo OFF"}}
 
-set modeShouldBe "Error: mode should be one of: ascii box column csv html insert json line list markdown qbox quote table tabs tcl"
+set modeShouldBe "Error: Mode should be one of: ascii box column csv html insert json line list markdown qbox quote table tabs tcl"
 
 # unbalanced quotes
 do_test shell1-2.2.1 {
@@ -466,17 +466,11 @@ do_test shell1-3.13.10 {
 do_test shell1-3.13.11 {
   # extra arguments rejected
   catchcmd "test.db" ".mode tcl BAD"
-} {1 {Error: invalid arguments for ".mode"}}
+} {1 {Error: Invalid .mode argument: BAD}}
 
-# don't allow too-partial mode type matches
+# allow partial mode type matches
 do_test shell1-3.13.12 {
   catchcmd "test.db" ".mode l"
-} [list 1 $modeShouldBe]
-do_test shell1-3.13.13 {
-  catchcmd "test.db" ".mode li"
-} [list 1 $modeShouldBe]
-do_test shell1-3.13.14 {
-  catchcmd "test.db" ".mode lin"
 } {0 {}}
 
 # .nullvalue STRING      Print STRING in place of NULL values

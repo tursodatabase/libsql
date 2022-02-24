@@ -1285,48 +1285,55 @@ static void updateSafeMode(ShellState *pSS){
 #define ShellClearFlag(P,X)  ((P)->shellFlgs&=(~(X)))
 
 /*
-** These are the allowed modes.
+** These are the allowed modes, in search order (for abbreviation matches.)
 */
 #define MODE_Line     0  /* One column per line.  Blank line between records */
 #define MODE_Column   1  /* One record per line in neat columns */
 #define MODE_List     2  /* One record per line with a separator */
-#define MODE_Semi     3  /* Same as MODE_List but append ";" to each line */
-#define MODE_Html     4  /* Generate an XHTML table */
-#define MODE_Insert   5  /* Generate SQL "insert" statements */
-#define MODE_Quote    6  /* Quote values as for SQL */
-#define MODE_Tcl      7  /* Generate ANSI-C or TCL quoted elements */
-#define MODE_Csv      8  /* Quote strings, numbers are plain */
-#define MODE_Explain  9  /* Like MODE_Column, but do not truncate data */
-#define MODE_Ascii   10  /* Use ASCII unit and record separators (0x1F/0x1E) */
-#define MODE_Pretty  11  /* Pretty-print schemas */
-#define MODE_EQP     12  /* Converts EXPLAIN QUERY PLAN output into a graph */
-#define MODE_Json    13  /* Output JSON */
-#define MODE_Markdown 14 /* Markdown formatting */
-#define MODE_Table   15  /* MySQL-style table formatting */
-#define MODE_Box     16  /* Unicode box-drawing characters */
-#define MODE_Count   17  /* Output only a count of the rows of output */
-#define MODE_Off     18  /* No query output shown */
-
-static const char *modeDescr[] = {
-  "line",
-  "column",
-  "list",
-  "semi",
-  "html",
-  "insert",
-  "quote",
-  "tcl",
-  "csv",
-  "explain",
-  "ascii",
-  "prettyprint",
-  "eqp",
-  "json",
-  "markdown",
-  "table",
-  "box",
-  "count",
-  "off"
+#define MODE_Html     3  /* Generate an XHTML table */
+#define MODE_Tcl      4  /* Generate ANSI-C or TCL quoted elements */
+#define MODE_Csv      5  /* Quote strings, numbers are plain */
+#define MODE_Tab      6  /* Transitory */
+#define MODE_Insert   7  /* Generate SQL "insert" statements */
+#define MODE_Quote    8  /* Quote values as for SQL */
+#define MODE_Ascii    9  /* Use ASCII unit and record separators (0x1F/0x1E) */
+#define MODE_Markdown 10 /* Markdown formatting */
+#define MODE_Table    11 /* MySQL-style table formatting */
+#define MODE_Box      12 /* Unicode box-drawing characters */
+#define MODE_Count    13 /* Output only a count of the rows of output */
+#define MODE_Off      14 /* No query output shown */
+#define MODE_Json     15 /* Output JSON */
+#define MODE_EQP      16 /* Converts EXPLAIN QUERY PLAN output into a graph */
+#define MODE_Explain  17 /* Like MODE_Column, but do not truncate data */
+#define MODE_Pretty   18 /* Pretty-print schemas */
+#define MODE_Semi     19 /* Same as MODE_List but append ";" to each line */
+#define MODE_COUNT_OF 20
+static struct {
+  const char *zModeName;
+  u8 bDepluralize;
+  u8 bUserBlocked;
+  u8 iAliasFor;
+} modeDescr[] = {
+  { "lines", 1, 0, MODE_Line },
+  { "columns", 1, 0, MODE_Column },
+  { "list", 0, 0, MODE_List },
+  { "html", 0, 0, MODE_Html },
+  { "tcl", 0, 0, MODE_Tcl },
+  { "csv", 0, 0, MODE_Csv },
+  { "tabs", 1, 0, MODE_List },
+  { "insert", 0, 0, MODE_Insert },
+  { "quote", 0, 0, MODE_Quote },
+  { "ascii", 0, 0, MODE_Ascii },
+  { "markdown", 0, 0, MODE_Markdown },
+  { "table", 0, 0, MODE_Table },
+  { "box", 0, 0, MODE_Box },
+  { "count", 0, 0, MODE_Count },
+  { "off", 0, 0, MODE_Off },
+  { "json", 0, 0, MODE_Json },
+  { "eqp", 0, 1, MODE_EQP },
+  { "explain", 0, 1, MODE_Explain },
+  { "prettyprint", 0, 1, MODE_Pretty },
+  { "semi", 0, 1, MODE_Semi }
 };
 
 /*
@@ -9177,126 +9184,153 @@ COLLECT_HELP_TEXT[
   "     --noquote      Do not quote output text",
   "     TABLE          The name of SQL table used for \"insert\" mode",
 ];
-DISPATCHABLE_COMMAND( mode ? 1 3 ){
-  const char *zMode = 0;
+DISPATCHABLE_COMMAND( mode ? 1 0 ){
   const char *zTabname = 0;
-  int i, n2;
+  const char *zArg;
+  int i;
+  u8 foundMode = MODE_COUNT_OF, setMode = MODE_COUNT_OF;
   ColModeOpts cmOpts = ColModeOpts_default;
   for(i=1; i<nArg; i++){
-    const char *z = azArg[i];
-    if( optionMatch(z,"wrap") && i+1<nArg ){
+    zArg = azArg[i];
+    if( optionMatch(zArg,"wrap") && i+1<nArg ){
       cmOpts.iWrap = integerValue(azArg[++i]);
-    }else if( optionMatch(z,"ww") ){
+    }else if( optionMatch(zArg,"ww") ){
       cmOpts.bWordWrap = 1;
-    }else if( optionMatch(z,"wordwrap") && i+1<nArg ){
+    }else if( optionMatch(zArg,"wordwrap") && i+1<nArg ){
       cmOpts.bWordWrap = (u8)booleanValue(azArg[++i]);
-    }else if( optionMatch(z,"quote") ){
+    }else if( optionMatch(zArg,"quote") ){
       cmOpts.bQuote = 1;
-    }else if( optionMatch(z,"noquote") ){
+    }else if( optionMatch(zArg,"noquote") ){
       cmOpts.bQuote = 0;
-    }else if( zMode==0 ){
-      zMode = z;
-      /* Apply defaults for qbox pseudo-mods. If that
-       * overwrites already-set values, user was informed of this.
-       */
-      if( strcmp(z, "qbox")==0 ){
-        ColModeOpts cmo = ColModeOpts_default_qbox;
-        zMode = "box";
-        cmOpts = cmo;
-      }
-    }else if( zTabname==0 ){
-      zTabname = z;
-    }else if( z[0]=='-' ){
-      utf8_printf(stderr, "unknown option: %s\n", z);
-      utf8_printf(stderr, "options:\n"
-                  "  --noquote\n"
-                  "  --quote\n"
-                  "  --wordwrap on/off\n"
-                  "  --wrap N\n"
-                  "  --ww\n");
-      return 1;
     }else{
-      utf8_printf(stderr, "extra argument: \"%s\"\n", z);
-      return 1;
+      /* Not a known option. Check for known mode, or possibly a table name. */
+      if( foundMode==MODE_Insert && zTabname==0 ){
+        zTabname = zArg;
+      }else if( *zArg=='-' ){
+        goto flag_unknown;
+      }else{
+        int im, nza = strlen30(zArg);
+        if( foundMode!=MODE_COUNT_OF ) goto mode_badarg;
+        for( im=0; im<MODE_COUNT_OF; ++im ){
+          if( modeDescr[i].bUserBlocked ) continue;
+          if( strncmp(zArg,modeDescr[im].zModeName,nza)==0 ){
+            foundMode = (u8)im;
+            setMode = modeDescr[im].iAliasFor;
+            break;
+          }
+        }
+        if( strcmp(zArg, "qbox")==0 ){
+          ColModeOpts cmo = ColModeOpts_default_qbox;
+          foundMode = setMode = MODE_Box;
+          cmOpts = cmo;
+        }else if( im==MODE_COUNT_OF ) goto mode_unknown;
+      }
     }
-  }
-  if( zMode==0 ){
-    if( p->mode==MODE_Column
-        || (p->mode>=MODE_Markdown && p->mode<=MODE_Box)
-        ){
+  } /* Arg loop */
+  if( foundMode==MODE_COUNT_OF ){
+    const char *zMode;
+    int nms;
+    i = p->mode;
+    assert(i>=0 && i<MODE_COUNT_OF);
+    zMode = modeDescr[i].zModeName;
+    nms = strlen30(zMode)-modeDescr[i].bDepluralize;
+    /* Mode not specified. Show present mode (and toss any options set.) */
+    if( p->mode==MODE_Column || (p->mode>=MODE_Markdown && p->mode<=MODE_Box) ){
       raw_printf
-        (p->out,
-         "current output mode: %s --wrap %d --wordwrap %s --%squote\n",
-         modeDescr[p->mode], p->cmOpts.iWrap,
+        (p->out, "current output mode: %.*s --wrap %d --wordwrap %s --%squote\n",
+         nms, zMode, p->cmOpts.iWrap,
          p->cmOpts.bWordWrap ? "on" : "off",
          p->cmOpts.bQuote ? "" : "no");
     }else{
-      raw_printf(p->out, "current output mode: %s\n", modeDescr[p->mode]);
+      raw_printf(p->out, "current output mode: %.*s\n", nms, zMode);
     }
-    zMode = modeDescr[p->mode];
-  }
-  n2 = strlen30(zMode);
-  if( strncmp(zMode,"lines",n2)==0 ){
-    p->mode = MODE_Line;
-    sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Row);
-  }else if( strncmp(zMode,"columns",n2)==0 ){
-    p->mode = MODE_Column;
-    if( (p->shellFlgs & SHFLG_HeaderSet)==0 ){
-      p->showHeader = 1;
-    }
-    sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Row);
-    p->cmOpts = cmOpts;
-  }else if( strncmp(zMode,"list",n2)==0 ){
-    p->mode = MODE_List;
-    sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, SEP_Column);
-    sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Row);
-  }else if( strncmp(zMode,"html",n2)==0 ){
-    p->mode = MODE_Html;
-  }else if( strncmp(zMode,"tcl",n2)==0 ){
-    p->mode = MODE_Tcl;
-    sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, SEP_Space);
-    sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Row);
-  }else if( strncmp(zMode,"csv",n2)==0 ){
-    p->mode = MODE_Csv;
-    sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, SEP_Comma);
-    sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_CrLf);
-  }else if( strncmp(zMode,"tabs",n2)==0 ){
-    p->mode = MODE_List;
-    sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, SEP_Tab);
-  }else if( strncmp(zMode,"insert",n2)==0 ){
-    p->mode = MODE_Insert;
-    set_table_name(p, zTabname ? zTabname : "table");
-  }else if( strncmp(zMode,"quote",n2)==0 ){
-    p->mode = MODE_Quote;
-    sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, SEP_Comma);
-    sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Row);
-  }else if( strncmp(zMode,"ascii",n2)==0 ){
-    p->mode = MODE_Ascii;
-    sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, SEP_Unit);
-    sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Record);
-  }else if( strncmp(zMode,"markdown",n2)==0 ){
-    p->mode = MODE_Markdown;
-    p->cmOpts = cmOpts;
-  }else if( strncmp(zMode,"table",n2)==0 ){
-    p->mode = MODE_Table;
-    p->cmOpts = cmOpts;
-  }else if( strncmp(zMode,"box",n2)==0 ){
-    p->mode = MODE_Box;
-    p->cmOpts = cmOpts;
-  }else if( strncmp(zMode,"count",n2)==0 ){
-    p->mode = MODE_Count;
-  }else if( strncmp(zMode,"off",n2)==0 ){
-    p->mode = MODE_Off;
-  }else if( strncmp(zMode,"json",n2)==0 ){
-    p->mode = MODE_Json;
   }else{
-    raw_printf(stderr, "Error: mode should be one of: "
-               "ascii box column csv html insert json line list markdown "
-               "qbox quote table tabs tcl\n");
-    return 1;
+    /* Effect the specified mode change. */
+    const char *zColSep = 0, *zRowSep = 0;
+    assert(setMode!=MODE_COUNT_OF);
+    switch( foundMode ){
+    case MODE_Line:
+      zRowSep = SEP_Row;
+      break;
+    case MODE_Column:
+      if( (p->shellFlgs & SHFLG_HeaderSet)==0 ){
+        p->showHeader = 1;
+      }
+      zRowSep = SEP_Row;
+      p->cmOpts = cmOpts;
+      break;
+    case MODE_List:
+      zColSep = SEP_Column;
+      zRowSep = SEP_Row;
+      break;
+    case MODE_Html:
+      break;
+    case MODE_Tcl:
+      zColSep = SEP_Space;
+      zRowSep = SEP_Row;
+      break;
+    case MODE_Csv:
+      zColSep = SEP_Comma;
+      zRowSep = SEP_CrLf;
+      break;
+    case MODE_Tab:
+      zColSep = SEP_Tab;
+      break;
+    case MODE_Insert:
+      set_table_name(p, zTabname ? zTabname : "table");
+      break;
+    case MODE_Quote:
+      zColSep = SEP_Comma;
+      zRowSep = SEP_Row;
+      break;
+    case MODE_Ascii:
+      zColSep = SEP_Unit;
+      zRowSep = SEP_Record;
+      break;
+    case MODE_Markdown:
+      /* fall-thru */
+    case MODE_Table:
+      /* fall-thru */
+    case MODE_Box:
+      p->cmOpts = cmOpts;
+      break;
+    case MODE_Count:
+      /* fall-thru */
+    case MODE_Off:
+      /* fall-thru */
+    case MODE_Json:
+      break;
+    case MODE_Explain: case MODE_Semi: case MODE_EQP: case MODE_Pretty: default:
+      /* Modes used internally, not settable by .mode command. */
+      return 0;
+    }
+    if( zRowSep!=0 ){
+      sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, zRowSep);
+    }
+    if( zColSep!=0 ){
+      sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, zColSep);
+    }
+    p->mode = setMode;
   }
   p->cMode = p->mode;
   return 0;
+ flag_unknown:
+  utf8_printf(stderr, "Error: Unknown .mode option: %s\nValid options:\n%s",
+              zArg,
+              "  --noquote\n"
+              "  --quote\n"
+              "  --wordwrap on/off\n"
+              "  --wrap N\n"
+              "  --ww\n");
+  return 1;
+ mode_unknown:
+  raw_printf(stderr, "Error: Mode should be one of: "
+             "ascii box column csv html insert json line list markdown "
+             "qbox quote table tabs tcl\n");
+  return 1;
+ mode_badarg:
+  utf8_printf(stderr, "Error: Invalid .mode argument: %s\n", zArg);
+  return 1;
 }
 
 /*****************
@@ -10715,16 +10749,18 @@ DISPATCHABLE_COMMAND( show ? 1 1 ){
   utf8_printf(p->out, "%12.12s: %s\n","explain",
               p->mode==MODE_Explain ? "on" : p->autoExplain ? "auto" : "off");
   utf8_printf(p->out,"%12.12s: %s\n","headers", azBool[p->showHeader!=0]);
+  zOut = modeDescr[p->mode].zModeName;
+  i = strlen30(zOut) - modeDescr[p->mode].bDepluralize;
   if( p->mode==MODE_Column
       || (p->mode>=MODE_Markdown && p->mode<=MODE_Box)
       ){
     utf8_printf
-      (p->out, "%12.12s: %s --wrap %d --wordwrap %s --%squote\n", "mode",
-       modeDescr[p->mode], p->cmOpts.iWrap,
+      (p->out, "%12.12s: %.*s --wrap %d --wordwrap %s --%squote\n", "mode",
+       i, zOut, p->cmOpts.iWrap,
        p->cmOpts.bWordWrap ? "on" : "off",
        p->cmOpts.bQuote ? "" : "no");
   }else{
-    utf8_printf(p->out, "%12.12s: %s\n","mode", modeDescr[p->mode]);
+    utf8_printf(p->out, "%12.12s: %.*s\n","mode", i, zOut);
   }
   utf8_printf(p->out, "%12.12s: ", "nullvalue");
   output_c_string(p->out, p->nullValue);
