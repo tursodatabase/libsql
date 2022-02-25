@@ -1,5 +1,5 @@
-C Remove\sunused\sP4\stypes\son\sthe\sOpcode\sobject.\s\sSaves\sa\sfew\sbytes\sof\scode\nspace\sand\ssimplifies\sthe\scode.
-D 2022-02-25T01:10:57.145
+C Invoking\sSQLITE_TESTCTRL_INTERNAL_FUNCTIONS\scauses\sthe\sflags\sfield\sof\sthe\nPRAGMA\sfunction_list\sto\sshow\sall\sbits,\sincluding\sinternal-use-only\sbits,\nrather\sthan\sjust\sthe\sbits\sthat\sare\spart\sof\sthe\sAPI.
+D 2022-02-25T01:23:17.074
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -545,7 +545,7 @@ F src/parse.y 0f02b27cdaa334441463153fff3ceb780fea006ab53ffd6ef566d4468f93e924
 F src/pcache.c 084e638432c610f95aea72b8509f0845d2791293f39d1b82f0c0a7e089c3bb6b
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c 54881292a9a5db202b2c0ac541c5e3ef9a5e8c4f1c1383adb2601d5499a60e65
-F src/pragma.c 7c024d690a3dc93f61830f11f900e4af2357f31d081b0c79099ca5e28919cba7
+F src/pragma.c a7323cd175587afa0b82c213b9bba5789fe9ea67f9e5d66e35df00742a923bcc
 F src/pragma.h e690a356c18e98414d2e870ea791c1be1545a714ba623719deb63f7f226d8bb7
 F src/prepare.c a187dade741c1f09ae118fcbbf0302511807bfc0355880927d7152eb75b8260d
 F src/printf.c 05d8dfd2018bc4fc3ddb8b37eb97ccef7abf985643fa1caebdcf2916ca90fa32
@@ -1944,8 +1944,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9d13cbbef3cf64f281d3e100f23f1b2ed6e8d65920c7517a84e1e4f964ceff2e
-R 2e2e520a1c1c7c20c92c398ea415795b
+P aca538435939e6146f9a42e72e3a65030bbc5f646a0bbc7684e43688a0339888
+R 40203a3ea03c20c36dd71deecf295b46
 U drh
-Z 977c1663b04e9296fbb3fb3dc96b6b1a
+Z 5ccd33ee4f07f795e380e5ae421f88d6
 # Remove this line to create a well-formed Fossil manifest.
