@@ -1,5 +1,5 @@
-C Improved\scomment\son\sthe\scodeDeferredSeek()\sroutine.\sNo\scode\schanges.
-D 2022-02-25T13:29:56.636
+C Fix\sthe\sOP_NullRow\sdocumentation\sso\sthat\sit\saccurately\sdescribes\swhat\sit\nactually\sdoes\sfor\sa\spseudo-cursor.
+D 2022-02-25T18:51:09.169
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -624,7 +624,7 @@ F src/upsert.c 8789047a8f0a601ea42fa0256d1ba3190c13746b6ba940fe2d25643a7e991937
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c 602fe229f32a96ceccae4f40824129669582096f7c355f53dbac156c9fecef23
 F src/vacuum.c 6c38ddc52f0619865c91dae9c441d4d48bf3040d7dc1bc5b22da1e45547ed0b3
-F src/vdbe.c 5ff8a23c52b38a25f5b8ae398c0a787aff6fdf49e60e675915614022862a4a0a
+F src/vdbe.c 5299556464a6a947611334db56adbf20d2b345c1cff7d74f666008c349f0410c
 F src/vdbe.h a1d0e3b934e835e73edd146f2e7c4eadb711b5c9875c18159a57483fd78e550e
 F src/vdbeInt.h b45599a2b59f1ce042512ab6786b0b82a8cf3002f6b0fa60b4834e2cd3ac61d8
 F src/vdbeapi.c 8863ffb5a7bac42fe9a68aaa3526ee29fc18fb02a9b27188b756de41e33856e9
@@ -1944,8 +1944,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 393460132994d6ca133e52af57374e43a2795a9e7fc7781bd9dea752a2b52c6a
-R 9d513bd798b81de21bb7dd572470a8e8
+P 54f49f65ac943263a1622b1efe519c8a61f30f23694fd4fec89ad2bf0e17b473
+R 84b7b86c0cda7b37ea1827afa5aef02e
 U drh
-Z bd0ff582d66826c917840ae517528eb1
+Z ad486a9d2be85a263d9516418548523a
 # Remove this line to create a well-formed Fossil manifest.
