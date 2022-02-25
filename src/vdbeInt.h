@@ -58,9 +58,36 @@ typedef struct AuxData AuxData;
 
 /* Types of VDBE cursors */
 #define CURTYPE_BTREE       0
-#define CURTYPE_SORTER      1
-#define CURTYPE_VTAB        2
-#define CURTYPE_PSEUDO      3
+#define CURTYPE_PSEUDO      1
+#define CURTYPE_SORTER      2
+#define CURTYPE_VTAB        3
+
+/* Allowed values for VdbeCursor.eCurState, representing the "cursor state".
+**
+** The cursor state captures most of the information that the OP_Column
+** opcode needs to know about the status of the cursor.  This state info
+** used to be captured by three different fields of the VdbeCursor:
+**
+**    u8 nullRow;          // True if pointing to a row with no data
+**    u8 deferredMoveto;   // A call to sqlite3BtreeMoveto() is needed
+**    u32 cacheStatus;     // Cache is valid if this matches Vdbe.cacheCtr
+**
+** Moving the state information into a single variable simplifies the logic
+** and requires fewer CPU cycles to process.
+**
+** Constraints on values:
+**
+**             CURSTATE_READY == CURTYPE_BTREE
+**            CURSTATE_PSEUDO == CURTYPE_PSEUDO
+**            CURSTATE_UNINIT == CURSTATE_READY + 2
+**     CURSTATE_PSEUDO_UNINIT == CURSTATE_PSEUDO + 2
+*/
+#define CURSTATE_READY            0    /* Cursor ready for use */
+#define CURSTATE_PSEUDO           1    /* Pseudo-cursor ready for use */
+#define CURSTATE_UNINIT           2    /* Without column cache */
+#define CURSTATE_PSEUDO_UNINIT    3    /* Pseudo without column cache */
+#define CURSTATE_DEFERRED         4    /* Btree with deferred seek */
+#define CURSTATE_NULLROW          5    /* Return NULL for all columns */
 
 /*
 ** A VdbeCursor is an superclass (a wrapper) for various cursor objects:
@@ -79,6 +106,7 @@ struct VdbeCursor {
   u8 nullRow;             /* True if pointing to a row with no data */
   u8 deferredMoveto;      /* A call to sqlite3BtreeMoveto() is needed */
   u8 isTable;             /* True for rowid tables.  False for indexes */
+  u8 eCurState;           /* Current state of the cursor */
 #ifdef SQLITE_DEBUG
   u8 seekOp;              /* Most recent seek operation on this cursor */
   u8 wrFlag;              /* The wrFlag argument to sqlite3BtreeCursor() */

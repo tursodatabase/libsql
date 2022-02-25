@@ -1536,12 +1536,18 @@ case OP_FkCheck: {
 case OP_ResultRow: {
   Mem *pMem;
   int i;
+  VdbeCursor *pC;
+
   assert( p->nResColumn==pOp->p2 );
   assert( pOp->p1>0 || CORRUPT_DB );
   assert( pOp->p1+pOp->p2<=(p->nMem+1 - p->nCursor)+1 );
 
   /* Invalidate all ephemeral cursor row caches */
   p->cacheCtr = (p->cacheCtr + 2)|1;
+  for(i=0; i<p->nCursor; i++){
+    pC = p->apCsr[i];
+    if( pC && pC->eCurState<2 ) pC->eCurState |= 2;
+  }
 
   /* Make sure the results of the current row are \000 terminated
   ** and have an assigned type.  The results are de-ephemeralized as
@@ -2597,11 +2603,17 @@ case OP_NotNull: {            /* same as TK_NOTNULL, jump, in1 */
 ** changes.
 */
 case OP_IfNullRow: {         /* jump */
+  VdbeCursor *pC;
+
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
-  assert( p->apCsr[pOp->p1]!=0 );
-  if( p->apCsr[pOp->p1]->nullRow ){
+  pC = p->apCsr[pOp->p1];
+  assert( pC!=0 );
+  if( pC->nullRow ){
+    assert( pC->eCurState==CURSTATE_NULLROW );
     sqlite3VdbeMemSetNull(aMem + pOp->p3);
     goto jump_to_p2;
+  }else{
+    assert( pC->eCurState!=CURSTATE_NULLROW );
   }
   break;
 }
@@ -2700,18 +2712,22 @@ case OP_Column: {
         /* For the special case of as pseudo-cursor, the seekResult field
         ** identifies the register that holds the record */
         assert( pC->seekResult>0 );
+        assert( pC->eCurState==CURSTATE_PSEUDO_UNINIT
+             || pC->eCurState==CURSTATE_NULLROW );
         pReg = &aMem[pC->seekResult];
         assert( pReg->flags & MEM_Blob );
         assert( memIsValid(pReg) );
         pC->payloadSize = pC->szRow = pReg->n;
         pC->aRow = (u8*)pReg->z;
       }else{
+        assert( pC->eCurState==CURSTATE_NULLROW );
         sqlite3VdbeMemSetNull(pDest);
         goto op_column_out;
       }
     }else{
       pCrsr = pC->uc.pCursor;
       assert( pC->eCurType==CURTYPE_BTREE );
+      assert( pC->eCurState==CURSTATE_UNINIT );
       assert( pCrsr );
       assert( sqlite3BtreeCursorIsValid(pCrsr) );
       pC->payloadSize = sqlite3BtreePayloadSize(pCrsr);
@@ -2722,6 +2738,7 @@ case OP_Column: {
         goto too_big;
       }
     }
+    pC->eCurState = pC->eCurType;
     pC->cacheStatus = p->cacheCtr;
     pC->iHdrOffset = getVarint32(pC->aRow, aOffset[0]);
     pC->nHdrParsed = 0;
@@ -4023,6 +4040,7 @@ case OP_OpenWrite:
   if( pCur==0 ) goto no_mem;
   pCur->iDb = iDb;
   pCur->nullRow = 1;
+  pCur->eCurState = CURSTATE_NULLROW;
   pCur->isOrdered = 1;
   pCur->pgnoRoot = p2;
 #ifdef SQLITE_DEBUG
@@ -4066,6 +4084,7 @@ case OP_OpenDup: {
   pCx = allocateCursor(p, pOp->p1, pOrig->nField, CURTYPE_BTREE);
   if( pCx==0 ) goto no_mem;
   pCx->nullRow = 1;
+  pCx->eCurState = CURSTATE_NULLROW;
   pCx->isEphemeral = 1;
   pCx->pKeyInfo = pOrig->pKeyInfo;
   pCx->isTable = pOrig->isTable;
@@ -4190,6 +4209,7 @@ case OP_OpenEphemeral: {
   }
   if( rc ) goto abort_due_to_error;
   pCx->nullRow = 1;
+  pCx->eCurState = CURSTATE_NULLROW;
   break;
 }
 
@@ -4260,6 +4280,7 @@ case OP_OpenPseudo: {
   pCx = allocateCursor(p, pOp->p1, pOp->p3, CURTYPE_PSEUDO);
   if( pCx==0 ) goto no_mem;
   pCx->nullRow = 1;
+  pCx->eCurState = CURSTATE_NULLROW;
   pCx->seekResult = pOp->p2;
   pCx->isTable = 1;
   /* Give this pseudo-cursor a fake BtCursor pointer so that pCx
@@ -4424,6 +4445,7 @@ case OP_SeekGT: {       /* jump, in3, group */
 
   pC->deferredMoveto = 0;
   pC->cacheStatus = CACHE_STALE;
+  pC->eCurState = CURSTATE_UNINIT;
   if( pC->isTable ){
     u16 flags3, newType;
     /* The OPFLAG_SEEKEQ/BTREE_SEEK_EQ flag is only set on index cursors */
@@ -4957,6 +4979,7 @@ case OP_Found: {        /* jump, in3 */
   pC->nullRow = 1-alreadyExists;
   pC->deferredMoveto = 0;
   pC->cacheStatus = CACHE_STALE;
+  pC->eCurState = alreadyExists ? CURSTATE_UNINIT : CURSTATE_NULLROW;
   if( pOp->opcode==OP_Found ){
     VdbeBranchTaken(alreadyExists!=0,2);
     if( alreadyExists ) goto jump_to_p2;
@@ -5061,6 +5084,7 @@ notExistsWithKey:
   pC->movetoTarget = iKey;  /* Used by OP_Delete */
   pC->nullRow = 0;
   pC->cacheStatus = CACHE_STALE;
+  pC->eCurState = CURSTATE_UNINIT;
   pC->deferredMoveto = 0;
   VdbeBranchTaken(res!=0,2);
   pC->seekResult = res;
@@ -5226,6 +5250,7 @@ case OP_NewRowid: {           /* out2 */
     }
     pC->deferredMoveto = 0;
     pC->cacheStatus = CACHE_STALE;
+    pC->eCurState = CURSTATE_UNINIT;
   }
   pOut->u.i = v;
   break;
@@ -5338,6 +5363,7 @@ case OP_Insert: {
   );
   pC->deferredMoveto = 0;
   pC->cacheStatus = CACHE_STALE;
+  pC->eCurState = CURSTATE_UNINIT;
 
   /* Invoke the update-hook if required. */
   if( rc ) goto abort_due_to_error;
@@ -5498,6 +5524,7 @@ case OP_Delete: {
 
   rc = sqlite3BtreeDelete(pC->uc.pCursor, pOp->p5);
   pC->cacheStatus = CACHE_STALE;
+  pC->eCurState = CURSTATE_UNINIT;
   pC->seekResult = 0;
   if( rc ) goto abort_due_to_error;
 
@@ -5581,7 +5608,10 @@ case OP_SorterData: {
   assert( rc!=SQLITE_OK || (pOut->flags & MEM_Blob) );
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   if( rc ) goto abort_due_to_error;
-  p->apCsr[pOp->p3]->cacheStatus = CACHE_STALE;
+  pC = p->apCsr[pOp->p3];
+  assert( pC!=0 );
+  pC->cacheStatus = CACHE_STALE;
+  pC->eCurState = pC->eCurType + 2;
   break;
 }
 
@@ -5626,6 +5656,7 @@ case OP_RowData: {
   assert( pC->eCurType==CURTYPE_BTREE );
   assert( isSorter(pC)==0 );
   assert( pC->nullRow==0 );
+  assert( pC->eCurState!=CURSTATE_NULLROW );
   assert( pC->uc.pCursor!=0 );
   pCrsr = pC->uc.pCursor;
 
@@ -5674,10 +5705,12 @@ case OP_Rowid: {                 /* out2 */
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
   assert( pC->eCurType!=CURTYPE_PSEUDO || pC->nullRow );
+  assert( (pC->eCurState==CURSTATE_NULLROW)==(pC->nullRow!=0) );
   if( pC->nullRow ){
     pOut->flags = MEM_Null;
     break;
   }else if( pC->deferredMoveto ){
+    assert( pC->eCurState==CURSTATE_DEFERRED );
     v = pC->movetoTarget;
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   }else if( pC->eCurType==CURTYPE_VTAB ){
@@ -5694,6 +5727,7 @@ case OP_Rowid: {                 /* out2 */
     assert( pC->uc.pCursor!=0 );
     rc = sqlite3VdbeCursorRestore(pC);
     if( rc ) goto abort_due_to_error;
+    assert( (pC->eCurState==CURSTATE_NULLROW)==(pC->nullRow!=0) );
     if( pC->nullRow ){
       pOut->flags = MEM_Null;
       break;
@@ -5718,6 +5752,7 @@ case OP_NullRow: {
   assert( pC!=0 );
   pC->nullRow = 1;
   pC->cacheStatus = CACHE_STALE;
+  pC->eCurState = CURSTATE_NULLROW;
   if( pC->eCurType==CURTYPE_BTREE ){
     assert( pC->uc.pCursor!=0 );
     sqlite3BtreeClearCursor(pC->uc.pCursor);
@@ -5777,6 +5812,7 @@ case OP_Last: {        /* jump */
   pC->nullRow = (u8)res;
   pC->deferredMoveto = 0;
   pC->cacheStatus = CACHE_STALE;
+  pC->eCurState = res ? CURSTATE_NULLROW : CURSTATE_UNINIT;
   if( rc ) goto abort_due_to_error;
   if( pOp->p2>0 ){
     VdbeBranchTaken(res!=0,2);
@@ -5880,8 +5916,9 @@ case OP_Rewind: {        /* jump */
     pC->deferredMoveto = 0;
     pC->cacheStatus = CACHE_STALE;
   }
-  if( rc ) goto abort_due_to_error;
   pC->nullRow = (u8)res;
+  pC->eCurState = res ? CURSTATE_NULLROW : CURSTATE_UNINIT;
+  if( rc ) goto abort_due_to_error;
   assert( pOp->p2>0 && pOp->p2<p->nOp );
   VdbeBranchTaken(res!=0,2);
   if( res ) goto jump_to_p2;
@@ -5978,6 +6015,7 @@ case OP_Next:          /* jump */
 
 next_tail:
   pC->cacheStatus = CACHE_STALE;
+  pC->eCurState = CURSTATE_UNINIT;
   VdbeBranchTaken(rc==SQLITE_OK,2);
   if( rc==SQLITE_OK ){
     pC->nullRow = 0;
@@ -5990,6 +6028,7 @@ next_tail:
   if( rc!=SQLITE_DONE ) goto abort_due_to_error;
   rc = SQLITE_OK;
   pC->nullRow = 1;
+  pC->eCurState = CURSTATE_NULLROW;
   goto check_for_interrupt;
 }
 
@@ -6047,6 +6086,7 @@ case OP_IdxInsert: {        /* in2 */
       );
   assert( pC->deferredMoveto==0 );
   pC->cacheStatus = CACHE_STALE;
+  pC->eCurState = CURSTATE_UNINIT;
   if( rc) goto abort_due_to_error;
   break;
 }
@@ -6121,6 +6161,7 @@ case OP_IdxDelete: {
   }
   assert( pC->deferredMoveto==0 );
   pC->cacheStatus = CACHE_STALE;
+  pC->eCurState = CURSTATE_UNINIT;
   pC->seekResult = 0;
   break;
 }
@@ -6193,6 +6234,7 @@ case OP_IdxRowid: {           /* out2 */
       pTabCur->nullRow = 0;
       pTabCur->movetoTarget = rowid;
       pTabCur->deferredMoveto = 1;
+      pTabCur->eCurState = CURSTATE_DEFERRED;
       assert( pOp->p4type==P4_INTARRAY || pOp->p4.ai==0 );
       assert( !pTabCur->isEphemeral );
       pTabCur->ub.aAltMap = pOp->p4.ai;
@@ -6221,6 +6263,7 @@ case OP_FinishSeek: {
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
   if( pC->deferredMoveto ){
+    assert( pC->eCurState==CURSTATE_DEFERRED );
     rc = sqlite3VdbeFinishMoveto(pC);
     if( rc ) goto abort_due_to_error;
   }
@@ -7818,6 +7861,7 @@ case OP_VFilter: {   /* jump */
   if( rc ) goto abort_due_to_error;
   res = pModule->xEof(pVCur);
   pCur->nullRow = 0;
+  pCur->eCurState = CURSTATE_READY;
   VdbeBranchTaken(res!=0,2);
   if( res ) goto jump_to_p2;
   break;
@@ -7852,9 +7896,11 @@ case OP_VColumn: {
   pDest = &aMem[pOp->p3];
   memAboutToChange(p, pDest);
   if( pCur->nullRow ){
+    assert( pCur->eCurState==CURSTATE_NULLROW );
     sqlite3VdbeMemSetNull(pDest);
     break;
   }
+  assert( pCur->eCurState!=CURSTATE_NULLROW );
   pVtab = pCur->uc.pVCur->pVtab;
   pModule = pVtab->pModule;
   assert( pModule->xColumn );
@@ -7903,8 +7949,10 @@ case OP_VNext: {   /* jump */
   assert( pCur!=0 );
   assert( pCur->eCurType==CURTYPE_VTAB );
   if( pCur->nullRow ){
+    assert( pCur->eCurState==CURSTATE_NULLROW );
     break;
   }
+  assert( pCur->eCurState!=CURSTATE_NULLROW );
   pVtab = pCur->uc.pVCur->pVtab;
   pModule = pVtab->pModule;
   assert( pModule->xNext );
