@@ -634,7 +634,15 @@ proc transform_line {lineVar nesting} {
       set line "/* $line */"
       return 1
     }
-    set ::typedefsSeen($line) 1
+    if {[regexp {\s(\w+)\s*;} $line _ tdname]} {
+      if {[info exists ::typedefsSeen($tdname)]} {
+        set line "/* [regsub {;} $line {; **/}]"
+        return 1
+      }
+      set ::typedefsSeen($tdname) 1
+    } else {
+      set ::typedefsSeen($line) 1
+    }
     return 0
   } elseif {$nesting == 0} {
     return 0

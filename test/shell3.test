@@ -97,9 +97,10 @@ do_test shell3-2.6 {
   catchcmd "foo.db" ".tables"
 } {0 {}}
 do_test shell3-2.7 {
-  catchcmd "foo.db" "CREATE TABLE"
-} {1 {Parse error near line 1: incomplete input}}
-
+  catchcmd "foo.db" "CREATE TABLE;"
+} {1 {Parse error near line 1: near ";": syntax error
+  CREATE TABLE;
+              ^--- error here}}
 
 #----------------------------------------------------------------------------
 #   shell3-3.*: Basic tests for processing odd SQL constructs.

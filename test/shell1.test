@@ -75,7 +75,7 @@ do_test shell1-1.3.1 {
 } {0 {}}
 do_test shell1-1.3.2 {
   catchcmdex "-init FOO test.db .quit BAD" ""
-} {1 {child process exited abnormally}}
+} {0 {}}
 do_test shell1-1.3.3 {
   catchcmd "-init FOO test.db BAD .quit" ""
 } {/1 .Error: in prepare, near "BAD": syntax error*/}

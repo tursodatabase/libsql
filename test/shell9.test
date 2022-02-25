@@ -1,0 +1,261 @@
+# 2022 Feb 5
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# The focus of this file is testing the CLI shell tool enhanced parsing,
+# new .parameter subcommands and uses, and the new .x meta-command.
+#
+#
+
+# Test plan:
+#
+#   shell9-1.*: command line parsing and acting accordingly
+#   shell9-2.*: Basic "dot" command, cross-line token parsing
+#   shell9-3.*: .parameter set options and types
+#   shell9-4.*: .parameter save/load operation
+#   shell9-5.*: Ensure "dot" commands and SQL intermix ok.
+#   shell9-6.*: .x command operation and refusal
+#
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set CLI [test_find_cli]
+db close
+forcedelete test.db test.db-journal test.db-wal
+forcedelete x.db xn.db
+
+sqlite3 db test.db
+
+#----------------------------------------------------------------------------
+# Test cases shell9-1.*: command line parsing and acting accordingly
+
+do_test shell9-1.1 {
+  set res [catchcmd ":memory: -cmd .quit" ""]
+} {0 {}}
+
+do_test shell9-1.2 {
+  set res [catchcmd ":memory: -shxopts 1 -cmd .shxopts -cmd .quit" ""]
+} {0 {     name    value  "-shxopts set"
+   --------  -----  ---------------
+    parsing    1    "-shxopts 0x01"
+   all_opts    0    "-shxopts 0x07"}}
+
+do_test shell9-1.3 {
+  set res [catchcmd ":memory: -cmd .shxopts -cmd .quit" ""]
+} {0 {     name    value  "-shxopts set"
+   --------  -----  ---------------
+    parsing    0    "-shxopts 0x01"
+   all_opts    0    "-shxopts 0x07"}}
+
+#----------------------------------------------------------------------------
+# Test cases shell9-2.*: Basic "dot" command, cross-line token parsing
+
+set cmds ".print 'l1\nl2'\n.print 'a\\\nb'"
+do_test shell9-2.1 {
+  set res [catchcmd ":memory: -shxopts 1" $cmds]
+} {0 {l1
+l2
+ab}}
+
+set cmds " .print \"l1\nl2\"\n .print \"a\\\nb\" \n# c\n  ## c"
+do_test shell9-2.2 {
+  set res [catchcmd ":memory: -shxopts 1" $cmds]
+} {0 {l1
+l2
+ab}}
+
+set cmds ".echo on\n.seeargs 'a'\\\n'b'\n#!"
+do_test shell9-2.3 {
+  set res [catchcmd ":memory: -shxopts 1" $cmds]
+} {0 {.seeargs 'a''b'
+a|b|}}
+
+set cmds ".echo on\n.seeargs a\\\nb\n#!"
+do_test shell9-2.4 {
+  set res [catchcmd ":memory: -shxopts 1" $cmds]
+} {0 {.seeargs ab
+ab|}}
+
+set cmds ".echo 1\n.print \"\\\"\nq\\\"\""
+do_test shell9-2.5 {
+  set res [catchcmd ":memory: -shxopts 1" $cmds]
+} {0 {.print "\"
+q\""
+"
+q"}}
+
+#----------------------------------------------------------------------------
+# Test cases shell9-3.*: .parameter set options and types
+
+set cmds {
+.pa set -b b x'a5a5'
+.pa set -i ii 33-11
+.pa set -i ir 3.3-1.1
+.pa set -n ni 3-1
+.pa set -n nr 3.3-1.1
+.pa set -r ri 1
+.pa set -r rr 1.2
+.pa set -t t 123
+.mode list
+select typeof(value) from temp.sqlite_parameters order by key;
+}
+do_test shell9-3.1 {
+  set res [catchcmd ":memory:" $cmds]
+} {0 {blob
+integer
+integer
+integer
+real
+real
+real
+text}}
+
+set cmds {
+.pa set expr 1 + 2 * 3
+.pa set text "'1 + 2*3'"
+.pa set -t ttext 1 + 2*3
+.pa list
+}
+do_test shell9-3.2 {
+  set res [catchcmd ":memory:" $cmds]
+} {0 {Scripts
+name  value
+expr  7
+text  1 + 2*3
+ttext 1 + 2*3}}
+
+set cmds {
+.pa set a "'a'"
+.pa set b "'b'"
+.pa set c "'c'"
+.pa unset
+.pa list
+.pa clear a
+.pa list
+.pa unset b
+.pa list
+.pa clear
+.pa list
+.pa set d "'e'"
+.pa set e "'e'"
+.pa unset d e
+.pa list
+}
+do_test shell9-3.3 {
+  set res [catchcmd ":memory:" $cmds]
+} {0 {Scripts
+name value
+a    a
+b    b
+c    c
+Scripts
+name value
+b    b
+c    c
+Scripts
+name value
+c    c}}
+
+if {$::tcl_platform(platform)=="unix"} {
+  proc set_ed {sayWhat} {
+    global env
+    set env(VISUAL) "echo SELECT $sayWhat ';' >"
+    return 1
+  }
+} elseif {$::tcl_platform(platform)=="windows"} {
+  proc set_ed {sayWhat} {
+    global env
+    set env(VISUAL) "echo SELECT $sayWhat ; >"
+    return 1
+  }
+} else { return 0 }
+
+if {[set_ed @name]} {
+  set cmds {
+.pa set @name Fido
+.pa edit -t dog
+.x dog
+  }
+  do_test shell9-3.4 {
+    set res [catchcmd ":memory: -quiet 1 -shxopts 1 -interactive" $cmds]
+  } {0 {.pa set @name Fido
+.pa edit -t dog
+.x dog
+Fido
+  }}
+}
+
+#----------------------------------------------------------------------------
+# Test cases shell9-4.*: .parameter save/load operation
+
+set cmds {
+  .pa set -t x '.print Ex'
+  .pa set -i $n 7
+  .pa save xn.db
+  .pa save x.db x
+  .pa clear
+  .pa load xn.db
+  .pa list
+  .pa clear
+  .pa load x.db
+  .pa list
+  .pa clear
+  .pa load xn.db $n
+  .pa list
+}
+do_test shell9-4.1 {
+  set res [catchcmd ":memory: -shxopts 1" $cmds]
+} {0 {Binding Values:
+name value
+$n   7
+Scripts
+name value
+x    .print Ex
+Scripts
+name value
+x    .print Ex
+Binding Values:
+name value
+$n   7}}
+
+forcedelete x.db xn.db
+
+#----------------------------------------------------------------------------
+# Test cases shell9-5.*: Ensure "dot" commands and SQL intermix ok.
+
+set cmds {
+ .pa set -t mixed "
+ .print Hi.
+ select 'Hi.';
+ .print 'Good\
+ Bye.'
+ select 'Good'||
+ ' Bye.';
+ "
+ .x mixed
+}
+do_test shell9-5.1 {
+  set res [catchcmd ":memory: -shxopts 1" $cmds]
+} {0 {Hi.
+Hi.
+Good Bye.
+Good Bye.}}
+
+#----------------------------------------------------------------------------
+# Test cases shell9-6.*: .x command operation and refusal
+set cmds {
+ .pa set -t $v '.print Ok'
+ .x $v
+}
+do_test shell9-6.1 {
+  set res [catchcmd ":memory: -bail -shxopts 1" $cmds]
+} {1 {Skipping badly named $v. Run ".help x"
+Abnormal exit (0)}}
+
+finish_test
