@@ -3495,7 +3495,7 @@ int SQLITE_NOINLINE sqlite3VdbeFinishMoveto(VdbeCursor *p){
 #endif
   p->deferredMoveto = 0;
   p->cacheStatus = CACHE_STALE;
-  p->eCurState = p->nullRow ? CURSTATE_NULLROW : CURSTATE_UNINIT;
+  if( !p->nullRow ) p->eCurState = CURSTATE_UNINIT;
   return SQLITE_OK;
 }
 
@@ -3549,7 +3549,7 @@ int sqlite3VdbeCursorRestore(VdbeCursor *p){
 int sqlite3VdbeCursorMoveto(VdbeCursor **pp, u32 *piCol){
   VdbeCursor *p = *pp;
   assert( p->eCurType==CURTYPE_BTREE || p->eCurType==CURTYPE_PSEUDO );
-  if( p->deferredMoveto ){
+  if( p->deferredMoveto && !p->nullRow ){
     u32 iMap;
     assert( !p->isEphemeral );
     assert( p->eCurState==CURSTATE_DEFERRED );
