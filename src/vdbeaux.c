@@ -3505,7 +3505,7 @@ int SQLITE_NOINLINE sqlite3VdbeFinishMoveto(VdbeCursor *p){
 ** is supposed to be pointing.  If the row was deleted out from under the
 ** cursor, set the cursor to point to a NULL row.
 */
-static int SQLITE_NOINLINE handleMovedCursor(VdbeCursor *p){
+int SQLITE_NOINLINE sqlite3VdbeHandleMovedCursor(VdbeCursor *p){
   int isDifferentRow, rc;
   assert( p->eCurType==CURTYPE_BTREE );
   assert( p->uc.pCursor!=0 );
@@ -3523,39 +3523,7 @@ static int SQLITE_NOINLINE handleMovedCursor(VdbeCursor *p){
 int sqlite3VdbeCursorRestore(VdbeCursor *p){
   assert( p->eCurType==CURTYPE_BTREE );
   if( sqlite3BtreeCursorHasMoved(p->uc.pCursor) ){
-    return handleMovedCursor(p);
-  }
-  return SQLITE_OK;
-}
-
-/*
-** Make sure the cursor p is ready to read or write the row to which it
-** was last positioned.  Return an error code if an OOM fault or I/O error
-** prevents us from positioning the cursor to its correct position.
-**
-** If a MoveTo operation is pending on the given cursor, then do that
-** MoveTo now.  If no move is pending, check to see if the row has been
-** deleted out from under the cursor and if it has, mark the row as
-** a NULL row.
-**
-** If the cursor is already pointing to the correct row and that row has
-** not been deleted out from under the cursor, then this routine is a no-op.
-*/
-int sqlite3VdbeCursorMoveto(VdbeCursor **pp, u32 *piCol){
-  VdbeCursor *p = *pp;
-  assert( p->eCurType==CURTYPE_BTREE || p->eCurType==CURTYPE_PSEUDO );
-  if( p->deferredMoveto ){
-    u32 iMap;
-    assert( !p->isEphemeral );
-    if( p->ub.aAltMap && (iMap = p->ub.aAltMap[1+*piCol])>0 && !p->nullRow ){
-      *pp = p->pAltCursor;
-      *piCol = iMap - 1;
-      return SQLITE_OK;
-    }
-    return sqlite3VdbeFinishMoveto(p);
-  }
-  if( sqlite3BtreeCursorHasMoved(p->uc.pCursor) ){
-    return handleMovedCursor(p);
+    return sqlite3VdbeHandleMovedCursor(p);
   }
   return SQLITE_OK;
 }
