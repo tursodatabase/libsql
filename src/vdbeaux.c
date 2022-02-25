@@ -1111,7 +1111,6 @@ static void freeP4(sqlite3 *db, int p4type, void *p4){
     case P4_REAL:
     case P4_INT64:
     case P4_DYNAMIC:
-    case P4_DYNBLOB:
     case P4_INTARRAY: {
       sqlite3DbFree(db, p4);
       break;
@@ -1706,9 +1705,6 @@ char *sqlite3VdbeDisplayP4(sqlite3 *db, Op *pOp){
     }
     case P4_SUBPROGRAM: {
       zP4 = "program";
-      break;
-    }
-    case P4_DYNBLOB: {
       break;
     }
     case P4_TABLE: {
