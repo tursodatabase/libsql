@@ -95,10 +95,10 @@ impl Connection {
 
     /// Make configuration changes to a database connection
     ///
-    /// - `SQLITE_DBCONFIG_ENABLE_FKEY`: `false` to disable FK enforcement, `true`
-    ///   to enable FK enforcement
-    /// - `SQLITE_DBCONFIG_ENABLE_TRIGGER`: `false` to disable triggers, `true` to
-    ///   enable triggers
+    /// - `SQLITE_DBCONFIG_ENABLE_FKEY`: `false` to disable FK enforcement,
+    ///   `true` to enable FK enforcement
+    /// - `SQLITE_DBCONFIG_ENABLE_TRIGGER`: `false` to disable triggers, `true`
+    ///   to enable triggers
     /// - `SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER`: `false` to disable
     ///   `fts3_tokenizer()`, `true` to enable `fts3_tokenizer()`
     /// - `SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE`: `false` (the default) to enable
