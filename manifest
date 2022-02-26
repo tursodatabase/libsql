@@ -1,5 +1,5 @@
-C Allow\sthe\sOP_Column\sopcode\sto\sread\srows\sthat\sare\slarger\sthan\nSQLITE_LIMIT_LENGTH\sas\slong\sas\sthe\sspecific\sfield\sbeing\sread\sout\sis\nless\sthan\sor\sequal\sto\sSQLITE_LIMIT_LENGTH.
-D 2022-02-26T14:39:08.859
+C Remove\san\sunnecessary\slocal\svariable\sfor\sa\ssmall\sperformance\sincrease\sand\ssize\nreduction.
+D 2022-02-26T23:01:25.800
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -624,7 +624,7 @@ F src/upsert.c 8789047a8f0a601ea42fa0256d1ba3190c13746b6ba940fe2d25643a7e991937
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c 602fe229f32a96ceccae4f40824129669582096f7c355f53dbac156c9fecef23
 F src/vacuum.c 6c38ddc52f0619865c91dae9c441d4d48bf3040d7dc1bc5b22da1e45547ed0b3
-F src/vdbe.c 2dd9dc73c6e99db958550d1b66ea35046ff3d95ee2c752f41cf90a73ca742d25
+F src/vdbe.c 4b969ebe6b61f87a90aebf817bc6ebda5075fe56987591091a9bf22556262484
 F src/vdbe.h a1d0e3b934e835e73edd146f2e7c4eadb711b5c9875c18159a57483fd78e550e
 F src/vdbeInt.h de2348c1643c1ac5bf0932452cbb708f52f52d8b4e29b667abdcfd4bacbf6aa6
 F src/vdbeapi.c 8863ffb5a7bac42fe9a68aaa3526ee29fc18fb02a9b27188b756de41e33856e9
@@ -1944,8 +1944,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3b7259ebd5b9b1f75577521c4d0d96f5503d302a513b20a0b17dbe8c3823dd33
-R a170b2aecc18c2441545989ed3dec05a
+P 1bf4848995ab094ad84ef4aa1563bce641d5acf7335fb4630c892b16cf7d7edd
+R 6ea0329386e044b14d5ca6833590b961
 U drh
-Z 8d66f3f471c1337d94ff51594a5973cc
+Z 0c7c29fba439ea1710add27e6f563edc
 # Remove this line to create a well-formed Fossil manifest.
