@@ -946,6 +946,10 @@ pub enum StatementStatus {
     RePrepare = 5,
     /// Equivalent to SQLITE_STMTSTATUS_RUN
     Run = 6,
+    /// Equivalent to SQLITE_STMTSTATUS_FILTER_MISS
+    FilterMiss = 7,
+    /// Equivalent to SQLITE_STMTSTATUS_FILTER_HIT
+    FilterHit = 8,
     /// Equivalent to SQLITE_STMTSTATUS_MEMUSED
     MemUsed = 99,
 }

@@ -281,6 +281,8 @@ pub enum IndexConstraintOp {
     SQLITE_INDEX_CONSTRAINT_ISNOTNULL,    // 3.21.0
     SQLITE_INDEX_CONSTRAINT_ISNULL,       // 3.21.0
     SQLITE_INDEX_CONSTRAINT_IS,           // 3.21.0
+    SQLITE_INDEX_CONSTRAINT_LIMIT,        // 3.38.0
+    SQLITE_INDEX_CONSTRAINT_OFFSET,       // 3.38.0
     SQLITE_INDEX_CONSTRAINT_FUNCTION(u8), // 3.25.0
 }
 
@@ -301,6 +303,8 @@ impl From<u8> for IndexConstraintOp {
             70 => IndexConstraintOp::SQLITE_INDEX_CONSTRAINT_ISNOTNULL,
             71 => IndexConstraintOp::SQLITE_INDEX_CONSTRAINT_ISNULL,
             72 => IndexConstraintOp::SQLITE_INDEX_CONSTRAINT_IS,
+            73 => IndexConstraintOp::SQLITE_INDEX_CONSTRAINT_LIMIT,
+            74 => IndexConstraintOp::SQLITE_INDEX_CONSTRAINT_OFFSET,
             v => IndexConstraintOp::SQLITE_INDEX_CONSTRAINT_FUNCTION(v),
         }
     }

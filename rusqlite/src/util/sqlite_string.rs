@@ -95,10 +95,10 @@ impl SqliteMallocString {
     /// If `s` contains internal NULs, we'll replace them with
     /// `NUL_REPLACE_CHAR`.
     ///
-    /// Except for `debug_assert`s which may trigger during testing, this function
-    /// never panics. If we hit integer overflow or the allocation fails, we
-    /// call `handle_alloc_error` which aborts the program after calling a
-    /// global hook.
+    /// Except for `debug_assert`s which may trigger during testing, this
+    /// function never panics. If we hit integer overflow or the allocation
+    /// fails, we call `handle_alloc_error` which aborts the program after
+    /// calling a global hook.
     ///
     /// This means it's safe to use in extern "C" functions even outside of
     /// `catch_unwind`.
