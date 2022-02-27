@@ -1,6 +1,6 @@
 [package]
 name = "libsqlite3-sys"
-version = "0.23.2"
+version = "0.24.0"
 authors = ["The rusqlite developers"]
 edition = "2018"
 repository = "https://github.com/rusqlite/rusqlite"
