@@ -4746,11 +4746,15 @@ static int vdbeRecordCompareString(
 
   assert( pPKey2->aMem[0].flags & MEM_Str );
   vdbeAssertFieldCountWithinLimits(nKey1, pKey1, pPKey2->pKeyInfo);
-  serial_type = (u8)(aKey1[1]);
-  if( serial_type >= 0x80 ){
-    sqlite3GetVarint32(&aKey1[1], (u32*)&serial_type);
-  }
+  serial_type = (signed char)(aKey1[1]);
+
+vrcs_restart:
   if( serial_type<12 ){
+    if( serial_type<0 ){
+      sqlite3GetVarint32(&aKey1[1], (u32*)&serial_type);
+      if( serial_type>=12 ) goto vrcs_restart;
+      assert( CORRUPT_DB );
+    }
     res = pPKey2->r1;      /* (pKey1/nKey1) is a number or a null */
   }else if( !(serial_type & 0x01) ){ 
     res = pPKey2->r2;      /* (pKey1/nKey1) is a blob */
