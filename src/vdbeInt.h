@@ -266,9 +266,6 @@ struct sqlite3_value {
 **
 **  *  MEM_IntReal             Real stored as an integer in Mem.u.i.
 **
-**  *  MEM_Undefined           An undefined and/or uninitialized value.
-**                             Trying to use an Undefined value is an error.
-**
 ** If the MEM_Null flag is set, then the value is an SQL NULL value.
 ** For a pointer type created using sqlite3_bind_pointer() or
 ** sqlite3_result_pointer() the MEM_Term and MEM_Subtype flags are also set.
@@ -279,6 +276,7 @@ struct sqlite3_value {
 ** set, then the string is nul terminated. The MEM_Int and MEM_Real 
 ** flags may coexist with the MEM_Str flag.
 */
+#define MEM_Undefined 0x0000   /* Value is undefined */
 #define MEM_Null      0x0001   /* Value is NULL (or a pointer) */
 #define MEM_Str       0x0002   /* Value is a string */
 #define MEM_Int       0x0004   /* Value is an integer */
@@ -286,28 +284,24 @@ struct sqlite3_value {
 #define MEM_Blob      0x0010   /* Value is a BLOB */
 #define MEM_IntReal   0x0020   /* MEM_Int that stringifies like MEM_Real */
 #define MEM_AffMask   0x003f   /* Mask of affinity bits */
-#define MEM_FromBind  0x0040   /* Value originates from sqlite3_bind() */
-#define MEM_Undefined 0x0080   /* Value is undefined */
-#define MEM_Cleared   0x0100   /* NULL set by OP_Null, not from data */
-#define MEM_TypeMask  0xc1bf   /* Mask of type bits */
 
-
-/* Whenever Mem contains a valid string or blob representation, one of
-** the following flags must be set to determine the memory management
-** policy for Mem.z.  The MEM_Term flag tells us whether or not the
-** string is \000 or \u0000 terminated
+/* Extra bits that modify the meanings of the core datatypes above
 */
+#define MEM_FromBind  0x0040   /* Value originates from sqlite3_bind() */
+ /*                   0x0080   // Available */
+#define MEM_Cleared   0x0100   /* NULL set by OP_Null, not from data */
 #define MEM_Term      0x0200   /* String in Mem.z is zero terminated */
-#define MEM_Dyn       0x0400   /* Need to call Mem.xDel() on Mem.z */
-#define MEM_Static    0x0800   /* Mem.z points to a static string */
-#define MEM_Ephem     0x1000   /* Mem.z points to an ephemeral string */
-#define MEM_Agg       0x2000   /* Mem.z points to an agg function context */
-#define MEM_Zero      0x4000   /* Mem.i contains count of 0s appended to blob */
-#define MEM_Subtype   0x8000   /* Mem.eSubtype is valid */
-#ifdef SQLITE_OMIT_INCRBLOB
-  #undef MEM_Zero
-  #define MEM_Zero 0x0000
-#endif
+#define MEM_Zero      0x0400   /* Mem.i contains count of 0s appended to blob */
+#define MEM_Subtype   0x0800   /* Mem.eSubtype is valid */
+#define MEM_TypeMask  0x0dbf   /* Mask of type bits */
+
+/* Bits that determine the storage for Mem.z for a string or blob or
+** aggregate accumulator.
+*/
+#define MEM_Dyn       0x1000   /* Need to call Mem.xDel() on Mem.z */
+#define MEM_Static    0x2000   /* Mem.z points to a static string */
+#define MEM_Ephem     0x4000   /* Mem.z points to an ephemeral string */
+#define MEM_Agg       0x8000   /* Mem.z points to an agg function context */
 
 /* Return TRUE if Mem X contains dynamically allocated content - anything
 ** that needs to be deallocated to avoid a leak.
@@ -329,11 +323,15 @@ struct sqlite3_value {
     && (X)->n==0 && (X)->u.nZero==0)
 
 /*
-** Return true if a memory cell is not marked as invalid.  This macro
+** Return true if a memory cell has been initialized and is valid.
 ** is for use inside assert() statements only.
+**
+** A Memory cell is initialized if at least one of the 
+** MEM_Null, MEM_Str, MEM_Int, MEM_Real, MEM_Blob, or MEM_IntReal bits
+** is set.  It is "undefined" if all those bits are zero.
 */
 #ifdef SQLITE_DEBUG
-#define memIsValid(M)  ((M)->flags & MEM_Undefined)==0
+#define memIsValid(M)  ((M)->flags & MEM_AffMask)!=0
 #endif
 
 /*

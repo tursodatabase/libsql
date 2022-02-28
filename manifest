@@ -1,5 +1,5 @@
-C Expand\sthe\scomment\son\sthe\sdefinition\sof\sthe\sMem\sobject\sto\sbetter\sexplain\sthe\nmeanings\sof\sthe\svarious\sflag\sbits.
-D 2022-02-28T13:38:28.184
+C Reorganize\sthe\sbits\sin\sMem.flags.\s\sFree\sup\sone\sbit\sfor\sreuse.
+D 2022-02-28T14:26:33.757
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -626,7 +626,7 @@ F src/util.c 602fe229f32a96ceccae4f40824129669582096f7c355f53dbac156c9fecef23
 F src/vacuum.c 6c38ddc52f0619865c91dae9c441d4d48bf3040d7dc1bc5b22da1e45547ed0b3
 F src/vdbe.c 4b969ebe6b61f87a90aebf817bc6ebda5075fe56987591091a9bf22556262484
 F src/vdbe.h a1d0e3b934e835e73edd146f2e7c4eadb711b5c9875c18159a57483fd78e550e
-F src/vdbeInt.h d23573156379d0666dc3f04f0305ea50385ecaf7c788413a530a2523dbaf2c54
+F src/vdbeInt.h 958066f0448930dac697a7d1fc345d1b5fd1bb2d93685860967b94c901a7b244
 F src/vdbeapi.c 1c80efbe51118bbecc7279023e75d18edcfa4b3dc441287e1718ee70ad594f58
 F src/vdbeaux.c 0f3ce77dabb1f897cc7d3812ed162ec5d31d2298d1aa41b606f8048a742c4b9e
 F src/vdbeblob.c 5e61ce31aca17db8fb60395407457a8c1c7fb471dde405e0cd675974611dcfcd
@@ -1944,8 +1944,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c3e9cd5e7430be0653a96a2097a695447549980e08cc8bd8d8097a50c954908e
-R 1afa8d37576887b173d9bf5fb651f41d
+P f2f0426035d4e0334be000a3eb62bbd7d61fdab7c2ef9ba13cfdf6482396dd13
+R 212742c08d61f97ea8c5e2c9e09ba4bf
 U drh
-Z dd0779de4c53c5ff450355df311fc955
+Z 643db4bc2b127b89002f367b4377945f
 # Remove this line to create a well-formed Fossil manifest.
