@@ -199,10 +199,6 @@ struct VdbeFrame {
 ** Internally, the vdbe manipulates nearly all SQL values as Mem
 ** structures. Each Mem struct may cache multiple representations (string,
 ** integer etc.) of the same value.
-**
-** Code uses offsetof() on this object.  Order of the fields is important.
-** Search for tag-20220228a to find all places that need to change when the
-** field order changes.
 */
 struct sqlite3_value {
   union MemValue {
