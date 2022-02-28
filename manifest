@@ -1,5 +1,5 @@
-C Cache\svalues\sof\sUnpackedRecord.aMem[0]\sinto\snew\sfields\sof\sUnpackedRecord.\nThis\savoids\sextra\sindirections\sand\ssaves\sabout\s750K\scycles.
-D 2022-02-27T21:10:49.020
+C Avoid\sunnecessary\sdeinitialization\sof\sthe\sMem.flags\sfield.
+D 2022-02-28T02:35:48.040
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -628,7 +628,7 @@ F src/vdbe.c 4b969ebe6b61f87a90aebf817bc6ebda5075fe56987591091a9bf22556262484
 F src/vdbe.h a1d0e3b934e835e73edd146f2e7c4eadb711b5c9875c18159a57483fd78e550e
 F src/vdbeInt.h de2348c1643c1ac5bf0932452cbb708f52f52d8b4e29b667abdcfd4bacbf6aa6
 F src/vdbeapi.c 8863ffb5a7bac42fe9a68aaa3526ee29fc18fb02a9b27188b756de41e33856e9
-F src/vdbeaux.c fd3a8624f9d100aed25d93b3f3d33becba4a81a5e34ffb20935bae608263eeb6
+F src/vdbeaux.c 342a59d99d57185b972fe40b8a9e4bb7d8d52ee8ce327159992ffb3efe55e1ab
 F src/vdbeblob.c 5e61ce31aca17db8fb60395407457a8c1c7fb471dde405e0cd675974611dcfcd
 F src/vdbemem.c 7737f0b1c480a32b057849c804d2f21d5389649bb8be80f77ad75df700adc9a1
 F src/vdbesort.c 43756031ca7430f7aec3ef904824a7883c4ede783e51f280d99b9b65c0796e35
@@ -1944,8 +1944,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 36f0f07e505dfb38c61d3b4d5b947013c8793e6796fe690e53864479b9276abb
-R 210a5a709d1400d775b9fe8a84643106
+P 7cf2d1f0396362aae7b93da75c2036d52ba86acba1cc90abca560bcf0314a22f
+R 4d4dfe83297801d5193fce44bd4e8a2e
 U drh
-Z 7b50e756ba7763330519aa8c81aced5b
+Z 9485415c0ffb00de37ffcb9d694e10b9
 # Remove this line to create a well-formed Fossil manifest.
