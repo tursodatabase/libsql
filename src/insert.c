@@ -795,7 +795,11 @@ void sqlite3Insert(
   **
   ** This is the 2nd template.
   */
-  if( pColumn==0 && xferOptimization(pParse, pTab, pSelect, onError, iDb) ){
+  if( pColumn==0 
+   && pSelect!=0
+   && pTrigger==0
+   && xferOptimization(pParse, pTab, pSelect, onError, iDb)
+  ){
     assert( !pTrigger );
     assert( pList==0 );
     goto insert_end;
@@ -2766,17 +2770,12 @@ static int xferOptimization(
   int destHasUniqueIdx = 0;        /* True if pDest has a UNIQUE index */
   int regData, regRowid;           /* Registers holding data and rowid */
 
-  if( pSelect==0 ){
-    return 0;   /* Must be of the form  INSERT INTO ... SELECT ... */
-  }
+  assert( pSelect!=0 );
   if( pParse->pWith || pSelect->pWith ){
     /* Do not attempt to process this query if there are an WITH clauses
     ** attached to it. Proceeding may generate a false "no such table: xxx"
     ** error if pSelect reads from a CTE named "xxx".  */
     return 0;
-  }
-  if( sqlite3TriggerList(pParse, pDest) ){
-    return 0;   /* tab1 must not have triggers */
   }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   if( IsVirtual(pDest) ){

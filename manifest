@@ -1,5 +1,5 @@
-C Reorganize\sthe\sbits\sin\sMem.flags.\s\sFree\sup\sone\sbit\sfor\sreuse.
-D 2022-02-28T14:26:33.757
+C Fix\sthe\sXfer-optimization\son\sthe\sINSERT\sstatement\sso\sthat\sit\sis\somitted\sif\nthere\sis\sa\sRETURNING\sclause,\ssince\sthat\soptimization\sis\snot\sable\sto\sdeal\nwith\sRETURNING.\s\sSee\s[forum:/forumpost/595e132f71|forum\sthread\s595e132f71]\nfor\sdetails.
+D 2022-02-28T16:44:58.607
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -512,7 +512,7 @@ F src/hash.c 8d7dda241d0ebdafb6ffdeda3149a412d7df75102cecfc1021c98d6219823b19
 F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h cb1d7e3e1ed94b7aa6fde95ae2c2daccc3df826be26fc9ed7fd90d1750ae6144
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c 1eea44389de3768ac98588c1410171cd53e7c6ad1af74049983dcbac82093de0
+F src/insert.c 9fbf8704562fe17e442c16b7f60d3d91101ea69fc45c2bce96ee6cb982e86d2f
 F src/json.c 225b00422112ecd7094a555f3ace16b25d7d5894062b823269ed03899907c2a2
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c aa919a6a7884f8b34d7b791841b24d14b1b0ab43f45b3940f4851043b2855c0c
@@ -1121,7 +1121,7 @@ F test/init.test 15c823093fdabbf7b531fe22cf037134d09587a7
 F test/insert.test 4e3f0de67aac3c5be1f4aaedbcea11638f1b5cdc9a3115be14d19aa9db7623c6
 F test/insert2.test 4d14b8f1b810a41995f6286b64a6943215d52208
 F test/insert3.test 1b7db95a03ad9c5013fdf7d6722b6cd66ee55e30
-F test/insert4.test 59cb99521be01a5aefc9be8e8b5a51ee7f3944781d4d7f6201b9f774fcd51662
+F test/insert4.test 2bf81535a990c969665d66db51fcf76c23499b39893b5109f413d1de4ad34cd3
 F test/insert5.test 394f96728d1258f406fe5f5aeb0aaf29487c39a6
 F test/insertfault.test ac63d14ea3b49c573673a572f4014b9117383a03e497c58f308b5c776e4a7f74
 F test/instr.test 107df2b9b74a4b59315916b575590a08f2a714de0754abe541f10a0971d0a2a4
@@ -1316,7 +1316,7 @@ F test/reindex.test cd9d6021729910ece82267b4f5e1b5ac2911a7566c43b43c176a6a4732e2
 F test/releasetest_data.tcl 11ba48a21ed1c808147b0e77c6e93d204577f4327ffe6d7c3b34cd3c01eac3a2
 F test/resetdb.test 8062cf10a09d8c048f8de7711e94571c38b38168db0e5877ba7561789e5eeb2b
 F test/resolver01.test f4022acafda7f4d40eca94dbf16bc5fc4ac30ceb
-F test/returning1.test ee0b115162b17f59fe486767899596b1e8290bcd845db05d7d1d9e6c2dad1b8b
+F test/returning1.test c43b8370a351f77aec6d71f4a2cde59b849369ed1933261a2c2c69e23e34ff5e
 F test/returningfault.test ae4c4b5e8745813287a359d9ccdb9d5c883c2e68afb18fb0767937d5de5692a4
 F test/rollback.test 06680159bc6746d0f26276e339e3ae2f951c64812468308838e0a3362d911eaa
 F test/rollback2.test 3f3a4e20401825017df7e7671e9f31b6de5fae5620c2b9b49917f52f8c160a8f
@@ -1944,8 +1944,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f2f0426035d4e0334be000a3eb62bbd7d61fdab7c2ef9ba13cfdf6482396dd13
-R 212742c08d61f97ea8c5e2c9e09ba4bf
+P fe454291d959c299d6608dfc165c9e05fb53e431b0fc7aed1cb4a557cd61d8ab
+R e9028d6c34b8a78e7f17a977b6a22df9
 U drh
-Z 643db4bc2b127b89002f367b4377945f
+Z ccd7a3ce5bbeae9f70687f9b0ffdfb00
 # Remove this line to create a well-formed Fossil manifest.
