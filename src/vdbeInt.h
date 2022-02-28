@@ -231,8 +231,43 @@ struct sqlite3_value {
 */
 #define MEMCELLSIZE offsetof(Mem,db)
 
-/* One or more of the following flags are set to indicate the validOK
+/* One or more of the following flags are set to indicate the
 ** representations of the value stored in the Mem struct.
+**
+**  *  MEM_Null                An SQL NULL value
+**
+**  *  MEM_Null|MEM_Zero       An SQL NULL with the virtual table
+**                             UPDATE no-change flag set
+**
+**  *  MEM_Null|MEM_Term|      An SQL NULL, but also contains a
+**        MEM_Subtype          pointer accessible using
+**                             sqlite3_value_pointer().
+**
+**  *  MEM_Null|MEM_Cleared    Special SQL NULL that compares non-equal
+**                             to other NULLs even using the IS operator.
+**
+**  *  MEM_Str                 A string, stored in Mem.z with
+**                             length Mem.n.  Zero-terminated if
+**                             MEM_Term is set.  This flag is
+**                             incompatible with MEM_Blob and
+**                             MEM_Null, but can appear with MEM_Int,
+**                             MEM_Real, and MEM_IntReal.
+**
+**  *  MEM_Blob                A blob, stored in Mem.z length Mem.n.
+**                             Incompatible with MEM_Str, MEM_Null,
+**                             MEM_Int, MEM_Real, and MEM_IntReal.
+**
+**  *  MEM_Blob|MEM_Zero       A blob in Mem.z of length Mem.n plus
+**                             MEM.u.i extra 0x00 bytes at the end.
+**                                       
+**  *  MEM_Int                 Integer stored in Mem.u.i.
+**
+**  *  MEM_Real                Real stored in Mem.u.r.
+**
+**  *  MEM_IntReal             Real stored as an integer in Mem.u.i.
+**
+**  *  MEM_Undefined           An undefined and/or uninitialized value.
+**                             Trying to use an Undefined value is an error.
 **
 ** If the MEM_Null flag is set, then the value is an SQL NULL value.
 ** For a pointer type created using sqlite3_bind_pointer() or
