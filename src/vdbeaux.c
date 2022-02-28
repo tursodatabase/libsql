@@ -1838,16 +1838,30 @@ void sqlite3VdbePrintOp(FILE *pOut, int pc, VdbeOp *pOp){
 
 /*
 ** Initialize an array of N Mem element.
+**
+** This is a high-runner, so only those fields that really do need to
+** be initialized are set.  The Mem structure is organized so that
+** the fields that get initialized are nearby and hopefully on the same
+** cache line.
+**
+**    Mem.flags = flags
+**    Mem.db = db
+**    Mem.szMalloc = 0
+**
+** All other fields of Mem can safely remain uninitialized for now.  They
+** will be initialized before use.
 */
 static void initMemArray(Mem *p, int N, sqlite3 *db, u16 flags){
-  while( (N--)>0 ){
-    p->db = db;
-    p->flags = flags;
-    p->szMalloc = 0;
+  if( N>0 ){
+    do{
+      p->flags = flags;
+      p->db = db;
+      p->szMalloc = 0;
 #ifdef SQLITE_DEBUG
-    p->pScopyFrom = 0;
+      p->pScopyFrom = 0;
 #endif
-    p++;
+      p++;
+    }while( (--N)>0 );
   }
 }
 
