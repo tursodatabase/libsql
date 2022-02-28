@@ -1087,6 +1087,8 @@ int sqlite3_data_count(sqlite3_stmt *pStmt){
 
 /*
 ** Return a pointer to static memory containing an SQL NULL value.
+**
+** Must be revised if column order for Mem changes.  tag-20220228a.
 */
 static const Mem *columnNullValue(void){
   /* Even though the Mem structure contains an element
@@ -1104,15 +1106,15 @@ static const Mem *columnNullValue(void){
 #endif
     = {
         /* .u          = */ {0},
+        /* .z          = */ (char*)0,
+        /* .n          = */ (int)0,
         /* .flags      = */ (u16)MEM_Null,
         /* .enc        = */ (u8)0,
         /* .eSubtype   = */ (u8)0,
-        /* .n          = */ (int)0,
-        /* .z          = */ (char*)0,
-        /* .zMalloc    = */ (char*)0,
+        /* .db         = */ (sqlite3*)0,
         /* .szMalloc   = */ (int)0,
         /* .uTemp      = */ (u32)0,
-        /* .db         = */ (sqlite3*)0,
+        /* .zMalloc    = */ (char*)0,
         /* .xDel       = */ (void(*)(void*))0,
 #ifdef SQLITE_DEBUG
         /* .pScopyFrom = */ (Mem*)0,
