@@ -1,5 +1,5 @@
-C Fix\sthe\sXfer-optimization\son\sthe\sINSERT\sstatement\sso\sthat\sit\sis\somitted\sif\nthere\sis\sa\sRETURNING\sclause,\ssince\sthat\soptimization\sis\snot\sable\sto\sdeal\nwith\sRETURNING.\s\sSee\s[forum:/forumpost/595e132f71|forum\sthread\s595e132f71]\nfor\sdetails.
-D 2022-02-28T16:44:58.607
+C Increase\sthe\smax_page_count\son\sROLLBACK,\sif\snecessary,\sso\sthat\sit\sis\ssufficient\nto\scover\sthe\sentire\sdatabase.\s\sFix\sfor\sthe\sproblem\sidentified\sby\n[forum:/forumpost/3b9e894312|forum\spost\s3b9e894312].
+D 2022-03-01T14:13:32.451
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -539,7 +539,7 @@ F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c f5ad51cfd024116db8531feab9efd831c2621436dca1464e4ff1e8af9bf3252e
 F src/os_win.c 77d39873836f1831a9b0b91894fec45ab0e9ca8e067dc8c549e1d1eca1566fe9
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c 90a3721b4ab007a835c751a441c1b1fc68bfe68d99dd298f28d91cc163730194
+F src/pager.c 1c415888b3658513c26a79b6a61989ca6463d3770102e6c24372fd7235022b02
 F src/pager.h f82e9844166e1585f5786837ddc7709966138ced17f568c16af7ccf946c2baa3
 F src/parse.y 0f02b27cdaa334441463153fff3ceb780fea006ab53ffd6ef566d4468f93e924
 F src/pcache.c 084e638432c610f95aea72b8509f0845d2791293f39d1b82f0c0a7e089c3bb6b
@@ -1272,7 +1272,7 @@ F test/oserror.test 1fc9746b83d778e70d115049747ba19c7fba154afce7cc165b09feb6ca6a
 F test/ossfuzz.c 9636dad2092a05a32110df0ca06713038dd0c43dd89a77dabe4b8b0d71096715
 F test/ossshell.c f125c5bd16e537a2549aa579b328dd1c59905e7ab1338dfc210e755bb7b69f17
 F test/ovfl.test 199c482696defceacee8c8e0e0ef36da62726b2f
-F test/pager1.test 8cb45ccbdb3ba423fc8158701c8f010a1d104336b8f14ef14bbfbadf14bad700
+F test/pager1.test ffd885cdc98b986c9f746496508c0c4810ed0eaade3575ddf53c222e85880552
 F test/pager2.test 67b8f40ae98112bcdba1f2b2d03ea83266418c71
 F test/pager3.test 4e9a83d6ca0838d7c602c9eb93d1357562d9059c1e02ffb138a8271020838370
 F test/pager4.test a122e9e6925d5b23b31e3dfef8c6a44bbf19590e
@@ -1944,8 +1944,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fe454291d959c299d6608dfc165c9e05fb53e431b0fc7aed1cb4a557cd61d8ab
-R e9028d6c34b8a78e7f17a977b6a22df9
+P 1d3760a517b8bd2a6be82d2d5788945f49397cdc539fe28fd23e2c0c62a1dbe2
+R a263a674387992906dd7cdc654c455fb
 U drh
-Z ccd7a3ce5bbeae9f70687f9b0ffdfb00
+Z 752cae2129a5da5a149754dd50e2175d
 # Remove this line to create a well-formed Fossil manifest.
