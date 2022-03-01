@@ -1457,7 +1457,7 @@ static u16 cellSize(MemPage *pPage, int iCell){
 #ifndef SQLITE_OMIT_AUTOVACUUM
 /*
 ** The cell pCell is currently part of page pSrc but will ultimately be part
-** of pPage.  (pSrc and pPager are often the same.)  If pCell contains a
+** of pPage.  (pSrc and pPage are often the same.)  If pCell contains a
 ** pointer to an overflow page, insert an entry into the pointer-map for
 ** the overflow page that will be valid after pCell has been moved to pPage.
 */
