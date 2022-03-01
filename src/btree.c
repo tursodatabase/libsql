@@ -2107,7 +2107,7 @@ static int btreeInitPage(MemPage *pPage){
   pPage->nOverflow = 0;
   pPage->cellOffset = pPage->hdrOffset + 8 + pPage->childPtrSize;
   pPage->aCellIdx = data + pPage->childPtrSize + 8;
-  pPage->aDataEnd = pPage->aData + pBt->usableSize;
+  pPage->aDataEnd = pPage->aData + pBt->pageSize;
   pPage->aDataOfst = pPage->aData + pPage->childPtrSize;
   /* EVIDENCE-OF: R-37002-32774 The two-byte integer at offset 3 gives the
   ** number of cells on the page. */
@@ -2158,7 +2158,7 @@ static void zeroPage(MemPage *pPage, int flags){
   pPage->nFree = (u16)(pBt->usableSize - first);
   decodeFlags(pPage, flags);
   pPage->cellOffset = first;
-  pPage->aDataEnd = &data[pBt->usableSize];
+  pPage->aDataEnd = &data[pBt->pageSize];
   pPage->aCellIdx = &data[first];
   pPage->aDataOfst = &data[pPage->childPtrSize];
   pPage->nOverflow = 0;

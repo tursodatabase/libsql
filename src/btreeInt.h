@@ -293,7 +293,9 @@ struct MemPage {
   u8 *apOvfl[4];       /* Pointers to the body of overflow cells */
   BtShared *pBt;       /* Pointer to BtShared that this page is part of */
   u8 *aData;           /* Pointer to disk image of the page data */
-  u8 *aDataEnd;        /* One byte past the end of usable data */
+  u8 *aDataEnd;        /* One byte past the end of the entire page - not just
+                       ** the usable space, the entire page.  Used to prevent
+                       ** corruption-induced of buffer overflow. */
   u8 *aCellIdx;        /* The cell index area */
   u8 *aDataOfst;       /* Same as aData for leaves.  aData+4 for interior */
   DbPage *pDbPage;     /* Pager page handle */
