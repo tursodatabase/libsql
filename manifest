@@ -1,5 +1,5 @@
-C The\soptimization\sat\s[ece326db50201937]\sis\snot\squite\sright,\sso\sback\sit\sout\nfor\snow.
-D 2022-03-02T11:39:11.573
+C Reinstate\sthe\sreleaseMemArray()\sperformance\soptimization\sof\n[bb520293d8c11518]\swith\scorrections.
+D 2022-03-02T13:45:22.786
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -628,7 +628,7 @@ F src/vdbe.c 4b969ebe6b61f87a90aebf817bc6ebda5075fe56987591091a9bf22556262484
 F src/vdbe.h a1d0e3b934e835e73edd146f2e7c4eadb711b5c9875c18159a57483fd78e550e
 F src/vdbeInt.h 958066f0448930dac697a7d1fc345d1b5fd1bb2d93685860967b94c901a7b244
 F src/vdbeapi.c 1c80efbe51118bbecc7279023e75d18edcfa4b3dc441287e1718ee70ad594f58
-F src/vdbeaux.c ab8c90419e78021b70b3a76a02b6f6dcc8f80d4208f065e916066968909020bf
+F src/vdbeaux.c 219aef2bb6dc46f6ede76de18e7c388c30bd359ec094e178c362e1b412c56213
 F src/vdbeblob.c 5e61ce31aca17db8fb60395407457a8c1c7fb471dde405e0cd675974611dcfcd
 F src/vdbemem.c 7737f0b1c480a32b057849c804d2f21d5389649bb8be80f77ad75df700adc9a1
 F src/vdbesort.c 43756031ca7430f7aec3ef904824a7883c4ede783e51f280d99b9b65c0796e35
@@ -1944,9 +1944,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6497997aa80419688890ed5dbbb7d6acc26bf3732305ff4a728cba1fe4d1626b
-Q -ece326db50201937eb688809df39edc7fb97413b4614d2e2e783418192f7b02a
-R 6e3d2a70dcfbb60b44acaa137825df92
+P b218a4b9fe44ffc5cb8d2a2491a5aad217d37b26ccc6b04caf8f28b71bcfe809
+R 5f0e4af1c896fc134e4b58b7139e0944
 U drh
-Z 2c1c2df4762c35de9490f72bfde9d5c8
+Z 49bdd6bb7b5e60b4733d0aedae5472b4
 # Remove this line to create a well-formed Fossil manifest.

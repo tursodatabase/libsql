@@ -1866,7 +1866,12 @@ static void initMemArray(Mem *p, int N, sqlite3 *db, u16 flags){
 }
 
 /*
-** Release an array of N Mem elements
+** Release auxiliary memory held in an array of N Mem elements.
+**
+** After this routine returns, all Mem elements in the array will still
+** be valid.  Those Mem elements that were not holding auxiliary resources
+** will be unchanged.  Mem elements which had something freed will be
+** set to MEM_Undefined.
 */
 static void releaseMemArray(Mem *p, int N){
   if( p && N ){
@@ -1899,12 +1904,17 @@ static void releaseMemArray(Mem *p, int N){
       if( p->flags&(MEM_Agg|MEM_Dyn) ){
         testcase( (p->flags & MEM_Dyn)!=0 && p->xDel==sqlite3VdbeFrameMemDel );
         sqlite3VdbeMemRelease(p);
+        p->flags = MEM_Undefined;
       }else if( p->szMalloc ){
         sqlite3DbFreeNN(db, p->zMalloc);
         p->szMalloc = 0;
+        p->flags = MEM_Undefined;
       }
-
-      p->flags = MEM_Undefined;
+#ifdef SQLITE_DEBUG
+      else{
+        p->flags = MEM_Undefined;
+      }
+#endif
     }while( (++p)<pEnd );
   }
 }
