@@ -4209,8 +4209,8 @@ static int vdbeCompareMemString(
     }else{
       rc = pColl->xCmp(pColl->pUser, c1.n, v1, c2.n, v2);
     }
-    sqlite3VdbeMemRelease(&c1);
-    sqlite3VdbeMemRelease(&c2);
+    sqlite3VdbeMemReleaseMalloc(&c1);
+    sqlite3VdbeMemReleaseMalloc(&c2);
     return rc;
   }
 }
@@ -4942,14 +4942,14 @@ int sqlite3VdbeIdxRowid(sqlite3 *db, BtCursor *pCur, i64 *rowid){
   /* Fetch the integer off the end of the index record */
   sqlite3VdbeSerialGet((u8*)&m.z[m.n-lenRowid], typeRowid, &v);
   *rowid = v.u.i;
-  sqlite3VdbeMemRelease(&m);
+  sqlite3VdbeMemReleaseMalloc(&m);
   return SQLITE_OK;
 
   /* Jump here if database corruption is detected after m has been
   ** allocated.  Free the m object and return SQLITE_CORRUPT. */
 idx_rowid_corruption:
   testcase( m.szMalloc!=0 );
-  sqlite3VdbeMemRelease(&m);
+  sqlite3VdbeMemReleaseMalloc(&m);
   return SQLITE_CORRUPT_BKPT;
 }
 
@@ -4991,7 +4991,7 @@ int sqlite3VdbeIdxKeyCompare(
     return rc;
   }
   *res = sqlite3VdbeRecordCompareWithSkip(m.n, m.z, pUnpacked, 0);
-  sqlite3VdbeMemRelease(&m);
+  sqlite3VdbeMemReleaseMalloc(&m);
   return SQLITE_OK;
 }
 
@@ -5158,7 +5158,7 @@ static void vdbeFreeUnpacked(sqlite3 *db, int nField, UnpackedRecord *p){
     int i;
     for(i=0; i<nField; i++){
       Mem *pMem = &p->aMem[i];
-      if( pMem->zMalloc ) sqlite3VdbeMemRelease(pMem);
+      if( pMem->zMalloc ) sqlite3VdbeMemReleaseMalloc(pMem);
     }
     sqlite3DbFreeNN(db, p);
   }

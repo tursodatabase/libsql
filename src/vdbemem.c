@@ -555,6 +555,14 @@ void sqlite3VdbeMemRelease(Mem *p){
   }
 }
 
+/* Like sqlite3VdbeMemRelease() but faster for cases where we
+** know in advance that the Mem is not MEM_Dyn or MEM_Agg.
+*/
+void sqlite3VdbeMemReleaseMalloc(Mem *p){
+  assert( !VdbeMemDynamic(p) );
+  if( p->szMalloc ) vdbeMemClear(p);
+}
+
 /*
 ** Convert a 64-bit IEEE double into a 64-bit signed integer.
 ** If the double is out of range of a 64-bit signed integer then

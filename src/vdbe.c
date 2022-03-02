@@ -6345,7 +6345,7 @@ case OP_IdxGE:  {       /* jump */
     rc = sqlite3VdbeMemFromBtreeZeroOffset(pCur, (u32)nCellKey, &m);
     if( rc ) goto abort_due_to_error;
     res = sqlite3VdbeRecordCompareWithSkip(m.n, m.z, &r, 0);
-    sqlite3VdbeMemRelease(&m);
+    sqlite3VdbeMemReleaseMalloc(&m);
   }
   /* End of inlined sqlite3VdbeIdxKeyCompare() */
 
