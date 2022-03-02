@@ -1903,9 +1903,8 @@ static void releaseMemArray(Mem *p, int N){
         sqlite3DbFreeNN(db, p->zMalloc);
         p->szMalloc = 0;
       }
-#ifdef SQLITE_DEBUG
+
       p->flags = MEM_Undefined;
-#endif
     }while( (++p)<pEnd );
   }
 }

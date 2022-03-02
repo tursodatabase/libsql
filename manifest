@@ -1,5 +1,5 @@
-C The\sMemPage.aDataEnd\sfield\sshould\spoint\sto\sthe\send\sof\sthe\sdata\sbuffer\sfor\nthe\spage,\snot\sjust\sthe\send\sof\sthe\susable\sportion\sof\sthat\sbuffer.\s\sThe\spurpose\naDataEnd\sis\sto\sdetect\scells\sthat\soverflow\sthe\spage,\sand\sthat\swon't\swork\son\sa\npage\swith\sreserved\sbytes\sand\sa\scell\sthat\sstarts\sin\sthe\sreserved\sregion,\sunless\nthe\sboundary\sis\sat\sthe\svery\send\sof\sthe\spage.\sChromium\sissue\s1276294.
-D 2022-03-01T20:15:04.332
+C The\sperformance\soptimizations\sat\s[bb520293d8c11518]\sis\snot\squite\sright,\nso\sit\shas\sto\sbe\sbacked\sout.
+D 2022-03-02T00:50:06.086
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -628,7 +628,7 @@ F src/vdbe.c 4b969ebe6b61f87a90aebf817bc6ebda5075fe56987591091a9bf22556262484
 F src/vdbe.h a1d0e3b934e835e73edd146f2e7c4eadb711b5c9875c18159a57483fd78e550e
 F src/vdbeInt.h 958066f0448930dac697a7d1fc345d1b5fd1bb2d93685860967b94c901a7b244
 F src/vdbeapi.c 1c80efbe51118bbecc7279023e75d18edcfa4b3dc441287e1718ee70ad594f58
-F src/vdbeaux.c 0f3ce77dabb1f897cc7d3812ed162ec5d31d2298d1aa41b606f8048a742c4b9e
+F src/vdbeaux.c ab8c90419e78021b70b3a76a02b6f6dcc8f80d4208f065e916066968909020bf
 F src/vdbeblob.c 5e61ce31aca17db8fb60395407457a8c1c7fb471dde405e0cd675974611dcfcd
 F src/vdbemem.c 7737f0b1c480a32b057849c804d2f21d5389649bb8be80f77ad75df700adc9a1
 F src/vdbesort.c 43756031ca7430f7aec3ef904824a7883c4ede783e51f280d99b9b65c0796e35
@@ -1944,8 +1944,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 86ba06aa4c55d3aefe030b19b2b5c08baf46bbb2218b04ac1228ab76682a929b
-R 759bdd2426153bccb0e084e1cc68e2b8
+P f839c0bc8388a31f6db5081906b66b9e129855ba27a13cf13bd995b083f7386e
+Q -bb520293d8c11518ba153b986662f081ebfd781d38eb624c509605fa9148f6e9
+R 76d16a1a1f4506ffb5d6a4d86b768e8a
 U drh
-Z c62f0605f7573e50ae4553081294f184
+Z b009d278911c3d1765c2302d54175b80
 # Remove this line to create a well-formed Fossil manifest.
