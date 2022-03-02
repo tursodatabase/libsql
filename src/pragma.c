@@ -314,7 +314,7 @@ static void pragmaFunclistLine(
       SQLITE_INNOCUOUS |
       SQLITE_FUNC_INTERNAL
   ;
-  if( showInternFuncs ) mask = -1;
+  if( showInternFuncs ) mask = 0xffffffff;
   for(; p; p=p->pNext){
     const char *zType;
     static const char *azEnc[] = { 0, "utf8", "utf16le", "utf16be" };
