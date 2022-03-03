@@ -991,10 +991,14 @@ jump_to_p2:
   break;
 }
 
-/* Opcode:  Return P1 * * * *
+/* Opcode:  Return P1 * P3 * *
 **
 ** Jump to the next instruction after the address in register P1.  After
 ** the jump, register P1 becomes undefined.
+**
+** P3 is not used by the byte-code engine.  However, the code generator
+** sets P3 to address of the associated OP_BeginSubrtn opcode, if there is
+** one.
 */
 case OP_Return: {           /* in1 */
   pIn1 = &aMem[pOp->p1];
@@ -1182,11 +1186,22 @@ case OP_Halt: {
   goto vdbe_return;
 }
 
+/* Opcode: BeginSubrtn P1 P2 * * *
+** Synopsis: r[P2]=P1
+**
+** Mark the beginning of a subroutine by loading the integer value P1
+** into register r[P2].  The P2 register is used to store the return
+** address of the subroutine call.
+**
+** This opcode is identical to OP_Integer.  It has a different name
+** only to make the byte code easier to read and verify.
+*/
 /* Opcode: Integer P1 P2 * * *
 ** Synopsis: r[P2]=P1
 **
 ** The 32-bit integer value P1 is written into register P2.
 */
+case OP_BeginSubrtn:
 case OP_Integer: {         /* out2 */
   pOut = out2Prerelease(p, pOp);
   pOut->u.i = pOp->p1;

@@ -3040,8 +3040,7 @@ void sqlite3CodeRhsOfIN(
     assert( !ExprHasProperty(pExpr, EP_TokenOnly|EP_Reduced) );
     pExpr->y.sub.regReturn = ++pParse->nMem;
     pExpr->y.sub.iAddr =
-      sqlite3VdbeAddOp2(v, OP_Integer, 0, pExpr->y.sub.regReturn) + 1;
-    VdbeComment((v, "return address"));
+      sqlite3VdbeAddOp2(v, OP_BeginSubrtn, 0, pExpr->y.sub.regReturn) + 1;
 
     addrOnce = sqlite3VdbeAddOp0(v, OP_Once); VdbeCoverage(v);
   }
@@ -3143,6 +3142,7 @@ void sqlite3CodeRhsOfIN(
       ** expression we need to rerun this code each time.
       */
       if( addrOnce && !sqlite3ExprIsConstant(pE2) ){
+        sqlite3VdbeChangeToNoop(v, addrOnce-1);
         sqlite3VdbeChangeToNoop(v, addrOnce);
         ExprClearProperty(pExpr, EP_Subrtn);
         addrOnce = 0;
@@ -3163,7 +3163,10 @@ void sqlite3CodeRhsOfIN(
     sqlite3VdbeJumpHere(v, addrOnce);
     /* Subroutine return */
     assert( ExprUseYSub(pExpr) );
-    sqlite3VdbeAddOp1(v, OP_Return, pExpr->y.sub.regReturn);
+    assert( sqlite3VdbeGetOp(v,pExpr->y.sub.iAddr-1)->opcode==OP_BeginSubrtn
+            || pParse->nErr );
+    sqlite3VdbeAddOp3(v, OP_Return, pExpr->y.sub.regReturn, 0, 
+                      pExpr->y.sub.iAddr-1);
     sqlite3VdbeChangeP1(v, pExpr->y.sub.iAddr-1, sqlite3VdbeCurrentAddr(v)-1);
     sqlite3ClearTempRegCache(pParse);
   }
@@ -3218,9 +3221,7 @@ int sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
   ExprSetProperty(pExpr, EP_Subrtn);
   pExpr->y.sub.regReturn = ++pParse->nMem;
   pExpr->y.sub.iAddr =
-    sqlite3VdbeAddOp2(v, OP_Integer, 0, pExpr->y.sub.regReturn) + 1;
-  VdbeComment((v, "return address"));
-
+    sqlite3VdbeAddOp2(v, OP_BeginSubrtn, 0, pExpr->y.sub.regReturn) + 1;
 
   /* The evaluation of the EXISTS/SELECT must be repeated every time it
   ** is encountered if any of the following is true:
@@ -3293,7 +3294,10 @@ int sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
 
   /* Subroutine return */
   assert( ExprUseYSub(pExpr) );
-  sqlite3VdbeAddOp1(v, OP_Return, pExpr->y.sub.regReturn);
+  assert( sqlite3VdbeGetOp(v,pExpr->y.sub.iAddr-1)->opcode==OP_BeginSubrtn
+          || pParse->nErr );
+  sqlite3VdbeAddOp3(v, OP_Return, pExpr->y.sub.regReturn, 0,
+                    pExpr->y.sub.iAddr-1);
   sqlite3VdbeChangeP1(v, pExpr->y.sub.iAddr-1, sqlite3VdbeCurrentAddr(v)-1);
   sqlite3ClearTempRegCache(pParse);
   return rReg;
