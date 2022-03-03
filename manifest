@@ -1,5 +1,5 @@
-C Make\ssure\sthe\sxParseCell\sand\sxCellSize\smethods\sof\sthe\sMemPage\sobject\sare\ninitialized\sconsistently\seven\sif\sthe\spage\sis\sdetected\sas\sbeing\scorrupt.\ndbsqlfuzz\sfd21f341f3b4f582401d2feb2a1c0c4cc2c26caa.
-D 2022-03-03T16:48:35.284
+C Restore\sthe\sability\sto\spush-down\sOR\ssubterms\sof\sthe\sWHERE\sclause\swhen\nprocessing\sa\smulti-index\sOR.
+D 2022-03-03T19:40:21.148
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -641,7 +641,7 @@ F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
 F src/where.c 0d75d7514764726409ea945520fe9fb515e7d9ae52a5a3c0a136142cfaa19087
 F src/whereInt.h 15d2975c3b4c193c78c26674400a840da8647fe1777ae3b026e2d15937b38a03
-F src/wherecode.c 5559cf12b4d3f6d123f70f9097a88fa879921785e9b69815a8901b89d63a87bf
+F src/wherecode.c e0f6be39a0938008a20f1b1a528225f2364c459e88603799c417247a4ea3836c
 F src/whereexpr.c 2a71f5491798460c9590317329234d332d9eb1717cba4f3403122189a75c465e
 F src/window.c dfaec4abc6012cbc18e4a202ca3a5d5a0efcc4011d86a06d882ddaab8aedee4d
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1944,8 +1944,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 61a1c6dbd089979cbeb8b0c0c5ee1ab1abcb466be1d21a3a851be73c27e67a6c
-R e394f5d71fcf3ab03b849ac8d2f2e010
+P 725a06434b886c96bb816340ef236530672a4593f0ceb3230ce69c8367beb997
+R 4b254954a632dbd7b6a27be8beffe3fb
 U drh
-Z 6957f162062fe17752cd0dc465054be9
+Z 721c2ad23ec3a940469fd54f5a97ae6c
 # Remove this line to create a well-formed Fossil manifest.

@@ -2365,7 +2365,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         if( (pWC->a[iTerm].wtFlags & (TERM_VIRTUAL|TERM_CODED|TERM_SLICE))!=0 ){
           continue;
         }
-        if( (pWC->a[iTerm].eOperator & WO_SINGLE)==0 ) continue;
+        if( (pWC->a[iTerm].eOperator & WO_ALL)==0 ) continue;
         if( ExprHasProperty(pExpr, EP_Subquery) ) continue;  /* tag-20220303a */
         pExpr = sqlite3ExprDup(db, pExpr, 0);
         pAndExpr = sqlite3ExprAnd(pParse, pAndExpr, pExpr);
