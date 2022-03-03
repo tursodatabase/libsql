@@ -2345,6 +2345,14 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     ** the initialization of the right-hand operand of the vector comparison
     ** might not occur, or might occur only in an OR branch that is not
     ** taken.  dbsqlfuzz 80a9fade844b4fb43564efc972bcb2c68270f5d1.
+    **
+    ** 2022-03-03:  Do not push down expressions that involve subqueries.
+    ** The subquery might get coded as a subroutine.  Any table-references
+    ** in the subquery might be resolved to index-references for the index on
+    ** the OR branch in which the subroutine is coded.  But if the subroutine
+    ** is invoked from a different OR branch that uses a different index, such
+    ** index-references will not work.  tag-20220303a
+    ** https://sqlite.org/forum/forumpost/36937b197273d403
     */
     if( pWC->nTerm>1 ){
       int iTerm;
@@ -2357,8 +2365,8 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         if( (pWC->a[iTerm].wtFlags & (TERM_VIRTUAL|TERM_CODED|TERM_SLICE))!=0 ){
           continue;
         }
-        if( (pWC->a[iTerm].eOperator & WO_ALL)==0 ) continue;
-        testcase( pWC->a[iTerm].wtFlags & TERM_ORINFO );
+        if( (pWC->a[iTerm].eOperator & WO_SINGLE)==0 ) continue;
+        if( ExprHasProperty(pExpr, EP_Subquery) ) continue;  /* tag-20220303a */
         pExpr = sqlite3ExprDup(db, pExpr, 0);
         pAndExpr = sqlite3ExprAnd(pParse, pAndExpr, pExpr);
       }
