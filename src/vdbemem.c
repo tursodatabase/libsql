@@ -924,6 +924,7 @@ void sqlite3VdbeMemSetPointer(
   void (*xDestructor)(void*)
 ){
   assert( pMem->flags==MEM_Null );
+  vdbeMemClear(pMem);
   pMem->u.zPType = zPType ? zPType : "";
   pMem->z = pPtr;
   pMem->flags = MEM_Null|MEM_Dyn|MEM_Subtype|MEM_Term;
