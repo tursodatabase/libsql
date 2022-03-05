@@ -342,4 +342,23 @@ do_execsql_test 9.1 {
   SELECT a FROM (SELECT a FROM t1 NATURAL LEFT JOIN t1) NATURAL LEFT JOIN t1 WHERE (rowid,1)<=(5,0);
 } {1}
 
+# 2022-03-02 https://sqlite.org/forum/info/50a1bbe08ce4c29c
+# Bloom-filter pulldown is incompatible with skip-scan.
+#
+reset_db
+do_execsql_test 10.1 {
+  CREATE TABLE t1(x INT);
+  WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<20)
+    INSERT INTO t1(x) SELECT 0 FROM c;
+  CREATE INDEX t1x1 ON t1(x BETWEEN 0 AND 10, x);
+  ANALYZE;
+  DELETE FROM t1;
+  INSERT INTO t1 VALUES(0),(0);
+  CREATE VIEW v1 AS SELECT * FROM t1 NATURAL JOIN t1 WHERE (x BETWEEN 0 AND 10) OR true;
+  CREATE VIEW v2 AS SELECT * FROM v1 NATURAL JOIN v1;
+  CREATE VIEW v3 AS SELECT * FROM v2, v1 USING (x) GROUP BY x;
+  SELECT x FROM v3; 
+} {0}
+
+
 finish_test

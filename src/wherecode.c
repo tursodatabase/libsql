@@ -792,6 +792,7 @@ static int codeAllEqualityTerms(
     VdbeCoverageIf(v, bRev!=0);
     VdbeComment((v, "begin skip-scan on %s", pIdx->zName));
     j = sqlite3VdbeAddOp0(v, OP_Goto);
+    assert( pLevel->addrSkip==0 );
     pLevel->addrSkip = sqlite3VdbeAddOp4Int(v, (bRev?OP_SeekLT:OP_SeekGT),
                             iIdxCur, 0, regBase, nSkip);
     VdbeCoverageIf(v, bRev==0);
@@ -1389,6 +1390,7 @@ static SQLITE_NOINLINE void filterPullDown(
     WhereLevel *pLevel = &pWInfo->a[iLevel];
     WhereLoop *pLoop = pLevel->pWLoop;
     if( pLevel->regFilter==0 ) continue;
+    if( pLevel->pWLoop->nSkip ) continue;
     /*         ,--- Because sqlite3ConstructBloomFilter() has will not have set
     **  vvvvv--'    pLevel->regFilter if this were true. */
     if( NEVER(pLoop->prereq & notReady) ) continue;
@@ -2335,6 +2337,14 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     ** the initialization of the right-hand operand of the vector comparison
     ** might not occur, or might occur only in an OR branch that is not
     ** taken.  dbsqlfuzz 80a9fade844b4fb43564efc972bcb2c68270f5d1.
+    **
+    ** 2022-03-03:  Do not push down expressions that involve subqueries.
+    ** The subquery might get coded as a subroutine.  Any table-references
+    ** in the subquery might be resolved to index-references for the index on
+    ** the OR branch in which the subroutine is coded.  But if the subroutine
+    ** is invoked from a different OR branch that uses a different index, such
+    ** index-references will not work.  tag-20220303a
+    ** https://sqlite.org/forum/forumpost/36937b197273d403
     */
     if( pWC->nTerm>1 ){
       int iTerm;
@@ -2348,7 +2358,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
           continue;
         }
         if( (pWC->a[iTerm].eOperator & WO_ALL)==0 ) continue;
-        testcase( pWC->a[iTerm].wtFlags & TERM_ORINFO );
+        if( ExprHasProperty(pExpr, EP_Subquery) ) continue;  /* tag-20220303a */
         pExpr = sqlite3ExprDup(db, pExpr, 0);
         pAndExpr = sqlite3ExprAnd(pParse, pAndExpr, pExpr);
       }
