@@ -2641,18 +2641,19 @@ case OP_Offset: {          /* out3 */
   VdbeCursor *pC;    /* The VDBE cursor */
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
-  if( pC->deferredMoveto ){
-    rc = sqlite3VdbeFinishMoveto(pC);
-    if( rc ) goto abort_due_to_error;
-  }
   pOut = &p->aMem[pOp->p3];
-  if( NEVER(pC==0)
-   || pC->eCurType!=CURTYPE_BTREE
-   || NEVER(sqlite3BtreeEof(pC->uc.pCursor))
-  ){
+  if( pC==0 || pC->eCurType!=CURTYPE_BTREE ){
     sqlite3VdbeMemSetNull(pOut);
   }else{
-    sqlite3VdbeMemSetInt64(pOut, sqlite3BtreeOffset(pC->uc.pCursor));
+    if( pC->deferredMoveto ){
+      rc = sqlite3VdbeFinishMoveto(pC);
+      if( rc ) goto abort_due_to_error;
+    }
+    if( NEVER(sqlite3BtreeEof(pC->uc.pCursor)) ){
+      sqlite3VdbeMemSetNull(pOut);
+    }else{
+      sqlite3VdbeMemSetInt64(pOut, sqlite3BtreeOffset(pC->uc.pCursor));
+    }
   }
   break;
 }
