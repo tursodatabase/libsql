@@ -1,5 +1,5 @@
-C Fix\sthe\s'localtime'\smodifier\sin\sdate/time\sfunctions\sso\sthat\sit\spreserves\nfractional\sseconds.\n[forum:/forumpost/2ffbaa2c3fd7fb82|Forum\spost\s2ffbaa2c3fd7fb82].
-D 2022-03-05T20:12:53.990
+C Remove\sa\sNEVER()\sassociated\swith\ssqlite_offset()>
+D 2022-03-05T23:52:05.495
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -624,7 +624,7 @@ F src/upsert.c 8789047a8f0a601ea42fa0256d1ba3190c13746b6ba940fe2d25643a7e991937
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c 602fe229f32a96ceccae4f40824129669582096f7c355f53dbac156c9fecef23
 F src/vacuum.c 6c38ddc52f0619865c91dae9c441d4d48bf3040d7dc1bc5b22da1e45547ed0b3
-F src/vdbe.c 17ac5ed082a7f6832af3eb6c72b9a74049867c9a8c80b3c1e40faa017960941d
+F src/vdbe.c b1830c6daf744473a732257652b6431ac18032f508a3e30ff3a1466fe5978559
 F src/vdbe.h a1d0e3b934e835e73edd146f2e7c4eadb711b5c9875c18159a57483fd78e550e
 F src/vdbeInt.h 8dd91427155a38ec06e9ecbde07e33f21bc02e101625191e7613f883e379a363
 F src/vdbeapi.c 1c80efbe51118bbecc7279023e75d18edcfa4b3dc441287e1718ee70ad594f58
@@ -1944,8 +1944,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4230e2f5e068f2151fa33be25bb06123d41273dbe497a5ebc7173f8d7f81d160
-R a3891cb2acaa3a2b99d86e17fa16100e
+P 1c875b0764ab00e95c92f0ee329659e88041763e125c2891201d80f68c41f717
+R eddd65823035f6d87a8d953cb436e877
 U drh
-Z 5cc749784ef515382e391fd2e88fc594
+Z 2f62ada0831e290d77c07589d7cf603f
 # Remove this line to create a well-formed Fossil manifest.
