@@ -1,5 +1,5 @@
-C The\ssqlite_offset()\sfunction\sshould\sbe\snon-deterministic.\ndbsqlfuzz\s3df8230bb940870db87ffca2c0fc759c1e7fa356.
-D 2022-03-06T11:43:06.649
+C Fix\sobsolete\sbut\sharmless\scomments\sin\sbtree.\s\sNo\schanges\sto\scode.
+D 2022-03-06T20:22:24.862
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -492,7 +492,7 @@ F src/auth.c f4fa91b6a90bbc8e0d0f738aa284551739c9543a367071f55574681e0f24f8cf
 F src/backup.c a2891172438e385fdbe97c11c9745676bec54f518d4447090af97189fd8e52d7
 F src/bitvec.c 7c849aac407230278445cb069bebc5f89bf2ddd87c5ed9459b070a9175707b3d
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c 9a5112589dc9491781bfd4e1b30d79bdab7e7ea3fc37a505e7ca5cc82f01c09a
+F src/btree.c 3a925b8542eb7f2a00c1919d6dbcd252b1d2781fbc43228b33dcc03fe6cd772a
 F src/btree.h 74d64b8f28cfa4a894d14d4ed64fa432cd697b98b61708d4351482ae15913e22
 F src/btreeInt.h 1ca477727c5f420a8321208dc5b14d93cb46cec8f941bc49318feb0e00bc961f
 F src/build.c 9891c2160886cf7e344d7e8f1f7177f9612916c7c67ffeacd64cb34a92d387a8
@@ -1944,8 +1944,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e29dffcdba6f68af5cb76ca250e06a42183d9db92b60a16b2337b0d43c68bf2e
-R e44b1e991497d101f7d60ecf2d42efc6
+P e1a185e60afd32d3b25278dee42049920759ccd8fe709161007f5daa4a048693
+R 3b376b7bd2b0a7789dc2fc49263ee5af
 U drh
-Z 5e3aad0d7656a38b0b65e677bfc05be9
+Z 746f08a842d71959509f58033103e467
 # Remove this line to create a well-formed Fossil manifest.
