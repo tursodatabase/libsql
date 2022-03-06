@@ -262,7 +262,7 @@ do_test shell5-1.7.1 {
 SELECT COUNT(*) FROM t3;}]
 } [list 0 $rows]
 
-# Inport from a pipe.  (Unix only, as it requires "awk")
+# Import from a pipe.  (Unix only, as it requires "awk")
 if {$tcl_platform(platform)=="unix"} {
   do_test shell5-1.8 {
     forcedelete test.db
@@ -475,6 +475,20 @@ CREATE TABLE t8(a, b, c);
   }]
   db eval { SELECT * FROM t8 }
 } {1 2 3}
+
+do_test shell5-4.4 {
+  forcedelete shell5.csv
+  set fd [open shell5.csv w]
+  puts $fd "1,2,3"
+  close $fd
+  catchcmd test.db [string trim {
+.mode csv
+CREATE TEMP TABLE t8(a, b, c);
+.import shell5.csv t8
+.nullvalue #
+SELECT * FROM temp.t8
+  }]
+} {0 1,2,3}
 
 #----------------------------------------------------------------------------
 # Tests for the shell automatic column rename.
