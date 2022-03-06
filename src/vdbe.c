@@ -2634,7 +2634,7 @@ case OP_Offset: {          /* out3 */
       rc = sqlite3VdbeFinishMoveto(pC);
       if( rc ) goto abort_due_to_error;
     }
-    if( NEVER(sqlite3BtreeEof(pC->uc.pCursor)) ){
+    if( sqlite3BtreeEof(pC->uc.pCursor) ){
       sqlite3VdbeMemSetNull(pOut);
     }else{
       sqlite3VdbeMemSetInt64(pOut, sqlite3BtreeOffset(pC->uc.pCursor));
