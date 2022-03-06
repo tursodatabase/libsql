@@ -130,7 +130,6 @@ if {$::lineTags >= 3} {
   # which are used to get #line directives on all dispatch and help table
   # entries, and any conditionals affecting their compilation.
   array set ::cmd_help_tags {}
-  array set ::cmd_dispatch_tags {}
   array set ::cmd_conditional_tags {}
 }
 
@@ -198,7 +197,6 @@ proc emit_sync { lines ostrm precLines {fromFile ""} } {
 }
 
 array set ::cmd_help {}
-array set ::cmd_dispatch {}
 array set ::cmd_condition {}
 array set ::metacmd_init {}
 array set ::inc_type_files {}
@@ -341,8 +339,6 @@ array set ::macroTailREs [list \
   CONDITION_COMMAND {^\(\s*(\w+)\s+([^;]+)\);} \
   DISPATCH_CONFIG {^\[} \
   DISPATCHABLE_COMMAND {^\(([\w\? ]+)\)(\S)\s*$} \
-  EMIT_DISPATCH {^\((\d*)\)} \
-  EMIT_HELP_TEXT {^\((\d*)\)} \
   EMIT_METACMD_INIT {^\((\d*)\)} \
   INCLUDE {^(?:\(\s*(\w+)\s*\))|(?:\s+([\w./\\]+)\M)} \
   IGNORE_COMMANDS {^\(\s*([-+\w ]*)\)\s*;\s*} \
@@ -353,8 +349,6 @@ array set ::macroTailREs [list \
 # CONFIGURE_DISPATCH tailCapture_Empty
 # COLLECT_HELP_TEXT tailCapture_Empty
 # DISPATCHABLE_COMMAND tailCapture_ArgsGlom_TrailChar
-# EMIT_DISPATCH tailCapture_Indent
-# EMIT_HELP_TEXT tailCapture_Indent
 # EMIT_METACMD_INIT tailCapture_Indent
 # IGNORED_COMMANDS tailCapture_SignedCmdGlom
 # INCLUDE tailCapture_IncType_Filename
@@ -366,8 +360,6 @@ array set ::macroUsages [list \
   DISPATCH_CONFIG "\[\n   <NAME=value lines>\n  \];" \
   DISPATCHABLE_COMMAND \
       "( name args... ){\n   <implementation code lines>\n  }" \
-  EMIT_DISPATCH "( indent );" \
-  EMIT_HELP_TEXT "( indent );" \
   EMIT_METACMD_INIT "( indent );" \
   INCLUDE {( <inc_type> )} \
   SKIP_COMMANDS "( <signed_names> );" \
@@ -544,24 +536,13 @@ proc DISPATCHABLE_COMMAND {inSrc tailCapture ostrm} {
       set argexp [subst $::dispCfg(ARGS_SIGNATURE)]
       set fname [subst $::dispCfg(DISPATCHEE_NAME)]
       set funcOpen "$rsct $fname\($argexp\)$::lb"
-      set dispEntry [subst $::dispCfg(DISPATCH_ENTRY)]
       set mcInit [subst $::dispCfg(METACMD_INIT)]
       emit_conditionally $cmd [linsert $body 0 $funcOpen] $inSrc $ostrm
-      set ::cmd_dispatch($cmd) [list $dispEntry]
       set ::metacmd_init($cmd) $mcInit
       set_src_tags dispatch $cmd $inSrc
     }
   }
   return $iAte
-}
-
-proc EMIT_DISPATCH {inSrc tailCap ostrm} {
-  # Emit the collected dispatch table entries, in command order, maybe
-  # wrapped with a conditional construct as set by CONDITION_COMMAND().
-  foreach cmd [lsort [array names ::cmd_dispatch]] {
-    emit_conditionally $cmd $::cmd_dispatch($cmd) $inSrc $ostrm $tailCap
-  }
-  return 1
 }
 
 proc EMIT_METACMD_INIT {inSrc tailCap ostrm} {
@@ -596,15 +577,6 @@ proc EMIT_METACMD_INIT {inSrc tailCap ostrm} {
     set initem [regsub {<HT1>} $initem $ht1]
     set initem [split $initem "\n"]
     emit_conditionally $cmd $initem $inSrc $ostrm $tailCap
-  }
-  return 1
-}
-
-proc EMIT_HELP_TEXT {inSrc tailCap ostrm} {
-  # Emit the collected help text table entries, in command order, maybe
-  # wrapped with a conditional construct as set by CONDITION_COMMAND().
-  foreach htc [lsort [array names ::cmd_help]] {
-    emit_conditionally $htc $::cmd_help($htc) $inSrc $ostrm $tailCap
   }
   return 1
 }

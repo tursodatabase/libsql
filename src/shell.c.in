@@ -247,7 +247,6 @@ static void setTextMode(FILE *file, int isOutput){
 # define setTextMode(X,Y)
 #endif
 
-static const char *(azHelp[]);
 static unsigned numCommands;
 static FILE *currentOutputFile(ShellExState *p);
 
@@ -4622,91 +4621,8 @@ DISPATCH_CONFIG[
  * Alternative is 0 and "%s\n" .
  */
 
-/*
-** Output primary (single-line) help for a known command.
-*/
-static void showPrimaryHelp(FILE *out, const char *zCmd){
-  const char **pzH;
-  int nc = strlen30(zCmd);
-  for(pzH = azHelp; *pzH != 0; ++pzH){
-    if( **pzH=='.' && strncmp(zCmd, (*pzH)+1, nc)==0 ){
-      utf8_printf(out, HELP_TEXT_FMT, *pzH);
-      break;
-    }
-  }
-}
-
-/*
-** Output various subsets of help text. These 5 are defined:
-** 1. For all commands, primary help text only.
-** 2. For all commands, complete help text.
-** 3. For multiple commands matching a pattern, primary help text only.
-** 4. For a single matched command, complete help text.
-** 5. For commands whose help contains a pattern, complete help text.
-** These variations are indicated thusly:
-** 1. zPattern is NULL
-** 2. zPattern is ""
-** 3. zPattern is a prefix matching more than one command
-** 4. zPattern is a word or prefix matching just one command
-** 5. zPattern is neither case 3 or 4 but is found in complete help text
-**
-** Return the number of matches.
-*/
-static int showHelp(FILE *out, const char *zPattern){
-  int npm = 0;
-  char *zPat = sqlite3_mprintf(".%s*", zPattern? zPattern : "");
-  const char **pzHxtra;
-  const char **pzH;
-  int nma = 0;
-  shell_check_oom(zPat);
-  for(pzH = azHelp; *pzH != 0; ++pzH){
-    /* Look for all commands or those for which zPattern is an exact prefix */
-    if( *pzH[0]=='.' ){
-      if ( sqlite3_strglob(zPat, *pzH)==0 ){
-        utf8_printf(out, HELP_TEXT_FMT, *pzH);
-        pzHxtra = pzH + 1;
-        ++npm;
-      }
-    }else if( zPattern && *zPattern==0 ){
-      utf8_printf(out, HELP_TEXT_FMT, *pzH);
-    }
-  }
-  sqlite3_free(zPat);
-  if( npm==1 ){
-    /* When zPattern is a prefix of exactly one command, then include
-    ** the secondary help of that command, (beginning at *pzHxtra.) */
-    while( *pzHxtra !=0 && *pzHxtra[0]!='.' ){
-      utf8_printf(out, HELP_TEXT_FMT, *pzHxtra++);
-    }
-  }
-  if( npm>0 )
-    return npm;
-
-  /* Having failed to match a command, look for commands whose help contains
-   * zPattern anywhere. Show the complete text of all such commands.
-   */
-  zPat = sqlite3_mprintf("%%%s%%", zPattern);
-  if( zPat==0 ) shell_out_of_memory();
-  for(pzH = azHelp; *pzH != 0;){
-    if( *pzH[0]=='.' ){
-      pzHxtra = pzH;
-      nma = 0;
-    }
-    if( sqlite3_strlike(zPat, *pzH, 0)==0 )
-      ++nma;
-    ++pzH;
-    if( nma>0 && (*pzH==0 || *pzH[0]=='.') ){
-      ++npm;
-      while( pzHxtra < pzH )
-        utf8_printf(out, HELP_TEXT_FMT, *pzHxtra++);
-    }
-  }
-  sqlite3_free(zPat);
-
-  return npm;
-}
-
-/* Forward reference */
+/* Forward references */
+static int showHelp(FILE *out, const char *zPattern, ShellExState *);
 static int process_input(ShellInState *psx);
 
 /*
@@ -6438,8 +6354,8 @@ struct ArCommand {
 /*
 ** Print a usage message for the .ar command to stderr and return SQLITE_ERROR.
 */
-static int arUsage(FILE *f){
-  showHelp(f,"archive");
+static int arUsage(FILE *f, ArCommand *pAr){
+  showHelp(f,"archive", pAr->p);
   return SQLITE_ERROR;
 }
 
@@ -6561,7 +6477,7 @@ static int arParseCommand(
                 azArg[0]);
     if( stdin_is_interactive ){
       utf8_printf(STD_ERR, "Usage:\n");
-      return arUsage(STD_ERR);
+      return arUsage(STD_ERR, pAr);
     }
   }else{
     char *z = azArg[1];
@@ -7138,7 +7054,7 @@ static int arDotCommand(
         break;
 
       case AR_CMD_HELP:
-        arUsage(cmd.out);
+        arUsage(cmd.out, &cmd);
         break;
 
       case AR_CMD_INSERT:
@@ -7919,10 +7835,6 @@ static int load_shell_extension(ShellExState *psx, const char *zFile,
 }
 #endif
 
-#ifndef OBJECTIFY_COMMANDS
-# define OBJECTIFY_COMMANDS 1 /* This value required for extensibility. */
-#endif
-
 /* Meta-command implementation functions are defined in this section.
 COMMENT  Define meta-commands and provide for their dispatch and .help text.
 COMMENT  These should be kept in command name order for coding convenience
@@ -7931,8 +7843,8 @@ COMMENT  required for dispatch and help text is effected regardless.) The
 COMMENT  effect of this configuration can be seen in generated output or by
 COMMENT  executing tool/mkshellc.tcl --parameters (or --details or --help).
 COMMENT  Generally, this section defines dispatchable functions inline and
-COMMENT  causes collection of dispatch and help table entries, to be later
-COMMENT  emitted by certain macros. (See EMIT_* further on.)
+COMMENT  causes collection of command_table entry initializers, to be later
+COMMENT  emitted by a mkshellc macro. (See EMIT_METACMD_INIT further on.)
 ** All dispatchable meta-command execute functions have this signature:
 static int someCommand(char *azArg[], int nArg, ShellExState *p, char **pzErr);
 */
@@ -8873,7 +8785,7 @@ DISPATCHABLE_COMMAND( help 3 1 2 ){
       zPat = z;
     }
   }
-  if( showHelp(ISS(p)->out, zPat)==0 ){
+  if( showHelp(ISS(p)->out, zPat, p)==0 ){
     utf8_printf(ISS(p)->out, "Nothing matches '%s'\n", azArg[1]);
   }
   /* Help pleas never fail! */
@@ -10596,7 +10508,7 @@ DISPATCHABLE_COMMAND( parameter 2 2 0 ){
   }else
 
   {  /* If no command name and arg count matches, show a syntax error */
-    showHelp(ISS(p)->out, "parameter");
+    showHelp(ISS(p)->out, "parameter", p);
     return 1;
   }
 
@@ -10773,7 +10685,7 @@ DISPATCHABLE_COMMAND( recover ? 1 7 ){
     }
     else{
       *pzErr = shellMPrintf(0,"unexpected option: %s\n", azArg[i]);
-      showHelp(out, azArg[0]);
+      showHelp(out, azArg[0], p);
       return 1;
     }
   }
@@ -11512,7 +11424,7 @@ DISPATCHABLE_COMMAND( session 3 2 0 ){
 
   /* If no command name matches, show a syntax error */
   session_syntax_error:
-    showHelp(out, "session");
+    showHelp(out, "session", p);
     return 1;
   }
   return rc;
@@ -12605,7 +12517,7 @@ DISPATCHABLE_COMMAND( wheretrace ? 1 2 ){
  */
 COLLECT_HELP_TEXT[
   ".x NAMES ...             Excecute content of some .parameter set variable(s)",
-  "   Only variables whose name begins with a letter are eligible for this."
+  "   Only variables whose name begins with a letter are eligible for this.",
 ];
 DISPATCHABLE_COMMAND( x ? 1 0 ){
   int ia, rc, nErrors = 0;
@@ -12707,29 +12619,21 @@ static VTABLE_NAME(MetaCommand) meta_cmd_VtabBuiltIn = {
 
 /* Define and populate command dispatch table. */
 static struct CommandInfo {
-#if OBJECTIFY_COMMANDS
   VTABLE_NAME(MetaCommand) *mcVtabBuiltIn;
-#endif
   const char * cmdName;
   int (*cmdDoer)(char *azArg[], int nArg, ShellExState *, char **pzErr);
   unsigned char minLen, minArgs, maxArgs;
-#if OBJECTIFY_COMMANDS
   const char *azHelp[2]; /* primary and secondary help text */
   void * pCmdData;
-#endif
-} command_table[] = {
+  } command_table[] = {
   COMMENT Emit the dispatch table entries generated and collected above.
-#if OBJECTIFY_COMMANDS
-# define META_CMD_INFO(cmd, nlenMin, minArgs, maxArgs, ht0, ht1 ) \
+#define META_CMD_INFO(cmd, nlenMin, minArgs, maxArgs, ht0, ht1 ) \
   { &meta_cmd_VtabBuiltIn, #cmd, cmd ## Command, \
     nlenMin, minArgs, maxArgs, { ht0, ht1 }, 0 \
   }
   EMIT_METACMD_INIT(2);
+#undef META_CMD_INFO
   { 0, 0, 0, 0, ~0, ~0, {0,0}, 0 }
-#else
-  EMIT_DISPATCH(2);
-  { 0, 0, 0, ~0, ~0 }
-#endif
 };
 static unsigned numCommands
   = sizeof(command_table)/sizeof(struct CommandInfo) - 1;
@@ -12763,70 +12667,207 @@ static int MetaCommand_execute(MetaCommand *pMe, ShellExState *pssx,
   return (((struct CommandInfo *)pMe)->cmdDoer)(azArgs, nArgs, pssx, pzErrMsg);
 }
 
-/*
-** Text of help messages.
-**
-** The help text for each individual command begins with a line that starts
-** with ".".  Subsequent lines are supplimental information.
-**
-** There must be two or more spaces between the end of the command and the
-** start of the description of what that command does.
+/*****************
+** MetaCommand iteration by name match, used by the .help meta-command
+** MetaCommands with matching names are produced in lexical order. Any
+** returned MetaMatchIter must eventually be passed to freeMetaMatchIter().
 */
-static const char *(azHelp[]) = {
-/* Template for help text indents and length:
-  ".whatever ?arg? ...      Summary of effects (limited to this line's length)",
-  "   ^ ^                   ^  ^                                              ",
-*/
-  COMMENT  Emit the help text fragments collected above via COLLECT_HELP_TEXT.
-  EMIT_HELP_TEXT(2);
-  0 /* Sentinel */
-};
+typedef struct MetaMatchIter {
+  /* 0 indicates prepared statement; non-0 is the glob pattern. */
+  const char *zPattern;
+  union {
+    MetaCommand *pMC;
+    sqlite3_stmt *stmt;
+  };
+} MetaMatchIter;
 
+/* Prepare an iterator that will produce a sequence of MetaCommand
+ * pointers whose referents names match the given cmdFragment. */
+static MetaMatchIter findMatchingMetaCmds(const char *cmdFragment,
+                                          ShellExState *psx){
+  MetaMatchIter rv = { 0, 0 };
+  if( psx->dbShell==0 ){
+    rv.zPattern = sqlite3_mprintf("%s*", cmdFragment? cmdFragment : "");
+    shell_check_oom((void *)rv.zPattern);
+    rv.pMC = (MetaCommand *)command_table;
+  }else{
+    /* Prepare rv.stmt to yield results glob-matching cmdFragment. */
+  }
+  return rv;
+}
+/* Produce the next MetaCommand pointer from the iterator, or 0 if no next. */
+static MetaCommand * nextMatchingMetaCmd(MetaMatchIter *pMMI){
+  MetaCommand *rv = 0;
+  if( pMMI->zPattern!=0 ){
+    struct CommandInfo *pCI = (struct CommandInfo *)(pMMI->pMC);
+    assert(pCI>=command_table && pCI<=command_table+numCommands);
+    while( pCI<command_table+numCommands ){
+      if( sqlite3_strglob(pMMI->zPattern, pCI->cmdName)==0 ) rv = pMMI->pMC;
+      pMMI->pMC = (MetaCommand *)(++pCI);
+      if( rv!=0 ) break;
+    }
+  }else{
+    /* Future: Step the query finding matches once dbShell is loaded. */
+  }
+  return rv;
+}
+/* Release resources held by the iterator and clear it. */
+static void freeMetaMatchIter(MetaMatchIter *pMMI){
+  if( pMMI->zPattern!=0 ){
+    sqlite3_free((void *)pMMI->zPattern);
+    pMMI->zPattern = 0;
+    pMMI->pMC = 0;
+  }else{
+    sqlite3_finalize(pMMI->stmt);
+    pMMI->stmt = 0;
+  }
+}
+
+/*****************
+** MetaCommand lookup
+**
+** For the non-extended or non-extensible shell, this function does
+** a binary search of the fixed list of meta-command info structs.
+** For an extended shell, it queries the shell's DB. Either way,
+** this function returns a MetaCommand pointer if one can be found
+** with an adequate match for the given name. Here, "adequate" may
+** vary according to whether shell extensions have been loaded. If
+** not, the match must be for as many characters as set within the
+** above CommandInfo array (set via DISPATCHABLE_COMMAND macro call.)
+** If shell extensions are loaded, the match must be long enough to
+** result in a unique lookup.
+*/
+MetaCommand *findMetaCommand(const char *cmdName, ShellExState *psx,
+                             /* out */ int *nFound){
+  if( psx->dbShell!=0 ){
+    /* Future: Actually look it up (once registration is working.) */
+    *nFound = 0;
+    return 0;
+  }else{
+    int cmdLen = strlen30(cmdName);
+    struct CommandInfo *pci = 0;
+    int ixb = 0, ixe = numCommands-1;
+    while( ixb <= ixe ){
+      int ixm = (ixb+ixe)/2;
+      int md = strncmp(cmdName, command_table[ixm].cmdName, cmdLen);
+      if( md>0 ){
+        ixb = ixm+1;
+      }else if( md<0 ){
+        ixe = ixm-1;
+      }else{
+        if( command_table[ixm].minLen > cmdLen ) return 0;
+        pci = &command_table[ixm];
+        break;
+      }
+    }
+    return (MetaCommand *)pci;
+  }
+}
 
 #define NO_SUCH_COMMAND SQLITE_NOTFOUND
 /* SHELL_INVALID_ARGS defined as SQLITE_MISUSE in shext_linkage.h */
 
 /*****************
 ** Command dispatcher
-** For the non-extended or non-extensible shell, this function does
-** a binary search of the fixed list of meta-command info structs.
-** For an extended shell, it may (TBD) query the shell's DB. Either
-** way, this function retains its interface.
 ** After successful command lookup and (simple) argument checking,
-** it calls the found meta-command with the input arguments (except
+** invoke the found MetaCommand with the input arguments (except
 ** that azArg[0] is replaced with the properly spelled command name.)
 ** The return is either a dispatch error or whatever the dispatched
-** meta-command returns.
+** MetaCommand returns.
 */
 int dispatchCommand(char *azArg[], int nArg, ShellExState *psx, char **pzErr){
   const char *cmdName = azArg[0];
-  int cmdLen = strlen30(cmdName);
-  struct CommandInfo *pci = 0;
-  int ixb = 0, ixe = numCommands-1;
-  while( ixb <= ixe ){
-    int ixm = (ixb+ixe)/2;
-    int md = strncmp(cmdName, command_table[ixm].cmdName, cmdLen);
-    if( md>0 ){
-      ixb = ixm+1;
-    }else if( md<0 ){
-      ixe = ixm-1;
-    }else{
-      if( command_table[ixm].minLen > cmdLen ){
-        return NO_SUCH_COMMAND;
+  int nFound = 0, argsCheck;
+  MetaCommand *pMC = findMetaCommand(cmdName, psx, &nFound);
+  if( 0==pMC ) return NO_SUCH_COMMAND;
+  /* Future: Distinguish not found from ambiguous (due to too-short name.) */
+  argsCheck = pMC->pMethods->argsCheck(pMC, pzErr, nArg, azArg);
+  if( argsCheck!=0 ) return SHELL_INVALID_ARGS;
+  /* Replace any user-shortened command name with its whole name. */
+  azArg[0] = (char *)(pMC->pMethods->name(pMC));
+  return pMC->pMethods->execute(pMC, psx, pzErr, nArg, azArg);
+}
+
+/*
+** Output primary (single-line) help for a known command.
+*/
+static void showPrimaryHelp(FILE *out, const char *zCmd, ShellExState *psx){
+  MetaMatchIter mmi = findMatchingMetaCmds(zCmd, psx);
+  MetaCommand *pmc = nextMatchingMetaCmd(&mmi);
+  if( pmc!=0 ){
+    const char *zH = pmc->pMethods->help(pmc, 0);
+    if( zH!=0 ) utf8_printf(out, HELP_TEXT_FMT, zH);
+  }
+  freeMetaMatchIter(&mmi);
+}
+
+/*
+** Output various subsets of help text. These 5 are defined:
+** 1. For all commands, primary help text only.
+** 2. For all commands, complete help text.
+** 3. For multiple commands matching a pattern, primary help text only.
+** 4. For a single matched command, complete help text.
+** 5. For commands whose help contains a pattern, complete help text.
+** These variations are indicated thusly:
+** 1. zPattern is NULL
+** 2. zPattern is ""
+** 3. zPattern is a prefix matching more than one command
+** 4. zPattern is a word or prefix matching just one command
+** 5. zPattern is neither case 3 or 4 but is found in complete help text
+**
+** Return the number of matches.
+*/
+static int showHelp(FILE *out, const char *zPattern, ShellExState *psx){
+  u8 bNullPattern = zPattern==0;
+  u8 bEmptyPattern = (bNullPattern)? 0 : *zPattern==0;
+  int npm = 0; /* track how many matches found */
+  MetaMatchIter mmi = findMatchingMetaCmds(zPattern, psx);
+  MetaCommand *pmc, *pmcLastShown = 0;
+  char *zPat = 0;
+
+  while( 0 != (pmc = nextMatchingMetaCmd(&mmi)) ){
+    const char *zH = pmc->pMethods->help(pmc, 0);
+    if( zH!=0 ){
+      ++npm;
+      pmcLastShown = pmc;
+      utf8_printf(out, HELP_TEXT_FMT, zH);
+      if( bEmptyPattern ){
+        zH = pmc->pMethods->help(pmc, 1);
+        if( zH!=0 ){
+          utf8_printf(out, HELP_TEXT_FMT, zH);
+        }
       }
-      pci = &command_table[ixm];
-      break;
     }
   }
-  if( 0==pci ){
-    return NO_SUCH_COMMAND;
+  freeMetaMatchIter(&mmi);
+  if( npm==1 && !bEmptyPattern ){
+    /* When zPattern is a prefix of exactly one command, then emit
+     * the secondary help of that command, even if not requested,
+     * unless it was already emitted. */
+    const char *zH = pmcLastShown->pMethods->help(pmcLastShown, 1);
+    if( zH!=0 ) utf8_printf(out, HELP_TEXT_FMT, zH);
+    return npm;
   }
-  if( pci->minArgs > nArg||(pci->maxArgs > 0 && pci->maxArgs < nArg) ){
-    return SHELL_INVALID_ARGS;
+  /* If found anything with provided (or NULL or empty) pattern, it's done. */
+  if( npm>0 ) return npm;
+  /* Otherwise, look for the pattern in all of the help text and show the
+   * complete help for those meta-commands whose help matches. */
+  mmi = findMatchingMetaCmds("", psx);
+  zPat = sqlite3_mprintf("%%%s%%", zPattern);
+  shell_check_oom(zPat);
+  while( 0 != (pmc = nextMatchingMetaCmd(&mmi)) ){
+    const char *zHp = pmc->pMethods->help(pmc, 0);
+    const char *zHs = pmc->pMethods->help(pmc, 1);
+    if( (zHp!=0 && sqlite3_strlike(zPat, zHp, 0)==0)
+        || (zHs!=0 && sqlite3_strlike(zPat, zHs, 0)==0) ){
+      if( zHp ) utf8_printf(out, HELP_TEXT_FMT, zHp);
+      if( zHs ) utf8_printf(out, HELP_TEXT_FMT, zHs);
+      ++npm;
+    }
   }
-  /* Replace any user-shortened command name with its whole name. */
-  azArg[0] = (char *)pci->cmdName;
-  return (pci->cmdDoer)(azArg, nArg, psx, pzErr);
+  sqlite3_free(zPat);
+  freeMetaMatchIter(&mmi);
+  return npm;
 }
 
 /*
@@ -12942,7 +12983,7 @@ static int do_meta_command(char *zLine, ShellExState *psx){
           utf8_printf(STD_ERR, "  %s\n", zErr);
         }else{
           utf8_printf(STD_ERR, "Usage: ");
-          showPrimaryHelp(STD_ERR, azArg[0]);
+          showPrimaryHelp(STD_ERR, azArg[0], psx);
         }
       }
       rc = 1;
