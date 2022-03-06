@@ -200,6 +200,7 @@ proc emit_sync { lines ostrm precLines {fromFile ""} } {
 array set ::cmd_help {}
 array set ::cmd_dispatch {}
 array set ::cmd_condition {}
+array set ::metacmd_init {}
 array set ::inc_type_files {}
 set ::iShuffleErrors 0
 # Ease use of { and } in literals. Instead, $::lb and $::rb can be used.
@@ -214,9 +215,6 @@ set ::parametersHelp {
    ARGS_SIGNATURE sets the formal argument list for the dispatchable functions.
    DISPATCH_ENTRY sets the text of each entry line in emitted dispatch table.
    DISPATCHEE_NAME sets the name to be generated for dispatchable functions.
-   CMD_CAPTURE_RE sets a regular expression to be used for capturing the name
-     to be used for meta-commands within a line passed into COLLECT_DISPATCH,
-     (which is needed to permit them to be emitted in lexical order by name.)
    DC_ARG_COUNT sets the effective argument count for DISPATCHABLE_COMMAND().
    DC_ARG#_DEFAULT sets a default value, DISPATCHABLE_COMMAND() #'th argument.
    HELP_COALESCE sets whether to coalesce secondary help text and add newlines.
@@ -236,8 +234,9 @@ array set ::dispCfg [list \
   DISPATCH_ENTRY \
    "{ \"\$cmd\", \${cmd}Command, \$arg1,\$arg2,\$arg3 }," \
   DISPATCHEE_NAME {${cmd}Command} \
-  CMD_CAPTURE_RE "^\\s*$::lb\\s*\"(\\w+)\"" \
   HELP_COALESCE 0 \
+  METACMD_INIT \
+   "META_CMD_INFO( \${cmd}, \$arg1,\$arg2,\$arg3,\n <HT0>,\n <HT1> )," \
 ]
 # Other config keys:
 #  DC_ARG_COUNT=<number of arguments to DISPATCHABLE_COMMAND()>
@@ -337,7 +336,6 @@ proc chunkify_help {htin} {
 }
 
 array set ::macroTailREs [list \
-  COLLECT_DISPATCH {^\(\s*([\w\*]+)\s*\)\[} \
   COLLECT_HELP_TEXT {^\[} \
   COMMENT {\s+(.*)$} \
   CONDITION_COMMAND {^\(\s*(\w+)\s+([^;]+)\);} \
@@ -345,6 +343,7 @@ array set ::macroTailREs [list \
   DISPATCHABLE_COMMAND {^\(([\w\? ]+)\)(\S)\s*$} \
   EMIT_DISPATCH {^\((\d*)\)} \
   EMIT_HELP_TEXT {^\((\d*)\)} \
+  EMIT_METACMD_INIT {^\((\d*)\)} \
   INCLUDE {^(?:\(\s*(\w+)\s*\))|(?:\s+([\w./\\]+)\M)} \
   IGNORE_COMMANDS {^\(\s*([-+\w ]*)\)\s*;\s*} \
 ]
@@ -352,16 +351,15 @@ array set ::macroTailREs [list \
 # COMMENT tailCapture_Commentary
 # CONDITION_COMMAND tailCapture_Cmd_Condition
 # CONFIGURE_DISPATCH tailCapture_Empty
-# COLLECT_DISPATCH tailCapture_Cmd
 # COLLECT_HELP_TEXT tailCapture_Empty
 # DISPATCHABLE_COMMAND tailCapture_ArgsGlom_TrailChar
 # EMIT_DISPATCH tailCapture_Indent
 # EMIT_HELP_TEXT tailCapture_Indent
+# EMIT_METACMD_INIT tailCapture_Indent
 # IGNORED_COMMANDS tailCapture_SignedCmdGlom
 # INCLUDE tailCapture_IncType_Filename
 
 array set ::macroUsages [list \
-  COLLECT_DISPATCH "\[\n   <dispatch table entry lines>\n  \];" \
   COLLECT_HELP_TEXT "\[\n   <help text lines>\n  \];" \
   COMMENT " <arbitrary characters to end of line>" \
   CONDITION_COMMAND "( name pp_expr );" \
@@ -370,6 +368,7 @@ array set ::macroUsages [list \
       "( name args... ){\n   <implementation code lines>\n  }" \
   EMIT_DISPATCH "( indent );" \
   EMIT_HELP_TEXT "( indent );" \
+  EMIT_METACMD_INIT "( indent );" \
   INCLUDE {( <inc_type> )} \
   SKIP_COMMANDS "( <signed_names> );" \
 ]
@@ -403,32 +402,6 @@ proc IGNORED_COMMANDS {inSrc tcSignedCmdGlom ostrm} {
     }
   }
   return 1
-}
-
-proc COLLECT_DISPATCH {inSrc tailCaptureCmdOrStar ostrm} {
-  # Collect dispatch table entries, along with cmd(s) as ordering info.
-  foreach {infile istrm inLineNum} $inSrc {}
-  foreach {cmd} $tailCaptureCmdOrStar {}
-  set iAte 2
-  set lx [gets $istrm]
-  set disp_frag {}
-  while {![eof $istrm] && ![regexp {^\s*\];} $lx]} {
-    lappend disp_frag $lx
-    set grabCmd $::dispCfg(CMD_CAPTURE_RE)
-    if {![regexp $grabCmd $lx ma dcmd]} {
-      puts stderr "malformed dispatch element:\n $lx"
-      incr ::iShuffleErrors
-    } elseif {$cmd ne "*" && $dcmd ne $cmd} {
-      puts stderr "misdeclared dispatch element:\n $lx"
-      incr ::iShuffleErrors
-    } else {
-      set ::cmd_dispatch($dcmd) [list $lx]
-      set_src_tags dispatch $dcmd $inSrc
-    }
-    set lx [gets $istrm]
-    incr iAte
-  }
-  return $iAte
 }
 
 proc COMMENT {inSrc tailCaptureIgnore ostrm} {
@@ -572,8 +545,10 @@ proc DISPATCHABLE_COMMAND {inSrc tailCapture ostrm} {
       set fname [subst $::dispCfg(DISPATCHEE_NAME)]
       set funcOpen "$rsct $fname\($argexp\)$::lb"
       set dispEntry [subst $::dispCfg(DISPATCH_ENTRY)]
+      set mcInit [subst $::dispCfg(METACMD_INIT)]
       emit_conditionally $cmd [linsert $body 0 $funcOpen] $inSrc $ostrm
       set ::cmd_dispatch($cmd) [list $dispEntry]
+      set ::metacmd_init($cmd) $mcInit
       set_src_tags dispatch $cmd $inSrc
     }
   }
@@ -585,6 +560,42 @@ proc EMIT_DISPATCH {inSrc tailCap ostrm} {
   # wrapped with a conditional construct as set by CONDITION_COMMAND().
   foreach cmd [lsort [array names ::cmd_dispatch]] {
     emit_conditionally $cmd $::cmd_dispatch($cmd) $inSrc $ostrm $tailCap
+  }
+  return 1
+}
+
+proc EMIT_METACMD_INIT {inSrc tailCap ostrm} {
+  # Emit the collected metacommand init table entries, in command order, maybe
+  # wrapped with a conditional construct as set by CONDITION_COMMAND(). Prior
+  # to the emit, substitute markers <HT{0,1}> with help text for the command.
+  foreach cmd [lsort [array names ::metacmd_init]] {
+    set initem $::metacmd_init($cmd)
+    set ht0i -1
+    if {[info exists ::cmd_help($cmd)]} {
+      set ht $::cmd_help($cmd) ; # ht is a list.
+      # HT0 is its content through first trailing comma.
+      # HT1 is the remainder.
+      for {set itc 0} {$itc < [llength $ht]} {incr itc} {
+        if {[regexp {,\w*$} [lindex $ht $itc]]} {
+          set ht0i $itc
+          break
+        }
+      }
+    }
+    if {$ht0i != -1} {
+      set ht0 [regsub {,\w*$} [join [lrange $ht 0 $ht0i] "\n"] "\n"]
+      incr ht0i
+      set ht1 [regsub {,\w*$} [join [lrange $ht $ht0i end] "\n"] "\n"]
+      set ht0 "\n$ht0"
+      set ht1 "\n$ht1"
+    } else {
+      set ht0 {0 /* help or commas missing */}
+      set ht1 0
+    }
+    set initem [regsub {<HT0>} $initem $ht0]
+    set initem [regsub {<HT1>} $initem $ht1]
+    set initem [split $initem "\n"]
+    emit_conditionally $cmd $initem $inSrc $ostrm $tailCap
   }
   return 1
 }
