@@ -1,5 +1,5 @@
-C Fix\sthe\s.import\sproblem\sin\sthe\sCLI\sreported\sby\n[forum:/forumpost/72a024c957|forum\spost\s72a024c957].
-D 2022-03-07T01:28:13.580
+C Fix\sthe\scode\sgenerated\sfor\svector\sIN\soperator\sconstraints\son\svirtual\stables\nso\sthat\sthey\swork\seven\sif\sthe\s"omit"\sfield\sin\sthe\ssqlite3_index_info\sobject\nis\soff.\s\sThis\shas\sapparently\snever\sworked\scorrectly\sbefore.\s\sPresumably,\snobody\nhas\sever\sbefore\swritten\sa\svirtual\stable\sthat\scan\suse\svector\sIN\soperator\nconstraints\sand\sthat\srelies\son\sbytecode\sto\sdouble-check\sthe\sconstraints.\nTest\scases\sin\sTH3.\s\sProblem\sdiscovered\sby\ndbsqlfuzz\scab8e26194a40147627094f3c6849c0a7b1e0310.
+D 2022-03-07T14:59:45.436
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -641,7 +641,7 @@ F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
 F src/where.c 1471be86b34b8ce328c6c68d7e2ee667c7f801ddf83ff179bc5936700cf43aa7
 F src/whereInt.h 15d2975c3b4c193c78c26674400a840da8647fe1777ae3b026e2d15937b38a03
-F src/wherecode.c dd0cdd1b2a0db4f52f8ac36ba4c2fb46eedacc2a833253bc445867cf54081e0f
+F src/wherecode.c 84be340684393248b9f3ecbce9b87c8a6f818149b52302702ea0b8d2a9d51faf
 F src/whereexpr.c 2a71f5491798460c9590317329234d332d9eb1717cba4f3403122189a75c465e
 F src/window.c dfaec4abc6012cbc18e4a202ca3a5d5a0efcc4011d86a06d882ddaab8aedee4d
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1944,10 +1944,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8083757606920151171530f337919553fa8ba902a51744d7b21eeba1558db9fa
-Q +4c3a02600f10926da1f88ddbd457bb1486e6e02dee366b5cfc89e498a10daa6f
-Q +bf9d1278846dce9255f9a11ddfc5dfac1acea2eadcb20816a19d59f7bccaec0f
-R 019f54d2f127da970daad0bc2fb20027
+P d753285bcbb68bdf8f6d95a64af58b20ce6da9f048734fdb0ae49150eb7befd4
+Q +21b656572d066b640ff5774205a4f0db13e1b08a35d0fd484da9130e759b0c26
+R b984960188ad903efb662e97e056efd4
 U drh
-Z 6fea8bddc882893a47ea3bb1db9d8f05
+Z e343344889b797f3e11e78405c1e934e
 # Remove this line to create a well-formed Fossil manifest.
