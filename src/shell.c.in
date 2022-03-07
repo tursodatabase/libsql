@@ -8813,7 +8813,7 @@ COLLECT_HELP_TEXT[
 ];
 DISPATCHABLE_COMMAND( import ? 3 7 ){
   char *zTable = 0;           /* Insert data into this table */
-  char *zSchema = "main";     /* within this schema */
+  char *zSchema = 0;          /* within this schema (may default to "main") */
   char *zFile = 0;            /* Name of file to extra content from */
   sqlite3_stmt *pStmt = NULL; /* A statement */
   int nCol;                   /* Number of columns in the table */
@@ -8822,6 +8822,7 @@ DISPATCHABLE_COMMAND( import ? 3 7 ){
   int needCommit;             /* True to COMMIT or ROLLBACK at end */
   int nSep;                   /* Number of bytes in psi->colSeparator[] */
   char *zSql;                 /* An SQL statement */
+  char *zFullTabName;         /* Table name with schema if applicable */
   ImportCtx sCtx;             /* Reader context */
   char *(SQLITE_CDECL *xRead)(ImportCtx*); /* Func to read one value */
   int eVerbose = 0;           /* Larger for more console output */
@@ -8939,7 +8940,7 @@ DISPATCHABLE_COMMAND( import ? 3 7 ){
     import_cleanup(&sCtx);
     return 1;
   }
-  /* Below, resources must be freed before exit. */
+  /* Here and below, resources must be freed before exit. */
   if( eVerbose>=2 || (eVerbose>=1 && useOutputMode) ){
     char zSep[2];
     zSep[1] = 0;
@@ -8954,8 +8955,13 @@ DISPATCHABLE_COMMAND( import ? 3 7 ){
   while( (nSkip--)>0 ){
     while( xRead(&sCtx) && sCtx.cTerm==sCtx.cColSep ){}
   }
-  zSql = sqlite3_mprintf("SELECT * FROM \"%w\".\"%w\"", zSchema, zTable);
-  if( zSql==0 ){
+  if( zSchema!=0 ){
+    zFullTabName = sqlite3_mprintf("\"%w\".\"%w\"", zSchema, zTable);
+  }else{
+    zFullTabName = sqlite3_mprintf("\"%w\"", zTable);
+  }
+  zSql = sqlite3_mprintf("SELECT * FROM %s", zFullTabName);
+  if( zSql==0 || zFullTabName==0 ){
     import_cleanup(&sCtx);
     shell_out_of_memory();
   }
@@ -8963,8 +8969,7 @@ DISPATCHABLE_COMMAND( import ? 3 7 ){
   rc = sqlite3_prepare_v2(DBX(p), zSql, -1, &pStmt, 0);
   import_append_char(&sCtx, 0);    /* To ensure sCtx.z is allocated */
   if( rc && sqlite3_strglob("no such table: *", sqlite3_errmsg(DBX(p)))==0 ){
-    char *zCreate = sqlite3_mprintf("CREATE TABLE \"%w\".\"%w\"",
-                                    zSchema, zTable);
+    char *zCreate = sqlite3_mprintf("CREATE TABLE %s", zFullTabName);
     sqlite3 *dbCols = 0;
     char *zRenames = 0;
     char *zColDefs;
@@ -8981,9 +8986,12 @@ DISPATCHABLE_COMMAND( import ? 3 7 ){
     }
     assert(dbCols==0);
     if( zColDefs==0 ){
+      utf8_printf(stderr,"%s: empty file\n", sCtx.zFile);
+    import_fail:
       sqlite3_free(zCreate);
+      sqlite3_free(zSql);
+      sqlite3_free(zFullTabName);
       import_cleanup(&sCtx);
-      *pzErr = shellMPrintf(0,"%s: empty file\n", sCtx.zFile);
       return 1;
     }
     zCreate = sqlite3_mprintf("%z%z\n", zCreate, zColDefs);
@@ -8993,20 +9001,18 @@ DISPATCHABLE_COMMAND( import ? 3 7 ){
     rc = sqlite3_exec(DBX(p), zCreate, 0, 0, 0);
     if( rc ){
       utf8_printf(STD_ERR, "%s failed:\n%s\n", zCreate, sqlite3_errmsg(DBX(p)));
-      sqlite3_free(zCreate);
-      import_cleanup(&sCtx);
-      return 1;
+      goto import_fail;
     }
     sqlite3_free(zCreate);
+    zCreate = 0;
     rc = sqlite3_prepare_v2(DBX(p), zSql, -1, &pStmt, 0);
   }
-  sqlite3_free(zSql);
   if( rc ){
     if (pStmt) sqlite3_finalize(pStmt);
     *pzErr = shellMPrintf(0,"Error: %s\n", sqlite3_errmsg(DBX(p)));
-    import_cleanup(&sCtx);
-    return 1;
+    goto import_fail;
   }
+  sqlite3_free(zSql);
   nCol = sqlite3_column_count(pStmt);
   sqlite3_finalize(pStmt);
   pStmt = 0;
@@ -9016,8 +9022,7 @@ DISPATCHABLE_COMMAND( import ? 3 7 ){
     import_cleanup(&sCtx);
     shell_out_of_memory();
   }
-  sqlite3_snprintf(nByte+20, zSql, "INSERT INTO \"%w\".\"%w\" VALUES(?",
-                   zSchema, zTable);
+  sqlite3_snprintf(nByte+20, zSql, "INSERT INTO %s VALUES(?", zFullTabName);
   j = strlen30(zSql);
   for(i=1; i<nCol; i++){
     zSql[j++] = ',';
@@ -9029,13 +9034,13 @@ DISPATCHABLE_COMMAND( import ? 3 7 ){
     utf8_printf(psi->out, "Insert using: %s\n", zSql);
   }
   rc = sqlite3_prepare_v2(DBX(p), zSql, -1, &pStmt, 0);
-  sqlite3_free(zSql);
   if( rc ){
     *pzErr = shellMPrintf(0,"Error: %s\n", sqlite3_errmsg(DBX(p)));
     if (pStmt) sqlite3_finalize(pStmt);
-    import_cleanup(&sCtx);
-    return 1;
+    goto import_fail;
   }
+  sqlite3_free(zSql);
+  sqlite3_free(zFullTabName);
   needCommit = sqlite3_get_autocommit(DBX(p));
   if( needCommit ) sqlite3_exec(DBX(p), "BEGIN", 0, 0, 0);
   do{

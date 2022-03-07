@@ -681,6 +681,7 @@ struct Pager {
   u32 vfsFlags;               /* Flags for sqlite3_vfs.xOpen() */
   u32 sectorSize;             /* Assumed sector size during rollback */
   Pgno mxPgno;                /* Maximum allowed size of the database */
+  Pgno lckPgno;               /* Page number for the locking page */
   i64 pageSize;               /* Number of bytes in a page */
   i64 journalSizeLimit;       /* Size limit for persistent journal files */
   char *zFilename;            /* Name of the database file */
@@ -1667,7 +1668,7 @@ static int readJournalHdr(
 ** journal file descriptor is advanced to the next sector boundary before
 ** anything is written. The format is:
 **
-**   + 4 bytes: PAGER_MJ_PGNO.
+**   + 4 bytes: PAGER_SJ_PGNO.
 **   + N bytes: super-journal filename in utf-8.
 **   + 4 bytes: N (length of super-journal name in bytes, no nul-terminator).
 **   + 4 bytes: super-journal name checksum.
@@ -1715,7 +1716,7 @@ static int writeSuperJournal(Pager *pPager, const char *zSuper){
   /* Write the super-journal data to the end of the journal file. If
   ** an error occurs, return the error code to the caller.
   */
-  if( (0 != (rc = write32bits(pPager->jfd, iHdrOff, PAGER_MJ_PGNO(pPager))))
+  if( (0 != (rc = write32bits(pPager->jfd, iHdrOff, PAGER_SJ_PGNO(pPager))))
    || (0 != (rc = sqlite3OsWrite(pPager->jfd, zSuper, nSuper, iHdrOff+4)))
    || (0 != (rc = write32bits(pPager->jfd, iHdrOff+4+nSuper, nSuper)))
    || (0 != (rc = write32bits(pPager->jfd, iHdrOff+4+nSuper+4, cksum)))
@@ -2225,7 +2226,7 @@ static u32 pager_cksum(Pager *pPager, const u8 *aData){
 ** corrupted, SQLITE_DONE is returned. Data is considered corrupted in
 ** two circumstances:
 ** 
-**   * If the record page-number is illegal (0 or PAGER_MJ_PGNO), or
+**   * If the record page-number is illegal (0 or PAGER_SJ_PGNO), or
 **   * If the record is being rolled back from the main journal file
 **     and the checksum field does not match the record content.
 **
@@ -2285,7 +2286,7 @@ static int pager_playback_one_page(
   ** it could cause invalid data to be written into the journal.  We need to
   ** detect this invalid data (with high probability) and ignore it.
   */
-  if( pgno==0 || pgno==PAGER_MJ_PGNO(pPager) ){
+  if( pgno==0 || pgno==PAGER_SJ_PGNO(pPager) ){
     assert( !isSavepnt );
     return SQLITE_DONE;
   }
@@ -2844,6 +2845,9 @@ static int pager_playback(Pager *pPager, int isHot){
         goto end_playback;
       }
       pPager->dbSize = mxPg;
+      if( pPager->mxPgno<mxPg ){
+        pPager->mxPgno = mxPg;
+      }
     }
 
     /* Copy original pages out of the journal and back into the 
@@ -3740,6 +3744,7 @@ int sqlite3PagerSetPagesize(Pager *pPager, u32 *pPageSize, int nReserve){
       pPager->pTmpSpace = pNew;
       pPager->dbSize = (Pgno)((nByte+pageSize-1)/pageSize);
       pPager->pageSize = pageSize;
+      pPager->lckPgno = (Pgno)(PENDING_BYTE/pageSize) + 1;
     }else{
       sqlite3PageFree(pNew);
     }
@@ -5509,7 +5514,7 @@ static int getPageNormal(
   if( pPg->pPager && !noContent ){
     /* In this case the pcache already contains an initialized copy of
     ** the page. Return without further ado.  */
-    assert( pgno!=PAGER_MJ_PGNO(pPager) );
+    assert( pgno!=PAGER_SJ_PGNO(pPager) );
     pPager->aStat[PAGER_STAT_HIT]++;
     return SQLITE_OK;
 
@@ -5520,7 +5525,7 @@ static int getPageNormal(
     ** (*) obsolete.  Was: maximum page number is 2^31
     ** (2) Never try to fetch the locking page
     */
-    if( pgno==PAGER_MJ_PGNO(pPager) ){
+    if( pgno==PAGER_SJ_PGNO(pPager) ){
       rc = SQLITE_CORRUPT_BKPT;
       goto pager_acquire_err;
     }
@@ -5919,7 +5924,7 @@ static SQLITE_NOINLINE int pagerAddPageToRollbackJournal(PgHdr *pPg){
   /* We should never write to the journal file the page that
   ** contains the database locks.  The following assert verifies
   ** that we do not. */
-  assert( pPg->pgno!=PAGER_MJ_PGNO(pPager) );
+  assert( pPg->pgno!=PAGER_SJ_PGNO(pPager) );
 
   assert( pPager->journalHdr<=pPager->journalOff );
   pData2 = pPg->pData;
@@ -6098,7 +6103,7 @@ static SQLITE_NOINLINE int pagerWriteLargeSector(PgHdr *pPg){
     Pgno pg = pg1+ii;
     PgHdr *pPage;
     if( pg==pPg->pgno || !sqlite3BitvecTest(pPager->pInJournal, pg) ){
-      if( pg!=PAGER_MJ_PGNO(pPager) ){
+      if( pg!=PAGER_SJ_PGNO(pPager) ){
         rc = sqlite3PagerGet(pPager, pg, &pPage, 0);
         if( rc==SQLITE_OK ){
           rc = pager_write(pPage);
@@ -6576,7 +6581,7 @@ int sqlite3PagerCommitPhaseOne(
       ** last page is never written out to disk, leaving the database file
       ** undersized. Fix this now if it is the case.  */
       if( pPager->dbSize>pPager->dbFileSize ){
-        Pgno nNew = pPager->dbSize - (pPager->dbSize==PAGER_MJ_PGNO(pPager));
+        Pgno nNew = pPager->dbSize - (pPager->dbSize==PAGER_SJ_PGNO(pPager));
         assert( pPager->eState==PAGER_WRITER_DBMOD );
         rc = pager_truncate(pPager, nNew);
         if( rc!=SQLITE_OK ) goto commit_phase_one_exit;
