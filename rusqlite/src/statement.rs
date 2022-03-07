@@ -33,17 +33,45 @@ impl Statement<'_> {
     /// ```rust,no_run
     /// # use rusqlite::{Connection, Result, params};
     /// fn update_rows(conn: &Connection) -> Result<()> {
-    ///     let mut stmt = conn.prepare("UPDATE foo SET bar = 'baz' WHERE qux = ?")?;
+    ///     let mut stmt = conn.prepare("UPDATE foo SET bar = ? WHERE qux = ?")?;
+    ///     // For a single parameter, or a parameter where all the values have
+    ///     // the same type, just passing an array is simplest.
+    ///     stmt.execute([2i32])?;
     ///     // The `rusqlite::params!` macro is mostly useful when the parameters do not
     ///     // all have the same type, or if there are more than 32 parameters
-    ///     // at once.
+    ///     // at once, but it can be used in other cases.
     ///     stmt.execute(params![1i32])?;
     ///     // However, it's not required, many cases are fine as:
     ///     stmt.execute(&[&2i32])?;
     ///     // Or even:
     ///     stmt.execute([2i32])?;
+    ///     // If you really want to, this is an option as well.
+    ///     stmt.execute((2i32,))?;
     ///     Ok(())
     /// }
+    /// ```
+    ///
+    /// #### Heterogeneous positional parameters
+    ///
+    /// ```
+    /// use rusqlite::{Connection, Result};
+    /// fn store_file(conn: &Connection, path: &str, data: &[u8]) -> Result<()> {
+    ///     # // no need to do it for real.
+    ///     # fn sha256(_: &[u8]) -> [u8; 32] { [0; 32] }
+    ///     let query = "INSERT OR REPLACE INTO files(path, hash, data) VALUES (?, ?, ?)";
+    ///     let mut stmt = conn.prepare_cached(query)?;
+    ///     let hash: [u8; 32] = sha256(data);
+    ///     // The easiest way to pass positional parameters of have several
+    ///     // different types is by using a tuple.
+    ///     stmt.execute((path, hash, data))?;
+    ///     // Using the `params!` macro also works, and supports longer parameter lists:
+    ///     stmt.execute(rusqlite::params![path, hash, data])?;
+    ///     Ok(())
+    /// }
+    /// # let c = Connection::open_in_memory().unwrap();
+    /// # c.execute_batch("CREATE TABLE files(path TEXT PRIMARY KEY, hash BLOB, data BLOB)").unwrap();
+    /// # store_file(&c, "foo/bar.txt", b"bibble").unwrap();
+    /// # store_file(&c, "foo/baz.txt", b"bobble").unwrap();
     /// ```
     ///
     /// ### Use with named parameters
@@ -567,6 +595,16 @@ impl Statement<'_> {
     }
 
     #[inline]
+    pub(crate) fn ensure_parameter_count(&self, n: usize) -> Result<()> {
+        let count = self.parameter_count();
+        if count != n {
+            Err(Error::InvalidParameterCount(n, count))
+        } else {
+            Ok(())
+        }
+    }
+
+    #[inline]
     pub(crate) fn bind_parameters_named<T: ?Sized + ToSql>(
         &mut self,
         params: &[(&str, &T)],
@@ -606,9 +644,14 @@ impl Statement<'_> {
     /// - binding named and positional parameters in the same query.
     /// - separating parameter binding from query execution.
     ///
-    /// Statements that have had their parameters bound this way should be
-    /// queried or executed by [`Statement::raw_query`] or
-    /// [`Statement::raw_execute`]. Other functions are not guaranteed to work.
+    /// In general, statements that have had *any* parameters bound this way
+    /// should have *all* parameters bound this way, and be queried or executed
+    /// by [`Statement::raw_query`] or [`Statement::raw_execute`], other usage
+    /// is unsupported and will likely, probably in surprising ways.
+    ///
+    /// That is: Do not mix the "raw" statement functions with the rest of the
+    /// API, or the results may be surprising, and may even change in future
+    /// versions without comment.
     ///
     /// # Example
     ///
@@ -1264,6 +1307,41 @@ mod test {
         assert!(stmt.exists([1i32])?);
         assert!(stmt.exists([2i32])?);
         assert!(!stmt.exists([0i32])?);
+        Ok(())
+    }
+    #[test]
+    fn test_tuple_params() -> Result<()> {
+        let db = Connection::open_in_memory()?;
+        let s = db.query_row("SELECT printf('[%s]', ?)", ("abc",), |r| {
+            r.get::<_, String>(0)
+        })?;
+        assert_eq!(s, "[abc]");
+        let s = db.query_row(
+            "SELECT printf('%d %s %d', ?, ?, ?)",
+            (1i32, "abc", 2i32),
+            |r| r.get::<_, String>(0),
+        )?;
+        assert_eq!(s, "1 abc 2");
+        let s = db.query_row(
+            "SELECT printf('%d %s %d %d', ?, ?, ?, ?)",
+            (1, "abc", 2i32, 4i64),
+            |r| r.get::<_, String>(0),
+        )?;
+        assert_eq!(s, "1 abc 2 4");
+        #[rustfmt::skip]
+        let bigtup = (
+            0, "a", 1, "b", 2, "c", 3, "d",
+            4, "e", 5, "f", 6, "g", 7, "h",
+        );
+        let query = "SELECT printf(
+            '%d %s | %d %s | %d %s | %d %s || %d %s | %d %s | %d %s | %d %s',
+            ?, ?, ?, ?,
+            ?, ?, ?, ?,
+            ?, ?, ?, ?,
+            ?, ?, ?, ?
+        )";
+        let s = db.query_row(query, bigtup, |r| r.get::<_, String>(0))?;
+        assert_eq!(s, "0 a | 1 b | 2 c | 3 d || 4 e | 5 f | 6 g | 7 h");
         Ok(())
     }
 

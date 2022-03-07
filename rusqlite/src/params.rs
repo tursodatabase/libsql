@@ -31,12 +31,19 @@ use sealed::Sealed;
 /// parameters is known at compile time, this can be done in one of the
 /// following ways:
 ///
+/// - For small lists of parameters up to 16 items, they may alternatively be
+///   passed as a tuple, as in `thing.query((1, "foo"))`.
+///
+///     This is somewhat inconvenient for a single item, since you need a
+///     weird-looking trailing comma: `thing.query(("example",))`. That case is
+///     perhaps more cleanly expressed as `thing.query(["example"])`.
+///
 /// - Using the [`rusqlite::params!`](crate::params!) macro, e.g.
 ///   `thing.query(rusqlite::params![1, "foo", bar])`. This is mostly useful for
-///   heterogeneous lists of parameters, or lists where the number of parameters
-///   exceeds 32.
+///   heterogeneous lists where the number of parameters greater than 16, or
+///   homogenous lists of paramters where the number of parameters exceeds 32.
 ///
-/// - For small heterogeneous lists of parameters, they can either be passed as:
+/// - For small homogeneous lists of parameters, they can either be passed as:
 ///
 ///     - an array, as in `thing.query([1i32, 2, 3, 4])` or `thing.query(["foo",
 ///       "bar", "baz"])`.
@@ -64,6 +71,9 @@ use sealed::Sealed;
 /// # use rusqlite::{Connection, Result, params};
 /// fn update_rows(conn: &Connection) -> Result<()> {
 ///     let mut stmt = conn.prepare("INSERT INTO test (a, b) VALUES (?, ?)")?;
+///
+///     // Using a tuple:
+///     stmt.execute((0, "foobar"))?;
 ///
 ///     // Using `rusqlite::params!`:
 ///     stmt.execute(params![1i32, "blah"])?;
@@ -127,11 +137,25 @@ use sealed::Sealed;
 ///
 /// ## No parameters
 ///
-/// You can just use an empty array literal for no params. The
-/// `rusqlite::NO_PARAMS` constant which was so common in previous versions of
-/// this library is no longer needed (and is now deprecated).
+/// You can just use an empty tuple or the empty array literal to run a query
+/// that accepts no parameters. (The `rusqlite::NO_PARAMS` constant which was
+/// common in previous versions of this library is no longer needed, and is now
+/// deprecated).
 ///
 /// ### Example (no parameters)
+///
+/// The empty tuple:
+///
+/// ```rust,no_run
+/// # use rusqlite::{Connection, Result, params};
+/// fn delete_all_users(conn: &Connection) -> Result<()> {
+///     // You may also use `()`.
+///     conn.execute("DELETE FROM users", ())?;
+///     Ok(())
+/// }
+/// ```
+///
+/// The empty array:
 ///
 /// ```rust,no_run
 /// # use rusqlite::{Connection, Result, params};
@@ -147,10 +171,11 @@ use sealed::Sealed;
 /// If you have a number of parameters which is unknown at compile time (for
 /// example, building a dynamic query at runtime), you have two choices:
 ///
-/// - Use a `&[&dyn ToSql]`, which is nice if you have one otherwise might be
-///   annoying.
+/// - Use a `&[&dyn ToSql]`. This is often annoying to construct if you don't
+///   already have this type on-hand.
 /// - Use the [`ParamsFromIter`] type. This essentially lets you wrap an
-///   iterator some `T: ToSql` with something that implements `Params`.
+///   iterator some `T: ToSql` with something that implements `Params`. The
+///   usage of this looks like `rusqlite::params_from_iter(something)`.
 ///
 /// A lot of the considerations here are similar either way, so you should see
 /// the [`ParamsFromIter`] documentation for more info / examples.
@@ -169,14 +194,23 @@ pub trait Params: Sealed {
 // Explicitly impl for empty array. Critically, for `conn.execute([])` to be
 // unambiguous, this must be the *only* implementation for an empty array. This
 // avoids `NO_PARAMS` being a necessary part of the API.
+//
+// This sadly prevents `impl<T: ToSql, const N: usize> Params for [T; N]`, which
+// forces people to use `params![...]` or `rusqlite::params_from_iter` for long
+// homogenous lists of parameters. This is not that big of a deal, but is
+// unfortunate, especially because I mostly did it because I wanted a simple
+// syntax for no-params that didnt require importing -- the empty tuple fits
+// that nicely, but I didn't think of it until much later.
+//
+// Admittedly, if we did have the generic impl, then we *wouldn't* support the
+// empty array literal as a parameter, since the `T` there would fail to be
+// inferred. The error message here would probably be quite bad, and so on
+// further thought, probably would end up causing *more* surprises, not less.
 impl Sealed for [&(dyn ToSql + Send + Sync); 0] {}
 impl Params for [&(dyn ToSql + Send + Sync); 0] {
     #[inline]
     fn __bind_in(self, stmt: &mut Statement<'_>) -> Result<()> {
-        // Note: Can't just return `Ok(())` — `Statement::bind_parameters`
-        // checks that the right number of params were passed too.
-        // TODO: we should have tests for `Error::InvalidParameterCount`...
-        stmt.bind_parameters(&[] as &[&dyn ToSql])
+        stmt.ensure_parameter_count(0)
     }
 }
 
@@ -195,6 +229,69 @@ impl Params for &[(&str, &dyn ToSql)] {
         stmt.bind_parameters_named(self)
     }
 }
+
+// Manual impls for the empty and singleton tuple, although the rest are covered
+// by macros.
+impl Sealed for () {}
+impl Params for () {
+    #[inline]
+    fn __bind_in(self, stmt: &mut Statement<'_>) -> Result<()> {
+        stmt.ensure_parameter_count(0)
+    }
+}
+
+// I'm pretty sure you could tweak the `single_tuple_impl` to accept this.
+impl<T: ToSql> Sealed for (T,) {}
+impl<T: ToSql> Params for (T,) {
+    #[inline]
+    fn __bind_in(self, stmt: &mut Statement<'_>) -> Result<()> {
+        stmt.ensure_parameter_count(1)?;
+        stmt.raw_bind_parameter(1, self.0)?;
+        Ok(())
+    }
+}
+
+macro_rules! single_tuple_impl {
+    ($count:literal : $(($field:tt $ftype:ident)),* $(,)?) => {
+        impl<$($ftype,)*> Sealed for ($($ftype,)*) where $($ftype: ToSql,)* {}
+        impl<$($ftype,)*> Params for ($($ftype,)*) where $($ftype: ToSql,)* {
+            fn __bind_in(self, stmt: &mut Statement<'_>) -> Result<()> {
+                stmt.ensure_parameter_count($count)?;
+                $({
+                    debug_assert!($field < $count);
+                    stmt.raw_bind_parameter($field + 1, self.$field)?;
+                })+
+                Ok(())
+            }
+        }
+    }
+}
+
+// We use a the macro for the rest, but don't bother with trying to implement it
+// in a single invocation (it's possible to do, but my attempts were almost the
+// same amount of code as just writing it out this way, and much more dense --
+// it is a more complicated case than the TryFrom macro we have for row->tuple).
+//
+// Note that going up to 16 (rather than the 12 that the impls in the stdlib
+// usually support) is just because we did the same in the `TryFrom<Row>` impl.
+// I didn't catch that then, but there's no reason to remove it, and it seems
+// nice to be consistent here; this way putting data in the database and getting
+// data out of the database are more symmetric in a (mostly superficial) sense.
+single_tuple_impl!(2: (0 A), (1 B));
+single_tuple_impl!(3: (0 A), (1 B), (2 C));
+single_tuple_impl!(4: (0 A), (1 B), (2 C), (3 D));
+single_tuple_impl!(5: (0 A), (1 B), (2 C), (3 D), (4 E));
+single_tuple_impl!(6: (0 A), (1 B), (2 C), (3 D), (4 E), (5 F));
+single_tuple_impl!(7: (0 A), (1 B), (2 C), (3 D), (4 E), (5 F), (6 G));
+single_tuple_impl!(8: (0 A), (1 B), (2 C), (3 D), (4 E), (5 F), (6 G), (7 H));
+single_tuple_impl!(9: (0 A), (1 B), (2 C), (3 D), (4 E), (5 F), (6 G), (7 H), (8 I));
+single_tuple_impl!(10: (0 A), (1 B), (2 C), (3 D), (4 E), (5 F), (6 G), (7 H), (8 I), (9 J));
+single_tuple_impl!(11: (0 A), (1 B), (2 C), (3 D), (4 E), (5 F), (6 G), (7 H), (8 I), (9 J), (10 K));
+single_tuple_impl!(12: (0 A), (1 B), (2 C), (3 D), (4 E), (5 F), (6 G), (7 H), (8 I), (9 J), (10 K), (11 L));
+single_tuple_impl!(13: (0 A), (1 B), (2 C), (3 D), (4 E), (5 F), (6 G), (7 H), (8 I), (9 J), (10 K), (11 L), (12 M));
+single_tuple_impl!(14: (0 A), (1 B), (2 C), (3 D), (4 E), (5 F), (6 G), (7 H), (8 I), (9 J), (10 K), (11 L), (12 M), (13 N));
+single_tuple_impl!(15: (0 A), (1 B), (2 C), (3 D), (4 E), (5 F), (6 G), (7 H), (8 I), (9 J), (10 K), (11 L), (12 M), (13 N), (14 O));
+single_tuple_impl!(16: (0 A), (1 B), (2 C), (3 D), (4 E), (5 F), (6 G), (7 H), (8 I), (9 J), (10 K), (11 L), (12 M), (13 N), (14 O), (15 P));
 
 macro_rules! impl_for_array_ref {
     ($($N:literal)+) => {$(
@@ -225,6 +322,9 @@ macro_rules! impl_for_array_ref {
 // Following libstd/libcore's (old) lead, implement this for arrays up to `[_;
 // 32]`. Note `[_; 0]` is intentionally omitted for coherence reasons, see the
 // note above the impl of `[&dyn ToSql; 0]` for more information.
+//
+// Note that this unfortunately means we can't use const generics here, but I
+// don't really think it matters -- users who hit that can use `params!` anyway.
 impl_for_array_ref!(
     1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17
     18 19 20 21 22 23 24 25 26 27 29 30 31 32

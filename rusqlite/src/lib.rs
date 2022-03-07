@@ -16,10 +16,10 @@
 //!
 //!     conn.execute(
 //!         "CREATE TABLE person (
-//!                   id              INTEGER PRIMARY KEY,
-//!                   name            TEXT NOT NULL,
-//!                   data            BLOB
-//!                   )",
+//!             id   INTEGER PRIMARY KEY,
+//!             name TEXT NOT NULL,
+//!             data BLOB
+//!         )",
 //!         [],
 //!     )?;
 //!     let me = Person {
@@ -29,7 +29,7 @@
 //!     };
 //!     conn.execute(
 //!         "INSERT INTO person (name, data) VALUES (?1, ?2)",
-//!         params![me.name, me.data],
+//!         (me.name, me.data),
 //!     )?;
 //!
 //!     let mut stmt = conn.prepare("SELECT id, name, data FROM person")?;
@@ -145,7 +145,7 @@ const STATEMENT_CACHE_DEFAULT_CAPACITY: usize = 16;
 #[deprecated = "Use an empty array instead; `stmt.execute(NO_PARAMS)` => `stmt.execute([])`"]
 pub const NO_PARAMS: &[&dyn ToSql] = &[];
 
-/// A macro making it more convenient to pass heterogeneous or long lists of
+/// A macro making it more convenient to longer lists of
 /// parameters as a `&[&dyn ToSql]`.
 ///
 /// # Example
@@ -161,8 +161,7 @@ pub const NO_PARAMS: &[&dyn ToSql] = &[];
 ///
 /// fn add_person(conn: &Connection, person: &Person) -> Result<()> {
 ///     conn.execute(
-///         "INSERT INTO person (name, age_in_years, data)
-///                   VALUES (?1, ?2, ?3)",
+///         "INSERT INTO person(name, age_in_years, data) VALUES (?1, ?2, ?3)",
 ///         params![person.name, person.age_in_years, person.data],
 ///     )?;
 ///     Ok(())
