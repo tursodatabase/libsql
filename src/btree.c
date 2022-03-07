@@ -5698,6 +5698,69 @@ moveto_table_finish:
   return rc;
 }
 
+/*
+** Compare the "idx"-th cell on the page the cursor pCur is currently
+** pointing to to pIdxKey using xRecordCompare.  Return negative or
+** zero if the cell is less than or equal pIdxKey.  Return positive
+** if unknown.
+**
+**    Return value negative:     Cell at pCur[idx] less than pIdxKey
+**
+**    Return value is zero:      Cell at pCur[idx] equals pIdxKey
+**
+**    Return value positive:     Nothing is known about the relationship
+**                               of the cell at pCur[idx] and pIdxKey.
+**
+** This routine is part of an optimization.  It is always safe to return
+** a positive value as that will cause the optimization to be skipped.
+*/
+static int indexCellCompare(
+  BtCursor *pCur,
+  int idx,
+  UnpackedRecord *pIdxKey,
+  RecordCompare xRecordCompare
+){
+  MemPage *pPage = pCur->pPage;
+  int c;
+  int nCell;  /* Size of the pCell cell in bytes */
+  u8 *pCell = findCellPastPtr(pPage, idx);
+
+  nCell = pCell[0];
+  if( nCell<=pPage->max1bytePayload ){
+    /* This branch runs if the record-size field of the cell is a
+    ** single byte varint and the record fits entirely on the main
+    ** b-tree page.  */
+    testcase( pCell+nCell+1==pPage->aDataEnd );
+    c = xRecordCompare(nCell, (void*)&pCell[1], pIdxKey);
+  }else if( !(pCell[1] & 0x80) 
+    && (nCell = ((nCell&0x7f)<<7) + pCell[1])<=pPage->maxLocal
+  ){
+    /* The record-size field is a 2 byte varint and the record 
+    ** fits entirely on the main b-tree page.  */
+    testcase( pCell+nCell+2==pPage->aDataEnd );
+    c = xRecordCompare(nCell, (void*)&pCell[2], pIdxKey);
+  }else{
+    /* If the record extends into overflow pages, do not attempt
+    ** the optimization. */
+    c = 99;
+  }
+  return c;
+}
+
+/*
+** Return true (non-zero) if pCur is current pointing to the last
+** page of a table.
+*/
+static int cursorOnLastPage(BtCursor *pCur){
+  int i;
+  assert( pCur->eState==CURSOR_VALID );
+  for(i=0; i<pCur->iPage; i++){
+    MemPage *pPage = pCur->apPage[i];
+    if( pCur->aiIdx[i]<pPage->nCell ) return 0;
+  }
+  return 1;
+}
+
 /* Move the cursor so that it points to an entry in an index table
 ** near the key pIdxKey.   Return a success code.
 **
@@ -5748,6 +5811,36 @@ int sqlite3BtreeIndexMoveto(
        || pIdxKey->default_rc==-1
   );
 
+
+  /* Check to see if we can skip a lot of work.  Two cases:
+  **
+  **    (1) If the cursor is already pointing to the very last cell
+  **        in the table and the pIdxKey search key is greater than or
+  **        equal to that last cell, then no movement is required.
+  **
+  **    (2) If the cursor is on the last page of the table and the first
+  **        cell on that last page is less than or equal to the pIdxKey
+  **        search key, then we can start the search on the current page
+  **        without needing to go back to root.
+  */
+  if( pCur->eState==CURSOR_VALID
+   && pCur->pPage->leaf
+   && cursorOnLastPage(pCur)
+  ){
+    int c;
+    if( pCur->ix==pCur->pPage->nCell-1
+     && (c = indexCellCompare(pCur, pCur->ix, pIdxKey, xRecordCompare))<=0
+    ){
+      *pRes = c;
+      return SQLITE_OK;  /* Cursor already pointing at the correct spot */
+    }
+    if( pCur->iPage>0 
+     && (c = indexCellCompare(pCur, 0, pIdxKey, xRecordCompare))<=0
+    ){
+      goto bypass_moveto_root;  /* Start search on the current page */
+    }
+  }
+
   rc = moveToRoot(pCur);
   if( rc ){
     if( rc==SQLITE_EMPTY ){
@@ -5757,12 +5850,14 @@ int sqlite3BtreeIndexMoveto(
     }
     return rc;
   }
+
+bypass_moveto_root:
   assert( pCur->pPage );
   assert( pCur->pPage->isInit );
   assert( pCur->eState==CURSOR_VALID );
   assert( pCur->pPage->nCell > 0 );
-  assert( pCur->iPage==0 || pCur->apPage[0]->intKey==pCur->curIntKey );
-  assert( pCur->curIntKey || pIdxKey );
+  assert( pCur->curIntKey==0 );
+  assert( pIdxKey!=0 );
   for(;;){
     int lwr, upr, idx, c;
     Pgno chldPg;
@@ -5776,7 +5871,7 @@ int sqlite3BtreeIndexMoveto(
     ** be the right kind (index or table) of b-tree page. Otherwise
     ** a moveToChild() or moveToRoot() call would have detected corruption.  */
     assert( pPage->nCell>0 );
-    assert( pPage->intKey==(pIdxKey==0) );
+    assert( pPage->intKey==0 );
     lwr = 0;
     upr = pPage->nCell-1;
     idx = upr>>1; /* idx = (lwr+upr)/2; */
