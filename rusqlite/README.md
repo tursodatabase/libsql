@@ -17,13 +17,14 @@ In your Cargo.toml:
 ```toml
 [dependencies]
 # `bundled` causes us to automatically compile and link in an up to date
-# version of SQLite for you, which avoids many common build issues, and
-# avoids depending on the version of SQLite on the users system, which may
-# be old or missing. However, it's not ideal for all scenarios and in
-# particular, generic libraries built around `rusqlite` should probably
-# not enable it; it's a choice that should *usually* be left up to
-# the application that actually manages the database, which is why it
-# is not a default feature.
+# version of SQLite for you. This avoids many common build issues, and
+# avoids depending on the version of SQLite on the users system (or your
+# system), which may be old or missing. It's the right choice for most
+# programs that control their own SQLite databases.
+#
+# That said, it's not ideal for all scenarios and in particular, generic
+# libraries built around `rusqlite` should probably not enable it, which
+# is why it is not a default feature -- it could become hard to disable.
 rusqlite = { version = "0.27.0", features = ["bundled"] }
 ```
 
