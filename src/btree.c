@@ -5837,6 +5837,7 @@ int sqlite3BtreeIndexMoveto(
     if( pCur->iPage>0 
      && (c = indexCellCompare(pCur, 0, pIdxKey, xRecordCompare))<=0
     ){
+      pCur->curFlags &= ~BTCF_ValidOvfl;
       goto bypass_moveto_root;  /* Start search on the current page */
     }
   }

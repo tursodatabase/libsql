@@ -1,5 +1,5 @@
-C Do\snot\sallocate\snew\sTrigger\sobjects\sin\sthe\sparser\sfollowing\sa\ssyntax\serror,\nto\savoid\sviolating\sinvariants\sassociated\swith\sExpr\snodes.\s\sSee\n[forum:/forumpost/2024e94071ef1531|forum\sthread\s2024e94071ef1531]\sfor\smore\ninformation.
-D 2022-03-07T16:22:31.035
+C In\sthe\sstay-on-last-page\soptimization\s\sfor\ssqlite3BtreeIndexMoveto()\n(check-in\s[0057bbb508e7662b]\sabout\s16\shours\sago),\sbe\ssure\nto\sclear\sthe\sBTCF_ValidOvfl\sflag,\ssince\sthe\soverflow\scache\sis\sinvalidated\nby\sthe\ssearch\son\sthe\slast\spage.\s\sOSSFuzz\sissue\s45329.
+D 2022-03-07T17:19:40.649
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -492,7 +492,7 @@ F src/auth.c f4fa91b6a90bbc8e0d0f738aa284551739c9543a367071f55574681e0f24f8cf
 F src/backup.c a2891172438e385fdbe97c11c9745676bec54f518d4447090af97189fd8e52d7
 F src/bitvec.c 7c849aac407230278445cb069bebc5f89bf2ddd87c5ed9459b070a9175707b3d
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c dff405cefec5a5573ca9254a6fdefcadf64fa884b575cc15cd4bb23c13b35516
+F src/btree.c 8abb72f4b4cd362eca177332da67c6f7e55dbfb1f0cb4c1df153a90e6ee2027d
 F src/btree.h 74d64b8f28cfa4a894d14d4ed64fa432cd697b98b61708d4351482ae15913e22
 F src/btreeInt.h 1ca477727c5f420a8321208dc5b14d93cb46cec8f941bc49318feb0e00bc961f
 F src/build.c 9891c2160886cf7e344d7e8f1f7177f9612916c7c67ffeacd64cb34a92d387a8
@@ -751,7 +751,7 @@ F test/boundary3.tcl 23361e108a125dca9c4080c2feb884fe54d69243
 F test/boundary3.test 56ef82096b4329aca2be74fa1e2b0f762ea0eb45
 F test/boundary4.tcl 0bb4b1a94f4fc5ae59b79b9a2b7a140c405e2983
 F test/boundary4.test 89e02fa66397b8a325d5eb102b5806f961f8ec4b
-F test/btree01.test e08b3613540145b353f20c81cb18ead54ff12e0f
+F test/btree01.test 8e1ba2f857608ad8fbf9fcc11f33b15b083711162f9566b0a21fb573f2008593
 F test/btree02.test 7555a5440453d900410160a52554fe6478af4faf53098f7235f1f443d5a1d6cc
 F test/btreefault.test c2bcb542685eea44621275cfedbd8a13f65201e3
 F test/busy.test 510dc6daaad18bcbbc085bcc6217d6dc418def5e73f72ce1475eea0cb7834727
@@ -1944,8 +1944,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 21b656572d066b640ff5774205a4f0db13e1b08a35d0fd484da9130e759b0c26
-R 28d58384364b7a2f3c7b557082919a43
+P 5e0ed49b3d739d292f5df3e498449ae8f4357cbb83394181fb34f98ed8372707
+R f716eefd212005e4b7e38ae3bd823c39
 U drh
-Z 79d608a0bfa4ae7a72b8e52e1aaf2711
+Z e8342be86d82f1f58876f0baf6aae742
 # Remove this line to create a well-formed Fossil manifest.
