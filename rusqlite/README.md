@@ -8,11 +8,29 @@
 [![Dependency Status](https://deps.rs/repo/github/rusqlite/rusqlite/status.svg)](https://deps.rs/repo/github/rusqlite/rusqlite)
 [![Discord Chat](https://img.shields.io/discord/927966344266256434.svg?logo=discord)](https://discord.gg/nFYfGPB8g4)
 
-Rusqlite is an ergonomic wrapper for using SQLite from Rust. It attempts to expose
-an interface similar to [rust-postgres](https://github.com/sfackler/rust-postgres).
+Rusqlite is an ergonomic wrapper for using SQLite from Rust.
+
+## Usage
+
+In your Cargo.toml:
+
+```toml
+[dependencies]
+# `bundled` causes us to automatically compile and link in an up to date
+# version of SQLite for you, which avoids many common build issues, and
+# avoids depending on the version of SQLite on the users system, which may
+# be old or missing. However, it's not ideal for all scenarios and in
+# particular, generic libraries built around `rusqlite` should probably
+# not enable it; it's a choice that should *usually* be left up to
+# the application that actually manages the database, which is why it
+# is not a default feature.
+rusqlite = { version = "0.27.0", features = ["bundled"] }
+```
+
+Simple example usage:
 
 ```rust
-use rusqlite::{params, Connection, Result};
+use rusqlite::{Connection, Result};
 
 #[derive(Debug)]
 struct Person {
@@ -30,7 +48,7 @@ fn main() -> Result<()> {
             name  TEXT NOT NULL,
             data  BLOB
         )",
-        [], // empty list of parameters.
+        (), // empty list of parameters.
     )?;
     let me = Person {
         id: 0,
@@ -39,7 +57,7 @@ fn main() -> Result<()> {
     };
     conn.execute(
         "INSERT INTO person (name, data) VALUES (?1, ?2)",
-        params![me.name, me.data],
+        (&me.name, &me.data),
     )?;
 
     let mut stmt = conn.prepare("SELECT id, name, data FROM person")?;
