@@ -88,45 +88,34 @@ newer SQLite version; see details below.
 Rusqlite provides several features that are behind [Cargo
 features](https://doc.rust-lang.org/cargo/reference/manifest.html#the-features-section). They are:
 
-* [`load_extension`](https://docs.rs/rusqlite/latest/rusqlite/struct.LoadExtensionGuard.html)
+* [`load_extension`](https://docs.rs/rusqlite/~0/rusqlite/struct.LoadExtensionGuard.html)
   allows loading dynamic library-based SQLite extensions.
-
-* [`backup`](https://docs.rs/rusqlite/latest/rusqlite/backup/index.html)
+* [`backup`](https://docs.rs/rusqlite/~0/rusqlite/backup/index.html)
   allows use of SQLite's online backup API. Note: This feature requires SQLite 3.6.11 or later.
-
-* [`functions`](https://docs.rs/rusqlite/latest/rusqlite/functions/index.html)
+* [`functions`](https://docs.rs/rusqlite/~0/rusqlite/functions/index.html)
   allows you to load Rust closures into SQLite connections for use in queries.
   Note: This feature requires SQLite 3.7.3 or later.
-
 * `window` for [window function](https://www.sqlite.org/windowfunctions.html) support (`fun(...) OVER ...`). (Implies `functions`.)
-
-* [`trace`](https://docs.rs/rusqlite/latest/rusqlite/trace/index.html)
+* [`trace`](https://docs.rs/rusqlite/~0/rusqlite/trace/index.html)
   allows hooks into SQLite's tracing and profiling APIs. Note: This feature
   requires SQLite 3.6.23 or later.
-
-* [`blob`](https://docs.rs/rusqlite/latest/rusqlite/blob/index.html)
+* [`blob`](https://docs.rs/rusqlite/~0/rusqlite/blob/index.html)
   gives `std::io::{Read, Write, Seek}` access to SQL BLOBs. Note: This feature
   requires SQLite 3.7.4 or later.
-
-* [`limits`](https://docs.rs/rusqlite/latest/rusqlite/struct.Connection.html#method.limit)
+* [`limits`](https://docs.rs/rusqlite/~0/rusqlite/struct.Connection.html#method.limit)
   allows you to set and retrieve SQLite's per connection limits.
-
-* `chrono` implements [`FromSql`](https://docs.rs/rusqlite/latest/rusqlite/types/trait.FromSql.html)
-  and [`ToSql`](https://docs.rs/rusqlite/latest/rusqlite/types/trait.ToSql.html) for various
+* `chrono` implements [`FromSql`](https://docs.rs/rusqlite/~0/rusqlite/types/trait.FromSql.html)
+  and [`ToSql`](https://docs.rs/rusqlite/~0/rusqlite/types/trait.ToSql.html) for various
   types from the [`chrono` crate](https://crates.io/crates/chrono).
-
-* `serde_json` implements [`FromSql`](https://docs.rs/rusqlite/latest/rusqlite/types/trait.FromSql.html)
-  and [`ToSql`](https://docs.rs/rusqlite/latest/rusqlite/types/trait.ToSql.html) for the
+* `serde_json` implements [`FromSql`](https://docs.rs/rusqlite/~0/rusqlite/types/trait.FromSql.html)
+  and [`ToSql`](https://docs.rs/rusqlite/~0/rusqlite/types/trait.ToSql.html) for the
   `Value` type from the [`serde_json` crate](https://crates.io/crates/serde_json).
-
-* `time` implements [`FromSql`](https://docs.rs/rusqlite/latest/rusqlite/types/trait.FromSql.html)
-   and [`ToSql`](https://docs.rs/rusqlite/latest/rusqlite/types/trait.ToSql.html) for the
+* `time` implements [`FromSql`](https://docs.rs/rusqlite/~0/rusqlite/types/trait.FromSql.html)
+   and [`ToSql`](https://docs.rs/rusqlite/~0/rusqlite/types/trait.ToSql.html) for the
    `time::OffsetDateTime` type from the [`time` crate](https://crates.io/crates/time).
-
-* `url` implements [`FromSql`](https://docs.rs/rusqlite/latest/rusqlite/types/trait.FromSql.html)
-  and [`ToSql`](https://docs.rs/rusqlite/latest/rusqlite/types/trait.ToSql.html) for the
+* `url` implements [`FromSql`](https://docs.rs/rusqlite/~0/rusqlite/types/trait.FromSql.html)
+  and [`ToSql`](https://docs.rs/rusqlite/~0/rusqlite/types/trait.ToSql.html) for the
   `Url` type from the [`url` crate](https://crates.io/crates/url).
-
 * `bundled` uses a bundled version of SQLite.  This is a good option for cases where linking to SQLite is complicated, such as Windows.
 * `sqlcipher` looks for the SQLCipher library to link against instead of SQLite. This feature overrides `bundled`.
 * `bundled-sqlcipher` uses a bundled version of SQLCipher. This searches for and links against a system-installed crypto library to provide the crypto implementation.
