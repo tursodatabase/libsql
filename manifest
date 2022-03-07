@@ -1,5 +1,5 @@
-C Fix\sthe\scode\sgenerated\sfor\svector\sIN\soperator\sconstraints\son\svirtual\stables\nso\sthat\sthey\swork\seven\sif\sthe\s"omit"\sfield\sin\sthe\ssqlite3_index_info\sobject\nis\soff.\s\sThis\shas\sapparently\snever\sworked\scorrectly\sbefore.\s\sPresumably,\snobody\nhas\sever\sbefore\swritten\sa\svirtual\stable\sthat\scan\suse\svector\sIN\soperator\nconstraints\sand\sthat\srelies\son\sbytecode\sto\sdouble-check\sthe\sconstraints.\nTest\scases\sin\sTH3.\s\sProblem\sdiscovered\sby\ndbsqlfuzz\scab8e26194a40147627094f3c6849c0a7b1e0310.
-D 2022-03-07T14:51:29.714
+C Do\snot\sallocate\snew\sTrigger\sobjects\sin\sthe\sparser\sfollowing\sa\ssyntax\serror,\nto\savoid\sviolating\sinvariants\sassociated\swith\sExpr\snodes.\s\sSee\n[forum:/forumpost/2024e94071ef1531|forum\sthread\s2024e94071ef1531]\sfor\smore\ninformation.
+D 2022-03-07T16:22:31.035
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -618,7 +618,7 @@ F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 6661a9fa660ecbd3ac0df1acd2ec788b3a8122b4316022bcdaf476ea6754a8de
 F src/treeview.c a84b57d15e46007d8b1ae249344b3f0b7f3c62def908b98baaa54935a57c8476
-F src/trigger.c 19fc6fe696a2409b04496df1ff044e6a942dad6ed3b6e897b1c9093b88cc2c62
+F src/trigger.c 5fc3cde35cc4de510be68bb2db4dcff0ce0e1625f43e28a0920be9a6f010cd3f
 F src/update.c f875b0d59da5c3055a0b2ac20560e1650229c6787e78de5e9836267b5cbb8359
 F src/upsert.c 8789047a8f0a601ea42fa0256d1ba3190c13746b6ba940fe2d25643a7e991937
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
@@ -1640,7 +1640,7 @@ F test/trans.test 45f6f9ab6f66a7b5744f1caac06b558f95da62501916906cf55586a896f9f4
 F test/trans2.test 62bd045bfc7a1c14c5ba83ba64d21ade31583f76
 F test/trans3.test 91a100e5412b488e22a655fe423a14c26403ab94
 F test/transitive1.test f8ee983600b33d167da1885657f064aec404e1c0d0bc8765fdf163f4c749237a
-F test/trigger1.test d30cd09ae8ac365a088f09daba583cc5c0b8fc7d4e1d70809d0b4be3bf6ae2ab
+F test/trigger1.test 02cc64dc98278816c1c1ed8e472e18db8edbad88f37018bf46223e9614831963
 F test/trigger2.test 6e35bd7321c49e63d540aee980eb95dec63e1d1caca175224101045bcc80871f
 F test/trigger3.test aa640bb2bbb03edd5ff69c055117ea088f121945
 F test/trigger4.test 74700b76ebf3947b2f7a92405141eb2cf2a5d359
@@ -1944,8 +1944,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0057bbb508e7662b0da19e981c07ef10236cb616bda952745de3aa2d1c286289
-R 6a4ed095521aa4ba12dc4960a634c639
+P 21b656572d066b640ff5774205a4f0db13e1b08a35d0fd484da9130e759b0c26
+R 28d58384364b7a2f3c7b557082919a43
 U drh
-Z 1e4d19ee992d5d61115bab33a2b8aaba
+Z 79d608a0bfa4ae7a72b8e52e1aaf2711
 # Remove this line to create a well-formed Fossil manifest.
