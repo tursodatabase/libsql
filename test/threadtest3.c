@@ -1494,6 +1494,8 @@ static void dynamic_triggers(int nMs){
 #include "tt3_stress.c"
 #include "tt3_shared.c"
 
+#include "tt3_bcwal2.c"
+
 int main(int argc, char **argv){
   struct ThreadTest {
     void (*xTest)(int);   /* Routine for running this test */
@@ -1518,6 +1520,8 @@ int main(int argc, char **argv){
     { stress1,             "stress1", 10000 },
     { stress2,             "stress2", 60000 },
     { shared1,             "shared1", 10000 },
+
+    { bcwal2_1,            "bcwal2_1", 100000 },
   };
   static char *substArgv[] = { 0, "*", 0 };
   int i, iArg;

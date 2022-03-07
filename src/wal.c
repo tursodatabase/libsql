@@ -4499,7 +4499,12 @@ static int walRestartLog(Wal *pWal){
       nWalSize = MAX(nWalSize, 1);
     }
 
-    if( walidxGetMxFrame(&pWal->hdr, iApp)>=nWalSize ){
+    assert( 1==WAL_LOCK_PART1 );
+    assert( 4==WAL_LOCK_PART2 );
+    assert( 1+(iApp*3)==WAL_LOCK_PART1 || 1+(iApp*3)==WAL_LOCK_PART2 );
+    if( pWal->readLock==1+(iApp*3)
+     && walidxGetMxFrame(&pWal->hdr, iApp)>=nWalSize 
+    ){
       volatile WalCkptInfo *pInfo = walCkptInfo(pWal);
       u32 mxFrame = walidxGetMxFrame(&pWal->hdr, !iApp);
       if( mxFrame==0 || pInfo->nBackfill ){

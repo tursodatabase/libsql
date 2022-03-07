@@ -992,6 +992,7 @@ THREADTEST3_SRC = $(TOP)/test/threadtest3.c    \
                   $(TOP)/test/tt3_index.c      \
                   $(TOP)/test/tt3_vacuum.c      \
                   $(TOP)/test/tt3_stress.c      \
+                  $(TOP)/test/tt3_bcwal2.c      \
                   $(TOP)/test/tt3_lookaside1.c
 
 threadtest3$(EXE): sqlite3.o $(THREADTEST3_SRC) $(TOP)/src/test_multiplex.c
