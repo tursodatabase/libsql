@@ -20,7 +20,7 @@
 //!             name TEXT NOT NULL,
 //!             data BLOB
 //!         )",
-//!         [],
+//!         (), // empty list of parameters.
 //!     )?;
 //!     let me = Person {
 //!         id: 0,
@@ -29,7 +29,7 @@
 //!     };
 //!     conn.execute(
 //!         "INSERT INTO person (name, data) VALUES (?1, ?2)",
-//!         (me.name, me.data),
+//!         (&me.name, &me.data),
 //!     )?;
 //!
 //!     let mut stmt = conn.prepare("SELECT id, name, data FROM person")?;
