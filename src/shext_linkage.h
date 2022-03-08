@@ -33,7 +33,7 @@ typedef struct ShellExState {
   sqlite3 *dbUser;
   /* DB connection for shell dynamical data and extension management
    * Extensions may use this DB, but should not alter content created
-   * by the shell nor depend upon its schema. Names with prefix "shell_"
+   * by the shell nor depend upon its schema. Names with prefix "Shell"
    * or "shext_" are reserved for the shell's use.
    */
   sqlite3 *dbShell;
