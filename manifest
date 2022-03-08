@@ -1,5 +1,5 @@
-C Fix\scompiler\swarnings.
-D 2022-03-08T13:59:46.057
+C Fix\sa\sminor\stypo\sin\sa\scomment.
+D 2022-03-08T15:49:17.727
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -494,7 +494,7 @@ F src/bitvec.c 7c849aac407230278445cb069bebc5f89bf2ddd87c5ed9459b070a9175707b3d
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c f00f7323b3e7d2bf5192055b4a325a5b813686d424b59815e725690d2c215451
 F src/btree.h 74d64b8f28cfa4a894d14d4ed64fa432cd697b98b61708d4351482ae15913e22
-F src/btreeInt.h 1ca477727c5f420a8321208dc5b14d93cb46cec8f941bc49318feb0e00bc961f
+F src/btreeInt.h 8ce1332edd89dfd2461d561ac10a0ab5601c8e06200cb5230596c3caaf54482e
 F src/build.c 9891c2160886cf7e344d7e8f1f7177f9612916c7c67ffeacd64cb34a92d387a8
 F src/callback.c 4c19af69835787bfe790ac560f3071a824eb629f34e41f97b52ce5235c77de1c
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
@@ -1944,8 +1944,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ae464a18d74bf44fc95bc335e75e6a57dc974f6d6a3d603133594039fb589af2
-R 0305e4ee75e40dc455311f12a8983540
+P 5e30c6ea707f9d381127e8b2bb59e0b39bc00997da2c14d32a0e302d0121203b
+R dd5da23e574023e92e905ca7b95262f2
 U drh
-Z 4d6c360fc29e12f82d08e8ad6a34a2b7
+Z b1ecbf8808dd4301db6e0ee5abe242f9
 # Remove this line to create a well-formed Fossil manifest.
