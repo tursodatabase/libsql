@@ -21,8 +21,11 @@ typedef struct ShellExState {
   /* A semi-transient holder of arbitrary data used during operations
    * not interrupted by meta-command invocations. Any not-null pointer
    * left after a meta-command has completed is, by contract, to be
-   * freeable using sqlite3_free(). It is otherwise unconstrained. */
+   * freeable using sqlite3_free(), unless freeHandlerData is non-zero,
+   * in which case it is used for the free, then zeroed too. This
+   * pointer's use is otherwise unconstrained. */
   void *pvHandlerData;
+  void (*freeHandlerData)(void *);
 
   /* The user's currently open and primary DB connection
    * Extensions may use this DB, but must not modify this pointer.
@@ -72,6 +75,7 @@ typedef struct ShellExState {
   int  *pSpecWidths;
   /* The column widths last observed in query results, read-only */
   int  *pHaveWidths;
+
   /* Internal and opaque shell state, not for use by extensions */
   struct ShellInState *pSIS; /* Offset of this member is NOT STABLE. */
 } ShellExState;

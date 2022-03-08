@@ -269,7 +269,7 @@ proc emit_conditionally {cmd lines inSrc ostrm {indent ""} {cmdTagStore {}}} {
 proc coalesce_help {htin} {
   set htrv {}
   foreach hl $htin {
-    if {[regexp {^\s*"\.\w+} $hl]} { ;# "
+    if {[regexp {^\s*"[\.,/><?]\w+} $hl]} { ;# "
       lappend htrv [regsub {"\s*,\s*$} $hl {\n",}]
     } elseif {[regexp {^\s*#\s*\w+} $hl]} {
       lappend htrv $hl
@@ -284,17 +284,23 @@ proc coalesce_help {htin} {
 # Keys are the command names. Values are the help for the
 # commands as a list of lines, with .* logically first.
 # Any #if... #endif structures are maintained and do not
-# interact with "logically first" .* lines, except that
+# interact with "logically first" ?* lines, except that
 # only one such line is seen within such a conditional.
 # (The effect of this is to defeat sorting by command if
 # help for multiple commands' is within one conditional.)
+# Quoted lines beginning with a character in [.,></?],
+# followed by an alpha sequence, are used as the initial,
+# primary, single-line help text for the command named by
+# the alpha sequence. Other quoted lines which follow are
+# used as the command's secondary, expanded help text.
 proc chunkify_help {htin} {
   array set rv [list]
   set if_depth 0
   set cmd_seen ""
   set chunk {}
   foreach htx $htin {
-    if {[regexp {^\s*\"\.\w} $htx] && $cmd_seen ne "" && $if_depth == 0} {
+    if {[regexp {^\s*\"[\.,/><?]\w} $htx]
+        && $cmd_seen ne "" && $if_depth == 0} {
       # Flush accumulated chunk.
       set rv($cmd_seen) $chunk
       set cmd_seen ""
@@ -306,7 +312,7 @@ proc chunkify_help {htin} {
     } elseif {[regexp {^\s*#endif} $htx]} {
       incr if_depth -1
     } else {
-      if {[regexp {^\s*\"\.(\w+)} $htx all cmd] && $cmd_seen eq ""} {
+      if {[regexp {^\s*\"[\.,/><?](\w+)} $htx all cmd] && $cmd_seen eq ""} {
         set cmd_seen $cmd
       }
     }

@@ -1269,7 +1269,6 @@ typedef struct OutputModeSave{
 #define DBX(psx) (psx)->dbUser
 
 typedef struct ShellInState {
-  /* sqlite3 *db;           user database moved to ShellExState.dbUser */
   int openFlags;         /* Additional flags to open.  (SQLITE_OPEN_NOFOLLOW) */
   u8 openMode;           /* SHELL_OPEN_NORMAL, _APPENDVFS, or _ZIPFILE */
   sqlite3_int64 szMax;   /* --maxsize argument to .open */
@@ -1298,27 +1297,18 @@ typedef struct ShellInState {
   /* Output mode state-keep for certain ad-hoc save/restore ops: */
   u8 cMode;              /* temporary output mode for the current query */
   u8 normalMode;         /* Output mode before ".explain on" */
-#if 0 /* moved to ShellExState and renamed */
-  int *colWidth;         /* Requested width of each column in columnar modes */
-  int *actualWidth;      /* Actual width of each column */
-  int nWidth;            /* Number of slots in colWidth[] and actualWidth[] */
-#endif
   char nullValue[20];    /* Text to print for NULL retrieved from database */
 
   unsigned statsOn;      /* True to display memory stats before each finalize */
   unsigned mEqpLines;    /* Mask of veritical lines in the EQP output graph */
   int outCount;          /* Revert to stdout when reaching zero */
-#if 0 /* moved to ShellExState as resultCount */
-  int cnt;               /* Number of records displayed so far */
-#endif
+
   int inputNesting;      /* Track nesting level of .read and other redirects */
   InSource *pInSource;   /* Read commands and SQL from this stream source */
 
   FILE *out;             /* Write results here */
   FILE *traceOut;        /* Output for sqlite3_trace() */
-#if 0 /* moved to ShellExState */
-  int abruptExit;        /* Flag for immediate shell exit, exit code */
-#endif
+
   int nErr;              /* Number of errors seen */
   int writableSchema;    /* True if PRAGMA writable_schema=ON */
   int nCheck;            /* Number of ".check" commands run */
@@ -1348,6 +1338,7 @@ typedef struct ShellInState {
   char *zNonce;          /* Nonce for temporary safe-mode suspension */
   EQPGraph sGraph;       /* Information for the graphical EXPLAIN QUERY PLAN */
   ExpertInfo expert;     /* Valid if previous command was ".expert OPT..." */
+
   ShellExState *pSXS;    /* Pointer to companion, exposed shell state */
 } ShellInState;
 
@@ -4616,9 +4607,10 @@ static int run_schema_dump_query(
 DISPATCH_CONFIG[
   HELP_COALESCE=1
 ];
-#define HELP_TEXT_FMT "%s"
+#define HELP_TEXT_FMTP ".%s"
+#define HELP_TEXT_FMTS "%s"
 /* Above HELP_COALESCE config and HELP_TEXT_FMT PP vars must track.
- * Alternative is 0 and "%s\n" .
+ * Alternative is 0, ".%s\n" and "%s\n" .
  */
 
 /* Forward references */
@@ -7871,7 +7863,7 @@ CONDITION_COMMAND(seeargs !defined(SHELL_OMIT_SEEARGS));
  * The .seeargs command
  */
 COLLECT_HELP_TEXT[
-  ".seeargs                 Echo arguments suffixed with |",
+  ",seeargs                 Echo arguments suffixed with |",
 ];
 DISPATCHABLE_COMMAND( seeargs ? 0 0 azArg nArg p ){
   int rc = 0;
@@ -8011,7 +8003,7 @@ DISPATCHABLE_COMMAND( breakpoint 3 1 1 ){
  */
 COLLECT_HELP_TEXT[
   ".changes on|off          Show number of rows changed by SQL",
-  ".check GLOB              Fail if output since .testcase does not match",
+  ",check GLOB              Fail if output since .testcase does not match",
   ".clone NEWDB             Clone data into NEWDB from the existing database",
   ".connection [close] [#]  Open or close an auxiliary database connection",
 ];
@@ -8367,6 +8359,24 @@ DISPATCHABLE_COMMAND( eqp ? 0 0 ){
   }else{
     return SHELL_INVALID_ARGS;
   }
+}
+
+/*****************
+ * The .exit and .quit commands
+ * These are together so that their subtle differences are apparent.
+ */
+COLLECT_HELP_TEXT[
+  ".exit ?CODE?             Exit this program with return-code CODE",
+  ".quit                    Exit this program or script",
+];
+DISPATCHABLE_COMMAND( exit 3 1 0 ){
+  int rc;
+  if( nArg>1 && (rc = (int)integerValue(azArg[1]))!=0 )
+    p->shellAbruptExit = rc;
+  return 2;
+}
+DISPATCHABLE_COMMAND( quit 1 1 0 ){
+  return 2;
 }
 
 /*****************
@@ -8769,24 +8779,30 @@ DISPATCHABLE_COMMAND( headers 6 2 2 ){
 /*****************
  * The .help command
  */
+
+/* This literal's value AND address are used for help's workings. */
+static const char *zHelpAll = "-all";
+
 COLLECT_HELP_TEXT[
   ".help ?PATTERN?|?-all?   Show help for PATTERN or everything, or summarize",
   "                           Repeat -all to see undocumented commands",
 ];
-DISPATCHABLE_COMMAND( help 3 1 2 ){
+DISPATCHABLE_COMMAND( help 3 1 3 ){
   const char *zPat = 0;
+  FILE *out = ISS(p)->out;
   if( nArg>1 ){
     char *z = azArg[1];
-    if( strcmp(z,"-a")==0
-        || strcmp(z,"-all")==0
-        || strcmp(z,"--all")==0 ){
+    if( nArg==3 && strcmp(z, zHelpAll)==0 && strcmp(azArg[2], zHelpAll)==0 ){
+      /* Show the undocumented command help */
+      zPat = zHelpAll;
+    }else if( strcmp(z,"-a")==0 || strcmp(z,"-all")==0 || strcmp(z,"--all")==0 ){
       zPat = "";
     }else{
       zPat = z;
     }
   }
-  if( showHelp(ISS(p)->out, zPat, p)==0 ){
-    utf8_printf(ISS(p)->out, "Nothing matches '%s'\n", azArg[1]);
+  if( showHelp(out, zPat, p)==0 && nArg>1 ){
+    utf8_printf(out, "Nothing matches '%s'\n", azArg[1]);
   }
   /* Help pleas never fail! */
   return 0;
@@ -11548,16 +11564,20 @@ DISPATCHABLE_COMMAND( sha3sum 4 1 1 ){
 }
 
 /*****************
- * The .selftest, .shell, .show, .shxopts, .stats and .system commands
+ * The .selftest*, .shell, .show, .shxopts, .stats and .system commands
  */
+CONDITION_COMMAND( selftest_bool defined(SQLITE_DEBUG) );
+CONDITION_COMMAND( selftest_int defined(SQLITE_DEBUG) );
 CONDITION_COMMAND( shell !defined(SQLITE_NOHAVE_SYSTEM) );
 CONDITION_COMMAND( shxopts (SHELL_EXTENSIONS)!=0 );
 CONDITION_COMMAND( system !defined(SQLITE_NOHAVE_SYSTEM) );
 COLLECT_HELP_TEXT[
-  ".selftest ?OPTIONS?      Run tests defined in the SELFTEST table",
+  ",selftest ?OPTIONS?      Run tests defined in the SELFTEST table",
   "    Options:",
   "       --init               Create a new SELFTEST table",
   "       -v                   Verbose output",
+  ",selftest_bool ?ARGS?    Show boolean values of ARGS as flag tokens",
+  ",selftest_int ?ARGS?     Show integer values of ARGS as integer tokens",
   ".shell CMD ARGS...       Run CMD ARGS... in a system shell",
   ".show                    Show the current values for various settings",
   ".shxopts ?SIGNED_OPTS?   Show or alter shell extension options",
@@ -11569,6 +11589,26 @@ COLLECT_HELP_TEXT[
   "   vmstep                   Show the virtual machine step count only",
   ".system CMD ARGS...      Run CMD ARGS... in a system shell",
 ];
+
+DISPATCHABLE_COMMAND( selftest_bool 10 0 0 ){
+  int i, v;
+  for(i=1; i<nArg; i++){
+    v = booleanValue(azArg[i]);
+    utf8_printf(ISS(p)->out, "%s: %d 0x%x\n", azArg[i], v, v);
+  }
+  return 0;
+}
+DISPATCHABLE_COMMAND( selftest_int 10 0 0 ){
+  int i; sqlite3_int64 v;
+  for(i=1; i<nArg; i++){
+    char zBuf[200];
+    v = integerValue(azArg[i]);
+    sqlite3_snprintf(sizeof(zBuf),zBuf,"%s: %lld 0x%llx\n", azArg[i],v,v);
+    utf8_printf(ISS(p)->out, "%s", zBuf);
+  }
+  return 0;
+}
+
 DISPATCHABLE_COMMAND( selftest 4 0 0 ){
   int rc;
   ShellInState *psi = ISS(p);
@@ -11994,8 +12034,8 @@ DISPATCHABLE_COMMAND( indices 3 1 2 ){
 CONDITION_COMMAND( testctrl !defined(SQLITE_UNTESTABLE) );
 CONDITION_COMMAND( trace !defined(SQLITE_OMIT_TRACE) );
 COLLECT_HELP_TEXT[
-  ".testcase NAME           Begin redirecting output to 'testcase-out.txt'",
-  ".testctrl CMD ...        Run various sqlite3_test_control() operations",
+  ",testcase NAME           Begin redirecting output to 'testcase-out.txt'",
+  ",testctrl CMD ...        Run various sqlite3_test_control() operations",
   "                            Run \".testctrl\" with no arguments for details",
   ".timeout MS              Try opening locked tables for MS milliseconds",
   ".timer on|off            Turn SQL timer on or off",
@@ -12801,7 +12841,7 @@ static void showPrimaryHelp(FILE *out, const char *zCmd, ShellExState *psx){
   MetaCommand *pmc = nextMatchingMetaCmd(&mmi);
   if( pmc!=0 ){
     const char *zH = pmc->pMethods->help(pmc, 0);
-    if( zH!=0 ) utf8_printf(out, HELP_TEXT_FMT, zH);
+    if( zH!=0 && *zH ) utf8_printf(out, HELP_TEXT_FMTP, zH+1);
   }
   freeMetaMatchIter(&mmi);
 }
@@ -12813,33 +12853,42 @@ static void showPrimaryHelp(FILE *out, const char *zCmd, ShellExState *psx){
 ** 3. For multiple commands matching a pattern, primary help text only.
 ** 4. For a single matched command, complete help text.
 ** 5. For commands whose help contains a pattern, complete help text.
+** 6. For the set of "undocumented" (without normal help) commands.
 ** These variations are indicated thusly:
 ** 1. zPattern is NULL
 ** 2. zPattern is ""
 ** 3. zPattern is a prefix matching more than one command
 ** 4. zPattern is a word or prefix matching just one command
 ** 5. zPattern is neither case 3 or 4 but is found in complete help text
+** 6. zPattern is exactly the pointer known locally as zHelpAll.
 **
 ** Return the number of matches.
 */
 static int showHelp(FILE *out, const char *zPattern, ShellExState *psx){
   u8 bNullPattern = zPattern==0;
-  u8 bEmptyPattern = (bNullPattern)? 0 : *zPattern==0;
+  u8 bShowUndoc = zPattern==zHelpAll;
+  u8 bEmptyPattern = !bNullPattern && (*zPattern==0 || bShowUndoc);
   int npm = 0; /* track how many matches found */
-  MetaMatchIter mmi = findMatchingMetaCmds(zPattern, psx);
+  MetaMatchIter mmi = findMatchingMetaCmds(bShowUndoc? "" : zPattern, psx);
   MetaCommand *pmc, *pmcLastShown = 0;
   char *zPat = 0;
+  char cLead = (bShowUndoc)? ',' : '.';
 
+  if( bShowUndoc ){
+    utf8_printf(out, "%s\n%s\n",
+                "The following commands are used for internal SQLite testing.",
+                "They are undocumented and subject to change without notice.");
+  }
   while( 0 != (pmc = nextMatchingMetaCmd(&mmi)) ){
     const char *zH = pmc->pMethods->help(pmc, 0);
-    if( zH!=0 ){
+    if( zH!=0 && *zH==cLead){
       ++npm;
       pmcLastShown = pmc;
-      utf8_printf(out, HELP_TEXT_FMT, zH);
+      utf8_printf(out, HELP_TEXT_FMTP, zH+1);
       if( bEmptyPattern ){
         zH = pmc->pMethods->help(pmc, 1);
         if( zH!=0 ){
-          utf8_printf(out, HELP_TEXT_FMT, zH);
+          utf8_printf(out, HELP_TEXT_FMTS, zH);
         }
       }
     }
@@ -12850,7 +12899,7 @@ static int showHelp(FILE *out, const char *zPattern, ShellExState *psx){
      * the secondary help of that command, even if not requested,
      * unless it was already emitted. */
     const char *zH = pmcLastShown->pMethods->help(pmcLastShown, 1);
-    if( zH!=0 ) utf8_printf(out, HELP_TEXT_FMT, zH);
+    if( zH!=0 ) utf8_printf(out, HELP_TEXT_FMTS, zH);
     return npm;
   }
   /* If found anything with provided (or NULL or empty) pattern, it's done. */
@@ -12863,10 +12912,11 @@ static int showHelp(FILE *out, const char *zPattern, ShellExState *psx){
   while( 0 != (pmc = nextMatchingMetaCmd(&mmi)) ){
     const char *zHp = pmc->pMethods->help(pmc, 0);
     const char *zHs = pmc->pMethods->help(pmc, 1);
-    if( (zHp!=0 && sqlite3_strlike(zPat, zHp, 0)==0)
+    if( zHp==0 || *zHp!='.' ) continue;
+    if( sqlite3_strlike(zPat, zHp, 0)==0
         || (zHs!=0 && sqlite3_strlike(zPat, zHs, 0)==0) ){
-      if( zHp ) utf8_printf(out, HELP_TEXT_FMT, zHp);
-      if( zHs ) utf8_printf(out, HELP_TEXT_FMT, zHs);
+      utf8_printf(out, HELP_TEXT_FMTP, zHp+1);
+      if( zHs ) utf8_printf(out, HELP_TEXT_FMTS, zHs);
       ++npm;
     }
   }
@@ -12887,6 +12937,8 @@ static int do_meta_command(char *zLine, ShellExState *psx){
   int n, c;
   int rc = 0;
   char *azArg[52];
+  char *zErr = 0;
+  int dispatchResult;
 #if SHELL_VARIABLE_EXPANSION
   int ncLineIn = strlen30(zLine);
   u8 bExpVars = SHEXT_VAREXP(ISS(psx));
@@ -12930,91 +12982,52 @@ static int do_meta_command(char *zLine, ShellExState *psx){
   c = azArg[0][0];
   clearTempFile(ISS(psx));
 
-  /* Check for the special, non-dispatched meta-commands.
-  */
-
-  if( c=='e' && strncmp(azArg[0], "exit", n)==0 ){
-    if( nArg>1 && (rc = (int)integerValue(azArg[1]))!=0 )
-      psx->shellAbruptExit = rc;
-    rc = 2;
-  }else
-
-  if( c=='q' && strncmp(azArg[0], "quit", n)==0 ){
-    rc = 2;
-  }else
-
-#ifdef SQLITE_DEBUG
-  /* Undocumented commands for internal testing.  
-   * Subject to change without notice.
-   * These are not dispatched via lookup because the command word varies.
-   */
-  if( c=='s' && n>=10 && strncmp(azArg[0], "selftest-", 9)==0 ){
-    if( strncmp(azArg[0]+9, "boolean", n-9)==0 ){
-      int i, v;
-      for(i=1; i<nArg; i++){
-        v = booleanValue(azArg[i]);
-        utf8_printf(ISS(psx)->out, "%s: %d 0x%x\n", azArg[i], v, v);
-      }
-    }
-    if( strncmp(azArg[0]+9, "integer", n-9)==0 ){
-      int i; sqlite3_int64 v;
-      for(i=1; i<nArg; i++){
-        char zBuf[200];
-        v = integerValue(azArg[i]);
-        sqlite3_snprintf(sizeof(zBuf),zBuf,"%s: %lld 0x%llx\n", azArg[i],v,v);
-        utf8_printf(ISS(psx)->out, "%s", zBuf);
-      }
-    }
-  }else
-#endif
-    /* The meta-command is not among the specially handled ones. Dispatch it. */
-  {
-    char *zErr = 0;
-    int dispatchResult = dispatchCommand(azArg, nArg, psx, &zErr);
-    if( psx->shellAbruptExit!=0 ){
-      dispatchResult = SHELL_FORBIDDEN_OP;
-    }
-    switch( dispatchResult ){
-    case NO_SUCH_COMMAND:
-      utf8_printf(STD_ERR, "Error: unknown command: \"%s\"\n", azArg[0]);
-      if( stdin_is_interactive )
-        utf8_printf(STD_ERR, "  Enter \".help\" for a list of commands.\n");
-      rc = 1;
-      break;
-    case SHELL_INVALID_ARGS:
-      utf8_printf(STD_ERR, "Error: invalid arguments for \".%s\"\n", azArg[0]);
-      if( stdin_is_interactive ){
-        if( zErr!=0 ){
-          utf8_printf(STD_ERR, "  %s\n", zErr);
-        }else{
-          utf8_printf(STD_ERR, "Usage: ");
-          showPrimaryHelp(STD_ERR, azArg[0], psx);
-        }
-      }
-      rc = 1;
-      break;
-    case SHELL_FORBIDDEN_OP:
+  dispatchResult = dispatchCommand(azArg, nArg, psx, &zErr);
+  if( psx->shellAbruptExit!=0 ){
+    dispatchResult = SHELL_FORBIDDEN_OP;
+  }
+  switch( dispatchResult ){
+  case NO_SUCH_COMMAND:
+    utf8_printf(STD_ERR, "Error: unknown command: \"%s\"\n", azArg[0]);
+    if( stdin_is_interactive )
+      utf8_printf(STD_ERR, "  Enter \".help\" for a list of commands.\n");
+    rc = 1;
+    break;
+  case SHELL_INVALID_ARGS:
+    utf8_printf(STD_ERR, "Error: invalid arguments for \".%s\"\n", azArg[0]);
+    if( stdin_is_interactive ){
       if( zErr!=0 ){
-        utf8_printf
-          (STD_ERR,
-           "Error: \".%s\" may not %s in --safe mode\n", azArg[0], zErr);
-        sqlite3_free(zErr);
-      }else {
-        utf8_printf(STD_ERR,
-                    "Error: \".%s\" forbidden in --safe mode\n", azArg[0]);
+        utf8_printf(STD_ERR, "  %s\n", zErr);
+      }else{
+        utf8_printf(STD_ERR, "Usage: ");
+        showPrimaryHelp(STD_ERR, azArg[0], psx);
       }
-      psx->shellAbruptExit = 3;
-      rc = 2;
-    default:
-      if( 0!=dispatchResult ) rc = 1;
-      if( zErr!=0 ){
-        utf8_printf(STD_ERR, "%s", zErr);
-        sqlite3_free(zErr);
-      }
+    }
+    rc = 1;
+    break;
+  case SHELL_FORBIDDEN_OP:
+    if( zErr!=0 ){
+      utf8_printf
+        (STD_ERR,
+         "Error: \".%s\" may not %s in --safe mode\n", azArg[0], zErr);
+      sqlite3_free(zErr);
+    }else {
+      utf8_printf(STD_ERR,
+                  "Error: \".%s\" forbidden in --safe mode\n", azArg[0]);
+    }
+    psx->shellAbruptExit = 3;
+    /* fall thru */
+  case 2:
+    rc = 2;
+    /* fall thru */
+  default:
+    if( dispatchResult>2 ) rc = 1;
+    if( zErr!=0 ){
+      utf8_printf(STD_ERR, "%s", zErr);
+      sqlite3_free(zErr);
     }
   }
 
-meta_command_exit:
   if( ISS(psx)->outCount ){
     ISS(psx)->outCount--;
     if( ISS(psx)->outCount==0 ) output_reset(ISS(psx));
