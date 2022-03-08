@@ -33,7 +33,7 @@ static TreeView *sqlite3TreeViewPush(TreeView *p, u8 moreToFollow){
     p->iLevel++;
   }
   assert( moreToFollow==0 || moreToFollow==1 );
-  if( p->iLevel<sizeof(p->bLine) ) p->bLine[p->iLevel] = moreToFollow;
+  if( p->iLevel<(int)sizeof(p->bLine) ) p->bLine[p->iLevel] = moreToFollow;
   return p;
 }
 
@@ -57,7 +57,7 @@ static void sqlite3TreeViewLine(TreeView *p, const char *zFormat, ...){
   char zBuf[500];
   sqlite3StrAccumInit(&acc, 0, zBuf, sizeof(zBuf), 0);
   if( p ){
-    for(i=0; i<p->iLevel && i<sizeof(p->bLine)-1; i++){
+    for(i=0; i<p->iLevel && i<(int)sizeof(p->bLine)-1; i++){
       sqlite3_str_append(&acc, p->bLine[i] ? "|   " : "    ", 4);
     }
     sqlite3_str_append(&acc, p->bLine[i] ? "|-- " : "'-- ", 4);

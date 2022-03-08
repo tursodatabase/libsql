@@ -180,7 +180,7 @@ static int growOpArray(Vdbe *v, int nOp){
     return SQLITE_NOMEM;
   }
 
-  assert( nOp<=(1024/sizeof(Op)) );
+  assert( nOp<=(int)(1024/sizeof(Op)) );
   assert( nNew>=(v->nOpAlloc+nOp) );
   pNew = sqlite3DbRealloc(p->db, v->aOp, nNew*sizeof(Op));
   if( pNew ){
