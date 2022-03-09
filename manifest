@@ -1,5 +1,5 @@
-C Do\snot\suse\sva_arg()\sas\san\sl-value,\sbecause\n[forum:/forumpost/45e39c1311|AIX\sdoes\snot\sallow\sthat],\sfrom\swhat\swe\sare\ntold.
-D 2022-03-09T13:22:53.442
+C Fix\sthe\ssqlite_dbpage\svirtual\stable\sso\sthat\sit\sstarts\sa\swrite\stransaction\non\sall\sattached\sschemas.
+D 2022-03-09T14:22:28.517
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -500,7 +500,7 @@ F src/callback.c 4c19af69835787bfe790ac560f3071a824eb629f34e41f97b52ce5235c77de1
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 2cce39df1a13e05b7633e6d21b651f21492471f991dd7b323a4ee4e7b7f0b7f1
 F src/date.c 15082566229d4b1e5f24fdb490bf9bcc68824b911d70e3573ef075a1b9e2d26f
-F src/dbpage.c 74cf60d209adbf00a5687fb777fd66c450e7008dcf9e97f446b543c13fe841c4
+F src/dbpage.c a70be9a4879ac5392673a1050d526a72b8b2f9938df7049f65348566a2637db3
 F src/dbstat.c 861e08690fcb0f2ee1165eff0060ea8d4f3e2ea10f80dab7d32ad70443a6ff2d
 F src/delete.c b5f1716b4d723db48254ee0f896e362cd029e865e05414139ea7f539f3884e1d
 F src/expr.c 3cdb00b6c15f815c94836e7b4474b675155d1279e64804f6ab5816188a9b05b6
@@ -557,7 +557,7 @@ F src/shell.c.in 69d1e59da4881f096ab47fbd3e6d99794f3e4a43f41fd9e4d2e845c9b8d20fd
 F src/sqlite.h.in e82ac380b307659d0892f502b742f825504e78729f4edaadce946003b9c00816
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h a95cb9ed106e3d39e2118e4dcc15a14faec3fa50d0093425083d340d9dfd96e6
-F src/sqliteInt.h 4a8b7d685781df55ce546b6c72bdbd72bb23ca93f59b6d70d81ed6df22607d75
+F src/sqliteInt.h a98a9cfc7e717b98f30e72545695f1ad92354fdf16df8510e80f48cf98c4adbe
 F src/sqliteLimit.h d7323ffea5208c6af2734574bae933ca8ed2ab728083caa117c9738581a31657
 F src/status.c 4b8bc2a6905163a38b739854a35b826c737333fab5b1f8e03fa7eb9a4799c4c1
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -639,7 +639,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c b9df133a705093da8977da5eb202eaadb844839f1c7297c08d33471f5491843d
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
-F src/where.c 1471be86b34b8ce328c6c68d7e2ee667c7f801ddf83ff179bc5936700cf43aa7
+F src/where.c 5c5a380bfb13a6964a7ab4d3780f9b4fd2b40457f4bfd2b85224d326f4a3bae1
 F src/whereInt.h 15d2975c3b4c193c78c26674400a840da8647fe1777ae3b026e2d15937b38a03
 F src/wherecode.c 555f598a9ddad81761f084710fdb4f8733fe31bc14cd6b19f8ca4274a7eaa04c
 F src/whereexpr.c 2a71f5491798460c9590317329234d332d9eb1717cba4f3403122189a75c465e
@@ -1944,8 +1944,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a9cda38997a692e25d2fe994a9a3fb9472c00ba04323c82e706fdb1112d4244e
-R 64b1de8af9978ba381b4e1a3e1bb2e50
+P 46d1a6de620f26fef9d0e2de6e9ea032790016441e4e6228a2f8cb30e20c9a51
+R 3cf9d0a8d2242fdc47ea70af0c922c52
 U drh
-Z 86421268c2e3304c272a8e4b33f694ad
+Z 3ca5a3fb65527e732bd1765ba8c8c948
 # Remove this line to create a well-formed Fossil manifest.
