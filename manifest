@@ -1,5 +1,5 @@
-C Fix\sthe\ssqlite_dbpage\svirtual\stable\sso\sthat\sit\sstarts\sa\swrite\stransaction\non\sall\sattached\sschemas.
-D 2022-03-09T14:22:28.517
+C Further\srefinements\sto\sthe\ssqlite_offset()\sfix\sfrom\s[6029514b08b88e3f].
+D 2022-03-09T18:29:19.102
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -639,7 +639,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c b9df133a705093da8977da5eb202eaadb844839f1c7297c08d33471f5491843d
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
-F src/where.c 5c5a380bfb13a6964a7ab4d3780f9b4fd2b40457f4bfd2b85224d326f4a3bae1
+F src/where.c b6f15969cadadd050cb9e43e77af76c7b073fd0247c486f0364427b56336f0c2
 F src/whereInt.h 15d2975c3b4c193c78c26674400a840da8647fe1777ae3b026e2d15937b38a03
 F src/wherecode.c 555f598a9ddad81761f084710fdb4f8733fe31bc14cd6b19f8ca4274a7eaa04c
 F src/whereexpr.c 2a71f5491798460c9590317329234d332d9eb1717cba4f3403122189a75c465e
@@ -1944,8 +1944,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 46d1a6de620f26fef9d0e2de6e9ea032790016441e4e6228a2f8cb30e20c9a51
-R 3cf9d0a8d2242fdc47ea70af0c922c52
+P 642a0b4752743216271e4f855a465515ef7f6a985f280251e18d67e3d5fb694b
+R e003996df7c18cb8469e22c2bd0a359b
 U drh
-Z 3ca5a3fb65527e732bd1765ba8c8c948
+Z b55793a1f68bedfa10993b4fd3b3fa4f
 # Remove this line to create a well-formed Fossil manifest.
