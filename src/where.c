@@ -3764,7 +3764,6 @@ int sqlite3_vtab_rhs_value(
   return rc;
 }
 
-
 /*
 ** Return true if ORDER BY clause may be handled as DISTINCT.
 */
@@ -3775,6 +3774,22 @@ int sqlite3_vtab_distinct(sqlite3_index_info *pIdxInfo){
        || pHidden->eDistinct==2 );
   return pHidden->eDistinct;
 }
+
+#if (defined(SQLITE_ENABLE_DBPAGE_VTAB) || defined(SQLITE_TEST)) \
+    && !defined(SQLITE_OMIT_VIRTUALTABLE)
+/*
+** Cause the prepared statement that is associated with a call to
+** xBestIndex to open write transactions on all attached schemas.
+** This is used by the (built-in) sqlite_dbpage virtual table.
+*/
+void sqlite3VtabWriteAll(sqlite3_index_info *pIdxInfo){
+  HiddenIndexInfo *pHidden = (HiddenIndexInfo*)&pIdxInfo[1];
+  Parse *pParse = pHidden->pParse;
+  Parse *pTopLevel = sqlite3ParseToplevel(pParse);
+  pTopLevel->cookieMask =
+    pTopLevel->writeMask = (((u64)1) << pParse->db->nDb) - 1;
+}
+#endif
 
 /*
 ** Add all WhereLoop objects for a table of the join identified by
