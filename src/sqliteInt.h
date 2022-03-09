@@ -2517,6 +2517,11 @@ struct KeyInfo {
 struct UnpackedRecord {
   KeyInfo *pKeyInfo;  /* Collation and sort-order information */
   Mem *aMem;          /* Values */
+  union {
+    char *z;            /* Cache of aMem[0].z for vdbeRecordCompareString() */
+    i64 i;              /* Cache of aMem[0].u.i for vdbeRecordCompareInt() */
+  } u;
+  int n;              /* Cache of aMem[0].n used by vdbeRecordCompareString() */
   u16 nField;         /* Number of entries in apMem[] */
   i8 default_rc;      /* Comparison result if keys are equal */
   u8 errCode;         /* Error detected by xRecordCompare (CORRUPT or NOMEM) */
@@ -5101,7 +5106,12 @@ int sqlite3VtabCallCreate(sqlite3*, int, const char *, char **);
 int sqlite3VtabCallConnect(Parse*, Table*);
 int sqlite3VtabCallDestroy(sqlite3*, int, const char *);
 int sqlite3VtabBegin(sqlite3 *, VTable *);
+
 FuncDef *sqlite3VtabOverloadFunction(sqlite3 *,FuncDef*, int nArg, Expr*);
+#if (defined(SQLITE_ENABLE_DBPAGE_VTAB) || defined(SQLITE_TEST)) \
+    && !defined(SQLITE_OMIT_VIRTUALTABLE)
+  void sqlite3VtabWriteAll(sqlite3_index_info*);
+#endif
 sqlite3_int64 sqlite3StmtCurrentTime(sqlite3_context*);
 int sqlite3VdbeParameterIndex(Vdbe*, const char*, int);
 int sqlite3TransferBindings(sqlite3_stmt *, sqlite3_stmt *);

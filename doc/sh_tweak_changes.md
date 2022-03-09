@@ -1,4 +1,4 @@
-# Feature changes on shell-tweaks branch.
+# <u>Feature changes on shell-tweaks branch.</u>
 
 This section summarizes the changes; motivation is addressed further below.
 
@@ -23,7 +23,7 @@ This section summarizes the changes; motivation is addressed further below.
 
 ### clear ?NAME? to allow selective zapping. (Was everything before.)
 
-### edit ?OPT? NAME to allow editing an existing or new entry. The OPT, if provided, may be -t or -e to select whether the resulting value is stored as text or evaluated as a SQL expression. A hidden option, --editor=<something>, may be used in place of having set environment variable DISPLAY before starting shell. This option is mentioned just when needed in an interactive session.
+### edit ?OPT? NAME to allow editing an existing or new entry. The OPT, if provided, may be -t or -e to select whether the resulting value is stored as text or evaluated as a SQL expression. A hidden option, --editor=\<something\>, may be used in place of having set environment variable DISPLAY before starting shell. This option is mentioned just when needed in an interactive session.
 
 ### list/ls output options, prettified with optional glob patterns.
 
@@ -57,17 +57,17 @@ Undocumented dot commands are: .check, .selftest-*, .seeargs, .testcase, and .te
 
 ## Dot-command parsing is optionally extended to permit arguments to span more than one line, or more arguments to be added in subsequent lines. This is not the default behavior because it breaks backward compatibility (for ill-formed input with mis-balanced quotes.) It is enabled with either an invocation command-line option or the dot-commad, ".shxopts +parsing". With extended parsing, unclosed arguments may contain literal newlines, and lines may be be spliced if backslash is the final character (other than newline) at the end of an input line.
 
-## (internal) Input line processing (process_input()) rewritten to support collection and dispatch of multi-line input in a more regular manner. This will be easily adapted to incorporate TCL scripting when (or if) that is added.
+## (internal) Input line processing (process_input()) rewritten to support collection and dispatch of multi-line input in a more regular manner.
 
 ## (internal) process_input() is over-commented to aid initial write and review if desired. Its comment volume is slated for post-merge reduction.
 
-## (semi-internal) An undocumented command-line option, -quiet, added to suppress start-up banner (which contains a version string) and prompts when input is "interactive". This facilitates testing of the ".parameter edit" feature.
+## (semi-internal) An undocumented command-line option, -quiet, added to suppress start-up banner (which contains a version string) and prompts when input is "interactive".
 
 ## (internal) Tests added for above new/changed features.
 
 ## (internal) mkshellc.tcl usefully handles simple typedefs with comments.
 
-# Motivation or justification for above shell-tweaks branch changes.
+# <u>Motivation or justification for above shell-tweaks branch changes.</u>
 
 The changes marked "(internal)" are generally made to either simplify the code, or to manage its complexity in a more readily understood way. It can mostly be categorized as "showing a little love" for the affected code where not strictly necessary for feature implementation.
 
@@ -103,7 +103,7 @@ The .parameter command becomes the focal point for managing all kinds of user-al
 
 ### clear or unset ?NAMES? are enhanced to conveniently remove just selected parameters, (rather than all of them as before), for pre-save cleanup, list de-clutter, or testing effect of unbound query parameters.
 
-### edit ?OPT? NAME is added to aid convenient interactive creation or modification of parameter values, particularly ones that may have multiple lines or tax a user's perception when only a line-editor is available. The feature is only enabled for interactive sessions, as it makes little sense to begin an edit session in batch mode. Its hidden option, --editor=<something>, is for cases where a user has not set DISPLAY before starting the CLI, or needs to change it. It does not appear in help, but is mentioned when edit is invoked without DISPLAY being set.
+### edit ?OPT? NAME is added to aid convenient interactive creation or modification of parameter values, particularly ones that may have multiple lines or tax a user's perception when only a line-editor is available. The feature is only enabled for interactive sessions, as it makes little sense to begin an edit session in batch mode. Its hidden option, --editor=\<something\>, is for cases where a user has not set DISPLAY before starting the CLI, or needs to change it. It does not appear in help, but is mentioned when edit is invoked without DISPLAY being set.
 
 ### load/save ?FILE? ?NAMES? is a persistence facility mainly for edited queries, DDL or DML that a user may wish to reuse across sessions. Or it may prove useful for commonly repeated sequences of dot commands. Or both.
 
@@ -119,6 +119,10 @@ The .parameter command becomes the focal point for managing all kinds of user-al
 
 ## Compile option, BOOLNAMES_ARE_BOOLEAN is a place-holder for until addition of "false" and "true" to the binary switch name set is rejected or accepted. The case for adding them is that they are a natural choice as boolean values and having "true" taken as "false" (as happens today) can be surprising.
 
-## Extended dot-command parsing, (where arguments and/or dot commands may span line-ends), has several uses. One is for allowing ".param set <name> <value>" to specify a multi-line value, useful mainly for script creation. (Otherwise, multi-line script, which may contain complex SQL in need of line-structure, can only be created by using ".parameter edit <name>".) Another is for .print commands, so that literal multi-line output may be more naturally specified.
+## Extended dot-command parsing, (where arguments and/or dot commands may span line-ends), has several uses. One is for allowing ".param set \<name\> \<value\>" to specify a multi-line value, useful mainly for script creation. (Otherwise, multi-line script, which may contain complex SQL in need of line-structure, can only be created by using ".parameter edit \<name\>".) Another is for .print commands, so that literal multi-line output may be more naturally specified.
 
+## The process_input() rewrite was needed to support extended dot-command parsing. The difficulty of gaining that support without a rewrite, together with anticipation of later adding a TCL input feature, (which would present similar issues), easily made the rewrite appear advantageous. The code was hard to follow before, but can now be easily adapted to incorporate TCL scripting when (or if) that is added.
 
+## The added command-line option, -quiet, facilitates testing of the ".parameter edit" feature.
+
+## The mkshellc.tcl change to handle more typedef repetition than before merely reduces the fragility of the feature. It was motivated by added use of a sometimes-redundant typedef which exposed the older fragility.

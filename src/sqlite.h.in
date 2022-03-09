@@ -9767,7 +9767,7 @@ int sqlite3_vtab_in_next(sqlite3_value *pVal, sqlite3_value **ppOut);
 ** ^When xBestIndex returns, the sqlite3_value object returned by
 ** sqlite3_vtab_rhs_value() is automatically deallocated.
 **
-** The "_rhs_" in the name of this routine is an appreviation for
+** The "_rhs_" in the name of this routine is an abbreviation for
 ** "Right-Hand Side".
 */
 int sqlite3_vtab_rhs_value(sqlite3_index_info*, int, sqlite3_value **ppVal);
