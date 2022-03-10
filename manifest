@@ -1,5 +1,5 @@
-C Check-in\s[642a0b4752743216]\sfixing\ssqlite_dbpage\sis\snot\sexactly\scorrect.\nThis\spatch\sshould\sfix\sit.
-D 2022-03-10T01:15:35.360
+C Prevent\sa\sNULL-pointer\sdereference\swhen\strying\sto\sparse\sa\sillegal\nschema\sentry\sthat\scontains\sa\swindow\sfunction\swhile\sdoing\sa\sRENAME\sCOLUMN.\n[forum:/forumpost/ec2a2e0deb|Forum\spost\sec2a2e0deb].
+D 2022-03-10T16:28:13.109
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -643,7 +643,7 @@ F src/where.c baec5c64db111227b6c7f07f65d91706a51d9f8c72d3f3ec7e65c39450b592d0
 F src/whereInt.h 15d2975c3b4c193c78c26674400a840da8647fe1777ae3b026e2d15937b38a03
 F src/wherecode.c 84be340684393248b9f3ecbce9b87c8a6f818149b52302702ea0b8d2a9d51faf
 F src/whereexpr.c 2a71f5491798460c9590317329234d332d9eb1717cba4f3403122189a75c465e
-F src/window.c dfaec4abc6012cbc18e4a202ca3a5d5a0efcc4011d86a06d882ddaab8aedee4d
+F src/window.c 2eea25240cfe1bdbd23970d34b007ac29e31f808bef54c1e2df0e93fe3308ce6
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test ce1aafc86e110685b324e9a763eab4f2a73f737842ec3b687bd965867de90627
 F test/affinity3.test eecb0dabee4b7765a8465439d5e99429279ffba23ca74a7eae270a452799f9e7
@@ -1944,9 +1944,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 98799d7bbb6d62d71862d5fdfe87856995dd179d66612e369c5dc440e7fac31a
-Q +6ba36714ca5e5457bc424273129f2814b62b7fae38926aa6eeeeec81020d7f70
-R 1312e8081c9c52ce83710e6da7d32842
+P b6c4c8a09a63693dd515d30a9f07f67ed81dc14df2586835fcb2b1bc6a9d01fc
+Q +58de3c2b1a773a71b2d6a5d9a4dc0f839185d78d64519e7d267ad133b9830120
+R 7f00f09efc9ea2f6eb3332f345d78af3
 U drh
-Z 907e5e7ecf5e9d8f2a6fcbbe93934456
+Z 3d37c68651afadf2e39b0d02d5b69141
 # Remove this line to create a well-formed Fossil manifest.
