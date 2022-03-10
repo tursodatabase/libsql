@@ -3785,9 +3785,9 @@ int sqlite3_vtab_distinct(sqlite3_index_info *pIdxInfo){
 void sqlite3VtabWriteAll(sqlite3_index_info *pIdxInfo){
   HiddenIndexInfo *pHidden = (HiddenIndexInfo*)&pIdxInfo[1];
   Parse *pParse = pHidden->pParse;
-  Parse *pTopLevel = sqlite3ParseToplevel(pParse);
-  pTopLevel->cookieMask =
-    pTopLevel->writeMask = (((u64)1) << pParse->db->nDb) - 1;
+  int nDb = pParse->db->nDb;
+  int i;
+  for(i=0; i<nDb; i++) sqlite3BeginWriteOperation(pParse, 0, i);
 }
 #endif
 
