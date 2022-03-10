@@ -10,6 +10,8 @@
 
 Rusqlite is an ergonomic wrapper for using SQLite from Rust.
 
+Historically, the API was based on the one from [`rust-postgres`](https://github.com/sfackler/rust-postgres). However, the two have diverged in many ways, and no compatibility between the two is intended.
+
 ## Usage
 
 In your Cargo.toml:
