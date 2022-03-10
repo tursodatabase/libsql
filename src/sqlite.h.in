@@ -4979,6 +4979,10 @@ int sqlite3_data_count(sqlite3_stmt *pStmt);
 ** even empty strings, are always zero-terminated.  ^The return
 ** value from sqlite3_column_blob() for a zero-length BLOB is a NULL pointer.
 **
+** ^Strings returned by sqlite3_column_text16() always have the endianness
+** which is native to the platform, regardless of the text encoding set
+** for the database.
+**
 ** <b>Warning:</b> ^The object returned by [sqlite3_column_value()] is an
 ** [unprotected sqlite3_value] object.  In a multithreaded environment,
 ** an unprotected sqlite3_value object may only be used safely with
@@ -4992,7 +4996,7 @@ int sqlite3_data_count(sqlite3_stmt *pStmt);
 ** [application-defined SQL functions] or [virtual tables], not within
 ** top-level application code.
 **
-** The these routines may attempt to convert the datatype of the result.
+** These routines may attempt to convert the datatype of the result.
 ** ^For example, if the internal representation is FLOAT and a text result
 ** is requested, [sqlite3_snprintf()] is used internally to perform the
 ** conversion automatically.  ^(The following table details the conversions
@@ -5017,7 +5021,7 @@ int sqlite3_data_count(sqlite3_stmt *pStmt);
 ** <tr><td>  TEXT    <td>   BLOB    <td> No change
 ** <tr><td>  BLOB    <td> INTEGER   <td> [CAST] to INTEGER
 ** <tr><td>  BLOB    <td>  FLOAT    <td> [CAST] to REAL
-** <tr><td>  BLOB    <td>   TEXT    <td> Add a zero terminator if needed
+** <tr><td>  BLOB    <td>   TEXT    <td> [CAST] to TEXT, ensure zero terminator
 ** </table>
 ** </blockquote>)^
 **
