@@ -387,7 +387,7 @@ void sqlite3TreeViewWindow(TreeView *pView, const Window *pWin, u8 more){
 void sqlite3TreeViewWinFunc(TreeView *pView, const Window *pWin, u8 more){
   pView = sqlite3TreeViewPush(pView, more);
   sqlite3TreeViewLine(pView, "WINFUNC %s(%d)",
-                       pWin->pFunc->zName, pWin->pFunc->nArg);
+                       pWin->pWFunc->zName, pWin->pWFunc->nArg);
   sqlite3TreeViewWindow(pView, pWin, 0);
   sqlite3TreeViewPop(pView);
 }

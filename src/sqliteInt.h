@@ -4146,7 +4146,7 @@ struct Window {
   Window **ppThis;        /* Pointer to this object in Select.pWin list */
   Window *pNextWin;       /* Next window function belonging to this SELECT */
   Expr *pFilter;          /* The FILTER expression */
-  FuncDef *pFunc;         /* The function */
+  FuncDef *pWFunc;        /* The function */
   int iEphCsr;            /* Partition buffer or Peer buffer */
   int regAccum;           /* Accumulator */
   int regResult;          /* Interim result */
