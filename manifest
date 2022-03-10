@@ -1,5 +1,5 @@
-C Sync\sw/Trunk,\sfinish\sdoc/sh_tweak_changes.md
-D 2022-03-09T22:16:38.326
+C Improve\sformatting\sof\schanges\sdoc\sfor\sthis\sbranch
+D 2022-03-10T11:10:03.722
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -41,7 +41,7 @@ F doc/F2FS.txt c1d4a0ae9711cfe0e1d8b019d154f1c29e0d3abfe820787ba1e9ed7691160fcd
 F doc/json-enhancements.md e356fc834781f1f1aa22ee300027a270b2c960122468499bf347bb123ce1ea4f
 F doc/lemon.html efc0cd2345d66905505d98f862e1c571512def0ceb5b016cb658fd4918eb76a3
 F doc/pager-invariants.txt 27fed9a70ddad2088750c4a2b493b63853da2710
-F doc/sh_tweak_changes.md 5a9fbf65817433ddc4493cd328266a8918b70cd90bde7162c92eea59c61093d8
+F doc/sh_tweak_changes.md d7cc2d4f528696722bda07f15e82e68d4fcc4f4dff07cdd5274ee36abdf38aa1
 F doc/trusted-schema.md 33625008620e879c7bcfbbfa079587612c434fa094d338b08242288d358c3e8a
 F doc/vdbesort-memory.md 4da2639c14cd24a31e0af694b1a8dd37eaf277aff3867e9a8cc14046bc49df56
 F doc/vfs-shm.txt e101f27ea02a8387ce46a05be2b1a902a021d37a
@@ -1946,8 +1946,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5ddccc2f2885ae4068e492053dbb4e7215ce7dd052f782bffa0076b4585d175f 6f838305e2c848a43b210bd1b7b962fb9e3c41de34de778675e6578fcd99f397
-R d80dca76fe43cf772691a942a2518ea1
+P 5a1797c2250665d013e0a1818f90c52db1b6f67b2daff82c46c06c9d058080e7
+R 5c01fa176890fe506ddfbaf5b91b0bb9
 U larrybr
-Z 6f5df54da847b7514dd0b48c6ee05b25
+Z b98fb326f8f5ba3355de2a5d288c631c
 # Remove this line to create a well-formed Fossil manifest.

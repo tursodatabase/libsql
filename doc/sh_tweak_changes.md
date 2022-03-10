@@ -11,33 +11,55 @@ This section summarizes the changes; motivation is addressed further below.
 
 ## Extension features made optional at build-time or runtime, for backwards compatibility. (Described further per-feature.)
 
-## (internal) Query output display mode stack implemented and used. (Associated ShellState reorg supports this, and groups members more by purpose.)
+## (internal) Query output display mode stack implemented and used.
 
-## (internal) Expand temp.sqlite_parameters usage to include "scripts", with an extra column, "uses", limiting role of variables to either binding or execution.
+(Associated ShellState reorg supports this, and groups members more by purpose.)
 
-## (internal) Refactoring and interface adjustments to allow resuse by new code of previously buried operations or utility routines.
+## (internal) Expand temp.sqlite_parameters usage to include "scripts".
+
+An extra column, "uses", limits role of variables to either binding or execution. This is set when variables are created, keyed off their names.
+
+## (internal) Refactoring and interface adjustments.
 
 ## Add --schema SCHEMA option to .dump
 
 ## Many changes and additions to .parameter subcommands:
 
-### clear ?NAME? to allow selective zapping. (Was everything before.)
+### clear ?NAME?
 
-### edit ?OPT? NAME to allow editing an existing or new entry. The OPT, if provided, may be -t or -e to select whether the resulting value is stored as text or evaluated as a SQL expression. A hidden option, --editor=\<something\>, may be used in place of having set environment variable DISPLAY before starting shell. This option is mentioned just when needed in an interactive session.
+Allowing selective zapping. (Was everything before.)
 
-### list/ls output options, prettified with optional glob patterns.
+### edit ?OPT? NAME
 
-### load ?FILE? ?NAMES? to allow saved parameters to be loaded. With no arguments, a defaulted file in user's HOME directory is the source, and all of its parameters are loaded. With a FILE argument, named file is the source. With more arguments, selective loading from the file is done.
+Allow editing an existing or new entry. The OPT, if provided, may be -t or -e to select whether the resulting value is stored as text or evaluated as a SQL expression. A hidden option, --editor=\<something\>, may be used in place of having set environment variable DISPLAY before starting shell. This option is mentioned just when needed in an interactive session.
 
-### save ?FILE? ?NAMES? is parallel to load except for direction of data flow and intolerance of FILE being read-only.
+### list/ls output options
 
-### set ?TOPT? NAME VALUE accepts an optional type option to specify storage of the given value as a particular type, bypassing the old, "evaluate as SQL expression" behavior (which can be problematic without two levels of quoting.) Without the type option, the old behavior occurs. Also, if multiple arguments are found where VALUE would be, they are space-joined to form the stored value. (This is convenient for script use.)
+These are prettified with optional glob patterns.
 
-### unset ?NAMES? is much like "clear ?NAMES?", except that with no names it is a no-op rather than an error as with prior shell versions.
+### load ?FILE? ?NAMES?
 
-## .shxopts command added to display or modify extension options.
+Allow saved parameters to be loaded. With no arguments, a defaulted file in user's HOME directory is the source, and all of its parameters are loaded. With a FILE argument, named file is the source. With more arguments, selective loading from the file is done.
 
-## .x NAMES command added to execute named parameters as if their content was fed to the input stream.
+### save ?FILE? ?NAMES?
+
+This is parallel to load except for direction of data flow and intolerance of FILE being read-only.
+
+### set ?TOPT? NAME VALUE
+
+Accept an optional type option to specify storage of the given value as a particular type, bypassing the old, "evaluate as SQL expression" behavior (which can be problematic without two levels of quoting.) Without the type option, the old behavior occurs. Also, if multiple arguments are found where VALUE would be, they are space-joined to form the stored value. (This is convenient for script use.)
+
+### unset ?NAMES?
+
+This is much like "clear ?NAMES?", except that with no names it is a no-op rather than an error as with prior shell versions.
+
+## .shxopts command
+
+This addition is to display or modify extension options.
+
+## .x NAMES command
+
+This will execute named parameters as if their content was fed to the input stream.
 
 ## Certain dot-commands become "undocumented".
 
@@ -45,23 +67,37 @@ This means that, in addition to not appearing in the website docs, they do not a
 
 Undocumented dot commands are: .check, .selftest-*, .seeargs, .testcase, and .testctrl .
 
-## .seeargs command added to show its arguments bounded by '|', for those who are unsure of the shell's quoting and expansion rules.
+## .seeargs command
 
-## For .open command, --hexdb option without a FILE given can read in a hex DB from the current input stream, including from string sources.
+An "undocumented" dot command to show arguments bounded by '|', for those who are unsure of the shell's quoting and expansion rules.
 
-## (internal) Compile option, BOOLNAMES_ARE_BOOLEAN, adds "false" and "true" to the recognized binary switch values.
+## For .open command
 
-## (internal) Utility function, db_text(), added. It resembles db_int().
+The --hexdb option without a FILE given can read in a hex DB from the current input stream, including from string sources.
 
-## (internal) Preparation made for variable expansion within double-quoted command arguments. (This is not a visible or completed feature, so now "internal".)
+## (internal) Compile option, BOOLNAMES_ARE_BOOLEAN
 
-## Dot-command parsing is optionally extended to permit arguments to span more than one line, or more arguments to be added in subsequent lines. This is not the default behavior because it breaks backward compatibility (for ill-formed input with mis-balanced quotes.) It is enabled with either an invocation command-line option or the dot-commad, ".shxopts +parsing". With extended parsing, unclosed arguments may contain literal newlines, and lines may be be spliced if backslash is the final character (other than newline) at the end of an input line.
+This adds "false" and "true" to the recognized binary switch values.
 
-## (internal) Input line processing (process_input()) rewritten to support collection and dispatch of multi-line input in a more regular manner.
+## (internal) Utility function, db_text()
 
-## (internal) process_input() is over-commented to aid initial write and review if desired. Its comment volume is slated for post-merge reduction.
+This is added for reasons similar those for db_int().
 
-## (semi-internal) An undocumented command-line option, -quiet, added to suppress start-up banner (which contains a version string) and prompts when input is "interactive".
+## (internal) Preparation for variable expansion
+
+This is for later addition of expansion within double-quoted command arguments.
+
+## Dot-command parsing extension
+
+This optional extension permits arguments to span more than one line, or more arguments to be added in subsequent lines. This is not the default behavior because it breaks backward compatibility (for ill-formed input with mis-balanced quotes.) It is enabled with either an invocation command-line option or the dot-commad, ".shxopts +parsing". With extended parsing, unclosed arguments may contain literal newlines, and lines may be be spliced if backslash is the final character (other than newline) at the end of an input line.
+
+## (internal) Rewrite of process_input()
+
+It was rewritten to support collection and dispatch of multi-line input in a more regular manner. It is now over-commented to aid initial write and review if desired. Its comment volume is slated for post-merge reduction.
+
+## (semi-internal) An undocumented command-line option, -quiet
+
+This was added to suppress the start-up banner (which contains a version string) and prompts when input is "interactive".
 
 ## (internal) Tests added for above new/changed features.
 
@@ -101,28 +137,54 @@ Simplifies scenarios where a user attaches a DB, or creates an attached DB, for 
 
 The .parameter command becomes the focal point for managing all kinds of user-alterable parameters and variables. It is easy to remember: If some parameter(s) will be created, modified, reviewed, saved, loaded, or removed, .parameter is how it is done.
 
-### clear or unset ?NAMES? are enhanced to conveniently remove just selected parameters, (rather than all of them as before), for pre-save cleanup, list de-clutter, or testing effect of unbound query parameters.
+### clear or unset ?NAMES?
 
-### edit ?OPT? NAME is added to aid convenient interactive creation or modification of parameter values, particularly ones that may have multiple lines or tax a user's perception when only a line-editor is available. The feature is only enabled for interactive sessions, as it makes little sense to begin an edit session in batch mode. Its hidden option, --editor=\<something\>, is for cases where a user has not set DISPLAY before starting the CLI, or needs to change it. It does not appear in help, but is mentioned when edit is invoked without DISPLAY being set.
+Make it convenient to remove just selected parameters, (rather than all of them as before), for pre-save cleanup, list de-clutter, or testing effect of unbound query parameters.
 
-### load/save ?FILE? ?NAMES? is a persistence facility mainly for edited queries, DDL or DML that a user may wish to reuse across sessions. Or it may prove useful for commonly repeated sequences of dot commands. Or both.
+### edit ?OPT? NAME
 
-### list/ls output options make it easier to see what is in the parameters table by using the short, "ls" form, which lists only names, or by specifying glob patterns to restrict output.
+Allow convenient interactive creation or modification of parameter values, particularly ones that may have multiple lines or tax a user's perception when only a line-editor is available. The feature is only enabled for interactive sessions, as it makes little sense to begin an edit session in batch mode. Its hidden option, --editor=\<something\>, is for cases where a user has not set DISPLAY before starting the CLI, or needs to change it. It does not appear in help, but is mentioned when edit is invoked without DISPLAY being set.
 
-### set ?TOPT? NAME VALUE gained the option, TOPT, to force the value's type or to bypass the effective eval trial for text. Taking the VALUE to be the space-joined remaining arguments simplifies quoting in many cases.
+### load/save ?FILE? ?NAMES?
 
-## Added .shxopts command to allow certain optional features, which potentially impair backward compatibility, to be enabled or disabled at runtime.
+This persistence facility is mainly for edited queries, DDL or DML that a user may wish to reuse across sessions. Or it may prove useful for commonly repeated sequences of dot commands. Or both.
 
-## The new dot command, .x NAMES, is added to allow convenient execution of pre-written or edited SQL and command sequences.
+### list/ls output options
 
-## Certain dot-commands become "undocumented" to reduce clutter seen by those who use the CLI to use SQLite rather than to test it.
+These make it easier to see what is in the parameters table by using the short, "ls" form, which lists only names, or by specifying glob patterns to restrict output. With the added utility of parameters, there may be a lot more to see or avoid seeing.
 
-## Compile option, BOOLNAMES_ARE_BOOLEAN is a place-holder for until addition of "false" and "true" to the binary switch name set is rejected or accepted. The case for adding them is that they are a natural choice as boolean values and having "true" taken as "false" (as happens today) can be surprising.
+### set ?TOPT? NAME VALUE
 
-## Extended dot-command parsing, (where arguments and/or dot commands may span line-ends), has several uses. One is for allowing ".param set \<name\> \<value\>" to specify a multi-line value, useful mainly for script creation. (Otherwise, multi-line script, which may contain complex SQL in need of line-structure, can only be created by using ".parameter edit \<name\>".) Another is for .print commands, so that literal multi-line output may be more naturally specified.
+The new option, TOPT, can force the value's type or to bypass the effective eval trial for text. This makes it more deterministic for those who may not understand the detailed processing or quoting rules. Taking the VALUE to be the space-joined remaining arguments simplifies quoting in many cases.
 
-## The process_input() rewrite was needed to support extended dot-command parsing. The difficulty of gaining that support without a rewrite, together with anticipation of later adding a TCL input feature, (which would present similar issues), easily made the rewrite appear advantageous. The code was hard to follow before, but can now be easily adapted to incorporate TCL scripting when (or if) that is added.
+## Added .shxopts command
 
-## The added command-line option, -quiet, facilitates testing of the ".parameter edit" feature.
+By allow certain optional features, which potentially impair backward compatibility, to be enabled or disabled at runtime, users are given control over the trade between compatibility and the convenience of the new features.
 
-## The mkshellc.tcl change to handle more typedef repetition than before merely reduces the fragility of the feature. It was motivated by added use of a sometimes-redundant typedef which exposed the older fragility.
+## The new dot command, .x NAMES
+
+This is a convenience for those who are often repeating some command, query, or set of commands and/or queries. Many people do not get their queries right on the first write.
+
+## Certain dot-commands become "undocumented"
+
+This is to reduce clutter seen by those who use the CLI to use SQLite rather than to test it. It may also reduce needless doc searches by the curious.
+
+## Compile option, BOOLNAMES_ARE_BOOLEAN
+
+This is a place-holder for until addition of "false" and "true" to the binary switch name set is rejected or accepted. The case for adding them is that they are a natural choice as boolean values and having "true" taken as "false" (as happens today) can be surprising.
+
+## Extended dot-command parsing
+
+This feature, (where arguments and/or dot commands may span line-ends), has several uses. One is for allowing ".param set \<name\> \<value\>" to specify a multi-line value, useful mainly for script creation. (Otherwise, multi-line script, which may contain complex SQL in need of line-structure, can only be created by using ".parameter edit \<name\>".) Another is for .print commands, so that literal multi-line output may be more naturally specified.
+
+## process_input() rewrite
+
+This was needed to support extended dot-command parsing. The difficulty of gaining that support without a rewrite, together with anticipation of later adding a TCL input feature, (which would present similar issues), easily made the rewrite appear advantageous. The code was hard to follow before, but can now be easily adapted to incorporate TCL scripting when (or if) that is added.
+
+## added command-line option, -quiet
+
+This facilitates testing of the ".parameter edit" feature.
+
+## mkshellc.tcl change to handle more typedef repetition than before
+
+This merely reduces the fragility of the feature. It was motivated by added use of a sometimes-redundant typedef which exposed the older fragility.
