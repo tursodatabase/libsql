@@ -102,4 +102,10 @@ do_catchsql_test 270 {
   PRAGMA aux1.integrity_check;
 } {0 ok}
 
+db close
+sqlite3 db :memory:
+do_execsql_test 300 {
+  SELECT * FROM sqlite_temp_schema, sqlite_dbpage;
+} {}
+
 finish_test
