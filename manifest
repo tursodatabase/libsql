@@ -1,5 +1,5 @@
-C Refactor\sWindow.pFunc\sinto\sWindow.pWFunc\sto\sdisambiguate\sfrom\sother\suses\sof\nthe\svariable\sor\sfield\snamed\s"pFunc".
-D 2022-03-10T16:01:14.573
+C Prevent\sa\sNULL-pointer\sdereference\swhen\strying\sto\sparse\sa\sillegal\nschema\sentry\sthat\scontains\sa\swindow\sfunction\swhile\sdoing\sa\sRENAME\sCOLUMN.\n[forum:/forumpost/ec2a2e0deb|Forum\spost\sec2a2e0deb].
+D 2022-03-10T16:26:00.147
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -643,7 +643,7 @@ F src/where.c baec5c64db111227b6c7f07f65d91706a51d9f8c72d3f3ec7e65c39450b592d0
 F src/whereInt.h 15d2975c3b4c193c78c26674400a840da8647fe1777ae3b026e2d15937b38a03
 F src/wherecode.c 555f598a9ddad81761f084710fdb4f8733fe31bc14cd6b19f8ca4274a7eaa04c
 F src/whereexpr.c 2a71f5491798460c9590317329234d332d9eb1717cba4f3403122189a75c465e
-F src/window.c ce1b413b2e7320c20e709e9cec11d1589c7cb671718961e15162e14723389135
+F src/window.c 457434edca750340462c84f2747381dfd15e3295e834821a18e48bde6d40da5f
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test ce1aafc86e110685b324e9a763eab4f2a73f737842ec3b687bd965867de90627
 F test/affinity3.test eecb0dabee4b7765a8465439d5e99429279ffba23ca74a7eae270a452799f9e7
@@ -1944,8 +1944,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4173819cd285a1c133645eda27b9f6dc5a2247eaa0c834bdc60058ef3109b102
-R 0dcc25c67d9010afc551373ff27626de
+P d9475ebcde169272ad7b1d3a82b2326df55dafc68217bfecd9fcd1f2b89efbd9
+R 19ed8acfffced0dc406eb65b6efd6f1c
 U drh
-Z 8d13225c9c60b1f2df116002c6ed2308
+Z b78965c8e1d3b4bd978415cc04bb99fe
 # Remove this line to create a well-formed Fossil manifest.
