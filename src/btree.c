@@ -5839,6 +5839,7 @@ int sqlite3BtreeIndexMoveto(
      && (c = indexCellCompare(pCur, 0, pIdxKey, xRecordCompare))<=0
     ){
       pCur->curFlags &= ~BTCF_ValidOvfl;
+      if( pIdxKey->errCode ){ *pRes = 0; return SQLITE_CORRUPT_BKPT; }
       goto bypass_moveto_root;  /* Start search on the current page */
     }
   }
