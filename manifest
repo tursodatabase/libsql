@@ -1,5 +1,5 @@
-C Stronger\sdefenses\sagainst\scorrupt\sschemas\sin\sthe\sALTER\sTABLE\slogic.
-D 2022-03-10T21:04:49.750
+C In\sthe\ssqlite3BtreeIndexMoveto()\slast-page\soptimization,\smake\ssure\sto\sreturn\nSQLITE_CORRUPT\sif\scorruption\sis\sdetected.
+D 2022-03-10T22:54:32.736
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -492,7 +492,7 @@ F src/auth.c f4fa91b6a90bbc8e0d0f738aa284551739c9543a367071f55574681e0f24f8cf
 F src/backup.c a2891172438e385fdbe97c11c9745676bec54f518d4447090af97189fd8e52d7
 F src/bitvec.c 7c849aac407230278445cb069bebc5f89bf2ddd87c5ed9459b070a9175707b3d
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c f00f7323b3e7d2bf5192055b4a325a5b813686d424b59815e725690d2c215451
+F src/btree.c ed074030972b8445ac7020ef4928e2e2ec090bfe3b2169f4674dcd225d101a99
 F src/btree.h 74d64b8f28cfa4a894d14d4ed64fa432cd697b98b61708d4351482ae15913e22
 F src/btreeInt.h 8ce1332edd89dfd2461d561ac10a0ab5601c8e06200cb5230596c3caaf54482e
 F src/build.c a0cc68fe8172c0a31b54576f9c6c0fe6f7c82b1b5e1387afdd6a5a13132bc131
@@ -1944,8 +1944,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1f473099776249f774a285fa117316636e00c3ff030ba0f22ed5bd05641c1bc9
-R 2ae2925ec91f5619d1a35088b1bcfad0
+P 13fbde28173332522a7ad307c1aad2b83c9aa1fe737583afa2b29f6da4de6370
+R 5ddd7ed25326819447879d6db7c533a0
 U drh
-Z e232808c8eb653b66c1790d6c0687a0f
+Z 65cf82e71fed144bd34f9030a2054257
 # Remove this line to create a well-formed Fossil manifest.

@@ -5832,6 +5832,7 @@ int sqlite3BtreeIndexMoveto(
      && (c = indexCellCompare(pCur, pCur->ix, pIdxKey, xRecordCompare))<=0
     ){
       *pRes = c;
+      if( pIdxKey->errCode ) return SQLITE_CORRUPT_BKPT;
       return SQLITE_OK;  /* Cursor already pointing at the correct spot */
     }
     if( pCur->iPage>0 
