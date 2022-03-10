@@ -2826,6 +2826,11 @@ void sqlite3EndTable(
       int addrInsLoop;    /* Top of the loop for inserting rows */
       Table *pSelTab;     /* A table that describes the SELECT results */
 
+      if( IN_SPECIAL_PARSE ){
+        pParse->rc = SQLITE_ERROR;
+        pParse->nErr++;
+        return;
+      }
       regYield = ++pParse->nMem;
       regRec = ++pParse->nMem;
       regRowid = ++pParse->nMem;

@@ -960,7 +960,7 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
   if( p->pWin
    && p->pPrior==0
    && ALWAYS((p->selFlags & SF_WinRewrite)==0)
-   && !IN_RENAME_OBJECT
+   && ALWAYS(!IN_RENAME_OBJECT)
   ){
     Vdbe *v = sqlite3GetVdbe(pParse);
     sqlite3 *db = pParse->db;
