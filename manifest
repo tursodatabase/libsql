@@ -1,5 +1,5 @@
-C Fix\sa\scase\sin\sfts5\swhere\sa\scorrupt\sdatabase\scould\scause\sa\scrash.
-D 2022-03-11T12:02:18.299
+C Fix\sa\sharmless\scompiler\swarning\sand\srestore\sperformance\sin\sthe\nsqlite3BtreeIndexMoveto()\slast-page\soptimization.
+D 2022-03-11T14:20:06.914
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -492,7 +492,7 @@ F src/auth.c f4fa91b6a90bbc8e0d0f738aa284551739c9543a367071f55574681e0f24f8cf
 F src/backup.c a2891172438e385fdbe97c11c9745676bec54f518d4447090af97189fd8e52d7
 F src/bitvec.c 7c849aac407230278445cb069bebc5f89bf2ddd87c5ed9459b070a9175707b3d
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c 961ae88f10541fa0cb6fb0cffedfbdfb7183041b66d99c57544b7e9fc1214f8f
+F src/btree.c ddc3cec12a39675e10066c008aac7925b26c74f78c46b849b2416ca45701a313
 F src/btree.h 74d64b8f28cfa4a894d14d4ed64fa432cd697b98b61708d4351482ae15913e22
 F src/btreeInt.h 8ce1332edd89dfd2461d561ac10a0ab5601c8e06200cb5230596c3caaf54482e
 F src/build.c a0cc68fe8172c0a31b54576f9c6c0fe6f7c82b1b5e1387afdd6a5a13132bc131
@@ -1944,8 +1944,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 531e6ad0389c6c820bb8c64db5049fb6b0bffd30bd394fd8ee7412959b1752e2
-R b26ba835a81a27a8d4e88d89ca2bec5f
-U dan
-Z 72823c7752498ddb91913ba2db429eed
+P 5e95df261cce275adb5b2226e9584f4c389bb0d53c3b4feafd5a14be8d02ce63
+R 5ab1a745e3278dea812b08524563aa85
+U drh
+Z e7eed47d8c0d1a5c83108e7c1f88ee07
 # Remove this line to create a well-formed Fossil manifest.
