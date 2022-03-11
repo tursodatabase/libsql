@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\scompiler\swarning\sand\srestore\sperformance\sin\sthe\nsqlite3BtreeIndexMoveto()\slast-page\soptimization.
-D 2022-03-11T14:20:06.914
+C Fix\sa\sharmless\scompiler\swarning.
+D 2022-03-11T15:16:50.449
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -557,7 +557,7 @@ F src/shell.c.in 69d1e59da4881f096ab47fbd3e6d99794f3e4a43f41fd9e4d2e845c9b8d20fd
 F src/sqlite.h.in b93deee892f1bc4030e5c8712df9e21d786a1bf8e921ab8dc987eaf1e44c676f
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h a95cb9ed106e3d39e2118e4dcc15a14faec3fa50d0093425083d340d9dfd96e6
-F src/sqliteInt.h 7ab4575383df08f356ac2d60cee07da5d6c3c20488b5ca4d79f41664b0f93f0b
+F src/sqliteInt.h 2ce7d868630ccd70ffd4b15d46b59ccf7daf89198993b62ed6e4a165d3511280
 F src/sqliteLimit.h d7323ffea5208c6af2734574bae933ca8ed2ab728083caa117c9738581a31657
 F src/status.c 4b8bc2a6905163a38b739854a35b826c737333fab5b1f8e03fa7eb9a4799c4c1
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -1944,8 +1944,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5e95df261cce275adb5b2226e9584f4c389bb0d53c3b4feafd5a14be8d02ce63
-R 5ab1a745e3278dea812b08524563aa85
+P 8b032293b384c3728c27b0658ee634c028c0d231d067de8b747d2e9e4ae704a7
+R ffc0ccb4d1ca145963d18f87b727b980
 U drh
-Z e7eed47d8c0d1a5c83108e7c1f88ee07
+Z 8ce388e37bd47e2c9feee08884bf9baa
 # Remove this line to create a well-formed Fossil manifest.
