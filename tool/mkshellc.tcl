@@ -455,7 +455,7 @@ proc COLLECT_HELP_TEXT {inSrc tailCaptureEmpty ostrm} {
 proc CONDITION_COMMAND {inSrc tailCap ostrm} {
   # Name a command to be conditionally available, with the condition.
   foreach {cmd pp_expr} $tailCap { set pp_expr [string trim $pp_expr] ; break }
-  if {[regexp {^(!)?defined\(\s*(\w+)\s*\)} $pp_expr ma bang pp_var]} {
+  if {[regexp {^(!)?defined\(\s*(\w+)\s*\)\s*$} $pp_expr ma bang pp_var]} {
     if {$bang eq "!"} {
       set pp_expr "#ifndef $pp_var"
     } else {

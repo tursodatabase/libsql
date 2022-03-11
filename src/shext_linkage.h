@@ -52,7 +52,7 @@ typedef struct ShellExState {
   /* Number of lines written during a query result output */
   int resultCount;
   /* Whether to show column names for certain output modes (reference) */
-  u8 *pShowHeader;
+  unsigned char *pShowHeader;
   /* Column separator character for some modes, read-only */
   char *zFieldSeparator;
   /* Row separator character for some modes (MODE_Ascii), read-only */
@@ -147,10 +147,10 @@ PURE_VMETHOD(void, closeDataInStream, ImportHandler,
              2,( ShellExState *pSES, char **pzErr ));
 INTERFACE_END( ImportHandlerVtable );
 
-typedef struct {
+typedef struct ExtensionHelpers {
   int helperCount; /* Helper count, not including sentinel */
-  union ExtHelp {
-    struct {
+  union {
+    struct ExtHelpers {
       int (*failIfSafeMode)(ShellExState *p, const char *zErrMsg, ...);
       FILE * (*currentOutputFile)(ShellExState *p);
       struct InSource * (*currentInputSource)(ShellExState *p);
@@ -166,7 +166,7 @@ typedef struct {
 /* Various shell extension helpers and feature registration functions */
 typedef struct ShellExtensionAPI {
   /* Utility functions for use by extensions */
-  ExtensionHelpers * pExtHelp;
+  ExtensionHelpers * pExtHelpers;
 
   /* Functions for extension to register its implementors with shell */
   const int numRegistrars; /* 3 for this version */
@@ -196,7 +196,7 @@ typedef struct ShellExtensionAPI {
 typedef struct ShellExtensionLink {
   int sizeOfThis;        /* sizeof(ShellExtensionLink) for expansion */
   ShellExtensionAPI *pShellExtensionAPI;
-  ShellExState *pSSX;    /* For use in extension feature registrations */
+  ShellExState *pSXS;    /* For use in extension feature registrations */
   char *zErrMsg;         /* Extension error messages land here, if any. */
 
   /* An init "out" parameter, used as the loaded extension ID. Unless
@@ -223,7 +223,7 @@ typedef struct ShellExtensionLink {
  * pointer to a ShellExtensionLink instance during an extension's *init*()
  * call (during shell extension load) or 0 (during SQLite extension load.)
  */
-#define DEFINE_SHDB_TO_SHEXT_API(func_name) \
+#define DEFINE_SHDB_TO_SHEXTLINK(func_name) \
  static ShellExtensionLink * func_name(sqlite3 * db){ \
   ShellExtensionLink *rv = 0; sqlite3_stmt *pStmt = 0; \
   if( SQLITE_OK==sqlite3_prepare_v2(db,"SELECT shext_pointer(0)",-1,&pStmt,0) \

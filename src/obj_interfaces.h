@@ -20,21 +20,22 @@
  *     IMPLEMENTING( returnType, methodName, ClassName, argCount, args ) [b]
  *   (for C implementations only)
  *     VTABLE_NAME( ClassName ) [c]
+ *     DECORATE_METHOD( DerivedName, methodName )
  *   (for C++ implementations only [d])
  *     CONCRETE_BEGIN( InterfaceName, DerivedName )
  *     CONCRETE_METHOD( returnType, methodName, ClassName, argCount, args )
  *     CONCRETE_END( DerivedName )
  * Notes on these macros:
  *   1. These macros should be used in the order shown. Many should be
- *      terminated with either ';' or a curly-braced construct (which
- *      helps auto-indentation tools to operate sanely.)
+ *      terminated with either ';' or a curly-braced construct. (This
+ *      helps auto-indentation tools to operate usefully or sanely.)
  *   2. The "args" parameter is a parenthesized list of the additional
  *     arguments, those beyond an explicit "InterfaceName *pThis" for C
  *     or the implicit "this" for C++.
  *   3. The argCount parameter must number the additional arguments.
  *   4. A leading method, named "destruct" without additional arguments
  *     and returning void, is declared for all interfaces. This is not
- *     the C++ destructor. (It might delegate to a destructor.)
+ *     the C++ destructor. (It may sometimes delegate to a destructor.)
  *   [a. The convenience is that the signatures from the interface may
  *     be reused for method implementations with a copy and paste. ]
  *   [b. This macro may be useful for function/method definitions which
@@ -71,7 +72,7 @@
 
 #define PURE_VMETHOD(rt, mn, ot, na, args) VMETHOD_BEGIN(rt, mn) \
  ARG_FIRST_ ## na(ot) ARGS_EXPAND(na)args PURE_VMETHOD_END
-#define CONCRETE_METHOD(rt, mn, ot, na, args) rt mn( \
+#define CONCRETE_METHOD(rt, mn, ot, na, args) rt (*mn)( \
  ARG_FIRST_ ## na(ot) ARGS_EXPAND(na)args )
 
 #ifdef __cplusplus
@@ -81,7 +82,7 @@
 # define CONCRETE_BEGIN(iname, derived) class derived : public iname { \
     CONCRETE_METHOD(void, destruct, derived, 0, ())
 # define CONCRETE_END(derived) }
-# define IMPLEMENTING(rt, mn, derived, na, args) rt derived::mn(  \
+# define DEFINE_METHOD(rt, mn, derived, na, args) rt derived::mn(  \
  ARG_FIRST_ ## na(derived) ARGS_EXPAND(na)args )
 #else
 # define VTABLE_NAME(name) name ## _Vtable
@@ -90,8 +91,19 @@
   } iname; typedef struct VTABLE_NAME(iname) {         \
   PURE_VMETHOD(void, destruct, iname, 0, ())
 # define INTERFACE_END(iname) } VTABLE_NAME(iname)
+
+#define DERIVED_METHOD(rt, mn, ot,dt, na, args) rt DECORATE_METHOD(dt,mn)( \
+ ARG_FIRST_ ## na(ot) ARGS_EXPAND(na)args )
+
+# define CONCRETE_BEGIN(iname, derived) struct VTABLE_NAME(derived) { \
+    CONCRETE_METHOD(void, destruct, iname, 0, ())
+# define CONCRETE_END(derived) }
+# define INSTANCE_BEGIN(derived) struct derived { \
+  struct VTABLE_NAME(derived) *pMethods
+# define INSTANCE_END(derived) }
+
 # define DECORATE_METHOD(ot, mn)  ot ## _ ## mn
-# define IMPLEMENTING(rt, mn, ot, na, args) rt DECORATE_METHOD(ot, mn)(  \
+# define DEFINE_METHOD(rt, mn, ot, na, args) rt DECORATE_METHOD(ot, mn)(  \
  ARG_FIRST_ ## na(ot) ARGS_EXPAND(na)args )
 #endif
 

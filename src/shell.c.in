@@ -1227,7 +1227,6 @@ struct EQPGraph {
  */
 typedef struct ShExtInfo {
   ExtensionId extId;        /* The xInit function pointer */
-  void *pExtHandle;         /* Used for unloading (if possible) */
   void (*extDtor)(void *);  /* Extension shutdown on exit or unload */
   /* Each shell extension library registers 0 or more of its extension
    * implementations, interfaces to which are kept in below dynamic.
@@ -7720,7 +7719,9 @@ FROM (\
       sqlite3_finalize(pStmt);
       assert(rc==SQLITE_DONE);
     }
-    assert(db_int(*pDb, zHasDupes)==0); /* Consider: remove this */
+    /* This assert is maybe overly cautious for above de-dup DML, but that can
+     * be replaced via #define's. So this check is made for debug builds. */
+    assert(db_int(*pDb, zHasDupes)==0);
     rc = sqlite3_prepare_v2(*pDb, zCollectVar, -1, &pStmt, 0);
     rc_err_oom_die(rc);
     rc = sqlite3_step(pStmt);
@@ -7751,6 +7752,51 @@ FROM (\
 /* Register a meta-command */
 static int register_meta_command(ShellExState *p,
                                  ExtensionId eid, MetaCommand *pMC){
+  ShellInState *psi = ISS(p);
+  ShExtInfo *psei = 0;
+  const char *zSql
+    = "INSERT INTO ShellCommands (name, extIx, cmdIx) VALUES(?, ?, ?)";
+  int nle = psi->numExtLoaded;
+  int ie;
+  if( pMC==0 ) return SQLITE_ERROR;
+  assert(psi->pShxLoaded!=0 && nle>0 && p->dbShell!=0);
+  for( ie=0; ie<nle; ++ie ){
+    if( psi->pShxLoaded[ie].extId==eid ){
+      psei = &psi->pShxLoaded[ie];
+      break;
+    }
+  }
+  if( psei==0 ){
+    ShExtInfo sei = {eid,0};
+    psi->pShxLoaded = sqlite3_realloc(psi->pShxLoaded,
+                                      (nle+1)*sizeof(ShExtInfo));
+    shell_check_oom(psi->pShxLoaded);
+    psei = &psi->pShxLoaded[psi->numExtLoaded];
+    psi->pShxLoaded[psi->numExtLoaded++] = sei;
+    ie = nle;
+  }
+  {
+    const char *zName = pMC->pMethods->name(pMC);
+    sqlite3_stmt *pStmt;
+    int rc = sqlite3_prepare_v2(p->dbShell, zSql, -1, &pStmt, 0);
+    int nc = psei->numMetaCommands;
+    if( rc!=SQLITE_OK ) return SQLITE_ERROR;
+    psei->ppMetaCommands
+      = sqlite3_realloc(psei->ppMetaCommands, (nc+1)*sizeof(MetaCommand *));
+    shell_check_oom(psei->ppMetaCommands);
+    sqlite3_bind_text(pStmt, 1, zName, -1, 0);
+    sqlite3_bind_int(pStmt, 2, ie);
+    sqlite3_bind_int(pStmt, 3, nc);
+    rc = sqlite3_step(pStmt);
+    sqlite3_finalize(pStmt);
+    if( rc==SQLITE_DONE ){
+      psei->ppMetaCommands[nc++] = pMC;
+      psei->numMetaCommands = nc;
+      return SQLITE_OK;
+    }else{
+      psei->ppMetaCommands[nc] = 0;
+    }
+  }
   return SQLITE_ERROR;
 }
 
@@ -7833,10 +7879,13 @@ static void shell_linkage(
 # define SHELL_DB_STORE SHELL_STRINGIFY(SHELL_DB_FILE)
 #endif
 
+/* Do the initialization needed for use of dbShell for command lookup
+ * and dispatch and for I/O handler lookup and dispatch.
+ */
 static int begin_db_dispatch(ShellExState *psx){
   ShellInState *psi = ISS(psx);
   sqlite3_stmt *pStmt = 0;
-  int ic, rc;
+  int ic, rc, rc1, rc2;
   char *zErr = 0;
   const char *zSql;
   ShExtInfo sei = {0};
@@ -7864,19 +7913,25 @@ static int begin_db_dispatch(ShellExState *psx){
   if( rc!=SQLITE_OK ) return 1;
 #ifdef SHELL_DB_FILE
   sqlite3_exec(psx->dbShell, "DROP TABLE IF EXISTS ShellCommands", 0,0,0);
+  sqlite3_exec(psx->dbShell, "DROP VIEW IF EXISTS ActiveCommands", 0,0,0);
 #endif
-  rc = sqlite3_exec(psx->dbShell, "CREATE TABLE ShellCommands("
-                    "name TEXT, extIx INT, cmdIx INT,"
-                    "PRIMARY KEY(extIx,cmdIx)) WITHOUT ROWID",
-                    0, 0, &zErr);
-  if( rc!=SQLITE_OK || zErr!=0 ){
+  rc1 = sqlite3_exec(psx->dbShell, "CREATE TABLE ShellCommands("
+                     "name TEXT, extIx INT, cmdIx INT,"
+                     "PRIMARY KEY(extIx,cmdIx)) WITHOUT ROWID",
+                     0, 0, &zErr);
+  rc2 = sqlite3_exec(psx->dbShell, "CREATE VIEW ActiveCommands AS SELECT "
+                     "s.name AS name, max(s.extIx) AS extIx, s.cmdIx AS cmdIx "
+                     "FROM ShellCommands s GROUP BY name,extIx",
+                     0, 0, &zErr);
+  if( rc1!=SQLITE_OK || rc2!=SQLITE_OK || zErr!=0 ){
     utf8_printf(STD_ERR, "Shell DB init failure, %s\n", zErr? zErr : "");
     return 1;
   }
   zSql = "INSERT INTO ShellCommands (name, extIx, cmdIx) VALUES(?, 0, ?)";
-  rc = sqlite3_prepare_v2(psx->dbShell, zSql, -1, &pStmt, 0);
-  if( rc!=SQLITE_OK ) return 1;
-  rc = sqlite3_exec(psx->dbShell, "BEGIN TRANSACTION", 0, 0, &zErr);
+  rc1 = sqlite3_prepare_v2(psx->dbShell, zSql, -1, &pStmt, 0);
+  rc2 = sqlite3_exec(psx->dbShell, "BEGIN TRANSACTION", 0, 0, &zErr);
+  if( rc1!=SQLITE_OK || rc2!=SQLITE_OK ) return 1;
+  assert(sei.numMetaCommands>0);
   for( ic=0; ic<sei.numMetaCommands; ++ic ){
     MetaCommand *pmc = sei.ppMetaCommands[ic];
     const char *zName = pmc->pMethods->name(pmc);
@@ -7896,36 +7951,39 @@ static int begin_db_dispatch(ShellExState *psx){
   return SQLITE_OK;
 }
 
+/* Call all existent loaded extension destructors, in reverse order
+ * of their objects' creation, then free the tracking dyna-arrays.
+ */
 static void free_shext_tracking(ShellInState *psi){
   int i, j;
   if( psi->pShxLoaded!=0 ){
-    for( i=0; i<psi->numExtLoaded; ++i ){
-      ShExtInfo *psei = &psi->pShxLoaded[i];
+    for( i=psi->numExtLoaded; i>0; --i ){
+      ShExtInfo *psei = &psi->pShxLoaded[i-1];
       if( psei->ppMetaCommands!=0 ){
-        if( i>0 ){ /* built-in commands need no freeing */
-          for( j=0; j<psei->numMetaCommands; ++j ){
-            MetaCommand *pmc = psei->ppMetaCommands[j];
-            if( pmc->pMethods->destruct!=0 ) pmc->pMethods->destruct(pmc);
-          }
+        for( j=psei->numMetaCommands; j>0; --j ){
+          MetaCommand *pmc = psei->ppMetaCommands[j-1];
+          if( pmc->pMethods->destruct!=0 ) pmc->pMethods->destruct(pmc);
         }
         sqlite3_free(psei->ppMetaCommands);
       }
       if( psei->ppOutModeHandlers!=0 ){
-        for( j=0; j<psei->numOutModeHandlers; ++j ){
-          OutModeHandler *pomh = psei->ppOutModeHandlers[j];
+        for( j=psei->numOutModeHandlers; j>0; --j ){
+          OutModeHandler *pomh = psei->ppOutModeHandlers[j-1];
           if( pomh->pMethods->destruct!=0 ) pomh->pMethods->destruct(pomh);
         }
         sqlite3_free(psei->ppOutModeHandlers);
       }
       if( psei->ppImportHandlers!=0 ){
-        for( j=0; j<psei->numImportHandlers; ++j ){
-          ImportHandler *pih = psei->ppImportHandlers[j];
+        for( j=psei->numImportHandlers; j>0; --j ){
+          ImportHandler *pih = psei->ppImportHandlers[j-1];
           if( pih->pMethods->destruct!=0 ) pih->pMethods->destruct(pih);
         }
         sqlite3_free(psei->ppImportHandlers);
       }
     }
     sqlite3_free(psi->pShxLoaded);
+    psi->pShxLoaded = 0;
+    psi->numExtLoaded = 0;
   }
 }
 
@@ -7944,9 +8002,10 @@ static int load_shell_extension(ShellExState *psx, const char *zFile,
   ShellExtensionLink shxLink = {
     sizeof(ShellExtensionLink),
     &shellExtAPI,
-    0, /* zErrMsg */
-    0, /* ExtensionId */
-    0  /* Extension destructor */
+    psx, /* pSXS */
+    0,   /* zErrMsg */
+    0,   /* ExtensionId */
+    0    /* Extension destructor */
   };
   int rc;
   if( psx->dbShell==0 ){
@@ -9145,8 +9204,8 @@ DISPATCHABLE_COMMAND( import ? 3 7 ){
     assert(dbCols==0);
     if( zColDefs==0 ){
       utf8_printf(stderr,"%s: empty file\n", sCtx.zFile);
-    import_fail:
       sqlite3_free(zCreate);
+    import_fail: /* entry from outer blocks */
       sqlite3_free(zSql);
       sqlite3_free(zFullTabName);
       import_cleanup(&sCtx);
@@ -9157,12 +9216,11 @@ DISPATCHABLE_COMMAND( import ? 3 7 ){
       utf8_printf(out, "%s\n", zCreate);
     }
     rc = sqlite3_exec(DBX(p), zCreate, 0, 0, 0);
+    sqlite3_free(zCreate);
     if( rc ){
       utf8_printf(STD_ERR, "%s failed:\n%s\n", zCreate, sqlite3_errmsg(DBX(p)));
       goto import_fail;
     }
-    sqlite3_free(zCreate);
-    zCreate = 0;
     rc = sqlite3_prepare_v2(DBX(p), zSql, -1, &pStmt, 0);
   }
   if( rc ){
@@ -12885,13 +12943,11 @@ static MetaMatchIter findMatchingMetaCmds(const char *cmdFragment,
     rv.pMC = (MetaCommand *)command_table;
   }else{
     /* Prepare rv.stmt to yield results glob-matching cmdFragment. */
-    /* ToDo: Verify this query is right in face of overridden commands. */
-    const char *zSql = "SELECT extIx, cmdIx FROM ("
-      " SELECT name,max(extIx),cmdIx FROM ShellCommands GROUP BY name,extIx"
-      ") WHERE name glob (?||'*')";
-    if( cmdFragment==0 ) cmdFragment = "";
+    const char *zSql =
+      "SELECT name, extIx, cmdIx FROM ActiveCommands "
+      "WHERE name glob (?||'*') ORDER BY name";
     sqlite3_prepare_v2(psx->dbShell, zSql, -1, &rv.stmt, 0);
-    sqlite3_bind_text(rv.stmt, 1, cmdFragment, -1, 0);
+    sqlite3_bind_text(rv.stmt, 1, cmdFragment? cmdFragment : "", -1, 0);
   }
   return rv;
 }
@@ -12909,8 +12965,8 @@ static MetaCommand * nextMatchingMetaCmd(MetaMatchIter *pMMI){
   }else{
     int rc = sqlite3_step(pMMI->stmt);
     if( rc==SQLITE_ROW ){
-      int extIx = sqlite3_column_int(pMMI->stmt, 0);
-      int cmdIx = sqlite3_column_int(pMMI->stmt, 1);
+      int extIx = sqlite3_column_int(pMMI->stmt, 1);
+      int cmdIx = sqlite3_column_int(pMMI->stmt, 2);
       return command_by_index(ISS(pMMI->psx), extIx, cmdIx);
     }else{
       sqlite3_finalize(pMMI->stmt);
@@ -12953,9 +13009,8 @@ MetaCommand *findMetaCommand(const char *cmdName, ShellExState *psx,
     int rc;
     int extIx = -1, cmdIx = -1, nf;
     sqlite3_stmt *pStmt = 0;
-    /* FixMe ToDo: This is not yet right where commands have been overridden. */
-    const char *zSql = "SELECT COUNT(*), max(extIx), cmdIx"
-      " FROM ShellCommands WHERE name glob (?||'*')";
+    const char *zSql = "SELECT COUNT(*), extIx, cmdIx"
+      " FROM ActiveCommands WHERE name glob (?||'*')";
     rc = sqlite3_prepare_v2(psx->dbShell, zSql, -1, &pStmt, 0);
     sqlite3_bind_text(pStmt, 1, cmdName, -1, 0);
     rc = sqlite3_step(pStmt);
@@ -12965,7 +13020,7 @@ MetaCommand *findMetaCommand(const char *cmdName, ShellExState *psx,
     sqlite3_finalize(pStmt);
     if( rc!= SQLITE_ROW ) return 0;
     *nFound = nf;
-    if( nf!=1 ) return 0;
+    if( nf!=1 ) return 0; /* Future: indicate ambiguity if > 1 */
     return command_by_index(ISS(psx), extIx, cmdIx);
   }else
 #endif
