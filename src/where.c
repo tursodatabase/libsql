@@ -1078,7 +1078,10 @@ static SQLITE_NOINLINE void sqlite3ConstructBloomFilter(
     pLoop->wsFlags &= ~WHERE_BLOOMFILTER;
     if( OptimizationDisabled(pParse->db, SQLITE_BloomPulldown) ) break;
     while( ++iLevel < pWInfo->nLevel ){
+      const SrcItem *pTabItem;
       pLevel = &pWInfo->a[iLevel];
+      pTabItem = &pWInfo->pTabList->a[pLevel->iFrom];
+      if( pTabItem->fg.jointype & JT_LEFT ) continue;
       pLoop = pLevel->pWLoop;
       if( NEVER(pLoop==0) ) continue;
       if( pLoop->prereq & notReady ) continue;
@@ -3761,7 +3764,6 @@ int sqlite3_vtab_rhs_value(
   return rc;
 }
 
-
 /*
 ** Return true if ORDER BY clause may be handled as DISTINCT.
 */
@@ -3772,6 +3774,22 @@ int sqlite3_vtab_distinct(sqlite3_index_info *pIdxInfo){
        || pHidden->eDistinct==2 );
   return pHidden->eDistinct;
 }
+
+#if (defined(SQLITE_ENABLE_DBPAGE_VTAB) || defined(SQLITE_TEST)) \
+    && !defined(SQLITE_OMIT_VIRTUALTABLE)
+/*
+** Cause the prepared statement that is associated with a call to
+** xBestIndex to open write transactions on all attached schemas.
+** This is used by the (built-in) sqlite_dbpage virtual table.
+*/
+void sqlite3VtabWriteAll(sqlite3_index_info *pIdxInfo){
+  HiddenIndexInfo *pHidden = (HiddenIndexInfo*)&pIdxInfo[1];
+  Parse *pParse = pHidden->pParse;
+  int nDb = pParse->db->nDb;
+  int i;
+  for(i=0; i<nDb; i++) sqlite3BeginWriteOperation(pParse, 0, i);
+}
+#endif
 
 /*
 ** Add all WhereLoop objects for a table of the join identified by
@@ -6132,6 +6150,10 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
             Index *pPk = sqlite3PrimaryKeyIndex(pTab);
             x = pPk->aiColumn[x];
             assert( x>=0 );
+#ifdef SQLITE_ENABLE_OFFSET_SQL_FUNC
+          }else if( pOp->opcode==OP_Offset ){
+            /* Do not need to translate the column number */
+#endif
           }else{
             testcase( x!=sqlite3StorageColumnToTable(pTab,x) );
             x = sqlite3StorageColumnToTable(pTab,x);

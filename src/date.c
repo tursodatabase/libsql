@@ -602,7 +602,7 @@ static int toLocaltime(
   p->D = sLocal.tm_mday;
   p->h = sLocal.tm_hour;
   p->m = sLocal.tm_min;
-  p->s = sLocal.tm_sec;
+  p->s = sLocal.tm_sec + (p->iJD%1000)*0.001;
   p->validYMD = 1;
   p->validHMS = 1;
   p->validJD = 0;

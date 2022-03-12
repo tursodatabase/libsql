@@ -251,7 +251,7 @@ static const PragmaName aPragmaName[] = {
 #if !defined(SQLITE_OMIT_SCHEMA_PRAGMAS)
  {/* zName:     */ "database_list",
   /* ePragTyp:  */ PragTyp_DATABASE_LIST,
-  /* ePragFlg:  */ PragFlg_NeedSchema|PragFlg_Result0,
+  /* ePragFlg:  */ PragFlg_Result0,
   /* ColNames:  */ 47, 3,
   /* iArg:      */ 0 },
 #endif
