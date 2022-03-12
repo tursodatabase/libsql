@@ -362,4 +362,18 @@ do_execsql_test 15.2 {
   DELETE FROM t1 RETURNING x, affinity(x);
 } {6.0 real}
 
+# 2022-02-28 Forum post https://sqlite.org/forum/forumpost/595e132f71
+# RETURNING with the xfer optimization
+#
+reset_db
+do_execsql_test 16.0 {
+  CREATE TABLE t1(a,b,c);
+  INSERT INTO t1 VALUES(1,2,3),('a','b','c');
+  CREATE TEMP TABLE t2(x,y,z);
+  INSERT INTO t2 SELECT * FROM t1 RETURNING *;
+} {1 2 3 a b c}
+do_execsql_test 16.1 {
+  SELECT * FROM t2;
+} {1 2 3 a b c}
+
 finish_test

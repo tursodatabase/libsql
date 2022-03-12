@@ -63,8 +63,7 @@ foreach {tn before after} {
  10 {CREATE TABLE t2(abc, xyz CHECK (xyz != "123"))} 
     {CREATE TABLE t2(abc, xyz CHECK (xyz != '123'))} 
 
- 11 {
-    CREATE TRIGGER ott AFTER UPDATE ON t1 BEGIN 
+ 11 {CREATE TRIGGER ott AFTER UPDATE ON t1 BEGIN 
       SELECT max("str", new."a") FROM t1 
           WHERE group_concat("b", ",") OVER (ORDER BY c||"str");
       UPDATE t1 SET c= b + "str";
@@ -72,8 +71,7 @@ foreach {tn before after} {
         SELECT 1 FROM t1 AS o WHERE o."a" = "o.a" AND t1.b IN("t1.b")
       );
     END;
- } {
-    CREATE TRIGGER ott AFTER UPDATE ON t1 BEGIN 
+ } {CREATE TRIGGER ott AFTER UPDATE ON t1 BEGIN 
       SELECT max('str', new."a") FROM t1 
           WHERE group_concat("b", ',') OVER (ORDER BY c||'str');
       UPDATE t1 SET c= b + 'str';

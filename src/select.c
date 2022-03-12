@@ -2623,7 +2623,7 @@ static int multiSelectOrderBy(
 ** The "LIMIT of exactly 1" case of condition (1) comes about when a VALUES
 ** clause occurs within scalar expression (ex: "SELECT (VALUES(1),(2),(3))").
 ** The sqlite3CodeSubselect will have added the LIMIT 1 clause in tht case.
-** Since the limit is exactly 1, we only need to evalutes the left-most VALUES.
+** Since the limit is exactly 1, we only need to evaluate the left-most VALUES.
 */
 static int multiSelectValues(
   Parse *pParse,        /* Parsing context */
