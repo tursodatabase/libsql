@@ -180,7 +180,7 @@ static int growOpArray(Vdbe *v, int nOp){
     return SQLITE_NOMEM;
   }
 
-  assert( nOp<=(1024/sizeof(Op)) );
+  assert( nOp<=(int)(1024/sizeof(Op)) );
   assert( nNew>=(v->nOpAlloc+nOp) );
   pNew = sqlite3DbRealloc(p->db, v->aOp, nNew*sizeof(Op));
   if( pNew ){
@@ -784,7 +784,7 @@ void sqlite3VdbeAssertAbortable(Vdbe *p){
 ** (3) Update the Vdbe.readOnly and Vdbe.bIsReader flags to accurately
 **     indicate what the prepared statement actually does.
 **
-** (4) Initialize the p4.xAdvance pointer on opcodes that use it.
+** (4) (discontinued)
 **
 ** (5) Reclaim the memory allocated for storing labels.
 **
@@ -828,25 +828,6 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
         case OP_JournalMode: {
           p->readOnly = 0;
           p->bIsReader = 1;
-          break;
-        }
-        case OP_Next:
-        case OP_SorterNext: {
-          pOp->p4.xAdvance = sqlite3BtreeNext;
-          pOp->p4type = P4_ADVANCE;
-          /* The code generator never codes any of these opcodes as a jump
-          ** to a label.  They are always coded as a jump backwards to a 
-          ** known address */
-          assert( pOp->p2>=0 );
-          break;
-        }
-        case OP_Prev: {
-          pOp->p4.xAdvance = sqlite3BtreePrevious;
-          pOp->p4type = P4_ADVANCE;
-          /* The code generator never codes any of these opcodes as a jump
-          ** to a label.  They are always coded as a jump backwards to a 
-          ** known address */
-          assert( pOp->p2>=0 );
           break;
         }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
@@ -1132,7 +1113,6 @@ static void freeP4(sqlite3 *db, int p4type, void *p4){
     case P4_REAL:
     case P4_INT64:
     case P4_DYNAMIC:
-    case P4_DYNBLOB:
     case P4_INTARRAY: {
       sqlite3DbFree(db, p4);
       break;
@@ -1729,10 +1709,6 @@ char *sqlite3VdbeDisplayP4(sqlite3 *db, Op *pOp){
       zP4 = "program";
       break;
     }
-    case P4_DYNBLOB:
-    case P4_ADVANCE: {
-      break;
-    }
     case P4_TABLE: {
       zP4 = pOp->p4.pTab->zName;
       break;
@@ -1864,21 +1840,40 @@ void sqlite3VdbePrintOp(FILE *pOut, int pc, VdbeOp *pOp){
 
 /*
 ** Initialize an array of N Mem element.
+**
+** This is a high-runner, so only those fields that really do need to
+** be initialized are set.  The Mem structure is organized so that
+** the fields that get initialized are nearby and hopefully on the same
+** cache line.
+**
+**    Mem.flags = flags
+**    Mem.db = db
+**    Mem.szMalloc = 0
+**
+** All other fields of Mem can safely remain uninitialized for now.  They
+** will be initialized before use.
 */
 static void initMemArray(Mem *p, int N, sqlite3 *db, u16 flags){
-  while( (N--)>0 ){
-    p->db = db;
-    p->flags = flags;
-    p->szMalloc = 0;
+  if( N>0 ){
+    do{
+      p->flags = flags;
+      p->db = db;
+      p->szMalloc = 0;
 #ifdef SQLITE_DEBUG
-    p->pScopyFrom = 0;
+      p->pScopyFrom = 0;
 #endif
-    p++;
+      p++;
+    }while( (--N)>0 );
   }
 }
 
 /*
-** Release an array of N Mem elements
+** Release auxiliary memory held in an array of N Mem elements.
+**
+** After this routine returns, all Mem elements in the array will still
+** be valid.  Those Mem elements that were not holding auxiliary resources
+** will be unchanged.  Mem elements which had something freed will be
+** set to MEM_Undefined.
 */
 static void releaseMemArray(Mem *p, int N){
   if( p && N ){
@@ -1911,12 +1906,17 @@ static void releaseMemArray(Mem *p, int N){
       if( p->flags&(MEM_Agg|MEM_Dyn) ){
         testcase( (p->flags & MEM_Dyn)!=0 && p->xDel==sqlite3VdbeFrameMemDel );
         sqlite3VdbeMemRelease(p);
+        p->flags = MEM_Undefined;
       }else if( p->szMalloc ){
         sqlite3DbFreeNN(db, p->zMalloc);
         p->szMalloc = 0;
+        p->flags = MEM_Undefined;
       }
-
-      p->flags = MEM_Undefined;
+#ifdef SQLITE_DEBUG
+      else{
+        p->flags = MEM_Undefined;
+      }
+#endif
     }while( (++p)<pEnd );
   }
 }
@@ -3531,7 +3531,7 @@ int SQLITE_NOINLINE sqlite3VdbeFinishMoveto(VdbeCursor *p){
 ** is supposed to be pointing.  If the row was deleted out from under the
 ** cursor, set the cursor to point to a NULL row.
 */
-static int SQLITE_NOINLINE handleMovedCursor(VdbeCursor *p){
+int SQLITE_NOINLINE sqlite3VdbeHandleMovedCursor(VdbeCursor *p){
   int isDifferentRow, rc;
   assert( p->eCurType==CURTYPE_BTREE );
   assert( p->uc.pCursor!=0 );
@@ -3549,39 +3549,7 @@ static int SQLITE_NOINLINE handleMovedCursor(VdbeCursor *p){
 int sqlite3VdbeCursorRestore(VdbeCursor *p){
   assert( p->eCurType==CURTYPE_BTREE );
   if( sqlite3BtreeCursorHasMoved(p->uc.pCursor) ){
-    return handleMovedCursor(p);
-  }
-  return SQLITE_OK;
-}
-
-/*
-** Make sure the cursor p is ready to read or write the row to which it
-** was last positioned.  Return an error code if an OOM fault or I/O error
-** prevents us from positioning the cursor to its correct position.
-**
-** If a MoveTo operation is pending on the given cursor, then do that
-** MoveTo now.  If no move is pending, check to see if the row has been
-** deleted out from under the cursor and if it has, mark the row as
-** a NULL row.
-**
-** If the cursor is already pointing to the correct row and that row has
-** not been deleted out from under the cursor, then this routine is a no-op.
-*/
-int sqlite3VdbeCursorMoveto(VdbeCursor **pp, u32 *piCol){
-  VdbeCursor *p = *pp;
-  assert( p->eCurType==CURTYPE_BTREE || p->eCurType==CURTYPE_PSEUDO );
-  if( p->deferredMoveto ){
-    u32 iMap;
-    assert( !p->isEphemeral );
-    if( p->ub.aAltMap && (iMap = p->ub.aAltMap[1+*piCol])>0 && !p->nullRow ){
-      *pp = p->pAltCursor;
-      *piCol = iMap - 1;
-      return SQLITE_OK;
-    }
-    return sqlite3VdbeFinishMoveto(p);
-  }
-  if( sqlite3BtreeCursorHasMoved(p->uc.pCursor) ){
-    return handleMovedCursor(p);
+    return sqlite3VdbeHandleMovedCursor(p);
   }
   return SQLITE_OK;
 }
@@ -4243,8 +4211,8 @@ static int vdbeCompareMemString(
     }else{
       rc = pColl->xCmp(pColl->pUser, c1.n, v1, c2.n, v2);
     }
-    sqlite3VdbeMemRelease(&c1);
-    sqlite3VdbeMemRelease(&c2);
+    sqlite3VdbeMemReleaseMalloc(&c1);
+    sqlite3VdbeMemReleaseMalloc(&c2);
     return rc;
   }
 }
@@ -4768,7 +4736,8 @@ static int vdbeRecordCompareInt(
       return sqlite3VdbeRecordCompare(nKey1, pKey1, pPKey2);
   }
 
-  v = pPKey2->aMem[0].u.i;
+  assert( pPKey2->u.i == pPKey2->aMem[0].u.i );
+  v = pPKey2->u.i;
   if( v>lhs ){
     res = pPKey2->r1;
   }else if( v<lhs ){
@@ -4803,12 +4772,18 @@ static int vdbeRecordCompareString(
   int res;
 
   assert( pPKey2->aMem[0].flags & MEM_Str );
+  assert( pPKey2->aMem[0].n == pPKey2->n );
+  assert( pPKey2->aMem[0].z == pPKey2->u.z );
   vdbeAssertFieldCountWithinLimits(nKey1, pKey1, pPKey2->pKeyInfo);
-  serial_type = (u8)(aKey1[1]);
-  if( serial_type >= 0x80 ){
-    sqlite3GetVarint32(&aKey1[1], (u32*)&serial_type);
-  }
+  serial_type = (signed char)(aKey1[1]);
+
+vrcs_restart:
   if( serial_type<12 ){
+    if( serial_type<0 ){
+      sqlite3GetVarint32(&aKey1[1], (u32*)&serial_type);
+      if( serial_type>=12 ) goto vrcs_restart;
+      assert( CORRUPT_DB );
+    }
     res = pPKey2->r1;      /* (pKey1/nKey1) is a number or a null */
   }else if( !(serial_type & 0x01) ){ 
     res = pPKey2->r2;      /* (pKey1/nKey1) is a blob */
@@ -4822,15 +4797,15 @@ static int vdbeRecordCompareString(
       pPKey2->errCode = (u8)SQLITE_CORRUPT_BKPT;
       return 0;    /* Corruption */
     }
-    nCmp = MIN( pPKey2->aMem[0].n, nStr );
-    res = memcmp(&aKey1[szHdr], pPKey2->aMem[0].z, nCmp);
+    nCmp = MIN( pPKey2->n, nStr );
+    res = memcmp(&aKey1[szHdr], pPKey2->u.z, nCmp);
 
     if( res>0 ){
       res = pPKey2->r2;
     }else if( res<0 ){
       res = pPKey2->r1;
     }else{
-      res = nStr - pPKey2->aMem[0].n;
+      res = nStr - pPKey2->n;
       if( res==0 ){
         if( pPKey2->nField>1 ){
           res = sqlite3VdbeRecordCompareWithSkip(nKey1, pKey1, pPKey2, 1);
@@ -4885,6 +4860,7 @@ RecordCompare sqlite3VdbeFindCompare(UnpackedRecord *p){
       p->r2 = 1;
     }
     if( (flags & MEM_Int) ){
+      p->u.i = p->aMem[0].u.i;
       return vdbeRecordCompareInt;
     }
     testcase( flags & MEM_Real );
@@ -4894,6 +4870,8 @@ RecordCompare sqlite3VdbeFindCompare(UnpackedRecord *p){
      && p->pKeyInfo->aColl[0]==0
     ){
       assert( flags & MEM_Str );
+      p->u.z = p->aMem[0].z;
+      p->n = p->aMem[0].n;
       return vdbeRecordCompareString;
     }
   }
@@ -4966,14 +4944,14 @@ int sqlite3VdbeIdxRowid(sqlite3 *db, BtCursor *pCur, i64 *rowid){
   /* Fetch the integer off the end of the index record */
   sqlite3VdbeSerialGet((u8*)&m.z[m.n-lenRowid], typeRowid, &v);
   *rowid = v.u.i;
-  sqlite3VdbeMemRelease(&m);
+  sqlite3VdbeMemReleaseMalloc(&m);
   return SQLITE_OK;
 
   /* Jump here if database corruption is detected after m has been
   ** allocated.  Free the m object and return SQLITE_CORRUPT. */
 idx_rowid_corruption:
   testcase( m.szMalloc!=0 );
-  sqlite3VdbeMemRelease(&m);
+  sqlite3VdbeMemReleaseMalloc(&m);
   return SQLITE_CORRUPT_BKPT;
 }
 
@@ -5015,7 +4993,7 @@ int sqlite3VdbeIdxKeyCompare(
     return rc;
   }
   *res = sqlite3VdbeRecordCompareWithSkip(m.n, m.z, pUnpacked, 0);
-  sqlite3VdbeMemRelease(&m);
+  sqlite3VdbeMemReleaseMalloc(&m);
   return SQLITE_OK;
 }
 
@@ -5182,7 +5160,7 @@ static void vdbeFreeUnpacked(sqlite3 *db, int nField, UnpackedRecord *p){
     int i;
     for(i=0; i<nField; i++){
       Mem *pMem = &p->aMem[i];
-      if( pMem->zMalloc ) sqlite3VdbeMemRelease(pMem);
+      if( pMem->zMalloc ) sqlite3VdbeMemReleaseMalloc(pMem);
     }
     sqlite3DbFreeNN(db, p);
   }

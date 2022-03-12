@@ -307,15 +307,16 @@ static void pragmaFunclistLine(
   int isBuiltin,         /* True if this is a built-in function */
   int showInternFuncs    /* True if showing internal functions */
 ){
+  u32 mask = 
+      SQLITE_DETERMINISTIC |
+      SQLITE_DIRECTONLY |
+      SQLITE_SUBTYPE |
+      SQLITE_INNOCUOUS |
+      SQLITE_FUNC_INTERNAL
+  ;
+  if( showInternFuncs ) mask = 0xffffffff;
   for(; p; p=p->pNext){
     const char *zType;
-    static const u32 mask = 
-        SQLITE_DETERMINISTIC |
-        SQLITE_DIRECTONLY |
-        SQLITE_SUBTYPE |
-        SQLITE_INNOCUOUS |
-        SQLITE_FUNC_INTERNAL
-    ;
     static const char *azEnc[] = { 0, "utf8", "utf16le", "utf16be" };
 
     assert( SQLITE_FUNC_ENCMASK==0x3 );

@@ -551,7 +551,8 @@ void sqlite3PcacheDrop(PgHdr *p){
 ** make it so.
 */
 void sqlite3PcacheMakeDirty(PgHdr *p){
-  assert( p->nRef>0 );
+  assert( p->nRef>0 || p->pCache->bPurgeable==0 );
+  testcase( p->nRef==0 );
   assert( sqlite3PcachePageSanity(p) );
   if( p->flags & (PGHDR_CLEAN|PGHDR_DONT_WRITE) ){    /*OPTIMIZATION-IF-FALSE*/
     p->flags &= ~PGHDR_DONT_WRITE;

@@ -1625,7 +1625,7 @@ static JsonNode *jsonMergePatch(
   if( pPatch->eType!=JSON_OBJECT ){
     return pPatch;
   }
-  assert( iTarget>=0 && iTarget<pParse->nNode );
+  assert( iTarget<pParse->nNode );
   pTarget = &pParse->aNode[iTarget];
   assert( (pPatch->jnFlags & JNODE_APPEND)==0 );
   if( pTarget->eType!=JSON_OBJECT ){
