@@ -4387,10 +4387,12 @@ int sqlite3_test_control(int op, ...){
     case SQLITE_TESTCTRL_LOGEST: {
       double rIn = va_arg(ap, double);
       LogEst rLogEst = sqlite3LogEstFromDouble(rIn);
-      u64 iInt = sqlite3LogEstToInt(rLogEst);
-      va_arg(ap, int*)[0] = rLogEst;
-      va_arg(ap, u64*)[0] = iInt;
-      va_arg(ap, int*)[0] = sqlite3LogEst(iInt);
+      int *pI1 = va_arg(ap,int*);
+      u64 *pU64 = va_arg(ap,u64*);
+      int *pI2 = va_arg(ap,int*);
+      *pI1 = rLogEst;
+      *pU64 = sqlite3LogEstToInt(rLogEst);
+      *pI2 = sqlite3LogEst(*pU64);
       break;
     }
  

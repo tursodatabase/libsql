@@ -19,6 +19,10 @@ if {$::longdouble_size<=8} {
   finish_test
   return
 }
+if {$::tcl_platform(machine)!="x86_64"} {
+  finish_test
+  return
+}
 
 expr srand(1)
 for {set i 1} {$i<20000} {incr i} {
