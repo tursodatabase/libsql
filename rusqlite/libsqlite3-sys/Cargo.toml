@@ -36,7 +36,7 @@ in_gecko = []
 with-asan = []
 wasm32-wasi-vfs = []
 # lowest version shipped with Windows 10.0.10586 was 3.8.8.3
-winsqlite3 = ["min_sqlite_version_3_7_16"]
+winsqlite3 = ["min_sqlite_version_3_7_16", "buildtime_bindgen"]
 
 [dependencies]
 openssl-sys = { version = "0.9", optional = true }
