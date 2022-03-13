@@ -1508,4 +1508,21 @@ mod test {
         assert_eq!(expected, actual);
         Ok(())
     }
+
+    #[test]
+    #[cfg(feature = "modern_sqlite")]
+    fn test_error_offset() -> Result<()> {
+        use crate::ffi::ErrorCode;
+        let db = Connection::open_in_memory()?;
+        let r = db.execute_batch("SELECT CURRENT_TIMESTANP;");
+        assert!(r.is_err());
+        match r.unwrap_err() {
+            Error::SqlInputError { error, offset, .. } => {
+                assert_eq!(error.code, ErrorCode::Unknown);
+                assert_eq!(offset, 7);
+            }
+            err => panic!("Unexpected error {}", err),
+        }
+        Ok(())
+    }
 }

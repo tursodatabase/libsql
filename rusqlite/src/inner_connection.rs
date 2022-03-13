@@ -10,7 +10,7 @@ use std::sync::{Arc, Mutex};
 use super::ffi;
 use super::str_for_sqlite;
 use super::{Connection, InterruptHandle, OpenFlags, Result};
-use crate::error::{error_from_handle, error_from_sqlite_code, Error};
+use crate::error::{error_from_handle, error_from_sqlite_code, error_with_offset, Error};
 use crate::raw_statement::RawStatement;
 use crate::statement::Statement;
 use crate::version::version_number;
@@ -255,7 +255,9 @@ impl InnerConnection {
             rc
         };
         // If there is an error, *ppStmt is set to NULL.
-        self.decode_result(r)?;
+        if r != ffi::SQLITE_OK {
+            return Err(unsafe { error_with_offset(self.db, r) });
+        }
         // If the input text contains no SQL (if the input is an empty string or a
         // comment) then *ppStmt is set to NULL.
         let c_stmt: *mut ffi::sqlite3_stmt = c_stmt;
