@@ -6165,6 +6165,9 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
             OpcodeRewriteTrace(db, k, pOp);
           }
           assert( (pLoop->wsFlags & WHERE_IDX_ONLY)==0 || x>=0 
+#ifdef SQLITE_ENABLE_OFFSET_SQL_FUNC
+              || pOp->opcode==OP_Offset
+#endif
               || pWInfo->eOnePass );
         }else if( pOp->opcode==OP_Rowid ){
           pOp->p1 = pLevel->iIdxCur;
