@@ -5593,7 +5593,8 @@ unsigned int sqlite3_value_subtype(sqlite3_value*);
 ** object D and returns a pointer to that copy.  ^The [sqlite3_value] returned
 ** is a [protected sqlite3_value] object even if the input is not.
 ** ^The sqlite3_value_dup(V) interface returns NULL if V is NULL or if a
-** memory allocation fails.
+** memory allocation fails. ^If V is a [pointer value], then the result
+** of sqlite3_value_dup(V) is a NULL value.
 **
 ** ^The sqlite3_value_free(V) interface frees an [sqlite3_value] object
 ** previously obtained from [sqlite3_value_dup()].  ^If V is a NULL pointer

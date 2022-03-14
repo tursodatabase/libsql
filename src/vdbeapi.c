@@ -345,6 +345,9 @@ sqlite3_value *sqlite3_value_dup(const sqlite3_value *pOrig){
       sqlite3ValueFree(pNew);
       pNew = 0;
     }
+  }else if( pNew->flags & MEM_Null ){
+    /* Do not duplicate pointer values */
+    pNew->flags &= ~(MEM_Term|MEM_Subtype);
   }
   return pNew;
 }
