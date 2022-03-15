@@ -11560,7 +11560,8 @@ static int process_input(ShellState *p){
       qss = QSS_Start;
     }
   }
-  if( nSql && QSS_PLAINDARK(qss) ){
+  if( nSql ){
+    /* This may be incomplete. Let the SQL parser deal with that. */
     errCnt += runOneSqlLine(p, zSql, p->in, startline);
   }
   free(zSql);
