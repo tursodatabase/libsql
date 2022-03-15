@@ -80,16 +80,38 @@ typedef struct ShellExState {
   struct ShellInState *pSIS; /* Offset of this member is NOT STABLE. */
 } ShellExState;
 
-/* This function pointer has the same signature as the sqlite3_X_init()
- * function that is called as SQLite3 completes loading an extension.
- */
-typedef int (*ExtensionId)
-  (sqlite3 *, char **, const struct sqlite3_api_routines *);
-
 /*****************
  * See "Shell Extensions, Programming" for purposes and usage of the following
  * interfaces supporting extended meta-commands and import and output modes.
  */
+
+/* Define status codes returned by a meta-command, either during its argument
+ * checking or during its execution (to which checking may be deferred.) The
+ * code has 1 or 2 parts. The low-valued codes, below MCR_ArgIxMask, have an
+ * action part and an error flag. Higher-valued codes are bitwise-or'ed with
+ * a small integer and indicate problems with the meta-command itself.
+ */
+typedef enum DotCmdRC {
+  /* Post-execute action and success/error status */
+  DCR_Ok          = 0,    /* ordinary success and continue */
+  DCR_Error       = 1,    /* or'ed with low-valued codes upon error */
+  DCR_Return      = 2,    /* return from present input source/script */
+  DCR_ReturnError = 3,    /* return with error */
+  DCR_Exit        = 4,    /* exit shell ( process or pseudo-main() ) */
+  DCR_ExitError   = 5,    /* exit with error */
+  DCR_Abort       = 6,    /* abort for unrecoverable cause (OOM) */
+  DCR_AbortError  = 7,    /* abort with error (blocked unsafe) */
+  /* Dispatch and argument errors */
+  DCR_ArgIxMask = 0xfff,  /* mask to retain/exclude argument index */
+  /* Below codes may be or'ed with the offending argument index */
+  DCR_Unknown   = 0x1000, /* unknown command, subcommand or option */
+  DCR_Ambiguous = 0x2000, /* ambiguous (sub)command (too abreviated) */
+  DCR_Unpaired  = 0x3000, /* option value indicated but missing */
+  DCR_TooMany   = 0x4000, /* excess arguments were provided */
+  DCR_TooFew    = 0x5000, /* insufficient arguments provided */
+  DCR_Missing   = 0x6000, /* required argument(s) missing */
+  DCR_ArgError  = 0x7000  /* non-specific argument error */
+} DotCmdRC;
 
 /* An object implementing below interface is registered with the
  * shell to make new or overriding meta-commands available to it.
@@ -97,17 +119,11 @@ typedef int (*ExtensionId)
 INTERFACE_BEGIN( MetaCommand );
 PURE_VMETHOD(const char *, name, MetaCommand, 0,());
 PURE_VMETHOD(const char *, help, MetaCommand, 1,(int more));
-PURE_VMETHOD(int, argsCheck, MetaCommand,
+PURE_VMETHOD(DotCmdRC, argsCheck, MetaCommand,
              3, (char **pzErrMsg, int nArgs, char *azArgs[]));
-PURE_VMETHOD(int, execute, MetaCommand,
+PURE_VMETHOD(DotCmdRC, execute, MetaCommand,
              4,(ShellExState *, char **pzErrMsg, int nArgs, char *azArgs[]));
 INTERFACE_END( MetaCommand );
-
-/* Define error codes to be returned either by a meta-command during
- * its own checking or by the dispatcher for bad argument counts.
- */
-#define SHELL_INVALID_ARGS SQLITE_MISUSE
-#define SHELL_FORBIDDEN_OP 0x7ffe /* Action disallowed under --safe.*/
 
 /* An object implementing below interface is registered with the
  * shell to make new or overriding output modes available to it.
@@ -146,6 +162,12 @@ PURE_VMETHOD(int, finishDataInput, ImportHandler,
 PURE_VMETHOD(void, closeDataInStream, ImportHandler,
              2,( ShellExState *pSES, char **pzErr ));
 INTERFACE_END( ImportHandlerVtable );
+
+/* This function pointer has the same signature as the sqlite3_X_init()
+ * function that is called as SQLite3 completes loading an extension.
+ */
+typedef int (*ExtensionId)
+  (sqlite3 *, char **, const struct sqlite3_api_routines *);
 
 typedef struct ExtensionHelpers {
   int helperCount; /* Helper count, not including sentinel */

@@ -1,5 +1,5 @@
-C CLI\sextension's\sregisterMetaCommand\sdone,\sand\sused\sby\stest_shellext.c\s(demo\scode)
-D 2022-03-11T22:59:24.198
+C For\sCLI,\sbegin\scentralizing\sargument\schecking/complaining.
+D 2022-03-15T10:07:56.877
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -555,8 +555,8 @@ F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c ea935b87d6fb36c78b70cdc7b28561dc8f33f2ef37048389549c7b5ef9b0ba5e
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 4890a3cfee0bc60ff231c3a44db37968859ab0be156983dbcc0c096109832cdd
-F src/shell.c.in 8ecf1834819828c7ba2c375722c01a3db346ce5fd8d1313839c14d89db517259
-F src/shext_linkage.h 6a9830f48061677ead5c05b537af3452b655f088db3a1298d1bbdd71279d8fe1
+F src/shell.c.in af1a255482cd315901eb75134838dc9403fc04f8d755b7e75e2a85ee47df9a87
+F src/shext_linkage.h aba0d02f92fdea48904bf0b0805df9140a6b5dc20e9e76dad866e0568abaf458
 F src/sqlite.h.in e82ac380b307659d0892f502b742f825504e78729f4edaadce946003b9c00816
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h a95cb9ed106e3d39e2118e4dcc15a14faec3fa50d0093425083d340d9dfd96e6
@@ -1949,8 +1949,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 19f2a747b8f4d84d8695beb9b23a455f1dead24c94aa90466510555a796027d7
-R f5ab49aa4d163198ec36e8804abd988c
+P 9be5e0b503f63dbbf1375460ce74a0aad6f202c2e5b2a748bba1d3af82c7d2d8
+R 859f2736e1cb4ffb3cf8130c1ca2c5f2
 U larrybr
-Z 7b79332717703ce0f5d855b6c23450ad
+Z 1a5305d5e77e7119519f6839e7b8c711
 # Remove this line to create a well-formed Fossil manifest.
