@@ -109,7 +109,7 @@ bundled-full = ["modern-full", "bundled"]
 [dependencies]
 time = { version = "0.3.0", features = ["formatting", "macros", "parsing"], optional = true }
 bitflags = "1.2"
-hashlink = "0.7"
+hashlink = "0.8"
 chrono = { version = "0.4", optional = true, default-features = false, features = ["clock"] }
 serde_json = { version = "1.0", optional = true }
 csv = { version = "1.1", optional = true }
