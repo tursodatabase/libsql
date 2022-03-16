@@ -1,5 +1,5 @@
-C Make\sCLI\scomplain\sabout\sincomplete\sinput\sat\sEOF.\sFix\sfor\sregression\sreported\sat\shttps://sqlite.org/forum/forumpost/718f489a43be3197
-D 2022-03-15T17:57:42.959
+C Experimental\schange\sto\shave\ssqlite3_vtab_distinct()\sreturn\s3\sto\sindicate\sthat\sresults\sshould\ssorted\sand\sduplicates\smay\sbe\sremoved.
+D 2022-03-16T12:06:00.492
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -552,7 +552,7 @@ F src/printf.c 05d8dfd2018bc4fc3ddb8b37eb97ccef7abf985643fa1caebdcf2916ca90fa32
 F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c ea935b87d6fb36c78b70cdc7b28561dc8f33f2ef37048389549c7b5ef9b0ba5e
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c 4890a3cfee0bc60ff231c3a44db37968859ab0be156983dbcc0c096109832cdd
+F src/select.c 16453eff42da7b9705f0e3e3cdf4a7251b27b7b88620d0697c15e4f656ff3e77
 F src/shell.c.in ec4b952f7d9c02919e8e8394be16bcbff55c105fd080895602d10fc8fa5328b8
 F src/sqlite.h.in 5845213799feca09cd69d18ff841a85fe0df31021f46aaa1797e703e80dc1d70
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -639,7 +639,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c b9df133a705093da8977da5eb202eaadb844839f1c7297c08d33471f5491843d
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
-F src/where.c 7f7e6b5f0c017997a3a47988781de9481f9fa685febdaea779a9fd79ab17a43c
+F src/where.c 615ac2c6ea64baf48b023f27b33fa5b6f8f2bbd75d86d16c43ce7b0a2aa7a4fa
 F src/whereInt.h 15d2975c3b4c193c78c26674400a840da8647fe1777ae3b026e2d15937b38a03
 F src/wherecode.c 555f598a9ddad81761f084710fdb4f8733fe31bc14cd6b19f8ca4274a7eaa04c
 F src/whereexpr.c 2a71f5491798460c9590317329234d332d9eb1717cba4f3403122189a75c465e
@@ -732,6 +732,7 @@ F test/bestindex5.test a0c90b2dad7836e80a01379e200e5f8ec9476d49b349af02c0dbff2fb
 F test/bestindex6.test 16942535b551273f3ad9df8d7cc4b7f22b1fcd8882714358859eb049a6f99dd4
 F test/bestindex7.test f094c669a6400777f4d2ddc3ed28e39169f1adb5be3d59b55f22ccf8c414b71e
 F test/bestindex8.test abd0016fc04f19dc382976750b06df5463d2757e11e78a8ba7d7dc50671f3337
+F test/bestindex9.test bf2eb8556e8d5c00ef3ee18c521751cd03c1b55454b6e7683b4c6742e3131b23
 F test/between.test b9a65fb065391980119e8a781a7409d3fcf059d89968279c750e190a9a1d5263
 F test/bigfile.test aa74f4e5db51c8e54a1d9de9fa65d01d1eb20b59
 F test/bigfile2.test 1b489a3a39ae90c7f027b79110d6b4e1dbc71bfc
@@ -1944,8 +1945,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fff1243b594c190d15f14b7ca4e60d23519cd15134f275991c685966fcc24145
-R 419d7db42dfecc265d3cd4cb01355313
-U larrybr
-Z e6c264c989ed1b7dd7a09ef4a9447bb1
+P 72029cf7cdb266703cc8716102dbba8e6f2666e1f47409f42c39528795757b73
+R 091535e0d89f14f4e262c52c3edd5ea6
+T *branch * vtab-distinct-ordered
+T *sym-vtab-distinct-ordered *
+T -sym-trunk *
+U dan
+Z e66666d32a77ed9604cb92699aaf4a49
 # Remove this line to create a well-formed Fossil manifest.
