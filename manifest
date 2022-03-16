@@ -1,5 +1,5 @@
-C Experimental\schange\sto\shave\ssqlite3_vtab_distinct()\sreturn\s3\sto\sindicate\sthat\sresults\sshould\ssorted\sand\sduplicates\smay\sbe\sremoved.
-D 2022-03-16T12:06:00.492
+C Update\sthe\ssqlite3_vtab_distinct()\sdocumentation.
+D 2022-03-16T14:51:35.141
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -554,7 +554,7 @@ F src/resolve.c ea935b87d6fb36c78b70cdc7b28561dc8f33f2ef37048389549c7b5ef9b0ba5e
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 16453eff42da7b9705f0e3e3cdf4a7251b27b7b88620d0697c15e4f656ff3e77
 F src/shell.c.in ec4b952f7d9c02919e8e8394be16bcbff55c105fd080895602d10fc8fa5328b8
-F src/sqlite.h.in 5845213799feca09cd69d18ff841a85fe0df31021f46aaa1797e703e80dc1d70
+F src/sqlite.h.in 2a35f62185eb5e7ecc64a2f68442b538ce9be74f80f28a00abc24837edcf1c17
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h a95cb9ed106e3d39e2118e4dcc15a14faec3fa50d0093425083d340d9dfd96e6
 F src/sqliteInt.h 2ce7d868630ccd70ffd4b15d46b59ccf7daf89198993b62ed6e4a165d3511280
@@ -1945,11 +1945,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 72029cf7cdb266703cc8716102dbba8e6f2666e1f47409f42c39528795757b73
-R 091535e0d89f14f4e262c52c3edd5ea6
-T *branch * vtab-distinct-ordered
-T *sym-vtab-distinct-ordered *
-T -sym-trunk *
-U dan
-Z e66666d32a77ed9604cb92699aaf4a49
+P 11f4508895c0a46d8623ca2f4f37b4f1b54b6d9022765f6124a9d42132f7d633
+R d6e5b04ecfceb5b1d41e97b1931549ce
+U drh
+Z b7abd501d6e35f76ed5404c5b9be3a3f
 # Remove this line to create a well-formed Fossil manifest.
