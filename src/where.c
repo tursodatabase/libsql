@@ -6146,14 +6146,15 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
         ){
           int x = pOp->p2;
           assert( pIdx->pTable==pTab );
+#ifdef SQLITE_ENABLE_OFFSET_SQL_FUNC
+          if( pOp->opcode==OP_Offset ){
+            /* Do not need to translate the column number */
+          }else
+#endif
           if( !HasRowid(pTab) ){
             Index *pPk = sqlite3PrimaryKeyIndex(pTab);
             x = pPk->aiColumn[x];
             assert( x>=0 );
-#ifdef SQLITE_ENABLE_OFFSET_SQL_FUNC
-          }else if( pOp->opcode==OP_Offset ){
-            /* Do not need to translate the column number */
-#endif
           }else{
             testcase( x!=sqlite3StorageColumnToTable(pTab,x) );
             x = sqlite3StorageColumnToTable(pTab,x);
