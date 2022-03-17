@@ -119,6 +119,8 @@ impl Connection {
             None => unsafe { ffi::sqlite3_profile(c.db(), None, ptr::null_mut()) },
         };
     }
+
+    // TODO sqlite3_trace_v2 (https://sqlite.org/c3ref/trace_v2.html) // 3.14.0, #977
 }
 
 #[cfg(test)]

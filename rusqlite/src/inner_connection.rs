@@ -222,6 +222,7 @@ impl InnerConnection {
         let mut c_stmt = ptr::null_mut();
         let (c_sql, len, _) = str_for_sqlite(sql.as_bytes())?;
         let mut c_tail = ptr::null();
+        // TODO sqlite3_prepare_v3 (https://sqlite.org/c3ref/c_prepare_normalize.html) // 3.20.0, #728
         #[cfg(not(feature = "unlock_notify"))]
         let r = unsafe {
             ffi::sqlite3_prepare_v2(
@@ -277,7 +278,14 @@ impl InnerConnection {
 
     #[inline]
     pub fn changes(&self) -> usize {
-        unsafe { ffi::sqlite3_changes(self.db()) as usize }
+        #[cfg(not(feature = "modern_sqlite"))]
+        unsafe {
+            ffi::sqlite3_changes(self.db()) as usize
+        }
+        #[cfg(feature = "modern_sqlite")] // 3.37.0
+        unsafe {
+            ffi::sqlite3_changes64(self.db()) as usize
+        }
     }
 
     #[inline]
@@ -308,6 +316,50 @@ impl InnerConnection {
     #[cfg(not(feature = "hooks"))]
     #[inline]
     fn remove_hooks(&mut self) {}
+
+    #[cfg(feature = "modern_sqlite")] // 3.7.11
+    pub fn db_readonly(&self, db_name: super::DatabaseName<'_>) -> Result<bool> {
+        let name = db_name.as_cstring()?;
+        let r = unsafe { ffi::sqlite3_db_readonly(self.db, name.as_ptr()) };
+        match r {
+            0 => Ok(false),
+            1 => Ok(true),
+            -1 => Err(Error::SqliteFailure(
+                ffi::Error::new(ffi::SQLITE_MISUSE),
+                Some(format!("{:?} is not the name of a database", db_name)),
+            )),
+            _ => Err(error_from_sqlite_code(
+                r,
+                Some("Unexpected result".to_owned()),
+            )),
+        }
+    }
+
+    #[cfg(feature = "modern_sqlite")] // 3.37.0
+    pub fn txn_state(
+        &self,
+        db_name: Option<super::DatabaseName<'_>>,
+    ) -> Result<super::transaction::TransactionState> {
+        let r = if let Some(ref name) = db_name {
+            let name = name.as_cstring()?;
+            unsafe { ffi::sqlite3_txn_state(self.db, name.as_ptr()) }
+        } else {
+            unsafe { ffi::sqlite3_txn_state(self.db, ptr::null()) }
+        };
+        match r {
+            0 => Ok(super::transaction::TransactionState::None),
+            1 => Ok(super::transaction::TransactionState::Read),
+            2 => Ok(super::transaction::TransactionState::Write),
+            -1 => Err(Error::SqliteFailure(
+                ffi::Error::new(ffi::SQLITE_MISUSE),
+                Some(format!("{:?} is not the name of a valid schema", db_name)),
+            )),
+            _ => Err(error_from_sqlite_code(
+                r,
+                Some("Unexpected result".to_owned()),
+            )),
+        }
+    }
 }
 
 impl Drop for InnerConnection {

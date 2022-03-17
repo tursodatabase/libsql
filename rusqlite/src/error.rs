@@ -339,6 +339,7 @@ impl error::Error for Error {
 
 #[cold]
 pub fn error_from_sqlite_code(code: c_int, message: Option<String>) -> Error {
+    // TODO sqlite3_error_offset // 3.38.0, #1130
     Error::SqliteFailure(ffi::Error::new(code), message)
 }
 

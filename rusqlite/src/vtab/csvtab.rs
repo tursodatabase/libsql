@@ -31,7 +31,7 @@ use crate::ffi;
 use crate::types::Null;
 use crate::vtab::{
     dequote, escape_double_quote, parse_boolean, read_only_module, Context, CreateVTab, IndexInfo,
-    VTab, VTabConnection, VTabCursor, Values,
+    VTab, VTabConfig, VTabConnection, VTabCursor, Values,
 };
 use crate::{Connection, Error, Result};
 
@@ -101,7 +101,7 @@ unsafe impl<'vtab> VTab<'vtab> for CsvTab {
     type Cursor = CsvTabCursor<'vtab>;
 
     fn connect(
-        _: &mut VTabConnection,
+        db: &mut VTabConnection,
         _aux: Option<&()>,
         args: &[&[u8]],
     ) -> Result<(String, CsvTab)> {
@@ -249,7 +249,7 @@ unsafe impl<'vtab> VTab<'vtab> for CsvTab {
             }
             schema = Some(sql);
         }
-
+        db.config(VTabConfig::DirectOnly)?;
         Ok((schema.unwrap(), vtab))
     }
 
