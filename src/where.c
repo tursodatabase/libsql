@@ -3771,11 +3771,7 @@ int sqlite3_vtab_rhs_value(
 */
 int sqlite3_vtab_distinct(sqlite3_index_info *pIdxInfo){
   HiddenIndexInfo *pHidden = (HiddenIndexInfo*)&pIdxInfo[1];
-  assert( pHidden->eDistinct==0
-       || pHidden->eDistinct==1
-       || pHidden->eDistinct==2 
-       || pHidden->eDistinct==3 
-  );
+  assert( pHidden->eDistinct>=0 && pHidden->eDistinct<=3 );
   return pHidden->eDistinct;
 }
 
