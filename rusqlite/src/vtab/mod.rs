@@ -84,6 +84,43 @@ const ZERO_MODULE: ffi::sqlite3_module = unsafe {
     .module
 };
 
+/// Create an modifiable virtual table implementation.
+///
+/// Step 2 of [Creating New Virtual Table Implementations](https://sqlite.org/vtab.html#creating_new_virtual_table_implementations).
+#[must_use]
+pub fn update_module<'vtab, T: UpdateVTab<'vtab>>() -> &'static Module<'vtab, T> {
+    #[allow(clippy::needless_update)]
+    &Module {
+        base: ffi::sqlite3_module {
+            iVersion: 2,
+            xCreate: Some(rust_create::<T>),
+            xConnect: Some(rust_connect::<T>),
+            xBestIndex: Some(rust_best_index::<T>),
+            xDisconnect: Some(rust_disconnect::<T>),
+            xDestroy: Some(rust_destroy::<T>),
+            xOpen: Some(rust_open::<T>),
+            xClose: Some(rust_close::<T::Cursor>),
+            xFilter: Some(rust_filter::<T::Cursor>),
+            xNext: Some(rust_next::<T::Cursor>),
+            xEof: Some(rust_eof::<T::Cursor>),
+            xColumn: Some(rust_column::<T::Cursor>),
+            xRowid: Some(rust_rowid::<T::Cursor>),
+            xUpdate: Some(rust_update::<T>),
+            xBegin: None,
+            xSync: None,
+            xCommit: None,
+            xRollback: None,
+            xFindFunction: None,
+            xRename: None,
+            xSavepoint: None,
+            xRelease: None,
+            xRollbackTo: None,
+            ..ZERO_MODULE
+        },
+        phantom: PhantomData::<&'vtab T>,
+    }
+}
+
 /// Create a read-only virtual table implementation.
 ///
 /// Step 2 of [Creating New Virtual Table Implementations](https://sqlite.org/vtab.html#creating_new_virtual_table_implementations).
@@ -278,6 +315,21 @@ pub trait CreateVTab<'vtab>: VTab<'vtab> {
     fn destroy(&self) -> Result<()> {
         Ok(())
     }
+}
+
+/// Non-read-only virtual table instance trait.
+///
+/// (See [SQLite doc](https://sqlite.org/vtab.html#xupdate))
+pub trait UpdateVTab<'vtab>: CreateVTab<'vtab> {
+    /// Delete rowid or PK
+    fn delete(&mut self, arg: ValueRef<'_>) -> Result<()>;
+    /// Insert: args[0] == NULL: old rowid or PK, args[1]: new rowid or PK,
+    /// args[2]: ... Return the new rowid.
+    // TODO Make the distinction between argv[1] == NULL and argv[1] != NULL ?
+    fn insert(&mut self, args: &Values<'_>) -> Result<i64>;
+    /// Update: args[0] != NULL: old rowid or PK, args[1]: new row id or PK,
+    /// args[2]: ...
+    fn update(&mut self, args: &Values<'_>) -> Result<()>;
 }
 
 /// Index constraint operator.
@@ -1150,6 +1202,49 @@ where
             ffi::SQLITE_OK
         }
         err => cursor_error(cursor, err),
+    }
+}
+
+unsafe extern "C" fn rust_update<'vtab, T: 'vtab>(
+    vtab: *mut ffi::sqlite3_vtab,
+    argc: c_int,
+    argv: *mut *mut ffi::sqlite3_value,
+    p_rowid: *mut ffi::sqlite3_int64,
+) -> c_int
+where
+    T: UpdateVTab<'vtab>,
+{
+    assert!(argc >= 1);
+    let args = slice::from_raw_parts_mut(argv, argc as usize);
+    let vt = vtab.cast::<T>();
+    let r = if args.len() == 1 {
+        (*vt).delete(ValueRef::from_value(args[0]))
+    } else if ffi::sqlite3_value_type(args[0]) == ffi::SQLITE_NULL {
+        // TODO Make the distinction between argv[1] == NULL and argv[1] != NULL ?
+        let values = Values { args };
+        match (*vt).insert(&values) {
+            Ok(rowid) => {
+                *p_rowid = rowid;
+                Ok(())
+            }
+            Err(e) => Err(e),
+        }
+    } else {
+        let values = Values { args };
+        (*vt).update(&values)
+    };
+    match r {
+        Ok(_) => ffi::SQLITE_OK,
+        Err(Error::SqliteFailure(err, s)) => {
+            if let Some(err_msg) = s {
+                set_err_msg(vtab, &err_msg);
+            }
+            err.extended_code
+        }
+        Err(err) => {
+            set_err_msg(vtab, &err.to_string());
+            ffi::SQLITE_ERROR
+        }
     }
 }
 
