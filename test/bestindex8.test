@@ -85,7 +85,7 @@ foreach {tn sql bDistinct idxinsert bConsumed res} {
   4 "SELECT DISTINCT b FROM vt1"                        2 1 0 {b d}
   5 "SELECT DISTINCT b FROM vt1 ORDER BY a"             0 1 1 {b d}
   6 "SELECT DISTINCT t0.c0 FROM vt1, t0 ORDER BY vt1.a" 0 1 1 {1 0}
-  7 "SELECT DISTINCT a, b FROM vt1 ORDER BY a, b"       1 0 1 {a b c d}
+  7 "SELECT DISTINCT a, b FROM vt1 ORDER BY a, b"       3 0 1 {a b c d}
   8 "SELECT DISTINCT a, b FROM vt1 ORDER BY a"          0 1 1 {a b c d}
   9 "SELECT DISTINCT a FROM vt1 ORDER BY a, b"          0 1 1 {a c}
 
