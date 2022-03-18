@@ -110,7 +110,7 @@ SELECT 1;
 ifcapable trace {
 do_test shell4-2.1 {
   catchcmd ":memory:" "CREATE TABLE t1(x);\n.trace --unknown"
-} {1 {Unknown option "--unknown" on ".trace"}}
+} {1 {Error: On .trace, unknown option or subcommand: "--unknown"}}
 do_test shell4-2.2 {
   catchcmd ":memory:" "CREATE TABLE t1(x);\n.trace off\n.trace off\n"
 } {0 {}}
@@ -146,6 +146,6 @@ do_test shell4-4.1 {
   catchcmd ":memory:" ".read t1.txt"
 } {1 {Input nesting limit (25) reached, from line 1 of "t1.txt"
  from line 1 of "t1.txt" from line 1 of "t1.txt" ...
-ERROR: Check recursion.}}
+Error: Check recursion.}}
 
 finish_test

@@ -92,7 +92,7 @@ typedef struct ShellExState {
  * a small integer and indicate problems with the meta-command itself.
  */
 typedef enum DotCmdRC {
-  /* Post-execute action and success/error status */
+  /* Post-execute action and success/error status (semi-ordered) */
   DCR_Ok          = 0,    /* ordinary success and continue */
   DCR_Error       = 1,    /* or'ed with low-valued codes upon error */
   DCR_Return      = 2,    /* return from present input source/script */
@@ -101,6 +101,8 @@ typedef enum DotCmdRC {
   DCR_ExitError   = 5,    /* exit with error */
   DCR_Abort       = 6,    /* abort for unrecoverable cause (OOM) */
   DCR_AbortError  = 7,    /* abort with error (blocked unsafe) */
+  /* Above are in reverse-priority order for process_input() returns. */
+
   /* Dispatch and argument errors */
   DCR_ArgIxMask = 0xfff,  /* mask to retain/exclude argument index */
   /* Below codes may be or'ed with the offending argument index */
@@ -110,7 +112,12 @@ typedef enum DotCmdRC {
   DCR_TooMany   = 0x4000, /* excess arguments were provided */
   DCR_TooFew    = 0x5000, /* insufficient arguments provided */
   DCR_Missing   = 0x6000, /* required argument(s) missing */
-  DCR_ArgError  = 0x7000  /* non-specific argument error */
+  DCR_ArgWrong  = 0x7000, /* non-specific argument error, nothing emitted */
+
+  /* This code indicates error and a usage message to be emitted to stderr. */
+  DCR_SayUsage  = 0x7ffd, /* usage is at *pzErr or is to be generated */
+  /* This code indicates nothing more need be put to stderr (or stdout.) */
+  DCR_CmdErred  = 0x7fff  /* non-specific error for which complaint is done */
 } DotCmdRC;
 
 /* An object implementing below interface is registered with the
@@ -177,6 +184,8 @@ typedef struct ExtensionHelpers {
       FILE * (*currentOutputFile)(ShellExState *p);
       struct InSource * (*currentInputSource)(ShellExState *p);
       char * (*strLineGet)(char *zBuf, int ncMax, struct InSource *pInSrc);
+      MetaCommand * (*findMetaCommand)(const char *cmdName, ShellExState *p,
+                                       /* out */ int *pnFound);
       void (*setColumnWidths)(ShellExState *p, char *azWidths[], int nWidths);
       int (*nowInteractive)(ShellExState *p);
       void (*sentinel)(void);

@@ -2282,7 +2282,7 @@ void sqlite3GenerateConstraintChecks(
         if( isUpdate ){
           /* If currently processing the PRIMARY KEY of a WITHOUT ROWID 
           ** table, only conflict if the new PRIMARY KEY values are actually
-          ** different from the old.
+          ** different from the old.  See TH3 withoutrowid04.test.
           **
           ** For a UNIQUE index, only conflict if the PRIMARY KEY values
           ** of the matched index row are different from the original PRIMARY

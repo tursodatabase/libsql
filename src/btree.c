@@ -214,7 +214,7 @@ static int hasSharedCacheTableLock(
     int bSeen = 0;
     for(p=sqliteHashFirst(&pSchema->idxHash); p; p=sqliteHashNext(p)){
       Index *pIdx = (Index *)sqliteHashData(p);
-      if( pIdx->tnum==(int)iRoot ){
+      if( pIdx->tnum==iRoot ){
         if( bSeen ){
           /* Two or more indexes share the same root page.  There must
           ** be imposter tables.  So just return true.  The assert is not
@@ -5377,7 +5377,7 @@ static int moveToRoot(BtCursor *pCur){
     pCur->curIntKey = pCur->pPage->intKey;
   }
   pRoot = pCur->pPage;
-  assert( pRoot->pgno==pCur->pgnoRoot );
+  assert( pRoot->pgno==pCur->pgnoRoot || CORRUPT_DB );
 
   /* If pCur->pKeyInfo is not NULL, then the caller that opened this cursor
   ** expected to open it on an index b-tree. Otherwise, if pKeyInfo is
@@ -5830,16 +5830,19 @@ int sqlite3BtreeIndexMoveto(
     int c;
     if( pCur->ix==pCur->pPage->nCell-1
      && (c = indexCellCompare(pCur, pCur->ix, pIdxKey, xRecordCompare))<=0
+     && pIdxKey->errCode==SQLITE_OK
     ){
       *pRes = c;
       return SQLITE_OK;  /* Cursor already pointing at the correct spot */
     }
     if( pCur->iPage>0 
-     && (c = indexCellCompare(pCur, 0, pIdxKey, xRecordCompare))<=0
+     && indexCellCompare(pCur, 0, pIdxKey, xRecordCompare)<=0
+     && pIdxKey->errCode==SQLITE_OK
     ){
       pCur->curFlags &= ~BTCF_ValidOvfl;
       goto bypass_moveto_root;  /* Start search on the current page */
     }
+    pIdxKey->errCode = SQLITE_OK;
   }
 
   rc = moveToRoot(pCur);

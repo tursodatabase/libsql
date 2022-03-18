@@ -182,23 +182,25 @@ do_test shell1-1.16.1 {
 # check first token handling
 do_test shell1-2.1.1 {
   catchcmd "test.db" ".foo"
-} {1 {Error: unknown command: "foo"}}
+} {1 {Error: unknown dot command: ".foo"}}
 do_test shell1-2.1.2 {
   catchcmd "test.db" ".\"foo OFF\""
-} {1 {Error: unknown command: "foo OFF"}}
+} {1 {Error: unknown dot command: ".foo OFF"}}
 do_test shell1-2.1.3 {
   catchcmd "test.db" ".\'foo OFF\'"
-} {1 {Error: unknown command: "foo OFF"}}
+} {1 {Error: unknown dot command: ".foo OFF"}}
 
-set modeShouldBe "Error: Mode should be one of: ascii box column csv html insert json line list markdown qbox quote table tabs tcl"
+set modeShouldBe {Error: Mode should be one of:
+  ascii box column csv html insert json line
+  list markdown qbox quote table tabs tcl}
 
 # unbalanced quotes
 do_test shell1-2.2.1 {
   catchcmd "test.db" ".\"foo OFF"
-} {1 {Error: unknown command: "foo OFF"}}
+} {1 {Error: unknown dot command: ".foo OFF"}}
 do_test shell1-2.2.2 {
   catchcmd "test.db" ".\'foo OFF"
-} {1 {Error: unknown command: "foo OFF"}}
+} {1 {Error: unknown dot command: ".foo OFF"}}
 do_test shell1-2.2.3 {
   catchcmd "test.db" ".explain \"OFF"
 } {0 {}}
@@ -254,23 +256,23 @@ do_test shell1-2.4.2 {
 # .backup ?DB? FILE      Backup DB (default "main") to FILE
 do_test shell1-3.1.1 {
   catchcmd "test.db" ".backup"
-} {1 {Error: invalid arguments for ".backup"}}
+} {1 {Error: Too few arguments for ".backup", need 1}}
 forcedelete FOO
 do_test shell1-3.1.2 {
   catchcmd "test.db" ".backup FOO"
 } {0 {}}
 do_test shell1-3.1.3 {
   catchcmd "test.db" ".backup FOO BAR"
-} {1 {Error: unknown database FOO}}
+} {1 {Error: backup failed, unknown database FOO}}
 do_test shell1-3.1.4 {
   # too many arguments
   catchcmd "test.db" ".backup FOO BAR BAD"
-} {1 {Error: invalid arguments for ".backup"}}
+} {1 {Error: Excess arguments provided; try .help backup}}
 
 # .bail ON|OFF           Stop after hitting an error.  Default OFF
 do_test shell1-3.2.1 {
   catchcmd "test.db" ".bail"
-} {1 {Error: invalid arguments for ".bail"}}
+} {1 {Error: Too few arguments for ".bail", need 1}}
 do_test shell1-3.2.2 {
   catchcmd "test.db" ".bail ON"
 } {0 {}}
@@ -280,7 +282,7 @@ do_test shell1-3.2.3 {
 do_test shell1-3.2.4 {
   # too many arguments
   catchcmd "test.db" ".bail OFF BAD"
-} {1 {Error: invalid arguments for ".bail"}}
+} {1 {Error: Too many arguments for ".bail", over 1}}
 
 ifcapable vtab {
 # .databases             List names and files of attached databases
@@ -315,7 +317,7 @@ do_test shell1-3.4.2 {
 # .echo ON|OFF           Turn command echo on or off
 do_test shell1-3.5.1 {
   catchcmd "test.db" ".echo"
-} {1 {Error: invalid arguments for ".echo"}}
+} {1 {Error: Too few arguments for ".echo", need 1}}
 do_test shell1-3.5.2 {
   catchcmd "test.db" ".echo ON"
 } {0 {}}
@@ -325,7 +327,7 @@ do_test shell1-3.5.3 {
 do_test shell1-3.5.4 {
   # too many arguments
   catchcmd "test.db" ".echo OFF BAD"
-} {1 {Error: invalid arguments for ".echo"}}
+} {1 {Error: Too many arguments for ".echo", over 1}}
 
 # .exit                  Exit this program
 do_test shell1-3.6.1 {
@@ -346,12 +348,12 @@ do_test shell1-3.7.3 {
 do_test shell1-3.7.4 {
   # extra arguments no longer ignored
   catchcmd "test.db" ".explain OFF BAD"
-} {1 {Error: invalid arguments for ".explain"}}
+} {1 {Error: Too many arguments for ".explain", over 1}}
 
 # .header(s) ON|OFF      Turn display of headers on or off
 do_test shell1-3.9.1 {
   catchcmd "test.db" ".header"
-} {1 {Error: invalid arguments for ".header"}}
+} {1 {Error: Too few arguments for ".header", need 1}}
 do_test shell1-3.9.2 {
   catchcmd "test.db" ".header ON"
 } {0 {}}
@@ -361,21 +363,11 @@ do_test shell1-3.9.3 {
 do_test shell1-3.9.4 {
   # too many arguments
   catchcmd "test.db" ".header OFF BAD"
-} {1 {Error: invalid arguments for ".header"}}
-
+} {1 {Error: Too many arguments for ".header", over 1}}
+# .headers is accepted alias
 do_test shell1-3.9.5 {
-  catchcmd "test.db" ".headers"
-} {1 {Error: invalid arguments for ".headers"}}
-do_test shell1-3.9.6 {
   catchcmd "test.db" ".headers ON"
 } {0 {}}
-do_test shell1-3.9.7 {
-  catchcmd "test.db" ".headers OFF"
-} {0 {}}
-do_test shell1-3.9.8 {
-  # too many arguments
-  catchcmd "test.db" ".headers OFF BAD"
-} {1 {Error: invalid arguments for ".headers"}}
 
 # .help                  Show this message
 do_test shell1-3.10.1 {
@@ -397,14 +389,14 @@ do_test shell1-3.10.2 {
 # .import FILE TABLE     Import data from FILE into TABLE
 do_test shell1-3.11.1 {
   catchcmd "test.db" ".import"
-} {1 {Error: invalid arguments for ".import"}}
+} {1 {Error: Too few arguments for ".import", need 2}}
 do_test shell1-3.11.2 {
   catchcmd "test.db" ".import FOO"
-} {1 {Error: invalid arguments for ".import"}}
+} {1 {Error: Too few arguments for ".import", need 2}}
 do_test shell1-3.11.3 {
   # too many arguments
   catchcmd "test.db" ".import FOO BAR BAD"
-} {1 {Error: invalid arguments for ".import"}}
+} {1 {Error: Excess arguments provided; try .help import}}
 
 # .indexes ?TABLE?       Show names of all indexes
 #                          If TABLE specified, only show indexes for tables
@@ -421,7 +413,7 @@ do_test shell1-3.12.2-legacy {
 do_test shell1-3.12.3 {
   # too many arguments
   catchcmd "test.db" ".indexes FOO BAD"
-} {1 {Error: invalid arguments for ".indexes"}}
+} {1 {Error: Too many arguments for ".indexes", over 1}}
 
 # .mode MODE ?TABLE?     Set output mode where MODE is one of:
 #                          ascii    Columns/rows delimited by 0x1F and 0x1E
@@ -476,14 +468,14 @@ do_test shell1-3.13.12 {
 # .nullvalue STRING      Print STRING in place of NULL values
 do_test shell1-3.14.1 {
   catchcmd "test.db" ".nullvalue"
-} {1 {Error: invalid arguments for ".nullvalue"}}
+} {1 {Error: Too few arguments for ".nullvalue", need 1}}
 do_test shell1-3.14.2 {
   catchcmd "test.db" ".nullvalue FOO"
 } {0 {}}
 do_test shell1-3.14.3 {
   # too many arguments
   catchcmd "test.db" ".nullvalue FOO BAD"
-} {1 {Error: invalid arguments for ".nullvalue"}}
+} {1 {Error: Too many arguments for ".nullvalue", over 1}}
 
 # .output FILENAME       Send output to FILENAME
 do_test shell1-3.15.1 {
@@ -495,7 +487,7 @@ do_test shell1-3.15.2 {
 do_test shell1-3.15.3 {
   # too many arguments
   catchcmd "test.db" ".output FOO BAD"
-} {1 {Error: invalid arguments for ".output"}}
+} {1 {Error: Excess arguments provided; try .help output}}
 
 # .output stdout         Send output to the screen
 do_test shell1-3.16.1 {
@@ -504,7 +496,7 @@ do_test shell1-3.16.1 {
 do_test shell1-3.16.2 {
   # too many arguments
   catchcmd "test.db" ".output stdout BAD"
-} {1 {Error: invalid arguments for ".output"}}
+} {1 {Error: Excess arguments provided; try .help output}}
 
 # .prompt MAIN CONTINUE  Replace the standard prompts
 do_test shell1-3.17.1 {
@@ -519,7 +511,7 @@ do_test shell1-3.17.3 {
 do_test shell1-3.17.4 {
   # too many arguments
   catchcmd "test.db" ".prompt FOO BAR BAD"
-} {1 {Error: invalid arguments for ".prompt"}}
+} {1 {Error: Too many arguments for ".prompt", over 2}}
 
 # .quit                  Exit this program
 do_test shell1-3.18.1 {
@@ -533,7 +525,7 @@ do_test shell1-3.18.2 {
 # .read FILENAME         Execute SQL in FILENAME
 do_test shell1-3.19.1 {
   catchcmd "test.db" ".read"
-} {1 {Error: invalid arguments for ".read"}}
+} {1 {Error: Too few arguments for ".read", need 1}}
 do_test shell1-3.19.2 {
   forcedelete FOO
   catchcmd "test.db" ".read FOO"
@@ -541,12 +533,12 @@ do_test shell1-3.19.2 {
 do_test shell1-3.19.3 {
   # too many arguments
   catchcmd "test.db" ".read FOO BAD"
-} {1 {Error: invalid arguments for ".read"}}
+} {1 {Error: Too many arguments for ".read", over 1}}
 
 # .restore ?DB? FILE     Restore content of DB (default "main") from FILE
 do_test shell1-3.20.1 {
   catchcmd "test.db" ".restore"
-} {1 {Error: invalid arguments for ".restore"}}
+} {1 {Error: Too few arguments for ".restore", need 1}}
 do_test shell1-3.20.2 {
   catchcmd "test.db" ".restore FOO"
 } {0 {}}
@@ -556,7 +548,7 @@ do_test shell1-3.20.3 {
 do_test shell1-3.20.4 {
   # too many arguments
   catchcmd "test.db" ".restore FOO BAR BAD"
-} {1 {Error: invalid arguments for ".restore"}}
+} {1 {Error: Too many arguments for ".restore", over 2}}
 
 ifcapable vtab {
 # .schema ?TABLE?        Show the CREATE statements
@@ -571,7 +563,7 @@ do_test shell1-3.21.2 {
 do_test shell1-3.21.3 {
   # too many arguments
   catchcmd "test.db" ".schema FOO BAD"
-} {1 {Error: invalid arguments for ".schema"}}
+} {1 {Error: Too many arguments for ".schema", over 1}}
 
 do_test shell1-3.21.4 {
   catchcmd "test.db" {
@@ -592,7 +584,7 @@ CREATE VIEW v1 AS SELECT y+1 FROM v2
 # .separator STRING  Change column separator used by output and .import
 do_test shell1-3.22.1 {
   catchcmd "test.db" ".separator"
-} {1 {Error: invalid arguments for ".separator"}}
+} {1 {Error: Too few arguments for ".separator", need 1}}
 do_test shell1-3.22.2 {
   catchcmd "test.db" ".separator FOO"
 } {0 {}}
@@ -602,7 +594,7 @@ do_test shell1-3.22.3 {
 do_test shell1-3.22.4 {
   # too many arguments
   catchcmd "test.db" ".separator FOO BAD BAD2"
-} {1 {Error: invalid arguments for ".separator"}}
+} {1 {Error: Too many arguments for ".separator", over 2}}
 
 # .show                  Show the current values for various settings
 do_test shell1-3.23.1 {
@@ -621,7 +613,7 @@ do_test shell1-3.23.1 {
 do_test shell1-3.23.2 {
   # too many arguments
   catchcmd "test.db" ".show BAD"
-} {1 {Error: invalid arguments for ".show"}}
+} {1 {Error: Too many arguments for ".show", over 0}}
 
 # .stats ON|OFF          Turn stats on or off
 #do_test shell1-3.23b.1 {
@@ -679,7 +671,7 @@ do_test shell1-3.25.3 {
 do_test shell1-3.25.4 {
   # too many arguments
   catchcmd "test.db" ".timeout 1 BAD"
-} {1 {Error: invalid arguments for ".timeout"}}
+} {1 {Error: Too many arguments for ".timeout", over 1}}
 
 # .width NUM NUM ...     Set column widths for "column" mode
 do_test shell1-3.26.1 {
@@ -710,7 +702,7 @@ do_test shell1-3.26.6 {
 # .timer ON|OFF          Turn the CPU timer measurement on or off
 do_test shell1-3.27.1 {
   catchcmd "test.db" ".timer"
-} {1 {Error: invalid arguments for ".timer"}}
+} {1 {Error: Too few arguments for ".timer", need 1}}
 do_test shell1-3.27.2 {
   catchcmd "test.db" ".timer ON"
 } {0 {}}
@@ -720,7 +712,7 @@ do_test shell1-3.27.3 {
 do_test shell1-3.27.4 {
   # too many arguments
   catchcmd "test.db" ".timer OFF BAD"
-} {1 {Error: invalid arguments for ".timer"}}
+} {1 {Error: Too many arguments for ".timer", over 1}}
 
 do_test shell1-3-28.1 {
   catchcmd test.db \
