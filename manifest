@@ -1,5 +1,5 @@
-C Change\sa\sconditional\sinto\san\sassert()\sdue\sto\sthe\schange\sin\n[387ab17b8a0a4b87].
-D 2022-03-17T23:49:58.567
+C Fix\sthe\szipfile\sextension\sso\sthat\sit\sknows\sthat\sa\szero-length\sBLOB\sreturns\na\sNULL\spointer.\n[forum:/forumpost/ae86934905|Forum\spost\sae86934905].
+D 2022-03-19T12:48:14.721
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -339,7 +339,7 @@ F ext/misc/vfsstat.c 474d08efc697b8eba300082cb1eb74a5f0f3df31ed257db1cb07e72ab0e
 F ext/misc/vtablog.c 5538acd0c8ddaae372331bee11608d76973436b77d6a91e8635cfc9432fba5ae
 F ext/misc/vtshim.c 1976e6dd68dd0d64508c91a6dfab8e75f8aaf6cd
 F ext/misc/wholenumber.c a838d1bea913c514ff316c69695efbb49ea3b8cb37d22afc57f73b6b010b4546
-F ext/misc/zipfile.c c4e2d12b3544a380ce171a143dc2fdfe2fc76ae424ed4cf43ba4f74c6d0db444
+F ext/misc/zipfile.c 22afe121d1a5e318453b7cdbc0f5492161d2fd4fce548ff3605da05e89be7140
 F ext/misc/zorder.c b0ff58fa643afa1d846786d51ea8d5c4b6b35aa0254ab5a82617db92f3adda64
 F ext/rbu/rbu.c 801450b24eaf14440d8fd20385aacc751d5c9d6123398df41b1b5aa804bf4ce8
 F ext/rbu/rbu1.test c62904bd9526dcdc3496a21199aaf14ae191bbadbf67f076bf16be6b3f2115c2
@@ -1945,8 +1945,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 135d8b97b01f9b5204f486f828c274c2d779c17723e79171ca61f738746adf8e
-R 804c8964f2fbb5642c5ee5c7164de09a
+P 13b584869f40ea6aa2190dbac64709695ee8d72b27bc5afb8b39ab3763b9c46a
+R f08299960d4b1603006c98552917b7fb
 U drh
-Z e27c445db2b5c5196ccb2b18d76e60e4
+Z 86a529adb93c7cd292392a9b7c1968ce
 # Remove this line to create a well-formed Fossil manifest.
