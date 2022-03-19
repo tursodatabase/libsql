@@ -41,10 +41,11 @@ typedef struct ShellExState {
   /* Output stream to which shell's text output to be written (reference) */
   FILE **ppCurrentOutput;
 
-  /* Whether to exit as command completes.
+  /* Shell abrupt exit indicator with return code in LS-byte
    * 0 => no exit
-   * ~0 => a non-error (0) exit
-   * other => exit with process exit code other
+   * 0x100 => a non-error (0) exit
+   * 0x100|other => exit with process exit code other
+   * Any value greater than 0x1ff indicates an abnormal exit.
    * For embedded shell, "exit" means "return from REPL function".
    */
   int shellAbruptExit;
@@ -169,6 +170,25 @@ PURE_VMETHOD(int, finishDataInput, ImportHandler,
 PURE_VMETHOD(void, closeDataInStream, ImportHandler,
              2,( ShellExState *pSES, char **pzErr ));
 INTERFACE_END( ImportHandlerVtable );
+
+/* Define an implementation's v-table matching the MetaCommand interface.
+ * Method signatures are copied and pasted from above interface declaration.
+ */
+#define MetaCommand_IMPLEMENT_VTABLE(Derived, vtname) \
+CONCRETE_BEGIN(MetaCommand, Derived); \
+CONCRETE_METHOD(const char *, name, MetaCommand, 0,()); \
+CONCRETE_METHOD(const char *, help, MetaCommand, 1,(int more)); \
+CONCRETE_METHOD(DotCmdRC, argsCheck, MetaCommand, 3, \
+         (char **pzErrMsg, int nArgs, char *azArgs[])); \
+CONCRETE_METHOD(DotCmdRC, execute, MetaCommand, 4, \
+         (ShellExState *, char **pzErrMsg, int nArgs, char *azArgs[])); \
+CONCRETE_END(Derived) vtname = { \
+  DECORATE_METHOD(Derived,destruct), \
+  DECORATE_METHOD(Derived,name), \
+  DECORATE_METHOD(Derived,help), \
+  DECORATE_METHOD(Derived,argsCheck), \
+  DECORATE_METHOD(Derived,execute) \
+}
 
 /* This function pointer has the same signature as the sqlite3_X_init()
  * function that is called as SQLite3 completes loading an extension.

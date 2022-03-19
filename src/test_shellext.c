@@ -20,9 +20,12 @@ SQLITE_EXTENSION_INIT1;
 static struct ShExtAPI *pShExtApi = 0;
 static struct ExtHelpers *pExtHelpers = 0;
 
+typedef struct BatBeing BatBeing;
+static void sayHowMany( BatBeing *pbb, FILE *out, ShellExState *psx );
+
 /* These DERIVED_METHOD(...) macro calls' arguments were copied and
  * pasted from the MetaCommand interface declaration in shext_linkage.h ,
- * but with Interface,Derived substituted for the interface typename.
+ * but with "Interface,Derived" substituted for the interface typename.
  * The function bodies are not so easily written, of course. */
 
 DERIVED_METHOD(void, destruct, MetaCommand,BatBeing, 0, ()){
@@ -47,9 +50,6 @@ DERIVED_METHOD(DotCmdRC, argsCheck, MetaCommand,BatBeing, 3,
   return DCR_Ok;
 }
 
-typedef struct BatBeing BatBeing;
-static void sayHowMany( struct BatBeing *pbb, FILE *out, ShellExState *psx );
-
 DERIVED_METHOD(DotCmdRC, execute, MetaCommand,BatBeing, 4,
              (ShellExState *psx, char **pzErrMsg, int nArgs, char *azArgs[])){
   FILE *out = pExtHelpers->currentOutputFile(psx);
@@ -58,45 +58,37 @@ DERIVED_METHOD(DotCmdRC, execute, MetaCommand,BatBeing, 4,
   case 2: fprintf(out, "The Dynamic Duo arrives, and ... ");
   case 1: fprintf(out, "@#$ KaPow! $#@\n");
   }
-  sayHowMany((struct BatBeing *)pThis, out, psx);
+  sayHowMany((BatBeing *)pThis, out, psx);
   return DCR_Ok;
 }
 
-/* Note that these CONCRETE_METHOD... macro calls' arguments were copied and
- * pasted from the MetaCommand interface declaration in shext_linkage.h .
- * In a future version of shext_linkage.h, this will all be a mondo maco. */
-CONCRETE_BEGIN(MetaCommand, BatBeing);
-CONCRETE_METHOD(const char *, name, MetaCommand, 0,());
-CONCRETE_METHOD(const char *, help, MetaCommand, 1,(int more));
-CONCRETE_METHOD(DotCmdRC, argsCheck, MetaCommand, 3,
-                 (char **pzErrMsg, int nArgs, char *azArgs[]));
-CONCRETE_METHOD(DotCmdRC, execute, MetaCommand, 4,
-                 (ShellExState *, char **pzErrMsg, int nArgs, char *azArgs[]));
-CONCRETE_END(BatBeing) batty_methods = {
-  DECORATE_METHOD(BatBeing,destruct),
-  DECORATE_METHOD(BatBeing,name),
-  DECORATE_METHOD(BatBeing,help),
-  DECORATE_METHOD(BatBeing,argsCheck),
-  DECORATE_METHOD(BatBeing,execute)
-};
+/* Define a MetaCommand v-table initialized to reference above methods. */
+MetaCommand_IMPLEMENT_VTABLE(BatBeing, batty_methods);
 
+/* Define/initialize BatBeing as a MetaCommand subclass using above v-table. 
+ * This compiles in a type-safe manner because the batty_methods v-table
+ * and methods it incorporates strictly match the MetaCommand interface.
+ */
 INSTANCE_BEGIN(BatBeing);
   int numCalls;
-  MetaCommand * pShow;
+  MetaCommand * pPrint;
 INSTANCE_END(BatBeing) batty = {
   &batty_methods,
   0, 0
 };
 
-static void sayHowMany( struct BatBeing *pbb, FILE *out, ShellExState *psx ){
-  fprintf(out, "This execute has been called %d times.\n", ++pbb->numCalls);
-  if( pbb->pShow ){
-    char *az[] = { "show" };
+static void sayHowMany( BatBeing *pbb, FILE *out, ShellExState *psx ){
+  if( pbb->pPrint ){
+    char *az[] = { "print", 0 };
     char *zErr = 0;
-    MetaCommand * pmcShow = (MetaCommand *)pbb->pShow;
-    DotCmdRC rc = pmc->pMethods->execute(pmc, psx, &zErr, 1, az);
+    MetaCommand * pmcPrint = pbb->pPrint;
+    DotCmdRC rc;
+    az[1] = sqlite3_mprintf("This execute has been called %d times.\n",
+                            ++pbb->numCalls);
+    rc = pmcPrint->pMethods->execute(pmcPrint, psx, &zErr, 2, az);
+    sqlite3_free(az[1]);
     if( rc!= DCR_Ok ){
-      fprintf(out, "show() failed: %d\n", rc);
+      fprintf(out, "print() failed: %d\n", rc);
     }
   }
 }
@@ -126,7 +118,7 @@ int sqlite3_testshellext_init(
 
     pShExtApi = & pShExtLink->pShellExtensionAPI->api.named;
     pExtHelpers = & pShExtLink->pShellExtensionAPI->pExtHelpers->helpers.named;
-    batty.pShow = pExtHelpers->findMetaCommand("show", psx, &rc);
+    batty.pPrint = pExtHelpers->findMetaCommand("print", psx, &rc);
     rc = pShExtApi->registerMetaCommand(psx, sqlite3_testshellext_init,pmc);
     if( rc!=0 ) ++nErr;
   }

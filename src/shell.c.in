@@ -1574,7 +1574,7 @@ static int failIfSafeMode(
     va_end(ap);
     raw_printf(STD_ERR, "line %d: ", ISS(psx)->pInSource->lineno);
     utf8_printf(STD_ERR, "%s\n", zMsg);
-    psx->shellAbruptExit = 3;
+    psx->shellAbruptExit = 0x202;
     return 1;
   }
   return 0;
@@ -8498,20 +8498,39 @@ DISPATCHABLE_COMMAND( eqp ? 0 0 ){
 }
 
 /*****************
- * The .exit and .quit commands
- * These are together so that their subtle differences are apparent.
+ * The .cease, .exit and .quit commands
+ * These are together so that their differing effects are apparent.
  */
+CONDITION_COMMAND(cease defined(SHELL_CEASE));
 COLLECT_HELP_TEXT[
-  ".exit ?CODE?             Exit this program with return-code CODE",
-  ".quit                    Exit this program or script",
+  ".cease ?CODE?            Cease shell operation, with optional return code",
+  "   Return code defaults to 0, otherwise is limited to non-signal values",
+  ".exit ?CODE?             Exit shell program, maybe with return-code CODE",
+  "   Exit immediately if CODE != 0, else functions as \"quit this input\"",
+  ".quit                    Quit processing this input or script",
 ];
+DISPATCHABLE_COMMAND( cease 4 1 2 ){
+  /* .cease effects an exit, always. Only the exit code is variable. */
+  int rc = 0;
+  if( nArg>1 ){
+    rc = (int)integerValue(azArg[1]);
+    if( rc>0x7f ) rc = 0x7f;
+  }
+  p->shellAbruptExit = 0x100|rc;
+  return DCR_Exit;
+}
 DISPATCHABLE_COMMAND( exit 3 1 0 ){
+  /* .exit acts like .quit with no argument or a zero argument,
+   * only returning. With a non-zero argument, it effects an exit. */
   int rc;
-  if( nArg>1 && (rc = (int)integerValue(azArg[1]))!=0 )
-    p->shellAbruptExit = rc;
+  if( nArg>1 && (rc = (int)integerValue(azArg[1]))!=0 ){
+    rc &= 0xff;    /* Mimic effect of legacy call to exit(). */
+    p->shellAbruptExit = 0x100|rc;
+  }
   return DCR_Return;
 }
 DISPATCHABLE_COMMAND( quit 1 1 0 ){
+  /* .quit would be more aptly named .return, as it does nothing more. */
   return DCR_Return;
 }
 
@@ -13204,7 +13223,8 @@ static DotCmdRC do_meta_command(char *zLine, ShellExState *psx){
 
   dispatchResult = dispatchCommand(azArg, nArg, psx, &zErr);
   if( psx->shellAbruptExit!=0 ){
-    dispatchResult = DCR_AbortError;
+    if( psx->shellAbruptExit>0x1ff ) dispatchResult = DCR_AbortError;
+    else dispatchResult = DCR_Exit | (dispatchResult&DCR_Error);
   }
   if( dispatchResult==DCR_CmdErred ){
     /* Error message(s) already emitted. Just translate to execute error. */
@@ -13297,13 +13317,13 @@ static DotCmdRC do_meta_command(char *zLine, ShellExState *psx){
     /* Handle execution errors. */
     if( dispatchResult==DCR_AbortError ){
       if( zErr!=0 ){
-        utf8_printf(STD_ERR, "Error: \".%s\" may not %s in --safe mode\n",
+        utf8_printf(STD_ERR, "Error: \".%s\" may not %s in -safe mode\n",
                     azArg[0], zErr);
       }else {
-        utf8_printf(STD_ERR, "Error: \".%s\" forbidden in --safe mode\n",
+        utf8_printf(STD_ERR, "Error: \".%s\" forbidden in -safe mode\n",
                     azArg[0]);
       }
-      psx->shellAbruptExit = 3;
+      psx->shellAbruptExit = 0x203;
     }else{
       int error = dispatchResult & DCR_Error;
       int action = dispatchResult & ~DCR_Error;
@@ -13905,7 +13925,7 @@ static DotCmdRC process_input(ShellInState *psi){
         break;
       }
       if( XSS(psi)->shellAbruptExit!=0 ){
-        termKind = XSS(psi)->shellAbruptExit;
+        termKind = DCR_Exit;
       }
       break;
     case Erroneous:
@@ -14017,7 +14037,7 @@ static int run_single_query(ShellExState *psx, char *zSql){
     }else{
       utf8_printf(STD_ERR,"Error: unable to process SQL \"%s\"\n", zSql);
     }
-    psx->shellAbruptExit = (rc==0)? 1 : rc;
+    psx->shellAbruptExit = (rc==0)? 0x100 : 0x102;
     rc = 2;
   }
   return rc;
@@ -14061,7 +14081,9 @@ static void process_sqliterc(
     rc = process_input(psi);
     fclose(inUse);
     psi->pInSource = inSourceRedir.pFrom;
-    if( rc>DCR_Ok && bail_on_error ) XSS(psi)->shellAbruptExit = rc;
+    if( rc>DCR_Ok && bail_on_error ){
+      XSS(psi)->shellAbruptExit = 0x100|((rc>>1)&0x3);
+    }
   }else if( sqliterc_override!=0 ){
     utf8_printf(STD_ERR,"cannot open: \"%s\"\n", sqliterc);
     if( bail_on_error ) exit(1); /* Future: Exit shell rather than process. */
@@ -14843,10 +14865,9 @@ int SQLITE_CDECL SHELL_MAIN(int argc, wchar_t **wargv){
    * exit code or an abnormal exit code. Its abnormal values take priority.
    */
   /* Check for an abnormal exit, and issue error if so. */
-  if( rc>2 || aec>1 ){
-    rc = (rc<aec)? aec : rc;
-    if( rc>255 ) rc = 255; /* Clamp to valid error exit range. */
-    raw_printf(STD_ERR, "Abnormal exit (%d)\n", rc);
+  if( aec!=0 ){
+    rc = aec & 0xff;
+    if( aec>0x1ff ) raw_printf(STD_ERR, "Abnormal exit (%d)\n", rc);
   }else{
     /* rc is one of 0,1,2, mapping to 0,1,0 shellexit codes. */
     rc &= ~2;
