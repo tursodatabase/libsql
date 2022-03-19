@@ -57,6 +57,19 @@ use crate::{str_to_cstring, Connection, Error, InnerConnection, Result};
 // ffi::sqlite3_vtab => VTab
 // ffi::sqlite3_vtab_cursor => VTabCursor
 
+/// Virtual table kind
+pub enum VTabKind {
+    /// Non-eponymous
+    Default,
+    /// [`create`](CreateVTab::create) == [`connect`](VTab::connect)
+    Eponymous,
+    /// No [`create`](CreateVTab::create) / [`destroy`](CreateVTab::destroy) or
+    /// not used
+    ///
+    /// SQLite >= 3.9.0
+    EponymousOnly,
+}
+
 /// Virtual table module
 ///
 /// (See [SQLite doc](https://sqlite.org/c3ref/module.html))
@@ -93,11 +106,19 @@ pub fn update_module<'vtab, T: UpdateVTab<'vtab>>() -> &'static Module<'vtab, T>
     &Module {
         base: ffi::sqlite3_module {
             iVersion: 2,
-            xCreate: Some(rust_create::<T>),
+            xCreate: match T::KIND {
+                VTabKind::EponymousOnly => None,
+                VTabKind::Eponymous => Some(rust_connect::<T>),
+                _ => Some(rust_create::<T>),
+            },
             xConnect: Some(rust_connect::<T>),
             xBestIndex: Some(rust_best_index::<T>),
             xDisconnect: Some(rust_disconnect::<T>),
-            xDestroy: Some(rust_destroy::<T>),
+            xDestroy: match T::KIND {
+                VTabKind::EponymousOnly => None,
+                VTabKind::Eponymous => Some(rust_disconnect::<T>),
+                _ => Some(rust_destroy::<T>),
+            },
             xOpen: Some(rust_open::<T>),
             xClose: Some(rust_close::<T::Cursor>),
             xFilter: Some(rust_filter::<T::Cursor>),
@@ -133,11 +154,19 @@ pub fn read_only_module<'vtab, T: CreateVTab<'vtab>>() -> &'static Module<'vtab,
         base: ffi::sqlite3_module {
             // We don't use V3
             iVersion: 2, // We don't use V2 or V3 features in read_only_module types
-            xCreate: Some(rust_create::<T>),
+            xCreate: match T::KIND {
+                VTabKind::EponymousOnly => None,
+                VTabKind::Eponymous => Some(rust_connect::<T>),
+                _ => Some(rust_create::<T>),
+            },
             xConnect: Some(rust_connect::<T>),
             xBestIndex: Some(rust_best_index::<T>),
             xDisconnect: Some(rust_disconnect::<T>),
-            xDestroy: Some(rust_destroy::<T>),
+            xDestroy: match T::KIND {
+                VTabKind::EponymousOnly => None,
+                VTabKind::Eponymous => Some(rust_disconnect::<T>),
+                _ => Some(rust_destroy::<T>),
+            },
             xOpen: Some(rust_open::<T>),
             xClose: Some(rust_close::<T::Cursor>),
             xFilter: Some(rust_filter::<T::Cursor>),
@@ -247,7 +276,7 @@ impl VTabConnection {
     }
 }
 
-/// Virtual table instance trait.
+/// Eponymous-only virtual table instance trait.
 ///
 /// # Safety
 ///
@@ -288,10 +317,14 @@ pub unsafe trait VTab<'vtab>: Sized {
     fn open(&'vtab self) -> Result<Self::Cursor>;
 }
 
-/// Non-eponymous virtual table instance trait.
+/// Read-only virtual table instance trait.
 ///
 /// (See [SQLite doc](https://sqlite.org/c3ref/vtab.html))
 pub trait CreateVTab<'vtab>: VTab<'vtab> {
+    /// For [`EponymousOnly`](VTabKind::EponymousOnly),
+    /// [`create`](CreateVTab::create) and [`destroy`](CreateVTab::destroy) are
+    /// not called
+    const KIND: VTabKind;
     /// Create a new instance of a virtual table in response to a CREATE VIRTUAL
     /// TABLE statement. The `db` parameter is a pointer to the SQLite
     /// database connection that is executing the CREATE VIRTUAL TABLE
@@ -323,12 +356,14 @@ pub trait CreateVTab<'vtab>: VTab<'vtab> {
 pub trait UpdateVTab<'vtab>: CreateVTab<'vtab> {
     /// Delete rowid or PK
     fn delete(&mut self, arg: ValueRef<'_>) -> Result<()>;
-    /// Insert: args[0] == NULL: old rowid or PK, args[1]: new rowid or PK,
-    /// args[2]: ... Return the new rowid.
+    /// Insert: `args[0] == NULL: old rowid or PK, args[1]: new rowid or PK,
+    /// args[2]: ...`
+    ///
+    /// Return the new rowid.
     // TODO Make the distinction between argv[1] == NULL and argv[1] != NULL ?
     fn insert(&mut self, args: &Values<'_>) -> Result<i64>;
-    /// Update: args[0] != NULL: old rowid or PK, args[1]: new row id or PK,
-    /// args[2]: ...
+    /// Update: `args[0] != NULL: old rowid or PK, args[1]: new row id or PK,
+    /// args[2]: ...`
     fn update(&mut self, args: &Values<'_>) -> Result<()>;
 }
 

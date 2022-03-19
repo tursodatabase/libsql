@@ -31,7 +31,7 @@ use crate::ffi;
 use crate::types::Null;
 use crate::vtab::{
     dequote, escape_double_quote, parse_boolean, read_only_module, Context, CreateVTab, IndexInfo,
-    VTab, VTabConfig, VTabConnection, VTabCursor, Values,
+    VTab, VTabConfig, VTabConnection, VTabCursor, VTabKind, Values,
 };
 use crate::{Connection, Error, Result};
 
@@ -264,7 +264,9 @@ unsafe impl<'vtab> VTab<'vtab> for CsvTab {
     }
 }
 
-impl CreateVTab<'_> for CsvTab {}
+impl CreateVTab<'_> for CsvTab {
+    const KIND: VTabKind = VTabKind::Default;
+}
 
 /// A cursor for the CSV virtual table
 #[repr(C)]
