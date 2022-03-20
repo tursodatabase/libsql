@@ -286,6 +286,12 @@ mod test {
         let mut stmt = db.prepare("SELECT * FROM log;")?;
         let mut rows = stmt.query([])?;
         while rows.next()?.is_some() {}
+        db.execute("DELETE FROM log WHERE a = ?", ["a1"])?;
+        db.execute(
+            "INSERT INTO log (a, b, c) VALUES (?, ?, ?)",
+            ["a", "b", "c"],
+        )?;
+        db.execute("UPDATE log SET b = ?, c = ? WHERE a = ?", ["bn", "cn", "a1"])?;
         Ok(())
     }
 }
