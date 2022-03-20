@@ -263,7 +263,7 @@ pub unsafe trait VTab<'vtab>: Sized {
 
     /// Create a new cursor used for accessing a virtual table.
     /// (See [SQLite doc](https://sqlite.org/vtab.html#the_xopen_method))
-    fn open(&'vtab self) -> Result<Self::Cursor>;
+    fn open(&'vtab mut self) -> Result<Self::Cursor>;
 }
 
 /// Read-only virtual table instance trait.
@@ -882,7 +882,7 @@ pub fn dequote(s: &str) -> &str {
     }
     match s.bytes().next() {
         Some(b) if b == b'"' || b == b'\'' => match s.bytes().rev().next() {
-            Some(e) if e == b => &s[1..s.len() - 1],
+            Some(e) if e == b => &s[1..s.len() - 1], // FIXME handle inner escaped quote(s)
             _ => s,
         },
         _ => s,
@@ -910,6 +910,20 @@ pub fn parse_boolean(s: &str) -> Option<bool> {
     } else {
         None
     }
+}
+
+/// `<param_name>=['"]?<param_value>['"]?` => `(<param_name>, <param_value>)`
+pub fn parameter(c_slice: &[u8]) -> Result<(&str, &str)> {
+    let arg = std::str::from_utf8(c_slice)?.trim();
+    let mut split = arg.split('=');
+    if let Some(key) = split.next() {
+        if let Some(value) = split.next() {
+            let param = key.trim();
+            let value = dequote(value);
+            return Ok((param, value));
+        }
+    }
+    Err(Error::ModuleError(format!("illegal argument: '{}'", arg)))
 }
 
 // FIXME copy/paste from function.rs
@@ -1309,6 +1323,8 @@ pub mod csvtab;
 #[cfg(feature = "series")]
 #[cfg_attr(docsrs, doc(cfg(feature = "series")))]
 pub mod series; // SQLite >= 3.9.0
+#[cfg(test)]
+mod vtablog;
 
 #[cfg(test)]
 mod test {

@@ -153,7 +153,7 @@ unsafe impl<'vtab> VTab<'vtab> for SeriesTab {
         Ok(())
     }
 
-    fn open(&self) -> Result<SeriesTabCursor<'_>> {
+    fn open(&mut self) -> Result<SeriesTabCursor<'_>> {
         Ok(SeriesTabCursor::new())
     }
 }

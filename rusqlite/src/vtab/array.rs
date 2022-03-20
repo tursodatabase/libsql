@@ -117,7 +117,7 @@ unsafe impl<'vtab> VTab<'vtab> for ArrayTab {
         Ok(())
     }
 
-    fn open(&self) -> Result<ArrayTabCursor<'_>> {
+    fn open(&mut self) -> Result<ArrayTabCursor<'_>> {
         Ok(ArrayTabCursor::new())
     }
 }
