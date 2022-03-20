@@ -285,7 +285,7 @@ mod test {
         )?;
         let mut stmt = db.prepare("SELECT * FROM log;")?;
         let mut rows = stmt.query([])?;
-        while let Some(_) = rows.next()? {}
+        while rows.next()?.is_some() {}
         Ok(())
     }
 }
