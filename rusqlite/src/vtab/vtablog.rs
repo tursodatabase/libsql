@@ -291,7 +291,10 @@ mod test {
             "INSERT INTO log (a, b, c) VALUES (?, ?, ?)",
             ["a", "b", "c"],
         )?;
-        db.execute("UPDATE log SET b = ?, c = ? WHERE a = ?", ["bn", "cn", "a1"])?;
+        db.execute(
+            "UPDATE log SET b = ?, c = ? WHERE a = ?",
+            ["bn", "cn", "a1"],
+        )?;
         Ok(())
     }
 }
