@@ -1,5 +1,5 @@
-C In\sthe\sCLI,\sdisable\sthe\szipfile\sand\ssqlar\sextensions\sin\s--safe\smode.
-D 2022-03-19T15:19:35.831
+C Fix\san\sassert()\sin\ssqlite3TableAffinity()\sthat\smight\shave\sbeen\sfalse\sif\sthere\nwas\sa\sprior\ssyntax\serror\sin\sthe\squery.
+D 2022-03-21T11:32:45.255
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -512,7 +512,7 @@ F src/hash.c 8d7dda241d0ebdafb6ffdeda3149a412d7df75102cecfc1021c98d6219823b19
 F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h cb1d7e3e1ed94b7aa6fde95ae2c2daccc3df826be26fc9ed7fd90d1750ae6144
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c d9fd15b2bd030cb9bd3119b301dbdb2912f16fff76c6e3797296cfd1500faaf4
+F src/insert.c c4fc48e6f38cc415262652407949771ce4e6f8f0c7330f872e44a0677f3ad602
 F src/json.c 24fcd7f5f9080b04b89722c343010d390f85e55b2ab560046cb567c9dd640f62
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c aa919a6a7884f8b34d7b791841b24d14b1b0ab43f45b3940f4851043b2855c0c
@@ -1945,8 +1945,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5f6d56737caefa78e542a7af2f95646e3a818e0ecdd8e838f3c2978500ce960c
-R 351703dbbae8170966ef28712efda463
+P d8b65a2dab97392ff81bcc33ff707b4e626a10d84a258c6452e45f90cd2c7f45
+R b0e701a49b12b11d39ad32ac91f5b559
 U drh
-Z 115f5affaaf1a7b376be313e0bf919f0
+Z f3540f142b57b02386753768c9b41bc5
 # Remove this line to create a well-formed Fossil manifest.
