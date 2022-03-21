@@ -5896,6 +5896,26 @@ whereBeginError:
   }
 #endif
 
+#ifdef SQLITE_DEBUG
+/*
+** Return true if cursor iCur is opened by instruction k of the
+** bytecode.  Used inside of assert() only.
+*/
+static int cursorIsOpen(Vdbe *v, int iCur, int k){
+  while( k>=0 ){
+    VdbeOp *pOp = sqlite3VdbeGetOp(v,k--);
+    if( pOp->p1!=iCur ) continue;
+    if( pOp->opcode==OP_Close ) return 0;
+    if( pOp->opcode==OP_OpenRead ) return 1;
+    if( pOp->opcode==OP_OpenWrite ) return 1;
+    if( pOp->opcode==OP_OpenDup ) return 1;
+    if( pOp->opcode==OP_OpenAutoindex ) return 1;
+    if( pOp->opcode==OP_OpenEphemeral ) return 1;
+  }
+  return 0;
+}
+#endif /* SQLITE_DEBUG */
+
 /*
 ** Generate the end of the WHERE loop.  See comments on 
 ** sqlite3WhereBegin() for additional information.
@@ -6166,12 +6186,15 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
             pOp->p2 = x;
             pOp->p1 = pLevel->iIdxCur;
             OpcodeRewriteTrace(db, k, pOp);
+          }else{
+            /* Unable to translate the table reference into an index
+            ** reference.  Verify that this is harmless - that the
+            ** table being referenced really is open.
+            */
+            assert( (pLoop->wsFlags & WHERE_IDX_ONLY)==0
+                 || cursorIsOpen(v,pOp->p1,k)
+            );
           }
-          assert( (pLoop->wsFlags & WHERE_IDX_ONLY)==0 || x>=0 
-#ifdef SQLITE_ENABLE_OFFSET_SQL_FUNC
-              || pOp->opcode==OP_Offset
-#endif
-              || pWInfo->eOnePass );
         }else if( pOp->opcode==OP_Rowid ){
           pOp->p1 = pLevel->iIdxCur;
           pOp->opcode = OP_IdxRowid;
