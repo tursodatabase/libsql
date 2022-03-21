@@ -6193,6 +6193,9 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
             */
             assert( (pLoop->wsFlags & WHERE_IDX_ONLY)==0
                  || cursorIsOpen(v,pOp->p1,k)
+#ifdef SQLITE_ENABLE_OFFSET_SQL_FUNC
+                 || pOp->opcode==OP_Offset
+#endif
             );
           }
         }else if( pOp->opcode==OP_Rowid ){
