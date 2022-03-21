@@ -9031,7 +9031,12 @@ int sqlite3BtreeInsert(
     }
   }
 
+  /* Ensure that the cursor is not in the CURSOR_FAULT state and that it
+  ** points to a valid cell.
+  */
   if( pCur->eState>=CURSOR_REQUIRESEEK ){
+    testcase( pCur->eState==CURSOR_REQUIRESEEK );
+    testcase( pCur->eState==CURSOR_FAULT );
     rc = moveToRoot(pCur);
     if( rc && rc!=SQLITE_EMPTY ) return rc;
   }
@@ -9143,7 +9148,8 @@ int sqlite3BtreeInsert(
   assert( pPage->intKey || pX->nKey>=0 || (flags & BTREE_PREFORMAT) );
   assert( pPage->leaf || !pPage->intKey );
   if( pPage->nFree<0 ){
-    if( pCur->eState>CURSOR_INVALID ){
+    if( NEVER(pCur->eState>CURSOR_INVALID) ){
+     /* ^^^^^--- due to the moveToRoot() call above */
       rc = SQLITE_CORRUPT_BKPT;
     }else{
       rc = btreeComputeFreeSpace(pPage);
