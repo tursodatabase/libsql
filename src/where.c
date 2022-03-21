@@ -6191,12 +6191,16 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
             ** reference.  Verify that this is harmless - that the
             ** table being referenced really is open.
             */
+#ifdef SQLITE_ENABLE_OFFSET_SQL_FUNC
             assert( (pLoop->wsFlags & WHERE_IDX_ONLY)==0
                  || cursorIsOpen(v,pOp->p1,k)
-#ifdef SQLITE_ENABLE_OFFSET_SQL_FUNC
                  || pOp->opcode==OP_Offset
-#endif
             );
+#else
+            assert( (pLoop->wsFlags & WHERE_IDX_ONLY)==0
+                 || cursorIsOpen(v,pOp->p1,k)
+            );
+#endif
           }
         }else if( pOp->opcode==OP_Rowid ){
           pOp->p1 = pLevel->iIdxCur;

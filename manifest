@@ -1,5 +1,5 @@
-C Some\sbranches\sare\sno\slonger\sreachable\safter\sthe\sprevious\schange.\s\sMark\sthem\naccordingly.\s\sAlso\simprove\scomments.
-D 2022-03-21T18:48:31.068
+C Do\snot\sallow\san\s#ifdef\sinside\sof\san\sassert(),\sas\sgcc\stells\sus\sthat\sis\nnot\sportable.
+D 2022-03-21T20:08:13.044
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -639,7 +639,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c b9df133a705093da8977da5eb202eaadb844839f1c7297c08d33471f5491843d
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
-F src/where.c b071160c771d396c82b7d37e901834b5b58544811200cdbf14fffc8f982c4224
+F src/where.c 9cba7b9e58d4d07f08bb0cb5b9b982d359c8051050df9114ee927cf6798e5509
 F src/whereInt.h 15d2975c3b4c193c78c26674400a840da8647fe1777ae3b026e2d15937b38a03
 F src/wherecode.c 555f598a9ddad81761f084710fdb4f8733fe31bc14cd6b19f8ca4274a7eaa04c
 F src/whereexpr.c 2a71f5491798460c9590317329234d332d9eb1717cba4f3403122189a75c465e
@@ -1945,8 +1945,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4df301c8610c4c36b4eb360d49ccaef873c63ea719ccb14b357754ff0b3ea5ef
-R 89c086814dc175a63802ec978ba098bf
+P 88d69f60cceb22bde42cfe43c23259c7bad47b8e06f918a79bd089a77b480d46
+R e549179e194537a8c238e9efdda7fdd8
 U drh
-Z 6be762314610127124940dc99f0ea403
+Z 1df73c54c069d2ae3e739535fe1bd6f4
 # Remove this line to create a well-formed Fossil manifest.
