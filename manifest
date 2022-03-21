@@ -1,5 +1,5 @@
-C The\sprevious\sassert()\sfix\swas\snot\scorrect\swhen\sbuilding\swith\n-DSQLITE_ENABLE_OFFSET_SQL_FUNC.\s\sThis\sis\sthe\sfix.
-D 2022-03-21T15:42:42.783
+C Strengthen\sthe\sdefenses\sagainst\scorrupt\sdatabases\sin\sthe\nsqlite3BtreeInsert()\sfunction\sof\sthe\sbtree\smodule.\n[forum:/forumpost/c7ec29905f|Forum\spost\sc7ec29905f].
+D 2022-03-21T18:17:09.573
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -492,7 +492,7 @@ F src/auth.c f4fa91b6a90bbc8e0d0f738aa284551739c9543a367071f55574681e0f24f8cf
 F src/backup.c a2891172438e385fdbe97c11c9745676bec54f518d4447090af97189fd8e52d7
 F src/bitvec.c 7c849aac407230278445cb069bebc5f89bf2ddd87c5ed9459b070a9175707b3d
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c ddc3cec12a39675e10066c008aac7925b26c74f78c46b849b2416ca45701a313
+F src/btree.c 3362779aa933ef3a66f97110cf25a2acea06fbea74c95364b86401ad0a774a5c
 F src/btree.h 74d64b8f28cfa4a894d14d4ed64fa432cd697b98b61708d4351482ae15913e22
 F src/btreeInt.h 8ce1332edd89dfd2461d561ac10a0ab5601c8e06200cb5230596c3caaf54482e
 F src/build.c a0cc68fe8172c0a31b54576f9c6c0fe6f7c82b1b5e1387afdd6a5a13132bc131
@@ -1945,8 +1945,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fa9bd1fce47e8db1cfc4cd8efd2c09f8711ea917ce7d116dc7226c575cb9a6d4
-R fc8ee44bd759c8bce21e1507c043ba2f
+P c0a4767fef27cfe4fdc1d8a29342998095894769a63d84e37ec47ced7ce4e5f7
+R f0ffb8e52619d6c660df8acbda2d48c1
 U drh
-Z 03ce4b7e2beed66af6c911c254018f05
+Z c7aaa48c41ee3a7af14aecc83b976bcc
 # Remove this line to create a well-formed Fossil manifest.
