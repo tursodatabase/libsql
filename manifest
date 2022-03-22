@@ -1,5 +1,5 @@
-C Make\sthe\ssqlite3_serialize()\sand\ssqlite3_deserialize()\sinterfaces\saccessible\nto\sloadable\sextensions.
-D 2022-03-22T11:22:55.530
+C Harden\sthe\sxShmLock\smethod\sof\sboth\sthe\sunix\sand\sWindows\sVFSes\sso\sthat\sthey\nare\srobust\sagainst\sbeing\sinvoked\swhen\sthe\sSHM\sfile\sis\snot\sopen.
+D 2022-03-22T19:41:55.891
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -536,8 +536,8 @@ F src/os.c b1c4f2d485961e9a5b6b648c36687d25047c252222e9660b7cc25a6e1ea436ab
 F src/os.h 26890f540b475598cd9881dcc68931377b8d429d3ea3e2eeb64470cde64199f8
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
-F src/os_unix.c f0dc85d439ece53120c4071c98876758ec24e6f713b67af3711af033c897091e
-F src/os_win.c 77d39873836f1831a9b0b91894fec45ab0e9ca8e067dc8c549e1d1eca1566fe9
+F src/os_unix.c 1f71ec8c87621f75c9c5ea973f5e8ce2f1d23fe760c01ed2814fe4b98b639825
+F src/os_win.c a8ea80037e81127ca01959daa87387cc135f325c88dc745376c4f760de852a10
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 42120492784fc9bcd9082b5c9b5e329b7318c357f9f3574a1bbfcf7418910356
 F src/pager.h f82e9844166e1585f5786837ddc7709966138ced17f568c16af7ccf946c2baa3
@@ -1945,9 +1945,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c7a2047e93df36c172be0be773f9a04150dafe7ba1773269d74016418d262fc4 da874180d35aacdeb9c06f5b425e8909d833e2765179c4337854d56b8a624fd5
-R bf3c838ea5a83946446e0f353de9bf76
-T +closed da874180d35aacdeb9c06f5b425e8909d833e2765179c4337854d56b8a624fd5
+P 81f8746bc65828fb91e170393f22f1f4e9c587a8938e8c11b72315fcd6131403
+R d298ad7f59290d0a6efedfc24438d25c
 U drh
-Z 464016fe3bfc08f8aed0a703c852c5bf
+Z 4cb272d1327d5bb30f85a15fc2446351
 # Remove this line to create a well-formed Fossil manifest.
