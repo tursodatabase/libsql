@@ -1,5 +1,5 @@
-C Create\snew\sbranch\snamed\s"extapi-serializing"
-D 2022-03-22T02:53:34.923
+C expose\ssqlite3_{deserialize,serialize}()\sin\ssqlite3ext.h
+D 2022-03-22T03:03:13.557
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -515,7 +515,7 @@ F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c c4fc48e6f38cc415262652407949771ce4e6f8f0c7330f872e44a0677f3ad602
 F src/json.c 24fcd7f5f9080b04b89722c343010d390f85e55b2ab560046cb567c9dd640f62
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
-F src/loadext.c aa919a6a7884f8b34d7b791841b24d14b1b0ab43f45b3940f4851043b2855c0c
+F src/loadext.c 2ecb1441f9b1c22e9e022ee0776e67d259facf34b56ba892b206f0a294ee6f8c
 F src/main.c 89dfd569b4fbcab65281b3c6d636b887b2cb23cbaa16f8c6b67062862144c927
 F src/malloc.c fec841aa0a0400a6f7d20706178a5d8e8219a6bf562b6fe712c17f6c26813266
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
@@ -556,7 +556,7 @@ F src/select.c c366c05e48e836ea04f8ecefb9c1225745dc250c3f01bdb39e9cbb0dc25e3610
 F src/shell.c.in a292c6f78b4dd0302adeea03929f2dffec14ab39b364e98f707de942af2b9ac2
 F src/sqlite.h.in 2a35f62185eb5e7ecc64a2f68442b538ce9be74f80f28a00abc24837edcf1c17
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
-F src/sqlite3ext.h a95cb9ed106e3d39e2118e4dcc15a14faec3fa50d0093425083d340d9dfd96e6
+F src/sqlite3ext.h f49e28c25bd941e79794db5415fdf7b202deb3bc072ed6f1ed273d578703684e
 F src/sqliteInt.h 2ce7d868630ccd70ffd4b15d46b59ccf7daf89198993b62ed6e4a165d3511280
 F src/sqliteLimit.h d7323ffea5208c6af2734574bae933ca8ed2ab728083caa117c9738581a31657
 F src/status.c 4b8bc2a6905163a38b739854a35b826c737333fab5b1f8e03fa7eb9a4799c4c1
@@ -1945,11 +1945,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c7a2047e93df36c172be0be773f9a04150dafe7ba1773269d74016418d262fc4
-R e549179e194537a8c238e9efdda7fdd8
-T *branch * extapi-serializing
-T *sym-extapi-serializing *
-T -sym-trunk *
+P a1220a2170a09075a42d1d6c4b502ffa7cc92856779b9eb2ecb9e05c09ccedac
+R bf3c838ea5a83946446e0f353de9bf76
 U larrybr
-Z f0119c9607692a68a3b40efe179fd906
+Z 47187b657b7053b4c6d0a1936928ef2c
 # Remove this line to create a well-formed Fossil manifest.
