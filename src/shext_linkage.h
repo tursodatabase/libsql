@@ -13,6 +13,46 @@
 extern "C" {
 #endif
 
+/*****************
+ * See "Shell Extensions, Programming" for purposes and usage of the following
+ * interfaces supporting extended meta-commands and import and output modes.
+ */
+
+/* Define status codes returned by a meta-command, either during its argument
+ * checking or during its execution (to which checking may be deferred.) The
+ * code has 1 or 2 parts. The low-valued codes, below MCR_ArgIxMask, have an
+ * action part and an error flag. Higher-valued codes are bitwise-or'ed with
+ * a small integer and indicate problems with the meta-command itself.
+ */
+typedef enum DotCmdRC {
+  /* Post-execute action and success/error status (semi-ordered) */
+  DCR_Ok          = 0,    /* ordinary success and continue */
+  DCR_Error       = 1,    /* or'ed with low-valued codes upon error */
+  DCR_Return      = 2,    /* return from present input source/script */
+  DCR_ReturnError = 3,    /* return with error */
+  DCR_Exit        = 4,    /* exit shell ( process or pseudo-main() ) */
+  DCR_ExitError   = 5,    /* exit with error */
+  DCR_Abort       = 6,    /* abort for unrecoverable cause (OOM) */
+  DCR_AbortError  = 7,    /* abort with error (blocked unsafe) */
+  /* Above are in reverse-priority order for process_input() returns. */
+
+  /* Dispatch and argument errors */
+  DCR_ArgIxMask = 0xfff,  /* mask to retain/exclude argument index */
+  /* Below codes may be or'ed with the offending argument index */
+  DCR_Unknown   = 0x1000, /* unknown command, subcommand or option */
+  DCR_Ambiguous = 0x2000, /* ambiguous (sub)command (too abreviated) */
+  DCR_Unpaired  = 0x3000, /* option value indicated but missing */
+  DCR_TooMany   = 0x4000, /* excess arguments were provided */
+  DCR_TooFew    = 0x5000, /* insufficient arguments provided */
+  DCR_Missing   = 0x6000, /* required argument(s) missing */
+  DCR_ArgWrong  = 0x7000, /* non-specific argument error, nothing emitted */
+
+  /* This code indicates error and a usage message to be emitted to stderr. */
+  DCR_SayUsage  = 0x7ffd, /* usage is at *pzErr or is to be generated */
+  /* This code indicates nothing more need be put to stderr (or stdout.) */
+  DCR_CmdErred  = 0x7fff  /* non-specific error for which complaint is done */
+} DotCmdRC;
+
 /* Convey data to, from and/or between I/O handlers and meta-commands. */
 typedef struct ShellExState {
   /* A sizeof(*) to permit extensions to guard against too-old hosts */
@@ -80,46 +120,6 @@ typedef struct ShellExState {
   /* Internal and opaque shell state, not for use by extensions */
   struct ShellInState *pSIS; /* Offset of this member is NOT STABLE. */
 } ShellExState;
-
-/*****************
- * See "Shell Extensions, Programming" for purposes and usage of the following
- * interfaces supporting extended meta-commands and import and output modes.
- */
-
-/* Define status codes returned by a meta-command, either during its argument
- * checking or during its execution (to which checking may be deferred.) The
- * code has 1 or 2 parts. The low-valued codes, below MCR_ArgIxMask, have an
- * action part and an error flag. Higher-valued codes are bitwise-or'ed with
- * a small integer and indicate problems with the meta-command itself.
- */
-typedef enum DotCmdRC {
-  /* Post-execute action and success/error status (semi-ordered) */
-  DCR_Ok          = 0,    /* ordinary success and continue */
-  DCR_Error       = 1,    /* or'ed with low-valued codes upon error */
-  DCR_Return      = 2,    /* return from present input source/script */
-  DCR_ReturnError = 3,    /* return with error */
-  DCR_Exit        = 4,    /* exit shell ( process or pseudo-main() ) */
-  DCR_ExitError   = 5,    /* exit with error */
-  DCR_Abort       = 6,    /* abort for unrecoverable cause (OOM) */
-  DCR_AbortError  = 7,    /* abort with error (blocked unsafe) */
-  /* Above are in reverse-priority order for process_input() returns. */
-
-  /* Dispatch and argument errors */
-  DCR_ArgIxMask = 0xfff,  /* mask to retain/exclude argument index */
-  /* Below codes may be or'ed with the offending argument index */
-  DCR_Unknown   = 0x1000, /* unknown command, subcommand or option */
-  DCR_Ambiguous = 0x2000, /* ambiguous (sub)command (too abreviated) */
-  DCR_Unpaired  = 0x3000, /* option value indicated but missing */
-  DCR_TooMany   = 0x4000, /* excess arguments were provided */
-  DCR_TooFew    = 0x5000, /* insufficient arguments provided */
-  DCR_Missing   = 0x6000, /* required argument(s) missing */
-  DCR_ArgWrong  = 0x7000, /* non-specific argument error, nothing emitted */
-
-  /* This code indicates error and a usage message to be emitted to stderr. */
-  DCR_SayUsage  = 0x7ffd, /* usage is at *pzErr or is to be generated */
-  /* This code indicates nothing more need be put to stderr (or stdout.) */
-  DCR_CmdErred  = 0x7fff  /* non-specific error for which complaint is done */
-} DotCmdRC;
 
 /* An object implementing below interface is registered with the
  * shell to make new or overriding meta-commands available to it.
@@ -196,6 +196,30 @@ CONCRETE_END(Derived) vtname = { \
 typedef int (*ExtensionId)
   (sqlite3 *, char **, const struct sqlite3_api_routines *);
 
+/* Hooks for scripting language integration.
+ *
+ * If hookScripting(...) has been called to register an extension's
+ * scripting support, and isScriptLeader(pvSS, zLineLead) returns true,
+ * (where zLineLead is an input group's leading line), then the shell
+ * will collect input lines until scriptIsComplete(pvSS, zLineGroup)
+ * returns non-zero, whereupon, the same group is submitted to be run
+ * via runScript(pvSS, zLineGroup, ...). The default behaviors (when
+ * one of the function pointers is 0) are: return false; return true;
+ * and return DCR_Error after doing nothing.
+ *
+ * An extension which has called hookScripting() should arrange to
+ * free associated resources upon exit or when its destructor runs.
+ *
+ * The 1st member, pvScriptingState, is an arbitrary, opaque pointer.
+ */
+typedef struct ScriptHooks {
+  void *pvScriptingState; /* passed into below functions as pvSS */
+  int (*isScriptLeader)(void *pvSS, const char *zScript);
+  int (*scriptIsComplete)(void *pvSS, const char *zScript);
+  DotCmdRC (*runScript)(void *pvSS, const char *zScript,
+                        ShellExState *, char **pzErrMsg);
+} ScriptHooks;
+
 typedef struct ExtensionHelpers {
   int helperCount; /* Helper count, not including sentinel */
   union {
@@ -208,9 +232,12 @@ typedef struct ExtensionHelpers {
                                        /* out */ int *pnFound);
       void (*setColumnWidths)(ShellExState *p, char *azWidths[], int nWidths);
       int (*nowInteractive)(ShellExState *p);
+      const char * (*shellInvokedAs)(void);
+      const char * (*shellStartupDir)(void);
+      int (*enable_load_extension)(sqlite3 *db, int onoff);
       void (*sentinel)(void);
     } named ;
-    void (*nameless[5+1])(); /* Same as named but anonymous plus a sentinel. */
+    void (*nameless[10+1])(); /* Same as named but anonymous plus a sentinel. */
   } helpers;
 } ExtensionHelpers;
 
@@ -220,7 +247,7 @@ typedef struct ShellExtensionAPI {
   ExtensionHelpers * pExtHelpers;
 
   /* Functions for extension to register its implementors with shell */
-  const int numRegistrars; /* 3 for this version */
+  const int numRegistrars; /* 4 for this version */
   union {
     struct ShExtAPI {
       /* Register a meta-command */
@@ -232,6 +259,9 @@ typedef struct ShellExtensionAPI {
       /* Register an import variation from (various sources) for .import */
       int (*registerImporter)(ShellExState *p,
                               ExtensionId eid, ImportHandler *pIH);
+      /* Provide scripting support to host shell. (See ScriptHooks above.) */
+      int (*hookScripting)(ShellExState *p,
+                           ExtensionId eid, ScriptHooks *pSH);
       /* Preset to 0 at extension load, a sentinel for expansion */
       void (*sentinel)(void);
     } named;
@@ -256,10 +286,12 @@ typedef struct ShellExtensionLink {
    */
   ExtensionId eid;
 
-  /* Another init "out" parameter, a destructor for extension overall.
-   * Set to 0 on input and may be left so if no destructor is needed.
+  /* Two more init "out" parameters, a destructor for extension overall.
+   * Set to 0 on input and left so if no destructor is needed. Otherwise,
+   * upon exit or unload, extensionDestruct(pvExtensionObject) is called.
    */
-  void (*extensionDestruct)(void *);
+  void (*extensionDestruct)(void *pvExtObj);
+  void *pvExtensionObject;
 
 } ShellExtensionLink;
 

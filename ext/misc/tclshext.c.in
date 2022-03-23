@@ -1,0 +1,350 @@
+/*
+** 2022 March 20
+**
+** The author disclaims copyright to this source code.  In place of
+** a legal notice, here is a blessing:
+**
+**    May you do good and not evil.
+**    May you find forgiveness for yourself and forgive others.
+**    May you share freely, never taking more than you give.
+**
+*************************************************************************
+** This file contains code to implement the "tclshext" shell extension
+** for use with the extensible "sqlite3" CLI shell. On *Nix, build thusly:
+     tool/mkshellc.tcl ext/misc/tclshext.c.in > tclshext.c
+     gcc -shared -fPIC -O2 -I. -Isrc -I/usr/include/tcl8.6 tclshext.c \
+       -o tclshext.so -ltcl8.6
+** Later TCL versions can be used if desired.
+**
+** This extension adds two features to the host shell:
+** 1. The .tcl dot command is added.
+** 2. TCL scripting support is added.
+**
+** The .tcl command can be run with 0 or more arguments.
+** With no arguments, it does a REPL loop until the end of input is seen.
+** The end of input is either an EOF condition or a lone '.' on a line.
+** With more arguments, files they name are interpreted as TCL script.
+** In either case, the TCL command return code is tranlated to a DotCmdRC.
+**
+** TCL scripting support is added with a ShellExtensionAPI hookScripting()
+** call in the manner documented for it and the ScriptHooks struct. This
+** support lasts until the extension destructor is called. Until then,
+** shell input groups beginning with ".." are treated as TCL input, one
+** complete TCL command at a time.
+**
+** For any of these ways of providing TCL input, the same TCL interpreter
+** is used, with its state maintained from one input to the next. In this
+** way, .sqliterc or other preparatory shell scripts (or typing) can be
+** made to provide a useful set of user-defined shell enhancements.
+*/
+
+#include <limits.h>
+#include "shext_linkage.h"
+
+static struct ShExtAPI *pShExtApi = 0;
+static struct ExtHelpers *pExtHelpers = 0;
+
+SQLITE_EXTENSION_INIT1;
+
+/* This is not found in the API pointer table published for extensions: */
+#define sqlite3_enable_load_extension pExtHelpers->enable_load_extension
+
+/* Control how tclsqlite.c compiles. (REPL is effected here, not there.) */
+#undef SQLITE_AMALGAMATION
+#undef TCLSH
+#include <tclOO.h>
+INCLUDE tclsqlite.c
+
+#if defined(_WIN32) || defined(WIN32)
+# define getDir(cArray) _getwd(cArray)
+# define chdir(s) _chdir(s)
+#else
+# define getDir(cArray) getcwd(cArray, sizeof(cArray))
+#endif
+
+typedef struct TclCmd TclCmd;
+
+static void TclCmd_Takedown(TclCmd *ptc);
+
+/* These DERIVED_METHOD(...) macro calls' arguments were copied and
+ * pasted from the MetaCommand interface declaration in shext_linkage.h
+ */
+DERIVED_METHOD(void, destruct, MetaCommand,TclCmd, 0, ()){
+  TclCmd_Takedown((TclCmd *)pThis);
+}
+
+DERIVED_METHOD(const char *, name, MetaCommand,TclCmd, 0,()){
+  return "tcl";
+}
+
+DERIVED_METHOD(const char *, help, MetaCommand,TclCmd, 1,(int more)){
+  switch( more ){
+  case 0: return
+      ".tcl ?FILES?   Run a TCL REPL or interpret files as TCL\n";
+  case 1: return
+      "   If FILES are provided, they name files to be read in as TCL.\n"
+      "   Otherwise, a read/evaluate/print loop is run until a lone \".\" is\n"
+      "   entered on an input line or end-of-stream is encountered.\n";
+  default: return 0;
+  }
+}
+
+DERIVED_METHOD(DotCmdRC, argsCheck, MetaCommand,TclCmd, 3,
+             (char **pzErrMsg, int nArgs, char *azArgs[])){
+  return DCR_Ok;
+}
+
+static Tcl_Interp *getInterp(TclCmd *ptc);
+
+static void copy_complaint(char **pzErr, Tcl_Interp *pi){
+  if( pzErr ){
+    Tcl_Obj *po = Tcl_GetObjResult(pi);
+    *pzErr = sqlite3_mprintf("%s", Tcl_GetStringFromObj(po,0));
+  }
+}
+
+DERIVED_METHOD(DotCmdRC, execute, MetaCommand,TclCmd, 4,
+             (ShellExState *psx, char **pzErrMsg, int nArgs, char *azArgs[])){
+  FILE *out = pExtHelpers->currentOutputFile(psx);
+  TclCmd *ptc = (TclCmd *)pThis;
+  DotCmdRC rv = DCR_Ok;
+  int rc = TCL_OK;
+  if( nArgs>1 ){
+    /* Read named files into the interpreter. */
+    int aix;
+    for( aix=0; aix<(nArgs-1) && rc==TCL_OK; ++aix ){
+      rc = Tcl_EvalFile(getInterp(ptc), azArgs[aix+1]);
+    }
+  }else{
+    /* Enter a REPL */
+    static const char * const zREPL =
+#ifdef REPL_STDIN_ONLY
+      "set line {}\n"
+      "while {![eof stdin]} {\n"
+        "if {$line!=\"\"} {\n"
+          "puts -nonewline \"> \"\n"
+        "} else {\n"
+          "puts -nonewline \"% \"\n"
+        "}\n"
+        "flush stdout\n"
+        "append line [gets stdin]\n"
+        "if {$line eq \".\"} break\n"
+        "if {[info complete $line]} {\n"
+          "if {[catch {uplevel #0 $line} result]} {\n"
+            "puts stderr \"Error: $result\"\n"
+          "} elseif {$result!=\"\"} {\n"
+            "puts $result\n"
+          "}\n"
+          "set line {}\n"
+        "} else {\n"
+          "append line \\n\n"
+        "}\n"
+      "}\n"
+      "if {$line ne \".\"} {puts {}}\n"
+      "read stdin 0\n"
+#else
+      "set line {}\n"
+      "set at_end 0\n"
+      "set prompting [now_interactive]\n"
+      "while {!$at_end} {\n"
+        "if {$prompting} {\n"
+          "if {$line!=\"\"} {\n"
+            "puts -nonewline \"> \"\n"
+          "} else {\n"
+            "puts -nonewline \"% \"\n"
+          "}\n"
+        "}\n"
+        "flush stdout\n"
+        "set li [get_input_line]\n"
+        "if {$li eq \"\"} {\n"
+          "set at_end 1\n"
+        "} elseif {[string trimright $li] eq \".\"} {\n"
+          "if {$line ne \"\"} {\n"
+            "throw {NONE} {incomplete input at EOF}\n"
+          "}\n"
+          "set at_end 1\n"
+        "} else {\n" 
+          "append line $li\n"
+          "if {[string trim $line] eq \"\"} {\n"
+            "set line \"\"\n"
+            "continue\n"
+          "}\n" 
+          "if {[info complete $line]} {\n"
+            "if {[catch {uplevel #0 $line} result]} {\n"
+              "puts stderr \"Error: $result\"\n"
+            "} elseif {$result!=\"\" && $prompting} {\n"
+              "puts $result\n"
+            "}\n"
+            "set line {}\n"
+          "}\n"
+        "}\n"
+      "}\n"
+      "if {$prompting && $li ne \".\\n\"} {puts {}}\n"
+      "unset li line prompting at_end\n"
+      "read stdin 0\n"
+#endif
+      ;
+    rc = Tcl_Eval(getInterp(ptc), zREPL);
+    clearerr(stdin);
+  }
+  if( rc!=TCL_OK ){
+    copy_complaint(pzErrMsg, getInterp(ptc));
+    rv = DCR_Error;
+  }
+  return rv;
+}
+
+/* Define a MetaCommand v-table initialized to reference above methods. */
+MetaCommand_IMPLEMENT_VTABLE(TclCmd, tclcmd_methods);
+
+INSTANCE_BEGIN(TclCmd);
+  Tcl_Interp *interp;
+INSTANCE_END(TclCmd) tclcmd = {
+  &tclcmd_methods
+  , 0 /* interp pointer */
+};
+
+static Tcl_Interp *getInterp(TclCmd *ptc){
+  return ptc->interp;
+}
+
+static void TclCmd_Takedown(TclCmd *ptc){
+  Tcl_DeleteInterp(ptc->interp);
+  ptc->interp = 0;
+  Tcl_Finalize();
+}
+
+/* Say line is script lead-in iff its first dark is "..". */
+static int tclIsScriptLead(void *pvState, const char *zLineLead){
+  char c;
+  (void)(pvState);
+  while( (c=*zLineLead++) && (c==' '||c=='\t') ) {}
+  return (c=='.' && *zLineLead=='.');
+}
+
+static int tclIsComplete(void *pvState, const char *zScript){
+  (void)(pvState);
+  return Tcl_CommandComplete(zScript);
+}
+
+static DotCmdRC tclRunScript(void *pvState, const char *zScript,
+                             ShellExState *p, char **pzErrMsg){
+  char c;
+  TclCmd *ptc = (TclCmd *)pvState;
+  while( (c=*zScript++) && (c==' '||c=='\t') ) {}
+  if( c=='.' &&  *zScript++=='.' ){
+    int rc, nc = strlen(zScript);
+    rc = Tcl_EvalEx(ptc->interp, zScript, nc, TCL_EVAL_DIRECT|TCL_EVAL_GLOBAL);
+    if( rc!=TCL_OK ) copy_complaint(pzErrMsg, getInterp(ptc));
+    return DCR_Ok|(rc!=TCL_OK);
+  }
+  return DCR_Error;
+}
+
+#define GETLINE_MAXLEN 1000
+
+/* C implementation of TCL proc, get_input_line */
+int getInputLine(void *pvSS, Tcl_Interp *interp,
+                 int nArgs, const char *azArgs[]){
+  if( nArgs==1 ){
+    char buffer[GETLINE_MAXLEN+1];
+    ShellExState *psx = (ShellExState *)pvSS;
+    struct InSource *pis = pExtHelpers->currentInputSource(psx);
+    if( pExtHelpers->strLineGet(buffer, GETLINE_MAXLEN, pis) ){
+      Tcl_SetResult(interp, buffer, TCL_VOLATILE);
+    }else{
+      Tcl_SetResult(interp, 0, 0);
+    }
+    return TCL_OK;
+  }else{
+    Tcl_SetResult(interp, "too many arguments", TCL_STATIC);
+    return TCL_ERROR;
+  }
+}
+
+/* C implementation of TCL proc, now_interactive */
+int nowInteractive(void *pvSS, Tcl_Interp *interp,
+                 int nArgs, const char *azArgs[]){
+  if( nArgs==1 ){
+    ShellExState *psx = (ShellExState *)pvSS;
+    struct InSource *pis = pExtHelpers->currentInputSource(psx);
+    static const char * zAns[2] = { "0","1" };
+    int iiix = (pExtHelpers->nowInteractive(psx) != 0);
+    Tcl_SetResult(interp, (char *)zAns[iiix], TCL_STATIC);
+    return TCL_OK;
+  }else{
+    Tcl_SetResult(interp, "too many arguments", TCL_STATIC);
+    return TCL_ERROR;
+  }
+}
+
+/* ToDo: C implementation of TCL ::unknown to reflect to dot commands */
+
+/* ToDo: ... TCL db_user command, like a (TCL) sqlite3 object except that
+ * it defers to shell's db and treats close subcommand as an error. */
+
+DEFINE_SHDB_TO_SHEXTLINK(shext_link);
+
+/*
+** Extension load function.
+*/
+#ifdef _WIN32
+__declspec(dllexport)
+#endif
+int sqlite3_tclshext_init(
+  sqlite3 *db,
+  char **pzErrMsg,
+  const sqlite3_api_routines *pApi
+){
+  ShellExtensionLink *pShExtLink;
+  SQLITE_EXTENSION_INIT2(pApi);
+  pShExtLink = shext_link(db);
+  if( pShExtLink && pShExtLink->pShellExtensionAPI->numRegistrars>=1 ){
+    ShellExState *psx = pShExtLink->pSXS;
+    MetaCommand *pmc = (MetaCommand *)&tclcmd;
+    const char *zShellName, *zShellDir;
+    int rc;
+
+    pShExtApi = & pShExtLink->pShellExtensionAPI->api.named;
+    pExtHelpers = & pShExtLink->pShellExtensionAPI->pExtHelpers->helpers.named;
+    if( pShExtLink->pShellExtensionAPI->pExtHelpers->helperCount < 10 ){
+      *pzErrMsg = sqlite3_mprintf("Shell version mismatch");
+      return SQLITE_ERROR;
+    }
+    zShellName = pExtHelpers->shellInvokedAs();
+    zShellDir = pExtHelpers->shellStartupDir();
+    if( zShellDir!=0 ){
+      char cwd[FILENAME_MAX+1];
+      if( getDir(cwd) && 0==chdir(zShellDir) ){
+        Tcl_FindExecutable(zShellName);
+        rc = chdir(cwd); /* result ignored, kept only to silence gcc */
+      }
+    }
+    tclcmd.interp = Tcl_CreateInterp();
+    if( 0==Tcl_OOInitStubs(tclcmd.interp) ){
+      *pzErrMsg = sqlite3_mprintf("Tcl v8.6 or higher required.\n");
+      TclCmd_Takedown(&tclcmd);
+      return SQLITE_ERROR;
+    }
+    Tcl_SetSystemEncoding(tclcmd.interp, "utf-8");
+    Sqlite3_Init(tclcmd.interp);
+    rc = pShExtApi->registerMetaCommand(psx, sqlite3_tclshext_init, pmc);
+    if( rc==SQLITE_OK ){
+      ScriptHooks sh = { pmc, tclIsScriptLead, tclIsComplete, tclRunScript };
+      pShExtApi->hookScripting(psx, sqlite3_tclshext_init, &sh);
+      Tcl_CreateCommand(tclcmd.interp,
+                        "get_input_line", getInputLine, psx, 0);
+      Tcl_CreateCommand(tclcmd.interp,
+                        "now_interactive", nowInteractive, psx, 0);
+      pShExtLink->eid = sqlite3_tclshext_init;
+    }else{
+      TclCmd_Takedown(&tclcmd);
+    }
+    return rc;
+  }
+  else{
+    *pzErrMsg
+      = sqlite3_mprintf("Bad ShellExtensionLink or registration API.\n");
+    return SQLITE_ERROR;
+  }
+}
