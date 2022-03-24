@@ -244,8 +244,8 @@ static DotCmdRC tclRunScript(void *pvState, const char *zScript,
 #define GETLINE_MAXLEN 1000
 
 /* C implementation of TCL proc, get_input_line */
-int getInputLine(void *pvSS, Tcl_Interp *interp,
-                 int nArgs, const char *azArgs[]){
+static int getInputLine(void *pvSS, Tcl_Interp *interp,
+                        int nArgs, const char *azArgs[]){
   if( nArgs==1 ){
     char buffer[GETLINE_MAXLEN+1];
     ShellExState *psx = (ShellExState *)pvSS;
@@ -263,8 +263,8 @@ int getInputLine(void *pvSS, Tcl_Interp *interp,
 }
 
 /* C implementation of TCL proc, now_interactive */
-int nowInteractive(void *pvSS, Tcl_Interp *interp,
-                 int nArgs, const char *azArgs[]){
+static int nowInteractive(void *pvSS, Tcl_Interp *interp,
+                          int nArgs, const char *azArgs[]){
   if( nArgs==1 ){
     ShellExState *psx = (ShellExState *)pvSS;
     struct InSource *pis = pExtHelpers->currentInputSource(psx);
@@ -278,7 +278,61 @@ int nowInteractive(void *pvSS, Tcl_Interp *interp,
   }
 }
 
-/* ToDo: C implementation of TCL ::unknown to reflect to dot commands */
+#define UNKNOWN_RENAME "::_original_unknown"
+
+/* C implementation of TCL ::unknown to delegate to dot commands */
+static int unknown_dot_delegate(void *pvSS, Tcl_Interp *interp,
+                                int nArgs, const char *azArgs[]){
+  const char *name = (nArgs>1 && *azArgs[1]=='.')? azArgs[1]+1 : 0;
+  ShellExState *psx = (ShellExState *)pvSS;
+  MetaCommand *pmc = 0;
+  int nFound = 0;
+  int ia, rc;
+
+  if( name ) pmc = pExtHelpers->findMetaCommand(name, psx, &nFound);
+  if( pmc &&nFound==1 ){
+    /* Run the dot command and interpret its returns. */
+    char *zErr = 0;
+    DotCmdRC drc = pmc->pMethods->argsCheck(pmc, &zErr, nArgs-1,
+                                            (char **)azArgs+1);
+    if( drc==DCR_Ok ){
+      drc = pmc->pMethods->execute(pmc, psx, &zErr, nArgs-1,
+                                   (char **)azArgs+1);
+    }
+    assert(!(drc==DCR_Ok && zErr!=0));
+    if( drc==DCR_Ok ) return TCL_OK;
+    else{
+      /* ToDo: Try to indicate what went wrong as part of result. 
+       * This is deferred until some shell functionality helping
+       * with this is factored out and exposed for extensions. */
+      sqlite3_free(zErr);
+      return TCL_ERROR;
+    }
+  }else{
+    /* Defer to the TCL-default ::unknown command, or fail here. */
+    int haveUnkCmd = (0!=Tcl_FindCommand(interp, UNKNOWN_RENAME,
+                                         0, TCL_GLOBAL_ONLY));
+    Tcl_Obj **ppo;
+    if( haveUnkCmd ){
+      ppo = sqlite3_malloc((nArgs+1)*sizeof(Tcl_Obj*));
+      if( ppo==0 ) return TCL_ERROR;
+      ppo[0] = Tcl_NewStringObj(UNKNOWN_RENAME, -1);
+      Tcl_IncrRefCount(ppo[0]);
+      for( ia=1; ia<nArgs; ++ia ){
+        ppo[ia] = Tcl_NewStringObj(azArgs[ia], -1);
+        Tcl_IncrRefCount(ppo[ia]);
+      }
+      rc = Tcl_EvalObjv(interp, nArgs, ppo, TCL_EVAL_GLOBAL);
+      for( ia=0; ia<nArgs; ++ia ) Tcl_DecrRefCount(ppo[ia]);
+      return TCL_OK;
+    }else{
+      /* Fail now (instead of recursing back into this handler.) */
+      Tcl_AppendResult(interp,
+                       "Command ", azArgs[1], " does not exist.", (char *)0);
+      return TCL_ERROR;
+    }
+  }
+}
 
 /* ToDo: ... TCL db_user command, like a (TCL) sqlite3 object except that
  * it defers to shell's db and treats close subcommand as an error. */
@@ -321,22 +375,31 @@ int sqlite3_tclshext_init(
       }
     }
     tclcmd.interp = Tcl_CreateInterp();
+    Tcl_SetSystemEncoding(tclcmd.interp, "utf-8");
+    Sqlite3_Init(tclcmd.interp);
     if( 0==Tcl_OOInitStubs(tclcmd.interp) ){
       *pzErrMsg = sqlite3_mprintf("Tcl v8.6 or higher required.\n");
       TclCmd_Takedown(&tclcmd);
       return SQLITE_ERROR;
     }
-    Tcl_SetSystemEncoding(tclcmd.interp, "utf-8");
-    Sqlite3_Init(tclcmd.interp);
     rc = pShExtApi->registerMetaCommand(psx, sqlite3_tclshext_init, pmc);
     if( rc==SQLITE_OK ){
       ScriptHooks sh = { pmc, tclIsScriptLead, tclIsComplete, tclRunScript };
-      pShExtApi->hookScripting(psx, sqlite3_tclshext_init, &sh);
-      Tcl_CreateCommand(tclcmd.interp,
-                        "get_input_line", getInputLine, psx, 0);
-      Tcl_CreateCommand(tclcmd.interp,
-                        "now_interactive", nowInteractive, psx, 0);
-      pShExtLink->eid = sqlite3_tclshext_init;
+      int irc = Tcl_Init(tclcmd.interp);
+      if( irc==TCL_OK ){
+        pShExtApi->hookScripting(psx, sqlite3_tclshext_init, &sh);
+        Tcl_CreateCommand(tclcmd.interp,
+                          "get_input_line", getInputLine, psx, 0);
+        Tcl_CreateCommand(tclcmd.interp,
+                          "now_interactive", nowInteractive, psx, 0);
+        Tcl_Eval(tclcmd.interp, "rename unknown "UNKNOWN_RENAME);
+        Tcl_CreateCommand(tclcmd.interp,
+                          "unknown", unknown_dot_delegate, psx, 0);
+        pShExtLink->eid = sqlite3_tclshext_init;
+      }else{
+        TclCmd_Takedown(&tclcmd);
+        rc = SQLITE_ERROR;
+      }
     }else{
       TclCmd_Takedown(&tclcmd);
     }
