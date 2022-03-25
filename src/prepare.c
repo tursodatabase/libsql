@@ -389,7 +389,7 @@ int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg, u32 mFlags){
     sqlite3ResetAllSchemasOfConnection(db);
     pDb = &db->aDb[iDb];
   }else
-  if( rc==SQLITE_OK || (db->flags&SQLITE_NoSchemaError)){
+  if( rc==SQLITE_OK || ((db->flags&SQLITE_NoSchemaError) && rc!=SQLITE_NOMEM)){
     /* Hack: If the SQLITE_NoSchemaError flag is set, then consider
     ** the schema loaded, even if errors (other than OOM) occurred. In
     ** this situation the current sqlite3_prepare() operation will fail,
