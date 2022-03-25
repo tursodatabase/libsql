@@ -2596,8 +2596,17 @@ static void whereLoopOutputAdjust(
         /* If there are extra terms in the WHERE clause not used by an index
         ** that depend only on the table being scanned, and that will tend to
         ** cause many rows to be omitted, then mark that table as
-        ** "self-culling". */
-        pLoop->wsFlags |= WHERE_SELFCULL;
+        ** "self-culling".
+        **
+        ** 2022-03-24:  Self-culling only applies if either the extra terms
+        ** are straight comparison operators that are non-true with NULL
+        ** operand, or if the loop is not a LEFT JOIN.
+        */
+        if( (pTerm->eOperator & 0x3f)!=0
+         || (pWC->pWInfo->pTabList->a[pLoop->iTab].fg.jointype & JT_LEFT)==0
+        ){
+          pLoop->wsFlags |= WHERE_SELFCULL;
+        }
       }
       if( pTerm->truthProb<=0 ){
         /* If a truth probability is specified using the likelihood() hints,
