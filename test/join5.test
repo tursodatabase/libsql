@@ -303,6 +303,13 @@ do_eqp_test 7.4 {
 } {
   QUERY PLAN
   |--SCAN t3
+  `--SEARCH t4 USING INDEX t4xz (x=?)
+} 
+do_eqp_test 7.4b {
+  SELECT * FROM t3 CROSS JOIN t4 ON (t4.x = t3.x) WHERE (+t4.y = ? OR t4.z = ?);
+} {
+  QUERY PLAN
+  |--SCAN t3
   |--BLOOM FILTER ON t4 (x=?)
   `--SEARCH t4 USING INDEX t4xz (x=?)
 } 
@@ -359,6 +366,33 @@ do_execsql_test 10.1 {
   CREATE VIEW v3 AS SELECT * FROM v2, v1 USING (x) GROUP BY x;
   SELECT x FROM v3; 
 } {0}
+
+# 2022-03-24 https://sqlite.org/forum/forumpost/031e262a89b6a9d2
+# Bloom-filter on a LEFT JOIN with NULL-based WHERE constraints.
+#
+reset_db
+do_execsql_test 11.1 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b INT);
+  CREATE TABLE t2(c INTEGER PRIMARY KEY, d INT);
+  WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<8)
+  INSERT INTO t1(a,b) SELECT x, 10*x FROM c;
+  INSERT INTO t2(c,d) SELECT b*2, 100*a FROM t1;
+  ANALYZE;
+  DELETE FROM sqlite_stat1;
+  INSERT INTO sqlite_stat1(tbl,idx,stat) VALUES
+    ('t1',NULL,150105),('t2',NULL,98747);
+  ANALYZE sqlite_schema;
+} {}
+do_execsql_test 11.2 {
+  SELECT count(*) FROM t1 LEFT JOIN t2 ON c=b WHERE d IS NULL;
+} {4}
+do_execsql_test 11.3 {
+  SELECT count(*) FROM t1 LEFT JOIN t2 ON c=b WHERE d=100;
+} {1}
+do_execsql_test 11.4 {
+  SELECT count(*) FROM t1 LEFT JOIN t2 ON c=b WHERE d>=300;
+} {2}
+
 
 
 finish_test

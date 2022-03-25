@@ -181,7 +181,7 @@ void sqlite3TableAffinity(Vdbe *v, Table *pTab, int iReg){
     }
 
     for(i=j=0; i<pTab->nCol; i++){
-      assert( pTab->aCol[i].affinity!=0 );
+      assert( pTab->aCol[i].affinity!=0 || sqlite3VdbeParser(v)->nErr>0 );
       if( (pTab->aCol[i].colFlags & COLFLAG_VIRTUAL)==0 ){
         zColAff[j++] = pTab->aCol[i].affinity;
       }

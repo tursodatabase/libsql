@@ -1212,8 +1212,10 @@ static sqlite3_index_info *allocateIndexInfo(
     }
     if( i==n ){
       nOrderBy = n;
-      if( (pWInfo->wctrlFlags & (WHERE_GROUPBY|WHERE_DISTINCTBY)) ){
-        eDistinct = 1 + ((pWInfo->wctrlFlags & WHERE_DISTINCTBY)!=0);
+      if( (pWInfo->wctrlFlags & WHERE_DISTINCTBY) ){
+        eDistinct = 2 + ((pWInfo->wctrlFlags & WHERE_SORTBYGROUP)!=0);
+      }else if( pWInfo->wctrlFlags & WHERE_GROUPBY ){
+        eDistinct = 1;
       }
     }
   }
@@ -2594,8 +2596,17 @@ static void whereLoopOutputAdjust(
         /* If there are extra terms in the WHERE clause not used by an index
         ** that depend only on the table being scanned, and that will tend to
         ** cause many rows to be omitted, then mark that table as
-        ** "self-culling". */
-        pLoop->wsFlags |= WHERE_SELFCULL;
+        ** "self-culling".
+        **
+        ** 2022-03-24:  Self-culling only applies if either the extra terms
+        ** are straight comparison operators that are non-true with NULL
+        ** operand, or if the loop is not a LEFT JOIN.
+        */
+        if( (pTerm->eOperator & 0x3f)!=0
+         || (pWC->pWInfo->pTabList->a[pLoop->iTab].fg.jointype & JT_LEFT)==0
+        ){
+          pLoop->wsFlags |= WHERE_SELFCULL;
+        }
       }
       if( pTerm->truthProb<=0 ){
         /* If a truth probability is specified using the likelihood() hints,
@@ -3769,9 +3780,7 @@ int sqlite3_vtab_rhs_value(
 */
 int sqlite3_vtab_distinct(sqlite3_index_info *pIdxInfo){
   HiddenIndexInfo *pHidden = (HiddenIndexInfo*)&pIdxInfo[1];
-  assert( pHidden->eDistinct==0
-       || pHidden->eDistinct==1
-       || pHidden->eDistinct==2 );
+  assert( pHidden->eDistinct>=0 && pHidden->eDistinct<=3 );
   return pHidden->eDistinct;
 }
 
@@ -4230,7 +4239,9 @@ static i8 wherePathSatisfiesOrderBy(
       pLoop = pLast;
     }
     if( pLoop->wsFlags & WHERE_VIRTUALTABLE ){
-      if( pLoop->u.vtab.isOrdered && (wctrlFlags & WHERE_DISTINCTBY)==0 ){
+      if( pLoop->u.vtab.isOrdered 
+       && ((wctrlFlags&(WHERE_DISTINCTBY|WHERE_SORTBYGROUP))!=WHERE_DISTINCTBY)
+      ){
         obSat = obDone;
       }
       break;
@@ -4497,7 +4508,7 @@ static i8 wherePathSatisfiesOrderBy(
 **   SELECT * FROM t1 GROUP BY y,x ORDER BY y,x;   -- IsSorted()==0
 */
 int sqlite3WhereIsSorted(WhereInfo *pWInfo){
-  assert( pWInfo->wctrlFlags & WHERE_GROUPBY );
+  assert( pWInfo->wctrlFlags & (WHERE_GROUPBY|WHERE_DISTINCTBY) );
   assert( pWInfo->wctrlFlags & WHERE_SORTBYGROUP );
   return pWInfo->sorted;
 }
@@ -4898,12 +4909,12 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
   }
   pWInfo->bOrderedInnerLoop = 0;
   if( pWInfo->pOrderBy ){
+    pWInfo->nOBSat = pFrom->isOrdered;
     if( pWInfo->wctrlFlags & WHERE_DISTINCTBY ){
       if( pFrom->isOrdered==pWInfo->pOrderBy->nExpr ){
         pWInfo->eDistinct = WHERE_DISTINCT_ORDERED;
       }
     }else{
-      pWInfo->nOBSat = pFrom->isOrdered;
       pWInfo->revMask = pFrom->revLoop;
       if( pWInfo->nOBSat<=0 ){
         pWInfo->nOBSat = 0;
@@ -5894,6 +5905,26 @@ whereBeginError:
   }
 #endif
 
+#ifdef SQLITE_DEBUG
+/*
+** Return true if cursor iCur is opened by instruction k of the
+** bytecode.  Used inside of assert() only.
+*/
+static int cursorIsOpen(Vdbe *v, int iCur, int k){
+  while( k>=0 ){
+    VdbeOp *pOp = sqlite3VdbeGetOp(v,k--);
+    if( pOp->p1!=iCur ) continue;
+    if( pOp->opcode==OP_Close ) return 0;
+    if( pOp->opcode==OP_OpenRead ) return 1;
+    if( pOp->opcode==OP_OpenWrite ) return 1;
+    if( pOp->opcode==OP_OpenDup ) return 1;
+    if( pOp->opcode==OP_OpenAutoindex ) return 1;
+    if( pOp->opcode==OP_OpenEphemeral ) return 1;
+  }
+  return 0;
+}
+#endif /* SQLITE_DEBUG */
+
 /*
 ** Generate the end of the WHERE loop.  See comments on 
 ** sqlite3WhereBegin() for additional information.
@@ -6146,14 +6177,15 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
         ){
           int x = pOp->p2;
           assert( pIdx->pTable==pTab );
+#ifdef SQLITE_ENABLE_OFFSET_SQL_FUNC
+          if( pOp->opcode==OP_Offset ){
+            /* Do not need to translate the column number */
+          }else
+#endif
           if( !HasRowid(pTab) ){
             Index *pPk = sqlite3PrimaryKeyIndex(pTab);
             x = pPk->aiColumn[x];
             assert( x>=0 );
-#ifdef SQLITE_ENABLE_OFFSET_SQL_FUNC
-          }else if( pOp->opcode==OP_Offset ){
-            /* Do not need to translate the column number */
-#endif
           }else{
             testcase( x!=sqlite3StorageColumnToTable(pTab,x) );
             x = sqlite3StorageColumnToTable(pTab,x);
@@ -6163,12 +6195,22 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
             pOp->p2 = x;
             pOp->p1 = pLevel->iIdxCur;
             OpcodeRewriteTrace(db, k, pOp);
-          }
-          assert( (pLoop->wsFlags & WHERE_IDX_ONLY)==0 || x>=0 
+          }else{
+            /* Unable to translate the table reference into an index
+            ** reference.  Verify that this is harmless - that the
+            ** table being referenced really is open.
+            */
 #ifdef SQLITE_ENABLE_OFFSET_SQL_FUNC
-              || pOp->opcode==OP_Offset
+            assert( (pLoop->wsFlags & WHERE_IDX_ONLY)==0
+                 || cursorIsOpen(v,pOp->p1,k)
+                 || pOp->opcode==OP_Offset
+            );
+#else
+            assert( (pLoop->wsFlags & WHERE_IDX_ONLY)==0
+                 || cursorIsOpen(v,pOp->p1,k)
+            );
 #endif
-              || pWInfo->eOnePass );
+          }
         }else if( pOp->opcode==OP_Rowid ){
           pOp->p1 = pLevel->iIdxCur;
           pOp->opcode = OP_IdxRowid;
