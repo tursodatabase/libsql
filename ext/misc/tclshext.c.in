@@ -83,8 +83,8 @@ DERIVED_METHOD(const char *, help, MetaCommand,TclCmd, 1,(int more)){
       ".tcl ?FILES?   Run a TCL REPL or interpret files as TCL\n";
   case 1: return
       "   If FILES are provided, they name files to be read in as TCL.\n"
-      "   Otherwise, a read/evaluate/print loop is run until a lone \".\" is\n"
-      "   entered on an input line or end-of-stream is encountered.\n";
+      "   Otherwise, a read/evaluate/print loop is run until a lone \".\"\n"
+      "   is entered on an input line or end-of-stream is encountered.\n";
   default: return 0;
   }
 }
@@ -99,7 +99,7 @@ static Tcl_Interp *getInterp(TclCmd *ptc);
 static void copy_complaint(char **pzErr, Tcl_Interp *pi){
   if( pzErr ){
     Tcl_Obj *po = Tcl_GetObjResult(pi);
-    *pzErr = sqlite3_mprintf("%s", Tcl_GetStringFromObj(po,0));
+    *pzErr = sqlite3_mprintf("%s\n", Tcl_GetStringFromObj(po,0));
   }
 }
 
@@ -143,44 +143,51 @@ DERIVED_METHOD(DotCmdRC, execute, MetaCommand,TclCmd, 4,
       "if {$line ne \".\"} {puts {}}\n"
       "read stdin 0\n"
 #else
-      "set line {}\n"
-      "set at_end 0\n"
-      "set prompting [now_interactive]\n"
-      "while {!$at_end} {\n"
-        "if {$prompting} {\n"
-          "if {$line!=\"\"} {\n"
-            "puts -nonewline \"> \"\n"
+      "namespace eval ::REPL {\n"
+        "variable line {}\n"
+        "variable at_end 0\n"
+        "variable prompting [now_interactive]\n"
+      "}\n"
+      "while {!$::REPL::at_end} {\n"
+        "if {$::REPL::prompting} {\n"
+          "if {$::REPL::line!=\"\"} {\n"
+            "puts -nonewline \"...> \"\n"
           "} else {\n"
-            "puts -nonewline \"% \"\n"
+            "puts -nonewline \"tcl% \"\n"
           "}\n"
         "}\n"
         "flush stdout\n"
-        "set li [get_input_line]\n"
-        "if {$li eq \"\"} {\n"
-          "set at_end 1\n"
-        "} elseif {[string trimright $li] eq \".\"} {\n"
-          "if {$line ne \"\"} {\n"
+        "set ::REPL::li [get_input_line]\n"
+        "if {$::REPL::li eq \"\"} {\n"
+          "set ::REPL::at_end 1\n"
+        "} elseif {[string trimright $::REPL::li] eq \".\"} {\n"
+          "if {$::REPL::line ne \"\"} {\n"
             "throw {NONE} {incomplete input at EOF}\n"
           "}\n"
-          "set at_end 1\n"
+          "set ::REPL::at_end 1\n"
         "} else {\n" 
-          "append line $li\n"
-          "if {[string trim $line] eq \"\"} {\n"
-            "set line \"\"\n"
+          "append ::REPL::line $::REPL::li\n"
+          "if {[string trim $::REPL::line] eq \"\"} {\n"
+            "set ::REPL::line \"\"\n"
             "continue\n"
           "}\n" 
-          "if {[info complete $line]} {\n"
-            "if {[catch {uplevel #0 $line} result]} {\n"
-              "puts stderr \"Error: $result\"\n"
-            "} elseif {$result!=\"\" && $prompting} {\n"
-              "puts $result\n"
+          "if {[info complete $::REPL::line]} {\n"
+            "set ::REPL::rc [catch {uplevel #0 $::REPL::line} ::REPL::result]\n"
+            "if {$::REPL::rc == 0} {\n"
+              "if {$::REPL::result!=\"\" && $::REPL::prompting} {\n"
+                "puts $::REPL::result\n"
+              "}\n"
+            "} elseif {$::REPL::rc == 1} {\n"
+              "puts stderr \"Error: $::REPL::result\"\n"
+            "} elseif {$::REPL::rc == 2} {\n"
+              "set ::REPL::at_end 1\n"
             "}\n"
-            "set line {}\n"
+            "set ::REPL::line {}\n"
           "}\n"
         "}\n"
       "}\n"
-      "if {$prompting && $li ne \".\\n\"} {puts {}}\n"
-      "unset li line prompting at_end\n"
+      "if {$::REPL::prompting && $::REPL::li ne \".\\n\"} {puts {}}\n"
+      "namespace delete ::REPL\n"
       "read stdin 0\n"
 #endif
       ;
@@ -281,7 +288,7 @@ static int nowInteractive(void *pvSS, Tcl_Interp *interp,
 #define UNKNOWN_RENAME "::_original_unknown"
 
 /* C implementation of TCL ::unknown to delegate to dot commands */
-static int unknown_dot_delegate(void *pvSS, Tcl_Interp *interp,
+static int unknownDotDelegate(void *pvSS, Tcl_Interp *interp,
                                 int nArgs, const char *azArgs[]){
   const char *name = (nArgs>1 && *azArgs[1]=='.')? azArgs[1]+1 : 0;
   ShellExState *psx = (ShellExState *)pvSS;
@@ -290,31 +297,27 @@ static int unknown_dot_delegate(void *pvSS, Tcl_Interp *interp,
   int ia, rc;
 
   if( name ) pmc = pExtHelpers->findMetaCommand(name, psx, &nFound);
-  if( pmc &&nFound==1 ){
+  if( pmc==(MetaCommand*)&tclcmd && nArgs==2 ){
+    /* Will not do a nested REPL, just silently semi-fake it. */
+    return TCL_OK;
+  }
+  if( pmc && nFound==1 ){
     /* Run the dot command and interpret its returns. */
-    char *zErr = 0;
-    DotCmdRC drc = pmc->pMethods->argsCheck(pmc, &zErr, nArgs-1,
-                                            (char **)azArgs+1);
-    if( drc==DCR_Ok ){
-      drc = pmc->pMethods->execute(pmc, psx, &zErr, nArgs-1,
-                                   (char **)azArgs+1);
-    }
-    assert(!(drc==DCR_Ok && zErr!=0));
+    DotCmdRC drc = pExtHelpers->runMetaCommand(pmc, (char **)azArgs+1,
+                                               nArgs-1, psx);
     if( drc==DCR_Ok ) return TCL_OK;
-    else{
-      /* ToDo: Try to indicate what went wrong as part of result. 
-       * This is deferred until some shell functionality helping
-       * with this is factored out and exposed for extensions. */
-      sqlite3_free(zErr);
+    else if( drc==DCR_Return ){
+      return TCL_RETURN;
+    }else{
+      Tcl_AppendResult(interp, "Execution of .", name, " failed.", 0);
       return TCL_ERROR;
     }
   }else{
     /* Defer to the TCL-default ::unknown command, or fail here. */
     int haveUnkCmd = (0!=Tcl_FindCommand(interp, UNKNOWN_RENAME,
                                          0, TCL_GLOBAL_ONLY));
-    Tcl_Obj **ppo;
     if( haveUnkCmd ){
-      ppo = sqlite3_malloc((nArgs+1)*sizeof(Tcl_Obj*));
+      Tcl_Obj **ppo = sqlite3_malloc((nArgs+1)*sizeof(Tcl_Obj*));
       if( ppo==0 ) return TCL_ERROR;
       ppo[0] = Tcl_NewStringObj(UNKNOWN_RENAME, -1);
       Tcl_IncrRefCount(ppo[0]);
@@ -394,7 +397,7 @@ int sqlite3_tclshext_init(
                           "now_interactive", nowInteractive, psx, 0);
         Tcl_Eval(tclcmd.interp, "rename unknown "UNKNOWN_RENAME);
         Tcl_CreateCommand(tclcmd.interp,
-                          "unknown", unknown_dot_delegate, psx, 0);
+                          "unknown", unknownDotDelegate, psx, 0);
         pShExtLink->eid = sqlite3_tclshext_init;
       }else{
         TclCmd_Takedown(&tclcmd);

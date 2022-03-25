@@ -121,6 +121,7 @@ int sqlite3_testshellext_init(
     batty.pPrint = pExtHelpers->findMetaCommand("print", psx, &rc);
     rc = pShExtApi->registerMetaCommand(psx, sqlite3_testshellext_init,pmc);
     if( rc!=0 ) ++nErr;
+    pShExtLink->eid = sqlite3_testshellext_init;
   }
   else{
     printf("No ShellExtensionLink pointer or registration API.\n");

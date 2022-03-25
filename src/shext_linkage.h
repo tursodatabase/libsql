@@ -230,6 +230,8 @@ typedef struct ExtensionHelpers {
       char * (*strLineGet)(char *zBuf, int ncMax, struct InSource *pInSrc);
       MetaCommand * (*findMetaCommand)(const char *cmdName, ShellExState *p,
                                        /* out */ int *pnFound);
+      DotCmdRC (*runMetaCommand)(MetaCommand *pmc, char *azArg[], int nArg,
+                                 ShellExState *psx);
       void (*setColumnWidths)(ShellExState *p, char *azWidths[], int nWidths);
       int (*nowInteractive)(ShellExState *p);
       const char * (*shellInvokedAs)(void);

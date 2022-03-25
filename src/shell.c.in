@@ -5206,7 +5206,7 @@ static void linenoise_completion(const char *zLine, linenoiseCompletions *lc){
 #endif
 
 /*
-** Do C-language style dequoting.
+** Do C-language style escape sequence translation.
 **
 **    \a    -> alarm
 **    \b    -> backspace
@@ -7802,15 +7802,17 @@ static const char *shellStartupDir(void){
 
 static void setColumnWidths(ShellExState *p, char *azWidths[], int nWidths);
 static MetaCommand * findMetaCommand(const char *, ShellExState *, int *);
+static DotCmdRC runMetaCommand(MetaCommand*, char *[], int na, ShellExState*);
 
 static ExtensionHelpers extHelpers = {
-  10,
+  11,
   {
     failIfSafeMode,
     currentOutputFile,
     currentInputSource,
     strLineGet,
     findMetaCommand,
+    runMetaCommand,
     setColumnWidths,
     nowInteractive,
     shellInvokedAs,
@@ -7833,8 +7835,9 @@ static ShellExtensionAPI shellExtAPI = {
 /* This SQL function provides a way for a just-loaded shell extension to
  * obtain a ShellExtensionLink pointer from the shell core while using
  * the same sqlite3_load_extension API used for SQLite extensions.
- * This serves as an alternative to deriving the same pointer from
- * the pzErr argument passed into that API.
+ *
+ * (It is also useful for debugging a shell extension, as a breakpoint
+ * on it will be hit soon after loading and before real work is done.)
  */
 static void shell_linkage(
   sqlite3_context *context,
@@ -7842,17 +7845,25 @@ static void shell_linkage(
   sqlite3_value **argv
 ){
   int linkKind = 0;
+  void *pv;
   if( argc>0 ){
     linkKind = sqlite3_value_int(argv[0]);
   }
   switch (linkKind){
   case 0:
-    sqlite3_result_pointer(context, sqlite3_user_data(context),
-                           SHELLEXT_API_POINTERS, 0);
+    pv = sqlite3_user_data(context);
+    break;
+  case 1:
+    pv = &extHelpers;
+    break;
+  case 2:
+    pv = &shellExtAPI;
     break;
   default:
-    sqlite3_result_null(context);
+    pv = 0;
   }
+  if( pv==0 ) sqlite3_result_null(context);
+  else sqlite3_result_pointer(context, pv, SHELLEXT_API_POINTERS, 0);
 }
 
 #ifndef SHELL_DB_FILE
@@ -8010,6 +8021,8 @@ static int load_shell_extension(ShellExState *psx, const char *zFile,
   ScriptHooks shSave = psi->scripting;
   ExtensionId siSave = psi->scriptXid;
   int rc;
+
+  if( pzErr ) *pzErr = 0;
   if( psx->dbShell==0 ){
     rc = begin_db_dispatch(psx);
     if( rc!=SQLITE_OK ) return rc;
@@ -8042,7 +8055,13 @@ static int load_shell_extension(ShellExState *psx, const char *zFile,
     psi->scriptXid = siSave;
   }
   psi->ixExtPending = 0;
-  return rc!=SQLITE_OK;
+  if( rc!=SQLITE_OK ){
+    if( rc==SQLITE_MISUSE && pzErr!=0 ){
+      *pzErr = sqlite3_mprintf("extension id mismatch %z\n", *pzErr);
+    }
+    rc = SQLITE_ERROR;
+  }
+  return rc;
 }
 #endif
 
@@ -13129,28 +13148,6 @@ MetaCommand *findMetaCommand(const char *cmdName, ShellExState *psx,
   }
 }
 
-/*****************
-** Command dispatcher
-** After successful command lookup and (simple) argument checking,
-** invoke the found MetaCommand with the input arguments (except
-** that azArg[0] is replaced with the properly spelled command name.)
-** The return is either a dispatch error or whatever the dispatched
-** MetaCommand returns.
-*/
-static DotCmdRC dispatchCommand(char *azArg[], int nArg,
-                                ShellExState *psx, char **pzErr){
-  const char *cmdName = azArg[0];
-  int nFound = 0;
-  DotCmdRC argsCheck;
-  MetaCommand *pMC = findMetaCommand(cmdName, psx, &nFound);
-  if( 0==pMC || nFound>1 ) return (nFound>1)? DCR_Ambiguous: DCR_Unknown;
-  argsCheck = pMC->pMethods->argsCheck(pMC, pzErr, nArg, azArg);
-  if( argsCheck!=DCR_Ok ) return argsCheck;
-  /* Replace any user-shortened command name with its whole name. */
-  azArg[0] = (char *)(pMC->pMethods->name(pMC));
-  return pMC->pMethods->execute(pMC, psx, pzErr, nArg, azArg);
-}
-
 /*
 ** Output primary (single-line) help for a known command.
 */
@@ -13243,84 +13240,51 @@ static int showHelp(FILE *out, const char *zPattern, ShellExState *psx){
   return npm;
 }
 
-/*
-** If an input line or line group begins with "." then invoke this routine
-** to process that line.
-**
-** Return sanitized DotCmdRC values, with invocation error codes
-** translated to DCR_Error, so that only these 8 returns are possible:
-** DCR_Ok, DCR_Return, DCR_Exit or DCR_Abort possibly or'ed with DCR_Error.
-*/
-static DotCmdRC do_meta_command(char *zLine, ShellExState *psx){
-  int h = 1;
-  int nArg = 0;
-  char *azArg[52];
-  char *zErr = 0;
-  DotCmdRC dispatchResult;
-#if SHELL_VARIABLE_EXPANSION
-  int ncLineIn = strlen30(zLine);
-  u8 bExpVars = SHEXT_VAREXP(ISS(psx));
-#endif
-
+/* Perform preparation needed prior to actually running any dot command. */
+static void command_prep(ShellInState *psi){
+  clearTempFile(psi);
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-  if( ISS(psx)->expert.pExpert ){
-    expertFinish(ISS(psx), 1, 0);
+  if( psi->expert.pExpert ){
+    expertFinish(psi, 1, 0);
   }
 #endif
+}
 
-  /* Parse the input line into tokens.
-  */
-  while( zLine[h] && nArg<ArraySize(azArg)-1 ){
-    while( IsSpace(zLine[h]) ){ h++; }
-    if( zLine[h]==0 ) break;
-    if( zLine[h]=='\'' || zLine[h]=='"' ){
-      int delim = zLine[h++];
-      azArg[nArg++] = &zLine[h];
-      while( zLine[h] && zLine[h]!=delim ){
-        if( zLine[h]=='\\' && delim=='"' && zLine[h+1]!=0 ) h++;
-        h++;
-      }
-      if( zLine[h]==delim ){
-        zLine[h++] = 0;
-      }
-      if( delim=='"' ) resolve_backslashes(azArg[nArg-1]);
-    }else{
-      azArg[nArg++] = &zLine[h];
-      while( zLine[h] && !IsSpace(zLine[h]) ){ h++; }
-      if( zLine[h] ) zLine[h++] = 0;
-      resolve_backslashes(azArg[nArg-1]);
-    }
+/* Perform post-execution actions needed after running any dot command. */
+static void command_post(ShellInState *psi){
+  if( psi->outCount ){
+    psi->outCount--;
+    if( psi->outCount==0 ) output_reset(psi);
   }
-  azArg[nArg] = 0;
+  updateSafeMode(psi);
+}
 
-  /* Process the input line.
-  */
-  if( nArg==0 ) return DCR_Ok; /* no tokens, no error, done */
-
-  clearTempFile(ISS(psx));
-
-  dispatchResult = dispatchCommand(azArg, nArg, psx, &zErr);
+/* Issue errors per returned DotCmdRC and error message, handle certain
+ * exceptional returns, and translate return to the sanitized first 8.
+ */
+static DotCmdRC meta_command_errors(char *zErr, char *azArg[], int nArg,
+                                    DotCmdRC dcr, ShellExState *psx){
   if( psx->shellAbruptExit!=0 ){
-    if( psx->shellAbruptExit>0x1ff ) dispatchResult = DCR_AbortError;
-    else dispatchResult = DCR_Exit | (dispatchResult&DCR_Error);
+    if( psx->shellAbruptExit>0x1ff ) dcr = DCR_AbortError;
+    else dcr = DCR_Exit | (dcr & DCR_Error);
   }
-  if( dispatchResult==DCR_CmdErred ){
+  if( dcr==DCR_CmdErred ){
     /* Error message(s) already emitted. Just translate to execute error. */
-    dispatchResult = DCR_Error;
-  }else if( dispatchResult==DCR_SayUsage ){
+    dcr = DCR_Error;
+  }else if( dcr==DCR_SayUsage ){
     if( zErr ){
       utf8_printf(STD_ERR, "%s", zErr);
     }else{
       utf8_printf(STD_ERR, "Usage:\n");
       showPrimaryHelp(STD_ERR, azArg[0], psx);
     }
-    dispatchResult = DCR_Error;
-  }else if( dispatchResult > DCR_AbortError ){
+    dcr = DCR_Error;
+  }else if( dcr > DCR_AbortError ){
     /* Handle invocation errors. */
-    int ia = dispatchResult & DCR_ArgIxMask;
+    int ia = dcr & DCR_ArgIxMask;
     const char *pArg1st = (ia>=nArg)? "" : azArg[ia];
     const char *pArg2nd = 0;
-    int ec = dispatchResult & ~DCR_ArgIxMask;
+    int ec = dcr & ~DCR_ArgIxMask;
     int unknownCmd = 0;
     const char *z = 0;
     switch( ec ){
@@ -13366,10 +13330,11 @@ static DotCmdRC do_meta_command(char *zLine, ShellExState *psx){
       z = "?";
       break;
     }
-    if( zErr==0 ){
+    if( !zErr ){
       if( z!=0 ){
-        zErr = smprintf("Error: %z\n", smprintf(z, pArg1st, pArg2nd));
-        utf8_printf(STD_ERR, "%s", zErr);
+        char *ze = smprintf("Error: %z\n", smprintf(z, pArg1st, pArg2nd));
+        utf8_printf(STD_ERR, "%s", ze);
+        sqlite3_free(ze);
       }
     }else{
       const char *fmt
@@ -13384,17 +13349,17 @@ static DotCmdRC do_meta_command(char *zLine, ShellExState *psx){
         showPrimaryHelp(STD_ERR, azArg[0], psx);
       }
     }
-    /* If the shell DB is messed up, at least .quit will be doable. */
+    /* If the shell DB becomes messed up, at least .quit will be doable. */
     if( unknownCmd && psx->dbShell!=0
         && sqlite3_strnicmp(azArg[0],"quit",strlen30(azArg[0]))==0 ){
-      dispatchResult = DCR_Return;
+      dcr = DCR_Return;
     }else{
-      dispatchResult = DCR_Error;
+      dcr = DCR_Error;
     }
   }else{
     /* Handle execution errors. */
-    if( dispatchResult==DCR_AbortError ){
-      if( zErr!=0 ){
+    if( dcr==DCR_AbortError ){
+      if( zErr ){
         utf8_printf(STD_ERR, "Error: \".%s\" may not %s in -safe mode\n",
                     azArg[0], zErr);
       }else {
@@ -13403,10 +13368,10 @@ static DotCmdRC do_meta_command(char *zLine, ShellExState *psx){
       }
       psx->shellAbruptExit = 0x203;
     }else{
-      int error = dispatchResult & DCR_Error;
-      int action = dispatchResult & ~DCR_Error;
+      int error = dcr & DCR_Error;
+      int action = dcr & ~DCR_Error;
       if( error ){
-        if( zErr!=0 ){
+        if( zErr ){
           const char *fmt
             = (sqlite3_strnicmp(zErr, "Error", 5)==0)? "%s" : "Error: %s";
           utf8_printf(STD_ERR, fmt, zErr);
@@ -13415,12 +13380,104 @@ static DotCmdRC do_meta_command(char *zLine, ShellExState *psx){
       }
     }
   }
-  if( zErr ) sqlite3_free(zErr);
-  if( ISS(psx)->outCount ){
-    ISS(psx)->outCount--;
-    if( ISS(psx)->outCount==0 ) output_reset(ISS(psx));
+  return dcr;
+}
+
+/* Argument-check and execute a found MetaCommand, wrapping execution
+ * with command_{prep,post}(...), and issue errors as made evident.
+ * Return one of the "Post-execute action and success/error status"
+ * codes from the DotCmdRC enum.
+ *
+ * Note that this function is exposed for shell extensions to use.
+ *
+ * This should be called for "top-level" dot command execution only.
+ * Should an extension wrap or use a MetaCommand object to effect its
+ * own functionality, that object's execute() method should be called
+ * directly, without going through this function.
+ */
+static DotCmdRC runMetaCommand(MetaCommand *pmc, char *azArg[], int nArg,
+                               ShellExState *psx){
+  char *arg0 = azArg[0];
+  char *zErr = 0;
+  DotCmdRC dcr = pmc->pMethods->argsCheck(pmc, &zErr, nArg, azArg);
+
+  command_prep(ISS(psx));
+  azArg[0] = (char *)(pmc->pMethods->name(pmc));
+  if( dcr==DCR_Ok ){
+    dcr = pmc->pMethods->execute(pmc, psx, &zErr, nArg, azArg);
   }
-  updateSafeMode(ISS(psx));
+  if( dcr!=DCR_Ok ){
+    dcr = meta_command_errors(zErr, azArg, nArg, dcr, psx);
+  }
+  azArg[0] = arg0;
+  sqlite3_free(zErr);
+  command_post(ISS(psx));
+  return dcr;
+}
+
+/*
+** If an input line or line group begins with "." then invoke this routine
+** to process that line.
+**
+** Returns sanitized DotCmdRC values, with invocation error codes
+** translated to DCR_Error, so that only these 8 returns are possible:
+** DCR_Ok, DCR_Return, DCR_Exit or DCR_Abort possibly or'ed with DCR_Error.
+**
+** Any applicable error messages are issued along with output messages.
+*/
+static DotCmdRC do_meta_command(char *zLine, ShellExState *psx){
+  int h = 1; /* Passing over leading '.' */
+  int nArg = 0;
+  char *azArg[52];
+  DotCmdRC dcr = DCR_Ok;
+#if SHELL_VARIABLE_EXPANSION
+  int ncLineIn = strlen30(zLine);
+  u8 bExpVars = SHEXT_VAREXP(ISS(psx));
+#endif
+
+  /* Parse the input line into tokens which are 0-terminated and left in-place.
+  */
+  while( zLine[h] && nArg<ArraySize(azArg)-1 ){
+    /* Future: Complain if this fixed argument count limit is hit. */
+    while( IsSpace(zLine[h]) ){ h++; }
+    if( zLine[h]==0 ) break;
+    if( zLine[h]=='\'' || zLine[h]=='"' ){
+      int delim = zLine[h++];
+      azArg[nArg++] = &zLine[h];
+      while( zLine[h] && zLine[h]!=delim ){
+        if( zLine[h]=='\\' && delim=='"' && zLine[h+1]!=0 ) h++;
+        h++;
+      }
+      if( zLine[h]==delim ){
+        zLine[h++] = 0;
+      }
+      if( delim=='"' ) resolve_backslashes(azArg[nArg-1]);
+    }else{
+      azArg[nArg++] = &zLine[h];
+      while( zLine[h] && !IsSpace(zLine[h]) ){ h++; }
+      if( zLine[h] ) zLine[h++] = 0;
+      resolve_backslashes(azArg[nArg-1]);
+    }
+  }
+  azArg[nArg] = 0; /* No code here relies on this, but some extension might. */
+
+  /* Process the input line. If it was empty, do nothing and declare success.
+   * Note that "empty" includes a leading '.' followed by nothing else.
+   */
+  if( nArg>0 ){
+    int nFound;
+    MetaCommand *pmc = findMetaCommand(azArg[0], psx, &nFound);
+    if( pmc==0 || nFound>1 ){
+      dcr = (nFound>1)? DCR_Ambiguous: DCR_Unknown;
+      /* Issue error for an unknown or inadequately specified dot command. */
+      dcr = meta_command_errors(0, azArg, nArg, dcr, psx);
+    }
+    else{
+      /* Run found command and issue or handle any errors it may report. */
+      dcr = runMetaCommand(pmc, azArg, nArg, psx);
+    }
+  }
+
 #if SHELL_VARIABLE_EXPANSION
   if( bExpVars ){
     /* Free any arguments that are allocated rather than tokenized in place. */
@@ -13431,7 +13488,7 @@ static DotCmdRC do_meta_command(char *zLine, ShellExState *psx){
     }
   }
 #endif
-  return dispatchResult;
+  return dcr;
 }
 
 /* Line scan result and intermediate states (supporting scan resumption)
