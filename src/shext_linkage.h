@@ -243,12 +243,32 @@ typedef struct ExtensionHelpers {
   } helpers;
 } ExtensionHelpers;
 
+/* This enum is stable excepting that it grows at the end. Members will not
+ * change value across successive shell versions, except for NK_CountOf. An
+ * extension which is built to rely upon particular notifications can pass
+ * an NK_CountOf value upon which it relies to subscribe(...) as nkMin,
+ * which will fail if the hosting shell's NK_CountOf value is lower.
+ */
+typedef enum {
+  NK_Unsubscribe,      /* event handler is being unsubsribed
+                        * Also passed to subscribeEvents(...) as nkMin
+                        * to unsubscribe event handler(s) */
+  NK_ShutdownImminent, /* a shell exit (or return) will soon occur */
+  NK_DbUserAppeared,   /* a new ShellExState .dbUser value has been set */
+  NK_DbUserVanishing,  /* current ShellExState .dbUser will soon vanish */
+  NK_CountOf           /* present count of preceding members (evolves) */
+} NoticeKind;
+
+/* Callback signature for shell event handlers. */
+typedef
+int (*ShellEventNotify)(void *pvUserData, NoticeKind nk, ShellExState *psx);
+
 /* Various shell extension helpers and feature registration functions */
 typedef struct ShellExtensionAPI {
   /* Utility functions for use by extensions */
   ExtensionHelpers * pExtHelpers;
 
-  /* Functions for extension to register its implementors with shell */
+  /* Functions for an extension to register its implementors with shell */
   const int numRegistrars; /* 4 for this version */
   union {
     struct ShExtAPI {
@@ -264,6 +284,9 @@ typedef struct ShellExtensionAPI {
       /* Provide scripting support to host shell. (See ScriptHooks above.) */
       int (*hookScripting)(ShellExState *p,
                            ExtensionId eid, ScriptHooks *pSH);
+      /* Subscribe to (or unsubscribe from) messages about various changes. */
+      int (*subscribeEvents)(ShellExState *p, ExtensionId eid, void *pvUserData,
+                             NoticeKind nkMin, ShellEventNotify eventHandler);
       /* Preset to 0 at extension load, a sentinel for expansion */
       void (*sentinel)(void);
     } named;

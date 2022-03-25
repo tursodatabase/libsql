@@ -93,6 +93,20 @@ static void sayHowMany( BatBeing *pbb, FILE *out, ShellExState *psx ){
   }
 }
 
+static int shellEventHandle(void *pv, NoticeKind nk, ShellExState *psx){
+  FILE *out = pExtHelpers->currentOutputFile(psx);
+  if( nk==NK_ShutdownImminent ){
+    BatBeing *pbb = (BatBeing *)pv;
+    fprintf(out, "Bat cave meteor strike detected after %d calls.\n",
+            pbb->numCalls);
+  }else if( nk==NK_Unsubscribe ){
+    fprintf(out, "BatBeing incommunicado.\n");
+  }else if( nk==NK_DbUserAppeared || nk==NK_DbUserVanishing ){
+    const char *zWhat = (nk==NK_DbUserAppeared)? "appeared" : "vanishing";
+    fprintf(out, "dbUser (%p) %s\n", psx->dbUser, zWhat);
+  }
+  return 0;
+}
 
 DEFINE_SHDB_TO_SHEXTLINK(shext_link);
 
@@ -118,8 +132,10 @@ int sqlite3_testshellext_init(
 
     pShExtApi = & pShExtLink->pShellExtensionAPI->api.named;
     pExtHelpers = & pShExtLink->pShellExtensionAPI->pExtHelpers->helpers.named;
+    pShExtApi->subscribeEvents(psx, sqlite3_testshellext_init, &batty,
+                               NK_CountOf, shellEventHandle);
     batty.pPrint = pExtHelpers->findMetaCommand("print", psx, &rc);
-    rc = pShExtApi->registerMetaCommand(psx, sqlite3_testshellext_init,pmc);
+    rc = pShExtApi->registerMetaCommand(psx, sqlite3_testshellext_init,  pmc);
     if( rc!=0 ) ++nErr;
     pShExtLink->eid = sqlite3_testshellext_init;
   }

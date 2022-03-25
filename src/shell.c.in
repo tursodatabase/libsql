@@ -1372,11 +1372,20 @@ typedef struct ShellInState {
   ExpertInfo expert;     /* Valid if previous command was ".expert OPT..." */
 
 #if SHELL_DYNAMIC_EXTENSION
+  /* extension management */
   int numExtLoaded;      /* Number of extensions presently loaded or emulated */
   ShExtInfo *pShxLoaded; /* Tracking and use info for loaded shell extensions */
   int ixExtPending;      /* Index of pending extension load operations if !0  */
+  /* scripting integration */
   ScriptHooks scripting; /* Hooks for scripting support from loaded extension */
   ExtensionId scriptXid; /* Id of extension which has set scripting hooks */
+  /* shell event subscription list */
+  int numSubscriptions;  /* Number of active entries in below list */
+  struct EventSubscription {
+    ExtensionId eid;
+    void *pvUserData;
+    ShellEventNotify eventHandler;
+  } *pSubscriptions;     /* The currently active shell event subscriptions */
 #endif
 
   ShellExState *pSXS;    /* Pointer to companion, exposed shell state */
@@ -4680,6 +4689,19 @@ static int session_filter(void *pCtx, const char *zTab){
 }
 #endif
 
+#if SHELL_DYNAMIC_EXTENSION
+static int notify_subscribers(ShellInState *psi, NoticeKind nk) {
+  int six = 0;
+  int rcFlags = 0;
+  ShellExState *psx = XSS(psi);
+  while( six < psi->numSubscriptions ){
+    struct EventSubscription *pes = psi->pSubscriptions + six++;
+    rcFlags |= pes->eventHandler(pes->pvUserData, nk, psx);
+  }
+  return rcFlags;
+}
+#endif
+
 /*
 ** Try to deduce the type of file for zName based on its content.  Return
 ** one of the SHELL_OPEN_* constants.
@@ -5110,14 +5132,17 @@ static void open_db(ShellExState *psx, int openFlags){
       }
     }
 #endif
-  }
-  if( psi->bSafeModeFuture && DBX(psx)!=0 ){
-    sqlite3_set_authorizer(DBX(psx), safeModeAuth, psx);
+    if( psi->bSafeModeFuture && DBX(psx)!=0 ){
+      sqlite3_set_authorizer(DBX(psx), safeModeAuth, psx);
+    }
+#if SHELL_DYNAMIC_EXTENSION
+    notify_subscribers(psi, NK_DbUserAppeared);
+#endif
   }
 }
 
 /*
-** Attempt to close the databaes connection.  Report errors.
+** Attempt to close the database connection. Report errors.
 */
 void close_db(sqlite3 *db){
   int rc;
@@ -7779,6 +7804,64 @@ static int hook_scripting(ShellExState *p, ExtensionId eid, ScriptHooks *pSH){
   return SQLITE_OK;
 }
 
+#if SHELL_DYNAMIC_EXTENSION
+/*
+ * Subscribe to (or unsubscribe from) messages about various changes. 
+ * Unsubscribe, effected when nkMin==NK_Unsubscribe, always succeeds.
+ * Return SQLITE_OK on success, or one of these error codes:
+ * SQLITE_ERROR when the nkMin value is unsupported by this host;
+ * SQLITE_NOMEM when a required allocation failed; or
+ * SQLITE_MISUSE when the provided eid or eventHandler is invalid.
+ */
+static int subscribe_events(ShellExState *p, ExtensionId eid, void *pvUserData,
+                            NoticeKind nkMin, ShellEventNotify eventHandler){
+  ShellInState *psi = ISS(p);
+  struct EventSubscription *pes = psi->pSubscriptions;
+  struct EventSubscription *pesLim = pes + psi->numSubscriptions;
+  if( nkMin==NK_Unsubscribe ){
+    /* unsubscribe (if now subscribed) */
+    while( pes < pesLim ){
+      if( (eventHandler==0 || eventHandler==pes->eventHandler)
+          && (pes->eid==0 || eid==eid)
+          && (eid!=0 ||eventHandler!=0 ||/* for shell use */ pvUserData==p ) ){
+        int nLeft = pesLim - pesLim;
+        assert(pes->eventHandler!=0);
+        pes->eventHandler(pes->pvUserData, NK_Unsubscribe, p);
+        if( nLeft>1 ) memmove(pes, pes+1, (nLeft-1)*sizeof(*pes));
+        --pesLim;
+        --psi->numSubscriptions;
+      }else{
+        ++pes;
+      }
+    }
+    if( psi->numSubscriptions==0 ){
+      sqlite3_free(psi->pSubscriptions);
+      psi->pSubscriptions = 0;
+    }
+    return SQLITE_OK;
+  }else{
+    /* subscribe only if minimum NoticeKind supported by this host */
+    if( nkMin > NK_CountOf ) return SQLITE_ERROR;
+    if( eventHandler==0 || eid==0 ) return SQLITE_MISUSE;
+    while( pes < pesLim ){
+      /* Never add duplicate handlers, but may renew their user data. */
+      if( pes->eid==eid && pes->eventHandler==eventHandler ){
+        pes->pvUserData = pvUserData;
+        return SQLITE_OK;
+      }
+    }
+    assert(pes==pesLim);
+    pes = sqlite3_realloc(pes, (psi->numSubscriptions+1)*sizeof(*pes));
+    if( pes==0 ) return SQLITE_NOMEM;
+    psi->pSubscriptions = pes;
+    pes += (psi->numSubscriptions++);
+    pes->eid = eid;
+    pes->pvUserData = pvUserData;
+    pes->eventHandler = eventHandler;
+    return SQLITE_OK;
+  }
+}
+#endif
 
 static FILE *currentOutputFile(ShellExState *p){
   return ISS(p)->out;
@@ -7823,11 +7906,12 @@ static ExtensionHelpers extHelpers = {
 };
 
 static ShellExtensionAPI shellExtAPI = {
-  &extHelpers, 4, {
+  &extHelpers, 5, {
     register_meta_command,
     register_out_mode,
     register_importer,
     hook_scripting,
+    subscribe_events,
     0
   }
 };
@@ -8305,7 +8389,13 @@ DISPATCHABLE_COMMAND( connection ? 1 4 ){
     if( psi->pAuxDb != &psi->aAuxDb[i] && i>=0 && i<ArraySize(psi->aAuxDb) ){
       psi->pAuxDb->db = DBI(psi);
       psi->pAuxDb = &psi->aAuxDb[i];
+#if SHELL_DYNAMIC_EXTENSION
+      if( DBI(psi)!=0 ) notify_subscribers(psi, NK_DbUserVanishing);
+#endif
       globalDb = DBI(psi) = psi->pAuxDb->db;
+#if SHELL_DYNAMIC_EXTENSION
+      if( DBI(psi)!=0 ) notify_subscribers(psi, NK_DbUserAppeared);
+#endif
       psi->pAuxDb->db = 0;
     }
   }else if( nArg==3 && strcmp(azArg[1], "close")==0
@@ -10100,6 +10190,9 @@ DISPATCHABLE_COMMAND( open 3 1 0 ){
   }
 
   /* Close the existing database */
+#if SHELL_DYNAMIC_EXTENSION
+  if( DBX(p)!=0 ) notify_subscribers(psi, NK_DbUserVanishing);
+#endif
   session_close_all(psi, -1);
   close_db(DBX(p));
   DBX(p) = 0;
@@ -15009,6 +15102,9 @@ int SQLITE_CDECL SHELL_MAIN(int argc, wchar_t **wargv){
  shell_bail:
   set_table_name(&datax, 0);
   if( datax.dbUser ){
+#if SHELL_DYNAMIC_EXTENSION
+    notify_subscribers(&data, NK_DbUserVanishing);
+#endif
     session_close_all(&data, -1);
     close_db(datax.dbUser);
   }
@@ -15027,7 +15123,9 @@ int SQLITE_CDECL SHELL_MAIN(int argc, wchar_t **wargv){
   clearTempFile(&data);
   sqlite3_free(data.zEditor);
 #if SHELL_DYNAMIC_EXTENSION
+  notify_subscribers(&data, NK_ShutdownImminent);
   free_all_shext_tracking(&data);
+  subscribe_events(&datax, 0, &datax, NK_Unsubscribe, 0);
   sqlite3_close(datax.dbShell);
 #endif
 #if !SQLITE_SHELL_IS_UTF8
