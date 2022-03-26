@@ -156,6 +156,7 @@ static int dbpageBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
   ){
     pIdxInfo->orderByConsumed = 1;
   }
+  sqlite3VtabWriteAll(pIdxInfo);
   return SQLITE_OK;
 }
 

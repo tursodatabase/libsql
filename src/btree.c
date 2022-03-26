@@ -2293,7 +2293,7 @@ static int btreeInitPage(MemPage *pPage){
   pPage->nOverflow = 0;
   pPage->cellOffset = pPage->hdrOffset + 8 + pPage->childPtrSize;
   pPage->aCellIdx = data + pPage->childPtrSize + 8;
-  pPage->aDataEnd = pPage->aData + pBt->usableSize;
+  pPage->aDataEnd = pPage->aData + pBt->pageSize;
   pPage->aDataOfst = pPage->aData + pPage->childPtrSize;
   /* EVIDENCE-OF: R-37002-32774 The two-byte integer at offset 3 gives the
   ** number of cells on the page. */
@@ -2328,7 +2328,7 @@ static void zeroPage(MemPage *pPage, int flags){
   u8 hdr = pPage->hdrOffset;
   u16 first;
 
-  assert( sqlite3PagerPagenumber(pPage->pDbPage)==pPage->pgno );
+  assert( sqlite3PagerPagenumber(pPage->pDbPage)==pPage->pgno || CORRUPT_DB );
   assert( sqlite3PagerGetExtra(pPage->pDbPage) == (void*)pPage );
   assert( sqlite3PagerGetData(pPage->pDbPage) == data );
   assert( sqlite3PagerIswriteable(pPage->pDbPage) );
@@ -2344,7 +2344,7 @@ static void zeroPage(MemPage *pPage, int flags){
   pPage->nFree = (u16)(pBt->usableSize - first);
   decodeFlags(pPage, flags);
   pPage->cellOffset = first;
-  pPage->aDataEnd = &data[pBt->usableSize];
+  pPage->aDataEnd = &data[pBt->pageSize];
   pPage->aCellIdx = &data[first];
   pPage->aDataOfst = &data[pPage->childPtrSize];
   pPage->nOverflow = 0;
@@ -2470,7 +2470,7 @@ static int getAndInitPage(
       goto getAndInitPage_error2;
     }
   }
-  assert( (*ppPage)->pgno==pgno );
+  assert( (*ppPage)->pgno==pgno || CORRUPT_DB );
   assert( (*ppPage)->aData==sqlite3PagerGetData(pDbPage) );
 
   /* If obtaining a child page for a cursor, we must verify that the page is
@@ -5775,7 +5775,7 @@ static int moveToRoot(BtCursor *pCur){
     pCur->curIntKey = pCur->pPage->intKey;
   }
   pRoot = pCur->pPage;
-  assert( pRoot->pgno==pCur->pgnoRoot );
+  assert( pRoot->pgno==pCur->pgnoRoot || CORRUPT_DB );
 
   /* If pCur->pKeyInfo is not NULL, then the caller that opened this cursor
   ** expected to open it on an index b-tree. Otherwise, if pKeyInfo is
@@ -9316,24 +9316,6 @@ int sqlite3BtreeInsert(
   assert( (flags & (BTREE_SAVEPOSITION|BTREE_APPEND|BTREE_PREFORMAT))==flags );
   assert( (flags & BTREE_PREFORMAT)==0 || seekResult || pCur->pKeyInfo==0 );
 
-  if( pCur->eState==CURSOR_FAULT ){
-    assert( pCur->skipNext!=SQLITE_OK );
-    return pCur->skipNext;
-  }
-
-  assert( cursorOwnsBtShared(pCur) );
-  assert( (pCur->curFlags & BTCF_WriteFlag)!=0
-              && pBt->inTransaction==TRANS_WRITE
-              && (pBt->btsFlags & BTS_READ_ONLY)==0 );
-  assert( hasSharedCacheTableLock(p, pCur->pgnoRoot, pCur->pKeyInfo!=0, 2) );
-
-  /* Assert that the caller has been consistent. If this cursor was opened
-  ** expecting an index b-tree, then the caller should be inserting blob
-  ** keys with no associated data. If the cursor was opened expecting an
-  ** intkey table, the caller should be inserting integer keys with a
-  ** blob of associated data.  */
-  assert( (flags & BTREE_PREFORMAT) || (pX->pKey==0)==(pCur->pKeyInfo==0) );
-
   /* Save the positions of any other cursors open on this table.
   **
   ** In some cases, the call to btreeMoveto() below is a no-op. For
@@ -9357,6 +9339,24 @@ int sqlite3BtreeInsert(
       return SQLITE_CORRUPT_BKPT;
     }
   }
+
+  if( pCur->eState>=CURSOR_REQUIRESEEK ){
+    rc = moveToRoot(pCur);
+    if( rc && rc!=SQLITE_EMPTY ) return rc;
+  }
+
+  assert( cursorOwnsBtShared(pCur) );
+  assert( (pCur->curFlags & BTCF_WriteFlag)!=0
+              && pBt->inTransaction==TRANS_WRITE
+              && (pBt->btsFlags & BTS_READ_ONLY)==0 );
+  assert( hasSharedCacheTableLock(p, pCur->pgnoRoot, pCur->pKeyInfo!=0, 2) );
+
+  /* Assert that the caller has been consistent. If this cursor was opened
+  ** expecting an index b-tree, then the caller should be inserting blob
+  ** keys with no associated data. If the cursor was opened expecting an
+  ** intkey table, the caller should be inserting integer keys with a
+  ** blob of associated data.  */
+  assert( (flags & BTREE_PREFORMAT) || (pX->pKey==0)==(pCur->pKeyInfo==0) );
 
   if( pCur->pKeyInfo==0 ){
     assert( pX->pKey==0 );
@@ -9446,14 +9446,13 @@ int sqlite3BtreeInsert(
     }
   }
   assert( pCur->eState==CURSOR_VALID 
-       || (pCur->eState==CURSOR_INVALID && loc)
-       || CORRUPT_DB );
+       || (pCur->eState==CURSOR_INVALID && loc) );
 
   pPage = pCur->pPage;
   assert( pPage->intKey || pX->nKey>=0 || (flags & BTREE_PREFORMAT) );
   assert( pPage->leaf || !pPage->intKey );
   if( pPage->nFree<0 ){
-    if( NEVER(pCur->eState>CURSOR_INVALID) ){
+    if( pCur->eState>CURSOR_INVALID ){
       rc = SQLITE_CORRUPT_BKPT;
     }else{
       rc = btreeComputeFreeSpace(pPage);
@@ -9734,12 +9733,16 @@ int sqlite3BtreeDelete(BtCursor *pCur, u8 flags){
   assert( hasSharedCacheTableLock(p, pCur->pgnoRoot, pCur->pKeyInfo!=0, 2) );
   assert( !hasReadConflicts(p, pCur->pgnoRoot) );
   assert( (flags & ~(BTREE_SAVEPOSITION | BTREE_AUXDELETE))==0 );
-  if( pCur->eState==CURSOR_REQUIRESEEK ){
-    rc = btreeRestoreCursorPosition(pCur);
-    assert( rc!=SQLITE_OK || CORRUPT_DB || pCur->eState==CURSOR_VALID );
-    if( rc || pCur->eState!=CURSOR_VALID ) return rc;
+  if( pCur->eState!=CURSOR_VALID ){
+    if( pCur->eState>=CURSOR_REQUIRESEEK ){
+      rc = btreeRestoreCursorPosition(pCur);
+      assert( rc!=SQLITE_OK || CORRUPT_DB || pCur->eState==CURSOR_VALID );
+      if( rc || pCur->eState!=CURSOR_VALID ) return rc;
+    }else{
+      return SQLITE_CORRUPT_BKPT;
+    }
   }
-  assert( CORRUPT_DB || pCur->eState==CURSOR_VALID );
+  assert( pCur->eState==CURSOR_VALID );
 
   iCellDepth = pCur->iPage;
   iCellIdx = pCur->ix;

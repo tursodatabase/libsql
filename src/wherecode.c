@@ -792,6 +792,7 @@ static int codeAllEqualityTerms(
     VdbeCoverageIf(v, bRev!=0);
     VdbeComment((v, "begin skip-scan on %s", pIdx->zName));
     j = sqlite3VdbeAddOp0(v, OP_Goto);
+    assert( pLevel->addrSkip==0 );
     pLevel->addrSkip = sqlite3VdbeAddOp4Int(v, (bRev?OP_SeekLT:OP_SeekGT),
                             iIdxCur, 0, regBase, nSkip);
     VdbeCoverageIf(v, bRev==0);
@@ -1389,6 +1390,7 @@ static SQLITE_NOINLINE void filterPullDown(
     WhereLevel *pLevel = &pWInfo->a[iLevel];
     WhereLoop *pLoop = pLevel->pWLoop;
     if( pLevel->regFilter==0 ) continue;
+    if( pLevel->pWLoop->nSkip ) continue;
     /*         ,--- Because sqlite3ConstructBloomFilter() has will not have set
     **  vvvvv--'    pLevel->regFilter if this were true. */
     if( NEVER(pLoop->prereq & notReady) ) continue;
@@ -1523,7 +1525,6 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     int iReg;   /* P3 Value for OP_VFilter */
     int addrNotFound;
     int nConstraint = pLoop->nLTerm;
-    int iIn;    /* Counter for IN constraints */
 
     iReg = sqlite3GetTempRange(pParse, nConstraint+2);
     addrNotFound = pLevel->addrBrk;
@@ -1569,50 +1570,54 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     pLevel->op = pWInfo->eOnePass ? OP_Noop : OP_VNext;
     pLevel->p2 = sqlite3VdbeCurrentAddr(v);
     assert( (pLoop->wsFlags & WHERE_MULTI_OR)==0 );
-    if( pLoop->wsFlags & WHERE_IN_ABLE ){
-      iIn = pLevel->u.in.nIn;
-    }else{
-      iIn = 0;
-    }
-    for(j=nConstraint-1; j>=0; j--){
-      int bIn;     /* True to generate byte code to loop over RHS IN values */
+
+    for(j=0; j<nConstraint; j++){
       pTerm = pLoop->aLTerm[j];
-      if( (pTerm->eOperator & WO_IN)!=0
-       && (SMASKBIT32(j) & pLoop->u.vtab.mHandleIn)==0
-      ){
-        bIn = 1;
-      }else{
-        bIn = 0;
-      }
-      if( bIn ) iIn--;
       if( j<16 && (pLoop->u.vtab.omitMask>>j)&1 ){
         disableTerm(pLevel, pTerm);
-      }else if( bIn && sqlite3ExprVectorSize(pTerm->pExpr->pLeft)==1 ){
+        continue;
+      }
+      if( (pTerm->eOperator & WO_IN)!=0
+       && (SMASKBIT32(j) & pLoop->u.vtab.mHandleIn)==0
+       && !db->mallocFailed
+      ){
         Expr *pCompare;  /* The comparison operator */
         Expr *pRight;    /* RHS of the comparison */
         VdbeOp *pOp;     /* Opcode to access the value of the IN constraint */
+        int iIn;         /* IN loop corresponding to the j-th constraint */
 
         /* Reload the constraint value into reg[iReg+j+2].  The same value
         ** was loaded into the same register prior to the OP_VFilter, but
         ** the xFilter implementation might have changed the datatype or
-        ** encoding of the value in the register, so it *must* be reloaded. */
-        assert( pLevel->u.in.aInLoop!=0 || db->mallocFailed );
-        if( !db->mallocFailed ){
-          assert( iIn>=0 && iIn<pLevel->u.in.nIn );
+        ** encoding of the value in the register, so it *must* be reloaded.
+        */
+        for(iIn=0; ALWAYS(iIn<pLevel->u.in.nIn); iIn++){
           pOp = sqlite3VdbeGetOp(v, pLevel->u.in.aInLoop[iIn].addrInTop);
-          assert( pOp->opcode==OP_Column || pOp->opcode==OP_Rowid );
-          assert( pOp->opcode!=OP_Column || pOp->p3==iReg+j+2 );
-          assert( pOp->opcode!=OP_Rowid || pOp->p2==iReg+j+2 );
-          testcase( pOp->opcode==OP_Rowid );
-          sqlite3VdbeAddOp3(v, pOp->opcode, pOp->p1, pOp->p2, pOp->p3);
+          if( (pOp->opcode==OP_Column && pOp->p3==iReg+j+2)
+           || (pOp->opcode==OP_Rowid && pOp->p2==iReg+j+2)
+          ){
+            testcase( pOp->opcode==OP_Rowid );
+            sqlite3VdbeAddOp3(v, pOp->opcode, pOp->p1, pOp->p2, pOp->p3);
+            break;
+          }
         }
 
         /* Generate code that will continue to the next row if 
-        ** the IN constraint is not satisfied */
+        ** the IN constraint is not satisfied
+        */
         pCompare = sqlite3PExpr(pParse, TK_EQ, 0, 0);
-        assert( pCompare!=0 || db->mallocFailed );
-        if( pCompare ){
-          pCompare->pLeft = pTerm->pExpr->pLeft;
+        if( !db->mallocFailed ){
+          int iFld = pTerm->u.x.iField;
+          Expr *pLeft = pTerm->pExpr->pLeft;
+          assert( pLeft!=0 );
+          if( iFld>0 ){
+            assert( pLeft->op==TK_VECTOR );
+            assert( ExprUseXList(pLeft) );
+            assert( iFld<=pLeft->x.pList->nExpr );
+            pCompare->pLeft = pLeft->x.pList->a[iFld-1].pExpr;
+          }else{
+            pCompare->pLeft = pLeft;
+          }
           pCompare->pRight = pRight = sqlite3Expr(db, TK_REGISTER, 0);
           if( pRight ){
             pRight->iTable = iReg+j+2;
@@ -1621,11 +1626,11 @@ Bitmask sqlite3WhereCodeOneLoopStart(
             );
           }
           pCompare->pLeft = 0;
-          sqlite3ExprDelete(db, pCompare);
         }
+        sqlite3ExprDelete(db, pCompare);
       }
     }
-    assert( iIn==0 || db->mallocFailed );
+
     /* These registers need to be preserved in case there is an IN operator
     ** loop.  So we could deallocate the registers here (and potentially
     ** reuse them later) if (pLoop->wsFlags & WHERE_IN_ABLE)==0.  But it seems
@@ -2335,6 +2340,14 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     ** the initialization of the right-hand operand of the vector comparison
     ** might not occur, or might occur only in an OR branch that is not
     ** taken.  dbsqlfuzz 80a9fade844b4fb43564efc972bcb2c68270f5d1.
+    **
+    ** 2022-03-03:  Do not push down expressions that involve subqueries.
+    ** The subquery might get coded as a subroutine.  Any table-references
+    ** in the subquery might be resolved to index-references for the index on
+    ** the OR branch in which the subroutine is coded.  But if the subroutine
+    ** is invoked from a different OR branch that uses a different index, such
+    ** index-references will not work.  tag-20220303a
+    ** https://sqlite.org/forum/forumpost/36937b197273d403
     */
     if( pWC->nTerm>1 ){
       int iTerm;
@@ -2348,7 +2361,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
           continue;
         }
         if( (pWC->a[iTerm].eOperator & WO_ALL)==0 ) continue;
-        testcase( pWC->a[iTerm].wtFlags & TERM_ORINFO );
+        if( ExprHasProperty(pExpr, EP_Subquery) ) continue;  /* tag-20220303a */
         pExpr = sqlite3ExprDup(db, pExpr, 0);
         pAndExpr = sqlite3ExprAnd(pParse, pAndExpr, pExpr);
       }
