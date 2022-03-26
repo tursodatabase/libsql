@@ -1,5 +1,5 @@
-C The\s"PRAGMA\swritable_schema=ON"\sflag\sshould\snot\sallow\sOOM\serrors\sto\spass\nwhile\sparsing\sthe\sschema.\ndbsqlfuzz\s9cc49e1a53e1cef8e3a1496a88c683aa20483163.
-D 2022-03-25T19:16:26.517
+C Version\s3.38.2
+D 2022-03-26T13:51:10.240
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1944,9 +1944,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b193156c2a2407146e7cf77e237e0de0766d4ce8c673547d9f2bda4a1814959b
-Q +a7abb725c7c783331e73837597917e25e5ff692aac8ec97a0a8c0e30db62d68b
+P 4977d8f453bcd56fb1dfab02cc5b283fb32d402bafdf2b6112e7dd322b7c32ad
 R da11ed5f90621f5fb7c0aa8d0a45881c
+T +sym-release *
+T +sym-version-3.38.2 *
 U drh
-Z d77522a91c94bd42e9450188651060ce
+Z 1c2a1cc2a9288218f72e9d4db2ebcd7a
 # Remove this line to create a well-formed Fossil manifest.
