@@ -4690,13 +4690,13 @@ static int session_filter(void *pCtx, const char *zTab){
 #endif
 
 #if SHELL_DYNAMIC_EXTENSION
-static int notify_subscribers(ShellInState *psi, NoticeKind nk) {
+static int notify_subscribers(ShellInState *psi, NoticeKind nk, void *pvs) {
   int six = 0;
   int rcFlags = 0;
   ShellExState *psx = XSS(psi);
   while( six < psi->numSubscriptions ){
     struct EventSubscription *pes = psi->pSubscriptions + six++;
-    rcFlags |= pes->eventHandler(pes->pvUserData, nk, psx);
+    rcFlags |= pes->eventHandler(pes->pvUserData, nk, pvs, psx);
   }
   return rcFlags;
 }
@@ -5138,7 +5138,7 @@ static void open_db(ShellExState *psx, int openFlags){
       sqlite3_set_authorizer(DBX(psx), safeModeAuth, psx);
     }
 #if SHELL_DYNAMIC_EXTENSION
-    notify_subscribers(psi, NK_DbUserAppeared);
+    notify_subscribers(psi, NK_DbUserAppeared, DBX(psx));
 #endif
   }
 }
@@ -5419,8 +5419,8 @@ static int sql_trace_callback(
 #endif
 
 /*
-** A no-op routine that runs with the ".breakpoint" doc-command.  This is
-** a useful spot to set a debugger breakpoint.
+** A no-op routine that runs with the ".breakpoint" doc-command.
+** This is a useful spot to set a debugger breakpoint.
 */
 static void test_breakpoint(void){
   static int nCall = 0;
@@ -7828,7 +7828,7 @@ static int subscribe_events(ShellExState *p, ExtensionId eid, void *pvUserData,
           && (eid!=0 ||eventHandler!=0 ||/* for shell use */ pvUserData==p ) ){
         int nLeft = pesLim - pesLim;
         assert(pes->eventHandler!=0);
-        pes->eventHandler(pes->pvUserData, NK_Unsubscribe, p);
+        pes->eventHandler(pes->pvUserData, NK_Unsubscribe, pes->eid, p);
         if( nLeft>1 ) memmove(pes, pes+1, (nLeft-1)*sizeof(*pes));
         --pesLim;
         --psi->numSubscriptions;
@@ -8392,11 +8392,11 @@ DISPATCHABLE_COMMAND( connection ? 1 4 ){
       psi->pAuxDb->db = DBI(psi);
       psi->pAuxDb = &psi->aAuxDb[i];
 #if SHELL_DYNAMIC_EXTENSION
-      if( DBI(psi)!=0 ) notify_subscribers(psi, NK_DbUserVanishing);
+      if( DBI(psi)!=0 ) notify_subscribers(psi, NK_DbUserVanishing, DBI(psi));
 #endif
       globalDb = DBI(psi) = psi->pAuxDb->db;
 #if SHELL_DYNAMIC_EXTENSION
-      if( DBI(psi)!=0 ) notify_subscribers(psi, NK_DbUserAppeared);
+      if( DBI(psi)!=0 ) notify_subscribers(psi, NK_DbUserAppeared, DBI(psi));
 #endif
       psi->pAuxDb->db = 0;
     }
@@ -10194,10 +10194,10 @@ DISPATCHABLE_COMMAND( open 3 1 0 ){
   }
 
   /* Close the existing database */
-#if SHELL_DYNAMIC_EXTENSION
-  if( DBX(p)!=0 ) notify_subscribers(psi, NK_DbUserVanishing);
-#endif
   session_close_all(psi, -1);
+#if SHELL_DYNAMIC_EXTENSION
+  if( DBX(p)!=0 ) notify_subscribers(psi, NK_DbAboutToClose, DBX(p));
+#endif
   close_db(DBX(p));
   DBX(p) = 0;
   psi->pAuxDb->zDbFilename = 0;
@@ -15106,10 +15106,10 @@ int SQLITE_CDECL SHELL_MAIN(int argc, wchar_t **wargv){
  shell_bail:
   set_table_name(&datax, 0);
   if( datax.dbUser ){
-#if SHELL_DYNAMIC_EXTENSION
-    notify_subscribers(&data, NK_DbUserVanishing);
-#endif
     session_close_all(&data, -1);
+#if SHELL_DYNAMIC_EXTENSION
+    notify_subscribers(&data, NK_DbAboutToClose, datax.dbUser);
+#endif
     close_db(datax.dbUser);
   }
   sqlite3_mutex_free(pGlobalDbLock);
@@ -15127,7 +15127,7 @@ int SQLITE_CDECL SHELL_MAIN(int argc, wchar_t **wargv){
   clearTempFile(&data);
   sqlite3_free(data.zEditor);
 #if SHELL_DYNAMIC_EXTENSION
-  notify_subscribers(&data, NK_ShutdownImminent);
+  notify_subscribers(&data, NK_ShutdownImminent, 0);
   free_all_shext_tracking(&data);
   subscribe_events(&datax, 0, &datax, NK_Unsubscribe, 0);
   sqlite3_close(datax.dbShell);
@@ -15146,7 +15146,7 @@ int SQLITE_CDECL SHELL_MAIN(int argc, wchar_t **wargv){
   memset(&datax, 0, sizeof(datax));
   /* Process exit codes to yield single shell exit code.
    * rc == 2 is a quit signal, resulting in no error by itself.
-   * datax.shellAbruptExit conveyed either an normal (success or error)
+   * datax.shellAbruptExit conveyed either a normal (success or error)
    * exit code or an abnormal exit code. Its abnormal values take priority.
    */
   /* Check for an abnormal exit, and issue error if so. */

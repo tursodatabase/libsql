@@ -93,7 +93,8 @@ static void sayHowMany( BatBeing *pbb, FILE *out, ShellExState *psx ){
   }
 }
 
-static int shellEventHandle(void *pv, NoticeKind nk, ShellExState *psx){
+static int shellEventHandle(void *pv, NoticeKind nk,
+                            void *pvSubject, ShellExState *psx){
   FILE *out = pExtHelpers->currentOutputFile(psx);
   if( nk==NK_ShutdownImminent ){
     BatBeing *pbb = (BatBeing *)pv;
@@ -103,7 +104,10 @@ static int shellEventHandle(void *pv, NoticeKind nk, ShellExState *psx){
     fprintf(out, "BatBeing incommunicado.\n");
   }else if( nk==NK_DbUserAppeared || nk==NK_DbUserVanishing ){
     const char *zWhat = (nk==NK_DbUserAppeared)? "appeared" : "vanishing";
-    fprintf(out, "dbUser (%p) %s\n", psx->dbUser, zWhat);
+    fprintf(out, "dbUser(%p) %s\n", pvSubject, zWhat);
+    if( psx->dbUser != pvSubject ) fprintf(out, "not dbx(%p)\n", psx->dbUser);
+  }else if( nk==NK_DbAboutToClose ){
+    fprintf(out, "db(%p) closing\n", pvSubject);
   }
   return 0;
 }

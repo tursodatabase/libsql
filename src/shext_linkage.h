@@ -68,14 +68,20 @@ typedef struct ShellExState {
   void (*freeHandlerData)(void *);
 
   /* The user's currently open and primary DB connection
-   * Extensions may use this DB, but must not modify this pointer.
-   */
+   * Extensions may use this DB, but must not modify this pointer
+   * and must never close the database. The shell is exclusively
+   * responsible for creation and termination of this connection.
+   * Extensions should not store a copy of this pointer without
+   * provisions for maintaining validity of the copy. The shell
+   * may alter this pointer apart from opening or closing a DB.
+   * See ShellEvenNotify, NoticeKind and subscribeEvents below
+   * for means of maintaining valid copies.  */
   sqlite3 *dbUser;
+
   /* DB connection for shell dynamical data and extension management
    * Extensions may use this DB, but should not alter content created
    * by the shell nor depend upon its schema. Names with prefix "Shell"
-   * or "shext_" are reserved for the shell's use.
-   */
+   * or "shext_" are reserved for the shell's use. */
   sqlite3 *dbShell;
 
   /* Output stream to which shell's text output to be written (reference) */
@@ -86,8 +92,7 @@ typedef struct ShellExState {
    * 0x100 => a non-error (0) exit
    * 0x100|other => exit with process exit code other
    * Any value greater than 0x1ff indicates an abnormal exit.
-   * For embedded shell, "exit" means "return from REPL function".
-   */
+   * For embedded shell, "exit" means "return from top-level REPL function". */
   int shellAbruptExit;
 
   /* Number of lines written during a query result output */
@@ -192,6 +197,7 @@ CONCRETE_END(Derived) vtname = { \
 
 /* This function pointer has the same signature as the sqlite3_X_init()
  * function that is called as SQLite3 completes loading an extension.
+ * It is used as a process-unique identifier for a loaded extention.
  */
 typedef int (*ExtensionId)
   (sqlite3 *, char **, const struct sqlite3_api_routines *);
@@ -204,7 +210,7 @@ typedef int (*ExtensionId)
  * will collect input lines until scriptIsComplete(pvSS, zLineGroup)
  * returns non-zero, whereupon, the same group is submitted to be run
  * via runScript(pvSS, zLineGroup, ...). The default behaviors (when
- * one of the function pointers is 0) are: return false; return true;
+ * any of the function pointers is 0) are: return false; return true;
  * and return DCR_Error after doing nothing.
  *
  * An extension which has called hookScripting() should arrange to
@@ -247,21 +253,30 @@ typedef struct ExtensionHelpers {
  * change value across successive shell versions, except for NK_CountOf. An
  * extension which is built to rely upon particular notifications can pass
  * an NK_CountOf value upon which it relies to subscribe(...) as nkMin,
- * which will fail if the hosting shell's NK_CountOf value is lower.
+ * which call will fail if the hosting shell's NK_CountOf value is lower.
  */
 typedef enum {
-  NK_Unsubscribe,      /* event handler is being unsubsribed
+  NK_Unsubscribe,      /* Event handler is being unsubsribed, pvSubject
+                        * is the ExtensionId used to subscribe. Sent last.
+                        * All event handlers eventually get this event, so
+                        * it can be used to free a handler's resources.
                         * Also passed to subscribeEvents(...) as nkMin
-                        * to unsubscribe event handler(s) */
-  NK_ShutdownImminent, /* a shell exit (or return) will soon occur */
-  NK_DbUserAppeared,   /* a new ShellExState .dbUser value has been set */
-  NK_DbUserVanishing,  /* current ShellExState .dbUser will soon vanish */
-  NK_CountOf           /* present count of preceding members (evolves) */
+                        * to unsubscribe some/all event handler(s). */
+  NK_ShutdownImminent, /* Shell or module will soon be shut down, pvSubject
+                        * is NULL. Event sent prior to above and extension
+                        * destructor calls, and sent after all below, */
+  NK_DbUserAppeared,   /* A new ShellExState .dbUser value has been set,
+                        * pvSubject is the newly set .dbUser value. */
+  NK_DbUserVanishing,  /* Current ShellExState .dbUser will soon vanish,
+                        * pvSubject is the vanishing .dbUser value. */
+  NK_DbAboutToClose,   /* A maybe-user-visible DB will soon be closed,
+                        * pvSubject is the sqlite3 pointer soon to close. */
+  NK_CountOf           /* Present count of preceding members (evolves) */
 } NoticeKind;
 
 /* Callback signature for shell event handlers. */
-typedef
-int (*ShellEventNotify)(void *pvUserData, NoticeKind nk, ShellExState *psx);
+typedef int (*ShellEventNotify)(void *pvUserData, NoticeKind nk,
+                                void *pvSubject, ShellExState *psx);
 
 /* Various shell extension helpers and feature registration functions */
 typedef struct ShellExtensionAPI {
@@ -269,7 +284,7 @@ typedef struct ShellExtensionAPI {
   ExtensionHelpers * pExtHelpers;
 
   /* Functions for an extension to register its implementors with shell */
-  const int numRegistrars; /* 4 for this version */
+  const int numRegistrars; /* 5 for this version */
   union {
     struct ShExtAPI {
       /* Register a meta-command */
@@ -284,20 +299,21 @@ typedef struct ShellExtensionAPI {
       /* Provide scripting support to host shell. (See ScriptHooks above.) */
       int (*hookScripting)(ShellExState *p,
                            ExtensionId eid, ScriptHooks *pSH);
-      /* Subscribe to (or unsubscribe from) messages about various changes. */
+      /* Subscribe to (or unsubscribe from) messages about various changes.
+       * See above NoticeKind enum and ShellEventNotify callback typedef. */
       int (*subscribeEvents)(ShellExState *p, ExtensionId eid, void *pvUserData,
                              NoticeKind nkMin, ShellEventNotify eventHandler);
       /* Preset to 0 at extension load, a sentinel for expansion */
       void (*sentinel)(void);
     } named;
-    void (*pFunctions[4])(); /* 0-terminated sequence of function pointers */
+    void (*pFunctions[5+1])(); /* 0-terminated sequence of function pointers */
   } api;
 } ShellExtensionAPI;
 
 /* Struct passed to extension init function to establish linkage. The
  * lifetime of instances spans only the init call itself. Extensions
  * should make a copy, if needed, of pShellExtensionAPI for later use.
- * Its referant is static, persisting for the process duration.
+ * Its referent is static, persisting for the process duration.
  */
 typedef struct ShellExtensionLink {
   int sizeOfThis;        /* sizeof(ShellExtensionLink) for expansion */

@@ -118,7 +118,7 @@ DERIVED_METHOD(DotCmdRC, execute, MetaCommand,TclCmd, 4,
   }else{
     /* Enter a REPL */
     static const char * const zREPL =
-#ifdef REPL_STDIN_ONLY
+#ifdef TCL_REPL_STDIN_ONLY /* a fallback for debug */
       "set line {}\n"
       "while {![eof stdin]} {\n"
         "if {$line!=\"\"} {\n"
@@ -190,9 +190,9 @@ DERIVED_METHOD(DotCmdRC, execute, MetaCommand,TclCmd, 4,
       "namespace delete ::REPL\n"
       "read stdin 0\n"
 #endif
-      ;
+      ; //... ToDo: Get line editing working here. Reuse shell's line entry.
     rc = Tcl_Eval(getInterp(ptc), zREPL);
-    clearerr(stdin);
+    clearerr(stdin); /* Cure issue where stdin gets stuck after keyboard EOF. */
   }
   if( rc!=TCL_OK ){
     copy_complaint(pzErrMsg, getInterp(ptc));
@@ -240,7 +240,7 @@ static DotCmdRC tclRunScript(void *pvState, const char *zScript,
   TclCmd *ptc = (TclCmd *)pvState;
   while( (c=*zScript++) && (c==' '||c=='\t') ) {}
   if( c=='.' &&  *zScript++=='.' ){
-    int rc, nc = strlen(zScript);
+    int rc, nc = strlen30(zScript);
     rc = Tcl_EvalEx(ptc->interp, zScript, nc, TCL_EVAL_DIRECT|TCL_EVAL_GLOBAL);
     if( rc!=TCL_OK ) copy_complaint(pzErrMsg, getInterp(ptc));
     return DCR_Ok|(rc!=TCL_OK);
@@ -287,7 +287,7 @@ static int nowInteractive(void *pvSS, Tcl_Interp *interp,
 
 #define UNKNOWN_RENAME "::_original_unknown"
 
-/* C implementation of TCL ::unknown to delegate to dot commands */
+/* C implementation of TCL ::unknown to (maybe) delegate to dot commands */
 static int unknownDotDelegate(void *pvSS, Tcl_Interp *interp,
                                 int nArgs, const char *azArgs[]){
   const char *name = (nArgs>1 && *azArgs[1]=='.')? azArgs[1]+1 : 0;
@@ -337,9 +337,219 @@ static int unknownDotDelegate(void *pvSS, Tcl_Interp *interp,
   }
 }
 
-/* ToDo: ... TCL db_user command, like a (TCL) sqlite3 object except that
- * it defers to shell's db and treats close subcommand as an error. */
+/* Forward reference for use as ExtensionId */
+int sqlite3_tclshext_init(sqlite3*, char**, const sqlite3_api_routines*);
 
+/* TCL dbu command: Acts like a (TCL) sqlite3 command created object except
+ * that it defers to shell's DB and treats the close subcommand as an error.
+ * The below struct and functions through userDbInit() support this feature.
+ */
+typedef struct UserDb {
+  SqliteDb **ppSdb;   /* Some tclsqlite.c "sqlite3" DB objects, held here. */
+  int numSdb;         /* How many "sqlite3" objects are now being held */
+  int ixSdb;          /* Which held "sqlite3" object is the .userDb, if any */
+  int nRef;           /* TCL object sharing counter */
+  Tcl_Interp *interp; /* For creation of newly visible .dbUser DBs */
+  ShellExState *psx;  /* For shell state access when .eval is run */
+} UserDb;
+
+/* Add a DB to the list. Return its index. */
+static int udbAdd(UserDb *pudb, sqlite3 *udb){
+  SqliteDb *p;
+  int nshift;
+  pudb->ppSdb
+    = (SqliteDb**)Tcl_Realloc((char*)pudb->ppSdb, (pudb->numSdb+1)*sizeof(p));
+  memset(pudb->ppSdb + pudb->numSdb, 0, sizeof(SqliteDb*));
+  p = (SqliteDb*)Tcl_Alloc(sizeof(SqliteDb));
+  memset(p, 0, sizeof(SqliteDb));
+  pudb->ppSdb[pudb->numSdb] = p;
+  p->db = udb;
+  p->interp = pudb->interp;
+  p->maxStmt = NUM_PREPARED_STMTS;
+  p->openFlags = SQLITE_OPEN_URI;
+  p->nRef = 1;
+  return pudb->numSdb++;
+}
+
+/* Remove a DB from the list */
+static void udbRemove(UserDb *pudb, int ix){
+  SqliteDb *pdb;
+  assert(ix>=0 && ix<pudb->numSdb);
+  /* The code below is highly dependent upon implementation details of
+   * tclsqlite.c , and may become incorrect if that code changes. This
+   * is an accepted downside of reusing vast portions of that code.
+   * The minutiae in these comments is to explain the dependencies so
+   * that adjustments might be easily made when proven necessary. */
+  pdb = pudb->ppSdb[ix];
+#ifndef SQLITE_OMIT_INCRBLOB
+  /* This is a preemptive action, which is normally done by the
+   * delDatabaseRef() routine, which needs a non-zero db pointer
+   * to reach Tcl_UnregisterChannel()'s implementation. We do it
+   * now because, to avoid closing that db, that pointer will be
+   * set to 0 when delDatabaseRef() runs. */
+  closeIncrblobChannels(pdb);
+  /* Prevent closeIncrblobChannels() from trying to free anything. */
+  pdb->pIncrblob = 0;
+#endif
+  /* This appears to not be necessary, but is defensive in case the
+   * flushStmtCache() or dbFreeStmt() code begins to use pdb->db .
+   * We rely on its behavior whereby, once flushed, the cache is
+   * made to appear empty in the SqliteDb struct. */
+  flushStmtCache(pdb);
+  /* This next intervention prevents delDatabaseRef() from closing
+   * the .db ; this relies on sqlite3_close(0) being a NOP. If the
+   * SqliteDb takedown code changes, this may lead to an address
+   * fault. For that reason, the *.in which produces this source
+   * should be tested by excercising the TCL udb command. */
+  pdb->db = 0;
+  assert(pdb->nRef==1);
+  /* Use the "stock" delete for sqlite3-generated objects. */
+  delDatabaseRef(pdb);
+  /* At this point, pdb has been Tcl_Free()'ed. Forget it. */
+  --pudb->numSdb;
+  {
+    int nshift = pudb->numSdb-ix;
+    if( nshift>0 ){
+      memmove(pudb->ppSdb+ix, pudb->ppSdb+ix+1, nshift*sizeof(pdb));
+    }
+  }
+  /* Adjust index to currently visible DB. */
+  if( ix==pudb->ixSdb ) pudb->ixSdb = -1;
+  else if( ix<pudb->ixSdb ) --pudb->ixSdb;
+}
+
+static struct UserDb *udbCreate(Tcl_Interp *interp, ShellExState *psx);
+
+/* Cleanup the UserDb singleton. Should only be done at shutdown. 
+ * This routine is idempotent, and may be called redundantly.
+ */
+static void udbCleanup(UserDb *pudb){
+  /* If this is called too early, when *pudb is still associated with
+   * active (not yet closed) SqliteDb objects, those will simply be
+   * orphaned and leaked. But this assert may make the error evident. */
+  if( pudb==0 ) pudb = udbCreate(0, 0);
+  assert(pudb->numSdb==0);
+  pudb->numSdb==0;
+  if( pudb->ppSdb ) Tcl_Free((char*)pudb->ppSdb);
+  memset(pudb, 0, sizeof(UserDb));
+  pudb->ixSdb = -1;
+}
+
+/* Hunt for given db in UserDb's list. Return its index if found, else -1. */
+static int udbIndexOfDb(UserDb *pudb, sqlite3 *psdb){
+  int ix = 0;
+  while( ix < pudb->numSdb ){
+    if( psdb==pudb->ppSdb[ix]->db ) return ix;
+    else ++ix;
+  }
+  return -1;
+}
+
+/* The event handler used to keep udb command's wrapped DB in sync with
+ * changes to the ShellExState .dbUser member. This task is complicated
+ * by effects of these dot commands: .open ; .connection ; and .quit,
+ * .exit or various other shell exit causes. The intention is to always
+ * have an orderly and leak-free shutdown (excepting kill/OOM aborts.)
+ */
+static int udbEventHandle(void *pv, NoticeKind nk, void *pvSubject,
+                          ShellExState *psx){
+  UserDb *pudb = (UserDb*)pv;
+  if( nk==NK_ShutdownImminent ){
+    udbCleanup(pudb);
+  }else if( nk==NK_Unsubscribe ){
+    assert(pudb==0 || (pudb->nRef==0 && pudb->ppSdb==0));
+  }else if( nk==NK_DbUserAppeared || nk==NK_DbUserVanishing
+            || nk==NK_DbAboutToClose ){
+    sqlite3 *dbSubject = (sqlite3*)pvSubject;
+    int ix = udbIndexOfDb(pudb, dbSubject);
+    switch( nk ){
+    case NK_DbUserAppeared:
+      if( ix>=0 ) pudb->ixSdb = ix;
+      else pudb->ixSdb = udbAdd(pudb, dbSubject);
+      break;
+    case NK_DbUserVanishing:
+      if( ix>=0 ) pudb->ixSdb = -1;
+      break;
+    case NK_DbAboutToClose:
+      if( ix>=0 ) udbRemove(pudb, ix);
+      break;
+    }
+  }
+  return 0;
+}
+
+/* Create the UserDb object supporting TCL "udb" command operations. 
+ * It's not wholly created because it is a singleton. Any subsequent
+ * creation is ignored; instead, the singleton is returned. This
+ * object is made to release resources only upon shutdown. If a TCL
+ * user removes the udb command, this avoids problems arising from
+ * this object holding references to databases that may still be in
+ * use, either as the active .dbUser or as a blob streaming store. */
+static struct UserDb *udbCreate(Tcl_Interp *interp, ShellExState *psx){
+  static UserDb *rv = 0;
+  static UserDb udb = { 0 };
+  if( interp==0 || psx==0 ) return &udb;
+  if( rv==0 ){
+    sqlite3 *sdb = psx->dbUser;
+    rv = &udb;
+    rv->interp = interp;
+    rv->psx = psx;
+    rv->ppSdb = (SqliteDb**)Tcl_Alloc(5*sizeof(SqliteDb*));
+    memset(rv->ppSdb, 0, 5*sizeof(SqliteDb*));
+    if( sdb!=0 ){
+      udbAdd(rv, sdb);
+      rv->ixSdb = 0;
+    } else rv->ixSdb = -1;
+    rv->nRef = 1;
+    /* Arrange that this object tracks lifetimes and visibility of the
+     * ShellExState .dbUser member values which udb purports to wrap.
+     * This subscription eventually leads to a udbCleanup() call. */
+    pShExtApi->subscribeEvents(psx, sqlite3_tclshext_init,
+                               rv, NK_CountOf, udbEventHandle);
+  }
+  return rv;
+}
+
+/* C implementation behind added TCL udb command */
+static int UserDbObjCmd(void *cd, Tcl_Interp *interp,
+                        int objc, Tcl_Obj * const * objv){
+  UserDb *pudb = (UserDb*)cd;
+  static const char *azDoHere[] = { "close", ".eval", 0 };
+  enum DbDoWhat { DDW_Close, DDW_ShellEval } doWhat;
+
+  /* Delegate all subcommands except above to the now-visible SqliteDb. */
+  if( objc>=2 && !Tcl_GetIndexFromObj(interp, objv[1], azDoHere,
+                                      "subcommand", 0, (int*)&doWhat)){
+    switch( doWhat ){
+    case DDW_Close:
+      Tcl_AppendResult(interp, "Directly closing udb is disallowed.\n", 0);
+      return TCL_ERROR;
+    case DDW_ShellEval:
+      Tcl_AppendResult(interp, "Faking .eval ...\n", 0);
+      //... ToDo: Implement this.
+      return TCL_OK;
+    }
+  }
+  if( pudb->numSdb==0 || pudb->ixSdb<0 ){
+    Tcl_AppendResult(interp, Tcl_GetStringFromObj(objv[0], (int*)0),
+                     " references no DB yet.\n", 0);
+    return TCL_ERROR;
+  }
+  return DbObjCmd(pudb->ppSdb[pudb->ixSdb], interp, objc, objv);
+}
+
+/* Get the udb command subsystem initialized and create "udb" TCL command. */
+static int userDbInit(Tcl_Interp *interp, ShellExState *psx){
+  UserDb *pudb = udbCreate(interp, psx);
+  if( Tcl_CreateObjCommand(interp, "udb", (Tcl_ObjCmdProc*)UserDbObjCmd,
+                           (char *)pudb, 0) ){
+    ++pudb->nRef;
+    return TCL_OK;
+  }
+  return TCL_ERROR;
+}
+
+/* Extension boiler-plate to grab ShellExtensionLink pointer from db. */
 DEFINE_SHDB_TO_SHEXTLINK(shext_link);
 
 /*
@@ -390,6 +600,11 @@ int sqlite3_tclshext_init(
       ScriptHooks sh = { pmc, tclIsScriptLead, tclIsComplete, tclRunScript };
       int irc = Tcl_Init(tclcmd.interp);
       if( irc==TCL_OK ){
+        if( TCL_OK==userDbInit(tclcmd.interp, psx) ){
+          UserDb *pudb = udbCreate(tclcmd.interp, psx);
+          pShExtLink->extensionDestruct = (void (*)(void*))udbCleanup;
+          pShExtLink->pvExtensionObject = pudb;
+        }
         pShExtApi->hookScripting(psx, sqlite3_tclshext_init, &sh);
         Tcl_CreateCommand(tclcmd.interp,
                           "get_input_line", getInputLine, psx, 0);
