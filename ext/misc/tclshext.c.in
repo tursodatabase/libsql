@@ -103,6 +103,132 @@ static void copy_complaint(char **pzErr, Tcl_Interp *pi){
   }
 }
 
+/* The .tcl REPL script is one of the 3 following string literals,
+ * selected at build time for these different purposes:
+ *  1st: a simple input collection, reading only stdin, which may
+ *    be (handily) used as a fallback for debugging purposes.
+ *  2nd: input collection which honors the shell's input switching
+ *    and otherwise has low dependency upon shell features, which
+ *    means that it has no input line editing or history recall.
+ *  3rd: an input collection which fully leverages the shell's
+ *    input collection. It has higher shell dependency, and for
+ *    that it gains the shell's line editing and history recall,
+ *    in addition to working with the shell's input switching.
+ */
+#ifdef TCL_REPL_STDIN_ONLY
+# define TCL_REPL 1
+#elif defined(TCL_REPL_LOW_DEPENDENCY)
+# define TCL_REPL 2
+#else
+# define TCL_REPL 3
+#endif
+
+static const char * const zREPL =
+#if TCL_REPL==1 /* a fallback for debug */
+  "set line {}\n"
+  "while {![eof stdin]} {\n"
+    "if {$line!=\"\"} {\n"
+      "puts -nonewline \"> \"\n"
+    "} else {\n"
+      "puts -nonewline \"% \"\n"
+    "}\n"
+    "flush stdout\n"
+    "append line [gets stdin]\n"
+    "if {$line eq \".\"} break\n"
+    "if {[info complete $line]} {\n"
+      "if {[catch {uplevel #0 $line} result]} {\n"
+        "puts stderr \"Error: $result\"\n"
+      "} elseif {$result!=\"\"} {\n"
+        "puts $result\n"
+      "}\n"
+      "set line {}\n"
+    "} else {\n"
+      "append line \\n\n"
+    "}\n"
+  "}\n"
+  "if {$line ne \".\"} {puts {}}\n"
+  "read stdin 0\n"
+#elif TCL_REPL==2 /* minimal use of shell's read */
+  "namespace eval ::REPL {\n"
+    "variable line {}\n"
+    "variable at_end 0\n"
+    "variable prompting [now_interactive]\n"
+  "}\n"
+  "while {!$::REPL::at_end} {\n"
+    "if {$::REPL::prompting} {\n"
+      "if {$::REPL::line!=\"\"} {\n"
+        "puts -nonewline \"...> \"\n"
+      "} else {\n"
+        "puts -nonewline \"tcl% \"\n"
+      "}\n"
+    "}\n"
+    "flush stdout\n"
+    "set ::REPL::li [get_input_line]\n"
+    "if {$::REPL::li eq \"\"} {\n"
+      "set ::REPL::at_end 1\n"
+    "} elseif {[string trimright $::REPL::li] eq \".\"} {\n"
+      "if {$::REPL::line ne \"\"} {\n"
+        "throw {NONE} {incomplete input at EOF}\n"
+      "}\n"
+      "set ::REPL::at_end 1\n"
+    "} else {\n" 
+      "append ::REPL::line $::REPL::li\n"
+      "if {[string trim $::REPL::line] eq \"\"} {\n"
+        "set ::REPL::line \"\"\n"
+        "continue\n"
+      "}\n" 
+      "if {[info complete $::REPL::line]} {\n"
+        "set ::REPL::rc [catch {uplevel #0 $::REPL::line} ::REPL::result]\n"
+        "if {$::REPL::rc == 0} {\n"
+          "if {$::REPL::result!=\"\" && $::REPL::prompting} {\n"
+            "puts $::REPL::result\n"
+          "}\n"
+        "} elseif {$::REPL::rc == 1} {\n"
+          "puts stderr \"Error: $::REPL::result\"\n"
+        "} elseif {$::REPL::rc == 2} {\n"
+          "set ::REPL::at_end 1\n"
+        "}\n"
+        "set ::REPL::line {}\n"
+      "}\n"
+    "}\n"
+  "}\n"
+  "if {$::REPL::prompting && $::REPL::li ne \".\\n\"} {puts {}}\n"
+  "namespace delete ::REPL\n"
+  "read stdin 0\n"
+#elif TCL_REPL==3
+  /* using shell's input collection with line editing (if configured) */
+  "namespace eval ::REPL {\n"
+    "variable at_end 0\n"
+    "variable interactive [now_interactive] 0\n"
+  "}\n"
+  "while {!$::REPL::at_end} {\n"
+    "foreach {::REPL::group ::REPL::ready} [get_input_line_group] {}\n"
+    "set ::REPL::trimmed [string trim $::REPL::group]\n"
+    "if {$::REPL::group eq \"\" && !$::REPL::ready} break\n"
+    "if {$::REPL::trimmed eq \"\"} continue\n"
+    "if {!$::REPL::ready && $::REPL::trimmed ne \"\"} {\n"
+      "throw {NONE} {incomplete input at EOF}\n"
+    "}\n" 
+    "if {$::REPL::trimmed eq \".\"} break\n"
+    "set ::REPL::rc [catch {uplevel #0 $::REPL::group} ::REPL::result]\n"
+    "if {$::REPL::rc == 0} {\n"
+      "if {$::REPL::result!=\"\" && $::REPL::interactive} {\n"
+        "puts $::REPL::result\n"
+      "}\n"
+    "} elseif {$::REPL::rc == 1} {\n"
+      "puts stderr \"Error: $::REPL::result\"\n"
+    "} elseif {$::REPL::rc == 2} {\n"
+      "set ::REPL::at_end 1\n"
+    "}\n"
+  "}\n"
+  "if {$::REPL::interactive && $::REPL::trimmed ne \".\"} {puts {}}\n"
+  "namespace delete ::REPL\n"
+  "read stdin 0\n"
+#else
+  "throw {NONE} {not built for REPL}\n"
+#endif
+  ; /* zREPL */
+
 DERIVED_METHOD(DotCmdRC, execute, MetaCommand,TclCmd, 4,
              (ShellExState *psx, char **pzErrMsg, int nArgs, char *azArgs[])){
   FILE *out = pExtHelpers->currentOutputFile(psx);
@@ -117,80 +243,6 @@ DERIVED_METHOD(DotCmdRC, execute, MetaCommand,TclCmd, 4,
     }
   }else{
     /* Enter a REPL */
-    static const char * const zREPL =
-#ifdef TCL_REPL_STDIN_ONLY /* a fallback for debug */
-      "set line {}\n"
-      "while {![eof stdin]} {\n"
-        "if {$line!=\"\"} {\n"
-          "puts -nonewline \"> \"\n"
-        "} else {\n"
-          "puts -nonewline \"% \"\n"
-        "}\n"
-        "flush stdout\n"
-        "append line [gets stdin]\n"
-        "if {$line eq \".\"} break\n"
-        "if {[info complete $line]} {\n"
-          "if {[catch {uplevel #0 $line} result]} {\n"
-            "puts stderr \"Error: $result\"\n"
-          "} elseif {$result!=\"\"} {\n"
-            "puts $result\n"
-          "}\n"
-          "set line {}\n"
-        "} else {\n"
-          "append line \\n\n"
-        "}\n"
-      "}\n"
-      "if {$line ne \".\"} {puts {}}\n"
-      "read stdin 0\n"
-#else
-      "namespace eval ::REPL {\n"
-        "variable line {}\n"
-        "variable at_end 0\n"
-        "variable prompting [now_interactive]\n"
-      "}\n"
-      "while {!$::REPL::at_end} {\n"
-        "if {$::REPL::prompting} {\n"
-          "if {$::REPL::line!=\"\"} {\n"
-            "puts -nonewline \"...> \"\n"
-          "} else {\n"
-            "puts -nonewline \"tcl% \"\n"
-          "}\n"
-        "}\n"
-        "flush stdout\n"
-        "set ::REPL::li [get_input_line]\n"
-        "if {$::REPL::li eq \"\"} {\n"
-          "set ::REPL::at_end 1\n"
-        "} elseif {[string trimright $::REPL::li] eq \".\"} {\n"
-          "if {$::REPL::line ne \"\"} {\n"
-            "throw {NONE} {incomplete input at EOF}\n"
-          "}\n"
-          "set ::REPL::at_end 1\n"
-        "} else {\n" 
-          "append ::REPL::line $::REPL::li\n"
-          "if {[string trim $::REPL::line] eq \"\"} {\n"
-            "set ::REPL::line \"\"\n"
-            "continue\n"
-          "}\n" 
-          "if {[info complete $::REPL::line]} {\n"
-            "set ::REPL::rc [catch {uplevel #0 $::REPL::line} ::REPL::result]\n"
-            "if {$::REPL::rc == 0} {\n"
-              "if {$::REPL::result!=\"\" && $::REPL::prompting} {\n"
-                "puts $::REPL::result\n"
-              "}\n"
-            "} elseif {$::REPL::rc == 1} {\n"
-              "puts stderr \"Error: $::REPL::result\"\n"
-            "} elseif {$::REPL::rc == 2} {\n"
-              "set ::REPL::at_end 1\n"
-            "}\n"
-            "set ::REPL::line {}\n"
-          "}\n"
-        "}\n"
-      "}\n"
-      "if {$::REPL::prompting && $::REPL::li ne \".\\n\"} {puts {}}\n"
-      "namespace delete ::REPL\n"
-      "read stdin 0\n"
-#endif
-      ; //... ToDo: Get line editing working here. Reuse shell's line entry.
     rc = Tcl_Eval(getInterp(ptc), zREPL);
     clearerr(stdin); /* Cure issue where stdin gets stuck after keyboard EOF. */
   }
@@ -250,6 +302,7 @@ static DotCmdRC tclRunScript(void *pvState, const char *zScript,
 
 #define GETLINE_MAXLEN 1000
 
+#if TCL_REPL==2
 /* C implementation of TCL proc, get_input_line */
 static int getInputLine(void *pvSS, Tcl_Interp *interp,
                         int nArgs, const char *azArgs[]){
@@ -268,6 +321,61 @@ static int getInputLine(void *pvSS, Tcl_Interp *interp,
     return TCL_ERROR;
   }
 }
+#endif
+
+#if TCL_REPL==3
+/* C implementation of TCL proc, get_input_line_group 
+ * This routine returns a 2 element list consisting of:
+ *   the collected input lines, joined with "\n", as a string
+ * and
+ *   the line group status, as an integer.
+ * The status is either 0, meaning input EOF was encountered,
+ * or 1, meaning the input is a complete TCL line group.
+ * There are only these return combinations:
+ *   { Empty 0 } => no input obtained and no more to be had
+ *   { Other 0 } => input collected, but is invalid TCL
+ *   { Other 1 } => input collected, may be valid TCL
+ * By design, this combination is never returned:
+ *   { Empty 1 } => no input collected but valid TCL
+ */
+static int getInputLineGroup(void *pvSS, Tcl_Interp *interp,
+                             int objc, Tcl_Obj *const objv[]){
+  if( objc==1 ){
+    static Prompts cueTcl = { "tcl% ", "   > " };
+    ShellExState *psx = (ShellExState *)pvSS;
+    struct InSource *pis = pExtHelpers->currentInputSource(psx);
+    int isComplete = 0;
+    char *zIn = 0;
+    int isContinuation = 0;
+    do {
+      zIn = pExtHelpers->oneInputLine(pis, zIn, isContinuation, &cueTcl);
+      if( isContinuation ){
+        if( zIn ){
+          Tcl_AppendResult(interp, "\n", zIn, (char*)0);
+          isComplete = Tcl_CommandComplete(Tcl_GetStringResult(interp));
+        }
+      }else if( zIn ){
+        isComplete = Tcl_CommandComplete(zIn);
+        Tcl_SetResult(interp, zIn, TCL_VOLATILE);
+      }
+      isContinuation = 1;
+    } while( zIn && !isComplete );
+    if( zIn ) pExtHelpers->freeInputLine(zIn);
+    {
+      Tcl_Obj *const objv[] = {
+        Tcl_NewStringObj(Tcl_GetStringResult(interp) , -1),
+        Tcl_NewIntObj(isComplete)
+      }; /* These unowned objects go directly into result, becoming owned. */
+      Tcl_ResetResult(interp);
+      Tcl_SetObjResult(interp, Tcl_NewListObj(2, objv));
+    }
+    return TCL_OK;
+  }else{
+    Tcl_SetResult(interp, "too many arguments", TCL_STATIC);
+    return TCL_ERROR;
+  }
+}
+#endif
 
 /* C implementation of TCL proc, now_interactive */
 static int nowInteractive(void *pvSS, Tcl_Interp *interp,
@@ -314,9 +422,7 @@ static int unknownDotDelegate(void *pvSS, Tcl_Interp *interp,
     }
   }else{
     /* Defer to the TCL-default ::unknown command, or fail here. */
-    int haveUnkCmd = (0!=Tcl_FindCommand(interp, UNKNOWN_RENAME,
-                                         0, TCL_GLOBAL_ONLY));
-    if( haveUnkCmd ){
+    if( 0!=Tcl_FindCommand(interp, UNKNOWN_RENAME, 0, TCL_GLOBAL_ONLY) ){
       Tcl_Obj **ppo = sqlite3_malloc((nArgs+1)*sizeof(Tcl_Obj*));
       if( ppo==0 ) return TCL_ERROR;
       ppo[0] = Tcl_NewStringObj(UNKNOWN_RENAME, -1);
@@ -327,7 +433,7 @@ static int unknownDotDelegate(void *pvSS, Tcl_Interp *interp,
       }
       rc = Tcl_EvalObjv(interp, nArgs, ppo, TCL_EVAL_GLOBAL);
       for( ia=0; ia<nArgs; ++ia ) Tcl_DecrRefCount(ppo[ia]);
-      return TCL_OK;
+      return rc;
     }else{
       /* Fail now (instead of recursing back into this handler.) */
       Tcl_AppendResult(interp,
@@ -606,8 +712,14 @@ int sqlite3_tclshext_init(
           pShExtLink->pvExtensionObject = pudb;
         }
         pShExtApi->hookScripting(psx, sqlite3_tclshext_init, &sh);
+#if TCL_REPL==2
         Tcl_CreateCommand(tclcmd.interp,
                           "get_input_line", getInputLine, psx, 0);
+#endif
+#if TCL_REPL==3
+        Tcl_CreateObjCommand(tclcmd.interp,
+                             "get_input_line_group", getInputLineGroup, psx, 0);
+#endif
         Tcl_CreateCommand(tclcmd.interp,
                           "now_interactive", nowInteractive, psx, 0);
         Tcl_Eval(tclcmd.interp, "rename unknown "UNKNOWN_RENAME);

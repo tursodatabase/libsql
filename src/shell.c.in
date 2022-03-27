@@ -469,6 +469,7 @@ static char startupDir[PATH_MAX+1] = {0};
 */
 static char mainPrompt[20];     /* First line prompt. default: "sqlite> "*/
 static char continuePrompt[20]; /* Continuation prompt. default: "   ...> " */
+static Prompts shellPrompts = { mainPrompt, continuePrompt };
 
 /*
 ** Render output like fprintf().  Except, if the output is going to the
@@ -798,8 +799,12 @@ static char *local_getline(char *zLine, InSource *pInSrc){
 ** routine that can be reused.
 **
 ** The result is stored in space obtained from malloc() and must either
-** be freed by the caller or else passed back into this routine via the
-** zPrior argument for reuse.
+** be freed by the caller, using the same allocator[a], or else passed
+** back into this routine via the zPrior argument for reuse.
+**
+** [a. This function is exposed for use by shell extensions which may
+**   have no access to "the same allocator". This is why the function
+**   following this one exists, also exposed to shell extensions. ]
 **
 ** If this function is called until it returns NULL, and the prior return
 ** has been passed in for resuse, then the caller need/must not free it.
@@ -809,11 +814,15 @@ static char *local_getline(char *zLine, InSource *pInSrc){
 ** The trailing newline (or its ilk), if any, is trimmed.
 ** The input line number is adjusted (via delegation or directly.)
 */
-static char *one_input_line(InSource *pInSrc, char *zPrior, int isContinuation){
+static char *one_input_line(InSource *pInSrc, char *zPrior,
+                            int isContinuation, Prompts *pCue){
   if( !INSOURCE_IS_INTERACTIVE(pInSrc) ){
     return local_getline(zPrior, pInSrc);
   }else{
-    char *zPrompt = isContinuation ? continuePrompt : mainPrompt;
+    static Prompts cueDefault = { "$ ","> " };
+    const char *zPrompt;
+    if( pCue==0 ) pCue = &cueDefault;
+    zPrompt = isContinuation ? pCue->zContinue : pCue->zMain;
 #if SHELL_USE_LOCAL_GETLINE
     printf("%s", zPrompt);
     fflush(stdout);
@@ -827,6 +836,11 @@ static char *one_input_line(InSource *pInSrc, char *zPrior, int isContinuation){
     return zResult;
 #endif
   }
+}
+
+/* For use by shell extensions. See footnote [a] to above function. */
+void free_input_line(char *z){
+  free(z);
 }
 
 /*
@@ -7890,7 +7904,7 @@ static MetaCommand * findMetaCommand(const char *, ShellExState *, int *);
 static DotCmdRC runMetaCommand(MetaCommand*, char *[], int na, ShellExState*);
 
 static ExtensionHelpers extHelpers = {
-  11,
+  13,
   {
     failIfSafeMode,
     currentOutputFile,
@@ -7902,6 +7916,8 @@ static ExtensionHelpers extHelpers = {
     nowInteractive,
     shellInvokedAs,
     shellStartupDir,
+    one_input_line,
+    free_input_line,
     sqlite3_enable_load_extension,
     0
   }
@@ -14001,7 +14017,8 @@ static DotCmdRC process_input(ShellInState *psi){
     int iStartline = 0;               /* starting line number of group */
 
     fflush(psi->out);
-    zLineInput = one_input_line(psi->pInSource, zLineInput, nGroupLines>0);
+    zLineInput = one_input_line(psi->pInSource, zLineInput,
+                                nGroupLines>0, &shellPrompts);
     if( zLineInput==0 ){
       bInputEnd = 1;
       inKind = Eof;
@@ -14121,7 +14138,8 @@ static DotCmdRC process_input(ShellInState *psi){
           pncLineUse = &ncLineAcc;
         }
         /* Read in next line of group, (if available.) */
-        zLineInput = one_input_line(psi->pInSource, zLineInput, nGroupLines>0);
+        zLineInput = one_input_line(psi->pInSource, zLineInput,
+                                    nGroupLines>0, &shellPrompts);
         if( zLineInput==0 ){
           bInputEnd = 1;
           inKind = Eof;
@@ -15127,10 +15145,11 @@ int SQLITE_CDECL SHELL_MAIN(int argc, wchar_t **wargv){
   clearTempFile(&data);
   sqlite3_free(data.zEditor);
 #if SHELL_DYNAMIC_EXTENSION
+  notify_subscribers(&data, NK_DbAboutToClose, datax.dbShell);
+  sqlite3_close(datax.dbShell);
   notify_subscribers(&data, NK_ShutdownImminent, 0);
   free_all_shext_tracking(&data);
   subscribe_events(&datax, 0, &datax, NK_Unsubscribe, 0);
-  sqlite3_close(datax.dbShell);
 #endif
 #if !SQLITE_SHELL_IS_UTF8
   for(i=0; i<argcToFree; i++) free(argvToFree[i]);

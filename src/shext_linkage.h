@@ -226,6 +226,11 @@ typedef struct ScriptHooks {
                         ShellExState *, char **pzErrMsg);
 } ScriptHooks;
 
+typedef struct Prompts {
+  const char *zMain;
+  const char *zContinue;
+} Prompts;
+
 typedef struct ExtensionHelpers {
   int helperCount; /* Helper count, not including sentinel */
   union {
@@ -242,17 +247,20 @@ typedef struct ExtensionHelpers {
       int (*nowInteractive)(ShellExState *p);
       const char * (*shellInvokedAs)(void);
       const char * (*shellStartupDir)(void);
+      char * (*oneInputLine)(struct InSource *pInSrc, char *zPrior,
+                             int isContinuation, Prompts *pCue);
+      void (*freeInputLine)(char *zLine);
       int (*enable_load_extension)(sqlite3 *db, int onoff);
       void (*sentinel)(void);
     } named ;
-    void (*nameless[10+1])(); /* Same as named but anonymous plus a sentinel. */
+    void (*nameless[13+1])(); /* Same as named but anonymous plus a sentinel. */
   } helpers;
 } ExtensionHelpers;
 
 /* This enum is stable excepting that it grows at the end. Members will not
  * change value across successive shell versions, except for NK_CountOf. An
  * extension which is built to rely upon particular notifications can pass
- * an NK_CountOf value upon which it relies to subscribe(...) as nkMin,
+ * an NK_CountOf value upon which it relies to subscribeEvents(...) as nkMin,
  * which call will fail if the hosting shell's NK_CountOf value is lower.
  */
 typedef enum {
@@ -269,7 +277,7 @@ typedef enum {
                         * pvSubject is the newly set .dbUser value. */
   NK_DbUserVanishing,  /* Current ShellExState .dbUser will soon vanish,
                         * pvSubject is the vanishing .dbUser value. */
-  NK_DbAboutToClose,   /* A maybe-user-visible DB will soon be closed,
+  NK_DbAboutToClose,   /* A ShellExState-visible DB will soon be closed,
                         * pvSubject is the sqlite3 pointer soon to close. */
   NK_CountOf           /* Present count of preceding members (evolves) */
 } NoticeKind;
