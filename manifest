@@ -1,5 +1,5 @@
-C Use\ssqlite3DbFreeNN()\sinstead\sof\ssqlite3DbFree()\sin\sa\sfew\shot\sspots\sfor\nbetter\sperformance.
-D 2022-03-28T14:18:03.634
+C Another\ssmall\sperformance\sgain\sby\susing\ssqlite3DbFreeNN().
+D 2022-03-28T14:56:47.340
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -628,7 +628,7 @@ F src/vdbe.c b1830c6daf744473a732257652b6431ac18032f508a3e30ff3a1466fe5978559
 F src/vdbe.h a1d0e3b934e835e73edd146f2e7c4eadb711b5c9875c18159a57483fd78e550e
 F src/vdbeInt.h 8dd91427155a38ec06e9ecbde07e33f21bc02e101625191e7613f883e379a363
 F src/vdbeapi.c bc3812dff7c9e6497c87ae86962818a51f66f8d7a873e7ec02a22aa115b84799
-F src/vdbeaux.c 1a718a2baef76f2e6fcf7fe12d60e4a2a3b5ccb84b0733ab3f8d1fbe312dce19
+F src/vdbeaux.c eb7e1379abdd414b8585510e137a7061196c6d55a0d5a4c9e9c60b7d45bcb414
 F src/vdbeblob.c 5e61ce31aca17db8fb60395407457a8c1c7fb471dde405e0cd675974611dcfcd
 F src/vdbemem.c 57fceb4ed6aac960e9517c963dc0668189e8b7c8e6216d257030a2f5e9a583df
 F src/vdbesort.c 43756031ca7430f7aec3ef904824a7883c4ede783e51f280d99b9b65c0796e35
@@ -1945,8 +1945,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 949133231f8f751aa86518d0d3f6f03d7827fec085bfef3929fa3d57369d0216
-R 8bb789d6e9ef98c61a24ee7a63b36635
+P b12de0ecc78a4f654c8e7b2b17cc2201688808a4f516908e9563a216677e655c
+R 240acd8eb9a53671ac46c1b4413159b7
 U drh
-Z 93250572ce0f63983b330a7fac8a4441
+Z 55979c13a79d18f654ea77f2201d732c
 # Remove this line to create a well-formed Fossil manifest.

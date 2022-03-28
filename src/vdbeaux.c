@@ -863,8 +863,10 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
     if( pOp==p->aOp ) break;
     pOp--;
   }
-  sqlite3DbFree(p->db, pParse->aLabel);
-  pParse->aLabel = 0;
+  if( aLabel ){
+    sqlite3DbFreeNN(p->db, pParse->aLabel);
+    pParse->aLabel = 0;
+  }
   pParse->nLabel = 0;
   *pMaxFuncArgs = nMaxArgs;
   assert( p->bIsReader!=0 || DbMaskAllZero(p->btreeMask) );
