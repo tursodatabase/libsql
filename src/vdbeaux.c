@@ -3439,7 +3439,10 @@ void sqlite3VdbeDeleteAuxData(sqlite3 *db, AuxData **pp, int iOp, int mask){
 void sqlite3VdbeClearObject(sqlite3 *db, Vdbe *p){
   SubProgram *pSub, *pNext;
   assert( p->db==0 || p->db==db );
-  releaseMemArray(p->aColName, p->nResColumn*COLNAME_N);
+  if( p->aColName ){
+    releaseMemArray(p->aColName, p->nResColumn*COLNAME_N);
+    sqlite3DbFreeNN(db, p->aColName);
+  }
   for(pSub=p->pProgram; pSub; pSub=pNext){
     pNext = pSub->pNext;
     vdbeFreeOpArray(db, pSub->aOp, pSub->nOp);
@@ -3447,11 +3450,10 @@ void sqlite3VdbeClearObject(sqlite3 *db, Vdbe *p){
   }
   if( p->iVdbeMagic!=VDBE_MAGIC_INIT ){
     releaseMemArray(p->aVar, p->nVar);
-    sqlite3DbFree(db, p->pVList);
-    sqlite3DbFree(db, p->pFree);
+    if( p->pVList ) sqlite3DbFreeNN(db, p->pVList);
+    if( p->pFree ) sqlite3DbFreeNN(db, p->pFree);
   }
   vdbeFreeOpArray(db, p->aOp, p->nOp);
-  sqlite3DbFree(db, p->aColName);
   sqlite3DbFree(db, p->zSql);
 #ifdef SQLITE_ENABLE_NORMALIZE
   sqlite3DbFree(db, p->zNormSql);
