@@ -1124,7 +1124,7 @@ int sqlite3VdbeMemSetStr(
 ){
   i64 nByte = n;      /* New value for pMem->n */
   int iLimit;         /* Maximum allowed string or blob size */
-  u16 flags = 0;      /* New value for pMem->flags */
+  u16 flags;          /* New value for pMem->flags */
 
   assert( pMem!=0 );
   assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
@@ -1149,9 +1149,27 @@ int sqlite3VdbeMemSetStr(
     }else{
       for(nByte=0; nByte<=iLimit && (z[nByte] | z[nByte+1]); nByte+=2){}
     }
-    flags|= MEM_Str|MEM_Term;
+    flags= MEM_Str|MEM_Term;
+  }else if( enc==0 ){
+    flags = MEM_Blob;
+#ifdef SQLITE_ENABLE_SESSION
+    enc = pMem->db ? ENC(pMem->db) : SQLITE_UTF8;
+#else
+    assert( pMem->db!=0 );
+    enc = ENC(pMem->db);
+#endif
   }else{
-    flags = (enc==0?MEM_Blob:MEM_Str);
+    flags = MEM_Str;
+  }
+  if( nByte>iLimit ){
+    if( xDel && xDel!=SQLITE_TRANSIENT ){
+      if( xDel==SQLITE_DYNAMIC ){
+        sqlite3DbFree(pMem->db, (void*)z);
+      }else{
+        xDel((void*)z);
+      }
+    }
+    return sqlite3ErrorToParser(pMem->db, SQLITE_TOOBIG);
   }
 
   /* The following block sets the new values of Mem.z and Mem.xDel. It
@@ -1162,9 +1180,6 @@ int sqlite3VdbeMemSetStr(
     i64 nAlloc = nByte;
     if( flags&MEM_Term ){
       nAlloc += (enc==SQLITE_UTF8?1:2);
-    }
-    if( nByte>iLimit ){
-      return sqlite3ErrorToParser(pMem->db, SQLITE_TOOBIG);
     }
     testcase( nAlloc==0 );
     testcase( nAlloc==31 );
@@ -1187,26 +1202,17 @@ int sqlite3VdbeMemSetStr(
 
   pMem->n = (int)(nByte & 0x7fffffff);
   pMem->flags = flags;
-  if( enc ){
-    pMem->enc = enc;
-#ifdef SQLITE_ENABLE_SESSION
-  }else if( pMem->db==0 ){
-    pMem->enc = SQLITE_UTF8;
-#endif
-  }else{
-    assert( pMem->db!=0 );
-    pMem->enc = ENC(pMem->db);
-  }
+  pMem->enc = enc;
 
 #ifndef SQLITE_OMIT_UTF16
-  if( enc>SQLITE_UTF8 && sqlite3VdbeMemHandleBom(pMem) ){
+  if( enc>SQLITE_UTF8
+   && (flags & MEM_Blob)==0
+   && sqlite3VdbeMemHandleBom(pMem)
+  ){
     return SQLITE_NOMEM_BKPT;
   }
 #endif
 
-  if( nByte>iLimit ){
-    return sqlite3ErrorToParser(pMem->db, SQLITE_TOOBIG);
-  }
 
   return SQLITE_OK;
 }

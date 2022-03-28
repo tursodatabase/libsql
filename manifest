@@ -1,5 +1,5 @@
-C Slightly\ssmaller\sand\sfaster\ssqlite3VdbeMemSetStr().
-D 2022-03-28T17:34:46.798
+C Further\ssize\sand\sperformance\soptimizations\sfor\ssqlite3VdbeMemSetStr().
+D 2022-03-28T18:34:40.795
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -630,7 +630,7 @@ F src/vdbeInt.h 8dd91427155a38ec06e9ecbde07e33f21bc02e101625191e7613f883e379a363
 F src/vdbeapi.c bc3812dff7c9e6497c87ae86962818a51f66f8d7a873e7ec02a22aa115b84799
 F src/vdbeaux.c 1de06d17a1af1bf5cc776e60afcc01c49438df90863fc4db0a0516060e7b959a
 F src/vdbeblob.c 5e61ce31aca17db8fb60395407457a8c1c7fb471dde405e0cd675974611dcfcd
-F src/vdbemem.c 4fdef7b1dadb7073ea6c20f366f84cce5e01f8795317d4fd55cf2c9d6e5febf4
+F src/vdbemem.c dc02c6b8d51bcfc50f02266cb7003395d2989b72a9df6be561fcecdf16040784
 F src/vdbesort.c 43756031ca7430f7aec3ef904824a7883c4ede783e51f280d99b9b65c0796e35
 F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf823
 F src/vdbevtab.c f99b275366c5fc5e2d99f734729880994ab9500bdafde7fae3b02d562b9d323c
@@ -1945,8 +1945,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4ccebb86aae178dbce905d782f04d98211f8fce9aacd71c12b8694c92a4f5c40
-R d5c1e4092f171ba4e7d9a62fbfe55090
+P 06928e745c7bcb26ec46a17989f30efe3536fd48a74c8a1cd423cc9ff6feccb5
+R e5b296feee8b6ff8861e4cf66944c654
 U drh
-Z 6eb24c52f69c2c05bf470575314084b5
+Z 8d86ba5638b23b699bb683c424e71903
 # Remove this line to create a well-formed Fossil manifest.
