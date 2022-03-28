@@ -197,37 +197,39 @@ static const char * const zREPL =
   "read stdin 0\n"
 #elif TCL_REPL==3
   /* using shell's input collection with line editing (if configured) */
-  "namespace eval ::REPL {\n"
-    "variable at_end 0\n"
-    "variable interactive [now_interactive] 0\n"
-  "}\n"
-  "while {!$::REPL::at_end} {\n"
-    "foreach {::REPL::group ::REPL::ready} [get_input_line_group] {}\n"
-    "set ::REPL::trimmed [string trim $::REPL::group]\n"
-    "if {$::REPL::group eq \"\" && !$::REPL::ready} break\n"
-    "if {$::REPL::trimmed eq \"\"} continue\n"
-    "if {!$::REPL::ready && $::REPL::trimmed ne \"\"} {\n"
-      "throw {NONE} {incomplete input at EOF}\n"
-    "}\n" 
-    "if {$::REPL::trimmed eq \".\"} break\n"
-    "set ::REPL::rc [catch {uplevel #0 $::REPL::group} ::REPL::result]\n"
-    "if {$::REPL::rc == 0} {\n"
-      "if {$::REPL::result!=\"\" && $::REPL::interactive} {\n"
-        "puts $::REPL::result\n"
-      "}\n"
-    "} elseif {$::REPL::rc == 1} {\n"
-      "puts stderr \"Error: $::REPL::result\"\n"
-    "} elseif {$::REPL::rc == 2} {\n"
-      "set ::REPL::at_end 1\n"
-    "}\n"
-  "}\n"
-  "if {$::REPL::interactive && $::REPL::trimmed ne \".\"} {puts {}}\n"
-  "namespace delete ::REPL\n"
-  "read stdin 0\n"
+  "sqlite_shell_REPL"
 #else
   "throw {NONE} {not built for REPL}\n"
 #endif
   ; /* zREPL */
+
+static const char * const zDefineREPL =
+  "proc sqlite_shell_REPL {} {\n"
+    "set interactive [now_interactive]\n"
+    "while {1} {\n"
+      "foreach {group ready} [get_input_line_group] {}\n"
+      "set trimmed [string trim $group]\n"
+      "if {$group eq \"\" && !$ready} break\n"
+      "if {$trimmed eq \"\"} continue\n"
+      "if {!$ready && $trimmed ne \"\"} {\n"
+        "throw {NONE} {incomplete input at EOF}\n"
+      "}\n"
+      "if {$trimmed eq \".\"} break\n"
+      "set rc [catch {uplevel #0 $group} result]\n"
+      "if {$rc == 0} {\n"
+        "if {$result != \"\" && $interactive} {\n"
+          "puts $result\n"
+        "}\n"
+      "} elseif {$rc == 1} {\n"
+        "puts stderr \"Error: $result\"\n"
+      "} elseif {$rc == 2} {\n"
+        "return -code 2\n"
+      "}\n"
+    "}\n"
+    "if {$interactive && $trimmed ne \".\"} {puts {}}\n"
+    "read stdin 0\n"
+  "}\n"
+  ;
 
 DERIVED_METHOD(DotCmdRC, execute, MetaCommand,TclCmd, 4,
              (ShellExState *psx, char **pzErrMsg, int nArgs, char *azArgs[])){
@@ -453,7 +455,7 @@ int sqlite3_tclshext_init(sqlite3*, char**, const sqlite3_api_routines*);
 typedef struct UserDb {
   SqliteDb **ppSdb;   /* Some tclsqlite.c "sqlite3" DB objects, held here. */
   int numSdb;         /* How many "sqlite3" objects are now being held */
-  int ixSdb;          /* Which held "sqlite3" object is the .userDb, if any */
+  int ixuSdb;         /* Which held "sqlite3" object is the .dbUser, if any */
   int nRef;           /* TCL object sharing counter */
   Tcl_Interp *interp; /* For creation of newly visible .dbUser DBs */
   ShellExState *psx;  /* For shell state access when .eval is run */
@@ -497,7 +499,7 @@ static void udbRemove(UserDb *pudb, int ix){
   /* Prevent closeIncrblobChannels() from trying to free anything. */
   pdb->pIncrblob = 0;
 #endif
-  /* This appears to not be necessary, but is defensive in case the
+  /* This appears to not be necessary; it is defensive in case the
    * flushStmtCache() or dbFreeStmt() code begins to use pdb->db .
    * We rely on its behavior whereby, once flushed, the cache is
    * made to appear empty in the SqliteDb struct. */
@@ -506,7 +508,7 @@ static void udbRemove(UserDb *pudb, int ix){
    * the .db ; this relies on sqlite3_close(0) being a NOP. If the
    * SqliteDb takedown code changes, this may lead to an address
    * fault. For that reason, the *.in which produces this source
-   * should be tested by excercising the TCL udb command. */
+   * should be tested by excercising the TCL udb command well. */
   pdb->db = 0;
   assert(pdb->nRef==1);
   /* Use the "stock" delete for sqlite3-generated objects. */
@@ -520,8 +522,8 @@ static void udbRemove(UserDb *pudb, int ix){
     }
   }
   /* Adjust index to currently visible DB. */
-  if( ix==pudb->ixSdb ) pudb->ixSdb = -1;
-  else if( ix<pudb->ixSdb ) --pudb->ixSdb;
+  if( ix==pudb->ixuSdb ) pudb->ixuSdb = -1;
+  else if( ix<pudb->ixuSdb ) --pudb->ixuSdb;
 }
 
 static struct UserDb *udbCreate(Tcl_Interp *interp, ShellExState *psx);
@@ -538,7 +540,7 @@ static void udbCleanup(UserDb *pudb){
   pudb->numSdb==0;
   if( pudb->ppSdb ) Tcl_Free((char*)pudb->ppSdb);
   memset(pudb, 0, sizeof(UserDb));
-  pudb->ixSdb = -1;
+  pudb->ixuSdb = -1;
 }
 
 /* Hunt for given db in UserDb's list. Return its index if found, else -1. */
@@ -570,11 +572,11 @@ static int udbEventHandle(void *pv, NoticeKind nk, void *pvSubject,
     int ix = udbIndexOfDb(pudb, dbSubject);
     switch( nk ){
     case NK_DbUserAppeared:
-      if( ix>=0 ) pudb->ixSdb = ix;
-      else pudb->ixSdb = udbAdd(pudb, dbSubject);
+      if( ix>=0 ) pudb->ixuSdb = ix;
+      else pudb->ixuSdb = udbAdd(pudb, dbSubject);
       break;
     case NK_DbUserVanishing:
-      if( ix>=0 ) pudb->ixSdb = -1;
+      if( ix>=0 ) pudb->ixuSdb = -1;
       break;
     case NK_DbAboutToClose:
       if( ix>=0 ) udbRemove(pudb, ix);
@@ -596,19 +598,22 @@ static struct UserDb *udbCreate(Tcl_Interp *interp, ShellExState *psx){
   static UserDb udb = { 0 };
   if( interp==0 || psx==0 ) return &udb;
   if( rv==0 ){
-    sqlite3 *sdb = psx->dbUser;
+    sqlite3 *sdbS = psx->dbShell;
+    sqlite3 *sdbU = psx->dbUser;
     rv = &udb;
     rv->interp = interp;
     rv->psx = psx;
-    rv->ppSdb = (SqliteDb**)Tcl_Alloc(5*sizeof(SqliteDb*));
-    memset(rv->ppSdb, 0, 5*sizeof(SqliteDb*));
-    if( sdb!=0 ){
-      udbAdd(rv, sdb);
-      rv->ixSdb = 0;
-    } else rv->ixSdb = -1;
+    rv->ppSdb = (SqliteDb**)Tcl_Alloc(6*sizeof(SqliteDb*));
+    memset(rv->ppSdb, 0, 6*sizeof(SqliteDb*));
+    assert(sdbS!=0);
+    udbAdd(rv, sdbS);
+    if( sdbU!=0 ){
+      rv->ixuSdb = udbAdd(rv, sdbU);
+    } else rv->ixuSdb = -1;
     rv->nRef = 1;
     /* Arrange that this object tracks lifetimes and visibility of the
-     * ShellExState .dbUser member values which udb purports to wrap.
+     * ShellExState .dbUser member values which udb purports to wrap,
+     * and that shdb ceases wrapping the .dbShell member at shutdown.
      * This subscription eventually leads to a udbCleanup() call. */
     pShExtApi->subscribeEvents(psx, sqlite3_tclshext_init,
                                rv, NK_CountOf, udbEventHandle);
@@ -616,39 +621,62 @@ static struct UserDb *udbCreate(Tcl_Interp *interp, ShellExState *psx){
   return rv;
 }
 
+static const char *azDbNames[] = { "shdb", "udb", 0 };
+static const int numDbNames = 2;
+
 /* C implementation behind added TCL udb command */
 static int UserDbObjCmd(void *cd, Tcl_Interp *interp,
                         int objc, Tcl_Obj * const * objv){
   UserDb *pudb = (UserDb*)cd;
   static const char *azDoHere[] = { "close", ".eval", 0 };
-  enum DbDoWhat { DDW_Close, DDW_ShellEval } doWhat;
+  enum DbDoWhat { DDW_Close, DDW_ShellEval };
+  int doWhat;
+  int whichDb = -1;
+  const char *zMoan;
 
+  if( Tcl_GetIndexFromObj(interp, objv[0], azDbNames,
+                          "shell DB command", 0, &whichDb)){
+    zMoan = " is not a wrapped DB.\n";
+    goto complain_fail;
+  }
+  if( whichDb>0 ) whichDb = pudb->ixuSdb;
   /* Delegate all subcommands except above to the now-visible SqliteDb. */
   if( objc>=2 && !Tcl_GetIndexFromObj(interp, objv[1], azDoHere,
-                                      "subcommand", 0, (int*)&doWhat)){
+                                      "subcommand", 0, &doWhat)){
     switch( doWhat ){
     case DDW_Close:
-      Tcl_AppendResult(interp, "Directly closing udb is disallowed.\n", 0);
-      return TCL_ERROR;
+      zMoan = " close is disallowd. It is a wrapped DB.\n";
+      goto complain_fail;
     case DDW_ShellEval:
       Tcl_AppendResult(interp, "Faking .eval ...\n", 0);
       //... ToDo: Implement this.
       return TCL_OK;
     }
   }
-  if( pudb->numSdb==0 || pudb->ixSdb<0 ){
-    Tcl_AppendResult(interp, Tcl_GetStringFromObj(objv[0], (int*)0),
-                     " references no DB yet.\n", 0);
-    return TCL_ERROR;
+  if( pudb->numSdb==0 || whichDb<0 ){
+    zMoan = " references no DB yet.\n";
+    goto complain_fail;
   }
-  return DbObjCmd(pudb->ppSdb[pudb->ixSdb], interp, objc, objv);
+  return DbObjCmd(pudb->ppSdb[whichDb], interp, objc, objv);
+
+ complain_fail:
+  Tcl_AppendResult(interp,
+                   Tcl_GetStringFromObj(objv[0], (int*)0), zMoan, (char*)0);
+  return TCL_ERROR;
 }
 
 /* Get the udb command subsystem initialized and create "udb" TCL command. */
 static int userDbInit(Tcl_Interp *interp, ShellExState *psx){
   UserDb *pudb = udbCreate(interp, psx);
-  if( Tcl_CreateObjCommand(interp, "udb", (Tcl_ObjCmdProc*)UserDbObjCmd,
-                           (char *)pudb, 0) ){
+  int nCreate = 0;
+  int ic;
+  for( ic=0; ic<numDbNames; ++ic ){
+    nCreate +=
+      0 != Tcl_CreateObjCommand(interp, azDbNames[ic],
+                                (Tcl_ObjCmdProc*)UserDbObjCmd,
+                                (char *)pudb, 0);
+  }
+  if( nCreate==ic ){
     ++pudb->nRef;
     return TCL_OK;
   }
@@ -719,6 +747,7 @@ int sqlite3_tclshext_init(
 #if TCL_REPL==3
         Tcl_CreateObjCommand(tclcmd.interp,
                              "get_input_line_group", getInputLineGroup, psx, 0);
+        Tcl_Eval(tclcmd.interp, zDefineREPL);
 #endif
         Tcl_CreateCommand(tclcmd.interp,
                           "now_interactive", nowInteractive, psx, 0);
