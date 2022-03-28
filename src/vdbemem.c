@@ -1107,6 +1107,13 @@ void sqlite3VdbeMemMove(Mem *pTo, Mem *pFrom){
 ** stored without allocating memory, then it is.  If a memory allocation
 ** is required to store the string, then value of pMem is unchanged.  In
 ** either case, SQLITE_TOOBIG is returned.
+**
+** The "enc" parameter is the text encoding for the string, or zero
+** to store a blob.
+**
+** If n is negative, then the string consists of all bytes up to but
+** excluding the first zero character.  The n parameter must be
+** non-negative for blobs.
 */
 int sqlite3VdbeMemSetStr(
   Mem *pMem,          /* Memory cell to set to string value */
@@ -1122,6 +1129,7 @@ int sqlite3VdbeMemSetStr(
   assert( pMem!=0 );
   assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
   assert( !sqlite3VdbeMemIsRowSet(pMem) );
+  assert( enc!=0 || n>=0 );
 
   /* If z is a NULL pointer, set pMem to contain an SQL NULL. */
   if( !z ){
@@ -1134,7 +1142,6 @@ int sqlite3VdbeMemSetStr(
   }else{
     iLimit = SQLITE_MAX_LENGTH;
   }
-  flags = (enc==0?MEM_Blob:MEM_Str);
   if( nByte<0 ){
     assert( enc!=0 );
     if( enc==SQLITE_UTF8 ){
@@ -1142,7 +1149,9 @@ int sqlite3VdbeMemSetStr(
     }else{
       for(nByte=0; nByte<=iLimit && (z[nByte] | z[nByte+1]); nByte+=2){}
     }
-    flags |= MEM_Term;
+    flags|= MEM_Str|MEM_Term;
+  }else{
+    flags = (enc==0?MEM_Blob:MEM_Str);
   }
 
   /* The following block sets the new values of Mem.z and Mem.xDel. It
