@@ -277,8 +277,13 @@ typedef enum {
                         * pvSubject is the newly set .dbUser value. */
   NK_DbUserVanishing,  /* Current ShellExState .dbUser will soon vanish,
                         * pvSubject is the vanishing .dbUser value. */
-  NK_DbAboutToClose,   /* A ShellExState-visible DB will soon be closed,
-                        * pvSubject is the sqlite3 pointer soon to close. */
+  NK_DbAboutToClose,   /* A possibly ShellExState-visible DB will soon be
+                        * closed, pvSubject is the DB's sqlite3 pointer. */
+  NK_ExtensionUnload,  /* The ShellExState .dbShell DB will soon be closed,
+                        * soon to be followed by unloading of all dynamic
+                        * extensions; pvSubject is the DB's sqlite3 pointer. */
+  NK_NewDotCommand,    /* A new MetaCommand has been registered, pvSubject
+                        * is the just-added MetaCommand object (pointer). */
   NK_CountOf           /* Present count of preceding members (evolves) */
 } NoticeKind;
 

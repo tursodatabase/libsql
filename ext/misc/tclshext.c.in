@@ -16,29 +16,81 @@
        -o tclshext.so -ltcl8.6
 ** Later TCL versions can be used if desired.
 **
-** This extension adds two features to the host shell:
-** 1. The .tcl dot command is added.
-** 2. TCL scripting support is added.
-**
-** The .tcl command can be run with 0 or more arguments.
-** With no arguments, it does a REPL loop until the end of input is seen.
-** The end of input is either an EOF condition or a lone '.' on a line.
-** With more arguments, files they name are interpreted as TCL script.
-** In either case, the TCL command return code is tranlated to a DotCmdRC.
+** This extension adds these features to the host shell:
+** 1. TCL scripting support is added.
+** 2. TCL commands added: udb shdb now_interactive get_tcl_group ..
+** 3. The .tcl and .eval dot commands are added.
 **
 ** TCL scripting support is added with a ShellExtensionAPI hookScripting()
 ** call in the manner documented for it and the ScriptHooks struct. This
 ** support lasts until the extension destructor is called. Until then,
-** shell input groups beginning with ".." are treated as TCL input, one
-** complete TCL command at a time.
+** shell input groups beginning with ".." are treated as TCL input, in
+** various ways, specifically: (1) When a bare ".." is entered, a TCL
+** REPL loop is run until the end of input is seen; (2) When "..X ..."
+** is entered, (where "X" is a dot-command name), the X dot command will
+** be run in its normal fashion, but its arguments will be collected
+** according to TCL parsing rules and will be expanded as is usual for
+** TCL commands; and (3) when ".. T ..." is entered, (where "T" is a TCL
+** command name), that TCL command and its arguments will be collected
+** and expanded according to TCL parsing rules, and the command will be
+** run in the TCL execution environment (in the root namespace), but the
+** shell execution environment remains in effect afterward. (Note that
+** cases 2 and 3 differ in whether space occurs after the leading "..".)
+**
+** The phrase "end of input" means either: end-of-file is seen on a file,
+** pipe or string stream input, or a lone "." on the first and only line
+** of an input line group is seen. This convention is useful in scripting
+** when it is expedient to switch execution environments from within the
+** same input stream. For example:
+     # From shell, enter TCL REPL:
+     ..
+     # Initialize some variables and insert into the DB:
+     set var1 [compute_however ...]
+     set var2 [derive_somehow ...]
+     udb eval { INSERT INTO SomeTable(col1, col2) VALUES($var1, var2) }
+     # Leave REPL
+     .
+     # Generate and keep pretty output:
+     .mode box -ww
+     .header on
+     .once prettified.txt
+     SELECT * FROM SomeTable;
+     # Alternatively, the query can be run from the TCL environment:
+     ..
+     set tstamp [clock format [clock seconds] -format %Y-%m-%d]
+     .once "backup of prettified.txt made $tstamp"
+     .eval {SELECT col1, col2 FROM SomeTable}
+     # Return to shell environment:
+     .
 **
 ** For any of these ways of providing TCL input, the same TCL interpreter
 ** is used, with its state maintained from one input to the next. In this
 ** way, .sqliterc or other preparatory shell scripts (or typing) can be
-** made to provide a useful set of user-defined shell enhancements.
+** made to provide useful, user-defined shell enhancements or specialized
+** procedures (aka "TCL commands") for oft-repeated tasks.
+**
+** The added TCL commands are:
+**   udb shdb ; # which expose the user DB and shell DB for access via TCL
+**   now_interactive ; # which indicates whether input is interactive
+**   get_tcl_group ; # which gets a single TCL input line group
+**   .. ; # which does nothing, silently and without error
+** The .. command exists so that a lone ".." on an input line suffices
+** to ensure the TCL REPL is running. This is symmetric with a lone "."
+** input to the TCL REPL because it either terminates the loop or, if
+** entered in the shell environment, quietly does nothing without error.
+**
+** The added .tcl dot command may be used to enter a TCL REPL, or with
+** arguments, it will read files as TCL. (This is somewhat extraneous,
+** as the same can be done with TCL commands. This is more easily done
+** from the shell invocation, and the .tcl command's integration into
+** the .help facility provides a way for users to get help for "..".)
+**
+** The added .eval dot command may be used from the TCL environment to
+** run a SQL query or statement and obtain the shell's nice display or
+** other disposition of results. While the udb and shdb command allow
+** convenient access to the DB(s), they are not setup for display.
 */
 
-#include <limits.h>
 #include "shext_linkage.h"
 
 static struct ShExtAPI *pShExtApi = 0;
@@ -63,6 +115,7 @@ INCLUDE tclsqlite.c
 #endif
 
 typedef struct TclCmd TclCmd;
+typedef struct EvalCmd EvalCmd;
 
 static void TclCmd_Takedown(TclCmd *ptc);
 
@@ -72,24 +125,56 @@ static void TclCmd_Takedown(TclCmd *ptc);
 DERIVED_METHOD(void, destruct, MetaCommand,TclCmd, 0, ()){
   TclCmd_Takedown((TclCmd *)pThis);
 }
+DERIVED_METHOD(void, destruct, MetaCommand,EvalCmd, 0, ()){
+  (void)(pThis);
+}
 
 DERIVED_METHOD(const char *, name, MetaCommand,TclCmd, 0,()){
   return "tcl";
+}
+DERIVED_METHOD(const char *, name, MetaCommand,EvalCmd, 0,()){
+  return "eval";
 }
 
 DERIVED_METHOD(const char *, help, MetaCommand,TclCmd, 1,(int more)){
   switch( more ){
   case 0: return
-      ".tcl ?FILES?   Run a TCL REPL or interpret files as TCL\n";
+    ".tcl ?FILES?             Run a TCL REPL or interpret files as TCL.\n";
   case 1: return
-      "   If FILES are provided, they name files to be read in as TCL.\n"
-      "   Otherwise, a read/evaluate/print loop is run until a lone \".\"\n"
-      "   is entered on an input line or end-of-stream is encountered.\n";
+    "   If FILES are provided, they name files to be read in as TCL.\n"
+    "   Otherwise, a read/evaluate/print loop is run until a lone \".\" is\n"
+    "   entered as complete TCL input or input end-of-stream is encountered.\n"
+    "\n"
+    "   The same REPL can be run with a lone \"..\". Or the \"..\" prefix\n"
+    "   may be used thusly, \"..dotcmd ...\" or \".. tclcmd ...\", to run a\n"
+    "   single dot command or TCL command, respectively, whereupon it will\n"
+    "   be run in its respective execution environment after its arguments\n"
+    "   are collected using TCL parsing rules and expanded as for TCL, in\n"
+    "   the TCL base namespace. In this way, arguments may be \"computed\".\n"
+    ;
+  default: return 0;
+  }
+}
+DERIVED_METHOD(const char *, help, MetaCommand,EvalCmd, 1,(int more)){
+  switch( more ){
+  case 0: return
+    ".eval SQL ...            Evaluate given SQL statements as shell does.\n";
+  case 1: return
+    "   There is little use for this dot command without the TCL extension,\n"
+    "   as it merely does what can be done in the shell by direct entry of\n"
+    "   the same statements. Its utility is in the TCL environment, where\n"
+    "   statements may be computed or derived in a variety of ways, and\n"
+    "   one wishes to use the shell's result output rendering capability.\n"
+    ;
   default: return 0;
   }
 }
 
 DERIVED_METHOD(DotCmdRC, argsCheck, MetaCommand,TclCmd, 3,
+             (char **pzErrMsg, int nArgs, char *azArgs[])){
+  return DCR_Ok;
+}
+DERIVED_METHOD(DotCmdRC, argsCheck, MetaCommand,EvalCmd, 3,
              (char **pzErrMsg, int nArgs, char *azArgs[])){
   return DCR_Ok;
 }
@@ -103,7 +188,7 @@ static void copy_complaint(char **pzErr, Tcl_Interp *pi){
   }
 }
 
-/* The .tcl REPL script is one of the 3 following string literals,
+/* The .tcl/.. REPL script is one of the 3 following string literals,
  * selected at build time for these different purposes:
  *  1st: a simple input collection, reading only stdin, which may
  *    be (handily) used as a fallback for debugging purposes.
@@ -114,6 +199,7 @@ static void copy_complaint(char **pzErr, Tcl_Interp *pi){
  *    input collection. It has higher shell dependency, and for
  *    that it gains the shell's line editing and history recall,
  *    in addition to working with the shell's input switching.
+ *    It also supports recursive REPLs when return is caught.
  */
 #ifdef TCL_REPL_STDIN_ONLY
 # define TCL_REPL 1
@@ -196,18 +282,19 @@ static const char * const zREPL =
   "namespace delete ::REPL\n"
   "read stdin 0\n"
 #elif TCL_REPL==3
+# define SHELL_REPL_CMDNAME "sqlite_shell_REPL"
   /* using shell's input collection with line editing (if configured) */
-  "sqlite_shell_REPL"
+  SHELL_REPL_CMDNAME
 #else
   "throw {NONE} {not built for REPL}\n"
 #endif
   ; /* zREPL */
 
 static const char * const zDefineREPL =
-  "proc sqlite_shell_REPL {} {\n"
+  "proc "SHELL_REPL_CMDNAME" {} {\n"
     "set interactive [now_interactive]\n"
     "while {1} {\n"
-      "foreach {group ready} [get_input_line_group] {}\n"
+      "foreach {group ready} [get_tcl_group] {}\n"
       "set trimmed [string trim $group]\n"
       "if {$group eq \"\" && !$ready} break\n"
       "if {$trimmed eq \"\"} continue\n"
@@ -231,38 +318,61 @@ static const char * const zDefineREPL =
   "}\n"
   ;
 
+/* Enter the preferred REPL */
+static DotCmdRC runTclREPL(Tcl_Interp *interp, char **pzErrMsg){
+  int rc = Tcl_Eval(interp, zREPL);
+  clearerr(stdin); /* Cure issue where stdin gets stuck after keyboard EOF. */
+  if( rc!=TCL_OK ){
+    copy_complaint(pzErrMsg, interp);
+    return DCR_Error;
+  }
+  return DCR_Ok;
+}
+
 DERIVED_METHOD(DotCmdRC, execute, MetaCommand,TclCmd, 4,
              (ShellExState *psx, char **pzErrMsg, int nArgs, char *azArgs[])){
   FILE *out = pExtHelpers->currentOutputFile(psx);
   TclCmd *ptc = (TclCmd *)pThis;
-  DotCmdRC rv = DCR_Ok;
-  int rc = TCL_OK;
   if( nArgs>1 ){
     /* Read named files into the interpreter. */
+    int rc = TCL_OK;
     int aix;
     for( aix=0; aix<(nArgs-1) && rc==TCL_OK; ++aix ){
       rc = Tcl_EvalFile(getInterp(ptc), azArgs[aix+1]);
     }
+    if( rc!=TCL_OK ){
+      copy_complaint(pzErrMsg, getInterp(ptc));
+      return DCR_Error;
+    }
+    return DCR_Ok;
   }else{
     /* Enter a REPL */
-    rc = Tcl_Eval(getInterp(ptc), zREPL);
-    clearerr(stdin); /* Cure issue where stdin gets stuck after keyboard EOF. */
+    return runTclREPL(getInterp(ptc), pzErrMsg);
   }
-  if( rc!=TCL_OK ){
-    copy_complaint(pzErrMsg, getInterp(ptc));
-    rv = DCR_Error;
-  }
-  return rv;
+}
+DERIVED_METHOD(DotCmdRC, execute, MetaCommand,EvalCmd, 4,
+             (ShellExState *psx, char **pzErrMsg, int nArgs, char *azArgs[])){
+  FILE *out = pExtHelpers->currentOutputFile(psx);
+  fprintf(out, "The .eval command does nothing, yet.\n");
+  return DCR_Ok;
 }
 
-/* Define a MetaCommand v-table initialized to reference above methods. */
+/* Define MetaCommand v-tables initialized to reference above methods. */
 MetaCommand_IMPLEMENT_VTABLE(TclCmd, tclcmd_methods);
+MetaCommand_IMPLEMENT_VTABLE(EvalCmd, evalcmd_methods);
 
+/* Static instances are used because that suffices and makes the
+ * interpreter easy to reference without going through pointers. */
 INSTANCE_BEGIN(TclCmd);
   Tcl_Interp *interp;
 INSTANCE_END(TclCmd) tclcmd = {
   &tclcmd_methods
   , 0 /* interp pointer */
+};
+INSTANCE_BEGIN(EvalCmd);
+  /* no instance data */
+INSTANCE_END(EvalCmd) evalcmd = {
+  &evalcmd_methods
 };
 
 static Tcl_Interp *getInterp(TclCmd *ptc){
@@ -275,7 +385,11 @@ static void TclCmd_Takedown(TclCmd *ptc){
   Tcl_Finalize();
 }
 
-/* Say line is script lead-in iff its first dark is "..". */
+/* Say line is script lead-in iff its first dark is "..".
+ * In combination with dot commands also being TCL commands and the
+ * special handling in the next three functions, this effects what is
+ * promised in this file's header text and by .tcl's help text.
+ */
 static int tclIsScriptLead(void *pvState, const char *zLineLead){
   char c;
   (void)(pvState);
@@ -283,11 +397,13 @@ static int tclIsScriptLead(void *pvState, const char *zLineLead){
   return (c=='.' && *zLineLead=='.');
 }
 
+/* Say line group is complete if it passes muster as ready-to-go TCL. */
 static int tclIsComplete(void *pvState, const char *zScript){
   (void)(pvState);
   return Tcl_CommandComplete(zScript);
 }
 
+/* Run as TCL after some jiggering with the leading dots. */
 static DotCmdRC tclRunScript(void *pvState, const char *zScript,
                              ShellExState *p, char **pzErrMsg){
   char c;
@@ -295,11 +411,40 @@ static DotCmdRC tclRunScript(void *pvState, const char *zScript,
   while( (c=*zScript++) && (c==' '||c=='\t') ) {}
   if( c=='.' &&  *zScript++=='.' ){
     int rc, nc = strlen30(zScript);
-    rc = Tcl_EvalEx(ptc->interp, zScript, nc, TCL_EVAL_DIRECT|TCL_EVAL_GLOBAL);
-    if( rc!=TCL_OK ) copy_complaint(pzErrMsg, getInterp(ptc));
+    /* At this point, *zScript should fall into one of these cases: */
+    switch( *zScript ){
+    case '.':
+      /* Three dots, assume user meant to run a dot command. */
+    one_shot_tcl:
+      rc = Tcl_EvalEx(ptc->interp, zScript, /* needs no adjustment */
+                      nc, TCL_EVAL_DIRECT|TCL_EVAL_GLOBAL);
+      if( rc!=TCL_OK ) copy_complaint(pzErrMsg, getInterp(ptc));
+      break;
+    case ' ': case '\t':
+      /* Two dots then whitespace, it's a TCL one-shot command. */
+      while( (c = *zScript)!=0 && c==' ' || c=='\t' ) ++zScript, --nc;
+      if ( c!=0 ) goto one_shot_tcl;
+      /* It looks like "..", so run it that way via fall-thru. */
+    case 0:
+      /* Two lone dots, user wants to run TCL REPL. */
+      return runTclREPL(ptc->interp, pzErrMsg);
+    default:
+      /* Two dots then dark not dot, may be a dot command. */
+      if( *zScript>='a' && *zScript<='z' ){
+        --zScript, ++nc;
+        goto one_shot_tcl;
+      }
+      /* It cannot be a dot command; a user tip is apparently needed. */
+      if( pzErrMsg ){
+        *pzErrMsg = sqlite3_mprintf("Nothing valid begins with ..%c\n"
+                                    "Run .help tcl to see what is valid.\n",
+                                    *zScript);
+        return DCR_SayUsage;
+      }
+    }
     return DCR_Ok|(rc!=TCL_OK);
   }
-  return DCR_Error;
+  return DCR_Error; /* Silent error because it should not happen. */
 }
 
 #define GETLINE_MAXLEN 1000
@@ -326,7 +471,7 @@ static int getInputLine(void *pvSS, Tcl_Interp *interp,
 #endif
 
 #if TCL_REPL==3
-/* C implementation of TCL proc, get_input_line_group 
+/* C implementation of TCL proc, get_tcl_group 
  * This routine returns a 2 element list consisting of:
  *   the collected input lines, joined with "\n", as a string
  * and
@@ -565,9 +710,9 @@ static int udbEventHandle(void *pv, NoticeKind nk, void *pvSubject,
   if( nk==NK_ShutdownImminent ){
     udbCleanup(pudb);
   }else if( nk==NK_Unsubscribe ){
-    assert(pudb==0 || (pudb->nRef==0 && pudb->ppSdb==0));
+    assert(pudb==0 || pudb->numSdb==0);
   }else if( nk==NK_DbUserAppeared || nk==NK_DbUserVanishing
-            || nk==NK_DbAboutToClose ){
+            || nk==NK_DbAboutToClose || nk==NK_ExtensionUnload ){
     sqlite3 *dbSubject = (sqlite3*)pvSubject;
     int ix = udbIndexOfDb(pudb, dbSubject);
     switch( nk ){
@@ -578,6 +723,10 @@ static int udbEventHandle(void *pv, NoticeKind nk, void *pvSubject,
     case NK_DbUserVanishing:
       if( ix>=0 ) pudb->ixuSdb = -1;
       break;
+    case NK_ExtensionUnload:
+      pShExtApi->subscribeEvents(psx, sqlite3_tclshext_init, 0,
+                                 NK_Unsubscribe, udbEventHandle);
+      /* fall thru */
     case NK_DbAboutToClose:
       if( ix>=0 ) udbRemove(pudb, ix);
       break;
@@ -703,6 +852,7 @@ int sqlite3_tclshext_init(
   if( pShExtLink && pShExtLink->pShellExtensionAPI->numRegistrars>=1 ){
     ShellExState *psx = pShExtLink->pSXS;
     MetaCommand *pmc = (MetaCommand *)&tclcmd;
+    MetaCommand *pec = (MetaCommand *)&evalcmd;
     const char *zShellName, *zShellDir;
     int rc;
 
@@ -729,6 +879,7 @@ int sqlite3_tclshext_init(
       TclCmd_Takedown(&tclcmd);
       return SQLITE_ERROR;
     }
+    rc = pShExtApi->registerMetaCommand(psx, sqlite3_tclshext_init, pec);
     rc = pShExtApi->registerMetaCommand(psx, sqlite3_tclshext_init, pmc);
     if( rc==SQLITE_OK ){
       ScriptHooks sh = { pmc, tclIsScriptLead, tclIsComplete, tclRunScript };
@@ -746,14 +897,18 @@ int sqlite3_tclshext_init(
 #endif
 #if TCL_REPL==3
         Tcl_CreateObjCommand(tclcmd.interp,
-                             "get_input_line_group", getInputLineGroup, psx, 0);
+                             "get_tcl_group", getInputLineGroup, psx, 0);
         Tcl_Eval(tclcmd.interp, zDefineREPL);
 #endif
         Tcl_CreateCommand(tclcmd.interp,
                           "now_interactive", nowInteractive, psx, 0);
+        /* Rename unknown so that calls to it can be intercepted. */
         Tcl_Eval(tclcmd.interp, "rename unknown "UNKNOWN_RENAME);
         Tcl_CreateCommand(tclcmd.interp,
                           "unknown", unknownDotDelegate, psx, 0);
+        /* Define this proc so that ".." either gets to the TCL REPL loop
+         * or does nothing (if already in it), as a user convenience. */
+        Tcl_Eval(tclcmd.interp, "proc .. {} {}");
         pShExtLink->eid = sqlite3_tclshext_init;
       }else{
         TclCmd_Takedown(&tclcmd);

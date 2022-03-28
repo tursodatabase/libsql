@@ -7785,6 +7785,7 @@ static int register_meta_command(ShellExState *p,
     if( rc==SQLITE_DONE ){
       psei->ppMetaCommands[nc++] = pMC;
       psei->numMetaCommands = nc;
+      notify_subscribers(psi, NK_NewDotCommand, pMC);
       return SQLITE_OK;
     }else{
       psei->ppMetaCommands[nc] = 0;
@@ -7840,7 +7841,7 @@ static int subscribe_events(ShellExState *p, ExtensionId eid, void *pvUserData,
       if( (eventHandler==0 || eventHandler==pes->eventHandler)
           && (pes->eid==0 || eid==eid)
           && (eid!=0 ||eventHandler!=0 ||/* for shell use */ pvUserData==p ) ){
-        int nLeft = pesLim - pesLim;
+        int nLeft = pesLim - pes;
         assert(pes->eventHandler!=0);
         pes->eventHandler(pes->pvUserData, NK_Unsubscribe, pes->eid, p);
         if( nLeft>1 ) memmove(pes, pes+1, (nLeft-1)*sizeof(*pes));
@@ -7875,6 +7876,26 @@ static int subscribe_events(ShellExState *p, ExtensionId eid, void *pvUserData,
     pes->pvUserData = pvUserData;
     pes->eventHandler = eventHandler;
     return SQLITE_OK;
+  }
+}
+
+/* 
+ * Unsubscribe all event listeners having an ExtensionId > 0. This is
+ * done just prior closing the shell DB (when dynamic extensions will
+ * be unloaded and accessing them in any way is good for a crash.)
+ */
+static void unsubscribe_extensions(ShellInState *psi){
+  ShellExState *psx = XSS(psi);
+  int esix = 0;
+
+  if( psi->numExtLoaded<=1 ) return; /* Ignore shell pseudo-extension. */
+  while( esix<psi->numSubscriptions ){
+    struct EventSubscription *pes = psi->pSubscriptions+esix;
+    if( pes->eid > 0 ){
+      int nsin = psi->numSubscriptions;
+      subscribe_events(psx, pes->eid, psx, NK_Unsubscribe, 0);
+      esix = esix + 1 + (psi->numSubscriptions - nsin);
+    }else ++esix;
   }
 }
 #endif
@@ -13439,8 +13460,7 @@ static DotCmdRC meta_command_errors(char *zErr, char *azArg[], int nArg,
       pArg1st = azArg[0];
       break;
     default:
-      assert(0);
-      z = "?";
+      z = "? Bizarre return from %s";
       break;
     }
     if( !zErr ){
@@ -15146,9 +15166,20 @@ int SQLITE_CDECL SHELL_MAIN(int argc, wchar_t **wargv){
   sqlite3_free(data.zEditor);
 #if SHELL_DYNAMIC_EXTENSION
   notify_subscribers(&data, NK_DbAboutToClose, datax.dbShell);
-  sqlite3_close(datax.dbShell);
-  notify_subscribers(&data, NK_ShutdownImminent, 0);
+  /* It is necessary that the shell DB be closed after the user DBs.
+   * This is because loaded extensions are held by the shell DB and
+   * are therefor (automatically) unloaded when it is closed. */
+  notify_subscribers(&data, NK_ExtensionUnload, datax.dbShell);
+  /* Forcefully unsubscribe any extension which ignored above or did
+   * not unsubscribe upon getting above event. */
+  unsubscribe_extensions(&data);
+  /* This must be done before any extensions unload. */
   free_all_shext_tracking(&data);
+  /* Unload extensions and free the DB used for dealing with them. */
+  sqlite3_close(datax.dbShell);
+  /* This notification can only reach statically linked extensions. */
+  notify_subscribers(&data, NK_ShutdownImminent, 0);
+  /* Forcefull unsubscribe static extension event listeners. */
   subscribe_events(&datax, 0, &datax, NK_Unsubscribe, 0);
 #endif
 #if !SQLITE_SHELL_IS_UTF8
