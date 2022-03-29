@@ -1168,6 +1168,7 @@ int sqlite3VdbeMemSetStr(
         xDel((void*)z);
       }
     }
+    sqlite3VdbeMemSetNull(pMem);
     return sqlite3ErrorToParser(pMem->db, SQLITE_TOOBIG);
   }
 
