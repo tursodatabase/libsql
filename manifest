@@ -1,5 +1,5 @@
-C Ensure\sthat\ssqlite3VdbeMemSetStr()\salways\sleaves\sthe\svalue\sin\sa\sconsistent\nstate\seven\sif\sthere\sis\san\serror.
-D 2022-03-29T20:50:20.630
+C In\ssetResultStrOrError(),\sif\sthe\sinput\sstring\spointer\sis\sNULL\sand\shence\sthe\nvalue\sgets\sset\sto\san\sSQL\sNULL,\sthen\sthe\sMem.enc\sfield\sis\suninitialized.\s\sSo\ndo\snot\sread\sit.\s\sThis\sis\sa\sharmless\sOSSFuzz/ASAN\sfound\sproblem.
+D 2022-03-29T22:57:00.956
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -627,7 +627,7 @@ F src/vacuum.c 6c38ddc52f0619865c91dae9c441d4d48bf3040d7dc1bc5b22da1e45547ed0b3
 F src/vdbe.c af4a5e9d64dbcc484be1fa4609b655577f81ee2cd40b61e96bece6d43718ae91
 F src/vdbe.h a1d0e3b934e835e73edd146f2e7c4eadb711b5c9875c18159a57483fd78e550e
 F src/vdbeInt.h 8dd91427155a38ec06e9ecbde07e33f21bc02e101625191e7613f883e379a363
-F src/vdbeapi.c 299da88f2788ac50b83890bbcfcfbfd09f5863604ad66f6165010cd897d087b5
+F src/vdbeapi.c 2571824e8eb961e528428ae31e2a993acc586330a32e26d03d918f0bdbdfc5f7
 F src/vdbeaux.c 1de06d17a1af1bf5cc776e60afcc01c49438df90863fc4db0a0516060e7b959a
 F src/vdbeblob.c 5e61ce31aca17db8fb60395407457a8c1c7fb471dde405e0cd675974611dcfcd
 F src/vdbemem.c 512499e51eb7cbe1d886031f19ab6f3e05655a0b25655991af01b61a631a78f7
@@ -1945,8 +1945,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 800b8fdad73b67105e416b4b5c6a5c5ded7d6a43b4eacd6b67d690cab7584b0b
-R 2b3031ad1bef73c7bb072d8d8c375b8b
+P c86ab289ec31ce9ae0abaf103a829b8d1e5ed632f493456f1f40607aeb91b41c
+R 52ea0d5515c388b9056669df44e0e84b
 U drh
-Z 768c379b4a042ffc9bb001e63cb4eaa8
+Z b8d3abe3b2948e70e31147c55397470d
 # Remove this line to create a well-formed Fossil manifest.

@@ -391,11 +391,9 @@ static void setResultStrOrError(
     }
     return;
   }
-  if( pOut->enc!=ENC(pOut->db) ){
-    sqlite3VdbeChangeEncoding(pOut, ENC(pOut->db));
-    if( sqlite3VdbeMemTooBig(pOut) ){
-      sqlite3_result_error_toobig(pCtx);
-    }
+  sqlite3VdbeChangeEncoding(pOut, ENC(pOut->db));
+  if( sqlite3VdbeMemTooBig(pOut) ){
+    sqlite3_result_error_toobig(pCtx);
   }
 }
 static int invokeValueDestructor(
