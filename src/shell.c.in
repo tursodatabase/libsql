@@ -193,9 +193,9 @@ typedef unsigned short u16;
 #endif
 
 /* ctype macros that work with signed characters */
-#define IsSpace(X)  isspace((unsigned char)X)
-#define IsDigit(X)  isdigit((unsigned char)X)
-#define ToLower(X)  (char)tolower((unsigned char)X)
+#define IsSpace(X)  isspace((unsigned char)(X))
+#define IsDigit(X)  isdigit((unsigned char)(X))
+#define ToLower(X)  (char)tolower((unsigned char)(X))
 
 #if defined(_WIN32) || defined(WIN32)
 #if SQLITE_OS_WINRT
@@ -8037,7 +8037,7 @@ static int begin_db_dispatch(ShellExState *psx){
                      0, 0, &zErr);
   rc2 = sqlite3_exec(psx->dbShell, "CREATE VIEW ActiveCommands AS SELECT "
                      "s.name AS name, max(s.extIx) AS extIx, s.cmdIx AS cmdIx "
-                     "FROM ShellCommands s GROUP BY name,extIx",
+                     "FROM ShellCommands s GROUP BY name",
                      0, 0, &zErr);
   if( rc1!=SQLITE_OK || rc2!=SQLITE_OK || zErr!=0 ){
     utf8_printf(STD_ERR, "Shell DB init failure, %s\n", zErr? zErr : "");
@@ -8350,9 +8350,12 @@ DISPATCHABLE_COMMAND( cd ? 2 2 ){
   return DCR_Ok|rc;
 }
 
-/* The undocumented ".breakpoint" command causes a call
-** to the no-op routine named test_breakpoint().
+/* The ".breakpoint" command causes a call to the no-op routine named
+ * test_breakpoint(). It is undocumented.
 */
+COLLECT_HELP_TEXT[
+  ",breakpoint              calls test_breakpoint(). (a debugging aid)",
+];
 DISPATCHABLE_COMMAND( breakpoint 3 1 1 ){
   test_breakpoint();
   return DCR_Ok;
@@ -11028,12 +11031,10 @@ DISPATCHABLE_COMMAND( prompt ? 1 3 ){
 }
 
 /*****************
- * The .read, .recover and .restore commands
+ * The .recover and .restore commands
  */
 CONDITION_COMMAND( recover !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_ENABLE_DBPAGE_VTAB) );
 COLLECT_HELP_TEXT[
-  ".read FILE               Read input from FILE",
-  "   If FILE begins with \"|\", it is a command that generates the input.",
   ".recover                 Recover as much data as possible from corrupt db.",
   "   --freelist-corrupt       Assume the freelist is corrupt",
   "   --recovery-db NAME       Store recovery metadata in database file NAME",
@@ -11042,44 +11043,6 @@ COLLECT_HELP_TEXT[
   "                            that are not also INTEGER PRIMARY KEYs",
   ".restore ?DB? FILE       Restore content of DB (default \"main\") from FILE",
 ];
-DISPATCHABLE_COMMAND( read 3 2 2 ){
-  DotCmdRC rc = DCR_Ok;
-  FILE *inUse = 0;
-  int (*fCloser)(FILE *) = 0;
-  if( ISS(p)->bSafeMode ) return DCR_AbortError;
-  if( azArg[1][0]=='|' ){
-#ifdef SQLITE_OMIT_POPEN
-    *pzErr = smprintf("pipes are not supported in this OS\n");
-    rc = DCR_Error;
-    /* p->out = STD_OUT; This was likely not needed. To be investigated. */
-#else
-    inUse = popen(azArg[1]+1, "r");
-    if( inUse==0 ){
-      *pzErr = smprintf("cannot open \"%s\"\n", azArg[1]);
-      rc = DCR_Error;
-    }else{
-      fCloser = pclose;
-    }
-#endif
-  }else if( (inUse = openChrSource(azArg[1]))==0 ){
-    *pzErr = smprintf("cannot open \"%s\"\n", azArg[1]);
-    rc = DCR_Error;
-  }else{
-    fCloser = fclose;
-  }
-  if( inUse!=0 ){
-    InSource inSourceRedir
-      = INSOURCE_FILE_REDIR(inUse, azArg[1], ISS(p)->pInSource);
-    ISS(p)->pInSource = &inSourceRedir;
-    rc = process_input(ISS(p));
-    /* If error(s) occured during process, leave complaining to them. */
-    if( rc==DCR_Error ) rc = DCR_CmdErred;
-    assert(fCloser!=0);
-    fCloser(inUse);
-    ISS(p)->pInSource = inSourceRedir.pFrom;
-  }
-  return rc;
-}
 
 /*
 ** This command is invoked to recover data from the database. A script
@@ -12773,6 +12736,20 @@ DISPATCHABLE_COMMAND( trace ? 0 0 ){
 }
 
 /*****************
+ * The .unknown command (undocumented)
+ */
+COLLECT_HELP_TEXT[
+  ",unknown ?ARGS?          Handle attempt to invoke an unknown dot command",
+];
+DISPATCHABLE_COMMAND( unknown ? 1 0 ){
+  /* Dispatcher will call this after replacing azArg[0] with the mystery
+   * command name, leaving remaining arguments as passed to dispatcher.
+   * An extension may override this to provide new commands dynamically.
+   * This name and operation were inspired by a similar TCL feature. */
+  return DCR_Unknown|0;
+}
+
+/*****************
  * The .unmodule command
  */
 CONDITION_COMMAND( unmodule defined(SQLITE_DEBUG) && !defined(SQLITE_OMIT_VIRTUALTABLE) );
@@ -12973,81 +12950,234 @@ DISPATCHABLE_COMMAND( wheretrace ? 1 2 ){
 }
 
 /*****************
- * The .x command
+ * The .x .read and .eval commands
+ * These are together because they share some function and implementation.
  */
-COLLECT_HELP_TEXT[
-  ".x NAMES ...             Excecute content of some .parameter set variable(s)",
-  "   Only variables whose name begins with a letter are eligible for this.",
-];
-DISPATCHABLE_COMMAND( x ? 1 0 ){
-  int ia, rc, nErrors = 0;
-  sqlite3_stmt *pStmt = 0;
-  sqlite3 *db;
-  DotCmdRC rv = DCR_Ok;
 
-  open_db(p, 0);
-  db = DBX(p);
-  if( db==0 ){
-    utf8_printf(STD_ERR, ".x can only be done with a database open.\n");
-    return DCR_Error;
+COLLECT_HELP_TEXT[
+  ".eval ?ARGS?             Process each ARG's content as shell input.",
+  ".read FILE               Read input from FILE",
+  "   If FILE begins with \"|\", it is a command that generates the input.",
+  ".x ?OBJS or FLAGS?  ...  Excecute content of objects as shell input",
+  "   FLAGS can be any of {-p -s -f} specifying what subsequent arguments are.",
+  "   Arguments after -p are keys in a key/value table kept by the shell DB,",
+  "   for which the object content to be executed is the corresponding value.",
+  "   Arguments after -f name either files (or pipes), which are to be read",
+  "   and the content executed. Input pipe names begin with '|'; the rest is",
+  "   an OS-shell command which can be run by the OS shell to produce output.",
+  "   Arguments after -s are strings, content of which is to be executed.",
+  "   The default in effect for arguments prior to any FLAG is -p .",
+];
+
+/* Return an allocated string with trailing whitespace trimmed except
+ * for a trailing newline. If empty (or OOM), return 0. Otherwise, the
+ * caller must eventually pass the return to sqlite3_free().
+ */
+static char *zPrepForEval(const char *zVal, int ntc){
+  int ixNewline = 0;
+  char c;
+  while( ntc>0 && IsSpace(c = zVal[ntc-1]) ){
+    if( c=='\n' ) ixNewline = ntc-1;
+    --ntc;
   }
-  if( sqlite3_table_column_metadata(db, PARAM_TABLE_SCHEMA,
-                                    PARAM_TABLE_NAME,
-                                    "key", 0, 0, 0, 0, 0)!=SQLITE_OK ){
-    utf8_printf(STD_ERR, "No "PARAM_TABLE_SNAME" table exists.\n");
-    return DCR_Error;
+  if( ntc>0 ){
+    /* The trailing newline (or some other placeholder) is important
+     * because one (or some other character) will likely be put in
+     * its place during process_input() line/group handling, along
+     * with a terminating NUL character. Without it, the NULL could
+     * land past the end of the allocation made just below.
+     */
+    int nle = ixNewline>0;
+    return smprintf( "%.*s%s", ntc, zVal, "\n"+nle );
+  }else{
+    return 0;
   }
-  rc = sqlite3_prepare_v2(db, "SELECT value FROM "PARAM_TABLE_SNAME
-                          " WHERE key=$1 AND uses=1", -1, &pStmt, 0);
-  if( rc!=SQLITE_OK ){
-    utf8_printf(STD_ERR, PARAM_TABLE_SNAME" is wrongly created.\n");
-    return DCR_Error;
+}
+
+/* Evaluate a string as input to the CLI.
+ * zName is the name to be given to the source for error reporting.
+ * Return usual dot command return codes as filtered by process_input().
+ * No provision is made for error emission because, presumably, that
+ * has been done by whatever dot commands or SQL execution is invoked.
+ */
+static DotCmdRC shellEvalText(char *zIn, const char *zName, ShellExState *psx){
+  DotCmdRC rv;
+  ShellInState *psi = ISS(psx);
+  InSource inRedir
+    = INSOURCE_STR_REDIR(zIn, zName, psi->pInSource);
+  psi->pInSource = &inRedir;
+  rv = process_input(psi);
+  psi->pInSource = inRedir.pFrom;
+  return rv;
+}
+
+DISPATCHABLE_COMMAND( eval 3 1 0 ){
+  DotCmdRC rv = DCR_Ok;
+  int ia = 1;
+  int nErrors = 0;
+  while( ia < nArg ){
+    char *zA = azArg[ia++];
+    int nc = strlen30(zA);
+    char *zSubmit = zPrepForEval(zA, nc);
+    if( zSubmit ){
+      char zName[] = "eval arg[999]";
+      sqlite3_snprintf(sizeof(zName), zName,"eval arg[%d]", ia-1);
+      rv = shellEvalText(zSubmit, zName, p);
+      sqlite3_free(zSubmit);
+      if( rv<DCR_ArgIxMask ){
+        nErrors += (rv & DCR_Error);
+        /* Handle DCR_Return, DCR_Exit or DCR_Abort */
+        if( rv>DCR_Error ) break;
+      }
+    }
   }
+  rv |= (nErrors>0);
+  /* If error to be returned, indicate that complaining about it is done. */
+  return (rv==DCR_Error)? DCR_CmdErred : rv;
+}
+
+DISPATCHABLE_COMMAND( read 3 2 2 ){
+  DotCmdRC rc = DCR_Ok;
+  FILE *inUse = 0;
+  int (*fCloser)(FILE *) = 0;
+  if( ISS(p)->bSafeMode ) return DCR_AbortError;
+  if( azArg[1][0]=='|' ){
+#ifdef SQLITE_OMIT_POPEN
+    *pzErr = smprintf("pipes are not supported in this OS\n");
+    rc = DCR_Error;
+    /* p->out = STD_OUT; This was likely not needed. To be investigated. */
+#else
+    inUse = popen(azArg[1]+1, "r");
+    if( inUse==0 ){
+      *pzErr = smprintf("cannot open \"%s\"\n", azArg[1]);
+      rc = DCR_Error;
+    }else{
+      fCloser = pclose;
+    }
+#endif
+  }else if( (inUse = openChrSource(azArg[1]))==0 ){
+    *pzErr = smprintf("cannot open \"%s\"\n", azArg[1]);
+    rc = DCR_Error;
+  }else{
+    fCloser = fclose;
+  }
+  if( inUse!=0 ){
+    InSource inSourceRedir
+      = INSOURCE_FILE_REDIR(inUse, azArg[1], ISS(p)->pInSource);
+    ISS(p)->pInSource = &inSourceRedir;
+    rc = process_input(ISS(p));
+    /* If error(s) occured during process, leave complaining to them. */
+    if( rc==DCR_Error ) rc = DCR_CmdErred;
+    assert(fCloser!=0);
+    fCloser(inUse);
+    ISS(p)->pInSource = inSourceRedir.pFrom;
+  }
+  return rc;
+}
+
+DISPATCHABLE_COMMAND( x ? 1 0 ){
+  int ia, nErrors = 0;
+  sqlite3_stmt *pStmt = 0;
+  sqlite3 *db = 0;
+  DotCmdRC rv = DCR_Ok;
+  enum { AsParam, AsString, AsFile } evalAs = AsParam;
+
   for( ia=1; ia < nArg; ++ia ){
-    if( isalpha(azArg[ia][0]) ){
-      rc = sqlite3_reset(pStmt);
-      rc = sqlite3_bind_text(pStmt, 1, azArg[ia], -1, 0);
-      rc = sqlite3_step(pStmt);
-      if( rc==SQLITE_ROW ){
-        const unsigned char *zValue = sqlite3_column_text(pStmt, 0);
-        int nb = sqlite3_column_bytes(pStmt, 0);
-        while( nb>0 && IsSpace(zValue[nb-1]) ) --nb;
-        if( nb>0 ){
-          /* The trailing newline (or some other placeholder) is important
-           * because one (or some other character) will likely be put in
-           * its place during process_input() line/group handling, along
-           * with a terminating NUL character. Without it, the NULL could
-           * land past the end of the allocation made just below.
-           */
-          int nle = zValue[nb-1]=='\n';
-          char *zSubmit = smprintf( "%.*s%s", nb, zValue, "\n"+nle );
+    char *zSubmit = 0;
+    const char *zOpt = azArg[ia];
+    if ( *zOpt == '-' ){
+      static const char *azOpts[] = { "p", "s", "f" };
+      int io = ArraySize(azOpts);
+      while( io > 0 ){
+        if( optionMatch(zOpt, azOpts[--io]) ){
+          evalAs = io;
+          zOpt = 0;
+          break;
+        }
+      }
+      if( zOpt==0 ) continue;
+    }
+    switch( evalAs ){
+    case AsParam:
+      if( pStmt==0 ){
+        int rc;
+        open_db(p, 0);
+        db = DBX(p);
+        if( db==0 ){
+          utf8_printf(STD_ERR, ".x can only be done with a database open.\n");
+          return DCR_Error;
+        }
+        if( sqlite3_table_column_metadata(db, PARAM_TABLE_SCHEMA,
+                                          PARAM_TABLE_NAME, "key",
+                                          0, 0, 0, 0, 0)!=SQLITE_OK ){
+          utf8_printf(STD_ERR, "No "PARAM_TABLE_SNAME" table exists.\n");
+          return DCR_Error;
+        }
+        rc = sqlite3_prepare_v2(db, "SELECT value FROM "PARAM_TABLE_SNAME
+                                " WHERE key=$1 AND uses=1", -1, &pStmt, 0);
+        if( rc!=SQLITE_OK ){
+          utf8_printf(STD_ERR, PARAM_TABLE_SNAME" is wrongly created.\n");
+          return DCR_Error;
+        }
+      }
+      if( isalpha(azArg[ia][0]) ){
+        int rc = sqlite3_reset(pStmt);
+        rc = sqlite3_bind_text(pStmt, 1, azArg[ia], -1, 0);
+        rc = sqlite3_step(pStmt);
+        if( rc==SQLITE_ROW ){
           ShellInState *psi = ISS(p);
-          InSource inRedir
-            = INSOURCE_STR_REDIR(zSubmit, azArg[ia], psi->pInSource);
+          const unsigned char *zValue = sqlite3_column_text(pStmt, 0);
+          int nb = sqlite3_column_bytes(pStmt, 0);
+          zSubmit = zPrepForEval((const char *)zValue, nb);
           sqlite3_reset(pStmt); /* End the parameter read to unlock DB. */
-          shell_check_oom(zSubmit);
-          psi->pInSource = &inRedir;
-          rv = process_input(psi);
-          if( rv<DCR_ArgIxMask ){
-            nErrors += (rv & DCR_Error);
-            /* Handle DCR_Return, DCR_Exit or DCR_Abort */
-            if( rv>DCR_Error ) break;
+          if( zSubmit ){
+            rv = shellEvalText(zSubmit, azArg[ia], p);
+            sqlite3_free(zSubmit);
+            if( rv<DCR_ArgIxMask ){
+              nErrors += (rv & DCR_Error);
+              /* Handle DCR_Return, DCR_Exit or DCR_Abort */
+              if( rv>DCR_Error ) break;
+            }
+          }else{
+            continue; /* All white (or OOM), ignore. */
           }
-          sqlite3_free(zSubmit);
-          psi->pInSource = inRedir.pFrom;
         }else{
-          continue; /* All white, ignore. */
+          utf8_printf(STD_ERR,
+                      "Skipping parameter '%s' (not set and executable.)\n",
+                      azArg[ia]);
+          ++nErrors;
         }
       }else{
         utf8_printf(STD_ERR,
-                    "Skipping parameter '%s' (not set and executable.)\n",
-                    azArg[ia]);
+                    "Skipping badly named %s. Run \".help x\"\n", azArg[ia]);
         ++nErrors;
       }
+      break;
+    case AsString:
+      {
+        zSubmit = zPrepForEval(zOpt, strlen30(zOpt));
+        if( zSubmit ){
+          char zName[] = "x arg[999]";
+          sqlite3_snprintf(sizeof(zName), zName,"x arg[%d]", ia);
+          rv = shellEvalText(zSubmit, zName, p);
+          sqlite3_free(zSubmit);
+        }
+      }
+      break;
+    case AsFile:
+      {
+        char *av[] = {"read", (char*)zOpt};
+        rv = readCommand(av, ArraySize(av), p, pzErr);
+      }
+      break;
+    }
+    if( rv<DCR_ArgIxMask ){
+      nErrors += (rv & DCR_Error);
+      /* Handle DCR_Return, DCR_Exit or DCR_Abort */
+      if( rv>DCR_Error ) break;
     }else{
-      utf8_printf(STD_ERR,
-                  "Skipping badly named %s. Run \".help x\"\n", azArg[ia]);
       ++nErrors;
+      rv = DCR_Error;
     }
   }
   sqlite3_finalize(pStmt);
@@ -13256,7 +13386,7 @@ MetaCommand *findMetaCommand(const char *cmdName, ShellExState *psx,
     sqlite3_finalize(pStmt);
     if( rc!= SQLITE_ROW ) return 0;
     if( pnFound ) *pnFound = nf;
-    if( nf!=1 ) return 0; /* Future: indicate ambiguity if > 1 */
+    if( nf!=1 ) return 0; /* Future: indicate collisions if > 1 */
     return command_by_index(ISS(psx), extIx, cmdIx);
   }else
 #endif
@@ -13272,12 +13402,24 @@ MetaCommand *findMetaCommand(const char *cmdName, ShellExState *psx,
       }else if( md<0 ){
         ixe = ixm-1;
       }else{
-        if( command_table[ixm].minLen > cmdLen ) return 0;
+        /* Have a match, see whether it's ambiguous. */
+        if( command_table[ixm].minLen > cmdLen ){
+          if( (ixm>0
+               && !strncmp(cmdName, command_table[ixm-1].cmdName, cmdLen))
+              ||
+              (ixm<ixe
+               && !strncmp(cmdName, command_table[ixm+1].cmdName, cmdLen)) ){
+            /* Yes, a neighbor matches too. */
+            if( pnFound ) *pnFound = 2; /* could be more, but >1 suffices */
+            return 0;
+          }
+        }
         pci = &command_table[ixm];
+        if( pnFound ) *pnFound = 1;
         break;
       }
     }
-    if( pnFound ) *pnFound = 1;
+    if( pnFound && pci ) *pnFound = 1;
     return (MetaCommand *)pci;
   }
 }
@@ -13530,19 +13672,16 @@ static DotCmdRC meta_command_errors(char *zErr, char *azArg[], int nArg,
  */
 static DotCmdRC runMetaCommand(MetaCommand *pmc, char *azArg[], int nArg,
                                ShellExState *psx){
-  char *arg0 = azArg[0];
   char *zErr = 0;
   DotCmdRC dcr = pmc->pMethods->argsCheck(pmc, &zErr, nArg, azArg);
 
   command_prep(ISS(psx));
-  azArg[0] = (char *)(pmc->pMethods->name(pmc));
   if( dcr==DCR_Ok ){
     dcr = pmc->pMethods->execute(pmc, psx, &zErr, nArg, azArg);
   }
   if( dcr!=DCR_Ok ){
     dcr = meta_command_errors(zErr, azArg, nArg, dcr, psx);
   }
-  azArg[0] = arg0;
   sqlite3_free(zErr);
   command_post(ISS(psx));
   return dcr;
@@ -13601,13 +13740,24 @@ static DotCmdRC do_meta_command(char *zLine, ShellExState *psx){
     int nFound;
     MetaCommand *pmc = findMetaCommand(azArg[0], psx, &nFound);
     if( pmc==0 || nFound>1 ){
-      dcr = (nFound>1)? DCR_Ambiguous: DCR_Unknown;
-      /* Issue error for an unknown or inadequately specified dot command. */
-      dcr = meta_command_errors(0, azArg, nArg, dcr, psx);
+      if( nFound==0 ){
+        pmc = findMetaCommand("unknown", psx, &nFound);
+        if( pmc && nFound<2 ) dcr = runMetaCommand(pmc, azArg, nArg, psx);
+        else dcr = DCR_Unknown;
+      }else{
+        dcr = DCR_Ambiguous;
+      }
+      if( dcr > DCR_ArgIxMask ){
+        /* Issue error for unknown or inadequately specified dot command. */
+        dcr = meta_command_errors(0, azArg, nArg, dcr, psx);
+      }
     }
     else{
+      char *arg0 = azArg[0];
+      azArg[0] = (char *)(pmc->pMethods->name(pmc));
       /* Run found command and issue or handle any errors it may report. */
       dcr = runMetaCommand(pmc, azArg, nArg, psx);
+      azArg[0] = arg0;
     }
   }
 

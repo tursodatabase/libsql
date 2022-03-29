@@ -19,7 +19,7 @@
 ** This extension adds these features to the host shell:
 ** 1. TCL scripting support is added.
 ** 2. TCL commands added: udb shdb now_interactive get_tcl_group ..
-** 3. The .tcl and .eval dot commands are added.
+** 3. The .tcl and .unknown dot commands are added.
 **
 ** TCL scripting support is added with a ShellExtensionAPI hookScripting()
 ** call in the manner documented for it and the ScriptHooks struct. This
@@ -85,10 +85,9 @@
 ** from the shell invocation, and the .tcl command's integration into
 ** the .help facility provides a way for users to get help for "..".)
 **
-** The added .eval dot command may be used from the TCL environment to
-** run a SQL query or statement and obtain the shell's nice display or
-** other disposition of results. While the udb and shdb command allow
-** convenient access to the DB(s), they are not setup for display.
+** The added .unknown dot command overrides the shell's .unknown so
+** that new dot commands can be implemented in TCL and then be run
+** from the shell in the dot command execution context.
 */
 
 #include "shext_linkage.h"
@@ -115,25 +114,73 @@ INCLUDE tclsqlite.c
 #endif
 
 typedef struct TclCmd TclCmd;
-typedef struct EvalCmd EvalCmd;
+typedef struct UnkCmd UnkCmd;
 
-static void TclCmd_Takedown(TclCmd *ptc);
+static struct InterpManage {
+  Tcl_Interp *pInterp;
+  int nRefs;
+} interpKeep = { 0, 0 };
+
+static Tcl_Interp *getInterp(){
+  assert(interpKeep.nRefs>0 && interpKeep.pInterp!=0);
+  return interpKeep.pInterp;
+}
+
+static void Tcl_TakeDown(void *pv){
+  assert(pv==&interpKeep);
+  if( --interpKeep.nRefs==0 ){
+    if( interpKeep.pInterp ){
+      Tcl_DeleteInterp(interpKeep.pInterp);
+      interpKeep.pInterp = 0;
+      Tcl_Finalize();
+    }
+  }
+}
+
+static int Tcl_BringUp(char **pzErrMsg){
+  if( ++interpKeep.nRefs==1 ){
+    const char *zShellName = pExtHelpers->shellInvokedAs();
+    const char *zShellDir = pExtHelpers->shellStartupDir();
+    if( zShellDir!=0 ){
+      char cwd[FILENAME_MAX+1];
+      if( getDir(cwd) && 0==chdir(zShellDir) ){
+        int rc;
+        Tcl_FindExecutable(zShellName);
+        rc = chdir(cwd); /* result ignored, kept only to silence gcc */
+      }
+    }
+    interpKeep.pInterp = Tcl_CreateInterp();
+    Tcl_SetSystemEncoding(interpKeep.pInterp, "utf-8");
+    Sqlite3_Init(interpKeep.pInterp);
+    if( 0==Tcl_OOInitStubs(interpKeep.pInterp) ){
+      *pzErrMsg = sqlite3_mprintf("Tcl v8.6 or higher required.\n");
+      Tcl_TakeDown(&interpKeep);
+      return SQLITE_ERROR;
+    }
+    if( Tcl_Init(interpKeep.pInterp)!=TCL_OK ){
+      *pzErrMsg = sqlite3_mprintf("Tcl interpreter startup failed.\n");
+      Tcl_TakeDown(&interpKeep);
+      return SQLITE_ERROR;
+    }
+  }
+  return (interpKeep.pInterp!=0)? SQLITE_OK : SQLITE_ERROR;
+}
 
 /* These DERIVED_METHOD(...) macro calls' arguments were copied and
  * pasted from the MetaCommand interface declaration in shext_linkage.h
  */
 DERIVED_METHOD(void, destruct, MetaCommand,TclCmd, 0, ()){
-  TclCmd_Takedown((TclCmd *)pThis);
+  (void)(pThis);
 }
-DERIVED_METHOD(void, destruct, MetaCommand,EvalCmd, 0, ()){
+DERIVED_METHOD(void, destruct, MetaCommand,UnkCmd, 0, ()){
   (void)(pThis);
 }
 
 DERIVED_METHOD(const char *, name, MetaCommand,TclCmd, 0,()){
   return "tcl";
 }
-DERIVED_METHOD(const char *, name, MetaCommand,EvalCmd, 0,()){
-  return "eval";
+DERIVED_METHOD(const char *, name, MetaCommand,UnkCmd, 0,()){
+  return "unknown";
 }
 
 DERIVED_METHOD(const char *, help, MetaCommand,TclCmd, 1,(int more)){
@@ -149,23 +196,23 @@ DERIVED_METHOD(const char *, help, MetaCommand,TclCmd, 1,(int more)){
     "   may be used thusly, \"..dotcmd ...\" or \".. tclcmd ...\", to run a\n"
     "   single dot command or TCL command, respectively, whereupon it will\n"
     "   be run in its respective execution environment after its arguments\n"
-    "   are collected using TCL parsing rules and expanded as for TCL, in\n"
+    "   are collected using TCL parsing rules and expanded as for TCL in\n"
     "   the TCL base namespace. In this way, arguments may be \"computed\".\n"
     ;
   default: return 0;
   }
 }
-DERIVED_METHOD(const char *, help, MetaCommand,EvalCmd, 1,(int more)){
+DERIVED_METHOD(const char *, help, MetaCommand,UnkCmd, 1,(int more)){
   switch( more ){
   case 0: return
-    ".eval SQL ...            Evaluate given SQL statements as shell does.\n";
+  ",unknown ?ARGS?          Retry unknown dot command if it is a TCL command\n";
   case 1: return
-    "   There is little use for this dot command without the TCL extension,\n"
-    "   as it merely does what can be done in the shell by direct entry of\n"
-    "   the same statements. Its utility is in the TCL environment, where\n"
-    "   statements may be computed or derived in a variety of ways, and\n"
-    "   one wishes to use the shell's result output rendering capability.\n"
-    ;
+  "   There is little use for this dot command without the TCL extension,\n"
+  "   as the shell's version merely does some error reporting. However,\n"
+  "   with it overridden, (as it is now), it provides a retry mechanism\n"
+  "   whereby, if the command can be found defined in the TCL environment,\n"
+  "   that command can be run with whatever arguments it was provided.\n"
+  ;
   default: return 0;
   }
 }
@@ -174,12 +221,10 @@ DERIVED_METHOD(DotCmdRC, argsCheck, MetaCommand,TclCmd, 3,
              (char **pzErrMsg, int nArgs, char *azArgs[])){
   return DCR_Ok;
 }
-DERIVED_METHOD(DotCmdRC, argsCheck, MetaCommand,EvalCmd, 3,
+DERIVED_METHOD(DotCmdRC, argsCheck, MetaCommand,UnkCmd, 3,
              (char **pzErrMsg, int nArgs, char *azArgs[])){
   return DCR_Ok;
 }
-
-static Tcl_Interp *getInterp(TclCmd *ptc);
 
 static void copy_complaint(char **pzErr, Tcl_Interp *pi){
   if( pzErr ){
@@ -338,52 +383,78 @@ DERIVED_METHOD(DotCmdRC, execute, MetaCommand,TclCmd, 4,
     int rc = TCL_OK;
     int aix;
     for( aix=0; aix<(nArgs-1) && rc==TCL_OK; ++aix ){
-      rc = Tcl_EvalFile(getInterp(ptc), azArgs[aix+1]);
+      rc = Tcl_EvalFile(getInterp(), azArgs[aix+1]);
     }
     if( rc!=TCL_OK ){
-      copy_complaint(pzErrMsg, getInterp(ptc));
+      copy_complaint(pzErrMsg, getInterp());
       return DCR_Error;
     }
     return DCR_Ok;
   }else{
     /* Enter a REPL */
-    return runTclREPL(getInterp(ptc), pzErrMsg);
+    return runTclREPL(getInterp(), pzErrMsg);
   }
 }
-DERIVED_METHOD(DotCmdRC, execute, MetaCommand,EvalCmd, 4,
+DERIVED_METHOD(DotCmdRC, execute, MetaCommand,UnkCmd, 4,
              (ShellExState *psx, char **pzErrMsg, int nArgs, char *azArgs[])){
-  FILE *out = pExtHelpers->currentOutputFile(psx);
-  fprintf(out, "The .eval command does nothing, yet.\n");
-  return DCR_Ok;
+  Tcl_Interp *interp = getInterp();
+  Tcl_Obj **ppo;
+  char zName[50];
+  int ia, rc;
+
+  if( interp==0 || nArgs==0 ) return DCR_Unknown;
+
+  sqlite3_snprintf(sizeof(zName), zName, ".%s", azArgs[0]);
+  if( !Tcl_FindCommand(interp, zName, 0, TCL_GLOBAL_ONLY|TCL_LEAVE_ERR_MSG) ){
+    if( !pExtHelpers->nowInteractive(psx) ){
+      *pzErrMsg = sqlite3_mprintf("Command %s not found.\n", zName);
+      return DCR_Unknown;
+    }else{
+      FILE *out = pExtHelpers->currentOutputFile(psx);
+      fprintf(stderr, "The %s command does not yet exist.\n", zName);
+      fprintf(out, "Run .help to see existent dot commands,"
+              " or create %s as a TCL proc.\n", zName);
+      return DCR_CmdErred;
+    }
+  }
+  ppo = sqlite3_malloc((nArgs+1)*sizeof(Tcl_Obj*));
+  if( ppo==0 ) return TCL_ERROR;
+  for( ia=0; ia<nArgs; ++ia ){
+    ppo[ia] = Tcl_NewStringObj((ia)? azArgs[ia] : zName, -1);
+    Tcl_IncrRefCount(ppo[ia]);
+  }
+  rc = Tcl_EvalObjv(interp, nArgs, ppo, TCL_EVAL_GLOBAL);
+  for( ia=0; ia<nArgs; ++ia ) Tcl_DecrRefCount(ppo[ia]);
+  sqlite3_free(ppo);
+  /* Translate TCL return to a dot command return. */
+  switch( rc ){
+  case TCL_OK:
+    return DCR_Ok;
+  case TCL_ERROR:
+    *pzErrMsg = sqlite3_mprintf("%s\n", Tcl_GetStringResult(interp));
+    return DCR_Error;
+  case TCL_RETURN: case TCL_BREAK: case TCL_CONTINUE:
+    return DCR_Return;
+  default:
+    return DCR_Exit;
+  }
 }
 
 /* Define MetaCommand v-tables initialized to reference above methods. */
 MetaCommand_IMPLEMENT_VTABLE(TclCmd, tclcmd_methods);
-MetaCommand_IMPLEMENT_VTABLE(EvalCmd, evalcmd_methods);
+MetaCommand_IMPLEMENT_VTABLE(UnkCmd, unkcmd_methods);
 
-/* Static instances are used because that suffices and makes the
- * interpreter easy to reference without going through pointers. */
+/* Static instances are used because that suffices. */
 INSTANCE_BEGIN(TclCmd);
-  Tcl_Interp *interp;
+  /* no instance data */
 INSTANCE_END(TclCmd) tclcmd = {
   &tclcmd_methods
-  , 0 /* interp pointer */
 };
-INSTANCE_BEGIN(EvalCmd);
+INSTANCE_BEGIN(UnkCmd);
   /* no instance data */
-INSTANCE_END(EvalCmd) evalcmd = {
-  &evalcmd_methods
+INSTANCE_END(UnkCmd) unkcmd = {
+  &unkcmd_methods
 };
-
-static Tcl_Interp *getInterp(TclCmd *ptc){
-  return ptc->interp;
-}
-
-static void TclCmd_Takedown(TclCmd *ptc){
-  Tcl_DeleteInterp(ptc->interp);
-  ptc->interp = 0;
-  Tcl_Finalize();
-}
 
 /* Say line is script lead-in iff its first dark is "..".
  * In combination with dot commands also being TCL commands and the
@@ -407,7 +478,9 @@ static int tclIsComplete(void *pvState, const char *zScript){
 static DotCmdRC tclRunScript(void *pvState, const char *zScript,
                              ShellExState *p, char **pzErrMsg){
   char c;
-  TclCmd *ptc = (TclCmd *)pvState;
+  struct InterpManage *pim = (struct InterpManage *)pvState;
+  Tcl_Interp *interp = pim->pInterp;
+  if( interp==0 ) return DCR_Error;
   while( (c=*zScript++) && (c==' '||c=='\t') ) {}
   if( c=='.' &&  *zScript++=='.' ){
     int rc, nc = strlen30(zScript);
@@ -416,9 +489,9 @@ static DotCmdRC tclRunScript(void *pvState, const char *zScript,
     case '.':
       /* Three dots, assume user meant to run a dot command. */
     one_shot_tcl:
-      rc = Tcl_EvalEx(ptc->interp, zScript, /* needs no adjustment */
+      rc = Tcl_EvalEx(interp, zScript, /* needs no adjustment */
                       nc, TCL_EVAL_DIRECT|TCL_EVAL_GLOBAL);
-      if( rc!=TCL_OK ) copy_complaint(pzErrMsg, getInterp(ptc));
+      if( rc!=TCL_OK ) copy_complaint(pzErrMsg, getInterp());
       break;
     case ' ': case '\t':
       /* Two dots then whitespace, it's a TCL one-shot command. */
@@ -427,7 +500,7 @@ static DotCmdRC tclRunScript(void *pvState, const char *zScript,
       /* It looks like "..", so run it that way via fall-thru. */
     case 0:
       /* Two lone dots, user wants to run TCL REPL. */
-      return runTclREPL(ptc->interp, pzErrMsg);
+      return runTclREPL(interp, pzErrMsg);
     default:
       /* Two dots then dark not dot, may be a dot command. */
       if( *zScript>='a' && *zScript<='z' ){
@@ -485,8 +558,8 @@ static int getInputLine(void *pvSS, Tcl_Interp *interp,
  * By design, this combination is never returned:
  *   { Empty 1 } => no input collected but valid TCL
  */
-static int getInputLineGroup(void *pvSS, Tcl_Interp *interp,
-                             int objc, Tcl_Obj *const objv[]){
+static int getTclGroup(void *pvSS, Tcl_Interp *interp,
+                       int objc, Tcl_Obj *const objv[]){
   if( objc==1 ){
     static Prompts cueTcl = { "tcl% ", "   > " };
     ShellExState *psx = (ShellExState *)pvSS;
@@ -580,6 +653,7 @@ static int unknownDotDelegate(void *pvSS, Tcl_Interp *interp,
       }
       rc = Tcl_EvalObjv(interp, nArgs, ppo, TCL_EVAL_GLOBAL);
       for( ia=0; ia<nArgs; ++ia ) Tcl_DecrRefCount(ppo[ia]);
+      sqlite3_free(ppo);
       return rc;
     }else{
       /* Fail now (instead of recursing back into this handler.) */
@@ -851,10 +925,7 @@ int sqlite3_tclshext_init(
   pShExtLink = shext_link(db);
   if( pShExtLink && pShExtLink->pShellExtensionAPI->numRegistrars>=1 ){
     ShellExState *psx = pShExtLink->pSXS;
-    MetaCommand *pmc = (MetaCommand *)&tclcmd;
-    MetaCommand *pec = (MetaCommand *)&evalcmd;
-    const char *zShellName, *zShellDir;
-    int rc;
+    int rc = 0;
 
     pShExtApi = & pShExtLink->pShellExtensionAPI->api.named;
     pExtHelpers = & pShExtLink->pShellExtensionAPI->pExtHelpers->helpers.named;
@@ -862,60 +933,42 @@ int sqlite3_tclshext_init(
       *pzErrMsg = sqlite3_mprintf("Shell version mismatch");
       return SQLITE_ERROR;
     }
-    zShellName = pExtHelpers->shellInvokedAs();
-    zShellDir = pExtHelpers->shellStartupDir();
-    if( zShellDir!=0 ){
-      char cwd[FILENAME_MAX+1];
-      if( getDir(cwd) && 0==chdir(zShellDir) ){
-        Tcl_FindExecutable(zShellName);
-        rc = chdir(cwd); /* result ignored, kept only to silence gcc */
+    rc = pShExtApi->registerMetaCommand(psx, sqlite3_tclshext_init,
+                                        (MetaCommand *)&unkcmd);
+    rc = pShExtApi->registerMetaCommand(psx, sqlite3_tclshext_init,
+                                        (MetaCommand *)&tclcmd);
+    if( rc==SQLITE_OK && (rc = Tcl_BringUp(pzErrMsg))==SQLITE_OK ){
+      Tcl_Interp *interp = getInterp();
+      ScriptHooks sh = {
+        &interpKeep, tclIsScriptLead, tclIsComplete, tclRunScript
+      };
+      if( TCL_OK==userDbInit(interp, psx) ){
+        UserDb *pudb = udbCreate(interp, psx);
+        pShExtLink->extensionDestruct = (void (*)(void*))udbCleanup;
+        pShExtLink->pvExtensionObject = pudb;
       }
-    }
-    tclcmd.interp = Tcl_CreateInterp();
-    Tcl_SetSystemEncoding(tclcmd.interp, "utf-8");
-    Sqlite3_Init(tclcmd.interp);
-    if( 0==Tcl_OOInitStubs(tclcmd.interp) ){
-      *pzErrMsg = sqlite3_mprintf("Tcl v8.6 or higher required.\n");
-      TclCmd_Takedown(&tclcmd);
-      return SQLITE_ERROR;
-    }
-    rc = pShExtApi->registerMetaCommand(psx, sqlite3_tclshext_init, pec);
-    rc = pShExtApi->registerMetaCommand(psx, sqlite3_tclshext_init, pmc);
-    if( rc==SQLITE_OK ){
-      ScriptHooks sh = { pmc, tclIsScriptLead, tclIsComplete, tclRunScript };
-      int irc = Tcl_Init(tclcmd.interp);
-      if( irc==TCL_OK ){
-        if( TCL_OK==userDbInit(tclcmd.interp, psx) ){
-          UserDb *pudb = udbCreate(tclcmd.interp, psx);
-          pShExtLink->extensionDestruct = (void (*)(void*))udbCleanup;
-          pShExtLink->pvExtensionObject = pudb;
-        }
-        pShExtApi->hookScripting(psx, sqlite3_tclshext_init, &sh);
-#if TCL_REPL==2
-        Tcl_CreateCommand(tclcmd.interp,
-                          "get_input_line", getInputLine, psx, 0);
+      pShExtApi->hookScripting(psx, sqlite3_tclshext_init, &sh);
+#if TCL_REPL==1 || TCL_REPL==2
+      Tcl_CreateCommand(interp, "get_input_line", getInputLine, psx, 0);
 #endif
 #if TCL_REPL==3
-        Tcl_CreateObjCommand(tclcmd.interp,
-                             "get_tcl_group", getInputLineGroup, psx, 0);
-        Tcl_Eval(tclcmd.interp, zDefineREPL);
+      Tcl_CreateObjCommand(interp, "get_tcl_group", getTclGroup, psx, 0);
+      Tcl_Eval(interp, zDefineREPL);
 #endif
-        Tcl_CreateCommand(tclcmd.interp,
-                          "now_interactive", nowInteractive, psx, 0);
-        /* Rename unknown so that calls to it can be intercepted. */
-        Tcl_Eval(tclcmd.interp, "rename unknown "UNKNOWN_RENAME);
-        Tcl_CreateCommand(tclcmd.interp,
-                          "unknown", unknownDotDelegate, psx, 0);
-        /* Define this proc so that ".." either gets to the TCL REPL loop
-         * or does nothing (if already in it), as a user convenience. */
-        Tcl_Eval(tclcmd.interp, "proc .. {} {}");
-        pShExtLink->eid = sqlite3_tclshext_init;
-      }else{
-        TclCmd_Takedown(&tclcmd);
-        rc = SQLITE_ERROR;
-      }
+      Tcl_CreateCommand(interp, "now_interactive", nowInteractive, psx, 0);
+      /* Rename unknown so that calls to it can be intercepted. */
+      Tcl_Eval(interp, "rename unknown "UNKNOWN_RENAME);
+      Tcl_CreateCommand(interp, "unknown", unknownDotDelegate, psx, 0);
+      /* Define this proc so that ".." either gets to the TCL REPL loop
+       * or does nothing (if already in it), as a user convenience. */
+      Tcl_Eval(interp, "proc .. {} {}");
+      pShExtLink->eid = sqlite3_tclshext_init;
+    }
+    if( rc==SQLITE_OK ){
+      pShExtLink->extensionDestruct = Tcl_TakeDown;
+      pShExtLink->pvExtensionObject = &interpKeep;
     }else{
-      TclCmd_Takedown(&tclcmd);
+      Tcl_TakeDown(&interpKeep);
     }
     return rc;
   }
