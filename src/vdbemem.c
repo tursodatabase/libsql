@@ -204,7 +204,11 @@ int sqlite3VdbeChangeEncoding(Mem *pMem, int desiredEnc){
   assert( !sqlite3VdbeMemIsRowSet(pMem) );
   assert( desiredEnc==SQLITE_UTF8 || desiredEnc==SQLITE_UTF16LE
            || desiredEnc==SQLITE_UTF16BE );
-  if( !(pMem->flags&MEM_Str) || pMem->enc==desiredEnc ){
+  if( pMem->enc==desiredEnc ){
+    return SQLITE_OK;
+  }
+  if( !(pMem->flags&MEM_Str) ){
+    pMem->enc = desiredEnc;
     return SQLITE_OK;
   }
   assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
@@ -1152,12 +1156,7 @@ int sqlite3VdbeMemSetStr(
     flags= MEM_Str|MEM_Term;
   }else if( enc==0 ){
     flags = MEM_Blob;
-#ifdef SQLITE_ENABLE_SESSION
-    enc = pMem->db ? ENC(pMem->db) : SQLITE_UTF8;
-#else
-    assert( pMem->db!=0 );
-    enc = ENC(pMem->db);
-#endif
+    enc = SQLITE_UTF8;
   }else{
     flags = MEM_Str;
   }
@@ -1205,10 +1204,7 @@ int sqlite3VdbeMemSetStr(
   pMem->enc = enc;
 
 #ifndef SQLITE_OMIT_UTF16
-  if( enc>SQLITE_UTF8
-   && (flags & MEM_Blob)==0
-   && sqlite3VdbeMemHandleBom(pMem)
-  ){
+  if( enc>SQLITE_UTF8 && sqlite3VdbeMemHandleBom(pMem) ){
     return SQLITE_NOMEM_BKPT;
   }
 #endif
