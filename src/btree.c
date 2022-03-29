@@ -8742,7 +8742,6 @@ static int anotherValidCursor(BtCursor *pCur){
 */
 static int balance(BtCursor *pCur){
   int rc = SQLITE_OK;
-  const int nMin = pCur->pBt->usableSize * 2 / 3;
   u8 aBalanceQuickSpace[13];
   u8 *pFree = 0;
 
@@ -8754,7 +8753,11 @@ static int balance(BtCursor *pCur){
     MemPage *pPage = pCur->pPage;
 
     if( NEVER(pPage->nFree<0) && btreeComputeFreeSpace(pPage) ) break;
-    if( pPage->nOverflow==0 && pPage->nFree<=nMin ){
+    if( pPage->nOverflow==0 && pPage->nFree*3<=pCur->pBt->usableSize*2 ){
+      /* No rebalance required as long as:
+      **   (1) There are no overflow cells
+      **   (2) The amount of free space on the page is less than 2/3rds of
+      **       the total usable space on the page. */
       break;
     }else if( (iPage = pCur->iPage)==0 ){
       if( pPage->nOverflow && (rc = anotherValidCursor(pCur))==SQLITE_OK ){
@@ -9568,7 +9571,15 @@ int sqlite3BtreeDelete(BtCursor *pCur, u8 flags){
   ** been corrected, so be it. Otherwise, after balancing the leaf node,
   ** walk the cursor up the tree to the internal node and balance it as 
   ** well.  */
-  rc = balance(pCur);
+  assert( pCur->pPage->nOverflow==0 );
+  assert( pCur->pPage->nFree>=0 );
+  if( pCur->pPage->nFree*3<=pCur->pBt->usableSize*2 ){
+    /* Optimization: If the free space is less than 2/3rds of the page,
+    ** then balance() will always be a no-op.  No need to invoke it. */
+    rc = SQLITE_OK;
+  }else{
+    rc = balance(pCur);
+  }
   if( rc==SQLITE_OK && pCur->iPage>iCellDepth ){
     releasePageNotNull(pCur->pPage);
     pCur->iPage--;
