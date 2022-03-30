@@ -1,5 +1,5 @@
-C Small\ssize\sreduction\sand\sperformance\sincrease\sin\ssqlite3FinishCoding().
-D 2022-03-30T17:36:40.718
+C Faster\sand\sslightly\ssmaller\simplementation\sof\ssqlite3Step().
+D 2022-03-30T17:56:27.350
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -627,7 +627,7 @@ F src/vacuum.c 6c38ddc52f0619865c91dae9c441d4d48bf3040d7dc1bc5b22da1e45547ed0b3
 F src/vdbe.c af4a5e9d64dbcc484be1fa4609b655577f81ee2cd40b61e96bece6d43718ae91
 F src/vdbe.h a1d0e3b934e835e73edd146f2e7c4eadb711b5c9875c18159a57483fd78e550e
 F src/vdbeInt.h 8dd91427155a38ec06e9ecbde07e33f21bc02e101625191e7613f883e379a363
-F src/vdbeapi.c 2571824e8eb961e528428ae31e2a993acc586330a32e26d03d918f0bdbdfc5f7
+F src/vdbeapi.c d41dedcf05f4b0ee3f0a2ce4f8316631fef5391c2d5705b4a0b48156b8061c0b
 F src/vdbeaux.c 1de06d17a1af1bf5cc776e60afcc01c49438df90863fc4db0a0516060e7b959a
 F src/vdbeblob.c 5e61ce31aca17db8fb60395407457a8c1c7fb471dde405e0cd675974611dcfcd
 F src/vdbemem.c 512499e51eb7cbe1d886031f19ab6f3e05655a0b25655991af01b61a631a78f7
@@ -1945,8 +1945,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 47d0b1c4cfc3d2d8f57a02079276bb70a205ffd0f18007dd39c92f813d4c87f5
-R bfff41b69f3c58b7003f472b201fd884
+P 9248ce50f57fb9c4ba67949fdf9c9567c3e626cd9dd1b41b71c602d29c77c43e
+R d211f80e25abf1520d1ba8916168f07f
 U drh
-Z 561c127ed7f0a8dbf7f5fadac7f3d58b
+Z 7ecb30a0193ebe95381527545dca992e
 # Remove this line to create a well-formed Fossil manifest.
