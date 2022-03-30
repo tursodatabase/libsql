@@ -214,7 +214,9 @@ void sqlite3FinishCoding(Parse *pParse){
       int iDb, i;
       assert( sqlite3VdbeGetOp(v, 0)->opcode==OP_Init );
       sqlite3VdbeJumpHere(v, 0);
-      for(iDb=0; iDb<db->nDb; iDb++){
+      assert( db->nDb>0 );
+      iDb = 0;
+      do{
         Schema *pSchema;
         if( DbMaskTest(pParse->cookieMask, iDb)==0 ) continue;
         sqlite3VdbeUsesBtree(v, iDb);
@@ -229,7 +231,7 @@ void sqlite3FinishCoding(Parse *pParse){
         if( db->init.busy==0 ) sqlite3VdbeChangeP5(v, 1);
         VdbeComment((v,
               "usesStmtJournal=%d", pParse->mayAbort && pParse->isMultiWrite));
-      }
+      }while( ++iDb<db->nDb );
 #ifndef SQLITE_OMIT_VIRTUALTABLE
       for(i=0; i<pParse->nVtabLock; i++){
         char *vtab = (char *)sqlite3GetVTable(db, pParse->apVtabLock[i]);

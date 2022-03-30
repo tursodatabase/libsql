@@ -1,5 +1,5 @@
-C In\ssetResultStrOrError(),\sif\sthe\sinput\sstring\spointer\sis\sNULL\sand\shence\sthe\nvalue\sgets\sset\sto\san\sSQL\sNULL,\sthen\sthe\sMem.enc\sfield\sis\suninitialized.\s\sSo\ndo\snot\sread\sit.\s\sThis\sis\sa\sharmless\sOSSFuzz/ASAN\sfound\sproblem.
-D 2022-03-29T22:57:00.956
+C Small\ssize\sreduction\sand\sperformance\sincrease\sin\ssqlite3FinishCoding().
+D 2022-03-30T17:36:40.718
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -495,7 +495,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c 485157b77a8d841c16bff713380d2ce1375c2167f6824202e56f2715bf51c982
 F src/btree.h 74d64b8f28cfa4a894d14d4ed64fa432cd697b98b61708d4351482ae15913e22
 F src/btreeInt.h 8ce1332edd89dfd2461d561ac10a0ab5601c8e06200cb5230596c3caaf54482e
-F src/build.c a0cc68fe8172c0a31b54576f9c6c0fe6f7c82b1b5e1387afdd6a5a13132bc131
+F src/build.c 4a265d49342cefc95ae739982a6197eae04a9258151f8e0bbe3ff8ab56aab801
 F src/callback.c 4c19af69835787bfe790ac560f3071a824eb629f34e41f97b52ce5235c77de1c
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 2cce39df1a13e05b7633e6d21b651f21492471f991dd7b323a4ee4e7b7f0b7f1
@@ -1945,8 +1945,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c86ab289ec31ce9ae0abaf103a829b8d1e5ed632f493456f1f40607aeb91b41c
-R 52ea0d5515c388b9056669df44e0e84b
+P 47d0b1c4cfc3d2d8f57a02079276bb70a205ffd0f18007dd39c92f813d4c87f5
+R bfff41b69f3c58b7003f472b201fd884
 U drh
-Z b8d3abe3b2948e70e31147c55397470d
+Z 561c127ed7f0a8dbf7f5fadac7f3d58b
 # Remove this line to create a well-formed Fossil manifest.
