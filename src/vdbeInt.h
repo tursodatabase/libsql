@@ -417,7 +417,6 @@ struct Vdbe {
   Vdbe *pPrev,*pNext;     /* Linked list of VDBEs with the same Vdbe.db */
   Parse *pParse;          /* Parsing context used to create this Vdbe */
   ynVar nVar;             /* Number of entries in aVar[] */
-  u32 iVdbeMagic;         /* Magic number defining state of the SQL statement */
   int nMem;               /* Number of memory locations currently allocated */
   int nCursor;            /* Number of slots in apCsr[] */
   u32 cacheCtr;           /* VdbeCursor row cache generation counter */
@@ -456,6 +455,7 @@ struct Vdbe {
   u8 minWriteFileFormat;  /* Minimum file format for writable database files */
   u8 prepFlags;           /* SQLITE_PREPARE_* flags */
   u8 doingRerun;          /* True if rerunning after an auto-reprepare */
+  u8 eVdbeState;          /* On of the VDBE_*_STATE values */
   bft expired:2;          /* 1: recompile VM immediately  2: when convenient */
   bft explain:2;          /* True if EXPLAIN present on SQL command */
   bft changeCntOn:1;      /* True to update the change-counter */
@@ -486,13 +486,12 @@ struct Vdbe {
 };
 
 /*
-** The following are allowed values for Vdbe.magic
+** The following are allowed values for Vdbe.eVdbeState
 */
-#define VDBE_MAGIC_INIT     0x16bceaa5    /* Building a VDBE program */
-#define VDBE_MAGIC_RUN      0x2df20da3    /* VDBE is ready to execute */
-#define VDBE_MAGIC_HALT     0x319c2973    /* VDBE has completed execution */
-#define VDBE_MAGIC_RESET    0x48fa9f76    /* Reset and ready to run again */
-#define VDBE_MAGIC_DEAD     0x5606c3c8    /* The VDBE has been deallocated */
+#define VDBE_INIT_STATE     0   /* Prepared statement under construction */
+#define VDBE_READY_STATE    1   /* Ready to run but not yet started */
+#define VDBE_RUN_STATE      2   /* Run in progress */
+#define VDBE_HALT_STATE     3   /* Finished.  Need reset() or finalize() */
 
 /*
 ** Structure used to store the context required by the 

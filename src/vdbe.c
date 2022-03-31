@@ -740,7 +740,7 @@ int sqlite3VdbeExec(
 #endif
   /*** INSERT STACK UNION HERE ***/
 
-  assert( p->iVdbeMagic==VDBE_MAGIC_RUN );  /* sqlite3_step() verifies this */
+  assert( p->eVdbeState==VDBE_RUN_STATE );  /* sqlite3_step() verifies this */
   sqlite3VdbeEnter(p);
 #ifndef SQLITE_OMIT_PROGRESS_CALLBACK
   if( db->xProgress ){
