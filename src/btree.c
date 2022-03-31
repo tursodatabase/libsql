@@ -8753,7 +8753,7 @@ static int balance(BtCursor *pCur){
     MemPage *pPage = pCur->pPage;
 
     if( NEVER(pPage->nFree<0) && btreeComputeFreeSpace(pPage) ) break;
-    if( pPage->nOverflow==0 && pPage->nFree*3<=pCur->pBt->usableSize*2 ){
+    if( pPage->nOverflow==0 && pPage->nFree*3<=(int)pCur->pBt->usableSize*2 ){
       /* No rebalance required as long as:
       **   (1) There are no overflow cells
       **   (2) The amount of free space on the page is less than 2/3rds of
@@ -9573,7 +9573,7 @@ int sqlite3BtreeDelete(BtCursor *pCur, u8 flags){
   ** well.  */
   assert( pCur->pPage->nOverflow==0 );
   assert( pCur->pPage->nFree>=0 );
-  if( pCur->pPage->nFree*3<=pCur->pBt->usableSize*2 ){
+  if( pCur->pPage->nFree*3<=(int)pCur->pBt->usableSize*2 ){
     /* Optimization: If the free space is less than 2/3rds of the page,
     ** then balance() will always be a no-op.  No need to invoke it. */
     rc = SQLITE_OK;

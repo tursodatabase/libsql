@@ -699,6 +699,8 @@ int sqlite3VdbeAssertMayAbort(Vdbe *v, int mayAbort){
   int hasInitCoroutine = 0;
   Op *pOp;
   VdbeOpIter sIter;
+
+  if( v==0 ) return 0;
   memset(&sIter, 0, sizeof(sIter));
   sIter.v = v;
 
