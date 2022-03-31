@@ -2999,6 +2999,7 @@ int sqlite3VdbeCheckFk(Vdbe *p, int deferred){
     p->rc = SQLITE_CONSTRAINT_FOREIGNKEY;
     p->errorAction = OE_Abort;
     sqlite3VdbeError(p, "FOREIGN KEY constraint failed");
+    if( (p->prepFlags & SQLITE_PREPARE_SAVESQL)==0 ) return SQLITE_ERROR;
     return SQLITE_CONSTRAINT_FOREIGNKEY;
   }
   return SQLITE_OK;
