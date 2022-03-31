@@ -1,5 +1,5 @@
-C For\sTCL\sextension:\sAdd\sTk\sand\smeans\sto\srun\sit,\soptionally.\sImplement\sScriptSupport\sinterface.\nFor\sshell:\sGet\sscripting\ssupport\sthru\san\sobject\sinterface\slike\sthe\sothers.\sRename\sOutMode*\sto\sExport*.\nFor\sboth:\sProvide\sa\sway\sto\spass\sarguments\sto\san\sextension\supon\sload\sand\sget\sthem\sinto\sTCL's\sargv.\n
-D 2022-03-31T03:45:52.869
+C Make\sCLI\sbuild\safter\san\sincomplete\srename\scompleted.
+D 2022-03-31T04:05:48.910
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -329,7 +329,7 @@ F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
 F ext/misc/spellfix.c 94df9bbfa514a563c1484f684a2df3d128a2f7209a84ca3ca100c68a0163e29f
 F ext/misc/sqlar.c 0ace5d3c10fe736dc584bf1159a36b8e2e60fab309d310cd8a0eecd9036621b6
 F ext/misc/stmt.c 35063044a388ead95557e4b84b89c1b93accc2f1c6ddea3f9710e8486a7af94a
-F ext/misc/tclshext.c.in 50eb7c99d8b9c4e7b5f1d066cb8d36400b7b250f18107ba1282f39314c590c14
+F ext/misc/tclshext.c.in 07a41995103fcecf803a3a644bb7a273bffcdfad53e5047280a91e3cb474c966
 F ext/misc/templatevtab.c 8a16a91a5ceaccfcbd6aaaa56d46828806e460dd194965b3f77bf38f14b942c4
 F ext/misc/totype.c fa4aedeb07f66169005dffa8de3b0a2b621779fd44f85c103228a42afa71853b
 F ext/misc/uint.c 053fed3bce2e89583afcd4bf804d75d659879bbcedac74d0fa9ed548839a030b
@@ -556,7 +556,7 @@ F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c ea935b87d6fb36c78b70cdc7b28561dc8f33f2ef37048389549c7b5ef9b0ba5e
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c c366c05e48e836ea04f8ecefb9c1225745dc250c3f01bdb39e9cbb0dc25e3610
-F src/shell.c.in a0f9dc4a772ac1b9737936b69b5931d4087ccc3711bb031cc42742f8dea7332a x
+F src/shell.c.in 8b29c2ce4544e3145b9cc50595c021ce43d860de3513754eb18c7cac546e2687 x
 F src/shext_linkage.h ae26717af53bee705fcba3c0d755dc59f7a55aa18adbe8b89b9f166bc8e35e06
 F src/sqlite.h.in 2a35f62185eb5e7ecc64a2f68442b538ce9be74f80f28a00abc24837edcf1c17
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1951,8 +1951,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7616a6f4abe20699e5aa66018233247aa94e3e87f3e6ebe1357f776a18115eb3
-R 51ec30730a18840f04b19c6edf2cb5f7
+P d2446e50805cc3a46f9bcafccf017da60b0cf9fcd27695c214d71d1c5141d03f
+R 8d018387443555439471a4d46bbd7db3
 U larrybr
-Z 604240d043bafbbe5712cfcf2c93e52d
+Z e1c667450a7c160d0e6c96cbbafb6943
 # Remove this line to create a well-formed Fossil manifest.

@@ -7809,11 +7809,12 @@ static int register_importer(ShellExState *p,
 static int register_scripting(ShellExState *p, ExtensionId eid,
                               ScriptSupport *pSS){
   ShellInState *psi = ISS(p);
-  if( psi->scriptXid!=0 ){
+  if( psi->scriptXid!=0 || psi->script!=0 ){
     /* Scripting support already provided. Only one provider is allowed. */
     return SQLITE_BUSY;
   }
   if( eid==0 || pSS==0 || psi->ixExtPending==0 ){
+    /* Scripting addition allowed only when sqlite3_*_init() runs. */
     return SQLITE_MISUSE;
   }
   psi->script = pSS;
@@ -14377,7 +14378,7 @@ static DotCmdRC process_input(ShellInState *psi){
     case Dumpable:
       echo_group_input(psi, *pzLineUse);
 #if SHELL_DYNAMIC_EXTENSION
-      if( inKind==Script && pSS!=0 ) pSS->pMethods->restartCompletionScan(pSS);
+      if( inKind==Script && pSS!=0 ) pSS->pMethods->resetCompletionScan(pSS);
 #endif
       break;
     case Runnable:
@@ -14402,7 +14403,7 @@ static DotCmdRC process_input(ShellInState *psi){
         char *zErr = 0;
         DotCmdRC dcr;
         assert(pSS!=0);
-        pSS->pMethods->restartCompletionScan(pSS);
+        pSS->pMethods->resetCompletionScan(pSS);
         dcr = pSS->pMethods->runScript(pSS, *pzLineUse+nLeadWhite,
                                        XSS(psi), &zErr);
         if( dcr!=DCR_Ok || zErr!=0 ){
@@ -14428,7 +14429,7 @@ static DotCmdRC process_input(ShellInState *psi){
       utf8_printf(STD_ERR, "Error: Input incomplete at line %d of \"%s\"\n",
                   psi->pInSource->lineno, psi->pInSource->zSourceSay);
 #if SHELL_DYNAMIC_EXTENSION
-      if( inKind==Script && pSS!=0 ) pSS->pMethods->restartCompletionScan(pSS);
+      if( inKind==Script && pSS!=0 ) pSS->pMethods->resetCompletionScan(pSS);
 #endif
       ++nErrors;
       break;

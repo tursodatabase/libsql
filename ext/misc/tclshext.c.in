@@ -208,7 +208,7 @@ DERIVED_METHOD(const char *, help, ScriptSupport,TclSS, 1,( int more )){
   switch( more ){
   case 0:
     return "Provides TCL scripting support for SQLite extensible shell.\n";
-  case 1: return zTclHelp; /* ToDo: Rewrite this help. */
+  case 1: return zTclHelp;
   }
   return 0;
 }
