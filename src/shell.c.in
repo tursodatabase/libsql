@@ -1257,8 +1257,8 @@ typedef struct ShExtInfo {
    * of pointers to the implementations. */
   int numMetaCommands;
   MetaCommand **ppMetaCommands;
-  int numOutModeHandlers;
-  OutModeHandler **ppOutModeHandlers;
+  int numExportHandlers;
+  ExportHandler **ppExportHandlers;
   int numImportHandlers;
   ImportHandler **ppImportHandlers;
 } ShExtInfo;
@@ -1391,15 +1391,15 @@ typedef struct ShellInState {
   ShExtInfo *pShxLoaded; /* Tracking and use info for loaded shell extensions */
   int ixExtPending;      /* Index of pending extension load operations if !0  */
   /* scripting integration */
-  ScriptHooks scripting; /* Hooks for scripting support from loaded extension */
-  ExtensionId scriptXid; /* Id of extension which has set scripting hooks */
+  ScriptSupport *script; /* Scripting support, if any, from loaded extension */
+  ExtensionId scriptXid; /* Id of extension which is supporting scripting */
   /* shell event subscription list */
   int numSubscriptions;  /* Number of active entries in below list */
   struct EventSubscription {
     ExtensionId eid;
     void *pvUserData;
     ShellEventNotify eventHandler;
-  } *pSubscriptions;     /* The currently active shell event subscriptions */
+  } *pSubscriptions;     /* The current shell event subscriptions */
 #endif
 
   ShellExState *pSXS;    /* Pointer to companion, exposed shell state */
@@ -7795,8 +7795,8 @@ static int register_meta_command(ShellExState *p,
 }
 
 /* Register an output data display (or other disposition) mode */
-static int register_out_mode(ShellExState *p,
-                             ExtensionId eid, OutModeHandler *pOMH){
+static int register_exporter(ShellExState *p,
+                             ExtensionId eid, ExportHandler *pEH){
   return SQLITE_ERROR;
 }
 
@@ -7806,17 +7806,17 @@ static int register_importer(ShellExState *p,
   return SQLITE_ERROR;
 }
 
-static int hook_scripting(ShellExState *p, ExtensionId eid, ScriptHooks *pSH){
+static int register_scripting(ShellExState *p, ExtensionId eid,
+                              ScriptSupport *pSS){
   ShellInState *psi = ISS(p);
   if( psi->scriptXid!=0 ){
     /* Scripting support already provided. Only one provider is allowed. */
     return SQLITE_BUSY;
   }
-  if( eid==0 || pSH==0 || psi->ixExtPending==0
-      || pSH->scriptIsComplete==0 || pSH->runScript==0 ){
+  if( eid==0 || pSS==0 || psi->ixExtPending==0 ){
     return SQLITE_MISUSE;
   }
-  psi->scripting = *pSH;
+  psi->script = pSS;
   psi->scriptXid = eid;
   return SQLITE_OK;
 }
@@ -7947,9 +7947,9 @@ static ExtensionHelpers extHelpers = {
 static ShellExtensionAPI shellExtAPI = {
   &extHelpers, 5, {
     register_meta_command,
-    register_out_mode,
+    register_exporter,
     register_importer,
-    hook_scripting,
+    register_scripting,
     subscribe_events,
     0
   }
@@ -8010,15 +8010,15 @@ static int begin_db_dispatch(ShellExState *psx){
   psi->pShxLoaded = (ShExtInfo *)sqlite3_malloc(2*sizeof(ShExtInfo));
   sei.ppMetaCommands
     = (MetaCommand **)sqlite3_malloc((numCommands+2)*sizeof(MetaCommand *));
-  sei.ppOutModeHandlers
-    = (OutModeHandler **)sqlite3_malloc(2*sizeof(OutModeHandler *));
+  sei.ppExportHandlers
+    = (ExportHandler **)sqlite3_malloc(2*sizeof(ExportHandler *));
   sei.ppImportHandlers
     = (ImportHandler **)sqlite3_malloc(2*sizeof(ImportHandler *));
-  if( sei.ppMetaCommands==0||sei.ppOutModeHandlers==0||sei.ppImportHandlers==0
+  if( sei.ppMetaCommands==0||sei.ppExportHandlers==0||sei.ppImportHandlers==0
       || psi->pShxLoaded==0 ){
     shell_out_of_memory();
   }
-  sei.numOutModeHandlers = 0;
+  sei.numExportHandlers = 0;
   sei.numImportHandlers = 0;
   for( ic=0; ic<numCommands; ++ic ){
     sei.ppMetaCommands[ic] = builtInCommand(ic);
@@ -8079,12 +8079,12 @@ static void free_one_shext_tracking(ShExtInfo *psei){
     }
     sqlite3_free(psei->ppMetaCommands);
   }
-  if( psei->ppOutModeHandlers!=0 ){
-    for( j=psei->numOutModeHandlers; j>0; --j ){
-      OutModeHandler *pomh = psei->ppOutModeHandlers[j-1];
-      if( pomh->pMethods->destruct!=0 ) pomh->pMethods->destruct(pomh);
+  if( psei->ppExportHandlers!=0 ){
+    for( j=psei->numExportHandlers; j>0; --j ){
+      ExportHandler *peh = psei->ppExportHandlers[j-1];
+      if( peh->pMethods->destruct!=0 ) peh->pMethods->destruct(peh);
     }
-    sqlite3_free(psei->ppOutModeHandlers);
+    sqlite3_free(psei->ppExportHandlers);
   }
   if( psei->ppImportHandlers!=0 ){
     for( j=psei->numImportHandlers; j>0; --j ){
@@ -8098,8 +8098,9 @@ static void free_one_shext_tracking(ShExtInfo *psei){
   }
 }
 
-/* Call all existent loaded extension destructors, in reverse order
- * of their objects' creation, then free the tracking dyna-arrays.
+/* Call all existent loaded extension destructors, in reverse order of their
+ * objects' creation, except for scripting support which is done last,
+ * then free the tracking dyna-arrays.
  */
 static void free_all_shext_tracking(ShellInState *psi){
   if( psi->pShxLoaded!=0 ){
@@ -8108,7 +8109,11 @@ static void free_all_shext_tracking(ShellInState *psi){
       ShExtInfo *psei = &psi->pShxLoaded[--i];
       free_one_shext_tracking(psei);
       if( psi->scriptXid!=0 && psi->scriptXid==psei->extId ){
-        memset(&psi->scripting, 0, sizeof(ScriptHooks));
+        assert(psi->script!=0);
+        if (psi->script->pMethods->destruct){
+          psi->script->pMethods->destruct(psi->script);
+        }
+        psi->script = 0;
         psi->scriptXid = 0;
       }
     }
@@ -8129,7 +8134,8 @@ static MetaCommand *command_by_index(ShellInState *psi, int extIx, int cmdIx){
 }
 
 static int load_shell_extension(ShellExState *psx, const char *zFile,
-                                const char *zProc, char **pzErr){
+                                const char *zProc, char **pzErr,
+                                int nLoadArgs, char **azLoadArgs){
   ShellExtensionLink shxLink = {
     sizeof(ShellExtensionLink),
     &shellExtAPI,
@@ -8137,12 +8143,13 @@ static int load_shell_extension(ShellExState *psx, const char *zFile,
     0,   /* zErrMsg */
     0,   /* ExtensionId */
     0,   /* Extension destructor */
-    0    /* Extension data ref */
+    0,   /* Extension data ref */
+    nLoadArgs, azLoadArgs /* like-named members */
   }; //extDtor(pvExtObj)
   ShellInState *psi = ISS(psx);
-  /* save script hooking state for possible fallback if load fails */
-  ScriptHooks shSave = psi->scripting;
-  ExtensionId siSave = psi->scriptXid;
+  /* save script support state for possible fallback if load fails */
+  ScriptSupport *pssSave = psi->script;
+  ExtensionId ssiSave = psi->scriptXid;
   int rc;
 
   if( pzErr ) *pzErr = 0;
@@ -8173,9 +8180,10 @@ static int load_shell_extension(ShellExState *psx, const char *zFile,
       free_one_shext_tracking(psi->pShxLoaded+psi->ixExtPending);
       --psi->numExtLoaded;
     }
-    /* And unhook any scripting linkage it might have setup. */
-    psi->scripting = shSave;
-    psi->scriptXid = siSave;
+    /* And make it unwind any scripting linkage it might have setup. */
+    if( psi->script!=0 ) psi->script->pMethods->destruct(psi->script);
+    psi->script = pssSave;
+    psi->scriptXid = ssiSave;
   }
   psi->ixExtPending = 0;
   if( rc!=SQLITE_OK ){
@@ -9580,7 +9588,7 @@ DISPATCHABLE_COMMAND( keyword ? 1 2 ){
 }
 
 /*****************
- * The .imposter, .iotrace, limit, lint, .load and .log commands
+ * The .imposter, .iotrace, limit, lint and .log commands
  */
 CONDITION_COMMAND( imposter !defined(SQLITE_OMIT_TEST_CONTROL) );
 CONDITION_COMMAND( iotrace defined(SQLITE_ENABLE_IOTRACE) );
@@ -9592,10 +9600,6 @@ COLLECT_HELP_TEXT[
   ".lint OPTIONS            Report potential schema issues.",
   "     Options:",
   "        fkey-indexes     Find missing foreign key indexes",
-  ".load FILE ?ENTRY?       Load an extension library",
-#if SHELL_DYNAMIC_EXTENSION
-  "   Option -shellext will load the library as a shell extension.",
-#endif
   ".log FILE|off            Turn logging on or off.  FILE can be stderr/stdout",
 ];
 DISPATCHABLE_COMMAND( imposter ? 3 3 ){
@@ -9948,36 +9952,6 @@ DISPATCHABLE_COMMAND( lint 3 1 0 ){
   return DCR_Ok|(rc!=0);
 }
 
-DISPATCHABLE_COMMAND( load ? 2 4 ){
-  const char *zFile = 0, *zProc = 0;
-  char *zErrMsg = 0;
-  int ai = 1, rc;
-#if SHELL_DYNAMIC_EXTENSION
-  u8 bLoadShellExt = 0;
-#endif
-  if( ISS(p)->bSafeMode ) return DCR_AbortError;
-  while( ai<nArg ){
-    const char *zA = azArg[ai++];
-#if SHELL_DYNAMIC_EXTENSION
-    if( optionMatch(zA, "shellext") ) bLoadShellExt = 1;
-    else
-#endif
-    if( zFile==0 ) zFile = zA;
-    else if( zProc==0 ) zProc = zA;
-    else return DCR_TooMany|ai;
-  }
-  open_db(p, 0);
-#if SHELL_DYNAMIC_EXTENSION
-  if( bLoadShellExt ){
-    rc = load_shell_extension(p, zFile, zProc, pzErr);
-  }else
-#endif
-  {
-    rc = sqlite3_load_extension(DBX(p), zFile, zProc, pzErr);
-  }
-  return DCR_Ok|(rc!=SQLITE_OK);
-}
-
 DISPATCHABLE_COMMAND( log ? 2 2 ){
   const char *zFile = azArg[1];
   if( ISS(p)->bSafeMode ) return DCR_AbortError;
@@ -10050,6 +10024,66 @@ static void effectMode(ShellInState *psi, u8 modeRequest, u8 modeNominal){
     sqlite3_snprintf(sizeof(psi->colSeparator), psi->colSeparator, zColSep);
   }
   psi->mode = modeNominal;
+}
+
+/*****************
+ * The .load command
+ * This is out of order to alleviate code clarity concerns.
+ */
+#if SHELL_DYNAMIC_EXTENSION  /* Avoid confusing users or mkshellc.tcl here. */
+# define LDEXT_OPTS "?ENTRY? ?..?"
+# define LDEXT_MAXARGS 0
+#else
+# define LDEXT_OPTS "?ENTRY?     "
+# define LDEXT_MAXARGS 3
+#endif
+COLLECT_HELP_TEXT[
+  ".load FILE "LDEXT_OPTS"  Load an extension library",
+#if SHELL_DYNAMIC_EXTENSION
+  "   If option -shext follows the first 1 or 2 arguments, then the library",
+  "   will be loaded as a shell extension, and any subsequent arguments will",
+  "   be passed to the extension's init function. That function is named per",
+  "   the docs for sqlite3_load_extension(), with ENTRY taking zProc's role.",
+#else
+  "   If ENTRY is provided, the entry point \"sqlite_ENTRY_init\" is called.",
+  "   Otherwise, the entry point name is derived from the FILE's name.",
+#endif
+];
+DISPATCHABLE_COMMAND( load ? 2 LDEXT_MAXARGS ){
+  const char *zFile = 0, *zProc = 0;
+  char *zErrMsg = 0;
+  int ai = 1, rc;
+#if SHELL_DYNAMIC_EXTENSION
+  char **pzShext = 0;
+#else
+  if( nArg>3 ) return DCR_TooMany|3;
+#endif
+  if( ISS(p)->bSafeMode ) return DCR_AbortError;
+  while( ai<nArg ){
+    const char *zA = azArg[ai++];
+#if SHELL_DYNAMIC_EXTENSION
+    if( optionMatch(zA, "shext") ){
+      if( zFile==0 ) return DCR_Missing;
+      pzShext = azArg + ai;
+      break;
+    }else if( zFile==0 ) zFile = zA;
+    else if( zProc==0 ) zProc = zA;
+#else
+    if( zFile==0 ) zFile = zA;
+    else if( zProc==0 ) zProc = zA;
+    else return DCR_TooMany|ai;
+#endif
+  }
+  open_db(p, 0);
+#if SHELL_DYNAMIC_EXTENSION
+  if( pzShext ){
+    rc = load_shell_extension(p, zFile, zProc, pzErr, nArg-ai, pzShext);
+  }else
+#endif
+    {
+      rc = sqlite3_load_extension(DBX(p), zFile, zProc, pzErr);
+    }
+  return DCR_Ok|(rc!=SQLITE_OK);
 }
 
 /*****************
@@ -14077,7 +14111,7 @@ static void dot_command_scan(char *zCmd, DCmd_ScanState *pScanState){
 ** This is broken out of process_input() mainly for readability.
 ** The return is TRUE for dot-command ready to run, else false.
 */
-static int line_join_ends(DCmd_ScanState dcss, char *zLine,
+static int line_join_done(DCmd_ScanState dcss, char *zLine,
                           int *pnLength, char *pcLE){
   /* It is ready only if has no open argument or escaped newline. */
   int bOpen = DCSS_IsOpen(dcss);
@@ -14156,6 +14190,7 @@ static DotCmdRC process_input(ShellInState *psi){
 
   /* line-group processing loop (per SQL block, dot-command or comment) */
   while( !bInputEnd && termKind==DCR_Ok && !bInterrupted ){
+    ScriptSupport *pSS = psi->script;
     int nGroupLines = 0;  /* count of lines belonging to this group */
     int ncLineIn = 0;     /* how many (non-zero) chars are in zLineInput  */
     int ncLineAcc = 0;    /* how many (non-zero) chars are in zLineAccum  */
@@ -14164,10 +14199,10 @@ static DotCmdRC process_input(ShellInState *psi){
     SqlScanState sqScanState = SSS_Start; /* for SQL scan */
 #if SHELL_EXTENDED_PARSING
     DCmd_ScanState dcScanState = DCSS_Start;  /* for dot-command scan */
-    int ndcLeadWhite = 0; /* skips over initial whitespace to . or # */
+    int nLeadWhite = 0; /* skips over initial whitespace to . or # */
     char cLineEnd = '\n'; /* May be swallowed or replaced with space. */
 #else
-# define ndcLeadWhite 0   /* For legacy parsing, no white before . or # . */
+# define nLeadWhite 0     /* For legacy parsing, no white before . or # . */
 # define cLineEnd '\n'    /* For legacy parsing, this always joins lines. */
 #endif
     /* An ordered enum to record kind of incoming line group. Its ordering
@@ -14206,22 +14241,20 @@ static DotCmdRC process_input(ShellInState *psi){
       }
       /* Classify and check for single-line dispositions, prep for more. */
 #if SHELL_EXTENDED_PARSING
-      ndcLeadWhite = (SHEXT_PARSING(psi))
+      nLeadWhite = (SHEXT_PARSING(psi))
         ? skipWhite(zLineInput)-zLineInput
         : 0; /* Disallow leading whitespace for . or # in legacy mode. */
 #endif
 #if SHELL_DYNAMIC_EXTENSION
-      if( psi->scripting.isScriptLeader!=0
-          && psi->scripting.isScriptLeader(psi->scripting.pvScriptingState,
-                                           zLineInput+ndcLeadWhite) ){
+      if( pSS && pSS->pMethods->isScriptLeader(pSS, zLineInput+nLeadWhite) ){
         inKind = Script;
       }else
 #endif
       {
-        switch( zLineInput[ndcLeadWhite] ){
+        switch( zLineInput[nLeadWhite] ){
         case '.':
           inKind = Cmd;
-          dot_command_scan(zLineInput+ndcLeadWhite, &dcScanState);
+          dot_command_scan(zLineInput+nLeadWhite, &dcScanState);
           break;
         case '#':
           inKind = Comment;
@@ -14257,7 +14290,7 @@ static DotCmdRC process_input(ShellInState *psi){
       case Cmd:
 #if SHELL_EXTENDED_PARSING
         if( SHEXT_PARSING(psi) ){
-          if( line_join_ends(dcScanState, *pzLineUse, pncLineUse, &cLineEnd) ){
+          if( line_join_done(dcScanState, *pzLineUse, pncLineUse, &cLineEnd) ){
             disposition = Runnable;
           }
         }else
@@ -14266,9 +14299,8 @@ static DotCmdRC process_input(ShellInState *psi){
         break;
 #if SHELL_DYNAMIC_EXTENSION
       case Script:
-        if( psi->scripting.scriptIsComplete==0
-            || psi->scripting.scriptIsComplete(psi->scripting.pvScriptingState,
-                                               *pzLineUse+ndcLeadWhite) ){
+        if( pSS==0
+            || pSS->pMethods->scriptIsComplete(pSS, *pzLineUse+nLeadWhite, 0) ){
           disposition = Runnable;
         }
         break;
@@ -14344,6 +14376,9 @@ static DotCmdRC process_input(ShellInState *psi){
     switch( disposition ){
     case Dumpable:
       echo_group_input(psi, *pzLineUse);
+#if SHELL_DYNAMIC_EXTENSION
+      if( inKind==Script && pSS!=0 ) pSS->pMethods->restartCompletionScan(pSS);
+#endif
       break;
     case Runnable:
       switch( inKind ){
@@ -14356,7 +14391,7 @@ static DotCmdRC process_input(ShellInState *psi){
       case Cmd: {
         DotCmdRC dcr;
         echo_group_input(psi, *pzLineUse);
-        dcr = do_meta_command(*pzLineUse+ndcLeadWhite, XSS(psi));
+        dcr = do_meta_command(*pzLineUse+nLeadWhite, XSS(psi));
         nErrors += (dcr & DCR_Error);
         dcr &= ~DCR_Error;
         if( dcr > termKind ) termKind = dcr;
@@ -14364,25 +14399,19 @@ static DotCmdRC process_input(ShellInState *psi){
       }
 #if SHELL_DYNAMIC_EXTENSION
       case Script: {
-        if( psi->scripting.runScript!=0 ){
-          char *zErr = 0;
-          DotCmdRC dcr
-            = psi->scripting.runScript(psi->scripting.pvScriptingState,
-                                       *pzLineUse+ndcLeadWhite,
+        char *zErr = 0;
+        DotCmdRC dcr;
+        assert(pSS!=0);
+        pSS->pMethods->restartCompletionScan(pSS);
+        dcr = pSS->pMethods->runScript(pSS, *pzLineUse+nLeadWhite,
                                        XSS(psi), &zErr);
-          if( dcr!=DCR_Ok || zErr!=0 ){
-            /* ToDo: Handle errors more informatively and like dot commands. */
-            nErrors += (dcr!=DCR_Ok);
-            if( zErr!=0 ){
-              utf8_printf(STD_ERR, "Error: %s\n", zErr);
-              sqlite3_free(zErr);
-            }
+        if( dcr!=DCR_Ok || zErr!=0 ){
+          /* ToDo: Handle errors more informatively and like dot commands. */
+          nErrors += (dcr!=DCR_Ok);
+          if( zErr!=0 ){
+            utf8_printf(STD_ERR, "Error: %s\n", zErr);
+            sqlite3_free(zErr);
           }
-        }else{
-          utf8_printf(STD_ERR, "Error: No script support;"
-                      " ignoring group at line %d of \"%s\"\n",
-                      psi->pInSource->lineno, psi->pInSource->zSourceSay);
-          ++nErrors;
         }
         break;
       }
@@ -14398,6 +14427,9 @@ static DotCmdRC process_input(ShellInState *psi){
     case Erroneous:
       utf8_printf(STD_ERR, "Error: Input incomplete at line %d of \"%s\"\n",
                   psi->pInSource->lineno, psi->pInSource->zSourceSay);
+#if SHELL_DYNAMIC_EXTENSION
+      if( inKind==Script && pSS!=0 ) pSS->pMethods->restartCompletionScan(pSS);
+#endif
       ++nErrors;
       break;
     case Ignore:

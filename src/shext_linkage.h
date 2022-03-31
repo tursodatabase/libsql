@@ -141,21 +141,21 @@ INTERFACE_END( MetaCommand );
 /* An object implementing below interface is registered with the
  * shell to make new or overriding output modes available to it.
  */
-INTERFACE_BEGIN( OutModeHandler );
-PURE_VMETHOD(const char *, name, OutModeHandler, 0,());
-PURE_VMETHOD(const char *, help, OutModeHandler, 1,(int more));
-PURE_VMETHOD(int, openResultsOutStream, OutModeHandler,
+INTERFACE_BEGIN( ExportHandler );
+PURE_VMETHOD(const char *, name, ExportHandler, 0,());
+PURE_VMETHOD(const char *, help, ExportHandler, 1,(int more));
+PURE_VMETHOD(int, openResultsOutStream, ExportHandler,
              5,( ShellExState *pSES, char **pzErr,
                  int numArgs, char *azArgs[], const char * zName ));
-PURE_VMETHOD(int, prependResultsOut, OutModeHandler,
+PURE_VMETHOD(int, prependResultsOut, ExportHandler,
              3,( ShellExState *pSES, char **pzErr, sqlite3_stmt *pStmt ));
-PURE_VMETHOD(int, rowResultsOut, OutModeHandler,
+PURE_VMETHOD(int, rowResultsOut, ExportHandler,
              3,( ShellExState *pSES, char **pzErr, sqlite3_stmt *pStmt ));
-PURE_VMETHOD(int, appendResultsOut, OutModeHandler,
+PURE_VMETHOD(int, appendResultsOut, ExportHandler,
              3,( ShellExState *pSES, char **pzErr, sqlite3_stmt *pStmt ));
-PURE_VMETHOD(void, closeResultsOutStream, OutModeHandler,
+PURE_VMETHOD(void, closeResultsOutStream, ExportHandler,
              2,( ShellExState *pSES, char **pzErr ));
-INTERFACE_END( OutModeHandlerVtable );
+INTERFACE_END( ExportHandler );
 
 /* An object implementing below interface is registered with the
  * shell to make new or overriding data importers available to it.
@@ -174,8 +174,89 @@ PURE_VMETHOD(int, finishDataInput, ImportHandler,
              3,( ShellExState *pSES, char **pzErr, sqlite3_stmt *pStmt ));
 PURE_VMETHOD(void, closeDataInStream, ImportHandler,
              2,( ShellExState *pSES, char **pzErr ));
-INTERFACE_END( ImportHandlerVtable );
+INTERFACE_END( ImportHandler );
 
+/* An object implementing this next interface is registered with the shell
+ * to make scripting support available to it. Only one at a time can be used.
+ *
+ * If registerScripting() has been called to register an extension's support
+ * for scripting, then its methods are called, and must respond, as follows:
+ *
+ * When the initial line of an "execution group" is collected by the shell,
+ * it calls isScriptLeader(pObj, zLineLead) to determine whether the group
+ * should be considered as (eventually) being one for the script handler
+ * to execute. This does not indicate whether it is good input or runnable;
+ * it is only for classification (so that different parsing/collection rules
+ * may be applied for different categories of shell input.) The method should
+ * return true iff the group should be parsed and run by this handler. If it
+ * returns false, something else will be done with the group.
+ *
+ * As one or more lines of an "execution group" are collected by the shell,
+ * scriptIsComplete(pObj, zLineGroup, pzWhyNot) is called with the group as
+ * so far accumulated. If out parameter pzWhyNot is non-zero, the method may
+ * output a message indicating in what way the input is incomplete, which is
+ * then the shell's responsibility to pass to sqlite3_free(). The method must
+ * return true if the group is ready to be executed, otherwise false. This is
+ * not the time at which to execute the accumulated group.
+ *
+ * After the scriptIsComplete() method returns true, or whenever the script is
+ * being ignored (due to end-of-stream or interrupt), the resetCompletionScan()
+ * method is called. This may be used to reset the scanning state held across
+ * calls to scriptIsComplete() so that it need not scan the whole script text
+ * at each call. It might do other things; it is always called after a call to
+ * isScriptLeader() has returned true and scriptIsComplete() has been called.
+ *
+ * If a script group is complete (as above-determined), then runScript() may
+ * be called to execute that script group. (Or, it may not.) It must either
+ * execute it successfully and return DCR_Ok, suffer an ordinary failure and
+ * return DCR_Error, or return one of the codes DCR_{Return,Exit,Abort} or'ed
+ * with DCR_Error or not, to indicate extraordinary post-execute actions.
+ * DCR_Return is to indicate the present execution context should be left.
+ * DCR_Exit is for shell exit requests. DCR_Abort means exit with prejudice.
+ *
+ * An extension which has called registerScripting() should arrange to
+ * free associated resources upon exit or when its destructor runs.
+ */
+INTERFACE_BEGIN( ScriptSupport );
+PURE_VMETHOD(const char *, name, ScriptSupport, 0,());
+PURE_VMETHOD(const char *, help, ScriptSupport, 1,( int more ));
+PURE_VMETHOD(int,  configure, ScriptSupport,
+             4,( ShellExState *pSES, char **pzErr,
+                 int numArgs, char *azArgs[] ));
+PURE_VMETHOD(int, isScriptLeader, ScriptSupport,
+             1,( const char *zScript ));
+PURE_VMETHOD(int, scriptIsComplete, ScriptSupport,
+             2,( const char *zScript, char **pzWhyNot ));
+PURE_VMETHOD(void, resetCompletionScan, ScriptSupport, 0,());
+
+PURE_VMETHOD(DotCmdRC, runScript, ScriptSupport,
+             3,( const char *zScript, ShellExState *pSES, char **pzErr ));
+INTERFACE_END( ScriptSupport );
+
+/* Define a v-table implementation for ScriptSupport interface. */
+#define ScriptSupport_IMPLEMENT_VTABLE(Derived, vtname) \
+CONCRETE_BEGIN(ScriptSupport, Derived); \
+CONCRETE_METHOD(const char *, name, ScriptSupport, 0,()); \
+CONCRETE_METHOD(const char *, help, ScriptSupport, 1,( int more )); \
+CONCRETE_METHOD(int,  configure, ScriptSupport, \
+  4,( ShellExState *pSES, char **pzErr, int numArgs, char *azArgs[] )); \
+CONCRETE_METHOD(int, isScriptLeader, ScriptSupport, \
+  1,( const char *zScript )); \
+CONCRETE_METHOD(int, scriptIsComplete, ScriptSupport, \
+   2,( const char *zScript, char **pzWhyNot )); \
+CONCRETE_METHOD(void, resetCompletionScan, ScriptSupport, 0,()); \
+CONCRETE_METHOD(DotCmdRC, runScript, ScriptSupport, \
+  3,( const char *zScript, ShellExState *pSES, char **pzErr )); \
+CONCRETE_END(Derived) vtname = { \
+  DECORATE_METHOD(Derived,destruct), \
+  DECORATE_METHOD(Derived,name), \
+  DECORATE_METHOD(Derived,help), \
+  DECORATE_METHOD(Derived,configure), \
+  DECORATE_METHOD(Derived,isScriptLeader), \
+  DECORATE_METHOD(Derived,scriptIsComplete), \
+  DECORATE_METHOD(Derived,resetCompletionScan), \
+  DECORATE_METHOD(Derived,runScript) \
+}
 /* Define an implementation's v-table matching the MetaCommand interface.
  * Method signatures are copied and pasted from above interface declaration.
  */
@@ -201,30 +282,6 @@ CONCRETE_END(Derived) vtname = { \
  */
 typedef int (*ExtensionId)
   (sqlite3 *, char **, const struct sqlite3_api_routines *);
-
-/* Hooks for scripting language integration.
- *
- * If hookScripting(...) has been called to register an extension's
- * scripting support, and isScriptLeader(pvSS, zLineLead) returns true,
- * (where zLineLead is an input group's leading line), then the shell
- * will collect input lines until scriptIsComplete(pvSS, zLineGroup)
- * returns non-zero, whereupon, the same group is submitted to be run
- * via runScript(pvSS, zLineGroup, ...). The default behaviors (when
- * any of the function pointers is 0) are: return false; return true;
- * and return DCR_Error after doing nothing.
- *
- * An extension which has called hookScripting() should arrange to
- * free associated resources upon exit or when its destructor runs.
- *
- * The 1st member, pvScriptingState, is an arbitrary, opaque pointer.
- */
-typedef struct ScriptHooks {
-  void *pvScriptingState; /* passed into below functions as pvSS */
-  int (*isScriptLeader)(void *pvSS, const char *zScript);
-  int (*scriptIsComplete)(void *pvSS, const char *zScript);
-  DotCmdRC (*runScript)(void *pvSS, const char *zScript,
-                        ShellExState *, char **pzErrMsg);
-} ScriptHooks;
 
 typedef struct Prompts {
   const char *zMain;
@@ -304,14 +361,14 @@ typedef struct ShellExtensionAPI {
       int (*registerMetaCommand)(ShellExState *p,
                                  ExtensionId eid, MetaCommand *pMC);
       /* Register query result data display (or other disposition) mode */
-      int (*registerOutMode)(ShellExState *p,
-                             ExtensionId eid, OutModeHandler *pOMH);
+      int (*registerExporter)(ShellExState *p,
+                              ExtensionId eid, ExportHandler *pOMH);
       /* Register an import variation from (various sources) for .import */
       int (*registerImporter)(ShellExState *p,
                               ExtensionId eid, ImportHandler *pIH);
-      /* Provide scripting support to host shell. (See ScriptHooks above.) */
-      int (*hookScripting)(ShellExState *p,
-                           ExtensionId eid, ScriptHooks *pSH);
+      /* Provide scripting support to host shell. (See ScriptSupport above.) */
+      int (*registerScripting)(ShellExState *p,
+                               ExtensionId eid, ScriptSupport *pSS);
       /* Subscribe to (or unsubscribe from) messages about various changes.
        * See above NoticeKind enum and ShellEventNotify callback typedef. */
       int (*subscribeEvents)(ShellExState *p, ExtensionId eid, void *pvUserData,
@@ -347,6 +404,14 @@ typedef struct ShellExtensionLink {
   void (*extensionDestruct)(void *pvExtObj);
   void *pvExtensionObject;
 
+  /* If extra arguments were provided to the .load command, they are
+   * available through these two members. Only azLoadArgs[0] through
+   * azLoadArgs[nLoadArgs-1] may be referenced. (That may be none.)
+   * If an extension keeps the argument values, copies must be made
+   * as the pointers in azLoadArgs[] become invalid after loading.
+   */
+  int nLoadArgs;
+  char **azLoadArgs;
 } ShellExtensionLink;
 
 /* String used with SQLite "Pointer Passing Interfaces" as a type marker.
