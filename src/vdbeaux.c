@@ -2299,13 +2299,15 @@ void sqlite3VdbeRewind(Vdbe *p){
   int i;
 #endif
   assert( p!=0 );
-  assert( p->eVdbeState==VDBE_INIT_STATE || p->eVdbeState==VDBE_HALT_STATE );
+  assert( p->eVdbeState==VDBE_INIT_STATE
+       || p->eVdbeState==VDBE_READY_STATE
+       || p->eVdbeState==VDBE_HALT_STATE );
 
   /* There should be at least one opcode.
   */
   assert( p->nOp>0 );
 
-  p->eVdbeState = VDBE_RUN_STATE;
+  p->eVdbeState = VDBE_READY_STATE;
 
 #ifdef SQLITE_DEBUG
   for(i=0; i<p->nMem; i++){
@@ -2558,9 +2560,7 @@ static void closeAllCursors(Vdbe *p){
   }
   assert( p->nFrame==0 );
   closeCursorsInFrame(p);
-  if( p->aMem ){
-    releaseMemArray(p->aMem, p->nMem);
-  }
+  releaseMemArray(p->aMem, p->nMem);
   while( p->pDelFrame ){
     VdbeFrame *pDel = p->pDelFrame;
     p->pDelFrame = pDel->pParent;
@@ -3051,7 +3051,7 @@ int sqlite3VdbeHalt(Vdbe *p){
 
   /* No commit or rollback needed if the program never started or if the
   ** SQL statement does not read or write a database file.  */
-  if( p->pc>=0 && p->bIsReader ){
+  if( p->bIsReader ){
     int mrc;   /* Primary error code from p->rc */
     int eStatementOp = 0;
     int isSpecialError;            /* Set to true if a 'special' error */
@@ -3199,14 +3199,12 @@ int sqlite3VdbeHalt(Vdbe *p){
   }
 
   /* We have successfully halted and closed the VM.  Record this fact. */
-  if( p->pc>=0 ){
-    db->nVdbeActive--;
-    if( !p->readOnly ) db->nVdbeWrite--;
-    if( p->bIsReader ) db->nVdbeRead--;
-    assert( db->nVdbeActive>=db->nVdbeRead );
-    assert( db->nVdbeRead>=db->nVdbeWrite );
-    assert( db->nVdbeWrite>=0 );
-  }
+  db->nVdbeActive--;
+  if( !p->readOnly ) db->nVdbeWrite--;
+  if( p->bIsReader ) db->nVdbeRead--;
+  assert( db->nVdbeActive>=db->nVdbeRead );
+  assert( db->nVdbeRead>=db->nVdbeWrite );
+  assert( db->nVdbeWrite>=0 );
   p->eVdbeState = VDBE_HALT_STATE;
   checkActiveVdbeCnt(db);
   if( db->mallocFailed ){
@@ -3390,7 +3388,10 @@ int sqlite3VdbeReset(Vdbe *p){
 */
 int sqlite3VdbeFinalize(Vdbe *p){
   int rc = SQLITE_OK;
-  if( p->eVdbeState==VDBE_RUN_STATE || p->eVdbeState==VDBE_HALT_STATE ){
+  assert( VDBE_RUN_STATE>VDBE_READY_STATE );
+  assert( VDBE_HALT_STATE>VDBE_READY_STATE );
+  assert( VDBE_INIT_STATE<VDBE_READY_STATE );
+  if( p->eVdbeState>=VDBE_READY_STATE ){
     rc = sqlite3VdbeReset(p);
     assert( (rc & p->db->errMask)==rc );
   }
