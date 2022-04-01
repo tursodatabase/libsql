@@ -3315,12 +3315,6 @@ int sqlite3VdbeReset(Vdbe *p){
       db->errCode = p->rc;
     }
     if( p->runOnlyOnce ) p->expired = 1;
-  }else if( p->rc && p->expired ){
-    /* The expired flag was set on the VDBE before the first call
-    ** to sqlite3_step(). For consistency (since sqlite3_step() was
-    ** called), set the database error in this case as well.
-    */
-    sqlite3ErrorWithMsg(db, p->rc, p->zErrMsg ? "%s" : 0, p->zErrMsg);
   }
 
   /* Reset register contents and reclaim error message memory.

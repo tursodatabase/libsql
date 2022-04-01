@@ -1,5 +1,5 @@
-C Refactor\sthe\sVdbe.iVdbeMagic\sfield\sinto\sVdbe.eVdbeState.\s\sSplit\sthe\sRUNNING\nstate\sinto\sseparate\sRUNNING\sand\sREADY.\s\sThis\sgives\sa\ssize\sreduction\sand\nperformance\sincrease.
-D 2022-04-01T17:01:57.201
+C Remove\san\sunnecessary\sbranch\sfrom\ssqlite3VdbeReset().
+D 2022-04-01T17:23:17.177
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -628,7 +628,7 @@ F src/vdbe.c aa8751fbca2aae36ea0a4753636d4e257363a39c67af6b52ebdaecea83de2859
 F src/vdbe.h a1d0e3b934e835e73edd146f2e7c4eadb711b5c9875c18159a57483fd78e550e
 F src/vdbeInt.h a2f535ae607e441104d22617a30cb6290264fa1820702a7956a10c6f795b1344
 F src/vdbeapi.c 17474f2122c1f54c93dcdb7b845e68e207bbebab6a040c65ed374c4aec049d34
-F src/vdbeaux.c 12fd47127081042706c318590f4dbc90233e22ca12742462f85703f4f4fc6658
+F src/vdbeaux.c 58e52186c8589c027cbd641a712bff32d065ed9979dceee075f149fbd9741a48
 F src/vdbeblob.c 5e61ce31aca17db8fb60395407457a8c1c7fb471dde405e0cd675974611dcfcd
 F src/vdbemem.c 062cd58c54f887dc2eeb865686251c17237f791f0e6394e9c6f7a6f3c1a7e206
 F src/vdbesort.c 43756031ca7430f7aec3ef904824a7883c4ede783e51f280d99b9b65c0796e35
@@ -1945,9 +1945,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6d976f90dfe4886c3f4c062151af5c5ca7454d34b71172401b8c67acd2d663a0 d698826b08b88e227eb83f84b3cdb19f17306b532eccfa162090abccdf3c63d8
-R 97a4d2d9fb07a14d2a76d85d2d1743dd
-T +closed d698826b08b88e227eb83f84b3cdb19f17306b532eccfa162090abccdf3c63d8
+P 5a50a42fde9477868fad31099f5fe976437825fac44f8b3a4cf6c739c7667bbb
+R c8b23c8076d7301b5325ea561823bba4
 U drh
-Z b98f2a477a3e4e8aef60cc1790477902
+Z 3fa3c8a11056de64fa803d36c3f3eb49
 # Remove this line to create a well-formed Fossil manifest.
