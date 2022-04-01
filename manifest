@@ -1,5 +1,5 @@
-C There\sis\sno\sneed\sfor\ssqlite3_step()\sto\scheck\sfor\san\sOOM\scondition\sprior\nto\sstarting\sup.
-D 2022-04-01T19:13:39.542
+C It\sis\snot\snecessary\sto\sde-ephermeralize\sthe\soutput\sregisters\sin\sthe\nOP_ResultRow\sopcode.\s\sOmit\sthat\sstep\sfor\sa\ssize\sreduction\sand\sperformance\nincrease.
+D 2022-04-01T20:19:36.366
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -624,7 +624,7 @@ F src/upsert.c 8789047a8f0a601ea42fa0256d1ba3190c13746b6ba940fe2d25643a7e991937
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c 602fe229f32a96ceccae4f40824129669582096f7c355f53dbac156c9fecef23
 F src/vacuum.c 6c38ddc52f0619865c91dae9c441d4d48bf3040d7dc1bc5b22da1e45547ed0b3
-F src/vdbe.c 8f8373466beab434b7d1991fafec68a13318adf10ccf345a14ed178873c66632
+F src/vdbe.c c8f0fc516a54aa9c696ca0cd4f54b550ea86ab08bcee70b8982f5e3b0305ab8b
 F src/vdbe.h a1d0e3b934e835e73edd146f2e7c4eadb711b5c9875c18159a57483fd78e550e
 F src/vdbeInt.h 22babf1e585ae7e5c49f2e6442969b88f07bdcc3d154164346d25ef4efa3ebf3
 F src/vdbeapi.c 5c498998c99667f16cac2519f2fa439fe46acf99a332b0caa73637fc2ab35c22
@@ -1945,8 +1945,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e93297a9d775688e6274c54ba75b19fc1fe8b29b73b9b5e7f94f3f2ca37f045f
-R 3bf981a3a67361db5af62d95568eb001
+P 44be7f46ba89289683ed0e123169ca9adb1018de03071d66de480c910a23d074
+R e4956d08253d673d906bef0462c4e505
 U drh
-Z f0feb45320505d1785603ccc6d16bf9d
+Z 404f89fed3d9a2adc89e028bcb714881
 # Remove this line to create a well-formed Fossil manifest.

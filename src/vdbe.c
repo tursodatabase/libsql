@@ -1549,45 +1549,32 @@ case OP_FkCheck: {
 ** the result row.
 */
 case OP_ResultRow: {
-  Mem *pMem;
-  int i;
   assert( p->nResColumn==pOp->p2 );
   assert( pOp->p1>0 || CORRUPT_DB );
   assert( pOp->p1+pOp->p2<=(p->nMem+1 - p->nCursor)+1 );
 
-  /* Invalidate all ephemeral cursor row caches */
   p->cacheCtr = (p->cacheCtr + 2)|1;
-
-  /* Make sure the results of the current row are \000 terminated
-  ** and have an assigned type.  The results are de-ephemeralized as
-  ** a side effect.
-  */
-  pMem = p->pResultSet = &aMem[pOp->p1];
-  for(i=0; i<pOp->p2; i++){
-    assert( memIsValid(&pMem[i]) );
-    Deephemeralize(&pMem[i]);
-    assert( (pMem[i].flags & MEM_Ephem)==0
-            || (pMem[i].flags & (MEM_Str|MEM_Blob))==0 );
-    sqlite3VdbeMemNulTerminate(&pMem[i]);
-    REGISTER_TRACE(pOp->p1+i, &pMem[i]);
+  p->pResultSet = &aMem[pOp->p1];
 #ifdef SQLITE_DEBUG
-    /* The registers in the result will not be used again when the
-    ** prepared statement restarts.  This is because sqlite3_column()
-    ** APIs might have caused type conversions of made other changes to
-    ** the register values.  Therefore, we can go ahead and break any
-    ** OP_SCopy dependencies. */
-    pMem[i].pScopyFrom = 0;
-#endif
+  {
+    Mem *pMem = p->pResultSet;
+    int i;
+    for(i=0; i<pOp->p2; i++){
+      assert( memIsValid(&pMem[i]) );
+      REGISTER_TRACE(pOp->p1+i, &pMem[i]);
+      /* The registers in the result will not be used again when the
+      ** prepared statement restarts.  This is because sqlite3_column()
+      ** APIs might have caused type conversions of made other changes to
+      ** the register values.  Therefore, we can go ahead and break any
+      ** OP_SCopy dependencies. */
+      pMem[i].pScopyFrom = 0;
+    }
   }
+#endif
   if( db->mallocFailed ) goto no_mem;
-
   if( db->mTrace & SQLITE_TRACE_ROW ){
     db->trace.xV2(SQLITE_TRACE_ROW, db->pTraceArg, p, 0);
   }
-
-
-  /* Return SQLITE_ROW
-  */
   p->pc = (int)(pOp - aOp) + 1;
   rc = SQLITE_ROW;
   goto vdbe_return;
