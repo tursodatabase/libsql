@@ -9314,7 +9314,11 @@ int sqlite3BtreeTransferRow(BtCursor *pDest, BtCursor *pSrc, i64 iKey){
   u32 nRem;                     /* Bytes of data still to copy */
 
   getCellInfo(pSrc);
-  aOut += putVarint32(aOut, pSrc->info.nPayload);
+  if( pSrc->info.nPayload<0x80 ){
+    *(aOut++) = pSrc->info.nPayload;
+  }else{
+    aOut += sqlite3PutVarint(aOut, pSrc->info.nPayload);
+  }
   if( pDest->pKeyInfo==0 ) aOut += putVarint(aOut, iKey);
   nIn = pSrc->info.nLocal;
   aIn = pSrc->info.pPayload;

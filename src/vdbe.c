@@ -3374,14 +3374,22 @@ case OP_MakeRecord: {
   zPayload = zHdr + nHdr;
 
   /* Write the record */
-  zHdr += putVarint32(zHdr, nHdr);
+  if( nHdr<0x80 ){
+    *(zHdr++) = nHdr;
+  }else{
+    zHdr += sqlite3PutVarint(zHdr,nHdr);
+  }
   assert( pData0<=pLast );
   pRec = pData0;
   while( 1 /*exit-by-break*/ ){
     serial_type = pRec->uTemp;
     /* EVIDENCE-OF: R-06529-47362 Following the size varint are one or more
     ** additional varints, one per column. */
-    zHdr += putVarint32(zHdr, serial_type);            /* serial type */
+    if( serial_type<0x80 ){
+      *(zHdr++) = serial_type;
+    }else{
+      zHdr += sqlite3PutVarint(zHdr, serial_type);
+    }
     /* EVIDENCE-OF: R-64536-51728 The values for each column in the record
     ** immediately follow the header. */
     zPayload += sqlite3VdbeSerialPut(zPayload, pRec, serial_type); /* content */
