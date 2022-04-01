@@ -7249,6 +7249,7 @@ case OP_AggStep: {
   pCtx->pVdbe = p;
   pCtx->skipFlag = 0;
   pCtx->isError = 0;
+  pCtx->enc = encoding;
   pCtx->argc = n;
   pOp->p4type = P4_FUNCCTX;
   pOp->p4.pCtx = pCtx;
@@ -7898,6 +7899,7 @@ case OP_VColumn: {
   assert( pModule->xColumn );
   memset(&sContext, 0, sizeof(sContext));
   sContext.pOut = pDest;
+  sContext.enc = encoding;
   assert( pOp->p5==OPFLAG_NOCHNG || pOp->p5==0 );
   if( pOp->p5 & OPFLAG_NOCHNG ){
     sqlite3VdbeMemSetNull(pDest);
@@ -8182,6 +8184,7 @@ case OP_Function: {            /* group */
   if( pCtx->pOut != pOut ){
     pCtx->pVdbe = p;
     pCtx->pOut = pOut;
+    pCtx->enc = encoding;
     for(i=pCtx->argc-1; i>=0; i--) pCtx->argv[i] = &aMem[pOp->p2+i];
   }
   assert( pCtx->pVdbe==p );

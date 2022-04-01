@@ -467,6 +467,7 @@ int sqlite3VdbeMemFinalize(Mem *pMem, FuncDef *pFunc){
   ctx.pOut = &t;
   ctx.pMem = pMem;
   ctx.pFunc = pFunc;
+  ctx.enc = ENC(t.db);
   pFunc->xFinalize(&ctx); /* IMP: R-24505-23230 */
   assert( (pMem->flags & MEM_Dyn)==0 );
   if( pMem->szMalloc>0 ) sqlite3DbFreeNN(pMem->db, pMem->zMalloc);
@@ -494,6 +495,7 @@ int sqlite3VdbeMemAggValue(Mem *pAccum, Mem *pOut, FuncDef *pFunc){
   ctx.pOut = pOut;
   ctx.pMem = pAccum;
   ctx.pFunc = pFunc;
+  ctx.enc = ENC(pAccum->db);
   pFunc->xValue(&ctx);
   return ctx.isError;
 }
@@ -1491,6 +1493,7 @@ static int valueFromFunction(
   memset(&ctx, 0, sizeof(ctx));
   ctx.pOut = pVal;
   ctx.pFunc = pFunc;
+  ctx.enc = ENC(db);
   pFunc->xSFunc(&ctx, nVal, apVal);
   if( ctx.isError ){
     rc = ctx.isError;

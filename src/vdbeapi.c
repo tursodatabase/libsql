@@ -391,7 +391,7 @@ static void setResultStrOrError(
     }
     return;
   }
-  sqlite3VdbeChangeEncoding(pOut, ENC(pOut->db));
+  sqlite3VdbeChangeEncoding(pOut, pCtx->enc);
   if( sqlite3VdbeMemTooBig(pOut) ){
     sqlite3_result_error_toobig(pCtx);
   }
@@ -540,7 +540,7 @@ void sqlite3_result_value(sqlite3_context *pCtx, sqlite3_value *pValue){
   Mem *pOut = pCtx->pOut;
   assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
   sqlite3VdbeMemCopy(pOut, pValue);
-  sqlite3VdbeChangeEncoding(pOut, ENC(pOut->db));
+  sqlite3VdbeChangeEncoding(pOut, pCtx->enc);
   if( sqlite3VdbeMemTooBig(pOut) ){
     sqlite3_result_error_toobig(pCtx);
   }
