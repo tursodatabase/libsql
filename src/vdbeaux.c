@@ -2080,7 +2080,7 @@ void sqlite3VdbeFrameDelete(VdbeFrame *p){
   VdbeCursor **apCsr = (VdbeCursor **)&aMem[p->nChildMem];
   assert( sqlite3VdbeFrameIsValid(p) );
   for(i=0; i<p->nChildCsr; i++){
-    sqlite3VdbeFreeCursor(p->v, apCsr[i]);
+    if( apCsr[i] ) sqlite3VdbeFreeCursorNN(p->v, apCsr[i]);
   }
   releaseMemArray(aMem, p->nChildMem);
   sqlite3VdbeDeleteAuxData(p->v->db, &p->pAuxData, -1, 0);
@@ -2474,9 +2474,9 @@ void sqlite3VdbeMakeReady(
 ** happens to hold.
 */
 void sqlite3VdbeFreeCursor(Vdbe *p, VdbeCursor *pCx){
-  if( pCx==0 ){
-    return;
-  }
+  if( pCx ) sqlite3VdbeFreeCursorNN(p,pCx);
+}
+void sqlite3VdbeFreeCursorNN(Vdbe *p, VdbeCursor *pCx){
   switch( pCx->eCurType ){
     case CURTYPE_SORTER: {
       sqlite3VdbeSorterClose(p->db, pCx);
@@ -2508,7 +2508,7 @@ static void closeCursorsInFrame(Vdbe *p){
   for(i=0; i<p->nCursor; i++){
     VdbeCursor *pC = p->apCsr[i];
     if( pC ){
-      sqlite3VdbeFreeCursor(p, pC);
+      sqlite3VdbeFreeCursorNN(p, pC);
       p->apCsr[i] = 0;
     }
   }

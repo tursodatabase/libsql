@@ -538,6 +538,7 @@ struct ValueList {
 */
 void sqlite3VdbeError(Vdbe*, const char *, ...);
 void sqlite3VdbeFreeCursor(Vdbe *, VdbeCursor*);
+void sqlite3VdbeFreeCursorNN(Vdbe*,VdbeCursor*);
 void sqliteVdbePopStack(Vdbe*,int);
 int SQLITE_NOINLINE sqlite3VdbeHandleMovedCursor(VdbeCursor *p);
 int SQLITE_NOINLINE sqlite3VdbeFinishMoveto(VdbeCursor*);
