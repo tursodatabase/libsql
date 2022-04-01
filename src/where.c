@@ -5408,7 +5408,7 @@ WhereInfo *sqlite3WhereBegin(
   ** field (type Bitmask) it must be aligned on an 8-byte boundary on
   ** some architectures. Hence the ROUND8() below.
   */
-  nByteWInfo = ROUND8(sizeof(WhereInfo)+(nTabList-1)*sizeof(WhereLevel));
+  nByteWInfo = ROUND8P(sizeof(WhereInfo)+(nTabList-1)*sizeof(WhereLevel));
   pWInfo = sqlite3DbMallocRawNN(db, nByteWInfo + sizeof(WhereLoop));
   if( db->mallocFailed ){
     sqlite3DbFree(db, pWInfo);

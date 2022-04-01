@@ -2274,11 +2274,11 @@ struct ReusableSpace {
 static void *allocSpace(
   struct ReusableSpace *p,  /* Bulk memory available for allocation */
   void *pBuf,               /* Pointer to a prior allocation */
-  sqlite3_int64 nByte       /* Bytes of memory needed */
+  sqlite3_int64 nByte       /* Bytes of memory needed. */
 ){
   assert( EIGHT_BYTE_ALIGNMENT(p->pSpace) );
   if( pBuf==0 ){
-    nByte = ROUND8(nByte);
+    nByte = ROUND8P(nByte);
     if( nByte <= p->nFree ){
       p->nFree -= nByte;
       pBuf = &p->pSpace[p->nFree];
@@ -2386,7 +2386,7 @@ void sqlite3VdbeMakeReady(
   ** opcode array.  This extra memory will be reallocated for other elements
   ** of the prepared statement.
   */
-  n = ROUND8(sizeof(Op)*p->nOp);              /* Bytes of opcode memory used */
+  n = ROUND8P(sizeof(Op)*p->nOp);             /* Bytes of opcode memory used */
   x.pSpace = &((u8*)p->aOp)[n];               /* Unused opcode memory */
   assert( EIGHT_BYTE_ALIGNMENT(x.pSpace) );
   x.nFree = ROUNDDOWN8(pParse->szOpAlloc - n);  /* Bytes of unused memory */
@@ -3969,10 +3969,10 @@ UnpackedRecord *sqlite3VdbeAllocUnpackedRecord(
 ){
   UnpackedRecord *p;              /* Unpacked record to return */
   int nByte;                      /* Number of bytes required for *p */
-  nByte = ROUND8(sizeof(UnpackedRecord)) + sizeof(Mem)*(pKeyInfo->nKeyField+1);
+  nByte = ROUND8P(sizeof(UnpackedRecord)) + sizeof(Mem)*(pKeyInfo->nKeyField+1);
   p = (UnpackedRecord *)sqlite3DbMallocRaw(pKeyInfo->db, nByte);
   if( !p ) return 0;
-  p->aMem = (Mem*)&((char*)p)[ROUND8(sizeof(UnpackedRecord))];
+  p->aMem = (Mem*)&((char*)p)[ROUND8P(sizeof(UnpackedRecord))];
   assert( pKeyInfo->aSortFlags!=0 );
   p->pKeyInfo = pKeyInfo;
   p->nField = pKeyInfo->nKeyField + 1;

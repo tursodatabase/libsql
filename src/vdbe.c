@@ -266,7 +266,7 @@ static VdbeCursor *allocateCursor(
   int nByte;
   VdbeCursor *pCx = 0;
   nByte = 
-      ROUND8(sizeof(VdbeCursor)) + 2*sizeof(u32)*nField + 
+      ROUND8P(sizeof(VdbeCursor)) + 2*sizeof(u32)*nField + 
       (eCurType==CURTYPE_BTREE?sqlite3BtreeCursorSize():0);
 
   assert( iCur>=0 && iCur<p->nCursor );
@@ -301,7 +301,7 @@ static VdbeCursor *allocateCursor(
   pCx->aOffset = &pCx->aType[nField];
   if( eCurType==CURTYPE_BTREE ){
     pCx->uc.pCursor = (BtCursor*)
-        &pMem->z[ROUND8(sizeof(VdbeCursor))+2*sizeof(u32)*nField];
+        &pMem->z[ROUND8P(sizeof(VdbeCursor))+2*sizeof(u32)*nField];
     sqlite3BtreeCursorZero(pCx->uc.pCursor);
   }
   return pCx;

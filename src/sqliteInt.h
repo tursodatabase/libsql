@@ -939,8 +939,19 @@ typedef INT16_TYPE LogEst;
 /*
 ** Round up a number to the next larger multiple of 8.  This is used
 ** to force 8-byte alignment on 64-bit architectures.
+**
+** ROUND8() always does the rounding, for any argument.
+**
+** ROUND8P() assumes that the argument is already an integer number of
+** pointers in size, and so it is a no-op on systems where the pointer
+** size is 8.
 */
 #define ROUND8(x)     (((x)+7)&~7)
+#if SQLITE_PTRSIZE==8
+# define ROUND8P(x)   (x)
+#else
+# define ROUND8P(x)   (((x)+7)&~7)
+#endif
 
 /*
 ** Round down to the nearest multiple of 8
