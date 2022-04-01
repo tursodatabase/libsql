@@ -642,14 +642,8 @@ static int sqlite3Step(Vdbe *p){
   sqlite3 *db;
   int rc;
 
-  /* Check that malloc() has not failed. If it has, return early. */
-  db = p->db;
-  if( db->mallocFailed ){
-    p->rc = SQLITE_NOMEM;
-    return SQLITE_NOMEM_BKPT;
-  }
-
   assert(p);
+  db = p->db;
   if( p->eVdbeState!=VDBE_RUN_STATE ){
     restart_step:
     if( p->eVdbeState==VDBE_READY_STATE ){
