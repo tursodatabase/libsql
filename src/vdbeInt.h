@@ -532,7 +532,12 @@ struct ValueList {
   sqlite3_value *pOut;     /* Register to hold each decoded output value */
 };
 
-const u8 sqlite3SmallTypeSizes[128];
+/* Size of content associated with serial types that fit into a
+** single-byte varint.
+*/
+#ifndef SQLITE_AMALGAMATION
+extern const u8 sqlite3SmallTypeSizes[];
+#endif
 
 /*
 ** Function prototypes

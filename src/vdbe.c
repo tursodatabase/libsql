@@ -3393,7 +3393,7 @@ case OP_MakeRecord: {
         /* NULL value.  No change in zPayload */
       }else{
         u64 v;
-        u32 i, len;
+        u32 i;
         if( serial_type==7 ){
           assert( sizeof(v)==sizeof(pRec->u.r) );
           memcpy(&v, &pRec->u.r, sizeof(v));
