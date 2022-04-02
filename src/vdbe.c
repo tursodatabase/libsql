@@ -3384,15 +3384,42 @@ case OP_MakeRecord: {
   while( 1 /*exit-by-break*/ ){
     serial_type = pRec->uTemp;
     /* EVIDENCE-OF: R-06529-47362 Following the size varint are one or more
-    ** additional varints, one per column. */
-    if( serial_type<0x80 ){
+    ** additional varints, one per column.
+    ** EVIDENCE-OF: R-64536-51728 The values for each column in the record
+    ** immediately follow the header. */
+    if( serial_type<=7 ){
       *(zHdr++) = serial_type;
+      if( serial_type==0 ){
+        /* NULL value.  No change in zPayload */
+      }else{
+        u64 v;
+        u32 i, len;
+        if( serial_type==7 ){
+          assert( sizeof(v)==sizeof(pRec->u.r) );
+          memcpy(&v, &pRec->u.r, sizeof(v));
+          swapMixedEndianFloat(v);
+        }else{
+          v = pRec->u.i;
+        }
+        len = i = sqlite3SmallTypeSizes[serial_type];
+        assert( i>0 );
+        do{
+          zPayload[--i] = (u8)(v&0xFF);
+          v >>= 8;
+        }while( i );
+        zPayload += len;
+      }
+    }else if( serial_type<0x80 ){
+      *(zHdr++) = serial_type;
+      if( serial_type>=14 ){
+        memcpy(zPayload, pRec->z, pRec->n);
+        zPayload += pRec->n;
+      }
     }else{
       zHdr += sqlite3PutVarint(zHdr, serial_type);
+      memcpy(zPayload, pRec->z, pRec->n);
+      zPayload += pRec->n;
     }
-    /* EVIDENCE-OF: R-64536-51728 The values for each column in the record
-    ** immediately follow the header. */
-    zPayload += sqlite3VdbeSerialPut(zPayload, pRec, serial_type); /* content */
     if( pRec==pLast ) break;
     pRec++;
   }

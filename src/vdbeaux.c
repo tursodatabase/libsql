@@ -3557,7 +3557,7 @@ int sqlite3VdbeCursorRestore(VdbeCursor *p){
 ** sqlite3VdbeSerialType()
 ** sqlite3VdbeSerialTypeLen()
 ** sqlite3VdbeSerialLen()
-** sqlite3VdbeSerialPut()
+** sqlite3VdbeSerialPut()  <--- in-lined into OP_MakeRecord as of 2022-04-02
 ** sqlite3VdbeSerialGet()
 **
 ** encapsulate the code that serializes values for storage in SQLite
@@ -3669,7 +3669,7 @@ u32 sqlite3VdbeSerialType(Mem *pMem, int file_format, u32 *pLen){
 /*
 ** The sizes for serial types less than 128
 */
-static const u8 sqlite3SmallTypeSizes[] = {
+const u8 sqlite3SmallTypeSizes[128] = {
         /*  0   1   2   3   4   5   6   7   8   9 */   
 /*   0 */   0,  1,  2,  3,  4,  6,  8,  8,  0,  0,
 /*  10 */   0,  0,  0,  0,  1,  1,  2,  2,  3,  3,
@@ -3738,7 +3738,7 @@ u8 sqlite3VdbeOneByteSerialTypeLen(u8 serial_type){
 ** so we trust him.
 */
 #ifdef SQLITE_MIXED_ENDIAN_64BIT_FLOAT
-static u64 floatSwap(u64 in){
+u64 sqlite3FloatSwap(u64 in){
   union {
     u64 r;
     u32 i[2];
@@ -3751,59 +3751,8 @@ static u64 floatSwap(u64 in){
   u.i[1] = t;
   return u.r;
 }
-# define swapMixedEndianFloat(X)  X = floatSwap(X)
-#else
-# define swapMixedEndianFloat(X)
-#endif
+#endif /* SQLITE_MIXED_ENDIAN_64BIT_FLOAT */
 
-/*
-** Write the serialized data blob for the value stored in pMem into 
-** buf. It is assumed that the caller has allocated sufficient space.
-** Return the number of bytes written.
-**
-** nBuf is the amount of space left in buf[].  The caller is responsible
-** for allocating enough space to buf[] to hold the entire field, exclusive
-** of the pMem->u.nZero bytes for a MEM_Zero value.
-**
-** Return the number of bytes actually written into buf[].  The number
-** of bytes in the zero-filled tail is included in the return value only
-** if those bytes were zeroed in buf[].
-*/ 
-u32 sqlite3VdbeSerialPut(u8 *buf, Mem *pMem, u32 serial_type){
-  u32 len;
-
-  /* Integer and Real */
-  if( serial_type<=7 && serial_type>0 ){
-    u64 v;
-    u32 i;
-    if( serial_type==7 ){
-      assert( sizeof(v)==sizeof(pMem->u.r) );
-      memcpy(&v, &pMem->u.r, sizeof(v));
-      swapMixedEndianFloat(v);
-    }else{
-      v = pMem->u.i;
-    }
-    len = i = sqlite3SmallTypeSizes[serial_type];
-    assert( i>0 );
-    do{
-      buf[--i] = (u8)(v&0xFF);
-      v >>= 8;
-    }while( i );
-    return len;
-  }
-
-  /* String or blob */
-  if( serial_type>=12 ){
-    assert( pMem->n + ((pMem->flags & MEM_Zero)?pMem->u.nZero:0)
-             == (int)sqlite3VdbeSerialTypeLen(serial_type) );
-    len = pMem->n;
-    if( len>0 ) memcpy(buf, pMem->z, len);
-    return len;
-  }
-
-  /* NULL or constants 0 or 1 */
-  return 0;
-}
 
 /* Input "x" is a sequence of unsigned characters that represent a
 ** big-endian integer.  Return the equivalent native integer
