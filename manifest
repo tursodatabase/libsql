@@ -1,5 +1,5 @@
-C Minor\sloop\soptimization\sin\sOP_MakeRecord.
-D 2022-04-02T15:19:02.206
+C Ensure\sthat\sa\szero-blob\sdoes\snot\scause\sin\sinvocation\sof\smemcpy()\swith\sa\nzero\slength\sand\sa\sNULL\ssource\spointer.
+D 2022-04-02T19:21:58.840
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -624,7 +624,7 @@ F src/upsert.c 8789047a8f0a601ea42fa0256d1ba3190c13746b6ba940fe2d25643a7e991937
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c 602fe229f32a96ceccae4f40824129669582096f7c355f53dbac156c9fecef23
 F src/vacuum.c 6c38ddc52f0619865c91dae9c441d4d48bf3040d7dc1bc5b22da1e45547ed0b3
-F src/vdbe.c 9dca2919060c79df77a9e2db6440461592f8230aa379102e45c3988604794fa1
+F src/vdbe.c 7154f67e5317d3e62a7582c0fc6922570f816f669646e135187190152619cb57
 F src/vdbe.h a1d0e3b934e835e73edd146f2e7c4eadb711b5c9875c18159a57483fd78e550e
 F src/vdbeInt.h 106930790a7619bc6e851be698e6e35c6b2b2e9e66c2f464d597d6b75b919679
 F src/vdbeapi.c 5c498998c99667f16cac2519f2fa439fe46acf99a332b0caa73637fc2ab35c22
@@ -1945,8 +1945,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6f4d6f212a3558c27be6e9dcf71cec43c424d445e5889c6e91dde84a19c5a2c1
-R b4168a297f2f907dda7ae8fb734939e5
+P 4350983b37879d3280432d90fef04f5cc4be1b3110b5435123d897e31b34db8a
+R 41e1f7708441585a94d754911a9cc8e1
 U drh
-Z a1b1f1e17a6d5742ec380e2ab7594ab3
+Z 0c7a0f0fdc1ef54b004e1c62fd235a57
 # Remove this line to create a well-formed Fossil manifest.

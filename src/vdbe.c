@@ -3412,14 +3412,18 @@ case OP_MakeRecord: {
       }
     }else if( serial_type<0x80 ){
       *(zHdr++) = serial_type;
-      if( serial_type>=14 ){
+      if( serial_type>=14 && pRec->n>0 ){
+        assert( pRec->z!=0 );
         memcpy(zPayload, pRec->z, pRec->n);
         zPayload += pRec->n;
       }
     }else{
       zHdr += sqlite3PutVarint(zHdr, serial_type);
-      memcpy(zPayload, pRec->z, pRec->n);
-      zPayload += pRec->n;
+      if( pRec->n ){
+        assert( pRec->z!=0 );
+        memcpy(zPayload, pRec->z, pRec->n);
+        zPayload += pRec->n;
+      }
     }
     if( pRec==pLast ) break;
     pRec++;
