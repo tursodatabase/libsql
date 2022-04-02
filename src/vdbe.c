@@ -3403,10 +3403,11 @@ case OP_MakeRecord: {
         }
         len = i = sqlite3SmallTypeSizes[serial_type];
         assert( i>0 );
-        do{
+        while( 1 /*exit-by-break*/ ){
           zPayload[--i] = (u8)(v&0xFF);
+          if( i==0 ) break;
           v >>= 8;
-        }while( i );
+        }
         zPayload += len;
       }
     }else if( serial_type<0x80 ){
