@@ -4419,14 +4419,22 @@ int sqlite3VdbeRecordCompareWithSkip(
   ** two elements in the keys are equal. Fix the various stack variables so
   ** that this routine begins comparing at the second field. */
   if( bSkip ){
-    u32 s1;
-    idx1 = 1 + getVarint32(&aKey1[1], s1);
+    u32 s1 = aKey1[1];
+    if( s1<0x80 ){
+      idx1 = 2;
+    }else{
+      idx1 = 1 + sqlite3GetVarint32(&aKey1[1], &s1);
+    }
     szHdr1 = aKey1[0];
     d1 = szHdr1 + sqlite3VdbeSerialTypeLen(s1);
     i = 1;
     pRhs++;
   }else{
-    idx1 = getVarint32(aKey1, szHdr1);
+    if( (szHdr1 = aKey1[0])<0x80 ){
+      idx1 = 1;
+    }else{
+      idx1 = sqlite3GetVarint32(aKey1, &szHdr1);
+    }
     d1 = szHdr1;
     i = 0;
   }
