@@ -588,14 +588,20 @@ void sqlite3VdbeResolveLabel(Vdbe *v, int x){
 ** Mark the VDBE as one that can only be run one time.
 */
 void sqlite3VdbeRunOnlyOnce(Vdbe *p){
-  p->runOnlyOnce = 1;
+  sqlite3VdbeAddOp2(p, OP_Expire, 1, 1);
 }
 
 /*
 ** Mark the VDBE as one that can only be run multiple times.
 */
 void sqlite3VdbeReusable(Vdbe *p){
-  p->runOnlyOnce = 0;
+  int i;
+  for(i=1; ALWAYS(i<p->nOp); i++){
+    if( p->aOp[i].opcode==OP_Expire ){
+      p->aOp[1].opcode = OP_Noop;
+      break;
+    }
+  }
 }
 
 #ifdef SQLITE_DEBUG /* sqlite3AssertMayAbort() logic */
@@ -3314,7 +3320,6 @@ int sqlite3VdbeReset(Vdbe *p){
     }else{
       db->errCode = p->rc;
     }
-    if( p->runOnlyOnce ) p->expired = 1;
   }
 
   /* Reset register contents and reclaim error message memory.
