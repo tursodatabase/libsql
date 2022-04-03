@@ -3649,7 +3649,10 @@ case OP_Savepoint: {
     }
   }
   if( rc ) goto abort_due_to_error;
-
+  if( p->eVdbeState==VDBE_HALT_STATE ){
+    rc = SQLITE_DONE;
+    goto vdbe_return;
+  }
   break;
 }
 
@@ -8602,7 +8605,7 @@ abort_due_to_error:
   testcase( sqlite3GlobalConfig.xLog!=0 );
   sqlite3_log(rc, "statement aborts at %d: [%s] %s", 
                    (int)(pOp - aOp), p->zSql, p->zErrMsg);
-  sqlite3VdbeHalt(p);
+  if( p->eVdbeState==VDBE_RUN_STATE ) sqlite3VdbeHalt(p);
   if( rc==SQLITE_IOERR_NOMEM ) sqlite3OomFault(db);
   if( rc==SQLITE_CORRUPT && db->autoCommit==0 ){
     db->flags |= SQLITE_CorruptRdOnly;

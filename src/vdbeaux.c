@@ -3044,9 +3044,7 @@ int sqlite3VdbeHalt(Vdbe *p){
   ** one, or the complete transaction if there is no statement transaction.
   */
 
-  if( p->eVdbeState!=VDBE_RUN_STATE ){
-    return SQLITE_OK;
-  }
+  assert( p->eVdbeState==VDBE_RUN_STATE );
   if( db->mallocFailed ){
     p->rc = SQLITE_NOMEM_BKPT;
   }
@@ -3306,7 +3304,7 @@ int sqlite3VdbeReset(Vdbe *p){
   ** error, then it might not have been halted properly.  So halt
   ** it now.
   */
-  sqlite3VdbeHalt(p);
+  if( p->eVdbeState==VDBE_RUN_STATE ) sqlite3VdbeHalt(p);
 
   /* If the VDBE has been run even partially, then transfer the error code
   ** and error message from the VDBE into the main database structure.  But
