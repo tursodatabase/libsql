@@ -3754,6 +3754,7 @@ case OP_AutoCommit: {
 */
 case OP_Transaction: {
   Btree *pBt;
+  Db *pDb;
   int iMeta = 0;
 
   assert( p->bIsReader );
@@ -3773,7 +3774,8 @@ case OP_Transaction: {
     }
     goto abort_due_to_error;
   }
-  pBt = db->aDb[pOp->p1].pBt;
+  pDb = &db->aDb[pOp->p1];
+  pBt = pDb->pBt;
 
   if( pBt ){
     rc = sqlite3BtreeBeginTrans(pBt, pOp->p2, &iMeta);
@@ -3814,8 +3816,7 @@ case OP_Transaction: {
   assert( pOp->p5==0 || pOp->p4type==P4_INT32 );
   if( rc==SQLITE_OK
    && pOp->p5
-   && (iMeta!=pOp->p3
-      || db->aDb[pOp->p1].pSchema->iGeneration!=pOp->p4.i)
+   && (iMeta!=pOp->p3 || pDb->pSchema->iGeneration!=pOp->p4.i)
   ){
     /*
     ** IMPLEMENTATION-OF: R-03189-51135 As each SQL statement runs, the schema

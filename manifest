@@ -1,5 +1,5 @@
-C Expand\sthe\sgetVarint32()\smacro\sin\sa\sfew\splaces,\sas\sthe\sC-compiler\sseems\sto\nbe\sable\sto\soptimize\sbetter\swhen\sthat\smacro\sis\sexpanded\smanually.
-D 2022-04-02T22:47:47.656
+C Performance\soptimization\sand\sslight\ssize\sreduction\sin\sthe\sOP_Transaction\nopcode.
+D 2022-04-03T10:42:06.846
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -624,7 +624,7 @@ F src/upsert.c 8789047a8f0a601ea42fa0256d1ba3190c13746b6ba940fe2d25643a7e991937
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c 602fe229f32a96ceccae4f40824129669582096f7c355f53dbac156c9fecef23
 F src/vacuum.c 6c38ddc52f0619865c91dae9c441d4d48bf3040d7dc1bc5b22da1e45547ed0b3
-F src/vdbe.c 52b9afb8df338c7a392332ecfe71c748817b72abfcc1bb90c61d10264aa6db53
+F src/vdbe.c 17c49fe3d853ca458dbf681ea462f8095b4cab86beaca57be3483f8aa0394ca4
 F src/vdbe.h a1d0e3b934e835e73edd146f2e7c4eadb711b5c9875c18159a57483fd78e550e
 F src/vdbeInt.h 88c11169ac35488764e6275017610ddbaaa0e51acd260ea61638f9ccce578d7c
 F src/vdbeapi.c 5c498998c99667f16cac2519f2fa439fe46acf99a332b0caa73637fc2ab35c22
@@ -1945,8 +1945,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8a3a3486358d076c34e515ac92663a04f0c7ff10f405094cb5b6ada0d5f05cdc
-R a6b1bae040909e67200132c66e5ed3d0
+P cd4fe34b98bf5ce26f3596c717edb73932f3b46ad6e9b4934d06b7b3c176a0d6
+R cceae0bcc38787bdf816e721690684a9
 U drh
-Z b06751a34dfdacfa9d4b7d6e9de9abea
+Z 9618a426f045ebdd433022eacdc71e54
 # Remove this line to create a well-formed Fossil manifest.
