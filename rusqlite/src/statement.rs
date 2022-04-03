@@ -778,7 +778,7 @@ impl Statement<'_> {
         let r = self.stmt.step();
         self.stmt.reset();
         match r {
-            ffi::SQLITE_DONE => Ok(self.conn.changes()),
+            ffi::SQLITE_DONE => Ok(self.conn.changes() as usize),
             ffi::SQLITE_ROW => Err(Error::ExecuteReturnedResults),
             _ => Err(self.conn.decode_result(r).unwrap_err()),
         }
