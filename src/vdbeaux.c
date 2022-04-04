@@ -597,7 +597,7 @@ void sqlite3VdbeRunOnlyOnce(Vdbe *p){
 void sqlite3VdbeReusable(Vdbe *p){
   int i;
   for(i=1; ALWAYS(i<p->nOp); i++){
-    if( p->aOp[i].opcode==OP_Expire ){
+    if( ALWAYS(p->aOp[i].opcode==OP_Expire) ){
       p->aOp[1].opcode = OP_Noop;
       break;
     }
