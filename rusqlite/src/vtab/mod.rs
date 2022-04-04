@@ -62,11 +62,15 @@ pub enum VTabKind {
     /// Non-eponymous
     Default,
     /// [`create`](CreateVTab::create) == [`connect`](VTab::connect)
+    ///
+    /// See [SQLite doc](https://sqlite.org/vtab.html#eponymous_virtual_tables)
     Eponymous,
     /// No [`create`](CreateVTab::create) / [`destroy`](CreateVTab::destroy) or
     /// not used
     ///
     /// SQLite >= 3.9.0
+    ///
+    /// See [SQLite doc](https://sqlite.org/vtab.html#eponymous_only_virtual_tables)
     EponymousOnly,
 }
 
@@ -835,6 +839,13 @@ impl InnerConnection {
         module: &'static Module<'vtab, T>,
         aux: Option<T::Aux>,
     ) -> Result<()> {
+        use crate::version;
+        if version::version_number() < 3_009_000 && module.base.xCreate.is_none() {
+            return Err(Error::ModuleError(format!(
+                "Eponymous-only virtual table not supported by SQLite version {}",
+                version::version()
+            )));
+        }
         let c_name = str_to_cstring(module_name)?;
         let r = match aux {
             Some(aux) => {
