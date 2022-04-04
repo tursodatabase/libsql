@@ -2087,23 +2087,23 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
     assert( (pOp->p5 & SQLITE_AFF_MASK)!=SQLITE_AFF_TEXT || CORRUPT_DB );
     /* Common case of comparison of two integers */
     if( pIn3->u.i > pIn1->u.i ){
-      iCompare = +1;
       if( sqlite3aGTb[pOp->opcode] ){
         VdbeBranchTaken(1, (pOp->p5 & SQLITE_NULLEQ)?2:3);
         goto jump_to_p2;
       }
+      iCompare = +1;
     }else if( pIn3->u.i < pIn1->u.i ){
-      iCompare = -1;
       if( sqlite3aLTb[pOp->opcode] ){
         VdbeBranchTaken(1, (pOp->p5 & SQLITE_NULLEQ)?2:3);
         goto jump_to_p2;
       }
+      iCompare = -1;
     }else{
-      iCompare = 0;
       if( sqlite3aEQb[pOp->opcode] ){
         VdbeBranchTaken(1, (pOp->p5 & SQLITE_NULLEQ)?2:3);
         goto jump_to_p2;
       }
+      iCompare = 0;
     }
     VdbeBranchTaken(0, (pOp->p5 & SQLITE_NULLEQ)?2:3);
     break;
@@ -2130,11 +2130,11 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
       ** then the result is always NULL.
       ** The jump is taken if the SQLITE_JUMPIFNULL bit is set.
       */
-      iCompare = 1;    /* Operands are not equal */
       VdbeBranchTaken(2,3);
       if( pOp->p5 & SQLITE_JUMPIFNULL ){
         goto jump_to_p2;
       }
+      iCompare = 1;    /* Operands are not equal */
       break;
     }
   }else{
@@ -2240,9 +2240,8 @@ case OP_ElseEq: {       /* same as TK_ESCAPE, jump */
 ** Set the permutation used by the OP_Compare operator in the next
 ** instruction.  The permutation is stored in the P4 operand.
 **
-** The permutation is only valid until the next OP_Compare that has
-** the OPFLAG_PERMUTE bit set in P5. Typically the OP_Permutation should 
-** occur immediately prior to the OP_Compare.
+** The permutation is only valid for the next opcode which must be
+** an OP_Compare that has the OPFLAG_PERMUTE bit set in P5.
 **
 ** The first integer in the P4 integer array is the length of the array
 ** and does not become part of the permutation.
@@ -2274,6 +2273,8 @@ case OP_Permutation: {
 ** The comparison is a sort comparison, so NULLs compare equal,
 ** NULLs are less than numbers, numbers are less than strings,
 ** and strings are less than blobs.
+**
+** This opcode must be immediately followed by an OP_Jump opcode.
 */
 case OP_Compare: {
   int n;
@@ -2332,6 +2333,7 @@ case OP_Compare: {
       break;
     }
   }
+  assert( pOp[1].opcode==OP_Jump );
   break;
 }
 
@@ -2340,8 +2342,11 @@ case OP_Compare: {
 ** Jump to the instruction at address P1, P2, or P3 depending on whether
 ** in the most recent OP_Compare instruction the P1 vector was less than
 ** equal to, or greater than the P2 vector, respectively.
+**
+** This opcode must immediately follow an OP_Compare opcode.
 */
 case OP_Jump: {             /* jump */
+  assert( pOp>aOp && pOp[-1].opcode==OP_Compare );
   if( iCompare<0 ){
     VdbeBranchTaken(0,4); pOp = &aOp[pOp->p1 - 1];
   }else if( iCompare==0 ){
