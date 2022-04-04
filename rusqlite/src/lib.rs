@@ -397,7 +397,7 @@ impl Connection {
     /// Most of these are also the default settings for the C API, although
     /// technically the default locking behavior is controlled by the flags used
     /// when compiling SQLite -- rather than let it vary, we choose `NO_MUTEX`
-    /// because it's a fairly clear best choice for users this library.
+    /// because it's a fairly clearly the best choice for users of this library.
     ///
     /// # Failure
     ///
