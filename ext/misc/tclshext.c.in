@@ -100,10 +100,13 @@ static const char * const zTclHelp =
 
 #include "shext_linkage.h"
 
-static struct ShExtAPI *pShExtApi = 0;
-static struct ExtHelpers *pExtHelpers = 0;
-
+/* Extension boiler-plate to dynamically link into host's SQLite library */
 SQLITE_EXTENSION_INIT1;
+
+/* Extension boiler-plate for a function to get ShellExtensionLink pointer
+ * from db passed to extension init() and define a pair of static API refs.
+ */
+SHELL_EXTENSION_INIT1(pShExtApi, pExtHelpers, shextLinkFetcher);
 
 /* This is not found in the API pointer table published for extensions: */
 #define sqlite3_enable_load_extension pExtHelpers->enable_load_extension
@@ -384,114 +387,116 @@ static void copy_complaint(char **pzErr, Tcl_Interp *pi){
 # define TCL_REPL 3
 #endif
 
-static const char * const zREPL =
+
 #if TCL_REPL==1 /* a fallback for debug */
-  "set line {}\n"
-  "while {![eof stdin]} {\n"
-    "if {$line!=\"\"} {\n"
-      "puts -nonewline \"> \"\n"
-    "} else {\n"
-      "puts -nonewline \"% \"\n"
-    "}\n"
-    "flush stdout\n"
-    "append line [gets stdin]\n"
-    "if {$line eq \".\"} break\n"
-    "if {[info complete $line]} {\n"
-      "if {[catch {uplevel #0 $line} result]} {\n"
-        "puts stderr \"Error: $result\"\n"
-      "} elseif {$result!=\"\"} {\n"
-        "puts $result\n"
-      "}\n"
-      "set line {}\n"
-    "} else {\n"
-      "append line \\n\n"
-    "}\n"
-  "}\n"
-  "if {$line ne \".\"} {puts {}}\n"
-  "read stdin 0\n"
+TCL_CSTR_LITERAL(static const char * const zREPL = ){
+  set line {}
+  while {![eof stdin]} {
+    if {$line!=""} {
+      puts -nonewline "> "
+    } else {
+      puts -nonewline "% "
+    }
+    flush stdout
+    append line [gets stdin]
+    if {$line eq "."} break
+    if {[info complete $line]} {
+      if {[catch {uplevel #0 $line} result]} {
+        puts stderr "Error: $result"
+      } elseif {$result!=""} {
+        puts $result
+      }
+      set line {}
+    } else {
+      append line \n
+    }
+  }
+  if {$line ne "."} {puts {}}
+  read stdin 0
+};
 #elif TCL_REPL==2 /* minimal use of shell's read */
-  "namespace eval ::REPL {\n"
-    "variable line {}\n"
-    "variable at_end 0\n"
-    "variable prompting [now_interactive]\n"
-  "}\n"
-  "while {!$::REPL::at_end} {\n"
-    "if {$::REPL::prompting} {\n"
-      "if {$::REPL::line!=\"\"} {\n"
-        "puts -nonewline \"...> \"\n"
-      "} else {\n"
-        "puts -nonewline \"tcl% \"\n"
-      "}\n"
-    "}\n"
-    "flush stdout\n"
-    "set ::REPL::li [get_input_line]\n"
-    "if {$::REPL::li eq \"\"} {\n"
-      "set ::REPL::at_end 1\n"
-    "} elseif {[string trimright $::REPL::li] eq \".\"} {\n"
-      "if {$::REPL::line ne \"\"} {\n"
-        "throw {NONE} {incomplete input at EOF}\n"
-      "}\n"
-      "set ::REPL::at_end 1\n"
-    "} else {\n" 
-      "append ::REPL::line $::REPL::li\n"
-      "if {[string trim $::REPL::line] eq \"\"} {\n"
-        "set ::REPL::line \"\"\n"
-        "continue\n"
-      "}\n" 
-      "if {[info complete $::REPL::line]} {\n"
-        "set ::REPL::rc [catch {uplevel #0 $::REPL::line} ::REPL::result]\n"
-        "if {$::REPL::rc == 0} {\n"
-          "if {$::REPL::result!=\"\" && $::REPL::prompting} {\n"
-            "puts $::REPL::result\n"
-          "}\n"
-        "} elseif {$::REPL::rc == 1} {\n"
-          "puts stderr \"Error: $::REPL::result\"\n"
-        "} elseif {$::REPL::rc == 2} {\n"
-          "set ::REPL::at_end 1\n"
-        "}\n"
-        "set ::REPL::line {}\n"
-      "}\n"
-    "}\n"
-  "}\n"
-  "if {$::REPL::prompting && $::REPL::li ne \".\\n\"} {puts {}}\n"
-  "namespace delete ::REPL\n"
-  "read stdin 0\n"
+TCL_CSTR_LITERAL(static const char * const zREPL = ){
+  namespace eval ::REPL {
+    variable line {}
+    variable at_end 0
+    variable prompting [now_interactive]
+  }
+  while {!$::REPL::at_end} {
+    if {$::REPL::prompting} {
+      if {$::REPL::line!=""} {
+        puts -nonewline "...> "
+      } else {
+        puts -nonewline "tcl% "
+      }
+    }
+    flush stdout
+    set ::REPL::li [get_input_line]
+    if {$::REPL::li eq ""} {
+      set ::REPL::at_end 1
+    } elseif {[string trimright $::REPL::li] eq "."} {
+      if {$::REPL::line ne ""} {
+        throw {NONE} {incomplete input at EOF}
+      }
+      set ::REPL::at_end 1
+    } else {
+      append ::REPL::line $::REPL::li
+      if {[string trim $::REPL::line] eq ""} {
+        set ::REPL::line ""
+        continue
+      }
+      if {[info complete $::REPL::line]} {
+        set ::REPL::rc [catch {uplevel #0 $::REPL::line} ::REPL::result]
+        if {$::REPL::rc == 0} {
+          if {$::REPL::result!="" && $::REPL::prompting} {
+            puts $::REPL::result
+          }
+        } elseif {$::REPL::rc == 1} {
+          puts stderr "Error: $::REPL::result"
+        } elseif {$::REPL::rc == 2} {
+          set ::REPL::at_end 1
+        }
+        set ::REPL::line {}
+      }
+    }
+  }
+  if {$::REPL::prompting && $::REPL::li ne ".\n"} {puts {}}
+  namespace delete ::REPL
+  read stdin 0
+};
 #elif TCL_REPL==3
-# define SHELL_REPL_CMDNAME "sqlite_shell_REPL"
-  /* using shell's input collection with line editing (if configured) */
-  SHELL_REPL_CMDNAME
+/* using shell's input collection with line editing (if configured) */
+static const char * const zREPL = "sqlite_shell_REPL";
+
+TCL_CSTR_LITERAL(static const char * const zDefineREPL = ){
+  proc sqlite_shell_REPL {} {
+    set interactive [now_interactive]
+    while {1} {
+      foreach {group ready} [get_tcl_group] {}
+      set trimmed [string trim $group]
+      if {$group eq "" && !$ready} break
+      if {$trimmed eq ""} continue
+      if {!$ready && $trimmed ne ""} {
+        throw {NONE} {incomplete input at EOF}
+      }
+      if {$trimmed eq "."} break
+      set rc [catch {uplevel #0 $group} result]
+      if {$rc == 0} {
+        if {$result != "" && $interactive} {
+          puts $result
+        }
+      } elseif {$rc == 1} {
+        puts stderr "Error: $result"
+      } elseif {$rc == 2} {
+        return -code 2
+      }
+    }
+    if {$interactive && $trimmed ne "."} {puts {}}
+    read stdin 0
+  }
+};
 #else
   "throw {NONE} {not built for REPL}\n"
 #endif
-  ; /* zREPL */
-
-static const char * const zDefineREPL =
-  "proc "SHELL_REPL_CMDNAME" {} {\n"
-    "set interactive [now_interactive]\n"
-    "while {1} {\n"
-      "foreach {group ready} [get_tcl_group] {}\n"
-      "set trimmed [string trim $group]\n"
-      "if {$group eq \"\" && !$ready} break\n"
-      "if {$trimmed eq \"\"} continue\n"
-      "if {!$ready && $trimmed ne \"\"} {\n"
-        "throw {NONE} {incomplete input at EOF}\n"
-      "}\n"
-      "if {$trimmed eq \".\"} break\n"
-      "set rc [catch {uplevel #0 $group} result]\n"
-      "if {$rc == 0} {\n"
-        "if {$result != \"\" && $interactive} {\n"
-          "puts $result\n"
-        "}\n"
-      "} elseif {$rc == 1} {\n"
-        "puts stderr \"Error: $result\"\n"
-      "} elseif {$rc == 2} {\n"
-        "return -code 2\n"
-      "}\n"
-    "}\n"
-    "if {$interactive && $trimmed ne \".\"} {puts {}}\n"
-    "read stdin 0\n"
-  "}\n"
-  ;
 
 /* Enter the preferred REPL */
 static DotCmdRC runTclREPL(Tcl_Interp *interp, char **pzErrMsg){
@@ -525,6 +530,7 @@ DERIVED_METHOD(DotCmdRC, execute, MetaCommand,TclCmd, 4,
     return runTclREPL(getInterp(), pzErrMsg);
   }
 }
+
 DERIVED_METHOD(DotCmdRC, execute, MetaCommand,UnkCmd, 4,
              (ShellExState *psx, char **pzErrMsg, int nArgs, char *azArgs[])){
   Tcl_Interp *interp = getInterp();
@@ -593,9 +599,9 @@ INSTANCE_END(TclSS) tclss = {
   &tclss_methods
 };
 
+#if TCL_REPL==2
 #define GETLINE_MAXLEN 1000
 
-#if TCL_REPL==2
 /* C implementation of TCL proc, get_input_line */
 static int getInputLine(void *pvSS, Tcl_Interp *interp,
                         int nArgs, const char *azArgs[]){
@@ -985,8 +991,8 @@ static const int numDbNames = 2;
 static int UserDbObjCmd(void *cd, Tcl_Interp *interp,
                         int objc, Tcl_Obj * const * objv){
   UserDb *pudb = (UserDb*)cd;
-  static const char *azDoHere[] = { "close", ".eval", 0 };
-  enum DbDoWhat { DDW_Close, DDW_ShellEval };
+  static const char *azDoHere[] = { "close", 0 };
+  enum DbDoWhat { DDW_Close };
   int doWhat;
   int whichDb = -1;
   const char *zMoan;
@@ -1004,10 +1010,6 @@ static int UserDbObjCmd(void *cd, Tcl_Interp *interp,
     case DDW_Close:
       zMoan = " close is disallowd. It is a wrapped DB.\n";
       goto complain_fail;
-    case DDW_ShellEval:
-      Tcl_AppendResult(interp, "Faking .eval ...\n", 0);
-      //... ToDo: Implement this.
-      return TCL_OK;
     }
   }
   if( pudb->numSdb==0 || whichDb<0 ){
@@ -1040,9 +1042,6 @@ static int userDbInit(Tcl_Interp *interp, ShellExState *psx){
   return TCL_ERROR;
 }
 
-/* Extension boiler-plate to grab ShellExtensionLink pointer from db. */
-DEFINE_SHDB_TO_SHEXTLINK(shext_link);
-
 /*
 ** Extension load function.
 */
@@ -1054,10 +1053,16 @@ int sqlite3_tclshext_init(
   char **pzErrMsg,
   const sqlite3_api_routines *pApi
 ){
-  ShellExtensionLink *pShExtLink;
   SQLITE_EXTENSION_INIT2(pApi);
-  pShExtLink = shext_link(db);
-  if( pShExtLink && pShExtLink->pShellExtensionAPI->numRegistrars>=5 ){
+  SHELL_EXTENSION_INIT2(pShExtLink, shextLinkFetcher, db);
+
+  SHELL_EXTENSION_INIT3(pShExtApi, pExtHelpers, pShExtLink);
+  if( SHELL_EXTENSION_LOADFAIL(pShExtLink, 5, 10) ){
+    *pzErrMsg
+      = sqlite3_mprintf("No ShellExtensionLink or shell API is too old.\n"
+                        "Use '.load tclshext -shext' or update the shell.\n");
+    return SQLITE_ERROR;
+  }else{
     ShellExState *psx = pShExtLink->pSXS;
     Tcl_Obj *targv = Tcl_NewListObj(0, NULL);
     const char *zAppName = "tclshext";
@@ -1065,12 +1070,6 @@ int sqlite3_tclshext_init(
     int ldTk = 0;
     int rc = 0;
 
-    pShExtApi = & pShExtLink->pShellExtensionAPI->api.named;
-    pExtHelpers = & pShExtLink->pShellExtensionAPI->pExtHelpers->helpers.named;
-    if( pShExtLink->pShellExtensionAPI->pExtHelpers->helperCount < 10 ){
-      *pzErrMsg = sqlite3_mprintf("Shell version mismatch");
-      return SQLITE_ERROR;
-    }
     if( pShExtLink->nLoadArgs>0 ){
       int ila;
       for( ila=0; ila<pShExtLink->nLoadArgs; ++ila ){
@@ -1219,10 +1218,5 @@ int sqlite3_tclshext_init(
       Tcl_TakeDown(&interpKeep);
     }
     return rc;
-  }
-  else{
-    *pzErrMsg
-      = sqlite3_mprintf("Bad ShellExtensionLink or registration API.\n");
-    return SQLITE_ERROR;
   }
 }

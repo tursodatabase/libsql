@@ -362,7 +362,7 @@ typedef struct ShellExtensionAPI {
                                  ExtensionId eid, MetaCommand *pMC);
       /* Register query result data display (or other disposition) mode */
       int (*registerExporter)(ShellExState *p,
-                              ExtensionId eid, ExportHandler *pOMH);
+                              ExtensionId eid, ExportHandler *pEH);
       /* Register an import variation from (various sources) for .import */
       int (*registerImporter)(ShellExState *p,
                               ExtensionId eid, ImportHandler *pIH);
@@ -425,8 +425,8 @@ typedef struct ShellExtensionLink {
  * pointer to a ShellExtensionLink instance during an extension's *init*()
  * call (during shell extension load) or 0 (during SQLite extension load.)
  */
-#define DEFINE_SHDB_TO_SHEXTLINK(func_name) \
- static ShellExtensionLink * func_name(sqlite3 * db){ \
+#define DEFINE_SHDB_TO_SHEXTLINK(link_func_name) \
+ static ShellExtensionLink * link_func_name(sqlite3 * db){ \
   ShellExtensionLink *rv = 0; sqlite3_stmt *pStmt = 0; \
   if( SQLITE_OK==sqlite3_prepare_v2(db,"SELECT shext_pointer(0)",-1,&pStmt,0) \
       && SQLITE_ROW == sqlite3_step(pStmt) ) \
@@ -434,6 +434,47 @@ typedef struct ShellExtensionLink {
      (sqlite3_column_value(pStmt, 0), SHELLEXT_API_POINTERS); \
   sqlite3_finalize(pStmt); return rv; \
  }
+
+/*
+ * Define boilerplate macros analogous to SQLITE_EXTENSION_INIT#
+ */
+/* Place at file scope prior to usage of the arguments by extension code. */
+#define SHELL_EXTENSION_INIT1( shell_api_ptr, ext_helpers_ptr, link_func ) \
+  static struct ShExtAPI *shell_api_ptr = 0; \
+  static struct ExtHelpers *ext_helpers_ptr = 0; \
+  DEFINE_SHDB_TO_SHEXTLINK(link_func)
+
+/* Place within sqlite3_x_init() among its local variable declarations. */
+#define SHELL_EXTENSION_INIT2( link_ptr, link_func, db_ptr ) \
+  ShellExtensionLink * link_ptr = link_func(db_ptr)
+
+/* Place within sqlite3_x_init() code prior to usage of the *_ptr arguments. */
+#define SHELL_EXTENSION_INIT3( shell_api_ptr, ext_helpers_ptr, link_ptr ) \
+ if( (link_ptr)!=0 ){ \
+  shell_api_ptr = &link_ptr->pShellExtensionAPI->api.named; \
+  ext_helpers_ptr = &link_ptr->pShellExtensionAPI->pExtHelpers->helpers.named; \
+ }
+
+/* This test may be used within sqlite3_x_init() after SHELL_EXTENSION_INIT3 */
+#define SHELL_EXTENSION_LINKED(link_ptr) ((link_ptr)!=0)
+/* These *_COUNT() macros help determine version compatibility.
+ * They should only be used when the above test yields true.
+ */
+#define SHELL_API_COUNT(link_ptr) \
+  (link_ptr->pShellExtensionAPI->numRegistrars)
+#define SHELL_HELPER_COUNT(link_ptr) \
+  (link_ptr->pShellExtensionAPI->pExtHelpers->helperCount)
+
+/* Combining the above, safely, to provide a single test for extensions to
+ * use for assurance that: (1) the load was as a shell extension (with the
+ * -shext flag rather than bare .load); and (2) the loading host provides
+ * stated minimum extension API and helper counts.
+ */
+#define SHELL_EXTENSION_LOADFAIL(link_ptr, minNumApi, minNumHelpers) \
+  (!SHELL_EXTENSION_LINKED(link_ptr) \
+   || SHELL_API_COUNT(link_ptr)<(minNumApi) \
+   || SHELL_HELPER_COUNT(link_ptr)<(minNumHelpers) \
+  )
 
 #ifdef __cplusplus
 } // extern "C"
