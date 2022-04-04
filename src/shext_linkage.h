@@ -278,7 +278,7 @@ CONCRETE_END(Derived) vtname = { \
 
 /* This function pointer has the same signature as the sqlite3_X_init()
  * function that is called as SQLite3 completes loading an extension.
- * It is used as a process-unique identifier for a loaded extention.
+ * It is used as a process-unique identifier for a loaded extension.
  */
 typedef int (*ExtensionId)
   (sqlite3 *, char **, const struct sqlite3_api_routines *);

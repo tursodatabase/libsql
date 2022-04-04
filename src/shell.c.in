@@ -1400,6 +1400,7 @@ typedef struct ShellInState {
     void *pvUserData;
     ShellEventNotify eventHandler;
   } *pSubscriptions;     /* The current shell event subscriptions */
+  u8 bDbDispatch;        /* Cache fact of dbShell dispatch table */
 #endif
 
   ShellExState *pSXS;    /* Pointer to companion, exposed shell state */
@@ -1413,8 +1414,8 @@ typedef struct ShellInState {
 
 /*
 ** This procedure updates the bSafeMode flag after completion of any
-** operation (meta-command or SQL submission) that counts as one for
-** which safe mode might be suspended.
+** operation (meta-command, SQL submission, or script execution) that
+** counts as one for which safe mode might be suspended.
 ** bSafeModeFuture has 3 states salient here:
 ** equal 0 => Safe mode is and will remain inactive.
 ** equal 1 => Safe mode is and will remain active.
@@ -2412,6 +2413,74 @@ static int progress_handler(void *pClientData) {
   return 0;
 }
 #endif /* SQLITE_OMIT_PROGRESS_CALLBACK */
+
+/* For debugging or experimentation, the shell DB can be made file-based. */
+#ifndef SHELL_DB_FILE
+# define SHELL_DB_STORE ":memory:"
+#else
+# define SHELL_DB_STORE SHELL_STRINGIFY(SHELL_DB_FILE)
+#endif
+
+#define SHELL_DISP_SCHEMA "main"
+#define SHELL_DISP_TAB "ShellCommands"
+#define SHELL_DISP_VIEW "ShellActiveCmds"
+
+/*
+** Ensure dbShell exists and return SQLITE_OK,
+** or complain and return SQLITE_ERROR.
+*/
+static int ensure_shell_db(ShellExState *psx){
+  if( psx->dbShell!=0 ) return SQLITE_OK;
+  else{
+    int rc = sqlite3_open(SHELL_DB_STORE, &psx->dbShell);
+    if( rc!=SQLITE_OK ){
+      utf8_printf(STD_ERR, "Shell DB open failure: %s\n", sqlite3_errstr(rc));
+      return SQLITE_ERROR;
+    }
+#ifndef SQLITE_NOHAVE_SYSTEM
+    sqlite3_create_function(psx->dbShell, "edit", 1,
+                            SQLITE_UTF8, 0, editFunc, 0, 0);
+    sqlite3_create_function(psx->dbShell, "edit", 2,
+                            SQLITE_UTF8, 0, editFunc, 0, 0);
+#endif
+    return rc;
+  }
+}
+
+/* Tell whether the above-created table exists, return true iff exists. */
+static int dispatch_table_exists(sqlite3 *dbs){
+  return sqlite3_table_column_metadata
+    (dbs, SHELL_DISP_SCHEMA, SHELL_DISP_TAB, 0, 0, 0, 0, 0, 0)==SQLITE_OK;
+}
+
+static int ensure_dispatch_table(ShellExState *psx){
+  int rc = ensure_shell_db(psx);
+  if( rc==SQLITE_OK ){
+    char *zErr = 0;
+    int rc1, rc2;
+    if( dispatch_table_exists(psx->dbShell) ) return rc;
+    /* Create the dispatch table and view on it. */
+#ifdef SHELL_DB_FILE
+    sqlite3_exec(psx->dbShell, "DROP TABLE IF EXISTS "SHELL_DISP_TAB, 0,0,0);
+    sqlite3_exec(psx->dbShell, "DROP VIEW IF EXISTS "SHELL_DISP_VIEW, 0,0,0);
+#endif
+    rc1 = sqlite3_exec(psx->dbShell, "CREATE TABLE "SHELL_DISP_TAB"("
+                       "name TEXT, extIx INT, cmdIx INT,"
+                       "PRIMARY KEY(extIx,cmdIx)) WITHOUT ROWID", 0, 0, &zErr);
+    rc2 = sqlite3_exec(psx->dbShell,
+                       "CREATE VIEW "SHELL_DISP_VIEW
+                       " AS SELECT s.name AS name,"
+                       " max(s.extIx) AS extIx, s.cmdIx AS cmdIx"
+                       " FROM "SHELL_DISP_TAB" s GROUP BY name",
+                       0, 0, &zErr);
+    if( rc1!=SQLITE_OK || rc2!=SQLITE_OK || zErr!=0 ){
+      utf8_printf(STD_ERR, "Shell DB init failure, %s\n", zErr? zErr : "?");
+      rc = SQLITE_ERROR;
+    }else rc = SQLITE_OK;
+    sqlite3_free(zErr);
+  }
+  return rc;
+}
 
 /*
 ** Skip over whitespace, returning remainder.
@@ -3493,21 +3562,66 @@ static ParamTableUse classify_param_name( const char *zName ){
   }
 }
 
+#ifndef SQLITE_NOHAVE_SYSTEM
+/* Possibly using a -editor=X argument and env-var VISUAL, attempt
+ * to get the zEditor shell state member set iff not already set.
+ * If there is no such argument, the env-var is retrieved if set.
+ * If the argument is -editor=X or --editor=X, use that and leave
+ * the zEditor member set accordingly. Returns are:
+ * 0 => editor set, zEd was not the -editor option
+ * 1 => editor set, zEd consumed as -editor option
+ * -1 => editor not set, and error/advice message issued.
+ *
+ * This implements an undocumented fall-back for the .vars and
+ * .parameters edit subcommands, so that users need not restart
+ * a shell session to get an editor specified upon need for it. */
+int attempt_editor_set(ShellInState *psi, char *zDot, const char *zEd){
+  if( psi->zEditor==0 ){
+    const char *zE = getenv("VISUAL");
+    if( zE!=0 ) psi->zEditor = smprintf("%s", zE);
+  }
+  if( zEd && zEd[0]=='-' ){
+    zEd += 1 + (zEd[1]=='-');
+    if( strncmp(zEd,"editor=",7)==0 ){
+      sqlite3_free(psi->zEditor);
+      /* Accept an initial -editor=? option. */
+      psi->zEditor = smprintf("%s", zEd+7);
+      return 1;
+    }
+  }
+  if( psi->zEditor==0 ){
+    utf8_printf(STD_ERR,
+                "Either set env-var VISUAL to name an"
+                " editor and restart, or rerun\n "
+                ".%s edit with an initial edit option,"
+                " --editor=EDITOR_COMMAND .\n", zDot);
+    return -1;
+  }
+  return 0;
+}
+#endif
+
+/* The table kept for user DBs if .parameter command is used usefully. */
 #define PARAM_TABLE_NAME "sqlite_parameters"
 #define PARAM_TABLE_SCHEMA "temp"
 #define PARAM_TABLE_SNAME PARAM_TABLE_SCHEMA"."PARAM_TABLE_NAME
 
-#ifndef PARAM_STORE_NAME
-/* Name for table keeping user's saved parameters */
-# define PARAM_STORE_NAME "SQLiteShellParameters"
-#endif
-#ifndef PARAM_STORE_SCHEMA
-/* Schema name used to attach saved parameters DB during load/save */
-# define PARAM_STORE_SCHEMA "SQLiteShell"
-#endif
-#define PARAM_STORE_SNAME PARAM_STORE_SCHEMA"."PARAM_STORE_NAME
+/* The table kept for the shell DB if .vars command is used usefully. */
+#define SHVAR_TABLE_NAME "sqlite_variables"
+#define SHVAR_TABLE_SCHEMA "main"
+#define SHVAR_TABLE_SNAME SHVAR_TABLE_SCHEMA"."SHVAR_TABLE_NAME
 
-/* Create the TEMP table used to store parameter bindings and SQL statements */
+#ifndef SH_KV_STORE_NAME
+/* Name for table keeping user's saved parameters */
+# define SH_KV_STORE_NAME "SQLiteShell_KeyValuePairs"
+#endif
+#ifndef SH_KV_STORE_SCHEMA
+/* Schema name used to attach saved parameters DB during load/save */
+# define SH_KV_STORE_SCHEMA "SQLiteShell"
+#endif
+#define SH_KV_STORE_SNAME SH_KV_STORE_SCHEMA"."SH_KV_STORE_NAME
+
+/* Create the TEMP table used to store parameter bindings */
 static void param_table_init(sqlite3 *db){
   DbProtectState dps = allow_sys_schema_change(db);
   sqlite3_exec(db,
@@ -3524,6 +3638,32 @@ static void param_table_init(sqlite3 *db){
 static int param_table_exists( sqlite3 *db ){
   return sqlite3_table_column_metadata
     (db, PARAM_TABLE_SCHEMA, PARAM_TABLE_NAME, 0, 0, 0, 0, 0, 0)==SQLITE_OK;
+}
+
+/* Create the shell DB table used to store shell variables or scripts */
+static int shvars_table_init(sqlite3 *db){
+  DbProtectState dps = allow_sys_schema_change(db);
+  int rc = sqlite3_exec(db,
+    "CREATE TABLE IF NOT EXISTS "SHVAR_TABLE_SNAME"(\n"
+    "  key TEXT PRIMARY KEY,\n"
+    "  value,\n"
+    "  uses INT DEFAULT (0)" /* aka PTU_Binding */
+    ") WITHOUT ROWID;",
+    0, 0, 0);
+  restore_sys_schema_protection( db, &dps );
+  return rc!=SQLITE_OK;
+}
+
+/* Tell whether the above-created table exists, return true iff exists. */
+static int shvars_table_exists( sqlite3 *db ){
+  return sqlite3_table_column_metadata
+    (db, SHVAR_TABLE_SCHEMA, SHVAR_TABLE_NAME, 0, 0, 0, 0, 0, 0)==SQLITE_OK;
+}
+
+/* Make shell vars table exist. */
+static int ensure_shvars_table(sqlite3 *dbs){
+  if( shvars_table_exists(dbs) ) return SQLITE_OK;
+  else return shvars_table_init(dbs);
 }
 
 /*
@@ -7761,7 +7901,7 @@ static int register_meta_command(ShellExState *p,
   ShellInState *psi = ISS(p);
   ShExtInfo *psei = pending_ext_info(psi);
   const char *zSql
-    = "INSERT INTO ShellCommands (name, extIx, cmdIx) VALUES(?, ?, ?)";
+    = "INSERT INTO "SHELL_DISP_TAB"(name, extIx, cmdIx) VALUES(?, ?, ?)";
   int ie = psi->ixExtPending;
   assert(psi->pShxLoaded!=0 && p->dbShell!=0);
   if( pMC==0 ) return SQLITE_ERROR;
@@ -7990,24 +8130,26 @@ static void shell_linkage(
   else sqlite3_result_pointer(context, pv, SHELLEXT_API_POINTERS, 0);
 }
 
-#ifndef SHELL_DB_FILE
-# define SHELL_DB_STORE ":memory:"
-#else
-# define SHELL_DB_STORE SHELL_STRINGIFY(SHELL_DB_FILE)
-#endif
-
 /* Do the initialization needed for use of dbShell for command lookup
  * and dispatch and for I/O handler lookup and dispatch.
  */
 static int begin_db_dispatch(ShellExState *psx){
   ShellInState *psi = ISS(psx);
   sqlite3_stmt *pStmt = 0;
-  int ic, rc, rc1, rc2;
+  int ic, rc1, rc2;
+  int rc = 0;
   char *zErr = 0;
   const char *zSql;
   ShExtInfo sei = {0};
   /* Consider: Store these dynamic arrays in the DB as indexed-into blobs. */
-  assert(psx->dbShell==0 && psi->numExtLoaded==0 && psi->pShxLoaded==0);
+  assert(psx->dbShell==0 || (psi->numExtLoaded==0 && psi->pShxLoaded==0));
+  rc = ensure_shell_db(psx);
+  if( rc!=SQLITE_OK ){
+    utf8_printf(STD_ERR, "Error: Shell DB uncreatable. Best to .quit soon.\n");
+    return SQLITE_ERROR;
+  }
+  if( ensure_dispatch_table(psx)!=SQLITE_OK ) return 1;
+
   psi->pShxLoaded = (ShExtInfo *)sqlite3_malloc(2*sizeof(ShExtInfo));
   sei.ppMetaCommands
     = (MetaCommand **)sqlite3_malloc((numCommands+2)*sizeof(MetaCommand *));
@@ -8026,25 +8168,7 @@ static int begin_db_dispatch(ShellExState *psx){
   }
   sei.numMetaCommands = ic;
   psi->pShxLoaded[psi->numExtLoaded++] = sei;
-  rc = sqlite3_open(SHELL_DB_STORE, &psx->dbShell);
-  if( rc!=SQLITE_OK ) return 1;
-#ifdef SHELL_DB_FILE
-  sqlite3_exec(psx->dbShell, "DROP TABLE IF EXISTS ShellCommands", 0,0,0);
-  sqlite3_exec(psx->dbShell, "DROP VIEW IF EXISTS ActiveCommands", 0,0,0);
-#endif
-  rc1 = sqlite3_exec(psx->dbShell, "CREATE TABLE ShellCommands("
-                     "name TEXT, extIx INT, cmdIx INT,"
-                     "PRIMARY KEY(extIx,cmdIx)) WITHOUT ROWID",
-                     0, 0, &zErr);
-  rc2 = sqlite3_exec(psx->dbShell, "CREATE VIEW ActiveCommands AS SELECT "
-                     "s.name AS name, max(s.extIx) AS extIx, s.cmdIx AS cmdIx "
-                     "FROM ShellCommands s GROUP BY name",
-                     0, 0, &zErr);
-  if( rc1!=SQLITE_OK || rc2!=SQLITE_OK || zErr!=0 ){
-    utf8_printf(STD_ERR, "Shell DB init failure, %s\n", zErr? zErr : "");
-    return 1;
-  }
-  zSql = "INSERT INTO ShellCommands (name, extIx, cmdIx) VALUES(?, 0, ?)";
+  zSql = "INSERT INTO "SHELL_DISP_TAB"(name, extIx, cmdIx) VALUES(?, 0, ?)";
   rc1 = sqlite3_prepare_v2(psx->dbShell, zSql, -1, &pStmt, 0);
   rc2 = sqlite3_exec(psx->dbShell, "BEGIN TRANSACTION", 0, 0, &zErr);
   if( rc1!=SQLITE_OK || rc2!=SQLITE_OK ) return 1;
@@ -8065,6 +8189,9 @@ static int begin_db_dispatch(ShellExState *psx){
   if( rc!=SQLITE_DONE ) return 1;
   rc = sqlite3_exec(psx->dbShell, "COMMIT", 0, 0, &zErr);
   sqlite3_enable_load_extension(psx->dbShell, 1);
+  sqlite3_free(zErr);
+  psi->bDbDispatch = 1;
+
   return SQLITE_OK;
 }
 
@@ -8154,7 +8281,7 @@ static int load_shell_extension(ShellExState *psx, const char *zFile,
   int rc;
 
   if( pzErr ) *pzErr = 0;
-  if( psx->dbShell==0 ){
+  if( psx->dbShell==0 || ISS(psx)->numExtLoaded==0 ){
     rc = begin_db_dispatch(psx);
     if( rc!=SQLITE_OK ) return rc;
     assert(ISS(psx)->numExtLoaded==1 && psx->dbShell!=0);
@@ -10337,15 +10464,15 @@ DISPATCHABLE_COMMAND( nullvalue ? 2 2 ){
   return DCR_Ok;
 }
 
-/* Helper functions for .parameter command
+/* Helper functions for .parameter and .vars commands
  */
 
-struct param_row { char * value; int uses; int hits; };
+struct keyval_row { char * value; int uses; int hits; };
 
-static int param_find_callback(void *pData, int nc, char **pV, char **pC){
+static int kv_find_callback(void *pData, int nc, char **pV, char **pC){
   assert(nc>=1);
   assert(strcmp(pC[0],"value")==0);
-  struct param_row *pParam = (struct param_row *)pData;
+  struct keyval_row *pParam = (struct keyval_row *)pData;
   assert(pParam->value==0); /* key values are supposedly unique. */
   if( pParam->value!=0 ) sqlite3_free( pParam->value );
   pParam->value = smprintf("%s", pV[0]); /* source owned by statement */
@@ -10398,39 +10525,47 @@ static char *home_based_path( const char *zPath ){
  *
  * Returns are SQLITE_OK for success, or other codes for failure.
  */
-static int param_xfr_table(sqlite3 *db, const char *zStoreDbName,
-                           int bSaveNotLoad, const char *azNames[], int nNames){
+static int kv_xfr_table(sqlite3 *db, const char *zStoreDbName,
+                        int bSaveNotLoad, ParamTableUse ptu,
+                        const char *azNames[], int nNames){
   int rc = 0;
   char *zSql = 0; /* to be sqlite3_free()'ed */
   sqlite3_str *sbCopy = 0;
-  const char *zHere = PARAM_TABLE_SNAME;
-  const char *zThere = PARAM_STORE_SNAME;
-  const char *zTo = (bSaveNotLoad)? zThere : zHere;
-  const char *zFrom = (bSaveNotLoad)? zHere : zThere;
+  const char *zHere = 0;
+  const char *zThere = SH_KV_STORE_SNAME;
+  const char *zTo;
+  const char *zFrom;
   sqlite3 *dbStore = 0;
   int openFlags = (bSaveNotLoad)
     ? SQLITE_OPEN_URI|SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE
     : SQLITE_OPEN_READONLY;
 
+  switch( ptu ){
+  case PTU_Binding: zHere = PARAM_TABLE_SNAME; break;
+  case PTU_Script:  zHere = SHVAR_TABLE_SNAME; break;
+  default: assert(0); return 1;
+  }
+  zTo = (bSaveNotLoad)? zThere : zHere;
+  zFrom = (bSaveNotLoad)? zHere : zThere;
   /* Ensure store DB can be opened and/or created appropriately. */
   rc = sqlite3_open_v2(zStoreDbName, &dbStore, openFlags, 0);
   if( rc!=SQLITE_OK ){
-    utf8_printf(STD_ERR, "Error: Cannot %s parameter store DB %s\n",
+    utf8_printf(STD_ERR, "Error: Cannot %s key/value store DB %s\n",
                 bSaveNotLoad? "open/create" : "read", zStoreDbName);
     return rc;
   }
-  /* Ensure it has the parameter store table, or handle its absence. */
+  /* Ensure it has the kv store table, or handle its absence. */
   assert(dbStore!=0);
   if( sqlite3_table_column_metadata
-      (dbStore, "main", PARAM_STORE_NAME, 0, 0, 0, 0, 0, 0)!=SQLITE_OK ){
+      (dbStore, "main", SH_KV_STORE_NAME, 0, 0, 0, 0, 0, 0)!=SQLITE_OK ){
     if( !bSaveNotLoad ){
-      utf8_printf(STD_ERR, "Error: No parameters ever stored in DB %s\n",
+      utf8_printf(STD_ERR, "Error: No key/value pairs ever stored in DB %s\n",
                   zStoreDbName);
       rc = 1;
     }else{
       /* The saved parameters table is not there yet; create it. */
       const char *zCT =
-        "CREATE TABLE IF NOT EXISTS "PARAM_STORE_NAME"(\n"
+        "CREATE TABLE IF NOT EXISTS "SH_KV_STORE_NAME"(\n"
         "  key TEXT PRIMARY KEY,\n"
         "  value,\n"
         "  uses INT\n"
@@ -10444,7 +10579,7 @@ static int param_xfr_table(sqlite3 *db, const char *zStoreDbName,
   sqlite3_close(dbStore);
   if( rc!=0 ) return rc;
 
-  zSql = smprintf("ATTACH %Q AS %s;", zStoreDbName, PARAM_STORE_SCHEMA);
+  zSql = smprintf("ATTACH %Q AS %s;", zStoreDbName, SH_KV_STORE_SCHEMA);
   shell_check_oom(zSql);
   rc = sqlite3_exec(db, zSql, 0, 0, 0);
   sqlite3_free(zSql);
@@ -10460,12 +10595,13 @@ static int param_xfr_table(sqlite3 *db, const char *zStoreDbName,
   rc = sqlite3_exec(db, zSql, 0, 0, 0);
   sqlite3_free(zSql);
 
-  sqlite3_exec(db, "DETACH "PARAM_STORE_SCHEMA";", 0, 0, 0);
+  sqlite3_exec(db, "DETACH "SH_KV_STORE_SCHEMA";", 0, 0, 0);
   return rc;
 }
 
-/* Default location of parameters store DB for .parameters save/load. */
+/* Default locations of kv store DBs for .parameters and .vars save/load. */
 static const char *zDefaultParamStore = "~/sqlite_params.sdb";
+static const char *zDefaultVarStore = "~/sqlite_vars.sdb";
 
 /* Possibly generate a derived path from input spec, with defaulting
  * and conversion of leading (or only) tilde as home directory.
@@ -10474,40 +10610,48 @@ static const char *zDefaultParamStore = "~/sqlite_params.sdb";
  * If the return is exactly the input, it must not be sqlite3_free()'ed.
  * If the return differs from the input, it must be sqlite3_free()'ed.
  */
-static const char *params_store_path(const char *zSpec){
+  static const char *kv_store_path(const char *zSpec, ParamTableUse ptu){
   if( zSpec==0 || zSpec[0]==0 || strcmp(zSpec,"~")==0 ){
-    return home_based_path(zDefaultParamStore);
+    const char *zDef;
+    switch( ptu ){
+    case PTU_Binding: zDef = zDefaultParamStore; break;
+    case PTU_Script:  zDef = zDefaultVarStore; break;
+    default: return 0;
+    }
+    return home_based_path(zDef);
   }else if ( zSpec[0]=='~' ){
     return home_based_path(zSpec);
   }
   return zSpec;
 }
 
-/* Load some or all parameters. Arguments are "load FILE ?NAMES?". */
-static int parameters_load(sqlite3 *db, const char *azArg[], int nArg){
-  const char *zStore = params_store_path((nArg>1)? azArg[1] : 0);
+/* Load some or all kv pairs. Arguments are "load FILE ?NAMES?". */
+static int kv_pairs_load(sqlite3 *db, ParamTableUse ptu,
+                         const char *azArg[], int nArg){
+  const char *zStore = kv_store_path((nArg>1)? azArg[1] : 0, ptu);
   if( zStore==0 ){
     utf8_printf(STD_ERR, "Cannot form parameter load path. Nothing loaded.\n");
     return DCR_Error;
   }else{
     const char **pzFirst = (nArg>2)? azArg+2 : 0;
     int nNames = (nArg>2)? nArg-2 : 0;
-    int rc = param_xfr_table(db, zStore, 0, pzFirst, nNames);
+    int rc = kv_xfr_table(db, zStore, 0, ptu, pzFirst, nNames);
     if( nArg>1 && zStore!=azArg[1] ) sqlite3_free((void*)zStore);
     return rc;
   }
 }
 
 /* Save some or all parameters. Arguments are "save FILE ?NAMES?". */
-static int parameters_save(sqlite3 *db, const char *azArg[], int nArg){
-  const char *zStore = params_store_path((nArg>1)? azArg[1] : 0);
+static int kv_pairs_save(sqlite3 *db, ParamTableUse ptu,
+                         const char *azArg[], int nArg){
+  const char *zStore = kv_store_path((nArg>1)? azArg[1] : 0, ptu);
   if( zStore==0 ){
     utf8_printf(STD_ERR, "Cannot form parameter save path. Nothing saved.\n");
     return DCR_Error;
   }else{
     const char **pzFirst = (nArg>2)? azArg+2 : 0;
     int nNames = (nArg>2)? nArg-2 : 0;
-    int rc = param_xfr_table(db, zStore, 1, pzFirst, nNames);
+    int rc = kv_xfr_table(db, zStore, 1, ptu, pzFirst, nNames);
     if( nArg>1 && zStore!=azArg[1] ) sqlite3_free((void*)zStore);
     return rc;
   }
@@ -10515,62 +10659,63 @@ static int parameters_save(sqlite3 *db, const char *azArg[], int nArg){
 
 #ifndef SQLITE_NOHAVE_SYSTEM
 /*
- * Edit one named parameter in the parameters table. If it does not
- * yet exist, create it. If eval is true, the value is treated as a
- * bare expression, otherwise it is a text value. The uses argument
- * sets the 3rd column in the parameters table, and may also serve
- * to partition the key namespace. (This is not done now.)
+ * Edit one named value in the parameters or shell variables table.
+ * If it does not yet exist, create it. If eval is true, the value
+ * is treated as a bare expression, otherwise it is a text value.
+ * The "uses" argument sets the 3rd column in the selected table,
+ * and serves to select which of the two tables is modified.
  */
-static int edit_one_param(sqlite3 *db, char *name, int eval,
-                          ParamTableUse uses, const char * zEditor){
-  struct param_row paramVU = {0,0,0};
+static int edit_one_kvalue(sqlite3 *db, char *name, int eval,
+                           ParamTableUse uses, const char * zEditor){
+  struct keyval_row kvRow = {0,0,0};
   int rc;
   char * zVal = 0;
-  char * zSql = smprintf
-    ("SELECT value, uses FROM " PARAM_TABLE_SNAME " WHERE key=%Q", name);
+  const char *zTab = 0;
+  char * zSql = 0;
+
+  switch( uses ){
+  case PTU_Script:  zTab = SHVAR_TABLE_SNAME; break;
+  case PTU_Binding: zTab = PARAM_TABLE_SNAME; break;
+  default: assert(0);
+  }
+  zSql = smprintf("SELECT value, uses FROM %s "
+                  "WHERE key=%Q AND uses=%d", zTab, name, uses);
   shell_check_oom(zSql);
-  sqlite3_exec(db, zSql, param_find_callback, &paramVU, 0);
+  sqlite3_exec(db, zSql, kv_find_callback, &kvRow, 0);
   sqlite3_free(zSql);
-  assert(paramVU.hits<2);
-  if( paramVU.hits==1 && paramVU.uses==uses){
+  assert(kvRow.hits<2);
+  if( kvRow.hits==1 && kvRow.uses==uses){
     /* Editing an existing value of same kind. */
-    sqlite3_free(paramVU.value);
+    sqlite3_free(kvRow.value);
     if( eval!=0 ){
-      zSql = smprintf
-        ("SELECT edit(value, %Q) FROM " PARAM_TABLE_SNAME
-         " WHERE key=%Q AND uses=%d", zEditor, name, uses);
+      zSql = smprintf("SELECT edit(value, %Q) FROM %s "
+                      "WHERE key=%Q AND uses=%d", zEditor, zTab, name, uses);
+      shell_check_oom(zSql);
       zVal = db_text(db, zSql, 1);
       sqlite3_free(zSql);
-      zSql = smprintf
-        ("UPDATE "PARAM_TABLE_SNAME" SET value=(SELECT %s) WHERE"
-         " key=%Q AND uses=%d", zVal, name, uses);
+      zSql = smprintf("UPDATE %s SET value=(SELECT %s) "
+                      "WHERE key=%Q AND uses=%d", zTab, zVal, name, uses);
     }else{
-      zSql = smprintf
-        ("UPDATE "PARAM_TABLE_SNAME" SET value=edit(value, %Q) WHERE"
-         " key=%Q AND uses=%d", zEditor, name, uses);
+      zSql = smprintf("UPDATE %s SET value=edit(value, %Q) WHERE"
+                      " key=%Q AND uses=%d", zTab, zEditor, name, uses);
     }
   }else{
     /* Editing a new value of same kind. */
-    assert(paramVU.value==0 || paramVU.uses!=uses);
+    assert(kvRow.value==0 || kvRow.uses!=uses);
     if( eval!=0 ){
-      zSql = smprintf
-        ("SELECT edit('-- %q%s', %Q)", name, "\n", zEditor);
+      zSql = smprintf("SELECT edit('-- %q%s', %Q)", name, "\n", zEditor);
       zVal = db_text(db, zSql, 1);
       sqlite3_free(zSql);
-      zSql = smprintf
-        ("INSERT INTO "PARAM_TABLE_SNAME"(key,value,uses)"
+      zSql = smprintf("INSERT INTO %s(key,value,uses)"
          " VALUES (%Q,(SELECT %s LIMIT 1),%d)",
-         name, zVal, uses);
+         zTab, name, zVal, uses);
     }else{
-      zSql = smprintf
-        ("INSERT INTO "PARAM_TABLE_SNAME"(key,value,uses)"
-         " VALUES (%Q,edit('-- %q%s', %Q),%d)",
-         name, name, "\n", zEditor, uses);
+      zSql = smprintf("INSERT INTO %s(key,value,uses)"
+                      " VALUES (%Q,edit('-- %q;%s', %Q),%d)",
+                      zTab, name, name, "\n", zEditor, uses);
     }
   }
   shell_check_oom(zSql);
-  if( eval!=0 ){
-  }
   rc = sqlite3_exec(db, zSql, 0, 0, 0);
   sqlite3_free(zSql);
   sqlite3_free(zVal);
@@ -10588,29 +10733,6 @@ char *values_join( char **valBeg, char **valLim ){
     ++valBeg;
   }
   return z;
-}
-
-/* Get a named parameter value in form of stepped prepared statement,
- * ready to have its value taken from the 0th column. If the name
- * cannot be found for the given ParamTableUse, 0 is returned.
- * The caller is responsible for calling sqlite3_finalize(pStmt),
- * where pStmt is the return from this function.
- */
-static sqlite3_stmt *get_param_value(sqlite3 *db, char *name,
-                                     ParamTableUse ptu){
-  sqlite3_stmt *rv = 0;
-  int rc;
-  char *zSql = smprintf
-    ( "SELECT value FROM "PARAM_TABLE_SNAME
-      " WHERE key=%Q AND uses=%d", name, ptu );
-  shell_check_oom(zSql);
-  rc = sqlite3_prepare_v2(db, zSql, -1, &rv, 0);
-  sqlite3_free(zSql);
-  if( SQLITE_OK==rc ){
-    if( SQLITE_ROW==sqlite3_step(rv) ) return rv;
-    sqlite3_finalize(rv);
-  }
-  return 0;
 }
 
 static struct ParamSetOpts {
@@ -10639,11 +10761,32 @@ static char option_char(char *zArg){
   return 0;
 }
 
-/* The set subcommand (per help text)
+/* Most of .vars set
+ * Return SQLITE_OK on success, else SQLITE_ERROR.
+ */
+static int shvar_set(sqlite3 *db, char *name, char **valBeg, char **valLim){
+  int rc = SQLITE_OK;
+  char *zValGlom = (valLim-valBeg>1)? values_join(valBeg, valLim) : 0;
+  sqlite3_stmt *pStmtSet = 0;
+  char *zValue = (zValGlom==0)? *valBeg : zValGlom;
+  char *zSql
+    = smprintf("REPLACE INTO "SHVAR_TABLE_SNAME"(key,value,uses)"
+               "VALUES(%Q,%Q,%d);", name, zValue, PTU_Script);
+  shell_check_oom(zSql);
+  rc = sqlite3_prepare_v2(db, zSql, -1, &pStmtSet, 0);
+  assert(rc==SQLITE_OK);
+  sqlite3_free(zSql);
+  rc = (SQLITE_DONE==sqlite3_step(pStmtSet))? SQLITE_OK : SQLITE_ERROR;
+  sqlite3_finalize(pStmtSet);
+  sqlite3_free(zValGlom);
+  return rc;
+}
+
+
+/* Most of the .parameter set subcommand (per help text)
  */
 static int param_set(sqlite3 *db, char cCast,
-                     char *name, char **valBeg, char **valLim,
-                     ParamTableUse ptu){
+                     char *name, char **valBeg, char **valLim){
   char *zSql = 0;
   int rc = SQLITE_OK, retries = 0, needsEval = 1;
   char *zValGlom = (valLim-valBeg>1)? values_join(valBeg, valLim) : 0;
@@ -10664,11 +10807,12 @@ static int param_set(sqlite3 *db, char cCast,
     if( zCastTo!=0 ){
       zSql = smprintf
         ( "REPLACE INTO "PARAM_TABLE_SNAME"(key,value,uses)"
-          " VALUES(%Q,CAST((%s) AS %s),%d);", name, zValue, zCastTo, ptu );
+          " VALUES(%Q,CAST((%s) AS %s),%d);",
+          name, zValue, zCastTo, PTU_Binding );
     }else{
       zSql = smprintf
         ( "REPLACE INTO "PARAM_TABLE_SNAME"(key,value,uses)"
-          "VALUES(%Q,(%s),%d);", name, zValue, ptu );
+          "VALUES(%Q,(%s),%d);", name, zValue, PTU_Binding );
     }
     shell_check_oom(zSql);
     rc = sqlite3_prepare_v2(db, zSql, -1, &pStmtSet, 0);
@@ -10680,7 +10824,7 @@ static int param_set(sqlite3 *db, char cCast,
     pStmtSet = 0;
     zSql = smprintf
       ( "REPLACE INTO "PARAM_TABLE_SNAME"(key,value,uses)"
-        "VALUES(%Q,%Q,%d);", name, zValue, ptu );
+        "VALUES(%Q,%Q,%d);", name, zValue, PTU_Binding );
     shell_check_oom(zSql);
     rc = sqlite3_prepare_v2(db, zSql, -1, &pStmtSet, 0);
     assert(rc==SQLITE_OK);
@@ -10692,17 +10836,32 @@ static int param_set(sqlite3 *db, char cCast,
   return rc;
 }
 
-/* list or ls subcommand for .parameter dot-command */
-static void list_params(ShellExState *psx, ParamTableUse ptu, u8 bShort,
-                        char **pzArgs, int nArg){
+/* list or ls subcommand for .parameter and .vars dot-commands */
+static void list_pov_entries(ShellExState *psx, ParamTableUse ptu, u8 bShort,
+                             char **pzArgs, int nArg){
   sqlite3_stmt *pStmt = 0;
-  sqlite3 *db = DBX(psx);
-  sqlite3_str *sbList = sqlite3_str_new(db);
+  sqlite3_str *sbList;
   int len = 0, rc;
   char *zFromWhere = 0;
   char *zSql = 0;
-  sqlite3_str_appendf(sbList, "FROM "PARAM_TABLE_SNAME
-                      " WHERE (?1=3 OR uses=?1) AND ");
+  sqlite3 *db;
+  const char *zTab;
+
+  switch( ptu ){
+  case PTU_Binding:
+    db = DBX(psx);
+    zTab = PARAM_TABLE_SNAME;
+    break;
+  case PTU_Script:
+    db = psx->dbShell;
+    zTab = SHVAR_TABLE_NAME;
+    break;
+  default: assert(0); return;
+  }
+  sbList = sqlite3_str_new(db);
+  sqlite3_str_appendf(sbList, "FROM ");
+  sqlite3_str_appendf(sbList, zTab);
+  sqlite3_str_appendf(sbList, " WHERE (uses=?1) AND ");
   append_glob_terms(sbList, "key",
                     (const char **)pzArgs, (const char **)pzArgs+nArg);
   zFromWhere = sqlite3_str_finish(sbList);
@@ -10824,17 +10983,16 @@ COLLECT_HELP_TEXT[
   "      OPT may be -t to use edited value as text or -e to evaluate it.",
 #endif
   "   init                    Initialize TEMP table for bindings and scripts",
-  "   list ?PATTERNS?         List parameters table binding and script values",
+  "   list ?PATTERNS?         List current DB parameters table binding values",
   "      Alternatively, to list just some or all names: ls ?PATTERNS?",
   "   load ?FILE? ?NAMES?     Load some or all named parameters from FILE",
   "      If FILE missing, empty or '~', it defaults to ~/sqlite_params.sdb",
   "   save ?FILE? ?NAMES?     Save some or all named parameters into FILE",
   "      If FILE missing, empty or '~', it defaults to ~/sqlite_params.sdb",
   "   set ?TOPT? NAME VALUE   Give SQL parameter NAME a value of VALUE",
-  "      NAME must begin with one of $,:,@,? for bindings, or with a letter",
-  "      to be executable; value is the space-joined argument list.",
-  "      Option TOPT may be one of {-b -i -n -r -t} to cast effective value",
-  "      to BLOB, INT, NUMERIC, REAL or TEXT respectively.",
+  "      NAME must begin with one of $,:,@,? for bindings, VALUE is the space-",
+  "      joined argument list. TOPT may be one of {-b -i -n -r -t} to cast the",
+  "      effective value to BLOB, INT, NUMERIC, REAL or TEXT respectively.",
   "   unset ?NAMES?           Remove named parameter(s) from parameters table",
 ];
 DISPATCHABLE_COMMAND( parameter 2 2 0 ){
@@ -10863,65 +11021,48 @@ DISPATCHABLE_COMMAND( parameter 2 2 0 ){
 #ifndef SQLITE_NOHAVE_SYSTEM
   /* .parameter edit ?NAMES?
   ** Edit the named parameters. Any that do not exist are created.
-  ** New ones get a uses tag auto-selected by their leading char.
   */
   if( strcmp(azArg[1],"edit")==0 ){
     ShellInState *psi = ISS(p);
     int ia = 2;
     int eval = 0;
+    int edSet;
+
     if( !INSOURCE_IS_INTERACTIVE(psi->pInSource) ){
       utf8_printf(STD_ERR, "Error: "
                   ".parameter edit can only be used interactively.\n");
       return DCR_Error;
     }
     param_table_init(db);
-    if( psi->zEditor==0 ){
-      const char *zE = getenv("VISUAL");
-      if( zE!=0 ) psi->zEditor = smprintf("%s", zE);
-    }
-    if( nArg>=3 && azArg[2][0]=='-' ){
-      char *zArg = (azArg[2][1]=='-')? azArg[2]+2 : azArg[2]+1;
-      if( strncmp(zArg,"editor=",7)==0 ){
-        sqlite3_free(psi->zEditor);
-        /* Accept an initial -editor=? option. */
-        psi->zEditor = smprintf("%s", zArg+7);
-        ++ia;
-      }
-    }
-    if( psi->zEditor==0 ){
-      utf8_printf(STD_ERR,
-                  "Either set env-var VISUAL to name an"
-                  " editor and restart, or rerun\n "
-                  ".parameter edit with an initial "
-                  "edit option, --editor=EDITOR_COMMAND .\n");
-      return DCR_Error;
-    }
+    edSet = attempt_editor_set(psi, azArg[0], (nArg>2)? azArg[2] : 0 );
+    if( edSet < 0 ) return DCR_Error;
+    else ia += edSet;
     /* Future: Allow an option whereby new value can be evaluated
      * the way that .parameter set ... does.
      */
     while( ia < nArg ){
       ParamTableUse ptu;
-      char cf = (azArg[ia][0]=='-')? azArg[ia][1] : 0;
-      if( cf!=0 && azArg[ia][2]==0 ){
+      char *zA = azArg[ia];
+      char cf = (zA[0]=='-')? zA[1] : 0;
+      if( cf!=0 && zA[2]==0 ){
         ++ia;
         switch( cf ){
         case 'e': eval = 1; continue;
         case 't': eval = 0; continue;
         default:
-          utf8_printf(STD_ERR, "Error: bad .parameter name: %s\n",
-                      azArg[--ia]);
+          utf8_printf(STD_ERR, "Error: bad .parameter name: %s\n", zA);
           return DCR_Error;
         }
       }
-      ptu = classify_param_name(azArg[ia]);
-      if( ptu==PTU_Nil ){
-        utf8_printf(STD_ERR, "Error: %s cannot be a binding or executable"
-                    " parameter name.\n", azArg[ia]);
+      ptu = classify_param_name(zA);
+      if( ptu!=PTU_Binding ){
+        utf8_printf(STD_ERR, "Error: "
+                    "%s cannot be a binding parameter name.\n", zA);
         return DCR_Error;
       }
-      rc = edit_one_param(db, azArg[ia], eval, ptu, psi->zEditor);
+      rc = edit_one_kvalue(db, zA, eval, ptu, psi->zEditor);
       ++ia;
-      if( rc!=0 ) return rc;
+      if( rc!=0 ) return DCR_Error;
     }
   }else
 #endif
@@ -10941,7 +11082,7 @@ DISPATCHABLE_COMMAND( parameter 2 2 0 ){
   */
   if( nArg>=2 && ((strcmp(azArg[1],"list")==0)
                   || (strcmp(azArg[1],"ls")==0)) ){
-    list_params(p, PTU_Nil, azArg[1][1]=='s', azArg+2, nArg-2);
+    list_pov_entries(p, PTU_Binding, azArg[1][1]=='s', azArg+2, nArg-2);
   }else
 
   /* .parameter load
@@ -10949,14 +11090,14 @@ DISPATCHABLE_COMMAND( parameter 2 2 0 ){
   */
   if( strcmp(azArg[1],"load")==0 ){
     param_table_init(db);
-    rc = parameters_load(db, (const char **)azArg+1, nArg-1);
+    rc = kv_pairs_load(db, PTU_Binding, (const char **)azArg+1, nArg-1);
   }else
 
   /* .parameter save
   ** Save all or named parameters into specified or default (DB) file.
   */
   if( strcmp(azArg[1],"save")==0 ){
-    rc = parameters_save(db, (const char **)azArg+1, nArg-1);
+    rc = kv_pairs_save(db, PTU_Binding, (const char **)azArg+1, nArg-1);
   }else
 
   /* .parameter set NAME VALUE
@@ -10969,14 +11110,13 @@ DISPATCHABLE_COMMAND( parameter 2 2 0 ){
     char cCast = option_char(azArg[2]);
     int inv = 2 + (cCast != 0);
     ParamTableUse ptu = classify_param_name(azArg[inv]);
-    if( ptu==PTU_Nil ){
+    if( ptu!=PTU_Binding ){
       utf8_printf(STD_ERR,
                   "Error: %s is not a usable parameter name.\n", azArg[inv]);
       rc = 1;
     }else{
       param_table_init(db);
-      rc = param_set(db, cCast, azArg[inv],
-                     &azArg[inv+1], &azArg[nArg], ptu);
+      rc = param_set(db, cCast, azArg[inv], &azArg[inv+1], &azArg[nArg]);
       if( rc!=SQLITE_OK ){
         utf8_printf(STD_ERR, "Error: %s\n", sqlite3_errmsg(db));
         rc = 1;
@@ -10989,7 +11129,7 @@ DISPATCHABLE_COMMAND( parameter 2 2 0 ){
     return DCR_CmdErred;
   }
 
-  return rc;
+  return DCR_Ok | (rc!=0);
 }
 
 /*****************
@@ -12878,6 +13018,135 @@ DISPATCHABLE_COMMAND( user ? 0 0 ){
 }
 
 /*****************
+ * The .vars command
+ */
+COLLECT_HELP_TEXT[
+  ".vars ?OPTIONS? ...      Manipulate and display shell variables",
+  "   clear ?NAMES?           Erase all or only given named variables",
+#ifndef SQLITE_NOHAVE_SYSTEM
+  "   edit ?-e? NAME        Use edit() to create or alter variable NAME",
+  "      With a -e option, the edited value is evaluated as a SQL expression.",
+#endif
+  "   list ?PATTERNS?         List shell variables table values",
+  "      Alternatively, to list just some or all names: ls ?PATTERNS?",
+  "   load ?FILE? ?NAMES?     Load some or all named variables from FILE",
+  "      If FILE missing, empty or '~', it defaults to ~/sqlite_vars.sdb",
+  "   save ?FILE? ?NAMES?     Save some or all named variables into FILE",
+  "      If FILE missing, empty or '~', it defaults to ~/sqlite_vars.sdb",
+  "   set NAME VALUE          Give shell variable NAME a value of VALUE",
+  "      NAME must begin with a letter to be executable by .x, Other leading",
+  "      characters have special uses. VALUE is the space-joined arguments.",
+  "   unset ?NAMES?           Remove named variables(s) from variables table",
+];
+DISPATCHABLE_COMMAND( vars 2 1 0 ){
+  DotCmdRC rv = DCR_Ok;
+  sqlite3 *dbs = p->dbShell;
+  const char *zCmd = (nArg>1)? azArg[1] : "ls";
+  int rc = 0;
+  int ncCmd = strlen30(zCmd);
+
+  if( *zCmd>'e' && ncCmd<2 ) return DCR_Ambiguous|1;
+#define SUBCMD(scn) (strncmp(zCmd, scn, ncCmd)==0)
+
+  /* This could be done lazily, but with more code. */
+  if( (dbs && ensure_shvars_table(dbs)!=SQLITE_OK) ){
+    return DCR_Error;
+  }else{
+    if( ensure_shell_db(p)!=SQLITE_OK ) return DCR_Error;
+    dbs = p->dbShell;
+    assert(dbs!=0);
+    if( ensure_shvars_table(dbs)!=SQLITE_OK ) return DCR_Error;
+  }
+
+  /* .vars clear  and  .vars unset ?NAMES?
+  **  Delete some or all key/value pairs from the shell variables table.
+  **  Without any arguments, clear deletes them all and unset does nothing.
+  */
+  if( SUBCMD("clear") || SUBCMD("unset") ){
+    if( (nArg>2 || zCmd[0]=='c') ){
+      sqlite3_str *sbZap = sqlite3_str_new(dbs);
+      char *zSql;
+      sqlite3_str_appendf
+        (sbZap, "DELETE FROM "SHVAR_TABLE_SNAME" WHERE key ");
+      append_in_clause(sbZap,
+                       (const char **)&azArg[2], (const char **)&azArg[nArg]);
+      zSql = sqlite3_str_finish(sbZap);
+      shell_check_oom(zSql);
+      rc = sqlite3_exec(dbs, zSql, 0, 0, 0);
+      sqlite3_free(zSql);
+    }
+#ifndef SQLITE_NOHAVE_SYSTEM
+  }else if( SUBCMD("edit") ){
+    ShellInState *psi = ISS(p);
+    int ia = 2;
+    int eval = 0;
+    int edSet;
+
+    if( !INSOURCE_IS_INTERACTIVE(psi->pInSource) ){
+      utf8_printf(STD_ERR, "Error: "
+                  ".vars edit can only be used interactively.\n");
+      return DCR_Error;
+    }
+    edSet = attempt_editor_set(psi, azArg[0], (nArg>2)? azArg[2] : 0 );
+    if( edSet < 0 ) return DCR_Error;
+    else ia += edSet;
+    while( ia < nArg ){
+      ParamTableUse ptu;
+      char *zA = azArg[ia];
+      char cf = (zA[0]=='-')? zA[1] : 0;
+      if( cf!=0 && zA[2]==0 ){
+        ++ia;
+        switch( cf ){
+        case 'e': eval = 1; continue;
+        case 't': eval = 0; continue;
+        default:
+          utf8_printf(STD_ERR, "Error: bad .vars edit option: %s\n", zA);
+          return DCR_Error;
+        }
+      }
+      ptu = classify_param_name(zA);
+      if( ptu!=PTU_Script ){
+        utf8_printf(STD_ERR,
+                    "Error: %s cannot be a shell variable name.\n", zA);
+        return DCR_Error;
+      }
+      rc = edit_one_kvalue(dbs, zA, eval, ptu, psi->zEditor);
+      ++ia;
+      if( rc!=0 ) return DCR_Error;
+    }
+#endif
+  }else if( SUBCMD("list") || SUBCMD("ls") ){
+    int nTailArgs = nArg - 1 - (nArg>1);
+    char **pzTailArgs = azArg + 1 + (nArg>1);
+    list_pov_entries(p, PTU_Script, zCmd[1]=='s', pzTailArgs, nTailArgs);
+  }else if( SUBCMD("load") ){
+    rc = kv_pairs_load(dbs, PTU_Script, (const char **)azArg+1, nArg-1);
+  }else if( SUBCMD("save") ){
+    rc = kv_pairs_save(dbs, PTU_Script, (const char **)azArg+1, nArg-1);
+  }else if( SUBCMD("set") ){
+    ParamTableUse ptu;
+    if( nArg<4 ) return DCR_Missing;
+    ptu = classify_param_name(azArg[2]);
+    if( ptu!=PTU_Script ){
+      utf8_printf(STD_ERR,
+                  "Error: %s is not a valid shell variable name.\n", azArg[2]);
+      rc = 1;
+    }else{
+      rc = shvar_set(dbs, azArg[2], &azArg[3], &azArg[nArg]);
+      if( rc!=SQLITE_OK ){
+        utf8_printf(STD_ERR, "Error: %s\n", sqlite3_errmsg(dbs));
+        rc = 1;
+      }
+    }
+  }else{
+    showHelp(ISS(p)->out, "vars", p);
+    return DCR_CmdErred;
+  }
+  return DCR_Ok | (rv!=0) | (rc!=0);
+#undef SUBCMD
+}
+
+/*****************
  * The .vfsinfo, .vfslist, .vfsname and .version commands
  */
 COLLECT_HELP_TEXT[
@@ -13113,9 +13382,9 @@ DISPATCHABLE_COMMAND( read 3 2 2 ){
 DISPATCHABLE_COMMAND( x ? 1 0 ){
   int ia, nErrors = 0;
   sqlite3_stmt *pStmt = 0;
-  sqlite3 *db = 0;
+  sqlite3 *dbs = p->dbShell;
   DotCmdRC rv = DCR_Ok;
-  enum { AsParam, AsString, AsFile } evalAs = AsParam;
+  enum { AsVar, AsString, AsFile } evalAs = AsVar;
 
   for( ia=1; ia < nArg; ++ia ){
     char *zSubmit = 0;
@@ -13133,25 +13402,18 @@ DISPATCHABLE_COMMAND( x ? 1 0 ){
       if( zOpt==0 ) continue;
     }
     switch( evalAs ){
-    case AsParam:
+    case AsVar:
       if( pStmt==0 ){
         int rc;
-        open_db(p, 0);
-        db = DBX(p);
-        if( db==0 ){
-          utf8_printf(STD_ERR, ".x can only be done with a database open.\n");
+        if( dbs==0 || !shvars_table_exists(dbs) ){
+          utf8_printf(STD_ERR,
+                      "\".x vname\" can only be done after .var set ... .\n");
           return DCR_Error;
         }
-        if( sqlite3_table_column_metadata(db, PARAM_TABLE_SCHEMA,
-                                          PARAM_TABLE_NAME, "key",
-                                          0, 0, 0, 0, 0)!=SQLITE_OK ){
-          utf8_printf(STD_ERR, "No "PARAM_TABLE_SNAME" table exists.\n");
-          return DCR_Error;
-        }
-        rc = sqlite3_prepare_v2(db, "SELECT value FROM "PARAM_TABLE_SNAME
+        rc = sqlite3_prepare_v2(dbs, "SELECT value FROM "SHVAR_TABLE_SNAME
                                 " WHERE key=$1 AND uses=1", -1, &pStmt, 0);
         if( rc!=SQLITE_OK ){
-          utf8_printf(STD_ERR, PARAM_TABLE_SNAME" is wrongly created.\n");
+          utf8_printf(STD_ERR, SHVAR_TABLE_SNAME" is wrongly created.\n");
           return DCR_Error;
         }
       }
@@ -13178,7 +13440,7 @@ DISPATCHABLE_COMMAND( x ? 1 0 ){
           }
         }else{
           utf8_printf(STD_ERR,
-                      "Skipping parameter '%s' (not set and executable.)\n",
+                      "Skipping var '%s' (not set and executable.)\n",
                       azArg[ia]);
           ++nErrors;
         }
@@ -13338,14 +13600,14 @@ typedef struct MetaMatchIter {
 static MetaMatchIter findMatchingMetaCmds(const char *cmdFragment,
                                           ShellExState *psx){
   MetaMatchIter rv = { psx, 0, 0 };
-  if( psx->dbShell==0 ){
+  if( psx->dbShell==0 || ISS(psx)->bDbDispatch==0 ){
     rv.zPattern = smprintf("%s*", cmdFragment? cmdFragment : "");
     shell_check_oom((void *)rv.zPattern);
     rv.pMC = (MetaCommand *)command_table;
   }else{
     /* Prepare rv.stmt to yield results glob-matching cmdFragment. */
     const char *zSql =
-      "SELECT name, extIx, cmdIx FROM ActiveCommands "
+      "SELECT name, extIx, cmdIx FROM "SHELL_DISP_VIEW" "
       "WHERE name glob (?||'*') ORDER BY name";
     sqlite3_prepare_v2(psx->dbShell, zSql, -1, &rv.stmt, 0);
     sqlite3_bind_text(rv.stmt, 1, cmdFragment? cmdFragment : "", -1, 0);
@@ -13406,12 +13668,12 @@ MetaCommand *findMetaCommand(const char *cmdName, ShellExState *psx,
                              /* out */ int *pnFound){
   if( pnFound ) *pnFound = 0;
 #if SHELL_DYNAMIC_EXTENSION
-  if( psx->dbShell!=0 ){
+  if( ISS(psx)->bDbDispatch ){
     int rc;
     int extIx = -1, cmdIx = -1, nf = 0;
     sqlite3_stmt *pStmt = 0;
     const char *zSql = "SELECT COUNT(*), extIx, cmdIx"
-      " FROM ActiveCommands WHERE name glob (?||'*')";
+      " FROM "SHELL_DISP_VIEW" WHERE name glob (?||'*')";
     rc = sqlite3_prepare_v2(psx->dbShell, zSql, -1, &pStmt, 0);
     sqlite3_bind_text(pStmt, 1, cmdName, -1, 0);
     rc = sqlite3_step(pStmt);

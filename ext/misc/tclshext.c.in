@@ -16,17 +16,17 @@
        -o tclshext.so -ltcl8.6
 ** Later TCL versions can be used if desired.
   "TCL scripting support is added with a registerScripting() call in the\n"
-  "ShellExtensionAPI, as documented for ScriptingSupport interface. This\n"
-  "support lasts until the scripting object destructor is called. Until\n"
+  "ShellExtensionAPI, per ScriptingSupport interface requirements. This\n"
+  "support lasts until the scripting object destructor is called.\n"
 */
 static const char * const zTclHelp =
   "This extension adds these features to the host shell:\n"
   " 1. TCL scripting support is added.\n"
   " 2. TCL commands are added: udb shdb now_interactive get_tcl_group ..\n"
   " 3. The .tcl and .unknown dot commands are added.\n"
-  " 4. If built with Tk capability, a run_gui TCL command may be added if\n"
-  "  the extension is loaded by the shell via .load ... -shext -tk . Any\n"
-  "  other arguments beyond -shext are in TCL's argv variable.\n"
+  " 4. If built with Tk capability, the gui TCL command will be added if\n"
+  "  this extension was loaded using the shell via: .load ... -shext -tk .\n"
+  "  Any other arguments beyond -shext are in TCL's argv variable.\n"
   "Operation:\n"
   " Shell input groups beginning with \"..\" are treated as TCL input, in\n"
   " these ways: (1) When a bare \"..\" is entered, a TCL REPL loop is run\n"
@@ -687,12 +687,63 @@ static int nowInteractive(void *pvSS, Tcl_Interp *interp,
 }
 
 #ifndef SHELL_OMIT_TK
-static int runTkGUI(void *pvSS, Tcl_Interp *interp,
-                    int nArgs, const char *azArgs[]){
-  ShellExState *psx = (ShellExState *)pvSS;
+static int numEventLoops = 0;
+static int inOuterLoop = 0;
+
+static int exitThisTkGUI(void *pvSS, Tcl_Interp *interp,
+                         int nArgs, const char *azArgs[]){
+  if( numEventLoops==0 && !inOuterLoop ){
+    int ec = 0;
+    if( nArgs>=2 ){
+      if( azArgs[1] && sscanf(azArgs[1], "%d", &ec)!=1 ){
+        ec = 1;
+        fprintf(stderr, "Exit: %d\n", ec);
+      }else{
+        const char *zA = (azArgs[1])? azArgs[1] : "null";
+        fprintf(stderr, "Exit: \"%s\"\n", azArgs[1]);
+      }
+    }else{
+      fprintf(stderr, "Exit without argument\n");
+    }
+    fprintf(stderr, "Exit: \"%s\"\n", azArgs[1]);
+    // exit(ec);
+  }
+  --numEventLoops;
+  return TCL_BREAK;
+}
+
+static void runTclEventLoop(void){
+  int inOuter = inOuterLoop;
+  int nmw = Tk_GetNumMainWindows();
   /* This runs without looking at stdin. So it cannot be a REPL, yet.
    * Unless user has created something for it to do, it does nothing. */
-  Tk_MainLoop();
+  /* Tk_MapWindow(Tk_MainWindow(interpKeep.pInterp)); */
+  ++numEventLoops;
+  inOuterLoop = 1;
+  while( nmw  > 0 ) {
+    Tcl_DoOneEvent(0);
+    nmw = Tk_GetNumMainWindows();
+    /* if( nmw==1 ){ */
+    /*   Tk_UnmapWindow(Tk_MainWindow(interpKeep.pInterp)); */
+    /*   nmw = Tk_GetNumMainWindows(); */
+    /*   break; */
+    /* } */
+  }
+  if( nmw==0 ){
+    fprintf(stderr,
+            "Tk application and its root window destroyed. Restarting Tk.\n");
+    Tk_Init(interpKeep.pInterp);
+  }
+  --numEventLoops;
+  inOuterLoop = inOuter;
+}
+
+static int runTkGUI(void *pvSS, Tcl_Interp *interp,
+                    int nArgs, const char *azArgs[]){
+  (void)(pvSS); /* ShellExState *psx = (ShellExState *)pvSS; */
+  Tcl_SetMainLoop(runTclEventLoop);
+  runTclEventLoop();
+  return TCL_OK;
 }
 #endif
 
@@ -1061,17 +1112,104 @@ int sqlite3_tclshext_init(
       Tcl_Eval(interp, "proc .. {} {}");
 #ifndef SHELL_OMIT_TK
       if( ldTk ){
-        /* Create a command which wraps Tk_MainLoop(). It runs a GUI event
-         * loop, so does not return until all of its Tk windows are closed. */
-        Tcl_CreateCommand(interp, "run_gui", runTkGUI, psx, 0);
+        /* Create a proc to launch GUI programs, in faint mimicry of wish. 
+         *
+         * Its first argument, pgmName is the name to be given to the GUI
+         * program that may be launched, used for error reporting and to
+         * become the value of the ::argv0 that it sees.
+         *
+         * Its second argument, pgmSetup, will be executed as a list (of
+         * a command and its arguments) to setup the GUI program. It may
+         * do anything necessary to prepare for the GUI program to be
+         * run by running a Tk event loop. It may be an empty list, in
+         * which case pgmName must name a list serving the same purpose.
+         *
+         * Subsequent arguments to this proc will be passed to the GUI
+         * program in the ::argv/::argc variable pair it sees.
+         *
+         * If only two empty arguments are provided to this proc, (whether
+         * as defaulted or explictly passed), the GUI event loop will be
+         * run with whatever conditions have been setup prior to the call.
+         * (This is perfectly legitimate; this "gui" proc provides a way
+         * to package GUI preparation and separate it from GUI run.)
+         *
+         * It is the responsibility of whatever setup code is run, if any,
+         * to leave Tk objects and variables set so that when a GUI event
+         * loop is run, some useful GUI program runs and can terminate.
+         *
+         * Before running the setup code, a variable, ::isHost, is set 
+         * true to possibly inform the setup code that it should avoid
+         * exit and exec calls. Setup code which is designed for either
+         * hosted or standalone use, when run with $::isHost!=0, may opt
+         * to leave variables ::exitCode and ::resultValue set which are
+         * taken to indicate pseudo-exit status and a string result to
+         * be used for error reporting or possibly other purposes.
+         *
+         * If the above responsibilities cannot be met, setup code should
+         * fail in some way so that its execution produces a TCL error or
+         * follows the ::exitCode and ::resultValue convention. Otherwise,
+         * annoying sqlite3 shell hangs or abrupt exits may result.
+         */
+        TCL_CSTR_LITERAL(const char * const zGui =){
+          proc gui {{pgmName ""} {pgmSetup {}} args} {
+            unset -nocomplain ::exitCode
+            set ::tcl_interactive [now_interactive]
+            set saveArgs [list $::argv0 $::argc $::argv]
+            if {"$pgmName" ne ""} {
+              set ::argv0 $pgmName
+            } else {set ::argv0 "?"}
+            set ::argv $args
+            set ::argc [llength $args]
+            if {[llength $pgmSetup] == 0 && $pgmName ne ""} {
+              if { [catch {set ::programSetup [subst "\$$pgmName"]}] } {
+                foreach {::argv0 ::argc ::argv} $saveArgs {}
+                return -code 1 "Error: pgmSetup empty, and pgmName does not\
+                   name a list that might be\n executed in\
+                   its place. Consult tclshext doc on using the gui command."
+              }
+            } elseif {[llength $pgmSetup] == 0 && $pgmName eq ""} {
+              unset -nocomplain ::programSetup
+            } else {
+              set ::programSetup $pgmSetup
+            }
+            if {[info exists ::programSetup] && [llength $::programSetup] > 0} {
+              set rc [catch {uplevel #0 {
+                {*}$::programSetup
+              }} result options]
+              if {$rc==1} {
+                puts stderr "gui setup failed: $result"
+                puts stderr [dict get $options -errorinfo]
+              } elseif {[info exists ::exitCode] && $::exitCode!=0} {
+                puts stderr "gui setup failed: $::resultValue"
+              } else { run_gui_event_loop }
+            } else {
+              run_gui_event_loop
+            }
+            foreach {::argv0 ::argc ::argv} $saveArgs {}
+          }
+        };
+        /* Create a command which nearly emuluates Tk_MainLoop(). It runs a
+         * GUI event loop, so does not return until either: all Tk top level
+         * windows are destroyed, which causes and error return, or the Tk
+         * app has called the replacement exit routine described next. */
+        Tcl_CreateCommand(interp, "run_gui_event_loop", runTkGUI, psx, 0);
+        Tcl_Eval(interp, "rename exit process_exit");
+        Tcl_CreateCommand(interp, "exit", exitThisTkGUI, psx, 0);
+        Tcl_Eval(interp, zGui);
+        Tcl_SetMainLoop(runTclEventLoop);
         zAppName = "tclshext_tk";
       }
 #endif
-      Tcl_SetVar2Ex(interp, "argv0", NULL,
+      Tcl_SetVar2Ex(interp, "::argv0", NULL,
                     Tcl_NewStringObj(zAppName,-1), TCL_GLOBAL_ONLY);
-      Tcl_SetVar2Ex(interp, "argc", NULL,
+      Tcl_SetVar2Ex(interp, "::argc", NULL,
                     Tcl_NewIntObj(tnarg), TCL_GLOBAL_ONLY);
-      Tcl_SetVar2Ex(interp, "argv", NULL, targv, TCL_GLOBAL_ONLY);
+      Tcl_SetVar2Ex(interp, "::argv", NULL, targv, TCL_GLOBAL_ONLY);
+      Tcl_SetVar2Ex(interp, "::tcl_interactive", NULL,
+                    Tcl_NewIntObj(pExtHelpers->nowInteractive(psx)),
+                    TCL_GLOBAL_ONLY);
+      Tcl_SetVar2Ex(interp, "::isHosted", NULL,
+                    Tcl_NewIntObj(1), TCL_GLOBAL_ONLY);
       pShExtLink->eid = sqlite3_tclshext_init;
     }
     if( rc==SQLITE_OK ){

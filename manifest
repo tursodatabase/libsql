@@ -1,5 +1,5 @@
-C Make\sCLI\sbuild\safter\san\sincomplete\srename\scompleted.
-D 2022-03-31T04:05:48.910
+C For\sTCL\sextension:\sAdjust\sprovided\s"gui"\scommand,\sand\sdocument\sit.\nFor\sshell:\sSeparate\sshell\svariables\sfrom\sbinding\sparameters,\smainly\sso\sthey\slive\slonger,\sin\sthe\sshell\sDB.\nAdd\s.vars\sdot\scommand\sto\sreflect\sthis\sseparation,\sand\sspecialized\sfor\sshell\svariables.\nMuch\scode\sshuffling\sto\sshare\scode\sbetween\s.parameters\sand\s.vars\scommands.\n
+D 2022-04-04T06:33:43.022
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -329,7 +329,7 @@ F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
 F ext/misc/spellfix.c 94df9bbfa514a563c1484f684a2df3d128a2f7209a84ca3ca100c68a0163e29f
 F ext/misc/sqlar.c 0ace5d3c10fe736dc584bf1159a36b8e2e60fab309d310cd8a0eecd9036621b6
 F ext/misc/stmt.c 35063044a388ead95557e4b84b89c1b93accc2f1c6ddea3f9710e8486a7af94a
-F ext/misc/tclshext.c.in 07a41995103fcecf803a3a644bb7a273bffcdfad53e5047280a91e3cb474c966
+F ext/misc/tclshext.c.in 05768ea49bd04d3b1ca6287b0769ca63fa7453544db6c3c58d28ce7469ba2c4b
 F ext/misc/templatevtab.c 8a16a91a5ceaccfcbd6aaaa56d46828806e460dd194965b3f77bf38f14b942c4
 F ext/misc/totype.c fa4aedeb07f66169005dffa8de3b0a2b621779fd44f85c103228a42afa71853b
 F ext/misc/uint.c 053fed3bce2e89583afcd4bf804d75d659879bbcedac74d0fa9ed548839a030b
@@ -556,8 +556,8 @@ F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c ea935b87d6fb36c78b70cdc7b28561dc8f33f2ef37048389549c7b5ef9b0ba5e
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c c366c05e48e836ea04f8ecefb9c1225745dc250c3f01bdb39e9cbb0dc25e3610
-F src/shell.c.in 8b29c2ce4544e3145b9cc50595c021ce43d860de3513754eb18c7cac546e2687 x
-F src/shext_linkage.h ae26717af53bee705fcba3c0d755dc59f7a55aa18adbe8b89b9f166bc8e35e06
+F src/shell.c.in 37740ab1661dcd54ec9577f632afc968692aa86001a7ce21f839a6077ec3c36c x
+F src/shext_linkage.h a07c4eaaeff29386a2be06773b779ff4a2a299fda966fd432b7258f191666fdc
 F src/sqlite.h.in 2a35f62185eb5e7ecc64a2f68442b538ce9be74f80f28a00abc24837edcf1c17
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h f49e28c25bd941e79794db5415fdf7b202deb3bc072ed6f1ed273d578703684e
@@ -1885,7 +1885,7 @@ F tool/mkopcodec.tcl 33d20791e191df43209b77d37f0ff0904620b28465cca6990cf8d60da61
 F tool/mkopcodeh.tcl 5dab48c49a25452257494e9601702ab63adaba6bd54a9b382615fa52661c8f8c
 F tool/mkopts.tcl 680f785fdb09729fd9ac50632413da4eadbdf9071535e3f26d03795828ab07fa
 F tool/mkpragmatab.tcl bd07bd59d45d0f3448e123d6937e9811195f9908a51e09d774609883055bfd3d
-F tool/mkshellc.tcl a8db284614942c48e35e58f2a3a2e762f3bae0262e81acd1dbfc4813fd304d85 x
+F tool/mkshellc.tcl 21a84ef869e5b4de1e103730d8eac8e95c424226fcf73c6ccfc7a6b13370f2c5 x
 F tool/mksourceid.c 36aa8020014aed0836fd13c51d6dc9219b0df1761d6b5f58ff5b616211b079b9
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl 4f7cfef5152b0c91920355cbfc1d608a4ad242cb819f1aea07f6d0274f584a7f
@@ -1951,8 +1951,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d2446e50805cc3a46f9bcafccf017da60b0cf9fcd27695c214d71d1c5141d03f
-R 8d018387443555439471a4d46bbd7db3
+P 4f11e639f02e6ebe5ec9268cf066b83e6992599c049f497ebed704614b870706
+R de816fd352883164601c9ffe394f900e
 U larrybr
-Z e1c667450a7c160d0e6c96cbbafb6943
+Z c0273a0e4655d42ef0fee3956260570a
 # Remove this line to create a well-formed Fossil manifest.

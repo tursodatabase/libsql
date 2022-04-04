@@ -77,6 +77,7 @@ set runMode normal
 set ::lineTags 0 ; # 0 => none, 1 => source change, 2 => line syncs, 3 => more
 
 set ::tclGenerate 0
+set ::invokeLeadWhite ""
 set ::verbosity 0
 set ::inFiles {}
 set ::topInfile "?"
@@ -367,6 +368,7 @@ array set ::macroTailREs [list \
   EMIT_METACMD_INIT {^\((\d*)\)} \
   INCLUDE {^(?:\(\s*(\w+)\s*\))|(?:\s+([\w./\\]+)\M)} \
   IGNORE_COMMANDS {^\(\s*([-+\w ]*)\)\s*;\s*} \
+  TCL_CSTR_LITERAL {^\(([ \w*=]+)\)(\S)\s*$} \
 ]
 # Names of the subcaptures as formal parameter to macro procs.
 # COMMENT tailCapture_Commentary
@@ -384,14 +386,16 @@ array set ::macroUsages [list \
   CONDITION_COMMAND "( name pp_expr );" \
   DISPATCH_CONFIG "\[\n   <NAME=value lines>\n  \];" \
   DISPATCHABLE_COMMAND \
-      "( name args... ){\n   <implementation code lines>\n  }" \
+    "( name args... ){\n   <implementation code lines>\n  }" \
   EMIT_METACMD_INIT "( indent );" \
   INCLUDE {( <inc_type> )} \
   SKIP_COMMANDS "( <signed_names> );" \
+  TCL_CSTR_LITERAL \
+    "( C string literal decl = ) {\n <TCL code lines>\n };" \
 ]
 # RE for early discard of non-macro lines, matching all above keywords
 set ::macroKeywordTailRE \
- {^\s{0,8}((?:(?:CO)|(?:DI)|(?:EM)|(?:IN)|(?:SK))[A-Z_]+)\M(.+)$}
+ {^\s{0,40}((?:(?:CO)|(?:DI)|(?:EM)|(?:IN)|(?:TCL)|(?:SK))[A-Z_]+)\M(.+)$}
 
 ########
 # Macro procs, general signature and usage:
@@ -506,6 +510,56 @@ proc DISPATCH_CONFIG {inSrc tailCaptureEmpty ostrm} {
     }
   }
   return $iAte
+}
+
+# Translate a TCL line into a quoted/escaped C string literal line.
+set ::bs "\\"
+set ::dbs "\\\\"
+set ::dq "\""
+proc tcl2c {line} {
+  regsub -all $::dbs $line {\\\\} line
+  regsub -all $::dq $line "$::bs$::dq" line
+  regsub {^\s*} $line "&$::dq" line
+  return "$line${::bs}n$::dq"
+}
+
+proc TCL_CSTR_LITERAL {inSrc tailCapture ostrm} {
+  # Collect and translate TCL code into a C string literal definition.
+  # The macro call, TCL_CSTR_LITERAL( ... = ){, will name and declare
+  # the type of the literal, and introduce the TCL lines, while lines
+  # that follow, upto but not including one beginning with }, will be
+  # quoted and escaped as needed to get the same logical content as a
+  # multi-line initializer for the declared C string variable.
+  foreach { srcFile istrm srcPrecLines } $inSrc break
+  set litdef [lindex $tailCapture 0]
+  set tc [lindex $tailCapture 1]
+  if {$tc ne $::lb} {
+    yap_usage "TCL_CSTR_LITERAL($litdef)$tc" TCL_CSTR_LITERAL
+    incr $::iShuffleErrors
+    return 0
+  }
+  set iAte 1
+  set oIndent ""
+  set firstIndent -1
+  set clLines [list "$::invokeLeadWhite$litdef"]
+  while {![eof $istrm]} {
+    set tclLine [gets $istrm]
+    incr iAte
+    if {[regexp "^\\s*$::rb\\s*\;$" $tclLine]} {
+      regsub "^(\\s*)$::rb" $tclLine {\1} tclLine
+      lappend clLines $tclLine
+      break
+    }
+    set lrt [string trimright $tclLine]
+    set lt [string trimleft $lrt]
+    if {$lt eq ""} {
+      lappend clLines ""
+      continue
+    }
+    lappend clLines [tcl2c $tclLine]
+  }
+  emit_sync $clLines $ostrm $srcPrecLines $srcFile
+  return $iAte;
 }
 
 proc DISPATCHABLE_COMMAND {inSrc tailCapture ostrm} {
@@ -624,8 +678,11 @@ proc do_macro {inSrc lx ostrm} {
     return 0
   }
   # It's an attempted macro invocation line. Process or fail and yap.
+  # First, capture its leading space for those macros respecting indent.
+  regexp {^(\s*)} $lx ma ::invokeLeadWhite
+  # Second, separate the tail according to this macro's RE for such.
   set tailCap [regexp -inline $::macroTailREs($macro) $tail]
-  # Call like-named proc with any args captured by the corresponding RE.
+  # Third, call like-named proc with args captured by the corresponding RE.
   return [$macro $inSrc [lrange $tailCap 1 end] $ostrm]
 }
 
