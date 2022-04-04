@@ -132,6 +132,7 @@ impl Statement<'_> {
     /// Will return `Err` if binding parameters fails, the executed statement
     /// returns rows (in which case `query` should be used instead), or the
     /// underlying SQLite call fails.
+    #[doc(hidden)]
     #[deprecated = "You can use `execute` with named params now."]
     #[inline]
     pub fn execute_named(&mut self, params: &[(&str, &dyn ToSql)]) -> Result<usize> {
@@ -267,6 +268,7 @@ impl Statement<'_> {
     /// # Failure
     ///
     /// Will return `Err` if binding parameters fails.
+    #[doc(hidden)]
     #[deprecated = "You can use `query` with named params now."]
     pub fn query_named(&mut self, params: &[(&str, &dyn ToSql)]) -> Result<Rows<'_>> {
         self.query(params)
@@ -344,6 +346,7 @@ impl Statement<'_> {
     /// ## Failure
     ///
     /// Will return `Err` if binding parameters fails.
+    #[doc(hidden)]
     #[deprecated = "You can use `query_map` with named params now."]
     pub fn query_map_named<T, F>(
         &mut self,
@@ -436,6 +439,7 @@ impl Statement<'_> {
     /// ## Failure
     ///
     /// Will return `Err` if binding parameters fails.
+    #[doc(hidden)]
     #[deprecated = "You can use `query_and_then` with named params now."]
     pub fn query_and_then_named<T, E, F>(
         &mut self,
@@ -503,6 +507,7 @@ impl Statement<'_> {
     ///
     /// Will return `Err` if `sql` cannot be converted to a C-compatible string
     /// or if the underlying SQLite call fails.
+    #[doc(hidden)]
     #[deprecated = "You can use `query_row` with named params now."]
     pub fn query_row_named<T, F>(&mut self, params: &[(&str, &dyn ToSql)], f: F) -> Result<T>
     where
