@@ -3438,7 +3438,7 @@ void sqlite3VdbeDeleteAuxData(sqlite3 *db, AuxData **pp, int iOp, int mask){
 ** VdbeDelete() also unlinks the Vdbe from the list of VMs associated with
 ** the database connection and frees the object itself.
 */
-void sqlite3VdbeClearObject(sqlite3 *db, Vdbe *p){
+static void sqlite3VdbeClearObject(sqlite3 *db, Vdbe *p){
   SubProgram *pSub, *pNext;
   assert( p->db==0 || p->db==db );
   if( p->aColName ){
@@ -3488,14 +3488,16 @@ void sqlite3VdbeDelete(Vdbe *p){
   db = p->db;
   assert( sqlite3_mutex_held(db->mutex) );
   sqlite3VdbeClearObject(db, p);
-  if( p->pPrev ){
-    p->pPrev->pNext = p->pNext;
-  }else{
-    assert( db->pVdbe==p );
-    db->pVdbe = p->pNext;
-  }
-  if( p->pNext ){
-    p->pNext->pPrev = p->pPrev;
+  if( db->pnBytesFreed==0 ){
+    if( p->pPrev ){
+      p->pPrev->pNext = p->pNext;
+    }else{
+      assert( db->pVdbe==p );
+      db->pVdbe = p->pNext;
+    }
+    if( p->pNext ){
+      p->pNext->pPrev = p->pPrev;
+    }
   }
   sqlite3DbFreeNN(db, p);
 }

@@ -1835,8 +1835,7 @@ int sqlite3_stmt_status(sqlite3_stmt *pStmt, int op, int resetFlag){
     sqlite3_mutex_enter(db->mutex);
     v = 0;
     db->pnBytesFreed = (int*)&v;
-    sqlite3VdbeClearObject(db, pVdbe);
-    sqlite3DbFree(db, pVdbe);
+    sqlite3VdbeDelete(pVdbe);
     db->pnBytesFreed = 0;
     sqlite3_mutex_leave(db->mutex);
   }else{
