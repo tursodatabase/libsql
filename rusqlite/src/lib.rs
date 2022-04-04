@@ -1,5 +1,9 @@
-//! Rusqlite is an ergonomic wrapper for using SQLite from Rust. It attempts to
-//! expose an interface similar to [rust-postgres](https://github.com/sfackler/rust-postgres).
+//! Rusqlite is an ergonomic wrapper for using SQLite from Rust.
+//!
+//! Historically, the API was based on the one from
+//! [`rust-postgres`](https://github.com/sfackler/rust-postgres). However, the
+//! two have diverged in many ways, and no compatibility between the two is
+//! intended.
 //!
 //! ```rust
 //! use rusqlite::{params, Connection, Result};
@@ -901,8 +905,10 @@ impl Connection {
     /// Return the number of rows modified, inserted or deleted by the most
     /// recently completed INSERT, UPDATE or DELETE statement on the database
     /// connection.
+    ///
+    /// See <https://www.sqlite.org/c3ref/changes.html>
     #[inline]
-    fn changes(&self) -> usize {
+    pub fn changes(&self) -> u64 {
         self.db.borrow().changes()
     }
 
