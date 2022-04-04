@@ -1,5 +1,5 @@
-C Use\sunpacked\skeys\sfor\sOP_Found\sin\sforeign\skey\sprocessing.
-D 2022-04-04T18:17:59.858
+C Optimizations\sto\sthe\sOP_Found\sopcode\ssave\sabout\s600K\scycles\sin\sspeedtest1.
+D 2022-04-04T19:43:57.944
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -624,7 +624,7 @@ F src/upsert.c 8789047a8f0a601ea42fa0256d1ba3190c13746b6ba940fe2d25643a7e991937
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c 602fe229f32a96ceccae4f40824129669582096f7c355f53dbac156c9fecef23
 F src/vacuum.c 6c38ddc52f0619865c91dae9c441d4d48bf3040d7dc1bc5b22da1e45547ed0b3
-F src/vdbe.c c6e546c9d1ade8e253f54476263d669b2f9af2f57c9de113b1a1096575cfa36e
+F src/vdbe.c 61ff67a29b89214c928631be206af9cb5f820ed46b8cec3e58308fea205123e4
 F src/vdbe.h 89f5edb1422c8783a0b29db836e409876f2b3e847f78e2b21b1fbcc48a93f85f
 F src/vdbeInt.h 5f3d0abcf30c2b7a6672ad4386f18be0fca9c9b2cefe18f85a2e3df74f2613bf
 F src/vdbeapi.c 354c893f1500cf524cc45c32879b9c68893a28b77e3442c24668d6afe4236217
@@ -1945,8 +1945,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0fbbe7881cadf0b3c211653c7a0797e0a90c7c24da78ecc8a27140c05f89f2ed
-R 98b3d21b59eb71e092a0c493cf5ae5c8
+P 328dc76657eb5317f0201859d2b3abe6918103b894f7beaed0aca3058a9f2b64
+R ac8b3e120e5046f4e8f53f05766d7e6a
 U drh
-Z fe844f2684caa7d8abe26eb99432eaf4
+Z 8545e3f2f52a7362bf82a3c0cf610720
 # Remove this line to create a well-formed Fossil manifest.
