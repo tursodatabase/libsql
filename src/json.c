@@ -1119,14 +1119,15 @@ static JsonNode *jsonLookupStep(
         *pzErr = zPath;
         return 0;
       }
+      testcase( nKey==0 );
     }else{
       zKey = zPath;
       for(i=0; zPath[i] && zPath[i]!='.' && zPath[i]!='['; i++){}
       nKey = i;
-    }
-    if( nKey==0 ){
-      *pzErr = zPath;
-      return 0;
+      if( nKey==0 ){
+        *pzErr = zPath;
+        return 0;
+      }
     }
     j = 1;
     for(;;){

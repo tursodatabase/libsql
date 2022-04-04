@@ -1,5 +1,5 @@
-C Performance\soptimization\sand\sstronger\sassert()s\sin\sthe\scomparison\sopcodes.
-D 2022-04-04T11:38:49.588
+C Fix\sthe\sJSON\sPath\sparser\sso\sthat\sit\swill\saccept\szero-length\sobject\slabels.\n[forum/forumpost/c082aeab43|Forum\sthread\sc082aeab43].
+D 2022-04-04T14:24:14.310
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -513,7 +513,7 @@ F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h cb1d7e3e1ed94b7aa6fde95ae2c2daccc3df826be26fc9ed7fd90d1750ae6144
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c c4fc48e6f38cc415262652407949771ce4e6f8f0c7330f872e44a0677f3ad602
-F src/json.c 24fcd7f5f9080b04b89722c343010d390f85e55b2ab560046cb567c9dd640f62
+F src/json.c 37d4b68b52440653e9a8ffab13e9d5c282f01d4d6c1ba763aaa36c72671d9988
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 2ecb1441f9b1c22e9e022ee0776e67d259facf34b56ba892b206f0a294ee6f8c
 F src/main.c 89dfd569b4fbcab65281b3c6d636b887b2cb23cbaa16f8c6b67062862144c927
@@ -1152,7 +1152,7 @@ F test/journal3.test 7c3cf23ffc77db06601c1fcfc9743de8441cb77db9d1aa931863d94f5ff
 F test/jrnlmode.test 9b5bc01dac22223cb60ec2d5f97acf568d73820794386de5634dcadbea9e1946
 F test/jrnlmode2.test 8759a1d4657c064637f8b079592651530db738419e1d649c6df7048cd724363d
 F test/jrnlmode3.test 556b447a05be0e0963f4311e95ab1632b11c9eaa
-F test/json101.test d7c84854acafaf80f883e183ac4248ea2742615086c94a61a46ad7d7382ce123
+F test/json101.test 9d46b8e254c4e23306da175dd226d5c4f164db6b294bcea98e5dcd891ba48c91
 F test/json102.test 327e77275f338c028faefa2da5164daf6b142a165e3015ff2a6e4251ddc6a0ac
 F test/json103.test 53df87f83a4e5fa0c0a56eb29ff6c94055c6eb919f33316d62161a8880112dbe
 F test/json104.test a502dc01853aada95d721b3b275afbe2dc18fffdac1fea6e96fb20c13586bbb5
@@ -1945,8 +1945,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c6947a96e61f71aa61ca3d70d9e2612d784ab04d60fa88852b03cfce86b1bf2b
-R d512c70bc3a60e0984463bf1a9685f54
+P e0305e640b9078c7eed9ab0bcc14f4515b54e7cd9ade3306bc2d1660f05b2725
+R b7b1f674d3bb83fa7d01b3c971c6fb98
 U drh
-Z 355946a7b8f5d0c9dd9f26b391a9102c
+Z 9f0444d3701a4ee2277aeb80cbb65f96
 # Remove this line to create a well-formed Fossil manifest.
