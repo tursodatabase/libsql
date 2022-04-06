@@ -882,6 +882,54 @@ void sqlite3TreeViewUpsert(
 
 /*
 ** Generate a human-readable diagram of the data structure that go
+** into generating an DELETE statement.
+*/
+void sqlite3TreeViewDelete(
+  TreeView *pView,
+  const With *pWith,
+  const SrcList *pTabList,
+  const Expr *pWhere,
+  const ExprList *pOrderBy,
+  const Expr *pLimit
+){
+  int n = 0;
+  sqlite3TreeViewLine(pView, "DELETE");
+  pView = sqlite3TreeViewPush(pView, 0);
+  if( pWith ) n++;
+  if( pTabList ) n++;
+  if( pWhere ) n++;
+  if( pOrderBy ) n++;
+  if( pLimit ) n++;
+  if( pWith ){
+    pView = sqlite3TreeViewPush(pView, (--n)>0);
+    sqlite3TreeViewWith(pView, pWith, 0);
+    sqlite3TreeViewPop(pView);
+  }
+  if( pTabList ){
+    pView = sqlite3TreeViewPush(pView, (--n)>0);
+    sqlite3TreeViewLine(pView, "FROM");
+    sqlite3TreeViewSrcList(pView, pTabList);
+    sqlite3TreeViewPop(pView);
+  }
+  if( pWhere ){
+    pView = sqlite3TreeViewPush(pView, (--n)>0);
+    sqlite3TreeViewLine(pView, "WHERE");
+    sqlite3TreeViewExpr(pView, pWhere, 0);
+    sqlite3TreeViewPop(pView);
+  }
+  if( pOrderBy ){
+    sqlite3TreeViewExprList(pView, pOrderBy, (--n)>0, "ORDER-BY");
+  }
+  if( pLimit ){
+    pView = sqlite3TreeViewPush(pView, (--n)>0);
+    sqlite3TreeViewLine(pView, "LIMIT");
+    sqlite3TreeViewExpr(pView, pLimit, 0);
+    sqlite3TreeViewPop(pView);
+  }
+}
+
+/*
+** Generate a human-readable diagram of the data structure that go
 ** into generating an INSERT statement.
 */
 void sqlite3TreeViewInsert(
@@ -927,6 +975,76 @@ void sqlite3TreeViewInsert(
     pView = sqlite3TreeViewPush(pView, (--n)>0);
     sqlite3TreeViewLine(pView, "DATA-SOURCE");
     sqlite3TreeViewSelect(pView, pSelect, 0);
+    sqlite3TreeViewPop(pView);
+  }
+  if( pUpsert ){
+    pView = sqlite3TreeViewPush(pView, (--n)>0);
+    sqlite3TreeViewLine(pView, "UPSERT");
+    sqlite3TreeViewUpsert(pView, pUpsert, 0);
+    sqlite3TreeViewPop(pView);
+  }
+}
+
+/*
+** Generate a human-readable diagram of the data structure that go
+** into generating an UPDATE statement.
+*/
+void sqlite3TreeViewUpdate(
+  TreeView *pView,
+  const With *pWith,
+  const SrcList *pTabList,
+  const ExprList *pChanges,
+  const Expr *pWhere,
+  int onError,
+  const ExprList *pOrderBy,
+  const Expr *pLimit,
+  const Upsert *pUpsert
+){
+  int n = 0;
+  const char *zLabel = "UPDATE";
+  switch( onError ){
+    case OE_Replace:  zLabel = "UPDATE OR REPLACE";   break;
+    case OE_Ignore:   zLabel = "UPDATE OR IGNORE";    break;
+    case OE_Rollback: zLabel = "UPDATE OR ROLLBACK";  break;
+    case OE_Abort:    zLabel = "UPDATE OR ABORT";     break;
+    case OE_Fail:     zLabel = "UPDATE OR FAIL";      break;
+  }
+  sqlite3TreeViewLine(pView, zLabel);
+  pView = sqlite3TreeViewPush(pView, 0);
+  if( pWith ) n++;
+  if( pTabList ) n++;
+  if( pChanges ) n++;
+  if( pWhere ) n++;
+  if( pOrderBy ) n++;
+  if( pLimit ) n++;
+  if( pUpsert ) n++;
+  if( pWith ){
+    pView = sqlite3TreeViewPush(pView, (--n)>0);
+    sqlite3TreeViewWith(pView, pWith, 0);
+    sqlite3TreeViewPop(pView);
+  }
+  if( pTabList ){
+    pView = sqlite3TreeViewPush(pView, (--n)>0);
+    sqlite3TreeViewLine(pView, "FROM");
+    sqlite3TreeViewSrcList(pView, pTabList);
+    sqlite3TreeViewPop(pView);
+  }
+  if( pChanges ){
+    sqlite3TreeViewExprList(pView, pChanges, (--n)>0, "SET");
+  }
+  if( pWhere ){
+    pView = sqlite3TreeViewPush(pView, (--n)>0);
+    sqlite3TreeViewLine(pView, "WHERE");
+    sqlite3TreeViewExpr(pView, pWhere, 0);
+    sqlite3TreeViewPop(pView);
+  }
+  if( pOrderBy ){
+    sqlite3TreeViewExprList(pView, pOrderBy, (--n)>0, "ORDER-BY");
+  }
+  if( pLimit ){
+    pView = sqlite3TreeViewPush(pView, (--n)>0);
+    sqlite3TreeViewLine(pView, "LIMIT");
+    sqlite3TreeViewExpr(pView, pLimit, 0);
     sqlite3TreeViewPop(pView);
   }
   if( pUpsert ){

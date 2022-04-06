@@ -723,7 +723,7 @@ void sqlite3Insert(
   dest.iSDParm = 0;  /* Suppress a harmless compiler warning */
 
 #if SELECTTRACE_ENABLED
-  if( sqlite3SelectTrace & 0x100 ){
+  if( sqlite3SelectTrace & 0x10000 ){
     sqlite3TreeViewInsert(0, pParse->pWith, pTabList, pColumn, pSelect,
                              onError, pUpsert);
   }
