@@ -95,7 +95,7 @@ void sqlite3TreeViewWith(TreeView *pView, const With *pWith, u8 moreToFollow){
     sqlite3TreeViewLine(pView, "WITH (0x%p)", pWith);
   }
   if( pWith->nCte>0 ){
-    pView = sqlite3TreeViewPush(pView, 1);
+    pView = sqlite3TreeViewPush(pView, moreToFollow);
     for(i=0; i<pWith->nCte; i++){
       StrAccum x;
       char zLine[1000];
@@ -812,6 +812,129 @@ void sqlite3TreeViewExprList(
   pView = sqlite3TreeViewPush(pView, moreToFollow);
   sqlite3TreeViewBareExprList(pView, pList, zLabel);
   sqlite3TreeViewPop(pView);
+}
+
+/*
+** Generate a human-readable explanation of an id-list.
+*/
+void sqlite3TreeViewBareIdList(
+  TreeView *pView,
+  const IdList *pList,
+  const char *zLabel
+){
+  if( zLabel==0 || zLabel[0]==0 ) zLabel = "LIST";
+  if( pList==0 ){
+    sqlite3TreeViewLine(pView, "%s (empty)", zLabel);
+  }else{
+    int i;
+    sqlite3TreeViewLine(pView, "%s", zLabel);
+    for(i=0; i<pList->nId; i++){
+      char *zName = pList->a[i].zName;
+      int moreToFollow = i<pList->nId - 1;
+      if( zName==0 ) zName = "(null)";
+      sqlite3TreeViewPush(pView, moreToFollow);
+      moreToFollow = 0;
+      sqlite3TreeViewLine(pView, 0);
+      fprintf(stdout, "%s (%d)\n", zName, pList->a[i].idx);
+      sqlite3TreeViewPop(pView);
+    }
+  }
+}
+void sqlite3TreeViewIdList(
+  TreeView *pView,
+  const IdList *pList,
+  u8 moreToFollow,
+  const char *zLabel
+){
+  pView = sqlite3TreeViewPush(pView, moreToFollow);
+  sqlite3TreeViewBareIdList(pView, pList, zLabel);
+  sqlite3TreeViewPop(pView);
+}
+
+/*
+** Generate a human-readable explanation of a list of Upsert objects
+*/
+void sqlite3TreeViewUpsert(
+  TreeView *pView,
+  const Upsert *pUpsert,
+  u8 moreToFollow
+){
+  if( pUpsert==0 ) return;
+  pView = sqlite3TreeViewPush(pView, moreToFollow);
+  while( pUpsert ){
+    int n;
+    sqlite3TreeViewPush(pView, pUpsert->pNextUpsert!=0 || moreToFollow);
+    sqlite3TreeViewLine(pView, "ON CONFLICT DO %s", 
+         pUpsert->isDoUpdate ? "UPDATE" : "NOTHING");
+    n = (pUpsert->pUpsertSet!=0) + (pUpsert->pUpsertWhere!=0);
+    sqlite3TreeViewExprList(pView, pUpsert->pUpsertTarget, (n--)>0, "TARGET");
+    sqlite3TreeViewExprList(pView, pUpsert->pUpsertSet, (n--)>0, "SET");
+    if( pUpsert->pUpsertWhere ){
+      sqlite3TreeViewItem(pView, "WHERE", (n--)>0);
+      sqlite3TreeViewExpr(pView, pUpsert->pUpsertWhere, 0);
+      sqlite3TreeViewPop(pView);
+    }
+    sqlite3TreeViewPop(pView);
+    pUpsert = pUpsert->pNextUpsert;
+  }
+  sqlite3TreeViewPop(pView);
+}
+
+/*
+** Generate a human-readable diagram of the data structure that go
+** into generating an INSERT statement.
+*/
+void sqlite3TreeViewInsert(
+  TreeView *pView,
+  const With *pWith,
+  const SrcList *pTabList,
+  const IdList *pColumnList,
+  const Select *pSelect,
+  int onError,
+  const Upsert *pUpsert
+){
+  int n = 0;
+  const char *zLabel = "INSERT";
+  switch( onError ){
+    case OE_Replace:  zLabel = "REPLACE";             break;
+    case OE_Ignore:   zLabel = "INSERT OR IGNORE";    break;
+    case OE_Rollback: zLabel = "INSERT OR ROLLBACK";  break;
+    case OE_Abort:    zLabel = "INSERT OR ABORT";     break;
+    case OE_Fail:     zLabel = "INSERT OR FAIL";      break;
+  }
+  sqlite3TreeViewLine(pView, zLabel);
+  pView = sqlite3TreeViewPush(pView, 0);
+  if( pWith ) n++;
+  if( pTabList ) n++;
+  if( pColumnList ) n++;
+  if( pSelect ) n++;
+  if( pUpsert ) n++;
+  if( pWith ){
+    pView = sqlite3TreeViewPush(pView, (--n)>0);
+    sqlite3TreeViewWith(pView, pWith, 0);
+    sqlite3TreeViewPop(pView);
+  }
+  if( pTabList ){
+    pView = sqlite3TreeViewPush(pView, (--n)>0);
+    sqlite3TreeViewLine(pView, "INTO");
+    sqlite3TreeViewSrcList(pView, pTabList);
+    sqlite3TreeViewPop(pView);
+  }
+  if( pColumnList ){
+    sqlite3TreeViewIdList(pView, pColumnList, (--n)>0, "COLUMNS");
+  }
+  if( pSelect ){
+    pView = sqlite3TreeViewPush(pView, (--n)>0);
+    sqlite3TreeViewLine(pView, "DATA-SOURCE");
+    sqlite3TreeViewSelect(pView, pSelect, 0);
+    sqlite3TreeViewPop(pView);
+  }
+  if( pUpsert ){
+    pView = sqlite3TreeViewPush(pView, (--n)>0);
+    sqlite3TreeViewLine(pView, "UPSERT");
+    sqlite3TreeViewUpsert(pView, pUpsert, 0);
+    sqlite3TreeViewPop(pView);
+  }
 }
 
 #endif /* SQLITE_DEBUG */

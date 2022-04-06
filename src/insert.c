@@ -722,6 +722,13 @@ void sqlite3Insert(
   assert( db->mallocFailed==0 );
   dest.iSDParm = 0;  /* Suppress a harmless compiler warning */
 
+#if SELECTTRACE_ENABLED
+  if( sqlite3SelectTrace & 0x100 ){
+    sqlite3TreeViewInsert(0, pParse->pWith, pTabList, pColumn, pSelect,
+                             onError, pUpsert);
+  }
+#endif
+
   /* If the Select object is really just a simple VALUES() list with a
   ** single row (the common case) then keep that one row of values
   ** and discard the other (unused) parts of the pSelect object

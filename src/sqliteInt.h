@@ -4415,9 +4415,15 @@ char *sqlite3VMPrintf(sqlite3*,const char*, va_list);
   void sqlite3TreeViewExpr(TreeView*, const Expr*, u8);
   void sqlite3TreeViewBareExprList(TreeView*, const ExprList*, const char*);
   void sqlite3TreeViewExprList(TreeView*, const ExprList*, u8, const char*);
+  void sqlite3TreeViewBareIdList(TreeView*, const IdList*, const char*);
+  void sqlite3TreeViewIdList(TreeView*, const IdList*, u8, const char*);
   void sqlite3TreeViewSrcList(TreeView*, const SrcList*);
   void sqlite3TreeViewSelect(TreeView*, const Select*, u8);
   void sqlite3TreeViewWith(TreeView*, const With*, u8);
+  void sqlite3TreeViewUpsert(TreeView*, const Upsert*, u8);
+  void sqlite3TreeViewInsert(TreeView*, const With*, const SrcList*,
+                             const IdList*, const Select*, int,
+                             const Upsert*);
 #ifndef SQLITE_OMIT_WINDOWFUNC
   void sqlite3TreeViewWindow(TreeView*, const Window*, u8);
   void sqlite3TreeViewWinFunc(TreeView*, const Window*, u8);
