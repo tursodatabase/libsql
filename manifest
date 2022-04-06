@@ -1,5 +1,5 @@
-C Add\sthe\ssqlite3Show()\sfamily\sof\sdebugging\sinterfaces\sunder\sSQLITE_DEBUG.\nNo\schanges\sto\sdeliverable\sbuilds.\s\sRename\sSQLITE_ENABLE_SELECTTRACE\sto\nSQLITE_ENABLE_TREETRACE\sin\sctime.c.
-D 2022-04-06T12:25:04.844
+C Corrections\sand\supdates\sto\sthe\sheader\scomment\sdescribing\sthe\nTriggerStep\sobject.\s\sNo\schanges\sto\scode.
+D 2022-04-06T12:54:41.675
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -557,7 +557,7 @@ F src/shell.c.in 18832612e74c92bbd25d88e1f92685f66589262f68cca1001d2a43bd6dd0ed6
 F src/sqlite.h.in 2a35f62185eb5e7ecc64a2f68442b538ce9be74f80f28a00abc24837edcf1c17
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h f49e28c25bd941e79794db5415fdf7b202deb3bc072ed6f1ed273d578703684e
-F src/sqliteInt.h 811d8defe1dff439db365e18129216140204462665d19c23be14b78affea3e18
+F src/sqliteInt.h 2cd3008975523038cf01ce77d3ec61c190466c5879aa3856fa79c2cb00e5240d
 F src/sqliteLimit.h d7323ffea5208c6af2734574bae933ca8ed2ab728083caa117c9738581a31657
 F src/status.c 4a3da6d77eeb3531cb0dbdf7047772a2a1b99f98c69e90ce009c75fe6328b2c0
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -1945,8 +1945,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 393fa32e188a017f431372b54037cb31e885030542f00d0bfd59da9d9db5c014
-R 816f74a7ffe21c8ebedcd180ac5b3970
+P bc33168cf1f48caf848c2dc5c3ae15e4efff8c0378f944eb5398a245139a2b35
+R 2e653a42f648804346ba4eb540aa80b7
 U drh
-Z 533350b01dcc82c38ad1e7fcaa045f9f
+Z 6f432e2a1d80c3ecd80c5f978baed379
 # Remove this line to create a well-formed Fossil manifest.

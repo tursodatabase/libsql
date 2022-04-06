@@ -3727,20 +3727,20 @@ struct AuthContext {
 #define OPFLAG_PREFORMAT     0x80    /* OP_Insert uses preformatted cell */ 
 
 /*
- * Each trigger present in the database schema is stored as an instance of
- * struct Trigger.
- *
- * Pointers to instances of struct Trigger are stored in two ways.
- * 1. In the "trigHash" hash table (part of the sqlite3* that represents the
- *    database). This allows Trigger structures to be retrieved by name.
- * 2. All triggers associated with a single table form a linked list, using the
- *    pNext member of struct Trigger. A pointer to the first element of the
- *    linked list is stored as the "pTrigger" member of the associated
- *    struct Table.
- *
- * The "step_list" member points to the first element of a linked list
- * containing the SQL statements specified as the trigger program.
- */
+** Each trigger present in the database schema is stored as an instance of
+** struct Trigger.
+**
+** Pointers to instances of struct Trigger are stored in two ways.
+** 1. In the "trigHash" hash table (part of the sqlite3* that represents the
+**    database). This allows Trigger structures to be retrieved by name.
+** 2. All triggers associated with a single table form a linked list, using the
+**    pNext member of struct Trigger. A pointer to the first element of the
+**    linked list is stored as the "pTrigger" member of the associated
+**    struct Table.
+**
+** The "step_list" member points to the first element of a linked list
+** containing the SQL statements specified as the trigger program.
+*/
 struct Trigger {
   char *zName;            /* The name of the trigger                        */
   char *table;            /* The table or view to which the trigger applies */
@@ -3767,43 +3767,48 @@ struct Trigger {
 #define TRIGGER_AFTER   2
 
 /*
- * An instance of struct TriggerStep is used to store a single SQL statement
- * that is a part of a trigger-program.
- *
- * Instances of struct TriggerStep are stored in a singly linked list (linked
- * using the "pNext" member) referenced by the "step_list" member of the
- * associated struct Trigger instance. The first element of the linked list is
- * the first step of the trigger-program.
- *
- * The "op" member indicates whether this is a "DELETE", "INSERT", "UPDATE" or
- * "SELECT" statement. The meanings of the other members is determined by the
- * value of "op" as follows:
- *
- * (op == TK_INSERT)
- * orconf    -> stores the ON CONFLICT algorithm
- * pSelect   -> If this is an INSERT INTO ... SELECT ... statement, then
- *              this stores a pointer to the SELECT statement. Otherwise NULL.
- * zTarget   -> Dequoted name of the table to insert into.
- * pExprList -> If this is an INSERT INTO ... VALUES ... statement, then
- *              this stores values to be inserted. Otherwise NULL.
- * pIdList   -> If this is an INSERT INTO ... (<column-names>) VALUES ...
- *              statement, then this stores the column-names to be
- *              inserted into.
- *
- * (op == TK_DELETE)
- * zTarget   -> Dequoted name of the table to delete from.
- * pWhere    -> The WHERE clause of the DELETE statement if one is specified.
- *              Otherwise NULL.
- *
- * (op == TK_UPDATE)
- * zTarget   -> Dequoted name of the table to update.
- * pWhere    -> The WHERE clause of the UPDATE statement if one is specified.
- *              Otherwise NULL.
- * pExprList -> A list of the columns to update and the expressions to update
- *              them to. See sqlite3Update() documentation of "pChanges"
- *              argument.
- *
- */
+** An instance of struct TriggerStep is used to store a single SQL statement
+** that is a part of a trigger-program.
+**
+** Instances of struct TriggerStep are stored in a singly linked list (linked
+** using the "pNext" member) referenced by the "step_list" member of the
+** associated struct Trigger instance. The first element of the linked list is
+** the first step of the trigger-program.
+**
+** The "op" member indicates whether this is a "DELETE", "INSERT", "UPDATE" or
+** "SELECT" statement. The meanings of the other members is determined by the
+** value of "op" as follows:
+**
+** (op == TK_INSERT)
+** orconf    -> stores the ON CONFLICT algorithm
+** pSelect   -> The content to be inserted - either a SELECT statement or
+**              a VALUES clause.
+** zTarget   -> Dequoted name of the table to insert into.
+** pIdList   -> If this is an INSERT INTO ... (<column-names>) VALUES ...
+**              statement, then this stores the column-names to be
+**              inserted into.
+** pUpsert   -> The ON CONFLICT clauses for an Upsert
+**
+** (op == TK_DELETE)
+** zTarget   -> Dequoted name of the table to delete from.
+** pWhere    -> The WHERE clause of the DELETE statement if one is specified.
+**              Otherwise NULL.
+**
+** (op == TK_UPDATE)
+** zTarget   -> Dequoted name of the table to update.
+** pWhere    -> The WHERE clause of the UPDATE statement if one is specified.
+**              Otherwise NULL.
+** pExprList -> A list of the columns to update and the expressions to update
+**              them to. See sqlite3Update() documentation of "pChanges"
+**              argument.
+**
+** (op == TK_SELECT)
+** pSelect   -> The SELECT statement
+**
+** (op == TK_RETURNING)
+** pExprList -> The list of expressions that follow the RETURNING keyword.
+**
+*/
 struct TriggerStep {
   u8 op;               /* One of TK_DELETE, TK_UPDATE, TK_INSERT, TK_SELECT,
                        ** or TK_RETURNING */
