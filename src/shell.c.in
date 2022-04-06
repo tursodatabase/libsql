@@ -1200,6 +1200,12 @@ struct EQPGraph {
 # define SHELL_OMIT_EXTENSIONS 4
 #endif
 
+#ifdef SQLITE_OMIT_LOAD_EXTENSION
+# define SHELL_OMIT_LOAD_EXTENSION 1
+#else
+# define SHELL_OMIT_LOAD_EXTENSION 0
+#endif
+
 /* Selectively omit features with one PP variable. Value is true iff
 ** either x is not defined or defined with 0 in bitnum bit position.
 */
@@ -1211,7 +1217,7 @@ struct EQPGraph {
   NOT_IFDEF_BIT(SHELL_OMIT_EXTENSIONS, SHEXT_PARSING_BIT)
 /* Whether build will include runtime extension via .load -extension */
 #define SHEXT_DYNEXT_BIT 1
-#define SHELL_DYNAMIC_EXTENSION ( !defined(SQLITE_OMIT_LOAD_EXTENSION) \
+#define SHELL_DYNAMIC_EXTENSION ( !SHELL_OMIT_LOAD_EXTENSION \
   && NOT_IFDEF_BIT(SHELL_OMIT_EXTENSIONS, SHEXT_DYNEXT_BIT) )
 /* Whether build will include expansion of variables in dot-commands */
 #define SHEXT_VAREXP_BIT 2
