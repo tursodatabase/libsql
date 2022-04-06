@@ -947,6 +947,7 @@ void sqlite3TreeViewInsert(
   const SrcList *pTabList,
   const IdList *pColumnList,
   const Select *pSelect,
+  const ExprList *pExprList,
   int onError,
   const Upsert *pUpsert,
   const Trigger *pTrigger
@@ -967,6 +968,7 @@ void sqlite3TreeViewInsert(
   if( pTabList ) n++;
   if( pColumnList ) n++;
   if( pSelect ) n++;
+  if( pExprList ) n++;
   if( pUpsert ) n++;
   if( pTrigger ) n++;
   if( pWith ){
@@ -988,6 +990,9 @@ void sqlite3TreeViewInsert(
     sqlite3TreeViewLine(pView, "DATA-SOURCE");
     sqlite3TreeViewSelect(pView, pSelect, 0);
     sqlite3TreeViewPop(&pView);
+  }
+  if( pExprList ){
+    sqlite3TreeViewExprList(pView, pExprList, (--n)>0, "VALUES");
   }
   if( pUpsert ){
     sqlite3TreeViewPush(&pView, (--n)>0);

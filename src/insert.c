@@ -768,7 +768,7 @@ void sqlite3Insert(
 #if TREETRACE_ENABLED
   if( sqlite3TreeTrace & 0x10000 ){
     sqlite3TreeViewLine(0, "In sqlite3Insert() at %s:%d", __FILE__, __LINE__);
-    sqlite3TreeViewInsert(pParse->pWith, pTabList, pColumn, pSelect,
+    sqlite3TreeViewInsert(pParse->pWith, pTabList, pColumn, pSelect, pList,
                           onError, pUpsert, pTrigger);
   }
 #endif

@@ -4431,8 +4431,8 @@ char *sqlite3VMPrintf(sqlite3*,const char*, va_list);
   void sqlite3TreeViewDelete(const With*, const SrcList*, const Expr*,
                              const ExprList*,const Expr*, const Trigger*);
   void sqlite3TreeViewInsert(const With*, const SrcList*,
-                             const IdList*, const Select*, int,
-                             const Upsert*, const Trigger*);
+                             const IdList*, const Select*, const ExprList*,
+                             int, const Upsert*, const Trigger*);
   void sqlite3TreeViewUpdate(const With*, const SrcList*, const ExprList*,
                              const Expr*, int, const ExprList*, const Expr*,
                              const Upsert*, const Trigger*);
