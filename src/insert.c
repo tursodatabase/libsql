@@ -722,13 +722,6 @@ void sqlite3Insert(
   assert( db->mallocFailed==0 );
   dest.iSDParm = 0;  /* Suppress a harmless compiler warning */
 
-#if TREETRACE_ENABLED
-  if( sqlite3TreeTrace & 0x10000 ){
-    sqlite3TreeViewInsert(0, pParse->pWith, pTabList, pColumn, pSelect,
-                             onError, pUpsert);
-  }
-#endif
-
   /* If the Select object is really just a simple VALUES() list with a
   ** single row (the common case) then keep that one row of values
   ** and discard the other (unused) parts of the pSelect object
@@ -771,6 +764,14 @@ void sqlite3Insert(
 # define isView 0
 #endif
   assert( (pTrigger && tmask) || (pTrigger==0 && tmask==0) );
+
+#if TREETRACE_ENABLED
+  if( sqlite3TreeTrace & 0x10000 ){
+    sqlite3TreeViewLine(0, "In sqlite3Insert() at %s:%d", __FILE__, __LINE__);
+    sqlite3TreeViewInsert(pParse->pWith, pTabList, pColumn, pSelect,
+                          onError, pUpsert, pTrigger);
+  }
+#endif
 
   /* If pTab is really a view, make sure it has been initialized.
   ** ViewGetColumnNames() is a no-op if pTab is not a view.

@@ -4418,6 +4418,7 @@ char *sqlite3VMPrintf(sqlite3*,const char*, va_list);
 #endif
 
 #if defined(SQLITE_DEBUG)
+  void sqlite3TreeViewLine(TreeView*, const char *zFormat, ...);
   void sqlite3TreeViewExpr(TreeView*, const Expr*, u8);
   void sqlite3TreeViewBareExprList(TreeView*, const ExprList*, const char*);
   void sqlite3TreeViewExprList(TreeView*, const ExprList*, u8, const char*);
@@ -4427,14 +4428,18 @@ char *sqlite3VMPrintf(sqlite3*,const char*, va_list);
   void sqlite3TreeViewSelect(TreeView*, const Select*, u8);
   void sqlite3TreeViewWith(TreeView*, const With*, u8);
   void sqlite3TreeViewUpsert(TreeView*, const Upsert*, u8);
-  void sqlite3TreeViewDelete(TreeView*, const With*, const SrcList*,
-                             const Expr*,const ExprList*,const Expr*);
-  void sqlite3TreeViewInsert(TreeView*, const With*, const SrcList*,
+  void sqlite3TreeViewDelete(const With*, const SrcList*, const Expr*,
+                             const ExprList*,const Expr*, const Trigger*);
+  void sqlite3TreeViewInsert(const With*, const SrcList*,
                              const IdList*, const Select*, int,
-                             const Upsert*);
-  void sqlite3TreeViewUpdate(TreeView*, const With*, const SrcList*,
-                             const ExprList*, const Expr*, int,
-                             const ExprList*, const Expr*, const Upsert*);
+                             const Upsert*, const Trigger*);
+  void sqlite3TreeViewUpdate(const With*, const SrcList*, const ExprList*,
+                             const Expr*, int, const ExprList*, const Expr*,
+                             const Upsert*, const Trigger*);
+#ifndef SQLITE_OMIT_TRIGGER
+  void sqlite3TreeViewTriggerStep(TreeView*, const TriggerStep*, u8, u8);
+  void sqlite3TreeViewTrigger(TreeView*, const Trigger*, u8, u8);
+#endif
 #ifndef SQLITE_OMIT_WINDOWFUNC
   void sqlite3TreeViewWindow(TreeView*, const Window*, u8);
   void sqlite3TreeViewWinFunc(TreeView*, const Window*, u8);
@@ -4446,6 +4451,12 @@ char *sqlite3VMPrintf(sqlite3*,const char*, va_list);
   void sqlite3ShowSelect(const Select*);
   void sqlite3ShowWith(const With*);
   void sqlite3ShowUpsert(const Upsert*);
+#ifndef SQLITE_OMIT_TRIGGER
+  void sqlite3ShowTriggerStep(const TriggerStep*);
+  void sqlite3ShowTriggerStepList(const TriggerStep*);
+  void sqlite3ShowTrigger(const Trigger*);
+  void sqlite3ShowTriggerList(const Trigger*);
+#endif
 #ifndef SQLITE_OMIT_WINDOWFUNC
   void sqlite3ShowWindow(const Window*);
   void sqlite3ShowWinFunc(const Window*);

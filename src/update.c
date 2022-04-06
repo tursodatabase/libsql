@@ -353,13 +353,6 @@ void sqlite3Update(
   }
   assert( db->mallocFailed==0 );
 
-#if TREETRACE_ENABLED
-  if( sqlite3TreeTrace & 0x10000 ){
-    sqlite3TreeViewUpdate(0, pParse->pWith, pTabList, pChanges, pWhere,
-                             onError, pOrderBy, pLimit, pUpsert);
-  }
-#endif
-
   /* Locate the table which we want to update. 
   */
   pTab = sqlite3SrcListLookup(pParse, pTabList);
@@ -381,6 +374,14 @@ void sqlite3Update(
 #ifdef SQLITE_OMIT_VIEW
 # undef isView
 # define isView 0
+#endif
+
+#if TREETRACE_ENABLED
+  if( sqlite3TreeTrace & 0x10000 ){
+    sqlite3TreeViewLine(0, "In sqlite3Update() at %s:%d", __FILE__, __LINE__);
+    sqlite3TreeViewUpdate(pParse->pWith, pTabList, pChanges, pWhere,
+                          onError, pOrderBy, pLimit, pUpsert, pTrigger);
+  }
 #endif
 
   /* If there was a FROM clause, set nChangeFrom to the number of expressions

@@ -300,13 +300,6 @@ void sqlite3DeleteFrom(
   assert( db->mallocFailed==0 );
   assert( pTabList->nSrc==1 );
 
-#if TREETRACE_ENABLED
-  if( sqlite3TreeTrace & 0x10000 ){
-    sqlite3TreeViewDelete(0, pParse->pWith, pTabList, pWhere,
-                             pOrderBy, pLimit);
-  }
-#endif
-
   /* Locate the table which we want to delete.  This table has to be
   ** put in an SrcList structure because some of the subroutines we
   ** will be calling are designed to work with multiple tables and expect
@@ -329,6 +322,14 @@ void sqlite3DeleteFrom(
 #ifdef SQLITE_OMIT_VIEW
 # undef isView
 # define isView 0
+#endif
+
+#if TREETRACE_ENABLED
+  if( sqlite3TreeTrace & 0x10000 ){
+    sqlite3TreeViewLine(0, "In sqlite3Delete() at %s:%d", __FILE__, __LINE__);
+    sqlite3TreeViewDelete(pParse->pWith, pTabList, pWhere,
+                          pOrderBy, pLimit, pTrigger);
+  }
 #endif
 
 #ifdef SQLITE_ENABLE_UPDATE_DELETE_LIMIT
