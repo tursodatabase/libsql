@@ -549,6 +549,7 @@ FUZZCHECK_OPT += -DSQLITE_ENABLE_BYTECODE_VTAB
 DBFUZZ_OPT =
 KV_OPT = -DSQLITE_THREADSAFE=0 -DSQLITE_DIRECT_OVERFLOW_READ
 ST_OPT = -DSQLITE_THREADSAFE=0
+SHELL_OPT_NOEXT = $(SHELL_OPT) -DSHELL_OMIT_EXTENSIONS=7
 
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
@@ -560,6 +561,10 @@ libsqlite3.a: sqlite3.h	$(LIBOBJ)
 	$(RANLIB) libsqlite3.a
 
 sqlite3$(EXE):	sqlite3.h libsqlite3.a shell.c
+	$(TCCX) $(READLINE_FLAGS) -o sqlite3$(EXE) $(SHELL_OPT_NOEXT) \
+		shell.c libsqlite3.a $(LIBREADLINE) $(TLIBS) $(THREADLIB)
+
+sqlite3x$(EXE):	sqlite3.h libsqlite3.a shell.c
 	$(TCCX) $(READLINE_FLAGS) -o sqlite3$(EXE) $(SHELL_OPT) \
 		shell.c libsqlite3.a $(LIBREADLINE) $(TLIBS) $(THREADLIB)
 
