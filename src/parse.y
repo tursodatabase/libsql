@@ -695,7 +695,10 @@ stl_prefix(A) ::= seltablist(A) joinop(Y).    {
    if( ALWAYS(A && A->nSrc>0) ) A->a[A->nSrc-1].fg.jointype = (u8)Y;
 }
 stl_prefix(A) ::= .                           {A = 0;}
-seltablist(A) ::= stl_prefix(A) nm(Y) dbnm(D) as(Z) indexed_opt(I)
+seltablist(A) ::= stl_prefix(A) nm(Y) dbnm(D) as(Z) on_opt(N) using_opt(U). {
+  A = sqlite3SrcListAppendFromTerm(pParse,A,&Y,&D,&Z,0,N,U);
+}
+seltablist(A) ::= stl_prefix(A) nm(Y) dbnm(D) as(Z) indexed_by(I)
                   on_opt(N) using_opt(U). {
   A = sqlite3SrcListAppendFromTerm(pParse,A,&Y,&D,&Z,0,N,U);
   sqlite3SrcListIndexedBy(pParse, A, &I);
@@ -813,9 +816,11 @@ on_opt(N) ::= .     [OR]   {N = 0;}
 // recognizes and interprets this as a special case.
 //
 %type indexed_opt {Token}
+%type indexed_by  {Token}
 indexed_opt(A) ::= .                 {A.z=0; A.n=0;}
-indexed_opt(A) ::= INDEXED BY nm(X). {A = X;}
-indexed_opt(A) ::= NOT INDEXED.      {A.z=0; A.n=1;}
+indexed_opt(A) ::= indexed_by(A).
+indexed_by(A)  ::= INDEXED BY nm(X). {A = X;}
+indexed_by(A)  ::= NOT INDEXED.      {A.z=0; A.n=1;}
 
 %type using_opt {IdList*}
 %destructor using_opt {sqlite3IdListDelete(pParse->db, $$);}

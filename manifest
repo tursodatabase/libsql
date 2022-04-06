@@ -1,5 +1,5 @@
-C Improvements\sto\sthe\sdisplay\sof\sAST\sfor\sDML\sstatements.
-D 2022-04-06T18:30:17.017
+C Faster\sparsing\sof\sthe\sFROM\sclause\sin\sjoins\sfor\sthe\scommon\scase\swhere\sthere\nis\sno\sINDEXED\sBY\sclause.
+D 2022-04-06T19:46:20.282
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -541,7 +541,7 @@ F src/os_win.c a8ea80037e81127ca01959daa87387cc135f325c88dc745376c4f760de852a10
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 42120492784fc9bcd9082b5c9b5e329b7318c357f9f3574a1bbfcf7418910356
 F src/pager.h f82e9844166e1585f5786837ddc7709966138ced17f568c16af7ccf946c2baa3
-F src/parse.y 0f02b27cdaa334441463153fff3ceb780fea006ab53ffd6ef566d4468f93e924
+F src/parse.y a2786e72c5ce8a91df7dbad8306616d822ba7093f87cfa0d09fe351b83fa5828
 F src/pcache.c 084e638432c610f95aea72b8509f0845d2791293f39d1b82f0c0a7e089c3bb6b
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c 54881292a9a5db202b2c0ac541c5e3ef9a5e8c4f1c1383adb2601d5499a60e65
@@ -1945,8 +1945,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b0939d6f4d94b45dce53ace6295508a67d574cc72bd6977623bf77065b3c4e64
-R 872e7cb0a41ffc82d4d587b9b5d48fbd
+P 84c239a071cfaf8af107646f01ef269e2915fd2384e95927d484f2e408ba6bbf
+R c85c19380822b3766b7352b207ade832
 U drh
-Z 7e160e4a9e1d6cdfe648435dccc34431
+Z f7c9c9fec330149ee82e748d50b754aa
 # Remove this line to create a well-formed Fossil manifest.
