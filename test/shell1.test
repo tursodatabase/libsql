@@ -353,7 +353,7 @@ do_test shell1-3.7.4 {
 # .header(s) ON|OFF      Turn display of headers on or off
 do_test shell1-3.9.1 {
   catchcmd "test.db" ".header"
-} {1 {Error: Too few arguments for ".header", need 1}}
+} {1 {Error: Too few arguments for ".headers", need 1}}
 do_test shell1-3.9.2 {
   catchcmd "test.db" ".header ON"
 } {0 {}}
@@ -363,7 +363,7 @@ do_test shell1-3.9.3 {
 do_test shell1-3.9.4 {
   # too many arguments
   catchcmd "test.db" ".header OFF BAD"
-} {1 {Error: Too many arguments for ".header", over 1}}
+} {1 {Error: Too many arguments for ".headers", over 1}}
 # .headers is accepted alias
 do_test shell1-3.9.5 {
   catchcmd "test.db" ".headers ON"

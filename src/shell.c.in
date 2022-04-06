@@ -458,9 +458,10 @@ static volatile int seenInterrupt = 0;
 static char *Argv0;
 static char startupDir[PATH_MAX+1] = {0};
 #if defined(_WIN32) || defined(WIN32)
-# define initStartupDir() _getwd(startupDir)
+# define initStartupDir() (_getwd(startupDir)!=0)
 #else
-# define initStartupDir() getcwd(startupDir, sizeof(startupDir))
+# define initStartupDir() (getcwd(startupDir, sizeof(startupDir))!=0)
+  /* The useless expression silences a "unused result" warning. */
 #endif
 
 /*
@@ -7878,6 +7879,10 @@ FROM (\
   }
 }
 
+static FILE *currentOutputFile(ShellExState *p){
+  return ISS(p)->out;
+}
+
 #if SHELL_DYNAMIC_EXTENSION
 /* Ensure there is room in loaded extension info list for one being loaded.
  * On exit, psi->ixExtPending can be used to index into psi->pShxLoaded.
@@ -7962,7 +7967,6 @@ static int register_scripting(ShellExState *p, ExtensionId eid,
   return SQLITE_OK;
 }
 
-#if SHELL_DYNAMIC_EXTENSION
 /*
  * Subscribe to (or unsubscribe from) messages about various changes. 
  * Unsubscribe, effected when nkMin==NK_Unsubscribe, always succeeds.
@@ -8038,11 +8042,6 @@ static void unsubscribe_extensions(ShellInState *psi){
       esix = esix + 1 + (psi->numSubscriptions - nsin);
     }else ++esix;
   }
-}
-#endif
-
-static FILE *currentOutputFile(ShellExState *p){
-  return ISS(p)->out;
 }
 
 static struct InSource *currentInputSource(ShellExState *p){
@@ -13591,7 +13590,9 @@ typedef struct MetaMatchIter {
   const char *zPattern;
   union {
     MetaCommand *pMC;
+#if SHELL_DYNAMIC_EXTENSION
     sqlite3_stmt *stmt;
+#endif
   };
 } MetaMatchIter;
 
@@ -13600,32 +13601,28 @@ typedef struct MetaMatchIter {
 static MetaMatchIter findMatchingMetaCmds(const char *cmdFragment,
                                           ShellExState *psx){
   MetaMatchIter rv = { psx, 0, 0 };
-  if( psx->dbShell==0 || ISS(psx)->bDbDispatch==0 ){
-    rv.zPattern = smprintf("%s*", cmdFragment? cmdFragment : "");
-    shell_check_oom((void *)rv.zPattern);
-    rv.pMC = (MetaCommand *)command_table;
-  }else{
+#if SHELL_DYNAMIC_EXTENSION
+  if( psx->dbShell!=0 && ISS(psx)->bDbDispatch ){
     /* Prepare rv.stmt to yield results glob-matching cmdFragment. */
     const char *zSql =
       "SELECT name, extIx, cmdIx FROM "SHELL_DISP_VIEW" "
       "WHERE name glob (?||'*') ORDER BY name";
     sqlite3_prepare_v2(psx->dbShell, zSql, -1, &rv.stmt, 0);
     sqlite3_bind_text(rv.stmt, 1, cmdFragment? cmdFragment : "", -1, 0);
+  }else
+#endif
+  {
+    rv.zPattern = smprintf("%s*", cmdFragment? cmdFragment : "");
+    shell_check_oom((void *)rv.zPattern);
+    rv.pMC = (MetaCommand *)command_table;
   }
   return rv;
 }
 /* Produce the next MetaCommand pointer from the iterator, or 0 if no next. */
 static MetaCommand * nextMatchingMetaCmd(MetaMatchIter *pMMI){
   MetaCommand *rv = 0;
-  if( pMMI->zPattern!=0 ){
-    struct CommandInfo *pCI = (struct CommandInfo *)(pMMI->pMC);
-    assert(pCI>=command_table && pCI<=command_table+numCommands);
-    while( pCI<command_table+numCommands ){
-      if( sqlite3_strglob(pMMI->zPattern, pCI->cmdName)==0 ) rv = pMMI->pMC;
-      pMMI->pMC = (MetaCommand *)(++pCI);
-      if( rv!=0 ) break;
-    }
-  }else{
+#if SHELL_DYNAMIC_EXTENSION
+  if( pMMI->zPattern==0 ){
     int rc = sqlite3_step(pMMI->stmt);
     if( rc==SQLITE_ROW ){
       int extIx = sqlite3_column_int(pMMI->stmt, 1);
@@ -13634,6 +13631,16 @@ static MetaCommand * nextMatchingMetaCmd(MetaMatchIter *pMMI){
     }else{
       sqlite3_finalize(pMMI->stmt);
       pMMI->stmt = 0;
+    }
+  }else
+#endif
+  {
+    struct CommandInfo *pCI = (struct CommandInfo *)(pMMI->pMC);
+    assert(pCI>=command_table && pCI<=command_table+numCommands);
+    while( pCI<command_table+numCommands ){
+      if( sqlite3_strglob(pMMI->zPattern, pCI->cmdName)==0 ) rv = pMMI->pMC;
+      pMMI->pMC = (MetaCommand *)(++pCI);
+      if( rv!=0 ) break;
     }
   }
   return rv;
@@ -13644,10 +13651,13 @@ static void freeMetaMatchIter(MetaMatchIter *pMMI){
     sqlite3_free((void *)pMMI->zPattern);
     pMMI->zPattern = 0;
     pMMI->pMC = 0;
-  }else{
+  }
+#if SHELL_DYNAMIC_EXTENSION
+  else{
     sqlite3_finalize(pMMI->stmt);
     pMMI->stmt = 0;
   }
+#endif
 }
 
 /*****************
@@ -14453,7 +14463,9 @@ static DotCmdRC process_input(ShellInState *psi){
 
   /* line-group processing loop (per SQL block, dot-command or comment) */
   while( !bInputEnd && termKind==DCR_Ok && !bInterrupted ){
+#if SHELL_DYNAMIC_EXTENSION
     ScriptSupport *pSS = psi->script;
+#endif
     int nGroupLines = 0;  /* count of lines belonging to this group */
     int ncLineIn = 0;     /* how many (non-zero) chars are in zLineInput  */
     int ncLineAcc = 0;    /* how many (non-zero) chars are in zLineAccum  */
@@ -14628,7 +14640,9 @@ static DotCmdRC process_input(ShellInState *psi){
         grow_line_buffer(&zLineAccum, &naAccum, ncLineAcc+ncLineIn+2);
         /* Join lines as setup by exam of previous line(s). */
         if( cLineEnd!=0 ) zLineAccum[ncLineAcc++] = cLineEnd;
+#if SHELL_EXTENDED_PARSING
         cLineEnd = '\n'; /* reset to default after use */
+#endif
         memcpy(zLineAccum+ncLineAcc, zLineInput, ncLineIn);
         iLastLine = ncLineAcc;
         ncLineAcc += ncLineIn;

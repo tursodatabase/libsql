@@ -633,6 +633,9 @@ FUZZCHECK_OPT += -DSQLITE_ENABLE_BYTECODE_VTAB
 FUZZCHECK_SRC = $(TOP)/test/fuzzcheck.c $(TOP)/test/ossfuzz.c
 DBFUZZ_OPT =
 
+#
+SHELL_OPT_NOEXT = $(SHELL_OPT) -DSHELL_OMIT_EXTENSIONS=7
+
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
 #
@@ -656,6 +659,11 @@ libtclsqlite3.la:	tclsqlite.lo libsqlite3.la
 		-avoid-version
 
 sqlite3$(TEXE):	shell.c sqlite3.c
+	$(LTLINK) $(READLINE_FLAGS) $(SHELL_OPT_NOEXT) -o $@ \
+		shell.c sqlite3.c \
+		$(LIBREADLINE) $(TLIBS) -rpath "$(libdir)"
+
+sqlite3x$(TEXE): shell.c sqlite3.c
 	$(LTLINK) $(READLINE_FLAGS) $(SHELL_OPT) -o $@ \
 		shell.c sqlite3.c \
 		$(LIBREADLINE) $(TLIBS) -rpath "$(libdir)"
