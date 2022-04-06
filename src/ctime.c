@@ -307,9 +307,6 @@ static const char * const sqlite3azCompileOpt[] = {
 #ifdef SQLITE_ENABLE_RTREE
   "ENABLE_RTREE",
 #endif
-#ifdef SQLITE_ENABLE_SELECTTRACE
-  "ENABLE_SELECTTRACE",
-#endif
 #ifdef SQLITE_ENABLE_SESSION
   "ENABLE_SESSION",
 #endif
@@ -330,6 +327,9 @@ static const char * const sqlite3azCompileOpt[] = {
 #endif
 #ifdef SQLITE_ENABLE_STMT_SCANSTATUS
   "ENABLE_STMT_SCANSTATUS",
+#endif
+#ifdef SQLITE_ENABLE_TREETRACE
+  "ENABLE_TREETRACE",
 #endif
 #ifdef SQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
   "ENABLE_UNKNOWN_SQL_FUNCTION",

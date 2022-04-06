@@ -1055,4 +1055,26 @@ void sqlite3TreeViewUpdate(
   }
 }
 
+/*
+** These simplified versions of the tree-view routines omit unnecessary
+** parameters.  These variants are intended to be used from a symbolic
+** debugger, such as "gdb", during interactive debugging sessions.
+**
+** This routines are given external linkage so that they will always be
+** accessible to the debugging, and to avoid warnings about unused
+** functions.  But these routines only exist in debugging builds, so they
+** do not contaminate the interface.
+*/
+void sqlite3ShowExpr(const Expr *p){ sqlite3TreeViewExpr(0,p,0); }
+void sqlite3ShowExprList(const ExprList *p){ sqlite3TreeViewExprList(0,p,0,0);}
+void sqlite3ShowIdList(const IdList *p){ sqlite3TreeViewIdList(0,p,0,0); }
+void sqlite3ShowSrcList(const SrcList *p){ sqlite3TreeViewSrcList(0,p); }
+void sqlite3ShowSelect(const Select *p){ sqlite3TreeViewSelect(0,p,0); }
+void sqlite3ShowWith(const With *p){ sqlite3TreeViewWith(0,p,0); }
+void sqlite3ShowUpsert(const Upsert *p){ sqlite3TreeViewUpsert(0,p,0); }
+#ifndef SQLITE_OMIT_WINDOWFUNC
+void sqlite3ShowWindow(const Window *p){ sqlite3TreeViewWindow(0,p,0); }
+void sqlite3ShowWinFunc(const Window *p){ sqlite3TreeViewWinFunc(0,p,0); }
+#endif
+
 #endif /* SQLITE_DEBUG */
