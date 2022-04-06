@@ -1014,22 +1014,23 @@ typedef INT16_TYPE LogEst;
 #endif
 
 /*
-** SELECTTRACE_ENABLED will be either 1 or 0 depending on whether or not
-** the Select query generator tracing logic is turned on.
+** TREETRACE_ENABLED will be either 1 or 0 depending on whether or not
+** the Abstract Syntax Tree tracing logic is turned on.
 */
 #if !defined(SQLITE_AMALGAMATION)
-extern u32 sqlite3SelectTrace;
+extern u32 sqlite3TreeTrace;
 #endif
 #if defined(SQLITE_DEBUG) \
-    && (defined(SQLITE_TEST) || defined(SQLITE_ENABLE_SELECTTRACE))
-# define SELECTTRACE_ENABLED 1
+    && (defined(SQLITE_TEST) || defined(SQLITE_ENABLE_SELECTTRACE) \
+                             || defined(SQLITE_ENABLE_TREETRACE))
+# define TREETRACE_ENABLED 1
 # define SELECTTRACE(K,P,S,X)  \
-  if(sqlite3SelectTrace&(K))   \
+  if(sqlite3TreeTrace&(K))   \
     sqlite3DebugPrintf("%u/%d/%p: ",(S)->selId,(P)->addrExplain,(S)),\
     sqlite3DebugPrintf X
 #else
 # define SELECTTRACE(K,P,S,X)
-# define SELECTTRACE_ENABLED 0
+# define TREETRACE_ENABLED 0
 #endif
 
 /*

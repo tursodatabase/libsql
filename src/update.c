@@ -353,8 +353,8 @@ void sqlite3Update(
   }
   assert( db->mallocFailed==0 );
 
-#if SELECTTRACE_ENABLED
-  if( sqlite3SelectTrace & 0x10000 ){
+#if TREETRACE_ENABLED
+  if( sqlite3TreeTrace & 0x10000 ){
     sqlite3TreeViewUpdate(0, pParse->pWith, pTabList, pChanges, pWhere,
                              onError, pOrderBy, pLimit, pUpsert);
   }

@@ -300,8 +300,8 @@ void sqlite3DeleteFrom(
   assert( db->mallocFailed==0 );
   assert( pTabList->nSrc==1 );
 
-#if SELECTTRACE_ENABLED
-  if( sqlite3SelectTrace & 0x10000 ){
+#if TREETRACE_ENABLED
+  if( sqlite3TreeTrace & 0x10000 ){
     sqlite3TreeViewDelete(0, pParse->pWith, pTabList, pWhere,
                              pOrderBy, pLimit);
   }

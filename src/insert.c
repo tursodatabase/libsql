@@ -722,8 +722,8 @@ void sqlite3Insert(
   assert( db->mallocFailed==0 );
   dest.iSDParm = 0;  /* Suppress a harmless compiler warning */
 
-#if SELECTTRACE_ENABLED
-  if( sqlite3SelectTrace & 0x10000 ){
+#if TREETRACE_ENABLED
+  if( sqlite3TreeTrace & 0x10000 ){
     sqlite3TreeViewInsert(0, pParse->pWith, pTabList, pColumn, pSelect,
                              onError, pUpsert);
   }

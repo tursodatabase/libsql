@@ -347,7 +347,7 @@ int sqlite3PendingByte = 0x40000000;
 /*
 ** Tracing flags set by SQLITE_TESTCTRL_TRACEFLAGS.
 */
-u32 sqlite3SelectTrace = 0;
+u32 sqlite3TreeTrace = 0;
 u32 sqlite3WhereTrace = 0;
 
 #include "opcodes.h"
