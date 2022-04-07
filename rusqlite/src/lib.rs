@@ -384,9 +384,8 @@ impl Connection {
     ///
     /// - Open the database for both reading or writing.
     /// - Create the database if one does not exist at the path.
-    /// - Allow the filename to be interpreted as a URI (see
-    ///   <https://www.sqlite.org/uri.html#uri_filenames_in_sqlite> for
-    ///   details).
+    /// - Allow the filename to be interpreted as a URI (see <https://www.sqlite.org/uri.html#uri_filenames_in_sqlite>
+    ///   for details).
     /// - Disables the use of a per-connection mutex.
     ///
     ///     Rusqlite enforces thread-safety at compile time, so additional
