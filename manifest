@@ -1,5 +1,5 @@
-C Avoid\scompiler\swarnings\sabout\sthe\snew\ssqlite3Show()\sdebugging\sroutines\nbegin\s"defined\sbut\snot\sused".
-D 2022-04-07T13:48:34.525
+C Optimization\sto\ssqlite3TriggersExist()\ssaves\sover\s700K\sCPU\scycles.
+D 2022-04-07T14:03:07.800
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -618,7 +618,7 @@ F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c a38f52058b517929e264094abd0b5fd1e8e145a1aa43bc6f6a72ae5218f96c98
 F src/treeview.c 80a3d70bbc112399aa3cc7e777acc5d07c452e44c652630fc158d4594d86afd1
-F src/trigger.c 8caa0baf1b18522863cf0fd611ef483962cfa50155ca82ad43e63b20f863a683
+F src/trigger.c 4cdfe612037f10a42b32a59ba2a356105d27f51fd245d448375b947fb34db9a4
 F src/update.c 2cfaded82ca80ff56afb8c3ae5e88284e0824bfd86119827cc22481959f96f92
 F src/upsert.c 8789047a8f0a601ea42fa0256d1ba3190c13746b6ba940fe2d25643a7e991937
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
@@ -1945,8 +1945,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8f6ae686019c61a03fe70eb78d2b529b1cf126215b45513a97cfdf7086f82f54
-R 380084301cb6b00c02dcf97f512da662
+P 47ddc26974fbad8233c953d435e79d4f5dd5e09fbd684ea5f4ad32f4cae6cae6
+R 313704a91e0bd8ca9890cadf31801b34
 U drh
-Z cfb664e1b06ecfbc84035c3ba38b1870
+Z d452943e9c0d2e6a5130deca0f1583c4
 # Remove this line to create a well-formed Fossil manifest.
