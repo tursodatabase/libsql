@@ -4097,6 +4097,25 @@ int sqlite3_test_control(int op, ...){
       volatile int x = 0;
       assert( /*side-effects-ok*/ (x = va_arg(ap,int))!=0 );
       rc = x;
+#if defined(SQLITE_DEBUG)
+      /* Invoke these debugging routines so that the compiler does not
+      ** issue "defined but not used" warnings. */
+      if( x==9999 ){
+        sqlite3ShowExpr(0);
+        sqlite3ShowExpr(0);
+        sqlite3ShowExprList(0);
+        sqlite3ShowIdList(0);
+        sqlite3ShowSrcList(0);
+        sqlite3ShowWith(0);
+        sqlite3ShowUpsert(0);
+        sqlite3ShowTriggerStep(0);
+        sqlite3ShowTriggerStepList(0);
+        sqlite3ShowTrigger(0);
+        sqlite3ShowTriggerList(0);
+        sqlite3ShowWindow(0);
+        sqlite3ShowWinFunc(0);
+      }
+#endif
       break;
     }
 

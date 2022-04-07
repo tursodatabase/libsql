@@ -1,5 +1,5 @@
-C Omit\san\sunnecessary\sinitialization\sin\stokenExpr().
-D 2022-04-07T12:10:00.281
+C Avoid\scompiler\swarnings\sabout\sthe\snew\ssqlite3Show()\sdebugging\sroutines\nbegin\s"defined\sbut\snot\sused".
+D 2022-04-07T13:48:34.525
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -516,7 +516,7 @@ F src/insert.c 221ae0496a53fcf74321d6dcdd7fa2d3c17ede1c17fa1d9020e2465da4a4505a
 F src/json.c 7749b98c62f691697c7ee536b570c744c0583cab4a89200fdd0fc2aa8cc8cbd6
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 2ecb1441f9b1c22e9e022ee0776e67d259facf34b56ba892b206f0a294ee6f8c
-F src/main.c db08e3ebd5e1802ab4d4cac5dfa6ae0a12058c51345a90126146dd6010b32593
+F src/main.c 135858d2ede0b83d779e71b07ede9c1d6b6eaab7b77bc2a85729584152769faf
 F src/malloc.c fec841aa0a0400a6f7d20706178a5d8e8219a6bf562b6fe712c17f6c26813266
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
@@ -1945,8 +1945,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 61095b5bcb5c30d29f03efa5b4809e3a0b780ed57e35227c292aab9dd1cfe3f6
-R d10cb8dc7a06987894bb442f89af796a
+P 8f6ae686019c61a03fe70eb78d2b529b1cf126215b45513a97cfdf7086f82f54
+R 380084301cb6b00c02dcf97f512da662
 U drh
-Z 9cd1781a9da7842a2690f24190d28f26
+Z cfb664e1b06ecfbc84035c3ba38b1870
 # Remove this line to create a well-formed Fossil manifest.
