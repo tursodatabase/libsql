@@ -1742,14 +1742,10 @@ mod test {
 
         let result: Result<Vec<i32>> = stmt.query([])?.map(|r| r.get(0)).collect();
 
-        match result.unwrap_err() {
-            Error::SqliteFailure(err, _) => {
-                assert_eq!(err.code, ErrorCode::OperationInterrupted);
-            }
-            err => {
-                panic!("Unexpected error {}", err);
-            }
-        }
+        assert_eq!(
+            result.unwrap_err().sqlite_error_code(),
+            Some(ErrorCode::OperationInterrupted)
+        );
         Ok(())
     }
 
