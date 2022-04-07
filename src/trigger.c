@@ -52,9 +52,7 @@ Trigger *sqlite3TriggerList(Parse *pParse, Table *pTab){
   Trigger *pList;           /* List of triggers to return */
   HashElem *p;              /* Loop variable for TEMP triggers */
 
-  if( pParse->disableTriggers ){
-    return 0;
-  }
+  assert( pParse->disableTriggers==0 );
   pTmpSchema = pParse->db->aDb[1].pSchema;
   p = sqliteHashFirst(&pTmpSchema->trigHash);
   pList = pTab->pTrigger;
@@ -733,7 +731,7 @@ static int checkColumnOverlap(IdList *pIdList, ExprList *pEList){
 ** Return true if any TEMP triggers exist
 */
 static int tempTriggersExist(sqlite3 *db){
-  if( db->aDb[1].pSchema==0 ) return 0;
+  if( NEVER(db->aDb[1].pSchema==0) ) return 0;
   if( sqliteHashFirst(&db->aDb[1].pSchema->trigHash)==0 ) return 0;
   return 1;
 }
