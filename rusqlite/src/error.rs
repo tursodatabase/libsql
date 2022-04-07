@@ -335,6 +335,24 @@ impl error::Error for Error {
     }
 }
 
+impl Error {
+    /// Returns the underlying SQLite error if this is [`Error::SqliteFailure`].
+    #[inline]
+    pub fn sqlite_error(&self) -> Option<&ffi::Error> {
+        match self {
+            Self::SqliteFailure(error, _) => Some(error),
+            _ => None,
+        }
+    }
+
+    /// Returns the underlying SQLite error code if this is
+    /// [`Error::SqliteFailure`].
+    #[inline]
+    pub fn sqlite_error_code(&self) -> Option<ffi::ErrorCode> {
+        self.sqlite_error().map(|error| error.code)
+    }
+}
+
 // These are public but not re-exported by lib.rs, so only visible within crate.
 
 #[cold]
