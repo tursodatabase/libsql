@@ -991,10 +991,18 @@ jump_to_p2:
   break;
 }
 
-/* Opcode:  Return P1 * P3 * *
+/* Opcode:  Return P1 P2 P3 * *
 **
 ** Jump to the next instruction after the address in register P1.  After
 ** the jump, register P1 becomes undefined.
+**
+** P2 is not used by the byte-code engine.  However, if P2 is positive
+** and also less than the current address, then the "EXPLAIN" output
+** formatter in the CLI will indent all opcodes from the P2 opcode up
+** to be not including the current Return.   P2 should be the first opcode
+** in the subroutine from which this opcode is returnning.  Thus the P2
+** value is a byte-code indentation hint.  See tag-20220407a in
+** wherecode.c and shell.c.
 **
 ** P3 is not used by the byte-code engine.  However, the code generator
 ** sets P3 to address of the associated OP_BeginSubrtn opcode, if there is

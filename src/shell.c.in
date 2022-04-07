@@ -2944,6 +2944,9 @@ static int str_in_array(const char *zStr, const char **azArray){
 **       all opcodes that occur between the p2 jump destination and the opcode
 **       itself by 2 spaces.
 **
+**     * Do the previous for "Return" instructions for when P2 is positive.
+**       See tag-20220407a in wherecode.c and vdbe.c.
+**
 **     * For each "Goto", if the jump destination is earlier in the program
 **       and ends on one of:
 **          Yield  SeekGt  SeekLt  RowSetRead  Rewind
@@ -2958,7 +2961,8 @@ static void explain_data_prepare(ShellState *p, sqlite3_stmt *pSql){
   int nAlloc = 0;                 /* Allocated size of p->aiIndent[], abYield */
   int iOp;                        /* Index of operation in p->aiIndent[] */
 
-  const char *azNext[] = { "Next", "Prev", "VPrev", "VNext", "SorterNext", 0 };
+  const char *azNext[] = { "Next", "Prev", "VPrev", "VNext", "SorterNext",
+                           "Return", 0 };
   const char *azYield[] = { "Yield", "SeekLT", "SeekGT", "RowSetRead",
                             "Rewind", 0 };
   const char *azGoto[] = { "Goto", 0 };
@@ -3016,7 +3020,7 @@ static void explain_data_prepare(ShellState *p, sqlite3_stmt *pSql){
     p->aiIndent[iOp] = 0;
     p->nIndent = iOp+1;
 
-    if( str_in_array(zOp, azNext) ){
+    if( str_in_array(zOp, azNext) && p2op>0 ){
       for(i=p2op; i<iOp; i++) p->aiIndent[i] += 2;
     }
     if( str_in_array(zOp, azGoto) && p2op<p->nIndent
