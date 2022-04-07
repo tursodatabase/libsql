@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings.
-D 2022-04-07T10:11:35.114
+C Omit\san\sunnecessary\sinitialization\sin\stokenExpr().
+D 2022-04-07T12:10:00.281
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -541,7 +541,7 @@ F src/os_win.c a8ea80037e81127ca01959daa87387cc135f325c88dc745376c4f760de852a10
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 42120492784fc9bcd9082b5c9b5e329b7318c357f9f3574a1bbfcf7418910356
 F src/pager.h f82e9844166e1585f5786837ddc7709966138ced17f568c16af7ccf946c2baa3
-F src/parse.y afae75ce87abc2d87a8277ed811bc09d04da4b1760ace3e845cb1553f3a3dd0a
+F src/parse.y 9130a936927658e7c574e97e5d4f0a747a3f6b9a42bc5c63e455c8e40cc74216
 F src/pcache.c 084e638432c610f95aea72b8509f0845d2791293f39d1b82f0c0a7e089c3bb6b
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c 54881292a9a5db202b2c0ac541c5e3ef9a5e8c4f1c1383adb2601d5499a60e65
@@ -1945,8 +1945,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 158156a3e3d50042cafc75dea3aaaa68b1f2efb9c3d178518ea6e68e32e0d21c
-R ddc4a547b7cd9ea461a0814ceeb710d6
+P 61095b5bcb5c30d29f03efa5b4809e3a0b780ed57e35227c292aab9dd1cfe3f6
+R d10cb8dc7a06987894bb442f89af796a
 U drh
-Z 47d2237d442f3e332877057086e92ecb
+Z 9cd1781a9da7842a2690f24190d28f26
 # Remove this line to create a well-formed Fossil manifest.

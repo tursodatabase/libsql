@@ -1030,7 +1030,7 @@ idlist(A) ::= nm(Y).
       p->affExpr = 0;
       p->flags = EP_Leaf;
       ExprClearVVAProperties(p);
-      p->iAgg = -1;
+      /* p->iAgg = -1; // Not required */
       p->pLeft = p->pRight = 0;
       p->pAggInfo = 0;
       memset(&p->x, 0, sizeof(p->x));
