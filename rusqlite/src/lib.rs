@@ -1288,7 +1288,7 @@ mod test {
         let filename = "no_such_file.db";
         let result = Connection::open_with_flags(filename, OpenFlags::SQLITE_OPEN_READ_ONLY);
         assert!(result.is_err());
-        let err = result.err().unwrap();
+        let err = result.unwrap_err();
         if let Error::SqliteFailure(e, Some(msg)) = err {
             assert_eq!(ErrorCode::CannotOpen, e.code);
             assert_eq!(ffi::SQLITE_CANTOPEN, e.extended_code);
