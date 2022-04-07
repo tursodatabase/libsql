@@ -837,7 +837,6 @@ void sqlite3TreeViewBareIdList(
       int moreToFollow = i<pList->nId - 1;
       if( zName==0 ) zName = "(null)";
       sqlite3TreeViewPush(&pView, moreToFollow);
-      moreToFollow = 0;
       sqlite3TreeViewLine(pView, 0);
       fprintf(stdout, "%s (%d)\n", zName, pList->a[i].idx);
       sqlite3TreeViewPop(&pView);
