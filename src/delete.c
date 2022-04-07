@@ -128,8 +128,8 @@ void sqlite3MaterializeView(
     assert( pFrom->nSrc==1 );
     pFrom->a[0].zName = sqlite3DbStrDup(db, pView->zName);
     pFrom->a[0].zDatabase = sqlite3DbStrDup(db, db->aDb[iDb].zDbSName);
-    assert( pFrom->a[0].pOn==0 );
-    assert( pFrom->a[0].pUsing==0 );
+    assert( pFrom->a[0].fg.isUsing==0 );
+    assert( pFrom->a[0].u3.pOn==0 );
   }
   pSel = sqlite3SelectNew(pParse, 0, pFrom, pWhere, 0, 0, pOrderBy, 
                           SF_IncludeHidden, pLimit);

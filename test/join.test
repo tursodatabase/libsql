@@ -307,7 +307,7 @@ do_test join-3.3 {
   catchsql {
     SELECT * FROM t1 JOIN t2 ON t1.a=t2.b USING(b);
   }
-} {1 {cannot have both ON and USING clauses in the same join}}
+} {1 {near "USING": syntax error}}
 do_test join-3.4.1 {
   catchsql {
     SELECT * FROM t1 JOIN t2 USING(a);

@@ -1191,6 +1191,7 @@ typedef struct Lookaside Lookaside;
 typedef struct LookasideSlot LookasideSlot;
 typedef struct Module Module;
 typedef struct NameContext NameContext;
+typedef struct OnOrUsing OnOrUsing;
 typedef struct Parse Parse;
 typedef struct ParseCleanup ParseCleanup;
 typedef struct PreUpdate PreUpdate;
@@ -3075,10 +3076,13 @@ struct SrcItem {
     unsigned fromDDL :1;       /* Comes from sqlite_schema */
     unsigned isCte :1;         /* This is a CTE */
     unsigned notCte :1;        /* This item may not match a CTE */
+    unsigned isUsing :1;       /* u3.pUsing is valid */
   } fg;
   int iCursor;      /* The VDBE cursor number used to access this table */
-  Expr *pOn;        /* The ON clause of a join */
-  IdList *pUsing;   /* The USING clause of a join */
+  union {
+    Expr *pOn;        /* fg.isUsing==0 =>  The ON clause of a join */
+    IdList *pUsing;   /* fg.isUsing==1 =>  The USING clause of a join */
+  } u3;
   Bitmask colUsed;  /* Bit N (1<<N) set if column N of pTab is used */
   union {
     char *zIndexedBy;    /* Identifier from "INDEXED BY <zIndex>" clause */
@@ -3088,6 +3092,15 @@ struct SrcItem {
     Index *pIBIndex;  /* Index structure corresponding to u1.zIndexedBy */
     CteUse *pCteUse;  /* CTE Usage info info fg.isCte is true */
   } u2;
+};
+
+/*
+** The OnOrUsing object represents either an ON clause or a USING clause.
+** It can never be both at the same time, but it can be neither.
+*/
+struct OnOrUsing {
+  Expr *pOn;         /* The ON clause of a join */
+  IdList *pUsing;    /* The USING clause of a join */
 };
 
 /*
@@ -4610,13 +4623,14 @@ SrcList *sqlite3SrcListEnlarge(Parse*, SrcList*, int, int);
 SrcList *sqlite3SrcListAppendList(Parse *pParse, SrcList *p1, SrcList *p2);
 SrcList *sqlite3SrcListAppend(Parse*, SrcList*, Token*, Token*);
 SrcList *sqlite3SrcListAppendFromTerm(Parse*, SrcList*, Token*, Token*,
-                                      Token*, Select*, Expr*, IdList*);
+                                      Token*, Select*, OnOrUsing*);
 void sqlite3SrcListIndexedBy(Parse *, SrcList *, Token *);
 void sqlite3SrcListFuncArgs(Parse*, SrcList*, ExprList*);
 int sqlite3IndexedByLookup(Parse *, SrcItem *);
 void sqlite3SrcListShiftJoinType(SrcList*);
 void sqlite3SrcListAssignCursors(Parse*, SrcList*);
 void sqlite3IdListDelete(sqlite3*, IdList*);
+void sqlite3ClearOnOrUsing(sqlite3*, OnOrUsing*);
 void sqlite3SrcListDelete(sqlite3*, SrcList*);
 Index *sqlite3AllocateIndexObject(sqlite3*,i16,int,char**);
 void sqlite3CreateIndex(Parse*,Token*,Token*,SrcList*,ExprList*,int,Token*,

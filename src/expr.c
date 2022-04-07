@@ -1249,6 +1249,18 @@ void sqlite3ExprDelete(sqlite3 *db, Expr *p){
   if( p ) sqlite3ExprDeleteNN(db, p);
 }
 
+/*
+** Clear both elements of an OnOrUsing object
+*/
+void sqlite3ClearOnOrUsing(sqlite3 *db, OnOrUsing *p){
+  if( p==0 ){
+    /* Nothing to clear */
+  }else if( p->pOn ){
+    sqlite3ExprDeleteNN(db, p->pOn);
+  }else if( p->pUsing ){
+    sqlite3IdListDelete(db, p->pUsing);
+  }
+}
 
 /*
 ** Arrange to cause pExpr to be deleted when the pParse is deleted.
@@ -1671,8 +1683,12 @@ SrcList *sqlite3SrcListDup(sqlite3 *db, const SrcList *p, int flags){
       pTab->nTabRef++;
     }
     pNewItem->pSelect = sqlite3SelectDup(db, pOldItem->pSelect, flags);
-    pNewItem->pOn = sqlite3ExprDup(db, pOldItem->pOn, flags);
-    pNewItem->pUsing = sqlite3IdListDup(db, pOldItem->pUsing);
+    if( pOldItem->fg.isUsing ){
+      assert( pNewItem->fg.isUsing );
+      pNewItem->u3.pUsing = sqlite3IdListDup(db, pOldItem->u3.pUsing);
+    }else{
+      pNewItem->u3.pOn = sqlite3ExprDup(db, pOldItem->u3.pOn, flags);
+    }
     pNewItem->colUsed = pOldItem->colUsed;
   }
   return pNew;

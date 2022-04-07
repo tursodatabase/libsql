@@ -468,7 +468,7 @@ static int sqliteProcessJoin(Parse *pParse, Select *p){
     ** every column that the two tables have in common.
     */
     if( pRight->fg.jointype & JT_NATURAL ){
-      if( pRight->pOn || pRight->pUsing ){
+      if( pRight->fg.isUsing || pRight->u3.pOn ){
         sqlite3ErrorMsg(pParse, "a NATURAL join may not have "
            "an ON or USING clause", 0);
         return 1;
@@ -487,23 +487,6 @@ static int sqliteProcessJoin(Parse *pParse, Select *p){
       }
     }
 
-    /* Disallow both ON and USING clauses in the same join
-    */
-    if( pRight->pOn && pRight->pUsing ){
-      sqlite3ErrorMsg(pParse, "cannot have both ON and USING "
-        "clauses in the same join");
-      return 1;
-    }
-
-    /* Add the ON clause to the end of the WHERE clause, connected by
-    ** an AND operator.
-    */
-    if( pRight->pOn ){
-      if( isOuter ) sqlite3SetJoinExpr(pRight->pOn, pRight->iCursor);
-      p->pWhere = sqlite3ExprAnd(pParse, p->pWhere, pRight->pOn);
-      pRight->pOn = 0;
-    }
-
     /* Create extra terms on the WHERE clause for each column named
     ** in the USING clause.  Example: If the two tables to be joined are 
     ** A and B and the USING clause names X, Y, and Z, then add this
@@ -511,8 +494,9 @@ static int sqliteProcessJoin(Parse *pParse, Select *p){
     ** Report an error if any column mentioned in the USING clause is
     ** not contained in both tables to be joined.
     */
-    if( pRight->pUsing ){
-      IdList *pList = pRight->pUsing;
+    if( pRight->fg.isUsing ){
+      IdList *pList = pRight->u3.pUsing;
+      assert( pList!=0 );
       for(j=0; j<pList->nId; j++){
         char *zName;     /* Name of the term in the USING clause */
         int iLeft;       /* Table on the left with matching column name */
@@ -531,6 +515,15 @@ static int sqliteProcessJoin(Parse *pParse, Select *p){
         addWhereTerm(pParse, pSrc, iLeft, iLeftCol, i+1, iRightCol,
                      isOuter, &p->pWhere);
       }
+    }
+
+    /* Add the ON clause to the end of the WHERE clause, connected by
+    ** an AND operator.
+    */
+    else if( pRight->u3.pOn ){
+      if( isOuter ) sqlite3SetJoinExpr(pRight->u3.pOn, pRight->iCursor);
+      p->pWhere = sqlite3ExprAnd(pParse, p->pWhere, pRight->u3.pOn);
+      pRight->u3.pOn = 0;
     }
   }
   return 0;
@@ -4222,7 +4215,7 @@ static int flattenSubquery(
   pSubitem->zName = 0;
   pSubitem->zAlias = 0;
   pSubitem->pSelect = 0;
-  assert( pSubitem->pOn==0 );
+  assert( pSubitem->fg.isUsing!=0 || pSubitem->u3.pOn==0 );
 
   /* If the sub-query is a compound SELECT statement, then (by restrictions
   ** 17 and 18 above) it must be a UNION ALL and the parent query must 
@@ -4366,9 +4359,10 @@ static int flattenSubquery(
     ** outer query.
     */
     for(i=0; i<nSubSrc; i++){
-      sqlite3IdListDelete(db, pSrc->a[i+iFrom].pUsing);
-      assert( pSrc->a[i+iFrom].fg.isTabFunc==0 );
-      pSrc->a[i+iFrom] = pSubSrc->a[i];
+      SrcItem *pItem = &pSrc->a[i+iFrom];
+      if( pItem->fg.isUsing ) sqlite3IdListDelete(db, pItem->u3.pUsing);
+      assert( pItem->fg.isTabFunc==0 );
+      *pItem = pSubSrc->a[i];
       iNewParent = pSubSrc->a[i].iCursor;
       memset(&pSubSrc->a[i], 0, sizeof(pSubSrc->a[i]));
     }
@@ -5092,7 +5086,7 @@ static int convertCompoundSelectToSubquery(Walker *pWalker, Select *p){
   pNew = sqlite3DbMallocZero(db, sizeof(*pNew) );
   if( pNew==0 ) return WRC_Abort;
   memset(&dummy, 0, sizeof(dummy));
-  pNewSrc = sqlite3SrcListAppendFromTerm(pParse,0,0,0,&dummy,pNew,0,0);
+  pNewSrc = sqlite3SrcListAppendFromTerm(pParse,0,0,0,&dummy,pNew,0);
   if( pNewSrc==0 ) return WRC_Abort;
   *pNew = *p;
   p->pSrc = pNewSrc;
@@ -5703,7 +5697,9 @@ static int selectExpander(Walker *pWalker, Select *p){
                 ** table to the right of the join */
                 continue;
               }
-              if( sqlite3IdListIndex(pFrom->pUsing, zName)>=0 ){
+              if( pFrom->fg.isUsing
+               && sqlite3IdListIndex(pFrom->u3.pUsing, zName)>=0
+              ){
                 /* In a join with a USING clause, omit columns in the
                 ** using clause from the table on the right. */
                 continue;

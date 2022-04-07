@@ -858,11 +858,10 @@ static void unmapColumnIdlistNames(
   Parse *pParse,
   const IdList *pIdList
 ){
-  if( pIdList ){
-    int ii;
-    for(ii=0; ii<pIdList->nId; ii++){
-      sqlite3RenameTokenRemap(pParse, 0, (const void*)pIdList->a[ii].zName);
-    }
+  int ii;
+  assert( pIdList!=0 );
+  for(ii=0; ii<pIdList->nId; ii++){
+    sqlite3RenameTokenRemap(pParse, 0, (const void*)pIdList->a[ii].zName);
   }
 }
 
@@ -890,8 +889,11 @@ static int renameUnmapSelectCb(Walker *pWalker, Select *p){
     SrcList *pSrc = p->pSrc;
     for(i=0; i<pSrc->nSrc; i++){
       sqlite3RenameTokenRemap(pParse, 0, (void*)pSrc->a[i].zName);
-      sqlite3WalkExpr(pWalker, pSrc->a[i].pOn);
-      unmapColumnIdlistNames(pParse, pSrc->a[i].pUsing);
+      if( pSrc->a[i].fg.isUsing==0 ){
+        sqlite3WalkExpr(pWalker, pSrc->a[i].u3.pOn);
+      }else{
+        unmapColumnIdlistNames(pParse, pSrc->a[i].u3.pUsing);
+      }
     }
   }
 

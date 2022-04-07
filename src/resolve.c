@@ -123,11 +123,10 @@ static void resolveAlias(
 ** zCol.
 */
 static int nameInUsingClause(IdList *pUsing, const char *zCol){
-  if( pUsing ){
-    int k;
-    for(k=0; k<pUsing->nId; k++){
-      if( sqlite3StrICmp(pUsing->a[k].zName, zCol)==0 ) return 1;
-    }
+  int k;
+  assert( pUsing!=0 );
+  for(k=0; k<pUsing->nId; k++){
+    if( sqlite3StrICmp(pUsing->a[k].zName, zCol)==0 ) return 1;
   }
   return 0;
 }
@@ -346,7 +345,11 @@ static int lookupName(
             */
             if( cnt==1 ){
               if( pItem->fg.jointype & JT_NATURAL ) continue;
-              if( nameInUsingClause(pItem->pUsing, zCol) ) continue;
+              if( pItem->fg.isUsing
+               && nameInUsingClause(pItem->u3.pUsing, zCol)
+              ){
+                continue;
+              }
             }
             cnt++;
             pMatch = pItem;
