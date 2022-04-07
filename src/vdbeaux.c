@@ -1231,7 +1231,7 @@ void sqlite3VdbeReleaseRegisters(
   u32 mask,            /* Mask of registers to NOT release */
   int bUndefine        /* If true, mark registers as undefined */
 ){
-  if( N==0 ) return;
+  if( N==0 || OptimizationDisabled(pParse->db, SQLITE_ReleaseReg) ) return;
   assert( pParse->pVdbe );
   assert( iFirst>=1 );
   assert( iFirst+N-1<=pParse->nMem );

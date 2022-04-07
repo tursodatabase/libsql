@@ -1779,6 +1779,7 @@ struct sqlite3 {
 #define SQLITE_BloomFilter    0x00080000 /* Use a Bloom filter on searches */
 #define SQLITE_BloomPulldown  0x00100000 /* Run Bloom filters early */
 #define SQLITE_BalancedMerge  0x00200000 /* Balance multi-way merges */
+#define SQLITE_ReleaseReg     0x00400000 /* Use OP_ReleaseReg for testing */
 #define SQLITE_AllOpts        0xffffffff /* All optimizations */
 
 /*
