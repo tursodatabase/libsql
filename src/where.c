@@ -3788,15 +3788,26 @@ int sqlite3_vtab_distinct(sqlite3_index_info *pIdxInfo){
     && !defined(SQLITE_OMIT_VIRTUALTABLE)
 /*
 ** Cause the prepared statement that is associated with a call to
-** xBestIndex to open write transactions on all attached schemas.
+** xBestIndex to potentiall use all schemas.  If the statement being
+** prepared is read-only, then just start read transactions on all
+** schemas.  But if this is a write operation, start writes on all
+** schemas.
+**
 ** This is used by the (built-in) sqlite_dbpage virtual table.
 */
-void sqlite3VtabWriteAll(sqlite3_index_info *pIdxInfo){
+void sqlite3VtabUsesAllSchemas(sqlite3_index_info *pIdxInfo){
   HiddenIndexInfo *pHidden = (HiddenIndexInfo*)&pIdxInfo[1];
   Parse *pParse = pHidden->pParse;
   int nDb = pParse->db->nDb;
   int i;
-  for(i=0; i<nDb; i++) sqlite3BeginWriteOperation(pParse, 0, i);
+  for(i=0; i<nDb; i++){
+    sqlite3CodeVerifySchema(pParse, i);
+  }
+  if( pParse->writeMask ){
+    for(i=0; i<nDb; i++){
+      sqlite3BeginWriteOperation(pParse, 0, i);
+    }
+  }
 }
 #endif
 

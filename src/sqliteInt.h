@@ -5174,7 +5174,7 @@ int sqlite3VtabBegin(sqlite3 *, VTable *);
 FuncDef *sqlite3VtabOverloadFunction(sqlite3 *,FuncDef*, int nArg, Expr*);
 #if (defined(SQLITE_ENABLE_DBPAGE_VTAB) || defined(SQLITE_TEST)) \
     && !defined(SQLITE_OMIT_VIRTUALTABLE)
-  void sqlite3VtabWriteAll(sqlite3_index_info*);
+  void sqlite3VtabUsesAllSchemas(sqlite3_index_info*);
 #endif
 sqlite3_int64 sqlite3StmtCurrentTime(sqlite3_context*);
 int sqlite3VdbeParameterIndex(Vdbe*, const char*, int);
