@@ -164,6 +164,11 @@ struct Keyword {
 #else
 #  define RETURNING  0x00400000
 #endif
+#ifdef SQLITE_OMIT_MERGE
+#  define MERGE      0
+#else
+#  define MERGE      0x00800000
+#endif
 
 
 /*
@@ -210,7 +215,7 @@ static Keyword aKeywordTable[] = {
   { "DESC",             "TK_DESC",         ALWAYS,           3      },
   { "DETACH",           "TK_DETACH",       ATTACH,           0      },
   { "DISTINCT",         "TK_DISTINCT",     ALWAYS,           5      },
-  { "DO",               "TK_DO",           UPSERT,           2      },
+  { "DO",               "TK_DO",           UPSERT|MERGE,     2      },
   { "DROP",             "TK_DROP",         ALWAYS,           1      },
   { "END",              "TK_END",          ALWAYS,           1      },
   { "EACH",             "TK_EACH",         TRIGGER,          1      },
@@ -255,11 +260,13 @@ static Keyword aKeywordTable[] = {
   { "LIKE",             "TK_LIKE_KW",      ALWAYS,           5      },
   { "LIMIT",            "TK_LIMIT",        ALWAYS,           3      },
   { "MATCH",            "TK_MATCH",        ALWAYS,           2      },
+  { "MATCHED",          "TK_MATCHED",      MERGE,            10     },
   { "MATERIALIZED",     "TK_MATERIALIZED", CTE,              12     },
+  { "MERGE",            "TK_MERGE",        MERGE,            10     },
   { "NATURAL",          "TK_JOIN_KW",      ALWAYS,           3      },
   { "NO",               "TK_NO",           FKEY|WINDOWFUNC,  2      },
   { "NOT",              "TK_NOT",          ALWAYS,           10     },
-  { "NOTHING",          "TK_NOTHING",      UPSERT,           1      },
+  { "NOTHING",          "TK_NOTHING",      UPSERT|MERGE,     1      },
   { "NOTNULL",          "TK_NOTNULL",      ALWAYS,           3      },
   { "NULL",             "TK_NULL",         ALWAYS,           10     },
   { "NULLS",            "TK_NULLS",        ALWAYS,           3      },
@@ -295,6 +302,8 @@ static Keyword aKeywordTable[] = {
   { "SAVEPOINT",        "TK_SAVEPOINT",    ALWAYS,           1      },
   { "SELECT",           "TK_SELECT",       ALWAYS,           10     },
   { "SET",              "TK_SET",          ALWAYS,           10     },
+  { "SOURCE",           "TK_SOURCE",       MERGE,            10     },
+  { "TARGET",           "TK_TARGET",       MERGE,            10     },
   { "TABLE",            "TK_TABLE",        ALWAYS,           1      },
   { "TEMP",             "TK_TEMP",         ALWAYS,           1      },
   { "TEMPORARY",        "TK_TEMP",         ALWAYS,           1      },

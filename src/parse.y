@@ -263,6 +263,9 @@ columnname(A) ::= nm(A) typetoken(Y). {sqlite3AddColumn(pParse,A,Y);}
 %endif
   MATERIALIZED
   REINDEX RENAME CTIME_KW IF
+%ifndef SQLITE_OMIT_MERGE
+  MERGE MATCHED SOURCE TARGET
+%endif
   .
 %wildcard ANY.
 
@@ -1010,6 +1013,30 @@ idlist(A) ::= idlist(A) COMMA nm(Y).
     {A = sqlite3IdListAppend(pParse,A,&Y);}
 idlist(A) ::= nm(Y).
     {A = sqlite3IdListAppend(pParse,0,&Y); /*A-overwrites-Y*/}
+
+
+////////////////////////// The MERGE command //////////////////////////////////
+//
+%ifndef SQLITE_OMIT_MERGE
+cmd ::= mergecmd.
+mergecmd ::= with MERGE INTO nm dbnm as USING nm dbnm as ON expr whenclause.
+mergecmd ::= with MERGE INTO nm dbnm as USING LP select RP as ON expr whenclause.
+whenclause ::= when.
+whenclause ::= whenclause when.
+when ::= WHEN MATCHED whencond THEN whenaction1.
+when ::= WHEN NOT MATCHED whencond THEN whenaction2.
+when ::= WHEN NOT MATCHED BY TARGET whencond THEN whenaction2.
+when ::= WHEN NOT MATCHED BY SOURCE whencond THEN whenaction1.
+whencond ::= .
+whencond ::= AND expr.
+whenaction1 ::= UPDATE SET setlist.
+whenaction1 ::= DELETE.
+whenaction1 ::= DO NOTHING.
+whenaction2 ::= INSERT DEFAULT VALUES.
+whenaction2 ::= INSERT idlist_opt values.
+whenaction2 ::= DO NOTHING.
+%endif  /* SQLITE_OMIT_MERGE */
+
 
 /////////////////////////// Expression Processing /////////////////////////////
 //
@@ -1851,6 +1878,7 @@ over_clause(A) ::= OVER nm(Z). {
 
 filter_clause(A) ::= FILTER LP WHERE expr(X) RP.  { A = X; }
 %endif /* SQLITE_OMIT_WINDOWFUNC */
+
 
 /*
 ** The code generator needs some extra TK_ token values for tokens that
