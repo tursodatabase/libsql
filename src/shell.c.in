@@ -456,13 +456,6 @@ static volatile int seenInterrupt = 0;
 ** in a number of other places, mostly for error messages.
 */
 static char *Argv0;
-static char startupDir[PATH_MAX+1] = {0};
-#if defined(_WIN32) || defined(WIN32)
-# define initStartupDir() (_getwd(startupDir)!=0)
-#else
-# define initStartupDir() (getcwd(startupDir, sizeof(startupDir))!=0)
-  /* The useless expression silences a "unused result" warning. */
-#endif
 
 /*
 ** Prompt strings. Initialized in main. Settable with
@@ -1247,6 +1240,32 @@ struct EQPGraph {
 #endif
 
 #if SHELL_DYNAMIC_EXTENSION
+
+/* This is only used to support extensions that need this information.
+ * For example, they might need to locate and load related files. */
+static char startupDir[PATH_MAX+1] = {0};
+# if defined(_WIN32) || defined(WIN32)
+# define initStartupDir() (_getwd(startupDir)!=0)
+#  define IS_PATH_SEP(c) ((c)=='/'||(c)=='\\')
+# else
+# define initStartupDir() (getcwd(startupDir, sizeof(startupDir))!=0)
+  /* Above useless expression avoids an "unused result" warning. */
+#  define IS_PATH_SEP(c) ((c)=='/')
+# endif
+
+# ifndef SHELL_OMIT_EXTBYNAME
+/* Is a program invocation name one used for a shell to start as extensible? */
+static int isExtendedBasename(const char *zPgm){
+  int ixe = (zPgm)? strlen(zPgm)-1 : 0;
+  if( ixe==0 ) return 0;
+  while( ixe>=0 && !IS_PATH_SEP(zPgm[ixe]) ) --ixe;
+  /* ixe is just before the basename with extension(s) */
+  return sqlite3_strnicmp(&zPgm[ixe+1], "sqlite3x", 8)==0;
+}
+# else
+#  define isExtendedBasename(pathname) 0
+# endif
+
 /* Tracking and use info for loaded shell extensions
  * An instance is kept for each shell extension that is currently loaded.
  * They are kept in a simple list (aka dynamic array), index into which
@@ -1268,6 +1287,7 @@ typedef struct ShExtInfo {
   ExportHandler **ppExportHandlers;
   int numImportHandlers;
   ImportHandler **ppImportHandlers;
+  MetaCommand *pUnknown;  /* .unknown registered for this extension */
 } ShExtInfo;
 #endif
 
@@ -1408,6 +1428,7 @@ typedef struct ShellInState {
     ShellEventNotify eventHandler;
   } *pSubscriptions;     /* The current shell event subscriptions */
   u8 bDbDispatch;        /* Cache fact of dbShell dispatch table */
+  MetaCommand *pUnknown; /* Last registered "unknown" dot command */
 #endif
 
   ShellExState *pSXS;    /* Pointer to companion, exposed shell state */
@@ -2430,7 +2451,9 @@ static int progress_handler(void *pClientData) {
 
 #define SHELL_DISP_SCHEMA "main"
 #define SHELL_DISP_TAB "ShellCommands"
+#define SHELL_AHELP_TAB "ShellAdHocHelp"
 #define SHELL_DISP_VIEW "ShellActiveCmds"
+#define SHELL_HELP_VIEW "ShellHelpedCmds"
 
 /*
 ** Ensure dbShell exists and return SQLITE_OK,
@@ -2470,15 +2493,34 @@ static int ensure_dispatch_table(ShellExState *psx){
 #ifdef SHELL_DB_FILE
     sqlite3_exec(psx->dbShell, "DROP TABLE IF EXISTS "SHELL_DISP_TAB, 0,0,0);
     sqlite3_exec(psx->dbShell, "DROP VIEW IF EXISTS "SHELL_DISP_VIEW, 0,0,0);
+    sqlite3_exec(psx->dbShell, "DROP TABLE IF EXISTS "SHELL_AHELP_TAB, 0,0,0);
+    sqlite3_exec(psx->dbShell, "DROP VIEW IF EXISTS "SHELL_HELP_VIEW, 0,0,0);
 #endif
+    rc1 = sqlite3_exec(psx->dbShell, "CREATE TABLE "SHELL_AHELP_TAB"("
+                       "name TEXT, extIx INT, helpText TEXT,"
+                       "PRIMARY KEY(name,extIx)) WITHOUT ROWID", 0, 0, &zErr);
     rc1 = sqlite3_exec(psx->dbShell, "CREATE TABLE "SHELL_DISP_TAB"("
                        "name TEXT, extIx INT, cmdIx INT,"
                        "PRIMARY KEY(extIx,cmdIx)) WITHOUT ROWID", 0, 0, &zErr);
     rc2 = sqlite3_exec(psx->dbShell,
-                       "CREATE VIEW "SHELL_DISP_VIEW
-                       " AS SELECT s.name AS name,"
+                       /* name, extIx, cmdIx */
+                       "CREATE VIEW "SHELL_DISP_VIEW" AS"
+                       " SELECT s.name AS name,"
                        " max(s.extIx) AS extIx, s.cmdIx AS cmdIx"
-                       " FROM "SHELL_DISP_TAB" s GROUP BY name",
+                       " FROM "SHELL_DISP_TAB" s GROUP BY name"
+                       " ORDER BY name",
+                       0, 0, &zErr);
+    rc2 = sqlite3_exec(psx->dbShell,
+                       /* name, extIx, cmdIx, help */
+                       "CREATE VIEW "SHELL_HELP_VIEW" AS"
+                       " SELECT s.name AS name, max(s.extIx) AS extIx,"
+                       " s.cmdIx AS cmdIx, NULL as help"
+                       " FROM "SHELL_DISP_TAB" s GROUP BY name"
+                       " UNION"
+                       " SELECT s.name AS name, max(s.extIx) AS extIx,"
+                       " -1 AS cmdIx, s.helpText AS help"
+                       " FROM "SHELL_AHELP_TAB" s GROUP BY name"
+                       " ORDER BY name",
                        0, 0, &zErr);
     if( rc1!=SQLITE_OK || rc2!=SQLITE_OK || zErr!=0 ){
       utf8_printf(STD_ERR, "Shell DB init failure, %s\n", zErr? zErr : "?");
@@ -7937,6 +7979,10 @@ static int register_meta_command(ShellExState *p,
       psei->ppMetaCommands[nc++] = pMC;
       psei->numMetaCommands = nc;
       notify_subscribers(psi, NK_NewDotCommand, pMC);
+      if( strcmp("unknown", zName)==0 ){
+        psi->pUnknown = pMC;
+        psei->pUnknown = pMC;
+      }
       return SQLITE_OK;
     }else{
       psei->ppMetaCommands[nc] = 0;
@@ -7957,6 +8003,7 @@ static int register_importer(ShellExState *p,
   return SQLITE_ERROR;
 }
 
+/* See registerScripting API in shext_linkage.h */
 static int register_scripting(ShellExState *p, ExtensionId eid,
                               ScriptSupport *pSS){
   ShellInState *psi = ISS(p);
@@ -7971,6 +8018,41 @@ static int register_scripting(ShellExState *p, ExtensionId eid,
   psi->script = pSS;
   psi->scriptXid = eid;
   return SQLITE_OK;
+}
+
+/* See registerAdHocCommand API in shext_linkage.h re detailed behavior.
+ * Depending on zHelp==0, either register or unregister ad-hoc treatment
+ * of zName for this extension (identified by eid.)
+ */
+static int register_adhoc_command(ShellExState *p, ExtensionId eid,
+                                  const char *zName, const char *zHelp){
+  ShellInState *psi = ISS(p);
+  u8 bRegNotRemove = zHelp!=0;
+  const char *zSql = bRegNotRemove
+    ? "INSERT OR REPLACE INTO "SHELL_AHELP_TAB
+    "(name, extIx, helpText) VALUES(?, ?, ?||?)"
+    : "DELETE FROM "SHELL_AHELP_TAB" WHERE name=? AND extIx=?";
+  sqlite3_stmt *pStmt;
+  int rc, ie;
+
+  assert(psi->pShxLoaded!=0 && p->dbShell!=0);
+  for( ie=psi->numExtLoaded-1; ie>0; --ie ){
+    if( psi->pShxLoaded[ie].extId==eid ) break;
+  }
+  if( !zName || ie==0 || psi->pShxLoaded[ie].pUnknown==0 ) return SQLITE_MISUSE;
+  rc = sqlite3_prepare_v2(p->dbShell, zSql, -1, &pStmt, 0);
+  if( rc!=SQLITE_OK ) return rc;
+  sqlite3_bind_text(pStmt, 1, zName, -1, 0);
+  sqlite3_bind_int(pStmt, 2, ie);
+  if( bRegNotRemove ){
+    int nc = strlen30(zHelp);
+    const char *zLE = (nc>0 && zHelp[nc-1]!='\n')? "\n" : "";
+    sqlite3_bind_text(pStmt, 3, zHelp, -1, 0);
+    sqlite3_bind_text(pStmt, 4, zLE, -1, 0);
+  }
+  rc = sqlite3_step(pStmt);
+  sqlite3_finalize(pStmt);
+  return (rc==SQLITE_DONE)? SQLITE_OK : SQLITE_ERROR;
 }
 
 /*
@@ -8091,12 +8173,13 @@ static ExtensionHelpers extHelpers = {
 };
 
 static ShellExtensionAPI shellExtAPI = {
-  &extHelpers, 5, {
+  &extHelpers, 6, {
     register_meta_command,
     register_exporter,
     register_importer,
     register_scripting,
     subscribe_events,
+    register_adhoc_command,
     0
   }
 };
@@ -8257,6 +8340,7 @@ static void free_all_shext_tracking(ShellInState *psi){
 }
 
 static MetaCommand *command_by_index(ShellInState *psi, int extIx, int cmdIx){
+  assert(extIx>=0);
   if( extIx>=0 && extIx<psi->numExtLoaded ){
     ShExtInfo *psei = & psi->pShxLoaded[extIx];
     if( cmdIx>=0 && cmdIx<psei->numMetaCommands ){
@@ -12919,13 +13003,14 @@ DISPATCHABLE_COMMAND( trace ? 0 0 ){
  * The .unknown command (undocumented)
  */
 COLLECT_HELP_TEXT[
-  ",unknown ?ARGS?          Handle attempt to invoke an unknown dot command",
+  ",unknown ?ARGS?          Handle attempt to use an unknown dot command",
+  "   The invocation dispatcher calls this after replacing azArg[0] with the",
+  "   mystery command name, leaving remaining arguments as originally passed.",
+  "   An extension may override this to provide new dot commands dynamically.",
+  "   This name and operation were inspired by a similar feature of TCL.",
 ];
 DISPATCHABLE_COMMAND( unknown ? 1 0 ){
-  /* Dispatcher will call this after replacing azArg[0] with the mystery
-   * command name, leaving remaining arguments as passed to dispatcher.
-   * An extension may override this to provide new commands dynamically.
-   * This name and operation were inspired by a similar TCL feature. */
+  /* Dispatcher will call this for dot commands it cannot find. */
   return DCR_Unknown|0;
 }
 
@@ -13029,7 +13114,7 @@ COLLECT_HELP_TEXT[
   ".vars ?OPTIONS? ...      Manipulate and display shell variables",
   "   clear ?NAMES?           Erase all or only given named variables",
 #ifndef SQLITE_NOHAVE_SYSTEM
-  "   edit ?-e? NAME        Use edit() to create or alter variable NAME",
+  "   edit ?-e? NAME          Use edit() to create or alter variable NAME",
   "      With a -e option, the edited value is evaluated as a SQL expression.",
 #endif
   "   list ?PATTERNS?         List shell variables table values",
@@ -13505,7 +13590,7 @@ COLLECT_HELP_TEXT[
 
 static void MetaCommand_dtor(MetaCommand *);
 static const char * MetaCommand_name(MetaCommand *);
-static const char * MetaCommand_help(MetaCommand *, int);
+static const char * MetaCommand_help(MetaCommand *, const char *);
 static DotCmdRC
   MetaCommand_argsCheck(MetaCommand *, char **, int nArgs, char *azArgs[]);
 static DotCmdRC
@@ -13554,8 +13639,10 @@ static const char * MetaCommand_name(MetaCommand *pMe){
   return ((struct CommandInfo *)pMe)->cmdName;
 }
 
-static const char * MetaCommand_help(MetaCommand *pMe, int more){
-  if( more>=0 && more<2 ) return ((struct CommandInfo *)pMe)->azHelp[more];
+static const char * MetaCommand_help(MetaCommand *pMe, const char * zWhat){
+  struct CommandInfo *pci = (struct CommandInfo *)pMe;
+  if( zWhat==0 ) return pci->azHelp[0];
+  if( *zWhat==0 ) return pci->azHelp[1];
   else return 0;
 }
 
@@ -13586,9 +13673,12 @@ static DotCmdRC
 }
 
 /*****************
-** MetaCommand iteration by name match, used by the .help meta-command
-** MetaCommands with matching names are produced in lexical order. Any
-** returned MetaMatchIter must eventually be passed to freeMetaMatchIter().
+** MetaCommand iteration by name match, used by the .help meta-command.
+** MetaCommands, or their ad-hoc stand-ins, having matching names are produced
+** in lexical order, with the iterator indicating which has been produced.
+** If .zAdhocHelpName == 0, it is a regular MetaCommand. Otherwise, the
+** ".unknown" MetaCommand is returned, whose help() method is to be used.
+** Any returned MetaMatchIter must eventually be passed to freeMetaMatchIter().
 */
 typedef struct MetaMatchIter {
   ShellExState *psx;
@@ -13600,30 +13690,75 @@ typedef struct MetaMatchIter {
     sqlite3_stmt *stmt;
 #endif
   };
+#if SHELL_DYNAMIC_EXTENSION
+  char *zAdhocHelpText; /* registered extension ad-hoc help */
+#endif
 } MetaMatchIter;
 
-/* Prepare an iterator that will produce a sequence of MetaCommand
- * pointers whose referents names match the given cmdFragment. */
-static MetaMatchIter findMatchingMetaCmds(const char *cmdFragment,
-                                          ShellExState *psx){
-  MetaMatchIter rv = { psx, 0, 0 };
+/* Release resources held by the iterator and clear it. */
+static void freeMetaMatchIter(MetaMatchIter *pMMI){
+  if( pMMI->zPattern!=0 ){
+    sqlite3_free((void *)pMMI->zPattern);
+    pMMI->zPattern = 0;
+    pMMI->pMC = 0;
+  }
 #if SHELL_DYNAMIC_EXTENSION
-  if( psx->dbShell!=0 && ISS(psx)->bDbDispatch ){
+  else{
+    sqlite3_finalize(pMMI->stmt);
+    pMMI->stmt = 0;
+  }
+  sqlite3_free(pMMI->zAdhocHelpText);
+  pMMI->zAdhocHelpText = 0;
+#endif
+}
+
+/* Prepare an iterator that will produce a sequence of MetaCommand
+ * pointers whose referents' names match the given cmdFragment. 
+ * Return how many will match (if iterated upon return.) */
+static int findMatchingMetaCmds(const char *cmdFragment,
+                                MetaMatchIter *pMMI,
+                                ShellExState *psx){
+  MetaMatchIter mmi = { psx, 0, 0 };
+  int rv = 0;
+#if SHELL_DYNAMIC_EXTENSION
+  if( ISS(psx)->bDbDispatch ){
+    sqlite3_stmt *stmtCount = 0;
     /* Prepare rv.stmt to yield results glob-matching cmdFragment. */
-    const char *zSql =
-      "SELECT name, extIx, cmdIx FROM "SHELL_DISP_VIEW" "
+    static const char * const zSqlIter =
+      "SELECT name, extIx, cmdIx, help FROM "SHELL_HELP_VIEW" "
       "WHERE name glob (?||'*') ORDER BY name";
-    sqlite3_prepare_v2(psx->dbShell, zSql, -1, &rv.stmt, 0);
-    sqlite3_bind_text(rv.stmt, 1, cmdFragment? cmdFragment : "", -1, 0);
+    static const char * const zSqlCount =
+      "SELECT count(*) FROM "SHELL_HELP_VIEW" "
+      "WHERE name glob (?||'*')";
+    if( pMMI ){
+      sqlite3_prepare_v2(psx->dbShell, zSqlIter, -1, &mmi.stmt, 0);
+      sqlite3_bind_text(mmi.stmt, 1, cmdFragment? cmdFragment : "", -1, 0);
+    }
+    sqlite3_prepare_v2(psx->dbShell, zSqlCount, -1, &stmtCount, 0);
+    sqlite3_bind_text(stmtCount, 1, cmdFragment? cmdFragment : "", -1, 0);
+    if( SQLITE_ROW==sqlite3_step(stmtCount) ){
+      rv = sqlite3_column_int(stmtCount, 0);
+    }else assert(0);
+    sqlite3_finalize(stmtCount);
   }else
 #endif
   {
-    rv.zPattern = smprintf("%s*", cmdFragment? cmdFragment : "");
-    shell_check_oom((void *)rv.zPattern);
-    rv.pMC = (MetaCommand *)command_table;
+    int i = 0;
+    mmi.zPattern = smprintf("%s*", cmdFragment? cmdFragment : "");
+    shell_check_oom((void *)mmi.zPattern);
+
+    struct CommandInfo *pCI = command_table;
+    mmi.pMC = (MetaCommand *)command_table;
+    while( pCI<command_table+numCommands ){
+      if( sqlite3_strglob(mmi.zPattern, pCI->cmdName)==0 ) ++rv;
+      ++pCI;
+    }
   }
+  if( pMMI ) *pMMI = mmi;
+  else freeMetaMatchIter(&mmi);
   return rv;
 }
+
 /* Produce the next MetaCommand pointer from the iterator, or 0 if no next. */
 static MetaCommand * nextMatchingMetaCmd(MetaMatchIter *pMMI){
   MetaCommand *rv = 0;
@@ -13631,9 +13766,22 @@ static MetaCommand * nextMatchingMetaCmd(MetaMatchIter *pMMI){
   if( pMMI->zPattern==0 ){
     int rc = sqlite3_step(pMMI->stmt);
     if( rc==SQLITE_ROW ){
+      /* name, extIx, cmdIx, help */
       int extIx = sqlite3_column_int(pMMI->stmt, 1);
       int cmdIx = sqlite3_column_int(pMMI->stmt, 2);
-      return command_by_index(ISS(pMMI->psx), extIx, cmdIx);
+      ShellInState *psi = ISS(pMMI->psx);
+      sqlite3_free(pMMI->zAdhocHelpText);
+      if( cmdIx>=0 ){
+        pMMI->zAdhocHelpText = 0;
+        return command_by_index(psi, extIx, cmdIx);
+      }else{
+        const unsigned char *zHT = sqlite3_column_text(pMMI->stmt, 3);
+        assert(psi->pUnknown!=0);
+        assert(extIx<psi->numExtLoaded && extIx>0);
+        if( zHT==0 ) zHT = sqlite3_column_text(pMMI->stmt, 0);
+        pMMI->zAdhocHelpText = sqlite3_mprintf(".%s", zHT);
+        return psi->pShxLoaded[extIx].pUnknown;
+      }
     }else{
       sqlite3_finalize(pMMI->stmt);
       pMMI->stmt = 0;
@@ -13650,20 +13798,6 @@ static MetaCommand * nextMatchingMetaCmd(MetaMatchIter *pMMI){
     }
   }
   return rv;
-}
-/* Release resources held by the iterator and clear it. */
-static void freeMetaMatchIter(MetaMatchIter *pMMI){
-  if( pMMI->zPattern!=0 ){
-    sqlite3_free((void *)pMMI->zPattern);
-    pMMI->zPattern = 0;
-    pMMI->pMC = 0;
-  }
-#if SHELL_DYNAMIC_EXTENSION
-  else{
-    sqlite3_finalize(pMMI->stmt);
-    pMMI->stmt = 0;
-  }
-#endif
 }
 
 /*****************
@@ -13700,7 +13834,7 @@ MetaCommand *findMetaCommand(const char *cmdName, ShellExState *psx,
     if( rc!= SQLITE_ROW ) return 0;
     if( pnFound ) *pnFound = nf;
     if( nf!=1 ) return 0; /* Future: indicate collisions if > 1 */
-    return command_by_index(ISS(psx), extIx, cmdIx);
+    return (cmdIx<0)? 0 : command_by_index(ISS(psx), extIx, cmdIx);
   }else
 #endif
   {
@@ -13738,26 +13872,111 @@ MetaCommand *findMetaCommand(const char *cmdName, ShellExState *psx,
 }
 
 /*
+** Given a MetaCommand, desired help level,
+** ( possibly retreived ad-hoc help text for extensible shell, )
+** and an optional all-text search pattern, then
+**   when level==0 and primary help available, output it
+**   when level==1 and primary or secondary help available, output it
+**   when level==2 and any help text matches pattern, output it
+**   when level>2 or no pattern: output all help text
+** If cLead==0, anything meeting above criteria is output. Otherwise, output
+** is restricted to those commands whose primary help begins with cLead.
+** Return 1 if anything output, else 0.
+*/
+static int putSelectedCmdHelp(MetaCommand *pmc, int iLevel, char cLead,
+#if SHELL_DYNAMIC_EXTENSION
+                              const char *zHelpText,
+#endif
+                              FILE *out, const char *zSearch){
+  int rc = 0;
+  assert(pmc!=0);
+#if SHELL_DYNAMIC_EXTENSION
+  if( zHelpText ){
+    if( cLead && *zHelpText!= cLead ) return 0;
+    const char *zLE = zHelpText;
+    if( iLevel<2 ){
+      while( *zLE && *zLE++!='\n' ) {}
+    }
+    switch( iLevel ){
+    case 0:
+      utf8_printf(out,"%.*s", (int)(zLE-zHelpText), zHelpText);
+      rc = 1;
+      break;
+    case 1:
+      utf8_printf(out,"%s", zHelpText);
+      rc = 1;
+      break;
+    case 2:
+      if( zSearch ){
+        if( !sqlite3_strlike(zSearch, zHelpText, 0) ) break;
+      }
+      /* else fall thru */
+    default:
+      utf8_printf(out,"%s", zHelpText);
+      rc = 1;
+    }
+  }else
+#endif
+  {
+    const char *zHTp = pmc->pMethods->help(pmc, 0);
+    const char *zHTs = pmc->pMethods->help(pmc, "");
+    if( !zHTp && !zHTs ) return 0;
+    if( cLead && zHTp && *zHTp!= cLead ) return 0;
+    switch( iLevel ){
+    case 0:
+      if( zHTp ){
+        utf8_printf(out, HELP_TEXT_FMTP, zHTp+1);
+        rc = 1;
+      }
+      break;
+    case 1:
+      if( zHTs ){
+        utf8_printf(out, HELP_TEXT_FMTS, zHTs);
+        rc = 1;
+      }
+      break;
+    case 2:
+      if( zSearch ){
+        int m = 0;
+        if( zHTp && !sqlite3_strlike(zSearch, zHTp, 0) ) ++m;
+        if( zHTs && !sqlite3_strlike(zSearch, zHTs, 0) ) ++m;
+        if( m==0 ) break;
+      }
+      /* else fall thru */
+    default:
+      if( zHTp ) utf8_printf(out, HELP_TEXT_FMTP, zHTp+1);
+      if( zHTs ) utf8_printf(out, HELP_TEXT_FMTS, zHTs);
+      rc = 1;
+    }
+  }
+  return rc;
+}
+
+/*
 ** Output primary (single-line) help for a known command.
 */
 static void showPrimaryHelp(FILE *out, const char *zCmd, ShellExState *psx){
-  MetaMatchIter mmi = findMatchingMetaCmds(zCmd, psx);
+  MetaMatchIter mmi = {0};
+  int nm = findMatchingMetaCmds(zCmd, &mmi, psx);
   MetaCommand *pmc = nextMatchingMetaCmd(&mmi);
   if( pmc!=0 ){
-    const char *zH = pmc->pMethods->help(pmc, 0);
-    if( zH!=0 && *zH ) utf8_printf(out, HELP_TEXT_FMTP, zH+1);
+    putSelectedCmdHelp(pmc, 0, 0,
+#if SHELL_DYNAMIC_EXTENSION
+                       mmi.zAdhocHelpText,
+#endif
+                       out, 0);
   }
   freeMetaMatchIter(&mmi);
 }
 
 /*
-** Output various subsets of help text. These 5 are defined:
-** 1. For all commands, primary help text only.
-** 2. For all commands, complete help text.
-** 3. For multiple commands matching a pattern, primary help text only.
-** 4. For a single matched command, complete help text.
-** 5. For commands whose help contains a pattern, complete help text.
-** 6. For the set of "undocumented" (without normal help) commands.
+** Output various subsets of help text. These 6 are defined:
+** 1. HO_AllP  For all commands, primary help text only.
+** 2. HO_AllX  For all commands, complete help text.
+** 3. HO_LikeP For multiple commands matching pattern, primary help text only.
+** 4. HO_OneX  For a single matched command, complete help text.
+** 5. HO_LikeT For commands whose help contains a pattern, complete help text.
+** 6. HO_Undoc For all internal "undocumented" (without normal help) commands.
 ** These variations are indicated thusly:
 ** 1. zPattern is NULL
 ** 2. zPattern is ""
@@ -13773,59 +13992,72 @@ static int showHelp(FILE *out, const char *zPattern, ShellExState *psx){
   u8 bShowUndoc = zPattern==zHelpAll;
   u8 bEmptyPattern = !bNullPattern && (*zPattern==0 || bShowUndoc);
   int npm = 0; /* track how many matches found */
-  MetaMatchIter mmi = findMatchingMetaCmds(bShowUndoc? "" : zPattern, psx);
-  MetaCommand *pmc, *pmcLastShown = 0;
+  MetaMatchIter mmi = {0};
+  MetaCommand *pmc;
   char *zPat = 0;
   char cLead = (bShowUndoc)? ',' : '.';
+  int iLevel = 0;
+  enum {
+    HO_Tbd, HO_AllP, HO_AllX, HO_LikeP, HO_OneX, HO_LikeT, HO_Undoc
+  } hoKind = bShowUndoc? HO_Undoc : HO_Tbd;
 
-  if( bShowUndoc ){
+  if( hoKind==HO_Undoc ){
+    int ixct = 0;
     utf8_printf(out, "%s\n%s\n",
                 "The following commands are used for internal SQLite testing.",
                 "They are undocumented and subject to change without notice.");
-  }
-  while( 0 != (pmc = nextMatchingMetaCmd(&mmi)) ){
-    const char *zH = pmc->pMethods->help(pmc, 0);
-    if( zH!=0 && *zH==cLead){
-      ++npm;
-      pmcLastShown = pmc;
-      utf8_printf(out, HELP_TEXT_FMTP, zH+1);
-      if( bEmptyPattern ){
-        zH = pmc->pMethods->help(pmc, 1);
-        if( zH!=0 ){
-          utf8_printf(out, HELP_TEXT_FMTS, zH);
-        }
+    /* Bypass command lookup/resolution. This is just for internal commands. */
+    while( ixct<numCommands ){
+      struct CommandInfo *pci = &command_table[ixct];
+      const char *zH = pci->azHelp[0];
+      if( zH && *zH==cLead ){
+        utf8_printf(out, HELP_TEXT_FMTP, zH+1);
+        zH = pci->azHelp[1];
+        if( zH ) utf8_printf(out, HELP_TEXT_FMTS, zH);
+        ++npm;
       }
+      ++ixct;
     }
-  }
-  freeMetaMatchIter(&mmi);
-  if( npm==1 && !bEmptyPattern ){
-    /* When zPattern is a prefix of exactly one command, then emit
-     * the secondary help of that command, even if not requested,
-     * unless it was already emitted. */
-    const char *zH = pmcLastShown->pMethods->help(pmcLastShown, 1);
-    if( zH!=0 ) utf8_printf(out, HELP_TEXT_FMTS, zH);
     return npm;
   }
-  /* If found anything with provided (or NULL or empty) pattern, it's done. */
-  if( npm>0 ) return npm;
-  /* Otherwise, look for the pattern in all of the help text and show the
-   * complete help for those meta-commands whose help matches. */
-  mmi = findMatchingMetaCmds("", psx);
-  zPat = smprintf("%%%s%%", zPattern);
-  shell_check_oom(zPat);
-  while( 0 != (pmc = nextMatchingMetaCmd(&mmi)) ){
-    const char *zHp = pmc->pMethods->help(pmc, 0);
-    const char *zHs = pmc->pMethods->help(pmc, 1);
-    if( zHp==0 || *zHp!='.' ) continue;
-    if( sqlite3_strlike(zPat, zHp, 0)==0
-        || (zHs!=0 && sqlite3_strlike(zPat, zHs, 0)==0) ){
-      utf8_printf(out, HELP_TEXT_FMTP, zHp+1);
-      if( zHs ) utf8_printf(out, HELP_TEXT_FMTS, zHs);
-      ++npm;
-    }
+  npm = findMatchingMetaCmds(zPattern, &mmi, psx);
+  if( bNullPattern ) hoKind = HO_AllP;
+  else if( bEmptyPattern ) hoKind = HO_AllX;
+  else if( npm>1 ) hoKind = HO_LikeP;
+  else if( npm==1 ) hoKind = HO_OneX;
+  else{
+    hoKind = HO_LikeT;
+    zPat = smprintf("%%%s%%", zPattern);
+    shell_check_oom(zPat);
   }
-  sqlite3_free(zPat);
+  zPattern = 0;
+  switch( hoKind ){
+  case HO_AllP: case HO_LikeP:
+    iLevel = 0;
+    break;
+  case HO_AllX:
+    iLevel = 1;
+    break;
+  case HO_OneX:
+    iLevel = 1;
+    cLead = 0;
+    break;
+  case HO_LikeT:
+    zPattern = zPat;
+    iLevel = 1;
+    break;
+  default: return 0;
+  }
+  npm = 0;
+  while( 0 != (pmc = nextMatchingMetaCmd(&mmi)) ){
+    npm += putSelectedCmdHelp(pmc, iLevel, cLead,
+#if SHELL_DYNAMIC_EXTENSION
+                              mmi.zAdhocHelpText,
+#endif
+                              out, zPattern);
+  }
   freeMetaMatchIter(&mmi);
+  sqlite3_free(zPat);
   return npm;
 }
 
@@ -14054,9 +14286,11 @@ static DotCmdRC do_meta_command(char *zLine, ShellExState *psx){
     MetaCommand *pmc = findMetaCommand(azArg[0], psx, &nFound);
     if( pmc==0 || nFound>1 ){
       if( nFound==0 ){
-        pmc = findMetaCommand("unknown", psx, &nFound);
-        if( pmc && nFound<2 ) dcr = runMetaCommand(pmc, azArg, nArg, psx);
-        else dcr = DCR_Unknown;
+        dcr = DCR_Unknown;
+#if SHELL_DYNAMIC_EXTENSION
+        pmc = ISS(psx)->pUnknown;
+        if( pmc ) dcr = runMetaCommand(pmc, azArg, nArg, psx);
+#endif
       }else{
         dcr = DCR_Ambiguous;
       }
@@ -15134,7 +15368,10 @@ int SQLITE_CDECL SHELL_MAIN(int argc, wchar_t **wargv){
 
   assert( argc>=1 && argv && argv[0] );
   Argv0 = argv[0];
+#if SHELL_DYNAMIC_EXTENSION
   initStartupDir();
+  if( isExtendedBasename(Argv0) ) data.bExtendedDotCmds = SHELL_ALL_EXTENSIONS;
+#endif
 
 #ifdef SQLITE_SHELL_DBNAME_PROC
   {

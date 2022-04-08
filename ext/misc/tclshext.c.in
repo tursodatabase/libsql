@@ -78,10 +78,12 @@ static const char * const zTclHelp =
 ** procedures (aka "TCL commands") for oft-repeated tasks.
 **
 ** The added TCL commands are:
-**   udb shdb ; # which expose the user DB and shell DB for access via TCL
-**   now_interactive ; # which indicates whether input is interactive
-**   get_tcl_group ; # which gets a single TCL input line group
-**   .. ; # which does nothing, silently and without error
+**   udb shdb ; # exposes the user DB and shell DB for access via TCL
+**   now_interactive ; # indicates whether current input is interactive
+**   get_tcl_group ; # gets one TCL input line group from current input
+**   register_adhoc_command ; # aids creation of dot commands with help
+**   .. ; # does nothing, silently and without error
+**
 ** The .. command exists so that a lone ".." on an input line suffices
 ** to ensure the TCL REPL is running. This is symmetric with a lone "."
 ** input to the TCL REPL because it either terminates the loop or, if
@@ -107,11 +109,20 @@ SQLITE_EXTENSION_INIT1;
  * from db passed to extension init() and define a pair of static API refs.
  */
 SHELL_EXTENSION_INIT1(pShExtApi, pExtHelpers, shextLinkFetcher);
+#define SHX_API(entry) pShExtApi->entry
+#define SHX_HELPER(entry) pExtHelpers->entry
 
 /* This is not found in the API pointer table published for extensions: */
-#define sqlite3_enable_load_extension pExtHelpers->enable_load_extension
+#define sqlite3_enable_load_extension SHX_HELPER(enable_load_extension)
+
+/* Forward reference for use as ExtensionId */
+#ifdef _WIN32
+__declspec(dllexport)
+#endif
+int sqlite3_tclshext_init(sqlite3*, char**, const sqlite3_api_routines*);
 
 /* Control how tclsqlite.c compiles. (REPL is effected here, not there.) */
+#define STATIC_BUILD /* Not publishing TCL API */
 #undef SQLITE_AMALGAMATION
 #undef TCLSH
 #include <tclOO.h>
@@ -154,8 +165,8 @@ static void Tcl_TakeDown(void *pv){
 
 static int Tcl_BringUp(int *pWithTk, char **pzErrMsg){
   if( ++interpKeep.nRefs==1 ){
-    const char *zShellName = pExtHelpers->shellInvokedAs();
-    const char *zShellDir = pExtHelpers->shellStartupDir();
+    const char *zShellName = SHX_HELPER(shellInvokedAs)();
+    const char *zShellDir = SHX_HELPER(shellStartupDir)();
     if( zShellDir!=0 ){
       char cwd[FILENAME_MAX+1];
       if( getDir(cwd) && 0==chdir(zShellDir) ){
@@ -206,13 +217,11 @@ DERIVED_METHOD(const char *, name, ScriptSupport,TclSS, 0,()){
 }
 
 /* Provide help for users of this scripting implementation. */
-DERIVED_METHOD(const char *, help, ScriptSupport,TclSS, 1,( int more )){
+DERIVED_METHOD(const char *, help, ScriptSupport,TclSS, 1,(const char *zHK)){
   (void)(pThis);
-  switch( more ){
-  case 0:
+  if( zHK==0 ){
     return "Provides TCL scripting support for SQLite extensible shell.\n";
-  case 1: return zTclHelp;
-  }
+  }else if( *zHK==0 ) return zTclHelp;
   return 0;
 }
 
@@ -302,10 +311,10 @@ DERIVED_METHOD(void, destruct, MetaCommand,TclCmd, 0, ()){
   /* Nothing to do, instance data is static. */
   (void)(pThis);
 }
-DERIVED_METHOD(void, destruct, MetaCommand,UnkCmd, 0, ()){
-  (void)(pThis);
-}
+static DERIVED_METHOD(void, destruct, MetaCommand,UnkCmd, 0, ());
+
 DERIVED_METHOD(void, destruct, ScriptSupport,TclSS, 0, ()){
+  /* Nothing to do, instance data is static. */
   (void)(pThis);
 }
 
@@ -316,11 +325,13 @@ DERIVED_METHOD(const char *, name, MetaCommand,UnkCmd, 0,()){
   return "unknown";
 }
 
-DERIVED_METHOD(const char *, help, MetaCommand,TclCmd, 1,(int more)){
-  switch( more ){
-  case 0: return
+DERIVED_METHOD(const char *, help, MetaCommand,TclCmd, 1,(const char *zHK)){
+  (void)(pThis);
+  if( zHK==0 )
+    return
     ".tcl ?FILES?             Run a TCL REPL or interpret files as TCL.\n";
-  case 1: return
+  if( *zHK==0 )
+    return
     "   If FILES are provided, they name files to be read in as TCL.\n"
     "   Otherwise, a read/evaluate/print loop is run until a lone \".\" is\n"
     "   entered as complete TCL input or input end-of-stream is encountered.\n"
@@ -332,23 +343,10 @@ DERIVED_METHOD(const char *, help, MetaCommand,TclCmd, 1,(int more)){
     "   are collected using TCL parsing rules and expanded as for TCL in\n"
     "   the TCL base namespace. In this way, arguments may be \"computed\".\n"
     ;
-  default: return 0;
-  }
+  return 0;
 }
-DERIVED_METHOD(const char *, help, MetaCommand,UnkCmd, 1,(int more)){
-  switch( more ){
-  case 0: return
-  ",unknown ?ARGS?          Retry unknown dot command if it is a TCL command\n";
-  case 1: return
-  "   There is little use for this dot command without the TCL extension,\n"
-  "   as the shell's version merely does some error reporting. However,\n"
-  "   with it overridden, (as it is now), it provides a retry mechanism\n"
-  "   whereby, if the command can be found defined in the TCL environment,\n"
-  "   that command can be run with whatever arguments it was provided.\n"
-  ;
-  default: return 0;
-  }
-}
+
+DERIVED_METHOD(const char *, help, MetaCommand,UnkCmd, 1,(const char *zHK));
 
 DERIVED_METHOD(DotCmdRC, argsCheck, MetaCommand,TclCmd, 3,
              (char **pzErrMsg, int nArgs, char *azArgs[])){
@@ -511,7 +509,7 @@ static DotCmdRC runTclREPL(Tcl_Interp *interp, char **pzErrMsg){
 
 DERIVED_METHOD(DotCmdRC, execute, MetaCommand,TclCmd, 4,
              (ShellExState *psx, char **pzErrMsg, int nArgs, char *azArgs[])){
-  FILE *out = pExtHelpers->currentOutputFile(psx);
+  FILE *out = SHX_HELPER(currentOutputFile)(psx);
   TclCmd *ptc = (TclCmd *)pThis;
   if( nArgs>1 ){
     /* Read named files into the interpreter. */
@@ -542,11 +540,11 @@ DERIVED_METHOD(DotCmdRC, execute, MetaCommand,UnkCmd, 4,
 
   sqlite3_snprintf(sizeof(zName), zName, ".%s", azArgs[0]);
   if( !Tcl_FindCommand(interp, zName, 0, TCL_GLOBAL_ONLY|TCL_LEAVE_ERR_MSG) ){
-    if( !pExtHelpers->nowInteractive(psx) ){
+    if( !SHX_HELPER(nowInteractive)(psx) ){
       *pzErrMsg = sqlite3_mprintf("Command %s not found.\n", zName);
       return DCR_Unknown;
     }else{
-      FILE *out = pExtHelpers->currentOutputFile(psx);
+      FILE *out = SHX_HELPER(currentOutputFile)(psx);
       fprintf(stderr, "The %s command does not yet exist.\n", zName);
       fprintf(out, "Run .help to see existent dot commands,"
               " or create %s as a TCL proc.\n", zName);
@@ -588,16 +586,40 @@ INSTANCE_BEGIN(TclCmd);
 INSTANCE_END(TclCmd) tclcmd = {
   &tclcmd_methods
 };
-INSTANCE_BEGIN(UnkCmd);
-  /* no instance data */
-INSTANCE_END(UnkCmd) unkcmd = {
-  &unkcmd_methods
-};
 INSTANCE_BEGIN(TclSS);
   /* no instance data */
 INSTANCE_END(TclSS) tclss = {
   &tclss_methods
 };
+
+INSTANCE_BEGIN(UnkCmd);
+  /* no instance data */
+INSTANCE_END(UnkCmd) unkcmd = {
+  &unkcmd_methods
+};
+
+static DERIVED_METHOD(void, destruct, MetaCommand,UnkCmd, 0, ()){
+  (void)(pThis);
+}
+
+DERIVED_METHOD(const char *, help, MetaCommand,UnkCmd, 1,(const char *zHK)){
+  (void)(pThis);
+  if( !zHK )
+    return
+  ",unknown ?ARGS?          Retry unknown dot command if it is a TCL command\n";
+  if( !*zHK )
+    return
+  "   There is little use for this dot command without the TCL extension, as\n"
+  "   the shell's version merely does some error reporting. However, with it\n"
+  "   overridden, (as it is now), it provides a retry mechanism whereby, if\n"
+  "   the command can be found defined in the TCL environment, that command\n"
+  "   can be run with whatever arguments it was provided.\n"
+  "\n"
+  "   If the TCL command, register_adhoc_command is run, this command's help\n"
+  "   method can be made to provide help text for the registered TCL command.\n"
+  ;
+  return 0;
+}
 
 #if TCL_REPL==2
 #define GETLINE_MAXLEN 1000
@@ -608,8 +630,8 @@ static int getInputLine(void *pvSS, Tcl_Interp *interp,
   if( nArgs==1 ){
     char buffer[GETLINE_MAXLEN+1];
     ShellExState *psx = (ShellExState *)pvSS;
-    struct InSource *pis = pExtHelpers->currentInputSource(psx);
-    if( pExtHelpers->strLineGet(buffer, GETLINE_MAXLEN, pis) ){
+    struct InSource *pis = SHX_HELPER(currentInputSource)(psx);
+    if( SHX_HELPER(strLineGet)(buffer, GETLINE_MAXLEN, pis) ){
       Tcl_SetResult(interp, buffer, TCL_VOLATILE);
     }else{
       Tcl_SetResult(interp, 0, 0);
@@ -642,12 +664,12 @@ static int getTclGroup(void *pvSS, Tcl_Interp *interp,
   if( objc==1 ){
     static Prompts cueTcl = { "tcl% ", "   > " };
     ShellExState *psx = (ShellExState *)pvSS;
-    struct InSource *pis = pExtHelpers->currentInputSource(psx);
+    struct InSource *pis = SHX_HELPER(currentInputSource)(psx);
     int isComplete = 0;
     char *zIn = 0;
     int isContinuation = 0;
     do {
-      zIn = pExtHelpers->oneInputLine(pis, zIn, isContinuation, &cueTcl);
+      zIn = SHX_HELPER(oneInputLine)(pis, zIn, isContinuation, &cueTcl);
       if( isContinuation ){
         if( zIn ){
           Tcl_AppendResult(interp, "\n", zIn, (char*)0);
@@ -659,7 +681,7 @@ static int getTclGroup(void *pvSS, Tcl_Interp *interp,
       }
       isContinuation = 1;
     } while( zIn && !isComplete );
-    if( zIn ) pExtHelpers->freeInputLine(zIn);
+    if( zIn ) SHX_HELPER(freeInputLine)(zIn);
     {
       Tcl_Obj *const objv[] = {
         Tcl_NewStringObj(Tcl_GetStringResult(interp) , -1),
@@ -681,9 +703,9 @@ static int nowInteractive(void *pvSS, Tcl_Interp *interp,
                           int nArgs, const char *azArgs[]){
   if( nArgs==1 ){
     ShellExState *psx = (ShellExState *)pvSS;
-    struct InSource *pis = pExtHelpers->currentInputSource(psx);
+    struct InSource *pis = SHX_HELPER(currentInputSource)(psx);
     static const char * zAns[2] = { "0","1" };
-    int iiix = (pExtHelpers->nowInteractive(psx) != 0);
+    int iiix = (SHX_HELPER(nowInteractive)(psx) != 0);
     Tcl_SetResult(interp, (char *)zAns[iiix], TCL_STATIC);
     return TCL_OK;
   }else{
@@ -755,6 +777,24 @@ static int runTkGUI(void *pvSS, Tcl_Interp *interp,
 
 #define UNKNOWN_RENAME "::_original_unknown"
 
+/* C implementation of TCL ::register_adhoc_command name ?help? */
+static int registerAdHocCommand(/* ShellExState */ void *pv,
+                                Tcl_Interp *interp,
+                                int nArgs, const char *azArgs[]){
+  ShellExState *psx = (ShellExState*)pv;
+  if( nArgs>3 ){
+    Tcl_SetResult(interp, "too many arguments", TCL_STATIC);
+  }else if( nArgs<2 ){
+    Tcl_SetResult(interp, "too few arguments", TCL_STATIC);
+  }else{
+    const char *zHT = (nArgs==3)? azArgs[2] : 0;
+    Tcl_ResetResult(interp);
+    SHX_API(registerAdHocCommand)(psx, sqlite3_tclshext_init, azArgs[1], zHT);
+    return TCL_OK;
+  }
+  return TCL_ERROR;
+}
+
 /* C implementation of TCL ::unknown to (maybe) delegate to dot commands */
 static int unknownDotDelegate(void *pvSS, Tcl_Interp *interp,
                                 int nArgs, const char *azArgs[]){
@@ -764,15 +804,15 @@ static int unknownDotDelegate(void *pvSS, Tcl_Interp *interp,
   int nFound = 0;
   int ia, rc;
 
-  if( name ) pmc = pExtHelpers->findMetaCommand(name, psx, &nFound);
+  if( name ) pmc = SHX_HELPER(findMetaCommand)(name, psx, &nFound);
   if( pmc==(MetaCommand*)&tclcmd && nArgs==2 ){
     /* Will not do a nested REPL, just silently semi-fake it. */
     return TCL_OK;
   }
   if( pmc && nFound==1 ){
     /* Run the dot command and interpret its returns. */
-    DotCmdRC drc = pExtHelpers->runMetaCommand(pmc, (char **)azArgs+1,
-                                               nArgs-1, psx);
+    DotCmdRC drc = SHX_HELPER(runMetaCommand)(pmc, (char **)azArgs+1,
+                                              nArgs-1, psx);
     if( drc==DCR_Ok ) return TCL_OK;
     else if( drc==DCR_Return ){
       return TCL_RETURN;
@@ -803,9 +843,6 @@ static int unknownDotDelegate(void *pvSS, Tcl_Interp *interp,
     }
   }
 }
-
-/* Forward reference for use as ExtensionId */
-int sqlite3_tclshext_init(sqlite3*, char**, const sqlite3_api_routines*);
 
 /* TCL dbu command: Acts like a (TCL) sqlite3 command created object except
  * that it defers to shell's DB and treats the close subcommand as an error.
@@ -938,8 +975,8 @@ static int udbEventHandle(void *pv, NoticeKind nk, void *pvSubject,
       if( ix>=0 ) pudb->ixuSdb = -1;
       break;
     case NK_ExtensionUnload:
-      pShExtApi->subscribeEvents(psx, sqlite3_tclshext_init, 0,
-                                 NK_Unsubscribe, udbEventHandle);
+      SHX_API(subscribeEvents)(psx, sqlite3_tclshext_init, 0,
+                               NK_Unsubscribe, udbEventHandle);
       /* fall thru */
     case NK_DbAboutToClose:
       if( ix>=0 ) udbRemove(pudb, ix);
@@ -978,8 +1015,8 @@ static struct UserDb *udbCreate(Tcl_Interp *interp, ShellExState *psx){
      * ShellExState .dbUser member values which udb purports to wrap,
      * and that shdb ceases wrapping the .dbShell member at shutdown.
      * This subscription eventually leads to a udbCleanup() call. */
-    pShExtApi->subscribeEvents(psx, sqlite3_tclshext_init,
-                               rv, NK_CountOf, udbEventHandle);
+    SHX_API(subscribeEvents)(psx, sqlite3_tclshext_init,
+                             rv, NK_CountOf, udbEventHandle);
   }
   return rv;
 }
@@ -1053,14 +1090,23 @@ int sqlite3_tclshext_init(
   char **pzErrMsg,
   const sqlite3_api_routines *pApi
 ){
+  static const char * const azLoadFailures[] = {
+    "Extension load failed unexpectedly.",
+    "No ShellExtensionLink.\n Use '.load tclshext -shext' to load.",
+    "Outdated shell host extension API.\n Update the shell.",
+    "Outdated shell host helper API.\n Use a newer shell.",
+  };
+  int iLoadStatus;
   SQLITE_EXTENSION_INIT2(pApi);
   SHELL_EXTENSION_INIT2(pShExtLink, shextLinkFetcher, db);
 
   SHELL_EXTENSION_INIT3(pShExtApi, pExtHelpers, pShExtLink);
-  if( SHELL_EXTENSION_LOADFAIL(pShExtLink, 5, 10) ){
-    *pzErrMsg
-      = sqlite3_mprintf("No ShellExtensionLink or shell API is too old.\n"
-                        "Use '.load tclshext -shext' or update the shell.\n");
+  iLoadStatus = SHELL_EXTENSION_LOADFAIL_WHY(pShExtLink, 6, 10);
+  if( iLoadStatus!=EXLD_Ok ){
+    if( iLoadStatus>=sizeof(azLoadFailures)/sizeof(azLoadFailures[0]) ){
+      iLoadStatus = 0;
+    }
+    *pzErrMsg = sqlite3_mprintf("%s\n", azLoadFailures[iLoadStatus]);
     return SQLITE_ERROR;
   }else{
     ShellExState *psx = pShExtLink->pSXS;
@@ -1082,10 +1128,10 @@ int sqlite3_tclshext_init(
         }
       }
     }
-    rc = pShExtApi->registerMetaCommand(psx, sqlite3_tclshext_init,
-                                        (MetaCommand *)&unkcmd);
-    rc = pShExtApi->registerMetaCommand(psx, sqlite3_tclshext_init,
-                                        (MetaCommand *)&tclcmd);
+    rc = SHX_API(registerMetaCommand)(psx, sqlite3_tclshext_init,
+                                      (MetaCommand *)&unkcmd);
+    rc = SHX_API(registerMetaCommand)(psx, sqlite3_tclshext_init,
+                                      (MetaCommand *)&tclcmd);
     if( rc==SQLITE_OK && (rc = Tcl_BringUp(&ldTk, pzErrMsg))==SQLITE_OK ){
       Tcl_Interp *interp = getInterp();
       if( TCL_OK==userDbInit(interp, psx) ){
@@ -1093,8 +1139,8 @@ int sqlite3_tclshext_init(
         pShExtLink->extensionDestruct = (void (*)(void*))udbCleanup;
         pShExtLink->pvExtensionObject = pudb;
       }
-      pShExtApi->registerScripting(psx, sqlite3_tclshext_init,
-                                   (ScriptSupport *)&tclss);
+      SHX_API(registerScripting)(psx, sqlite3_tclshext_init,
+                                 (ScriptSupport *)&tclss);
 #if TCL_REPL==1 || TCL_REPL==2
       Tcl_CreateCommand(interp, "get_input_line", getInputLine, psx, 0);
 #endif
@@ -1106,6 +1152,11 @@ int sqlite3_tclshext_init(
       /* Rename unknown so that calls to it can be intercepted. */
       Tcl_Eval(interp, "rename unknown "UNKNOWN_RENAME);
       Tcl_CreateCommand(interp, "unknown", unknownDotDelegate, psx, 0);
+      /* Add a command to facilitate ad-hoc TCL dot commands showing up in
+       * the .help output with help text as specified by calling this: */
+      Tcl_CreateCommand(interp, "register_adhoc_command",
+                        registerAdHocCommand, (void*)psx, 0);
+
       /* Define this proc so that ".." either gets to the TCL REPL loop
        * or does nothing (if already in it), as a user convenience. */
       Tcl_Eval(interp, "proc .. {} {}");
@@ -1205,7 +1256,7 @@ int sqlite3_tclshext_init(
                     Tcl_NewIntObj(tnarg), TCL_GLOBAL_ONLY);
       Tcl_SetVar2Ex(interp, "::argv", NULL, targv, TCL_GLOBAL_ONLY);
       Tcl_SetVar2Ex(interp, "::tcl_interactive", NULL,
-                    Tcl_NewIntObj(pExtHelpers->nowInteractive(psx)),
+                    Tcl_NewIntObj(SHX_HELPER(nowInteractive)(psx)),
                     TCL_GLOBAL_ONLY);
       Tcl_SetVar2Ex(interp, "::isHosted", NULL,
                     Tcl_NewIntObj(1), TCL_GLOBAL_ONLY);

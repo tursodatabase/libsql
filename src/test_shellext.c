@@ -10,7 +10,7 @@
 **
 *************************************************************************
 ** Test extension for testing the shell's .load -shellext ... function.
-** gcc -shared -fPIC -Wall -I$srcdir -I.. -g test_shellext.c -o test_shellext.so
+** gcc -shared -fPIC -Wall -I. -I.. -g test_shellext.c -o test_shellext.so
 */
 #include <stdio.h>
 #include "shext_linkage.h"
@@ -36,13 +36,12 @@ DERIVED_METHOD(const char *, name, MetaCommand,BatBeing, 0,()){
   return "bat_being";
 }
 
-DERIVED_METHOD(const char *, help, MetaCommand,BatBeing, 1,(int more)){
-  switch( more ){
-  case 0: return
-      ".bat_being ?whatever?    Demonstrates vigilantism weekly\n";
-  case 1: return "   Options summon side-kick and villains.\n";
-  default: return 0;
-  }
+DERIVED_METHOD(const char *, help, MetaCommand,BatBeing, 1,(const char *zHK)){
+  if( !zHK )
+    return ".bat_being ?whatever?    Demonstrates vigilantism weekly\n";
+  if( !*zHK )
+    return "   Options summon side-kick and villains.\n";
+  return 0;
 }
 
 DERIVED_METHOD(DotCmdRC, argsCheck, MetaCommand,BatBeing, 3,

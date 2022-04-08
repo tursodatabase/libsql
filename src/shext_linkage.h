@@ -130,10 +130,14 @@ typedef struct ShellExState {
  * shell to make new or overriding meta-commands available to it.
  */
 INTERFACE_BEGIN( MetaCommand );
+  /* The whole, true name for this command */
 PURE_VMETHOD(const char *, name, MetaCommand, 0,());
-PURE_VMETHOD(const char *, help, MetaCommand, 1,(int more));
+  /* Help text; zWhat=0 => primary, zWhat="" => secondary, other ? */
+PURE_VMETHOD(const char *, help, MetaCommand, 1,(const char *zWhat));
+  /* Validate arguments, blocking execute for returns != DCR_Ok */
 PURE_VMETHOD(DotCmdRC, argsCheck, MetaCommand,
              3, (char **pzErrMsg, int nArgs, char *azArgs[]));
+  /* Do whatever this command does, or return error of some kind */
 PURE_VMETHOD(DotCmdRC, execute, MetaCommand,
              4,(ShellExState *, char **pzErrMsg, int nArgs, char *azArgs[]));
 INTERFACE_END( MetaCommand );
@@ -143,7 +147,7 @@ INTERFACE_END( MetaCommand );
  */
 INTERFACE_BEGIN( ExportHandler );
 PURE_VMETHOD(const char *, name, ExportHandler, 0,());
-PURE_VMETHOD(const char *, help, ExportHandler, 1,(int more));
+PURE_VMETHOD(const char *, help, ExportHandler, 1,(const char *zWhat));
 PURE_VMETHOD(int, openResultsOutStream, ExportHandler,
              5,( ShellExState *pSES, char **pzErr,
                  int numArgs, char *azArgs[], const char * zName ));
@@ -162,7 +166,7 @@ INTERFACE_END( ExportHandler );
  */
 INTERFACE_BEGIN( ImportHandler );
 PURE_VMETHOD(const char *, name, ImportHandler, 0,());
-PURE_VMETHOD(const char *, help, ImportHandler, 1,( int more ));
+PURE_VMETHOD(const char *, help, ImportHandler, 1,(const char *zWhat));
 PURE_VMETHOD(int,  openDataInStream, ImportHandler,
              5,( ShellExState *pSES, char **pzErr,
                  int numArgs, char *azArgs[], const char * zName ));
@@ -219,7 +223,7 @@ INTERFACE_END( ImportHandler );
  */
 INTERFACE_BEGIN( ScriptSupport );
 PURE_VMETHOD(const char *, name, ScriptSupport, 0,());
-PURE_VMETHOD(const char *, help, ScriptSupport, 1,( int more ));
+PURE_VMETHOD(const char *, help, ScriptSupport, 1,(const char *zWhat));
 PURE_VMETHOD(int,  configure, ScriptSupport,
              4,( ShellExState *pSES, char **pzErr,
                  int numArgs, char *azArgs[] ));
@@ -237,7 +241,7 @@ INTERFACE_END( ScriptSupport );
 #define ScriptSupport_IMPLEMENT_VTABLE(Derived, vtname) \
 CONCRETE_BEGIN(ScriptSupport, Derived); \
 CONCRETE_METHOD(const char *, name, ScriptSupport, 0,()); \
-CONCRETE_METHOD(const char *, help, ScriptSupport, 1,( int more )); \
+CONCRETE_METHOD(const char *, help, ScriptSupport, 1,(const char *zWhat)); \
 CONCRETE_METHOD(int,  configure, ScriptSupport, \
   4,( ShellExState *pSES, char **pzErr, int numArgs, char *azArgs[] )); \
 CONCRETE_METHOD(int, isScriptLeader, ScriptSupport, \
@@ -263,7 +267,7 @@ CONCRETE_END(Derived) vtname = { \
 #define MetaCommand_IMPLEMENT_VTABLE(Derived, vtname) \
 CONCRETE_BEGIN(MetaCommand, Derived); \
 CONCRETE_METHOD(const char *, name, MetaCommand, 0,()); \
-CONCRETE_METHOD(const char *, help, MetaCommand, 1,(int more)); \
+CONCRETE_METHOD(const char *, help, MetaCommand, 1,(const char *zWhat)); \
 CONCRETE_METHOD(DotCmdRC, argsCheck, MetaCommand, 3, \
          (char **pzErrMsg, int nArgs, char *azArgs[])); \
 CONCRETE_METHOD(DotCmdRC, execute, MetaCommand, 4, \
@@ -354,7 +358,7 @@ typedef struct ShellExtensionAPI {
   ExtensionHelpers * pExtHelpers;
 
   /* Functions for an extension to register its implementors with shell */
-  const int numRegistrars; /* 5 for this version */
+  const int numRegistrars; /* 6 for this version */
   union {
     struct ShExtAPI {
       /* Register a meta-command */
@@ -373,10 +377,19 @@ typedef struct ShellExtensionAPI {
        * See above NoticeKind enum and ShellEventNotify callback typedef. */
       int (*subscribeEvents)(ShellExState *p, ExtensionId eid, void *pvUserData,
                              NoticeKind nkMin, ShellEventNotify eventHandler);
+      /* Notify host shell that an ad-hoc dot command exists and provide for
+       * its help text to appear in .help output. Only an extension which has
+       * registered an "unknown" MetaCommand may use this.
+       * If zHelp==0, any such provision is removed. If zHelp!=0, original or
+       * replacement help text is associated with command zName.
+       * Help text before the first newline is primary, issued as summary help.
+       * Text beyond that is secondary, issued as the complete command help. */
+      int (*registerAdHocCommand)(ShellExState *p, ExtensionId eid,
+                                  const char *zName, const char *zHelp);
       /* Preset to 0 at extension load, a sentinel for expansion */
       void (*sentinel)(void);
     } named;
-    void (*pFunctions[5+1])(); /* 0-terminated sequence of function pointers */
+    void (*pFunctions[6+1])(); /* 0-terminated sequence of function pointers */
   } api;
 } ShellExtensionAPI;
 
@@ -475,6 +488,18 @@ typedef struct ShellExtensionLink {
    || SHELL_API_COUNT(link_ptr)<(minNumApi) \
    || SHELL_HELPER_COUNT(link_ptr)<(minNumHelpers) \
   )
+/* Like above, except it is an enum expression. The value is EXLD_Ok for
+ * success or one of the next three values telling why the load failed.
+ */
+typedef enum {
+  EXLD_Ok, EXLD_NoLink, EXLD_OutdatedApi, EXLD_OutdatedHelpers
+} ExtensionLoadStatus;
+#define SHELL_EXTENSION_LOADFAIL_WHY(link_ptr, minNumApi, minNumHelpers) ( \
+  (!SHELL_EXTENSION_LINKED(link_ptr) ? EXLD_NoLink \
+   : SHELL_API_COUNT(link_ptr)<(minNumApi) ? EXLD_OutdatedApi \
+   : SHELL_HELPER_COUNT(link_ptr)<(minNumHelpers) ? EXLD_OutdatedHelpers \
+   : EXLD_Ok ) \
+)
 
 #ifdef __cplusplus
 } // extern "C"
