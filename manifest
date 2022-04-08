@@ -1,5 +1,5 @@
-C Fix\stwo\sunreachable\sbranches\sintroduced\sby\sthe\srecent\nsqlite3TriggersExist()\soptimization.
-D 2022-04-07T20:45:38.697
+C Improved\sexplanation\sand\scommentary\son\sthe\ssqlite3JoinType()\sroutine.\s\sOne\nof\sthe\serror\smessages\schanges\sslightly,\sbut\sbesides\sthat\severything\sworks\nthe\ssame.
+D 2022-04-08T15:11:10.072
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -552,7 +552,7 @@ F src/printf.c 05d8dfd2018bc4fc3ddb8b37eb97ccef7abf985643fa1caebdcf2916ca90fa32
 F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c 18d99e7146852d6064559561769fcca0743eb32b14a97da6dbed373a30ee0e76
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c d6c04eb93395024af80f61a8c278a33c2a0333aeb7d57bb6aa737a6f1c4af4b8
+F src/select.c 7c106b3f36d483242b0a9c696614cd53d6f29e1ac81da6a3f0e9ea92f4211cc3
 F src/shell.c.in 1a8fbf932ecd582b1a5f66c1e8294f92c30d954616f5c7cc54c9623fcdbb028d
 F src/sqlite.h.in 2a35f62185eb5e7ecc64a2f68442b538ce9be74f80f28a00abc24837edcf1c17
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1945,8 +1945,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c2965fea9df7076b235d3eadaf84f0a36242476d0329030b0e57557b66e2540c
-R 07d0b0c26e9cd2798bbb00ddbafc6a3b
+P 1b5475d212cf9de0bff69eee8c607b4fcd8e04bf4df72171429e7609c4153951
+R 931142dc24337bfedaa0369d45a2c00c
 U drh
-Z 93237070ff101cf9292ceb1ee884c28a
+Z 277112caa7eb0641987ae3d1eca17748
 # Remove this line to create a well-formed Fossil manifest.
