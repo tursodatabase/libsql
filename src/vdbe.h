@@ -244,7 +244,6 @@ int sqlite3VdbeMakeLabel(Parse*);
 void sqlite3VdbeRunOnlyOnce(Vdbe*);
 void sqlite3VdbeReusable(Vdbe*);
 void sqlite3VdbeDelete(Vdbe*);
-void sqlite3VdbeClearObject(sqlite3*,Vdbe*);
 void sqlite3VdbeMakeReady(Vdbe*,Parse*);
 int sqlite3VdbeFinalize(Vdbe*);
 void sqlite3VdbeResolveLabel(Vdbe*, int);

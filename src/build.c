@@ -214,7 +214,9 @@ void sqlite3FinishCoding(Parse *pParse){
       int iDb, i;
       assert( sqlite3VdbeGetOp(v, 0)->opcode==OP_Init );
       sqlite3VdbeJumpHere(v, 0);
-      for(iDb=0; iDb<db->nDb; iDb++){
+      assert( db->nDb>0 );
+      iDb = 0;
+      do{
         Schema *pSchema;
         if( DbMaskTest(pParse->cookieMask, iDb)==0 ) continue;
         sqlite3VdbeUsesBtree(v, iDb);
@@ -229,7 +231,7 @@ void sqlite3FinishCoding(Parse *pParse){
         if( db->init.busy==0 ) sqlite3VdbeChangeP5(v, 1);
         VdbeComment((v,
               "usesStmtJournal=%d", pParse->mayAbort && pParse->isMultiWrite));
-      }
+      }while( ++iDb<db->nDb );
 #ifndef SQLITE_OMIT_VIRTUALTABLE
       for(i=0; i<pParse->nVtabLock; i++){
         char *vtab = (char *)sqlite3GetVTable(db, pParse->apVtabLock[i]);
@@ -4708,7 +4710,7 @@ void sqlite3IdListDelete(sqlite3 *db, IdList *pList){
 */
 int sqlite3IdListIndex(IdList *pList, const char *zName){
   int i;
-  if( pList==0 ) return -1;
+  assert( pList!=0 );
   for(i=0; i<pList->nId; i++){
     if( sqlite3StrICmp(pList->a[i].zName, zName)==0 ) return i;
   }
@@ -4911,8 +4913,11 @@ void sqlite3SrcListDelete(sqlite3 *db, SrcList *pList){
     if( pItem->fg.isTabFunc ) sqlite3ExprListDelete(db, pItem->u1.pFuncArg);
     sqlite3DeleteTable(db, pItem->pTab);
     if( pItem->pSelect ) sqlite3SelectDelete(db, pItem->pSelect);
-    if( pItem->pOn ) sqlite3ExprDelete(db, pItem->pOn);
-    if( pItem->pUsing ) sqlite3IdListDelete(db, pItem->pUsing);
+    if( pItem->fg.isUsing ){
+      sqlite3IdListDelete(db, pItem->u3.pUsing);
+    }else if( pItem->u3.pOn ){
+      sqlite3ExprDelete(db, pItem->u3.pOn);
+    }
   }
   sqlite3DbFreeNN(db, pList);
 }
@@ -4940,14 +4945,13 @@ SrcList *sqlite3SrcListAppendFromTerm(
   Token *pDatabase,       /* Name of the database containing pTable */
   Token *pAlias,          /* The right-hand side of the AS subexpression */
   Select *pSubquery,      /* A subquery used in place of a table name */
-  Expr *pOn,              /* The ON clause of a join */
-  IdList *pUsing          /* The USING clause of a join */
+  OnOrUsing *pOnUsing     /* Either the ON clause or the USING clause */
 ){
   SrcItem *pItem;
   sqlite3 *db = pParse->db;
-  if( !p && (pOn || pUsing) ){
+  if( !p && pOnUsing!=0 && (pOnUsing->pOn || pOnUsing->pUsing) ){
     sqlite3ErrorMsg(pParse, "a JOIN clause is required before %s", 
-      (pOn ? "ON" : "USING")
+      (pOnUsing->pOn ? "ON" : "USING")
     );
     goto append_from_error;
   }
@@ -4968,14 +4972,21 @@ SrcList *sqlite3SrcListAppendFromTerm(
     pItem->zAlias = sqlite3NameFromToken(db, pAlias);
   }
   pItem->pSelect = pSubquery;
-  pItem->pOn = pOn;
-  pItem->pUsing = pUsing;
+  assert( pOnUsing==0 || pOnUsing->pOn==0 || pOnUsing->pUsing==0 );
+  assert( pItem->fg.isUsing==0 );
+  if( pOnUsing==0 ){
+    pItem->u3.pOn = 0;
+  }else if( pOnUsing->pUsing ){
+    pItem->fg.isUsing = 1;
+    pItem->u3.pUsing = pOnUsing->pUsing;
+  }else{
+    pItem->u3.pOn = pOnUsing->pOn;
+  }
   return p;
 
 append_from_error:
   assert( p==0 );
-  sqlite3ExprDelete(db, pOn);
-  sqlite3IdListDelete(db, pUsing);
+  sqlite3ClearOnOrUsing(db, pOnUsing);
   sqlite3SelectDelete(db, pSubquery);
   return 0;
 }

@@ -710,7 +710,7 @@ int sqlite3RunParser(Parse *pParse, const char *zSql){
   if( pParse->pNewTrigger && !IN_RENAME_OBJECT ){
     sqlite3DeleteTrigger(db, pParse->pNewTrigger);
   }
-  sqlite3DbFree(db, pParse->pVList);
+  if( pParse->pVList ) sqlite3DbFreeNN(db, pParse->pVList);
   db->pParse = pParentParse;
   assert( nErr==0 || pParse->rc!=SQLITE_OK );
   return nErr;

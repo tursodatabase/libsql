@@ -2534,6 +2534,14 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     sqlite3VdbeGoto(v, pLevel->addrBrk);
     sqlite3VdbeResolveLabel(v, iLoopBody);
 
+    /* Set the P2 operand of the OP_Return opcode that will end the current
+    ** loop to point to this spot, which is the top of the next containing
+    ** loop.  The byte-code formatter will use that P2 value as a hint to
+    ** indent everything in between the this point and the final OP_Return.
+    ** See tag-20220407a in vdbe.c and shell.c */
+    assert( pLevel->op==OP_Return );
+    pLevel->p2 = sqlite3VdbeCurrentAddr(v);
+
     if( pWInfo->nLevel>1 ){ sqlite3StackFree(db, pOrTab); }
     if( !untestedTerms ) disableTerm(pLevel, pTerm);
   }else

@@ -390,7 +390,6 @@ static void fkLookupParent(
     }else{
       int nCol = pFKey->nCol;
       int regTemp = sqlite3GetTempRange(pParse, nCol);
-      int regRec = sqlite3GetTempReg(pParse);
   
       sqlite3VdbeAddOp3(v, OP_OpenRead, iCur, pIdx->tnum, iDb);
       sqlite3VdbeSetP4KeyInfo(pParse, pIdx);
@@ -429,12 +428,11 @@ static void fkLookupParent(
         }
         sqlite3VdbeGoto(v, iOk);
       }
-  
-      sqlite3VdbeAddOp4(v, OP_MakeRecord, regTemp, nCol, regRec,
+
+      sqlite3VdbeAddOp4(v, OP_Affinity, regTemp, nCol, 0,
                         sqlite3IndexAffinityStr(pParse->db,pIdx), nCol);
-      sqlite3VdbeAddOp4Int(v, OP_Found, iCur, iOk, regRec, 0); VdbeCoverage(v);
-  
-      sqlite3ReleaseTempReg(pParse, regRec);
+      sqlite3VdbeAddOp4Int(v, OP_Found, iCur, iOk, regTemp, nCol);
+      VdbeCoverage(v);
       sqlite3ReleaseTempRange(pParse, regTemp, nCol);
     }
   }

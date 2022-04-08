@@ -369,6 +369,7 @@ struct sqlite3_context {
   Vdbe *pVdbe;            /* The VM that owns this context */
   int iOp;                /* Instruction number of OP_Function */
   int isError;            /* Error code returned by the function. */
+  u8 enc;                 /* Encoding to use for results */
   u8 skipFlag;            /* Skip accumulator loading if true */
   u8 argc;                /* Number of arguments */
   sqlite3_value *argv[1]; /* Argument set */
@@ -417,7 +418,6 @@ struct Vdbe {
   Vdbe *pPrev,*pNext;     /* Linked list of VDBEs with the same Vdbe.db */
   Parse *pParse;          /* Parsing context used to create this Vdbe */
   ynVar nVar;             /* Number of entries in aVar[] */
-  u32 iVdbeMagic;         /* Magic number defining state of the SQL statement */
   int nMem;               /* Number of memory locations currently allocated */
   int nCursor;            /* Number of slots in apCsr[] */
   u32 cacheCtr;           /* VdbeCursor row cache generation counter */
@@ -455,11 +455,10 @@ struct Vdbe {
   u8 errorAction;         /* Recovery action to do in case of an error */
   u8 minWriteFileFormat;  /* Minimum file format for writable database files */
   u8 prepFlags;           /* SQLITE_PREPARE_* flags */
-  u8 doingRerun;          /* True if rerunning after an auto-reprepare */
+  u8 eVdbeState;          /* On of the VDBE_*_STATE values */
   bft expired:2;          /* 1: recompile VM immediately  2: when convenient */
   bft explain:2;          /* True if EXPLAIN present on SQL command */
   bft changeCntOn:1;      /* True to update the change-counter */
-  bft runOnlyOnce:1;      /* Automatically expire on reset */
   bft usesStmtJournal:1;  /* True if uses a statement journal */
   bft readOnly:1;         /* True for statements that do not write */
   bft bIsReader:1;        /* True for statements that read */
@@ -486,13 +485,12 @@ struct Vdbe {
 };
 
 /*
-** The following are allowed values for Vdbe.magic
+** The following are allowed values for Vdbe.eVdbeState
 */
-#define VDBE_MAGIC_INIT     0x16bceaa5    /* Building a VDBE program */
-#define VDBE_MAGIC_RUN      0x2df20da3    /* VDBE is ready to execute */
-#define VDBE_MAGIC_HALT     0x319c2973    /* VDBE has completed execution */
-#define VDBE_MAGIC_RESET    0x48fa9f76    /* Reset and ready to run again */
-#define VDBE_MAGIC_DEAD     0x5606c3c8    /* The VDBE has been deallocated */
+#define VDBE_INIT_STATE     0   /* Prepared statement under construction */
+#define VDBE_READY_STATE    1   /* Ready to run but not yet started */
+#define VDBE_RUN_STATE      2   /* Run in progress */
+#define VDBE_HALT_STATE     3   /* Finished.  Need reset() or finalize() */
 
 /*
 ** Structure used to store the context required by the 
@@ -533,18 +531,31 @@ struct ValueList {
   sqlite3_value *pOut;     /* Register to hold each decoded output value */
 };
 
+/* Size of content associated with serial types that fit into a
+** single-byte varint.
+*/
+#ifndef SQLITE_AMALGAMATION
+extern const u8 sqlite3SmallTypeSizes[];
+#endif
+
 /*
 ** Function prototypes
 */
 void sqlite3VdbeError(Vdbe*, const char *, ...);
 void sqlite3VdbeFreeCursor(Vdbe *, VdbeCursor*);
+void sqlite3VdbeFreeCursorNN(Vdbe*,VdbeCursor*);
 void sqliteVdbePopStack(Vdbe*,int);
 int SQLITE_NOINLINE sqlite3VdbeHandleMovedCursor(VdbeCursor *p);
 int SQLITE_NOINLINE sqlite3VdbeFinishMoveto(VdbeCursor*);
 int sqlite3VdbeCursorRestore(VdbeCursor*);
 u32 sqlite3VdbeSerialTypeLen(u32);
 u8 sqlite3VdbeOneByteSerialTypeLen(u8);
-u32 sqlite3VdbeSerialPut(unsigned char*, Mem*, u32);
+#ifdef SQLITE_MIXED_ENDIAN_64BIT_FLOAT
+  u64 sqlite3FloatSwap(u64 in);
+# define swapMixedEndianFloat(X)  X = sqlite3FloatSwap(X)
+#else
+# define swapMixedEndianFloat(X)
+#endif
 void sqlite3VdbeSerialGet(const unsigned char*, u32, Mem*);
 void sqlite3VdbeDeleteAuxData(sqlite3*, AuxData**, int, int);
 

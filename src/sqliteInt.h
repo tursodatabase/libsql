@@ -939,8 +939,19 @@ typedef INT16_TYPE LogEst;
 /*
 ** Round up a number to the next larger multiple of 8.  This is used
 ** to force 8-byte alignment on 64-bit architectures.
+**
+** ROUND8() always does the rounding, for any argument.
+**
+** ROUND8P() assumes that the argument is already an integer number of
+** pointers in size, and so it is a no-op on systems where the pointer
+** size is 8.
 */
 #define ROUND8(x)     (((x)+7)&~7)
+#if SQLITE_PTRSIZE==8
+# define ROUND8P(x)   (x)
+#else
+# define ROUND8P(x)   (((x)+7)&~7)
+#endif
 
 /*
 ** Round down to the nearest multiple of 8
@@ -1003,22 +1014,23 @@ typedef INT16_TYPE LogEst;
 #endif
 
 /*
-** SELECTTRACE_ENABLED will be either 1 or 0 depending on whether or not
-** the Select query generator tracing logic is turned on.
+** TREETRACE_ENABLED will be either 1 or 0 depending on whether or not
+** the Abstract Syntax Tree tracing logic is turned on.
 */
 #if !defined(SQLITE_AMALGAMATION)
-extern u32 sqlite3SelectTrace;
+extern u32 sqlite3TreeTrace;
 #endif
 #if defined(SQLITE_DEBUG) \
-    && (defined(SQLITE_TEST) || defined(SQLITE_ENABLE_SELECTTRACE))
-# define SELECTTRACE_ENABLED 1
+    && (defined(SQLITE_TEST) || defined(SQLITE_ENABLE_SELECTTRACE) \
+                             || defined(SQLITE_ENABLE_TREETRACE))
+# define TREETRACE_ENABLED 1
 # define SELECTTRACE(K,P,S,X)  \
-  if(sqlite3SelectTrace&(K))   \
+  if(sqlite3TreeTrace&(K))   \
     sqlite3DebugPrintf("%u/%d/%p: ",(S)->selId,(P)->addrExplain,(S)),\
     sqlite3DebugPrintf X
 #else
 # define SELECTTRACE(K,P,S,X)
-# define SELECTTRACE_ENABLED 0
+# define TREETRACE_ENABLED 0
 #endif
 
 /*
@@ -1179,6 +1191,7 @@ typedef struct Lookaside Lookaside;
 typedef struct LookasideSlot LookasideSlot;
 typedef struct Module Module;
 typedef struct NameContext NameContext;
+typedef struct OnOrUsing OnOrUsing;
 typedef struct Parse Parse;
 typedef struct ParseCleanup ParseCleanup;
 typedef struct PreUpdate PreUpdate;
@@ -1766,6 +1779,7 @@ struct sqlite3 {
 #define SQLITE_BloomFilter    0x00080000 /* Use a Bloom filter on searches */
 #define SQLITE_BloomPulldown  0x00100000 /* Run Bloom filters early */
 #define SQLITE_BalancedMerge  0x00200000 /* Balance multi-way merges */
+#define SQLITE_ReleaseReg     0x00400000 /* Use OP_ReleaseReg for testing */
 #define SQLITE_AllOpts        0xffffffff /* All optimizations */
 
 /*
@@ -3063,10 +3077,13 @@ struct SrcItem {
     unsigned fromDDL :1;       /* Comes from sqlite_schema */
     unsigned isCte :1;         /* This is a CTE */
     unsigned notCte :1;        /* This item may not match a CTE */
+    unsigned isUsing :1;       /* u3.pUsing is valid */
   } fg;
   int iCursor;      /* The VDBE cursor number used to access this table */
-  Expr *pOn;        /* The ON clause of a join */
-  IdList *pUsing;   /* The USING clause of a join */
+  union {
+    Expr *pOn;        /* fg.isUsing==0 =>  The ON clause of a join */
+    IdList *pUsing;   /* fg.isUsing==1 =>  The USING clause of a join */
+  } u3;
   Bitmask colUsed;  /* Bit N (1<<N) set if column N of pTab is used */
   union {
     char *zIndexedBy;    /* Identifier from "INDEXED BY <zIndex>" clause */
@@ -3076,6 +3093,15 @@ struct SrcItem {
     Index *pIBIndex;  /* Index structure corresponding to u1.zIndexedBy */
     CteUse *pCteUse;  /* CTE Usage info info fg.isCte is true */
   } u2;
+};
+
+/*
+** The OnOrUsing object represents either an ON clause or a USING clause.
+** It can never be both at the same time, but it can be neither.
+*/
+struct OnOrUsing {
+  Expr *pOn;         /* The ON clause of a join */
+  IdList *pUsing;    /* The USING clause of a join */
 };
 
 /*
@@ -3715,20 +3741,20 @@ struct AuthContext {
 #define OPFLAG_PREFORMAT     0x80    /* OP_Insert uses preformatted cell */ 
 
 /*
- * Each trigger present in the database schema is stored as an instance of
- * struct Trigger.
- *
- * Pointers to instances of struct Trigger are stored in two ways.
- * 1. In the "trigHash" hash table (part of the sqlite3* that represents the
- *    database). This allows Trigger structures to be retrieved by name.
- * 2. All triggers associated with a single table form a linked list, using the
- *    pNext member of struct Trigger. A pointer to the first element of the
- *    linked list is stored as the "pTrigger" member of the associated
- *    struct Table.
- *
- * The "step_list" member points to the first element of a linked list
- * containing the SQL statements specified as the trigger program.
- */
+** Each trigger present in the database schema is stored as an instance of
+** struct Trigger.
+**
+** Pointers to instances of struct Trigger are stored in two ways.
+** 1. In the "trigHash" hash table (part of the sqlite3* that represents the
+**    database). This allows Trigger structures to be retrieved by name.
+** 2. All triggers associated with a single table form a linked list, using the
+**    pNext member of struct Trigger. A pointer to the first element of the
+**    linked list is stored as the "pTrigger" member of the associated
+**    struct Table.
+**
+** The "step_list" member points to the first element of a linked list
+** containing the SQL statements specified as the trigger program.
+*/
 struct Trigger {
   char *zName;            /* The name of the trigger                        */
   char *table;            /* The table or view to which the trigger applies */
@@ -3755,43 +3781,48 @@ struct Trigger {
 #define TRIGGER_AFTER   2
 
 /*
- * An instance of struct TriggerStep is used to store a single SQL statement
- * that is a part of a trigger-program.
- *
- * Instances of struct TriggerStep are stored in a singly linked list (linked
- * using the "pNext" member) referenced by the "step_list" member of the
- * associated struct Trigger instance. The first element of the linked list is
- * the first step of the trigger-program.
- *
- * The "op" member indicates whether this is a "DELETE", "INSERT", "UPDATE" or
- * "SELECT" statement. The meanings of the other members is determined by the
- * value of "op" as follows:
- *
- * (op == TK_INSERT)
- * orconf    -> stores the ON CONFLICT algorithm
- * pSelect   -> If this is an INSERT INTO ... SELECT ... statement, then
- *              this stores a pointer to the SELECT statement. Otherwise NULL.
- * zTarget   -> Dequoted name of the table to insert into.
- * pExprList -> If this is an INSERT INTO ... VALUES ... statement, then
- *              this stores values to be inserted. Otherwise NULL.
- * pIdList   -> If this is an INSERT INTO ... (<column-names>) VALUES ...
- *              statement, then this stores the column-names to be
- *              inserted into.
- *
- * (op == TK_DELETE)
- * zTarget   -> Dequoted name of the table to delete from.
- * pWhere    -> The WHERE clause of the DELETE statement if one is specified.
- *              Otherwise NULL.
- *
- * (op == TK_UPDATE)
- * zTarget   -> Dequoted name of the table to update.
- * pWhere    -> The WHERE clause of the UPDATE statement if one is specified.
- *              Otherwise NULL.
- * pExprList -> A list of the columns to update and the expressions to update
- *              them to. See sqlite3Update() documentation of "pChanges"
- *              argument.
- *
- */
+** An instance of struct TriggerStep is used to store a single SQL statement
+** that is a part of a trigger-program.
+**
+** Instances of struct TriggerStep are stored in a singly linked list (linked
+** using the "pNext" member) referenced by the "step_list" member of the
+** associated struct Trigger instance. The first element of the linked list is
+** the first step of the trigger-program.
+**
+** The "op" member indicates whether this is a "DELETE", "INSERT", "UPDATE" or
+** "SELECT" statement. The meanings of the other members is determined by the
+** value of "op" as follows:
+**
+** (op == TK_INSERT)
+** orconf    -> stores the ON CONFLICT algorithm
+** pSelect   -> The content to be inserted - either a SELECT statement or
+**              a VALUES clause.
+** zTarget   -> Dequoted name of the table to insert into.
+** pIdList   -> If this is an INSERT INTO ... (<column-names>) VALUES ...
+**              statement, then this stores the column-names to be
+**              inserted into.
+** pUpsert   -> The ON CONFLICT clauses for an Upsert
+**
+** (op == TK_DELETE)
+** zTarget   -> Dequoted name of the table to delete from.
+** pWhere    -> The WHERE clause of the DELETE statement if one is specified.
+**              Otherwise NULL.
+**
+** (op == TK_UPDATE)
+** zTarget   -> Dequoted name of the table to update.
+** pWhere    -> The WHERE clause of the UPDATE statement if one is specified.
+**              Otherwise NULL.
+** pExprList -> A list of the columns to update and the expressions to update
+**              them to. See sqlite3Update() documentation of "pChanges"
+**              argument.
+**
+** (op == TK_SELECT)
+** pSelect   -> The SELECT statement
+**
+** (op == TK_RETURNING)
+** pExprList -> The list of expressions that follow the RETURNING keyword.
+**
+*/
 struct TriggerStep {
   u8 op;               /* One of TK_DELETE, TK_UPDATE, TK_INSERT, TK_SELECT,
                        ** or TK_RETURNING */
@@ -4401,18 +4432,50 @@ char *sqlite3VMPrintf(sqlite3*,const char*, va_list);
 #endif
 
 #if defined(SQLITE_DEBUG)
+  void sqlite3TreeViewLine(TreeView*, const char *zFormat, ...);
   void sqlite3TreeViewExpr(TreeView*, const Expr*, u8);
   void sqlite3TreeViewBareExprList(TreeView*, const ExprList*, const char*);
   void sqlite3TreeViewExprList(TreeView*, const ExprList*, u8, const char*);
+  void sqlite3TreeViewBareIdList(TreeView*, const IdList*, const char*);
+  void sqlite3TreeViewIdList(TreeView*, const IdList*, u8, const char*);
   void sqlite3TreeViewSrcList(TreeView*, const SrcList*);
   void sqlite3TreeViewSelect(TreeView*, const Select*, u8);
   void sqlite3TreeViewWith(TreeView*, const With*, u8);
+  void sqlite3TreeViewUpsert(TreeView*, const Upsert*, u8);
+  void sqlite3TreeViewDelete(const With*, const SrcList*, const Expr*,
+                             const ExprList*,const Expr*, const Trigger*);
+  void sqlite3TreeViewInsert(const With*, const SrcList*,
+                             const IdList*, const Select*, const ExprList*,
+                             int, const Upsert*, const Trigger*);
+  void sqlite3TreeViewUpdate(const With*, const SrcList*, const ExprList*,
+                             const Expr*, int, const ExprList*, const Expr*,
+                             const Upsert*, const Trigger*);
+#ifndef SQLITE_OMIT_TRIGGER
+  void sqlite3TreeViewTriggerStep(TreeView*, const TriggerStep*, u8, u8);
+  void sqlite3TreeViewTrigger(TreeView*, const Trigger*, u8, u8);
+#endif
 #ifndef SQLITE_OMIT_WINDOWFUNC
   void sqlite3TreeViewWindow(TreeView*, const Window*, u8);
   void sqlite3TreeViewWinFunc(TreeView*, const Window*, u8);
 #endif
+  void sqlite3ShowExpr(const Expr*);
+  void sqlite3ShowExprList(const ExprList*);
+  void sqlite3ShowIdList(const IdList*);
+  void sqlite3ShowSrcList(const SrcList*);
+  void sqlite3ShowSelect(const Select*);
+  void sqlite3ShowWith(const With*);
+  void sqlite3ShowUpsert(const Upsert*);
+#ifndef SQLITE_OMIT_TRIGGER
+  void sqlite3ShowTriggerStep(const TriggerStep*);
+  void sqlite3ShowTriggerStepList(const TriggerStep*);
+  void sqlite3ShowTrigger(const Trigger*);
+  void sqlite3ShowTriggerList(const Trigger*);
 #endif
-
+#ifndef SQLITE_OMIT_WINDOWFUNC
+  void sqlite3ShowWindow(const Window*);
+  void sqlite3ShowWinFunc(const Window*);
+#endif
+#endif
 
 void sqlite3SetString(char **, sqlite3*, const char*);
 void sqlite3ErrorMsg(Parse*, const char*, ...);
@@ -4561,13 +4624,14 @@ SrcList *sqlite3SrcListEnlarge(Parse*, SrcList*, int, int);
 SrcList *sqlite3SrcListAppendList(Parse *pParse, SrcList *p1, SrcList *p2);
 SrcList *sqlite3SrcListAppend(Parse*, SrcList*, Token*, Token*);
 SrcList *sqlite3SrcListAppendFromTerm(Parse*, SrcList*, Token*, Token*,
-                                      Token*, Select*, Expr*, IdList*);
+                                      Token*, Select*, OnOrUsing*);
 void sqlite3SrcListIndexedBy(Parse *, SrcList *, Token *);
 void sqlite3SrcListFuncArgs(Parse*, SrcList*, ExprList*);
 int sqlite3IndexedByLookup(Parse *, SrcItem *);
 void sqlite3SrcListShiftJoinType(SrcList*);
 void sqlite3SrcListAssignCursors(Parse*, SrcList*);
 void sqlite3IdListDelete(sqlite3*, IdList*);
+void sqlite3ClearOnOrUsing(sqlite3*, OnOrUsing*);
 void sqlite3SrcListDelete(sqlite3*, SrcList*);
 Index *sqlite3AllocateIndexObject(sqlite3*,i16,int,char**);
 void sqlite3CreateIndex(Parse*,Token*,Token*,SrcList*,ExprList*,int,Token*,
