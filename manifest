@@ -1,5 +1,5 @@
-C Revamp\sand\ssimplify\sshell\shelp\sextension\sinterface,\sand\sprovide\sfor\sscripted\sshell\sextensions\sto\sbe\sseen\sin\s.help\soutput.
-D 2022-04-08T03:20:39.765
+C For\sshell,\ssilence\ssome\sclang\swarnings,\sand\scure\sone\sbona-fide\sgripe.
+D 2022-04-08T03:40:05.593
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -556,7 +556,7 @@ F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c ea935b87d6fb36c78b70cdc7b28561dc8f33f2ef37048389549c7b5ef9b0ba5e
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c c366c05e48e836ea04f8ecefb9c1225745dc250c3f01bdb39e9cbb0dc25e3610
-F src/shell.c.in 1cdd4be0d417a96f0c40202b6997e7c42a8ac34d993a2bac244393773bf6a22d x
+F src/shell.c.in 7776a6657604a00e9f63aac47ba782f4091f298c08b55d477a658faf79257204 x
 F src/shext_linkage.h 8a3990b43db032451e8ea04030ed67d99b15c7af10400032e9e8f6985e88ff73
 F src/sqlite.h.in 2a35f62185eb5e7ecc64a2f68442b538ce9be74f80f28a00abc24837edcf1c17
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1951,8 +1951,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 588c3512286491e2128103bcef0d6b3bdd0a0d0dcdc6bdc3e3068db552d70ed4
-R 780767747c65f5eb7755f095f488e743
+P aa785473d948b9f05f32c2107fb302374573a2906d867b4599a7063943277b0f
+R 56075a3576ea3234aa59180bfb50420a
 U larrybr
-Z 31343ddc807d11a76817aa4117ba46c9
+Z 13655dab6a777a188e42ca713dec502b
 # Remove this line to create a well-formed Fossil manifest.

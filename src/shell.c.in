@@ -1188,9 +1188,14 @@ struct EQPGraph {
   char zPrefix[100];    /* Graph prefix */
 };
 
-/* By default, omit the extension options that are not done yet. */
+/* By default, omit the extension options that are not done yet.
+ * "SHELL_EXTENSIONS" is short for "Some shell extensions are built in." */
 #ifndef SHELL_OMIT_EXTENSIONS
 # define SHELL_OMIT_EXTENSIONS 4
+# define SHELL_EXTENSIONS 1
+#else
+# define SHELL_EXTENSIONS \
+  (0!=((~SHELL_OMIT_EXTENSIONS) & SHELL_ALL_EXTENSIONS))
 #endif
 
 #ifdef SQLITE_OMIT_LOAD_EXTENSION
@@ -1219,11 +1224,6 @@ struct EQPGraph {
 
 #define SHELL_ALL_EXTENSIONS \
   (1<<SHEXT_PARSING_BIT)+(1<<SHEXT_DYNEXT_BIT)+(1<<SHEXT_VAREXP_BIT)
-#if !defined(SHELL_OMIT_EXTENSIONS)
-# define SHELL_EXTENSIONS SHELL_ALL_EXTENSIONS
-#else
-# define SHELL_EXTENSIONS ((~SHELL_OMIT_EXTENSIONS) & SHELL_ALL_EXTENSIONS)
-#endif
 
 /* Runtime test for shell extended parsing, given ShellInState pointer */
 #if SHELL_EXTENDED_PARSING
@@ -8072,8 +8072,8 @@ static int subscribe_events(ShellExState *p, ExtensionId eid, void *pvUserData,
     /* unsubscribe (if now subscribed) */
     while( pes < pesLim ){
       if( (eventHandler==0 || eventHandler==pes->eventHandler)
-          && (pes->eid==0 || eid==eid)
-          && (eid!=0 ||eventHandler!=0 ||/* for shell use */ pvUserData==p ) ){
+          && (pes->eid==0 || pes->eid==eid)
+          && (eid!=0 || eventHandler!=0 ||/*for shell use*/ pvUserData==p ) ){
         int nLeft = pesLim - pes;
         assert(pes->eventHandler!=0);
         pes->eventHandler(pes->pvUserData, NK_Unsubscribe, pes->eid, p);
@@ -9359,8 +9359,8 @@ DISPATCHABLE_COMMAND( filectrl ? 2 0 ){
     char zBuf[100];
     sqlite3_snprintf(sizeof(zBuf), zBuf, "%lld", iRes);
     raw_printf(psi->out, "%s\n", zBuf);
-    return DCR_Ok;
   }
+  return DCR_Ok;
 }
 
 DISPATCHABLE_COMMAND( fullschema ? 1 2 ){
@@ -13382,7 +13382,7 @@ static char *zPrepForEval(const char *zVal, int ntc){
      * land past the end of the allocation made just below.
      */
     int nle = ixNewline>0;
-    return smprintf( "%.*s%s", ntc, zVal, "\n"+nle );
+    return smprintf( "%.*s%s", ntc, zVal, &"\n"[nle] );
   }else{
     return 0;
   }
@@ -14603,6 +14603,8 @@ static void dot_command_scan(char *zCmd, DCmd_ScanState *pScanState){
       ss = twixtArgs;
       c = *zCmd++;
       continue;
+    case endEscaped: case isOpenMask: default:
+      ; /* Not reachable, but quiet compilers unable to see this. */
     }
   }
  atEnd:
@@ -14843,6 +14845,7 @@ static DotCmdRC process_input(ShellInState *psi){
           }
         }
         break;
+      case Tbd: case Eof: default: assert(0); /* Not reachable */
       } /* end switch on inKind */
       /* Collect and accumulate more input if group not yet complete. */
       if( disposition==Incoming ){
