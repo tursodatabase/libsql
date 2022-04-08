@@ -1852,6 +1852,28 @@ over_clause(A) ::= OVER nm(Z). {
 filter_clause(A) ::= FILTER LP WHERE expr(X) RP.  { A = X; }
 %endif /* SQLITE_OMIT_WINDOWFUNC */
 
+//////////////////////// The FOR EACH ROW Command ///////////////////////////////////
+//
+%ifndef SQLITE_OMIT_FOREACHROW
+cmd ::= foreachcmd.
+foreachcmd ::= FOR EACH ROW IN select fewhenlist END.
+foreachcmd ::= FOR EACH ROW IN select DO feactionlist END.
+fewhenlist ::= fewhen.
+fewhenlist ::= fewhenlist fewhen.
+fewhen ::= WHEN expr THEN feactionlist.
+fewhen ::= WHEN expr THEN DO NOTHING.
+fewhen ::= ELSE feactionlist.
+feactionlist ::= feaction SEMI.
+feactionlist ::= feactionlist feaction SEMI.
+feaction ::= insert_cmd INTO xfullname idlist_opt select upsert.
+feaction ::= insert_cmd INTO xfullname idlist_opt DEFAULT VALUES.
+feaction ::= UPDATE orconf xfullname indexed_opt SET setlist from where_opt upsert.
+feaction ::= DELETE FROM xfullname indexed_opt where_opt.
+feaction ::= select.
+feaction ::= .
+%endif
+
+
 /*
 ** The code generator needs some extra TK_ token values for tokens that
 ** are synthesized and do not actually appear in the grammar:

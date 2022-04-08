@@ -37,16 +37,17 @@ extern const char sqlite3IsEbcdicIdChar[];
 ** Token types used by the sqlite3_complete() routine.  See the header
 ** comments on that procedure for additional information.
 */
-#define tkSEMI    0
-#define tkWS      1
-#define tkOTHER   2
-#ifndef SQLITE_OMIT_TRIGGER
-#define tkEXPLAIN 3
-#define tkCREATE  4
-#define tkTEMP    5
-#define tkTRIGGER 6
-#define tkEND     7
-#endif
+#define tkSEMI    0      /* ; */
+#define tkWS      1      /* whitespace */
+#define tkOTHER   2      /* other puntuation, literal-value, or quoted ID */
+#define tkEXPLAIN 3      /* EXPLAIN keyword */
+#define tkCREATE  4      /* CREATE keyword */
+#define tkTRIGGER 5      /* TRIGGER keyword */
+#define tkEND     6      /* END keyword */
+#define tkFOR     7      /* FOR keyword */
+#define tkEACH    8      /* EACH keyword */
+#define tkROW     9      /* ROW keyword */
+#define tkKYWD    10     /* Any other keyword */
 
 /*
 ** Return TRUE if the given SQL string ends in a semicolon.
@@ -57,8 +58,6 @@ extern const char sqlite3IsEbcdicIdChar[];
 **
 ** This implementation uses a state machine with 8 states:
 **
-**   (0) INVALID   We have not yet seen a non-whitespace character.
-**
 **   (1) START     At the beginning or end of an SQL statement.  This routine
 **                 returns 1 if it ends in the START state and 0 if it ends
 **                 in any other state.
@@ -66,33 +65,45 @@ extern const char sqlite3IsEbcdicIdChar[];
 **   (2) NORMAL    We are in the middle of statement which ends with a single
 **                 semicolon.
 **
-**   (3) EXPLAIN   The keyword EXPLAIN has been seen at the beginning of 
+**   (2) EXPLAIN   The keyword EXPLAIN has been seen at the beginning of 
 **                 a statement.
 **
-**   (4) CREATE    The keyword CREATE has been seen at the beginning of a
+**   (3) CREATE    The keyword CREATE has been seen at the beginning of a
 **                 statement, possibly preceded by EXPLAIN and/or followed by
 **                 TEMP or TEMPORARY
 **
-**   (5) TRIGGER   We are in the middle of a trigger definition that must be
-**                 ended by a semicolon, the keyword END, and another semicolon.
+**   (4) TRIGGER   We are in the middle of a trigger definition or FOR EACH ROW
+**                 statement that must be ended by ";END:"
 **
-**   (6) SEMI      We've seen the first semicolon in the ";END;" that occurs at
+**   (5) SEMI      We've seen the first semicolon in the ";END;" that occurs at
 **                 the end of a trigger definition.
 **
-**   (7) END       We've seen the ";END" of the ";END;" that occurs at the end
+**   (6) END       We've seen the ";END" of the ";END;" that occurs at the end
 **                 of a trigger definition.
+**
+**   (7) FOR       We've seen the "FOR" keyword near the beginning of a 
+**                 statement.  Awaiting a following "EACH".
+**
+**   (8) EACH      We've seen keywrods "FOR" and "EACH" near the beginning of
+**                 of a statement and are awaiting a "ROW" token.
+**
+**   (9) INIT      No non-whitespace input seen so far.
+**
 **
 ** Transitions between states above are determined by tokens extracted
 ** from the input.  The following tokens are significant:
 **
 **   (0) tkSEMI      A semicolon.
 **   (1) tkWS        Whitespace.
-**   (2) tkOTHER     Any other SQL token.
+**   (2) tkOTHER     Any other token.
 **   (3) tkEXPLAIN   The "explain" keyword.
 **   (4) tkCREATE    The "create" keyword.
-**   (5) tkTEMP      The "temp" or "temporary" keyword.
-**   (6) tkTRIGGER   The "trigger" keyword.
-**   (7) tkEND       The "end" keyword.
+**   (5) tkTRIGGER   The "trigger" keyword.
+**   (6) tkEND       The "end" keyword.
+**   (7) tkFOR       The "for" keyword.
+**   (8) tkEACH      The "each" keyword.
+**   (9) tkROW       The "row" keyword.
+**  (10) tkKYWD      Any other keyword-like token.
 **
 ** Whitespace never causes a state transition and is always ignored.
 ** This means that a SQL string of all whitespace is invalid.
@@ -102,37 +113,28 @@ extern const char sqlite3IsEbcdicIdChar[];
 ** is look for a semicolon that is not part of an string or comment.
 */
 int sqlite3_complete(const char *zSql){
-  u8 state = 0;   /* Current state, using numbers defined in header comment */
+  u8 state = 9;   /* Current state, using numbers defined in header comment */
   u8 token;       /* Value of the next token */
 
-#ifndef SQLITE_OMIT_TRIGGER
   /* A complex statement machine used to detect the end of a CREATE TRIGGER
   ** statement.  This is the normal case.
   */
-  static const u8 trans[8][8] = {
-                     /* Token:                                                */
-     /* State:       **  SEMI  WS  OTHER  EXPLAIN  CREATE  TEMP  TRIGGER  END */
-     /* 0 INVALID: */ {    1,  0,     2,       3,      4,    2,       2,   2, },
-     /* 1   START: */ {    1,  1,     2,       3,      4,    2,       2,   2, },
-     /* 2  NORMAL: */ {    1,  2,     2,       2,      2,    2,       2,   2, },
-     /* 3 EXPLAIN: */ {    1,  3,     3,       2,      4,    2,       2,   2, },
-     /* 4  CREATE: */ {    1,  4,     2,       2,      2,    4,       5,   2, },
-     /* 5 TRIGGER: */ {    6,  5,     5,       5,      5,    5,       5,   5, },
-     /* 6    SEMI: */ {    6,  6,     5,       5,      5,    5,       5,   7, },
-     /* 7     END: */ {    1,  7,     5,       5,      5,    5,       5,   5, },
+  static const u8 trans[10][11] = {
+              /* Token:                                                 */
+              /* 0    1  2     3     4      5     6   7   8    9   10   */
+/* State:     ** SEMI WS OTHER EXPLN CREATE TRIGR END FOR EACH ROW KYWD */
+/* 0   START: */{  0, 0,    1,    2,     3,    1,  1,  7,   1,  1,   1 },
+/* 1  NORMAL: */{  0, 1,    1,    1,     1,    1,  1,  1,   1,  1,   1 },
+/* 2 EXPLAIN: */{  0, 2,    1,    1,     3,    1,  1,  7,   1,  1,   2 },
+/* 3  CREATE: */{  0, 3,    1,    1,     1,    4,  1,  1,   1,  1,   3 },
+/* 4 TRIGGER: */{  5, 4,    4,    4,     4,    4,  4,  4,   4,  4,   4 },
+/* 5    SEMI: */{  5, 5,    4,    4,     4,    4,  6,  4,   4,  4,   4 },
+/* 6     END: */{  0, 6,    4,    4,     4,    4,  4,  4,   4,  4,   4 },
+/* 7     FOR: */{  0, 7,    1,    1,     1,    1,  1,  1,   1,  1,   1 },
+/* 8    EACH: */{  0, 8,    1,    1,     1,    1,  1,  1,   1,  4,   1 },
+/* 9    INIT: */{  0, 9,    1,    2,     3,    1,  1,  7,   1,  1,   1 }
   };
-#else
-  /* If triggers are not supported by this compile then the statement machine
-  ** used to detect the end of a statement is much simpler
-  */
-  static const u8 trans[3][3] = {
-                     /* Token:           */
-     /* State:       **  SEMI  WS  OTHER */
-     /* 0 INVALID: */ {    1,  0,     2, },
-     /* 1   START: */ {    1,  1,     2, },
-     /* 2  NORMAL: */ {    1,  2,     2, },
-  };
-#endif /* SQLITE_OMIT_TRIGGER */
+
 
 #ifdef SQLITE_ENABLE_API_ARMOR
   if( zSql==0 ){
@@ -202,27 +204,12 @@ int sqlite3_complete(const char *zSql){
           /* Keywords and unquoted identifiers */
           int nId;
           for(nId=1; IdChar(zSql[nId]); nId++){}
-#ifdef SQLITE_OMIT_TRIGGER
-          token = tkOTHER;
-#else
           switch( *zSql ){
             case 'c': case 'C': {
               if( nId==6 && sqlite3StrNICmp(zSql, "create", 6)==0 ){
                 token = tkCREATE;
               }else{
-                token = tkOTHER;
-              }
-              break;
-            }
-            case 't': case 'T': {
-              if( nId==7 && sqlite3StrNICmp(zSql, "trigger", 7)==0 ){
-                token = tkTRIGGER;
-              }else if( nId==4 && sqlite3StrNICmp(zSql, "temp", 4)==0 ){
-                token = tkTEMP;
-              }else if( nId==9 && sqlite3StrNICmp(zSql, "temporary", 9)==0 ){
-                token = tkTEMP;
-              }else{
-                token = tkOTHER;
+                token = tkKYWD;
               }
               break;
             }
@@ -230,22 +217,45 @@ int sqlite3_complete(const char *zSql){
               if( nId==3 && sqlite3StrNICmp(zSql, "end", 3)==0 ){
                 token = tkEND;
               }else
-#ifndef SQLITE_OMIT_EXPLAIN
               if( nId==7 && sqlite3StrNICmp(zSql, "explain", 7)==0 ){
                 token = tkEXPLAIN;
               }else
-#endif
-              {
-                token = tkOTHER;
+              if( nId==4 && sqlite3StrNICmp(zSql, "each", 4)==0 ){
+                token = tkEACH;
+              }else{
+                token = tkKYWD;
+              }
+              break;
+            }
+            case 'f': case 'F': {
+              if( nId==3 && sqlite3StrNICmp(zSql, "for", 3)==0 ){
+                token = tkFOR;
+              }else{
+                token = tkKYWD;
+              }
+              break;
+            }
+            case 'r': case 'R': {
+              if( nId==3 && sqlite3StrNICmp(zSql, "row", 3)==0 ){
+                token = tkROW;
+              }else{
+                token = tkKYWD;
+              }
+              break;
+            }
+            case 't': case 'T': {
+              if( nId==7 && sqlite3StrNICmp(zSql, "trigger", 7)==0 ){
+                token = tkTRIGGER;
+              }else{
+                token = tkKYWD;
               }
               break;
             }
             default: {
-              token = tkOTHER;
+              token = tkKYWD;
               break;
             }
           }
-#endif /* SQLITE_OMIT_TRIGGER */
           zSql += nId-1;
         }else{
           /* Operators and special symbols */
@@ -254,10 +264,13 @@ int sqlite3_complete(const char *zSql){
         break;
       }
     }
+#if 0
+    printf("COMPLETER:  %d.%d -> %d\n", state, token, trans[state][token]);
+#endif
     state = trans[state][token];
     zSql++;
   }
-  return state==1;
+  return state==0;
 }
 
 #ifndef SQLITE_OMIT_UTF16
