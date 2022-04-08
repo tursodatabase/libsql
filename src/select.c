@@ -301,10 +301,6 @@ int sqlite3JoinType(Parse *pParse, Token *pA, Token *pB, Token *pC){
     sqlite3ErrorMsg(pParse, "unknown or unsupported join type: "
        "%T%s%T%s%T", pA, zSp1, pB, zSp2, pC);
     jointype = JT_INNER;
-  }else if( (jointype & JT_RIGHT)!=0 ){
-    sqlite3ErrorMsg(pParse, 
-      "RIGHT and FULL OUTER JOINs are not currently supported");
-    jointype = JT_INNER;
   }
   return jointype;
 }
@@ -6589,7 +6585,7 @@ int sqlite3Select(
      && i==0
      && (p->selFlags & SF_ComplexResult)!=0
      && (pTabList->nSrc==1
-         || (pTabList->a[1].fg.jointype&(JT_LEFT|JT_CROSS))!=0)
+         || (pTabList->a[1].fg.jointype&(JT_OUTER|JT_CROSS))!=0)
     ){
       continue;
     }
@@ -6741,8 +6737,8 @@ int sqlite3Select(
     */
     if( i==0
      && (pTabList->nSrc==1
-            || (pTabList->a[1].fg.jointype&(JT_LEFT|JT_CROSS))!=0)  /* (1) */
-     && (pItem->fg.isCte==0 || pItem->u2.pCteUse->eM10d!=M10d_Yes)  /* (2) */
+            || (pTabList->a[1].fg.jointype&(JT_OUTER|JT_CROSS))!=0)  /* (1) */
+     && (pItem->fg.isCte==0 || pItem->u2.pCteUse->eM10d!=M10d_Yes)   /* (2) */
     ){
       /* Implement a co-routine that will return a single row of the result
       ** set on each invocation.

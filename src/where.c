@@ -732,13 +732,13 @@ static int termCanDriveIndex(
   char aff;
   if( pTerm->leftCursor!=pSrc->iCursor ) return 0;
   if( (pTerm->eOperator & (WO_EQ|WO_IS))==0 ) return 0;
-  if( (pSrc->fg.jointype & JT_LEFT) 
+  if( (pSrc->fg.jointype & (JT_LEFT|JT_LTORJ))!=0
    && !ExprHasProperty(pTerm->pExpr, EP_FromJoin)
    && (pTerm->eOperator & WO_IS)
   ){
     /* Cannot use an IS term from the WHERE clause as an index driver for
-    ** the RHS of a LEFT JOIN. Such a term can only be used if it is from
-    ** the ON clause.  */
+    ** the RHS of a LEFT JOIN or for the LHS of a RIGHT JOIN. Such a term
+    ** can only be used if it is from the ON clause.  */
     return 0;
   }
   if( (pTerm->prereqRight & notReady)!=0 ) return 0;
@@ -808,7 +808,8 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
     ** WHERE clause (or the ON clause of a LEFT join) that constrain which
     ** rows of the target table (pSrc) that can be used. */
     if( (pTerm->wtFlags & TERM_VIRTUAL)==0
-     && ((pSrc->fg.jointype&JT_LEFT)==0 || ExprHasProperty(pExpr,EP_FromJoin))
+     && ((pSrc->fg.jointype&(JT_LEFT|JT_LTORJ))==0
+               || ExprHasProperty(pExpr,EP_FromJoin))
      && sqlite3ExprIsTableConstant(pExpr, pSrc->iCursor)
     ){
       pPartial = sqlite3ExprAnd(pParse, pPartial,
@@ -1081,7 +1082,7 @@ static SQLITE_NOINLINE void sqlite3ConstructBloomFilter(
       const SrcItem *pTabItem;
       pLevel = &pWInfo->a[iLevel];
       pTabItem = &pWInfo->pTabList->a[pLevel->iFrom];
-      if( pTabItem->fg.jointype & JT_LEFT ) continue;
+      if( pTabItem->fg.jointype & (JT_LEFT|JT_LTORJ) ) continue;
       pLoop = pLevel->pWLoop;
       if( NEVER(pLoop==0) ) continue;
       if( pLoop->prereq & notReady ) continue;
@@ -1154,9 +1155,10 @@ static sqlite3_index_info *allocateIndexInfo(
     assert( pTerm->u.x.leftColumn<pTab->nCol );
 
     /* tag-20191211-002: WHERE-clause constraints are not useful to the
-    ** right-hand table of a LEFT JOIN.  See tag-20191211-001 for the
+    ** right-hand table of a LEFT JOIN nor to the left-hand table of a
+    ** RIGHT JOIN.  See tag-20191211-001 for the
     ** equivalent restriction for ordinary tables. */
-    if( (pSrc->fg.jointype & JT_LEFT)!=0
+    if( (pSrc->fg.jointype & (JT_LEFT|JT_LTORJ))!=0
      && !ExprHasProperty(pTerm->pExpr, EP_FromJoin)
     ){
       continue;
@@ -2600,10 +2602,11 @@ static void whereLoopOutputAdjust(
         **
         ** 2022-03-24:  Self-culling only applies if either the extra terms
         ** are straight comparison operators that are non-true with NULL
-        ** operand, or if the loop is not a LEFT JOIN.
+        ** operand, or if the loop is not an OUTER JOIN.
         */
         if( (pTerm->eOperator & 0x3f)!=0
-         || (pWC->pWInfo->pTabList->a[pLoop->iTab].fg.jointype & JT_LEFT)==0
+         || (pWC->pWInfo->pTabList->a[pLoop->iTab].fg.jointype
+                  & (JT_LEFT|JT_LTORJ))==0
         ){
           pLoop->wsFlags |= WHERE_SELFCULL;
         }
@@ -2810,9 +2813,10 @@ static int whereLoopAddBtreeIndex(
     if( pTerm->wtFlags & TERM_LIKEOPT && pTerm->eOperator==WO_LT ) continue;
 
     /* tag-20191211-001:  Do not allow constraints from the WHERE clause to
-    ** be used by the right table of a LEFT JOIN.  Only constraints in the
+    ** be used by the right table of a LEFT JOIN nor by the left table of a
+    ** RIGHT JOIN.  Only constraints in the
     ** ON clause are allowed.  See tag-20191211-002 for the vtab equivalent. */
-    if( (pSrc->fg.jointype & JT_LEFT)!=0
+    if( (pSrc->fg.jointype & (JT_LEFT|JT_LTORJ))!=0
      && !ExprHasProperty(pTerm->pExpr, EP_FromJoin)
     ){
       continue;
@@ -4114,9 +4118,9 @@ static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
     pNew->iTab = iTab;
     pBuilder->iPlanLimit += SQLITE_QUERY_PLANNER_LIMIT_INCR;
     pNew->maskSelf = sqlite3WhereGetMask(&pWInfo->sMaskSet, pItem->iCursor);
-    if( (pItem->fg.jointype & (JT_LEFT|JT_CROSS))!=0 ){
+    if( (pItem->fg.jointype & (JT_OUTER|JT_CROSS))!=0 ){
       /* This condition is true when pItem is the FROM clause term on the
-      ** right-hand-side of a LEFT or CROSS JOIN.  */
+      ** right-hand-side of a OUTER or CROSS JOIN.  */
       mPrereq = mPrior;
     }else{
       mPrereq = 0;
@@ -4125,7 +4129,7 @@ static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
     if( IsVirtual(pItem->pTab) ){
       SrcItem *p;
       for(p=&pItem[1]; p<pEnd; p++){
-        if( mUnusable || (p->fg.jointype & (JT_LEFT|JT_CROSS)) ){
+        if( mUnusable || (p->fg.jointype & (JT_OUTER|JT_CROSS)) ){
           mUnusable |= sqlite3WhereGetMask(&pWInfo->sMaskSet, p->iCursor);
         }
       }
@@ -5844,6 +5848,10 @@ WhereInfo *sqlite3WhereBegin(
       }
     }
     if( iDb>=0 ) sqlite3CodeVerifySchema(pParse, iDb);
+    if( pTabItem->fg.jointype & JT_RIGHT ){
+      VdbeModuleComment((v, "TO-DO: Setup for the RIGHT JOIN of %s",
+                         pTab->zName));
+    }
   }
   pWInfo->iTop = sqlite3VdbeCurrentAddr(v);
   if( db->mallocFailed ) goto whereBeginError;
@@ -6091,11 +6099,6 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
                      pWInfo->pTabList->a[pLevel->iFrom].pTab->zName));
   }
 
-  /* The "break" point is here, just past the end of the outer loop.
-  ** Set it.
-  */
-  sqlite3VdbeResolveLabel(v, pWInfo->iBreak);
-
   assert( pWInfo->nLevel<=pTabList->nSrc );
   for(i=0, pLevel=pWInfo->a; i<pWInfo->nLevel; i++, pLevel++){
     int k, last;
@@ -6105,6 +6108,16 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
     Table *pTab = pTabItem->pTab;
     assert( pTab!=0 );
     pLoop = pLevel->pWLoop;
+
+    /* Do RIGHT JOIN processing.  Generate code that will output the
+    ** unmatched rows of the right operand of the RIGHT JOIN with
+    ** all of the columns of the left operand set to NULL.
+    */
+    if( pTabItem->fg.jointype & JT_RIGHT ){
+      VdbeModuleComment((v, "TO-DO: RIGHT JOIN post-processing for %s",
+                            pTab->zName));
+
+    }
 
     /* For a co-routine, change all OP_Column references to the table of
     ** the co-routine into OP_Copy of result contained in a register.
@@ -6116,29 +6129,6 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
                             pTabItem->regResult, 0);
       continue;
     }
-
-#ifdef SQLITE_ENABLE_EARLY_CURSOR_CLOSE
-    /* Close all of the cursors that were opened by sqlite3WhereBegin.
-    ** Except, do not close cursors that will be reused by the OR optimization
-    ** (WHERE_OR_SUBCLAUSE).  And do not close the OP_OpenWrite cursors
-    ** created for the ONEPASS optimization.
-    */
-    if( (pTab->tabFlags & TF_Ephemeral)==0
-     && !IsView(pTab)
-     && (pWInfo->wctrlFlags & WHERE_OR_SUBCLAUSE)==0
-    ){
-      int ws = pLoop->wsFlags;
-      if( pWInfo->eOnePass==ONEPASS_OFF && (ws & WHERE_IDX_ONLY)==0 ){
-        sqlite3VdbeAddOp1(v, OP_Close, pTabItem->iCursor);
-      }
-      if( (ws & WHERE_INDEXED)!=0
-       && (ws & (WHERE_IPK|WHERE_AUTO_INDEX))==0 
-       && pLevel->iIdxCur!=pWInfo->aiCurOnePass[1]
-      ){
-        sqlite3VdbeAddOp1(v, OP_Close, pLevel->iIdxCur);
-      }
-    }
-#endif
 
     /* If this scan uses an index, make VDBE code substitutions to read data
     ** from the index instead of from the table where possible.  In some cases
@@ -6239,6 +6229,11 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
 #endif
     }
   }
+
+  /* The "break" point is here, just past the end of the outer loop.
+  ** Set it.
+  */
+  sqlite3VdbeResolveLabel(v, pWInfo->iBreak);
 
   /* Final cleanup
   */

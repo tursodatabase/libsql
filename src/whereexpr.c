@@ -1831,7 +1831,7 @@ void sqlite3WhereTabFuncArgs(
     pRhs = sqlite3PExpr(pParse, TK_UPLUS, 
         sqlite3ExprDup(pParse->db, pArgs->a[j].pExpr, 0), 0);
     pTerm = sqlite3PExpr(pParse, TK_EQ, pColRef, pRhs);
-    if( pItem->fg.jointype & JT_LEFT ){
+    if( pItem->fg.jointype & (JT_LEFT|JT_LTORJ) ){
       sqlite3SetJoinExpr(pTerm, pItem->iCursor);
     }
     whereClauseInsert(pWC, pTerm, TERM_DYNAMIC);
