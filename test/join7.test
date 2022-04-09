@@ -1,0 +1,28 @@
+# 2022-04-09
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.
+#
+# This file implements tests for RIGHT and FULL OUTER JOINs.
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+do_execsql_test join7-1.1 {
+  CREATE TABLE t1(a int,b int);
+  INSERT INTO t1 VALUES(1,2),(1,3),(1,4);
+  CREATE INDEX t1a ON t1(a);
+  CREATE TABLE t2(c int,d int);
+  INSERT INTO t2 VALUES(3,33),(4,44),(5,55);
+  CREATE INDEX t2c ON t2(c);
+  SELECT quote(b), quote(d), '|' FROM t1 FULL OUTER JOIN t2 ON b=c ORDER BY b;
+} {NULL 55 | 2 NULL | 3 33 | 4 44 |}
+
+finish_test

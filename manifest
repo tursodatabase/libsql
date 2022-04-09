@@ -1,5 +1,5 @@
-C Bug\sfixes.\s\sA\sbasic\sFULL\sOUTER\sJOIN\snow\sworks.
-D 2022-04-09T18:48:11.005
+C Add\sa\ssimple\stest\scase.\s\s(It\sis\snot\sdifficult\sto\screate\sadditional\stest\ncases\sthat\sassert,\sat\sthis\spoint.)
+D 2022-04-09T20:11:05.917
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1146,6 +1146,7 @@ F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
 F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
 F test/join5.test 0d63c7e43b3160b9d4b93f196ef83b6efc7751b9edd0d18c53a46fbec7a49cfc
 F test/join6.test f809c025fa253f9e150c0e9afd4cef8813257bceeb6f46e04041228c9403cc2c
+F test/join7.test b62546e7961a535f5ec2df1f7bd1b4deb60f40dd42444d3d409d53d8890988e2
 F test/journal1.test c7b768041b7f494471531e17abc2f4f5ebf9e5096984f43ed17c4eb80ba34497
 F test/journal2.test 9dac6b4ba0ca79c3b21446bbae993a462c2397c4
 F test/journal3.test 7c3cf23ffc77db06601c1fcfc9743de8441cb77db9d1aa931863d94f5ffa140e
@@ -1945,8 +1946,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2db5a498e74241dd19ef51c601f1a2b3b687faed3e1be2d1e3ada737406ac8e9
-R 0ae50938e4462db8bba3d38695099c31
+P 34bbeeb77bd530b2b1f0390e9e552f65ae35f09a74d80a09dd327e64f9be51a1
+R d71d5d031d27efcdf2eb198054735b86
 U drh
-Z 29e379e6c2c78a86783f35cb54daa623
+Z 3028a815e9da0bf5b69ea97a441052fd
 # Remove this line to create a well-formed Fossil manifest.
