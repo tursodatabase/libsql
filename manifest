@@ -1,5 +1,5 @@
-C The\ssqlite3WhereMalloc()\sroutine\sallocates\smemory\sthat\sis\sautomatically\ndeleted\swhen\sthe\scorresponding\sWhereInfo\sobject\sis\sdestroyed.
-D 2022-04-09T03:06:01.731
+C Fix\s.import\sbug\sreported\sat\shttps://sqlite.org/forum/forumpost/14db09d7e765b819\s.\szAutoColumn\smade\sto\sdeliver\scharacters,\snot\sbytes.
+D 2022-04-09T18:51:49.784
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -553,7 +553,7 @@ F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c 18d99e7146852d6064559561769fcca0743eb32b14a97da6dbed373a30ee0e76
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 7c106b3f36d483242b0a9c696614cd53d6f29e1ac81da6a3f0e9ea92f4211cc3
-F src/shell.c.in 1a8fbf932ecd582b1a5f66c1e8294f92c30d954616f5c7cc54c9623fcdbb028d
+F src/shell.c.in eb7f10d5e2c47bd014d92ec5db1def21fcc1ed56ffaaa4ee715b6c37c370b47f
 F src/sqlite.h.in 2a35f62185eb5e7ecc64a2f68442b538ce9be74f80f28a00abc24837edcf1c17
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h f49e28c25bd941e79794db5415fdf7b202deb3bc072ed6f1ed273d578703684e
@@ -1393,7 +1393,7 @@ F test/shell1.test b224e0793c5f48aa3749e65d8c64b93a30731bd206f2e41e6c5f1bee1bdb1
 F test/shell2.test 7a3a23a9f57b99453f1679b1fe8072cb30e382a622874c0c4d97695fadb0a787
 F test/shell3.test a50628ab1d78d90889d9d3f32fb2c084ee15674771e96afe954aaa0accd1de3c
 F test/shell4.test 8f6c0fce4abed19a8a7f7262517149812a04caa905d01bdc8f5e92573504b759
-F test/shell5.test 0a9920d81fae28c45cd5dbd1deb809487a23c5f4b422a49f9d31c85f926d4a9c
+F test/shell5.test 78a7a8516b1e7de560748881424f621321549023d3e5f7ed2e1c56497f64c06c
 F test/shell6.test 1ceb51b2678c472ba6cf1e5da96679ce8347889fe2c3bf93a0e0fa73f00b00d3
 F test/shell7.test 115132f66d0463417f408562cc2cf534f6bbc6d83a6d50f0072a9eb171bae97f
 F test/shell8.test 388471d16e4de767333107e30653983f186232c0e863f4490bb230419e830aae
@@ -1945,8 +1945,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8efd61e8518594e3e9c84681fc35796a78fe8885a97ad4dd19f1573ee8065b18
-R 48010733dae82cb9023efd9a61e0d9ba
-U drh
-Z a50ac2a16236eccfde93e32da194e6bb
+P f237e1d8cc41b937f34288daebfacf5f7b0990a807a805e0cb6b45bc730192d6
+R 32d747db1a8abc3115c9e0c3c720312e
+U larrybr
+Z 31d16ad9966991b7487e6e03ff8edde4
 # Remove this line to create a well-formed Fossil manifest.
