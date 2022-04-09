@@ -1,5 +1,5 @@
-C The\sinterior\sof\sthe\sRIGHT\sJOIN\sloop\sis\snow\sa\ssubroutine.
-D 2022-04-09T12:27:20.408
+C Add\sbyte-code\sthat\scomputes\sunmatched\srows\son\sthe\sright\stable\sof\sa\sRIGHT\sJOIN.\nCompiles,\sand\sthe\scode\slooks\ssemi-reasonable,\sbut\sstill\sdoes\snot\srun.\nIncremental\scheck-in.
+D 2022-04-09T14:48:35.562
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -639,7 +639,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c b9df133a705093da8977da5eb202eaadb844839f1c7297c08d33471f5491843d
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
-F src/where.c 8aed75fc91e396b4576fcd8fc38e617a049496102e36ab92f1ff79b88c06ad27
+F src/where.c 7d0b140d373dce6b86e4023239265db5c4af465ea3cf1ff92f9a38369518e166
 F src/whereInt.h ecf0d9fe3e35f2546e660c6389e56aedb6fd2434e31a0449b261ff55ebc6df2d
 F src/wherecode.c 39532c183ea306ae44b5ab3119b244407b46970b088c59d5751c5724b4b6ec15
 F src/whereexpr.c ac8985bbd983f34273b1e0d05cd738ff436331674c1b22f4caf6537e1eca4691
@@ -1945,8 +1945,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 55b4543122646997d928598343bc467c993f971e86e9037c85430cc948750576
-R d55a6c933c69ce9dd22747640f9c6ba1
+P 549f5a7ee639de80f049445002f58e93c805f9a3d3db1987ec9d139ccef4805e
+R 897adc2c472d0e3292a88884e473c6ff
 U drh
-Z 4ad8351a3e92bf37b209fecc61321431
+Z 9e61af1d71063444102e67ca76812f4f
 # Remove this line to create a well-formed Fossil manifest.

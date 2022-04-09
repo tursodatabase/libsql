@@ -6006,7 +6006,9 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
     int addr;
     pLevel = &pWInfo->a[i];
     if( pLevel->pRJ ){
-      WhereRightJoin *pRJ = (WhereRightJoin*)pLevel->pRJ;
+      /* Terminate the subroutine that forms the interior of the loop of
+      ** the RIGHT JOIN table */
+      WhereRightJoin *pRJ = pLevel->pRJ;
       sqlite3VdbeChangeP2(v, pRJ->addrSubrtn-1, sqlite3VdbeCurrentAddr(v));
       sqlite3VdbeAddOp2(v, OP_Return, pRJ->regReturn, pRJ->addrSubrtn);
     }
@@ -6159,10 +6161,49 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
     ** unmatched rows of the right operand of the RIGHT JOIN with
     ** all of the columns of the left operand set to NULL.
     */
-    if( pTabItem->fg.jointype & JT_RIGHT ){
-      VdbeModuleComment((v, "TO-DO: RIGHT JOIN post-processing for %s",
-                            pTab->zName));
-
+    if( pLevel->pRJ ){
+      WhereRightJoin *pRJ = pLevel->pRJ;
+      Expr *pSubWhere = 0;
+      WhereClause *pWC = &pWInfo->sWC;
+      WhereInfo *pSubWInfo;
+      SrcList sFrom;
+      for(k=0; k<pWC->nTerm; k++){
+        WhereTerm *pTerm = &pWC->a[i];
+        if( pTerm->wtFlags & TERM_VIRTUAL ) break;
+        if( pTerm->prereqAll & ~pLoop->maskSelf ) continue;
+        pSubWhere = sqlite3ExprAnd(pParse, pSubWhere,
+                                   sqlite3ExprDup(db, pTerm->pExpr, 0));
+      }
+      sFrom.nSrc = 1;
+      sFrom.nAlloc = 1;
+      memcpy(&sFrom.a[0], pTabItem, sizeof(SrcItem));
+      sFrom.a[0].fg.jointype = 0;
+      pSubWInfo = sqlite3WhereBegin(pParse, &sFrom, pSubWhere, 0, 0, 0,
+                                    WHERE_OR_SUBCLAUSE, 0);
+      if( pSubWInfo ){
+        int iCur = pLevel->iTabCur;
+        int r = ++pParse->nMem;
+        int nPk;
+        int addrCont = sqlite3WhereContinueLabel(pSubWInfo);
+        if( HasRowid(pTab) ){
+          sqlite3ExprCodeGetColumnOfTable(v, pTab, iCur, -1, r);
+          nPk = 1;
+        }else{
+          int iPk;
+          Index *pPk = sqlite3PrimaryKeyIndex(pTab);
+          nPk = pPk->nKeyCol;
+          pParse->nMem += nPk - 1;
+          for(iPk=0; iPk<nPk; iPk++){
+            int iCol = pPk->aiColumn[iPk];
+            sqlite3ExprCodeGetColumnOfTable(v, pTab, iCur, iCol,r+iPk);
+          }
+        }
+        sqlite3VdbeAddOp4Int(v, OP_Filter, pRJ->regBloom, addrCont, r, nPk);
+        sqlite3VdbeAddOp4Int(v, OP_Found, pRJ->iMatch, addrCont, r, nPk);
+        sqlite3VdbeAddOp2(v, OP_Gosub, pRJ->regReturn, pRJ->addrSubrtn);
+        sqlite3WhereEnd(pSubWInfo);
+      }
+      sqlite3ExprDelete(pParse->db, pSubWhere);
     }
 
     /* For a co-routine, change all OP_Column references to the table of
