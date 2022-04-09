@@ -492,7 +492,7 @@ TCL_CSTR_LITERAL(static const char * const zDefineREPL = ){
       if {$trimmed eq "."} break
       set rc [catch {uplevel #0 $group} result]
       if {$rc == 0} {
-        if {$result != "" && $interactive} {
+        if {$result != "" && $::tcl_interactive} {
           puts $result
         }
       } elseif {$rc == 1} {
@@ -501,7 +501,7 @@ TCL_CSTR_LITERAL(static const char * const zDefineREPL = ){
         return -code 2
       }
     }
-    if {$interactive && $trimmed ne "."} {puts {}}
+    if {$::tcl_interactive && $trimmed ne "."} {puts {}}
     read stdin 0
     if {[info exists save_interactive]} {
       set ::tcl_interactive $save_interactive

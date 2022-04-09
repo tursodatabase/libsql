@@ -204,6 +204,52 @@ static Select *findRightmost(Select *p){
 **
 ** If an illegal or unsupported join type is seen, then still return
 ** a join type, but put an error in the pParse structure.
+**
+** These are the valid join types:
+**
+**
+**      pA       pB       pC               Return Value
+**     -------  -----    -----             ------------
+**     CROSS      -        -                 JT_CROSS
+**     INNER      -        -                 JT_INNER
+**     LEFT       -        -                 JT_LEFT|JT_OUTER
+**     LEFT     OUTER      -                 JT_LEFT|JT_OUTER
+**     RIGHT      -        -                 JT_RIGHT|JT_OUTER
+**     RIGHT    OUTER      -                 JT_RIGHT|JT_OUTER
+**     FULL       -        -                 JT_LEFT|JT_RIGHT|JT_OUTER
+**     FULL     OUTER      -                 JT_LEFT|JT_RIGHT|JT_OUTER
+**     NATURAL  INNER      -                 JT_NATURAL|JT_INNER
+**     NATURAL  LEFT       -                 JT_NATURAL|JT_LEFT|JT_OUTER
+**     NATURAL  LEFT     OUTER               JT_NATURAL|JT_LEFT|JT_OUTER
+**     NATURAL  RIGHT      -                 JT_NATURAL|JT_RIGHT|JT_OUTER
+**     NATURAL  RIGHT    OUTER               JT_NATURAL|JT_RIGHT|JT_OUTER
+**     NATURAL  FULL       -                 JT_NATURAL|JT_LEFT|JT_RIGHT
+**     NATURAL  FULL     OUTER               JT_NATRUAL|JT_LEFT|JT_RIGHT
+**
+** To preserve historical compatibly, SQLite also accepts a variety 
+** of other non-standard and in many cases non-sensical join types.
+** This routine makes as much sense at it can from the nonsense join
+** type and returns a result.  Examples of accepted nonsense join types
+** include but are not limited to:
+**
+**          INNER CROSS JOIN        ->   same as JOIN
+**          NATURAL CROSS JOIN      ->   same as NATURAL JOIN
+**          OUTER LEFT JOIN         ->   same as LEFT JOIN
+**          LEFT NATURAL JOIN       ->   same as NATURAL LEFT JOIN
+**          LEFT RIGHT JOIN         ->   same as FULL JOIN
+**          RIGHT OUTER FULL JOIN   ->   same as FULL JOIN
+**          CROSS CROSS CROSS JOIN  ->   same as JOIN
+**
+** The only restrictions on the join type name are:
+**
+**    *   "INNER" cannot appear together with "OUTER", "LEFT", "RIGHT",
+**        or "FULL".
+**
+**    *   "CROSS" cannot appear together with "OUTER", "LEFT", "RIGHT,
+**        or "FULL".
+**
+**    *   If "OUTER" is present then there must also be one of
+**        "LEFT", "RIGHT", or "FULL"
 */
 int sqlite3JoinType(Parse *pParse, Token *pA, Token *pB, Token *pC){
   int jointype = 0;
@@ -216,13 +262,13 @@ int sqlite3JoinType(Parse *pParse, Token *pA, Token *pB, Token *pC){
     u8 nChar;    /* Length of the keyword in characters */
     u8 code;     /* Join type mask */
   } aKeyword[] = {
-    /* natural */ { 0,  7, JT_NATURAL                },
-    /* left    */ { 6,  4, JT_LEFT|JT_OUTER          },
-    /* outer   */ { 10, 5, JT_OUTER                  },
-    /* right   */ { 14, 5, JT_RIGHT|JT_OUTER         },
-    /* full    */ { 19, 4, JT_LEFT|JT_RIGHT|JT_OUTER },
-    /* inner   */ { 23, 5, JT_INNER                  },
-    /* cross   */ { 28, 5, JT_INNER|JT_CROSS         },
+    /* (0) natural */ { 0,  7, JT_NATURAL                },
+    /* (1) left    */ { 6,  4, JT_LEFT|JT_OUTER          },
+    /* (2) outer   */ { 10, 5, JT_OUTER                  },
+    /* (3) right   */ { 14, 5, JT_RIGHT|JT_OUTER         },
+    /* (4) full    */ { 19, 4, JT_LEFT|JT_RIGHT|JT_OUTER },
+    /* (5) inner   */ { 23, 5, JT_INNER                  },
+    /* (6) cross   */ { 28, 5, JT_INNER|JT_CROSS         },
   };
   int i, j;
   apAll[0] = pA;
@@ -245,16 +291,17 @@ int sqlite3JoinType(Parse *pParse, Token *pA, Token *pB, Token *pC){
   }
   if(
      (jointype & (JT_INNER|JT_OUTER))==(JT_INNER|JT_OUTER) ||
-     (jointype & JT_ERROR)!=0
+     (jointype & JT_ERROR)!=0 ||
+     (jointype & (JT_OUTER|JT_LEFT|JT_RIGHT))==JT_OUTER
   ){
-    const char *zSp = " ";
-    assert( pB!=0 );
-    if( pC==0 ){ zSp++; }
+    const char *zSp1 = " ";
+    const char *zSp2 = " ";
+    if( pB==0 ){ zSp1++; }
+    if( pC==0 ){ zSp2++; }
     sqlite3ErrorMsg(pParse, "unknown or unsupported join type: "
-       "%T %T%s%T", pA, pB, zSp, pC);
+       "%T%s%T%s%T", pA, zSp1, pB, zSp2, pC);
     jointype = JT_INNER;
-  }else if( (jointype & JT_OUTER)!=0 
-         && (jointype & (JT_LEFT|JT_RIGHT))!=JT_LEFT ){
+  }else if( (jointype & JT_RIGHT)!=0 ){
     sqlite3ErrorMsg(pParse, 
       "RIGHT and FULL OUTER JOINs are not currently supported");
     jointype = JT_INNER;

@@ -253,6 +253,30 @@ Bitmask sqlite3WhereGetMask(WhereMaskSet *pMaskSet, int iCursor){
   return 0;
 }
 
+/* Allocate memory that is automatically freed when pWInfo is freed.
+*/
+void *sqlite3WhereMalloc(WhereInfo *pWInfo, u64 nByte){
+  WhereMemBlock *pBlock;
+  pBlock = sqlite3DbMallocRawNN(pWInfo->pParse->db, nByte+sizeof(*pBlock));
+  if( pBlock ){
+    pBlock->pNext = pWInfo->pMemToFree;
+    pBlock->sz = nByte;
+    pWInfo->pMemToFree = pBlock;
+    pBlock++;
+  }
+  return (void*)pBlock;
+}
+void *sqlite3WhereRealloc(WhereInfo *pWInfo, void *pOld, u64 nByte){
+  void *pNew = sqlite3WhereMalloc(pWInfo, nByte);
+  if( pNew && pOld ){
+    WhereMemBlock *pOldBlk = (WhereMemBlock*)pOld;
+    pOldBlk--;
+    assert( pOldBlk->sz<nByte );
+    memcpy(pNew, pOld, pOldBlk->sz);
+  }
+  return pNew;
+}
+
 /*
 ** Create a new mask for cursor iCursor.
 **
@@ -2216,15 +2240,7 @@ static void whereLoopDelete(sqlite3 *db, WhereLoop *p){
 ** Free a WhereInfo structure
 */
 static void whereInfoFree(sqlite3 *db, WhereInfo *pWInfo){
-  int i;
   assert( pWInfo!=0 );
-  for(i=0; i<pWInfo->nLevel; i++){
-    WhereLevel *pLevel = &pWInfo->a[i];
-    if( pLevel->pWLoop && (pLevel->pWLoop->wsFlags & WHERE_IN_ABLE)!=0 ){
-      assert( (pLevel->pWLoop->wsFlags & WHERE_MULTI_OR)==0 );
-      sqlite3DbFree(db, pLevel->u.in.aInLoop);
-    }
-  }
   sqlite3WhereClauseClear(&pWInfo->sWC);
   while( pWInfo->pLoops ){
     WhereLoop *p = pWInfo->pLoops;
@@ -2232,6 +2248,11 @@ static void whereInfoFree(sqlite3 *db, WhereInfo *pWInfo){
     whereLoopDelete(db, p);
   }
   assert( pWInfo->pExprMods==0 );
+  while( pWInfo->pMemToFree ){
+    WhereMemBlock *pNext = pWInfo->pMemToFree->pNext;
+    sqlite3DbFreeNN(db, pWInfo->pMemToFree);
+    pWInfo->pMemToFree = pNext;
+  }
   sqlite3DbFreeNN(db, pWInfo);
 }
 
@@ -3788,15 +3809,26 @@ int sqlite3_vtab_distinct(sqlite3_index_info *pIdxInfo){
     && !defined(SQLITE_OMIT_VIRTUALTABLE)
 /*
 ** Cause the prepared statement that is associated with a call to
-** xBestIndex to open write transactions on all attached schemas.
+** xBestIndex to potentiall use all schemas.  If the statement being
+** prepared is read-only, then just start read transactions on all
+** schemas.  But if this is a write operation, start writes on all
+** schemas.
+**
 ** This is used by the (built-in) sqlite_dbpage virtual table.
 */
-void sqlite3VtabWriteAll(sqlite3_index_info *pIdxInfo){
+void sqlite3VtabUsesAllSchemas(sqlite3_index_info *pIdxInfo){
   HiddenIndexInfo *pHidden = (HiddenIndexInfo*)&pIdxInfo[1];
   Parse *pParse = pHidden->pParse;
   int nDb = pParse->db->nDb;
   int i;
-  for(i=0; i<nDb; i++) sqlite3BeginWriteOperation(pParse, 0, i);
+  for(i=0; i<nDb; i++){
+    sqlite3CodeVerifySchema(pParse, i);
+  }
+  if( pParse->writeMask ){
+    for(i=0; i<nDb; i++){
+      sqlite3BeginWriteOperation(pParse, 0, i);
+    }
+  }
 }
 #endif
 
