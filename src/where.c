@@ -6009,7 +6009,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       /* Terminate the subroutine that forms the interior of the loop of
       ** the RIGHT JOIN table */
       WhereRightJoin *pRJ = pLevel->pRJ;
-      sqlite3VdbeChangeP2(v, pRJ->addrSubrtn-1, sqlite3VdbeCurrentAddr(v));
+      sqlite3VdbeChangeP1(v, pRJ->addrSubrtn-1, sqlite3VdbeCurrentAddr(v));
       sqlite3VdbeAddOp2(v, OP_Return, pRJ->regReturn, pRJ->addrSubrtn);
     }
     pLoop = pLevel->pWLoop;
@@ -6184,6 +6184,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
         int iCur = pLevel->iTabCur;
         int r = ++pParse->nMem;
         int nPk;
+        int jmp;
         int addrCont = sqlite3WhereContinueLabel(pSubWInfo);
         if( HasRowid(pTab) ){
           sqlite3ExprCodeGetColumnOfTable(v, pTab, iCur, -1, r);
@@ -6198,8 +6199,9 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
             sqlite3ExprCodeGetColumnOfTable(v, pTab, iCur, iCol,r+iPk);
           }
         }
-        sqlite3VdbeAddOp4Int(v, OP_Filter, pRJ->regBloom, addrCont, r, nPk);
+        jmp = sqlite3VdbeAddOp4Int(v, OP_Filter, pRJ->regBloom, 0, r, nPk);
         sqlite3VdbeAddOp4Int(v, OP_Found, pRJ->iMatch, addrCont, r, nPk);
+        sqlite3VdbeJumpHere(v, jmp);
         sqlite3VdbeAddOp2(v, OP_Gosub, pRJ->regReturn, pRJ->addrSubrtn);
         sqlite3WhereEnd(pSubWInfo);
       }
