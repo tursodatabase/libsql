@@ -57,7 +57,7 @@ LIBTCL = @TCL_LIB_SPEC@
 # that will run on the target platform. It relies on no in-tree includes,
 # using only pre-glommed source/header files in the current directory.
 TCCX = ${CC} ${CFLAGS} -fPIC -shared -I. @TCL_INCLUDE_SPEC@
-TCCX += @EXTENSION_DEBUG@ $(LIBTCL)
+TCCX += @EXTENSION_DEBUG@
 
 # Compiler options needed for programs that use the readline() library.
 #
@@ -1258,7 +1258,7 @@ tclshext.c:	$(TOP)/ext/misc/tclshext.c.in $(TOP)/src/tclsqlite.c
 	$(MKSHELL_TOOL) $(TOP)/ext/misc/tclshext.c.in > $@
 
 tclshext$(SHLIB_SUFFIX): tclshext.c shx_link.h
-	$(TCCX) $(TCLEXT_OPTS) tclshext.c -o $@
+	$(TCCX) $(TCLEXT_OPTS) tclshext.c -o $@ $(LIBTCL)
 
 # Rules to build the 'testfixture' application.
 #
