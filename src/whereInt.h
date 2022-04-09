@@ -75,6 +75,7 @@ struct WhereLevel {
   int addrLikeRep;      /* LIKE range processing address */
 #endif
   int regFilter;        /* Bloom filter */
+  int iRJMatch;         /* Cursor or rowset used for matched RIGHT JOIN rows */
   u8 iFrom;             /* Which entry in the FROM clause */
   u8 op, p3, p5;        /* Opcode, P3 & P5 of the opcode that ends the loop */
   int p1, p2;           /* Operands of the opcode used to end the loop */

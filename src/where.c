@@ -5870,8 +5870,22 @@ WhereInfo *sqlite3WhereBegin(
     }
     if( iDb>=0 ) sqlite3CodeVerifySchema(pParse, iDb);
     if( pTabItem->fg.jointype & JT_RIGHT ){
-      VdbeModuleComment((v, "TO-DO: Setup for the RIGHT JOIN of %s",
-                         pTab->zName));
+      assert( pTab==pTabItem->pTab );
+      pLevel->iRJMatch = pParse->nTab++;
+      if( HasRowid(pTab) ){
+        KeyInfo *pInfo;
+        sqlite3VdbeAddOp2(v, OP_OpenEphemeral, pLevel->iRJMatch, 1);
+        pInfo = sqlite3KeyInfoAlloc(pParse->db, 1, 0);
+        if( pInfo ){
+          pInfo->aColl[0] = 0;
+          pInfo->aSortFlags[0] = 0;
+          sqlite3VdbeAppendP4(v, pInfo, P4_KEYINFO);
+        }
+      }else{
+        Index *pPk = sqlite3PrimaryKeyIndex(pTab);
+        sqlite3VdbeAddOp2(v, OP_OpenEphemeral, pLevel->iRJMatch, pPk->nKeyCol);
+        sqlite3VdbeSetP4KeyInfo(pParse, pPk);
+      }
     }
   }
   pWInfo->iTop = sqlite3VdbeCurrentAddr(v);

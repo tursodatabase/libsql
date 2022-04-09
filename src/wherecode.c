@@ -2721,6 +2721,41 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     }
   }
 
+  /* For a RIGHT OUTER JOIN, record the fact that the current row has
+  ** been matched at least once.
+  */
+  if( pLevel->iRJMatch ){
+    Table *pTab;
+    int nPk;
+    int r;
+    int jmp1 = 0;
+
+    pTab = pWInfo->pTabList->a[pLevel->iFrom].pTab;
+    if( HasRowid(pTab) ){
+      r = sqlite3GetTempRange(pParse, 2);
+      sqlite3ExprCodeGetColumnOfTable(v, pTab, pLevel->iTabCur, -1, r+1);
+      nPk = 1;
+    }else{
+      int iPk;
+      Index *pPk = sqlite3PrimaryKeyIndex(pTab);
+      nPk = pPk->nKeyCol;
+      r = sqlite3GetTempRange(pParse, nPk+1);
+      for(iPk=0; iPk<nPk; iPk++){
+        int iCol = pPk->aiColumn[iPk];
+        sqlite3ExprCodeGetColumnOfTable(v, pTab, iCur, iCol,r+1+iPk);
+      }
+    }
+    jmp1 = sqlite3VdbeAddOp4Int(v, OP_Found, pLevel->iRJMatch, 0, r+1, nPk);
+    VdbeCoverage(v);
+    sqlite3VdbeAddOp3(v, OP_MakeRecord, r+1, nPk, r);
+    sqlite3VdbeAddOp4Int(v, OP_IdxInsert, pLevel->iRJMatch, r, r+1, nPk);
+    sqlite3VdbeChangeP5(v, OPFLAG_USESEEKRESULT);
+    sqlite3VdbeJumpHere(v, jmp1);
+
+    /* Release the array of temp registers */
+    sqlite3ReleaseTempRange(pParse, r, nPk+1);
+  }
+
 #if WHERETRACE_ENABLED /* 0x20800 */
   if( sqlite3WhereTrace & 0x20000 ){
     sqlite3DebugPrintf("All WHERE-clause terms after coding level %d:\n",
