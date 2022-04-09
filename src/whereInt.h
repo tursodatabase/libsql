@@ -32,6 +32,16 @@ typedef struct WhereLoopBuilder WhereLoopBuilder;
 typedef struct WhereScan WhereScan;
 typedef struct WhereOrCost WhereOrCost;
 typedef struct WhereOrSet WhereOrSet;
+typedef struct WhereMemBlock WhereMemBlock;
+
+/*
+** This object is a header on a block of allocated memory that will be
+** automatically freed when its WInfo oject is destructed.
+*/
+struct WhereMemBlock {
+  WhereMemBlock *pNext;      /* Next block in the chain */
+  u8 sz;                     /* Bytes of space */
+};
 
 /*
 ** This object contains information needed to implement a single nested
@@ -478,6 +488,7 @@ struct WhereInfo {
   int iEndWhere;            /* End of the WHERE clause itself */
   WhereLoop *pLoops;        /* List of all WhereLoop objects */
   WhereExprMod *pExprMods;  /* Expression modifications */
+  WhereMemBlock *pMemToFree;/* Memory to free when this object destroyed */
   Bitmask revMask;          /* Mask of ORDER BY terms that need reversing */
   WhereClause sWC;          /* Decomposition of the WHERE clause */
   WhereMaskSet sMaskSet;    /* Map cursor numbers to bitmasks */
@@ -503,6 +514,8 @@ WhereTerm *sqlite3WhereFindTerm(
   u32 op,               /* Mask of WO_xx values describing operator */
   Index *pIdx           /* Must be compatible with this index, if not NULL */
 );
+void *sqlite3WhereMalloc(WhereInfo *pWInfo, u64 nByte);
+void *sqlite3WhereRealloc(WhereInfo *pWInfo, void *pOld, u64 nByte);
 
 /* wherecode.c: */
 #ifndef SQLITE_OMIT_EXPLAIN
