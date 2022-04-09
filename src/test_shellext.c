@@ -10,10 +10,11 @@
 **
 *************************************************************************
 ** Test extension for testing the shell's .load -shellext ... function.
-** gcc -shared -fPIC -Wall -I. -I.. -g test_shellext.c -o test_shellext.so
+** To build from the SQLite project root:
+** gcc -shared -fPIC -Wall -I. -g src/test_shellext.c -o test_shellext.so
 */
 #include <stdio.h>
-#include "shext_linkage.h"
+#include "shx_link.h"
 
 SQLITE_EXTENSION_INIT1;
 

@@ -53,6 +53,12 @@ TCC += @TCL_INCLUDE_SPEC@
 #
 LIBTCL = @TCL_LIB_SPEC@
 
+# TCCX is the C Compile and options for use in building shell extensions
+# that will run on the target platform. It relies on no in-tree includes,
+# using only pre-glommed source/header files in the current directory.
+TCCX = ${CC} ${CFLAGS} -fPIC -shared -I. @TCL_INCLUDE_SPEC@
+TCCX += @EXTENSION_DEBUG@ $(LIBTCL)
+
 # Compiler options needed for programs that use the readline() library.
 #
 READLINE_FLAGS = -DHAVE_READLINE=@TARGET_HAVE_READLINE@ @TARGET_READLINE_INC@
@@ -160,6 +166,9 @@ ALLOWRELEASE = @ALLOWRELEASE@
 LTCOMPILE = $(LIBTOOL) --mode=compile --tag=CC $(TCC) $(LTCOMPILE_EXTRAS)
 LTLINK = $(LIBTOOL) --mode=link $(TCC) $(LTCOMPILE_EXTRAS) @LDFLAGS@ $(LTLINK_EXTRAS)
 LTINSTALL = $(LIBTOOL) --mode=install $(INSTALL)
+
+# Shell and extension source builder tool
+MKSHELL_TOOL = $(TCLSH_CMD) $(TOP)/tool/mkshellc.tcl
 
 # You should not have to change anything below this line
 ###############################################################################
@@ -1114,7 +1123,7 @@ SHELL_SRC = \
         $(TOP)/src/obj_interfaces.h
 
 shell.c:	$(SHELL_SRC) $(TOP)/tool/mkshellc.tcl
-	$(TCLSH_CMD) $(TOP)/tool/mkshellc.tcl >shell.c
+	$(MKSHELL_TOOL) >shell.c
 
 
 
@@ -1229,6 +1238,27 @@ fts5.lo:	fts5.c $(HDR) $(EXTHDR)
 sqlite3rbu.lo:	$(TOP)/ext/rbu/sqlite3rbu.c $(HDR) $(EXTHDR)
 	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/rbu/sqlite3rbu.c
 
+# Rule to build shx_link.h (for use by shell extensions)
+
+SHX_LINK_SRC = \
+ $(TOP)/src/shext_linkage.h \
+ $(TOP)/src/obj_interfaces.h \
+ sqlite3ext.h \
+ sqlite3.h
+
+shx_link.h:	$(SHX_LINK_SRC)
+	$(MKSHELL_TOOL) -short-head -header-gen \
+                $(TOP)/src/shext_linkage.h > $@
+
+# Rules to build the TCL shell extension (tclshext.{so,dll,dylib})
+
+tcl_shell_extension:	tclshext$(SHLIB_SUFFIX)
+
+tclshext.c:	$(TOP)/ext/misc/tclshext.c.in $(TOP)/src/tclsqlite.c
+	$(MKSHELL_TOOL) $(TOP)/ext/misc/tclshext.c.in > $@
+
+tclshext$(SHLIB_SUFFIX): tclshext.c shx_link.h
+	$(TCCX) $(TCLEXT_OPTS) tclshext.c -o $@
 
 # Rules to build the 'testfixture' application.
 #
@@ -1490,6 +1520,7 @@ clean:
 	rm -f sqlite3.c
 	rm -f sqlite3rc.h
 	rm -f shell.c sqlite3ext.h
+	rm -f shx_link.h tclshext.c tclshext$(SHLIB_SUFFIX)
 	rm -f sqlite3_analyzer$(TEXE) sqlite3_analyzer.c
 	rm -f sqlite-*-output.vsix
 	rm -f mptester mptester.exe

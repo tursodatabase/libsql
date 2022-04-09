@@ -558,12 +558,15 @@ AC_ARG_ENABLE(debug, AC_HELP_STRING([--enable-debug],[enable debugging & verbose
 AC_MSG_CHECKING([build type])
 if test "${enable_debug}" = "yes" ; then
   TARGET_DEBUG="-DSQLITE_DEBUG=1 -DSQLITE_ENABLE_SELECTTRACE -DSQLITE_ENABLE_WHERETRACE -O0"
+  EXTENSION_DEBUG="-DSQLITE_DEBUG=1"
   AC_MSG_RESULT([debug])
 else
   TARGET_DEBUG="-DNDEBUG"
+  EXTENSION_DEBUG="-DNDEBUG"
   AC_MSG_RESULT([release])
 fi
 AC_SUBST(TARGET_DEBUG)
+AC_SUBST(EXTENSION_DEBUG)
 
 #########
 # See whether we should use the amalgamation to build

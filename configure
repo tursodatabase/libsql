@@ -776,6 +776,7 @@ OPT_FEATURE_FLAGS
 HAVE_ZLIB
 USE_AMALGAMATION
 TARGET_DEBUG
+EXTENSION_DEBUG
 TARGET_HAVE_EDITLINE
 TARGET_HAVE_READLINE
 TARGET_READLINE_INC
@@ -11256,10 +11257,12 @@ fi
 $as_echo_n "checking build type... " >&6; }
 if test "${enable_debug}" = "yes" ; then
   TARGET_DEBUG="-DSQLITE_DEBUG=1 -DSQLITE_ENABLE_SELECTTRACE -DSQLITE_ENABLE_WHERETRACE -O0"
+  EXTENSION_DEBUG="-DSQLITE_DEBUG=1"
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: debug" >&5
 $as_echo "debug" >&6; }
 else
   TARGET_DEBUG="-DNDEBUG"
+  EXTENSION_DEBUG="-DNDEBUG"
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: release" >&5
 $as_echo "release" >&6; }
 fi

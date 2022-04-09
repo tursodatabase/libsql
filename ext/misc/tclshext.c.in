@@ -12,8 +12,13 @@
 ** This file contains code to implement the "tclshext" shell extension
 ** for use with the extensible "sqlite3" CLI shell. On *Nix, build thusly:
      tool/mkshellc.tcl ext/misc/tclshext.c.in > tclshext.c
-     gcc -shared -fPIC -O2 -I. -Isrc -I/usr/include/tcl8.6 tclshext.c \
-       -o tclshext.so -ltcl8.6
+     gcc -shared -fPIC -O2 -I. -Isrc -I/usr/include/tcl8.6 \
+       tclshext.c -o tclshext.so -ltcl8.6
+** Or, use the provided Makefile and build target tcl_shell_extension .
+   If the Tk library is available, it can be linked and used thusly:
+     gcc -shared -fPIC -O2 -I. -Isrc -I/usr/include/tcl8.6 \
+       -DSHELL_ENABLE_TK tclshext.c -o tclshext.so -ltcl8.6 -ltk8.6
+** Or, make the same target, with 'TCLEXT_OPTS=-DSHELL_ENABLE_TK'.
 ** Later TCL versions can be used if desired.
   "TCL scripting support is added with a registerScripting() call in the\n"
   "ShellExtensionAPI, per ScriptingSupport interface requirements. This\n"
@@ -100,7 +105,7 @@ static const char * const zTclHelp =
 ** from the shell in the dot command execution context.
 */
 
-#include "shext_linkage.h"
+#include "shx_link.h"
 
 /* Extension boiler-plate to dynamically link into host's SQLite library */
 SQLITE_EXTENSION_INIT1;
@@ -125,9 +130,9 @@ int sqlite3_tclshext_init(sqlite3*, char**, const sqlite3_api_routines*);
 #define STATIC_BUILD /* Not publishing TCL API */
 #undef SQLITE_AMALGAMATION
 #undef TCLSH
-#include <tclOO.h>
-#ifndef SHELL_OMIT_TK
-#include <tk.h> /* Only used if option -tk passed during load. */
+#include "tclOO.h"
+#ifdef SHELL_ENABLE_TK
+#include "tk.h" /* Only used if option -tk passed during load. */
 #endif
 INCLUDE tclsqlite.c
 
@@ -163,7 +168,11 @@ static void Tcl_TakeDown(void *pv){
   }
 }
 
-static int Tcl_BringUp(int *pWithTk, char **pzErrMsg){
+static int Tcl_BringUp(
+#ifdef SHELL_ENABLE_TK
+                       int *pWithTk,
+#endif
+                       char **pzErrMsg){
   if( ++interpKeep.nRefs==1 ){
     const char *zShellName = SHX_HELPER(shellInvokedAs)();
     const char *zShellDir = SHX_HELPER(shellStartupDir)();
@@ -188,17 +197,16 @@ static int Tcl_BringUp(int *pWithTk, char **pzErrMsg){
       *pzErrMsg = sqlite3_mprintf("Tcl interpreter startup failed.\n");
       Tcl_TakeDown(&interpKeep);
       return SQLITE_ERROR;
-    }else if( *pWithTk ){
-#ifndef SHELL_OMIT_TK
+    }
+#ifdef SHELL_ENABLE_TK
+    else if( *pWithTk ){
       if( TCL_OK!=Tk_Init(interpKeep.pInterp) ){
         fprintf(stderr, "Could not load/initialize Tk."
-                " (non-fatal, extension is loaded.)\n");
+                " (Non-fatal, extension is loaded.)\n");
         *pWithTk = 0;
       }
-#else
-      fprintf(stderr, "This tclshext extension has no Tk support.\n");
-#endif
     }
+#endif
   }
   return (interpKeep.pInterp!=0)? SQLITE_OK : SQLITE_ERROR;
 }
@@ -714,7 +722,7 @@ static int nowInteractive(void *pvSS, Tcl_Interp *interp,
   }
 }
 
-#ifndef SHELL_OMIT_TK
+#ifdef SHELL_ENABLE_TK
 static int numEventLoops = 0;
 static int inOuterLoop = 0;
 
@@ -773,7 +781,7 @@ static int runTkGUI(void *pvSS, Tcl_Interp *interp,
   runTclEventLoop();
   return TCL_OK;
 }
-#endif
+#endif /* defined(SHELL_ENABLE_TK) */
 
 #define UNKNOWN_RENAME "::_original_unknown"
 
@@ -1113,15 +1121,24 @@ int sqlite3_tclshext_init(
     Tcl_Obj *targv = Tcl_NewListObj(0, NULL);
     const char *zAppName = "tclshext";
     int tnarg = 0;
+#ifdef SHELL_ENABLE_TK
     int ldTk = 0;
+#endif
     int rc = 0;
 
     if( pShExtLink->nLoadArgs>0 ){
       int ila;
       for( ila=0; ila<pShExtLink->nLoadArgs; ++ila ){
         const char *zA = pShExtLink->azLoadArgs[ila];
-        if( strcmp(zA,"-tk")==0 ) ldTk = 1;
-        else {
+        if( strcmp(zA,"-tk")==0 ){
+#ifdef SHELL_ENABLE_TK
+          ldTk = 1;
+#else
+          *pzErrMsg = sqlite3_mprintf("Option -tk not supported by this"
+                                      "tclshext extension as built.\n");
+          return SQLITE_ERROR;
+#endif
+        }else{
           /* Collect args not affecting init into the argv list. */
           Tcl_ListObjAppendElement(NULL, targv, Tcl_NewStringObj(zA, -1));
           ++tnarg;
@@ -1132,7 +1149,13 @@ int sqlite3_tclshext_init(
                                       (MetaCommand *)&unkcmd);
     rc = SHX_API(registerMetaCommand)(psx, sqlite3_tclshext_init,
                                       (MetaCommand *)&tclcmd);
-    if( rc==SQLITE_OK && (rc = Tcl_BringUp(&ldTk, pzErrMsg))==SQLITE_OK ){
+    if( rc==SQLITE_OK &&
+        (rc = Tcl_BringUp(
+#ifdef SHELL_ENABLE_TK
+                          &ldTk,
+#endif
+                          pzErrMsg))==SQLITE_OK
+        ){
       Tcl_Interp *interp = getInterp();
       if( TCL_OK==userDbInit(interp, psx) ){
         UserDb *pudb = udbCreate(interp, psx);
@@ -1160,7 +1183,7 @@ int sqlite3_tclshext_init(
       /* Define this proc so that ".." either gets to the TCL REPL loop
        * or does nothing (if already in it), as a user convenience. */
       Tcl_Eval(interp, "proc .. {} {}");
-#ifndef SHELL_OMIT_TK
+#ifdef SHELL_ENABLE_TK
       if( ldTk ){
         /* Create a proc to launch GUI programs, in faint mimicry of wish. 
          *
@@ -1249,7 +1272,7 @@ int sqlite3_tclshext_init(
         Tcl_SetMainLoop(runTclEventLoop);
         zAppName = "tclshext_tk";
       }
-#endif
+#endif /* ..TK */
       Tcl_SetVar2Ex(interp, "::argv0", NULL,
                     Tcl_NewStringObj(zAppName,-1), TCL_GLOBAL_ONLY);
       Tcl_SetVar2Ex(interp, "::argc", NULL,
