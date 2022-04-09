@@ -2724,12 +2724,18 @@ Bitmask sqlite3WhereCodeOneLoopStart(
   /* For a RIGHT OUTER JOIN, record the fact that the current row has
   ** been matched at least once.
   */
-  if( pLevel->iRJMatch ){
+  if( pLevel->pRJ ){
     Table *pTab;
     int nPk;
     int r;
     int jmp1 = 0;
+    WhereRightJoin *pRJ = pLevel->pRJ;
 
+    /* pTab is the right-hand table of the RIGHT JOIN.  Generate code that
+    ** will record that the current row of that table has been matched at
+    ** least once.  This is accomplished by storing the PK for the row in
+    ** both the iMatch index and the regBloom Bloom filter.
+    */
     pTab = pWInfo->pTabList->a[pLevel->iFrom].pTab;
     if( HasRowid(pTab) ){
       r = sqlite3GetTempRange(pParse, 2);
@@ -2745,15 +2751,23 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         sqlite3ExprCodeGetColumnOfTable(v, pTab, iCur, iCol,r+1+iPk);
       }
     }
-    jmp1 = sqlite3VdbeAddOp4Int(v, OP_Found, pLevel->iRJMatch, 0, r+1, nPk);
+    jmp1 = sqlite3VdbeAddOp4Int(v, OP_Found, pRJ->iMatch, 0, r+1, nPk);
     VdbeCoverage(v);
     sqlite3VdbeAddOp3(v, OP_MakeRecord, r+1, nPk, r);
-    sqlite3VdbeAddOp4Int(v, OP_IdxInsert, pLevel->iRJMatch, r, r+1, nPk);
+    sqlite3VdbeAddOp4Int(v, OP_IdxInsert, pRJ->iMatch, r, r+1, nPk);
+    sqlite3VdbeAddOp4Int(v, OP_FilterAdd, pRJ->regBloom, 0, r+1, nPk);
     sqlite3VdbeChangeP5(v, OPFLAG_USESEEKRESULT);
     sqlite3VdbeJumpHere(v, jmp1);
-
-    /* Release the array of temp registers */
     sqlite3ReleaseTempRange(pParse, r, nPk+1);
+
+    /* Create a subroutine used to process all interior loops and code
+    ** of the RIGHT JOIN.  During normal operation, the subroutine will
+    ** be in-line with the rest of the code.  But at the end, a separate
+    ** loop will run that invokes this subroutine for unmatched rows
+    ** of pTab, with all tables to left begin set to NULL.
+    */
+    sqlite3VdbeAddOp2(v, OP_BeginSubrtn, 0, pRJ->regReturn);
+    pRJ->addrSubrtn = sqlite3VdbeCurrentAddr(v);
   }
 
 #if WHERETRACE_ENABLED /* 0x20800 */

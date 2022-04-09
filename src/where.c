@@ -5869,12 +5869,18 @@ WhereInfo *sqlite3WhereBegin(
       }
     }
     if( iDb>=0 ) sqlite3CodeVerifySchema(pParse, iDb);
-    if( pTabItem->fg.jointype & JT_RIGHT ){
+    if( (pTabItem->fg.jointype & JT_RIGHT)!=0
+     && (pLevel->pRJ = sqlite3WhereMalloc(pWInfo, sizeof(WhereRightJoin)))!=0
+    ){
+      WhereRightJoin *pRJ = pLevel->pRJ;
+      pRJ->iMatch = pParse->nTab++;
+      pRJ->regBloom = ++pParse->nMem;
+      sqlite3VdbeAddOp2(v, OP_Blob, 65536, pRJ->regBloom);
+      pRJ->regReturn = ++pParse->nMem;
       assert( pTab==pTabItem->pTab );
-      pLevel->iRJMatch = pParse->nTab++;
       if( HasRowid(pTab) ){
         KeyInfo *pInfo;
-        sqlite3VdbeAddOp2(v, OP_OpenEphemeral, pLevel->iRJMatch, 1);
+        sqlite3VdbeAddOp2(v, OP_OpenEphemeral, pRJ->iMatch, 1);
         pInfo = sqlite3KeyInfoAlloc(pParse->db, 1, 0);
         if( pInfo ){
           pInfo->aColl[0] = 0;
@@ -5883,7 +5889,7 @@ WhereInfo *sqlite3WhereBegin(
         }
       }else{
         Index *pPk = sqlite3PrimaryKeyIndex(pTab);
-        sqlite3VdbeAddOp2(v, OP_OpenEphemeral, pLevel->iRJMatch, pPk->nKeyCol);
+        sqlite3VdbeAddOp2(v, OP_OpenEphemeral, pRJ->iMatch, pPk->nKeyCol);
         sqlite3VdbeSetP4KeyInfo(pParse, pPk);
       }
     }
@@ -5999,6 +6005,11 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
   for(i=pWInfo->nLevel-1; i>=0; i--){
     int addr;
     pLevel = &pWInfo->a[i];
+    if( pLevel->pRJ ){
+      WhereRightJoin *pRJ = (WhereRightJoin*)pLevel->pRJ;
+      sqlite3VdbeChangeP2(v, pRJ->addrSubrtn-1, sqlite3VdbeCurrentAddr(v));
+      sqlite3VdbeAddOp2(v, OP_Return, pRJ->regReturn, pRJ->addrSubrtn);
+    }
     pLoop = pLevel->pWLoop;
     if( pLevel->op!=OP_Noop ){
 #ifndef SQLITE_DISABLE_SKIPAHEAD_DISTINCT

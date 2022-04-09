@@ -33,6 +33,7 @@ typedef struct WhereScan WhereScan;
 typedef struct WhereOrCost WhereOrCost;
 typedef struct WhereOrSet WhereOrSet;
 typedef struct WhereMemBlock WhereMemBlock;
+typedef struct WhereRightJoin WhereRightJoin;
 
 /*
 ** This object is a header on a block of allocated memory that will be
@@ -41,6 +42,16 @@ typedef struct WhereMemBlock WhereMemBlock;
 struct WhereMemBlock {
   WhereMemBlock *pNext;      /* Next block in the chain */
   u8 sz;                     /* Bytes of space */
+};
+
+/*
+** Extra information attached to a WhereLevel that is a RIGHT JOIN.
+*/
+struct WhereRightJoin {
+  int iMatch;          /* Cursor used to determine prior matched rows */
+  int regBloom;        /* Bloom filter for iRJMatch */
+  int regReturn;       /* Return register for the interior subroutine */
+  int addrSubrtn;      /* Starting address for the interior subroutine */
 };
 
 /*
@@ -75,7 +86,7 @@ struct WhereLevel {
   int addrLikeRep;      /* LIKE range processing address */
 #endif
   int regFilter;        /* Bloom filter */
-  int iRJMatch;         /* Cursor or rowset used for matched RIGHT JOIN rows */
+  WhereRightJoin *pRJ;  /* Extra information for RIGHT JOIN */
   u8 iFrom;             /* Which entry in the FROM clause */
   u8 op, p3, p5;        /* Opcode, P3 & P5 of the opcode that ends the loop */
   int p1, p2;           /* Operands of the opcode used to end the loop */
