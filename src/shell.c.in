@@ -15801,7 +15801,6 @@ int SQLITE_CDECL SHELL_MAIN(int argc, wchar_t **wargv){
     if( stdin_is_interactive ){
       char *zHome;
       char *zHistory;
-      int nHistory;
       if( bQuiet ){
         /* bQuiet is almost like normal interactive, but quieter. */
         mainPrompt[0] = 0;
@@ -15822,7 +15821,7 @@ int SQLITE_CDECL SHELL_MAIN(int argc, wchar_t **wargv){
         if( zHistory ){
           zHistory = strdup(zHistory);
         }else if( (zHome = find_home_dir(0))!=0 ){
-          nHistory = strlen30(zHome) + 20;
+          int nHistory = strlen30(zHome) + 20;
           if( (zHistory = malloc(nHistory))!=0 ){
             sqlite3_snprintf(nHistory, zHistory,"%s/.sqlite_history", zHome);
           }

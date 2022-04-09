@@ -14,24 +14,26 @@
      tool/mkshellc.tcl ext/misc/tclshext.c.in > tclshext.c
      gcc -shared -fPIC -O2 -I. -Isrc -I/usr/include/tcl8.6 \
        tclshext.c -o tclshext.so -ltcl8.6
-** Or, use the provided Makefile and build target tcl_shell_extension .
-   If the Tk library is available, it can be linked and used thusly:
+** Or, (after ./configure ...), use the provided Makefile thusly:
+     make tcl_shell_extension
+** If the Tk library is available, it can be linked and used thusly:
      gcc -shared -fPIC -O2 -I. -Isrc -I/usr/include/tcl8.6 \
        -DSHELL_ENABLE_TK tclshext.c -o tclshext.so -ltcl8.6 -ltk8.6
-** Or, make the same target, with 'TCLEXT_OPTS=-DSHELL_ENABLE_TK'.
-** Later TCL versions can be used if desired.
-  "TCL scripting support is added with a registerScripting() call in the\n"
-  "ShellExtensionAPI, per ScriptingSupport interface requirements. This\n"
-  "support lasts until the scripting object destructor is called.\n"
+** Or, make the same target with Tk thusly:
+     make tcl_shell_extension WITH_TK=1
+** Later TCL versions can be used if desired (and installed.)
+**
+** TCL scripting support is added with a registerScripting() call (in the
+** ShellExtensionAPI), meeting ScriptingSupport interface requirements.
 */
 static const char * const zTclHelp =
   "This extension adds these features to the host shell:\n"
   " 1. TCL scripting support is added.\n"
   " 2. TCL commands are added: udb shdb now_interactive get_tcl_group ..\n"
   " 3. The .tcl and .unknown dot commands are added.\n"
-  " 4. If built with Tk capability, the gui TCL command will be added if\n"
-  "  this extension was loaded using the shell via: .load ... -shext -tk .\n"
-  "  Any other arguments beyond -shext are in TCL's argv variable.\n"
+  " 4. If built with Tk capability, the gui TCL command will be added if this\n"
+  "  extension was loaded using shell command: .load tclshext -shext -tk .\n"
+  "  Any other arguments beyond -shext are copied into TCL's argv variable.\n"
   "Operation:\n"
   " Shell input groups beginning with \"..\" are treated as TCL input, in\n"
   " these ways: (1) When a bare \"..\" is entered, a TCL REPL loop is run\n"
@@ -42,7 +44,7 @@ static const char * const zTclHelp =
   " is entered, (where \"T\" is a TCL command name), that TCL command and its\n"
   " arguments will be collected and expanded according to TCL parsing rules,\n"
   " then run in the TCL execution environment (in its global namespace), but\n"
-  " the shell execution environment remains in effect afterward.\n"
+  " the shell REPL and execution environment remains in effect afterward.\n"
   "\n"
   " Note that cases 2 and 3 differ in having space after the leading \"..\".\n"
   "\n"
@@ -471,11 +473,14 @@ TCL_CSTR_LITERAL(static const char * const zREPL = ){
 };
 #elif TCL_REPL==3
 /* using shell's input collection with line editing (if configured) */
-static const char * const zREPL = "sqlite_shell_REPL";
+static const char * const zREPL = "uplevel #0 sqlite_shell_REPL";
 
 TCL_CSTR_LITERAL(static const char * const zDefineREPL = ){
   proc sqlite_shell_REPL {} {
-    set interactive [now_interactive]
+    if {[info exists ::tcl_interactive]} {
+      set save_interactive $::tcl_interactive
+    }
+    set ::tcl_interactive [now_interactive]
     while {1} {
       foreach {group ready} [get_tcl_group] {}
       set trimmed [string trim $group]
@@ -498,6 +503,9 @@ TCL_CSTR_LITERAL(static const char * const zDefineREPL = ){
     }
     if {$interactive && $trimmed ne "."} {puts {}}
     read stdin 0
+    if {[info exists save_interactive]} {
+      set ::tcl_interactive $save_interactive
+    } else { unset ::tcl_interactive }
   }
 };
 #else
@@ -629,7 +637,7 @@ DERIVED_METHOD(const char *, help, MetaCommand,UnkCmd, 1,(const char *zHK)){
   return 0;
 }
 
-#if TCL_REPL==2
+#if TCL_REPL==1 || TCL_REPL==2
 #define GETLINE_MAXLEN 1000
 
 /* C implementation of TCL proc, get_input_line */
@@ -783,7 +791,7 @@ static int runTkGUI(void *pvSS, Tcl_Interp *interp,
 }
 #endif /* defined(SHELL_ENABLE_TK) */
 
-#define UNKNOWN_RENAME "::_original_unknown"
+#define UNKNOWN_RENAME "_original_unknown"
 
 /* C implementation of TCL ::register_adhoc_command name ?help? */
 static int registerAdHocCommand(/* ShellExState */ void *pv,
@@ -803,7 +811,7 @@ static int registerAdHocCommand(/* ShellExState */ void *pv,
   return TCL_ERROR;
 }
 
-/* C implementation of TCL ::unknown to (maybe) delegate to dot commands */
+/* C implementation of TCL unknown to (maybe) delegate to dot commands */
 static int unknownDotDelegate(void *pvSS, Tcl_Interp *interp,
                                 int nArgs, const char *azArgs[]){
   const char *name = (nArgs>1 && *azArgs[1]=='.')? azArgs[1]+1 : 0;
@@ -829,7 +837,7 @@ static int unknownDotDelegate(void *pvSS, Tcl_Interp *interp,
       return TCL_ERROR;
     }
   }else{
-    /* Defer to the TCL-default ::unknown command, or fail here. */
+    /* Defer to the TCL-default unknown command, or fail here. */
     if( 0!=Tcl_FindCommand(interp, UNKNOWN_RENAME, 0, TCL_GLOBAL_ONLY) ){
       Tcl_Obj **ppo = sqlite3_malloc((nArgs+1)*sizeof(Tcl_Obj*));
       if( ppo==0 ) return TCL_ERROR;
@@ -839,6 +847,7 @@ static int unknownDotDelegate(void *pvSS, Tcl_Interp *interp,
         ppo[ia] = Tcl_NewStringObj(azArgs[ia], -1);
         Tcl_IncrRefCount(ppo[ia]);
       }
+      ppo[ia] = 0;
       rc = Tcl_EvalObjv(interp, nArgs, ppo, TCL_EVAL_GLOBAL);
       for( ia=0; ia<nArgs; ++ia ) Tcl_DecrRefCount(ppo[ia]);
       sqlite3_free(ppo);
@@ -1134,7 +1143,7 @@ int sqlite3_tclshext_init(
 #ifdef SHELL_ENABLE_TK
           ldTk = 1;
 #else
-          *pzErrMsg = sqlite3_mprintf("Option -tk not supported by this"
+          *pzErrMsg = sqlite3_mprintf("Option -tk not supported by this "
                                       "tclshext extension as built.\n");
           return SQLITE_ERROR;
 #endif

@@ -1254,11 +1254,24 @@ shx_link.h:	$(SHX_LINK_SRC)
 
 tcl_shell_extension:	tclshext$(SHLIB_SUFFIX)
 
+# This is a work-around for building Tk variant. Ultimately, the configure
+# script will find the Tk library with the same version as the Tcl library.
+# This has the same effect with the lib naming now used by the Tcl project,
+# but, if it will fail, does so when make rather than configure is run.
+TCL_LIBS = $(LIBTCL)
+ifdef WITH_TK
+ ifneq ($(WITH_TK),0)
+TCLEXT_OPTS += -DSHELL_ENABLE_TK
+LIBTK := $(patsubst -ltcl%,-ltk%,$(LIBTCL))
+TCL_LIBS += $(LIBTK)
+ endif
+endif
+
 tclshext.c:	$(TOP)/ext/misc/tclshext.c.in $(TOP)/src/tclsqlite.c
 	$(MKSHELL_TOOL) $(TOP)/ext/misc/tclshext.c.in > $@
 
 tclshext$(SHLIB_SUFFIX): tclshext.c shx_link.h
-	$(TCCX) $(TCLEXT_OPTS) tclshext.c -o $@ $(LIBTCL)
+	$(TCCX) $(TCLEXT_OPTS) tclshext.c -o $@ $(TCL_LIBS) $(TCLEXT_LDOPTS)
 
 # Rules to build the 'testfixture' application.
 #
