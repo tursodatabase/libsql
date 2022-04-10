@@ -15,98 +15,147 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-db nullvalue NULL
-do_execsql_test join7-1.1 {
-  CREATE TABLE t1(a int,b int);
-  INSERT INTO t1 VALUES(1,2),(1,3),(1,4);
-  CREATE INDEX t1a ON t1(a);
-  CREATE TABLE t2(c int,d int);
-  INSERT INTO t2 VALUES(3,33),(4,44),(5,55);
-  CREATE INDEX t2c ON t2(c);
-  CREATE VIEW dual AS SELECT 'x' AS dummy;
-  SELECT b, d FROM t1 FULL OUTER JOIN t2 ON b=c ORDER BY +b;
+foreach {id schema} {
+  1 {
+    CREATE TABLE t1(a INT, b INT);
+    INSERT INTO t1 VALUES(1,2),(1,3),(1,4);
+    CREATE INDEX t1a ON t1(a);
+    CREATE TABLE t2(c INT, d INT);
+    INSERT INTO t2 VALUES(3,33),(4,44),(5,55);
+    CREATE INDEX t2c ON t2(c);
+    CREATE VIEW dual(dummy) AS VALUES('x');
+  }
+  2 {
+    CREATE TABLE t1(a INT, b INT);
+    INSERT INTO t1 VALUES(1,2),(1,3),(1,4);
+    CREATE INDEX t1ab ON t1(a,b);
+    CREATE TABLE t2(c INT, d INT);
+    INSERT INTO t2 VALUES(3,33),(4,44),(5,55);
+    CREATE INDEX t2cd ON t2(c,d);
+    CREATE VIEW dual(dummy) AS VALUES('x');
+  }
+  3 {
+    CREATE TABLE t1(a INT, b INT);
+    INSERT INTO t1 VALUES(1,2),(1,3),(1,4);
+    CREATE INDEX t1a ON t1(a);
+    CREATE TABLE t2(c INT, d INT PRIMARY KEY) WITHOUT ROWID;
+    INSERT INTO t2 VALUES(3,33),(4,44),(5,55);
+    CREATE INDEX t2c ON t2(c);
+    CREATE VIEW dual(dummy) AS VALUES('x');
+  }
+  4 {
+    CREATE TABLE t1(a INT, b INT);
+    INSERT INTO t1 VALUES(1,2),(1,3),(1,4);
+    CREATE TABLE t2(c INTEGER PRIMARY KEY, d INT);
+    INSERT INTO t2 VALUES(3,33),(4,44),(5,55);
+    CREATE VIEW dual(dummy) AS VALUES('x');
+  }
+  5 {
+    CREATE TABLE t1(a INT, b INT);
+    INSERT INTO t1 VALUES(1,2),(1,3),(1,4);
+    CREATE TABLE t2(c INT PRIMARY KEY, d INT) WITHOUT ROWID;
+    INSERT INTO t2 VALUES(3,33),(4,44),(5,55);
+    CREATE VIEW dual(dummy) AS VALUES('x');
+  }
+  6 {
+    CREATE TABLE t1(a INT, b INT);
+    INSERT INTO t1 VALUES(1,2),(1,3),(1,4);
+    CREATE VIEW t2(c,d) AS VALUES(3,33),(4,44),(5,55);
+    CREATE VIEW dual(dummy) AS VALUES('x');
+  }
+  7 {
+    CREATE VIEW t1(a,b) AS VALUES(1,2),(1,3),(1,4);
+    CREATE TABLE t2(c INTEGER PRIMARY KEY, d INT);
+    INSERT INTO t2 VALUES(3,33),(4,44),(5,55);
+    CREATE VIEW dual(dummy) AS VALUES('x');
+  }
 } {
-  NULL 55
-  2    NULL
-  3    33
-  4    44
-}
-do_execsql_test join7-1.2 {
-  SELECT a, c FROM t1 FULL OUTER JOIN t2 ON b=c ORDER BY +b;
-} {
-  NULL  5
-  1     NULL
-  1     3
-  1     4
-}
-do_execsql_test join7-1.3 {
-  SELECT * FROM t1 FULL OUTER JOIN t2 ON b=c ORDER BY +b;
-} {
-  NULL NULL 5    55
-  1    2    NULL NULL
-  1    3    3    33
-  1    4    4    44
-}
-do_execsql_test join7-1.4a {
-  SELECT * FROM t1 RIGHT OUTER JOIN t2 ON b=c ORDER BY +b;
-} {
-  NULL NULL 5    55
-  1    3    3    33
-  1    4    4    44
-}
-do_execsql_test join7-1.4b {
-  SELECT * FROM dual JOIN t1 ON true RIGHT OUTER JOIN t2 ON b=c ORDER BY +b;
-} {
-  NULL NULL NULL 5    55
-  x    1    3    3    33
-  x    1    4    4    44
-}
-do_execsql_test join7-1.4c {
-  SELECT * FROM dual CROSS JOIN t1 RIGHT OUTER JOIN t2 ON b=c ORDER BY +b;
-} {
-  NULL NULL NULL 5    55
-  x    1    3    3    33
-  x    1    4    4    44
-}
-do_execsql_test join7-1.5 {
-  SELECT * FROM t1 LEFT OUTER JOIN t2 ON b=c ORDER BY +b;
-} {
-  1    2    NULL NULL
-  1    3    3    33
-  1    4    4    44
-}
-
-do_execsql_test join7-2.1 {
-  SELECT * FROM t1 FULL OUTER JOIN t2 ON b=c AND a=1 ORDER BY +b;
-} {
-  NULL NULL 5    55
-  1    2    NULL NULL
-  1    3    3    33
-  1    4    4    44
-}
-do_execsql_test join7-2.2 {
-  SELECT * FROM t1 FULL OUTER JOIN t2 ON b=c WHERE a=1 ORDER BY +b;
-} {
-  1    2    NULL NULL
-  1    3    3    33
-  1    4    4    44
-}
-do_execsql_test join7-2.3 {
-  SELECT * FROM t1 FULL OUTER JOIN t2 ON b=c WHERE a IS NULL ORDER BY +d;
-} {
-  NULL NULL 3    33
-  NULL NULL 4    44
-  NULL NULL 5    55
-}
-do_execsql_test join7-2.4 {
-  SELECT * FROM t1 FULL OUTER JOIN t2 ON b=c AND d<=0 ORDER BY +b, +d;
-} {
-  NULL NULL 3    33
-  NULL NULL 4    44
-  NULL NULL 5    55
-  1    2    NULL NULL
-  1    3    NULL NULL
-  1    4    NULL NULL
-}
-
+  reset_db
+  db nullvalue NULL
+  db eval $schema
+  do_execsql_test join7-$id.1 {
+    SELECT b, d FROM t1 FULL OUTER JOIN t2 ON b=c ORDER BY +b;
+  } {
+    NULL 55
+    2    NULL
+    3    33
+    4    44
+  }
+  do_execsql_test join7-$id.2 {
+    SELECT a, c FROM t1 FULL OUTER JOIN t2 ON b=c ORDER BY +b;
+  } {
+    NULL  5
+    1     NULL
+    1     3
+    1     4
+  }
+  do_execsql_test join7-$id.3 {
+    SELECT * FROM t1 FULL OUTER JOIN t2 ON b=c ORDER BY +b;
+  } {
+    NULL NULL 5    55
+    1    2    NULL NULL
+    1    3    3    33
+    1    4    4    44
+  }
+  do_execsql_test join7-$id.4 {
+    SELECT * FROM t1 RIGHT OUTER JOIN t2 ON b=c ORDER BY +b;
+  } {
+    NULL NULL 5    55
+    1    3    3    33
+    1    4    4    44
+  }
+  do_execsql_test join7-$id.5 {
+    SELECT * FROM dual JOIN t1 ON true RIGHT OUTER JOIN t2 ON b=c ORDER BY +b;
+  } {
+    NULL NULL NULL 5    55
+    x    1    3    3    33
+    x    1    4    4    44
+  }
+  do_execsql_test join7-$id.6 {
+    SELECT * FROM dual CROSS JOIN t1 RIGHT OUTER JOIN t2 ON b=c ORDER BY +b;
+  } {
+    NULL NULL NULL 5    55
+    x    1    3    3    33
+    x    1    4    4    44
+  }
+  do_execsql_test join7-$id.7 {
+    SELECT * FROM t1 LEFT OUTER JOIN t2 ON b=c ORDER BY +b;
+  } {
+    1    2    NULL NULL
+    1    3    3    33
+    1    4    4    44
+  }
+  do_execsql_test join7-$id.8 {
+    SELECT * FROM t1 FULL OUTER JOIN t2 ON b=c AND a=1 ORDER BY +b;
+  } {
+    NULL NULL 5    55
+    1    2    NULL NULL
+    1    3    3    33
+    1    4    4    44
+  }
+  do_execsql_test join7-$id.9 {
+    SELECT * FROM t1 FULL OUTER JOIN t2 ON b=c WHERE a=1 ORDER BY +b;
+  } {
+    1    2    NULL NULL
+    1    3    3    33
+    1    4    4    44
+  }
+  do_execsql_test join7-$id.10 {
+    SELECT * FROM t1 FULL OUTER JOIN t2 ON b=c WHERE a IS NULL ORDER BY +d;
+  } {
+    NULL NULL 3    33
+    NULL NULL 4    44
+    NULL NULL 5    55
+  }
+  do_execsql_test join7-$id.11 {
+    SELECT * FROM t1 FULL OUTER JOIN t2 ON b=c AND d<=0 ORDER BY +b, +d;
+  } {
+    NULL NULL 3    33
+    NULL NULL 4    44
+    NULL NULL 5    55
+    1    2    NULL NULL
+    1    3    NULL NULL
+    1    4    NULL NULL
+  }
+}  
 finish_test
