@@ -6755,6 +6755,9 @@ int sqlite3Select(
       pItem->pTab->nRowLogEst = pSub->nSelectRow;
       pItem->fg.viaCoroutine = 1;
       pItem->regResult = dest.iSdst;
+      if( pItem->fg.jointype & JT_LTORJ ){
+        sqlite3VdbeAddOp3(v, OP_Null, 0, dest.iSdst, dest.iSdst+dest.nSdst-1);
+      }
       sqlite3VdbeEndCoroutine(v, pItem->regReturn);
       sqlite3VdbeJumpHere(v, addrTop-1);
       sqlite3ClearTempRegCache(pParse);
