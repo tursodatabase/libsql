@@ -5894,6 +5894,7 @@ WhereInfo *sqlite3WhereBegin(
         sqlite3VdbeAddOp2(v, OP_OpenEphemeral, pRJ->iMatch, pPk->nKeyCol);
         sqlite3VdbeSetP4KeyInfo(pParse, pPk);
       }
+      pLoop->wsFlags &= ~WHERE_IDX_ONLY;
     }
   }
   pWInfo->iTop = sqlite3VdbeCurrentAddr(v);
@@ -6169,10 +6170,15 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       WhereClause *pWC = &pWInfo->sWC;
       WhereInfo *pSubWInfo;
       SrcList sFrom;
+      Bitmask mAll = 0;
+      for(k=0; k<=i; k++){
+        mAll |= pWInfo->a[k].pWLoop->maskSelf;
+      }
       for(k=0; k<pWC->nTerm; k++){
-        WhereTerm *pTerm = &pWC->a[i];
+        WhereTerm *pTerm = &pWC->a[k];
         if( pTerm->wtFlags & TERM_VIRTUAL ) break;
-        if( pTerm->prereqAll & ~pLoop->maskSelf ) continue;
+        if( pTerm->prereqAll & ~mAll ) continue;
+        if( ExprHasProperty(pTerm->pExpr, EP_FromJoin) ) continue;
         pSubWhere = sqlite3ExprAnd(pParse, pSubWhere,
                                    sqlite3ExprDup(db, pTerm->pExpr, 0));
       }
@@ -6208,6 +6214,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
         sqlite3WhereEnd(pSubWInfo);
       }
       sqlite3ExprDelete(pParse->db, pSubWhere);
+      continue;
     }
 
     /* For a co-routine, change all OP_Column references to the table of
