@@ -76,9 +76,8 @@
  ARG_FIRST_ ## na(ot) ARGS_EXPAND(na)args )
 
 #ifdef __cplusplus
-# define INTERFACE_BEGIN(iname) struct iname { \
-    PURE_VMETHOD(void, destruct, iname, 0, ())
-# define INTERFACE_END(iname) }
+# define INTERFACE_BEGIN(iname) struct iname { virtual void destruct() = 0
+# define INTERFACE_END(iname) };
 # define CONCRETE_BEGIN(iname, derived) class derived : public iname { \
     CONCRETE_METHOD(void, destruct, derived, 0, ())
 # define CONCRETE_END(derived) }
@@ -105,6 +104,18 @@
 # define DECORATE_METHOD(ot, mn)  ot ## _ ## mn
 # define DEFINE_METHOD(rt, mn, ot, na, args) rt DECORATE_METHOD(ot, mn)(  \
  ARG_FIRST_ ## na(ot) ARGS_EXPAND(na)args )
+#endif
+
+/* Some preprocessing to make struct type definitions usable for C and C++
+ * code using just the typename. Usage:
+ *   AGGTYPE_BEGIN(Framus) { member; ... } AGGTYPE_END(Framus);
+ */
+#ifndef __cplusplus
+#define AGGTYPE_BEGIN(tname) typedef struct tname
+#define AGGTYPE_END(tname) tname
+#else
+#define AGGTYPE_BEGIN(tname) struct tname
+#define AGGTYPE_END(tname)
 #endif
 
 #endif /* !defined(OBJIFACE_H) */

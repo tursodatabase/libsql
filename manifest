@@ -1,5 +1,5 @@
-C Sync\sw/trunk,\sfor\s.import\sfix.
-D 2022-04-09T19:39:58.635
+C Create\sparallel\sC\sand\sC++\stest/demo\sshell\sextensions,\swith\sheader\stweaks\sto\smake\sthat\swork.\sFix\sa\sbug\sexposed\swhen\smultiple\sshell\sextensions\swere\sloaded.
+D 2022-04-10T09:17:29.899
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -534,7 +534,7 @@ F src/mutex_noop.c 9d4309c075ba9cc7249e19412d3d62f7f94839c4
 F src/mutex_unix.c dd2b3f1cc1863079bc1349ac0fec395a500090c4fe4e11ab775310a49f2f956d
 F src/mutex_w32.c caa50e1c0258ac4443f52e00fe8aaea73b6d0728bd8856bedfff822cae418541
 F src/notify.c 89a97dc854c3aa62ad5f384ef50c5a4a11d70fcc69f86de3e991573421130ed6
-F src/obj_interfaces.h ea17e13ea521955fcdbeb2257b2439d2047b4c5d042a971a4639846023a9f373
+F src/obj_interfaces.h c80525ea603357a79ddae45ba98eec2ac60a9092d1800811d92f3a0e0208d8a6
 F src/os.c b1c4f2d485961e9a5b6b648c36687d25047c252222e9660b7cc25a6e1ea436ab
 F src/os.h 26890f540b475598cd9881dcc68931377b8d429d3ea3e2eeb64470cde64199f8
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
@@ -556,8 +556,8 @@ F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c 18d99e7146852d6064559561769fcca0743eb32b14a97da6dbed373a30ee0e76
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 7c106b3f36d483242b0a9c696614cd53d6f29e1ac81da6a3f0e9ea92f4211cc3
-F src/shell.c.in 3984e1de9e70357ea0a017409f4421eacf94175a30969d68f6cc135a4c1fb9f9
-F src/shext_linkage.h 88a3f215fdb090fcc3b3577a05bafd234f1a556bad3f2f4ac990a177aebf4b2c
+F src/shell.c.in 9ae99f072005ee180a06c10ba53f465ae1db315573abc7767c1060c1b3c0198d
+F src/shext_linkage.h 4f58ea112273f3e6769221739b7160852cf0d7cdd4ee757f6c696e90fb7ffcb9
 F src/sqlite.h.in 2a35f62185eb5e7ecc64a2f68442b538ce9be74f80f28a00abc24837edcf1c17
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h f49e28c25bd941e79794db5415fdf7b202deb3bc072ed6f1ed273d578703684e
@@ -606,7 +606,8 @@ F src/test_quota.h 2a8ad1952d1d2ca9af0ce0465e56e6c023b5e15d
 F src/test_rtree.c 671f3fae50ff116ef2e32a3bf1fe21b5615b4b7b
 F src/test_schema.c f5d6067dfc2f2845c4dd56df63e66ee826fb23877855c785f75cc2ca83fd0c1b
 F src/test_server.c a2615049954cbb9cfb4a62e18e2f0616e4dc38fe
-F src/test_shellext.c 0794ffe8c7762d027a28a2b445277c72a68b28eafba27d38ef197a9655599b42
+F src/test_shellext.c fa658ee13e39d2b4bbb49c1b7fe060990ee0928e0412ffcdecbf98ddba3ef12e
+F src/test_shellext.cpp 95d1f67570683b0cc61e6b5a447aadba39ffe10fffa7d6015ba855fb05f10865
 F src/test_sqllog.c 540feaea7280cd5f926168aee9deb1065ae136d0bbbe7361e2ef3541783e187a
 F src/test_superlock.c 4839644b9201da822f181c5bc406c0b2385f672e
 F src/test_syscall.c 1073306ba2e9bfc886771871a13d3de281ed3939
@@ -1951,8 +1952,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 43eb311e517b79cde9e17c1a80baed8d13d9d943dd9ee44b31831159df8715fc 21e96600d90c1cda84777abe22a11058eba46c9faefeb05f8c31bc0e7fa84b19
-R 67ea5330fa92b3979fbd7e883fdffd1f
+P 861ab023be283782131df5ccd9eff50cf2f06f48f1ea7defd3f08177a3df5889
+R 29bf4bbfab5e25a57abea25dca7857f3
 U larrybr
-Z b47b9cb62392429660769c050bed79ba
+Z 916c41d1a88108766c11b193884acec2
 # Remove this line to create a well-formed Fossil manifest.

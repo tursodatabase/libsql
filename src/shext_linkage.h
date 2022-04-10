@@ -305,31 +305,28 @@ typedef struct Prompts {
   const char *zContinue;
 } Prompts;
 
-typedef struct ExtensionHelpers {
+AGGTYPE_BEGIN(ExtensionHelpers) {
   int helperCount; /* Helper count, not including sentinel */
-  union {
-    struct ExtHelpers {
-      int (*failIfSafeMode)(ShellExState *p, const char *zErrMsg, ...);
-      FILE * (*currentOutputFile)(ShellExState *p);
-      struct InSource * (*currentInputSource)(ShellExState *p);
-      char * (*strLineGet)(char *zBuf, int ncMax, struct InSource *pInSrc);
-      MetaCommand * (*findMetaCommand)(const char *cmdName, ShellExState *p,
-                                       /* out */ int *pnFound);
-      DotCmdRC (*runMetaCommand)(MetaCommand *pmc, char *azArg[], int nArg,
-                                 ShellExState *psx);
-      void (*setColumnWidths)(ShellExState *p, char *azWidths[], int nWidths);
-      int (*nowInteractive)(ShellExState *p);
-      const char * (*shellInvokedAs)(void);
-      const char * (*shellStartupDir)(void);
-      char * (*oneInputLine)(struct InSource *pInSrc, char *zPrior,
-                             int isContinuation, Prompts *pCue);
-      void (*freeInputLine)(char *zLine);
-      int (*enable_load_extension)(sqlite3 *db, int onoff);
-      void (*sentinel)(void);
-    } named ;
-    void (*nameless[13+1])(); /* Same as named but anonymous plus a sentinel. */
+  struct ExtHelpers {
+    int (*failIfSafeMode)(ShellExState *p, const char *zErrMsg, ...);
+    FILE * (*currentOutputFile)(ShellExState *p);
+    struct InSource * (*currentInputSource)(ShellExState *p);
+    char * (*strLineGet)(char *zBuf, int ncMax, struct InSource *pInSrc);
+    MetaCommand * (*findMetaCommand)(const char *cmdName, ShellExState *p,
+                                     /* out */ int *pnFound);
+    DotCmdRC (*runMetaCommand)(MetaCommand *pmc, char *azArg[], int nArg,
+                               ShellExState *psx);
+    void (*setColumnWidths)(ShellExState *p, char *azWidths[], int nWidths);
+    int (*nowInteractive)(ShellExState *p);
+    const char * (*shellInvokedAs)(void);
+    const char * (*shellStartupDir)(void);
+    char * (*oneInputLine)(struct InSource *pInSrc, char *zPrior,
+                           int isContinuation, Prompts *pCue);
+    void (*freeInputLine)(char *zLine);
+    int (*enable_load_extension)(sqlite3 *db, int onoff);
+    void *pSentinel; /* Always set to 0, above never are. */
   } helpers;
-} ExtensionHelpers;
+} AGGTYPE_END(ExtensionHelpers);
 
 /* This enum is stable excepting that it grows at the end. Members will not
  * change value across successive shell versions, except for NK_CountOf. An
@@ -366,52 +363,48 @@ typedef int (*ShellEventNotify)(void *pvUserData, NoticeKind nk,
                                 void *pvSubject, ShellExState *psx);
 
 /* Various shell extension helpers and feature registration functions */
-typedef struct ShellExtensionAPI {
+AGGTYPE_BEGIN(ShellExtensionAPI) {
   /* Utility functions for use by extensions */
   ExtensionHelpers * pExtHelpers;
 
   /* Functions for an extension to register its implementors with shell */
   const int numRegistrars; /* 6 for this version */
-  union {
-    struct ShExtAPI {
-      /* Register a meta-command */
-      int (*registerMetaCommand)(ShellExState *p,
-                                 ExtensionId eid, MetaCommand *pMC);
-      /* Register query result data display (or other disposition) mode */
-      int (*registerExporter)(ShellExState *p,
-                              ExtensionId eid, ExportHandler *pEH);
-      /* Register an import variation from (various sources) for .import */
-      int (*registerImporter)(ShellExState *p,
-                              ExtensionId eid, ImportHandler *pIH);
-      /* Provide scripting support to host shell. (See ScriptSupport above.) */
-      int (*registerScripting)(ShellExState *p,
-                               ExtensionId eid, ScriptSupport *pSS);
-      /* Subscribe to (or unsubscribe from) messages about various changes.
-       * See above NoticeKind enum and ShellEventNotify callback typedef. */
-      int (*subscribeEvents)(ShellExState *p, ExtensionId eid, void *pvUserData,
-                             NoticeKind nkMin, ShellEventNotify eventHandler);
-      /* Notify host shell that an ad-hoc dot command exists and provide for
-       * its help text to appear in .help output. Only an extension which has
-       * registered an "unknown" MetaCommand may use this.
-       * If zHelp==0, any such provision is removed. If zHelp!=0, original or
-       * replacement help text is associated with command zName.
-       * Help text before the first newline is primary, issued as summary help.
-       * Text beyond that is secondary, issued as the complete command help. */
-      int (*registerAdHocCommand)(ShellExState *p, ExtensionId eid,
-                                  const char *zName, const char *zHelp);
-      /* Preset to 0 at extension load, a sentinel for expansion */
-      void (*sentinel)(void);
-    } named;
-    void (*pFunctions[6+1])(); /* 0-terminated sequence of function pointers */
+  struct ShExtAPI {
+    /* Register a meta-command */
+    int (*registerMetaCommand)(ShellExState *p,
+                               ExtensionId eid, MetaCommand *pMC);
+    /* Register query result data display (or other disposition) mode */
+    int (*registerExporter)(ShellExState *p,
+                            ExtensionId eid, ExportHandler *pEH);
+    /* Register an import variation from (various sources) for .import */
+    int (*registerImporter)(ShellExState *p,
+                            ExtensionId eid, ImportHandler *pIH);
+    /* Provide scripting support to host shell. (See ScriptSupport above.) */
+    int (*registerScripting)(ShellExState *p,
+                             ExtensionId eid, ScriptSupport *pSS);
+    /* Subscribe to (or unsubscribe from) messages about various changes.
+     * See above NoticeKind enum and ShellEventNotify callback typedef. */
+    int (*subscribeEvents)(ShellExState *p, ExtensionId eid, void *pvUserData,
+                           NoticeKind nkMin, ShellEventNotify eventHandler);
+    /* Notify host shell that an ad-hoc dot command exists and provide for
+     * its help text to appear in .help output. Only an extension which has
+     * registered an "unknown" MetaCommand may use this.
+     * If zHelp==0, any such provision is removed. If zHelp!=0, original or
+     * replacement help text is associated with command zName.
+     * Help text before the first newline is primary, issued as summary help.
+     * Text beyond that is secondary, issued as the complete command help. */
+    int (*registerAdHocCommand)(ShellExState *p, ExtensionId eid,
+                                const char *zName, const char *zHelp);
+    void *pSentinel; /* Always set to 0, above never are. */
   } api;
-} ShellExtensionAPI;
+} AGGTYPE_END(ShellExtensionAPI);
 
 /* Struct passed to extension init function to establish linkage. The
  * lifetime of instances spans only the init call itself. Extensions
  * should make a copy, if needed, of pShellExtensionAPI for later use.
  * Its referent is static, persisting for the process duration.
  */
-typedef struct ShellExtensionLink {
+AGGTYPE_BEGIN(ShellExtensionLink) {
   int sizeOfThis;        /* sizeof(ShellExtensionLink) for expansion */
   ShellExtensionAPI *pShellExtensionAPI;
   ShellExState *pSXS;    /* For use in extension feature registrations */
@@ -438,7 +431,7 @@ typedef struct ShellExtensionLink {
    */
   int nLoadArgs;
   char **azLoadArgs;
-} ShellExtensionLink;
+} AGGTYPE_END(ShellExtensionLink);
 
 /* String used with SQLite "Pointer Passing Interfaces" as a type marker.
  * That API subset is used by the shell to pass its extension API to the
@@ -463,12 +456,27 @@ typedef struct ShellExtensionLink {
 
 /*
  * Define boilerplate macros analogous to SQLITE_EXTENSION_INIT#
+ * Note that the argument names are reused across the macro set.
+ * This reflects the fact that, for the macros to be useful, the
+ * same objects must be referenced from different places. Hence,
+ * the actual arguments must appear in all of the invocations.
  */
-/* Place at file scope prior to usage of the arguments by extension code. */
+
+/* Place at file scope prior to usage of the arguments by extension code.
+ * This defines 3 static objects, named per the arguments and set or used
+ * for an extension to link into the shell host.
+ */
+#ifndef __cplusplus
 #define SHELL_EXTENSION_INIT1( shell_api_ptr, ext_helpers_ptr, link_func ) \
   static struct ShExtAPI *shell_api_ptr = 0; \
   static struct ExtHelpers *ext_helpers_ptr = 0; \
   DEFINE_SHDB_TO_SHEXTLINK(link_func)
+#else
+#define SHELL_EXTENSION_INIT1( shell_api_ptr, ext_helpers_ptr, link_func ) \
+  static ShellExtensionAPI::ShExtAPI *shell_api_ptr = 0; \
+  static ExtensionHelpers::ExtHelpers *ext_helpers_ptr = 0; \
+  DEFINE_SHDB_TO_SHEXTLINK(link_func)
+#endif
 
 /* Place within sqlite3_x_init() among its local variable declarations. */
 #define SHELL_EXTENSION_INIT2( link_ptr, link_func, db_ptr ) \
@@ -477,8 +485,8 @@ typedef struct ShellExtensionLink {
 /* Place within sqlite3_x_init() code prior to usage of the *_ptr arguments. */
 #define SHELL_EXTENSION_INIT3( shell_api_ptr, ext_helpers_ptr, link_ptr ) \
  if( (link_ptr)!=0 ){ \
-  shell_api_ptr = &link_ptr->pShellExtensionAPI->api.named; \
-  ext_helpers_ptr = &link_ptr->pShellExtensionAPI->pExtHelpers->helpers.named; \
+  shell_api_ptr = &link_ptr->pShellExtensionAPI->api; \
+  ext_helpers_ptr = &link_ptr->pShellExtensionAPI->pExtHelpers->helpers; \
  }
 
 /* This test may be used within sqlite3_x_init() after SHELL_EXTENSION_INIT3 */

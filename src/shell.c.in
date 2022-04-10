@@ -8103,9 +8103,11 @@ static int subscribe_events(ShellExState *p, ExtensionId eid, void *pvUserData,
         pes->pvUserData = pvUserData;
         return SQLITE_OK;
       }
+      ++pes;
     }
     assert(pes==pesLim);
-    pes = sqlite3_realloc(pes, (psi->numSubscriptions+1)*sizeof(*pes));
+    pes = sqlite3_realloc(psi->pSubscriptions,
+                          (psi->numSubscriptions+1)*sizeof(*pes));
     if( pes==0 ) return SQLITE_NOMEM;
     psi->pSubscriptions = pes;
     pes += (psi->numSubscriptions++);
