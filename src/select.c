@@ -3654,12 +3654,40 @@ static int multiSelectOrderBy(
 **
 ** All references to columns in table iTable are to be replaced by corresponding
 ** expressions in pEList.
+**
+** ## About "isOuterJoin":
+**
+** The isOuterJoin column indicates that the replacement will occur into a
+** position in the parent that NULL-able due to an OUTER JOIN.  Either the
+** target slot in the parent is the right operand of a LEFT JOIN, or one of
+** the left operands of a RIGHT JOIN.  In either case, we need to potentially
+** bypass the substituted expression with OP_IfNullRow.
+**
+** Suppose the original expression integer constant.  Even though the table
+** has the nullRow flag set, because the expression is an integer constant,
+** it will not be NULLed out.  So instead, we insert an OP_IfNullRow opcode
+** that checks to see if the nullRow flag is set on the table.  If the nullRow
+** flag is set, then the value in the register is set to NULL and the original
+** expression is bypassed.  If the nullRow flag is not set, then the original
+** expression runs to populate the register.
+**
+** Example where this is needed:
+**
+**      CREATE TABLE t1(a INTEGER PRIMARY KEY, b INT);
+**      CREATE TABLE t2(x INT UNIQUE);
+**
+**      SELECT a,b,m,x FROM t1 LEFT JOIN (SELECT 59 AS m,x FROM t2) ON b=x;
+**
+** When the subquery on the right side of the LEFT JOIN is flattened, we
+** have to add OP_IfNullRow in front of the OP_Integer that implements the
+** "m" value of the subquery so that a NULL will be loaded instead of 59
+** when processing a non-matched row of the left.
 */
 typedef struct SubstContext {
   Parse *pParse;            /* The parsing context */
   int iTable;               /* Replace references to this table */
   int iNewTable;            /* New table number */
-  int isLeftJoin;           /* Add TK_IF_NULL_ROW opcodes on each replacement */
+  int isOuterJoin;          /* Add TK_IF_NULL_ROW opcodes on each replacement */
   ExprList *pEList;         /* Replacement expressions */
 } SubstContext;
 
@@ -3709,7 +3737,7 @@ static Expr *substExpr(
         sqlite3VectorErrorMsg(pSubst->pParse, pCopy);
       }else{
         sqlite3 *db = pSubst->pParse->db;
-        if( pSubst->isLeftJoin && pCopy->op!=TK_COLUMN ){
+        if( pSubst->isOuterJoin && pCopy->op!=TK_COLUMN ){
           memset(&ifNullRow, 0, sizeof(ifNullRow));
           ifNullRow.op = TK_IF_NULL_ROW;
           ifNullRow.pLeft = pCopy;
@@ -3723,7 +3751,7 @@ static Expr *substExpr(
           sqlite3ExprDelete(db, pNew);
           return pExpr;
         }
-        if( pSubst->isLeftJoin ){
+        if( pSubst->isOuterJoin ){
           ExprSetProperty(pNew, EP_CanBeNull);
         }
         if( ExprHasProperty(pExpr,EP_FromJoin|EP_InnerJoin) ){
@@ -4105,7 +4133,7 @@ static int flattenSubquery(
   SrcList *pSubSrc;   /* The FROM clause of the subquery */
   int iParent;        /* VDBE cursor number of the pSub result set temp table */
   int iNewParent = -1;/* Replacement table for iParent */
-  int isLeftJoin = 0; /* True if pSub is the right side of a LEFT JOIN */    
+  int isOuterJoin = 0; /* True if pSub is the right side of a LEFT JOIN */    
   int i;              /* Loop counter */
   Expr *pWhere;                    /* The WHERE clause */
   SrcItem *pSubitem;               /* The subquery */
@@ -4178,7 +4206,7 @@ static int flattenSubquery(
   **
   ** See also tickets #306, #350, and #3300.
   */
-  if( (pSubitem->fg.jointype & JT_OUTER)!=0 ){
+  if( (pSubitem->fg.jointype & (JT_OUTER|JT_LTORJ))!=0 ){
     if( pSubSrc->nSrc>1                        /* (3a) */
      || isAgg                                  /* (3b) */
      || IsVirtual(pSubSrc->a[0].pTab)          /* (3c) */
@@ -4187,15 +4215,15 @@ static int flattenSubquery(
     ){
       return 0;
     }
-    isLeftJoin = 1;
+    isOuterJoin = 1;
   }
 #ifdef SQLITE_EXTRA_IFNULLROW
   else if( iFrom>0 && !isAgg ){
-    /* Setting isLeftJoin to -1 causes OP_IfNullRow opcodes to be generated for
+    /* Setting isOuterJoin to -1 causes OP_IfNullRow opcodes to be generated for
     ** every reference to any result column from subquery in a join, even
     ** though they are not necessary.  This will stress-test the OP_IfNullRow 
     ** opcode. */
-    isLeftJoin = -1;
+    isOuterJoin = -1;
   }
 #endif
 
@@ -4208,7 +4236,7 @@ static int flattenSubquery(
     if( pSub->pOrderBy ){
       return 0;  /* Restriction (20) */
     }
-    if( isAgg || (p->selFlags & SF_Distinct)!=0 || isLeftJoin>0 ){
+    if( isAgg || (p->selFlags & SF_Distinct)!=0 || isOuterJoin>0 ){
       return 0; /* (17d1), (17d2), or (17f) */
     }
     for(pSub1=pSub; pSub1; pSub1=pSub1->pPrior){
@@ -4454,7 +4482,7 @@ static int flattenSubquery(
     }
     pWhere = pSub->pWhere;
     pSub->pWhere = 0;
-    if( isLeftJoin>0 ){
+    if( isOuterJoin>0 ){
       sqlite3SetJoinExpr(pWhere, iNewParent, EP_FromJoin);
     }
     if( pWhere ){
@@ -4469,7 +4497,7 @@ static int flattenSubquery(
       x.pParse = pParse;
       x.iTable = iParent;
       x.iNewTable = iNewParent;
-      x.isLeftJoin = isLeftJoin;
+      x.isOuterJoin = isOuterJoin;
       x.pEList = pSub->pEList;
       substSelect(&x, pParent, 0);
     }
@@ -4930,7 +4958,7 @@ static int pushDownWhereTerms(
       x.pParse = pParse;
       x.iTable = iCursor;
       x.iNewTable = iCursor;
-      x.isLeftJoin = 0;
+      x.isOuterJoin = 0;
       x.pEList = pSubq->pEList;
       pNew = substExpr(&x, pNew);
 #ifndef SQLITE_OMIT_WINDOWFUNC
