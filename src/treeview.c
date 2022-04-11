@@ -416,7 +416,7 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
     sqlite3_str_appendf(&x, " fg.af=%x.%c",
       pExpr->flags, pExpr->affExpr ? pExpr->affExpr : 'n');
     if( ExprHasProperty(pExpr, EP_FromJoin) ){
-      sqlite3_str_appendf(&x, " iRJT=%d", pExpr->w.iRightJoinTable);
+      sqlite3_str_appendf(&x, " iJoin=%d", pExpr->w.iJoin);
     }
     if( ExprHasProperty(pExpr, EP_FromDDL) ){
       sqlite3_str_appendf(&x, " DDL");

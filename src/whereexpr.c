@@ -463,7 +463,7 @@ static int isAuxiliaryVtabOperator(
 static void transferJoinMarkings(Expr *pDerived, Expr *pBase){
   if( pDerived ){
     pDerived->flags |= pBase->flags & EP_FromJoin;
-    pDerived->w.iRightJoinTable = pBase->w.iRightJoinTable;
+    pDerived->w.iJoin = pBase->w.iJoin;
   }
 }
 
@@ -1110,7 +1110,7 @@ static void exprAnalyze(
 #endif
 
   if( ExprHasProperty(pExpr, EP_FromJoin) ){
-    Bitmask x = sqlite3WhereGetMask(pMaskSet, pExpr->w.iRightJoinTable);
+    Bitmask x = sqlite3WhereGetMask(pMaskSet, pExpr->w.iJoin);
     prereqAll |= x;
     extraRight = x-1;  /* ON clause terms may not be used with an index
                        ** on left table of a LEFT JOIN.  Ticket #3015 */
@@ -1461,7 +1461,7 @@ static void exprAnalyze(
             0, sqlite3ExprDup(db, pRight, 0));
         if( ExprHasProperty(pExpr, EP_FromJoin) && pNewExpr ){
           ExprSetProperty(pNewExpr, EP_FromJoin);
-          pNewExpr->w.iRightJoinTable = pExpr->w.iRightJoinTable;
+          pNewExpr->w.iJoin = pExpr->w.iJoin;
         }
         idxNew = whereClauseInsert(pWC, pNewExpr, TERM_VIRTUAL|TERM_DYNAMIC);
         testcase( idxNew==0 );
