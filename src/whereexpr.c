@@ -1809,6 +1809,7 @@ void sqlite3WhereTabFuncArgs(
   if( pArgs==0 ) return;
   for(j=k=0; j<pArgs->nExpr; j++){
     Expr *pRhs;
+    u32 joinType;
     while( k<pTab->nCol && (pTab->aCol[k].colFlags & COLFLAG_HIDDEN)==0 ){k++;}
     if( k>=pTab->nCol ){
       sqlite3ErrorMsg(pParse, "too many arguments on %s() - max %d",
@@ -1826,8 +1827,11 @@ void sqlite3WhereTabFuncArgs(
         sqlite3ExprDup(pParse->db, pArgs->a[j].pExpr, 0), 0);
     pTerm = sqlite3PExpr(pParse, TK_EQ, pColRef, pRhs);
     if( pItem->fg.jointype & (JT_LEFT|JT_LTORJ) ){
-      sqlite3SetJoinExpr(pTerm, pItem->iCursor);
+      joinType = EP_FromJoin;
+    }else{
+      joinType = EP_InnerJoin;
     }
+    sqlite3SetJoinExpr(pTerm, pItem->iCursor, joinType);
     whereClauseInsert(pWC, pTerm, TERM_DYNAMIC);
   }
 }

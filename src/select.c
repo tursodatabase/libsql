@@ -373,7 +373,7 @@ static void addWhereTerm(
   int iColLeft,                   /* Index of column in first table */
   int iRight,                     /* Index of second table in pSrc */
   int iColRight,                  /* Index of column in second table */
-  int isOuterJoin,                /* True if this is an OUTER join */
+  u32 joinType,                   /* EP_FromJoin or EP_InnerJoin */
   Expr **ppWhere                  /* IN/OUT: The WHERE clause to add to */
 ){
   sqlite3 *db = pParse->db;
@@ -393,8 +393,8 @@ static void addWhereTerm(
   assert( pE2!=0 || pEq==0 );  /* Due to db->mallocFailed test
                                ** in sqlite3DbMallocRawNN() called from
                                ** sqlite3PExpr(). */
-  if( pEq && isOuterJoin ){
-    ExprSetProperty(pEq, EP_FromJoin);
+  if( pEq ){
+    ExprSetProperty(pEq, joinType);
     assert( !ExprHasProperty(pEq, EP_TokenOnly|EP_Reduced) );
     ExprSetVVAProperty(pEq, EP_NoReduce);
     pEq->w.iJoin = pE2->iTable;
@@ -428,9 +428,10 @@ static void addWhereTerm(
 ** after the t1 loop and rows with t1.x!=5 will never appear in
 ** the output, which is incorrect.
 */
-void sqlite3SetJoinExpr(Expr *p, int iTable){
+void sqlite3SetJoinExpr(Expr *p, int iTable, u32 joinFlag){
+  assert( joinFlag==EP_FromJoin || joinFlag==EP_InnerJoin );
   while( p ){
-    ExprSetProperty(p, EP_FromJoin);
+    ExprSetProperty(p, joinFlag);
     assert( !ExprHasProperty(p, EP_TokenOnly|EP_Reduced) );
     ExprSetVVAProperty(p, EP_NoReduce);
     p->w.iJoin = iTable;
@@ -439,11 +440,11 @@ void sqlite3SetJoinExpr(Expr *p, int iTable){
       if( p->x.pList ){
         int i;
         for(i=0; i<p->x.pList->nExpr; i++){
-          sqlite3SetJoinExpr(p->x.pList->a[i].pExpr, iTable);
+          sqlite3SetJoinExpr(p->x.pList->a[i].pExpr, iTable, joinFlag);
         }
       }
     }
-    sqlite3SetJoinExpr(p->pLeft, iTable);
+    sqlite3SetJoinExpr(p->pLeft, iTable, joinFlag);
     p = p->pRight;
   } 
 }
@@ -459,6 +460,7 @@ static void unsetJoinExpr(Expr *p, int iTable){
     if( ExprHasProperty(p, EP_FromJoin)
      && (iTable<0 || p->w.iJoin==iTable) ){
       ExprClearProperty(p, EP_FromJoin);
+      ExprSetProperty(p, EP_InnerJoin);
     }
     if( p->op==TK_COLUMN && p->iTable==iTable ){
       ExprClearProperty(p, EP_CanBeNull);
@@ -502,10 +504,10 @@ static int sqliteProcessJoin(Parse *pParse, Select *p){
   pRight = &pLeft[1];
   for(i=0; i<pSrc->nSrc-1; i++, pRight++, pLeft++){
     Table *pRightTab = pRight->pTab;
-    int isOuter;
+    u32 joinType;
 
     if( NEVER(pLeft->pTab==0 || pRightTab==0) ) continue;
-    isOuter = (pRight->fg.jointype & JT_OUTER)!=0;
+    joinType = (pRight->fg.jointype & JT_OUTER)!=0 ? EP_FromJoin : EP_InnerJoin;
 
     /* When the NATURAL keyword is present, add WHERE clause terms for
     ** every column that the two tables have in common.
@@ -525,7 +527,7 @@ static int sqliteProcessJoin(Parse *pParse, Select *p){
         zName = pRightTab->aCol[j].zCnName;
         if( tableAndColumnIndex(pSrc, i+1, zName, &iLeft, &iLeftCol, 1) ){
           addWhereTerm(pParse, pSrc, iLeft, iLeftCol, i+1, j,
-                isOuter, &p->pWhere);
+                joinType, &p->pWhere);
         }
       }
     }
@@ -556,7 +558,7 @@ static int sqliteProcessJoin(Parse *pParse, Select *p){
           return 1;
         }
         addWhereTerm(pParse, pSrc, iLeft, iLeftCol, i+1, iRightCol,
-                     isOuter, &p->pWhere);
+                     joinType, &p->pWhere);
       }
     }
 
@@ -564,7 +566,7 @@ static int sqliteProcessJoin(Parse *pParse, Select *p){
     ** an AND operator.
     */
     else if( pRight->u3.pOn ){
-      if( isOuter ) sqlite3SetJoinExpr(pRight->u3.pOn, pRight->iCursor);
+      sqlite3SetJoinExpr(pRight->u3.pOn, pRight->iCursor, joinType);
       p->pWhere = sqlite3ExprAnd(pParse, p->pWhere, pRight->u3.pOn);
       pRight->u3.pOn = 0;
     }
@@ -3724,8 +3726,9 @@ static Expr *substExpr(
         if( pSubst->isLeftJoin ){
           ExprSetProperty(pNew, EP_CanBeNull);
         }
-        if( ExprHasProperty(pExpr,EP_FromJoin) ){
-          sqlite3SetJoinExpr(pNew, pExpr->w.iJoin);
+        if( ExprHasProperty(pExpr,EP_FromJoin|EP_InnerJoin) ){
+          sqlite3SetJoinExpr(pNew, pExpr->w.iJoin,
+                             pExpr->flags & (EP_FromJoin|EP_InnerJoin));
         }
         sqlite3ExprDelete(db, pExpr);
         pExpr = pNew;
@@ -4452,7 +4455,7 @@ static int flattenSubquery(
     pWhere = pSub->pWhere;
     pSub->pWhere = 0;
     if( isLeftJoin>0 ){
-      sqlite3SetJoinExpr(pWhere, iNewParent);
+      sqlite3SetJoinExpr(pWhere, iNewParent, EP_FromJoin);
     }
     if( pWhere ){
       if( pParent->pWhere ){

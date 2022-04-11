@@ -6172,14 +6172,18 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       WhereInfo *pSubWInfo;
       SrcList sFrom;
       Bitmask mAll = 0;
-      for(k=0; k<=i; k++){
+      for(k=0; k<i; k++){
+        int iIdxCur;
         mAll |= pWInfo->a[k].pWLoop->maskSelf;
+        iIdxCur = pWInfo->a[k].iIdxCur;
+        if( iIdxCur ) sqlite3VdbeAddOp1(v, OP_NullRow, iIdxCur);
       }
+      mAll |= pLoop->maskSelf;
       for(k=0; k<pWC->nTerm; k++){
         WhereTerm *pTerm = &pWC->a[k];
         if( pTerm->wtFlags & TERM_VIRTUAL ) break;
         if( pTerm->prereqAll & ~mAll ) continue;
-        if( ExprHasProperty(pTerm->pExpr, EP_FromJoin) ) continue;
+        if( ExprHasProperty(pTerm->pExpr, EP_FromJoin|EP_InnerJoin) ) continue;
         pSubWhere = sqlite3ExprAnd(pParse, pSubWhere,
                                    sqlite3ExprDup(db, pTerm->pExpr, 0));
       }
