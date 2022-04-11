@@ -87,11 +87,22 @@ foreach {id schema} {
     CREATE TABLE dual(dummy TEXT);
     INSERT INTO dual(dummy) VALUES('x');
   }
+  10 {
+    CREATE TABLE t1(a INT, b INT, PRIMARY KEY(a,b)) WITHOUT ROWID;
+    INSERT INTO t1 VALUES(1,2),(1,3),(1,4);
+    CREATE TABLE t2a(c INTEGER PRIMARY KEY, i1 INT);
+    CREATE TABLE t2b(i1 INTEGER PRIMARY KEY, d INT);
+    CREATE VIEW t2(c,d) AS SELECT c, d FROM t2a NATURAL JOIN t2b;
+    INSERT INTO t2a VALUES(3,93),(4,94),(5,95),(6,96),(7,97);
+    INSERT INTO t2b VALUES(91,11),(92,22),(93,33),(94,44),(95,55);
+    CREATE TABLE dual(dummy TEXT);
+    INSERT INTO dual(dummy) VALUES('x');
+  }
 } {
   reset_db
   db nullvalue NULL
   do_execsql_test join7-$id.setup $schema {}
-  do_execsql_test join7-$id.1 {
+  do_execsql_test join7-$id.10 {
     SELECT b, d FROM t1 FULL OUTER JOIN t2 ON b=c ORDER BY +b;
   } {
     NULL 55
@@ -99,7 +110,7 @@ foreach {id schema} {
     3    33
     4    44
   }
-  do_execsql_test join7-$id.2 {
+  do_execsql_test join7-$id.20 {
     SELECT a, c FROM t1 FULL OUTER JOIN t2 ON b=c ORDER BY +b;
   } {
     NULL  5
@@ -107,7 +118,7 @@ foreach {id schema} {
     1     3
     1     4
   }
-  do_execsql_test join7-$id.3 {
+  do_execsql_test join7-$id.30 {
     SELECT * FROM t1 FULL OUTER JOIN t2 ON b=c ORDER BY +b;
   } {
     NULL NULL 5    55
@@ -115,35 +126,66 @@ foreach {id schema} {
     1    3    3    33
     1    4    4    44
   }
-  do_execsql_test join7-$id.4 {
+  do_execsql_test join7-$id.31 {
+    SELECT t1.*, t2.* FROM t2 FULL OUTER JOIN t1 ON b=c ORDER BY +b;
+  } {
+    NULL NULL 5    55
+    1    2    NULL NULL
+    1    3    3    33
+    1    4    4    44
+  }
+  do_execsql_test join7-$id.40 {
     SELECT * FROM t1 RIGHT OUTER JOIN t2 ON b=c ORDER BY +b;
   } {
     NULL NULL 5    55
     1    3    3    33
     1    4    4    44
   }
-  do_execsql_test join7-$id.5 {
+  do_execsql_test join7-$id.50 {
+    SELECT t1.*, t2.* FROM t2 LEFT OUTER JOIN t1 ON b=c ORDER BY +b;
+  } {
+    NULL NULL 5    55
+    1    3    3    33
+    1    4    4    44
+  }
+  do_execsql_test join7-$id.60 {
     SELECT * FROM dual JOIN t1 ON true RIGHT OUTER JOIN t2 ON b=c ORDER BY +b;
   } {
     NULL NULL NULL 5    55
     x    1    3    3    33
     x    1    4    4    44
   }
-  do_execsql_test join7-$id.6 {
+  do_execsql_test join7-$id.70 {
+    SELECT t1.*, t2.* 
+      FROM t2 LEFT JOIN (dual JOIN t1 ON true) ON b=c ORDER BY +b;
+  } {
+    NULL NULL 5    55
+    1    3    3    33
+    1    4    4    44
+  }
+  do_execsql_test join7-$id.80 {
     SELECT * FROM dual CROSS JOIN t1 RIGHT OUTER JOIN t2 ON b=c ORDER BY +b;
   } {
     NULL NULL NULL 5    55
     x    1    3    3    33
     x    1    4    4    44
   }
-  do_execsql_test join7-$id.7 {
+  do_execsql_test join7-$id.81 {
+    SELECT dual.*, t1.*, t2.*
+      FROM t1 CROSS JOIN dual RIGHT OUTER JOIN t2 ON b=c ORDER BY +b;
+  } {
+    NULL NULL NULL 5    55
+    x    1    3    3    33
+    x    1    4    4    44
+  }
+  do_execsql_test join7-$id.90 {
     SELECT * FROM t1 LEFT OUTER JOIN t2 ON b=c ORDER BY +b;
   } {
     1    2    NULL NULL
     1    3    3    33
     1    4    4    44
   }
-  do_execsql_test join7-$id.8 {
+  do_execsql_test join7-$id.100 {
     SELECT * FROM t1 FULL OUTER JOIN t2 ON b=c AND a=1 ORDER BY +b;
   } {
     NULL NULL 5    55
@@ -151,21 +193,29 @@ foreach {id schema} {
     1    3    3    33
     1    4    4    44
   }
-  do_execsql_test join7-$id.9 {
+  do_execsql_test join7-$id.101 {
+    SELECT t1.*, t2.* FROM t2 FULL OUTER JOIN t1 ON b=c AND a=1 ORDER BY +b;
+  } {
+    NULL NULL 5    55
+    1    2    NULL NULL
+    1    3    3    33
+    1    4    4    44
+  }
+  do_execsql_test join7-$id.110 {
     SELECT * FROM t1 FULL OUTER JOIN t2 ON b=c WHERE a=1 ORDER BY +b;
   } {
     1    2    NULL NULL
     1    3    3    33
     1    4    4    44
   }
-  do_execsql_test join7-$id.10 {
+  do_execsql_test join7-$id.120 {
     SELECT * FROM t1 FULL OUTER JOIN t2 ON b=c WHERE a IS NULL ORDER BY +d;
   } {
     NULL NULL 3    33
     NULL NULL 4    44
     NULL NULL 5    55
   }
-  do_execsql_test join7-$id.11 {
+  do_execsql_test join7-$id.130 {
     SELECT * FROM t1 FULL OUTER JOIN t2 ON b=c AND d<=0 ORDER BY +b, +d;
   } {
     NULL NULL 3    33
@@ -175,7 +225,7 @@ foreach {id schema} {
     1    3    NULL NULL
     1    4    NULL NULL
   }
-  do_execsql_test join7-$id.12 {
+  do_execsql_test join7-$id.140 {
     SELECT a, b, c, d
       FROM t2 FULL OUTER JOIN t1 ON b=c AND d<=0 ORDER BY +b, +d;
   } {
