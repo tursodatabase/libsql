@@ -4373,6 +4373,7 @@ static int flattenSubquery(
   for(pParent=p; pParent; pParent=pParent->pPrior, pSub=pSub->pPrior){
     int nSubSrc;
     u8 jointype = 0;
+    u8 ltorj = pSrc->a[iFrom].fg.jointype & JT_LTORJ;
     assert( pSub!=0 );
     pSubSrc = pSub->pSrc;     /* FROM clause of subquery */
     nSubSrc = pSubSrc->nSrc;  /* Number of terms in subquery FROM clause */
@@ -4411,10 +4412,11 @@ static int flattenSubquery(
       if( pItem->fg.isUsing ) sqlite3IdListDelete(db, pItem->u3.pUsing);
       assert( pItem->fg.isTabFunc==0 );
       *pItem = pSubSrc->a[i];
+      pItem->fg.jointype |= ltorj;
       iNewParent = pSubSrc->a[i].iCursor;
       memset(&pSubSrc->a[i], 0, sizeof(pSubSrc->a[i]));
     }
-    pSrc->a[iFrom].fg.jointype = jointype;
+    pSrc->a[iFrom].fg.jointype = jointype | ltorj;
   
     /* Now begin substituting subquery result set expressions for 
     ** references to the iParent in the outer query.

@@ -1,5 +1,5 @@
-C Show\sthe\sJT_LTORJ\sflag\sin\sTreeView\sdebugging\soutput.
-D 2022-04-11T00:54:30.476
+C Ensure\sthat\sthe\sJT_LTORJ\sflag\sis\spreserved\swhen\sflattening\sa\ssubquery\sthat\nis\son\sthe\sleft\sside\sof\sa\sRIGHT\sJOIN.
+D 2022-04-11T10:38:28.801
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -552,7 +552,7 @@ F src/printf.c 05d8dfd2018bc4fc3ddb8b37eb97ccef7abf985643fa1caebdcf2916ca90fa32
 F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c 7110fc3b5a4dec5d11559141c1906c4a125349fb602f541b05db3a3d448d4b95
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c 451df0c74466d56d9d69be0d06047b1a0be7d1fa0397ac7d9211f05eb5f06318
+F src/select.c e889b6a0fee9341820adc9a421f6cabb69171360f7750c0ba175e0a6ac0fd537
 F src/shell.c.in 1a8fbf932ecd582b1a5f66c1e8294f92c30d954616f5c7cc54c9623fcdbb028d
 F src/sqlite.h.in 2a35f62185eb5e7ecc64a2f68442b538ce9be74f80f28a00abc24837edcf1c17
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1946,8 +1946,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5aa0c9ea9cf53c13bf266278b479b2e7af3aa5c6b144bd49ff155a4eb3c23c96
-R 1822de81f6d5e04eb79ec5cea58d30a4
+P 21eb44919f38abad30b75181ca8aec38b453b94dba2815caf7e946e07faa40d7
+R 582e9a3c8a9436aaf5a30603f3b09f3b
 U drh
-Z 5ed5c4da0a2f8bbe8f27f2f95fe823d4
+Z 8d7ebe62739250aad2468a2b76ceb82f
 # Remove this line to create a well-formed Fossil manifest.
