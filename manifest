@@ -1,5 +1,5 @@
-C Do\snot\sallow\squery\sflattening\snor\sthe\spush-down\soptimization\son\sthe\nright\soperand\sof\sa\sRIGHT\sJOIN.
-D 2022-04-11T00:21:53.844
+C Show\sthe\sJT_LTORJ\sflag\sin\sTreeView\sdebugging\soutput.
+D 2022-04-11T00:54:30.476
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -617,7 +617,7 @@ F src/test_window.c cdae419fdcea5bad6dcd9368c685abdad6deb59e9fc8b84b153de513d394
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c a38f52058b517929e264094abd0b5fd1e8e145a1aa43bc6f6a72ae5218f96c98
-F src/treeview.c d1401c129c980ace571f5071b91c349b8ad00bdb3d6f7112fb97a3da8bac85ff
+F src/treeview.c 7e50db6ae3bf4d2cb2451b72885667160b6670b0d17bc8d59525b0de6aabf036
 F src/trigger.c 372ada38f667c6823a3db15749eb668338e65c793394e55a37e56a489f2d1b55
 F src/update.c 2cfaded82ca80ff56afb8c3ae5e88284e0824bfd86119827cc22481959f96f92
 F src/upsert.c 8789047a8f0a601ea42fa0256d1ba3190c13746b6ba940fe2d25643a7e991937
@@ -1946,8 +1946,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P beb4401dc09fb68e85ddcf3f99598527691535d0eb7693168f440e5a5a076e3f
-R b2c7edceb2230e0242166af62b7682c3
+P 5aa0c9ea9cf53c13bf266278b479b2e7af3aa5c6b144bd49ff155a4eb3c23c96
+R 1822de81f6d5e04eb79ec5cea58d30a4
 U drh
-Z a361fbcfdefe8d9e9f1c63be816d7720
+Z 5ed5c4da0a2f8bbe8f27f2f95fe823d4
 # Remove this line to create a well-formed Fossil manifest.
