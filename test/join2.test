@@ -63,6 +63,12 @@ do_test join2-1.6 {
       t1 NATURAL LEFT OUTER JOIN t2 NATURAL JOIN t3
   }
 } {1 11 111 1111}
+do_test join2-1.6-rj {
+  execsql {
+    SELECT * FROM
+      t2 NATURAL RIGHT OUTER JOIN t1 NATURAL JOIN t3
+  }
+} {11 111 1 1111}
 ifcapable subquery {
   do_test join2-1.7 {
     execsql {
@@ -70,6 +76,12 @@ ifcapable subquery {
         t1 NATURAL LEFT OUTER JOIN (t2 NATURAL JOIN t3)
     }
   } {1 11 111 1111 2 22 {} {} 3 33 {} {}}
+  do_test join2-1.7-rj {
+    execsql {
+      SELECT * FROM
+        (t2 NATURAL JOIN t3) NATURAL RIGHT JOIN t1
+    }
+  } {11 111 1111 1 {} {} {} 2 {} {} {} 3}
 }
 
 #-------------------------------------------------------------------------
@@ -87,6 +99,9 @@ do_execsql_test 2.0 {
 
 do_catchsql_test 2.1 {
   SELECT * FROM aa LEFT JOIN cc ON (a=b) JOIN bb ON (b=coalesce(c,1));
+} {1 {ON clause references tables to its right}}
+do_catchsql_test 2.1b {
+  SELECT * FROM aa RIGHT JOIN cc ON (a=b) JOIN bb ON (b=coalesce(c,1));
 } {1 {ON clause references tables to its right}}
 do_catchsql_test 2.2 {
   SELECT * FROM aa JOIN cc ON (a=b) JOIN bb ON (b=c);
