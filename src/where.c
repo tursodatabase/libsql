@@ -5880,6 +5880,7 @@ WhereInfo *sqlite3WhereBegin(
       pRJ->regBloom = ++pParse->nMem;
       sqlite3VdbeAddOp2(v, OP_Blob, 65536, pRJ->regBloom);
       pRJ->regReturn = ++pParse->nMem;
+      pRJ->addrInit = sqlite3VdbeAddOp2(v, OP_Integer, 0, pRJ->regReturn);
       assert( pTab==pTabItem->pTab );
       if( HasRowid(pTab) ){
         KeyInfo *pInfo;
@@ -6013,7 +6014,11 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       /* Terminate the subroutine that forms the interior of the loop of
       ** the RIGHT JOIN table */
       WhereRightJoin *pRJ = pLevel->pRJ;
-      sqlite3VdbeChangeP1(v, pRJ->addrSubrtn-1, sqlite3VdbeCurrentAddr(v));
+      int addrHere = sqlite3VdbeCurrentAddr(v);
+      sqlite3VdbeChangeP1(v, pRJ->addrSubrtn-1, addrHere);
+      sqlite3VdbeChangeP1(v, pRJ->addrInit, addrHere);
+      sqlite3VdbeResolveLabel(v, pLevel->addrCont);
+      pLevel->addrCont = 0;
       sqlite3VdbeAddOp2(v, OP_Return, pRJ->regReturn, pRJ->addrSubrtn);
     }
     pLoop = pLevel->pWLoop;
@@ -6043,7 +6048,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       }
 #endif /* SQLITE_DISABLE_SKIPAHEAD_DISTINCT */
       /* The common case: Advance to the next row */
-      sqlite3VdbeResolveLabel(v, pLevel->addrCont);
+      if( pLevel->addrCont ) sqlite3VdbeResolveLabel(v, pLevel->addrCont);
       sqlite3VdbeAddOp3(v, pLevel->op, pLevel->p1, pLevel->p2, pLevel->p3);
       sqlite3VdbeChangeP5(v, pLevel->p5);
       VdbeCoverage(v);
@@ -6058,7 +6063,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
 #ifndef SQLITE_DISABLE_SKIPAHEAD_DISTINCT
       if( addrSeek ) sqlite3VdbeJumpHere(v, addrSeek);
 #endif
-    }else{
+    }else if( pLevel->addrCont ){
       sqlite3VdbeResolveLabel(v, pLevel->addrCont);
     }
     if( (pLoop->wsFlags & WHERE_IN_ABLE)!=0 && pLevel->u.in.nIn>0 ){

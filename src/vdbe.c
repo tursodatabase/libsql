@@ -993,8 +993,12 @@ jump_to_p2:
 
 /* Opcode:  Return P1 P2 P3 * *
 **
-** Jump to the next instruction after the address in register P1.  After
-** the jump, register P1 becomes undefined.
+** Jump to the next instruction after the address stored in register P1.
+**
+** It used to be that after the jump, register P1 would become undefined.
+** However, for the subroutine used for the inner loop of a RIGHT JOIN,
+** it is useful for R1 register to be unchanged, so that is what happens
+** now.
 **
 ** P2 is not used by the byte-code engine.  However, if P2 is positive
 ** and also less than the current address, then the "EXPLAIN" output
@@ -1012,7 +1016,7 @@ case OP_Return: {           /* in1 */
   pIn1 = &aMem[pOp->p1];
   assert( pIn1->flags==MEM_Int );
   pOp = &aOp[pIn1->u.i];
-  pIn1->flags = MEM_Undefined;
+  /*  pIn1->flags = MEM_Undefined; */
   break;
 }
 
