@@ -12,11 +12,11 @@ Over its 2+ decade existence, the sqlite3 CLI shell has evolved,
 from its original utility as a test vehicle for the SQLite library,
 to a tool used by many people who want to use SQLite databases
 without writing a specialized application. While the shell exposes
-many of the library features, its original design was suited for
-performing short sequences of DB operations, generally known prior
-to starting the shell.
+many of the library features, its original design was best suited
+for performing short, fixed sequences of DB operations.
 
-Using the shell for more complex operations can be difficult,
+Effecting more complex, algorithmically determined operations
+can be difficult,
 usually requiring use of a general purpose scripting tool
 to drive the sqlite3 shell.
 This can work well where the task can be decomposed into
@@ -106,8 +106,9 @@ is interpreted as a dot command if it begins with a single '.';
 
 * if that token is nothing but a '.', the line is a no-op;
 
-* or, if it begins with anything but a '.', it is collected
-as SQL and submitted to the SQL execution (prepare/step) engine;
+* or, if it begins with anything but a '.', it is collected as SQL,
+until terminated with ';', '/' or 'go',
+then submitted to the SQL execution (prepare/step) engine.
 
 * or, if it begins with '#', it is ignored (as a comment).
 
@@ -146,7 +147,7 @@ The "Tcl execution environment" differs in several important ways
 from the familiar execution environment describe above.
 How to get into this alternative execution environment is described later.
 
-In this alernative execution environment, these critical differences exist:
+In this alternative execution environment, these critical differences exist:
 
 * An expanded set of command words is available and readily expanded further.
 
@@ -156,7 +157,7 @@ In this alernative execution environment, these critical differences exist:
 initial token is not defined as a Tcl command,
 but can be found as an executable
 in directories named in the PATH environment variable,
-will be executed in a subprocess
+will be executed in a sub-process
 (unless blocked by auto_noexec having been set.)
 
 * The command word and arguments are collected, 
@@ -278,7 +279,7 @@ to use the extension's main feature.
 ## Momentary Use of Tcl Execution Environment ##
 
 When .. is not the sole non-whitespace content of an input line group
-which has been submitted from the shell excecution environment,
+which has been submitted from the shell execution environment,
 that causes argument collection and expansion to be performed
 according to Tcl rules by the Tcl interpreter,
 without entering and staying in the Tcl execution environment.
@@ -338,7 +339,7 @@ commands with a leading '.' specially,
 by attempting to find them in the shell's repertoire of dot commands.
 If found (unambiguously), they are executed then,
 and the result (such as it is) returned to the caller.
-So, assuming there is a dot command invocable as .dotcmd,
+So, assuming there is a dot command invokable as .dotcmd,
 (which could happen if another extension provided it),
 it can be found and executed from the Tcl execution environment
 with arguments as collected and expanded by the Tcl interpreter.
@@ -397,7 +398,7 @@ It can be used for nearly any content, except for unmatched braces.
 ## Summary, More to Come ##
 
 The Tcl extension should prove useful to those who like the features
-of the sqlite3 shell but sometimes find it diffult to use programmatically.
+of the sqlite3 shell but find using it programmatically to be challenging.
 
 A future article will cover using Tk, a graphical user interface
-toolkit originally creaated for use with Tcl, with sqlite3xt.
+toolkit originally created for use with Tcl, with sqlite3xt.
