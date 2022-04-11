@@ -2179,7 +2179,7 @@ Expr *sqlite3ExprSimplifiedAndOr(Expr *pExpr){
 static int exprNodeIsConstant(Walker *pWalker, Expr *pExpr){
 
   /* If pWalker->eCode is 2 then any term of the expression that comes from
-  ** the ON or USING clauses of a left join disqualifies the expression
+  ** the ON or USING clauses of an outer join disqualifies the expression
   ** from being considered constant. */
   if( pWalker->eCode==2 && ExprHasProperty(pExpr, EP_FromJoin) ){
     pWalker->eCode = 0;
@@ -5817,7 +5817,7 @@ static int impliesNotNullRow(Walker *pWalker, Expr *pExpr){
 ** in an incorrect answer.
 **
 ** Terms of p that are marked with EP_FromJoin (and hence that come from
-** the ON or USING clauses of LEFT JOINS) are excluded from the analysis.
+** the ON or USING clauses of OUTER JOINS) are excluded from the analysis.
 **
 ** This routine is used to check if a LEFT JOIN can be converted into
 ** an ordinary JOIN.  The p argument is the WHERE clause.  If the WHERE
