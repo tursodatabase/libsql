@@ -14351,7 +14351,7 @@ typedef enum {
 ** The scan is resumable for subsequent lines when prior
 ** return values are passed as the 2nd argument.
 */
-static void sql_prescan(char *zLine, SqlScanState *pSSS){
+static void sql_prescan(const char *zLine, SqlScanState *pSSS){
   SqlScanState sss = *pSSS;
   char cin;
   char cWait = (char)sss; /* intentional narrowing loss */
@@ -14432,15 +14432,15 @@ static void sql_prescan(char *zLine, SqlScanState *pSSS){
 */
 static char *line_is_command_terminator(char *zLine){
   int iSkip = 0;
-  while( IsSpace(zLine[0]) ){ zLine++; };
-  if( zLine[0]=='/' )
-    zLine += 1; /* Oracle */
-  else if( ToLower(zLine[0])=='g' && ToLower(zLine[1])=='o' )
-    zLine += 2; /* SQL Server */
-  else if( iSkip>0 ){
+  const char *zDark = skipWhite(zLine);
+  if( zDark[0]=='/' )
+    iSkip = 1; /* Oracle */
+  else if( ToLower(zDark[0])=='g' && ToLower(zDark[1])=='o' )
+    iSkip = 2; /* SQL Server */
+  if( iSkip>0 ){
     SqlScanState sss = SSS_Start;
-    sql_prescan(zLine+iSkip,&sss);
-    if( sss==SSS_Start ) return zLine;
+    sql_prescan(zDark+iSkip,&sss);
+    if( sss==SSS_Start ) return (char *)zDark;
   }
   return 0;
 }

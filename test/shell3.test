@@ -19,6 +19,7 @@
 #   shell3-1.*: Basic tests for running SQL statments from command line.
 #   shell3-2.*: Basic tests for running SQL file from command line.
 #   shell3-3.*: Basic tests for processing odd SQL constructs.
+#   shell3-4.*: Basic tests for accept/reject SQL "execute" terminators.
 #
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -135,5 +136,45 @@ a["b"]
 /*.
 .*/ x
 'y}} 1}
+
+#----------------------------------------------------------------------------
+#   shell3-4.*: Basic tests for accept/reject SQL "execute" terminators.
+#
+do_test shell3-4.1 {
+  catchcmd ":memory:" {
+select 1
+;
+select 2
+go
+select 3
+/
+}
+} {0 {1
+2
+3}}
+
+set incomplete {1 {Error: Input incomplete at line 4 of "<stdin>"}}
+
+do_test shell3-4.2 {
+  catchcmd ":memory:" {
+select 1
+; junk
+}
+} $incomplete
+
+do_test shell3-4.3 {
+  catchcmd ":memory:" {
+select 2
+go.
+}
+} $incomplete
+
+do_test shell3-4.4 {
+  catchcmd ":memory:" {
+select 3
+//
+}
+} $incomplete
+
 
 finish_test
