@@ -6181,7 +6181,12 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
         int iIdxCur;
         mAll |= pWInfo->a[k].pWLoop->maskSelf;
         iIdxCur = pWInfo->a[k].iIdxCur;
-        if( iIdxCur ) sqlite3VdbeAddOp1(v, OP_NullRow, iIdxCur);
+        if( iIdxCur ){
+          sqlite3VdbeAddOp1(v, OP_NullRow, iIdxCur);
+        }
+        if( pWInfo->a[k].pWLoop->wsFlags & WHERE_VIRTUALTABLE ){
+          sqlite3VdbeAddOp1(v, OP_NullRow, pWInfo->a[k].iTabCur);
+        }
       }
       mAll |= pLoop->maskSelf;
       for(k=0; k<pWC->nTerm; k++){
