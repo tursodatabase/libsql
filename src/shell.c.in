@@ -8034,7 +8034,7 @@ static int register_adhoc_command(ShellExState *p, ExtensionId eid,
   u8 bRegNotRemove = zHelp!=0;
   const char *zSql = bRegNotRemove
     ? "INSERT OR REPLACE INTO "SHELL_AHELP_TAB
-    "(name, extIx, helpText) VALUES(?, ?, ?||?)"
+    "(name, extIx, helpText) VALUES(?, ?, ?||?||?)"
     : "DELETE FROM "SHELL_AHELP_TAB" WHERE name=? AND extIx=?";
   sqlite3_stmt *pStmt;
   int rc, ie;
@@ -8050,9 +8050,14 @@ static int register_adhoc_command(ShellExState *p, ExtensionId eid,
   sqlite3_bind_int(pStmt, 2, ie);
   if( bRegNotRemove ){
     int nc = strlen30(zHelp);
+    char cLead = *zHelp;
+    /* Add leading '.' if no help classifier present. */
+    const char *zCL = (cLead!='.' && cLead!=',')? "." : "";
+    /* Add trailing newline if not already there. */
     const char *zLE = (nc>0 && zHelp[nc-1]!='\n')? "\n" : "";
-    sqlite3_bind_text(pStmt, 3, zHelp, -1, 0);
-    sqlite3_bind_text(pStmt, 4, zLE, -1, 0);
+    sqlite3_bind_text(pStmt, 3, zCL, -1, 0);
+    sqlite3_bind_text(pStmt, 4, zHelp, -1, 0);
+    sqlite3_bind_text(pStmt, 5, zLE, -1, 0);
   }
   rc = sqlite3_step(pStmt);
   sqlite3_finalize(pStmt);
@@ -13785,7 +13790,7 @@ static MetaCommand * nextMatchingMetaCmd(MetaMatchIter *pMMI){
         assert(psi->pUnknown!=0);
         assert(extIx<psi->numExtLoaded && extIx>0);
         if( zHT==0 ) zHT = sqlite3_column_text(pMMI->stmt, 0);
-        pMMI->zAdhocHelpText = sqlite3_mprintf(".%s", zHT);
+        pMMI->zAdhocHelpText = sqlite3_mprintf("%s", zHT);
         return psi->pShxLoaded[extIx].pUnknown;
       }
     }else{
@@ -13898,27 +13903,24 @@ static int putSelectedCmdHelp(MetaCommand *pmc, int iLevel, char cLead,
   assert(pmc!=0);
 #if SHELL_DYNAMIC_EXTENSION
   if( zHelpText ){
+    const char *zHT = zHelpText+1; /* skip over classifier */
     if( cLead && *zHelpText!= cLead ) return 0;
-    const char *zLE = zHelpText;
-    if( iLevel<2 ){
-      while( *zLE && *zLE++!='\n' ) {}
-    }
+    if( *zHelpText==0 ) return 0;
+    const char *zLE = zHT;
     switch( iLevel ){
     case 0:
-      utf8_printf(out,"%.*s", (int)(zLE-zHelpText), zHelpText);
-      rc = 1;
-      break;
-    case 1:
-      utf8_printf(out,"%s", zHelpText);
+      while( *zLE && *zLE++!='\n' ) {}
+      utf8_printf(out,".%.*s", (int)(zLE-zHT), zHT);
       rc = 1;
       break;
     case 2:
       if( zSearch ){
-        if( !sqlite3_strlike(zSearch, zHelpText, 0) ) break;
+        if( !sqlite3_strlike(zSearch, zHT, 0) ) break;
       }
       /* else fall thru */
+    case 1:
     default:
-      utf8_printf(out,"%s", zHelpText);
+      utf8_printf(out,".%s", zHT);
       rc = 1;
     }
   }else
@@ -13930,13 +13932,12 @@ static int putSelectedCmdHelp(MetaCommand *pmc, int iLevel, char cLead,
     if( cLead && zHTp && *zHTp!= cLead ) return 0;
     switch( iLevel ){
     case 0:
+    case 1:
       if( zHTp ){
         utf8_printf(out, HELP_TEXT_FMTP, zHTp+1);
         rc = 1;
       }
-      break;
-    case 1:
-      if( zHTs ){
+      if( iLevel>0 && zHTs ){
         utf8_printf(out, HELP_TEXT_FMTS, zHTs);
         rc = 1;
       }
