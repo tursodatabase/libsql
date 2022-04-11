@@ -6191,8 +6191,9 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       sFrom.nAlloc = 1;
       memcpy(&sFrom.a[0], pTabItem, sizeof(SrcItem));
       sFrom.a[0].fg.jointype = 0;
+      ExplainQueryPlan((pParse, 1, "RIGHT-JOIN %s", pTab->zName));
       pSubWInfo = sqlite3WhereBegin(pParse, &sFrom, pSubWhere, 0, 0, 0,
-                                    WHERE_OR_SUBCLAUSE, 0);
+                                    WHERE_RIGHT_JOIN, 0);
       if( pSubWInfo ){
         int iCur = pLevel->iTabCur;
         int r = ++pParse->nMem;
@@ -6219,6 +6220,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
         sqlite3WhereEnd(pSubWInfo);
       }
       sqlite3ExprDelete(pParse->db, pSubWhere);
+      ExplainQueryPlanPop(pParse);
       continue;
     }
 

@@ -204,6 +204,9 @@ int sqlite3WhereExplainOneScan(
                   pLoop->u.vtab.idxNum, pLoop->u.vtab.idxStr);
     }
 #endif
+    if( pItem->fg.jointype & JT_LEFT ){
+      sqlite3_str_appendf(&str, " LEFT-JOIN");
+    }
 #ifdef SQLITE_EXPLAIN_ESTIMATED_ROWS
     if( pLoop->nOut>=10 ){
       sqlite3_str_appendf(&str, " (~%llu rows)",
@@ -1150,7 +1153,7 @@ static void codeDeferredSeek(
   
   pWInfo->bDeferredSeek = 1;
   sqlite3VdbeAddOp3(v, OP_DeferredSeek, iIdxCur, 0, iCur);
-  if( (pWInfo->wctrlFlags & WHERE_OR_SUBCLAUSE)
+  if( (pWInfo->wctrlFlags & (WHERE_OR_SUBCLAUSE|WHERE_RIGHT_JOIN))
    && DbMaskAllZero(sqlite3ParseToplevel(pParse)->writeMask)
   ){
     int i;
@@ -1502,7 +1505,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
   ** initialize a memory cell that records if this table matches any
   ** row of the left table of the join.
   */
-  assert( (pWInfo->wctrlFlags & WHERE_OR_SUBCLAUSE)
+  assert( (pWInfo->wctrlFlags & (WHERE_OR_SUBCLAUSE|WHERE_RIGHT_JOIN))
        || pLevel->iFrom>0 || (pTabItem[0].fg.jointype & JT_LEFT)==0
   );
   if( pLevel->iFrom>0 && (pTabItem[0].fg.jointype & JT_LEFT)!=0 ){
@@ -2140,7 +2143,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
 
     /* Seek the table cursor, if required */
     omitTable = (pLoop->wsFlags & WHERE_IDX_ONLY)!=0 
-           && (pWInfo->wctrlFlags & WHERE_OR_SUBCLAUSE)==0;
+           && (pWInfo->wctrlFlags & (WHERE_OR_SUBCLAUSE|WHERE_RIGHT_JOIN))==0;
     if( omitTable ){
       /* pIdx is a covering index.  No need to access the main table. */
     }else if( HasRowid(pIdx->pTable) ){
@@ -2174,7 +2177,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       ** move forward to the next index.
       ** https://sqlite.org/src/info/4e8e4857d32d401f
       */
-      if( (pWInfo->wctrlFlags & WHERE_OR_SUBCLAUSE)==0 ){
+      if( (pWInfo->wctrlFlags & (WHERE_OR_SUBCLAUSE|WHERE_RIGHT_JOIN))==0 ){
         whereIndexExprTrans(pIdx, iCur, iIdxCur, pWInfo);
       }
   
@@ -2193,7 +2196,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       /* The following assert() is not a requirement, merely an observation:
       ** The OR-optimization doesn't work for the right hand table of
       ** a LEFT JOIN: */
-      assert( (pWInfo->wctrlFlags & WHERE_OR_SUBCLAUSE)==0 );
+      assert( (pWInfo->wctrlFlags & (WHERE_OR_SUBCLAUSE|WHERE_RIGHT_JOIN))==0 );
     }
   
     /* Record the instruction used to terminate the loop. */
