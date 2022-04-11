@@ -3975,6 +3975,7 @@ static void renumberCursors(
 **             table and
 **        (3c) the outer query may not be an aggregate.
 **        (3d) the outer query may not be DISTINCT.
+**        See also (26) for restrictions on RIGHT JOIN.
 **
 **   (4)  The subquery can not be DISTINCT.
 **
@@ -4072,6 +4073,9 @@ static void renumberCursors(
 **  (25)  If either the subquery or the parent query contains a window
 **        function in the select list or ORDER BY clause, flattening
 **        is not attempted.
+**
+**  (26)  The subquery may not be the right operand of a RIGHT JOIN.
+**        See also (3) for restrictions on LEFT JOIN.
 **
 **
 ** In this routine, the "p" parameter is a pointer to the outer query.
@@ -4172,14 +4176,15 @@ static int flattenSubquery(
   ** See also tickets #306, #350, and #3300.
   */
   if( (pSubitem->fg.jointype & JT_OUTER)!=0 ){
-    isLeftJoin = 1;
-    if( pSubSrc->nSrc>1                   /* (3a) */
-     || isAgg                             /* (3b) */
-     || IsVirtual(pSubSrc->a[0].pTab)     /* (3c) */
-     || (p->selFlags & SF_Distinct)!=0    /* (3d) */
+    if( pSubSrc->nSrc>1                        /* (3a) */
+     || isAgg                                  /* (3b) */
+     || IsVirtual(pSubSrc->a[0].pTab)          /* (3c) */
+     || (p->selFlags & SF_Distinct)!=0         /* (3d) */
+     || (pSubitem->fg.jointype & JT_RIGHT)!=0  /* (26) */
     ){
       return 0;
     }
+    isLeftJoin = 1;
   }
 #ifdef SQLITE_EXTRA_IFNULLROW
   else if( iFrom>0 && !isAgg ){
@@ -6707,6 +6712,7 @@ int sqlite3Select(
     if( OptimizationEnabled(db, SQLITE_PushDown)
      && (pItem->fg.isCte==0 
          || (pItem->u2.pCteUse->eM10d!=M10d_Yes && pItem->u2.pCteUse->nUse<2))
+     && (pItem->fg.jointype & JT_RIGHT)==0
      && pushDownWhereTerms(pParse, pSub, p->pWhere, pItem->iCursor,
                            (pItem->fg.jointype & JT_OUTER)!=0)
     ){
