@@ -1,5 +1,5 @@
-C Create\sparallel\sC\sand\sC++\stest/demo\sshell\sextensions,\swith\sheader\stweaks\sto\smake\sthat\swork.\sFix\sa\sbug\sexposed\swhen\smultiple\sshell\sextensions\swere\sloaded.
-D 2022-04-10T09:17:29.899
+C Add\sembedded\sdoc,\sIntro\sto\sTcl\sExtension
+D 2022-04-11T08:07:16.927
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -42,6 +42,7 @@ F doc/json-enhancements.md e356fc834781f1f1aa22ee300027a270b2c960122468499bf347b
 F doc/lemon.html efc0cd2345d66905505d98f862e1c571512def0ceb5b016cb658fd4918eb76a3
 F doc/pager-invariants.txt 27fed9a70ddad2088750c4a2b493b63853da2710
 F doc/shell_extend.html c2ce1584bd976613c984a0b7ea4680ef2d2c0ab0642540d730e0a899648e2294
+F doc/tcl_extension_intro.md bf404245b69db94b619287e3abf44b5e5f33736966c32bd27771bb584901b6d8
 F doc/trusted-schema.md 33625008620e879c7bcfbbfa079587612c434fa094d338b08242288d358c3e8a
 F doc/vdbesort-memory.md 4da2639c14cd24a31e0af694b1a8dd37eaf277aff3867e9a8cc14046bc49df56
 F doc/vfs-shm.txt e101f27ea02a8387ce46a05be2b1a902a021d37a
@@ -1952,8 +1953,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 861ab023be283782131df5ccd9eff50cf2f06f48f1ea7defd3f08177a3df5889
-R 29bf4bbfab5e25a57abea25dca7857f3
+P 2596e7c439b6c4c89921079a78ba6174e99f766b30fab8763be20c1b631e49ec
+R e8438fa69346d1c129bb2ec9bef46aab
 U larrybr
-Z 916c41d1a88108766c11b193884acec2
+Z dacf014d371b12af7a2495c1fcf04998
 # Remove this line to create a well-formed Fossil manifest.
