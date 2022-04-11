@@ -2844,7 +2844,7 @@ struct Expr {
                          ** TK_SELECT_COLUMN: column of the result vector */
   i16 iAgg;              /* Which entry in pAggInfo->aCol[] or ->aFunc[] */
   union {
-    int iRightJoinTable;   /* If EP_FromJoin, the right table of the join */
+    int iJoin;             /* If EP_FromJoin, the right table of the join */
     int iOfst;             /* else: start of token from start of statement */
   } w;
   AggInfo *pAggInfo;     /* Used by TK_AGG_COLUMN and TK_AGG_FUNCTION */
