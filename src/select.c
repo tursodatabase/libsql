@@ -6509,7 +6509,7 @@ int sqlite3Select(
     /* Convert LEFT JOIN into JOIN if there are terms of the right table
     ** of the LEFT JOIN used in the WHERE clause.
     */
-    if( (pItem->fg.jointype & JT_LEFT)!=0
+    if( (pItem->fg.jointype & (JT_LEFT|JT_RIGHT))==JT_LEFT
      && sqlite3ExprImpliesNonNullRow(p->pWhere, pItem->iCursor)
      && OptimizationEnabled(db, SQLITE_SimplifyJoin)
     ){
