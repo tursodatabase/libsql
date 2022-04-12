@@ -90,7 +90,7 @@ mod test {
     use std::thread;
     use std::time::Duration;
 
-    use crate::{Connection, Error, ErrorCode, Result, TransactionBehavior};
+    use crate::{Connection, ErrorCode, Result, TransactionBehavior};
 
     #[test]
     fn test_default_busy() -> Result<()> {
@@ -101,12 +101,10 @@ mod test {
         let tx1 = db1.transaction_with_behavior(TransactionBehavior::Exclusive)?;
         let db2 = Connection::open(&path)?;
         let r: Result<()> = db2.query_row("PRAGMA schema_version", [], |_| unreachable!());
-        match r.unwrap_err() {
-            Error::SqliteFailure(err, _) => {
-                assert_eq!(err.code, ErrorCode::DatabaseBusy);
-            }
-            err => panic!("Unexpected error {}", err),
-        }
+        assert_eq!(
+            r.unwrap_err().sqlite_error_code(),
+            Some(ErrorCode::DatabaseBusy)
+        );
         tx1.rollback()
     }
 

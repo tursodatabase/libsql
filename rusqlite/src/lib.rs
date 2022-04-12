@@ -384,9 +384,8 @@ impl Connection {
     ///
     /// - Open the database for both reading or writing.
     /// - Create the database if one does not exist at the path.
-    /// - Allow the filename to be interpreted as a URI (see
-    ///   <https://www.sqlite.org/uri.html#uri_filenames_in_sqlite> for
-    ///   details).
+    /// - Allow the filename to be interpreted as a URI (see <https://www.sqlite.org/uri.html#uri_filenames_in_sqlite>
+    ///   for details).
     /// - Disables the use of a per-connection mutex.
     ///
     ///     Rusqlite enforces thread-safety at compile time, so additional
@@ -1289,7 +1288,7 @@ mod test {
         let filename = "no_such_file.db";
         let result = Connection::open_with_flags(filename, OpenFlags::SQLITE_OPEN_READ_ONLY);
         assert!(result.is_err());
-        let err = result.err().unwrap();
+        let err = result.unwrap_err();
         if let Error::SqliteFailure(e, Some(msg)) = err {
             assert_eq!(ErrorCode::CannotOpen, e.code);
             assert_eq!(ffi::SQLITE_CANTOPEN, e.extended_code);
@@ -1742,14 +1741,10 @@ mod test {
 
         let result: Result<Vec<i32>> = stmt.query([])?.map(|r| r.get(0)).collect();
 
-        match result.unwrap_err() {
-            Error::SqliteFailure(err, _) => {
-                assert_eq!(err.code, ErrorCode::OperationInterrupted);
-            }
-            err => {
-                panic!("Unexpected error {}", err);
-            }
-        }
+        assert_eq!(
+            result.unwrap_err().sqlite_error_code(),
+            Some(ErrorCode::OperationInterrupted)
+        );
         Ok(())
     }
 
