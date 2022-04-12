@@ -4016,6 +4016,9 @@ static int whereLoopAddOr(
   pItem = pWInfo->pTabList->a + pNew->iTab;
   iCur = pItem->iCursor;
 
+  /* The multi-index OR optimization does not work for RIGHT and FULL JOIN */
+  if( pItem->fg.jointype & JT_RIGHT ) return SQLITE_OK;
+
   for(pTerm=pWC->a; pTerm<pWCEnd && rc==SQLITE_OK; pTerm++){
     if( (pTerm->eOperator & WO_OR)!=0
      && (pTerm->u.pOrInfo->indexable & pNew->maskSelf)!=0 
