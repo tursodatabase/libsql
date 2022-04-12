@@ -298,7 +298,7 @@ int sqlite3JoinType(Parse *pParse, Token *pA, Token *pB, Token *pC){
     const char *zSp2 = " ";
     if( pB==0 ){ zSp1++; }
     if( pC==0 ){ zSp2++; }
-    sqlite3ErrorMsg(pParse, "unknown or unsupported join type: "
+    sqlite3ErrorMsg(pParse, "unknown join type: "
        "%T%s%T%s%T", pA, zSp1, pB, zSp2, pC);
     jointype = JT_INNER;
   }

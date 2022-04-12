@@ -281,12 +281,12 @@ do_test vtab6-3.7 {
   catchsql {
     SELECT * FROM t1 INNER OUTER JOIN t2;
   }
-} {1 {unknown or unsupported join type: INNER OUTER}}
+} {1 {unknown join type: INNER OUTER}}
 do_test vtab6-3.7 {
   catchsql {
     SELECT * FROM t1 LEFT BOGUS JOIN t2;
   }
-} {1 {unknown or unsupported join type: LEFT BOGUS}}
+} {1 {unknown join type: LEFT BOGUS}}
 
 do_test vtab6-4.1 {
   execsql {

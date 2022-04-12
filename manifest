@@ -1,5 +1,5 @@
-C Factor\sout\sthe\sRIGHT\sJOIN\snon-matched\srow\sloop\sfrom\ssqlite3WhereEnd().\s\sThis\nreduces\sthe\sregister\spressure\son\sthat\sroutine\sand\shelps\sit\sto\srun\sfaster\nin\sthe\scommon\scase\swhere\sthere\sis\sno\sRIGHT\sJOIN.
-D 2022-04-12T18:04:29.831
+C For\sthe\sbad\sjoin\stype\serror\smessage\s"unknown\sor\sunsupported\sjoin\stype"\nremove\sthe\s"or\sunsupported"\sclause,\sbecause\swe\snow\ssupport\sall\svalid\sjoin\ntypes.
+D 2022-04-12T18:40:14.753
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -552,7 +552,7 @@ F src/printf.c 05d8dfd2018bc4fc3ddb8b37eb97ccef7abf985643fa1caebdcf2916ca90fa32
 F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c 7110fc3b5a4dec5d11559141c1906c4a125349fb602f541b05db3a3d448d4b95
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c fdec126045cf441883836756d6d949367e8a2945c53fa6e98d6c51a08d7efc81
+F src/select.c 31148fafdfb7bac67389f3db8eba9ecaee1d8f41105d87d9cc53a5009ebedad5
 F src/shell.c.in eb7f10d5e2c47bd014d92ec5db1def21fcc1ed56ffaaa4ee715b6c37c370b47f
 F src/sqlite.h.in 2a35f62185eb5e7ecc64a2f68442b538ce9be74f80f28a00abc24837edcf1c17
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1140,7 +1140,7 @@ F test/ioerr4.test f130fe9e71008577b342b8874d52984bd04ede2c
 F test/ioerr5.test 2edfa4fb0f896f733071303b42224df8bedd9da4
 F test/ioerr6.test a395a6ab144b26a9e3e21059a1ab6a7149cca65b
 F test/istrue.test e7f285bb70282625c258e866ce6337d4c762922f5a300e1b50f958aef6e7d9c9
-F test/join.test a1832675aa30f2b422ff934b553e30294ca899484710242a2119ebf21f20a66a
+F test/join.test d9c8cb2769b147b223f9dff8f694f56cfd9d0c097f8af9c7c6562b2e4ad256b5
 F test/join2.test 9751dac84a46a960281ca372fe2350252ef40286dde3c542540bccdea9a2d5c6
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
 F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
@@ -1712,7 +1712,7 @@ F test/vtab2.test 14d4ab26cee13ba6cf5c5601b158e4f57552d3b055cdd9406cf7f711e9c840
 F test/vtab3.test b45f47d20f225ccc9c28dc915d92740c2dee311e
 F test/vtab4.test 8e73ed268f3d596bc3590f45fc948fb40f28e9c3
 F test/vtab5.test 889f444970393c73f1e077e2bdc5d845e157a391
-F test/vtab6.test 5f5c10c694763d9cb438ec12aab7d6899f0bd6e2fa120551e11dea3daa8063ca
+F test/vtab6.test fa609a4af96da30beceefa3cb624abe9be38c4747ab373d98179b24027d6b798
 F test/vtab7.test 70c6f4a1d6177144a8236e4172d5fba92e683440374664ad1f04851fbb335d3c
 F test/vtab8.test e19fa4a538fcd1bb66c22825fa8f71618fb13583
 F test/vtab9.test ea58d2b95d61955f87226381716b2d0b1d4e4f9b
@@ -1946,8 +1946,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b3e57ba120067c79e0398e39da9f00ecb11a5e18c36479da4c36a39e88a78a27
-R bf3e23f39f0d1aa0a416881bc1478c40
+P beeecf1604d4fb11e45058f48cb2289c6542e0bc218d63a245198113d8d5476b
+R 94bd645abdceb148bbc9cc013d9cfae2
 U drh
-Z ccf3d060da235adb8537400c4c3b77af
+Z 54dfd3d74916a39a639c494027c1dd34
 # Remove this line to create a well-formed Fossil manifest.
