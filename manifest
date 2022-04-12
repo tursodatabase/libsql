@@ -1,5 +1,5 @@
-C Tcl\sextension\sdoc,\sminor\sclarifications\sand\sspelling\simprovements
-D 2022-04-11T23:08:36.402
+C Further\sclarification\sof\sTcl\sextension\sintro.
+D 2022-04-12T10:06:21.517
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -42,7 +42,7 @@ F doc/json-enhancements.md e356fc834781f1f1aa22ee300027a270b2c960122468499bf347b
 F doc/lemon.html efc0cd2345d66905505d98f862e1c571512def0ceb5b016cb658fd4918eb76a3
 F doc/pager-invariants.txt 27fed9a70ddad2088750c4a2b493b63853da2710
 F doc/shell_extend.html c2ce1584bd976613c984a0b7ea4680ef2d2c0ab0642540d730e0a899648e2294
-F doc/tcl_extension_intro.md 335c738ac1b8fdd931d8be0e9bb6b06f5762e0a80f3e447fa80e681d4536d889
+F doc/tcl_extension_intro.md ae73513f2443c65bdae35a733fdc5f3cef7c8674e7915b1e4355dd6af8a8ae23
 F doc/trusted-schema.md 33625008620e879c7bcfbbfa079587612c434fa094d338b08242288d358c3e8a
 F doc/vdbesort-memory.md 4da2639c14cd24a31e0af694b1a8dd37eaf277aff3867e9a8cc14046bc49df56
 F doc/vfs-shm.txt e101f27ea02a8387ce46a05be2b1a902a021d37a
@@ -1953,8 +1953,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1a117b0388d61f72d1f5947c9092ab5b6fffda32c438baadaef3187dc52bd7ca
-R efb1b2ab8e5e6e0af9d3cf9e018beeb0
+P 6ccdd9b7519bf8945c5187742c8ea9c335cb6a89b87f6b005bf2ba9dc6890b2f
+R 4a0f912c8f980bd74e9d39fc8fe464fe
 U larrybr
-Z e7158dd219ace34680f76887495ba3e4
+Z e768dbcccb579b99dc457c9712116706
 # Remove this line to create a well-formed Fossil manifest.

@@ -177,19 +177,20 @@ There are a few differences however. These are:<br>
 
 * A single '.' on an input line which is not inside of an incomplete
 Tcl line group is treated as a (momentary) end-of-input by the REPL.
+(footnote: "REPL" is short for "Read, Evaluate, Print Loop.)
 
 * The shell's dot commands, while not visible via \[info commands\],
 are discoverable by the "unknown" command and will be executed
 if their names (with the '.' prefix) would be found and resolved
 unambiguously in the shell execution environment.
-Commands whose names begin with '.' which are not found unique in the
+Commands whose names begin with '.' which are not found uniquely in the
 shell execution environment produce an "invalid command name" error.
 Except for that treatment, the unknown command in effect
-acts like the stock, Tcl version.
-(That stock version remains available as _original_unkown,
-to which non-. commands are delegated .)
+acts like the standard Tcl version.
+(footnote: That version remains available as _original_unkown,
+to which non-dot commands are delegated .)
 
-* A few, non-stock-Tcl commands are available, in particular:
+* A few non-standard-Tcl commands are available. In particular:
 
  + Commands udb and shdb act nearly like commands creatable
 by the "sqlite3" Tcl package to represent an open database. They
@@ -205,14 +206,16 @@ does not include the execution environment switching or SQL execution
 that the shell execution environment implements.
 
  + Command register_adhoc_command permits a newly (or oldly) defined
-Tcl command, likely with a leading '.' in its name, to associate
-help text with the shell. In this way, .help output can emit help
+Tcl command, likely with a leading '.' in its name, to be associated
+by name with some help text in a table kept by the shell
+for augmentation of its .help facility.
+In this way, the .help command can emit help
 text, in summary or long forms, for Tcl commands that might be
 executable from the shell execution environment.
 (More on this below.)
 
- + Finally, command .. exists for reasons made clear below.
-With no arguments,
+ + Finally, the command ".." (sans quotes) exists for reasons made
+evident below. With no arguments,
 it does nothing, quietly and successfully, with the empty result.
 
 * The present implementation does not run the event loop processing
@@ -233,7 +236,7 @@ what would be seen in interactive use; they are not to be typed either.)<br>
    tcl% proc .do {what} {
       >  .eval $what
       > }
-   tcl% register_adhoc_command {do   Does whatever one thing it is told to do
+   tcl% register_adhoc_command {.do   Does whatever one thing it is told to do
       >    from the shell execution environment and little else}
    tcl% # Time to return to shell execution environment.
    tcl% .
@@ -254,13 +257,13 @@ what would be seen in interactive use; they are not to be typed either.)<br>
    tcl% # Apparently, it either gets to the Tcl environment or stays there.
 ```
 
-The use of lone . and .. to switch environments are easiest to understand.
-However, .. , when not alone on an input line enables some other uses of Tcl,
-explained in the next section.
+The use of lone . and .. to switch environments is easiest to understand.
+However, as explained in the next section,
+use of .. not alone on an input line exploits other Tcl functionality.
 
 Another effect of loading tclshext is that a new dot command, .tcl ,
 becomes part of the shell's repertoire.
-When entered no argument(s),
+When entered without any argument(s)
 from the shell execution environment,
 the .tcl command has the same effect as .. by itself.
 (footnote:
@@ -283,7 +286,7 @@ which has been submitted from the shell execution environment,
 that causes argument collection and expansion to be performed
 according to Tcl rules by the Tcl interpreter,
 without entering and staying in the Tcl execution environment.
-These two variations exist (where "..." is the provide argument set):
+These two variations exist (where "..." stands for the provided argument set):
 ```
    sqlite> ..dotcmd ...
  or
@@ -316,9 +319,9 @@ In other words:<br>
    .
 ```
 
-Whenever more than one '.' leads an input line group,
-when it is submitted in the shell execution environment,
-then most of the line group is given to the Tcl interpreter for
+Whenever '..' leads an input line group
+submitted in the shell execution environment,
+then most of that input is given to the Tcl interpreter for
 processing on a one-shot basis.
 
 ## Cross-Execution Environment Interactions ##
@@ -335,12 +338,13 @@ in the namespace(s) searched by the interpreter, it is
 passed to the Tcl command named "unknown".
 In the tclshext-augmented Tcl environment,
 that procedure is implemented by C code which treats
-commands with a leading '.' specially, 
-by attempting to find them in the shell's repertoire of dot commands.
-If found (unambiguously), they are executed then,
+a purported command with a leading '.' specially, 
+by attempting to find it in the shell's repertoire of dot commands.
+If found (unambiguously), it is then executed
 and the result (such as it is) returned to the caller.
+(footnote: The sqlite3 dot commands return the empty result on success.)
 So, assuming there is a dot command invokable as .dotcmd,
-(which could happen if another extension provided it),
+(which there could be if another extension provided it),
 it can be found and executed from the Tcl execution environment
 with arguments as collected and expanded by the Tcl interpreter.
 
@@ -393,7 +397,7 @@ execution environment. For example:<br>
 
 It should be noted, for those new to Tcl, that brace-quoting in Tcl
 means "Whatever is between these matching braces is the (single) value."
-It can be used for nearly any content, except for unmatched braces.
+It can be used for nearly any content, except for mismatched braces.
 
 ## Summary, More to Come ##
 
