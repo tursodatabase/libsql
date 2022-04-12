@@ -4447,7 +4447,8 @@ static int flattenSubquery(
       iNewParent = pSubSrc->a[i].iCursor;
       memset(&pSubSrc->a[i], 0, sizeof(pSubSrc->a[i]));
     }
-    pSrc->a[iFrom].fg.jointype = jointype | ltorj;
+    pSrc->a[iFrom].fg.jointype &= JT_LTORJ;
+    pSrc->a[iFrom].fg.jointype |= jointype | ltorj;
   
     /* Now begin substituting subquery result set expressions for 
     ** references to the iParent in the outer query.
