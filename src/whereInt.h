@@ -565,6 +565,11 @@ Bitmask sqlite3WhereCodeOneLoopStart(
   WhereLevel *pLevel,  /* The current level pointer */
   Bitmask notReady     /* Which tables are currently available */
 );
+SQLITE_NOINLINE void sqlite3WhereRightJoinLoop(
+  WhereInfo *pWInfo,
+  int iLevel,
+  WhereLevel *pLevel
+);
 
 /* whereexpr.c: */
 void sqlite3WhereClauseInit(WhereClause*,WhereInfo*);

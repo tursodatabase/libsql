@@ -2786,3 +2786,79 @@ Bitmask sqlite3WhereCodeOneLoopStart(
 #endif
   return pLevel->notReady;
 }
+
+/*
+** Generate the code for the loop that finds all non-matched terms
+** for a RIGHT JOIN.
+*/
+SQLITE_NOINLINE void sqlite3WhereRightJoinLoop(
+  WhereInfo *pWInfo,
+  int iLevel,
+  WhereLevel *pLevel
+){
+  Parse *pParse = pWInfo->pParse;
+  Vdbe *v = pParse->pVdbe;
+  WhereRightJoin *pRJ = pLevel->pRJ;
+  Expr *pSubWhere = 0;
+  WhereClause *pWC = &pWInfo->sWC;
+  WhereInfo *pSubWInfo;
+  WhereLoop *pLoop = pLevel->pWLoop;
+  SrcItem *pTabItem = &pWInfo->pTabList->a[pLevel->iFrom];
+  SrcList sFrom;
+  Bitmask mAll = 0;
+  int k;
+
+  for(k=0; k<iLevel; k++){
+    int iIdxCur;
+    mAll |= pWInfo->a[k].pWLoop->maskSelf;
+    sqlite3VdbeAddOp1(v, OP_NullRow, pWInfo->a[k].iTabCur);
+    iIdxCur = pWInfo->a[k].iIdxCur;
+    if( iIdxCur ){
+      sqlite3VdbeAddOp1(v, OP_NullRow, iIdxCur);
+    }
+  }
+  mAll |= pLoop->maskSelf;
+  for(k=0; k<pWC->nTerm; k++){
+    WhereTerm *pTerm = &pWC->a[k];
+    if( pTerm->wtFlags & TERM_VIRTUAL ) break;
+    if( pTerm->prereqAll & ~mAll ) continue;
+    if( ExprHasProperty(pTerm->pExpr, EP_FromJoin|EP_InnerJoin) ) continue;
+    pSubWhere = sqlite3ExprAnd(pParse, pSubWhere,
+                               sqlite3ExprDup(pParse->db, pTerm->pExpr, 0));
+  }
+  sFrom.nSrc = 1;
+  sFrom.nAlloc = 1;
+  memcpy(&sFrom.a[0], pTabItem, sizeof(SrcItem));
+  sFrom.a[0].fg.jointype = 0;
+  ExplainQueryPlan((pParse, 1, "RIGHT-JOIN %s", pTabItem->pTab->zName));
+  pSubWInfo = sqlite3WhereBegin(pParse, &sFrom, pSubWhere, 0, 0, 0,
+                                WHERE_RIGHT_JOIN, 0);
+  if( pSubWInfo ){
+    int iCur = pLevel->iTabCur;
+    int r = ++pParse->nMem;
+    int nPk;
+    int jmp;
+    int addrCont = sqlite3WhereContinueLabel(pSubWInfo);
+    Table *pTab = pTabItem->pTab;
+    if( HasRowid(pTab) ){
+      sqlite3ExprCodeGetColumnOfTable(v, pTab, iCur, -1, r);
+      nPk = 1;
+    }else{
+      int iPk;
+      Index *pPk = sqlite3PrimaryKeyIndex(pTab);
+      nPk = pPk->nKeyCol;
+      pParse->nMem += nPk - 1;
+      for(iPk=0; iPk<nPk; iPk++){
+        int iCol = pPk->aiColumn[iPk];
+        sqlite3ExprCodeGetColumnOfTable(v, pTab, iCur, iCol,r+iPk);
+      }
+    }
+    jmp = sqlite3VdbeAddOp4Int(v, OP_Filter, pRJ->regBloom, 0, r, nPk);
+    sqlite3VdbeAddOp4Int(v, OP_Found, pRJ->iMatch, addrCont, r, nPk);
+    sqlite3VdbeJumpHere(v, jmp);
+    sqlite3VdbeAddOp2(v, OP_Gosub, pRJ->regReturn, pRJ->addrSubrtn);
+    sqlite3WhereEnd(pSubWInfo);
+  }
+  sqlite3ExprDelete(pParse->db, pSubWhere);
+  ExplainQueryPlanPop(pParse);
+}
