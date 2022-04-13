@@ -2705,7 +2705,8 @@ case OP_Column: {
 
 op_column_restart:
   assert( pC!=0 );
-  assert( p2<(u32)pC->nField );
+  assert( p2<(u32)pC->nField
+       || (pC->eCurType==CURTYPE_PSEUDO && pC->seekResult==0) );
   aOffset = pC->aOffset;
   assert( aOffset==pC->aType+pC->nField );
   assert( pC->eCurType!=CURTYPE_VTAB );
