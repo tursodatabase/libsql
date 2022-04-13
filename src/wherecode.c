@@ -2808,6 +2808,7 @@ SQLITE_NOINLINE void sqlite3WhereRightJoinLoop(
   Bitmask mAll = 0;
   int k;
 
+  ExplainQueryPlan((pParse, 1, "RIGHT-JOIN %s", pTabItem->pTab->zName));
   for(k=0; k<iLevel; k++){
     int iIdxCur;
     mAll |= pWInfo->a[k].pWLoop->maskSelf;
@@ -2830,7 +2831,6 @@ SQLITE_NOINLINE void sqlite3WhereRightJoinLoop(
   sFrom.nAlloc = 1;
   memcpy(&sFrom.a[0], pTabItem, sizeof(SrcItem));
   sFrom.a[0].fg.jointype = 0;
-  ExplainQueryPlan((pParse, 1, "RIGHT-JOIN %s", pTabItem->pTab->zName));
   pSubWInfo = sqlite3WhereBegin(pParse, &sFrom, pSubWhere, 0, 0, 0,
                                 WHERE_RIGHT_JOIN, 0);
   if( pSubWInfo ){
