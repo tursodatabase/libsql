@@ -1,0 +1,24 @@
+# 2022-04-12
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# This file implements tests for RIGHT and FULL OUTER JOINs.
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+db null NULL
+do_execsql_test join8-10 {
+  CREATE TABLE t1(a,b,c);
+  CREATE TABLE t2(x,y);
+  CREATE INDEX t2x ON t2(x);
+  SELECT avg(DISTINCT b) FROM (SELECT * FROM t2 LEFT RIGHT JOIN t1 ON c);
+} {NULL}
+finish_test

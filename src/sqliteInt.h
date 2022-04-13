@@ -2887,7 +2887,7 @@ struct Expr {
 #define EP_ConstFunc  0x080000 /* A SQLITE_FUNC_CONSTANT or _SLOCHNG function */
 #define EP_CanBeNull  0x100000 /* Can be null despite NOT NULL constraint */
 #define EP_Subquery   0x200000 /* Tree contains a TK_SELECT operator */
-                 /*   0x400000 // Available */
+#define EP_InnerJoin  0x400000 /* Originates in ON/USING of an inner join */
 #define EP_Leaf       0x800000 /* Expr.pLeft, .pRight, .u.pSelect all NULL */
 #define EP_WinFunc   0x1000000 /* TK_FUNCTION with Expr.y.pWin set */
 #define EP_Subrtn    0x2000000 /* Uses Expr.y.sub. TK_IN, _SELECT, or _EXISTS */
@@ -3132,13 +3132,14 @@ struct SrcList {
 /*
 ** Permitted values of the SrcList.a.jointype field
 */
-#define JT_INNER     0x0001    /* Any kind of inner or cross join */
-#define JT_CROSS     0x0002    /* Explicit use of the CROSS keyword */
-#define JT_NATURAL   0x0004    /* True for a "natural" join */
-#define JT_LEFT      0x0008    /* Left outer join */
-#define JT_RIGHT     0x0010    /* Right outer join */
-#define JT_OUTER     0x0020    /* The "OUTER" keyword is present */
-#define JT_ERROR     0x0040    /* unknown or unsupported join type */
+#define JT_INNER     0x01    /* Any kind of inner or cross join */
+#define JT_CROSS     0x02    /* Explicit use of the CROSS keyword */
+#define JT_NATURAL   0x04    /* True for a "natural" join */
+#define JT_LEFT      0x08    /* Left outer join */
+#define JT_RIGHT     0x10    /* Right outer join */
+#define JT_OUTER     0x20    /* The "OUTER" keyword is present */
+#define JT_LTORJ     0x40    /* One of the LEFT operands of a RIGHT JOIN */
+#define JT_ERROR     0x80    /* unknown or unsupported join type */
 
 
 /*
@@ -3162,7 +3163,7 @@ struct SrcList {
 #define WHERE_SORTBYGROUP      0x0200 /* Support sqlite3WhereIsSorted() */
 #define WHERE_AGG_DISTINCT     0x0400 /* Query is "SELECT agg(DISTINCT ...)" */
 #define WHERE_ORDERBY_LIMIT    0x0800 /* ORDERBY+LIMIT on the inner loop */
-                        /*     0x1000    not currently used */
+#define WHERE_RIGHT_JOIN       0x1000 /* Processing a RIGHT JOIN */
                         /*     0x2000    not currently used */
 #define WHERE_USE_LIMIT        0x4000 /* Use the LIMIT in cost estimates */
                         /*     0x8000    not currently used */
@@ -4828,7 +4829,7 @@ void sqlite3MaterializeView(Parse*, Table*, Expr*, ExprList*,Expr*,int);
 
 int sqlite3JoinType(Parse*, Token*, Token*, Token*);
 int sqlite3ColumnIndex(Table *pTab, const char *zCol);
-void sqlite3SetJoinExpr(Expr*,int);
+void sqlite3SetJoinExpr(Expr*,int,u32);
 void sqlite3CreateForeignKey(Parse*, ExprList*, Token*, ExprList*, int);
 void sqlite3DeferForeignKey(Parse*, int);
 #ifndef SQLITE_OMIT_AUTHORIZATION
