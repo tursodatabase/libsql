@@ -28,14 +28,14 @@ extern "C" {
 
 /*****************
  * See "Shell Extensions, Programming" for purposes and usage of the following
- * interfaces supporting extended meta-commands and import and output modes.
+ * interfaces supporting extended dot-commands and import and output modes.
  */
 
-/* Define status codes returned by a meta-command, either during its argument
+/* Define status codes returned by a dot-command, either during its argument
  * checking or during its execution (to which checking may be deferred.) The
- * code has 1 or 2 parts. The low-valued codes, below MCR_ArgIxMask, have an
+ * code has 1 or 2 parts. The low-valued codes, below DCR_ArgIxMask, have an
  * action part and an error flag. Higher-valued codes are bitwise-or'ed with
- * a small integer and indicate problems with the meta-command itself.
+ * a small integer and indicate problems with the dot-command itself.
  */
 typedef enum DotCmdRC {
   /* Post-execute action and success/error status (semi-ordered) */
@@ -66,19 +66,10 @@ typedef enum DotCmdRC {
   DCR_CmdErred  = 0x7fff  /* non-specific error for which complaint is done */
 } DotCmdRC;
 
-/* Convey data to, from and/or between I/O handlers and meta-commands. */
+/* Convey data to, from and/or between I/O handlers and dot-commands. */
 typedef struct ShellExState {
   /* A sizeof(*) to permit extensions to guard against too-old hosts */
   int sizeofThis;
-
-  /* A semi-transient holder of arbitrary data used during operations
-   * not interrupted by meta-command invocations. Any not-null pointer
-   * left after a meta-command has completed is, by contract, to be
-   * freeable using sqlite3_free(), unless freeHandlerData is non-zero,
-   * in which case it is used for the free, then zeroed too. This
-   * pointer's use is otherwise unconstrained. */
-  void *pvHandlerData;
-  void (*freeHandlerData)(void *);
 
   /* The user's currently open and primary DB connection
    * Extensions may use this DB, but must not modify this pointer
@@ -124,7 +115,7 @@ typedef struct ShellExState {
   char *zNullValue;
   /* Name of table for which inserts are to be written or performed */
   const char *zDestTable;
-  /* Next 3 members should be set and/or allocated by .width meta-command.
+  /* Next 3 members should be set and/or allocated by .width dot-command.
    * The values of pSpecWidths[i] and pHaveWidths[i] can be modified or
    * used by extensions, but setColumnWidths(...) must resize those lists.
    */
@@ -140,20 +131,20 @@ typedef struct ShellExState {
 } ShellExState;
 
 /* An object implementing below interface is registered with the
- * shell to make new or overriding meta-commands available to it.
+ * shell to make new or overriding dot-commands available to it.
  */
-INTERFACE_BEGIN( MetaCommand );
+INTERFACE_BEGIN( DotCommand );
   /* The whole, true name for this command */
-PURE_VMETHOD(const char *, name, MetaCommand, 0,());
+PURE_VMETHOD(const char *, name, DotCommand, 0,());
   /* Help text; zWhat=0 => primary, zWhat="" => secondary, other ? */
-PURE_VMETHOD(const char *, help, MetaCommand, 1,(const char *zWhat));
+PURE_VMETHOD(const char *, help, DotCommand, 1,(const char *zWhat));
   /* Validate arguments, blocking execute for returns != DCR_Ok */
-PURE_VMETHOD(DotCmdRC, argsCheck, MetaCommand,
+PURE_VMETHOD(DotCmdRC, argsCheck, DotCommand,
              3, (char **pzErrMsg, int nArgs, char *azArgs[]));
   /* Do whatever this command does, or return error of some kind */
-PURE_VMETHOD(DotCmdRC, execute, MetaCommand,
+PURE_VMETHOD(DotCmdRC, execute, DotCommand,
              4,(ShellExState *, char **pzErrMsg, int nArgs, char *azArgs[]));
-INTERFACE_END( MetaCommand );
+INTERFACE_END( DotCommand );
 
 /* An object implementing below interface is registered with the
  * shell to make new or overriding output modes available to it.
@@ -274,16 +265,16 @@ CONCRETE_END(Derived) vtname = { \
   DECORATE_METHOD(Derived,resetCompletionScan), \
   DECORATE_METHOD(Derived,runScript) \
 }
-/* Define an implementation's v-table matching the MetaCommand interface.
+/* Define an implementation's v-table matching the DotCommand interface.
  * Method signatures are copied and pasted from above interface declaration.
  */
-#define MetaCommand_IMPLEMENT_VTABLE(Derived, vtname) \
-CONCRETE_BEGIN(MetaCommand, Derived); \
-CONCRETE_METHOD(const char *, name, MetaCommand, 0,()); \
-CONCRETE_METHOD(const char *, help, MetaCommand, 1,(const char *zWhat)); \
-CONCRETE_METHOD(DotCmdRC, argsCheck, MetaCommand, 3, \
+#define DotCommand_IMPLEMENT_VTABLE(Derived, vtname) \
+CONCRETE_BEGIN(DotCommand, Derived); \
+CONCRETE_METHOD(const char *, name, DotCommand, 0,()); \
+CONCRETE_METHOD(const char *, help, DotCommand, 1,(const char *zWhat)); \
+CONCRETE_METHOD(DotCmdRC, argsCheck, DotCommand, 3, \
          (char **pzErrMsg, int nArgs, char *azArgs[])); \
-CONCRETE_METHOD(DotCmdRC, execute, MetaCommand, 4, \
+CONCRETE_METHOD(DotCmdRC, execute, DotCommand, 4, \
          (ShellExState *, char **pzErrMsg, int nArgs, char *azArgs[])); \
 CONCRETE_END(Derived) vtname = { \
   DECORATE_METHOD(Derived,destruct), \
@@ -312,10 +303,10 @@ AGGTYPE_BEGIN(ExtensionHelpers) {
     FILE * (*currentOutputFile)(ShellExState *p);
     struct InSource * (*currentInputSource)(ShellExState *p);
     char * (*strLineGet)(char *zBuf, int ncMax, struct InSource *pInSrc);
-    MetaCommand * (*findMetaCommand)(const char *cmdName, ShellExState *p,
-                                     /* out */ int *pnFound);
-    DotCmdRC (*runMetaCommand)(MetaCommand *pmc, char *azArg[], int nArg,
-                               ShellExState *psx);
+    DotCommand * (*findDotCommand)(const char *cmdName, ShellExState *p,
+                                   /* out */ int *pnFound);
+    DotCmdRC (*runDotCommand)(DotCommand *pmc, char *azArg[], int nArg,
+                              ShellExState *psx);
     void (*setColumnWidths)(ShellExState *p, char *azWidths[], int nWidths);
     int (*nowInteractive)(ShellExState *p);
     const char * (*shellInvokedAs)(void);
@@ -353,8 +344,8 @@ typedef enum {
   NK_ExtensionUnload,  /* The ShellExState .dbShell DB will soon be closed,
                         * soon to be followed by unloading of all dynamic
                         * extensions; pvSubject is the DB's sqlite3 pointer. */
-  NK_NewDotCommand,    /* A new MetaCommand has been registered, pvSubject
-                        * is the just-added MetaCommand object (pointer). */
+  NK_NewDotCommand,    /* A new DotCommand has been registered, pvSubject
+                        * is the just-added DotCommand object (pointer). */
   NK_CountOf           /* Present count of preceding members (evolves) */
 } NoticeKind;
 
@@ -370,9 +361,9 @@ AGGTYPE_BEGIN(ShellExtensionAPI) {
   /* Functions for an extension to register its implementors with shell */
   const int numRegistrars; /* 6 for this version */
   struct ShExtAPI {
-    /* Register a meta-command */
-    int (*registerMetaCommand)(ShellExState *p,
-                               ExtensionId eid, MetaCommand *pMC);
+    /* Register a dot-command */
+    int (*registerDotCommand)(ShellExState *p,
+                              ExtensionId eid, DotCommand *pMC);
     /* Register query result data display (or other disposition) mode */
     int (*registerExporter)(ShellExState *p,
                             ExtensionId eid, ExportHandler *pEH);
@@ -388,7 +379,7 @@ AGGTYPE_BEGIN(ShellExtensionAPI) {
                            NoticeKind nkMin, ShellEventNotify eventHandler);
     /* Notify host shell that an ad-hoc dot command exists and provide for
      * its help text to appear in .help output. Only an extension which has
-     * registered an "unknown" MetaCommand may use this.
+     * registered an "unknown" DotCommand may use this.
      * If zHelp==0, any such provision is removed. If zHelp!=0, original or
      * replacement help text is associated with command zName.
      * Help text before the first newline is primary, issued as summary help.

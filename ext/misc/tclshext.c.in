@@ -317,25 +317,25 @@ DERIVED_METHOD(DotCmdRC, runScript, ScriptSupport,TclSS,
   return DCR_Error; /* Silent error because it should not happen. */
 }
 
-DERIVED_METHOD(void, destruct, MetaCommand,TclCmd, 0, ()){
+DERIVED_METHOD(void, destruct, DotCommand,TclCmd, 0, ()){
   /* Nothing to do, instance data is static. */
   (void)(pThis);
 }
-static DERIVED_METHOD(void, destruct, MetaCommand,UnkCmd, 0, ());
+static DERIVED_METHOD(void, destruct, DotCommand,UnkCmd, 0, ());
 
 DERIVED_METHOD(void, destruct, ScriptSupport,TclSS, 0, ()){
   /* Nothing to do, instance data is static. */
   (void)(pThis);
 }
 
-DERIVED_METHOD(const char *, name, MetaCommand,TclCmd, 0,()){
+DERIVED_METHOD(const char *, name, DotCommand,TclCmd, 0,()){
   return "tcl";
 }
-DERIVED_METHOD(const char *, name, MetaCommand,UnkCmd, 0,()){
+DERIVED_METHOD(const char *, name, DotCommand,UnkCmd, 0,()){
   return "unknown";
 }
 
-DERIVED_METHOD(const char *, help, MetaCommand,TclCmd, 1,(const char *zHK)){
+DERIVED_METHOD(const char *, help, DotCommand,TclCmd, 1,(const char *zHK)){
   (void)(pThis);
   if( zHK==0 )
     return
@@ -356,13 +356,13 @@ DERIVED_METHOD(const char *, help, MetaCommand,TclCmd, 1,(const char *zHK)){
   return 0;
 }
 
-DERIVED_METHOD(const char *, help, MetaCommand,UnkCmd, 1,(const char *zHK));
+DERIVED_METHOD(const char *, help, DotCommand,UnkCmd, 1,(const char *zHK));
 
-DERIVED_METHOD(DotCmdRC, argsCheck, MetaCommand,TclCmd, 3,
+DERIVED_METHOD(DotCmdRC, argsCheck, DotCommand,TclCmd, 3,
              (char **pzErrMsg, int nArgs, char *azArgs[])){
   return DCR_Ok;
 }
-DERIVED_METHOD(DotCmdRC, argsCheck, MetaCommand,UnkCmd, 3,
+DERIVED_METHOD(DotCmdRC, argsCheck, DotCommand,UnkCmd, 3,
              (char **pzErrMsg, int nArgs, char *azArgs[])){
   return DCR_Ok;
 }
@@ -523,7 +523,7 @@ static DotCmdRC runTclREPL(Tcl_Interp *interp, char **pzErrMsg){
   return DCR_Ok;
 }
 
-DERIVED_METHOD(DotCmdRC, execute, MetaCommand,TclCmd, 4,
+DERIVED_METHOD(DotCmdRC, execute, DotCommand,TclCmd, 4,
              (ShellExState *psx, char **pzErrMsg, int nArgs, char *azArgs[])){
   FILE *out = SHX_HELPER(currentOutputFile)(psx);
   TclCmd *ptc = (TclCmd *)pThis;
@@ -545,7 +545,7 @@ DERIVED_METHOD(DotCmdRC, execute, MetaCommand,TclCmd, 4,
   }
 }
 
-DERIVED_METHOD(DotCmdRC, execute, MetaCommand,UnkCmd, 4,
+DERIVED_METHOD(DotCmdRC, execute, DotCommand,UnkCmd, 4,
              (ShellExState *psx, char **pzErrMsg, int nArgs, char *azArgs[])){
   Tcl_Interp *interp = getInterp();
   Tcl_Obj **ppo;
@@ -590,9 +590,9 @@ DERIVED_METHOD(DotCmdRC, execute, MetaCommand,UnkCmd, 4,
   }
 }
 
-/* Define MetaCommand v-tables initialized to reference most above methods. */
-MetaCommand_IMPLEMENT_VTABLE(TclCmd, tclcmd_methods);
-MetaCommand_IMPLEMENT_VTABLE(UnkCmd, unkcmd_methods);
+/* Define DotCommand v-tables initialized to reference most above methods. */
+DotCommand_IMPLEMENT_VTABLE(TclCmd, tclcmd_methods);
+DotCommand_IMPLEMENT_VTABLE(UnkCmd, unkcmd_methods);
 /* Define ScriptSupport v-table initialized to reference the others. */
 ScriptSupport_IMPLEMENT_VTABLE(TclSS, tclss_methods);
 
@@ -614,11 +614,11 @@ INSTANCE_END(UnkCmd) unkcmd = {
   &unkcmd_methods
 };
 
-static DERIVED_METHOD(void, destruct, MetaCommand,UnkCmd, 0, ()){
+static DERIVED_METHOD(void, destruct, DotCommand,UnkCmd, 0, ()){
   (void)(pThis);
 }
 
-DERIVED_METHOD(const char *, help, MetaCommand,UnkCmd, 1,(const char *zHK)){
+DERIVED_METHOD(const char *, help, DotCommand,UnkCmd, 1,(const char *zHK)){
   (void)(pThis);
   if( !zHK )
     return
@@ -813,21 +813,21 @@ static int registerAdHocCommand(/* ShellExState */ void *pv,
 
 /* C implementation of TCL unknown to (maybe) delegate to dot commands */
 static int unknownDotDelegate(void *pvSS, Tcl_Interp *interp,
-                                int nArgs, const char *azArgs[]){
+                              int nArgs, const char *azArgs[]){
   const char *name = (nArgs>1 && *azArgs[1]=='.')? azArgs[1]+1 : 0;
   ShellExState *psx = (ShellExState *)pvSS;
-  MetaCommand *pmc = 0;
+  DotCommand *pdc = 0;
   int nFound = 0;
   int ia, rc;
 
-  if( name ) pmc = SHX_HELPER(findMetaCommand)(name, psx, &nFound);
-  if( pmc==(MetaCommand*)&tclcmd && nArgs==2 ){
+  if( name ) pdc = SHX_HELPER(findDotCommand)(name, psx, &nFound);
+  if( pdc==(DotCommand*)&tclcmd && nArgs==2 ){
     /* Will not do a nested REPL, just silently semi-fake it. */
     return TCL_OK;
   }
-  if( pmc && nFound==1 ){
+  if( pdc && nFound==1 ){
     /* Run the dot command and interpret its returns. */
-    DotCmdRC drc = SHX_HELPER(runMetaCommand)(pmc, (char **)azArgs+1,
+    DotCmdRC drc = SHX_HELPER(runDotCommand)(pdc, (char **)azArgs+1,
                                               nArgs-1, psx);
     if( drc==DCR_Ok ) return TCL_OK;
     else if( drc==DCR_Return ){
@@ -1154,10 +1154,10 @@ int sqlite3_tclshext_init(
         }
       }
     }
-    rc = SHX_API(registerMetaCommand)(psx, sqlite3_tclshext_init,
-                                      (MetaCommand *)&unkcmd);
-    rc = SHX_API(registerMetaCommand)(psx, sqlite3_tclshext_init,
-                                      (MetaCommand *)&tclcmd);
+    rc = SHX_API(registerDotCommand)(psx, sqlite3_tclshext_init,
+                                     (DotCommand *)&unkcmd);
+    rc = SHX_API(registerDotCommand)(psx, sqlite3_tclshext_init,
+                                     (DotCommand *)&tclcmd);
     if( rc==SQLITE_OK &&
         (rc = Tcl_BringUp(
 #ifdef SHELL_ENABLE_TK

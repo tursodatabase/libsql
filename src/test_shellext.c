@@ -26,19 +26,19 @@ typedef struct BatBeing BatBeing;
 static void sayHowMany( BatBeing *pbb, FILE *out, ShellExState *psx );
 
 /* These DERIVED_METHOD(...) macro calls' arguments were copied and
- * pasted from the MetaCommand interface declaration in shext_linkage.h ,
+ * pasted from the DotCommand interface declaration in shext_linkage.h ,
  * but with "Interface,Derived" substituted for the interface typename.
  * The function bodies are not so easily written, of course. */
 
-DERIVED_METHOD(void, destruct, MetaCommand,BatBeing, 0, ()){
+DERIVED_METHOD(void, destruct, DotCommand,BatBeing, 0, ()){
   fprintf(stderr, "BatBeing unbecoming.\n");
 }
 
-DERIVED_METHOD(const char *, name, MetaCommand,BatBeing, 0,()){
+DERIVED_METHOD(const char *, name, DotCommand,BatBeing, 0,()){
   return "bat_being";
 }
 
-DERIVED_METHOD(const char *, help, MetaCommand,BatBeing, 1,(const char *zHK)){
+DERIVED_METHOD(const char *, help, DotCommand,BatBeing, 1,(const char *zHK)){
   if( !zHK )
     return ".bat_being ?whatever?    Demonstrates vigilantism weekly\n";
   if( !*zHK )
@@ -46,12 +46,12 @@ DERIVED_METHOD(const char *, help, MetaCommand,BatBeing, 1,(const char *zHK)){
   return 0;
 }
 
-DERIVED_METHOD(DotCmdRC, argsCheck, MetaCommand,BatBeing, 3,
+DERIVED_METHOD(DotCmdRC, argsCheck, DotCommand,BatBeing, 3,
              (char **pzErrMsg, int nArgs, char *azArgs[])){
   return DCR_Ok;
 }
 
-DERIVED_METHOD(DotCmdRC, execute, MetaCommand,BatBeing, 4,
+DERIVED_METHOD(DotCmdRC, execute, DotCommand,BatBeing, 4,
              (ShellExState *psx, char **pzErrMsg, int nArgs, char *azArgs[])){
   FILE *out = pExtHelpers->currentOutputFile(psx);
   switch( nArgs ){
@@ -63,16 +63,16 @@ DERIVED_METHOD(DotCmdRC, execute, MetaCommand,BatBeing, 4,
   return DCR_Ok;
 }
 
-/* Define a MetaCommand v-table initialized to reference above methods. */
-MetaCommand_IMPLEMENT_VTABLE(BatBeing, batty_methods);
+/* Define a DotCommand v-table initialized to reference above methods. */
+DotCommand_IMPLEMENT_VTABLE(BatBeing, batty_methods);
 
-/* Define/initialize BatBeing as a MetaCommand subclass using above v-table. 
+/* Define/initialize BatBeing as a DotCommand subclass using above v-table. 
  * This compiles in a type-safe manner because the batty_methods v-table
- * and methods it incorporates strictly match the MetaCommand interface.
+ * and methods it incorporates strictly match the DotCommand interface.
  */
 INSTANCE_BEGIN(BatBeing);
   int numCalls;
-  MetaCommand * pPrint;
+  DotCommand * pPrint;
 INSTANCE_END(BatBeing) batty = {
   &batty_methods,
   0, 0
@@ -82,11 +82,11 @@ static void sayHowMany( BatBeing *pbb, FILE *out, ShellExState *psx ){
   if( pbb->pPrint ){
     char *az[] = { "print", 0 };
     char *zErr = 0;
-    MetaCommand * pmcPrint = pbb->pPrint;
+    DotCommand * pdcPrint = pbb->pPrint;
     DotCmdRC rc;
     az[1] = sqlite3_mprintf("This execute has been called %d times.\n",
                             ++pbb->numCalls);
-    rc = pmcPrint->pMethods->execute(pmcPrint, psx, &zErr, 2, az);
+    rc = pdcPrint->pMethods->execute(pdcPrint, psx, &zErr, 2, az);
     sqlite3_free(az[1]);
     if( rc!= DCR_Ok ){
       fprintf(out, "print() failed: %d\n", rc);
@@ -136,13 +136,13 @@ int sqlite3_testshellext_init(
     return SQLITE_ERROR;
   }else{
     ShellExState *psx = pShExtLink->pSXS;
-    MetaCommand *pmc = (MetaCommand *)&batty;
+    DotCommand *pdc = (DotCommand *)&batty;
     int rc;
 
     SHX_API(subscribeEvents)(psx, sqlite3_testshellext_init, &batty,
                              NK_CountOf, shellEventHandle);
-    batty.pPrint = SHX_HELPER(findMetaCommand)("print", psx, &rc);
-    rc = SHX_API(registerMetaCommand)(psx, sqlite3_testshellext_init, pmc);
+    batty.pPrint = SHX_HELPER(findDotCommand)("print", psx, &rc);
+    rc = SHX_API(registerDotCommand)(psx, sqlite3_testshellext_init, pdc);
     if( rc!=0 ) ++nErr;
     pShExtLink->eid = sqlite3_testshellext_init;
   }

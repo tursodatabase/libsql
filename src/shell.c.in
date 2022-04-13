@@ -1281,13 +1281,13 @@ typedef struct ShExtInfo {
    * arrays. The dbShell DB keeps indices into these arrays and into
    * an array of this struct's instances to facilitate lookup by name
    * of pointers to the implementations. */
-  int numMetaCommands;
-  MetaCommand **ppMetaCommands;
+  int numDotCommands;
+  DotCommand **ppDotCommands;
   int numExportHandlers;
   ExportHandler **ppExportHandlers;
   int numImportHandlers;
   ImportHandler **ppImportHandlers;
-  MetaCommand *pUnknown;  /* .unknown registered for this extension */
+  DotCommand *pUnknown;  /* .unknown registered for this extension */
 } ShExtInfo;
 #endif
 
@@ -1428,7 +1428,7 @@ typedef struct ShellInState {
     ShellEventNotify eventHandler;
   } *pSubscriptions;     /* The current shell event subscriptions */
   u8 bDbDispatch;        /* Cache fact of dbShell dispatch table */
-  MetaCommand *pUnknown; /* Last registered "unknown" dot command */
+  DotCommand *pUnknown; /* Last registered "unknown" dot command */
 #endif
 
   ShellExState *pSXS;    /* Pointer to companion, exposed shell state */
@@ -1442,7 +1442,7 @@ typedef struct ShellInState {
 
 /*
 ** This procedure updates the bSafeMode flag after completion of any
-** operation (meta-command, SQL submission, or script execution) that
+** operation (dot-command, SQL submission, or script execution) that
 ** counts as one for which safe mode might be suspended.
 ** bSafeModeFuture has 3 states salient here:
 ** equal 0 => Safe mode is and will remain inactive.
@@ -1619,7 +1619,7 @@ static void shellPutsFunc(
 ** the caller of the shell's main, "do shell things" entry point.
 **
 ** It is an error, (perhaps with only minor effect such as memory leak),
-** for a meta-command to call this function while it holds resources in
+** for a dot-command to call this function while it holds resources in
 ** need of freeing. Instead, it should be called before acquiring them.
 **
 ** The return is true if failing, 0 otherwise.
@@ -4795,7 +4795,7 @@ static int run_schema_dump_query(
 
 /* Configure help text generation to have coalesced secondary help lines
  * with trailing newlines on all help lines. This allow help text to be
- * representable as an array of two C-strings per meta-command.
+ * representable as an array of two C-strings per dot-command.
  */
 DISPATCH_CONFIG[
   HELP_COALESCE=1
@@ -4809,7 +4809,7 @@ DISPATCH_CONFIG[
 /* Forward references */
 static int showHelp(FILE *out, const char *zPattern, ShellExState *);
 static DotCmdRC process_input(ShellInState *psx);
-static MetaCommand *builtInCommand(int ix);
+static DotCommand *builtInCommand(int ix);
 
 /*
 ** Read the content of file zName into memory obtained from sqlite3_malloc64()
@@ -7952,9 +7952,9 @@ static ShExtInfo *pending_ext_info(ShellInState *psi){
   return &psi->pShxLoaded[ixpe];
 }
 
-/* Register a meta-command, to be called during extension load/init. */
-static int register_meta_command(ShellExState *p,
-                                 ExtensionId eid, MetaCommand *pMC){
+/* Register a dot-command, to be called during extension load/init. */
+static int register_dot_command(ShellExState *p,
+                                ExtensionId eid, DotCommand *pMC){
   ShellInState *psi = ISS(p);
   ShExtInfo *psei = pending_ext_info(psi);
   const char *zSql
@@ -7965,23 +7965,23 @@ static int register_meta_command(ShellExState *p,
   else{
     const char *zName = pMC->pMethods->name(pMC);
     sqlite3_stmt *pStmt;
-    int nc = psei->numMetaCommands;
+    int nc = psei->numDotCommands;
     int rc;
     if( psei->extId!=0 && psei->extId!=eid ) return SQLITE_MISUSE;
     psei->extId = eid;
     rc = sqlite3_prepare_v2(p->dbShell, zSql, -1, &pStmt, 0);
     if( rc!=SQLITE_OK ) return rc;
-    psei->ppMetaCommands
-      = sqlite3_realloc(psei->ppMetaCommands, (nc+1)*sizeof(MetaCommand *));
-    shell_check_oom(psei->ppMetaCommands);
+    psei->ppDotCommands
+      = sqlite3_realloc(psei->ppDotCommands, (nc+1)*sizeof(DotCommand *));
+    shell_check_oom(psei->ppDotCommands);
     sqlite3_bind_text(pStmt, 1, zName, -1, 0);
     sqlite3_bind_int(pStmt, 2, ie);
     sqlite3_bind_int(pStmt, 3, nc);
     rc = sqlite3_step(pStmt);
     sqlite3_finalize(pStmt);
     if( rc==SQLITE_DONE ){
-      psei->ppMetaCommands[nc++] = pMC;
-      psei->numMetaCommands = nc;
+      psei->ppDotCommands[nc++] = pMC;
+      psei->numDotCommands = nc;
       notify_subscribers(psi, NK_NewDotCommand, pMC);
       if( strcmp("unknown", zName)==0 ){
         psi->pUnknown = pMC;
@@ -7989,7 +7989,7 @@ static int register_meta_command(ShellExState *p,
       }
       return SQLITE_OK;
     }else{
-      psei->ppMetaCommands[nc] = 0;
+      psei->ppDotCommands[nc] = 0;
     }
   }
   return SQLITE_ERROR;
@@ -8160,8 +8160,8 @@ static const char *shellStartupDir(void){
 }
 
 static void setColumnWidths(ShellExState *p, char *azWidths[], int nWidths);
-static MetaCommand * findMetaCommand(const char *, ShellExState *, int *);
-static DotCmdRC runMetaCommand(MetaCommand*, char *[], int na, ShellExState*);
+static DotCommand * findDotCommand(const char *, ShellExState *, int *);
+static DotCmdRC runDotCommand(DotCommand*, char *[], int na, ShellExState*);
 
 static ExtensionHelpers extHelpers = {
   13,
@@ -8170,8 +8170,8 @@ static ExtensionHelpers extHelpers = {
     currentOutputFile,
     currentInputSource,
     strLineGet,
-    findMetaCommand,
-    runMetaCommand,
+    findDotCommand,
+    runDotCommand,
     setColumnWidths,
     nowInteractive,
     shellInvokedAs,
@@ -8185,7 +8185,7 @@ static ExtensionHelpers extHelpers = {
 
 static ShellExtensionAPI shellExtAPI = {
   &extHelpers, 6, {
-    register_meta_command,
+    register_dot_command,
     register_exporter,
     register_importer,
     register_scripting,
@@ -8250,30 +8250,30 @@ static int begin_db_dispatch(ShellExState *psx){
   if( ensure_dispatch_table(psx)!=SQLITE_OK ) return 1;
 
   psi->pShxLoaded = (ShExtInfo *)sqlite3_malloc(2*sizeof(ShExtInfo));
-  sei.ppMetaCommands
-    = (MetaCommand **)sqlite3_malloc((numCommands+2)*sizeof(MetaCommand *));
+  sei.ppDotCommands
+    = (DotCommand **)sqlite3_malloc((numCommands+2)*sizeof(DotCommand *));
   sei.ppExportHandlers
     = (ExportHandler **)sqlite3_malloc(2*sizeof(ExportHandler *));
   sei.ppImportHandlers
     = (ImportHandler **)sqlite3_malloc(2*sizeof(ImportHandler *));
-  if( sei.ppMetaCommands==0||sei.ppExportHandlers==0||sei.ppImportHandlers==0
+  if( sei.ppDotCommands==0||sei.ppExportHandlers==0||sei.ppImportHandlers==0
       || psi->pShxLoaded==0 ){
     shell_out_of_memory();
   }
   sei.numExportHandlers = 0;
   sei.numImportHandlers = 0;
   for( ic=0; ic<numCommands; ++ic ){
-    sei.ppMetaCommands[ic] = builtInCommand(ic);
+    sei.ppDotCommands[ic] = builtInCommand(ic);
   }
-  sei.numMetaCommands = ic;
+  sei.numDotCommands = ic;
   psi->pShxLoaded[psi->numExtLoaded++] = sei;
   zSql = "INSERT INTO "SHELL_DISP_TAB"(name, extIx, cmdIx) VALUES(?, 0, ?)";
   rc1 = sqlite3_prepare_v2(psx->dbShell, zSql, -1, &pStmt, 0);
   rc2 = sqlite3_exec(psx->dbShell, "BEGIN TRANSACTION", 0, 0, &zErr);
   if( rc1!=SQLITE_OK || rc2!=SQLITE_OK ) return 1;
-  assert(sei.numMetaCommands>0);
-  for( ic=0; ic<sei.numMetaCommands; ++ic ){
-    MetaCommand *pmc = sei.ppMetaCommands[ic];
+  assert(sei.numDotCommands>0);
+  for( ic=0; ic<sei.numDotCommands; ++ic ){
+    DotCommand *pmc = sei.ppDotCommands[ic];
     const char *zName = pmc->pMethods->name(pmc);
     sqlite3_reset(pStmt);
     sqlite3_bind_text(pStmt, 1, zName, -1, 0);
@@ -8299,12 +8299,12 @@ static int begin_db_dispatch(ShellExState *psx){
  */
 static void free_one_shext_tracking(ShExtInfo *psei){
   int j;
-  if( psei->ppMetaCommands!=0 ){
-    for( j=psei->numMetaCommands; j>0; --j ){
-      MetaCommand *pmc = psei->ppMetaCommands[j-1];
+  if( psei->ppDotCommands!=0 ){
+    for( j=psei->numDotCommands; j>0; --j ){
+      DotCommand *pmc = psei->ppDotCommands[j-1];
       if( pmc->pMethods->destruct!=0 ) pmc->pMethods->destruct(pmc);
     }
-    sqlite3_free(psei->ppMetaCommands);
+    sqlite3_free(psei->ppDotCommands);
   }
   if( psei->ppExportHandlers!=0 ){
     for( j=psei->numExportHandlers; j>0; --j ){
@@ -8350,12 +8350,12 @@ static void free_all_shext_tracking(ShellInState *psi){
   }
 }
 
-static MetaCommand *command_by_index(ShellInState *psi, int extIx, int cmdIx){
+static DotCommand *command_by_index(ShellInState *psi, int extIx, int cmdIx){
   assert(extIx>=0);
   if( extIx>=0 && extIx<psi->numExtLoaded ){
     ShExtInfo *psei = & psi->pShxLoaded[extIx];
-    if( cmdIx>=0 && cmdIx<psei->numMetaCommands ){
-      return psei->ppMetaCommands[cmdIx];
+    if( cmdIx>=0 && cmdIx<psei->numDotCommands ){
+      return psei->ppDotCommands[cmdIx];
     }
   }
   return 0;
@@ -8424,17 +8424,17 @@ static int load_shell_extension(ShellExState *psx, const char *zFile,
 }
 #endif
 
-/* Meta-command implementation functions are defined in this section.
-COMMENT  Define meta-commands and provide for their dispatch and .help text.
+/* Dot-command implementation functions are defined in this section.
+COMMENT  Define dot-commands and provide for their dispatch and .help text.
 COMMENT  These should be kept in command name order for coding convenience
-COMMENT  except where meta-commands share implementation. (The ordering
+COMMENT  except where dot-commands share implementation. (The ordering
 COMMENT  required for dispatch and help text is effected regardless.) The
 COMMENT  effect of this configuration can be seen in generated output or by
 COMMENT  executing tool/mkshellc.tcl --parameters (or --details or --help).
 COMMENT  Generally, this section defines dispatchable functions inline and
 COMMENT  causes collection of command_table entry initializers, to be later
-COMMENT  emitted by a mkshellc macro. (See EMIT_METACMD_INIT further on.)
-** All dispatchable meta-command execute functions have this signature:
+COMMENT  emitted by a mkshellc macro. (See EMIT_DOTCMD_INIT further on.)
+** All dispatchable dot-command execute functions have this signature:
 static int someCommand(char *azArg[], int nArg, ShellExState *p, char **pzErr);
 */
 DISPATCH_CONFIG[
@@ -8442,7 +8442,7 @@ DISPATCH_CONFIG[
   STORAGE_CLASS=static
   ARGS_SIGNATURE=char *$arg4\[\], int $arg5, ShellExState *$arg6, char **$arg7
   DISPATCH_ENTRY={ "$cmd", ${cmd}Command, $arg1, $arg2, $arg3 },
-  METACMD_INIT=META_CMD_INFO(${cmd}, $arg1,$arg2,$arg3, <HT0>, <HT1>),
+  DOTCMD_INIT=DOT_CMD_INFO(${cmd}, $arg1,$arg2,$arg3, <HT0>, <HT1>),
   CMD_CAPTURE_RE=^\s*{\s*"(\w+)"
   DISPATCHEE_NAME=${cmd}Command
   DC_ARG1_DEFAULT=[string length $cmd]
@@ -10553,7 +10553,7 @@ DISPATCHABLE_COMMAND( nonce ? 2 2 ){
                psi->pInSource->lineno, azArg[1]);
     exit(1);
   }
-  /* Suspend safe mode for 1 meta-command after this. */
+  /* Suspend safe mode for 1 dot-command after this. */
   psi->bSafeModeFuture = 2;
   return DCR_Ok;
 }
@@ -13584,40 +13584,40 @@ DISPATCHABLE_COMMAND( x ? 1 0 ){
   return (rv==DCR_Error)? DCR_CmdErred : rv;
 }
 
-/* End of published, standard meta-command implementation functions
-COMMENT  Build-time overrides of above meta-commands or new meta-commands may be
+/* End of published, standard dot-command implementation functions
+COMMENT  Build-time overrides of above dot-commands or new dot-commands may be
 COMMENT  incorporated into shell.c via: -it COMMAND_CUSTOMIZE=<customize source>
 COMMENT  where <customize source> names a file using the above methodology to
-COMMENT  define new or altered meta-commands and their help text.
+COMMENT  define new or altered dot-commands and their help text.
 */
 INCLUDE( COMMAND_CUSTOMIZE );
 
-COMMENT  This help text is set seperately from meta-command definition section
+COMMENT  This help text is set seperately from dot-command definition section
 COMMENT  for the always-built-in, non-customizable commands with visible help.
 COLLECT_HELP_TEXT[
   ".exit ?CODE?             Exit this program with return-code CODE or 0",
   ".quit                    Exit this program",
 ];
 
-static void MetaCommand_dtor(MetaCommand *);
-static const char * MetaCommand_name(MetaCommand *);
-static const char * MetaCommand_help(MetaCommand *, const char *);
+static void DotCommand_dtor(DotCommand *);
+static const char * DotCommand_name(DotCommand *);
+static const char * DotCommand_help(DotCommand *, const char *);
 static DotCmdRC
-  MetaCommand_argsCheck(MetaCommand *, char **, int nArgs, char *azArgs[]);
+  DotCommand_argsCheck(DotCommand *, char **, int nArgs, char *azArgs[]);
 static DotCmdRC
-  MetaCommand_execute(MetaCommand *, ShellExState *, char **, int, char *[]);
+  DotCommand_execute(DotCommand *, ShellExState *, char **, int, char *[]);
 
-static VTABLE_NAME(MetaCommand) meta_cmd_VtabBuiltIn = {
-  MetaCommand_dtor,
-  MetaCommand_name,
-  MetaCommand_help,
-  MetaCommand_argsCheck,
-  MetaCommand_execute
+static VTABLE_NAME(DotCommand) dot_cmd_VtabBuiltIn = {
+  DotCommand_dtor,
+  DotCommand_name,
+  DotCommand_help,
+  DotCommand_argsCheck,
+  DotCommand_execute
 };
 
 /* Define and populate command dispatch table. */
 static struct CommandInfo {
-  VTABLE_NAME(MetaCommand) *mcVtabBuiltIn;
+  VTABLE_NAME(DotCommand) *mcVtabBuiltIn;
   const char * cmdName;
   DotCmdRC (*cmdDoer)(char *azArg[], int nArg,
                                ShellExState *, char **pzErr);
@@ -13626,31 +13626,31 @@ static struct CommandInfo {
   void * pCmdData;
   } command_table[] = {
   COMMENT Emit the dispatch table entries generated and collected above.
-#define META_CMD_INFO(cmd, nlenMin, minArgs, maxArgs, ht0, ht1 ) \
-  { &meta_cmd_VtabBuiltIn, #cmd, cmd ## Command, \
+#define DOT_CMD_INFO(cmd, nlenMin, minArgs, maxArgs, ht0, ht1 ) \
+  { &dot_cmd_VtabBuiltIn, #cmd, cmd ## Command, \
     nlenMin, minArgs, maxArgs, { ht0, ht1 }, 0 \
   }
-  EMIT_METACMD_INIT(2);
-#undef META_CMD_INFO
+  EMIT_DOTCMD_INIT(2);
+#undef DOT_CMD_INFO
   { 0, 0, 0, 0, ~0, ~0, {0,0}, 0 }
 };
 static unsigned numCommands
   = sizeof(command_table)/sizeof(struct CommandInfo) - 1;
 
-static MetaCommand *builtInCommand(int ix){
+static DotCommand *builtInCommand(int ix){
   if( ix<0 || ix>=numCommands ) return 0;
-  return (MetaCommand *)&command_table[ix];
+  return (DotCommand *)&command_table[ix];
 }
 
-static void MetaCommand_dtor(MetaCommand *pMe){
+static void DotCommand_dtor(DotCommand *pMe){
   UNUSED_PARAMETER(pMe);
 }
 
-static const char * MetaCommand_name(MetaCommand *pMe){
+static const char * DotCommand_name(DotCommand *pMe){
   return ((struct CommandInfo *)pMe)->cmdName;
 }
 
-static const char * MetaCommand_help(MetaCommand *pMe, const char * zWhat){
+static const char * DotCommand_help(DotCommand *pMe, const char * zWhat){
   struct CommandInfo *pci = (struct CommandInfo *)pMe;
   if( zWhat==0 ) return pci->azHelp[0];
   if( *zWhat==0 ) return pci->azHelp[1];
@@ -13658,7 +13658,7 @@ static const char * MetaCommand_help(MetaCommand *pMe, const char * zWhat){
 }
 
 static DotCmdRC
-  MetaCommand_argsCheck(MetaCommand *pMe,
+  DotCommand_argsCheck(DotCommand *pMe,
                         char **pzErrMsg, int nArgs, char *azArgs[]){
   struct CommandInfo *pci = (struct CommandInfo *)pMe;
   UNUSED_PARAMETER(azArgs);
@@ -13678,25 +13678,25 @@ static DotCmdRC
 }
 
 static DotCmdRC
-  MetaCommand_execute(MetaCommand *pMe, ShellExState *pssx,
+  DotCommand_execute(DotCommand *pMe, ShellExState *pssx,
                       char **pzErrMsg, int nArgs, char *azArgs[]){
   return (((struct CommandInfo *)pMe)->cmdDoer)(azArgs, nArgs, pssx, pzErrMsg);
 }
 
 /*****************
-** MetaCommand iteration by name match, used by the .help meta-command.
-** MetaCommands, or their ad-hoc stand-ins, having matching names are produced
+** DotCommand iteration by name match, used by the .help dot-command.
+** DotCommands, or their ad-hoc stand-ins, having matching names are produced
 ** in lexical order, with the iterator indicating which has been produced.
-** If .zAdhocHelpName == 0, it is a regular MetaCommand. Otherwise, the
-** ".unknown" MetaCommand is returned, whose help() method is to be used.
-** Any returned MetaMatchIter must eventually be passed to freeMetaMatchIter().
+** If .zAdhocHelpName == 0, it is a regular DotCommand. Otherwise, the
+** ".unknown" DotCommand is returned, whose help() method is to be used.
+** Any returned CmdMatchIter must eventually be passed to freeCmdMatchIter().
 */
-typedef struct MetaMatchIter {
+typedef struct CmdMatchIter {
   ShellExState *psx;
   /* 0 indicates prepared statement; non-0 is the glob pattern. */
   const char *zPattern;
   union {
-    MetaCommand *pMC;
+    DotCommand *pDotCmd;
 #if SHELL_DYNAMIC_EXTENSION
     sqlite3_stmt *stmt;
 #endif
@@ -13704,14 +13704,14 @@ typedef struct MetaMatchIter {
 #if SHELL_DYNAMIC_EXTENSION
   char *zAdhocHelpText; /* registered extension ad-hoc help */
 #endif
-} MetaMatchIter;
+} CmdMatchIter;
 
 /* Release resources held by the iterator and clear it. */
-static void freeMetaMatchIter(MetaMatchIter *pMMI){
+static void freeCmdMatchIter(CmdMatchIter *pMMI){
   if( pMMI->zPattern!=0 ){
     sqlite3_free((void *)pMMI->zPattern);
     pMMI->zPattern = 0;
-    pMMI->pMC = 0;
+    pMMI->pDotCmd = 0;
   }
 #if SHELL_DYNAMIC_EXTENSION
   else{
@@ -13723,13 +13723,13 @@ static void freeMetaMatchIter(MetaMatchIter *pMMI){
 #endif
 }
 
-/* Prepare an iterator that will produce a sequence of MetaCommand
+/* Prepare an iterator that will produce a sequence of DotCommand
  * pointers whose referents' names match the given cmdFragment. 
  * Return how many will match (if iterated upon return.) */
-static int findMatchingMetaCmds(const char *cmdFragment,
-                                MetaMatchIter *pMMI,
+static int findMatchingDotCmds(const char *cmdFragment,
+                                CmdMatchIter *pMMI,
                                 ShellExState *psx){
-  MetaMatchIter mmi = { psx, 0, 0 };
+  CmdMatchIter mmi = { psx, 0, 0 };
   int rv = 0;
 #if SHELL_DYNAMIC_EXTENSION
   if( ISS(psx)->bDbDispatch ){
@@ -13759,20 +13759,20 @@ static int findMatchingMetaCmds(const char *cmdFragment,
     shell_check_oom((void *)mmi.zPattern);
 
     struct CommandInfo *pCI = command_table;
-    mmi.pMC = (MetaCommand *)command_table;
+    mmi.pDotCmd = (DotCommand *)command_table;
     while( pCI<command_table+numCommands ){
       if( sqlite3_strglob(mmi.zPattern, pCI->cmdName)==0 ) ++rv;
       ++pCI;
     }
   }
   if( pMMI ) *pMMI = mmi;
-  else freeMetaMatchIter(&mmi);
+  else freeCmdMatchIter(&mmi);
   return rv;
 }
 
-/* Produce the next MetaCommand pointer from the iterator, or 0 if no next. */
-static MetaCommand * nextMatchingMetaCmd(MetaMatchIter *pMMI){
-  MetaCommand *rv = 0;
+/* Produce the next DotCommand pointer from the iterator, or 0 if no next. */
+static DotCommand * nextMatchingDotCmd(CmdMatchIter *pMMI){
+  DotCommand *rv = 0;
 #if SHELL_DYNAMIC_EXTENSION
   if( pMMI->zPattern==0 ){
     int rc = sqlite3_step(pMMI->stmt);
@@ -13800,11 +13800,11 @@ static MetaCommand * nextMatchingMetaCmd(MetaMatchIter *pMMI){
   }else
 #endif
   {
-    struct CommandInfo *pCI = (struct CommandInfo *)(pMMI->pMC);
+    struct CommandInfo *pCI = (struct CommandInfo *)(pMMI->pDotCmd);
     assert(pCI>=command_table && pCI<=command_table+numCommands);
     while( pCI<command_table+numCommands ){
-      if( sqlite3_strglob(pMMI->zPattern, pCI->cmdName)==0 ) rv = pMMI->pMC;
-      pMMI->pMC = (MetaCommand *)(++pCI);
+      if( sqlite3_strglob(pMMI->zPattern, pCI->cmdName)==0 ) rv = pMMI->pDotCmd;
+      pMMI->pDotCmd = (DotCommand *)(++pCI);
       if( rv!=0 ) break;
     }
   }
@@ -13812,12 +13812,12 @@ static MetaCommand * nextMatchingMetaCmd(MetaMatchIter *pMMI){
 }
 
 /*****************
-** MetaCommand lookup
+** DotCommand lookup
 **
 ** For the non-extended or non-extensible shell, this function does
-** a binary search of the fixed list of meta-command info structs.
+** a binary search of the fixed list of dot-command info structs.
 ** For an extended shell, it queries the shell's DB. Either way,
-** this function returns a MetaCommand pointer if one can be found
+** this function returns a DotCommand pointer if one can be found
 ** with an adequate match for the given name. Here, "adequate" may
 ** vary according to whether shell extensions have been loaded. If
 ** not, the match must be for as many characters as set within the
@@ -13825,7 +13825,7 @@ static MetaCommand * nextMatchingMetaCmd(MetaMatchIter *pMMI){
 ** If shell extensions are loaded, the match must be long enough to
 ** result in a unique lookup.
 */
-MetaCommand *findMetaCommand(const char *cmdName, ShellExState *psx,
+DotCommand *findDotCommand(const char *cmdName, ShellExState *psx,
                              /* out */ int *pnFound){
   if( pnFound ) *pnFound = 0;
 #if SHELL_DYNAMIC_EXTENSION
@@ -13878,12 +13878,12 @@ MetaCommand *findMetaCommand(const char *cmdName, ShellExState *psx,
       }
     }
     if( pnFound && pci ) *pnFound = 1;
-    return (MetaCommand *)pci;
+    return (DotCommand *)pci;
   }
 }
 
 /*
-** Given a MetaCommand, desired help level,
+** Given a DotCommand, desired help level,
 ** ( possibly retreived ad-hoc help text for extensible shell, )
 ** and an optional all-text search pattern, then
 **   when level==0 and primary help available, output it
@@ -13894,7 +13894,7 @@ MetaCommand *findMetaCommand(const char *cmdName, ShellExState *psx,
 ** is restricted to those commands whose primary help begins with cLead.
 ** Return 1 if anything output, else 0.
 */
-static int putSelectedCmdHelp(MetaCommand *pmc, int iLevel, char cLead,
+static int putSelectedCmdHelp(DotCommand *pmc, int iLevel, char cLead,
 #if SHELL_DYNAMIC_EXTENSION
                               const char *zHelpText,
 #endif
@@ -13963,17 +13963,17 @@ static int putSelectedCmdHelp(MetaCommand *pmc, int iLevel, char cLead,
 ** Output primary (single-line) help for a known command.
 */
 static void showPrimaryHelp(FILE *out, const char *zCmd, ShellExState *psx){
-  MetaMatchIter mmi = {0};
-  int nm = findMatchingMetaCmds(zCmd, &mmi, psx);
-  MetaCommand *pmc = nextMatchingMetaCmd(&mmi);
-  if( pmc!=0 ){
-    putSelectedCmdHelp(pmc, 0, 0,
+  CmdMatchIter cmi = {0};
+  int nm = findMatchingDotCmds(zCmd, &cmi, psx);
+  DotCommand *pdc = nextMatchingDotCmd(&cmi);
+  if( pdc!=0 ){
+    putSelectedCmdHelp(pdc, 0, 0,
 #if SHELL_DYNAMIC_EXTENSION
-                       mmi.zAdhocHelpText,
+                       cmi.zAdhocHelpText,
 #endif
                        out, 0);
   }
-  freeMetaMatchIter(&mmi);
+  freeCmdMatchIter(&cmi);
 }
 
 /*
@@ -13999,8 +13999,8 @@ static int showHelp(FILE *out, const char *zPattern, ShellExState *psx){
   u8 bShowUndoc = zPattern==zHelpAll;
   u8 bEmptyPattern = !bNullPattern && (*zPattern==0 || bShowUndoc);
   int npm = 0; /* track how many matches found */
-  MetaMatchIter mmi = {0};
-  MetaCommand *pmc;
+  CmdMatchIter cmi = {0};
+  DotCommand *pdc;
   char *zPat = 0;
   char cLead = (bShowUndoc)? ',' : '.';
   int iLevel = 0;
@@ -14027,7 +14027,7 @@ static int showHelp(FILE *out, const char *zPattern, ShellExState *psx){
     }
     return npm;
   }
-  npm = findMatchingMetaCmds(zPattern, &mmi, psx);
+  npm = findMatchingDotCmds(zPattern, &cmi, psx);
   if( bNullPattern ) hoKind = HO_AllP;
   else if( bEmptyPattern ) hoKind = HO_AllX;
   else if( npm>1 ) hoKind = HO_LikeP;
@@ -14038,32 +14038,30 @@ static int showHelp(FILE *out, const char *zPattern, ShellExState *psx){
     shell_check_oom(zPat);
   }
   zPattern = 0;
+  iLevel = 1;
   switch( hoKind ){
   case HO_AllP: case HO_LikeP:
     iLevel = 0;
     break;
   case HO_AllX:
-    iLevel = 1;
     break;
   case HO_OneX:
-    iLevel = 1;
     cLead = 0;
     break;
   case HO_LikeT:
     zPattern = zPat;
-    iLevel = 1;
     break;
   default: return 0;
   }
   npm = 0;
-  while( 0 != (pmc = nextMatchingMetaCmd(&mmi)) ){
-    npm += putSelectedCmdHelp(pmc, iLevel, cLead,
+  while( 0 != (pdc = nextMatchingDotCmd(&cmi)) ){
+    npm += putSelectedCmdHelp(pdc, iLevel, cLead,
 #if SHELL_DYNAMIC_EXTENSION
-                              mmi.zAdhocHelpText,
+                              cmi.zAdhocHelpText,
 #endif
                               out, zPattern);
   }
-  freeMetaMatchIter(&mmi);
+  freeCmdMatchIter(&cmi);
   sqlite3_free(zPat);
   return npm;
 }
@@ -14090,7 +14088,7 @@ static void command_post(ShellInState *psi){
 /* Issue errors per returned DotCmdRC and error message, handle certain
  * exceptional returns, and translate return to the sanitized first 8.
  */
-static DotCmdRC meta_command_errors(char *zErr, char *azArg[], int nArg,
+static DotCmdRC dot_command_errors(char *zErr, char *azArg[], int nArg,
                                     DotCmdRC dcr, ShellExState *psx){
   if( psx->shellAbruptExit!=0 ){
     if( psx->shellAbruptExit>0x1ff ) dcr = DCR_AbortError;
@@ -14210,7 +14208,7 @@ static DotCmdRC meta_command_errors(char *zErr, char *azArg[], int nArg,
   return dcr;
 }
 
-/* Argument-check and execute a found MetaCommand, wrapping execution
+/* Argument-check and execute a found DotCommand, wrapping execution
  * with command_{prep,post}(...), and issue errors as made evident.
  * Return one of the "Post-execute action and success/error status"
  * codes from the DotCmdRC enum.
@@ -14218,11 +14216,11 @@ static DotCmdRC meta_command_errors(char *zErr, char *azArg[], int nArg,
  * Note that this function is exposed for shell extensions to use.
  *
  * This should be called for "top-level" dot command execution only.
- * Should an extension wrap or use a MetaCommand object to effect its
+ * Should an extension wrap or use a DotCommand object to effect its
  * own functionality, that object's execute() method should be called
  * directly, without going through this function.
  */
-static DotCmdRC runMetaCommand(MetaCommand *pmc, char *azArg[], int nArg,
+static DotCmdRC runDotCommand(DotCommand *pmc, char *azArg[], int nArg,
                                ShellExState *psx){
   char *zErr = 0;
   DotCmdRC dcr = pmc->pMethods->argsCheck(pmc, &zErr, nArg, azArg);
@@ -14232,7 +14230,7 @@ static DotCmdRC runMetaCommand(MetaCommand *pmc, char *azArg[], int nArg,
     dcr = pmc->pMethods->execute(pmc, psx, &zErr, nArg, azArg);
   }
   if( dcr!=DCR_Ok ){
-    dcr = meta_command_errors(zErr, azArg, nArg, dcr, psx);
+    dcr = dot_command_errors(zErr, azArg, nArg, dcr, psx);
   }
   sqlite3_free(zErr);
   command_post(ISS(psx));
@@ -14249,7 +14247,7 @@ static DotCmdRC runMetaCommand(MetaCommand *pmc, char *azArg[], int nArg,
 **
 ** Any applicable error messages are issued along with output messages.
 */
-static DotCmdRC do_meta_command(char *zLine, ShellExState *psx){
+static DotCmdRC do_dot_command(char *zLine, ShellExState *psx){
   int h = 1; /* Passing over leading '.' */
   int nArg = 0;
   char *azArg[52];
@@ -14290,27 +14288,27 @@ static DotCmdRC do_meta_command(char *zLine, ShellExState *psx){
    */
   if( nArg>0 ){
     int nFound;
-    MetaCommand *pmc = findMetaCommand(azArg[0], psx, &nFound);
+    DotCommand *pmc = findDotCommand(azArg[0], psx, &nFound);
     if( pmc==0 || nFound>1 ){
       if( nFound==0 ){
         dcr = DCR_Unknown;
 #if SHELL_DYNAMIC_EXTENSION
         pmc = ISS(psx)->pUnknown;
-        if( pmc ) dcr = runMetaCommand(pmc, azArg, nArg, psx);
+        if( pmc ) dcr = runDotCommand(pmc, azArg, nArg, psx);
 #endif
       }else{
         dcr = DCR_Ambiguous;
       }
       if( dcr > DCR_ArgIxMask ){
         /* Issue error for unknown or inadequately specified dot command. */
-        dcr = meta_command_errors(0, azArg, nArg, dcr, psx);
+        dcr = dot_command_errors(0, azArg, nArg, dcr, psx);
       }
     }
     else{
       char *arg0 = azArg[0];
       azArg[0] = (char *)(pmc->pMethods->name(pmc));
       /* Run found command and issue or handle any errors it may report. */
-      dcr = runMetaCommand(pmc, azArg, nArg, psx);
+      dcr = runDotCommand(pmc, azArg, nArg, psx);
       azArg[0] = arg0;
     }
   }
@@ -14918,7 +14916,7 @@ static DotCmdRC process_input(ShellInState *psi){
       case Cmd: {
         DotCmdRC dcr;
         echo_group_input(psi, *pzLineUse);
-        dcr = do_meta_command(*pzLineUse+nLeadWhite, XSS(psi));
+        dcr = do_dot_command(*pzLineUse+nLeadWhite, XSS(psi));
         nErrors += (dcr & DCR_Error);
         dcr &= ~DCR_Error;
         if( dcr > termKind ) termKind = dcr;
@@ -15738,7 +15736,7 @@ int SQLITE_CDECL SHELL_MAIN(int argc, wchar_t **wargv){
       if( i==argc-1 ) break;
       z = cmdline_option_value(argc,argv,++i);
       if( z[0]=='.' ){
-        drc = do_meta_command(z, &datax);
+        drc = do_dot_command(z, &datax);
         rc = (drc>2)? 2 : drc;
       }else{
         rc = run_single_query(&datax, z);
@@ -15789,7 +15787,7 @@ int SQLITE_CDECL SHELL_MAIN(int argc, wchar_t **wargv){
     */
     for(i=0; i<nCmd && rc<2; i++){
       if( azCmd[i][0]=='.' ){
-        drc = do_meta_command(azCmd[i], &datax);
+        drc = do_dot_command(azCmd[i], &datax);
         rc = (drc>2)? 2 : drc;
       }else{
         rc = run_single_query(&datax, azCmd[i]);

@@ -22,7 +22,7 @@ SHELL_EXTENSION_INIT1(pShExtApi, pExtHelpers, shextLinkFetcher);
 #define SHX_API(entry) pShExtApi->entry
 #define SHX_HELPER(entry) pExtHelpers->entry
 
-struct BatBeing : MetaCommand {
+struct BatBeing : DotCommand {
 
   ~BatBeing() {}; // No held resources; copy/assign is fine and dying is easy.
 
@@ -44,7 +44,7 @@ struct BatBeing : MetaCommand {
   DotCmdRC execute(ShellExState *psx, char **pzErrMsg,
                    int nArgs, char *azArgs[]);
 
-  BatBeing(MetaCommand *pp = 0) {
+  BatBeing(DotCommand *pp = 0) {
     numCalls = 0;
     pPrint = pp;
   };
@@ -52,7 +52,7 @@ struct BatBeing : MetaCommand {
   // Default copy/assign are fine; nothing held.
 
   int numCalls;
-  MetaCommand * pPrint;
+  DotCommand * pPrint;
 };
 
 static void sayHowMany( BatBeing *pbb, FILE *out, ShellExState *psx ){
@@ -83,9 +83,9 @@ DotCmdRC BatBeing::execute(ShellExState *psx, char **pzErrMsg,
   return DCR_Ok;
 }
 
-/* Define/initialize BatBeing as a MetaCommand subclass using above v-table. 
+/* Define/initialize BatBeing as a DotCommand subclass using above v-table. 
  * This compiles in a type-safe manner because the batty_methods v-table
- * and methods it incorporates strictly match the MetaCommand interface.
+ * and methods it incorporates strictly match the DotCommand interface.
  */
 static BatBeing batty(0);
 
@@ -136,8 +136,8 @@ int sqlite3_testshellext_init(
 
     SHX_API(subscribeEvents)(psx, sqlite3_testshellext_init, &batty,
                              NK_CountOf, shellEventHandle);
-    batty.pPrint = SHX_HELPER(findMetaCommand)("print", psx, &rc);
-    rc = SHX_API(registerMetaCommand)(psx, sqlite3_testshellext_init, &batty);
+    batty.pPrint = SHX_HELPER(findDotCommand)("print", psx, &rc);
+    rc = SHX_API(registerDotCommand)(psx, sqlite3_testshellext_init, &batty);
     if( rc!=0 ) ++nErr;
     pShExtLink->eid = sqlite3_testshellext_init;
   }

@@ -183,7 +183,7 @@ proc project_path {relPath} {
 }
 
 if {$::lineTags >= 3} {
-  # These k/v stores hold {lineNum filename} lists keyed by meta-command,
+  # These k/v stores hold {lineNum filename} lists keyed by dot-command,
   # which are used to get #line directives on all dispatch and help table
   # entries, and any conditionals affecting their compilation.
   array set ::cmd_help_tags {}
@@ -255,7 +255,7 @@ proc emit_sync { lines ostrm precLines {fromFile ""} } {
 
 array set ::cmd_help {}
 array set ::cmd_condition {}
-array set ::metacmd_init {}
+array set ::dotcmd_init {}
 array set ::inc_type_files {}
 set ::iShuffleErrors 0
 # Ease use of { and } in literals. Instead, $::lb and $::rb can be used.
@@ -275,7 +275,7 @@ set ::parametersHelp {
    HELP_COALESCE sets whether to coalesce secondary help text and add newlines.
   Within values set for ARGS_SIGNATURE, DISPATCHEE_NAME, and DISPATCH_ENTRY
   parameters, the variables $cmd and $arg# (where # is an integer) may appear,
-  to be replaced by the meta-command name or the #'th effective argument to
+  to be replaced by the dot-command name or the #'th effective argument to
   DISPATCHABLE_COMMAND(). The "effective" argument is either what is provided,
   or a default value when the actual argument is missing (at the right end of
   the provided argument list) or the argument has the value ? . The expansion
@@ -290,8 +290,8 @@ array set ::dispCfg [list \
    "{ \"\$cmd\", \${cmd}Command, \$arg1,\$arg2,\$arg3 }," \
   DISPATCHEE_NAME {${cmd}Command} \
   HELP_COALESCE 0 \
-  METACMD_INIT \
-   "META_CMD_INFO( \${cmd}, \$arg1,\$arg2,\$arg3,\n <HT0>,\n <HT1> )," \
+  DOTCMD_INIT \
+   "DOT_CMD_INFO( \${cmd}, \$arg1,\$arg2,\$arg3,\n <HT0>,\n <HT1> )," \
 ]
 # Other config keys:
 #  DC_ARG_COUNT=<number of arguments to DISPATCHABLE_COMMAND()>
@@ -402,7 +402,7 @@ array set ::macroTailREs [list \
   CONDITION_COMMAND {^\(\s*(\w+)\s+([^;]+)\);} \
   DISPATCH_CONFIG {^\[} \
   DISPATCHABLE_COMMAND {^\(([\w\? ]+)\)(\S)\s*$} \
-  EMIT_METACMD_INIT {^\((\d*)\)} \
+  EMIT_DOTCMD_INIT {^\((\d*)\)} \
   INCLUDE {^(?:\(\s*(\w+)\s*\))|(?:\s+([\w./\\]+)\M)} \
   IGNORE_COMMANDS {^\(\s*([-+\w ]*)\)\s*;\s*} \
   TCL_CSTR_LITERAL {^\(([ \w*=]+)\)(\S)\s*$} \
@@ -413,7 +413,7 @@ array set ::macroTailREs [list \
 # CONFIGURE_DISPATCH tailCapture_Empty
 # COLLECT_HELP_TEXT tailCapture_Empty
 # DISPATCHABLE_COMMAND tailCapture_ArgsGlom_TrailChar
-# EMIT_METACMD_INIT tailCapture_Indent
+# EMIT_DOTCMD_INIT tailCapture_Indent
 # IGNORED_COMMANDS tailCapture_SignedCmdGlom
 # INCLUDE tailCapture_IncType_Filename
 
@@ -424,7 +424,7 @@ array set ::macroUsages [list \
   DISPATCH_CONFIG "\[\n   <NAME=value lines>\n  \];" \
   DISPATCHABLE_COMMAND \
     "( name args... ){\n   <implementation code lines>\n  }" \
-  EMIT_METACMD_INIT "( indent );" \
+  EMIT_DOTCMD_INIT "( indent );" \
   INCLUDE {( <inc_type> )} \
   SKIP_COMMANDS "( <signed_names> );" \
   TCL_CSTR_LITERAL \
@@ -652,21 +652,21 @@ proc DISPATCHABLE_COMMAND {inSrc tailCapture ostrm} {
       set argexp [subst $::dispCfg(ARGS_SIGNATURE)]
       set fname [subst $::dispCfg(DISPATCHEE_NAME)]
       set funcOpen "$rsct $fname\($argexp\)$::lb"
-      set mcInit [subst $::dispCfg(METACMD_INIT)]
+      set mcInit [subst $::dispCfg(DOTCMD_INIT)]
       emit_conditionally $cmd [linsert $body 0 $funcOpen] $inSrc $ostrm
-      set ::metacmd_init($cmd) $mcInit
+      set ::dotcmd_init($cmd) $mcInit
       set_src_tags dispatch $cmd $inSrc
     }
   }
   return $iAte
 }
 
-proc EMIT_METACMD_INIT {inSrc tailCap ostrm} {
-  # Emit the collected metacommand init table entries, in command order, maybe
+proc EMIT_DOTCMD_INIT {inSrc tailCap ostrm} {
+  # Emit the collected dotcommand init table entries, in command order, maybe
   # wrapped with a conditional construct as set by CONDITION_COMMAND(). Prior
   # to the emit, substitute markers <HT{0,1}> with help text for the command.
-  foreach cmd [lsort [array names ::metacmd_init]] {
-    set initem $::metacmd_init($cmd)
+  foreach cmd [lsort [array names ::dotcmd_init]] {
+    set initem $::dotcmd_init($cmd)
     set ht0i -1
     if {[info exists ::cmd_help($cmd)]} {
       set ht $::cmd_help($cmd) ; # ht is a list.
