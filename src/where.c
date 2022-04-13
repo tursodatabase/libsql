@@ -5900,6 +5900,11 @@ WhereInfo *sqlite3WhereBegin(
         sqlite3VdbeSetP4KeyInfo(pParse, pPk);
       }
       pLoop->wsFlags &= ~WHERE_IDX_ONLY;
+      /* The nature of RIGHT JOIN processing is such that it messes up
+      ** the output order.  So omit any ORDER BY/GROUP BY elimination
+      ** optimizations.  We need to do an actual sort for RIGHT JOIN. */
+      pWInfo->nOBSat = 0;
+      pWInfo->eDistinct = WHERE_DISTINCT_UNORDERED;
     }
   }
   pWInfo->iTop = sqlite3VdbeCurrentAddr(v);

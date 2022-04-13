@@ -1,5 +1,5 @@
-C Add\smissing\sVdbeCoverage()\smacros\son\snew\sbranch\sbyte-code\sopcodes.
-D 2022-04-13T01:52:32.481
+C The\srows\sof\sa\sRIGHT\sJOIN\smight\scome\sout\sin\sany\sarbitrary\sorder.\s\sSo\sdisable\nthe\sORDER-BY/GROUP-BY\soptimizations\sif\sa\sRIGHT\sJOIN\sis\sinvolved.
+D 2022-04-13T12:12:01.948
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -639,7 +639,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c b9df133a705093da8977da5eb202eaadb844839f1c7297c08d33471f5491843d
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
-F src/where.c 4176c858089e521de3f0961751016dc23314bd8bc5ae382ef2619eb38f6b968e
+F src/where.c 793d09ef0d824efb953cdaff59102dcdd5390f8c59d1d5119ddfd26dcf5cd957
 F src/whereInt.h ea1e4b6639c4c32246f4c54b733143df76109894adf08bedee4f3999ece62c2d
 F src/wherecode.c e0f7b26a9c2de2cbaa635e5c1ef47b9c22250b0245a14a4b785ff4c61215fa13
 F src/whereexpr.c 174d4ad5be165c610c907abb779ef4a97974d22b84e1ce7898d2d9f6947249e5
@@ -1947,8 +1947,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 61259050152321bc57dbdfdc3edcabb4f18c021b1ee0491c1e04ae24c7a59d89
-R 3ebbb5ad8363d344d9fe2023b4974777
+P 218c7167e562f5c327124f02a92de85079315320a221fb0508310d927596b14c
+R ad78fe8a972588635938e37b65ef3078
 U drh
-Z 8ce073acecbbfacea87c4e9aefc95045
+Z 45a91ae6630079ad59ce11d407cbe16e
 # Remove this line to create a well-formed Fossil manifest.
