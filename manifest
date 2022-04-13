@@ -1,5 +1,5 @@
-C Earlier\sdetection\sof\scorruption\sin\sbalance_nonroot().\sdbsqlfuzz\s9191ade77ebd3b7a3356e074957aa85b0c669d14.
-D 2022-04-12T17:02:27.322
+C Fix\san\sassert()\sin\sbtree.c\sthat\smight\snot\sbe\strue\sfor\sa\scorrupt\sdatabase\sfile.
+D 2022-04-13T10:49:50.291
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -492,7 +492,7 @@ F src/auth.c f4fa91b6a90bbc8e0d0f738aa284551739c9543a367071f55574681e0f24f8cf
 F src/backup.c a2891172438e385fdbe97c11c9745676bec54f518d4447090af97189fd8e52d7
 F src/bitvec.c 7c849aac407230278445cb069bebc5f89bf2ddd87c5ed9459b070a9175707b3d
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c c5ede430f700fef60a7b770b64f05071099042fbde87c3e72363baa06e98574b
+F src/btree.c 093c940ddf1d0753542d04e37eb9903cbc126e997815d234dd2b6317e812b192
 F src/btree.h 74d64b8f28cfa4a894d14d4ed64fa432cd697b98b61708d4351482ae15913e22
 F src/btreeInt.h 8ce1332edd89dfd2461d561ac10a0ab5601c8e06200cb5230596c3caaf54482e
 F src/build.c ff119be98394a65bc8be7afc39d4a791a66f03a778d396de3ec456f5dfaf39e8
@@ -1945,8 +1945,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 09c5a4ec13b02efd6207e26dab7beaf184f0d8ccea0bd0dfe94fc803fe5636ce
-R d18f99fed866e9865bcdfe9b0a30dad2
-U dan
-Z 6817a1ac7fab2812dd812cb873794720
+P bff4f083eb1c35544988493a5d73a42e646c4250b841f5aae38c2183f0867a0e
+R 1538c33a9ca8b52845c5bdc4ee31c46c
+U drh
+Z 98d0ff758b95c26883d10f0f51771962
 # Remove this line to create a well-formed Fossil manifest.
