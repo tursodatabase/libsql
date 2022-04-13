@@ -2854,7 +2854,9 @@ SQLITE_NOINLINE void sqlite3WhereRightJoinLoop(
       }
     }
     jmp = sqlite3VdbeAddOp4Int(v, OP_Filter, pRJ->regBloom, 0, r, nPk);
+    VdbeCoverage(v);
     sqlite3VdbeAddOp4Int(v, OP_Found, pRJ->iMatch, addrCont, r, nPk);
+    VdbeCoverage(v);
     sqlite3VdbeJumpHere(v, jmp);
     sqlite3VdbeAddOp2(v, OP_Gosub, pRJ->regReturn, pRJ->addrSubrtn);
     sqlite3WhereEnd(pSubWInfo);
