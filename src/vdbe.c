@@ -2714,10 +2714,9 @@ op_column_restart:
 
   if( pC->cacheStatus!=p->cacheCtr ){                /*OPTIMIZATION-IF-FALSE*/
     if( pC->nullRow ){
-      if( pC->eCurType==CURTYPE_PSEUDO ){
+      if( pC->eCurType==CURTYPE_PSEUDO && pC->seekResult>0 ){
         /* For the special case of as pseudo-cursor, the seekResult field
         ** identifies the register that holds the record */
-        assert( pC->seekResult>0 );
         pReg = &aMem[pC->seekResult];
         assert( pReg->flags & MEM_Blob );
         assert( memIsValid(pReg) );
@@ -5802,16 +5801,23 @@ case OP_Rowid: {                 /* out2 */
 ** that occur while the cursor is on the null row will always
 ** write a NULL.
 **
-** Or, if P1 is a Pseudo-Cursor (a cursor opened using OP_OpenPseudo)
-** just reset the cache for that cursor.  This causes the row of
-** content held by the pseudo-cursor to be reparsed.
+** If cursor P1 is not previously opened, open it now to a special
+** pseudo-cursor that always returns NULL for every column.
 */
 case OP_NullRow: {
   VdbeCursor *pC;
 
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
-  assert( pC!=0 );
+  if( pC==0 ){
+    /* If the cursor is not already open, create a special kind of
+    ** pseudo-cursor that always gives null rows. */
+    pC = allocateCursor(p, pOp->p1, 1, CURTYPE_PSEUDO);
+    if( pC==0 ) goto no_mem;
+    pC->seekResult = 0;
+    pC->isTable = 1;
+    pC->uc.pCursor = sqlite3BtreeFakeValidCursor();
+  }
   pC->nullRow = 1;
   pC->cacheStatus = CACHE_STALE;
   if( pC->eCurType==CURTYPE_BTREE ){
