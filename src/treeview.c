@@ -133,6 +133,7 @@ void sqlite3TreeViewWith(TreeView *pView, const With *pWith, u8 moreToFollow){
 */
 void sqlite3TreeViewSrcList(TreeView *pView, const SrcList *pSrc){
   int i;
+  if( pSrc==0 ) return;
   for(i=0; i<pSrc->nSrc; i++){
     const SrcItem *pItem = &pSrc->a[i];
     StrAccum x;
