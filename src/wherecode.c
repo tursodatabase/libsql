@@ -2771,6 +2771,8 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     */
     sqlite3VdbeAddOp2(v, OP_BeginSubrtn, 0, pRJ->regReturn);
     pRJ->addrSubrtn = sqlite3VdbeCurrentAddr(v);
+    assert( pParse->withinRJSubrtn < 255 );
+    pParse->withinRJSubrtn++;
   }
 
 #if WHERETRACE_ENABLED /* 0x20800 */

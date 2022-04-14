@@ -6028,6 +6028,8 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       sqlite3VdbeResolveLabel(v, pLevel->addrCont);
       pLevel->addrCont = 0;
       sqlite3VdbeAddOp2(v, OP_Return, pRJ->regReturn, pRJ->addrSubrtn);
+      assert( pParse->withinRJSubrtn>0 );
+      pParse->withinRJSubrtn--;
     }
     pLoop = pLevel->pWLoop;
     if( pLevel->op!=OP_Noop ){
