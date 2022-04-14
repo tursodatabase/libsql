@@ -983,12 +983,7 @@ case OP_Gosub: {            /* jump */
   pIn1->flags = MEM_Int;
   pIn1->u.i = (int)(pOp-aOp);
   REGISTER_TRACE(pOp->p1, pIn1);
-
-  /* Most jump operations do a goto to this spot in order to update
-  ** the pOp pointer. */
-jump_to_p2:
-  pOp = &aOp[pOp->p2 - 1];
-  break;
+  goto jump_to_p2_and_check_for_interrupt;
 }
 
 /* Opcode:  Return P1 P2 P3 * *
@@ -1035,7 +1030,12 @@ case OP_InitCoroutine: {     /* jump */
   assert( !VdbeMemDynamic(pOut) );
   pOut->u.i = pOp->p3 - 1;
   pOut->flags = MEM_Int;
-  if( pOp->p2 ) goto jump_to_p2;
+  if( pOp->p2==0 ) break;
+
+  /* Most jump operations do a goto to this spot in order to update
+  ** the pOp pointer. */
+jump_to_p2:
+  pOp = &aOp[pOp->p2 - 1];
   break;
 }
 

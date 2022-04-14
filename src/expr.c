@@ -3181,8 +3181,8 @@ void sqlite3CodeRhsOfIN(
     assert( ExprUseYSub(pExpr) );
     assert( sqlite3VdbeGetOp(v,pExpr->y.sub.iAddr-1)->opcode==OP_BeginSubrtn
             || pParse->nErr );
-    sqlite3VdbeAddOp3(v, OP_Return, pExpr->y.sub.regReturn, 0, 
-                      pExpr->y.sub.iAddr-1);
+    sqlite3VdbeAddOp2(v, OP_Return, pExpr->y.sub.regReturn,
+                      pExpr->y.sub.iAddr);
     sqlite3VdbeChangeP1(v, pExpr->y.sub.iAddr-1, sqlite3VdbeCurrentAddr(v)-1);
     sqlite3ClearTempRegCache(pParse);
   }
@@ -3312,8 +3312,8 @@ int sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
   assert( ExprUseYSub(pExpr) );
   assert( sqlite3VdbeGetOp(v,pExpr->y.sub.iAddr-1)->opcode==OP_BeginSubrtn
           || pParse->nErr );
-  sqlite3VdbeAddOp3(v, OP_Return, pExpr->y.sub.regReturn, 0,
-                    pExpr->y.sub.iAddr-1);
+  sqlite3VdbeAddOp2(v, OP_Return, pExpr->y.sub.regReturn,
+                    pExpr->y.sub.iAddr);
   sqlite3VdbeChangeP1(v, pExpr->y.sub.iAddr-1, sqlite3VdbeCurrentAddr(v)-1);
   sqlite3ClearTempRegCache(pParse);
   return rReg;
