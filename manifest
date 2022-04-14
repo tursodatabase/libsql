@@ -1,5 +1,5 @@
-C Another\sinstance\sof\sindenting\sa\ssubroutine.
-D 2022-04-14T19:05:17.456
+C Record\sthe\sthree\sknown\sbig\sissues\swith\sthe\scurrent\sRIGHT\sJOIN\sdesign\sin\nthe\sjoin8\stest\smodule,\swith\stests\sthat\sdeliberately\sfail\sin\sorder\sto\sremind\nus\sto\sfix\sthe\sissues.
+D 2022-04-14T20:43:22.638
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1147,7 +1147,7 @@ F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
 F test/join5.test c4df54e2e204d7f1417bfbdd21ca324b4b07415c647595cc47798eacfddc96d3
 F test/join6.test f809c025fa253f9e150c0e9afd4cef8813257bceeb6f46e04041228c9403cc2c
 F test/join7.test e5c9b1b729d7e1d0b4195e99833e0ff0cf2d88e7fdd32b49af1044f4c76f72d9
-F test/join8.test 72248c33b44f8fc8614c739eff176fd8e18ffab04896b9ce6fd7933854dd7d25
+F test/join8.test 9731b16dbb4309a980ba4adcb4ec31277626230300f819296ffc753c564b2011
 F test/journal1.test c7b768041b7f494471531e17abc2f4f5ebf9e5096984f43ed17c4eb80ba34497
 F test/journal2.test 9dac6b4ba0ca79c3b21446bbae993a462c2397c4
 F test/journal3.test 7c3cf23ffc77db06601c1fcfc9743de8441cb77db9d1aa931863d94f5ffa140e
@@ -1947,8 +1947,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 647211e044a5856ceb6bf3e7b78e650fe7d81f8b7bf34568b99b346405ba520c
-R 2197645c7a941ac2357190e97207d106
+P 73f4036b04798660b30e540cbab69420078df9fb62a6a39944e078c36272f905
+R 2147cfd4b343bafdc07bef52bfee2ef0
 U drh
-Z e29940f759984b818be8f8538ce00e8e
+Z 5c1d0d9c07677bde5075ec99ede43a74
 # Remove this line to create a well-formed Fossil manifest.

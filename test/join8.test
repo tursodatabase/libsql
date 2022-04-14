@@ -21,4 +21,61 @@ do_execsql_test join8-10 {
   CREATE INDEX t2x ON t2(x);
   SELECT avg(DISTINCT b) FROM (SELECT * FROM t2 LEFT RIGHT JOIN t1 ON c);
 } {NULL}
+
+# Pending issue #1:
+# Row-value initialization subroutines must be called from with the
+# RIGHT JOIN body subroutine before the first use of any register containing
+# the results of that subroutine.  This seems dodgy.  Test case:
+#
+# CREATE TABLE t1(a INTEGER PRIMARY KEY AUTOINCREMENT,b,c,d,e,f,g,h,j,k,l,m,n,o,p,q,r,s);
+# CREATE INDEX t1x1 ON t1(g+h,j,k);
+# CREATE INDEX t1x2 ON t1(b);
+# INSERT INTO t1 DEFAULT VALUES;
+# SELECT a FROM (SELECT a FROM (SELECT a FROM (SELECT a FROM t1 NATURAL LEFT JOIN t1 WHERE (b, 2 ) IS ( SELECT 2 IN(2,2),2)) NATURAL LEFT FULL JOIN t1 WHERE ( rowid , 1 )<=(CASE 5 WHEN 619 THEN 841 ELSE 3374391096 END,0) ORDER BY a ASC) NATURAL LEFT JOIN t1 WHERE (b, 2 ) IS ( SELECT 3 IN(3,3),3)) NATURAL LEFT FULL JOIN t1 WHERE ( rowid , 1 )<=(CASE 5 WHEN 619 THEN 841 ELSE 3374391096 END,0) ORDER BY a ASC;
+#
+do_test join8-issue-1 {set rc "Issue-1 'row-value subroutine' unresolved"} {}
+
+# Pending issue #2:
+# Jump to addrHalt inside the RIGHT JOIN body subroutine bypasses the
+# OP_Return, resulting in a subroutine loop.  Test case:
+#
+# CREATE TABLE t1(a int, b int, c int);
+# INSERT INTO t1 VALUES(1,2,3),(4,5,6);
+# CREATE TABLE t2(d int, e int);
+# INSERT INTO t2 VALUES(3,333),(4,444);
+# CREATE TABLE t3(f int, g int);
+# PRAGMA automatic_index=off;
+# .eqp trace
+# SELECT * FROM t1 RIGHT JOIN t2 ON c=d JOIN t3 ON f=e;
+#
+do_test join8-issue-2 {set rc "Issue-2 'jump to addrHalt' unresolved"} {}
+
+# Pending issue #3:
+# USING does not work with RIGHT JOIN.
+# Test case:
+#
+# CREATE TABLE t4(id INTEGER PRIMARY KEY, x TEXT);
+# CREATE TABLE t5(id INTEGER PRIMARY KEY, y TEXT);
+# CREATE TABLE t6(id INTEGER PRIMARY KEY, z INT);
+# 
+# INSERT INTO t4(id,x) VALUES(2,'alice'),(4,'bob'),(6,'cindy'),(8,'dave');
+# INSERT INTO t5(id,y) VALUES(1,'red'),(2,'orange'),(3,'yellow'),(4,'green'),
+#                            (5,'blue');
+# INSERT INTO t6(id,z) VALUES(3,333),(4,444),(5,555),(0,1000),(9,999);
+# 
+# .mode box
+# SELECT *, t4.id, t5.id, t6.id
+#   FROM t4 NATURAL LEFT JOIN t5 NATURAL LEFT JOIN t6
+#  ORDER BY coalesce(t4.id,t5.id,t6.id);
+# 
+# SELECT *, t4.id, t5.id, t6.id
+#   FROM t4 NATURAL RIGHT JOIN t5 NATURAL RIGHT JOIN t6
+#  ORDER BY coalesce(t4.id,t5.id,t6.id);
+# 
+# SELECT *, t4.id, t5.id, t6.id
+#   FROM t4 NATURAL FULL JOIN t5 NATURAL FULL JOIN t6
+#  ORDER BY coalesce(t4.id,t5.id,t6.id);
+#
+do_test join8-issue-3 {set rc "Issue-3 'USING' unresolved"} {}
+
 finish_test
