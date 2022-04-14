@@ -6264,9 +6264,9 @@ case OP_IdxRowid: {           /* out2 */
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
-  assert( pC->eCurType==CURTYPE_BTREE );
+  assert( pC->eCurType==CURTYPE_BTREE || IsNullCursor(pC) );
   assert( pC->uc.pCursor!=0 );
-  assert( pC->isTable==0 );
+  assert( pC->isTable!=0 || IsNullCursor(pC) );
   assert( pC->deferredMoveto==0 );
   assert( !pC->nullRow || pOp->opcode==OP_IdxRowid );
 
