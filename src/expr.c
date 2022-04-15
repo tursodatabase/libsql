@@ -1698,22 +1698,16 @@ IdList *sqlite3IdListDup(sqlite3 *db, const IdList *p){
   int i;
   assert( db!=0 );
   if( p==0 ) return 0;
-  pNew = sqlite3DbMallocRawNN(db, sizeof(*pNew) );
+  assert( p->eU4!=EU4_EXPR );
+  pNew = sqlite3DbMallocRawNN(db, sizeof(*pNew)+(p->nId-1)*sizeof(p->a[0]) );
   if( pNew==0 ) return 0;
   pNew->nId = p->nId;
-  pNew->a = sqlite3DbMallocRawNN(db, p->nId*sizeof(p->a[0]) );
-  if( pNew->a==0 ){
-    sqlite3DbFreeNN(db, pNew);
-    return 0;
-  }
-  /* Note that because the size of the allocation for p->a[] is not
-  ** necessarily a power of two, sqlite3IdListAppend() may not be called
-  ** on the duplicate created by this function. */
+  pNew->eU4 = p->eU4;
   for(i=0; i<p->nId; i++){
     struct IdList_item *pNewItem = &pNew->a[i];
-    struct IdList_item *pOldItem = &p->a[i];
+    const struct IdList_item *pOldItem = &p->a[i];
     pNewItem->zName = sqlite3DbStrDup(db, pOldItem->zName);
-    pNewItem->idx = pOldItem->idx;
+    pNewItem->u4 = pOldItem->u4;
   }
   return pNew;
 }

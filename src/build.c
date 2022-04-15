@@ -4672,18 +4672,17 @@ IdList *sqlite3IdListAppend(Parse *pParse, IdList *pList, Token *pToken){
   if( pList==0 ){
     pList = sqlite3DbMallocZero(db, sizeof(IdList) );
     if( pList==0 ) return 0;
+  }else{
+    IdList *pNew;
+    pNew = sqlite3DbRealloc(db, pList,
+                 sizeof(IdList) + pList->nId*sizeof(pList->a));
+    if( pNew==0 ){
+      sqlite3IdListDelete(db, pList);
+      return 0;
+    }
+    pList = pNew;
   }
-  pList->a = sqlite3ArrayAllocate(
-      db,
-      pList->a,
-      sizeof(pList->a[0]),
-      &pList->nId,
-      &i
-  );
-  if( i<0 ){
-    sqlite3IdListDelete(db, pList);
-    return 0;
-  }
+  i = pList->nId++;
   pList->a[i].zName = sqlite3NameFromToken(db, pToken);
   if( IN_RENAME_OBJECT && pList->a[i].zName ){
     sqlite3RenameTokenMap(pParse, (void*)pList->a[i].zName, pToken);
@@ -4696,11 +4695,13 @@ IdList *sqlite3IdListAppend(Parse *pParse, IdList *pList, Token *pToken){
 */
 void sqlite3IdListDelete(sqlite3 *db, IdList *pList){
   int i;
+  int delExpr;
   if( pList==0 ) return;
+  delExpr = pList->eU4==EU4_EXPR;
   for(i=0; i<pList->nId; i++){
     sqlite3DbFree(db, pList->a[i].zName);
+    if( delExpr ) sqlite3ExprDelete(db, pList->a[i].u4.pExpr);
   }
-  sqlite3DbFree(db, pList->a);
   sqlite3DbFreeNN(db, pList);
 }
 

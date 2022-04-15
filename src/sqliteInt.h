@@ -3038,12 +3038,24 @@ struct ExprList {
 ** If "a" is the k-th column of table "t", then IdList.a[0].idx==k.
 */
 struct IdList {
+  int nId;         /* Number of identifiers on the list */
+  u8 eU4;          /* Which element of a.u4 is valid */
   struct IdList_item {
     char *zName;      /* Name of the identifier */
-    int idx;          /* Index in some Table.aCol[] of a column named zName */
-  } *a;
-  int nId;         /* Number of identifiers on the list */
+    union {
+      int idx;          /* Index in some Table.aCol[] of a column named zName */
+      Expr *pExpr;      /* Expr to implement a USING variable */
+    } u4;
+  } a[1];
 };
+
+/*
+** Allowed values for IdList.eType, which determines which value of the a.u4
+** is valid.
+*/
+#define EU4_NONE   0   /* Does not use IdList.a.u4 */
+#define EU4_IDX    1   /* Uses IdList.a.u4.idx */
+#define EU4_EXPR   2   /* Uses IdList.a.u4.pExpr */
 
 /*
 ** The SrcItem object represents a single term in the FROM clause of a query.
