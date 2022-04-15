@@ -663,15 +663,6 @@ static int lookupName(
     }
   }
 
-  /* Remove any substructure from pExpr
-  */
-  if( !ExprHasProperty(pExpr,(EP_TokenOnly|EP_Leaf)) ){
-    sqlite3ExprDelete(db, pExpr->pLeft);
-    pExpr->pLeft = 0;
-    sqlite3ExprDelete(db, pExpr->pRight);
-    pExpr->pRight = 0;
-  }
-
   /*
   ** cnt==0 means there was not match.
   ** cnt>1 means there were two or more matches.
@@ -727,10 +718,16 @@ static int lookupName(
   }
 
   pExpr->op = eNewExprOp;
-  ExprSetProperty(pExpr, EP_Leaf);
 lookupname_end:
   if( cnt==1 ){
     assert( pNC!=0 );
+    if( !ExprHasProperty(pExpr,(EP_TokenOnly|EP_Leaf)) ){
+      sqlite3ExprDelete(db, pExpr->pLeft);
+      pExpr->pLeft = 0;
+      sqlite3ExprDelete(db, pExpr->pRight);
+      pExpr->pRight = 0;
+      ExprSetProperty(pExpr, EP_Leaf);
+    }
 #ifndef SQLITE_OMIT_AUTHORIZATION
     if( pParse->db->xAuth
      && (pExpr->op==TK_COLUMN || pExpr->op==TK_TRIGGER)
