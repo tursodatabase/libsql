@@ -10984,7 +10984,8 @@ static void list_pov_entries(ShellExState *psx, ParamTableUse ptu, u8 bShort,
     sqlite3_free(zSql);
     if( !bShort ){
       int nBindings = 0, nScripts = 0;
-      zSql = smprintf("SELECT key, uses, iif(uses, value, quote(value))"
+      zSql = smprintf("SELECT key, uses,"
+                      " iif(typeof(value)='text', quote(value), value) as v"
                       " %z ORDER BY uses, key", zFromWhere);
       shell_check_oom(zSql);
       rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
@@ -10994,7 +10995,7 @@ static void list_pov_entries(ShellExState *psx, ParamTableUse ptu, u8 bShort,
         switch( ptux ){
         case PTU_Binding:
           if( nBindings++ == 0 ){
-            utf8_printf(out, "Binding Values:\n%-*s %s\n",
+            utf8_printf(out, "Bindings:\n%-*s %s\n",
                         len, "name", "value");
           }
           utf8_printf(out, "%-*s %s\n", len, sqlite3_column_text(pStmt,0),
@@ -11002,7 +11003,7 @@ static void list_pov_entries(ShellExState *psx, ParamTableUse ptu, u8 bShort,
           break;
         case PTU_Script:
           if( nScripts++ == 0 ){
-            utf8_printf(out, "Scripts\n%-*s %s\n", len, "name", "value");
+            utf8_printf(out, "Scripts:\n%-*s %s\n", len, "name", "value");
           }
           utf8_printf(out, "%-*s %s\n", len, sqlite3_column_text(pStmt,0),
                       sqlite3_column_text(pStmt,2));

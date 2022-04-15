@@ -23,9 +23,9 @@
 #   shell9-5.*: Ensure "dot" commands and SQL intermix ok.
 #   shell9-6.*: .x command operation and refusal
 #
-set testdir [file dirname $argv0]
-source $testdir/tester.tcl
-set CLI [test_find_cli]
+set testdir [file join [file dirname $argv0] ..]
+source [file join $testdir tester.tcl]
+set CLI [test_find_cli sqlite3x]
 db close
 forcedelete test.db test.db-journal test.db-wal
 forcedelete x.db xn.db
@@ -50,8 +50,8 @@ do_test shell9-1.3 {
   set res [catchcmd ":memory: -cmd .shxopts -cmd .quit" ""]
 } {0 {     name    value  "-shxopts set"
    --------  -----  ---------------
-    parsing    0    "-shxopts 0x01"
-   all_opts    0    "-shxopts 0x07"}}
+    parsing    1    "-shxopts 0x01"
+   all_opts    1    "-shxopts 0x07"}}
 
 #----------------------------------------------------------------------------
 # Test cases shell9-2.*: Basic "dot" command, cross-line token parsing
@@ -65,20 +65,20 @@ ab}}
 
 set cmds " .print \"l1\nl2\"\n .print \"a\\\nb\" \n# c\n  ## c"
 do_test shell9-2.2 {
-  set res [catchcmd ":memory: -shxopts 1" $cmds]
+  set res [catchcmd ":memory:" $cmds]
 } {0 {l1
 l2
 ab}}
 
 set cmds ".echo on\n.seeargs 'a'\\\n'b'\n#!"
 do_test shell9-2.3 {
-  set res [catchcmd ":memory: -shxopts 1" $cmds]
+  set res [catchcmd ":memory:" $cmds]
 } {0 {.seeargs 'a''b'
 a|b|}}
 
 set cmds ".echo on\n.seeargs a\\\nb\n#!"
 do_test shell9-2.4 {
-  set res [catchcmd ":memory: -shxopts 1" $cmds]
+  set res [catchcmd ":memory:" $cmds]
 } {0 {.seeargs ab
 ab|}}
 
@@ -94,14 +94,14 @@ q"}}
 # Test cases shell9-3.*: .parameter set options and types
 
 set cmds {
-.pa set -b b x'a5a5'
-.pa set -i ii 33-11
-.pa set -i ir 3.3-1.1
-.pa set -n ni 3-1
-.pa set -n nr 3.3-1.1
-.pa set -r ri 1
-.pa set -r rr 1.2
-.pa set -t t 123
+.pa set -b $b x'a5a5'
+.pa set -i $ii 33-11
+.pa set -i $ir 3.3-1.1
+.pa set -n $ni 3-1
+.pa set -n $nr 3.3-1.1
+.pa set -r $ri 1
+.pa set -r $rr 1.2
+.pa set -t $t 123
 .mode list
 select typeof(value) from temp.sqlite_parameters order by key;
 }
@@ -117,50 +117,50 @@ real
 text}}
 
 set cmds {
-.pa set expr 1 + 2 * 3
-.pa set text "'1 + 2*3'"
-.pa set -t ttext 1 + 2*3
+.pa set $expr 1 + 2 * 3
+.pa set $text "'1 + 2*3'"
+.pa set -t $ttext 1 + 2*3
 .pa list
 }
 do_test shell9-3.2 {
   set res [catchcmd ":memory:" $cmds]
-} {0 {Scripts
-name  value
-expr  7
-text  1 + 2*3
-ttext 1 + 2*3}}
+} {0 {Bindings:
+name   value
+$expr  7
+$text  '1 + 2*3'
+$ttext '1 + 2*3'}}
 
 set cmds {
-.pa set a "'a'"
-.pa set b "'b'"
-.pa set c "'c'"
-.pa unset
-.pa list
-.pa clear a
-.pa list
-.pa unset b
-.pa list
-.pa clear
-.pa list
-.pa set d "'e'"
-.pa set e "'e'"
-.pa unset d e
-.pa list
+.var set a a
+.var set b b
+.var set c c
+.var unset
+.var list
+.var clear a
+.var list
+.var unset b
+.var list
+.var clear
+.var list
+.var set d e
+.var set e e
+.var unset d e
+.var list
 }
 do_test shell9-3.3 {
   set res [catchcmd ":memory:" $cmds]
-} {0 {Scripts
+} {0 {Scripts:
 name value
-a    a
-b    b
-c    c
-Scripts
+a    'a'
+b    'b'
+c    'c'
+Scripts:
 name value
-b    b
-c    c
-Scripts
+b    'b'
+c    'c'
+Scripts:
 name value
-c    c}}
+c    'c'}}
 
 if {$::tcl_platform(platform)=="unix"} {
   proc set_ed {sayWhat} {
@@ -179,23 +179,29 @@ if {$::tcl_platform(platform)=="unix"} {
 if {[set_ed @name]} {
   set cmds {
 .pa set @name Fido
-.pa edit -t dog
-.x dog
+.var edit -t dog
+.var set mutt 'SELECT @name;'
+.x dog mutt
   }
   do_test shell9-3.4 {
-    set res [catchcmd ":memory: -quiet 1 -shxopts 1 -interactive" $cmds]
-  } {0 {Fido
-}}
+    set res [catchcmd ":memory: -quiet 1 -interactive" $cmds]
+    list [lindex $res 0] [string trimright [lindex $res 1]]
+  } {0 {.pa set @name Fido
+.var edit -t dog
+.var set mutt 'SELECT @name;'
+.x dog mutt
+Fido
+Fido}}
 }
 
 #----------------------------------------------------------------------------
-# Test cases shell9-4.*: .parameter save/load operation
+# Test cases shell9-4.*: .parameter and .vars save/load operation
 
 set cmds {
-  .pa set -t x '.print Ex'
+  .pa set -t $t 'tt'
   .pa set -i $n 7
   .pa save xn.db
-  .pa save x.db x
+  .pa save x.db $x
   .pa clear
   .pa load xn.db
   .pa list
@@ -207,19 +213,39 @@ set cmds {
   .pa list
 }
 do_test shell9-4.1 {
-  set res [catchcmd ":memory: -shxopts 1" $cmds]
-} {0 {Binding Values:
+  set res [catchcmd ":memory:" $cmds]
+} {0 {Bindings:
 name value
 $n   7
-Scripts
-name value
-x    .print Ex
-Scripts
-name value
-x    .print Ex
-Binding Values:
+$t   'tt'
+Bindings:
 name value
 $n   7}}
+
+set cmds {
+  .var set t '.print t'
+  .var set n 'select 7;'
+  .var save xn.db
+  .var save x.db x
+  .var clear
+  .var load xn.db
+  .var list
+  .var clear
+  .var load x.db
+  .var list
+  .var clear
+  .var load xn.db n
+  .var list
+}
+do_test shell9-4.2 {
+  set res [catchcmd ":memory:" $cmds]
+} {0 {Scripts:
+name value
+n    'select 7;'
+t    '.print t'
+Scripts:
+name value
+n    'select 7;'}}
 
 forcedelete x.db xn.db
 
@@ -227,10 +253,10 @@ forcedelete x.db xn.db
 # Test cases shell9-5.*: Ensure "dot" commands and SQL intermix ok.
 
 set cmds {
- .pa set -t mixed "
+ .vars set mixed "
  .print Hi.
  select 'Hi.';
- .print 'Good\
+ .print 'Good\\
  Bye.'
  select 'Good'||
  ' Bye.';
@@ -238,7 +264,7 @@ set cmds {
  .x mixed
 }
 do_test shell9-5.1 {
-  set res [catchcmd ":memory: -shxopts 1" $cmds]
+  set res [catchcmd ":memory:" $cmds]
 } {0 {Hi.
 Hi.
 Good Bye.
@@ -247,11 +273,14 @@ Good Bye.}}
 #----------------------------------------------------------------------------
 # Test cases shell9-6.*: .x command operation and refusal
 set cmds {
- .pa set -t $v '.print Ok'
+ .pa set -t $v '.print Nada'
+ .var set v '.print Ok'
+ .x v
  .x $v
 }
 do_test shell9-6.1 {
-  set res [catchcmd ":memory: -bail -shxopts 1" $cmds]
-} {1 {Skipping badly named $v. Run ".help x"}}
+  set res [catchcmd ":memory: -bail" $cmds]
+} {1 {Ok
+Skipping badly named $v. Run ".help x"}}
 
 finish_test

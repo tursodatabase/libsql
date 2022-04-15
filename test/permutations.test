@@ -17,7 +17,7 @@ db close
 #-------------------------------------------------------------------------
 # test_suite NAME OPTIONS
 #
-# where available options are:  
+# where available options are:
 #
 #       -description TITLE                  (default "")
 #       -initialize  SCRIPT                 (default "")
@@ -191,6 +191,12 @@ test_suite "shell" -prefix "" -description {
   Run tests of the command-line shell
 } -files [
   test_set [glob $testdir/shell*.test]
+]
+
+test_suite "shellext" -prefix "" -description {
+  Run tests of the extensible command-line shell and extensions
+} -files [
+  test_set [glob $testdir/shell*.test $testdir/shell_x/*.test]
 ]
 
 test_suite "extraquick" -prefix "" -description {

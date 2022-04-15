@@ -52,12 +52,18 @@ TCC += @TCL_INCLUDE_SPEC@
 # The library that programs using TCL must link against.
 #
 LIBTCL = @TCL_LIB_SPEC@
+# The preprocessing options that are needed for images using the TCL library.
+INCTCL = @TCL_INCLUDE_SPEC@
 
 # TCCX is the C Compile and options for use in building shell extensions
 # that will run on the target platform. It relies on no in-tree includes,
 # using only pre-glommed source/header files in the current directory.
-TCCX = ${CC} ${CFLAGS} -fPIC -shared -I. @TCL_INCLUDE_SPEC@
+TCCX = ${CC} ${CFLAGS} -fPIC -shared -I.
 TCCX += @EXTENSION_DEBUG@
+
+# TCXX is the C++ compile for building a shell extension from a C++ source.
+TCXX = ${CXX} ${CFLAGS} -fPIC -shared -I.
+TCXX += @EXTENSION_DEBUG@
 
 # Compiler options needed for programs that use the readline() library.
 #
@@ -599,6 +605,11 @@ TESTPROGS = \
   sqldiff$(TEXE) \
   dbhash$(TEXE) \
   sqltclsh$(TEXE)
+
+TESTPROGS_SHX = \
+  testfixture$(TEXE) \
+  sqlite3x$(TEXE) \
+  shell_extensions
 
 # Databases containing fuzzer test cases
 #
@@ -1250,6 +1261,19 @@ shx_link.h:	$(SHX_LINK_SRC)
 	$(MKSHELL_TOOL) -short-head -header-gen \
                 $(TOP)/src/shext_linkage.h > $@
 
+# Rules to build shell extensions used for testing extensible shell
+
+shell_extensions:	tcl_shell_extension \
+  test_shellext_cpp$(SHLIB_SUFFIX)  test_shellext_c$(SHLIB_SUFFIX)
+
+test_shellext_cpp$(SHLIB_SUFFIX):	$(TOP)/src/test_shellext_cpp.cpp \
+  $(TOP)/shx_link.h
+	$(TCXX) $(TOP)/src/test_shellext_cpp.cpp -o $@
+
+test_shellext_c$(SHLIB_SUFFIX):	$(TOP)/src/test_shellext_c.c \
+  $(TOP)/shx_link.h
+	$(TCCX) $(TOP)/src/test_shellext_c.c -o $@
+
 # Rules to build the TCL shell extension (tclshext.{so,dll,dylib})
 
 tcl_shell_extension:	tclshext$(SHLIB_SUFFIX)
@@ -1271,7 +1295,8 @@ tclshext.c:	$(TOP)/ext/misc/tclshext.c.in $(TOP)/src/tclsqlite.c
 	$(MKSHELL_TOOL) $(TOP)/ext/misc/tclshext.c.in > $@
 
 tclshext$(SHLIB_SUFFIX): tclshext.c shx_link.h
-	$(TCCX) $(TCLEXT_OPTS) tclshext.c -o $@ $(TCL_LIBS) $(TCLEXT_LDOPTS)
+	$(TCCX) $(INCTCL) $(TCLEXT_OPTS) tclshext.c \
+ -o $@ $(TCL_LIBS) $(TCLEXT_LDOPTS)
 
 # Rules to build the 'testfixture' application.
 #
@@ -1356,8 +1381,11 @@ valgrindtest:	$(TESTPROGS) valgrindfuzz
 smoketest:	$(TESTPROGS) fuzzcheck$(TEXE)
 	./testfixture$(TEXE) $(TOP)/test/main.test $(TESTOPTS)
 
+shellxtest: $(TESTPROGS_SHX)
+	./testfixture$(TEXE) $(TOP)/test/shell_x/shell*.test
+
 shelltest: $(TESTPROGS)
-	./testfixture$(TEXT) $(TOP)/test/permutations.test shell
+	./testfixture$(TEXE) $(TOP)/test/permutations.test shell
 
 sqlite3_analyzer.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/spaceanal.tcl $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqlite3_analyzer.c.in
 	$(TCLSH_CMD) $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqlite3_analyzer.c.in >sqlite3_analyzer.c

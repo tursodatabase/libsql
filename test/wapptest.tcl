@@ -8,7 +8,8 @@ source [file join [file dirname [info script]] wapp.tcl]
 # Variables set by the "control" form:
 #
 #   G(platform) - User selected platform.
-#   G(test)     - Set to "Normal", "Veryquick", "Smoketest" or "Build-Only".
+#   G(test)     - Set to "Normal", "Veryquick", "Smoketest", "ShellExt"
+#                 or "Build-Only".
 #   G(keep)     - Boolean. True to delete no files after each test.
 #   G(msvc)     - Boolean. True to use MSVC as the compiler.
 #   G(tcl)      - Use Tcl from this directory for builds.
@@ -96,15 +97,15 @@ proc generate_fossil_info {} {
   }
 
   if {[string trim $r2]!=""} {
-    wapp-trim { 
-      <br><span class=warning> 
+    wapp-trim {
+      <br><span class=warning>
       WARNING: Uncommitted changes in checkout
       </span>
     }
   }
 }
 
-# If the application is in "config" state, set the contents of the 
+# If the application is in "config" state, set the contents of the
 # ::G(test_array) global to reflect the tests that will be run. If the
 # app is in some other state ("running" or "stopped"), this command
 # is a no-op.
@@ -120,7 +121,7 @@ proc set_test_array {} {
       # If using MSVC, do not run sanitize or valgrind tests. Or the
       # checksymbols test.
       if {$G(msvc) && (
-          "Sanitize" == $config 
+          "Sanitize" == $config
        || "checksymbols" in $target
        || "valgrindtest" in $target
       )} {
@@ -132,6 +133,7 @@ proc set_test_array {} {
       if {$target!="checksymbols" && $G(platform)!="Failure-Detection"} {
         switch -- $G(test) {
           Veryquick { set target quicktest }
+          ShellExt { set target shellext }
           Smoketest { set target smoketest }
           Build-Only {
             set target testfixture
@@ -466,7 +468,7 @@ proc generate_main_page {{extra {}}} {
   generate_select_widget Platform control_platform $lOpt $G(platform)
 
   # Build the "test" select widget. 
-  set lOpt [list Normal Veryquick Smoketest Build-Only] 
+  set lOpt [list Normal Veryquick Smoketest ShellExt Build-Only] 
   generate_select_widget Test control_test $lOpt $G(test)
 
   # Build the "jobs" select widget. Options are 1 to 8.
@@ -846,6 +848,7 @@ for {set i 0} {$i < [llength $lTestArg]} {incr i} {
 
     -smoketest { set G(test) Smoketest }
     -veryquick { set G(test) Veryquick }
+    -shellext { set G(test) ShellExt }
     -buildonly { set G(test) Build-Only }
     -jobs {
       if {$i==[llength $lTestArg]-1} { wapptest_usage }

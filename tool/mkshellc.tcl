@@ -116,8 +116,8 @@ set ::inFiles {}
 set ::topInfile "?"
 set ::presumedOutfile "?"
 set ::targetProgram "?"
-set ::defaultInfile "src/shell.c.in"
-array set ::incTypes [list "*" "$::topDir/$::defaultInfile"]
+set ::defaultInfile "$::topDir/src/shell.c.in"
+array set ::incTypes [list "*" "$::defaultInfile"]
 array set ::ignoringCommands [list]
 
 # Shift 0'th element out of named list and return it, modifying the named list.

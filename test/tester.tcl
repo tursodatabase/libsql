@@ -2452,7 +2452,7 @@ proc test_restore_config_pagecache {} {
 
   sqlite3_shutdown
   eval sqlite3_config_pagecache $::old_pagecache_config
-  unset ::old_pagecache_config 
+  unset ::old_pagecache_config
   sqlite3_initialize
   autoinstall_test_functions
   sqlite3 db test.db
@@ -2480,8 +2480,8 @@ proc test_find_binary {nm} {
 # the tests in shell[1-5].test. If no such executable can be found, invoke
 # [finish_test ; return] in the callers context.
 #
-proc test_find_cli {} {
-  set prog [test_find_binary sqlite3]
+proc test_find_cli {{cli_name {sqlite3}}} {
+  set prog [test_find_binary $cli_name]
   if {$prog==""} { return -code return }
   return $prog
 }

@@ -11,13 +11,13 @@
 #
 # This file implements a program that produces scripts (either shell scripts
 # or batch files) to implement a particular test that is part of the SQLite
-# release testing procedure. For example, to run veryquick.test with a 
+# release testing procedure. For example, to run veryquick.test with a
 # specified set of -D compiler switches.
 #
 # A "configuration" is a set of options passed to [./configure] and [make]
 # to build the SQLite library in a particular fashion. A "platform" is a
 # list of tests; most platforms are named after the hardware/OS platform
-# that the tests will be run on as part of the release procedure. Each 
+# that the tests will be run on as part of the release procedure. Each
 # "test" is a combination of a configuration and a makefile target (e.g.
 # "fulltest"). The program may be invoked as follows:
 #
@@ -462,7 +462,7 @@ proc main_script {args} {
   #   3. If the parameter begins with "-D", add it to $opts.
   #
   #   4. If the parameter begins with "--" add it to $configOpts. Unless
-  #      this command is preparing a script for MSVC - then add an 
+  #      this command is preparing a script for MSVC - then add an
   #      equivalent to $makeOpts or $opts.
   #
   #   5. If the parameter begins with "-" add it to $cflags. If in MSVC
@@ -499,7 +499,7 @@ proc main_script {args} {
           }
           --enable-fts5 {
             lappend opts -DSQLITE_ENABLE_FTS5
-          } 
+          }
           --enable-shared {
             lappend makeOpts USE_CRT_DLL=1 DYNAMIC_SHELL=1
           }
@@ -551,8 +551,8 @@ proc main_script {args} {
     puts "\$SRCDIR/configure --with-tcl=\$TCL $configOpts"
     puts {}
     puts {OPTS="      -DSQLITE_NO_SYNC=1"}
-    foreach o $opts { 
-      puts "OPTS=\"\$OPTS $o\"" 
+    foreach o $opts {
+      puts "OPTS=\"\$OPTS $o\""
     }
     puts {}
     puts "CFLAGS=\"$cflags\""
