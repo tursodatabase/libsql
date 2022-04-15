@@ -3090,6 +3090,7 @@ struct SrcItem {
     unsigned isCte :1;         /* This is a CTE */
     unsigned notCte :1;        /* This item may not match a CTE */
     unsigned isUsing :1;       /* u3.pUsing is valid */
+    unsigned isSynthUsing :1;  /* u3.pUsing is synthensized from NATURAL */
   } fg;
   int iCursor;      /* The VDBE cursor number used to access this table */
   union {
