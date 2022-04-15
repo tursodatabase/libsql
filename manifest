@@ -1,5 +1,5 @@
-C Record\sthe\sthree\sknown\sbig\sissues\swith\sthe\scurrent\sRIGHT\sJOIN\sdesign\sin\nthe\sjoin8\stest\smodule,\swith\stests\sthat\sdeliberately\sfail\sin\sorder\sto\sremind\nus\sto\sfix\sthe\sissues.
-D 2022-04-14T20:43:22.638
+C Add\sthe\s"3"\sin\sthe\sname\sof\sthe\ssqlite3ProcessJoin()\sfunction.
+D 2022-04-15T15:15:01.170
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -552,7 +552,7 @@ F src/printf.c 05d8dfd2018bc4fc3ddb8b37eb97ccef7abf985643fa1caebdcf2916ca90fa32
 F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c 7110fc3b5a4dec5d11559141c1906c4a125349fb602f541b05db3a3d448d4b95
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c d48e4ddfd0ff34caca8650a668eb3c9ba75bab21264026f0e9a9c2271334090c
+F src/select.c b785c8d0dc9b00d3ddac164f57d586f893c259a5ccc8c18284fec06451109278
 F src/shell.c.in eb7f10d5e2c47bd014d92ec5db1def21fcc1ed56ffaaa4ee715b6c37c370b47f
 F src/sqlite.h.in 2a35f62185eb5e7ecc64a2f68442b538ce9be74f80f28a00abc24837edcf1c17
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1947,8 +1947,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 73f4036b04798660b30e540cbab69420078df9fb62a6a39944e078c36272f905
-R 2147cfd4b343bafdc07bef52bfee2ef0
+P 2c4ee723f4d0591d09776adfb82246bfa89153ab390b8b3f1878d1cdc43d68c8
+R 0c69b944fdb1ef8478f9b21563a2b465
 U drh
-Z 5c1d0d9c07677bde5075ec99ede43a74
+Z 4eff36418fdc185b6e45146c045232b8
 # Remove this line to create a well-formed Fossil manifest.

@@ -493,7 +493,7 @@ static void unsetJoinExpr(Expr *p, int iTable){
 **
 ** This routine returns the number of errors encountered.
 */
-static int sqliteProcessJoin(Parse *pParse, Select *p){
+static int sqlite3ProcessJoin(Parse *pParse, Select *p){
   SrcList *pSrc;                  /* All tables in the FROM clause */
   int i, j;                       /* Loop counters */
   SrcItem *pLeft;                 /* Left table being joined */
@@ -5667,7 +5667,7 @@ static int selectExpander(Walker *pWalker, Select *p){
   /* Process NATURAL keywords, and ON and USING clauses of joins.
   */
   assert( db->mallocFailed==0 || pParse->nErr!=0 );
-  if( pParse->nErr || sqliteProcessJoin(pParse, p) ){
+  if( pParse->nErr || sqlite3ProcessJoin(pParse, p) ){
     return WRC_Abort;
   }
 
