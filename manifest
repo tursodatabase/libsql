@@ -1,5 +1,5 @@
-C Enhance\sthe\sIdList\sobject\sto\sexist\sin\sa\ssingle\smemory\sallocation\s(rather\sthan\na\sseparate\sallocate\sfor\sthe\sbase\sobject\sand\sthe\sarray\sof\sIDs).\s\sAlso\spermit\nan\sIdList\sobject\sto\sstore\san\sExpr\spointer\stogether\swith\seach\sname.
-D 2022-04-15T15:47:14.312
+C The\ssqlite3ProcessJoin()\sroutine\sconverts\sa\sNATURAL\sJOIN\sinto\sa\sJOIN\sUSING\sso\nthat\shenceforth\sthe\sNATURAL\skeyword\scan\sbe\signored.
+D 2022-04-15T17:08:40.527
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -550,9 +550,9 @@ F src/pragma.h e690a356c18e98414d2e870ea791c1be1545a714ba623719deb63f7f226d8bb7
 F src/prepare.c fd940149c691684e7c1073c3787a7170e44852b02d1275d2e30a5b58e89cfcaf
 F src/printf.c 05d8dfd2018bc4fc3ddb8b37eb97ccef7abf985643fa1caebdcf2916ca90fa32
 F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
-F src/resolve.c 7110fc3b5a4dec5d11559141c1906c4a125349fb602f541b05db3a3d448d4b95
+F src/resolve.c 2d0f29eadbc87154399b2794490a5bfd104daf818d76e59845ab5afb9bf66824
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c b785c8d0dc9b00d3ddac164f57d586f893c259a5ccc8c18284fec06451109278
+F src/select.c 820941d6c857e2cfdb2e56565bacd2b31b4adacc468550d44f8f9089888405e2
 F src/shell.c.in eb7f10d5e2c47bd014d92ec5db1def21fcc1ed56ffaaa4ee715b6c37c370b47f
 F src/sqlite.h.in 2a35f62185eb5e7ecc64a2f68442b538ce9be74f80f28a00abc24837edcf1c17
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1947,8 +1947,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b925f72b6f679c61b0d6be16fabe64dc7605550b7bd86f35c586dcecd8217673
-R b11d83f7cd569b4ace13c0dab33f163b
+P 40f3c95871e6f40f287ef2756abafb8fc56dffdd0af69436e5c7d8e95022d94e
+R a4dbe6f876199f457625a48f56e40a96
 U drh
-Z a062e1ee126eb5e46a77952af86658af
+Z 67a6ae70c20850bccd3ed1b730f595c0
 # Remove this line to create a well-formed Fossil manifest.

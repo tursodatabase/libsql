@@ -344,7 +344,6 @@ static int lookupName(
             ** USING clause, then skip this match.
             */
             if( cnt==1 ){
-              if( pItem->fg.jointype & JT_NATURAL ) continue;
               if( pItem->fg.isUsing
                && nameInUsingClause(pItem->u3.pUsing, zCol)
               ){

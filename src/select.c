@@ -320,8 +320,11 @@ int sqlite3ColumnIndex(Table *pTab, const char *zCol){
 }
 
 /*
-** Search the first N tables in pSrc, from left to right, looking for a
-** table that has a column named zCol.  
+** Search the first N tables in pSrc, looking for a
+** table that has a column named zCol.
+**
+** Search left-to-right if bRightmost is false.  Search right-to-left
+** if bRightmost is true.
 **
 ** When found, set *piTab and *piCol to the table index and column index
 ** of the matching column and return TRUE.
@@ -334,11 +337,15 @@ static int tableAndColumnIndex(
   const char *zCol,    /* Name of the column we are looking for */
   int *piTab,          /* Write index of pSrc->a[] here */
   int *piCol,          /* Write index of pSrc->a[*piTab].pTab->aCol[] here */
-  int bIgnoreHidden    /* True to ignore hidden columns */
+  int bIgnoreHidden,   /* True to ignore hidden columns */
+  int bRightmost       /* Return the right-most match */
 ){
   int i;               /* For looping over tables in pSrc */
   int iCol;            /* Index of column matching zCol */
+  int rc = 0;
 
+  assert( N<=pSrc->nSrc );
+  
   assert( (piTab==0)==(piCol==0) );  /* Both or neither are NULL */
   for(i=0; i<N; i++){
     iCol = sqlite3ColumnIndex(pSrc->a[i].pTab, zCol);
@@ -349,10 +356,11 @@ static int tableAndColumnIndex(
         *piTab = i;
         *piCol = iCol;
       }
-      return 1;
+      rc = 1;
+      if( !bRightmost ) break;
     }
   }
-  return 0;
+  return rc;
 }
 
 /*
@@ -509,10 +517,11 @@ static int sqlite3ProcessJoin(Parse *pParse, Select *p){
     if( NEVER(pLeft->pTab==0 || pRightTab==0) ) continue;
     joinType = (pRight->fg.jointype & JT_OUTER)!=0 ? EP_FromJoin : EP_InnerJoin;
 
-    /* When the NATURAL keyword is present, add WHERE clause terms for
-    ** every column that the two tables have in common.
+    /* If this is a NATURAL join, synthesize an approprate USING clause
+    ** to specify which columns should be joined.
     */
     if( pRight->fg.jointype & JT_NATURAL ){
+      IdList *pUsing = 0;
       if( pRight->fg.isUsing || pRight->u3.pOn ){
         sqlite3ErrorMsg(pParse, "a NATURAL join may not have "
            "an ON or USING clause", 0);
@@ -520,15 +529,19 @@ static int sqlite3ProcessJoin(Parse *pParse, Select *p){
       }
       for(j=0; j<pRightTab->nCol; j++){
         char *zName;   /* Name of column in the right table */
-        int iLeft;     /* Matching left table */
-        int iLeftCol;  /* Matching column in the left table */
 
         if( IsHiddenColumn(&pRightTab->aCol[j]) ) continue;
         zName = pRightTab->aCol[j].zCnName;
-        if( tableAndColumnIndex(pSrc, i+1, zName, &iLeft, &iLeftCol, 1) ){
-          addWhereTerm(pParse, pSrc, iLeft, iLeftCol, i+1, j,
-                joinType, &p->pWhere);
+        if( tableAndColumnIndex(pSrc, i+1, zName, 0, 0, 1, 0) ){
+          Token x;
+          x.z = zName;
+          x.n = sqlite3Strlen30(zName);
+          pUsing = sqlite3IdListAppend(pParse, pUsing, &x);
         }
+      }
+      if( pUsing ){
+        pRight->fg.isUsing = 1;
+        pRight->u3.pUsing = pUsing;
       }
     }
 
@@ -541,6 +554,7 @@ static int sqlite3ProcessJoin(Parse *pParse, Select *p){
     */
     if( pRight->fg.isUsing ){
       IdList *pList = pRight->u3.pUsing;
+      int bRight = (pRight->fg.jointype & JT_RIGHT)!=0;
       assert( pList!=0 );
       for(j=0; j<pList->nId; j++){
         char *zName;     /* Name of the term in the USING clause */
@@ -551,7 +565,7 @@ static int sqlite3ProcessJoin(Parse *pParse, Select *p){
         zName = pList->a[j].zName;
         iRightCol = sqlite3ColumnIndex(pRightTab, zName);
         if( iRightCol<0
-         || !tableAndColumnIndex(pSrc, i+1, zName, &iLeft, &iLeftCol, 0)
+         || !tableAndColumnIndex(pSrc, i+1, zName, &iLeft, &iLeftCol,0,bRight)
         ){
           sqlite3ErrorMsg(pParse, "cannot join using column %s - column "
             "not present in both tables", zName);
@@ -5772,13 +5786,6 @@ static int selectExpander(Walker *pWalker, Select *p){
             tableSeen = 1;
 
             if( i>0 && zTName==0 ){
-              if( (pFrom->fg.jointype & JT_NATURAL)!=0
-                && tableAndColumnIndex(pTabList, i, zName, 0, 0, 1)
-              ){
-                /* In a NATURAL join, omit the join columns from the 
-                ** table to the right of the join */
-                continue;
-              }
               if( pFrom->fg.isUsing
                && sqlite3IdListIndex(pFrom->u3.pUsing, zName)>=0
               ){
