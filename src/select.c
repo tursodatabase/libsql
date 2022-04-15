@@ -541,6 +541,7 @@ static int sqlite3ProcessJoin(Parse *pParse, Select *p){
       }
       if( pUsing ){
         pRight->fg.isUsing = 1;
+        pRight->fg.isSynthUsing = 1;
         pRight->u3.pUsing = pUsing;
       }
     }
@@ -565,7 +566,8 @@ static int sqlite3ProcessJoin(Parse *pParse, Select *p){
         zName = pList->a[j].zName;
         iRightCol = sqlite3ColumnIndex(pRightTab, zName);
         if( iRightCol<0
-         || !tableAndColumnIndex(pSrc, i+1, zName, &iLeft, &iLeftCol,0,bRight)
+         || !tableAndColumnIndex(pSrc, i+1, zName, &iLeft, &iLeftCol,
+                                 pRight->fg.isSynthUsing, bRight)
         ){
           sqlite3ErrorMsg(pParse, "cannot join using column %s - column "
             "not present in both tables", zName);
@@ -5527,10 +5529,34 @@ int sqlite3ExpandSubquery(Parse *pParse, SrcItem *pFrom){
 #else
   pTab->tabFlags |= TF_Ephemeral;  /* Legacy compatibility mode */
 #endif
-
-
   return pParse->nErr ? SQLITE_ERROR : SQLITE_OK;
 }
+
+
+/*
+** Check the N SrcItem objects to the right of pBase.  (N might be zero!)
+** If any of those SrcItem objects have a USING clause containing zName
+** then return true.
+**
+** If N is zero, or none of the N SrcItem objects to the right of pBase
+** contains a USING clause, or if none of the USING clauses contain zName,
+** then return false.
+*/
+static int inAnyUsingClause(
+  const char *zName, /* Name we are looking for */
+  SrcItem *pBase,    /* The base SrcItem.  Looking at pBase[1] and following */
+  int N              /* How many SrcItems to check */
+){
+  while( N>0 ){
+    N--;
+    pBase++;
+    if( pBase->fg.isUsing==0 ) continue;
+    if( pBase->u3.pUsing==0 ) continue;
+    if( sqlite3IdListIndex(pBase->u3.pUsing, zName)>=0 ) return 1;
+  }
+  return 0;
+}
+
 
 /*
 ** This routine is a Walker callback for "expanding" a SELECT statement.
@@ -5795,19 +5821,22 @@ static int selectExpander(Walker *pWalker, Select *p){
               }
             }
             pRight = sqlite3Expr(db, TK_ID, zName);
-            zColname = zName;
-            zToFree = 0;
-            if( longNames || pTabList->nSrc>1 ){
+            if( longNames ){
+              zColname = sqlite3MPrintf(db, "%s.%s", zTabName, zName);
+              zToFree = zColname;
+            }else{
+              zColname = zName;
+              zToFree = 0;
+            }
+            if( pTabList->nSrc>1
+             && !inAnyUsingClause(zName,pFrom,pTabList->nSrc-i-1)
+            ){
               Expr *pLeft;
               pLeft = sqlite3Expr(db, TK_ID, zTabName);
               pExpr = sqlite3PExpr(pParse, TK_DOT, pLeft, pRight);
               if( zSchemaName ){
                 pLeft = sqlite3Expr(db, TK_ID, zSchemaName);
                 pExpr = sqlite3PExpr(pParse, TK_DOT, pLeft, pExpr);
-              }
-              if( longNames ){
-                zColname = sqlite3MPrintf(db, "%s.%s", zTabName, zName);
-                zToFree = zColname;
               }
             }else{
               pExpr = pRight;
