@@ -28,6 +28,18 @@ foreach {id schema} {
                                (5,'blue');
     INSERT INTO t6(id,z) VALUES(3,333),(4,444),(5,555),(0,1000),(9,999);
   }
+  2 {
+    CREATE TABLE t3(id INT PRIMARY KEY, w TEXT) WITHOUT ROWID;
+    CREATE TABLE t4(id INT PRIMARY KEY, x TEXT) WITHOUT ROWID;
+    CREATE TABLE t5(id INT PRIMARY KEY, y TEXT) WITHOUT ROWID;
+    CREATE TABLE t6(id INT PRIMARY KEY, z INT) WITHOUT ROWID;
+    CREATE VIEW dual(dummy) AS VALUES('x');
+    INSERT INTO t3(id,w) VALUES(2,'two'),(3,'three'),(6,'six'),(7,'seven');
+    INSERT INTO t4(id,x) VALUES(2,'alice'),(4,'bob'),(6,'cindy'),(8,'dave');
+    INSERT INTO t5(id,y) VALUES(1,'red'),(2,'orange'),(3,'yellow'),(4,'green'),
+                               (5,'blue');
+    INSERT INTO t6(id,z) VALUES(3,333),(4,444),(5,555),(0,1000),(9,999);
+  }
 } {
   reset_db
   db nullvalue -
@@ -160,6 +172,110 @@ foreach {id schema} {
     6    cindy  -       -     6   -   - 
     8    dave   -       -     8   -   - 
     9    -      -       999   -   -   9 
+  }
+  do_execsql_test join9-$id.403 {
+    SELECT id, x, y, z, t4.id, t5.id, t6.id
+      FROM t5 NATURAL FULL JOIN t4 NATURAL FULL JOIN t6
+     ORDER BY id;
+  } {
+    0    -      -       1000  -   -   0 
+    1    -      red     -     -   1   - 
+    2    alice  orange  -     2   2   - 
+    3    -      yellow  333   -   3   3 
+    4    bob    green   444   4   4   4 
+    5    -      blue    555   -   5   5 
+    6    cindy  -       -     6   -   - 
+    8    dave   -       -     8   -   - 
+    9    -      -       999   -   -   9 
+  }
+  do_execsql_test join9-$id.404 {
+    SELECT id, x, y, z, t4.id, t5.id, t6.id
+      FROM t5 NATURAL FULL JOIN t6 NATURAL FULL JOIN t4
+     ORDER BY id;
+  } {
+    0    -      -       1000  -   -   0 
+    1    -      red     -     -   1   - 
+    2    alice  orange  -     2   2   - 
+    3    -      yellow  333   -   3   3 
+    4    bob    green   444   4   4   4 
+    5    -      blue    555   -   5   5 
+    6    cindy  -       -     6   -   - 
+    8    dave   -       -     8   -   - 
+    9    -      -       999   -   -   9 
+  }
+  do_execsql_test join9-$id.405 {
+    SELECT id, x, y, z, t4.id, t5.id, t6.id
+      FROM t6 NATURAL FULL JOIN t4 NATURAL FULL JOIN t5
+     ORDER BY id;
+  } {
+    0    -      -       1000  -   -   0 
+    1    -      red     -     -   1   - 
+    2    alice  orange  -     2   2   - 
+    3    -      yellow  333   -   3   3 
+    4    bob    green   444   4   4   4 
+    5    -      blue    555   -   5   5 
+    6    cindy  -       -     6   -   - 
+    8    dave   -       -     8   -   - 
+    9    -      -       999   -   -   9 
+  }
+  do_execsql_test join9-$id.406 {
+    SELECT id, x, y, z, t4.id, t5.id, t6.id
+      FROM t6 NATURAL FULL JOIN t5 NATURAL FULL JOIN t4
+     ORDER BY id;
+  } {
+    0    -      -       1000  -   -   0 
+    1    -      red     -     -   1   - 
+    2    alice  orange  -     2   2   - 
+    3    -      yellow  333   -   3   3 
+    4    bob    green   444   4   4   4 
+    5    -      blue    555   -   5   5 
+    6    cindy  -       -     6   -   - 
+    8    dave   -       -     8   -   - 
+    9    -      -       999   -   -   9 
+  }
+
+  # Verified by PG-14 using case 1
+  do_execsql_test join9-$id.500 {
+    SELECT id, w, x, y, z
+      FROM t3 FULL JOIN t4 USING(id)
+              NATURAL FULL JOIN t5
+              FULL JOIN t6 USING(id)
+      ORDER BY 1;
+  } {
+    0   -      -      -       1000
+    1   -      -      red     -   
+    2   two    alice  orange  -   
+    3   three  -      yellow  333 
+    4   -      bob    green   444 
+    5   -      -      blue    555 
+    6   six    cindy  -       -   
+    7   seven  -      -       -   
+    8   -      dave   -       -   
+    9   -      -      -       999 
+  }
+
+  # Verified by PG-14 using case 1
+  do_execsql_test join9-$id.600 {
+    SELECT id, w, x, y, z
+       FROM t3 JOIN dual ON true
+               FULL JOIN t4 USING(id)
+               JOIN dual AS d2 ON true
+               NATURAL FULL JOIN t5
+               JOIN dual AS d3 ON true FULL
+               JOIN t6 USING(id)
+               CROSS JOIN dual AS d4
+      ORDER BY 1;
+  } {
+    0   -      -      -       1000
+    1   -      -      red     -   
+    2   two    alice  orange  -   
+    3   three  -      yellow  333 
+    4   -      bob    green   444 
+    5   -      -      blue    555 
+    6   six    cindy  -       -   
+    7   seven  -      -       -   
+    8   -      dave   -       -   
+    9   -      -      -       999 
   }
 }  
 finish_test
