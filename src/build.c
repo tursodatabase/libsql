@@ -5076,7 +5076,7 @@ void sqlite3SrcListFuncArgs(Parse *pParse, SrcList *p, ExprList *pList){
 **       code generator can easily tell that the table is part of
 **       the left operand of at least one RIGHT JOIN.
 */
-void sqlite3SrcListShiftJoinType(SrcList *p){
+void sqlite3SrcListShiftJoinType(Parse *pParse, SrcList *p){
   if( p && p->nSrc>1 ){
     int i = p->nSrc-1;
     u8 allFlags = 0;
@@ -5092,8 +5092,12 @@ void sqlite3SrcListShiftJoinType(SrcList *p){
       i--;
       assert( i>=0 );
       do{
-        p->a[i--].fg.jointype |= JT_LTORJ;
-      }while( i>=0 );
+        if( p->a[i].fg.jointype & JT_LEFT ){
+          sqlite3ErrorMsg(pParse, "unable to compute a LEFT or FULL JOIN"
+            " that is a left operand of a RIGHT or FULL JOIN");
+        }
+        p->a[i].fg.jointype |= JT_LTORJ;
+      }while( (--i)>=0 );
     }
   }
 }

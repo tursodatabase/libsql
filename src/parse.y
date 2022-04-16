@@ -685,7 +685,7 @@ as(X) ::= .            {X.n = 0; X.z = 0;}
 from(A) ::= .                {A = 0;}
 from(A) ::= FROM seltablist(X). {
   A = X;
-  sqlite3SrcListShiftJoinType(A);
+  sqlite3SrcListShiftJoinType(pParse,A);
 }
 
 // "seltablist" is a "Select Table List" - the content of the FROM clause
@@ -733,7 +733,7 @@ seltablist(A) ::= stl_prefix(A) nm(Y) dbnm(D) LP exprlist(E) RP as(Z) on_using(N
       sqlite3SrcListDelete(pParse->db, F);
     }else{
       Select *pSubquery;
-      sqlite3SrcListShiftJoinType(F);
+      sqlite3SrcListShiftJoinType(pParse,F);
       pSubquery = sqlite3SelectNew(pParse,0,F,0,0,0,0,SF_NestedFrom,0);
       A = sqlite3SrcListAppendFromTerm(pParse,A,0,0,&Z,pSubquery,&N);
     }
