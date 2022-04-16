@@ -5882,6 +5882,12 @@ static int selectExpander(Walker *pWalker, Select *p){
       p->selFlags |= SF_ComplexResult;
     }
   }
+#if TREETRACE_ENABLED
+  if( sqlite3TreeTrace & 0x100 ){
+    SELECTTRACE(0x100,pParse,p,("After result-set wildcard expansion:\n"));
+    sqlite3TreeViewSelect(0, p, 0);
+  }
+#endif
   return WRC_Continue;
 }
 
