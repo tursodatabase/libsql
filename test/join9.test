@@ -17,9 +17,12 @@ source $testdir/tester.tcl
 
 foreach {id schema} {
   1 {
+    CREATE TABLE t3(id INTEGER PRIMARY KEY, w TEXT);
     CREATE TABLE t4(id INTEGER PRIMARY KEY, x TEXT);
     CREATE TABLE t5(id INTEGER PRIMARY KEY, y TEXT);
     CREATE TABLE t6(id INTEGER PRIMARY KEY, z INT);
+    CREATE VIEW dual(dummy) AS VALUES('x');
+    INSERT INTO t3(id,w) VALUES(2,'two'),(3,'three'),(6,'six'),(7,'seven');
     INSERT INTO t4(id,x) VALUES(2,'alice'),(4,'bob'),(6,'cindy'),(8,'dave');
     INSERT INTO t5(id,y) VALUES(1,'red'),(2,'orange'),(3,'yellow'),(4,'green'),
                                (5,'blue');
@@ -29,7 +32,20 @@ foreach {id schema} {
   reset_db
   db nullvalue -
   do_execsql_test join9-$id.setup $schema {}
-  do_execsql_test join9-$id.10 {
+
+  # Verifid by PG-14 for case 1
+  do_execsql_test join9-$id.100 {
+    SELECT *, t4.id, t5.id, t6.id
+      FROM t4 NATURAL LEFT JOIN t5 NATURAL LEFT JOIN t6
+     ORDER BY 1;
+  } {
+    2   alice  orange  -    2   2   - 
+    4   bob    green   444  4   4   4 
+    6   cindy  -       -    6   -   - 
+    8   dave   -       -    8   -   - 
+  }
+
+  do_execsql_test join9-$id.101 {
     SELECT *, t4.id, t5.id, t6.id
       FROM t4 NATURAL LEFT JOIN t5 NATURAL LEFT JOIN t6
      ORDER BY id;
@@ -39,7 +55,54 @@ foreach {id schema} {
     6   cindy  -       -    6   -   - 
     8   dave   -       -    8   -   - 
   }
-  do_execsql_test join9-$id.20 {
+  do_execsql_test join9-$id.102 {
+    SELECT *, t4.id, t5.id, t6.id
+      FROM t4 LEFT JOIN t5 USING(id) LEFT JOIN t6 USING(id)
+     ORDER BY id;
+  } {
+    2   alice  orange  -    2   2   - 
+    4   bob    green   444  4   4   4 
+    6   cindy  -       -    6   -   - 
+    8   dave   -       -    8   -   - 
+  }
+
+  # Verifid by PG-14 using case 1
+  do_execsql_test join9-$id.200 {
+    SELECT id, x, y, z, t4.id, t5.id, t6.id
+      FROM t5 NATURAL RIGHT JOIN t4 NATURAL LEFT JOIN t6
+     ORDER BY 1;
+  } {
+    2   alice  orange  -    2   2   - 
+    4   bob    green   444  4   4   4 
+    6   cindy  -       -    6   -   - 
+    8   dave   -       -    8   -   - 
+  }
+
+  do_execsql_test join9-$id.201 {
+    SELECT id, x, y, z, t4.id, t5.id, t6.id
+      FROM t5 NATURAL RIGHT JOIN t4 NATURAL LEFT JOIN t6
+     ORDER BY id;
+  } {
+    2   alice  orange  -    2   2   - 
+    4   bob    green   444  4   4   4 
+    6   cindy  -       -    6   -   - 
+    8   dave   -       -    8   -   - 
+  }
+
+  # Verified by PG-14 using case 1
+  do_execsql_test join9-$id.300 {
+    SELECT *, t4.id, t5.id, t6.id
+      FROM t4 NATURAL RIGHT JOIN t5 NATURAL RIGHT JOIN t6
+     ORDER BY 1;
+  } {
+    0   -    -       1000  -   -   0 
+    3   -    yellow  333   -   3   3 
+    4   bob  green   444   4   4   4 
+    5   -    blue    555   -   5   5 
+    9   -    -       999   -   -   9 
+  }
+
+  do_execsql_test join9-$id.301 {
     SELECT *, t4.id, t5.id, t6.id
       FROM t4 NATURAL RIGHT JOIN t5 NATURAL RIGHT JOIN t6
      ORDER BY id;
@@ -50,9 +113,42 @@ foreach {id schema} {
     5   -    blue    555   -   5   5 
     9   -    -       999   -   -   9 
   }
-  do_execsql_test join9-$id.30 {
+
+  # Verified by PG-14 for case 1
+  do_execsql_test join9-$id.400 {
     SELECT *, t4.id, t5.id, t6.id
       FROM t4 NATURAL FULL JOIN t5 NATURAL FULL JOIN t6
+     ORDER BY 1;
+  } {
+    0    -      -       1000  -   -   0 
+    1    -      red     -     -   1   - 
+    2    alice  orange  -     2   2   - 
+    3    -      yellow  333   -   3   3 
+    4    bob    green   444   4   4   4 
+    5    -      blue    555   -   5   5 
+    6    cindy  -       -     6   -   - 
+    8    dave   -       -     8   -   - 
+    9    -      -       999   -   -   9 
+  }
+
+  do_execsql_test join9-$id.401 {
+    SELECT *, t4.id, t5.id, t6.id
+      FROM t4 NATURAL FULL JOIN t5 NATURAL FULL JOIN t6
+     ORDER BY id;
+  } {
+    0    -      -       1000  -   -   0 
+    1    -      red     -     -   1   - 
+    2    alice  orange  -     2   2   - 
+    3    -      yellow  333   -   3   3 
+    4    bob    green   444   4   4   4 
+    5    -      blue    555   -   5   5 
+    6    cindy  -       -     6   -   - 
+    8    dave   -       -     8   -   - 
+    9    -      -       999   -   -   9 
+  }
+  do_execsql_test join9-$id.402 {
+    SELECT id, x, y, z, t4.id, t5.id, t6.id
+      FROM t4 NATURAL FULL JOIN t6 NATURAL FULL JOIN t5
      ORDER BY id;
   } {
     0    -      -       1000  -   -   0 

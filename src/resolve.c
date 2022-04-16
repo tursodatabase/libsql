@@ -684,7 +684,9 @@ static int lookupName(
     const char *zErr;
     if( pFJMatch ){
       if( pFJMatch->nExpr==cnt-1 ){
-        if( !ExprHasProperty(pExpr,(EP_TokenOnly|EP_Leaf)) ){
+        if( ExprHasProperty(pExpr,EP_Leaf) ){
+          ExprClearProperty(pExpr,EP_Leaf);
+        }else{
           sqlite3ExprDelete(db, pExpr->pLeft);
           pExpr->pLeft = 0;
           sqlite3ExprDelete(db, pExpr->pRight);
