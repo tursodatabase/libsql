@@ -342,6 +342,10 @@ static int lookupName(
                 ){
                   sqlite3ExprListDelete(db, pFJMatch);
                   pFJMatch = 0;
+                  if( pItem->fg.jointype & JT_LTORJ ){
+                    cnt++;
+                    continue;
+                  }
                 }else
                 if( (pItem->fg.jointype & JT_RIGHT)==0 ){
                   /* An INNER or LEFT JOIN.  Use the left-most table */
@@ -392,6 +396,10 @@ static int lookupName(
               ){
                 sqlite3ExprListDelete(db, pFJMatch);
                 pFJMatch = 0;
+                if( pItem->fg.jointype & JT_LTORJ ){
+                  cnt++;
+                  continue;
+                }
               }else
               if( (pItem->fg.jointype & JT_RIGHT)==0 ){
                 /* An INNER or LEFT JOIN.  Use the left-most table */
@@ -671,10 +679,17 @@ static int lookupName(
   ** be multiple matches for a NATURAL LEFT JOIN or a LEFT JOIN USING.
   */
   assert( pFJMatch==0 || cnt>0 );
+  assert( !ExprHasProperty(pExpr, EP_xIsSelect|EP_IntValue) );
   if( cnt!=1 ){
     const char *zErr;
     if( pFJMatch ){
       if( pFJMatch->nExpr==cnt-1 ){
+        if( !ExprHasProperty(pExpr,(EP_TokenOnly|EP_Leaf)) ){
+          sqlite3ExprDelete(db, pExpr->pLeft);
+          pExpr->pLeft = 0;
+          sqlite3ExprDelete(db, pExpr->pRight);
+          pExpr->pRight = 0;
+        }
         extendFJMatch(pParse, &pFJMatch, pMatch, pExpr->iColumn);
         pExpr->op = TK_FUNCTION;
         pExpr->u.zToken = "coalesce";
@@ -699,6 +714,15 @@ static int lookupName(
   }
   assert( pFJMatch==0 );
 
+  /* Remove all substructure from pExpr */
+  if( !ExprHasProperty(pExpr,(EP_TokenOnly|EP_Leaf)) ){
+    sqlite3ExprDelete(db, pExpr->pLeft);
+    pExpr->pLeft = 0;
+    sqlite3ExprDelete(db, pExpr->pRight);
+    pExpr->pRight = 0;
+    ExprSetProperty(pExpr, EP_Leaf);
+  }
+
   /* If a column from a table in pSrcList is referenced, then record
   ** this fact in the pSrcList.a[].colUsed bitmask.  Column 0 causes
   ** bit 0 to be set.  Column 1 sets bit 1.  And so forth.  Bit 63 is
@@ -721,13 +745,6 @@ static int lookupName(
 lookupname_end:
   if( cnt==1 ){
     assert( pNC!=0 );
-    if( !ExprHasProperty(pExpr,(EP_TokenOnly|EP_Leaf)) ){
-      sqlite3ExprDelete(db, pExpr->pLeft);
-      pExpr->pLeft = 0;
-      sqlite3ExprDelete(db, pExpr->pRight);
-      pExpr->pRight = 0;
-      ExprSetProperty(pExpr, EP_Leaf);
-    }
 #ifndef SQLITE_OMIT_AUTHORIZATION
     if( pParse->db->xAuth
      && (pExpr->op==TK_COLUMN || pExpr->op==TK_TRIGGER)

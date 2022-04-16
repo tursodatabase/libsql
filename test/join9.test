@@ -1,0 +1,69 @@
+# 2022-04-16
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.
+#
+# This file implements tests for RIGHT and FULL OUTER JOINs.
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+foreach {id schema} {
+  1 {
+    CREATE TABLE t4(id INTEGER PRIMARY KEY, x TEXT);
+    CREATE TABLE t5(id INTEGER PRIMARY KEY, y TEXT);
+    CREATE TABLE t6(id INTEGER PRIMARY KEY, z INT);
+    INSERT INTO t4(id,x) VALUES(2,'alice'),(4,'bob'),(6,'cindy'),(8,'dave');
+    INSERT INTO t5(id,y) VALUES(1,'red'),(2,'orange'),(3,'yellow'),(4,'green'),
+                               (5,'blue');
+    INSERT INTO t6(id,z) VALUES(3,333),(4,444),(5,555),(0,1000),(9,999);
+  }
+} {
+  reset_db
+  db nullvalue -
+  do_execsql_test join9-$id.setup $schema {}
+  do_execsql_test join9-$id.10 {
+    SELECT *, t4.id, t5.id, t6.id
+      FROM t4 NATURAL LEFT JOIN t5 NATURAL LEFT JOIN t6
+     ORDER BY id;
+  } {
+    2   alice  orange  -    2   2   - 
+    4   bob    green   444  4   4   4 
+    6   cindy  -       -    6   -   - 
+    8   dave   -       -    8   -   - 
+  }
+  do_execsql_test join9-$id.20 {
+    SELECT *, t4.id, t5.id, t6.id
+      FROM t4 NATURAL RIGHT JOIN t5 NATURAL RIGHT JOIN t6
+     ORDER BY id;
+  } {
+    0   -    -       1000  -   -   0 
+    3   -    yellow  333   -   3   3 
+    4   bob  green   444   4   4   4 
+    5   -    blue    555   -   5   5 
+    9   -    -       999   -   -   9 
+  }
+  do_execsql_test join9-$id.30 {
+    SELECT *, t4.id, t5.id, t6.id
+      FROM t4 NATURAL FULL JOIN t5 NATURAL FULL JOIN t6
+     ORDER BY id;
+  } {
+    0    -      -       1000  -   -   0 
+    1    -      red     -     -   1   - 
+    2    alice  orange  -     2   2   - 
+    3    -      yellow  333   -   3   3 
+    4    bob    green   444   4   4   4 
+    5    -      blue    555   -   5   5 
+    6    cindy  -       -     6   -   - 
+    8    dave   -       -     8   -   - 
+    9    -      -       999   -   -   9 
+  }
+}  
+finish_test

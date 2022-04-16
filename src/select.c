@@ -5829,7 +5829,8 @@ static int selectExpander(Walker *pWalker, Select *p){
               zToFree = 0;
             }
             if( pTabList->nSrc>1
-             && !inAnyUsingClause(zName,pFrom,pTabList->nSrc-i-1)
+             && (  (pFrom->fg.jointype & JT_LTORJ)==0
+                 || !inAnyUsingClause(zName,pFrom,pTabList->nSrc-i-1) )
             ){
               Expr *pLeft;
               pLeft = sqlite3Expr(db, TK_ID, zTabName);
