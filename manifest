@@ -1,5 +1,5 @@
-C Since\sthe\squery\splanner\sis\sunable\sto\scope\swith\sa\sLEFT\sJOIN\son\sthe\sleft-hand\sside\nof\sa\sRIGHT\sJOIN,\sdetect\sthat\ssituation\searly\sand\sraise\sa\sparsing\serror.\nThis\sis\sa\stemporary\smeasure\sthat\sneeds\sto\sbe\sfixed.
-D 2022-04-16T19:13:16.788
+C Fix\sthe\sUSING\sto\sON\stranslation\sso\sthat\sit\sworks\scorrectly\sfor\sa\ssequence\nof\stwo\sor\smore\sjoins\swhere\sone\sof\sthe\sjoins\sto\sthe\sright-hand\sside\sof\sthe\nlist\sis\sa\sRIGHT\sor\sFULL\sJOIN.
+D 2022-04-16T22:57:41.804
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -495,7 +495,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c 093c940ddf1d0753542d04e37eb9903cbc126e997815d234dd2b6317e812b192
 F src/btree.h 74d64b8f28cfa4a894d14d4ed64fa432cd697b98b61708d4351482ae15913e22
 F src/btreeInt.h 8ce1332edd89dfd2461d561ac10a0ab5601c8e06200cb5230596c3caaf54482e
-F src/build.c fad98f43a755f48ccdd0ba31d91f5a829cddd344dd3babaad0646bd23c2fcdc6
+F src/build.c d6518b209ec89e0b0c744564213369b772b00efa698c3f121d14cf25c5806ade
 F src/callback.c 4c19af69835787bfe790ac560f3071a824eb629f34e41f97b52ce5235c77de1c
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 026dbdcdbd8c3cde98a88483ee88310ff43150ab164ad768f12cc700a11495ad
@@ -552,7 +552,7 @@ F src/printf.c 05d8dfd2018bc4fc3ddb8b37eb97ccef7abf985643fa1caebdcf2916ca90fa32
 F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c 58b5c54b7e5cd7101b57901f9039dee86224b6a93699a5e8639f402aff43e7cc
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c 3074a36194727755f60e4496289b267ebc98d183d33f54ef22d5aa312968c0ce
+F src/select.c 0af8c196a4b3fdf5fa4f6aae4045758467d143efd32711bfc4bf711e8e8a04cc
 F src/shell.c.in eb7f10d5e2c47bd014d92ec5db1def21fcc1ed56ffaaa4ee715b6c37c370b47f
 F src/sqlite.h.in 2a35f62185eb5e7ecc64a2f68442b538ce9be74f80f28a00abc24837edcf1c17
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1948,8 +1948,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a7babf75418adffa27dec7a9d382a60e1b9364fb51d72b0a10e2769b308b3c54
-R 45449a4d7735a1a3898975e3feb2590b
+P 6d5d6e0403241c99ab4a47d7b6eedcd8ebc615a8ca8d66d7e81171f901b170d7
+R 4be646ba0dcbc3b7d9317327df4f7fe8
 U drh
-Z 24f79365e5bd75e3605e6ecd98fb146e
+Z 4c860c34eaaf8b2ecd96a50692d3cbf3
 # Remove this line to create a well-formed Fossil manifest.

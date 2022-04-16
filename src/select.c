@@ -555,13 +555,14 @@ static int sqlite3ProcessJoin(Parse *pParse, Select *p){
     */
     if( pRight->fg.isUsing ){
       IdList *pList = pRight->u3.pUsing;
-      int bRight = (pRight->fg.jointype & JT_RIGHT)!=0;
+      int bRight = (pLeft->fg.jointype & JT_RIGHT)!=0;
       assert( pList!=0 );
       for(j=0; j<pList->nId; j++){
         char *zName;     /* Name of the term in the USING clause */
         int iLeft;       /* Table on the left with matching column name */
         int iLeftCol;    /* Column number of matching column on the left */
         int iRightCol;   /* Column number of matching column on the right */
+        int iNxLeft, iNxLeftCol;
 
         zName = pList->a[j].zName;
         iRightCol = sqlite3ColumnIndex(pRightTab, zName);
@@ -573,8 +574,45 @@ static int sqlite3ProcessJoin(Parse *pParse, Select *p){
             "not present in both tables", zName);
           return 1;
         }
-        addWhereTerm(pParse, pSrc, iLeft, iLeftCol, i+1, iRightCol,
-                     joinType, &p->pWhere);
+        if( (pLeft->fg.jointype & (JT_RIGHT|JT_LEFT))!=(JT_LEFT|JT_RIGHT)
+         || 0==tableAndColumnIndex(pSrc, iLeft, zName, &iNxLeft, &iNxLeftCol,
+                                   pRight->fg.isSynthUsing, 1)
+        ){
+          addWhereTerm(pParse, pSrc, iLeft, iLeftCol, i+1, iRightCol,
+                       joinType, &p->pWhere);
+        }else{
+          /* Because the left-hand side of this join is another RIGHT or FULL
+          ** JOIN with two or more tables hold zName, we need to construct
+          ** a coalesce() function for left side of the ON constraint.
+          */
+          ExprList *pList;
+          Expr *pE;
+          Expr *pE2;
+          Expr *pEq;
+          sqlite3 *db = pParse->db;
+          static const Token tkCoalesce = { "coalesce", 8 };
+          pE = sqlite3CreateColumnExpr(db, pSrc, iLeft, iLeftCol);
+          pList = sqlite3ExprListAppend(pParse, 0, pE);
+          pE = sqlite3CreateColumnExpr(db, pSrc, iNxLeft, iNxLeftCol);
+          pList = sqlite3ExprListAppend(pParse, pList, pE);
+          while( tableAndColumnIndex(pSrc, iNxLeft, zName,
+                                     &iNxLeft, &iNxLeftCol,
+                                     pRight->fg.isSynthUsing, 1)!=0 ){
+            pE = sqlite3CreateColumnExpr(db, pSrc, iNxLeft, iNxLeftCol);
+            pList = sqlite3ExprListAppend(pParse, pList, pE);
+          }
+          pE = sqlite3ExprFunction(pParse, pList, &tkCoalesce, 0);
+          pE2 = sqlite3CreateColumnExpr(db, pSrc, i+1, iRightCol);
+          pEq = sqlite3PExpr(pParse, TK_EQ, pE, pE2);
+          assert( pE2!=0 || pEq==0 );
+          if( pEq ){
+            ExprSetProperty(pEq, joinType);
+            assert( !ExprHasProperty(pEq, EP_TokenOnly|EP_Reduced) );
+            ExprSetVVAProperty(pEq, EP_NoReduce);
+            pEq->w.iJoin = pE2->iTable;
+          }
+          p->pWhere = sqlite3ExprAnd(pParse, p->pWhere, pEq);
+        }
       }
     }
 

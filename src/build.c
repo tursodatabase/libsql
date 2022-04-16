@@ -5092,10 +5092,6 @@ void sqlite3SrcListShiftJoinType(Parse *pParse, SrcList *p){
       i--;
       assert( i>=0 );
       do{
-        if( p->a[i].fg.jointype & JT_LEFT ){
-          sqlite3ErrorMsg(pParse, "unable to compute a LEFT or FULL JOIN"
-            " that is a left operand of a RIGHT or FULL JOIN");
-        }
         p->a[i].fg.jointype |= JT_LTORJ;
       }while( (--i)>=0 );
     }
