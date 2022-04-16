@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\s"ON\sDELETE\sRESTRICT"\sand\s"ON\sUPDATE\sRESTRICT"\sforeign\skeys\sin\sattached\sdatabases\sscanning\schild\stables\sin\sthe\swrong\sschema.
-D 2022-04-16T15:46:23.749
+C Make\sshell\sauto-column\swork\swith\slots\sof\scolumns\swhen\slog()\sis\smissing.
+D 2022-04-16T17:53:25.671
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -553,7 +553,7 @@ F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c 18d99e7146852d6064559561769fcca0743eb32b14a97da6dbed373a30ee0e76
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 5ac7c08646ac5a03634da8a954645bdaa13d9bf692fb6b0b5fb3b55b19ab884e
-F src/shell.c.in eb7f10d5e2c47bd014d92ec5db1def21fcc1ed56ffaaa4ee715b6c37c370b47f
+F src/shell.c.in ecff6f4ab0e8e25acd578b3eb27ac0bad4d48643c160259a277151d6e9d412e1
 F src/sqlite.h.in 2a35f62185eb5e7ecc64a2f68442b538ce9be74f80f28a00abc24837edcf1c17
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h f49e28c25bd941e79794db5415fdf7b202deb3bc072ed6f1ed273d578703684e
@@ -1945,8 +1945,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 12645f100d902690630a2925674aedbb01d41a53426a26a2f56de5b8fdec955f
-R 65b6ae478c0c46336b2e3d4a00d84d7d
-U dan
-Z 20ffa409115b35ade94fa1104d7de644
+P 04d5b637f087520cd58211505f9b5c086ff96d864a1908f60464b6fe22c62b7d
+R 247d42769b42eb4f49b3d0e81a9caafe
+U larrybr
+Z 012ec694a47eae04b9be0b86d525b8a4
 # Remove this line to create a well-formed Fossil manifest.
