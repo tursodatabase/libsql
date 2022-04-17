@@ -414,11 +414,11 @@ AGGTYPE_BEGIN(ShellExtensionLink) {
   void (*extensionDestruct)(void *pvExtObj);
   void *pvExtensionObject;
 
-  /* If extra arguments were provided to the .load command, they are
+  /* If extra arguments were provided to the .shxload command, they are
    * available through these two members. Only azLoadArgs[0] through
    * azLoadArgs[nLoadArgs-1] may be referenced. (That may be none.)
    * If an extension keeps the argument values, copies must be made
-   * as the pointers in azLoadArgs[] become invalid after loading.
+   * because the pointers in azLoadArgs[] become invalid after loading.
    */
   int nLoadArgs;
   char **azLoadArgs;

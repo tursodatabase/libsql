@@ -69,11 +69,17 @@ To manually get a Tcl-extended-shell started,
 and have been placed where the shell and OS loader can find them),
 either of these inputs is needed:<br>
 ```
+  From a running shell:
     sqlite3x
-    .load tclshext -shext
+    .shxload tclshext
  or
-    sqlite3x -cmd '.load tclshext -shext'
+  At shell invocation:
+    sqlite3x -cmd '.shxload tclshext'
 ```
+(footnote: A directory path may need to be prepended to the extension's
+name for the OS loader to find it unless it is in one of the locations
+designated to the loader as a candidate for dynamic libraries. How such
+designation is made is beyond the scope of this introduction.)
 Provided this results in another prompt without any error message(s),
 the Tcl-extended shell is ready to go.
 For brevity, the shell in this state will be called "sqlite3xt".
