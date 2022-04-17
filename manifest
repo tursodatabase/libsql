@@ -1,5 +1,5 @@
-C Change\sOP_Return\ssuch\sthat\sif\sP3\sis\s1,\sthe\sReturn\sis\sa\sno-op\swhen\sthe\nP1\sregister\scontains\sa\sNULL.
-D 2022-04-17T20:30:52.124
+C Deal\swith\sOP_Return\sbypass\sin\sthe\sRIGHT\sJOIN\ssubroutine\sby\sadding\sextra\nOP_Returns\swhere\sneeded.
+D 2022-04-17T22:58:23.198
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -639,7 +639,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c b9df133a705093da8977da5eb202eaadb844839f1c7297c08d33471f5491843d
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
-F src/where.c cbbfdcbf701cc018f1a688da53b082f9cf2ea067ecadd0648ecd6c4244ecc4da
+F src/where.c 45102d682f6efd450d89c0c5f09b838be6d69c84c6105336730ee38d3b452fad
 F src/whereInt.h eecce79edc6f7005f91f35be6b18b7053f794e1b50e95bcd06a2d537fc176734
 F src/wherecode.c cb747d628e8fdc0396529c07be9c772c2978016a723eba9c3329f8ef5e4411f1
 F src/whereexpr.c 174d4ad5be165c610c907abb779ef4a97974d22b84e1ce7898d2d9f6947249e5
@@ -1948,8 +1948,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9fd3f22e2228dfba127f6ffe549109f3a4e910fa124adcc9c5483931bd6d5cd7
-R 18079ef5a0c4d399c9c19e3618838c8a
+P c90602328a4b26f06d76c5343d29ebb7a782186c86ea88f5965a41040cff5346
+R c6c7dddd732c43b8717c6704e8264673
 U drh
-Z 584bf1a379a2119bed4485fb42b41022
+Z 0ea458b3f473eb82432ab8cf97d554a5
 # Remove this line to create a well-formed Fossil manifest.

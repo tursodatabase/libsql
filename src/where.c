@@ -6121,6 +6121,10 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       }
     }
     sqlite3VdbeResolveLabel(v, pLevel->addrBrk);
+    if( pLevel->pRJ ){
+      sqlite3VdbeAddOp3(v, OP_Return, pLevel->pRJ->regReturn, 0, 1);
+      VdbeCoverage(v);
+    }
     if( pLevel->addrSkip ){
       sqlite3VdbeGoto(v, pLevel->addrSkip);
       VdbeComment((v, "next skip-scan on %s", pLoop->u.btree.pIndex->zName));
