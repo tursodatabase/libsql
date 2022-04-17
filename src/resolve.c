@@ -680,6 +680,7 @@ static int lookupName(
         pExpr->op = TK_FUNCTION;
         pExpr->u.zToken = "coalesce";
         pExpr->x.pList = pFJMatch;
+        cnt = 1;
         goto lookupname_end;
       }else{
         sqlite3ExprListDelete(db, pFJMatch);
