@@ -1381,8 +1381,12 @@ valgrindtest:	$(TESTPROGS) valgrindfuzz
 smoketest:	$(TESTPROGS) fuzzcheck$(TEXE)
 	./testfixture$(TEXE) $(TOP)/test/main.test $(TESTOPTS)
 
+TESTRUNS_SHX = \
+ $(TOP)/test/shell_x/shell9.test \
+ $(TOP)/test/shell_x/shell10.test
+
 shellxtest: $(TESTPROGS_SHX)
-	./testfixture$(TEXE) $(TOP)/test/shell_x/shell*.test
+	./testfixture$(TEXE) $(TESTRUNS_SHX)
 
 shelltest: $(TESTPROGS)
 	./testfixture$(TEXE) $(TOP)/test/permutations.test shell

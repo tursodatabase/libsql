@@ -1213,7 +1213,7 @@ struct EQPGraph {
 #define SHEXT_PARSING_BIT 0
 #define SHELL_EXTENDED_PARSING \
   NOT_IFDEF_BIT(SHELL_OMIT_EXTENSIONS, SHEXT_PARSING_BIT)
-/* Whether build will include runtime extension via .load -extension */
+/* Whether build will include runtime extension via .shxload */
 #define SHEXT_DYNEXT_BIT 1
 #define SHELL_DYNAMIC_EXTENSION ( !SHELL_OMIT_LOAD_EXTENSION \
   && NOT_IFDEF_BIT(SHELL_OMIT_EXTENSIONS, SHEXT_DYNEXT_BIT) )
@@ -9950,6 +9950,17 @@ DISPATCHABLE_COMMAND( iotrace ? 2 2 ){
   }
   return DCR_Ok;
 }
+
+/*****************
+ * The .limits and .load commands
+ */
+COLLECT_HELP_TEXT[
+  ",limits ?LIMIT_NAME?     Display limit selected by its name, or all limits",
+  ".load FILE ?ENTRY?       Load a SQLite extension library",
+  "   If ENTRY is provided, the entry point \"sqlite_ENTRY_init\" is called.",
+  "   Otherwise, the entry point name is derived from the FILE's name.",
+];
+
 DISPATCHABLE_COMMAND( limits 5 1 3 ){
   static const struct {
     const char *zLimitName;   /* Name of a limit */
@@ -10183,6 +10194,21 @@ DISPATCHABLE_COMMAND( lint 3 1 0 ){
   return DCR_Ok|(rc!=0);
 }
 
+DISPATCHABLE_COMMAND( load ? 2 3 ){
+  const char *zFile = 0, *zProc = 0;
+  int ai = 1, rc;
+  if( ISS(p)->bSafeMode ) return DCR_AbortError;
+  while( ai<nArg ){
+    const char *zA = azArg[ai++];
+    if( zFile==0 ) zFile = zA;
+    else if( zProc==0 ) zProc = zA;
+    else return DCR_TooMany|ai;
+  }
+  open_db(p, 0);
+  rc = sqlite3_load_extension(DBX(p), zFile, zProc, pzErr);
+  return DCR_Ok|(rc!=SQLITE_OK);
+}
+
 DISPATCHABLE_COMMAND( log ? 2 2 ){
   const char *zFile = azArg[1];
   if( ISS(p)->bSafeMode ) return DCR_AbortError;
@@ -10255,66 +10281,6 @@ static void effectMode(ShellInState *psi, u8 modeRequest, u8 modeNominal){
     sqlite3_snprintf(sizeof(psi->colSeparator), psi->colSeparator, zColSep);
   }
   psi->mode = modeNominal;
-}
-
-/*****************
- * The .load command
- * This is out of order to alleviate code clarity concerns.
- */
-#if SHELL_DYNAMIC_EXTENSION  /* Avoid confusing users or mkshellc.tcl here. */
-# define LDEXT_OPTS "?ENTRY? ?..?"
-# define LDEXT_MAXARGS 0
-#else
-# define LDEXT_OPTS "?ENTRY?     "
-# define LDEXT_MAXARGS 3
-#endif
-COLLECT_HELP_TEXT[
-  ".load FILE "LDEXT_OPTS"  Load an extension library",
-#if SHELL_DYNAMIC_EXTENSION
-  "   If option -shext follows the first 1 or 2 arguments, then the library",
-  "   will be loaded as a shell extension, and any subsequent arguments will",
-  "   be passed to the extension's init function. That function is named per",
-  "   the docs for sqlite3_load_extension(), with ENTRY taking zProc's role.",
-#else
-  "   If ENTRY is provided, the entry point \"sqlite_ENTRY_init\" is called.",
-  "   Otherwise, the entry point name is derived from the FILE's name.",
-#endif
-];
-DISPATCHABLE_COMMAND( load ? 2 LDEXT_MAXARGS ){
-  const char *zFile = 0, *zProc = 0;
-  char *zErrMsg = 0;
-  int ai = 1, rc;
-#if SHELL_DYNAMIC_EXTENSION
-  char **pzShext = 0;
-#else
-  if( nArg>3 ) return DCR_TooMany|3;
-#endif
-  if( ISS(p)->bSafeMode ) return DCR_AbortError;
-  while( ai<nArg ){
-    const char *zA = azArg[ai++];
-#if SHELL_DYNAMIC_EXTENSION
-    if( optionMatch(zA, "shext") ){
-      if( zFile==0 ) return DCR_Missing;
-      pzShext = azArg + ai;
-      break;
-    }else if( zFile==0 ) zFile = zA;
-    else if( zProc==0 ) zProc = zA;
-#else
-    if( zFile==0 ) zFile = zA;
-    else if( zProc==0 ) zProc = zA;
-    else return DCR_TooMany|ai;
-#endif
-  }
-  open_db(p, 0);
-#if SHELL_DYNAMIC_EXTENSION
-  if( pzShext ){
-    rc = load_shell_extension(p, zFile, zProc, pzErr, nArg-ai, pzShext);
-  }else
-#endif
-    {
-      rc = sqlite3_load_extension(DBX(p), zFile, zProc, pzErr);
-    }
-  return DCR_Ok|(rc!=SQLITE_OK);
 }
 
 /*****************
@@ -12222,13 +12188,10 @@ DISPATCHABLE_COMMAND( sha3sum 4 1 1 ){
 }
 
 /*****************
- * The .selftest*, .shell, .show, .shxopts, .stats and .system commands
+ * The .selftest*, .shell, and .show commands
  */
 CONDITION_COMMAND( selftest_bool defined(SQLITE_DEBUG) );
 CONDITION_COMMAND( selftest_int defined(SQLITE_DEBUG) );
-CONDITION_COMMAND( shell !defined(SQLITE_NOHAVE_SYSTEM) );
-CONDITION_COMMAND( shxopts (SHELL_EXTENSIONS)!=0 );
-CONDITION_COMMAND( system !defined(SQLITE_NOHAVE_SYSTEM) );
 COLLECT_HELP_TEXT[
   ",selftest ?OPTIONS?      Run tests defined in the SELFTEST table",
   "    Options:",
@@ -12236,16 +12199,7 @@ COLLECT_HELP_TEXT[
   "       -v                   Verbose output",
   ",selftest_bool ?ARGS?    Show boolean values of ARGS as flag tokens",
   ",selftest_int ?ARGS?     Show integer values of ARGS as integer tokens",
-  ".shell CMD ARGS...       Run CMD ARGS... in a system shell",
   ".show                    Show the current values for various settings",
-  ".shxopts ?SIGNED_OPTS?   Show or alter shell extension options",
-  "   Run without arguments to see their self-descriptive names",
-  ".stats ?ARG?             Show stats or turn stats on or off",
-  "   off                      Turn off automatic stat display",
-  "   on                       Turn on automatic stat display",
-  "   stmt                     Show statement stats",
-  "   vmstep                   Show the virtual machine step count only",
-  ".system CMD ARGS...      Run CMD ARGS... in a system shell",
 ];
 
 DISPATCHABLE_COMMAND( selftest_bool 10 0 0 ){
@@ -12372,22 +12326,82 @@ DISPATCHABLE_COMMAND( selftest 4 0 0 ){
   return rc > 0;
 }
 
-DISPATCHABLE_COMMAND( shell ? 2 0 ){
+/*****************
+ * The .shell, .stats and .system commands
+ */
+CONDITION_COMMAND( shell !defined(SQLITE_NOHAVE_SYSTEM) );
+CONDITION_COMMAND( system !defined(SQLITE_NOHAVE_SYSTEM) );
+COLLECT_HELP_TEXT[
+  ".shell CMD ARGS...       Run CMD ARGS... in a system shell",
+  ".stats ?ARG?             Show stats or turn stats on or off",
+  "   off                      Turn off automatic stat display",
+  "   on                       Turn on automatic stat display",
+  "   stmt                     Show statement stats",
+  "   vmstep                   Show the virtual machine step count only",
+  ".system CMD ARGS...      Run CMD ARGS... in a system shell",
+];
+
+#ifndef SQLITE_NOHAVE_SYSTEM
+static DotCmdRC shellOut(char *azArg[], int nArg,
+                         ShellExState *psx, char **pzErr){
   char *zCmd;
   int i, x;
-  if( ISS(p)->bSafeMode ) return DCR_AbortError;
+  if( ISS(psx)->bSafeMode ) return DCR_AbortError;
   zCmd = smprintf(strchr(azArg[1],' ')==0?"%s":"\"%s\"", azArg[1]);
-  shell_check_oom(zCmd);
   for(i=2; i<nArg; i++){
     zCmd = smprintf(strchr(azArg[i],' ')==0?"%z %s":"%z \"%s\"",
                     zCmd, azArg[i]);
-    shell_check_oom(zCmd);
   }
+  shell_check_oom(zCmd);
   x = system(zCmd);
   sqlite3_free(zCmd);
   if( x ) raw_printf(STD_ERR, "%s command returns %d\n", azArg[0], x);
   return DCR_Ok;
 }
+#endif
+DISPATCHABLE_COMMAND( shell ? 2 0 ){
+  return shellOut(azArg, nArg, p, pzErr);
+}
+
+DISPATCHABLE_COMMAND( system ? 2 0 ){
+  return shellOut(azArg, nArg, p, pzErr);
+}
+
+/*****************
+ * The .shxload and .shxopts commands
+ */
+CONDITION_COMMAND( shxload (SHELL_DYNAMIC_EXTENSION)!=0 );
+CONDITION_COMMAND( shxopts (SHELL_EXTENSIONS)!=0 );
+COLLECT_HELP_TEXT[
+  ".shxload FILE ?OPTIONS?  Load a CLI shell extension library",
+  "   The first option may name the init function to be called upon load.",
+  "   Otherwise, its name is derived from FILE. Either way, the entry point"
+  "   \"sqlite_NAME_init\" is called. All options after \"--\" are passed to",
+  "   the extension's init function in the ShellExtensionLink struct.",
+  ".shxopts ?SIGNED_OPTS?   Show or alter shell extension options",
+  "   Run without arguments to see their self-descriptive names",
+];
+
+DISPATCHABLE_COMMAND( shxload 4 2 0 ){
+  const char *zFile = 0, *zProc = 0;
+  int ai = 1, rc;
+  char **pzExtArgs = 0;
+  if( ISS(p)->bSafeMode ) return DCR_AbortError;
+  while( ai<nArg ){
+    const char *zA = azArg[ai++];
+    if( strcmp(zA, "--")==0 ){
+      pzExtArgs = azArg + ai;
+      break;
+    }
+    if( zFile==0 ) zFile = zA;
+    else if( zProc==0 ) zProc = zA;
+  }
+  if( zFile==0 ) return DCR_Missing;
+  if( pzExtArgs==0 ) pzExtArgs = azArg + ai;
+  rc = load_shell_extension(p, zFile, zProc, pzErr, nArg-ai, pzExtArgs);
+  return DCR_Ok|(rc!=SQLITE_OK);
+}
+
 DISPATCHABLE_COMMAND( shxopts 3 0 0 ){
   static struct { const char *name; u8 mask; } shopts[] = {
 #if SHELL_DYNAMIC_COMMANDS
@@ -12441,9 +12455,6 @@ DISPATCHABLE_COMMAND( shxopts 3 0 0 ){
  moan_error:
   raw_printf(STD_ERR, "Error: %s %s\n", zAbout, zMoan);
   return DCR_CmdErred;
-}
-DISPATCHABLE_COMMAND( system ? 2 0 ){
-  return shellCommand(azArg, nArg, p, pzErr);
 }
 DISPATCHABLE_COMMAND( show ? 1 1 ){
   static const char *azBool[] = { "off", "on", "trigger", "full"};
@@ -14015,8 +14026,8 @@ static int showHelp(FILE *out, const char *zPattern, ShellExState *psx){
   if( hoKind==HO_Undoc ){
     int ixct = 0;
     utf8_printf(out, "%s\n%s\n",
-                "The following commands are used for internal SQLite testing.",
-                "They are undocumented and subject to change without notice.");
+      "The following commands are for SQLite diagnosis and internal testing.",
+      "They are undocumented and subject to change without notice.");
     /* Bypass command lookup/resolution. This is just for internal commands. */
     while( ixct<numCommands ){
       struct CommandInfo *pci = &command_table[ixct];

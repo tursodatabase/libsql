@@ -42,12 +42,15 @@ proc catch_mdb_cmd {args} {
 #----------------------------------------------------------------------------
 # Test cases shell10-1.*: loading/running the {C,C++}-written test extensions
 set cmds ".
- .load $blddir/test_shellext_cpp -shext C++
+ .shxload $blddir/test_shellext_cpp -- C++
+ .tables
+ .quit
 "
 do_test shell10-1.1 {
   catch_mdb_cmd $cmds
 } {0 {BatBeing lives.
 Load arguments: C++
+dbUser appeared
 dbUser closing
 dbShell closing
 BatBeing incommunicado.
@@ -55,10 +58,11 @@ BatBeing unbecoming.
 BatBeing RIP.}}
 
 set cmds ".
- .load $blddir/test_shellext_c -shext C
+ .shxload $blddir/test_shellext_c -- C
  .bat 10 20 30
- .load $blddir/test_shellext_cpp -shext C++
+ .shxload $blddir/test_shellext_cpp -- C++
  .bat 10 20 30
+ .tables
 "
 do_test shell10-1.2 {
   catch_mdb_cmd $cmds
@@ -69,6 +73,8 @@ BatBeing lives.
 Load arguments: C++
 Column widths: 20 30 10
 This execute has been called 2 times.
+dbUser appeared
+dbUser appeared
 dbUser closing
 dbUser closing
 dbShell closing
@@ -83,7 +89,7 @@ BatBeing RIP.}}
 #----------------------------------------------------------------------------
 # Test cases shell10-2.*: Tcl extension load and execution environment switching
 
-set ldtce ".load $blddir/tclshext -shext"
+set ldtce ".shxload $blddir/tclshext"
 
 set cmds {
  ..
