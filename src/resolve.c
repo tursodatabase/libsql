@@ -115,22 +115,6 @@ static void resolveAlias(
   }
 }
 
-
-/*
-** Return TRUE if the name zCol occurs anywhere in the USING clause.
-**
-** Return FALSE if the USING clause is NULL or if it does not contain
-** zCol.
-*/
-static int nameInUsingClause(IdList *pUsing, const char *zCol){
-  int k;
-  assert( pUsing!=0 );
-  for(k=0; k<pUsing->nId; k++){
-    if( sqlite3StrICmp(pUsing->a[k].zName, zCol)==0 ) return 1;
-  }
-  return 0;
-}
-
 /*
 ** Subqueries stores the original database, table and column names for their
 ** result sets in ExprList.a[].zSpan, in the form "DATABASE.TABLE.COLUMN".
@@ -338,7 +322,7 @@ static int lookupName(
             if( sqlite3MatchEName(&pEList->a[j], zCol, zTab, zDb) ){
               if( cnt>0 ){
                 if( pItem->fg.isUsing==0
-                 || !nameInUsingClause(pItem->u3.pUsing, zCol)
+                 || sqlite3IdListIndex(pItem->u3.pUsing, zCol)<0
                 ){
                   sqlite3ExprListDelete(db, pFJMatch);
                   pFJMatch = 0;
@@ -392,7 +376,7 @@ static int lookupName(
           ){
             if( cnt>0 ){
               if( pItem->fg.isUsing==0
-               || !nameInUsingClause(pItem->u3.pUsing, zCol)
+               || sqlite3IdListIndex(pItem->u3.pUsing, zCol)<0
               ){
                 sqlite3ExprListDelete(db, pFJMatch);
                 pFJMatch = 0;

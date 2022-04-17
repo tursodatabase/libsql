@@ -320,11 +320,9 @@ int sqlite3ColumnIndex(Table *pTab, const char *zCol){
 }
 
 /*
-** Search the first N tables in pSrc, looking for a
-** table that has a column named zCol.
-**
-** Search left-to-right if bRightmost is false.  Search right-to-left
-** if bRightmost is true.
+** Search the tables iStart..iEnd (inclusive) in pSrc, looking for a
+** table that has a column named zCol.  The search is left-to-right.
+** The first match found is returned.
 **
 ** When found, set *piTab and *piCol to the table index and column index
 ** of the matching column and return TRUE.
@@ -333,21 +331,21 @@ int sqlite3ColumnIndex(Table *pTab, const char *zCol){
 */
 static int tableAndColumnIndex(
   SrcList *pSrc,       /* Array of tables to search */
-  int N,               /* Number of tables in pSrc->a[] to search */
+  int iStart,          /* First member of pSrc->a[] to check */
+  int iEnd,            /* Last member of pSrc->a[] to check */
   const char *zCol,    /* Name of the column we are looking for */
   int *piTab,          /* Write index of pSrc->a[] here */
   int *piCol,          /* Write index of pSrc->a[*piTab].pTab->aCol[] here */
-  int bIgnoreHidden,   /* True to ignore hidden columns */
-  int bRightmost       /* Return the right-most match */
+  int bIgnoreHidden    /* Ignore hidden columns */
 ){
   int i;               /* For looping over tables in pSrc */
   int iCol;            /* Index of column matching zCol */
-  int rc = 0;
 
-  assert( N<=pSrc->nSrc );
-  
+  assert( iEnd<pSrc->nSrc );
+  assert( iStart>=0 );
   assert( (piTab==0)==(piCol==0) );  /* Both or neither are NULL */
-  for(i=0; i<N; i++){
+
+  for(i=iStart; i<=iEnd; i++){
     iCol = sqlite3ColumnIndex(pSrc->a[i].pTab, zCol);
     if( iCol>=0 
      && (bIgnoreHidden==0 || IsHiddenColumn(&pSrc->a[i].pTab->aCol[iCol])==0)
@@ -356,58 +354,10 @@ static int tableAndColumnIndex(
         *piTab = i;
         *piCol = iCol;
       }
-      rc = 1;
-      if( !bRightmost ) break;
+      return 1;
     }
   }
-  return rc;
-}
-
-/*
-** This function is used to add terms implied by JOIN syntax to the
-** WHERE clause expression of a SELECT statement. The new term, which
-** is ANDed with the existing WHERE clause, is of the form:
-**
-**    (tab1.col1 = tab2.col2)
-**
-** where tab1 is the iSrc'th table in SrcList pSrc and tab2 is the 
-** (iSrc+1)'th. Column col1 is column iColLeft of tab1, and col2 is
-** column iColRight of tab2.
-*/
-static void addWhereTerm(
-  Parse *pParse,                  /* Parsing context */
-  SrcList *pSrc,                  /* List of tables in FROM clause */
-  int iLeft,                      /* Index of first table to join in pSrc */
-  int iColLeft,                   /* Index of column in first table */
-  int iRight,                     /* Index of second table in pSrc */
-  int iColRight,                  /* Index of column in second table */
-  u32 joinType,                   /* EP_FromJoin or EP_InnerJoin */
-  Expr **ppWhere                  /* IN/OUT: The WHERE clause to add to */
-){
-  sqlite3 *db = pParse->db;
-  Expr *pE1;
-  Expr *pE2;
-  Expr *pEq;
-
-  assert( iLeft<iRight );
-  assert( pSrc->nSrc>iRight );
-  assert( pSrc->a[iLeft].pTab );
-  assert( pSrc->a[iRight].pTab );
-
-  pE1 = sqlite3CreateColumnExpr(db, pSrc, iLeft, iColLeft);
-  pE2 = sqlite3CreateColumnExpr(db, pSrc, iRight, iColRight);
-
-  pEq = sqlite3PExpr(pParse, TK_EQ, pE1, pE2);
-  assert( pE2!=0 || pEq==0 );  /* Due to db->mallocFailed test
-                               ** in sqlite3DbMallocRawNN() called from
-                               ** sqlite3PExpr(). */
-  if( pEq ){
-    ExprSetProperty(pEq, joinType);
-    assert( !ExprHasProperty(pEq, EP_TokenOnly|EP_Reduced) );
-    ExprSetVVAProperty(pEq, EP_NoReduce);
-    pEq->w.iJoin = pE2->iTable;
-  }
-  *ppWhere = sqlite3ExprAnd(pParse, *ppWhere, pEq);
+  return 0;
 }
 
 /*
@@ -532,7 +482,7 @@ static int sqlite3ProcessJoin(Parse *pParse, Select *p){
 
         if( IsHiddenColumn(&pRightTab->aCol[j]) ) continue;
         zName = pRightTab->aCol[j].zCnName;
-        if( tableAndColumnIndex(pSrc, i+1, zName, 0, 0, 1, 0) ){
+        if( tableAndColumnIndex(pSrc, 0, i, zName, 0, 0, 1) ){
           Token x;
           x.z = zName;
           x.n = sqlite3Strlen30(zName);
@@ -555,64 +505,71 @@ static int sqlite3ProcessJoin(Parse *pParse, Select *p){
     */
     if( pRight->fg.isUsing ){
       IdList *pList = pRight->u3.pUsing;
-      int bRight = (pLeft->fg.jointype & JT_RIGHT)!=0;
+      sqlite3 *db = pParse->db;
       assert( pList!=0 );
       for(j=0; j<pList->nId; j++){
         char *zName;     /* Name of the term in the USING clause */
         int iLeft;       /* Table on the left with matching column name */
         int iLeftCol;    /* Column number of matching column on the left */
         int iRightCol;   /* Column number of matching column on the right */
-        int iNxLeft, iNxLeftCol;
+        Expr *pE1;       /* Reference to the column on the LEFT of the join */
+        Expr *pE2;       /* Reference to the column on the RIGHT of the join */
+        Expr *pEq;       /* Equality constraint.  pE1 == pE2 */
 
         zName = pList->a[j].zName;
         iRightCol = sqlite3ColumnIndex(pRightTab, zName);
         if( iRightCol<0
-         || !tableAndColumnIndex(pSrc, i+1, zName, &iLeft, &iLeftCol,
-                                 pRight->fg.isSynthUsing, bRight)
+         || tableAndColumnIndex(pSrc, 0, i, zName, &iLeft, &iLeftCol,
+                                pRight->fg.isSynthUsing)==0
         ){
           sqlite3ErrorMsg(pParse, "cannot join using column %s - column "
             "not present in both tables", zName);
           return 1;
         }
-        if( (pLeft->fg.jointype & (JT_RIGHT|JT_LEFT))!=(JT_LEFT|JT_RIGHT)
-         || 0==tableAndColumnIndex(pSrc, iLeft, zName, &iNxLeft, &iNxLeftCol,
-                                   pRight->fg.isSynthUsing, 1)
-        ){
-          addWhereTerm(pParse, pSrc, iLeft, iLeftCol, i+1, iRightCol,
-                       joinType, &p->pWhere);
-        }else{
-          /* Because the left-hand side of this join is another RIGHT or FULL
-          ** JOIN with two or more tables hold zName, we need to construct
-          ** a coalesce() function for left side of the ON constraint.
+        pE1 = sqlite3CreateColumnExpr(db, pSrc, iLeft, iLeftCol);
+        if( (pSrc->a[0].fg.jointype & JT_LTORJ)!=0 ){
+          /* This branch runs if the query contains one or more RIGHT or FULL
+          ** JOINs.  If only a single table on the left side of this join
+          ** contains the zName column, then this routine is branch is
+          ** a no-op.  But if there are two or more tables on the left side
+          ** of the join, construct a coalesce() function that gathers all
+          ** such tables.  Raise an error if more than one of those references
+          ** to zName is not also within a prior USING clause.
+          **
+          ** We really ought to raise an error if there are two or more
+          ** non-USING references to zName on the left of an INNER or LEFT
+          ** JOIN.  But older versions of SQLite do not do that, so we avoid
+          ** adding a new error so as to not break legacy applications.
           */
-          ExprList *pList;
-          Expr *pE;
-          Expr *pE2;
-          Expr *pEq;
-          sqlite3 *db = pParse->db;
+          ExprList *pFuncArgs = 0;   /* Arguments to the coalesce() */
           static const Token tkCoalesce = { "coalesce", 8 };
-          pE = sqlite3CreateColumnExpr(db, pSrc, iLeft, iLeftCol);
-          pList = sqlite3ExprListAppend(pParse, 0, pE);
-          pE = sqlite3CreateColumnExpr(db, pSrc, iNxLeft, iNxLeftCol);
-          pList = sqlite3ExprListAppend(pParse, pList, pE);
-          while( tableAndColumnIndex(pSrc, iNxLeft, zName,
-                                     &iNxLeft, &iNxLeftCol,
-                                     pRight->fg.isSynthUsing, 1)!=0 ){
-            pE = sqlite3CreateColumnExpr(db, pSrc, iNxLeft, iNxLeftCol);
-            pList = sqlite3ExprListAppend(pParse, pList, pE);
+          while( tableAndColumnIndex(pSrc, iLeft+1, i, zName, &iLeft, &iLeftCol,
+                                     pRight->fg.isSynthUsing)!=0 ){
+            if( pSrc->a[iLeft].fg.isUsing==0
+             || sqlite3IdListIndex(pSrc->a[iLeft].u3.pUsing, zName)<0
+            ){
+              sqlite3ErrorMsg(pParse, "ambiguous reference to %s in USING()",
+                              zName);
+              break;
+            }
+            pFuncArgs = sqlite3ExprListAppend(pParse, pFuncArgs, pE1);
+            pE1 = sqlite3CreateColumnExpr(db, pSrc, iLeft, iLeftCol);
           }
-          pE = sqlite3ExprFunction(pParse, pList, &tkCoalesce, 0);
-          pE2 = sqlite3CreateColumnExpr(db, pSrc, i+1, iRightCol);
-          pEq = sqlite3PExpr(pParse, TK_EQ, pE, pE2);
-          assert( pE2!=0 || pEq==0 );
-          if( pEq ){
-            ExprSetProperty(pEq, joinType);
-            assert( !ExprHasProperty(pEq, EP_TokenOnly|EP_Reduced) );
-            ExprSetVVAProperty(pEq, EP_NoReduce);
-            pEq->w.iJoin = pE2->iTable;
+          if( pFuncArgs ){
+            pFuncArgs = sqlite3ExprListAppend(pParse, pFuncArgs, pE1);
+            pE1 = sqlite3ExprFunction(pParse, pFuncArgs, &tkCoalesce, 0);
           }
-          p->pWhere = sqlite3ExprAnd(pParse, p->pWhere, pEq);
         }
+        pE2 = sqlite3CreateColumnExpr(db, pSrc, i+1, iRightCol);
+        pEq = sqlite3PExpr(pParse, TK_EQ, pE1, pE2);
+        assert( pE2!=0 || pEq==0 );
+        if( pEq ){
+          ExprSetProperty(pEq, joinType);
+          assert( !ExprHasProperty(pEq, EP_TokenOnly|EP_Reduced) );
+          ExprSetVVAProperty(pEq, EP_NoReduce);
+          pEq->w.iJoin = pE2->iTable;
+        }
+        p->pWhere = sqlite3ExprAnd(pParse, p->pWhere, pEq);
       }
     }
 
