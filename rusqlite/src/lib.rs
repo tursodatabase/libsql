@@ -595,6 +595,21 @@ impl Connection {
         self.path.as_deref()
     }
 
+    /// Attempts to free as much heap memory as possible from the database
+    /// connection.
+    ///
+    /// This calls [`sqlite3_db_release_memory`](https://www.sqlite.org/c3ref/db_release_memory.html).
+    #[inline]
+    #[cfg(feature = "release_memory")]
+    pub fn release_memory(&self) -> Result<()> {
+        unsafe {
+            match crate::ffi::sqlite3_db_release_memory(self.handle()) {
+                ffi::SQLITE_OK => Ok(()),
+                error => Err(error_from_sqlite_code(error)),
+            }
+        }
+    }
+
     /// Convenience method to prepare and execute a single SQL statement with
     /// named parameter(s).
     ///
