@@ -52,7 +52,6 @@ struct WhereRightJoin {
   int regBloom;        /* Bloom filter for iRJMatch */
   int regReturn;       /* Return register for the interior subroutine */
   int addrSubrtn;      /* Starting address for the interior subroutine */
-  int addrInit;        /* OP_Integer used for early init of regReturn */
 };
 
 /*

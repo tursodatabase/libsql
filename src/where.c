@@ -5883,7 +5883,7 @@ WhereInfo *sqlite3WhereBegin(
       pRJ->regBloom = ++pParse->nMem;
       sqlite3VdbeAddOp2(v, OP_Blob, 65536, pRJ->regBloom);
       pRJ->regReturn = ++pParse->nMem;
-      pRJ->addrInit = sqlite3VdbeAddOp2(v, OP_Integer, 0, pRJ->regReturn);
+      sqlite3VdbeAddOp2(v, OP_Null, 0, pRJ->regReturn);
       assert( pTab==pTabItem->pTab );
       if( HasRowid(pTab) ){
         KeyInfo *pInfo;
@@ -6022,12 +6022,10 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       /* Terminate the subroutine that forms the interior of the loop of
       ** the RIGHT JOIN table */
       WhereRightJoin *pRJ = pLevel->pRJ;
-      int addrHere = sqlite3VdbeCurrentAddr(v);
-      sqlite3VdbeChangeP1(v, pRJ->addrSubrtn-1, addrHere);
-      sqlite3VdbeChangeP1(v, pRJ->addrInit, addrHere);
       sqlite3VdbeResolveLabel(v, pLevel->addrCont);
       pLevel->addrCont = 0;
-      sqlite3VdbeAddOp2(v, OP_Return, pRJ->regReturn, pRJ->addrSubrtn);
+      sqlite3VdbeAddOp3(v, OP_Return, pRJ->regReturn, pRJ->addrSubrtn, 1);
+      VdbeCoverage(v);
       assert( pParse->withinRJSubrtn>0 );
       pParse->withinRJSubrtn--;
     }

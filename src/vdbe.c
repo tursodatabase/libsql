@@ -988,12 +988,17 @@ case OP_Gosub: {            /* jump */
 
 /* Opcode:  Return P1 P2 P3 * *
 **
-** Jump to the next instruction after the address stored in register P1.
+** Jump to the address stored in register P1.  If P1 is a return address
+** register, then this accomplishes a return from a subroutine.
 **
-** It used to be that after the jump, register P1 would become undefined.
-** However, for the subroutine used for the inner loop of a RIGHT JOIN,
-** it is useful for R1 register to be unchanged, so that is what happens
-** now.
+** If P3 is 1, then the jump is only taken if register P1 holds an integer
+** values, otherwise execution falls through to the next opcode, and the
+** OP_Return becomes a no-op. If P3 is 0, then register P1 must hold an
+** integer or else an assert() is raised.  P3 should be set to 1 when
+** this opcode is used in combination with OP_BeginSubrtn, and set to 0
+** otherwise.
+**
+** The value in register P1 is unchanged by this opcode.
 **
 ** P2 is not used by the byte-code engine.  However, if P2 is positive
 ** and also less than the current address, then the "EXPLAIN" output
@@ -1002,16 +1007,15 @@ case OP_Gosub: {            /* jump */
 ** in the subroutine from which this opcode is returnning.  Thus the P2
 ** value is a byte-code indentation hint.  See tag-20220407a in
 ** wherecode.c and shell.c.
-**
-** P3 is not used by the byte-code engine.  However, the code generator
-** sets P3 to address of the associated OP_BeginSubrtn opcode, if there is
-** one.
 */
 case OP_Return: {           /* in1 */
   pIn1 = &aMem[pOp->p1];
-  assert( pIn1->flags==MEM_Int );
-  pOp = &aOp[pIn1->u.i];
-  /*  pIn1->flags = MEM_Undefined; */
+  if( pIn1->flags & MEM_Int ){
+    if( pOp->p3 ) VdbeBranchTaken(1, 2);
+    pOp = &aOp[pIn1->u.i];
+  }else if( ALWAYS(pOp->p3) ){
+    VdbeBranchTaken(0, 2);
+  }
   break;
 }
 
@@ -1197,22 +1201,11 @@ case OP_Halt: {
   goto vdbe_return;
 }
 
-/* Opcode: BeginSubrtn P1 P2 * * *
-** Synopsis: r[P2]=P1
-**
-** Mark the beginning of a subroutine by loading the integer value P1
-** into register r[P2].  The P2 register is used to store the return
-** address of the subroutine call.
-**
-** This opcode is identical to OP_Integer.  It has a different name
-** only to make the byte code easier to read and verify.
-*/
 /* Opcode: Integer P1 P2 * * *
 ** Synopsis: r[P2]=P1
 **
 ** The 32-bit integer value P1 is written into register P2.
 */
-case OP_BeginSubrtn:
 case OP_Integer: {         /* out2 */
   pOut = out2Prerelease(p, pOp);
   pOut->u.i = pOp->p1;
@@ -1319,6 +1312,28 @@ case OP_String: {          /* out2 */
   break;
 }
 
+/* Opcode: BeginSubrtn * P2 * * *
+** Synopsis: r[P2]=NULL
+**
+** Mark the beginning of a subroutine that can be entered in-line
+** or that can be called using OP_Gosub.  The subroutine should
+** be terminated by an OP_Return instruction that has a P1 operand that
+** is the same as the P2 operand to this opcode and that has P3 set to 1.
+** If the subroutine is entered in-line, then the OP_Return will simply
+** fall through.  But if the subroutine is entered using OP_Gosub, then
+** the OP_Return will jump back to the first instruction after the OP_Gosub.
+**
+** This routine works by loading a NULL into the P2 register.  When the
+** return address register contains a NULL, the OP_Return instruction is
+** a no-op that simply falls through to the next instruction (assuming that
+** the OP_Return opcode has a P3 value of 1).  Thus if the subroutine is
+** entered in-line, then the OP_Return will cause in-line execution to
+** continue.  But if the subroutine is entered via OP_Gosub, then the
+** OP_Return will cause a return to the address following the OP_Gosub.
+**
+** This opcode is identical to OP_Null.  It has a different name
+** only to make the byte code easier to read and verify.
+*/
 /* Opcode: Null P1 P2 P3 * *
 ** Synopsis: r[P2..P3]=NULL
 **
@@ -1331,6 +1346,7 @@ case OP_String: {          /* out2 */
 ** NULL values will not compare equal even if SQLITE_NULLEQ is set on
 ** OP_Ne or OP_Eq.
 */
+case OP_BeginSubrtn:
 case OP_Null: {           /* out2 */
   int cnt;
   u16 nullFlag;
