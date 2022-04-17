@@ -1219,7 +1219,7 @@ int sqlite3_tclshext_init(
          * to leave Tk objects and variables set so that when a GUI event
          * loop is run, some useful GUI program runs and can terminate.
          *
-         * Before running the setup code, a variable, ::isHost, is set 
+         * Before running the setup code, a variable, ::isHost, is set
          * true to possibly inform the setup code that it should avoid
          * exit and exec calls. Setup code which is designed for either
          * hosted or standalone use, when run with $::isHost!=0, may opt

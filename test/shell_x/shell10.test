@@ -1,0 +1,126 @@
+# 2022 Apr 16
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# The focus of this file is testing the extensible CLI shell tool's
+# feature whereby shell extensions may be loaded and used, particularly
+# the Tcl extension.
+#
+
+# Test plan:
+#
+#   shell10-1.*: loading/running the {C,C++}-written test extensions
+#   shell10-2.*: Tcl extension load and execution environment switching
+#   shell10-3.*: Tcl extension ad hoc command creation
+
+set testdir [file join [file dirname $argv0] ..]
+source [file join $testdir tester.tcl]
+set CLI [test_find_cli sqlite3x]
+set blddir [file normalize [file join $testdir ..]]
+
+db close
+forcedelete test.db test.db-journal test.db-wal
+forcedelete x.db xn.db
+
+sqlite3 db test.db
+set mdb ":memory:"
+
+proc catch_mdb_cmd {args} {
+  global CLI
+  set cmd [join $args "\n"]
+  set rc [catch { exec $CLI :memory: << $cmd } msg]
+  list $rc $msg
+}
+
+#----------------------------------------------------------------------------
+# Test cases shell10-1.*: loading/running the {C,C++}-written test extensions
+set cmds ".
+ .load $blddir/test_shellext_cpp -shext C++
+"
+do_test shell10-1.1 {
+  catch_mdb_cmd $cmds
+} {0 {BatBeing lives.
+Load arguments: C++
+dbUser closing
+dbShell closing
+BatBeing incommunicado.
+BatBeing unbecoming.
+BatBeing RIP.}}
+
+set cmds ".
+ .load $blddir/test_shellext_c -shext C
+ .bat 10 20 30
+ .load $blddir/test_shellext_cpp -shext C++
+ .bat 10 20 30
+"
+do_test shell10-1.2 {
+  catch_mdb_cmd $cmds
+} {0 {Load arguments: C
+Column widths: 10 20 30
+This execute has been called 1 times.
+BatBeing lives.
+Load arguments: C++
+Column widths: 20 30 10
+This execute has been called 2 times.
+dbUser closing
+dbUser closing
+dbShell closing
+dbShell closing
+BatBeing incommunicado.
+BatBeing incommunicado.
+BatBeing unbecoming.
+BatBeing unbecoming.
+BatBeing RIP.}}
+
+
+#----------------------------------------------------------------------------
+# Test cases shell10-2.*: Tcl extension load and execution environment switching
+
+set ldtce ".load $blddir/tclshext -shext"
+
+set cmds {
+ ..
+ puts Putsing
+ for {set i 0} {$i<2} {incr i} {.print $i}
+ puts [info commands ..]
+ .
+ .print Printing
+ .quit
+}
+do_test shell10-2.1 {
+  catch_mdb_cmd $ldtce $cmds
+} {0 {Putsing
+..
+0
+1
+Printing}}
+
+#----------------------------------------------------------------------------
+# Test cases shell10-3.*: Tcl extension ad hoc command creation
+
+set cmds {
+ ..
+ proc .sum {args} {
+   set sum 0
+   foreach addend $args {incr sum $addend}
+   .print $sum
+ }
+ register_adhoc_command sum ".sum   Sums arguments and prints result.
+   Arguments must be integers."
+ .
+ .help sum
+ .sum 1 2 3 4 5
+ .quit
+}
+do_test shell10-3.1 {
+  catch_mdb_cmd $ldtce $cmds
+} {0 {.sum   Sums arguments and prints result.
+   Arguments must be integers.
+15}}

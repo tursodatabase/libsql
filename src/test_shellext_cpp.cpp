@@ -25,9 +25,13 @@ SHELL_EXTENSION_INIT1(pShExtApi, pExtHelpers, shextLinkFetcher);
 
 struct BatBeing : DotCommand {
 
-  ~BatBeing() {}; // No held resources; copy/assign is fine and dying is easy.
+  ~BatBeing() {
+    fprintf(stdout, "BatBeing RIP.\n");
+  }; // No held resources; copy/assign is fine and dying is easy.
 
-  void destruct() { this->~BatBeing(); }
+  void destruct() {
+    fprintf(stdout, "BatBeing unbecoming.\n");
+  }
 
   const char *name() { return "bat_being"; };
 
@@ -48,12 +52,15 @@ struct BatBeing : DotCommand {
   BatBeing(DotCommand *pp = 0) {
     numCalls = 0;
     pPrint = pp;
+    pPrior = 0;
+    fprintf(stdout, "BatBeing lives.\n");
   };
 
   // Default copy/assign are fine; nothing held.
 
   int numCalls;
   DotCommand * pPrint;
+  DotCommand * pPrior;
 };
 
 static void sayHowMany( BatBeing *pbb, FILE *out, ShellExState *psx ){
@@ -62,7 +69,7 @@ static void sayHowMany( BatBeing *pbb, FILE *out, ShellExState *psx ){
     char *az[] = { cmd, 0 };
     char *zErr = 0;
     DotCmdRC rc;
-    az[1] = sqlite3_mprintf("This execute has been called %d times.\n",
+    az[1] = sqlite3_mprintf("This execute has been called %d times.",
                             ++pbb->numCalls);
     rc = pbb->pPrint->execute(psx, &zErr, 2, az);
     sqlite3_free(az[1]);
@@ -76,7 +83,25 @@ DotCmdRC BatBeing::execute(ShellExState *psx, char **pzErrMsg,
                            int nArgs, char *azArgs[]) {
   FILE *out = SHX_HELPER(currentOutputFile)(psx);
   switch( nArgs ){
-  default: fprintf(out, "The Penguin, Joker and Riddler have teamed up!\n");
+  default:
+    {
+      if( pPrior ){
+        char *az1 = azArgs[1];
+        for( int i=2; i<nArgs; ++i ) azArgs[i-1] = azArgs[i];
+        azArgs[nArgs-1] = az1;
+        return pPrior->execute(psx, pzErrMsg, nArgs, azArgs);
+      }else{
+        SHX_HELPER(setColumnWidths)(psx, azArgs+1, nArgs-1);
+        fprintf(out, "Column widths:");
+        for( int cix=0; cix<psx->numWidths; ++cix ){
+          fprintf(out, " %d", psx->pSpecWidths[cix]);
+        }
+        fprintf(out, "\n");
+      }
+    }
+    break;
+  case 3:
+    fprintf(out, "The Penguin, Joker and Riddler have teamed up!\n");
   case 2: fprintf(out, "The Dynamic Duo arrives, and ... ");
   case 1: fprintf(out, "@#$ KaPow! $#@\n");
   }
@@ -84,7 +109,7 @@ DotCmdRC BatBeing::execute(ShellExState *psx, char **pzErrMsg,
   return DCR_Ok;
 }
 
-/* Define/initialize BatBeing as a DotCommand subclass using above v-table. 
+/* Define/initialize BatBeing as a DotCommand subclass using above v-table.
  * This compiles in a type-safe manner because the batty_methods v-table
  * and methods it incorporates strictly match the DotCommand interface.
  */
@@ -101,10 +126,13 @@ static int shellEventHandle(void *pv, NoticeKind nk,
     fprintf(out, "BatBeing incommunicado.\n");
   }else if( nk==NK_DbUserAppeared || nk==NK_DbUserVanishing ){
     const char *zWhat = (nk==NK_DbUserAppeared)? "appeared" : "vanishing";
-    fprintf(out, "dbUser(%p) %s\n", pvSubject, zWhat);
+    int isDbu = pvSubject==psx->dbUser;
+    fprintf(out, "db%s %s\n", isDbu? "User" : "?", zWhat);
     if( psx->dbUser != pvSubject ) fprintf(out, "not dbx(%p)\n", psx->dbUser);
   }else if( nk==NK_DbAboutToClose ){
-    fprintf(out, "db(%p) closing\n", pvSubject);
+    const char *zdb = (pvSubject==psx->dbUser)? "User"
+      : (pvSubject==psx->dbShell)? "Shell" : "?";
+    fprintf(out, "db%s closing\n", zdb);
   }
   return 0;
 }
@@ -116,7 +144,7 @@ extern "C"
 #ifdef _WIN32
 __declspec(dllexport)
 #endif
-int sqlite3_testshellext_cpp_init(
+int sqlite3_testshellextcpp_init(
   sqlite3 *db,
   char **pzErrMsg,
   const sqlite3_api_routines *pApi
@@ -134,14 +162,23 @@ int sqlite3_testshellext_cpp_init(
   }else{
     ShellExState *psx = pShExtLink->pSXS;
     int rc;
+    char *zLoadArgs = sqlite3_mprintf("Load arguments:");
+    int ila;
 
-    SHX_API(subscribeEvents)(psx, sqlite3_testshellext_cpp_init, &batty,
+    for( ila=0; ila<pShExtLink->nLoadArgs; ++ila ){
+      zLoadArgs = sqlite3_mprintf("%z %s", zLoadArgs,
+                                  pShExtLink->azLoadArgs[ila]);
+    }
+    if( ila ) fprintf(SHX_HELPER(currentOutputFile)(psx), "%s\n", zLoadArgs);
+    sqlite3_free(zLoadArgs);
+    SHX_API(subscribeEvents)(psx, sqlite3_testshellextcpp_init, &batty,
                              NK_CountOf, shellEventHandle);
     batty.pPrint = SHX_HELPER(findDotCommand)("print", psx, &rc);
+    batty.pPrior = SHX_HELPER(findDotCommand)(batty.name(), psx, &rc);
     rc = SHX_API(registerDotCommand)(psx,
-                                     sqlite3_testshellext_cpp_init, &batty);
+                                     sqlite3_testshellextcpp_init, &batty);
     if( rc!=0 ) ++nErr;
-    pShExtLink->eid = sqlite3_testshellext_cpp_init;
+    pShExtLink->eid = sqlite3_testshellextcpp_init;
   }
   return nErr ? SQLITE_ERROR : SQLITE_OK;
 }

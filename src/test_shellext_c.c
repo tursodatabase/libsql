@@ -31,7 +31,7 @@ static void sayHowMany( BatBeing *pbb, FILE *out, ShellExState *psx );
  * The function bodies are not so easily written, of course. */
 
 DERIVED_METHOD(void, destruct, DotCommand,BatBeing, 0, ()){
-  fprintf(stderr, "BatBeing unbecoming.\n");
+  fprintf(stdout, "BatBeing unbecoming.\n");
 }
 
 DERIVED_METHOD(const char *, name, DotCommand,BatBeing, 0,()){
@@ -52,16 +52,7 @@ DERIVED_METHOD(DotCmdRC, argsCheck, DotCommand,BatBeing, 3,
 }
 
 DERIVED_METHOD(DotCmdRC, execute, DotCommand,BatBeing, 4,
-             (ShellExState *psx, char **pzErrMsg, int nArgs, char *azArgs[])){
-  FILE *out = pExtHelpers->currentOutputFile(psx);
-  switch( nArgs ){
-  default: fprintf(out, "The Penguin, Joker and Riddler have teamed up!\n");
-  case 2: fprintf(out, "The Dynamic Duo arrives, and ... ");
-  case 1: fprintf(out, "@#$ KaPow! $#@\n");
-  }
-  sayHowMany((BatBeing *)pThis, out, psx);
-  return DCR_Ok;
-}
+           (ShellExState *psx, char **pzErrMsg, int nArgs, char *azArgs[]));
 
 /* Define a DotCommand v-table initialized to reference above methods. */
 DotCommand_IMPLEMENT_VTABLE(BatBeing, batty_methods);
@@ -73,10 +64,44 @@ DotCommand_IMPLEMENT_VTABLE(BatBeing, batty_methods);
 INSTANCE_BEGIN(BatBeing);
   int numCalls;
   DotCommand * pPrint;
+  DotCommand * pPrior;
 INSTANCE_END(BatBeing) batty = {
   &batty_methods,
-  0, 0
+  0, 0, 0
 };
+
+DERIVED_METHOD(DotCmdRC, execute, DotCommand,BatBeing, 4,
+             (ShellExState *psx, char **pzErrMsg, int nArgs, char *azArgs[])){
+  FILE *out = pExtHelpers->currentOutputFile(psx);
+  BatBeing *pbb = (BatBeing*)pThis;
+  switch( nArgs ){
+  default:
+    {
+      if( pbb->pPrior ){
+        char *az1 = azArgs[1];
+        for( int i=2; i<nArgs; ++i ) azArgs[i-1] = azArgs[i];
+        azArgs[nArgs-1] = az1;
+        return pbb->pPrior->pMethods->execute(pbb->pPrior, psx,
+                                              pzErrMsg, nArgs, azArgs);
+      }else{
+        int cix;
+        SHX_HELPER(setColumnWidths)(psx, azArgs+1, nArgs-1);
+        fprintf(out, "Column widths:");
+        for( cix=0; cix<psx->numWidths; ++cix ){
+          fprintf(out, " %d", psx->pSpecWidths[cix]);
+        }
+        fprintf(out, "\n");
+      }
+    }
+    break;
+  case 3:
+    fprintf(out, "The Penguin, Joker and Riddler have teamed up!\n");
+  case 2: fprintf(out, "The Dynamic Duo arrives, and ... ");
+  case 1: fprintf(out, "@#$ KaPow! $#@\n");
+  }
+  sayHowMany((BatBeing *)pThis, out, psx);
+  return DCR_Ok;
+}
 
 static void sayHowMany( BatBeing *pbb, FILE *out, ShellExState *psx ){
   if( pbb->pPrint ){
@@ -84,7 +109,7 @@ static void sayHowMany( BatBeing *pbb, FILE *out, ShellExState *psx ){
     char *zErr = 0;
     DotCommand * pdcPrint = pbb->pPrint;
     DotCmdRC rc;
-    az[1] = sqlite3_mprintf("This execute has been called %d times.\n",
+    az[1] = sqlite3_mprintf("This execute has been called %d times.",
                             ++pbb->numCalls);
     rc = pdcPrint->pMethods->execute(pdcPrint, psx, &zErr, 2, az);
     sqlite3_free(az[1]);
@@ -105,10 +130,13 @@ static int shellEventHandle(void *pv, NoticeKind nk,
     fprintf(out, "BatBeing incommunicado.\n");
   }else if( nk==NK_DbUserAppeared || nk==NK_DbUserVanishing ){
     const char *zWhat = (nk==NK_DbUserAppeared)? "appeared" : "vanishing";
-    fprintf(out, "dbUser(%p) %s\n", pvSubject, zWhat);
+    int isDbu = pvSubject==psx->dbUser;
+    fprintf(out, "db%s %s\n", isDbu? "User" : "?", zWhat);
     if( psx->dbUser != pvSubject ) fprintf(out, "not dbx(%p)\n", psx->dbUser);
   }else if( nk==NK_DbAboutToClose ){
-    fprintf(out, "db(%p) closing\n", pvSubject);
+    const char *zdb = (pvSubject==psx->dbUser)? "User"
+      : (pvSubject==psx->dbShell)? "Shell" : "?";
+    fprintf(out, "db%s closing\n", zdb);
   }
   return 0;
 }
@@ -119,7 +147,7 @@ static int shellEventHandle(void *pv, NoticeKind nk,
 #ifdef _WIN32
 __declspec(dllexport)
 #endif
-int sqlite3_testshellext_c_init(
+int sqlite3_testshellextc_init(
   sqlite3 *db,
   char **pzErrMsg,
   const sqlite3_api_routines *pApi
@@ -138,13 +166,22 @@ int sqlite3_testshellext_c_init(
     ShellExState *psx = pShExtLink->pSXS;
     DotCommand *pdc = (DotCommand *)&batty;
     int rc;
+    char *zLoadArgs = sqlite3_mprintf("Load arguments:");
+    int ila;
 
-    SHX_API(subscribeEvents)(psx, sqlite3_testshellext_c_init, &batty,
+    for( ila=0; ila<pShExtLink->nLoadArgs; ++ila ){
+      zLoadArgs = sqlite3_mprintf("%z %s", zLoadArgs,
+                                  pShExtLink->azLoadArgs[ila]);
+    }
+    if( ila ) fprintf(SHX_HELPER(currentOutputFile)(psx), "%s\n", zLoadArgs);
+    sqlite3_free(zLoadArgs);
+    SHX_API(subscribeEvents)(psx, sqlite3_testshellextc_init, &batty,
                              NK_CountOf, shellEventHandle);
     batty.pPrint = SHX_HELPER(findDotCommand)("print", psx, &rc);
-    rc = SHX_API(registerDotCommand)(psx, sqlite3_testshellext_c_init, pdc);
+    batty.pPrior = SHX_HELPER(findDotCommand)("bat_being", psx, &rc);
+    rc = SHX_API(registerDotCommand)(psx, sqlite3_testshellextc_init, pdc);
     if( rc!=0 ) ++nErr;
-    pShExtLink->eid = sqlite3_testshellext_c_init;
+    pShExtLink->eid = sqlite3_testshellextc_init;
   }
   return nErr ? SQLITE_ERROR : SQLITE_OK;
 }

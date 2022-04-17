@@ -10,7 +10,7 @@
 #***********************************************************************
 #
 # The focus of this file is testing the CLI shell tool enhanced parsing,
-# new .parameter subcommands and uses, and the new .x meta-command.
+# .parameter and .vars subcommands and uses, and the .x command.
 #
 #
 
