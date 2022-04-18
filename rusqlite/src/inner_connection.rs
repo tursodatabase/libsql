@@ -360,6 +360,12 @@ impl InnerConnection {
             )),
         }
     }
+
+    #[inline]
+    #[cfg(feature = "release_memory")]
+    pub fn release_memory(&self) -> Result<()> {
+        self.decode_result(unsafe { ffi::sqlite3_db_release_memory(self.db) })
+    }
 }
 
 impl Drop for InnerConnection {

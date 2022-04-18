@@ -602,12 +602,7 @@ impl Connection {
     #[inline]
     #[cfg(feature = "release_memory")]
     pub fn release_memory(&self) -> Result<()> {
-        unsafe {
-            match crate::ffi::sqlite3_db_release_memory(self.handle()) {
-                ffi::SQLITE_OK => Ok(()),
-                error => Err(error_from_sqlite_code(error)),
-            }
-        }
+        self.db.borrow_mut().release_memory()
     }
 
     /// Convenience method to prepare and execute a single SQL statement with
