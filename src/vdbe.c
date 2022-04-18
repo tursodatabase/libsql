@@ -2659,7 +2659,7 @@ case OP_Offset: {          /* out3 */
 #endif /* SQLITE_ENABLE_OFFSET_SQL_FUNC */
 
 /* Opcode: Column P1 P2 P3 P4 P5
-** Synopsis: r[P3]=PX
+** Synopsis: r[P3]=PX cursor P1 column P2
 **
 ** Interpret the data that cursor P1 points to as a structure built using
 ** the MakeRecord instruction.  (See the MakeRecord opcode for additional
@@ -5742,7 +5742,7 @@ case OP_RowData: {
 }
 
 /* Opcode: Rowid P1 P2 * * *
-** Synopsis: r[P2]=rowid
+** Synopsis: r[P2]=PX rowid of P1
 **
 ** Store in register P2 an integer which is the key of the table entry that
 ** P1 is currently point to.

@@ -3748,6 +3748,7 @@ void sqlite3ExprCodeGetColumnOfTable(
   }
   if( iCol<0 || iCol==pTab->iPKey ){
     sqlite3VdbeAddOp2(v, OP_Rowid, iTabCur, regOut);
+    VdbeComment((v, "%s.rowid", pTab->zName));
   }else{
     int op;
     int x;
