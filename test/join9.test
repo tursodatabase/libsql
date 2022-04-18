@@ -416,5 +416,25 @@ foreach {id schema} {
     8   -      dave   -       -   
     9   -      -      -       999 
   }
+  do_execsql_test join9-$id.920 {
+    SELECT *
+      FROM t3 FULL JOIN (
+                t4 FULL JOIN (
+                    t5 FULL JOIN t6 USING (id)
+                ) USING(id)
+           ) USING(id)
+    ORDER BY 1;
+  } {
+    0   -      -      -       1000
+    1   -      -      red     -   
+    2   two    alice  orange  -   
+    3   three  -      yellow  333 
+    4   -      bob    green   444 
+    5   -      -      blue    555 
+    6   six    cindy  -       -   
+    7   seven  -      -       -   
+    8   -      dave   -       -   
+    9   -      -      -       999 
+  }
 }
 finish_test
