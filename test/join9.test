@@ -518,6 +518,7 @@ foreach {id schema} {
     -   -      8   dave   -       -  
   }
 
+  # Restriction (27) in the query flattener
   # Verified by PG-14
   do_execsql_test join9-$id.1000 {
     WITH t56(id,y,z) AS (SELECT * FROM t5 FULL JOIN t6 USING(id) LIMIT 50)
@@ -536,6 +537,28 @@ foreach {id schema} {
   } {
     2   alice  orange  -  
     4   bob    green   444
+  }
+
+  # Verified by PG-14
+  do_execsql_test join9-$id.1020 {
+    SELECT id,x,y,z
+      FROM t4 FULL JOIN t5 USING(id) INNER JOIN t6 USING(id)
+     ORDER BY 1;
+  } {
+    3   -    yellow  333
+    4   bob  green   444
+    5   -    blue    555
+  }
+
+  # Verified by PG-14
+  do_execsql_test join9-$id.1030 {
+    WITH t45(id,x,y) AS (SELECT * FROM t4 FULL JOIN t5 USING(id) LIMIT 50)
+    SELECT id,x,y,z FROM t45 JOIN t6 USING(id)
+    ORDER BY 1;
+  } {
+    3   -    yellow  333
+    4   bob  green   444
+    5   -    blue    555
   }
 
 }

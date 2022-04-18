@@ -4122,6 +4122,9 @@ static void renumberCursors(
 **  (26)  The subquery may not be the right operand of a RIGHT JOIN.
 **        See also (3) for restrictions on LEFT JOIN.
 **
+**  (27)  The subquery may not contain a FULL or RIGHT JOIN unless it
+**        is the first element of the parent query.
+**
 **
 ** In this routine, the "p" parameter is a pointer to the outer query.
 ** The subquery is p->pSrc->a[iFrom].  isAgg is true if the outer query
@@ -4240,6 +4243,11 @@ static int flattenSubquery(
     isOuterJoin = -1;
   }
 #endif
+
+  assert( pSubSrc->nSrc>0 );  /* True by restriction (7) */
+  if( iFrom>0 && (pSubSrc->a[0].fg.jointype & JT_LTORJ)!=0 ){
+    return 0;   /* Restriction (27) */
+  }
 
   /* Restriction (17): If the sub-query is a compound SELECT, then it must
   ** use only the UNION ALL operator. And none of the simple select queries
