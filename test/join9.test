@@ -364,5 +364,19 @@ foreach {id schema} {
     8   -      dave   -       -   
     9   -      -      -       999 
   }
-}  
+
+  # Verified by PG-14 using case 1
+  do_execsql_test join9-$id.800 {
+    WITH t7(id,a) AS MATERIALIZED (SELECT * FROM t4 WHERE false)
+    SELECT *
+      FROM t7 
+           JOIN t7 AS t7b USING(id)
+           FULL JOIN t3 USING(id);
+  } {
+    2   -  -  two  
+    3   -  -  three
+    6   -  -  six  
+    7   -  -  seven
+  }
+}
 finish_test
