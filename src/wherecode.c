@@ -2819,16 +2819,16 @@ SQLITE_NOINLINE void sqlite3WhereRightJoinLoop(
   int k;
 
   ExplainQueryPlan((pParse, 1, "RIGHT-JOIN %s", pTabItem->pTab->zName));
-  if( (pTabItem->fg.jointype & JT_LTORJ)==0 ){
-    for(k=0; k<iLevel; k++){
-      int iIdxCur;
-      mAll |= pWInfo->a[k].pWLoop->maskSelf;
-      sqlite3VdbeAddOp1(v, OP_NullRow, pWInfo->a[k].iTabCur);
-      iIdxCur = pWInfo->a[k].iIdxCur;
-      if( iIdxCur ){
-        sqlite3VdbeAddOp1(v, OP_NullRow, iIdxCur);
-      }
+  for(k=0; k<iLevel; k++){
+    int iIdxCur;
+    mAll |= pWInfo->a[k].pWLoop->maskSelf;
+    sqlite3VdbeAddOp1(v, OP_NullRow, pWInfo->a[k].iTabCur);
+    iIdxCur = pWInfo->a[k].iIdxCur;
+    if( iIdxCur ){
+      sqlite3VdbeAddOp1(v, OP_NullRow, iIdxCur);
     }
+  }
+  if( (pTabItem->fg.jointype & JT_LTORJ)==0 ){
     mAll |= pLoop->maskSelf;
     for(k=0; k<pWC->nTerm; k++){
       WhereTerm *pTerm = &pWC->a[k];
