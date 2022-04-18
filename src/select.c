@@ -483,10 +483,12 @@ static int sqlite3ProcessJoin(Parse *pParse, Select *p){
         if( IsHiddenColumn(&pRightTab->aCol[j]) ) continue;
         zName = pRightTab->aCol[j].zCnName;
         if( tableAndColumnIndex(pSrc, 0, i, zName, 0, 0, 1) ){
-          Token x;
-          x.z = zName;
-          x.n = sqlite3Strlen30(zName);
-          pUsing = sqlite3IdListAppend(pParse, pUsing, &x);
+          pUsing = sqlite3IdListAppend(pParse, pUsing, 0);
+          if( pUsing ){
+            assert( pUsing->nId>0 );
+            assert( pUsing->a[pUsing->nId-1].zName==0 );
+            pUsing->a[pUsing->nId-1].zName = sqlite3DbStrDup(pParse->db, zName);
+          }
         }
       }
       if( pUsing ){
