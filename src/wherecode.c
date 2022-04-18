@@ -2706,27 +2706,6 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     pAlt->wtFlags |= TERM_CODED;
   }
 
-  /* For a LEFT OUTER JOIN, generate code that will record the fact that
-  ** at least one row of the right table has matched the left table.  
-  */
-  if( pLevel->iLeftJoin ){
-    pLevel->addrFirst = sqlite3VdbeCurrentAddr(v);
-    sqlite3VdbeAddOp2(v, OP_Integer, 1, pLevel->iLeftJoin);
-    VdbeComment((v, "record LEFT JOIN hit"));
-    for(pTerm=pWC->a, j=0; j<pWC->nBase; j++, pTerm++){
-      testcase( pTerm->wtFlags & TERM_VIRTUAL );
-      testcase( pTerm->wtFlags & TERM_CODED );
-      if( pTerm->wtFlags & (TERM_VIRTUAL|TERM_CODED) ) continue;
-      if( (pTerm->prereqAll & pLevel->notReady)!=0 ){
-        assert( pWInfo->untestedTerms );
-        continue;
-      }
-      assert( pTerm->pExpr );
-      sqlite3ExprIfFalse(pParse, pTerm->pExpr, addrCont, SQLITE_JUMPIFNULL);
-      pTerm->wtFlags |= TERM_CODED;
-    }
-  }
-
   /* For a RIGHT OUTER JOIN, record the fact that the current row has
   ** been matched at least once.
   */
@@ -2759,19 +2738,45 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     }
     jmp1 = sqlite3VdbeAddOp4Int(v, OP_Found, pRJ->iMatch, 0, r+1, nPk);
     VdbeCoverage(v);
+    VdbeComment((v, "match against %s", pTab->zName));
     sqlite3VdbeAddOp3(v, OP_MakeRecord, r+1, nPk, r);
     sqlite3VdbeAddOp4Int(v, OP_IdxInsert, pRJ->iMatch, r, r+1, nPk);
     sqlite3VdbeAddOp4Int(v, OP_FilterAdd, pRJ->regBloom, 0, r+1, nPk);
     sqlite3VdbeChangeP5(v, OPFLAG_USESEEKRESULT);
     sqlite3VdbeJumpHere(v, jmp1);
     sqlite3ReleaseTempRange(pParse, r, nPk+1);
+  }
 
+  /* For a LEFT OUTER JOIN, generate code that will record the fact that
+  ** at least one row of the right table has matched the left table.  
+  */
+  if( pLevel->iLeftJoin ){
+    pLevel->addrFirst = sqlite3VdbeCurrentAddr(v);
+    sqlite3VdbeAddOp2(v, OP_Integer, 1, pLevel->iLeftJoin);
+    VdbeComment((v, "record LEFT JOIN hit"));
+    for(pTerm=pWC->a, j=0; j<pWC->nBase; j++, pTerm++){
+      testcase( pTerm->wtFlags & TERM_VIRTUAL );
+      testcase( pTerm->wtFlags & TERM_CODED );
+      if( pTerm->wtFlags & (TERM_VIRTUAL|TERM_CODED) ) continue;
+      if( (pTerm->prereqAll & pLevel->notReady)!=0 ){
+        assert( pWInfo->untestedTerms );
+        continue;
+      }
+      if( pTabItem->fg.jointype & JT_LTORJ ) continue;
+      assert( pTerm->pExpr );
+      sqlite3ExprIfFalse(pParse, pTerm->pExpr, addrCont, SQLITE_JUMPIFNULL);
+      pTerm->wtFlags |= TERM_CODED;
+    }
+  }
+
+  if( pLevel->pRJ ){
     /* Create a subroutine used to process all interior loops and code
     ** of the RIGHT JOIN.  During normal operation, the subroutine will
     ** be in-line with the rest of the code.  But at the end, a separate
     ** loop will run that invokes this subroutine for unmatched rows
     ** of pTab, with all tables to left begin set to NULL.
     */
+    WhereRightJoin *pRJ = pLevel->pRJ;
     sqlite3VdbeAddOp2(v, OP_BeginSubrtn, 0, pRJ->regReturn);
     pRJ->addrSubrtn = sqlite3VdbeCurrentAddr(v);
     assert( pParse->withinRJSubrtn < 255 );
@@ -2814,23 +2819,25 @@ SQLITE_NOINLINE void sqlite3WhereRightJoinLoop(
   int k;
 
   ExplainQueryPlan((pParse, 1, "RIGHT-JOIN %s", pTabItem->pTab->zName));
-  for(k=0; k<iLevel; k++){
-    int iIdxCur;
-    mAll |= pWInfo->a[k].pWLoop->maskSelf;
-    sqlite3VdbeAddOp1(v, OP_NullRow, pWInfo->a[k].iTabCur);
-    iIdxCur = pWInfo->a[k].iIdxCur;
-    if( iIdxCur ){
-      sqlite3VdbeAddOp1(v, OP_NullRow, iIdxCur);
+  if( (pTabItem->fg.jointype & JT_LTORJ)==0 ){
+    for(k=0; k<iLevel; k++){
+      int iIdxCur;
+      mAll |= pWInfo->a[k].pWLoop->maskSelf;
+      sqlite3VdbeAddOp1(v, OP_NullRow, pWInfo->a[k].iTabCur);
+      iIdxCur = pWInfo->a[k].iIdxCur;
+      if( iIdxCur ){
+        sqlite3VdbeAddOp1(v, OP_NullRow, iIdxCur);
+      }
     }
-  }
-  mAll |= pLoop->maskSelf;
-  for(k=0; k<pWC->nTerm; k++){
-    WhereTerm *pTerm = &pWC->a[k];
-    if( pTerm->wtFlags & TERM_VIRTUAL ) break;
-    if( pTerm->prereqAll & ~mAll ) continue;
-    if( ExprHasProperty(pTerm->pExpr, EP_FromJoin|EP_InnerJoin) ) continue;
-    pSubWhere = sqlite3ExprAnd(pParse, pSubWhere,
-                               sqlite3ExprDup(pParse->db, pTerm->pExpr, 0));
+    mAll |= pLoop->maskSelf;
+    for(k=0; k<pWC->nTerm; k++){
+      WhereTerm *pTerm = &pWC->a[k];
+      if( pTerm->wtFlags & TERM_VIRTUAL ) break;
+      if( pTerm->prereqAll & ~mAll ) continue;
+      if( ExprHasProperty(pTerm->pExpr, EP_FromJoin|EP_InnerJoin) ) continue;
+      pSubWhere = sqlite3ExprAnd(pParse, pSubWhere,
+                                 sqlite3ExprDup(pParse->db, pTerm->pExpr, 0));
+    }
   }
   sFrom.nSrc = 1;
   sFrom.nAlloc = 1;
