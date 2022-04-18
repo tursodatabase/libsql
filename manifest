@@ -1,5 +1,5 @@
-C Do\snot\sallow\san\sempty\stable\sbypass\sto\sjump\soutside\sof\sa\sright-join\sbody\nsubroutine.
-D 2022-04-18T10:26:50.482
+C Change\sthe\srow-value\sinitialization\ssubroutine\scall\sfrom\swithin\sthe\nright-join\sbody\ssubroutine\sfrom\san\sissue\sto\san\soptimization\sopportunity.
+D 2022-04-18T11:22:46.211
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1147,7 +1147,7 @@ F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
 F test/join5.test c4df54e2e204d7f1417bfbdd21ca324b4b07415c647595cc47798eacfddc96d3
 F test/join6.test f809c025fa253f9e150c0e9afd4cef8813257bceeb6f46e04041228c9403cc2c
 F test/join7.test e5c9b1b729d7e1d0b4195e99833e0ff0cf2d88e7fdd32b49af1044f4c76f72d9
-F test/join8.test 8a4cea60cc57ad95f0c718f460d86a7a239fbb50eaf2fa37b66d5f195f40220c
+F test/join8.test 6ed7eed8993e060e5e9d07f6bcadf1bb634742a03b9824afbcfa193adf7f9965
 F test/join9.test afd899f0bda3db6d5fefae2275ad91802d056c7dcd109030100b87e0b75f47ff
 F test/journal1.test c7b768041b7f494471531e17abc2f4f5ebf9e5096984f43ed17c4eb80ba34497
 F test/journal2.test 9dac6b4ba0ca79c3b21446bbae993a462c2397c4
@@ -1948,8 +1948,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 07ed0dca310d828f9fe152efa8ee2a89202771a8f661afa1dbeee34aaabef67a
-R a87b222d27880866b7dfd28f3fc0e49d
+P 1549dcd2353903b70abadd428eeef971ab940df04fb05a6b83b04ee30932db6d
+R bf21b74f8101c167d0386cef1bd86b5d
 U drh
-Z 6dba88c851bb0b27e425f682c55f1888
+Z 5ad80f89a1f49f3de1c0f70362c7802e
 # Remove this line to create a well-formed Fossil manifest.

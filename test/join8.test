@@ -22,18 +22,39 @@ do_execsql_test join8-10 {
   SELECT avg(DISTINCT b) FROM (SELECT * FROM t2 LEFT RIGHT JOIN t1 ON c);
 } {NULL}
 
-# Pending issue #1:
+# Pending optimization opportunity:
 # Row-value initialization subroutines must be called from with the
 # RIGHT JOIN body subroutine before the first use of any register containing
 # the results of that subroutine.  This seems dodgy.  Test case:
 #
-# CREATE TABLE t1(a INTEGER PRIMARY KEY AUTOINCREMENT,b,c,d,e,f,g,h,j,k,l,m,n,o,p,q,r,s);
-# CREATE INDEX t1x1 ON t1(g+h,j,k);
-# CREATE INDEX t1x2 ON t1(b);
-# INSERT INTO t1 DEFAULT VALUES;
-# SELECT a FROM (SELECT a FROM (SELECT a FROM (SELECT a FROM t1 NATURAL LEFT JOIN t1 WHERE (b, 2 ) IS ( SELECT 2 IN(2,2),2)) NATURAL LEFT FULL JOIN t1 WHERE ( rowid , 1 )<=(CASE 5 WHEN 619 THEN 841 ELSE 3374391096 END,0) ORDER BY a ASC) NATURAL LEFT JOIN t1 WHERE (b, 2 ) IS ( SELECT 3 IN(3,3),3)) NATURAL LEFT FULL JOIN t1 WHERE ( rowid , 1 )<=(CASE 5 WHEN 619 THEN 841 ELSE 3374391096 END,0) ORDER BY a ASC;
-#
-do_test join8-issue-1 {set rc "Issue-1 'row-value subroutine' unresolved"} {}
+reset_db
+do_execsql_test join8-1000 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY AUTOINCREMENT,b,c,d,e,f,g,h,j,k,l,m,n,o,p,q,r,s);
+  CREATE INDEX t1x1 ON t1(g+h,j,k);
+  CREATE INDEX t1x2 ON t1(b);
+  INSERT INTO t1 DEFAULT VALUES;
+} {}
+do_catchsql_test join8-1010 {
+  SELECT a
+    FROM (
+          SELECT a
+            FROM (
+                  SELECT a
+                    FROM (
+                          SELECT a FROM t1 NATURAL LEFT JOIN t1
+                           WHERE (b, 2 ) IS ( SELECT 2 IN(2,2),2)
+                         )
+                    NATURAL LEFT FULL JOIN t1
+                   WHERE ( rowid , 1 )<=(CASE 5 WHEN 619 THEN 841 ELSE 3374391096 END,0)
+                   ORDER BY a ASC
+                 )
+            NATURAL LEFT JOIN t1
+           WHERE (b, 2 ) IS ( SELECT 3 IN(3,3),3)
+         )
+    NATURAL LEFT FULL JOIN t1
+   WHERE ( rowid , 1 )<=(CASE 5 WHEN 619 THEN 841 ELSE 3374391096 END,0)
+   ORDER BY a ASC;
+} {0 1}
 
 # Pending issue #2: (now resolved)
 # Jump to addrHalt inside the RIGHT JOIN body subroutine bypasses the
