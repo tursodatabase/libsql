@@ -205,11 +205,9 @@ static void extendFJMatch(
 ){
   Expr *pNew = sqlite3ExprAlloc(pParse->db, TK_COLUMN, 0, 0);
   if( pNew ){
-    Table *pTab;
     pNew->iTable = pMatch->iCursor;
-    assert( ExprUseYTab(pNew) );
-    pTab = pNew->y.pTab = pMatch->pTab;
-    pNew->iColumn = iColumn==pTab->iPKey ? -1 : iColumn;
+    pNew->iColumn = iColumn;
+    pNew->y.pTab = pMatch->pTab;
     assert( (pMatch->fg.jointype & (JT_LEFT|JT_LTORJ))!=0 );
     ExprSetProperty(pNew, EP_CanBeNull);
     *ppList = sqlite3ExprListAppend(pParse, *ppList, pNew);
@@ -342,7 +340,7 @@ static int lookupName(
                   pFJMatch = 0;
                 }else{
                   /* For a FULL JOIN, we must construct a coalesce() func */
-                  extendFJMatch(pParse, &pFJMatch, pMatch, j);
+                  extendFJMatch(pParse, &pFJMatch, pMatch, pExpr->iColumn);
                 }
               }
               cnt++;
@@ -396,7 +394,7 @@ static int lookupName(
                 pFJMatch = 0;
               }else{
                 /* For a FULL JOIN, we must construct a coalesce() func */
-                extendFJMatch(pParse, &pFJMatch, pMatch, j);
+                extendFJMatch(pParse, &pFJMatch, pMatch, pExpr->iColumn);
               }
             }
             cnt++;
