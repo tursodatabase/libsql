@@ -436,5 +436,107 @@ foreach {id schema} {
     8   -      dave   -       -   
     9   -      -      -       999 
   }
+  do_execsql_test join9-$id.920 {
+    SELECT *
+      FROM t3 FULL JOIN (
+                t4 FULL JOIN (
+                    t5 FULL JOIN t6 USING (id)
+                ) USING(id)
+           ) USING(id)
+    ORDER BY 1;
+  } {
+    0   -      -      -       1000
+    1   -      -      red     -   
+    2   two    alice  orange  -   
+    3   three  -      yellow  333 
+    4   -      bob    green   444 
+    5   -      -      blue    555 
+    6   six    cindy  -       -   
+    7   seven  -      -       -   
+    8   -      dave   -       -   
+    9   -      -      -       999 
+  }
+
+  # Verified by PG-14
+  do_execsql_test join9-$id.930 {
+    SELECT *
+      FROM t3 FULL JOIN (
+               t4 FULL JOIN (
+                   t5 FULL JOIN t6 USING(id)
+               ) USING(id)
+           ) AS j1 ON j1.id=t3.id
+     ORDER BY coalesce(t3.id,j1.id);
+  } {
+    -   -      0   -      -       1000
+    -   -      1   -      red     -   
+    2   two    2   alice  orange  -   
+    3   three  3   -      yellow  333 
+    -   -      4   bob    green   444 
+    -   -      5   -      blue    555 
+    6   six    6   cindy  -       -   
+    7   seven  -   -      -       -   
+    -   -      8   dave   -       -   
+    -   -      9   -      -       999 
+  }
+
+  # Verified by PG-14
+  do_execsql_test join9-$id.940 {
+    SELECT *
+      FROM t3 FULL JOIN (
+                t4 RIGHT JOIN (
+                    t5 FULL JOIN t6 USING(id)
+                ) USING(id)
+           ) AS j1 ON j1.id=t3.id
+     ORDER BY coalesce(t3.id,j1.id);
+  } {
+    -   -      0   -      -       1000
+    -   -      1   -      red     -   
+    2   two    2   alice  orange  -   
+    3   three  3   -      yellow  333 
+    -   -      4   bob    green   444 
+    -   -      5   -      blue    555 
+    6   six    -   -      -       -   
+    7   seven  -   -      -       -   
+    -   -      9   -      -       999 
+  }
+
+  # Verified by PG-14
+  do_execsql_test join9-$id.950 {
+    SELECT *
+      FROM t3 FULL JOIN (
+                t4 LEFT JOIN (
+                    t5 FULL JOIN t6 USING(id)
+                ) USING(id)
+           ) AS j1 ON j1.id=t3.id
+     ORDER BY coalesce(t3.id,j1.id);
+  } {
+    2   two    2   alice  orange  -  
+    3   three  -   -      -       -  
+    -   -      4   bob    green   444
+    6   six    6   cindy  -       -  
+    7   seven  -   -      -       -  
+    -   -      8   dave   -       -  
+  }
+
+  # Verified by PG-14
+  do_execsql_test join9-$id.1000 {
+    WITH t56(id,y,z) AS (SELECT * FROM t5 FULL JOIN t6 USING(id) LIMIT 50)
+    SELECT id,x,y,z FROM t4 JOIN t56 USING(id)
+    ORDER BY 1;
+  } {
+    2   alice  orange  -  
+    4   bob    green   444
+  }
+
+  # Verified by PG-14
+  do_execsql_test join9-$id.1010 {
+    SELECT id,x,y,z
+      FROM t4 INNER JOIN (t5 FULL JOIN t6 USING(id)) USING(id)
+     ORDER BY 1;
+  } {
+    2   alice  orange  -  
+    4   bob    green   444
+  }
+
 }
 finish_test
