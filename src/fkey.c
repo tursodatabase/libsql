@@ -534,14 +534,10 @@ static Expr *exprTableColumn(
 **   Operation | FK type   | Action taken
 **   --------------------------------------------------------------------------
 **   DELETE      immediate   Increment the "immediate constraint counter".
-**                           Or, if the ON (UPDATE|DELETE) action is RESTRICT,
-**                           throw a "FOREIGN KEY constraint failed" exception.
 **
 **   INSERT      immediate   Decrement the "immediate constraint counter".
 **
 **   DELETE      deferred    Increment the "deferred constraint counter".
-**                           Or, if the ON (UPDATE|DELETE) action is RESTRICT,
-**                           throw a "FOREIGN KEY constraint failed" exception.
 **
 **   INSERT      deferred    Decrement the "deferred constraint counter".
 **
@@ -1189,9 +1185,9 @@ int sqlite3FkRequired(
 **
 ** It returns a pointer to a Trigger structure containing a trigger
 ** equivalent to the ON UPDATE or ON DELETE action specified by pFKey.
-** If the action is "NO ACTION" or "RESTRICT", then a NULL pointer is
-** returned (these actions require no special handling by the triggers
-** sub-system, code for them is created by fkScanChildren()).
+** If the action is "NO ACTION" then a NULL pointer is returned (these actions
+** require no special handling by the triggers sub-system, code for them is
+** created by fkScanChildren()).
 **
 ** For example, if pFKey is the foreign key and pTab is table "p" in 
 ** the following schema:
@@ -1320,18 +1316,23 @@ static Trigger *fkActionTrigger(
     nFrom = sqlite3Strlen30(zFrom);
 
     if( action==OE_Restrict ){
+      int iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
       Token tFrom;
+      Token tDb;
       Expr *pRaise; 
 
       tFrom.z = zFrom;
       tFrom.n = nFrom;
+      tDb.z = db->aDb[iDb].zDbSName;
+      tDb.n = sqlite3Strlen30(tDb.z);
+
       pRaise = sqlite3Expr(db, TK_RAISE, "FOREIGN KEY constraint failed");
       if( pRaise ){
         pRaise->affExpr = OE_Abort;
       }
       pSelect = sqlite3SelectNew(pParse, 
           sqlite3ExprListAppend(pParse, 0, pRaise),
-          sqlite3SrcListAppend(pParse, 0, &tFrom, 0),
+          sqlite3SrcListAppend(pParse, 0, &tDb, &tFrom),
           pWhere,
           0, 0, 0, 0, 0
       );

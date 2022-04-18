@@ -7833,7 +7833,7 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
 #endif /* !(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_ENABLE_DBPAGE_VTAB) */
 
 
-/* 
+/*
  * zAutoColumn(zCol, &db, ?) => Maybe init db, add column zCol to it.
  * zAutoColumn(0, &db, ?) => (db!=0) Form columns spec for CREATE TABLE,
  *   close db and set it to 0, and return the columns spec, to later
@@ -7915,6 +7915,13 @@ UPDATE ColNames AS t SET reps=\
 #ifdef SQLITE_ENABLE_MATH_FUNCTIONS
   static const char * const zColDigits = "\
 SELECT CAST(ceil(log(count(*)+0.5)) AS INT) FROM ColNames \
+";
+#else
+  /* Counting on SQLITE_MAX_COLUMN < 100,000 here. (32767 is the hard limit.) */
+  static const char * const zColDigits = "\
+SELECT CASE WHEN (nc < 10) THEN 1 WHEN (nc < 100) THEN 2 \
+ WHEN (nc < 1000) THEN 3 WHEN (nc < 10000) THEN 4 \
+ ELSE 5 FROM (SELECT count(*) AS nc FROM ColNames) \
 ";
 #endif
   static const char * const zRenameRank =
@@ -8001,11 +8008,7 @@ FROM (\
     /* Formulate the columns spec, close the DB, zero *pDb. */
     char *zColsSpec = 0;
     int hasDupes = db_int(*pDb, zHasDupes);
-#ifdef SQLITE_ENABLE_MATH_FUNCTIONS
     int nDigits = (hasDupes)? db_int(*pDb, zColDigits) : 0;
-#else
-# define nDigits 2
-#endif
     if( hasDupes ){
 #ifdef SHELL_COLUMN_RENAME_CLEAN
       rc = sqlite3_exec(*pDb, zDedoctor, 0, 0, 0);
