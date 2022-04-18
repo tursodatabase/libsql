@@ -3044,7 +3044,7 @@ struct IdList {
     char *zName;      /* Name of the identifier */
     union {
       int idx;          /* Index in some Table.aCol[] of a column named zName */
-      Expr *pExpr;      /* Expr to implement a USING variable */
+      Expr *pExpr;      /* Expr to implement a USING variable -- NOT USED */
     } u4;
   } a[1];
 };
@@ -3055,7 +3055,7 @@ struct IdList {
 */
 #define EU4_NONE   0   /* Does not use IdList.a.u4 */
 #define EU4_IDX    1   /* Uses IdList.a.u4.idx */
-#define EU4_EXPR   2   /* Uses IdList.a.u4.pExpr */
+#define EU4_EXPR   2   /* Uses IdList.a.u4.pExpr -- NOT CURRENTLY USED */
 
 /*
 ** The SrcItem object represents a single term in the FROM clause of a query.

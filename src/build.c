@@ -4695,12 +4695,10 @@ IdList *sqlite3IdListAppend(Parse *pParse, IdList *pList, Token *pToken){
 */
 void sqlite3IdListDelete(sqlite3 *db, IdList *pList){
   int i;
-  int delExpr;
   if( pList==0 ) return;
-  delExpr = pList->eU4==EU4_EXPR;
+  assert( pList->eU4!=EU4_EXPR ); /* EU4_EXPR mode is not currently used */
   for(i=0; i<pList->nId; i++){
     sqlite3DbFree(db, pList->a[i].zName);
-    if( delExpr ) sqlite3ExprDelete(db, pList->a[i].u4.pExpr);
   }
   sqlite3DbFreeNN(db, pList);
 }
