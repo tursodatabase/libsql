@@ -378,5 +378,43 @@ foreach {id schema} {
     6   -  -  six  
     7   -  -  seven
   }
+
+  # Verified by PG-14
+  do_execsql_test join9-$id.900 {
+    SELECT *
+      FROM (t3 NATURAL FULL JOIN t4)
+           NATURAL FULL JOIN
+           (t5 NATURAL FULL JOIN t6)
+    ORDER BY 1;
+  } {
+    0   -      -      -       1000
+    1   -      -      red     -   
+    2   two    alice  orange  -   
+    3   three  -      yellow  333 
+    4   -      bob    green   444 
+    5   -      -      blue    555 
+    6   six    cindy  -       -   
+    7   seven  -      -       -   
+    8   -      dave   -       -   
+    9   -      -      -       999 
+  }
+  do_execsql_test join9-$id.910 {
+    SELECT *
+      FROM t3 NATURAL FULL JOIN 
+           (t4 NATURAL FULL JOIN
+            (t5 NATURAL FULL JOIN t6))
+    ORDER BY 1;
+  } {
+    0   -      -      -       1000
+    1   -      -      red     -   
+    2   two    alice  orange  -   
+    3   three  -      yellow  333 
+    4   -      bob    green   444 
+    5   -      -      blue    555 
+    6   six    cindy  -       -   
+    7   seven  -      -       -   
+    8   -      dave   -       -   
+    9   -      -      -       999 
+  }
 }
 finish_test
