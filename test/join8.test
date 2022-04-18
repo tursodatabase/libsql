@@ -35,20 +35,22 @@ do_execsql_test join8-10 {
 #
 do_test join8-issue-1 {set rc "Issue-1 'row-value subroutine' unresolved"} {}
 
-# Pending issue #2:
+# Pending issue #2: (now resolved)
 # Jump to addrHalt inside the RIGHT JOIN body subroutine bypasses the
 # OP_Return, resulting in a subroutine loop.  Test case:
 #
-# CREATE TABLE t1(a int, b int, c int);
-# INSERT INTO t1 VALUES(1,2,3),(4,5,6);
-# CREATE TABLE t2(d int, e int);
-# INSERT INTO t2 VALUES(3,333),(4,444);
-# CREATE TABLE t3(f int, g int);
-# PRAGMA automatic_index=off;
-# .eqp trace
-# SELECT * FROM t1 RIGHT JOIN t2 ON c=d JOIN t3 ON f=e;
-#
-do_test join8-issue-2 {set rc "Issue-2 'jump to addrHalt' unresolved"} {}
+reset_db
+do_execsql_test join8-2000 {
+  CREATE TABLE t1(a int, b int, c int);
+  INSERT INTO t1 VALUES(1,2,3),(4,5,6);
+  CREATE TABLE t2(d int, e int);
+  INSERT INTO t2 VALUES(3,333),(4,444);
+  CREATE TABLE t3(f int, g int);
+  PRAGMA automatic_index=off;
+} {}
+do_catchsql_test join8-2010 {
+  SELECT * FROM t1 RIGHT JOIN t2 ON c=d JOIN t3 ON f=e;
+} {0 {}}
 
 # Demonstrate that nested FULL JOINs and USING clauses work
 #
