@@ -496,6 +496,7 @@ static int sqlite3ProcessJoin(Parse *pParse, Select *p){
         pRight->fg.isSynthUsing = 1;
         pRight->u3.pUsing = pUsing;
       }
+      if( pParse->nErr ) return 1;
     }
 
     /* Create extra terms on the WHERE clause for each column named
