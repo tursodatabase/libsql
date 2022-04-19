@@ -1,5 +1,5 @@
-C Fix\sthe\squery\sflattener\sso\sthat\sit\sdoes\snot\sflatten\sa\sRIGHT\sor\sFULL\sJOIN\sinto\nany\sposition\sof\sthe\souter\squery\sother\sthan\sthe\sfirst.
-D 2022-04-18T23:20:02.870
+C New\stest\scases\sfor\sRIGHT\sand\sFULL\sJOIN.
+D 2022-04-19T00:24:52.147
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1149,6 +1149,7 @@ F test/join6.test f809c025fa253f9e150c0e9afd4cef8813257bceeb6f46e04041228c9403cc
 F test/join7.test 8e72de4b45e5e930d18c305c7efe86015fb2552731e4e03ea226353036b0dab0
 F test/join8.test 6ed7eed8993e060e5e9d07f6bcadf1bb634742a03b9824afbcfa193adf7f9965
 F test/join9.test 9056ddd3b0c0f4f9d658f4521038d9a37dc23ead8ca9a505d0b0db2b6a471e05
+F test/joinA.test 71672b591fe7ea87837b0a22e7e022aa1513f39991c31938f67d63c6a366d66c
 F test/journal1.test c7b768041b7f494471531e17abc2f4f5ebf9e5096984f43ed17c4eb80ba34497
 F test/journal2.test 9dac6b4ba0ca79c3b21446bbae993a462c2397c4
 F test/journal3.test 7c3cf23ffc77db06601c1fcfc9743de8441cb77db9d1aa931863d94f5ffa140e
@@ -1948,8 +1949,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 49ea11a4a5fd630db44f458304d4f45fa103529ed6b36d538c78074965e8d799
-R f732ede2542062631f39bbd96137d61f
+P 837322aa95b1c46201b7dd0c2e6c7b9915b4276d997949f1ecf961fb7f3514cf
+R 3bb4cbe21854d93bac5653e430f69487
 U drh
-Z dd5cee205fd9f7e997652ba77ec73d51
+Z 7e7983c98db07942264cc173c5b87cf4
 # Remove this line to create a well-formed Fossil manifest.
