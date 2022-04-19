@@ -686,4 +686,54 @@ do_execsql_test 28.2 {
     UPDATE "t2" SET (c,d)=(a,b);
   END}}
 
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 29.1 {
+  CREATE TABLE t1(x, y);
+  CREATE TRIGGER Trigger1 DELETE ON t1 
+  BEGIN 
+    SELECT t1.*, t1.x FROM t1 ORDER BY t1.x;
+  END;
+}
+
+
+do_execsql_test 29.2 {
+  ALTER TABLE t1 RENAME x TO z;
+}
+
+do_execsql_test 29.3 {
+  ALTER TABLE t1 RENAME TO t2;
+}
+
+do_execsql_test 29.4 {
+  CREATE TRIGGER tr2 AFTER DELETE ON t2 BEGIN
+    SELECT z, y FROM (
+      SELECT t2.* FROM t2
+    );
+  END;
+}
+
+do_execsql_test 29.5 {
+  DELETE FROM t2
+}
+
+do_execsql_test 29.6 {
+  ALTER TABLE t2 RENAME TO t3;
+}
+
+do_execsql_test 29.7 {
+  SELECT sql FROM sqlite_schema WHERE type='trigger'
+} {
+  {CREATE TRIGGER Trigger1 DELETE ON "t3" 
+  BEGIN 
+    SELECT "t3".*, "t3".z FROM "t3" ORDER BY "t3".z;
+  END}
+  {CREATE TRIGGER tr2 AFTER DELETE ON "t3" BEGIN
+    SELECT z, y FROM (
+      SELECT "t3".* FROM "t3"
+    );
+  END}
+}
+
 finish_test
