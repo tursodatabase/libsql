@@ -7606,7 +7606,9 @@ int sqlite3Select(
         updateAccumulator(pParse, regAcc, pAggInfo, eDist);
         if( eDist!=WHERE_DISTINCT_NOOP ){
           struct AggInfo_func *pF = &pAggInfo->aFunc[0];
-          fixDistinctOpenEph(pParse, eDist, pF->iDistinct, pF->iDistAddr);
+          if( pF ){
+            fixDistinctOpenEph(pParse, eDist, pF->iDistinct, pF->iDistAddr);
+          }
         }
 
         if( regAcc ) sqlite3VdbeAddOp2(v, OP_Integer, 1, regAcc);
