@@ -3151,9 +3151,9 @@ struct SrcList {
 #define JT_LEFT      0x08    /* Left outer join */
 #define JT_RIGHT     0x10    /* Right outer join */
 #define JT_OUTER     0x20    /* The "OUTER" keyword is present */
-#define JT_LTORJ     0x40    /* One of the LEFT operands of a RIGHT JOIN */
+#define JT_LTORJ     0x40    /* One of the LEFT operands of a RIGHT JOIN
+                             ** Mnemonic: Left Table Of Right Join */
 #define JT_ERROR     0x80    /* unknown or unsupported join type */
-
 
 /*
 ** Flags appropriate for the wctrlFlags parameter of sqlite3WhereBegin()

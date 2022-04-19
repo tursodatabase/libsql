@@ -1,5 +1,5 @@
-C Fix\sa\sNULL-pointer\sdereference\sthat\scan\soccur\son\san\saggregate\squery\sthat\nuses\sFULL\sJOIN.\s\sdbsqlfuzz\s496a35dd4eefcd7935aaaeb0c69056bf49785d28.
-D 2022-04-19T18:23:01.497
+C Improved\scomment\son\sthe\sJF_LTORJ\sconstant\sdefinition.
+D 2022-04-19T19:51:51.383
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -557,7 +557,7 @@ F src/shell.c.in ecff6f4ab0e8e25acd578b3eb27ac0bad4d48643c160259a277151d6e9d412e
 F src/sqlite.h.in 2a35f62185eb5e7ecc64a2f68442b538ce9be74f80f28a00abc24837edcf1c17
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h f49e28c25bd941e79794db5415fdf7b202deb3bc072ed6f1ed273d578703684e
-F src/sqliteInt.h e748c9855541432874b37dbf11550d46ea66cac3958857dad4643fc48308d398
+F src/sqliteInt.h f1c2ad8969396460805c3334f55d623123f2ad2c79d468242b2332e9584453f3
 F src/sqliteLimit.h d7323ffea5208c6af2734574bae933ca8ed2ab728083caa117c9738581a31657
 F src/status.c 4a3da6d77eeb3531cb0dbdf7047772a2a1b99f98c69e90ce009c75fe6328b2c0
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -1950,8 +1950,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b966d52437f08a6759a83a45cafb0d706a8933a8e55dee38ae78166d1a5b3ba4
-R 700d351d60353bc6a3752c8bca1af8cc
+P 63b8f8aec2a9ac3fbbd02715aa308eaf43c9ffde9d7c6db026d46edc575e7bdd
+R 0e43081825ba2ac344b2260d536ab5ce
 U drh
-Z 79f7f3b783582a1aa6157ba5326441d3
+Z 728f00126338b98c12a3542524a6b6aa
 # Remove this line to create a well-formed Fossil manifest.
