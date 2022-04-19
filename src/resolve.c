@@ -322,12 +322,11 @@ static int lookupName(
                 if( pItem->fg.isUsing==0
                  || sqlite3IdListIndex(pItem->u3.pUsing, zCol)<0
                 ){
+                  /* Two or more tables have the same column name which is
+                  ** not joined by USING.  This is an error.  Signal as much
+                  ** by clearing pFJMatch and letting cnt go above 1. */
                   sqlite3ExprListDelete(db, pFJMatch);
                   pFJMatch = 0;
-                  if( pItem->fg.jointype & JT_LTORJ ){
-                    cnt++;
-                    continue;
-                  }
                 }else
                 if( (pItem->fg.jointype & JT_RIGHT)==0 ){
                   /* An INNER or LEFT JOIN.  Use the left-most table */
@@ -376,12 +375,11 @@ static int lookupName(
               if( pItem->fg.isUsing==0
                || sqlite3IdListIndex(pItem->u3.pUsing, zCol)<0
               ){
+                /* Two or more tables have the same column name which is
+                ** not joined by USING.  This is an error.  Signal as much
+                ** by clearing pFJMatch and letting cnt go above 1. */
                 sqlite3ExprListDelete(db, pFJMatch);
                 pFJMatch = 0;
-                if( pItem->fg.jointype & JT_LTORJ ){
-                  cnt++;
-                  continue;
-                }
               }else
               if( (pItem->fg.jointype & JT_RIGHT)==0 ){
                 /* An INNER or LEFT JOIN.  Use the left-most table */
