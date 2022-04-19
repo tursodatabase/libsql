@@ -5557,7 +5557,7 @@ static int inAnyUsingClause(
     N--;
     pBase++;
     if( pBase->fg.isUsing==0 ) continue;
-    if( pBase->u3.pUsing==0 ) continue;
+    if( NEVER(pBase->u3.pUsing==0) ) continue;
     if( sqlite3IdListIndex(pBase->u3.pUsing, zName)>=0 ) return 1;
   }
   return 0;
