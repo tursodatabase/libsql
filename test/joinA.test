@@ -211,3 +211,4 @@ foreach {id schema} {
     19  -   29  39  -   49  - 
   }
 }
+finish_test
