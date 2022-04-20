@@ -794,13 +794,23 @@ void sqlite3TreeViewBareExprList(
       int j = pList->a[i].u.x.iOrderByCol;
       char *zName = pList->a[i].zEName;
       int moreToFollow = i<pList->nExpr - 1;
-      if( pList->a[i].eEName!=ENAME_NAME ) zName = 0;
+      if( pList->a[i].eEName==ENAME_SPAN ) zName = 0;
       if( j || zName ){
         sqlite3TreeViewPush(&pView, moreToFollow);
         moreToFollow = 0;
         sqlite3TreeViewLine(pView, 0);
         if( zName ){
-          fprintf(stdout, "AS %s ", zName);
+          switch( pList->a[i].eEName ){
+            default:
+              fprintf(stdout, "AS %s ", zName);
+              break;
+            case ENAME_TAB:
+              fprintf(stdout, "TABLE-ALIAS-NAME(\"%s\") ", zName);
+              break;
+            case ENAME_SPAN:
+              fprintf(stdout, "SPAN(\"%s\") ", zName);
+              break;
+          }
         }
         if( j ){
           fprintf(stdout, "iOrderByCol=%d", j);
