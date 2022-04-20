@@ -132,6 +132,7 @@ impl Statement<'_> {
     /// Will return `Err` if binding parameters fails, the executed statement
     /// returns rows (in which case `query` should be used instead), or the
     /// underlying SQLite call fails.
+    #[doc(hidden)]
     #[deprecated = "You can use `execute` with named params now."]
     #[inline]
     pub fn execute_named(&mut self, params: &[(&str, &dyn ToSql)]) -> Result<usize> {
@@ -267,6 +268,7 @@ impl Statement<'_> {
     /// # Failure
     ///
     /// Will return `Err` if binding parameters fails.
+    #[doc(hidden)]
     #[deprecated = "You can use `query` with named params now."]
     pub fn query_named(&mut self, params: &[(&str, &dyn ToSql)]) -> Result<Rows<'_>> {
         self.query(params)
@@ -344,6 +346,7 @@ impl Statement<'_> {
     /// ## Failure
     ///
     /// Will return `Err` if binding parameters fails.
+    #[doc(hidden)]
     #[deprecated = "You can use `query_map` with named params now."]
     pub fn query_map_named<T, F>(
         &mut self,
@@ -436,6 +439,7 @@ impl Statement<'_> {
     /// ## Failure
     ///
     /// Will return `Err` if binding parameters fails.
+    #[doc(hidden)]
     #[deprecated = "You can use `query_and_then` with named params now."]
     pub fn query_and_then_named<T, E, F>(
         &mut self,
@@ -503,6 +507,7 @@ impl Statement<'_> {
     ///
     /// Will return `Err` if `sql` cannot be converted to a C-compatible string
     /// or if the underlying SQLite call fails.
+    #[doc(hidden)]
     #[deprecated = "You can use `query_row` with named params now."]
     pub fn query_row_named<T, F>(&mut self, params: &[(&str, &dyn ToSql)], f: F) -> Result<T>
     where
@@ -727,6 +732,7 @@ impl Statement<'_> {
 
             #[cfg(feature = "blob")]
             ToSqlOutput::ZeroBlob(len) => {
+                // TODO sqlite3_bind_zeroblob64 // 3.8.11
                 return self
                     .conn
                     .decode_result(unsafe { ffi::sqlite3_bind_zeroblob(ptr, col as c_int, len) });
@@ -750,6 +756,7 @@ impl Statement<'_> {
             ValueRef::Real(r) => unsafe { ffi::sqlite3_bind_double(ptr, col as c_int, r) },
             ValueRef::Text(s) => unsafe {
                 let (c_str, len, destructor) = str_for_sqlite(s)?;
+                // TODO sqlite3_bind_text64 // 3.8.7
                 ffi::sqlite3_bind_text(ptr, col as c_int, c_str, len, destructor)
             },
             ValueRef::Blob(b) => unsafe {
@@ -757,6 +764,7 @@ impl Statement<'_> {
                 if length == 0 {
                     ffi::sqlite3_bind_zeroblob(ptr, col as c_int, 0)
                 } else {
+                    // TODO sqlite3_bind_blob64 // 3.8.7
                     ffi::sqlite3_bind_blob(
                         ptr,
                         col as c_int,
@@ -775,7 +783,7 @@ impl Statement<'_> {
         let r = self.stmt.step();
         self.stmt.reset();
         match r {
-            ffi::SQLITE_DONE => Ok(self.conn.changes()),
+            ffi::SQLITE_DONE => Ok(self.conn.changes() as usize),
             ffi::SQLITE_ROW => Err(Error::ExecuteReturnedResults),
             _ => Err(self.conn.decode_result(r).unwrap_err()),
         }
@@ -836,6 +844,16 @@ impl Statement<'_> {
     /// returning the value it had before resetting.
     pub fn reset_status(&self, status: StatementStatus) -> i32 {
         self.stmt.get_status(status, true)
+    }
+
+    /// Returns 1 if the prepared statement is an EXPLAIN statement,
+    /// or 2 if the statement is an EXPLAIN QUERY PLAN,
+    /// or 0 if it is an ordinary statement or a NULL pointer.
+    #[inline]
+    #[cfg(feature = "modern_sqlite")] // 3.28.0
+    #[cfg_attr(docsrs, doc(cfg(feature = "modern_sqlite")))]
+    pub fn is_explain(&self) -> i32 {
+        self.stmt.is_explain()
     }
 
     #[cfg(feature = "extra_check")]
@@ -985,15 +1003,15 @@ pub enum StatementStatus {
     AutoIndex = 3,
     /// Equivalent to SQLITE_STMTSTATUS_VM_STEP
     VmStep = 4,
-    /// Equivalent to SQLITE_STMTSTATUS_REPREPARE
+    /// Equivalent to SQLITE_STMTSTATUS_REPREPARE (3.20.0)
     RePrepare = 5,
-    /// Equivalent to SQLITE_STMTSTATUS_RUN
+    /// Equivalent to SQLITE_STMTSTATUS_RUN (3.20.0)
     Run = 6,
     /// Equivalent to SQLITE_STMTSTATUS_FILTER_MISS
     FilterMiss = 7,
     /// Equivalent to SQLITE_STMTSTATUS_FILTER_HIT
     FilterHit = 8,
-    /// Equivalent to SQLITE_STMTSTATUS_MEMUSED
+    /// Equivalent to SQLITE_STMTSTATUS_MEMUSED (3.20.0)
     MemUsed = 99,
 }
 
@@ -1506,6 +1524,15 @@ mod test {
         let expected = "a\x00b";
         let actual: String = db.query_row("SELECT ?", [expected], |row| row.get(0))?;
         assert_eq!(expected, actual);
+        Ok(())
+    }
+
+    #[test]
+    #[cfg(feature = "modern_sqlite")]
+    fn is_explain() -> Result<()> {
+        let db = Connection::open_in_memory()?;
+        let stmt = db.prepare("SELECT 1;")?;
+        assert_eq!(0, stmt.is_explain());
         Ok(())
     }
 

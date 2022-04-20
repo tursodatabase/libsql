@@ -1,5 +1,9 @@
-//! Rusqlite is an ergonomic wrapper for using SQLite from Rust. It attempts to
-//! expose an interface similar to [rust-postgres](https://github.com/sfackler/rust-postgres).
+//! Rusqlite is an ergonomic wrapper for using SQLite from Rust.
+//!
+//! Historically, the API was based on the one from
+//! [`rust-postgres`](https://github.com/sfackler/rust-postgres). However, the
+//! two have diverged in many ways, and no compatibility between the two is
+//! intended.
 //!
 //! ```rust
 //! use rusqlite::{params, Connection, Result};
@@ -346,27 +350,59 @@ impl Drop for Connection {
 }
 
 impl Connection {
-    /// Open a new connection to a SQLite database.
-    ///
-    /// `Connection::open(path)` is equivalent to
-    /// `Connection::open_with_flags(path,
-    /// OpenFlags::SQLITE_OPEN_READ_WRITE |
-    /// OpenFlags::SQLITE_OPEN_CREATE)`.
+    /// Open a new connection to a SQLite database. If a database does not exist
+    /// at the path, one is created.
     ///
     /// ```rust,no_run
     /// # use rusqlite::{Connection, Result};
     /// fn open_my_db() -> Result<()> {
     ///     let path = "./my_db.db3";
-    ///     let db = Connection::open(&path)?;
+    ///     let db = Connection::open(path)?;
+    ///     // Use the database somehow...
     ///     println!("{}", db.is_autocommit());
     ///     Ok(())
     /// }
     /// ```
     ///
+    /// # Flags
+    ///
+    /// `Connection::open(path)` is equivalent to using
+    /// [`Connection::open_with_flags`] with the default [`OpenFlags`]. That is,
+    /// it's equivalent to:
+    ///
+    /// ```ignore
+    /// Connection::open_with_flags(
+    ///     path,
+    ///     OpenFlags::SQLITE_OPEN_READ_WRITE
+    ///         | OpenFlags::SQLITE_OPEN_CREATE
+    ///         | OpenFlags::SQLITE_OPEN_URI
+    ///         | OpenFlags::SQLITE_OPEN_NO_MUTEX,
+    /// )
+    /// ```
+    ///
+    /// These flags have the following effects:
+    ///
+    /// - Open the database for both reading or writing.
+    /// - Create the database if one does not exist at the path.
+    /// - Allow the filename to be interpreted as a URI (see
+    ///   <https://www.sqlite.org/uri.html#uri_filenames_in_sqlite> for
+    ///   details).
+    /// - Disables the use of a per-connection mutex.
+    ///
+    ///     Rusqlite enforces thread-safety at compile time, so additional
+    ///     locking is not needed and provides no benefit. (See the
+    ///     documentation on [`OpenFlags::SQLITE_OPEN_FULL_MUTEX`] for some
+    ///     additional discussion about this).
+    ///
+    /// Most of these are also the default settings for the C API, although
+    /// technically the default locking behavior is controlled by the flags used
+    /// when compiling SQLite -- rather than let it vary, we choose `NO_MUTEX`
+    /// because it's a fairly clearly the best choice for users of this library.
+    ///
     /// # Failure
     ///
-    /// Will return `Err` if `path` cannot be converted to a C-compatible
-    /// string or if the underlying SQLite open call fails.
+    /// Will return `Err` if `path` cannot be converted to a C-compatible string
+    /// or if the underlying SQLite open call fails.
     #[inline]
     pub fn open<P: AsRef<Path>>(path: P) -> Result<Connection> {
         let flags = OpenFlags::default();
@@ -901,8 +937,10 @@ impl Connection {
     /// Return the number of rows modified, inserted or deleted by the most
     /// recently completed INSERT, UPDATE or DELETE statement on the database
     /// connection.
+    ///
+    /// See <https://www.sqlite.org/c3ref/changes.html>
     #[inline]
-    fn changes(&self) -> usize {
+    pub fn changes(&self) -> u64 {
         self.db.borrow().changes()
     }
 
@@ -926,6 +964,13 @@ impl Connection {
     #[cfg_attr(docsrs, doc(cfg(feature = "modern_sqlite")))]
     pub fn cache_flush(&self) -> Result<()> {
         self.db.borrow_mut().cache_flush()
+    }
+
+    /// Determine if a database is read-only
+    #[cfg(feature = "modern_sqlite")] // 3.7.11
+    #[cfg_attr(docsrs, doc(cfg(feature = "modern_sqlite")))]
+    pub fn is_readonly(&self, db_name: DatabaseName<'_>) -> Result<bool> {
+        self.db.borrow().db_readonly(db_name)
     }
 }
 
@@ -999,40 +1044,81 @@ impl<'conn> Iterator for Batch<'conn, '_> {
 }
 
 bitflags::bitflags! {
-    /// Flags for opening SQLite database connections.
-    /// See [sqlite3_open_v2](http://www.sqlite.org/c3ref/open.html) for details.
+    /// Flags for opening SQLite database connections. See
+    /// [sqlite3_open_v2](http://www.sqlite.org/c3ref/open.html) for details.
+    ///
+    /// The default open flags are `SQLITE_OPEN_READ_WRITE | SQLITE_OPEN_CREATE
+    /// | SQLITE_OPEN_URI | SQLITE_OPEN_NO_MUTEX`. See [`Connection::open`] for
+    /// some discussion about these flags.
     #[repr(C)]
     pub struct OpenFlags: ::std::os::raw::c_int {
         /// The database is opened in read-only mode.
         /// If the database does not already exist, an error is returned.
-        const SQLITE_OPEN_READ_ONLY     = ffi::SQLITE_OPEN_READONLY;
+        const SQLITE_OPEN_READ_ONLY = ffi::SQLITE_OPEN_READONLY;
         /// The database is opened for reading and writing if possible,
         /// or reading only if the file is write protected by the operating system.
         /// In either case the database must already exist, otherwise an error is returned.
-        const SQLITE_OPEN_READ_WRITE    = ffi::SQLITE_OPEN_READWRITE;
+        const SQLITE_OPEN_READ_WRITE = ffi::SQLITE_OPEN_READWRITE;
         /// The database is created if it does not already exist
-        const SQLITE_OPEN_CREATE        = ffi::SQLITE_OPEN_CREATE;
+        const SQLITE_OPEN_CREATE = ffi::SQLITE_OPEN_CREATE;
         /// The filename can be interpreted as a URI if this flag is set.
-        const SQLITE_OPEN_URI           = 0x0000_0040;
+        const SQLITE_OPEN_URI = 0x0000_0040;
         /// The database will be opened as an in-memory database.
-        const SQLITE_OPEN_MEMORY        = 0x0000_0080;
-        /// The new database connection will use the "multi-thread" threading mode.
-        const SQLITE_OPEN_NO_MUTEX      = ffi::SQLITE_OPEN_NOMUTEX;
-        /// The new database connection will use the "serialized" threading mode.
-        const SQLITE_OPEN_FULL_MUTEX    = ffi::SQLITE_OPEN_FULLMUTEX;
-        /// The database is opened shared cache enabled.
-        const SQLITE_OPEN_SHARED_CACHE  = 0x0002_0000;
+        const SQLITE_OPEN_MEMORY = 0x0000_0080;
+        /// The new database connection will not use a per-connection mutex (the
+        /// connection will use the "multi-thread" threading mode, in SQLite
+        /// parlance).
+        ///
+        /// This is used by default, as proper `Send`/`Sync` usage (in
+        /// particular, the fact that [`Connection`] does not implement `Sync`)
+        /// ensures thread-safety without the need to perform locking around all
+        /// calls.
+        const SQLITE_OPEN_NO_MUTEX = ffi::SQLITE_OPEN_NOMUTEX;
+        /// The new database connection will use a per-connection mutex -- the
+        /// "serialized" threading mode, in SQLite parlance.
+        ///
+        /// # Caveats
+        ///
+        /// This flag should probably never be used with `rusqlite`, as we
+        /// ensure thread-safety statically (we implement [`Send`] and not
+        /// [`Sync`]). That said
+        ///
+        /// Critically, even if this flag is used, the [`Connection`] is not
+        /// safe to use across multiple threads simultaneously. To access a
+        /// database from multiple threads, you should either create multiple
+        /// connections, one for each thread (if you have very many threads,
+        /// wrapping the `rusqlite::Connection` in a mutex is also reasonable).
+        ///
+        /// This is both because of the additional per-connection state stored
+        /// by `rusqlite` (for example, the prepared statement cache), and
+        /// because not all of SQLites functions are fully thread safe, even in
+        /// serialized/`SQLITE_OPEN_FULLMUTEX` mode.
+        ///
+        /// All that said, it's fairly harmless to enable this flag with
+        /// `rusqlite`, it will just slow things down while providing no
+        /// benefit.
+        const SQLITE_OPEN_FULL_MUTEX = ffi::SQLITE_OPEN_FULLMUTEX;
+        /// The database is opened with shared cache enabled.
+        ///
+        /// This is frequently useful for in-memory connections, but note that
+        /// broadly speaking it's discouraged by SQLite itself, which states
+        /// "Any use of shared cache is discouraged" in the official
+        /// [documentation](https://www.sqlite.org/c3ref/enable_shared_cache.html).
+        const SQLITE_OPEN_SHARED_CACHE = 0x0002_0000;
         /// The database is opened shared cache disabled.
         const SQLITE_OPEN_PRIVATE_CACHE = 0x0004_0000;
-        /// The database filename is not allowed to be a symbolic link.
+        /// The database filename is not allowed to be a symbolic link. (3.31.0)
         const SQLITE_OPEN_NOFOLLOW = 0x0100_0000;
-        /// Extended result codes.
+        /// Extended result codes. (3.37.0)
         const SQLITE_OPEN_EXRESCODE = 0x0200_0000;
     }
 }
 
 impl Default for OpenFlags {
+    #[inline]
     fn default() -> OpenFlags {
+        // Note: update the `Connection::open` and top-level `OpenFlags` docs if
+        // you change these.
         OpenFlags::SQLITE_OPEN_READ_WRITE
             | OpenFlags::SQLITE_OPEN_CREATE
             | OpenFlags::SQLITE_OPEN_NO_MUTEX
@@ -1508,15 +1594,28 @@ mod test {
     #[test]
     fn test_pragma_query_row() -> Result<()> {
         let db = Connection::open_in_memory()?;
-
         assert_eq!(
             "memory",
             db.query_row::<String, _, _>("PRAGMA journal_mode", [], |r| r.get(0))?
         );
-        assert_eq!(
-            "off",
-            db.query_row::<String, _, _>("PRAGMA journal_mode=off", [], |r| r.get(0))?
-        );
+        let mode = db.query_row::<String, _, _>("PRAGMA journal_mode=off", [], |r| r.get(0))?;
+        if cfg!(features = "bundled") {
+            assert_eq!(mode, "off");
+        } else {
+            // Note: system SQLite on macOS defaults to "off" rather than
+            // "memory" for the journal mode (which cannot be changed for
+            // in-memory connections). This seems like it's *probably* legal
+            // according to the docs below, so we relax this test when not
+            // bundling:
+            //
+            // From https://www.sqlite.org/pragma.html#pragma_journal_mode
+            // > Note that the journal_mode for an in-memory database is either
+            // > MEMORY or OFF and can not be changed to a different value. An
+            // > attempt to change the journal_mode of an in-memory database to
+            // > any setting other than MEMORY or OFF is ignored.
+            assert!(mode == "memory" || mode == "off", "Got mode {:?}", mode);
+        }
+
         Ok(())
     }
 
@@ -2011,5 +2110,13 @@ mod test {
     fn test_cache_flush() -> Result<()> {
         let db = Connection::open_in_memory()?;
         db.cache_flush()
+    }
+
+    #[test]
+    #[cfg(feature = "modern_sqlite")]
+    pub fn db_readonly() -> Result<()> {
+        let db = Connection::open_in_memory()?;
+        assert!(!db.is_readonly(super::MAIN_DB)?);
+        Ok(())
     }
 }

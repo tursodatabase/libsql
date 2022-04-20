@@ -72,6 +72,7 @@ bundled-windows = ["libsqlite3-sys/bundled-windows"]
 with-asan = ["libsqlite3-sys/with-asan"]
 column_decltype = []
 wasm32-wasi-vfs = ["libsqlite3-sys/wasm32-wasi-vfs"]
+# Note: doesn't support 32-bit.
 winsqlite3 = ["libsqlite3-sys/winsqlite3"]
 
 # Helper feature for enabling most non-build-related optional features
@@ -109,7 +110,7 @@ bundled-full = ["modern-full", "bundled"]
 [dependencies]
 time = { version = "0.3.0", features = ["formatting", "macros", "parsing"], optional = true }
 bitflags = "1.2"
-hashlink = "0.7"
+hashlink = "0.8"
 chrono = { version = "0.4", optional = true, default-features = false, features = ["clock"] }
 serde_json = { version = "1.0", optional = true }
 csv = { version = "1.1", optional = true }

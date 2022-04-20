@@ -1,6 +1,6 @@
 [package]
 name = "libsqlite3-sys"
-version = "0.24.1"
+version = "0.24.2"
 authors = ["The rusqlite developers"]
 edition = "2018"
 repository = "https://github.com/rusqlite/rusqlite"
@@ -35,8 +35,13 @@ session = ["preupdate_hook", "buildtime_bindgen"]
 in_gecko = []
 with-asan = []
 wasm32-wasi-vfs = []
+
 # lowest version shipped with Windows 10.0.10586 was 3.8.8.3
-winsqlite3 = ["min_sqlite_version_3_7_16", "buildtime_bindgen"]
+#
+# Note that because `winsqlite3.dll` exports SQLite functions using a atypical
+# ABI on 32-bit systems, this is currently unsupported on these. This may change
+# in the future.
+winsqlite3 = ["min_sqlite_version_3_7_16"]
 
 [dependencies]
 openssl-sys = { version = "0.9", optional = true }

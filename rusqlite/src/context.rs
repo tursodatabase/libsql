@@ -23,6 +23,7 @@ pub(super) unsafe fn set_result(ctx: *mut sqlite3_context, result: &ToSqlOutput<
 
         #[cfg(feature = "blob")]
         ToSqlOutput::ZeroBlob(len) => {
+            // TODO sqlite3_result_zeroblob64 // 3.8.11
             return ffi::sqlite3_result_zeroblob(ctx, len);
         }
         #[cfg(feature = "array")]
@@ -50,6 +51,7 @@ pub(super) unsafe fn set_result(ctx: *mut sqlite3_context, result: &ToSqlOutput<
                     // TODO sqlite3_result_error
                     Err(_) => return ffi::sqlite3_result_error_code(ctx, ffi::SQLITE_MISUSE),
                 };
+                // TODO sqlite3_result_text64 // 3.8.7
                 ffi::sqlite3_result_text(ctx, c_str, len, destructor);
             }
         }
@@ -60,6 +62,7 @@ pub(super) unsafe fn set_result(ctx: *mut sqlite3_context, result: &ToSqlOutput<
             } else if length == 0 {
                 ffi::sqlite3_result_zeroblob(ctx, 0);
             } else {
+                // TODO sqlite3_result_blob64 // 3.8.7
                 ffi::sqlite3_result_blob(
                     ctx,
                     b.as_ptr().cast::<c_void>(),
