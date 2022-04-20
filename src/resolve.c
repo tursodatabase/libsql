@@ -314,6 +314,12 @@ static int lookupName(
         assert( pTab!=0 && pTab->zName!=0 );
         assert( pTab->nCol>0 || pParse->nErr );
         if( pItem->pSelect && (pItem->pSelect->selFlags & SF_NestedFrom)!=0 ){
+          /* In this case, pItem is a subquery that has been formed from a
+          ** parenthesized subset of the FROM clause terms.  Example:
+          **   .... FROM t1 LEFT JOIN (t2 RIGHT JOIN t3 USING(x)) USING(y) ...
+          **                          \_________________________/
+          **             This pItem -------------^
+          */
           int hit = 0;
           pEList = pItem->pSelect->pEList;
           for(j=0; j<pEList->nExpr; j++){

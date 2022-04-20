@@ -1,5 +1,5 @@
-C Merge\sthe\sALTER\sTABLE\sfix\sfrom\strunk.
-D 2022-04-19T23:00:32.393
+C Add\sa\snew\scomment\sto\sthe\sbody\sof\slookupName().\s\sNo\scode\schanges.
+D 2022-04-20T12:02:52.532
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -550,7 +550,7 @@ F src/pragma.h e690a356c18e98414d2e870ea791c1be1545a714ba623719deb63f7f226d8bb7
 F src/prepare.c fd940149c691684e7c1073c3787a7170e44852b02d1275d2e30a5b58e89cfcaf
 F src/printf.c 05d8dfd2018bc4fc3ddb8b37eb97ccef7abf985643fa1caebdcf2916ca90fa32
 F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
-F src/resolve.c a3d58967025858f0f61b7b5d6c45914650acce05c33e4379a43ca4d042a68573
+F src/resolve.c a5ded9df5914fb1ff71e69e8d0c4aebfa04ad145e9ea8d9fbf185e409047e354
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 708edcf15749d1a91b8bc820f546772409b3a1a33d18ca70ff90f7253c470f5a
 F src/shell.c.in ecff6f4ab0e8e25acd578b3eb27ac0bad4d48643c160259a277151d6e9d412e1
@@ -1950,8 +1950,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e0744da95fc010dc3a2e030ff491bcfa08a18691ee6ebc7d4e8aab3850f56eec 24755fd0657252e49793bb1fe906973a2dd84a1bde03bea9a762de36cc96c2d2
-R 87c5522f1cf8919e21182be37373bb83
+P d5ceaef3fca8cb4791ead9cbfe00d0eafa1bdc2b0522c3599c68b40fe6a7efe2
+R 739e562be9542d144d481afc7ff917e9
 U drh
-Z c5b965cb083a0fb5798e9eb24bfa9f0b
+Z 237984b1f871665535324c226d9e5df6
 # Remove this line to create a well-formed Fossil manifest.
