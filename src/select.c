@@ -456,15 +456,22 @@ static void unsetJoinExpr(Expr *p, int iTable){
 
 /*
 ** This routine processes the join information for a SELECT statement.
-** ON and USING clauses are converted into extra terms of the WHERE clause.
-** NATURAL joins also create extra WHERE clause terms.
+**
+**   *  A NATURAL join is converted into a USING join.  After that, we
+**      do not need to be concerned with NATURAL joins and we only have
+**      think about USING joins.
+**
+**   *  ON and USING clauses result in extra terms being added to the
+**      WHERE clause to enforce the specified constraints.  The extra
+**      WHERE clause terms will be tagged with EP_FromJoin or
+**      EP_InnerJoin so that we know that they originated in ON/USING.
 **
 ** The terms of a FROM clause are contained in the Select.pSrc structure.
 ** The left most table is the first entry in Select.pSrc.  The right-most
 ** table is the last entry.  The join operator is held in the entry to
-** the left.  Thus entry 0 contains the join operator for the join between
+** the right.  Thus entry 1 contains the join operator for the join between
 ** entries 0 and 1.  Any ON or USING clauses associated with the join are
-** also attached to the left entry.
+** also attached to the right entry.
 **
 ** This routine returns the number of errors encountered.
 */
@@ -551,8 +558,8 @@ static int sqlite3ProcessJoin(Parse *pParse, Select *p){
         if( (pSrc->a[0].fg.jointype & JT_LTORJ)!=0 ){
           /* This branch runs if the query contains one or more RIGHT or FULL
           ** JOINs.  If only a single table on the left side of this join
-          ** contains the zName column, then this routine is branch is
-          ** a no-op.  But if there are two or more tables on the left side
+          ** contains the zName column, then this branch is a no-op.
+          ** But if there are two or more tables on the left side
           ** of the join, construct a coalesce() function that gathers all
           ** such tables.  Raise an error if more than one of those references
           ** to zName is not also within a prior USING clause.

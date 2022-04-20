@@ -1,5 +1,5 @@
-C Improved\stracking\sof\snested\sSELECT\sobjects\sused\sto\simplement\nparenthensized\sFROM\sterms.
-D 2022-04-20T15:07:39.807
+C Comment\sfixes\sand\simprovements\sin\ssqlite3ProcessJoin().
+D 2022-04-20T16:26:22.293
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -552,7 +552,7 @@ F src/printf.c 05d8dfd2018bc4fc3ddb8b37eb97ccef7abf985643fa1caebdcf2916ca90fa32
 F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c 0d0bfa186b020909a26e776f34af1ddb060c653d99c0e80ec3de79efeada1093
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c df2bea1b4c6a5456f0f9892a633d59c2e2a3be0179ecd0c803bca75ddc1fd28d
+F src/select.c 88f00d5b9b399f96cabe23a97cfc2be41c34696b057e4563b7e7bdb68c5b2a17
 F src/shell.c.in ecff6f4ab0e8e25acd578b3eb27ac0bad4d48643c160259a277151d6e9d412e1
 F src/sqlite.h.in 2a35f62185eb5e7ecc64a2f68442b538ce9be74f80f28a00abc24837edcf1c17
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1950,8 +1950,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c1d42861778d65f7014c43fbaf09972a69ff0d81bfc2f4720160a989489cf2c8
-R 29bf9f13e64da641ea2eb344ef47fe0b
+P 0da2232624571f4020c05d775ea518514d748fba8dacd4caba2e2e6ed1ae399f
+R 5a2e4f3e85f13e8d01e09d4b54ea6710
 U drh
-Z 1cabab88f048c2ecc5e840f82512e328
+Z 8b4e17289b78c9908d49197f73d337c0
 # Remove this line to create a well-formed Fossil manifest.
