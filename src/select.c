@@ -554,7 +554,7 @@ static int sqlite3ProcessJoin(Parse *pParse, Select *p){
           return 1;
         }
         pE1 = sqlite3CreateColumnExpr(db, pSrc, iLeft, iLeftCol);
-        sqlite3SrcItemColumnUsed(pLeft, iLeftCol);
+        sqlite3SrcItemColumnUsed(&pSrc->a[iLeft], iLeftCol);
         if( (pSrc->a[0].fg.jointype & JT_LTORJ)!=0 ){
           /* This branch runs if the query contains one or more RIGHT or FULL
           ** JOINs.  If only a single table on the left side of this join
@@ -582,7 +582,7 @@ static int sqlite3ProcessJoin(Parse *pParse, Select *p){
             }
             pFuncArgs = sqlite3ExprListAppend(pParse, pFuncArgs, pE1);
             pE1 = sqlite3CreateColumnExpr(db, pSrc, iLeft, iLeftCol);
-            sqlite3SrcItemColumnUsed(pLeft, iLeftCol);
+            sqlite3SrcItemColumnUsed(&pSrc->a[iLeft], iLeftCol);
           }
           if( pFuncArgs ){
             pFuncArgs = sqlite3ExprListAppend(pParse, pFuncArgs, pE1);

@@ -1,5 +1,5 @@
-C Merge\swindow\sfunction\sfix\sfrom\strunk.
-D 2022-04-20T16:54:47.749
+C Small\scorrection\sto\sthe\snew\sbUsed\slogic\sof\ssqlite3ProcessJoin().
+D 2022-04-20T18:12:42.455
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -552,7 +552,7 @@ F src/printf.c 05d8dfd2018bc4fc3ddb8b37eb97ccef7abf985643fa1caebdcf2916ca90fa32
 F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c 4039e3d89af416ffa8d665b59aac53ccdb10e088d8017649f2ceabda5e73473b
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c 88f00d5b9b399f96cabe23a97cfc2be41c34696b057e4563b7e7bdb68c5b2a17
+F src/select.c 8978bab868e63781d91d0b689b08f8ed62398cfce7945c465c8998133f8e2c52
 F src/shell.c.in ecff6f4ab0e8e25acd578b3eb27ac0bad4d48643c160259a277151d6e9d412e1
 F src/sqlite.h.in 2a35f62185eb5e7ecc64a2f68442b538ce9be74f80f28a00abc24837edcf1c17
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1950,8 +1950,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ed46527aca170ccbe9ed9ea4ae065db72c82dec17da7b99c928fae4495f05c2b 9430ead7ba433cbfce99f4f364a0c08499230e3a04f167326b0f131f098ffa09
-R 9e45b0e607b815fcf8a23e78f449116c
+P b6b9e185f8c44b5f2f51111f7c5e4e2d77c8b853c5be271467ce138e8066340c
+R 71f32b965c53fefec5ed2ab5db6eaed7
 U drh
-Z 15057c54b73b1d1c0f60c76ea8c87053
+Z dfb5b3729b0976a766bdc021ea7b2468
 # Remove this line to create a well-formed Fossil manifest.
