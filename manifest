@@ -1,5 +1,5 @@
-C Comment\sfixes\sand\simprovements\sin\ssqlite3ProcessJoin().
-D 2022-04-20T16:26:22.293
+C Remove\san\sunnecessary\sassignment\soperation.
+D 2022-04-20T16:53:23.152
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -550,7 +550,7 @@ F src/pragma.h e690a356c18e98414d2e870ea791c1be1545a714ba623719deb63f7f226d8bb7
 F src/prepare.c fd940149c691684e7c1073c3787a7170e44852b02d1275d2e30a5b58e89cfcaf
 F src/printf.c 05d8dfd2018bc4fc3ddb8b37eb97ccef7abf985643fa1caebdcf2916ca90fa32
 F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
-F src/resolve.c 0d0bfa186b020909a26e776f34af1ddb060c653d99c0e80ec3de79efeada1093
+F src/resolve.c 4039e3d89af416ffa8d665b59aac53ccdb10e088d8017649f2ceabda5e73473b
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 88f00d5b9b399f96cabe23a97cfc2be41c34696b057e4563b7e7bdb68c5b2a17
 F src/shell.c.in ecff6f4ab0e8e25acd578b3eb27ac0bad4d48643c160259a277151d6e9d412e1
@@ -1950,8 +1950,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0da2232624571f4020c05d775ea518514d748fba8dacd4caba2e2e6ed1ae399f
-R 5a2e4f3e85f13e8d01e09d4b54ea6710
+P 1118655f4d58da1273e83954c80d8bc17fa3bde7a39e81cb9947d59894d5ab93
+R edf3e42048aadaf122b7620ac21e901b
 U drh
-Z 8b4e17289b78c9908d49197f73d337c0
+Z b461f1dbdf9602f594f3deb9c2289e0f
 # Remove this line to create a well-formed Fossil manifest.

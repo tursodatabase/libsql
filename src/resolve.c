@@ -358,7 +358,6 @@ static int lookupName(
               pExpr->iColumn = j;
               hit = 1;
               pEList->a[j].bUsed = 1;
-              pTab->aCol[j].colFlags &= ~COLFLAG_HIDDEN;
             }
           }
           if( hit || zTab==0 ) continue;
