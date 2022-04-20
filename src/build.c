@@ -4970,7 +4970,12 @@ SrcList *sqlite3SrcListAppendFromTerm(
   if( pAlias->n ){
     pItem->zAlias = sqlite3NameFromToken(db, pAlias);
   }
-  pItem->pSelect = pSubquery;
+  if( pSubquery ){
+    pItem->pSelect = pSubquery;
+    if( pSubquery->selFlags & SF_NestedFrom ){
+      pItem->fg.isNestedFrom = 1;
+    }
+  }
   assert( pOnUsing==0 || pOnUsing->pOn==0 || pOnUsing->pUsing==0 );
   assert( pItem->fg.isUsing==0 );
   if( pOnUsing==0 ){

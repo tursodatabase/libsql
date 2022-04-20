@@ -320,6 +320,22 @@ int sqlite3ColumnIndex(Table *pTab, const char *zCol){
 }
 
 /*
+** Mark a subquery result column as having been used.
+*/
+void sqlite3SrcItemColumnUsed(SrcItem *pItem, int iCol){
+  assert( pItem!=0 );
+  assert( pItem->fg.isNestedFrom == IsNestedFrom(pItem->pSelect) );
+  if( pItem->fg.isNestedFrom ){
+    ExprList *pResults;
+    assert( pItem->pSelect!=0 );
+    pResults = pItem->pSelect->pEList;
+    assert( pResults!=0 );
+    assert( iCol>=0 && iCol<pResults->nExpr );
+    pResults->a[iCol].bUsed = 1;
+  }
+}
+
+/*
 ** Search the tables iStart..iEnd (inclusive) in pSrc, looking for a
 ** table that has a column named zCol.  The search is left-to-right.
 ** The first match found is returned.
@@ -351,6 +367,7 @@ static int tableAndColumnIndex(
      && (bIgnoreHidden==0 || IsHiddenColumn(&pSrc->a[i].pTab->aCol[iCol])==0)
     ){
       if( piTab ){
+        sqlite3SrcItemColumnUsed(&pSrc->a[i], iCol);
         *piTab = i;
         *piCol = iCol;
       }
@@ -530,6 +547,7 @@ static int sqlite3ProcessJoin(Parse *pParse, Select *p){
           return 1;
         }
         pE1 = sqlite3CreateColumnExpr(db, pSrc, iLeft, iLeftCol);
+        sqlite3SrcItemColumnUsed(pLeft, iLeftCol);
         if( (pSrc->a[0].fg.jointype & JT_LTORJ)!=0 ){
           /* This branch runs if the query contains one or more RIGHT or FULL
           ** JOINs.  If only a single table on the left side of this join
@@ -557,6 +575,7 @@ static int sqlite3ProcessJoin(Parse *pParse, Select *p){
             }
             pFuncArgs = sqlite3ExprListAppend(pParse, pFuncArgs, pE1);
             pE1 = sqlite3CreateColumnExpr(db, pSrc, iLeft, iLeftCol);
+            sqlite3SrcItemColumnUsed(pLeft, iLeftCol);
           }
           if( pFuncArgs ){
             pFuncArgs = sqlite3ExprListAppend(pParse, pFuncArgs, pE1);
@@ -564,6 +583,7 @@ static int sqlite3ProcessJoin(Parse *pParse, Select *p){
           }
         }
         pE2 = sqlite3CreateColumnExpr(db, pSrc, i+1, iRightCol);
+        sqlite3SrcItemColumnUsed(pRight, iRightCol);
         pEq = sqlite3PExpr(pParse, TK_EQ, pE1, pE2);
         assert( pE2!=0 || pEq==0 );
         if( pEq ){
@@ -5777,7 +5797,7 @@ static int selectExpander(Walker *pWalker, Select *p){
         }
         for(i=0, pFrom=pTabList->a; i<pTabList->nSrc; i++, pFrom++){
           Table *pTab = pFrom->pTab;
-          Select *pSub = pFrom->pSelect;
+          Select *pSub;
           char *zTabName = pFrom->zAlias;
           const char *zSchemaName = 0;
           int iDb;
@@ -5785,7 +5805,12 @@ static int selectExpander(Walker *pWalker, Select *p){
             zTabName = pTab->zName;
           }
           if( db->mallocFailed ) break;
-          if( pSub==0 || (pSub->selFlags & SF_NestedFrom)==0 ){
+          assert( pFrom->fg.isNestedFrom == IsNestedFrom(pFrom->pSelect) );
+          if( pFrom->fg.isNestedFrom ){
+            pSub = pFrom->pSelect;
+            assert( pSub->pEList!=0 );
+            assert( pSub->pEList->nExpr==pTab->nCol );
+          }else{
             pSub = 0;
             if( zTName && sqlite3StrICmp(zTName, zTabName)!=0 ){
               continue;

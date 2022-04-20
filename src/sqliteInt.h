@@ -3004,6 +3004,7 @@ struct ExprList {
     unsigned reusable :1;   /* Constant expression is reusable */
     unsigned bSorterRef :1; /* Defer evaluation until after sorting */
     unsigned bNulls: 1;     /* True if explicit "NULLS FIRST/LAST" */
+    unsigned bUsed: 1;      /* This column used in a SF_NestedFrom subquery */
     union {
       struct {             /* Used by any ExprList other than Parse.pConsExpr */
         u16 iOrderByCol;      /* For ORDER BY, column number in result set */
@@ -3091,6 +3092,7 @@ struct SrcItem {
     unsigned notCte :1;        /* This item may not match a CTE */
     unsigned isUsing :1;       /* u3.pUsing is valid */
     unsigned isSynthUsing :1;  /* u3.pUsing is synthensized from NATURAL */
+    unsigned isNestedFrom :1;  /* pSelect is a SF_NestedFrom subquery */
   } fg;
   int iCursor;      /* The VDBE cursor number used to access this table */
   union {
@@ -3371,6 +3373,9 @@ struct Select {
 #define SF_MultiPart     0x2000000 /* Has multiple incompatible PARTITIONs */
 #define SF_CopyCte       0x4000000 /* SELECT statement is a copy of a CTE */
 #define SF_OrderByReqd   0x8000000 /* The ORDER BY clause may not be omitted */
+
+/* True if S exists and has SF_NestedFrom */
+#define IsNestedFrom(S) ((S)!=0 && ((S)->selFlags&SF_NestedFrom)!=0)
 
 /*
 ** The results of a SELECT can be distributed in several ways, as defined
@@ -4843,6 +4848,7 @@ void sqlite3MaterializeView(Parse*, Table*, Expr*, ExprList*,Expr*,int);
 
 int sqlite3JoinType(Parse*, Token*, Token*, Token*);
 int sqlite3ColumnIndex(Table *pTab, const char *zCol);
+void sqlite3SrcItemColumnUsed(SrcItem*,int);
 void sqlite3SetJoinExpr(Expr*,int,u32);
 void sqlite3CreateForeignKey(Parse*, ExprList*, Token*, ExprList*, int);
 void sqlite3DeferForeignKey(Parse*, int);

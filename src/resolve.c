@@ -313,7 +313,8 @@ static int lookupName(
         pTab = pItem->pTab;
         assert( pTab!=0 && pTab->zName!=0 );
         assert( pTab->nCol>0 || pParse->nErr );
-        if( pItem->pSelect && (pItem->pSelect->selFlags & SF_NestedFrom)!=0 ){
+        assert( pItem->fg.isNestedFrom == IsNestedFrom(pItem->pSelect) );
+        if( pItem->fg.isNestedFrom ){
           /* In this case, pItem is a subquery that has been formed from a
           ** parenthesized subset of the FROM clause terms.  Example:
           **   .... FROM t1 LEFT JOIN (t2 RIGHT JOIN t3 USING(x)) USING(y) ...
@@ -321,7 +322,10 @@ static int lookupName(
           **             This pItem -------------^
           */
           int hit = 0;
+          assert( pItem->pSelect!=0 );
           pEList = pItem->pSelect->pEList;
+          assert( pEList!=0 );
+          assert( pEList->nExpr==pTab->nCol );
           for(j=0; j<pEList->nExpr; j++){
             if( sqlite3MatchEName(&pEList->a[j], zCol, zTab, zDb) ){
               if( cnt>0 ){
@@ -353,6 +357,8 @@ static int lookupName(
               pMatch = pItem;
               pExpr->iColumn = j;
               hit = 1;
+              pEList->a[j].bUsed = 1;
+              pTab->aCol[j].colFlags &= ~COLFLAG_HIDDEN;
             }
           }
           if( hit || zTab==0 ) continue;
