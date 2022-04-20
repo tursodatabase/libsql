@@ -265,6 +265,7 @@ static int lookupName(
 
   assert( pNC );     /* the name context cannot be NULL. */
   assert( zCol );    /* The Z in X.Y.Z cannot be NULL */
+  assert( zDb==0 || zTab!=0 );
   assert( !ExprHasProperty(pExpr, EP_TokenOnly|EP_Reduced) );
 
   /* Initialize the node to no-match */
@@ -362,12 +363,14 @@ static int lookupName(
           }
           if( hit || zTab==0 ) continue;
         }
-        if( zDb ){
-          if( pTab->pSchema!=pSchema ) continue;
-          if( pSchema==0 && strcmp(zDb,"*")!=0 ) continue;
-        }
+        assert( zDb==0 || zTab!=0 );
         if( zTab ){
-          const char *zTabName = pItem->zAlias ? pItem->zAlias : pTab->zName;
+          const char *zTabName;
+          if( zDb ){
+            if( pTab->pSchema!=pSchema ) continue;
+            if( pSchema==0 && strcmp(zDb,"*")!=0 ) continue;
+          }
+          zTabName = pItem->zAlias ? pItem->zAlias : pTab->zName;
           assert( zTabName!=0 );
           if( sqlite3StrICmp(zTabName, zTab)!=0 ){
             continue;
@@ -410,6 +413,9 @@ static int lookupName(
             pMatch = pItem;
             /* Substitute the rowid (column -1) for the INTEGER PRIMARY KEY */
             pExpr->iColumn = j==pTab->iPKey ? -1 : (i16)j;
+            if( pItem->fg.isNestedFrom ){
+              sqlite3SrcItemColumnUsed(pItem, j);
+            }
             break;
           }
         }
