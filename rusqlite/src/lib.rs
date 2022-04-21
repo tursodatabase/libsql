@@ -2098,7 +2098,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(all(feature = "bundled", not(feature = "bundled-sqlcipher")))] // SQLite >= 3.35.0
+    #[cfg(feature = "modern_sqlite")]
     fn test_returning() -> Result<()> {
         let db = Connection::open_in_memory()?;
         db.execute_batch("CREATE TABLE foo(x INTEGER PRIMARY KEY)")?;
