@@ -257,7 +257,7 @@ impl InnerConnection {
         };
         // If there is an error, *ppStmt is set to NULL.
         if r != ffi::SQLITE_OK {
-            return Err(unsafe { error_with_offset(self.db, r) });
+            return Err(unsafe { error_with_offset(self.db, r, sql) });
         }
         // If the input text contains no SQL (if the input is an empty string or a
         // comment) then *ppStmt is set to NULL.

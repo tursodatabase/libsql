@@ -1537,7 +1537,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature = "modern_sqlite")]
+    #[cfg(all(feature = "modern_sqlite", not(feature = "bundled-sqlcipher")))] // SQLite >= 3.38.0
     fn test_error_offset() -> Result<()> {
         use crate::ffi::ErrorCode;
         let db = Connection::open_in_memory()?;
