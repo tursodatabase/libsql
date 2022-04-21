@@ -1011,7 +1011,7 @@ case OP_Gosub: {            /* jump */
 case OP_Return: {           /* in1 */
   pIn1 = &aMem[pOp->p1];
   if( pIn1->flags & MEM_Int ){
-    if( pOp->p3 ) VdbeBranchTaken(1, 2);
+    if( pOp->p3 ){ VdbeBranchTaken(1, 2); }
     pOp = &aOp[pIn1->u.i];
   }else if( ALWAYS(pOp->p3) ){
     VdbeBranchTaken(0, 2);

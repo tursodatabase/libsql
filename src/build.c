@@ -5081,6 +5081,7 @@ void sqlite3SrcListFuncArgs(Parse *pParse, SrcList *p, ExprList *pList){
 **       the left operand of at least one RIGHT JOIN.
 */
 void sqlite3SrcListShiftJoinType(Parse *pParse, SrcList *p){
+  (void)pParse;
   if( p && p->nSrc>1 ){
     int i = p->nSrc-1;
     u8 allFlags = 0;
