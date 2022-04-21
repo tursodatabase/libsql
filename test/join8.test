@@ -16,6 +16,7 @@ source $testdir/tester.tcl
 
 ifcapable !vtab {
   finish_test
+  return
 }
 
 db null NULL

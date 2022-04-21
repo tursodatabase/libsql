@@ -1,5 +1,5 @@
-C Disable\sjoin8.test\sif\sthe\sbuild\slacks\ssupport\sfor\svirtual\stables.
-D 2022-04-21T23:01:24.700
+C Previous\sfix\sto\sjoin8.test\sneeds\sa\sreturn.
+D 2022-04-21T23:34:35.567
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1147,7 +1147,7 @@ F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
 F test/join5.test c4df54e2e204d7f1417bfbdd21ca324b4b07415c647595cc47798eacfddc96d3
 F test/join6.test f809c025fa253f9e150c0e9afd4cef8813257bceeb6f46e04041228c9403cc2c
 F test/join7.test 8e72de4b45e5e930d18c305c7efe86015fb2552731e4e03ea226353036b0dab0
-F test/join8.test 085a47c160ba8bad31817a4dabaf0e0af00a2ad146ab95dc0b90e2f0166e701e
+F test/join8.test fdab1aef8bebced45b3664c869a43dc3eeff658e98d183edf513b262369703f6
 F test/join9.test 9056ddd3b0c0f4f9d658f4521038d9a37dc23ead8ca9a505d0b0db2b6a471e05
 F test/joinA.test 7eab225dc1c1ab258a5e62513a4ed7cabbd3db971d59d5d92f4fb6fa14c12f6a
 F test/joinB.test 1b2ba3fc8568b49411787fccbf540570c148e9b6a53a30f80691cb6268098ded
@@ -1950,8 +1950,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f766dff012af0ea3c28a8ce4db850cd0205729a8283bce1e442992aded7c734b
-R bd10217d64495c218e1b07751142aeb5
+P 94e1916a2f594e6b8a54734027deb99688244d05cefb3c78f23afab49af1e08f
+R 573150bf22fddc6433562bcb5d5bac98
 U drh
-Z 41a5c71f636ea94dd40697c62df8b4a4
+Z a95960d40040bb3ed2298fba0fa35ab1
 # Remove this line to create a well-formed Fossil manifest.
