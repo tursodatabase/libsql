@@ -126,5 +126,15 @@ do_execsql_test join8-3040 {
   SELECT * FROM t9 WHERE id<>128*h+64*g+32*f+16*e+8*d+4*c+2*b+a;
 } {}
 
+# 2022-04-21 dbsqlfuzz find
+#
+reset_db
+do_execsql_test join8-4000 {
+  CREATE TABLE t1(x INTEGER PRIMARY KEY, a, b);
+  INSERT INTO t1 VALUES(1,5555,4);
+  CREATE INDEX i1a ON t1(a);
+  CREATE INDEX i1b ON t1(b);
+  SELECT a FROM t1 NATURAL RIGHT JOIN t1 WHERE a=5555 OR (1,b)==(SELECT 2 IN (2,2),4);
+} {5555}
 
 finish_test
