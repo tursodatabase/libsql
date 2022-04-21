@@ -3413,14 +3413,14 @@ static void exec_prepared_stmt_columnar(
       if( wx<0 ) wx = -wx;
       if( useNextLine ){
         uz = azNextLine[i];
-        if( uz==0 ) uz = (char*)zEmpty;
+        if( uz==0 ) uz = (u8*)zEmpty;
       }else if( p->cmOpts.bQuote ){
         sqlite3_free(azQuoted[i]);
         azQuoted[i] = quoted_column(pStmt,i);
         uz = (const unsigned char*)azQuoted[i];
       }else{
         uz = (const unsigned char*)sqlite3_column_text(pStmt,i);
-        if( uz==0 ) uz = (char*)zShowNull;
+        if( uz==0 ) uz = (u8*)zShowNull;
       }
       azData[nRow*nColumn + i]
         = translateForDisplayAndDup(uz, &azNextLine[i], wx, bw);
