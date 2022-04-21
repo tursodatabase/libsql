@@ -408,13 +408,13 @@ pub unsafe fn error_from_handle(db: *mut ffi::sqlite3, code: c_int) -> Error {
 }
 
 #[cold]
-#[cfg(not(feature = "modern_sqlite"))]
-pub unsafe fn error_with_offset(db: *mut ffi::sqlite3, code: c_int, sql: &str) -> Error {
+#[cfg(not(all(feature = "modern_sqlite", not(feature = "bundled-sqlcipher"))))] // SQLite >= 3.38.0
+pub unsafe fn error_with_offset(db: *mut ffi::sqlite3, code: c_int, _sql: &str) -> Error {
     error_from_handle(db, code)
 }
 
 #[cold]
-#[cfg(feature = "modern_sqlite")] // 3.38.0
+#[cfg(all(feature = "modern_sqlite", not(feature = "bundled-sqlcipher")))] // SQLite >= 3.38.0
 pub unsafe fn error_with_offset(db: *mut ffi::sqlite3, code: c_int, sql: &str) -> Error {
     if db.is_null() {
         error_from_sqlite_code(code, None)
