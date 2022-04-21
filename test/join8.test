@@ -1,0 +1,140 @@
+# 2022-04-12
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# This file implements tests for RIGHT and FULL OUTER JOINs.
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+db null NULL
+do_execsql_test join8-10 {
+  CREATE TABLE t1(a,b,c);
+  CREATE TABLE t2(x,y);
+  CREATE INDEX t2x ON t2(x);
+  SELECT avg(DISTINCT b) FROM (SELECT * FROM t2 LEFT RIGHT JOIN t1 ON c);
+} {NULL}
+
+# Pending optimization opportunity:
+# Row-value initialization subroutines must be called from with the
+# RIGHT JOIN body subroutine before the first use of any register containing
+# the results of that subroutine.  This seems dodgy.  Test case:
+#
+reset_db
+do_execsql_test join8-1000 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY AUTOINCREMENT,b,c,d,e,f,g,h,j,k,l,m,n,o,p,q,r,s);
+  CREATE INDEX t1x1 ON t1(g+h,j,k);
+  CREATE INDEX t1x2 ON t1(b);
+  INSERT INTO t1 DEFAULT VALUES;
+} {}
+do_catchsql_test join8-1010 {
+  SELECT a
+    FROM (
+          SELECT a
+            FROM (
+                  SELECT a
+                    FROM (
+                          SELECT a FROM t1 NATURAL LEFT JOIN t1
+                           WHERE (b, 2 ) IS ( SELECT 2 IN(2,2),2)
+                         )
+                    NATURAL LEFT FULL JOIN t1
+                   WHERE ( rowid , 1 )<=(CASE 5 WHEN 619 THEN 841 ELSE 3374391096 END,0)
+                   ORDER BY a ASC
+                 )
+            NATURAL LEFT JOIN t1
+           WHERE (b, 2 ) IS ( SELECT 3 IN(3,3),3)
+         )
+    NATURAL LEFT FULL JOIN t1
+   WHERE ( rowid , 1 )<=(CASE 5 WHEN 619 THEN 841 ELSE 3374391096 END,0)
+   ORDER BY a ASC;
+} {0 1}
+
+# Pending issue #2: (now resolved)
+# Jump to addrHalt inside the RIGHT JOIN body subroutine bypasses the
+# OP_Return, resulting in a subroutine loop.  Test case:
+#
+reset_db
+do_execsql_test join8-2000 {
+  CREATE TABLE t1(a int, b int, c int);
+  INSERT INTO t1 VALUES(1,2,3),(4,5,6);
+  CREATE TABLE t2(d int, e int);
+  INSERT INTO t2 VALUES(3,333),(4,444);
+  CREATE TABLE t3(f int, g int);
+  PRAGMA automatic_index=off;
+} {}
+do_catchsql_test join8-2010 {
+  SELECT * FROM t1 RIGHT JOIN t2 ON c=d JOIN t3 ON f=e;
+} {0 {}}
+
+# Demonstrate that nested FULL JOINs and USING clauses work
+#
+reset_db
+load_static_extension db series
+do_execsql_test join8-3000 {
+  CREATE TABLE t1(id INTEGER PRIMARY KEY, a INT);
+  CREATE TABLE t2(id INTEGER PRIMARY KEY, b INT);
+  CREATE TABLE t3(id INTEGER PRIMARY KEY, c INT);
+  CREATE TABLE t4(id INTEGER PRIMARY KEY, d INT);
+  CREATE TABLE t5(id INTEGER PRIMARY KEY, e INT);
+  CREATE TABLE t6(id INTEGER PRIMARY KEY, f INT);
+  CREATE TABLE t7(id INTEGER PRIMARY KEY, g INT);
+  CREATE TABLE t8(id INTEGER PRIMARY KEY, h INT);
+  INSERT INTO t1 SELECT value, 1 FROM generate_series(1,256) WHERE value & 1;
+  INSERT INTO t2 SELECT value, 1 FROM generate_series(1,256) WHERE value & 2;
+  INSERT INTO t3 SELECT value, 1 FROM generate_series(1,256) WHERE value & 4;
+  INSERT INTO t4 SELECT value, 1 FROM generate_series(1,256) WHERE value & 8;
+  INSERT INTO t5 SELECT value, 1 FROM generate_series(1,256) WHERE value & 16;
+  INSERT INTO t6 SELECT value, 1 FROM generate_series(1,256) WHERE value & 32;
+  INSERT INTO t7 SELECT value, 1 FROM generate_series(1,256) WHERE value & 64;
+  INSERT INTO t8 SELECT value, 1 FROM generate_series(1,256) WHERE value & 128;
+  CREATE TABLE t9 AS
+    SELECT id, h, g, f, e, d, c, b, a
+      FROM t1
+      NATURAL FULL JOIN t2
+      NATURAL FULL JOIN t3
+      NATURAL FULL JOIN t4
+      NATURAL FULL JOIN t5
+      NATURAL FULL JOIN t6
+      NATURAL FULL JOIN t7
+      NATURAL FULL JOIN t8;
+} {}
+do_execsql_test join8-3010 {
+  SELECT count(*) FROM t9;
+} {255}
+do_execsql_test join8-3020 {
+  SELECT id, count(*) FROM t9 GROUP BY id HAVING count(*)!=1;
+} {}
+do_execsql_test join8-3030 {
+  UPDATE t9 SET a=0 WHERE a IS NULL;
+  UPDATE t9 SET b=0 WHERE b IS NULL;
+  UPDATE t9 SET c=0 WHERE c IS NULL;
+  UPDATE t9 SET d=0 WHERE d IS NULL;
+  UPDATE t9 SET e=0 WHERE e IS NULL;
+  UPDATE t9 SET f=0 WHERE f IS NULL;
+  UPDATE t9 SET g=0 WHERE g IS NULL;
+  UPDATE t9 SET h=0 WHERE h IS NULL;
+  SELECT count(*) FROM t9 WHERE id=128*h+64*g+32*f+16*e+8*d+4*c+2*b+a;
+} {255}
+do_execsql_test join8-3040 {
+  SELECT * FROM t9 WHERE id<>128*h+64*g+32*f+16*e+8*d+4*c+2*b+a;
+} {}
+
+# 2022-04-21 dbsqlfuzz find
+#
+reset_db
+do_execsql_test join8-4000 {
+  CREATE TABLE t1(x INTEGER PRIMARY KEY, a, b);
+  INSERT INTO t1 VALUES(1,5555,4);
+  CREATE INDEX i1a ON t1(a);
+  CREATE INDEX i1b ON t1(b);
+  SELECT a FROM t1 NATURAL RIGHT JOIN t1 WHERE a=5555 OR (1,b)==(SELECT 2 IN (2,2),4);
+} {5555}
+
+finish_test

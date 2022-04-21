@@ -134,6 +134,11 @@ struct VdbeCursor {
   u32 aType[1];           /* Type values record decode.  MUST BE LAST */
 };
 
+/* Return true if P is a null-only cursor
+*/
+#define IsNullCursor(P) \
+  ((P)->eCurType==CURTYPE_PSEUDO && (P)->nullRow && (P)->seekResult==0)
+
 
 /*
 ** A value for VdbeCursor.cacheStatus that means the cache is always invalid.

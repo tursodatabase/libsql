@@ -3554,7 +3554,7 @@ int SQLITE_NOINLINE sqlite3VdbeHandleMovedCursor(VdbeCursor *p){
 ** if need be.  Return any I/O error from the restore operation.
 */
 int sqlite3VdbeCursorRestore(VdbeCursor *p){
-  assert( p->eCurType==CURTYPE_BTREE );
+  assert( p->eCurType==CURTYPE_BTREE || IsNullCursor(p) );
   if( sqlite3BtreeCursorHasMoved(p->uc.pCursor) ){
     return sqlite3VdbeHandleMovedCursor(p);
   }

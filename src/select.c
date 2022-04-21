@@ -298,12 +298,8 @@ int sqlite3JoinType(Parse *pParse, Token *pA, Token *pB, Token *pC){
     const char *zSp2 = " ";
     if( pB==0 ){ zSp1++; }
     if( pC==0 ){ zSp2++; }
-    sqlite3ErrorMsg(pParse, "unknown or unsupported join type: "
+    sqlite3ErrorMsg(pParse, "unknown join type: "
        "%T%s%T%s%T", pA, zSp1, pB, zSp2, pC);
-    jointype = JT_INNER;
-  }else if( (jointype & JT_RIGHT)!=0 ){
-    sqlite3ErrorMsg(pParse, 
-      "RIGHT and FULL OUTER JOINs are not currently supported");
     jointype = JT_INNER;
   }
   return jointype;
@@ -324,8 +320,25 @@ int sqlite3ColumnIndex(Table *pTab, const char *zCol){
 }
 
 /*
-** Search the first N tables in pSrc, from left to right, looking for a
-** table that has a column named zCol.  
+** Mark a subquery result column as having been used.
+*/
+void sqlite3SrcItemColumnUsed(SrcItem *pItem, int iCol){
+  assert( pItem!=0 );
+  assert( pItem->fg.isNestedFrom == IsNestedFrom(pItem->pSelect) );
+  if( pItem->fg.isNestedFrom ){
+    ExprList *pResults;
+    assert( pItem->pSelect!=0 );
+    pResults = pItem->pSelect->pEList;
+    assert( pResults!=0 );
+    assert( iCol>=0 && iCol<pResults->nExpr );
+    pResults->a[iCol].bUsed = 1;
+  }
+}
+
+/*
+** Search the tables iStart..iEnd (inclusive) in pSrc, looking for a
+** table that has a column named zCol.  The search is left-to-right.
+** The first match found is returned.
 **
 ** When found, set *piTab and *piCol to the table index and column index
 ** of the matching column and return TRUE.
@@ -334,22 +347,27 @@ int sqlite3ColumnIndex(Table *pTab, const char *zCol){
 */
 static int tableAndColumnIndex(
   SrcList *pSrc,       /* Array of tables to search */
-  int N,               /* Number of tables in pSrc->a[] to search */
+  int iStart,          /* First member of pSrc->a[] to check */
+  int iEnd,            /* Last member of pSrc->a[] to check */
   const char *zCol,    /* Name of the column we are looking for */
   int *piTab,          /* Write index of pSrc->a[] here */
   int *piCol,          /* Write index of pSrc->a[*piTab].pTab->aCol[] here */
-  int bIgnoreHidden    /* True to ignore hidden columns */
+  int bIgnoreHidden    /* Ignore hidden columns */
 ){
   int i;               /* For looping over tables in pSrc */
   int iCol;            /* Index of column matching zCol */
 
+  assert( iEnd<pSrc->nSrc );
+  assert( iStart>=0 );
   assert( (piTab==0)==(piCol==0) );  /* Both or neither are NULL */
-  for(i=0; i<N; i++){
+
+  for(i=iStart; i<=iEnd; i++){
     iCol = sqlite3ColumnIndex(pSrc->a[i].pTab, zCol);
     if( iCol>=0 
      && (bIgnoreHidden==0 || IsHiddenColumn(&pSrc->a[i].pTab->aCol[iCol])==0)
     ){
       if( piTab ){
+        sqlite3SrcItemColumnUsed(&pSrc->a[i], iCol);
         *piTab = i;
         *piCol = iCol;
       }
@@ -360,59 +378,12 @@ static int tableAndColumnIndex(
 }
 
 /*
-** This function is used to add terms implied by JOIN syntax to the
-** WHERE clause expression of a SELECT statement. The new term, which
-** is ANDed with the existing WHERE clause, is of the form:
-**
-**    (tab1.col1 = tab2.col2)
-**
-** where tab1 is the iSrc'th table in SrcList pSrc and tab2 is the 
-** (iSrc+1)'th. Column col1 is column iColLeft of tab1, and col2 is
-** column iColRight of tab2.
-*/
-static void addWhereTerm(
-  Parse *pParse,                  /* Parsing context */
-  SrcList *pSrc,                  /* List of tables in FROM clause */
-  int iLeft,                      /* Index of first table to join in pSrc */
-  int iColLeft,                   /* Index of column in first table */
-  int iRight,                     /* Index of second table in pSrc */
-  int iColRight,                  /* Index of column in second table */
-  int isOuterJoin,                /* True if this is an OUTER join */
-  Expr **ppWhere                  /* IN/OUT: The WHERE clause to add to */
-){
-  sqlite3 *db = pParse->db;
-  Expr *pE1;
-  Expr *pE2;
-  Expr *pEq;
-
-  assert( iLeft<iRight );
-  assert( pSrc->nSrc>iRight );
-  assert( pSrc->a[iLeft].pTab );
-  assert( pSrc->a[iRight].pTab );
-
-  pE1 = sqlite3CreateColumnExpr(db, pSrc, iLeft, iColLeft);
-  pE2 = sqlite3CreateColumnExpr(db, pSrc, iRight, iColRight);
-
-  pEq = sqlite3PExpr(pParse, TK_EQ, pE1, pE2);
-  assert( pE2!=0 || pEq==0 );  /* Due to db->mallocFailed test
-                               ** in sqlite3DbMallocRawNN() called from
-                               ** sqlite3PExpr(). */
-  if( pEq && isOuterJoin ){
-    ExprSetProperty(pEq, EP_FromJoin);
-    assert( !ExprHasProperty(pEq, EP_TokenOnly|EP_Reduced) );
-    ExprSetVVAProperty(pEq, EP_NoReduce);
-    pEq->w.iJoin = pE2->iTable;
-  }
-  *ppWhere = sqlite3ExprAnd(pParse, *ppWhere, pEq);
-}
-
-/*
 ** Set the EP_FromJoin property on all terms of the given expression.
 ** And set the Expr.w.iJoin to iTable for every term in the
 ** expression.
 **
 ** The EP_FromJoin property is used on terms of an expression to tell
-** the LEFT OUTER JOIN processing logic that this term is part of the
+** the OUTER JOIN processing logic that this term is part of the
 ** join restriction specified in the ON or USING clause and not a part
 ** of the more general WHERE clause.  These terms are moved over to the
 ** WHERE clause during join processing but we need to remember that they
@@ -432,9 +403,10 @@ static void addWhereTerm(
 ** after the t1 loop and rows with t1.x!=5 will never appear in
 ** the output, which is incorrect.
 */
-void sqlite3SetJoinExpr(Expr *p, int iTable){
+void sqlite3SetJoinExpr(Expr *p, int iTable, u32 joinFlag){
+  assert( joinFlag==EP_FromJoin || joinFlag==EP_InnerJoin );
   while( p ){
-    ExprSetProperty(p, EP_FromJoin);
+    ExprSetProperty(p, joinFlag);
     assert( !ExprHasProperty(p, EP_TokenOnly|EP_Reduced) );
     ExprSetVVAProperty(p, EP_NoReduce);
     p->w.iJoin = iTable;
@@ -443,11 +415,11 @@ void sqlite3SetJoinExpr(Expr *p, int iTable){
       if( p->x.pList ){
         int i;
         for(i=0; i<p->x.pList->nExpr; i++){
-          sqlite3SetJoinExpr(p->x.pList->a[i].pExpr, iTable);
+          sqlite3SetJoinExpr(p->x.pList->a[i].pExpr, iTable, joinFlag);
         }
       }
     }
-    sqlite3SetJoinExpr(p->pLeft, iTable);
+    sqlite3SetJoinExpr(p->pLeft, iTable, joinFlag);
     p = p->pRight;
   } 
 }
@@ -463,6 +435,7 @@ static void unsetJoinExpr(Expr *p, int iTable){
     if( ExprHasProperty(p, EP_FromJoin)
      && (iTable<0 || p->w.iJoin==iTable) ){
       ExprClearProperty(p, EP_FromJoin);
+      ExprSetProperty(p, EP_InnerJoin);
     }
     if( p->op==TK_COLUMN && p->iTable==iTable ){
       ExprClearProperty(p, EP_CanBeNull);
@@ -483,19 +456,26 @@ static void unsetJoinExpr(Expr *p, int iTable){
 
 /*
 ** This routine processes the join information for a SELECT statement.
-** ON and USING clauses are converted into extra terms of the WHERE clause.
-** NATURAL joins also create extra WHERE clause terms.
+**
+**   *  A NATURAL join is converted into a USING join.  After that, we
+**      do not need to be concerned with NATURAL joins and we only have
+**      think about USING joins.
+**
+**   *  ON and USING clauses result in extra terms being added to the
+**      WHERE clause to enforce the specified constraints.  The extra
+**      WHERE clause terms will be tagged with EP_FromJoin or
+**      EP_InnerJoin so that we know that they originated in ON/USING.
 **
 ** The terms of a FROM clause are contained in the Select.pSrc structure.
 ** The left most table is the first entry in Select.pSrc.  The right-most
 ** table is the last entry.  The join operator is held in the entry to
-** the left.  Thus entry 0 contains the join operator for the join between
+** the right.  Thus entry 1 contains the join operator for the join between
 ** entries 0 and 1.  Any ON or USING clauses associated with the join are
-** also attached to the left entry.
+** also attached to the right entry.
 **
 ** This routine returns the number of errors encountered.
 */
-static int sqliteProcessJoin(Parse *pParse, Select *p){
+static int sqlite3ProcessJoin(Parse *pParse, Select *p){
   SrcList *pSrc;                  /* All tables in the FROM clause */
   int i, j;                       /* Loop counters */
   SrcItem *pLeft;                 /* Left table being joined */
@@ -506,15 +486,16 @@ static int sqliteProcessJoin(Parse *pParse, Select *p){
   pRight = &pLeft[1];
   for(i=0; i<pSrc->nSrc-1; i++, pRight++, pLeft++){
     Table *pRightTab = pRight->pTab;
-    int isOuter;
+    u32 joinType;
 
     if( NEVER(pLeft->pTab==0 || pRightTab==0) ) continue;
-    isOuter = (pRight->fg.jointype & JT_OUTER)!=0;
+    joinType = (pRight->fg.jointype & JT_OUTER)!=0 ? EP_FromJoin : EP_InnerJoin;
 
-    /* When the NATURAL keyword is present, add WHERE clause terms for
-    ** every column that the two tables have in common.
+    /* If this is a NATURAL join, synthesize an approprate USING clause
+    ** to specify which columns should be joined.
     */
     if( pRight->fg.jointype & JT_NATURAL ){
+      IdList *pUsing = 0;
       if( pRight->fg.isUsing || pRight->u3.pOn ){
         sqlite3ErrorMsg(pParse, "a NATURAL join may not have "
            "an ON or USING clause", 0);
@@ -522,16 +503,24 @@ static int sqliteProcessJoin(Parse *pParse, Select *p){
       }
       for(j=0; j<pRightTab->nCol; j++){
         char *zName;   /* Name of column in the right table */
-        int iLeft;     /* Matching left table */
-        int iLeftCol;  /* Matching column in the left table */
 
         if( IsHiddenColumn(&pRightTab->aCol[j]) ) continue;
         zName = pRightTab->aCol[j].zCnName;
-        if( tableAndColumnIndex(pSrc, i+1, zName, &iLeft, &iLeftCol, 1) ){
-          addWhereTerm(pParse, pSrc, iLeft, iLeftCol, i+1, j,
-                isOuter, &p->pWhere);
+        if( tableAndColumnIndex(pSrc, 0, i, zName, 0, 0, 1) ){
+          pUsing = sqlite3IdListAppend(pParse, pUsing, 0);
+          if( pUsing ){
+            assert( pUsing->nId>0 );
+            assert( pUsing->a[pUsing->nId-1].zName==0 );
+            pUsing->a[pUsing->nId-1].zName = sqlite3DbStrDup(pParse->db, zName);
+          }
         }
       }
+      if( pUsing ){
+        pRight->fg.isUsing = 1;
+        pRight->fg.isSynthUsing = 1;
+        pRight->u3.pUsing = pUsing;
+      }
+      if( pParse->nErr ) return 1;
     }
 
     /* Create extra terms on the WHERE clause for each column named
@@ -543,24 +532,74 @@ static int sqliteProcessJoin(Parse *pParse, Select *p){
     */
     if( pRight->fg.isUsing ){
       IdList *pList = pRight->u3.pUsing;
+      sqlite3 *db = pParse->db;
       assert( pList!=0 );
       for(j=0; j<pList->nId; j++){
         char *zName;     /* Name of the term in the USING clause */
         int iLeft;       /* Table on the left with matching column name */
         int iLeftCol;    /* Column number of matching column on the left */
         int iRightCol;   /* Column number of matching column on the right */
+        Expr *pE1;       /* Reference to the column on the LEFT of the join */
+        Expr *pE2;       /* Reference to the column on the RIGHT of the join */
+        Expr *pEq;       /* Equality constraint.  pE1 == pE2 */
 
         zName = pList->a[j].zName;
         iRightCol = sqlite3ColumnIndex(pRightTab, zName);
         if( iRightCol<0
-         || !tableAndColumnIndex(pSrc, i+1, zName, &iLeft, &iLeftCol, 0)
+         || tableAndColumnIndex(pSrc, 0, i, zName, &iLeft, &iLeftCol,
+                                pRight->fg.isSynthUsing)==0
         ){
           sqlite3ErrorMsg(pParse, "cannot join using column %s - column "
             "not present in both tables", zName);
           return 1;
         }
-        addWhereTerm(pParse, pSrc, iLeft, iLeftCol, i+1, iRightCol,
-                     isOuter, &p->pWhere);
+        pE1 = sqlite3CreateColumnExpr(db, pSrc, iLeft, iLeftCol);
+        sqlite3SrcItemColumnUsed(&pSrc->a[iLeft], iLeftCol);
+        if( (pSrc->a[0].fg.jointype & JT_LTORJ)!=0 ){
+          /* This branch runs if the query contains one or more RIGHT or FULL
+          ** JOINs.  If only a single table on the left side of this join
+          ** contains the zName column, then this branch is a no-op.
+          ** But if there are two or more tables on the left side
+          ** of the join, construct a coalesce() function that gathers all
+          ** such tables.  Raise an error if more than one of those references
+          ** to zName is not also within a prior USING clause.
+          **
+          ** We really ought to raise an error if there are two or more
+          ** non-USING references to zName on the left of an INNER or LEFT
+          ** JOIN.  But older versions of SQLite do not do that, so we avoid
+          ** adding a new error so as to not break legacy applications.
+          */
+          ExprList *pFuncArgs = 0;   /* Arguments to the coalesce() */
+          static const Token tkCoalesce = { "coalesce", 8 };
+          while( tableAndColumnIndex(pSrc, iLeft+1, i, zName, &iLeft, &iLeftCol,
+                                     pRight->fg.isSynthUsing)!=0 ){
+            if( pSrc->a[iLeft].fg.isUsing==0
+             || sqlite3IdListIndex(pSrc->a[iLeft].u3.pUsing, zName)<0
+            ){
+              sqlite3ErrorMsg(pParse, "ambiguous reference to %s in USING()",
+                              zName);
+              break;
+            }
+            pFuncArgs = sqlite3ExprListAppend(pParse, pFuncArgs, pE1);
+            pE1 = sqlite3CreateColumnExpr(db, pSrc, iLeft, iLeftCol);
+            sqlite3SrcItemColumnUsed(&pSrc->a[iLeft], iLeftCol);
+          }
+          if( pFuncArgs ){
+            pFuncArgs = sqlite3ExprListAppend(pParse, pFuncArgs, pE1);
+            pE1 = sqlite3ExprFunction(pParse, pFuncArgs, &tkCoalesce, 0);
+          }
+        }
+        pE2 = sqlite3CreateColumnExpr(db, pSrc, i+1, iRightCol);
+        sqlite3SrcItemColumnUsed(pRight, iRightCol);
+        pEq = sqlite3PExpr(pParse, TK_EQ, pE1, pE2);
+        assert( pE2!=0 || pEq==0 );
+        if( pEq ){
+          ExprSetProperty(pEq, joinType);
+          assert( !ExprHasProperty(pEq, EP_TokenOnly|EP_Reduced) );
+          ExprSetVVAProperty(pEq, EP_NoReduce);
+          pEq->w.iJoin = pE2->iTable;
+        }
+        p->pWhere = sqlite3ExprAnd(pParse, p->pWhere, pEq);
       }
     }
 
@@ -568,7 +607,7 @@ static int sqliteProcessJoin(Parse *pParse, Select *p){
     ** an AND operator.
     */
     else if( pRight->u3.pOn ){
-      if( isOuter ) sqlite3SetJoinExpr(pRight->u3.pOn, pRight->iCursor);
+      sqlite3SetJoinExpr(pRight->u3.pOn, pRight->iCursor, joinType);
       p->pWhere = sqlite3ExprAnd(pParse, p->pWhere, pRight->u3.pOn);
       pRight->u3.pOn = 0;
     }
@@ -2140,12 +2179,13 @@ int sqlite3ColumnsFromExprList(
   *paCol = aCol;
 
   for(i=0, pCol=aCol; i<nCol && !db->mallocFailed; i++, pCol++){
+    struct ExprList_item *pX = &pEList->a[i];
     /* Get an appropriate name for the column
     */
-    if( (zName = pEList->a[i].zEName)!=0 && pEList->a[i].eEName==ENAME_NAME ){
+    if( (zName = pX->zEName)!=0 && pX->eEName==ENAME_NAME ){
       /* If the column contains an "AS <name>" phrase, use <name> as the name */
     }else{
-      Expr *pColExpr = sqlite3ExprSkipCollateAndLikely(pEList->a[i].pExpr);
+      Expr *pColExpr = sqlite3ExprSkipCollateAndLikely(pX->pExpr);
       while( ALWAYS(pColExpr!=0) && pColExpr->op==TK_DOT ){
         pColExpr = pColExpr->pRight;
         assert( pColExpr!=0 );
@@ -2163,7 +2203,7 @@ int sqlite3ColumnsFromExprList(
         zName = pColExpr->u.zToken;
       }else{
         /* Use the original text of the column expression as its name */
-        zName = pEList->a[i].zEName;
+        assert( zName==pX->zEName );  /* pointer comparison intended */
       }
     }
     if( zName && !sqlite3IsTrueOrFalse(zName) ){
@@ -3656,12 +3696,40 @@ static int multiSelectOrderBy(
 **
 ** All references to columns in table iTable are to be replaced by corresponding
 ** expressions in pEList.
+**
+** ## About "isOuterJoin":
+**
+** The isOuterJoin column indicates that the replacement will occur into a
+** position in the parent that NULL-able due to an OUTER JOIN.  Either the
+** target slot in the parent is the right operand of a LEFT JOIN, or one of
+** the left operands of a RIGHT JOIN.  In either case, we need to potentially
+** bypass the substituted expression with OP_IfNullRow.
+**
+** Suppose the original expression integer constant.  Even though the table
+** has the nullRow flag set, because the expression is an integer constant,
+** it will not be NULLed out.  So instead, we insert an OP_IfNullRow opcode
+** that checks to see if the nullRow flag is set on the table.  If the nullRow
+** flag is set, then the value in the register is set to NULL and the original
+** expression is bypassed.  If the nullRow flag is not set, then the original
+** expression runs to populate the register.
+**
+** Example where this is needed:
+**
+**      CREATE TABLE t1(a INTEGER PRIMARY KEY, b INT);
+**      CREATE TABLE t2(x INT UNIQUE);
+**
+**      SELECT a,b,m,x FROM t1 LEFT JOIN (SELECT 59 AS m,x FROM t2) ON b=x;
+**
+** When the subquery on the right side of the LEFT JOIN is flattened, we
+** have to add OP_IfNullRow in front of the OP_Integer that implements the
+** "m" value of the subquery so that a NULL will be loaded instead of 59
+** when processing a non-matched row of the left.
 */
 typedef struct SubstContext {
   Parse *pParse;            /* The parsing context */
   int iTable;               /* Replace references to this table */
   int iNewTable;            /* New table number */
-  int isLeftJoin;           /* Add TK_IF_NULL_ROW opcodes on each replacement */
+  int isOuterJoin;          /* Add TK_IF_NULL_ROW opcodes on each replacement */
   ExprList *pEList;         /* Replacement expressions */
 } SubstContext;
 
@@ -3711,7 +3779,7 @@ static Expr *substExpr(
         sqlite3VectorErrorMsg(pSubst->pParse, pCopy);
       }else{
         sqlite3 *db = pSubst->pParse->db;
-        if( pSubst->isLeftJoin && pCopy->op!=TK_COLUMN ){
+        if( pSubst->isOuterJoin && pCopy->op!=TK_COLUMN ){
           memset(&ifNullRow, 0, sizeof(ifNullRow));
           ifNullRow.op = TK_IF_NULL_ROW;
           ifNullRow.pLeft = pCopy;
@@ -3725,11 +3793,12 @@ static Expr *substExpr(
           sqlite3ExprDelete(db, pNew);
           return pExpr;
         }
-        if( pSubst->isLeftJoin ){
+        if( pSubst->isOuterJoin ){
           ExprSetProperty(pNew, EP_CanBeNull);
         }
-        if( ExprHasProperty(pExpr,EP_FromJoin) ){
-          sqlite3SetJoinExpr(pNew, pExpr->w.iJoin);
+        if( ExprHasProperty(pExpr,EP_FromJoin|EP_InnerJoin) ){
+          sqlite3SetJoinExpr(pNew, pExpr->w.iJoin,
+                             pExpr->flags & (EP_FromJoin|EP_InnerJoin));
         }
         sqlite3ExprDelete(db, pExpr);
         pExpr = pNew;
@@ -3979,6 +4048,7 @@ static void renumberCursors(
 **             table and
 **        (3c) the outer query may not be an aggregate.
 **        (3d) the outer query may not be DISTINCT.
+**        See also (26) for restrictions on RIGHT JOIN.
 **
 **   (4)  The subquery can not be DISTINCT.
 **
@@ -4077,6 +4147,12 @@ static void renumberCursors(
 **        function in the select list or ORDER BY clause, flattening
 **        is not attempted.
 **
+**  (26)  The subquery may not be the right operand of a RIGHT JOIN.
+**        See also (3) for restrictions on LEFT JOIN.
+**
+**  (27)  The subquery may not contain a FULL or RIGHT JOIN unless it
+**        is the first element of the parent query.
+**
 **
 ** In this routine, the "p" parameter is a pointer to the outer query.
 ** The subquery is p->pSrc->a[iFrom].  isAgg is true if the outer query
@@ -4102,7 +4178,7 @@ static int flattenSubquery(
   SrcList *pSubSrc;   /* The FROM clause of the subquery */
   int iParent;        /* VDBE cursor number of the pSub result set temp table */
   int iNewParent = -1;/* Replacement table for iParent */
-  int isLeftJoin = 0; /* True if pSub is the right side of a LEFT JOIN */    
+  int isOuterJoin = 0; /* True if pSub is the right side of a LEFT JOIN */    
   int i;              /* Loop counter */
   Expr *pWhere;                    /* The WHERE clause */
   SrcItem *pSubitem;               /* The subquery */
@@ -4175,25 +4251,31 @@ static int flattenSubquery(
   **
   ** See also tickets #306, #350, and #3300.
   */
-  if( (pSubitem->fg.jointype & JT_OUTER)!=0 ){
-    isLeftJoin = 1;
-    if( pSubSrc->nSrc>1                   /* (3a) */
-     || isAgg                             /* (3b) */
-     || IsVirtual(pSubSrc->a[0].pTab)     /* (3c) */
-     || (p->selFlags & SF_Distinct)!=0    /* (3d) */
+  if( (pSubitem->fg.jointype & (JT_OUTER|JT_LTORJ))!=0 ){
+    if( pSubSrc->nSrc>1                        /* (3a) */
+     || isAgg                                  /* (3b) */
+     || IsVirtual(pSubSrc->a[0].pTab)          /* (3c) */
+     || (p->selFlags & SF_Distinct)!=0         /* (3d) */
+     || (pSubitem->fg.jointype & JT_RIGHT)!=0  /* (26) */
     ){
       return 0;
     }
+    isOuterJoin = 1;
   }
 #ifdef SQLITE_EXTRA_IFNULLROW
   else if( iFrom>0 && !isAgg ){
-    /* Setting isLeftJoin to -1 causes OP_IfNullRow opcodes to be generated for
+    /* Setting isOuterJoin to -1 causes OP_IfNullRow opcodes to be generated for
     ** every reference to any result column from subquery in a join, even
     ** though they are not necessary.  This will stress-test the OP_IfNullRow 
     ** opcode. */
-    isLeftJoin = -1;
+    isOuterJoin = -1;
   }
 #endif
+
+  assert( pSubSrc->nSrc>0 );  /* True by restriction (7) */
+  if( iFrom>0 && (pSubSrc->a[0].fg.jointype & JT_LTORJ)!=0 ){
+    return 0;   /* Restriction (27) */
+  }
 
   /* Restriction (17): If the sub-query is a compound SELECT, then it must
   ** use only the UNION ALL operator. And none of the simple select queries
@@ -4204,7 +4286,7 @@ static int flattenSubquery(
     if( pSub->pOrderBy ){
       return 0;  /* Restriction (20) */
     }
-    if( isAgg || (p->selFlags & SF_Distinct)!=0 || isLeftJoin>0 ){
+    if( isAgg || (p->selFlags & SF_Distinct)!=0 || isOuterJoin>0 ){
       return 0; /* (17d1), (17d2), or (17f) */
     }
     for(pSub1=pSub; pSub1; pSub1=pSub1->pPrior){
@@ -4372,6 +4454,7 @@ static int flattenSubquery(
   for(pParent=p; pParent; pParent=pParent->pPrior, pSub=pSub->pPrior){
     int nSubSrc;
     u8 jointype = 0;
+    u8 ltorj = pSrc->a[iFrom].fg.jointype & JT_LTORJ;
     assert( pSub!=0 );
     pSubSrc = pSub->pSrc;     /* FROM clause of subquery */
     nSubSrc = pSubSrc->nSrc;  /* Number of terms in subquery FROM clause */
@@ -4410,10 +4493,12 @@ static int flattenSubquery(
       if( pItem->fg.isUsing ) sqlite3IdListDelete(db, pItem->u3.pUsing);
       assert( pItem->fg.isTabFunc==0 );
       *pItem = pSubSrc->a[i];
+      pItem->fg.jointype |= ltorj;
       iNewParent = pSubSrc->a[i].iCursor;
       memset(&pSubSrc->a[i], 0, sizeof(pSubSrc->a[i]));
     }
-    pSrc->a[iFrom].fg.jointype = jointype;
+    pSrc->a[iFrom].fg.jointype &= JT_LTORJ;
+    pSrc->a[iFrom].fg.jointype |= jointype | ltorj;
   
     /* Now begin substituting subquery result set expressions for 
     ** references to the iParent in the outer query.
@@ -4448,8 +4533,8 @@ static int flattenSubquery(
     }
     pWhere = pSub->pWhere;
     pSub->pWhere = 0;
-    if( isLeftJoin>0 ){
-      sqlite3SetJoinExpr(pWhere, iNewParent);
+    if( isOuterJoin>0 ){
+      sqlite3SetJoinExpr(pWhere, iNewParent, EP_FromJoin);
     }
     if( pWhere ){
       if( pParent->pWhere ){
@@ -4463,7 +4548,7 @@ static int flattenSubquery(
       x.pParse = pParse;
       x.iTable = iParent;
       x.iNewTable = iNewParent;
-      x.isLeftJoin = isLeftJoin;
+      x.isOuterJoin = isOuterJoin;
       x.pEList = pSub->pEList;
       substSelect(&x, pParent, 0);
     }
@@ -4924,7 +5009,7 @@ static int pushDownWhereTerms(
       x.pParse = pParse;
       x.iTable = iCursor;
       x.iNewTable = iCursor;
-      x.isLeftJoin = 0;
+      x.isOuterJoin = 0;
       x.pEList = pSubq->pEList;
       pNew = substExpr(&x, pNew);
 #ifndef SQLITE_OMIT_WINDOWFUNC
@@ -5478,10 +5563,34 @@ int sqlite3ExpandSubquery(Parse *pParse, SrcItem *pFrom){
 #else
   pTab->tabFlags |= TF_Ephemeral;  /* Legacy compatibility mode */
 #endif
-
-
   return pParse->nErr ? SQLITE_ERROR : SQLITE_OK;
 }
+
+
+/*
+** Check the N SrcItem objects to the right of pBase.  (N might be zero!)
+** If any of those SrcItem objects have a USING clause containing zName
+** then return true.
+**
+** If N is zero, or none of the N SrcItem objects to the right of pBase
+** contains a USING clause, or if none of the USING clauses contain zName,
+** then return false.
+*/
+static int inAnyUsingClause(
+  const char *zName, /* Name we are looking for */
+  SrcItem *pBase,    /* The base SrcItem.  Looking at pBase[1] and following */
+  int N              /* How many SrcItems to check */
+){
+  while( N>0 ){
+    N--;
+    pBase++;
+    if( pBase->fg.isUsing==0 ) continue;
+    if( NEVER(pBase->u3.pUsing==0) ) continue;
+    if( sqlite3IdListIndex(pBase->u3.pUsing, zName)>=0 ) return 1;
+  }
+  return 0;
+}
+
 
 /*
 ** This routine is a Walker callback for "expanding" a SELECT statement.
@@ -5632,7 +5741,7 @@ static int selectExpander(Walker *pWalker, Select *p){
   /* Process NATURAL keywords, and ON and USING clauses of joins.
   */
   assert( db->mallocFailed==0 || pParse->nErr!=0 );
-  if( pParse->nErr || sqliteProcessJoin(pParse, p) ){
+  if( pParse->nErr || sqlite3ProcessJoin(pParse, p) ){
     return WRC_Abort;
   }
 
@@ -5696,7 +5805,7 @@ static int selectExpander(Walker *pWalker, Select *p){
         }
         for(i=0, pFrom=pTabList->a; i<pTabList->nSrc; i++, pFrom++){
           Table *pTab = pFrom->pTab;
-          Select *pSub = pFrom->pSelect;
+          Select *pSub;
           char *zTabName = pFrom->zAlias;
           const char *zSchemaName = 0;
           int iDb;
@@ -5704,7 +5813,12 @@ static int selectExpander(Walker *pWalker, Select *p){
             zTabName = pTab->zName;
           }
           if( db->mallocFailed ) break;
-          if( pSub==0 || (pSub->selFlags & SF_NestedFrom)==0 ){
+          assert( pFrom->fg.isNestedFrom == IsNestedFrom(pFrom->pSelect) );
+          if( pFrom->fg.isNestedFrom ){
+            pSub = pFrom->pSelect;
+            assert( pSub->pEList!=0 );
+            assert( pSub->pEList->nExpr==pTab->nCol );
+          }else{
             pSub = 0;
             if( zTName && sqlite3StrICmp(zTName, zTabName)!=0 ){
               continue;
@@ -5714,9 +5828,7 @@ static int selectExpander(Walker *pWalker, Select *p){
           }
           for(j=0; j<pTab->nCol; j++){
             char *zName = pTab->aCol[j].zCnName;
-            char *zColname;  /* The computed column name */
-            char *zToFree;   /* Malloced string that needs to be freed */
-            Token sColname;  /* Computed column name as a token */
+            struct ExprList_item *pX; /* Newly added ExprList term */
 
             assert( zName );
             if( zTName && pSub
@@ -5737,13 +5849,6 @@ static int selectExpander(Walker *pWalker, Select *p){
             tableSeen = 1;
 
             if( i>0 && zTName==0 ){
-              if( (pFrom->fg.jointype & JT_NATURAL)!=0
-                && tableAndColumnIndex(pTabList, i, zName, 0, 0, 1)
-              ){
-                /* In a NATURAL join, omit the join columns from the 
-                ** table to the right of the join */
-                continue;
-              }
               if( pFrom->fg.isUsing
                && sqlite3IdListIndex(pFrom->u3.pUsing, zName)>=0
               ){
@@ -5753,9 +5858,13 @@ static int selectExpander(Walker *pWalker, Select *p){
               }
             }
             pRight = sqlite3Expr(db, TK_ID, zName);
-            zColname = zName;
-            zToFree = 0;
-            if( longNames || pTabList->nSrc>1 || IN_RENAME_OBJECT ){
+            if( (pTabList->nSrc>1
+                 && (  (pFrom->fg.jointype & JT_LTORJ)==0
+                     || !inAnyUsingClause(zName,pFrom,pTabList->nSrc-i-1)
+                    )
+                )
+             || IN_RENAME_OBJECT
+            ){
               Expr *pLeft;
               pLeft = sqlite3Expr(db, TK_ID, zTabName);
               pExpr = sqlite3PExpr(pParse, TK_DOT, pLeft, pRight);
@@ -5766,31 +5875,32 @@ static int selectExpander(Walker *pWalker, Select *p){
                 pLeft = sqlite3Expr(db, TK_ID, zSchemaName);
                 pExpr = sqlite3PExpr(pParse, TK_DOT, pLeft, pExpr);
               }
-              if( longNames ){
-                zColname = sqlite3MPrintf(db, "%s.%s", zTabName, zName);
-                zToFree = zColname;
-              }
             }else{
               pExpr = pRight;
             }
             pNew = sqlite3ExprListAppend(pParse, pNew, pExpr);
-
-            sqlite3TokenInit(&sColname, zColname);
-            sqlite3ExprListSetName(pParse, pNew, &sColname, 0);
-            if( pNew && (p->selFlags & SF_NestedFrom)!=0 && !IN_RENAME_OBJECT ){
-              struct ExprList_item *pX = &pNew->a[pNew->nExpr-1];
-              sqlite3DbFree(db, pX->zEName);
+            if( pNew==0 ){
+              break;  /* OOM */
+            }
+            pX = &pNew->a[pNew->nExpr-1];
+            assert( pX->zEName==0 );
+            if( (selFlags & SF_NestedFrom)!=0 && !IN_RENAME_OBJECT ){
               if( pSub ){
                 pX->zEName = sqlite3DbStrDup(db, pSub->pEList->a[j].zEName);
                 testcase( pX->zEName==0 );
               }else{
                 pX->zEName = sqlite3MPrintf(db, "%s.%s.%s",
-                                           zSchemaName, zTabName, zColname);
+                                           zSchemaName, zTabName, zName);
                 testcase( pX->zEName==0 );
               }
               pX->eEName = ENAME_TAB;
+            }else if( longNames ){
+              pX->zEName = sqlite3MPrintf(db, "%s.%s", zTabName, zName);
+              pX->eEName = ENAME_NAME;
+            }else{
+              pX->zEName = sqlite3DbStrDup(db, zName);
+              pX->eEName = ENAME_NAME;
             }
-            sqlite3DbFree(db, zToFree);
           }
         }
         if( !tableSeen ){
@@ -5814,6 +5924,12 @@ static int selectExpander(Walker *pWalker, Select *p){
       p->selFlags |= SF_ComplexResult;
     }
   }
+#if TREETRACE_ENABLED
+  if( sqlite3TreeTrace & 0x100 ){
+    SELECTTRACE(0x100,pParse,p,("After result-set wildcard expansion:\n"));
+    sqlite3TreeViewSelect(0, p, 0);
+  }
+#endif
   return WRC_Continue;
 }
 
@@ -6507,7 +6623,7 @@ int sqlite3Select(
     /* Convert LEFT JOIN into JOIN if there are terms of the right table
     ** of the LEFT JOIN used in the WHERE clause.
     */
-    if( (pItem->fg.jointype & JT_LEFT)!=0
+    if( (pItem->fg.jointype & (JT_LEFT|JT_RIGHT))==JT_LEFT
      && sqlite3ExprImpliesNonNullRow(p->pWhere, pItem->iCursor)
      && OptimizationEnabled(db, SQLITE_SimplifyJoin)
     ){
@@ -6593,7 +6709,7 @@ int sqlite3Select(
      && i==0
      && (p->selFlags & SF_ComplexResult)!=0
      && (pTabList->nSrc==1
-         || (pTabList->a[1].fg.jointype&(JT_LEFT|JT_CROSS))!=0)
+         || (pTabList->a[1].fg.jointype&(JT_OUTER|JT_CROSS))!=0)
     ){
       continue;
     }
@@ -6715,6 +6831,7 @@ int sqlite3Select(
     if( OptimizationEnabled(db, SQLITE_PushDown)
      && (pItem->fg.isCte==0 
          || (pItem->u2.pCteUse->eM10d!=M10d_Yes && pItem->u2.pCteUse->nUse<2))
+     && (pItem->fg.jointype & JT_RIGHT)==0
      && pushDownWhereTerms(pParse, pSub, p->pWhere, pItem->iCursor,
                            (pItem->fg.jointype & JT_OUTER)!=0)
     ){
@@ -6735,18 +6852,19 @@ int sqlite3Select(
 
     /* Generate code to implement the subquery
     **
-    ** The subquery is implemented as a co-routine if:
+    ** The subquery is implemented as a co-routine all of the following are
+    ** true:
+    **
     **    (1)  the subquery is guaranteed to be the outer loop (so that
     **         it does not need to be computed more than once), and
     **    (2)  the subquery is not a CTE that should be materialized
-    **
-    ** TODO: Are there other reasons beside (1) and (2) to use a co-routine
-    ** implementation?
+    **    (3)  the subquery is not part of a left operand for a RIGHT JOIN
     */
     if( i==0
      && (pTabList->nSrc==1
-            || (pTabList->a[1].fg.jointype&(JT_LEFT|JT_CROSS))!=0)  /* (1) */
-     && (pItem->fg.isCte==0 || pItem->u2.pCteUse->eM10d!=M10d_Yes)  /* (2) */
+            || (pTabList->a[1].fg.jointype&(JT_OUTER|JT_CROSS))!=0)  /* (1) */
+     && (pItem->fg.isCte==0 || pItem->u2.pCteUse->eM10d!=M10d_Yes)   /* (2) */
+     && (pTabList->a[0].fg.jointype & JT_LTORJ)==0                   /* (3) */
     ){
       /* Implement a co-routine that will return a single row of the result
       ** set on each invocation.
@@ -6908,6 +7026,18 @@ int sqlite3Select(
   */
   if( pDest->eDest==SRT_EphemTab ){
     sqlite3VdbeAddOp2(v, OP_OpenEphemeral, pDest->iSDParm, pEList->nExpr);
+    if( p->selFlags & SF_NestedFrom ){
+      /* Delete or NULL-out result columns that will never be used */
+      int ii;
+      for(ii=pEList->nExpr-1; ii>0 && pEList->a[ii].bUsed==0; ii--){
+        sqlite3ExprDelete(db, pEList->a[ii].pExpr);
+        sqlite3DbFree(db, pEList->a[ii].zEName);
+        pEList->nExpr--;
+      }
+      for(ii=0; ii<pEList->nExpr; ii++){
+        if( pEList->a[ii].bUsed==0 ) pEList->a[ii].pExpr->op = TK_NULL;
+      }
+    }
   }
 
   /* Set the limiter.
@@ -7524,7 +7654,9 @@ int sqlite3Select(
         updateAccumulator(pParse, regAcc, pAggInfo, eDist);
         if( eDist!=WHERE_DISTINCT_NOOP ){
           struct AggInfo_func *pF = &pAggInfo->aFunc[0];
-          fixDistinctOpenEph(pParse, eDist, pF->iDistinct, pF->iDistAddr);
+          if( pF ){
+            fixDistinctOpenEph(pParse, eDist, pF->iDistinct, pF->iDistAddr);
+          }
         }
 
         if( regAcc ) sqlite3VdbeAddOp2(v, OP_Integer, 1, regAcc);

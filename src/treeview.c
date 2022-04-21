@@ -133,6 +133,7 @@ void sqlite3TreeViewWith(TreeView *pView, const With *pWith, u8 moreToFollow){
 */
 void sqlite3TreeViewSrcList(TreeView *pView, const SrcList *pSrc){
   int i;
+  if( pSrc==0 ) return;
   for(i=0; i<pSrc->nSrc; i++){
     const SrcItem *pItem = &pSrc->a[i];
     StrAccum x;
@@ -144,10 +145,17 @@ void sqlite3TreeViewSrcList(TreeView *pView, const SrcList *pSrc){
       sqlite3_str_appendf(&x, " tab=%Q nCol=%d ptr=%p used=%llx",
            pItem->pTab->zName, pItem->pTab->nCol, pItem->pTab, pItem->colUsed);
     }
-    if( pItem->fg.jointype & JT_LEFT ){
+    if( (pItem->fg.jointype & (JT_LEFT|JT_RIGHT))==(JT_LEFT|JT_RIGHT) ){
+      sqlite3_str_appendf(&x, " FULL-OUTER-JOIN");
+    }else if( pItem->fg.jointype & JT_LEFT ){
       sqlite3_str_appendf(&x, " LEFT-JOIN");
+    }else if( pItem->fg.jointype & JT_RIGHT ){
+      sqlite3_str_appendf(&x, " RIGHT-JOIN");
     }else if( pItem->fg.jointype & JT_CROSS ){
       sqlite3_str_appendf(&x, " CROSS-JOIN");
+    }
+    if( pItem->fg.jointype & JT_LTORJ ){
+      sqlite3_str_appendf(&x, " LTORJ");
     }
     if( pItem->fg.fromDDL ){
       sqlite3_str_appendf(&x, " DDL");
@@ -158,6 +166,7 @@ void sqlite3TreeViewSrcList(TreeView *pView, const SrcList *pSrc){
     sqlite3StrAccumFinish(&x);
     sqlite3TreeViewItem(pView, zLine, i<pSrc->nSrc-1); 
     if( pItem->pSelect ){
+      assert( pItem->fg.isNestedFrom == IsNestedFrom(pItem->pSelect) );
       sqlite3TreeViewSelect(pView, pItem->pSelect, 0);
     }
     if( pItem->fg.isTabFunc ){
@@ -786,13 +795,23 @@ void sqlite3TreeViewBareExprList(
       int j = pList->a[i].u.x.iOrderByCol;
       char *zName = pList->a[i].zEName;
       int moreToFollow = i<pList->nExpr - 1;
-      if( pList->a[i].eEName!=ENAME_NAME ) zName = 0;
       if( j || zName ){
         sqlite3TreeViewPush(&pView, moreToFollow);
         moreToFollow = 0;
         sqlite3TreeViewLine(pView, 0);
         if( zName ){
-          fprintf(stdout, "AS %s ", zName);
+          switch( pList->a[i].eEName ){
+            default:
+              fprintf(stdout, "AS %s ", zName);
+              break;
+            case ENAME_TAB:
+              fprintf(stdout, "TABLE-ALIAS-NAME(\"%s\") ", zName);
+              if( pList->a[i].bUsed==0 ) fprintf(stdout, "(unused) ");
+              break;
+            case ENAME_SPAN:
+              fprintf(stdout, "SPAN(\"%s\") ", zName);
+              break;
+          }
         }
         if( j ){
           fprintf(stdout, "iOrderByCol=%d", j);
@@ -838,7 +857,21 @@ void sqlite3TreeViewBareIdList(
       if( zName==0 ) zName = "(null)";
       sqlite3TreeViewPush(&pView, moreToFollow);
       sqlite3TreeViewLine(pView, 0);
-      fprintf(stdout, "%s (%d)\n", zName, pList->a[i].idx);
+      if( pList->eU4==EU4_NONE ){
+        fprintf(stdout, "%s\n", zName);
+      }else if( pList->eU4==EU4_IDX ){
+        fprintf(stdout, "%s (%d)\n", zName, pList->a[i].u4.idx);
+      }else{
+        assert( pList->eU4==EU4_EXPR );
+        if( pList->a[i].u4.pExpr==0 ){
+          fprintf(stdout, "%s (pExpr=NULL)\n", zName);
+        }else{
+          fprintf(stdout, "%s\n", zName);
+          sqlite3TreeViewPush(&pView, i<pList->nId-1);
+          sqlite3TreeViewExpr(pView, pList->a[i].u4.pExpr, 0);
+          sqlite3TreeViewPop(&pView);
+        }
+      }
       sqlite3TreeViewPop(&pView);
     }
   }

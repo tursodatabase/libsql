@@ -756,13 +756,13 @@ static int termCanDriveIndex(
   char aff;
   if( pTerm->leftCursor!=pSrc->iCursor ) return 0;
   if( (pTerm->eOperator & (WO_EQ|WO_IS))==0 ) return 0;
-  if( (pSrc->fg.jointype & JT_LEFT) 
+  if( (pSrc->fg.jointype & (JT_LEFT|JT_LTORJ))!=0
    && !ExprHasProperty(pTerm->pExpr, EP_FromJoin)
    && (pTerm->eOperator & WO_IS)
   ){
     /* Cannot use an IS term from the WHERE clause as an index driver for
-    ** the RHS of a LEFT JOIN. Such a term can only be used if it is from
-    ** the ON clause.  */
+    ** the RHS of a LEFT JOIN or for the LHS of a RIGHT JOIN. Such a term
+    ** can only be used if it is from the ON clause.  */
     return 0;
   }
   if( (pTerm->prereqRight & notReady)!=0 ) return 0;
@@ -832,7 +832,8 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
     ** WHERE clause (or the ON clause of a LEFT join) that constrain which
     ** rows of the target table (pSrc) that can be used. */
     if( (pTerm->wtFlags & TERM_VIRTUAL)==0
-     && ((pSrc->fg.jointype&JT_LEFT)==0 || ExprHasProperty(pExpr,EP_FromJoin))
+     && ((pSrc->fg.jointype&(JT_LEFT|JT_LTORJ))==0
+               || ExprHasProperty(pExpr,EP_FromJoin))
      && sqlite3ExprIsTableConstant(pExpr, pSrc->iCursor)
     ){
       pPartial = sqlite3ExprAnd(pParse, pPartial,
@@ -1105,7 +1106,7 @@ static SQLITE_NOINLINE void sqlite3ConstructBloomFilter(
       const SrcItem *pTabItem;
       pLevel = &pWInfo->a[iLevel];
       pTabItem = &pWInfo->pTabList->a[pLevel->iFrom];
-      if( pTabItem->fg.jointype & JT_LEFT ) continue;
+      if( pTabItem->fg.jointype & (JT_LEFT|JT_LTORJ) ) continue;
       pLoop = pLevel->pWLoop;
       if( NEVER(pLoop==0) ) continue;
       if( pLoop->prereq & notReady ) continue;
@@ -1178,9 +1179,10 @@ static sqlite3_index_info *allocateIndexInfo(
     assert( pTerm->u.x.leftColumn<pTab->nCol );
 
     /* tag-20191211-002: WHERE-clause constraints are not useful to the
-    ** right-hand table of a LEFT JOIN.  See tag-20191211-001 for the
+    ** right-hand table of a LEFT JOIN nor to the left-hand table of a
+    ** RIGHT JOIN.  See tag-20191211-001 for the
     ** equivalent restriction for ordinary tables. */
-    if( (pSrc->fg.jointype & JT_LEFT)!=0
+    if( (pSrc->fg.jointype & (JT_LEFT|JT_LTORJ))!=0
      && !ExprHasProperty(pTerm->pExpr, EP_FromJoin)
     ){
       continue;
@@ -2621,10 +2623,11 @@ static void whereLoopOutputAdjust(
         **
         ** 2022-03-24:  Self-culling only applies if either the extra terms
         ** are straight comparison operators that are non-true with NULL
-        ** operand, or if the loop is not a LEFT JOIN.
+        ** operand, or if the loop is not an OUTER JOIN.
         */
         if( (pTerm->eOperator & 0x3f)!=0
-         || (pWC->pWInfo->pTabList->a[pLoop->iTab].fg.jointype & JT_LEFT)==0
+         || (pWC->pWInfo->pTabList->a[pLoop->iTab].fg.jointype
+                  & (JT_LEFT|JT_LTORJ))==0
         ){
           pLoop->wsFlags |= WHERE_SELFCULL;
         }
@@ -2831,9 +2834,10 @@ static int whereLoopAddBtreeIndex(
     if( pTerm->wtFlags & TERM_LIKEOPT && pTerm->eOperator==WO_LT ) continue;
 
     /* tag-20191211-001:  Do not allow constraints from the WHERE clause to
-    ** be used by the right table of a LEFT JOIN.  Only constraints in the
+    ** be used by the right table of a LEFT JOIN nor by the left table of a
+    ** RIGHT JOIN.  Only constraints in the
     ** ON clause are allowed.  See tag-20191211-002 for the vtab equivalent. */
-    if( (pSrc->fg.jointype & JT_LEFT)!=0
+    if( (pSrc->fg.jointype & (JT_LEFT|JT_LTORJ))!=0
      && !ExprHasProperty(pTerm->pExpr, EP_FromJoin)
     ){
       continue;
@@ -3313,13 +3317,14 @@ static int whereLoopAddBtree(
 #ifndef SQLITE_OMIT_AUTOMATIC_INDEX
   /* Automatic indexes */
   if( !pBuilder->pOrSet      /* Not part of an OR optimization */
-   && (pWInfo->wctrlFlags & WHERE_OR_SUBCLAUSE)==0
+   && (pWInfo->wctrlFlags & (WHERE_RIGHT_JOIN|WHERE_OR_SUBCLAUSE))==0
    && (pWInfo->pParse->db->flags & SQLITE_AutoIndex)!=0
    && !pSrc->fg.isIndexedBy  /* Has no INDEXED BY clause */
    && !pSrc->fg.notIndexed   /* Has no NOT INDEXED clause */
    && HasRowid(pTab)         /* Not WITHOUT ROWID table. (FIXME: Why not?) */
    && !pSrc->fg.isCorrelated /* Not a correlated subquery */
    && !pSrc->fg.isRecursive  /* Not a recursive common table expression. */
+   && (pSrc->fg.jointype & JT_RIGHT)==0 /* Not the right tab of a RIGHT JOIN */
   ){
     /* Generate auto-index WhereLoops */
     LogEst rLogSize;         /* Logarithm of the number of rows in the table */
@@ -4011,6 +4016,9 @@ static int whereLoopAddOr(
   pItem = pWInfo->pTabList->a + pNew->iTab;
   iCur = pItem->iCursor;
 
+  /* The multi-index OR optimization does not work for RIGHT and FULL JOIN */
+  if( pItem->fg.jointype & JT_RIGHT ) return SQLITE_OK;
+
   for(pTerm=pWC->a; pTerm<pWCEnd && rc==SQLITE_OK; pTerm++){
     if( (pTerm->eOperator & WO_OR)!=0
      && (pTerm->u.pOrInfo->indexable & pNew->maskSelf)!=0 
@@ -4135,9 +4143,9 @@ static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
     pNew->iTab = iTab;
     pBuilder->iPlanLimit += SQLITE_QUERY_PLANNER_LIMIT_INCR;
     pNew->maskSelf = sqlite3WhereGetMask(&pWInfo->sMaskSet, pItem->iCursor);
-    if( (pItem->fg.jointype & (JT_LEFT|JT_CROSS))!=0 ){
+    if( (pItem->fg.jointype & (JT_OUTER|JT_CROSS))!=0 ){
       /* This condition is true when pItem is the FROM clause term on the
-      ** right-hand-side of a LEFT or CROSS JOIN.  */
+      ** right-hand-side of a OUTER or CROSS JOIN.  */
       mPrereq = mPrior;
     }else{
       mPrereq = 0;
@@ -4146,7 +4154,7 @@ static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
     if( IsVirtual(pItem->pTab) ){
       SrcItem *p;
       for(p=&pItem[1]; p<pEnd; p++){
-        if( mUnusable || (p->fg.jointype & (JT_LEFT|JT_CROSS)) ){
+        if( mUnusable || (p->fg.jointype & (JT_OUTER|JT_CROSS)) ){
           mUnusable |= sqlite3WhereGetMask(&pWInfo->sMaskSet, p->iCursor);
         }
       }
@@ -5762,8 +5770,10 @@ WhereInfo *sqlite3WhereBegin(
       /* noop */
     }else
 #endif
-    if( (pLoop->wsFlags & WHERE_IDX_ONLY)==0
-         && (wctrlFlags & WHERE_OR_SUBCLAUSE)==0 ){
+    if( ((pLoop->wsFlags & WHERE_IDX_ONLY)==0
+         && (wctrlFlags & WHERE_OR_SUBCLAUSE)==0)
+     || (pTabItem->fg.jointype & (JT_LTORJ|JT_RIGHT))!=0
+    ){
       int op = OP_OpenRead;
       if( pWInfo->eOnePass!=ONEPASS_OFF ){
         op = OP_OpenWrite;
@@ -5865,6 +5875,37 @@ WhereInfo *sqlite3WhereBegin(
       }
     }
     if( iDb>=0 ) sqlite3CodeVerifySchema(pParse, iDb);
+    if( (pTabItem->fg.jointype & JT_RIGHT)!=0
+     && (pLevel->pRJ = sqlite3WhereMalloc(pWInfo, sizeof(WhereRightJoin)))!=0
+    ){
+      WhereRightJoin *pRJ = pLevel->pRJ;
+      pRJ->iMatch = pParse->nTab++;
+      pRJ->regBloom = ++pParse->nMem;
+      sqlite3VdbeAddOp2(v, OP_Blob, 65536, pRJ->regBloom);
+      pRJ->regReturn = ++pParse->nMem;
+      sqlite3VdbeAddOp2(v, OP_Null, 0, pRJ->regReturn);
+      assert( pTab==pTabItem->pTab );
+      if( HasRowid(pTab) ){
+        KeyInfo *pInfo;
+        sqlite3VdbeAddOp2(v, OP_OpenEphemeral, pRJ->iMatch, 1);
+        pInfo = sqlite3KeyInfoAlloc(pParse->db, 1, 0);
+        if( pInfo ){
+          pInfo->aColl[0] = 0;
+          pInfo->aSortFlags[0] = 0;
+          sqlite3VdbeAppendP4(v, pInfo, P4_KEYINFO);
+        }
+      }else{
+        Index *pPk = sqlite3PrimaryKeyIndex(pTab);
+        sqlite3VdbeAddOp2(v, OP_OpenEphemeral, pRJ->iMatch, pPk->nKeyCol);
+        sqlite3VdbeSetP4KeyInfo(pParse, pPk);
+      }
+      pLoop->wsFlags &= ~WHERE_IDX_ONLY;
+      /* The nature of RIGHT JOIN processing is such that it messes up
+      ** the output order.  So omit any ORDER BY/GROUP BY elimination
+      ** optimizations.  We need to do an actual sort for RIGHT JOIN. */
+      pWInfo->nOBSat = 0;
+      pWInfo->eDistinct = WHERE_DISTINCT_UNORDERED;
+    }
   }
   pWInfo->iTop = sqlite3VdbeCurrentAddr(v);
   if( db->mallocFailed ) goto whereBeginError;
@@ -5977,6 +6018,17 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
   for(i=pWInfo->nLevel-1; i>=0; i--){
     int addr;
     pLevel = &pWInfo->a[i];
+    if( pLevel->pRJ ){
+      /* Terminate the subroutine that forms the interior of the loop of
+      ** the RIGHT JOIN table */
+      WhereRightJoin *pRJ = pLevel->pRJ;
+      sqlite3VdbeResolveLabel(v, pLevel->addrCont);
+      pLevel->addrCont = 0;
+      sqlite3VdbeAddOp3(v, OP_Return, pRJ->regReturn, pRJ->addrSubrtn, 1);
+      VdbeCoverage(v);
+      assert( pParse->withinRJSubrtn>0 );
+      pParse->withinRJSubrtn--;
+    }
     pLoop = pLevel->pWLoop;
     if( pLevel->op!=OP_Noop ){
 #ifndef SQLITE_DISABLE_SKIPAHEAD_DISTINCT
@@ -6004,7 +6056,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       }
 #endif /* SQLITE_DISABLE_SKIPAHEAD_DISTINCT */
       /* The common case: Advance to the next row */
-      sqlite3VdbeResolveLabel(v, pLevel->addrCont);
+      if( pLevel->addrCont ) sqlite3VdbeResolveLabel(v, pLevel->addrCont);
       sqlite3VdbeAddOp3(v, pLevel->op, pLevel->p1, pLevel->p2, pLevel->p3);
       sqlite3VdbeChangeP5(v, pLevel->p5);
       VdbeCoverage(v);
@@ -6019,7 +6071,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
 #ifndef SQLITE_DISABLE_SKIPAHEAD_DISTINCT
       if( addrSeek ) sqlite3VdbeJumpHere(v, addrSeek);
 #endif
-    }else{
+    }else if( pLevel->addrCont ){
       sqlite3VdbeResolveLabel(v, pLevel->addrCont);
     }
     if( (pLoop->wsFlags & WHERE_IN_ABLE)!=0 && pLevel->u.in.nIn>0 ){
@@ -6069,6 +6121,10 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       }
     }
     sqlite3VdbeResolveLabel(v, pLevel->addrBrk);
+    if( pLevel->pRJ ){
+      sqlite3VdbeAddOp3(v, OP_Return, pLevel->pRJ->regReturn, 0, 1);
+      VdbeCoverage(v);
+    }
     if( pLevel->addrSkip ){
       sqlite3VdbeGoto(v, pLevel->addrSkip);
       VdbeComment((v, "next skip-scan on %s", pLoop->u.btree.pIndex->zName));
@@ -6112,11 +6168,6 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
                      pWInfo->pTabList->a[pLevel->iFrom].pTab->zName));
   }
 
-  /* The "break" point is here, just past the end of the outer loop.
-  ** Set it.
-  */
-  sqlite3VdbeResolveLabel(v, pWInfo->iBreak);
-
   assert( pWInfo->nLevel<=pTabList->nSrc );
   for(i=0, pLevel=pWInfo->a; i<pWInfo->nLevel; i++, pLevel++){
     int k, last;
@@ -6126,6 +6177,15 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
     Table *pTab = pTabItem->pTab;
     assert( pTab!=0 );
     pLoop = pLevel->pWLoop;
+
+    /* Do RIGHT JOIN processing.  Generate code that will output the
+    ** unmatched rows of the right operand of the RIGHT JOIN with
+    ** all of the columns of the left operand set to NULL.
+    */
+    if( pLevel->pRJ ){
+      sqlite3WhereRightJoinLoop(pWInfo, i, pLevel);
+      continue;
+    }
 
     /* For a co-routine, change all OP_Column references to the table of
     ** the co-routine into OP_Copy of result contained in a register.
@@ -6137,29 +6197,6 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
                             pTabItem->regResult, 0);
       continue;
     }
-
-#ifdef SQLITE_ENABLE_EARLY_CURSOR_CLOSE
-    /* Close all of the cursors that were opened by sqlite3WhereBegin.
-    ** Except, do not close cursors that will be reused by the OR optimization
-    ** (WHERE_OR_SUBCLAUSE).  And do not close the OP_OpenWrite cursors
-    ** created for the ONEPASS optimization.
-    */
-    if( (pTab->tabFlags & TF_Ephemeral)==0
-     && !IsView(pTab)
-     && (pWInfo->wctrlFlags & WHERE_OR_SUBCLAUSE)==0
-    ){
-      int ws = pLoop->wsFlags;
-      if( pWInfo->eOnePass==ONEPASS_OFF && (ws & WHERE_IDX_ONLY)==0 ){
-        sqlite3VdbeAddOp1(v, OP_Close, pTabItem->iCursor);
-      }
-      if( (ws & WHERE_INDEXED)!=0
-       && (ws & (WHERE_IPK|WHERE_AUTO_INDEX))==0 
-       && pLevel->iIdxCur!=pWInfo->aiCurOnePass[1]
-      ){
-        sqlite3VdbeAddOp1(v, OP_Close, pLevel->iIdxCur);
-      }
-    }
-#endif
 
     /* If this scan uses an index, make VDBE code substitutions to read data
     ** from the index instead of from the table where possible.  In some cases
@@ -6260,6 +6297,11 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
 #endif
     }
   }
+
+  /* The "break" point is here, just past the end of the outer loop.
+  ** Set it.
+  */
+  sqlite3VdbeResolveLabel(v, pWInfo->iBreak);
 
   /* Final cleanup
   */

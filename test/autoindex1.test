@@ -283,7 +283,7 @@ do_eqp_test autoindex1-600a {
   |  `--CORRELATED SCALAR SUBQUERY xxxxxx
   |     `--SEARCH later USING COVERING INDEX sqlite_autoindex_flock_owner_1 (flock_no=? AND owner_change_date>? AND owner_change_date<?)
   |--SCAN x USING INDEX sheep_reg_flock_index
-  `--SEARCH y USING AUTOMATIC COVERING INDEX (sheep_no=?)
+  `--SEARCH y USING AUTOMATIC COVERING INDEX (sheep_no=?) LEFT-JOIN
 }
 
 

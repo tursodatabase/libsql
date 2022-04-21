@@ -280,9 +280,9 @@ do_eqp_test 7.2 {
   |--SCAN t1
   `--MULTI-INDEX OR
      |--INDEX 1
-     |  `--SEARCH t2 USING INDEX t2xy (x=? AND y=?)
+     |  `--SEARCH t2 USING INDEX t2xy (x=? AND y=?) LEFT-JOIN
      `--INDEX 2
-        `--SEARCH t2 USING INDEX t2xy (x=? AND y=?)
+        `--SEARCH t2 USING INDEX t2xy (x=? AND y=?) LEFT-JOIN
 }
 
 do_execsql_test 7.3 {
@@ -303,7 +303,7 @@ do_eqp_test 7.4 {
 } {
   QUERY PLAN
   |--SCAN t3
-  `--SEARCH t4 USING INDEX t4xz (x=?)
+  `--SEARCH t4 USING INDEX t4xz (x=?) LEFT-JOIN
 } 
 do_eqp_test 7.4b {
   SELECT * FROM t3 CROSS JOIN t4 ON (t4.x = t3.x) WHERE (+t4.y = ? OR t4.z = ?);
