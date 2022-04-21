@@ -166,6 +166,7 @@ void sqlite3TreeViewSrcList(TreeView *pView, const SrcList *pSrc){
     sqlite3StrAccumFinish(&x);
     sqlite3TreeViewItem(pView, zLine, i<pSrc->nSrc-1); 
     if( pItem->pSelect ){
+      assert( pItem->fg.isNestedFrom == IsNestedFrom(pItem->pSelect) );
       sqlite3TreeViewSelect(pView, pItem->pSelect, 0);
     }
     if( pItem->fg.isTabFunc ){

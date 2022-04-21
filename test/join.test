@@ -1041,5 +1041,14 @@ do_execsql_test join-25.1 {
   SELECT count(*)  FROM v0 LEFT JOIN t0 ON v0.c0;
 } {1}
 
+# 2022-04-21 Parser issue detected by dbsqlfuzz
+#
+reset_db
+do_catchsql_test join-26.1 {
+  CREATE TABLE t4(a,b);
+  CREATE TABLE t5(a,c);
+  CREATE TABLE t6(a,d);
+  SELECT * FROM t5 JOIN ((t4 JOIN (t5 JOIN t6)) t7);
+} {/1 {.*}/}
 
 finish_test

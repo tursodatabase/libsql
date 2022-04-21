@@ -1,5 +1,5 @@
-C Avoid\smaterializing\scolumns\sof\sSF_NestedFrom\ssubqueries\sthat\sare\snever\sused.\nOther\scode\simprovements\smanually\simported\sfrom\sthe\sright-join-paren\sbranch.
-D 2022-04-21T13:11:26.388
+C Ensure\scorrect\sfg.isNestedFrom\svalues\seven\son\scrazy\sparses.
+D 2022-04-21T14:08:29.121
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -541,7 +541,7 @@ F src/os_win.c a8ea80037e81127ca01959daa87387cc135f325c88dc745376c4f760de852a10
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 42120492784fc9bcd9082b5c9b5e329b7318c357f9f3574a1bbfcf7418910356
 F src/pager.h f82e9844166e1585f5786837ddc7709966138ced17f568c16af7ccf946c2baa3
-F src/parse.y e221a1159c5e73730b4d3d87fe4b5ad4b10ea2237ff59804e6402495a04a26c7
+F src/parse.y b86d56b446afb9c203d8354dc6c422818a62b4bbab52b76ab3da06d7b1d07e44
 F src/pcache.c 084e638432c610f95aea72b8509f0845d2791293f39d1b82f0c0a7e089c3bb6b
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c 54881292a9a5db202b2c0ac541c5e3ef9a5e8c4f1c1383adb2601d5499a60e65
@@ -617,7 +617,7 @@ F src/test_window.c cdae419fdcea5bad6dcd9368c685abdad6deb59e9fc8b84b153de513d394
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c a38f52058b517929e264094abd0b5fd1e8e145a1aa43bc6f6a72ae5218f96c98
-F src/treeview.c f304faa8b595121da33f78f1f898af48a4db0caa7e310431aa27039ea5dbab36
+F src/treeview.c c834e0c9030b1f9971152e049f44e2f973625c680f10aed2fbcc956da2301d0b
 F src/trigger.c 372ada38f667c6823a3db15749eb668338e65c793394e55a37e56a489f2d1b55
 F src/update.c 2cfaded82ca80ff56afb8c3ae5e88284e0824bfd86119827cc22481959f96f92
 F src/upsert.c 8789047a8f0a601ea42fa0256d1ba3190c13746b6ba940fe2d25643a7e991937
@@ -1140,7 +1140,7 @@ F test/ioerr4.test f130fe9e71008577b342b8874d52984bd04ede2c
 F test/ioerr5.test 2edfa4fb0f896f733071303b42224df8bedd9da4
 F test/ioerr6.test a395a6ab144b26a9e3e21059a1ab6a7149cca65b
 F test/istrue.test e7f285bb70282625c258e866ce6337d4c762922f5a300e1b50f958aef6e7d9c9
-F test/join.test d9c8cb2769b147b223f9dff8f694f56cfd9d0c097f8af9c7c6562b2e4ad256b5
+F test/join.test e5f165dfd84fd46406ddae6614b0122c3bfa23a26ef62966442e1503c40d96aa
 F test/join2.test 466b07233820f5deee66a6c3bf6e4500c8bbf7b83649e67606f5f649c07928c0
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
 F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
@@ -1950,8 +1950,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ba04142e09bb1ccc86824760a2e11df47e070285a2d09c2f61b75255886597cd
-R 10336f90bf1e8bd2097eb8ad35da3707
+P cd8272fc2a34d1b245fd95208b9b601266ee7d2ff0f5ce52d03752f2c4e852a2
+R 8a87ff03f3b9042d5d80a515b01bbe71
 U drh
-Z 3ded7fd2b5106a18a37cbebcaf60418c
+Z 4f221c243b1c9d53087ee3bfbfa41863
 # Remove this line to create a well-formed Fossil manifest.
