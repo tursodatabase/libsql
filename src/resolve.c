@@ -329,7 +329,7 @@ static int lookupName(
           assert( pEList->nExpr==pTab->nCol );
           for(j=0; j<pEList->nExpr; j++){
             const char *zEName;
-            assert( pEList->a[j].eEName==ENAME_TAB );
+            if( pEList->a[j].eEName!=ENAME_TAB ) continue;
             zEName = pEList->a[j].zEName;
             if( zEName[0]=='.' && zEName[1]=='.' && zTab==0 ){
               if( sqlite3StrICmp(&zEName[2],zCol)!=0 ) continue;

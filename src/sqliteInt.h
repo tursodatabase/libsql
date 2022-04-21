@@ -3005,6 +3005,7 @@ struct ExprList {
     unsigned bSorterRef :1; /* Defer evaluation until after sorting */
     unsigned bNulls: 1;     /* True if explicit "NULLS FIRST/LAST" */
     unsigned bUsed: 1;      /* This column used in a SF_NestedFrom subquery */
+    unsigned bHidden: 1;    /* A "hidden" column of a subquery */
     union {
       struct {             /* Used by any ExprList other than Parse.pConsExpr */
         u16 iOrderByCol;      /* For ORDER BY, column number in result set */

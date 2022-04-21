@@ -2179,12 +2179,13 @@ int sqlite3ColumnsFromExprList(
   *paCol = aCol;
 
   for(i=0, pCol=aCol; i<nCol && !db->mallocFailed; i++, pCol++){
+    struct ExprList_item *pX = &pEList->a[i];
     /* Get an appropriate name for the column
     */
-    if( (zName = pEList->a[i].zEName)!=0 && pEList->a[i].eEName==ENAME_NAME ){
+    if( (zName = pX->zEName)!=0 && pX->eEName==ENAME_NAME ){
       /* If the column contains an "AS <name>" phrase, use <name> as the name */
     }else{
-      Expr *pColExpr = sqlite3ExprSkipCollateAndLikely(pEList->a[i].pExpr);
+      Expr *pColExpr = sqlite3ExprSkipCollateAndLikely(pX->pExpr);
       while( ALWAYS(pColExpr!=0) && pColExpr->op==TK_DOT ){
         pColExpr = pColExpr->pRight;
         assert( pColExpr!=0 );
@@ -2226,6 +2227,7 @@ int sqlite3ColumnsFromExprList(
     }
     pCol->zCnName = zName;
     pCol->hName = sqlite3StrIHash(zName);
+    if( pX->bHidden ) pCol->colFlags |= COLFLAG_HIDDEN;
     sqlite3ColumnPropertiesFromName(0, pCol);
     if( zName && sqlite3HashInsert(&ht, zName, pCol)==pCol ){
       sqlite3OomFault(db);
@@ -5845,9 +5847,7 @@ static int selectExpander(Walker *pWalker, Select *p){
           }
           for(j=0; j<pTab->nCol; j++){
             char *zName = pTab->aCol[j].zCnName;
-            char *zColname;  /* The computed column name */
-            char *zToFree;   /* Malloced string that needs to be freed */
-            Token sColname;  /* Computed column name as a token */
+            struct ExprList_item *pX; /* Newly added ExprList term */
 
             assert( zName );
             if( zTName && pSub
@@ -5876,13 +5876,6 @@ static int selectExpander(Walker *pWalker, Select *p){
               }
             }
             pRight = sqlite3Expr(db, TK_ID, zName);
-            if( longNames ){
-              zColname = sqlite3MPrintf(db, "%s.%s", zTabName, zName);
-              zToFree = zColname;
-            }else{
-              zColname = zName;
-              zToFree = 0;
-            }
             if( (selFlags && SF_NestedFrom)!=0
              || IN_RENAME_OBJECT
              || (pTabList->nSrc>1
@@ -5905,23 +5898,39 @@ static int selectExpander(Walker *pWalker, Select *p){
               pExpr = pRight;
             }
             pNew = sqlite3ExprListAppend(pParse, pNew, pExpr);
-
-            sqlite3TokenInit(&sColname, zColname);
-            sqlite3ExprListSetName(pParse, pNew, &sColname, 0);
-            if( pNew && (p->selFlags & SF_NestedFrom)!=0 && !IN_RENAME_OBJECT ){
-              struct ExprList_item *pX = &pNew->a[pNew->nExpr-1];
-              sqlite3DbFree(db, pX->zEName);
+            if( pNew==0 ){
+              break;
+            }
+            pX = &pNew->a[pNew->nExpr-1];
+            assert( pX->zEName==0 );
+            if( (selFlags & SF_NestedFrom)!=0 && !IN_RENAME_OBJECT ){
               if( pSub ){
                 pX->zEName = sqlite3DbStrDup(db, pSub->pEList->a[j].zEName);
                 testcase( pX->zEName==0 );
               }else{
                 pX->zEName = sqlite3MPrintf(db, "%s.%s.%s",
-                                           zSchemaName, zTabName, zColname);
+                                           zSchemaName, zTabName, zName);
                 testcase( pX->zEName==0 );
               }
               pX->eEName = ENAME_TAB;
+              if( pFrom->fg.isUsing
+               && sqlite3IdListIndex(pFrom->u3.pUsing, zName)>=0
+              ){
+                pX->bHidden = 1;
+              }else
+              if( i+1<pTabList->nSrc
+               && pFrom[1].fg.isUsing
+               && sqlite3IdListIndex(pFrom[1].u3.pUsing, zName)>=0
+              ){
+                pX->bHidden = 1;
+              }
+            }else if( longNames ){
+              pX->zEName = sqlite3MPrintf(db, "%s.%s", zTabName, zName);
+              pX->eEName = ENAME_NAME;
+            }else{
+              pX->zEName = sqlite3DbStrDup(db, zName);
+              pX->eEName = ENAME_NAME;
             }
-            sqlite3DbFree(db, zToFree);
           }
         }
         if( !tableSeen ){
