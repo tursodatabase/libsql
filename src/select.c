@@ -5825,6 +5825,24 @@ static int selectExpander(Walker *pWalker, Select *p){
             iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
             zSchemaName = iDb>=0 ? db->aDb[iDb].zDbSName : "*";
           }
+          if( i+1<pTabList->nSrc
+           && pFrom[1].fg.isUsing
+           && (selFlags & SF_NestedFrom)!=0
+          ){
+            int ii;
+            IdList *pUsing = pFrom[1].u3.pUsing;
+            for(ii=0; ii<pUsing->nId; ii++){
+              const char *zUName = pUsing->a[ii].zName;
+              pRight = sqlite3Expr(db, TK_ID, zUName);
+              pNew = sqlite3ExprListAppend(pParse, pNew, pRight);
+              if( pNew ){
+                struct ExprList_item *pX = &pNew->a[pNew->nExpr-1];
+                assert( pX->zEName==0 );
+                pX->zEName = sqlite3MPrintf(db,"..%s", zUName);
+                pX->eEName = ENAME_TAB;
+              }
+            }
+          }
           for(j=0; j<pTab->nCol; j++){
             char *zName = pTab->aCol[j].zCnName;
             char *zColname;  /* The computed column name */
@@ -5848,8 +5866,7 @@ static int selectExpander(Walker *pWalker, Select *p){
               continue;
             }
             tableSeen = 1;
-
-            if( i>0 && zTName==0 ){
+            if( i>0 && zTName==0 && (selFlags & SF_NestedFrom)==0 ){
               if( pFrom->fg.isUsing
                && sqlite3IdListIndex(pFrom->u3.pUsing, zName)>=0
               ){
@@ -5866,12 +5883,13 @@ static int selectExpander(Walker *pWalker, Select *p){
               zColname = zName;
               zToFree = 0;
             }
-            if( (pTabList->nSrc>1
+            if( (selFlags && SF_NestedFrom)!=0
+             || IN_RENAME_OBJECT
+             || (pTabList->nSrc>1
                  && (  (pFrom->fg.jointype & JT_LTORJ)==0
                      || !inAnyUsingClause(zName,pFrom,pTabList->nSrc-i-1)
                     )
                 )
-             || IN_RENAME_OBJECT
             ){
               Expr *pLeft;
               pLeft = sqlite3Expr(db, TK_ID, zTabName);

@@ -328,38 +328,46 @@ static int lookupName(
           assert( pEList!=0 );
           assert( pEList->nExpr==pTab->nCol );
           for(j=0; j<pEList->nExpr; j++){
-            if( sqlite3MatchEName(&pEList->a[j], zCol, zTab, zDb) ){
-              if( cnt>0 ){
-                if( pItem->fg.isUsing==0
-                 || sqlite3IdListIndex(pItem->u3.pUsing, zCol)<0
-                ){
-                  /* Two or more tables have the same column name which is
-                  ** not joined by USING.  This is an error.  Signal as much
-                  ** by clearing pFJMatch and letting cnt go above 1. */
-                  sqlite3ExprListDelete(db, pFJMatch);
-                  pFJMatch = 0;
-                }else
-                if( (pItem->fg.jointype & JT_RIGHT)==0 ){
-                  /* An INNER or LEFT JOIN.  Use the left-most table */
-                  continue;
-                }else
-                if( (pItem->fg.jointype & JT_LEFT)==0 ){
-                  /* A RIGHT JOIN.  Use the right-most table */
-                  cnt = 0;
-                  sqlite3ExprListDelete(db, pFJMatch);
-                  pFJMatch = 0;
-                }else{
-                  /* For a FULL JOIN, we must construct a coalesce() func */
-                  extendFJMatch(pParse, &pFJMatch, pMatch, pExpr->iColumn);
-                }
-              }
-              cnt++;
-              cntTab = 2;
-              pMatch = pItem;
-              pExpr->iColumn = j;
+            const char *zEName;
+            assert( pEList->a[j].eEName==ENAME_TAB );
+            zEName = pEList->a[j].zEName;
+            if( zEName[0]=='.' && zEName[1]=='.' && zTab==0 ){
+              if( sqlite3StrICmp(&zEName[2],zCol)!=0 ) continue;
               hit = 1;
-              pEList->a[j].bUsed = 1;
+            }else if( !sqlite3MatchEName(&pEList->a[j], zCol, zTab, zDb) ){
+              continue;
             }
+            if( cnt>0 ){
+              if( pItem->fg.isUsing==0
+               || sqlite3IdListIndex(pItem->u3.pUsing, zCol)<0
+              ){
+                /* Two or more tables have the same column name which is
+                ** not joined by USING.  This is an error.  Signal as much
+                ** by clearing pFJMatch and letting cnt go above 1. */
+                sqlite3ExprListDelete(db, pFJMatch);
+                pFJMatch = 0;
+              }else
+              if( (pItem->fg.jointype & JT_RIGHT)==0 ){
+                /* An INNER or LEFT JOIN.  Use the left-most table */
+                continue;
+              }else
+              if( (pItem->fg.jointype & JT_LEFT)==0 ){
+                /* A RIGHT JOIN.  Use the right-most table */
+                cnt = 0;
+                sqlite3ExprListDelete(db, pFJMatch);
+                pFJMatch = 0;
+              }else{
+                /* For a FULL JOIN, we must construct a coalesce() func */
+                extendFJMatch(pParse, &pFJMatch, pMatch, pExpr->iColumn);
+              }
+            }
+            cnt++;
+            cntTab = 2;
+            pMatch = pItem;
+            pExpr->iColumn = j;
+            pEList->a[j].bUsed = 1;
+            if( hit ) break;
+            hit = 1;
           }
           if( hit || zTab==0 ) continue;
         }
