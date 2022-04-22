@@ -3003,8 +3003,9 @@ struct ExprList {
     unsigned done :1;       /* A flag to indicate when processing is finished */
     unsigned reusable :1;   /* Constant expression is reusable */
     unsigned bSorterRef :1; /* Defer evaluation until after sorting */
-    unsigned bNulls: 1;     /* True if explicit "NULLS FIRST/LAST" */
-    unsigned bUsed: 1;      /* This column used in a SF_NestedFrom subquery */
+    unsigned bNulls :1;     /* True if explicit "NULLS FIRST/LAST" */
+    unsigned bUsed :1;      /* This column used in a SF_NestedFrom subquery */
+    unsigned bUsingTerm:1;  /* Term from the USING clause */
     union {
       struct {             /* Used by any ExprList other than Parse.pConsExpr */
         u16 iOrderByCol;      /* For ORDER BY, column number in result set */
