@@ -5804,25 +5804,27 @@ static int selectExpander(Walker *pWalker, Select *p){
           zTName = pE->pLeft->u.zToken;
         }
         for(i=0, pFrom=pTabList->a; i<pTabList->nSrc; i++, pFrom++){
-          Table *pTab = pFrom->pTab;
-          Select *pSub;
-          char *zTabName = pFrom->zAlias;
-          const char *zSchemaName = 0;
-          int iDb;
-          if( zTabName==0 ){
+          Table *pTab = pFrom->pTab;   /* Table for this data source */
+          ExprList *pNestedFrom;       /* Result-set of a nested FROM clause */
+          char *zTabName;              /* AS name for this data source */
+          const char *zSchemaName = 0; /* Schema name for this data source */
+          int iDb;                     /* Schema index for this data src */
+
+          if( (zTabName = pFrom->zAlias)==0 ){
             zTabName = pTab->zName;
           }
           if( db->mallocFailed ) break;
           assert( pFrom->fg.isNestedFrom == IsNestedFrom(pFrom->pSelect) );
           if( pFrom->fg.isNestedFrom ){
-            pSub = pFrom->pSelect;
-            assert( pSub->pEList!=0 );
-            assert( pSub->pEList->nExpr==pTab->nCol );
+            assert( pFrom->pSelect!=0 );
+            pNestedFrom = pFrom->pSelect->pEList;
+            assert( pNestedFrom!=0 );
+            assert( pNestedFrom->nExpr==pTab->nCol );
           }else{
-            pSub = 0;
             if( zTName && sqlite3StrICmp(zTName, zTabName)!=0 ){
               continue;
             }
+            pNestedFrom = 0;
             iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
             zSchemaName = iDb>=0 ? db->aDb[iDb].zDbSName : "*";
           }
@@ -5831,8 +5833,9 @@ static int selectExpander(Walker *pWalker, Select *p){
             struct ExprList_item *pX; /* Newly added ExprList term */
 
             assert( zName );
-            if( zTName && pSub
-             && sqlite3MatchEName(&pSub->pEList->a[j], 0, zTName, 0)==0
+            if( zTName
+             && pNestedFrom
+             && sqlite3MatchEName(&pNestedFrom->a[j], 0, zTName, 0)==0
             ){
               continue;
             }
@@ -5885,8 +5888,8 @@ static int selectExpander(Walker *pWalker, Select *p){
             pX = &pNew->a[pNew->nExpr-1];
             assert( pX->zEName==0 );
             if( (selFlags & SF_NestedFrom)!=0 && !IN_RENAME_OBJECT ){
-              if( pSub ){
-                pX->zEName = sqlite3DbStrDup(db, pSub->pEList->a[j].zEName);
+              if( pNestedFrom ){
+                pX->zEName = sqlite3DbStrDup(db, pNestedFrom->a[j].zEName);
                 testcase( pX->zEName==0 );
               }else{
                 pX->zEName = sqlite3MPrintf(db, "%s.%s.%s",
