@@ -5555,10 +5555,8 @@ int sqlite3ExpandSubquery(Parse *pParse, SrcItem *pFrom){
   pTab->nTabRef = 1;
   if( pFrom->zAlias ){
     pTab->zName = sqlite3DbStrDup(pParse->db, pFrom->zAlias);
-  }else if( pSel->selFlags & SF_NestedFrom ){
-    pTab->zName = sqlite3MPrintf(pParse->db, "(join-%u)", pSel->selId);
   }else{
-    pTab->zName = sqlite3MPrintf(pParse->db, "(subquery-%u)", pSel->selId);
+    pTab->zName = sqlite3MPrintf(pParse->db, "%!S", pFrom);
   }
   while( pSel->pPrior ){ pSel = pSel->pPrior; }
   sqlite3ColumnsFromExprList(pParse, pSel->pEList,&pTab->nCol,&pTab->aCol);
