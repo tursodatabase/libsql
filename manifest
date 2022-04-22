@@ -1,5 +1,5 @@
-C Previous\sfix\sto\sjoin8.test\sneeds\sa\sreturn.
-D 2022-04-21T23:34:35.567
+C Simplification\sof\sdata\sstructures\sin\sthe\swildcard\sexpander\sfor\nSF_NestedFrom\squeries.
+D 2022-04-22T13:34:45.273
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -552,7 +552,7 @@ F src/printf.c 05d8dfd2018bc4fc3ddb8b37eb97ccef7abf985643fa1caebdcf2916ca90fa32
 F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c f72bb13359dd5a74d440df25f320dc2c1baff5cde4fc9f0d1bc3feba90b8932a
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c 51e8b778abdd89289e2f2a6733d5e7ac6082f6c56ca717fa15f64f202e66bf42
+F src/select.c cbfe750ec71cc103a0efbf7448323f5abca8e6208fb90a387a06aa79721e594c
 F src/shell.c.in ae0a6fae983caac6f8c824733f0599dfdf7b3a7e8efdef3cb5e3ab2e457ffc35
 F src/sqlite.h.in 2a35f62185eb5e7ecc64a2f68442b538ce9be74f80f28a00abc24837edcf1c17
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1950,8 +1950,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 94e1916a2f594e6b8a54734027deb99688244d05cefb3c78f23afab49af1e08f
-R 573150bf22fddc6433562bcb5d5bac98
+P 7b4cd705a0339ddacad19564b07e50e4f68f54bf14dd2cd5d59b39314a4d2523 d942530a6550a0cbe31790e462b0f0d57b9b4a896161878b7d45d11cbc1cb7a3
+R eba1e6cacae696fe7d98ccb5196506b7
 U drh
-Z a95960d40040bb3ed2298fba0fa35ab1
+Z 02284e5f70f7e0ce37132715f41fa694
 # Remove this line to create a well-formed Fossil manifest.
