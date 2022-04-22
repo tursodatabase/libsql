@@ -229,10 +229,12 @@ do_eqp_test 211 {
 } {
   QUERY PLAN
   |--MATERIALIZE c1
-  |  |--MATERIALIZE c
+  |  |--CO-ROUTINE c
   |  |  `--SCAN 3 CONSTANT ROWS
   |  `--SCAN c
   |--MATERIALIZE c2
+  |  |--CO-ROUTINE c
+  |  |  `--SCAN 3 CONSTANT ROWS
   |  `--SCAN c
   |--SCAN c1
   |--SCAN c2
@@ -250,6 +252,71 @@ do_execsql_test 220 {
   SELECT y FROM t2 ORDER BY y;
 } {40404 40405 40406 40504 40505 40506 40604 40605 40606}
 
+# 2022-04-22: Do not allow flattening of a MATERIALIZED CTE into
+# an outer query.
+#
+reset_db
+db null -
+do_execsql_test 300 {
+  CREATE TABLE t2(a INT,b INT,d INT); INSERT INTO t2 VALUES(4,5,6),(7,8,9);
+  CREATE TABLE t3(a INT,b INT,e INT); INSERT INTO t3 VALUES(3,3,3),(8,8,8);
+} {}
+do_execsql_test 310 {
+  WITH t23 AS MATERIALIZED (SELECT * FROM t2 FULL JOIN t3 USING(b))
+  SELECT * FROM t23;
+} {
+  4 5 6 - -
+  7 8 9 8 8
+  - 3 - 3 3
+}
+do_eqp_test 311 {
+  WITH t23 AS MATERIALIZED (SELECT * FROM t2 FULL JOIN t3 USING(b))
+  SELECT * FROM t23;
+} {
+  QUERY PLAN
+  |--MATERIALIZE t23
+  |  |--SCAN t2
+  |  |--SCAN t3 LEFT-JOIN
+  |  `--RIGHT-JOIN t3
+  |     `--SCAN t3
+  `--SCAN t23
+}
+do_execsql_test 320 {
+  WITH t23 AS NOT MATERIALIZED (SELECT * FROM t2 FULL JOIN t3 USING(b))
+  SELECT * FROM t23;
+} {
+  4 5 6 - -
+  7 8 9 8 8
+  - 3 - 3 3
+}
+do_eqp_test 321 {
+  WITH t23 AS NOT MATERIALIZED (SELECT * FROM t2 FULL JOIN t3 USING(b))
+  SELECT * FROM t23;
+} {
+  QUERY PLAN
+  |--SCAN t2
+  |--SCAN t3 LEFT-JOIN
+  `--RIGHT-JOIN t3
+     `--SCAN t3
+}
+do_execsql_test 330 {
+  WITH t23 AS (SELECT * FROM t2 FULL JOIN t3 USING(b))
+  SELECT * FROM t23;
+} {
+  4 5 6 - -
+  7 8 9 8 8
+  - 3 - 3 3
+}
+do_eqp_test 331 {
+  WITH t23 AS (SELECT * FROM t2 FULL JOIN t3 USING(b))
+  SELECT * FROM t23;
+} {
+  QUERY PLAN
+  |--SCAN t2
+  |--SCAN t3 LEFT-JOIN
+  `--RIGHT-JOIN t3
+     `--SCAN t3
+}
 
 
 finish_test

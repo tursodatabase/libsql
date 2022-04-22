@@ -1527,6 +1527,7 @@ With *sqlite3WithDup(sqlite3 *db, With *p){
         pRet->a[i].pSelect = sqlite3SelectDup(db, p->a[i].pSelect, 0);
         pRet->a[i].pCols = sqlite3ExprListDup(db, p->a[i].pCols, 0);
         pRet->a[i].zName = sqlite3DbStrDup(db, p->a[i].zName);
+        pRet->a[i].eM10d = p->a[i].eM10d;
       }
     }
   }

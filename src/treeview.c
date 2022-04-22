@@ -115,6 +115,10 @@ void sqlite3TreeViewWith(TreeView *pView, const With *pWith, u8 moreToFollow){
         }
         sqlite3_str_appendf(&x, ")");
       }
+      if( pCte->eM10d!=M10d_Any ){
+        sqlite3_str_appendf(&x, " %sMATERIALIZED", 
+           pCte->eM10d==M10d_No ? "NOT " : "");
+      }
       if( pCte->pUse ){
         sqlite3_str_appendf(&x, " (pUse=0x%p, nUse=%d)", pCte->pUse,
                  pCte->pUse->nUse);
