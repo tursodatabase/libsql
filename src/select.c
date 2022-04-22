@@ -4153,6 +4153,8 @@ static void renumberCursors(
 **  (27)  The subquery may not contain a FULL or RIGHT JOIN unless it
 **        is the first element of the parent query.
 **
+**  (28)  The subquery is not a MATERIALIZED CTE.
+**
 **
 ** In this routine, the "p" parameter is a pointer to the outer query.
 ** The subquery is p->pSrc->a[iFrom].  isAgg is true if the outer query
@@ -4275,6 +4277,9 @@ static int flattenSubquery(
   assert( pSubSrc->nSrc>0 );  /* True by restriction (7) */
   if( iFrom>0 && (pSubSrc->a[0].fg.jointype & JT_LTORJ)!=0 ){
     return 0;   /* Restriction (27) */
+  }
+  if( pSubitem->fg.isCte && pSubitem->u2.pCteUse->eM10d==M10d_Yes ){
+    return 0;       /* (28) */
   }
 
   /* Restriction (17): If the sub-query is a compound SELECT, then it must
@@ -5551,7 +5556,7 @@ int sqlite3ExpandSubquery(Parse *pParse, SrcItem *pFrom){
   if( pFrom->zAlias ){
     pTab->zName = sqlite3DbStrDup(pParse->db, pFrom->zAlias);
   }else{
-    pTab->zName = sqlite3MPrintf(pParse->db, "subquery_%u", pSel->selId);
+    pTab->zName = sqlite3MPrintf(pParse->db, "%!S", pFrom);
   }
   while( pSel->pPrior ){ pSel = pSel->pPrior; }
   sqlite3ColumnsFromExprList(pParse, pSel->pEList,&pTab->nCol,&pTab->aCol);
