@@ -14,6 +14,11 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+ifcapable !vtab {
+  finish_test
+  return
+}
+
 db null NULL
 do_execsql_test join8-10 {
   CREATE TABLE t1(a,b,c);
