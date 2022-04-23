@@ -102,7 +102,7 @@ int sqlite3WhereOrderByLimitOptLabel(WhereInfo *pWInfo){
   }
   pInner = &pWInfo->a[pWInfo->nLevel-1];
   assert( pInner->addrNxt!=0 );
-  return pInner->addrNxt;
+  return pInner->pRJ ? pWInfo->iContinue : pInner->addrNxt;
 }
 
 /*
@@ -6024,6 +6024,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       WhereRightJoin *pRJ = pLevel->pRJ;
       sqlite3VdbeResolveLabel(v, pLevel->addrCont);
       pLevel->addrCont = 0;
+      pRJ->endSubrtn = sqlite3VdbeCurrentAddr(v);
       sqlite3VdbeAddOp3(v, OP_Return, pRJ->regReturn, pRJ->addrSubrtn, 1);
       VdbeCoverage(v);
       assert( pParse->withinRJSubrtn>0 );
