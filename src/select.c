@@ -2219,7 +2219,7 @@ int sqlite3ColumnsFromExprList(
     cnt = 0;
     while( zName && (pCollide = sqlite3HashFind(&ht, zName))!=0 ){
       if( pCollide->bUsingTerm ){
-        pCol->colFlags |= COLFLAG_HIDDEN;
+        pCol->colFlags |= COLFLAG_NOEXPAND;
       }
       nName = sqlite3Strlen30(zName);
       if( nName>0 ){
@@ -5872,10 +5872,17 @@ static int selectExpander(Walker *pWalker, Select *p){
             ** result-set list unless the SELECT has the SF_IncludeHidden
             ** bit set.
             */
-            if( (selFlags & SF_IncludeHidden)==0
-             && IsHiddenColumn(&pTab->aCol[j]) && zTName==0
-            ){
-              continue;
+            if( pTab->aCol[j].colFlags & (COLFLAG_HIDDEN|COLFLAG_NOEXPAND) ){
+              if( IsHiddenColumn(&pTab->aCol[j])
+               && (selFlags & SF_IncludeHidden)==0
+              ){
+                continue;
+              }
+              if( (pTab->aCol[j].colFlags & COLFLAG_NOEXPAND)!=0
+               && zTName==0
+              ){
+                continue;
+              }
             }
             tableSeen = 1;
 
