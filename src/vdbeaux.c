@@ -892,8 +892,9 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
 ** through iLast are also acceptable as long as the jump destination is
 ** an OP_Return to iReturnAddr.
 **
-** A jump to an unresolved label is considered to be a jump outside of the
-** subroutine.
+** A jump to an unresolved label means that the jump destination will be
+** beyond the current address.  That is normally a jump to an early
+** termination and is consider acceptable.
 **
 ** This routine only runs during debug builds.  The purpose is (of course)
 ** to detect invalid escapes out of a subroutine.  The OP_Halt opcode
@@ -921,20 +922,11 @@ void sqlite3VdbeNoJumpsOutsideSubrtn(
     if( (sqlite3OpcodeProperty[pOp->opcode] & OPFLG_JUMP)!=0 ){
       int iDest = pOp->p2;   /* Jump destination */
       if( iDest==0 ) continue;
+      if( pOp->opcode==OP_Gosub ) continue;
       if( iDest<0 ){
         int j = ADDR(iDest);
         assert( j>=0 );
         if( j>=-pParse->nLabel || pParse->aLabel[j]<0 ){
-          if( pErr==0 ){
-            pErr = sqlite3_str_new(0);
-          }else{
-            sqlite3_str_appendchar(pErr, 1, '\n');
-          }
-          sqlite3_str_appendf(pErr,
-            "Opcode at %d within the "
-            "subroutine at %d..%d jumps to an unresolved "
-            "address (%d)\n",
-            i, iFirst, iLast, iDest);
           continue;
         }
         iDest = pParse->aLabel[j];
