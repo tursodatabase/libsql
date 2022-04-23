@@ -810,7 +810,8 @@ void sqlite3TreeViewBareExprList(
               break;
             case ENAME_TAB:
               fprintf(stdout, "TABLE-ALIAS-NAME(\"%s\") ", zName);
-              if( pList->a[i].bUsed==0 ) fprintf(stdout, "(unused) ");
+              if( pList->a[i].bUsed ) fprintf(stdout, "(used) ");
+              if( pList->a[i].bUsingTerm ) fprintf(stdout, "(USING-term) ");
               break;
             case ENAME_SPAN:
               fprintf(stdout, "SPAN(\"%s\") ", zName);

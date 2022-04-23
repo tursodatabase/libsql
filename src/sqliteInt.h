@@ -2125,6 +2125,7 @@ struct Column {
 #define COLFLAG_NOTAVAIL  0x0080   /* STORED column not yet calculated */
 #define COLFLAG_BUSY      0x0100   /* Blocks recursion on GENERATED columns */
 #define COLFLAG_HASCOLL   0x0200   /* Has collating sequence name in zCnName */
+#define COLFLAG_NOEXPAND  0x0400   /* Omit this column when expanding "*" */
 #define COLFLAG_GENERATED 0x0060   /* Combo: _STORED, _VIRTUAL */
 #define COLFLAG_NOINSERT  0x0062   /* Combo: _HIDDEN, _STORED, _VIRTUAL */
 
@@ -3003,8 +3004,9 @@ struct ExprList {
     unsigned done :1;       /* A flag to indicate when processing is finished */
     unsigned reusable :1;   /* Constant expression is reusable */
     unsigned bSorterRef :1; /* Defer evaluation until after sorting */
-    unsigned bNulls: 1;     /* True if explicit "NULLS FIRST/LAST" */
-    unsigned bUsed: 1;      /* This column used in a SF_NestedFrom subquery */
+    unsigned bNulls :1;     /* True if explicit "NULLS FIRST/LAST" */
+    unsigned bUsed :1;      /* This column used in a SF_NestedFrom subquery */
+    unsigned bUsingTerm:1;  /* Term from the USING clause of a NestedFrom */
     union {
       struct {             /* Used by any ExprList other than Parse.pConsExpr */
         u16 iOrderByCol;      /* For ORDER BY, column number in result set */
