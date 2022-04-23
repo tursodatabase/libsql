@@ -2819,6 +2819,8 @@ SQLITE_NOINLINE void sqlite3WhereRightJoinLoop(
   int k;
 
   ExplainQueryPlan((pParse, 1, "RIGHT-JOIN %s", pTabItem->pTab->zName));
+  sqlite3VdbeNoJumpsOutsideSubrtn(v, pRJ->addrSubrtn, pRJ->endSubrtn,
+                                  pRJ->regReturn);
   for(k=0; k<iLevel; k++){
     int iIdxCur;
     mAll |= pWInfo->a[k].pWLoop->maskSelf;

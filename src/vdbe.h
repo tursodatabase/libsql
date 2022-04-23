@@ -198,8 +198,10 @@ void sqlite3VdbeEndCoroutine(Vdbe*,int);
 #endif
 #if defined(SQLITE_DEBUG)
   void sqlite3VdbeVerifyAbortable(Vdbe *p, int);
+  void sqlite3VdbeNoJumpsOutsideSubrtn(Vdbe*,int,int,int);
 #else
 # define sqlite3VdbeVerifyAbortable(A,B)
+# define sqlite3VdbeNoJumpsOutsideSubrtn(A,B,C,D)
 #endif
 VdbeOp *sqlite3VdbeAddOpList(Vdbe*, int nOp, VdbeOpList const *aOp,int iLineno);
 #ifndef SQLITE_OMIT_EXPLAIN
