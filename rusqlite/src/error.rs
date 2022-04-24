@@ -128,6 +128,19 @@ pub enum Error {
     #[cfg(feature = "blob")]
     #[cfg_attr(docsrs, doc(cfg(feature = "blob")))]
     BlobSizeError,
+    /// Error referencing a specific token in the input SQL
+    #[cfg(feature = "modern_sqlite")] // 3.38.0
+    #[cfg_attr(docsrs, doc(cfg(feature = "modern_sqlite")))]
+    SqlInputError {
+        /// error code
+        error: ffi::Error,
+        /// error message
+        msg: String,
+        /// SQL input
+        sql: String,
+        /// byte offset of the start of invalid token
+        offset: c_int,
+    },
 }
 
 impl PartialEq for Error {
@@ -172,6 +185,21 @@ impl PartialEq for Error {
             }
             #[cfg(feature = "blob")]
             (Error::BlobSizeError, Error::BlobSizeError) => true,
+            #[cfg(feature = "modern_sqlite")]
+            (
+                Error::SqlInputError {
+                    error: e1,
+                    msg: m1,
+                    sql: s1,
+                    offset: o1,
+                },
+                Error::SqlInputError {
+                    error: e2,
+                    msg: m2,
+                    sql: s2,
+                    offset: o2,
+                },
+            ) => e1 == e2 && m1 == m2 && s1 == s2 && o1 == o2,
             (..) => false,
         }
     }
@@ -281,9 +309,15 @@ impl fmt::Display for Error {
             #[cfg(feature = "functions")]
             Error::GetAuxWrongType => write!(f, "get_aux called with wrong type"),
             Error::MultipleStatement => write!(f, "Multiple statements provided"),
-
             #[cfg(feature = "blob")]
             Error::BlobSizeError => "Blob size is insufficient".fmt(f),
+            #[cfg(feature = "modern_sqlite")]
+            Error::SqlInputError {
+                ref msg,
+                offset,
+                ref sql,
+                ..
+            } => write!(f, "{} in {} at offset {}", msg, sql, offset),
         }
     }
 }
@@ -331,6 +365,8 @@ impl error::Error for Error {
 
             #[cfg(feature = "blob")]
             Error::BlobSizeError => None,
+            #[cfg(feature = "modern_sqlite")]
+            Error::SqlInputError { ref error, .. } => Some(error),
         }
     }
 }
@@ -369,6 +405,35 @@ pub unsafe fn error_from_handle(db: *mut ffi::sqlite3, code: c_int) -> Error {
         Some(errmsg_to_string(ffi::sqlite3_errmsg(db)))
     };
     error_from_sqlite_code(code, message)
+}
+
+#[cold]
+#[cfg(not(all(feature = "modern_sqlite", not(feature = "bundled-sqlcipher"))))] // SQLite >= 3.38.0
+pub unsafe fn error_with_offset(db: *mut ffi::sqlite3, code: c_int, _sql: &str) -> Error {
+    error_from_handle(db, code)
+}
+
+#[cold]
+#[cfg(all(feature = "modern_sqlite", not(feature = "bundled-sqlcipher")))] // SQLite >= 3.38.0
+pub unsafe fn error_with_offset(db: *mut ffi::sqlite3, code: c_int, sql: &str) -> Error {
+    if db.is_null() {
+        error_from_sqlite_code(code, None)
+    } else {
+        let error = ffi::Error::new(code);
+        let msg = errmsg_to_string(ffi::sqlite3_errmsg(db));
+        if ffi::ErrorCode::Unknown == error.code {
+            let offset = ffi::sqlite3_error_offset(db);
+            if offset >= 0 {
+                return Error::SqlInputError {
+                    error,
+                    msg,
+                    sql: sql.to_owned(),
+                    offset,
+                };
+            }
+        }
+        Error::SqliteFailure(error, Some(msg))
+    }
 }
 
 pub fn check(code: c_int) -> Result<()> {
