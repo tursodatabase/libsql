@@ -3602,9 +3602,17 @@ static void restore_sys_schema_protection( sqlite3 *db, DbProtectState *pPS ){
   sqlite3_db_config(db, SQLITE_DBCONFIG_DEFENSIVE, pPS->defensiveMode, 0);
 }
 
-/* Partition the temp.sqlite_parameters key namespace according to use. */
+/* Partition the temp.sqlite_parameters and main.sqlite_variables
+ * key namespace according to use.
+ */
 typedef enum {
-  PTU_Binding = 0, PTU_Script, PTU_Source, PTU_Nil
+  PTU_Binding = 0, /* Binding parameter, value to be bound */
+#define SPTU_Binding SHELL_STRINGIFY(0)
+  PTU_Script  = 1, /* A value containing shell SQL and dot-commands */
+#define SPTU_Script SHELL_STRINGIFY(1)
+  PTU_Entry   = 2, /* Value as entered for non-text binding parameters */
+#define SPTU_Entry SHELL_STRINGIFY(2)
+  PTU_Nil     = 3  /* Unspecified */
 } ParamTableUse;
 
 static ParamTableUse classify_param_name( const char *zName ){
@@ -3681,7 +3689,7 @@ static void param_table_init(sqlite3 *db){
     "CREATE TABLE IF NOT EXISTS "PARAM_TABLE_SNAME"(\n"
     "  key TEXT PRIMARY KEY,\n"
     "  value,\n"
-    "  uses INT DEFAULT (0)" /* aka PTU_Binding */
+    "  uses INT DEFAULT ("SPTU_Binding")"
     ") WITHOUT ROWID;",
     0, 0, 0);
   restore_sys_schema_protection( db, &dps );
@@ -3700,7 +3708,7 @@ static int shvars_table_init(sqlite3 *db){
     "CREATE TABLE IF NOT EXISTS "SHVAR_TABLE_SNAME"(\n"
     "  key TEXT PRIMARY KEY,\n"
     "  value,\n"
-    "  uses INT DEFAULT (0)" /* aka PTU_Binding */
+    "  uses INT DEFAULT ("SPTU_Script")"
     ") WITHOUT ROWID;",
     0, 0, 0);
   restore_sys_schema_protection( db, &dps );
@@ -3988,6 +3996,8 @@ static void exec_prepared_stmt_columnar(
   int bNextLine = 0;
   int bMultiLineRowExists = 0;
   int bw = psi->cmOpts.bWordWrap;
+  const char *zEmpty = "";
+  const char *zShowNull = psi->nullValue;
 
   rc = sqlite3_step(pStmt);
   if( rc!=SQLITE_ROW ) return;
@@ -4049,12 +4059,14 @@ static void exec_prepared_stmt_columnar(
       if( wx<0 ) wx = -wx;
       if( useNextLine ){
         uz = azNextLine[i];
+        if( uz==0 ) uz = (u8*)zEmpty;
       }else if( psi->cmOpts.bQuote ){
         sqlite3_free(azQuoted[i]);
         azQuoted[i] = quoted_column(pStmt,i);
         uz = (const unsigned char*)azQuoted[i];
       }else{
         uz = (const unsigned char*)sqlite3_column_text(pStmt,i);
+        if( uz==0 ) uz = (u8*)zShowNull;
       }
       azData[nRow*nColumn + i]
         = translateForDisplayAndDup(uz, &azNextLine[i], wx, bw);
@@ -4068,7 +4080,7 @@ static void exec_prepared_stmt_columnar(
   nTotal = nColumn*(nRow+1);
   for(i=0; i<nTotal; i++){
     z = azData[i];
-    if( z==0 ) z = psi->nullValue;
+    if( z==0 ) z = (char*)zEmpty;
     n = strlenChar(z);
     j = i%nColumn;
     if( n>psx->pHaveWidths[j] ) psx->pHaveWidths[j] = n;
@@ -4174,7 +4186,10 @@ columnar_end:
     utf8_printf(psi->out, "Interrupt\n");
   }
   nData = (nRow+1)*nColumn;
-  for(i=0; i<nData; i++) free(azData[i]);
+  for(i=0; i<nData; i++){
+    z = azData[i];
+    if( z!=zEmpty && z!=zShowNull ) free(azData[i]);
+  }
   sqlite3_free(azData);
   sqlite3_free((void*)azNextLine);
   sqlite3_free(abRowDiv);
@@ -10840,7 +10855,7 @@ static int shvar_set(sqlite3 *db, char *name, char **valBeg, char **valLim){
   char *zValue = (zValGlom==0)? *valBeg : zValGlom;
   char *zSql
     = smprintf("REPLACE INTO "SHVAR_TABLE_SNAME"(key,value,uses)"
-               "VALUES(%Q,%Q,%d);", name, zValue, PTU_Script);
+               "VALUES(%Q,%Q,"SPTU_Script");", name, zValue);
   shell_check_oom(zSql);
   rc = sqlite3_prepare_v2(db, zSql, -1, &pStmtSet, 0);
   assert(rc==SQLITE_OK);
@@ -10876,12 +10891,12 @@ static int param_set(sqlite3 *db, char cCast,
     if( zCastTo!=0 ){
       zSql = smprintf
         ( "REPLACE INTO "PARAM_TABLE_SNAME"(key,value,uses)"
-          " VALUES(%Q,CAST((%s) AS %s),%d);",
-          name, zValue, zCastTo, PTU_Binding );
+          " VALUES(%Q,CAST((%s) AS %s),"SPTU_Binding");",
+          name, zValue, zCastTo );
     }else{
       zSql = smprintf
         ( "REPLACE INTO "PARAM_TABLE_SNAME"(key,value,uses)"
-          "VALUES(%Q,(%s),%d);", name, zValue, PTU_Binding );
+          "VALUES(%Q,(%s),"SPTU_Binding");", name, zValue );
     }
     shell_check_oom(zSql);
     rc = sqlite3_prepare_v2(db, zSql, -1, &pStmtSet, 0);
@@ -10893,7 +10908,7 @@ static int param_set(sqlite3 *db, char cCast,
     pStmtSet = 0;
     zSql = smprintf
       ( "REPLACE INTO "PARAM_TABLE_SNAME"(key,value,uses)"
-        "VALUES(%Q,%Q,%d);", name, zValue, PTU_Binding );
+        "VALUES(%Q,%Q,"SPTU_Binding");", name, zValue );
     shell_check_oom(zSql);
     rc = sqlite3_prepare_v2(db, zSql, -1, &pStmtSet, 0);
     assert(rc==SQLITE_OK);
@@ -11046,7 +11061,7 @@ static void append_in_clause(sqlite3_str *pStr,
  * The .parameter command
  */
 COLLECT_HELP_TEXT[
-  ".parameter CMD ...       Manage SQL parameter bindings and scripts table",
+  ".parameter CMD ...       Manage per-DB SQL parameter bindings table",
   "   clear ?NAMES?           Erase all or only given named parameters",
 #ifndef SQLITE_NOHAVE_SYSTEM
   "   edit ?OPT? NAME ...     Use edit() to create or alter parameter NAME",
@@ -12327,17 +12342,12 @@ DISPATCHABLE_COMMAND( selftest 4 0 0 ){
 }
 
 /*****************
- * The .shell, .stats and .system commands
+ * The .shell and .system commands
  */
 CONDITION_COMMAND( shell !defined(SQLITE_NOHAVE_SYSTEM) );
 CONDITION_COMMAND( system !defined(SQLITE_NOHAVE_SYSTEM) );
 COLLECT_HELP_TEXT[
   ".shell CMD ARGS...       Run CMD ARGS... in a system shell",
-  ".stats ?ARG?             Show stats or turn stats on or off",
-  "   off                      Turn off automatic stat display",
-  "   on                       Turn on automatic stat display",
-  "   stmt                     Show statement stats",
-  "   vmstep                   Show the virtual machine step count only",
   ".system CMD ARGS...      Run CMD ARGS... in a system shell",
 ];
 
@@ -12507,6 +12517,17 @@ DISPATCHABLE_COMMAND( show ? 1 1 ){
               psi->pAuxDb->zDbFilename ? psi->pAuxDb->zDbFilename : "");
   return DCR_Ok;
 }
+
+/*****************
+ * The .stats command
+ */
+COLLECT_HELP_TEXT[
+  ".stats ?ARG?             Show stats or turn stats on or off",
+  "   off                      Turn off automatic stat display",
+  "   on                       Turn on automatic stat display",
+  "   stmt                     Show statement stats",
+  "   vmstep                   Show the virtual machine step count only",
+];
 DISPATCHABLE_COMMAND( stats ? 0 0 ){
   ShellInState *psi = ISS(p);
   if( nArg==2 ){
@@ -13370,7 +13391,7 @@ DISPATCHABLE_COMMAND( wheretrace ? 1 2 ){
 }
 
 /*****************
- * The .x .read and .eval commands
+ * The .x, .read and .eval commands
  * These are together because they share some function and implementation.
  */
 
@@ -13379,14 +13400,15 @@ COLLECT_HELP_TEXT[
   ".read FILE               Read input from FILE",
   "   If FILE begins with \"|\", it is a command that generates the input.",
   ".x ?OBJS or FLAGS?  ...  Excecute content of objects as shell input",
-  "   FLAGS can be any of {-p -s -f} specifying what subsequent arguments are.",
-  "   Arguments after -p are keys in a key/value table kept by the shell DB,",
+  "   FLAGS can be any of {-k -s -f} specifying what subsequent arguments are.",
+  "   Arguments after -k are keys in a key/value table kept by the shell DB,",
   "   for which the object content to be executed is the corresponding value.",
   "   Arguments after -f name either files (or pipes), which are to be read",
   "   and the content executed. Input pipe names begin with '|'; the rest is",
   "   an OS-shell command which can be run by the OS shell to produce output.",
   "   Arguments after -s are strings, content of which is to be executed.",
-  "   The default in effect for arguments prior to any FLAG is -p .",
+  "   The default in effect for arguments prior to any FLAG is -k .",
+  "   Arguments are executed in order until one fails.",
 ];
 
 /* Return an allocated string with trailing whitespace trimmed except
@@ -13502,11 +13524,11 @@ DISPATCHABLE_COMMAND( x ? 1 0 ){
   DotCmdRC rv = DCR_Ok;
   enum { AsVar, AsString, AsFile } evalAs = AsVar;
 
-  for( ia=1; ia < nArg; ++ia ){
+  for( ia=1; ia<nArg && nErrors==0; ++ia ){
     char *zSubmit = 0;
     const char *zOpt = azArg[ia];
     if ( *zOpt == '-' ){
-      static const char *azOpts[] = { "p", "s", "f" };
+      static const char *azOpts[] = { "k", "s", "f" };
       int io = ArraySize(azOpts);
       while( io > 0 ){
         if( optionMatch(zOpt, azOpts[--io]) ){
@@ -13527,7 +13549,8 @@ DISPATCHABLE_COMMAND( x ? 1 0 ){
           return DCR_Error;
         }
         rc = sqlite3_prepare_v2(dbs, "SELECT value FROM "SHVAR_TABLE_SNAME
-                                " WHERE key=$1 AND uses=1", -1, &pStmt, 0);
+                                " WHERE key=$1 AND uses="SPTU_Script,
+                                -1, &pStmt, 0);
         if( rc!=SQLITE_OK ){
           utf8_printf(STD_ERR, SHVAR_TABLE_SNAME" is wrongly created.\n");
           return DCR_Error;
@@ -13542,15 +13565,10 @@ DISPATCHABLE_COMMAND( x ? 1 0 ){
           const unsigned char *zValue = sqlite3_column_text(pStmt, 0);
           int nb = sqlite3_column_bytes(pStmt, 0);
           zSubmit = zPrepForEval((const char *)zValue, nb);
-          sqlite3_reset(pStmt); /* End the parameter read to unlock DB. */
+          sqlite3_reset(pStmt); /* End the script read to unlock DB. */
           if( zSubmit ){
             rv = shellEvalText(zSubmit, azArg[ia], p);
             sqlite3_free(zSubmit);
-            if( rv<DCR_ArgIxMask ){
-              nErrors += (rv & DCR_Error);
-              /* Handle DCR_Return, DCR_Exit or DCR_Abort */
-              if( rv>DCR_Error ) break;
-            }
           }else{
             continue; /* All white (or OOM), ignore. */
           }
@@ -15180,7 +15198,7 @@ static const char *zOptions =
   "   -safe                enable safe-mode\n"
   "   -separator SEP       set output column separator. Default: '|'\n"
 #if SHELL_EXTENSIONS
-  "   -shxopts BMASK       enable shell extensions and options (7 for all)\n"
+  "   -shxopts BMASK       enable shell extension features (7=all, 0=none)\n"
 #endif
 #ifdef SQLITE_ENABLE_SORTER_REFERENCES
   "   -sorterref SIZE      sorter references threshold size\n"
