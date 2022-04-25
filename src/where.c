@@ -808,8 +808,7 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
     ** WHERE clause (or the ON clause of a LEFT join) that constrain which
     ** rows of the target table (pSrc) that can be used. */
     if( (pTerm->wtFlags & TERM_VIRTUAL)==0
-     && ((pSrc->fg.jointype&JT_LEFT)==0 || ExprHasProperty(pExpr,EP_FromJoin))
-     && sqlite3ExprIsTableConstant(pExpr, pSrc->iCursor)
+     && sqlite3ExprIsTableConstraint(pExpr, pSrc)
     ){
       pPartial = sqlite3ExprAnd(pParse, pPartial,
                                 sqlite3ExprDup(pParse->db, pExpr, 0));
@@ -1048,7 +1047,7 @@ static SQLITE_NOINLINE void sqlite3ConstructBloomFilter(
     for(pTerm=pWInfo->sWC.a; pTerm<pWCEnd; pTerm++){
       Expr *pExpr = pTerm->pExpr;
       if( (pTerm->wtFlags & TERM_VIRTUAL)==0
-       && sqlite3ExprIsTableConstant(pExpr, iCur)
+       && sqlite3ExprIsTableConstraint(pExpr, pItem)
       ){
         sqlite3ExprIfFalse(pParse, pTerm->pExpr, addrCont, SQLITE_JUMPIFNULL);
       }

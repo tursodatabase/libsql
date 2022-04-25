@@ -2284,6 +2284,38 @@ int sqlite3ExprIsTableConstant(Expr *p, int iCur){
   return exprIsConst(p, 3, iCur);
 }
 
+/*
+** Check pExpr to see if it is an invariant constraint on data source pSrc.
+** This is an optimization.  False negatives will perhaps cause slower
+** queries, but false positives will yield incorrect answers.  So when in
+** double, return 0.
+**
+** To be an invariant constraint, the following must be true:
+**
+**   (1)  pExpr cannot refer to any table other than pSrc->iCursor.
+**
+**   (2)  pExpr cannot use subqueries or non-deterministic functions.
+**
+**   (*)  ** Not applicable to this branch **
+**
+**   (4)  If pSrc is the right operand of a LEFT JOIN, then...
+**         (4a)  pExpr must come from an ON clause..
+**         (4b)  and specifically the ON clause associated with the LEFT JOIN.
+**
+**   (5)  If pSrc is not the right operand of a LEFT JOIN or the left
+**        operand of a RIGHT JOIN, then pExpr must be from the WHERE
+**        clause, not an ON clause.
+*/
+int sqlite3ExprIsTableConstraint(Expr *pExpr, const SrcItem *pSrc){
+  if( pSrc->fg.jointype & JT_LEFT ){
+    if( !ExprHasProperty(pExpr, EP_FromJoin) ) return 0;    /* rule (4a) */
+    if( pExpr->w.iRightJoinTable!=pSrc->iCursor ) return 0; /* rule (4b) */
+  }else{
+    if( ExprHasProperty(pExpr, EP_FromJoin) ) return 0;     /* rule (5) */
+  }
+  return sqlite3ExprIsTableConstant(pExpr, pSrc->iCursor);  /* rules (1), (2) */
+}
+
 
 /*
 ** sqlite3WalkExpr() callback used by sqlite3ExprIsConstantOrGroupBy().
