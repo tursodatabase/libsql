@@ -1,5 +1,5 @@
-C The\spushDownWhereTerms()\sroutine\sshould\sbe\susing\nsqlite3ExprIsTableConstraint(),\snot\ssqlite3ExprIsTableConstant().\s\sThis\sfixes\nmany\sproblems,\sbut\sstill\san\serror\spersists\sin\sjoin7.test.
-D 2022-04-25T20:38:42.383
+C Do\snot\sallow\sthe\spush-down\soptimization\son\sthe\sright\stable\sof\sa\sRIGHT\sJOIN.
+D 2022-04-25T20:47:58.298
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -553,7 +553,7 @@ F src/printf.c 512574910a45341c8ad244bd3d4939968ebdfde215645b676fff01cc46e90757
 F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c f72bb13359dd5a74d440df25f320dc2c1baff5cde4fc9f0d1bc3feba90b8932a
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c 0ee60363b0bc5e4c0cc9fc2e0a6d76e5d0d2eb756d691e302800bebf16439ec4
+F src/select.c cc1a7581403fc074eee85283ba8d81de50a831ae175cb65a5751be00f621c0d5
 F src/shell.c.in ae0a6fae983caac6f8c824733f0599dfdf7b3a7e8efdef3cb5e3ab2e457ffc35
 F src/sqlite.h.in 2a35f62185eb5e7ecc64a2f68442b538ce9be74f80f28a00abc24837edcf1c17
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1951,8 +1951,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7ca3456c00998a429418ff29cf251b381586b330b88344c94a40c5df0b71da85
-R e383c06c18e315aa0b232a51b37bdb01
+P 10bf0e613809f71cc1a47ad40b517e2a66671212a6464e179c9d377e8b70d499
+R 8764866988e0da227134244ae6ff31d7
 U drh
-Z b20e944a61d9ac254d588d9faa898773
+Z bf16933ceb0da28b71dd4050f0adc6a6
 # Remove this line to create a well-formed Fossil manifest.

@@ -4960,6 +4960,7 @@ static int pushDownWhereTerms(
   int nChng = 0;
   if( pWhere==0 ) return 0;
   if( pSubq->selFlags & (SF_Recursive|SF_MultiPart) ) return 0;
+  if( pSrc->fg.jointype & (JT_LTORJ|JT_RIGHT) ) return 0;
 
 #ifndef SQLITE_OMIT_WINDOWFUNC
   if( pSubq->pPrior ){
