@@ -5007,7 +5007,7 @@ static int pushDownWhereTerms(
   }
 #endif
 
-  if( sqlite3ExprIsTableConstant(pWhere, pSrc->iCursor) ){
+  if( sqlite3ExprIsTableConstraint(pWhere, pSrc) ){
     nChng++;
     pSubq->selFlags |= SF_PushDown;
     while( pSubq ){
