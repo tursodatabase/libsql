@@ -4325,6 +4325,7 @@ static int flattenSubquery(
 
     if( pSrc->nSrc>1 ){
       if( pParse->nSelect>500 ) return 0;
+      if( OptimizationDisabled(db, SQLITE_FlttnUnionAll) ) return 0;
       aCsrMap = sqlite3DbMallocZero(db, ((i64)pParse->nTab+1)*sizeof(int));
       if( aCsrMap ) aCsrMap[0] = pParse->nTab;
     }
