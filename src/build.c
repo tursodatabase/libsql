@@ -3055,7 +3055,6 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
   Table *pSelTab;   /* A fake table from which we get the result set */
   Select *pSel;     /* Copy of the SELECT that implements the view */
   int nErr = 0;     /* Number of errors encountered */
-  int n;            /* Temporarily holds the number of cursors assigned */
   sqlite3 *db = pParse->db;  /* Database connection for malloc errors */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   int rc;
@@ -3113,8 +3112,9 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
   pSel = sqlite3SelectDup(db, pTable->u.view.pSelect, 0);
   if( pSel ){
     u8 eParseMode = pParse->eParseMode;
+    int nTab = pParse->nTab;
+    int nSelect = pParse->nSelect;
     pParse->eParseMode = PARSE_MODE_NORMAL;
-    n = pParse->nTab;
     sqlite3SrcListAssignCursors(pParse, pSel->pSrc);
     pTable->nCol = -1;
     DisableLookaside;
@@ -3126,7 +3126,8 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
 #else
     pSelTab = sqlite3ResultSetOfSelect(pParse, pSel, SQLITE_AFF_NONE);
 #endif
-    pParse->nTab = n;
+    pParse->nTab = nTab;
+    pParse->nSelect = nSelect;
     if( pSelTab==0 ){
       pTable->nCol = 0;
       nErr++;
