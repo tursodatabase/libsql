@@ -204,7 +204,11 @@ int sqlite3VdbeChangeEncoding(Mem *pMem, int desiredEnc){
   assert( !sqlite3VdbeMemIsRowSet(pMem) );
   assert( desiredEnc==SQLITE_UTF8 || desiredEnc==SQLITE_UTF16LE
            || desiredEnc==SQLITE_UTF16BE );
-  if( !(pMem->flags&MEM_Str) || pMem->enc==desiredEnc ){
+  if( !(pMem->flags&MEM_Str) ){
+    pMem->enc = desiredEnc;
+    return SQLITE_OK;
+  }
+  if( pMem->enc==desiredEnc ){
     return SQLITE_OK;
   }
   assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
