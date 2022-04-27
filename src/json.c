@@ -1119,14 +1119,15 @@ static JsonNode *jsonLookupStep(
         *pzErr = zPath;
         return 0;
       }
+      testcase( nKey==0 );
     }else{
       zKey = zPath;
       for(i=0; zPath[i] && zPath[i]!='.' && zPath[i]!='['; i++){}
       nKey = i;
-    }
-    if( nKey==0 ){
-      *pzErr = zPath;
-      return 0;
+      if( nKey==0 ){
+        *pzErr = zPath;
+        return 0;
+      }
     }
     j = 1;
     for(;;){
@@ -2274,6 +2275,33 @@ static int jsonEachNext(sqlite3_vtab_cursor *cur){
   return SQLITE_OK;
 }
 
+/* Append an object label to the JSON Path being constructed
+** in pStr.
+*/
+static void jsonAppendObjectPathElement(
+  JsonString *pStr,
+  JsonNode *pNode
+){
+  int jj, nn;
+  const char *z;
+  assert( pNode->eType==JSON_STRING );
+  assert( pNode->jnFlags & JNODE_LABEL );
+  assert( pNode->eU==1 );
+  z = pNode->u.zJContent;
+  nn = pNode->n;
+  assert( nn>=2 );
+  assert( z[0]=='"' );
+  assert( z[nn-1]=='"' );
+  if( nn>2 && sqlite3Isalpha(z[1]) ){
+    for(jj=2; jj<nn-1 && sqlite3Isalnum(z[jj]); jj++){}
+    if( jj==nn-1 ){
+      z++;
+      nn -= 2;
+    }
+  }
+  jsonPrintf(nn+2, pStr, ".%.*s", nn, z);
+}
+
 /* Append the name of the path for element i to pStr
 */
 static void jsonEachComputePath(
@@ -2298,10 +2326,7 @@ static void jsonEachComputePath(
   }else{
     assert( pUp->eType==JSON_OBJECT );
     if( (pNode->jnFlags & JNODE_LABEL)==0 ) pNode--;
-    assert( pNode->eType==JSON_STRING );
-    assert( pNode->jnFlags & JNODE_LABEL );
-    assert( pNode->eU==1 );
-    jsonPrintf(pNode->n+1, pStr, ".%.*s", pNode->n-2, pNode->u.zJContent+1);
+    jsonAppendObjectPathElement(pStr, pNode);
   }
 }
 
@@ -2372,8 +2397,7 @@ static int jsonEachColumn(
         if( p->eType==JSON_ARRAY ){
           jsonPrintf(30, &x, "[%d]", p->iRowid);
         }else if( p->eType==JSON_OBJECT ){
-          assert( pThis->eU==1 );
-          jsonPrintf(pThis->n, &x, ".%.*s", pThis->n-2, pThis->u.zJContent+1);
+          jsonAppendObjectPathElement(&x, pThis);
         }
       }
       jsonResult(&x);
