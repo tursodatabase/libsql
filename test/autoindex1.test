@@ -542,7 +542,23 @@ do_execsql_test autoindex1-1020 {
   SELECT count(*) FROM t11 LEFT JOIN t12 WHERE t12.y IS t11.w;
 } 0
 
-
-
+# 2022-04-25
+# https://sqlite.org/forum/forumpost/0d3200f4f3bcd3a3
+#
+reset_db
+do_execsql_test autoindex-1100 {
+  CREATE TABLE t1(a INT, b INT);
+  CREATE TABLE t2(c INT, d INT);
+  CREATE TABLE t3(e TEXT, f TEXT);
+  INSERT INTO t1 VALUES(1, 1);
+  INSERT INTO t2 VALUES(1, 2);
+  INSERT INTO t3 VALUES('abc', 'def');
+} {}
+do_execsql_test autoindex-1110 {
+  SELECT * FROM t1, t2 LEFT JOIN t3 ON (t2.d=1) WHERE t2.c = +t1.a;
+} {1 1 1 2 {} {}}
+do_execsql_test autoindex-1120 {
+  SELECT * FROM t1 LEFT JOIN t2 ON (t2.c=+t1.a) LEFT JOIN t3 ON (t2.d IS NULL);
+} {1 1 1 2 {} {}}
 
 finish_test
