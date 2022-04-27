@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\stypo\sin\sa\scomment.
-D 2022-04-27T18:38:46.859
+C The\s-DSQLITE_MXFILENAMESZ=N\soption\sfor\ssome\snon-negative\sinteger\svalue\sN\nprevents\sSQLite\sfrom\sever\screating\sa\shole\slarger\sthan\sN\sbytes\sin\sa\snamed\nfile\sfor\swhich\sa\ssize\shint\shas\sbeen\sissued.\s\sThe\sexception\scode\snever\nruns,\sexcept\sfor\scases\swhen\sthe\sapplication\sdeliberately\scorrupts\sthe\nsize\shint.
+D 2022-04-27T21:10:19.508
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -537,7 +537,7 @@ F src/os.c b1c4f2d485961e9a5b6b648c36687d25047c252222e9660b7cc25a6e1ea436ab
 F src/os.h 26890f540b475598cd9881dcc68931377b8d429d3ea3e2eeb64470cde64199f8
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
-F src/os_unix.c 1f71ec8c87621f75c9c5ea973f5e8ce2f1d23fe760c01ed2814fe4b98b639825
+F src/os_unix.c e854f8de7c037ac0c85dcd324a1b275943ff62ae140773d52e8d75509a971eb0
 F src/os_win.c a8ea80037e81127ca01959daa87387cc135f325c88dc745376c4f760de852a10
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 42120492784fc9bcd9082b5c9b5e329b7318c357f9f3574a1bbfcf7418910356
@@ -1951,8 +1951,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P eb59c46a5aed69bc6fd096997bf24c082e533c1085439f6ec1fbe5ff78e8b374
-R f499c3fddca86db7a0183d3ecdb0953b
+P e1f4a115df34e45cf1bcf98961c699b582f564a58a979e95853b219bda06212c
+R 5794d1298ad7cbc0b73b8c0832596e1c
+T *branch * mkfileholesz
+T *sym-mkfileholesz *
+T -sym-trunk *
 U drh
-Z 7426364b9684e9a6fe822d40fffa4b25
+Z 7def791b4ee1080fcb98c1f97ee1bab8
 # Remove this line to create a well-formed Fossil manifest.

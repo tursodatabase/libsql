@@ -250,6 +250,9 @@ struct unixFile {
 #if OS_VXWORKS
   struct vxworksFileId *pId;          /* Unique file ID */
 #endif
+#ifdef SQLITE_MXFILEHOLESZ
+  sqlite3_int64 sizeHint;             /* Latest SQLITE_FCNTL_SIZE_HINT value */
+#endif
 #ifdef SQLITE_DEBUG
   /* The next group of variables are used to track whether or not the
   ** transaction counter in bytes 24-27 of database files are updated
@@ -261,7 +264,6 @@ struct unixFile {
   unsigned char transCntrChng;   /* True if the transaction counter changed */
   unsigned char dbUpdate;        /* True if any part of database file changed */
   unsigned char inNormalWrite;   /* True if in a normal write operation */
-
 #endif
 
 #ifdef SQLITE_TEST
@@ -3456,6 +3458,35 @@ static int seekAndWriteFd(
 ** is set before returning.
 */
 static int seekAndWrite(unixFile *id, i64 offset, const void *pBuf, int cnt){
+
+#ifdef SQLITE_MXFILEHOLESZ
+  /* If SQLite is compiled with -DSQLITE_MXFILEHOLESIZE=nnn for some 
+  ** non-negative integer nnn, then the unix device driver will not allow
+  ** any writes to occur more than nnn bytes past the end of the most recent
+  ** SQLITE_FCNTL_SIZE_HINT, for named files that have ever received a size
+  ** hint.  Unnamed files (which will be deleted when they are closed) are
+  ** not subject to this constraint.  Also, journal files never receive
+  ** size hints, and so they are not restricted either.
+  **
+  ** It is reasonable to set the MXFILEHOLESZ to zero.  However, some of
+  ** the SQLite tests deliberately write holes (by accessing low-level
+  ** VFS routines directly) and so we need the ability to set a larger
+  ** MXFILEHOLESZ for testing purposes.
+  **
+  ** This can be used as an extra security measure to prevent an error
+  ** from creating a file with a gargantuan hole that can go on to mess
+  ** up backup daemons that do not know how to deal with unix file holes.
+  **
+  ** This option is off by default.  It is undocumented.
+  */
+  if( id->sizeHint>0
+   && id->zPath!=0
+   && offset>id->sizeHint+SQLITE_MXFILEHOLESZ
+  ){
+    return SQLITE_IOERR_WRITE;
+  }
+#endif /* SQLITE_MXFILEHOLESZ */
+
   return seekAndWriteFd(id->h, offset, pBuf, cnt, &id->lastErrno);
 }
 
@@ -3990,8 +4021,11 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
     }
     case SQLITE_FCNTL_SIZE_HINT: {
       int rc;
+#ifdef SQLITE_MXFILEHOLESZ
+      pFile->sizeHint = *(i64*)pArg;
+#endif
       SimulateIOErrorBenign(1);
-      rc = fcntlSizeHint(pFile, *(i64 *)pArg);
+      rc = fcntlSizeHint(pFile, *(i64*)pArg);
       SimulateIOErrorBenign(0);
       return rc;
     }
