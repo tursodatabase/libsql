@@ -1,5 +1,5 @@
-C When\scomputing\sSTAT1\svalues\susing\sANALYZE,\sif\sa\sratio\scomes\sout\sto\sbe\sbetween\n1.0\sand\s1.1,\sthen\sround\sit\sdown\sto\s1\srather\sthan\sthe\susing\sthe\sdefault\srounding\nrule\sof\schanging\sit\sto\s2.\s\sThe\sreduces\sthe\sestimation\serror\sfor\sthe\ncase\swhere\sa\scolumn\svalue\sis\svery\snearly,\sbut\snot\squite\sunique.
-D 2022-04-27T16:41:56.099
+C Fix\sa\sharmless\stypo\sin\sa\scomment.
+D 2022-04-27T18:38:46.859
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -504,7 +504,7 @@ F src/date.c 15082566229d4b1e5f24fdb490bf9bcc68824b911d70e3573ef075a1b9e2d26f
 F src/dbpage.c 90661a87e1db8bfbc8d2ebbdcd3749651ddb287c555c07a28fb17c7c591ffb68
 F src/dbstat.c 861e08690fcb0f2ee1165eff0060ea8d4f3e2ea10f80dab7d32ad70443a6ff2d
 F src/delete.c a8e844af211a48b13b5b358be77a12c860c6a557c21990ad51a548e2536500ce
-F src/expr.c 5d4178f8462ca55a38cefcfcdf9635030607e3532649c96de471afafeca732c4
+F src/expr.c d8c520edd0edf0b9c0ca467aa44c864ff17f265fd1cebbd224b6d5c625b638c3
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c d965ede15d8360c09ed59348940649ee647b192e784466837d7aefa836d1d91e
 F src/func.c a3407a6fbb0d4088d8d502e46f0ace63e0aeae7467ae23a9ca9815bbf9239761
@@ -1951,8 +1951,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bc5bbd9fa636cc9ef0cbbc0600b8fc1404b9732670ac4e7a8b5a230fbce758d5
-R 5515b70c241c679d58c02a7cda432aa8
+P eb59c46a5aed69bc6fd096997bf24c082e533c1085439f6ec1fbe5ff78e8b374
+R f499c3fddca86db7a0183d3ecdb0953b
 U drh
-Z e146713923a218edc001415f7d000194
+Z 7426364b9684e9a6fe822d40fffa4b25
 # Remove this line to create a well-formed Fossil manifest.

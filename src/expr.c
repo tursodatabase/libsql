@@ -2300,7 +2300,7 @@ int sqlite3ExprIsTableConstant(Expr *p, int iCur){
 ** Check pExpr to see if it is an invariant constraint on data source pSrc.
 ** This is an optimization.  False negatives will perhaps cause slower
 ** queries, but false positives will yield incorrect answers.  So when in
-** double, return 0.
+** doubt, return 0.
 **
 ** To be an invariant constraint, the following must be true:
 **
