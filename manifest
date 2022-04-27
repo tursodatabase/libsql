@@ -1,5 +1,5 @@
-C Modify\sutility\sfunction\ssqlite3SetString()\sso\sthat\sit\smay\sbe\sused\ssafely\son\sParse.zErrMsg.\sFuzzer\stest\scase\s"crash-1604e5d76c92574e21e437049dab9b672e06b767.txt".
-D 2022-04-26T20:58:48.054
+C Version\s3.38.3
+D 2022-04-27T12:03:15.047
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1944,9 +1944,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fece097c707ba563abfeca82a3d8f6fe6e90d73ae8a8ecaa4695131baa76b3b1
-Q +09c5a4ec13b02efd6207e26dab7beaf184f0d8ccea0bd0dfe94fc803fe5636ce
+P b9c7d2c1bdc529b8c367e4a0894f4c966957cfa4b427175d5aa10af6a25f4f12
 R 3239c458ee20a7ad3be4e144155c5ad4
+T +sym-relese *
+T +sym-version-3.38.3 *
 U drh
-Z be258944773c049c39f3b72b54aae24b
+Z 3eea06f2546971f0d6539e228b8fb587
 # Remove this line to create a well-formed Fossil manifest.
