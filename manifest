@@ -1,5 +1,5 @@
-C Fix\sa\stest\sproblem\sin\srbubusy.test\scausing\sa\scrash\sunder\ssome\scircumstances.
-D 2022-04-27T13:33:48.684
+C When\scomputing\sSTAT1\svalues\susing\sANALYZE,\sif\sa\sratio\scomes\sout\sto\sbe\sbetween\n1.0\sand\s1.1,\sthen\sround\sit\sdown\sto\s1\srather\sthan\sthe\susing\sthe\sdefault\srounding\nrule\sof\schanging\sit\sto\s2.\s\sThe\sreduces\sthe\sestimation\serror\sfor\sthe\ncase\swhere\sa\scolumn\svalue\sis\svery\snearly,\sbut\snot\squite\sunique.
+D 2022-04-27T16:41:56.099
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -487,7 +487,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c 9395ece9850ad57c6fbb453aeb5185be4bae3b159c4b37611425c565124ee849
-F src/analyze.c 3a119baeb03053c154029877454d41bb8fd79d4d1eb583392f2289b3554a75bc
+F src/analyze.c aabdf3769c7fd9954a8ec508eb7041ae174b66f88d12c47199fabbea9a646467
 F src/attach.c 4431f82f0247bf3aaf91589acafdff77d1882235c95407b36da1585c765fbbc8
 F src/auth.c f4fa91b6a90bbc8e0d0f738aa284551739c9543a367071f55574681e0f24f8cf
 F src/backup.c a2891172438e385fdbe97c11c9745676bec54f518d4447090af97189fd8e52d7
@@ -1951,8 +1951,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b1bec72043f798f4d4d30e6b60a45ed4dc521115c8a9f97bb8228e3f089deefb
-R f8e9d661e065b7babfd72a5655e4ad71
-U dan
-Z 3cd41b751eccac6d73d356239c542a95
+P bc5bbd9fa636cc9ef0cbbc0600b8fc1404b9732670ac4e7a8b5a230fbce758d5
+R 5515b70c241c679d58c02a7cda432aa8
+U drh
+Z e146713923a218edc001415f7d000194
 # Remove this line to create a well-formed Fossil manifest.
