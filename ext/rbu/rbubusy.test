@@ -79,4 +79,9 @@ do_test 1.7 {
 
 rbu close
 
+db close
+sqlite3_shutdown
+test_sqlite3_log 
+sqlite3_initialize
 finish_test
+

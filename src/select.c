@@ -4329,6 +4329,7 @@ static int flattenSubquery(
 
     if( pSrc->nSrc>1 ){
       if( pParse->nSelect>500 ) return 0;
+      if( OptimizationDisabled(db, SQLITE_FlttnUnionAll) ) return 0;
       aCsrMap = sqlite3DbMallocZero(db, ((i64)pParse->nTab+1)*sizeof(int));
       if( aCsrMap ) aCsrMap[0] = pParse->nTab;
     }
@@ -4957,13 +4958,13 @@ static int pushDownWhereTerms(
   Parse *pParse,        /* Parse context (for malloc() and error reporting) */
   Select *pSubq,        /* The subquery whose WHERE clause is to be augmented */
   Expr *pWhere,         /* The WHERE clause of the outer query */
-  int iCursor,          /* Cursor number of the subquery */
-  int isLeftJoin        /* True if pSubq is the right term of a LEFT JOIN */
+  SrcItem *pSrc         /* The subquery term of the outer FROM clause */
 ){
   Expr *pNew;
   int nChng = 0;
   if( pWhere==0 ) return 0;
   if( pSubq->selFlags & (SF_Recursive|SF_MultiPart) ) return 0;
+  if( pSrc->fg.jointype & (JT_LTORJ|JT_RIGHT) ) return 0;
 
 #ifndef SQLITE_OMIT_WINDOWFUNC
   if( pSubq->pPrior ){
@@ -4993,10 +4994,11 @@ static int pushDownWhereTerms(
     return 0; /* restriction (3) */
   }
   while( pWhere->op==TK_AND ){
-    nChng += pushDownWhereTerms(pParse, pSubq, pWhere->pRight,
-                                iCursor, isLeftJoin);
+    nChng += pushDownWhereTerms(pParse, pSubq, pWhere->pRight, pSrc);
     pWhere = pWhere->pLeft;
   }
+
+#if 0  /* Legacy code. Checks now done by sqlite3ExprIsTableConstraint() */
   if( isLeftJoin
    && (ExprHasProperty(pWhere,EP_FromJoin)==0
          || pWhere->w.iJoin!=iCursor)
@@ -5008,7 +5010,9 @@ static int pushDownWhereTerms(
   ){
     return 0; /* restriction (5) */
   }
-  if( sqlite3ExprIsTableConstant(pWhere, iCursor) ){
+#endif
+
+  if( sqlite3ExprIsTableConstraint(pWhere, pSrc) ){
     nChng++;
     pSubq->selFlags |= SF_PushDown;
     while( pSubq ){
@@ -5016,8 +5020,8 @@ static int pushDownWhereTerms(
       pNew = sqlite3ExprDup(pParse->db, pWhere, 0);
       unsetJoinExpr(pNew, -1);
       x.pParse = pParse;
-      x.iTable = iCursor;
-      x.iNewTable = iCursor;
+      x.iTable = pSrc->iCursor;
+      x.iNewTable = pSrc->iCursor;
       x.isOuterJoin = 0;
       x.pEList = pSubq->pEList;
       pNew = substExpr(&x, pNew);
@@ -6870,9 +6874,7 @@ int sqlite3Select(
     if( OptimizationEnabled(db, SQLITE_PushDown)
      && (pItem->fg.isCte==0 
          || (pItem->u2.pCteUse->eM10d!=M10d_Yes && pItem->u2.pCteUse->nUse<2))
-     && (pItem->fg.jointype & JT_RIGHT)==0
-     && pushDownWhereTerms(pParse, pSub, p->pWhere, pItem->iCursor,
-                           (pItem->fg.jointype & JT_OUTER)!=0)
+     && pushDownWhereTerms(pParse, pSub, p->pWhere, pItem)
     ){
 #if TREETRACE_ENABLED
       if( sqlite3TreeTrace & 0x100 ){

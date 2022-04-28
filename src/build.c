@@ -172,9 +172,7 @@ void sqlite3FinishCoding(Parse *pParse){
       int i;
       int reg;
 
-      if( NEVER(pReturning->nRetCol==0) ){
-        assert( CORRUPT_DB );
-      }else{
+      if( pReturning->nRetCol ){
         sqlite3VdbeAddOp0(v, OP_FkCheck);
         addrRewind =
            sqlite3VdbeAddOp1(v, OP_Rewind, pReturning->iRetCur);
@@ -270,9 +268,7 @@ void sqlite3FinishCoding(Parse *pParse){
 
       if( pParse->bReturning ){
         Returning *pRet = pParse->u1.pReturning;
-        if( NEVER(pRet->nRetCol==0) ){
-          assert( CORRUPT_DB );
-        }else{
+        if( pRet->nRetCol ){
           sqlite3VdbeAddOp2(v, OP_OpenEphemeral, pRet->iRetCur, pRet->nRetCol);
         }
       }
@@ -3059,7 +3055,6 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
   Table *pSelTab;   /* A fake table from which we get the result set */
   Select *pSel;     /* Copy of the SELECT that implements the view */
   int nErr = 0;     /* Number of errors encountered */
-  int n;            /* Temporarily holds the number of cursors assigned */
   sqlite3 *db = pParse->db;  /* Database connection for malloc errors */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   int rc;
@@ -3117,8 +3112,9 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
   pSel = sqlite3SelectDup(db, pTable->u.view.pSelect, 0);
   if( pSel ){
     u8 eParseMode = pParse->eParseMode;
+    int nTab = pParse->nTab;
+    int nSelect = pParse->nSelect;
     pParse->eParseMode = PARSE_MODE_NORMAL;
-    n = pParse->nTab;
     sqlite3SrcListAssignCursors(pParse, pSel->pSrc);
     pTable->nCol = -1;
     DisableLookaside;
@@ -3130,7 +3126,8 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
 #else
     pSelTab = sqlite3ResultSetOfSelect(pParse, pSel, SQLITE_AFF_NONE);
 #endif
-    pParse->nTab = n;
+    pParse->nTab = nTab;
+    pParse->nSelect = nSelect;
     if( pSelTab==0 ){
       pTable->nCol = 0;
       nErr++;

@@ -1780,6 +1780,7 @@ struct sqlite3 {
 #define SQLITE_BloomPulldown  0x00100000 /* Run Bloom filters early */
 #define SQLITE_BalancedMerge  0x00200000 /* Balance multi-way merges */
 #define SQLITE_ReleaseReg     0x00400000 /* Use OP_ReleaseReg for testing */
+#define SQLITE_FlttnUnionAll  0x00800000 /* Disable the UNION ALL flattener */
 #define SQLITE_AllOpts        0xffffffff /* All optimizations */
 
 /*
@@ -4753,6 +4754,7 @@ int sqlite3ExprIsConstantNotJoin(Expr*);
 int sqlite3ExprIsConstantOrFunction(Expr*, u8);
 int sqlite3ExprIsConstantOrGroupBy(Parse*, Expr*, ExprList*);
 int sqlite3ExprIsTableConstant(Expr*,int);
+int sqlite3ExprIsTableConstraint(Expr*,const SrcItem*);
 #ifdef SQLITE_ENABLE_CURSOR_HINTS
 int sqlite3ExprContainsSubquery(Expr*);
 #endif
