@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\stypo\sin\sa\scomment.
-D 2022-04-27T18:38:46.859
+C Fix\sproblem\swith\sSQLITE_OMIT_VIRTUALTABLE\sbuilds.
+D 2022-04-28T18:33:02.668
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -516,7 +516,7 @@ F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 173845e5a6bac96ae937409e4f876b631f26b31dabb9df8fd0eb3b130b2bb3a7
 F src/json.c 7749b98c62f691697c7ee536b570c744c0583cab4a89200fdd0fc2aa8cc8cbd6
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
-F src/loadext.c 2ecb1441f9b1c22e9e022ee0776e67d259facf34b56ba892b206f0a294ee6f8c
+F src/loadext.c 0705c2747212934183398f09891415d2f7f3113d0f543ccb205640210b20e617
 F src/main.c 135858d2ede0b83d779e71b07ede9c1d6b6eaab7b77bc2a85729584152769faf
 F src/malloc.c a9127efdcef92d6934c6339ea9813075b90edc0ce2e5c723556381a3828fb720
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
@@ -1951,8 +1951,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P eb59c46a5aed69bc6fd096997bf24c082e533c1085439f6ec1fbe5ff78e8b374
-R f499c3fddca86db7a0183d3ecdb0953b
-U drh
-Z 7426364b9684e9a6fe822d40fffa4b25
+P e1f4a115df34e45cf1bcf98961c699b582f564a58a979e95853b219bda06212c
+R 3b19b9ac79d036b17b28019016199748
+U dan
+Z 4c18f3559ff049507c583c5510546b21
 # Remove this line to create a well-formed Fossil manifest.
