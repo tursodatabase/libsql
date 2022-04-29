@@ -156,4 +156,14 @@ do_catchsql_test join8-5000 {
   SELECT (SELECT c FROM sqlite_temp_schema FULL JOIN t2 ON d IN (1,2,3) ORDER BY d) AS x FROM t1;
 } {0 {- -}}
 
+# 2022-04-29 dbsqlfuzz 19f1102a70cf966ab249de56d944fc20dbebcfcf
+#
+reset_db
+do_execsql_test join8-6000 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b TEXT, c TEXT, d REAL);
+  INSERT INTO t1 VALUES(1,'A','aa',2.5);
+  SELECT * FROM t1 AS t2 NATURAL RIGHT JOIN t1 AS t3
+   WHERE (a,b) IN (SELECT rowid, b FROM t1);
+} {1 A aa 2.5}
+
 finish_test

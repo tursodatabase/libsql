@@ -610,7 +610,7 @@ static int codeEqualityTerm(
     iTab = 0;
     if( !ExprUseXSelect(pX) || pX->x.pSelect->pEList->nExpr==1 ){
       eType = sqlite3FindInIndex(pParse, pX, IN_INDEX_LOOP, 0, 0, &iTab);
-    }else{
+    }else if( pTerm->pExpr->iTable==0 ){
       sqlite3 *db = pParse->db;
       pX = removeUnindexableInClauseTerms(pParse, iEq, pLoop, pX);
 
