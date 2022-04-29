@@ -463,7 +463,7 @@ static int isAuxiliaryVtabOperator(
 static void transferJoinMarkings(Expr *pDerived, Expr *pBase){
   if( pDerived ){
     pDerived->flags |= pBase->flags & EP_FromJoin;
-    pDerived->w.iRightJoinTable = pBase->w.iRightJoinTable;
+    pDerived->w.iJoin = pBase->w.iJoin;
   }
 }
 
@@ -1110,7 +1110,7 @@ static void exprAnalyze(
 #endif
 
   if( ExprHasProperty(pExpr, EP_FromJoin) ){
-    Bitmask x = sqlite3WhereGetMask(pMaskSet, pExpr->w.iRightJoinTable);
+    Bitmask x = sqlite3WhereGetMask(pMaskSet, pExpr->w.iJoin);
     prereqAll |= x;
     extraRight = x-1;  /* ON clause terms may not be used with an index
                        ** on left table of a LEFT JOIN.  Ticket #3015 */
@@ -1461,7 +1461,7 @@ static void exprAnalyze(
             0, sqlite3ExprDup(db, pRight, 0));
         if( ExprHasProperty(pExpr, EP_FromJoin) && pNewExpr ){
           ExprSetProperty(pNewExpr, EP_FromJoin);
-          pNewExpr->w.iRightJoinTable = pExpr->w.iRightJoinTable;
+          pNewExpr->w.iJoin = pExpr->w.iJoin;
         }
         idxNew = whereClauseInsert(pWC, pNewExpr, TERM_VIRTUAL|TERM_DYNAMIC);
         testcase( idxNew==0 );
@@ -1809,6 +1809,7 @@ void sqlite3WhereTabFuncArgs(
   if( pArgs==0 ) return;
   for(j=k=0; j<pArgs->nExpr; j++){
     Expr *pRhs;
+    u32 joinType;
     while( k<pTab->nCol && (pTab->aCol[k].colFlags & COLFLAG_HIDDEN)==0 ){k++;}
     if( k>=pTab->nCol ){
       sqlite3ErrorMsg(pParse, "too many arguments on %s() - max %d",
@@ -1825,9 +1826,12 @@ void sqlite3WhereTabFuncArgs(
     pRhs = sqlite3PExpr(pParse, TK_UPLUS, 
         sqlite3ExprDup(pParse->db, pArgs->a[j].pExpr, 0), 0);
     pTerm = sqlite3PExpr(pParse, TK_EQ, pColRef, pRhs);
-    if( pItem->fg.jointype & JT_LEFT ){
-      sqlite3SetJoinExpr(pTerm, pItem->iCursor);
+    if( pItem->fg.jointype & (JT_LEFT|JT_LTORJ) ){
+      joinType = EP_FromJoin;
+    }else{
+      joinType = EP_InnerJoin;
     }
+    sqlite3SetJoinExpr(pTerm, pItem->iCursor, joinType);
     whereClauseInsert(pWC, pTerm, TERM_DYNAMIC);
   }
 }

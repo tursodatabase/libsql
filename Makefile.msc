@@ -1671,6 +1671,11 @@ TESTPROGS = \
   dbhash.exe \
   sqltclsh.exe
 
+TESTPROGS_SHX = \
+  testfixture.exe \
+  $(SQLITE3XEXE) \
+  shell_extensions
+
 # Databases containing fuzzer test cases
 #
 FUZZDATA = \
@@ -2384,6 +2389,36 @@ fts5.dll:	fts5_ext.lo
 
 sqlite3rbu.lo:	$(TOP)\ext\rbu\sqlite3rbu.c $(HDR) $(EXTHDR)
 	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)\ext\rbu\sqlite3rbu.c
+
+# Rule to build shx_link.h (for use by shell extensions)
+
+SHX_LINK_SRC = \
+ $(TOP)/src/shext_linkage.h \
+ $(TOP)/src/obj_interfaces.h \
+ sqlite3ext.h \
+ sqlite3.h
+
+shx_link.h:	$(SHX_LINK_SRC)
+	$(TCLSH_CMD) $(TOP)\tool\mkshellc.tcl -short-head -header-gen \
+     $(TOP)/src/shext_linkage.h > $@
+
+# Rules to build shell extensions used for testing extensible shell
+
+shell_extensions:	tcl_shell_extension \
+  test_shellext_cpp.dll test_shellext_c.dll
+
+test_shellext_cpp.dll:	$(TOP)/src/test_shellext_cpp.cpp $(TOP)/shx_link.h
+	$(TCC) $(TOP)/src/test_shellext_cpp.cpp -LD -Fe$@
+
+test_shellext_c.dll:	$(TOP)/src/test_shellext_c.c $(TOP)/shx_link.h
+	$(TCC) $(TOP)/src/test_shellext_c.c -LD -Fe$@
+
+tclshext.c:	$(TOP)/ext/misc/tclshext.c.in $(TOP)/src/tclsqlite.c
+	$(TCLSH_CMD) $(TOP)\tool\mkshellc.tcl $(TOP)/ext/misc/tclshext.c.in > $@
+
+tclshext.dll: tclshext.c shx_link.h
+	$(TCC) -I$(TCLINCDIR) tclshext.c -Fe$@ -link -DLL \
+  -LIBPATH:$(TCLLIBDIR) $(TCLLIBS)
 
 # Rules to build the 'testfixture' application.
 #

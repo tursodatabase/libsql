@@ -1243,11 +1243,12 @@ struct EQPGraph {
 
 /* This is only used to support extensions that need this information.
  * For example, they might need to locate and load related files. */
-static char startupDir[PATH_MAX+1] = {0};
 # if defined(_WIN32) || defined(WIN32)
-# define initStartupDir() (_getwd(startupDir)!=0)
+static char startupDir[MAX_PATH+1] = {0};
+# define initStartupDir() (_getcwd(startupDir,MAX_PATH)!=0)
 #  define IS_PATH_SEP(c) ((c)=='/'||(c)=='\\')
 # else
+static char startupDir[PATH_MAX+1] = {0};
 # define initStartupDir() (getcwd(startupDir, sizeof(startupDir))!=0)
   /* Above useless expression avoids an "unused result" warning. */
 #  define IS_PATH_SEP(c) ((c)=='/')
@@ -1256,7 +1257,7 @@ static char startupDir[PATH_MAX+1] = {0};
 # ifndef SHELL_OMIT_EXTBYNAME
 /* Is a program invocation name one used for a shell to start as extensible? */
 static int isExtendedBasename(const char *zPgm){
-  int ixe = (zPgm)? strlen(zPgm)-1 : 0;
+  int ixe = (zPgm)? (int)strlen(zPgm)-1 : 0;
   if( ixe==0 ) return 0;
   while( ixe>=0 && !IS_PATH_SEP(zPgm[ixe]) ) --ixe;
   /* ixe is just before the basename with extension(s) */
@@ -7362,30 +7363,7 @@ static void *shellMalloc(int *pRc, sqlite3_int64 nByte){
   return pRet;
 }
 
-/*
-** If pRc!=0 and *pRc is not SQLITE_OK when this function is called, it is a
-** no-op. Otherwise, zFmt is treated as a printf() style string. The result
-** of formatting it along with any trailing arguments is written into a
-** buffer obtained from sqlite3_malloc(), and pointer to which is returned.
-** It is the responsibility of the caller to eventually free this buffer
-** using a call to sqlite3_free().
-**
-** If an OOM error occurs, (*pRc) is set to SQLITE_NOMEM (if pRc!=0)
-** and a NULL pointer returned.
-*/
-static char *shellMPrintf(int *pRc, const char *zFmt, ...){
-  char *z = 0;
-  if( pRc==0 || *pRc==SQLITE_OK ){
-    va_list ap;
-    va_start(ap, zFmt);
-    z = sqlite3_vmprintf(zFmt, ap);
-    va_end(ap);
-    if( z==0 && pRc!=0 ){
-      *pRc = SQLITE_NOMEM;
-    }
-  }
-  return z;
-}
+static char *shellMPrintf(int *pRc, const char *zFmt, ...);
 
 /*
 ** When running the ".recover" command, each output table, and the special
@@ -7664,6 +7642,30 @@ static RecoverTable *recoverOrphanTable(
   return pTab;
 }
 #endif /* !(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_ENABLE_DBPAGE_VTAB) */
+/*
+** If pRc!=0 and *pRc is not SQLITE_OK when this function is called, it is a
+** no-op. Otherwise, zFmt is treated as a printf() style string. The result
+** of formatting it along with any trailing arguments is written into a
+** buffer obtained from sqlite3_malloc(), and pointer to which is returned.
+** It is the responsibility of the caller to eventually free this buffer
+** using a call to sqlite3_free().
+**
+** If an OOM error occurs, (*pRc) is set to SQLITE_NOMEM (if pRc!=0)
+** and a NULL pointer returned.
+*/
+static char *shellMPrintf(int *pRc, const char *zFmt, ...){
+  char *z = 0;
+  if( pRc==0 || *pRc==SQLITE_OK ){
+    va_list ap;
+    va_start(ap, zFmt);
+    z = sqlite3_vmprintf(zFmt, ap);
+    va_end(ap);
+    if( z==0 && pRc!=0 ){
+      *pRc = SQLITE_NOMEM;
+    }
+  }
+  return z;
+}
 
 static DotCmdRC
 writeDb( char *azArg[], int nArg, ShellExState *psx, char **pzErr ){
@@ -8280,7 +8282,7 @@ static int begin_db_dispatch(ShellExState *psx){
   }
   sei.numExportHandlers = 0;
   sei.numImportHandlers = 0;
-  for( ic=0; ic<numCommands; ++ic ){
+  for( ic=0; ic<(int)numCommands; ++ic ){
     sei.ppDotCommands[ic] = builtInCommand(ic);
   }
   sei.numDotCommands = ic;
@@ -8460,7 +8462,7 @@ DISPATCH_CONFIG[
   STORAGE_CLASS=static
   ARGS_SIGNATURE=char *$arg4\[\], int $arg5, ShellExState *$arg6, char **$arg7
   DISPATCH_ENTRY={ "$cmd", ${cmd}Command, $arg1, $arg2, $arg3 },
-  DOTCMD_INIT=DOT_CMD_INFO(${cmd}, $arg1,$arg2,$arg3, <HT0>, <HT1>),
+  DOTCMD_INIT={ DOT_CMD_INFO(${cmd}, $arg1,$arg2,$arg3), {<HT0>, <HT1>}, 0 },
   CMD_CAPTURE_RE=^\s*{\s*"(\w+)"
   DISPATCHEE_NAME=${cmd}Command
   DC_ARG1_DEFAULT=[string length $cmd]
@@ -11696,7 +11698,7 @@ DISPATCHABLE_COMMAND( scanstats ? 2 2 ){
   return DCR_Ok;
 }
 DISPATCHABLE_COMMAND( schema ? 1 2 ){
-  int rc;
+  int rc = 0;
   ShellText sSelect;
   ShellInState data;
   ShellExState datax;
@@ -12237,7 +12239,7 @@ DISPATCHABLE_COMMAND( selftest_int 10 0 0 ){
 }
 
 DISPATCHABLE_COMMAND( selftest 4 0 0 ){
-  int rc;
+  int rc = 0;
   ShellInState *psi = ISS(p);
   int bIsInit = 0;         /* True to initialize the SELFTEST table */
   int bVerbose = 0;        /* Verbose output */
@@ -13659,19 +13661,17 @@ static struct CommandInfo {
   void * pCmdData;
   } command_table[] = {
   COMMENT Emit the dispatch table entries generated and collected above.
-#define DOT_CMD_INFO(cmd, nlenMin, minArgs, maxArgs, ht0, ht1 ) \
-  { &dot_cmd_VtabBuiltIn, #cmd, cmd ## Command, \
-    nlenMin, minArgs, maxArgs, { ht0, ht1 }, 0 \
-  }
+#define DOT_CMD_INFO(cmd, nlenMin, minArgs, maxArgs) \
+  &dot_cmd_VtabBuiltIn, #cmd, cmd ## Command, nlenMin, minArgs, maxArgs
   EMIT_DOTCMD_INIT(2);
 #undef DOT_CMD_INFO
-  { 0, 0, 0, 0, ~0, ~0, {0,0}, 0 }
+  { 0, 0, 0, 0, (u8)~0, (u8)~0, {0,0}, 0 }
 };
 static unsigned numCommands
   = sizeof(command_table)/sizeof(struct CommandInfo) - 1;
 
 static DotCommand *builtInCommand(int ix){
-  if( ix<0 || ix>=numCommands ) return 0;
+  if( ix<0 || (unsigned)ix>=numCommands ) return 0;
   return (DotCommand *)&command_table[ix];
 }
 
@@ -13733,7 +13733,7 @@ typedef struct CmdMatchIter {
 #if SHELL_DYNAMIC_EXTENSION
     sqlite3_stmt *stmt;
 #endif
-  };
+  } cursor;
 #if SHELL_DYNAMIC_EXTENSION
   char *zAdhocHelpText; /* registered extension ad-hoc help */
 #endif
@@ -13744,12 +13744,12 @@ static void freeCmdMatchIter(CmdMatchIter *pMMI){
   if( pMMI->zPattern!=0 ){
     sqlite3_free((void *)pMMI->zPattern);
     pMMI->zPattern = 0;
-    pMMI->pDotCmd = 0;
+    pMMI->cursor.pDotCmd = 0;
   }
 #if SHELL_DYNAMIC_EXTENSION
   else{
-    sqlite3_finalize(pMMI->stmt);
-    pMMI->stmt = 0;
+    sqlite3_finalize(pMMI->cursor.stmt);
+    pMMI->cursor.stmt = 0;
   }
   sqlite3_free(pMMI->zAdhocHelpText);
   pMMI->zAdhocHelpText = 0;
@@ -13775,8 +13775,8 @@ static int findMatchingDotCmds(const char *cmdFragment,
       "SELECT count(*) FROM "SHELL_HELP_VIEW" "
       "WHERE name glob (?||'*')";
     if( pMMI ){
-      sqlite3_prepare_v2(psx->dbShell, zSqlIter, -1, &mmi.stmt, 0);
-      sqlite3_bind_text(mmi.stmt, 1, cmdFragment? cmdFragment : "", -1, 0);
+      sqlite3_prepare_v2(psx->dbShell, zSqlIter, -1, &mmi.cursor.stmt, 0);
+      sqlite3_bind_text(mmi.cursor.stmt, 1, cmdFragment? cmdFragment:"", -1, 0);
     }
     sqlite3_prepare_v2(psx->dbShell, zSqlCount, -1, &stmtCount, 0);
     sqlite3_bind_text(stmtCount, 1, cmdFragment? cmdFragment : "", -1, 0);
@@ -13792,7 +13792,7 @@ static int findMatchingDotCmds(const char *cmdFragment,
     shell_check_oom((void *)mmi.zPattern);
 
     struct CommandInfo *pCI = command_table;
-    mmi.pDotCmd = (DotCommand *)command_table;
+    mmi.cursor.pDotCmd = (DotCommand *)command_table;
     while( pCI<command_table+numCommands ){
       if( sqlite3_strglob(mmi.zPattern, pCI->cmdName)==0 ) ++rv;
       ++pCI;
@@ -13808,36 +13808,38 @@ static DotCommand * nextMatchingDotCmd(CmdMatchIter *pMMI){
   DotCommand *rv = 0;
 #if SHELL_DYNAMIC_EXTENSION
   if( pMMI->zPattern==0 ){
-    int rc = sqlite3_step(pMMI->stmt);
+    int rc = sqlite3_step(pMMI->cursor.stmt);
     if( rc==SQLITE_ROW ){
       /* name, extIx, cmdIx, help */
-      int extIx = sqlite3_column_int(pMMI->stmt, 1);
-      int cmdIx = sqlite3_column_int(pMMI->stmt, 2);
+      int extIx = sqlite3_column_int(pMMI->cursor.stmt, 1);
+      int cmdIx = sqlite3_column_int(pMMI->cursor.stmt, 2);
       ShellInState *psi = ISS(pMMI->psx);
       sqlite3_free(pMMI->zAdhocHelpText);
       if( cmdIx>=0 ){
         pMMI->zAdhocHelpText = 0;
         return command_by_index(psi, extIx, cmdIx);
       }else{
-        const unsigned char *zHT = sqlite3_column_text(pMMI->stmt, 3);
+        const unsigned char *zHT = sqlite3_column_text(pMMI->cursor.stmt, 3);
         assert(psi->pUnknown!=0);
         assert(extIx<psi->numExtLoaded && extIx>0);
-        if( zHT==0 ) zHT = sqlite3_column_text(pMMI->stmt, 0);
+        if( zHT==0 ) zHT = sqlite3_column_text(pMMI->cursor.stmt, 0);
         pMMI->zAdhocHelpText = sqlite3_mprintf("%s", zHT);
         return psi->pShxLoaded[extIx].pUnknown;
       }
     }else{
-      sqlite3_finalize(pMMI->stmt);
-      pMMI->stmt = 0;
+      sqlite3_finalize(pMMI->cursor.stmt);
+      pMMI->cursor.stmt = 0;
     }
   }else
 #endif
   {
-    struct CommandInfo *pCI = (struct CommandInfo *)(pMMI->pDotCmd);
+    struct CommandInfo *pCI = (struct CommandInfo *)(pMMI->cursor.pDotCmd);
     assert(pCI>=command_table && pCI<=command_table+numCommands);
     while( pCI<command_table+numCommands ){
-      if( sqlite3_strglob(pMMI->zPattern, pCI->cmdName)==0 ) rv = pMMI->pDotCmd;
-      pMMI->pDotCmd = (DotCommand *)(++pCI);
+      if( sqlite3_strglob(pMMI->zPattern, pCI->cmdName)==0 ){
+	rv = pMMI->cursor.pDotCmd;
+      }
+      pMMI->cursor.pDotCmd = (DotCommand *)(++pCI);
       if( rv!=0 ) break;
     }
   }
@@ -14042,7 +14044,7 @@ static int showHelp(FILE *out, const char *zPattern, ShellExState *psx){
   } hoKind = bShowUndoc? HO_Undoc : HO_Tbd;
 
   if( hoKind==HO_Undoc ){
-    int ixct = 0;
+    unsigned ixct = 0;
     utf8_printf(out, "%s\n%s\n",
       "The following commands are for SQLite diagnosis and internal testing.",
       "They are undocumented and subject to change without notice.");
@@ -15834,7 +15836,7 @@ int SQLITE_CDECL SHELL_MAIN(int argc, wchar_t **wargv){
     */
     if( stdin_is_interactive ){
       char *zHome;
-      char *zHistory;
+      char *zHistory = 0;
       if( bQuiet ){
         /* bQuiet is almost like normal interactive, but quieter. */
         mainPrompt[0] = 0;

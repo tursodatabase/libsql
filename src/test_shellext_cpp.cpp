@@ -44,6 +44,9 @@ struct BatBeing : DotCommand {
   };
 
   DotCmdRC argsCheck(char **pzErrMsg, int nArgs, char *azArgs[]) {
+    (void)(pzErrMsg);
+    (void)(nArgs);
+    (void)(azArgs);
     return DCR_Ok;
   };
   DotCmdRC execute(ShellExState *psx, char **pzErrMsg,

@@ -31,14 +31,17 @@ static void sayHowMany( BatBeing *pbb, FILE *out, ShellExState *psx );
  * The function bodies are not so easily written, of course. */
 
 DERIVED_METHOD(void, destruct, DotCommand,BatBeing, 0, ()){
+  (void)(pThis);
   fprintf(stdout, "BatBeing unbecoming.\n");
 }
 
 DERIVED_METHOD(const char *, name, DotCommand,BatBeing, 0,()){
+  (void)(pThis);
   return "bat_being";
 }
 
 DERIVED_METHOD(const char *, help, DotCommand,BatBeing, 1,(const char *zHK)){
+  (void)(pThis);
   if( !zHK )
     return ".bat_being ?whatever?    Demonstrates vigilantism weekly\n";
   if( !*zHK )
@@ -48,6 +51,10 @@ DERIVED_METHOD(const char *, help, DotCommand,BatBeing, 1,(const char *zHK)){
 
 DERIVED_METHOD(DotCmdRC, argsCheck, DotCommand,BatBeing, 3,
              (char **pzErrMsg, int nArgs, char *azArgs[])){
+  (void)(pThis);
+  (void)(pzErrMsg);
+  (void)(nArgs);
+  (void)(azArgs);
   return DCR_Ok;
 }
 

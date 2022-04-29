@@ -851,13 +851,15 @@ void sqlite3Insert(
   */
   bIdListInOrder = (pTab->tabFlags & (TF_OOOHidden|TF_HasStored))==0;
   if( pColumn ){
+    assert( pColumn->eU4!=EU4_EXPR );
+    pColumn->eU4 = EU4_IDX;
     for(i=0; i<pColumn->nId; i++){
-      pColumn->a[i].idx = -1;
+      pColumn->a[i].u4.idx = -1;
     }
     for(i=0; i<pColumn->nId; i++){
       for(j=0; j<pTab->nCol; j++){
         if( sqlite3StrICmp(pColumn->a[i].zName, pTab->aCol[j].zCnName)==0 ){
-          pColumn->a[i].idx = j;
+          pColumn->a[i].u4.idx = j;
           if( i!=j ) bIdListInOrder = 0;
           if( j==pTab->iPKey ){
             ipkColumn = i;  assert( !withoutRowid );
@@ -1159,7 +1161,8 @@ void sqlite3Insert(
       }
     }
     if( pColumn ){
-      for(j=0; j<pColumn->nId && pColumn->a[j].idx!=i; j++){}
+      assert( pColumn->eU4==EU4_IDX );
+      for(j=0; j<pColumn->nId && pColumn->a[j].u4.idx!=i; j++){}
       if( j>=pColumn->nId ){
         /* A column not named in the insert column list gets its
         ** default value */

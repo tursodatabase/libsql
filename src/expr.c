@@ -1527,6 +1527,7 @@ With *sqlite3WithDup(sqlite3 *db, With *p){
         pRet->a[i].pSelect = sqlite3SelectDup(db, p->a[i].pSelect, 0);
         pRet->a[i].pCols = sqlite3ExprListDup(db, p->a[i].pCols, 0);
         pRet->a[i].zName = sqlite3DbStrDup(db, p->a[i].zName);
+        pRet->a[i].eM10d = p->a[i].eM10d;
       }
     }
   }
@@ -1631,6 +1632,7 @@ ExprList *sqlite3ExprListDup(sqlite3 *db, const ExprList *p, int flags){
     pItem->eEName = pOldItem->eEName;
     pItem->done = 0;
     pItem->bNulls = pOldItem->bNulls;
+    pItem->bUsed = pOldItem->bUsed;
     pItem->bSorterRef = pOldItem->bSorterRef;
     pItem->u = pOldItem->u;
   }
@@ -1698,22 +1700,16 @@ IdList *sqlite3IdListDup(sqlite3 *db, const IdList *p){
   int i;
   assert( db!=0 );
   if( p==0 ) return 0;
-  pNew = sqlite3DbMallocRawNN(db, sizeof(*pNew) );
+  assert( p->eU4!=EU4_EXPR );
+  pNew = sqlite3DbMallocRawNN(db, sizeof(*pNew)+(p->nId-1)*sizeof(p->a[0]) );
   if( pNew==0 ) return 0;
   pNew->nId = p->nId;
-  pNew->a = sqlite3DbMallocRawNN(db, p->nId*sizeof(p->a[0]) );
-  if( pNew->a==0 ){
-    sqlite3DbFreeNN(db, pNew);
-    return 0;
-  }
-  /* Note that because the size of the allocation for p->a[] is not
-  ** necessarily a power of two, sqlite3IdListAppend() may not be called
-  ** on the duplicate created by this function. */
+  pNew->eU4 = p->eU4;
   for(i=0; i<p->nId; i++){
     struct IdList_item *pNewItem = &pNew->a[i];
-    struct IdList_item *pOldItem = &p->a[i];
+    const struct IdList_item *pOldItem = &p->a[i];
     pNewItem->zName = sqlite3DbStrDup(db, pOldItem->zName);
-    pNewItem->idx = pOldItem->idx;
+    pNewItem->u4 = pOldItem->u4;
   }
   return pNew;
 }
@@ -2179,7 +2175,7 @@ Expr *sqlite3ExprSimplifiedAndOr(Expr *pExpr){
 static int exprNodeIsConstant(Walker *pWalker, Expr *pExpr){
 
   /* If pWalker->eCode is 2 then any term of the expression that comes from
-  ** the ON or USING clauses of a left join disqualifies the expression
+  ** the ON or USING clauses of an outer join disqualifies the expression
   ** from being considered constant. */
   if( pWalker->eCode==2 && ExprHasProperty(pExpr, EP_FromJoin) ){
     pWalker->eCode = 0;
@@ -2298,6 +2294,42 @@ int sqlite3ExprIsConstantNotJoin(Expr *p){
 */
 int sqlite3ExprIsTableConstant(Expr *p, int iCur){
   return exprIsConst(p, 3, iCur);
+}
+
+/*
+** Check pExpr to see if it is an invariant constraint on data source pSrc.
+** This is an optimization.  False negatives will perhaps cause slower
+** queries, but false positives will yield incorrect answers.  So when in
+** doubt, return 0.
+**
+** To be an invariant constraint, the following must be true:
+**
+**   (1)  pExpr cannot refer to any table other than pSrc->iCursor.
+**
+**   (2)  pExpr cannot use subqueries or non-deterministic functions.
+**
+**   (3)  pSrc cannot be part of the left operand for a RIGHT JOIN.
+**        (Is there some way to relax this constraint?)
+**
+**   (4)  If pSrc is the right operand of a LEFT JOIN, then...
+**         (4a)  pExpr must come from an ON clause..
+           (4b)  and specifically the ON clause associated with the LEFT JOIN.
+**
+**   (5)  If pSrc is not the right operand of a LEFT JOIN or the left
+**        operand of a RIGHT JOIN, then pExpr must be from the WHERE
+**        clause, not an ON clause.
+*/
+int sqlite3ExprIsTableConstraint(Expr *pExpr, const SrcItem *pSrc){
+  if( pSrc->fg.jointype & JT_LTORJ ){
+    return 0;  /* rule (3) */
+  }
+  if( pSrc->fg.jointype & JT_LEFT ){
+    if( !ExprHasProperty(pExpr, EP_FromJoin) ) return 0;  /* rule (4a) */
+    if( pExpr->w.iJoin!=pSrc->iCursor ) return 0;         /* rule (4b) */
+  }else{
+    if( ExprHasProperty(pExpr, EP_FromJoin) ) return 0;   /* rule (5) */
+  }
+  return sqlite3ExprIsTableConstant(pExpr, pSrc->iCursor); /* rules (1), (2) */
 }
 
 
@@ -3181,9 +3213,9 @@ void sqlite3CodeRhsOfIN(
     assert( ExprUseYSub(pExpr) );
     assert( sqlite3VdbeGetOp(v,pExpr->y.sub.iAddr-1)->opcode==OP_BeginSubrtn
             || pParse->nErr );
-    sqlite3VdbeAddOp3(v, OP_Return, pExpr->y.sub.regReturn, 0, 
-                      pExpr->y.sub.iAddr-1);
-    sqlite3VdbeChangeP1(v, pExpr->y.sub.iAddr-1, sqlite3VdbeCurrentAddr(v)-1);
+    sqlite3VdbeAddOp3(v, OP_Return, pExpr->y.sub.regReturn,
+                      pExpr->y.sub.iAddr, 1);
+    VdbeCoverage(v);
     sqlite3ClearTempRegCache(pParse);
   }
 }
@@ -3312,9 +3344,9 @@ int sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
   assert( ExprUseYSub(pExpr) );
   assert( sqlite3VdbeGetOp(v,pExpr->y.sub.iAddr-1)->opcode==OP_BeginSubrtn
           || pParse->nErr );
-  sqlite3VdbeAddOp3(v, OP_Return, pExpr->y.sub.regReturn, 0,
-                    pExpr->y.sub.iAddr-1);
-  sqlite3VdbeChangeP1(v, pExpr->y.sub.iAddr-1, sqlite3VdbeCurrentAddr(v)-1);
+  sqlite3VdbeAddOp3(v, OP_Return, pExpr->y.sub.regReturn,
+                    pExpr->y.sub.iAddr, 1);
+  VdbeCoverage(v);
   sqlite3ClearTempRegCache(pParse);
   return rReg;
 }
@@ -3748,6 +3780,7 @@ void sqlite3ExprCodeGetColumnOfTable(
   }
   if( iCol<0 || iCol==pTab->iPKey ){
     sqlite3VdbeAddOp2(v, OP_Rowid, iTabCur, regOut);
+    VdbeComment((v, "%s.rowid", pTab->zName));
   }else{
     int op;
     int x;
@@ -4500,16 +4533,18 @@ expr_code_doover:
     }
     case TK_SELECT_COLUMN: {
       int n;
-      if( pExpr->pLeft->iTable==0 ){
-        pExpr->pLeft->iTable = sqlite3CodeSubselect(pParse, pExpr->pLeft);
+      Expr *pLeft = pExpr->pLeft;
+      if( pLeft->iTable==0 || pParse->withinRJSubrtn > pLeft->op2 ){
+        pLeft->iTable = sqlite3CodeSubselect(pParse, pLeft);
+        pLeft->op2 = pParse->withinRJSubrtn;
       }
-      assert( pExpr->pLeft->op==TK_SELECT || pExpr->pLeft->op==TK_ERROR );
-      n = sqlite3ExprVectorSize(pExpr->pLeft);
+      assert( pLeft->op==TK_SELECT || pLeft->op==TK_ERROR );
+      n = sqlite3ExprVectorSize(pLeft);
       if( pExpr->iTable!=n ){
         sqlite3ErrorMsg(pParse, "%d columns assigned %d values",
                                 pExpr->iTable, n);
       }
-      return pExpr->pLeft->iTable + pExpr->iColumn;
+      return pLeft->iTable + pExpr->iColumn;
     }
     case TK_IN: {
       int destIfFalse = sqlite3VdbeMakeLabel(pParse);
@@ -5817,7 +5852,7 @@ static int impliesNotNullRow(Walker *pWalker, Expr *pExpr){
 ** in an incorrect answer.
 **
 ** Terms of p that are marked with EP_FromJoin (and hence that come from
-** the ON or USING clauses of LEFT JOINS) are excluded from the analysis.
+** the ON or USING clauses of OUTER JOINS) are excluded from the analysis.
 **
 ** This routine is used to check if a LEFT JOIN can be converted into
 ** an ordinary JOIN.  The p argument is the WHERE clause.  If the WHERE

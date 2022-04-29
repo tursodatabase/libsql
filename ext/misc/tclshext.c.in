@@ -139,7 +139,8 @@ int sqlite3_tclshext_init(sqlite3*, char**, const sqlite3_api_routines*);
 INCLUDE tclsqlite.c
 
 #if defined(_WIN32) || defined(WIN32)
-# define getDir(cArray) _getwd(cArray)
+# include <direct.h>
+# define getDir(cArray) _getcwd(cArray, sizeof(cArray))
 # define chdir(s) _chdir(s)
 #else
 # define getDir(cArray) getcwd(cArray, sizeof(cArray))
@@ -280,7 +281,8 @@ DERIVED_METHOD(DotCmdRC, runScript, ScriptSupport,TclSS,
   if( interp==0 ) return DCR_Error;
   while( (c=*zScript++) && (c==' '||c=='\t') ) {}
   if( c=='.' &&  *zScript++=='.' ){
-    int rc, nc = strlen30(zScript);
+    int rc = 0;
+    int nc = strlen30(zScript);
     /* At this point, *zScript should fall into one of these cases: */
     switch( *zScript ){
     case '.':
@@ -699,12 +701,12 @@ static int getTclGroup(void *pvSS, Tcl_Interp *interp,
     } while( zIn && !isComplete );
     if( zIn ) SHX_HELPER(freeInputLine)(zIn);
     {
-      Tcl_Obj *const objv[] = {
+      Tcl_Obj *const objvv[] = {
         Tcl_NewStringObj(Tcl_GetStringResult(interp) , -1),
         Tcl_NewIntObj(isComplete)
       }; /* These unowned objects go directly into result, becoming owned. */
       Tcl_ResetResult(interp);
-      Tcl_SetObjResult(interp, Tcl_NewListObj(2, objv));
+      Tcl_SetObjResult(interp, Tcl_NewListObj(2, objvv));
     }
     return TCL_OK;
   }else{
@@ -877,7 +879,6 @@ typedef struct UserDb {
 /* Add a DB to the list. Return its index. */
 static int udbAdd(UserDb *pudb, sqlite3 *udb){
   SqliteDb *p;
-  int nshift;
   pudb->ppSdb
     = (SqliteDb**)Tcl_Realloc((char*)pudb->ppSdb, (pudb->numSdb+1)*sizeof(p));
   memset(pudb->ppSdb + pudb->numSdb, 0, sizeof(SqliteDb*));
@@ -950,7 +951,6 @@ static void udbCleanup(UserDb *pudb){
    * orphaned and leaked. But this assert may make the error evident. */
   if( pudb==0 ) pudb = udbCreate(0, 0);
   assert(pudb->numSdb==0);
-  pudb->numSdb==0;
   if( pudb->ppSdb ) Tcl_Free((char*)pudb->ppSdb);
   memset(pudb, 0, sizeof(UserDb));
   pudb->ixuSdb = -1;
