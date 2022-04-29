@@ -186,6 +186,7 @@ void sqlite3TreeViewSrcList(TreeView *pView, const SrcList *pSrc){
   for(i=0; i<pSrc->nSrc; i++){
     const SrcItem *pItem = &pSrc->a[i];
     StrAccum x;
+    int n = 0;
     char zLine[100];
     sqlite3StrAccumInit(&x, 0, zLine, sizeof(zLine), 0);
     x.printfFlags |= SQLITE_PRINTF_INTERNAL;
@@ -214,14 +215,21 @@ void sqlite3TreeViewSrcList(TreeView *pView, const SrcList *pSrc){
     }
     sqlite3StrAccumFinish(&x);
     sqlite3TreeViewItem(pView, zLine, i<pSrc->nSrc-1);
+    n = 0;
+    if( pItem->pTab ) n++;
+    if( pItem->pSelect ) n++;
+    if( pItem->fg.isTabFunc ) n++;
+    if( pItem->fg.isUsing ) n++;
+    if( pItem->fg.isUsing ){
+      sqlite3TreeViewIdList(pView, pItem->u3.pUsing, (--n)>0, "USING");
+    }
     if( pItem->pTab ){
       Table *pTab = pItem->pTab;
-      sqlite3TreeViewColumnList(pView, pTab->aCol, pTab->nCol,
-                                pItem->pSelect!=0);
+      sqlite3TreeViewColumnList(pView, pTab->aCol, pTab->nCol, (--n)>0);
     }
     if( pItem->pSelect ){
       assert( pItem->fg.isNestedFrom == IsNestedFrom(pItem->pSelect) );
-      sqlite3TreeViewSelect(pView, pItem->pSelect, 0);
+      sqlite3TreeViewSelect(pView, pItem->pSelect, (--n)>0);
     }
     if( pItem->fg.isTabFunc ){
       sqlite3TreeViewExprList(pView, pItem->u1.pFuncArg, 0, "func-args:");
