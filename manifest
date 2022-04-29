@@ -1,11 +1,11 @@
-C Get\sMSVC\sbuild\sgoing\sfor\ssqlite3x.exe\sand\sextensions.
-D 2022-04-29T18:36:17.701
+C For\sTcl\sextension,\sget\sTk\soption\sinto\sMSVC\sbuild.
+D 2022-04-29T21:38:46.967
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
 F Makefile.in 3a2d4e3a13c497b24b92fa36e93f80dc49844f1ca62e5a7848b899afe7105a37
 F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
-F Makefile.msc 2c59950b86b58b5a4d78151883ee52a014f006d08ea18783c87509fddc3cde27
+F Makefile.msc f2fcd8771e903a5c59f2ea1afbc5410bc72c43fa5ac1b55f11544e60e8d26e24
 F README.md 2dd87a5c1d108b224921f3dd47dea567973f706e1f6959386282a626f459a70c
 F VERSION fa8e7d2d1cc962f9e14c6d410387cf75860ee139462763fda887c1be4261f824
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -1960,8 +1960,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 60e85c7e7130724a426fab11552ed2aa8e9280f53a219c7e15e0ae0efcaded57 e1f4a115df34e45cf1bcf98961c699b582f564a58a979e95853b219bda06212c
-R 66992ed57c5d75ba400df4ac1d7afb51
+P cd5e57e0fe4ef2a59c1202b66f4e774f6642fa826cfe3840a786104841dde2f6
+R 037b3c4ffd48e706e2587b3f973fcce4
 U larrybr
-Z 08242a9a87ce842bca989bccc1923f6d
+Z dbae7575bfac61c09fc21f4a48c444df
 # Remove this line to create a well-formed Fossil manifest.

@@ -909,6 +909,14 @@ TCLLIBDIR = $(TCLDIR)\lib
 LIBTCL = tcl$(TCLVERSION)$(TCLSUFFIX).lib
 !ENDIF
 
+# For Tcl shell extension only:
+!IFDEF WITH_TK
+!IFNDEF LIBTK
+LIBTK = tk$(TCLVERSION)$(TCLSUFFIX).lib
+!ENDIF
+!ENDIF
+
+
 !IFNDEF LIBTCLSTUB
 LIBTCLSTUB = tclstub$(TCLVERSION)$(TCLSUFFIX).lib
 !ENDIF
@@ -2413,12 +2421,21 @@ test_shellext_cpp.dll:	$(TOP)/src/test_shellext_cpp.cpp $(TOP)/shx_link.h
 test_shellext_c.dll:	$(TOP)/src/test_shellext_c.c $(TOP)/shx_link.h
 	$(TCC) $(TOP)/src/test_shellext_c.c -LD -Fe$@
 
+tcl_shell_extension:	tclshext.dll
+
+!IFDEF WITH_TK
+TCLEXT_OPTS=-DSHELL_ENABLE_TK
+TCLEXT_LIBS = $(TCLLIBS) $(LIBTK)
+!ELSE
+TCLEXT_OPTS=
+TCLEXT_LIBS = $(TCLLIBS)
+!ENDIF
 tclshext.c:	$(TOP)/ext/misc/tclshext.c.in $(TOP)/src/tclsqlite.c
 	$(TCLSH_CMD) $(TOP)\tool\mkshellc.tcl $(TOP)/ext/misc/tclshext.c.in > $@
 
 tclshext.dll: tclshext.c shx_link.h
-	$(TCC) -I$(TCLINCDIR) tclshext.c -Fe$@ -link -DLL \
-  -LIBPATH:$(TCLLIBDIR) $(TCLLIBS)
+	$(TCC) -I$(TCLINCDIR) $(TCLEXT_OPTS) tclshext.c -Fe$@ -link -DLL \
+  -LIBPATH:$(TCLLIBDIR) $(TCLEXT_LIBS)
 
 # Rules to build the 'testfixture' application.
 #
