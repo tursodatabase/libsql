@@ -619,14 +619,17 @@ static int codeEqualityTerm(
           aiMap = (int*)sqlite3DbMallocZero(pParse->db, sizeof(int)*nEq);
           eType = sqlite3FindInIndex(pParse, pX, IN_INDEX_LOOP, 0, aiMap,&iTab);
           pExpr->iTable = iTab;
-          pExpr->op2 = eType;
         }
         sqlite3ExprDelete(db, pX);
       }else{
+        int j1;
         sqlite3VdbeAddOp2(v, OP_Gosub, pExpr->y.sub.regReturn,
                           pExpr->y.sub.iAddr);
+        j1 = sqlite3VdbeAddOp0(v, OP_Goto);
+        aiMap = (int*)sqlite3DbMallocZero(pParse->db, sizeof(int)*nEq);
+        eType = sqlite3FindInIndex(pParse, pX, IN_INDEX_LOOP, 0, aiMap,&iTab);
         iTab = pExpr->iTable;
-        eType = pExpr->op2;
+        sqlite3VdbeJumpHere(v, j1);
       }
       pX = pExpr;
     }

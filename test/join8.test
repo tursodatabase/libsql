@@ -172,5 +172,12 @@ do_execsql_test join8-6010 {
   SELECT value, t1.* FROM json_each('7') NATURAL RIGHT JOIN t1
    WHERE (a,b) IN (SELECT a, b FROM t1);
 } {7 15 xray baker 42}
+do_execsql_test join8-6020 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(a INTEGER PRIMARY KEY,b);
+  INSERT INTO t1 VALUES(0,NULL),(1,2);
+  SELECT value, t1.* FROM json_each('17') NATURAL RIGHT JOIN t1
+   WHERE (a,b) IN (SELECT rowid, b FROM t1);
+} {17 1 2}
 
 finish_test
