@@ -397,6 +397,7 @@ void sqlite3TreeViewBound(
 */
 void sqlite3TreeViewWindow(TreeView *pView, const Window *pWin, u8 more){
   int nElement = 0;
+  if( pWin==0 ) return;
   if( pWin->pFilter ){
     sqlite3TreeViewItem(pView, "FILTER", 1);
     sqlite3TreeViewExpr(pView, pWin->pFilter, 0);
