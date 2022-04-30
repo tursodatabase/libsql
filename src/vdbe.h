@@ -232,6 +232,7 @@ void sqlite3VdbeJumpHere(Vdbe*, int addr);
 void sqlite3VdbeJumpHereOrPopInst(Vdbe*, int addr);
 int sqlite3VdbeChangeToNoop(Vdbe*, int addr);
 int sqlite3VdbeDeletePriorOpcode(Vdbe*, u8 op);
+void sqlite3VdbeUndoBackTo(Vdbe*, int addr);
 #ifdef SQLITE_DEBUG
   void sqlite3VdbeReleaseRegisters(Parse*,int addr, int n, u32 mask, int);
 #else

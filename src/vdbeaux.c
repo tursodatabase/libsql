@@ -1303,6 +1303,22 @@ int sqlite3VdbeDeletePriorOpcode(Vdbe *p, u8 op){
   }
 }
 
+/*
+** Undo all opcode inserts so that addr is the last opcode.
+*/
+void sqlite3VdbeUndoBackTo(Vdbe *p, int addr){
+  while( p->nOp>addr ){
+#ifdef SQLITE_DEBUG
+    if( p->db->flags & SQLITE_VdbeAddopTrace ){
+      printf("UNDO: ");
+      sqlite3VdbePrintOp(0, p->nOp-1, &p->aOp[p->nOp-1]);
+    }
+#endif
+    sqlite3VdbeChangeToNoop(p, p->nOp-1);
+    p->nOp--;
+  }
+}
+
 #ifdef SQLITE_DEBUG
 /*
 ** Generate an OP_ReleaseReg opcode to indicate that a range of
