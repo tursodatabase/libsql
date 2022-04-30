@@ -165,5 +165,12 @@ do_execsql_test join8-6000 {
   SELECT * FROM t1 AS t2 NATURAL RIGHT JOIN t1 AS t3
    WHERE (a,b) IN (SELECT rowid, b FROM t1);
 } {1 A aa 2.5}
+do_execsql_test join8-6010 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(a INT PRIMARY KEY, b TEXT, c TEXT, d INT) WITHOUT ROWID;
+  INSERT INTO t1 VALUES(15,'xray','baker',42);
+  SELECT value, t1.* FROM json_each('7') NATURAL RIGHT JOIN t1
+   WHERE (a,b) IN (SELECT a, b FROM t1);
+} {7 15 xray baker 42}
 
 finish_test
