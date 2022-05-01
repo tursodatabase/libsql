@@ -2539,6 +2539,13 @@ smoketest:	$(TESTPROGS)
 	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\main.test $(TESTOPTS)
 
+TESTRUNS_SHX = \
+ $(TOP)/test/shell_x/shell9.test \
+ $(TOP)/test/shell_x/shell10.test
+
+shellxtest: $(TESTPROGS_SHX)
+	.\testfixture.exe $(TESTRUNS_SHX)
+
 shelltest: $(TESTPROGS)
 	.\testfixture.exe $(TOP)\test\permutations.test shell
 

@@ -471,9 +471,7 @@ static Prompts shellPrompts = { mainPrompt, continuePrompt };
 ** output from UTF-8 into MBCS.
 */
 #if defined(_WIN32) || defined(WIN32)
-void utf8_printf(FILE *out, const char *zFormat, ...){
-  va_list ap;
-  va_start(ap, zFormat);
+void vf_utf8_printf(FILE *out, const char *zFormat, va_list ap){
   if( stdout_is_console && (out==STD_OUT || out==STD_ERR) ){
     char *z1 = sqlite3_vmprintf(zFormat, ap);
     char *z2 = sqlite3_win32_utf8_to_mbcs_v2(z1, 0);
@@ -483,6 +481,11 @@ void utf8_printf(FILE *out, const char *zFormat, ...){
   }else{
     vfprintf(out, zFormat, ap);
   }
+}
+void utf8_printf(FILE *out, const char *zFormat, ...){
+  va_list ap;
+  va_start(ap, zFormat);
+  vf_utf8_printf(out, zFormat, ap);
   va_end(ap);
 }
 #elif !defined(utf8_printf)
@@ -1642,6 +1645,23 @@ static int failIfSafeMode(
     return 1;
   }
   return 0;
+}
+
+/*
+** Emit formatted output to shell's current output, possibly translated
+** for the legacy console on the Windows platform. This is exposed as
+** a helper for extensions so that they may share a common buffering
+** for FILE* output or share output capture when/if that is implemented.
+*/
+static void utf8_out_printf(ShellExState *p, const char *zFormat, ...){
+  va_list ap;
+  va_start(ap, zFormat);
+#if defined(_WIN32) || defined(WIN32)
+  vf_utf8_printf(ISS(p)->out, zFormat, ap);
+#else
+  vfprintf(ISS(p)->out, zFormat, ap);
+#endif
+  va_end(ap);
 }
 
 /*
@@ -8184,7 +8204,7 @@ static DotCommand * findDotCommand(const char *, ShellExState *, int *);
 static DotCmdRC runDotCommand(DotCommand*, char *[], int na, ShellExState*);
 
 static ExtensionHelpers extHelpers = {
-  13,
+  14,
   {
     failIfSafeMode,
     currentOutputFile,
@@ -8199,6 +8219,7 @@ static ExtensionHelpers extHelpers = {
     one_input_line,
     free_input_line,
     sqlite3_enable_load_extension,
+    utf8_out_printf,
     0
   }
 };

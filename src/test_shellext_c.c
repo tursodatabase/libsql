@@ -21,19 +21,17 @@ SQLITE_EXTENSION_INIT1;
 SHELL_EXTENSION_INIT1(pShExtApi, pExtHelpers, shextLinkFetcher);
 #define SHX_API(entry) pShExtApi->entry
 #define SHX_HELPER(entry) pExtHelpers->entry
+#define oprintf pExtHelpers->utf8CurrentOutPrintf
 
 typedef struct BatBeing BatBeing;
-static void sayHowMany( BatBeing *pbb, FILE *out, ShellExState *psx );
+static void sayHowMany( BatBeing *pbb, ShellExState *psx );
 
 /* These DERIVED_METHOD(...) macro calls' arguments were copied and
  * pasted from the DotCommand interface declaration in shext_linkage.h ,
  * but with "Interface,Derived" substituted for the interface typename.
  * The function bodies are not so easily written, of course. */
 
-DERIVED_METHOD(void, destruct, DotCommand,BatBeing, 0, ()){
-  (void)(pThis);
-  fprintf(stdout, "BatBeing unbecoming.\n");
-}
+DERIVED_METHOD(void, destruct, DotCommand,BatBeing, 0, ());
 
 DERIVED_METHOD(const char *, name, DotCommand,BatBeing, 0,()){
   (void)(pThis);
@@ -72,15 +70,21 @@ INSTANCE_BEGIN(BatBeing);
   int numCalls;
   DotCommand * pPrint;
   DotCommand * pPrior;
+  ShellExState *pSXS;
 INSTANCE_END(BatBeing) batty = {
   &batty_methods,
-  0, 0, 0
+  0, 0, 0, 0
 };
+
+DERIVED_METHOD(void, destruct, DotCommand,BatBeing, 0, ()){
+  BatBeing *pBB = (BatBeing*)(pThis);
+  if( pBB->pSXS ) oprintf(pBB->pSXS, "BatBeing unbecoming.\n");
+}
 
 DERIVED_METHOD(DotCmdRC, execute, DotCommand,BatBeing, 4,
              (ShellExState *psx, char **pzErrMsg, int nArgs, char *azArgs[])){
-  FILE *out = pExtHelpers->currentOutputFile(psx);
   BatBeing *pbb = (BatBeing*)pThis;
+  pbb->pSXS = psx;
   switch( nArgs ){
   default:
     {
@@ -93,24 +97,24 @@ DERIVED_METHOD(DotCmdRC, execute, DotCommand,BatBeing, 4,
       }else{
         int cix;
         SHX_HELPER(setColumnWidths)(psx, azArgs+1, nArgs-1);
-        fprintf(out, "Column widths:");
+        oprintf(psx, "Column widths:");
         for( cix=0; cix<psx->numWidths; ++cix ){
-          fprintf(out, " %d", psx->pSpecWidths[cix]);
+          oprintf(psx, " %d", psx->pSpecWidths[cix]);
         }
-        fprintf(out, "\n");
+        oprintf(psx, "\n");
       }
     }
     break;
   case 3:
-    fprintf(out, "The Penguin, Joker and Riddler have teamed up!\n");
-  case 2: fprintf(out, "The Dynamic Duo arrives, and ... ");
-  case 1: fprintf(out, "@#$ KaPow! $#@\n");
+    oprintf(psx, "The Penguin, Joker and Riddler have teamed up!\n");
+  case 2: oprintf(psx, "The Dynamic Duo arrives, and ... ");
+  case 1: oprintf(psx, "@#$ KaPow! $#@\n");
   }
-  sayHowMany((BatBeing *)pThis, out, psx);
+  sayHowMany((BatBeing *)pThis, psx);
   return DCR_Ok;
 }
 
-static void sayHowMany( BatBeing *pbb, FILE *out, ShellExState *psx ){
+static void sayHowMany( BatBeing *pbb, ShellExState *psx ){
   if( pbb->pPrint ){
     char *az[] = { "print", 0 };
     char *zErr = 0;
@@ -121,29 +125,28 @@ static void sayHowMany( BatBeing *pbb, FILE *out, ShellExState *psx ){
     rc = pdcPrint->pMethods->execute(pdcPrint, psx, &zErr, 2, az);
     sqlite3_free(az[1]);
     if( rc!= DCR_Ok ){
-      fprintf(out, "print() failed: %d\n", rc);
+      oprintf(psx, "print() failed: %d\n", rc);
     }
   }
 }
 
 static int shellEventHandle(void *pv, NoticeKind nk,
                             void *pvSubject, ShellExState *psx){
-  FILE *out = pExtHelpers->currentOutputFile(psx);
   if( nk==NK_ShutdownImminent ){
     BatBeing *pbb = (BatBeing *)pv;
-    fprintf(out, "Bat cave meteor strike detected after %d calls.\n",
+    oprintf(psx, "Bat cave meteor strike detected after %d calls.\n",
             pbb->numCalls);
   }else if( nk==NK_Unsubscribe ){
-    fprintf(out, "BatBeing incommunicado.\n");
+    oprintf(psx, "BatBeing incommunicado.\n");
   }else if( nk==NK_DbUserAppeared || nk==NK_DbUserVanishing ){
     const char *zWhat = (nk==NK_DbUserAppeared)? "appeared" : "vanishing";
     int isDbu = pvSubject==psx->dbUser;
-    fprintf(out, "db%s %s\n", isDbu? "User" : "?", zWhat);
-    if( psx->dbUser != pvSubject ) fprintf(out, "not dbx(%p)\n", psx->dbUser);
+    oprintf(psx, "db%s %s\n", isDbu? "User" : "?", zWhat);
+    if( psx->dbUser != pvSubject ) oprintf(psx, "not dbx(%p)\n", psx->dbUser);
   }else if( nk==NK_DbAboutToClose ){
     const char *zdb = (pvSubject==psx->dbUser)? "User"
       : (pvSubject==psx->dbShell)? "Shell" : "?";
-    fprintf(out, "db%s closing\n", zdb);
+    oprintf(psx, "db%s closing\n", zdb);
   }
   return 0;
 }
@@ -165,7 +168,7 @@ int sqlite3_testshellextc_init(
   SHELL_EXTENSION_INIT2(pShExtLink, shextLinkFetcher, db);
 
   SHELL_EXTENSION_INIT3(pShExtApi, pExtHelpers, pShExtLink);
-  iLdErr = SHELL_EXTENSION_LOADFAIL_WHY(pShExtLink, 5, 5);
+  iLdErr = SHELL_EXTENSION_LOADFAIL_WHY(pShExtLink, 5, 14);
   if( iLdErr!=EXLD_Ok ){
     *pzErrMsg = sqlite3_mprintf("Load failed, cause %d\n", iLdErr);
     return SQLITE_ERROR;

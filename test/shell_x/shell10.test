@@ -48,14 +48,11 @@ set cmds ".
 "
 do_test shell10-1.1 {
   catch_mdb_cmd $cmds
-} {0 {BatBeing lives.
-Load arguments: C++
+} {0 {Load arguments: C++
 dbUser appeared
 dbUser closing
 dbShell closing
-BatBeing incommunicado.
-BatBeing unbecoming.
-BatBeing RIP.}}
+BatBeing incommunicado.}}
 
 set cmds ".
  .shxload $blddir/test_shellext_c -- C
@@ -69,7 +66,6 @@ do_test shell10-1.2 {
 } {0 {Load arguments: C
 Column widths: 10 20 30
 This execute has been called 1 times.
-BatBeing lives.
 Load arguments: C++
 Column widths: 20 30 10
 This execute has been called 2 times.
@@ -82,8 +78,7 @@ dbShell closing
 BatBeing incommunicado.
 BatBeing incommunicado.
 BatBeing unbecoming.
-BatBeing unbecoming.
-BatBeing RIP.}}
+BatBeing unbecoming.}}
 
 
 #----------------------------------------------------------------------------

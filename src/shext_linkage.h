@@ -315,6 +315,7 @@ AGGTYPE_BEGIN(ExtensionHelpers) {
                            int isContinuation, Prompts *pCue);
     void (*freeInputLine)(char *zLine);
     int (*enable_load_extension)(sqlite3 *db, int onoff);
+    void (*utf8CurrentOutPrintf)(ShellExState *p, const char *zFmt, ...);
     void *pSentinel; /* Always set to 0, above never are. */
   } helpers;
 } AGGTYPE_END(ExtensionHelpers);

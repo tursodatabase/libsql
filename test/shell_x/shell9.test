@@ -163,35 +163,31 @@ name value
 c    'c'}}
 
 if {$::tcl_platform(platform)=="unix"} {
-  proc set_ed {sayWhat} {
+  proc set_ed {what} {
     global env
-    set env(VISUAL) "echo SELECT $sayWhat ';' >"
+    set env(VISUAL) "cp $what"
     return 1
   }
 } elseif {$::tcl_platform(platform)=="windows"} {
-  proc set_ed {sayWhat} {
+  proc set_ed {what} {
     global env
-    set env(VISUAL) "echo SELECT $sayWhat ; >"
+    set env(VISUAL) "copy $what >nul"
     return 1
   }
 } else { return 0 }
 
-if {[set_ed @name]} {
+if {[set_ed query.txt]} {
   set cmds {
+.once query.txt
+.print SELECT @name ;
 .pa set @name Fido
 .var edit -t dog
-.var set mutt 'SELECT @name;'
-.x dog mutt
-  }
+.x dog
+}
   do_test shell9-3.4 {
     set res [catchcmd ":memory: -quiet 1 -interactive" $cmds]
     list [lindex $res 0] [string trimright [lindex $res 1]]
-  } {0 {.pa set @name Fido
-.var edit -t dog
-.var set mutt 'SELECT @name;'
-.x dog mutt
-Fido
-Fido}}
+  } {0 Fido}
 }
 
 #----------------------------------------------------------------------------

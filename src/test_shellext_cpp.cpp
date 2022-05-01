@@ -22,15 +22,15 @@ SQLITE_EXTENSION_INIT1;
 SHELL_EXTENSION_INIT1(pShExtApi, pExtHelpers, shextLinkFetcher);
 #define SHX_API(entry) pShExtApi->entry
 #define SHX_HELPER(entry) pExtHelpers->entry
+#define oprintf pExtHelpers->utf8CurrentOutPrintf
 
 struct BatBeing : DotCommand {
 
   ~BatBeing() {
-    fprintf(stdout, "BatBeing RIP.\n");
   }; // No held resources; copy/assign is fine and dying is easy.
 
   void destruct() {
-    fprintf(stdout, "BatBeing unbecoming.\n");
+    if( pSXS ) oprintf(pSXS, "BatBeing unbecoming.\n");
   }
 
   const char *name() { return "bat_being"; };
@@ -56,7 +56,7 @@ struct BatBeing : DotCommand {
     numCalls = 0;
     pPrint = pp;
     pPrior = 0;
-    fprintf(stdout, "BatBeing lives.\n");
+    pSXS = 0;
   };
 
   // Default copy/assign are fine; nothing held.
@@ -64,9 +64,10 @@ struct BatBeing : DotCommand {
   int numCalls;
   DotCommand * pPrint;
   DotCommand * pPrior;
+  ShellExState *pSXS;
 };
 
-static void sayHowMany( BatBeing *pbb, FILE *out, ShellExState *psx ){
+static void sayHowMany( BatBeing *pbb, ShellExState *psx ){
   if( pbb->pPrint ){
     static char cmd[] =  "print";
     char *az[] = { cmd, 0 };
@@ -77,14 +78,14 @@ static void sayHowMany( BatBeing *pbb, FILE *out, ShellExState *psx ){
     rc = pbb->pPrint->execute(psx, &zErr, 2, az);
     sqlite3_free(az[1]);
     if( rc!= DCR_Ok ){
-      fprintf(out, "print() failed: %d\n", rc);
+      oprintf(psx, "print() failed: %d\n", rc);
     }
   }
 }
 
 DotCmdRC BatBeing::execute(ShellExState *psx, char **pzErrMsg,
                            int nArgs, char *azArgs[]) {
-  FILE *out = SHX_HELPER(currentOutputFile)(psx);
+  pSXS = psx;
   switch( nArgs ){
   default:
     {
@@ -95,20 +96,20 @@ DotCmdRC BatBeing::execute(ShellExState *psx, char **pzErrMsg,
         return pPrior->execute(psx, pzErrMsg, nArgs, azArgs);
       }else{
         SHX_HELPER(setColumnWidths)(psx, azArgs+1, nArgs-1);
-        fprintf(out, "Column widths:");
+        oprintf(psx, "Column widths:");
         for( int cix=0; cix<psx->numWidths; ++cix ){
-          fprintf(out, " %d", psx->pSpecWidths[cix]);
+          oprintf(psx, " %d", psx->pSpecWidths[cix]);
         }
-        fprintf(out, "\n");
+        oprintf(psx, "\n");
       }
     }
     break;
   case 3:
-    fprintf(out, "The Penguin, Joker and Riddler have teamed up!\n");
-  case 2: fprintf(out, "The Dynamic Duo arrives, and ... ");
-  case 1: fprintf(out, "@#$ KaPow! $#@\n");
+    oprintf(psx, "The Penguin, Joker and Riddler have teamed up!\n");
+  case 2: oprintf(psx, "The Dynamic Duo arrives, and ... ");
+  case 1: oprintf(psx, "@#$ KaPow! $#@\n");
   }
-  sayHowMany(this, out, psx);
+  sayHowMany(this, psx);
   return DCR_Ok;
 }
 
@@ -120,22 +121,21 @@ static BatBeing batty(0);
 
 static int shellEventHandle(void *pv, NoticeKind nk,
                             void *pvSubject, ShellExState *psx){
-  FILE *out = SHX_HELPER(currentOutputFile)(psx);
   if( nk==NK_ShutdownImminent ){
     BatBeing *pbb = (BatBeing *)pv;
-    fprintf(out, "Bat cave meteor strike detected after %d calls.\n",
+    oprintf(psx, "Bat cave meteor strike detected after %d calls.\n",
             pbb->numCalls);
   }else if( nk==NK_Unsubscribe ){
-    fprintf(out, "BatBeing incommunicado.\n");
+    oprintf(psx, "BatBeing incommunicado.\n");
   }else if( nk==NK_DbUserAppeared || nk==NK_DbUserVanishing ){
     const char *zWhat = (nk==NK_DbUserAppeared)? "appeared" : "vanishing";
     int isDbu = pvSubject==psx->dbUser;
-    fprintf(out, "db%s %s\n", isDbu? "User" : "?", zWhat);
-    if( psx->dbUser != pvSubject ) fprintf(out, "not dbx(%p)\n", psx->dbUser);
+    oprintf(psx, "db%s %s\n", isDbu? "User" : "?", zWhat);
+    if( psx->dbUser != pvSubject ) oprintf(psx, "not dbx(%p)\n", psx->dbUser);
   }else if( nk==NK_DbAboutToClose ){
     const char *zdb = (pvSubject==psx->dbUser)? "User"
       : (pvSubject==psx->dbShell)? "Shell" : "?";
-    fprintf(out, "db%s closing\n", zdb);
+    oprintf(psx, "db%s closing\n", zdb);
   }
   return 0;
 }
@@ -158,7 +158,7 @@ int sqlite3_testshellextcpp_init(
   SHELL_EXTENSION_INIT2(pShExtLink, shextLinkFetcher, db);
 
   SHELL_EXTENSION_INIT3(pShExtApi, pExtHelpers, pShExtLink);
-  iLdErr = SHELL_EXTENSION_LOADFAIL_WHY(pShExtLink, 5, 5);
+  iLdErr = SHELL_EXTENSION_LOADFAIL_WHY(pShExtLink, 5, 14);
   if( iLdErr!=EXLD_Ok ){
     *pzErrMsg = sqlite3_mprintf("Load failed, cause %d\n", iLdErr);
     return SQLITE_ERROR;
