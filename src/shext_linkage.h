@@ -88,9 +88,6 @@ typedef struct ShellExState {
    * or "shext_" are reserved for the shell's use. */
   sqlite3 *dbShell;
 
-  /* Output stream to which shell's text output to be written (reference) */
-  FILE **ppCurrentOutput;
-
   /* Shell abrupt exit indicator with return code in LS-byte
    * 0 => no exit
    * 0x100 => a non-error (0) exit
@@ -300,7 +297,7 @@ AGGTYPE_BEGIN(ExtensionHelpers) {
   int helperCount; /* Helper count, not including sentinel */
   struct ExtHelpers {
     int (*failIfSafeMode)(ShellExState *p, const char *zErrMsg, ...);
-    FILE * (*currentOutputFile)(ShellExState *p);
+    void (*utf8CurrentOutPrintf)(ShellExState *p, const char *zFmt, ...);
     struct InSource * (*currentInputSource)(ShellExState *p);
     char * (*strLineGet)(char *zBuf, int ncMax, struct InSource *pInSrc);
     DotCommand * (*findDotCommand)(const char *cmdName, ShellExState *p,
@@ -315,7 +312,6 @@ AGGTYPE_BEGIN(ExtensionHelpers) {
                            int isContinuation, Prompts *pCue);
     void (*freeInputLine)(char *zLine);
     int (*enable_load_extension)(sqlite3 *db, int onoff);
-    void (*utf8CurrentOutPrintf)(ShellExState *p, const char *zFmt, ...);
     void *pSentinel; /* Always set to 0, above never are. */
   } helpers;
 } AGGTYPE_END(ExtensionHelpers);

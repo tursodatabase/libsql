@@ -8204,10 +8204,10 @@ static DotCommand * findDotCommand(const char *, ShellExState *, int *);
 static DotCmdRC runDotCommand(DotCommand*, char *[], int na, ShellExState*);
 
 static ExtensionHelpers extHelpers = {
-  14,
+  13,
   {
     failIfSafeMode,
-    currentOutputFile,
+    utf8_out_printf,
     currentInputSource,
     strLineGet,
     findDotCommand,
@@ -8219,7 +8219,6 @@ static ExtensionHelpers extHelpers = {
     one_input_line,
     free_input_line,
     sqlite3_enable_load_extension,
-    utf8_out_printf,
     0
   }
 };
@@ -15276,7 +15275,6 @@ static void verify_uninitialized(void){
   pDatax->zRecordSeparator = &pData->rowSeparator[0];
   pDatax->zNullValue = &pData->nullValue[0];
   pData->out = STD_OUT;
-  pDatax->ppCurrentOutput = &pData->out;
   pData->normalMode = pData->cMode = pData->mode = MODE_List;
   pData->autoExplain = 1;
   pData->pAuxDb = &pData->aAuxDb[0];

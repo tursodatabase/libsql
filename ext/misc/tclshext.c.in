@@ -118,6 +118,7 @@ SQLITE_EXTENSION_INIT1;
 SHELL_EXTENSION_INIT1(pShExtApi, pExtHelpers, shextLinkFetcher);
 #define SHX_API(entry) pShExtApi->entry
 #define SHX_HELPER(entry) pExtHelpers->entry
+#define oprintf pExtHelpers->utf8CurrentOutPrintf
 
 /* This is not found in the API pointer table published for extensions: */
 #define sqlite3_enable_load_extension SHX_HELPER(enable_load_extension)
@@ -527,7 +528,6 @@ static DotCmdRC runTclREPL(Tcl_Interp *interp, char **pzErrMsg){
 
 DERIVED_METHOD(DotCmdRC, execute, DotCommand,TclCmd, 4,
              (ShellExState *psx, char **pzErrMsg, int nArgs, char *azArgs[])){
-  FILE *out = SHX_HELPER(currentOutputFile)(psx);
   TclCmd *ptc = (TclCmd *)pThis;
   if( nArgs>1 ){
     /* Read named files into the interpreter. */
@@ -562,9 +562,8 @@ DERIVED_METHOD(DotCmdRC, execute, DotCommand,UnkCmd, 4,
       *pzErrMsg = sqlite3_mprintf("Command %s not found.\n", zName);
       return DCR_Unknown;
     }else{
-      FILE *out = SHX_HELPER(currentOutputFile)(psx);
       fprintf(stderr, "The %s command does not yet exist.\n", zName);
-      fprintf(out, "Run .help to see existent dot commands,"
+      oprintf(psx, "Run .help to see existent dot commands,"
               " or create %s as a TCL proc.\n", zName);
       return DCR_CmdErred;
     }

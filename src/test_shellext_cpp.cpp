@@ -158,7 +158,7 @@ int sqlite3_testshellextcpp_init(
   SHELL_EXTENSION_INIT2(pShExtLink, shextLinkFetcher, db);
 
   SHELL_EXTENSION_INIT3(pShExtApi, pExtHelpers, pShExtLink);
-  iLdErr = SHELL_EXTENSION_LOADFAIL_WHY(pShExtLink, 5, 14);
+  iLdErr = SHELL_EXTENSION_LOADFAIL_WHY(pShExtLink, 5, 13);
   if( iLdErr!=EXLD_Ok ){
     *pzErrMsg = sqlite3_mprintf("Load failed, cause %d\n", iLdErr);
     return SQLITE_ERROR;
@@ -172,7 +172,7 @@ int sqlite3_testshellextcpp_init(
       zLoadArgs = sqlite3_mprintf("%z %s", zLoadArgs,
                                   pShExtLink->azLoadArgs[ila]);
     }
-    if( ila ) fprintf(SHX_HELPER(currentOutputFile)(psx), "%s\n", zLoadArgs);
+    if( ila ) oprintf(psx, "%s\n", zLoadArgs);
     sqlite3_free(zLoadArgs);
     SHX_API(subscribeEvents)(psx, sqlite3_testshellextcpp_init, &batty,
                              NK_CountOf, shellEventHandle);
