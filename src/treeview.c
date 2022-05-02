@@ -122,7 +122,9 @@ void sqlite3TreeViewColumnList(
     }
     if( flg & COLFLAG_PRIMKEY ) printf(" PRIMARY KEY");
     if( flg & COLFLAG_HIDDEN ) printf(" HIDDEN");
+#ifdef COLFLAG_NOEXPAND
     if( flg & COLFLAG_NOEXPAND ) printf(" NO-EXPAND");
+#endif
     if( flg ) printf(" flags=%04x", flg);
     printf("\n");      
     fflush(stdout);
@@ -216,18 +218,17 @@ void sqlite3TreeViewSrcList(TreeView *pView, const SrcList *pSrc){
     sqlite3StrAccumFinish(&x);
     sqlite3TreeViewItem(pView, zLine, i<pSrc->nSrc-1);
     n = 0;
-    if( pItem->pTab ) n++;
     if( pItem->pSelect ) n++;
     if( pItem->fg.isTabFunc ) n++;
     if( pItem->fg.isUsing ) n++;
     if( pItem->fg.isUsing ){
       sqlite3TreeViewIdList(pView, pItem->u3.pUsing, (--n)>0, "USING");
     }
-    if( pItem->pTab ){
-      Table *pTab = pItem->pTab;
-      sqlite3TreeViewColumnList(pView, pTab->aCol, pTab->nCol, (--n)>0);
-    }
     if( pItem->pSelect ){
+      if( pItem->pTab ){
+        Table *pTab = pItem->pTab;
+        sqlite3TreeViewColumnList(pView, pTab->aCol, pTab->nCol, 1);
+      }
       assert( pItem->fg.isNestedFrom == IsNestedFrom(pItem->pSelect) );
       sqlite3TreeViewSelect(pView, pItem->pSelect, (--n)>0);
     }
@@ -396,6 +397,7 @@ void sqlite3TreeViewBound(
 */
 void sqlite3TreeViewWindow(TreeView *pView, const Window *pWin, u8 more){
   int nElement = 0;
+  if( pWin==0 ) return;
   if( pWin->pFilter ){
     sqlite3TreeViewItem(pView, "FILTER", 1);
     sqlite3TreeViewExpr(pView, pWin->pFilter, 0);
@@ -711,7 +713,17 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
       break;
     }
     case TK_IN: {
-      sqlite3TreeViewLine(pView, "IN flags=0x%x", pExpr->flags);
+      sqlite3_str *pStr = sqlite3_str_new(0);
+      char *z;
+      sqlite3_str_appendf(pStr, "IN flags=0x%x", pExpr->flags);
+      if( pExpr->iTable ) sqlite3_str_appendf(pStr, " iTable=%d",pExpr->iTable);
+      if( ExprHasProperty(pExpr, EP_Subrtn) ){
+        sqlite3_str_appendf(pStr, " subrtn(%d,%d)",
+            pExpr->y.sub.regReturn, pExpr->y.sub.iAddr);
+      }
+      z = sqlite3_str_finish(pStr);
+      sqlite3TreeViewLine(pView, z);
+      sqlite3_free(z);
       sqlite3TreeViewExpr(pView, pExpr->pLeft, 1);
       if( ExprUseXSelect(pExpr) ){
         sqlite3TreeViewSelect(pView, pExpr->x.pSelect, 0);
