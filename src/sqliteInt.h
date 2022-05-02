@@ -3001,16 +3001,18 @@ struct ExprList {
   struct ExprList_item { /* For each expression in the list */
     Expr *pExpr;            /* The parse tree for this expression */
     char *zEName;           /* Token associated with this expression */
-    u8 sortFlags;           /* Mask of KEYINFO_ORDER_* flags */
-    unsigned eEName :2;     /* Meaning of zEName */
-    unsigned done :1;       /* A flag to indicate when processing is finished */
-    unsigned reusable :1;   /* Constant expression is reusable */
-    unsigned bSorterRef :1; /* Defer evaluation until after sorting */
-    unsigned bNulls :1;     /* True if explicit "NULLS FIRST/LAST" */
-    unsigned bUsed :1;      /* This column used in a SF_NestedFrom subquery */
-    unsigned bUsingTerm:1;  /* Term from the USING clause of a NestedFrom */
-    unsigned bNoExpand: 1;  /* Term is an auxiliary in NestedFrom and should
-                            ** not be expanded by "*" in parent queries */
+    struct {
+      u8 sortFlags;           /* Mask of KEYINFO_ORDER_* flags */
+      unsigned eEName :2;     /* Meaning of zEName */
+      unsigned done :1;       /* Indicates when processing is finished */
+      unsigned reusable :1;   /* Constant expression is reusable */
+      unsigned bSorterRef :1; /* Defer evaluation until after sorting */
+      unsigned bNulls :1;     /* True if explicit "NULLS FIRST/LAST" */
+      unsigned bUsed :1;      /* This column used in a SF_NestedFrom subquery */
+      unsigned bUsingTerm:1;  /* Term from the USING clause of a NestedFrom */
+      unsigned bNoExpand: 1;  /* Term is an auxiliary in NestedFrom and should
+                              ** not be expanded by "*" in parent queries */
+    } fg;
     union {
       struct {             /* Used by any ExprList other than Parse.pConsExpr */
         u16 iOrderByCol;      /* For ORDER BY, column number in result set */

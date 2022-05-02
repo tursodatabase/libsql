@@ -331,7 +331,7 @@ void sqlite3SrcItemColumnUsed(SrcItem *pItem, int iCol){
     pResults = pItem->pSelect->pEList;
     assert( pResults!=0 );
     assert( iCol>=0 && iCol<pResults->nExpr );
-    pResults->a[iCol].bUsed = 1;
+    pResults->a[iCol].fg.bUsed = 1;
   }
 }
 
@@ -999,7 +999,7 @@ static void fixDistinctOpenEph(
 ** retrieved directly from table t1. If the values are very large, this 
 ** can be more efficient than storing them directly in the sorter records.
 **
-** The ExprList_item.bSorterRef flag is set for each expression in pEList 
+** The ExprList_item.fg.fg.bSorterRef flag is set for each expression in pEList 
 ** for which the sorter-reference optimization should be enabled. 
 ** Additionally, the pSort->aDefer[] array is populated with entries
 ** for all cursors required to evaluate all selected expressions. Finally.
@@ -1059,7 +1059,7 @@ static void selectExprDefer(
             nDefer++;
           }
         }
-        pItem->bSorterRef = 1;
+        pItem->fg.bSorterRef = 1;
       }
     }
   }
@@ -1190,7 +1190,7 @@ static void selectInnerLoop(
       for(i=0; i<pEList->nExpr; i++){
         if( pEList->a[i].u.x.iOrderByCol>0
 #ifdef SQLITE_ENABLE_SORTER_REFERENCES
-         || pEList->a[i].bSorterRef
+         || pEList->a[i].fg.bSorterRef
 #endif
         ){
           nResultCol--;
@@ -1552,7 +1552,7 @@ KeyInfo *sqlite3KeyInfoFromExprList(
     assert( sqlite3KeyInfoIsWriteable(pInfo) );
     for(i=iStart, pItem=pList->a+iStart; i<nExpr; i++, pItem++){
       pInfo->aColl[i-iStart] = sqlite3ExprNNCollSeq(pParse, pItem->pExpr);
-      pInfo->aSortFlags[i-iStart] = pItem->sortFlags;
+      pInfo->aSortFlags[i-iStart] = pItem->fg.sortFlags;
     }
   }
   return pInfo;
@@ -1691,7 +1691,7 @@ static void generateSortTail(
   }
   for(i=0, iCol=nKey+bSeq-1; i<nColumn; i++){
 #ifdef SQLITE_ENABLE_SORTER_REFERENCES
-    if( aOutEx[i].bSorterRef ) continue;
+    if( aOutEx[i].fg.bSorterRef ) continue;
 #endif
     if( aOutEx[i].u.x.iOrderByCol==0 ) iCol++;
   }
@@ -1728,7 +1728,7 @@ static void generateSortTail(
 #endif
   for(i=nColumn-1; i>=0; i--){
 #ifdef SQLITE_ENABLE_SORTER_REFERENCES
-    if( aOutEx[i].bSorterRef ){
+    if( aOutEx[i].fg.bSorterRef ){
       sqlite3ExprCode(pParse, aOutEx[i].pExpr, regRow+i);
     }else
 #endif
@@ -2094,7 +2094,7 @@ void sqlite3GenerateColumnNames(
     assert( p->op!=TK_AGG_COLUMN );  /* Agg processing has not run yet */
     assert( p->op!=TK_COLUMN
         || (ExprUseYTab(p) && p->y.pTab!=0) ); /* Covering idx not yet coded */
-    if( pEList->a[i].zEName && pEList->a[i].eEName==ENAME_NAME ){
+    if( pEList->a[i].zEName && pEList->a[i].fg.eEName==ENAME_NAME ){
       /* An AS clause always takes first priority */
       char *zName = pEList->a[i].zEName;
       sqlite3VdbeSetColName(v, i, COLNAME_NAME, zName, SQLITE_TRANSIENT);
@@ -2183,7 +2183,7 @@ int sqlite3ColumnsFromExprList(
     struct ExprList_item *pCollide;
     /* Get an appropriate name for the column
     */
-    if( (zName = pX->zEName)!=0 && pX->eEName==ENAME_NAME ){
+    if( (zName = pX->zEName)!=0 && pX->fg.eEName==ENAME_NAME ){
       /* If the column contains an "AS <name>" phrase, use <name> as the name */
     }else{
       Expr *pColExpr = sqlite3ExprSkipCollateAndLikely(pX->pExpr);
@@ -2218,7 +2218,7 @@ int sqlite3ColumnsFromExprList(
     */
     cnt = 0;
     while( zName && (pCollide = sqlite3HashFind(&ht, zName))!=0 ){
-      if( pCollide->bUsingTerm ){
+      if( pCollide->fg.bUsingTerm ){
         pCol->colFlags |= COLFLAG_NOEXPAND;
       }
       nName = sqlite3Strlen30(zName);
@@ -2231,7 +2231,7 @@ int sqlite3ColumnsFromExprList(
     }
     pCol->zCnName = zName;
     pCol->hName = sqlite3StrIHash(zName);
-    if( pX->bNoExpand ){
+    if( pX->fg.bNoExpand ){
       pCol->colFlags |= COLFLAG_NOEXPAND;
     }
     sqlite3ColumnPropertiesFromName(0, pCol);
@@ -2492,7 +2492,7 @@ static KeyInfo *multiSelectOrderByKeyInfo(Parse *pParse, Select *p, int nExtra){
       }
       assert( sqlite3KeyInfoIsWriteable(pRet) );
       pRet->aColl[i] = pColl;
-      pRet->aSortFlags[i] = pOrderBy->a[i].sortFlags;
+      pRet->aSortFlags[i] = pOrderBy->a[i].fg.sortFlags;
     }
   }
 
@@ -5098,7 +5098,7 @@ static u8 minMaxQuery(sqlite3 *db, Expr *pFunc, ExprList **ppMinMax){
   }
   *ppMinMax = pOrderBy = sqlite3ExprListDup(db, pEList, 0);
   assert( pOrderBy!=0 || db->mallocFailed );
-  if( pOrderBy ) pOrderBy->a[0].sortFlags = sortFlags;
+  if( pOrderBy ) pOrderBy->a[0].fg.sortFlags = sortFlags;
   return eRet;
 }
 
@@ -5805,7 +5805,7 @@ static int selectExpander(Walker *pWalker, Select *p){
         pNew = sqlite3ExprListAppend(pParse, pNew, a[k].pExpr);
         if( pNew ){
           pNew->a[pNew->nExpr-1].zEName = a[k].zEName;
-          pNew->a[pNew->nExpr-1].eEName = a[k].eEName;
+          pNew->a[pNew->nExpr-1].fg.eEName = a[k].fg.eEName;
           a[k].zEName = 0;
         }
         a[k].pExpr = 0;
@@ -5859,8 +5859,8 @@ static int selectExpander(Walker *pWalker, Select *p){
                 struct ExprList_item *pX = &pNew->a[pNew->nExpr-1];
                 assert( pX->zEName==0 );
                 pX->zEName = sqlite3MPrintf(db,"..%s", zUName);
-                pX->eEName = ENAME_TAB;
-                pX->bUsingTerm = 1;
+                pX->fg.eEName = ENAME_TAB;
+                pX->fg.bUsingTerm = 1;
               }
             }
           }else{
@@ -5943,20 +5943,20 @@ static int selectExpander(Walker *pWalker, Select *p){
                                            zSchemaName, zTabName, zName);
                 testcase( pX->zEName==0 );
               }
-              pX->eEName = ENAME_TAB;
+              pX->fg.eEName = ENAME_TAB;
               if( (pFrom->fg.isUsing
                    && sqlite3IdListIndex(pFrom->u3.pUsing, zName)>=0)
                || (pUsing && sqlite3IdListIndex(pUsing, zName)>=0)
                || (pTab->aCol[j].colFlags & COLFLAG_NOEXPAND)!=0
               ){
-                pX->bNoExpand = 1;
+                pX->fg.bNoExpand = 1;
               }
             }else if( longNames ){
               pX->zEName = sqlite3MPrintf(db, "%s.%s", zTabName, zName);
-              pX->eEName = ENAME_NAME;
+              pX->fg.eEName = ENAME_NAME;
             }else{
               pX->zEName = sqlite3DbStrDup(db, zName);
-              pX->eEName = ENAME_NAME;
+              pX->fg.eEName = ENAME_NAME;
             }
           }
         }
@@ -7084,13 +7084,13 @@ int sqlite3Select(
     if( p->selFlags & SF_NestedFrom ){
       /* Delete or NULL-out result columns that will never be used */
       int ii;
-      for(ii=pEList->nExpr-1; ii>0 && pEList->a[ii].bUsed==0; ii--){
+      for(ii=pEList->nExpr-1; ii>0 && pEList->a[ii].fg.bUsed==0; ii--){
         sqlite3ExprDelete(db, pEList->a[ii].pExpr);
         sqlite3DbFree(db, pEList->a[ii].zEName);
         pEList->nExpr--;
       }
       for(ii=0; ii<pEList->nExpr; ii++){
-        if( pEList->a[ii].bUsed==0 ) pEList->a[ii].pExpr->op = TK_NULL;
+        if( pEList->a[ii].fg.bUsed==0 ) pEList->a[ii].pExpr->op = TK_NULL;
       }
     }
   }
@@ -7242,8 +7242,9 @@ int sqlite3Select(
         ** ORDER BY to maximize the chances of rows being delivered in an 
         ** order that makes the ORDER BY redundant.  */
         for(ii=0; ii<pGroupBy->nExpr; ii++){
-          u8 sortFlags = sSort.pOrderBy->a[ii].sortFlags & KEYINFO_ORDER_DESC;
-          pGroupBy->a[ii].sortFlags = sortFlags;
+          u8 sortFlags;
+          sortFlags = sSort.pOrderBy->a[ii].fg.sortFlags & KEYINFO_ORDER_DESC;
+          pGroupBy->a[ii].fg.sortFlags = sortFlags;
         }
         if( sqlite3ExprListCompare(pGroupBy, sSort.pOrderBy, -1)==0 ){
           orderByGrp = 1;

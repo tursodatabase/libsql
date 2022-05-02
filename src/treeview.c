@@ -875,15 +875,15 @@ void sqlite3TreeViewBareExprList(
         moreToFollow = 0;
         sqlite3TreeViewLine(pView, 0);
         if( zName ){
-          switch( pList->a[i].eEName ){
+          switch( pList->a[i].fg.eEName ){
             default:
               fprintf(stdout, "AS %s ", zName);
               break;
             case ENAME_TAB:
               fprintf(stdout, "TABLE-ALIAS-NAME(\"%s\") ", zName);
-              if( pList->a[i].bUsed ) fprintf(stdout, "(used) ");
-              if( pList->a[i].bUsingTerm ) fprintf(stdout, "(USING-term) ");
-              if( pList->a[i].bNoExpand ) fprintf(stdout, "(NoExpand) ");
+              if( pList->a[i].fg.bUsed ) fprintf(stdout, "(used) ");
+              if( pList->a[i].fg.bUsingTerm ) fprintf(stdout, "(USING-term) ");
+              if( pList->a[i].fg.bNoExpand ) fprintf(stdout, "(NoExpand) ");
               break;
             case ENAME_SPAN:
               fprintf(stdout, "SPAN(\"%s\") ", zName);

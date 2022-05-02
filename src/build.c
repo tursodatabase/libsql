@@ -1890,7 +1890,7 @@ void sqlite3AddPrimaryKey(
     pTab->keyConf = (u8)onError;
     assert( autoInc==0 || autoInc==1 );
     pTab->tabFlags |= autoInc*TF_Autoincrement;
-    if( pList ) pParse->iPkSortOrder = pList->a[0].sortFlags;
+    if( pList ) pParse->iPkSortOrder = pList->a[0].fg.sortFlags;
     (void)sqlite3HasExplicitNulls(pParse, pList);
   }else if( autoInc ){
 #ifndef SQLITE_OMIT_AUTOINCREMENT
@@ -2384,7 +2384,7 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
     if( IN_RENAME_OBJECT ){
       sqlite3RenameTokenRemap(pParse, pList->a[0].pExpr, &pTab->iPKey);
     }
-    pList->a[0].sortFlags = pParse->iPkSortOrder;
+    pList->a[0].fg.sortFlags = pParse->iPkSortOrder;
     assert( pParse->pNewTable==pTab );
     pTab->iPKey = -1;
     sqlite3CreateIndex(pParse, 0, 0, 0, pList, pTab->keyConf, 0, 0, 0, 0,
@@ -3872,8 +3872,8 @@ int sqlite3HasExplicitNulls(Parse *pParse, ExprList *pList){
   if( pList ){
     int i;
     for(i=0; i<pList->nExpr; i++){
-      if( pList->a[i].bNulls ){
-        u8 sf = pList->a[i].sortFlags;
+      if( pList->a[i].fg.bNulls ){
+        u8 sf = pList->a[i].fg.sortFlags;
         sqlite3ErrorMsg(pParse, "unsupported use of NULLS %s", 
             (sf==0 || sf==3) ? "FIRST" : "LAST"
         );
@@ -4226,7 +4226,7 @@ void sqlite3CreateIndex(
       goto exit_create_index;
     }
     pIndex->azColl[i] = zColl;
-    requestedSortOrder = pListItem->sortFlags & sortOrderMask;
+    requestedSortOrder = pListItem->fg.sortFlags & sortOrderMask;
     pIndex->aSortOrder[i] = (u8)requestedSortOrder;
   }
 

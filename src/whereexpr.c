@@ -1616,7 +1616,7 @@ void sqlite3WhereAddLimit(WhereClause *pWC, Select *p){
         Expr *pExpr = pOrderBy->a[ii].pExpr;
         if( pExpr->op!=TK_COLUMN ) return;
         if( pExpr->iTable!=iCsr ) return;
-        if( pOrderBy->a[ii].sortFlags & KEYINFO_ORDER_BIGNULL ) return;
+        if( pOrderBy->a[ii].fg.sortFlags & KEYINFO_ORDER_BIGNULL ) return;
       }
     }
 
