@@ -1,5 +1,5 @@
-C Name\sresolution\sand\s"*"\swildcard\sexpansion\sfor\sparenthesized\sFROM\sclauses\nseems\sto\swork\sthe\ssame\sas\sPG.\s\sThe\scode\sis\schaos,\showever,\sand\sneeds\ssome\ncleanup.
-D 2022-05-02T19:59:03.190
+C Improved\scomments.
+D 2022-05-02T20:04:34.911
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -553,12 +553,12 @@ F src/printf.c 512574910a45341c8ad244bd3d4939968ebdfde215645b676fff01cc46e90757
 F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c b14bf8a4a1e3cb01eefc48a7e4129b15bb6a18b56d16dd4eca676586464337d0
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c 41a371b0256c38e258a4265d55fe55e7cd6a197c586647faee9924341ee06b4f
+F src/select.c 0c54305ca957ffe188dd5b042b81b44e0aeba3f3bcb73df81ddd740908655ff7
 F src/shell.c.in ae0a6fae983caac6f8c824733f0599dfdf7b3a7e8efdef3cb5e3ab2e457ffc35
 F src/sqlite.h.in 2a35f62185eb5e7ecc64a2f68442b538ce9be74f80f28a00abc24837edcf1c17
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h f49e28c25bd941e79794db5415fdf7b202deb3bc072ed6f1ed273d578703684e
-F src/sqliteInt.h 73faf6b2222f70f7777624a08af799cc20822d4cc578306b1316088dddd47736
+F src/sqliteInt.h de084be0bcb1d149c4b12cf2f2bd56a4ca2896950fded97238f42d37e2ee9325
 F src/sqliteLimit.h d7323ffea5208c6af2734574bae933ca8ed2ab728083caa117c9738581a31657
 F src/status.c 4a3da6d77eeb3531cb0dbdf7047772a2a1b99f98c69e90ce009c75fe6328b2c0
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -1952,8 +1952,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P afbcf075c1e09ae064c7b16e63501cd1d374711812664aef76bd35d02d64a2b6
-R 555aead77d8cae1693b8c4f6bc8f3e4c
+P 6f9c0b07aadc5189c65c3ee4e6938aac10fc0d98f1cb06980f5e5d7b0308f237
+R d21fbd984ceaf34ad0e0f693bcafb15a
 U drh
-Z 87ce52a531a5370a01dfeb75577a427b
+Z 6aa37fa121875e3bd8722acc06f99751
 # Remove this line to create a well-formed Fossil manifest.

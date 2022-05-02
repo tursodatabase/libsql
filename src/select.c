@@ -5825,7 +5825,7 @@ static int selectExpander(Walker *pWalker, Select *p){
           char *zTabName;              /* AS name for this data source */
           const char *zSchemaName = 0; /* Schema name for this data source */
           int iDb;                     /* Schema index for this data src */
-          IdList *pUsing;              /* USING clause for this join */
+          IdList *pUsing;              /* USING clause for pFrom[1] */
 
           if( (zTabName = pFrom->zAlias)==0 ){
             zTabName = pTab->zName;
