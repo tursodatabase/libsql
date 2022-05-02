@@ -2231,6 +2231,9 @@ int sqlite3ColumnsFromExprList(
     }
     pCol->zCnName = zName;
     pCol->hName = sqlite3StrIHash(zName);
+    if( pX->bNoExpand ){
+      pCol->colFlags |= COLFLAG_NOEXPAND;
+    }
     sqlite3ColumnPropertiesFromName(0, pCol);
     if( zName && sqlite3HashInsert(&ht, zName, pX)==pX ){
       sqlite3OomFault(db);
@@ -5822,6 +5825,7 @@ static int selectExpander(Walker *pWalker, Select *p){
           char *zTabName;              /* AS name for this data source */
           const char *zSchemaName = 0; /* Schema name for this data source */
           int iDb;                     /* Schema index for this data src */
+          IdList *pUsing;              /* USING clause for this join */
 
           if( (zTabName = pFrom->zAlias)==0 ){
             zTabName = pTab->zName;
@@ -5846,7 +5850,7 @@ static int selectExpander(Walker *pWalker, Select *p){
            && (selFlags & SF_NestedFrom)!=0
           ){
             int ii;
-            IdList *pUsing = pFrom[1].u3.pUsing;
+            pUsing = pFrom[1].u3.pUsing;
             for(ii=0; ii<pUsing->nId; ii++){
               const char *zUName = pUsing->a[ii].zName;
               pRight = sqlite3Expr(db, TK_ID, zUName);
@@ -5859,6 +5863,8 @@ static int selectExpander(Walker *pWalker, Select *p){
                 pX->bUsingTerm = 1;
               }
             }
+          }else{
+            pUsing = 0;
           }
           for(j=0; j<pTab->nCol; j++){
             char *zName = pTab->aCol[j].zCnName;
@@ -5938,6 +5944,13 @@ static int selectExpander(Walker *pWalker, Select *p){
                 testcase( pX->zEName==0 );
               }
               pX->eEName = ENAME_TAB;
+              if( (pFrom->fg.isUsing
+                   && sqlite3IdListIndex(pFrom->u3.pUsing, zName)>=0)
+               || (pUsing && sqlite3IdListIndex(pUsing, zName)>=0)
+               || (pTab->aCol[j].colFlags & COLFLAG_NOEXPAND)!=0
+              ){
+                pX->bNoExpand = 1;
+              }
             }else if( longNames ){
               pX->zEName = sqlite3MPrintf(db, "%s.%s", zTabName, zName);
               pX->eEName = ENAME_NAME;

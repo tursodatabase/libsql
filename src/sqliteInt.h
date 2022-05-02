@@ -3008,6 +3008,7 @@ struct ExprList {
     unsigned bNulls :1;     /* True if explicit "NULLS FIRST/LAST" */
     unsigned bUsed :1;      /* This column used in a SF_NestedFrom subquery */
     unsigned bUsingTerm:1;  /* Term from the USING clause of a NestedFrom */
+    unsigned bNoExpand: 1;
     union {
       struct {             /* Used by any ExprList other than Parse.pConsExpr */
         u16 iOrderByCol;      /* For ORDER BY, column number in result set */

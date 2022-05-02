@@ -1635,6 +1635,7 @@ ExprList *sqlite3ExprListDup(sqlite3 *db, const ExprList *p, int flags){
     pItem->bUsed = pOldItem->bUsed;
     pItem->bUsingTerm = pOldItem->bUsingTerm;
     pItem->bSorterRef = pOldItem->bSorterRef;
+    pItem->bNoExpand = pOldItem->bNoExpand;
     pItem->u = pOldItem->u;
   }
   return pNew;
