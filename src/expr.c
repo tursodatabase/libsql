@@ -2743,12 +2743,17 @@ int sqlite3FindInIndex(
 ){
   Select *p;                            /* SELECT to the right of IN operator */
   int eType = 0;                        /* Type of RHS table. IN_INDEX_* */
-  int iTab = pParse->nTab++;            /* Cursor of the RHS table */
+  int iTab;                             /* Cursor of the RHS table */
   int mustBeUnique;                     /* True if RHS must be unique */
   Vdbe *v = sqlite3GetVdbe(pParse);     /* Virtual machine being coded */
 
   assert( pX->op==TK_IN );
   mustBeUnique = (inFlags & IN_INDEX_LOOP)!=0;
+  if( pX->iTable && (inFlags & IN_INDEX_REUSE_CUR)!=0 ){
+    iTab = pX->iTable;
+  }else{
+    iTab = pParse->nTab++;
+  }
 
   /* If the RHS of this IN(...) operator is a SELECT, and if it matters 
   ** whether or not the SELECT result contains NULL values, check whether
@@ -3082,7 +3087,9 @@ void sqlite3CodeRhsOfIN(
       assert( ExprUseYSub(pExpr) );
       sqlite3VdbeAddOp2(v, OP_Gosub, pExpr->y.sub.regReturn,
                         pExpr->y.sub.iAddr);
-      sqlite3VdbeAddOp2(v, OP_OpenDup, iTab, pExpr->iTable);
+      if( iTab!=pExpr->iTable ){
+        sqlite3VdbeAddOp2(v, OP_OpenDup, iTab, pExpr->iTable);
+      }
       sqlite3VdbeJumpHere(v, addrOnce);
       return;
     }

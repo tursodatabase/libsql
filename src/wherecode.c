@@ -612,7 +612,7 @@ static int codeEqualityTerm(
       eType = sqlite3FindInIndex(pParse, pX, IN_INDEX_LOOP, 0, 0, &iTab);
     }else{
       Expr *pExpr = pTerm->pExpr;
-      if(  pExpr->iTable==0 || !ExprHasProperty(pExpr, EP_Subrtn) ){
+      if( pExpr->iTable==0 || !ExprHasProperty(pExpr, EP_Subrtn) ){
         sqlite3 *db = pParse->db;
         pX = removeUnindexableInClauseTerms(pParse, iEq, pLoop, pX);
         if( !db->mallocFailed ){
@@ -622,14 +622,9 @@ static int codeEqualityTerm(
         }
         sqlite3ExprDelete(db, pX);
       }else{
-        int j1;
-        sqlite3VdbeAddOp2(v, OP_Gosub, pExpr->y.sub.regReturn,
-                          pExpr->y.sub.iAddr);
-        j1 = sqlite3VdbeAddOp0(v, OP_Goto);
         aiMap = (int*)sqlite3DbMallocZero(pParse->db, sizeof(int)*nEq);
-        eType = sqlite3FindInIndex(pParse, pX, IN_INDEX_LOOP, 0, aiMap,&iTab);
+        eType = sqlite3FindInIndex(pParse, pX, IN_INDEX_LOOP|IN_INDEX_REUSE_CUR,                                   0, aiMap,&iTab);
         iTab = pExpr->iTable;
-        sqlite3VdbeJumpHere(v, j1);
       }
       pX = pExpr;
     }
