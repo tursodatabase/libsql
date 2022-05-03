@@ -1412,6 +1412,8 @@ static SQLITE_NOINLINE void filterPullDown(
     /*         ,--- Because sqlite3ConstructBloomFilter() has will not have set
     **  vvvvv--'    pLevel->regFilter if this were true. */
     if( NEVER(pLoop->prereq & notReady) ) continue;
+    assert( pLevel->addrBrk==0 );
+    pLevel->addrBrk = addrNxt;
     if( pLoop->wsFlags & WHERE_IPK ){
       WhereTerm *pTerm = pLoop->aLTerm[0];
       int regRowid;
@@ -1438,6 +1440,7 @@ static SQLITE_NOINLINE void filterPullDown(
       VdbeCoverage(pParse->pVdbe);
     }
     pLevel->regFilter = 0;
+    pLevel->addrBrk = 0;
   }
 }
 
