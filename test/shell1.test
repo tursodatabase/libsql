@@ -1221,6 +1221,23 @@ do_test shell1-8.4 {
 +------------------+-----+
 | 6683623321994527 | -47 |
 +------------------+-----+}}
+do_test shell1-8.5 {
+  catchcmd ":memory: --box" {
+create table t(a text, b int);
+insert into t values ('too long for one line', 1), ('shorter', NULL);
+.header on
+.width 10 10
+.nullvalue NADA
+select * from t;}
+} {0 {┌────────────┬────────────┐
+│     a      │     b      │
+├────────────┼────────────┤
+│ too long f │ 1          │
+│ or one lin │            │
+│ e          │            │
+├────────────┼────────────┤
+│ shorter    │ NADA       │
+└────────────┴────────────┘}}
 
 #----------------------------------------------------------------------------
 # Test cases shell1-9.*: Basic test that "dot" commands and SQL intermix ok.
