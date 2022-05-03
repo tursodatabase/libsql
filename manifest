@@ -1,12 +1,12 @@
-C Fix\sthe\sBloom\sfilter\spull-down\soptimization\sso\sthat\sit\sjumps\sto\sthe\scorrect\nplace\sif\sit\sencounters\sa\sNULL\skey.\s\sFix\sfor\sthe\sbug\sdescribed\sby\n[forum:/forumpost/2482b32700384a0f|forum\sthread\s2482b32700384a0f].
-D 2022-05-03T14:01:48.589
+C Typos\scleared\sfrom\sREADME.md
+D 2022-05-03T21:58:24.696
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
 F Makefile.in b210ad2733317f1a4353085dfb9d385ceec30b0e6a61d20a5accabecac6b1949
 F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
 F Makefile.msc b28a8a7a977e7312f6859f560348e1eb110c21bd6cf9fab0d16537c0a514eef3
-F README.md 2dd87a5c1d108b224921f3dd47dea567973f706e1f6959386282a626f459a70c
+F README.md 8b8df9ca852aeac4864eb1e400002633ee6db84065bd01b78c33817f97d31f5e
 F VERSION fa8e7d2d1cc962f9e14c6d410387cf75860ee139462763fda887c1be4261f824
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
@@ -1951,8 +1951,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8f8a58feb7047d19522ca32efbe42fd9ddf49aaf9064f7373eb56a88982406a2
-R 48e95e8ad10915971573fc98c5fba3fb
-U drh
-Z 4d1d0f66bed5171c72952a11ac9180b2
+P 6eda9b1a7784cf6d58c8876551f67ab98e78a08e726a0579d4def5ba881985bb
+R 488c5ef0a2e2c65a8876ebd84535d64a
+U larrybr
+Z b08bed53df46d6042a3906cc46d3517d
 # Remove this line to create a well-formed Fossil manifest.
