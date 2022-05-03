@@ -999,7 +999,7 @@ static void fixDistinctOpenEph(
 ** retrieved directly from table t1. If the values are very large, this 
 ** can be more efficient than storing them directly in the sorter records.
 **
-** The ExprList_item.fg.fg.bSorterRef flag is set for each expression in pEList 
+** The ExprList_item.fg.bSorterRef flag is set for each expression in pEList 
 ** for which the sorter-reference optimization should be enabled. 
 ** Additionally, the pSort->aDefer[] array is populated with entries
 ** for all cursors required to evaluate all selected expressions. Finally.
