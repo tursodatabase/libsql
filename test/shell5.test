@@ -540,4 +540,34 @@ Columns renamed during .import shell5.csv due to duplicates:
 "CoW" to "CoW_3",
 "cOw" to "cOw_4"}}
 
+#----------------------------------------------------------------------------
+# Tests for preserving utf-8 that is not also ASCII.
+#
+
+do_test shell5-6.1 {
+  set out [open shell5.csv w]
+  fconfigure $out -translation lf
+  puts $out {あい,うえお}
+  puts $out {1,2}
+  close $out
+  forcedelete test.db
+  catchcmd test.db {.import -csv shell5.csv t1
+.mode line
+SELECT * FROM t1;}
+} {0 {   あい = 1
+うえお = 2}}
+
+do_test shell5-6.2 {
+  set out [open shell5.csv w]
+  fconfigure $out -translation lf
+  puts $out {1,2}
+  puts $out {あい,うえお}
+  close $out
+  forcedelete test.db
+  catchcmd test.db {.import -csv shell5.csv t1
+.mode line
+SELECT * FROM t1;}
+} {0 {    1 = あい
+    2 = うえお}}
+
 finish_test

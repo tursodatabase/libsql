@@ -987,6 +987,8 @@ case OP_Gosub: {            /* jump */
   /* Most jump operations do a goto to this spot in order to update
   ** the pOp pointer. */
 jump_to_p2:
+  assert( pOp->p2>0 );       /* There are never any jumps to instruction 0 */
+  assert( pOp->p2<p->nOp );  /* Jumps must be in range */
   pOp = &aOp[pOp->p2 - 1];
   break;
 }
