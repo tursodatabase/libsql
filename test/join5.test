@@ -393,6 +393,38 @@ do_execsql_test 11.4 {
   SELECT count(*) FROM t1 LEFT JOIN t2 ON c=b WHERE d>=300;
 } {2}
 
+# 2022-05-03 https://sqlite.org/forum/forumpost/2482b32700384a0f
+# Bloom-filter pull-down does not handle NOT NULL constraints correctly.
+#
+reset_db
+do_execsql_test 12.1 {
+  CREATE TABLE t1(a INT, b INT, c INT);
+  WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<100)
+    INSERT INTO t1(a,b,c) SELECT x, x*1000, x*1000000 FROM c;
+  CREATE TABLE t2(b INT, x INT);
+  INSERT INTO t2(b,x) SELECT b, a FROM t1 WHERE a%3==0;
+  CREATE INDEX t2b ON t2(b);
+  CREATE TABLE t3(c INT, y INT);
+  INSERT INTO t3(c,y) SELECT c, a FROM t1 WHERE a%4==0;
+  CREATE INDEX t3c ON t3(c);
+  INSERT INTO t1(a,b,c) VALUES(200, 200000, NULL);
+  ANALYZE;
+} {}
+do_execsql_test 12.2 {
+  SELECT * FROM t1 NATURAL JOIN t2 NATURAL JOIN t3 WHERE x>0 AND y>0
+  ORDER BY +a;
+} {
+  12  12000  12000000  12  12
+  24  24000  24000000  24  24
+  36  36000  36000000  36  36
+  48  48000  48000000  48  48
+  60  60000  60000000  60  60
+  72  72000  72000000  72  72
+  84  84000  84000000  84  84
+  96  96000  96000000  96  96
+}
+
+
 
 
 finish_test
