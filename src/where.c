@@ -2836,7 +2836,7 @@ static int whereLoopAddBtreeIndex(
     ** RIGHT JOIN.  Only constraints in the
     ** ON clause are allowed.  See tag-20191211-002 for the vtab equivalent. */
     if( (pSrc->fg.jointype & (JT_LEFT|JT_LTORJ))!=0
-     && !ExprHasProperty(pTerm->pExpr, EP_FromJoin)
+     && !ExprHasProperty(pTerm->pExpr, EP_FromJoin|EP_InnerJoin)
     ){
       continue;
     }
