@@ -880,7 +880,7 @@ static int renameUnmapSelectCb(Walker *pWalker, Select *p){
   if( ALWAYS(p->pEList) ){
     ExprList *pList = p->pEList;
     for(i=0; i<pList->nExpr; i++){
-      if( pList->a[i].zEName && pList->a[i].eEName==ENAME_NAME ){
+      if( pList->a[i].zEName && pList->a[i].fg.eEName==ENAME_NAME ){
         sqlite3RenameTokenRemap(pParse, 0, (void*)pList->a[i].zEName);
       }
     }
@@ -929,7 +929,7 @@ void sqlite3RenameExprlistUnmap(Parse *pParse, ExprList *pEList){
     sWalker.xExprCallback = renameUnmapExprCb;
     sqlite3WalkExprList(&sWalker, pEList);
     for(i=0; i<pEList->nExpr; i++){
-      if( ALWAYS(pEList->a[i].eEName==ENAME_NAME) ){
+      if( ALWAYS(pEList->a[i].fg.eEName==ENAME_NAME) ){
         sqlite3RenameTokenRemap(pParse, 0, (void*)pEList->a[i].zEName);
       }
     }
@@ -1087,7 +1087,7 @@ static void renameColumnElistNames(
     int i;
     for(i=0; i<pEList->nExpr; i++){
       const char *zName = pEList->a[i].zEName;
-      if( ALWAYS(pEList->a[i].eEName==ENAME_NAME)
+      if( ALWAYS(pEList->a[i].fg.eEName==ENAME_NAME)
        && ALWAYS(zName!=0)
        && 0==sqlite3_stricmp(zName, zOld)
       ){

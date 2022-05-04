@@ -905,7 +905,7 @@ static ExprList *sqlite3ExpandReturning(
         if( !db->mallocFailed ){
           struct ExprList_item *pItem = &pNew->a[pNew->nExpr-1];
           pItem->zEName = sqlite3DbStrDup(db, pTab->aCol[jj].zCnName);
-          pItem->eEName = ENAME_NAME;
+          pItem->fg.eEName = ENAME_NAME;
         }
       }
     }else{
@@ -914,7 +914,7 @@ static ExprList *sqlite3ExpandReturning(
       if( !db->mallocFailed && ALWAYS(pList->a[i].zEName!=0) ){
         struct ExprList_item *pItem = &pNew->a[pNew->nExpr-1];
         pItem->zEName = sqlite3DbStrDup(db, pList->a[i].zEName);
-        pItem->eEName = pList->a[i].eEName;
+        pItem->fg.eEName = pList->a[i].fg.eEName;
       }
     }
   }

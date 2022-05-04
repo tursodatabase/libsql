@@ -1206,7 +1206,7 @@ static sqlite3_index_info *allocateIndexInfo(
       }
 
       /* Virtual tables are unable to deal with NULLS FIRST */
-      if( pOrderBy->a[i].sortFlags & KEYINFO_ORDER_BIGNULL ) break;
+      if( pOrderBy->a[i].fg.sortFlags & KEYINFO_ORDER_BIGNULL ) break;
 
       /* First case - a direct column references without a COLLATE operator */
       if( pExpr->op==TK_COLUMN && pExpr->iTable==pSrc->iCursor ){
@@ -1318,7 +1318,7 @@ static sqlite3_index_info *allocateIndexInfo(
          || (pExpr->op==TK_COLLATE && pExpr->pLeft->op==TK_COLUMN
               && pExpr->iColumn==pExpr->pLeft->iColumn) );
     pIdxOrderBy[j].iColumn = pExpr->iColumn;
-    pIdxOrderBy[j].desc = pOrderBy->a[i].sortFlags & KEYINFO_ORDER_DESC;
+    pIdxOrderBy[j].desc = pOrderBy->a[i].fg.sortFlags & KEYINFO_ORDER_DESC;
     j++;
   }
   pIdxInfo->nOrderBy = j;
@@ -4455,16 +4455,18 @@ static i8 wherePathSatisfiesOrderBy(
           /* Make sure the sort order is compatible in an ORDER BY clause.
           ** Sort order is irrelevant for a GROUP BY clause. */
           if( revSet ){
-            if( (rev ^ revIdx)!=(pOrderBy->a[i].sortFlags&KEYINFO_ORDER_DESC) ){
+            if( (rev ^ revIdx) 
+                           != (pOrderBy->a[i].fg.sortFlags&KEYINFO_ORDER_DESC)
+            ){
               isMatch = 0;
             }
           }else{
-            rev = revIdx ^ (pOrderBy->a[i].sortFlags & KEYINFO_ORDER_DESC);
+            rev = revIdx ^ (pOrderBy->a[i].fg.sortFlags & KEYINFO_ORDER_DESC);
             if( rev ) *pRevMask |= MASKBIT(iLoop);
             revSet = 1;
           }
         }
-        if( isMatch && (pOrderBy->a[i].sortFlags & KEYINFO_ORDER_BIGNULL) ){
+        if( isMatch && (pOrderBy->a[i].fg.sortFlags & KEYINFO_ORDER_BIGNULL) ){
           if( j==pLoop->u.btree.nEq ){
             pLoop->wsFlags |= WHERE_BIGNULL_SORT;
           }else{

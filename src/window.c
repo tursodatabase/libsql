@@ -916,7 +916,7 @@ static ExprList *exprListAppendList(
         }
       }
       pList = sqlite3ExprListAppend(pParse, pList, pDup);
-      if( pList ) pList->a[nInit+i].sortFlags = pAppend->a[i].sortFlags;
+      if( pList ) pList->a[nInit+i].fg.sortFlags = pAppend->a[i].fg.sortFlags;
     }
   }
   return pList;
@@ -2117,7 +2117,7 @@ static void windowCodeRangeTest(
 
   assert( op==OP_Ge || op==OP_Gt || op==OP_Le );
   assert( pOrderBy && pOrderBy->nExpr==1 );
-  if( pOrderBy->a[0].sortFlags & KEYINFO_ORDER_DESC ){
+  if( pOrderBy->a[0].fg.sortFlags & KEYINFO_ORDER_DESC ){
     switch( op ){
       case OP_Ge: op = OP_Le; break;
       case OP_Gt: op = OP_Lt; break;
@@ -2150,7 +2150,7 @@ static void windowCodeRangeTest(
   ** Additionally, if either reg1 or reg2 are NULL but the jump to lbl is 
   ** not taken, control jumps over the comparison operator coded below this
   ** block.  */
-  if( pOrderBy->a[0].sortFlags & KEYINFO_ORDER_BIGNULL ){
+  if( pOrderBy->a[0].fg.sortFlags & KEYINFO_ORDER_BIGNULL ){
     /* This block runs if reg1 contains a NULL. */
     int addr = sqlite3VdbeAddOp1(v, OP_NotNull, reg1); VdbeCoverage(v);
     switch( op ){

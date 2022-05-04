@@ -130,7 +130,7 @@ int sqlite3MatchEName(
 ){
   int n;
   const char *zSpan;
-  if( pItem->eEName!=ENAME_TAB ) return 0;
+  if( pItem->fg.eEName!=ENAME_TAB ) return 0;
   zSpan = pItem->zEName;
   for(n=0; ALWAYS(zSpan[n]) && zSpan[n]!='.'; n++){}
   if( zDb && (sqlite3StrNICmp(zSpan, zDb, n)!=0 || zDb[n]!=0) ){
@@ -359,8 +359,9 @@ static int lookupName(
             cntTab = 2;
             pMatch = pItem;
             pExpr->iColumn = j;
-            pEList->a[j].bUsed = 1;
+            pEList->a[j].fg.bUsed = 1;
             hit = 1;
+            if( pEList->a[j].fg.bUsingTerm ) break;
           }
           if( hit || zTab==0 ) continue;
         }
@@ -583,7 +584,7 @@ static int lookupName(
       assert( pEList!=0 );
       for(j=0; j<pEList->nExpr; j++){
         char *zAs = pEList->a[j].zEName;
-        if( pEList->a[j].eEName==ENAME_NAME
+        if( pEList->a[j].fg.eEName==ENAME_NAME
          && sqlite3_stricmp(zAs, zCol)==0
         ){
           Expr *pOrig;
@@ -1336,7 +1337,7 @@ static int resolveAsName(
     assert( !ExprHasProperty(pE, EP_IntValue) );
     zCol = pE->u.zToken;
     for(i=0; i<pEList->nExpr; i++){
-      if( pEList->a[i].eEName==ENAME_NAME
+      if( pEList->a[i].fg.eEName==ENAME_NAME
        && sqlite3_stricmp(pEList->a[i].zEName, zCol)==0
       ){
         return i+1;
@@ -1457,7 +1458,7 @@ static int resolveCompoundOrderBy(
     return 1;
   }
   for(i=0; i<pOrderBy->nExpr; i++){
-    pOrderBy->a[i].done = 0;
+    pOrderBy->a[i].fg.done = 0;
   }
   pSelect->pNext = 0;
   while( pSelect->pPrior ){
@@ -1472,7 +1473,7 @@ static int resolveCompoundOrderBy(
     for(i=0, pItem=pOrderBy->a; i<pOrderBy->nExpr; i++, pItem++){
       int iCol = -1;
       Expr *pE, *pDup;
-      if( pItem->done ) continue;
+      if( pItem->fg.done ) continue;
       pE = sqlite3ExprSkipCollateAndLikely(pItem->pExpr);
       if( NEVER(pE==0) ) continue;
       if( sqlite3ExprIsInteger(pE, &iCol) ){
@@ -1525,7 +1526,7 @@ static int resolveCompoundOrderBy(
           sqlite3ExprDelete(db, pE);
           pItem->u.x.iOrderByCol = (u16)iCol;
         }
-        pItem->done = 1;
+        pItem->fg.done = 1;
       }else{
         moreToDo = 1;
       }
@@ -1533,7 +1534,7 @@ static int resolveCompoundOrderBy(
     pSelect = pSelect->pNext;
   }
   for(i=0; i<pOrderBy->nExpr; i++){
-    if( pOrderBy->a[i].done==0 ){
+    if( pOrderBy->a[i].fg.done==0 ){
       sqlite3ErrorMsg(pParse, "%r ORDER BY term does not match any "
             "column in the result set", i+1);
       return 1;

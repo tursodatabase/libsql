@@ -1628,12 +1628,8 @@ ExprList *sqlite3ExprListDup(sqlite3 *db, const ExprList *p, int flags){
       }
     }
     pItem->zEName = sqlite3DbStrDup(db, pOldItem->zEName);
-    pItem->sortFlags = pOldItem->sortFlags;
-    pItem->eEName = pOldItem->eEName;
-    pItem->done = 0;
-    pItem->bNulls = pOldItem->bNulls;
-    pItem->bUsed = pOldItem->bUsed;
-    pItem->bSorterRef = pOldItem->bSorterRef;
+    pItem->fg = pOldItem->fg;
+    pItem->fg.done = 0;
     pItem->u = pOldItem->u;
   }
   return pNew;
@@ -1933,16 +1929,16 @@ void sqlite3ExprListSetSortOrder(ExprList *p, int iSortOrder, int eNulls){
   );
 
   pItem = &p->a[p->nExpr-1];
-  assert( pItem->bNulls==0 );
+  assert( pItem->fg.bNulls==0 );
   if( iSortOrder==SQLITE_SO_UNDEFINED ){
     iSortOrder = SQLITE_SO_ASC;
   }
-  pItem->sortFlags = (u8)iSortOrder;
+  pItem->fg.sortFlags = (u8)iSortOrder;
 
   if( eNulls!=SQLITE_SO_UNDEFINED ){
-    pItem->bNulls = 1;
+    pItem->fg.bNulls = 1;
     if( iSortOrder!=eNulls ){
-      pItem->sortFlags |= KEYINFO_ORDER_BIGNULL;
+      pItem->fg.sortFlags |= KEYINFO_ORDER_BIGNULL;
     }
   }
 }
@@ -1968,7 +1964,7 @@ void sqlite3ExprListSetName(
     assert( pList->nExpr>0 );
     pItem = &pList->a[pList->nExpr-1];
     assert( pItem->zEName==0 );
-    assert( pItem->eEName==ENAME_NAME );
+    assert( pItem->fg.eEName==ENAME_NAME );
     pItem->zEName = sqlite3DbStrNDup(pParse->db, pName->z, pName->n);
     if( dequote ){
       /* If dequote==0, then pName->z does not point to part of a DDL
@@ -2003,7 +1999,7 @@ void sqlite3ExprListSetSpan(
     assert( pList->nExpr>0 );
     if( pItem->zEName==0 ){
       pItem->zEName = sqlite3DbSpanDup(db, zStart, zEnd);
-      pItem->eEName = ENAME_SPAN;
+      pItem->fg.eEName = ENAME_SPAN;
     }
   }
 }
@@ -4829,7 +4825,9 @@ int sqlite3ExprCodeRunJustOnce(
     struct ExprList_item *pItem;
     int i;
     for(pItem=p->a, i=p->nExpr; i>0; pItem++, i--){
-      if( pItem->reusable && sqlite3ExprCompare(0,pItem->pExpr,pExpr,-1)==0 ){
+      if( pItem->fg.reusable
+       && sqlite3ExprCompare(0,pItem->pExpr,pExpr,-1)==0
+      ){
         return pItem->u.iConstExprReg;
       }
     }
@@ -4852,7 +4850,7 @@ int sqlite3ExprCodeRunJustOnce(
     p = sqlite3ExprListAppend(pParse, p, pExpr);
     if( p ){
        struct ExprList_item *pItem = &p->a[p->nExpr-1];
-       pItem->reusable = regDest<0;
+       pItem->fg.reusable = regDest<0;
        if( regDest<0 ) regDest = ++pParse->nMem;
        pItem->u.iConstExprReg = regDest;
     }
@@ -4986,7 +4984,7 @@ int sqlite3ExprCodeExprList(
   for(pItem=pList->a, i=0; i<n; i++, pItem++){
     Expr *pExpr = pItem->pExpr;
 #ifdef SQLITE_ENABLE_SORTER_REFERENCES
-    if( pItem->bSorterRef ){
+    if( pItem->fg.bSorterRef ){
       i--;
       n--;
     }else
@@ -5611,7 +5609,7 @@ int sqlite3ExprListCompare(const ExprList *pA, const ExprList *pB, int iTab){
     int res;
     Expr *pExprA = pA->a[i].pExpr;
     Expr *pExprB = pB->a[i].pExpr;
-    if( pA->a[i].sortFlags!=pB->a[i].sortFlags ) return 1;
+    if( pA->a[i].fg.sortFlags!=pB->a[i].fg.sortFlags ) return 1;
     if( (res = sqlite3ExprCompare(0, pExprA, pExprB, iTab)) ) return res;
   }
   return 0;
