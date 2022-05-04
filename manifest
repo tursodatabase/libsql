@@ -1,5 +1,5 @@
-C In\sthe\squery\splanner,\sdo\snot\slet\stables\scommute\sacross\sany\souter\sjoin.
-D 2022-05-04T02:01:49.881
+C Fix\sCLI\suse\sof\swrong\sallocator\sfor\sfree().
+D 2022-05-04T03:45:32.728
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -554,7 +554,7 @@ F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c f72bb13359dd5a74d440df25f320dc2c1baff5cde4fc9f0d1bc3feba90b8932a
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c cc1a7581403fc074eee85283ba8d81de50a831ae175cb65a5751be00f621c0d5
-F src/shell.c.in ae0a6fae983caac6f8c824733f0599dfdf7b3a7e8efdef3cb5e3ab2e457ffc35
+F src/shell.c.in d842e26a30fe9acab962a20b1d7dd27e6130f76fbea1be64bf73982a6d64bc71
 F src/sqlite.h.in 2a35f62185eb5e7ecc64a2f68442b538ce9be74f80f28a00abc24837edcf1c17
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h f49e28c25bd941e79794db5415fdf7b202deb3bc072ed6f1ed273d578703684e
@@ -1951,8 +1951,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P be3a1879c865cff85d8b1f0cc7b95295019c28cce67c687692a3210eeea6e314
-R 0ad645b7afda1c7b5bfd909d3f6cbc01
-U drh
-Z c5be1cebf65efa58a4f8d67d25367727
+P 8cee5388232ade91ea627bb6857eb8937d7530b5ea519e0ae6da362c37c7ed35
+R 3c89c63aaa0653a254417d115718d7c3
+U larrybr
+Z 111ff23023abfd8d38c72ec3de24a2fe
 # Remove this line to create a well-formed Fossil manifest.

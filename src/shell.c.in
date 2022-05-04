@@ -3540,7 +3540,7 @@ columnar_end:
   nData = (nRow+1)*nColumn;
   for(i=0; i<nData; i++){
     z = azData[i];
-    if( z!=zEmpty && z!=zShowNull ) free(azData[i]);
+    if( z!=zEmpty && z!=zShowNull ) sqlite3_free(azData[i]);
   }
   sqlite3_free(azData);
   sqlite3_free((void*)azNextLine);
