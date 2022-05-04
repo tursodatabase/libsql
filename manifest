@@ -1,5 +1,5 @@
-C Typos\scleared\sfrom\sREADME.md
-D 2022-05-03T21:58:24.696
+C In\sthe\squery\splanner,\sdo\snot\slet\stables\scommute\sacross\sany\souter\sjoin.
+D 2022-05-04T02:01:49.881
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -640,7 +640,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c b9df133a705093da8977da5eb202eaadb844839f1c7297c08d33471f5491843d
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
-F src/where.c 43085b3a4ce2e56315fabb0b240a56e76667d9e03c79f287695bcae7b76152d5
+F src/where.c b0f0c4b38d80530ff5e88fb8978e67555cb6392c8cedfd9f80d4d4d8e4106336
 F src/whereInt.h 4db5a877a9d1f38b5c928c1c84297c07f30b9a3bc1f5f66214cf1a8ef90a0556
 F src/wherecode.c cd9da760d391a51013f9ab8bc8ca7ad67f3b96e4857efe0d1dd85f538b3494a6
 F src/whereexpr.c 174d4ad5be165c610c907abb779ef4a97974d22b84e1ce7898d2d9f6947249e5
@@ -1951,8 +1951,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6eda9b1a7784cf6d58c8876551f67ab98e78a08e726a0579d4def5ba881985bb
-R 488c5ef0a2e2c65a8876ebd84535d64a
-U larrybr
-Z b08bed53df46d6042a3906cc46d3517d
+P be3a1879c865cff85d8b1f0cc7b95295019c28cce67c687692a3210eeea6e314
+R 0ad645b7afda1c7b5bfd909d3f6cbc01
+U drh
+Z c5be1cebf65efa58a4f8d67d25367727
 # Remove this line to create a well-formed Fossil manifest.

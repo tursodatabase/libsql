@@ -4144,9 +4144,7 @@ static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
     if( (pItem->fg.jointype & (JT_OUTER|JT_CROSS))!=0 ){
       /* This condition is true when pItem is the FROM clause term on the
       ** right-hand-side of a OUTER or CROSS JOIN.  */
-      mPrereq = mPrior;
-    }else{
-      mPrereq = 0;
+      mPrereq |= mPrior;
     }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
     if( IsVirtual(pItem->pTab) ){
