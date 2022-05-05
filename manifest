@@ -1,5 +1,5 @@
-C Backout\scheck-in\s[9fb20a21feb8f697]\swhich\swas\sincorrect.
-D 2022-05-05T10:03:19.990
+C Update\sthe\sversion\snumber\sto\s3.38.5
+D 2022-05-05T10:04:38.098
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -7,7 +7,7 @@ F Makefile.in b210ad2733317f1a4353085dfb9d385ceec30b0e6a61d20a5accabecac6b1949
 F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
 F Makefile.msc b28a8a7a977e7312f6859f560348e1eb110c21bd6cf9fab0d16537c0a514eef3
 F README.md 2dd87a5c1d108b224921f3dd47dea567973f706e1f6959386282a626f459a70c
-F VERSION 01b4df68a6266aba3e9ddaee2431393b03fd9c7f9a1f972640618f91bb743a4c
+F VERSION 2cef599294698e267cbcdadf44f14a0637a0015c1872cb37a16fe723d7c7add0
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
@@ -34,7 +34,7 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 883205ddf25b46f10c181818bf42c09da9888884af96f79e1719264345053bd6
 F config.h.in 6376abec766e9a0785178b1823b5a587e9f1ccbc
 F config.sub c2d0260f17f3e4bc0b6808fccf1b291cb5e9126c14fc5890efc77b9fd0175559
-F configure c1c6f201f4fa7fa877858665094d76ba9f818c10bb2d5cb20fae714c2a11bb5d x
+F configure d616d46e32a1c2324a561b464175907b976ff62e8946b14e9954268841fc0bb8 x
 F configure.ac 3ef6eeff4387585bfcab76b0c3f6e15a0618587bb90245dd5d44e4378141bb35
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/F2FS.txt c1d4a0ae9711cfe0e1d8b019d154f1c29e0d3abfe820787ba1e9ed7691160fcd
@@ -1944,9 +1944,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d402f49871152670a62f4f28cacb15d814f2c1644e9347ad7d258e562978e45e
-Q +99225618a83b577efbd5d13c0d1ff73e9c5a71bb43c259d7c0f22cf3479c992f
-R bc7c810360b7b2c9fe8a3f83de0daf96
+P 66f65b322a85c971d72397c2d7315504cc53b295bc9e207b2dfc07b9eea5fee8
+R 698c203ce86b7bddd50acfe7155cfca9
 U drh
-Z fd8f67adfd0aa2b908c99bca0f804cd3
+Z b413883a100ac0ce25ead271780af050
 # Remove this line to create a well-formed Fossil manifest.
