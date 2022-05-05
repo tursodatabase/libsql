@@ -70,8 +70,8 @@ set ::headComment {/* DO NOT EDIT!
 ** transforms code from various constituent source files of SQLite into
 ** this single OUT_FILE file to implement the SQLite command-line shell.
 **
-** Much of the code found below comes from the SOURCE_FILE file in
-** the canonical SQLite source tree.  That main file contains "INCLUDE"
+** Much of the code below is from the SOURCE_FILE file
+** in the canonical SQLite source tree.  That source contains "INCLUDE"
 ** lines that specify other files in the canonical source tree that are
 ** inserted and transformed, (via macro invocations explained by running
 ** "tool/mkshellc.tcl --help"), to generate this complete program source.
@@ -80,8 +80,8 @@ set ::headComment {/* DO NOT EDIT!
 ** file, building the program from it is simplified.
 **
 ** To modify this program, get a copy of the canonical SQLite source tree,
-** edit file SOURCE_FILE and/or some of the other files it includes,
-** then rerun the tool/mkshellc.tcl script.
+** edit file SOURCE_FILE and/or some of the other files
+** it includes, then rerun the tool/mkshellc.tcl script.
 */}
 
 set ::useShortHead 0
@@ -94,7 +94,7 @@ proc prepare_emit_header {ostr outFile srcFile targPgm} {
   }
   set hcNumLines [expr 1+[regexp -all "\n" $head]]
   set hc [regsub -all {OUT_FILE} $head $outFile]
-  set hc [regsub -all {SOURCE_FILE} $hc $srcFile]
+    set hc [regsub -all {SOURCE_FILE} $hc [proj_dir_normalize $srcFile]]
   set hc [regsub -all {TARGET_PROGRAM} $hc $targPgm]
   emit_sync [list $hc] $ostr $hcNumLines
 }
@@ -797,6 +797,14 @@ proc transform_line {lineVar nesting} {
   return 0
 }
 
+# Convert leading path fragment to <projectDir> where applicable.
+proc proj_dir_normalize {sdir} {
+  return [string map [list \
+			  "$::topDir/src/.." <projectDir> \
+			  "$::topDir/src" <projectDir>/src \
+			  "$::topDir" <projectDir> \
+			 ] $sdir]
+}
 
 set ::incFileStack {}
 
@@ -814,10 +822,7 @@ proc process_file { inFilepath ostrm } {
     lappend ::incFileStack $inFilepath
     set inFns [list $inFilepath $istrm]
     if {$nesting > 0} {
-      set sayPath [string map [list \
-                               "$::topDir/src/.." <projectDir> \
-                               "$::topDir/src" <projectDir>/src \
-                              ] $inFilepath]
+      set sayPath [proj_dir_normalize $inFilepath]
       set splats [string repeat * [expr {33 - [string length $sayPath]/2 }]]
       set sayFile [list "/*$splats Begin $sayPath $splats*/"]
     } else { set sayFile {} }

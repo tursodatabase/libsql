@@ -250,8 +250,8 @@ static void setTextMode(FILE *file, int isOutput){
 /* Use a shorter form of this ubiquitously used, (varargs) API: */
 #define smprintf sqlite3_mprintf
 
+/* Forward declaration of the number of built-in dot commands (as compiled) */
 static unsigned numCommands;
-static FILE *currentOutputFile(ShellExState *p);
 
 /* True if the timer is enabled */
 static int enableTimer = 0;
@@ -512,7 +512,7 @@ void utf8_printf(FILE *out, const char *zFormat, ...){
 /* Indicate out-of-memory and exit. */
 static void shell_out_of_memory(void){
   raw_printf(STD_ERR,"Error: out of memory\n");
-  sqlite3_mutex_free(pGlobalDbLock); 
+  sqlite3_mutex_free(pGlobalDbLock);
   pGlobalDbLock = 0;
   SHELL_OOM_EXIT;
 }
@@ -1242,6 +1242,9 @@ struct EQPGraph {
 # define SHEXT_VAREXP(psi) 0
 #endif
 
+/* Enable use of ExportHandler and ImportHandler interfaces for built-in I/O */
+#define SHELL_DATAIO_EXT 1
+
 #if SHELL_DYNAMIC_EXTENSION
 
 /* This is only used to support extensions that need this information.
@@ -1432,7 +1435,13 @@ typedef struct ShellInState {
     ShellEventNotify eventHandler;
   } *pSubscriptions;     /* The current shell event subscriptions */
   u8 bDbDispatch;        /* Cache fact of dbShell dispatch table */
-  DotCommand *pUnknown; /* Last registered "unknown" dot command */
+  DotCommand *pUnknown;  /* Last registered "unknown" dot command */
+#endif
+
+#if SHELL_DATAIO_EXT
+  ExportHandler *pFreeformExporter;  /* Default freeform mode exporter */
+  ExportHandler *pColumnarExporter;  /* Default columnar mode exporter */
+  ExportHandler *pActiveExporter;    /* Presently active exporter */
 #endif
 
   ShellExState *pSXS;    /* Pointer to companion, exposed shell state */
@@ -3985,6 +3994,30 @@ static char *quoted_column(sqlite3_stmt *pStmt, int i){
   return 0; /* Not reached */
 }
 
+#if SHELL_DATAIO_EXT
+/*
+** Run a prepared statement with output as determined by ExportHandler.
+*/
+static void exec_prepared_stmt(
+  ShellExState *psx,  /* Pointer to shell state */
+  sqlite3_stmt *pStmt /* Statment to run */
+){
+  ShellInState *psi = ISS(psx);
+  ExportHandler *pExporter = psi->pActiveExporter;
+  char *zErr = 0;
+  int rc;
+
+  rc = pExporter->pMethods->prependResultsOut(pExporter, psx, &zErr, pStmt);
+  if( rc==SQLITE_OK ){
+    do{
+      rc = pExporter->pMethods->rowResultsOut(pExporter, psx, &zErr, pStmt);
+    }while( rc==SQLITE_ROW );
+    rc = pExporter->pMethods->appendResultsOut(pExporter, psx, &zErr, pStmt);
+  }
+}
+
+#else /* !SHELL_DATAIO_EXT */
+
 /*
 ** Run a prepared statement and output the result in one of the
 ** table-oriented formats, for which MODE_IS_COLUMNAR(m) is true:
@@ -4079,7 +4112,7 @@ static void exec_prepared_stmt_columnar(
       }
       if( wx<0 ) wx = -wx;
       if( useNextLine ){
-        uz = azNextLine[i];
+        uz = azNextiLne[i];
         if( uz==0 ) uz = (u8*)zEmpty;
       }else if( psi->cmOpts.bQuote ){
         sqlite3_free(azQuoted[i]);
@@ -4176,7 +4209,7 @@ static void exec_prepared_stmt_columnar(
       utf8_printf(psi->out, "%s", psi->cMode==MODE_Box?BOX_13" ":"| ");
     }
     z = azData[i];
-    if( z==0 ) z = psi->nullValue;
+    if( z==0 ) z = zEmpty;
     w = psx->pHaveWidths[j];
     if( psx->pSpecWidths[j]<0 ) w = -w;
     utf8_width_print(psi->out, w, z);
@@ -4209,7 +4242,7 @@ columnar_end:
   nData = (nRow+1)*nColumn;
   for(i=0; i<nData; i++){
     z = azData[i];
-    if( z!=zEmpty && z!=zShowNull ) free(azData[i]);
+    if( z!=zEmpty && z!=zShowNull ) sqlite3_free(azData[i]);
   }
   sqlite3_free(azData);
   sqlite3_free((void*)azNextLine);
@@ -4293,6 +4326,7 @@ static void exec_prepared_stmt(
     }
   }
 }
+#endif /* !SHELL_DATAIO_EXT */
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 /*
@@ -4468,9 +4502,18 @@ static int shell_exec(
           shell_check_oom(zEQP);
           rc = sqlite3_prepare_v2(db, zEQP, -1, &pExplain, 0);
           if( rc==SQLITE_OK ){
-            psi->cMode = MODE_Explain;
             explain_data_prepare(psi, pExplain);
+            psi->cMode = MODE_Explain;
+#if SHELL_DATAIO_EXT
+            {
+              ExportHandler *pexSave = psi->pActiveExporter;
+              psi->pActiveExporter = psi->pFreeformExporter;
+              exec_prepared_stmt(psx, pExplain);
+              psi->pActiveExporter = pexSave;
+            }
+#else
             exec_prepared_stmt(psx, pExplain);
+#endif
             explain_data_delete(psi);
           }
           sqlite3_finalize(pExplain);
@@ -7225,7 +7268,7 @@ static DotCmdRC arDotCommand(
   memset(&cmd, 0, sizeof(cmd));
   cmd.fromCmdLine = fromCmdLine;
   rv = arParseCommand(azArg, nArg, &cmd);
-  cmd.out = currentOutputFile(pState);
+  cmd.out = ISS(pState)->out;
   if( rv==DCR_Ok ){
     int eDbType = SHELL_OPEN_UNSPEC;
     cmd.p = pState;
@@ -7971,11 +8014,532 @@ FROM (\
   }
 }
 
-static FILE *currentOutputFile(ShellExState *p){
-  return ISS(p)->out;
+#if SHELL_DATAIO_EXT
+
+/*
+** Standard ExportHandlers
+** These implement the built-in renderers of query results.
+** Two are provided, one for freeform results, the other for columnar results.
+*/
+
+static void EH_FF_destruct(ExportHandler *pMe);
+static void EH_CM_destruct(ExportHandler *pMe);
+static const char *EH_FF_name(ExportHandler *pMe);
+static const char *EH_CM_name(ExportHandler *pMe);
+static const char *EH_help(ExportHandler *pMe, const char *zWhat);
+static int EH_openResultsOutStream(ExportHandler *pMe,
+                                   ShellExState *pSES, char **pzErr,
+                                   int numArgs, char *azArgs[],
+                                   const char * zName);
+static int EH_FF_prependResultsOut(ExportHandler *pMe,
+                                   ShellExState *pSES, char **pzErr,
+                                   sqlite3_stmt *pStmt);
+static int EH_CM_prependResultsOut(ExportHandler *pMe,
+                                   ShellExState *pSES, char **pzErr,
+                                   sqlite3_stmt *pStmt);
+static int EH_FF_rowResultsOut(ExportHandler *pMe,
+                               ShellExState *pSES, char **pzErr,
+                               sqlite3_stmt *pStmt);
+static int EH_CM_rowResultsOut(ExportHandler *pMe,
+                               ShellExState *pSES, char **pzErr,
+                               sqlite3_stmt *pStmt);
+static int EH_FF_appendResultsOut(ExportHandler *pMe,
+                                  ShellExState *pSES, char **pzErr,
+                                  sqlite3_stmt *pStmt);
+static int EH_CM_appendResultsOut(ExportHandler *pMe,
+                                  ShellExState *pSES, char **pzErr,
+                                  sqlite3_stmt *pStmt);
+static void EH_closeResultsOutStream(ExportHandler *pMe,
+                                     ShellExState *pSES,
+                                     char **pzErr);
+
+static VTABLE_NAME(ExportHandler) exporter_Vtab_FF = {
+  EH_FF_destruct,
+  EH_FF_name,
+  EH_help,
+  EH_openResultsOutStream,
+  EH_FF_prependResultsOut,
+  EH_FF_rowResultsOut,
+  EH_FF_appendResultsOut,
+  EH_closeResultsOutStream
+};
+
+static VTABLE_NAME(ExportHandler) exporter_Vtab_CM = {
+  EH_CM_destruct,
+  EH_CM_name,
+  EH_help,
+  EH_openResultsOutStream,
+  EH_CM_prependResultsOut,
+  EH_CM_rowResultsOut,
+  EH_CM_appendResultsOut,
+  EH_closeResultsOutStream
+};
+
+typedef struct {
+  char **azCols; /* Names of result columns */
+  char **azVals; /* Results */
+  int *aiTypes;  /* Result types */
+} ColumnsInfo;
+
+typedef struct {
+  VTABLE_NAME(ExportHandler) *pMethods;
+  ShellInState *psi;
+  int nCol;
+  sqlite3_uint64 nRow;
+  void *pData;
+  void *pRowInfo;
+  ColumnsInfo colInfo;
+} BuiltInFFExporter;
+#define BI_FF_EXPORTER_INIT(psi) { & exporter_Vtab_FF, psi, 0, 0, 0, 0 }
+
+typedef struct {
+  VTABLE_NAME(ExportHandler) *pMethods;
+  ShellInState *psi;
+  int nCol;
+  sqlite3_uint64 nRow;
+  void *pData;
+  void *pRowInfo;
+  const char *colSep;
+  const char *rowSep;
+} BuiltInCMExporter;
+#define BI_CM_EXPORTER_INIT(psi) { & exporter_Vtab_CM, psi, 0, 0, 0, 0 }
+
+static void EH_FF_destruct(ExportHandler *pMe){
+  /* This serves two purposes: idempotent reinitialize, and final takedown */
+  BuiltInFFExporter *pbie = (BuiltInFFExporter*)pMe;
+  if( pbie->nCol!=0 ){
+    sqlite3_free(pbie->pData);
+    pbie->pData = 0;
+  }
+  pbie->nRow = 0;
+  pbie->nCol = 0;
 }
 
+static const char *zEmpty = "";
+
+static void EH_CM_destruct(ExportHandler *pMe){
+  /* This serves two purposes: idempotent reinitialize, and final takedown */
+  BuiltInCMExporter *pbie = (BuiltInCMExporter*)pMe;
+  if( pbie->nCol!=0 ){
+    sqlite3_uint64 nData = pbie->nCol * (pbie->nRow + 1), i;
+    const char *zNull = pbie->psi->nullValue;
+    char **azData = (char**)pbie->pData;
+    for(i=0; i<nData; i++){
+      char *z = azData[i];
+      if( z!=zEmpty && z!=zNull ) sqlite3_free(z);
+    }
+    sqlite3_free(pbie->pData);
+    sqlite3_free(pbie->pRowInfo);
+    pbie->pData = 0;
+    pbie->pRowInfo = 0;
+  }
+  pbie->nCol = 0;
+  pbie->nRow = 0;
+  pbie->colSep = 0;
+  pbie->rowSep = 0;
+}
+
+static const char *zModeName(ShellInState *psi){
+  int mi = psi->mode;
+  return (mi>=0 && mi<MODE_COUNT_OF)? modeDescr[mi].zModeName : 0;
+}
+static const char *EH_FF_name(ExportHandler *pMe){
+  return zModeName(((BuiltInFFExporter*)pMe)->psi);
+}
+static const char *EH_CM_name(ExportHandler *pMe){
+  return zModeName(((BuiltInCMExporter*)pMe)->psi);
+}
+
+static const char *EH_help(ExportHandler *pMe, const char *zWhat){
+  (void)(pMe);
+  (void)(zWhat);
+  return 0;
+}
+
+static int EH_openResultsOutStream(ExportHandler *pMe,
+                                   ShellExState *pSES, char **pzErr,
+                                   int numArgs, char *azArgs[],
+                                   const char * zName){
+  /* The built-in exporters have a predetermined destination, and their
+   * action is set by the shell state .mode member, so this method has
+   * nothing to do. For similar reasons, the shell never calls it. That
+   * could change if .mode command functionality is moved to here.
+   */
+  (void)(pMe);
+  (void)(pSES);
+  (void)(pzErr);
+  (void)(numArgs);
+  (void)(azArgs);
+  (void)(zName);
+  return 0;
+}
+
+static int EH_CM_prependResultsOut(ExportHandler *pMe,
+                                   ShellExState *psx, char **pzErr,
+                                   sqlite3_stmt *pStmt){
+  BuiltInCMExporter *pbie = (BuiltInCMExporter*)pMe;
+  ShellInState *psi = ISS(psx);
+  sqlite3_int64 nRow = 0;
+  char **azData = 0;
+  sqlite3_int64 nAlloc = 0;
+  char *abRowDiv = 0;
+  const unsigned char *uz;
+  const char *z;
+  char **azQuoted = 0;
+  int rc;
+  sqlite3_int64 i, nData;
+  int j, w, n;
+  const unsigned char **azNextLine = 0;
+  int bNextLine = 0;
+  int bMultiLineRowExists = 0;
+  int bw = psi->cmOpts.bWordWrap;
+  int nColumn = sqlite3_column_count(pStmt);
+
+  if( nColumn==0 ){
+    rc = sqlite3_step(pStmt);
+    assert(rc!=SQLITE_ROW);
+    return rc;
+  }
+  EH_CM_destruct(pMe);
+
+  nAlloc = nColumn*4;
+  if( nAlloc<=0 ) nAlloc = 1;
+  azData = sqlite3_malloc64( nAlloc*sizeof(char*) );
+  shell_check_oom(azData);
+  azNextLine = sqlite3_malloc64( nColumn*sizeof(char*) );
+  shell_check_oom((void*)azNextLine);
+  memset((void*)azNextLine, 0, nColumn*sizeof(char*) );
+  if( psi->cmOpts.bQuote ){
+    azQuoted = sqlite3_malloc64( nColumn*sizeof(char*) );
+    shell_check_oom(azQuoted);
+    memset(azQuoted, 0, nColumn*sizeof(char*) );
+  }
+  abRowDiv = sqlite3_malloc64( nAlloc/nColumn );
+  shell_check_oom(abRowDiv);
+  if( nColumn>psx->numWidths ){
+    psx->pSpecWidths = realloc(psx->pSpecWidths, (nColumn+1)*2*sizeof(int));
+    shell_check_oom(psx->pSpecWidths);
+    for(i=psx->numWidths; i<nColumn; i++) psx->pSpecWidths[i] = 0;
+    psx->numWidths = nColumn;
+    psx->pHaveWidths = &psx->pSpecWidths[nColumn];
+  }
+  memset(psx->pHaveWidths, 0, nColumn*sizeof(int));
+  for(i=0; i<nColumn; i++){
+    w = psx->pSpecWidths[i];
+    if( w<0 ) w = -w;
+    psx->pHaveWidths[i] = w;
+  }
+  for(i=0; i<nColumn; i++){
+    const unsigned char *zNotUsed;
+    int wx = psx->pSpecWidths[i];
+    if( wx==0 ){
+      wx = psi->cmOpts.iWrap;
+    }
+    if( wx<0 ) wx = -wx;
+    uz = (const unsigned char*)sqlite3_column_name(pStmt,i);
+    azData[i] = translateForDisplayAndDup(uz, &zNotUsed, wx, bw);
+  }
+  while( bNextLine || SQLITE_ROW==sqlite3_step(pStmt) ){
+    int useNextLine = bNextLine;
+    bNextLine = 0;
+    if( (nRow+2)*nColumn >= nAlloc ){
+      nAlloc *= 2;
+      azData = sqlite3_realloc64(azData, nAlloc*sizeof(char*));
+      shell_check_oom(azData);
+      abRowDiv = sqlite3_realloc64(abRowDiv, nAlloc/nColumn);
+      shell_check_oom(abRowDiv);
+    }
+    abRowDiv[nRow] = 1;
+    nRow++;
+    for(i=0; i<nColumn; i++){
+      int wx = psx->pSpecWidths[i];
+      if( wx==0 ){
+        wx = psi->cmOpts.iWrap;
+      }
+      if( wx<0 ) wx = -wx;
+      if( useNextLine ){
+        uz = azNextLine[i];
+        if( uz==0 ) uz = (u8*)zEmpty;
+      }else if( psi->cmOpts.bQuote ){
+        sqlite3_free(azQuoted[i]);
+        azQuoted[i] = quoted_column(pStmt,i);
+        uz = (const unsigned char*)azQuoted[i];
+      }else{
+        uz = (const unsigned char*)sqlite3_column_text(pStmt,i);
+        if( uz==0 ) uz = (u8*)psi->nullValue;
+      }
+      azData[nRow*nColumn + i]
+        = translateForDisplayAndDup(uz, &azNextLine[i], wx, bw);
+      if( azNextLine[i] ){
+        bNextLine = 1;
+        abRowDiv[nRow-1] = 0;
+        bMultiLineRowExists = 1;
+      }
+    }
+  }
+  sqlite3_free((void*)azNextLine);
+  if( azQuoted ){
+    for(i=0; i<nColumn; i++) sqlite3_free(azQuoted[i]);
+    sqlite3_free(azQuoted);
+  }
+  if( nRow==0 ){
+    EH_CM_destruct(pMe);
+    return SQLITE_DONE;
+  }
+
+  nData = nColumn*(nRow+1);
+
+  for(i=0; i<nData; i++){
+    z = azData[i];
+    if( z==0 ) z = (char*)zEmpty;
+    n = strlenChar(z);
+    j = i%nColumn;
+    if( n>psx->pHaveWidths[j] ) psx->pHaveWidths[j] = n;
+  }
+  if( seenInterrupt ) goto done;
+  switch( psi->cMode ){
+    case MODE_Column: {
+      pbie->colSep = "  ";
+      pbie->rowSep = "\n";
+      if( psi->showHeader ){
+        for(i=0; i<nColumn; i++){
+          w = psx->pHaveWidths[i];
+          if( psx->pSpecWidths[i]<0 ) w = -w;
+          utf8_width_print(psi->out, w, azData[i]);
+          fputs(i==nColumn-1?"\n":"  ", psi->out);
+        }
+        for(i=0; i<nColumn; i++){
+          print_dashes(psi->out, psx->pHaveWidths[i]);
+          fputs(i==nColumn-1?"\n":"  ", psi->out);
+        }
+      }
+      break;
+    }
+    case MODE_Table: {
+      pbie->colSep = " | ";
+      pbie->rowSep = " |\n";
+      print_row_separator(psx, nColumn, "+");
+      fputs("| ", psi->out);
+      for(i=0; i<nColumn; i++){
+        w = psx->pHaveWidths[i];
+        n = strlenChar(azData[i]);
+        utf8_printf(psi->out, "%*s%s%*s",
+                    (w-n)/2, "", azData[i], (w-n+1)/2, "");
+        fputs(i==nColumn-1?" |\n":" | ", psi->out);
+      }
+      print_row_separator(psx, nColumn, "+");
+      break;
+    }
+    case MODE_Markdown: {
+      pbie->colSep = " | ";
+      pbie->rowSep = " |\n";
+      fputs("| ", psi->out);
+      for(i=0; i<nColumn; i++){
+        w = psx->pHaveWidths[i];
+        n = strlenChar(azData[i]);
+        utf8_printf(psi->out, "%*s%s%*s",
+                    (w-n)/2, "", azData[i], (w-n+1)/2, "");
+        fputs(i==nColumn-1?" |\n":" | ", psi->out);
+      }
+      print_row_separator(psx, nColumn, "|");
+      break;
+    }
+    case MODE_Box: {
+      pbie->colSep = " " BOX_13 " ";
+      pbie->rowSep = " " BOX_13 "\n";
+      print_box_row_separator(psx, nColumn, BOX_23, BOX_234, BOX_34);
+      utf8_printf(psi->out, BOX_13 " ");
+      for(i=0; i<nColumn; i++){
+        w = psx->pHaveWidths[i];
+        n = strlenChar(azData[i]);
+        utf8_printf(psi->out, "%*s%s%*s%s",
+            (w-n)/2, "", azData[i], (w-n+1)/2, "",
+            i==nColumn-1?" "BOX_13"\n":" "BOX_13" ");
+      }
+      print_box_row_separator(psx, nColumn, BOX_123, BOX_1234, BOX_134);
+      break;
+    }
+  }
+ done:
+  pbie->nCol = nColumn;
+  pbie->pData = azData;
+  pbie->nRow = nRow;
+  if( bMultiLineRowExists ){
+    pbie->pRowInfo = abRowDiv;
+  }else{
+    pbie->pRowInfo = 0;
+    sqlite3_free(abRowDiv);
+  }
+  if( seenInterrupt ){
+    EH_CM_destruct(pMe);
+    return SQLITE_INTERRUPT;
+  }
+  return SQLITE_OK;
+}
+
+static int EH_CM_rowResultsOut(ExportHandler *pMe,
+                               ShellExState *psx, char **pzErr,
+                               sqlite3_stmt *pStmt){
+  BuiltInCMExporter *pbie = (BuiltInCMExporter*)pMe;
+  ShellInState *psi = pbie->psi;
+  sqlite3_int64 nRow = pbie->nRow;
+  int nColumn = pbie->nCol, j, w;
+  char **azData = (char**)(pbie->pData);
+  sqlite3_int64 nData = (nRow+1)*nColumn, i;
+  char *abRowDiv = pbie->pRowInfo;
+  const char *z;
+
+  (void)(pzErr);
+  (void)(pStmt);
+  if( nRow==0 || nColumn==0 ) return SQLITE_INTERRUPT;
+  for(i=nColumn, j=0; i<nData; i++, j++){
+    if( j==0 && psi->cMode!=MODE_Column ){
+      utf8_printf(psi->out, "%s", psi->cMode==MODE_Box?BOX_13" ":"| ");
+    }
+    z = azData[i];
+    if( z==0 ) z = zEmpty;
+    w = psx->pHaveWidths[j];
+    if( psx->pSpecWidths[j]<0 ) w = -w;
+    utf8_width_print(psi->out, w, z);
+    if( j==nColumn-1 ){
+      utf8_printf(psi->out, "%s", pbie->rowSep);
+      if( abRowDiv!=0 && abRowDiv[i/nColumn-1] && i+1<nData ){
+        if( psi->cMode==MODE_Table ){
+          print_row_separator(psx, nColumn, "+");
+        }else if( psi->cMode==MODE_Box ){
+          print_box_row_separator(psx, nColumn, BOX_123, BOX_1234, BOX_134);
+        }else if( psi->cMode==MODE_Column ){
+          raw_printf(psi->out, "\n");
+        }
+      }
+      j = -1;
+      if( seenInterrupt ){
+        EH_CM_destruct(pMe);
+        return SQLITE_INTERRUPT;
+      }
+    }else{
+      utf8_printf(psi->out, "%s", pbie->colSep);
+    }
+  }
+  return SQLITE_DONE;
+}
+
+static int EH_CM_appendResultsOut(ExportHandler *pMe,
+                                  ShellExState *psx, char **pzErr,
+                                  sqlite3_stmt *pStmt){
+  BuiltInCMExporter *pbie = (BuiltInCMExporter*)pMe;
+  ShellInState *psi = ISS(psx);
+  sqlite3_int64 nRow = pbie->nRow;
+  int nColumn = pbie->nCol;
+  char **azData = (char**)(pbie->pData);
+  sqlite3_int64 nData = (nRow+1)*nColumn;
+
+  if( nRow==0 || nColumn==0 ) return SQLITE_INTERRUPT;
+
+  if( psi->cMode==MODE_Table ){
+    print_row_separator(psx, nColumn, "+");
+  }else if( psi->cMode==MODE_Box ){
+    print_box_row_separator(psx, nColumn, BOX_12, BOX_124, BOX_14);
+  }
+  EH_CM_destruct(pMe);
+  return SQLITE_OK;
+}
+
+static int EH_FF_prependResultsOut(ExportHandler *pMe,
+                                   ShellExState *pSES, char **pzErr,
+                                   sqlite3_stmt *pStmt){
+  BuiltInFFExporter *pbie = (BuiltInFFExporter*)pMe;
+  int nc = sqlite3_column_count(pStmt);
+  int rc;
+
+  pbie->pMethods->destruct(pMe);
+  if( nc>0 ){
+    /* allocate space for col name ptr, value ptr, and type */
+    pbie->pData = sqlite3_malloc64(3*nc*sizeof(const char*) + 1);
+    if( !pbie->pData ){
+      shell_out_of_memory();
+    }else{
+      ColumnsInfo ci
+        = { (char **)pbie->pData, &ci.azCols[nc], (int *)&ci.azVals[nc] };
+      int i;
+      assert(sizeof(int) <= sizeof(char *));
+      pbie->nCol = nc;
+      pbie->colInfo = ci;
+      /* save off ptrs to column names */
+      for(i=0; i<nc; i++){
+        pbie->colInfo.azCols[i] = (char *)sqlite3_column_name(pStmt, i);
+      }
+    }
+    return SQLITE_OK;
+  }
+  rc = sqlite3_step(pStmt);
+  assert(rc!=SQLITE_ROW);
+  return rc;
+}
+
+static int EH_FF_rowResultsOut(ExportHandler *pMe,
+                               ShellExState *pSES, char **pzErr,
+                               sqlite3_stmt *pStmt){
+  BuiltInFFExporter *pbie = (BuiltInFFExporter*)pMe;
+  ShellInState *psi = ISS(pSES);
+  int rc = sqlite3_step(pStmt);
+  int i, x, nc = pbie->nCol;
+  if( rc==SQLITE_ROW ){
+    ColumnsInfo *pc = &pbie->colInfo;
+    sqlite3_uint64 nr = ++(pbie->nRow);
+    for( i=0; i<nc; ++i ){
+      pc->aiTypes[i] = x = sqlite3_column_type(pStmt, i);
+      if( x==SQLITE_BLOB
+          && (psi->cMode==MODE_Insert || psi->cMode==MODE_Quote) ){
+        pc->azVals[i] = "";
+      }else{
+        pc->azVals[i] = (char*)sqlite3_column_text(pStmt, i);
+      }
+      if( !pc->azVals[i] && (x!=SQLITE_NULL) ){
+        rc = SQLITE_NOMEM;
+        break; /* from for */
+      }
+    }
+    /* if data and types extracted successfully... */
+    if( SQLITE_ROW==rc ){
+      /* call the supplied callback with the result row data */
+      if( shell_callback(pSES, nc, pc->azVals, pc->azCols, pc->aiTypes) ){
+        rc = SQLITE_ABORT;
+      }
+    }
+  }
+  return rc;
+}
+
+static int EH_FF_appendResultsOut(ExportHandler *pMe,
+                                  ShellExState *pSES, char **pzErr,
+                                  sqlite3_stmt *pStmt){
+  BuiltInFFExporter *pbie = (BuiltInFFExporter*)pMe;
+  ShellInState *psi = ISS(pSES);
+  if( psi->cMode==MODE_Json ){
+    fputs("]\n", psi->out);
+  }else if( psi->cMode==MODE_Count ){
+    utf8_printf(psi->out, "%llu row%s\n", pbie->nRow, pbie->nRow!=1 ? "s" : "");
+  }
+  EH_FF_destruct(pMe);
+  return SQLITE_OK;
+}
+
+static void EH_closeResultsOutStream(ExportHandler *pMe,
+                                     ShellExState *pSES,
+                                     char **pzErr){
+  /* The built-in exporters have a predetermined destination which is
+   * never "closed", so this method has nothing to do. For similar
+   * reasons, it is not called by the shell.
+   */
+  (void)(pMe);
+  (void)(pSES);
+  (void)(pzErr);
+}
+#endif /* SHELL_DATAIO_EXT */
+
 #if SHELL_DYNAMIC_EXTENSION
+
 /* Ensure there is room in loaded extension info list for one being loaded.
  * On exit, psi->ixExtPending can be used to index into psi->pShxLoaded.
  */
@@ -8163,7 +8727,7 @@ static int subscribe_events(ShellExState *p, ExtensionId eid, void *pvUserData,
   }
 }
 
-/* 
+/*
  * Unsubscribe all event listeners having an ExtensionId > 0. This is
  * done just prior closing the shell DB (when dynamic extensions will
  * be unloaded and accessing them in any way is good for a crash.)
@@ -10413,9 +10977,18 @@ DISPATCHABLE_COMMAND( mode ? 1 0 ){
     }
   }else{
     effectMode(psi, foundMode, setMode);
-    if( MODE_IS_COLUMNAR(setMode) ) psi->cmOpts = cmOpts;
-    else if( setMode==MODE_Insert ){
-      set_table_name(p, zTabname ? zTabname : "table");
+    if( MODE_IS_COLUMNAR(setMode) ){
+      psi->cmOpts = cmOpts;
+#if SHELL_DATAIO_EXT
+      psi->pActiveExporter = psi->pColumnarExporter;
+#endif
+    }else{
+#if SHELL_DATAIO_EXT
+      psi->pActiveExporter = psi->pFreeformExporter;
+#endif
+      if( setMode==MODE_Insert ){
+        set_table_name(p, zTabname ? zTabname : "table");
+      }
     }
   }
   psi->cMode = psi->mode;
@@ -12488,6 +13061,7 @@ DISPATCHABLE_COMMAND( shxopts 3 0 0 ){
   raw_printf(STD_ERR, "Error: %s %s\n", zAbout, zMoan);
   return DCR_CmdErred;
 }
+
 DISPATCHABLE_COMMAND( show ? 1 1 ){
   static const char *azBool[] = { "off", "on", "trigger", "full"};
   const char *zOut;
@@ -13647,14 +14221,7 @@ COMMENT  define new or altered dot-commands and their help text.
 */
 INCLUDE( COMMAND_CUSTOMIZE );
 
-COMMENT  This help text is set seperately from dot-command definition section
-COMMENT  for the always-built-in, non-customizable commands with visible help.
-COLLECT_HELP_TEXT[
-  ".exit ?CODE?             Exit this program with return-code CODE or 0",
-  ".quit                    Exit this program",
-];
-
-static void DotCommand_dtor(DotCommand *);
+static void DotCommand_destruct(DotCommand *);
 static const char * DotCommand_name(DotCommand *);
 static const char * DotCommand_help(DotCommand *, const char *);
 static DotCmdRC
@@ -13663,7 +14230,7 @@ static DotCmdRC
   DotCommand_execute(DotCommand *, ShellExState *, char **, int, char *[]);
 
 static VTABLE_NAME(DotCommand) dot_cmd_VtabBuiltIn = {
-  DotCommand_dtor,
+  DotCommand_destruct,
   DotCommand_name,
   DotCommand_help,
   DotCommand_argsCheck,
@@ -13695,7 +14262,7 @@ static DotCommand *builtInCommand(int ix){
   return (DotCommand *)&command_table[ix];
 }
 
-static void DotCommand_dtor(DotCommand *pMe){
+static void DotCommand_destruct(DotCommand *pMe){
   UNUSED_PARAMETER(pMe);
 }
 
@@ -15353,6 +15920,10 @@ int SQLITE_CDECL SHELL_MAIN(int argc, wchar_t **wargv){
 #endif
   ShellInState data;
   ShellExState datax;
+#if SHELL_DATAIO_EXT
+  BuiltInFFExporter ffExporter = BI_FF_EXPORTER_INIT( &data );
+  BuiltInCMExporter cmExporter = BI_CM_EXPORTER_INIT( &data );
+#endif
   const char *zInitFile = 0;
   int bQuiet = 0; /* for testing, to suppress banner and history actions */
   int i, aec;
@@ -15401,6 +15972,11 @@ int SQLITE_CDECL SHELL_MAIN(int argc, wchar_t **wargv){
   }
 #endif
   main_init(&data,&datax);
+#if SHELL_DATAIO_EXT
+  data.pFreeformExporter = (ExportHandler*)&ffExporter;
+  data.pColumnarExporter = (ExportHandler*)&cmExporter;
+  data.pActiveExporter = (ExportHandler*)&ffExporter;
+#endif
 
   /* On Windows, we must translate command-line arguments into UTF-8.
   ** The SQLite memory allocator subsystem has to be enabled in order to
@@ -15953,6 +16529,10 @@ int SQLITE_CDECL SHELL_MAIN(int argc, wchar_t **wargv){
   free(data.zNonce);
   for(i=0; i<data.nSavedModes; ++i) sqlite3_free(data.pModeStack[i]);
   free(azCmd);
+#if SHELL_DATAIO_EXT
+  cmExporter.pMethods->destruct((ExportHandler*)&cmExporter);
+  ffExporter.pMethods->destruct((ExportHandler*)&ffExporter);
+#endif
   aec = datax.shellAbruptExit;
   /* Clear shell state objects so that valgrind detects real memory leaks. */
   memset(&data, 0, sizeof(data));

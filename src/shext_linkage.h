@@ -489,8 +489,8 @@ AGGTYPE_BEGIN(ShellExtensionLink) {
 
 /* Combining the above, safely, to provide a single test for extensions to
  * use for assurance that: (1) the load was as a shell extension (with the
- * -shext flag rather than bare .load); and (2) the loading host provides
- * stated minimum extension API and helper counts.
+ * .shxload command rather than .load); and (2) the loading host provides
+ * the stated minimum extension API and helper counts.
  */
 #define SHELL_EXTENSION_LOADFAIL(link_ptr, minNumApi, minNumHelpers) \
   (!SHELL_EXTENSION_LINKED(link_ptr) \
