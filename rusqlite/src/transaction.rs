@@ -87,6 +87,7 @@ pub struct Transaction<'conn> {
 ///     sp.commit()
 /// }
 /// ```
+#[derive(Debug)]
 pub struct Savepoint<'conn> {
     conn: &'conn Connection,
     name: String,
