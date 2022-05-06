@@ -1,5 +1,5 @@
-C Backout\scheck-in\s[9fb20a21feb8f697]\swhich\swas\sincorrect.
-D 2022-05-05T10:02:19.031
+C Prevent\san\sinfinite\sloop\son\sSQLITE_ERROR_RETRY\swhen\strying\sto\smodify\sa\ncorrupt\sschema\swhile\sPRAGMA\swriteable_schema=ON\sis\sactive.\ndbsqlfuzz\sded83609f475cc989c7339d45efb5151c1495501
+D 2022-05-06T00:43:06.024
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -548,7 +548,7 @@ F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c 54881292a9a5db202b2c0ac541c5e3ef9a5e8c4f1c1383adb2601d5499a60e65
 F src/pragma.c d1aead03e8418ff586c7cfca344c50a914b8eb06abd841e8e91a982d823671da
 F src/pragma.h e690a356c18e98414d2e870ea791c1be1545a714ba623719deb63f7f226d8bb7
-F src/prepare.c fd940149c691684e7c1073c3787a7170e44852b02d1275d2e30a5b58e89cfcaf
+F src/prepare.c c62820c15dcb63013519c8e41d9f928d7478672cc902cfd0581c733c271dbf45
 F src/printf.c 512574910a45341c8ad244bd3d4939968ebdfde215645b676fff01cc46e90757
 F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c e9ee235c4151d2b7fa47435a219bfd30bf516a804d2f004639858087ebf3137b
@@ -1953,9 +1953,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 006b2d9c52201c9e836b649018519acfb47f793f70b968722440f00084e9d846
-Q -9fb20a21feb8f6979812f45691e06aa3e297d7370cf0d5820523e817a4e97863
-R b2f806b159cf5b7512b127e1bdd5f6f4
+P 99225618a83b577efbd5d13c0d1ff73e9c5a71bb43c259d7c0f22cf3479c992f
+R 237342be5a3b7945b5f526c6ba0ad1f5
 U drh
-Z 6ea7d4e8035c10ed72515b983b2301a9
+Z 4736b1d65ba434838034b9038e83b4a0
 # Remove this line to create a well-formed Fossil manifest.
