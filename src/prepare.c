@@ -664,6 +664,14 @@ void sqlite3ParseObjectInit(Parse *pParse, sqlite3 *db){
 }
 
 /*
+** Maximum number of times that we will try again to prepare a statement
+** that returns SQLITE_ERROR_RETRY.
+*/
+#ifndef SQLITE_MAX_PREPARE_RETRY
+# define SQLITE_MAX_PREPARE_RETRY 25
+#endif
+
+/*
 ** Compile the UTF-8 encoded SQL statement zSql into a statement handle.
 */
 static int sqlite3Prepare(
@@ -837,7 +845,7 @@ static int sqlite3LockAndPrepare(
     rc = sqlite3Prepare(db, zSql, nBytes, prepFlags, pOld, ppStmt, pzTail);
     assert( rc==SQLITE_OK || *ppStmt==0 );
     if( rc==SQLITE_OK || db->mallocFailed ) break;
-  }while( rc==SQLITE_ERROR_RETRY
+  }while( (rc==SQLITE_ERROR_RETRY && (cnt++)<SQLITE_MAX_PREPARE_RETRY)
        || (rc==SQLITE_SCHEMA && (sqlite3ResetOneSchema(db,-1), cnt++)==0) );
   sqlite3BtreeLeaveAll(db);
   rc = sqlite3ApiExit(db, rc);

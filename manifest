@@ -1,5 +1,5 @@
-C Update\sthe\sversion\snumber\sto\s3.38.5
-D 2022-05-05T10:04:38.098
+C Prevent\san\sinfinite\sloop\son\sSQLITE_ERROR_RETRY\swhen\strying\sto\smodify\sa\ncorrupt\sschema\swhile\sPRAGMA\swriteable_schema=ON\sis\sactive.\ndbsqlfuzz\sded83609f475cc989c7339d45efb5151c1495501
+D 2022-05-06T01:02:05.148
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -547,7 +547,7 @@ F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c 54881292a9a5db202b2c0ac541c5e3ef9a5e8c4f1c1383adb2601d5499a60e65
 F src/pragma.c 7c024d690a3dc93f61830f11f900e4af2357f31d081b0c79099ca5e28919cba7
 F src/pragma.h 87330ed2fbfa2a1274de93ca0ab850fba336189228cb256089202c3b52766fad
-F src/prepare.c fd940149c691684e7c1073c3787a7170e44852b02d1275d2e30a5b58e89cfcaf
+F src/prepare.c c62820c15dcb63013519c8e41d9f928d7478672cc902cfd0581c733c271dbf45
 F src/printf.c 05d8dfd2018bc4fc3ddb8b37eb97ccef7abf985643fa1caebdcf2916ca90fa32
 F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c ea935b87d6fb36c78b70cdc7b28561dc8f33f2ef37048389549c7b5ef9b0ba5e
@@ -1944,8 +1944,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 66f65b322a85c971d72397c2d7315504cc53b295bc9e207b2dfc07b9eea5fee8
-R 698c203ce86b7bddd50acfe7155cfca9
+P bf73b57f700ea43cd8c5849dc8d7cca184329c77b065aa3da9459ce58959d3e9
+Q +217b33234dc3dc36b5b6add50c170869421057a56a7576d1a61767956248d5c9
+R c70a3244d878106624c489b9bff97d77
 U drh
-Z b413883a100ac0ce25ead271780af050
+Z 8428fe677b7f7848205fe950a75541b2
 # Remove this line to create a well-formed Fossil manifest.
