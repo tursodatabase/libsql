@@ -1,5 +1,5 @@
-C Prevent\san\sinfinite\sloop\son\sSQLITE_ERROR_RETRY\swhen\strying\sto\smodify\sa\ncorrupt\sschema\swhile\sPRAGMA\swriteable_schema=ON\sis\sactive.\ndbsqlfuzz\sded83609f475cc989c7339d45efb5151c1495501
-D 2022-05-06T00:43:06.024
+C Perserve\sthe\srequested\sreserved-bytes\ssize\sfor\sthe\sdatabase\sfile\swhen\ndoing\sa\sVACUUM.
+D 2022-05-06T22:29:45.170
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -624,7 +624,7 @@ F src/update.c 2cfaded82ca80ff56afb8c3ae5e88284e0824bfd86119827cc22481959f96f92
 F src/upsert.c 8789047a8f0a601ea42fa0256d1ba3190c13746b6ba940fe2d25643a7e991937
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c 602fe229f32a96ceccae4f40824129669582096f7c355f53dbac156c9fecef23
-F src/vacuum.c 6c38ddc52f0619865c91dae9c441d4d48bf3040d7dc1bc5b22da1e45547ed0b3
+F src/vacuum.c bb346170b0b54c6683bba4a5983aea40485597fdf605c87ec8bc2e199fe88cd8
 F src/vdbe.c a6a20956fa128c0b8d3c5592a9a3db890a46cf626f46ffee0cab2ac5bf8d04b2
 F src/vdbe.h 07641758ca8b4f4c6d81ea667ea167c541e6ece21f5574da11e3d21ec37e2662
 F src/vdbeInt.h ef43f7fdc5fde29fc3fd29c506c12830f366178fdb4edbbf0cbc3dfbd1278b5f
@@ -1953,8 +1953,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 99225618a83b577efbd5d13c0d1ff73e9c5a71bb43c259d7c0f22cf3479c992f
-R 237342be5a3b7945b5f526c6ba0ad1f5
+P 217b33234dc3dc36b5b6add50c170869421057a56a7576d1a61767956248d5c9
+R fb5b71dd78e91f00920386e6c95ee22a
 U drh
-Z 4736b1d65ba434838034b9038e83b4a0
+Z 5c19e3fe26f9144dbbad9274556b129a
 # Remove this line to create a well-formed Fossil manifest.
