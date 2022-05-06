@@ -1,5 +1,5 @@
-C Prevent\san\sinfinite\sloop\son\sSQLITE_ERROR_RETRY\swhen\strying\sto\smodify\sa\ncorrupt\sschema\swhile\sPRAGMA\swriteable_schema=ON\sis\sactive.\ndbsqlfuzz\sded83609f475cc989c7339d45efb5151c1495501
-D 2022-05-06T01:02:05.148
+C Version\s3.38.5
+D 2022-05-06T15:25:27.476
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1944,9 +1944,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bf73b57f700ea43cd8c5849dc8d7cca184329c77b065aa3da9459ce58959d3e9
-Q +217b33234dc3dc36b5b6add50c170869421057a56a7576d1a61767956248d5c9
+P 7fcdb760a4df8c5c11e94cecdc61bb8f40c86b70aa05f48e17520443a3d3b451
 R c70a3244d878106624c489b9bff97d77
+T +sym-release *
+T +sym-version-3.38.5 *
 U drh
-Z 8428fe677b7f7848205fe950a75541b2
+Z 54d3523b3ce9c5f872539bc3270e6853
 # Remove this line to create a well-formed Fossil manifest.
