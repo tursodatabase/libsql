@@ -8883,8 +8883,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         }else{
           utf8_printf(p->out, "ERROR: extra argument: \"%s\".  Usage:\n", z);
           showHelp(p->out, "import");
-          rc = 1;
-          goto meta_command_exit;
+          goto import_cleanup_fail;
         }
       }else if( strcmp(z,"-v")==0 ){
         eVerbose++;
@@ -8905,15 +8904,16 @@ static int do_meta_command(char *zLine, ShellState *p){
       }else{
         utf8_printf(p->out, "ERROR: unknown option: \"%s\".  Usage:\n", z);
         showHelp(p->out, "import");
-        rc = 1;
-        goto meta_command_exit;
+        goto import_cleanup_fail;
       }
     }
     if( zTable==0 ){
       utf8_printf(p->out, "ERROR: missing %s argument. Usage:\n",
                   zFile==0 ? "FILE" : "TABLE");
       showHelp(p->out, "import");
+    import_cleanup_fail:
       rc = 1;
+      import_cleanup(&sCtx);
       goto meta_command_exit;
     }
     seenInterrupt = 0;
@@ -8925,22 +8925,20 @@ static int do_meta_command(char *zLine, ShellState *p){
       if( nSep==0 ){
         raw_printf(stderr,
                    "Error: non-null column separator required for import\n");
-        rc = 1;
-        goto meta_command_exit;
+        goto import_cleanup_fail;
       }
       if( nSep>1 ){
         raw_printf(stderr, 
               "Error: multi-character column separators not allowed"
               " for import\n");
-        rc = 1;
-        goto meta_command_exit;
+        goto import_cleanup_fail;
       }
       nSep = strlen30(p->rowSeparator);
       if( nSep==0 ){
         raw_printf(stderr,
             "Error: non-null row separator required for import\n");
         rc = 1;
-        goto meta_command_exit;
+        goto import_cleanup_fail;
       }
       if( nSep==2 && p->mode==MODE_Csv && strcmp(p->rowSeparator,SEP_CrLf)==0 ){
         /* When importing CSV (only), if the row separator is set to the
@@ -8953,8 +8951,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       if( nSep>1 ){
         raw_printf(stderr, "Error: multi-character row separators not allowed"
                            " for import\n");
-        rc = 1;
-        goto meta_command_exit;
+        goto import_cleanup_fail;
       }
       sCtx.cColSep = p->colSeparator[0];
       sCtx.cRowSep = p->rowSeparator[0];
@@ -8964,8 +8961,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     if( sCtx.zFile[0]=='|' ){
 #ifdef SQLITE_OMIT_POPEN
       raw_printf(stderr, "Error: pipes are not supported in this OS\n");
-      rc = 1;
-      goto meta_command_exit;
+      goto import_cleanup_fail;
 #else
       sCtx.in = popen(sCtx.zFile+1, "r");
       sCtx.zFile = "<pipe>";
@@ -8977,9 +8973,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
     if( sCtx.in==0 ){
       utf8_printf(stderr, "Error: cannot open \"%s\"\n", zFile);
-      rc = 1;
-      import_cleanup(&sCtx);
-      goto meta_command_exit;
+      goto import_cleanup_fail;
     }
     if( eVerbose>=2 || (eVerbose>=1 && useOutputMode) ){
       char zSep[2];
@@ -11864,6 +11858,9 @@ int SQLITE_CDECL main(int argc, char **argv){
 int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   char **argv;
 #endif
+#ifdef SQLITE_DEBUG
+  sqlite3_uint64 mem_main_enter = sqlite3_memory_used();
+#endif
   char *zErrMsg = 0;
   ShellState data;
   const char *zInitFile = 0;
@@ -12430,5 +12427,11 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   /* Clear the global data structure so that valgrind will detect memory
   ** leaks */
   memset(&data, 0, sizeof(data));
+#ifdef SQLITE_DEBUG
+  if( sqlite3_memory_used()>mem_main_enter ){
+    utf8_printf(stderr, "Memory leaked: %u bytes\n",
+                (unsigned int)(sqlite3_memory_used()-mem_main_enter));
+  }
+#endif
   return rc;
 }
