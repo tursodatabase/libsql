@@ -1,5 +1,5 @@
-C Simplify\sa\sbranch\sin\sthe\s"*"\sexpansion\slogic.\s\sNew\stest\scase\sfor\san\nINSTEAD\sOF\strigger\son\sa\sRIGHT\sand\sFULL\souter\sjoin.
-D 2022-05-09T12:59:16.562
+C Add\sALWAYS()\son\stwo\sunreachable\sbranches\sin\sthe\s*\sexpander.
+D 2022-05-09T16:29:53.023
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -553,7 +553,7 @@ F src/printf.c 512574910a45341c8ad244bd3d4939968ebdfde215645b676fff01cc46e90757
 F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c e9ee235c4151d2b7fa47435a219bfd30bf516a804d2f004639858087ebf3137b
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c 625865ad9f8efec6bd3176461c5eeb36c8003f7a5366438d86e3f89f45df1f01
+F src/select.c 6c0fba59d2a74bf606065f23e3bb6a8f29106c84f90ec34290ac4245e83b918c
 F src/shell.c.in ae0a6fae983caac6f8c824733f0599dfdf7b3a7e8efdef3cb5e3ab2e457ffc35
 F src/sqlite.h.in 2a35f62185eb5e7ecc64a2f68442b538ce9be74f80f28a00abc24837edcf1c17
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1953,8 +1953,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P dac6d87c71606f3ec7ce601be6d17357d323476ecb60dbb167030146783b62b2
-R d81ef2c896b333ba6ad03fd21ef90d06
+P d2717348f43b571c7bb58498e0c723331abf85de174189e66aca2c438ca26d5f
+R bfa78738985cc250c9ab2a579702f4b0
 U drh
-Z 1c1d5a324638d0fbf012275c6ac59a4c
+Z 4ad8291fd7545a4052c6d83a014b41b4
 # Remove this line to create a well-formed Fossil manifest.
