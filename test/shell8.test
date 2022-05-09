@@ -19,7 +19,7 @@ set testprefix shell8
 ifcapable !vtab {
   finish_test; return
 }
-set CLI [test_find_cli]
+set CLI [test_cli_invocation]
 
 # Check to make sure the shell has been compiled with ".archive" support.
 #

@@ -23,7 +23,7 @@
 #
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-set CLI [test_find_cli]
+set CLI [test_cli_invocation]
 db close
 forcedelete test.db test.db-journal test.db-wal
 sqlite3 db test.db
