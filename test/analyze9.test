@@ -399,7 +399,7 @@ do_test 9.2 {
   for {set i 0} {$i < 100} {incr i} {
     execsql "INSERT INTO t1 VALUES('x', 'y', 'z', $i, [expr $i/2])"
   }
-  for {set i 0} {$i < 20} {incr i} {
+  for {set i 0} {$i < 21} {incr i} {
     execsql "INSERT INTO t1 VALUES('x', 'y', 'z', 101, $i)"
   }
   for {set i 102} {$i < 200} {incr i} {

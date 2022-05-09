@@ -1,5 +1,5 @@
-C Add\sALWAYS()\son\stwo\sunreachable\sbranches\sin\sthe\s*\sexpander.
-D 2022-05-09T16:29:53.023
+C Minor\sSTAT4\stest\scase\schange\sdue\sto\sthe\sANALYZE\senhancement\sof\n[eb59c46a5aed69bc|check-in\seb59c46a5aed69bc].
+D 2022-05-09T17:55:34.846
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -679,7 +679,7 @@ F test/analyze5.test fa5131952303ac4146aba101b116b9c8cb89e2637531c334a6df7f7d19d
 F test/analyze6.test 028f5bdfc9e5b5294768fa9a7185b8cd1d019aa7aab5b2f8ee42d7271d9a3b28
 F test/analyze7.test 079d17c495e396bdbd6cc6a083112788a6fbfb3b95c42e760e4270a53c9ead8f
 F test/analyze8.test 29ef237d8a59b39cc31c3310134fefe96a690b195e3deed5ecb652839089f15c
-F test/analyze9.test 162cd40d713310fbe7a63a5ecff5d3a013777d86809618838177d9b2af4dd09c
+F test/analyze9.test 30e1cb99336045a384a11d97900720184333c88174b3b89bc07444ea39e7df19
 F test/analyzeC.test 1111830ad355d29a294a5dda654dd5f6a8622c6a223a4f7b7b3d091df7a7a42b
 F test/analyzeD.test 485f621cfd2ef0a8f8ac79672586651bfa495bd899db50461bb4b558400ab3c1
 F test/analyzeE.test 69d130f9ba78c9853dcd5a18317e81f462a72d704cec0c4c30afb220213acd29
@@ -1953,8 +1953,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d2717348f43b571c7bb58498e0c723331abf85de174189e66aca2c438ca26d5f
-R bfa78738985cc250c9ab2a579702f4b0
+P 387c852375bba62df040330944c9e979a6993f95ece3443597c5fc66e34263ca
+R cbb8544fd969bd1dbd19e4e7428f857d
 U drh
-Z 4ad8291fd7545a4052c6d83a014b41b4
+Z 4859f8d06796c35fb9e8207cbbd745d2
 # Remove this line to create a well-formed Fossil manifest.
