@@ -5884,7 +5884,7 @@ static int selectExpander(Walker *pWalker, Select *p){
             */
             if( pTab->aCol[j].colFlags & (COLFLAG_HIDDEN|COLFLAG_NOEXPAND) ){
               if( IsHiddenColumn(&pTab->aCol[j])
-               && (selFlags & (SF_IncludeHidden|SF_NestedFrom))==0
+               && (selFlags & SF_IncludeHidden)==0
               ){
                 continue;
               }
