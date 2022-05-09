@@ -1,0 +1,55 @@
+# 2022 May 09
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#*************************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this script is testing the FTS5 module.
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+set testprefix fts5concurrent
+
+# If SQLITE_ENABLE_FTS5 is not defined, omit this file.
+ifcapable !fts5 {
+  finish_test
+  return
+}
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(line, tokenize=trigram);
+}
+
+do_execsql_test 1.1 {
+  BEGIN CONCURRENT;
+    INSERT INTO ft VALUES( hex(randomblob(50)) );
+  COMMIT
+} {}
+
+do_execsql_test 1.2 {
+  BEGIN CONCURRENT;
+    WITH s(i) AS (
+      SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<50
+    )
+    INSERT INTO ft SELECT hex(randomblob(50)) FROM s;
+
+    WITH s(i) AS (
+      SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<50
+    )
+    INSERT INTO ft SELECT hex(randomblob(50)) FROM s;
+
+    WITH s(i) AS (
+      SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<50
+    )
+    INSERT INTO ft SELECT hex(randomblob(50)) FROM s;
+  COMMIT;
+}
+
+
+finish_test
+
