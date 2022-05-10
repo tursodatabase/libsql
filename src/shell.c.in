@@ -1191,10 +1191,11 @@ struct ShellState {
 #define SHFLG_PreserveRowid  0x00000008 /* .dump preserves rowid values */
 #define SHFLG_Newlines       0x00000010 /* .dump --newline flag */
 #define SHFLG_CountChanges   0x00000020 /* .changes setting */
-#define SHFLG_Echo           0x00000040 /* .echo or --echo setting */
-#define SHFLG_HeaderSet      0x00000080 /* showHeader has been specified */
-#define SHFLG_DumpDataOnly   0x00000100 /* .dump show data only */
-#define SHFLG_DumpNoSys      0x00000200 /* .dump omits system tables */
+#define SHFLG_Echo           0x00000040 /* .echo on/off, or --echo setting */
+#define SHFLG_EchoSql        0x00000080 /* .echo sql, before prepare */
+#define SHFLG_HeaderSet      0x00000100 /* showHeader has been specified */
+#define SHFLG_DumpDataOnly   0x00000200 /* .dump show data only */
+#define SHFLG_DumpNoSys      0x00000400 /* .dump omits system tables */
 
 /*
 ** Macros for testing and setting shellFlgs
@@ -3796,6 +3797,11 @@ static int shell_exec(
   }
 #endif
 
+  /* Echo the sql statement(s) if echoing SQL early (before prepare.) */
+  if( pArg && ShellHasFlag(pArg, SHFLG_EchoSql) ){
+    utf8_printf(pArg->out, "%s\n", zSql);
+  }
+
   while( zSql[0] && (SQLITE_OK == rc) ){
     static const char *zStmtSql;
     rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, &zLeftover);
@@ -3824,7 +3830,6 @@ static int shell_exec(
       if( pArg && ShellHasFlag(pArg, SHFLG_Echo) ){
         utf8_printf(pArg->out, "%s\n", zStmtSql ? zStmtSql : zSql);
       }
-
       /* Show the EXPLAIN QUERY PLAN if .eqp is on */
       if( pArg && pArg->autoEQP && sqlite3_stmt_isexplain(pStmt)==0 ){
         sqlite3_stmt *pExplain;
@@ -8437,8 +8442,8 @@ static int do_meta_command(char *zLine, ShellState *p){
     int i;
     int savedShowHeader = p->showHeader;
     int savedShellFlags = p->shellFlgs;
-    ShellClearFlag(p, 
-       SHFLG_PreserveRowid|SHFLG_Newlines|SHFLG_Echo
+    ShellClearFlag(p,
+       SHFLG_PreserveRowid|SHFLG_Newlines|SHFLG_Echo|SHFLG_EchoSql
        |SHFLG_DumpDataOnly|SHFLG_DumpNoSys);
     for(i=1; i<nArg; i++){
       if( azArg[i][0]=='-' ){
@@ -8545,9 +8550,14 @@ static int do_meta_command(char *zLine, ShellState *p){
 
   if( c=='e' && strncmp(azArg[0], "echo", n)==0 ){
     if( nArg==2 ){
-      setOrClearFlag(p, SHFLG_Echo, azArg[1]);
+      ShellClearFlag(p,(SHFLG_Echo|SHFLG_EchoSql));
+      if( strcmp(azArg[1],"sql")==0 ){
+        ShellSetFlag(p,(SHFLG_EchoSql));
+      }else{
+        setOrClearFlag(p, SHFLG_Echo, azArg[1]);
+      }
     }else{
-      raw_printf(stderr, "Usage: .echo on|off\n");
+      raw_printf(stderr, "Usage: .echo on|off|sql\n");
       rc = 1;
     }
   }else
@@ -9667,7 +9677,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       if( eMode=='x' ){
         /* spreadsheet mode.  Output as CSV. */
         newTempFile(p, "csv");
-        ShellClearFlag(p, SHFLG_Echo);
+        ShellClearFlag(p, SHFLG_Echo|SHFLG_EchoSql);
         p->mode = MODE_Csv;
         sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, SEP_Comma);
         sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_CrLf);
@@ -10629,7 +10639,8 @@ static int do_meta_command(char *zLine, ShellState *p){
       goto meta_command_exit;
     }
     utf8_printf(p->out, "%12.12s: %s\n","echo",
-                                  azBool[ShellHasFlag(p, SHFLG_Echo)]);
+                (ShellHasFlag(p, SHFLG_EchoSql))
+                ? "sql" : azBool[ShellHasFlag(p, SHFLG_Echo)]);
     utf8_printf(p->out, "%12.12s: %s\n","eqp", azBool[p->autoEQP&3]);
     utf8_printf(p->out, "%12.12s: %s\n","explain",
          p->mode==MODE_Explain ? "on" : p->autoExplain ? "auto" : "off");
@@ -11379,7 +11390,7 @@ static QuickScanState quickscan(char *zLine, QuickScanState qss){
           cWait = 0;
           qss = QSS_SETV(qss, 0);
           goto PlainScan;
-        default: assert(0); 
+        default: assert(0);
         }
       }
     }
@@ -11400,7 +11411,7 @@ static int line_is_command_terminator(char *zLine){
     zLine += 2; /* SQL Server */
   else
     return 0;
-  return quickscan(zLine,QSS_Start)==QSS_Start;
+  return quickscan(zLine, QSS_Start)==QSS_Start;
 }
 
 /*
@@ -11722,7 +11733,8 @@ static const char zOptions[] =
 #if !defined(SQLITE_OMIT_DESERIALIZE)
   "   -deserialize         open the database using sqlite3_deserialize()\n"
 #endif
-  "   -echo                print commands before execution\n"
+  "   -echo                print inputs before execution\n"
+  "   -echo-sql            print SQL before prepare\n"
   "   -init FILENAME       read/process named file\n"
   "   -[no]header          turn headers on or off\n"
 #if defined(SQLITE_ENABLE_MEMSYS3) || defined(SQLITE_ENABLE_MEMSYS5)
@@ -12229,7 +12241,11 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       data.showHeader = 0;
       ShellSetFlag(&data, SHFLG_HeaderSet);
     }else if( strcmp(z,"-echo")==0 ){
+      ShellClearFlag(&data, SHFLG_EchoSql);
       ShellSetFlag(&data, SHFLG_Echo);
+    }else if( strcmp(z,"-echo-sql")==0 ){
+      ShellClearFlag(&data, SHFLG_Echo);
+      ShellSetFlag(&data, SHFLG_EchoSql);
     }else if( strcmp(z,"-eqp")==0 ){
       data.autoEQP = AUTOEQP_on;
     }else if( strcmp(z,"-eqpfull")==0 ){

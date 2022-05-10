@@ -313,7 +313,7 @@ do_test shell1-3.4.2 {
 # .echo ON|OFF           Turn command echo on or off
 do_test shell1-3.5.1 {
   catchcmd "test.db" ".echo"
-} {1 {Usage: .echo on|off}}
+} {1 {Usage: .echo on|off|sql}}
 do_test shell1-3.5.2 {
   catchcmd "test.db" ".echo ON"
 } {0 {}}
@@ -323,7 +323,7 @@ do_test shell1-3.5.3 {
 do_test shell1-3.5.4 {
   # too many arguments
   catchcmd "test.db" ".echo OFF BAD"
-} {1 {Usage: .echo on|off}}
+} {1 {Usage: .echo on|off|sql}}
 
 # .exit                  Exit this program
 do_test shell1-3.6.1 {
