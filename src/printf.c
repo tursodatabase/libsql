@@ -884,8 +884,14 @@ void sqlite3_str_vappendf(
           sqlite3_str_appendall(pAccum, pItem->zName);
         }else if( pItem->zAlias ){
           sqlite3_str_appendall(pAccum, pItem->zAlias);
-        }else if( ALWAYS(pItem->pSelect) ){
-          sqlite3_str_appendf(pAccum, "SUBQUERY %u", pItem->pSelect->selId);
+        }else{
+          Select *pSel = pItem->pSelect;
+          assert( pSel!=0 );
+          if( pSel->selFlags & SF_NestedFrom ){
+            sqlite3_str_appendf(pAccum, "(join-%u)", pSel->selId);
+          }else{
+            sqlite3_str_appendf(pAccum, "(subquery-%u)", pSel->selId);
+          }
         }
         length = width = 0;
         break;

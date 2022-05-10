@@ -1348,15 +1348,24 @@ do_execsql_test where-18.1 {
   INSERT INTO t181 VALUES(1);
   SELECT DISTINCT a FROM t181 LEFT JOIN t182 ON a=b ORDER BY c IS NULL;
 } {1}
+do_execsql_test where-18.1rj {
+  SELECT DISTINCT a FROM t182 RIGHT JOIN t181 ON a=b ORDER BY c IS NULL;
+} {1}
 do_execsql_test where-18.2 {
   SELECT DISTINCT a FROM t181 LEFT JOIN t182 ON a=b ORDER BY +c;
 } {1}
 do_execsql_test where-18.3 {
   SELECT DISTINCT a FROM t181 LEFT JOIN t182 ON a=b ORDER BY c;
 } {1}
+do_execsql_test where-18.3rj {
+  SELECT DISTINCT a FROM t182 RIGHT JOIN t181 ON a=b ORDER BY c;
+} {1}
 do_execsql_test where-18.4 {
   INSERT INTO t181 VALUES(1),(1),(1),(1);
   SELECT DISTINCT a FROM t181 LEFT JOIN t182 ON a=b ORDER BY +c;
+} {1}
+do_execsql_test where-18.4rj {
+  SELECT DISTINCT a FROM t182 RIGHT JOIN t181 ON a=b ORDER BY +c;
 } {1}
 do_execsql_test where-18.5 {
   INSERT INTO t181 VALUES(2);

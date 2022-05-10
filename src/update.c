@@ -376,6 +376,14 @@ void sqlite3Update(
 # define isView 0
 #endif
 
+#if TREETRACE_ENABLED
+  if( sqlite3TreeTrace & 0x10000 ){
+    sqlite3TreeViewLine(0, "In sqlite3Update() at %s:%d", __FILE__, __LINE__);
+    sqlite3TreeViewUpdate(pParse->pWith, pTabList, pChanges, pWhere,
+                          onError, pOrderBy, pLimit, pUpsert, pTrigger);
+  }
+#endif
+
   /* If there was a FROM clause, set nChangeFrom to the number of expressions
   ** in the change-list. Otherwise, set it to 0. There cannot be a FROM
   ** clause if this function is being called to generate code for part of

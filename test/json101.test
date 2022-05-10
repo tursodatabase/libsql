@@ -850,4 +850,21 @@ do_execsql_test json-17.1 {
   SELECT * FROM t1 LEFT JOIN t2 ON (SELECT b FROM json_each ORDER BY 1);
 } {}
 
+# 2022-04-04 forum post https://sqlite.org/forum/forumpost/c082aeab43
+do_execsql_test json-18.1 {
+  SELECT json_valid('{"":5}');
+} {1}
+do_execsql_test json-18.2 {
+  SELECT json_extract('{"":5}', '$.""');
+} {5}
+do_execsql_test json-18.3 {
+  SELECT json_extract('[3,{"a":4,"":[5,{"hi":6},7]},8]', '$[1].""[1].hi');
+} {6}
+do_execsql_test json-18.4 {
+  SELECT json_extract('[3,{"a":4,"":[5,{"hi":6},7]},8]', '$[1].""[1]."hi"');
+} {6}
+do_catchsql_test json-18.5 {
+  SELECT json_extract('{"":8}', '$.');
+} {1 {JSON path error near ''}}
+
 finish_test

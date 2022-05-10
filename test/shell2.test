@@ -188,4 +188,13 @@ b
 2
 }}
 
+# Test for rejection of incomplete input at EOF.
+# Reported at https://sqlite.org/forum/forumpost/718f489a43be3197
+do_test shell2-1.4.7 {
+  catchcmd ":memory:" {
+ SELECT 'unclosed;}
+} {1 {Parse error near line 2: unrecognized token: "'unclosed;"
+  SELECT 'unclosed;
+         ^--- error here}}
+
 finish_test
