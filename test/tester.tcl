@@ -2499,12 +2499,17 @@ proc test_find_cli {} {
 proc test_cli_invocation {} {
   set prog [test_find_binary sqlite3]
   if {$prog==""} { return -code return }
-  if {[info exists ::env(SQLITE_CLI_VALGRIND_OPT)]} {
-    set vgo $::env(SQLITE_CLI_VALGRIND_OPT)
+  set vgrun [expr {[permutation]=="valgrind"}]
+  if {$vgrun || [info exists ::env(SQLITE_CLI_VALGRIND_OPT)]} {
+    if {$vgrun} {
+      set vgo "--quiet"
+    } else {
+      set vgo $::env(SQLITE_CLI_VALGRIND_OPT)
+    }
     if {$vgo == 0 || $vgo eq ""} {
       return $prog
     } elseif {$vgo == 1} {
-      return "valgrind -q --leak-check=yes $prog"
+      return "valgrind --quiet --leak-check=yes $prog"
     } else {
       return "valgrind $vgo $prog"
     }
