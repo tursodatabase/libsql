@@ -365,4 +365,49 @@ do_execsql_test 9.0 {
   FROM seps;
 } {-22- -22-333- -333-4444- -4444-}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 10.1 {
+  CREATE TABLE t1(i INTEGER PRIMARY KEY, v);
+  INSERT INTO t1 VALUES( 1, 'one' );
+  INSERT INTO t1 VALUES( 2, 'two' );
+}
+
+do_execsql_test 10.2 {
+  SELECT 
+    json_group_array( v ) OVER w,
+    json_group_array( v ) OVER w
+  FROM t1
+  window w as ( 
+    range between unbounded preceding and unbounded following 
+  )
+} {
+  {["one","two"]} 
+  {["one","two"]} 
+  {["one","two"]} 
+  {["one","two"]} 
+}
+
+do_execsql_test 10.3 {
+  SELECT 
+    group_concat( v ) OVER w,
+    json_group_array( v ) OVER w,
+    json_group_array( v ) OVER w,
+    group_concat( v ) OVER w
+  FROM t1
+  window w as ( 
+    range between unbounded preceding and unbounded following 
+  )
+} {
+  one,two
+  {["one","two"]} 
+  {["one","two"]} 
+  one,two
+
+  one,two
+  {["one","two"]} 
+  {["one","two"]} 
+  one,two
+}
+
 finish_test

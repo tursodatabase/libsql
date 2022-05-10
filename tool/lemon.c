@@ -3015,6 +3015,7 @@ void Parse(struct lemon *gp)
     }
     if( c=='/' && cp[1]=='*' ){          /* Skip C style comments */
       cp+=2;
+      if( (*cp)=='/' ) cp++;
       while( (c= *cp)!=0 && (c!='/' || cp[-1]!='*') ){
         if( c=='\n' ) lineno++;
         cp++;

@@ -171,4 +171,13 @@ do_execsql_test func6-200 {
   SELECT offrec( sqlite_offset(y), x, y ) FROM t2 ORDER BY x
 } $z100
 
+# 2022-03-14 dbsqlfuzz 474499f3977d95fdf2dbcd99c50be1d0082e4c92
+reset_db
+do_execsql_test func6-300 {
+  CREATE TABLE t2(a INT, b INT PRIMARY KEY) WITHOUT ROWID;
+  CREATE INDEX x3 ON t2(b);
+  CREATE TABLE t1(a INT PRIMARY KEY, b TEXT);
+  SELECT * FROM t1 WHERE a IN (SELECT sqlite_offset(b) FROM t2);
+} {}
+
 finish_test

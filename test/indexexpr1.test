@@ -487,4 +487,23 @@ ifcapable like_match_blobs {
   } {2.0}
 }
 
+# 2022-04-30 https://sqlite.org/forum/info/7efabf4b03328e57
+# Assertion fault during a DELETE INDEXED BY.
+#
+reset_db
+do_execsql_test indexexpr-1900 {
+  CREATE TABLE t1(x TEXT PRIMARY KEY, y TEXT, z INT);
+  INSERT INTO t1(x,y,z) VALUES('alpha','ALPHA',1),('bravo','charlie',1);
+  CREATE INDEX i1 ON t1(+y COLLATE NOCASE);
+  SELECT * FROM t1;
+} {alpha ALPHA 1 bravo charlie 1}
+do_execsql_test indexexpr-1910 {
+  DELETE FROM t1 INDEXED BY i1 
+   WHERE x IS +y COLLATE NOCASE IN (SELECT z FROM t1)
+  RETURNING *;
+} {alpha ALPHA 1}
+do_execsql_test indexexpr-1920 {
+  SELECT * FROM t1;
+} {bravo charlie 1}
+
 finish_test

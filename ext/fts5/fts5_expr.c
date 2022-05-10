@@ -1627,6 +1627,9 @@ Fts5ExprNearset *sqlite3Fts5ParseNearset(
   }else{
     if( pRet->nPhrase>0 ){
       Fts5ExprPhrase *pLast = pRet->apPhrase[pRet->nPhrase-1];
+      assert( pParse!=0 );
+      assert( pParse->apPhrase!=0 );
+      assert( pParse->nPhrase>=2 );
       assert( pLast==pParse->apPhrase[pParse->nPhrase-2] );
       if( pPhrase->nTerm==0 ){
         fts5ExprPhraseFree(pPhrase);

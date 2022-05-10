@@ -1075,10 +1075,10 @@ do_execsql_test 21.2 {
 # Make sure crazy nexted CTE joins terminate with an error quickly.
 #
 do_catchsql_test 22.1 {
-  WITH RECURSIVE c AS (
-     WITH RECURSIVE c AS (
-        WITH RECURSIVE c AS (
-           WITH RECURSIVE c AS (
+  WITH RECURSIVE c AS NOT MATERIALIZED (
+     WITH RECURSIVE c AS NOT MATERIALIZED (
+        WITH RECURSIVE c AS NOT MATERIALIZED (
+           WITH RECURSIVE c AS NOT MATERIALIZED (
                WITH  c AS (VALUES(0))
                SELECT 1 FROM c LEFT JOIN c ON ltrim(1)
            )
