@@ -63,11 +63,23 @@ do_test join2-1.6 {
       t1 NATURAL LEFT OUTER JOIN t2 NATURAL JOIN t3
   }
 } {1 11 111 1111}
+do_test join2-1.6-rj {
+  execsql {
+    SELECT * FROM
+      t2 NATURAL RIGHT OUTER JOIN t1 NATURAL JOIN t3
+  }
+} {11 111 1 1111}
 ifcapable subquery {
   do_test join2-1.7 {
     execsql {
       SELECT * FROM
         t1 NATURAL LEFT OUTER JOIN (t2 NATURAL JOIN t3)
+    }
+  } {1 11 111 1111 2 22 {} {} 3 33 {} {}}
+  do_test join2-1.7-rj {
+    execsql {
+      SELECT a, b, c, d FROM
+        t2 NATURAL JOIN t3 NATURAL RIGHT JOIN t1
     }
   } {1 11 111 1111 2 22 {} {} 3 33 {} {}}
 }
@@ -87,6 +99,9 @@ do_execsql_test 2.0 {
 
 do_catchsql_test 2.1 {
   SELECT * FROM aa LEFT JOIN cc ON (a=b) JOIN bb ON (b=coalesce(c,1));
+} {1 {ON clause references tables to its right}}
+do_catchsql_test 2.1b {
+  SELECT * FROM aa RIGHT JOIN cc ON (a=b) JOIN bb ON (b=coalesce(c,1));
 } {1 {ON clause references tables to its right}}
 do_catchsql_test 2.2 {
   SELECT * FROM aa JOIN cc ON (a=b) JOIN bb ON (b=c);
@@ -114,7 +129,7 @@ do_eqp_test 3.1 {
 } {
   QUERY PLAN
   |--SCAN t1
-  `--SEARCH t2 USING INTEGER PRIMARY KEY (rowid=?)
+  `--SEARCH t2 USING INTEGER PRIMARY KEY (rowid=?) LEFT-JOIN
 }
 
 do_eqp_test 3.2 {
@@ -122,7 +137,7 @@ do_eqp_test 3.2 {
 } {
   QUERY PLAN
   |--SCAN t1
-  `--SEARCH t2 USING INTEGER PRIMARY KEY (rowid=?)
+  `--SEARCH t2 USING INTEGER PRIMARY KEY (rowid=?) LEFT-JOIN
 }
 
 #-------------------------------------------------------------------------
@@ -162,15 +177,15 @@ do_eqp_test 4.1.5 {
 } {
   QUERY PLAN
   |--SCAN c1
-  |--SEARCH c2 USING INTEGER PRIMARY KEY (rowid=?)
-  `--SEARCH c3 USING INTEGER PRIMARY KEY (rowid=?)
+  |--SEARCH c2 USING INTEGER PRIMARY KEY (rowid=?) LEFT-JOIN
+  `--SEARCH c3 USING INTEGER PRIMARY KEY (rowid=?) LEFT-JOIN
 }
 do_eqp_test 4.1.6 {
   SELECT v1, v3 FROM c1 LEFT JOIN c2 ON (c2.k=v1) LEFT JOIN c3 ON (c3.k=v1+1);
 } {
   QUERY PLAN
   |--SCAN c1
-  `--SEARCH c3 USING INTEGER PRIMARY KEY (rowid=?)
+  `--SEARCH c3 USING INTEGER PRIMARY KEY (rowid=?) LEFT-JOIN
 }
 
 do_execsql_test 4.2.0 {
@@ -209,15 +224,15 @@ do_eqp_test 4.2.5 {
 } {
   QUERY PLAN
   |--SCAN c1
-  |--SEARCH c2 USING INDEX sqlite_autoindex_c2_1 (k=?)
-  `--SEARCH c3 USING INDEX sqlite_autoindex_c3_1 (k=?)
+  |--SEARCH c2 USING INDEX sqlite_autoindex_c2_1 (k=?) LEFT-JOIN
+  `--SEARCH c3 USING INDEX sqlite_autoindex_c3_1 (k=?) LEFT-JOIN
 }
 do_eqp_test 4.2.6 {
   SELECT v1, v3 FROM c1 LEFT JOIN c2 ON (c2.k=v1) LEFT JOIN c3 ON (c3.k=v1+1);
 } {
   QUERY PLAN
   |--SCAN c1
-  `--SEARCH c3 USING INDEX sqlite_autoindex_c3_1 (k=?)
+  `--SEARCH c3 USING INDEX sqlite_autoindex_c3_1 (k=?) LEFT-JOIN
 }
 
 # 2017-11-23 (Thanksgiving day)

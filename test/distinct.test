@@ -301,4 +301,52 @@ do_execsql_test 8.0 {
   SELECT DISTINCT pid FROM person where pid = 10;
 } {10}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 9.0 {
+  CREATE TABLE t1(a, b);
+  INSERT INTO t1 VALUES('a', 'a');
+  INSERT INTO t1 VALUES('a', 'b');
+  INSERT INTO t1 VALUES('a', 'c');
+
+  INSERT INTO t1 VALUES('b', 'a');
+  INSERT INTO t1 VALUES('b', 'b');
+  INSERT INTO t1 VALUES('b', 'c');
+
+  INSERT INTO t1 VALUES('a', 'a');
+  INSERT INTO t1 VALUES('b', 'b');
+
+  INSERT INTO t1 VALUES('A', 'A');
+  INSERT INTO t1 VALUES('B', 'B');
+}
+
+foreach {tn idx} {
+  1 { }
+  2 { CREATE INDEX i1 ON t1(a, b); }
+  3 { CREATE INDEX i1 ON t1(b, a); }
+  4 { CREATE INDEX i1 ON t1(a COLLATE nocase, b COLLATE nocase); }
+  5 { CREATE INDEX i1 ON t1(b COLLATE nocase, a COLLATE nocase); }
+} {
+
+  execsql { DROP INDEX IF EXISTS i1 }
+  execsql $idx
+  
+  do_execsql_test 9.$tn.1 {
+    SELECT DISTINCT a, b FROM t1 ORDER BY a, b
+  } {
+    A A  B B
+    a a  a b  a c
+    b a  b b  b c
+  }
+
+  do_execsql_test 9.$tn.1 {
+    SELECT DISTINCT a COLLATE nocase, b COLLATE nocase FROM t1 
+    ORDER BY a COLLATE nocase, b COLLATE nocase
+  } {
+    a a  a b  a c
+    b a  b b  b c
+  }
+}
+
+
 finish_test

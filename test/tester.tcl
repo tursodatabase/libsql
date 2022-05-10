@@ -1012,6 +1012,7 @@ proc query_plan_graph {sql} {
   append a [append_graph "  " dx cx 0]
   regsub -all { 0x[A-F0-9]+\y} $a { xxxxxx} a
   regsub -all {(MATERIALIZE|CO-ROUTINE|SUBQUERY) \d+\y} $a {\1 xxxxxx} a
+  regsub -all {\((join|subquery)-\d+\)} $a {(\1-xxxxxx)} a
   return $a
 }
 

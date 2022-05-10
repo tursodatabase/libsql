@@ -342,7 +342,7 @@ do_eqp_execsql_test 7.2 {
   QUERY PLAN
   |--SCAN xdir
   |--SCAN rt VIRTUAL TABLE INDEX 2:B0D1
-  `--SCAN ydir
+  `--SCAN ydir LEFT-JOIN
 } {
   5 1 2 7 12 14 {}
   5 2 2 7  8 12 10
