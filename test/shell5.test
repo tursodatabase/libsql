@@ -262,7 +262,7 @@ do_test shell5-1.7.1 {
 SELECT COUNT(*) FROM t3;}]
 } [list 0 $rows]
 
-# Inport from a pipe.  (Unix only, as it requires "awk")
+# Import from a pipe.  (Unix only, as it requires "awk")
 if {$tcl_platform(platform)=="unix"} {
   do_test shell5-1.8 {
     forcedelete test.db
@@ -476,6 +476,20 @@ CREATE TABLE t8(a, b, c);
   db eval { SELECT * FROM t8 }
 } {1 2 3}
 
+do_test shell5-4.4 {
+  forcedelete shell5.csv
+  set fd [open shell5.csv w]
+  puts $fd "1,2,3"
+  close $fd
+  catchcmd test.db [string trim {
+.mode csv
+CREATE TEMP TABLE t8(a, b, c);
+.import shell5.csv t8
+.nullvalue #
+SELECT * FROM temp.t8
+  }]
+} {0 1,2,3}
+
 #----------------------------------------------------------------------------
 # Tests for the shell automatic column rename.
 #
@@ -525,5 +539,35 @@ Columns renamed during .import shell5.csv due to duplicates:
 "cow" to "cow_2",
 "CoW" to "CoW_3",
 "cOw" to "cOw_4"}}
+
+#----------------------------------------------------------------------------
+# Tests for preserving utf-8 that is not also ASCII.
+#
+
+do_test shell5-6.1 {
+  set out [open shell5.csv w]
+  fconfigure $out -translation lf
+  puts $out {あい,うえお}
+  puts $out {1,2}
+  close $out
+  forcedelete test.db
+  catchcmd test.db {.import -csv shell5.csv t1
+.mode line
+SELECT * FROM t1;}
+} {0 {   あい = 1
+うえお = 2}}
+
+do_test shell5-6.2 {
+  set out [open shell5.csv w]
+  fconfigure $out -translation lf
+  puts $out {1,2}
+  puts $out {あい,うえお}
+  close $out
+  forcedelete test.db
+  catchcmd test.db {.import -csv shell5.csv t1
+.mode line
+SELECT * FROM t1;}
+} {0 {    1 = あい
+    2 = うえお}}
 
 finish_test

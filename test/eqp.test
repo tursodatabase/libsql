@@ -94,9 +94,9 @@ do_eqp_test 1.7.1 {
   SELECT * FROM t3 JOIN (SELECT 1)
 } {
   QUERY PLAN
-  |--MATERIALIZE SUBQUERY xxxxxx
+  |--MATERIALIZE (subquery-xxxxxx)
   |  `--SCAN CONSTANT ROW
-  |--SCAN SUBQUERY xxxxxx
+  |--SCAN (subquery-xxxxxx)
   `--SCAN t3
 }
 do_eqp_test 1.7.2 {
@@ -123,13 +123,13 @@ do_eqp_test 1.8 {
   SELECT * FROM t3 JOIN (SELECT 1 UNION SELECT 2)
 } {
   QUERY PLAN
-  |--MATERIALIZE SUBQUERY xxxxxx
+  |--MATERIALIZE (subquery-xxxxxx)
   |  `--COMPOUND QUERY
   |     |--LEFT-MOST SUBQUERY
   |     |  `--SCAN CONSTANT ROW
   |     `--UNION USING TEMP B-TREE
   |        `--SCAN CONSTANT ROW
-  |--SCAN SUBQUERY xxxxxx
+  |--SCAN (subquery-xxxxxx)
   `--SCAN t3
 }
 do_eqp_test 1.9 {
@@ -282,10 +282,10 @@ det 3.2.1 {
   SELECT * FROM (SELECT * FROM t1 ORDER BY x LIMIT 10) ORDER BY y LIMIT 5
 } {
   QUERY PLAN
-  |--CO-ROUTINE SUBQUERY xxxxxx
+  |--CO-ROUTINE (subquery-xxxxxx)
   |  |--SCAN t1
   |  `--USE TEMP B-TREE FOR ORDER BY
-  |--SCAN SUBQUERY xxxxxx
+  |--SCAN (subquery-xxxxxx)
   `--USE TEMP B-TREE FOR ORDER BY
 }
 det 3.2.2 {

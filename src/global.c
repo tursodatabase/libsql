@@ -290,6 +290,9 @@ SQLITE_WSD struct Sqlite3Config sqlite3Config = {
    0x7ffffffe,                /* iOnceResetThreshold */
    SQLITE_DEFAULT_SORTERREF_SIZE,   /* szSorterRef */
    0,                         /* iPrngSeed */
+#ifdef SQLITE_DEBUG
+   {0,0,0,0,0,0}              /* aTune */
+#endif
 };
 
 /*
@@ -344,7 +347,7 @@ int sqlite3PendingByte = 0x40000000;
 /*
 ** Tracing flags set by SQLITE_TESTCTRL_TRACEFLAGS.
 */
-u32 sqlite3SelectTrace = 0;
+u32 sqlite3TreeTrace = 0;
 u32 sqlite3WhereTrace = 0;
 
 #include "opcodes.h"

@@ -1,0 +1,108 @@
+# 2020-01-29
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# 
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix bestindex9
+
+ifcapable !vtab {
+  finish_test
+  return
+}
+
+
+proc vtab_command {method args} {
+  switch -- $method {
+    xConnect {
+      return $::create_table
+    }
+
+    xBestIndex {
+      set hdl [lindex $args 0]
+      set ::vtab_orderby [$hdl orderby]
+      set ::vtab_distinct [$hdl distinct]
+
+      return [list orderby 1]
+    }
+
+    xFilter {
+      return ""
+    }
+  }
+
+  return {}
+}
+
+proc do_bestindex9_test {tn create select orderby distinct} {
+  forcedelete test.db2
+  sqlite3 dbtest test.db2
+  register_tcl_module dbtest
+
+  set ::create_table $create
+  dbtest eval { CREATE VIRTUAL TABLE t1 USING tcl(vtab_command); }
+  dbtest eval $select
+
+  do_test $tn.orderby [list set {} $::vtab_orderby] $orderby
+  do_test $tn.distinct [list set {} $::vtab_distinct] $distinct
+
+  dbtest close
+}
+
+#-------------------------------------------------------------------------
+#
+do_bestindex9_test 1.0 {
+  CREATE TABLE x(k1, k2, v1, PRIMARY KEY(k1, k2))
+} {
+  SELECT DISTINCT k1, k2 FROM t1 
+} {{column 0 desc 0} {column 1 desc 0}} 2
+
+do_bestindex9_test 1.1 {
+  CREATE TABLE x(k1, k2, v1, PRIMARY KEY(k1, k2)) WITHOUT ROWID
+} {
+  SELECT DISTINCT k1, k2 FROM t1 
+} {} 0
+
+do_bestindex9_test 1.2 {
+  CREATE TABLE x(k1 NOT NULL, k2 NOT NULL, v1, PRIMARY KEY(k1, k2))
+} {
+  SELECT DISTINCT k1, k2 FROM t1 
+} {} 0
+
+#-------------------------------------------------------------------------
+#
+do_bestindex9_test 2 {
+  CREATE TABLE x(c1, c2, c3);
+} {
+  SELECT DISTINCT c1 FROM t1 ORDER BY c1
+} {{column 0 desc 0}} 3
+
+#-------------------------------------------------------------------------
+#
+do_bestindex9_test 3 {
+  CREATE TABLE x(c1, c2, c3);
+} {
+  SELECT DISTINCT c1 FROM t1 GROUP BY c1
+} {{column 0 desc 0}} 1
+
+do_bestindex9_test 4 {
+  CREATE TABLE x(c1, c2, c3);
+} {
+  CREATE TABLE t2(balls);
+  SELECT DISTINCT c1 FROM t1, t2
+} {{column 0 desc 0}} 2
+
+
+finish_test
+
+
+
+

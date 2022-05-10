@@ -858,11 +858,10 @@ static void unmapColumnIdlistNames(
   Parse *pParse,
   const IdList *pIdList
 ){
-  if( pIdList ){
-    int ii;
-    for(ii=0; ii<pIdList->nId; ii++){
-      sqlite3RenameTokenRemap(pParse, 0, (const void*)pIdList->a[ii].zName);
-    }
+  int ii;
+  assert( pIdList!=0 );
+  for(ii=0; ii<pIdList->nId; ii++){
+    sqlite3RenameTokenRemap(pParse, 0, (const void*)pIdList->a[ii].zName);
   }
 }
 
@@ -881,7 +880,7 @@ static int renameUnmapSelectCb(Walker *pWalker, Select *p){
   if( ALWAYS(p->pEList) ){
     ExprList *pList = p->pEList;
     for(i=0; i<pList->nExpr; i++){
-      if( pList->a[i].zEName && pList->a[i].eEName==ENAME_NAME ){
+      if( pList->a[i].zEName && pList->a[i].fg.eEName==ENAME_NAME ){
         sqlite3RenameTokenRemap(pParse, 0, (void*)pList->a[i].zEName);
       }
     }
@@ -890,8 +889,11 @@ static int renameUnmapSelectCb(Walker *pWalker, Select *p){
     SrcList *pSrc = p->pSrc;
     for(i=0; i<pSrc->nSrc; i++){
       sqlite3RenameTokenRemap(pParse, 0, (void*)pSrc->a[i].zName);
-      sqlite3WalkExpr(pWalker, pSrc->a[i].pOn);
-      unmapColumnIdlistNames(pParse, pSrc->a[i].pUsing);
+      if( pSrc->a[i].fg.isUsing==0 ){
+        sqlite3WalkExpr(pWalker, pSrc->a[i].u3.pOn);
+      }else{
+        unmapColumnIdlistNames(pParse, pSrc->a[i].u3.pUsing);
+      }
     }
   }
 
@@ -927,7 +929,7 @@ void sqlite3RenameExprlistUnmap(Parse *pParse, ExprList *pEList){
     sWalker.xExprCallback = renameUnmapExprCb;
     sqlite3WalkExprList(&sWalker, pEList);
     for(i=0; i<pEList->nExpr; i++){
-      if( ALWAYS(pEList->a[i].eEName==ENAME_NAME) ){
+      if( ALWAYS(pEList->a[i].fg.eEName==ENAME_NAME) ){
         sqlite3RenameTokenRemap(pParse, 0, (void*)pEList->a[i].zEName);
       }
     }
@@ -1085,7 +1087,7 @@ static void renameColumnElistNames(
     int i;
     for(i=0; i<pEList->nExpr; i++){
       const char *zName = pEList->a[i].zEName;
-      if( ALWAYS(pEList->a[i].eEName==ENAME_NAME)
+      if( ALWAYS(pEList->a[i].fg.eEName==ENAME_NAME)
        && ALWAYS(zName!=0)
        && 0==sqlite3_stricmp(zName, zOld)
       ){
@@ -1131,19 +1133,21 @@ static int renameParseSql(
 ){
   int rc;
 
-  db->init.iDb = bTemp ? 1 : sqlite3FindDbName(db, zDb);
-
-  /* Parse the SQL statement passed as the first argument. If no error
-  ** occurs and the parse does not result in a new table, index or
-  ** trigger object, the database must be corrupt. */
   sqlite3ParseObjectInit(p, db);
+  if( zSql==0 ){
+    return SQLITE_NOMEM;
+  }
+  if( sqlite3StrNICmp(zSql,"CREATE ",7)!=0 ){
+    return SQLITE_CORRUPT_BKPT;
+  }
+  db->init.iDb = bTemp ? 1 : sqlite3FindDbName(db, zDb);
   p->eParseMode = PARSE_MODE_RENAME;
   p->db = db;
   p->nQueryLoop = 1;
-  rc = zSql ? sqlite3RunParser(p, zSql) : SQLITE_NOMEM;
+  rc = sqlite3RunParser(p, zSql);
   if( db->mallocFailed ) rc = SQLITE_NOMEM;
   if( rc==SQLITE_OK 
-   && p->pNewTable==0 && p->pNewIndex==0 && p->pNewTrigger==0 
+   && NEVER(p->pNewTable==0 && p->pNewIndex==0 && p->pNewTrigger==0)
   ){
     rc = SQLITE_CORRUPT_BKPT;
   }

@@ -19,7 +19,7 @@
 ** The sha3(X) function computes the SHA3 hash of the input X, or NULL if
 ** X is NULL.
 **
-** The sha3_query(Y) function evalutes all queries in the SQL statements of Y
+** The sha3_query(Y) function evaluates all queries in the SQL statements of Y
 ** and returns a hash of their results.
 **
 ** The SIZE argument is optional.  If omitted, the SHA3-256 hash algorithm

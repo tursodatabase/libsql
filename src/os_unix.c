@@ -4932,11 +4932,17 @@ static int unixShmLock(
   int flags                  /* What to do with the lock */
 ){
   unixFile *pDbFd = (unixFile*)fd;      /* Connection holding shared memory */
-  unixShm *p = pDbFd->pShm;             /* The shared memory being locked */
-  unixShmNode *pShmNode = p->pShmNode;  /* The underlying file iNode */
+  unixShm *p;                           /* The shared memory being locked */
+  unixShmNode *pShmNode;                /* The underlying file iNode */
   int rc = SQLITE_OK;                   /* Result code */
   u16 mask;                             /* Mask of locks to take or release */
-  int *aLock = pShmNode->aLock;
+  int *aLock;
+
+  p = pDbFd->pShm;
+  if( p==0 ) return SQLITE_IOERR_SHMLOCK;
+  pShmNode = p->pShmNode;
+  if( NEVER(pShmNode==0) ) return SQLITE_IOERR_SHMLOCK;
+  aLock = pShmNode->aLock;
 
   assert( pShmNode==pDbFd->pInode->pShmNode );
   assert( pShmNode->pInode==pDbFd->pInode );
@@ -6061,20 +6067,23 @@ static int findCreateFileMode(
     **
     ** where NN is a decimal number. The NN naming schemes are 
     ** used by the test_multiplex.c module.
+    **
+    ** In normal operation, the journal file name will always contain
+    ** a '-' character.  However in 8+3 filename mode, or if a corrupt
+    ** rollback journal specifies a super-journal with a goofy name, then
+    ** the '-' might be missing or the '-' might be the first character in
+    ** the filename.  In that case, just return SQLITE_OK with *pMode==0.
     */
-    nDb = sqlite3Strlen30(zPath) - 1; 
-    while( zPath[nDb]!='-' ){
-      /* In normal operation, the journal file name will always contain
-      ** a '-' character.  However in 8+3 filename mode, or if a corrupt
-      ** rollback journal specifies a super-journal with a goofy name, then
-      ** the '-' might be missing. */
-      if( nDb==0 || zPath[nDb]=='.' ) return SQLITE_OK;
+    nDb = sqlite3Strlen30(zPath) - 1;
+    while( nDb>0 && zPath[nDb]!='.' ){
+      if( zPath[nDb]=='-' ){
+        memcpy(zDb, zPath, nDb);
+        zDb[nDb] = '\0';
+        rc = getFileMode(zDb, pMode, pUid, pGid);
+        break;
+      }
       nDb--;
     }
-    memcpy(zDb, zPath, nDb);
-    zDb[nDb] = '\0';
-
-    rc = getFileMode(zDb, pMode, pUid, pGid);
   }else if( flags & SQLITE_OPEN_DELETEONCLOSE ){
     *pMode = 0600;
   }else if( flags & SQLITE_OPEN_URI ){

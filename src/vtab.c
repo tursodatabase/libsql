@@ -827,6 +827,7 @@ int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
 
   sqlite3ParseObjectInit(&sParse, db);
   sParse.eParseMode = PARSE_MODE_DECLARE_VTAB;
+  sParse.disableTriggers = 1;
   /* We should never be able to reach this point while loading the
   ** schema.  Nevertheless, defend against that (turn off db->init.busy)
   ** in case a bug arises. */

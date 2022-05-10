@@ -181,7 +181,7 @@ void sqlite3TableAffinity(Vdbe *v, Table *pTab, int iReg){
     }
 
     for(i=j=0; i<pTab->nCol; i++){
-      assert( pTab->aCol[i].affinity!=0 );
+      assert( pTab->aCol[i].affinity!=0 || sqlite3VdbeParser(v)->nErr>0 );
       if( (pTab->aCol[i].colFlags & COLFLAG_VIRTUAL)==0 ){
         zColAff[j++] = pTab->aCol[i].affinity;
       }
@@ -765,6 +765,14 @@ void sqlite3Insert(
 #endif
   assert( (pTrigger && tmask) || (pTrigger==0 && tmask==0) );
 
+#if TREETRACE_ENABLED
+  if( sqlite3TreeTrace & 0x10000 ){
+    sqlite3TreeViewLine(0, "In sqlite3Insert() at %s:%d", __FILE__, __LINE__);
+    sqlite3TreeViewInsert(pParse->pWith, pTabList, pColumn, pSelect, pList,
+                          onError, pUpsert, pTrigger);
+  }
+#endif
+
   /* If pTab is really a view, make sure it has been initialized.
   ** ViewGetColumnNames() is a no-op if pTab is not a view.
   */
@@ -795,7 +803,11 @@ void sqlite3Insert(
   **
   ** This is the 2nd template.
   */
-  if( pColumn==0 && xferOptimization(pParse, pTab, pSelect, onError, iDb) ){
+  if( pColumn==0 
+   && pSelect!=0
+   && pTrigger==0
+   && xferOptimization(pParse, pTab, pSelect, onError, iDb)
+  ){
     assert( !pTrigger );
     assert( pList==0 );
     goto insert_end;
@@ -839,13 +851,15 @@ void sqlite3Insert(
   */
   bIdListInOrder = (pTab->tabFlags & (TF_OOOHidden|TF_HasStored))==0;
   if( pColumn ){
+    assert( pColumn->eU4!=EU4_EXPR );
+    pColumn->eU4 = EU4_IDX;
     for(i=0; i<pColumn->nId; i++){
-      pColumn->a[i].idx = -1;
+      pColumn->a[i].u4.idx = -1;
     }
     for(i=0; i<pColumn->nId; i++){
       for(j=0; j<pTab->nCol; j++){
         if( sqlite3StrICmp(pColumn->a[i].zName, pTab->aCol[j].zCnName)==0 ){
-          pColumn->a[i].idx = j;
+          pColumn->a[i].u4.idx = j;
           if( i!=j ) bIdListInOrder = 0;
           if( j==pTab->iPKey ){
             ipkColumn = i;  assert( !withoutRowid );
@@ -1147,7 +1161,8 @@ void sqlite3Insert(
       }
     }
     if( pColumn ){
-      for(j=0; j<pColumn->nId && pColumn->a[j].idx!=i; j++){}
+      assert( pColumn->eU4==EU4_IDX );
+      for(j=0; j<pColumn->nId && pColumn->a[j].u4.idx!=i; j++){}
       if( j>=pColumn->nId ){
         /* A column not named in the insert column list gets its
         ** default value */
@@ -2278,7 +2293,7 @@ void sqlite3GenerateConstraintChecks(
         if( isUpdate ){
           /* If currently processing the PRIMARY KEY of a WITHOUT ROWID 
           ** table, only conflict if the new PRIMARY KEY values are actually
-          ** different from the old.
+          ** different from the old.  See TH3 withoutrowid04.test.
           **
           ** For a UNIQUE index, only conflict if the PRIMARY KEY values
           ** of the matched index row are different from the original PRIMARY
@@ -2769,17 +2784,12 @@ static int xferOptimization(
   int destHasUniqueIdx = 0;        /* True if pDest has a UNIQUE index */
   int regData, regRowid;           /* Registers holding data and rowid */
 
-  if( pSelect==0 ){
-    return 0;   /* Must be of the form  INSERT INTO ... SELECT ... */
-  }
+  assert( pSelect!=0 );
   if( pParse->pWith || pSelect->pWith ){
     /* Do not attempt to process this query if there are an WITH clauses
     ** attached to it. Proceeding may generate a false "no such table: xxx"
     ** error if pSelect reads from a CTE named "xxx".  */
     return 0;
-  }
-  if( sqlite3TriggerList(pParse, pDest) ){
-    return 0;   /* tab1 must not have triggers */
   }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   if( IsVirtual(pDest) ){

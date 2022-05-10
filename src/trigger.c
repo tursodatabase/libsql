@@ -52,9 +52,7 @@ Trigger *sqlite3TriggerList(Parse *pParse, Table *pTab){
   Trigger *pList;           /* List of triggers to return */
   HashElem *p;              /* Loop variable for TEMP triggers */
 
-  if( pParse->disableTriggers ){
-    return 0;
-  }
+  assert( pParse->disableTriggers==0 );
   pTmpSchema = pParse->db->aDb[1].pSchema;
   p = sqliteHashFirst(&pTmpSchema->trigHash);
   pList = pTab->pTrigger;
@@ -67,11 +65,10 @@ Trigger *sqlite3TriggerList(Parse *pParse, Table *pTab){
     ){
       pTrig->pNext = pList;
       pList = pTrig;
-    }else if( pTrig->op==TK_RETURNING
+    }else if( pTrig->op==TK_RETURNING ){
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-              && pParse->db->pVtabCtx==0
+      assert( pParse->db->pVtabCtx==0 );
 #endif
-    ){
       assert( pParse->bReturning );
       assert( &(pParse->u1.pReturning->retTrig) == pTrig );
       pTrig->table = pTab->zName;
@@ -446,6 +443,7 @@ static TriggerStep *triggerStepAllocate(
   sqlite3 *db = pParse->db;
   TriggerStep *pTriggerStep;
 
+  if( pParse->nErr ) return 0;
   pTriggerStep = sqlite3DbMallocZero(db, sizeof(TriggerStep) + pName->n + 1);
   if( pTriggerStep ){
     char *z = (char*)&pTriggerStep[1];
@@ -730,12 +728,21 @@ static int checkColumnOverlap(IdList *pIdList, ExprList *pEList){
 }
 
 /*
+** Return true if any TEMP triggers exist
+*/
+static int tempTriggersExist(sqlite3 *db){
+  if( NEVER(db->aDb[1].pSchema==0) ) return 0;
+  if( sqliteHashFirst(&db->aDb[1].pSchema->trigHash)==0 ) return 0;
+  return 1;
+}
+
+/*
 ** Return a list of all triggers on table pTab if there exists at least
 ** one trigger that must be fired when an operation of type 'op' is 
 ** performed on the table, and, if that operation is an UPDATE, if at
 ** least one of the columns in pChanges is being modified.
 */
-Trigger *sqlite3TriggersExist(
+static SQLITE_NOINLINE Trigger *triggersReallyExist(
   Parse *pParse,          /* Parse context */
   Table *pTab,            /* The table the contains the triggers */
   int op,                 /* one of TK_DELETE, TK_INSERT, TK_UPDATE */
@@ -797,6 +804,22 @@ exit_triggers_exist:
     *pMask = mask;
   }
   return (mask ? pList : 0);
+}
+Trigger *sqlite3TriggersExist(
+  Parse *pParse,          /* Parse context */
+  Table *pTab,            /* The table the contains the triggers */
+  int op,                 /* one of TK_DELETE, TK_INSERT, TK_UPDATE */
+  ExprList *pChanges,     /* Columns that change in an UPDATE statement */
+  int *pMask              /* OUT: Mask of TRIGGER_BEFORE|TRIGGER_AFTER */
+){
+  assert( pTab!=0 );
+  if( (pTab->pTrigger==0 && !tempTriggersExist(pParse->db))
+   || pParse->disableTriggers
+  ){
+    if( pMask ) *pMask = 0;
+    return 0;
+  }
+  return triggersReallyExist(pParse,pTab,op,pChanges,pMask);
 }
 
 /*
@@ -882,7 +905,7 @@ static ExprList *sqlite3ExpandReturning(
         if( !db->mallocFailed ){
           struct ExprList_item *pItem = &pNew->a[pNew->nExpr-1];
           pItem->zEName = sqlite3DbStrDup(db, pTab->aCol[jj].zCnName);
-          pItem->eEName = ENAME_NAME;
+          pItem->fg.eEName = ENAME_NAME;
         }
       }
     }else{
@@ -891,7 +914,7 @@ static ExprList *sqlite3ExpandReturning(
       if( !db->mallocFailed && ALWAYS(pList->a[i].zEName!=0) ){
         struct ExprList_item *pItem = &pNew->a[pNew->nExpr-1];
         pItem->zEName = sqlite3DbStrDup(db, pList->a[i].zEName);
-        pItem->eEName = pList->a[i].eEName;
+        pItem->fg.eEName = pList->a[i].fg.eEName;
       }
     }
   }

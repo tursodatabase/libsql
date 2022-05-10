@@ -382,4 +382,24 @@ do_execsql_test 6.2 {
   )
 } {}
 
+# 2022-03-21
+# https://sqlite.org/forum/forumpost/929168fdd6
+#
+reset_db
+do_execsql_test 7.0 {
+  CREATE TABLE t1(a);
+  INSERT INTO t1(a) VALUES(11),(22),(33),(44),(55);
+  CREATE VIEW t2(b,c) AS SELECT a, COUNT(*) OVER () FROM t1;
+  CREATE TABLE t3(x,y);
+  CREATE TRIGGER t2r1 INSTEAD OF UPDATE ON t2 BEGIN
+    INSERT INTO t3(x,y) VALUES(new.b,new.c);
+  END;
+  SELECT * FROM t2;
+} {11 5 22 5 33 5 44 5 55 5}
+do_execsql_test 7.1 {
+  UPDATE t2 SET c=t1.a FROM t1 WHERE t2.b=t1.a;
+  SELECT * FROM t3;
+} {11 11 22 22 33 33 44 44 55 55}
+
+
 finish_test
