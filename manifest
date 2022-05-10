@@ -1,5 +1,5 @@
-C Fix\sa\sstale\srequirement\smark.
-D 2022-05-10T18:18:45.504
+C New\srequirement\smarks.
+D 2022-05-10T18:43:54.263
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1141,14 +1141,14 @@ F test/ioerr4.test f130fe9e71008577b342b8874d52984bd04ede2c
 F test/ioerr5.test 2edfa4fb0f896f733071303b42224df8bedd9da4
 F test/ioerr6.test a395a6ab144b26a9e3e21059a1ab6a7149cca65b
 F test/istrue.test e7f285bb70282625c258e866ce6337d4c762922f5a300e1b50f958aef6e7d9c9
-F test/join.test e5f165dfd84fd46406ddae6614b0122c3bfa23a26ef62966442e1503c40d96aa
+F test/join.test edeaff6edc1c1a2bcfebee343744e04d000f861c3d67cb653114f88565f8c955
 F test/join2.test 466b07233820f5deee66a6c3bf6e4500c8bbf7b83649e67606f5f649c07928c0
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
 F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
 F test/join5.test d22b6cba8fb59ab3f1c82701434c360705eb12d4ce200c449f37b018fc47681a
 F test/join6.test f809c025fa253f9e150c0e9afd4cef8813257bceeb6f46e04041228c9403cc2c
 F test/join7.test 8e72de4b45e5e930d18c305c7efe86015fb2552731e4e03ea226353036b0dab0
-F test/join8.test 68f5ec206cd88610c19ab8edb4789a174a55cdb1732619a95db8fd33dbb13783
+F test/join8.test fef259c42d56bbe150b777726b185b0bc060d4290daf9f879abc68321f8ad6db
 F test/join9.test 9056ddd3b0c0f4f9d658f4521038d9a37dc23ead8ca9a505d0b0db2b6a471e05
 F test/joinA.test 7eab225dc1c1ab258a5e62513a4ed7cabbd3db971d59d5d92f4fb6fa14c12f6a
 F test/joinB.test 1b2ba3fc8568b49411787fccbf540570c148e9b6a53a30f80691cb6268098ded
@@ -1719,7 +1719,7 @@ F test/vtab2.test 14d4ab26cee13ba6cf5c5601b158e4f57552d3b055cdd9406cf7f711e9c840
 F test/vtab3.test b45f47d20f225ccc9c28dc915d92740c2dee311e
 F test/vtab4.test 8e73ed268f3d596bc3590f45fc948fb40f28e9c3
 F test/vtab5.test 889f444970393c73f1e077e2bdc5d845e157a391
-F test/vtab6.test fa609a4af96da30beceefa3cb624abe9be38c4747ab373d98179b24027d6b798
+F test/vtab6.test 2525a2fe2e44ccbed1d758cb2977fb8ab8f07d5312ed8d8799d3529647d11f2f
 F test/vtab7.test 70c6f4a1d6177144a8236e4172d5fba92e683440374664ad1f04851fbb335d3c
 F test/vtab8.test e19fa4a538fcd1bb66c22825fa8f71618fb13583
 F test/vtab9.test ea58d2b95d61955f87226381716b2d0b1d4e4f9b
@@ -1953,9 +1953,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8f9355028bc7baeeb10ee9a5e29f093adac6c2f149596dec0be827be4ce491cb
-Q +3eda4030f73384abf18b97cd8a4606e10b23e382d1b72dff7526aebfde23e0af
-R ad1a743739340ac35d67b569c30d27a5
+P fcda7fb1f184a31a67572aae15f3cdcd60f8aac199106a7b0f90aca251ca7017
+R 696e923f15f9da5ccd48142298e15665
 U drh
-Z a581d18ac49ad52a81b01edb2bbc696b
+Z 324ce18ac7f904101887dd5ff565ea9a
 # Remove this line to create a well-formed Fossil manifest.
