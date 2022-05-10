@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\sUBSAN\swarning.
-D 2022-05-10T15:55:10.266
+C Fix\sa\sstale\srequirement\smark.
+D 2022-05-10T18:18:45.504
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -879,7 +879,7 @@ F test/e_fts3.test 17ba7c373aba4d4f5696ba147ee23fd1a1ef70782af050e03e262ca187c5e
 F test/e_insert.test f02f7f17852b2163732c6611d193f84fc67bc641fb4882c77a464076e5eba80e
 F test/e_reindex.test 2b0e29344497d9a8a999453a003cb476b6b1d2eef2d6c120f83c2d3a429f3164
 F test/e_resolve.test a61751c368b109db73df0f20fc75fb47e166b1d8
-F test/e_select.test 9b7ca08975c5444844b35ee60e09f973787a9f3317719715e8e6669abdf6aba2
+F test/e_select.test 89fa483f68d868f1be3d6f56180ed42d979979c266e051bf8b5e66a251e6b44a
 F test/e_select2.test aceb80ab927d46fba5ce7586ebabf23e2bb0604f
 F test/e_totalchanges.test c927f7499dc3aa28b9b556b7d6d115a2f0fe41f012b128d16bf1f3b30e9b41e4
 F test/e_update.test f46c2554d915c9197548681e8d8c33a267e84528
@@ -1953,8 +1953,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c6c3115f3a008cf9b0d7c5c812f17e38c8a75a904032c5f05f0bea03a7340527
-R 2807b2267081068427cca811153cf146
+P 8f9355028bc7baeeb10ee9a5e29f093adac6c2f149596dec0be827be4ce491cb
+Q +3eda4030f73384abf18b97cd8a4606e10b23e382d1b72dff7526aebfde23e0af
+R ad1a743739340ac35d67b569c30d27a5
 U drh
-Z ee606463c5289401618f87c78d0ff20c
+Z a581d18ac49ad52a81b01edb2bbc696b
 # Remove this line to create a well-formed Fossil manifest.
