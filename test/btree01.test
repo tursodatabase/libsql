@@ -148,6 +148,9 @@ do_execsql_test btree01-2.1 {
   INSERT INTO t2(y) VALUES(198),(187),(100);
   SELECT y, c FROM t2 LEFT JOIN t1 ON y=a ORDER BY x;
 } {198 99 187 {} 100 50}
+do_execsql_test btree01-2.2 {
+  SELECT y, c FROM t1 RIGHT JOIN t2 ON y=a ORDER BY x;
+} {198 99 187 {} 100 50}
 
 
 finish_test

@@ -809,7 +809,7 @@ void sqlite3Pragma(
   */
 #ifndef SQLITE_OMIT_AUTOVACUUM
   case PragTyp_INCREMENTAL_VACUUM: {
-    int iLimit, addr;
+    int iLimit = 0, addr;
     if( zRight==0 || !sqlite3GetInt32(zRight, &iLimit) || iLimit<=0 ){
       iLimit = 0x7fffffff;
     }
@@ -1497,7 +1497,6 @@ void sqlite3Pragma(
     HashElem *k;           /* Loop counter:  Next table in schema */
     int x;                 /* result variable */
     int regResult;         /* 3 registers to hold a result row */
-    int regKey;            /* Register to hold key for checking the FK */
     int regRow;            /* Registers to hold a row from pTab */
     int addrTop;           /* Top of a loop checking foreign keys */
     int addrOk;            /* Jump here if the key is OK */
@@ -1505,7 +1504,6 @@ void sqlite3Pragma(
 
     regResult = pParse->nMem+1;
     pParse->nMem += 4;
-    regKey = ++pParse->nMem;
     regRow = ++pParse->nMem;
     k = sqliteHashFirst(&db->aDb[iDb].pSchema->tblHash);
     while( k ){
@@ -1572,9 +1570,9 @@ void sqlite3Pragma(
         /* Generate code to query the parent index for a matching parent
         ** key. If a match is found, jump to addrOk. */
         if( pIdx ){
-          sqlite3VdbeAddOp4(v, OP_MakeRecord, regRow, pFK->nCol, regKey,
+          sqlite3VdbeAddOp4(v, OP_Affinity, regRow, pFK->nCol, 0,
               sqlite3IndexAffinityStr(db,pIdx), pFK->nCol);
-          sqlite3VdbeAddOp4Int(v, OP_Found, i, addrOk, regKey, 0);
+          sqlite3VdbeAddOp4Int(v, OP_Found, i, addrOk, regRow, pFK->nCol);
           VdbeCoverage(v);
         }else if( pParent ){
           int jmp = sqlite3VdbeCurrentAddr(v)+2;
