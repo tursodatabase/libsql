@@ -7707,7 +7707,7 @@ int sqlite3Select(
         eDist = sqlite3WhereIsDistinct(pWInfo);
         updateAccumulator(pParse, regAcc, pAggInfo, eDist);
         if( eDist!=WHERE_DISTINCT_NOOP ){
-          struct AggInfo_func *pF = &pAggInfo->aFunc[0];
+          struct AggInfo_func *pF = pAggInfo->aFunc;
           if( pF ){
             fixDistinctOpenEph(pParse, eDist, pF->iDistinct, pF->iDistAddr);
           }
