@@ -184,7 +184,7 @@ proc get_pwd {} {
       set comSpec {C:\Windows\system32\cmd.exe}
     }
     return [string map [list \\ /] \
-        [string trim [exec -- $comSpec /c echo %CD%]]]
+        [string trim [exec -- $comSpec /c CD]]]
   } else {
     return [pwd]
   }
