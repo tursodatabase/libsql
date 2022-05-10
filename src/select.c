@@ -5882,18 +5882,16 @@ static int selectExpander(Walker *pWalker, Select *p){
             ** result-set list unless the SELECT has the SF_IncludeHidden
             ** bit set.
             */
-            if( pTab->aCol[j].colFlags & (COLFLAG_HIDDEN|COLFLAG_NOEXPAND) ){
-              if( IsHiddenColumn(&pTab->aCol[j])
-               && (selFlags & (SF_IncludeHidden|SF_NestedFrom))==0
-              ){
-                continue;
-              }
-              if( (pTab->aCol[j].colFlags & COLFLAG_NOEXPAND)!=0
-               && zTName==0
-               && (selFlags & (SF_NestedFrom))==0
-              ){
-                continue;
-              }
+            if( (p->selFlags & SF_IncludeHidden)==0
+             && IsHiddenColumn(&pTab->aCol[j]) 
+            ){
+              continue;
+            }
+            if( (pTab->aCol[j].colFlags & COLFLAG_NOEXPAND)!=0
+             && zTName==0
+             && (selFlags & (SF_NestedFrom))==0
+            ){
+              continue;
             }
             tableSeen = 1;
 
