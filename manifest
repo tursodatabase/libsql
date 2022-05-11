@@ -1,5 +1,5 @@
-C Change\s.echo\son\seffect\sso\sthat\sSQL\sis\sechoed\sbefore\sprepare.\sThis\sslightly\salters\sechoed\soutput\swhen\smultiple\sSQL\sstatements\sare\ssubmitted\sat\sonce.\sAlso\ssync\swith\strunk.
-D 2022-05-11T19:59:31.774
+C Zap\sstray\s--help\soutput\sfrom\sintermediate\sversion.
+D 2022-05-11T20:29:32.525
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -554,7 +554,7 @@ F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c e9ee235c4151d2b7fa47435a219bfd30bf516a804d2f004639858087ebf3137b
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 5096a2e8ab0511a413e7f5e45453fea4102d99c5636c46792581ae67899a76d7
-F src/shell.c.in cf90e67622f3d1a1874a4080ac1ab6b9393a09ca4cf7d820b45a62ff2429a6c0
+F src/shell.c.in afaed94af09f12ec99b4b9685e20273ad5bb5cdfcb6e2600cfb50f5a1ffe8e63
 F src/sqlite.h.in 2a35f62185eb5e7ecc64a2f68442b538ce9be74f80f28a00abc24837edcf1c17
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h f49e28c25bd941e79794db5415fdf7b202deb3bc072ed6f1ed273d578703684e
@@ -1953,8 +1953,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3eda4030f73384abf18b97cd8a4606e10b23e382d1b72dff7526aebfde23e0af d55273e36e312336b8fc77dc771657d3b2c3437fbbd79f3be37701982560d634
-R aa68945421e08aa1a970b0abab882c1b
+P c1eff632c41809214edea2850a93852fff66da3ca0dc393e8fe55e0976d422fd
+R 56f20e29d8d8bd4f94a878cd8e451873
 U larrybr
-Z c1c6d0984d4c87f2c4cc513f1bf72524
+Z ec90e5296e8a585e62fc3cef12515b0b
 # Remove this line to create a well-formed Fossil manifest.

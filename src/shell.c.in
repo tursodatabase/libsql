@@ -11714,7 +11714,6 @@ static const char zOptions[] =
   "   -deserialize         open the database using sqlite3_deserialize()\n"
 #endif
   "   -echo                print inputs before execution\n"
-  "   -echo-sql            print SQL before prepare\n"
   "   -init FILENAME       read/process named file\n"
   "   -[no]header          turn headers on or off\n"
 #if defined(SQLITE_ENABLE_MEMSYS3) || defined(SQLITE_ENABLE_MEMSYS5)
