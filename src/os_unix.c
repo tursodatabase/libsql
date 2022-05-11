@@ -6483,7 +6483,7 @@ static void appendOnePathElement(
         pPath->rc = SQLITE_CANTOPEN_BKPT;
         return;
       }
-      got = readlink(zIn, zLnk, sizeof(zLnk)-2);
+      got = osReadlink(zIn, zLnk, sizeof(zLnk)-2);
       if( got<=0 || got>=sizeof(zLnk)-2 ){
         pPath->rc = unixLogError(SQLITE_CANTOPEN_BKPT, "readlink", zIn);
         return;
