@@ -23,7 +23,7 @@
 #
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-set CLI [test_find_cli]
+set CLI [test_cli_invocation]
 db close
 forcedelete test.db test.db-journal test.db-wal
 sqlite3 db test.db
@@ -313,7 +313,7 @@ do_test shell1-3.4.2 {
 # .echo ON|OFF           Turn command echo on or off
 do_test shell1-3.5.1 {
   catchcmd "test.db" ".echo"
-} {1 {Usage: .echo on|off|sql}}
+} {1 {Usage: .echo on|off}}
 do_test shell1-3.5.2 {
   catchcmd "test.db" ".echo ON"
 } {0 {}}
@@ -323,7 +323,7 @@ do_test shell1-3.5.3 {
 do_test shell1-3.5.4 {
   # too many arguments
   catchcmd "test.db" ".echo OFF BAD"
-} {1 {Usage: .echo on|off|sql}}
+} {1 {Usage: .echo on|off}}
 
 # .exit                  Exit this program
 do_test shell1-3.6.1 {

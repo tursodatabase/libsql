@@ -6423,86 +6423,99 @@ static int unixAccess(
 }
 
 /*
-** If the last component of the pathname in z[0]..z[j-1] is something
-** other than ".." then back it out and return true.  If the last
-** component is empty or if it is ".." then return false.
+** A pathname under construction
 */
-static int unixBackupDir(const char *z, int *pJ){
-  int j = *pJ;
-  int i;
-  if( j<=0 ) return 0;
-  for(i=j-1; i>0 && z[i-1]!='/'; i--){}
-  if( i==0 ) return 0;
-  if( z[i]=='.' && i==j-2 && z[i+1]=='.' ) return 0;
-  *pJ = i-1;
-  return 1;
+typedef struct DbPath DbPath;
+struct DbPath {
+  int rc;           /* Non-zero following any error */
+  int nSymlink;     /* Number of symlinks resolved */
+  char *zOut;       /* Write the pathname here */
+  int nOut;         /* Bytes of space available to zOut[] */
+  int nUsed;        /* Bytes of zOut[] currently being used */
+};
+
+/* Forward reference */
+static void appendAllPathElements(DbPath*,const char*);
+
+/*
+** Append a single path element to the DbPath under construction
+*/
+static void appendOnePathElement(
+  DbPath *pPath,       /* Path under construction, to which to append zName */
+  const char *zName,   /* Name to append to pPath.  Not zero-terminated */
+  int nName            /* Number of significant bytes in zName */
+){
+  assert( nName>0 );
+  assert( zName!=0 );
+  if( zName[0]=='.' ){
+    if( nName==1 ) return;
+    if( zName[1]=='.' && nName==2 ){
+      if( pPath->nUsed<=1 ){
+        pPath->rc = SQLITE_ERROR;
+        return;
+      }
+      assert( pPath->zOut[0]=='/' );
+      while( pPath->zOut[--pPath->nUsed]!='/' ){}
+      return;
+    }
+  }
+  if( pPath->nUsed + nName + 2 >= pPath->nOut ){
+    pPath->rc = SQLITE_ERROR;
+    return;
+  }
+  pPath->zOut[pPath->nUsed++] = '/';
+  memcpy(&pPath->zOut[pPath->nUsed], zName, nName);
+  pPath->nUsed += nName;
+#if defined(HAVE_READLINK) && defined(HAVE_LSTAT)
+  if( pPath->rc==SQLITE_OK ){
+    const char *zIn;
+    struct stat buf;
+    pPath->zOut[pPath->nUsed] = 0;
+    zIn = pPath->zOut;
+    if( osLstat(zIn, &buf)!=0 ){
+      if( errno!=ENOENT ){
+        pPath->rc = unixLogError(SQLITE_CANTOPEN_BKPT, "lstat", zIn);
+      }
+    }else if( S_ISLNK(buf.st_mode) ){
+      ssize_t got;
+      char zLnk[SQLITE_MAX_PATHLEN+2];
+      if( pPath->nSymlink++ > SQLITE_MAX_SYMLINK ){
+        pPath->rc = SQLITE_CANTOPEN_BKPT;
+        return;
+      }
+      got = osReadlink(zIn, zLnk, sizeof(zLnk)-2);
+      if( got<=0 || got>=sizeof(zLnk)-2 ){
+        pPath->rc = unixLogError(SQLITE_CANTOPEN_BKPT, "readlink", zIn);
+        return;
+      }
+      zLnk[got] = 0;
+      if( zLnk[0]=='/' ){
+        pPath->nUsed = 0;
+      }else{
+        pPath->nUsed -= nName + 1;
+      }
+      appendAllPathElements(pPath, zLnk);
+    }
+  }
+#endif
 }
 
 /*
-** Convert a relative pathname into a full pathname.  Also
-** simplify the pathname as follows:
-**
-**    Remove all instances of /./
-**    Remove all isntances of /X/../ for any X
+** Append all path elements in zPath to the DbPath under construction.
 */
-static int mkFullPathname(
-  const char *zPath,              /* Input path */
-  char *zOut,                     /* Output buffer */
-  int nOut                        /* Allocated size of buffer zOut */
+static void appendAllPathElements(
+  DbPath *pPath,       /* Path under construction, to which to append zName */
+  const char *zPath    /* Path to append to pPath.  Is zero-terminated */
 ){
-  int nPath = sqlite3Strlen30(zPath);
-  int iOff = 0;
-  int i, j;
-  if( zPath[0]!='/' ){
-    if( osGetcwd(zOut, nOut-2)==0 ){
-      return unixLogError(SQLITE_CANTOPEN_BKPT, "getcwd", zPath);
+  int i = 0;
+  int j = 0;
+  do{
+    while( zPath[i] && zPath[i]!='/' ){ i++; }
+    if( i>j ){
+      appendOnePathElement(pPath, &zPath[j], i-j);
     }
-    iOff = sqlite3Strlen30(zOut);
-    zOut[iOff++] = '/';
-  }
-  if( (iOff+nPath+1)>nOut ){
-    /* SQLite assumes that xFullPathname() nul-terminates the output buffer
-    ** even if it returns an error.  */
-    zOut[iOff] = '\0';
-    return SQLITE_CANTOPEN_BKPT;
-  }
-  sqlite3_snprintf(nOut-iOff, &zOut[iOff], "%s", zPath);
-
-  /* Remove duplicate '/' characters.  Except, two // at the beginning
-  ** of a pathname is allowed since this is important on windows. */
-  for(i=j=1; zOut[i]; i++){
-    zOut[j++] = zOut[i];
-    while( zOut[i]=='/' && zOut[i+1]=='/' ) i++;
-  }
-  zOut[j] = 0;
-
-  assert( zOut[0]=='/' );
-  for(i=j=0; zOut[i]; i++){
-    if( zOut[i]=='/' ){
-      /* Skip over internal "/." directory components */
-      if( zOut[i+1]=='.' && zOut[i+2]=='/' ){
-        i += 1;
-        continue;
-      }
-
-      /* If this is a "/.." directory component then back out the
-      ** previous term of the directory if it is something other than "..".
-      */
-      if( zOut[i+1]=='.'
-       && zOut[i+2]=='.'
-       && zOut[i+3]=='/'
-       && unixBackupDir(zOut, &j)
-      ){
-        i += 2;
-        continue;
-      }
-    }
-    if( ALWAYS(j>=0) ) zOut[j] = zOut[i];
-    j++;
-  }
-  if( NEVER(j==0) ) zOut[j++] = '/';
-  zOut[j] = 0;
-  return SQLITE_OK;
+    j = i+1;
+  }while( zPath[i++] );
 }
 
 /*
@@ -6520,85 +6533,25 @@ static int unixFullPathname(
   int nOut,                     /* Size of output buffer in bytes */
   char *zOut                    /* Output buffer */
 ){
-#if !defined(HAVE_READLINK) || !defined(HAVE_LSTAT)
-  return mkFullPathname(zPath, zOut, nOut);
-#else
-  int rc = SQLITE_OK;
-  int nByte;
-  int nLink = 0;                /* Number of symbolic links followed so far */
-  const char *zIn = zPath;      /* Input path for each iteration of loop */
-  char *zDel = 0;
-
-  assert( pVfs->mxPathname==MAX_PATHNAME );
-  UNUSED_PARAMETER(pVfs);
-
-  /* It's odd to simulate an io-error here, but really this is just
-  ** using the io-error infrastructure to test that SQLite handles this
-  ** function failing. This function could fail if, for example, the
-  ** current working directory has been unlinked.
-  */
-  SimulateIOError( return SQLITE_ERROR );
-
-  do {
-
-    /* Call stat() on path zIn. Set bLink to true if the path is a symbolic
-    ** link, or false otherwise.  */
-    int bLink = 0;
-    struct stat buf;
-    if( osLstat(zIn, &buf)!=0 ){
-      if( errno!=ENOENT ){
-        rc = unixLogError(SQLITE_CANTOPEN_BKPT, "lstat", zIn);
-      }
-    }else{
-      bLink = S_ISLNK(buf.st_mode);
+  DbPath path;
+  path.rc = 0;
+  path.nUsed = 0;
+  path.nSymlink = 0;
+  path.nOut = nOut;
+  path.zOut = zOut;
+  if( zPath[0]!='/' ){
+    char zPwd[SQLITE_MAX_PATHLEN+2];
+    if( osGetcwd(zPwd, sizeof(zPwd)-2)==0 ){
+      return unixLogError(SQLITE_CANTOPEN_BKPT, "getcwd", zPath);
     }
-
-    if( bLink ){
-      nLink++;
-      if( zDel==0 ){
-        zDel = sqlite3_malloc(nOut);
-        if( zDel==0 ) rc = SQLITE_NOMEM_BKPT;
-      }else if( nLink>=SQLITE_MAX_SYMLINKS ){
-        rc = SQLITE_CANTOPEN_BKPT;
-      }
-
-      if( rc==SQLITE_OK ){
-        nByte = osReadlink(zIn, zDel, nOut-1);
-        if( nByte<0 ){
-          rc = unixLogError(SQLITE_CANTOPEN_BKPT, "readlink", zIn);
-        }else{
-          if( zDel[0]!='/' ){
-            int n;
-            for(n = sqlite3Strlen30(zIn); n>0 && zIn[n-1]!='/'; n--);
-            if( nByte+n+1>nOut ){
-              rc = SQLITE_CANTOPEN_BKPT;
-            }else{
-              memmove(&zDel[n], zDel, nByte+1);
-              memcpy(zDel, zIn, n);
-              nByte += n;
-            }
-          }
-          zDel[nByte] = '\0';
-        }
-      }
-
-      zIn = zDel;
-    }
-
-    assert( rc!=SQLITE_OK || zIn!=zOut || zIn[0]=='/' );
-    if( rc==SQLITE_OK && zIn!=zOut ){
-      rc = mkFullPathname(zIn, zOut, nOut);
-    }
-    if( bLink==0 ) break;
-    zIn = zOut;
-  }while( rc==SQLITE_OK );
-
-  sqlite3_free(zDel);
-  if( rc==SQLITE_OK && nLink ) rc = SQLITE_OK_SYMLINK;
-  return rc;
-#endif   /* HAVE_READLINK && HAVE_LSTAT */
+    appendAllPathElements(&path, zPwd);
+  }
+  appendAllPathElements(&path, zPath);
+  zOut[path.nUsed] = 0;
+  if( path.rc || path.nUsed<2 ) return SQLITE_CANTOPEN_BKPT;
+  if( path.nSymlink ) return SQLITE_OK_SYMLINK;
+  return SQLITE_OK;
 }
-
 
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
 /*
