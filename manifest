@@ -1,5 +1,5 @@
-C Fix\s.import\sleak\sin\sCLI\sand\sadd\sshell\sleak\stesting\sto\sdebug\sbuilds\sand\sthe\sTcl\stest\ssuite.
-D 2022-05-11T03:42:38.536
+C The\sunix\sinterface\snow\sresolves\sall\ssymbolic\slinks\sin\sfilenames\sbefore\nactually\susing\sthose\sfilenames.
+D 2022-05-11T17:57:43.566
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -534,10 +534,10 @@ F src/mutex_unix.c dd2b3f1cc1863079bc1349ac0fec395a500090c4fe4e11ab775310a49f2f9
 F src/mutex_w32.c caa50e1c0258ac4443f52e00fe8aaea73b6d0728bd8856bedfff822cae418541
 F src/notify.c 89a97dc854c3aa62ad5f384ef50c5a4a11d70fcc69f86de3e991573421130ed6
 F src/os.c b1c4f2d485961e9a5b6b648c36687d25047c252222e9660b7cc25a6e1ea436ab
-F src/os.h 26890f540b475598cd9881dcc68931377b8d429d3ea3e2eeb64470cde64199f8
+F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
-F src/os_unix.c 1f71ec8c87621f75c9c5ea973f5e8ce2f1d23fe760c01ed2814fe4b98b639825
+F src/os_unix.c 02becb87c58245d2831f10f4f1a9108a465f8091cc598b2a9c78976f51a4e446
 F src/os_win.c a8ea80037e81127ca01959daa87387cc135f325c88dc745376c4f760de852a10
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 42120492784fc9bcd9082b5c9b5e329b7318c357f9f3574a1bbfcf7418910356
@@ -1953,8 +1953,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 764b71267e0b31ff7eaf2a0def7526a1a02dce4d5b456dea060d97ed342efdd1 1284225b0a8c7b630416be5348e99f7280f6443548ec97ffb1c85be23352b2bc
-R cbd08087a18243878650effded154d2f
-U larrybr
-Z ea5582c29873b8c02a6e6d4653537a8f
+P df842ebc796a2b0c913d19d873e88d048808dc5283465271369e302a680317e4 c3da4c1611cebd9f9d695892a3ffddc47d5f0db1a1ea8bd2b4f83ef7673b68de
+R 692b7f3944f60c275f9ba394269455ca
+T +closed c3da4c1611cebd9f9d695892a3ffddc47d5f0db1a1ea8bd2b4f83ef7673b68de
+U drh
+Z 68d76aedfae717687d8131de0b7511d9
 # Remove this line to create a well-formed Fossil manifest.
