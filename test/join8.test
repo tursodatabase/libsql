@@ -20,6 +20,8 @@ ifcapable !vtab {
 }
 
 db null NULL
+# EVIDENCE-OF: R-33754-02880 you can say "LEFT RIGHT JOIN" which is the
+# same as "FULL JOIN".
 do_execsql_test join8-10 {
   CREATE TABLE t1(a,b,c);
   CREATE TABLE t2(x,y);
@@ -226,6 +228,27 @@ do_execsql_test join8-7010 {
   -    -    -    -    -  -    -  -  305   5
   -    -    -    -    -  -    -  -  310  10
 }
+
+# EVIDENCE-OF: R-33754-02880 you can say "LEFT RIGHT JOIN" which is the
+# same as "FULL JOIN".
+do_execsql_test join8-7011 {
+  WITH t0 AS MATERIALIZED (
+    SELECT t1.*, t2.*, t3.*
+      FROM t1 INNER JOIN t2 ON t1.b=t2.b AND t2.x>0
+        RIGHT JOIN t3 ON t1.c=t3.c AND t3.y>0
+  )
+  SELECT * FROM t0 LEFT RIGHT JOIN t4 ON t0.a=t4.d AND t4.z>0
+   ORDER BY coalesce(t0.a, t0.y+200, t4.d);
+} {
+  6  106  206  306  106  6  206  6    -   -
+  -    -    -    -    -  -  200  0    -   -
+  -    -    -    -    -  -  203  3    -   -
+  -    -    -    -    -  -  209  9    -   -
+  -    -    -    -    -  -    -  -  300   0
+  -    -    -    -    -  -    -  -  305   5
+  -    -    -    -    -  -    -  -  310  10
+}
+
 do_execsql_test join8-7020 {
   EXPLAIN QUERY PLAN
   WITH t0 AS MATERIALIZED (
