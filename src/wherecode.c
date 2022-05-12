@@ -2621,7 +2621,8 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       pE = pTerm->pExpr;
       assert( pE!=0 );
       if( (pTabItem->fg.jointype & (JT_LEFT|JT_LTORJ))
-       && !ExprHasProperty(pE,EP_FromJoin|EP_InnerJoin)
+       && (!ExprHasProperty(pE,EP_FromJoin|EP_InnerJoin)
+             || pE->w.iJoin!=pTabItem->iCursor)
       ){
         continue;
       }

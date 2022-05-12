@@ -260,4 +260,27 @@ do_execsql_test join8-7020 {
    ORDER BY coalesce(t0.a, t0.y+200, t4.d);
 } {/.*BLOOM FILTER ON t2.*BLOOM FILTER ON t3.*BLOOM FILTER ON t4.*/}
 
+# 2022-05-12 Difference with PG found (by Dan) while exploring
+# https://sqlite.org/forum/forumpost/677a0ab93fcd9ccd
+#
+reset_db
+do_execsql_test join8-8000 {
+  CREATE TABLE t1(a INT, b INT);
+  CREATE TABLE t2(c INT, d INT);
+  CREATE TABLE t3(e INT, f INT);
+  INSERT INTO t1 VALUES(1, 2);
+  INSERT INTO t2 VALUES(3, 4);
+  INSERT INTO t3 VALUES(5, 6);
+} {}
+do_execsql_test join8-8010 {
+  SELECT *
+    FROM t3 LEFT JOIN t2 ON true
+            JOIN t1 ON (t3.e IS t2.c);
+} {}
+do_execsql_test join8-8020 {
+  SELECT *
+    FROM t3 LEFT JOIN t2 ON true
+            JOIN t1 ON (t3.e IS NOT DISTINCT FROM t2.c);
+} {}
+
 finish_test
