@@ -1,5 +1,5 @@
-C Fix\sthe\s".echo"\scommand\sof\sthe\sCLI\sso\sthat\sit\sshows\sthe\sresults\sof\sinput\nlines\simmediately,\sbefore\sinvoking\ssqlite3_prepare().
-D 2022-05-12T11:01:41.992
+C Add\sIS\sNOT\sDISTINCT\sFROM\sand\sIS\sDISTINCT\sFROM\sbinary\soperators\swhich\sare\nequivalent\sto\sIS\sand\sIS\sNOT,\srespectively,\sfor\scompatability\swith\sPostgreSQL\nand\shence\sstandard\sSQL.
+D 2022-05-12T11:45:20.320
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -542,7 +542,7 @@ F src/os_win.c a8ea80037e81127ca01959daa87387cc135f325c88dc745376c4f760de852a10
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 42120492784fc9bcd9082b5c9b5e329b7318c357f9f3574a1bbfcf7418910356
 F src/pager.h f82e9844166e1585f5786837ddc7709966138ced17f568c16af7ccf946c2baa3
-F src/parse.y b86d56b446afb9c203d8354dc6c422818a62b4bbab52b76ab3da06d7b1d07e44
+F src/parse.y efcb41d403be7bcecd6a95e51f73f89043e768cd0650a392c9b7ee0edbf1cc67
 F src/pcache.c 084e638432c610f95aea72b8509f0845d2791293f39d1b82f0c0a7e089c3bb6b
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c 54881292a9a5db202b2c0ac541c5e3ef9a5e8c4f1c1383adb2601d5499a60e65
@@ -901,7 +901,7 @@ F test/exclusive.test 7ff63be7503990921838d5c9f77f6e33e68e48ed1a9d48cd28745bf650
 F test/exclusive2.test 984090e8e9d1b331d2e8111daf6e5d61dda0bef7
 F test/exec.test e949714dc127eaa5ecc7d723efec1ec27118fdd7
 F test/exists.test 79a75323c78f02bbe9c251ea502a092f9ef63dac
-F test/expr.test e1afcdb1038e4d3fa67a3df323347c38750946e2e1b4e385bdc75d26284f2dac
+F test/expr.test 5c06696478212e5a04e04b043f993373f6f8e5ce5a80f5548a84703b123b6caa
 F test/expr2.test c27327ae9c017a7ff6280123f67aff496f912da74d78c888926d68b46ec75fd8
 F test/exprfault.test 497cc0b8fe6a677f49b55cb485e040f709ec2834b84f25912fe9c2dfeeda33db
 F test/extension01.test 00d13cec817f331a687a243e0e5a2d87b0e358c9
@@ -1953,9 +1953,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d55273e36e312336b8fc77dc771657d3b2c3437fbbd79f3be37701982560d634 deb7372b18cc8fb9d305085498fd24b3c2c17bd920ae2d03fa885af02ad47008
-R 56f20e29d8d8bd4f94a878cd8e451873
-T +closed deb7372b18cc8fb9d305085498fd24b3c2c17bd920ae2d03fa885af02ad47008
+P cf7fdabdba3a7600ea730263ca80ba80154645dfa15c31c037b780d6cb70e530
+R 3d6af656fb4de79992bd7eb88f082265
 U drh
-Z cf10466c2750403d999365883982fc9d
+Z 3682303474f6dcc00e17a0b96d46c4cc
 # Remove this line to create a well-formed Fossil manifest.
