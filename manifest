@@ -1,5 +1,5 @@
-C Ensure\sthat\sON\sclauses\sare\sapplied\sto\sthe\scorrect\souter\sjoin.
-D 2022-05-12T11:56:44.510
+C Fix\sa\sharmless\scompiler\swarning\sin\sthe\sCLI.
+D 2022-05-12T17:09:33.863
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -554,7 +554,7 @@ F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c e9ee235c4151d2b7fa47435a219bfd30bf516a804d2f004639858087ebf3137b
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 5096a2e8ab0511a413e7f5e45453fea4102d99c5636c46792581ae67899a76d7
-F src/shell.c.in afaed94af09f12ec99b4b9685e20273ad5bb5cdfcb6e2600cfb50f5a1ffe8e63
+F src/shell.c.in 176cad562152cbbafe7ecc9c83c82850e2c3d0cf33ec0a52d67341d35c842f22
 F src/sqlite.h.in 2a35f62185eb5e7ecc64a2f68442b538ce9be74f80f28a00abc24837edcf1c17
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h f49e28c25bd941e79794db5415fdf7b202deb3bc072ed6f1ed273d578703684e
@@ -1953,8 +1953,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P db27611e172102483eaede3981d473e3d5bf93d98bc68f480398b1573876349d
-R afe0cdc3523728a1b8ae188a6e9f6b30
+P c7e3a13a3288c577209be99c630fbe924e19880e8af1aa8a83b517acaa8b43d7
+R 0a3845fefd0ad6aac7e45fbf280fa0ff
 U drh
-Z 2be2867ba128a1ce436a897eb9d120e9
+Z 54875c2875e3e9b4c71ab954fb3fc0b2
 # Remove this line to create a well-formed Fossil manifest.
