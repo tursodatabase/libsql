@@ -461,8 +461,8 @@ static int isAuxiliaryVtabOperator(
 ** a join, then transfer the appropriate markings over to derived.
 */
 static void transferJoinMarkings(Expr *pDerived, Expr *pBase){
-  if( pDerived ){
-    pDerived->flags |= pBase->flags & EP_OuterON;
+  if( pDerived && ExprHasProperty(pBase, EP_OuterON|EP_InnerON) ){
+    pDerived->flags |= pBase->flags & (EP_OuterON|EP_InnerON);
     pDerived->w.iJoin = pBase->w.iJoin;
   }
 }

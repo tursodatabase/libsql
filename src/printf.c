@@ -954,7 +954,9 @@ void sqlite3RecordErrorByteOffset(sqlite3 *db, const char *z){
 ** as the error offset.
 */
 void sqlite3RecordErrorOffsetOfExpr(sqlite3 *db, const Expr *pExpr){
-  while( pExpr && (ExprHasProperty(pExpr,EP_OuterON) || pExpr->w.iOfst<=0) ){
+  while( pExpr
+     && (ExprHasProperty(pExpr,EP_OuterON|EP_InnerON) || pExpr->w.iOfst<=0)
+  ){
     pExpr = pExpr->pLeft;
   }
   if( pExpr==0 ) return;
