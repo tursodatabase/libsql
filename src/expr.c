@@ -3080,9 +3080,8 @@ void sqlite3CodeRhsOfIN(
       assert( ExprUseYSub(pExpr) );
       sqlite3VdbeAddOp2(v, OP_Gosub, pExpr->y.sub.regReturn,
                         pExpr->y.sub.iAddr);
-      if( iTab!=pExpr->iTable ){
-        sqlite3VdbeAddOp2(v, OP_OpenDup, iTab, pExpr->iTable);
-      }
+      assert( iTab!=pExpr->iTable );
+      sqlite3VdbeAddOp2(v, OP_OpenDup, iTab, pExpr->iTable);
       sqlite3VdbeJumpHere(v, addrOnce);
       return;
     }
