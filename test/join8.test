@@ -283,4 +283,15 @@ do_execsql_test join8-8020 {
             JOIN t1 ON (t3.e IS NOT DISTINCT FROM t2.c);
 } {}
 
+# 2022-05-13 The idea of reusing subquery cursors does not
+# work, if the cursors are used both for scanning and lookups.
+#
+reset_db
+db null -
+do_execsql_test join8-9000 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b TEXT, c TEXT, d REAL);
+  INSERT INTO t1 VALUES(1,'E','bb',NULL),(2,NULL,NULL,NULL);
+  SELECT * FROM t1 NATURAL RIGHT JOIN t1 AS t2 WHERE (a,b) IN (SELECT a+0, b FROM t1);
+} {1 E bb -}
+
 finish_test

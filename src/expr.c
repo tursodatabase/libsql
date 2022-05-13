@@ -2746,11 +2746,7 @@ int sqlite3FindInIndex(
 
   assert( pX->op==TK_IN );
   mustBeUnique = (inFlags & IN_INDEX_LOOP)!=0;
-  if( pX->iTable && (inFlags & IN_INDEX_REUSE_CUR)!=0 ){
-    iTab = pX->iTable;
-  }else{
-    iTab = pParse->nTab++;
-  }
+  iTab = pParse->nTab++;
 
   /* If the RHS of this IN(...) operator is a SELECT, and if it matters 
   ** whether or not the SELECT result contains NULL values, check whether
