@@ -489,8 +489,11 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
     sqlite3StrAccumInit(&x, 0, zFlgs, sizeof(zFlgs), 0);
     sqlite3_str_appendf(&x, " fg.af=%x.%c",
       pExpr->flags, pExpr->affExpr ? pExpr->affExpr : 'n');
-    if( ExprHasProperty(pExpr, EP_FromJoin) ){
+    if( ExprHasProperty(pExpr, EP_OuterON) ){
       sqlite3_str_appendf(&x, " iJoin=%d", pExpr->w.iJoin);
+    }
+    if( ExprHasProperty(pExpr, EP_InnerON) ){
+      sqlite3_str_appendf(&x, " inner-ON");
     }
     if( ExprHasProperty(pExpr, EP_FromDDL) ){
       sqlite3_str_appendf(&x, " DDL");

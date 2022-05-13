@@ -330,7 +330,7 @@ static WhereTerm *whereScanNext(WhereScan *pScan){
          && (iColumn!=XN_EXPR
              || sqlite3ExprCompareSkip(pTerm->pExpr->pLeft,
                                        pScan->pIdxExpr,iCur)==0)
-         && (pScan->iEquiv<=1 || !ExprHasProperty(pTerm->pExpr, EP_FromJoin))
+         && (pScan->iEquiv<=1 || !ExprHasProperty(pTerm->pExpr, EP_OuterON))
         ){
           if( (pTerm->eOperator & WO_EQUIV)!=0
            && pScan->nEquiv<ArraySize(pScan->aiCur)
@@ -757,7 +757,7 @@ static int termCanDriveIndex(
   if( pTerm->leftCursor!=pSrc->iCursor ) return 0;
   if( (pTerm->eOperator & (WO_EQ|WO_IS))==0 ) return 0;
   if( (pSrc->fg.jointype & (JT_LEFT|JT_LTORJ))!=0
-   && !ExprHasProperty(pTerm->pExpr, EP_FromJoin)
+   && !ExprHasProperty(pTerm->pExpr, EP_OuterON)
    && (pTerm->eOperator & WO_IS)
   ){
     /* Cannot use an IS term from the WHERE clause as an index driver for
@@ -1181,7 +1181,7 @@ static sqlite3_index_info *allocateIndexInfo(
     ** RIGHT JOIN.  See tag-20191211-001 for the
     ** equivalent restriction for ordinary tables. */
     if( (pSrc->fg.jointype & (JT_LEFT|JT_LTORJ))!=0
-     && !ExprHasProperty(pTerm->pExpr, EP_FromJoin)
+     && !ExprHasProperty(pTerm->pExpr, EP_OuterON)
     ){
       continue;
     }
@@ -2059,7 +2059,7 @@ void sqlite3WhereTermPrint(WhereTerm *pTerm, int iTerm){
     memcpy(zType, "....", 5);
     if( pTerm->wtFlags & TERM_VIRTUAL ) zType[0] = 'V';
     if( pTerm->eOperator & WO_EQUIV  ) zType[1] = 'E';
-    if( ExprHasProperty(pTerm->pExpr, EP_FromJoin) ) zType[2] = 'L';
+    if( ExprHasProperty(pTerm->pExpr, EP_OuterON) ) zType[2] = 'L';
     if( pTerm->wtFlags & TERM_CODED  ) zType[3] = 'C';
     if( pTerm->eOperator & WO_SINGLE ){
       assert( (pTerm->eOperator & (WO_OR|WO_AND))==0 );
@@ -2836,7 +2836,7 @@ static int whereLoopAddBtreeIndex(
     ** RIGHT JOIN.  Only constraints in the
     ** ON clause are allowed.  See tag-20191211-002 for the vtab equivalent. */
     if( (pSrc->fg.jointype & (JT_LEFT|JT_LTORJ))!=0
-     && !ExprHasProperty(pTerm->pExpr, EP_FromJoin|EP_InnerJoin)
+     && !ExprHasProperty(pTerm->pExpr, EP_OuterON|EP_InnerON)
     ){
       continue;
     }
@@ -3205,8 +3205,8 @@ static int whereUsablePartialIndex(
   for(i=0, pTerm=pWC->a; i<pWC->nTerm; i++, pTerm++){
     Expr *pExpr;
     pExpr = pTerm->pExpr;
-    if( (!ExprHasProperty(pExpr, EP_FromJoin) || pExpr->w.iJoin==iTab)
-     && (isLeft==0 || ExprHasProperty(pExpr, EP_FromJoin))
+    if( (!ExprHasProperty(pExpr, EP_OuterON) || pExpr->w.iJoin==iTab)
+     && (isLeft==0 || ExprHasProperty(pExpr, EP_OuterON))
      && sqlite3ExprImpliesExpr(pParse, pExpr, pWhere, iTab)
      && (pTerm->wtFlags & TERM_VNULL)==0
     ){
@@ -5214,7 +5214,7 @@ static SQLITE_NOINLINE Bitmask whereOmitNoopJoin(
     pEnd = pWInfo->sWC.a + pWInfo->sWC.nTerm;
     for(pTerm=pWInfo->sWC.a; pTerm<pEnd; pTerm++){
       if( (pTerm->prereqAll & pLoop->maskSelf)!=0 ){
-        if( !ExprHasProperty(pTerm->pExpr, EP_FromJoin)
+        if( !ExprHasProperty(pTerm->pExpr, EP_OuterON)
          || pTerm->pExpr->w.iJoin!=pItem->iCursor
         ){
           break;

@@ -350,7 +350,7 @@ static void disableTerm(WhereLevel *pLevel, WhereTerm *pTerm){
   int nLoop = 0;
   assert( pTerm!=0 );
   while( (pTerm->wtFlags & TERM_CODED)==0
-      && (pLevel->iLeftJoin==0 || ExprHasProperty(pTerm->pExpr, EP_FromJoin))
+      && (pLevel->iLeftJoin==0 || ExprHasProperty(pTerm->pExpr, EP_OuterON))
       && (pLevel->notReady & pTerm->prereqAll)==0
   ){
     if( nLoop && (pTerm->wtFlags & TERM_LIKE)!=0 ){
@@ -1072,7 +1072,7 @@ static void codeCursorHint(
     */
     if( pTabItem->fg.jointype & JT_LEFT ){
       Expr *pExpr = pTerm->pExpr;
-      if( !ExprHasProperty(pExpr, EP_FromJoin) 
+      if( !ExprHasProperty(pExpr, EP_OuterON) 
        || pExpr->w.iJoin!=pTabItem->iCursor
       ){
         sWalker.eCode = 0;
@@ -1081,7 +1081,7 @@ static void codeCursorHint(
         if( sWalker.eCode ) continue;
       }
     }else{
-      if( ExprHasProperty(pTerm->pExpr, EP_FromJoin) ) continue;
+      if( ExprHasProperty(pTerm->pExpr, EP_OuterON) ) continue;
     }
 
     /* All terms in pWLoop->aLTerm[] except pEndRange are used to initialize
@@ -2412,7 +2412,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         Expr *pDelete;                  /* Local copy of OR clause term */
         int jmp1 = 0;                   /* Address of jump operation */
         testcase( (pTabItem[0].fg.jointype & JT_LEFT)!=0
-               && !ExprHasProperty(pOrExpr, EP_FromJoin)
+               && !ExprHasProperty(pOrExpr, EP_OuterON)
         ); /* See TH3 vtab25.400 and ticket 614b25314c766238 */
         pDelete = pOrExpr = sqlite3ExprDup(db, pOrExpr, 0);
         if( db->mallocFailed ){
@@ -2621,7 +2621,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       pE = pTerm->pExpr;
       assert( pE!=0 );
       if( (pTabItem->fg.jointype & (JT_LEFT|JT_LTORJ))
-       && (!ExprHasProperty(pE,EP_FromJoin|EP_InnerJoin)
+       && (!ExprHasProperty(pE,EP_OuterON|EP_InnerON)
              || pE->w.iJoin!=pTabItem->iCursor)
       ){
         continue;
@@ -2693,7 +2693,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       sqlite3WhereTermPrint(pTerm, pWC->nTerm-j);
     }
 #endif
-    assert( !ExprHasProperty(pE, EP_FromJoin) );
+    assert( !ExprHasProperty(pE, EP_OuterON) );
     assert( (pTerm->prereqRight & pLevel->notReady)!=0 );
     assert( (pTerm->eOperator & (WO_OR|WO_AND))==0 );
     pAlt = sqlite3WhereFindTerm(pWC, iCur, pTerm->u.x.leftColumn, notReady,
@@ -2846,7 +2846,7 @@ SQLITE_NOINLINE void sqlite3WhereRightJoinLoop(
       WhereTerm *pTerm = &pWC->a[k];
       if( pTerm->wtFlags & TERM_VIRTUAL ) break;
       if( pTerm->prereqAll & ~mAll ) continue;
-      if( ExprHasProperty(pTerm->pExpr, EP_FromJoin|EP_InnerJoin) ) continue;
+      if( ExprHasProperty(pTerm->pExpr, EP_OuterON|EP_InnerON) ) continue;
       pSubWhere = sqlite3ExprAnd(pParse, pSubWhere,
                                  sqlite3ExprDup(pParse->db, pTerm->pExpr, 0));
     }
