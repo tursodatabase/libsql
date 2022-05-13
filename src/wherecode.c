@@ -2620,10 +2620,12 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       }
       pE = pTerm->pExpr;
       assert( pE!=0 );
-      if( (pTabItem->fg.jointype & (JT_LEFT|JT_LTORJ))
+      if( (pTabItem->fg.jointype & (JT_LEFT|JT_LTORJ|JT_RIGHT))
        && (!ExprHasProperty(pE,EP_OuterON|EP_InnerON)
              || pE->w.iJoin!=pTabItem->iCursor)
       ){
+        /* Defer processing WHERE clause constraints until after outer
+        ** join processing.  tag-20220513a */
         continue;
       }
       
@@ -2764,18 +2766,8 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     pLevel->addrFirst = sqlite3VdbeCurrentAddr(v);
     sqlite3VdbeAddOp2(v, OP_Integer, 1, pLevel->iLeftJoin);
     VdbeComment((v, "record LEFT JOIN hit"));
-    for(pTerm=pWC->a, j=0; j<pWC->nBase; j++, pTerm++){
-      testcase( pTerm->wtFlags & TERM_VIRTUAL );
-      testcase( pTerm->wtFlags & TERM_CODED );
-      if( pTerm->wtFlags & (TERM_VIRTUAL|TERM_CODED) ) continue;
-      if( (pTerm->prereqAll & pLevel->notReady)!=0 ){
-        assert( pWInfo->untestedTerms );
-        continue;
-      }
-      if( pTabItem->fg.jointype & JT_LTORJ ) continue;
-      assert( pTerm->pExpr );
-      sqlite3ExprIfFalse(pParse, pTerm->pExpr, addrCont, SQLITE_JUMPIFNULL);
-      pTerm->wtFlags |= TERM_CODED;
+    if( pLevel->pRJ==0 ){
+      goto code_outer_join_constraints; /* WHERE clause constraints */
     }
   }
 
@@ -2791,6 +2783,26 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     pRJ->addrSubrtn = sqlite3VdbeCurrentAddr(v);
     assert( pParse->withinRJSubrtn < 255 );
     pParse->withinRJSubrtn++;
+
+    /* WHERE clause constraints must be deferred until after outer join
+    ** row elimination has completed, since WHERE clause constraints apply
+    ** to the results of the OUTER JOIN.  The following loop generates the
+    ** appropriate WHERE clause constraint checks.  tag-20220513a.
+    */
+  code_outer_join_constraints:
+    for(pTerm=pWC->a, j=0; j<pWC->nBase; j++, pTerm++){
+      testcase( pTerm->wtFlags & TERM_VIRTUAL );
+      testcase( pTerm->wtFlags & TERM_CODED );
+      if( pTerm->wtFlags & (TERM_VIRTUAL|TERM_CODED) ) continue;
+      if( (pTerm->prereqAll & pLevel->notReady)!=0 ){
+        assert( pWInfo->untestedTerms );
+        continue;
+      }
+      if( pTabItem->fg.jointype & JT_LTORJ ) continue;
+      assert( pTerm->pExpr );
+      sqlite3ExprIfFalse(pParse, pTerm->pExpr, addrCont, SQLITE_JUMPIFNULL);
+      pTerm->wtFlags |= TERM_CODED;
+    }
   }
 
 #if WHERETRACE_ENABLED /* 0x20800 */
