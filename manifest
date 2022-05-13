@@ -1,5 +1,5 @@
-C New\stest\scases\sfor\souter\sjoins.\s\sCase\sjoinE-32\scurrently\sgets\san\sincorrect\nanswer.\s\sSee\s[forum:/forumpost/41cc3851d8|forum\spost\s41cc3851d8]\sfor\sthe\sbug\nreport.
-D 2022-05-13T15:31:30.015
+C Corrections\sto\sthe\sheader\scomment\sto\sthe\snew\sjoinE.test\sscript.\s\sAdd\sthe\ngenerator\sTCL\sas\sa\scomment\sat\sthe\sbottom\sof\sthe\sscript.
+D 2022-05-13T15:36:47.140
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1154,7 +1154,7 @@ F test/joinA.test 7eab225dc1c1ab258a5e62513a4ed7cabbd3db971d59d5d92f4fb6fa14c12f
 F test/joinB.test 1b2ba3fc8568b49411787fccbf540570c148e9b6a53a30f80691cb6268098ded
 F test/joinC.test 1f1a602c2127f55f136e2cbd3bf2d26546614bf8cffe5902ec1ac9c07f87f207
 F test/joinD.test 7f0f4dd1f2767330bf1fda5c9cc8a437015a54bcd2355036b4d04ddfc1519d76
-F test/joinE.test b610b61c6e7484d1d93d0544da2c9821ef55c55ca0c36f465db6ac6f8a236903
+F test/joinE.test d5d182f3812771e2c0d97c9dcf5dbe4c41c8e21c82560e59358731c4a3981d6b
 F test/journal1.test c7b768041b7f494471531e17abc2f4f5ebf9e5096984f43ed17c4eb80ba34497
 F test/journal2.test 9dac6b4ba0ca79c3b21446bbae993a462c2397c4
 F test/journal3.test 7c3cf23ffc77db06601c1fcfc9743de8441cb77db9d1aa931863d94f5ffa140e
@@ -1954,8 +1954,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1ffea07ff98b894729c698b681cc7433df3bbfccd8a0529a706908602a636937
-R c7a9689e86e2884096bfe487c1ca7e7e
+P 02b24863e6dc617c9260f79292a96b7c861d088268e77fd17204570515eb792c
+R 167bc393f082329eafd5eddb2ff31acf
 U drh
-Z 94eee899c46b87f17cfa9d895d400453
+Z 3187fb402b840f2b66e20fdf22743291
 # Remove this line to create a well-formed Fossil manifest.
