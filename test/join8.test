@@ -294,4 +294,51 @@ do_execsql_test join8-9000 {
   SELECT * FROM t1 NATURAL RIGHT JOIN t1 AS t2 WHERE (a,b) IN (SELECT a+0, b FROM t1);
 } {1 E bb -}
 
+# 2022-05-14 https://sqlite.org/forum/forumpost/c06b10ad7e
+#
+reset_db
+db null -
+do_execsql_test join8-10000 {
+  CREATE TABLE t1(c0 INT UNIQUE);
+  CREATE TABLE t2(c0);
+  CREATE TABLE t2i(c0 INT);
+  CREATE TABLE t3(c0 INT);
+  INSERT INTO t1 VALUES(1);
+  INSERT INTO t2 VALUES(2);
+  INSERT INTO t2i VALUES(2);
+  INSERT INTO t3 VALUES(3);
+} {}
+do_execsql_test join8-10010 {
+  SELECT DISTINCT t1.c0, t3.c0
+    FROM t2 NATURAL JOIN t1 RIGHT JOIN t3 ON t1.c0;
+} {- 3}
+do_execsql_test join8-10020 {
+  SELECT t1.c0, t3.c0
+    FROM t2 NATURAL JOIN t1 RIGHT JOIN t3 ON t1.c0;
+} {- 3}
+do_execsql_test join8-10030 {
+  SELECT DISTINCT t1.c0, t3.c0
+    FROM t2 NATURAL CROSS JOIN t1 RIGHT JOIN t3 ON t1.c0;
+} {- 3}
+do_execsql_test join8-10040 {
+  SELECT t1.c0, t3.c0
+    FROM t1 NATURAL CROSS JOIN t2 RIGHT JOIN t3 ON t1.c0;
+} {- 3}
+do_execsql_test join8-10050 {
+  SELECT DISTINCT t1.c0, t3.c0
+    FROM t2i NATURAL JOIN t1 RIGHT JOIN t3 ON t1.c0;
+} {- 3}
+do_execsql_test join8-10060 {
+  SELECT DISTINCT +t1.c0, t3.c0
+    FROM t2 NATURAL JOIN t1 RIGHT JOIN t3 ON t1.c0;
+} {- 3}
+do_execsql_test join8-10070 {
+  SELECT DISTINCT +t1.c0, t3.c0
+    FROM t1 NATURAL CROSS JOIN t2 RIGHT JOIN t3 ON t1.c0;
+} {- 3}
+do_execsql_test join8-10080 {
+  SELECT DISTINCT t1.c0, t3.c0
+    FROM t2 NATURAL JOIN t1 RIGHT JOIN t3 ON t1.c0<>0;
+} {- 3}
+
 finish_test

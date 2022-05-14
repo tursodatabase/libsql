@@ -2619,15 +2619,19 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       }
       pE = pTerm->pExpr;
       assert( pE!=0 );
-      if( (pTabItem->fg.jointype & (JT_LEFT|JT_LTORJ|JT_RIGHT))
-       && (!ExprHasProperty(pE,EP_OuterON|EP_InnerON)
-             || pE->w.iJoin!=pTabItem->iCursor)
-      ){
-        /* Defer processing WHERE clause constraints until after outer
-        ** join processing.  tag-20220513a */
-        continue;
+      if( pTabItem->fg.jointype & (JT_LEFT|JT_LTORJ|JT_RIGHT) ){
+        if( !ExprHasProperty(pE,EP_OuterON|EP_InnerON) ){
+          /* Defer processing WHERE clause constraints until after outer
+          ** join processing.  tag-20220513a */
+          continue;
+        }else{
+          Bitmask m = sqlite3WhereGetMask(&pWInfo->sMaskSet, pE->w.iJoin);
+          if( m & pLevel->notReady ){
+            /* An ON clause that is not ripe */
+            continue;
+          }
+        }
       }
-      
       if( iLoop==1 && !sqlite3ExprCoveredByIndex(pE, pLevel->iTabCur, pIdx) ){
         iNext = 2;
         continue;
