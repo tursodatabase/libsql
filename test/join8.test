@@ -341,4 +341,38 @@ do_execsql_test join8-10080 {
     FROM t2 NATURAL JOIN t1 RIGHT JOIN t3 ON t1.c0<>0;
 } {- 3}
 
+# 2022-05-14
+# index-on-expr scan on a RIGHT JOIN
+# dbsqlfuzz 39ee60004ff027a9e2846cf76e02cd5ac0953739
+#
+reset_db
+db null -
+do_execsql_test join8-11000 {
+  CREATE TABLE t1(a);
+  CREATE TABLE t2(b);
+  INSERT INTO t2 VALUES(0),(1),(2);
+  SELECT * FROM t1 RIGHT JOIN t2 ON (a=b) WHERE 99+(b+1)!=99;
+} {- 0 - 1 - 2}
+do_execsql_test join8-11010 {
+  CREATE INDEX t2b ON t2(b+1) WHERE b IS NOT NULL;
+  SELECT * FROM t1 RIGHT JOIN t2 ON (a=b) WHERE 99+(b+1)!=99;
+} {- 0 - 1 - 2}
+do_execsql_test join8-11020 {
+  DROP TABLE t1;
+  DROP TABLE t2;
+  CREATE TABLE t1(a);
+  CREATE TABLE t2(b, c, d);
+  INSERT INTO t2 VALUES(1, 3, 'not-4');
+  SELECT b, d FROM t1 RIGHT JOIN t2 WHERE (b+0)=1 AND d!=4;
+} {1 not-4}
+do_execsql_test join8-11030 {
+  CREATE INDEX i2 ON t2((b+0), d);
+  SELECT b, d FROM t1 RIGHT JOIN t2 WHERE (b+0)=1 AND d!=4;
+} {1 not-4}
+do_execsql_test join8-11040 {
+  DROP INDEX i2;
+  CREATE INDEX i2 ON t2((b+0), d) WHERE d IS NOT NULL;
+  SELECT b, d FROM t1 RIGHT JOIN t2 WHERE (b+0)=1 AND d!=4;
+} {1 not-4}
+
 finish_test

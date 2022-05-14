@@ -3482,7 +3482,14 @@ static int whereLoopAddBtree(
         }
         ApplyCostMultiplier(pNew->rRun, pTab->costMult);
         whereLoopOutputAdjust(pWC, pNew, rSize);
-        rc = whereLoopInsert(pBuilder, pNew);
+        if( (pSrc->fg.jointype & JT_RIGHT)!=0 && pProbe->aColExpr ){
+          /* Do not do an SCAN of a index-on-expression in a RIGHT JOIN
+          ** because the cursor used to access the index might not be
+          ** positioned to the correct row during the right-join no-match
+          ** loop. */
+        }else{
+          rc = whereLoopInsert(pBuilder, pNew);
+        }
         pNew->nOut = rSize;
         if( rc ) break;
       }
@@ -6168,6 +6175,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
   }
 
   assert( pWInfo->nLevel<=pTabList->nSrc );
+  if( pWInfo->pExprMods ) whereUndoExprMods(pWInfo);
   for(i=0, pLevel=pWInfo->a; i<pWInfo->nLevel; i++, pLevel++){
     int k, last;
     VdbeOp *pOp, *pLastOp;
@@ -6304,7 +6312,6 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
 
   /* Final cleanup
   */
-  if( pWInfo->pExprMods ) whereUndoExprMods(pWInfo);
   pParse->nQueryLoop = pWInfo->savedNQueryLoop;
   whereInfoFree(db, pWInfo);
   return;
