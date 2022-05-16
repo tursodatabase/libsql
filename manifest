@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sin\stest\sfile\sswarmvtab3.test\scausing\soccasional\sfailures.
-D 2022-05-16T16:10:04.466
+C Add\smemory\sbarriers\sto\smulti-threaded\scode\sin\stest4.c.
+D 2022-05-16T16:55:22.768
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -566,7 +566,7 @@ F src/tclsqlite.c 1f6673991147bc2cecc08a40d22f9803b84c805b24b499fe727f392256f734
 F src/test1.c 1356984e97bff07e4a8cc3863e892f05b3348678a74783bb6f350b76316736f1
 F src/test2.c 3efb99ab7f1fc8d154933e02ae1378bac9637da5
 F src/test3.c 61798bb0d38b915067a8c8e03f5a534b431181f802659a6616f9b4ff7d872644
-F src/test4.c 7c4420e01c577b5c4add2cb03119743b1a357543d347773b9e717195ea967159
+F src/test4.c 4533b76419e7feb41b40582554663ed3cd77aaa54e135cf76b3205098cd6e664
 F src/test5.c 328aae2c010c57a9829d255dc099d6899311672d
 F src/test6.c ae73a3a42bbc982fb9e301b84d30bda65a307be48c6dff20aba1461e17a9b0ce
 F src/test7.c 5612e9aecf934d6df7bba6ce861fdf5ba5456010
@@ -1954,8 +1954,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2277f9ba7087dd993ac0f4007c523aa9cf74dba187f53af03d8c164886726fee
-R 68c24df5ae8824ce38e34e7cd46a31f1
+P f935c155ef205802c16b4ebea4a3fb01bf5689662b7b4f2af56f0f9021d6d4b1
+R c061fe23c974300044233fa5c2c2a108
 U dan
-Z e76e8801e618c61286f9010190950bf1
+Z f437a9eddd805a091e05b9805ba19805
 # Remove this line to create a well-formed Fossil manifest.
