@@ -1,5 +1,5 @@
-C Do\snot\sallow\san\sindex\sscan\son\san\sindex-on-expression\sfor\sa\sRIGHT\sJOIN\sbecause\nthe\sindex\smight\snot\sbe\spositioned\son\sthe\scorrect\srow\swhen\srunning\sthe\nthe\sright-join\sno-match\sloop.\ndbsqlfuzz\s39ee60004ff027a9e2846cf76e02cd5ac0953739
-D 2022-05-14T19:05:13.161
+C Fix\sa\sproblem\sin\stest\sfile\sswarmvtab3.test\scausing\soccasional\sfailures.
+D 2022-05-16T16:10:04.466
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1463,7 +1463,7 @@ F test/subtype1.test 7fe09496352f97053af1437150751be2d0a0cae8
 F test/superlock.test ec94f0556b6488d97f71c79f9061ae08d9ab8f12
 F test/swarmvtab.test 250231404fcac88f61a6c147bb0e3a118ed879278cd3ccb0ae2d3a729e1e8e26
 F test/swarmvtab2.test c948cb2fdfc5b01d85e8f6d6504854202dc1a0782ab2a0ed61538f27cbd0aa5c
-F test/swarmvtab3.test 247aa38b6ebd2b99db2075847ae47e789ac34f1c2ab5c720dfcffd990004c544
+F test/swarmvtab3.test 41a3ab47cb7a834d4e5336425103b617410a67bb95d335ef536f887587ece073
 F test/swarmvtabfault.test 8a67a9f27c61073a47990829e92bc0c64420a807cb642b15a25f6c788210ed95
 F test/symlink.test 72b22238d4405ba34df8e60b335d290a3b1129fd5c260835c944c1e4e77288a9
 F test/symlink2.test 9531f475a53d8781c4f81373f87faf2e2aff4f5fb2102ec6386e0c827916a670
@@ -1954,8 +1954,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3e073bfddfcd652dfae8656d8978a4de427d21847fdaccfce53b6b895ad33f01
-R 45a6d14271adb894f8a23a1d1403bcc8
-U drh
-Z e0ba2eaedaa5d31f63ce00b4accf03e3
+P 2277f9ba7087dd993ac0f4007c523aa9cf74dba187f53af03d8c164886726fee
+R 68c24df5ae8824ce38e34e7cd46a31f1
+U dan
+Z e76e8801e618c61286f9010190950bf1
 # Remove this line to create a well-formed Fossil manifest.
