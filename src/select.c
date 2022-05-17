@@ -378,11 +378,11 @@ static int tableAndColumnIndex(
 }
 
 /*
-** Set the EP_FromJoin property on all terms of the given expression.
+** Set the EP_OuterON property on all terms of the given expression.
 ** And set the Expr.w.iJoin to iTable for every term in the
 ** expression.
 **
-** The EP_FromJoin property is used on terms of an expression to tell
+** The EP_OuterON property is used on terms of an expression to tell
 ** the OUTER JOIN processing logic that this term is part of the
 ** join restriction specified in the ON or USING clause and not a part
 ** of the more general WHERE clause.  These terms are moved over to the
@@ -404,7 +404,7 @@ static int tableAndColumnIndex(
 ** the output, which is incorrect.
 */
 void sqlite3SetJoinExpr(Expr *p, int iTable, u32 joinFlag){
-  assert( joinFlag==EP_FromJoin || joinFlag==EP_InnerJoin );
+  assert( joinFlag==EP_OuterON || joinFlag==EP_InnerON );
   while( p ){
     ExprSetProperty(p, joinFlag);
     assert( !ExprHasProperty(p, EP_TokenOnly|EP_Reduced) );
@@ -425,17 +425,17 @@ void sqlite3SetJoinExpr(Expr *p, int iTable, u32 joinFlag){
 }
 
 /* Undo the work of sqlite3SetJoinExpr(). In the expression p, convert every
-** term that is marked with EP_FromJoin and w.iJoin==iTable into
-** an ordinary term that omits the EP_FromJoin mark.
+** term that is marked with EP_OuterON and w.iJoin==iTable into
+** an ordinary term that omits the EP_OuterON mark.
 **
 ** This happens when a LEFT JOIN is simplified into an ordinary JOIN.
 */
 static void unsetJoinExpr(Expr *p, int iTable){
   while( p ){
-    if( ExprHasProperty(p, EP_FromJoin)
+    if( ExprHasProperty(p, EP_OuterON)
      && (iTable<0 || p->w.iJoin==iTable) ){
-      ExprClearProperty(p, EP_FromJoin);
-      ExprSetProperty(p, EP_InnerJoin);
+      ExprClearProperty(p, EP_OuterON);
+      ExprSetProperty(p, EP_InnerON);
     }
     if( p->op==TK_COLUMN && p->iTable==iTable ){
       ExprClearProperty(p, EP_CanBeNull);
@@ -463,8 +463,8 @@ static void unsetJoinExpr(Expr *p, int iTable){
 **
 **   *  ON and USING clauses result in extra terms being added to the
 **      WHERE clause to enforce the specified constraints.  The extra
-**      WHERE clause terms will be tagged with EP_FromJoin or
-**      EP_InnerJoin so that we know that they originated in ON/USING.
+**      WHERE clause terms will be tagged with EP_OuterON or
+**      EP_InnerON so that we know that they originated in ON/USING.
 **
 ** The terms of a FROM clause are contained in the Select.pSrc structure.
 ** The left most table is the first entry in Select.pSrc.  The right-most
@@ -489,7 +489,7 @@ static int sqlite3ProcessJoin(Parse *pParse, Select *p){
     u32 joinType;
 
     if( NEVER(pLeft->pTab==0 || pRightTab==0) ) continue;
-    joinType = (pRight->fg.jointype & JT_OUTER)!=0 ? EP_FromJoin : EP_InnerJoin;
+    joinType = (pRight->fg.jointype & JT_OUTER)!=0 ? EP_OuterON : EP_InnerON;
 
     /* If this is a NATURAL join, synthesize an approprate USING clause
     ** to specify which columns should be joined.
@@ -3762,7 +3762,7 @@ static Expr *substExpr(
   Expr *pExpr            /* Expr in which substitution occurs */
 ){
   if( pExpr==0 ) return 0;
-  if( ExprHasProperty(pExpr, EP_FromJoin)
+  if( ExprHasProperty(pExpr, EP_OuterON)
    && pExpr->w.iJoin==pSubst->iTable
   ){
     pExpr->w.iJoin = pSubst->iNewTable;
@@ -3803,9 +3803,9 @@ static Expr *substExpr(
         if( pSubst->isOuterJoin ){
           ExprSetProperty(pNew, EP_CanBeNull);
         }
-        if( ExprHasProperty(pExpr,EP_FromJoin|EP_InnerJoin) ){
+        if( ExprHasProperty(pExpr,EP_OuterON|EP_InnerON) ){
           sqlite3SetJoinExpr(pNew, pExpr->w.iJoin,
-                             pExpr->flags & (EP_FromJoin|EP_InnerJoin));
+                             pExpr->flags & (EP_OuterON|EP_InnerON));
         }
         sqlite3ExprDelete(db, pExpr);
         pExpr = pNew;
@@ -3969,7 +3969,7 @@ static int renumberCursorsCb(Walker *pWalker, Expr *pExpr){
   if( op==TK_COLUMN || op==TK_IF_NULL_ROW ){
     renumberCursorDoMapping(pWalker, &pExpr->iTable);
   }
-  if( ExprHasProperty(pExpr, EP_FromJoin) ){
+  if( ExprHasProperty(pExpr, EP_OuterON) ){
     renumberCursorDoMapping(pWalker, &pExpr->w.iJoin);
   }
   return WRC_Continue;
@@ -4547,7 +4547,7 @@ static int flattenSubquery(
     pWhere = pSub->pWhere;
     pSub->pWhere = 0;
     if( isOuterJoin>0 ){
-      sqlite3SetJoinExpr(pWhere, iNewParent, EP_FromJoin);
+      sqlite3SetJoinExpr(pWhere, iNewParent, EP_OuterON);
     }
     if( pWhere ){
       if( pParent->pWhere ){
@@ -4680,7 +4680,7 @@ static void constInsert(
 static void findConstInWhere(WhereConst *pConst, Expr *pExpr){
   Expr *pRight, *pLeft;
   if( NEVER(pExpr==0) ) return;
-  if( ExprHasProperty(pExpr, EP_FromJoin) ) return;
+  if( ExprHasProperty(pExpr, EP_OuterON) ) return;
   if( pExpr->op==TK_AND ){
     findConstInWhere(pConst, pExpr->pRight);
     findConstInWhere(pConst, pExpr->pLeft);
@@ -4716,9 +4716,9 @@ static int propagateConstantExprRewriteOne(
   int i;
   if( pConst->pOomFault[0] ) return WRC_Prune;
   if( pExpr->op!=TK_COLUMN ) return WRC_Continue;
-  if( ExprHasProperty(pExpr, EP_FixedCol|EP_FromJoin) ){
+  if( ExprHasProperty(pExpr, EP_FixedCol|EP_OuterON) ){
     testcase( ExprHasProperty(pExpr, EP_FixedCol) );
-    testcase( ExprHasProperty(pExpr, EP_FromJoin) );
+    testcase( ExprHasProperty(pExpr, EP_OuterON) );
     return WRC_Continue;
   }
   for(i=0; i<pConst->nConst; i++){
@@ -5003,12 +5003,12 @@ static int pushDownWhereTerms(
 
 #if 0  /* Legacy code. Checks now done by sqlite3ExprIsTableConstraint() */
   if( isLeftJoin
-   && (ExprHasProperty(pWhere,EP_FromJoin)==0
+   && (ExprHasProperty(pWhere,EP_OuterON)==0
          || pWhere->w.iJoin!=iCursor)
   ){
     return 0; /* restriction (4) */
   }
-  if( ExprHasProperty(pWhere,EP_FromJoin)
+  if( ExprHasProperty(pWhere,EP_OuterON)
    && pWhere->w.iJoin!=iCursor 
   ){
     return 0; /* restriction (5) */
@@ -7707,7 +7707,7 @@ int sqlite3Select(
         eDist = sqlite3WhereIsDistinct(pWInfo);
         updateAccumulator(pParse, regAcc, pAggInfo, eDist);
         if( eDist!=WHERE_DISTINCT_NOOP ){
-          struct AggInfo_func *pF = &pAggInfo->aFunc[0];
+          struct AggInfo_func *pF = pAggInfo->aFunc;
           if( pF ){
             fixDistinctOpenEph(pParse, eDist, pF->iDistinct, pF->iDistAddr);
           }

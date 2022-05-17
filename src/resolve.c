@@ -928,7 +928,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       }
       sqlite3WalkExpr(pWalker, pExpr->pLeft);
       if( 0==sqlite3ExprCanBeNull(pExpr->pLeft) && !IN_RENAME_OBJECT ){
-        testcase( ExprHasProperty(pExpr, EP_FromJoin) );
+        testcase( ExprHasProperty(pExpr, EP_OuterON) );
         assert( !ExprHasProperty(pExpr, EP_IntValue) );
         if( pExpr->op==TK_NOTNULL ){
           pExpr->u.zToken = "true";

@@ -20,6 +20,8 @@ ifcapable !vtab {
 }
 
 db null NULL
+# EVIDENCE-OF: R-33754-02880 you can say "LEFT RIGHT JOIN" which is the
+# same as "FULL JOIN".
 do_execsql_test join8-10 {
   CREATE TABLE t1(a,b,c);
   CREATE TABLE t2(x,y);
@@ -226,6 +228,27 @@ do_execsql_test join8-7010 {
   -    -    -    -    -  -    -  -  305   5
   -    -    -    -    -  -    -  -  310  10
 }
+
+# EVIDENCE-OF: R-33754-02880 you can say "LEFT RIGHT JOIN" which is the
+# same as "FULL JOIN".
+do_execsql_test join8-7011 {
+  WITH t0 AS MATERIALIZED (
+    SELECT t1.*, t2.*, t3.*
+      FROM t1 INNER JOIN t2 ON t1.b=t2.b AND t2.x>0
+        RIGHT JOIN t3 ON t1.c=t3.c AND t3.y>0
+  )
+  SELECT * FROM t0 LEFT RIGHT JOIN t4 ON t0.a=t4.d AND t4.z>0
+   ORDER BY coalesce(t0.a, t0.y+200, t4.d);
+} {
+  6  106  206  306  106  6  206  6    -   -
+  -    -    -    -    -  -  200  0    -   -
+  -    -    -    -    -  -  203  3    -   -
+  -    -    -    -    -  -  209  9    -   -
+  -    -    -    -    -  -    -  -  300   0
+  -    -    -    -    -  -    -  -  305   5
+  -    -    -    -    -  -    -  -  310  10
+}
+
 do_execsql_test join8-7020 {
   EXPLAIN QUERY PLAN
   WITH t0 AS MATERIALIZED (
@@ -236,5 +259,120 @@ do_execsql_test join8-7020 {
   SELECT * FROM t0 FULL JOIN t4 ON t0.a=t4.d AND t4.z>0
    ORDER BY coalesce(t0.a, t0.y+200, t4.d);
 } {/.*BLOOM FILTER ON t2.*BLOOM FILTER ON t3.*BLOOM FILTER ON t4.*/}
+
+# 2022-05-12 Difference with PG found (by Dan) while exploring
+# https://sqlite.org/forum/forumpost/677a0ab93fcd9ccd
+#
+reset_db
+do_execsql_test join8-8000 {
+  CREATE TABLE t1(a INT, b INT);
+  CREATE TABLE t2(c INT, d INT);
+  CREATE TABLE t3(e INT, f INT);
+  INSERT INTO t1 VALUES(1, 2);
+  INSERT INTO t2 VALUES(3, 4);
+  INSERT INTO t3 VALUES(5, 6);
+} {}
+do_execsql_test join8-8010 {
+  SELECT *
+    FROM t3 LEFT JOIN t2 ON true
+            JOIN t1 ON (t3.e IS t2.c);
+} {}
+do_execsql_test join8-8020 {
+  SELECT *
+    FROM t3 LEFT JOIN t2 ON true
+            JOIN t1 ON (t3.e IS NOT DISTINCT FROM t2.c);
+} {}
+
+# 2022-05-13 The idea of reusing subquery cursors does not
+# work, if the cursors are used both for scanning and lookups.
+#
+reset_db
+db null -
+do_execsql_test join8-9000 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b TEXT, c TEXT, d REAL);
+  INSERT INTO t1 VALUES(1,'E','bb',NULL),(2,NULL,NULL,NULL);
+  SELECT * FROM t1 NATURAL RIGHT JOIN t1 AS t2 WHERE (a,b) IN (SELECT a+0, b FROM t1);
+} {1 E bb -}
+
+# 2022-05-14 https://sqlite.org/forum/forumpost/c06b10ad7e
+#
+reset_db
+db null -
+do_execsql_test join8-10000 {
+  CREATE TABLE t1(c0 INT UNIQUE);
+  CREATE TABLE t2(c0);
+  CREATE TABLE t2i(c0 INT);
+  CREATE TABLE t3(c0 INT);
+  INSERT INTO t1 VALUES(1);
+  INSERT INTO t2 VALUES(2);
+  INSERT INTO t2i VALUES(2);
+  INSERT INTO t3 VALUES(3);
+} {}
+do_execsql_test join8-10010 {
+  SELECT DISTINCT t1.c0, t3.c0
+    FROM t2 NATURAL JOIN t1 RIGHT JOIN t3 ON t1.c0;
+} {- 3}
+do_execsql_test join8-10020 {
+  SELECT t1.c0, t3.c0
+    FROM t2 NATURAL JOIN t1 RIGHT JOIN t3 ON t1.c0;
+} {- 3}
+do_execsql_test join8-10030 {
+  SELECT DISTINCT t1.c0, t3.c0
+    FROM t2 NATURAL CROSS JOIN t1 RIGHT JOIN t3 ON t1.c0;
+} {- 3}
+do_execsql_test join8-10040 {
+  SELECT t1.c0, t3.c0
+    FROM t1 NATURAL CROSS JOIN t2 RIGHT JOIN t3 ON t1.c0;
+} {- 3}
+do_execsql_test join8-10050 {
+  SELECT DISTINCT t1.c0, t3.c0
+    FROM t2i NATURAL JOIN t1 RIGHT JOIN t3 ON t1.c0;
+} {- 3}
+do_execsql_test join8-10060 {
+  SELECT DISTINCT +t1.c0, t3.c0
+    FROM t2 NATURAL JOIN t1 RIGHT JOIN t3 ON t1.c0;
+} {- 3}
+do_execsql_test join8-10070 {
+  SELECT DISTINCT +t1.c0, t3.c0
+    FROM t1 NATURAL CROSS JOIN t2 RIGHT JOIN t3 ON t1.c0;
+} {- 3}
+do_execsql_test join8-10080 {
+  SELECT DISTINCT t1.c0, t3.c0
+    FROM t2 NATURAL JOIN t1 RIGHT JOIN t3 ON t1.c0<>0;
+} {- 3}
+
+# 2022-05-14
+# index-on-expr scan on a RIGHT JOIN
+# dbsqlfuzz 39ee60004ff027a9e2846cf76e02cd5ac0953739
+#
+reset_db
+db null -
+do_execsql_test join8-11000 {
+  CREATE TABLE t1(a);
+  CREATE TABLE t2(b);
+  INSERT INTO t2 VALUES(0),(1),(2);
+  SELECT * FROM t1 RIGHT JOIN t2 ON (a=b) WHERE 99+(b+1)!=99;
+} {- 0 - 1 - 2}
+do_execsql_test join8-11010 {
+  CREATE INDEX t2b ON t2(b+1) WHERE b IS NOT NULL;
+  SELECT * FROM t1 RIGHT JOIN t2 ON (a=b) WHERE 99+(b+1)!=99;
+} {- 0 - 1 - 2}
+do_execsql_test join8-11020 {
+  DROP TABLE t1;
+  DROP TABLE t2;
+  CREATE TABLE t1(a);
+  CREATE TABLE t2(b, c, d);
+  INSERT INTO t2 VALUES(1, 3, 'not-4');
+  SELECT b, d FROM t1 RIGHT JOIN t2 WHERE (b+0)=1 AND d!=4;
+} {1 not-4}
+do_execsql_test join8-11030 {
+  CREATE INDEX i2 ON t2((b+0), d);
+  SELECT b, d FROM t1 RIGHT JOIN t2 WHERE (b+0)=1 AND d!=4;
+} {1 not-4}
+do_execsql_test join8-11040 {
+  DROP INDEX i2;
+  CREATE INDEX i2 ON t2((b+0), d) WHERE d IS NOT NULL;
+  SELECT b, d FROM t1 RIGHT JOIN t2 WHERE (b+0)=1 AND d!=4;
+} {1 not-4}
 
 finish_test
