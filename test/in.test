@@ -798,4 +798,13 @@ do_execsql_test in-20.1 {
   SELECT (1 IN (2 IS TRUE));
 } {1}
 
+# Forum post: https://sqlite.org/forum/forumpost/5782619992.
+#
+reset_db
+do_execsql_test in-21.1 {
+  CREATE TABLE t0(c0);
+  SELECT COUNT(*) FROM t0 ORDER BY (t0.c0 IN ());
+} {0}
+
+
 finish_test
