@@ -6484,7 +6484,7 @@ static void appendOnePathElement(
         return;
       }
       got = osReadlink(zIn, zLnk, sizeof(zLnk)-2);
-      if( got<=0 || got>=sizeof(zLnk)-2 ){
+      if( got<=0 || got>=(ssize_t)sizeof(zLnk)-2 ){
         pPath->rc = unixLogError(SQLITE_CANTOPEN_BKPT, "readlink", zIn);
         return;
       }
@@ -6534,6 +6534,7 @@ static int unixFullPathname(
   char *zOut                    /* Output buffer */
 ){
   DbPath path;
+  UNUSED_PARAMETER(pVfs);
   path.rc = 0;
   path.nUsed = 0;
   path.nSymlink = 0;
