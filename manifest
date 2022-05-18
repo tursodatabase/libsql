@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\sin\sthe\snew\sunixFullPathname\simplementation.
-D 2022-05-17T15:11:57.632
+C Experimental\scode\sto\sprovide\sa\sSIZE_HINT\swhen\swriting\sthe\s-wal\sfile.
+D 2022-05-18T20:44:08.397
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -637,7 +637,7 @@ F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf8
 F src/vdbevtab.c f99b275366c5fc5e2d99f734729880994ab9500bdafde7fae3b02d562b9d323c
 F src/vtab.c 3d72c780d1ea08906a198e4f033921a658a54590e3ed72c544995d84f3f9464a
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c b9df133a705093da8977da5eb202eaadb844839f1c7297c08d33471f5491843d
+F src/wal.c 62c3f396c03ba67f0938596e0e346dc3a15b2ee1a509d15932f3b31e8baaba1d
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
 F src/where.c 2ee27fed4a5564cddfc6710a539037d18e39e75cdf90b3f48d476c3b9767592e
@@ -1954,8 +1954,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d8b249e8cdf0babe1427d0587dbdc27a52ec06a5ef3a20dfb05a0ea4adb85858
-R 56c8d067b3c475439a951ae630953e32
+P f7e1ceb5b59a876cfd04a8aac0ee2b322c970555b9c361b4953d711ef6596e37
+R fb9e0c313f98ff8144b64347e47b5609
+T *branch * wal-size-hint
+T *sym-wal-size-hint *
+T -sym-trunk *
 U drh
-Z 99cc78493b68b2d09cacc03a9e60389c
+Z 4879c59e74ba66138d5ab23971a29312
 # Remove this line to create a well-formed Fossil manifest.

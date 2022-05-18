@@ -3597,6 +3597,52 @@ static int walRewriteChecksums(Wal *pWal, u32 iLast){
   return rc;
 }
 
+#ifdef SQLITE_WAL_SIZE_HINTS
+/*
+** Provide a size-hint for the -wal file
+*/
+static void sqlite3WalSizeHint(
+  Wal *pWal,                      /* Wal handle to write to */
+  int szPage,                     /* Database page-size in bytes */
+  PgHdr *pList,                   /* List of dirty pages to write */
+  int isCommit,                   /* True if this is a commit */
+  u32 iFirst,                     /* First frame that can be overwritten */
+  int sync_flags                  /* Flags to pass to OsSync() (or 0) */
+){
+  i64 szFile;
+  u32 iFrame;
+  int szFrame = szPage + WAL_FRAME_HDRSIZE;
+  PgHdr *p;
+
+  iFrame = pWal->hdr.mxFrame;
+  for(p=pList; p; p=p->pDirty){
+    /* Check if this page has already been written into the wal file by
+    ** the current transaction. If so, overwrite the existing frame and
+    ** set Wal.writeLock to WAL_WRITELOCK_RECKSUM - indicating that 
+    ** checksums must be recomputed when the transaction is committed.  */
+    if( iFirst && (p->pDirty || isCommit==0) ){
+      u32 iWrite = 0;
+      sqlite3WalFindFrame(pWal, p->pgno, &iWrite);
+      if( iWrite>=iFirst ) continue;
+    }
+    iFrame++;
+  }
+  szFile = walFrameOffset(iFrame+1, szPage);
+  if( isCommit
+   && WAL_SYNC_FLAGS(sync_flags)!=0
+   && pWal->padToSectorBoundary
+  ){
+    int sectorSize = sqlite3SectorSize(pWal->pWalFd);
+    i64 iSyncPoint = ((szFile+sectorSize-1)/sectorSize)*sectorSize;
+    while( szFile<iSyncPoint ){
+      szFile += szFrame;
+    }
+  }
+  szFile += szFrame;
+  sqlite3OsFileControlHint(pWal->pWalFd, SQLITE_FCNTL_SIZE_HINT, &szFile);
+}
+#endif /* SQLITE_WAL_SIZE_HINTS */
+
 /* 
 ** Write a set of frames to the log. The caller must hold the write-lock
 ** on the log file (obtained using sqlite3WalBeginWriteTransaction()).
@@ -3645,6 +3691,10 @@ int sqlite3WalFrames(
   if( SQLITE_OK!=(rc = walRestartLog(pWal)) ){
     return rc;
   }
+
+#ifdef SQLITE_WAL_SIZE_HINTS
+  sqlite3WalSizeHint(pWal, szPage, pList, isCommit, iFirst, sync_flags);
+#endif
 
   /* If this is the first frame written into the log, write the WAL
   ** header to the start of the WAL file. See comments at the top of
