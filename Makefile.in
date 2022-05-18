@@ -1512,3 +1512,24 @@ sqlite3.def: $(REAL_LIBOBJ)
 sqlite3.dll: $(REAL_LIBOBJ) sqlite3.def
 	$(TCC) -shared -o $@ sqlite3.def \
 		-Wl,"--strip-all" $(REAL_LIBOBJ)
+
+
+#
+# fiddle section
+#
+fiddle_dir = ext/fiddle
+fiddle_tmpl = $(fiddle_dir)/fiddle.in.html
+fiddle_html = $(fiddle_dir)/fiddle.html
+fiddle_generated = $(fiddle_html) \
+                   $(fiddle_dir)/fiddle.js \
+                   $(fiddle_dir)/fiddle.wasm
+clean-fiddle:
+	rm -f $(fiddle_generated)
+clean: clean-fiddle
+emcc_flags = -sEXPORTED_RUNTIME_METHODS=ccall,cwrap \
+             -sEXPORTED_FUNCTIONS=_fiddle_exec \
+             --shell-file $(fiddle_tmpl)
+$(fiddle_html): Makefile sqlite3.c shell.c $(fiddle_tmpl)
+	emcc -o $@ $(emcc_flags) sqlite3.c shell.c
+
+fiddle: $(fiddle_html)

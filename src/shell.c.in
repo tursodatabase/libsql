@@ -229,6 +229,16 @@ static void setTextMode(FILE *file, int isOutput){
 # define setTextMode(X,Y)
 #endif
 
+/*
+** When compiling with emcc (a.k.a. emscripten), we're building a
+** WebAssembly (WASM) bundle and need to disable and rewire a few
+** things.
+*/
+#ifdef __EMSCRIPTEN__
+#define SQLITE_SHELL_WASM_MODE
+#else
+#undef SQLITE_SHELL_WASM_MODE
+#endif
 
 /* True if the timer is enabled */
 static int enableTimer = 0;
@@ -691,6 +701,7 @@ static char *local_getline(char *zLine, FILE *in){
 ** be freed by the caller or else passed back into this routine via the
 ** zPrior argument for reuse.
 */
+#ifndef SQLITE_SHELL_WASM_MODE
 static char *one_input_line(FILE *in, char *zPrior, int isContinuation){
   char *zPrompt;
   char *zResult;
@@ -710,7 +721,7 @@ static char *one_input_line(FILE *in, char *zPrior, int isContinuation){
   }
   return zResult;
 }
-
+#endif /* !SQLITE_SHELL_WASM_MODE */
 
 /*
 ** Return the value of a hexadecimal digit.  Return -1 if the input
@@ -1009,16 +1020,18 @@ INCLUDE test_windirent.h
 INCLUDE test_windirent.c
 #define dirent DIRENT
 #endif
-INCLUDE ../ext/misc/shathree.c
-INCLUDE ../ext/misc/fileio.c
-INCLUDE ../ext/misc/completion.c
-INCLUDE ../ext/misc/appendvfs.c
 INCLUDE ../ext/misc/memtrace.c
+INCLUDE ../ext/misc/shathree.c
 INCLUDE ../ext/misc/uint.c
 INCLUDE ../ext/misc/decimal.c
 INCLUDE ../ext/misc/ieee754.c
 INCLUDE ../ext/misc/series.c
 INCLUDE ../ext/misc/regexp.c
+#ifndef SQLITE_SHELL_WASM_MODE
+INCLUDE ../ext/misc/fileio.c
+INCLUDE ../ext/misc/completion.c
+INCLUDE ../ext/misc/appendvfs.c
+#endif
 #ifdef SQLITE_HAVE_ZLIB
 INCLUDE ../ext/misc/zipfile.c
 INCLUDE ../ext/misc/sqlar.c
@@ -1149,7 +1162,17 @@ struct ShellState {
   char *zNonce;          /* Nonce for temporary safe-mode excapes */
   EQPGraph sGraph;       /* Information for the graphical EXPLAIN QUERY PLAN */
   ExpertInfo expert;     /* Valid if previous command was ".expert OPT..." */
+#ifdef SQLITE_SHELL_WASM_MODE
+  struct {
+    const char * zInput; /* Input string from wasm/JS proxy */
+    char const * zPos;   /* Cursor pos into zInput */
+  } wasm;
+#endif
 };
+
+#ifdef SQLITE_SHELL_WASM_MODE
+static ShellState shellState;
+#endif
 
 
 /* Allowed values for ShellState.autoEQP
@@ -4991,14 +5014,16 @@ static void open_db(ShellState *p, int openFlags){
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
     sqlite3_enable_load_extension(p->db, 1);
 #endif
-    sqlite3_fileio_init(p->db, 0, 0);
     sqlite3_shathree_init(p->db, 0, 0);
-    sqlite3_completion_init(p->db, 0, 0);
     sqlite3_uint_init(p->db, 0, 0);
     sqlite3_decimal_init(p->db, 0, 0);
     sqlite3_regexp_init(p->db, 0, 0);
     sqlite3_ieee_init(p->db, 0, 0);
     sqlite3_series_init(p->db, 0, 0);
+#ifndef SQLITE_SHELL_WASM_MODE
+    sqlite3_fileio_init(p->db, 0, 0);
+    sqlite3_completion_init(p->db, 0, 0);
+#endif
 #if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_ENABLE_DBPAGE_VTAB)
     sqlite3_dbdata_init(p->db, 0, 0);
 #endif
@@ -11467,6 +11492,39 @@ static void echo_group_input(ShellState *p, const char *zDo){
   if( ShellHasFlag(p, SHFLG_Echo) ) utf8_printf(p->out, "%s\n", zDo);
 }
 
+#ifdef SQLITE_SHELL_WASM_MODE
+/*
+** Alternate one_input_line() impl for wasm mode. This is not in the primary impl
+** because we need the global shellState and cannot access it from that function
+** without moving lots of code around (creating a larger/messier diff).
+*/
+static char *one_input_line(FILE *in, char *zPrior, int isContinuation){
+  /* Parse the next line from shellState.wasm.zInput. */
+  const char *zBegin = shellState.wasm.zPos;
+  const char *z = zBegin;
+  char *zLine = 0;
+  int nZ = 0;
+
+  UNUSED_PARAMETER(in);
+  UNUSED_PARAMETER(isContinuation);
+  if(!z || !*z){
+    return 0;
+  }
+  while(*z && isspace(*z)) ++z;
+  zBegin = z;
+  for(; *z && '\n'!=*z; ++nZ, ++z){}
+  if(nZ>0 && '\r'==zBegin[nZ-1]){
+    --nZ;
+  }
+  shellState.wasm.zPos = z;
+  zLine = realloc(zPrior, nZ+1);
+  shell_check_oom(zLine);
+  memcpy(zLine, zBegin, (size_t)nZ);
+  zLine[nZ] = 0;
+  return zLine;
+}
+#endif /* SQLITE_SHELL_WASM_MODE */
+
 /*
 ** Read input from *in and process it.  If *in==0 then input
 ** is interactive - the user is typing it it.  Otherwise, input
@@ -11848,6 +11906,10 @@ static char *cmdline_option_value(int argc, char **argv, int i){
 #  endif
 #endif
 
+#ifdef SQLITE_SHELL_WASM_MODE
+#  define main fiddle_main
+#endif
+
 #if SQLITE_SHELL_IS_UTF8
 int SQLITE_CDECL main(int argc, char **argv){
 #else
@@ -11858,7 +11920,11 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   sqlite3_uint64 mem_main_enter = sqlite3_memory_used();
 #endif
   char *zErrMsg = 0;
+#ifdef SQLITE_SHELL_WASM_MODE
+#  define data shellState
+#else
   ShellState data;
+#endif
   const char *zInitFile = 0;
   int i;
   int rc = 0;
@@ -11874,8 +11940,13 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 
   setBinaryMode(stdin, 0);
   setvbuf(stderr, 0, _IONBF, 0); /* Make sure stderr is unbuffered */
+#ifdef SQLITE_SHELL_WASM_MODE
+  stdin_is_interactive = 0;
+  stdout_is_console = 1;
+#else
   stdin_is_interactive = isatty(0);
   stdout_is_console = isatty(1);
+#endif
 
 #if !defined(_WIN32_WCE)
   if( getenv("SQLITE_DEBUG_BREAK") ){
@@ -12131,7 +12202,9 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 #endif
   }
   data.out = stdout;
+#ifndef SQLITE_SHELL_WASM_MODE
   sqlite3_appendvfs_init(0,0,0);
+#endif
 
   /* Go ahead and open the database file if it already exists.  If the
   ** file does not exist, delay opening it.  This prevents empty database
@@ -12397,6 +12470,9 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       rc = process_input(&data);
     }
   }
+#ifndef SQLITE_SHELL_WASM_MODE
+  /* In WASM mode we have to leave the db state in place so that
+  ** client code can "push" SQL into it after this call returns. */
   free(azCmd);
   set_table_name(&data, 0);
   if( data.db ){
@@ -12429,5 +12505,45 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
                 (unsigned int)(sqlite3_memory_used()-mem_main_enter));
   }
 #endif
+#endif /* !SQLITE_SHELL_WASM_MODE */
   return rc;
 }
+
+
+#ifdef SQLITE_SHELL_WASM_MODE
+/*
+** Trivial exportable function for emscripten. Needs to be exported using:
+**
+** emcc ..flags... -sEXPORTED_FUNCTIONS=_fiddle_exec -sEXPORTED_RUNTIME_METHODS=ccall,cwrap
+**
+** (Note the underscore before the function name.) It processes zSql
+** as if it were input to the sqlite3 shell and redirects all output
+** to the wasm binding.
+*/
+void fiddle_exec(char const * zSql){
+  static int once = 0;
+  int rc = 0;
+  if(!once){
+    /* Simulate an argv array for main() */
+    static char * argv[] = {"fiddle", "-bail", "-safe"};
+    rc = fiddle_main((int)(sizeof(argv)/sizeof(argv[0])), argv);
+    once = rc ? -1 : 1;
+    memset(&shellState.wasm, 0, sizeof(shellState.wasm));
+    printf(
+        "SQLite version %s %.19s\n" /*extra-version-info*/,
+        sqlite3_libversion(), sqlite3_sourceid()
+    );
+    puts("WASM shell");
+    puts("Enter \".help\" for usage hints.");
+    puts("Connected to a transient in-memory database.");
+  }
+  if(once<0){
+    puts("DB init failed. Not executing SQL.");
+  }else if(zSql && *zSql){
+    shellState.wasm.zInput = zSql;
+    shellState.wasm.zPos = zSql;
+    process_input(&shellState);
+    memset(&shellState.wasm, 0, sizeof(shellState.wasm));
+  }
+}
+#endif /* SQLITE_SHELL_WASM_MODE */
