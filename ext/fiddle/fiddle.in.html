@@ -6,7 +6,10 @@
     <title>sqlite3 fiddle</title>
     <style>
       .emscripten { padding-right: 0; margin-left: auto; margin-right: auto; display: block; }
-      textarea { font-family: monospace; }
+      textarea {
+          font-family: monospace;
+          flex: 1 1 auto;
+      }
       div.emscripten { text-align: center; }
       div.emscripten_border { border: 1px solid black; }
       .spinner {
@@ -76,7 +79,7 @@ select * from t;</textarea>
         </div>
       </div>
       <div class='ta-wrapper'>
-        <textarea id="output" readonly rows="18"></textarea>
+        <textarea id="output" readonly rows="18" placeholder="Shell output"></textarea>
         <div class='button-bar'>
           <button id='btn-clear-output' disabled>Clear</button>
         </div>
