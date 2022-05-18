@@ -53,12 +53,21 @@
       .button-bar button {
           margin: 0.25em 1em;
       }
-      label {
+      label[for] {
           cursor: pointer;
+      }
+      fieldset {
+          border-radius: 0.5em;
       }
       .error {
           color: red;
           background-color: yellow;
+      }
+      .hidden {
+          position: absolute !important;
+          opacity: 0 !important;
+          pointer-events: none !important;
+          display: none !important;
       }
     </style>
   </head>
@@ -97,6 +106,34 @@ select * from t;</textarea>
         <label for='opt-cb-sbs'>Side-by-side</label>
       </div>
     </fieldset>
+    <hr>
+    <header>
+      Notes and Caveats
+      (<input id='cb-notes-caveats' type='checkbox'>
+      <label for='cb-notes-caveats'>hide</label>)
+    </header>
+    <div id='notes-caveats'>
+      <p>
+        This JavaScript application runs a C application which has been
+        compiled into WASM (Web Assembly). As such, it has certain
+        limitations. Those include, but are not limited to:
+      </p>
+      <ul>
+        <li>It <strong>cannot recover after a call to
+            <code>exit()</code></strong>. If the native code triggers
+          an exit, reloading the page is the only way to restart
+          the application. (Making the app restartable without reloading
+          the page would require significant surgery in the C code.)
+        </li>
+        <li>It <strong>cannot perform any file I/O</strong>, and running
+          any command which attempts to do so might trigger an
+          <code>exit()</code>.
+        </li>
+        <li>A number of dot-commands available in the CLI shell are
+            explicitly removed from this version of the shell.
+        </li>
+      </ul>
+    </div><!-- #notes-caveats -->
     <script type='text/javascript'>
       (function(){
           /**
@@ -126,7 +163,14 @@ select * from t;</textarea>
               btnClearOut.addEventListener('click',function(){
                   taOutput.value = '';
               },false);
-              const doExec = Module.cwrap('fiddle_exec', null, ['string']);
+              const doExec = function f(sql){
+                  if(!f._) f._ = Module.cwrap('fiddle_exec', null, ['string']);
+                  if(Module._isDead){
+                      Module.printErr("shell module has exit()ed. Cannot run SQL.");
+                  }else{
+                      f._(sql);
+                  }
+              };
               const btnRun = document.querySelector('#btn-run');
               btnRun.addEventListener('click',function(){
                   const sql = taInput.value.trim();
@@ -136,11 +180,18 @@ select * from t;</textarea>
               },false);
               doExec(null)/*sets up the db and outputs the header*/;
 
-              let e = document.querySelector('#opt-cb-sbs');
-              const mainWrapper = document.querySelector('#main-wrapper');
-              e.addEventListener('change', function(){
-                  mainWrapper.classList[this.checked ? 'add' : 'remove']('side-by-side');
-              }, false);
+              document.querySelector('#opt-cb-sbs')
+                  .addEventListener('change', function(){
+                      document.querySelector('#main-wrapper').classList[
+                          this.checked ? 'add' : 'remove'
+                      ]('side-by-side');
+                  }, false);
+              document.querySelector('#cb-notes-caveats')
+                  .addEventListener('change', function(){
+                      document.querySelector('#notes-caveats').classList[
+                          this.checked ? 'add' : 'remove'
+                      ]('hidden');
+                  }, false);
 
               /* For all buttons with data-cmd=X, map a click handler which
                  calls doExec(X). */
@@ -217,6 +268,7 @@ select * from t;</textarea>
           window.onerror = function(/*message, source, lineno, colno, error*/) {
               const err = arguments[4];
               if(err && 'ExitStatus'==err.name){
+                  Module._isDead = true;
                   Module.printErr("FATAL ERROR:", err.message);
                   Module.printErr("Restarting the app requires reloading the page.");
                   const taOutput = document.querySelector('#output');

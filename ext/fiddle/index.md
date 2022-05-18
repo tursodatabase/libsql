@@ -64,7 +64,30 @@ Then browse to `http://localhost:9090/fiddle.html`.
 Note that when serving this app via [althttpd][], it must be a version
 from 2022-05-17 or newer so that it recognizes the `.wasm` file
 extension and responds with the mimetype `application/wasm`, as the
-wasm loader is pedantic about that detail.
+WASM loader is pedantic about that detail.
+
+# Known Quirks and Limitations
+
+Some "impedence mismatch" between C and WASM/JavaScript is to be
+expected.
+
+## No I/O
+
+sqlite3 shell commands which require file I/O or pipes are disabled in
+the WASM build.
+
+## `exit()` Triggered from C
+
+When C code calls `exit()`, as happens (for example) when running an
+"unsafe" command when safe mode is active, WASM's connection to the
+sqlite3 shell environment has no sensible choice but to shut down
+because `exit()` leaves it in a state we can no longer recover
+from. The JavaScript-side application attempts to recognize this and
+warn the user that restarting the application is necessary. Currently
+the only way to restart it is to reload the page. Restructuring the
+shell code such that it could be "rebooted" without restarting the
+JS app would require some invasive changes which are not currently
+on any TODO list but have not been entirely ruled out long-term.
 
 
 [emscripten]: https://emscripten.org
