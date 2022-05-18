@@ -809,7 +809,7 @@ static void freeText(ShellText *p){
 ** If the third argument, quote, is not '\0', then it is used as a
 ** quote character for zAppend.
 */
-static void appendText(ShellText *p, char const *zAppend, char quote){
+static void appendText(ShellText *p, const char *zAppend, char quote){
   int len;
   int i;
   int nAppend = strlen30(zAppend);
@@ -1165,7 +1165,7 @@ struct ShellState {
 #ifdef SQLITE_SHELL_WASM_MODE
   struct {
     const char * zInput; /* Input string from wasm/JS proxy */
-    char const * zPos;   /* Cursor pos into zInput */
+    const char * zPos;   /* Cursor pos into zInput */
   } wasm;
 #endif
 };
@@ -12520,7 +12520,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 ** as if it were input to the sqlite3 shell and redirects all output
 ** to the wasm binding.
 */
-void fiddle_exec(char const * zSql){
+void fiddle_exec(const char * zSql){
   static int once = 0;
   int rc = 0;
   if(!once){
