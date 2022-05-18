@@ -1526,10 +1526,16 @@ fiddle_generated = $(fiddle_html) \
 clean-fiddle:
 	rm -f $(fiddle_generated)
 clean: clean-fiddle
-emcc_flags = -sEXPORTED_RUNTIME_METHODS=ccall,cwrap \
+emcc_opt = -O0
+#emcc_opt = -O1
+#emcc_opt = -O2
+#emcc_opt = -O3
+#emcc_opt = -Oz
+emcc_flags = $(emcc_opt) \
+             -sEXPORTED_RUNTIME_METHODS=ccall,cwrap \
              -sEXPORTED_FUNCTIONS=_fiddle_exec \
+             -sEXIT_RUNTIME=1 \
              --shell-file $(fiddle_tmpl)
 $(fiddle_html): Makefile sqlite3.c shell.c $(fiddle_tmpl)
 	emcc -o $@ $(emcc_flags) sqlite3.c shell.c
-
 fiddle: $(fiddle_html)
