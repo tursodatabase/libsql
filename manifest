@@ -1,5 +1,5 @@
-C Initial\sversion\sof\san\ssqlfiddle-style\sapplication\susing\sa\sWASM\sbuild\sof\sthe\ssqlite3\sshell.
-D 2022-05-18T17:14:24.622
+C Increased\sdefault\ssize\sof\sthe\sfiddle\soutput\sarea,\schanged\sthe\s.nullvalue\sdefault\sin\sthe\sinput\sarea,\sand\sminor\sCSS\stweaks.
+D 2022-05-18T17:22:02.563
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -56,7 +56,7 @@ F ext/expert/sqlite3expert.c 6ca30d73b9ed75bd56d6e0d7f2c962d2affaa72c505458619d0
 F ext/expert/sqlite3expert.h ca81efc2679a92373a13a3e76a6138d0310e32be53d6c3bfaedabd158ea8969b
 F ext/expert/test_expert.c d56c194b769bdc90cf829a14c9ecbc1edca9c850b837a4d0b13be14095c32a72
 F ext/fiddle/Makefile ea647919e6ac4b50edde1490f60ee87e8ccd75141e4aa650718c6f28eb323bbc
-F ext/fiddle/fiddle.in.html 85db5e736f82fd2cae1c4f61b5af62239cc5db363b9eb6f4e383e0d97c59b322
+F ext/fiddle/fiddle.in.html 3659d42f050e8f6544f8b46bd56f39c81655b8f4c094ad1f753c74567b2cf7f2
 F ext/fiddle/index.md 08d25ec6fe2a56923e8ea6e5d6c80907bf3a60f9c40a6841a8f402e402dd5f22
 F ext/fts1/README.txt 20ac73b006a70bcfd80069bdaf59214b6cf1db5e
 F ext/fts1/ft_hash.c 3927bd880e65329bdc6f506555b228b28924921b
@@ -1957,11 +1957,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f7e1ceb5b59a876cfd04a8aac0ee2b322c970555b9c361b4953d711ef6596e37
-R f9ce230cf39758aaeb408ee00f09f455
-T *branch * fiddle
-T *sym-fiddle *
-T -sym-trunk *
+P af9c21c9e0caf05adac7a9fcde39a9164c89f1c78b767b6fdd74a1405a3d373f
+R 3b664192bd5ef6de339309209f084d85
 U stephan
-Z 33db0432b22b9541a19d442c2dec2c8e
+Z f2dd4c4723165b12480a254a01ad4fae
 # Remove this line to create a well-formed Fossil manifest.

@@ -50,6 +50,9 @@
       .button-bar button {
           margin: 0.25em 1em;
       }
+      label {
+          cursor: pointer;
+      }
     </style>
   </head>
   <body>
@@ -62,7 +65,7 @@
     <div id='main-wrapper'>
       <div class='ta-wrapper'>
         <textarea id="input" rows="8">-- Use ctrl-enter or shift-enter to execute SQL
-.nullvalue THIS_IS_NULL
+.nullvalue NULL
 .mode box
 create table t(a,b);
 insert into t(a,b) values('abc',123),('def',456),(NULL,789),('ghi',012);
@@ -73,7 +76,7 @@ select * from t;</textarea>
         </div>
       </div>
       <div class='ta-wrapper'>
-        <textarea id="output" readonly rows="8"></textarea>
+        <textarea id="output" readonly rows="18"></textarea>
         <div class='button-bar'>
           <button id='btn-clear-output' disabled>Clear</button>
         </div>
