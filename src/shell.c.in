@@ -4348,7 +4348,7 @@ static const char *(azHelp[]) = {
   ".lint OPTIONS            Report potential schema issues.",
   "     Options:",
   "        fkey-indexes     Find missing foreign key indexes",
-#ifndef SQLITE_OMIT_LOAD_EXTENSION
+#if !defined(SQLITE_OMIT_LOAD_EXTENSION) && !defined(SQLITE_SHELL_WASM_MODE)
   ".load FILE ?ENTRY?       Load an extension library",
 #endif
   ".log FILE|off            Turn logging on or off.  FILE can be stderr/stdout",
@@ -9360,7 +9360,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     lintDotCommand(p, azArg, nArg);
   }else
 
-#ifndef SQLITE_OMIT_LOAD_EXTENSION
+#if !defined(SQLITE_OMIT_LOAD_EXTENSION) && !defined(SQLITE_SHELL_WASM_MODE)
   if( c=='l' && strncmp(azArg[0], "load", n)==0 ){
     const char *zFile, *zProc;
     char *zErrMsg = 0;

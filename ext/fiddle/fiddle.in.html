@@ -45,6 +45,7 @@
           flex-direction: column;
           align-items: stretch;
           flex: 1 1 auto;
+          margin: 0.25em;
       }
       .button-bar {
           display: flex;
@@ -69,6 +70,18 @@
           pointer-events: none !important;
           display: none !important;
       }
+      fieldset.options {
+          font-size: 80%;
+      }
+      fieldset > legend {
+          padding: 0 0.5em;
+      }
+      span.labeled-input {
+          padding: 0.25em;
+          margin: 0.25em 0.5em;
+          border: 1px inset;
+          border-radius: 0.25em;
+      }
     </style>
   </head>
   <body>
@@ -78,6 +91,19 @@
     <div class="emscripten">
       <progress value="0" max="100" id="progress" hidden='1'></progress>  
     </div>
+    <fieldset class='options'>
+      <legend>Options</legend>
+      <div class=''>
+        <span class='labeled-input'>
+          <input type='checkbox' id='opt-cb-sbs'>
+          <label for='opt-cb-sbs'>Side-by-side</label>
+        </span>
+        <span class='labeled-input'>
+          <input type='checkbox' id='opt-cb-autoscroll' checked>
+          <label for='opt-cb-autoscroll'>Auto-scroll output</label>
+        </span>
+      </div>
+    </fieldset>
     <div id='main-wrapper'>
       <div class='ta-wrapper'>
         <textarea id="input" rows="8">-- Use ctrl-enter or shift-enter to execute SQL
@@ -89,23 +115,16 @@ select * from t;</textarea>
         <div class='button-bar'>
           <button id='btn-run' disabled>Run</button>
           <button id='btn-clear' disabled>Clear</button>
+          <button data-cmd='.help' disabled>Help</button>
         </div>
       </div>
       <div class='ta-wrapper'>
         <textarea id="output" readonly rows="18" placeholder="Shell output"></textarea>
         <div class='button-bar'>
-          <button data-cmd='.help' disabled>Help</button>
           <button id='btn-clear-output' disabled>Clear</button>
         </div>
       </div>
     </div>
-    <fieldset>
-      <legend>Options</legend>
-      <div class=''>
-        <input type='checkbox' id='opt-cb-sbs'>
-        <label for='opt-cb-sbs'>Side-by-side</label>
-      </div>
-    </fieldset>
     <hr>
     <header>
       Notes and Caveats
@@ -136,6 +155,14 @@ select * from t;</textarea>
     </div><!-- #notes-caveats -->
     <script type='text/javascript'>
       (function(){
+          /* An object for propagating certain config state between our
+           JS code and the WASM module. */
+          const config = {
+              /* If true, the Module.print() impl will auto-scroll
+                 the output widget to the bottom when it receives output,
+                 else it won't. */
+              autoScrollOutput: true
+          };
           /**
              Callback for the emscripten module init process, gets
              passed the module object after all parts of the module
@@ -186,6 +213,10 @@ select * from t;</textarea>
                           this.checked ? 'add' : 'remove'
                       ]('side-by-side');
                   }, false);
+              document.querySelector('#opt-cb-autoscroll')
+                  .addEventListener('change', function(){
+                      config.autoScrollOutput = this.checked;
+                  }, false);
               document.querySelector('#cb-notes-caveats')
                   .addEventListener('change', function(){
                       document.querySelector('#notes-caveats').classList[
@@ -229,7 +260,9 @@ select * from t;</textarea>
                       //console.log("arguments",arguments);
                       console.log(text);
                       f._.value += text + "\n";
-                      f._.scrollTop = f._.scrollHeight; // focus on bottom
+                      if(config.autoScrollOutput){
+                          f._.scrollTop = f._.scrollHeight;
+                      }
                   };
               })(),
               setStatus: function f(text) {
