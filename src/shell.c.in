@@ -229,6 +229,16 @@ static void setTextMode(FILE *file, int isOutput){
 # define setTextMode(X,Y)
 #endif
 
+/*
+** When compiling with emcc (a.k.a. emscripten), we're building a
+** WebAssembly (WASM) bundle and need to disable and rewire a few
+** things.
+*/
+#ifdef __EMSCRIPTEN__
+#define SQLITE_SHELL_WASM_MODE
+#else
+#undef SQLITE_SHELL_WASM_MODE
+#endif
 
 /* True if the timer is enabled */
 static int enableTimer = 0;
@@ -691,6 +701,7 @@ static char *local_getline(char *zLine, FILE *in){
 ** be freed by the caller or else passed back into this routine via the
 ** zPrior argument for reuse.
 */
+#ifndef SQLITE_SHELL_WASM_MODE
 static char *one_input_line(FILE *in, char *zPrior, int isContinuation){
   char *zPrompt;
   char *zResult;
@@ -710,7 +721,7 @@ static char *one_input_line(FILE *in, char *zPrior, int isContinuation){
   }
   return zResult;
 }
-
+#endif /* !SQLITE_SHELL_WASM_MODE */
 
 /*
 ** Return the value of a hexadecimal digit.  Return -1 if the input
@@ -798,7 +809,7 @@ static void freeText(ShellText *p){
 ** If the third argument, quote, is not '\0', then it is used as a
 ** quote character for zAppend.
 */
-static void appendText(ShellText *p, char const *zAppend, char quote){
+static void appendText(ShellText *p, const char *zAppend, char quote){
   int len;
   int i;
   int nAppend = strlen30(zAppend);
@@ -1009,16 +1020,18 @@ INCLUDE test_windirent.h
 INCLUDE test_windirent.c
 #define dirent DIRENT
 #endif
-INCLUDE ../ext/misc/shathree.c
-INCLUDE ../ext/misc/fileio.c
-INCLUDE ../ext/misc/completion.c
-INCLUDE ../ext/misc/appendvfs.c
 INCLUDE ../ext/misc/memtrace.c
+INCLUDE ../ext/misc/shathree.c
 INCLUDE ../ext/misc/uint.c
 INCLUDE ../ext/misc/decimal.c
 INCLUDE ../ext/misc/ieee754.c
 INCLUDE ../ext/misc/series.c
 INCLUDE ../ext/misc/regexp.c
+#ifndef SQLITE_SHELL_WASM_MODE
+INCLUDE ../ext/misc/fileio.c
+INCLUDE ../ext/misc/completion.c
+INCLUDE ../ext/misc/appendvfs.c
+#endif
 #ifdef SQLITE_HAVE_ZLIB
 INCLUDE ../ext/misc/zipfile.c
 INCLUDE ../ext/misc/sqlar.c
@@ -1149,7 +1162,17 @@ struct ShellState {
   char *zNonce;          /* Nonce for temporary safe-mode excapes */
   EQPGraph sGraph;       /* Information for the graphical EXPLAIN QUERY PLAN */
   ExpertInfo expert;     /* Valid if previous command was ".expert OPT..." */
+#ifdef SQLITE_SHELL_WASM_MODE
+  struct {
+    const char * zInput; /* Input string from wasm/JS proxy */
+    const char * zPos;   /* Cursor pos into zInput */
+  } wasm;
+#endif
 };
+
+#ifdef SQLITE_SHELL_WASM_MODE
+static ShellState shellState;
+#endif
 
 
 /* Allowed values for ShellState.autoEQP
@@ -4218,13 +4241,14 @@ static int run_schema_dump_query(
 ** Text of help messages.
 **
 ** The help text for each individual command begins with a line that starts
-** with ".".  Subsequent lines are supplimental information.
+** with ".".  Subsequent lines are supplemental information.
 **
 ** There must be two or more spaces between the end of the command and the
 ** start of the description of what that command does.
 */
 static const char *(azHelp[]) = {
-#if defined(SQLITE_HAVE_ZLIB) && !defined(SQLITE_OMIT_VIRTUALTABLE)
+#if defined(SQLITE_HAVE_ZLIB) && !defined(SQLITE_OMIT_VIRTUALTABLE) \
+  && !defined(SQLITE_SHELL_WASM_MODE)
   ".archive ...             Manage SQL archives",
   "   Each command must have exactly one of the following options:",
   "     -c, --create               Create a new archive",
@@ -4250,10 +4274,12 @@ static const char *(azHelp[]) = {
 #ifndef SQLITE_OMIT_AUTHORIZATION
   ".auth ON|OFF             Show authorizer callbacks",
 #endif
+#ifndef SQLITE_SHELL_WASM_MODE
   ".backup ?DB? FILE        Backup DB (default \"main\") to FILE",
   "   Options:",
   "       --append            Use the appendvfs",
   "       --async             Write to FILE without journal and fsync()",
+#endif
   ".bail on|off             Stop after hitting an error.  Default OFF",
   ".binary on|off           Turn binary output on or off.  Default OFF",
   ".cd DIRECTORY            Change the working directory to DIRECTORY",
@@ -4280,9 +4306,13 @@ static const char *(azHelp[]) = {
   "      trace                 Like \"full\" but enable \"PRAGMA vdbe_trace\"",
 #endif
   "      trigger               Like \"full\" but also show trigger bytecode",
+#ifndef SQLITE_SHELL_WASM_MODE
   ".excel                   Display the output of next command in spreadsheet",
   "   --bom                   Put a UTF8 byte-order mark on intermediate file",
+#endif
+#ifndef SQLITE_SHELL_WASM_MODE
   ".exit ?CODE?             Exit this program with return-code CODE",
+#endif
   ".expert                  EXPERIMENTAL. Suggest indexes for queries",
   ".explain ?on|off|auto?   Change the EXPLAIN formatting mode.  Default: auto",
   ".filectrl CMD ...        Run various sqlite3_file_control() operations",
@@ -4291,6 +4321,7 @@ static const char *(azHelp[]) = {
   ".fullschema ?--indent?   Show schema and the content of sqlite_stat tables",
   ".headers on|off          Turn display of headers on or off",
   ".help ?-all? ?PATTERN?   Show help text for PATTERN",
+#ifndef SQLITE_SHELL_WASM_MODE
   ".import FILE TABLE       Import data from FILE into TABLE",
   "   Options:",
   "     --ascii               Use \\037 and \\036 as column and row separators",
@@ -4305,6 +4336,7 @@ static const char *(azHelp[]) = {
   "        from the \".mode\" output mode",
   "     *  If FILE begins with \"|\" then it is a command that generates the",
   "        input text.",
+#endif
 #ifndef SQLITE_OMIT_TEST_CONTROL
   ".imposter INDEX TABLE    Create imposter table TABLE on index INDEX",
 #endif
@@ -4318,10 +4350,12 @@ static const char *(azHelp[]) = {
   ".lint OPTIONS            Report potential schema issues.",
   "     Options:",
   "        fkey-indexes     Find missing foreign key indexes",
-#ifndef SQLITE_OMIT_LOAD_EXTENSION
+#if !defined(SQLITE_OMIT_LOAD_EXTENSION) && !defined(SQLITE_SHELL_WASM_MODE)
   ".load FILE ?ENTRY?       Load an extension library",
 #endif
+#ifndef SQLITE_SHELL_WASM_MODE
   ".log FILE|off            Turn logging on or off.  FILE can be stderr/stdout",
+#endif
   ".mode MODE ?OPTIONS?     Set output mode",
   "   MODE is one of:",
   "     ascii       Columns/rows delimited by 0x1F and 0x1E",
@@ -4348,6 +4382,7 @@ static const char *(azHelp[]) = {
   "     TABLE          The name of SQL table used for \"insert\" mode",
   ".nonce STRING            Suspend safe mode for one command if nonce matches",
   ".nullvalue STRING        Use STRING in place of NULL values",
+#ifndef SQLITE_SHELL_WASM_MODE
   ".once ?OPTIONS? ?FILE?   Output for the next SQL command only to FILE",
   "     If FILE begins with '|' then open as a pipe",
   "       --bom  Put a UTF8 byte-order mark at the beginning",
@@ -4356,6 +4391,7 @@ static const char *(azHelp[]) = {
   ".open ?OPTIONS? ?FILE?   Close existing database and reopen FILE",
   "     Options:",
   "        --append        Use appendvfs to append database to the end of FILE",
+#endif
 #ifndef SQLITE_OMIT_DESERIALIZE
   "        --deserialize   Load into memory using sqlite3_deserialize()",
   "        --hexdb         Load the output of \"dbtotxt\" as an in-memory db",
@@ -4387,9 +4423,11 @@ static const char *(azHelp[]) = {
   "   --reset                   Reset the count for each input and interrupt",
 #endif
   ".prompt MAIN CONTINUE    Replace the standard prompts",
+#ifndef SQLITE_SHELL_WASM_MODE
   ".quit                    Exit this program",
   ".read FILE               Read input from FILE or command output",
   "    If FILE begins with \"|\", it is a command that generates the input.",
+#endif
 #if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_ENABLE_DBPAGE_VTAB)
   ".recover                 Recover as much data as possible from corrupt db.",
   "   --freelist-corrupt       Assume the freelist is corrupt",
@@ -4398,8 +4436,10 @@ static const char *(azHelp[]) = {
   "   --no-rowids              Do not attempt to recover rowid values",
   "                            that are not also INTEGER PRIMARY KEYs",
 #endif
+#ifndef SQLITE_SHELL_WASM_MODE
   ".restore ?DB? FILE       Restore content of DB (default \"main\") from FILE",
   ".save ?OPTIONS? FILE     Write database to FILE (an alias for .backup ...)",
+#endif
   ".scanstats on|off        Turn sqlite3_stmt_scanstatus() metrics on or off",
   ".schema ?PATTERN?        Show the CREATE statements matching PATTERN",
   "   Options:",
@@ -4433,7 +4473,7 @@ static const char *(azHelp[]) = {
   "      --sha3-384            Use the sha3-384 algorithm",
   "      --sha3-512            Use the sha3-512 algorithm",
   "    Any other argument is a LIKE pattern for tables to hash",
-#ifndef SQLITE_NOHAVE_SYSTEM
+#if !defined(SQLITE_NOHAVE_SYSTEM) && !defined(SQLITE_SHELL_WASM_MODE)
   ".shell CMD ARGS...       Run CMD ARGS... in a system shell",
 #endif
   ".show                    Show the current values for various settings",
@@ -4442,11 +4482,13 @@ static const char *(azHelp[]) = {
   "   on                       Turn on automatic stat display",
   "   stmt                     Show statement stats",
   "   vmstep                   Show the virtual machine step count only",
-#ifndef SQLITE_NOHAVE_SYSTEM
+#if !defined(SQLITE_NOHAVE_SYSTEM) && !defined(SQLITE_SHELL_WASM_MODE)
   ".system CMD ARGS...      Run CMD ARGS... in a system shell",
 #endif
   ".tables ?TABLE?          List names of tables matching LIKE pattern TABLE",
+#ifndef SQLITE_SHELL_WASM_MODE
   ".testcase NAME           Begin redirecting output to 'testcase-out.txt'",
+#endif
   ".testctrl CMD ...        Run various sqlite3_test_control() operations",
   "                           Run \".testctrl\" with no arguments for details",
   ".timeout MS              Try opening locked tables for MS milliseconds",
@@ -4991,14 +5033,16 @@ static void open_db(ShellState *p, int openFlags){
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
     sqlite3_enable_load_extension(p->db, 1);
 #endif
-    sqlite3_fileio_init(p->db, 0, 0);
     sqlite3_shathree_init(p->db, 0, 0);
-    sqlite3_completion_init(p->db, 0, 0);
     sqlite3_uint_init(p->db, 0, 0);
     sqlite3_decimal_init(p->db, 0, 0);
     sqlite3_regexp_init(p->db, 0, 0);
     sqlite3_ieee_init(p->db, 0, 0);
     sqlite3_series_init(p->db, 0, 0);
+#ifndef SQLITE_SHELL_WASM_MODE
+    sqlite3_fileio_init(p->db, 0, 0);
+    sqlite3_completion_init(p->db, 0, 0);
+#endif
 #if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_ENABLE_DBPAGE_VTAB)
     sqlite3_dbdata_init(p->db, 0, 0);
 #endif
@@ -8121,7 +8165,8 @@ static int do_meta_command(char *zLine, ShellState *p){
   }else
 #endif
 
-#if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_HAVE_ZLIB)
+#if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_HAVE_ZLIB) \
+  && !defined(SQLITE_SHELL_WASM_MODE)
   if( c=='a' && strncmp(azArg[0], "archive", n)==0 ){
     open_db(p, 0);
     failIfSafeMode(p, "cannot run .archive in safe mode");
@@ -8129,6 +8174,7 @@ static int do_meta_command(char *zLine, ShellState *p){
   }else
 #endif
 
+#ifndef SQLITE_SHELL_WASM_MODE
   if( (c=='b' && n>=3 && strncmp(azArg[0], "backup", n)==0)
    || (c=='s' && n>=3 && strncmp(azArg[0], "save", n)==0)
   ){
@@ -8197,6 +8243,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
     close_db(pDest);
   }else
+#endif /* !defined(SQLITE_SHELL_WASM_MODE) */
 
   if( c=='b' && n>=3 && strncmp(azArg[0], "bail", n)==0 ){
     if( nArg==2 ){
@@ -8578,10 +8625,12 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
   }else
 
+#ifndef SQLITE_SHELL_WASM_MODE
   if( c=='e' && strncmp(azArg[0], "exit", n)==0 ){
     if( nArg>1 && (rc = (int)integerValue(azArg[1]))!=0 ) exit(rc);
     rc = 2;
   }else
+#endif
 
   /* The ".explain" command is automatic now.  It is largely pointless.  It
   ** retained purely for backwards compatibility */
@@ -8836,6 +8885,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
   }else
 
+#ifndef SQLITE_SHELL_WASM_MODE
   if( c=='i' && strncmp(azArg[0], "import", n)==0 ){
     char *zTable = 0;           /* Insert data into this table */
     char *zSchema = 0;          /* within this schema (may default to "main") */
@@ -9126,6 +9176,7 @@ static int do_meta_command(char *zLine, ShellState *p){
           sCtx.nRow, sCtx.nErr, sCtx.nLine-1);
     }
   }else
+#endif /* !defined(SQLITE_SHELL_WASM_MODE) */
 
 #ifndef SQLITE_UNTESTABLE
   if( c=='i' && strncmp(azArg[0], "imposter", n)==0 ){
@@ -9315,7 +9366,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     lintDotCommand(p, azArg, nArg);
   }else
 
-#ifndef SQLITE_OMIT_LOAD_EXTENSION
+#if !defined(SQLITE_OMIT_LOAD_EXTENSION) && !defined(SQLITE_SHELL_WASM_MODE)
   if( c=='l' && strncmp(azArg[0], "load", n)==0 ){
     const char *zFile, *zProc;
     char *zErrMsg = 0;
@@ -9337,6 +9388,7 @@ static int do_meta_command(char *zLine, ShellState *p){
   }else
 #endif
 
+#ifndef SQLITE_SHELL_WASM_MODE
   if( c=='l' && strncmp(azArg[0], "log", n)==0 ){
     failIfSafeMode(p, "cannot run .log in safe mode");
     if( nArg!=2 ){
@@ -9348,6 +9400,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       p->pLog = output_file_open(zFile, 0);
     }
   }else
+#endif
 
   if( c=='m' && strncmp(azArg[0], "mode", n)==0 ){
     const char *zMode = 0;
@@ -9583,6 +9636,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
   }else
 
+#ifndef SQLITE_SHELL_WASM_MODE
   if( (c=='o'
         && (strncmp(azArg[0], "output", n)==0||strncmp(azArg[0], "once", n)==0))
    || (c=='e' && n==5 && strcmp(azArg[0],"excel")==0)
@@ -9698,6 +9752,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
     sqlite3_free(zFile);
   }else
+#endif /* !defined(SQLITE_SHELL_WASM_MODE) */
 
   if( c=='p' && n>=3 && strncmp(azArg[0], "parameter", n)==0 ){
     open_db(p,0);
@@ -9867,10 +9922,13 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
   }else
 
+#ifndef SQLITE_SHELL_WASM_MODE
   if( c=='q' && strncmp(azArg[0], "quit", n)==0 ){
     rc = 2;
   }else
+#endif
 
+#ifndef SQLITE_SHELL_WASM_MODE
   if( c=='r' && n>=3 && strncmp(azArg[0], "read", n)==0 ){
     FILE *inSaved = p->in;
     int savedLineno = p->lineno;
@@ -9905,7 +9963,9 @@ static int do_meta_command(char *zLine, ShellState *p){
     p->in = inSaved;
     p->lineno = savedLineno;
   }else
+#endif /* !defined(SQLITE_SHELL_WASM_MODE) */
 
+#ifndef SQLITE_SHELL_WASM_MODE
   if( c=='r' && n>=3 && strncmp(azArg[0], "restore", n)==0 ){
     const char *zSrcFile;
     const char *zDb;
@@ -9957,6 +10017,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
     close_db(pSrc);
   }else
+#endif /* !defined(SQLITE_SHELL_WASM_MODE) */
 
   if( c=='s' && strncmp(azArg[0], "scanstats", n)==0 ){
     if( nArg==2 ){
@@ -10582,7 +10643,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     sqlite3_free(zSql);
   }else
 
-#ifndef SQLITE_NOHAVE_SYSTEM
+#if !defined(SQLITE_NOHAVE_SYSTEM) && !defined(SQLITE_SHELL_WASM_MODE)
   if( c=='s'
    && (strncmp(azArg[0], "shell", n)==0 || strncmp(azArg[0],"system",n)==0)
   ){
@@ -10603,7 +10664,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     sqlite3_free(zCmd);
     if( x ) raw_printf(stderr, "System command returns %d\n", x);
   }else
-#endif /* !defined(SQLITE_NOHAVE_SYSTEM) */
+#endif /* !defined(SQLITE_NOHAVE_SYSTEM) && !defined(SQLITE_SHELL_WASM_MODE) */
 
   if( c=='s' && strncmp(azArg[0], "show", n)==0 ){
     static const char *azBool[] = { "off", "on", "trigger", "full"};
@@ -10783,6 +10844,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     sqlite3_free(azResult);
   }else
 
+#ifndef SQLITE_SHELL_WASM_MODE
   /* Begin redirecting output to the file "testcase-out.txt" */
   if( c=='t' && strcmp(azArg[0],"testcase")==0 ){
     output_reset(p);
@@ -10796,6 +10858,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       sqlite3_snprintf(sizeof(p->zTestcase), p->zTestcase, "?");
     }
   }else
+#endif /* !defined(SQLITE_SHELL_WASM_MODE) */
 
 #ifndef SQLITE_UNTESTABLE
   if( c=='t' && n>=8 && strncmp(azArg[0], "testctrl", n)==0 ){
@@ -11467,6 +11530,39 @@ static void echo_group_input(ShellState *p, const char *zDo){
   if( ShellHasFlag(p, SHFLG_Echo) ) utf8_printf(p->out, "%s\n", zDo);
 }
 
+#ifdef SQLITE_SHELL_WASM_MODE
+/*
+** Alternate one_input_line() impl for wasm mode. This is not in the primary impl
+** because we need the global shellState and cannot access it from that function
+** without moving lots of code around (creating a larger/messier diff).
+*/
+static char *one_input_line(FILE *in, char *zPrior, int isContinuation){
+  /* Parse the next line from shellState.wasm.zInput. */
+  const char *zBegin = shellState.wasm.zPos;
+  const char *z = zBegin;
+  char *zLine = 0;
+  int nZ = 0;
+
+  UNUSED_PARAMETER(in);
+  UNUSED_PARAMETER(isContinuation);
+  if(!z || !*z){
+    return 0;
+  }
+  while(*z && isspace(*z)) ++z;
+  zBegin = z;
+  for(; *z && '\n'!=*z; ++nZ, ++z){}
+  if(nZ>0 && '\r'==zBegin[nZ-1]){
+    --nZ;
+  }
+  shellState.wasm.zPos = z;
+  zLine = realloc(zPrior, nZ+1);
+  shell_check_oom(zLine);
+  memcpy(zLine, zBegin, (size_t)nZ);
+  zLine[nZ] = 0;
+  return zLine;
+}
+#endif /* SQLITE_SHELL_WASM_MODE */
+
 /*
 ** Read input from *in and process it.  If *in==0 then input
 ** is interactive - the user is typing it it.  Otherwise, input
@@ -11848,6 +11944,10 @@ static char *cmdline_option_value(int argc, char **argv, int i){
 #  endif
 #endif
 
+#ifdef SQLITE_SHELL_WASM_MODE
+#  define main fiddle_main
+#endif
+
 #if SQLITE_SHELL_IS_UTF8
 int SQLITE_CDECL main(int argc, char **argv){
 #else
@@ -11858,7 +11958,11 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   sqlite3_uint64 mem_main_enter = sqlite3_memory_used();
 #endif
   char *zErrMsg = 0;
+#ifdef SQLITE_SHELL_WASM_MODE
+#  define data shellState
+#else
   ShellState data;
+#endif
   const char *zInitFile = 0;
   int i;
   int rc = 0;
@@ -11874,8 +11978,13 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 
   setBinaryMode(stdin, 0);
   setvbuf(stderr, 0, _IONBF, 0); /* Make sure stderr is unbuffered */
+#ifdef SQLITE_SHELL_WASM_MODE
+  stdin_is_interactive = 0;
+  stdout_is_console = 1;
+#else
   stdin_is_interactive = isatty(0);
   stdout_is_console = isatty(1);
+#endif
 
 #if !defined(_WIN32_WCE)
   if( getenv("SQLITE_DEBUG_BREAK") ){
@@ -12131,7 +12240,9 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 #endif
   }
   data.out = stdout;
+#ifndef SQLITE_SHELL_WASM_MODE
   sqlite3_appendvfs_init(0,0,0);
+#endif
 
   /* Go ahead and open the database file if it already exists.  If the
   ** file does not exist, delay opening it.  This prevents empty database
@@ -12397,6 +12508,9 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       rc = process_input(&data);
     }
   }
+#ifndef SQLITE_SHELL_WASM_MODE
+  /* In WASM mode we have to leave the db state in place so that
+  ** client code can "push" SQL into it after this call returns. */
   free(azCmd);
   set_table_name(&data, 0);
   if( data.db ){
@@ -12429,5 +12543,47 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
                 (unsigned int)(sqlite3_memory_used()-mem_main_enter));
   }
 #endif
+#endif /* !SQLITE_SHELL_WASM_MODE */
   return rc;
 }
+
+
+#ifdef SQLITE_SHELL_WASM_MODE
+/*
+** Trivial exportable function for emscripten. Needs to be exported using:
+**
+** emcc ..flags... -sEXPORTED_FUNCTIONS=_fiddle_exec -sEXPORTED_RUNTIME_METHODS=ccall,cwrap
+**
+** (Note the underscore before the function name.) It processes zSql
+** as if it were input to the sqlite3 shell and redirects all output
+** to the wasm binding.
+*/
+void fiddle_exec(const char * zSql){
+  static int once = 0;
+  int rc = 0;
+  if(!once){
+    /* Simulate an argv array for main() */
+    static char * argv[] = {"fiddle",
+                            "-bail",
+                            "-safe"};
+    rc = fiddle_main((int)(sizeof(argv)/sizeof(argv[0])), argv);
+    once = rc ? -1 : 1;
+    memset(&shellState.wasm, 0, sizeof(shellState.wasm));
+    printf(
+        "SQLite version %s %.19s\n" /*extra-version-info*/,
+        sqlite3_libversion(), sqlite3_sourceid()
+    );
+    puts("WASM shell");
+    puts("Enter \".help\" for usage hints.");
+    puts("Connected to a transient in-memory database.");
+  }
+  if(once<0){
+    puts("DB init failed. Not executing SQL.");
+  }else if(zSql && *zSql){
+    shellState.wasm.zInput = zSql;
+    shellState.wasm.zPos = zSql;
+    process_input(&shellState);
+    memset(&shellState.wasm, 0, sizeof(shellState.wasm));
+  }
+}
+#endif /* SQLITE_SHELL_WASM_MODE */

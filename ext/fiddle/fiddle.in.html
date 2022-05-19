@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>sqlite3 fiddle</title>
+    <!-- script src="jqterm/jqterm-bundle.min.js"></script>
+    <link rel="stylesheet" href="jqterm/jquery.terminal.min.css"/ -->
+    <style>
+      /* emcscript-related styling, used during the intialization phase... */
+      .emscripten { padding-right: 0; margin-left: auto; margin-right: auto; display: block; }
+      div.emscripten { text-align: center; }
+      div.emscripten_border { border: 1px solid black; }
+      #spinner { overflow: visible; }
+      #spinner > * {
+          margin-top: 1em;
+      }
+      .spinner {
+        height: 50px;
+        width: 50px;
+        margin: 0px auto;
+        animation: rotation 0.8s linear infinite;
+        border-left: 10px solid rgb(0,150,240);
+        border-right: 10px solid rgb(0,150,240);
+        border-bottom: 10px solid rgb(0,150,240);
+        border-top: 10px solid rgb(100,0,200);
+        border-radius: 100%;
+        background-color: rgb(200,100,250);
+      }
+      @keyframes rotation {
+        from {transform: rotate(0deg);}
+        to {transform: rotate(360deg);}
+      }
+
+      /* The following styles are for app-level use. */
+      
+      textarea {
+          font-family: monospace;
+          flex: 1 1 auto;
+      }
+      header {
+          font-size: 130%;
+          font-weight: bold;
+      }
+      #main-wrapper {
+          display: flex;
+          flex-direction: column-reverse;
+          flex: 20 1 auto;
+      }
+      #main-wrapper.side-by-side {
+          flex-direction: row-reverse;
+      }
+      #main-wrapper.swapio {
+          flex-direction: column;
+      }
+      #main-wrapper.side-by-side.swapio {
+          flex-direction: row;
+      }
+      .ta-wrapper{
+          display: flex;
+          flex-direction: column;
+          align-items: stretch;
+          margin: 0 0.25em;
+          flex: 1 1 auto;
+      }
+      .ta-wrapper.input { flex: 10 1 auto; }
+      .ta-wrapper.output { flex: 20 1 auto; }
+      .ta-wrapper textarea {
+          font-size: 110%;
+          filter: invert(100%);
+          flex: 10 1 auto;
+      }
+      /*#main-wrapper:not(.side-by-side) .ta-wrapper.input {
+          flex: 5 1 auto;
+      }*/
+      .button-bar {
+          display: flex;
+          justify-content: center;
+          flex: 0 1 auto;
+      }
+      .button-bar button {
+          margin: 0.25em 1em;
+      }
+      label[for] {
+          cursor: pointer;
+      }
+      fieldset {
+          border-radius: 0.5em;
+      }
+      .error {
+          color: red;
+          background-color: yellow;
+      }
+      .hidden {
+          position: absolute !important;
+          opacity: 0 !important;
+          pointer-events: none !important;
+          display: none !important;
+      }
+      .initially-hidden {
+          position: absolute !important;
+          opacity: 0 !important;
+          pointer-events: none !important;
+          display: none !important;
+      }
+      fieldset.options {
+          font-size: 75%;
+      }
+      fieldset > legend {
+          padding: 0 0.5em;
+      }
+      span.labeled-input {
+          padding: 0.25em;
+          margin: 0.25em 0.5em;
+          border-radius: 0.25em;
+          white-space: nowrap;
+          background: #0002;
+      }
+      #notes-caveats {
+          border-top: 1px dotted;
+          padding-top: 0.25em;
+          margin-top: 0.5em;
+      }
+      .center { text-align: center; }
+
+      body.terminal-mode {
+          max-height: calc(100% - 2em);
+          display: flex;
+          flex-direction: column;
+          align-items: stretch;
+      }
+      #jqterminal {
+      }
+      .app-view {
+          flex: 20 1 auto;
+      }
+      #titlebar {
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: 0.5em;
+      }
+      #view-split {
+          display: flex;
+          flex-direction: column;
+      }
+    </style>
+  </head>
+  <body>
+    <header id='titlebar'><span>sqlite3 fiddle</span></header>
+    <figure id="spinner">
+      <div class="spinner"></div>
+      <div class='center'><strong>Initializing app...</strong></div>
+      <div class='center'>
+        On a slow internet connection this may take a moment.  If this
+        message displays for "a long time", intialization may have
+        failed and the JavaScript console may contain clues as to why.
+      </div>
+    </figure>
+    <div class="emscripten" id="status">Downloading...</div>
+    <div class="emscripten">
+      <progress value="0" max="100" id="progress" hidden='1'></progress>  
+    </div>
+
+    <div id='jqterminal' class='app-view hidden initially-hidden'>
+      This is a placeholder for a terminal-like view.
+    </div>
+
+    <div id='view-split' class='app-view initially-hidden'>
+      <fieldset class='options'>
+        <legend>Options</legend>
+        <div class=''>
+          <span class='labeled-input'>
+            <input type='checkbox' id='opt-cb-sbs'
+                   data-csstgt='#main-wrapper'
+                   data-cssclass='side-by-side'
+                   data-config='sideBySide'>
+            <label for='opt-cb-sbs'>Side-by-side</label>
+          </span>
+          <span class='labeled-input'>
+            <input type='checkbox' id='opt-cb-swapio'
+                   data-csstgt='#main-wrapper'
+                   data-cssclass='swapio'
+                   data-config='swapInOut'>
+            <label for='opt-cb-swapio'>Swap in/out</label>
+          </span>
+          <span class='labeled-input'>
+            <input type='checkbox' id='opt-cb-autoscroll'
+                   data-config='autoScrollOutput'>
+            <label for='opt-cb-autoscroll'>Auto-scroll output</label>
+          </span>
+          <span class='labeled-input'>
+            <input type='checkbox' id='opt-cb-autoclear'
+                   data-config='autoClearOutput'>
+            <label for='opt-cb-autoclear'>Auto-clear output</label>
+          </span>
+        </div>
+      </fieldset>
+      <div id='main-wrapper' class=''>
+        <div class='ta-wrapper input'>
+          <textarea id="input"
+                    placeholder="Shell input. Ctrl-enter/shift-enter runs it.">
+-- Use ctrl-enter or shift-enter to execute SQL
+.nullvalue NULL
+.mode box
+CREATE TABLE t(a,b);
+INSERT INTO t(a,b) VALUES('abc',123),('def',456),(NULL,789),('ghi',012);
+SELECT * FROM t;</textarea>        
+          <div class='button-bar'>
+            <button id='btn-run'>Run</button>
+            <button id='btn-clear'>Clear</button>
+            <button data-cmd='.help'>Help</button>
+          </div>
+        </div>
+        <div class='ta-wrapper output'>
+          <textarea id="output" readonly
+                    placeholder="Shell output."></textarea>
+          <div class='button-bar'>
+            <button id='btn-clear-output'>Clear</button>
+          </div>
+        </div>
+      </div>
+    </div> <!-- .app-view -->
+    <!-- Maintenance notes:
+
+        - emscripten module init goes is in fiddle-pre.js and gets
+          prepended to the generated script code.
+
+        - App-specific code is in fiddle-post.js and gets appended to
+          the generated script code.
+
+        - The following placeholder (if you're reading this in the
+          input template file) gets replaced by a generated
+          amalgamation of: module-pre.js, emcc-generated bootstrapping
+          code, and module-post.js.
+
+    -->
+    {{{ SCRIPT }}}
+  </body>
+</html>
