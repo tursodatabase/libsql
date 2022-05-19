@@ -1,5 +1,5 @@
-C #if'd\sout\sthe\s'.import'\scommand\sin\sWASM\sbuilds.\sSeveral\sminor\scosmetic\sUI\stweaks.
-D 2022-05-19T00:38:34.262
+C Replaced\sthe\stoggle\sfor\sthe\snotes/caveats\ssection\sof\sthe\sfiddle\sUI\swith\sa\sbutton\sto\sremove\sthat\ssection.
+D 2022-05-19T01:12:23.597
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -56,7 +56,7 @@ F ext/expert/sqlite3expert.c 6ca30d73b9ed75bd56d6e0d7f2c962d2affaa72c505458619d0
 F ext/expert/sqlite3expert.h ca81efc2679a92373a13a3e76a6138d0310e32be53d6c3bfaedabd158ea8969b
 F ext/expert/test_expert.c d56c194b769bdc90cf829a14c9ecbc1edca9c850b837a4d0b13be14095c32a72
 F ext/fiddle/Makefile ea647919e6ac4b50edde1490f60ee87e8ccd75141e4aa650718c6f28eb323bbc
-F ext/fiddle/fiddle.in.html 7913a4cd46fd98319744fc1cee116049e24b44b24a086d50c8b838020ae547ef
+F ext/fiddle/fiddle.in.html bac5846bf1655dfd7f4e2a4b3a5b78b5b285b8ab64ab8b545ac8864c4e4c6770
 F ext/fiddle/index.md d9c1c308d8074341bc3b11d1d39073cd77754cb3ca9aeb949f23fdd8323d81cf
 F ext/fts1/README.txt 20ac73b006a70bcfd80069bdaf59214b6cf1db5e
 F ext/fts1/ft_hash.c 3927bd880e65329bdc6f506555b228b28924921b
@@ -1957,8 +1957,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 67d98297f01d4274c510f5c5cb2a219aeb36fcbb7ce78b8b9ed65639a4561c73
-R 59fa59fdfab93a205e0e1cfea08a2433
+P e4f87eb7c3ed16b7e431f86b7d337bb4097246d20780207b43e28fffda3d8a61
+R 445736e40685ca5f686d69cfda721787
 U stephan
-Z 0bfb7bb16263207b215ea22d8aab2a42
+Z afe318168f254a6f3b75d6236f7da0c3
 # Remove this line to create a well-formed Fossil manifest.

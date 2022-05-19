@@ -28,7 +28,7 @@
         from {transform: rotate(0deg);}
         to {transform: rotate(360deg);}
       }
-      body > header {
+      header {
           font-size: 130%;
           font-weight: bold;
       }
@@ -83,6 +83,11 @@
           border-radius: 0.25em;
           white-space: nowrap;
       }
+      #notes-caveats {
+          border-top: 1px dotted;
+          padding-top: 0.25em;
+          margin-top: 0.5em;
+      }
     </style>
   </head>
   <body>
@@ -129,13 +134,11 @@ SELECT * FROM t;</textarea>
         </div>
       </div>
     </div>
-    <hr>
-    <header>
-      Notes and Caveats
-      (<input id='cb-notes-caveats' type='checkbox'>
-      <label for='cb-notes-caveats'>hide</label>)
-    </header>
     <div id='notes-caveats'>
+      <header>
+        Notes and Caveats
+        <button id='btn-notes-caveats'>Remove</button>
+      </header>
       <p>
         This JavaScript application runs a C application which has been
         compiled into WASM (Web Assembly). As such, it has certain
@@ -221,11 +224,9 @@ SELECT * FROM t;</textarea>
                   .addEventListener('change', function(){
                       config.autoScrollOutput = this.checked;
                   }, false);
-              document.querySelector('#cb-notes-caveats')
-                  .addEventListener('change', function(){
-                      document.querySelector('#notes-caveats').classList[
-                          this.checked ? 'add' : 'remove'
-                      ]('hidden');
+              document.querySelector('#btn-notes-caveats')
+                  .addEventListener('click', function(){
+                      document.querySelector('#notes-caveats').remove();
                   }, false);
 
               /* For all buttons with data-cmd=X, map a click handler which
