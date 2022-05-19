@@ -1518,7 +1518,6 @@ sqlite3.dll: $(REAL_LIBOBJ) sqlite3.def
 # fiddle section
 #
 fiddle_dir = ext/fiddle
-fiddle_tmpl = $(fiddle_dir)/fiddle.in.html
 fiddle_html = $(fiddle_dir)/fiddle.html
 fiddle_generated = $(fiddle_html) \
                    $(fiddle_dir)/fiddle.js \
@@ -1537,8 +1536,12 @@ emcc_flags = $(emcc_opt) \
              -sEXIT_RUNTIME=1 \
              --pre-js $(fiddle_dir)/module-pre.js \
              --post-js $(fiddle_dir)/module-post.js \
-             --shell-file $(fiddle_tmpl)
-$(fiddle_html): Makefile sqlite3.c shell.c $(fiddle_tmpl) \
+             --shell-file $(fiddle_dir)/fiddle.in.html \
+             $(fiddle_cflags)
+# $(fiddle_cflags) is intended to be passed to make via the CLI in
+# order to override, e.g., -Ox for one-off builds.
+$(fiddle_html): Makefile sqlite3.c shell.c \
+    $(fiddle_dir)/fiddle.in.html \
     $(fiddle_dir)/module-pre.js $(fiddle_dir)/module-post.js
 	emcc -o $@ $(emcc_flags) sqlite3.c shell.c
 fiddle: $(fiddle_html)

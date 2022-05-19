@@ -1,9 +1,9 @@
-C Ensure\sthat\sthe\soutput\sarea\sis\scleared\sof\sany\sinit-time\smessages\swhich\sthe\semscripten\sbootstrapping\sprocess\semits\swhen\sdownloading\sof\sthe\swasm\smodule\sis\sslow.
-D 2022-05-19T10:38:54.185
+C fiddle\smake\starget\snow\saccepts\sfiddle_cflags=...\sfrom\sthe\sCLI\sto\soverrid\s-Ox\sand\ssuch\sfor\sone-off\sbuilds.
+D 2022-05-19T10:58:59.923
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in 7835a8858609cd5f40b84e86cca78bd2c25c54f2e8b22fa76b16acf83509cb63
+F Makefile.in 04cd03b6d3b1f1ec84b5b052f37d0a8708000f3d9584e6106f1b8e2e1f559987
 F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
 F Makefile.msc b28a8a7a977e7312f6859f560348e1eb110c21bd6cf9fab0d16537c0a514eef3
 F README.md 8b8df9ca852aeac4864eb1e400002633ee6db84065bd01b78c33817f97d31f5e
@@ -1959,8 +1959,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b5fa12f824690c1022e4d69b0f5c3949324b311557a7412810741731db7e2cce
-R e7797da2d1a4378761bd408e0f019d9d
+P 1d8d0593573f9fc8e0990a292a4b3317d8a4c323d60514d0768543dd65c24d1e
+R 95e0243279f406591d2490a8625a64de
 U stephan
-Z 2f01ae6f2a6a94715d9eed3abad05b24
+Z 342f02945f9525abd872463c70c813a2
 # Remove this line to create a well-formed Fossil manifest.
