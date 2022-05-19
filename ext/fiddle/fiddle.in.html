@@ -91,13 +91,7 @@
           color: red;
           background-color: yellow;
       }
-      .hidden {
-          position: absolute !important;
-          opacity: 0 !important;
-          pointer-events: none !important;
-          display: none !important;
-      }
-      .initially-hidden {
+      .hidden, .initially-hidden {
           position: absolute !important;
           opacity: 0 !important;
           pointer-events: none !important;
@@ -219,13 +213,13 @@ SELECT * FROM t;</textarea>
           </div>
         </div>
       </div>
-    </div> <!-- .app-view -->
+    </div> <!-- #view-split -->
     <!-- Maintenance notes:
 
-        - emscripten module init goes is in fiddle-pre.js and gets
+        - emscripten module init goes is in module-pre.js and gets
           prepended to the generated script code.
 
-        - App-specific code is in fiddle-post.js and gets appended to
+        - App-specific code is in module-post.js and gets appended to
           the generated script code.
 
         - The following placeholder (if you're reading this in the
