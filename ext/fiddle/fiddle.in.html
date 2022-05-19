@@ -5,13 +5,14 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <title>sqlite3 fiddle</title>
     <style>
+      /* emcscript-related styling, used during the intialization phase... */
       .emscripten { padding-right: 0; margin-left: auto; margin-right: auto; display: block; }
-      textarea {
-          font-family: monospace;
-          flex: 1 1 auto;
-      }
       div.emscripten { text-align: center; }
       div.emscripten_border { border: 1px solid black; }
+      #spinner { overflow: visible; }
+      #spinner > * {
+          margin-top: 1em;
+      }
       .spinner {
         height: 50px;
         width: 50px;
@@ -28,11 +29,17 @@
         from {transform: rotate(0deg);}
         to {transform: rotate(360deg);}
       }
+
+      /* The following styles are for app-level use. */
+      
+      textarea {
+          font-family: monospace;
+          flex: 1 1 auto;
+      }
       header {
           font-size: 130%;
           font-weight: bold;
       }
-      
       #main-wrapper {
           display: flex;
           flex-direction: column;
@@ -74,6 +81,12 @@
           pointer-events: none !important;
           display: none !important;
       }
+      .initially-hidden {
+          position: absolute !important;
+          opacity: 0 !important;
+          pointer-events: none !important;
+          display: none !important;
+      }
       fieldset.options {
           font-size: 75%;
       }
@@ -92,16 +105,25 @@
           padding-top: 0.25em;
           margin-top: 0.5em;
       }
+      .center { text-align: center; }
     </style>
   </head>
   <body>
     <header>sqlite3 fiddle</header>
-    <figure style="overflow:visible;" id="spinner"><div class="spinner"></div><center style="margin-top:0.5em"><strong>emscripten</strong></center></figure>
+    <figure id="spinner">
+      <div class="spinner"></div>
+      <div class='center'><strong>Initializing app...</strong></div>
+      <div class='center'>
+        On a slow internet connection this may take a moment.  If this
+        message displays for "a long time", intialization may have
+        failed and the JavaScript console may contain clues as to why.
+      </div>
+    </figure>
     <div class="emscripten" id="status">Downloading...</div>
     <div class="emscripten">
       <progress value="0" max="100" id="progress" hidden='1'></progress>  
     </div>
-    <fieldset class='options'>
+    <fieldset class='options initially-hidden'>
       <legend>Options</legend>
       <div class=''>
         <span class='labeled-input'>
@@ -120,7 +142,7 @@
         </span>
       </div>
     </fieldset>
-    <div id='main-wrapper'>
+    <div id='main-wrapper' class='initially-hidden'>
       <div class='ta-wrapper'>
         <textarea id="input" rows="8"
                   placeholder="Shell input. Ctrl-enter/shift-enter runs it.">
@@ -131,20 +153,20 @@ CREATE TABLE t(a,b);
 INSERT INTO t(a,b) VALUES('abc',123),('def',456),(NULL,789),('ghi',012);
 SELECT * FROM t;</textarea>        
         <div class='button-bar'>
-          <button id='btn-run' disabled>Run</button>
-          <button id='btn-clear' disabled>Clear</button>
-          <button data-cmd='.help' disabled>Help</button>
+          <button id='btn-run'>Run</button>
+          <button id='btn-clear'>Clear</button>
+          <button data-cmd='.help'>Help</button>
         </div>
       </div>
       <div class='ta-wrapper'>
         <textarea id="output" rows="18" readonly
                   placeholder="Shell output."></textarea>
         <div class='button-bar'>
-          <button id='btn-clear-output' disabled>Clear</button>
+          <button id='btn-clear-output'>Clear</button>
         </div>
       </div>
     </div>
-    <div id='notes-caveats'>
+    <div id='notes-caveats' class='initially-hidden'>
       <header>
         Notes and Caveats
         <button id='btn-notes-caveats'>Remove</button>

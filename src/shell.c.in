@@ -4353,7 +4353,9 @@ static const char *(azHelp[]) = {
 #if !defined(SQLITE_OMIT_LOAD_EXTENSION) && !defined(SQLITE_SHELL_WASM_MODE)
   ".load FILE ?ENTRY?       Load an extension library",
 #endif
+#ifndef SQLITE_SHELL_WASM_MODE
   ".log FILE|off            Turn logging on or off.  FILE can be stderr/stdout",
+#endif
   ".mode MODE ?OPTIONS?     Set output mode",
   "   MODE is one of:",
   "     ascii       Columns/rows delimited by 0x1F and 0x1E",
@@ -9386,6 +9388,7 @@ static int do_meta_command(char *zLine, ShellState *p){
   }else
 #endif
 
+#ifndef SQLITE_SHELL_WASM_MODE
   if( c=='l' && strncmp(azArg[0], "log", n)==0 ){
     failIfSafeMode(p, "cannot run .log in safe mode");
     if( nArg!=2 ){
@@ -9397,6 +9400,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       p->pLog = output_file_open(zFile, 0);
     }
   }else
+#endif
 
   if( c=='m' && strncmp(azArg[0], "mode", n)==0 ){
     const char *zMode = 0;

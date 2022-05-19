@@ -14,11 +14,23 @@ window.Module.onRuntimeInitialized = function(){
     'use strict';
     const Module = window.Module /* wasm module as set up by emscripten */;
     delete Module.onRuntimeInitialized;
-    const taInput = document.querySelector('#input');
-    const btnClearIn = document.querySelector('#btn-clear');
-    document.querySelectorAll('button').forEach(function(e){
-        e.removeAttribute('disabled');
-    });
+
+    /* querySelectorAll() proxy */
+    const EAll = function(/*[element=document,] cssSelector*/){
+        return (arguments.length>1 ? arguments[0] : document)
+            .querySelectorAll(arguments[arguments.length-1]);
+    };
+    /* querySelector() proxy */
+    const E = function(/*[element=document,] cssSelector*/){
+        return (arguments.length>1 ? arguments[0] : document)
+            .querySelector(arguments[arguments.length-1]);
+    };
+    
+    // Unhide all elements which start out hidden
+    EAll('.initially-hidden').forEach((e)=>e.classList.remove('initially-hidden'));
+    
+    const taInput = E('#input');
+    const btnClearIn = E('#btn-clear');
     btnClearIn.addEventListener('click',function(){
         taInput.value = '';
     },false);
@@ -30,8 +42,8 @@ window.Module.onRuntimeInitialized = function(){
             btnRun.click();
         }
     }, false);
-    const taOutput = document.querySelector('#output');
-    const btnClearOut = document.querySelector('#btn-clear-output');
+    const taOutput = E('#output');
+    const btnClearOut = E('#btn-clear-output');
     btnClearOut.addEventListener('click',function(){
         taOutput.value = '';
     },false);
@@ -47,7 +59,7 @@ window.Module.onRuntimeInitialized = function(){
         if(Module.config.autoClearOutput) taOutput.value='';
         f._(sql);
     };
-    const btnRun = document.querySelector('#btn-run');
+    const btnRun = E('#btn-run');
     btnRun.addEventListener('click',function(){
         const sql = taInput.value.trim();
         if(sql){
@@ -55,20 +67,20 @@ window.Module.onRuntimeInitialized = function(){
         }
     },false);
 
-    document.querySelector('#opt-cb-sbs')
+    E('#opt-cb-sbs')
         .addEventListener('change', function(){
-            document.querySelector('#main-wrapper').classList[
+            E('#main-wrapper').classList[
                 this.checked ? 'add' : 'remove'
             ]('side-by-side');
         }, false);
-    document.querySelector('#btn-notes-caveats')
+    E('#btn-notes-caveats')
         .addEventListener('click', function(){
-            document.querySelector('#notes-caveats').remove();
+            E('#notes-caveats').remove();
         }, false);
 
     /* For each checkbox with data-config=X, set up a binding to
        Module.config[X]. */
-    document.querySelectorAll('input[type=checkbox][data-config]')
+    EAll('input[type=checkbox][data-config]')
         .forEach(function(e){
             e.checked = !!Module.config[e.dataset.config];
             e.addEventListener('change', function(){
@@ -79,7 +91,7 @@ window.Module.onRuntimeInitialized = function(){
     /* For each button with data-cmd=X, map a click handler which
        calls doExec(X). */
     const cmdClick = function(){doExec(this.dataset.cmd);};
-    document.querySelectorAll('button[data-cmd]').forEach(
+    EAll('button[data-cmd]').forEach(
         e => e.addEventListener('click', cmdClick, false)
     );
 

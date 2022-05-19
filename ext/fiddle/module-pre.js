@@ -64,12 +64,11 @@
                 progressElement.hidden = false;
                 spinnerElement.hidden = false;
             } else {
-                progressElement.value = null;
-                progressElement.max = null;
-                progressElement.hidden = true;
-                if(!text) spinnerElement.hidden = true;
+                progressElement.remove();
+                if(!text) spinnerElement.remove();
             }
-            statusElement.innerHTML = text;
+            if(text) statusElement.innerText = text;
+            else statusElement.remove();
         },
         totalDependencies: 0,
         monitorRunDependencies: function(left) {
