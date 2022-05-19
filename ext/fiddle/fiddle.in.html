@@ -47,6 +47,10 @@
           flex: 1 1 auto;
           margin: 0.25em;
       }
+      .ta-wrapper textarea {
+          font-size: 110%;
+          filter: invert(100%);
+      }
       .button-bar {
           display: flex;
           justify-content: center;
@@ -71,7 +75,7 @@
           display: none !important;
       }
       fieldset.options {
-          font-size: 80%;
+          font-size: 75%;
       }
       fieldset > legend {
           padding: 0 0.5em;
@@ -105,8 +109,14 @@
           <label for='opt-cb-sbs'>Side-by-side</label>
         </span>
         <span class='labeled-input'>
-          <input type='checkbox' id='opt-cb-autoscroll' checked>
+          <input type='checkbox' id='opt-cb-autoscroll'
+                 data-config='autoScrollOutput'>
           <label for='opt-cb-autoscroll'>Auto-scroll output</label>
+        </span>
+        <span class='labeled-input'>
+          <input type='checkbox' id='opt-cb-autoclear'
+                 data-config='autoClearOutput'>
+          <label for='opt-cb-autoclear'>Auto-clear output</label>
         </span>
       </div>
     </fieldset>
@@ -168,7 +178,10 @@ SELECT * FROM t;</textarea>
               /* If true, the Module.print() impl will auto-scroll
                  the output widget to the bottom when it receives output,
                  else it won't. */
-              autoScrollOutput: true
+              autoScrollOutput: true,
+              /* If true, the output area will be cleared before each
+                 command is run, else it will not. */
+              autoClearOutput: false
           };
           /**
              Callback for the emscripten module init process, gets
@@ -197,13 +210,17 @@ SELECT * FROM t;</textarea>
               btnClearOut.addEventListener('click',function(){
                   taOutput.value = '';
               },false);
+              /* Sends the given text to the shell. If it's null or empty, this
+                 is a no-op except that the very first call will initialize the
+                 db and output an informational header. */
               const doExec = function f(sql){
                   if(!f._) f._ = Module.cwrap('fiddle_exec', null, ['string']);
                   if(Module._isDead){
                       Module.printErr("shell module has exit()ed. Cannot run SQL.");
-                  }else{
-                      f._(sql);
+                      return;
                   }
+                  if(config.autoClearOutput) taOutput.value='';
+                  f._(sql);
               };
               const btnRun = document.querySelector('#btn-run');
               btnRun.addEventListener('click',function(){
@@ -220,16 +237,22 @@ SELECT * FROM t;</textarea>
                           this.checked ? 'add' : 'remove'
                       ]('side-by-side');
                   }, false);
-              document.querySelector('#opt-cb-autoscroll')
-                  .addEventListener('change', function(){
-                      config.autoScrollOutput = this.checked;
-                  }, false);
               document.querySelector('#btn-notes-caveats')
                   .addEventListener('click', function(){
                       document.querySelector('#notes-caveats').remove();
                   }, false);
 
-              /* For all buttons with data-cmd=X, map a click handler which
+              /* For each checkbox with data-config=X, set up a binding to
+                 config[X]. */
+              document.querySelectorAll('input[type=checkbox][data-config]')
+                  .forEach(function(e){
+                      e.checked = !!config[e.dataset.config];
+                      e.addEventListener('change', function(){
+                          config[this.dataset.config] = this.checked;
+                      }, false);
+                  });
+
+              /* For each button with data-cmd=X, map a click handler which
                  calls doExec(X). */
               const cmdClick = function(){doExec(this.dataset.cmd);};
               document.querySelectorAll('button[data-cmd]').forEach(
