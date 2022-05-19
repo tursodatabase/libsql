@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>sqlite3 fiddle</title>
+    <title>sqlite3 fiddle (experimental!)</title>
     <!-- script src="jqterm/jqterm-bundle.min.js"></script>
     <link rel="stylesheet" href="jqterm/jquery.terminal.min.css"/ -->
     <style>
@@ -207,7 +207,7 @@ INSERT INTO t(a,b) VALUES('abc',123),('def',456),(NULL,789),('ghi',012);
 SELECT * FROM t;</textarea>        
           <div class='button-bar'>
             <button id='btn-run'>Run</button>
-            <button id='btn-clear'>Clear</button>
+            <button id='btn-clear'>Clear Input</button>
             <button data-cmd='.help'>Help</button>
           </div>
         </div>
@@ -215,7 +215,7 @@ SELECT * FROM t;</textarea>
           <textarea id="output" readonly
                     placeholder="Shell output."></textarea>
           <div class='button-bar'>
-            <button id='btn-clear-output'>Clear</button>
+            <button id='btn-clear-output'>Clear Output</button>
           </div>
         </div>
       </div>

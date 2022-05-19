@@ -186,7 +186,8 @@ window.Module.onRuntimeInitialized = function(){
             var ht;
             var extra = 0;
             const elemsToCount = [
-                E('body > header')
+                E('body > header'),
+                E('body > footer')
             ];
             elemsToCount.forEach((e)=>e ? extra += effectiveHeight(e) : false);
             ht = wh - extra;
@@ -194,10 +195,10 @@ window.Module.onRuntimeInitialized = function(){
                 e.style.height =
                 e.style.maxHeight = [
                     "calc(", (ht>=100 ? ht : 100), "px",
-                    " - 3em"/*fudge value*/,")"
-                    /* ^^^^ hypothetically not needed, but both Chrome/FF on
-                       Linux will force scrollbars on the body if this value is
-                       too small (<0.75em in my tests). */
+                    " - 2em"/*fudge value*/,")"
+                    /* ^^^^ hypothetically not needed, but both
+                       Chrome/FF on Linux will force scrollbars on the
+                       body if this value is too small. */
                 ].join('');
             });
         };
@@ -228,6 +229,10 @@ window.Module.onRuntimeInitialized = function(){
         btnToggleView.click();
     }
     doExec(null/*init the db and output the header*/);
+    Module.print('\nThis experimental app is provided in the hope that it',
+                 'may prove interesting or useful but is not an officially',
+                 'supported deliverable of the sqlite project. It is subject to',
+                 'any number of changes or outright removal at any time.\n');
     delete ForceResizeKludge.$disabled;
     ForceResizeKludge();
 };
