@@ -68,12 +68,22 @@ window.Module.onRuntimeInitialized = function(){
         }
     },false);
 
-    E('#opt-cb-sbs')
-        .addEventListener('change', function(){
-            E('#main-wrapper').classList[
+    const mainWrapper = E('#main-wrapper');
+    const cbSbs = E('#opt-cb-sbs');
+    cbSbs.checked = mainWrapper.classList.contains('side-by-side');
+    cbSbs.addEventListener('change', function(){
+            mainWrapper.classList[
                 this.checked ? 'add' : 'remove'
             ]('side-by-side');
         }, false);
+
+    const cbSwapIo = E('#opt-cb-swapio');
+    cbSwapIo.checked = mainWrapper.classList.contains('swapio');
+    cbSwapIo.addEventListener('change', function(){
+        mainWrapper.classList[
+            this.checked ? 'add' : 'remove'
+        ]('swapio');
+    }, false);
 
     /* For each checkbox with data-config=X, set up a binding to
        Module.config[X]. */
@@ -84,7 +94,7 @@ window.Module.onRuntimeInitialized = function(){
                 Module.config[this.dataset.config] = this.checked;
             }, false);
         });
-
+    
     /* For each button with data-cmd=X, map a click handler which
        calls doExec(X). */
     const cmdClick = function(){doExec(this.dataset.cmd);};

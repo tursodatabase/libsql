@@ -50,6 +50,12 @@
       #main-wrapper.side-by-side {
           flex-direction: row-reverse;
       }
+      #main-wrapper.swapio {
+          flex-direction: column;
+      }
+      #main-wrapper.side-by-side.swapio {
+          flex-direction: row;
+      }
       .ta-wrapper{
           display: flex;
           flex-direction: column;
@@ -106,9 +112,9 @@
       span.labeled-input {
           padding: 0.25em;
           margin: 0.25em 0.5em;
-          border: 1px inset;
           border-radius: 0.25em;
           white-space: nowrap;
+          background: #0002;
       }
       #notes-caveats {
           border-top: 1px dotted;
@@ -168,6 +174,10 @@
             <label for='opt-cb-sbs'>Side-by-side</label>
           </span>
           <span class='labeled-input'>
+            <input type='checkbox' id='opt-cb-swapio'>
+            <label for='opt-cb-swapio'>Swap in/out</label>
+          </span>
+          <span class='labeled-input'>
             <input type='checkbox' id='opt-cb-autoscroll'
                    data-config='autoScrollOutput'>
             <label for='opt-cb-autoscroll'>Auto-scroll output</label>
@@ -179,7 +189,7 @@
           </span>
         </div>
       </fieldset>
-      <div id='main-wrapper' class='side-by-side'>
+      <div id='main-wrapper' class=''>
         <div class='ta-wrapper input'>
           <textarea id="input"
                     placeholder="Shell input. Ctrl-enter/shift-enter runs it.">
