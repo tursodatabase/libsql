@@ -30,10 +30,13 @@
         postRun: [],
         //onRuntimeInitialized: function(){},
         print: (function f() {
-            if(!f._){
-                f._ = document.getElementById('output');
-            }
-            f._.value = ''; // clear browser cache
+            /* Maintenance reminder: we currently require/expect a textarea
+               output element. It might be nice to extend this to behave
+               differently if the output element is a non-textarea element,
+               in which case it would need to append the given text as a TEXT
+               node and add a line break. */
+            const outputElem = document.getElementById('output');
+            outputElem.value = ''; // clear browser cache
             return function(text) {
                 if(arguments.length > 1) text = Array.prototype.slice.call(arguments).join(' ');
                 // These replacements are necessary if you render to raw HTML
@@ -41,11 +44,14 @@
                 //text = text.replace(/</g, "&lt;");
                 //text = text.replace(/>/g, "&gt;");
                 //text = text.replace('\n', '<br>', 'g');
-                //console.log("arguments",arguments);
+                if(null===text){/*special case: clear output*/
+                    outputElem.value = '';
+                    return;
+                }
                 if(window.Module.config.printToConsole) console.log(text);
-                f._.value += text + "\n";
+                outputElem.value += text + "\n";
                 if(window.Module.config.autoScrollOutput){
-                    f._.scrollTop = f._.scrollHeight;
+                    outputElem.scrollTop = outputElem.scrollHeight;
                 }
             };
         })(),
