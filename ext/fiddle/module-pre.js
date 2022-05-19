@@ -24,7 +24,11 @@
             autoClearOutput: false,
             /* If true, Module.print() will echo its output to
                the console, in addition to its normal output widget. */
-            printToConsole: true
+            printToConsole: true,
+            /* If true, display input/output areas side-by-side. */
+            sideBySide: false,
+            /* If true, swap positions of the input/output areas. */
+            swapInOut: false
         },
         preRun: [],
         postRun: [],

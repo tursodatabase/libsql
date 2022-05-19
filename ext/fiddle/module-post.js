@@ -69,32 +69,36 @@ window.Module.onRuntimeInitialized = function(){
     },false);
 
     const mainWrapper = E('#main-wrapper');
-    const cbSbs = E('#opt-cb-sbs');
-    cbSbs.checked = mainWrapper.classList.contains('side-by-side');
-    cbSbs.addEventListener('change', function(){
-            mainWrapper.classList[
-                this.checked ? 'add' : 'remove'
-            ]('side-by-side');
-        }, false);
-
-    const cbSwapIo = E('#opt-cb-swapio');
-    cbSwapIo.checked = mainWrapper.classList.contains('swapio');
-    cbSwapIo.addEventListener('change', function(){
-        mainWrapper.classList[
-            this.checked ? 'add' : 'remove'
-        ]('swapio');
-    }, false);
-
+    /* For each checkboxes with data-csstgt, set up a handler which
+       toggles the given CSS class on the element matching
+       E(data-csstgt). */
+    EAll('input[type=checkbox][data-csstgt]')
+        .forEach(function(e){
+            const tgt = E(e.dataset.csstgt);
+            const cssClass = e.dataset.cssclass || 'error';
+            e.checked = tgt.classList.contains(cssClass);
+            e.addEventListener('change', function(){
+                tgt.classList[
+                    this.checked ? 'add' : 'remove'
+                ](cssClass)
+            }, false);
+        });
     /* For each checkbox with data-config=X, set up a binding to
-       Module.config[X]. */
+       Module.config[X]. These must be set up AFTER data-csstgt
+       checkboxes so that those two states can be synced properly. */
     EAll('input[type=checkbox][data-config]')
         .forEach(function(e){
-            e.checked = !!Module.config[e.dataset.config];
+            const confVal = !!Module.config[e.dataset.config];
+            if(e.checked !== confVal){
+                /* Ensure that data-csstgt mappings (if any) get
+                   synced properly. */
+                e.checked = confVal;
+                e.dispatchEvent(new Event('change'));
+            }
             e.addEventListener('change', function(){
                 Module.config[this.dataset.config] = this.checked;
             }, false);
         });
-    
     /* For each button with data-cmd=X, map a click handler which
        calls doExec(X). */
     const cmdClick = function(){doExec(this.dataset.cmd);};
