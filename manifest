@@ -1,5 +1,5 @@
-C fiddle\smake\starget\snow\saccepts\sfiddle_cflags=...\sfrom\sthe\sCLI\sto\soverrid\s-Ox\sand\ssuch\sfor\sone-off\sbuilds.
-D 2022-05-19T10:58:59.923
+C Numerous\slayout\stweaks,\sthe\smost\ssignificant\sbeing\sthat\sthe\slayout\snow\sadapts\sto\sthe\swindow\ssize.\sSwapped\spositions\sof\sthe\sinput/output\sareas.\sThis\sversion\ssupports,\sby\suncommenting\sa\sfew\sbits,\sa\sjquery.terminal-based\sview\sbut\salternatives\sto\sthat\s300kb\sdependency\sare\sstill\sunder\sinvestigation.
+D 2022-05-19T15:58:13.139
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -56,10 +56,10 @@ F ext/expert/sqlite3expert.c 6ca30d73b9ed75bd56d6e0d7f2c962d2affaa72c505458619d0
 F ext/expert/sqlite3expert.h ca81efc2679a92373a13a3e76a6138d0310e32be53d6c3bfaedabd158ea8969b
 F ext/expert/test_expert.c d56c194b769bdc90cf829a14c9ecbc1edca9c850b837a4d0b13be14095c32a72
 F ext/fiddle/Makefile ea647919e6ac4b50edde1490f60ee87e8ccd75141e4aa650718c6f28eb323bbc
-F ext/fiddle/fiddle.in.html fc5bb8e6c13cac9880dfb41eceed3ff031d51d2a73bf66da51e5cc171e1ee28c
+F ext/fiddle/fiddle.in.html 0a176030dd3643a811007c39b8dde2271652b5a7a8597f0d7db8259a2f043111
 F ext/fiddle/index.md d9c1c308d8074341bc3b11d1d39073cd77754cb3ca9aeb949f23fdd8323d81cf
-F ext/fiddle/module-post.js 5295dfb2bd744cb0ad03d219e8e14123b1bb8ad39054f8b65c3358df4d746cd2
-F ext/fiddle/module-pre.js baff3e5f693db09f693af0bf398c0c89cdef04bdc3ffb6ad4ed02775077fdea4
+F ext/fiddle/module-post.js 0ff724148ea206d69e39241b771006606ec11131536fe677bfaf4d8faf546299
+F ext/fiddle/module-pre.js 318fe73db5b9bf829d6f7a509ed557205ca7e64de59fcbb108d1dc4fa7aa3ac6
 F ext/fts1/README.txt 20ac73b006a70bcfd80069bdaf59214b6cf1db5e
 F ext/fts1/ft_hash.c 3927bd880e65329bdc6f506555b228b28924921b
 F ext/fts1/ft_hash.h 06df7bba40dadd19597aa400a875dbc2fed705ea
@@ -1959,8 +1959,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1d8d0593573f9fc8e0990a292a4b3317d8a4c323d60514d0768543dd65c24d1e
-R 95e0243279f406591d2490a8625a64de
+P 4609a4f8626ae3d8179cae27e391bd06ffda18e9ef9e1b78745b36c7e8dd25db
+R e1efe6508b92a0a525711479235be1f2
 U stephan
-Z 342f02945f9525abd872463c70c813a2
+Z 187d58546525d991c64f645554e38d64
 # Remove this line to create a well-formed Fossil manifest.

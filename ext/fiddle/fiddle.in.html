@@ -4,6 +4,8 @@
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <title>sqlite3 fiddle</title>
+    <!-- script src="jqterm/jqterm-bundle.min.js"></script>
+    <link rel="stylesheet" href="jqterm/jquery.terminal.min.css"/ -->
     <style>
       /* emcscript-related styling, used during the intialization phase... */
       .emscripten { padding-right: 0; margin-left: auto; margin-right: auto; display: block; }
@@ -42,25 +44,33 @@
       }
       #main-wrapper {
           display: flex;
-          flex-direction: column;
+          flex-direction: column-reverse;
+          flex: 20 1 auto;
       }
       #main-wrapper.side-by-side {
-          flex-direction: row;
+          flex-direction: row-reverse;
       }
       .ta-wrapper{
           display: flex;
           flex-direction: column;
           align-items: stretch;
+          margin: 0 0.25em;
           flex: 1 1 auto;
-          margin: 0.25em;
       }
+      .ta-wrapper.input { flex: 10 1 auto; }
+      .ta-wrapper.output { flex: 20 1 auto; }
       .ta-wrapper textarea {
           font-size: 110%;
           filter: invert(100%);
+          flex: 10 1 auto;
       }
+      /*#main-wrapper:not(.side-by-side) .ta-wrapper.input {
+          flex: 5 1 auto;
+      }*/
       .button-bar {
           display: flex;
           justify-content: center;
+          flex: 0 1 auto;
       }
       .button-bar button {
           margin: 0.25em 1em;
@@ -106,10 +116,31 @@
           margin-top: 0.5em;
       }
       .center { text-align: center; }
+
+      body.terminal-mode {
+          max-height: calc(100% - 2em);
+          display: flex;
+          flex-direction: column;
+          align-items: stretch;
+      }
+      #jqterminal {
+      }
+      .app-view {
+          flex: 20 1 auto;
+      }
+      #titlebar {
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: 0.5em;
+      }
+      #view-split {
+          display: flex;
+          flex-direction: column;
+      }
     </style>
   </head>
   <body>
-    <header>sqlite3 fiddle</header>
+    <header id='titlebar'><span>sqlite3 fiddle</span></header>
     <figure id="spinner">
       <div class="spinner"></div>
       <div class='center'><strong>Initializing app...</strong></div>
@@ -123,75 +154,56 @@
     <div class="emscripten">
       <progress value="0" max="100" id="progress" hidden='1'></progress>  
     </div>
-    <fieldset class='options initially-hidden'>
-      <legend>Options</legend>
-      <div class=''>
-        <span class='labeled-input'>
-          <input type='checkbox' id='opt-cb-sbs'>
-          <label for='opt-cb-sbs'>Side-by-side</label>
-        </span>
-        <span class='labeled-input'>
-          <input type='checkbox' id='opt-cb-autoscroll'
-                 data-config='autoScrollOutput'>
-          <label for='opt-cb-autoscroll'>Auto-scroll output</label>
-        </span>
-        <span class='labeled-input'>
-          <input type='checkbox' id='opt-cb-autoclear'
-                 data-config='autoClearOutput'>
-          <label for='opt-cb-autoclear'>Auto-clear output</label>
-        </span>
-      </div>
-    </fieldset>
-    <div id='main-wrapper' class='initially-hidden'>
-      <div class='ta-wrapper'>
-        <textarea id="input" rows="8"
-                  placeholder="Shell input. Ctrl-enter/shift-enter runs it.">
+
+    <div id='jqterminal' class='app-view hidden initially-hidden'>
+      This is a placeholder for a terminal-like view.
+    </div>
+
+    <div id='view-split' class='app-view initially-hidden'>
+      <fieldset class='options'>
+        <legend>Options</legend>
+        <div class=''>
+          <span class='labeled-input'>
+            <input type='checkbox' id='opt-cb-sbs' checked>
+            <label for='opt-cb-sbs'>Side-by-side</label>
+          </span>
+          <span class='labeled-input'>
+            <input type='checkbox' id='opt-cb-autoscroll'
+                   data-config='autoScrollOutput'>
+            <label for='opt-cb-autoscroll'>Auto-scroll output</label>
+          </span>
+          <span class='labeled-input'>
+            <input type='checkbox' id='opt-cb-autoclear'
+                   data-config='autoClearOutput'>
+            <label for='opt-cb-autoclear'>Auto-clear output</label>
+          </span>
+        </div>
+      </fieldset>
+      <div id='main-wrapper' class='side-by-side'>
+        <div class='ta-wrapper input'>
+          <textarea id="input"
+                    placeholder="Shell input. Ctrl-enter/shift-enter runs it.">
 -- Use ctrl-enter or shift-enter to execute SQL
 .nullvalue NULL
 .mode box
 CREATE TABLE t(a,b);
 INSERT INTO t(a,b) VALUES('abc',123),('def',456),(NULL,789),('ghi',012);
 SELECT * FROM t;</textarea>        
-        <div class='button-bar'>
-          <button id='btn-run'>Run</button>
-          <button id='btn-clear'>Clear</button>
-          <button data-cmd='.help'>Help</button>
+          <div class='button-bar'>
+            <button id='btn-run'>Run</button>
+            <button id='btn-clear'>Clear</button>
+            <button data-cmd='.help'>Help</button>
+          </div>
+        </div>
+        <div class='ta-wrapper output'>
+          <textarea id="output" readonly
+                    placeholder="Shell output."></textarea>
+          <div class='button-bar'>
+            <button id='btn-clear-output'>Clear</button>
+          </div>
         </div>
       </div>
-      <div class='ta-wrapper'>
-        <textarea id="output" rows="18" readonly
-                  placeholder="Shell output."></textarea>
-        <div class='button-bar'>
-          <button id='btn-clear-output'>Clear</button>
-        </div>
-      </div>
-    </div>
-    <div id='notes-caveats' class='initially-hidden'>
-      <header>
-        Notes and Caveats
-        <button id='btn-notes-caveats'>Remove</button>
-      </header>
-      <p>
-        This JavaScript application runs a C application which has been
-        compiled into WASM (Web Assembly). As such, it has certain
-        limitations. Those include, but are not limited to:
-      </p>
-      <ul>
-        <li>It <strong>cannot recover after a call to
-            <code>exit()</code></strong>. If the native code triggers
-          an exit, reloading the page is the only way to restart
-          the application. (Making the app restartable without reloading
-          the page would require significant surgery in the C code.)
-        </li>
-        <li>It <strong>cannot perform any file I/O</strong>, and running
-          any command which attempts to do so might trigger an
-          <code>exit()</code>.
-        </li>
-        <li>A number of dot-commands available in the CLI shell are
-            explicitly removed from this version of the shell.
-        </li>
-      </ul>
-    </div><!-- #notes-caveats -->
+    </div> <!-- .app-view -->
     <!-- Maintenance notes:
 
         - emscripten module init goes is in fiddle-pre.js and gets

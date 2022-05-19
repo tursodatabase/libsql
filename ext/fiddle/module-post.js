@@ -46,6 +46,7 @@ window.Module.onRuntimeInitialized = function(){
     const btnClearOut = E('#btn-clear-output');
     btnClearOut.addEventListener('click',function(){
         taOutput.value = '';
+        if(Module.jqTerm) Module.jqTerm.clear();
     },false);
     /* Sends the given text to the shell. If it's null or empty, this
        is a no-op except that the very first call will initialize the
@@ -73,10 +74,6 @@ window.Module.onRuntimeInitialized = function(){
                 this.checked ? 'add' : 'remove'
             ]('side-by-side');
         }, false);
-    E('#btn-notes-caveats')
-        .addEventListener('click', function(){
-            E('#notes-caveats').remove();
-        }, false);
 
     /* For each checkbox with data-config=X, set up a binding to
        Module.config[X]. */
@@ -95,6 +92,128 @@ window.Module.onRuntimeInitialized = function(){
         e => e.addEventListener('click', cmdClick, false)
     );
 
+
+    /**
+       Given a DOM element, this routine measures its "effective
+       height", which is the bounding top/bottom range of this element
+       and all of its children, recursively. For some DOM structure
+       cases, a parent may have a reported height of 0 even though
+       children have non-0 sizes.
+
+       Returns 0 if !e or if the element really has no height.
+    */
+    const effectiveHeight = function f(e){
+        if(!e) return 0;
+        if(!f.measure){
+            f.measure = function callee(e, depth){
+                if(!e) return;
+                const m = e.getBoundingClientRect();
+                if(0===depth){
+                    callee.top = m.top;
+                    callee.bottom = m.bottom;
+                }else{
+                    callee.top = m.top ? Math.min(callee.top, m.top) : callee.top;
+                    callee.bottom = Math.max(callee.bottom, m.bottom);
+                }
+                Array.prototype.forEach.call(e.children,(e)=>callee(e,depth+1));
+                if(0===depth){
+                    //console.debug("measure() height:",e.className, callee.top, callee.bottom, (callee.bottom - callee.top));
+                    f.extra += callee.bottom - callee.top;
+                }
+                return f.extra;
+            };
+        }
+        f.extra = 0;
+        f.measure(e,0);
+        return f.extra;
+    };
+
+    /**
+       Returns a function, that, as long as it continues to be invoked,
+       will not be triggered. The function will be called after it stops
+       being called for N milliseconds. If `immediate` is passed, call
+       the callback immediately and hinder future invocations until at
+       least the given time has passed.
+
+       If passed only 1 argument, or passed a falsy 2nd argument,
+       the default wait time set in this function's $defaultDelay
+       property is used.
+
+       Source: underscore.js, by way of https://davidwalsh.name/javascript-debounce-function
+    */
+    const debounce = function f(func, wait, immediate) {
+        var timeout;
+        if(!wait) wait = f.$defaultDelay;
+        return function() {
+            const context = this, args = Array.prototype.slice.call(arguments);
+            const later = function() {
+                timeout = undefined;
+                if(!immediate) func.apply(context, args);
+            };
+            const callNow = immediate && !timeout;
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+            if(callNow) func.apply(context, args);
+        };
+    };
+    debounce.$defaultDelay = 500 /*arbitrary*/;
+
+    const ForceResizeKludge = (function(){
+        /* Workaround for Safari mayhem regarding use of vh CSS units....
+           We cannot use vh units to set the terminal area size because
+           Safari chokes on that, so we calculate that height here. Larger
+           than ~95% is too big for Firefox on Android, causing the input
+           area to move off-screen. */
+        const bcl = document.body.classList;
+        const appViews = EAll('.app-view');
+        const resized = function f(){
+            if(f.$disabled) return;
+            const wh = window.innerHeight;
+            var ht;
+            var extra = 0;
+            const elemsToCount = [
+                E('body > header')
+            ];
+            elemsToCount.forEach((e)=>e ? extra += effectiveHeight(e) : false);
+            ht = wh - extra;
+            appViews.forEach(function(e){
+                e.style.height =
+                e.style.maxHeight = [
+                    "calc(", (ht>=100 ? ht : 100), "px",
+                    " - 3em"/*fudge value*/,")"
+                    /* ^^^^ hypothetically not needed, but both Chrome/FF on
+                       Linux will force scrollbars on the body if this value is
+                       too small (<0.75em in my tests). */
+                ].join('');
+            });
+        };
+        resized.$disabled = true/*gets deleted when setup is finished*/;
+        window.addEventListener('resize', debounce(resized, 250), false);
+        return resized;
+    })();
+
     Module.print(null/*clear any output generated by the init process*/);
-    doExec(null)/*sets up the db and outputs the header*/;
+    if(window.jQuery && window.jQuery.terminal){
+        /* Set up the terminal-style view... */
+        const eTerm = window.jQuery('#jqterminal').empty();
+        Module.jqTerm = eTerm.terminal(doExec,{
+            prompt: 'sqlite> ',
+            greetings: false /* note that the docs incorrectly call this 'greeting' */
+        });
+        //Module.jqTerm.clear(/*remove the "greeting"*/);
+        /* Set up a button to toggle the views... */
+        const head = E('header#titlebar');
+        const btnToggleView = jQuery("<button>Toggle View</button>")[0];
+        head.appendChild(btnToggleView);
+        btnToggleView.addEventListener('click',function f(){
+            EAll('.app-view').forEach(e=>e.classList.toggle('hidden'));
+            if(document.body.classList.toggle('terminal-mode')){
+                ForceResizeKludge();
+            }
+        }, false);
+        btnToggleView.click();
+    }
+    doExec(null/*init the db and output the header*/);
+    delete ForceResizeKludge.$disabled;
+    ForceResizeKludge();
 };

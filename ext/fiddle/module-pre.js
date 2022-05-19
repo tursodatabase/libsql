@@ -24,7 +24,7 @@
             autoClearOutput: false,
             /* If true, Module.print() will echo its output to
                the console, in addition to its normal output widget. */
-            printToConsole: false,
+            printToConsole: true
         },
         preRun: [],
         postRun: [],
@@ -49,6 +49,7 @@
                     return;
                 }
                 if(window.Module.config.printToConsole) console.log(text);
+                if(window.Module.jqTerm) window.Module.jqTerm.echo(text);
                 outputElem.value += text + "\n";
                 if(window.Module.config.autoScrollOutput){
                     outputElem.scrollTop = outputElem.scrollHeight;
