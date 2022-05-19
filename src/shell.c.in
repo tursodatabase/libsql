@@ -4321,6 +4321,7 @@ static const char *(azHelp[]) = {
   ".fullschema ?--indent?   Show schema and the content of sqlite_stat tables",
   ".headers on|off          Turn display of headers on or off",
   ".help ?-all? ?PATTERN?   Show help text for PATTERN",
+#ifndef SQLITE_SHELL_WASM_MODE
   ".import FILE TABLE       Import data from FILE into TABLE",
   "   Options:",
   "     --ascii               Use \\037 and \\036 as column and row separators",
@@ -4335,6 +4336,7 @@ static const char *(azHelp[]) = {
   "        from the \".mode\" output mode",
   "     *  If FILE begins with \"|\" then it is a command that generates the",
   "        input text.",
+#endif
 #ifndef SQLITE_OMIT_TEST_CONTROL
   ".imposter INDEX TABLE    Create imposter table TABLE on index INDEX",
 #endif
@@ -8881,6 +8883,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
   }else
 
+#ifndef SQLITE_SHELL_WASM_MODE
   if( c=='i' && strncmp(azArg[0], "import", n)==0 ){
     char *zTable = 0;           /* Insert data into this table */
     char *zSchema = 0;          /* within this schema (may default to "main") */
@@ -9171,6 +9174,7 @@ static int do_meta_command(char *zLine, ShellState *p){
           sCtx.nRow, sCtx.nErr, sCtx.nLine-1);
     }
   }else
+#endif /* !defined(SQLITE_SHELL_WASM_MODE) */
 
 #ifndef SQLITE_UNTESTABLE
   if( c=='i' && strncmp(azArg[0], "imposter", n)==0 ){
