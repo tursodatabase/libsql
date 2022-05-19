@@ -4282,10 +4282,14 @@ static const char *(azHelp[]) = {
 #endif
   ".bail on|off             Stop after hitting an error.  Default OFF",
   ".binary on|off           Turn binary output on or off.  Default OFF",
+#ifndef SQLITE_SHELL_WASM_MODE
   ".cd DIRECTORY            Change the working directory to DIRECTORY",
+#endif
   ".changes on|off          Show number of rows changed by SQL",
   ".check GLOB              Fail if output since .testcase does not match",
+#ifndef SQLITE_SHELL_WASM_MODE
   ".clone NEWDB             Clone data into NEWDB from the existing database",
+#endif
   ".connection [close] [#]  Open or close an auxiliary database connection",
   ".databases               List names and files of attached databases",
   ".dbconfig ?op? ?val?     List or change sqlite3_db_config() options",
@@ -8274,6 +8278,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     test_breakpoint();
   }else
 
+#ifndef SQLITE_SHELL_WASM_MODE
   if( c=='c' && strcmp(azArg[0],"cd")==0 ){
     failIfSafeMode(p, "cannot run .cd in safe mode");
     if( nArg==2 ){
@@ -8293,6 +8298,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       rc = 1;
     }
   }else
+#endif /* !defined(SQLITE_SHELL_WASM_MODE) */
 
   if( c=='c' && n>=3 && strncmp(azArg[0], "changes", n)==0 ){
     if( nArg==2 ){
@@ -8328,6 +8334,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     sqlite3_free(zRes);
   }else
 
+#ifndef SQLITE_SHELL_WASM_MODE
   if( c=='c' && strncmp(azArg[0], "clone", n)==0 ){
     failIfSafeMode(p, "cannot run .clone in safe mode");
     if( nArg==2 ){
@@ -8337,6 +8344,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       rc = 1;
     }
   }else
+#endif /* !defined(SQLITE_SHELL_WASM_MODE) */
 
   if( c=='c' && strncmp(azArg[0], "connection", n)==0 ){
     if( nArg==1 ){
