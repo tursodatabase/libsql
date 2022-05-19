@@ -1535,7 +1535,10 @@ emcc_flags = $(emcc_opt) \
              -sEXPORTED_RUNTIME_METHODS=ccall,cwrap \
              -sEXPORTED_FUNCTIONS=_fiddle_exec \
              -sEXIT_RUNTIME=1 \
+             --pre-js $(fiddle_dir)/module-pre.js \
+             --post-js $(fiddle_dir)/module-post.js \
              --shell-file $(fiddle_tmpl)
-$(fiddle_html): Makefile sqlite3.c shell.c $(fiddle_tmpl)
+$(fiddle_html): Makefile sqlite3.c shell.c $(fiddle_tmpl) \
+    $(fiddle_dir)/module-pre.js $(fiddle_dir)/module-post.js
 	emcc -o $@ $(emcc_flags) sqlite3.c shell.c
 fiddle: $(fiddle_html)

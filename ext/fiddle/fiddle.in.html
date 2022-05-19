@@ -170,179 +170,20 @@ SELECT * FROM t;</textarea>
         </li>
       </ul>
     </div><!-- #notes-caveats -->
-    <script type='text/javascript'>
-      (function(){
-          /* An object for propagating certain config state between our
-           JS code and the WASM module. */
-          const config = {
-              /* If true, the Module.print() impl will auto-scroll
-                 the output widget to the bottom when it receives output,
-                 else it won't. */
-              autoScrollOutput: true,
-              /* If true, the output area will be cleared before each
-                 command is run, else it will not. */
-              autoClearOutput: false
-          };
-          /**
-             Callback for the emscripten module init process, gets
-             passed the module object after all parts of the module
-             have been loaded and initialized.
-          */
-          const doAppSetup = function(Module) {
-              const taInput = document.querySelector('#input');
-              const btnClearIn = document.querySelector('#btn-clear');
-              document.querySelectorAll('button').forEach(function(e){
-                  e.removeAttribute('disabled');
-              });
-              btnClearIn.addEventListener('click',function(){
-                  taInput.value = '';
-              },false);
-              // Ctrl-enter and shift-enter both run the current SQL.
-              taInput.addEventListener('keydown',function(ev){
-                  if((ev.ctrlKey || ev.shiftKey) && 13 === ev.keyCode){
-                      ev.preventDefault();
-                      ev.stopPropagation();
-                      btnRun.click();
-                  }
-              }, false);
-              const taOutput = document.querySelector('#output');
-              const btnClearOut = document.querySelector('#btn-clear-output');
-              btnClearOut.addEventListener('click',function(){
-                  taOutput.value = '';
-              },false);
-              /* Sends the given text to the shell. If it's null or empty, this
-                 is a no-op except that the very first call will initialize the
-                 db and output an informational header. */
-              const doExec = function f(sql){
-                  if(!f._) f._ = Module.cwrap('fiddle_exec', null, ['string']);
-                  if(Module._isDead){
-                      Module.printErr("shell module has exit()ed. Cannot run SQL.");
-                      return;
-                  }
-                  if(config.autoClearOutput) taOutput.value='';
-                  f._(sql);
-              };
-              const btnRun = document.querySelector('#btn-run');
-              btnRun.addEventListener('click',function(){
-                  const sql = taInput.value.trim();
-                  if(sql){
-                      doExec(sql);
-                  }
-              },false);
-              doExec(null)/*sets up the db and outputs the header*/;
+    <!-- Maintenance notes:
 
-              document.querySelector('#opt-cb-sbs')
-                  .addEventListener('change', function(){
-                      document.querySelector('#main-wrapper').classList[
-                          this.checked ? 'add' : 'remove'
-                      ]('side-by-side');
-                  }, false);
-              document.querySelector('#btn-notes-caveats')
-                  .addEventListener('click', function(){
-                      document.querySelector('#notes-caveats').remove();
-                  }, false);
+        - emscripten module init goes is in fiddle-pre.js and gets
+          prepended to the generated script code.
 
-              /* For each checkbox with data-config=X, set up a binding to
-                 config[X]. */
-              document.querySelectorAll('input[type=checkbox][data-config]')
-                  .forEach(function(e){
-                      e.checked = !!config[e.dataset.config];
-                      e.addEventListener('change', function(){
-                          config[this.dataset.config] = this.checked;
-                      }, false);
-                  });
+        - App-specific code is in fiddle-post.js and gets appended to
+          the generated script code.
 
-              /* For each button with data-cmd=X, map a click handler which
-                 calls doExec(X). */
-              const cmdClick = function(){doExec(this.dataset.cmd);};
-              document.querySelectorAll('button[data-cmd]').forEach(
-                  e => e.addEventListener('click', cmdClick, false)
-              );
-          };
+        - The following placeholder (if you're reading this in the
+          input template file) gets replaced by a generated
+          amalgamation of: module-pre.js, emcc-generated bootstrapping
+          code, and module-post.js.
 
-          /**
-             What follows is part of the emscripten core setup. Do not
-             modify without understanding what it's doing...
-          */
-          const statusElement = document.getElementById('status');
-          const progressElement = document.getElementById('progress');
-          const spinnerElement = document.getElementById('spinner');
-          const Module = window.Module = {
-              preRun: [],
-              postRun: [],
-              onRuntimeInitialized: function(){
-                  doAppSetup(this);
-              },
-              print: (function f() {
-                  if(!f._){
-                      f._ = document.getElementById('output');
-                  }
-                  f._.value = ''; // clear browser cache
-                  return function(text) {
-                      if(arguments.length > 1) text = Array.prototype.slice.call(arguments).join(' ');
-                      // These replacements are necessary if you render to raw HTML
-                      //text = text.replace(/&/g, "&amp;");
-                      //text = text.replace(/</g, "&lt;");
-                      //text = text.replace(/>/g, "&gt;");
-                      //text = text.replace('\n', '<br>', 'g');
-                      //console.log("arguments",arguments);
-                      console.log(text);
-                      f._.value += text + "\n";
-                      if(config.autoScrollOutput){
-                          f._.scrollTop = f._.scrollHeight;
-                      }
-                  };
-              })(),
-              setStatus: function f(text) {
-                  if(!f.last) f.last = { time: Date.now(), text: '' };
-                  if(text === f.last.text) return;
-                  const m = text.match(/([^(]+)\((\d+(\.\d+)?)\/(\d+)\)/);
-                  const now = Date.now();
-                  if(m && now - f.last.time < 30) return; // if this is a progress update, skip it if too soon
-                  f.last.time = now;
-                  f.last.text = text;
-                  if(m) {
-                      text = m[1];
-                      progressElement.value = parseInt(m[2])*100;
-                      progressElement.max = parseInt(m[4])*100;
-                      progressElement.hidden = false;
-                      spinnerElement.hidden = false;
-                  } else {
-                      progressElement.value = null;
-                      progressElement.max = null;
-                      progressElement.hidden = true;
-                      if(!text) spinnerElement.hidden = true;
-                  }
-                  statusElement.innerHTML = text;
-              },
-              totalDependencies: 0,
-              monitorRunDependencies: function(left) {
-                  this.totalDependencies = Math.max(this.totalDependencies, left);
-                  this.setStatus(left
-                                 ? ('Preparing... (' + (this.totalDependencies-left)
-                                         + '/' + this.totalDependencies + ')')
-                                 : 'All downloads complete.');
-              }
-          };
-          Module.printErr = Module.print/*capture stderr output*/;
-          Module.setStatus('Downloading...');
-          window.onerror = function(/*message, source, lineno, colno, error*/) {
-              const err = arguments[4];
-              if(err && 'ExitStatus'==err.name){
-                  Module._isDead = true;
-                  Module.printErr("FATAL ERROR:", err.message);
-                  Module.printErr("Restarting the app requires reloading the page.");
-                  const taOutput = document.querySelector('#output');
-                  if(taOutput) taOutput.classList.add('error');
-              }
-              Module.setStatus('Exception thrown, see JavaScript console');
-              spinnerElement.style.display = 'none';
-              Module.setStatus = function(text) {
-                  if(text) console.error('[post-exception status] ' + text);
-              };
-          };
-      })();
-    </script>
+    -->
     {{{ SCRIPT }}}
   </body>
 </html>
