@@ -1,9 +1,9 @@
-C Added\sa\stoggle\sto\sswap\sinput/output\sfield\spositions\sand\ssimplified\ssetup\sof\scheckboxes\swhich\stoggle\sa\sCSS\sclass\son\sa\sgiven\selement.
-D 2022-05-19T16:30:03.606
+C Tweaks\sto\sthe\sfiddle\smake\starget\sso\sthat\sit\sbuilds\swith\sall\sof\sthe\ssame\nextensions\sas\sthe\sstandard\sCLI.
+D 2022-05-19T16:42:41.466
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in 04cd03b6d3b1f1ec84b5b052f37d0a8708000f3d9584e6106f1b8e2e1f559987
+F Makefile.in 5dbc61c076215a580d59d1f21b5e62955d2e570321b63f00a31b188f1f5089a6
 F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
 F Makefile.msc b28a8a7a977e7312f6859f560348e1eb110c21bd6cf9fab0d16537c0a514eef3
 F README.md 8b8df9ca852aeac4864eb1e400002633ee6db84065bd01b78c33817f97d31f5e
@@ -1959,8 +1959,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 362d236aca31ca2004d1e81d8e306f7a12a6cb4eeb2bab432a9c2aae5206ddd7
-R 5972ffff2ff6adf7c5f6cbd2f6c0d011
-U stephan
-Z a3eae77f5852c45e7c56e5cba1b6c11c
+P eae3ab10c813d6f051d497271be2df05f54005ec54b19a2a27d04d632bccbeac
+R 622d5630a2a019f5f30105c6f9f2cdad
+U drh
+Z 5b44594a37d68ccf6723c9a82bfea906
 # Remove this line to create a well-formed Fossil manifest.
