@@ -4286,8 +4286,8 @@ static const char *(azHelp[]) = {
   ".cd DIRECTORY            Change the working directory to DIRECTORY",
 #endif
   ".changes on|off          Show number of rows changed by SQL",
-  ".check GLOB              Fail if output since .testcase does not match",
 #ifndef SQLITE_SHELL_WASM_MODE
+  ".check GLOB              Fail if output since .testcase does not match",
   ".clone NEWDB             Clone data into NEWDB from the existing database",
 #endif
   ".connection [close] [#]  Open or close an auxiliary database connection",
@@ -4384,7 +4384,9 @@ static const char *(azHelp[]) = {
   "     --quote        Quote output text as SQL literals",
   "     --noquote      Do not quote output text",
   "     TABLE          The name of SQL table used for \"insert\" mode",
+#ifndef SQLITE_SHELL_WASM_MODE
   ".nonce STRING            Suspend safe mode for one command if nonce matches",
+#endif
   ".nullvalue STRING        Use STRING in place of NULL values",
 #ifndef SQLITE_SHELL_WASM_MODE
   ".once ?OPTIONS? ?FILE?   Output for the next SQL command only to FILE",
@@ -8309,6 +8311,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
   }else
 
+#ifndef SQLITE_SHELL_WASM_MODE
   /* Cancel output redirection, if it is currently set (by .testcase)
   ** Then read the content of the testcase-out.txt file and compare against
   ** azArg[1].  If there are differences, report an error and exit.
@@ -8333,6 +8336,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
     sqlite3_free(zRes);
   }else
+#endif /* !defined(SQLITE_SHELL_WASM_MODE) */
 
 #ifndef SQLITE_SHELL_WASM_MODE
   if( c=='c' && strncmp(azArg[0], "clone", n)==0 ){
@@ -9533,6 +9537,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     p->cMode = p->mode;
   }else
 
+#ifndef SQLITE_SHELL_WASM_MODE
   if( c=='n' && strcmp(azArg[0], "nonce")==0 ){
     if( nArg!=2 ){
       raw_printf(stderr, "Usage: .nonce NONCE\n");
@@ -9547,6 +9552,7 @@ static int do_meta_command(char *zLine, ShellState *p){
                  ** at the end of this procedure */
     }
   }else
+#endif /* !defined(SQLITE_SHELL_WASM_MODE) */
 
   if( c=='n' && strncmp(azArg[0], "nullvalue", n)==0 ){
     if( nArg==2 ){

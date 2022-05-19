@@ -1,5 +1,5 @@
-C #if'd\sout\sthe\sthe\s'.cd'\sand\s'.clone'\scommands\sfor\sWASM\sbuilds.
-D 2022-05-19T21:56:50.043
+C #if'd\sout\sthe\s'.nonce'\sand\s'.check'\scommends\sin\sWASM\sbuilds.
+D 2022-05-19T22:04:23.547
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -559,7 +559,7 @@ F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c a4eb3c617027fd049b07432f3b942ea7151fa793a332a11a7d0f58c9539e104f
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 74060a09f66c0c056f3c61627e22cb484af0bbfa29d7d14dcf17c684742c15de
-F src/shell.c.in 3316815dd4aba4ad151f9a46d540a24197e5b1d9b91eb9a6a2822ea6863b0fac
+F src/shell.c.in 198aed4b4d225acdaf89c19b1c32b5e1a5c5956ef25c6de993ec6ac872369215
 F src/sqlite.h.in d15c307939039086adca159dd340a94b79b69827e74c6d661f343eeeaefba896
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h a988810c9b21c0dc36dc7a62735012339dc76fc7ab448fb0792721d30eacb69d
@@ -1959,8 +1959,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d3175a793fb2d1ac9ecfd7a7c3b1627fe583effcd37740206a11b115f099d521
-R 42d0ca5c67ceea270880218da3bcbfc1
+P fa391868dd626ffdb220bed6834d0a10c7336f0fc4ca56055147784de1a4f99d
+R ecfaf227f75d4bef58737ff0c6c5c4c5
 U stephan
-Z b82e2305c283c356a7fd95759eb9583d
+Z c416bbcbbdae88d64354eab148e9450d
 # Remove this line to create a well-formed Fossil manifest.
