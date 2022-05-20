@@ -1,6 +1,19 @@
-/* This is the --pre-js file for emcc. It gets prepended to the
-   generated fiddle.js. It should contain only code which is relevant
-   to the setup and initialization of the wasm module. */
+/*
+  2022-05-20
+
+  The author disclaims copyright to this source code.  In place of a
+  legal notice, here is a blessing:
+
+  *   May you do good and not evil.
+  *   May you find forgiveness for yourself and forgive others.
+  *   May you share freely, never taking more than you give.
+
+  ***********************************************************************
+
+  This is the --pre-js file for emcc. It gets prepended to the
+  generated fiddle.js. It should contain only code which is relevant
+  to the setup and initialization of the wasm module.
+*/
 (function(){
     'use strict';
 
