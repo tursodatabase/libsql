@@ -4,8 +4,7 @@
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <title>sqlite3 fiddle (experimental!)</title>
-    <!-- script src="jqterm/jqterm-bundle.min.js"></script>
-    <link rel="stylesheet" href="jqterm/jquery.terminal.min.css"/ -->
+    <link rel="stylesheet" href="fiddle.css"/>
     <style>
       /* emcscript-related styling, used during the intialization phase... */
       .emscripten { padding-right: 0; margin-left: auto; margin-right: auto; display: block; }
@@ -123,7 +122,7 @@
           flex-direction: column;
           align-items: stretch;
       }
-      #jqterminal {
+      #terminal {
       }
       .app-view {
           flex: 20 1 auto;
@@ -155,7 +154,7 @@
       <progress value="0" max="100" id="progress" hidden='1'></progress>  
     </div>
 
-    <div id='jqterminal' class='app-view hidden initially-hidden'>
+    <div id='terminal' class='app-view hidden initially-hidden'>
       This is a placeholder for a terminal-like view.
     </div>
 
@@ -217,15 +216,17 @@ SELECT * FROM t;</textarea>
     <!-- Maintenance notes:
 
         - emscripten module init goes is in module-pre.js and gets
-          prepended to the generated script code.
+          prepended to the generated script code by the compilation
+          process.
 
         - App-specific code is in module-post.js and gets appended to
-          the generated script code.
+          the generated script code by the compilation process.
 
-        - The following placeholder (if you're reading this in the
-          input template file) gets replaced by a generated
-          amalgamation of: module-pre.js, emcc-generated bootstrapping
-          code, and module-post.js.
+        - The following SCRIPT placeholder (if you're reading this in
+          the input template file) gets replaced by a generated
+          amalgamation of: (possibly) some imported 3rd-party JS code,
+          module-pre.js, emcc-generated bootstrapping code, and
+          module-post.js.
 
     -->
     {{{ SCRIPT }}}

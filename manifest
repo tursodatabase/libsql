@@ -1,9 +1,9 @@
-C #if'd\sout\sthe\s'.nonce'\sand\s'.check'\scommends\sin\sWASM\sbuilds.
-D 2022-05-19T22:04:23.547
+C Add\sa\sterminal-style\sview\sto\sthe\sfiddle\sapp,\sbased\son\sjquery.terminal.
+D 2022-05-20T13:27:57.777
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in 5dbc61c076215a580d59d1f21b5e62955d2e570321b63f00a31b188f1f5089a6
+F Makefile.in 049e8889fe8b2514b135a5fec91f526909b60570dd1293c49fc23e45669a532d
 F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
 F Makefile.msc b28a8a7a977e7312f6859f560348e1eb110c21bd6cf9fab0d16537c0a514eef3
 F README.md 8b8df9ca852aeac4864eb1e400002633ee6db84065bd01b78c33817f97d31f5e
@@ -56,10 +56,12 @@ F ext/expert/sqlite3expert.c 6ca30d73b9ed75bd56d6e0d7f2c962d2affaa72c505458619d0
 F ext/expert/sqlite3expert.h ca81efc2679a92373a13a3e76a6138d0310e32be53d6c3bfaedabd158ea8969b
 F ext/expert/test_expert.c d56c194b769bdc90cf829a14c9ecbc1edca9c850b837a4d0b13be14095c32a72
 F ext/fiddle/Makefile b2904d52c10a7c984cfab95c54fb85f33aa8a6b2653faf1527d08ce57114be46
-F ext/fiddle/fiddle.in.html 715ae6d60f7a6575ec2df7495ff7ab25d758d63398ce6a1056265453c06441e7
+F ext/fiddle/fiddle.in.html df40d8a0124af9eb9eb043c41114c2b2e202122ec746f76d466309788c05cd8f
 F ext/fiddle/index.md d9c1c308d8074341bc3b11d1d39073cd77754cb3ca9aeb949f23fdd8323d81cf
-F ext/fiddle/module-post.js fe8b5589fa2b71d7adf21b555f161018a2d0bffe4051694660f671b42d7ff184
-F ext/fiddle/module-pre.js a7b046c0f764b100a5bedd3880bece8e6fb5908fb73cb91fb7a9b692bc938862
+F ext/fiddle/jqterm/jqterm-bundle.min.js 4cab97f3ffdc38fd38a89b13a5a72dfbaac5efd4c91b8f67169c8079f6a2d2d9
+F ext/fiddle/jqterm/jquery.terminal.min.css a397585fa85f317b86c171204e2635b8dc88cc4286fe11ee33573435b760e373
+F ext/fiddle/module-post.js 9f39bbef838025990a81f3482f2932a2ce83b7b64973e77d42a729f865b525f1
+F ext/fiddle/module-pre.js 07424817847d06a137780816bf1450d3a970af70e71a4c76317b842cfef6cb99
 F ext/fts1/README.txt 20ac73b006a70bcfd80069bdaf59214b6cf1db5e
 F ext/fts1/ft_hash.c 3927bd880e65329bdc6f506555b228b28924921b
 F ext/fts1/ft_hash.h 06df7bba40dadd19597aa400a875dbc2fed705ea
@@ -1959,8 +1961,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fa391868dd626ffdb220bed6834d0a10c7336f0fc4ca56055147784de1a4f99d
-R ecfaf227f75d4bef58737ff0c6c5c4c5
+P 326f79ea54566a9302be99d920856f13b48f2c2ed265fa87d78ced367d4b1946
+R 709af074008351043c91eb99eb0e25ff
+T *branch * fiddle-terminal-view
+T *sym-fiddle-terminal-view *
+T -sym-trunk * Cancelled\sby\sbranch.
 U stephan
-Z c416bbcbbdae88d64354eab148e9450d
+Z b28a6d2f4b26edcae888bcd4d2e0458d
 # Remove this line to create a well-formed Fossil manifest.

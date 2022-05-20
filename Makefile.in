@@ -1519,29 +1519,42 @@ sqlite3.dll: $(REAL_LIBOBJ) sqlite3.def
 #
 fiddle_dir = ext/fiddle
 fiddle_html = $(fiddle_dir)/fiddle.html
-fiddle_generated = $(fiddle_html) \
-                   $(fiddle_dir)/fiddle.js \
-                   $(fiddle_dir)/fiddle.wasm
+fiddle_html_in = $(fiddle_dir)/fiddle.in.html
+fiddle_css = $(fiddle_dir)/fiddle.css
+fiddle_pre_js = $(fiddle_dir)/_module-pre.js
+fiddle_post_js = $(fiddle_dir)/module-post.js
+# ^^^ note that pre_js is currently generated but post_js is not!
+fiddle_generated = 
 clean-fiddle:
-	rm -f $(fiddle_generated)
+	rm -f $(fiddle_html) \
+          $(fiddle_css) \
+          $(fiddle_dir)/fiddle.js \
+          $(fiddle_dir)/fiddle.wasm \
+          $(fiddle_pre_js)
 clean: clean-fiddle
-#emcc_opt = -O0
-#emcc_opt = -O1
-#emcc_opt = -O2
-#emcc_opt = -O3
+#Optimization flags: -O0, -O1, -O2, -O3, -Oz
 emcc_opt = -Oz
 emcc_flags = $(emcc_opt) $(SHELL_OPT) \
              -sEXPORTED_RUNTIME_METHODS=ccall,cwrap \
              -sEXPORTED_FUNCTIONS=_fiddle_exec \
              -sEXIT_RUNTIME=1 \
-             --pre-js $(fiddle_dir)/module-pre.js \
-             --post-js $(fiddle_dir)/module-post.js \
-             --shell-file $(fiddle_dir)/fiddle.in.html \
+             --pre-js $(fiddle_pre_js) \
+             --post-js $(fiddle_post_js) \
+             --shell-file $(fiddle_html_in) \
              $(fiddle_cflags)
 # $(fiddle_cflags) is intended to be passed to make via the CLI in
-# order to override, e.g., -Ox for one-off builds.
+# order to add/override for one-off builds.
+fiddle_css_in = $(fiddle_dir)/jqterm/jquery.terminal.min.css
+$(fiddle_css): Makefile $(fiddle_css_in)
+	cat $(fiddle_css_in) > $@
+fiddle_pre_js_in = $(fiddle_dir)/jqterm/jqterm-bundle.min.js \
+                   $(fiddle_dir)/module-pre.js
+$(fiddle_pre_js): Makefile $(fiddle_pre_js_in)
+	cat $(fiddle_pre_js_in) > $@
+# Note that compilation to $(fiddle_html) generates fiddle.wasm and
+# fiddle.js as well.
 $(fiddle_html): Makefile sqlite3.c shell.c \
-    $(fiddle_dir)/fiddle.in.html \
-    $(fiddle_dir)/module-pre.js $(fiddle_dir)/module-post.js
+    $(fiddle_html_in) $(fiddle_pre_js) $(fiddle_post_js)
 	emcc -o $@ $(emcc_flags) sqlite3.c shell.c
-fiddle: $(fiddle_html)
+	@chmod -x $(fiddle_dir)/fiddle.wasm
+fiddle: $(fiddle_css) $(fiddle_html)
