@@ -1519,9 +1519,9 @@ sqlite3.dll: $(REAL_LIBOBJ) sqlite3.def
 #
 fiddle_dir = ext/fiddle
 fiddle_html = $(fiddle_dir)/fiddle.html
-fiddle_generated = $(fiddle_html) \
-                   $(fiddle_dir)/fiddle.js \
-                   $(fiddle_dir)/fiddle.wasm
+fiddle_module_js = $(fiddle_dir)/fiddle-module.js
+fiddle_generated = $(fiddle_module_js) \
+                   $(fiddle_dir)/fiddle-module.wasm
 # fiddle_dummy_exports = ,comma,list of func bound solely for
 # experimentation and testing purposes in the WASM build.
 fiddle_dummy_exports = ,_fiddle_experiment,_fiddle_the_db,_fiddle_db_arg
@@ -1536,15 +1536,10 @@ clean: clean-fiddle
 emcc_opt = -Oz
 emcc_flags = $(emcc_opt) $(SHELL_OPT) \
              -sEXPORTED_RUNTIME_METHODS=ccall,cwrap \
-             -sEXPORTED_FUNCTIONS=_fiddle_exec$(fiddle_dummy_exports) \
-             --pre-js $(fiddle_dir)/module-pre.js \
-             --post-js $(fiddle_dir)/module-post.js \
-             --shell-file $(fiddle_dir)/fiddle.in.html \
+             -sEXPORTED_FUNCTIONS=_fiddle_exec,_fiddle_interrupt$(fiddle_dummy_exports) \
              $(fiddle_cflags)
 # $(fiddle_cflags) is intended to be passed to make via the CLI in
 # order to override, e.g., -Ox for one-off builds.
-$(fiddle_html): Makefile sqlite3.c shell.c \
-    $(fiddle_dir)/fiddle.in.html \
-    $(fiddle_dir)/module-pre.js $(fiddle_dir)/module-post.js
+$(fiddle_module_js): Makefile sqlite3.c shell.c
 	emcc -o $@ $(emcc_flags) sqlite3.c shell.c
-fiddle: $(fiddle_html)
+fiddle: $(fiddle_module_js)

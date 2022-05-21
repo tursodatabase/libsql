@@ -12596,6 +12596,15 @@ sqlite3 * fiddle_db_arg(sqlite3 *arg){
 }
 
 /*
+** Intended to be called via a SharedWorker() while a separate
+** SharedWorker() (which manages the wasm module) is performing work
+** which should be interrupted.
+*/
+void fiddle_interrupt(void){
+  if(globalDb) sqlite3_interrupt(globalDb);
+}
+
+/*
 ** Trivial exportable function for emscripten. Needs to be exported using:
 **
 ** emcc ..flags... -sEXPORTED_FUNCTIONS=_fiddle_exec -sEXPORTED_RUNTIME_METHODS=ccall,cwrap

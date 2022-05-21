@@ -3,16 +3,16 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>sqlite3 fiddle (experimental!)</title>
-    <!-- script src="jqterm/jqterm-bundle.min.js"></script>
-    <link rel="stylesheet" href="jqterm/jquery.terminal.min.css"/ -->
+    <title>sqlite3 fiddle</title>
+    <!--script src="jqterm/jqterm-bundle.min.js"></script>
+    <link rel="stylesheet" href="jqterm/jquery.terminal.min.css"/-->
     <style>
       /* emcscript-related styling, used during the intialization phase... */
       .emscripten { padding-right: 0; margin-left: auto; margin-right: auto; display: block; }
       div.emscripten { text-align: center; }
       div.emscripten_border { border: 1px solid black; }
-      #spinner { overflow: visible; }
-      #spinner > * {
+      #module-spinner { overflow: visible; }
+      #module-spinner > * {
           margin-top: 1em;
       }
       .spinner {
@@ -142,7 +142,7 @@
   </head>
   <body>
     <header id='titlebar'><span>sqlite3 fiddle</span></header>
-    <figure id="spinner">
+    <figure id="module-spinner">
       <div class="spinner"></div>
       <div class='center'><strong>Initializing app...</strong></div>
       <div class='center'>
@@ -151,9 +151,9 @@
         failed and the JavaScript console may contain clues as to why.
       </div>
     </figure>
-    <div class="emscripten" id="status">Downloading...</div>
+    <div class="emscripten" id="module-status">Downloading...</div>
     <div class="emscripten">
-      <progress value="0" max="100" id="progress" hidden='1'></progress>  
+      <progress value="0" max="100" id="module-progress" hidden='1'></progress>  
     </div>
 
     <div id='view-terminal' class='app-view hidden initially-hidden'>
@@ -201,7 +201,7 @@ CREATE TABLE t(a,b);
 INSERT INTO t(a,b) VALUES('abc',123),('def',456),(NULL,789),('ghi',012);
 SELECT * FROM t;</textarea>        
           <div class='button-bar'>
-            <button id='btn-run'>Run</button>
+            <button id='btn-shell-exec'>Run</button>
             <button id='btn-clear'>Clear Input</button>
             <button data-cmd='.help'>Help</button>
             <select id='select-examples'></select>
@@ -218,18 +218,9 @@ SELECT * FROM t;</textarea>
     </div> <!-- #view-split -->
     <!-- Maintenance notes:
 
-        - emscripten module init goes is in module-pre.js and gets
-          prepended to the generated script code.
-
-        - App-specific code is in module-post.js and gets appended to
-          the generated script code.
-
-        - The following placeholder (if you're reading this in the
-          input template file) gets replaced by a generated
-          amalgamation of: module-pre.js, emcc-generated bootstrapping
-          code, and module-post.js.
+        ... TODO... currently being refactored...
 
     -->
-    {{{ SCRIPT }}}
+    <script src="fiddle.js"></script>
   </body>
 </html>
