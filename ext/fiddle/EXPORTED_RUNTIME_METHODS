@@ -1,0 +1,6 @@
+ccall
+cwrap
+stackAlloc
+stackSave
+stackRestore
+UTF8ToString

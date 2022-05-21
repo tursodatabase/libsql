@@ -138,4 +138,48 @@ self.onmessage = function(ev){
 };
 self.Module.setStatus('Downloading...');
 importScripts('fiddle-module.js')
-/* loads module and notifies, via Module.setStatus(), when it's done loading. */;
+/* loads the wasm module and notifies, via Module.setStatus() and
+   Module.onRuntimeInitialized(), when it's done loading. */;
+
+Module["onRuntimeInitialized"] = function onRuntimeInitialized() {
+    /* For reference: sql.js does essentially everything we want and
+       it solves much of the wasm-related voodoo, but we'll need a
+       different structure because we want the db connection to run in
+       a worker thread and feed data back into the main
+       thread. Regardless of those differences, it makes a great point
+       of reference:
+
+       https://github.com/sql-js/sql.js
+
+       Some of the specific design goals here:
+
+       - Bind a low-level sqlite3 API which is close to the native one in
+         terms of usage.
+
+       - Create a higher-level one, more akin to sql.js and
+         node.js-style implementations. This one would speak directly
+         to the low-level API. This API could be used by clients who
+         import the low-level API directly into their main thread
+         (which we don't want to recommend but also don't want to
+         outright forbid).
+
+       - Create a second higher-level one which speaks to the
+         low-level API via worker messages. This one would be intended
+         for use in the main thread, talking to the low-level UI via
+         worker messages. Because workers have only a single message
+         channel, some acrobatics will be needed here to feed async
+         work results back into client-side callbacks (as those
+         callbacks cannot simply be passed to the worker). Exactly
+         what those acrobatics should look like is not yet entirely
+         clear and much experimentation is pending.
+
+    */
+    console.log('onRuntimeInitialized');
+
+    /*
+      TODO: create the main sqlite API here. We'll have another for
+      use in the main thread which will talk to this one via worker
+      messages.
+    */
+    
+}
