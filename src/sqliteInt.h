@@ -3093,6 +3093,7 @@ struct SrcItem {
     unsigned isIndexedBy :1;   /* True if there is an INDEXED BY clause */
     unsigned isTabFunc :1;     /* True if table-valued-function syntax */
     unsigned isCorrelated :1;  /* True if sub-query is correlated */
+    unsigned isMaterialized:1; /* This is a materialized view */
     unsigned viaCoroutine :1;  /* Implemented as a co-routine */
     unsigned isRecursive :1;   /* True for recursive reference in WITH */
     unsigned fromDDL :1;       /* Comes from sqlite_schema */
