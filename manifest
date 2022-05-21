@@ -1,5 +1,5 @@
-C fiddle:\srefactor\sinto\smain\sthread\s(UI)\sand\sworker\sthread\s(wasm\smodule).\sAdded\sbits\sneeded\sto\ssupport\striggering\ssqlite3_interrupt()\sbut\sdo\snot\syet\shave\sa\ssecond\sSharedWorker\sto\stest\sit\swith.
-D 2022-05-21T14:19:05.384
+C Use\sthe\snewer\sOP_BeginSubrtn\sopcode\sinstead\sof\sOP_Integer\sto\sstart\sthe\nsubroutine\sused\sto\smatrialize\sa\sview.\s\sThis\sdoes\snot\schange\sexecution\sbut\ndoes\smake\sthe\sbyte\scode\sa\slittle\seasier\sto\sread.
+D 2022-05-21T15:12:41.148
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -57,7 +57,7 @@ F ext/expert/sqlite3expert.h ca81efc2679a92373a13a3e76a6138d0310e32be53d6c3bfaed
 F ext/expert/test_expert.c d56c194b769bdc90cf829a14c9ecbc1edca9c850b837a4d0b13be14095c32a72
 F ext/fiddle/Makefile b2904d52c10a7c984cfab95c54fb85f33aa8a6b2653faf1527d08ce57114be46
 F ext/fiddle/fiddle-worker.js eae61419d5a7fcc9c4fcfda157ca0fe0a36b690b716899e5ec54a6d20c7037a9
-F ext/fiddle/fiddle.html f536878dbaa35ba4d9ad8c87dda7fb2ea5502fdd824577d83b2265d65b8ca4d1 w ext/fiddle/fiddle.in.html
+F ext/fiddle/fiddle.html f536878dbaa35ba4d9ad8c87dda7fb2ea5502fdd824577d83b2265d65b8ca4d1
 F ext/fiddle/fiddle.js 76a490d59bf0e09fb8a9610e6fa5c5032ee44680fbf9773b55974cb50d6dc3dc
 F ext/fiddle/index.md d9c1c308d8074341bc3b11d1d39073cd77754cb3ca9aeb949f23fdd8323d81cf
 F ext/fts1/README.txt 20ac73b006a70bcfd80069bdaf59214b6cf1db5e
@@ -558,7 +558,7 @@ F src/printf.c 6166a30417b05c5b2f82e1f183f75faa2926ad60531c0b688a57dbc951441a20
 F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c a4eb3c617027fd049b07432f3b942ea7151fa793a332a11a7d0f58c9539e104f
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c 74060a09f66c0c056f3c61627e22cb484af0bbfa29d7d14dcf17c684742c15de
+F src/select.c ab5c8eaf73d2ea8334d9ebcb1b23369045b56eb2794e2c32d579bf14a5527514
 F src/shell.c.in 55d71bf8c7a8f2a66bc5f99cd76f226790b291599b83415533dad84a553ed806
 F src/sqlite.h.in d15c307939039086adca159dd340a94b79b69827e74c6d661f343eeeaefba896
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1959,8 +1959,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 74abf03977e1ff8c6043defa38211cdfcfbba1979771b90ed9d3dbc99750fe9f
-R 209182df1b3b6bd2044e6acab7e588b4
-U stephan
-Z 8cd34b489ca85b418bdc02d766bcd2dc
+P 5ff3326856bc190cee15a5fca5ded89aacc4bf931a8df98726a872b310e2a4fc
+R 5a79c149d2c7919d631f1236323f007e
+T *branch * deferred-materialize
+T *sym-deferred-materialize *
+T -sym-trunk *
+U drh
+Z a30301f76a4cd7ebb6e59efa9c355aec
 # Remove this line to create a well-formed Fossil manifest.

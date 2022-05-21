@@ -6966,7 +6966,7 @@ int sqlite3Select(
       int retAddr;
 
       pItem->regReturn = ++pParse->nMem;
-      topAddr = sqlite3VdbeAddOp2(v, OP_Integer, 0, pItem->regReturn);
+      topAddr = sqlite3VdbeAddOp2(v, OP_BeginSubrtn, 0, pItem->regReturn);
       pItem->addrFillSub = topAddr+1;
       if( pItem->fg.isCorrelated==0 ){
         /* If the subquery is not correlated and if we are not inside of
@@ -6982,7 +6982,7 @@ int sqlite3Select(
       sqlite3Select(pParse, pSub, &dest);
       pItem->pTab->nRowLogEst = pSub->nSelectRow;
       if( onceAddr ) sqlite3VdbeJumpHere(v, onceAddr);
-      retAddr = sqlite3VdbeAddOp1(v, OP_Return, pItem->regReturn);
+      retAddr = sqlite3VdbeAddOp3(v, OP_Return, pItem->regReturn, topAddr+1, 1);
       VdbeComment((v, "end %!S", pItem));
       sqlite3VdbeChangeP1(v, topAddr, retAddr);
       sqlite3ClearTempRegCache(pParse);
