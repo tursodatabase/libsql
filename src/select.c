@@ -6905,7 +6905,7 @@ int sqlite3Select(
 
     /* Generate code to implement the subquery
     **
-    ** The subquery is implemented as a co-routine all of the following are
+    ** The subquery is implemented as a co-routine all if the following are
     ** true:
     **
     **    (1)  the subquery is guaranteed to be the outer loop (so that
