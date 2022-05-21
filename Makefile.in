@@ -1522,6 +1522,9 @@ fiddle_html = $(fiddle_dir)/fiddle.html
 fiddle_generated = $(fiddle_html) \
                    $(fiddle_dir)/fiddle.js \
                    $(fiddle_dir)/fiddle.wasm
+# fiddle_dummy_exports = ,comma,list of func bound solely for
+# experimentation and testing purposes in the WASM build.
+fiddle_dummy_exports = ,_fiddle_experiment,_fiddle_the_db,_fiddle_db_arg
 clean-fiddle:
 	rm -f $(fiddle_generated)
 clean: clean-fiddle
@@ -1529,11 +1532,11 @@ clean: clean-fiddle
 #emcc_opt = -O1
 #emcc_opt = -O2
 #emcc_opt = -O3
+# --js-library $(fiddle_dir)/_dummylib.js
 emcc_opt = -Oz
 emcc_flags = $(emcc_opt) $(SHELL_OPT) \
              -sEXPORTED_RUNTIME_METHODS=ccall,cwrap \
-             -sEXPORTED_FUNCTIONS=_fiddle_exec \
-             -sEXIT_RUNTIME=1 \
+             -sEXPORTED_FUNCTIONS=_fiddle_exec$(fiddle_dummy_exports) \
              --pre-js $(fiddle_dir)/module-pre.js \
              --post-js $(fiddle_dir)/module-post.js \
              --shell-file $(fiddle_dir)/fiddle.in.html \
