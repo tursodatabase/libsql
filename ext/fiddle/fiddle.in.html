@@ -77,6 +77,7 @@
           display: flex;
           justify-content: center;
           flex: 0 1 auto;
+          flex-wrap: wrap;
       }
       .button-bar button {
           margin: 0.25em 1em;
@@ -203,6 +204,7 @@ SELECT * FROM t;</textarea>
             <button id='btn-run'>Run</button>
             <button id='btn-clear'>Clear Input</button>
             <button data-cmd='.help'>Help</button>
+            <select id='select-examples'></select>
           </div>
         </div>
         <div class='ta-wrapper output'>
