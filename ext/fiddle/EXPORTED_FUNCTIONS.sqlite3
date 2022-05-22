@@ -3,6 +3,7 @@ _sqlite3_bind_double
 _sqlite3_bind_int
 _sqlite3_bind_int64
 _sqlite3_bind_null
+_sqlite3_bind_parameter_count
 _sqlite3_bind_parameter_index
 _sqlite3_bind_text
 _sqlite3_changes
@@ -16,6 +17,8 @@ _sqlite3_column_double
 _sqlite3_column_name
 _sqlite3_column_text
 _sqlite3_column_type
+_sqlite3_compileoption_get
+_sqlite3_compileoption_used
 _sqlite3_create_function_v2
 _sqlite3_data_count
 _sqlite3_db_filename

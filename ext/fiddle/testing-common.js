@@ -28,7 +28,6 @@
     const statusElement = E('#module-status');
     const progressElement = E('#module-progress');
     const spinnerElement = E('#module-spinner');
-
     self.Module = {
         /* ^^^ cannot declare that const because fiddle-module.js
            (auto-generated) includes a decl for it and runs in this scope. */
@@ -71,9 +70,10 @@
                            : 'All downloads complete.');
         },
         /* Loads sqlite3-api.js and calls the given callback (if
-           provided), passing it the sqlite3 module. Whether this is
-           synchronous or async depends on whether it's run in the
-           main thread or a worker.*/
+           provided), passing it an object which contains the sqlite3
+           and SQLite3 modules. Whether this is synchronous or async
+           depends on whether it's run in the main thread or a
+           worker.*/
         loadSqliteAPI: function(callback){
             const theScript = 'sqlite3-api.js';
             if(self.importScripts){/*worker*/
@@ -88,9 +88,62 @@
                     script.async = true;
                     script.src = theScript;
                 }).then(() => {
-                    if(callback) callback(self.sqlite3);
+                    if(callback) callback({sqlite3:self.sqlite3,
+                                           SQLite3:self.SQLite3});
                 });
             }
         }
     };
+
+    const _expr = function(expr){
+        return (expr instanceof Function) ? expr() : !!expr;
+    };
+    
+    /**
+       Helpers for writing sqlite3-specific tests.
+    */
+    self.SqliteTester = {
+        /** Running total of the number of tests run via
+            this API. */
+        counter: 0,
+        /** abort() if expr is false. If expr is a function, it
+            is called and its result is evaluated.
+        */
+        assert: function(expr, msg){
+            ++this.counter;
+            if(!_expr(expr)) abort(msg || "Assertion failed.");
+            return this;
+        },
+        /** Identical to assert() but throws instead of calling
+            abort(). */
+        affirm: function(expr, msg){
+            ++this.counter;
+            if(!_expr(expr)) throw new Error(msg || "Affirmation failed.");
+            return this;
+        },
+        /** Calls f() and squelches any exception it throws. If it
+            does not throw, this function throws. */
+        mustThrow: function(f, msg){
+            ++this.counter;
+            let err;
+            try{ f(); } catch(e){err=e;}
+            if(!err) throw new Error(msg || "Expected exception.");
+            return this;
+        },
+        /** Throws if expr is truthy or expr is a function and expr()
+            returns truthy. */
+        throwIf: function(expr, msg){
+            ++this.counter;
+            if(_expr(expr)) throw new Error(msg || "throwIf() failed");
+            return this;
+        },
+        /** Throws if expr is falsy or expr is a function and expr()
+            returns falsy. */
+        throwUnless: function(expr, msg){
+            ++this.counter;
+            if(!_expr(expr)) throw new Error(msg || "throwUnless() failed");
+            return this;
+        }
+    };
+
 })(self/*window or worker*/);
