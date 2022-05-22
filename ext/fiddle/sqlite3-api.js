@@ -400,14 +400,14 @@
             affirmDbOpen(this);
             const arg = parseExecArgs(arguments);
             if(!arg.sql) return this;
-            else if(arg.multi){
+            else if(arg.opt.multi){
                 return this.execMulti(arg, undefined, BindTypes);
             }
             const opt = arg.opt;
             let stmt;
             try {
                 stmt = this.prepare(arg.sql);
-                if(opt.bind) stmt.bind(bind);
+                if(opt.bind) stmt.bind(opt.bind);
                 if(opt.callback){
                     while(stmt.step()){
                         stmt._isLocked = true;

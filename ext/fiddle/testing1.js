@@ -59,12 +59,14 @@ const mainTest1 = function(namespace){
             .assert(!db._statements[pId]);
 
         let list = [];
-        db.execMulti({
+        db.exec({
             sql:`CREATE TABLE t(a,b);
 INSERT INTO t(a,b) VALUES(1,2),(3,4),(?,?);`,
+            multi: true,
             saveSql: list,
             bind: [5,6]
         });
+        T.assert(2 === list.length);
         log("Exec'd SQL:", list);
         let counter = 0, colNames = [];
         db.exec("SELECT a a, b b FROM t",{
