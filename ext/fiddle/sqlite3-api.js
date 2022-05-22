@@ -85,6 +85,7 @@
         SQLITE_FLOAT: 2,
         SQLITE_TEXT: 3,
         SQLITE_BLOB: 4,
+        SQLITE_NULL: 5,
         /* sqlite encodings, used for creating UDFs, noting that we
            will only support UTF8. */
         SQLITE_UTF8: 1
@@ -102,61 +103,61 @@
         use for the JS-side binding. That's required when overloading
         a binding for two different uses.
      */
-        ["sqlite3_open", "number", ["string", "number"]],
-        ["sqlite3_close_v2", "number", ["number"]],
-        ["sqlite3_exec", "number",
-         ["number", "string", "number", "number", "number"]],
+        ["sqlite3_bind_blob","number",["number", "number", "number", "number", "number"]],
+        ["sqlite3_bind_double","number",["number", "number", "number"]],
+        ["sqlite3_bind_int","number",["number", "number", "number"]],
+        ["sqlite3_bind_int64","number",["number", "number", "number"]],
+        ["sqlite3_bind_null","void",["number"]],
+        ["sqlite3_bind_parameter_index","number",["number", "string"]],
+        ["sqlite3_bind_text","number",["number", "number", "number", "number", "number"]],
         ["sqlite3_changes", "number", ["number"]],
+        ["sqlite3_clear_bindings","number",["number"]],
+        ["sqlite3_close_v2", "number", ["number"]],
+        ["sqlite3_column_blob","number", ["number", "number"]],
+        ["sqlite3_column_bytes","number",["number", "number"]],
+        ["sqlite3_column_count", "number", ["number"]],
+        ["sqlite3_column_count","number",["number"]],
+        ["sqlite3_column_double","number",["number", "number"]],
+        ["sqlite3_column_name","string",["number", "number"]],
+        ["sqlite3_column_text","string",["number", "number"]],
+        ["sqlite3_column_type","number",["number", "number"]],
+        ["sqlite3_create_function_v2", "number",
+         ["number", "string", "number", "number","number",
+          "number", "number", "number", "number"]],
+        ["sqlite3_data_count", "number", ["number"]],
+        ["sqlite3_db_filename", "string", ["number", "string"]],
+        ["sqlite3_errmsg", "string", ["number"]],
+        ["sqlite3_exec", "number", ["number", "string", "number", "number", "number"]],
+        ["sqlite3_finalize", "number", ["number"]],
+        ["sqlite3_interrupt", "void", ["number"]],
+        ["sqlite3_libversion", "string", []],
+        ["sqlite3_open", "number", ["string", "number"]],
         ["sqlite3_prepare_v2", "number", ["number", "string", "number", "number", "number"]],
-        ["sqlite3_prepare_v2_sqlptr",
+        ["sqlite3_prepare_v2_sqlptr", "sqlite3_prepare_v2",
          /* Impl which requires that the 2nd argument be a pointer to
             the SQL, instead of a string. This is used for cases where
             we require a non-NULL value for the final argument. We may
             or may not need this, depending on how our higher-level
             API shapes up, but this code's spiritual guide (sql.js)
             uses it we we'll include it. */
-         "sqlite3_prepare_v2",
          "number", ["number", "number", "number", "number", "number"]],
-        ["sqlite3_bind_text","number",["number", "number", "number", "number", "number"]],
-        ["sqlite3_bind_blob","number",["number", "number", "number", "number", "number"]],
-        ["sqlite3_bind_double","number",["number", "number", "number"]],
-        ["sqlite3_bind_int","number",["number", "number", "number"]],
-        ["sqlite3_bind_parameter_index","number",["number", "string"]],
-        ["sqlite3_step", "number", ["number"]],
-        ["sqlite3_errmsg", "string", ["number"]],
-        ["sqlite3_column_count","number",["number"]],
-        ["sqlite3_data_count", "number", ["number"]],
-        ["sqlite3_column_count", "number", ["number"]],
-        ["sqlite3_column_double","number",["number", "number"]],
-        ["sqlite3_column_text","string",["number", "number"]],
-        ["sqlite3_column_blob","number", ["number", "number"]],
-        ["sqlite3_column_bytes","number",["number", "number"]],
-        ["sqlite3_column_type","number",["number", "number"]],
-        ["sqlite3_column_name","string",["number", "number"]],
         ["sqlite3_reset", "number", ["number"]],
-        ["sqlite3_clear_bindings","number",["number"]],
-        ["sqlite3_finalize", "number", ["number"]],
-        ["sqlite3_create_function_v2", "number",
-         ["number", "string", "number", "number",
-          "number", "number", "number", "number",
-          "number"]],
-        ["sqlite3_value_type", "number", ["number"]],
-        ["sqlite3_value_bytes","number",["number"]],
-        ["sqlite3_value_text", "string", ["number"]],
-        ["sqlite3_value_blob", "number", ["number"]],
-        ["sqlite3_value_double","number",["number"]],
+        ["sqlite3_result_blob",null,["number", "number", "number", "number"]],
         ["sqlite3_result_double",null,["number", "number"]],
+        ["sqlite3_result_error",null,["number", "string", "number"]],
+        ["sqlite3_result_int",null,["number", "number"]],
         ["sqlite3_result_null",null,["number"]],
         ["sqlite3_result_text",null,["number", "string", "number", "number"]],
-        ["sqlite3_result_blob",null,["number", "number", "number", "number"]],
-        ["sqlite3_result_int",null,["number", "number"]],
-        ["sqlite3_result_error",null,["number", "string", "number"]],
-        ["sqlite3_libversion", "string", []],
-        ["sqlite3_sourceid", "string", []]
+        ["sqlite3_sourceid", "string", []],
+        ["sqlite3_step", "number", ["number"]],
+        ["sqlite3_value_blob", "number", ["number"]],
+        ["sqlite3_value_bytes","number",["number"]],
+        ["sqlite3_value_double","number",["number"]],
+        ["sqlite3_value_text", "string", ["number"]],
+        ["sqlite3_value_type", "number", ["number"]]
         //["sqlite3_sql", "string", ["number"]],
         //["sqlite3_normalized_sql", "string", ["number"]]
-    ].forEach(function(e){
-        const a = Array.prototype.slice.call(e);
+    ].forEach(function(a){
         const k = (4==a.length) ? a.shift() : a[0];
         api[k] = cwrap.apply(this, a);
     });
