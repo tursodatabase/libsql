@@ -42,6 +42,22 @@
   This file installs namespace.sqlite3, where namespace is `self`,
   meaning either the global window or worker, depending on where this
   is loaded from.
+
+  # Goals and Non-goals of this API
+
+  Goals:
+
+  - Except where noted in the non-goals, provide a more-or-less
+    complete wrapper to the sqlite3 C API, insofar as WASM feature
+    parity with C allows for.
+
+  Non-goals:
+
+  - As WASM is a web-based technology and UTF-8 is the King of
+    Encodings in that realm, there are no plans to support the
+    UTF16-related APIs will not be. They would add a complication to
+    the bindings for no appreciable benefit.
+
 */
 (function(namespace){
     /* For reference: sql.js does essentially everything we want and
@@ -184,13 +200,13 @@
         ["sqlite3_result_null",null,["number"]],
         ["sqlite3_result_text",null,["number", "string", "number", "number"]],
         ["sqlite3_sourceid", "string", []],
+        ["sqlite3_sql", "string", ["number"]],
         ["sqlite3_step", "number", ["number"]],
         ["sqlite3_value_blob", "number", ["number"]],
         ["sqlite3_value_bytes","number",["number"]],
         ["sqlite3_value_double","number",["number"]],
         ["sqlite3_value_text", "string", ["number"]],
         ["sqlite3_value_type", "number", ["number"]]
-        //["sqlite3_sql", "string", ["number"]],
         //["sqlite3_normalized_sql", "string", ["number"]]
     ].forEach(function(a){
         const k = (4==a.length) ? a.shift() : a[0];
@@ -201,10 +217,11 @@
     /* What follows is colloquially known as "OO API #1". It is a
        binding of the sqlite3 API which is designed to be run within
        the same thread (main or worker) as the one in which the
-       sqlite3 WASM binding was initialized.  This wrapper cannot use
+       sqlite3 WASM binding was initialized. This wrapper cannot use
        the sqlite3 binding if, e.g., the wrapper is in the main thread
        and the sqlite3 API is in a worker. */
-    /* memory for use in some pointer-passing routines */
+
+    /** Memory for use in some pointer-to-pointer-passing routines. */
     const pPtrArg = stackAlloc(4);
     /** Throws a new error, concatenating all args with a space between
         each. */
@@ -212,8 +229,8 @@
         throw new Error(Array.prototype.join.call(arguments, ' '));
     };
 
-    const sqlite3/*canonical name*/ = S/*convenience alias*/ = api;
-    
+    const S/*convenience alias*/ = api;
+
     /**
        The DB class wraps a sqlite3 db handle.
     */
@@ -222,6 +239,7 @@
         else if('string'!==typeof name){
             toss("TODO: support blob image of db here.");
         }
+        setValue(pPtrArg, 0, "i32");
         this.checkRc(S.sqlite3_open(name, pPtrArg));
         this._pDb = getValue(pPtrArg, "i32");
         this.filename = name;
@@ -249,7 +267,7 @@
        new instances.
     */
     const Stmt = function(){
-        if(BindTypes!=arguments[2]){
+        if(BindTypes!==arguments[2]){
             toss("Do not call the Stmt constructor directly. Use DB.prepare().");
         }
         this.db = arguments[0];
@@ -265,16 +283,64 @@
         return db;
     };
 
+    /**
+       Expects to be passed (arguments) from DB.exec() and
+       DB.execMulti(). Does the argument processing/validation, throws
+       on error, and returns a new object on success:
+
+       { sql: the SQL, obt: optionsObj, cbArg: function}
+
+       cbArg is only set if the opt.callback is set, in which case
+       it's a function which expects to be passed the current Stmt
+       and returns the callback argument of the type indicated by
+       the input arguments.
+    */
+    const parseExecArgs = function(args){
+        const out = {};
+        switch(args.length){
+            case 1:
+                if('string'===typeof args[0]){
+                    out.sql = args[0];
+                    out.opt = {};
+                }else if(args[0] && 'object'===typeof args[0]){
+                    out.opt = args[0];
+                    out.sql = out.opt.sql;
+                }
+            break;
+            case 2:
+                out.sql = args[0];
+                out.opt = args[1];
+            break;
+            default: toss("Invalid argument count for exec().");
+        };
+        if('string'!==typeof out.sql) toss("Missing SQL argument.");
+        if(out.opt.callback){
+            switch((undefined===out.opt.rowMode)
+                    ? 'stmt' : out.opt.rowMode) {
+                case 'object': out.cbArg = (stmt)=>stmt.get({}); break;
+                case 'array': out.cbArg = (stmt)=>stmt.get([]); break;
+                case 'stmt': out.cbArg = (stmt)=>stmt; break;
+                default: toss("Invalid rowMode:",out.opt.rowMode);
+            }
+        }
+        return out;
+    };
+
     DB.prototype = {
         /**
            Expects to be given an sqlite3 API result code. If it is
            falsy, this function returns this object, else it throws an
            exception with an error message from sqlite3_errmsg(),
-           using this object's db handle.
+           using this object's db handle. Note that if it's passed a
+           non-error code like SQLITE_ROW or SQLITE_DONE, it will
+           still throw but the error string might be "Not an error."
+           The various non-0 non-error codes need to be checked for in
+           client code where they are expected.
         */
         checkRc: function(sqliteResultCode){
             if(!sqliteResultCode) return this;
-            toss(S.sqlite3_errmsg(this._pDb) || "Unknown db error.");
+            toss("sqlite result code",sqliteResultCode+":",
+                 S.sqlite3_errmsg(this._pDb) || "Unknown db error.");
         },
         /**
            Finalizes all open statements and closes this database
@@ -317,7 +383,168 @@
             const stmt = new Stmt(this, pStmt, BindTypes);
             this._statements[pStmt] = stmt;
             return stmt;
-        }
+        },
+        /**
+           This function works like execMulti(), and takes the same
+           arguments, but is more efficient (performs much less work)
+           when the input SQL is only a single statement. If passed a
+           multi-statement SQL, it only processes the first one.
+
+           This function supports one additional option not used by
+           execMulti():
+
+           - .multi: if true, this function acts as a proxy for
+             execMulti().
+        */
+        exec: function(/*(sql [,optionsObj]) or (optionsObj)*/){
+            affirmDbOpen(this);
+            const arg = parseExecArgs(arguments);
+            if(!arg.sql) return this;
+            else if(arg.multi){
+                return this.execMulti(arg, undefined, BindTypes);
+            }
+            const opt = arg.opt;
+            let stmt;
+            try {
+                stmt = this.prepare(arg.sql);
+                if(opt.bind) stmt.bind(bind);
+                if(opt.callback){
+                    while(stmt.step()){
+                        stmt._isLocked = true;
+                        opt.callback(arg.cbArg(stmt), stmt);
+                        stmt._isLocked = false;
+                    }
+                }else{
+                    stmt.step();
+                }
+            }finally{
+                if(stmt){
+                    delete stmt._isLocked;
+                    stmt.finalize();
+                }
+            }
+            return this;
+
+        }/*exec()*/,
+        /**
+           Executes one or more SQL statements. Its arguments
+           must be either (sql,optionsObject) or (optionsObject).
+           In the latter case, optionsObject.sql must contain the
+           SQL to execute. Returns this object. Throws on error.
+
+           If no SQL is provided, or a non-string is provided, an
+           exception is triggered. Empty SQL, on the other hand, is
+           simply a no-op.
+
+           The optional options object may contain any of the following
+           properties:
+
+           - .sql = the SQL to run (unless it's provided as the first
+             argument).
+
+           - .bind = a single value valid as an argument for
+             Stmt.bind(). This is ONLY applied to the FIRST non-empty
+             statement in the SQL which has any bindable
+             parameters. (Empty statements are skipped entirely.)
+
+           - .callback = a function which gets called for each row of
+             the FIRST statement in the SQL (if it has any result
+             rows). The second argument passed to the callback is
+             always the current Stmt object (so that the caller
+             may collect column names, or similar). The first
+             argument passed to the callback defaults to the current
+             Stmt object but may be changed with ...
+
+           - .rowMode = a string describing what type of argument
+             should be passed as the first argument to the callback. A
+             value of 'object' causes the results of `stmt.get({})` to
+             be passed to the object. A value of 'array' causes the
+             results of `stmt.get([])` to be passed to the callback.
+             A value of 'stmt' is equivalent to the default, passing
+             the current Stmt to the callback (noting that it's always
+             passed as the 2nd argument). Any other value triggers an
+             exception.
+
+           - saveSql = an optional array. If set, the SQL of each
+             executed statement is appended to this array before the
+             statement is executed (but after it is prepared - we
+             don't have the string until after that). Empty SQL
+             statements are elided.
+
+           ACHTUNG #1: The callback MUST NOT modify the Stmt
+           object. Calling any of the Stmt.get() variants,
+           Stmt.getColumnName(), or simililar, is legal, but calling
+           step() or finalize() is not. Routines which are illegal
+           in this context will trigger an exception.
+
+           ACHTUNG #2: The semantics of the `bind` and `callback`
+           options may well change or those options may be removed
+           altogether for this function (but retained for exec()).
+        */
+        execMulti: function(/*(sql [,obj]) || (obj)*/){
+            affirmDbOpen(this);
+            const arg = (BindTypes===arguments[2]
+                         /* ^^^ Being passed on from exec() */
+                         ? arguments[0] : parseExecArgs(arguments));
+            if(!arg.sql) return this;
+            const opt = arg.opt;
+            const stack = stackSave();
+            let stmt;
+            let bind = opt.bind;
+            let rowMode = (
+                (opt.callback && opt.rowMode)
+                    ? opt.rowMode : false);
+            try{
+                let pSql = allocateUTF8OnStack(arg.sql)
+                const pzTail = stackAlloc(4);
+                while(getValue(pSql, "i8")){
+                    setValue(pPtrArg, 0, "i32");
+                    setValue(pzTail, 0, "i32");
+                    this.checkRc(S.sqlite3_prepare_v2_sqlptr(
+                        this._pDb, pSql, -1, pPtrArg, pzTail
+                    ));
+                    const pStmt = getValue(pPtrArg, "i32");
+                    pSql = getValue(pzTail, "i32");
+                    if(!pStmt) continue;
+                    if(opt.saveSql){
+                        opt.saveSql.push(S.sqlite3_sql(pStmt).trim());
+                    }
+                    stmt = new Stmt(this, pStmt, BindTypes);
+                    if(bind && stmt.parameterCount){
+                        stmt.bind(bind);
+                        bind = null;
+                    }
+                    if(opt.callback && null!==rowMode){
+                        while(stmt.step()){
+                            stmt._isLocked = true;
+                            callback(arg.cbArg(stmt), stmt);
+                            stmt._isLocked = false;
+                        }
+                        rowMode = null;
+                    }else{
+                        // Do we need to while(stmt.step()){} here?
+                        stmt.step();
+                    }
+                    stmt.finalize();
+                    stmt = null;
+                }
+            }finally{
+                if(stmt){
+                    delete stmt._isLocked;
+                    stmt.finalize();
+                }
+                stackRestore(stack);
+            }
+            return this;
+        }/*execMulti()*/
+    }/*DB.prototype*/;
+
+
+    /** Throws if the given Stmt has been finalized, else stmt is
+        returned. */
+    const affirmStmtOpen = function(stmt){
+        if(!stmt._pStmt) toss("Stmt has been closed.");
+        return stmt;
     };
 
     /** Returns an opaque truthy value from the BindTypes
@@ -360,12 +587,17 @@
         if(0===n || (n===key && (n!==(n|0)/*floating point*/))){
             toss("Invalid bind() parameter name: "+key);
         }
-        else if(n<1 || n>=stmt.parameterCount) toss("Bind index",key,"is out of range.");
+        else if(n<1 || n>stmt.parameterCount) toss("Bind index",key,"is out of range.");
         return n;
     };
 
     /** Throws if ndx is not an integer or if it is out of range
-        for stmt.columnCount, else returns stmt. */
+        for stmt.columnCount, else returns stmt.
+
+        Reminder: this will also fail after the statement is finalized
+        but the resulting error will be about an out-of-bounds column
+        index.
+    */
     const affirmColIndex = function(stmt,ndx){
         if((ndx !== (ndx|0)) || ndx<0 || ndx>=stmt.columnCount){
             toss("Column index",ndx,"is out of range.");
@@ -380,7 +612,22 @@
         }
         return stmt;
     };
-    
+
+    /**
+       If stmt._isLocked is truthy, this throws an exception
+       complaining that the 2nd argument (an operation name,
+       e.g. "bind()") is not legal while the statement is "locked".
+       Locking happens before an exec()-like callback is passed a
+       statement, to ensure that the callback does not mutate or
+       finalize the statement. If it does not throw, it returns stmt.
+    */
+    const affirmUnlocked = function(stmt,currentOpName){
+        if(stmt._isLocked){
+            toss("Operation is illegal when statement is locked:",currentOpName);
+        }
+        return stmt;
+    };
+
     /**
        Binds a single bound parameter value on the given stmt at the
        given index (numeric or named) using the given bindType (see
@@ -388,6 +635,7 @@
        success.
     */
     const bindOne = function f(stmt,ndx,bindType,val){
+        affirmUnlocked(stmt, 'bind()');
         if(!f._){
             f._ = {
                 string: function(stmt, ndx, val, asBlob){
@@ -403,14 +651,14 @@
         ndx = affirmParamIndex(stmt,ndx);
         let rc = 0;
         switch((null===val || undefined===val) ? BindTypes.null : bindType){
-            case BindType.null:
+            case BindTypes.null:
                 rc = S.sqlite3_bind_null(stmt._pStmt, ndx);
                 break;
-            case BindType.string:{
+            case BindTypes.string:{
                 rc = f._.string(stmt, ndx, val, false);
                 break;
             }
-            case BindType.number: {
+            case BindTypes.number: {
                 const m = ((val === (val|0))
                            ? ((val & 0x00000000/*>32 bits*/)
                               ? S.sqlite3_bind_int64
@@ -419,10 +667,10 @@
                 rc = m(stmt._pStmt, ndx, val);
                 break;
             }
-            case BindType.boolean:
+            case BindTypes.boolean:
                 rc = S.sqlite3_bind_int(stmt._pStmt, ndx, val ? 1 : 0);
                 break;
-            case BindType.blob: {
+            case BindTypes.blob: {
                 if('string'===typeof val){
                     rc = f._.string(stmt, ndx, val, true);
                 }else{
@@ -439,13 +687,6 @@
             default: toss("Unsupported bind() argument type.");
         }
         if(rc) stmt.db.checkRc(rc);
-        return stmt;
-    };
-
-    /** Throws if the given Stmt has been finalized, else
-        it is returned. */
-    const affirmStmtOpen = function(stmt){
-        if(!stmt._pStmt) toss("Stmt has been closed.");
         return stmt;
     };
 
@@ -468,6 +709,7 @@
         */
         finalize: function(){
             if(this._pStmt){
+                affirmUnlocked(this,'finalize()');
                 freeBindMemory(this);
                 delete this.db._statements[this._pStmt];
                 S.sqlite3_finalize(this._pStmt);
@@ -475,12 +717,15 @@
                 delete this.parameterCount;
                 delete this._pStmt;
                 delete this.db;
+                delete this._isLocked;
             }
         },
         /** Clears all bound values. Returns this object.
             Throws if this statement has been finalized. */
         clearBindings: function(){
-            freeBindMemory(affirmStmtOpen(this));
+            freeBindMemory(
+                affirmUnlocked(affirmStmtOpen(this), 'clearBindings()')
+            );
             S.sqlite3_clear_bindings(this._pStmt);
             this._mayGet = false;
             return this;
@@ -495,6 +740,7 @@
            any memory allocated for them, are retained.
         */
         reset: function(alsoClearBinds){
+            affirmUnlocked(this,'reset()');
             if(alsoClearBinds) this.clearBindings();
             S.sqlite3_reset(affirmStmtOpen(this)._pStmt);
             this._mayGet = false;
@@ -565,7 +811,7 @@
             }
             if(null===arg || undefined===arg){
                 /* bind NULL */
-                return bindOne(this, ndx, BindType.null, arg);
+                return bindOne(this, ndx, BindTypes.null, arg);
             }
             else if(Array.isArray(arg)){
                 /* bind each entry by index */
@@ -611,7 +857,7 @@
                && BindTypes.null !== t){
                 toss("Invalid value type for bindAsBlob()");
             }
-            return bindOne(this, ndx, BindType.blob, arg);
+            return bindOne(this, ndx, BindTypes.blob, arg);
         },
         /**
            Steps the statement one time. If the result indicates that
@@ -619,12 +865,16 @@
            data is available, false is returned.  Throws on error.
         */
         step: function(){
+            affirmUnlocked(this, 'step()');
             const rc = S.sqlite3_step(affirmStmtOpen(this)._pStmt);
             this._mayGet = false;
             switch(rc){
                 case S.SQLITE_DONE: return false;
                 case S.SQLITE_ROW: return this._mayGet = true;
-                default: this.db.checkRc(rc);
+                default:
+                    console.warn("sqlite3_step() rc=",rc,"SQL =",
+                                 S.sqlite3_sql(this._pStmt));
+                    this.db.checkRc(rc);
             };
         },
         /**
@@ -713,7 +963,8 @@
            A convenience wrapper around get() which fetches the value
            as a string and then, if it is not null, passes it to
            JSON.parse(), returning that result. Throws if parsing
-           fails.
+           fails. If the result is null, null is returned. An empty
+           string, on the other hand, will trigger an exception.
         */
         getJSON: function(ndx){
             const s = this.get(ndx, S.SQLITE_STRING);
@@ -725,26 +976,56 @@
            finalized.
         */
         getColumnName: function(ndx){
-            return S.sqlite3_column_name(affirmColIndex(this,ndx)._pStmt, ndx);
+            return S.sqlite3_column_name(
+                affirmColIndex(affirmStmtOpen(this),ndx)._pStmt, ndx
+            );
+        },
+        /**
+           If this statement potentially has result columns, this
+           function returns an array of all such names. If passed an
+           array, it is used as the target and all names are appended
+           to it. Returns the target array. Throws if this statement
+           cannot have result columns. This object's columnCount member
+           holds the number of columns.
+        */
+        getColumnNames: function(tgt){
+            affirmColIndex(affirmStmtOpen(this),0);
+            if(!tgt) tgt = [];
+            for(let i = 0; i < this.columnCount; ++i){
+                tgt.push(S.sqlite3_column_name(this._pStmt, i));
+            }
+            return tgt;
+        },
+        /**
+           If this statement has named bindable parameters and the
+           given name matches one, its 1-based bind index is
+           returned. If no match is found, 0 is returned. If it has no
+           bindable parameters, the undefined value is returned.
+        */
+        getParamIndex: function(name){
+            return (affirmStmtOpen(this).parameterCount
+                    ? S.sqlite3_bind_parameter_index(this._pStmt, name)
+                    : undefined);
         }
-    };
+    }/*Stmt.prototype*/;
 
     /** OO binding's namespace. */
     const SQLite3 = {
         version: {
-            lib: sqlite3.sqlite3_libversion(),
+            lib: S.sqlite3_libversion(),
             ooApi: "0.0.1"
         },
         DB,
         Stmt,
         /**
            Reports whether a given compile-time option, named by the
-           given argument.
+           given argument. It has several distinct uses:
 
            If optName is an array then it is expected to be a list of
            compilation options and this function returns an object
-           which maps each such option to true or false. That object
-           is returned.
+           which maps each such option to true or false, indicating
+           whether or not the given option was included in this
+           build. That object is returned.
 
            If optName is an object, its keys are expected to be
            compilation options and this function sets each entry to
@@ -752,10 +1033,10 @@
 
            If passed no arguments then it returns an object mapping
            all known compilation options to their compile-time values,
-           or true if the are defined with no value.
+           or boolean true if they are defined with no value.
 
-           In all other cases it returns true if the option was active
-           when when compiling the sqlite3 module, else false.
+           In all other cases it returns true if the given option was
+           active when when compiling the sqlite3 module, else false.
 
            Compile-time option names may optionally include their
            "SQLITE_" prefix. When it returns an object of all options,
@@ -798,9 +1079,9 @@
             ) ? !!S.sqlite3_compileoption_used(optName) : false;
         }
     };
-    
+
     namespace.sqlite3 = {
-        api:sqlite3,
+        api: api,
         SQLite3
     };
 })(self/*worker or window*/);
