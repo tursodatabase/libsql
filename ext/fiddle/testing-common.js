@@ -24,13 +24,15 @@
         return (arguments.length>1 ? arguments[0] : document)
             .querySelector(arguments[arguments.length-1]);
     };
-    
+
+    /* emscripten-related bits... */
     const statusElement = E('#module-status');
     const progressElement = E('#module-progress');
     const spinnerElement = E('#module-spinner');
     self.Module = {
-        /* ^^^ cannot declare that const because fiddle-module.js
-           (auto-generated) includes a decl for it and runs in this scope. */
+        /* ^^^ cannot declare that const because sqlite3.js
+           (auto-generated) includes a decl for it and runs in this
+           scope. */
         preRun: [],
         postRun: [],
         //onRuntimeInitialized: function(){},
@@ -94,10 +96,6 @@
             }
         }
     };
-
-    const _expr = function(expr){
-        return (expr instanceof Function) ? expr() : !!expr;
-    };
     
     /**
        Helpers for writing sqlite3-specific tests.
@@ -106,19 +104,27 @@
         /** Running total of the number of tests run via
             this API. */
         counter: 0,
+        /**
+           If expr is a function, it is called and its result
+           is returned, coerced to a bool, else expr, coerced to
+           a bool, is returned.
+        */
+        toBool: function(expr){
+            return (expr instanceof Function) ? !!expr() : !!expr;
+        },
         /** abort() if expr is false. If expr is a function, it
             is called and its result is evaluated.
         */
         assert: function(expr, msg){
             ++this.counter;
-            if(!_expr(expr)) abort(msg || "Assertion failed.");
+            if(!this.toBool(expr)) abort(msg || "Assertion failed.");
             return this;
         },
         /** Identical to assert() but throws instead of calling
             abort(). */
         affirm: function(expr, msg){
             ++this.counter;
-            if(!_expr(expr)) throw new Error(msg || "Affirmation failed.");
+            if(!this.toBool(expr)) throw new Error(msg || "Affirmation failed.");
             return this;
         },
         /** Calls f() and squelches any exception it throws. If it
@@ -134,14 +140,14 @@
             returns truthy. */
         throwIf: function(expr, msg){
             ++this.counter;
-            if(_expr(expr)) throw new Error(msg || "throwIf() failed");
+            if(this.toBool(expr)) throw new Error(msg || "throwIf() failed");
             return this;
         },
         /** Throws if expr is falsy or expr is a function and expr()
             returns falsy. */
         throwUnless: function(expr, msg){
             ++this.counter;
-            if(!_expr(expr)) throw new Error(msg || "throwUnless() failed");
+            if(!this.toBool(expr)) throw new Error(msg || "throwUnless() failed");
             return this;
         }
     };
