@@ -6,34 +6,9 @@
     <title>sqlite3 fiddle</title>
     <!--script src="jqterm/jqterm-bundle.min.js"></script>
     <link rel="stylesheet" href="jqterm/jquery.terminal.min.css"/-->
+    <link rel="stylesheet" href="emscripten.css"/>
     <style>
-      /* emcscript-related styling, used during the intialization phase... */
-      .emscripten { padding-right: 0; margin-left: auto; margin-right: auto; display: block; }
-      div.emscripten { text-align: center; }
-      div.emscripten_border { border: 1px solid black; }
-      #module-spinner { overflow: visible; }
-      #module-spinner > * {
-          margin-top: 1em;
-      }
-      .spinner {
-        height: 50px;
-        width: 50px;
-        margin: 0px auto;
-        animation: rotation 0.8s linear infinite;
-        border-left: 10px solid rgb(0,150,240);
-        border-right: 10px solid rgb(0,150,240);
-        border-bottom: 10px solid rgb(0,150,240);
-        border-top: 10px solid rgb(100,0,200);
-        border-radius: 100%;
-        background-color: rgb(200,100,250);
-      }
-      @keyframes rotation {
-        from {transform: rotate(0deg);}
-        to {transform: rotate(360deg);}
-      }
-
       /* The following styles are for app-level use. */
-      
       textarea {
           font-family: monospace;
           flex: 1 1 auto;
@@ -70,9 +45,6 @@
           filter: invert(100%);
           flex: 10 1 auto;
       }
-      /*#main-wrapper:not(.side-by-side) .ta-wrapper.input {
-          flex: 5 1 auto;
-      }*/
       .button-bar {
           display: flex;
           justify-content: center;
@@ -142,6 +114,7 @@
   </head>
   <body>
     <header id='titlebar'><span>sqlite3 fiddle</span></header>
+    <!-- emscripten bits -->
     <figure id="module-spinner">
       <div class="spinner"></div>
       <div class='center'><strong>Initializing app...</strong></div>
@@ -154,7 +127,7 @@
     <div class="emscripten" id="module-status">Downloading...</div>
     <div class="emscripten">
       <progress value="0" max="100" id="module-progress" hidden='1'></progress>  
-    </div>
+    </div><!-- /emscripten bits -->
 
     <div id='view-terminal' class='app-view hidden initially-hidden'>
       This is a placeholder for a terminal-like view.

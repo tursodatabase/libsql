@@ -159,8 +159,9 @@
             progressElement.remove();
             if(!text) spinnerElement.remove();
         }
-        if(text) statusElement.innerText = text;
-        else {
+        if(text){
+            statusElement.innerText = text;
+        }else{
             console.log("Finalizing status.");
             statusElement.remove();
             SF.clearMsgHandlers('module');

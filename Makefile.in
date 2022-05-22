@@ -1515,7 +1515,7 @@ sqlite3.dll: $(REAL_LIBOBJ) sqlite3.def
 
 
 #
-# fiddle section
+# fiddle/wasm section
 #
 fiddle_dir = ext/fiddle
 fiddle_dir_abs = $(TOP)/$(fiddle_dir)
@@ -1524,22 +1524,31 @@ fiddle_html = $(fiddle_dir)/fiddle.html
 fiddle_module_js = $(fiddle_dir)/fiddle-module.js
 fiddle_generated = $(fiddle_module_js) \
                    $(fiddle_dir)/fiddle-module.wasm
-clean-fiddle:
-	rm -f $(fiddle_generated)
-clean: clean-fiddle
+sqlite3_wasm_js = $(fiddle_dir)/sqlite3.js
+sqlite3_wasm = $(fiddle_dir)/sqlite3.wasm
+sqlite3_wasm_generated = $(sqlite3_wasm) $(sqlite3_wasm_js)
+clean-wasm:
+	rm -f $(fiddle_generated) $(sqlite3_wasm_generated)
+clean: clean-wasm
 #emcc_opt = -O0
 #emcc_opt = -O1
 #emcc_opt = -O2
 #emcc_opt = -O3
-# --js-library $(fiddle_dir)/_dummylib.js
 emcc_opt = -Oz
-emcc_flags = $(emcc_opt) $(SHELL_OPT) \
-             -sEXPORTED_RUNTIME_METHODS=@$(fiddle_dir_abs)/EXPORTED_RUNTIME_METHODS \
-             -sEXPORTED_FUNCTIONS=@$(fiddle_dir_abs)/EXPORTED_FUNCTIONS \
-             $(fiddle_cflags)
-# $(fiddle_cflags) is intended to be passed to make via the CLI in
-# order to override, e.g., -Ox for one-off builds.
+emcc_flags = $(emcc_opt) -I. $(SHELL_OPT)
 $(fiddle_module_js): Makefile sqlite3.c shell.c \
-    $(fiddle_dir)/EXPORTED_RUNTIME_METHODS $(fiddle_dir)/EXPORTED_FUNCTIONS
-	emcc -o $@ $(emcc_flags) sqlite3.c shell.c
+    $(fiddle_dir)/EXPORTED_RUNTIME_METHODS $(fiddle_dir)/EXPORTED_FUNCTIONS.fiddle
+	emcc -o $@ $(emcc_flags) \
+        -sEXPORTED_RUNTIME_METHODS=@$(fiddle_dir_abs)/EXPORTED_RUNTIME_METHODS \
+        -sEXPORTED_FUNCTIONS=@$(fiddle_dir_abs)/EXPORTED_FUNCTIONS.fiddle \
+        sqlite3.c shell.c
+$(sqlite3_wasm_js): Makefile sqlite3.c \
+    $(fiddle_dir)/EXPORTED_RUNTIME_METHODS $(fiddle_dir)/EXPORTED_FUNCTIONS.sqlite3
+	emcc -o $@ $(emcc_flags) \
+        -sEXPORTED_RUNTIME_METHODS=@$(fiddle_dir_abs)/EXPORTED_RUNTIME_METHODS \
+        -sEXPORTED_FUNCTIONS=@$(fiddle_dir_abs)/EXPORTED_FUNCTIONS.sqlite3 \
+        --no-entry \
+        sqlite3.c
 fiddle: $(fiddle_module_js)
+sqlite3-wasm: $(sqlite3_wasm_js)
+wasm: fiddle sqlite3-wasm
