@@ -16,12 +16,12 @@
 const mainTest1 = function(namespace){
     const S = namespace.sqlite3.api;
     const oo = namespace.sqlite3.SQLite3;
-    const T = self.SqliteTester;
+    const T = self.SqliteTestUtil;
     console.log("Loaded module:",S.sqlite3_libversion(),
                 S.sqlite3_sourceid());
     const db = new oo.DB();
+    const log = console.log.bind(console);
     try {
-        const log = console.log.bind(console);
         T.assert(db._pDb);
         log("DB:",db.filename);
         log("Build options:",oo.compileOptionUsed());
@@ -95,7 +95,11 @@ INSERT INTO t(a,b) VALUES(1,2),(3,4),(?,?);`,
     }
 };
 
-self/*window or worker*/.Module.onRuntimeInitialized = function(){
-    console.log("Loading sqlite3-api.js...");
-    self.Module.loadSqliteAPI(mainTest1);
-};
+self/*window or worker*/.Module.postRun.push(function(theModule){
+    /** Use a timeout so that we are (hopefully) out from under the
+        module init stack when our setup gets run. */
+    
+    setTimeout(function(){
+        theModule.loadSqliteAPI(mainTest1);
+    },0);
+});
