@@ -375,4 +375,35 @@ do_execsql_test join8-11040 {
   SELECT b, d FROM t1 RIGHT JOIN t2 WHERE (b+0)=1 AND d!=4;
 } {1 not-4}
 
+# 2022-05-23
+# NATURAL JOIN name resolution is more forgiving with LEFT JOIN
+# https://sqlite.org/forum/forumpost/e90a8e6e6f
+#
+reset_db
+db null -
+do_execsql_test join8-12000 {
+  CREATE TABLE t1(a INT);  INSERT INTO t1 VALUES(0),(1);
+  CREATE TABLE t2(a INT);  INSERT INTO t2 VALUES(0),(2);
+  CREATE TABLE t3(a INT);  INSERT INTO t3 VALUES(0),(3);
+} {}
+do_catchsql_test join8-12010 {
+  SELECT * FROM t1 RIGHT JOIN t2 ON t2.a<>0 NATURAL RIGHT JOIN t3;
+} {1 {ambiguous reference to a in USING()}}
+do_catchsql_test join8-12020 {
+  SELECT * FROM t1 RIGHT JOIN t2 ON t2.a<>0 NATURAL LEFT JOIN t3;
+} {1 {ambiguous reference to a in USING()}}
+do_catchsql_test join8-12030 {
+  SELECT * FROM t1 LEFT JOIN t2 ON t2.a<>0 NATURAL RIGHT JOIN t3;
+} {1 {ambiguous reference to a in USING()}}
+
+# The following query should probably also return the same error as the
+# previous three cases.  However, historical versions of SQLite have always
+# let it pass.  We will not "fix" this, since to do so might break legacy
+# applications.
+#
+do_catchsql_test join8-12040 {
+  SELECT * FROM t1 LEFT JOIN t2 ON t2.a<>0 NATURAL LEFT JOIN t3;
+} {0 {0 2 1 2}}
+
+
 finish_test

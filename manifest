@@ -1,5 +1,5 @@
-C Add\san\sassert()\sto\sclear\sa\sharmless\sstatic-analyzer\swarning.
-D 2022-05-23T11:51:10.322
+C New\stest\scases\sto\sfurther\sdemonstrate\sthe\sdifference\sin\sname\smatching\srules\nfor\sLEFT\sJOIN\sversus\sRIGHT\sJOIN\sthat\sprotect\slegacy\sbehavior.\n[forum:/forumpost/e90a8e6e6fa652ac|Forum\sthread\se90a8e6e6fa652ac].
+D 2022-05-23T12:37:54.866
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1161,7 +1161,7 @@ F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
 F test/join5.test d22b6cba8fb59ab3f1c82701434c360705eb12d4ce200c449f37b018fc47681a
 F test/join6.test f809c025fa253f9e150c0e9afd4cef8813257bceeb6f46e04041228c9403cc2c
 F test/join7.test 8e72de4b45e5e930d18c305c7efe86015fb2552731e4e03ea226353036b0dab0
-F test/join8.test adf30584c6d0cc61816b24fd6f3cc8386ce89f579da4b65a6c8e05c2f2dce08e
+F test/join8.test e46de7f84611663b4ee2fab699d5735af8948386904b0f067263561ee05ae427
 F test/join9.test 9056ddd3b0c0f4f9d658f4521038d9a37dc23ead8ca9a505d0b0db2b6a471e05
 F test/joinA.test 7eab225dc1c1ab258a5e62513a4ed7cabbd3db971d59d5d92f4fb6fa14c12f6a
 F test/joinB.test 1b2ba3fc8568b49411787fccbf540570c148e9b6a53a30f80691cb6268098ded
@@ -1967,8 +1967,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d64ae49a1f2513171d678259928c67741d79b2ae595078299525641a676cc46b
-R f4740518f2ef42e0c51e1c88bd493d42
+P 919ba2f0472e12c2d1e82364c1481e778b24ea406615b08992964a4eb80abee7
+R 6c059b818d3fd73ba4e722dfbe5f733e
 U drh
-Z ea092fa8452c2e569b6fc162be055767
+Z 1b7fdd9547fd3e324ebf708a24bee8c4
 # Remove this line to create a well-formed Fossil manifest.
