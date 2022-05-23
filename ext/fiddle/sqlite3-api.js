@@ -573,7 +573,7 @@
                 return t;
             default:
                 if(v instanceof Uint8Array) return BindTypes.blob;
-                toss("Unhandled isSupportedBindType()",t);
+                return undefined;
         }
     }
 
