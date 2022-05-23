@@ -17,6 +17,9 @@
 (function(){
     'use strict';
 
+    /* Recall that the 'self' symbol, except where locally
+       overwritten, refers to the global window or worker object. */
+
     /**
        The SqliteFiddle object is intended to be the primary
        app-level object for the main-thread side of the sqlite
@@ -136,37 +139,38 @@
 
     SF.addMsgHandler('module', function f(ev){
         ev = ev.data;
-        //console.log("Module status:",ev);
-        if('status'!==ev.type) return;
-        /* This weird handling of the ev.data is simply how
-           emscripten's auto-generated code notifies the client of
-           load progress. */
-        let text = ev.data;
-        if(!f.last) f.last = { time: Date.now(), text: '' };
-        if(text === f.last.text) return;
-        const m = text.match(/([^(]+)\((\d+(\.\d+)?)\/(\d+)\)/);
-        const now = Date.now();
-        if(m && now - f.last.time < 30) return; // if this is a progress update, skip it if too soon
-        f.last.time = now;
-        f.last.text = text;
-        if(m) {
-            text = m[1];
-            progressElement.value = parseInt(m[2])*100;
-            progressElement.max = parseInt(m[4])*100;
+        if('status'!==ev.type){
+            console.warn("Unexpected module-type message:",ev);
+            return;
+        }
+        const msg = ev.data;
+        progressElement.value = msg.step;
+        progressElement.max = msg.step + 1/*we don't know how many steps to expect*/;
+        if(1==msg.step){
             progressElement.hidden = false;
             spinnerElement.hidden = false;
-        } else {
-            progressElement.remove();
-            if(!text) spinnerElement.remove();
         }
-        if(text){
-            statusElement.innerText = text;
+        if(msg.text){
+            statusElement.classList.remove('hidden');
+            statusElement.innerText = msg.text;
         }else{
-            console.log("Finalizing status.");
-            statusElement.remove();
-            SF.clearMsgHandlers('module');
-            self.onSFLoaded();
+            progressElement.remove();
+            spinnerElement.remove();
+            statusElement.classList.add('hidden');
+            /* The module can post messages about fatal problems,
+               e.g. an exit() being triggered or assertion failure,
+               after the last "load" message has arrived, so
+               leave the statusElement and message listener intact. */
         }
+    });
+
+    /**
+       The 'fiddle-ready' event is fired (with no payload) when the
+       wasm module has finished loading. Interestingly, that happens
+       _before_ the final module:status event */
+    SF.addMsgHandler('fiddle-ready', function(){
+        SF.clearMsgHandlers('fiddle-ready');
+        self.onSFLoaded();
     });
 
     /**

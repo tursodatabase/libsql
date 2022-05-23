@@ -38,19 +38,30 @@
     layer. The data property is the string of the output, noting
     that the emscripten binding emits these one line at a time. Thus,
     if a C-side puts() emits multiple lines in a single call, the JS
-    side will see that as multiple calls.
+    side will see that as multiple calls. Example:
+
+    {type:'stdout', data: 'Hi, world.'}
 
   - module: Status text. This is intended to alert the main thread
     about module loading status so that, e.g., the main thread can
     update a progress widget and DTRT when the module is finished
-    loading and available for work. The status text is mostly in some
-    undocumented(?) format emited by the emscripten generated
-    module-loading code, encoding progress info within it.
+    loading and available for work. Status messages come in the form
+    
+    {type:'module', data:{
+        type:'status',
+        data: {text:string|null, step:1-based-integer}
+    }
+
+    with an incrementing step value for each subsequent message. When
+    the module loading is complete, a message with a text value of
+    null is posted.
 
   - working: data='start'|'end'. Indicates that work is about to be
     sent to the module or has just completed. This can be used, e.g.,
     to disable UI elements which should not be activated while work
-    is pending.
+    is pending. Example:
+
+    {type:'working', data:'start'}
 
   Main-to-Worker types:
 
@@ -60,7 +71,9 @@
     it starts and a 'working' event (data='end') when it finished. If
     called while work is currently being executed it emits stderr
     message instead of doing actual work, as the underlying db cannot
-    handle concurrent tasks.
+    handle concurrent tasks. Example:
+
+    {type:'shellExec', data: 'select * from sqlite_master'}
 
   - More TBD as the higher-level db layer develops.
 */
@@ -102,7 +115,40 @@ self.Module = {
     //onRuntimeInitialized: function(){},
     print: function(text){wMsg('stdout', Array.prototype.slice.call(arguments));},
     printErr: function(text){wMsg('stderr', Array.prototype.slice.call(arguments));},
-    setStatus: function f(text){wMsg('module',{type:'status',data:text});},
+    /**
+       Intercepts status updates from the Module object and fires
+       worker events with a type of 'status' and a payload of:
+
+       {
+         text: string | null, // null at end of load process
+         step: integer // starts at 1, increments 1 per call
+       }
+
+       We have no way of knowing in advance how many steps will
+       be processed/posted, so creating a "percentage done" view is
+       not really practical. One can be approximated by giving it a
+       current value of message.step and max value of message.step+1,
+       though.
+
+       When work is finished, a message with a text value of null is
+       submitted.
+
+       After a message with text==null is posted, the module may later
+       post messages about fatal problems, e.g. an exit() being
+       triggered, so it is recommended that UI elements for posting
+       status messages not be outright removed from the DOM when
+       text==null, and that they instead be hidden until/unless
+       text!=null.
+    */
+    setStatus: function f(text){
+        if(!f.last) f.last = { step: 0, text: '' };
+        else if(text === f.last.text) return;
+        f.last.text = text;
+        wMsg('module',{
+            type:'status',
+            data:{step: ++f.last.step, text: text||null}
+        });
+    },
     totalDependencies: 0,
     monitorRunDependencies: function(left) {
         this.totalDependencies = Math.max(this.totalDependencies, left);
@@ -147,6 +193,5 @@ importScripts('fiddle-module.js')
    is called _before_ the final call to Module.setStatus(). */;
 
 Module["onRuntimeInitialized"] = function onRuntimeInitialized() {
-    //console.log('onRuntimeInitialized');
-    //wMsg('module','done');
+    wMsg('fiddle-ready');
 };
