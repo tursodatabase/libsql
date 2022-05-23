@@ -73,6 +73,7 @@
 
 */
 (function(namespace){
+    'use strict';
     /* For reference: sql.js does essentially everything we want and
        it solves much of the wasm-related voodoo, but we'll need a
        different structure because we want the db connection to run in
@@ -575,7 +576,7 @@
                 if(v instanceof Uint8Array) return BindTypes.blob;
                 return undefined;
         }
-    }
+    };
 
     /**
        If isSupportedBindType(v) returns a truthy value, this
@@ -1076,7 +1077,7 @@
                     };                    
                 }
                 const rc = {}, ov = [0,0];
-                let i = 0;
+                let i = 0, k;
                 while((k = S.sqlite3_compileoption_get(i++))){
                     f._opt(k,ov);
                     rc[ov[0]] = ov[1];
