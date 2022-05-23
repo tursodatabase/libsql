@@ -5847,6 +5847,7 @@ WhereInfo *sqlite3WhereBegin(
         iIndexCur = pParse->nTab++;
       }
       pLevel->iIdxCur = iIndexCur;
+      assert( pIx!=0 );
       assert( pIx->pSchema==pTab->pSchema );
       assert( iIndexCur>=0 );
       if( op ){
@@ -5922,9 +5923,20 @@ WhereInfo *sqlite3WhereBegin(
   for(ii=0; ii<nTabList; ii++){
     int addrExplain;
     int wsFlags;
+    SrcItem *pSrc;
     if( pParse->nErr ) goto whereBeginError;
     pLevel = &pWInfo->a[ii];
     wsFlags = pLevel->pWLoop->wsFlags;
+    pSrc = &pTabList->a[pLevel->iFrom];
+    if( pSrc->fg.isMaterialized ){
+      if( pSrc->fg.isCorrelated ){
+        sqlite3VdbeAddOp2(v, OP_Gosub, pSrc->regReturn, pSrc->addrFillSub);
+      }else{
+        int iOnce = sqlite3VdbeAddOp0(v, OP_Once);
+        sqlite3VdbeAddOp2(v, OP_Gosub, pSrc->regReturn, pSrc->addrFillSub);
+        sqlite3VdbeJumpHere(v, iOnce);
+      }
+    }
     if( (wsFlags & (WHERE_AUTO_INDEX|WHERE_BLOOMFILTER))!=0 ){
       if( (wsFlags & WHERE_AUTO_INDEX)!=0 ){
 #ifndef SQLITE_OMIT_AUTOMATIC_INDEX

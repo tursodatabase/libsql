@@ -6905,7 +6905,7 @@ int sqlite3Select(
 
     /* Generate code to implement the subquery
     **
-    ** The subquery is implemented as a co-routine all of the following are
+    ** The subquery is implemented as a co-routine all if the following are
     ** true:
     **
     **    (1)  the subquery is guaranteed to be the outer loop (so that
@@ -6963,11 +6963,11 @@ int sqlite3Select(
       ** the same view can reuse the materialization. */
       int topAddr;
       int onceAddr = 0;
-      int retAddr;
 
       pItem->regReturn = ++pParse->nMem;
-      topAddr = sqlite3VdbeAddOp2(v, OP_Integer, 0, pItem->regReturn);
+      topAddr = sqlite3VdbeAddOp0(v, OP_Goto);
       pItem->addrFillSub = topAddr+1;
+      pItem->fg.isMaterialized = 1;
       if( pItem->fg.isCorrelated==0 ){
         /* If the subquery is not correlated and if we are not inside of
         ** a trigger, then we only need to compute the value of the subquery
@@ -6982,9 +6982,9 @@ int sqlite3Select(
       sqlite3Select(pParse, pSub, &dest);
       pItem->pTab->nRowLogEst = pSub->nSelectRow;
       if( onceAddr ) sqlite3VdbeJumpHere(v, onceAddr);
-      retAddr = sqlite3VdbeAddOp1(v, OP_Return, pItem->regReturn);
+      sqlite3VdbeAddOp2(v, OP_Return, pItem->regReturn, topAddr+1);
       VdbeComment((v, "end %!S", pItem));
-      sqlite3VdbeChangeP1(v, topAddr, retAddr);
+      sqlite3VdbeJumpHere(v, topAddr);
       sqlite3ClearTempRegCache(pParse);
       if( pItem->fg.isCte && pItem->fg.isCorrelated==0 ){
         CteUse *pCteUse = pItem->u2.pCteUse;
