@@ -405,5 +405,17 @@ do_catchsql_test join8-12040 {
   SELECT * FROM t1 LEFT JOIN t2 ON t2.a<>0 NATURAL LEFT JOIN t3;
 } {0 {0 2 1 2}}
 
+# 2022-05-24
+# https://sqlite.org/forum/forumpost/687b0bf563a1d4f1
+#
+reset_db
+do_execsql_test join8-13000 {
+  CREATE TABLE t0(t TEXT, u TEXT);  INSERT INTO t0 VALUES('t', 'u');
+  CREATE TABLE t1(v TEXT, w TEXT);  INSERT INTO t1 VALUES('v', 'w');
+  CREATE TABLE t2(x TEXT, y TEXT);  INSERT INTO t2 VALUES('x', 'y');
+  SELECT * FROM t0 JOIN t1 ON (t2.x NOTNULL) LEFT JOIN t2 ON false;
+  SELECT * FROM t0 JOIN t1 ON (t2.x NOTNULL) LEFT JOIN t2 ON false
+   WHERE t2.y ISNULL;
+} {}
 
 finish_test

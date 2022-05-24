@@ -1109,14 +1109,22 @@ static void exprAnalyze(
   }
 #endif
 
-  if( ExprHasProperty(pExpr, EP_OuterON) ){
+  if( ExprHasProperty(pExpr, EP_OuterON|EP_InnerON) ){
     Bitmask x = sqlite3WhereGetMask(pMaskSet, pExpr->w.iJoin);
-    prereqAll |= x;
-    extraRight = x-1;  /* ON clause terms may not be used with an index
-                       ** on left table of a LEFT JOIN.  Ticket #3015 */
-    if( (prereqAll>>1)>=x ){
-      sqlite3ErrorMsg(pParse, "ON clause references tables to its right");
-      return;
+    if( ExprHasProperty(pExpr, EP_OuterON) ){
+      prereqAll |= x;
+      extraRight = x-1;  /* ON clause terms may not be used with an index
+                         ** on left table of a LEFT JOIN.  Ticket #3015 */
+      if( (prereqAll>>1)>=x ){
+        sqlite3ErrorMsg(pParse, "ON clause references tables to its right");
+        return;
+      }
+    }else if( (prereqAll>>1)>=x ){
+      /* The ON clause of an INNER JOIN references a table to its right.
+      ** Most other SQL database engines raise an error.  But all versions
+      ** of SQLite going back to 3.0.0 have just put the ON clause constraint
+      ** into the WHERE clause and carried on. */
+      ExprClearProperty(pExpr, EP_InnerON);
     }
   }
   pTerm->prereqAll = prereqAll;
