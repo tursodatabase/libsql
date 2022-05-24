@@ -115,7 +115,9 @@ INSERT INTO t(a,b) VALUES(1,2),(3,4),(?,?);`,
             assert(3===db.selectValue("select bar(1,2)")).
             assert(-1===db.selectValue("select bar(1,2,-4)"));
 
-        T.assert('hi' === db.selectValue("select ?",'hi'));
+        T.assert('hi' === db.selectValue("select ?",'hi')).
+            assert(null===db.selectValue("select null"));
+                 
     }finally{
         db.close();
     }

@@ -1,5 +1,5 @@
-C wasm/JS:\sadded\ssupport\sfor\sscalar\sUDFs.\sFixed\sa\sdeallocation\sproblem\swith\sbind()ed\sstrings/blobs.
-D 2022-05-24T00:22:10.054
+C wasm/JS:\sdocumented\sDB.selectValue()\sand\scorrected\sthe\sfetching\sof\sNULL\scolumns\svia\sStmt.get().
+D 2022-05-24T00:35:18.252
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -65,10 +65,10 @@ F ext/fiddle/fiddle-worker.js e87c17070b979bd057a6849332f2a86660a4255ff7f1b6671e
 F ext/fiddle/fiddle.html 657c6c3f860c322fba3c69fa4f7a1209e2d2ce44b4bc65a3e154e3a97c047a7c
 F ext/fiddle/fiddle.js 68f5bb45fc1ae7f8ae3f6b85f465257db514d12bf50ec492259685178c452a88
 F ext/fiddle/index.md d9c1c308d8074341bc3b11d1d39073cd77754cb3ca9aeb949f23fdd8323d81cf
-F ext/fiddle/sqlite3-api.js 43d750c13ca2426580a57c1f0c8b4e529a1d8af45eda92dcdde6b5d5e4031fcd
+F ext/fiddle/sqlite3-api.js 2a0ba8c9a0778a6ea6720c6717540732a8eb36b7605b883a716db3da9d4a2aba
 F ext/fiddle/testing-common.js 723aada13d90a5ee3f0f8f5b5b88e46954becae5d2b04ded811d90106057f4ac
 F ext/fiddle/testing1.html 026502e5d5e6a250e4101f8e8948708a1295ce831a094d741839ecaf788d8533
-F ext/fiddle/testing1.js 7365c6dac4f680f8ebd6ecfcf6475c5c0a0afd61cdaff5b5281e473b79c7424e
+F ext/fiddle/testing1.js 2f9910ff46bcd31ed2779b4bd2fcf09a57805c6073da6dd56dce6cd2e95a47b9
 F ext/fts1/README.txt 20ac73b006a70bcfd80069bdaf59214b6cf1db5e
 F ext/fts1/ft_hash.c 3927bd880e65329bdc6f506555b228b28924921b
 F ext/fts1/ft_hash.h 06df7bba40dadd19597aa400a875dbc2fed705ea
@@ -1968,8 +1968,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6044605b2a712da73600cabb967797a03ed1915dc0ab0b10edbd52525e548196
-R ceb272ebfbe3295f001f5fea9e36326e
+P 325a9ee31ad7abae563c4da5cd8228e151b00aa9afcac7e9bca5efaa9d48e107
+R ec73c1d66717375855af09a51e0d10ff
 U stephan
-Z 228a27040854e49e332f67b566615c59
+Z 005deadcf1ed546088d3a014fe907d3d
 # Remove this line to create a well-formed Fossil manifest.

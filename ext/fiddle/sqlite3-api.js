@@ -736,11 +736,18 @@
             this._udfs[name] = pUdf;
             return this;
         }/*createFunction()*/,
+        /**
+           Prepares the given SQL, step()s it one time and returns the
+           value of the first result column. If it has no results,
+           undefined is returned. If passed a second argument, it is
+           treated like an argument to Stmt.bind(), so may be any type
+           supported by that function. Throws on error (e.g. malformed
+           SQL).
+        */
         selectValue: function(sql,bind){
             let stmt, rc;
             try {
-                stmt = this.prepare(sql);
-                stmt.bind(bind);
+                stmt = this.prepare(sql).bind(bind);
                 if(stmt.step()) rc = stmt.get(0);
             }finally{
                 if(stmt) stmt.finalize();
@@ -1155,6 +1162,7 @@
             switch(undefined===asType
                    ? S.sqlite3_column_type(this._pStmt, ndx)
                    : asType){
+                case S.SQLITE_NULL: return null;
                 case S.SQLITE_INTEGER:{
                     return 0 | S.sqlite3_column_double(this._pStmt, ndx);
                     /* ^^^^^^^^ strips any fractional part and handles
