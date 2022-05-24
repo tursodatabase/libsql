@@ -159,30 +159,73 @@ self.Module = {
     }
 };
 
-const shellExec = function f(sql){
-    if(!f._) f._ = Module.cwrap('fiddle_exec', null, ['string']);
-    if(Module._isDead){
-        wMsg('stderr', "shell module has exit()ed. Cannot run SQL.");
-        return;
-    }
-    wMsg('working','start');
-    try {
-        if(f._running) wMsg('stderr','Cannot run multiple commands concurrently.');
-        else{
-            f._running = true;
-            f._(sql);
+const Sqlite3Shell = {
+    exec: function f(sql){
+        if(!f._) f._ = Module.cwrap('fiddle_exec', null, ['string']);
+        if(Module._isDead){
+            wMsg('stderr', "shell module has exit()ed. Cannot run SQL.");
+            return;
         }
-    } finally {
-        wMsg('working','end');
-        delete f._running;
+        wMsg('working','start');
+        try {
+            if(f._running) wMsg('stderr','Cannot run multiple commands concurrently.');
+            else{
+                f._running = true;
+                f._(sql);
+            }
+        } finally {
+            wMsg('working','end');
+            delete f._running;
+        }
+    },
+    /* Interrupt can't work: this Worker is tied up working, so won't get the
+       interrupt event which would be needed to perform the interrupt. */
+    interrupt: function f(){
+        if(!f._) f._ = Module.cwrap('fiddle_interrupt', null);
+        wMsg('stdout',"Requesting interrupt.");
+        f._();
     }
 };
 
-self.onmessage = function(ev){
+self.onmessage = function f(ev){
     ev = ev.data;
+    if(!f.cache){
+        f.cache = {
+            prevFilename: null
+        };
+    }
     //console.debug("worker: onmessage.data",ev);
     switch(ev.type){
-        case 'shellExec': shellExec(ev.data); return;
+        case 'shellExec': Sqlite3Shell.exec(ev.data); return;
+        case 'interrupt': Sqlite3Shell.interrupt(); return;
+        case 'open': {
+            /* Expects: {
+                 buffer: ArrayBuffer | Uint8Array,
+                 filename: for logging/informational purposes only
+               } */
+            const opt = ev.data;
+            let buffer = opt.buffer;
+            if(buffer instanceof Uint8Array){
+            }else if(buffer instanceof ArrayBuffer){
+                buffer = new Uint8Array(buffer);
+            }else{
+                wMsg('stderr',"'open' expects {buffer:Uint8Array} containing an uploaded db.");
+                return;
+            }
+            if(f.cache.prevFilename){
+                FS.unlink(f.cache.prevFilename);
+                /* Noting that it might not actually be removed until
+                   the current db handle closes it. */
+                f.cache.prevFilename = null;
+            }
+            const fn = "db-"+((Math.random() * 10000000) | 0)+
+                  "-"+((Math.random() * 10000000) | 0)+".sqlite3";
+            FS.createDataFile("/", fn, buffer, true, true);
+            f.cache.prevFilename = fn;
+            Sqlite3Shell.exec(".open /"+fn);
+            wMsg('stdout',"Replaced DB with "+(opt.filename || fn)+".");
+            return;
+        }
     };
     console.warn("Unknown fiddle-worker message type:",ev);
 };

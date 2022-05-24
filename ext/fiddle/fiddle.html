@@ -76,6 +76,10 @@
       fieldset > legend {
           padding: 0 0.5em;
       }
+      fieldset.options > div {
+          display: flex;
+          flex-wrap: wrap;
+      }
       span.labeled-input {
           padding: 0.25em;
           margin: 0.25em 0.5em;
@@ -108,7 +112,7 @@
       }
       #view-split {
           display: flex;
-          flex-direction: column;
+          flex-direction: column-reverse;
       }
     </style>
   </head>
@@ -161,6 +165,10 @@
                    data-config='autoClearOutput'>
             <label for='opt-cb-autoclear'>Auto-clear output</label>
           </span>
+          <span class='labeled-input'>
+            <input type='file' id='load-db'/>
+            <label>Load DB</label>
+          </span>
         </div>
       </fieldset>
       <div id='main-wrapper' class=''>
@@ -185,6 +193,11 @@ SELECT * FROM t;</textarea>
                     placeholder="Shell output."></textarea>
           <div class='button-bar'>
             <button id='btn-clear-output'>Clear Output</button>
+            <button id='btn-interrupt' class='hidden' disabled>Interrupt</button>
+            <!-- interruption cannot work in the current configuration
+                 because we cannot send an interrupt message when work
+                 is currently underway. At that point the Worker is
+                 tied up and will not receive the message. */
           </div>
         </div>
       </div>

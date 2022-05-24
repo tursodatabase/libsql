@@ -253,17 +253,39 @@
     };
 
     /**
-       The DB class wraps a sqlite3 db handle.
+       The DB class wraps a sqlite3 db handle. Its argument may either
+       be a db name or a Uint8Array containing a binary image of a
+       database. If the name is not provided or is an empty string,
+       ":memory:" is used. A string name other than ":memory:" or ""
+       will currently fail to open, for lack of a filesystem to
+       load it from. If given a blob, a random name is generated.
+
+       Achtung: all arguments other than those specifying an
+       in-memory db are currently untested for lack of an app
+       to test them in.       
     */
-    const DB = function(name/*TODO: openMode flags*/){
-        if(!name) name = ':memory:';
-        else if('string'!==typeof name){
+    const DB = function(name/*TODO? openMode flags*/){
+        let fn, buff;
+        if(name instanceof Uint8Array){
+            buff = name;
+            name = undefined;
+            fn = "db-"+((Math.random() * 10000000) | 0)+
+                "-"+((Math.random() * 10000000) | 0)+".sqlite3";
+        }else if(":memory:" === name || "" === name){
+            fn = name || ":memory:";
+            name = undefined;
+        }else if('string'!==typeof name){
             toss("TODO: support blob image of db here.");
+        }else{
+            fn = name;
+        }
+        if(buff){
+            FS.createDataFile("/", fn, buff, true, true);
         }
         setValue(pPtrArg, 0, "i32");
-        this.checkRc(api.sqlite3_open(name, pPtrArg));
+        this.checkRc(api.sqlite3_open(fn, pPtrArg));
         this._pDb = getValue(pPtrArg, "i32");
-        this.filename = name;
+        this.filename = fn;
         this._statements = {/*map of open Stmt _pointers_ to Stmt*/};
         this._udfs = {/*map of UDF names to wasm function _pointers_*/};
     };
