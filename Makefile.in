@@ -1535,7 +1535,7 @@ clean: clean-wasm
 #emcc_opt = -O2
 #emcc_opt = -O3
 emcc_opt = -Oz
-emcc_flags = $(emcc_opt) -I. $(SHELL_OPT)
+emcc_flags = $(emcc_opt) -sALLOW_TABLE_GROWTH -I. $(SHELL_OPT)
 $(fiddle_module_js): Makefile sqlite3.c shell.c \
     $(fiddle_dir)/EXPORTED_RUNTIME_METHODS $(fiddle_dir)/EXPORTED_FUNCTIONS.fiddle
 	emcc -o $@ $(emcc_flags) \

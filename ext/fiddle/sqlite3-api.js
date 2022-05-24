@@ -144,6 +144,10 @@
         SQLITE_TEXT: 3,
         SQLITE_BLOB: 4,
         SQLITE_NULL: 5,
+        /* create_function() flags */
+        SQLITE_DETERMINISTIC: 0x000000800,
+        SQLITE_DIRECTONLY: 0x000080000,
+        SQLITE_INNOCUOUS: 0x000200000,
         /* sqlite encodings, used for creating UDFs, noting that we
            will only support UTF8. */
         SQLITE_UTF8: 1
@@ -257,7 +261,8 @@
         this.checkRc(S.sqlite3_open(name, pPtrArg));
         this._pDb = getValue(pPtrArg, "i32");
         this.filename = name;
-        this._statements = {/*map of open Stmt _pointers_*/};
+        this._statements = {/*map of open Stmt _pointers_ to Stmt*/};
+        this._udfs = {/*map of UDF names to wasm function _pointers_*/};
     };
 
     /**
@@ -295,6 +300,12 @@
     const affirmDbOpen = function(db){
         if(!db._pDb) toss("DB has been closed.");
         return db;
+    };
+
+    /** Returns true if n is a 32-bit (signed) integer,
+        else false. */
+    const isInt32 = function(n){
+        return (n===n|0 && n<0xFFFFFFFF) ? true : undefined;
     };
 
     /**
@@ -340,6 +351,11 @@
         return out;
     };
 
+    /** If object opts has _its own_ property named p then that
+        property's value is returned, else dflt is returned. */
+    const getOwnOption = (opts, p, dflt)=>
+        opts.hasOwnProperty(p) ? opts[p] : dflt;
+
     DB.prototype = {
         /**
            Expects to be given an sqlite3 API result code. If it is
@@ -369,6 +385,9 @@
                     delete that._statements[k];
                     if(s && s._pStmt) s.finalize();
                 });
+                Object.values(this._udfs).forEach(Module.removeFunction);
+                delete this._udfs;
+                delete this._statements;
                 S.sqlite3_close_v2(this._pDb);
                 delete this._pDb;
             }
@@ -550,7 +569,184 @@
                 stackRestore(stack);
             }
             return this;
-        }/*execMulti()*/
+        }/*execMulti()*/,
+        /**
+           Creates a new scalar UDF (User-Defined Function) which is
+           accessible via SQL code. This function may be called in any
+           of the following forms:
+
+           - (name, function)
+           - (name, function, optionsObject)
+           - (name, optionsObject)
+           - (optionsObject)
+
+           In the final two cases, the function must be defined as the
+           'callback' property of the options object. In the final
+           case, the function's name must be the 'name' property.
+
+           This can only be used to create scalar functions, not
+           aggregate or window functions. UDFs cannot be removed from
+           a DB handle after they're added.
+
+           On success, returns this object. Throws on error.
+
+           When called from SQL, arguments to the UDF, and its result,
+           will be converted between JS and SQL with as much fidelity
+           as is feasible, triggering an exception if a type
+           conversion cannot be determined. Some freedom is afforded
+           to numeric conversions due to friction between the JS and C
+           worlds: integers which are larger than 32 bits will be
+           treated as doubles, as JS does not support 64-bit integers
+           and it is (as of this writing) illegal to use WASM
+           functions which take or return 64-bit integers from JS.
+
+           The optional options object may contain flags to modify how
+           the function is defined:
+
+           - .arity: the number of arguments which SQL calls to this
+             function expect or require. The default value is the
+             callback's length property. A value of -1 means that the
+             function is variadic and may accept any number of
+             arguments, up to sqlite3's compile-time limits. sqlite3
+             will enforce the argument count if is zero or greater.
+
+           The following properties correspond to flags documented at:
+
+           https://sqlite.org/c3ref/create_function.html
+
+           - .deterministic = SQLITE_DETERMINISTIC
+           - .directOnly = SQLITE_DIRECTONLY
+           - .innocuous = SQLITE_INNOCUOUS
+
+
+           Maintenance reminder: the ability to add new
+           WASM-accessible functions to the runtime requires that the
+           WASM build is compiled with emcc's `-sALLOW_TABLE_GROWTH`
+           flag.
+        */
+        createFunction: function f(name, callback,opt){
+            switch(arguments.length){
+                case 1: /* (optionsObject) */
+                    opt = name;
+                    name = opt.name;
+                    callback = opt.callback;
+                    break;
+                case 2: /* (name, callback|optionsObject) */
+                    if(!(callback instanceof Function)){
+                        opt = callback;
+                        callback = opt.callback;
+                    }
+                    break;
+                default: break;
+            }
+            if(!opt) opt = {};
+            if(!(callback instanceof Function)){
+                toss("Invalid arguments: expecting a callback function.");
+            }else if('string' !== typeof name){
+                toss("Invalid arguments: missing function name.");
+            }
+            if(!f._extractArgs){
+                /* Static init */
+                f._extractArgs = function(argc, pArgv){
+                    let i, pVal, valType, arg;
+                    const tgt = [];
+                    for(i = 0; i < argc; ++i){
+                        pVal = getValue(pArgv + (4 * i), "i32");
+                        valType = S.sqlite3_value_type(pVal);
+                        switch(valType){
+                            case S.SQLITE_INTEGER:
+                            case S.SQLITE_FLOAT:
+                                arg = S.sqlite3_value_double(pVal);
+                                break;
+                            case SQLITE_TEXT:
+                                arg = S.sqlite3_value_text(pVal);
+                                break;
+                            case SQLITE_BLOB:{
+                                const n = S.sqlite3_value_bytes(ptr);
+                                const pBlob = S.sqlite3_value_blob(ptr);
+                                arg = new Uint8Array(n);
+                                let i;
+                                for(i = 0; i < n; ++i) arg[i] = HEAP8[pBlob+i];
+                                break;
+                            }
+                            default:
+                                arg = null; break;
+                        }
+                        tgt.push(arg);
+                    }
+                    return tgt;
+                }/*_extractArgs()*/;
+                f._setResult = function(pCx, val){
+                    switch(typeof val) {
+                        case 'boolean':
+                            S.sqlite3_result_int(pCx, val ? 1 : 0);
+                            break;
+                        case 'number': {
+                            (isInt32(val)
+                             ? S.sqlite3_result_int
+                             : S.sqlite3_result_double)(pCx, val);
+                            break;
+                        }
+                        case 'string':
+                            S.sqlite3_result_text(pCx, val, -1,
+                                                  -1/*==SQLITE_TRANSIENT*/);
+                            break;
+                        case 'object':
+                            if(null===val) {
+                                S.sqlite3_result_null(pCx);
+                                break;
+                            }else if(undefined!==val.length){
+                                const pBlob = Module.allocate(val, ALLOC_NORMAL);
+                                S.sqlite3_result_blob(pCx, pBlob, val.length, -1/*==SQLITE_TRANSIENT*/);
+                                Module._free(blobptr);
+                                break;
+                            }
+                            // else fall through
+                        default:
+                            toss("Don't not how to handle this UDF result value:",val);
+                    };
+                }/*_setResult()*/;
+            }/*static init*/
+            const wrapper = function(pCx, argc, pArgv){
+                try{
+                    f._setResult(pCx, callback.apply(null, f._extractArgs(argc, pArgv)));
+                }catch(e){
+                    S.sqlite3_result_error(pCx, e.message, -1);
+                }
+            };
+            const pUdf = Module.addFunction(wrapper, "viii");
+            let fFlags = 0;
+            if(getOwnOption(opt, 'deterministic')) fFlags |= S.SQLITE_DETERMINISTIC;
+            if(getOwnOption(opt, 'directOnly')) fFlags |= S.SQLITE_DIRECTONLY;
+            if(getOwnOption(opt, 'innocuous')) fFlags |= S.SQLITE_INNOCUOUS;
+            name = name.toLowerCase();
+            try {
+                this.checkRc(S.sqlite3_create_function_v2(
+                    this._pDb, name,
+                    (opt.hasOwnProperty('arity') ? +opt.arity : callback.length),
+                    S.SQLITE_UTF8 | fFlags, null/*pApp*/, pUdf,
+                    null/*xStep*/, null/*xFinal*/, null/*xDestroy*/));
+            }catch(e){
+                Module.removeFunction(pUdf);
+                throw e;
+            }
+            if(this._udfs.hasOwnProperty(name)){
+                Module.removeFunction(this._udfs[name]);
+            }
+            this._udfs[name] = pUdf;
+            return this;
+        }/*createFunction()*/,
+        selectValue: function(sql,bind){
+            let stmt, rc;
+            try {
+                stmt = this.prepare(sql);
+                stmt.bind(bind);
+                if(stmt.step()) rc = stmt.get(0);
+            }finally{
+                if(stmt) stmt.finalize();
+            }
+            return rc;
+        }
     }/*DB.prototype*/;
 
 
@@ -654,7 +850,7 @@
             f._ = {
                 string: function(stmt, ndx, val, asBlob){
                     const bytes = intArrayFromString(val,true);
-                    const pStr = allocate(bytes, ALLOC_NORMAL);
+                    const pStr = Module.allocate(bytes, ALLOC_NORMAL);
                     stmt._allocs.push(pStr);
                     const func =  asBlob ? S.sqlite3_bind_blob : S.sqlite3_bind_text;
                     return func(stmt._pStmt, ndx, pStr, bytes.length, 0);
@@ -673,12 +869,10 @@
                 break;
             }
             case BindTypes.number: {
-                const m = ((val === (val|0))
-                           ? ((val & 0x00000000/*>32 bits*/)
-                              ? S.sqlite3_bind_double
-                              /*It's illegal to bind a 64-bit int
-                                from here*/
-                              : S.sqlite3_bind_int)
+                const m = (isInt32(val)
+                           ? S.sqlite3_bind_int
+                           /*It's illegal to bind a 64-bit int
+                             from here*/
                            : S.sqlite3_bind_double);
                 rc = m(stmt._pStmt, ndx, val);
                 break;
@@ -695,7 +889,7 @@
                         toss("Binding a value as a blob requires",
                              "that it have a length member.");
                     }
-                    const pBlob = allocate(val, ALLOC_NORMAL);
+                    const pBlob = Module.allocate(val, ALLOC_NORMAL);
                     stmt._allocs.push(pBlob);
                     rc = S.sqlite3_bind_blob(stmt._pStmt, ndx, pBlob, len, 0);
                 }
@@ -711,7 +905,7 @@
     const freeBindMemory = function(stmt){
         let m;
         while(undefined !== (m = stmt._allocs.pop())){
-            _free(m);
+            Module._free(m);
         }
         return stmt;
     };
@@ -775,7 +969,13 @@
 
            Bindable value types:
 
-           - null or undefined is bound as NULL.
+           - null is bound as NULL.
+
+           - undefined as a standalone value is a no-op intended to
+             simplify certain client-side use cases: passing undefined
+             as a value to this function will not actually bind
+             anything. undefined as an array or object property when
+             binding an array/object is treated as null.
 
            - Numbers are bound as either doubles or integers: doubles
              if they are larger than 32 bits, else double or int32,
@@ -818,18 +1018,24 @@
 
            - The statement has been finalized.
         */
-        bind: function(/*[ndx,] value*/){
-            if(!affirmStmtOpen(this).parameterCount){
-                toss("This statement has no bindable parameters.");
-            }
-            this._mayGet = false;
+        bind: function(/*[ndx,] arg*/){
+            affirmStmtOpen(this);
             let ndx, arg;
             switch(arguments.length){
                 case 1: ndx = 1; arg = arguments[0]; break;
                 case 2: ndx = arguments[0]; arg = arguments[1]; break;
                 default: toss("Invalid bind() arguments.");
             }
-            if(null===arg || undefined===arg){
+            this._mayGet = false;
+            if(undefined===arg){
+                /* It might seem intuitive to bind undefined as NULL
+                   but this approach simplifies certain client-side
+                   uses when passing on arguments between 2+ levels of
+                   functions. */
+                return this;
+            }else if(!this.parameterCount){
+                toss("This statement has no bindable parameters.");
+            }else if(null===arg){
                 /* bind NULL */
                 return bindOne(this, ndx, BindTypes.null, arg);
             }

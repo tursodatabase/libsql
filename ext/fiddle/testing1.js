@@ -14,14 +14,20 @@
 */
 
 const mainTest1 = function(namespace){
+    const T = self.SqliteTestUtil;
+    T.assert(Module._free instanceof Function).
+        assert(Module.allocate instanceof Function).
+        assert(Module.addFunction instanceof Function).
+        assert(Module.removeFunction instanceof Function);
+
     const S = namespace.sqlite3.api;
     const oo = namespace.sqlite3.SQLite3;
-    const T = self.SqliteTestUtil;
     console.log("Loaded module:",S.sqlite3_libversion(),
                 S.sqlite3_sourceid());
     const db = new oo.DB();
     const log = console.log.bind(console);
     try {
+
         T.assert(db._pDb);
         log("DB:",db.filename);
         log("Build options:",oo.compileOptionUsed());
@@ -89,10 +95,31 @@ INSERT INTO t(a,b) VALUES(1,2),(3,4),(?,?);`,
             }
         });
         T.assert(6 === counter);
-        log("Test count:",T.counter);
+
+        log("Testing UDF...");
+        db.createFunction("foo",function(a,b){return a+b});
+        T.assert(7===db.selectValue("select foo(3,4)")).
+            assert(5===db.selectValue("select foo(3,?)",2)).
+            assert(5===db.selectValue("select foo(?,?)",[1,4])).
+            assert(5===db.selectValue("select foo($a,$b)",{$a:0,$b:5}));
+        db.createFunction("bar", {
+            arity: -1,
+            callback: function(){
+                var rc = 0;
+                for(let i = 0; i < arguments.length; ++i) rc += arguments[i];
+                return rc;
+            }
+        });
+        T.assert(0===db.selectValue("select bar()")).
+            assert(1===db.selectValue("select bar(1)")).
+            assert(3===db.selectValue("select bar(1,2)")).
+            assert(-1===db.selectValue("select bar(1,2,-4)"));
+
+        T.assert('hi' === db.selectValue("select ?",'hi'));
     }finally{
         db.close();
     }
+    log("Total Test count:",T.counter);
 };
 
 self/*window or worker*/.Module.postRun.push(function(theModule){

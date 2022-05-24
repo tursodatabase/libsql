@@ -4,3 +4,8 @@ stackAlloc
 stackSave
 stackRestore
 UTF8ToString
+removeFunction
+addFunction
+setValue
+getValue
+allocate
