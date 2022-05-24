@@ -12,27 +12,15 @@
 
   A basic test script for sqlite3-api.js.
 */
-
-const mainTest1 = function(namespace){
+(function(){
     const T = self.SqliteTestUtil;
-    T.assert(Module._free instanceof Function).
-        assert(Module.allocate instanceof Function).
-        assert(Module.addFunction instanceof Function).
-        assert(Module.removeFunction instanceof Function);
-
-    const S = namespace.sqlite3.api;
-    const oo = namespace.sqlite3.SQLite3;
-    console.log("Loaded module:",S.sqlite3_libversion(),
-                S.sqlite3_sourceid());
-    const db = new oo.DB();
     const log = console.log.bind(console);
-    try {
 
+    const test1 = function(db,api){
+        log("Basic sanity tests...");
         T.assert(db._pDb);
-        log("DB:",db.filename);
-        log("Build options:",oo.compileOptionUsed());
         let st = db.prepare("select 3 as a");
-        log("statement =",st);
+        //log("statement =",st);
         T.assert(st._pStmt)
             .assert(!st._mayGet)
             .assert('a' === st.getColumnName(0))
@@ -43,14 +31,14 @@ const mainTest1 = function(namespace){
             .assert(true===st.step())
             .assert(3 === st.get(0))
             .mustThrow(()=>st.get(1))
-            .mustThrow(()=>st.get(0,~S.SQLITE_INTEGER))
-            .assert(3 === st.get(0,S.SQLITE_INTEGER))
+            .mustThrow(()=>st.get(0,~api.SQLITE_INTEGER))
+            .assert(3 === st.get(0,api.SQLITE_INTEGER))
             .assert(3 === st.getInt(0))
-            .assert('3' === st.get(0,S.SQLITE_TEXT))
+            .assert('3' === st.get(0,api.SQLITE_TEXT))
             .assert('3' === st.getString(0))
-            .assert(3.0 === st.get(0,S.SQLITE_FLOAT))
+            .assert(3.0 === st.get(0,api.SQLITE_FLOAT))
             .assert(3.0 === st.getFloat(0))
-            .assert(st.get(0,S.SQLITE_BLOB) instanceof Uint8Array)
+            .assert(st.get(0,api.SQLITE_BLOB) instanceof Uint8Array)
             .assert(st.getBlob(0) instanceof Uint8Array)
             .assert(3 === st.get([])[0])
             .assert(3 === st.get({}).a)
@@ -73,7 +61,7 @@ INSERT INTO t(a,b) VALUES(1,2),(3,4),(?,?);`,
             bind: [5,6]
         });
         T.assert(2 === list.length);
-        log("Exec'd SQL:", list);
+        //log("Exec'd SQL:", list);
         let counter = 0, colNames = [];
         db.exec("SELECT a a, b b FROM t",{
             rowMode: 'object',
@@ -95,7 +83,9 @@ INSERT INTO t(a,b) VALUES(1,2),(3,4),(?,?);`,
             }
         });
         T.assert(6 === counter);
+    };
 
+    const testUDF = function(db){
         log("Testing UDF...");
         db.createFunction("foo",function(a,b){return a+b});
         T.assert(7===db.selectValue("select foo(3,4)")).
@@ -110,6 +100,8 @@ INSERT INTO t(a,b) VALUES(1,2),(3,4),(?,?);`,
                 return rc;
             }
         });
+
+        log("Testing DB::selectValue() w/ UDF...");
         T.assert(0===db.selectValue("select bar()")).
             assert(1===db.selectValue("select bar(1)")).
             assert(3===db.selectValue("select bar(1,2)")).
@@ -120,18 +112,34 @@ INSERT INTO t(a,b) VALUES(1,2),(3,4),(?,?);`,
             assert(null === db.selectValue("select ?",null)).
             assert(null === db.selectValue("select ?",[null])).
             assert(null === db.selectValue("select $a",{$a:null}));
-                 
-    }finally{
-        db.close();
-    }
-    log("Total Test count:",T.counter);
-};
+    };
 
-self/*window or worker*/.Module.postRun.push(function(theModule){
-    /** Use a timeout so that we are (hopefully) out from under the
-        module init stack when our setup gets run. */
-    
-    setTimeout(function(){
-        theModule.loadSqliteAPI(mainTest1);
-    },0);
-});
+    const runTests = function(namespace){
+        T.assert(Module._free instanceof Function).
+            assert(Module.allocate instanceof Function).
+            assert(Module.addFunction instanceof Function).
+            assert(Module.removeFunction instanceof Function);
+        const api = namespace.api;
+        const oo = namespace.SQLite3;
+        console.log("Loaded module:",api.sqlite3_libversion(),
+                    api.sqlite3_sourceid());
+        log("Build options:",oo.compileOptionUsed());
+        const db = new oo.DB();
+        try {
+            log("DB:",db.filename);
+            [
+                test1, testUDF
+            ].forEach((f)=>f(db, api));
+        }finally{
+            db.close();
+        }
+        log("Total Test count:",T.counter);
+    };
+
+    self.Module.postRun.push(function(theModule){
+        /** Use a timeout so that we are (hopefully) out from under the
+            module init stack when our setup gets run. Just on principle,
+            not because we _need_ to be. */
+        setTimeout(()=>theModule.loadSqliteAPI(runTests), 0);
+    });
+})(self/*window or worker*/);

@@ -132,35 +132,45 @@
         return (arguments.length>1 ? arguments[0] : document)
             .querySelector(arguments[arguments.length-1]);
     };
-    
-    const statusElement = E('#module-status');
-    const progressElement = E('#module-progress');
-    const spinnerElement = E('#module-spinner');
 
+    /** Handles status updates from the Module object. */
     SF.addMsgHandler('module', function f(ev){
         ev = ev.data;
         if('status'!==ev.type){
             console.warn("Unexpected module-type message:",ev);
             return;
         }
+        if(!f.ui){
+            f.ui = {
+                status: E('#module-status'),
+                progress: E('#module-progress'),
+                spinner: E('#module-spinner')
+            };
+        }
         const msg = ev.data;
-        progressElement.value = msg.step;
-        progressElement.max = msg.step + 1/*we don't know how many steps to expect*/;
+        if(f.ui.progres){
+            progress.value = msg.step;
+            progress.max = msg.step + 1/*we don't know how many steps to expect*/;
+        }
         if(1==msg.step){
-            progressElement.hidden = false;
-            spinnerElement.hidden = false;
+            f.ui.progress.classList.remove('hidden');
+            f.ui.spinner.classList.remove('hidden');
         }
         if(msg.text){
-            statusElement.classList.remove('hidden');
-            statusElement.innerText = msg.text;
+            f.ui.status.classList.remove('hidden');
+            f.ui.status.innerText = msg.text;
         }else{
-            progressElement.remove();
-            spinnerElement.remove();
-            statusElement.classList.add('hidden');
+            if(f.ui.progress){
+                f.ui.progress.remove();
+                f.ui.spinner.remove();
+                delete f.ui.progress;
+                delete f.ui.spinner;
+            }
+            f.ui.status.classList.add('hidden');
             /* The module can post messages about fatal problems,
                e.g. an exit() being triggered or assertion failure,
                after the last "load" message has arrived, so
-               leave the statusElement and message listener intact. */
+               leave f.ui.status and message listener intact. */
         }
     });
 
@@ -209,9 +219,9 @@
         },false);
 
         /** To be called immediately before work is sent to the
-            worker.  Updates some UI elements. The 'working'/'end'
+            worker. Updates some UI elements. The 'working'/'end'
             event will apply the inverse, undoing the bits this
-            function does.  This impl is not in the 'working'/'start'
+            function does. This impl is not in the 'working'/'start'
             event handler because that event is given to us
             asynchronously _after_ we need to have performed this
             work.
@@ -242,13 +252,15 @@
         };
 
         SF.addMsgHandler('working',function f(ev){
-            if('start' === ev.data){
-                /* See notes in preStartWork(). */
-            }else if('end' === ev.data){
-                preStartWork._.pageTitle.innerText = preStartWork._.pageTitleOrig;
-                btnShellExec.innerText = preStartWork._.btnLabel;
-                btnShellExec.removeAttribute('disabled');
+            switch(ev.data){
+                case 'start': /* See notes in preStartWork(). */; return;
+                case 'end':
+                    preStartWork._.pageTitle.innerText = preStartWork._.pageTitleOrig;
+                    btnShellExec.innerText = preStartWork._.btnLabel;
+                    btnShellExec.removeAttribute('disabled');
+                    return;
             }
+            console.warn("Unhandled 'working' event:",ev.data);
         });
 
         /* For each checkbox with data-csstgt, set up a handler which
