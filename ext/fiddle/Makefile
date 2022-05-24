@@ -6,26 +6,28 @@ default:
 clean:
 	make -C ../../ clean-wasm
 
-demo_files = emscripten.css fiddle.html \
+fiddle_files = emscripten.css fiddle.html \
              fiddle.js fiddle-module.js \
              fiddle-module.wasm fiddle-worker.js
 
-# demo_target is the remote destination for the fiddle app. It
+# fiddle_remote is the remote destination for the fiddle app. It
 # must be a [user@]HOST:/path for rsync.
 # Note that the target "should probably" contain a symlink of
 # index.html -> fiddle.html.
-demo_target ?=
-ifeq (,$(demo_target))
+fiddle_remote ?=
+ifeq (,$(fiddle_remote))
 ifneq (,$(wildcard /home/stephan))
-  demo_target = wh2:www/wh/sqlite3/.
+  fiddle_remote = wh2:www/wh/sqlite3/.
 else ifneq (,$(wildcard /home/drh))
-  #demo_target = if appropriate, add that user@host:/path here
+  #fiddle_remote = if appropriate, add that user@host:/path here
 endif
 endif
 
-push-fiddle: $(demo_files)
-	@if [ x = "x$(demo_target)" ]; then \
-		echo "demo_target must be a [user@]HOST:/path for rsync"; \
+$(fiddle_files): default
+
+push-fiddle: $(fiddle_files)
+	@if [ x = "x$(fiddle_remote)" ]; then \
+		echo "fiddle_remote must be a [user@]HOST:/path for rsync"; \
 		exit 1; \
 	fi
-	rsync -va $(demo_files) $(demo_target)
+	rsync -va $(fiddle_files) $(fiddle_remote)

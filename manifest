@@ -1,5 +1,5 @@
-C fiddle:\slots\sof\sgeneric\srefactoring,\srestructuring,\sand\scleanup\sin\sthe\shigher-level\scode.\sAdded\spush-fiddle\sext/fiddle/Makefile\starget\sto\spush\sthe\sfiddle\sapp\sto\sa\sremote\sserver\svia\srsync.
-D 2022-05-24T14:36:45.563
+C MoUse\sre\sdescriptive\svar\snames\sin\sext/fiddle/Makefile.
+D 2022-05-24T14:45:16.972
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -58,7 +58,7 @@ F ext/expert/test_expert.c d56c194b769bdc90cf829a14c9ecbc1edca9c850b837a4d0b13be
 F ext/fiddle/EXPORTED_FUNCTIONS.fiddle 487fc7c83d45c48326f731c89162ed17ab15767e5efede8999d7d6c6e2d04c0f
 F ext/fiddle/EXPORTED_FUNCTIONS.sqlite3 07b573a1830cb2d38ed347cf2a4139ec3b9c0f69748da6a2d8356b426c807694
 F ext/fiddle/EXPORTED_RUNTIME_METHODS ff64aea52779b0d4a838268275fe02adf6f2fdf4d9ce21c22d104bf3d7597398
-F ext/fiddle/Makefile 8eb51a07b4ff7e5684ca829906233c07d0dccb5d14a9d8b4ec737a2a6f3f0d7e
+F ext/fiddle/Makefile 2608fe0c56fa8f9cdf17e28d2be6def550a2fe987db5f7fc06d0210bfc868258
 F ext/fiddle/SqliteTestUtil.js e3094833660a6ddd40766b802901b5861b37f0b89c6c577ee0ce4c9d36399e61
 F ext/fiddle/emscripten.css 3d253a6fdb8983a2ac983855bfbdd4b6fa1ff267c28d69513dd6ef1f289ada3f
 F ext/fiddle/fiddle-worker.js e87c17070b979bd057a6849332f2a86660a4255ff7f1b6671e3e6026182ffd5a
@@ -1969,8 +1969,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 526c8c728019b317624a93f6f07840ca524bca84e7c03ce5e86e38953146236f
-R 8d308c6cc994c31188b8c779dc67218e
+P ed19fef3459499abb0a4a010f368b4576d6e068d930c8480446ea677ac87c1c1
+R 2d139ba9f84cbb3e77d4faca8388b32a
 U stephan
-Z 3a03c1dbb04138d0aaacfe24b6f85ef3
+Z 17627719ea8f66a25c6ef55c824d9ee0
 # Remove this line to create a well-formed Fossil manifest.
