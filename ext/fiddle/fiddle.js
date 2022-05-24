@@ -219,7 +219,7 @@
         },false);
 
         const btnInterrupt = E("#btn-interrupt");
-        btnInterrupt.classList.add('hidden');
+        //btnInterrupt.classList.add('hidden');
         /** To be called immediately before work is sent to the
             worker. Updates some UI elements. The 'working'/'end'
             event will apply the inverse, undoing the bits this
@@ -308,20 +308,55 @@
             SF.wMsg('interrupt');
         });
 
-        const fileSelector = E('#load-db');
-        fileSelector.addEventListener('change',function(){
+        /** Initiate a download of the db. */
+        const btnExport = E('#btn-export');
+        const eDisableDuringExport = [
+            /* UI elements to disable while export is running. Normally
+               the export is fast enough that this won't matter, but we
+               really don't want to be reading (from outside of sqlite)
+               the db when the user taps btnShellExec. */
+            btnShellExec, btnExport
+        ];
+        btnExport.addEventListener('click',function(){
+            eDisableDuringExport.forEach(e=>e.setAttribute('disabled','disabled'));
+            SF.wMsg('db-export');
+        });
+        SF.addMsgHandler('db-export', function(ev){
+            eDisableDuringExport.forEach(e=>e.removeAttribute('disabled'));
+            ev = ev.data;
+            if(ev.error){
+                SF.echo("Export failed:",ev.error);
+                return;
+            }
+            const blob = new Blob([ev.buffer], {type:"application/x-sqlite3"});
+            const a = document.createElement('a');
+            document.body.appendChild(a);
+            a.href = window.URL.createObjectURL(blob);
+            a.download = ev.filename;
+            a.addEventListener('click',function(){
+                setTimeout(function(){
+                    SF.echo("Exported (possibly auto-downloaded):",ev.filename);
+                    window.URL.revokeObjectURL(a.href);
+                    a.remove();
+                },0);
+            });
+            a.click();
+        });
+
+        E('#load-db').addEventListener('change',function(){
             const f = this.files[0];
             const r = new FileReader();
             const status = {loaded: 0, total: 0};
-            fileSelector.setAttribute('disabled','disabled');
+            this.setAttribute('disabled','disabled');
             r.addEventListener('loadstart', function(){
                 SF.echo("Loading",f.name,"...");
             });
             r.addEventListener('progress', function(ev){
                 SF.echo("Loading progress:",ev.loaded,"of",ev.total,"bytes.");
             });
+            const that = this;
             r.addEventListener('load', function(){
-                fileSelector.removeAttribute('disabled');
+                that.removeAttribute('disabled');
                 SF.echo("Loaded",f.name+". Opening db...");
                 SF.wMsg('open',{
                     filename: f.name,
@@ -329,11 +364,11 @@
                 });
             });
             r.addEventListener('error',function(){
-                fileSelector.removeAttribute('disabled');
+                that.removeAttribute('disabled');
                 SF.echo("Loading",f.name,"failed for unknown reason.");
             });
             r.addEventListener('abort',function(){
-                fileSelector.removeAttribute('disabled');
+                that.removeAttribute('disabled');
                 SF.echo("Cancelled loading of",f.name+".");
             });
             r.readAsArrayBuffer(f);

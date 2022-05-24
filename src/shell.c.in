@@ -12619,6 +12619,17 @@ void fiddle_interrupt(void){
 }
 
 /*
+** Returns the filename of the given db name, assuming
+** "main" if zDbName is NULL. Returns NULL globalDb is
+** not opened.
+*/
+const char * fiddle_db_filename(const char * zDbName){
+    return globalDb
+      ? sqlite3_db_filename(globalDb, zDbName ? zDbName : "main")
+      : NULL;
+}
+
+/*
 ** Trivial exportable function for emscripten. Needs to be exported using:
 **
 ** emcc ..flags... -sEXPORTED_FUNCTIONS=_fiddle_exec -sEXPORTED_RUNTIME_METHODS=ccall,cwrap
@@ -12644,9 +12655,12 @@ void fiddle_exec(const char * zSql){
     );
     puts("WASM shell");
     puts("Enter \".help\" for usage hints.");
-    if(once>0) open_db(&shellState, 0);
+    if(once>0){
+      shellState.pAuxDb->zDbFilename = "/fiddle.sqlite3";
+      open_db(&shellState, 0);
+    }
     if(shellState.db){
-      puts("Connected to a transient in-memory database.");
+      printf("Connected to %s.\n", fiddle_db_filename(NULL));
     }else{
       fprintf(stderr,"ERROR initializing db!\n");
       return;

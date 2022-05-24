@@ -206,6 +206,8 @@
         ["sqlite3_interrupt", "void", ["number"]],
         ["sqlite3_libversion", "string", []],
         ["sqlite3_open", "number", ["string", "number"]],
+        //["sqlite3_open_v2", "number", ["string", "number", "number", "string"]],
+        //^^^^ TODO: add the flags needed for the 3rd arg
         ["sqlite3_prepare_v2", "number", ["number", "string", "number", "number", "number"]],
         ["sqlite3_prepare_v2_sqlptr", "sqlite3_prepare_v2",
          /* Impl which requires that the 2nd argument be a pointer to
@@ -253,34 +255,40 @@
     };
 
     /**
-       The DB class wraps a sqlite3 db handle. Its argument may either
-       be a db name or a Uint8Array containing a binary image of a
-       database. If the name is not provided or is an empty string,
-       ":memory:" is used. A string name other than ":memory:" or ""
-       will currently fail to open, for lack of a filesystem to
-       load it from. If given a blob, a random name is generated.
+       The DB class wraps a sqlite3 db handle.
 
-       Achtung: all arguments other than those specifying an
-       in-memory db are currently untested for lack of an app
-       to test them in.       
+       It accepts the following argument signatures:
+
+       - ()
+       - (undefined) (same effect as ())
+       - (Uint8Array holding an sqlite3 db image)
+
+       It always generates a random filename and sets is to
+       the `filename` property of this object.
+
+       Developer's note: the reason it does not (any longer) support
+       ":memory:" as a name is because we can apparently only export
+       images of DBs which are stored in the pseudo-filesystem
+       provided by the JS APIs. Since exporting and importing images
+       is an important usability feature for this class, ":memory:"
+       DBs are not supported (until/unless we can find a way to export
+       those as well). The naming semantics will certainly evolve as
+       this API does.
     */
-    const DB = function(name/*TODO? openMode flags*/){
-        let fn, buff;
+    const DB = function(arg){
+        const fn = "db-"+((Math.random() * 10000000) | 0)+
+              "-"+((Math.random() * 10000000) | 0)+".sqlite3";
+        let buffer;
         if(name instanceof Uint8Array){
-            buff = name;
-            name = undefined;
-            fn = "db-"+((Math.random() * 10000000) | 0)+
-                "-"+((Math.random() * 10000000) | 0)+".sqlite3";
-        }else if(":memory:" === name || "" === name){
-            fn = name || ":memory:";
-            name = undefined;
-        }else if('string'!==typeof name){
-            toss("TODO: support blob image of db here.");
-        }else{
-            fn = name;
+            buffer = arg;
+            arg = undefined;
+        }else if(arguments.length && undefined!==arg){
+            toss("Invalid arguments to DB constructor.",
+                 "Expecting no args, undefined, or a",
+                 "sqlite3 file as a Uint8Array.");
         }
-        if(buff){
-            FS.createDataFile("/", fn, buff, true, true);
+        if(buffer){
+            FS.createDataFile("/", fn, buffer, true, true);
         }
         setValue(pPtrArg, 0, "i32");
         this.checkRc(api.sqlite3_open(fn, pPtrArg));
@@ -413,6 +421,7 @@
                 Object.values(this._udfs).forEach(Module.removeFunction);
                 delete this._udfs;
                 delete this._statements;
+                delete this.filename;
                 api.sqlite3_close_v2(this._pDb);
                 delete this._pDb;
             }
@@ -779,6 +788,32 @@
                 if(stmt) stmt.finalize();
             }
             return rc;
+        },
+
+        /**
+           Exports a copy of this db's file as a Uint8Array and
+           returns it. It is technically not legal to call this while
+           any prepared statement are currently active. Throws if this
+           db is not open.
+
+           Maintenance reminder: the corresponding sql.js impl of this
+           feature closes the current db, finalizing any active
+           statements and (seemingly unnecessarily) destroys any UDFs,
+           copies the file, and then re-opens it (without restoring
+           the UDFs). Those gymnastics are not necessary on the tested
+           platform but might be necessary on others. Because of that
+           eventuality, this interface currently enforces that no
+           statements are active when this is run. It will throw if
+           any are.
+        */
+        exportBinaryImage: function(){
+            affirmDbOpen(this);
+            if(Object.keys(this._statements).length){
+                toss("Cannot export with prepared statements active!",
+                     "finalize() all statements and try again.");
+            }
+            const img = FS.readFile(this.filename, {encoding:"binary"});
+            return img;
         }
     }/*DB.prototype*/;
 

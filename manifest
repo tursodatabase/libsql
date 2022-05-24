@@ -1,5 +1,5 @@
-C fiddle:\sinitial\swork\son\sloading\sa\sclient-side\sdb\sfile.\sWorks\sbut\srequires\ssome\scleanup.\sExport\sis\snot\syet\simplemented.
-D 2022-05-24T19:01:21.099
+C fiddle:\sadded\ssupport\sfor\sexporting\s(downloading)\sthe\scurrent\sdb\sfile.\sTo\sdo\sthis\swe\shad\sto\sfall\sback\sto\snamed\sdbs,\sinstead\sof\sdefaulting\sto\san\sin-memory\sone,\sbut\sthe\svirtual\sfilesystem\sis\san\sin-memory\sFS,\sso\sthe\send\seffect\sis\sthe\ssame.
+D 2022-05-24T22:16:12.220
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -55,17 +55,17 @@ F ext/expert/expert1.test 3c642a4e7bbb14f21ddab595436fb465a4733f47a0fe5b2855e1d5
 F ext/expert/sqlite3expert.c 6ca30d73b9ed75bd56d6e0d7f2c962d2affaa72c505458619d0ff5d9cdfac204
 F ext/expert/sqlite3expert.h ca81efc2679a92373a13a3e76a6138d0310e32be53d6c3bfaedabd158ea8969b
 F ext/expert/test_expert.c d56c194b769bdc90cf829a14c9ecbc1edca9c850b837a4d0b13be14095c32a72
-F ext/fiddle/EXPORTED_FUNCTIONS.fiddle 487fc7c83d45c48326f731c89162ed17ab15767e5efede8999d7d6c6e2d04c0f
-F ext/fiddle/EXPORTED_FUNCTIONS.sqlite3 07b573a1830cb2d38ed347cf2a4139ec3b9c0f69748da6a2d8356b426c807694
+F ext/fiddle/EXPORTED_FUNCTIONS.fiddle 2f7c561af85e6d711fb42f395bc0074b6e6fcf16bc57d495ce4e1c3d0484c5d2
+F ext/fiddle/EXPORTED_FUNCTIONS.sqlite3 540b9dec63a3a62a256e2f030827848a92e9b9d9b6fa5c0188295a4a1c5382cd
 F ext/fiddle/EXPORTED_RUNTIME_METHODS ff64aea52779b0d4a838268275fe02adf6f2fdf4d9ce21c22d104bf3d7597398
 F ext/fiddle/Makefile 2608fe0c56fa8f9cdf17e28d2be6def550a2fe987db5f7fc06d0210bfc868258
 F ext/fiddle/SqliteTestUtil.js e3094833660a6ddd40766b802901b5861b37f0b89c6c577ee0ce4c9d36399e61
 F ext/fiddle/emscripten.css 3d253a6fdb8983a2ac983855bfbdd4b6fa1ff267c28d69513dd6ef1f289ada3f
-F ext/fiddle/fiddle-worker.js 12b51133e47d1bfaf3e09bb0fa956c0f24bada42d25d4d67322ed86ca94ff634
-F ext/fiddle/fiddle.html caee127caba2e2a797954ae911f071a6fd224c07e108171d24b01940058b4564
-F ext/fiddle/fiddle.js e4b10f2b7c325060d0c2ff49408cf5ca1439f8bac2df97781fe7213eaac1d6a3
+F ext/fiddle/fiddle-worker.js 2c4e323ad5c94b863271d7779436a6e5291d3cc9dd2f5e5d067a22c2a539ff22
+F ext/fiddle/fiddle.html 468723b7a0bbdc92e24990c72e4b8bffdc1a8d605f91b595e36bcd8a6c840ff8
+F ext/fiddle/fiddle.js bc08897ceee8b4f32bb32dabab9c28d5aa1f252a88ac14b51933d6fa36e1c34c
 F ext/fiddle/index.md d9c1c308d8074341bc3b11d1d39073cd77754cb3ca9aeb949f23fdd8323d81cf
-F ext/fiddle/sqlite3-api.js 5b47e19d2e34cf0d6f09e1ea845f4e151879aaa37dc06eb88b21865efb94bd8a
+F ext/fiddle/sqlite3-api.js ce08520b8117e4fbbbeb02d8d047defd4e8507d687e76d20a39f12401bad0219
 F ext/fiddle/testing-common.js a2527fd8dfb500bad9b434ae2645bb91489792115ee1e1b4b53cac4e9198992a
 F ext/fiddle/testing.css 750572dded671d2cf142bbcb27af5542522ac08db128245d0b9fe410aa1d7f2a
 F ext/fiddle/testing1.html c00236d71b7f7523b722ae2f79cb2b734e6ed4ff16102fa69974145f6e2bfc95
@@ -569,7 +569,7 @@ F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c a4eb3c617027fd049b07432f3b942ea7151fa793a332a11a7d0f58c9539e104f
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 4f13d01141caae4f982125fecf50703c746ab621c57ca0aa747fab2b28e88c1e
-F src/shell.c.in b0adbcaaa7941284194b1e3ca2b89fb8a3cb96d395ea2f3be46b85f166716b09
+F src/shell.c.in 20932a2f318c77ae4540427dab75de9e91b5d2b9f8201c5953931e84c0d3cc5d
 F src/sqlite.h.in d15c307939039086adca159dd340a94b79b69827e74c6d661f343eeeaefba896
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h a988810c9b21c0dc36dc7a62735012339dc76fc7ab448fb0792721d30eacb69d
@@ -1969,11 +1969,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2b6ebba26d936ae7b9acf7d4bd15e82cbfabda22e1044b3dd838c7b07095100e
-R 62090175f25fd90e2c5311e4c96dd351
-T *branch * fiddle-local-db
-T *sym-fiddle-local-db *
-T -sym-trunk * Cancelled\sby\sbranch.
+P 0fa8378c006fcf2311772d36cf2e3c2cd8e8648f671de89ee9832e2e1a06ef49
+R 39035a17b33485a10b3b4dd052e35f61
 U stephan
-Z 3bd69b4520f16e04c7fb41fc28b99798
+Z 0fc30b16e829c9b67855feacd792a751
 # Remove this line to create a well-formed Fossil manifest.
