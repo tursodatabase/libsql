@@ -605,10 +605,11 @@
 
            - .arity: the number of arguments which SQL calls to this
              function expect or require. The default value is the
-             callback's length property. A value of -1 means that the
-             function is variadic and may accept any number of
-             arguments, up to sqlite3's compile-time limits. sqlite3
-             will enforce the argument count if is zero or greater.
+             callback's length property (i.e. the number of declared
+             parameters it has). A value of -1 means that the function
+             is variadic and may accept any number of arguments, up to
+             sqlite3's compile-time limits. sqlite3 will enforce the
+             argument count if is zero or greater.
 
            The following properties correspond to flags documented at:
 
@@ -737,8 +738,8 @@
             return this;
         }/*createFunction()*/,
         /**
-           Prepares the given SQL, step()s it one time and returns the
-           value of the first result column. If it has no results,
+           Prepares the given SQL, step()s it one time, and returns
+           the value of the first result column. If it has no results,
            undefined is returned. If passed a second argument, it is
            treated like an argument to Stmt.bind(), so may be any type
            supported by that function. Throws on error (e.g. malformed
@@ -766,9 +767,10 @@
 
     /** Returns an opaque truthy value from the BindTypes
         enum if v's type is a valid bindable type, else
-        returns a falsy value. */
+        returns a falsy value. As a special case, a value of
+        undefined is treated as a bind type of null. */
     const isSupportedBindType = function(v){
-        let t = BindTypes[null===v ? 'null' : typeof v];
+        let t = BindTypes[(null===v||undefined===v) ? 'null' : typeof v];
         switch(t){
             case BindTypes.boolean:
             case BindTypes.null:
@@ -818,14 +820,6 @@
     const affirmColIndex = function(stmt,ndx){
         if((ndx !== (ndx|0)) || ndx<0 || ndx>=stmt.columnCount){
             toss("Column index",ndx,"is out of range.");
-        }
-        return stmt;
-    };
-
-    /** If stmt._mayGet, returns stmt, else throws. */
-    const affirmMayGet = function(stmt){
-        if(!affirmStmtOpen(stmt)._mayGet){
-            toss("Statement.step() has not (recently) returned true.");
         }
         return stmt;
     };
@@ -981,8 +975,11 @@
            - undefined as a standalone value is a no-op intended to
              simplify certain client-side use cases: passing undefined
              as a value to this function will not actually bind
-             anything. undefined as an array or object property when
-             binding an array/object is treated as null.
+             anything and this function will skip confirmation that
+             binding is even legal. (Those semantics simplify certain
+             client-side uses.) Conversely, a value of undefined as an
+             array or object property when binding an array/object
+             (see below) is treated the same as null.
 
            - Numbers are bound as either doubles or integers: doubles
              if they are larger than 32 bits, else double or int32,
@@ -1033,7 +1030,6 @@
                 case 2: ndx = arguments[0]; arg = arguments[1]; break;
                 default: toss("Invalid bind() arguments.");
             }
-            this._mayGet = false;
             if(undefined===arg){
                 /* It might seem intuitive to bind undefined as NULL
                    but this approach simplifies certain client-side
@@ -1042,7 +1038,9 @@
                 return this;
             }else if(!this.parameterCount){
                 toss("This statement has no bindable parameters.");
-            }else if(null===arg){
+            }
+            this._mayGet = false;
+            if(null===arg){
                 /* bind NULL */
                 return bindOne(this, ndx, BindTypes.null, arg);
             }
@@ -1080,7 +1078,7 @@
            If passed a single argument, a bind index of 1 is assumed.
         */
         bindAsBlob: function(ndx,arg){
-            affirmStmtOpen(this)._mayGet = false;
+            affirmStmtOpen(this);
             if(1===arguments.length){
                 ndx = 1;
                 arg = arguments[0];
@@ -1090,6 +1088,7 @@
                && BindTypes.null !== t){
                 toss("Invalid value type for bindAsBlob()");
             }
+            this._mayGet = false;
             return bindOne(this, ndx, BindTypes.blob, arg);
         },
         /**
@@ -1100,11 +1099,11 @@
         step: function(){
             affirmUnlocked(this, 'step()');
             const rc = S.sqlite3_step(affirmStmtOpen(this)._pStmt);
-            this._mayGet = false;
             switch(rc){
-                case S.SQLITE_DONE: return false;
+                case S.SQLITE_DONE: return this._mayGet = false;
                 case S.SQLITE_ROW: return this._mayGet = true;
                 default:
+                    this._mayGet = false;
                     console.warn("sqlite3_step() rc=",rc,"SQL =",
                                  S.sqlite3_sql(this._pStmt));
                     this.db.checkRc(rc);
@@ -1144,7 +1143,9 @@
            getJSON() can be used for that.
         */
         get: function(ndx,asType){
-            affirmMayGet(this);
+            if(!affirmStmtOpen(this)._mayGet){
+                toss("Stmt.step() has not (recently) returned true.");
+            }
             if(Array.isArray(ndx)){
                 let i = 0;
                 while(i<this.columnCount){
