@@ -1537,7 +1537,8 @@ clean: clean-wasm
 emcc_opt = -Oz
 emcc_flags = $(emcc_opt) -sALLOW_TABLE_GROWTH -I. $(SHELL_OPT)
 $(fiddle_module_js): Makefile sqlite3.c shell.c \
-    $(fiddle_dir)/EXPORTED_RUNTIME_METHODS $(fiddle_dir)/EXPORTED_FUNCTIONS.fiddle
+    $(fiddle_dir)/EXPORTED_RUNTIME_METHODS \
+    $(fiddle_dir)/EXPORTED_FUNCTIONS.fiddle
 	emcc -o $@ $(emcc_flags) \
         -sMODULARIZE \
         -sEXPORT_NAME=initFiddleModule \
@@ -1546,10 +1547,11 @@ $(fiddle_module_js): Makefile sqlite3.c shell.c \
         -sEXPORTED_FUNCTIONS=@$(fiddle_dir_abs)/EXPORTED_FUNCTIONS.fiddle \
         sqlite3.c shell.c
 $(sqlite3_wasm_js): Makefile sqlite3.c \
-    $(fiddle_dir)/EXPORTED_RUNTIME_METHODS $(fiddle_dir)/EXPORTED_FUNCTIONS.sqlite3
+    $(fiddle_dir)/EXPORTED_RUNTIME_METHODS \
+    $(fiddle_dir)/EXPORTED_FUNCTIONS.sqlite3-api
 	emcc -o $@ $(emcc_flags) \
         -sEXPORTED_RUNTIME_METHODS=@$(fiddle_dir_abs)/EXPORTED_RUNTIME_METHODS \
-        -sEXPORTED_FUNCTIONS=@$(fiddle_dir_abs)/EXPORTED_FUNCTIONS.sqlite3 \
+        -sEXPORTED_FUNCTIONS=@$(fiddle_dir_abs)/EXPORTED_FUNCTIONS.sqlite3-api \
         --no-entry \
         sqlite3.c
 fiddle: $(fiddle_module_js)
