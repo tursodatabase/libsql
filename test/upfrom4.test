@@ -1,0 +1,55 @@
+# 2022-05-24
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix upfrom4
+
+do_execsql_test 100 {
+  DROP TABLE IF EXISTS t5;
+  DROP TABLE IF EXISTS m1;
+  DROP TABLE IF EXISTS m2;
+  CREATE TABLE t5(a INTEGER PRIMARY KEY, b TEXT, c TEXT);
+  CREATE TABLE m1(x INTEGER PRIMARY KEY, y TEXT);
+  CREATE TABLE m2(u INTEGER PRIMARY KEY, v TEXT);
+
+  INSERT INTO t5 VALUES(1, 'one', 'ONE');
+  INSERT INTO t5 VALUES(2, 'two', 'TWO');
+  INSERT INTO t5 VALUES(3, 'three', 'THREE');
+  INSERT INTO t5 VALUES(4, 'four', 'FOUR');
+
+  INSERT INTO m1 VALUES(1, 'i');
+  INSERT INTO m1 VALUES(2, 'ii');
+  INSERT INTO m1 VALUES(3, 'iii');
+
+  INSERT INTO m2 VALUES(1, 'I');
+  INSERT INTO m2 VALUES(3, 'II');
+  INSERT INTO m2 VALUES(4, 'III');
+  SELECT * FROM t5;
+} {1 one ONE 2 two TWO 3 three THREE 4 four FOUR}
+
+do_execsql_test 110 {
+  BEGIN;
+  UPDATE t5 SET b=y, c=v FROM m1 LEFT JOIN m2 ON (x=u) WHERE x=a;
+  SELECT * FROM t5 ORDER BY a;
+  ROLLBACK;
+} {1 i I 2 ii {} 3 iii II 4 four FOUR}
+
+do_execsql_test 120 {
+  BEGIN;
+  UPDATE t5 SET b=y, c=v FROM m2 RIGHT JOIN m1 ON (x=u) WHERE x=a;
+  SELECT * FROM t5 ORDER BY a;
+  ROLLBACK;
+} {1 i I 2 ii {} 3 iii II 4 four FOUR}
+
+
+finish_test
