@@ -6519,6 +6519,29 @@ static int countOfViewOptimization(Parse *pParse, Select *p){
 #endif /* SQLITE_COUNTOFVIEW_OPTIMIZATION */
 
 /*
+** If any term of pSrc, or any SF_NestedFrom sub-query, is not the same
+** as pSrcItem but has the same alias as p0, then return true.
+** Otherwise return false.
+*/
+static int sameSrcAlias(SrcItem *p0, SrcList *pSrc){
+  int i;
+  for(i=0; i<pSrc->nSrc; i++){
+    SrcItem *p1 = &pSrc->a[i];
+    if( p1==p0 ) continue;
+    if( p0->pTab==p1->pTab && 0==sqlite3_stricmp(p0->zAlias, p1->zAlias) ){
+      return 1;
+    }
+    if( p1->pSelect
+     && (p1->pSelect->selFlags & SF_NestedFrom)!=0
+     && sameSrcAlias(p0, p1->pSelect->pSrc)
+    ){
+      return 1;
+    }
+  }
+  return 0;
+}
+
+/*
 ** Generate code for the SELECT statement given in the p argument.  
 **
 ** The results are returned according to the SelectDest structure.
@@ -6622,15 +6645,12 @@ int sqlite3Select(
   ** disallow it altogether.  */
   if( p->selFlags & SF_UFSrcCheck ){
     SrcItem *p0 = &p->pSrc->a[0];
-    for(i=1; i<p->pSrc->nSrc; i++){
-      SrcItem *p1 = &p->pSrc->a[i];
-      if( p0->pTab==p1->pTab && 0==sqlite3_stricmp(p0->zAlias, p1->zAlias) ){
-        sqlite3ErrorMsg(pParse, 
-            "target object/alias may not appear in FROM clause: %s", 
-            p0->zAlias ? p0->zAlias : p0->pTab->zName
-        );
-        goto select_end;
-      }
+    if( sameSrcAlias(p0, p->pSrc) ){
+      sqlite3ErrorMsg(pParse, 
+          "target object/alias may not appear in FROM clause: %s", 
+          p0->zAlias ? p0->zAlias : p0->pTab->zName
+      );
+      goto select_end;
     }
 
     /* Clear the SF_UFSrcCheck flag. The check has already been performed,
