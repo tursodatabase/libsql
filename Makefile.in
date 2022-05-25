@@ -1539,6 +1539,9 @@ emcc_flags = $(emcc_opt) -sALLOW_TABLE_GROWTH -I. $(SHELL_OPT)
 $(fiddle_module_js): Makefile sqlite3.c shell.c \
     $(fiddle_dir)/EXPORTED_RUNTIME_METHODS $(fiddle_dir)/EXPORTED_FUNCTIONS.fiddle
 	emcc -o $@ $(emcc_flags) \
+        -sMODULARIZE \
+        -sEXPORT_NAME=initFiddleModule \
+        -sENVIRONMENT=web \
         -sEXPORTED_RUNTIME_METHODS=@$(fiddle_dir_abs)/EXPORTED_RUNTIME_METHODS \
         -sEXPORTED_FUNCTIONS=@$(fiddle_dir_abs)/EXPORTED_FUNCTIONS.fiddle \
         sqlite3.c shell.c

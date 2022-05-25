@@ -79,7 +79,7 @@
                 f._.value = '';
             }
             if(this.config.echoToConsole) console.log(text);
-            if(this.jqTerm) window.Module.jqTerm.echo(text);
+            if(this.jqTerm) this.jqTerm.echo(text);
             f._.value += text + "\n";
             if(this.config.autoScrollOutput){
                 f._.scrollTop = f._.scrollHeight;
@@ -527,7 +527,7 @@ SELECT group_concat(rtrim(t),x'0a') as Mandelbrot FROM a;`}
         if(window.jQuery && window.jQuery.terminal){
             /* Set up the terminal-style view... */
             const eTerm = window.jQuery('#view-terminal').empty();
-            SF.jqTerm = eTerm.terminal(dbExec,{
+            SF.jqTerm = eTerm.terminal(SF.dbExec.bind(SF),{
                 prompt: 'sqlite> ',
                 greetings: false /* note that the docs incorrectly call this 'greeting' */
             });
@@ -535,6 +535,7 @@ SELECT group_concat(rtrim(t),x'0a') as Mandelbrot FROM a;`}
             const head = E('header#titlebar');
             const btnToggleView = document.createElement('button');
             btnToggleView.appendChild(document.createTextNode("Toggle View"));
+            head.appendChild(btnToggleView);
             btnToggleView.addEventListener('click',function f(){
                 EAll('.app-view').forEach(e=>e.classList.toggle('hidden'));
                 if(document.body.classList.toggle('terminal-mode')){
