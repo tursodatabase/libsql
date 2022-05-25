@@ -16,7 +16,14 @@
     const T = self.SqliteTestUtil;
     const log = console.log.bind(console);
 
-    const test1 = function(db,api){
+    const assert = function(condition, text) {
+        if (!condition) {
+            throw new Error('Assertion failed' + (text ? ': ' + text : ''));
+        }
+    };
+
+    const test1 = function(db,sqlite3){
+        const api = sqlite3.api;
         log("Basic sanity tests...");
         T.assert(db._pDb);
         let st = db.prepare("select 3 as a");
@@ -114,13 +121,14 @@ INSERT INTO t(a,b) VALUES(1,2),(3,4),(?,?);`,
             assert(null === db.selectValue("select $a",{$a:null}));
     };
 
-    const runTests = function(namespace){
+    const runTests = function(Module){
         T.assert(Module._free instanceof Function).
             assert(Module.allocate instanceof Function).
             assert(Module.addFunction instanceof Function).
             assert(Module.removeFunction instanceof Function);
-        const api = namespace.api;
-        const oo = namespace.SQLite3;
+        const sqlite3 = Module.sqlite3;
+        const api = sqlite3.api;
+        const oo = sqlite3.SQLite3;
         console.log("Loaded module:",api.sqlite3_libversion(),
                     api.sqlite3_sourceid());
         log("Build options:",oo.compileOptionUsed());
@@ -129,17 +137,19 @@ INSERT INTO t(a,b) VALUES(1,2),(3,4),(?,?);`,
             log("DB:",db.filename);
             [
                 test1, testUDF
-            ].forEach((f)=>f(db, api));
+            ].forEach((f)=>f(db, sqlite3));
         }finally{
             db.close();
         }
         log("Total Test count:",T.counter);
     };
 
-    self.Module.postRun.push(function(theModule){
-        /** Use a timeout so that we are (hopefully) out from under the
-            module init stack when our setup gets run. Just on principle,
-            not because we _need_ to be. */
-        setTimeout(()=>theModule.loadSqliteAPI(runTests), 0);
+    initSqlite3Module(self.sqlite3TestModule).then(function(theModule){
+        /** Use a timeout so that we are (hopefully) out from
+            under the module init stack when our setup gets
+            run. Just on principle, not because we _need_ to
+            be. */
+        //console.debug("theModule =",theModule);
+        setTimeout(()=>runTests(theModule), 0);
     });
-})(self/*window or worker*/);
+})();

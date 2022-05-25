@@ -1540,18 +1540,23 @@ $(fiddle_module_js): Makefile sqlite3.c shell.c \
     $(fiddle_dir)/EXPORTED_RUNTIME_METHODS \
     $(fiddle_dir)/EXPORTED_FUNCTIONS.fiddle
 	emcc -o $@ $(emcc_flags) \
+        -sENVIRONMENT=web \
         -sMODULARIZE \
         -sEXPORT_NAME=initFiddleModule \
-        -sENVIRONMENT=web \
         -sEXPORTED_RUNTIME_METHODS=@$(fiddle_dir_abs)/EXPORTED_RUNTIME_METHODS \
         -sEXPORTED_FUNCTIONS=@$(fiddle_dir_abs)/EXPORTED_FUNCTIONS.fiddle \
         sqlite3.c shell.c
 $(sqlite3_wasm_js): Makefile sqlite3.c \
+    $(fiddle_dir)/sqlite3-api.js \
     $(fiddle_dir)/EXPORTED_RUNTIME_METHODS \
     $(fiddle_dir)/EXPORTED_FUNCTIONS.sqlite3-api
 	emcc -o $@ $(emcc_flags) \
+        -sENVIRONMENT=web \
+        -sMODULARIZE \
+        -sEXPORT_NAME=initSqlite3Module \
         -sEXPORTED_RUNTIME_METHODS=@$(fiddle_dir_abs)/EXPORTED_RUNTIME_METHODS \
         -sEXPORTED_FUNCTIONS=@$(fiddle_dir_abs)/EXPORTED_FUNCTIONS.sqlite3-api \
+        --post-js=$(fiddle_dir)/sqlite3-api.js \
         --no-entry \
         sqlite3.c
 fiddle: $(fiddle_module_js)

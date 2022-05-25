@@ -1,10 +1,10 @@
 # This GNU makefile exists primarily to simplify/speed up development
 # from emacs. It is not part of the canonical build process.
 default:
-	make -C ../.. wasm -e emcc_opt=-O0
+	$(MAKE) -C ../.. wasm -e emcc_opt=-O0
 
 clean:
-	make -C ../../ clean-wasm
+	$(MAKE) -C ../../ clean-wasm
 
 fiddle_files = emscripten.css fiddle.html \
              fiddle.js fiddle-module.js \
