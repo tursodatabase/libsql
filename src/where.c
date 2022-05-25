@@ -5933,7 +5933,7 @@ WhereInfo *sqlite3WhereBegin(
       if( pSrc->fg.isCorrelated ){
         sqlite3VdbeAddOp2(v, OP_Gosub, pSrc->regReturn, pSrc->addrFillSub);
       }else{
-        int iOnce = sqlite3VdbeAddOp0(v, OP_Once);
+        int iOnce = sqlite3VdbeAddOp0(v, OP_Once);  VdbeCoverage(v);
         sqlite3VdbeAddOp2(v, OP_Gosub, pSrc->regReturn, pSrc->addrFillSub);
         sqlite3VdbeJumpHere(v, iOnce);
       }
