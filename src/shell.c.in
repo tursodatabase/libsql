@@ -4394,6 +4394,9 @@ static const char *(azHelp[]) = {
   "       --bom  Put a UTF8 byte-order mark at the beginning",
   "       -e     Send output to the system text editor",
   "       -x     Send output as CSV to a spreadsheet (same as \".excel\")",
+  /* Note that .open is (partially) available in WASM builds but is
+  ** currently only intended to be used by the fiddle tool, not
+  ** end users, so is "undocumented." */
   ".open ?OPTIONS? ?FILE?   Close existing database and reopen FILE",
   "     Options:",
   "        --append        Use appendvfs to append database to the end of FILE",
@@ -4407,12 +4410,14 @@ static const char *(azHelp[]) = {
   "        --nofollow      Do not follow symbolic links",
   "        --readonly      Open FILE readonly",
   "        --zip           FILE is a ZIP archive",
+#ifndef SQLITE_SHELL_WASM_MODE
   ".output ?FILE?           Send output to FILE or stdout if FILE is omitted",
   "   If FILE begins with '|' then open it as a pipe.",
   "   Options:",
   "     --bom                 Prefix output with a UTF8 byte-order mark",
   "     -e                    Send output to the system text editor",
   "     -x                    Send output as CSV to a spreadsheet",
+#endif
   ".parameter CMD ...       Manage SQL parameter bindings",
   "   clear                   Erase all bindings",
   "   init                    Initialize the TEMP table that holds bindings",
@@ -9574,6 +9579,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     /* Check for command-line arguments */
     for(iName=1; iName<nArg; iName++){
       const char *z = azArg[iName];
+#ifndef SQLITE_SHELL_WASM_MODE
       if( optionMatch(z,"new") ){
         newFlag = 1;
 #ifdef SQLITE_HAVE_ZLIB
@@ -9594,7 +9600,9 @@ static int do_meta_command(char *zLine, ShellState *p){
       }else if( optionMatch(z, "maxsize") && iName+1<nArg ){
         p->szMax = integerValue(azArg[++iName]);
 #endif /* SQLITE_OMIT_DESERIALIZE */
-      }else if( z[0]=='-' ){
+      }else
+#endif /* !SQLITE_SHELL_WASM_MODE */
+      if( z[0]=='-' ){
         utf8_printf(stderr, "unknown option: %s\n", z);
         rc = 1;
         goto meta_command_exit;
@@ -9621,6 +9629,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     /* If a filename is specified, try to open it first */
     if( zFN || p->openMode==SHELL_OPEN_HEXDB ){
       if( newFlag && zFN && !p->bSafeMode ) shellDeleteFile(zFN);
+#ifndef SQLITE_SHELL_WASM_MODE
       if( p->bSafeMode
        && p->openMode!=SHELL_OPEN_HEXDB
        && zFN
@@ -9628,6 +9637,9 @@ static int do_meta_command(char *zLine, ShellState *p){
       ){
         failIfSafeMode(p, "cannot open disk-based database files in safe mode");
       }
+#else
+      /* WASM mode has its own sandboxed pseudo-filesystem. */
+#endif
       if( zFN ){
         zNewFilename = sqlite3_mprintf("%s", zFN);
         shell_check_oom(zNewFilename);
@@ -12598,10 +12610,21 @@ sqlite3 * fiddle_db_arg(sqlite3 *arg){
 /*
 ** Intended to be called via a SharedWorker() while a separate
 ** SharedWorker() (which manages the wasm module) is performing work
-** which should be interrupted.
+** which should be interrupted. Unfortunately, SharedWorker is not
+** portable enough to make real use of.
 */
 void fiddle_interrupt(void){
   if(globalDb) sqlite3_interrupt(globalDb);
+}
+
+/*
+** Returns the filename of the given db name, assuming "main" if
+** zDbName is NULL. Returns NULL if globalDb is not opened.
+*/
+const char * fiddle_db_filename(const char * zDbName){
+    return globalDb
+      ? sqlite3_db_filename(globalDb, zDbName ? zDbName : "main")
+      : NULL;
 }
 
 /*
@@ -12630,9 +12653,12 @@ void fiddle_exec(const char * zSql){
     );
     puts("WASM shell");
     puts("Enter \".help\" for usage hints.");
-    if(once>0) open_db(&shellState, 0);
+    if(once>0){
+      shellState.pAuxDb->zDbFilename = "/fiddle.sqlite3";
+      open_db(&shellState, 0);
+    }
     if(shellState.db){
-      puts("Connected to a transient in-memory database.");
+      printf("Connected to %s.\n", fiddle_db_filename(NULL));
     }else{
       fprintf(stderr,"ERROR initializing db!\n");
       return;

@@ -4,6 +4,9 @@
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <title>sqlite3 fiddle</title>
+    <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
+    <!-- to add a togglable terminal-style view, uncomment the following
+         two lines and ensure that these files are on the web server. -->
     <!--script src="jqterm/jqterm-bundle.min.js"></script>
     <link rel="stylesheet" href="jqterm/jquery.terminal.min.css"/-->
     <link rel="stylesheet" href="emscripten.css"/>
@@ -71,10 +74,14 @@
           display: none !important;
       }
       fieldset.options {
-          font-size: 75%;
+          font-size: 70%;
       }
       fieldset > legend {
           padding: 0 0.5em;
+      }
+      fieldset.options > div {
+          display: flex;
+          flex-wrap: wrap;
       }
       span.labeled-input {
           padding: 0.25em;
@@ -108,7 +115,7 @@
       }
       #view-split {
           display: flex;
-          flex-direction: column;
+          flex-direction: column-reverse;
       }
     </style>
   </head>
@@ -161,6 +168,16 @@
                    data-config='autoClearOutput'>
             <label for='opt-cb-autoclear'>Auto-clear output</label>
           </span>
+          <span class='labeled-input'>
+            <input type='file' id='load-db'/>
+            <label>Load DB</label>
+          </span>
+          <span class='labeled-input'>
+            <button id='btn-export'>Download DB</button>
+          </span>
+          <span class='labeled-input'>
+            <select id='select-examples'></select>
+          </span>
         </div>
       </fieldset>
       <div id='main-wrapper' class=''>
@@ -177,7 +194,6 @@ SELECT * FROM t;</textarea>
             <button id='btn-shell-exec'>Run</button>
             <button id='btn-clear'>Clear Input</button>
             <button data-cmd='.help'>Help</button>
-            <select id='select-examples'></select>
           </div>
         </div>
         <div class='ta-wrapper output'>
@@ -185,6 +201,11 @@ SELECT * FROM t;</textarea>
                     placeholder="Shell output."></textarea>
           <div class='button-bar'>
             <button id='btn-clear-output'>Clear Output</button>
+            <button id='btn-interrupt' class='hidden' disabled>Interrupt</button>
+            <!-- interruption cannot work in the current configuration
+                 because we cannot send an interrupt message when work
+                 is currently underway. At that point the Worker is
+                 tied up and will not receive the message. */
           </div>
         </div>
       </div>

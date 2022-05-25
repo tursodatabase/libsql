@@ -30,6 +30,7 @@ _sqlite3_finalize
 _sqlite3_interrupt
 _sqlite3_libversion
 _sqlite3_open
+_sqlite3_open_v2
 _sqlite3_prepare_v2
 _sqlite3_prepare_v2
 _sqlite3_reset
