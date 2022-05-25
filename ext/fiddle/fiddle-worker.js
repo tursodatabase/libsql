@@ -102,14 +102,17 @@
         });
     };
 
+    const stdout = function(){wMsg('stdout', Array.prototype.slice.call(arguments));};
+    const stderr = function(){wMsg('stderr', Array.prototype.slice.call(arguments));};
+
     self.onerror = function(/*message, source, lineno, colno, error*/) {
         const err = arguments[4];
         if(err && 'ExitStatus'==err.name){
             /* This is relevant for the sqlite3 shell binding but not the
                lower-level binding. */
-            fiddleModule._isDead = true;
-            fiddleModule.printErr("FATAL ERROR:", err.message);
-            fiddleModule.printErr("Restarting the app requires reloading the page.");
+            fiddleModule.isDead = true;
+            stderr("FATAL ERROR:", err.message);
+            stderr("Restarting the app requires reloading the page.");
             wMsg('error', err);
         }
         fiddleModule.setStatus('Exception thrown, see JavaScript console');
@@ -131,7 +134,7 @@
         */
         exec: function f(sql){
             if(!f._) f._ = fiddleModule.cwrap('fiddle_exec', null, ['string']);
-            if(fiddleModule._isDead){
+            if(fiddleModule.isDead){
                 wMsg('stderr', "shell module has exit()ed. Cannot run SQL.");
                 return;
             }
@@ -240,24 +243,12 @@
        emscripten module for use with build mode -sMODULARIZE.
     */
     const fiddleModule = {
-        /* ^^^ cannot declare that const because fiddle-module.js
-           (auto-generated) includes a decl for it and runs in this scope. */
-        preRun: [],
-        postRun: [
-            /*function(M) {
-                console.debug("FS=",M.FS);
-                wMsg('fiddle-ready');
-            }*/
-        ],
-        print: function(text){wMsg('stdout', Array.prototype.slice.call(arguments));},
-        printErr: function(text){wMsg('stderr', Array.prototype.slice.call(arguments));},
-        onRuntimeInitialized: function(M) {
-            //console.debug("M=",M);
-            wMsg('fiddle-ready');
-        },
+        print: stdout,
+        printErr: stderr,
         /**
-           Intercepts status updates from the Module object and fires
-           worker events with a type of 'status' and a payload of:
+           Intercepts status updates from the emscripting module init
+           and fires worker events with a type of 'status' and a
+           payload of:
 
            {
            text: string | null, // null at end of load process
@@ -288,26 +279,17 @@
                 type:'status',
                 data:{step: ++f.last.step, text: text||null}
             });
-        },
-        totalDependencies: 0,
-        monitorRunDependencies: function(left) {
-            this.totalDependencies = Math.max(this.totalDependencies, left);
-            this.setStatus(left
-                           ? ('Preparing... (' + (this.totalDependencies-left)
-                              + '/' + this.totalDependencies + ')')
-                           : 'All downloads complete.');
         }
     };
 
-
-    importScripts('fiddle-module.js')
-    /* loads the wasm module and installs our module init function,
-       initFiddleModule(). */;
+    importScripts('fiddle-module.js');
     /**
        initFiddleModule() is installed via fiddle-module.js due to
        building with:
 
        emcc ... -sMODULARIZE=1 -sEXPORT_NAME=initFiddleModule
     */
-    initFiddleModule(fiddleModule);
+    initFiddleModule(fiddleModule).then(function(thisModule){
+        wMsg('fiddle-ready');
+    });
 })();

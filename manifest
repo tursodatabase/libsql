@@ -1,5 +1,5 @@
-C fiddle:\srefactored\sso\sthat\sit\sno\slonger\sexposes\sany\sglobal\ssymbols.\sDoing\sso\swith\sthe\smain\ssqlite3.api\smodule\swill\sbe\smuch\stricker.
-D 2022-05-25T03:08:22.772
+C Further\sminor\scleanups\sand\sdocs\sin\sthe\sfiddle\sapp\sand\sworker.
+D 2022-05-25T04:20:08.617
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -61,14 +61,14 @@ F ext/fiddle/EXPORTED_RUNTIME_METHODS 4808171d24c601e31d2ea4eb131180e25194d8e78a
 F ext/fiddle/Makefile 2608fe0c56fa8f9cdf17e28d2be6def550a2fe987db5f7fc06d0210bfc868258
 F ext/fiddle/SqliteTestUtil.js e3094833660a6ddd40766b802901b5861b37f0b89c6c577ee0ce4c9d36399e61
 F ext/fiddle/emscripten.css 3d253a6fdb8983a2ac983855bfbdd4b6fa1ff267c28d69513dd6ef1f289ada3f
-F ext/fiddle/fiddle-worker.js ecfdf9d842f895046338469b30101f312866ca5dc3d3e002ae88b1256898094c
+F ext/fiddle/fiddle-worker.js 6000da12965319bed53d546f87885a6717a0cd8de0b4832edde7a95e63d1f33e
 F ext/fiddle/fiddle.html 70796dc8a867448b41bc7e2c5fd6b1865ed8010b3abe22ba0678e8915c062e9a
-F ext/fiddle/fiddle.js 931562304cf918b4b88c7095735e8b91896194c918a15afcfba0e5a31e273d63
+F ext/fiddle/fiddle.js 45f96ac7f7d6678503568dded46afaa741d841a2464519035636da0fd77aec50
 F ext/fiddle/index.md d9c1c308d8074341bc3b11d1d39073cd77754cb3ca9aeb949f23fdd8323d81cf
 F ext/fiddle/sqlite3-api.js ce08520b8117e4fbbbeb02d8d047defd4e8507d687e76d20a39f12401bad0219
 F ext/fiddle/testing-common.js a2527fd8dfb500bad9b434ae2645bb91489792115ee1e1b4b53cac4e9198992a
 F ext/fiddle/testing.css 750572dded671d2cf142bbcb27af5542522ac08db128245d0b9fe410aa1d7f2a
-F ext/fiddle/testing1.html c00236d71b7f7523b722ae2f79cb2b734e6ed4ff16102fa69974145f6e2bfc95
+F ext/fiddle/testing1.html 6c9321f68d90f942bdf51bbbfa7497113b203b85e45ef65e31d7cca3ce460366
 F ext/fiddle/testing1.js a2cee7ee12c2e1756e775125b0f9950dc5e5faeeeb4979c6d9894626d90cb5d9
 F ext/fts1/README.txt 20ac73b006a70bcfd80069bdaf59214b6cf1db5e
 F ext/fts1/ft_hash.c 3927bd880e65329bdc6f506555b228b28924921b
@@ -1969,8 +1969,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7c7fd34c8a05832a3973aaffe696250cb4d2a0b1646c9bfbe83970daf33cd817
-R 51490a036ccbb69f6412426a9f5e3350
+P cd227be805d0cd4b6e3c72ed0992ad3aec3db9c366909d9d82c6d3a29009c6eb
+R 89c5ae72ffcf082aa75015e7b32399c7
 U stephan
-Z 8dfdf2f1ba6221b5fdaef93177c62735
+Z 3072b7cf3dc542f70a2622c2abe8aee2
 # Remove this line to create a well-formed Fossil manifest.

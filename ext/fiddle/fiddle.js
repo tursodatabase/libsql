@@ -86,6 +86,8 @@
             }
         },
         _msgMap: {},
+        /** Adds a worker message handler for messages of the given
+            type. */
         addMsgHandler: function f(type,callback){
             if(Array.isArray(type)){
                 type.forEach((t)=>this.addMsgHandler(t, callback));
@@ -96,6 +98,7 @@
              : (this._msgMap[type] = [])).push(callback);
             return this;
         },
+        /** Given a worker message, runs all handlers for msg.type. */
         runMsgHandlers: function(msg){
             const list = (this._msgMap.hasOwnProperty(msg.type)
                           ? this._msgMap[msg.type] : false);
@@ -107,6 +110,7 @@
             list.forEach((f)=>f(msg));
             return true;
         },
+        /** Removes all message handlers for the given message type. */
         clearMsgHandlers: function(type){
             delete this._msgMap[type];
             return this;
@@ -338,11 +342,14 @@
                     SF.echo("Exported (possibly auto-downloaded):",ev.filename);
                     window.URL.revokeObjectURL(a.href);
                     a.remove();
-                },0);
+                },500);
             });
             a.click();
         });
 
+        /**
+           Handle load/import of an external db file.
+        */
         E('#load-db').addEventListener('change',function(){
             const f = this.files[0];
             const r = new FileReader();
@@ -365,7 +372,7 @@
             });
             r.addEventListener('error',function(){
                 that.removeAttribute('disabled');
-                SF.echo("Loading",f.name,"failed for unknown reason.");
+                SF.echo("Loading",f.name,"failed for unknown reasons.");
             });
             r.addEventListener('abort',function(){
                 that.removeAttribute('disabled');
@@ -440,11 +447,12 @@
         debounce.$defaultDelay = 500 /*arbitrary*/;
 
         const ForceResizeKludge = (function(){
-            /* Workaround for Safari mayhem regarding use of vh CSS units....
-               We cannot use vh units to set the terminal area size because
-               Safari chokes on that, so we calculate that height here. Larger
-               than ~95% is too big for Firefox on Android, causing the input
-               area to move off-screen. */
+            /* Workaround for Safari mayhem regarding use of vh CSS
+               units....  We cannot use vh units to set the main view
+               size because Safari chokes on that, so we calculate
+               that height here. Larger than ~95% is too big for
+               Firefox on Android, causing the input area to move
+               off-screen. */
             const bcl = document.body.classList;
             const appViews = EAll('.app-view');
             const resized = function f(){
@@ -453,6 +461,8 @@
                 var ht;
                 var extra = 0;
                 const elemsToCount = [
+                    /* Elements which we need to always count in the
+                       visible body size. */
                     E('body > header'),
                     E('body > footer')
                 ];
