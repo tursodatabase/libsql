@@ -1,5 +1,5 @@
-C Correct\shandling\sof\souter\sjoins\sin\sthe\sFROM\sclause\sof\san\sUPDATE\sstatement\nthat\soccurs\sinside\sof\sa\strigger.\s\sFollow-on\sto\s[98b3816bbaf539ea].
-D 2022-05-26T17:33:42.057
+C Fix\sissues\swith\sALTER\sTABLE\sand\striggers\scontaining\s"UPDATE...FROM"\sstatements.
+D 2022-05-26T19:10:11.700
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -500,7 +500,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
-F src/alter.c d8872f9d1863d8e31c37475e318de746e1b5ca57c0e477e35042a9ebbb6e0298
+F src/alter.c 379c644a32c64a18b592affac5ef173eb6024638b70ed4c593896e901702c78c
 F src/analyze.c aabdf3769c7fd9954a8ec508eb7041ae174b66f88d12c47199fabbea9a646467
 F src/attach.c 4431f82f0247bf3aaf91589acafdff77d1882235c95407b36da1585c765fbbc8
 F src/auth.c f4fa91b6a90bbc8e0d0f738aa284551739c9543a367071f55574681e0f24f8cf
@@ -685,6 +685,7 @@ F test/alterqf.test ff6c6f881485c29ed699b8ef4774864ca1b0c01a6c08f5cdd624a008e4b4
 F test/altertab.test 7273b8506eab46342be016af78028df49f3bd99037412f997a8f1011b37a6912
 F test/altertab2.test 62597b6fd08feaba1b6bfe7d31dac6117c67e06dc9ce9c478a3abe75b5926de0
 F test/altertab3.test 8af5c6eb4a7dd2fc73235b865b53561bf07428d1d6a9cd59a067abf51141891e
+F test/altertrig.test f621cb3b209a2e72974e580840365b046537cd97b2df6b52088218a95dcbd58d
 F test/amatch1.test b5ae7065f042b7f4c1c922933f4700add50cdb9f
 F test/analyze.test 547bb700f903107b38611b014ca645d6b5bb819f5210d7bf39c40802aafeb7d7
 F test/analyze3.test 4440c4932247adb2b4e0c838f657c19dc7af4f56859255436dc4e855f39b9324
@@ -1969,8 +1970,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f22f41d2c8a676b9a339e7f00c29c163bbb7079b1a4a76ee1a6a96aaf7de5f9e
-R 96c2f1a4243ab0b57b68e0f3b4978a15
-U drh
-Z 723fac70f8b090aa70201f7f985c54bc
+P 664a49fa813144b6fa5a7ae3f65af5412f150dd5def261c4d581d706b39f7846
+R 4d839461e9af3d0a5ea1b8ddf72bf796
+U dan
+Z 14299f1b8c4a8b0632845b66e1aabf6a
 # Remove this line to create a well-formed Fossil manifest.

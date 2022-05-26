@@ -1318,6 +1318,8 @@ static int renameResolveTrigger(Parse *pParse){
       SrcList *pSrc = sqlite3TriggerStepSrc(pParse, pStep);
       if( pSrc ){
         int i;
+        assert( pSrc->nSrc==1 || pSrc->nSrc==2 );
+        assert( pSrc->a[0].pSelect==0 );
         for(i=0; i<pSrc->nSrc && rc==SQLITE_OK; i++){
           SrcItem *p = &pSrc->a[i];
           p->iCursor = pParse->nTab++;
@@ -1325,8 +1327,6 @@ static int renameResolveTrigger(Parse *pParse){
             sqlite3SelectPrep(pParse, p->pSelect, 0);
             sqlite3ExpandSubquery(pParse, p);
             assert( i>0 );
-            assert( pStep->pFrom->a[i-1].pSelect );
-            sqlite3SelectPrep(pParse, pStep->pFrom->a[i-1].pSelect, 0);
           }else{
             p->pTab = sqlite3LocateTableItem(pParse, 0, p);
             if( p->pTab==0 ){
@@ -1337,6 +1337,15 @@ static int renameResolveTrigger(Parse *pParse){
             }
           }
         }
+        if( pStep->pFrom ){
+          for(i=0; i<pStep->pFrom->nSrc && rc==SQLITE_OK; i++){
+            SrcItem *p = &pStep->pFrom->a[i];
+            if( p->pSelect ){
+              sqlite3SelectPrep(pParse, p->pSelect, 0);
+            }
+          }
+        }
+
         if( rc==SQLITE_OK && db->mallocFailed ){
           rc = SQLITE_NOMEM;
         }
@@ -1788,6 +1797,15 @@ static void renameTableFunc(
             for(pStep=pTrigger->step_list; pStep; pStep=pStep->pNext){
               if( pStep->zTarget && 0==sqlite3_stricmp(pStep->zTarget, zOld) ){
                 renameTokenFind(&sParse, &sCtx, pStep->zTarget);
+              }
+              if( pStep->pFrom ){
+                int i;
+                for(i=0; i<pStep->pFrom->nSrc; i++){
+                  SrcItem *pItem = &pStep->pFrom->a[i];
+                  if( pItem->zName && 0==sqlite3_stricmp(pItem->zName, zOld) ){
+                    renameTokenFind(&sParse, &sCtx, pItem->zName);
+                  }
+                }
               }
             }
           }
