@@ -52,4 +52,79 @@ do_execsql_test 120 {
 } {1 i I 2 ii {} 3 iii II 4 four FOUR}
 
 
+reset_db
+db null -
+do_execsql_test 200 {
+  CREATE TABLE t1(a INT PRIMARY KEY, b INT, c INT);
+  INSERT INTO t1(a) VALUES(1),(2),(8),(19);
+  CREATE TABLE c1(x INTEGER PRIMARY KEY, b INT);
+  INSERT INTO c1(x,b) VALUES(1,1),(8,8),(17,17),(NULL,NULL);
+  CREATE TABLE c2(x INT,c INT);
+  INSERT INTO c2(x,c) VALUES(2,2),(8,8),(NULL,NULL);
+  CREATE TABLE dual(dummy TEXT);
+  INSERT INTO dual VALUES('X');
+} {}
+do_execsql_test 210 {
+  BEGIN;
+  SELECT * FROM t1 ORDER BY a;
+  UPDATE t1 SET b=c1.b, c=c2.c
+    FROM dual, c1 NATURAL RIGHT JOIN c2
+   WHERE x=a;
+  SELECT * FROM t1 ORDER BY a;
+  ROLLBACK;
+} {
+  1  -  -
+  2  -  -
+  8  -  -
+  19 -  -
+  1  -  -
+  2  -  2
+  8  8  8
+  19 -  -
+}
+do_execsql_test 300 {
+  CREATE TABLE t2(x);
+  CREATE TRIGGER AFTER INSERT ON t2 BEGIN
+    UPDATE t1 SET b=c1.b, c=c2.c
+      FROM dual, c1 NATURAL RIGHT JOIN c2
+     WHERE x=a;
+  END;
+} {}
+do_execsql_test 310 {
+  BEGIN;
+  SELECT * FROM t1 ORDER BY a;
+  INSERT INTO t2(x) VALUES(1);
+  SELECT * FROM t1 ORDER BY a;
+  ROLLBACK;
+} {
+  1  -  -
+  2  -  -
+  8  -  -
+  19 -  -
+  1  -  -
+  2  -  2
+  8  8  8
+  19 -  -
+}
+
+# 2022-05-26 dbsqlfuzz crash-9401d6ba699f1257d352a657de236286bf2b14da
+#
+reset_db
+db null -
+do_execsql_test 400 {
+  CREATE TABLE t2(x,y,z PRIMARY KEY) WITHOUT ROWID;
+  INSERT INTO t2 VALUES(89,-89,6);
+  CREATE TABLE t1(a INT,b TEXT,c TEXT,d REAL) STRICT;
+  INSERT INTO t1 VALUES(1,'xyz','def',4.5);
+  CREATE TRIGGER t1tr BEFORE UPDATE ON t1 BEGIN
+    INSERT INTO t1(a,b) VALUES(1000,'uvw');
+    UPDATE t1 SET b=NULL FROM (SELECT CAST(a AS varchar) FROM t1 ORDER BY b) NATURAL LEFT FULL JOIN t1 AS text;
+  END;
+  UPDATE t1 SET b=b|100;
+  SELECT * FROM t1 ORDER BY a;
+} {
+  1    100  def 4.5
+  1000 -    -   -
+}
+
 finish_test

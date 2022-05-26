@@ -1,5 +1,5 @@
-C Clarification\sof\sthe\smeaning\sof\sthe\sN\sparameter\sin\ssqlite3_db_name().\nDocumentation\sonly.\s\sNo\schanges\sto\scode.
-D 2022-05-26T14:46:09.766
+C Correct\shandling\sof\souter\sjoins\sin\sthe\sFROM\sclause\sof\san\sUPDATE\sstatement\nthat\soccurs\sinside\sof\sa\strigger.\s\sFollow-on\sto\s[98b3816bbaf539ea].
+D 2022-05-26T17:33:42.057
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -633,7 +633,7 @@ F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c a38f52058b517929e264094abd0b5fd1e8e145a1aa43bc6f6a72ae5218f96c98
 F src/treeview.c 73facf395c8841653b9a54e789d8c80e15bc3d0d1cb9d16104c2d889c15e33cd
-F src/trigger.c 4fe4c1ac811755aff49d669d2e52e414eb5dfa6e172e849ab7b6825e70a571c0
+F src/trigger.c adecf22bf1e869653a0637c2bb0c12b0b289e71fbb2c5cac70d596e11dbdf957
 F src/update.c 2cfaded82ca80ff56afb8c3ae5e88284e0824bfd86119827cc22481959f96f92
 F src/upsert.c 8789047a8f0a601ea42fa0256d1ba3190c13746b6ba940fe2d25643a7e991937
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
@@ -1706,7 +1706,7 @@ F test/upfrom1.tcl 8859d9d437f03b44174c4524a7a734a391fd4526fcff65be08285dafc9dc9
 F test/upfrom1.test 8cb06689e99cd707d884faa16da0e8eb26ff658bb01c47ddf72fadade666e6e1
 F test/upfrom2.test 66f3ebf721b3cebd922faee5c386bf244f816d416b57c000753ff51af62328a1
 F test/upfrom3.test 6130f24ebf97f5ea865e5d2a14a2d543fe5428a62e87cc60f62d875e45c1f5f0
-F test/upfrom4.test 71d25e18c7d04e2930dcbd78e6aafb6931c80cb08f77039309b6095a12f1e62e
+F test/upfrom4.test 1cd82e9423e02b1f63d069e8665c6c3932ec424fd0043d033cc0ba99abf33236
 F test/upfromfault.test 3a10075a0043f0c4fad6614b2c371f88a8ba5a4acab68b907438413865d6a8d6
 F test/upsert1.test b0ae2f58680c5205b4bc1cdeed3c3d444057c506f6c44494fa3eac60731d68a2
 F test/upsert2.test 720e94d09f7362a282bc69b3c6b83d51daeaaf0440eb4920a08b86518b8c7496
@@ -1969,8 +1969,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 37e3764839b968456f576fad67d3d99007773f5c0689165ecbdc610fcabef1ca
-R ad1c2600d93c5d6d7235db32fa9a048b
+P f22f41d2c8a676b9a339e7f00c29c163bbb7079b1a4a76ee1a6a96aaf7de5f9e
+R 96c2f1a4243ab0b57b68e0f3b4978a15
 U drh
-Z ca32a2eb387f9f8be5f39604dc123106
+Z 723fac70f8b090aa70201f7f985c54bc
 # Remove this line to create a well-formed Fossil manifest.
