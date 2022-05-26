@@ -1,9 +1,9 @@
-C Slight\sincrease\sin\sthe\saccuracy\sof\slog10().
-D 2022-05-25T13:10:29.282
+C Makefile.in:\sadded\sexplanations,\sintended\sfor\smaintainers\sand\shackers,\sof\sthe\svarious\semcc\sflags\sused\sfor\sbuilding\sthe\swasm\sfiles.\sNo\scode\sor\sbuild\srule\schanges.
+D 2022-05-26T05:08:25.641
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in 7ad689fdbe11297af09488b00c88b133b1505d6559bdad1f1829b6b7388c05be
+F Makefile.in 80e7bb2f240fd2f17a0617501dc4ce41a05d36147587ec4cf6f8ae18edbdf6e9
 F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
 F Makefile.msc b28a8a7a977e7312f6859f560348e1eb110c21bd6cf9fab0d16537c0a514eef3
 F README.md 8b8df9ca852aeac4864eb1e400002633ee6db84065bd01b78c33817f97d31f5e
@@ -1969,8 +1969,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4be0c60e38edc5d5bfd72bb35a3c91c55240b4e6313a40614beb60f1ab9d9f4c
-R 1c6e1432c4284eb2e687e5d9d74723a1
-U drh
-Z 42ab2d62436fdafee99e49f2f11c2914
+P c48a735bd4a1dbd541aed5937c25fc0c606c4263d8ee94cae30a06b1a7b26d9a
+R 6471d09ee21cb81c75dbefeb9f386ac7
+U stephan
+Z a2d5db1738115b0671a1164b1988cd28
 # Remove this line to create a well-formed Fossil manifest.

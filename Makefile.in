@@ -1562,3 +1562,48 @@ $(sqlite3_wasm_js): Makefile sqlite3.c \
 fiddle: $(fiddle_module_js)
 sqlite3-wasm: $(sqlite3_wasm_js)
 wasm: fiddle sqlite3-wasm
+########################################################################
+# Explanation of the emcc build flags:
+#
+# -sENVIRONMENT=web: elides bootstrap code related to non-web JS
+#  environments like node.js. Removing this makes the output a tiny
+#  tick larger but hypothetically makes it more portable to
+#  non-browser JS environments.
+#
+# -sMODULARIZE: changes how the generated code is structured to avoid
+#  declaring a global Module object and instead installing a function
+#  which loads and initialized the module. The function is named...
+#
+# -sEXPORT_NAME=jsFunctionName (see -sMODULARIZE)
+#
+# -sEXPORTED_RUNTIME_METHODS=@/absolute/path/to/file: a file
+#  containing a list of emscripten-supplied APIs, one per line, which
+#  must be exported into the generated JS.
+#
+# -sEXPORTED_FUNCTIONS=@/absolute/path/to/file: a file containing a
+#  list of C functions, one per line, which must be exported via wasm
+#  so they're visible to JS. C symbols names in that file must all
+#  start with an underscore for reasons known only to the emcc
+#  developers. e.g., _sqlite3_open_v2 and _sqlite3_finalize. Must be
+#  an absolute path!
+#
+# --no-entry: for compiling library code with no main(). If this is
+#  not supplied and the code has a main(), it is called as part of the
+#  module init process. Note that main() is #if'd out of shell.c
+#  (renamed) when building in wasm mode. Must be an absolute path!
+#
+# --pre-js/--post-js=FILE relative or absolute paths to JS files to
+#  prepend/append to the emcc-generated bootstrapping JS. It's
+#  easier/faster to develop with separate JS files (reduces rebuilding
+#  requirements) but certain configurations, namely -sMODULARIZE, may
+#  require using at least a --pre-js file. They can be used
+#  individually and need not be paired.
+#
+# -O0..-O3 and -Oz: optimization levels affect not only C-style
+#  optimization but whether or not the resulting generated JS code
+#  gets minified. -O0 compiles _much_ more quickly than -O3 or -Oz,
+#  and doesn't minimize any JS code, so is recommended for
+#  development. -O3 or -Oz are recommended for deployment, but primarily
+#  because -Oz will shrink the wasm file notably. JS-side minification
+#  makes little difference in terms of overall distributable size.
+########################################################################
