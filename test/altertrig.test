@@ -118,6 +118,22 @@ foreach {tn alter update final} {
   } {
     UPDATE t1 SET a=t2.abc FROM t2, t3
   }
+
+  7 {
+    ALTER TABLE t4 RENAME e TO abc
+  } {
+    UPDATE t1 SET a=1 FROM t3 NATURAL JOIN t4 WHERE t4.e=a
+  } {
+    UPDATE t1 SET a=1 FROM t3 NATURAL JOIN t4 WHERE t4.abc=a
+  }
+
+  8 {
+    ALTER TABLE t4 RENAME TO abc
+  } {
+    UPDATE t1 SET a=1 FROM t3 NATURAL JOIN t4 WHERE t4.e=a
+  } {
+    UPDATE t1 SET a=1 FROM t3 NATURAL JOIN "abc" WHERE "abc".e=a
+  }
  
 } {
   reset_db
@@ -125,6 +141,7 @@ foreach {tn alter update final} {
     CREATE TABLE t1(a,b);
     CREATE TABLE t2(c,d);
     CREATE TABLE t3(e,f);
+    CREATE TABLE t4(e,f);
   }
   do_execsql_test 2.$tn.2 "
     CREATE TRIGGER r1 INSERT ON t1 BEGIN 

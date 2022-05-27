@@ -1318,21 +1318,18 @@ static int renameResolveTrigger(Parse *pParse){
       SrcList *pSrc = sqlite3TriggerStepSrc(pParse, pStep);
       if( pSrc ){
         Select *pSel = sqlite3SelectNew(
-            pParse, pStep->pExprList, pSrc, pStep->pWhere, 0, 0, 0, 0, 0
+            pParse, pStep->pExprList, pSrc, 0, 0, 0, 0, 0, 0
         );
         if( pSel==0 ){
           pStep->pExprList = 0;
-          pStep->pWhere = 0;
           pSrc = 0;
           rc = SQLITE_NOMEM;
         }else{
           sqlite3SelectPrep(pParse, pSel, 0);
           rc = pParse->nErr ? SQLITE_ERROR : SQLITE_OK;
           assert( pStep->pExprList==0 || pStep->pExprList==pSel->pEList );
-          assert( pStep->pWhere==pSel->pWhere );
           assert( pSrc==pSel->pSrc );
           if( pStep->pExprList ) pSel->pEList = 0;
-          pSel->pWhere = 0;
           pSel->pSrc = 0;
           sqlite3SelectDelete(db, pSel);
         }
