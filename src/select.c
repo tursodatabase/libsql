@@ -2193,10 +2193,11 @@ int sqlite3ColumnsFromExprList(
       }
       if( pColExpr->op==TK_COLUMN
        && ALWAYS( ExprUseYTab(pColExpr) )
-       && (pTab = pColExpr->y.pTab)!=0
+       && ALWAYS( pColExpr->y.pTab!=0 )
       ){
         /* For columns use the column name name */
         int iCol = pColExpr->iColumn;
+        pTab = pColExpr->y.pTab;
         if( iCol<0 ) iCol = pTab->iPKey;
         zName = iCol>=0 ? pTab->aCol[iCol].zCnName : "rowid";
       }else if( pColExpr->op==TK_ID ){
