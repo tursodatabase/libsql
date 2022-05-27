@@ -1,5 +1,5 @@
-C Fix\sanother\sproblem\swith\sALTER\sTABLE\sand\sUPDATE...FROM\sin\striggers.
-D 2022-05-27T15:33:51.795
+C Corrected\sa\sbroken\sHTML\scomment\s(was\susing\sa\sC-style\scomment\scloser).
+D 2022-05-27T17:13:56.268
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -62,7 +62,7 @@ F ext/fiddle/Makefile de65d04bfb312e94dbd7a0e7d99fb126f0abc1db62f920159c4124b5a4
 F ext/fiddle/SqliteTestUtil.js 559731c3e8e0de330ec7d292e6c1846566408caee6637acc8a119ac338a8781c
 F ext/fiddle/emscripten.css 3d253a6fdb8983a2ac983855bfbdd4b6fa1ff267c28d69513dd6ef1f289ada3f
 F ext/fiddle/fiddle-worker.js e3e8c7af2d6d10d915c8d6b5c88bd48587afbfdab7cb76858829c3b83e83a810
-F ext/fiddle/fiddle.html 2d63f820b8b5001ebd0ec0045beef0fed7cbef8e02fd6717b79e9b35050ce2e0
+F ext/fiddle/fiddle.html 724f1cd4126616bc87f5871f78d3f7aaaf41e45c9728724627baab87e6af35f0
 F ext/fiddle/fiddle.js 700df283e8c6e87519aba6839e1aa99d040b39ea545253cbe79da18e24af256a
 F ext/fiddle/index.md d9c1c308d8074341bc3b11d1d39073cd77754cb3ca9aeb949f23fdd8323d81cf
 F ext/fiddle/sqlite3-api.js 8500698d2163f4a25f8e5e6810ad826487342579d6a321d82b244dbc8e6f6db6
@@ -1970,8 +1970,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 53fbc269ddbabc4a97d297e881e5f9cd2bfbcd24af4af1b7cf9db412a3a51813
-R 782c6ab6608c09278d06be6bd8fb58f8
-U dan
-Z 229c3e01bc73b34742f015169bd23836
+P 33cf12235e6469ba17cfb72cef0e480dfd0dea81ed412fb1fb24b05dbeb8dc02
+R 0185d9a66db4bbbf377e87a775a5273a
+U stephan
+Z e1db3e85707eb265e716816de954de27
 # Remove this line to create a well-formed Fossil manifest.
