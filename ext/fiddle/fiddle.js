@@ -119,6 +119,17 @@
         wMsg: function(type,data){
             this.worker.postMessage({type, data});
             return this;
+        },
+        /**
+           Prompts for confirmation and, if accepted, deletes
+           all content and tables in the (transient) database.
+        */
+        resetDb: function(){
+            if(window.confirm("Really destroy all content and tables "
+                              +"in the (transient) db?")){
+                this.wMsg('db-reset');
+            }
+            return this;
         }
     };
 
@@ -196,7 +207,7 @@
         delete this.onSFLoaded;
         // Unhide all elements which start out hidden
         EAll('.initially-hidden').forEach((e)=>e.classList.remove('initially-hidden'));
-        
+        E('#btn-reset').addEventListener('click',()=>SF.resetDb());
         const taInput = E('#input');
         const btnClearIn = E('#btn-clear');
         btnClearIn.addEventListener('click',function(){
@@ -217,8 +228,14 @@
             if(SF.jqTerm) SF.jqTerm.clear();
         },false);
         const btnShellExec = E('#btn-shell-exec');
-        btnShellExec.addEventListener('click',function(){
-            const sql = taInput.value.trim();
+        btnShellExec.addEventListener('click',function(ev){
+            let sql;
+            ev.preventDefault();
+            if(taInput.selectionStart<taInput.selectionEnd){
+                sql = taInput.value.substring(taInput.selectionStart,taInput.selectionEnd).trim();
+            }else{
+                sql = taInput.value.trim();
+            }
             if(sql) SF.dbExec(sql);
         },false);
 
@@ -346,7 +363,6 @@
             });
             a.click();
         });
-
         /**
            Handle load/import of an external db file.
         */
@@ -381,6 +397,15 @@
             r.readAsArrayBuffer(f);
         });
 
+        EAll('.fieldset.collapsible').forEach(function(fs){
+            const legend = E(fs,'span.legend'),
+                  content = EAll(fs,':scope > div');
+            legend.addEventListener('click', function(){
+                fs.classList.toggle('collapsed');
+                content.forEach((d)=>d.classList.toggle('hidden'));
+            }, false);
+        });
+        
         /**
            Given a DOM element, this routine measures its "effective
            height", which is the bounding top/bottom range of this element
@@ -453,19 +478,18 @@
                that height here. Larger than ~95% is too big for
                Firefox on Android, causing the input area to move
                off-screen. */
-            const bcl = document.body.classList;
             const appViews = EAll('.app-view');
+            const elemsToCount = [
+                /* Elements which we need to always count in the
+                   visible body size. */
+                E('body > header'),
+                E('body > footer')
+            ];
             const resized = function f(){
                 if(f.$disabled) return;
                 const wh = window.innerHeight;
                 var ht;
                 var extra = 0;
-                const elemsToCount = [
-                    /* Elements which we need to always count in the
-                       visible body size. */
-                    E('body > header'),
-                    E('body > footer')
-                ];
                 elemsToCount.forEach((e)=>e ? extra += effectiveHeight(e) : false);
                 ht = wh - extra;
                 appViews.forEach(function(e){

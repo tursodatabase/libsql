@@ -12628,6 +12628,29 @@ const char * fiddle_db_filename(const char * zDbName){
 }
 
 /*
+** Closes, unlinks, and reopens the db using its current filename (or
+** the default if the db is currently closed). It is assumed, for
+** purposes of the fiddle build, that the file is in a transient
+** virtual filesystem within the browser.
+*/
+void fiddle_reset_db(void){
+  char *zFilename = 0;
+  if(0==globalDb){
+    shellState.pAuxDb->zDbFilename = "/fiddle.sqlite3";
+  }else{
+    zFilename =
+      sqlite3_mprintf("%s", sqlite3_db_filename(globalDb, "main"));
+    shell_check_oom(zFilename);
+    close_db(globalDb);
+    shellDeleteFile(zFilename);
+    shellState.db = 0;
+    shellState.pAuxDb->zDbFilename = zFilename;
+  }
+  open_db(&shellState, 0);
+  sqlite3_free(zFilename);
+}
+
+/*
 ** Trivial exportable function for emscripten. Needs to be exported using:
 **
 ** emcc ..flags... -sEXPORTED_FUNCTIONS=_fiddle_exec -sEXPORTED_RUNTIME_METHODS=ccall,cwrap
@@ -12654,8 +12677,7 @@ void fiddle_exec(const char * zSql){
     puts("WASM shell");
     puts("Enter \".help\" for usage hints.");
     if(once>0){
-      shellState.pAuxDb->zDbFilename = "/fiddle.sqlite3";
-      open_db(&shellState, 0);
+      fiddle_reset_db();
     }
     if(shellState.db){
       printf("Connected to %s.\n", fiddle_db_filename(NULL));

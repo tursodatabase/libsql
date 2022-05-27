@@ -60,9 +60,6 @@
       label[for] {
           cursor: pointer;
       }
-      fieldset {
-          border-radius: 0.5em;
-      }
       .error {
           color: red;
           background-color: yellow;
@@ -73,15 +70,55 @@
           pointer-events: none !important;
           display: none !important;
       }
-      fieldset.options {
-          font-size: 70%;
+      /* Safari supports neither styling of nor event handling on a
+         fieldset legend, so we emulate a fieldset-like widget. */
+      .fieldset {
+          border-radius: 0.5em;
+          border: 1px inset;
+          display: flex;
+          flex-direction: column;
       }
-      fieldset > legend {
+      .fieldset > .legend {
+          position: relative;
+          top: -1.5ex;
           padding: 0 0.5em;
+          font-size: 85%;
+          margin-left: 0.5em;
+          flex: 0 1 auto;
+          align-self: self-start;
+          cursor: pointer;
       }
-      fieldset.options > div {
+      .fieldset.options > div {
           display: flex;
           flex-wrap: wrap;
+          font-size: 70%;
+          margin: 0 0.5em 0.5em 0.5em;
+      }
+      .fieldset > .legend > span {
+          position: relative;
+      }
+      .fieldset > .legend::before {
+          /* Hide the parent element's top border where this
+             element intersects it. */
+          content: ' '; 
+          width: 100%; 
+          height: 100%; 
+          background-color: white
+           /* REALLY want to 'inherit' the color from the fieldset's
+              parent, but inherit leads to a transparent bg, which is
+              exactly what we're trying to avoid here. */;
+          opacity: 1;
+          position: absolute; 
+          top: 0; 
+          left: 0; 
+      }
+      .fieldset > .legend::after {
+          content: " [hide]";
+          position: relative;
+      }
+      .fieldset.collapsed > .legend::after {
+          content: " [show]";
+          position: relative;
       }
       span.labeled-input {
           padding: 0.25em;
@@ -117,6 +154,9 @@
           display: flex;
           flex-direction: column-reverse;
       }
+      #view-split > .fieldset.options {
+          margin-top: 0.5em;
+      }
     </style>
   </head>
   <body>
@@ -141,8 +181,8 @@
     </div>
 
     <div id='view-split' class='app-view initially-hidden'>
-      <fieldset class='options'>
-        <legend>Options</legend>
+      <div class='fieldset options collapsible'>
+        <span class='legend'><span>Options</span></span>
         <div class=''>
           <span class='labeled-input'>
             <input type='checkbox' id='opt-cb-sbs'
@@ -176,15 +216,19 @@
             <button id='btn-export'>Download DB</button>
           </span>
           <span class='labeled-input'>
+            <button id='btn-reset'>Reset DB</button>
+          </span>
+          <span class='labeled-input'>
             <select id='select-examples'></select>
           </span>
         </div>
-      </fieldset>
+      </div><!-- .fieldset -->
       <div id='main-wrapper' class=''>
         <div class='ta-wrapper input'>
           <textarea id="input"
                     placeholder="Shell input. Ctrl-enter/shift-enter runs it.">
--- Use ctrl-enter or shift-enter to execute SQL
+-- Use ctrl-enter or shift-enter to execute SQL. If only a subset
+-- is currently selected, only that part is executed.
 .nullvalue NULL
 .mode box
 CREATE TABLE t(a,b);

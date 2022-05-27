@@ -1,5 +1,5 @@
-C Fix\sissues\swith\sALTER\sTABLE\sand\striggers\scontaining\s"UPDATE...FROM"\sstatements.
-D 2022-05-26T19:10:11.700
+C fiddle:\sadded\san\soption\sto\scompletely\swipe/reset\sthe\sdb.\sThe\sOptions\sarea\scan\snow\sbe\stoggled\son/off\svia\stapping\sthe\slabel\sat\sits\stop.\sRunning\sthe\sinput\sSQL\sis\snow\slimited\sto\sthe\sselected\sarea\sif\sany\stext\sis\scurrently\sselected,\sper\ssuggestion\sin\sthe\sforum.
+D 2022-05-27T03:27:10.415
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -55,15 +55,15 @@ F ext/expert/expert1.test 3c642a4e7bbb14f21ddab595436fb465a4733f47a0fe5b2855e1d5
 F ext/expert/sqlite3expert.c 6ca30d73b9ed75bd56d6e0d7f2c962d2affaa72c505458619d0ff5d9cdfac204
 F ext/expert/sqlite3expert.h ca81efc2679a92373a13a3e76a6138d0310e32be53d6c3bfaedabd158ea8969b
 F ext/expert/test_expert.c d56c194b769bdc90cf829a14c9ecbc1edca9c850b837a4d0b13be14095c32a72
-F ext/fiddle/EXPORTED_FUNCTIONS.fiddle 2f7c561af85e6d711fb42f395bc0074b6e6fcf16bc57d495ce4e1c3d0484c5d2
+F ext/fiddle/EXPORTED_FUNCTIONS.fiddle 7fb73f7150ab79d83bb45a67d257553c905c78cd3d693101699243f36c5ae6c3
 F ext/fiddle/EXPORTED_FUNCTIONS.sqlite3-api 540b9dec63a3a62a256e2f030827848a92e9b9d9b6fa5c0188295a4a1c5382cd
 F ext/fiddle/EXPORTED_RUNTIME_METHODS b831017ba67ba993b34a27400cef2f6095bd6789c0fc4eba7e7a251c207be31c
 F ext/fiddle/Makefile de65d04bfb312e94dbd7a0e7d99fb126f0abc1db62f920159c4124b5a42347d8
 F ext/fiddle/SqliteTestUtil.js 559731c3e8e0de330ec7d292e6c1846566408caee6637acc8a119ac338a8781c
 F ext/fiddle/emscripten.css 3d253a6fdb8983a2ac983855bfbdd4b6fa1ff267c28d69513dd6ef1f289ada3f
-F ext/fiddle/fiddle-worker.js 6000da12965319bed53d546f87885a6717a0cd8de0b4832edde7a95e63d1f33e
-F ext/fiddle/fiddle.html 70796dc8a867448b41bc7e2c5fd6b1865ed8010b3abe22ba0678e8915c062e9a
-F ext/fiddle/fiddle.js 45f96ac7f7d6678503568dded46afaa741d841a2464519035636da0fd77aec50
+F ext/fiddle/fiddle-worker.js e3e8c7af2d6d10d915c8d6b5c88bd48587afbfdab7cb76858829c3b83e83a810
+F ext/fiddle/fiddle.html 2d63f820b8b5001ebd0ec0045beef0fed7cbef8e02fd6717b79e9b35050ce2e0
+F ext/fiddle/fiddle.js 700df283e8c6e87519aba6839e1aa99d040b39ea545253cbe79da18e24af256a
 F ext/fiddle/index.md d9c1c308d8074341bc3b11d1d39073cd77754cb3ca9aeb949f23fdd8323d81cf
 F ext/fiddle/sqlite3-api.js 8500698d2163f4a25f8e5e6810ad826487342579d6a321d82b244dbc8e6f6db6
 F ext/fiddle/testing.css 750572dded671d2cf142bbcb27af5542522ac08db128245d0b9fe410aa1d7f2a
@@ -568,7 +568,7 @@ F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c a4eb3c617027fd049b07432f3b942ea7151fa793a332a11a7d0f58c9539e104f
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c a0dca0b4a328826d4713195a2fe305852cd8b1ed876311667b00c64b93a7fe23
-F src/shell.c.in f3e0eb3e817f4d2edaeb12a06b2a0c8b5302fa223d87db68975313b9ce768e03
+F src/shell.c.in b76e681f9e441928d574f21f9473ef615158bbeab1ae49f05ecab9d81730a51d
 F src/sqlite.h.in 172528c287399a34f188154017b7268bf82c6d5b780902e361958d2318c4e37c
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h a988810c9b21c0dc36dc7a62735012339dc76fc7ab448fb0792721d30eacb69d
@@ -1970,8 +1970,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 664a49fa813144b6fa5a7ae3f65af5412f150dd5def261c4d581d706b39f7846
-R 4d839461e9af3d0a5ea1b8ddf72bf796
-U dan
-Z 14299f1b8c4a8b0632845b66e1aabf6a
+P 2fba0d41b781d226915fa2bf888a7bc640c046ce22670ceb53f62a09f3975259
+R d64445d576ad28e1599d65086ff528c2
+U stephan
+Z 4f4eb41f174aae895c1e375e4f35adbf
 # Remove this line to create a well-formed Fossil manifest.

@@ -115,10 +115,10 @@
             stderr("Restarting the app requires reloading the page.");
             wMsg('error', err);
         }
-        fiddleModule.setStatus('Exception thrown, see JavaScript console');
-        fiddleModule.setStatus = function(text) {
+        fiddleModule.setStatus('Exception thrown, see JavaScript console:',text);
+        /*fiddleModule.setStatus = function(text) {
             console.error('[post-exception status]', text);
-        };
+        };*/
     };
 
     const Sqlite3Shell = {
@@ -135,13 +135,13 @@
         exec: function f(sql){
             if(!f._) f._ = fiddleModule.cwrap('fiddle_exec', null, ['string']);
             if(fiddleModule.isDead){
-                wMsg('stderr', "shell module has exit()ed. Cannot run SQL.");
+                stderr("shell module has exit()ed. Cannot run SQL.");
                 return;
             }
             wMsg('working','start');
             try {
                 if(f._running){
-                    wMsg('stderr','Cannot run multiple commands concurrently.');
+                    stderr('Cannot run multiple commands concurrently.');
                 }else{
                     f._running = true;
                     f._(sql);
@@ -151,11 +151,17 @@
                 wMsg('working','end');
             }
         },
+        resetDb: function f(){
+            if(!f._) f._ = fiddleModule.cwrap('fiddle_reset_db', null);
+            stdout("Resetting database.");
+            f._();
+            stdout("Reset",this.dbFilename());
+        },
         /* Interrupt can't work: this Worker is tied up working, so won't get the
            interrupt event which would be needed to perform the interrupt. */
         interrupt: function f(){
             if(!f._) f._ = fiddleModule.cwrap('fiddle_interrupt', null);
-            wMsg('stdout',"Requesting interrupt.");
+            stdout("Requesting interrupt.");
             f._();
         }
     };
@@ -170,6 +176,7 @@
         //console.debug("worker: onmessage.data",ev);
         switch(ev.type){
             case 'shellExec': Sqlite3Shell.exec(ev.data); return;
+            case 'db-reset': Sqlite3Shell.resetDb(); return;
             case 'interrupt': Sqlite3Shell.interrupt(); return;
                 /** Triggers the export of the current db. Fires an
                     event in the form:
@@ -184,7 +191,7 @@
                 */
             case 'db-export': {
                 const fn = Sqlite3Shell.dbFilename();
-                wMsg('stdout',"Exporting",fn+".");
+                stdout("Exporting",fn+".");
                 const fn2 = fn ? fn.split(/[/\\]/).pop() : null;
                 try{
                     if(!fn2) throw new Error("DB appears to be closed.");
@@ -213,7 +220,7 @@
                 }else if(buffer instanceof ArrayBuffer){
                     buffer = new Uint8Array(buffer);
                 }else{
-                    wMsg('stderr',"'open' expects {buffer:Uint8Array} containing an uploaded db.");
+                    stderr("'open' expects {buffer:Uint8Array} containing an uploaded db.");
                     return;
                 }
                 const fn = (
@@ -232,7 +239,7 @@
                 if(oldName !== fn){
                     fiddleModule.FS.unlink(oldName);
                 }
-                wMsg('stdout',"Replaced DB with",fn+".");
+                stdout("Replaced DB with",fn+".");
                 return;
             }
         };
