@@ -1317,27 +1317,28 @@ static int renameResolveTrigger(Parse *pParse){
     if( rc==SQLITE_OK && pStep->zTarget ){
       SrcList *pSrc = sqlite3TriggerStepSrc(pParse, pStep);
       if( pSrc ){
-        int i;
-        assert( pSrc->nSrc==1 || pSrc->nSrc==2 );
-        assert( pSrc->a[0].pSelect==0 );
-        for(i=0; i<pSrc->nSrc && rc==SQLITE_OK; i++){
-          SrcItem *p = &pSrc->a[i];
-          p->iCursor = pParse->nTab++;
-          if( p->pSelect ){
-            sqlite3SelectPrep(pParse, p->pSelect, 0);
-            sqlite3ExpandSubquery(pParse, p);
-            assert( i>0 );
-          }else{
-            p->pTab = sqlite3LocateTableItem(pParse, 0, p);
-            if( p->pTab==0 ){
-              rc = SQLITE_ERROR;
-            }else{
-              p->pTab->nTabRef++;
-              rc = sqlite3ViewGetColumnNames(pParse, p->pTab);
-            }
-          }
+        Select *pSel = sqlite3SelectNew(
+            pParse, pStep->pExprList, pSrc, pStep->pWhere, 0, 0, 0, 0, 0
+        );
+        if( pSel==0 ){
+          pStep->pExprList = 0;
+          pStep->pWhere = 0;
+          pSrc = 0;
+          rc = SQLITE_NOMEM;
+        }else{
+          sqlite3SelectPrep(pParse, pSel, 0);
+          rc = pParse->nErr ? SQLITE_ERROR : SQLITE_OK;
+          assert( pStep->pExprList==0 || pStep->pExprList==pSel->pEList );
+          assert( pStep->pWhere==pSel->pWhere );
+          assert( pSrc==pSel->pSrc );
+          if( pStep->pExprList ) pSel->pEList = 0;
+          pSel->pWhere = 0;
+          pSel->pSrc = 0;
+          sqlite3SelectDelete(db, pSel);
         }
+        
         if( pStep->pFrom ){
+          int i;
           for(i=0; i<pStep->pFrom->nSrc && rc==SQLITE_OK; i++){
             SrcItem *p = &pStep->pFrom->a[i];
             if( p->pSelect ){

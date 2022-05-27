@@ -82,25 +82,41 @@ foreach {tn alter update final} {
   2 {
     ALTER TABLE t3 RENAME TO t10
   } {
-    UPDATE t1 SET d='xyz' FROM t3, (SELECT * FROM (SELECT e FROM t3))
+    UPDATE t1 SET a='xyz' FROM t3, (SELECT * FROM (SELECT e FROM t3))
   } {
-    UPDATE t1 SET d='xyz' FROM "t10", (SELECT * FROM (SELECT e FROM "t10"))
+    UPDATE t1 SET a='xyz' FROM "t10", (SELECT * FROM (SELECT e FROM "t10"))
   }
 
   3 {
     ALTER TABLE t3 RENAME e TO abc
   } {
-    UPDATE t1 SET d='xyz' FROM t3, (SELECT * FROM (SELECT e FROM t3))
+    UPDATE t1 SET a='xyz' FROM t3, (SELECT * FROM (SELECT e FROM t3))
   } {
-    UPDATE t1 SET d='xyz' FROM t3, (SELECT * FROM (SELECT abc FROM t3))
+    UPDATE t1 SET a='xyz' FROM t3, (SELECT * FROM (SELECT abc FROM t3))
   }
 
   4 {
     ALTER TABLE t2 RENAME c TO abc
   } {
-    UPDATE t1 SET d='xyz' FROM t3, (SELECT 1 FROM t2 WHERE c)
+    UPDATE t1 SET a='xyz' FROM t3, (SELECT 1 FROM t2 WHERE c)
   } {
-    UPDATE t1 SET d='xyz' FROM t3, (SELECT 1 FROM t2 WHERE abc)
+    UPDATE t1 SET a='xyz' FROM t3, (SELECT 1 FROM t2 WHERE abc)
+  }
+
+  5 {
+    ALTER TABLE t2 RENAME c TO abc
+  } {
+    UPDATE t1 SET a=t2.c FROM t2
+  } {
+    UPDATE t1 SET a=t2.abc FROM t2
+  }
+
+  6 {
+    ALTER TABLE t2 RENAME c TO abc
+  } {
+    UPDATE t1 SET a=t2.c FROM t2, t3
+  } {
+    UPDATE t1 SET a=t2.abc FROM t2, t3
   }
  
 } {

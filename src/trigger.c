@@ -850,7 +850,7 @@ SrcList *sqlite3TriggerStepSrc(
     }
     if( pStep->pFrom ){
       SrcList *pDup = sqlite3SrcListDup(db, pStep->pFrom, 0);
-      if( pDup && pDup->nSrc>1 ){
+      if( pDup && pDup->nSrc>1 && !IN_RENAME_OBJECT ){
         Select *pSubquery;
         Token as;
         pSubquery = sqlite3SelectNew(pParse,0,pDup,0,0,0,0,SF_NestedFrom,0);
