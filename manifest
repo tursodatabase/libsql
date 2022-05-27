@@ -1,5 +1,5 @@
-C Corrected\sa\sbroken\sHTML\scomment\s(was\susing\sa\sC-style\scomment\scloser).
-D 2022-05-27T17:13:56.268
+C Minor\ssimplification\sto\sALTER\sTABLE\slogic.
+D 2022-05-27T17:36:21.337
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -500,7 +500,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
-F src/alter.c d8671d56a89123dfeb517efbd580043a67b5859a615c31745f533567fd42e69b
+F src/alter.c 0390ca1d69ec3626cfa9f153114b7ab233e6b2bada6a9eb91361ed385fe90deb
 F src/analyze.c aabdf3769c7fd9954a8ec508eb7041ae174b66f88d12c47199fabbea9a646467
 F src/attach.c 4431f82f0247bf3aaf91589acafdff77d1882235c95407b36da1585c765fbbc8
 F src/auth.c f4fa91b6a90bbc8e0d0f738aa284551739c9543a367071f55574681e0f24f8cf
@@ -1970,8 +1970,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 33cf12235e6469ba17cfb72cef0e480dfd0dea81ed412fb1fb24b05dbeb8dc02
-R 0185d9a66db4bbbf377e87a775a5273a
-U stephan
-Z e1db3e85707eb265e716816de954de27
+P db742e3e7d1caeff8d9df1d86abf54fcb2f2263db7a433ffacf3cd3777e533c5
+R 9f5bbbd598c3c632a4687a11d52f0b0c
+U drh
+Z bcb40d0c984d7fab2c03d3331d81ea89
 # Remove this line to create a well-formed Fossil manifest.

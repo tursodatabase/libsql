@@ -1333,7 +1333,6 @@ static int renameResolveTrigger(Parse *pParse){
           pSel->pSrc = 0;
           sqlite3SelectDelete(db, pSel);
         }
-        
         if( pStep->pFrom ){
           int i;
           for(i=0; i<pStep->pFrom->nSrc && rc==SQLITE_OK; i++){
@@ -1344,7 +1343,7 @@ static int renameResolveTrigger(Parse *pParse){
           }
         }
 
-        if( rc==SQLITE_OK && db->mallocFailed ){
+        if(  db->mallocFailed ){
           rc = SQLITE_NOMEM;
         }
         sNC.pSrcList = pSrc;
