@@ -1802,7 +1802,7 @@ static void renameTableFunc(
                 int i;
                 for(i=0; i<pStep->pFrom->nSrc; i++){
                   SrcItem *pItem = &pStep->pFrom->a[i];
-                  if( pItem->zName && 0==sqlite3_stricmp(pItem->zName, zOld) ){
+                  if( 0==sqlite3_stricmp(pItem->zName, zOld) ){
                     renameTokenFind(&sParse, &sCtx, pItem->zName);
                   }
                 }
