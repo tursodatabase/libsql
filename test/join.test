@@ -250,6 +250,19 @@ do_test join-2.1 {
   }
 } {1 2 3 4 2 3 4 5 3 4 5 {}}
 
+# EVIDENCE-OF: R-52129-05406 you can say things like "OUTER LEFT NATURAL
+# JOIN" which means the same as "NATURAL LEFT OUTER JOIN".
+do_test join-2.1b {
+  execsql {
+    SELECT * FROM t1 OUTER LEFT NATURAL JOIN t2;
+  }
+} {1 2 3 4 2 3 4 5 3 4 5 {}}
+do_test join-2.1c {
+  execsql {
+    SELECT * FROM t1 NATURAL LEFT OUTER JOIN t2;
+  }
+} {1 2 3 4 2 3 4 5 3 4 5 {}}
+
 # ticket #3522
 do_test join-2.1.1 {
   execsql2 {
@@ -328,6 +341,9 @@ do_test join-3.6 {
     SELECT * FROM t1 JOIN t2 ON t3.a=t2.b;
   }
 } {1 {no such column: t3.a}}
+
+# EVIDENCE-OF: R-47973-48020 you cannot say "INNER OUTER JOIN", because
+# that would be contradictory.
 do_test join-3.7 {
   catchsql {
     SELECT * FROM t1 INNER OUTER JOIN t2;

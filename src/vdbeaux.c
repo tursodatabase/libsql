@@ -1576,11 +1576,9 @@ char *sqlite3VdbeDisplayComment(
         }else if( c=='X' ){
           if( pOp->zComment && pOp->zComment[0] ){
             sqlite3_str_appendall(&x, pOp->zComment);
-          }else{
-            sqlite3_str_appendall(&x, zSynopsis+1);
+            seenCom = 1;
+            break;
           }
-          seenCom = 1;
-          break;
         }else{
           int v1 = translateP(c, pOp);
           int v2;

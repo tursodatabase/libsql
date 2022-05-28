@@ -2098,11 +2098,11 @@ static void logFunc(
     switch( SQLITE_PTR_TO_INT(sqlite3_user_data(context)) ){
       case 1:
         /* Convert from natural logarithm to log base 10 */
-        ans *= 1.0/M_LN10;
+        ans /= M_LN10;
         break;
       case 2:
         /* Convert from natural logarithm to log base 2 */
-        ans *= 1.0/M_LN2;
+        ans /= M_LN2;
         break;
       default:
         break;

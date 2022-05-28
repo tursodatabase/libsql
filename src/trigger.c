@@ -514,7 +514,7 @@ TriggerStep *sqlite3TriggerInsertStep(
 TriggerStep *sqlite3TriggerUpdateStep(
   Parse *pParse,          /* Parser */
   Token *pTableName,   /* Name of the table to be updated */
-  SrcList *pFrom,
+  SrcList *pFrom,      /* FROM clause for an UPDATE-FROM, or NULL */
   ExprList *pEList,    /* The SET clause: list of column and new values */
   Expr *pWhere,        /* The WHERE clause */
   u8 orconf,           /* The conflict algorithm. (OE_Abort, OE_Ignore, etc) */
@@ -850,6 +850,14 @@ SrcList *sqlite3TriggerStepSrc(
     }
     if( pStep->pFrom ){
       SrcList *pDup = sqlite3SrcListDup(db, pStep->pFrom, 0);
+      if( pDup && pDup->nSrc>1 && !IN_RENAME_OBJECT ){
+        Select *pSubquery;
+        Token as;
+        pSubquery = sqlite3SelectNew(pParse,0,pDup,0,0,0,0,SF_NestedFrom,0);
+        as.n = 0;
+        as.z = 0;
+        pDup = sqlite3SrcListAppendFromTerm(pParse,0,0,0,&as,pSubquery,0);
+      }
       pSrc = sqlite3SrcListAppendList(pParse, pSrc, pDup);
     }
   }else{

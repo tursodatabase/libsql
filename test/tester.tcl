@@ -184,7 +184,7 @@ proc get_pwd {} {
       set comSpec {C:\Windows\system32\cmd.exe}
     }
     return [string map [list \\ /] \
-        [string trim [exec -- $comSpec /c echo %CD%]]]
+        [string trim [exec -- $comSpec /c CD]]]
   } else {
     return [pwd]
   }
@@ -2494,13 +2494,44 @@ proc test_find_binary {nm} {
 }
 
 # Find the name of the 'shell' executable (e.g. "sqlite3.exe") to use for
-# the tests in shell[1-5].test. If no such executable can be found, invoke
+# the tests in shell*.test. If no such executable can be found, invoke
 # [finish_test ; return] in the callers context.
 #
 proc test_find_cli {} {
   set prog [test_find_binary sqlite3]
   if {$prog==""} { return -code return }
   return $prog
+}
+
+# Find invocation of the 'shell' executable (e.g. "sqlite3.exe") to use
+# for the tests in shell*.test with optional valgrind prefix when the
+# environment variable SQLITE_CLI_VALGRIND_OPT is set. The set value
+# operates as follows:
+#   empty or 0 => no valgrind prefix;
+#   1 => valgrind options for memory leak check;
+#   other => use value as valgrind options.
+# If shell not found, invoke [finish_test ; return] in callers context.
+#
+proc test_cli_invocation {} {
+  set prog [test_find_binary sqlite3]
+  if {$prog==""} { return -code return }
+  set vgrun [expr {[permutation]=="valgrind"}]
+  if {$vgrun || [info exists ::env(SQLITE_CLI_VALGRIND_OPT)]} {
+    if {$vgrun} {
+      set vgo "--quiet"
+    } else {
+      set vgo $::env(SQLITE_CLI_VALGRIND_OPT)
+    }
+    if {$vgo == 0 || $vgo eq ""} {
+      return $prog
+    } elseif {$vgo == 1} {
+      return "valgrind --quiet --leak-check=yes $prog"
+    } else {
+      return "valgrind $vgo $prog"
+    }
+  } else {
+    return $prog
+  }
 }
 
 # Find the name of the 'sqldiff' executable (e.g. "sqlite3.exe") to use for
