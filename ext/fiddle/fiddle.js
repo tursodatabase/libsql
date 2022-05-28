@@ -192,7 +192,7 @@
 
 
     /** Name of the stored copy of SqliteFiddle.config. */
-    const configStorageKey = 'fiddle-config';
+    const configStorageKey = 'sqlite3-fiddle-config';
 
     /**
        The SqliteFiddle object is intended to be the primary
@@ -305,12 +305,13 @@
             }
             return this;
         },
+        /** Stores this object's config in the browser's storage. */
         storeConfig: function(){
             storage.setJSON(configStorageKey,this.config);
         }
     };
 
-    if(1){ /* set up SF.config */
+    if(1){ /* Restore SF.config */
         const storedConfig = storage.getJSON(configStorageKey);
         if(storedConfig){
             /* Copy all properties to SF.config which are currently in
