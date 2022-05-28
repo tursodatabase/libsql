@@ -1,0 +1,14 @@
+ALLOC_NORMAL
+FS
+UTF8ToString
+addFunction
+allocate
+allocateUTF8OnStack
+ccall
+cwrap
+getValue
+removeFunction
+setValue
+stackAlloc
+stackRestore
+stackSave

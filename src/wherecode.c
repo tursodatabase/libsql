@@ -350,7 +350,7 @@ static void disableTerm(WhereLevel *pLevel, WhereTerm *pTerm){
   int nLoop = 0;
   assert( pTerm!=0 );
   while( (pTerm->wtFlags & TERM_CODED)==0
-      && (pLevel->iLeftJoin==0 || ExprHasProperty(pTerm->pExpr, EP_FromJoin))
+      && (pLevel->iLeftJoin==0 || ExprHasProperty(pTerm->pExpr, EP_OuterON))
       && (pLevel->notReady & pTerm->prereqAll)==0
   ){
     if( nLoop && (pTerm->wtFlags & TERM_LIKE)!=0 ){
@@ -623,8 +623,7 @@ static int codeEqualityTerm(
         sqlite3ExprDelete(db, pX);
       }else{
         aiMap = (int*)sqlite3DbMallocZero(pParse->db, sizeof(int)*nEq);
-        eType = sqlite3FindInIndex(pParse, pX, IN_INDEX_LOOP|IN_INDEX_REUSE_CUR,                                   0, aiMap,&iTab);
-        iTab = pExpr->iTable;
+        eType = sqlite3FindInIndex(pParse, pX, IN_INDEX_LOOP, 0, aiMap, &iTab);
       }
       pX = pExpr;
     }
@@ -1072,7 +1071,7 @@ static void codeCursorHint(
     */
     if( pTabItem->fg.jointype & JT_LEFT ){
       Expr *pExpr = pTerm->pExpr;
-      if( !ExprHasProperty(pExpr, EP_FromJoin) 
+      if( !ExprHasProperty(pExpr, EP_OuterON) 
        || pExpr->w.iJoin!=pTabItem->iCursor
       ){
         sWalker.eCode = 0;
@@ -1081,7 +1080,7 @@ static void codeCursorHint(
         if( sWalker.eCode ) continue;
       }
     }else{
-      if( ExprHasProperty(pTerm->pExpr, EP_FromJoin) ) continue;
+      if( ExprHasProperty(pTerm->pExpr, EP_OuterON) ) continue;
     }
 
     /* All terms in pWLoop->aLTerm[] except pEndRange are used to initialize
@@ -2412,7 +2411,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         Expr *pDelete;                  /* Local copy of OR clause term */
         int jmp1 = 0;                   /* Address of jump operation */
         testcase( (pTabItem[0].fg.jointype & JT_LEFT)!=0
-               && !ExprHasProperty(pOrExpr, EP_FromJoin)
+               && !ExprHasProperty(pOrExpr, EP_OuterON)
         ); /* See TH3 vtab25.400 and ticket 614b25314c766238 */
         pDelete = pOrExpr = sqlite3ExprDup(db, pOrExpr, 0);
         if( db->mallocFailed ){
@@ -2620,12 +2619,19 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       }
       pE = pTerm->pExpr;
       assert( pE!=0 );
-      if( (pTabItem->fg.jointype & (JT_LEFT|JT_LTORJ))
-       && !ExprHasProperty(pE,EP_FromJoin|EP_InnerJoin)
-      ){
-        continue;
+      if( pTabItem->fg.jointype & (JT_LEFT|JT_LTORJ|JT_RIGHT) ){
+        if( !ExprHasProperty(pE,EP_OuterON|EP_InnerON) ){
+          /* Defer processing WHERE clause constraints until after outer
+          ** join processing.  tag-20220513a */
+          continue;
+        }else{
+          Bitmask m = sqlite3WhereGetMask(&pWInfo->sMaskSet, pE->w.iJoin);
+          if( m & pLevel->notReady ){
+            /* An ON clause that is not ripe */
+            continue;
+          }
+        }
       }
-      
       if( iLoop==1 && !sqlite3ExprCoveredByIndex(pE, pLevel->iTabCur, pIdx) ){
         iNext = 2;
         continue;
@@ -2684,7 +2690,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     if( (pTerm->eOperator & (WO_EQ|WO_IS))==0 ) continue;
     if( (pTerm->eOperator & WO_EQUIV)==0 ) continue;
     if( pTerm->leftCursor!=iCur ) continue;
-    if( pTabItem->fg.jointype & (JT_LEFT|JT_LTORJ) ) continue;
+    if( pTabItem->fg.jointype & (JT_LEFT|JT_LTORJ|JT_RIGHT) ) continue;
     pE = pTerm->pExpr;
 #ifdef WHERETRACE_ENABLED /* 0x800 */
     if( sqlite3WhereTrace & 0x800 ){
@@ -2692,7 +2698,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       sqlite3WhereTermPrint(pTerm, pWC->nTerm-j);
     }
 #endif
-    assert( !ExprHasProperty(pE, EP_FromJoin) );
+    assert( !ExprHasProperty(pE, EP_OuterON) );
     assert( (pTerm->prereqRight & pLevel->notReady)!=0 );
     assert( (pTerm->eOperator & (WO_OR|WO_AND))==0 );
     pAlt = sqlite3WhereFindTerm(pWC, iCur, pTerm->u.x.leftColumn, notReady,
@@ -2763,18 +2769,8 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     pLevel->addrFirst = sqlite3VdbeCurrentAddr(v);
     sqlite3VdbeAddOp2(v, OP_Integer, 1, pLevel->iLeftJoin);
     VdbeComment((v, "record LEFT JOIN hit"));
-    for(pTerm=pWC->a, j=0; j<pWC->nBase; j++, pTerm++){
-      testcase( pTerm->wtFlags & TERM_VIRTUAL );
-      testcase( pTerm->wtFlags & TERM_CODED );
-      if( pTerm->wtFlags & (TERM_VIRTUAL|TERM_CODED) ) continue;
-      if( (pTerm->prereqAll & pLevel->notReady)!=0 ){
-        assert( pWInfo->untestedTerms );
-        continue;
-      }
-      if( pTabItem->fg.jointype & JT_LTORJ ) continue;
-      assert( pTerm->pExpr );
-      sqlite3ExprIfFalse(pParse, pTerm->pExpr, addrCont, SQLITE_JUMPIFNULL);
-      pTerm->wtFlags |= TERM_CODED;
+    if( pLevel->pRJ==0 ){
+      goto code_outer_join_constraints; /* WHERE clause constraints */
     }
   }
 
@@ -2790,6 +2786,26 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     pRJ->addrSubrtn = sqlite3VdbeCurrentAddr(v);
     assert( pParse->withinRJSubrtn < 255 );
     pParse->withinRJSubrtn++;
+
+    /* WHERE clause constraints must be deferred until after outer join
+    ** row elimination has completed, since WHERE clause constraints apply
+    ** to the results of the OUTER JOIN.  The following loop generates the
+    ** appropriate WHERE clause constraint checks.  tag-20220513a.
+    */
+  code_outer_join_constraints:
+    for(pTerm=pWC->a, j=0; j<pWC->nBase; j++, pTerm++){
+      testcase( pTerm->wtFlags & TERM_VIRTUAL );
+      testcase( pTerm->wtFlags & TERM_CODED );
+      if( pTerm->wtFlags & (TERM_VIRTUAL|TERM_CODED) ) continue;
+      if( (pTerm->prereqAll & pLevel->notReady)!=0 ){
+        assert( pWInfo->untestedTerms );
+        continue;
+      }
+      if( pTabItem->fg.jointype & JT_LTORJ ) continue;
+      assert( pTerm->pExpr );
+      sqlite3ExprIfFalse(pParse, pTerm->pExpr, addrCont, SQLITE_JUMPIFNULL);
+      pTerm->wtFlags |= TERM_CODED;
+    }
   }
 
 #if WHERETRACE_ENABLED /* 0x20800 */
@@ -2845,7 +2861,7 @@ SQLITE_NOINLINE void sqlite3WhereRightJoinLoop(
       WhereTerm *pTerm = &pWC->a[k];
       if( pTerm->wtFlags & TERM_VIRTUAL ) break;
       if( pTerm->prereqAll & ~mAll ) continue;
-      if( ExprHasProperty(pTerm->pExpr, EP_FromJoin|EP_InnerJoin) ) continue;
+      if( ExprHasProperty(pTerm->pExpr, EP_OuterON|EP_InnerON) ) continue;
       pSubWhere = sqlite3ExprAnd(pParse, pSubWhere,
                                  sqlite3ExprDup(pParse->db, pTerm->pExpr, 0));
     }

@@ -41,7 +41,7 @@ typedef struct WhereRightJoin WhereRightJoin;
 */
 struct WhereMemBlock {
   WhereMemBlock *pNext;      /* Next block in the chain */
-  u8 sz;                     /* Bytes of space */
+  u64 sz;                    /* Bytes of space */
 };
 
 /*

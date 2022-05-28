@@ -1069,6 +1069,7 @@ Expr *sqlite3ExprFunction(
     sqlite3ExprListDelete(db, pList); /* Avoid memory leak when malloc fails */
     return 0;
   }
+  assert( !ExprHasProperty(pNew, EP_InnerON|EP_OuterON) );
   pNew->w.iOfst = (int)(pToken->z - pParse->zTail);
   if( pList 
    && pList->nExpr > pParse->db->aLimit[SQLITE_LIMIT_FUNCTION_ARG]
@@ -1347,7 +1348,7 @@ static int dupedExprStructSize(const Expr *p, int flags){
     nSize = EXPR_FULLSIZE;
   }else{
     assert( !ExprHasProperty(p, EP_TokenOnly|EP_Reduced) );
-    assert( !ExprHasProperty(p, EP_FromJoin) ); 
+    assert( !ExprHasProperty(p, EP_OuterON) ); 
     assert( !ExprHasProperty(p, EP_MemToken) );
     assert( !ExprHasVVAProperty(p, EP_NoReduce) );
     if( p->pLeft || p->x.pList ){
@@ -2173,7 +2174,7 @@ static int exprNodeIsConstant(Walker *pWalker, Expr *pExpr){
   /* If pWalker->eCode is 2 then any term of the expression that comes from
   ** the ON or USING clauses of an outer join disqualifies the expression
   ** from being considered constant. */
-  if( pWalker->eCode==2 && ExprHasProperty(pExpr, EP_FromJoin) ){
+  if( pWalker->eCode==2 && ExprHasProperty(pExpr, EP_OuterON) ){
     pWalker->eCode = 0;
     return WRC_Abort;
   }
@@ -2320,10 +2321,10 @@ int sqlite3ExprIsTableConstraint(Expr *pExpr, const SrcItem *pSrc){
     return 0;  /* rule (3) */
   }
   if( pSrc->fg.jointype & JT_LEFT ){
-    if( !ExprHasProperty(pExpr, EP_FromJoin) ) return 0;  /* rule (4a) */
+    if( !ExprHasProperty(pExpr, EP_OuterON) ) return 0;   /* rule (4a) */
     if( pExpr->w.iJoin!=pSrc->iCursor ) return 0;         /* rule (4b) */
   }else{
-    if( ExprHasProperty(pExpr, EP_FromJoin) ) return 0;   /* rule (5) */
+    if( ExprHasProperty(pExpr, EP_OuterON) ) return 0;    /* rule (5) */
   }
   return sqlite3ExprIsTableConstant(pExpr, pSrc->iCursor); /* rules (1), (2) */
 }
@@ -2745,11 +2746,7 @@ int sqlite3FindInIndex(
 
   assert( pX->op==TK_IN );
   mustBeUnique = (inFlags & IN_INDEX_LOOP)!=0;
-  if( pX->iTable && (inFlags & IN_INDEX_REUSE_CUR)!=0 ){
-    iTab = pX->iTable;
-  }else{
-    iTab = pParse->nTab++;
-  }
+  iTab = pParse->nTab++;
 
   /* If the RHS of this IN(...) operator is a SELECT, and if it matters 
   ** whether or not the SELECT result contains NULL values, check whether
@@ -3083,9 +3080,8 @@ void sqlite3CodeRhsOfIN(
       assert( ExprUseYSub(pExpr) );
       sqlite3VdbeAddOp2(v, OP_Gosub, pExpr->y.sub.regReturn,
                         pExpr->y.sub.iAddr);
-      if( iTab!=pExpr->iTable ){
-        sqlite3VdbeAddOp2(v, OP_OpenDup, iTab, pExpr->iTable);
-      }
+      assert( iTab!=pExpr->iTable );
+      sqlite3VdbeAddOp2(v, OP_OpenDup, iTab, pExpr->iTable);
       sqlite3VdbeJumpHere(v, addrOnce);
       return;
     }
@@ -5078,8 +5074,8 @@ static void exprCodeBetween(
       ** so that the sqlite3ExprCodeTarget() routine will not attempt to move
       ** it into the Parse.pConstExpr list.  We should use a new bit for this,
       ** for clarity, but we are out of bits in the Expr.flags field so we
-      ** have to reuse the EP_FromJoin bit.  Bummer. */
-      pDel->flags |= EP_FromJoin;
+      ** have to reuse the EP_OuterON bit.  Bummer. */
+      pDel->flags |= EP_OuterON;
       sqlite3ExprCodeTarget(pParse, &exprAnd, dest);
     }
     sqlite3ReleaseTempReg(pParse, regFree1);
@@ -5764,7 +5760,7 @@ int sqlite3ExprImpliesExpr(
 static int impliesNotNullRow(Walker *pWalker, Expr *pExpr){
   testcase( pExpr->op==TK_AGG_COLUMN );
   testcase( pExpr->op==TK_AGG_FUNCTION );
-  if( ExprHasProperty(pExpr, EP_FromJoin) ) return WRC_Prune;
+  if( ExprHasProperty(pExpr, EP_OuterON) ) return WRC_Prune;
   switch( pExpr->op ){
     case TK_ISNOT:
     case TK_ISNULL:
@@ -5861,7 +5857,7 @@ static int impliesNotNullRow(Walker *pWalker, Expr *pExpr){
 ** False positives are not allowed, however.  A false positive may result
 ** in an incorrect answer.
 **
-** Terms of p that are marked with EP_FromJoin (and hence that come from
+** Terms of p that are marked with EP_OuterON (and hence that come from
 ** the ON or USING clauses of OUTER JOINS) are excluded from the analysis.
 **
 ** This routine is used to check if a LEFT JOIN can be converted into

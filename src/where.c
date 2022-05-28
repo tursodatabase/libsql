@@ -330,7 +330,7 @@ static WhereTerm *whereScanNext(WhereScan *pScan){
          && (iColumn!=XN_EXPR
              || sqlite3ExprCompareSkip(pTerm->pExpr->pLeft,
                                        pScan->pIdxExpr,iCur)==0)
-         && (pScan->iEquiv<=1 || !ExprHasProperty(pTerm->pExpr, EP_FromJoin))
+         && (pScan->iEquiv<=1 || !ExprHasProperty(pTerm->pExpr, EP_OuterON))
         ){
           if( (pTerm->eOperator & WO_EQUIV)!=0
            && pScan->nEquiv<ArraySize(pScan->aiCur)
@@ -757,7 +757,7 @@ static int termCanDriveIndex(
   if( pTerm->leftCursor!=pSrc->iCursor ) return 0;
   if( (pTerm->eOperator & (WO_EQ|WO_IS))==0 ) return 0;
   if( (pSrc->fg.jointype & (JT_LEFT|JT_LTORJ))!=0
-   && !ExprHasProperty(pTerm->pExpr, EP_FromJoin)
+   && !ExprHasProperty(pTerm->pExpr, EP_OuterON)
    && (pTerm->eOperator & WO_IS)
   ){
     /* Cannot use an IS term from the WHERE clause as an index driver for
@@ -1181,7 +1181,7 @@ static sqlite3_index_info *allocateIndexInfo(
     ** RIGHT JOIN.  See tag-20191211-001 for the
     ** equivalent restriction for ordinary tables. */
     if( (pSrc->fg.jointype & (JT_LEFT|JT_LTORJ))!=0
-     && !ExprHasProperty(pTerm->pExpr, EP_FromJoin)
+     && !ExprHasProperty(pTerm->pExpr, EP_OuterON)
     ){
       continue;
     }
@@ -2059,7 +2059,7 @@ void sqlite3WhereTermPrint(WhereTerm *pTerm, int iTerm){
     memcpy(zType, "....", 5);
     if( pTerm->wtFlags & TERM_VIRTUAL ) zType[0] = 'V';
     if( pTerm->eOperator & WO_EQUIV  ) zType[1] = 'E';
-    if( ExprHasProperty(pTerm->pExpr, EP_FromJoin) ) zType[2] = 'L';
+    if( ExprHasProperty(pTerm->pExpr, EP_OuterON) ) zType[2] = 'L';
     if( pTerm->wtFlags & TERM_CODED  ) zType[3] = 'C';
     if( pTerm->eOperator & WO_SINGLE ){
       assert( (pTerm->eOperator & (WO_OR|WO_AND))==0 );
@@ -2836,7 +2836,7 @@ static int whereLoopAddBtreeIndex(
     ** RIGHT JOIN.  Only constraints in the
     ** ON clause are allowed.  See tag-20191211-002 for the vtab equivalent. */
     if( (pSrc->fg.jointype & (JT_LEFT|JT_LTORJ))!=0
-     && !ExprHasProperty(pTerm->pExpr, EP_FromJoin|EP_InnerJoin)
+     && !ExprHasProperty(pTerm->pExpr, EP_OuterON|EP_InnerON)
     ){
       continue;
     }
@@ -3205,8 +3205,8 @@ static int whereUsablePartialIndex(
   for(i=0, pTerm=pWC->a; i<pWC->nTerm; i++, pTerm++){
     Expr *pExpr;
     pExpr = pTerm->pExpr;
-    if( (!ExprHasProperty(pExpr, EP_FromJoin) || pExpr->w.iJoin==iTab)
-     && (isLeft==0 || ExprHasProperty(pExpr, EP_FromJoin))
+    if( (!ExprHasProperty(pExpr, EP_OuterON) || pExpr->w.iJoin==iTab)
+     && (isLeft==0 || ExprHasProperty(pExpr, EP_OuterON))
      && sqlite3ExprImpliesExpr(pParse, pExpr, pWhere, iTab)
      && (pTerm->wtFlags & TERM_VNULL)==0
     ){
@@ -3482,7 +3482,14 @@ static int whereLoopAddBtree(
         }
         ApplyCostMultiplier(pNew->rRun, pTab->costMult);
         whereLoopOutputAdjust(pWC, pNew, rSize);
-        rc = whereLoopInsert(pBuilder, pNew);
+        if( (pSrc->fg.jointype & JT_RIGHT)!=0 && pProbe->aColExpr ){
+          /* Do not do an SCAN of a index-on-expression in a RIGHT JOIN
+          ** because the cursor used to access the index might not be
+          ** positioned to the correct row during the right-join no-match
+          ** loop. */
+        }else{
+          rc = whereLoopInsert(pBuilder, pNew);
+        }
         pNew->nOut = rSize;
         if( rc ) break;
       }
@@ -3657,6 +3664,7 @@ static int whereLoopAddVirtualOne(
         *pbIn = 1; assert( (mExclude & WO_IN)==0 );
       }
 
+      assert( pbRetryLimit || !isLimitTerm(pTerm) );
       if( isLimitTerm(pTerm) && *pbIn ){
         /* If there is an IN(...) term handled as an == (separate call to
         ** xFilter for each value on the RHS of the IN) and a LIMIT or
@@ -4130,7 +4138,9 @@ static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
   SrcItem *pEnd = &pTabList->a[pWInfo->nLevel];
   sqlite3 *db = pWInfo->pParse->db;
   int rc = SQLITE_OK;
+  int bFirstPastRJ = 0;
   WhereLoop *pNew;
+
 
   /* Loop over the tables in the join, from left to right */
   pNew = pBuilder->pNew;
@@ -4141,10 +4151,13 @@ static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
     pNew->iTab = iTab;
     pBuilder->iPlanLimit += SQLITE_QUERY_PLANNER_LIMIT_INCR;
     pNew->maskSelf = sqlite3WhereGetMask(&pWInfo->sMaskSet, pItem->iCursor);
-    if( (pItem->fg.jointype & (JT_OUTER|JT_CROSS))!=0 ){
-      /* This condition is true when pItem is the FROM clause term on the
-      ** right-hand-side of a OUTER or CROSS JOIN.  */
+    if( bFirstPastRJ || (pItem->fg.jointype & (JT_OUTER|JT_CROSS))!=0 ){
+      /* Add prerequisites to prevent reordering of FROM clause terms
+      ** across CROSS joins and outer joins.  The bFirstPastRJ boolean
+      ** prevents the right operand of a RIGHT JOIN from being swapped with
+      ** other elements even further to the right. */
       mPrereq |= mPrior;
+      bFirstPastRJ = (pItem->fg.jointype & JT_RIGHT)!=0;
     }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
     if( IsVirtual(pItem->pTab) ){
@@ -5214,7 +5227,7 @@ static SQLITE_NOINLINE Bitmask whereOmitNoopJoin(
     pEnd = pWInfo->sWC.a + pWInfo->sWC.nTerm;
     for(pTerm=pWInfo->sWC.a; pTerm<pEnd; pTerm++){
       if( (pTerm->prereqAll & pLoop->maskSelf)!=0 ){
-        if( !ExprHasProperty(pTerm->pExpr, EP_FromJoin)
+        if( !ExprHasProperty(pTerm->pExpr, EP_OuterON)
          || pTerm->pExpr->w.iJoin!=pItem->iCursor
         ){
           break;
@@ -5840,6 +5853,7 @@ WhereInfo *sqlite3WhereBegin(
         iIndexCur = pParse->nTab++;
       }
       pLevel->iIdxCur = iIndexCur;
+      assert( pIx!=0 );
       assert( pIx->pSchema==pTab->pSchema );
       assert( iIndexCur>=0 );
       if( op ){
@@ -5915,9 +5929,20 @@ WhereInfo *sqlite3WhereBegin(
   for(ii=0; ii<nTabList; ii++){
     int addrExplain;
     int wsFlags;
+    SrcItem *pSrc;
     if( pParse->nErr ) goto whereBeginError;
     pLevel = &pWInfo->a[ii];
     wsFlags = pLevel->pWLoop->wsFlags;
+    pSrc = &pTabList->a[pLevel->iFrom];
+    if( pSrc->fg.isMaterialized ){
+      if( pSrc->fg.isCorrelated ){
+        sqlite3VdbeAddOp2(v, OP_Gosub, pSrc->regReturn, pSrc->addrFillSub);
+      }else{
+        int iOnce = sqlite3VdbeAddOp0(v, OP_Once);  VdbeCoverage(v);
+        sqlite3VdbeAddOp2(v, OP_Gosub, pSrc->regReturn, pSrc->addrFillSub);
+        sqlite3VdbeJumpHere(v, iOnce);
+      }
+    }
     if( (wsFlags & (WHERE_AUTO_INDEX|WHERE_BLOOMFILTER))!=0 ){
       if( (wsFlags & WHERE_AUTO_INDEX)!=0 ){
 #ifndef SQLITE_OMIT_AUTOMATIC_INDEX
@@ -6168,6 +6193,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
   }
 
   assert( pWInfo->nLevel<=pTabList->nSrc );
+  if( pWInfo->pExprMods ) whereUndoExprMods(pWInfo);
   for(i=0, pLevel=pWInfo->a; i<pWInfo->nLevel; i++, pLevel++){
     int k, last;
     VdbeOp *pOp, *pLastOp;
@@ -6304,7 +6330,6 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
 
   /* Final cleanup
   */
-  if( pWInfo->pExprMods ) whereUndoExprMods(pWInfo);
   pParse->nQueryLoop = pWInfo->savedNQueryLoop;
   whereInfoFree(db, pWInfo);
   return;

@@ -181,29 +181,53 @@ if {[working_64bit_int]} {
 }
 
 test_expr expr-1.111 {i1=NULL, i2=8} {i1 IS i2} 0
+test_expr expr-1.111b {i1=NULL, i2=8} {i1 IS NOT DISTINCT FROM i2} 0
 test_expr expr-1.112 {i1=NULL, i2=NULL} {i1 IS i2} 1
+test_expr expr-1.112b {i1=NULL, i2=NULL} {i1 IS NOT DISTINCT FROM i2} 1
 test_expr expr-1.113 {i1=6, i2=NULL} {i1 IS i2} 0
+test_expr expr-1.113b {i1=6, i2=NULL} {i1 IS NOT DISTINCT FROM i2} 0
 test_expr expr-1.114 {i1=6, i2=6} {i1 IS i2} 1
+test_expr expr-1.114b {i1=6, i2=6} {i1 IS NOT DISTINCT FROM i2} 1
 test_expr expr-1.115 {i1=NULL, i2=8} \
   {CASE WHEN i1 IS i2 THEN 'yes' ELSE 'no' END} no
+test_expr expr-1.115b {i1=NULL, i2=8} \
+  {CASE WHEN i1 IS NOT DISTINCT FROM i2 THEN 'yes' ELSE 'no' END} no
 test_expr expr-1.116 {i1=NULL, i2=NULL} \
   {CASE WHEN i1 IS i2 THEN 'yes' ELSE 'no' END} yes
+test_expr expr-1.116b {i1=NULL, i2=NULL} \
+  {CASE WHEN i1 IS NOT DISTINCT FROM i2 THEN 'yes' ELSE 'no' END} yes
 test_expr expr-1.117 {i1=6, i2=NULL} \
   {CASE WHEN i1 IS i2 THEN 'yes' ELSE 'no' END} no
+test_expr expr-1.117b {i1=6, i2=NULL} \
+  {CASE WHEN i1 IS NOT DISTINCT FROM i2 THEN 'yes' ELSE 'no' END} no
 test_expr expr-1.118 {i1=8, i2=8} \
   {CASE WHEN i1 IS i2 THEN 'yes' ELSE 'no' END} yes
+test_expr expr-1.118b {i1=8, i2=8} \
+  {CASE WHEN i1 IS NOT DISTINCT FROM i2 THEN 'yes' ELSE 'no' END} yes
 test_expr expr-1.119 {i1=NULL, i2=8} {i1 IS NOT i2} 1
+test_expr expr-1.119b {i1=NULL, i2=8} {i1 IS DISTINCT FROM i2} 1
 test_expr expr-1.120 {i1=NULL, i2=NULL} {i1 IS NOT i2} 0
+test_expr expr-1.120b {i1=NULL, i2=NULL} {i1 IS DISTINCT FROM i2} 0
 test_expr expr-1.121 {i1=6, i2=NULL} {i1 IS NOT i2} 1
+test_expr expr-1.121b {i1=6, i2=NULL} {i1 IS DISTINCT FROM i2} 1
 test_expr expr-1.122 {i1=6, i2=6} {i1 IS NOT i2} 0
+test_expr expr-1.122b {i1=6, i2=6} {i1 IS DISTINCT FROM i2} 0
 test_expr expr-1.123 {i1=NULL, i2=8} \
   {CASE WHEN i1 IS NOT i2 THEN 'yes' ELSE 'no' END} yes
+test_expr expr-1.123b {i1=NULL, i2=8} \
+  {CASE WHEN i1 IS DISTINCT FROM i2 THEN 'yes' ELSE 'no' END} yes
 test_expr expr-1.124 {i1=NULL, i2=NULL} \
   {CASE WHEN i1 IS NOT i2 THEN 'yes' ELSE 'no' END} no
+test_expr expr-1.124b {i1=NULL, i2=NULL} \
+  {CASE WHEN i1 IS DISTINCT FROM i2 THEN 'yes' ELSE 'no' END} no
 test_expr expr-1.125 {i1=6, i2=NULL} \
   {CASE WHEN i1 IS NOT i2 THEN 'yes' ELSE 'no' END} yes
+test_expr expr-1.125b {i1=6, i2=NULL} \
+  {CASE WHEN i1 IS DISTINCT FROM i2 THEN 'yes' ELSE 'no' END} yes
 test_expr expr-1.126 {i1=8, i2=8} \
   {CASE WHEN i1 IS NOT i2 THEN 'yes' ELSE 'no' END} no
+test_expr expr-1.126b {i1=8, i2=8} \
+  {CASE WHEN i1 IS DISTINCT FROM i2 THEN 'yes' ELSE 'no' END} no
 
 do_catchsql_test expr-1.127 {
   SELECT 1 IS #1;

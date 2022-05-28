@@ -23,7 +23,8 @@
 #
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-set CLI [test_find_cli]
+set CLI [test_cli_invocation]
+set CLI_ONLY [test_find_cli]
 db close
 forcedelete test.db test.db-journal test.db-wal
 sqlite3 db test.db
@@ -130,13 +131,13 @@ do_test shell4-3.1 {
   set fd [open t1.txt wb]
   puts $fd "SELECT 'squirrel';"
   close $fd
-  exec $::CLI :memory: --interactive ".read t1.txt"
+  exec $::CLI_ONLY :memory: --interactive ".read t1.txt"
 } {squirrel}
 do_test shell4-3.2 {
   set fd [open t1.txt wb]
   puts $fd "SELECT 'pound: \302\243';"
   close $fd
-  exec $::CLI :memory: --interactive ".read t1.txt"
+  exec $::CLI_ONLY :memory: --interactive ".read t1.txt"
 } {pound: £}
 
 do_test shell4-4.1 {
