@@ -2193,10 +2193,11 @@ int sqlite3ColumnsFromExprList(
       }
       if( pColExpr->op==TK_COLUMN
        && ALWAYS( ExprUseYTab(pColExpr) )
-       && (pTab = pColExpr->y.pTab)!=0
+       && ALWAYS( pColExpr->y.pTab!=0 )
       ){
         /* For columns use the column name name */
         int iCol = pColExpr->iColumn;
+        pTab = pColExpr->y.pTab;
         if( iCol<0 ) iCol = pTab->iPKey;
         zName = iCol>=0 ? pTab->aCol[iCol].zCnName : "rowid";
       }else if( pColExpr->op==TK_ID ){
@@ -6519,6 +6520,29 @@ static int countOfViewOptimization(Parse *pParse, Select *p){
 #endif /* SQLITE_COUNTOFVIEW_OPTIMIZATION */
 
 /*
+** If any term of pSrc, or any SF_NestedFrom sub-query, is not the same
+** as pSrcItem but has the same alias as p0, then return true.
+** Otherwise return false.
+*/
+static int sameSrcAlias(SrcItem *p0, SrcList *pSrc){
+  int i;
+  for(i=0; i<pSrc->nSrc; i++){
+    SrcItem *p1 = &pSrc->a[i];
+    if( p1==p0 ) continue;
+    if( p0->pTab==p1->pTab && 0==sqlite3_stricmp(p0->zAlias, p1->zAlias) ){
+      return 1;
+    }
+    if( p1->pSelect
+     && (p1->pSelect->selFlags & SF_NestedFrom)!=0
+     && sameSrcAlias(p0, p1->pSelect->pSrc)
+    ){
+      return 1;
+    }
+  }
+  return 0;
+}
+
+/*
 ** Generate code for the SELECT statement given in the p argument.  
 **
 ** The results are returned according to the SelectDest structure.
@@ -6622,15 +6646,12 @@ int sqlite3Select(
   ** disallow it altogether.  */
   if( p->selFlags & SF_UFSrcCheck ){
     SrcItem *p0 = &p->pSrc->a[0];
-    for(i=1; i<p->pSrc->nSrc; i++){
-      SrcItem *p1 = &p->pSrc->a[i];
-      if( p0->pTab==p1->pTab && 0==sqlite3_stricmp(p0->zAlias, p1->zAlias) ){
-        sqlite3ErrorMsg(pParse, 
-            "target object/alias may not appear in FROM clause: %s", 
-            p0->zAlias ? p0->zAlias : p0->pTab->zName
-        );
-        goto select_end;
-      }
+    if( sameSrcAlias(p0, p->pSrc) ){
+      sqlite3ErrorMsg(pParse, 
+          "target object/alias may not appear in FROM clause: %s", 
+          p0->zAlias ? p0->zAlias : p0->pTab->zName
+      );
+      goto select_end;
     }
 
     /* Clear the SF_UFSrcCheck flag. The check has already been performed,
@@ -6905,7 +6926,7 @@ int sqlite3Select(
 
     /* Generate code to implement the subquery
     **
-    ** The subquery is implemented as a co-routine all of the following are
+    ** The subquery is implemented as a co-routine all if the following are
     ** true:
     **
     **    (1)  the subquery is guaranteed to be the outer loop (so that
@@ -6963,11 +6984,11 @@ int sqlite3Select(
       ** the same view can reuse the materialization. */
       int topAddr;
       int onceAddr = 0;
-      int retAddr;
 
       pItem->regReturn = ++pParse->nMem;
-      topAddr = sqlite3VdbeAddOp2(v, OP_Integer, 0, pItem->regReturn);
+      topAddr = sqlite3VdbeAddOp0(v, OP_Goto);
       pItem->addrFillSub = topAddr+1;
+      pItem->fg.isMaterialized = 1;
       if( pItem->fg.isCorrelated==0 ){
         /* If the subquery is not correlated and if we are not inside of
         ** a trigger, then we only need to compute the value of the subquery
@@ -6982,9 +7003,9 @@ int sqlite3Select(
       sqlite3Select(pParse, pSub, &dest);
       pItem->pTab->nRowLogEst = pSub->nSelectRow;
       if( onceAddr ) sqlite3VdbeJumpHere(v, onceAddr);
-      retAddr = sqlite3VdbeAddOp1(v, OP_Return, pItem->regReturn);
+      sqlite3VdbeAddOp2(v, OP_Return, pItem->regReturn, topAddr+1);
       VdbeComment((v, "end %!S", pItem));
-      sqlite3VdbeChangeP1(v, topAddr, retAddr);
+      sqlite3VdbeJumpHere(v, topAddr);
       sqlite3ClearTempRegCache(pParse);
       if( pItem->fg.isCte && pItem->fg.isCorrelated==0 ){
         CteUse *pCteUse = pItem->u2.pCteUse;
