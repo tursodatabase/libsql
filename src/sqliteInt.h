@@ -2902,7 +2902,7 @@ struct Expr {
                          ** TK_SELECT_COLUMN: column of the result vector */
   i16 iAgg;              /* Which entry in pAggInfo->aCol[] or ->aFunc[] */
   union {
-    int iJoin;             /* If EP_FromJoin, the right table of the join */
+    int iJoin;             /* If EP_OuterON or EP_InnerON, the right table */
     int iOfst;             /* else: start of token from start of statement */
   } w;
   AggInfo *pAggInfo;     /* Used by TK_AGG_COLUMN and TK_AGG_FUNCTION */
@@ -2923,29 +2923,29 @@ struct Expr {
 **          EP_Agg == NC_HasAgg == SF_HasAgg
 **          EP_Win == NC_HasWin
 */
-#define EP_FromJoin   0x000001 /* Originates in ON/USING clause of outer join */
-#define EP_Distinct   0x000002 /* Aggregate function with DISTINCT keyword */
-#define EP_HasFunc    0x000004 /* Contains one or more functions of any kind */
-#define EP_FixedCol   0x000008 /* TK_Column with a known fixed value */
+#define EP_OuterON    0x000001 /* Originates in ON/USING clause of outer join */
+#define EP_InnerON    0x000002 /* Originates in ON/USING of an inner join */
+#define EP_Distinct   0x000004 /* Aggregate function with DISTINCT keyword */
+#define EP_HasFunc    0x000008 /* Contains one or more functions of any kind */
 #define EP_Agg        0x000010 /* Contains one or more aggregate functions */
-#define EP_VarSelect  0x000020 /* pSelect is correlated, not constant */
-#define EP_DblQuoted  0x000040 /* token.z was originally in "..." */
-#define EP_InfixFunc  0x000080 /* True for an infix function: LIKE, GLOB, etc */
-#define EP_Collate    0x000100 /* Tree contains a TK_COLLATE operator */
-#define EP_Commuted   0x000200 /* Comparison operator has been commuted */
-#define EP_IntValue   0x000400 /* Integer value contained in u.iValue */
-#define EP_xIsSelect  0x000800 /* x.pSelect is valid (otherwise x.pList is) */
-#define EP_Skip       0x001000 /* Operator does not contribute to affinity */
-#define EP_Reduced    0x002000 /* Expr struct EXPR_REDUCEDSIZE bytes only */
-#define EP_TokenOnly  0x004000 /* Expr struct EXPR_TOKENONLYSIZE bytes only */
+#define EP_FixedCol   0x000020 /* TK_Column with a known fixed value */
+#define EP_VarSelect  0x000040 /* pSelect is correlated, not constant */
+#define EP_DblQuoted  0x000080 /* token.z was originally in "..." */
+#define EP_InfixFunc  0x000100 /* True for an infix function: LIKE, GLOB, etc */
+#define EP_Collate    0x000200 /* Tree contains a TK_COLLATE operator */
+#define EP_Commuted   0x000400 /* Comparison operator has been commuted */
+#define EP_IntValue   0x000800 /* Integer value contained in u.iValue */
+#define EP_xIsSelect  0x001000 /* x.pSelect is valid (otherwise x.pList is) */
+#define EP_Skip       0x002000 /* Operator does not contribute to affinity */
+#define EP_Reduced    0x004000 /* Expr struct EXPR_REDUCEDSIZE bytes only */
 #define EP_Win        0x008000 /* Contains window functions */
-#define EP_MemToken   0x010000 /* Need to sqlite3DbFree() Expr.zToken */
-#define EP_IfNullRow  0x020000 /* The TK_IF_NULL_ROW opcode */
-#define EP_Unlikely   0x040000 /* unlikely() or likelihood() function */
-#define EP_ConstFunc  0x080000 /* A SQLITE_FUNC_CONSTANT or _SLOCHNG function */
-#define EP_CanBeNull  0x100000 /* Can be null despite NOT NULL constraint */
-#define EP_Subquery   0x200000 /* Tree contains a TK_SELECT operator */
-#define EP_InnerJoin  0x400000 /* Originates in ON/USING of an inner join */
+#define EP_TokenOnly  0x010000 /* Expr struct EXPR_TOKENONLYSIZE bytes only */
+#define EP_MemToken   0x020000 /* Need to sqlite3DbFree() Expr.zToken */
+#define EP_IfNullRow  0x040000 /* The TK_IF_NULL_ROW opcode */
+#define EP_Unlikely   0x080000 /* unlikely() or likelihood() function */
+#define EP_ConstFunc  0x100000 /* A SQLITE_FUNC_CONSTANT or _SLOCHNG function */
+#define EP_CanBeNull  0x200000 /* Can be null despite NOT NULL constraint */
+#define EP_Subquery   0x400000 /* Tree contains a TK_SELECT operator */
 #define EP_Leaf       0x800000 /* Expr.pLeft, .pRight, .u.pSelect all NULL */
 #define EP_WinFunc   0x1000000 /* TK_FUNCTION with Expr.y.pWin set */
 #define EP_Subrtn    0x2000000 /* Uses Expr.y.sub. TK_IN, _SELECT, or _EXISTS */
@@ -2968,8 +2968,8 @@ struct Expr {
 #define ExprHasAllProperty(E,P)  (((E)->flags&(P))==(P))
 #define ExprSetProperty(E,P)     (E)->flags|=(P)
 #define ExprClearProperty(E,P)   (E)->flags&=~(P)
-#define ExprAlwaysTrue(E)   (((E)->flags&(EP_FromJoin|EP_IsTrue))==EP_IsTrue)
-#define ExprAlwaysFalse(E)  (((E)->flags&(EP_FromJoin|EP_IsFalse))==EP_IsFalse)
+#define ExprAlwaysTrue(E)   (((E)->flags&(EP_OuterON|EP_IsTrue))==EP_IsTrue)
+#define ExprAlwaysFalse(E)  (((E)->flags&(EP_OuterON|EP_IsFalse))==EP_IsFalse)
 
 /* Macros used to ensure that the correct members of unions are accessed
 ** in Expr.
@@ -3148,6 +3148,7 @@ struct SrcItem {
     unsigned isIndexedBy :1;   /* True if there is an INDEXED BY clause */
     unsigned isTabFunc :1;     /* True if table-valued-function syntax */
     unsigned isCorrelated :1;  /* True if sub-query is correlated */
+    unsigned isMaterialized:1; /* This is a materialized view */
     unsigned viaCoroutine :1;  /* Implemented as a co-routine */
     unsigned isRecursive :1;   /* True for recursive reference in WITH */
     unsigned fromDDL :1;       /* Comes from sqlite_schema */
@@ -5380,7 +5381,6 @@ const char *sqlite3JournalModename(int);
 #define IN_INDEX_NOOP_OK     0x0001  /* OK to return IN_INDEX_NOOP */
 #define IN_INDEX_MEMBERSHIP  0x0002  /* IN operator used for membership test */
 #define IN_INDEX_LOOP        0x0004  /* IN operator used as a loop */
-#define IN_INDEX_REUSE_CUR   0x0008  /* Reuse prior table cursor */
 int sqlite3FindInIndex(Parse *, Expr *, u32, int*, int*, int*);
 
 int sqlite3JournalOpen(sqlite3_vfs *, const char *, sqlite3_file *, int, int);

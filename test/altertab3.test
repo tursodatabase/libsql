@@ -645,7 +645,7 @@ do_execsql_test 26.5 {
 } {}
 do_catchsql_test 26.6 {
   ALTER TABLE t1 RENAME TO t2;
-} {1 {error in trigger xx: ambiguous column name: xx}}
+} {1 {error in trigger xx: no such column: xx}}
 
 
 #-------------------------------------------------------------------------

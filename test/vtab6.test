@@ -277,11 +277,15 @@ do_test vtab6-3.6 {
     SELECT * FROM t1 JOIN t2 ON t3.a=t2.b;
   }
 } {1 {no such column: t3.a}}
+
+# EVIDENCE-OF: R-47973-48020 you cannot say "INNER OUTER JOIN", because
+# that would be contradictory.
 do_test vtab6-3.7 {
   catchsql {
     SELECT * FROM t1 INNER OUTER JOIN t2;
   }
 } {1 {unknown join type: INNER OUTER}}
+
 do_test vtab6-3.7 {
   catchsql {
     SELECT * FROM t1 LEFT BOGUS JOIN t2;

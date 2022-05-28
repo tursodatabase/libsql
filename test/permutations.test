@@ -217,7 +217,8 @@ test_suite "valgrind" -prefix "" -description {
   fail under valgrind) omitted.
 } -files [
   test_set $allquicktests -exclude *malloc* *ioerr* *fault* *_err* wal.test \
-              shell*.test crash8.test atof1.test selectG.test \
+              shell2.test shell6.test shell7.test \
+              crash8.test atof1.test selectG.test \
               tkt-fc62af4523.test numindex1.test corruptK.test
 ] -initialize {
   set ::G(valgrind) 1
