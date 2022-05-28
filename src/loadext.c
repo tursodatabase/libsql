@@ -503,11 +503,12 @@ static const sqlite3_api_routines sqlite3Apis = {
   /* Version 3.39.0 and later */
 #ifndef SQLITE_OMIT_DESERIALIZE
   sqlite3_deserialize,
-  sqlite3_serialize
+  sqlite3_serialize,
 #else
   0,
-  0
+  0,
 #endif
+  sqlite3_db_name
 };
 
 /* True if x is the directory separator character

@@ -461,8 +461,8 @@ static int isAuxiliaryVtabOperator(
 ** a join, then transfer the appropriate markings over to derived.
 */
 static void transferJoinMarkings(Expr *pDerived, Expr *pBase){
-  if( pDerived ){
-    pDerived->flags |= pBase->flags & EP_FromJoin;
+  if( pDerived && ExprHasProperty(pBase, EP_OuterON|EP_InnerON) ){
+    pDerived->flags |= pBase->flags & (EP_OuterON|EP_InnerON);
     pDerived->w.iJoin = pBase->w.iJoin;
   }
 }
@@ -917,7 +917,7 @@ static int termIsEquivalence(Parse *pParse, Expr *pExpr){
   CollSeq *pColl;
   if( !OptimizationEnabled(pParse->db, SQLITE_Transitive) ) return 0;
   if( pExpr->op!=TK_EQ && pExpr->op!=TK_IS ) return 0;
-  if( ExprHasProperty(pExpr, EP_FromJoin) ) return 0;
+  if( ExprHasProperty(pExpr, EP_OuterON) ) return 0;
   aff1 = sqlite3ExprAffinity(pExpr->pLeft);
   aff2 = sqlite3ExprAffinity(pExpr->pRight);
   if( aff1!=aff2
@@ -1109,14 +1109,22 @@ static void exprAnalyze(
   }
 #endif
 
-  if( ExprHasProperty(pExpr, EP_FromJoin) ){
+  if( ExprHasProperty(pExpr, EP_OuterON|EP_InnerON) ){
     Bitmask x = sqlite3WhereGetMask(pMaskSet, pExpr->w.iJoin);
-    prereqAll |= x;
-    extraRight = x-1;  /* ON clause terms may not be used with an index
-                       ** on left table of a LEFT JOIN.  Ticket #3015 */
-    if( (prereqAll>>1)>=x ){
-      sqlite3ErrorMsg(pParse, "ON clause references tables to its right");
-      return;
+    if( ExprHasProperty(pExpr, EP_OuterON) ){
+      prereqAll |= x;
+      extraRight = x-1;  /* ON clause terms may not be used with an index
+                         ** on left table of a LEFT JOIN.  Ticket #3015 */
+      if( (prereqAll>>1)>=x ){
+        sqlite3ErrorMsg(pParse, "ON clause references tables to its right");
+        return;
+      }
+    }else if( (prereqAll>>1)>=x ){
+      /* The ON clause of an INNER JOIN references a table to its right.
+      ** Most other SQL database engines raise an error.  But all versions
+      ** of SQLite going back to 3.0.0 have just put the ON clause constraint
+      ** into the WHERE clause and carried on. */
+      ExprClearProperty(pExpr, EP_InnerON);
     }
   }
   pTerm->prereqAll = prereqAll;
@@ -1184,7 +1192,7 @@ static void exprAnalyze(
       pNew->eOperator = (operatorMask(pDup->op) + eExtraOp) & opMask;
     }else 
     if( op==TK_ISNULL
-     && !ExprHasProperty(pExpr,EP_FromJoin)
+     && !ExprHasProperty(pExpr,EP_OuterON)
      && 0==sqlite3ExprCanBeNull(pLeft)
     ){
       assert( !ExprHasProperty(pExpr, EP_IntValue) );
@@ -1255,7 +1263,7 @@ static void exprAnalyze(
   else if( pExpr->op==TK_NOTNULL ){
     if( pExpr->pLeft->op==TK_COLUMN
      && pExpr->pLeft->iColumn>=0
-     && !ExprHasProperty(pExpr, EP_FromJoin)
+     && !ExprHasProperty(pExpr, EP_OuterON)
     ){
       Expr *pNewExpr;
       Expr *pLeft = pExpr->pLeft;
@@ -1459,8 +1467,8 @@ static void exprAnalyze(
         Expr *pNewExpr;
         pNewExpr = sqlite3PExpr(pParse, TK_MATCH, 
             0, sqlite3ExprDup(db, pRight, 0));
-        if( ExprHasProperty(pExpr, EP_FromJoin) && pNewExpr ){
-          ExprSetProperty(pNewExpr, EP_FromJoin);
+        if( ExprHasProperty(pExpr, EP_OuterON) && pNewExpr ){
+          ExprSetProperty(pNewExpr, EP_OuterON);
           pNewExpr->w.iJoin = pExpr->w.iJoin;
         }
         idxNew = whereClauseInsert(pWC, pNewExpr, TERM_VIRTUAL|TERM_DYNAMIC);
@@ -1827,9 +1835,9 @@ void sqlite3WhereTabFuncArgs(
         sqlite3ExprDup(pParse->db, pArgs->a[j].pExpr, 0), 0);
     pTerm = sqlite3PExpr(pParse, TK_EQ, pColRef, pRhs);
     if( pItem->fg.jointype & (JT_LEFT|JT_LTORJ) ){
-      joinType = EP_FromJoin;
+      joinType = EP_OuterON;
     }else{
-      joinType = EP_InnerJoin;
+      joinType = EP_InnerON;
     }
     sqlite3SetJoinExpr(pTerm, pItem->iCursor, joinType);
     whereClauseInsert(pWC, pTerm, TERM_DYNAMIC);

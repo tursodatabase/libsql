@@ -11,7 +11,6 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the use of indices in WHERE clases.
 #
-# $Id: where.test,v 1.50 2008/11/03 09:06:06 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -1601,6 +1600,21 @@ if {[permutation]!="valgrind"} {
   do_execsql_test where-27.2 {
     SELECT a>=9223372036854775807+1 FROM t1;
   } {0}
+}
+
+# 2022-05-10 dbsqlfuzz 4c5e3e89bc251d28378be88233f531b84ec66901
+# 
+reset_db
+do_execsql_test where-28.1 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b INT);
+  CREATE INDEX t1b ON t1(b,b,b,b,b,b,b,b,b,b,b,b,b);
+  INSERT INTO t1(a,b) VALUES(1,1),(15,2),(19,5);
+  UPDATE t1 SET b=999 WHERE a IN (SELECT 15) AND b IN (1,2);
+  SELECT * FROM t1;
+} {
+ 1  1
+ 15 999
+ 19 5
 }
 
 finish_test

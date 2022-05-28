@@ -148,11 +148,13 @@ catch { array unset ::dbcache }
 # random integer between 0 and 1,000,000
 # 0 and 99.
 do_test 2.1 {
+  catch { array unset ctx_used } 
   for {set i 0} {$i < 100} {incr i} {
     while 1 {
       set ctx [expr abs(int(rand() *1000000))]
-      if {[info exists ::dbcache($ctx)]==0} break
+      if {[info exists ctx_used($ctx)]==0} break
     }
+    set ctx_used($ctx) 1
 
     set file test_remote.db$ctx
     forcedelete $file

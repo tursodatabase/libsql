@@ -1,0 +1,31 @@
+textarea {
+    font-family: monospace;
+}
+header {
+    font-size: 130%;
+    font-weight: bold;
+}
+.hidden, .initially-hidden {
+    position: absolute !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    display: none !important;
+}
+fieldset.options {
+    font-size: 75%;
+}
+fieldset > legend {
+    padding: 0 0.5em;
+}
+span.labeled-input {
+    padding: 0.25em;
+    margin: 0.25em 0.5em;
+    border-radius: 0.25em;
+    white-space: nowrap;
+    background: #0002;
+}
+.center { text-align: center; }
+.error {
+    color: red;
+    background-color: yellow;
+}

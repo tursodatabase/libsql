@@ -21,6 +21,7 @@ ifcapable !altertable {
   return
 }
 
+
 set ::TMPDBERROR [list 1 \
   {unable to open a temporary database file for storing temporary tables}
 ]
@@ -47,6 +48,7 @@ do_faultsim_test 1 -prep {
   faultsim_test_result {0 {}} $::TMPDBERROR
 }
 
+
 #-------------------------------------------------------------------------
 # dbsqlfuzz e3dd84cda3848016a6a6024c7249d09bc2ef2615
 #
@@ -58,6 +60,11 @@ do_execsql_test 2.0 {
        (WITH cte1(a) AS ( SELECT 1 FROM ( SELECT * FROM t2 ) )
        SELECT a FROM cte1
     ), 1);
+  END;
+
+  CREATE TRIGGER r1 AFTER INSERT ON t2 BEGIN
+    UPDATE t2 SET k=1 FROM t2 AS one, t2 AS two NATURAL JOIN t2 AS three 
+    WHERE one.k=two.v;
   END;
 }
 
