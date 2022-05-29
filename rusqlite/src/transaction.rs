@@ -559,7 +559,7 @@ mod test {
         }
         Ok(())
     }
-    fn assert_nested_tx_error(e: crate::Error) {
+    fn assert_nested_tx_error(e: Error) {
         if let Error::SqliteFailure(e, Some(m)) = &e {
             assert_eq!(e.extended_code, crate::ffi::SQLITE_ERROR);
             // FIXME: Not ideal...

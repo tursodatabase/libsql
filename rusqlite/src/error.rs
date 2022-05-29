@@ -34,7 +34,7 @@ pub enum Error {
 
     /// Error converting a string to a C-compatible string because it contained
     /// an embedded nul.
-    NulError(::std::ffi::NulError),
+    NulError(std::ffi::NulError),
 
     /// Error when using SQL named parameters and passing a parameter name not
     /// present in the SQL.
@@ -212,14 +212,14 @@ impl From<str::Utf8Error> for Error {
     }
 }
 
-impl From<::std::ffi::NulError> for Error {
+impl From<std::ffi::NulError> for Error {
     #[cold]
-    fn from(err: ::std::ffi::NulError) -> Error {
+    fn from(err: std::ffi::NulError) -> Error {
         Error::NulError(err)
     }
 }
 
-const UNKNOWN_COLUMN: usize = std::usize::MAX;
+const UNKNOWN_COLUMN: usize = usize::MAX;
 
 /// The conversion isn't precise, but it's convenient to have it
 /// to allow use of `get_raw(…).as_…()?` in callbacks that take `Error`.
@@ -438,7 +438,7 @@ pub unsafe fn error_with_offset(db: *mut ffi::sqlite3, code: c_int, sql: &str) -
 
 pub fn check(code: c_int) -> Result<()> {
     if code != crate::ffi::SQLITE_OK {
-        Err(crate::error::error_from_sqlite_code(code, None))
+        Err(error_from_sqlite_code(code, None))
     } else {
         Ok(())
     }

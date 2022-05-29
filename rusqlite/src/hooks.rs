@@ -37,7 +37,7 @@ impl From<i32> for Action {
     }
 }
 
-/// The context recieved by an authorizer hook.
+/// The context received by an authorizer hook.
 ///
 /// See <https://sqlite.org/c3ref/set_authorizer.html> for more info.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

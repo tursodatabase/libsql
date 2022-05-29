@@ -11,7 +11,7 @@
 //!     // Note: This should be done once (usually when opening the DB).
 //!     let db = Connection::open_in_memory()?;
 //!     rusqlite::vtab::csvtab::load_module(&db)?;
-//!     // Assum3e my_csv.csv
+//!     // Assume my_csv.csv
 //!     let schema = "
 //!         CREATE VIRTUAL TABLE my_csv_data
 //!         USING csv(filename = 'my_csv.csv')

@@ -963,7 +963,7 @@ where
         .map(|&cs| CStr::from_ptr(cs).to_bytes()) // FIXME .to_str() -> Result<&str, Utf8Error>
         .collect::<Vec<_>>();
     match T::create(&mut conn, aux.as_ref(), &vec[..]) {
-        Ok((sql, vtab)) => match ::std::ffi::CString::new(sql) {
+        Ok((sql, vtab)) => match std::ffi::CString::new(sql) {
             Ok(c_sql) => {
                 let rc = ffi::sqlite3_declare_vtab(db, c_sql.as_ptr());
                 if rc == ffi::SQLITE_OK {
@@ -1015,7 +1015,7 @@ where
         .map(|&cs| CStr::from_ptr(cs).to_bytes()) // FIXME .to_str() -> Result<&str, Utf8Error>
         .collect::<Vec<_>>();
     match T::connect(&mut conn, aux.as_ref(), &vec[..]) {
-        Ok((sql, vtab)) => match ::std::ffi::CString::new(sql) {
+        Ok((sql, vtab)) => match std::ffi::CString::new(sql) {
             Ok(c_sql) => {
                 let rc = ffi::sqlite3_declare_vtab(db, c_sql.as_ptr());
                 if rc == ffi::SQLITE_OK {

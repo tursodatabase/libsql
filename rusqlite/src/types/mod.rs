@@ -140,7 +140,6 @@ impl fmt::Display for Type {
 mod test {
     use super::Value;
     use crate::{params, Connection, Error, Result, Statement};
-    use std::f64::EPSILON;
     use std::os::raw::{c_double, c_int};
 
     fn checked_memory_handle() -> Result<Connection> {
@@ -264,7 +263,7 @@ mod test {
         assert_eq!(vec![1, 2], row.get::<_, Vec<u8>>(0)?);
         assert_eq!("text", row.get::<_, String>(1)?);
         assert_eq!(1, row.get::<_, c_int>(2)?);
-        assert!((1.5 - row.get::<_, c_double>(3)?).abs() < EPSILON);
+        assert!((1.5 - row.get::<_, c_double>(3)?).abs() < f64::EPSILON);
         assert_eq!(row.get::<_, Option<c_int>>(4)?, None);
         assert_eq!(row.get::<_, Option<c_double>>(4)?, None);
         assert_eq!(row.get::<_, Option<String>>(4)?, None);
@@ -355,7 +354,7 @@ mod test {
         assert_eq!(Value::Text(String::from("text")), row.get::<_, Value>(1)?);
         assert_eq!(Value::Integer(1), row.get::<_, Value>(2)?);
         match row.get::<_, Value>(3)? {
-            Value::Real(val) => assert!((1.5 - val).abs() < EPSILON),
+            Value::Real(val) => assert!((1.5 - val).abs() < f64::EPSILON),
             x => panic!("Invalid Value {:?}", x),
         }
         assert_eq!(Value::Null, row.get::<_, Value>(4)?);

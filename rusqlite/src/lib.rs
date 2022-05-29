@@ -57,7 +57,6 @@
 pub use libsqlite3_sys as ffi;
 
 use std::cell::RefCell;
-use std::convert;
 use std::default::Default;
 use std::ffi::{CStr, CString};
 use std::fmt;
@@ -272,7 +271,7 @@ fn str_for_sqlite(s: &[u8]) -> Result<(*const c_char, c_int, ffi::sqlite3_destru
 // Helper to cast to c_int safely, returning the correct error type if the cast
 // failed.
 fn len_as_c_int(len: usize) -> Result<c_int> {
-    if len >= (c_int::max_value() as usize) {
+    if len >= (c_int::MAX as usize) {
         Err(Error::SqliteFailure(
             ffi::Error::new(ffi::SQLITE_TOOBIG),
             None,
@@ -323,7 +322,7 @@ pub const TEMP_DB: DatabaseName<'static> = DatabaseName::Temp;
 ))]
 impl DatabaseName<'_> {
     #[inline]
-    fn as_cstring(&self) -> Result<util::SmallCString> {
+    fn as_cstring(&self) -> Result<SmallCString> {
         use self::DatabaseName::{Attached, Main, Temp};
         match *self {
             Main => str_to_cstring("main"),
@@ -724,7 +723,7 @@ impl Connection {
     where
         P: Params,
         F: FnOnce(&Row<'_>) -> Result<T, E>,
-        E: convert::From<Error>,
+        E: From<Error>,
     {
         let mut stmt = self.prepare(sql)?;
         stmt.check_no_tail()?;
@@ -1434,8 +1433,9 @@ mod test {
     fn test_execute_select() {
         let db = checked_memory_handle();
         let err = db.execute("SELECT 1 WHERE 1 < ?", [1i32]).unwrap_err();
-        assert!(
-            err == Error::ExecuteReturnedResults,
+        assert_eq!(
+            err,
+            Error::ExecuteReturnedResults,
             "Unexpected error: {}",
             err
         );
@@ -1739,7 +1739,7 @@ mod test {
         db.create_scalar_function(
             "interrupt",
             0,
-            crate::functions::FunctionFlags::default(),
+            functions::FunctionFlags::default(),
             move |_| {
                 interrupt_handle.interrupt();
                 Ok(0)
@@ -2121,7 +2121,7 @@ mod test {
     #[cfg(feature = "modern_sqlite")]
     pub fn db_readonly() -> Result<()> {
         let db = Connection::open_in_memory()?;
-        assert!(!db.is_readonly(super::MAIN_DB)?);
+        assert!(!db.is_readonly(MAIN_DB)?);
         Ok(())
     }
 }

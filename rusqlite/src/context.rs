@@ -43,7 +43,7 @@ pub(super) unsafe fn set_result(ctx: *mut sqlite3_context, result: &ToSqlOutput<
         ValueRef::Real(r) => ffi::sqlite3_result_double(ctx, r),
         ValueRef::Text(s) => {
             let length = s.len();
-            if length > c_int::max_value() as usize {
+            if length > c_int::MAX as usize {
                 ffi::sqlite3_result_error_toobig(ctx);
             } else {
                 let (c_str, len, destructor) = match str_for_sqlite(s) {
@@ -57,7 +57,7 @@ pub(super) unsafe fn set_result(ctx: *mut sqlite3_context, result: &ToSqlOutput<
         }
         ValueRef::Blob(b) => {
             let length = b.len();
-            if length > c_int::max_value() as usize {
+            if length > c_int::MAX as usize {
                 ffi::sqlite3_result_error_toobig(ctx);
             } else if length == 0 {
                 ffi::sqlite3_result_zeroblob(ctx, 0);

@@ -8,14 +8,14 @@ use std::path::Path;
 /// targetting, and this test must be made at run-time (of the build script) See
 /// https://doc.rust-lang.org/cargo/reference/environment-variables.html#environment-variables-cargo-sets-for-build-scripts
 fn win_target() -> bool {
-    std::env::var("CARGO_CFG_WINDOWS").is_ok()
+    env::var("CARGO_CFG_WINDOWS").is_ok()
 }
 
 /// Tells whether we're building for Android.
 /// See [`win_target`]
 #[cfg(any(feature = "bundled", feature = "bundled-windows"))]
 fn android_target() -> bool {
-    std::env::var("CARGO_CFG_TARGET_OS").map_or(false, |v| v == "android")
+    env::var("CARGO_CFG_TARGET_OS").map_or(false, |v| v == "android")
 }
 
 /// Tells whether a given compiler will be used `compiler_name` is compared to
@@ -23,7 +23,7 @@ fn android_target() -> bool {
 ///
 /// See [`win_target`]
 fn is_compiler(compiler_name: &str) -> bool {
-    std::env::var("CARGO_CFG_TARGET_ENV").map_or(false, |v| v == compiler_name)
+    env::var("CARGO_CFG_TARGET_ENV").map_or(false, |v| v == compiler_name)
 }
 
 fn main() {
@@ -178,7 +178,7 @@ mod build_bundled {
             };
 
             if cfg!(feature = "bundled-sqlcipher-vendored-openssl") {
-                cfg.include(std::env::var("DEP_OPENSSL_INCLUDE").unwrap());
+                cfg.include(env::var("DEP_OPENSSL_INCLUDE").unwrap());
                 // cargo will resolve downstream to the static lib in
                 // openssl-sys
             } else if is_windows {
@@ -505,7 +505,7 @@ mod bindings {
 
     impl ParseCallbacks for SqliteTypeChooser {
         fn int_macro(&self, _name: &str, value: i64) -> Option<IntKind> {
-            if value >= i32::min_value() as i64 && value <= i32::max_value() as i64 {
+            if value >= i32::MIN as i64 && value <= i32::MAX as i64 {
                 Some(IntKind::I32)
             } else {
                 None

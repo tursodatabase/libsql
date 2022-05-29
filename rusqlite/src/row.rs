@@ -171,7 +171,7 @@ pub struct AndThenRows<'stmt, F> {
 
 impl<T, E, F> Iterator for AndThenRows<'_, F>
 where
-    E: convert::From<Error>,
+    E: From<Error>,
     F: FnMut(&Row<'_>) -> Result<T, E>,
 {
     type Item = Result<T, E>;
