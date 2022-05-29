@@ -10,7 +10,7 @@ use crate::ffi;
 use crate::{Connection, InnerConnection};
 
 /// Action Codes
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(i32)]
 #[non_exhaustive]
 #[allow(clippy::upper_case_acronyms)]
@@ -40,7 +40,7 @@ impl From<i32> for Action {
 /// The context recieved by an authorizer hook.
 ///
 /// See <https://sqlite.org/c3ref/set_authorizer.html> for more info.
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct AuthContext<'c> {
     /// The action to be authorized.
     pub action: AuthAction<'c>,
@@ -57,7 +57,7 @@ pub struct AuthContext<'c> {
 /// preparation.
 ///
 /// See <https://sqlite.org/c3ref/c_alter_table.html> for more info.
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[non_exhaustive]
 #[allow(missing_docs)]
 pub enum AuthAction<'c> {
@@ -296,7 +296,7 @@ pub(crate) type BoxedAuthorizer =
     Box<dyn for<'c> FnMut(AuthContext<'c>) -> Authorization + Send + 'static>;
 
 /// A transaction operation.
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[non_exhaustive]
 #[allow(missing_docs)]
 pub enum TransactionOperation {
@@ -318,7 +318,7 @@ impl TransactionOperation {
 }
 
 /// [`authorizer`](Connection::authorizer) return code
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[non_exhaustive]
 pub enum Authorization {
     /// Authorize the action.
