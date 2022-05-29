@@ -3,7 +3,7 @@ use std::os::raw::{c_int, c_void};
 #[cfg(feature = "array")]
 use std::rc::Rc;
 use std::slice::from_raw_parts;
-use std::{convert, fmt, mem, ptr, str};
+use std::{fmt, mem, ptr, str};
 
 use super::ffi;
 use super::{len_as_c_int, str_for_sqlite};
@@ -417,7 +417,7 @@ impl Statement<'_> {
     pub fn query_and_then<T, E, P, F>(&mut self, params: P, f: F) -> Result<AndThenRows<'_, F>>
     where
         P: Params,
-        E: convert::From<Error>,
+        E: From<Error>,
         F: FnMut(&Row<'_>) -> Result<T, E>,
     {
         self.query(params).map(|rows| rows.and_then(f))
@@ -447,7 +447,7 @@ impl Statement<'_> {
         f: F,
     ) -> Result<AndThenRows<'_, F>>
     where
-        E: convert::From<Error>,
+        E: From<Error>,
         F: FnMut(&Row<'_>) -> Result<T, E>,
     {
         self.query_and_then(params, f)

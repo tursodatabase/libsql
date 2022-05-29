@@ -168,7 +168,7 @@ impl Session<'_> {
             if r != ffi::SQLITE_OK {
                 let errmsg: *mut c_char = errmsg;
                 let message = errmsg_to_string(&*errmsg);
-                ffi::sqlite3_free(errmsg as *mut ::std::os::raw::c_void);
+                ffi::sqlite3_free(errmsg as *mut c_void);
                 return Err(error_from_sqlite_code(r, Some(message)));
             }
         }

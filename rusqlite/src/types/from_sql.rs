@@ -240,7 +240,7 @@ mod test {
 
         fn check_ranges<T>(db: &Connection, out_of_range: &[i64], in_range: &[i64])
         where
-            T: Into<i64> + FromSql + ::std::fmt::Debug,
+            T: Into<i64> + FromSql + std::fmt::Debug,
         {
             for n in out_of_range {
                 let err = db

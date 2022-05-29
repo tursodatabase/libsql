@@ -363,7 +363,6 @@ mod test {
     #[test]
     fn test_i128() -> crate::Result<()> {
         use crate::Connection;
-        use std::i128;
         let db = Connection::open_in_memory()?;
         db.execute_batch("CREATE TABLE foo (i128 BLOB, desc TEXT)")?;
         db.execute(

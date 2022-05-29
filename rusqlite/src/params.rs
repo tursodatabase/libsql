@@ -41,7 +41,7 @@ use sealed::Sealed;
 /// - Using the [`rusqlite::params!`](crate::params!) macro, e.g.
 ///   `thing.query(rusqlite::params![1, "foo", bar])`. This is mostly useful for
 ///   heterogeneous lists where the number of parameters greater than 16, or
-///   homogenous lists of paramters where the number of parameters exceeds 32.
+///   homogenous lists of parameters where the number of parameters exceeds 32.
 ///
 /// - For small homogeneous lists of parameters, they can either be passed as:
 ///

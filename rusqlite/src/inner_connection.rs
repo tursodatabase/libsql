@@ -25,11 +25,11 @@ pub struct InnerConnection {
     // interrupt would only acquire the lock after the query's completion.
     interrupt_lock: Arc<Mutex<*mut ffi::sqlite3>>,
     #[cfg(feature = "hooks")]
-    pub free_commit_hook: Option<unsafe fn(*mut ::std::os::raw::c_void)>,
+    pub free_commit_hook: Option<unsafe fn(*mut std::os::raw::c_void)>,
     #[cfg(feature = "hooks")]
-    pub free_rollback_hook: Option<unsafe fn(*mut ::std::os::raw::c_void)>,
+    pub free_rollback_hook: Option<unsafe fn(*mut std::os::raw::c_void)>,
     #[cfg(feature = "hooks")]
-    pub free_update_hook: Option<unsafe fn(*mut ::std::os::raw::c_void)>,
+    pub free_update_hook: Option<unsafe fn(*mut std::os::raw::c_void)>,
     #[cfg(feature = "hooks")]
     pub progress_handler: Option<Box<dyn FnMut() -> bool + Send>>,
     #[cfg(feature = "hooks")]
@@ -208,7 +208,7 @@ impl InnerConnection {
             Ok(())
         } else {
             let message = super::errmsg_to_string(errmsg);
-            ffi::sqlite3_free(errmsg.cast::<::std::os::raw::c_void>());
+            ffi::sqlite3_free(errmsg.cast::<std::os::raw::c_void>());
             Err(error_from_sqlite_code(r, Some(message)))
         }
     }
@@ -400,7 +400,7 @@ fn ensure_safe_sqlite_threading_mode() -> Result<()> {
 
 #[cfg(not(any(target_arch = "wasm32")))]
 fn ensure_safe_sqlite_threading_mode() -> Result<()> {
-    // Ensure SQLite was compiled in thredsafe mode.
+    // Ensure SQLite was compiled in threadsafe mode.
     if unsafe { ffi::sqlite3_threadsafe() == 0 } {
         return Err(Error::SqliteSingleThreadedMode);
     }
