@@ -2627,6 +2627,12 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         }else if( (pTabItem->fg.jointype & JT_LEFT)==JT_LEFT
                && !ExprHasProperty(pE,EP_OuterON) ){
           continue;
+        }else{
+          Bitmask m = sqlite3WhereGetMask(&pWInfo->sMaskSet, pE->w.iJoin);
+          if( m & pLevel->notReady ){
+            /* An ON clause that is not ripe */
+            continue;
+          }
         }
       }
       if( iLoop==1 && !sqlite3ExprCoveredByIndex(pE, pLevel->iTabCur, pIdx) ){
