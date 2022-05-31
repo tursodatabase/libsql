@@ -1522,14 +1522,8 @@ fiddle_dir_abs = $(TOP)/$(fiddle_dir)
 # ^^^ some emcc opts require absolute paths
 fiddle_html = $(fiddle_dir)/fiddle.html
 fiddle_module_js = $(fiddle_dir)/fiddle-module.js
-fiddle_generated = $(fiddle_module_js) \
-                   $(fiddle_dir)/fiddle-module.wasm
 sqlite3_wasm_js = $(fiddle_dir)/sqlite3.js
 sqlite3_wasm = $(fiddle_dir)/sqlite3.wasm
-sqlite3_wasm_generated = $(sqlite3_wasm) $(sqlite3_wasm_js)
-clean-wasm:
-	rm -f $(fiddle_generated) $(sqlite3_wasm_generated)
-clean: clean-wasm
 #emcc_opt = -O0
 #emcc_opt = -O1
 #emcc_opt = -O2
@@ -1546,6 +1540,8 @@ $(fiddle_module_js): Makefile sqlite3.c shell.c \
         -sEXPORTED_RUNTIME_METHODS=@$(fiddle_dir_abs)/EXPORTED_RUNTIME_METHODS \
         -sEXPORTED_FUNCTIONS=@$(fiddle_dir_abs)/EXPORTED_FUNCTIONS.fiddle \
         sqlite3.c shell.c
+	gzip < $@ > $@.gz
+	gzip < $(fiddle_dir)/fiddle-module.wasm > $(fiddle_dir)/fiddle-module.wasm.gz
 $(sqlite3_wasm_js): Makefile sqlite3.c \
     $(fiddle_dir)/sqlite3-api.js \
     $(fiddle_dir)/EXPORTED_RUNTIME_METHODS \
@@ -1559,7 +1555,28 @@ $(sqlite3_wasm_js): Makefile sqlite3.c \
         --post-js=$(fiddle_dir)/sqlite3-api.js \
         --no-entry \
         sqlite3.c
-fiddle: $(fiddle_module_js)
+	gzip < $@ > $@.gz
+	gzip < $(sqlite3_wasm) > $(sqlite3_wasm).gz
+	gzip < $(fiddle_dir)/sqlite3-api.js > $(fiddle_dir)/sqlite3-api.js.gz
+$(fiddle_dir)/fiddle.js.gz: $(fiddle_dir)/fiddle.js
+	gzip < $< > $@
+$(fiddle_dir)/sqlite3-api.js.gz: $(fiddle_dir)/sqlite3-api.js
+	gzip < $< > $@
+
+fiddle_generated = $(fiddle_module_js) $(fiddle_module_js).gz \
+                   $(fiddle_dir)/fiddle-module.wasm \
+                   $(fiddle_dir)/fiddle-module.wasm.gz \
+                   $(fiddle_dir)/fiddle.js.gz
+sqlite3_wasm_generated = \
+                   $(sqlite3_wasm) $(sqlite3_wasm).gz \
+                   $(sqlite3_wasm_js) $(sqlite3_wasm_js).gz \
+                   $(fiddle_dir)/sqlite3.js.gz \
+                   $(fiddle_dir)/sqlite3-api.js.gz
+
+clean-wasm:
+	rm -f $(fiddle_generated) $(sqlite3_wasm_generated)
+clean: clean-wasm
+fiddle: $(fiddle_module_js) $(fiddle_dir)/fiddle.js.gz
 sqlite3-wasm: $(sqlite3_wasm_js)
 wasm: fiddle sqlite3-wasm
 ########################################################################
