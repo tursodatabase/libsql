@@ -9165,7 +9165,7 @@ int sqlite3BtreeInsert(
   TRACE(("INSERT: table=%d nkey=%lld ndata=%d page=%d %s\n",
           pCur->pgnoRoot, pX->nKey, pX->nData, pPage->pgno,
           loc==0 ? "overwrite" : "new entry"));
-  assert( pPage->isInit );
+  assert( pPage->isInit || CORRUPT_DB );
   newCell = pBt->pTmpSpace;
   assert( newCell!=0 );
   if( flags & BTREE_PREFORMAT ){
