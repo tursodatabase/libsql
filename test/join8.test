@@ -481,5 +481,40 @@ do_execsql_test join8-15120 {
    WHERE t5.y!='x' AND t4.x!='x';
 } {b b -}
 
+# 2022-05-31
+# https://sqlite.org/forum/forumpost/c2554d560b
+reset_db
+do_execsql_test join8-16000 {
+  CREATE TABLE t1(a TEXT);
+  CREATE TABLE t2(b TEXT);
+  CREATE TABLE t3(c TEXT);
+  INSERT INTO t2(b) VALUES ('x');
+  INSERT INTO t3(c) VALUES ('y'), ('z');
+} {}
+db null -
+do_execsql_test join8-16010 {
+  SELECT * FROM t1 RIGHT JOIN t2 ON true LEFT JOIN t3 ON a<>'';
+} {- x -}
+do_execsql_test join8-16020 {
+  SELECT * FROM t1 RIGHT JOIN t2 ON true LEFT JOIN t3 ON a<>'' WHERE c IS NULL;
+} {- x -}
+do_execsql_test join8-16020 {
+  SELECT * FROM t1 RIGHT JOIN t2 ON true JOIN t3 ON a<>'' WHERE c IS NULL;
+} {}
+do_execsql_test join8-16030 {
+  SELECT * FROM t1 RIGHT JOIN t2 ON true JOIN t3 ON a<>'';
+} {}
+do_execsql_test join8-16040 {
+  SELECT * FROM t1 RIGHT JOIN t2 ON true LEFT JOIN t3 ON a<>'' WHERE c<>'';
+} {}
+do_execsql_test join8-16050 {
+  SELECT * FROM t1 RIGHT JOIN t2 ON true LEFT JOIN t3 ON a<>'' WHERE c IS NOT NULL;
+} {}
+do_execsql_test join8-16060 {
+  SELECT * FROM t1 RIGHT JOIN t2 ON true JOIN t3 ON a<>'' WHERE c<>'';
+} {}
+do_execsql_test join8-16070 {
+  SELECT * FROM t1 RIGHT JOIN t2 ON true JOIN t3 ON a<>'' WHERE c IS NOT NULL;
+} {}
 
 finish_test
