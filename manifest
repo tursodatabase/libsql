@@ -1,9 +1,9 @@
-C Fix\sa\sminor\sproblem\sin\sthe\sTcl\s"incrblob"\scommand.\sThis\sdoes\snot\saffect\sthe\sSQLite\score.
-D 2022-06-01T14:32:05.554
+C Minor\stweaks\sto,\sand\sconsolidation\sof,\sthe\swasm-related\sbuild\sflags.
+D 2022-06-01T14:52:23.135
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in f876bff913171f8cd1ef0866b6c346bcae2caf00e219a48e1fa129701df41175
+F Makefile.in e45046a016985c8fedfc5e7aad88ee396033a1e9b4e929fd6e1033e4c39dba95
 F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
 F Makefile.msc b28a8a7a977e7312f6859f560348e1eb110c21bd6cf9fab0d16537c0a514eef3
 F README.md 8b8df9ca852aeac4864eb1e400002633ee6db84065bd01b78c33817f97d31f5e
@@ -1974,8 +1974,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 382cd7e10b2df4216da8f25b55546bc74a963d9834af240f75ec8b8321ba106e
-R ef79bb9e53693c3f781d762f53d114b4
-U dan
-Z 499f9d1db46d766843c93e3c173e7b6f
+P e96feccc21d9b858f076960e029b615809243d0cc3f95db75180feb01887451f
+R 471b902d8001c2396cd771e4411b6c73
+U stephan
+Z 12097a5aaa82e69db2d6ce001a3738eb
 # Remove this line to create a well-formed Fossil manifest.
