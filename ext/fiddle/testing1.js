@@ -71,23 +71,27 @@ INSERT INTO t(a,b) VALUES(1,2),(3,4),(?,?);`,
         T.assert(2 === list.length);
         //log("Exec'd SQL:", list);
         let counter = 0, colNames = [];
+        list.length = 0;
         db.exec("SELECT a a, b b FROM t",{
             rowMode: 'object',
+            resultRows: list,
+            columnNames: colNames,
             callback: function(row,stmt){
-                if(!counter) stmt.getColumnNames(colNames);
                 ++counter;
                 T.assert(row.a%2 && row.a<6);
             }
         });
-        assert(2 === colNames.length);
-        assert('a' === colNames[0]);
-        T.assert(3 === counter);
+        T.assert(2 === colNames.length)
+            .assert('a' === colNames[0])
+            .assert(3 === counter)
+            .assert(3 === list.length);
+        list.length = 0;
         db.exec("SELECT a a, b b FROM t",{
             rowMode: 'array',
             callback: function(row,stmt){
                 ++counter;
-                assert(Array.isArray(row));
-                T.assert(0===row[1]%2 && row[1]<7);
+                T.assert(Array.isArray(row))
+                    .assert(0===row[1]%2 && row[1]<7);
             }
         });
         T.assert(6 === counter);

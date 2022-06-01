@@ -271,33 +271,55 @@ Module.postRun.push(function(namespace/*the module object, the target for
 
        - ()
        - (undefined) (same effect as ())
-       - (Uint8Array holding an sqlite3 db image)
+       - (filename[,buffer])
+       - (buffer)
 
-       It always generates a random filename and sets is to
-       the `filename` property of this object.
+       Where a buffer indicates a Uint8Array holding an sqlite3 db
+       image.
 
-       Developer's note: the reason it does not (any longer) support
-       ":memory:" as a name is because we can apparently only export
-       images of DBs which are stored in the pseudo-filesystem
-       provided by the JS APIs. Since exporting and importing images
-       is an important usability feature for this class, ":memory:"
-       DBs are not supported (until/unless we can find a way to export
-       those as well). The naming semantics will certainly evolve as
-       this API does.
+       If the filename is provided, only the last component of the
+       path is used - any path prefix is stripped. If no name is
+       provided, a random name is generated. The resulting filename is
+       the one used for accessing the db file within root directory of
+       the emscripten-supplied virtual filesystem, and is set (with no
+       path part) as the DB object's `filename` property.
+
+       Note that the special sqlite3 db names ":memory:" and ""
+       (temporary db) have no special meanings here. We can apparently
+       only export images of DBs which are stored in the
+       pseudo-filesystem provided by the JS APIs. Since exporting and
+       importing images is an important usability feature for this
+       class, ":memory:" DBs are not supported (until/unless we can
+       find a way to export those as well). The naming semantics will
+       certainly evolve as this API does.
     */
     const DB = function(arg){
-        const fn = "db-"+((Math.random() * 10000000) | 0)+
-              "-"+((Math.random() * 10000000) | 0)+".sqlite3";
-        let buffer;
-        if(name instanceof Uint8Array){
+        let buffer, fn;
+        if(arg instanceof Uint8Array){
             buffer = arg;
             arg = undefined;
-        }else if(arguments.length && undefined!==arg){
-            toss("Invalid arguments to DB constructor.",
-                 "Expecting no args, undefined, or a",
-                 "sqlite3 file as a Uint8Array.");
+        }else if(arguments.length){ /*(filename[,buffer])*/
+            if('string'===typeof arg){
+                const p = arg.split('/').pop().replace(':','');
+                if(p) fn = p;
+                if(arguments.length>1){
+                    buffer = arguments[1];
+                }
+            }else if(undefined!==arg){
+                toss("Invalid arguments to DB constructor.",
+                     "Expecting (), (undefined), (name,buffer),",
+                     "or (buffer), where buffer an sqlite3 db ",
+                     "as a Uint8Array.");
+            }
+        }
+        if(!fn){
+            fn = "db-"+((Math.random() * 10000000) | 0)+
+                "-"+((Math.random() * 10000000) | 0)+".sqlite3";
         }
         if(buffer){
+            if(!(buffer instanceof Uint8Array)){
+                toss("Expecting Uint8Array image of db contents.");
+            }
             FS.createDataFile("/", fn, buffer, true, true);
         }
         setValue(pPtrArg, 0, "i32");
@@ -382,7 +404,7 @@ Module.postRun.push(function(namespace/*the module object, the target for
             default: toss("Invalid argument count for exec().");
         };
         if('string'!==typeof out.sql) toss("Missing SQL argument.");
-        if(out.opt.callback){
+        if(out.opt.callback || out.opt.resultRows){
             switch((undefined===out.opt.rowMode)
                     ? 'stmt' : out.opt.rowMode) {
                 case 'object': out.cbArg = (stmt)=>stmt.get({}); break;
@@ -462,16 +484,37 @@ Module.postRun.push(function(namespace/*the module object, the target for
             return stmt;
         },
         /**
-           This function works like execMulti(), and takes the same
-           arguments, but is more efficient (performs much less work)
-           when the input SQL is only a single statement. If passed a
-           multi-statement SQL, it only processes the first one.
+           This function works like execMulti(), and takes most of the
+           same arguments, but is more efficient (performs much less
+           work) when the input SQL is only a single statement. If
+           passed a multi-statement SQL, it only processes the first
+           one.
 
-           This function supports one additional option not used by
-           execMulti():
+           This function supports the following additional options not
+           used by execMulti():
 
            - .multi: if true, this function acts as a proxy for
              execMulti() and behaves identically to that function.
+
+           - .resultRows: if this is an array, each row of the result
+             set (if any) is appended to it in the format specified
+             for the `rowMode` property, with the exception that the
+             `rowMode` property _must_ be one of 'array' or 'object'
+             if this is set (else an exception is throws). It is legal
+             to use both `resultRows` and `callback`, but `resultRows`
+             is likely much simpler to use for small data sets.
+
+           - .columnNames: if this is an array and the query has
+             result columns, the array is passed to
+             Stmt.getColumnNames() to append the column names to it
+             (regardless of whether the query produces any result
+             rows). If the query has no result columns, this value is
+             unchanged.
+
+           The following options to execMulti() are _not_ supported by
+           this method (they are simply ignored):
+
+          - .saveSql
         */
         exec: function(/*(sql [,optionsObj]) or (optionsObj)*/){
             affirmDbOpen(this);
@@ -481,15 +524,29 @@ Module.postRun.push(function(namespace/*the module object, the target for
                 return this.execMulti(arg, undefined, BindTypes);
             }
             const opt = arg.opt;
-            let stmt;
+            let stmt, rowTarget;
             try {
+                if(Array.isArray(opt.resultRows)){
+                    if(opt.rowMode!=='array' && opt.rowMode!=='object'){
+                        throw new Error("Invalid rowMode for resultRows array: must "+
+                                        "be one of 'array' or 'object'.");
+                    }
+                    rowTarget = opt.resultRows;
+                }
                 stmt = this.prepare(arg.sql);
+                if(stmt.columnCount && Array.isArray(opt.columnNames)){
+                    stmt.getColumnNames(opt.columnNames);
+                }
                 if(opt.bind) stmt.bind(opt.bind);
-                if(opt.callback){
+                if(opt.callback || rowTarget){
                     while(stmt.step()){
-                        stmt._isLocked = true;
-                        opt.callback(arg.cbArg(stmt), stmt);
-                        stmt._isLocked = false;
+                        const row = arg.cbArg(stmt);
+                        if(rowTarget) rowTarget.push(row);
+                        if(opt.callback){
+                            stmt._isLocked = true;
+                            opt.callback(row, stmt);
+                            stmt._isLocked = false;
+                        }
                     }
                 }else{
                     stmt.step();
@@ -504,10 +561,11 @@ Module.postRun.push(function(namespace/*the module object, the target for
 
         }/*exec()*/,
         /**
-           Executes one or more SQL statements. Its arguments
-           must be either (sql,optionsObject) or (optionsObject).
-           In the latter case, optionsObject.sql must contain the
-           SQL to execute. Returns this object. Throws on error.
+           Executes one or more SQL statements in the form of a single
+           string. Its arguments must be either (sql,optionsObject) or
+           (optionsObject). In the latter case, optionsObject.sql
+           must contain the SQL to execute. Returns this
+           object. Throws on error.
 
            If no SQL is provided, or a non-string is provided, an
            exception is triggered. Empty SQL, on the other hand, is
@@ -547,6 +605,9 @@ Module.postRun.push(function(namespace/*the module object, the target for
              statement is executed (but after it is prepared - we
              don't have the string until after that). Empty SQL
              statements are elided.
+
+           See also the exec() method, which is a close cousin of this
+           one.
 
            ACHTUNG #1: The callback MUST NOT modify the Stmt
            object. Calling any of the Stmt.get() variants,
@@ -806,8 +867,13 @@ Module.postRun.push(function(namespace/*the module object, the target for
         /**
            Exports a copy of this db's file as a Uint8Array and
            returns it. It is technically not legal to call this while
-           any prepared statement are currently active. Throws if this
-           db is not open.
+           any prepared statement are currently active because,
+           depending on the platform, it might not be legal to read
+           the db while a statement is locking it. Throws if this db
+           is not open or has any opened statements.
+
+           The resulting buffer can be passed to this class's
+           constructor to restore the DB.
 
            Maintenance reminder: the corresponding sql.js impl of this
            feature closes the current db, finalizing any active
@@ -825,8 +891,7 @@ Module.postRun.push(function(namespace/*the module object, the target for
                 toss("Cannot export with prepared statements active!",
                      "finalize() all statements and try again.");
             }
-            const img = FS.readFile(this.filename, {encoding:"binary"});
-            return img;
+            return FS.readFile(this.filename, {encoding:"binary"});
         }
     }/*DB.prototype*/;
 
@@ -1397,8 +1462,13 @@ Module.postRun.push(function(namespace/*the module object, the target for
         SQLite3
     };
 
+    const postApiLoaded = function(){
+        setTimeout(()=>postMessage({type:'sqlite3-api',data:'loaded'}), 0);
+    };
+
     if(self === self.window){
         /* This is running in the main window thread, so we're done. */
+        postApiLoaded();
         return;
     }
     /******************************************************************
@@ -1407,24 +1477,108 @@ Module.postRun.push(function(namespace/*the module object, the target for
     ******************************************************************/
 
     /*
-      TODO: we need an API which can proxy the DB API via a Worker
-      message interface. The primary quirky factor in such an API is
-      that clients cannot pass callback functions to it, so have to receive
-      all query results via asynchronous message-passing.
+      UNDER CONSTRUCTION
+
+      We need an API which can proxy the DB API via a Worker message
+      interface. The primary quirky factor in such an API is that we
+      cannot pass callback functions between the window thread and a
+      worker thread, so we have to receive all db results via
+      asynchronous message-passing.
 
       Certain important considerations here include:
 
-      - Support only one db connectior or multiple? The former is far
+      - Support only one db connection or multiple? The former is far
         easier, but there's always going to be a user out there who
-        wants to juggle six database handles at once.
+        wants to juggle six database handles at once. Do we add that
+        complexity or tell such users to write their own code using
+        the provided lower-level APIs?
 
       - Fetching multiple results: do we pass them on as a series of
         messages, with start/end messages on either end, or do we
         collect all results and bundle them back in a single message?
         The former is, generically speaking, more memory-efficient but
-        the latter far easier to implement in this environment.
-     */
-    
+        the latter far easier to implement in this environment. The
+        latter is untennable for large data sets. Despite a web page
+        hypothetically being a relatively limited environment, there
+        will always be those users who feel that they should/need to
+        be able to work with multi-hundred-meg (or larger) blobs, and
+        passing around arrays of those may quickly exhaust the JS
+        engine's memory.
+    */
 
-    setTimeout(()=>postMessage({type:'sqlite3-api',data:'loaded'}), 0);
+    const wState = {
+        db: undefined,
+        open: function(arg){
+            if(!arg && this.db) return this.db;
+            else if(this.db) this.db.close();
+            return this.db = (Array.isArray(arg) ? new DB(...arg) : new DB(arg));
+        }
+    };
+    const wMsg = (type,data)=>self.postMessage({type, data});
+
+    /**
+       UNDER CONSTRUCTION:
+
+       A subset of the DB API is accessible via Worker messages in the form:
+
+       { type: apiCommand,
+         data: apiArguments }
+
+       As a rule, these commands respond with a postMessage() of their
+       own in the same form, but will, if needed, transform the `data`
+       member to an object and may add state to it. The responses
+       always have an object-format `data` part. If the inbound `data`
+       is an object which has a `messageId` property, that property is
+       always mirrored in the result object, for use in client-side
+       dispatching of these asynchronous results. Exceptions thrown
+       during processing result in an `error`-type event with a
+       payload in the form:
+
+       {message: error string,
+        errorClass: class name of the error type,
+        [, messageId: if set in the inbound message]}
+
+       The individual APIs will be documented as they are fleshed out.
+    */
+    self.onmessage = function(ev){
+        ev = ev.data;
+        let response = {}, evType = ev.type;
+        try {
+            switch(evType){
+                case 'open': {
+                    const args = [], data = (ev.data || {});
+                    if(data.filename) args.push(data.filename);
+                    if(data.buffer) args.push(data.buffer);
+                    const d = wState.open(args);
+                    response.filename = d.filename;
+                    response.messageId = data.messageId;
+                    break;
+                }
+                case 'exec': {
+                    const opt = (
+                        'string'===typeof ev.data
+                    ) ? {sql: ev.data} : (ev.data || {});
+                    if(!opt.rowMode) opt.rowMode = 'array';
+                    wState.open().exec(opt);
+                    response = opt;
+                    break;
+                }
+                default:
+                    throw new Error("Unknown db worker message type: "+ev.type);
+            }
+        }catch(err){
+            evType = 'error';
+            response = {
+                message: err.message,
+                errorClass: err.name
+            };
+        }
+        if(!response.messageId && ev.data
+           && 'object'===typeof ev.data && ev.data.messageId){
+            response.messageId = ev.data.messageId;
+        }
+        wMsg(evType, response);
+    };
+
+    postApiLoaded();
 });
