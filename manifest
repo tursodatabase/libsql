@@ -1,5 +1,5 @@
-C Only\sinclude\sthe\scode\sfor\ssqlite_offset()\sif\scompiled\swith\n-DSQLITE_ENABLE_OFFSET_SQL_FUNC.
-D 2022-06-01T13:32:05.631
+C Fix\sa\sminor\sproblem\sin\sthe\sTcl\s"incrblob"\scommand.\sThis\sdoes\snot\saffect\sthe\sSQLite\score.
+D 2022-06-01T14:32:05.554
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -579,7 +579,7 @@ F src/sqliteInt.h bc88540ae44fa1a88c41b94bea247ff16709e95f0a81a1382a629e71f6b284
 F src/sqliteLimit.h d7323ffea5208c6af2734574bae933ca8ed2ab728083caa117c9738581a31657
 F src/status.c 4a3da6d77eeb3531cb0dbdf7047772a2a1b99f98c69e90ce009c75fe6328b2c0
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
-F src/tclsqlite.c 1f6673991147bc2cecc08a40d22f9803b84c805b24b499fe727f392256f73474
+F src/tclsqlite.c 4e64ba300a5a26e0f1170e09032429faeb65e45e8f3d1a7833e8edb69fc2979e
 F src/test1.c 1356984e97bff07e4a8cc3863e892f05b3348678a74783bb6f350b76316736f1
 F src/test2.c 3efb99ab7f1fc8d154933e02ae1378bac9637da5
 F src/test3.c 61798bb0d38b915067a8c8e03f5a534b431181f802659a6616f9b4ff7d872644
@@ -1115,7 +1115,7 @@ F test/in5.test b32ce7f4a93f44c5dee94af16886d922cc16ebe33c8e1765c73d4049d0f4b40f
 F test/in6.test f5f40d6816a8bb7c784424b58a10ac38efb76ab29127a2c17399e0cbeeda0e4b
 F test/incrblob.test c9b96afc292aeff43d6687bcb09b0280aa599822
 F test/incrblob2.test a494c9e848560039a23974b9119cfc2cf3ad3bd15cc2694ee6367ae537ef8f1f
-F test/incrblob3.test d47be78a46da142dd60b93772db6e03936a8a36a3b6129dff8d11923dfdc6d63
+F test/incrblob3.test 67621a04b3084113bf38ce03797d70eca012d9d8f948193b8f655df577b0da6f
 F test/incrblob4.test 21a52a6843a56cdcce968c6a86b72a7066d0e6ba
 F test/incrblob_err.test 89372a28f1d98254f03fed705f9efcd34ef61a674df16d2dbb4726944a2de5e9
 F test/incrblobfault.test de274b1e329169c2c3438f9528994807ea8201ebf38ae9f157d34bf3ec0cc549
@@ -1974,8 +1974,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 371d6f7497016ca9bf82c8524b4d701ddf1e614b3fb4e69ff63935da0d51ed05
-R aaf57c756317bf4c95459d6e036b0bf6
-U drh
-Z 09ba0e139c45241df99a2df10ee0b7dd
+P 382cd7e10b2df4216da8f25b55546bc74a963d9834af240f75ec8b8321ba106e
+R ef79bb9e53693c3f781d762f53d114b4
+U dan
+Z 499f9d1db46d766843c93e3c173e7b6f
 # Remove this line to create a well-formed Fossil manifest.
