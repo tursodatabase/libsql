@@ -461,7 +461,7 @@ Module.postRun.push(function(namespace/*the module object, the target for
                 delete this._pDb;
                 if(this.filename){
                     if(alsoUnlink){
-                        try{SQM.FS.unlink(this.filename);}
+                        try{SQM.FS.unlink('/'+this.filename);}
                         catch(e){/*ignored*/}
                     }
                     delete this.filename;
@@ -1530,9 +1530,9 @@ Module.postRun.push(function(namespace/*the module object, the target for
             else if(this.db) this.db.close();
             return this.db = (Array.isArray(arg) ? new DB(...arg) : new DB(arg));
         },
-        close: function(){
+        close: function(alsoUnlink){
             if(this.db){
-                this.db.close();
+                this.db.close(alsoUnlink);
                 this.db = undefined;
             }
         },
@@ -1679,9 +1679,30 @@ Module.postRun.push(function(namespace/*the module object, the target for
             }
             const db = wState.open(args);
             return {filename: db.filename};
+        },
+        /**
+           Proxy for DB.close(). If ev.data may either be a boolean or
+           an object with an `unlink` property. If that value is
+           truthy then the db file (if the db is currently open) will
+           be unlinked from the virtual filesystem, else it will be
+           kept intact. The response object is:
+
+           {filename: db filename _if_ the db is is opened when this
+                      is called, else the undefined value
+           }
+        */
+        close: function(ev){
+            const response = {
+                filename: wState.db && wState.db.filename
+            };
+            if(wState.db){
+                wState.close(!!(ev.data && 'object'===typeof ev.data)
+                             ? ev.data.unlink : ev.data);
+            }
+            return response;
         }
     }/*wMsgHandler*/;
-    
+
     /**
        UNDER CONSTRUCTION!
 

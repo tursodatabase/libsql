@@ -25,14 +25,23 @@
     const error = console.error.bind(console);
 
     SW.onerror = function(event){
-        warn("onerror",event);
+        error("onerror",event);
     };
 
+    /**
+       A queue for callbacks which are to be run in response to async
+       DB commands. See the notes in runTests() for why we need
+       this. The event-handling plumbing of this file requires that
+       any DB command which includes a `messageId` property also have
+       a queued callback entry, as the existence of that property in
+       response payloads is how it knows whether or not to shift an
+       entry off of the queue.
+    */
     const MsgHandlerQueue = {
         queue: [],
         id: 0,
-        push: function(type,f){
-            this.queue.push(f);
+        push: function(type,callback){
+            this.queue.push(callback);
             return type + '-' + (++this.id);
         },
         shift: function(){
@@ -57,7 +66,7 @@
     };
 
     /** Methods which map directly to onmessage() event.type keys.
-        They get passed the inbound event. */
+        They get passed the inbound event.data. */
     const dbMsgHandler = {
         open: function(ev){
             log("open result",ev.data);
@@ -78,8 +87,11 @@
             T.assert(null===ev.data || 'number' === typeof ev.data.b);
         }
     };
-    
+
     const runTests = function(){
+        const mustNotReach = ()=>{
+            throw new Error("This is not supposed to be reached.");
+        };
         /**
            "The problem" now is that the test results are async. We
            know, however, that the messages posted to the worker will
@@ -127,9 +139,7 @@
                 .assert(1===ev.resultRows[0].a)
                 .assert(6===ev.resultRows[2].b)
         });
-        runOneTest('exec',{sql:'intentional_error'}, function(){
-            throw new Error("This is not supposed to be reached.");
-        });
+        runOneTest('exec',{sql:'intentional_error'}, mustNotReach);
         // Ensure that the message-handler queue survives ^^^ that error...
         runOneTest('exec',{
             sql:'select 1',
@@ -163,6 +173,16 @@
                 .assert(ev.buffer instanceof Uint8Array)
                 .assert(ev.buffer.length > 1024)
                 .assert('application/x-sqlite3' === ev.mimetype);
+        });
+
+        /***** close() tests must come last. *****/
+        runOneTest('close',{unlink:true},function(ev){
+            ev = ev.data;
+            T.assert('string' === typeof ev.filename);
+        });
+        runOneTest('close',{unlink:true},function(ev){
+            ev = ev.data;
+            T.assert(undefined === ev.filename);
         });
     };
 
