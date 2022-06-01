@@ -560,5 +560,16 @@ do_execsql_test join8-17070 {
 do_execsql_test join8-17071 {
   SELECT * FROM t2 RIGHT JOIN t1 WHERE (1, 0)==(+id,y);
 } {NULL 1 0 0}
+do_execsql_test join8-17080 {
+  CREATE TABLE t3(a INTEGER PRIMARY KEY, b INT);
+  CREATE TABLE t4(x INT, y INT);
+  INSERT INTO t3(a,b) VALUES(1, 3);
+} {}
+do_execsql_test join8-17090 {
+  SELECT t3.a FROM t4 RIGHT JOIN t3 ON (x=a) WHERE (b, 4)=(SELECT 3, 4);
+} {1}
+do_execsql_test join8-17091 {
+  SELECT t3.a FROM t4 RIGHT JOIN t3 ON (x=a) WHERE (b, 4) IS (SELECT 3, 4);
+} {1}
 
 finish_test
