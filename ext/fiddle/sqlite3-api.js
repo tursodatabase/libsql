@@ -85,7 +85,8 @@
 if(!Module.postRun) Module.postRun = [];
 /* ^^^^ the name Module is, in this setup, scope-local in the generated
    file sqlite3.js, with which this file gets combined at build-time. */
-Module.postRun.push(function(namespace){
+Module.postRun.push(function(namespace/*the module object, the target for
+                                        installed features*/){
     'use strict';
     /* For reference: sql.js does essentially everything we want and
        it solves much of the wasm-related voodoo, but we'll need a
@@ -470,7 +471,7 @@ Module.postRun.push(function(namespace){
            execMulti():
 
            - .multi: if true, this function acts as a proxy for
-             execMulti().
+             execMulti() and behaves identically to that function.
         */
         exec: function(/*(sql [,optionsObj]) or (optionsObj)*/){
             affirmDbOpen(this);
@@ -549,13 +550,15 @@ Module.postRun.push(function(namespace){
 
            ACHTUNG #1: The callback MUST NOT modify the Stmt
            object. Calling any of the Stmt.get() variants,
-           Stmt.getColumnName(), or simililar, is legal, but calling
+           Stmt.getColumnName(), or similar, is legal, but calling
            step() or finalize() is not. Routines which are illegal
            in this context will trigger an exception.
 
            ACHTUNG #2: The semantics of the `bind` and `callback`
            options may well change or those options may be removed
            altogether for this function (but retained for exec()).
+           Generally speaking, neither bind parameters nor a callback
+           are generically useful when executing multi-statement SQL.
         */
         execMulti: function(/*(sql [,obj]) || (obj)*/){
             affirmDbOpen(this);
@@ -1327,8 +1330,8 @@ Module.postRun.push(function(namespace){
         DB,
         Stmt,
         /**
-           Reports whether a given compile-time option, named by the
-           given argument. It has several distinct uses:
+           Reports info about compile-time options. It has several
+           distinct uses:
 
            If optName is an array then it is expected to be a list of
            compilation options and this function returns an object
@@ -1387,10 +1390,41 @@ Module.postRun.push(function(namespace){
                 'string'===typeof optName
             ) ? !!api.sqlite3_compileoption_used(optName) : false;
         }
-    };
+    }/*SQLite3 object*/;
 
     namespace.sqlite3 = {
         api: api,
         SQLite3
     };
+
+    if(self === self.window){
+        /* This is running in the main window thread, so we're done. */
+        return;
+    }
+    /******************************************************************
+     End of main window thread. What follows is only intended for use
+     in Worker threads.
+    ******************************************************************/
+
+    /*
+      TODO: we need an API which can proxy the DB API via a Worker
+      message interface. The primary quirky factor in such an API is
+      that clients cannot pass callback functions to it, so have to receive
+      all query results via asynchronous message-passing.
+
+      Certain important considerations here include:
+
+      - Support only one db connectior or multiple? The former is far
+        easier, but there's always going to be a user out there who
+        wants to juggle six database handles at once.
+
+      - Fetching multiple results: do we pass them on as a series of
+        messages, with start/end messages on either end, or do we
+        collect all results and bundle them back in a single message?
+        The former is, generically speaking, more memory-efficient but
+        the latter far easier to implement in this environment.
+     */
+    
+
+    setTimeout(()=>postMessage({type:'sqlite3-api',data:'loaded'}), 0);
 });

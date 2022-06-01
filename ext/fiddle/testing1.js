@@ -10,7 +10,8 @@
 
   ***********************************************************************
 
-  A basic test script for sqlite3-api.js.
+  A basic test script for sqlite3-api.js. This file must be run in
+  main JS thread and sqlite3.js must have been loaded before it.
 */
 (function(){
     const T = self.SqliteTestUtil;
