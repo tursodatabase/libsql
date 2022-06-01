@@ -517,4 +517,30 @@ do_execsql_test join8-16070 {
   SELECT * FROM t1 RIGHT JOIN t2 ON true JOIN t3 ON a<>'' WHERE c IS NOT NULL;
 } {}
 
+# 2022-06-01
+# https://sqlite.org/forum/forumpost/087de2d9ec
+#
+reset_db
+do_execsql_test join8-17000 {
+  CREATE TABLE t1(id INTEGER PRIMARY KEY, x INT, y INT);
+  CREATE TABLE t2(z INT);
+  INSERT INTO t1(x,y) VALUES(0, 0);
+} {}
+db null NULL
+do_execsql_test join8-17010 {
+  SELECT * FROM t2 RIGHT JOIN t1 ON true;
+} {NULL 1 0 0}
+do_execsql_test join8-17020 {
+  SELECT null=id AND false=y AS "truth" FROM t2 RIGHT JOIN t1 ON true;
+} {NULL}
+do_execsql_test join8-17030 {
+  SELECT (null, false)==(id, y) AS "truth" FROM t2 RIGHT JOIN t1;
+} {NULL}
+do_execsql_test join8-17040 {
+  SELECT * FROM t2 RIGHT JOIN t1 WHERE null=id AND false=y;
+} {}
+do_execsql_test join8-17050 {
+  SELECT * FROM t2 RIGHT JOIN t1 WHERE (null, false)==(id,y);
+} {}
+
 finish_test
