@@ -531,16 +531,16 @@ do_execsql_test join8-17010 {
   SELECT * FROM t2 RIGHT JOIN t1 ON true;
 } {NULL 1 0 0}
 do_execsql_test join8-17020 {
-  SELECT null=id AND false=y AS "truth" FROM t2 RIGHT JOIN t1 ON true;
+  SELECT null=id AND 0=y AS "truth" FROM t2 RIGHT JOIN t1 ON true;
 } {NULL}
 do_execsql_test join8-17030 {
-  SELECT (null, false)==(id, y) AS "truth" FROM t2 RIGHT JOIN t1;
+  SELECT (null, 0)==(id, y) AS "truth" FROM t2 RIGHT JOIN t1;
 } {NULL}
 do_execsql_test join8-17040 {
-  SELECT * FROM t2 RIGHT JOIN t1 WHERE null=id AND false=y;
+  SELECT * FROM t2 RIGHT JOIN t1 WHERE null=id AND 0=y;
 } {}
 do_execsql_test join8-17050 {
-  SELECT * FROM t2 RIGHT JOIN t1 WHERE (null, false)==(id,y);
+  SELECT * FROM t2 RIGHT JOIN t1 WHERE (null, 0)==(id,y);
 } {}
 
 finish_test
