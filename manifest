@@ -1,5 +1,5 @@
-C Fix\stest\scases\sin\sthe\sprevious\scheck-in\sto\smake\sthem\spostgres-compatible.
-D 2022-06-01T11:46:39.688
+C Additional\senhancements\sto\sthe\stest\scases.
+D 2022-06-01T11:58:11.635
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1166,7 +1166,7 @@ F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
 F test/join5.test d22b6cba8fb59ab3f1c82701434c360705eb12d4ce200c449f37b018fc47681a
 F test/join6.test f809c025fa253f9e150c0e9afd4cef8813257bceeb6f46e04041228c9403cc2c
 F test/join7.test 2268dcbb54b724391dda3748ea95c60d960607ffeed67885675998e7117697f6
-F test/join8.test 4f6f320bbbfd69b58d76eb03164da04a4fc9aa185a83fd1929858dbfc4e8e661
+F test/join8.test ddabb1587ab64fa21d3bd2c2573685c0ed4722d219423d5701473b7334d91793
 F test/join9.test 9056ddd3b0c0f4f9d658f4521038d9a37dc23ead8ca9a505d0b0db2b6a471e05
 F test/joinA.test 7eab225dc1c1ab258a5e62513a4ed7cabbd3db971d59d5d92f4fb6fa14c12f6a
 F test/joinB.test 1b2ba3fc8568b49411787fccbf540570c148e9b6a53a30f80691cb6268098ded
@@ -1974,8 +1974,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d1e3e0d26e302587a6cfcb7aa4fcdefe2b3891037732a0df0d0fe10a14454e00
-R 6b208c28ef42892c79ca868b144025b2
+P f223ba72b6e02a7ccfd894b4b135f4609b1eb79f547ec279b1c52a6996cd5a73
+R ba1013862f606feacb0a325a863157ec
 U drh
-Z e43cb371d9af867c25343be13aaa8a18
+Z 3e6d6ce4db0f2a78246c90873b555c53
 # Remove this line to create a well-formed Fossil manifest.

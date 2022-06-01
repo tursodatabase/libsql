@@ -524,23 +524,41 @@ reset_db
 do_execsql_test join8-17000 {
   CREATE TABLE t1(id INTEGER PRIMARY KEY, x INT, y INT);
   CREATE TABLE t2(z INT);
-  INSERT INTO t1(x,y) VALUES(0, 0);
+  INSERT INTO t1(id,x,y) VALUES(1, 0, 0);
 } {}
 db null NULL
 do_execsql_test join8-17010 {
   SELECT * FROM t2 RIGHT JOIN t1 ON true;
 } {NULL 1 0 0}
 do_execsql_test join8-17020 {
-  SELECT null=id AND 0=y AS "truth" FROM t2 RIGHT JOIN t1 ON true;
-} {NULL}
+  SELECT 99=id AND 0=y AS "truth" FROM t2 RIGHT JOIN t1 ON true;
+} {0}
 do_execsql_test join8-17030 {
-  SELECT (null, 0)==(id, y) AS "truth" FROM t2 RIGHT JOIN t1;
-} {NULL}
+  SELECT (99, 0)==(id, y) AS "truth" FROM t2 RIGHT JOIN t1;
+} {0}
 do_execsql_test join8-17040 {
-  SELECT * FROM t2 RIGHT JOIN t1 WHERE null=id AND 0=y;
+  SELECT * FROM t2 RIGHT JOIN t1 WHERE 99=id AND 0=y;
+} {}
+do_execsql_test join8-17041 {
+  SELECT * FROM t2 RIGHT JOIN t1 WHERE 99=+id AND 0=y;
 } {}
 do_execsql_test join8-17050 {
-  SELECT * FROM t2 RIGHT JOIN t1 WHERE (null, 0)==(id,y);
+  SELECT * FROM t2 RIGHT JOIN t1 WHERE (99, 0)==(id,y);
 } {}
+do_execsql_test join8-17051 {
+  SELECT * FROM t2 RIGHT JOIN t1 WHERE (99, 0)==(+id,y);
+} {}
+do_execsql_test join8-17060 {
+  SELECT * FROM t2 RIGHT JOIN t1 WHERE 1=id AND 0=y;
+} {NULL 1 0 0}
+do_execsql_test join8-17061 {
+  SELECT * FROM t2 RIGHT JOIN t1 WHERE 1=+id AND 0=y;
+} {NULL 1 0 0}
+do_execsql_test join8-17070 {
+  SELECT * FROM t2 RIGHT JOIN t1 WHERE (1, 0)==(id,y);
+} {NULL 1 0 0}
+do_execsql_test join8-17071 {
+  SELECT * FROM t2 RIGHT JOIN t1 WHERE (1, 0)==(+id,y);
+} {NULL 1 0 0}
 
 finish_test
