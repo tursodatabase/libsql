@@ -1,5 +1,5 @@
-C Additional\senhancements\sto\sthe\stest\scases.
-D 2022-06-01T11:58:11.635
+C Fix\sa\stypo\sin\sa\scomment\sin\sa\stest\scase.\s\sNo\schanges\sto\scode.
+D 2022-06-01T13:01:57.890
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1354,7 +1354,7 @@ F test/round1.test 768018b04522ca420b1aba8a24bd76091d269f3bce3902af3ec6ebcee41ab
 F test/rowallock.test 3f88ec6819489d0b2341c7a7528ae17c053ab7cc
 F test/rowhash.test 0bc1d31415e4575d10cacf31e1a66b5cc0f8be81
 F test/rowid.test e29025be95baf6b32f0d5edef59a7633028325896a98f1caa8019559ca910350
-F test/rowvalue.test 228b312f8526ed000ecda559a6a9adf30aa2d79dcb12afa5c04eebaafcf55eae
+F test/rowvalue.test 00668659c2ffb0ae8711b3f6702979f199170734c00f582622375cde4d03e091
 F test/rowvalue2.test 060d238b7e5639a7c5630cb5e63e311b44efef2b
 F test/rowvalue3.test 3068f508753af69884b12125995f023da0dbb256
 F test/rowvalue4.test 441e7e366ac6d939a3a95a574031c56ec2a854077a91d66eee5ff1d86cb5be58
@@ -1974,8 +1974,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f223ba72b6e02a7ccfd894b4b135f4609b1eb79f547ec279b1c52a6996cd5a73
-R ba1013862f606feacb0a325a863157ec
+P 55cfad74cace74e541b354228e3ad46e17028213a9f639edf2007c6a8f3ba8fc
+R 596d7d7318a29f139f453a88229a9104
 U drh
-Z 3e6d6ce4db0f2a78246c90873b555c53
+Z ee379ce9a8bb1abceb8b02b54a734fea
 # Remove this line to create a well-formed Fossil manifest.
