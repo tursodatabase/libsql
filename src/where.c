@@ -6034,6 +6034,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
   SrcList *pTabList = pWInfo->pTabList;
   sqlite3 *db = pParse->db;
   int iEnd = sqlite3VdbeCurrentAddr(v);
+  int nRJ = 0;
 
   /* Generate loop termination code.
   */
@@ -6050,8 +6051,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       pRJ->endSubrtn = sqlite3VdbeCurrentAddr(v);
       sqlite3VdbeAddOp3(v, OP_Return, pRJ->regReturn, pRJ->addrSubrtn, 1);
       VdbeCoverage(v);
-      assert( pParse->withinRJSubrtn>0 );
-      pParse->withinRJSubrtn--;
+      nRJ++;
     }
     pLoop = pLevel->pWLoop;
     if( pLevel->op!=OP_Noop ){
@@ -6332,5 +6332,6 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
   */
   pParse->nQueryLoop = pWInfo->savedNQueryLoop;
   whereInfoFree(db, pWInfo);
+  pParse->withinRJSubrtn -= nRJ;
   return;
 }

@@ -2862,7 +2862,11 @@ SQLITE_NOINLINE void sqlite3WhereRightJoinLoop(
     mAll |= pLoop->maskSelf;
     for(k=0; k<pWC->nTerm; k++){
       WhereTerm *pTerm = &pWC->a[k];
-      if( pTerm->wtFlags & TERM_VIRTUAL ) break;
+      if( (pTerm->wtFlags & (TERM_VIRTUAL|TERM_SLICE))!=0
+       && pTerm->eOperator!=WO_ROWVAL
+      ){
+        break;
+      }
       if( pTerm->prereqAll & ~mAll ) continue;
       if( ExprHasProperty(pTerm->pExpr, EP_OuterON|EP_InnerON) ) continue;
       pSubWhere = sqlite3ExprAnd(pParse, pSubWhere,

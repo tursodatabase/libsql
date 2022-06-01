@@ -1,5 +1,5 @@
-C fiddle:\sadded\sanother\sUI\selement\sto\sthe\slist\sof\sthose\swhich\sare\sdisabled\sduring\slong-running\sactivities.\sAdded\sDB.close()\sbinding\sto\sthe\sWorker-based\swasm\sbinding.
-D 2022-06-01T16:04:29.637
+C Ensure\sthat\ssubqueries\sassociated\swith\srow-values\sare\sinvoked\sbefore\sbeing\nused\swhen\sprocessing\sa\sRIGHT\sJOIN.\s\sFix\sfor\sthe\sproblem\sdescribed\sby\n[forum:/forumpost/087de2d9ec87305b|forum\spost\s087de2d9ec87305b].
+D 2022-06-01T16:05:25.847
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -657,10 +657,10 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c b9df133a705093da8977da5eb202eaadb844839f1c7297c08d33471f5491843d
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
-F src/where.c c4b64c6fa224e5b89ed547ec0ebdfd243c081509b195e71581164a2fbb8d4a80
-F src/whereInt.h 8da918f392bf202ccc0ee61291455b33ad171d209445f1ff3eaf62e0b6f6b363
-F src/wherecode.c 1d5bed686d60e272e93c04e34fec5b487d086383dd4773a7f2f98f86278e6a94
-F src/whereexpr.c 7c5ee52e1df81d6a43f39e6b6f35d540fd37254e2b6e953a4e2715c3abf26f46
+F src/where.c 3a69f4403aa994cda45db8f4070d146d8f253f9850b4c827a9ade7d444f889ea
+F src/whereInt.h b48ca529ffe293c18cbfa8326af18a09e39910de66fb3e96ef788c7cbf8ef3a7
+F src/wherecode.c 0b09abfcb88c61c6a6984a3e065786631ff35495e9bdf865e6b74ab0a1299c5b
+F src/whereexpr.c 416d6a847bc0c3d391b65e7748dc04d57d3117c82e072c222888f9eb346760da
 F src/window.c fff1b51757438c664e471d5184634e48dcdf8ea34b640f3b1b0810b1e06de18c
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test ce1aafc86e110685b324e9a763eab4f2a73f737842ec3b687bd965867de90627
@@ -1166,7 +1166,7 @@ F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
 F test/join5.test d22b6cba8fb59ab3f1c82701434c360705eb12d4ce200c449f37b018fc47681a
 F test/join6.test f809c025fa253f9e150c0e9afd4cef8813257bceeb6f46e04041228c9403cc2c
 F test/join7.test 2268dcbb54b724391dda3748ea95c60d960607ffeed67885675998e7117697f6
-F test/join8.test 2d7e2d744cd6967cd141e97572af039f3e9494ca33650c057600846b02a1633f
+F test/join8.test 01c46c005f3cd20f530e1b7e17d003a1e6d16ae945ceca395f6c016bbee92e9f
 F test/join9.test 9056ddd3b0c0f4f9d658f4521038d9a37dc23ead8ca9a505d0b0db2b6a471e05
 F test/joinA.test 7eab225dc1c1ab258a5e62513a4ed7cabbd3db971d59d5d92f4fb6fa14c12f6a
 F test/joinB.test 1b2ba3fc8568b49411787fccbf540570c148e9b6a53a30f80691cb6268098ded
@@ -1354,7 +1354,7 @@ F test/round1.test 768018b04522ca420b1aba8a24bd76091d269f3bce3902af3ec6ebcee41ab
 F test/rowallock.test 3f88ec6819489d0b2341c7a7528ae17c053ab7cc
 F test/rowhash.test 0bc1d31415e4575d10cacf31e1a66b5cc0f8be81
 F test/rowid.test e29025be95baf6b32f0d5edef59a7633028325896a98f1caa8019559ca910350
-F test/rowvalue.test 228b312f8526ed000ecda559a6a9adf30aa2d79dcb12afa5c04eebaafcf55eae
+F test/rowvalue.test 00668659c2ffb0ae8711b3f6702979f199170734c00f582622375cde4d03e091
 F test/rowvalue2.test 060d238b7e5639a7c5630cb5e63e311b44efef2b
 F test/rowvalue3.test 3068f508753af69884b12125995f023da0dbb256
 F test/rowvalue4.test 441e7e366ac6d939a3a95a574031c56ec2a854077a91d66eee5ff1d86cb5be58
@@ -1974,8 +1974,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f0ad6b1b324f9c0f4340f6cf9584884d1206b56fe1010db43bcbef324e713ea3
-R 8aa54d35311465583fa9edb90a82d403
-U stephan
-Z f4b934a70d4d19bc08d2e676d68f616b
+P 5933163ed1a8f996e81023c7c5822655dc6411d30016f37fe8863f760530dc5b e4e71b4cd4c026fc36f0da1703e6237e6ddd8ff2e08dc3c0011632b9e63098cd
+R 29237a4ae29ef3cc0374b4c8b3b6c3e8
+T +closed e4e71b4cd4c026fc36f0da1703e6237e6ddd8ff2e08dc3c0011632b9e63098cd
+U drh
+Z 8809ed3fb5097c404e378a7b4bbae70a
 # Remove this line to create a well-formed Fossil manifest.
