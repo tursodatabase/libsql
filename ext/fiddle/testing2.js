@@ -40,17 +40,45 @@
         }
     };
 
+    const testCount = ()=>log("Total test count:",T.counter);
+
     const runOneTest = function(eventType, eventData, callback){
         T.assert(eventData && 'object'===typeof eventData);
+        /* ^^^ that is for the testing and messageId-related code, not
+           a hard requirement of all of the Worker-exposed APIs. */
         eventData.messageId = MsgHandlerQueue.push(eventType,function(ev){
             log("runOneTest",eventType,"result",ev.data);
-            callback(ev);
+            if(callback instanceof Function){
+                callback(ev);
+                testCount();
+            }
         });
         wMsg(eventType, eventData);
     };
 
-    const testCount = ()=>log("Total test count:",T.counter);
-
+    /** Methods which map directly to onmessage() event.type keys.
+        They get passed the inbound event. */
+    const dbMsgHandler = {
+        open: function(ev){
+            log("open result",ev.data);
+        },
+        exec: function(ev){
+            log("exec result",ev.data);
+        },
+        export: function(ev){
+            log("exec result",ev.data);
+        },
+        error: function(ev){
+            error("ERROR from the worker:",ev.data);
+        },
+        resultRowTest1: function f(ev){
+            if(undefined === f.counter) f.counter = 0;
+            if(ev.data) ++f.counter;
+            //log("exec() result row:",ev.data);
+            T.assert(null===ev.data || 'number' === typeof ev.data.b);
+        }
+    };
+    
     const runTests = function(){
         /**
            "The problem" now is that the test results are async. We
@@ -66,24 +94,21 @@
             //log("open result",ev);
             T.assert('testing2.sqlite3'===ev.data.filename)
                 .assert(ev.data.messageId);
-            testCount();
         });
         runOneTest('exec',{
             sql: ["create table t(a,b)",
                   "insert into t(a,b) values(1,2),(3,4),(5,6)"
                  ].join(';'),
             multi: true,
-            resultRows: [],
-            columnNames: []
+            resultRows: [], columnNames: []
         }, function(ev){
             ev = ev.data;
             T.assert(0===ev.resultRows.length)
                 .assert(0===ev.columnNames.length);
-            testCount();
         });
         runOneTest('exec',{
             sql: 'select a a, b b from t order by a',
-            resultRows: [], columnNames: []
+            resultRows: [], columnNames: [],
         }, function(ev){
             ev = ev.data;
             T.assert(3===ev.resultRows.length)
@@ -91,34 +116,54 @@
                 .assert(6===ev.resultRows[2][1])
                 .assert(2===ev.columnNames.length)
                 .assert('b'===ev.columnNames[1]);
-            testCount();
         });
-        runOneTest('exec',{sql:'select 1 from intentional_error'}, function(){
+        runOneTest('exec',{
+            sql: 'select a a, b b from t order by a',
+            resultRows: [], columnNames: [],
+            rowMode: 'object'
+        }, function(ev){
+            ev = ev.data;
+            T.assert(3===ev.resultRows.length)
+                .assert(1===ev.resultRows[0].a)
+                .assert(6===ev.resultRows[2].b)
+        });
+        runOneTest('exec',{sql:'intentional_error'}, function(){
             throw new Error("This is not supposed to be reached.");
         });
         // Ensure that the message-handler queue survives ^^^ that error...
         runOneTest('exec',{
             sql:'select 1',
             resultRows: [],
-            rowMode: 'array',
+            //rowMode: 'array', // array is the default in the Worker interface
         }, function(ev){
             ev = ev.data;
             T.assert(1 === ev.resultRows.length)
                 .assert(1 === ev.resultRows[0][0]);
-            testCount();
         });
-    };
-
-    const dbMsgHandler = {
-        open: function(ev){
-            log("open result",ev.data);
-        },
-        exec: function(ev){
-            log("exec result",ev.data);
-        },
-        error: function(ev){
-            error("ERROR from the worker:",ev.data);
-        }
+        runOneTest('exec',{
+            sql: 'select a a, b b from t order by a',
+            callback: 'resultRowTest1',
+            rowMode: 'object'
+        }, function(ev){
+            T.assert(3===dbMsgHandler.resultRowTest1.counter);
+            dbMsgHandler.resultRowTest1.counter = 0;
+        });
+        runOneTest('exec',{sql: 'delete from t where a>3'});
+        runOneTest('exec',{
+            sql: 'select count(a) from t',
+            resultRows: []
+        },function(ev){
+            ev = ev.data;
+            T.assert(1===ev.resultRows.length)
+                .assert(2===ev.resultRows[0][0]);
+        });
+        runOneTest('export',{}, function(ev){
+            ev = ev.data;
+            T.assert('string' === typeof ev.filename)
+                .assert(ev.buffer instanceof Uint8Array)
+                .assert(ev.buffer.length > 1024)
+                .assert('application/x-sqlite3' === ev.mimetype);
+        });
     };
 
     SW.onmessage = function(ev){
@@ -166,5 +211,5 @@
         }
     };
 
-    log("Init complete, but async bits may still be running.");
+    log("Init complete, but async init bits may still be running.");
 })();

@@ -278,7 +278,8 @@ Module.postRun.push(function(namespace/*the module object, the target for
        image.
 
        If the filename is provided, only the last component of the
-       path is used - any path prefix is stripped. If no name is
+       path is used - any path prefix is stripped and certain
+       "special" characters are replaced with `_`. If no name is
        provided, a random name is generated. The resulting filename is
        the one used for accessing the db file within root directory of
        the emscripten-supplied virtual filesystem, and is set (with no
@@ -300,7 +301,7 @@ Module.postRun.push(function(namespace/*the module object, the target for
             arg = undefined;
         }else if(arguments.length){ /*(filename[,buffer])*/
             if('string'===typeof arg){
-                const p = arg.split('/').pop().replace(':','');
+                const p = arg.split('/').pop().replace(':','_');
                 if(p) fn = p;
                 if(arguments.length>1){
                     buffer = arguments[1];
@@ -406,7 +407,7 @@ Module.postRun.push(function(namespace/*the module object, the target for
         if('string'!==typeof out.sql) toss("Missing SQL argument.");
         if(out.opt.callback || out.opt.resultRows){
             switch((undefined===out.opt.rowMode)
-                    ? 'stmt' : out.opt.rowMode) {
+                   ? 'stmt' : out.opt.rowMode) {
                 case 'object': out.cbArg = (stmt)=>stmt.get({}); break;
                 case 'array': out.cbArg = (stmt)=>stmt.get([]); break;
                 case 'stmt': out.cbArg = (stmt)=>stmt; break;
@@ -440,9 +441,12 @@ Module.postRun.push(function(namespace/*the module object, the target for
         /**
            Finalizes all open statements and closes this database
            connection. This is a no-op if the db has already been
-           closed.
+           closed. If the db is open and alsoUnlink is truthy then the
+           this.filename entry in the pseudo-filesystem will also be
+           removed (and any error in that attempt is silently
+           ignored).
         */
-        close: function(){
+        close: function(alsoUnlink){
             if(this._pDb){
                 let s;
                 const that = this;
@@ -453,9 +457,15 @@ Module.postRun.push(function(namespace/*the module object, the target for
                 Object.values(this._udfs).forEach(SQM.removeFunction);
                 delete this._udfs;
                 delete this._statements;
-                delete this.filename;
                 api.sqlite3_close_v2(this._pDb);
                 delete this._pDb;
+                if(this.filename){
+                    if(alsoUnlink){
+                        try{SQM.FS.unlink(this.filename);}
+                        catch(e){/*ignored*/}
+                    }
+                    delete this.filename;
+                }
             }
         },
         /**
@@ -491,7 +501,7 @@ Module.postRun.push(function(namespace/*the module object, the target for
            one.
 
            This function supports the following additional options not
-           used by execMulti():
+           supported by execMulti():
 
            - .multi: if true, this function acts as a proxy for
              execMulti() and behaves identically to that function.
@@ -499,10 +509,11 @@ Module.postRun.push(function(namespace/*the module object, the target for
            - .resultRows: if this is an array, each row of the result
              set (if any) is appended to it in the format specified
              for the `rowMode` property, with the exception that the
-             `rowMode` property _must_ be one of 'array' or 'object'
-             if this is set (else an exception is throws). It is legal
+             only legal values for `rowMode` in this case are 'array'
+             or 'object', neither of which is the default. It is legal
              to use both `resultRows` and `callback`, but `resultRows`
-             is likely much simpler to use for small data sets.
+             is likely much simpler to use for small data sets and can
+             be used over a WebWorker-style message interface.
 
            - .columnNames: if this is an array and the query has
              result columns, the array is passed to
@@ -528,8 +539,8 @@ Module.postRun.push(function(namespace/*the module object, the target for
             try {
                 if(Array.isArray(opt.resultRows)){
                     if(opt.rowMode!=='array' && opt.rowMode!=='object'){
-                        throw new Error("Invalid rowMode for resultRows array: must "+
-                                        "be one of 'array' or 'object'.");
+                        toss("Invalid rowMode for resultRows array: must",
+                             "be one of 'array' or 'object'.");
                     }
                     rowTarget = opt.resultRows;
                 }
@@ -1316,6 +1327,13 @@ Module.postRun.push(function(namespace/*the module object, the target for
                     const ptr = api.sqlite3_column_blob(this._pStmt, ndx);
                     const rc = new Uint8Array(n);
                     for(let i = 0; i < n; ++i) rc[i] = HEAP8[ptr + i];
+                    if(n && this.db._blobXfer instanceof Array){
+                        /* This is an optimization soley for the
+                           Worker-based API. These values will be
+                           transfered to the main thread directly
+                           instead of being copied. */
+                        this.db._blobXfer.push(rc.buffer);
+                    }
                     return rc;
                 }
                 default: toss("Don't know how to translate",
@@ -1462,13 +1480,9 @@ Module.postRun.push(function(namespace/*the module object, the target for
         SQLite3
     };
 
-    const postApiLoaded = function(){
-        setTimeout(()=>postMessage({type:'sqlite3-api',data:'loaded'}), 0);
-    };
-
     if(self === self.window){
         /* This is running in the main window thread, so we're done. */
-        postApiLoaded();
+        setTimeout(()=>postMessage({type:'sqlite3-api',data:'loaded'}), 0);
         return;
     }
     /******************************************************************
@@ -1506,18 +1520,170 @@ Module.postRun.push(function(namespace/*the module object, the target for
         engine's memory.
     */
 
+    /**
+       Helper for managing Worker-level state.
+    */
     const wState = {
         db: undefined,
         open: function(arg){
             if(!arg && this.db) return this.db;
             else if(this.db) this.db.close();
             return this.db = (Array.isArray(arg) ? new DB(...arg) : new DB(arg));
+        },
+        close: function(){
+            if(this.db){
+                this.db.close();
+                this.db = undefined;
+            }
+        },
+        affirmOpen: function(){
+            return this.db || toss("DB is not opened.");
+        },
+        post: function(type,data,xferList){
+            if(xferList){
+                self.postMessage({type, data},xferList);
+                xferList.length = 0;
+            }else{
+                self.postMessage({type, data});
+            }
         }
     };
-    const wMsg = (type,data)=>self.postMessage({type, data});
 
     /**
-       UNDER CONSTRUCTION:
+       A level of "organizational abstraction" for the Worker
+       API. Each method in this object must map directly to a Worker
+       message type key. The onmessage() dispatcher attempts to
+       dispatch all inbound messages to a method of this object,
+       passing it the event.data part of the inbound event object. All
+       methods must return a plain Object containing any response
+       state, which the dispatcher may amend. All methods must throw
+       on error.
+    */
+    const wMsgHandler = {
+        xfer: [/*Temp holder for "transferable" postMessage() state.*/],
+        /**
+           Proxy for DB.exec() which expects a single argument of type
+           string (SQL to execute) or an options object in the form
+           expected by exec(). The notable differences from exec()
+           include:
+
+           - The default value for options.rowMode is 'array' because
+           the normal default cannot cross the window/Worker boundary.
+
+           - A function-type options.callback property cannot cross
+           the window/Worker boundary, so is not useful here. If
+           options.callback is a string then it is assumed to be a
+           message type key, in which case a callback function will be
+           applied which posts each row result via:
+
+           postMessage({type: thatKeyType, data: theRow})
+
+           And, at the end of the result set (whether or not any
+           result rows were produced), it will post an identical
+           message with data:null to alert the caller than the result
+           set is completed.
+
+           The callback proxy must not recurse into this interface, or
+           results are undefined. (It hypothetically cannot recurse
+           because an exec() call will be tying up the Worker thread,
+           causing any recursion attempt to wait until the first
+           exec() is completed.)
+
+           The response is the input options object (or a synthesized
+           one if passed only a string), noting that
+           options.resultRows and options.columnNames may be populated
+           by the call to exec().
+
+           This opens/creates the Worker's db if needed.
+        */
+        exec: function(ev){
+            const opt = (
+                'string'===typeof ev.data
+            ) ? {sql: ev.data} : (ev.data || {});
+            if(!opt.rowMode){
+                /* Since the default rowMode of 'stmt' is not useful
+                   for the Worker interface, we'll default to
+                   something else. */
+                opt.rowMode = 'array';
+            }else if('stmt'===opt.rowMode){
+                toss("Invalid rowMode for exec(): stmt mode",
+                     "does not work in the Worker API.");
+            }
+            const db = wState.open();
+            if(opt.callback || opt.resultRows instanceof Array){
+                // Part of a copy-avoidance optimization for blobs
+                db._blobXfer = this.xfer;
+            }
+            const callbackMsgType = opt.callback;
+            if('string' === typeof callbackMsgType){
+                const that = this;
+                opt.callback =
+                    (row)=>wState.post(callbackMsgType,row,this.xfer);
+            }
+            try {
+                db.exec(opt);
+                if(opt.callback instanceof Function){
+                    opt.callback = callbackMsgType;
+                    wState.post(callbackMsgType, null);
+                }
+            }finally{
+                delete db._blobXfer;
+                if('string'===typeof callbackMsgType){
+                    opt.callback = callbackMsgType;
+                }
+            }
+            return opt;
+        }/*exec()*/,
+        /**
+           Proxy for DB.exportBinaryImage(). Throws if the db has not
+           been opened. Response is an object:
+
+           {
+             buffer: Uint8Array (db file contents),
+             filename: the current db filename,
+             mimetype: string
+           }
+        */
+        export: function(ev){
+            const db = wState.affirmOpen();
+            const response = {
+                buffer: db.exportBinaryImage(),
+                filename: db.filename,
+                mimetype: 'application/x-sqlite3'
+            };
+            this.xfer.push(response.buffer.buffer);
+            return response;
+        }/*export()*/,
+        /**
+           Proxy for the DB constructor. Expects to be passed a single
+           object or a falsy value to use defaults. The object may
+           have a filename property to name the db file (see the DB
+           constructor for peculiarities and transformations) and/or a
+           buffer property (a Uint8Array holding a complete database
+           file's contents). The response is an object:
+
+           {
+             filename: db filename (possibly differing from the input)
+           }
+
+           If the Worker's db is currently opened, this call closes it
+           before proceeding.
+        */
+        open: function(ev){
+            wState.close(/*true???*/);
+            const args = [], data = (ev.data || {});
+            if(data.filename) args.push(data.filename);
+            if(data.buffer){
+                args.push(data.buffer);
+                this.xfer.push(data.buffer.buffer);
+            }
+            const db = wState.open(args);
+            return {filename: db.filename};
+        }
+    }/*wMsgHandler*/;
+    
+    /**
+       UNDER CONSTRUCTION!
 
        A subset of the DB API is accessible via Worker messages in the form:
 
@@ -1534,51 +1700,39 @@ Module.postRun.push(function(namespace/*the module object, the target for
        during processing result in an `error`-type event with a
        payload in the form:
 
-       {message: error string,
-        errorClass: class name of the error type,
-        [, messageId: if set in the inbound message]}
+       {
+         message: error string,
+         errorClass: class name of the error type,
+         input: ev.data,
+         [messageId: if set in the inbound message]
+       }
 
-       The individual APIs will be documented as they are fleshed out.
+       The individual APIs are documented in the wMsgHandler object.
     */
     self.onmessage = function(ev){
         ev = ev.data;
-        let response = {}, evType = ev.type;
+        let response, evType = ev.type;
         try {
-            switch(evType){
-                case 'open': {
-                    const args = [], data = (ev.data || {});
-                    if(data.filename) args.push(data.filename);
-                    if(data.buffer) args.push(data.buffer);
-                    const d = wState.open(args);
-                    response.filename = d.filename;
-                    response.messageId = data.messageId;
-                    break;
-                }
-                case 'exec': {
-                    const opt = (
-                        'string'===typeof ev.data
-                    ) ? {sql: ev.data} : (ev.data || {});
-                    if(!opt.rowMode) opt.rowMode = 'array';
-                    wState.open().exec(opt);
-                    response = opt;
-                    break;
-                }
-                default:
-                    throw new Error("Unknown db worker message type: "+ev.type);
+            if(wMsgHandler.hasOwnProperty(evType) &&
+               wMsgHandler[evType] instanceof Function){
+                response = wMsgHandler[evType](ev);
+            }else{
+                toss("Unknown db worker message type:",ev.type);
             }
         }catch(err){
             evType = 'error';
             response = {
                 message: err.message,
-                errorClass: err.name
+                errorClass: err.name,
+                input: ev
             };
         }
         if(!response.messageId && ev.data
            && 'object'===typeof ev.data && ev.data.messageId){
             response.messageId = ev.data.messageId;
         }
-        wMsg(evType, response);
+        wState.post(evType, response, wMsgHandler.xfer);
     };
 
-    postApiLoaded();
+    setTimeout(()=>postMessage({type:'sqlite3-api',data:'loaded'}), 0);
 });
