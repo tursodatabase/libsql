@@ -1884,7 +1884,7 @@ struct FuncDestructor {
 #define SQLITE_FUNC_SLOCHNG  0x2000 /* "Slow Change". Value constant during a
                                     ** single query - might change over time */
 #define SQLITE_FUNC_TEST     0x4000 /* Built-in testing functions */
-#define SQLITE_FUNC_OFFSET   0x8000 /* Built-in sqlite_offset() function */
+/*                           0x8000 -- available for reuse */
 #define SQLITE_FUNC_WINDOW   0x00010000 /* Built-in window-only function */
 #define SQLITE_FUNC_INTERNAL 0x00040000 /* For use by NestedParse() only */
 #define SQLITE_FUNC_DIRECT   0x00080000 /* Not for use in TRIGGERs or VIEWs */
@@ -1901,6 +1901,7 @@ struct FuncDestructor {
 #define INLINEFUNC_expr_compare         3      
 #define INLINEFUNC_affinity             4
 #define INLINEFUNC_iif                  5
+#define INLINEFUNC_sqlite_offset        6
 #define INLINEFUNC_unlikely            99  /* Default case */
 
 /*

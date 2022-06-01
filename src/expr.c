@@ -3955,7 +3955,15 @@ static int exprCodeInlineFunction(
       caseExpr.x.pList = pFarg;
       return sqlite3ExprCodeTarget(pParse, &caseExpr, target);
     }
-
+    case INLINEFUNC_sqlite_offset: {
+      Expr *pArg = pFarg->a[0].pExpr;
+      if( pArg->op==TK_COLUMN && pArg->iTable>=0 ){
+        sqlite3VdbeAddOp3(v, OP_Offset, pArg->iTable, pArg->iColumn, target);
+      }else{
+        sqlite3VdbeAddOp2(v, OP_Null, 0, target);
+      }
+      break;
+    }
     default: {   
       /* The UNLIKELY() function is a no-op.  The result is the value
       ** of the first argument.
@@ -4494,20 +4502,8 @@ expr_code_doover:
         if( !pColl ) pColl = db->pDfltColl; 
         sqlite3VdbeAddOp4(v, OP_CollSeq, 0, 0, 0, (char *)pColl, P4_COLLSEQ);
       }
-#ifdef SQLITE_ENABLE_OFFSET_SQL_FUNC
-      if( (pDef->funcFlags & SQLITE_FUNC_OFFSET)!=0 && ALWAYS(pFarg!=0) ){
-        Expr *pArg = pFarg->a[0].pExpr;
-        if( pArg->op==TK_COLUMN ){
-          sqlite3VdbeAddOp3(v, OP_Offset, pArg->iTable, pArg->iColumn, target);
-        }else{
-          sqlite3VdbeAddOp2(v, OP_Null, 0, target);
-        }
-      }else
-#endif
-      {
-        sqlite3VdbeAddFunctionCall(pParse, constMask, r1, target, nFarg,
-                                   pDef, pExpr->op2);
-      }
+      sqlite3VdbeAddFunctionCall(pParse, constMask, r1, target, nFarg,
+                                 pDef, pExpr->op2);
       if( nFarg ){
         if( constMask==0 ){
           sqlite3ReleaseTempRange(pParse, r1, nFarg);
