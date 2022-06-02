@@ -1,5 +1,5 @@
-C New\stest\scases\sfor\srow\svalues\sand\sRIGHT\sJOIN.
-D 2022-06-01T20:08:22.760
+C Avoid\sa\sdirect\suse\sof\sabort()\sin\sdebug\sbuilds\sto\sprevent\sa\scompilation\sissue\sfor\sWindows\sCE.
+D 2022-06-02T02:45:59.290
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -660,7 +660,7 @@ F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
 F src/where.c 3a69f4403aa994cda45db8f4070d146d8f253f9850b4c827a9ade7d444f889ea
 F src/whereInt.h b48ca529ffe293c18cbfa8326af18a09e39910de66fb3e96ef788c7cbf8ef3a7
 F src/wherecode.c 0b09abfcb88c61c6a6984a3e065786631ff35495e9bdf865e6b74ab0a1299c5b
-F src/whereexpr.c 416d6a847bc0c3d391b65e7748dc04d57d3117c82e072c222888f9eb346760da
+F src/whereexpr.c 20255cf03e0b765b742301197d165511ff99e95da0d7ee9c8a2ebc1e888dd049
 F src/window.c fff1b51757438c664e471d5184634e48dcdf8ea34b640f3b1b0810b1e06de18c
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test ce1aafc86e110685b324e9a763eab4f2a73f737842ec3b687bd965867de90627
@@ -1974,8 +1974,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5a9465dcc0c23fc2c66cd4898bcdfd5086fe4c71ec19a95db7221fdf7c0bbbbd
-R 26b2bd3e5fdb1d8e69b29c7f29b2a2d7
-U drh
-Z 9985a346f99ce9b1374a1245c847ef44
+P 5f0582b90fab9111e4a645c692549c35480e62635c596f8c7fa3466bd22f7235
+R abb395061a642667c1680dd38abf2f31
+U mistachkin
+Z c9fa52bf0a6b4049050e6228e79c8440
 # Remove this line to create a well-formed Fossil manifest.

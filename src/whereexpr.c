@@ -1105,7 +1105,7 @@ static void exprAnalyze(
   if( prereqAll!=sqlite3WhereExprUsageNN(pMaskSet, pExpr) ){
     printf("\n*** Incorrect prereqAll computed for:\n");
     sqlite3TreeViewExpr(0,pExpr,0);
-    abort();
+    assert( 0 );
   }
 #endif
 
