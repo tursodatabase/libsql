@@ -3810,6 +3810,11 @@ static Expr *substExpr(
         }
         sqlite3ExprDelete(db, pExpr);
         pExpr = pNew;
+        if( pExpr->op==TK_TRUEFALSE ){
+          pExpr->u.iValue = sqlite3ExprTruthValue(pExpr);
+          pExpr->op = TK_INTEGER;
+          ExprSetProperty(pExpr, EP_IntValue);
+        }
 
         /* Ensure that the expression now has an implicit collation sequence,
         ** just as it did when it was a column of a view or sub-query. */
