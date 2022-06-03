@@ -194,6 +194,7 @@ do_catchsql_test 7.10 {
 } {1 {database disk image is malformed}}
 
 reset_db
+sqlite3_fts3_may_be_corrupt 1
 do_execsql_test 8.1 {
   CREATE VIRTUAL TABLE f USING fts3(a);
   INSERT INTO f(f) VALUES('nodesize=24');
@@ -228,5 +229,6 @@ do_execsql_test 8.2 {
 do_catchsql_test 8.3 {
   INSERT INTO f(f) VALUES('merge=2,2');
 } {1 {database disk image is malformed}}
+sqlite3_fts3_may_be_corrupt 0
 
 finish_test

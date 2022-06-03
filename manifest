@@ -1,5 +1,5 @@
-C Fix\sa\s1-byte\soverread\sin\sfts3\sthat\scould\soccur\swhen\sprocessing\scorrupt\srecords.
-D 2022-06-03T13:52:53.169
+C Fix\sto\stest\scase\sin\sfts3corrupt.test.\sNo\schanges\sto\ssource\scode.
+D 2022-06-03T14:08:40.859
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1003,7 +1003,7 @@ F test/fts3b.test c15c4a9d04e210d0be67e54ce6a87b927168fbf9c1e3faec8c1a732c366fd4
 F test/fts3c.test fc723a9cf10b397fdfc2b32e73c53c8b1ec02958
 F test/fts3comp1.test a0f5b16a2df44dd0b15751787130af2183167c0c
 F test/fts3conf.test c84bbaec81281c1788aa545ac6e78a6bd6cde2bdbbce2da261690e3659f5a76b
-F test/fts3corrupt.test 8659266079bb0ccb4b1da3105e871c6d79a646296518c09325a6b657a54eddff
+F test/fts3corrupt.test 6732477c5ace050c5758a40a8b5706c8c0cccd416b9c558e0e15224805a40e57
 F test/fts3corrupt2.test e318f0676e5e78d5a4b702637e2bb25265954c08a1b1e4aaf93c7880bb0c67d0
 F test/fts3corrupt3.test 0d5b69a0998b4adf868cc301fc78f3d0707745f1d984ce044c205cdb764b491f
 F test/fts3corrupt4.test 799ff994b964fed7201be6b6b62c7ff2ef7bb3da6c02b9eaf0d96a5a4d9b6ca3
@@ -1975,8 +1975,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2a952c7738d94e70024e06600fee8c3a49f317f2d02774468019bd7cf9488c8b
-R d2c5ea1de948d5953025c952202b7480
+P f1dfbc4f7452154ca5190ac22e17fdabebb92833967b11f7dae21b8d3a5857bd
+R 0e53c4e5af03302c956c74fa1c3798cf
 U dan
-Z 6b712f0c41f121f184a0a0d122159660
+Z 035c36790d92294bdb53bee5aed3ce5b
 # Remove this line to create a well-formed Fossil manifest.
