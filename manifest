@@ -1,5 +1,5 @@
-C Create\snew\sbranch\snamed\s"dbinfo-guard"
-D 2022-06-05T22:40:49.966
+C In\sCLI,\sdrop\s.dbinfo\scommand\swhen\sbuild\soptions\sprevent\sit\sfrom\sworking.
+D 2022-06-05T22:58:40.391
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -571,7 +571,7 @@ F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c a4eb3c617027fd049b07432f3b942ea7151fa793a332a11a7d0f58c9539e104f
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 8b98d3e5511d2789880ea4a12a4637803f69db5df04c81e1e93a5aac75c89b2a
-F src/shell.c.in b76e681f9e441928d574f21f9473ef615158bbeab1ae49f05ecab9d81730a51d
+F src/shell.c.in 865218b56e28f5d5939b82ef98a11a692c30c773f6cd86e04939605ecf824adc
 F src/sqlite.h.in 172528c287399a34f188154017b7268bf82c6d5b780902e361958d2318c4e37c
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h a988810c9b21c0dc36dc7a62735012339dc76fc7ab448fb0792721d30eacb69d
@@ -1975,11 +1975,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d18818afc6021a32989499c26ab38fa442e5a55e662e39bb06e5c0daa9c65e25
-R 0e53c4e5af03302c956c74fa1c3798cf
-T *branch * dbinfo-guard
-T *sym-dbinfo-guard *
-T -sym-trunk *
+P 8d942ba72ea995d0e8d1f8694bb428e5f919fc75afd3e059a69547e27991d580
+R 2f96e1736565174c18982a8437387e70
 U larrybr
-Z 9bee3ff1aa6527701a04a3ee682adf6b
+Z 9287eafb5d9d14c387b8d48b6146606a
 # Remove this line to create a well-formed Fossil manifest.
