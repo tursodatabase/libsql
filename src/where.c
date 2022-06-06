@@ -1177,11 +1177,11 @@ static sqlite3_index_info *allocateIndexInfo(
     assert( pTerm->u.x.leftColumn<pTab->nCol );
 
     /* tag-20191211-002: WHERE-clause constraints are not useful to the
-    ** right-hand table of a LEFT JOIN nor to the left-hand table of a
+    ** right-hand table of a LEFT JOIN nor to the either table of a
     ** RIGHT JOIN.  See tag-20191211-001 for the
     ** equivalent restriction for ordinary tables. */
-    if( (pSrc->fg.jointype & (JT_LEFT|JT_LTORJ))!=0
-     && !ExprHasProperty(pTerm->pExpr, EP_OuterON)
+    if( (pSrc->fg.jointype & (JT_LEFT|JT_LTORJ|JT_RIGHT))!=0
+     && !ExprHasProperty(pTerm->pExpr, EP_OuterON|EP_InnerON)
     ){
       continue;
     }
@@ -2833,9 +2833,15 @@ static int whereLoopAddBtreeIndex(
 
     /* tag-20191211-001:  Do not allow constraints from the WHERE clause to
     ** be used by the right table of a LEFT JOIN nor by the left table of a
-    ** RIGHT JOIN.  Only constraints in the
-    ** ON clause are allowed.  See tag-20191211-002 for the vtab equivalent. */
-    if( (pSrc->fg.jointype & (JT_LEFT|JT_LTORJ))!=0
+    ** RIGHT JOIN.  Only constraints in the ON clause are allowed.
+    ** See tag-20191211-002 for the vtab equivalent.  
+    **
+    ** 2022-06-06: See https://sqlite.org/forum/forumpost/206d99a16dd9212f
+    ** for an example of a WHERE clause constraints that may not be used on
+    ** the right table of a RIGHT JOIN because the constraint implies a
+    ** not-NULL condition on the left table of the RIGHT JOIN.
+    */
+    if( (pSrc->fg.jointype & (JT_LEFT|JT_LTORJ|JT_RIGHT))!=0
      && !ExprHasProperty(pTerm->pExpr, EP_OuterON|EP_InnerON)
     ){
       continue;

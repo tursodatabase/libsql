@@ -572,4 +572,19 @@ do_execsql_test join8-17091 {
   SELECT t3.a FROM t4 RIGHT JOIN t3 ON (x=a) WHERE (b, 4) IS (SELECT 3, 4);
 } {1}
 
+# 2022-06-06
+# https://sqlite.org/forum/forumpost/206d99a16dd9212f
+# tag-20191211-001
+#
+reset_db
+do_execsql_test join8-18000 {
+  CREATE TABLE t1(a BOOLEAN); INSERT INTO t1 VALUES (false);
+  CREATE TABLE t2(x INT);     INSERT INTO t2 VALUES (0);
+  SELECT *, x NOTNULL, (x NOTNULL)=a FROM t2 RIGHT JOIN t1 ON true WHERE (x NOTNULL)=a;
+} {}
+do_execsql_test join8-18010 {
+  CREATE INDEX t1a ON t1(a);
+  SELECT *, x NOTNULL, (x NOTNULL)=a FROM t2 RIGHT JOIN t1 ON true WHERE (x NOTNULL)=a;
+} {}
+
 finish_test
