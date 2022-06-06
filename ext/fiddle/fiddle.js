@@ -526,6 +526,8 @@
         /** Initiate a download of the db. */
         const btnExport = E('#btn-export');
         const eLoadDb = E('#load-db');
+        const btnLoadDb = E('#btn-load-db');
+        btnLoadDb.addEventListener('click', ()=>eLoadDb.click());
         /**
            Enables (if passed true) or disables all UI elements which
            "might," if timed "just right," interfere with an
