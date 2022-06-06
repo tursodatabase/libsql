@@ -587,4 +587,43 @@ do_execsql_test join8-18010 {
   SELECT *, x NOTNULL, (x NOTNULL)=a FROM t2 RIGHT JOIN t1 ON true WHERE (x NOTNULL)=a;
 } {}
 
+do_execsql_test join8-18020 {
+  CREATE TABLE t3(z);
+  INSERT INTO t3 VALUES('t3value');
+  SELECT *, x NOTNULL, (x NOTNULL)=a FROM t2 RIGHT JOIN t1 ON true INNER JOIN t3 ON (x NOTNULL)=a;
+} {}
+
+ifcapable rtree {
+  do_execsql_test join8-18030 {
+    CREATE VIRTUAL TABLE rtree1 USING rtree(a, x1, x2);
+    INSERT INTO rtree1 VALUES(0, 0, 0);
+  }
+  do_execsql_test join8-18040 {
+    SELECT *, x NOTNULL, (x NOTNULL)=a FROM t2 
+      RIGHT JOIN rtree1 ON true INNER JOIN t3 ON (x NOTNULL)=+a;
+  } {}
+  do_execsql_test join8-18050 {
+    SELECT *, x NOTNULL, (x NOTNULL)=a FROM t2 
+      RIGHT JOIN rtree1 ON true INNER JOIN t3 ON (x NOTNULL)=a;
+  } {}
+}
+
+
+reset_db
+do_execsql_test join8-19000 {
+  CREATE TABLE t1(a INT);
+  CREATE TABLE t2(b INT, c INT);
+  CREATE TABLE t3(d INT);
+
+  INSERT INTO t1 VALUES(10);
+  INSERT INTO t2 VALUES(50,51);
+  INSERT INTO t3 VALUES(299);
+
+  CREATE INDEX t2b ON t2( (b IS NOT NULL) );
+}
+
+do_execsql_test join8-19010 {
+  SELECT * FROM t1 LEFT JOIN t2 ON true INNER JOIN t3 ON (b IS NOT NULL)=0;
+}
+
 finish_test
