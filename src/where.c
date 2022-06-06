@@ -1180,10 +1180,17 @@ static sqlite3_index_info *allocateIndexInfo(
     ** right-hand table of a LEFT JOIN nor to the either table of a
     ** RIGHT JOIN.  See tag-20191211-001 for the
     ** equivalent restriction for ordinary tables. */
-    if( (pSrc->fg.jointype & (JT_LEFT|JT_LTORJ|JT_RIGHT))!=0
-     && !ExprHasProperty(pTerm->pExpr, EP_OuterON|EP_InnerON)
-    ){
-      continue;
+    if( (pSrc->fg.jointype & (JT_LEFT|JT_LTORJ|JT_RIGHT))!=0 ){
+      testcase( (pSrc->fg.jointype & (JT_LEFT|JT_LTORJ|JT_RIGHT))==JT_LEFT );
+      testcase( (pSrc->fg.jointype & (JT_LEFT|JT_LTORJ|JT_RIGHT))==JT_RIGHT );
+      testcase( (pSrc->fg.jointype & (JT_LEFT|JT_LTORJ|JT_RIGHT))==JT_LTORJ );
+      testcase( ExprHasProperty(pTerm->pExpr, EP_OuterON) );
+      testcase( ExprHasProperty(pTerm->pExpr, EP_InnerON) );
+      if( !ExprHasProperty(pTerm->pExpr, EP_OuterON|EP_InnerON)
+       || pTerm->pExpr->w.iJoin != pSrc->iCursor
+      ){
+        continue;
+      }
     }
     nTerm++;
     pTerm->wtFlags |= TERM_OK;
@@ -2841,10 +2848,17 @@ static int whereLoopAddBtreeIndex(
     ** the right table of a RIGHT JOIN because the constraint implies a
     ** not-NULL condition on the left table of the RIGHT JOIN.
     */
-    if( (pSrc->fg.jointype & (JT_LEFT|JT_LTORJ|JT_RIGHT))!=0
-     && !ExprHasProperty(pTerm->pExpr, EP_OuterON|EP_InnerON)
-    ){
-      continue;
+    if( (pSrc->fg.jointype & (JT_LEFT|JT_LTORJ|JT_RIGHT))!=0 ){
+      testcase( (pSrc->fg.jointype & (JT_LEFT|JT_LTORJ|JT_RIGHT))==JT_LEFT );
+      testcase( (pSrc->fg.jointype & (JT_LEFT|JT_LTORJ|JT_RIGHT))==JT_RIGHT );
+      testcase( (pSrc->fg.jointype & (JT_LEFT|JT_LTORJ|JT_RIGHT))==JT_LTORJ );
+      testcase( ExprHasProperty(pTerm->pExpr, EP_OuterON) )
+      testcase( ExprHasProperty(pTerm->pExpr, EP_InnerON) );
+      if( !ExprHasProperty(pTerm->pExpr, EP_OuterON|EP_InnerON)
+       || pTerm->pExpr->w.iJoin != pSrc->iCursor
+      ){
+        continue;
+      }
     }
 
     if( IsUniqueIndex(pProbe) && saved_nEq==pProbe->nKeyCol-1 ){
