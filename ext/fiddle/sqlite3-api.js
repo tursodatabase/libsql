@@ -222,11 +222,10 @@ Module.postRun.push(function(namespace/*the module object, the target for
         ["sqlite3_prepare_v2", "number", ["number", "string", "number", "number", "number"]],
         ["sqlite3_prepare_v2_sqlptr", "sqlite3_prepare_v2",
          /* Impl which requires that the 2nd argument be a pointer to
-            the SQL, instead of a string. This is used for cases where
-            we require a non-NULL value for the final argument. We may
-            or may not need this, depending on how our higher-level
-            API shapes up, but this code's spiritual guide (sql.js)
-            uses it we we'll include it. */
+            the SQL string, instead of being converted to a
+            string. This is used for cases where we require a non-NULL
+            value for the final argument (exec()'ing multiple
+            statements from one input string). */
          "number", ["number", "number", "number", "number", "number"]],
         ["sqlite3_reset", "number", ["number"]],
         ["sqlite3_result_blob",null,["number", "number", "number", "number"]],
@@ -1518,6 +1517,29 @@ Module.postRun.push(function(namespace/*the module object, the target for
         be able to work with multi-hundred-meg (or larger) blobs, and
         passing around arrays of those may quickly exhaust the JS
         engine's memory.
+
+      TODOs include, but are not limited to:
+
+      - The ability to manage multiple DB handles. This can
+        potentially be done via a simple mapping of DB.filename or
+        DB._pDb (`sqlite3*` handle) to DB objects. The open()
+        interface would need to provide an ID (probably DB._pDb) back
+        to the user which can optionally be passed as an argument to
+        the other APIs (they'd default to the first-opened DB, for
+        ease of use). Client-side usability of this feature would
+        benefit from making another wrapper class (or a singleton)
+        available to the main thread, with that object proxying all(?)
+        communication with the worker.
+
+      - Revisit how virtual files are managed. We currently delete DBs
+        from the virtual filesystem when we close them, for the sake
+        of saving memory (the VFS lives in RAM). Supporting multiple
+        DBs may require that we give up that habit. Similarly, fully
+        supporting ATTACH, where a user can upload multiple DBs and
+        ATTACH them, also requires the that we manage the VFS entries
+        better. As of this writing, ATTACH will fail fatally in the
+        fiddle app (but not the lower-level APIs) because it runs in
+        safe mode, where ATTACH is disabled.
     */
 
     /**
