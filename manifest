@@ -1,5 +1,5 @@
-C Extra\stest\scases\sfor\souter\sjoins.
-D 2022-06-06T21:08:27.912
+C More\sprecise\sdetermination\sof\swhen\sa\sWHERE/ON\sclause\sterm\scan\sbe\sused\sas\san\nindexed\sjoin\sconstraint.\s\sTestcase\smacros\sadded\sto\sensure\stest\scoverage.
+D 2022-06-06T22:33:44.489
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -657,7 +657,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c b9df133a705093da8977da5eb202eaadb844839f1c7297c08d33471f5491843d
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
-F src/where.c 667f8fab750f246e499a82b4b6711bfc605541bbf5206912fb647b9d325baeb5
+F src/where.c 01eea25cefc6fb5a081213749cfa29f14ed3092206f18ebb38abbb31c137f594
 F src/whereInt.h b48ca529ffe293c18cbfa8326af18a09e39910de66fb3e96ef788c7cbf8ef3a7
 F src/wherecode.c 0b09abfcb88c61c6a6984a3e065786631ff35495e9bdf865e6b74ab0a1299c5b
 F src/whereexpr.c 20255cf03e0b765b742301197d165511ff99e95da0d7ee9c8a2ebc1e888dd049
@@ -1975,11 +1975,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4a31b7942a15c9c4363477365784d6d4ac5b1bbe8ff8aeaf2dd3d6532bf8bc96
-R 898330edf4a8d997653c5dd1a4fb4585
-T *branch * outer-join-tests
-T *sym-outer-join-tests *
-T -sym-trunk *
-U dan
-Z 7fd73dc63da28e4103b7c450b99067c6
+P c7505765280fb27ec2c8c4da6f87229a4078e3a4a27525226b6bf55864caa04b
+R c2e526412189cf6f0523d76532d3dca9
+U drh
+Z d50f770c4ee4cf5221452486eef1f28b
 # Remove this line to create a well-formed Fossil manifest.
