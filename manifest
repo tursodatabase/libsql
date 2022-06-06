@@ -1,5 +1,5 @@
-C shell:\sin\sWASM\smode,\spermit\sATTACH\sbecause\sthe\sfilesystem\sis\sa\svirtual\ssandbox\sand\sATTACH\scan\sbe\sused\sto\sprovide\smore\simport/export\soptions.\sMinor\sdoc\supdates\sin\ssqlite3-api.js.
-D 2022-06-06T04:09:44.420
+C Fix\sa\stest\scase\sin\sfts3corrupt6.test.\sWas\sfailing\sdue\sto\s[f1dfbc4f].
+D 2022-06-06T06:17:54.877
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1008,7 +1008,7 @@ F test/fts3corrupt2.test e318f0676e5e78d5a4b702637e2bb25265954c08a1b1e4aaf93c788
 F test/fts3corrupt3.test 0d5b69a0998b4adf868cc301fc78f3d0707745f1d984ce044c205cdb764b491f
 F test/fts3corrupt4.test 799ff994b964fed7201be6b6b62c7ff2ef7bb3da6c02b9eaf0d96a5a4d9b6ca3
 F test/fts3corrupt5.test 0549f85ec4bd22e992f645f13c59b99d652f2f5e643dac75568bfd23a6db7ed5
-F test/fts3corrupt6.test 657b4b8e5791d8d4adc93c90588fb25f1c7346544dd877c6c298a0746749146d
+F test/fts3corrupt6.test f417c910254f32c0bc9ead7affa991a1d5aec35b3b32a183ffb05eea78289525
 F test/fts3cov.test 7eacdbefd756cfa4dc2241974e3db2834e9b372ca215880e00032222f32194cf
 F test/fts3d.test 2bd8c97bcb9975f2334147173b4872505b6a41359a4f9068960a36afe07a679f
 F test/fts3defer.test f4c20e4c7153d20a98ee49ee5f3faef624fefc9a067f8d8d629db380c4d9f1de
@@ -1975,8 +1975,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d18818afc6021a32989499c26ab38fa442e5a55e662e39bb06e5c0daa9c65e25
-R dd896338802aeee36c510f5914b04fd2
-U stephan
-Z c59f8d92cfc32216e397bef16af41dcd
+P f28de5b726999b913b442fa51355d020ba1f1662d2f7978380623c16438eb238
+R 1bdd9a69a470a2e4dc4bbbb3456554a4
+U dan
+Z 08e13aaa40ef36c9f4fbdd5771e7d14a
 # Remove this line to create a well-formed Fossil manifest.
