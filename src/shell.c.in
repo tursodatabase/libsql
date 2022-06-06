@@ -1838,7 +1838,11 @@ static int safeModeAuth(
   UNUSED_PARAMETER(zA4);
   switch( op ){
     case SQLITE_ATTACH: {
+#ifndef SQLITE_SHELL_WASM_MODE
+      /* In WASM builds the filesystem is a virtual sandbox, so
+      ** there's no harm in using ATTACH. */
       failIfSafeMode(p, "cannot run ATTACH in safe mode");
+#endif
       break;
     }
     case SQLITE_FUNCTION: {

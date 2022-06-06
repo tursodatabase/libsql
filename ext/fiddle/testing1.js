@@ -126,6 +126,21 @@ INSERT INTO t(a,b) VALUES(1,2),(3,4),(?,?);`,
             assert(null === db.selectValue("select $a",{$a:null}));
     };
 
+    const testAttach = function(db){
+        log("Testing ATTACH...");
+        db.exec({
+            sql:[
+                "attach 'foo.db' as foo",
+                "create table foo.bar(a)",
+                "insert into foo.bar(a) values(1),(2),(3)"
+            ].join(';'),
+            multi: true
+        });
+        T.assert(2===db.selectValue('select a from foo.bar where a>1 order by a'));
+        db.exec("detach foo");
+        T.mustThrow(()=>db.exec("select * from foo.bar"));
+    };
+
     const runTests = function(Module){
         T.assert(Module._free instanceof Function).
             assert(Module.allocate instanceof Function).
@@ -141,8 +156,12 @@ INSERT INTO t(a,b) VALUES(1,2),(3,4),(?,?);`,
         try {
             log("DB:",db.filename);
             [
-                test1, testUDF
-            ].forEach((f)=>f(db, sqlite3));
+                test1, testUDF, testAttach
+            ].forEach((f)=>{
+                const t = T.counter;
+                f(db, sqlite3);
+                log("Test count:",T.counter - t);
+            });
         }finally{
             db.close();
         }
