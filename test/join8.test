@@ -626,7 +626,6 @@ do_execsql_test join8-19010 {
   SELECT * FROM t1 LEFT JOIN t2 ON true INNER JOIN t3 ON (b IS NOT NULL)=0;
 }
 
-if 0 {
 # 2022-06-07
 # https://sqlite.org/forum/forumpost/323f86cc30
 reset_db
@@ -657,6 +656,5 @@ do_execsql_test join8-20060 {
   SELECT count(*) 
     FROM (SELECT 99 as "m" FROM t2 JOIN v0 ON z<>'' RIGHT JOIN t1 ON z<>'' ORDER BY z) AS "t3";
 } {1}
-}
 
 finish_test

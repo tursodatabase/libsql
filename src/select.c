@@ -3763,9 +3763,10 @@ static Expr *substExpr(
   Expr *pExpr            /* Expr in which substitution occurs */
 ){
   if( pExpr==0 ) return 0;
-  if( ExprHasProperty(pExpr, EP_OuterON)
+  if( ExprHasProperty(pExpr, EP_OuterON|EP_InnerON)
    && pExpr->w.iJoin==pSubst->iTable
   ){
+    testcase( ExprHasProperty(pExpr, EP_InnerON) );
     pExpr->w.iJoin = pSubst->iNewTable;
   }
   if( pExpr->op==TK_COLUMN
