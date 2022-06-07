@@ -626,4 +626,37 @@ do_execsql_test join8-19010 {
   SELECT * FROM t1 LEFT JOIN t2 ON true INNER JOIN t3 ON (b IS NOT NULL)=0;
 }
 
+if 0 {
+# 2022-06-07
+# https://sqlite.org/forum/forumpost/323f86cc30
+reset_db
+do_execsql_test join8-20000 {
+  CREATE TABLE t1(x TEXT);
+  INSERT INTO t1(x) VALUES('aaa');
+  CREATE VIEW v0(y) AS SELECT x FROM t1;
+  CREATE TABLE t2(z TEXT);
+} {}
+db null -
+do_execsql_test join8-20010 {
+  SELECT * FROM t2 JOIN v0 ON z<>'bbb' RIGHT JOIN t1 ON z<>'ccc';
+} {- - aaa}
+do_execsql_test join8-20020 {
+  SELECT * FROM t2 JOIN v0 ON z<>'bbb' RIGHT JOIN t1 ON z<>'ccc' ORDER BY z;
+} {- - aaa}
+do_execsql_test join8-20030 {
+  SELECT 99 as "m" FROM t2 JOIN v0 ON z<>'bbb' RIGHT JOIN t1 ON z<>'ccc';
+} {99}
+do_execsql_test join8-20040 {
+  SELECT 99 as "m" FROM t2 JOIN v0 ON z<>'bbb' RIGHT JOIN t1 ON z<>'ccc' ORDER BY z;
+} {99}
+do_execsql_test join8-20050 {
+  SELECT count(*)
+    FROM (SELECT 99 as "m" FROM t2 JOIN v0 ON z<>'' RIGHT JOIN t1 ON z<>'') AS "t3";
+} {1}
+do_execsql_test join8-20060 {
+  SELECT count(*) 
+    FROM (SELECT 99 as "m" FROM t2 JOIN v0 ON z<>'' RIGHT JOIN t1 ON z<>'' ORDER BY z) AS "t3";
+} {1}
+}
+
 finish_test
