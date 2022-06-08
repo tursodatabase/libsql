@@ -4302,14 +4302,29 @@ static int flattenSubquery(
     return 0;       /* (28) */
   }
 
+  /* Restriction (29): 
+  **
+  ** We do not want two constraints on the same term of the flattened
+  ** query where one constraint has EP_InnerON and the other is EP_OuterON.
+  ** To prevent this, one or the other of the following conditions must be
+  ** false:
+  **
+  **   (29a)  The right-most entry in the FROM clause of the subquery
+  **          must not be part of an outer join.
+  **
+  **   (29b)  The subquery itself must not be the right operand of a 
+  **          NATURAL join or a join that as an ON or USING clause.
+  **
+  ** These conditions are sufficient to keep an EP_OuterON from being
+  ** flattened into an EP_InnerON.  Restrictions (3a) and (27) prevent
+  ** an EP_InnerON from being flattened into an EP_OuterON.
+  */
   if( pSubSrc->nSrc>=2
    && (pSubSrc->a[pSubSrc->nSrc-1].fg.jointype & JT_OUTER)!=0
   ){
-    /* Reach here if the right-most term in the FROM clause of the subquery
-    ** is an outer join - the second half of (29) */
-    if( pSubitem->fg.jointype & JT_NATURAL
+    if( (pSubitem->fg.jointype & JT_NATURAL)!=0
      || pSubitem->fg.isUsing
-     || pSubitem->u3.pOn!=0
+     || NEVER(pSubitem->u3.pOn!=0) /* ON clause already shifted into WHERE */
      || pSubitem->fg.isOn
     ){
       return 0;
