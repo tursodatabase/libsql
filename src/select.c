@@ -610,6 +610,7 @@ static int sqlite3ProcessJoin(Parse *pParse, Select *p){
       sqlite3SetJoinExpr(pRight->u3.pOn, pRight->iCursor, joinType);
       p->pWhere = sqlite3ExprAnd(pParse, p->pWhere, pRight->u3.pOn);
       pRight->u3.pOn = 0;
+      pRight->fg.isOn = 1;
     }
   }
   return 0;
@@ -4169,6 +4170,11 @@ static void renumberCursors(
 **
 **  (28)  The subquery is not a MATERIALIZED CTE.
 **
+**  (29)  Either the subquery is not the right-hand operand of a join with an
+**        ON or USING clause nor the right-hand operand of a NATURAL JOIN, or
+**        the right-most table within the FROM clause of the subquery
+**        is not part of an outer join.
+**
 **
 ** In this routine, the "p" parameter is a pointer to the outer query.
 ** The subquery is p->pSrc->a[iFrom].  isAgg is true if the outer query
@@ -4294,6 +4300,20 @@ static int flattenSubquery(
   }
   if( pSubitem->fg.isCte && pSubitem->u2.pCteUse->eM10d==M10d_Yes ){
     return 0;       /* (28) */
+  }
+
+  if( pSubSrc->nSrc>=2
+   && (pSubSrc->a[pSubSrc->nSrc-1].fg.jointype & JT_OUTER)!=0
+  ){
+    /* Reach here if the right-most term in the FROM clause of the subquery
+    ** is an outer join - the second half of (29) */
+    if( pSubitem->fg.jointype & JT_NATURAL
+     || pSubitem->fg.isUsing
+     || pSubitem->u3.pOn!=0
+     || pSubitem->fg.isOn
+    ){
+      return 0;
+    }
   }
 
   /* Restriction (17): If the sub-query is a compound SELECT, then it must

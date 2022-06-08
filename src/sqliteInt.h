@@ -3101,6 +3101,7 @@ struct SrcItem {
     unsigned isCte :1;         /* This is a CTE */
     unsigned notCte :1;        /* This item may not match a CTE */
     unsigned isUsing :1;       /* u3.pUsing is valid */
+    unsigned isOn :1;          /* u3.pOn was once valid and non-NULL */
     unsigned isSynthUsing :1;  /* u3.pUsing is synthensized from NATURAL */
     unsigned isNestedFrom :1;  /* pSelect is a SF_NestedFrom subquery */
   } fg;
