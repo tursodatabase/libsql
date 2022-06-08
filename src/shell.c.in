@@ -5837,6 +5837,7 @@ static int db_int(sqlite3 *db, const char *zSql){
   return res;
 }
 
+#if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_ENABLE_DBPAGE_VTAB)
 /*
 ** Convert a 2-byte or 4-byte big-endian integer into a native integer
 */
@@ -5847,7 +5848,6 @@ static unsigned int get4byteInt(unsigned char *a){
   return (a[0]<<24) + (a[1]<<16) + (a[2]<<8) + a[3];
 }
 
-#if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_ENABLE_DBPAGE_VTAB)
 /*
 ** Implementation of the ".dbinfo" command.
 **
