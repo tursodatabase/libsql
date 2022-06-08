@@ -3216,7 +3216,10 @@ static int whereUsablePartialIndex(
 ){
   int i;
   WhereTerm *pTerm;
-  Parse *pParse = pWC->pWInfo->pParse;
+  Parse *pParse;
+
+  if( jointype & JT_LTORJ ) return 0;
+  pParse = pWC->pWInfo->pParse;
   while( pWhere->op==TK_AND ){
     if( !whereUsablePartialIndex(iTab,jointype,pWC,pWhere->pLeft) ) return 0;
     pWhere = pWhere->pRight;
