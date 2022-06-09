@@ -4577,8 +4577,24 @@ expr_code_doover:
       exprCodeBetween(pParse, pExpr, target, 0, 0);
       return target;
     }
+    case TK_COLLATE: {
+      if( !ExprHasProperty(pExpr, EP_Collate)
+       && ALWAYS(pExpr->pLeft)
+       && pExpr->pLeft->op==TK_FUNCTION
+      ){
+        inReg = sqlite3ExprCodeTarget(pParse, pExpr->pLeft, target);
+        if( inReg!=target ){
+          sqlite3VdbeAddOp2(v, OP_SCopy, inReg, target);
+          inReg = target;
+        }
+        sqlite3VdbeAddOp1(v, OP_ClrSubtype, inReg);
+        return inReg;
+      }else{
+        pExpr = pExpr->pLeft;
+        goto expr_code_doover; /* 2018-04-28: Prevent deep recursion. */
+      }
+    }
     case TK_SPAN:
-    case TK_COLLATE: 
     case TK_UPLUS: {
       pExpr = pExpr->pLeft;
       goto expr_code_doover; /* 2018-04-28: Prevent deep recursion. OSSFuzz. */
