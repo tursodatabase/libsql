@@ -8306,6 +8306,17 @@ case OP_Function: {            /* group */
   break;
 }
 
+/* Opcode: ClrSubtype P1 * * * *
+** Synopsis:  r[P1].subtype = 0
+**
+** Clear the subtype from register P1.
+*/
+case OP_ClrSubtype: {   /* in1 */
+  pIn1 = &aMem[pOp->p1];
+  pIn1->flags &= ~MEM_Subtype;
+  break;
+}
+
 /* Opcode: FilterAdd P1 * P3 P4 *
 ** Synopsis: filter(P1) += key(P3@P4)
 **
