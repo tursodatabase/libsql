@@ -1,5 +1,5 @@
-C The\ssubtype\sof\sa\svalue\sshould\snot\spropagate\sacross\sa\ssubquery\sboundary.\nProposed\sfix\sfor\sthe\sproblem\sreported\sby\n[forum:/forumpost/3d9caa45cbe38c78|forum\spost\s3d9caa45cbe38c78].\nAdditional\sworks\sis\sneeded\sas\snot\sall\scases\sare\scovered.
-D 2022-06-09T16:19:01.223
+C Prevent\ssubtype\svalues\sfrom\sslipping\sacross\sa\ssubquery\sboundry\swhen\sthe\nsubquery\sis\simplemented\sas\sa\sco-routine.
+D 2022-06-09T17:17:14.158
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -642,7 +642,7 @@ F src/upsert.c 8789047a8f0a601ea42fa0256d1ba3190c13746b6ba940fe2d25643a7e991937
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c 602fe229f32a96ceccae4f40824129669582096f7c355f53dbac156c9fecef23
 F src/vacuum.c bb346170b0b54c6683bba4a5983aea40485597fdf605c87ec8bc2e199fe88cd8
-F src/vdbe.c 9959b20b1dbe72eca51cc611669ab1cc623274b4681c4bec7c4fee0c35c080d4
+F src/vdbe.c 388ced8d8c8724f8c1e9395b0727c628d7b9b813dfcb4fc67a67c56e46896be2
 F src/vdbe.h 07641758ca8b4f4c6d81ea667ea167c541e6ece21f5574da11e3d21ec37e2662
 F src/vdbeInt.h ef43f7fdc5fde29fc3fd29c506c12830f366178fdb4edbbf0cbc3dfbd1278b5f
 F src/vdbeapi.c 354c893f1500cf524cc45c32879b9c68893a28b77e3442c24668d6afe4236217
@@ -657,7 +657,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c b9df133a705093da8977da5eb202eaadb844839f1c7297c08d33471f5491843d
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
-F src/where.c 7da9e0c1275fb3f180beb0d63551ea4d246e028908809bbbcd7f56005872d1bd
+F src/where.c 7a5c084800eab6ed9006bccd5d3116a7a6a998c56c525b22f62f131b3b133189
 F src/whereInt.h b48ca529ffe293c18cbfa8326af18a09e39910de66fb3e96ef788c7cbf8ef3a7
 F src/wherecode.c 0b09abfcb88c61c6a6984a3e065786631ff35495e9bdf865e6b74ab0a1299c5b
 F src/whereexpr.c 20255cf03e0b765b742301197d165511ff99e95da0d7ee9c8a2ebc1e888dd049
@@ -1479,7 +1479,7 @@ F test/subquery.test 3a1a5b600b8d4f504d2a2c61f33db820983dba94a0ef3e4aedca8f0165e
 F test/subquery2.test 90cf944b9de8204569cf656028391e4af1ccc8c0cc02d4ef38ee3be8de1ffb12
 F test/subselect.test 0966aa8e720224dbd6a5e769a3ec2a723e332303
 F test/substr.test a673e3763e247e9b5e497a6cacbaf3da2bd8ec8921c0677145c109f2e633f36b
-F test/subtype1.test 0dcd5daf00a1bdd4ba4b3410aed1c5336adb4d9695e2c93633588fe38b0b3404
+F test/subtype1.test 45c85632abd38f7ea9b33f17448d966d67550f552e0822bab74576814d0d1718
 F test/superlock.test ec94f0556b6488d97f71c79f9061ae08d9ab8f12
 F test/swarmvtab.test 250231404fcac88f61a6c147bb0e3a118ed879278cd3ccb0ae2d3a729e1e8e26
 F test/swarmvtab2.test c948cb2fdfc5b01d85e8f6d6504854202dc1a0782ab2a0ed61538f27cbd0aa5c
@@ -1976,11 +1976,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5abb5ef500f52c52dac33e54d824cf89481fec1643c27943f34f0ca4560a7e00
-R a4791de68ccc60dbd3fc486a3fbb1159
-T *branch * subtype-subquery
-T *sym-subtype-subquery *
-T -sym-trunk *
+P 08af1fe27ebd0edf6e0f1ac477deea033e7f7c813f1016b75196836daf02d2e4
+R c35df4ec51cfa3b0337adabea0f5033f
 U drh
-Z f43ab1740e2db0ad3ebbcc397a4e347d
+Z f8e714816d78c089a301e0aab2d70435
 # Remove this line to create a well-formed Fossil manifest.

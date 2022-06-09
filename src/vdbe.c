@@ -1479,10 +1479,15 @@ case OP_Move: {
   break;
 }
 
-/* Opcode: Copy P1 P2 P3 * *
+/* Opcode: Copy P1 P2 P3 * P5
 ** Synopsis: r[P2@P3+1]=r[P1@P3+1]
 **
 ** Make a copy of registers P1..P1+P3 into registers P2..P2+P3.
+**
+** If the 0x0002 bit of P5 is set then also clear the MEM_Subtype flag in the
+** destination.  The 0x0001 bit of P5 indicates that this Copy opcode cannot
+** be merged.  The 0x0001 bit is used by the query planner and does not
+** come into play during query execution.
 **
 ** This instruction makes a deep copy of the value.  A duplicate
 ** is made of any string or blob constant.  See also OP_SCopy.
@@ -1498,6 +1503,9 @@ case OP_Copy: {
     memAboutToChange(p, pOut);
     sqlite3VdbeMemShallowCopy(pOut, pIn1, MEM_Ephem);
     Deephemeralize(pOut);
+    if( (pOut->flags & MEM_Subtype)!=0 &&  (pOp->p5 & 0x0002)!=0 ){
+      pOut->flags &= ~MEM_Subtype;
+    }
 #ifdef SQLITE_DEBUG
     pOut->pScopyFrom = 0;
 #endif
