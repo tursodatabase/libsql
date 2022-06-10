@@ -657,4 +657,23 @@ do_execsql_test join8-20060 {
     FROM (SELECT 99 as "m" FROM t2 JOIN v0 ON z<>'' RIGHT JOIN t1 ON z<>'' ORDER BY z) AS "t3";
 } {1}
 
+# 2022-06-10
+# https://sqlite.org/forum/forumpost/8e4c352937e82929
+#
+# Do not allow constant propagation between ON and WHERE clause terms.
+#
+reset_db
+do_execsql_test join8-21000 {
+  CREATE TABLE t1(a INT,b BOOLEAN);
+  CREATE TABLE t2(c INT);  INSERT INTO t2 VALUES(NULL);
+  CREATE TABLE t3(d INT);
+}
+do_execsql_test join8-21010 {
+  SELECT (b IS TRUE) FROM t1 JOIN t3 ON (b=TRUE) RIGHT JOIN t2 ON TRUE;
+} {0}
+do_execsql_test join8-22020 {
+  SELECT * FROM t1 JOIN t3 ON (b=TRUE) RIGHT JOIN t2 ON TRUE WHERE (b IS TRUE);
+} {}
+  
+
 finish_test
