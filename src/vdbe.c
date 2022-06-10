@@ -7979,7 +7979,6 @@ case OP_VColumn: {
 
   VdbeCursor *pCur = p->apCsr[pOp->p1];
   assert( pCur!=0 );
-  assert( pCur->eCurType==CURTYPE_VTAB );
   assert( pOp->p3>0 && pOp->p3<=(p->nMem+1 - p->nCursor) );
   pDest = &aMem[pOp->p3];
   memAboutToChange(p, pDest);
@@ -7987,6 +7986,7 @@ case OP_VColumn: {
     sqlite3VdbeMemSetNull(pDest);
     break;
   }
+  assert( pCur->eCurType==CURTYPE_VTAB );
   pVtab = pCur->uc.pVCur->pVtab;
   pModule = pVtab->pModule;
   assert( pModule->xColumn );
