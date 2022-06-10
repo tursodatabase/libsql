@@ -14,12 +14,18 @@
       /* The following styles are for app-level use. */
       :root {
           --sqlite-blue: #044a64;
+          --textarea-color1: #044a64;
+          --textarea-color2: white;
       }
       textarea {
           font-family: monospace;
           flex: 1 1 auto;
-          background-color: var(--sqlite-blue);
-          color: white;
+          background-color: var(--textarea-color1);
+          color: var(--textarea-color2);
+      }
+      textarea#input {
+          color: var(--textarea-color1);
+          background-color: var(--textarea-color2);
       }
       header {
           display: flex;
@@ -111,20 +117,24 @@
           pointer-events: none !important;
           display: none !important;
       }
-      fieldset.options {
+      fieldset {
           border-radius: 0.5em;
           border: 1px inset;
-          display: flex;
-          flex-direction: column;
           padding: 0.25em;
+      }
+      fieldset.options {
+          font-size: 80%;
+          margin-top: 0.5em;
+      }
+      fieldset:not(.options) > legend {
+          font-size: 80%;
       }
       fieldset.options > div {
           display: flex;
           flex-wrap: wrap;
-          font-size: 85%;
       }
-      fieldset > legend {
-          font-size: 85%;
+      fieldset button {
+          font-size: inherit;
       }
       fieldset.collapsible > legend > .fieldset-toggle::after {
           content: " [hide]";
@@ -160,9 +170,6 @@
       #view-split {
           display: flex;
           flex-direction: column-reverse;
-      }
-      #view-split > .fieldset.options {
-          margin-top: 0.5em;
       }
     </style>
   </head>
