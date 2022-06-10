@@ -757,14 +757,17 @@ static int termCanDriveIndex(
   char aff;
   if( pTerm->leftCursor!=pSrc->iCursor ) return 0;
   if( (pTerm->eOperator & (WO_EQ|WO_IS))==0 ) return 0;
-  if( (pSrc->fg.jointype & (JT_LEFT|JT_LTORJ))!=0
-   && !ExprHasProperty(pTerm->pExpr, EP_OuterON)
-   && (pTerm->eOperator & WO_IS)
-  ){
-    /* Cannot use an IS term from the WHERE clause as an index driver for
-    ** the RHS of a LEFT JOIN or for the LHS of a RIGHT JOIN. Such a term
-    ** can only be used if it is from the ON clause.  */
-    return 0;
+  assert( (pSrc->fg.jointype & JT_RIGHT)==0 );
+  if( (pSrc->fg.jointype & (JT_LEFT|JT_LTORJ|JT_RIGHT))!=0 ){
+    testcase( (pSrc->fg.jointype & (JT_LEFT|JT_LTORJ|JT_RIGHT))==JT_LEFT );
+    testcase( (pSrc->fg.jointype & (JT_LEFT|JT_LTORJ|JT_RIGHT))==JT_LTORJ );
+    testcase( ExprHasProperty(pTerm->pExpr, EP_OuterON) )
+    testcase( ExprHasProperty(pTerm->pExpr, EP_InnerON) );
+    if( !ExprHasProperty(pTerm->pExpr, EP_OuterON|EP_InnerON)
+     || pTerm->pExpr->w.iJoin != pSrc->iCursor
+    ){
+      return 0;  /* See tag-20191211-001 */
+    }
   }
   if( (pTerm->prereqRight & notReady)!=0 ) return 0;
   assert( (pTerm->eOperator & (WO_OR|WO_AND))==0 );
@@ -2848,6 +2851,9 @@ static int whereLoopAddBtreeIndex(
     ** for an example of a WHERE clause constraints that may not be used on
     ** the right table of a RIGHT JOIN because the constraint implies a
     ** not-NULL condition on the left table of the RIGHT JOIN.
+    **
+    ** 2022-06-10: The same condition applies to termCanDriveIndex() above.
+    ** https://sqlite.org/forum/forumpost/51e6959f61
     */
     if( (pSrc->fg.jointype & (JT_LEFT|JT_LTORJ|JT_RIGHT))!=0 ){
       testcase( (pSrc->fg.jointype & (JT_LEFT|JT_LTORJ|JT_RIGHT))==JT_LEFT );
