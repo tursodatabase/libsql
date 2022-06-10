@@ -216,7 +216,7 @@
                That slows it down but is useful for testing. */
             echoToConsole: false,
             /* If true, display input/output areas side-by-side. */
-            sideBySide: false,
+            sideBySide: true,
             /* If true, swap positions of the input/output areas. */
             swapInOut: false
         },
@@ -607,15 +607,15 @@
             r.readAsArrayBuffer(f);
         });
 
-        EAll('.fieldset.collapsible').forEach(function(fs){
-            const legend = E(fs,'span.legend'),
+        EAll('fieldset.collapsible').forEach(function(fs){
+            const btnToggle = E(fs,'legend > .fieldset-toggle'),
                   content = EAll(fs,':scope > div');
-            legend.addEventListener('click', function(){
+            btnToggle.addEventListener('click', function(){
                 fs.classList.toggle('collapsed');
                 content.forEach((d)=>d.classList.toggle('hidden'));
             }, false);
         });
-        
+
         /**
            Given a DOM element, this routine measures its "effective
            height", which is the bounding top/bottom range of this element
@@ -722,6 +722,14 @@
         (function(){
             const xElem = E('#select-examples');
             const examples = [
+                {name: "Help", sql:
+`-- ================================================
+-- Use ctrl-enter or shift-enter to execute sqlite3
+-- shell commands and SQL.
+-- If a subset of the text is currently selected,
+-- only that part is executed.
+-- ================================================
+.help`},
                 {name: "Timer on", sql: ".timer on"},
                 {name: "Setup table T", sql:`.nullvalue NULL
 CREATE TABLE t(a,b);
@@ -795,5 +803,7 @@ SELECT group_concat(rtrim(t),x'0a') as Mandelbrot FROM a;`}
                 'any number of changes or outright removal at any time.\n');
         delete ForceResizeKludge.$disabled;
         ForceResizeKludge();
+
+        btnShellExec.click();
     }/*onSFLoaded()*/;
 })();

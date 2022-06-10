@@ -119,11 +119,17 @@ INSERT INTO t(a,b) VALUES(1,2),(3,4),(?,?);`,
             assert(3===db.selectValue("select bar(1,2)")).
             assert(-1===db.selectValue("select bar(1,2,-4)"));
 
+        const eqApprox = function(v1,v2,factor=0.05){
+            return v1>=(v2-factor) && v1<=(v2+factor);
+        };
+        
         T.assert('hi' === db.selectValue("select ?",'hi')).
             assert(null===db.selectValue("select null")).
             assert(null === db.selectValue("select ?",null)).
             assert(null === db.selectValue("select ?",[null])).
-            assert(null === db.selectValue("select $a",{$a:null}));
+            assert(null === db.selectValue("select $a",{$a:null})).
+            assert(eqApprox(3.1,db.selectValue("select 3.0 + 0.1")))
+        ;
     };
 
     const testAttach = function(db){

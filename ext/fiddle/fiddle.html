@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>sqlite3 fiddle</title>
+    <title>SQLite3 Fiddle</title>
     <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
     <!-- to add a togglable terminal-style view, uncomment the following
          two lines and ensure that these files are on the web server. -->
@@ -12,50 +12,91 @@
     <link rel="stylesheet" href="emscripten.css"/>
     <style>
       /* The following styles are for app-level use. */
+      :root {
+          --sqlite-blue: #044a64;
+      }
       textarea {
           font-family: monospace;
           flex: 1 1 auto;
+          background-color: var(--sqlite-blue);
+          color: white;
       }
       header {
-          font-size: 130%;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          background-color: var(--sqlite-blue);
+          color: white;
+          font-size: 120%;
           font-weight: bold;
+          border-radius: 0.25em;
+          padding: 0.2em 0.5em;
+      }
+      header > .powered-by {
+          font-size: 80%;
+      }
+      header a, header a:visited, header a:hover {
+          color: inherit;
       }
       #main-wrapper {
           display: flex;
           flex-direction: column-reverse;
-          flex: 20 1 auto;
+          flex: 1 1 auto;
+          margin: 0.5em 0;
+          overflow: hidden;
       }
       #main-wrapper.side-by-side {
-          flex-direction: row-reverse;
+          flex-direction: row;
+      }
+      #main-wrapper.side-by-side > fieldset {
+          margin-left: 0.25em;
+          margin-right: 0.25em;
+      }
+      #main-wrapper:not(.side-by-side) > fieldset {
+          margin-bottom: 0.25em;
       }
       #main-wrapper.swapio {
           flex-direction: column;
       }
       #main-wrapper.side-by-side.swapio {
-          flex-direction: row;
+          flex-direction: row-reverse;
       }
-      .ta-wrapper{
+      .zone-wrapper{
           display: flex;
-          flex-direction: column;
-          align-items: stretch;
-          margin: 0 0.25em;
+          margin: 0;
+          flex: 1 1 0%;
+          border-radius: 0.5em;
+          min-width: inherit/*important: resolves inability to scroll fieldset child element!*/;
+          padding: 0.35em 0 0 0;
+      }
+      .zone-wrapper textarea {
+          border-radius: 0.5em;
           flex: 1 1 auto;
+          /*min/max width resolve an inexplicable margin on the RHS.  The -1em
+            is for the padding, else we overlap the parent boundaries.*/
+          /*min-width: calc(100% - 1em);
+          max-width: calc(100% - 1em);
+          padding: 0 0.5em;*/
       }
-      .ta-wrapper.input { flex: 10 1 auto; }
-      .ta-wrapper.output { flex: 20 1 auto; }
-      .ta-wrapper textarea {
-          font-size: 110%;
-          filter: invert(100%);
-          flex: 10 1 auto;
+
+      .zone-wrapper.input { flex: 10 1 auto; }
+      .zone-wrapper.output { flex: 20 1 auto; }
+      .zone-wrapper > div {
+          display:flex;
+          flex: 1 1 0%;
       }
+      .zone-wrapper.output {}
       .button-bar {
           display: flex;
-          justify-content: center;
-          flex: 0 1 auto;
           flex-wrap: wrap;
+          align-items: center;
+          align-content: space-between;
+          justify-content: flex-start;
       }
-      .button-bar button {
-          margin: 0.25em 1em;
+      .button-bar > * {
+          margin: 0.05em 0.5em 0.05em 0;
+          flex: 0 1 auto;
+          align-self: auto;
       }
       label[for] {
           cursor: pointer;
@@ -70,85 +111,51 @@
           pointer-events: none !important;
           display: none !important;
       }
-      /* Safari supports neither styling of nor event handling on a
-         fieldset legend, so we emulate a fieldset-like widget. */
-      .fieldset {
+      fieldset.options {
           border-radius: 0.5em;
           border: 1px inset;
           display: flex;
           flex-direction: column;
+          padding: 0.25em;
       }
-      .fieldset > .legend {
-          position: relative;
-          top: -1.5ex;
-          padding: 0 0.5em;
-          font-size: 85%;
-          margin-left: 0.5em;
-          flex: 0 1 auto;
-          align-self: self-start;
-          cursor: pointer;
-      }
-      .fieldset.options > div {
+      fieldset.options > div {
           display: flex;
           flex-wrap: wrap;
-          font-size: 70%;
-          margin: 0 0.5em 0.5em 0.5em;
+          font-size: 85%;
       }
-      .fieldset > .legend > span {
-          position: relative;
+      fieldset > legend {
+          font-size: 85%;
       }
-      .fieldset > .legend::before {
-          /* Hide the parent element's top border where this
-             element intersects it. */
-          content: ' '; 
-          width: 100%; 
-          height: 100%; 
-          background-color: white
-           /* REALLY want to 'inherit' the color from the fieldset's
-              parent, but inherit leads to a transparent bg, which is
-              exactly what we're trying to avoid here. */;
-          opacity: 1;
-          position: absolute; 
-          top: 0; 
-          left: 0; 
-      }
-      .fieldset > .legend::after {
+      fieldset.collapsible > legend > .fieldset-toggle::after {
           content: " [hide]";
           position: relative;
       }
-      .fieldset.collapsed > .legend::after {
+      fieldset.collapsible.collapsed > legend > .fieldset-toggle::after {
           content: " [show]";
           position: relative;
       }
       span.labeled-input {
           padding: 0.25em;
-          margin: 0.25em 0.5em;
+          margin: 0.05em 0.25em;
           border-radius: 0.25em;
           white-space: nowrap;
           background: #0002;
+          display: flex;
+          align-items: center;
       }
-      #notes-caveats {
-          border-top: 1px dotted;
-          padding-top: 0.25em;
-          margin-top: 0.5em;
+      span.labeled-input > *:nth-child(2) {
+          margin-left: 0.3em;
       }
       .center { text-align: center; }
-
       body.terminal-mode {
           max-height: calc(100% - 2em);
           display: flex;
           flex-direction: column;
           align-items: stretch;
       }
-      #view-terminal {
-      }
+      #view-terminal {}
       .app-view {
           flex: 20 1 auto;
-      }
-      #titlebar {
-          display: flex;
-          justify-content: space-between;
-          margin-bottom: 0.5em;
       }
       #view-split {
           display: flex;
@@ -160,7 +167,11 @@
     </style>
   </head>
   <body>
-    <header id='titlebar'><span>sqlite3 fiddle</span></header>
+    <header id='titlebar'>
+      <span>SQLite3 Fiddle</span>
+      <span class='powered-by'>Powered by
+        <a href='https://sqlite.org'>SQLite3</a></span>
+    </header>
     <!-- emscripten bits -->
     <figure id="module-spinner">
       <div class="spinner"></div>
@@ -177,12 +188,13 @@
     </div><!-- /emscripten bits -->
 
     <div id='view-terminal' class='app-view hidden initially-hidden'>
-      This is a placeholder for a terminal-like view.
+      This is a placeholder for a terminal-like view which is not in
+      the default build.
     </div>
 
     <div id='view-split' class='app-view initially-hidden'>
-      <div class='fieldset options collapsible'>
-        <span class='legend'><span>Options</span></span>
+      <fieldset class='options collapsible'>
+        <legend><button class='fieldset-toggle'>Options</button></legend>
         <div class=''>
           <span class='labeled-input'>
             <input type='checkbox' id='opt-cb-sbs'
@@ -218,40 +230,40 @@
           <span class='labeled-input'>
             <button id='btn-reset'>Reset DB</button>
           </span>
-          <span class='labeled-input'>
-            <select id='select-examples'></select>
-          </span>
         </div>
-      </div><!-- .fieldset -->
+      </fieldset><!-- .options -->
       <div id='main-wrapper' class=''>
-        <div class='ta-wrapper input'>
-          <textarea id="input"
-                    placeholder="Shell input. Ctrl-enter/shift-enter runs it.">
--- Use ctrl-enter or shift-enter to execute SQL. If only a subset
--- is currently selected, only that part is executed.
-.nullvalue NULL
-.mode box
-CREATE TABLE t(a,b);
-INSERT INTO t(a,b) VALUES('abc',123),('def',456),(NULL,789),('ghi',012);
-SELECT * FROM t;</textarea>        
-          <div class='button-bar'>
+        <fieldset class='zone-wrapper input'>
+          <legend><div class='button-bar'>
             <button id='btn-shell-exec'>Run</button>
             <button id='btn-clear'>Clear Input</button>
-            <button data-cmd='.help'>Help</button>
-          </div>
-        </div>
-        <div class='ta-wrapper output'>
-          <textarea id="output" readonly
-                    placeholder="Shell output."></textarea>
-          <div class='button-bar'>
+            <!--button data-cmd='.help'>Help</button-->
+            <select id='select-examples'></select>
+          </div></legend>
+          <div><textarea id="input"
+                         placeholder="Shell input. Ctrl-enter/shift-enter runs it.">
+-- ==================================================
+-- Use ctrl-enter or shift-enter to execute sqlite3
+-- shell commands and SQL.
+-- If a subset of the text is currently selected,
+-- only that part is executed.
+-- ==================================================
+.nullvalue NULL
+.headers on
+</textarea></div>
+        </fieldset>
+        <fieldset class='zone-wrapper output'>
+          <legend><div class='button-bar'>
             <button id='btn-clear-output'>Clear Output</button>
             <button id='btn-interrupt' class='hidden' disabled>Interrupt</button>
             <!-- interruption cannot work in the current configuration
                  because we cannot send an interrupt message when work
                  is currently underway. At that point the Worker is
                  tied up and will not receive the message. -->
-          </div>
-        </div>
+          </div></legend>
+          <div><textarea id="output" readonly
+                         placeholder="Shell output."></textarea></div>
+        </fieldset>
       </div>
     </div> <!-- #view-split -->
     <!-- Maintenance notes:
