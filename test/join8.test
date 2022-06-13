@@ -694,6 +694,39 @@ do_execsql_test join8-22000 {
          RIGHT JOIN t4 ON true
    WHERE a=b;
 } {}
-  
+
+# 2022-06-13
+# https://sqlite.org/forum/forumpost/b40696f501
+#
+# This optimization that converts "x ISNULL" into "FALSE" when column "x" has a
+# NOT NULL constraint is too aggresive if the query contains RIGHT JOIN.
+#
+reset_db
+db null -
+do_execsql_test join8-23000 {
+  CREATE TABLE t1(a TEXT);
+  INSERT INTO t1 VALUES('c');
+  CREATE TABLE t2(b TEXT, c TEXT NOT NULL);
+  INSERT INTO t2 VALUES('a', 'b');
+  CREATE TABLE t3(d TEXT);
+  INSERT INTO t3 VALUES('x');
+  CREATE TABLE t4(e TEXT);
+  INSERT INTO t4 VALUES('y');
+}
+do_execsql_test join8-23010 {
+  SELECT *
+    FROM t1
+         LEFT JOIN t2 ON TRUE
+         JOIN t3 ON c=''
+         RIGHT JOIN t4 ON b='';
+} {- - - - y}
+do_execsql_test join8-23020 {
+  SELECT *
+    FROM t1
+         LEFT JOIN t2 ON TRUE
+         JOIN t3 ON c=''
+         RIGHT JOIN t4 ON b=''
+   WHERE d ISNULL
+} {- - - - y}
 
 finish_test

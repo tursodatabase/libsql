@@ -429,15 +429,21 @@ void sqlite3SetJoinExpr(Expr *p, int iTable, u32 joinFlag){
 ** an ordinary term that omits the EP_OuterON mark.
 **
 ** This happens when a LEFT JOIN is simplified into an ordinary JOIN.
+**
+** If nullable is true, that means that Expr p might evaluate to NULL even
+** if it is a reference to a NOT NULL column.  This can happen, for example,
+** if the table that p references is on the left side of a RIGHT JOIN.
+** If nullable is true, then take care to not remove the EP_CanBeNull bit.
+** See forum thread https://sqlite.org/forum/forumpost/b40696f50145d21c
 */
-static void unsetJoinExpr(Expr *p, int iTable){
+static void unsetJoinExpr(Expr *p, int iTable, int nullable){
   while( p ){
     if( ExprHasProperty(p, EP_OuterON)
      && (iTable<0 || p->w.iJoin==iTable) ){
       ExprClearProperty(p, EP_OuterON);
       ExprSetProperty(p, EP_InnerON);
     }
-    if( p->op==TK_COLUMN && p->iTable==iTable ){
+    if( p->op==TK_COLUMN && p->iTable==iTable && !nullable ){
       ExprClearProperty(p, EP_CanBeNull);
     }
     if( p->op==TK_FUNCTION ){
@@ -445,11 +451,11 @@ static void unsetJoinExpr(Expr *p, int iTable){
       if( p->x.pList ){
         int i;
         for(i=0; i<p->x.pList->nExpr; i++){
-          unsetJoinExpr(p->x.pList->a[i].pExpr, iTable);
+          unsetJoinExpr(p->x.pList->a[i].pExpr, iTable, nullable);
         }
       }
     }
-    unsetJoinExpr(p->pLeft, iTable);
+    unsetJoinExpr(p->pLeft, iTable, nullable);
     p = p->pRight;
   } 
 }
@@ -5067,7 +5073,7 @@ static int pushDownWhereTerms(
     while( pSubq ){
       SubstContext x;
       pNew = sqlite3ExprDup(pParse->db, pWhere, 0);
-      unsetJoinExpr(pNew, -1);
+      unsetJoinExpr(pNew, -1, 1);
       x.pParse = pParse;
       x.iTable = pSrc->iCursor;
       x.iNewTable = pSrc->iCursor;
@@ -6751,7 +6757,8 @@ int sqlite3Select(
       SELECTTRACE(0x100,pParse,p,
                 ("LEFT-JOIN simplifies to JOIN on term %d\n",i));
       pItem->fg.jointype &= ~(JT_LEFT|JT_OUTER);
-      unsetJoinExpr(p->pWhere, pItem->iCursor);
+      unsetJoinExpr(p->pWhere, pItem->iCursor,
+                    pTabList->a[0].fg.jointype & JT_LTORJ);
     }
 
     /* No futher action if this term of the FROM clause is no a subquery */
