@@ -4192,8 +4192,8 @@ case OP_OpenDup: {
   pCx->pgnoRoot = pOrig->pgnoRoot;
   pCx->isOrdered = pOrig->isOrdered;
   pCx->ub.pBtx = pOrig->ub.pBtx;
-  pCx->hasBeenDuped = 1;
-  pOrig->hasBeenDuped = 1;
+  pCx->noReuse = 1;
+  pOrig->noReuse = 1;
   rc = sqlite3BtreeCursor(pCx->ub.pBtx, pCx->pgnoRoot, BTREE_WRCSR, 
                           pCx->pKeyInfo, pCx->uc.pCursor);
   /* The sqlite3BtreeCursor() routine can only fail for the first cursor
@@ -4260,7 +4260,7 @@ case OP_OpenEphemeral: {
     aMem[pOp->p3].z = "";
   }
   pCx = p->apCsr[pOp->p1];
-  if( pCx && !pCx->hasBeenDuped &&  ALWAYS(pOp->p2<=pCx->nField) ){
+  if( pCx && !pCx->noReuse &&  ALWAYS(pOp->p2<=pCx->nField) ){
     /* If the ephermeral table is already open and has no duplicates from
     ** OP_OpenDup, then erase all existing content so that the table is
     ** empty again, rather than creating a new table. */
@@ -5847,6 +5847,7 @@ case OP_NullRow: {
     if( pC==0 ) goto no_mem;
     pC->seekResult = 0;
     pC->isTable = 1;
+    pC->noReuse = 1;
     pC->uc.pCursor = sqlite3BtreeFakeValidCursor();
   }
   pC->nullRow = 1;

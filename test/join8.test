@@ -729,4 +729,22 @@ do_execsql_test join8-23020 {
    WHERE d ISNULL
 } {- - - - y}
 
+# 2022-06-14
+# dbsqlfuzz 2f3101834d14325a976f601b9267a0fd323d6bbd
+#
+# When the OP_NullRow opcode creates a new cursor, it must
+# set the cursor to no-reuse so that an OP_OpenEphemeral in
+# a subroutine does not try to reuse it.
+#
+reset_db
+db null -
+do_execsql_test join8-24000 {
+  CREATE TABLE t4(b INT, c INT);
+  CREATE TABLE t5(a INT, f INT);
+  INSERT INTO t5 VALUES(1,2);
+  WITH t7(x, y) AS (SELECT 100, 200 FROM t5)
+    SELECT * FROM t4 JOIN t7 ON true RIGHT JOIN (SELECT y AS z FROM t7) AS t6 ON (x=z);
+} {- - - - 200}
+
+
 finish_test
