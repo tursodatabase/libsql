@@ -154,7 +154,15 @@ static char *fuzz_invariant_sql(sqlite3_stmt *pStmt, int iCnt){
   int rc;
   int nCol = sqlite3_column_count(pStmt);
   int mxCnt;
+  int bDistinct = 0;
+  int bOrderBy = 0;
 
+  switch( iCnt % 4 ){
+    case 1:  bDistinct = 1;              break;
+    case 2:  bOrderBy = 1;               break;
+    case 3:  bDistinct = bOrderBy = 1;   break;
+  }
+  iCnt /= 4;
   if( nCol==1 ){
     mxCnt = 0;
   }else{
@@ -167,7 +175,8 @@ static char *fuzz_invariant_sql(sqlite3_stmt *pStmt, int iCnt){
   while( nIn>0 && (isspace(zIn[nIn-1]) || zIn[nIn-1]==';') ) nIn--;
   if( strchr(zIn, '?') ) return 0;
   pTest = sqlite3_str_new(0);
-  sqlite3_str_appendf(pTest, "SELECT * FROM (%.*s)", (int)nIn, zIn);
+  sqlite3_str_appendf(pTest, "SELECT %s* FROM (%.*s)",
+                      bDistinct ? "DISTINCT " : "", (int)nIn, zIn);
   rc = sqlite3_prepare_v2(db, sqlite3_str_value(pTest), -1, &pBase, 0);
   if( rc ){
     sqlite3_finalize(pBase);
@@ -193,6 +202,9 @@ static char *fuzz_invariant_sql(sqlite3_stmt *pStmt, int iCnt){
     zAnd = "AND";
   }
   if( pBase!=pStmt ) sqlite3_finalize(pBase);
+  if( bOrderBy ){
+    sqlite3_str_appendf(pTest, " ORDER BY 1");
+  }
   return sqlite3_str_finish(pTest);
 }
 

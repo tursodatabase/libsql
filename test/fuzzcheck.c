@@ -949,12 +949,15 @@ static int runDbSql(sqlite3 *db, const char *zSql, unsigned int *pBtsFlags){
     int nRow = 0;
     while( (rc = sqlite3_step(pStmt))==SQLITE_ROW ){
       nRow++;
-      if( (*pBtsFlags)==BTS_SELECT && g.doInvariantChecks ){
+      if( (*pBtsFlags)==BTS_SELECT
+       && g.doInvariantChecks
+       && !sqlite3_stmt_isexplain(pStmt)
+      ){
         int iCnt = 0;
         for(iCnt=0; iCnt<99999; iCnt++){
           rc = fuzz_invariant(db, pStmt, iCnt, nRow, &bCorrupt, eVerbosity);
           if( rc==SQLITE_DONE ) break;
-          g.nInvariant++;
+          if( rc!=SQLITE_ERROR ) g.nInvariant++;
           if( eVerbosity>0 ){
             if( rc==SQLITE_OK ){
               printf("invariant-check: ok\n");
