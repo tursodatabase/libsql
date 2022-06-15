@@ -1,5 +1,5 @@
-C Attempt\sto\senhance\sfuzzcheck\sto\sdo\ssome\ssimple\sinvariant\stesting\son\squeries.\nThis\sis\san\sincremental\scheck-in\sfor\sa\swork-in-progress.
-D 2022-06-14T19:12:25.257
+C Improvements\sto\squery\sinvariant\stesting.\s\sAlmost\sworking\snow.
+D 2022-06-15T10:37:16.279
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1097,7 +1097,7 @@ F test/fuzzdata8.db ca9a97f401b06b0d5376139ec7e1f9e773e13345a9a2d9ccc0032cdbfede
 F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test f64c4aef4c9e9edf1d6dc0d3f1e65dcc81e67c996403c88d14f09b74807a42bc
-F test/fuzzinvariants.c 37b1f99fe4a6335983651b6b97a250dacf03b9ef81a189e2b52aeeace88ab1b1
+F test/fuzzinvariants.c f8c304b8640afbf58536b0825f7fe5749af731f1bb72347ee7cee26e7181ab40
 F test/gcfault.test dd28c228a38976d6336a3fc42d7e5f1ad060cb8c
 F test/gencol1.test cc0dbb0ee116e5602e18ea7d47f2a0f76b26e09a823b7c36ef254370c2b0f3c1
 F test/genesis.tcl 1e2e2e8e5cc4058549a154ff1892fe5c9de19f98
@@ -1977,11 +1977,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b1be2259e2e08ec22a88bc9a18b3ab4d83246ad4c635c05cdf80d3eff84df06a
-R d9a53a2b707897d91318ee68037f4638
-T *branch * query-invariant-tests
-T *sym-query-invariant-tests *
-T -sym-trunk *
+P ce2d780163b3a28486904860a1815acc4169c09b971cfd199bb58d1e9a57b000
+R f40be5688ab6b140e179b3752fba449f
 U drh
-Z 709cfc900b1da90b6bf9416298b653df
+Z dac2d9a9551a2253d7acf57f43e8f388
 # Remove this line to create a well-formed Fossil manifest.

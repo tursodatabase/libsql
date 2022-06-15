@@ -111,8 +111,14 @@ int fuzz_invariant(
       return SQLITE_CORRUPT;
     }
     sqlite3_finalize(pCk);
-    reportInvariantFailed(pStmt, pTestStmt, iRow);
-    return SQLITE_INTERNAL;
+    rc = sqlite3_prepare_v2(db, 
+            "SELECT 1 FROM bytecode(?1) WHERE opcode='VOpen'", -1, &pCk, 0);
+    if( rc==SQLITE_OK ) rc = sqlite3_step(pCk);
+    sqlite3_finalize(pCk);
+    if( rc==SQLITE_DONE ){
+      reportInvariantFailed(pStmt, pTestStmt, iRow);
+      return SQLITE_INTERNAL;
+    }
   }
   sqlite3_finalize(pTestStmt);
   return SQLITE_OK;
@@ -148,12 +154,20 @@ static char *fuzz_invariant_sql(sqlite3_stmt *pStmt, int iCnt){
     pBase = pStmt;
   }
   for(i=0; i<sqlite3_column_count(pStmt); i++){
+    const char *zColName = sqlite3_column_name(pBase,i);
+    const char *zSuffix = strchr(zColName, ':');
+    if( zSuffix 
+     && isdigit(zSuffix[1])
+     && (zSuffix[1]>'3' || isdigit(zSuffix[2]))
+    ){
+      /* This is a randomized column name and so cannot be used in the
+      ** WHERE clause. */
+      continue;
+    }
     if( sqlite3_column_type(pStmt, i)==SQLITE_NULL ){
-      sqlite3_str_appendf(pTest, " %s \"%w\" ISNULL", zAnd,
-                          sqlite3_column_name(pBase,i));
+      sqlite3_str_appendf(pTest, " %s \"%w\" ISNULL", zAnd, zColName);
     }else{
-      sqlite3_str_appendf(pTest, " %s \"%s\"=?%d", zAnd,
-                          sqlite3_column_name(pBase, i), i+1);
+      sqlite3_str_appendf(pTest, " %s \"%w\"=?%d", zAnd, zColName);
     }
     zAnd = "AND";
   }
