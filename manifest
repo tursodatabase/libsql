@@ -1,5 +1,5 @@
-C Improvements\sto\squery\sinvariant\stesting.\s\sAlmost\sworking\snow.
-D 2022-06-15T10:37:16.279
+C Add\sthe\s--query-invariants\sflag\sto\sfuzzcheck.\s\sThe\squery\sinvariant\schecks\sare\nonly\srun\sif\sthat\sflag\sis\senabled.
+D 2022-06-15T10:46:52.101
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1085,7 +1085,7 @@ F test/fuzz3.test 9c813e6613b837cb7a277b0383cd66bfa07042b4cf0317157c35852f30043c
 F test/fuzz4.test c229bcdb45518a89e1d208a21343e061503460ac69fae1539320a89f572eb634
 F test/fuzz_common.tcl b7197de6ed1ee8250a4f82d67876f4561b42ee8cbbfc6160dcb66331bad3f830
 F test/fuzz_malloc.test f348276e732e814802e39f042b1f6da6362a610af73a528d8f76898fde6b22f2
-F test/fuzzcheck.c 08d629c91b8307630273eb1e2e9a12bf0cf83fa2934e2b94681e11bf43819ef2
+F test/fuzzcheck.c 94b45d08b3500f71c90704381d26ba18b1b2988cdc896a16bd9491c48dada67b
 F test/fuzzdata1.db 3e86d9cf5aea68ddb8e27c02d7dfdaa226347426c7eb814918e4d95475bf8517
 F test/fuzzdata2.db 128b3feeb78918d075c9b14b48610145a0dd4c8d6f1ca7c2870c7e425f5bf31f
 F test/fuzzdata3.db c6586d3e3cef0fbc18108f9bb649aa77bfc38aba
@@ -1977,8 +1977,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ce2d780163b3a28486904860a1815acc4169c09b971cfd199bb58d1e9a57b000
-R f40be5688ab6b140e179b3752fba449f
+P e039820418d64fb57cb1a8f9f21186284e6c76255a53445c5d7aef6cca89bfc4
+R 64f031e2d80a57df90e414f608a2f784
 U drh
-Z dac2d9a9551a2253d7acf57f43e8f388
+Z 1f191fe35494b511dfe1ea17486123d5
 # Remove this line to create a well-formed Fossil manifest.

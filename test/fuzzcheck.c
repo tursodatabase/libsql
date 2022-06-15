@@ -153,6 +153,7 @@ static struct GlobalVars {
   int nSql;                        /* Number of SQL scripts */
   Blob *pFirstSql;                 /* First SQL script */
   unsigned int uRandom;            /* Seed for the SQLite PRNG */
+  unsigned char doInvariantChecks; /* True to run query invariant checks */
   char zTestName[100];             /* Name of current test */
 } g;
 
@@ -946,7 +947,7 @@ static int runDbSql(sqlite3 *db, const char *zSql, unsigned int *pBtsFlags){
     int nRow = 0;
     while( (rc = sqlite3_step(pStmt))==SQLITE_ROW ){
       nRow++;
-      if( (*pBtsFlags)==BTS_SELECT ){
+      if( (*pBtsFlags)==BTS_SELECT && g.doInvariantChecks ){
         int iCnt = 0;
         for(iCnt=0; iCnt<99999; iCnt++){
           rc = fuzz_invariant(db, pStmt, iCnt, nRow, &bCorrupt);
@@ -1640,6 +1641,7 @@ static void showHelp(void){
 "  --oss-fuzz           Enable OSS-FUZZ testing\n"
 "  --prng-seed N        Seed value for the PRGN inside of SQLite\n"
 "  -q|--quiet           Reduced output\n"
+"  --query-invariants   Run query invariant checks\n"
 "  --rebuild            Rebuild and vacuum the database file\n"
 "  --result-trace       Show the results of each SQL command\n"
 "  --script             Output CLI script instead of running tests\n"
@@ -1799,6 +1801,9 @@ int main(int argc, char **argv){
         quietFlag = 1;
         verboseFlag = 0;
         eVerbosity = 0;
+      }else
+      if( strcmp(z,"query-invariants")==0 ){
+        g.doInvariantChecks = 1;
       }else
       if( strcmp(z,"rebuild")==0 ){
         rebuildFlag = 1;
