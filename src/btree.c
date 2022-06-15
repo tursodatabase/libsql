@@ -3933,12 +3933,17 @@ static int incrVacuumStep(BtShared *pBt, Pgno nFin, Pgno iLastPg, int bCommit){
       }
       do {
         MemPage *pFreePg;
+        Pgno dbSize = btreePagecount(pBt);
         rc = allocateBtreePage(pBt, &pFreePg, &iFreePg, iNear, eMode);
         if( rc!=SQLITE_OK ){
           releasePage(pLastPg);
           return rc;
         }
         releasePage(pFreePg);
+        if( iFreePg>dbSize ){
+          releasePage(pLastPg);
+          return SQLITE_CORRUPT_BKPT;
+        }
       }while( bCommit && iFreePg>nFin );
       assert( iFreePg<iLastPg );
       
