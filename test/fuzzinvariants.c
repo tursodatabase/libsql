@@ -63,7 +63,8 @@ int fuzz_invariant(
   sqlite3_stmt *pStmt,    /* Test statement stopped on an SQLITE_ROW */
   int iCnt,               /* Invariant sequence number, starting at 0 */
   int iRow,               /* The row number for pStmt */
-  int *pbCorrupt          /* IN/OUT: Flag indicating a corrupt database file */
+  int *pbCorrupt,         /* IN/OUT: Flag indicating a corrupt database file */
+  int eVerbosity          /* How much debugging output */
 ){
   char *zTest;
   sqlite3_stmt *pTestStmt = 0;
@@ -75,14 +76,24 @@ int fuzz_invariant(
   zTest = fuzz_invariant_sql(pStmt, iCnt);
   if( zTest==0 ) return SQLITE_DONE;
   rc = sqlite3_prepare_v2(db, zTest, -1, &pTestStmt, 0);
-  sqlite3_free(zTest);
   if( rc ){
+    if( eVerbosity ){
+      printf("invariant compile failed: %s\n%s\n",
+             sqlite3_errmsg(db), zTest);
+    }
+    sqlite3_free(zTest);
     sqlite3_finalize(pTestStmt);
     return rc;
   }
+  sqlite3_free(zTest);
   nCol = sqlite3_column_count(pStmt);
   for(i=0; i<nCol; i++){
     sqlite3_bind_value(pTestStmt, i+1, sqlite3_column_value(pStmt,i));
+  }
+  if( eVerbosity>=2 ){
+    char *zSql = sqlite3_expanded_sql(pTestStmt);
+    printf("invariant-sql #%d:\n%s\n", iCnt, zSql);
+    sqlite3_free(zSql);
   }
   while( (rc = sqlite3_step(pTestStmt))==SQLITE_ROW ){
     for(i=0; i<nCol; i++){
@@ -118,6 +129,8 @@ int fuzz_invariant(
     if( rc==SQLITE_DONE ){
       reportInvariantFailed(pStmt, pTestStmt, iRow);
       return SQLITE_INTERNAL;
+    }else if( eVerbosity>0 ){
+      printf("invariant-error ignored due to the use of virtual tables\n");
     }
   }
   sqlite3_finalize(pTestStmt);
@@ -139,8 +152,15 @@ static char *fuzz_invariant_sql(sqlite3_stmt *pStmt, int iCnt){
   sqlite3_stmt *pBase = 0;
   sqlite3 *db = sqlite3_db_handle(pStmt);
   int rc;
+  int nCol = sqlite3_column_count(pStmt);
+  int mxCnt;
 
-  if( iCnt<0 || iCnt>0 ) return 0;
+  if( nCol==1 ){
+    mxCnt = 0;
+  }else{
+    mxCnt = nCol;
+  }
+  if( iCnt<0 || iCnt>mxCnt ) return 0;
   zIn = sqlite3_sql(pStmt);
   if( zIn==0 ) return 0;
   nIn = strlen(zIn);
@@ -164,10 +184,11 @@ static char *fuzz_invariant_sql(sqlite3_stmt *pStmt, int iCnt){
       ** WHERE clause. */
       continue;
     }
+    if( iCnt>0 && i+1!=iCnt ) continue;
     if( sqlite3_column_type(pStmt, i)==SQLITE_NULL ){
       sqlite3_str_appendf(pTest, " %s \"%w\" ISNULL", zAnd, zColName);
     }else{
-      sqlite3_str_appendf(pTest, " %s \"%w\"=?%d", zAnd, zColName);
+      sqlite3_str_appendf(pTest, " %s \"%w\"=?%d", zAnd, zColName, i+1);
     }
     zAnd = "AND";
   }

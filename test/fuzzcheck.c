@@ -154,6 +154,7 @@ static struct GlobalVars {
   Blob *pFirstSql;                 /* First SQL script */
   unsigned int uRandom;            /* Seed for the SQLite PRNG */
   unsigned char doInvariantChecks; /* True to run query invariant checks */
+  unsigned int nInvariant;         /* Number of invariant checks run */
   char zTestName[100];             /* Name of current test */
 } g;
 
@@ -925,7 +926,8 @@ int fuzz_invariant(
   sqlite3_stmt *pStmt,    /* Test statement stopped on an SQLITE_ROW */
   int iCnt,               /* Invariant sequence number, starting at 0 */
   int iRow,               /* The row number for pStmt */
-  int *pbCorrupt          /* IN/OUT: Flag indicating a corrupt database file */
+  int *pbCorrupt,         /* IN/OUT: Flag indicating a corrupt database file */
+  int eVerbosity          /* How much debugging output */
 );
 
 /*
@@ -950,8 +952,9 @@ static int runDbSql(sqlite3 *db, const char *zSql, unsigned int *pBtsFlags){
       if( (*pBtsFlags)==BTS_SELECT && g.doInvariantChecks ){
         int iCnt = 0;
         for(iCnt=0; iCnt<99999; iCnt++){
-          rc = fuzz_invariant(db, pStmt, iCnt, nRow, &bCorrupt);
+          rc = fuzz_invariant(db, pStmt, iCnt, nRow, &bCorrupt, eVerbosity);
           if( rc==SQLITE_DONE ) break;
+          g.nInvariant++;
           if( eVerbosity>0 ){
             if( rc==SQLITE_OK ){
               printf("invariant-check: ok\n");
@@ -2340,6 +2343,9 @@ int main(int argc, char **argv){
 
   if( !quietFlag && !bScript ){
     sqlite3_int64 iElapse = timeOfDay() - iBegin;
+    if( g.nInvariant ){
+      printf("fuzzcheck: %u query invariants checked\n", g.nInvariant);
+    }
     printf("fuzzcheck: 0 errors out of %d tests in %d.%03d seconds\n"
            "SQLite %s %s\n",
            nTest, (int)(iElapse/1000), (int)(iElapse%1000),
