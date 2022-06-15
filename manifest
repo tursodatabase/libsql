@@ -1,5 +1,5 @@
-C Fix\sthe\sOP_NullRow\sopcode\sso\sthat\sit\sworks\seven\sif\sit\sapplied\sto\san\nephemeral\scursor\sthat\shas\snot\syet\sbeen\screated.
-D 2022-06-14T22:21:23.940
+C Dbsqlfuzz\sdiscovered\sa\scase\swhere\sa\sbytecode\sbranch\sis\sin\sfact\staken,\sso\schange\nthe\sdesignator\sfrom\sVdbeCoverageNeverTaken()\sto\sVdbeCoverage().\s\sTest\scase\nin\sTH3.
+D 2022-06-15T12:32:27.651
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -637,7 +637,7 @@ F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c a38f52058b517929e264094abd0b5fd1e8e145a1aa43bc6f6a72ae5218f96c98
 F src/treeview.c c48bbb4b04a951dcecf95b464d0fe94930339af56688a77f18ee50a526bc1706
 F src/trigger.c 61bea163b1fa3039bc572ed8312461b978e5c527e5301f302b078f4c1ccdec6a
-F src/update.c 2cfaded82ca80ff56afb8c3ae5e88284e0824bfd86119827cc22481959f96f92
+F src/update.c c52a7991bece0453d22c77c08469512ee2f1391c12503fd347d1c939220c5877
 F src/upsert.c 8789047a8f0a601ea42fa0256d1ba3190c13746b6ba940fe2d25643a7e991937
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c 602fe229f32a96ceccae4f40824129669582096f7c355f53dbac156c9fecef23
@@ -1976,8 +1976,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6c3266c1b4fc446c7c3a40a8816caf4f9fe0cafe4f27cdafecac61425a17927e
-R 76c655ef409274be060169c56d9cdb33
+P 0e925654c24774933c7738c68f704b229c68e18c8baa45f506b8d6f09164d0d8
+R fc77c0f7235368cab2eb46c215200d7e
 U drh
-Z 17cec38f8d64f2ebe20fa6b2787372c5
+Z 28b980d024414557764b901ec0487955
 # Remove this line to create a well-formed Fossil manifest.
