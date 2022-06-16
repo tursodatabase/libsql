@@ -632,7 +632,7 @@ FUZZCHECK_OPT += -DSQLITE_ENABLE_RTREE
 FUZZCHECK_OPT += -DSQLITE_ENABLE_GEOPOLY
 FUZZCHECK_OPT += -DSQLITE_ENABLE_DBSTAT_VTAB
 FUZZCHECK_OPT += -DSQLITE_ENABLE_BYTECODE_VTAB
-FUZZCHECK_SRC = $(TOP)/test/fuzzcheck.c $(TOP)/test/ossfuzz.c
+FUZZCHECK_SRC = $(TOP)/test/fuzzcheck.c $(TOP)/test/ossfuzz.c $(TOP)/test/fuzzinvariants.c
 DBFUZZ_OPT =
 
 # This is the default Makefile target.  The objects listed here
@@ -1524,48 +1524,66 @@ fiddle_dir_abs = $(TOP)/$(fiddle_dir)
 # ^^^ some emcc opts require absolute paths
 fiddle_html = $(fiddle_dir)/fiddle.html
 fiddle_module_js = $(fiddle_dir)/fiddle-module.js
-fiddle_generated = $(fiddle_module_js) \
-                   $(fiddle_dir)/fiddle-module.wasm
 sqlite3_wasm_js = $(fiddle_dir)/sqlite3.js
 sqlite3_wasm = $(fiddle_dir)/sqlite3.wasm
-sqlite3_wasm_generated = $(sqlite3_wasm) $(sqlite3_wasm_js)
-clean-wasm:
-	rm -f $(fiddle_generated) $(sqlite3_wasm_generated)
-clean: clean-wasm
 #emcc_opt = -O0
 #emcc_opt = -O1
 #emcc_opt = -O2
 #emcc_opt = -O3
 emcc_opt = -Oz
-emcc_flags = $(emcc_opt) -sALLOW_TABLE_GROWTH -I. $(SHELL_OPT)
+emcc_flags = $(emcc_opt) -sALLOW_TABLE_GROWTH -sSTRICT_JS \
+        -sENVIRONMENT=web -sMODULARIZE \
+        -sEXPORTED_RUNTIME_METHODS=@$(fiddle_dir_abs)/EXPORTED_RUNTIME_METHODS \
+        -sDYNAMIC_EXECUTION=0 \
+        -I. $(SHELL_OPT)
 $(fiddle_module_js): Makefile sqlite3.c shell.c \
     $(fiddle_dir)/EXPORTED_RUNTIME_METHODS \
     $(fiddle_dir)/EXPORTED_FUNCTIONS.fiddle
 	emcc -o $@ $(emcc_flags) \
-        -sENVIRONMENT=web \
-        -sMODULARIZE \
         -sEXPORT_NAME=initFiddleModule \
-        -sEXPORTED_RUNTIME_METHODS=@$(fiddle_dir_abs)/EXPORTED_RUNTIME_METHODS \
         -sEXPORTED_FUNCTIONS=@$(fiddle_dir_abs)/EXPORTED_FUNCTIONS.fiddle \
         sqlite3.c shell.c
+	gzip < $@ > $@.gz
+	gzip < $(fiddle_dir)/fiddle-module.wasm > $(fiddle_dir)/fiddle-module.wasm.gz
 $(sqlite3_wasm_js): Makefile sqlite3.c \
     $(fiddle_dir)/sqlite3-api.js \
     $(fiddle_dir)/EXPORTED_RUNTIME_METHODS \
     $(fiddle_dir)/EXPORTED_FUNCTIONS.sqlite3-api
 	emcc -o $@ $(emcc_flags) \
-        -sENVIRONMENT=web \
-        -sMODULARIZE \
         -sEXPORT_NAME=initSqlite3Module \
-        -sEXPORTED_RUNTIME_METHODS=@$(fiddle_dir_abs)/EXPORTED_RUNTIME_METHODS \
         -sEXPORTED_FUNCTIONS=@$(fiddle_dir_abs)/EXPORTED_FUNCTIONS.sqlite3-api \
         --post-js=$(fiddle_dir)/sqlite3-api.js \
         --no-entry \
         sqlite3.c
-fiddle: $(fiddle_module_js)
+	gzip < $@ > $@.gz
+	gzip < $(sqlite3_wasm) > $(sqlite3_wasm).gz
+	gzip < $(fiddle_dir)/sqlite3-api.js > $(fiddle_dir)/sqlite3-api.js.gz
+$(fiddle_dir)/fiddle.js.gz: $(fiddle_dir)/fiddle.js
+	gzip < $< > $@
+$(fiddle_dir)/sqlite3-api.js.gz: $(fiddle_dir)/sqlite3-api.js
+	gzip < $< > $@
+
+fiddle_generated = $(fiddle_module_js) $(fiddle_module_js).gz \
+                   $(fiddle_dir)/fiddle-module.wasm \
+                   $(fiddle_dir)/fiddle-module.wasm.gz \
+                   $(fiddle_dir)/fiddle.js.gz
+sqlite3_wasm_generated = \
+                   $(sqlite3_wasm) $(sqlite3_wasm).gz \
+                   $(sqlite3_wasm_js) $(sqlite3_wasm_js).gz \
+                   $(fiddle_dir)/sqlite3.js.gz \
+                   $(fiddle_dir)/sqlite3-api.js.gz
+
+clean-wasm:
+	rm -f $(fiddle_generated) $(sqlite3_wasm_generated)
+clean: clean-wasm
+fiddle: $(fiddle_module_js) $(fiddle_dir)/fiddle.js.gz
 sqlite3-wasm: $(sqlite3_wasm_js)
 wasm: fiddle sqlite3-wasm
 ########################################################################
-# Explanation of the emcc build flags:
+# Explanation of the emcc build flags follows. Full docs for these can
+# be found at:
+#
+#  https://github.com/emscripten-core/emscripten/blob/main/src/settings.js
 #
 # -sENVIRONMENT=web: elides bootstrap code related to non-web JS
 #  environments like node.js. Removing this makes the output a tiny
@@ -1588,6 +1606,23 @@ wasm: fiddle sqlite3-wasm
 #  start with an underscore for reasons known only to the emcc
 #  developers. e.g., _sqlite3_open_v2 and _sqlite3_finalize. Must be
 #  an absolute path!
+#
+# -sSTRICT_JS ensures that the emitted JS code includes the 'use
+#  strict' option. Note that -sSTRICT is more broadly-scoped and
+#  results in build errors.
+#
+# -sALLOW_TABLE_GROWTH is required for (at a minimum) the UDF-binding
+#  feature.
+#
+# -sDYNAMIC_EXECUTION=0 disables eval() and the Function constructor.
+#  If the build runs without these, it's preferable to use this flag
+#  because certain execution environments disallow those constructs.
+#  This flag is not strictly necessary, however.
+#
+# -sWASM_BIGINT is UNTESTED but "should" allow the int64-using C APIs
+#  to work with JS/wasm, insofar as the JS environment supports the
+#  BigInt type. That support requires an extremely recent browser:
+#  Safari didn't get that support until late 2020.
 #
 # --no-entry: for compiling library code with no main(). If this is
 #  not supplied and the code has a main(), it is called as part of the

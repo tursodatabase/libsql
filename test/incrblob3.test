@@ -13,6 +13,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set testprefix incrblob3
 
 ifcapable !incrblob {
   finish_test
@@ -273,4 +274,41 @@ do_test incrblob3-7.2 {
 db close
 tvfs delete
 
+#-------------------------------------------------------------------------
+#
+reset_db
+forcedelete test.db2
+do_execsql_test 8.1 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+  ATTACH 'test.db2' AS aux;
+  CREATE TABLE aux.t1(a INTEGER PRIMARY KEY, b);
+
+  INSERT INTO t1 VALUES(4, 'hello');
+  INSERT INTO aux.t1 VALUES(4, 'world');
+}
+
+do_test 8.2 {
+  set ::blob [db incrblob -readonly main t1 b 4]
+  read $::blob
+} {hello}
+close $::blob
+
+do_test 8.3 {
+  set ::blob [db incrblob -readonly aux t1 b 4]
+  read $::blob
+} {world}
+close $::blob
+
+do_test 8.4 {
+  set ::blob [db incrblob -readonly t1 b 4]
+  read $::blob
+} {hello}
+close $::blob
+
+do_test 8.5 {
+  list [catch { db incrblob -readonly nosuchdb t1 b 4 } msg] $msg
+} {1 {no such table: nosuchdb.t1}}
+
+
+db close
 finish_test

@@ -28,4 +28,32 @@ do_execsql_test subtype1-130 {
   SELECT test_setsubtype('hello',123);
 } {hello}
 
+# 2022-06-09
+# https://sqlite.org/forum/forumpost/3d9caa45cbe38c78
+#
+# Avoid carrying subtypes through into a subquery that has been flattened
+# or to which the outer WHERE clause has been pushed down.
+#
+reset_db
+do_execsql_test subtype1-200 {
+  CREATE TABLE t1(a); INSERT INTO t1 VALUES ('x');
+  CREATE VIEW t2(b) AS SELECT json(TRUE);
+  CREATE TABLE t3(b); INSERT INTO t3 VALUES(json(TRUE));
+}
+do_execsql_test subtype1-210 {
+  SELECT * FROM t3, t1 WHERE NOT json_quote(b);
+} {1 x}
+do_execsql_test subtype1-220 {
+  SELECT * FROM t2, t1 WHERE NOT json_quote(b);
+} {1 x}
+do_execsql_test subtype1-230 {
+  WITH t4(a) AS MATERIALIZED (SELECT json(1)) SELECT subtype(a) FROM t4;
+} {0}
+do_execsql_test subtype1-231 {
+  WITH t4(a) AS NOT MATERIALIZED (SELECT json(1)) SELECT subtype(a) FROM t4;
+} {0}
+
+
+
+
 finish_test
