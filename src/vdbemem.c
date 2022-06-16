@@ -1571,8 +1571,8 @@ static int valueFromExpr(
     rc = valueFromExpr(db, pExpr->pLeft, enc, aff, ppVal, pCtx);
     testcase( rc!=SQLITE_OK );
     if( *ppVal ){
-      sqlite3VdbeMemCast(*ppVal, aff, SQLITE_UTF8);
-      sqlite3ValueApplyAffinity(*ppVal, affinity, SQLITE_UTF8);
+      sqlite3VdbeMemCast(*ppVal, aff, enc);
+      sqlite3ValueApplyAffinity(*ppVal, affinity, enc);
     }
     return rc;
   }

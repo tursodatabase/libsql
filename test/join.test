@@ -1067,4 +1067,38 @@ do_catchsql_test join-26.1 {
   SELECT * FROM t5 JOIN ((t4 JOIN (t5 JOIN t6)) t7);
 } {/1 {.*}/}
 
+# 2022-06-09 Invalid subquery flattening caused by
+# check-in 3f45007d544e5f78 and detected by dbsqlfuzz
+#
+reset_db
+do_execsql_test join-27.1 {
+  CREATE TABLE t1(a INT,b INT,c INT);  INSERT INTO t1 VALUES(NULL,NULL,NULL);
+  CREATE TABLE t2(d INT,e INT);        INSERT INTO t2 VALUES(NULL,NULL);
+  CREATE INDEX x2 ON t1(c,b);
+  CREATE TABLE t3(x INT);              INSERT INTO t3 VALUES(NULL);
+}
+do_execsql_test join-27.2 {
+  WITH t99(b) AS MATERIALIZED (
+    SELECT b FROM t2 LEFT JOIN t1 ON c IN (SELECT x FROM t3)
+  )
+  SELECT 5 FROM t2 JOIN t99 ON b IN (1,2,3);
+} {}
+do_execsql_test join-27.3 {
+  WITH t99(b) AS NOT MATERIALIZED (
+    SELECT b FROM t2 LEFT JOIN t1 ON c IN (SELECT x FROM t3)
+  )
+  SELECT 5 FROM t2 JOIN t99 ON b IN (1,2,3);
+} {}
+do_execsql_test join-27.4 {
+  WITH t99(b) AS (SELECT b FROM t2 LEFT JOIN t1 ON c IN (SELECT x FROM t3))
+  SELECT 5 FROM t2 JOIN t99 ON b IN (1,2,3);
+} {}
+do_execsql_test join-27.5 {
+  SELECT 5
+    FROM t2 JOIN (
+       SELECT b FROM t2 LEFT JOIN t1 ON c IN (SELECT x FROM t3)
+    ) AS t99 ON b IN (1,2,3);
+} {}
+
+
 finish_test

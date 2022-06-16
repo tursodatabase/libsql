@@ -234,8 +234,9 @@
                 fiddleModule.FS.createDataFile("/", fn, buffer, true, true);
                 const oldName = Sqlite3Shell.dbFilename();
                 Sqlite3Shell.exec('.open "/'+fn+'"');
-                if(oldName !== fn){
-                    fiddleModule.FS.unlink(oldName);
+                if(oldName && oldName !== fn){
+                    try{fiddleModule.FS.unlink(oldName);}
+                    catch(e){/*ignored*/}
                 }
                 stdout("Replaced DB with",fn+".");
                 return;

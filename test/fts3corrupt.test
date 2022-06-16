@@ -193,4 +193,42 @@ do_catchsql_test 7.10 {
   SELECT  matchinfo( f , 'pcx')  FROM f WHERE b MATCH x'c533';
 } {1 {database disk image is malformed}}
 
+reset_db
+sqlite3_fts3_may_be_corrupt 1
+do_execsql_test 8.1 {
+  CREATE VIRTUAL TABLE f USING fts3(a);
+  INSERT INTO f(f) VALUES('nodesize=24');
+  BEGIN;
+    INSERT INTO f VALUES('abcdefghijklmnopqrstuvwxyz0123456789');
+    INSERT INTO f VALUES('abcdefghijklmnopqrstuvwxyz0123456789');
+    INSERT INTO f VALUES('abcdefghijklmnopqrstuvwxyz0123456789');
+
+    INSERT INTO f VALUES('abcdefghijklmnopqrstuvwxyz012345678X');
+    INSERT INTO f VALUES('abcdefghijklmnopqrstuvwxyz012345678X');
+    INSERT INTO f VALUES('abcdefghijklmnopqrstuvwxyz012345678X');
+  COMMIT;
+  BEGIN;
+    INSERT INTO f VALUES('abcdefghijklmnopqrstuvwxyz0123456789');
+    INSERT INTO f VALUES('abcdefghijklmnopqrstuvwxyz0123456789');
+    INSERT INTO f VALUES('abcdefghijklmnopqrstuvwxyz0123456789');
+
+    INSERT INTO f VALUES('abcdefghijklmnopqrstuvwxyz012345678X');
+    INSERT INTO f VALUES('abcdefghijklmnopqrstuvwxyz012345678X');
+    INSERT INTO f VALUES('abcdefghijklmnopqrstuvwxyz012345678X');
+  COMMIT;
+
+  SELECT count(*) FROM f_segments;
+} {4}
+
+do_execsql_test 8.2 {
+  UPDATE f_segments SET block = (
+    SELECT block FROM f_segments WHERE blockid=1
+  ) WHERE blockid=2
+}
+
+do_catchsql_test 8.3 {
+  INSERT INTO f(f) VALUES('merge=2,2');
+} {1 {database disk image is malformed}}
+sqlite3_fts3_may_be_corrupt 0
+
 finish_test

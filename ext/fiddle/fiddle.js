@@ -216,7 +216,7 @@
                That slows it down but is useful for testing. */
             echoToConsole: false,
             /* If true, display input/output areas side-by-side. */
-            sideBySide: false,
+            sideBySide: true,
             /* If true, swap positions of the input/output areas. */
             swapInOut: false
         },
@@ -525,19 +525,35 @@
 
         /** Initiate a download of the db. */
         const btnExport = E('#btn-export');
-        const eDisableDuringExport = [
-            /* UI elements to disable while export is running. Normally
-               the export is fast enough that this won't matter, but we
-               really don't want to be reading (from outside of sqlite)
-               the db when the user taps btnShellExec. */
-            btnShellExec, btnExport
-        ];
+        const eLoadDb = E('#load-db');
+        const btnLoadDb = E('#btn-load-db');
+        btnLoadDb.addEventListener('click', ()=>eLoadDb.click());
+        /**
+           Enables (if passed true) or disables all UI elements which
+           "might," if timed "just right," interfere with an
+           in-progress db import/export/exec operation.
+        */
+        const enableMutatingElements = function f(enable){
+            if(!f._elems){
+                f._elems = [
+                    /* UI elements to disable while import/export are
+                       running. Normally the export is fast enough
+                       that this won't matter, but we really don't
+                       want to be reading (from outside of sqlite) the
+                       db when the user taps btnShellExec. */
+                    btnShellExec, btnExport, eLoadDb
+                ];
+            }
+            f._elems.forEach( enable
+                              ? (e)=>e.removeAttribute('disabled')
+                              : (e)=>e.setAttribute('disabled','disabled') );
+        };
         btnExport.addEventListener('click',function(){
-            eDisableDuringExport.forEach(e=>e.setAttribute('disabled','disabled'));
+            enableMutatingElements(false);
             SF.wMsg('db-export');
         });
         SF.addMsgHandler('db-export', function(ev){
-            eDisableDuringExport.forEach(e=>e.removeAttribute('disabled'));
+            enableMutatingElements(true);
             ev = ev.data;
             if(ev.error){
                 SF.echo("Export failed:",ev.error);
@@ -560,11 +576,11 @@
         /**
            Handle load/import of an external db file.
         */
-        E('#load-db').addEventListener('change',function(){
+        eLoadDb.addEventListener('change',function(){
             const f = this.files[0];
             const r = new FileReader();
             const status = {loaded: 0, total: 0};
-            this.setAttribute('disabled','disabled');
+            enableMutatingElements(false);
             r.addEventListener('loadstart', function(){
                 SF.echo("Loading",f.name,"...");
             });
@@ -573,7 +589,7 @@
             });
             const that = this;
             r.addEventListener('load', function(){
-                that.removeAttribute('disabled');
+                enableMutatingElements(true);
                 SF.echo("Loaded",f.name+". Opening db...");
                 SF.wMsg('open',{
                     filename: f.name,
@@ -581,25 +597,25 @@
                 });
             });
             r.addEventListener('error',function(){
-                that.removeAttribute('disabled');
+                enableMutatingElements(true);
                 SF.echo("Loading",f.name,"failed for unknown reasons.");
             });
             r.addEventListener('abort',function(){
-                that.removeAttribute('disabled');
+                enableMutatingElements(true);
                 SF.echo("Cancelled loading of",f.name+".");
             });
             r.readAsArrayBuffer(f);
         });
 
-        EAll('.fieldset.collapsible').forEach(function(fs){
-            const legend = E(fs,'span.legend'),
+        EAll('fieldset.collapsible').forEach(function(fs){
+            const btnToggle = E(fs,'legend > .fieldset-toggle'),
                   content = EAll(fs,':scope > div');
-            legend.addEventListener('click', function(){
+            btnToggle.addEventListener('click', function(){
                 fs.classList.toggle('collapsed');
                 content.forEach((d)=>d.classList.toggle('hidden'));
             }, false);
         });
-        
+
         /**
            Given a DOM element, this routine measures its "effective
            height", which is the bounding top/bottom range of this element
@@ -706,6 +722,14 @@
         (function(){
             const xElem = E('#select-examples');
             const examples = [
+                {name: "Help", sql:
+`-- ================================================
+-- Use ctrl-enter or shift-enter to execute sqlite3
+-- shell commands and SQL.
+-- If a subset of the text is currently selected,
+-- only that part is executed.
+-- ================================================
+.help`},
                 {name: "Timer on", sql: ".timer on"},
                 {name: "Setup table T", sql:`.nullvalue NULL
 CREATE TABLE t(a,b);
@@ -779,5 +803,7 @@ SELECT group_concat(rtrim(t),x'0a') as Mandelbrot FROM a;`}
                 'any number of changes or outright removal at any time.\n');
         delete ForceResizeKludge.$disabled;
         ForceResizeKludge();
+
+        btnShellExec.click();
     }/*onSFLoaded()*/;
 })();
