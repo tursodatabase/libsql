@@ -75,6 +75,10 @@
 
     {type:'shellExec', data: 'select * from sqlite_master'}
 
+    If the data property is an array, it gets glued together with a
+    newline separating each entry and is provided to the shell as a
+    single input string.
+
   - More TBD as the higher-level db layer develops.
 */
 
@@ -103,7 +107,10 @@
     };
 
     const stdout = function(){wMsg('stdout', Array.prototype.slice.call(arguments));};
-    const stderr = function(){wMsg('stderr', Array.prototype.slice.call(arguments));};
+    const stderr = function f(){
+        if(0===f._disabled) wMsg('stderr', Array.prototype.slice.call(arguments));
+    };
+    stderr._disabled = 0;
 
     self.onerror = function(/*message, source, lineno, colno, error*/) {
         const err = arguments[4];
@@ -120,6 +127,8 @@
     };
 
     const Sqlite3Shell = {
+        module: undefined/*gets set to the wasm module object*/,
+        idbDir: undefined/*mount point for IDBFS, if available. Includes trailing slash. */,
         /** Returns the name of the currently-opened db. */
         dbFilename: function f(){
             if(!f._) f._ = fiddleModule.cwrap('fiddle_db_filename', "string", ['string']);
@@ -129,6 +138,17 @@
            Runs the given text through the shell as if it had been typed
            in by a user. Fires a working/start event before it starts and
            working/end event when it finishes.
+
+           sql may===null, in which case the db connection will be set
+           up if it hasn't already been, but that case is otherwise a
+           no-op.
+
+           Client code should call this once with a null SQL value to
+           trigger the initial setup.
+
+           If the argument is an array, it is pasted together with
+           `\n` as a separator and submitted as a single input to the
+           shell.
         */
         exec: function f(sql){
             if(!f._) f._ = fiddleModule.cwrap('fiddle_exec', null, ['string']);
@@ -136,6 +156,7 @@
                 stderr("shell module has exit()ed. Cannot run SQL.");
                 return;
             }
+            if(Array.isArray(sql)) sql = sql.join('\n');
             wMsg('working','start');
             try {
                 if(f._running){
@@ -146,6 +167,9 @@
                 }
             } finally {
                 delete f._running;
+                if(this.module.FS.filesystems.IDBFS){
+                    this.module.FS.syncfs(false,function(){});
+                }
                 wMsg('working','end');
             }
         },
@@ -270,12 +294,12 @@
            When work is finished, a message with a text value of null is
            submitted.
 
-           After a message with text==null is posted, the module may later
-           post messages about fatal problems, e.g. an exit() being
-           triggered, so it is recommended that UI elements for posting
-           status messages not be outright removed from the DOM when
-           text==null, and that they instead be hidden until/unless
-           text!=null.
+           After a message with text===null is posted, the module may
+           later post messages about fatal problems, e.g. an exit()
+           being triggered, so it is recommended that UI elements for
+           posting status messages not be outright removed from the
+           DOM when text===null, and that they instead be hidden
+           until/unless text!==null.
         */
         setStatus: function f(text){
             if(!f.last) f.last = { step: 0, text: '' };
@@ -296,6 +320,61 @@
        emcc ... -sMODULARIZE=1 -sEXPORT_NAME=initFiddleModule
     */
     initFiddleModule(fiddleModule).then(function(thisModule){
-        wMsg('fiddle-ready');
+        Sqlite3Shell.module = thisModule;
+        const FS = thisModule.FS;
+        if(FS.filesystems.IDBFS){
+            /* Set up IndexedDB backing store. See:
+
+              https://emscripten.org/docs/api_reference/Filesystem-API.html#FS.syncfs
+            */
+            Sqlite3Shell.idbDir = '/idbfs/';
+            FS.mkdir(Sqlite3Shell.idbDir);
+            FS.mount(FS.filesystems.IDBFS, {}, Sqlite3Shell.idbDir);
+            const dbFile = Sqlite3Shell.idbDir+"fiddle.sqlite3";
+            /*
+              When FS.syncfs() is called, we often (but not always)
+              see this warning on stderr during app startup:
+
+              warning: 2 FS.syncfs operations in flight at once,
+              probably just doing extra work
+
+              Squelching that requires replacing FS.syncfs() with a
+              proxy which disables fiddleModule.printErr for the
+              duration of the call. _Sigh_. To that end...
+            */
+            const oldsyncfs = FS.syncfs;
+            FS.syncfs = function f(){
+                const args = Array.prototype.slice.call(arguments,0);
+                let cbNdx = -1, i = 0;
+                for(; i < args.length; ++i){
+                    if(args[i] instanceof Function){ cbNdx = i; break; }
+                }
+                if(cbNdx>=0){
+                    const cb = args[cbNdx];
+                    args[cbNdx] = function(){
+                        --stderr._disabled;
+                        cb.apply(this,Array.prototype.slice.call(arguments,0));
+                    }
+                }else{
+                    args.push(function(){--stderr._disabled;});
+                }
+                ++stderr._disabled;
+                return oldsyncfs.apply(this,args);
+            };
+            /* Tell the shell to use a persistent db instead of the
+               default transient one... */
+            FS.syncfs(true,function(err){
+                if(!err){
+                    Sqlite3Shell.exec([
+                        ".print 'Opening IndexedDB-backed db:' "+dbFile,
+                        ".open '"+dbFile+"'",
+                        ".databases"
+                    ]);
+                }
+                wMsg('fiddle-ready');
+            });
+        }else{
+            wMsg('fiddle-ready');
+        }
     });
 })();
