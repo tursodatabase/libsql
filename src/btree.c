@@ -4199,12 +4199,17 @@ static int incrVacuumStep(BtShared *pBt, Pgno nFin, Pgno iLastPg, int bCommit){
       }
       do {
         MemPage *pFreePg;
+        Pgno dbSize = btreePagecount(pBt);
         rc = allocateBtreePage(pBt, &pFreePg, &iFreePg, iNear, eMode);
         if( rc!=SQLITE_OK ){
           releasePage(pLastPg);
           return rc;
         }
         releasePage(pFreePg);
+        if( iFreePg>dbSize ){
+          releasePage(pLastPg);
+          return SQLITE_CORRUPT_BKPT;
+        }
       }while( bCommit && iFreePg>nFin );
       assert( iFreePg<iLastPg );
       
@@ -9633,7 +9638,7 @@ int sqlite3BtreeInsert(
   TRACE(("INSERT: table=%d nkey=%lld ndata=%d page=%d %s\n",
           pCur->pgnoRoot, pX->nKey, pX->nData, pPage->pgno,
           loc==0 ? "overwrite" : "new entry"));
-  assert( pPage->isInit );
+  assert( pPage->isInit || CORRUPT_DB );
   newCell = pBt->pTmpSpace;
   assert( newCell!=0 );
   if( flags & BTREE_PREFORMAT ){

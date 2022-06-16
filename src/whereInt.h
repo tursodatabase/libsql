@@ -612,8 +612,9 @@ void sqlite3WhereTabFuncArgs(Parse*, SrcItem*, WhereClause*);
 #define WO_AND    0x0400       /* Two or more AND-connected terms */
 #define WO_EQUIV  0x0800       /* Of the form A==B, both columns */
 #define WO_NOOP   0x1000       /* This term does not restrict search space */
+#define WO_ROWVAL 0x2000       /* A row-value term */
 
-#define WO_ALL    0x1fff       /* Mask of all possible WO_* values */
+#define WO_ALL    0x3fff       /* Mask of all possible WO_* values */
 #define WO_SINGLE 0x01ff       /* Mask of all non-compound WO_* values */
 
 /*

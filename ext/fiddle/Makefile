@@ -8,7 +8,8 @@ clean:
 
 fiddle_files = emscripten.css fiddle.html \
              fiddle.js fiddle-module.js \
-             fiddle-module.wasm fiddle-worker.js
+             fiddle-module.wasm fiddle-worker.js \
+             $(wildcard *.wasm.gz) $(wildcard *.js.gz)
 
 # fiddle_remote is the remote destination for the fiddle app. It
 # must be a [user@]HOST:/path for rsync.
