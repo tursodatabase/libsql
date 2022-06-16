@@ -2663,6 +2663,7 @@ static int pager_truncate(Pager *pPager, Pgno nPage){
         memset(pTmp, 0, szPage);
         testcase( (newSize-szPage) == currentSize );
         testcase( (newSize-szPage) >  currentSize );
+        sqlite3OsFileControlHint(pPager->fd, SQLITE_FCNTL_SIZE_HINT, &newSize);
         rc = sqlite3OsWrite(pPager->fd, pTmp, szPage, newSize-szPage);
       }
       if( rc==SQLITE_OK ){

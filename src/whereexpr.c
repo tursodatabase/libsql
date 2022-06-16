@@ -1105,7 +1105,7 @@ static void exprAnalyze(
   if( prereqAll!=sqlite3WhereExprUsageNN(pMaskSet, pExpr) ){
     printf("\n*** Incorrect prereqAll computed for:\n");
     sqlite3TreeViewExpr(0,pExpr,0);
-    abort();
+    assert( 0 );
   }
 #endif
 
@@ -1411,7 +1411,7 @@ static void exprAnalyze(
     }
     pTerm = &pWC->a[idxTerm];
     pTerm->wtFlags |= TERM_CODED|TERM_VIRTUAL;  /* Disable the original */
-    pTerm->eOperator = 0;
+    pTerm->eOperator = WO_ROWVAL;
   }
 
   /* If there is a vector IN term - e.g. "(a, b) IN (SELECT ...)" - create
@@ -1612,7 +1612,7 @@ void sqlite3WhereAddLimit(WhereClause *pWC, Select *p){
         /* This term is a vector operation that has been decomposed into
         ** other, subsequent terms.  It can be ignored. See tag-20220128a */
         assert( pWC->a[ii].wtFlags & TERM_VIRTUAL );
-        assert( pWC->a[ii].eOperator==0 );
+        assert( pWC->a[ii].eOperator==WO_ROWVAL );
         continue;
       }
       if( pWC->a[ii].leftCursor!=iCsr ) return;

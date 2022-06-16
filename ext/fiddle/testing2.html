@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
+    <link rel="stylesheet" href="emscripten.css"/>
+    <link rel="stylesheet" href="testing.css"/>
+    <title>sqlite3-worker.js tests</title>
+    <style></style>
+  </head>
+  <body>
+    <header id='titlebar'><span>sqlite3-worker.js tests</span></header>
+    <!-- emscripten bits -->
+    <figure id="module-spinner">
+      <div class="spinner"></div>
+      <div class='center'><strong>Initializing app...</strong></div>
+      <div class='center'>
+        On a slow internet connection this may take a moment.  If this
+        message displays for "a long time", intialization may have
+        failed and the JavaScript console may contain clues as to why.
+      </div>
+    </figure>
+    <div class="emscripten" id="module-status">Downloading...</div>
+    <div class="emscripten">
+      <progress value="0" max="100" id="module-progress" hidden='1'></progress>  
+    </div><!-- /emscripten bits -->
+    <div>Everything on this page happens in the dev console.</div>
+    <script src="testing-common.js"></script>
+    <script src="testing2.js"></script>
+  </body>
+</html>

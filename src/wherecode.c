@@ -2624,6 +2624,9 @@ Bitmask sqlite3WhereCodeOneLoopStart(
           /* Defer processing WHERE clause constraints until after outer
           ** join processing.  tag-20220513a */
           continue;
+        }else if( (pTabItem->fg.jointype & JT_LEFT)==JT_LEFT
+               && !ExprHasProperty(pE,EP_OuterON) ){
+          continue;
         }else{
           Bitmask m = sqlite3WhereGetMask(&pWInfo->sMaskSet, pE->w.iJoin);
           if( m & pLevel->notReady ){
@@ -2859,7 +2862,11 @@ SQLITE_NOINLINE void sqlite3WhereRightJoinLoop(
     mAll |= pLoop->maskSelf;
     for(k=0; k<pWC->nTerm; k++){
       WhereTerm *pTerm = &pWC->a[k];
-      if( pTerm->wtFlags & TERM_VIRTUAL ) break;
+      if( (pTerm->wtFlags & (TERM_VIRTUAL|TERM_SLICE))!=0
+       && pTerm->eOperator!=WO_ROWVAL
+      ){
+        break;
+      }
       if( pTerm->prereqAll & ~mAll ) continue;
       if( ExprHasProperty(pTerm->pExpr, EP_OuterON|EP_InnerON) ) continue;
       pSubWhere = sqlite3ExprAnd(pParse, pSubWhere,
