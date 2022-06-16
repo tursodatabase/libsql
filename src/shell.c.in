@@ -1838,7 +1838,11 @@ static int safeModeAuth(
   UNUSED_PARAMETER(zA4);
   switch( op ){
     case SQLITE_ATTACH: {
+#ifndef SQLITE_SHELL_WASM_MODE
+      /* In WASM builds the filesystem is a virtual sandbox, so
+      ** there's no harm in using ATTACH. */
       failIfSafeMode(p, "cannot run ATTACH in safe mode");
+#endif
       break;
     }
     case SQLITE_FUNCTION: {
@@ -4293,7 +4297,9 @@ static const char *(azHelp[]) = {
   ".connection [close] [#]  Open or close an auxiliary database connection",
   ".databases               List names and files of attached databases",
   ".dbconfig ?op? ?val?     List or change sqlite3_db_config() options",
+#if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_ENABLE_DBPAGE_VTAB)
   ".dbinfo ?DB?             Show status information about the database",
+#endif
   ".dump ?OBJECTS?          Render database content as SQL",
   "   Options:",
   "     --data-only            Output only INSERT statements",
@@ -5831,6 +5837,7 @@ static int db_int(sqlite3 *db, const char *zSql){
   return res;
 }
 
+#if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_ENABLE_DBPAGE_VTAB)
 /*
 ** Convert a 2-byte or 4-byte big-endian integer into a native integer
 */
@@ -5937,6 +5944,8 @@ static int shell_dbinfo_command(ShellState *p, int nArg, char **azArg){
   utf8_printf(p->out, "%-20s %u\n", "data version", iDataVersion);
   return 0;
 }
+#endif /* !defined(SQLITE_OMIT_VIRTUALTABLE)
+          && defined(SQLITE_ENABLE_DBPAGE_VTAB) */
 
 /*
 ** Print the current sqlite3_errmsg() value to stderr and return 1.
@@ -8479,11 +8488,11 @@ static int do_meta_command(char *zLine, ShellState *p){
     }   
   }else
 
+#if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_ENABLE_DBPAGE_VTAB)
   if( c=='d' && n>=3 && strncmp(azArg[0], "dbinfo", n)==0 ){
     rc = shell_dbinfo_command(p, nArg, azArg);
   }else
 
-#if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_ENABLE_DBPAGE_VTAB)
   if( c=='r' && strncmp(azArg[0], "recover", n)==0 ){
     open_db(p, 0);
     rc = recoverDatabaseCmd(p, nArg, azArg);

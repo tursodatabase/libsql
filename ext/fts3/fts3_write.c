@@ -3899,6 +3899,8 @@ static int fts3IncrmergePush(
           pBlk->n += sqlite3Fts3PutVarint(&pBlk->a[pBlk->n], nPrefix);
         }
         pBlk->n += sqlite3Fts3PutVarint(&pBlk->a[pBlk->n], nSuffix);
+        assert( nPrefix+nSuffix<=nTerm );
+        assert( nPrefix>=0 );
         memcpy(&pBlk->a[pBlk->n], &zTerm[nPrefix], nSuffix);
         pBlk->n += nSuffix;
 
@@ -4021,6 +4023,7 @@ static int fts3IncrmergeAppend(
   pLeaf = &pWriter->aNodeWriter[0];
   nPrefix = fts3PrefixCompress(pLeaf->key.a, pLeaf->key.n, zTerm, nTerm);
   nSuffix = nTerm - nPrefix;
+  if(nSuffix<=0 ) return FTS_CORRUPT_VTAB;
 
   nSpace  = sqlite3Fts3VarintLen(nPrefix);
   nSpace += sqlite3Fts3VarintLen(nSuffix) + nSuffix;
