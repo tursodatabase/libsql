@@ -901,6 +901,7 @@ static int block_troublesome_sql(
         "current_timestamp",
         "date",
         "datetime",
+        "implies_nonnull_row",
         "julianday",
         "random",
         "randomblob",
@@ -909,13 +910,21 @@ static int block_troublesome_sql(
         "time",
         "unixepoch",
       };
-      int i;
-      for(i=0; i<sizeof(azBadFuncs)/sizeof(azBadFuncs[0]); i++){
-        if( sqlite3_stricmp(azBadFuncs[i], zArg2)==0 ){
+      int first, last;
+      first = 0;
+      last = sizeof(azBadFuncs)/sizeof(azBadFuncs[0]) - 1;
+      do{
+        int mid = (first+last)/2;
+        int c = sqlite3_stricmp(azBadFuncs[mid], zArg2);
+        if( c<0 ){
+          first = mid+1;
+        }else if( c>0 ){
+          last = mid-1;
+        }else{
           *pFlags |= BTS_BADFUNC;
           break;
         }
-      }
+      }while( first<=last );
       break;
     }
     case SQLITE_READ: {
