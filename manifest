@@ -1,5 +1,5 @@
-C Only\srun\squery-invariant\schecks\safter\sthe\soriginal\squery\shas\srun\sto\scompletion,\nso\sthat\swe\sknow\sit\sdoes\snot\serror-out\son\sa\ssubsequent\srow.
-D 2022-06-17T15:52:43.687
+C Improve\squery-invariants\sto\sthe\spoint\sthat\sit\swould\shave\sdiscovered\sthe\n[f23a429d4153518d]\sbug\sif\sthat\sbug\shad\snot\salready\sbeen\sfixed.
+D 2022-06-17T16:09:47.744
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1085,7 +1085,7 @@ F test/fuzz3.test 9c813e6613b837cb7a277b0383cd66bfa07042b4cf0317157c35852f30043c
 F test/fuzz4.test c229bcdb45518a89e1d208a21343e061503460ac69fae1539320a89f572eb634
 F test/fuzz_common.tcl b7197de6ed1ee8250a4f82d67876f4561b42ee8cbbfc6160dcb66331bad3f830
 F test/fuzz_malloc.test f348276e732e814802e39f042b1f6da6362a610af73a528d8f76898fde6b22f2
-F test/fuzzcheck.c 873ea79afe6ffa015bb92bc2b6c8b3b0ae19939f05a2bb170c72554cee7efca6
+F test/fuzzcheck.c c50f105aaa5f5cc5ca5248ac8423ec316fbf6a9540236bcbf55999ff364bb49c
 F test/fuzzdata1.db 3e86d9cf5aea68ddb8e27c02d7dfdaa226347426c7eb814918e4d95475bf8517
 F test/fuzzdata2.db 128b3feeb78918d075c9b14b48610145a0dd4c8d6f1ca7c2870c7e425f5bf31f
 F test/fuzzdata3.db c6586d3e3cef0fbc18108f9bb649aa77bfc38aba
@@ -1097,7 +1097,7 @@ F test/fuzzdata8.db ca9a97f401b06b0d5376139ec7e1f9e773e13345a9a2d9ccc0032cdbfede
 F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test f64c4aef4c9e9edf1d6dc0d3f1e65dcc81e67c996403c88d14f09b74807a42bc
-F test/fuzzinvariants.c 227ab751f1417bbc135389f2e394ab3f97b4940343aea006283b8888e8166d58
+F test/fuzzinvariants.c df8e8e41e1b3d6a4b2d4af7971b6da546291935344b8b2ddd44a51f12dac773f
 F test/gcfault.test dd28c228a38976d6336a3fc42d7e5f1ad060cb8c
 F test/gencol1.test cc0dbb0ee116e5602e18ea7d47f2a0f76b26e09a823b7c36ef254370c2b0f3c1
 F test/genesis.tcl 1e2e2e8e5cc4058549a154ff1892fe5c9de19f98
@@ -1978,8 +1978,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 42b2e6676fed1508ea0ba17c292e83134825469735700da97817c45d45c54e66
-R 2ffa9998fa10a6490052b5721ce71198
+P d1fc857bb8dcd5914f5a9bbcc4efe5f4abe19a190e42e2c923b28327a95e4de6
+R 55960cb339a18680e19e442b178a6dfb
 U drh
-Z e096bb1569d84715c095fddd40356f9f
+Z edf9c8ab3b73ba6da0e22cf8e8453a3c
 # Remove this line to create a well-formed Fossil manifest.

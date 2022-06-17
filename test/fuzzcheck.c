@@ -934,6 +934,7 @@ int fuzz_invariant(
   sqlite3_stmt *pStmt,    /* Test statement stopped on an SQLITE_ROW */
   int iCnt,               /* Invariant sequence number, starting at 0 */
   int iRow,               /* The row number for pStmt */
+  int nRow,               /* Total number of output rows */
   int *pbCorrupt,         /* IN/OUT: Flag indicating a corrupt database file */
   int eVerbosity          /* How much debugging output */
 );
@@ -957,7 +958,7 @@ static int runDbSql(sqlite3 *db, const char *zSql, unsigned int *pBtsFlags){
     int nRow = 0;
     while( (rc = sqlite3_step(pStmt))==SQLITE_ROW ){
       nRow++;
-      if( eVerbosity>=5 ){
+      if( eVerbosity>=4 ){
         int j;
         for(j=0; j<sqlite3_column_count(pStmt); j++){
           if( j ) printf(",");
@@ -1011,11 +1012,14 @@ static int runDbSql(sqlite3 *db, const char *zSql, unsigned int *pBtsFlags){
        && !sqlite3_stmt_isexplain(pStmt)
        && nRow>0
       ){
+        int iRow = 0;
         sqlite3_reset(pStmt);
         while( sqlite3_step(pStmt)==SQLITE_ROW ){
           int iCnt = 0;
+          iRow++;
           for(iCnt=0; iCnt<99999; iCnt++){
-            rc = fuzz_invariant(db, pStmt, iCnt, nRow, &bCorrupt, eVerbosity);
+            rc = fuzz_invariant(db, pStmt, iCnt, iRow, nRow,
+                                &bCorrupt, eVerbosity);
             if( rc==SQLITE_DONE ) break;
             if( rc!=SQLITE_ERROR ) g.nInvariant++;
             if( eVerbosity>0 ){

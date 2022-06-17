@@ -62,7 +62,8 @@ int fuzz_invariant(
   sqlite3 *db,            /* The database connection */
   sqlite3_stmt *pStmt,    /* Test statement stopped on an SQLITE_ROW */
   int iCnt,               /* Invariant sequence number, starting at 0 */
-  int iRow,               /* The row number for pStmt */
+  int iRow,               /* Current row number */
+  int nRow,               /* Number of output rows from pStmt */
   int *pbCorrupt,         /* IN/OUT: Flag indicating a corrupt database file */
   int eVerbosity          /* How much debugging output */
 ){
@@ -163,17 +164,14 @@ static char *fuzz_invariant_sql(sqlite3_stmt *pStmt, int iCnt){
   int bOrderBy = 0;
   int nParam = sqlite3_bind_parameter_count(pStmt);
 
+  iCnt++;
   switch( iCnt % 4 ){
     case 1:  bDistinct = 1;              break;
     case 2:  bOrderBy = 1;               break;
     case 3:  bDistinct = bOrderBy = 1;   break;
   }
   iCnt /= 4;
-  if( nCol==1 ){
-    mxCnt = 0;
-  }else{
-    mxCnt = nCol;
-  }
+  mxCnt = nCol;
   if( iCnt<0 || iCnt>mxCnt ) return 0;
   zIn = sqlite3_sql(pStmt);
   if( zIn==0 ) return 0;
@@ -199,7 +197,7 @@ static char *fuzz_invariant_sql(sqlite3_stmt *pStmt, int iCnt){
       ** WHERE clause. */
       continue;
     }
-    if( iCnt>0 && i+1!=iCnt ) continue;
+    if( i+1!=iCnt ) continue;
     if( sqlite3_column_type(pStmt, i)==SQLITE_NULL ){
       sqlite3_str_appendf(pTest, " %s \"%w\" ISNULL", zAnd, zColName);
     }else{
