@@ -957,24 +957,6 @@ static int runDbSql(sqlite3 *db, const char *zSql, unsigned int *pBtsFlags){
     int nRow = 0;
     while( (rc = sqlite3_step(pStmt))==SQLITE_ROW ){
       nRow++;
-      if( (*pBtsFlags)==BTS_SELECT
-       && g.doInvariantChecks
-       && !sqlite3_stmt_isexplain(pStmt)
-      ){
-        int iCnt = 0;
-        for(iCnt=0; iCnt<99999; iCnt++){
-          rc = fuzz_invariant(db, pStmt, iCnt, nRow, &bCorrupt, eVerbosity);
-          if( rc==SQLITE_DONE ) break;
-          if( rc!=SQLITE_ERROR ) g.nInvariant++;
-          if( eVerbosity>0 ){
-            if( rc==SQLITE_OK ){
-              printf("invariant-check: ok\n");
-            }else if( rc==SQLITE_CORRUPT ){
-              printf("invariant-check: failed due to database corruption\n");
-            }
-          }
-        }
-      }
       if( eVerbosity>=5 ){
         int j;
         for(j=0; j<sqlite3_column_count(pStmt); j++){
@@ -1023,7 +1005,30 @@ static int runDbSql(sqlite3 *db, const char *zSql, unsigned int *pBtsFlags){
         fflush(stdout);
       } /* End if( eVerbosity>=5 ) */
     } /* End while( SQLITE_ROW */
-    if( rc!=SQLITE_DONE && eVerbosity>=4 ){
+    if( rc==SQLITE_DONE ){
+      if( (*pBtsFlags)==BTS_SELECT
+       && g.doInvariantChecks
+       && !sqlite3_stmt_isexplain(pStmt)
+       && nRow>0
+      ){
+        sqlite3_reset(pStmt);
+        while( sqlite3_step(pStmt)==SQLITE_ROW ){
+          int iCnt = 0;
+          for(iCnt=0; iCnt<99999; iCnt++){
+            rc = fuzz_invariant(db, pStmt, iCnt, nRow, &bCorrupt, eVerbosity);
+            if( rc==SQLITE_DONE ) break;
+            if( rc!=SQLITE_ERROR ) g.nInvariant++;
+            if( eVerbosity>0 ){
+              if( rc==SQLITE_OK ){
+                printf("invariant-check: ok\n");
+              }else if( rc==SQLITE_CORRUPT ){
+                printf("invariant-check: failed due to database corruption\n");
+              }
+            }
+          }
+        }          
+      }
+    }else if( eVerbosity>=4 ){
       printf("SQL-ERROR: (%d) %s\n", rc, sqlite3_errmsg(db));
       fflush(stdout);
     }

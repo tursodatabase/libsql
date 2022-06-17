@@ -1,5 +1,5 @@
-C Fix\sthe\svirtual\stable\sdetection\smechanism\sto\savoid\sfalse-positives\sthat\swere\nblocking\sall\sfailures.\s\sThen\sfix\sa\sfew\sof\sthe\sadditional\sproblems\sthat\sare\nrevealed\sby\sthat\sfix.\s\sMore\sfixes\sare\sneeded.
-D 2022-06-17T15:11:31.795
+C Only\srun\squery-invariant\schecks\safter\sthe\soriginal\squery\shas\srun\sto\scompletion,\nso\sthat\swe\sknow\sit\sdoes\snot\serror-out\son\sa\ssubsequent\srow.
+D 2022-06-17T15:52:43.687
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1085,7 +1085,7 @@ F test/fuzz3.test 9c813e6613b837cb7a277b0383cd66bfa07042b4cf0317157c35852f30043c
 F test/fuzz4.test c229bcdb45518a89e1d208a21343e061503460ac69fae1539320a89f572eb634
 F test/fuzz_common.tcl b7197de6ed1ee8250a4f82d67876f4561b42ee8cbbfc6160dcb66331bad3f830
 F test/fuzz_malloc.test f348276e732e814802e39f042b1f6da6362a610af73a528d8f76898fde6b22f2
-F test/fuzzcheck.c b18b6ae117937deac68793385d41ff6d73abcd1bf66f66b5b0cb4151d170c8db
+F test/fuzzcheck.c 873ea79afe6ffa015bb92bc2b6c8b3b0ae19939f05a2bb170c72554cee7efca6
 F test/fuzzdata1.db 3e86d9cf5aea68ddb8e27c02d7dfdaa226347426c7eb814918e4d95475bf8517
 F test/fuzzdata2.db 128b3feeb78918d075c9b14b48610145a0dd4c8d6f1ca7c2870c7e425f5bf31f
 F test/fuzzdata3.db c6586d3e3cef0fbc18108f9bb649aa77bfc38aba
@@ -1978,11 +1978,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d9f820151d74a690b5fa560597a5b3ace20165a112e1b58cb4a7c47b42745643
-R 3bffc86c82ff136a0c0c4c0a76be66e5
-T *branch * query-invariants
-T *sym-query-invariants *
-T -sym-trunk *
+P 42b2e6676fed1508ea0ba17c292e83134825469735700da97817c45d45c54e66
+R 2ffa9998fa10a6490052b5721ce71198
 U drh
-Z 8dc954db016e69d2c5b338fff670ae32
+Z e096bb1569d84715c095fddd40356f9f
 # Remove this line to create a well-formed Fossil manifest.
