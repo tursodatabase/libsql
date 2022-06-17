@@ -5246,7 +5246,7 @@ static SQLITE_NOINLINE Bitmask whereOmitNoopJoin(
     WhereLoop *pLoop;
     pLoop = pWInfo->a[i].pWLoop;
     pItem = &pWInfo->pTabList->a[pLoop->iTab];
-    if( (pItem->fg.jointype & JT_LEFT)==0 ) continue;
+    if( (pItem->fg.jointype & (JT_LEFT|JT_RIGHT))!=JT_LEFT ) continue;
     if( (pWInfo->wctrlFlags & WHERE_WANT_DISTINCT)==0
      && (pLoop->wsFlags & WHERE_ONEROW)==0
     ){
