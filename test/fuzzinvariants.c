@@ -29,7 +29,7 @@
 
 /* Forward references */
 static char *fuzz_invariant_sql(sqlite3_stmt*, int);
-static int sameValue(sqlite3_value*,sqlite3_value*);
+static int sameValue(sqlite3_stmt*,int,sqlite3_stmt*,int);
 static void reportInvariantFailed(sqlite3_stmt*,sqlite3_stmt*,int);
 
 /*
@@ -97,8 +97,7 @@ int fuzz_invariant(
   }
   while( (rc = sqlite3_step(pTestStmt))==SQLITE_ROW ){
     for(i=0; i<nCol; i++){
-      if( !sameValue(sqlite3_column_value(pStmt,i),
-                     sqlite3_column_value(pTestStmt,i)) ) break;
+      if( !sameValue(pStmt, i, pTestStmt, i) ) break;
     }
     if( i>=nCol ) break;
   }
@@ -211,29 +210,29 @@ static char *fuzz_invariant_sql(sqlite3_stmt *pStmt, int iCnt){
 /*
 ** Return true if and only if v1 and is the same as v2.
 */
-static int sameValue(sqlite3_value *v1, sqlite3_value *v2){
+static int sameValue(sqlite3_stmt *pS1, int i1, sqlite3_stmt *pS2, int i2){
   int x = 1;
-  if( sqlite3_value_type(v1)!=sqlite3_value_type(v2) ) return 0;
-  switch( sqlite3_value_type(v1) ){
+  if( sqlite3_column_type(pS1,i1)!=sqlite3_column_type(pS2,i2) ) return 0;
+  switch( sqlite3_column_type(pS1,i1) ){
     case SQLITE_INTEGER: {
-      x =  sqlite3_value_int64(v1)==sqlite3_value_int64(v2);
+      x =  sqlite3_column_int64(pS1,i1)==sqlite3_column_int64(pS2,i2);
       break;
     }
     case SQLITE_FLOAT: {
-      x = sqlite3_value_double(v1)==sqlite3_value_double(v2);
+      x = sqlite3_column_double(pS1,i1)==sqlite3_column_double(pS2,i2);
       break;
     }
     case SQLITE_TEXT: {
-      const char *z1 = (const char*)sqlite3_value_text(v1);
-      const char *z2 = (const char*)sqlite3_value_text(v2);
+      const char *z1 = (const char*)sqlite3_column_text(pS1,i1);
+      const char *z2 = (const char*)sqlite3_column_text(pS2,i2);
       x = ((z1==0 && z2==0) || (z1!=0 && z2!=0 && strcmp(z1,z1)==0));
       break;
     }
     case SQLITE_BLOB: {
-      int len1 = sqlite3_value_bytes(v1);
-      const unsigned char *b1 = sqlite3_value_blob(v1);
-      int len2 = sqlite3_value_bytes(v2);
-      const unsigned char *b2 = sqlite3_value_blob(v2);
+      int len1 = sqlite3_column_bytes(pS1,i1);
+      const unsigned char *b1 = sqlite3_column_blob(pS1,i1);
+      int len2 = sqlite3_column_bytes(pS2,i2);
+      const unsigned char *b2 = sqlite3_column_blob(pS2,i2);
       if( len1!=len2 ){
         x = 0;
       }else if( len1==0 ){
