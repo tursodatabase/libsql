@@ -343,7 +343,7 @@
               duration of the call. _Sigh_. To that end...
             */
             const oldsyncfs = FS.syncfs;
-            FS.syncfs = function f(){
+            FS.syncfs = function(){
                 const args = Array.prototype.slice.call(arguments,0);
                 let cbNdx = -1, i = 0;
                 for(; i < args.length; ++i){
@@ -354,7 +354,7 @@
                     args[cbNdx] = function(){
                         --stderr._disabled;
                         cb.apply(this,Array.prototype.slice.call(arguments,0));
-                    }
+                    };
                 }else{
                     args.push(function(){--stderr._disabled;});
                 }

@@ -1,5 +1,5 @@
-C fiddle:\sinitial\sproof\sof\sconcept\sof\susing\sEmscripten's\sIndexedDB\svirtual\sfilesystem\sfor\sa\spersistent\sdb.\sThere's\sstill\smuch\swork\sto\sdo\sto\sintegrate\sthis\sinto\ssomething\suseful\sfor\sclients\sbut\sthe\sconcept\sis\snow\sproven.
-D 2022-06-16T23:55:35.640
+C Tiny\sfiddle\scleanups.
+D 2022-06-17T00:24:33.501
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -61,8 +61,8 @@ F ext/fiddle/EXPORTED_RUNTIME_METHODS b831017ba67ba993b34a27400cef2f6095bd6789c0
 F ext/fiddle/Makefile e25d34a0e1324f771d64c09c592601b97219282011587e6ce410fa8acdedb913
 F ext/fiddle/SqliteTestUtil.js 559731c3e8e0de330ec7d292e6c1846566408caee6637acc8a119ac338a8781c
 F ext/fiddle/emscripten.css 3d253a6fdb8983a2ac983855bfbdd4b6fa1ff267c28d69513dd6ef1f289ada3f
-F ext/fiddle/fiddle-worker.js fa60a65f30247a14c671132f311d04b0bd51e7dbcaa5fa89c242f15f36af28ca
-F ext/fiddle/fiddle.html 550c5aafce40bd218de9bf26192749f69f9b10bc379423ecd2e162bcef885c08
+F ext/fiddle/fiddle-worker.js 84a7d932641a0bb5a0496fc2b66e215bf7c46640424f8db53408053c29d49d51
+F ext/fiddle/fiddle.html 5daf54e8f3d7777cbb1ca4f93affe28858dbfff25841cb4ab81d694efed28ec2
 F ext/fiddle/fiddle.js 3e3192f23dd4d29dc36743c0280a729b496851230807c06e9fdc8656c5f7d96f
 F ext/fiddle/index.md d9c1c308d8074341bc3b11d1d39073cd77754cb3ca9aeb949f23fdd8323d81cf
 F ext/fiddle/sqlite3-api.js ccf4bd0c1c5bbb3be3469573423d6c53991941bec497eac63e9f17ea13bf8952
@@ -1977,11 +1977,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 447e62a0946f5d77b7358adcabaeb23a7012cdfbfa1ef6082734cd9b45b2699d
-R 389664f8ef5d055d1478dcc341b64542
-T *branch * fiddle-indexeddb
-T *sym-fiddle-indexeddb *
-T -sym-trunk * Cancelled\sby\sbranch.
+P 65c152d3354f1623bf1a6b05ea584b0e4b670eea92052a2df3e1ce57bf3f8b67
+R 1e1bef98a8eb5d37307579edced25874
 U stephan
-Z c98265dfc1cf4e337cd12b40eb80c496
+Z bd0fe7b7391c1b9a18a73da87088bd74
 # Remove this line to create a well-formed Fossil manifest.
