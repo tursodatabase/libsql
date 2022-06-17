@@ -904,6 +904,7 @@ static int block_troublesome_sql(
         "julianday",
         "random",
         "randomblob",
+        "sqlite_offset",
         "strftime",
         "time",
         "unixepoch",
