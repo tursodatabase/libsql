@@ -71,8 +71,11 @@ int fuzz_invariant(
   int rc;
   int i;
   int nCol;
+  int nParam;
 
   if( *pbCorrupt ) return SQLITE_DONE;
+  nParam = sqlite3_bind_parameter_count(pStmt);
+  if( nParam>100 ) return SQLITE_DONE;
   zTest = fuzz_invariant_sql(pStmt, iCnt);
   if( zTest==0 ) return SQLITE_DONE;
   rc = sqlite3_prepare_v2(db, zTest, -1, &pTestStmt, 0);
@@ -88,7 +91,7 @@ int fuzz_invariant(
   sqlite3_free(zTest);
   nCol = sqlite3_column_count(pStmt);
   for(i=0; i<nCol; i++){
-    sqlite3_bind_value(pTestStmt, i+1, sqlite3_column_value(pStmt,i));
+    sqlite3_bind_value(pTestStmt, i+1+nParam, sqlite3_column_value(pStmt,i));
   }
   if( eVerbosity>=2 ){
     char *zSql = sqlite3_expanded_sql(pTestStmt);
@@ -101,7 +104,7 @@ int fuzz_invariant(
     }
     if( i>=nCol ) break;
   }
-  if( rc!=SQLITE_ROW ){
+  if( rc!=SQLITE_ROW && rc!=SQLITE_NOMEM ){
     /* No matching output row found */
     sqlite3_stmt *pCk = 0;
     rc = sqlite3_prepare_v2(db, "PRAGMA integrity_check", -1, &pCk, 0);
@@ -123,7 +126,10 @@ int fuzz_invariant(
     sqlite3_finalize(pCk);
     rc = sqlite3_prepare_v2(db, 
             "SELECT 1 FROM bytecode(?1) WHERE opcode='VOpen'", -1, &pCk, 0);
-    if( rc==SQLITE_OK ) rc = sqlite3_step(pCk);
+    if( rc==SQLITE_OK ){
+      sqlite3_bind_pointer(pCk, 1, pStmt, "stmt-pointer", 0);
+      rc = sqlite3_step(pCk);
+    }
     sqlite3_finalize(pCk);
     if( rc==SQLITE_DONE ){
       reportInvariantFailed(pStmt, pTestStmt, iRow);
@@ -155,6 +161,7 @@ static char *fuzz_invariant_sql(sqlite3_stmt *pStmt, int iCnt){
   int mxCnt;
   int bDistinct = 0;
   int bOrderBy = 0;
+  int nParam = sqlite3_bind_parameter_count(pStmt);
 
   switch( iCnt % 4 ){
     case 1:  bDistinct = 1;              break;
@@ -196,7 +203,8 @@ static char *fuzz_invariant_sql(sqlite3_stmt *pStmt, int iCnt){
     if( sqlite3_column_type(pStmt, i)==SQLITE_NULL ){
       sqlite3_str_appendf(pTest, " %s \"%w\" ISNULL", zAnd, zColName);
     }else{
-      sqlite3_str_appendf(pTest, " %s \"%w\"=?%d", zAnd, zColName, i+1);
+      sqlite3_str_appendf(pTest, " %s \"%w\"=?%d", zAnd, zColName, 
+                          i+1+nParam);
     }
     zAnd = "AND";
   }
@@ -253,7 +261,7 @@ static void printRow(sqlite3_stmt *pStmt, int iRow){
   int i, nCol;
   nCol = sqlite3_column_count(pStmt);
   for(i=0; i<nCol; i++){
-    printf("row%d.col%d] = ", iRow, i);
+    printf("row%d.col%d = ", iRow, i);
     switch( sqlite3_column_type(pStmt, i) ){
       case SQLITE_NULL: {
         printf("NULL\n");

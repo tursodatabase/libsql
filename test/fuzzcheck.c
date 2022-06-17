@@ -896,9 +896,17 @@ static int block_troublesome_sql(
     }
     case SQLITE_FUNCTION: {
       static const char *azBadFuncs[] = {
+        "current_date",
+        "current_time",
+        "current_timestamp",
+        "date",
+        "datetime",
+        "julianday",
         "random",
         "randomblob",
-        "rtreedepth",
+        "strftime",
+        "time",
+        "unixepoch",
       };
       int i;
       for(i=0; i<sizeof(azBadFuncs)/sizeof(azBadFuncs[0]); i++){
