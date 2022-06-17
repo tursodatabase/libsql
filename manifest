@@ -1,5 +1,5 @@
-C Improve\squery-invariants\sto\sthe\spoint\sthat\sit\swould\shave\sdiscovered\sthe\n[f23a429d4153518d]\sbug\sif\sthat\sbug\shad\snot\salready\sbeen\sfixed.
-D 2022-06-17T16:09:47.744
+C Allow\sintegers\sand\sfloating\spoint\snumbers\sto\scompare\sequal.
+D 2022-06-17T16:32:21.419
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1097,7 +1097,7 @@ F test/fuzzdata8.db ca9a97f401b06b0d5376139ec7e1f9e773e13345a9a2d9ccc0032cdbfede
 F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test f64c4aef4c9e9edf1d6dc0d3f1e65dcc81e67c996403c88d14f09b74807a42bc
-F test/fuzzinvariants.c df8e8e41e1b3d6a4b2d4af7971b6da546291935344b8b2ddd44a51f12dac773f
+F test/fuzzinvariants.c e1c844a9234329f8e6f84acc4c32c0657aacfde08d69d90cb9c24d332062994d
 F test/gcfault.test dd28c228a38976d6336a3fc42d7e5f1ad060cb8c
 F test/gencol1.test cc0dbb0ee116e5602e18ea7d47f2a0f76b26e09a823b7c36ef254370c2b0f3c1
 F test/genesis.tcl 1e2e2e8e5cc4058549a154ff1892fe5c9de19f98
@@ -1978,8 +1978,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d1fc857bb8dcd5914f5a9bbcc4efe5f4abe19a190e42e2c923b28327a95e4de6
-R 55960cb339a18680e19e442b178a6dfb
+P 2a7251ed9c4c959b6df75172159c6b4445e1c2212e357d2c49ab8fa19cb3ac11
+R a7fd0f7a55560bceea65dad05280da0e
 U drh
-Z edf9c8ab3b73ba6da0e22cf8e8453a3c
+Z 41ab90bc026d0fa40109a7c68e53d405
 # Remove this line to create a well-formed Fossil manifest.

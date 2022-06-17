@@ -218,7 +218,17 @@ static char *fuzz_invariant_sql(sqlite3_stmt *pStmt, int iCnt){
 */
 static int sameValue(sqlite3_stmt *pS1, int i1, sqlite3_stmt *pS2, int i2){
   int x = 1;
-  if( sqlite3_column_type(pS1,i1)!=sqlite3_column_type(pS2,i2) ) return 0;
+  int t1 = sqlite3_column_type(pS1,i1);
+  int t2 = sqlite3_column_type(pS2,i2);
+  if( t1!=t2 ){
+    if( (t1==SQLITE_INTEGER && t2==SQLITE_FLOAT)
+     || (t1==SQLITE_FLOAT && t2==SQLITE_INTEGER)
+    ){
+      /* Comparison of numerics is ok */
+    }else{
+      return 0;
+    }
+  }
   switch( sqlite3_column_type(pS1,i1) ){
     case SQLITE_INTEGER: {
       x =  sqlite3_column_int64(pS1,i1)==sqlite3_column_int64(pS2,i2);
