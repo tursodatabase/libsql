@@ -109,7 +109,7 @@ int fuzz_invariant(
     }
     if( i>=nCol ) break;
   }
-  if( rc!=SQLITE_ROW && rc!=SQLITE_NOMEM ){
+  if( rc==SQLITE_DONE ){
     /* No matching output row found */
     sqlite3_stmt *pCk = 0;
     rc = sqlite3_prepare_v2(db, "PRAGMA integrity_check", -1, &pCk, 0);
@@ -183,8 +183,9 @@ static char *fuzz_invariant_sql(sqlite3_stmt *pStmt, int iCnt){
   while( nIn>0 && (isspace(zIn[nIn-1]) || zIn[nIn-1]==';') ) nIn--;
   if( strchr(zIn, '?') ) return 0;
   pTest = sqlite3_str_new(0);
-  sqlite3_str_appendf(pTest, "SELECT %s* FROM (%.*s)",
-                      bDistinct ? "DISTINCT " : "", (int)nIn, zIn);
+  sqlite3_str_appendf(pTest, "SELECT %s* FROM (%s",
+                      bDistinct ? "DISTINCT " : "", zIn);
+  sqlite3_str_appendf(pTest, ")");
   rc = sqlite3_prepare_v2(db, sqlite3_str_value(pTest), -1, &pBase, 0);
   if( rc ){
     sqlite3_finalize(pBase);

@@ -153,7 +153,6 @@ static struct GlobalVars {
   int nSql;                        /* Number of SQL scripts */
   Blob *pFirstSql;                 /* First SQL script */
   unsigned int uRandom;            /* Seed for the SQLite PRNG */
-  unsigned char doInvariantChecks; /* True to run query invariant checks */
   unsigned int nInvariant;         /* Number of invariant checks run */
   char zTestName[100];             /* Name of current test */
 } g;
@@ -838,6 +837,7 @@ static int progress_handler(void *pClientData) {
 #define BTS_SELECT      0x000001
 #define BTS_NONSELECT   0x000002
 #define BTS_BADFUNC     0x000004
+#define BTS_BADPRAGMA   0x000008  /* Sticky for rest of the script */
 
 /*
 ** Disallow debugging pragmas such as "PRAGMA vdbe_debug" and
@@ -854,7 +854,8 @@ static int block_troublesome_sql(
   const char *zArg3,
   const char *zArg4
 ){
-  unsigned int *pFlags = (unsigned int*)pClientData;
+  unsigned int *pBtsFlags = (unsigned int*)pClientData;
+
   (void)zArg3;
   (void)zArg4;
   switch( eCode ){
@@ -863,24 +864,31 @@ static int block_troublesome_sql(
        && (zArg2==0 || strtoll(zArg2,0,0)>100 || strtoll(zArg2,0,10)>100)
       ){
         return SQLITE_DENY;
+      }else if( sqlite3_stricmp("hard_heap_limit", zArg1)==0
+              || sqlite3_stricmp("reverse_unordered_selects", zArg1)==0
+      ){
+        /* BTS_BADPRAGMA is sticky.  A hard_heap_limit or
+        ** revert_unordered_selects should inhibit all future attempts
+        ** at verifying query invariants */
+        *pBtsFlags |= BTS_BADPRAGMA;
       }else if( eVerbosity==0 ){
         if( sqlite3_strnicmp("vdbe_", zArg1, 5)==0
          || sqlite3_stricmp("parser_trace", zArg1)==0
          || sqlite3_stricmp("temp_store_directory", zArg1)==0
         ){
          return SQLITE_DENY;
-       }
+        }
       }else if( sqlite3_stricmp("oom",zArg1)==0
               && zArg2!=0 && zArg2[0]!=0 ){
         oomCounter = atoi(zArg2);
       }
-      *pFlags |= BTS_NONSELECT;
+      *pBtsFlags |= BTS_NONSELECT;
       break;
     }
     case SQLITE_ATTACH: {
       /* Deny the ATTACH if it is attaching anything other than an in-memory
       ** database. */
-      *pFlags |= BTS_NONSELECT;
+      *pBtsFlags |= BTS_NONSELECT;
       if( zArg1==0 ) return SQLITE_DENY;
       if( strcmp(zArg1,":memory:")==0 ) return SQLITE_OK;
       if( sqlite3_strglob("file:*[?]vfs=memdb", zArg1)==0
@@ -891,23 +899,45 @@ static int block_troublesome_sql(
       return SQLITE_DENY;
     }
     case SQLITE_SELECT: {
-      *pFlags |= BTS_SELECT;
+      *pBtsFlags |= BTS_SELECT;
       break;
     }
     case SQLITE_FUNCTION: {
       static const char *azBadFuncs[] = {
+        "avg",
+        "count",
+        "cume_dist",
         "current_date",
         "current_time",
         "current_timestamp",
         "date",
         "datetime",
+        "decimal_sum",
+        "dense_rank",
+        "first_value",
+        "geopoly_group_bbox",
+        "group_concat",
         "implies_nonnull_row",
+        "json_group_array",
+        "json_group_object",
         "julianday",
+        "lag",
+        "last_value",
+        "lead",
+        "max",
+        "min",
+        "nth_value",
+        "ntile",
+        "percent_rank",
         "random",
         "randomblob",
+        "rank",
+        "row_number",
         "sqlite_offset",
         "strftime",
+        "sum",
         "time",
+        "total",
         "unixepoch",
       };
       int first, last;
@@ -921,7 +951,7 @@ static int block_troublesome_sql(
         }else if( c>0 ){
           last = mid-1;
         }else{
-          *pFlags |= BTS_BADFUNC;
+          *pBtsFlags |= BTS_BADFUNC;
           break;
         }
       }while( first<=last );
@@ -932,7 +962,7 @@ static int block_troublesome_sql(
       break;
     }
     default: {
-      *pFlags |= BTS_NONSELECT;
+      *pBtsFlags |= BTS_NONSELECT;
     }
   }
   return SQLITE_OK;
@@ -962,7 +992,7 @@ static int runDbSql(sqlite3 *db, const char *zSql, unsigned int *pBtsFlags){
     printf("RUNNING-SQL: [%s]\n", zSql);
     fflush(stdout);
   }
-  (*pBtsFlags) = 0;
+  (*pBtsFlags) &= ~BTS_BADPRAGMA;
   rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
   if( rc==SQLITE_OK ){
     int nRow = 0;
@@ -1018,7 +1048,6 @@ static int runDbSql(sqlite3 *db, const char *zSql, unsigned int *pBtsFlags){
     } /* End while( SQLITE_ROW */
     if( rc==SQLITE_DONE ){
       if( (*pBtsFlags)==BTS_SELECT
-       && g.doInvariantChecks
        && !sqlite3_stmt_isexplain(pStmt)
        && nRow>0
       ){
@@ -1674,7 +1703,6 @@ static void showHelp(void){
 "  --oss-fuzz           Enable OSS-FUZZ testing\n"
 "  --prng-seed N        Seed value for the PRGN inside of SQLite\n"
 "  -q|--quiet           Reduced output\n"
-"  --query-invariants   Run query invariant checks\n"
 "  --rebuild            Rebuild and vacuum the database file\n"
 "  --result-trace       Show the results of each SQL command\n"
 "  --script             Output CLI script instead of running tests\n"
@@ -1834,9 +1862,6 @@ int main(int argc, char **argv){
         quietFlag = 1;
         verboseFlag = 0;
         eVerbosity = 0;
-      }else
-      if( strcmp(z,"query-invariants")==0 ){
-        g.doInvariantChecks = 1;
       }else
       if( strcmp(z,"rebuild")==0 ){
         rebuildFlag = 1;
