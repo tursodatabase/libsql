@@ -92,7 +92,11 @@ int fuzz_invariant(
   sqlite3_free(zTest);
   nCol = sqlite3_column_count(pStmt);
   for(i=0; i<nCol; i++){
-    sqlite3_bind_value(pTestStmt, i+1+nParam, sqlite3_column_value(pStmt,i));
+    rc = sqlite3_bind_value(pTestStmt,i+1+nParam,sqlite3_column_value(pStmt,i));
+    if( rc!=SQLITE_OK && rc!=SQLITE_RANGE ){
+      sqlite3_finalize(pTestStmt);
+      return rc;
+    }
   }
   if( eVerbosity>=2 ){
     char *zSql = sqlite3_expanded_sql(pTestStmt);
