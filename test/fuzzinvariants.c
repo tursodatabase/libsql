@@ -198,6 +198,7 @@ static char *fuzz_invariant_sql(sqlite3_stmt *pStmt, int iCnt){
       continue;
     }
     if( i+1!=iCnt ) continue;
+    if( zColName==0 ) continue;
     if( sqlite3_column_type(pStmt, i)==SQLITE_NULL ){
       sqlite3_str_appendf(pTest, " %s \"%w\" ISNULL", zAnd, zColName);
     }else{
