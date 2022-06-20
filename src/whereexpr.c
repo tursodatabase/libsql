@@ -1126,7 +1126,7 @@ static void exprAnalyze(
       ** clause and carried on.   Beginning with 3.39, raise an error only
       ** if there is a RIGHT or LEFT JOIN in the query.  This makes SQLite
       ** more like other systems, and also preserves legacy. */
-      if( pSrc->nSrc>0 && (pSrc->a[0].fg.jointype & JT_LTORJ)!=0 ){
+      if( ALWAYS(pSrc->nSrc>0) && (pSrc->a[0].fg.jointype & JT_LTORJ)!=0 ){
         sqlite3ErrorMsg(pParse, "ON clause references tables to its right");
         return;
       }
