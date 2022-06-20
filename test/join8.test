@@ -764,5 +764,26 @@ do_execsql_test join8-24000 {
     SELECT * FROM t4 JOIN t7 ON true RIGHT JOIN (SELECT y AS z FROM t7) AS t6 ON (x=z);
 } {- - - - 200}
 
+# 2022-06-20
+# forum/forumpost/6650cd40b5634f35
+#
+reset_db
+do_execsql_test join8-25000 {
+  CREATE TABLE t1(a1 INT);
+  CREATE TABLE t2(b2 INT);
+  CREATE TABLE t3(c3 INT, d3 INT UNIQUE);
+  CREATE TABLE t4(e4 INT, f4 TEXT);
+  INSERT INTO t3(c3, d3) VALUES (2, 1);
+  INSERT INTO t4(f4) VALUES ('x');
+  CREATE INDEX i0 ON t3(c3) WHERE d3 ISNULL;
+  ANALYZE main;
+}
+db null -
+do_execsql_test join8-25010 {
+  SELECT * FROM t1 LEFT JOIN t2 ON true JOIN t3 ON (b2 IN (a1)) FULL JOIN t4 ON true;
+} {- - - - - x}
+do_execsql_test join8-25020 {
+  SELECT 1 FROM t1 LEFT JOIN t2 ON true JOIN t3 ON (b2 IN (a1)) FULL JOIN t4 ON true;
+} {1}
 
 finish_test

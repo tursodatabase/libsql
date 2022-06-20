@@ -4180,11 +4180,21 @@ static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
     pNew->iTab = iTab;
     pBuilder->iPlanLimit += SQLITE_QUERY_PLANNER_LIMIT_INCR;
     pNew->maskSelf = sqlite3WhereGetMask(&pWInfo->sMaskSet, pItem->iCursor);
-    if( bFirstPastRJ || (pItem->fg.jointype & (JT_OUTER|JT_CROSS))!=0 ){
+    if( bFirstPastRJ 
+     || (pItem->fg.jointype & (JT_OUTER|JT_CROSS|JT_LTORJ))!=0
+    ){
       /* Add prerequisites to prevent reordering of FROM clause terms
       ** across CROSS joins and outer joins.  The bFirstPastRJ boolean
       ** prevents the right operand of a RIGHT JOIN from being swapped with
-      ** other elements even further to the right. */
+      ** other elements even further to the right.
+      **
+      ** The JT_LTORJ term prevents any FROM-clause term reordering for terms
+      ** to the left of a RIGHT JOIN.  This is conservative.  Relaxing this
+      ** constraint somewhat to prevent terms from crossing from the right
+      ** side of a LEFT JOIN over to the left side when they are on the
+      ** left side of a RIGHT JOIN would be sufficient for all known failure
+      ** cases.  FIX ME: Implement this optimization.
+      */
       mPrereq |= mPrior;
       bFirstPastRJ = (pItem->fg.jointype & JT_RIGHT)!=0;
     }
