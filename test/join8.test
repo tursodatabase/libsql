@@ -684,11 +684,13 @@ do_execsql_test join8-22030 {
   CREATE TABLE t3(c INTEGER PRIMARY KEY, d INT);
   CREATE INDEX t3d ON t3(d);
   INSERT INTO t3 VALUES(0, 0);
+}
+do_catchsql_test join8-22031 {
   SELECT * FROM t1 JOIN t2 ON d>b RIGHT JOIN t3 ON true WHERE +d = 0;
-} {}
-do_execsql_test join8-22040 {
+} {1 {ON clause references tables to its right}}
+do_catchsql_test join8-22040 {
   SELECT * FROM t1 JOIN t2 ON d>b RIGHT JOIN t3 ON true WHERE d = 0;
-} {}
+} {1 {ON clause references tables to its right}}
 
 
 # 2022-06-10

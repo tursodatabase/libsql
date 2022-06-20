@@ -424,11 +424,13 @@ void sqlite3SetJoinExpr(Expr *p, int iTable, u32 joinFlag){
   } 
 }
 
-/* Undo the work of sqlite3SetJoinExpr(). In the expression p, convert every
-** term that is marked with EP_OuterON and w.iJoin==iTable into
-** an ordinary term that omits the EP_OuterON mark.
+/* Undo the work of sqlite3SetJoinExpr().  This is used when a LEFT JOIN
+** is simplified into an ordinary JOIN, and when an ON expression is
+** "pushed down" into the WHERE clause of a subquery.
 **
-** This happens when a LEFT JOIN is simplified into an ordinary JOIN.
+** Convert every term that is marked with EP_OuterON and w.iJoin==iTable into
+** an ordinary term that omits the EP_OuterON mark.  Or if iTable<0, then
+** just clear every EP_OuterON and EP_InnerON mark from the expression tree.
 **
 ** If nullable is true, that means that Expr p might evaluate to NULL even
 ** if it is a reference to a NOT NULL column.  This can happen, for example,
@@ -438,10 +440,9 @@ void sqlite3SetJoinExpr(Expr *p, int iTable, u32 joinFlag){
 */
 static void unsetJoinExpr(Expr *p, int iTable, int nullable){
   while( p ){
-    if( ExprHasProperty(p, EP_OuterON)
-     && (iTable<0 || p->w.iJoin==iTable) ){
-      ExprClearProperty(p, EP_OuterON);
-      ExprSetProperty(p, EP_InnerON);
+    if( iTable<0 || (ExprHasProperty(p, EP_OuterON) && p->w.iJoin==iTable) ){
+      ExprClearProperty(p, EP_OuterON|EP_InnerON);
+      if( iTable>=0 ) ExprSetProperty(p, EP_InnerON);
     }
     if( p->op==TK_COLUMN && p->iTable==iTable && !nullable ){
       ExprClearProperty(p, EP_CanBeNull);
@@ -6771,6 +6772,7 @@ int sqlite3Select(
       SELECTTRACE(0x100,pParse,p,
                 ("LEFT-JOIN simplifies to JOIN on term %d\n",i));
       pItem->fg.jointype &= ~(JT_LEFT|JT_OUTER);
+      assert( pItem->iCursor>=0 );
       unsetJoinExpr(p->pWhere, pItem->iCursor,
                     pTabList->a[0].fg.jointype & JT_LTORJ);
     }
