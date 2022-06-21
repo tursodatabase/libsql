@@ -1,5 +1,5 @@
-C Add\san\sALWAYS()\smacro\sto\san\salways-true\sbranch.
-D 2022-06-20T19:12:57.509
+C Allow\sa\sHAVING\sclause\son\sany\saggregate\squery,\seven\sif\sthere\sis\sno\sGROUP\sBY\nclause.\s\sThis\sbrings\sSQLite\sinto\scloser\sagreement\swith\sPostgreSQL\sand\sfixes\nthe\sconcern\sraised\sby\s\n[forum:/forumpost/1a7fea4651|forum\spost\s1a7fea4651].
+D 2022-06-21T13:41:24.351
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -568,7 +568,7 @@ F src/pragma.h e690a356c18e98414d2e870ea791c1be1545a714ba623719deb63f7f226d8bb7
 F src/prepare.c c62820c15dcb63013519c8e41d9f928d7478672cc902cfd0581c733c271dbf45
 F src/printf.c 6166a30417b05c5b2f82e1f183f75faa2926ad60531c0b688a57dbc951441a20
 F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
-F src/resolve.c a4eb3c617027fd049b07432f3b942ea7151fa793a332a11a7d0f58c9539e104f
+F src/resolve.c 1655e44c77c51ebbe82924287528a78bd4a4aaaf34189dbae28d19ccf2ca615c
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c baadb1b3fd0e87f82f0c416b68a5b8d90d8f4ffb3568c9a86f84a2be7d40261f
 F src/shell.c.in 08e59f1cb9d9b1180aba52861aaada0c95f6ddd210488719684e160a0724c806
@@ -838,7 +838,7 @@ F test/corruptL.test ecce40d7b9b909a670a42a45d86e30d927735d7e7f09041af438b19529d
 F test/corruptM.test 7d574320e08c1b36caa3e47262061f186367d593a7e305d35f15289cc2c3e067
 F test/corruptN.test 60b5a62944b4f0029ba07edaa5fd8e670539d6b0a8d99db26c068d435675cbfe
 F test/cost.test b11cdbf9f11ffe8ef99c9881bf390e61fe92baf2182bad1dbe6de59a7295c576
-F test/count.test 013d64569c15563c59472d17ec4ddc681034aaee65e8b01880bc88315fd4c673
+F test/count.test cd4bd531066e8d77ef8fe1e3fc8253d042072e117ccab214b290cf83f1602249
 F test/countofview.test e17d6e6688cf74f22783c9ec6e788c0790ee4fbbaee713affd00b1ac0bb39b86
 F test/coveridxscan.test f35c7208dedc4f98e471c569df64c0f95a49f6e072d8dc7c8f99bdee2697de1b
 F test/crash.test fb9dc4a02dcba30d4aa5c2c226f98b220b2b959f
@@ -1390,7 +1390,7 @@ F test/securedel.test 2f70b2449186a1921bd01ec9da407fbfa98c3a7a5521854c300c194b2f
 F test/securedel2.test 2d54c28e46eb1fd6902089958b20b1b056c6f1c5
 F test/select1.test 692e84cfa29c405854c69e8a4027183d64c22952866a123fabbce741a379e889
 F test/select2.test 352480e0e9c66eda9c3044e412abdf5be0215b56
-F test/select3.test c49fbb758903f3718e2de5aa4655eda4838131cbea24a86db908f8b6889aa68c
+F test/select3.test 399a0b23f8618bfe07ea24fb67f2952f620d6eba662bccabf6f4f71c2d89e6c9
 F test/select4.test f0684d3da3bccacbe2a1ebadf6fb49d9df6f53acb4c6ebc228a88d0d6054cc7b
 F test/select5.test 8afc5e5dcdebc2be54472e73ebd9cd1adef1225fd15d37a1c62f969159f390ae
 F test/select6.test 9b2fb4ffedf52e1b5703cfcae1212e7a4a063f014c0458d78d29aca3db766d1f
@@ -1831,7 +1831,7 @@ F test/win32heap.test 10fd891266bd00af68671e702317726375e5407561d859be1aa04696f2
 F test/win32lock.test fbf107c91d8f5512be5a5b87c4c42ab9fdd54972
 F test/win32longpath.test 4baffc3acb2e5188a5e3a895b2b543ed09e62f7c72d713c1feebf76222fe9976
 F test/win32nolock.test ac4f08811a562e45a5755e661f45ca85892bdbbc
-F test/window1.test 18aadea36d7a9fab1474b1d80002d82304a342e0471793841c66afde14a381b8
+F test/window1.test ae87c4ea4e689725c7e1c826ab2b10704d5b6d31f9b9e5abadded996ba53a1d4
 F test/window2.tcl 492c125fa550cda1dd3555768a2303b3effbeceee215293adf8871efc25f1476
 F test/window2.test e466a88bd626d66edc3d352d7d7e1d5531e0079b549ba44efb029d1fbff9fd3c
 F test/window3.tcl acea6e86a4324a210fd608d06741010ca83ded9fde438341cb978c49928faf03
@@ -1978,8 +1978,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 238453ffab0ba1bdddb529be35da82d5e8fb312a9574003a5441f455e601a909
-R 57576f51c387fe18a54479f6dd78ac04
+P 364645d8fe22491cd566e868027e739464205e892753356016b1988ead207af4
+R b811a955eaf3f4f24a3997e7a988ecb5
 U drh
-Z b2444781b1807ed8d4ed33c84208ef21
+Z 1ff0c2c17df919cd17badf81d6bc1850
 # Remove this line to create a well-formed Fossil manifest.
