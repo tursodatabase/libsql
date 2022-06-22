@@ -58,7 +58,7 @@ void sqlite3TreeViewLine(TreeView *p, const char *zFormat, ...){
   va_list ap;
   int i;
   StrAccum acc;
-  char zBuf[500];
+  char zBuf[1000];
   sqlite3StrAccumInit(&acc, 0, zBuf, sizeof(zBuf), 0);
   if( p ){
     for(i=0; i<p->iLevel && i<(int)sizeof(p->bLine)-1; i++){
@@ -189,7 +189,7 @@ void sqlite3TreeViewSrcList(TreeView *pView, const SrcList *pSrc){
     const SrcItem *pItem = &pSrc->a[i];
     StrAccum x;
     int n = 0;
-    char zLine[100];
+    char zLine[1000];
     sqlite3StrAccumInit(&x, 0, zLine, sizeof(zLine), 0);
     x.printfFlags |= SQLITE_PRINTF_INTERNAL;
     sqlite3_str_appendf(&x, "{%d:*} %!S", pItem->iCursor, pItem);

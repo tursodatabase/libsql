@@ -1,5 +1,5 @@
-C Additional\senhancements\sto\scomments.\s\sNo\schanges\sto\scode.
-D 2022-06-22T14:25:12.248
+C Allow\smore\sline\swith\son\sthe\sdebugging\soutput\sfor\sSrcItem\selements\sin\sthe\nparse\stree.\s\sThis\saffects\sdebugging\sbuilds\sonly\sand\sis\sa\sno-op\sfor\sproduction\nbuilds.
+D 2022-06-22T14:43:52.362
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -635,7 +635,7 @@ F src/test_window.c cdae419fdcea5bad6dcd9368c685abdad6deb59e9fc8b84b153de513d394
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c a38f52058b517929e264094abd0b5fd1e8e145a1aa43bc6f6a72ae5218f96c98
-F src/treeview.c c48bbb4b04a951dcecf95b464d0fe94930339af56688a77f18ee50a526bc1706
+F src/treeview.c 0bd550f5974565eba541db339906be7a3f9e91beafb879cb40705382887f08e1
 F src/trigger.c 61bea163b1fa3039bc572ed8312461b978e5c527e5301f302b078f4c1ccdec6a
 F src/update.c c52a7991bece0453d22c77c08469512ee2f1391c12503fd347d1c939220c5877
 F src/upsert.c 8789047a8f0a601ea42fa0256d1ba3190c13746b6ba940fe2d25643a7e991937
@@ -1978,8 +1978,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P afeee6125d141ae281658a5f7b73e9b77bc252fa387678b2b5837488180bf108
-R 69eeb3295eb4274ceb6c39df1e8e1372
+P d9a320448f5693d906adf437800675cd4773701db065f3ed238b933fb80f6681
+R 27ed9fcb382af87d5a08bc34ff2d6974
 U drh
-Z 91cf5bff56e9a2477802f426b46d491e
+Z a2538d4ae7c9b67cd89e3d643eaf4fd0
 # Remove this line to create a well-formed Fossil manifest.
