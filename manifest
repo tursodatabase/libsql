@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\sa\scomment.\s\sNo\schanges\sto\scode.
-D 2022-06-22T12:54:25.584
+C Give\sdbtotxt\san\soption\sto\sprepend\s.open\s--hexdb
+D 2022-06-22T14:00:24.150
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1883,7 +1883,7 @@ F tool/build-shell.sh 950f47c6174f1eea171319438b93ba67ff5bf367
 F tool/cg_anno.tcl c1f875f5a4c9caca3d59937b16aff716f8b1883935f1b4c9ae23124705bc8099 x
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
 F tool/dbhash.c 5da0c61032d23d74f2ab84ffc5740f0e8abec94f2c45c0b4306be7eb3ae96df0
-F tool/dbtotxt.c b2221864a20fb391c46bd31bc1fbdc4a96f5c8a89bef58f421eb9b9c36b1702c
+F tool/dbtotxt.c 2620a354d109b70d71bf758d2a64e042d74e0aaa5bd6e447900ed3542410d7f9
 F tool/dbtotxt.md c9a57af8739957ef36d2cfad5c4b1443ff3688ed33e4901ee200c8b651f43f3c
 F tool/enlargedb.c 3e8b2612b985cfa7e3e8800031ee191b43ae80de96abb5abbd5eada62651ee21
 F tool/extract-sqlite3h.tcl 069ceab0cee26cba99952bfa08c0b23e35941c837acabe143f0c355d96c9e2eb x
@@ -1978,8 +1978,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bd87d107fe474ceeac8bacb01c80bc479edbc2ae4e30697bf54ab91a5a8d2a98
-R 7711111e395c840c3bc6751d9962c287
-U drh
-Z 85a2fed5268d7d7a54feb858103fed23
+P ef9de201b33678a80bb27c5be8f9dc973c8a4f14af9bfdd3ace36887c8a591ea
+R 67da5a3eed2217c3a0aabb673b1aeeeb
+U larrybr
+Z 3ac9b1cd50f131bc537beb881646b592
 # Remove this line to create a well-formed Fossil manifest.
