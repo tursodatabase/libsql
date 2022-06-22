@@ -1,5 +1,5 @@
-C Disable\sthe\sshort-cut\squery\splanner\sif\sthe\sNOT\sINDEXED\smodifier\sis\sused.\n[forum:/forumpost/454d706296|Forum\spost\s454d706296].
-D 2022-06-21T18:38:18.478
+C Fix\sa\stypo\sin\sa\scomment.\s\sNo\schanges\sto\scode.
+D 2022-06-22T12:54:25.584
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -646,7 +646,7 @@ F src/vdbe.c 555620fbbf4cb2e816e506afeae189e9f2c19a0bf18442f471f7a799300155b7
 F src/vdbe.h 07641758ca8b4f4c6d81ea667ea167c541e6ece21f5574da11e3d21ec37e2662
 F src/vdbeInt.h 2cad0aeeb106371ed0e0946bab89f60627087068847afc2451c05056961c18da
 F src/vdbeapi.c 354c893f1500cf524cc45c32879b9c68893a28b77e3442c24668d6afe4236217
-F src/vdbeaux.c 75c4f75ed7e1d12eb3d80093a160ec998c839f3008a1c3c967fc5acf522d0e3c
+F src/vdbeaux.c 328b866880e67526300aa2361c5e50beb3d97dd8746db37dd4aa0135aea60e4d
 F src/vdbeblob.c 5e61ce31aca17db8fb60395407457a8c1c7fb471dde405e0cd675974611dcfcd
 F src/vdbemem.c 3db315458f8dc158aff58719795441437dd6c0fd302e9d9379a8f2a61e185ad6
 F src/vdbesort.c 43756031ca7430f7aec3ef904824a7883c4ede783e51f280d99b9b65c0796e35
@@ -1978,8 +1978,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9322a7c21f1c22ba00e9b889223e89bc1591db6e561ce05091e905e98c1bf2b3
-R dc1b0ba1ee85a7e377a271938e5a33d9
+P bd87d107fe474ceeac8bacb01c80bc479edbc2ae4e30697bf54ab91a5a8d2a98
+R 7711111e395c840c3bc6751d9962c287
 U drh
-Z 22b60deef4a05bbb68a5eab2c13bab74
+Z 85a2fed5268d7d7a54feb858103fed23
 # Remove this line to create a well-formed Fossil manifest.
