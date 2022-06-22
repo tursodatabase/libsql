@@ -1,5 +1,5 @@
-C More\scomment\sfixes.\s\sNo\schanges\sto\scode.
-D 2022-06-22T15:55:28.710
+C Fix\srequirements\smarks\sthat\schanged\sdue\sto\stypo\sfixes\sin\sthe\sdocumentation.
+D 2022-06-22T18:33:21.684
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -903,7 +903,7 @@ F test/e_select2.test aceb80ab927d46fba5ce7586ebabf23e2bb0604f
 F test/e_totalchanges.test c927f7499dc3aa28b9b556b7d6d115a2f0fe41f012b128d16bf1f3b30e9b41e4
 F test/e_update.test f46c2554d915c9197548681e8d8c33a267e84528
 F test/e_uri.test a3d30c7d6d7700150055b6660ee42da7f05dee2c150ce08bf6a9ededc26468cc
-F test/e_vacuum.test 0d8832a2ce92350db0d0cff47b419465fd9772562e1f77ff7d9478c07a4980d2
+F test/e_vacuum.test 89fc48e8beee2f9dfd6de1fbb2edea6542dae9121dc0fbe6313764169e742104
 F test/e_wal.test ae9a593207a77d711443ee69ffe081fda9243625
 F test/e_walauto.test 248af31e73c98df23476a22bdb815524c9dc3ba8
 F test/e_walckpt.test 28c371a6bb5e5fe7f31679c1df1763a19d19e8a0
@@ -1978,8 +1978,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P edbe24e7fc81ab6c26ab05f2231cb46d157d71a677ce8a2983e0c6e48122a2bd
-R eed41148dbd1edc9cf961b34c5434b7b
+P 5c9133ef431a031249760267ca851239d0857ffba633cac27d3865cf179c3274
+R 05fb481e132d02ee2b4ecd44d8b7de24
 U drh
-Z 26bd716937413acf498443519370ce68
+Z a7b592876a55718c3da48b4ab5a2abbd
 # Remove this line to create a well-formed Fossil manifest.
