@@ -1004,7 +1004,7 @@ case OP_Gosub: {            /* jump */
 ** and also less than the current address, then the "EXPLAIN" output
 ** formatter in the CLI will indent all opcodes from the P2 opcode up
 ** to be not including the current Return.   P2 should be the first opcode
-** in the subroutine from which this opcode is returnning.  Thus the P2
+** in the subroutine from which this opcode is returning.  Thus the P2
 ** value is a byte-code indentation hint.  See tag-20220407a in
 ** wherecode.c and shell.c.
 */
