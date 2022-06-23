@@ -762,10 +762,23 @@ do_execsql_test join-14.4 {
   CREATE TABLE t1(c PRIMARY KEY, a TEXT(10000), b TEXT(10000));
   SELECT * FROM (SELECT 111) LEFT JOIN (SELECT c+222 FROM t1) GROUP BY 1;
 } {111 {}}
+do_execsql_test join-14.4b {
+  SELECT * FROM (SELECT 111) LEFT JOIN (SELECT c+222 FROM t1);
+} {111 {}}
 do_execsql_test join-14.5 {
   SELECT * FROM (SELECT 111 AS x UNION ALL SELECT 222)
                 LEFT JOIN (SELECT c+333 AS y FROM t1) ON x=y GROUP BY 1;
 } {111 {} 222 {}}
+do_execsql_test join-14.5b {
+  SELECT count(*)
+    FROM (SELECT 111 AS x UNION ALL SELECT 222)
+         LEFT JOIN (SELECT c+333 AS y FROM t1) ON x=y;
+} {2}
+do_execsql_test join-14.5c {
+  SELECT count(*)
+    FROM (SELECT c+333 AS y FROM t1)
+         RIGHT JOIN (SELECT 111 AS x UNION ALL SELECT 222) ON x=y;
+} {2}
 do_execsql_test join-14.6 {
   SELECT * FROM (SELECT 111 AS x UNION ALL SELECT 111)
                 LEFT JOIN (SELECT c+333 AS y FROM t1) ON x=y GROUP BY 1;
