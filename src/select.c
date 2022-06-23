@@ -4282,8 +4282,8 @@ static int flattenSubquery(
   */
   if( (pSubitem->fg.jointype & (JT_OUTER|JT_LTORJ))!=0 ){
     if( pSubSrc->nSrc>1                        /* (3a) */
-     || isAgg                                  /* (3b) */
-     || IsVirtual(pSubSrc->a[0].pTab)          /* (3c) */
+     || isAgg                                  /* (3c) */
+     || IsVirtual(pSubSrc->a[0].pTab)          /* (3b) */
      || (p->selFlags & SF_Distinct)!=0         /* (3d) */
      || (pSubitem->fg.jointype & JT_RIGHT)!=0  /* (26) */
     ){
