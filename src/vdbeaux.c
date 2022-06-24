@@ -592,7 +592,7 @@ void sqlite3VdbeRunOnlyOnce(Vdbe *p){
 }
 
 /*
-** Mark the VDBE as one that can only be run multiple times.
+** Mark the VDBE as one that can be run multiple times.
 */
 void sqlite3VdbeReusable(Vdbe *p){
   int i;

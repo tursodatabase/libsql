@@ -424,11 +424,13 @@ void sqlite3SetJoinExpr(Expr *p, int iTable, u32 joinFlag){
   } 
 }
 
-/* Undo the work of sqlite3SetJoinExpr(). In the expression p, convert every
-** term that is marked with EP_OuterON and w.iJoin==iTable into
-** an ordinary term that omits the EP_OuterON mark.
+/* Undo the work of sqlite3SetJoinExpr().  This is used when a LEFT JOIN
+** is simplified into an ordinary JOIN, and when an ON expression is
+** "pushed down" into the WHERE clause of a subquery.
 **
-** This happens when a LEFT JOIN is simplified into an ordinary JOIN.
+** Convert every term that is marked with EP_OuterON and w.iJoin==iTable into
+** an ordinary term that omits the EP_OuterON mark.  Or if iTable<0, then
+** just clear every EP_OuterON and EP_InnerON mark from the expression tree.
 **
 ** If nullable is true, that means that Expr p might evaluate to NULL even
 ** if it is a reference to a NOT NULL column.  This can happen, for example,
@@ -438,10 +440,9 @@ void sqlite3SetJoinExpr(Expr *p, int iTable, u32 joinFlag){
 */
 static void unsetJoinExpr(Expr *p, int iTable, int nullable){
   while( p ){
-    if( ExprHasProperty(p, EP_OuterON)
-     && (iTable<0 || p->w.iJoin==iTable) ){
-      ExprClearProperty(p, EP_OuterON);
-      ExprSetProperty(p, EP_InnerON);
+    if( iTable<0 || (ExprHasProperty(p, EP_OuterON) && p->w.iJoin==iTable) ){
+      ExprClearProperty(p, EP_OuterON|EP_InnerON);
+      if( iTable>=0 ) ExprSetProperty(p, EP_InnerON);
     }
     if( p->op==TK_COLUMN && p->iTable==iTable && !nullable ){
       ExprClearProperty(p, EP_CanBeNull);
@@ -4281,8 +4282,8 @@ static int flattenSubquery(
   */
   if( (pSubitem->fg.jointype & (JT_OUTER|JT_LTORJ))!=0 ){
     if( pSubSrc->nSrc>1                        /* (3a) */
-     || isAgg                                  /* (3b) */
-     || IsVirtual(pSubSrc->a[0].pTab)          /* (3c) */
+     || isAgg                                  /* (3c) */
+     || IsVirtual(pSubSrc->a[0].pTab)          /* (3b) */
      || (p->selFlags & SF_Distinct)!=0         /* (3d) */
      || (pSubitem->fg.jointype & JT_RIGHT)!=0  /* (26) */
     ){
@@ -4666,6 +4667,8 @@ struct WhereConst {
   int nConst;      /* Number for COLUMN=CONSTANT terms */
   int nChng;       /* Number of times a constant is propagated */
   int bHasAffBlob; /* At least one column in apExpr[] as affinity BLOB */
+  u32 mExcludeOn;  /* Which ON expressions to exclude from considertion.
+                   ** Either EP_OuterON or EP_InnerON|EP_OuterON */
   Expr **apExpr;   /* [i*2] is COLUMN and [i*2+1] is VALUE */
 };
 
@@ -4728,7 +4731,7 @@ static void constInsert(
 static void findConstInWhere(WhereConst *pConst, Expr *pExpr){
   Expr *pRight, *pLeft;
   if( NEVER(pExpr==0) ) return;
-  if( ExprHasProperty(pExpr, EP_OuterON|EP_InnerON) ){
+  if( ExprHasProperty(pExpr, pConst->mExcludeOn) ){
     testcase( ExprHasProperty(pExpr, EP_OuterON) );
     testcase( ExprHasProperty(pExpr, EP_InnerON) );
     return;
@@ -4768,9 +4771,10 @@ static int propagateConstantExprRewriteOne(
   int i;
   if( pConst->pOomFault[0] ) return WRC_Prune;
   if( pExpr->op!=TK_COLUMN ) return WRC_Continue;
-  if( ExprHasProperty(pExpr, EP_FixedCol|EP_OuterON) ){
+  if( ExprHasProperty(pExpr, EP_FixedCol|pConst->mExcludeOn) ){
     testcase( ExprHasProperty(pExpr, EP_FixedCol) );
     testcase( ExprHasProperty(pExpr, EP_OuterON) );
+    testcase( ExprHasProperty(pExpr, EP_InnerON) );
     return WRC_Continue;
   }
   for(i=0; i<pConst->nConst; i++){
@@ -4894,6 +4898,17 @@ static int propagateConstants(
     x.nChng = 0;
     x.apExpr = 0;
     x.bHasAffBlob = 0;
+    if( ALWAYS(p->pSrc!=0)
+     && p->pSrc->nSrc>0
+     && (p->pSrc->a[0].fg.jointype & JT_LTORJ)!=0
+    ){
+      /* Do not propagate constants on any ON clause if there is a
+      ** RIGHT JOIN anywhere in the query */
+      x.mExcludeOn = EP_InnerON | EP_OuterON;
+    }else{
+      /* Do not propagate constants through the ON clause of a LEFT JOIN */
+      x.mExcludeOn = EP_OuterON;
+    }
     findConstInWhere(&x, p->pWhere);
     if( x.nConst ){
       memset(&w, 0, sizeof(w));
@@ -6757,6 +6772,7 @@ int sqlite3Select(
       SELECTTRACE(0x100,pParse,p,
                 ("LEFT-JOIN simplifies to JOIN on term %d\n",i));
       pItem->fg.jointype &= ~(JT_LEFT|JT_OUTER);
+      assert( pItem->iCursor>=0 );
       unsetJoinExpr(p->pWhere, pItem->iCursor,
                     pTabList->a[0].fg.jointype & JT_LTORJ);
     }
@@ -6978,7 +6994,7 @@ int sqlite3Select(
 
     /* Generate code to implement the subquery
     **
-    ** The subquery is implemented as a co-routine all if the following are
+    ** The subquery is implemented as a co-routine if all of the following are
     ** true:
     **
     **    (1)  the subquery is guaranteed to be the outer loop (so that
