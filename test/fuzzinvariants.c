@@ -193,7 +193,7 @@ static char *fuzz_invariant_sql(sqlite3_stmt *pStmt, int iCnt){
   }
   for(i=0; i<sqlite3_column_count(pStmt); i++){
     const char *zColName = sqlite3_column_name(pBase,i);
-    const char *zSuffix = zColName ? strchr(zColName, ':') : 0;
+    const char *zSuffix = zColName ? strrchr(zColName, ':') : 0;
     if( zSuffix 
      && isdigit(zSuffix[1])
      && (zSuffix[1]>'3' || isdigit(zSuffix[2]))
