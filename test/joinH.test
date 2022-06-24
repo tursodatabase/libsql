@@ -1,0 +1,72 @@
+# 2022 May 17
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix joinH
+
+do_execsql_test 1.0 {
+  CREATE TABLE t1(a INT);
+  CREATE TABLE t2(b INT);
+  INSERT INTO t2(b) VALUES(NULL);
+}
+
+db nullvalue NULL
+
+do_execsql_test 1.1 {
+  SELECT DISTINCT a FROM t1 FULL JOIN t2 ON true WHERE (b ISNULL);
+} {NULL}
+do_execsql_test 1.2 {
+  SELECT a FROM t1 FULL JOIN t2 ON true;
+} {NULL}
+do_execsql_test 1.3 {
+  SELECT a FROM t1 FULL JOIN t2 ON true WHERE (b ISNULL);
+} {NULL}
+do_execsql_test 1.4 {
+  SELECT DISTINCT a FROM t1 FULL JOIN t2 ON true;
+} {NULL}
+
+#-----------------------------------------------------------
+
+reset_db
+do_execsql_test 2.0 {
+  CREATE TABLE r3(x);
+  CREATE TABLE r4(y INTEGER PRIMARY KEY);
+  INSERT INTO r4 VALUES(55);
+}
+
+do_execsql_test 2.1 {
+  SELECT 'value!' FROM r3 FULL JOIN r4 ON (y=x);
+} {value!}
+
+do_execsql_test 2.2 {
+  SELECT 'value!' FROM r3 FULL JOIN r4 ON (y=x) WHERE +y=55;
+} {value!}
+
+#-----------------------------------------------------------
+reset_db
+do_execsql_test 3.1 {
+  CREATE TABLE t0 (c0);
+  CREATE TABLE t1 (c0);
+  CREATE TABLE t2 (c0 , c1 , c2 , UNIQUE (c0), UNIQUE (c2 DESC));
+  INSERT INTO t2 VALUES ('x', 'y', 'z');
+  ANALYZE;
+  CREATE VIEW v0(c0) AS SELECT FALSE;
+}
+
+do_catchsql_test 3.2 {
+  SELECT * FROM t0 LEFT OUTER JOIN t1 ON v0.c0 INNER JOIN v0 INNER JOIN t2 ON (t2.c2 NOT NULL); 
+} {1 {ON clause references tables to its right}}
+
+
+finish_test
