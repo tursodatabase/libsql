@@ -126,9 +126,12 @@ do_test count-2.7 {
 do_test count-2.8 {
   uses_op_count {SELECT count(*) FROM t2 WHERE a IS NOT NULL}
 } {0}
-do_test count-2.9 {
-  catchsql {SELECT count(*) FROM t2 HAVING count(*)>1}
-} {1 {a GROUP BY clause is required before HAVING}}
+do_execsql_test count-2.9a {
+  SELECT count(*) FROM t2 HAVING count(*)>1;
+} {}
+do_execsql_test count-2.9b {
+  SELECT count(*) FROM t2 HAVING count(*)<10;
+} {0}
 do_test count-2.10 {
   uses_op_count {SELECT count(*) FROM (SELECT 1)}
 } {0}

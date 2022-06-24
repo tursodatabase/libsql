@@ -5847,6 +5847,9 @@ int sqlite3BtreeIndexMoveto(
      && pIdxKey->errCode==SQLITE_OK
     ){
       pCur->curFlags &= ~BTCF_ValidOvfl;
+      if( !pCur->pPage->isInit ){
+        return SQLITE_CORRUPT_BKPT;
+      }
       goto bypass_moveto_root;  /* Start search on the current page */
     }
     pIdxKey->errCode = SQLITE_OK;

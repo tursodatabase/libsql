@@ -119,10 +119,9 @@ do_test select3-2.14 {
 
 # Cannot have a HAVING without a GROUP BY
 #
-do_test select3-3.1 {
-  set v [catch {execsql {SELECT log, count(*) FROM t1 HAVING log>=4}} msg]
-  lappend v $msg
-} {1 {a GROUP BY clause is required before HAVING}}
+do_execsql_test select3-3.1 {
+  SELECT log, count(*) FROM t1 HAVING log>=4
+} {}
 
 # Toss in some HAVING clauses
 #
