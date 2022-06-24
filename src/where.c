@@ -5592,7 +5592,7 @@ WhereInfo *sqlite3WhereBegin(
   /* Analyze all of the subexpressions. */
   sqlite3WhereExprAnalyze(pTabList, &pWInfo->sWC);
   sqlite3WhereAddLimit(&pWInfo->sWC, pLimit);
-  if( db->mallocFailed ) goto whereBeginError;
+  if( pParse->nErr ) goto whereBeginError;
 
   /* Special case: WHERE terms that do not refer to any tables in the join
   ** (constant expressions). Evaluate each such term, and jump over all the
