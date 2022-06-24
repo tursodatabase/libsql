@@ -661,6 +661,7 @@ do_execsql_test join8-20060 {
 # https://sqlite.org/forum/forumpost/8e4c352937e82929
 #
 # Do not allow constant propagation between ON and WHERE clause terms.
+# (Updated 2022-06-20) See also https://sqlite.org/forum/forumpost/57bdf2217d
 #
 reset_db
 do_execsql_test join8-21000 {
@@ -674,6 +675,23 @@ do_execsql_test join8-21010 {
 do_execsql_test join8-22020 {
   SELECT * FROM t1 JOIN t3 ON (b=TRUE) RIGHT JOIN t2 ON TRUE WHERE (b IS TRUE);
 } {}
+do_execsql_test join8-22030 {
+  DROP TABLE t1;
+  DROP TABLE t2;
+  DROP TABLE t3;
+  CREATE TABLE t1(a INT);
+  CREATE TABLE t2(b INT);
+  CREATE TABLE t3(c INTEGER PRIMARY KEY, d INT);
+  CREATE INDEX t3d ON t3(d);
+  INSERT INTO t3 VALUES(0, 0);
+}
+do_catchsql_test join8-22031 {
+  SELECT * FROM t1 JOIN t2 ON d>b RIGHT JOIN t3 ON true WHERE +d = 0;
+} {1 {ON clause references tables to its right}}
+do_catchsql_test join8-22040 {
+  SELECT * FROM t1 JOIN t2 ON d>b RIGHT JOIN t3 ON true WHERE d = 0;
+} {1 {ON clause references tables to its right}}
+
 
 # 2022-06-10
 # https://sqlite.org/forum/forumpost/51e6959f61
@@ -746,5 +764,26 @@ do_execsql_test join8-24000 {
     SELECT * FROM t4 JOIN t7 ON true RIGHT JOIN (SELECT y AS z FROM t7) AS t6 ON (x=z);
 } {- - - - 200}
 
+# 2022-06-20
+# forum/forumpost/6650cd40b5634f35
+#
+reset_db
+do_execsql_test join8-25000 {
+  CREATE TABLE t1(a1 INT);
+  CREATE TABLE t2(b2 INT);
+  CREATE TABLE t3(c3 INT, d3 INT UNIQUE);
+  CREATE TABLE t4(e4 INT, f4 TEXT);
+  INSERT INTO t3(c3, d3) VALUES (2, 1);
+  INSERT INTO t4(f4) VALUES ('x');
+  CREATE INDEX i0 ON t3(c3) WHERE d3 ISNULL;
+  ANALYZE main;
+}
+db null -
+do_execsql_test join8-25010 {
+  SELECT * FROM t1 LEFT JOIN t2 ON true JOIN t3 ON (b2 IN (a1)) FULL JOIN t4 ON true;
+} {- - - - - x}
+do_execsql_test join8-25020 {
+  SELECT 1 FROM t1 LEFT JOIN t2 ON true JOIN t3 ON (b2 IN (a1)) FULL JOIN t4 ON true;
+} {1}
 
 finish_test

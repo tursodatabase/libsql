@@ -74,6 +74,11 @@ while {[regexp $BEGIN $line]} {
   incr N $n
   while {[gets $in line]>=0} {
     if {[regexp $BEGIN $line]} break
+    if {$N>0} {
+      write_one_file $all
+      set N 0
+      set all {}
+    }
     puts $out1 $line
   }
 }

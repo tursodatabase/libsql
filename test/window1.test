@@ -2203,5 +2203,10 @@ do_catchsql_test 71.0 {
    ORDER BY b;
 } {/1 {.*}/}
 
+do_execsql_test 72.1 {
+  CREATE TABLE dual(dummy);  INSERT INTO dual VALUES('X');
+  CREATE VIEW v1(x,y) AS SELECT RANK() OVER (PARTITION BY 0), SUM(0) FROM dual;
+  SELECT * FROM v1 WHERE true;
+} {1 0}
 
 finish_test

@@ -29,7 +29,7 @@
 
 /* Forward references */
 static char *fuzz_invariant_sql(sqlite3_stmt*, int);
-static int sameValue(sqlite3_value*,sqlite3_value*);
+static int sameValue(sqlite3_stmt*,int,sqlite3_stmt*,int);
 static void reportInvariantFailed(sqlite3_stmt*,sqlite3_stmt*,int);
 
 /*
@@ -62,7 +62,8 @@ int fuzz_invariant(
   sqlite3 *db,            /* The database connection */
   sqlite3_stmt *pStmt,    /* Test statement stopped on an SQLITE_ROW */
   int iCnt,               /* Invariant sequence number, starting at 0 */
-  int iRow,               /* The row number for pStmt */
+  int iRow,               /* Current row number */
+  int nRow,               /* Number of output rows from pStmt */
   int *pbCorrupt,         /* IN/OUT: Flag indicating a corrupt database file */
   int eVerbosity          /* How much debugging output */
 ){
@@ -71,8 +72,11 @@ int fuzz_invariant(
   int rc;
   int i;
   int nCol;
+  int nParam;
 
   if( *pbCorrupt ) return SQLITE_DONE;
+  nParam = sqlite3_bind_parameter_count(pStmt);
+  if( nParam>100 ) return SQLITE_DONE;
   zTest = fuzz_invariant_sql(pStmt, iCnt);
   if( zTest==0 ) return SQLITE_DONE;
   rc = sqlite3_prepare_v2(db, zTest, -1, &pTestStmt, 0);
@@ -88,7 +92,11 @@ int fuzz_invariant(
   sqlite3_free(zTest);
   nCol = sqlite3_column_count(pStmt);
   for(i=0; i<nCol; i++){
-    sqlite3_bind_value(pTestStmt, i+1, sqlite3_column_value(pStmt,i));
+    rc = sqlite3_bind_value(pTestStmt,i+1+nParam,sqlite3_column_value(pStmt,i));
+    if( rc!=SQLITE_OK && rc!=SQLITE_RANGE ){
+      sqlite3_finalize(pTestStmt);
+      return rc;
+    }
   }
   if( eVerbosity>=2 ){
     char *zSql = sqlite3_expanded_sql(pTestStmt);
@@ -97,12 +105,11 @@ int fuzz_invariant(
   }
   while( (rc = sqlite3_step(pTestStmt))==SQLITE_ROW ){
     for(i=0; i<nCol; i++){
-      if( !sameValue(sqlite3_column_value(pStmt,i),
-                     sqlite3_column_value(pTestStmt,i)) ) break;
+      if( !sameValue(pStmt, i, pTestStmt, i) ) break;
     }
     if( i>=nCol ) break;
   }
-  if( rc!=SQLITE_ROW ){
+  if( rc==SQLITE_DONE ){
     /* No matching output row found */
     sqlite3_stmt *pCk = 0;
     rc = sqlite3_prepare_v2(db, "PRAGMA integrity_check", -1, &pCk, 0);
@@ -124,7 +131,10 @@ int fuzz_invariant(
     sqlite3_finalize(pCk);
     rc = sqlite3_prepare_v2(db, 
             "SELECT 1 FROM bytecode(?1) WHERE opcode='VOpen'", -1, &pCk, 0);
-    if( rc==SQLITE_OK ) rc = sqlite3_step(pCk);
+    if( rc==SQLITE_OK ){
+      sqlite3_bind_pointer(pCk, 1, pStmt, "stmt-pointer", 0);
+      rc = sqlite3_step(pCk);
+    }
     sqlite3_finalize(pCk);
     if( rc==SQLITE_DONE ){
       reportInvariantFailed(pStmt, pTestStmt, iRow);
@@ -156,18 +166,16 @@ static char *fuzz_invariant_sql(sqlite3_stmt *pStmt, int iCnt){
   int mxCnt;
   int bDistinct = 0;
   int bOrderBy = 0;
+  int nParam = sqlite3_bind_parameter_count(pStmt);
 
+  iCnt++;
   switch( iCnt % 4 ){
     case 1:  bDistinct = 1;              break;
     case 2:  bOrderBy = 1;               break;
     case 3:  bDistinct = bOrderBy = 1;   break;
   }
   iCnt /= 4;
-  if( nCol==1 ){
-    mxCnt = 0;
-  }else{
-    mxCnt = nCol;
-  }
+  mxCnt = nCol;
   if( iCnt<0 || iCnt>mxCnt ) return 0;
   zIn = sqlite3_sql(pStmt);
   if( zIn==0 ) return 0;
@@ -175,8 +183,9 @@ static char *fuzz_invariant_sql(sqlite3_stmt *pStmt, int iCnt){
   while( nIn>0 && (isspace(zIn[nIn-1]) || zIn[nIn-1]==';') ) nIn--;
   if( strchr(zIn, '?') ) return 0;
   pTest = sqlite3_str_new(0);
-  sqlite3_str_appendf(pTest, "SELECT %s* FROM (%.*s)",
-                      bDistinct ? "DISTINCT " : "", (int)nIn, zIn);
+  sqlite3_str_appendf(pTest, "SELECT %s* FROM (%s",
+                      bDistinct ? "DISTINCT " : "", zIn);
+  sqlite3_str_appendf(pTest, ")");
   rc = sqlite3_prepare_v2(db, sqlite3_str_value(pTest), -1, &pBase, 0);
   if( rc ){
     sqlite3_finalize(pBase);
@@ -184,7 +193,7 @@ static char *fuzz_invariant_sql(sqlite3_stmt *pStmt, int iCnt){
   }
   for(i=0; i<sqlite3_column_count(pStmt); i++){
     const char *zColName = sqlite3_column_name(pBase,i);
-    const char *zSuffix = strchr(zColName, ':');
+    const char *zSuffix = zColName ? strrchr(zColName, ':') : 0;
     if( zSuffix 
      && isdigit(zSuffix[1])
      && (zSuffix[1]>'3' || isdigit(zSuffix[2]))
@@ -193,11 +202,13 @@ static char *fuzz_invariant_sql(sqlite3_stmt *pStmt, int iCnt){
       ** WHERE clause. */
       continue;
     }
-    if( iCnt>0 && i+1!=iCnt ) continue;
+    if( i+1!=iCnt ) continue;
+    if( zColName==0 ) continue;
     if( sqlite3_column_type(pStmt, i)==SQLITE_NULL ){
       sqlite3_str_appendf(pTest, " %s \"%w\" ISNULL", zAnd, zColName);
     }else{
-      sqlite3_str_appendf(pTest, " %s \"%w\"=?%d", zAnd, zColName, i+1);
+      sqlite3_str_appendf(pTest, " %s \"%w\"=?%d", zAnd, zColName, 
+                          i+1+nParam);
     }
     zAnd = "AND";
   }
@@ -211,29 +222,39 @@ static char *fuzz_invariant_sql(sqlite3_stmt *pStmt, int iCnt){
 /*
 ** Return true if and only if v1 and is the same as v2.
 */
-static int sameValue(sqlite3_value *v1, sqlite3_value *v2){
+static int sameValue(sqlite3_stmt *pS1, int i1, sqlite3_stmt *pS2, int i2){
   int x = 1;
-  if( sqlite3_value_type(v1)!=sqlite3_value_type(v2) ) return 0;
-  switch( sqlite3_value_type(v1) ){
+  int t1 = sqlite3_column_type(pS1,i1);
+  int t2 = sqlite3_column_type(pS2,i2);
+  if( t1!=t2 ){
+    if( (t1==SQLITE_INTEGER && t2==SQLITE_FLOAT)
+     || (t1==SQLITE_FLOAT && t2==SQLITE_INTEGER)
+    ){
+      /* Comparison of numerics is ok */
+    }else{
+      return 0;
+    }
+  }
+  switch( sqlite3_column_type(pS1,i1) ){
     case SQLITE_INTEGER: {
-      x =  sqlite3_value_int64(v1)==sqlite3_value_int64(v2);
+      x =  sqlite3_column_int64(pS1,i1)==sqlite3_column_int64(pS2,i2);
       break;
     }
     case SQLITE_FLOAT: {
-      x = sqlite3_value_double(v1)==sqlite3_value_double(v2);
+      x = sqlite3_column_double(pS1,i1)==sqlite3_column_double(pS2,i2);
       break;
     }
     case SQLITE_TEXT: {
-      const char *z1 = (const char*)sqlite3_value_text(v1);
-      const char *z2 = (const char*)sqlite3_value_text(v2);
+      const char *z1 = (const char*)sqlite3_column_text(pS1,i1);
+      const char *z2 = (const char*)sqlite3_column_text(pS2,i2);
       x = ((z1==0 && z2==0) || (z1!=0 && z2!=0 && strcmp(z1,z1)==0));
       break;
     }
     case SQLITE_BLOB: {
-      int len1 = sqlite3_value_bytes(v1);
-      const unsigned char *b1 = sqlite3_value_blob(v1);
-      int len2 = sqlite3_value_bytes(v2);
-      const unsigned char *b2 = sqlite3_value_blob(v2);
+      int len1 = sqlite3_column_bytes(pS1,i1);
+      const unsigned char *b1 = sqlite3_column_blob(pS1,i1);
+      int len2 = sqlite3_column_bytes(pS2,i2);
+      const unsigned char *b2 = sqlite3_column_blob(pS2,i2);
       if( len1!=len2 ){
         x = 0;
       }else if( len1==0 ){
@@ -254,7 +275,7 @@ static void printRow(sqlite3_stmt *pStmt, int iRow){
   int i, nCol;
   nCol = sqlite3_column_count(pStmt);
   for(i=0; i<nCol; i++){
-    printf("row%d.col%d] = ", iRow, i);
+    printf("row%d.col%d = ", iRow, i);
     switch( sqlite3_column_type(pStmt, i) ){
       case SQLITE_NULL: {
         printf("NULL\n");

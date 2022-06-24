@@ -1824,8 +1824,8 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
     sNC.uNC.pEList = p->pEList;
     sNC.ncFlags |= NC_UEList;
     if( p->pHaving ){
-      if( !pGroupBy ){
-        sqlite3ErrorMsg(pParse, "a GROUP BY clause is required before HAVING");
+      if( (p->selFlags & SF_Aggregate)==0 ){
+        sqlite3ErrorMsg(pParse, "HAVING clause on a non-aggregate query");
         return WRC_Abort;
       }
       if( sqlite3ResolveExprNames(&sNC, p->pHaving) ) return WRC_Abort;
