@@ -4180,11 +4180,21 @@ static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
     pNew->iTab = iTab;
     pBuilder->iPlanLimit += SQLITE_QUERY_PLANNER_LIMIT_INCR;
     pNew->maskSelf = sqlite3WhereGetMask(&pWInfo->sMaskSet, pItem->iCursor);
-    if( bFirstPastRJ || (pItem->fg.jointype & (JT_OUTER|JT_CROSS))!=0 ){
+    if( bFirstPastRJ 
+     || (pItem->fg.jointype & (JT_OUTER|JT_CROSS|JT_LTORJ))!=0
+    ){
       /* Add prerequisites to prevent reordering of FROM clause terms
       ** across CROSS joins and outer joins.  The bFirstPastRJ boolean
       ** prevents the right operand of a RIGHT JOIN from being swapped with
-      ** other elements even further to the right. */
+      ** other elements even further to the right.
+      **
+      ** The JT_LTORJ term prevents any FROM-clause term reordering for terms
+      ** to the left of a RIGHT JOIN.  This is conservative.  Relaxing this
+      ** constraint somewhat to prevent terms from crossing from the right
+      ** side of a LEFT JOIN over to the left side when they are on the
+      ** left side of a RIGHT JOIN would be sufficient for all known failure
+      ** cases.  FIX ME: Implement this optimization.
+      */
       mPrereq |= mPrior;
       bFirstPastRJ = (pItem->fg.jointype & JT_RIGHT)!=0;
     }
@@ -5073,7 +5083,11 @@ static int whereShortCut(WhereLoopBuilder *pBuilder){
   pItem = pWInfo->pTabList->a;
   pTab = pItem->pTab;
   if( IsVirtual(pTab) ) return 0;
-  if( pItem->fg.isIndexedBy ) return 0;
+  if( pItem->fg.isIndexedBy || pItem->fg.notIndexed ){
+    testcase( pItem->fg.isIndexedBy );
+    testcase( pItem->fg.notIndexed );
+    return 0;
+  }
   iCur = pItem->iCursor;
   pWC = &pWInfo->sWC;
   pLoop = pBuilder->pNew;
@@ -5246,7 +5260,7 @@ static SQLITE_NOINLINE Bitmask whereOmitNoopJoin(
     WhereLoop *pLoop;
     pLoop = pWInfo->a[i].pWLoop;
     pItem = &pWInfo->pTabList->a[pLoop->iTab];
-    if( (pItem->fg.jointype & JT_LEFT)==0 ) continue;
+    if( (pItem->fg.jointype & (JT_LEFT|JT_RIGHT))!=JT_LEFT ) continue;
     if( (pWInfo->wctrlFlags & WHERE_WANT_DISTINCT)==0
      && (pLoop->wsFlags & WHERE_ONEROW)==0
     ){
@@ -5578,7 +5592,7 @@ WhereInfo *sqlite3WhereBegin(
   /* Analyze all of the subexpressions. */
   sqlite3WhereExprAnalyze(pTabList, &pWInfo->sWC);
   sqlite3WhereAddLimit(&pWInfo->sWC, pLimit);
-  if( db->mallocFailed ) goto whereBeginError;
+  if( pParse->nErr ) goto whereBeginError;
 
   /* Special case: WHERE terms that do not refer to any tables in the join
   ** (constant expressions). Evaluate each such term, and jump over all the

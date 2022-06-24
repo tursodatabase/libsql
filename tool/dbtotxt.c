@@ -10,7 +10,11 @@
 **
 ** Usage:
 **
-**         dbtotxt [--pagesize N] FILENAME
+**         dbtotxt [OPTIONS] FILENAME
+**
+** where OPTIONS are zero or more of:
+**    --pagesize N  => setting the database page size for later readin
+**    --for-cli     => prepending '.open --hexdb' to the output
 **
 ** The translation of the database appears on standard output.  If the
 ** --pagesize command-line option is omitted, then the page size is taken
@@ -38,6 +42,7 @@ static int allZero(unsigned char *aLine){
 
 int main(int argc, char **argv){
   int pgsz = 0;               /* page size */
+  int forCli = 0;             /* whether to prepend with .open */
   long szFile;                /* Size of the input file in bytes */
   FILE *in;                   /* Input file */
   int i, j;                   /* Loop counters */
@@ -66,6 +71,9 @@ int main(int argc, char **argv){
                           " 512 and 65536.\n");
           nErr++;
         }
+        continue;
+      }else if( strcmp(z,"for-cli")==0 ){
+        forCli = 1;
         continue;
       }
       fprintf(stderr, "Unknown option: %s\n", argv[i]);
@@ -113,6 +121,9 @@ int main(int argc, char **argv){
   zBaseName = zInputFile;
   for(i=0; zInputFile[i]; i++){
     if( zInputFile[i]=='/' && zInputFile[i+1]!=0 ) zBaseName = zInputFile+i+1;
+  }
+  if( forCli ){
+    printf(".open --hexdb\n");
   }
   printf("| size %d pagesize %d filename %s\n",(int)szFile,pgsz,zBaseName);
   for(i=0; i<szFile; i+=16){

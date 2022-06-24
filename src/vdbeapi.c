@@ -818,9 +818,9 @@ int sqlite3_step(sqlite3_stmt *pStmt){
     sqlite3_reset(pStmt);
     if( savedPc>=0 ){
       /* Setting minWriteFileFormat to 254 is a signal to the OP_Init and
-      ** OP_Trace opcodes to *not* perform SQLITE_TRACE_STMT because one
-      ** should output has already occurred due to SQLITE_SCHEMA.
-      ** tag-20220401a */
+      ** OP_Trace opcodes to *not* perform SQLITE_TRACE_STMT because it has
+      ** already been done once on a prior invocation that failed due to
+      ** SQLITE_SCHEMA.   tag-20220401a  */
       v->minWriteFileFormat = 254;
     }
     assert( v->expired==0 );

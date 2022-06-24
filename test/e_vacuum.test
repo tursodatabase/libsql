@@ -190,8 +190,8 @@ if {![nonzero_reserved_bytes]} {
   }
 }
   
-# EVIDENCE-OF: R-55119-57913 By default, VACUUM only works only on the
-# main database.
+# EVIDENCE-OF: R-40347-36128 By default, VACUUM operates on the main
+# database.
 forcedelete test.db2
 create_db { PRAGMA auto_vacuum = NONE }
 do_execsql_test e_vacuum-2.1.1 {
