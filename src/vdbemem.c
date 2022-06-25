@@ -1491,7 +1491,8 @@ static int valueFromFunction(
     goto value_from_function_out;
   }
 
-  assert( pCtx->pParse->rc==SQLITE_OK );
+  testcase( pCtx->pParse->rc==SQLITE_ERROR );
+  testcase( pCtx->pParse->rc==SQLITE_OK );
   memset(&ctx, 0, sizeof(ctx));
   ctx.pOut = pVal;
   ctx.pFunc = pFunc;
