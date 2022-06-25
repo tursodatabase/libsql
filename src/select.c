@@ -4068,7 +4068,8 @@ static void renumberCursors(
 **        (3a) the subquery may not be a join and
 **        (3b) the FROM clause of the subquery may not contain a virtual
 **             table and
-**        (3c) the outer query may not be an aggregate.
+**        (3c) The outer query may not have a GROUP BY.  (This limitation is
+**             due to how TK_IF_NULL_ROW works.  FIX ME!)
 **        (3d) the outer query may not be DISTINCT.
 **        See also (26) for restrictions on RIGHT JOIN.
 **
@@ -4273,18 +4274,13 @@ static int flattenSubquery(
   **
   ** which is not at all the same thing.
   **
-  ** If the subquery is the right operand of a LEFT JOIN, then the outer
-  ** query cannot be an aggregate. (3c)  This is an artifact of the way
-  ** aggregates are processed - there is no mechanism to determine if
-  ** the LEFT JOIN table should be all-NULL.
-  **
   ** See also tickets #306, #350, and #3300.
   */
   if( (pSubitem->fg.jointype & (JT_OUTER|JT_LTORJ))!=0 ){
     if( pSubSrc->nSrc>1                        /* (3a) */
-     || isAgg                                  /* (3c) */
      || IsVirtual(pSubSrc->a[0].pTab)          /* (3b) */
      || (p->selFlags & SF_Distinct)!=0         /* (3d) */
+     || (p->pGroupBy!=0)                       /* (3c) */
      || (pSubitem->fg.jointype & JT_RIGHT)!=0  /* (26) */
     ){
       return 0;
