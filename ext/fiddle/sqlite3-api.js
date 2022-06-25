@@ -321,7 +321,13 @@ Module.postRun.push(function(namespace/*the module object, the target for
        function assumes case (1) and calls the underling C function
        with:
 
-       (pDb, sql, -1, ppStmt, null)
+       (pDb, sqlAsString, -1, ppStmt, null)
+
+       The pzTail argument is ignored in this case because its result
+       is meaningless when a string-type value is passed through
+       (because the string goes through another level of internal
+       conversion for WASM's sake and the result pointer would refer
+       to that conversion's memory, not the passed-in string).
 
        If sql is not a string or Uint8Array, it must be a _pointer_ to
        a string which was allocated via api.wasm.allocateUTF8OnStack()
@@ -331,17 +337,14 @@ Module.postRun.push(function(namespace/*the module object, the target for
        for the C-side sqlite3_prepare_v2(). In case (2), the
        underlying C function is called with:
 
-       (pDb, sql, -1, ppStmt, pzTail)
+       (pDb, sqlAsPointer, -1, ppStmt, pzTail)
 
        It returns its result and compiled statement as documented in
-       the C API. Fetching the output pointer (4th argument) requires using
-       api.wasm.getValue().
+       the C API. Fetching the output pointers (4th and 5th
+       parameters) requires using api.wasm.getValue().
     */
     api.sqlite3_prepare_v2 = function(pDb, sql, sqlLen, ppStmt, pzTail){
         if(sql instanceof Uint8Array) sql = uint8ToString(sql);
-        /* ^^^ TODO: confirm whether this conversion is really
-           necessary or whether passing on the array as-is will work
-           as if it were a string. */
         switch(typeof sql){
             case 'string': return prepareMethods.basic(pDb, sql, -1, ppStmt, null);
             case 'number': return prepareMethods.full(pDb, sql, -1, ppStmt, pzTail);
@@ -349,7 +352,7 @@ Module.postRun.push(function(namespace/*the module object, the target for
         }
     };
 
-    /** Populate api.wasm... */
+    /** Populate api.wasm with several members of the module object... */
     ['getValue','setValue', 'stackSave', 'stackRestore', 'stackAlloc',
      'allocateUTF8OnStack', '_malloc', '_free',
      'addFunction', 'removeFunction'     
