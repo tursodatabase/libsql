@@ -18,7 +18,7 @@ fiddle_files = emscripten.css fiddle.html \
 fiddle_remote ?=
 ifeq (,$(fiddle_remote))
 ifneq (,$(wildcard /home/stephan))
-  fiddle_remote = wh2:www/wh/sqlite3/.
+  fiddle_remote = wh:www/wh/sqlite3/.
 else ifneq (,$(wildcard /home/drh))
   #fiddle_remote = if appropriate, add that user@host:/path here
 endif

@@ -120,10 +120,9 @@ Module.postRun.push(function(namespace/*the module object, the target for
         throw new Error(Array.prototype.join.call(arguments, ' '));
     };
     
-    /** Returns true if n is a 32-bit (signed) integer,
-        else false. */
+    /** Returns true if n is a 32-bit (signed) integer, else false. */
     const isInt32 = function(n){
-        return (n===(n|0) && n<0xFFFFFFFF) ? true : undefined;
+        return !!(n===(n|0) && n<=2147483647 && n>=-2147483648);
     };
 
     /** Returns v if v appears to be a TypedArray, else false. */
