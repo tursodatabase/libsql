@@ -1,5 +1,5 @@
-C Merge\sthe\s3.39.0\srelease\scandidate\s1\schanges\sinto\sthe\sreuse-schema\sbranch.
-D 2022-06-24T16:15:20.115
+C Merge\sversion\s3.39.0\sinto\sthe\sreuse-schema\sbranch.
+D 2022-06-25T17:20:36.074
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -650,7 +650,7 @@ F src/vdbeInt.h 2cad0aeeb106371ed0e0946bab89f60627087068847afc2451c05056961c18da
 F src/vdbeapi.c 602610f1252d59cd69742f78a1e2f6fbae40a4b407f5506a6a7b869b0df08ff2
 F src/vdbeaux.c bba838cf3d368019f0bea9eccd80c23d6affa6d8dd3442ae297933cc75cac301
 F src/vdbeblob.c aa23a326ff86bdde8f7ba74cf23c3e1795b13bee749314feaf26273be2f63e89
-F src/vdbemem.c 3db315458f8dc158aff58719795441437dd6c0fd302e9d9379a8f2a61e185ad6
+F src/vdbemem.c 5ebf05c0182addedb1607ade848e1c83cef40981df94d1abfab0c59288c6064f
 F src/vdbesort.c 43756031ca7430f7aec3ef904824a7883c4ede783e51f280d99b9b65c0796e35
 F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf823
 F src/vdbevtab.c f99b275366c5fc5e2d99f734729880994ab9500bdafde7fae3b02d562b9d323c
@@ -1988,8 +1988,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7f405fe209d141435562b69ff161a545c63c5804f7de37871d24d7b6ee80ecec e93fd170ce4ae91d572c46d03f68f55d00091d0188030517455017d90d212587
-R f49e1c8881997b8ad28c72b3c51eb2f2
+P 506a3e6f242f42d3106f80ad4385a5ef458461fbd056258e65c82dd4e0a80e8c 14e166f40dbfa6e055543f8301525f2ca2e96a02a57269818b9e69e162e98918
+R 61deda926824d27273c77f6317549005
 U drh
-Z f28042d46818ae2d322f4229ce34dcd1
+Z f8f8ba31ffb4d36289a5542d147651e2
 # Remove this line to create a well-formed Fossil manifest.
