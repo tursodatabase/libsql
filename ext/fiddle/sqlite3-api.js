@@ -405,7 +405,7 @@ Module.postRun.push(function(namespace/*the module object, the target for
     ['getValue','setValue', 'stackSave', 'stackRestore', 'stackAlloc',
      'allocateUTF8OnStack', '_malloc', '_free',
      'addFunction', 'removeFunction',
-     'intArrayFromString'
+     'intArrayFromString', 'lengthBytesUTF8', 'stringToUTF8Array'
     ].forEach(function(m){
         if(undefined === (api.wasm[m] = SQM[m])){
             toss("Internal init error: Module."+m+" not found.");
@@ -524,7 +524,6 @@ Module.postRun.push(function(namespace/*the module object, the target for
         this._pStmt = arguments[1];
         this.columnCount = api.sqlite3_column_count(this._pStmt);
         this.parameterCount = api.sqlite3_bind_parameter_count(this._pStmt);
-        this._allocs = [/*list of alloc'd memory blocks for bind() values*/]
     };
 
     /** Throws if the given DB has been closed, else it is returned. */
@@ -1186,12 +1185,29 @@ Module.postRun.push(function(namespace/*the module object, the target for
         if(!f._){
             f._ = {
                 string: function(stmt, ndx, val, asBlob){
-                    const bytes = api.wasm.intArrayFromString(val,true);
-                    const pStr = api.wasm._malloc(bytes.length || 1);
-                    stmt._allocs.push(pStr);
-                    api.wasm._malloc.HEAP.set(bytes, pStr);
-                    const func =  asBlob ? api.sqlite3_bind_blob : api.sqlite3_bind_text;
-                    return func(stmt._pStmt, ndx, pStr, bytes.length, api.SQLITE_STATIC);
+                    if(1){
+                        /* _Hypothetically_ more efficient than the impl in the 'else' block. */
+                        const stack = api.wasm.stackSave();
+                        try{
+                            const n = api.wasm.lengthBytesUTF8(val)+1/*required for NUL terminator*/;
+                            const pStr = api.wasm.stackAlloc(n);
+                            api.wasm.stringToUTF8Array(val, api.wasm.HEAP8, pStr, n);
+                            const f = asBlob ? api.sqlite3_bind_blob : api.sqlite3_bind_text;
+                            return f(stmt._pStmt, ndx, pStr, n-1, api.SQLITE_TRANSIENT);
+                        }finally{
+                            api.wasm.stackRestore(stack);
+                        }
+                    }else{
+                        const bytes = api.wasm.intArrayFromString(val,true);
+                        const pStr = api.wasm._malloc(bytes.length || 1);
+                        api.wasm._malloc.HEAP.set(bytes.length ? bytes : [0], pStr);
+                        try{
+                            const f = asBlob ? api.sqlite3_bind_blob : api.sqlite3_bind_text;
+                            return f(stmt._pStmt, ndx, pStr, bytes.length, api.SQLITE_TRANSIENT);
+                        }finally{
+                            api.wasm._free(pStr);
+                        }
+                    }
                 }
             };
         }
@@ -1221,16 +1237,28 @@ Module.postRun.push(function(namespace/*the module object, the target for
             case BindTypes.blob: {
                 if('string'===typeof val){
                     rc = f._.string(stmt, ndx, val, true);
-                }else{
-                    if(!isSupportedTypedArray(val)){
-                        toss("Binding a value as a blob requires",
-                             "that it be a string, Uint8Array, or Int8Array.");
+                }else if(!isSupportedTypedArray(val)){
+                    toss("Binding a value as a blob requires",
+                         "that it be a string, Uint8Array, or Int8Array.");
+                }else if(1){
+                    /* _Hypothetically_ more efficient than the impl in the 'else' block. */
+                    const stack = api.wasm.stackSave();
+                    try{
+                        const pBlob = api.wasm.stackAlloc(val.byteLength || 1);
+                        api.wasm.HEAP8.set(val.byteLength ? val : [0], pBlob)
+                        rc = api.sqlite3_bind_blob(stmt._pStmt, ndx, pBlob, val.byteLength,
+                                                   api.SQLITE_TRANSIENT);
+                    }finally{
+                        api.wasm.stackRestore(stack);
                     }
-                    //console.debug("Binding blob",len,val);
+                }else{
                     const pBlob = api.wasm.mallocFromTypedArray(val);
-                    stmt._allocs.push(pBlob);
-                    rc = api.sqlite3_bind_blob(stmt._pStmt, ndx, pBlob, val.byteLength,
-                                               api.SQLITE_STATIC);
+                    try{
+                        rc = api.sqlite3_bind_blob(stmt._pStmt, ndx, pBlob, val.byteLength,
+                                                   api.SQLITE_TRANSIENT);
+                    }finally{
+                        api.wasm._free(pBlob);
+                    }
                 }
                 break;
             }
@@ -1239,16 +1267,6 @@ Module.postRun.push(function(namespace/*the module object, the target for
                 toss("Unsupported bind() argument type.");
         }
         if(rc) stmt.db.checkRc(rc);
-        return stmt;
-    };
-
-    /** Frees any memory explicitly allocated for the given
-        Stmt object. Returns stmt. */
-    const freeBindMemory = function(stmt){
-        let m;
-        while(undefined !== (m = stmt._allocs.pop())){
-            api.wasm._free(m);
-        }
         return stmt;
     };
     
@@ -1262,7 +1280,6 @@ Module.postRun.push(function(namespace/*the module object, the target for
         finalize: function(){
             if(this._pStmt){
                 affirmUnlocked(this,'finalize()');
-                freeBindMemory(this);
                 delete this.db._statements[this._pStmt];
                 api.sqlite3_finalize(this._pStmt);
                 delete this.columnCount;
@@ -1275,9 +1292,7 @@ Module.postRun.push(function(namespace/*the module object, the target for
         /** Clears all bound values. Returns this object.
             Throws if this statement has been finalized. */
         clearBindings: function(){
-            freeBindMemory(
-                affirmUnlocked(affirmStmtOpen(this), 'clearBindings()')
-            );
+            affirmUnlocked(affirmStmtOpen(this), 'clearBindings()')
             api.sqlite3_clear_bindings(this._pStmt);
             this._mayGet = false;
             return this;

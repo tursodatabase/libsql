@@ -16,6 +16,7 @@
 (function(){
     const T = self.SqliteTestUtil;
     const log = console.log.bind(console);
+    const debug = console.debug.bind(console);
 
     const assert = function(condition, text) {
         if (!condition) {
@@ -31,7 +32,7 @@
             new TextEncoder('utf-8').encode("select 3 as a")
             /* Testing handling of Uint8Array input */
         );
-        //log("statement =",st);
+        //debug("statement =",st);
         T.assert(st._pStmt)
             .assert(!st._mayGet)
             .assert('a' === st.getColumnName(0))
@@ -76,7 +77,7 @@
             /* Achtung: ^^^ bind support might be removed from multi-mode exec. */
         });
         T.assert(2 === list.length);
-        //log("Exec'd SQL:", list);
+        //debug("Exec'd SQL:", list);
 
         let blob = db.selectValue("select b from t where a='blob'");
         T.assert(blob instanceof Uint8Array).
@@ -138,7 +139,7 @@
             assert('hi'===db.selectValue("select asis('hi')"));
                     
         const eqApprox = function(v1,v2,factor=0.05){
-            //log('eqApprox',v1, v2);
+            //debug('eqApprox',v1, v2);
             return v1>=(v2-factor) && v1<=(v2+factor);
         };
         
@@ -165,11 +166,11 @@
 
         blobArg = new Int8Array(2);
         blobArg.set([0x68, 0x69]);
-        console.debug("blobArg=",blobArg);
+        //debug("blobArg=",blobArg);
         blobRc = db.selectValue("select asis(?1)", blobArg);
         T.assert(blobRc instanceof Uint8Array).
             assert(2 === blobRc.length);
-        console.debug("blobRc=",blobRc);
+        //debug("blobRc=",blobRc);
         T.assert(0x68==blobRc[0] && 0x69==blobRc[1]);
     };
 
@@ -196,9 +197,10 @@
         const sqlite3 = Module.sqlite3;
         const api = sqlite3.api;
         const oo = sqlite3.SQLite3;
-        console.log("Loaded module:",api.sqlite3_libversion(),
+        log("Loaded module:",api.sqlite3_libversion(),
                     api.sqlite3_sourceid());
         log("Build options:",oo.compileOptionUsed());
+        log("api.wasm.HEAP8 size =",api.wasm.HEAP8.length);
         const db = new oo.DB();
         try {
             log("DB:",db.filename);
@@ -213,6 +215,7 @@
             db.close();
         }
         log("Total Test count:",T.counter);
+        log("api.wasm.HEAP8 size =",api.wasm.HEAP8.length);
     };
 
     initSqlite3Module(self.sqlite3TestModule).then(function(theModule){

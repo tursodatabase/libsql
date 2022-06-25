@@ -1,5 +1,5 @@
-C wasm:\seliminated\sthe\sdependency\son\sthe\sdeprecated\semcc-provided\sallocate()\sfunction.\sAdjacent\scleanups\sin\sblob\sbinding.
-D 2022-06-25T06:46:22.284
+C wasm:\seliminated\sthe\sneed\sfor\sStmt\sobjects\sto\skeep\sahold\sof\smemory\sallocated\sfor\sbound\sstrings\sand\sblobs.\sAdded\salternate\sstring/blob\sbind\simpls\swhich\sare\shypothetically\smore\sefficient\sbut\snot\syet\sproven\sto\sbe\sso.
+D 2022-06-25T07:42:24.832
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -57,7 +57,7 @@ F ext/expert/sqlite3expert.h ca81efc2679a92373a13a3e76a6138d0310e32be53d6c3bfaed
 F ext/expert/test_expert.c d56c194b769bdc90cf829a14c9ecbc1edca9c850b837a4d0b13be14095c32a72
 F ext/fiddle/EXPORTED_FUNCTIONS.fiddle 7fb73f7150ab79d83bb45a67d257553c905c78cd3d693101699243f36c5ae6c3
 F ext/fiddle/EXPORTED_FUNCTIONS.sqlite3-api 540b9dec63a3a62a256e2f030827848a92e9b9d9b6fa5c0188295a4a1c5382cd
-F ext/fiddle/EXPORTED_RUNTIME_METHODS e499bbb5201bf671850da8dcd47de31b0db47c1183f0c669016801b4d2035534
+F ext/fiddle/EXPORTED_RUNTIME_METHODS a004bd5eeeda6d3b28d16779b7f1a80305bfe009dfc7f0721b042967f0d39d02
 F ext/fiddle/Makefile e25d34a0e1324f771d64c09c592601b97219282011587e6ce410fa8acdedb913
 F ext/fiddle/SqliteTestUtil.js 559731c3e8e0de330ec7d292e6c1846566408caee6637acc8a119ac338a8781c
 F ext/fiddle/emscripten.css 3d253a6fdb8983a2ac983855bfbdd4b6fa1ff267c28d69513dd6ef1f289ada3f
@@ -65,11 +65,11 @@ F ext/fiddle/fiddle-worker.js 88bc2193a6cb6a3f04d8911bed50a4401fe6f277de7a71ba83
 F ext/fiddle/fiddle.html 550c5aafce40bd218de9bf26192749f69f9b10bc379423ecd2e162bcef885c08
 F ext/fiddle/fiddle.js 812f9954cc7c4b191884ad171f36fcf2d0112d0a7ecfdf6087896833a0c079a8
 F ext/fiddle/index.md d9c1c308d8074341bc3b11d1d39073cd77754cb3ca9aeb949f23fdd8323d81cf
-F ext/fiddle/sqlite3-api.js 706bb55b3901a90ec3a0e588f00d4c260d61d5b5ac916b894f48cdd6203ff0ba
+F ext/fiddle/sqlite3-api.js 664a454d82694c6cfab36b8ad9e36620cfc44fa37e05642ba87109c37409f51f
 F ext/fiddle/sqlite3-worker.js a9c2b614beca187dbdd8c053ec2770cc61ec1ac9c0ec6398ceb49a79f705a421
 F ext/fiddle/testing.css 750572dded671d2cf142bbcb27af5542522ac08db128245d0b9fe410aa1d7f2a
 F ext/fiddle/testing1.html ea1f3be727f78e420007f823912c1a03b337ecbb8e79449abc2244ad4fe15d9a
-F ext/fiddle/testing1.js f3a5bd125154a51dfe20b699cb90c7cf2a23fbb5eaf9129cd4fb06e262de2647
+F ext/fiddle/testing1.js 5c04721d205b3d909ec6896682743051cb5e5202e9151a058e90600a42f48f48
 F ext/fiddle/testing2.html 9063b2430ade2fe9da4e711addd1b51a2741cf0c7ebf6926472a5e5dd63c0bc4
 F ext/fiddle/testing2.js 7b45b4e7fddbd51dbaf89b6722c02758051b34bac5a98c11b569a7e7572f88ee
 F ext/fts1/README.txt 20ac73b006a70bcfd80069bdaf59214b6cf1db5e
@@ -1978,8 +1978,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 37a8fecb56793fbd3763a2240a0bd62b639c811934d3af2ef0e5ff579073d632
-R 4c023b8516cd5b1336a52ada20a79c7d
+P 140618b212e3aa9ff2df20f22af846a1c4c5ffaeefd84330446f61362b39a8f1
+R ecfc68999ba200e5f9d0ce8c6a78fe70
 U stephan
-Z 05e90a0a470a56e05a8109a17f4f47da
+Z ec8563cad502dab169a1c4538eaf6ec1
 # Remove this line to create a well-formed Fossil manifest.
