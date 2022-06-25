@@ -1529,10 +1529,15 @@ sqlite3_wasm = $(fiddle_dir)/sqlite3.wasm
 #emcc_opt = -O2
 #emcc_opt = -O3
 emcc_opt = -Oz
-emcc_flags = $(emcc_opt) -sALLOW_TABLE_GROWTH -sSTRICT_JS \
-        -sENVIRONMENT=web -sMODULARIZE \
+emcc_flags = $(emcc_opt) \
+        -sALLOW_TABLE_GROWTH \
+        -sABORTING_MALLOC \
+        -sSTRICT_JS \
+        -sENVIRONMENT=web \
+        -sMODULARIZE \
         -sEXPORTED_RUNTIME_METHODS=@$(fiddle_dir_abs)/EXPORTED_RUNTIME_METHODS \
         -sDYNAMIC_EXECUTION=0 \
+        --minify 0 \
         -I. $(SHELL_OPT)
 $(fiddle_module_js): Makefile sqlite3.c shell.c \
     $(fiddle_dir)/EXPORTED_RUNTIME_METHODS \
@@ -1590,7 +1595,7 @@ wasm: fiddle sqlite3-wasm
 #
 # -sMODULARIZE: changes how the generated code is structured to avoid
 #  declaring a global Module object and instead installing a function
-#  which loads and initialized the module. The function is named...
+#  which loads and initializes the module. The function is named...
 #
 # -sEXPORT_NAME=jsFunctionName (see -sMODULARIZE)
 #
@@ -1610,7 +1615,15 @@ wasm: fiddle sqlite3-wasm
 #  results in build errors.
 #
 # -sALLOW_TABLE_GROWTH is required for (at a minimum) the UDF-binding
-#  feature.
+#  feature. Without it, JS functions cannot be made to proxy C-side
+#  callbacks.
+#
+# -sABORTING_MALLOC causes the JS-bound _malloc() to abort rather than
+#  return 0 on OOM. If set to 0 then all code which uses _malloc()
+#  must, just like in C, check the result before using it, else
+#  they're likely to corrupt the JS/WASM heap by writing to its
+#  address of 0. It is, as of this writing, enabled in Emscripten by
+#  default but we enable it explicitly in case that default changes.
 #
 # -sDYNAMIC_EXECUTION=0 disables eval() and the Function constructor.
 #  If the build runs without these, it's preferable to use this flag
@@ -1642,4 +1655,28 @@ wasm: fiddle sqlite3-wasm
 #  primarily because -Oz will shrink the wasm file notably. JS-side
 #  minification makes little difference in terms of overall
 #  distributable size.
+#
+# --minify 0: disables minification of the generated JS code,
+#  regardless of optimization level. Minification of the JS has
+#  minimal overall effect in the larger scheme of things and results
+#  in JS files which can neither be edited nor viewed as text files in
+#  Fossil (which flags them as binary because of their extreme line
+#  lengths). Interestingly, whether or not the comments in the
+#  generated JS file get stripped is unaffected by this setting and
+#  depends entirely on the optimization level. Higher optimization
+#  levels reduce the size of the JS considerably even without
+#  minification.
+#
+# ACHTUNG...
+#
+# -sALLOW_MEMORY_GROWTH is very tempting but has side-effects which
+#  may break the higher-level code. Specifically, growning the memory
+#  region beyong the default size requires that the app-visible arrays
+#  which act as views for that memory buffer have to be replaced,
+#  which inherently leaves any client-side references to those arrays
+#  with stale state, effectively resulting in memory corruption.
+#  Until/unless that can be well-encapsulated, such that the higher-level
+#  bindings which access those memory heaps are known to be using the
+#  proper references, DO NOT build with this option.
+#
 ########################################################################

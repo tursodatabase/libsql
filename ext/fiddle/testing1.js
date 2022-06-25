@@ -190,17 +190,13 @@
     };
 
     const runTests = function(Module){
-        T.assert(Module._free instanceof Function).
-            assert(Module.allocate instanceof Function).
-            assert(Module.addFunction instanceof Function).
-            assert(Module.removeFunction instanceof Function);
         const sqlite3 = Module.sqlite3;
         const api = sqlite3.api;
         const oo = sqlite3.SQLite3;
         log("Loaded module:",api.sqlite3_libversion(),
                     api.sqlite3_sourceid());
         log("Build options:",oo.compileOptionUsed());
-        log("api.wasm.HEAP8 size =",api.wasm.HEAP8.length);
+        log("api.wasm.HEAP8 size =",api.wasm.HEAP8().length);
         log("wasmEnum",JSON.parse(Module.ccall('sqlite3_wasm_enum_json', 'string', [])));
         [ /* Spot-check a handful of constants to make sure they got installed... */
             'SQLITE_SCHEMA','SQLITE_NULL','SQLITE_UTF8',
@@ -208,6 +204,13 @@
         ].forEach(function(k){
             T.assert('number' === typeof api[k]);
         });
+        [/* Spot-check a few of the WASM API methods. */
+            '_free', '_malloc', 'addFunction', 'stackRestore'
+        ].forEach(function(k){
+            T.assert(Module[k] instanceof Function).
+                assert(api.wasm[k] instanceof Function);
+        });
+
         const db = new oo.DB();
         try {
             log("DB:",db.filename);

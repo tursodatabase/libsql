@@ -1,9 +1,9 @@
-C wasm:\sadded\sutility\sC\scode\sto\sgenerate\sa\sJSON-format\s"enum"\sof\sthe\snumerous\sSQLITE_xyz\sconstants\sso\sthat\swe\sdo\snot\srisk\sthose\sgetting\sout\sof\ssync\sin\sthe\sJS\scode.\sRenamed\sinitSqlite3Module\sto\ssqlite3InitModule.\sCleanups\sin\sthe\sTypedArray\shandling.
-D 2022-06-25T10:30:24.409
+C wasm:\slots\sof\sdoc\sadditions\sand\srefactoring.\sRefactored\sthe\sWASM\smemory\sheap\susage\sto\shopefully\seventually\saccount\sfor\sa\sruntime-growable\sheap.\sDifferentiate\sbetween\ssupported\sTypedArray\stypes\sfor\sinput\sSQL\sstrings\svs\sbinding/fetching\sblobs.\sMight\s(untested)\shave\simplemented\sthe\sability\sto\sbind\sUtfNNArray\svalues\sas\sblobs,\swhere\sNN\sis\sone\sof\s16\sor\s32.
+D 2022-06-25T18:18:45.580
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in b3ccd1a79e6364d49c465b38cec5eccdc74dfdc06501be62ef8eb01dc1f93f43
+F Makefile.in fff0e19d74fe31d6c2960e72b79a1c82aeb971b32fa5002ace2ceb906b9917e5
 F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
 F Makefile.msc de7cb3e095ce2fdc33513ccd76ebdaeda1483d0ddab0410fe65cbdeadd4c0ee1
 F README.md 8b8df9ca852aeac4864eb1e400002633ee6db84065bd01b78c33817f97d31f5e
@@ -65,14 +65,14 @@ F ext/fiddle/fiddle-worker.js 88bc2193a6cb6a3f04d8911bed50a4401fe6f277de7a71ba83
 F ext/fiddle/fiddle.html 550c5aafce40bd218de9bf26192749f69f9b10bc379423ecd2e162bcef885c08
 F ext/fiddle/fiddle.js 812f9954cc7c4b191884ad171f36fcf2d0112d0a7ecfdf6087896833a0c079a8
 F ext/fiddle/index.md d9c1c308d8074341bc3b11d1d39073cd77754cb3ca9aeb949f23fdd8323d81cf
-F ext/fiddle/sqlite3-api.js 03ac065f4bc68eefd3b09cf3957a58891cbfcebe2a5ffe1c8a10f16a58dfc70b
+F ext/fiddle/sqlite3-api.js 690921c0daabde10f7eea1fd1d2d4b034ef0d66d68292931403be0b8e6fccf6a
 F ext/fiddle/sqlite3-worker.js 50b7a9ce14c8fae0af965e35605fe12cafb79c1e01e99216d8110d8b02fbf4b5
 F ext/fiddle/testing.css 750572dded671d2cf142bbcb27af5542522ac08db128245d0b9fe410aa1d7f2a
 F ext/fiddle/testing1.html ea1f3be727f78e420007f823912c1a03b337ecbb8e79449abc2244ad4fe15d9a
-F ext/fiddle/testing1.js f9615ff58b9de6879e4836618b34322085510ec44c6754e725a92a097c908a6f
+F ext/fiddle/testing1.js b7e34d83d6cb2f640311654266cbbe85f4144ef31fda7615d6e91c6486d3890f
 F ext/fiddle/testing2.html 9063b2430ade2fe9da4e711addd1b51a2741cf0c7ebf6926472a5e5dd63c0bc4
 F ext/fiddle/testing2.js 7b45b4e7fddbd51dbaf89b6722c02758051b34bac5a98c11b569a7e7572f88ee
-F ext/fiddle/wasm_util.c b63e00c2f264ab4a9c45c9f9727627cbc4d8aa2f93c5dd09e8105d63ff7e0872
+F ext/fiddle/wasm_util.c dc9f6e8882b0777037b01d2c8ef2dd9360306a37980f6908cfa3909bf6c25da7
 F ext/fts1/README.txt 20ac73b006a70bcfd80069bdaf59214b6cf1db5e
 F ext/fts1/ft_hash.c 3927bd880e65329bdc6f506555b228b28924921b
 F ext/fts1/ft_hash.h 06df7bba40dadd19597aa400a875dbc2fed705ea
@@ -1979,8 +1979,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P da1d3151a440567f34a2f6c0b2bfc2e9fab81c256cc361c9ce7b46f2c23a2aa8
-R ff53072845ce3be319c8a5687950f355
+P 778062e3b415dca5104eee398950741b6dbb9d4bdf7c998eef18371a42669946
+R 7173ecb48dc9d037c18c86459c1a9792
 U stephan
-Z 0ce9f393ac2f284b021257ae10338830
+Z d57bc6484b99c6c0083ee3c3d006ea5c
 # Remove this line to create a well-formed Fossil manifest.

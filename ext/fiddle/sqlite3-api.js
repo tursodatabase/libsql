@@ -40,47 +40,69 @@
 
   Because using certain parts of the low-level API properly requires
   some degree of WASM-related magic, it is not recommended that that
-  API be used as-is in client-level code. Rather, client code should
-  use the higher-level OO API or write a custom wrapper on top of the
-  lower-level API. In short, most of the C-style API is used in an
-  intuitive manner from JS but any C-style APIs which take
+  API be used as-is in client-level code. Rather, client code is
+  encouraged use the higher-level OO API or write a custom wrapper on
+  top of the lower-level API. In short, most of the C-style API is
+  used in an intuitive manner from JS but any C-style APIs which take
   pointers-to-pointer arguments require WASM-specific interfaces
-  installed by emcscripten-generated code. Those which take or return
+  installed by Emscripten-generated code. Those which take or return
   only integers, doubles, strings, or "plain" pointers to db or
   statement objects can be used in "as normal," noting that "pointers"
-  in wasm are simply 32-bit integers.
+  in WASM are simply 32-bit integers.
 
-  # Goals and Non-goals of this API
 
-  Goals:
+  Specific goals of this project:
 
   - Except where noted in the non-goals, provide a more-or-less
     complete wrapper to the sqlite3 C API, insofar as WASM feature
     parity with C allows for. In fact, provide at least 3...
 
-  - (1) The aforementioned C-style API. (2) An OO-style API on
-    top of that, designed to run in the same thread (main window or
-    Web Worker) as the C API. (3) A less-capable wrapper which can
-    work across the main window/worker boundary, where the sqlite3 API
-    is one of those and this wrapper is in the other. That
-    constellation places some considerable limitations on how the API
-    can be interacted with, but keeping the DB operations out of the
-    UI thread is generally desirable.
+    1) Bind a low-level sqlite3 API which is as close to the native
+       one as feasible in terms of usage.
+
+    2) A higher-level API, more akin to sql.js and node.js-style
+       implementations. This one speaks directly to the low-level
+       API. This API must be used from the same thread as the
+       low-level API.
+
+    3) A second higher-level API which speaks to the previous APIs via
+       worker messages. This one is intended for use in the main
+       thread, with the lower-level APIs installed in a Worker thread,
+       and talking to them via Worker messages. Because Workers are
+       asynchronouns and have only a single message channel, some
+       acrobatics are needed here to feed async work results back to
+       the client (as we cannot simply pass around callbacks between
+       the main and Worker threads).
 
   - Insofar as possible, support client-side storage using JS
     filesystem APIs. As of this writing, such things are still very
     much TODO.
 
-  Non-goals:
+
+  Specific non-goals of this project:
 
   - As WASM is a web-centric technology and UTF-8 is the King of
-    Encodings in that realm, there are no current plans to support the
-    UTF16-related APIs. They would add a complication to the bindings
-    for no appreciable benefit.
+    Encodings in that realm, there are no currently plans to support
+    the UTF16-related sqlite3 APIs. They would add a complication to
+    the bindings for no appreciable benefit.
 
   - Supporting old or niche-market platforms. WASM is built for a
     modern web and requires modern platforms.
 
+
+  Attribution:
+
+  Though this code is not a direct copy/paste, much of the
+  functionality in this file is strongly influenced by the
+  corresponding features in sql.js:
+
+  https://github.com/sql-js/sql.js
+
+  sql.js was an essential stepping stone in this code's development as
+  it demonstrated how to handle some of the WASM-related voodoo (like
+  handling pointers-to-pointers and adding JS implementations of
+  C-bound callback functions). These APIs have a considerably
+  different shape than sql.js's, however.
 */
 if(!Module.postRun) Module.postRun = [];
 /* ^^^^ the name Module is, in this setup, scope-local in the generated
@@ -88,124 +110,208 @@ if(!Module.postRun) Module.postRun = [];
 Module.postRun.push(function(namespace/*the module object, the target for
                                         installed features*/){
     'use strict';
-    /* For reference: sql.js does essentially everything we want and
-       it solves much of the wasm-related voodoo, but we'll need a
-       different structure because we want the db connection to run in
-       a worker thread and feed data back into the main
-       thread. Regardless of those differences, it makes a great point
-       of reference:
-
-       https://github.com/sql-js/sql.js
-
-       Some of the specific design goals here:
-
-       - Bind a low-level sqlite3 API which is close to the native one
-         in terms of usage.
-
-       - Create a higher-level one, more akin to sql.js and
-         node.js-style implementations. This one would speak directly
-         to the low-level API. This API could be used by clients who
-         import the low-level API directly into their main thread
-         (which we don't want to recommend but also don't want to
-         outright forbid).
-
-       - Create a second higher-level one which speaks to the
-         low-level API via worker messages. This one would be intended
-         for use in the main thread, talking to the low-level UI via
-         worker messages. Because workers have only a single message
-         channel, some acrobatics will be needed here to feed async
-         work results back into client-side callbacks (as those
-         callbacks cannot simply be passed to the worker). Exactly
-         what those acrobatics should look like is not yet entirely
-         clear and much experimentation is pending.
+    /**
     */
-
-    const SQM = namespace/*the sqlite module object */;
+    const SQM/*interal-use convenience alias*/ = namespace/*the sqlite module object */;
 
     /** Throws a new Error, the message of which is the concatenation
         all args with a space between each. */
     const toss = function(){
         throw new Error(Array.prototype.join.call(arguments, ' '));
     };
-
-    /**
-       Returns true if v appears to be one of our supported TypedArray types:
-       Uint8Array or Int8Array.
-    */
-    const isSupportedTypedArray = function(v){
-        return v && (undefined!==v.byteLength) && (v.byteLength === v.length);
+    
+    /** Returns true if n is a 32-bit (signed) integer,
+        else false. */
+    const isInt32 = function(n){
+        return (n===(n|0) && n<0xFFFFFFFF) ? true : undefined;
     };
 
-    /** Returns true if isSupportedTypedArray(v) does, else throws with a message
+    /** Returns v if v appears to be a TypedArray, else false. */
+    const isTypedArray = (v)=>{
+        return (v && v.constructor && isInt32(v.constructor.BYTES_PER_ELEMENT)) ? v : false;
+    };
+    
+    /**
+       Returns true if v appears to be one of our bind()-able
+       TypedArray types: Uint8Array or Int8Array. Support for
+       TypedArrays with element sizes >1 is a potential TODO.
+    */
+    const isBindableTypedArray = (v)=>{
+        return v && v.constructor && (1===v.constructor.BYTES_PER_ELEMENT);
+    };
+
+    /**
+       Returns true if v appears to be one of the TypedArray types
+       which is legal for holding SQL code (as opposed to binary blobs).
+
+       Currently this is the same as isBindableTypedArray() but it
+       seems likely that we'll eventually want to add Uint32Array
+       and friends to the isBindableTypedArray() list but not to the
+       isSQLableTypedArray() list.
+    */
+    const isSQLableTypedArray = isBindableTypedArray;
+
+    /** Returns true if isBindableTypedArray(v) does, else throws with a message
         that v is not a supported TypedArray value. */
-    const affirmSupportedTypedArray = function(v){
-        return isSupportedTypedArray(v)
+    const affirmBindableTypedArray = (v)=>{
+        return isBindableTypedArray(v)
             || toss("Value is not of a supported TypedArray type.");
     };
 
     /** 
-      Set up the main sqlite3 binding API here, mimicking the C API as
-      closely as we can.
-
-      Attribution: though not a direct copy/paste, much of what
-      follows is strongly influenced by the sql.js implementation.
+      The main sqlite3 binding API gets installed into this object,
+      mimicking the C API as closely as we can. The numerous members
+      names with prefixes 'sqlite3_' and 'SQLITE_' behave, insofar as
+      possible, identically to the C-native counterparts. A very few
+      exceptions may require an additional level of proxy function, as
+      documented in this object.
     */
     const api = {
+        /**
+           The sqlite3_prepare_v2() binding handles two different uses
+           with differing JS/WASM semantics:
+
+           1) sqlite3_prepare_v2(pDb, sqlString, -1, ppStmt [, null])
+
+           2) sqlite3_prepare_v2(pDb, sqlPointer, -1, ppStmt, sqlPointerToPointer)
+
+           Note that the SQL length argument (the 3rd argument) must
+           always be negative because it must be a byte length and
+           that value is expensive to calculate from JS (where only
+           the character length of strings is readily available). It
+           is retained in this API's interface for code/documentation
+           compatibility reasons but is currently _always_
+           ignored. When using the 2nd form of this call, it is
+           critical that the custom-allocated string be terminated
+           with a 0 byte. (Potential TODO: if the 3rd argument is >0,
+           assume the caller knows precisely what they're doing, vis a
+           vis WASM memory management, and pass it on as-is. That
+           approach currently seems fraught with peril.)
+
+           In usage (1), the 2nd argument must be of type string,
+           Uint8Array, or Int8Array (either of which is assumed to
+           hold SQL). If it is, this function assumes case (1) and
+           calls the underyling C function with:
+
+           (pDb, sqlAsString, -1, ppStmt, null)
+
+           The pzTail argument is ignored in this case because its result
+           is meaningless when a string-type value is passed through
+           (because the string goes through another level of internal
+           conversion for WASM's sake and the result pointer would refer
+           to that conversion's memory, not the passed-in string).
+
+           If sql is not a string or supported TypedArray, it must be
+           a _pointer_ to a string which was allocated via
+           api.wasm.allocateUTF8OnStack(), api.wasm._malloc(), or
+           equivalent. In that case,
+           the final argument may be 0/null/undefined or must be a
+           pointer to which the "tail" of the compiled SQL is written,
+           as documented for the C-side sqlite3_prepare_v2(). In case
+           (2), the underlying C function is called with:
+
+           (pDb, sqlAsPointer, -1, ppStmt, pzTail)
+
+           It returns its result and compiled statement as documented
+           in the C API. Fetching the output pointers (4th and 5th
+           parameters) requires using api.wasm.getValue() and the
+           pzTail will point to an address relative to the
+           sqlAsPointer value.
+
+           If passed an invalid 2nd argument type, this function will
+           throw. That behaviour is in strong constrast to all of the
+           other C-bound functions (which return a non-0 result code
+           on error) but is necessary because we have to way to set
+           the db's error state such that this function could return a
+           non-0 integer and the client could call sqlite3_errcode()
+           or sqlite3_errmsg() to fetch it.
+        */
+        sqlite3_prepare_v2: undefined/*installed later*/,
+
         /**
            Holds state which are specific to the WASM-related
            infrastructure and glue code. It is not expected that client
            code will normally need these, but they're exposed here in case it
            does.
+
+           Note that a number of members of this object are injected
+           dynamically after the api object is fully constructed, so
+           not all are documented inline here.
         */
         wasm: {
             /**
                api.wasm._malloc()'s srcTypedArray.byteLength bytes,
-               populates them with the values from the source array,
-               and returns the pointer to that memory. The pointer
-               must eventually be passed to api.wasm._free() to clean
-               it up.
+               populates them with the values from the source
+               TypedArray, and returns the pointer to that memory. The
+               returned pointer must eventually be passed to
+               api.wasm._free() to clean it up.
 
                As a special case, to avoid further special cases where
                this is used, if srcTypedArray.byteLength is 0, it
-               allocates a single byte and sets it to the value 0.
+               allocates a single byte and sets it to the value
+               0. Even in such cases, calls must behave as if the
+               allocated memory has exactly srcTypedArray.byteLength
+               bytes.
 
                ACHTUNG: this currently only works for Uint8Array and
-               Int8Array types.
+               Int8Array types and will throw if srcTypedArray is of
+               any other type.
             */
             mallocFromTypedArray: function(srcTypedArray){
-                affirmSupportedTypedArray(srcTypedArray);
+                affirmBindableTypedArray(srcTypedArray);
                 const pRet = api.wasm._malloc(srcTypedArray.byteLength || 1);
-                if(srcTypedArray.byteLength){
-                    api.wasm._malloc.HEAP.set(srcTypedArray, pRet);
-                    /* That unfortunately does not behave intuitively
-                       when copying, e.g., the contents of a
-                       Uint16Array, copying only 1 byte of each
-                       entry instead of blitting the whole array
-                       contents over the destination array. A potential TODO
-                       is handle that copying here so that we can support a wider
-                       array (haha) of bindable-as-blob types. */
-                }
-                else api.wasm._malloc.HEAP[pRet] = 0;
+                this.heapForSize(srcTypedArray).set(srcTypedArray.byteLength ? srcTypedArray : [0], pRet);
                 return pRet;
             },
+            /** Convenience form of this.heapForSize(8,false). */
+            HEAP8: ()=>SQM['HEAP8'],
+            /** Convenience form of this.heapForSize(8,true). */
+            HEAPU8: ()=>SQM['HEAPU8'],
             /**
-               The TypedArray buffer which holds the heap memory
-               managed by the emscripten-installed _malloc().
+               Requires n to be one of (8, 16, 32) or a TypedArray
+               instance of Int8Array, Int16Array, Int32Array, or their
+               Uint counterparts.
+
+               Returns the current integer-based TypedArray view of
+               the WASM heap memory buffer associated with the given
+               block size. If unsigned is truthy then the "U"
+               (unsigned) variant of that view is returned, else the
+               signed variant is returned. If passed a TypedArray
+               value and no 2nd argument then the 2nd argument
+               defaults to the signedness of that array. Note that
+               Float32Array and Float64Array views are not supported
+               by this function.
+
+               Note that growth of the heap will invalidate any
+               references to this heap, so do not hold a reference
+               longer than needed and do not use a reference
+               after any operation which may allocate.
+
+               Throws if passed an invalid n
             */
-            HEAP8: SQM.HEAP8
+            heapForSize: function(n,unsigned = true){
+                if(isTypedArray(n)){
+                    if(1===arguments.length){
+                        unsigned = n instanceof Uint8Array || n instanceof Uint16Array
+                            || n instanceof Uint32Array;
+                    }
+                    n = n.constructor.BYTES_PER_ELEMENT * 8;
+                }
+                switch(n){
+                    case 8:  return SQM[unsigned ? 'HEAPU8'  : 'HEAP8'];
+                    case 16: return SQM[unsigned ? 'HEAPU16' : 'HEAP16'];
+                    case 32: return SQM[unsigned ? 'HEAPU32' : 'HEAP32'];
+                }
+                toss("Invalid heapForSize() size: expecting 8, 16, or 32.");
+            }
         }
     };
-    [/* C-side functions to bind. Each entry is an array with 3 or 4
-        elements:
+    [/* C-side functions to bind. Each entry is an array with 3 elements:
         
         ["c-side name",
          "result type" (cwrap() syntax),
          [arg types in cwrap() syntax]
         ]
-
-        If it has 4 elements, the first one is an alternate name to
-        use for the JS-side binding. That's required when overloading
-        a binding for two different uses.
      */
         ["sqlite3_bind_blob","number",["number", "number", "number", "number", "number"]],
         ["sqlite3_bind_double","number",["number", "number", "number"]],
@@ -263,10 +369,7 @@ Module.postRun.push(function(namespace/*the module object, the target for
         ["sqlite3_value_text", "string", ["number"]],
         ["sqlite3_value_type", "number", ["number"]]
         //["sqlite3_normalized_sql", "string", ["number"]]
-    ].forEach(function(a){
-        const k = (4==a.length) ? a.shift() : a[0];
-        api[k] = SQM.cwrap.apply(this, a);
-    });
+    ].forEach((a)=>api[a[0]] = SQM.cwrap.apply(this, a));
 
     /**
        Proxies for variants of sqlite3_prepare_v2() which have
@@ -314,54 +417,9 @@ Module.postRun.push(function(namespace/*the module object, the target for
     const typedArrayToString = (str)=>utf8Decoder.decode(str);
     //const stringToUint8 = (sql)=>new TextEncoder('utf-8').encode(sql);
 
-    /**
-       sqlite3_prepare_v2() binding which handles two different uses
-       with differing JS/WASM semantics:
-
-       1) sqlite3_prepare_v2(pDb, sqlString, -1, ppStmt [, null])
-
-       2) sqlite3_prepare_v2(pDb, sqlPointer, -1, ppStmt, sqlPointerToPointer)
-
-       Note that the SQL length argument (the 3rd argument) must
-       always be negative because it must be a byte length and that
-       value is expensive to calculate from JS (where we get the
-       character length of strings). It is retained in this API's
-       interface for code/documentation compatibility reasons but is
-       currently _always_ ignored. When using the 2nd form of this
-       call, it is critical that the custom-allocated string be
-       terminated with a 0 byte. (Potential TODO: if this value is >0,
-       assume the caller knows precisely what they're doing and pass
-       it on as-is. That approach currently seems fraught with peril.)
-
-       In usage (1), the 2nd argument must be of type string or
-       Uint8Array (which is assumed to hold SQL). If it is, this
-       function assumes case (1) and calls the underling C function
-       with:
-
-       (pDb, sqlAsString, -1, ppStmt, null)
-
-       The pzTail argument is ignored in this case because its result
-       is meaningless when a string-type value is passed through
-       (because the string goes through another level of internal
-       conversion for WASM's sake and the result pointer would refer
-       to that conversion's memory, not the passed-in string).
-
-       If sql is not a string or Uint8Array, it must be a _pointer_ to
-       a string which was allocated via api.wasm.allocateUTF8OnStack()
-       or equivalent (TODO: define "or equivalent"). In that case, the
-       final argument may be 0/null/undefined or must be a pointer to
-       which the "tail" of the compiled SQL is written, as documented
-       for the C-side sqlite3_prepare_v2(). In case (2), the
-       underlying C function is called with:
-
-       (pDb, sqlAsPointer, -1, ppStmt, pzTail)
-
-       It returns its result and compiled statement as documented in
-       the C API. Fetching the output pointers (4th and 5th
-       parameters) requires using api.wasm.getValue().
-    */
+    /* Documented inline in the api object. */
     api.sqlite3_prepare_v2 = function(pDb, sql, sqlLen, ppStmt, pzTail){
-        if(isSupportedTypedArray(sql)) sql = typedArrayToString(sql);
+        if(isSQLableTypedArray(sql)) sql = typedArrayToString(sql);
         switch(typeof sql){
             case 'string': return prepareMethods.basic(pDb, sql, -1, ppStmt, null);
             case 'number': return prepareMethods.full(pDb, sql, -1, ppStmt, pzTail);
@@ -369,23 +427,35 @@ Module.postRun.push(function(namespace/*the module object, the target for
         }
     };
 
-    /** Populate api.wasm with several members of the module object... */
-    ['getValue','setValue', 'stackSave', 'stackRestore', 'stackAlloc',
-     'allocateUTF8OnStack', '_malloc', '_free',
-     'addFunction', 'removeFunction',
-     'intArrayFromString', 'lengthBytesUTF8', 'stringToUTF8Array'
+    /**
+       Populate api.wasm with several members of the module object. Some of these
+       will be required by higher-level code. At a minimum:
+
+       getValue(), setValue(), stackSave(), stackRestore(), stackAlloc(), _malloc(),
+       _free(), addFunction(), removeFunction()
+
+       The rest are exposed primarily for internal use in this API but may well
+       be useful from higher-level client code.
+
+       All of the functions injected here are part of the
+       Emscripten-exposed APIs and are documented "elsewhere". Some
+       are documented in the Emscripten-generated `sqlite3.js` and
+       some are documented (if at all) in places unknown, possibly
+       even inaccessible, to us.
+    */
+    [
+        // Memory management:
+        'getValue','setValue', 'stackSave', 'stackRestore', 'stackAlloc',
+        'allocateUTF8OnStack', '_malloc', '_free',
+        // String utilities:
+        'intArrayFromString', 'lengthBytesUTF8', 'stringToUTF8Array',
+        // The obligatory "misc" category:
+        'addFunction', 'removeFunction'
     ].forEach(function(m){
         if(undefined === (api.wasm[m] = SQM[m])){
             toss("Internal init error: Module."+m+" not found.");
         }
     });
-    /**
-       The array object which holds the raw bytes managed by the
-       _malloc() binding. Side note: why on earth _malloc() manages
-       HEAP8 (an Int8Array), rather than HEAPU8 (a Uint8Array), is a
-       mystery.
-    */
-    api.wasm._malloc.HEAP = api.wasm.HEAP8;
 
     /* What follows is colloquially known as "OO API #1". It is a
        binding of the sqlite3 API which is designed to be run within
@@ -500,12 +570,6 @@ Module.postRun.push(function(namespace/*the module object, the target for
         return db;
     };
 
-    /** Returns true if n is a 32-bit (signed) integer,
-        else false. */
-    const isInt32 = function(n){
-        return (n===(n|0) && n<0xFFFFFFFF) ? true : undefined;
-    };
-
     /**
        Expects to be passed (arguments) from DB.exec() and
        DB.execMulti(). Does the argument processing/validation, throws
@@ -522,9 +586,7 @@ Module.postRun.push(function(namespace/*the module object, the target for
         const out = {opt:{}};
         switch(args.length){
             case 1:
-                if('string'===typeof args[0]){
-                    out.sql = args[0];
-                }else if(isSupportedTypedArray(args[0])){
+                if('string'===typeof args[0] || isSQLableTypedArray(args[0])){
                     out.sql = args[0];
                 }else if(args[0] && 'object'===typeof args[0]){
                     out.opt = args[0];
@@ -537,7 +599,7 @@ Module.postRun.push(function(namespace/*the module object, the target for
             break;
             default: toss("Invalid argument count for exec().");
         };
-        if(isSupportedTypedArray(out.sql)){
+        if(isSQLableTypedArray(out.sql)){
             out.sql = typedArrayToString(out.sql);
         }else if(Array.isArray(out.sql)){
             out.sql = out.sql.join('');
@@ -797,7 +859,7 @@ Module.postRun.push(function(namespace/*the module object, the target for
                 (opt.callback && opt.rowMode)
                     ? opt.rowMode : false);
             try{
-                const sql = isSupportedTypedArray(arg.sql)
+                const sql = isSQLableTypedArray(arg.sql)
                       ? typedArrayToString(arg.sql)
                       : arg.sql;
                 let pSql = api.wasm.allocateUTF8OnStack(sql)
@@ -939,7 +1001,8 @@ Module.postRun.push(function(namespace/*the module object, the target for
                                 const pBlob = api.sqlite3_value_blob(pVal);
                                 arg = new Uint8Array(n);
                                 let i;
-                                for(i = 0; i < n; ++i) arg[i] = api.wasm.HEAP8[pBlob+i];
+                                const heap = n ? api.wasm.HEAP8() : false;
+                                for(i = 0; i < n; ++i) arg[i] = heap[pBlob+i];
                                 break;
                             }
                             default:
@@ -967,7 +1030,7 @@ Module.postRun.push(function(namespace/*the module object, the target for
                             if(null===val) {
                                 api.sqlite3_result_null(pCx);
                                 break;
-                            }else if(isSupportedTypedArray(val)){
+                            }else if(isBindableTypedArray(val)){
                                 const pBlob = api.wasm.mallocFromTypedArray(val);
                                 api.sqlite3_result_blob(pCx, pBlob, val.byteLength,
                                                         api.SQLITE_TRANSIENT);
@@ -1081,7 +1144,7 @@ Module.postRun.push(function(namespace/*the module object, the target for
                 return t;
             default:
                 //console.log("isSupportedBindType",t,v);
-                return isSupportedTypedArray(v) ? BindTypes.blob : undefined;
+                return isBindableTypedArray(v) ? BindTypes.blob : undefined;
         }
     };
 
@@ -1159,7 +1222,7 @@ Module.postRun.push(function(namespace/*the module object, the target for
                         try{
                             const n = api.wasm.lengthBytesUTF8(val)+1/*required for NUL terminator*/;
                             const pStr = api.wasm.stackAlloc(n);
-                            api.wasm.stringToUTF8Array(val, api.wasm.HEAP8, pStr, n);
+                            api.wasm.stringToUTF8Array(val, api.wasm.HEAPU8(), pStr, n);
                             const f = asBlob ? api.sqlite3_bind_blob : api.sqlite3_bind_text;
                             return f(stmt._pStmt, ndx, pStr, n-1, api.SQLITE_TRANSIENT);
                         }finally{
@@ -1168,7 +1231,7 @@ Module.postRun.push(function(namespace/*the module object, the target for
                     }else{
                         const bytes = api.wasm.intArrayFromString(val,true);
                         const pStr = api.wasm._malloc(bytes.length || 1);
-                        api.wasm._malloc.HEAP.set(bytes.length ? bytes : [0], pStr);
+                        api.wasm.HEAPU8().set(bytes.length ? bytes : [0], pStr);
                         try{
                             const f = asBlob ? api.sqlite3_bind_blob : api.sqlite3_bind_text;
                             return f(stmt._pStmt, ndx, pStr, bytes.length, api.SQLITE_TRANSIENT);
@@ -1205,7 +1268,7 @@ Module.postRun.push(function(namespace/*the module object, the target for
             case BindTypes.blob: {
                 if('string'===typeof val){
                     rc = f._.string(stmt, ndx, val, true);
-                }else if(!isSupportedTypedArray(val)){
+                }else if(!isBindableTypedArray(val)){
                     toss("Binding a value as a blob requires",
                          "that it be a string, Uint8Array, or Int8Array.");
                 }else if(1){
@@ -1213,7 +1276,7 @@ Module.postRun.push(function(namespace/*the module object, the target for
                     const stack = api.wasm.stackSave();
                     try{
                         const pBlob = api.wasm.stackAlloc(val.byteLength || 1);
-                        api.wasm.HEAP8.set(val.byteLength ? val : [0], pBlob)
+                        api.wasm.HEAP8().set(val.byteLength ? val : [0], pBlob)
                         rc = api.sqlite3_bind_blob(stmt._pStmt, ndx, pBlob, val.byteLength,
                                                    api.SQLITE_TRANSIENT);
                     }finally{
@@ -1379,7 +1442,7 @@ Module.postRun.push(function(namespace/*the module object, the target for
                 return this;
             }
             else if('object'===typeof arg/*null was checked above*/
-                    && !isSupportedTypedArray(arg)){
+                    && !isBindableTypedArray(arg)){
                 /* Treat each property of arg as a named bound parameter. */
                 if(1!==arguments.length){
                     toss("When binding an object, an index argument is not permitted.");
@@ -1501,10 +1564,11 @@ Module.postRun.push(function(namespace/*the module object, the target for
                 case api.SQLITE_TEXT:
                     return api.sqlite3_column_text(this._pStmt, ndx);
                 case api.SQLITE_BLOB: {
-                    const n = api.sqlite3_column_bytes(this._pStmt, ndx);
-                    const ptr = api.sqlite3_column_blob(this._pStmt, ndx);
-                    const rc = new Uint8Array(n);
-                    for(let i = 0; i < n; ++i) rc[i] = api.wasm.HEAP8[ptr + i];
+                    const n = api.sqlite3_column_bytes(this._pStmt, ndx),
+                          ptr = api.sqlite3_column_blob(this._pStmt, ndx),
+                          rc = new Uint8Array(n),
+                          heap = n ? api.wasm.HEAP8() : false;
+                    for(let i = 0; i < n; ++i) rc[i] = heap[ptr + i];
                     if(n && this.db._blobXfer instanceof Array){
                         /* This is an optimization soley for the
                            Worker-based API. These values will be

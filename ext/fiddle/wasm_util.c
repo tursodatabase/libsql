@@ -12,9 +12,14 @@
 **
 ***********************************************************************
 **
-** Utility functions for use with the emscripten/WASM bits.  These
+** Utility functions for use with the emscripten/WASM bits. These
 ** functions ARE NOT part of the sqlite3 public API. They are strictly
 ** for internal use by the JS/WASM bindings.
+**
+** This file is intended to be WASM-compiled together with sqlite3.c,
+** e.g.:
+**
+**  emcc ... sqlite3.c wasm_util.c
 */
 
 /** Result value of sqlite3_wasm_enum_json(). */
