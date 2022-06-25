@@ -201,6 +201,13 @@
                     api.sqlite3_sourceid());
         log("Build options:",oo.compileOptionUsed());
         log("api.wasm.HEAP8 size =",api.wasm.HEAP8.length);
+        log("wasmEnum",JSON.parse(Module.ccall('sqlite3_wasm_enum_json', 'string', [])));
+        [ /* Spot-check a handful of constants to make sure they got installed... */
+            'SQLITE_SCHEMA','SQLITE_NULL','SQLITE_UTF8',
+            'SQLITE_STATIC', 'SQLITE_DIRECTONLY'
+        ].forEach(function(k){
+            T.assert('number' === typeof api[k]);
+        });
         const db = new oo.DB();
         try {
             log("DB:",db.filename);
@@ -215,14 +222,12 @@
             db.close();
         }
         log("Total Test count:",T.counter);
-        log("api.wasm.HEAP8 size =",api.wasm.HEAP8.length);
     };
 
-    initSqlite3Module(self.sqlite3TestModule).then(function(theModule){
-        /** Use a timeout so that we are (hopefully) out from
-            under the module init stack when our setup gets
-            run. Just on principle, not because we _need_ to
-            be. */
+    sqlite3InitModule(self.sqlite3TestModule).then(function(theModule){
+        /** Use a timeout so that we are (hopefully) out from under
+            the module init stack when our setup gets run. Just on
+            principle, not because we _need_ to be. */
         //console.debug("theModule =",theModule);
         setTimeout(()=>runTests(theModule), 0);
     });

@@ -90,7 +90,7 @@
     
     /**
        This is a module object for use with the emscripten-installed
-       initSqlite3Module() factory function.
+       sqlite3InitModule() factory function.
     */
     self.sqlite3TestModule = {
         postRun: [

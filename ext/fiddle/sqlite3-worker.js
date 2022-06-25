@@ -20,7 +20,7 @@
   loading sqlite3.js via a Worker. Loading sqlite3.js from the main
   window thread elides the Worker-specific API. Instantiating a worker
   with new Worker("sqlite.js") will not (cannot) call
-  initSqlite3Module() to initialize the module due to a
+  sqlite3InitModule() to initialize the module due to a
   timing/order-of-operations conflict (and that symbol is not exported
   in a way that a Worker loading it that way can see it).  Thus JS
   code wanting to load the sqlite3 Worker-specific API needs to pass
@@ -39,6 +39,6 @@
 */
 "use strict";
 importScripts('sqlite3.js');
-initSqlite3Module().then(function(){
+sqlite3InitModule().then(function(){
     setTimeout(()=>self.postMessage({type:'sqlite3-api',data:'ready'}), 0);
 });

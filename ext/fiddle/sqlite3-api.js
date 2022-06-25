@@ -13,11 +13,11 @@
   This file is intended to be appended to the emcc-generated
   sqlite3.js via emcc:
 
-  emcc ... -sMODULARIZE -sEXPORT_NAME=initSqlite3Module --post-js=THIS_FILE
+  emcc ... -sMODULARIZE -sEXPORT_NAME=sqlite3InitModule --post-js=THIS_FILE
 
   It is loaded by importing the emcc-generated sqlite3.js, then:
 
-  initSqlite3Module({module object}).then(
+  sqlite3InitModule({module object}).then(
     function(theModule){
       theModule.sqlite3 == an object containing this file's
       deliverables:
@@ -29,7 +29,7 @@
 
   It is up to the caller to provide a module object compatible with
   emcc, but it can be a plain empty object. The object passed to
-  initSqlite3Module() will get populated by the emscripten-generated
+  sqlite3InitModule() will get populated by the emscripten-generated
   bits and, in part, by the code from this file. Specifically, this file
   installs the `theModule.sqlite3` part shown above.
 
@@ -151,49 +151,6 @@ Module.postRun.push(function(namespace/*the module object, the target for
       follows is strongly influenced by the sql.js implementation.
     */
     const api = {
-        /* It is important that the following integer values match
-           those from the C code. Ideally we could fetch them from the
-           C API, e.g., in the form of a JSON object, but getting that
-           JSON string constructed within our current confines is
-           currently not worth the effort.
-
-           Reminder to self: we could probably do so by adding the
-           proverbial level of indirection, calling in to C to get it,
-           and having that C func call an
-           emscripten-installed/JS-implemented library function which
-           builds the result object:
-
-           const obj = {};
-           sqlite3__get_enum(function(key,val){
-               obj[key] = val;
-           });
-
-           but whether or not we can pass a function that way, via a
-           (void*) is as yet unknown.
-        */
-        /* Minimum subset of sqlite result codes we'll need. */
-        SQLITE_OK: 0,
-        SQLITE_ROW: 100,
-        SQLITE_DONE: 101,
-        /* sqlite data types */
-        SQLITE_INTEGER: 1,
-        SQLITE_FLOAT: 2,
-        SQLITE_TEXT: 3,
-        SQLITE_BLOB: 4,
-        SQLITE_NULL: 5,
-        /* create_function() flags */
-        SQLITE_DETERMINISTIC: 0x000000800,
-        SQLITE_DIRECTONLY: 0x000080000,
-        SQLITE_INNOCUOUS: 0x000200000,
-        /* sqlite encodings, used for creating UDFs, noting that we
-           will only support UTF8. */
-        SQLITE_UTF8: 1,
-        /* Values for the final argument of sqlite3_result_blob(),
-           noting that these are interpreted in WASM as pointer
-           values. */
-        SQLITE_TRANSIENT: -1,
-        SQLITE_STATIC: 0,
-
         /**
            Holds state which are specific to the WASM-related
            infrastructure and glue code. It is not expected that client
@@ -343,7 +300,18 @@ Module.postRun.push(function(namespace/*the module object, the target for
                                    "number", "number"]),
     };
 
-    const uint8ToString = (str)=>new TextDecoder('utf-8').decode(str);
+    /* Import C-level constants... */
+    //console.log("wasmEnum=",SQM.ccall('sqlite3_wasm_enum_json', 'string', []));
+    const wasmEnum = JSON.parse(SQM.ccall('sqlite3_wasm_enum_json', 'string', []));
+    ['resultCodes','dataTypes','udfFlags',
+     'encodings','blobFinalizers'].forEach(function(t){
+        Object.keys(wasmEnum[t]).forEach(function(k){
+            api[k] = wasmEnum[t][k];
+        });
+    });
+
+    const utf8Decoder = new TextDecoder('utf-8');
+    const typedArrayToString = (str)=>utf8Decoder.decode(str);
     //const stringToUint8 = (sql)=>new TextEncoder('utf-8').encode(sql);
 
     /**
@@ -393,7 +361,7 @@ Module.postRun.push(function(namespace/*the module object, the target for
        parameters) requires using api.wasm.getValue().
     */
     api.sqlite3_prepare_v2 = function(pDb, sql, sqlLen, ppStmt, pzTail){
-        if(sql instanceof Uint8Array) sql = uint8ToString(sql);
+        if(isSupportedTypedArray(sql)) sql = typedArrayToString(sql);
         switch(typeof sql){
             case 'string': return prepareMethods.basic(pDb, sql, -1, ppStmt, null);
             case 'number': return prepareMethods.full(pDb, sql, -1, ppStmt, pzTail);
@@ -556,7 +524,7 @@ Module.postRun.push(function(namespace/*the module object, the target for
             case 1:
                 if('string'===typeof args[0]){
                     out.sql = args[0];
-                }else if(args[0] instanceof Uint8Array){
+                }else if(isSupportedTypedArray(args[0])){
                     out.sql = args[0];
                 }else if(args[0] && 'object'===typeof args[0]){
                     out.opt = args[0];
@@ -569,8 +537,8 @@ Module.postRun.push(function(namespace/*the module object, the target for
             break;
             default: toss("Invalid argument count for exec().");
         };
-        if(out.sql instanceof Uint8Array){
-            out.sql = uint8ToString(out.sql);
+        if(isSupportedTypedArray(out.sql)){
+            out.sql = typedArrayToString(out.sql);
         }else if(Array.isArray(out.sql)){
             out.sql = out.sql.join('');
         }else if('string'!==typeof out.sql){
@@ -829,8 +797,8 @@ Module.postRun.push(function(namespace/*the module object, the target for
                 (opt.callback && opt.rowMode)
                     ? opt.rowMode : false);
             try{
-                const sql = (arg.sql instanceof Uint8Array)
-                      ? uint8ToString(arg.sql)
+                const sql = isSupportedTypedArray(arg.sql)
+                      ? typedArrayToString(arg.sql)
                       : arg.sql;
                 let pSql = api.wasm.allocateUTF8OnStack(sql)
                 const ppStmt  = api.wasm.stackAlloc(8) /* output (sqlite3_stmt**) arg */;
@@ -1638,7 +1606,9 @@ Module.postRun.push(function(namespace/*the module object, the target for
 
            If passed no arguments then it returns an object mapping
            all known compilation options to their compile-time values,
-           or boolean true if they are defined with no value.
+           or boolean true if they are defined with no value. This
+           result, which is relatively expensive to compute, is cached
+           and returned for future no-argument calls.
 
            In all other cases it returns true if the given option was
            active when when compiling the sqlite3 module, else false.
@@ -1649,7 +1619,8 @@ Module.postRun.push(function(namespace/*the module object, the target for
         */
         compileOptionUsed: function f(optName){
             if(!arguments.length){
-                if(!f._opt){
+                if(f._result) return f._result;
+                else if(!f._opt){
                     f._rx = /^([^=]+)=(.+)/;
                     f._rxInt = /^-?\d+$/;
                     f._opt = function(opt, rv){
@@ -1664,16 +1635,14 @@ Module.postRun.push(function(namespace/*the module object, the target for
                     f._opt(k,ov);
                     rc[ov[0]] = ov[1];
                 }
-                return rc;
-            }
-            else if(Array.isArray(optName)){
+                return f._result = rc;
+            }else if(Array.isArray(optName)){
                 const rc = {};
                 optName.forEach((v)=>{
                     rc[v] = api.sqlite3_compileoption_used(v);
                 });
                 return rc;
-            }
-            else if('object' === typeof optName){
+            }else if('object' === typeof optName){
                 Object.keys(optName).forEach((k)=> {
                     optName[k] = api.sqlite3_compileoption_used(k);
                 });

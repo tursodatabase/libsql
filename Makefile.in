@@ -1543,16 +1543,16 @@ $(fiddle_module_js): Makefile sqlite3.c shell.c \
         sqlite3.c shell.c
 	gzip < $@ > $@.gz
 	gzip < $(fiddle_dir)/fiddle-module.wasm > $(fiddle_dir)/fiddle-module.wasm.gz
-$(sqlite3_wasm_js): Makefile sqlite3.c \
+$(sqlite3_wasm_js): Makefile sqlite3.c $(fiddle_dir)/wasm_util.c \
     $(fiddle_dir)/sqlite3-api.js \
     $(fiddle_dir)/EXPORTED_RUNTIME_METHODS \
     $(fiddle_dir)/EXPORTED_FUNCTIONS.sqlite3-api
 	emcc -o $@ $(emcc_flags) \
-        -sEXPORT_NAME=initSqlite3Module \
+        -sEXPORT_NAME=sqlite3InitModule \
         -sEXPORTED_FUNCTIONS=@$(fiddle_dir_abs)/EXPORTED_FUNCTIONS.sqlite3-api \
         --post-js=$(fiddle_dir)/sqlite3-api.js \
         --no-entry \
-        sqlite3.c
+        sqlite3.c $(fiddle_dir)/wasm_util.c
 	gzip < $@ > $@.gz
 	gzip < $(sqlite3_wasm) > $(sqlite3_wasm).gz
 	gzip < $(fiddle_dir)/sqlite3-api.js > $(fiddle_dir)/sqlite3-api.js.gz
