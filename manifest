@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\sUBSAN\swarning\sassociated\swith\sPRAGMA\sschema_version\nfound\sby\sOSSFuzz.
-D 2022-06-24T12:56:48.588
+C wasm\sbinding:\sconsolidated\sthe\stwo\ssqlite3_prepare_v2()\sbindings\sbehind\sa\ssingle\sdispathcer.\sVarious\sinternal\scleanups\sand\srefactoring.\sBranched\sbecause\strunk\sis\sin\spencils-down\smode\sfor\spending\s3.39\srelease.
+D 2022-06-25T02:37:57.122
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -65,11 +65,11 @@ F ext/fiddle/fiddle-worker.js 88bc2193a6cb6a3f04d8911bed50a4401fe6f277de7a71ba83
 F ext/fiddle/fiddle.html 550c5aafce40bd218de9bf26192749f69f9b10bc379423ecd2e162bcef885c08
 F ext/fiddle/fiddle.js 812f9954cc7c4b191884ad171f36fcf2d0112d0a7ecfdf6087896833a0c079a8
 F ext/fiddle/index.md d9c1c308d8074341bc3b11d1d39073cd77754cb3ca9aeb949f23fdd8323d81cf
-F ext/fiddle/sqlite3-api.js ccf4bd0c1c5bbb3be3469573423d6c53991941bec497eac63e9f17ea13bf8952
+F ext/fiddle/sqlite3-api.js aff4fe5583d02cb7207cc27a92d2cc708fca8a0eba14339f519059298f6bbc5e
 F ext/fiddle/sqlite3-worker.js a9c2b614beca187dbdd8c053ec2770cc61ec1ac9c0ec6398ceb49a79f705a421
 F ext/fiddle/testing.css 750572dded671d2cf142bbcb27af5542522ac08db128245d0b9fe410aa1d7f2a
 F ext/fiddle/testing1.html ea1f3be727f78e420007f823912c1a03b337ecbb8e79449abc2244ad4fe15d9a
-F ext/fiddle/testing1.js e2fa02ac8adbd21c69bc50cfcb79bfc26af0d30a8d6b95ac473a17e0dc9de733
+F ext/fiddle/testing1.js 2ba8d14b335cdfc694757c25a3ffcfa76f4696bb21187db5c12ea6e505c44af0
 F ext/fiddle/testing2.html 9063b2430ade2fe9da4e711addd1b51a2741cf0c7ebf6926472a5e5dd63c0bc4
 F ext/fiddle/testing2.js 7b45b4e7fddbd51dbaf89b6722c02758051b34bac5a98c11b569a7e7572f88ee
 F ext/fts1/README.txt 20ac73b006a70bcfd80069bdaf59214b6cf1db5e
@@ -1978,8 +1978,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P db5266dec601a9513bc8dd09a9f8bb4aef55b780d22610946099e8edd4836587
-R 09efcead2b1be4144ef279312bf3e194
-U drh
-Z 1fc91f4cca35906afdee86eebc313610
+P e93fd170ce4ae91d572c46d03f68f55d00091d0188030517455017d90d212587
+R 3edce7228a2d729bf332a89ed3af6305
+T *branch * wasm-cleanups
+T *sym-wasm-cleanups *
+T -sym-trunk * Cancelled\sby\sbranch.
+U stephan
+Z e1adc8db1d84e5f34db3da1c68e91f04
 # Remove this line to create a well-formed Fossil manifest.

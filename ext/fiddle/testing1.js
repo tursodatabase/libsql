@@ -27,7 +27,10 @@
         const api = sqlite3.api;
         log("Basic sanity tests...");
         T.assert(db._pDb);
-        let st = db.prepare("select 3 as a");
+        let st = db.prepare(
+            new TextEncoder('utf-8').encode("select 3 as a")
+            /* Testing handling of Uint8Array input */
+        );
         //log("statement =",st);
         T.assert(st._pStmt)
             .assert(!st._mayGet)
@@ -47,6 +50,7 @@
             .assert(3.0 === st.get(0,api.SQLITE_FLOAT))
             .assert(3.0 === st.getFloat(0))
             .assert(st.get(0,api.SQLITE_BLOB) instanceof Uint8Array)
+            .assert(1===st.get(0,api.SQLITE_BLOB).length)
             .assert(st.getBlob(0) instanceof Uint8Array)
             .assert(3 === st.get([])[0])
             .assert(3 === st.get({}).a)
@@ -72,7 +76,7 @@ INSERT INTO t(a,b) VALUES(1,2),(3,4),(?,?);`,
         //log("Exec'd SQL:", list);
         let counter = 0, colNames = [];
         list.length = 0;
-        db.exec("SELECT a a, b b FROM t",{
+        db.exec(new TextEncoder('utf-8').encode("SELECT a a, b b FROM t"),{
             rowMode: 'object',
             resultRows: list,
             columnNames: colNames,
