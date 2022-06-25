@@ -186,7 +186,12 @@ Module.postRun.push(function(namespace/*the module object, the target for
                module-init-internal state which isn't normally visible to
                us.
             */
-            allocate: (slab, allocator=SQM.ALLOC_NORMAL)=>SQM.allocate(slab, allocator)
+            allocate: (slab, allocator=SQM.ALLOC_NORMAL)=>SQM.allocate(slab, allocator),
+            /**
+               The buffer which holds the heap memory managed by the
+               emscripten-installed allocator.
+            */
+            HEAP8: SQM.HEAP8
         }
     };
     [/* C-side functions to bind. Each entry is an array with 3 or 4
@@ -485,7 +490,7 @@ Module.postRun.push(function(namespace/*the module object, the target for
     /** Returns true if n is a 32-bit (signed) integer,
         else false. */
     const isInt32 = function(n){
-        return (n===n|0 && n<0xFFFFFFFF) ? true : undefined;
+        return (n===(n|0) && n<0xFFFFFFFF) ? true : undefined;
     };
 
     /**
@@ -521,6 +526,8 @@ Module.postRun.push(function(namespace/*the module object, the target for
         };
         if(out.sql instanceof Uint8Array){
             out.sql = uint8ToString(out.sql);
+        }else if(Array.isArray(out.sql)){
+            out.sql = out.sql.join('');
         }else if('string'!==typeof out.sql){
             toss("Missing SQL argument.");
         }
@@ -713,7 +720,10 @@ Module.postRun.push(function(namespace/*the module object, the target for
            properties:
 
            - .sql = the SQL to run (unless it's provided as the first
-             argument). This must be of type string or Uint8Array.
+             argument). This must be of type string, Uint8Array, or an
+             array of strings (in which case they're concatenated
+             together as-is, with no separator between elements,
+             before evaluation).
 
            - .bind = a single value valid as an argument for
              Stmt.bind(). This is ONLY applied to the FIRST non-empty
@@ -721,12 +731,13 @@ Module.postRun.push(function(namespace/*the module object, the target for
              parameters. (Empty statements are skipped entirely.)
 
            - .callback = a function which gets called for each row of
-             the FIRST statement in the SQL (if it has any result
-             rows). The second argument passed to the callback is
-             always the current Stmt object (so that the caller
-             may collect column names, or similar). The first
-             argument passed to the callback defaults to the current
-             Stmt object but may be changed with ...
+             the FIRST statement in the SQL which has result
+             _columns_, but only if that statement has any result
+             _rows_. The second argument passed to the callback is
+             always the current Stmt object (so that the caller may
+             collect column names, or similar). The first argument
+             passed to the callback defaults to the current Stmt
+             object but may be changed with ...
 
            - .rowMode = a string describing what type of argument
              should be passed as the first argument to the callback. A
@@ -796,7 +807,7 @@ Module.postRun.push(function(namespace/*the module object, the target for
                         stmt.bind(bind);
                         bind = null;
                     }
-                    if(opt.callback && null!==rowMode){
+                    if(opt.callback && null!==rowMode && stmt.columnCount){
                         while(stmt.step()){
                             stmt._isLocked = true;
                             callback(arg.cbArg(stmt), stmt);
@@ -907,15 +918,15 @@ Module.postRun.push(function(namespace/*the module object, the target for
                             case api.SQLITE_FLOAT:
                                 arg = api.sqlite3_value_double(pVal);
                                 break;
-                            case SQLITE_TEXT:
+                            case api.SQLITE_TEXT:
                                 arg = api.sqlite3_value_text(pVal);
                                 break;
-                            case SQLITE_BLOB:{
-                                const n = api.sqlite3_value_bytes(ptr);
-                                const pBlob = api.sqlite3_value_blob(ptr);
+                            case api.SQLITE_BLOB:{
+                                const n = api.sqlite3_value_bytes(pVal);
+                                const pBlob = api.sqlite3_value_blob(pVal);
                                 arg = new Uint8Array(n);
                                 let i;
-                                for(i = 0; i < n; ++i) arg[i] = HEAP8[pBlob+i];
+                                for(i = 0; i < n; ++i) arg[i] = api.wasm.HEAP8[pBlob+i];
                                 break;
                             }
                             default:
@@ -948,7 +959,7 @@ Module.postRun.push(function(namespace/*the module object, the target for
                                       api.wasm.allocate(val);
                                 api.sqlite3_result_blob(pCx, pBlob, val.length,
                                                         api.SQLITE_TRANSIENT);
-                                api.wasm._free(blobptr);
+                                api.wasm._free(pBlob);
                                 break;
                             }
                             // else fall through
@@ -1082,7 +1093,7 @@ Module.postRun.push(function(namespace/*the module object, the target for
     const affirmParamIndex = function(stmt,key){
         const n = ('number'===typeof key)
               ? key : api.sqlite3_bind_parameter_index(stmt._pStmt, key);
-        if(0===n || (n===key && (n!==(n|0)/*floating point*/))){
+        if(0===n || !isInt32(n)){
             toss("Invalid bind() parameter name: "+key);
         }
         else if(n<1 || n>stmt.parameterCount) toss("Bind index",key,"is out of range.");
@@ -1456,7 +1467,7 @@ Module.postRun.push(function(namespace/*the module object, the target for
                     const n = api.sqlite3_column_bytes(this._pStmt, ndx);
                     const ptr = api.sqlite3_column_blob(this._pStmt, ndx);
                     const rc = new Uint8Array(n);
-                    for(let i = 0; i < n; ++i) rc[i] = HEAP8[ptr + i];
+                    for(let i = 0; i < n; ++i) rc[i] = api.wasm.HEAP8[ptr + i];
                     if(n && this.db._blobXfer instanceof Array){
                         /* This is an optimization soley for the
                            Worker-based API. These values will be

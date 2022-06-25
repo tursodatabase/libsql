@@ -66,11 +66,14 @@
 
         let list = [];
         db.exec({
-            sql:`CREATE TABLE t(a,b);
-INSERT INTO t(a,b) VALUES(1,2),(3,4),(?,?);`,
+            sql:['CREATE TABLE t(a,b);',
+                 "INSERT INTO t(a,b) VALUES(1,2),(3,4),",
+                 "(?,?),('blob',X'6869');"
+                ],
             multi: true,
             saveSql: list,
             bind: [5,6]
+            /* Achtung: ^^^ bind support might be removed from multi-mode exec. */
         });
         T.assert(2 === list.length);
         //log("Exec'd SQL:", list);
@@ -82,23 +85,24 @@ INSERT INTO t(a,b) VALUES(1,2),(3,4),(?,?);`,
             columnNames: colNames,
             callback: function(row,stmt){
                 ++counter;
-                T.assert(row.a%2 && row.a<6);
+                T.assert((row.a%2 && row.a<6) || 'blob'===row.a);
             }
         });
         T.assert(2 === colNames.length)
             .assert('a' === colNames[0])
-            .assert(3 === counter)
-            .assert(3 === list.length);
+            .assert(4 === counter)
+            .assert(4 === list.length);
         list.length = 0;
         db.exec("SELECT a a, b b FROM t",{
             rowMode: 'array',
             callback: function(row,stmt){
                 ++counter;
                 T.assert(Array.isArray(row))
-                    .assert(0===row[1]%2 && row[1]<7);
+                    .assert((0===row[1]%2 && row[1]<7)
+                            || (row[1] instanceof Uint8Array));
             }
         });
-        T.assert(6 === counter);
+        T.assert(8 === counter);
     };
 
     const testUDF = function(db){
@@ -106,7 +110,7 @@ INSERT INTO t(a,b) VALUES(1,2),(3,4),(?,?);`,
         db.createFunction("foo",function(a,b){return a+b});
         T.assert(7===db.selectValue("select foo(3,4)")).
             assert(5===db.selectValue("select foo(3,?)",2)).
-            assert(5===db.selectValue("select foo(?,?)",[1,4])).
+            assert(5===db.selectValue("select foo(?,?2)",[1,4])).
             assert(5===db.selectValue("select foo($a,$b)",{$a:0,$b:5}));
         db.createFunction("bar", {
             arity: -1,
@@ -115,15 +119,26 @@ INSERT INTO t(a,b) VALUES(1,2),(3,4),(?,?);`,
                 for(let i = 0; i < arguments.length; ++i) rc += arguments[i];
                 return rc;
             }
+        }).createFunction({
+            name: "asis",
+            callback: function(arg){
+                return arg;
+            }
         });
 
         log("Testing DB::selectValue() w/ UDF...");
         T.assert(0===db.selectValue("select bar()")).
             assert(1===db.selectValue("select bar(1)")).
             assert(3===db.selectValue("select bar(1,2)")).
-            assert(-1===db.selectValue("select bar(1,2,-4)"));
+            assert(-1===db.selectValue("select bar(1,2,-4)")).
+            assert('hi'===db.selectValue("select asis('hi')"));
+        let blob = db.selectValue("select asis(X'6869')");
+        T.assert(blob instanceof Uint8Array).
+            assert(2 === blob.length).
+            assert(0x68==blob[0] && 0x69==blob[1]);
 
         const eqApprox = function(v1,v2,factor=0.05){
+            //log('eqApprox',v1, v2);
             return v1>=(v2-factor) && v1<=(v2+factor);
         };
         
@@ -132,7 +147,8 @@ INSERT INTO t(a,b) VALUES(1,2),(3,4),(?,?);`,
             assert(null === db.selectValue("select ?",null)).
             assert(null === db.selectValue("select ?",[null])).
             assert(null === db.selectValue("select $a",{$a:null})).
-            assert(eqApprox(3.1,db.selectValue("select 3.0 + 0.1")))
+            assert(eqApprox(3.1,db.selectValue("select 3.0 + 0.1"))).
+            assert(eqApprox(1.3,db.selectValue("select asis(1 + 0.3)")))
         ;
     };
 
