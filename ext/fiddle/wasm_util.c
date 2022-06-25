@@ -103,6 +103,20 @@ const char * sqlite3_wasm_enum_json(void){
   SD(SQLITE_DIRECTONLY);
   SDFinal(SQLITE_INNOCUOUS);
 
+  sqlite3_str_appendall(s,",\"openFlags\": {");
+  /* Noting that not all of these will have any effect in WASM-space. */
+  SD(SQLITE_OPEN_READONLY);
+  SD(SQLITE_OPEN_READWRITE);
+  SD(SQLITE_OPEN_CREATE);
+  SD(SQLITE_OPEN_URI);
+  SD(SQLITE_OPEN_MEMORY);
+  SD(SQLITE_OPEN_NOMUTEX);
+  SD(SQLITE_OPEN_FULLMUTEX);
+  SD(SQLITE_OPEN_SHAREDCACHE);
+  SD(SQLITE_OPEN_PRIVATECACHE);
+  SD(SQLITE_OPEN_EXRESCODE);
+  SDFinal(SQLITE_OPEN_NOFOLLOW);
+
 #undef SD_
 #undef SD
 #undef SDFinal

@@ -162,11 +162,43 @@ Module.postRun.push(function(namespace/*the module object, the target for
       The main sqlite3 binding API gets installed into this object,
       mimicking the C API as closely as we can. The numerous members
       names with prefixes 'sqlite3_' and 'SQLITE_' behave, insofar as
-      possible, identically to the C-native counterparts. A very few
-      exceptions may require an additional level of proxy function, as
-      documented in this object.
+      possible, identically to the C-native counterparts, as documented at:
+
+      https://www.sqlite.org/c3ref/intro.html
+
+      A very few exceptions require an additional level of proxy
+      function or may otherwise require special attention in the WASM
+      environment, and all such cases are document here. Those not
+      documented here are installed as 1-to-1 proxies for their C-side
+      counterparts.
     */
     const api = {
+        /**
+           When using sqlite3_open_v2() it is important to keep the following
+           in mind:
+
+           https://www.sqlite.org/c3ref/open.html
+
+           - The flags for use with its 3rd argument are installed in this
+             object using the C-cide names, e.g. SQLITE_OPEN_CREATE.
+
+           - If the combination of flags passed to it are invalid,
+             behavior is undefined. Thus is is never okay to call this
+             with fewer than 3 arguments, as JS will default the
+             missing arguments to `undefined`, which will result in a
+             flag value of 0. Most of the available SQLITE_OPEN_xxx
+             flags are meaningless in the WASM build, e.g. the mutext-
+             and cache-related flags, but they are retained in this
+             API for consistency's sake.
+
+           - The final argument to this function specifies the VFS to
+             use, which is largely (but not entirely!) meaningless in
+             the WASM environment. It should always be null or
+             undefined, and it is safe to elide that argument when
+             calling this function.
+        */
+        sqlite3_open_v2: function(filename,dbPtrPtr,flags,vfsStr){}/*installed later*/,
+
         /**
            The sqlite3_prepare_v2() binding handles two different uses
            with differing JS/WASM semantics:
@@ -204,11 +236,11 @@ Module.postRun.push(function(namespace/*the module object, the target for
            If sql is not a string or supported TypedArray, it must be
            a _pointer_ to a string which was allocated via
            api.wasm.allocateUTF8OnStack(), api.wasm._malloc(), or
-           equivalent. In that case,
-           the final argument may be 0/null/undefined or must be a
-           pointer to which the "tail" of the compiled SQL is written,
-           as documented for the C-side sqlite3_prepare_v2(). In case
-           (2), the underlying C function is called with:
+           equivalent. In that case, the final argument may be
+           0/null/undefined or must be a pointer to which the "tail"
+           of the compiled SQL is written, as documented for the
+           C-side sqlite3_prepare_v2(). In case (2), the underlying C
+           function is called with:
 
            (pDb, sqlAsPointer, -1, ppStmt, pzTail)
 
@@ -219,14 +251,14 @@ Module.postRun.push(function(namespace/*the module object, the target for
            sqlAsPointer value.
 
            If passed an invalid 2nd argument type, this function will
-           throw. That behaviour is in strong constrast to all of the
+           throw. That behavior is in strong constrast to all of the
            other C-bound functions (which return a non-0 result code
            on error) but is necessary because we have to way to set
            the db's error state such that this function could return a
            non-0 integer and the client could call sqlite3_errcode()
            or sqlite3_errmsg() to fetch it.
         */
-        sqlite3_prepare_v2: undefined/*installed later*/,
+        sqlite3_prepare_v2: function(dbPtr, sql, sqlByteLen, stmtPtrPtr, strPtrPtr){}/*installed later*/,
 
         /**
            Holds state which are specific to the WASM-related
@@ -345,12 +377,12 @@ Module.postRun.push(function(namespace/*the module object, the target for
         ["sqlite3_db_filename", "string", ["number", "string"]],
         ["sqlite3_errmsg", "string", ["number"]],
         ["sqlite3_exec", "number", ["number", "string", "number", "number", "number"]],
+        ["sqlite3_extended_result_codes", "number", ["number", "number"]],
         ["sqlite3_finalize", "number", ["number"]],
         ["sqlite3_interrupt", "void", ["number"]],
         ["sqlite3_libversion", "string", []],
         ["sqlite3_open", "number", ["string", "number"]],
-        //["sqlite3_open_v2", "number", ["string", "number", "number", "string"]],
-        //^^^^ TODO: add the flags needed for the 3rd arg
+        ["sqlite3_open_v2", "number", ["string", "number", "number", "string"]],
         /* sqlite3_prepare_v2() is handled separately due to us requiring two
            different sets of semantics for that function. */
         ["sqlite3_reset", "number", ["number"]],
@@ -406,8 +438,9 @@ Module.postRun.push(function(namespace/*the module object, the target for
     /* Import C-level constants... */
     //console.log("wasmEnum=",SQM.ccall('sqlite3_wasm_enum_json', 'string', []));
     const wasmEnum = JSON.parse(SQM.ccall('sqlite3_wasm_enum_json', 'string', []));
-    ['resultCodes','dataTypes','udfFlags',
-     'encodings','blobFinalizers'].forEach(function(t){
+    ['blobFinalizers', 'dataTypes','encodings',
+     'openFlags', 'resultCodes','udfFlags'
+    ].forEach(function(t){
         Object.keys(wasmEnum[t]).forEach(function(k){
             api[k] = wasmEnum[t][k];
         });
@@ -493,6 +526,12 @@ Module.postRun.push(function(namespace/*the module object, the target for
        class, ":memory:" DBs are not supported (until/unless we can
        find a way to export those as well). The naming semantics will
        certainly evolve as this API does.
+
+       The db is opened with a fixed set of flags:
+       (SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE |
+       SQLITE_OPEN_EXRESCODE).  This API may change in the future
+       permit the caller to provide those flags via an additional
+       argument.
     */
     const DB = function(arg){
         let buffer, fn;
@@ -526,7 +565,11 @@ Module.postRun.push(function(namespace/*the module object, the target for
         const stack = api.wasm.stackSave();
         const ppDb  = api.wasm.stackAlloc(4) /* output (sqlite3**) arg */;
         api.wasm.setValue(ppDb, 0, "i32");
-        try {this.checkRc(api.sqlite3_open(fn, ppDb));}
+        try {
+            this.checkRc(api.sqlite3_open_v2(fn, ppDb, api.SQLITE_OPEN_READWRITE
+                                             | api.SQLITE_OPEN_CREATE
+                                             | api.SQLITE_OPEN_EXRESCODE, null));
+        }
         finally{api.wasm.stackRestore(stack);}
         this._pDb = api.wasm.getValue(ppDb, "i32");
         this.filename = fn;

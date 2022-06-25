@@ -27,7 +27,8 @@
     const test1 = function(db,sqlite3){
         const api = sqlite3.api;
         log("Basic sanity tests...");
-        T.assert(db._pDb);
+        T.assert(db._pDb).
+            assert(0===api.sqlite3_extended_result_codes(db._pDb,1));
         let st = db.prepare(
             new TextEncoder('utf-8').encode("select 3 as a")
             /* Testing handling of Uint8Array input */
@@ -200,7 +201,8 @@
         log("wasmEnum",JSON.parse(Module.ccall('sqlite3_wasm_enum_json', 'string', [])));
         [ /* Spot-check a handful of constants to make sure they got installed... */
             'SQLITE_SCHEMA','SQLITE_NULL','SQLITE_UTF8',
-            'SQLITE_STATIC', 'SQLITE_DIRECTONLY'
+            'SQLITE_STATIC', 'SQLITE_DIRECTONLY',
+            'SQLITE_OPEN_CREATE'
         ].forEach(function(k){
             T.assert('number' === typeof api[k]);
         });
