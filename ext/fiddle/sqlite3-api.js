@@ -122,6 +122,27 @@ Module.postRun.push(function(namespace/*the module object, the target for
 
     const SQM = namespace/*the sqlite module object */;
 
+    /** Throws a new Error, the message of which is the concatenation
+        all args with a space between each. */
+    const toss = function(){
+        throw new Error(Array.prototype.join.call(arguments, ' '));
+    };
+
+    /**
+       Returns true if v appears to be one of our supported TypedArray types:
+       Uint8Array or Int8Array.
+    */
+    const isSupportedTypedArray = function(v){
+        return v && (undefined!==v.byteLength) && (v.byteLength === v.length);
+    };
+
+    /** Returns true if isSupportedTypedArray(v) does, else throws with a message
+        that v is not a supported TypedArray value. */
+    const affirmSupportedTypedArray = function(v){
+        return isSupportedTypedArray(v)
+            || toss("Value is not of a supported TypedArray type.");
+    };
+
     /** 
       Set up the main sqlite3 binding API here, mimicking the C API as
       closely as we can.
@@ -181,15 +202,38 @@ Module.postRun.push(function(namespace/*the module object, the target for
         */
         wasm: {
             /**
-               Proxy for SQM.allocate(). TODO: remove deprecated allocate(),
-               use _malloc(). The kicker is that allocate() uses
-               module-init-internal state which isn't normally visible to
-               us.
+               api.wasm._malloc()'s srcTypedArray.byteLength bytes,
+               populates them with the values from the source array,
+               and returns the pointer to that memory. The pointer
+               must eventually be passed to api.wasm._free() to clean
+               it up.
+
+               As a special case, to avoid further special cases where
+               this is used, if srcTypedArray.byteLength is 0, it
+               allocates a single byte and sets it to the value 0.
+
+               ACHTUNG: this currently only works for Uint8Array and
+               Int8Array types.
             */
-            allocate: (slab, allocator=SQM.ALLOC_NORMAL)=>SQM.allocate(slab, allocator),
+            mallocFromTypedArray: function(srcTypedArray){
+                affirmSupportedTypedArray(srcTypedArray);
+                const pRet = api.wasm._malloc(srcTypedArray.byteLength || 1);
+                if(srcTypedArray.byteLength){
+                    api.wasm._malloc.HEAP.set(srcTypedArray, pRet);
+                    /* That unfortunately does not behave intuitively
+                       when copying, e.g., the contents of a
+                       Uint16Array, copying only 1 byte of each
+                       entry instead of blitting the whole array
+                       contents over the destination array. A potential TODO
+                       is handle that copying here so that we can support a wider
+                       array (haha) of bindable-as-blob types. */
+                }
+                else api.wasm._malloc.HEAP[pRet] = 0;
+                return pRet;
+            },
             /**
-               The buffer which holds the heap memory managed by the
-               emscripten-installed allocator.
+               The TypedArray buffer which holds the heap memory
+               managed by the emscripten-installed _malloc().
             */
             HEAP8: SQM.HEAP8
         }
@@ -360,12 +404,20 @@ Module.postRun.push(function(namespace/*the module object, the target for
     /** Populate api.wasm with several members of the module object... */
     ['getValue','setValue', 'stackSave', 'stackRestore', 'stackAlloc',
      'allocateUTF8OnStack', '_malloc', '_free',
-     'addFunction', 'removeFunction'     
+     'addFunction', 'removeFunction',
+     'intArrayFromString'
     ].forEach(function(m){
         if(undefined === (api.wasm[m] = SQM[m])){
             toss("Internal init error: Module."+m+" not found.");
         }
     });
+    /**
+       The array object which holds the raw bytes managed by the
+       _malloc() binding. Side note: why on earth _malloc() manages
+       HEAP8 (an Int8Array), rather than HEAPU8 (a Uint8Array), is a
+       mystery.
+    */
+    api.wasm._malloc.HEAP = api.wasm.HEAP8;
 
     /* What follows is colloquially known as "OO API #1". It is a
        binding of the sqlite3 API which is designed to be run within
@@ -373,12 +425,6 @@ Module.postRun.push(function(namespace/*the module object, the target for
        sqlite3 WASM binding was initialized. This wrapper cannot use
        the sqlite3 binding if, e.g., the wrapper is in the main thread
        and the sqlite3 API is in a worker. */
-
-    /** Throws a new error, concatenating all args with a space between
-        each. */
-    const toss = function(){
-        throw new Error(Array.prototype.join.call(arguments, ' '));
-    };
 
     /**
        The DB class wraps a sqlite3 db handle.
@@ -954,10 +1000,9 @@ Module.postRun.push(function(namespace/*the module object, the target for
                             if(null===val) {
                                 api.sqlite3_result_null(pCx);
                                 break;
-                            }else if(undefined!==val.length){
-                                const pBlob =
-                                      api.wasm.allocate(val);
-                                api.sqlite3_result_blob(pCx, pBlob, val.length,
+                            }else if(isSupportedTypedArray(val)){
+                                const pBlob = api.wasm.mallocFromTypedArray(val);
+                                api.sqlite3_result_blob(pCx, pBlob, val.byteLength,
                                                         api.SQLITE_TRANSIENT);
                                 api.wasm._free(pBlob);
                                 break;
@@ -1068,8 +1113,8 @@ Module.postRun.push(function(namespace/*the module object, the target for
             case BindTypes.string:
                 return t;
             default:
-                if(v instanceof Uint8Array) return BindTypes.blob;
-                return undefined;
+                //console.log("isSupportedBindType",t,v);
+                return isSupportedTypedArray(v) ? BindTypes.blob : undefined;
         }
     };
 
@@ -1078,7 +1123,8 @@ Module.postRun.push(function(namespace/*the module object, the target for
        function returns that value, else it throws.
     */
     const affirmSupportedBindType = function(v){
-        return isSupportedBindType(v) || toss("Unsupport bind() argument type.");
+        //console.log('affirmSupportedBindType',v);
+        return isSupportedBindType(v) || toss("Unsupported bind() argument type:",typeof v);
     };
 
     /**
@@ -1140,11 +1186,12 @@ Module.postRun.push(function(namespace/*the module object, the target for
         if(!f._){
             f._ = {
                 string: function(stmt, ndx, val, asBlob){
-                    const bytes = intArrayFromString(val,true);
-                    const pStr = api.wasm.allocate(bytes);
+                    const bytes = api.wasm.intArrayFromString(val,true);
+                    const pStr = api.wasm._malloc(bytes.length || 1);
                     stmt._allocs.push(pStr);
+                    api.wasm._malloc.HEAP.set(bytes, pStr);
                     const func =  asBlob ? api.sqlite3_bind_blob : api.sqlite3_bind_text;
-                    return func(stmt._pStmt, ndx, pStr, bytes.length, 0);
+                    return func(stmt._pStmt, ndx, pStr, bytes.length, api.SQLITE_STATIC);
                 }
             };
         }
@@ -1175,17 +1222,21 @@ Module.postRun.push(function(namespace/*the module object, the target for
                 if('string'===typeof val){
                     rc = f._.string(stmt, ndx, val, true);
                 }else{
-                    const len = val.length;
-                    if(undefined===len){
+                    if(!isSupportedTypedArray(val)){
                         toss("Binding a value as a blob requires",
-                             "that it have a length member.");
+                             "that it be a string, Uint8Array, or Int8Array.");
                     }
-                    const pBlob = api.wasm.allocate(val);
+                    //console.debug("Binding blob",len,val);
+                    const pBlob = api.wasm.mallocFromTypedArray(val);
                     stmt._allocs.push(pBlob);
-                    rc = api.sqlite3_bind_blob(stmt._pStmt, ndx, pBlob, len, 0);
+                    rc = api.sqlite3_bind_blob(stmt._pStmt, ndx, pBlob, val.byteLength,
+                                               api.SQLITE_STATIC);
                 }
+                break;
             }
-            default: toss("Unsupported bind() argument type.");
+            default:
+                console.warn("Unsupported bind() argument type:",val);
+                toss("Unsupported bind() argument type.");
         }
         if(rc) stmt.db.checkRc(rc);
         return stmt;
@@ -1286,7 +1337,9 @@ Module.postRun.push(function(namespace/*the module object, the target for
            - Strings are bound as strings (use bindAsBlob() to force
              blob binding).
 
-           - Uint8Array instances are bound as blobs.
+           - Uint8Array and Int8Array instances are bound as blobs.
+           (TODO: support binding other TypedArray types with larger
+           int sizes.)
 
            If passed an array, each element of the array is bound at
            the parameter index equal to the array index plus 1
@@ -1297,7 +1350,7 @@ Module.postRun.push(function(namespace/*the module object, the target for
            bindable parameter names, including any `$`, `@`, or `:`
            prefix. Because `$` is a legal identifier chararacter in
            JavaScript, that is the suggested prefix for bindable
-           parameters.
+           parameters: `stmt.bind({$a: 1, $b: 2})`.
 
            It returns this object on success and throws on
            error. Errors include:
@@ -1342,8 +1395,9 @@ Module.postRun.push(function(namespace/*the module object, the target for
                 arg.forEach((v,i)=>bindOne(this, i+1, affirmSupportedBindType(v), v));
                 return this;
             }
-            else if('object'===typeof arg/*null was checked above*/){
-                /* bind by name */
+            else if('object'===typeof arg/*null was checked above*/
+                    && !isSupportedTypedArray(arg)){
+                /* Treat each property of arg as a named bound parameter. */
                 if(1!==arguments.length){
                     toss("When binding an object, an index argument is not permitted.");
                 }
@@ -1353,25 +1407,25 @@ Module.postRun.push(function(namespace/*the module object, the target for
                                         arg[k]));
                 return this;
             }else{
-                return bindOne(this, ndx,
-                               affirmSupportedBindType(arg), arg);
+                return bindOne(this, ndx, affirmSupportedBindType(arg), arg);
             }
             toss("Should not reach this point.");
         },
         /**
-           Special case of bind() which binds the given value
-           using the BLOB binding mechanism instead of the default
-           selected one for the value. The ndx may be a numbered
-           or named bind index. The value must be of type string,
-           Uint8Array, or null/undefined (both treated as null).
+           Special case of bind() which binds the given value using
+           the BLOB binding mechanism instead of the default selected
+           one for the value. The ndx may be a numbered or named bind
+           index. The value must be of type string, null/undefined
+           (both treated as null), or a TypedArray of a type supported
+           by the bind() API.
 
            If passed a single argument, a bind index of 1 is assumed.
         */
         bindAsBlob: function(ndx,arg){
             affirmStmtOpen(this);
             if(1===arguments.length){
+                arg = ndx;
                 ndx = 1;
-                arg = arguments[0];
             }
             const t = affirmSupportedBindType(arg);
             if(BindTypes.string !== t && BindTypes.blob !== t

@@ -77,6 +77,12 @@
         });
         T.assert(2 === list.length);
         //log("Exec'd SQL:", list);
+
+        let blob = db.selectValue("select b from t where a='blob'");
+        T.assert(blob instanceof Uint8Array).
+            assert(0x68===blob[0] && 0x69===blob[1]);
+        blob = null;
+
         let counter = 0, colNames = [];
         list.length = 0;
         db.exec(new TextEncoder('utf-8').encode("SELECT a a, b b FROM t"),{
@@ -121,9 +127,7 @@
             }
         }).createFunction({
             name: "asis",
-            callback: function(arg){
-                return arg;
-            }
+            callback: (arg)=>arg
         });
 
         log("Testing DB::selectValue() w/ UDF...");
@@ -132,11 +136,7 @@
             assert(3===db.selectValue("select bar(1,2)")).
             assert(-1===db.selectValue("select bar(1,2,-4)")).
             assert('hi'===db.selectValue("select asis('hi')"));
-        let blob = db.selectValue("select asis(X'6869')");
-        T.assert(blob instanceof Uint8Array).
-            assert(2 === blob.length).
-            assert(0x68==blob[0] && 0x69==blob[1]);
-
+                    
         const eqApprox = function(v1,v2,factor=0.05){
             //log('eqApprox',v1, v2);
             return v1>=(v2-factor) && v1<=(v2+factor);
@@ -150,6 +150,27 @@
             assert(eqApprox(3.1,db.selectValue("select 3.0 + 0.1"))).
             assert(eqApprox(1.3,db.selectValue("select asis(1 + 0.3)")))
         ;
+
+        log("Testing binding and UDF propagation of blobs...");
+        let blobArg = new Uint8Array(2);
+        blobArg.set([0x68, 0x69], 0);
+        let blobRc = db.selectValue("select asis(?1)", blobArg);
+        T.assert(blobRc instanceof Uint8Array).
+            assert(2 === blobRc.length).
+            assert(0x68==blobRc[0] && 0x69==blobRc[1]);
+        blobRc = db.selectValue("select asis(X'6869')");
+        T.assert(blobRc instanceof Uint8Array).
+            assert(2 === blobRc.length).
+            assert(0x68==blobRc[0] && 0x69==blobRc[1]);
+
+        blobArg = new Int8Array(2);
+        blobArg.set([0x68, 0x69]);
+        console.debug("blobArg=",blobArg);
+        blobRc = db.selectValue("select asis(?1)", blobArg);
+        T.assert(blobRc instanceof Uint8Array).
+            assert(2 === blobRc.length);
+        console.debug("blobRc=",blobRc);
+        T.assert(0x68==blobRc[0] && 0x69==blobRc[1]);
     };
 
     const testAttach = function(db){
