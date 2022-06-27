@@ -1827,7 +1827,8 @@ static int walIndexRecover(Wal *pWal){
     if( isOpen(pWal->apWalFd[1]) ){
       /* The case where *-wal2 may follow *-wal */
       if( nCkpt2<=0x0F && nCkpt2==nCkpt1+1 ){
-        if( sqlite3Get4byte((u8*)(&pWal->hdr.aSalt[0]))==hdr.aFrameCksum[0]
+        if( pWal->hdr.mxFrame
+         && sqlite3Get4byte((u8*)(&pWal->hdr.aSalt[0]))==hdr.aFrameCksum[0]
          && sqlite3Get4byte((u8*)(&pWal->hdr.aSalt[1]))==hdr.aFrameCksum[1]
         ){
           walidxSetFile(&pWal->hdr, 1);
@@ -1840,7 +1841,8 @@ static int walIndexRecover(Wal *pWal){
 
       /* When *-wal may follow *-wal2 */
       if( (nCkpt2==0x0F && nCkpt1==0) || (nCkpt2<0x0F && nCkpt2==nCkpt1-1) ){
-        if( sqlite3Get4byte((u8*)(&hdr.aSalt[0]))==pWal->hdr.aFrameCksum[0]
+        if( hdr.mxFrame
+         && sqlite3Get4byte((u8*)(&hdr.aSalt[0]))==pWal->hdr.aFrameCksum[0]
          && sqlite3Get4byte((u8*)(&hdr.aSalt[1]))==pWal->hdr.aFrameCksum[1]
         ){
           SWAP(WalIndexHdr, pWal->hdr, hdr);
