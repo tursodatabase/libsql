@@ -1,0 +1,52 @@
+# 2022 June 28
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing the operation of the library in
+# "PRAGMA journal_mode=WAL2" mode.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+source $testdir/lock_common.tcl
+source $testdir/malloc_common.tcl
+source $testdir/wal_common.tcl
+
+set testprefix wal2recover3
+ifcapable !wal {finish_test ; return }
+
+do_execsql_test 1.0 {
+  CREATE TABLE t1(x);
+  CREATE TABLE t2(x);
+  PRAGMA journal_mode = wal2;
+  PRAGMA wal_autocheckpoint = 0;
+  PRAGMA journal_size_limit = 10000;
+} {wal2 0 10000}
+
+do_execsql_test 1.1 {
+  WITH s(i) AS ( VALUES(1) UNION ALL SELECT i+1 FROM s WHERE i<1500 )
+    INSERT INTO t1 SELECT i FROM s;
+  WITH s(i) AS ( VALUES(1) UNION ALL SELECT i+1 FROM s WHERE i<1500 )
+    INSERT INTO t2 SELECT i FROM s;
+}
+
+db_save_and_close
+set fd [open sv_test.db-wal2 r+]
+seek $fd 4000
+puts -nonewline $fd 0
+close $fd
+
+db_restore_and_reopen
+do_execsql_test 1.2 {
+  SELECT sql FROM sqlite_schema;
+} {{CREATE TABLE t1(x)} {CREATE TABLE t2(x)}}
+
+finish_test
+
