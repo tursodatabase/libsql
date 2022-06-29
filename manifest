@@ -1,5 +1,5 @@
-C Fix\sa\smissing\sdependency\sfor\sjson.lo\sin\sMakefile.in
-D 2022-06-27T11:28:25.255
+C Have\sthe\ssqlite_stmt\stable\sbuffer\sall\sdata\sfor\sthe\scurrent\sscan\swithin\sthe\sxFilter\smethod.
+D 2022-06-29T15:16:48.039
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -344,7 +344,7 @@ F ext/misc/shathree.c 7b17615869a495659f1569ada1d8d3d21b4a24614f2746d93cc87ef7c0
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
 F ext/misc/spellfix.c 94df9bbfa514a563c1484f684a2df3d128a2f7209a84ca3ca100c68a0163e29f
 F ext/misc/sqlar.c 0ace5d3c10fe736dc584bf1159a36b8e2e60fab309d310cd8a0eecd9036621b6
-F ext/misc/stmt.c 35063044a388ead95557e4b84b89c1b93accc2f1c6ddea3f9710e8486a7af94a
+F ext/misc/stmt.c 72b23e1746bedcf6e36907e972383e7eb74940344da90b2965149739b55cc801
 F ext/misc/templatevtab.c 8a16a91a5ceaccfcbd6aaaa56d46828806e460dd194965b3f77bf38f14b942c4
 F ext/misc/totype.c fa4aedeb07f66169005dffa8de3b0a2b621779fd44f85c103228a42afa71853b
 F ext/misc/uint.c 053fed3bce2e89583afcd4bf804d75d659879bbcedac74d0fa9ed548839a030b
@@ -1978,8 +1978,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 58caa50a410b7eb0e68658ea1e606d75ea85cdae04e864270c932246ba990b5e
-R 75e666d95bc19960088c32e5514624f5
-U drh
-Z 7850a40777a5511a9d66baab30b628c4
+P 65930a5c069e7274b945ce1aed0abb0edba3d4ab4e63916cc38c11cdef998926
+R 9025eb614ce3aeb665704ae99984368a
+U dan
+Z b363217bc0e676f1566caa9eb7479dc4
 # Remove this line to create a well-formed Fossil manifest.
