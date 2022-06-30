@@ -108,7 +108,9 @@ int sqlite3_finalize(sqlite3_stmt *pStmt){
     if( vdbeSafety(v) ) return SQLITE_MISUSE_BKPT;
     sqlite3_mutex_enter(db->mutex);
     checkProfileCallback(db, v);
-    rc = sqlite3VdbeFinalize(v);
+    assert( v->eVdbeState>=VDBE_READY_STATE );
+    rc = sqlite3VdbeReset(v);
+    sqlite3VdbeDelete(v);
     rc = sqlite3ApiExit(db, rc);
     sqlite3LeaveMutexAndCloseZombie(db);
   }
