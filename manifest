@@ -1,5 +1,5 @@
-C Have\sthe\ssqlite_stmt\stable\sbuffer\sall\sdata\sfor\sthe\scurrent\sscan\swithin\sthe\sxFilter\smethod.
-D 2022-06-29T15:16:48.039
+C Add\smissing\s"finish_test"\scommand\sto\sthe\send\sof\stest\sscript\smerge1.test.
+D 2022-06-30T11:01:48.271
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1244,7 +1244,7 @@ F test/memjournal2.test 89a4e0d1084170a281efa4d54c2677599f986f44227f98f7dfae2828
 F test/memleak.test 10b9c6c57e19fc68c32941495e9ba1c50123f6e2
 F test/memsubsys1.test 9e7555a22173b8f1c96c281ce289b338fcba2abe8b157f8798ca195bbf1d347e
 F test/memsubsys2.test 3e4a8d0c05fd3e5fa92017c64666730a520c7e08
-F test/merge1.test 0ade470d77b689c4a64dc7f736527fcd893140bcafa70af8f7b98523cfb83f16
+F test/merge1.test 2de6d6ef8d25402764b1aab49d8f9d7f89208c89a6674e437f76de4c812157b8
 F test/minmax.test fe638b55d77d2375531a8f549b338eafcd9adfbd2f72df37ed77d9b26ca0a71a
 F test/minmax2.test cf9311babb6f0518d04e42fd6a42c619531c4309a9dd790a2c4e9b3bc595e0de
 F test/minmax3.test cc1e8b010136db0d01a6f2a29ba5a9f321034354
@@ -1978,8 +1978,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 65930a5c069e7274b945ce1aed0abb0edba3d4ab4e63916cc38c11cdef998926
-R 9025eb614ce3aeb665704ae99984368a
+P 84a91c255e3d77728820561f16bdd9a87b7ff42b5430a9e13f404dfc3365c716
+R 2a5f2c7138401d3f0c12c136204a2064
 U dan
-Z b363217bc0e676f1566caa9eb7479dc4
+Z 442415903905a18bee84a4ba74343e75
 # Remove this line to create a well-formed Fossil manifest.
