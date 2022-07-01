@@ -1,5 +1,5 @@
-C Small\sperformance\simprovement\sto\ssqlite3_finalize().
-D 2022-06-30T22:46:28.469
+C Performance\simprovement\sin\sresolveP2Values().\s\sSave\sover\s1\smillion\sCPU\ncycles\sby\somitting\sthe\sloop\stermination\scondition\sand\sexiting\swhen\sthe\nOP_Init\s(always\sthe\sfirst\sopcode\sin\sany\sVDBE\sprogram)\sis\sencountered.
+D 2022-07-01T19:42:12.598
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -646,7 +646,7 @@ F src/vdbe.c 1266f3a4744224253dd74f0080014be8056b062c6f2f6a81e229fa0d306d4102
 F src/vdbe.h 07641758ca8b4f4c6d81ea667ea167c541e6ece21f5574da11e3d21ec37e2662
 F src/vdbeInt.h 2cad0aeeb106371ed0e0946bab89f60627087068847afc2451c05056961c18da
 F src/vdbeapi.c d68267db6e6641994e17c70670c40fd67ceb2352e42188815ed8c05d4d6502cb
-F src/vdbeaux.c 328b866880e67526300aa2361c5e50beb3d97dd8746db37dd4aa0135aea60e4d
+F src/vdbeaux.c a0259ac215b5a3c7583e88108eb57583e825983b81c8e5f885343d4f8b83aeda
 F src/vdbeblob.c 5e61ce31aca17db8fb60395407457a8c1c7fb471dde405e0cd675974611dcfcd
 F src/vdbemem.c 5ebf05c0182addedb1607ade848e1c83cef40981df94d1abfab0c59288c6064f
 F src/vdbesort.c 43756031ca7430f7aec3ef904824a7883c4ede783e51f280d99b9b65c0796e35
@@ -1909,7 +1909,7 @@ F tool/mkctimec.tcl ac96a74f5e6d9dac672d5229f79c583d3357a50e7d098e473e6b2ce2f8ae
 F tool/mkkeywordhash.c 35bfc41adacc4aa6ef6fca7fd0c63e0ec0534b78daf4d0cfdebe398216bbffc3
 F tool/mkmsvcmin.tcl 6ecab9fe22c2c8de4d82d4c46797bda3d2deac8e763885f5a38d0c44a895ab33
 F tool/mkopcodec.tcl 33d20791e191df43209b77d37f0ff0904620b28465cca6990cf8d60da61a07ef
-F tool/mkopcodeh.tcl 5dab48c49a25452257494e9601702ab63adaba6bd54a9b382615fa52661c8f8c
+F tool/mkopcodeh.tcl bcb2bd5affb545fd219ef0304c7978e2a356407ab723f45ec8569235892c1c3f
 F tool/mkopts.tcl 680f785fdb09729fd9ac50632413da4eadbdf9071535e3f26d03795828ab07fa
 F tool/mkpragmatab.tcl bd07bd59d45d0f3448e123d6937e9811195f9908a51e09d774609883055bfd3d
 F tool/mkshellc.tcl df5d249617f9cc94d5c48eb0401673eb3f31f383ecbc54e8a13ca3dd97e89450
@@ -1978,8 +1978,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 13cb3f1e63ed1e906f820655645a4966f0cae140ac442177b6685637dcfd365a
-R 34d4d9bd240555c32fd6af81aad0f565
+P 8a6913b66cc5af354497044ccb849eb80d00d0799362475f1537a6999196895e
+R 5971b08b257db606bcd37261acc2841e
 U drh
-Z 92cfa4f9af2c01d5c0a3aeb41d9df236
+Z 70d456a11395b6ccc3ce693c73ee9fef
 # Remove this line to create a well-formed Fossil manifest.

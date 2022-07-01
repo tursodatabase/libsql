@@ -806,8 +806,8 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
   p->readOnly = 1;
   p->bIsReader = 0;
   pOp = &p->aOp[p->nOp-1];
-  while(1){
-
+  assert( p->aOp[0].opcode==OP_Init );
+  while( 1 /* Loop termates when it reaches the OP_Init opcode */ ){
     /* Only JUMP opcodes and the short list of special opcodes in the switch
     ** below need to be considered.  The mkopcodeh.tcl generator script groups
     ** all these opcodes together near the front of the opcode list.  Skip
@@ -835,6 +835,10 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
           p->readOnly = 0;
           p->bIsReader = 1;
           break;
+        }
+        case OP_Init: {
+          assert( pOp->p2>=0 );
+          goto resolve_p2_values_loop_exit;
         }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
         case OP_VUpdate: {
@@ -868,9 +872,10 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
       ** have non-negative values for P2. */
       assert( (sqlite3OpcodeProperty[pOp->opcode]&OPFLG_JUMP)==0 || pOp->p2>=0);
     }
-    if( pOp==p->aOp ) break;
+    assert( pOp>p->aOp );    
     pOp--;
   }
+resolve_p2_values_loop_exit:
   if( aLabel ){
     sqlite3DbFreeNN(p->db, pParse->aLabel);
     pParse->aLabel = 0;
