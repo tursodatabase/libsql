@@ -5193,6 +5193,7 @@ static Table *isSimpleCount(Select *p, AggInfo *pAggInfo){
    || p->pSrc->nSrc!=1
    || p->pSrc->a[0].pSelect
    || pAggInfo->nFunc!=1
+   || p->pHaving
   ){
     return 0;
   }

@@ -118,10 +118,18 @@ do_test select3-2.14 {
 } {1 {near ";": syntax error}}
 
 # Cannot have a HAVING without a GROUP BY
+# 
+# Update: As of 3.39.0, you can.
 #
 do_execsql_test select3-3.1 {
   SELECT log, count(*) FROM t1 HAVING log>=4
 } {}
+do_execsql_test select3-3.2 {
+  SELECT count(*) FROM t1 HAVING log>=4
+} {}
+do_execsql_test select3-3.3 {
+  SELECT count(*) FROM t1 HAVING log!=400
+} {31}
 
 # Toss in some HAVING clauses
 #
