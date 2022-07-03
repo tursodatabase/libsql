@@ -1,5 +1,5 @@
-C Remove\sdebugging\scode\sthat\shas\salways\sbeen\scommented\sout.\s\sCosmetic\schange.
-D 2022-07-03T11:12:59.625
+C Improved\scomment\son\ssqlite3VdbeSwap().\s\sNo\schanges\sto\scode.
+D 2022-07-03T11:16:03.854
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -646,7 +646,7 @@ F src/vdbe.c 1266f3a4744224253dd74f0080014be8056b062c6f2f6a81e229fa0d306d4102
 F src/vdbe.h 07641758ca8b4f4c6d81ea667ea167c541e6ece21f5574da11e3d21ec37e2662
 F src/vdbeInt.h 2cad0aeeb106371ed0e0946bab89f60627087068847afc2451c05056961c18da
 F src/vdbeapi.c d68267db6e6641994e17c70670c40fd67ceb2352e42188815ed8c05d4d6502cb
-F src/vdbeaux.c a0259ac215b5a3c7583e88108eb57583e825983b81c8e5f885343d4f8b83aeda
+F src/vdbeaux.c 444c399df547e003be52cc51b460fed3b63e1f18939e6b773ff99c584954b726
 F src/vdbeblob.c 5e61ce31aca17db8fb60395407457a8c1c7fb471dde405e0cd675974611dcfcd
 F src/vdbemem.c 5ebf05c0182addedb1607ade848e1c83cef40981df94d1abfab0c59288c6064f
 F src/vdbesort.c 43756031ca7430f7aec3ef904824a7883c4ede783e51f280d99b9b65c0796e35
@@ -1978,8 +1978,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 566b7842ee286ed8620a87b06de65bc173ad0d208df4157292238fcb059cb484
-R d49750ad5ea4a17f2067ad4595d4dbf5
+P b54064170c51a2c905f98737c224e19c06dc728342ca2224e32ebeb47f803bcd
+R 99d17d4f153cc68e746fb72ad8ba0840
 U drh
-Z dbcc3e99f423baf35317581d02c84c1e
+Z bc5e9503636b3fa144917e41e898a5a3
 # Remove this line to create a well-formed Fossil manifest.
