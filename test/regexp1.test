@@ -261,4 +261,23 @@ do_execsql_test regexp1-3.4 {
   SELECT * FROM t1 wHERE a REGEXP '日本語';
 } {1 日本語}
 
+# 2022-07-03
+# https://sqlite.org/forum/forumpost/96692f8ba5  Issue #2
+# The '$' token in REGEXP contained within other elements.
+#
+do_execsql_test regexp1-4.1 {SELECT 'xab' REGEXP 'a(b$|cd)';} {1}
+do_execsql_test regexp1-4.1b {SELECT 'xab' REGEXP '(b$|cd)';} {1}
+do_execsql_test regexp1-4.2 {SELECT 'xaby' REGEXP 'a(b$|cd)';} {0}
+do_execsql_test regexp1-4.3 {SELECT 'xacd' REGEXP 'a(b$|cd)';} {1}
+do_execsql_test regexp1-4.4 {SELECT 'xacdy' REGEXP 'a(b$|cd)';} {1}
+do_execsql_test regexp1-4.5 {SELECT 'xab' REGEXP 'a(cd|b$)';} {1}
+do_execsql_test regexp1-4.6 {SELECT 'xaby' REGEXP 'a(cd|b$)';} {0}
+do_execsql_test regexp1-4.7 {SELECT 'xacd' REGEXP 'a(cd|b$)';} {1}
+do_execsql_test regexp1-4.8 {SELECT 'xacdy' REGEXP 'a(cd|b$)';} {1}
+do_execsql_test regexp1-4.9 {SELECT 'xab' REGEXP 'a(cd|b$|e)';} {1}
+do_execsql_test regexp1-4.10 {SELECT 'xaby' REGEXP 'a(cd|b$|e)';} {0}
+do_execsql_test regexp1-4.11 {SELECT 'xacd' REGEXP 'a(cd|b$|e)';} {1}
+do_execsql_test regexp1-4.12 {SELECT 'xacdy' REGEXP 'a(cd|b$|e)';} {1}
+
+
 finish_test

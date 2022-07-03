@@ -328,7 +328,9 @@ static int re_match(ReCompiled *pRe, const unsigned char *zIn, int nIn){
     }
   }
   for(i=0; i<pNext->nState; i++){
-    if( pRe->aOp[pNext->aState[i]]==RE_OP_ACCEPT ){ rc = 1; break; }
+    int x = pNext->aState[i];
+    while( pRe->aOp[x]==RE_OP_GOTO ) x += pRe->aArg[x];
+    if( pRe->aOp[x]==RE_OP_ACCEPT ){ rc = 1; break; }
   }
 re_match_end:
   sqlite3_free(pToFree);
@@ -483,7 +485,6 @@ static const char *re_subcompile_string(ReCompiled *p){
     iStart = p->nState;
     switch( c ){
       case '|':
-      case '$':
       case ')': {
         p->sIn.i--;
         return 0;
@@ -518,6 +519,10 @@ static const char *re_subcompile_string(ReCompiled *p){
       case '?': {
         if( iPrev<0 ) return "'?' without operand";
         re_insert(p, iPrev, RE_OP_FORK, p->nState - iPrev+1);
+        break;
+      }
+      case '$': {
+        re_append(p, RE_OP_MATCH, RE_EOF);
         break;
       }
       case '{': {
@@ -656,11 +661,7 @@ static const char *re_compile(ReCompiled **ppRe, const char *zIn, int noCase){
     re_free(pRe);
     return zErr;
   }
-  if( rePeek(pRe)=='$' && pRe->sIn.i+1>=pRe->sIn.mx ){
-    re_append(pRe, RE_OP_MATCH, RE_EOF);
-    re_append(pRe, RE_OP_ACCEPT, 0);
-    *ppRe = pRe;
-  }else if( pRe->sIn.i>=pRe->sIn.mx ){
+  if( pRe->sIn.i>=pRe->sIn.mx ){
     re_append(pRe, RE_OP_ACCEPT, 0);
     *ppRe = pRe;
   }else{

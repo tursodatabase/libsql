@@ -1,5 +1,5 @@
-C Fix\sthe\sinitial-prefix\soptimization\sfor\sthe\sREGEXP\sextension\ssuch\sthat\sit\nworks\seven\sif\sthe\sprefix\scontains\scharacters\sthat\srequire\sa\s3-byte\sUTF8\nencoding.\s\sThis\sshould\sfix\sthe\sproblem\sreported\sby\n[forum:/forumpost/96692f8ba5|forum\spost\s96692f8ba5].
-D 2022-07-03T14:25:47.812
+C Enhance\sthe\sREGEXP\sextension\sso\sthat\sthe\send-of-input\sindicate\s("$")\sis\nallowed\sto\soccur\son\sone\sbranch\sof\san\sOR\s("|").\n[forum:/forumpost/0107d5d40dd273e2|Forum\spost\s0107d5d40dd273e2],\ssecond\nissue.
+D 2022-07-03T18:12:43.089
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -334,7 +334,7 @@ F ext/misc/normalize.c bd84355c118e297522aba74de34a4fd286fc775524e0499b14473918d
 F ext/misc/percentile.c b9086e223d583bdaf8cb73c98a6539d501a2fc4282654adbfea576453d82e691
 F ext/misc/prefixes.c 0f4f8cff5aebc00a7e3ac4021fd59cfe1a8e17c800ceaf592859ecb9cbc38196
 F ext/misc/qpvtab.c 09738419e25f603a35c0ac8bd0a04daab794f48d08a9bc07a6085b9057b99009
-F ext/misc/regexp.c 03e483711534c437b2e29648d2a4b7730f5cb781a434ac8150907376bc4489f6
+F ext/misc/regexp.c c1fb4f0639ad70f180fa7ebca3b9830c1c648cdcd072e28747f727699f3a5071
 F ext/misc/remember.c add730f0f7e7436cd15ea3fd6a90fd83c3f706ab44169f7f048438b7d6baa69c
 F ext/misc/rot13.c 51ac5f51e9d5fd811db58a9c23c628ad5f333c173f1fc53c8491a3603d38556c
 F ext/misc/scrub.c 2a44b0d44c69584c0580ad2553f6290a307a49df4668941d2812135bfb96a946
@@ -1342,7 +1342,7 @@ F test/randexpr1.test eda062a97e60f9c38ae8d806b03b0ddf23d796df
 F test/rbu.test 168573d353cd0fd10196b87b0caa322c144ef736
 F test/rdonly.test 64e2696c322e3538df0b1ed624e21f9a23ed9ff8
 F test/recover.test ccb8c2623902a92ebb76770edd075cb4f75a4760bb7afde38026572c6e79070d
-F test/regexp1.test 4a44e014664a109bbb1c37d29d9b61ca5aa5a7f49cc564c95208a80f818e3377
+F test/regexp1.test 611adedda9ab00c86a14e2a4becf4086ed712e83d86f576a884d21795213f16b
 F test/regexp2.test 55ed41da802b0e284ac7e2fe944be3948f93ff25abbca0361a609acfed1368b5
 F test/reindex.test cd9d6021729910ece82267b4f5e1b5ac2911a7566c43b43c176a6a4732e2118d
 F test/releasetest_data.tcl 11ba48a21ed1c808147b0e77c6e93d204577f4327ffe6d7c3b34cd3c01eac3a2
@@ -1978,8 +1978,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6a8e4fb72a9e3dea9e5752c3d54fddba8878b355bd43f3c879f042f247a6610f
-R 3b0d1d13c75a6aec06b5d58ce72f012e
+P c94595a6e15490b432f099fefbe2429fa19287f7bdc86332cba0fd1e08f65bd6
+R 5a847080949684e34540bd8fbb3bcdb5
 U drh
-Z 9a117fdde370084441c6305b15600e26
+Z 843de43aa11ad4fe844e55becdb579a4
 # Remove this line to create a well-formed Fossil manifest.
