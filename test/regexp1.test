@@ -239,4 +239,26 @@ do_execsql_test regexp1-2.22 {
   SELECT 'abc$¢€xyz' REGEXP '^abc[^\u0025-X][^ -\u007f][^\u20ab]xyz$'
 } {1}
 
+# 2022-07-03
+# https://sqlite.org/forum/forumpost/96692f8ba5
+# The REGEXP extension mishandles the prefix search optimization when
+# the prefix contains 3-byte UTF8 characters.
+#
+reset_db
+load_static_extension db regexp
+do_execsql_test regexp1-3.1 {
+  CREATE TABLE t1(id INTEGER PRIMARY KEY, a TEXT);
+  INSERT INTO t1(id, a) VALUES(1, '日本語');
+  SELECT a, hex(a), length(a) FROM t1;
+} {日本語 E697A5E69CACE8AA9E 3}
+do_execsql_test regexp1-3.2 {
+  SELECT * FROM t1 WHERE a='日本語';
+} {1 日本語}
+do_execsql_test regexp1-3.3 {
+  SELECT * FROM t1 WHERE a LIKE '日本語';
+} {1 日本語}
+do_execsql_test regexp1-3.4 {
+  SELECT * FROM t1 wHERE a REGEXP '日本語';
+} {1 日本語}
+
 finish_test
