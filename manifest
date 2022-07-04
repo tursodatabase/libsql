@@ -1,5 +1,5 @@
-C Enhance\sthe\sREGEXP\sextension\sso\sthat\sthe\send-of-input\sindicate\s("$")\sis\nallowed\sto\soccur\son\sone\sbranch\sof\san\sOR\s("|").\n[forum:/forumpost/0107d5d40dd273e2|Forum\spost\s0107d5d40dd273e2],\ssecond\nissue.
-D 2022-07-03T18:12:43.089
+C In\sthe\sgetNormalPage()\sroutine\sof\spager.c,\sconsolidate\spgno\serror\schecking\ninto\sa\ssingle\sspot\sfor\ssmall\ssize\sreduction\sand\sperformance\sincrease.
+D 2022-07-04T09:41:44.103
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -557,7 +557,7 @@ F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c 2df2b33db88f00af13805d4573ee126bc5973f9e3b91d03c575fa7ba64e7dc41
 F src/os_win.c a8ea80037e81127ca01959daa87387cc135f325c88dc745376c4f760de852a10
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c 74596fc3d5d8a50de32c37225fc300cccd5ea27ea303c5f4b845d6572f999c5f
+F src/pager.c a7cad005d788957737cb6662960f022d767dded35bcecf06dae090213d62e924
 F src/pager.h f82e9844166e1585f5786837ddc7709966138ced17f568c16af7ccf946c2baa3
 F src/parse.y 8e67d820030d2655b9942ffe61c1e7e6b96cea2f2f72183533299393907d0564
 F src/pcache.c 084e638432c610f95aea72b8509f0845d2791293f39d1b82f0c0a7e089c3bb6b
@@ -1978,8 +1978,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c94595a6e15490b432f099fefbe2429fa19287f7bdc86332cba0fd1e08f65bd6
-R 5a847080949684e34540bd8fbb3bcdb5
+P 3c04d21e6c632feb3bea8d1fa76bedcbfe254b0dc59865633d158a3f1bddefba
+R 14e47e4bb1ab8f4db4305d42d7534790
 U drh
-Z 843de43aa11ad4fe844e55becdb579a4
+Z 5c670065e3a48de39ba2455ceb117563
 # Remove this line to create a well-formed Fossil manifest.
