@@ -1,5 +1,5 @@
-C Fix\sthe\sinitial-prefix\soptimization\sfor\sthe\sREGEXP\sextension\ssuch\sthat\sit\nworks\seven\sif\sthe\sprefix\scontains\scharacters\sthat\srequire\sa\s3-byte\sUTF8\nencoding.\s\sThis\sshould\sfix\sthe\sproblem\sreported\sby\n[forum:/forumpost/96692f8ba5|forum\spost\s96692f8ba5].
-D 2022-07-03T14:32:18.936
+C Fix\sfor\sbuilds\swith\sboth\sSQLITE_DEBUG\sand\sSQLITE_OMIT_WINDOWFUNC\sdefined.
+D 2022-07-05T19:56:10.936
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -534,7 +534,7 @@ F src/insert.c 173845e5a6bac96ae937409e4f876b631f26b31dabb9df8fd0eb3b130b2bb3a7
 F src/json.c 7749b98c62f691697c7ee536b570c744c0583cab4a89200fdd0fc2aa8cc8cbd6
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 853385cc7a604157e137585097949252d5d0c731768e16b044608e5c95c3614b
-F src/main.c e946f1d9e30bf49cf399ddf860cfd2319e3a97bbaabfb8e87d6ab985a20d54ad
+F src/main.c 62100512f2f86e8af2e17cc41644a358868d5b26c691118b6ef31fea066d49d3
 F src/malloc.c a9127efdcef92d6934c6339ea9813075b90edc0ce2e5c723556381a3828fb720
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
@@ -1978,9 +1978,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0a9e08be6d06e571ef9dc688317271de8054179a0458e196d3bc2dc6262efecc
-Q +c94595a6e15490b432f099fefbe2429fa19287f7bdc86332cba0fd1e08f65bd6
-R f00d1bfbb463fa5a19a7d29d082da2c3
-U drh
-Z c8c769f5766b47d3e0174aafc839859f
+P 7a32ccccef7712a40aba86c2204457f6772403befabe0aab19407399df46f096
+Q +77916947ce3f0828e1c50bcb8a6438c951ab9e74d83ec4324e82e90e100b9a98
+R c76bf8a7a0675c45824a79f37624945a
+U dan
+Z 00a80c17736fd5b4d6276b2b74c0db73
 # Remove this line to create a well-formed Fossil manifest.
