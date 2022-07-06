@@ -324,7 +324,7 @@ int sqlite3ColumnIndex(Table *pTab, const char *zCol){
 */
 void sqlite3SrcItemColumnUsed(SrcItem *pItem, int iCol){
   assert( pItem!=0 );
-  assert( pItem->fg.isNestedFrom == IsNestedFrom(pItem->pSelect) );
+  assert( (int)pItem->fg.isNestedFrom == IsNestedFrom(pItem->pSelect) );
   if( pItem->fg.isNestedFrom ){
     ExprList *pResults;
     assert( pItem->pSelect!=0 );
@@ -5895,7 +5895,7 @@ static int selectExpander(Walker *pWalker, Select *p){
             zTabName = pTab->zName;
           }
           if( db->mallocFailed ) break;
-          assert( pFrom->fg.isNestedFrom == IsNestedFrom(pFrom->pSelect) );
+          assert( (int)pFrom->fg.isNestedFrom == IsNestedFrom(pFrom->pSelect) );
           if( pFrom->fg.isNestedFrom ){
             assert( pFrom->pSelect!=0 );
             pNestedFrom = pFrom->pSelect->pEList;

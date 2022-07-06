@@ -11990,7 +11990,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   char **argv;
 #endif
 #ifdef SQLITE_DEBUG
-  sqlite3_uint64 mem_main_enter = sqlite3_memory_used();
+  sqlite3_int64 mem_main_enter = sqlite3_memory_used();
 #endif
   char *zErrMsg = 0;
 #ifdef SQLITE_SHELL_WASM_MODE

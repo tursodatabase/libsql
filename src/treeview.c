@@ -100,8 +100,8 @@ void sqlite3TreeViewColumnList(
   sqlite3TreeViewLine(pView, "COLUMNS");
   for(i=0; i<nCol; i++){
     u16 flg = aCol[i].colFlags;
-    int moreToFollow = i<(nCol - 1);
-    sqlite3TreeViewPush(&pView, moreToFollow);
+    int colMoreToFollow = i<(nCol - 1);
+    sqlite3TreeViewPush(&pView, colMoreToFollow);
     sqlite3TreeViewLine(pView, 0);
     printf(" %s", aCol[i].zCnName);
     switch( aCol[i].eCType ){
@@ -232,7 +232,7 @@ void sqlite3TreeViewSrcList(TreeView *pView, const SrcList *pSrc){
         Table *pTab = pItem->pTab;
         sqlite3TreeViewColumnList(pView, pTab->aCol, pTab->nCol, 1);
       }
-      assert( pItem->fg.isNestedFrom == IsNestedFrom(pItem->pSelect) );
+      assert( (int)pItem->fg.isNestedFrom == IsNestedFrom(pItem->pSelect) );
       sqlite3TreeViewSelect(pView, pItem->pSelect, (--n)>0);
     }
     if( pItem->fg.isTabFunc ){
