@@ -1,0 +1,52 @@
+# 2022 July 06
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+source $testdir/lock_common.tcl
+source $testdir/malloc_common.tcl
+
+if {[permutation] == "inmemory_journal"} {
+  finish_test
+  return
+}
+
+set testprefix dbpagefault
+
+
+faultsim_save_and_close
+do_faultsim_test 1 -prep {
+  faultsim_restore_and_reopen
+  execsql { ATTACH 'test.db2' AS aux; }
+} -body {
+  execsql { 
+    CREATE VIRTUAL TABLE t1 USING sqlite_dbpage();
+  }
+} -test {
+  execsql { PRAGMA journal_mode = off }
+  faultsim_test_result {0 {}} 
+}
+
+do_faultsim_test 2 -prep {
+  sqlite3 db "xyz.db" -vfs memdb
+  execsql { ATTACH 'test.db2' AS aux; }
+} -body {
+  execsql { 
+    CREATE VIRTUAL TABLE t1 USING sqlite_dbpage();
+    INSERT INTO t1 DEFAULT VALUES;
+  }
+} -test {
+  execsql { PRAGMA journal_mode = off }
+  faultsim_test_result {1 {no such schema}}  {1 {SQL logic error}}
+}
+
+finish_test
