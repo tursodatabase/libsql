@@ -751,7 +751,7 @@ static int csvtabNext(sqlite3_vtab_cursor *cur){
       i++;
     }
   }while( pCur->rdr.cTerm==',' );
-  if( z==0 || (pCur->rdr.cTerm==EOF && i<pTab->nCol) ){
+  if( z==0 && i==0 ){
     pCur->iRowid = -1;
   }else{
     pCur->iRowid++;

@@ -253,10 +253,27 @@ for {set ii 0} {$ii < 200} {incr ii} {
   do_execsql_test 6.$ii.1 {
     CREATE VIRTUAL TABLE abc USING csv(filename='csv.data', header=true);
   }
-
   do_execsql_test 6.$ii.2 {
     SELECT count(*) FROM abc
   } 1
 }
+
+for {set ii 0} {$ii < 20} {incr ii} {
+  reset_db
+  load_static_extension db csv
+  set T [randomtext $ii]
+  set fd [open csv.data w]
+  puts $fd "a,b"
+  puts -nonewline $fd "abcd,$T"
+  close $fd
+  do_execsql_test 7.$ii.1 {
+    CREATE VIRTUAL TABLE abc USING csv(filename='csv.data', header=true);
+  }
+  breakpoint
+  do_execsql_test 7.$ii.2 {
+    SELECT * FROM abc
+  } [list abcd $T]
+}
+
 
 finish_test
