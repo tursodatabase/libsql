@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\sseen\swith\sMSVC.
-D 2022-07-06T23:50:01.037
+C Size\sreduction\sand\sperformance\sincrease\sin\sthe\sfreeSpace()\sroutine\sof\sbtree.c.
+D 2022-07-07T20:11:35.233
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -510,7 +510,7 @@ F src/auth.c f4fa91b6a90bbc8e0d0f738aa284551739c9543a367071f55574681e0f24f8cf
 F src/backup.c a2891172438e385fdbe97c11c9745676bec54f518d4447090af97189fd8e52d7
 F src/bitvec.c 7c849aac407230278445cb069bebc5f89bf2ddd87c5ed9459b070a9175707b3d
 F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
-F src/btree.c 8923fefe168ffe5b943e053ce4869069e93545af79bb07028d9b08a70957aea4
+F src/btree.c 4cba0082bd53caf0897b743ed28b0e4c588c3c79a785042fab63cbdd41184807
 F src/btree.h 74d64b8f28cfa4a894d14d4ed64fa432cd697b98b61708d4351482ae15913e22
 F src/btreeInt.h 8ce1332edd89dfd2461d561ac10a0ab5601c8e06200cb5230596c3caaf54482e
 F src/build.c 23f874642825d7eaaeeb7a3281b2b1a75e1d4c4dd9ae4dceddcd908266634214
@@ -1979,8 +1979,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 587795d47fcaf5142526fabbcc4d5a632f561f258414c2846e8932a49b5b2e6b
-R 2eb751598396b97b93bf551986a07087
-U mistachkin
-Z 4d05d451769cfa8ea2dbf377223e0684
+P 61e2094afbbcbd5fdf5c3ec06b96134fafb7b854dc9bfa7d0619bed6d35efbe4
+R 6b7426ab3817b569b11bfb68e4612c05
+U drh
+Z e6c220e352c0a10417bd5db52eaf6a42
 # Remove this line to create a well-formed Fossil manifest.

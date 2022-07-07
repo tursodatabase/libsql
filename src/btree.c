@@ -1827,7 +1827,7 @@ static int freeSpace(MemPage *pPage, u16 iStart, u16 iSize){
     iFreeBlk = 0;  /* Shortcut for the case when the freelist is empty */
   }else{
     while( (iFreeBlk = get2byte(&data[iPtr]))<iStart ){
-      if( iFreeBlk<iPtr+4 ){
+      if( iFreeBlk<=iPtr ){
         if( iFreeBlk==0 ) break; /* TH3: corrupt082.100 */
         return SQLITE_CORRUPT_PAGE(pPage);
       }
