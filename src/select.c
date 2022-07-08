@@ -1820,9 +1820,6 @@ static void generateSortTail(
 ** Return a pointer to a string containing the 'declaration type' of the
 ** expression pExpr. The string may be treated as static by the caller.
 **
-** Also try to estimate the size of the returned value and return that
-** result in *pEstWidth.
-**
 ** The declaration type is the exact datatype definition extracted from the
 ** original CREATE TABLE statement if the expression is a column. The
 ** declaration type for a ROWID field is INTEGER. Exactly when an expression

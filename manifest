@@ -1,5 +1,5 @@
-C Very\ssmall\ssize\sreduction\sand\sperformance\sincrease\sin\sbtree.c.
-D 2022-07-07T22:59:35.373
+C Remove\san\sobsolete\sstatement\sfrom\sa\scomment.\s\sNo\schanges\sto\scode.
+D 2022-07-08T11:55:54.035
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -570,7 +570,7 @@ F src/printf.c 6166a30417b05c5b2f82e1f183f75faa2926ad60531c0b688a57dbc951441a20
 F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c 84a8443e3723e908730d754f54df4e1dacc1eb7073c0bd79c9d5efe977a9f5b9
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c 3c6558bb0678a4d1d086c30afbd933c1160356aff5285825f6cf0de66b81f16c
+F src/select.c 061b628dd1d3025a4ef3278e7128ce148d5f6bf58b8c1173c3c9e118d16198c6
 F src/shell.c.in 2b85128ca8ea13fc2dc32f971d628d9f688a324a30f469619b817ce490764fcb
 F src/sqlite.h.in 01573eae96721f2a8ee2a9e3b7140ceeba2e9c44350911890b89b8ff0dcf6781
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1979,8 +1979,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1b03f197b5572084177012a58990f8dba7ff10382ff5657fda62867a4d0b1af9
-R 90dc3f67b9cbf22f3b538962187867f6
+P 9a7c031a822246ee36bc440c7492e9c8ebeec6bc7066e56f114756b1881b2eb8
+R 3e7508022cb0498325fdd1393c541034
 U drh
-Z d64fafa6d8a0e54f3ee1db1b4990dc40
+Z 3aecf681069937d17dd627bbc558be00
 # Remove this line to create a well-formed Fossil manifest.
