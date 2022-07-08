@@ -1,5 +1,5 @@
-C Update\soptions\sin\sthe\sTEA\spackage\smsvc\smakefile\sto\smatch\sother\sbuilds.
-D 2022-07-08T11:21:30.127
+C Fix\stypo\sin\sautoconf/tea/win/makefile.vc.
+D 2022-07-08T13:57:45.139
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -28,7 +28,7 @@ F autoconf/tea/license.terms 13bd403c9610fd2b76ece0ab50c4c5eda933d523
 F autoconf/tea/pkgIndex.tcl.in b9eb6dd37f64e08e637d576b3c83259814b9cddd78bec4af2e5abfc6c5c750ce
 F autoconf/tea/tclconfig/install-sh bdd5e293591621ae60d9824d86a4b1c5f22c3d00
 F autoconf/tea/tclconfig/tcl.m4 debe13280bd5a9d76dc34e7919cd9ed3a1408c7320400900357128c2d1abb723
-F autoconf/tea/win/makefile.vc cb856bed4fefe9981c5e44e0a0272efba3e1030e0f9783da9387cc6ff71b688b
+F autoconf/tea/win/makefile.vc 2c478a9a962e48b2bf9062734e04d7c63c556e217095419173f9d7938d7d78f7
 F autoconf/tea/win/nmakehlp.c b01f822eabbe1ed2b64e70882d97d48402b42d2689a1ea00342d1a1a7eaa19cb
 F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 883205ddf25b46f10c181818bf42c09da9888884af96f79e1719264345053bd6
@@ -1979,8 +1979,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9d6d9dba6680b62c24f5671109f3c28b6829645bffc5ed4e92d016fd2ad02a3e
-R ce56e50ba35107c6def73a3ed3b309a4
+P d72e12b99dd1f8abdd855130adc27dbfc8794cfe9550a8495f68c4498a89d07e
+R bad6e21eb03a6dca5cb9c42e35791ce8
 U dan
-Z 763f99dda03ae6f94bf436543fae3155
+Z af7e3af8326bc996b6cb3fe7208f05f5
 # Remove this line to create a well-formed Fossil manifest.
