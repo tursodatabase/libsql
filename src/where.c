@@ -2196,12 +2196,18 @@ static void whereLoopClearUnion(sqlite3 *db, WhereLoop *p){
 }
 
 /*
-** Deallocate internal memory used by a WhereLoop object
+** Deallocate internal memory used by a WhereLoop object.  Leave the
+** object in an initialized state, as if it had been newly allocated.
 */
 static void whereLoopClear(sqlite3 *db, WhereLoop *p){
-  if( p->aLTerm!=p->aLTermSpace ) sqlite3DbFreeNN(db, p->aLTerm);
+  if( p->aLTerm!=p->aLTermSpace ){
+    sqlite3DbFreeNN(db, p->aLTerm);
+    p->aLTerm = p->aLTermSpace;
+    p->nLSlot = ArraySize(p->aLTermSpace);
+  }
   whereLoopClearUnion(db, p);
-  whereLoopInit(p);
+  p->nLTerm = 0;
+  p->wsFlags = 0;
 }
 
 /*
@@ -2225,7 +2231,9 @@ static int whereLoopResize(sqlite3 *db, WhereLoop *p, int n){
 */
 static int whereLoopXfer(sqlite3 *db, WhereLoop *pTo, WhereLoop *pFrom){
   whereLoopClearUnion(db, pTo);
-  if( whereLoopResize(db, pTo, pFrom->nLTerm) ){
+  if( pFrom->nLTerm > pTo->nLSlot
+   && whereLoopResize(db, pTo, pFrom->nLTerm)
+  ){
     memset(pTo, 0, WHERE_LOOP_XFER_SZ);
     return SQLITE_NOMEM_BKPT;
   }
@@ -2878,7 +2886,11 @@ static int whereLoopAddBtreeIndex(
     pNew->u.btree.nBtm = saved_nBtm;
     pNew->u.btree.nTop = saved_nTop;
     pNew->nLTerm = saved_nLTerm;
-    if( whereLoopResize(db, pNew, pNew->nLTerm+1) ) break; /* OOM */
+    if( pNew->nLTerm>=pNew->nLSlot
+     && whereLoopResize(db, pNew, pNew->nLTerm+1)
+    ){
+       break; /* OOM while trying to enlarge the pNew->aLTerm array */
+    }
     pNew->aLTerm[pNew->nLTerm++] = pTerm;
     pNew->prereq = (saved_prereq | pTerm->prereqRight) & ~pNew->maskSelf;
 
@@ -4178,8 +4190,8 @@ static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
   /* Verify that pNew has already been initialized */
   assert( pNew->nLTerm==0 );
   assert( pNew->wsFlags==0 );
-  assert( pNew->nLSlot==ArraySize(pNew->aLTermSpace) );
-  assert( pNew->aLTerm==pNew->aLTermSpace );
+  assert( pNew->nLSlot>=ArraySize(pNew->aLTermSpace) );
+  assert( pNew->aLTerm!=0 );
 
   pBuilder->iPlanLimit = SQLITE_QUERY_PLANNER_LIMIT;
   for(iTab=0, pItem=pTabList->a; pItem<pEnd; iTab++, pItem++){
