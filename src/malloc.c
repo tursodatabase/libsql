@@ -776,8 +776,13 @@ void *sqlite3OomFault(sqlite3 *db){
     }
     DisableLookaside;
     if( db->pParse ){
+      Parse *pParse;
       sqlite3ErrorMsg(db->pParse, "out of memory");
       db->pParse->rc = SQLITE_NOMEM_BKPT;
+      for(pParse=db->pParse->pOuterParse; pParse; pParse = pParse->pOuterParse){
+        pParse->nErr++;
+        pParse->rc = SQLITE_NOMEM;
+      } 
     }
   }
   return 0;
