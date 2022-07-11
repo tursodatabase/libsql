@@ -999,6 +999,7 @@ void sqlite3TreeViewUpsert(
   sqlite3TreeViewPop(&pView);
 }
 
+#if TREETRACE_ENABLED
 /*
 ** Generate a human-readable diagram of the data structure that go
 ** into generating an DELETE statement.
@@ -1052,7 +1053,9 @@ void sqlite3TreeViewDelete(
   }
   sqlite3TreeViewPop(&pView);
 }
+#endif /* TREETRACE_ENABLED */
 
+#if TREETRACE_ENABLED
 /*
 ** Generate a human-readable diagram of the data structure that go
 ** into generating an INSERT statement.
@@ -1120,7 +1123,9 @@ void sqlite3TreeViewInsert(
   }
   sqlite3TreeViewPop(&pView);
 }
+#endif /* TREETRACE_ENABLED */
 
+#if TREETRACE_ENABLED
 /*
 ** Generate a human-readable diagram of the data structure that go
 ** into generating an UPDATE statement.
@@ -1196,6 +1201,7 @@ void sqlite3TreeViewUpdate(
   }
   sqlite3TreeViewPop(&pView);
 }
+#endif /* TREETRACE_ENABLED */
 
 #ifndef SQLITE_OMIT_TRIGGER
 /*

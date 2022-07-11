@@ -4474,6 +4474,7 @@ char *sqlite3VMPrintf(sqlite3*,const char*, va_list);
   void sqlite3TreeViewSelect(TreeView*, const Select*, u8);
   void sqlite3TreeViewWith(TreeView*, const With*, u8);
   void sqlite3TreeViewUpsert(TreeView*, const Upsert*, u8);
+#if TREETRACE_ENABLED
   void sqlite3TreeViewDelete(const With*, const SrcList*, const Expr*,
                              const ExprList*,const Expr*, const Trigger*);
   void sqlite3TreeViewInsert(const With*, const SrcList*,
@@ -4482,6 +4483,7 @@ char *sqlite3VMPrintf(sqlite3*,const char*, va_list);
   void sqlite3TreeViewUpdate(const With*, const SrcList*, const ExprList*,
                              const Expr*, int, const ExprList*, const Expr*,
                              const Upsert*, const Trigger*);
+#endif
 #ifndef SQLITE_OMIT_TRIGGER
   void sqlite3TreeViewTriggerStep(TreeView*, const TriggerStep*, u8, u8);
   void sqlite3TreeViewTrigger(TreeView*, const Trigger*, u8, u8);
