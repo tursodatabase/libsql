@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sin\sfts3\sto\sdo\swith\sdeferred\stokens\sand\sOR\sexpressions.
-D 2022-07-11T14:39:55.222
+C Ensure\sthat\sthe\sParse.nErr\sflag\sis\sset\sfollowing\san\sSQLITE_TOOBIG\serror\son\na\snested\sparse.\s\sFix\sfor\sthe\sproblem\sidentified\sby\n[forum/forumpost/d5a82ba9eedee30c\s|\sforum\spost\sd5a82ba9eedee30c].\nAlso,\sremove\sunnecessary\sclearing\sof\sthe\sParse.zErrMsg\sfield\nfollowing\sa\snested\sparse.
+D 2022-07-11T14:43:33.075
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -513,7 +513,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c b5a74c39d3123dadd190019c0afadd7f62b43dfe0712a39e9d0ff2fe26be5d93
 F src/btree.h 74d64b8f28cfa4a894d14d4ed64fa432cd697b98b61708d4351482ae15913e22
 F src/btreeInt.h 8ce1332edd89dfd2461d561ac10a0ab5601c8e06200cb5230596c3caaf54482e
-F src/build.c 23f874642825d7eaaeeb7a3281b2b1a75e1d4c4dd9ae4dceddcd908266634214
+F src/build.c 29fcc97af5197511788a571ed35a001eea472cbe3bcdbae88178e17fcafd4341
 F src/callback.c 4c19af69835787bfe790ac560f3071a824eb629f34e41f97b52ce5235c77de1c
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 026dbdcdbd8c3cde98a88483ee88310ff43150ab164ad768f12cc700a11495ad
@@ -634,7 +634,7 @@ F src/test_windirent.h 90dfbe95442c9762357fe128dc7ae3dc199d006de93eb33ba3972e0a9
 F src/test_window.c cdae419fdcea5bad6dcd9368c685abdad6deb59e9fc8b84b153de513d394ba3f
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
-F src/tokenize.c a38f52058b517929e264094abd0b5fd1e8e145a1aa43bc6f6a72ae5218f96c98
+F src/tokenize.c 36eb0799e487759bbe73e5742b82ee676f06cea2515ff578d03c59a74ccf2d6c
 F src/treeview.c 0bd550f5974565eba541db339906be7a3f9e91beafb879cb40705382887f08e1
 F src/trigger.c 61bea163b1fa3039bc572ed8312461b978e5c527e5301f302b078f4c1ccdec6a
 F src/update.c c52a7991bece0453d22c77c08469512ee2f1391c12503fd347d1c939220c5877
@@ -1978,9 +1978,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P dfe46de2d4149fea5031c670f2bcec20851b0941ed9b7adf6cb31a01040362c5
-Q +d0bfe5c574dbc467ba97d96306d78a62a55b78dbbbe4d25aa962db6aa40406f6
-R 6a72c6f71393faa13fe853a07997e9f7
+P bbe999e345d43b2f90493d11b95bb5da39d356bfddfc79234cfa70ac1eb273e8
+Q +44d77a7f807f5dc3e94e6cd88a27bea79257f0f2ccf332891bdaa4668d0bb987
+R 48b9c5920bd7ac2f65fca2e09d1f113b
 U drh
-Z 741ce1cd1f5cd0b3b63261e7d96551b2
+Z a468ca872c45dad9ce388766cd5c849b
 # Remove this line to create a well-formed Fossil manifest.

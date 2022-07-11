@@ -614,6 +614,7 @@ int sqlite3RunParser(Parse *pParse, const char *zSql){
     mxSqlLen -= n;
     if( mxSqlLen<0 ){
       pParse->rc = SQLITE_TOOBIG;
+      pParse->nErr++;
       break;
     }
 #ifndef SQLITE_OMIT_WINDOWFUNC
