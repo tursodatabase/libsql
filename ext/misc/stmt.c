@@ -220,7 +220,7 @@ static int stmtFilter(
   ppRow = &pCur->pRow;
   for(p=sqlite3_next_stmt(pCur->db, 0); p; p=sqlite3_next_stmt(pCur->db, p)){
     const char *zSql = sqlite3_sql(p);
-    int nSql = zSql ? strlen(zSql)+1 : 0;
+    sqlite3_int64 nSql = zSql ? strlen(zSql)+1 : 0;
     StmtRow *pNew = (StmtRow*)sqlite3_malloc(sizeof(StmtRow) + nSql);
 
     if( pNew==0 ) return SQLITE_NOMEM;
