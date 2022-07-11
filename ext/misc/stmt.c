@@ -101,7 +101,7 @@ static int stmtConnect(
      "CREATE TABLE x(sql,ncol,ro,busy,nscan,nsort,naidx,nstep,"
                     "reprep,run,mem)");
   if( rc==SQLITE_OK ){
-    pNew = sqlite3_malloc( sizeof(*pNew) );
+    pNew = sqlite3_malloc64( sizeof(*pNew) );
     *ppVtab = (sqlite3_vtab*)pNew;
     if( pNew==0 ) return SQLITE_NOMEM;
     memset(pNew, 0, sizeof(*pNew));
@@ -123,7 +123,7 @@ static int stmtDisconnect(sqlite3_vtab *pVtab){
 */
 static int stmtOpen(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
   stmt_cursor *pCur;
-  pCur = sqlite3_malloc( sizeof(*pCur) );
+  pCur = sqlite3_malloc64( sizeof(*pCur) );
   if( pCur==0 ) return SQLITE_NOMEM;
   memset(pCur, 0, sizeof(*pCur));
   pCur->db = ((stmt_vtab*)p)->db;
@@ -221,7 +221,7 @@ static int stmtFilter(
   for(p=sqlite3_next_stmt(pCur->db, 0); p; p=sqlite3_next_stmt(pCur->db, p)){
     const char *zSql = sqlite3_sql(p);
     sqlite3_int64 nSql = zSql ? strlen(zSql)+1 : 0;
-    StmtRow *pNew = (StmtRow*)sqlite3_malloc(sizeof(StmtRow) + nSql);
+    StmtRow *pNew = (StmtRow*)sqlite3_malloc64(sizeof(StmtRow) + nSql);
 
     if( pNew==0 ) return SQLITE_NOMEM;
     memset(pNew, 0, sizeof(StmtRow));
