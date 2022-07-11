@@ -3138,17 +3138,20 @@ int sqlite3WalFindFrame(
   u32 *piRead                     /* OUT: Frame number (or zero) */
 ){
   u32 iRead = 0;                  /* If !=0, WAL frame to return data from */
-  u32 iLast;                      /* Last page in WAL for this reader */
+  u32 iLast = pWal->hdr.mxFrame;  /* Last page in WAL for this reader */
   int iHash;                      /* Used to loop through N hash tables */
   int iMinHash;
 
   /* This routine is only be called from within a read transaction. */
   assert( pWal->readLock>=0 || pWal->lockError );
 
-  /* if pWal->readLock==0,  then the WAL is ignored by the reader
-  ** so return early, as if the  WAL were empty.
+  /* If the "last page" field of the wal-index header snapshot is 0, then
+  ** no data will be read from the wal under any circumstances. Return early
+  ** in this case as an optimization.  Likewise, if pWal->readLock==0, 
+  ** then the WAL is ignored by the reader so return early, as if the 
+  ** WAL were empty.
   */
-  if( pWal->readLock==0 && pWal->bShmUnreliable==0 ){
+  if( iLast==0 || (pWal->readLock==0 && pWal->bShmUnreliable==0) ){
     *piRead = 0;
     return SQLITE_OK;
   }
@@ -3179,7 +3182,6 @@ int sqlite3WalFindFrame(
   **     table after the current read-transaction had started.
   */
   iMinHash = walFramePage(pWal->minFrame);
-  iLast = pWal->hdr.mxFrame;
   for(iHash=walFramePage(iLast); iHash>=iMinHash; iHash--){
     WalHashLoc sLoc;              /* Hash table location */
     int iKey;                     /* Hash slot index */
