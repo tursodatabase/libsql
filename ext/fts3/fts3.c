@@ -4382,6 +4382,7 @@ static int fts3EvalDeferredPhrase(Fts3Cursor *pCsr, Fts3Phrase *pPhrase){
       }
       
       pPhrase->doclist.pList = aOut;
+      assert( p1 && p2 );
       if( fts3PoslistPhraseMerge(&aOut, nDistance, 0, 1, &p1, &p2) ){
         pPhrase->doclist.bFreeList = 1;
         pPhrase->doclist.nList = (int)(aOut - pPhrase->doclist.pList);
@@ -5568,9 +5569,9 @@ static int fts3EvalTestExpr(
 
       default: {
 #ifndef SQLITE_DISABLE_FTS4_DEFERRED
-        if( pCsr->pDeferred 
-         && (pExpr->iDocid==pCsr->iPrevId || pExpr->bDeferred)
-        ){
+        if( pCsr->pDeferred && (pExpr->bDeferred || (
+            pExpr->iDocid==pCsr->iPrevId && pExpr->pPhrase->doclist.pList
+        ))){
           Fts3Phrase *pPhrase = pExpr->pPhrase;
           assert( pExpr->bDeferred || pPhrase->doclist.bFreeList==0 );
           if( pExpr->bDeferred ){

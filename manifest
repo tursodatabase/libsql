@@ -1,5 +1,5 @@
-C Fix\sfor\sbuilds\swith\sboth\sSQLITE_DEBUG\sand\sSQLITE_OMIT_WINDOWFUNC\sdefined.
-D 2022-07-05T19:56:10.936
+C Fix\sa\sproblem\sin\sfts3\sto\sdo\swith\sdeferred\stokens\sand\sOR\sexpressions.
+D 2022-07-11T14:39:55.222
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -102,7 +102,7 @@ F ext/fts3/README.content b9078d0843a094d86af0d48dffbff13c906702b4c3558012e67b9c
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers b92bdeb8b46503f0dd301d364efc5ef59ef9fa8e2758b8e742f39fa93a2e422d
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 6634a3854e70afa8710ee5e3a7253cd0f0c89d4cce207fcbfe2ead3bad1db7d5
+F ext/fts3/fts3.c 5577b9e88b492e6dab0592c2367d82ae3a634109a0903d0c9f9db69121da1d85
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h dafdc371f9fbab175744b06cfe019d5f040cdfdbd11fea752f5dc28d45b04c05
 F ext/fts3/fts3_aux.c f0dc9bd98582615b7750218899bd0c729879b6bbf94d1be57ca1833ff49afc6f
@@ -1978,9 +1978,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7a32ccccef7712a40aba86c2204457f6772403befabe0aab19407399df46f096
-Q +77916947ce3f0828e1c50bcb8a6438c951ab9e74d83ec4324e82e90e100b9a98
-R c76bf8a7a0675c45824a79f37624945a
-U dan
-Z 00a80c17736fd5b4d6276b2b74c0db73
+P dfe46de2d4149fea5031c670f2bcec20851b0941ed9b7adf6cb31a01040362c5
+Q +d0bfe5c574dbc467ba97d96306d78a62a55b78dbbbe4d25aa962db6aa40406f6
+R 6a72c6f71393faa13fe853a07997e9f7
+U drh
+Z 741ce1cd1f5cd0b3b63261e7d96551b2
 # Remove this line to create a well-formed Fossil manifest.
