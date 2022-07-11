@@ -1,5 +1,5 @@
-C Use\s64-bit\smemory\sallocation\sAPIs\sin\sthe\ssqlite_stmt\svirtual\stable,\sto\savoid\nharmless\scompiler\swarnings.
-D 2022-07-11T19:47:57.590
+C Update\sthe\sexpected\serror\smessages\sin\ssome\sOOM\stest\scases\sto\saccount\sfor\s[44d77a7f807].
+D 2022-07-11T21:40:34.209
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -191,7 +191,7 @@ F ext/fts5/test/fts5eb.test a973baadac524dbbb4ad9b0e99030e12cabde2c6b28e0ac43729
 F ext/fts5/test/fts5fault1.test d28a65caee75db6897c3cf1358c5230d3bb2a3bf7fb31062c19c7e5382b3d2bd
 F ext/fts5/test/fts5fault2.test 69c8fdbef830cd0d450908d4504d5bb86609e255af99c421c20a0756251fe344
 F ext/fts5/test/fts5fault3.test da2f9e3e56ff5740d68ebdd6877c97089e7ed28ddff28a0da87a6afea27e5522
-F ext/fts5/test/fts5fault4.test 1c1db5fcfe59401e7833146100f1d8de284a0a686fac31ddac9fb56c459f725b
+F ext/fts5/test/fts5fault4.test 87a10d0caee57da587c7588b0c8d25d2930197399b4812ad1e4d574c75324cee
 F ext/fts5/test/fts5fault5.test a336e4e11847de24c9497f80cce18e00bb3fab7fb11f97d04eb9af898900a762
 F ext/fts5/test/fts5fault6.test a0fc0a8f99e4b16500c31dfc7e38e1defe0f1693ac47650517ac7b723b1956f8
 F ext/fts5/test/fts5fault7.test 0acbec416edb24b8881f154e99c31e9ccf73f539cfcd164090be139e9e97ed4c
@@ -418,7 +418,7 @@ F ext/rtree/rtree.c d7b4b8b81d8d54376a7f81de5be85ec58b37c11604bcf42984a8418b3415
 F ext/rtree/rtree.h 4a690463901cb5e6127cf05eb8e642f127012fd5003830dbc974eca5802d9412
 F ext/rtree/rtree1.test d47f58832145fcfed9067bc457ca8664962196c4566c17a1ebd679367db55d11
 F ext/rtree/rtree2.test 9d9deddbb16fd0c30c36e6b4fdc3ee3132d765567f0f9432ee71e1303d32603d
-F ext/rtree/rtree3.test 4ee5d7df86040efe3d8d84f141f2962a7745452200a7cba1db06f86d97050499
+F ext/rtree/rtree3.test 272594f88c344e973864008bbe4c71fd3a41a264c097d568593ee7886d83d409
 F ext/rtree/rtree4.test 304de65d484540111b896827e4261815e5dca4ce28eeecd58be648cd73452c4b
 F ext/rtree/rtree5.test 49c9041d713d54560b315c2c7ef7207ee287eba1b20f8266968a06f2e55d3142
 F ext/rtree/rtree6.test 9ce3691c1aac43070a9f194f0ebf54372db346c5a82241fd11b525ed53ce9f3f
@@ -1025,7 +1025,7 @@ F test/fts3expr3.test c4d4a7d6327418428c96e0a3a1137c251b8dfbf8
 F test/fts3expr4.test f5b2832549f01b1f7f73389fa21d4b875499bc95bf7c8b36271844888c6a0938
 F test/fts3expr5.test a5b9a053becbdb8e973fbf4d6d3abaabeb42d511d1848bd57931f3e0a1cf983e
 F test/fts3f.test 8c438d5e1cab526b0021988fb1dc70cf3597b006a33ffd6c955ee89929077fe3
-F test/fts3fault.test 798e45af84be7978ca33d5bdc94246eb44724db24174b5d8e9b1ac46c57fb08d
+F test/fts3fault.test f4e1342acfe6d216a001490e8cd52afac1f9ffe4a11bbcdcb296129a45c5df45
 F test/fts3fault2.test 6a17a11d8034b1c4eca9f3091649273d56c49ff049e2173df8060f94341e9da0
 F test/fts3first.test dbdedd20914c8d539aa3206c9b34a23775644641
 F test/fts3fuzz001.test e3c7b0ce9b04cc02281dcc96812a277f02df03cd7dc082055d87e11eb18aaf56
@@ -1234,7 +1234,7 @@ F test/mallocJ.test b5d1839da331d96223e5f458856f8ffe1366f62e
 F test/mallocK.test 25897506da0098cea09b302ff432b0fb6d8002773c1e0fc9732aa8b444bfd455
 F test/mallocL.test fb311ff80afddf3b1a75e52289081f4754d901dc
 F test/mallocM.test 78bbe9d3da84a5c679123cdb40d7b2010b18fc46e13897e4f253c6ba6fbff134
-F test/malloc_common.tcl aac62499b76be719fac31e7a3e54a7fd53272e7f
+F test/malloc_common.tcl 806c50379cf4fa65008cd4d5af18273e5dac8ab62d1d4316c76aa2ecd2e54018
 F test/malloctraceviewer.tcl b7a54595270c1d201abf1c3f3d461f27eaf24cdef623ad08a0fe5e411264c8a9
 F test/manydb.test 28385ae2087967aa05c38624cec7d96ec74feb3e
 F test/mem5.test c6460fba403c5703141348cd90de1c294188c68f
@@ -1979,8 +1979,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3fe19452499afc8e6b38905e1ce7e9153adbfebf10dccf39da4b7f1b0cd24f05
-R 9c418d7d2871b88acc68dd2dd3026e6e
-U drh
-Z e0cb3e16109e36d9cf204ca651b9678d
+P afb9e60ee3b194f33664a6722356e5d3c69ce1d4da1a0affd92b8e6aaf4dd2da
+R 8ea09e929549a140c3e6dd1310564461
+U dan
+Z f4f04c769fa4ae18f60bb76e1371a738
 # Remove this line to create a well-formed Fossil manifest.

@@ -23,6 +23,10 @@ ifcapable !rtree {
   return
 }
 
+set ::TMPDBERROR [list 1 \
+  {unable to open a temporary database file for storing temporary tables}
+]
+
 # Test summary:
 #
 #   rtree3-1: Test OOM in simple CREATE TABLE, INSERT, DELETE and SELECT 
@@ -196,9 +200,9 @@ do_test rtree3-7.prep {
 do_faultsim_test rtree3-7 -faults oom-* -prep {
   faultsim_restore_and_reopen
 } -body {
-  execsql { ALTER TABLE rt RENAME TO rt2 }
+  execsql { ALTER TABLE rt RENAME TO rt2 } 
 } -test {
-  faultsim_test_result {0 {}}
+  faultsim_test_result {0 {}} $::TMPDBERROR
 }
 
 do_faultsim_test rtree3-8 -faults oom-* -prep {
