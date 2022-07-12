@@ -1541,7 +1541,7 @@ $(fiddle_module_js): Makefile sqlite3.c shell.c \
 	emcc -o $@ $(emcc_flags) \
         -sEXPORT_NAME=initFiddleModule \
         -sEXPORTED_FUNCTIONS=@$(fiddle_dir_abs)/EXPORTED_FUNCTIONS.fiddle \
-        -DSQLITE_SHELL_WASM_WEB_MODE \
+        -DSQLITE_SHELL_FIDDLE \
         sqlite3.c shell.c
 	gzip < $@ > $@.gz
 	gzip < $(fiddle_dir)/fiddle-module.wasm > $(fiddle_dir)/fiddle-module.wasm.gz
