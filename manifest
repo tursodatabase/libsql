@@ -1,5 +1,5 @@
-C Add\sthe\s--config\soption\sto\swapptest.tcl.\s\sThe\sargument\sis\sa\sglob\spattern.\s\sAll\nconfigurations\smust\smatch\sthe\sglob\spattern\sin\sorder\sto\srun.\s\sThe\sdefault\svalue\nis\s"*".
-D 2022-07-11T22:20:39.584
+C Back\sout\sthe\spager\sperformance\senhancement\sat\s[a1c090e08139f99d3],\sbecause\sit\nturns\sout\swe\sshould\snever\sallow\sa\szero\skey\sinto\sthe\spcache\sinterface\saccording\nto\sthe\sdesign\sspecs,\seven\sif\sthat\spage\sis\simmediately\sreleased\swithout\sever\nbeing\sused.
+D 2022-07-12T07:13:38.289
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -557,7 +557,7 @@ F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c 2df2b33db88f00af13805d4573ee126bc5973f9e3b91d03c575fa7ba64e7dc41
 F src/os_win.c a8ea80037e81127ca01959daa87387cc135f325c88dc745376c4f760de852a10
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c a7cad005d788957737cb6662960f022d767dded35bcecf06dae090213d62e924
+F src/pager.c 74596fc3d5d8a50de32c37225fc300cccd5ea27ea303c5f4b845d6572f999c5f
 F src/pager.h f82e9844166e1585f5786837ddc7709966138ced17f568c16af7ccf946c2baa3
 F src/parse.y 8e67d820030d2655b9942ffe61c1e7e6b96cea2f2f72183533299393907d0564
 F src/pcache.c 084e638432c610f95aea72b8509f0845d2791293f39d1b82f0c0a7e089c3bb6b
@@ -1979,8 +1979,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b3d6b3c3fc68dca7e20418eefa35ce3b583322b884b88a11c6773419f027a7a4
-R fba8b20c9fe2d30ccb99ea466f2ceaef
+P 51255bad4c1fb6074f602586fabad675ae310b9c37f4b80ecf60e2959fb0db12
+Q -a1c090e08139f99d30aa89db0756dc59fe8990ce15b3db4d4b726cc6acdab46f
+R a92351bd0b7826d19b4b1cf7b0fdbaec
 U drh
-Z 2c62dc1d407b4391742c0258c96664b6
+Z 1a1f72772307e1446eb3c352af79bbe8
 # Remove this line to create a well-formed Fossil manifest.
