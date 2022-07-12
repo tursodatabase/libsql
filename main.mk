@@ -423,6 +423,7 @@ TESTSRC2 = \
   $(TOP)/src/select.c \
   $(TOP)/src/threads.c \
   $(TOP)/src/tokenize.c \
+  $(TOP)/src/treeview.c \
   $(TOP)/src/utf.c \
   $(TOP)/src/util.c \
   $(TOP)/src/vdbeapi.c \
