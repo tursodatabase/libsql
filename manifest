@@ -1,5 +1,5 @@
-C Renamed\sSQLITE_SHELL_WASM_MODE\sto\sSQLITE_SHELL_WASM_WEB_MODE\sand\sno\slonger\sautomatically\senable\sit\sif\s__EMSCRIPTEN__\sis\sdefined,\sin\sorder\sto\sfacilitate\susing\sEmscripten\sto\sbuild\sthe\sshell\sfor\sCLI-based\sWASM\sruntimes\s(which\scannot\smake\suse\sof\sthe\sweb-specific\suser\sinput\schanges).\sThe\sfiddle\sbuild\snow\sexplicitly\spasses\sthe\snew\sflag\son\sat\scompile-time.
-D 2022-07-12T09:40:27.255
+C Fix\sa\sbug\sin\swapptest.tcl\sintroduced\sby\s[51255bad4c1fb607].
+D 2022-07-12T10:46:02.702
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1801,7 +1801,7 @@ F test/walslow.test c05c68d4dc2700a982f89133ce103a1a84cc285f
 F test/walthread.test 14b20fcfa6ae152f5d8e12f5dc8a8a724b7ef189f5d8ef1e2ceab79f2af51747
 F test/walvfs.test bccb3e0d235ef85e276f491d34db32c9ada1ea67be8d9f10aabe7b30319ec656
 F test/wapp.tcl b440cd8cf57953d3a49e7ee81e6a18f18efdaf113b69f7d8482b0710a64566ec
-F test/wapptest.tcl 8d69504451f613141fc0107a60c4fdcf59745cb3d421cdcd051deb6cdf36b288 x
+F test/wapptest.tcl e3b6d5afa021c39a0f459ea9fbd1077459c1d81fca98eb40af8404ad3fc2360f x
 F test/where.test d13cd7c24e80009d2b54e2f7a8893c457afa49c64f99359c9eb3fe668ba1d9d4
 F test/where2.test 03c21a11e7b90e2845fc3c8b4002fc44cc2797fa74c86ee47d70bd7ea4f29ed6
 F test/where3.test 5b4ffc0ac2ea0fe92f02b1244b7531522fe4d7bccf6fa8741d54e82c10e67753
@@ -1979,8 +1979,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ec96293ead83603ebe5d7f250d6fdc11f22172f05a9513f175331437c3eaa4c8
-R 8020e393ac6ab4de8f603cb939b22712
-U stephan
-Z d97d3fda1a826afffbfc7a98df7e436e
+P ee059ad5a811a1511e37158f041a7bf9070529d530410d2f1c4395cdd25c6d33
+R 045391b1c16f142da84fbbaaea1c1d59
+U drh
+Z 054267434d9e9a8e380eb13bbd806a61
 # Remove this line to create a well-formed Fossil manifest.

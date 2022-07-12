@@ -16,7 +16,7 @@ source [file join [file dirname [info script]] wapp.tcl]
 #   G(jobs)     - How many sub-processes to run simultaneously.
 #
 set G(platform) $::tcl_platform(os)-$::tcl_platform(machine)
-set G(cfgglob   *
+set G(cfgglob)  *
 set G(test)     Normal
 set G(keep)     1
 set G(msvc)     0
@@ -31,7 +31,7 @@ set G(stdout)   0
 proc wapptest_init {} {
   global G
 
-  set lSave [list platform test keep msvc tcl jobs debug noui stdout] 
+  set lSave [list platform test keep msvc tcl jobs debug noui stdout cfgglob] 
   foreach k $lSave { set A($k) $G($k) }
   array unset G
   foreach k $lSave { set G($k) $A($k) }
