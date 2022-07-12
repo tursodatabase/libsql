@@ -1,9 +1,9 @@
-C Back\sout\sthe\spager\sperformance\senhancement\sat\s[a1c090e08139f99d3],\sbecause\sit\nturns\sout\swe\sshould\snever\sallow\sa\szero\skey\sinto\sthe\spcache\sinterface\saccording\nto\sthe\sdesign\sspecs,\seven\sif\sthat\spage\sis\simmediately\sreleased\swithout\sever\nbeing\sused.
-D 2022-07-12T07:13:38.289
+C Renamed\sSQLITE_SHELL_WASM_MODE\sto\sSQLITE_SHELL_WASM_WEB_MODE\sand\sno\slonger\sautomatically\senable\sit\sif\s__EMSCRIPTEN__\sis\sdefined,\sin\sorder\sto\sfacilitate\susing\sEmscripten\sto\sbuild\sthe\sshell\sfor\sCLI-based\sWASM\sruntimes\s(which\scannot\smake\suse\sof\sthe\sweb-specific\suser\sinput\schanges).\sThe\sfiddle\sbuild\snow\sexplicitly\spasses\sthe\snew\sflag\son\sat\scompile-time.
+D 2022-07-12T09:40:27.255
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in 731cf154c61e7cd63a2707600fecde816cedc113bd9901723522aefc74ddb292
+F Makefile.in ab82a7cf01fd4d2b1164c8cb20513b59f4223a1a6e713938b1fb5b842418020d
 F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
 F Makefile.msc de7cb3e095ce2fdc33513ccd76ebdaeda1483d0ddab0410fe65cbdeadd4c0ee1
 F README.md 8b8df9ca852aeac4864eb1e400002633ee6db84065bd01b78c33817f97d31f5e
@@ -571,7 +571,7 @@ F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c 84a8443e3723e908730d754f54df4e1dacc1eb7073c0bd79c9d5efe977a9f5b9
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 061b628dd1d3025a4ef3278e7128ce148d5f6bf58b8c1173c3c9e118d16198c6
-F src/shell.c.in 2b85128ca8ea13fc2dc32f971d628d9f688a324a30f469619b817ce490764fcb
+F src/shell.c.in b928ddd7c3b5c63a9b625695e8af6a8831efd267d5187b9418f9eca05157bda3
 F src/sqlite.h.in 01573eae96721f2a8ee2a9e3b7140ceeba2e9c44350911890b89b8ff0dcf6781
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h a988810c9b21c0dc36dc7a62735012339dc76fc7ab448fb0792721d30eacb69d
@@ -1979,9 +1979,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 51255bad4c1fb6074f602586fabad675ae310b9c37f4b80ecf60e2959fb0db12
-Q -a1c090e08139f99d30aa89db0756dc59fe8990ce15b3db4d4b726cc6acdab46f
-R a92351bd0b7826d19b4b1cf7b0fdbaec
-U drh
-Z 1a1f72772307e1446eb3c352af79bbe8
+P ec96293ead83603ebe5d7f250d6fdc11f22172f05a9513f175331437c3eaa4c8
+R 8020e393ac6ab4de8f603cb939b22712
+U stephan
+Z d97d3fda1a826afffbfc7a98df7e436e
 # Remove this line to create a well-formed Fossil manifest.
