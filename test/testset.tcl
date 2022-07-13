@@ -109,9 +109,10 @@ proc testset_patternlist {patternlist} {
         }
         foreach n [array names a $p] { set S($a($n)) 1 }
       }
+
+      set scripts [lsort [array names S]]
     }
 
-    set scripts [lsort [array names S]]
   }
 
   set scripts

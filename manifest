@@ -1,5 +1,5 @@
-C Update\stestrunner.tcl\sto\sallow\sthe\suser\sto\sspecify\swhich\stests\sto\srun\son\sthe\scommand\sline.
-D 2022-07-13T19:57:35.922
+C Fix\sa\sproblem\spreventing\s"testrunnter.tcl\sall"\sfrom\sworking.
+D 2022-07-13T20:26:37.216
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1508,7 +1508,7 @@ F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
 F test/tester.tcl 76771269dcc20b2c2d1d6f1175dd50d1eebddc004aebac865483f1829a5cd398
 F test/testrunner.tcl 297f066a0c2c78e552a29060701825fcfd16cd915c19d51654112d54df2feacc
-F test/testset.tcl 8295bbfe2da21bc32a818b55b074d572a24a44fccfb74da919194a749bb7654c
+F test/testset.tcl 27a6bbbc93cbbcf442c57e3c023e6b5d7304dc415e09eb0e9ac61edd0e6c1fbe
 F test/thread001.test b61a29dd87cf669f5f6ac96124a7c97d71b0c80d9012746072055877055cf9ef
 F test/thread002.test e630504f8a06c00bf8bbe68528774dd96aeb2e58
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
@@ -1981,8 +1981,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 106f6724d54ccec3edf8c9a0422b89c4f227adb26021ed6f0fc91392ef4b3fc5
-R 032a0dd6c8d21e7f2f5ea3dc860bfe74
+P 900febcf362fa5f592c640d16177f33c13aab11ce31a61c7e18ff1be6e70bf9b
+R 0ad59c4f151fdc0de195dce40012b69c
 U dan
-Z f52161ed1f80342c1b5b733a625a7b6b
+Z f4f6164f8a169ec2d085a00d87e67f68
 # Remove this line to create a well-formed Fossil manifest.
