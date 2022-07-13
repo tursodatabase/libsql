@@ -1,5 +1,5 @@
-C The\squery\sflattener\sshould\snot\srun\sif\sthe\ssubquery\sis\sa\scompound\sthat\scontains\na\sRIGHT\sJOIN\sin\sany\sarm\sand\sthe\ssubquery\sis\snot\sthe\sfirst\selement\sof\sthe\nouter\squery.\s\sOtherwise,\sprior\selements\sof\sthe\souter\squery\swill\snot\shave\nthe\sJT_LTORJ\sflag\sset.\s\sFix\sfor\sthe\sproblem\sreported\sin\n[forum:/forumpost/174afeae5734d42d|forum\spost\s174afeae5734d42d].
-D 2022-07-13T15:52:15.028
+C Add\snew\sscript\stest/testrunner.tcl.\sFor\srunning\sa\sset\sof\stest\sscripts\susing\nmultiple\sprocesses.
+D 2022-07-13T21:02:07.599
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1507,6 +1507,8 @@ F test/temptable2.test d2940417496e2b9548e01d09990763fbe88c316504033256d51493e1f
 F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
 F test/tester.tcl 76771269dcc20b2c2d1d6f1175dd50d1eebddc004aebac865483f1829a5cd398
+F test/testrunner.tcl 39e43ba90d8fe2d2694049af5ac53861c04a42600d3a8ccb1d07eaaaf350c806
+F test/testset.tcl 27a6bbbc93cbbcf442c57e3c023e6b5d7304dc415e09eb0e9ac61edd0e6c1fbe
 F test/thread001.test b61a29dd87cf669f5f6ac96124a7c97d71b0c80d9012746072055877055cf9ef
 F test/thread002.test e630504f8a06c00bf8bbe68528774dd96aeb2e58
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
@@ -1979,8 +1981,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d1d019bfa2f62b0dc39bba42e17786ca2e4362b6d11d206e5445a051a0f93ae0
-R 8ba9f41e04ffe4b4f2fce5afccce75ed
-U drh
-Z 64b6a3b4244651c63a98e29aa670c738
+P 274e244c85935084b2f0f85176283f018bf9b74e7703f985bd5a2f6f8bdcff5d 0ed1e83c6fc12acd06ecf7210a869bebaf5e5e75762e5f16bf1834ecab717d59
+R 6e5b00a7e5284e8563026668673ce8cf
+U dan
+Z 363eb180a41ae46020bac6b29842c080
 # Remove this line to create a well-formed Fossil manifest.
