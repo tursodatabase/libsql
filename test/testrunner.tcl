@@ -12,7 +12,90 @@ proc usage {} {
 }
 #-------------------------------------------------------------------------
 
+#-------------------------------------------------------------------------
+# The database schema used by the testrunner.db database.
+#
+set R(schema) {
+  DROP TABLE IF EXISTS script;
+  DROP TABLE IF EXISTS msg;
+  DROP TABLE IF EXISTS malloc;
 
+  CREATE TABLE script(
+    filename TEXT PRIMARY KEY,    -- full path to test script
+    state TEXT CHECK( state IN ('ready', 'running', 'done') ),
+    testfixtureid,                -- Id of process that ran script
+    time INTEGER,                 -- Time in ms
+    nerr INTEGER,                 -- if 'done', the number of errors
+    ntest INTEGER,                -- if 'done', the number of tests
+    output TEXT                   -- full output of test script
+  );
+
+  CREATE TABLE malloc(
+    id INTEGER PRIMARY KEY,
+    nmalloc INTEGER,
+    nbyte INTEGER,
+    leaker TEXT
+  );
+
+  CREATE TABLE msg(
+    id INTEGER PRIMARY KEY,
+    msg TEXT
+  );
+}
+#-------------------------------------------------------------------------
+
+#-------------------------------------------------------------------------
+# Try to estimate a the number of processes to use.
+#
+# Command [guess_number_of_cores] attempts to glean the number of logical
+# cores. Command [default_njob] returns the default value for the --jobs
+# switch.
+#
+proc guess_number_of_cores {} {
+  set ret 4
+  catch {
+    set fd [open "|nproc" r]
+    set ret [gets $fd]
+    close $fd
+    set ret [expr $ret]
+  }
+  return $ret
+}
+
+proc default_njob {} {
+  set nCore [guess_number_of_cores]
+  set nHelper [expr int($nCore*0.75)]
+  expr $nHelper>0 ? $nHelper : 1
+}
+#-------------------------------------------------------------------------
+
+
+
+set R(dbname) [file normalize testrunner.db]
+set R(logname) [file normalize testrunner.log]
+set R(info_script) [file normalize [info script]]
+set R(timeout) 10000              ;# Default busy-timeout for testrunner.
+set R(nJob)    [default_njob]     ;# Default number of helper processes
+set R(leaker)  ""                 ;# Name of first script to leak memory
+
+
+# Parse the command line options. There are two ways to invoke this
+# script - to create a helper or coordinator process. If there are
+# no helper processes, the coordinator runs test scripts.
+#
+# To create a helper process:
+#
+#    testrunner.tcl helper ID
+#
+# where ID is an integer greater than 0. The process will create and
+# run tests in the "testdir$ID" directory. Helper processes are only
+# created by coordinators - there is no need for a user to create
+# helper processes manually.
+#
+# If the first argument is anything other than "helper", then a coordinator
+# process is started. See the implementation of the [usage] proc above for
+# details.
+#
 switch -- [lindex $argv 0] {
   helper {
     set R(helper) 1
@@ -23,16 +106,9 @@ switch -- [lindex $argv 0] {
   default {
     set R(helper) 0
     set R(helper_id) 0
+
   }
 }
-
-
-set R(dbname) [file normalize testrunner.db]
-set R(logname) [file normalize testrunner.log]
-set R(timeout) 10000
-set R(nHelper) 4
-set R(info_script) [file normalize [info script]]
-
 if {$R(helper)==0} {
   for {set ii 0} {$ii < [llength $argv]} {incr ii} {
     set a [lindex $argv $ii]
@@ -40,7 +116,7 @@ if {$R(helper)==0} {
 
     if {($n>2 && [string match "$a*" --jobs]) || $a=="-j"} {
       incr ii
-      set R(nHelper) [lindex $argv $ii]
+      set R(nJob) [lindex $argv $ii]
     } else {
       usage
     }
@@ -52,28 +128,6 @@ if {$R(helper)==0} {
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 db close
-
-# The database schema used by the testset database.
-#
-set R(schema) {
-  DROP TABLE IF EXISTS script;
-  DROP TABLE IF EXISTS msg;
-
-  CREATE TABLE script(
-    filename TEXT PRIMARY KEY,    -- full path to test script
-    state TEXT CHECK( state IN ('ready', 'running', 'done') ),
-    testfixtureid,                -- Id of process that ran script
-    nerr INTEGER,                 -- if 'done', the number of errors
-    ntest INTEGER,                -- if 'done', the number of tests
-    output TEXT                   -- full output of test script
-  );
-
-  CREATE TABLE msg(
-    id INTEGER PRIMARY KEY,
-    msg TEXT
-  );
-}
-
 
 #--------------------------------------------------------------------
 # This is temporary!
@@ -109,6 +163,7 @@ proc all_veryquick_scripts {} {
   memleak.test    permutations.test  soak.test   fts3.test
   mallocAll.test  rtree.test         full.test   extraquick.test
   session.test    rbu.test
+
   }
 
   set testdir [file normalize $::testdir]
@@ -131,68 +186,48 @@ proc all_veryquick_scripts {} {
 
   set ret
 }
-#proc all_veryquick_scripts {} {
-#  set testdir [file normalize $::testdir]
-#  glob -nocomplain $testdir/select*.test
-#}
 #--------------------------------------------------------------------
 
-
-proc make_new_testset {} {
-  global R
-
-  sqlite3 db $R(dbname)
-  db eval $R(schema)
-  foreach s [all_veryquick_scripts] {
-    db eval { INSERT INTO script(filename, state) VALUES ($s, 'ready') }
-  }
-
-  # db eval { SELECT filename FROM Script ORDER BY 1 } { puts $filename }
-  # exit
-
-
-  db close
-}
-
-proc get_next_test {} {
-  global R
-  set myid $R(helper_id)
-
-  sqlite3 db $R(dbname)
-  db timeout $R(timeout)
-  db eval { BEGIN EXCLUSIVE }
-  set f [db one { 
-    SELECT filename FROM script WHERE state='ready' ORDER BY 1 LIMIT 1 
-  }]
-  if {$f!=""} {
-    db eval { 
-      UPDATE script SET state='running', testfixtureid=$myid WHERE filename=$f 
-    }
-  }
-  db eval { COMMIT }
-  db close
-
-  return $f
-}
 
 proc r_write_db {tcl} {
   global R
   sqlite3 db $R(dbname)
   db timeout $R(timeout)
   db eval { BEGIN EXCLUSIVE }
+
   uplevel $tcl
+
   db eval { COMMIT }
   db close
 }
 
-proc r_read_db {tcl} {
+proc make_new_testset {} {
   global R
-  sqlite3 db $R(dbname)
-  db timeout $R(timeout)
-  db eval { BEGIN }
-  uplevel $tcl
-  db eval { COMMIT }
-  db close
+
+  r_write_db {
+    db eval $R(schema)
+    foreach s [all_veryquick_scripts] {
+      db eval { INSERT INTO script(filename, state) VALUES ($s, 'ready') }
+    }
+  }
+}
+
+proc get_next_test {} {
+  global R
+  set myid $R(helper_id)
+
+  r_write_db {
+    set f [db one { 
+      SELECT filename FROM script WHERE state='ready' ORDER BY 1 LIMIT 1 
+    }]
+    if {$f!=""} {
+      db eval { 
+        UPDATE script SET state='running', testfixtureid=$myid WHERE filename=$f
+      }
+    }
+  }
+
+  return $f
 }
 
 proc r_set_test_result {filename ms nerr ntest output} {
@@ -209,10 +244,17 @@ proc r_set_test_result {filename ms nerr ntest output} {
     append msg " (helper $R(helper_id))"
   }
 
+  sqlite3_shutdown
+  set nMalloc [lindex [sqlite3_status SQLITE_STATUS_MALLOC_COUNT 0] 1]
+  set nByte   [sqlite3_memory_used]
+  if {($nByte>0 || $nMalloc>0) && $R(leaker)==""} {
+    set R(leaker) $filename
+  }
+
   r_write_db {
     db eval {
       UPDATE script 
-        SET state='done', output=$output, nerr=$nerr, ntest=$ntest
+        SET state='done', output=$output, nerr=$nerr, ntest=$ntest, time=$ms
       WHERE filename=$filename;
 
       INSERT INTO msg(msg) VALUES ($msg);
@@ -245,10 +287,30 @@ proc r_get_messages {{db ""}} {
   set ret
 }
 
+# This is called after all tests have been run to write the leaked memory
+# report into the malloc table of testrunner.db.
+#
+proc r_memory_report {} {
+  global R
+
+  sqlite3_shutdown
+
+  set nMalloc [lindex [sqlite3_status SQLITE_STATUS_MALLOC_COUNT 0] 1]
+  set nByte   [sqlite3_memory_used]
+  set id $R(helper_id)
+  set leaker $R(leaker)
+
+  r_write_db {
+    db eval {
+      INSERT INTO malloc(id, nMalloc, nByte, leaker) 
+        VALUES($id, $nMalloc, $nByte, $leaker)
+    }
+  }
+}
+
+
 #--------------------------------------------------------------------------
 #
-
-
 set ::R_INSTALL_PUTS_WRAPPER {
   proc puts_sts_wrapper {args} {
     set n [llength $args]
@@ -370,11 +432,88 @@ proc puts_into_caller {args} {
   }
 }
 
-set R(nHelperRunning) 0
+#-------------------------------------------------------------------------
+#
+proc r_final_report {} {
+  global R
+
+  sqlite3 db $R(dbname)
+  db timeout $R(timeout)
+
+  set errcode 0
+
+  # Create the text log file. This is just the concatenation of the 
+  # 'output' column of the database for every script that was run.
+  set fd [open $R(logname) w]
+  db eval {SELECT output FROM script ORDER BY filename} {
+    puts $fd $output
+  }
+  close $fd
+
+  # Check if any scripts reported errors. If so, print one line noting
+  # how many errors, and another identifying the scripts in which they
+  # occured. Or, if no errors occurred, print out "no errors at all!".
+  sqlite3 db $R(dbname)
+  db timeout $R(timeout)
+  db eval { SELECT sum(nerr) AS nerr, sum(ntest) AS ntest FROM script } { }
+  puts "$nerr errors from $ntest tests."
+  if {$nerr>0} {
+    db eval { SELECT filename FROM script WHERE nerr>0 } {
+      lappend errlist [file tail $filename]
+    }
+    puts "Errors in: $errlist"
+    set errcode 1
+  }
+
+  # Check if any scripts were not run or did not finish. Print out a
+  # line identifying them if there are any. 
+  set errlist [list]
+  db eval { SELECT filename FROM script WHERE state!='done' } {
+    lappend errlist [file tail $filename]
+  }
+  if {$errlist!=[list]} {
+    puts "Tests DID NOT FINISH (crashed?): $errlist"
+    set errcode 1
+  }
+
+  set bLeak 0
+  db eval {
+    SELECT id, nmalloc, nbyte, leaker FROM malloc 
+      WHERE nmalloc>0 OR nbyte>0
+  } {
+    if {$id==0} { 
+      set line "This process " 
+    } else {
+      set line "Helper $id "
+    }
+    append line "leaked $nbyte byte in $nmalloc allocations"
+    if {$leaker!=""} { append line " (perhaps in [file tail $leaker])" }
+    puts $line
+    set bLeak 1
+  }
+  if {$bLeak==0} {
+    puts "No leaks - all allocations freed."
+  }
+
+  db close
+
+  puts "Test database is $R(dbname)"
+  puts "Test log file is $R(logname)"
+  if {$errcode} {
+    puts "This test has FAILED."
+  }
+  return $errcode
+}
+
+
 if {$R(helper)==0} {
-  cd $cmdlinearg(TESTFIXTURE_HOME)
   make_new_testset
-  for {set ii 1} {$ii <= $R(nHelper)} {incr ii} {
+}
+
+set R(nHelperRunning) 0
+if {$R(helper)==0 && $R(nJob)>1} {
+  cd $cmdlinearg(TESTFIXTURE_HOME)
+  for {set ii 1} {$ii <= $R(nJob)} {incr ii} {
     set cmd "[info nameofexec] $R(info_script) helper $ii 2>@1"
     puts "Launching helper $ii ($cmd)"
     set chan [open "|$cmd" r]
@@ -386,70 +525,48 @@ if {$R(helper)==0} {
 }
 
 proc r_helper_readable {id chan} {
-  puts "helper $id:[gets $chan]"
+  set data [gets $chan]
+  if {$data!=""} { puts "helper $id:[gets $chan]" }
   if {[eof $chan]} {
-    puts "helper $id is FINISHED"
+    puts "helper $id is finished"
     incr ::R(nHelperRunning) -1
     close $chan
   }
 }
 
-if {$R(helper) || $R(nHelper)<4} {
+if {$R(nHelperRunning)==0} {
   while { ""!=[set f [get_next_test]] } {
     set R(output) ""
     set TC(count) 0
     set TC(errors) 0
     set ms [slave_test_file $f]
+
     r_set_test_result $f $ms $TC(errors) $TC(count) $R(output)
   
     if {$R(helper)==0} {
       foreach msg [r_get_messages] { puts $msg }
     }
   }
-}
 
-set TTT 0
-sqlite3 db $R(dbname)
-db timeout $R(timeout)
-while {$R(nHelperRunning)>0} {
-  after 250 { incr TTT }
-  vwait TTT
-  foreach msg [r_get_messages db] { puts $msg }
+  # Tests are finished - write a record into testrunner.db describing 
+  # any memory leaks. 
+  r_memory_report
+
+} else {
+  set TTT 0
+  sqlite3 db $R(dbname)
+  db timeout $R(timeout)
+  while {$R(nHelperRunning)>0} {
+    after 250 { incr TTT }
+    vwait TTT
+    foreach msg [r_get_messages db] { puts $msg }
+  }
+  db close
 }
-db close
 
 set errcode 0
 if {$R(helper)==0} {
-  sqlite3 db $R(dbname)
-  db timeout $R(timeout)
-  db eval { SELECT sum(nerr) AS nerr, sum(ntest) AS ntest FROM script } {
-    puts "$nerr errors from $ntest tests."
-  }
-  if {$nerr>0} {
-    db eval { SELECT filename FROM script WHERE nerr>0 } {
-      lappend errlist [file tail $filename]
-    }
-    puts "Errors in: $errlist"
-    set errcode 1
-  }
-
-  set errlist [list]
-  db eval { SELECT filename FROM script WHERE state!='done' } {
-    lappend errlist [file tail $filename]
-  }
-  if {$errlist!=[list]} {
-    puts "Tests DID NOT FINISH (crashed?): $errlist"
-    set errcode 1
-  }
-
-  set fd [open $R(logname) w]
-  db eval {SELECT output FROM script ORDER BY filename} {
-    puts $fd $output
-  }
-  close $fd
-
-  puts "Test database is $R(dbname)"
-  puts "Test log file is $R(logname)"
+  set errcode [r_final_report]
 }
 
 exit $errcode
