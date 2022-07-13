@@ -786,4 +786,19 @@ do_execsql_test join8-25020 {
   SELECT 1 FROM t1 LEFT JOIN t2 ON true JOIN t3 ON (b2 IN (a1)) FULL JOIN t4 ON true;
 } {1}
 
+# 2022-07-13
+# forum/forumpost/174afeae57
+#
+reset_db
+db null -
+do_execsql_test join8-26000 {
+  CREATE TABLE t1(a INT);
+  CREATE TABLE t2(b INT, c INT);
+  CREATE VIEW t3(d) AS SELECT NULL FROM t2 FULL OUTER JOIN t1 ON c=a UNION ALL SELECT b FROM t2;
+  INSERT INTO t1(a) VALUES (NULL);
+  INSERT INTO t2(b, c) VALUES (99, NULL);
+  SELECT DISTINCT b, c, d FROM t2, t3 WHERE b<>0
+   UNION SELECT DISTINCT b, c, d FROM t2, t3 WHERE b ISNULL;
+} {99 - - 99 - 99}
+
 finish_test
