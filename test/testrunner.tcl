@@ -62,8 +62,14 @@ set R(schema) {
 #
 proc guess_number_of_cores {} {
   set ret 4
+  
+  if {$::tcl_platform(os)=="Darwin"} {
+    set cmd "sysctl -n hw.logicalcpu"
+  } else {
+    set cmd "nproc"
+  }
   catch {
-    set fd [open "|nproc" r]
+    set fd [open "|$cmd" r]
     set ret [gets $fd]
     close $fd
     set ret [expr $ret]
