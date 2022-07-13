@@ -4,7 +4,7 @@
 # Usage:
 #
 proc usage {} {
-  puts stderr "Usage: $::argv0 ?SWITCHES?"
+  puts stderr "Usage: $::argv0 ?SWITCHES? ?PATTERN? ..."
   puts stderr ""
   puts stderr "where SWITCHES are:"
   puts stderr "    --jobs NUMBER-OF-JOBS"
@@ -70,7 +70,6 @@ proc default_njob {} {
 #-------------------------------------------------------------------------
 
 
-
 set R(dbname) [file normalize testrunner.db]
 set R(logname) [file normalize testrunner.log]
 set R(info_script) [file normalize [info script]]
@@ -78,6 +77,10 @@ set R(timeout) 10000              ;# Default busy-timeout for testrunner.
 set R(nJob)    [default_njob]     ;# Default number of helper processes
 set R(leaker)  ""                 ;# Name of first script to leak memory
 
+set R(patternlist) [list]
+
+set testdir [file dirname $argv0]
+source $testdir/testset.tcl
 
 # Parse the command line options. There are two ways to invoke this
 # script - to create a helper or coordinator process. If there are
@@ -114,79 +117,23 @@ if {$R(helper)==0} {
     set a [lindex $argv $ii]
     set n [string length $a]
 
-    if {($n>2 && [string match "$a*" --jobs]) || $a=="-j"} {
-      incr ii
-      set R(nJob) [lindex $argv $ii]
+    if {[string range $a 0 0]=="-"} {
+      if {($n>2 && [string match "$a*" --jobs]) || $a=="-j"} {
+        incr ii
+          set R(nJob) [lindex $argv $ii]
+      } else {
+        usage
+      }
     } else {
-      usage
+      lappend R(patternlist) [string map {% * _ .} $a]
     }
   }
 
   set argv [list]
 }
 
-set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 db close
-
-#--------------------------------------------------------------------
-# This is temporary!
-# 
-# Return a list of all scripts in the "veryquick" test.
-#
-proc all_veryquick_scripts {} {
-  set OMIT {
-  async2.test async3.test backup_ioerr.test corrupt.test
-  corruptC.test crash.test crash2.test crash3.test crash4.test crash5.test
-  crash6.test crash7.test delete3.test e_fts3.test fts3rnd.test
-  fkey_malloc.test fuzz.test fuzz3.test fuzz_malloc.test in2.test loadext.test
-  misc7.test mutex2.test notify2.test onefile.test pagerfault2.test 
-  savepoint4.test savepoint6.test select9.test 
-  speed1.test speed1p.test speed2.test speed3.test speed4.test 
-  speed4p.test sqllimits1.test tkt2686.test thread001.test thread002.test
-  thread003.test thread004.test thread005.test trans2.test vacuum3.test 
-  incrvacuum_ioerr.test autovacuum_crash.test btree8.test shared_err.test
-  vtab_err.test walslow.test walcrash.test walcrash3.test
-  walthread.test rtree3.test indexfault.test securedel2.test
-  sort3.test sort4.test fts4growth.test fts4growth2.test
-  bigsort.test walprotocol.test mmap4.test fuzzer2.test
-  walcrash2.test e_fkey.test backup.test
-  writecrash.test
-
-  fts4merge.test fts4merge2.test fts4merge4.test fts4check.test
-  fts4merge5.test
-  fts3cov.test fts3snippet.test fts3corrupt2.test fts3an.test
-  fts3defer.test fts4langid.test fts3sort.test fts5unicode.test
-  rtree4.test sessionbig.test
-
-  all.test        async.test         quick.test  veryquick.test
-  memleak.test    permutations.test  soak.test   fts3.test
-  mallocAll.test  rtree.test         full.test   extraquick.test
-  session.test    rbu.test
-
-  }
-
-  set testdir [file normalize $::testdir]
-  set ret [list]
-
-  foreach f [glob -nocomplain $testdir/*.test] {
-    if {[lsearch $OMIT [file tail $f]]<0
-     && [string match *malloc* $f]==0
-     && [string match *ioerr* $f]==0
-     && [string match *fault* $f]==0
-     && [string match *bigfile* $f]==0
-     && [string match *_err* $f]==0
-     && [string match *fts5corrupt* $f]==0
-     && [string match *fts5big* $f]==0
-     && [string match *fts5aj* $f]==0
-    } { 
-      lappend ret $f
-    }
-  }
-
-  set ret
-}
-#--------------------------------------------------------------------
 
 
 proc r_write_db {tcl} {
@@ -204,9 +151,10 @@ proc r_write_db {tcl} {
 proc make_new_testset {} {
   global R
 
+  set scripts [testset_patternlist $R(patternlist)]
   r_write_db {
     db eval $R(schema)
-    foreach s [all_veryquick_scripts] {
+    foreach s $scripts {
       db eval { INSERT INTO script(filename, state) VALUES ($s, 'ready') }
     }
   }
