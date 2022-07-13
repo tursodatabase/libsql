@@ -1,5 +1,5 @@
-C Add\snew\sscript\stest/testrunner.tcl.\sFor\srunning\sa\sset\sof\stest\sscripts\susing\nmultiple\sprocesses.
-D 2022-07-13T21:02:07.599
+C Minor\schange\sto\shelp\smessage\sin\stestrunner.tcl.
+D 2022-07-13T21:10:11.168
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1507,7 +1507,7 @@ F test/temptable2.test d2940417496e2b9548e01d09990763fbe88c316504033256d51493e1f
 F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
 F test/tester.tcl 76771269dcc20b2c2d1d6f1175dd50d1eebddc004aebac865483f1829a5cd398
-F test/testrunner.tcl 39e43ba90d8fe2d2694049af5ac53861c04a42600d3a8ccb1d07eaaaf350c806
+F test/testrunner.tcl 10b2f2c9c029dc611c6a34215edf29174397370b5c9e2df7a40e5560933bffe4
 F test/testset.tcl 27a6bbbc93cbbcf442c57e3c023e6b5d7304dc415e09eb0e9ac61edd0e6c1fbe
 F test/thread001.test b61a29dd87cf669f5f6ac96124a7c97d71b0c80d9012746072055877055cf9ef
 F test/thread002.test e630504f8a06c00bf8bbe68528774dd96aeb2e58
@@ -1981,8 +1981,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 274e244c85935084b2f0f85176283f018bf9b74e7703f985bd5a2f6f8bdcff5d 0ed1e83c6fc12acd06ecf7210a869bebaf5e5e75762e5f16bf1834ecab717d59
-R 6e5b00a7e5284e8563026668673ce8cf
+P 0122e93dc19c228546908b9ef5c58f88d27d79233523e2d09a4bbd56b0c492f9
+R 7e269f5dfdef1a9282f328f55b519c5c
 U dan
-Z 363eb180a41ae46020bac6b29842c080
+Z 246b3b776865c8a91afa511145e5ca7c
 # Remove this line to create a well-formed Fossil manifest.

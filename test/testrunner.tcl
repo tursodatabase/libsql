@@ -6,7 +6,7 @@
 proc usage {} {
   set a0 testrunner.tcl
 
-  puts stderr "Usage: $a0 ?SWITCHES? ?PATTERN? ..."
+  puts stderr "Usage: $a0 ?SWITCHES? ?all|veryquick? ?PATTERNS?" 
   puts stderr ""
   puts stderr "where SWITCHES are:"
   puts stderr "    --jobs NUMBER-OF-JOBS"
