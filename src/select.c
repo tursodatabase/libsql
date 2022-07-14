@@ -6834,7 +6834,9 @@ int sqlite3Select(
     ){
       SELECTTRACE(0x100,pParse,p,
                 ("omit superfluous ORDER BY on %r FROM-clause subquery\n",i+1));
-      sqlite3ExprListDelete(db, pSub->pOrderBy);
+      sqlite3ParserAddCleanup(pParse, 
+         (void(*)(sqlite3*,void*))sqlite3ExprListDelete,
+         pSub->pOrderBy);
       pSub->pOrderBy = 0;
     }
 
