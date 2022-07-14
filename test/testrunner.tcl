@@ -251,6 +251,8 @@ proc testset_patternlist {patternlist} {
 
 proc r_write_db {tcl} {
   global R
+
+  sqlite3_test_control_pending_byte 0x010000
   sqlite3 db $R(dbname)
   db timeout $R(timeout)
   db eval { BEGIN EXCLUSIVE }
@@ -352,6 +354,8 @@ proc r_set_test_result {config filename ms nerr ntest output} {
 set R(iNextMsg) 1
 proc r_get_messages {{db ""}} {
   global R
+
+  sqlite3_test_control_pending_byte 0x010000
 
   if {$db==""} {
     sqlite3 rgmhandle $R(dbname)
@@ -524,7 +528,9 @@ proc puts_into_caller {args} {
 proc r_final_report {} {
   global R
 
+  sqlite3_test_control_pending_byte 0x010000
   sqlite3 db $R(dbname)
+
   db timeout $R(timeout)
 
   set errcode 0
@@ -613,7 +619,7 @@ if {$R(helper)==0 && $R(nJob)>1} {
 
 proc r_helper_readable {id chan} {
   set data [gets $chan]
-  if {$data!=""} { puts "helper $id:[gets $chan]" }
+  if {$data!=""} { puts "helper $id:$data" }
   if {[eof $chan]} {
     puts "helper $id is finished"
     incr ::R(nHelperRunning) -1
