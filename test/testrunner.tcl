@@ -1,21 +1,47 @@
 
-
 #-------------------------------------------------------------------------
 # Usage:
 #
 proc usage {} {
   set a0 testrunner.tcl
 
-  puts stderr "Usage: $a0 ?SWITCHES? ?all|veryquick? ?PATTERNS?" 
+  set ::argv [list]
+  uplevel [list source $::testdir/permutations.test]
+
+  puts stderr "Usage: $a0 ?SWITCHES? ?PERMUTATION? ?PATTERNS?" 
   puts stderr ""
   puts stderr "where SWITCHES are:"
   puts stderr "    --jobs NUMBER-OF-JOBS"
   puts stderr ""
+  puts stderr "available PERMUTATION values are:"
+  set ii 0
+  foreach name [lsort [array names ::testspec]] {
+    if {($ii % 3)==0} { puts -nonewline stderr "  " }
+    puts -nonewline stderr [format "% -22s" $name]
+    if {($ii % 3)==2} { puts stderr "" }
+    incr ii
+  }
+  puts stderr ""
+  puts stderr ""
   puts stderr "Examples:"
-  puts stderr "    $a0                    # Run veryquick.test tests"
-  puts stderr "    $a0 all                # Run all tests"
-  puts stderr "    $a0 veryquick rtree%   # Run all test scripts from veryquick.test that match 'rtree%'"
-  puts stderr "    $a0 alter% fts5%       # Run all test scripts that match 'alter%' or 'rtree%'"
+  puts stderr " 1) Run the veryquick tests:"
+  puts stderr "      $a0"
+  puts stderr " 2) Run all test scripts in the source tree:"
+  puts stderr "      $a0 full"
+  puts stderr " 2) Run the 'memsubsys1' permutation:"
+  puts stderr "      $a0 memsubsys1"
+  puts stderr " 3) Run all permutations usually run by \[make fulltest\]"
+  puts stderr "      $a0 release"
+  puts stderr " 4) Run all scripts that match the pattern 'select%':"
+  puts stderr "      $a0 select%"
+  puts stderr "      $a0 all select%"
+  puts stderr "      $a0 full select%"
+  puts stderr " 5) Run all scripts that are part of the veryquick permutation and match the pattern 'select%':"
+  puts stderr "      $a0 veryquick select%"
+  puts stderr " 6) Run the 'memsubsys1' permutation, but just those scripts that match 'window%':"
+  puts stderr "      $a0 memsubsys1 window%"
+  puts stderr " 7) Run all the permutations, but only the scripts that match either 'fts5%' or 'rtree%':"
+  puts stderr "      $a0 release fts5% rtree%"
 
   exit 1
 }
@@ -30,13 +56,15 @@ set R(schema) {
   DROP TABLE IF EXISTS malloc;
 
   CREATE TABLE script(
-    filename TEXT PRIMARY KEY,    -- full path to test script
+    config TEXT,
+    filename TEXT,                -- full path to test script
     state TEXT CHECK( state IN ('ready', 'running', 'done') ),
     testfixtureid,                -- Id of process that ran script
     time INTEGER,                 -- Time in ms
     nerr INTEGER,                 -- if 'done', the number of errors
     ntest INTEGER,                -- if 'done', the number of tests
-    output TEXT                   -- full output of test script
+    output TEXT,                  -- full output of test script
+    PRIMARY KEY(config, filename)
   );
 
   CREATE TABLE malloc(
@@ -95,7 +123,6 @@ set R(leaker)  ""                 ;# Name of first script to leak memory
 set R(patternlist) [list]
 
 set testdir [file dirname $argv0]
-source $testdir/testset.tcl
 
 # Parse the command line options. There are two ways to invoke this
 # script - to create a helper or coordinator process. If there are
@@ -140,15 +167,86 @@ if {$R(helper)==0} {
         usage
       }
     } else {
-      lappend R(patternlist) [string map {% * _ .} $a]
+      lappend R(patternlist) [string map {% *} $a]
     }
   }
 
   set argv [list]
 }
+source $testdir/permutations.test
 
-source $testdir/tester.tcl
-db close
+#-------------------------------------------------------------------------
+# Return a list of tests to run. Each element of the list is itself a
+# list of two elements - the name of a permuations.test configuration
+# followed by the full path to a test script. i.e.:
+#
+#    {CONFIG FILENAME} {CONFIG FILENAME} ...
+#
+proc testset_patternlist {patternlist} {
+
+  set first [lindex $patternlist 0]
+  if {$first=="all"} { set first "full" }
+
+  if {$first=="release"} {
+
+    # The following mirrors the set of test suites invoked by "all.test".
+    #
+    set clist {
+      full
+      no_optimization memsubsys1 memsubsys2 singlethread 
+      multithread onefile utf16 exclusive persistent_journal 
+      persistent_journal_error no_journal no_journal_error
+      autovacuum_ioerr no_mutex_try fullmutex journaltest 
+      inmemory_journal pcache0 pcache10 pcache50 pcache90 
+      pcache100 prepare mmap
+    }
+    ifcapable rbu { lappend clist rbu }
+    if {$::tcl_platform(platform)=="unix"} {
+      ifcapable !default_autovacuum {
+        lappend clist autovacuum_crash 
+      }
+    }
+    set patternlist [lrange $patternlist 1 end]
+
+  } elseif {[info exists ::testspec($first)]} {
+    set clist $first
+    set patternlist [lrange $patternlist 1 end]
+  } elseif { [llength $patternlist]==0 } {
+    set clist veryquick
+  } else {
+    set clist full
+  }
+
+  set testset [list]
+
+  foreach config $clist {
+    catch { array unset O }
+    array set O $::testspec($config)
+    foreach f $O(-files) {
+      if {[file pathtype $f]!="absolute"} {
+        set f [file join $::testdir $f]
+      }
+      lappend testset [list $config [file normalize $f]]
+    }
+  }
+
+  if {[llength $patternlist]>0} {
+    foreach t $testset {
+      set tail [file tail [lindex $t 1]]
+      foreach p $patternlist {
+        if {[string match $p $tail]} {
+          lappend ret $t
+          break;
+        }
+      }
+    }
+  } else {
+    set ret $testset
+  }
+
+  set ret
+}
+#--------------------------------------------------------------------------
 
 
 proc r_write_db {tcl} {
@@ -166,37 +264,63 @@ proc r_write_db {tcl} {
 proc make_new_testset {} {
   global R
 
-  set scripts [testset_patternlist $R(patternlist)]
+  set tests [testset_patternlist $R(patternlist)]
   r_write_db {
     db eval $R(schema)
-    foreach s $scripts {
-      db eval { INSERT INTO script(filename, state) VALUES ($s, 'ready') }
+    foreach t $tests {
+      foreach {c s} $t {}
+      db eval { 
+        INSERT INTO script(config, filename, state) VALUES ($c, $s, 'ready') 
+      }
     }
   }
 }
 
+# Find the next job in the database and mark it as 'running'. Then return
+# a list consisting of the 
+#
+#   CONFIG FILENAME
+#
+# pair for the test.
+#
 proc get_next_test {} {
   global R
   set myid $R(helper_id)
 
   r_write_db {
-    set f [db one { 
-      SELECT filename FROM script WHERE state='ready' ORDER BY 1 LIMIT 1 
-    }]
+    set f ""
+    set c ""
+    db eval {
+      SELECT config, filename FROM script WHERE state='ready' 
+      ORDER BY config!='full', config, filename LIMIT 1
+    } {
+      set c $config
+      set f $filename
+    }
     if {$f!=""} {
       db eval { 
-        UPDATE script SET state='running', testfixtureid=$myid WHERE filename=$f
+        UPDATE script SET state='running', testfixtureid=$myid 
+        WHERE (config, filename) = ($c, $f)
       }
     }
   }
 
-  return $f
+  if {$f==""} { return "" }
+  list $c $f
 }
 
-proc r_set_test_result {filename ms nerr ntest output} {
+proc r_testname {config filename} {
+  set name [file tail $filename]
+  if {$config!="" && $config!="full" && $config!="veryquick"} {
+    set name "$config-$name"
+  }
+  return $name
+}
+
+proc r_set_test_result {config filename ms nerr ntest output} {
   global R
 
-  set f [file tail $filename]
+  set f [r_testname $config $filename]
   if {$nerr==0} {
     set msg "$f... Ok"
   } else {
@@ -211,14 +335,14 @@ proc r_set_test_result {filename ms nerr ntest output} {
   set nMalloc [lindex [sqlite3_status SQLITE_STATUS_MALLOC_COUNT 0] 1]
   set nByte   [sqlite3_memory_used]
   if {($nByte>0 || $nMalloc>0) && $R(leaker)==""} {
-    set R(leaker) $filename
+    set R(leaker) $f
   }
 
   r_write_db {
     db eval {
       UPDATE script 
         SET state='done', output=$output, nerr=$nerr, ntest=$ntest, time=$ms
-      WHERE filename=$filename;
+      WHERE (config, filename)=($config, $filename);
 
       INSERT INTO msg(msg) VALUES ($msg);
     }
@@ -408,7 +532,7 @@ proc r_final_report {} {
   # Create the text log file. This is just the concatenation of the 
   # 'output' column of the database for every script that was run.
   set fd [open $R(logname) w]
-  db eval {SELECT output FROM script ORDER BY filename} {
+  db eval {SELECT output FROM script ORDER BY config!='full',config,filename} {
     puts $fd $output
   }
   close $fd
@@ -421,8 +545,8 @@ proc r_final_report {} {
   db eval { SELECT sum(nerr) AS nerr, sum(ntest) AS ntest FROM script } { }
   puts "$nerr errors from $ntest tests."
   if {$nerr>0} {
-    db eval { SELECT filename FROM script WHERE nerr>0 } {
-      lappend errlist [file tail $filename]
+    db eval { SELECT config, filename FROM script WHERE nerr>0 } {
+      lappend errlist [r_testname $config $filename]
     }
     puts "Errors in: $errlist"
     set errcode 1
@@ -431,8 +555,8 @@ proc r_final_report {} {
   # Check if any scripts were not run or did not finish. Print out a
   # line identifying them if there are any. 
   set errlist [list]
-  db eval { SELECT filename FROM script WHERE state!='done' } {
-    lappend errlist [file tail $filename]
+  db eval { SELECT config, filename FROM script WHERE state!='done' } {
+    lappend errlist [r_testname $config $filename]
   }
   if {$errlist!=[list]} {
     puts "Tests DID NOT FINISH (crashed?): $errlist"
@@ -498,13 +622,31 @@ proc r_helper_readable {id chan} {
 }
 
 if {$R(nHelperRunning)==0} {
-  while { ""!=[set f [get_next_test]] } {
+  while { ""!=[set t [get_next_test]] } {
     set R(output) ""
     set TC(count) 0
     set TC(errors) 0
-    set ms [slave_test_file $f]
 
-    r_set_test_result $f $ms $TC(errors) $TC(count) $R(output)
+    foreach {config filename} $t {}
+
+    array set O $::testspec($config)
+    set ::G(perm:name)         $config
+    set ::G(perm:prefix)       $O(-prefix)
+    set ::G(isquick)           1
+    set ::G(perm:dbconfig)     $O(-dbconfig)
+    set ::G(perm:presql)       $O(-presql)
+
+    eval $O(-initialize)
+    set ms [slave_test_file $filename]
+    eval $O(-shutdown)
+
+    unset -nocomplain ::G(perm:sqlite3_args)
+    unset ::G(perm:name)
+    unset ::G(perm:prefix)
+    unset ::G(perm:dbconfig)
+    unset ::G(perm:presql)
+
+    r_set_test_result $config $filename $ms $TC(errors) $TC(count) $R(output)
   
     if {$R(helper)==0} {
       foreach msg [r_get_messages] { puts $msg }
