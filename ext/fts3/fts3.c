@@ -4308,6 +4308,7 @@ static int fts3EvalDeferredPhrase(Fts3Cursor *pCsr, Fts3Phrase *pPhrase){
   char *aPoslist = 0;             /* Position list for deferred tokens */
   int nPoslist = 0;               /* Number of bytes in aPoslist */
   int iPrev = -1;                 /* Token number of previous deferred token */
+  char *aFree = (pPhrase->doclist.bFreeList ? pPhrase->doclist.pList : 0);
 
   for(iToken=0; iToken<pPhrase->nToken; iToken++){
     Fts3PhraseToken *pToken = &pPhrase->aToken[iToken];
@@ -4321,6 +4322,7 @@ static int fts3EvalDeferredPhrase(Fts3Cursor *pCsr, Fts3Phrase *pPhrase){
 
       if( pList==0 ){
         sqlite3_free(aPoslist);
+        sqlite3_free(aFree);
         pPhrase->doclist.pList = 0;
         pPhrase->doclist.nList = 0;
         return SQLITE_OK;
@@ -4341,6 +4343,7 @@ static int fts3EvalDeferredPhrase(Fts3Cursor *pCsr, Fts3Phrase *pPhrase){
         nPoslist = (int)(aOut - aPoslist);
         if( nPoslist==0 ){
           sqlite3_free(aPoslist);
+          sqlite3_free(aFree);
           pPhrase->doclist.pList = 0;
           pPhrase->doclist.nList = 0;
           return SQLITE_OK;
@@ -4393,6 +4396,7 @@ static int fts3EvalDeferredPhrase(Fts3Cursor *pCsr, Fts3Phrase *pPhrase){
     }
   }
 
+  if( pPhrase->doclist.pList!=aFree ) sqlite3_free(aFree);
   return SQLITE_OK;
 }
 #endif /* SQLITE_DISABLE_FTS4_DEFERRED */
