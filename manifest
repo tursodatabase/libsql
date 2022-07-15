@@ -1,5 +1,5 @@
-C Fix\sthe\swhereKeyStats()\sroutine\s(part\sof\sSTAT4\sprocessing\sonly)\sso\sthat\sit\nis\sable\sto\scope\swith\srow-value\scomparisons\sagainst\sthe\sprimary\skey\sindex\nof\sa\sWITHOUT\sROWID\stable.\n[forum:/forumpost/3607259d3c|Forum\spost\s3607259d3c].
-D 2022-07-15T12:16:11.966
+C Fix\sa\smemory\sleak\sin\sfts3\sthat\scould\soccur\swhen\sprocessing\sa\scorrupt\sdatabase.
+D 2022-07-15T15:08:48.874
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -102,7 +102,7 @@ F ext/fts3/README.content b9078d0843a094d86af0d48dffbff13c906702b4c3558012e67b9c
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers b92bdeb8b46503f0dd301d364efc5ef59ef9fa8e2758b8e742f39fa93a2e422d
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 9ba24e484da5146f033ee78ecf6bc740fc4f62c6c42143f9f2c99be27baca4c8
+F ext/fts3/fts3.c 8cd361bd8612de3e5ec451d33ced8575cbc5af6744e7efc05d54bde4d2df3cd0
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h dafdc371f9fbab175744b06cfe019d5f040cdfdbd11fea752f5dc28d45b04c05
 F ext/fts3/fts3_aux.c f0dc9bd98582615b7750218899bd0c729879b6bbf94d1be57ca1833ff49afc6f
@@ -1008,7 +1008,7 @@ F test/fts3conf.test c84bbaec81281c1788aa545ac6e78a6bd6cde2bdbbce2da261690e3659f
 F test/fts3corrupt.test 6732477c5ace050c5758a40a8b5706c8c0cccd416b9c558e0e15224805a40e57
 F test/fts3corrupt2.test e318f0676e5e78d5a4b702637e2bb25265954c08a1b1e4aaf93c7880bb0c67d0
 F test/fts3corrupt3.test 0d5b69a0998b4adf868cc301fc78f3d0707745f1d984ce044c205cdb764b491f
-F test/fts3corrupt4.test e3f7915a156d75bec2fb282630165197d8e682498c5177d43dfd453f5a4ede80
+F test/fts3corrupt4.test 589e043d1114ea02c83530e459ef5c2d6adce63094e72826ed3bceb02e795116
 F test/fts3corrupt5.test 0549f85ec4bd22e992f645f13c59b99d652f2f5e643dac75568bfd23a6db7ed5
 F test/fts3corrupt6.test f417c910254f32c0bc9ead7affa991a1d5aec35b3b32a183ffb05eea78289525
 F test/fts3cov.test 7eacdbefd756cfa4dc2241974e3db2834e9b372ca215880e00032222f32194cf
@@ -1980,8 +1980,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b072851be1a5e49441469dbfa4580e132ebb1d8bc2de98fe1aa67bb9c7cf13a3
-R 09fb2c54faf3b89c4b078e3ba6b760f0
-U drh
-Z ea98894b53d9b6ede773b2a171a6b669
+P 0620e419a927a3da6ebe921aaa3471686f0fdc2e485f4c2d5c88f32092228724
+R b9aac4d9609cc8841634db9ea3e3fcba
+U dan
+Z bb096f0e437aaa23189ce1ee6aae46bf
 # Remove this line to create a well-formed Fossil manifest.
