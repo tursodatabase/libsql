@@ -1433,7 +1433,7 @@ static int whereKeyStats(
 #endif
   assert( pRec!=0 );
   assert( pIdx->nSample>0 );
-  assert( pRec->nField>0 && pRec->nField<=pIdx->nSampleCol );
+  assert( pRec->nField>0 );
 
   /* Do a binary search to find the first sample greater than or equal
   ** to pRec. If pRec contains a single field, the set of samples to search
@@ -1479,7 +1479,7 @@ static int whereKeyStats(
   ** it is extended to two fields. The duplicates that this creates do not 
   ** cause any problems.
   */
-  nField = pRec->nField;
+  nField = MIN(pRec->nField, pIdx->nSample);
   iCol = 0;
   iSample = pIdx->nSample * nField;
   do{
