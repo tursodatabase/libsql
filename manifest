@@ -1,5 +1,5 @@
-C In\sthe\squery\splanner,\srestore\sthe\sformer\saggressiveness\sin\sreordering\sof\nFROM\sclause\sterms\sthat\sexisted\sprior\sto\sversion\s3.39.0\sfor\squeries\sthat\ncontain\sno\sRIGHT\sor\sFULL\sJOINs.
-D 2022-07-15T20:39:39.491
+C Fixes\sfor\sthe\sgenerated\s"mallocs.tcl"\sand\s"leaks.tcl"\sscripts\sgenerated\sby\srunning\stcl\stests\swith\sthe\s--malloctrace=1\soption.
+D 2022-07-16T18:08:48.116
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1235,7 +1235,7 @@ F test/mallocK.test 25897506da0098cea09b302ff432b0fb6d8002773c1e0fc9732aa8b444bf
 F test/mallocL.test fb311ff80afddf3b1a75e52289081f4754d901dc
 F test/mallocM.test 78bbe9d3da84a5c679123cdb40d7b2010b18fc46e13897e4f253c6ba6fbff134
 F test/malloc_common.tcl 806c50379cf4fa65008cd4d5af18273e5dac8ab62d1d4316c76aa2ecd2e54018
-F test/malloctraceviewer.tcl b7a54595270c1d201abf1c3f3d461f27eaf24cdef623ad08a0fe5e411264c8a9
+F test/malloctraceviewer.tcl 3e3ddf11e30d2b20f53aa16aa6615082fb24a100bea61cca7214c927b742eba6
 F test/manydb.test 28385ae2087967aa05c38624cec7d96ec74feb3e
 F test/mem5.test c6460fba403c5703141348cd90de1c294188c68f
 F test/memdb.test c1f2a343ad14398d5d6debda6ea33e80d0dafcc7
@@ -1506,7 +1506,7 @@ F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
 F test/temptable2.test d2940417496e2b9548e01d09990763fbe88c316504033256d51493e1f1a5ce6a
 F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
-F test/tester.tcl 76771269dcc20b2c2d1d6f1175dd50d1eebddc004aebac865483f1829a5cd398
+F test/tester.tcl d759ac44a501fb832f2ea966429ca18acfba0f9a8d34ad5c499332b079b37023
 F test/testrunner.tcl 6aabdfcbfc489cc666720048606e5f9e62b8e17a3cfaf36a81fc587d9e7c39cb
 F test/thread001.test b61a29dd87cf669f5f6ac96124a7c97d71b0c80d9012746072055877055cf9ef
 F test/thread002.test e630504f8a06c00bf8bbe68528774dd96aeb2e58
@@ -1980,8 +1980,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d74f6f6d5136995b8bf900eb671e4b15ca81e03cc1ab5b7a1aa43dc4f3617760
-R fa54dcdbc827a4bcf8d891638157443e
-U drh
-Z 2feb16b88bfbd559419278240c03d9ae
+P 92d60b64ebfc2d1f0a9cabaa88e7bf0d11737ed01a77b627af10dd1b96a5321c
+R c2826cbb8b9c28cc73030d164bbfa10e
+U dan
+Z 0beb54d1e8fdf448050ee0b11342583e
 # Remove this line to create a well-formed Fossil manifest.
