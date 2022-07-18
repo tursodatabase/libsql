@@ -58,6 +58,7 @@ set R(schema) {
   CREATE TABLE script(
     config TEXT,
     filename TEXT,                -- full path to test script
+    slow BOOLEAN,                 -- true if script is "slow"
     state TEXT CHECK( state IN ('ready', 'running', 'done') ),
     testfixtureid,                -- Id of process that ran script
     time INTEGER,                 -- Time in ms
@@ -271,8 +272,23 @@ proc make_new_testset {} {
     db eval $R(schema)
     foreach t $tests {
       foreach {c s} $t {}
+      set slow 0
+
+      set fd [open $s]
+      for {set ii 0} {$ii<100 && ![eof $fd]} {incr ii} {
+        set line [gets $fd]
+        if {[string match -nocase *testrunner:* $line]} {
+          regexp -nocase {.*testrunner:(.*)} $line -> properties
+          foreach p $properties {
+            if {$p=="slow"} { set slow 1 }
+          }
+        }
+      }
+      close $fd
+
       db eval { 
-        INSERT INTO script(config, filename, state) VALUES ($c, $s, 'ready') 
+        INSERT INTO script(config, filename, slow, state) 
+            VALUES ($c, $s, $slow, 'ready') 
       }
     }
   }
@@ -294,7 +310,12 @@ proc get_next_test {} {
     set c ""
     db eval {
       SELECT config, filename FROM script WHERE state='ready' 
-      ORDER BY config!='full', config, filename LIMIT 1
+      ORDER BY 
+        (slow * (($myid+1) % 2)) DESC, 
+        config!='full', 
+        config,
+        filename
+      LIMIT 1
     } {
       set c $config
       set f $filename
