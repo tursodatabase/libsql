@@ -94,6 +94,31 @@ SQLITE_EXTENSION_INIT1
 #define RE_OP_NOTSPACE   16    /* Not a digit */
 #define RE_OP_BOUNDARY   17    /* Boundary between word and non-word */
 
+#if defined(SQLITE_DEBUG)
+/* Opcode names used for symbolic debugging */
+static const char *ReOpName[] = {
+  "EOF",
+  "MATCH",
+  "ANY",
+  "ANYSTAR",
+  "FORK",
+  "GOTO",
+  "ACCEPT",
+  "CC_INC",
+  "CC_EXC",
+  "CC_VALUE",
+  "CC_RANGE",
+  "WORD",
+  "NOTWORD",
+  "DIGIT",
+  "NOTDIGIT",
+  "SPACE",
+  "NOTSPACE",
+  "BOUNDARY",
+};
+#endif /* SQLITE_DEBUG */
+
+
 /* Each opcode is a "state" in the NFA */
 typedef unsigned short ReStateNumber;
 
@@ -127,7 +152,7 @@ struct ReCompiled {
   int *aArg;                  /* Arguments to each operator */
   unsigned (*xNextChar)(ReInput*);  /* Next character function */
   unsigned char zInit[12];    /* Initial text to match */
-  int nInit;                  /* Number of characters in zInit */
+  int nInit;                  /* Number of bytes in zInit */
   unsigned nState;            /* Number of entries in aOp[] and aArg[] */
   unsigned nAlloc;            /* Slots allocated for aOp[] and aArg[] */
 };
@@ -745,6 +770,67 @@ static void re_sql_func(
   }
 }
 
+#if defined(SQLITE_DEBUG)
+/*
+** This function is used for testing and debugging only.  It is only available
+** if the SQLITE_DEBUG compile-time option is used.
+**
+** Compile a regular expression and then convert the compiled expression into
+** text and return that text.
+*/
+static void re_bytecode_func(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  const char *zPattern;
+  const char *zErr;
+  ReCompiled *pRe;
+  sqlite3_str *pStr;
+  int i;
+  int n;
+  char *z;
+
+  zPattern = (const char*)sqlite3_value_text(argv[0]);
+  if( zPattern==0 ) return;
+  zErr = re_compile(&pRe, zPattern, sqlite3_user_data(context)!=0);
+  if( zErr ){
+    re_free(pRe);
+    sqlite3_result_error(context, zErr, -1);
+    return;
+  }
+  if( pRe==0 ){
+    sqlite3_result_error_nomem(context);
+    return;
+  }
+  pStr = sqlite3_str_new(0);
+  if( pStr==0 ) goto re_bytecode_func_err;
+  if( pRe->nInit>0 ){
+    sqlite3_str_appendf(pStr, "INIT     ");
+    for(i=0; i<pRe->nInit; i++){
+      sqlite3_str_appendf(pStr, "%02x", pRe->zInit[i]);
+    }
+    sqlite3_str_appendf(pStr, "\n");
+  }
+  for(i=0; i<pRe->nState; i++){
+    sqlite3_str_appendf(pStr, "%-8s %4d\n",
+         ReOpName[(unsigned char)pRe->aOp[i]], pRe->aArg[i]);
+  }
+  n = sqlite3_str_length(pStr);
+  z = sqlite3_str_finish(pStr);
+  if( n==0 ){
+    sqlite3_free(z);
+  }else{
+    sqlite3_result_text(context, z, n-1, sqlite3_free);
+  }
+
+re_bytecode_func_err:
+  re_free(pRe);
+}
+
+#endif /* SQLITE_DEBUG */
+
+
 /*
 ** Invoke this routine to register the regexp() function with the
 ** SQLite database connection.
@@ -769,6 +855,13 @@ int sqlite3_regexp_init(
     rc = sqlite3_create_function(db, "regexpi", 2,
                             SQLITE_UTF8|SQLITE_INNOCUOUS|SQLITE_DETERMINISTIC,
                             (void*)db, re_sql_func, 0, 0);
+#if defined(SQLITE_DEBUG)
+    if( rc==SQLITE_OK ){
+      rc = sqlite3_create_function(db, "regexp_bytecode", 1,
+                            SQLITE_UTF8|SQLITE_INNOCUOUS|SQLITE_DETERMINISTIC,
+                            0, re_bytecode_func, 0, 0);
+    }
+#endif /* SQLITE_DEBUG */
   }
   return rc;
 }
