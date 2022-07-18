@@ -1,5 +1,5 @@
-C Enhance\sthe\sREGEXP\sextension\sso\sthat\sit\swill\saccept\sthe\sstart-of-input\nmark\s("^")\sin\sthe\smiddle\sof\sparentheses.\n[forum:/forumpost/0d6a9160f81ef1a8|Forum\spost\s0d6a9160f81ef1a8].
-D 2022-07-18T13:55:21.667
+C Increase\sthe\ssize\sof\sloop\svariables\sin\sthe\sprintf()\simplementation\sto\savoid\nharmless\scompiler\swarnings.
+D 2022-07-18T15:02:01.000
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -566,7 +566,7 @@ F src/pcache1.c 54881292a9a5db202b2c0ac541c5e3ef9a5e8c4f1c1383adb2601d5499a60e65
 F src/pragma.c d1aead03e8418ff586c7cfca344c50a914b8eb06abd841e8e91a982d823671da
 F src/pragma.h e690a356c18e98414d2e870ea791c1be1545a714ba623719deb63f7f226d8bb7
 F src/prepare.c c62820c15dcb63013519c8e41d9f928d7478672cc902cfd0581c733c271dbf45
-F src/printf.c 6166a30417b05c5b2f82e1f183f75faa2926ad60531c0b688a57dbc951441a20
+F src/printf.c e99ee9741e79ae3873458146f59644276657340385ade4e76a5f5d1c25793764
 F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c 84a8443e3723e908730d754f54df4e1dacc1eb7073c0bd79c9d5efe977a9f5b9
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
@@ -1980,8 +1980,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P af15bb75306a4b94593b8431a34768b3de3d6689293e85ca02db16bf3e9f39e2
-R 012943bc0a0dde589766791fd61f6489
+P ed8a8ebd62a319b5dabbdf67ee27141153b9899d7c8f08eeb4bdf35271015c71
+R 778e59f1aaa0081676e34be0c4cd31b6
 U drh
-Z 6dd034c999f521ca4e2cae722ceb4800
+Z 10b5a5c5b4eda184dfdf7926eb701ee8
 # Remove this line to create a well-formed Fossil manifest.
