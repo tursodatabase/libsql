@@ -803,8 +803,8 @@ void sqlite3_str_vappendf(
       case etSQLESCAPE:           /* %q: Escape ' characters */
       case etSQLESCAPE2:          /* %Q: Escape ' and enclose in '...' */
       case etSQLESCAPE3: {        /* %w: Escape " characters */
-        int i, j, k, n, isnull;
-        int needQuote;
+        i64 i, j, k, n;
+        int needQuote, isnull;
         char ch;
         char q = ((xtype==etSQLESCAPE3)?'"':'\'');   /* Quote character */
         char *escarg;
