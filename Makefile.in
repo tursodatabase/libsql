@@ -1281,6 +1281,12 @@ valgrindfuzz:	fuzzcheck$(TEXT) $(FUZZDATA) sessionfuzz$(TEXE) $(TOP)/test/sessio
 tcltest:	./testfixture$(TEXE)
 	./testfixture$(TEXE) $(TOP)/test/veryquick.test $(TESTOPTS)
 
+# Runs all the same tests cases as the "tcltest" target but uses
+# the testrunner.tcl script to run them in multiple cores
+# concurrently.
+testrunner:	testfixture$(TEXE)
+	./testfixture$(TEXE) $(TOP)/test/testrunner.tcl
+
 # Minimal testing that runs in less than 3 minutes
 #
 quicktest:	./testfixture$(TEXE)
