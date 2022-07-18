@@ -568,6 +568,7 @@ static const char *re_subcompile_string(ReCompiled *p){
         if( m==0 ){
           if( n==0 ) return "both m and n are zero in '{m,n}'";
           re_insert(p, iPrev, RE_OP_FORK, sz+1);
+          iPrev++;
           n--;
         }else{
           for(j=1; j<m; j++) re_copy(p, iPrev, sz);
