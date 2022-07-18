@@ -289,6 +289,20 @@ do_execsql_test regexp1-5.3 {SELECT 'fooX' REGEXP '^[a-z][a-z0-9]{0,2}X$';} {1}
 do_execsql_test regexp1-5.4 {SELECT 'foooX' REGEXP '^[a-z][a-z0-9]{0,2}X$';} {0}
 do_execsql_test regexp1-5.5 {SELECT 'foooX' REGEXP '^[a-z][a-z0-9]{0,3}X$';} {1}
 
+# 2022-07-18
+# https://sqlite.org/forum/forumpost/18f87fdcdf
+# Allow "^" to occur inside of "(..)"
+#
+do_execsql_test regexp1-6.1 {SELECT 'foo' REGEXP '[a-z]';} {1}
+do_execsql_test regexp1-6.2 {SELECT 'foo' REGEXP '^[a-z]+$';} {1}
+do_execsql_test regexp1-6.3 {SELECT 'foo' REGEXP '^([a-z]+)$';} {1}
+do_execsql_test regexp1-6.4 {SELECT 'foo' REGEXP '(^[a-z]+)$';} {1}
+do_execsql_test regexp1-6.5 {SELECT 'foo' REGEXP '(^[a-z]+$)';} {1}
+do_execsql_test regexp1-6.6 {SELECT 'abc' REGEXP '(^abc|def)';} {1}
+do_execsql_test regexp1-6.7 {SELECT 'xabc' REGEXP '(^abc|def)';} {0}
+do_execsql_test regexp1-6.8 {SELECT 'def' REGEXP '(^abc|def)';} {1}
+do_execsql_test regexp1-6.9 {SELECT 'xdef' REGEXP '(^abc|def)';} {1}
+
 
 
 finish_test
