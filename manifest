@@ -1,5 +1,5 @@
-C Remove\sa\sfew\sunsuitable\sscripts\sfrom\sthe\s"veryquick"\stest\ssuite.\sAlso\shave\severy\ssecond\stestrunner.tcl\sprocess\sfavour\srunning\stest\sscripts\sthat\scontain\stext\slike\s"testrunner:\sslow"\sbefore\sany\sothers.
-D 2022-07-18T19:32:30.436
+C Improve\saccuracy\sof\sjulian\sday\smilliseconds\scalculation.
+D 2022-07-19T21:12:54.087
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -517,7 +517,7 @@ F src/build.c 29fcc97af5197511788a571ed35a001eea472cbe3bcdbae88178e17fcafd4341
 F src/callback.c 4c19af69835787bfe790ac560f3071a824eb629f34e41f97b52ce5235c77de1c
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 026dbdcdbd8c3cde98a88483ee88310ff43150ab164ad768f12cc700a11495ad
-F src/date.c 15082566229d4b1e5f24fdb490bf9bcc68824b911d70e3573ef075a1b9e2d26f
+F src/date.c 272162554168e7af4976213850e1c4c5f33b964d299ceb0983f3d5cceba01d05
 F src/dbpage.c 5808e91bc27fa3981b028000f8fadfdc10ce9e59a34ce7dc4e035a69be3906ec
 F src/dbstat.c 861e08690fcb0f2ee1165eff0060ea8d4f3e2ea10f80dab7d32ad70443a6ff2d
 F src/delete.c a8e844af211a48b13b5b358be77a12c860c6a557c21990ad51a548e2536500ce
@@ -1981,8 +1981,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 954c6593152f8c7372ed1233b32cce153d0ce4804869cf4ec5504d106a4920a2
-R 9670f05875ab585d41bfeed2ab20423d
-U dan
-Z 35daffda51481f646d4c20758c239b69
+P 22d280a5cd395abbedcfffbac3d3b3a614c327be25763ca380c1338a2a7bd33a
+R 358f17e3f8be659125138359345ba38f
+U larrybr
+Z 66841ff8e7be7e09568cdaf4bf69cc26
 # Remove this line to create a well-formed Fossil manifest.
