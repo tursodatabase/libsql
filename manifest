@@ -1,5 +1,5 @@
-C Improve\saccuracy\sof\sjulian\sday\smilliseconds\scalculation.
-D 2022-07-19T21:12:54.087
+C Simplify\sthe\slogic\sthat\sconverts\sthe\s"1"\sexpression\sin\s"ORDER\sBY\s1"\sinto\sa\ncopy\sof\sthe\sexpression\sthat\sdefines\sthe\sfirst\soutput\scolumn.
+D 2022-07-20T16:42:40.963
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -568,7 +568,7 @@ F src/pragma.h e690a356c18e98414d2e870ea791c1be1545a714ba623719deb63f7f226d8bb7
 F src/prepare.c c62820c15dcb63013519c8e41d9f928d7478672cc902cfd0581c733c271dbf45
 F src/printf.c e99ee9741e79ae3873458146f59644276657340385ade4e76a5f5d1c25793764
 F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
-F src/resolve.c 84a8443e3723e908730d754f54df4e1dacc1eb7073c0bd79c9d5efe977a9f5b9
+F src/resolve.c f0d663c9b1ceeb3e7d262ede872dd3b24b323a7cc11d84c05a39d962e7d64b07
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 45b93eee3c349f46240ddc14344365bbf34579ec332bd4c7bc061945e38172e2
 F src/shell.c.in 29749b34bbd19d0004fdb6f61f62659096e1c0b4dfb1ad2314e7fafbe9dd8d37
@@ -1981,8 +1981,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 22d280a5cd395abbedcfffbac3d3b3a614c327be25763ca380c1338a2a7bd33a
-R 358f17e3f8be659125138359345ba38f
-U larrybr
-Z 66841ff8e7be7e09568cdaf4bf69cc26
+P e5e9311863544ef30dccd3bd0b3a048a864a650e69cdf9aab13dbe32a4777b51
+R 311c30e12c0d7c0934ec40d91e93ee45
+U drh
+Z d68f40fa601eed057ba107efae30da32
 # Remove this line to create a well-formed Fossil manifest.
