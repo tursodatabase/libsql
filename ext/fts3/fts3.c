@@ -4308,8 +4308,7 @@ static int fts3EvalDeferredPhrase(Fts3Cursor *pCsr, Fts3Phrase *pPhrase){
   char *aPoslist = 0;             /* Position list for deferred tokens */
   int nPoslist = 0;               /* Number of bytes in aPoslist */
   int iPrev = -1;                 /* Token number of previous deferred token */
-
-  assert( pPhrase->doclist.bFreeList==0 );
+  char *aFree = (pPhrase->doclist.bFreeList ? pPhrase->doclist.pList : 0);
 
   for(iToken=0; iToken<pPhrase->nToken; iToken++){
     Fts3PhraseToken *pToken = &pPhrase->aToken[iToken];
@@ -4323,6 +4322,7 @@ static int fts3EvalDeferredPhrase(Fts3Cursor *pCsr, Fts3Phrase *pPhrase){
 
       if( pList==0 ){
         sqlite3_free(aPoslist);
+        sqlite3_free(aFree);
         pPhrase->doclist.pList = 0;
         pPhrase->doclist.nList = 0;
         return SQLITE_OK;
@@ -4343,6 +4343,7 @@ static int fts3EvalDeferredPhrase(Fts3Cursor *pCsr, Fts3Phrase *pPhrase){
         nPoslist = (int)(aOut - aPoslist);
         if( nPoslist==0 ){
           sqlite3_free(aPoslist);
+          sqlite3_free(aFree);
           pPhrase->doclist.pList = 0;
           pPhrase->doclist.nList = 0;
           return SQLITE_OK;
@@ -4382,6 +4383,7 @@ static int fts3EvalDeferredPhrase(Fts3Cursor *pCsr, Fts3Phrase *pPhrase){
       }
       
       pPhrase->doclist.pList = aOut;
+      assert( p1 && p2 );
       if( fts3PoslistPhraseMerge(&aOut, nDistance, 0, 1, &p1, &p2) ){
         pPhrase->doclist.bFreeList = 1;
         pPhrase->doclist.nList = (int)(aOut - pPhrase->doclist.pList);
@@ -4394,6 +4396,7 @@ static int fts3EvalDeferredPhrase(Fts3Cursor *pCsr, Fts3Phrase *pPhrase){
     }
   }
 
+  if( pPhrase->doclist.pList!=aFree ) sqlite3_free(aFree);
   return SQLITE_OK;
 }
 #endif /* SQLITE_DISABLE_FTS4_DEFERRED */
@@ -5568,11 +5571,10 @@ static int fts3EvalTestExpr(
 
       default: {
 #ifndef SQLITE_DISABLE_FTS4_DEFERRED
-        if( pCsr->pDeferred 
-         && (pExpr->iDocid==pCsr->iPrevId || pExpr->bDeferred)
-        ){
+        if( pCsr->pDeferred && (pExpr->bDeferred || (
+            pExpr->iDocid==pCsr->iPrevId && pExpr->pPhrase->doclist.pList
+        ))){
           Fts3Phrase *pPhrase = pExpr->pPhrase;
-          assert( pExpr->bDeferred || pPhrase->doclist.bFreeList==0 );
           if( pExpr->bDeferred ){
             fts3EvalInvalidatePoslist(pPhrase);
           }

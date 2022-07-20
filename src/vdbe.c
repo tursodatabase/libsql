@@ -2639,11 +2639,14 @@ case OP_NotNull: {            /* same as TK_NOTNULL, jump, in1 */
 ** If it is, then set register P3 to NULL and jump immediately to P2.
 ** If P1 is not on a NULL row, then fall through without making any
 ** changes.
+**
+** If P1 is not an open cursor, then this opcode is a no-op.
 */
 case OP_IfNullRow: {         /* jump */
+  VdbeCursor *pC;
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
-  assert( p->apCsr[pOp->p1]!=0 );
-  if( p->apCsr[pOp->p1]->nullRow ){
+  pC = p->apCsr[pOp->p1];
+  if( ALWAYS(pC) && pC->nullRow ){
     sqlite3VdbeMemSetNull(aMem + pOp->p3);
     goto jump_to_p2;
   }

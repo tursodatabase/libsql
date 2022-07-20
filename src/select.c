@@ -324,7 +324,7 @@ int sqlite3ColumnIndex(Table *pTab, const char *zCol){
 */
 void sqlite3SrcItemColumnUsed(SrcItem *pItem, int iCol){
   assert( pItem!=0 );
-  assert( pItem->fg.isNestedFrom == IsNestedFrom(pItem->pSelect) );
+  assert( (int)pItem->fg.isNestedFrom == IsNestedFrom(pItem->pSelect) );
   if( pItem->fg.isNestedFrom ){
     ExprList *pResults;
     assert( pItem->pSelect!=0 );
@@ -1819,9 +1819,6 @@ static void generateSortTail(
 /*
 ** Return a pointer to a string containing the 'declaration type' of the
 ** expression pExpr. The string may be treated as static by the caller.
-**
-** Also try to estimate the size of the returned value and return that
-** result in *pEstWidth.
 **
 ** The declaration type is the exact datatype definition extracted from the
 ** original CREATE TABLE statement if the expression is a column. The
@@ -4068,7 +4065,8 @@ static void renumberCursors(
 **        (3a) the subquery may not be a join and
 **        (3b) the FROM clause of the subquery may not contain a virtual
 **             table and
-**        (3c) the outer query may not be an aggregate.
+**        (3c) The outer query may not have a GROUP BY.  (This limitation is
+**             due to how TK_IF_NULL_ROW works.  FIX ME!)
 **        (3d) the outer query may not be DISTINCT.
 **        See also (26) for restrictions on RIGHT JOIN.
 **
@@ -4122,6 +4120,9 @@ static void renumberCursors(
 **              (17d2) DISTINCT
 **        (17e) the subquery may not contain window functions, and
 **        (17f) the subquery must not be the RHS of a LEFT JOIN.
+**        (17g) either the subquery is the first element of the outer
+**              query or there are no RIGHT or FULL JOINs in any arm
+**              of the subquery.  (This is a duplicate of condition (27b).)
 **
 **        The parent and sub-query may contain WHERE clauses. Subject to
 **        rules (11), (13) and (14), they may also contain ORDER BY,
@@ -4173,7 +4174,11 @@ static void renumberCursors(
 **        See also (3) for restrictions on LEFT JOIN.
 **
 **  (27)  The subquery may not contain a FULL or RIGHT JOIN unless it
-**        is the first element of the parent query.
+**        is the first element of the parent query.  This must be the
+**        the case if:
+**        (27a) the subquery is not compound query, and
+**        (27b) the subquery is a compound query and the RIGHT JOIN occurs
+**              in any arm of the compound query.  (See also (17g).)
 **
 **  (28)  The subquery is not a MATERIALIZED CTE.
 **
@@ -4273,18 +4278,13 @@ static int flattenSubquery(
   **
   ** which is not at all the same thing.
   **
-  ** If the subquery is the right operand of a LEFT JOIN, then the outer
-  ** query cannot be an aggregate. (3c)  This is an artifact of the way
-  ** aggregates are processed - there is no mechanism to determine if
-  ** the LEFT JOIN table should be all-NULL.
-  **
   ** See also tickets #306, #350, and #3300.
   */
   if( (pSubitem->fg.jointype & (JT_OUTER|JT_LTORJ))!=0 ){
     if( pSubSrc->nSrc>1                        /* (3a) */
-     || isAgg                                  /* (3c) */
      || IsVirtual(pSubSrc->a[0].pTab)          /* (3b) */
      || (p->selFlags & SF_Distinct)!=0         /* (3d) */
+     || (p->pGroupBy!=0)                       /* (3c) */
      || (pSubitem->fg.jointype & JT_RIGHT)!=0  /* (26) */
     ){
       return 0;
@@ -4303,7 +4303,7 @@ static int flattenSubquery(
 
   assert( pSubSrc->nSrc>0 );  /* True by restriction (7) */
   if( iFrom>0 && (pSubSrc->a[0].fg.jointype & JT_LTORJ)!=0 ){
-    return 0;   /* Restriction (27) */
+    return 0;   /* Restriction (27a) */
   }
   if( pSubitem->fg.isCte && pSubitem->u2.pCteUse->eM10d==M10d_Yes ){
     return 0;       /* (28) */
@@ -4323,7 +4323,7 @@ static int flattenSubquery(
   **          NATURAL join or a join that as an ON or USING clause.
   **
   ** These conditions are sufficient to keep an EP_OuterON from being
-  ** flattened into an EP_InnerON.  Restrictions (3a) and (27) prevent
+  ** flattened into an EP_InnerON.  Restrictions (3a) and (27a) prevent
   ** an EP_InnerON from being flattened into an EP_OuterON.
   */
   if( pSubSrc->nSrc>=2
@@ -4364,6 +4364,12 @@ static int flattenSubquery(
 #endif
       ){
         return 0;
+      }
+      if( iFrom>0 && (pSub1->pSrc->a[0].fg.jointype & JT_LTORJ)!=0 ){
+        /* Without this restriction, the JT_LTORJ flag would end up being
+        ** omitted on left-hand tables of the right join that is being
+        ** flattened. */
+        return 0;   /* Restrictions (17g), (27b) */
       }
       testcase( pSub1->pSrc->nSrc>1 );
     }
@@ -5197,6 +5203,7 @@ static Table *isSimpleCount(Select *p, AggInfo *pAggInfo){
    || p->pSrc->nSrc!=1
    || p->pSrc->a[0].pSelect
    || pAggInfo->nFunc!=1
+   || p->pHaving
   ){
     return 0;
   }
@@ -5898,7 +5905,7 @@ static int selectExpander(Walker *pWalker, Select *p){
             zTabName = pTab->zName;
           }
           if( db->mallocFailed ) break;
-          assert( pFrom->fg.isNestedFrom == IsNestedFrom(pFrom->pSelect) );
+          assert( (int)pFrom->fg.isNestedFrom == IsNestedFrom(pFrom->pSelect) );
           if( pFrom->fg.isNestedFrom ){
             assert( pFrom->pSelect!=0 );
             pNestedFrom = pFrom->pSelect->pEList;
@@ -6827,7 +6834,9 @@ int sqlite3Select(
     ){
       SELECTTRACE(0x100,pParse,p,
                 ("omit superfluous ORDER BY on %r FROM-clause subquery\n",i+1));
-      sqlite3ExprListDelete(db, pSub->pOrderBy);
+      sqlite3ParserAddCleanup(pParse, 
+         (void(*)(sqlite3*,void*))sqlite3ExprListDelete,
+         pSub->pOrderBy);
       pSub->pOrderBy = 0;
     }
 

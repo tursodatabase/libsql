@@ -9,6 +9,8 @@
 #
 #***********************************************************************
 #
+# TESTRUNNER: slow
+#
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl

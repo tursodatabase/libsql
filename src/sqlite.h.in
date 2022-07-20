@@ -6282,7 +6282,7 @@ sqlite3 *sqlite3_db_handle(sqlite3_stmt*);
 **
 ** ^The sqlite3_db_name(D,N) interface returns a pointer to the schema name
 ** for the N-th database on database connection D, or a NULL pointer of N is
-** out of range.  An N alue of 0 means the main database file.  An N of 1 is
+** out of range.  An N value of 0 means the main database file.  An N of 1 is
 ** the "temp" schema.  Larger values of N correspond to various ATTACH-ed
 ** databases.
 **

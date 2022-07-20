@@ -503,6 +503,7 @@ TESTSRC2 = \
   $(TOP)/src/pcache1.c \
   $(TOP)/src/select.c \
   $(TOP)/src/tokenize.c \
+  $(TOP)/src/treeview.c \
   $(TOP)/src/utf.c \
   $(TOP)/src/util.c \
   $(TOP)/src/vdbeapi.c \
@@ -874,7 +875,7 @@ hash.lo:	$(TOP)/src/hash.c $(HDR)
 insert.lo:	$(TOP)/src/insert.c $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/insert.c
 
-json.lo:	$(TOP)/src/json.c
+json.lo:	$(TOP)/src/json.c $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/json.c
 
 legacy.lo:	$(TOP)/src/legacy.c $(HDR)
@@ -1280,6 +1281,12 @@ valgrindfuzz:	fuzzcheck$(TEXT) $(FUZZDATA) sessionfuzz$(TEXE) $(TOP)/test/sessio
 tcltest:	./testfixture$(TEXE)
 	./testfixture$(TEXE) $(TOP)/test/veryquick.test $(TESTOPTS)
 
+# Runs all the same tests cases as the "tcltest" target but uses
+# the testrunner.tcl script to run them in multiple cores
+# concurrently.
+testrunner:	testfixture$(TEXE)
+	./testfixture$(TEXE) $(TOP)/test/testrunner.tcl
+
 # Minimal testing that runs in less than 3 minutes
 #
 quicktest:	./testfixture$(TEXE)
@@ -1545,6 +1552,7 @@ $(fiddle_module_js): Makefile sqlite3.c shell.c \
 	emcc -o $@ $(emcc_flags) \
         -sEXPORT_NAME=initFiddleModule \
         -sEXPORTED_FUNCTIONS=@$(fiddle_dir_abs)/EXPORTED_FUNCTIONS.fiddle \
+        -DSQLITE_SHELL_FIDDLE \
         sqlite3.c shell.c
 	gzip < $@ > $@.gz
 	gzip < $(fiddle_dir)/fiddle-module.wasm > $(fiddle_dir)/fiddle-module.wasm.gz
