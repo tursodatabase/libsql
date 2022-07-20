@@ -3325,7 +3325,7 @@ int sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
       pLimit = sqlite3PExpr(pParse, TK_NE,
                             sqlite3ExprDup(db, pSel->pLimit->pLeft, 0), pLimit);
     }
-    sqlite3ExprDelete(db, pSel->pLimit->pLeft);
+    sqlite3ExprDeferredDelete(pParse, pSel->pLimit->pLeft);
     pSel->pLimit->pLeft = pLimit;
   }else{
     /* If there is no pre-existing limit add a limit of 1 */
