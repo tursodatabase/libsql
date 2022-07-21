@@ -1,5 +1,5 @@
-C In\sthe\squery\splanner,\srestore\sthe\sformer\saggressiveness\sin\sreordering\sof\nFROM\sclause\sterms\sthat\sexisted\sprior\sto\sversion\s3.39.0\sfor\squeries\sthat\ncontain\sno\sRIGHT\sor\sFULL\sJOINs.
-D 2022-07-21T12:26:01.015
+C Version\s3.39.2
+D 2022-07-21T15:24:47.212
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1978,9 +1978,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 449935914c3f64e37bbfb9842e868927222fa3d5315c123a32818e67fcfbbf60
-Q +92d60b64ebfc2d1f0a9cabaa88e7bf0d11737ed01a77b627af10dd1b96a5321c
+P 9141e873c575b049ce7aeaf313d05966f1966087caf33a6c80d2416a28571a21
 R 8d3cb391daa96d7d2c40e5bc9d5676de
+T +sym-release *
+T +sym-version-3.39.2 *
 U drh
-Z fc72d7ef166ac419f2851e5be04a7594
+Z 89ae78e7fc05abf10cde154f943a869d
 # Remove this line to create a well-formed Fossil manifest.
