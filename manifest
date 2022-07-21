@@ -1,5 +1,5 @@
-C Make\suse\sof\sthe\ssqlite3ExprDeferredDelete()\sinterface\sin\sthe\sprevious\ncheck-in,\sand\sin\sanother\splace\swhere\sit\smight\sbe\shelpful.
-D 2022-07-20T20:36:26.106
+C Fix\sharmless\scompiler\swarning\sseen\swith\sMSVC.
+D 2022-07-21T18:37:50.752
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -334,7 +334,7 @@ F ext/misc/normalize.c bd84355c118e297522aba74de34a4fd286fc775524e0499b14473918d
 F ext/misc/percentile.c b9086e223d583bdaf8cb73c98a6539d501a2fc4282654adbfea576453d82e691
 F ext/misc/prefixes.c 0f4f8cff5aebc00a7e3ac4021fd59cfe1a8e17c800ceaf592859ecb9cbc38196
 F ext/misc/qpvtab.c 09738419e25f603a35c0ac8bd0a04daab794f48d08a9bc07a6085b9057b99009
-F ext/misc/regexp.c 1459fe1452b61aafb25b11d7144f3dabfaf890b566c4ef9cfa4dc270451a8f02
+F ext/misc/regexp.c 5abed0ace2d9340b42b9ab1dbe64db9c276e4e8eba38a903232b6253e05ccdaf
 F ext/misc/remember.c add730f0f7e7436cd15ea3fd6a90fd83c3f706ab44169f7f048438b7d6baa69c
 F ext/misc/rot13.c 51ac5f51e9d5fd811db58a9c23c628ad5f333c173f1fc53c8491a3603d38556c
 F ext/misc/scrub.c 2a44b0d44c69584c0580ad2553f6290a307a49df4668941d2812135bfb96a946
@@ -1981,8 +1981,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e1f1cfe7f4387b60443bd31742e2f49db1a2d0443200318a898ba0da216619be
-R cf76080c96baf955a2cebd7f6b61366a
-U drh
-Z 4c65ef63d6c645ffaac99f031aa62bbf
+P 22f90e9683d5cd6619ccdb06a02e9dde9f4b7457391c0dbb4c3216c22fc0db47
+R 846ac44e12ef98f830013180b827ef68
+U mistachkin
+Z 35c5050a4917217d748070c1e316ab4b
 # Remove this line to create a well-formed Fossil manifest.
