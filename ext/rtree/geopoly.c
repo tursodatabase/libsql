@@ -1736,7 +1736,7 @@ static int geopolyFindFunction(
 
 
 static sqlite3_module geopolyModule = {
-  3,                          /* iVersion */
+  4,                          /* iVersion */
   geopolyCreate,              /* xCreate - create a table */
   geopolyConnect,             /* xConnect - connect to an existing table */
   geopolyBestIndex,           /* xBestIndex - Determine search strategy */
@@ -1759,7 +1759,8 @@ static sqlite3_module geopolyModule = {
   rtreeSavepoint,             /* xSavepoint */
   0,                          /* xRelease */
   0,                          /* xRollbackTo */
-  rtreeShadowName             /* xShadowName */
+  rtreeShadowName,            /* xShadowName */
+  rtreeShadowName2            /* xShadowName2 */
 };
 
 static int sqlite3_geopoly_init(sqlite3 *db){

@@ -2695,7 +2695,8 @@ static const sqlite3_module pragmaVtabModule = {
   0,                           /* xSavepoint */
   0,                           /* xRelease */
   0,                           /* xRollbackTo */
-  0                            /* xShadowName */
+  0,                           /* xShadowName */
+  0                            /* xShadowName2 */
 };
 
 /*

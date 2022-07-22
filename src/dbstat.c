@@ -891,7 +891,8 @@ int sqlite3DbstatRegister(sqlite3 *db){
     0,                            /* xSavepoint */
     0,                            /* xRelease */
     0,                            /* xRollbackTo */
-    0                             /* xShadowName */
+    0,                            /* xShadowName */
+    0                             /* xShadowName2 */
   };
   return sqlite3_create_module(db, "dbstat", &dbstat_module, 0);
 }

@@ -2606,7 +2606,8 @@ static sqlite3_module jsonEachModule = {
   0,                         /* xSavepoint */
   0,                         /* xRelease */
   0,                         /* xRollbackTo */
-  0                          /* xShadowName */
+  0,                         /* xShadowName */
+  0                          /* xShadowName2 */
 };
 
 /* The methods of the json_tree virtual table. */
@@ -2634,7 +2635,8 @@ static sqlite3_module jsonTreeModule = {
   0,                         /* xSavepoint */
   0,                         /* xRelease */
   0,                         /* xRollbackTo */
-  0                          /* xShadowName */
+  0,                         /* xShadowName */
+  0                          /* xShadowName2 */
 };
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
 #endif /* !defined(SQLITE_OMIT_JSON) */

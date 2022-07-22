@@ -662,6 +662,7 @@ static int idxRegisterVtab(sqlite3expert *p){
     0,                            /* xRelease */
     0,                            /* xRollbackTo */
     0,                            /* xShadowName */
+    0                             /* xShadowName2 */
   };
 
   return sqlite3_create_module(p->dbv, "expert", &expertModule, (void*)p);

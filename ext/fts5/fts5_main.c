@@ -2811,9 +2811,14 @@ static int fts5ShadowName(const char *zName){
   return 0;
 }
 
+static int fts5ShadowName2(sqlite3_vtab *pVtab, const char *zName){
+  UNUSED_PARAMETER(pVtab);
+  return fts5ShadowName(zName);
+}
+
 static int fts5Init(sqlite3 *db){
   static const sqlite3_module fts5Mod = {
-    /* iVersion      */ 3,
+    /* iVersion      */ 4,
     /* xCreate       */ fts5CreateMethod,
     /* xConnect      */ fts5ConnectMethod,
     /* xBestIndex    */ fts5BestIndexMethod,
@@ -2836,7 +2841,8 @@ static int fts5Init(sqlite3 *db){
     /* xSavepoint    */ fts5SavepointMethod,
     /* xRelease      */ fts5ReleaseMethod,
     /* xRollbackTo   */ fts5RollbackToMethod,
-    /* xShadowName   */ fts5ShadowName
+    /* xShadowName   */ fts5ShadowName,
+    /* xShadowName2  */ fts5ShadowName2
   };
 
   int rc;

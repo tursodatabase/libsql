@@ -3980,8 +3980,13 @@ static int fts3ShadowName(const char *zName){
   return 0;
 }
 
+static int fts3ShadowName2(sqlite3_vtab *pVtab, const char *zName){
+  UNUSED_PARAMETER(pVtab);
+  return fts3ShadowName(zName);
+}
+
 static const sqlite3_module fts3Module = {
-  /* iVersion      */ 3,
+  /* iVersion      */ 4,
   /* xCreate       */ fts3CreateMethod,
   /* xConnect      */ fts3ConnectMethod,
   /* xBestIndex    */ fts3BestIndexMethod,
@@ -4000,11 +4005,12 @@ static const sqlite3_module fts3Module = {
   /* xCommit       */ fts3CommitMethod,
   /* xRollback     */ fts3RollbackMethod,
   /* xFindFunction */ fts3FindFunctionMethod,
-  /* xRename */       fts3RenameMethod,
+  /* xRename       */ fts3RenameMethod,
   /* xSavepoint    */ fts3SavepointMethod,
   /* xRelease      */ fts3ReleaseMethod,
   /* xRollbackTo   */ fts3RollbackToMethod,
   /* xShadowName   */ fts3ShadowName,
+  /* xShadowName2  */ fts3ShadowName2
 };
 
 /*

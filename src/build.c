@@ -2492,12 +2492,58 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 /*
+** Returns non-zero if the module supports at least one of the xShadowName
+** or xShadowName2 methods.
+*/
+static int doesSupportShadowNames(
+  const sqlite3_module *pModule, /* The definition of the module */
+  VTable *pVTab                  /* The virtual table being asked */
+){
+  int iVersion;
+  assert( pModule!=0 );
+  iVersion = pModule->iVersion;
+  if( pVTab!=0 && iVersion>=4 && pModule->xShadowName2!=0 ) return 1;
+  if( iVersion>=3 && pModule->xShadowName!=0 ) return 1;
+  return 0;
+}
+
+/*
+** Attempts to calls one of the module xShadowName methods and returns its
+** result.  The xShadowName2 method will be preferred when supported (i.e.
+** the module is version 4 or later and has an xShadowName2 method).
+*/
+static int isShadowTableOf(
+  sqlite3 *db,      /* Database connection */
+  Table *pTab,      /* The Table that refers to the virtual table */
+  Module *pMod,     /* Definition of the module */
+  VTable *pVTab,    /* The virtual table being asked */
+  const char *zName /* Table name that may refer to a shadow table */
+){
+  int iVersion;
+  assert( pMod!=0 );
+  assert( pMod->pModule!=0 );
+  iVersion = pMod->pModule->iVersion;
+  assert( iVersion>=3 );
+  assert( zName!=0 );
+  assert( sqlite3Strlen30(zName)>0 );
+  if( pVTab!=0 && iVersion>=4 && pMod->pModule->xShadowName2!=0 ){
+    assert( pVTab->pVtab!=0 );
+    return pMod->pModule->xShadowName2(pVTab->pVtab, zName);
+  }
+  if( pMod->pModule->xShadowName!=0 ){
+    return pMod->pModule->xShadowName(zName);
+  }
+  return 0;
+}
+
+/*
 ** Return true if pTab is a virtual table and zName is a shadow table name
 ** for that virtual table.
 */
 int sqlite3IsShadowTableOf(sqlite3 *db, Table *pTab, const char *zName){
   int nName;                    /* Length of zName */
   Module *pMod;                 /* Module for the virtual table */
+  VTable *pVTab;                /* The virtual table being asked */
 
   if( !IsVirtual(pTab) ) return 0;
   nName = sqlite3Strlen30(pTab->zName);
@@ -2505,9 +2551,10 @@ int sqlite3IsShadowTableOf(sqlite3 *db, Table *pTab, const char *zName){
   if( zName[nName]!='_' ) return 0;
   pMod = (Module*)sqlite3HashFind(&db->aModule, pTab->u.vtab.azArg[0]);
   if( pMod==0 ) return 0;
-  if( pMod->pModule->iVersion<3 ) return 0;
-  if( pMod->pModule->xShadowName==0 ) return 0;
-  return pMod->pModule->xShadowName(zName+nName+1);
+  if( NEVER(pMod->pModule==0) ) return 0;
+  pVTab = sqlite3GetVTable(db, pTab);
+  if( !doesSupportShadowNames(pMod->pModule, pVTab) ) return 0;
+  return isShadowTableOf(db, pTab, pMod, pVTab, zName+nName+1);
 }
 #endif /* ifndef SQLITE_OMIT_VIRTUALTABLE */
 
@@ -2521,14 +2568,15 @@ int sqlite3IsShadowTableOf(sqlite3 *db, Table *pTab, const char *zName){
 void sqlite3MarkAllShadowTablesOf(sqlite3 *db, Table *pTab){
   int nName;                    /* Length of pTab->zName */
   Module *pMod;                 /* Module for the virtual table */
+  VTable *pVTab;                /* Virtual table instance */
   HashElem *k;                  /* For looping through the symbol table */
 
   assert( IsVirtual(pTab) );
   pMod = (Module*)sqlite3HashFind(&db->aModule, pTab->u.vtab.azArg[0]);
   if( pMod==0 ) return;
   if( NEVER(pMod->pModule==0) ) return;
-  if( pMod->pModule->iVersion<3 ) return;
-  if( pMod->pModule->xShadowName==0 ) return;
+  pVTab = sqlite3GetVTable(db, pTab);
+  if( !doesSupportShadowNames(pMod->pModule, pVTab) ) return;
   assert( pTab->zName!=0 );
   nName = sqlite3Strlen30(pTab->zName);
   for(k=sqliteHashFirst(&pTab->pSchema->tblHash); k; k=sqliteHashNext(k)){
@@ -2538,7 +2586,7 @@ void sqlite3MarkAllShadowTablesOf(sqlite3 *db, Table *pTab){
     if( pOther->tabFlags & TF_Shadow ) continue;
     if( sqlite3StrNICmp(pOther->zName, pTab->zName, nName)==0
      && pOther->zName[nName]=='_'
-     && pMod->pModule->xShadowName(pOther->zName+nName+1)
+     && isShadowTableOf(db, pTab, pMod, pVTab, pOther->zName+nName+1)
     ){
       pOther->tabFlags |= TF_Shadow;
     }

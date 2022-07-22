@@ -411,7 +411,8 @@ int sqlite3BinfoRegister(sqlite3 *db){
     0,                           /* xSavepoint */
     0,                           /* xRelease */
     0,                           /* xRollbackTo */
-    0                            /* xShadowName */
+    0,                           /* xShadowName */
+    0                            /* xShadowName2 */
   };
   return sqlite3_create_module(db, "sqlite_btreeinfo", &binfo_module, 0);
 }

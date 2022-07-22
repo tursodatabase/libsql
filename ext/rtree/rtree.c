@@ -3477,8 +3477,13 @@ static int rtreeShadowName(const char *zName){
   return 0;
 }
 
+static int rtreeShadowName2(sqlite3_vtab *pVtab, const char *zName){
+  UNUSED_PARAMETER(pVtab);
+  return rtreeShadowName(zName);
+}
+
 static sqlite3_module rtreeModule = {
-  3,                          /* iVersion */
+  4,                          /* iVersion */
   rtreeCreate,                /* xCreate - create a table */
   rtreeConnect,               /* xConnect - connect to an existing table */
   rtreeBestIndex,             /* xBestIndex - Determine search strategy */
@@ -3501,7 +3506,8 @@ static sqlite3_module rtreeModule = {
   rtreeSavepoint,             /* xSavepoint */
   0,                          /* xRelease */
   0,                          /* xRollbackTo */
-  rtreeShadowName             /* xShadowName */
+  rtreeShadowName,            /* xShadowName */
+  rtreeShadowName2            /* xShadowName2 */
 };
 
 static int rtreeSqlInit(
