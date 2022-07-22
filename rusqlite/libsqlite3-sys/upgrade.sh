@@ -9,7 +9,7 @@ export SQLITE3_LIB_DIR="$SCRIPT_DIR/sqlite3"
 export SQLITE3_INCLUDE_DIR="$SQLITE3_LIB_DIR"
 
 # Download and extract amalgamation
-SQLITE=sqlite-amalgamation-3390100
+SQLITE=sqlite-amalgamation-3390200
 curl -O https://sqlite.org/2022/$SQLITE.zip
 unzip -p "$SQLITE.zip" "$SQLITE/sqlite3.c" > "$SQLITE3_LIB_DIR/sqlite3.c"
 unzip -p "$SQLITE.zip" "$SQLITE/sqlite3.h" > "$SQLITE3_LIB_DIR/sqlite3.h"
