@@ -2886,7 +2886,7 @@ struct Expr {
 #define EP_Reduced    0x004000 /* Expr struct EXPR_REDUCEDSIZE bytes only */
 #define EP_Win        0x008000 /* Contains window functions */
 #define EP_TokenOnly  0x010000 /* Expr struct EXPR_TOKENONLYSIZE bytes only */
-#define EP_MemToken   0x020000 /* Need to sqlite3DbFree() Expr.zToken */
+                   /* 0x020000 // Available for reuse */
 #define EP_IfNullRow  0x040000 /* The TK_IF_NULL_ROW opcode */
 #define EP_Unlikely   0x080000 /* unlikely() or likelihood() function */
 #define EP_ConstFunc  0x100000 /* A SQLITE_FUNC_CONSTANT or _SLOCHNG function */
