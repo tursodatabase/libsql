@@ -1,5 +1,5 @@
-C Update\sthe\sdocumentation\sfor\sSQLITE_OPEN_NOFOLLOW\sto\sstate\smore\sclearly\sthat\nnothing\sin\sthe\sdatabase\spath\sis\sallowed\sto\sbe\sa\ssymbolic\slink.
-D 2022-07-22T14:52:29.510
+C In\sa\sTK_BLOB\sExpr\snode,\sthe\sExpr.zToken\smight\snot\sbe\sa\swell-formed\nBLOB\sliteral\sif\sthere\shas\sbeen\sa\sprior\sOOM.\ndbsqlfuzz\s23871e5805d6c45b392f9b7aa1e8a2b98f3c27cd.
+D 2022-07-22T18:25:04.652
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -521,7 +521,7 @@ F src/date.c 272162554168e7af4976213850e1c4c5f33b964d299ceb0983f3d5cceba01d05
 F src/dbpage.c 5808e91bc27fa3981b028000f8fadfdc10ce9e59a34ce7dc4e035a69be3906ec
 F src/dbstat.c 861e08690fcb0f2ee1165eff0060ea8d4f3e2ea10f80dab7d32ad70443a6ff2d
 F src/delete.c a8e844af211a48b13b5b358be77a12c860c6a557c21990ad51a548e2536500ce
-F src/expr.c 9f568514b37dff8b1e10df6c2ccea0e5d871272d913877cde999e0168969b573
+F src/expr.c 10b3e1a052ccadbb81037e273bd4482831dcebdbbab379d895df655a5ff7e305
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c d965ede15d8360c09ed59348940649ee647b192e784466837d7aefa836d1d91e
 F src/func.c 8f72e88cccdee22185133c10f96ccd61dc34c5ea4b1fa9a73c237ef59b2e64f1
@@ -1981,8 +1981,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 648172de20d70532ed0fb9713b76161dd481e09bbd973c03dffb51fb61b731cc
-R 22d3a3c7680400f82d17fa9e3cf5e084
+P de9222697b2ca8cae2cc7aa9082cca3910038ebbab1e8ee15270b06711711a0b
+R 6f602e521caa17d238271eb589ae4e8e
 U drh
-Z ef2231159a73a46fc3d5cbe83757be79
+Z 19001449740bd3515437c61d096c4c20
 # Remove this line to create a well-formed Fossil manifest.

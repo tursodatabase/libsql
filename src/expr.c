@@ -4212,6 +4212,7 @@ expr_code_doover:
       int n;
       const char *z;
       char *zBlob;
+      if( pParse->nErr ) return target;
       assert( !ExprHasProperty(pExpr, EP_IntValue) );
       assert( pExpr->u.zToken[0]=='x' || pExpr->u.zToken[0]=='X' );
       assert( pExpr->u.zToken[1]=='\'' );
