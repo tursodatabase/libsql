@@ -425,6 +425,16 @@ static int vtshimRollbackTo(sqlite3_vtab *pBase, int n){
   return rc;
 }
 
+static int vtshimShadowName2(sqlite3_vtab *pBase, const char *zName){
+  vtshim_vtab *pVtab = (vtshim_vtab*)pBase;
+  vtshim_aux *pAux = pVtab->pAux;
+  int rc;
+  if( pAux->bDisposed ) return 0;
+  rc = pAux->pMod->xShadowName2(pVtab->pChild, zName);
+  VTSHIM_COPY_ERRMSG();
+  return rc;
+}
+
 /* The destructor function for a disposible module */
 static void vtshimAuxDestructor(void *pXAux){
   vtshim_aux *pAux = (vtshim_aux*)pXAux;
@@ -481,7 +491,7 @@ void *sqlite3_create_disposable_module(
   pAux->zName = sqlite3_mprintf("%s", zName);
   pAux->bDisposed = 0;
   pAux->pAllVtab = 0;
-  pAux->sSelf.iVersion = p->iVersion<=2 ? p->iVersion : 2;
+  pAux->sSelf.iVersion = p->iVersion<=4 ? p->iVersion : 4;
   pAux->sSelf.xCreate = p->xCreate ? vtshimCreate : 0;
   pAux->sSelf.xConnect = p->xConnect ? vtshimConnect : 0;
   pAux->sSelf.xBestIndex = p->xBestIndex ? vtshimBestIndex : 0;
@@ -509,6 +519,12 @@ void *sqlite3_create_disposable_module(
     pAux->sSelf.xSavepoint = 0;
     pAux->sSelf.xRelease = 0;
     pAux->sSelf.xRollbackTo = 0;
+  }
+  pAux->sSelf.xShadowName = 0; /* v3 */
+  if( p->iVersion>=4 ){
+    pAux->sSelf.xShadowName2 = p->xShadowName2 ? vtshimShadowName2 : 0;
+  }else{
+    pAux->sSelf.xShadowName2 = 0;
   }
   rc = sqlite3_create_module_v2(db, zName, &pAux->sSelf,
                                 pAux, vtshimAuxDestructor);

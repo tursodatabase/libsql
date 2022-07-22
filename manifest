@@ -1,5 +1,5 @@
-C Add\sexperimental\s'xShadowName2'\smethod\sfor\svirtual\stable\smodules.
-D 2022-07-22T20:24:38.815
+C Updates\sto\sthe\s'vtshim'\sextension.
+D 2022-07-22T20:48:04.084
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -354,7 +354,7 @@ F ext/misc/uuid.c 5bb2264c1b64d163efa46509544fd7500cb8769cb7c16dd52052da8d961505
 F ext/misc/vfslog.c 3932ab932eeb2601dbc4447cb14d445aaa9fbe43b863ef5f014401c3420afd20
 F ext/misc/vfsstat.c 474d08efc697b8eba300082cb1eb74a5f0f3df31ed257db1cb07e72ab0e53dfb
 F ext/misc/vtablog.c 9d55383743afc57e420fb9e43071f76d6c4f242af84c949297695820f683727a
-F ext/misc/vtshim.c 1976e6dd68dd0d64508c91a6dfab8e75f8aaf6cd
+F ext/misc/vtshim.c 625e9c3b4ec969a55cc2714874745652d43f4f5f6f0d240aa6f09a3f070980bd
 F ext/misc/wholenumber.c a838d1bea913c514ff316c69695efbb49ea3b8cb37d22afc57f73b6b010b4546
 F ext/misc/zipfile.c b7bd56f9033c5b7c45dd5ca1fce5572b4313f8532ee2495558a70c0c07e7ca8f
 F ext/misc/zorder.c b0ff58fa643afa1d846786d51ea8d5c4b6b35aa0254ab5a82617db92f3adda64
@@ -1981,11 +1981,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 28934a9d92d5e5ac862a0dc7169f071f39047f98dc79441db697cf353a4b9433
-R a4161f0056fd022904f14dd60f6489c3
-T *branch * xShadowName2
-T *sym-xShadowName2 *
-T -sym-trunk *
+P 57beb700c081b20758d52ad4d395be34ef53f71a231f3dd27613030ac232bca8
+R 2f6137a57297c338189bcc60946413eb
 U mistachkin
-Z e83a6f5786fc037d59d154d976bd34e1
+Z 954e742b6c71cc403981ead43d29b5c8
 # Remove this line to create a well-formed Fossil manifest.
