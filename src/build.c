@@ -260,9 +260,7 @@ void sqlite3FinishCoding(Parse *pParse){
         pParse->okConstFactor = 0;
         for(i=0; i<pEL->nExpr; i++){
           int iReg = pEL->a[i].u.iConstExprReg;
-          if( iReg>0 ){
-            sqlite3ExprCode(pParse, pEL->a[i].pExpr, iReg);
-          }
+          sqlite3ExprCode(pParse, pEL->a[i].pExpr, iReg);
         }
       }
 
