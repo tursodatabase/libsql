@@ -140,6 +140,7 @@ int sqlite3DbMaskAllZero(yDbMask m){
 void sqlite3FinishCoding(Parse *pParse){
   sqlite3 *db;
   Vdbe *v;
+  int iDb, i;
 
   assert( pParse->pToplevel==0 );
   db = pParse->db;
@@ -206,74 +207,69 @@ void sqlite3FinishCoding(Parse *pParse){
     ** transaction on each used database and to verify the schema cookie
     ** on each used database.
     */
-    if( db->mallocFailed==0 
-     && (DbMaskNonZero(pParse->cookieMask) || pParse->pConstExpr)
-    ){
-      int iDb, i;
-      assert( sqlite3VdbeGetOp(v, 0)->opcode==OP_Init );
-      sqlite3VdbeJumpHere(v, 0);
-      assert( db->nDb>0 );
-      iDb = 0;
-      do{
-        Schema *pSchema;
-        if( DbMaskTest(pParse->cookieMask, iDb)==0 ) continue;
-        sqlite3VdbeUsesBtree(v, iDb);
-        pSchema = db->aDb[iDb].pSchema;
-        sqlite3VdbeAddOp4Int(v,
-          OP_Transaction,                    /* Opcode */
-          iDb,                               /* P1 */
-          DbMaskTest(pParse->writeMask,iDb), /* P2 */
-          pSchema->schema_cookie,            /* P3 */
-          pSchema->iGeneration               /* P4 */
-        );
-        if( db->init.busy==0 ) sqlite3VdbeChangeP5(v, 1);
-        VdbeComment((v,
-              "usesStmtJournal=%d", pParse->mayAbort && pParse->isMultiWrite));
-      }while( ++iDb<db->nDb );
+    assert( pParse->nErr>0 || sqlite3VdbeGetOp(v, 0)->opcode==OP_Init );
+    sqlite3VdbeJumpHere(v, 0);
+    assert( db->nDb>0 );
+    iDb = 0;
+    do{
+      Schema *pSchema;
+      if( DbMaskTest(pParse->cookieMask, iDb)==0 ) continue;
+      sqlite3VdbeUsesBtree(v, iDb);
+      pSchema = db->aDb[iDb].pSchema;
+      sqlite3VdbeAddOp4Int(v,
+        OP_Transaction,                    /* Opcode */
+        iDb,                               /* P1 */
+        DbMaskTest(pParse->writeMask,iDb), /* P2 */
+        pSchema->schema_cookie,            /* P3 */
+        pSchema->iGeneration               /* P4 */
+      );
+      if( db->init.busy==0 ) sqlite3VdbeChangeP5(v, 1);
+      VdbeComment((v,
+            "usesStmtJournal=%d", pParse->mayAbort && pParse->isMultiWrite));
+    }while( ++iDb<db->nDb );
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-      for(i=0; i<pParse->nVtabLock; i++){
-        char *vtab = (char *)sqlite3GetVTable(db, pParse->apVtabLock[i]);
-        sqlite3VdbeAddOp4(v, OP_VBegin, 0, 0, 0, vtab, P4_VTAB);
-      }
-      pParse->nVtabLock = 0;
+    for(i=0; i<pParse->nVtabLock; i++){
+      char *vtab = (char *)sqlite3GetVTable(db, pParse->apVtabLock[i]);
+      sqlite3VdbeAddOp4(v, OP_VBegin, 0, 0, 0, vtab, P4_VTAB);
+    }
+    pParse->nVtabLock = 0;
 #endif
 
-      /* Once all the cookies have been verified and transactions opened, 
-      ** obtain the required table-locks. This is a no-op unless the 
-      ** shared-cache feature is enabled.
-      */
-      codeTableLocks(pParse);
+    /* Once all the cookies have been verified and transactions opened, 
+    ** obtain the required table-locks. This is a no-op unless the 
+    ** shared-cache feature is enabled.
+    */
+    codeTableLocks(pParse);
 
-      /* Initialize any AUTOINCREMENT data structures required.
-      */
-      sqlite3AutoincrementBegin(pParse);
+    /* Initialize any AUTOINCREMENT data structures required.
+    */
+    sqlite3AutoincrementBegin(pParse);
 
-      /* Code constant expressions that where factored out of inner loops.
-      **
-      ** The pConstExpr list might also contain expressions that we simply
-      ** want to keep around until the Parse object is deleted.  Such
-      ** expressions have iConstExprReg==0.  Do not generate code for
-      ** those expressions, of course.
-      */
-      if( pParse->pConstExpr ){
-        ExprList *pEL = pParse->pConstExpr;
-        pParse->okConstFactor = 0;
-        for(i=0; i<pEL->nExpr; i++){
-          int iReg = pEL->a[i].u.iConstExprReg;
-          sqlite3ExprCode(pParse, pEL->a[i].pExpr, iReg);
-        }
+    /* Code constant expressions that where factored out of inner loops.
+    **
+    ** The pConstExpr list might also contain expressions that we simply
+    ** want to keep around until the Parse object is deleted.  Such
+    ** expressions have iConstExprReg==0.  Do not generate code for
+    ** those expressions, of course.
+    */
+    if( pParse->pConstExpr ){
+      ExprList *pEL = pParse->pConstExpr;
+      pParse->okConstFactor = 0;
+      for(i=0; i<pEL->nExpr; i++){
+        int iReg = pEL->a[i].u.iConstExprReg;
+        sqlite3ExprCode(pParse, pEL->a[i].pExpr, iReg);
       }
-
-      if( pParse->bReturning ){
-        Returning *pRet = pParse->u1.pReturning;
-        if( pRet->nRetCol ){
-          sqlite3VdbeAddOp2(v, OP_OpenEphemeral, pRet->iRetCur, pRet->nRetCol);
-        }
-      }
-
-      /* Finally, jump back to the beginning of the executable code. */
-      sqlite3VdbeGoto(v, 1);
     }
+
+    if( pParse->bReturning ){
+      Returning *pRet = pParse->u1.pReturning;
+      if( pRet->nRetCol ){
+        sqlite3VdbeAddOp2(v, OP_OpenEphemeral, pRet->iRetCur, pRet->nRetCol);
+      }
+    }
+
+    /* Finally, jump back to the beginning of the executable code. */
+    sqlite3VdbeGoto(v, 1);
   }
 
   /* Get the VDBE program ready for execution

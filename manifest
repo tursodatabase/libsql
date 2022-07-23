@@ -1,5 +1,5 @@
-C Remove\sa\sbranch\sthat\sis\sno\slonger\sreachable\sdue\sto\sthe\sprevious\scheck-in.
-D 2022-07-23T00:53:48.586
+C Simplifications\sto\ssqlite3FinishCoding()\sfor\sa\ssmall\ssize\sreduction\sand\nperformance\sincrease.
+D 2022-07-23T12:51:48.615
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -513,7 +513,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c 1307d57f65023c9f37c2b6c62253343fca63877f161f694a593b14c0883cedda
 F src/btree.h 74d64b8f28cfa4a894d14d4ed64fa432cd697b98b61708d4351482ae15913e22
 F src/btreeInt.h 8ce1332edd89dfd2461d561ac10a0ab5601c8e06200cb5230596c3caaf54482e
-F src/build.c 149663ba16fc023d3ee1929d2fac40e0055617cd58e49d4e75b99376ddd40bd3
+F src/build.c 249fb44843805cded2003e0e678ab65acb98ae0982e23256d4d0a7576a440eb3
 F src/callback.c 4c19af69835787bfe790ac560f3071a824eb629f34e41f97b52ce5235c77de1c
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 026dbdcdbd8c3cde98a88483ee88310ff43150ab164ad768f12cc700a11495ad
@@ -1981,8 +1981,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2a6f6971fa010219323b976ff53b2606e39fb43fd36c394837c3a8528bf3c425
-R 620499f569e880513867b67bc9090f80
+P 8b4d1b9317624f443fe526858bfe3da5281ba83de1828c62935f48b3e7cf2a88
+R 4e3eaba4ea506cda95e5ca36886afbe8
 U drh
-Z 0dba3b3710f22c731b61e5cb97b7e027
+Z 03b9158b57b304bce795274f430799f1
 # Remove this line to create a well-formed Fossil manifest.
