@@ -4670,6 +4670,13 @@ expr_code_doover:
     case TK_IF_NULL_ROW: {
       int addrINR;
       u8 okConstFactor = pParse->okConstFactor;
+      if( pExpr->pAggInfo && !pExpr->pAggInfo->directMode ){
+        struct AggInfo_col *pCol;
+        assert( pExpr->iAgg>=0 && pExpr->iAgg<pExpr->pAggInfo->nColumn );
+        pCol = &pExpr->pAggInfo->aCol[pExpr->iAgg];
+        inReg = pCol->iMem;
+        break;
+      }
       addrINR = sqlite3VdbeAddOp1(v, OP_IfNullRow, pExpr->iTable);
       /* Temporarily disable factoring of constant expressions, since
       ** even though expressions may appear to be constant, they are not
@@ -6175,6 +6182,7 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
 
   assert( pNC->ncFlags & NC_UAggInfo );
   switch( pExpr->op ){
+    case TK_IF_NULL_ROW:
     case TK_AGG_COLUMN:
     case TK_COLUMN: {
       testcase( pExpr->op==TK_AGG_COLUMN );
@@ -6237,7 +6245,7 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
             */
             ExprSetVVAProperty(pExpr, EP_NoReduce);
             pExpr->pAggInfo = pAggInfo;
-            pExpr->op = TK_AGG_COLUMN;
+            if( pExpr->op==TK_COLUMN ) pExpr->op = TK_AGG_COLUMN;
             pExpr->iAgg = (i16)k;
             break;
           } /* endif pExpr->iTable==pItem->iCursor */
