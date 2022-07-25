@@ -170,7 +170,6 @@ void sqlite3FinishCoding(Parse *pParse){
     if( pParse->bReturning ){
       Returning *pReturning = pParse->u1.pReturning;
       int addrRewind;
-      int i;
       int reg;
 
       if( pReturning->nRetCol ){

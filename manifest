@@ -1,5 +1,5 @@
-C In-line\sa\scall\sto\ssqlite3ExprCode()\sin\sinsert.c,\sfor\sa\ssize\sreduction\sand\nperformance\sincrease.
-D 2022-07-25T21:37:13.343
+C Fix\sa\sharmless\scompiler\swarning.
+D 2022-07-25T22:02:35.792
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -513,7 +513,7 @@ F src/btmutex.c 8acc2f464ee76324bf13310df5692a262b801808984c1b79defb2503bbafadb6
 F src/btree.c 1307d57f65023c9f37c2b6c62253343fca63877f161f694a593b14c0883cedda
 F src/btree.h 74d64b8f28cfa4a894d14d4ed64fa432cd697b98b61708d4351482ae15913e22
 F src/btreeInt.h 8ce1332edd89dfd2461d561ac10a0ab5601c8e06200cb5230596c3caaf54482e
-F src/build.c 249fb44843805cded2003e0e678ab65acb98ae0982e23256d4d0a7576a440eb3
+F src/build.c abba8a3f8529d3f3808e7cfa580e4541471ea010635d2a23365c0de8b22128b5
 F src/callback.c 4c19af69835787bfe790ac560f3071a824eb629f34e41f97b52ce5235c77de1c
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 026dbdcdbd8c3cde98a88483ee88310ff43150ab164ad768f12cc700a11495ad
@@ -1981,8 +1981,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1798ce97c8763d75315e1716d10f6c5be301042c174f41ee8c1fb8d9db99d52b
-R 893e05cda15fed15bec15ef6790fcb7b
+P 35066b1446228bf030795e7868509c7b54a5681984ac28bf43123f8fac2e361e
+R 14bc2153dd870c51d01ef34ec6804518
 U drh
-Z b54185c467fd683a9e6941abfcb36a89
+Z 26d5ce22a72ed03f342cb02915325d2e
 # Remove this line to create a well-formed Fossil manifest.
