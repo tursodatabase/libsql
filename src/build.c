@@ -3067,9 +3067,10 @@ static SQLITE_NOINLINE int viewGetColumnNames(Parse *pParse, Table *pTable){
 
 #ifndef SQLITE_OMIT_VIEW
   /* A positive nCol means the columns names for this view are
-  ** already known.
+  ** already known.  This routine is not called unless either the
+  ** table is virtual or nCol is zero.
   */
-  if( pTable->nCol>0 ) return 0;
+  assert( pTable->nCol<=0 );
 
   /* A negative nCol is a special marker meaning that we are currently
   ** trying to compute the column names.  If we enter this routine with
