@@ -3835,7 +3835,7 @@ int sqlite3ExprCodeGetColumn(
   assert( pParse->pVdbe!=0 );
   sqlite3ExprCodeGetColumnOfTable(pParse->pVdbe, pTab, iTable, iColumn, iReg);
   if( p5 ){
-    VdbeOp *pOp = sqlite3VdbeGetOp(pParse->pVdbe,-1);
+    VdbeOp *pOp = sqlite3VdbeGetLastOp(pParse->pVdbe);
     if( pOp->opcode==OP_Column ) pOp->p5 = p5;
   }
   return iReg;
@@ -3904,7 +3904,7 @@ static int exprCodeVector(Parse *pParse, Expr *p, int *piFreeable){
 ** so that a subsequent copy will not be merged into this one.
 */
 static void setDoNotMergeFlagOnCopy(Vdbe *v){
-  if( sqlite3VdbeGetOp(v, -1)->opcode==OP_Copy ){
+  if( sqlite3VdbeGetLastOp(v)->opcode==OP_Copy ){
     sqlite3VdbeChangeP5(v, 1);  /* Tag trailing OP_Copy as not mergable */
   }
 }
@@ -5026,7 +5026,7 @@ int sqlite3ExprCodeExprList(
       if( inReg!=target+i ){
         VdbeOp *pOp;
         if( copyOp==OP_Copy
-         && (pOp=sqlite3VdbeGetOp(v, -1))->opcode==OP_Copy
+         && (pOp=sqlite3VdbeGetLastOp(v))->opcode==OP_Copy
          && pOp->p1+pOp->p3+1==inReg
          && pOp->p2+pOp->p3+1==target+i
          && pOp->p5==0  /* The do-not-merge flag must be clear */

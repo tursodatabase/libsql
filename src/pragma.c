@@ -1781,7 +1781,7 @@ void sqlite3Pragma(
           if( pCol->notNull==0 && !bStrict ) continue;
           doError = bStrict ? sqlite3VdbeMakeLabel(pParse) : 0;
           sqlite3ExprCodeGetColumnOfTable(v, pTab, iDataCur, j, 3);
-          if( sqlite3VdbeGetOp(v,-1)->opcode==OP_Column ){
+          if( sqlite3VdbeGetLastOp(v)->opcode==OP_Column ){
             sqlite3VdbeChangeP5(v, OPFLAG_TYPEOFARG);
           }
           if( pCol->notNull ){

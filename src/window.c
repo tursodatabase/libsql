@@ -2170,10 +2170,8 @@ static void windowCodeRangeTest(
 
     /* This block runs if reg1 is not NULL, but reg2 is. */
     sqlite3VdbeJumpHere(v, addr);
-    sqlite3VdbeAddOp2(v, OP_IsNull, reg2, lbl); VdbeCoverage(v);
-    if( op==OP_Gt || op==OP_Ge ){
-      sqlite3VdbeChangeP2(v, -1, addrDone);
-    }
+    sqlite3VdbeAddOp2(v, OP_IsNull, reg2,
+                      (op==OP_Gt || op==OP_Ge) ? addrDone : lbl);
   }
 
   /* Register reg1 currently contains csr1.peerVal (the peer-value from csr1).

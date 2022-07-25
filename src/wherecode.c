@@ -892,7 +892,7 @@ static void whereLikeOptimizationStringFixup(
   if( pTerm->wtFlags & TERM_LIKEOPT ){
     VdbeOp *pOp;
     assert( pLevel->iLikeRepCntr>0 );
-    pOp = sqlite3VdbeGetOp(v, -1);
+    pOp = sqlite3VdbeGetLastOp(v);
     assert( pOp!=0 );
     assert( pOp->opcode==OP_String8 
             || pTerm->pWC->pWInfo->pParse->db->mallocFailed );
