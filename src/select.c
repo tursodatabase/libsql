@@ -4065,8 +4065,8 @@ static void renumberCursors(
 **        (3a) the subquery may not be a join and
 **        (3b) the FROM clause of the subquery may not contain a virtual
 **             table and
-**        (3c) The outer query may not have a GROUP BY.  (This limitation is
-**             due to how TK_IF_NULL_ROW works.  FIX ME!)
+**        (**) Was: "The outer query may not have a GROUP BY." This case
+**             is now managed correctly
 **        (3d) the outer query may not be DISTINCT.
 **        See also (26) for restrictions on RIGHT JOIN.
 **
@@ -4284,7 +4284,6 @@ static int flattenSubquery(
     if( pSubSrc->nSrc>1                        /* (3a) */
      || IsVirtual(pSubSrc->a[0].pTab)          /* (3b) */
      || (p->selFlags & SF_Distinct)!=0         /* (3d) */
-     || (p->pGroupBy!=0)                       /* (3c) */
      || (pSubitem->fg.jointype & JT_RIGHT)!=0  /* (26) */
     ){
       return 0;
@@ -7541,15 +7540,15 @@ int sqlite3Select(
         regBase = sqlite3GetTempRange(pParse, nCol);
         sqlite3ExprCodeExprList(pParse, pGroupBy, regBase, 0, 0);
         j = nGroupBy;
+        pAggInfo->directMode = 1;
         for(i=0; i<pAggInfo->nColumn; i++){
           struct AggInfo_col *pCol = &pAggInfo->aCol[i];
           if( pCol->iSorterColumn>=j ){
-            int r1 = j + regBase;
-            sqlite3ExprCodeGetColumnOfTable(v,
-                               pCol->pTab, pCol->iTable, pCol->iColumn, r1);
+            sqlite3ExprCode(pParse, pCol->pCExpr, j + regBase);
             j++;
           }
         }
+        pAggInfo->directMode = 0;
         regRecord = sqlite3GetTempReg(pParse);
         sqlite3VdbeAddOp3(v, OP_MakeRecord, regBase, nCol, regRecord);
         sqlite3VdbeAddOp2(v, OP_SorterInsert, pAggInfo->sortingIdx, regRecord);
