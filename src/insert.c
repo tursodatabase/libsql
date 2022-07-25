@@ -1189,7 +1189,12 @@ void sqlite3Insert(
         sqlite3VdbeAddOp2(v, OP_SCopy, regFromSelect+k, iRegStore);
       }
     }else{
-      sqlite3ExprCode(pParse, pList->a[k].pExpr, iRegStore);
+      Expr *pX = pList->a[k].pExpr;
+      int y = sqlite3ExprCodeTarget(pParse, pX, iRegStore);
+      if( y!=iRegStore ){
+        sqlite3VdbeAddOp2(v,
+          ExprHasProperty(pX, EP_Subquery) ? OP_Copy : OP_SCopy, y, iRegStore);
+      }
     }
   }
 

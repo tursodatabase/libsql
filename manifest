@@ -1,5 +1,5 @@
-C Performance\soptimization\sin\scomputing\sthe\sExpr.nHeight\sfield.
-D 2022-07-25T20:21:57.291
+C In-line\sa\scall\sto\ssqlite3ExprCode()\sin\sinsert.c,\sfor\sa\ssize\sreduction\sand\nperformance\sincrease.
+D 2022-07-25T21:37:13.343
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -530,7 +530,7 @@ F src/hash.c 8d7dda241d0ebdafb6ffdeda3149a412d7df75102cecfc1021c98d6219823b19
 F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h cb1d7e3e1ed94b7aa6fde95ae2c2daccc3df826be26fc9ed7fd90d1750ae6144
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c ffbfe57fb73c0f14b30ce8a5da431519cdd315e20a9dd07fa12ae8e526d37f49
+F src/insert.c 0dad9475a958e9d3bfd6c4bc3507b5ed0ec7cca615c423c652b19e2676d59b3f
 F src/json.c 7749b98c62f691697c7ee536b570c744c0583cab4a89200fdd0fc2aa8cc8cbd6
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 853385cc7a604157e137585097949252d5d0c731768e16b044608e5c95c3614b
@@ -1981,8 +1981,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 92ac01d41d46ab73e189b1e5596ea63e5edb5b15639c5d7bdb981b95366c069b
-R 5546500321041b9016b316ba858300f9
+P 1798ce97c8763d75315e1716d10f6c5be301042c174f41ee8c1fb8d9db99d52b
+R 893e05cda15fed15bec15ef6790fcb7b
 U drh
-Z dddc2675e82e808f6c9034d235b5fa31
+Z b54185c467fd683a9e6941abfcb36a89
 # Remove this line to create a well-formed Fossil manifest.
