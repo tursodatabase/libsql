@@ -1,5 +1,5 @@
-C Simplifications\sto\ssqlite3FinishCoding()\sfor\sa\ssmall\ssize\sreduction\sand\nperformance\sincrease.
-D 2022-07-23T12:51:48.615
+C Reduce\sa\stimeout\sin\swalsetlk.test\sfrom\s2000ms\sto\s1100ms\sso\sthat\sthe\stest\sruns\sa\sbit\sfaster.
+D 2022-07-25T11:04:13.326
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1797,7 +1797,7 @@ F test/walprotocol2.test 7d3b6b4bf0b12f8007121b1e6ef714bc99101fb3b48e46371df1db8
 F test/walro.test cb438d05ba0d191f10b688e39c4f0cd5b71569a1d1f4440e5bdf3c6880e08c20
 F test/walro2.test 33955a6fd874dd9724005e17f77fef89d334b3171454a1256fe4941a96766cdc
 F test/walrofault.test c70cb6e308c443867701856cce92ad8288cd99488fa52afab77cca6cfd51af68
-F test/walsetlk.test c084796fc1d908957eaeba00caf85a575565be17e3333a60d5b72fe75c150387
+F test/walsetlk.test 34c901443b31ab720afc463f5b236c86ca5c4134402573dce91aa0761de8db5a
 F test/walshared.test 0befc811dcf0b287efae21612304d15576e35417
 F test/walslow.test c05c68d4dc2700a982f89133ce103a1a84cc285f
 F test/walthread.test 14b20fcfa6ae152f5d8e12f5dc8a8a724b7ef189f5d8ef1e2ceab79f2af51747
@@ -1981,8 +1981,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8b4d1b9317624f443fe526858bfe3da5281ba83de1828c62935f48b3e7cf2a88
-R 4e3eaba4ea506cda95e5ca36886afbe8
-U drh
-Z 03b9158b57b304bce795274f430799f1
+P a995614b9aedf4492e6d7b777293770f268837f8246e1678ef0523738c8a8339
+R e7b8638d6eb2bb65a2c18035ce7a719d
+U dan
+Z 34c5d50caba419fff3085e94b713365e
 # Remove this line to create a well-formed Fossil manifest.
