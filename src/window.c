@@ -2172,6 +2172,7 @@ static void windowCodeRangeTest(
     sqlite3VdbeJumpHere(v, addr);
     sqlite3VdbeAddOp2(v, OP_IsNull, reg2,
                       (op==OP_Gt || op==OP_Ge) ? addrDone : lbl);
+    VdbeCoverage(v);
   }
 
   /* Register reg1 currently contains csr1.peerVal (the peer-value from csr1).
