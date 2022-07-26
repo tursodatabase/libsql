@@ -4088,7 +4088,7 @@ expr_code_doover:
                               pCol->iSorterColumn, target);
         if( pCol->iColumn<0 ){
           VdbeComment((v,"%s.rowid",pTab->zName));
-        }else{
+        }else if( ALWAYS(pTab!=0) ){
           VdbeComment((v,"%s.%s", 
               pTab->zName, pTab->aCol[pCol->iColumn].zCnName));
           if( pTab->aCol[pCol->iColumn].affinity==SQLITE_AFF_REAL ){
@@ -6227,8 +6227,10 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
             int k;
             pCol = pAggInfo->aCol;
             for(k=0; k<pAggInfo->nColumn; k++, pCol++){
-              if( pCol->iTable==pExpr->iTable &&
-                  pCol->iColumn==pExpr->iColumn ){
+              if( pCol->iTable==pExpr->iTable
+               && pCol->iColumn==pExpr->iColumn
+               && pExpr->op!=TK_IF_NULL_ROW
+              ){
                 break;
               }
             }
@@ -6243,15 +6245,17 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
               pCol->iMem = ++pParse->nMem;
               pCol->iSorterColumn = -1;
               pCol->pCExpr = pExpr;
-              if( pAggInfo->pGroupBy ){
+              if( pAggInfo->pGroupBy && pExpr->op!=TK_IF_NULL_ROW ){
                 int j, n;
                 ExprList *pGB = pAggInfo->pGroupBy;
                 struct ExprList_item *pTerm = pGB->a;
                 n = pGB->nExpr;
                 for(j=0; j<n; j++, pTerm++){
                   Expr *pE = pTerm->pExpr;
-                  if( pE->op==TK_COLUMN && pE->iTable==pExpr->iTable &&
-                      pE->iColumn==pExpr->iColumn ){
+                  if( pE->op==TK_COLUMN
+                   && pE->iTable==pExpr->iTable
+                   && pE->iColumn==pExpr->iColumn
+                  ){
                     pCol->iSorterColumn = j;
                     break;
                   }

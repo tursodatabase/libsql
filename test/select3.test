@@ -374,5 +374,64 @@ foreach {tn sql} {
   } {abc constant}
 }
 
+reset_db
+do_execsql_test 12.0 {
+  CREATE TABLE t1(a);
+  CREATE TABLE t2(x);
+}
+do_execsql_test 12.1 {
+  SELECT count(x), m FROM t1 LEFT JOIN (SELECT x, 59 AS m FROM t2) GROUP BY a;
+}
+do_execsql_test 12.2 {
+  INSERT INTO t1 VALUES(1), (1), (2), (3);
+  SELECT count(x), m FROM t1 LEFT JOIN (SELECT x, 59 AS m FROM t2) GROUP BY a;
+} {
+  0 {}
+  0 {}
+  0 {}
+}
+do_execsql_test 12.3 {
+  INSERT INTO t2 VALUES(45);
+  SELECT count(x), m FROM t1 LEFT JOIN (SELECT x, 59 AS m FROM t2) GROUP BY a;
+} {
+  2 59
+  1 59
+  1 59
+}
+do_execsql_test 12.4 {
+  INSERT INTO t2 VALUES(210);
+  SELECT count(x), m FROM t1 LEFT JOIN (SELECT x, 59 AS m FROM t2) GROUP BY a;
+} {
+  4 59
+  2 59
+  2 59
+}
+do_execsql_test 12.5 {
+  INSERT INTO t2 VALUES(NULL);
+  SELECT count(x), m FROM t1 LEFT JOIN (SELECT x, 59 AS m FROM t2) GROUP BY a;
+} {
+  4 59
+  2 59
+  2 59
+}
+do_execsql_test 12.6 {
+  DELETE FROM t2;
+  DELETE FROM t1;
+  INSERT INTO t1 VALUES('value');
+  INSERT INTO t2 VALUES('hello');
+} {}
+do_execsql_test 12.7 {
+  SELECT group_concat(x), m FROM t1 
+    LEFT JOIN (SELECT x, 59 AS m FROM t2) GROUP BY a;
+} {
+  hello 59
+}
+do_execsql_test 12.8 {
+  SELECT group_concat(x), m, n FROM t1 
+    LEFT JOIN (SELECT x, 59 AS m, 60 AS n FROM t2) GROUP BY a;
+} {
+  hello 59 60
+}
 
 finish_test
+
