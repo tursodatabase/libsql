@@ -1,5 +1,5 @@
-C Make\ssure\sIF_NULL_ROW\sexpressions\sreceive\sa\sseparate\sslot\sin\sthe\ssorter\sused\nto\simplement\sGROUP\sBY.
-D 2022-07-26T15:32:02.206
+C Add\stest\scases\srelated\sto\sfix\s[e717e029].
+D 2022-07-26T15:39:32.378
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1391,7 +1391,7 @@ F test/securedel.test 2f70b2449186a1921bd01ec9da407fbfa98c3a7a5521854c300c194b2f
 F test/securedel2.test 2d54c28e46eb1fd6902089958b20b1b056c6f1c5
 F test/select1.test 692e84cfa29c405854c69e8a4027183d64c22952866a123fabbce741a379e889
 F test/select2.test 352480e0e9c66eda9c3044e412abdf5be0215b56
-F test/select3.test 054b155a4b9394c6858640029cb93e87defbaecc1c87ebb21157c3d35dfc4d88
+F test/select3.test 8d04b66df7475275a65f7e4a786d6a724c30bd9929f8ae5bd59c8d3d6e75e6cd
 F test/select4.test f0684d3da3bccacbe2a1ebadf6fb49d9df6f53acb4c6ebc228a88d0d6054cc7b
 F test/select5.test 8afc5e5dcdebc2be54472e73ebd9cd1adef1225fd15d37a1c62f969159f390ae
 F test/select6.test 9b2fb4ffedf52e1b5703cfcae1212e7a4a063f014c0458d78d29aca3db766d1f
@@ -1981,8 +1981,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e717e029bde4ee68b6ea77a68721c02ddb6e296f1d310a368137ea3c4164f68c
-R 1029f8a12febed8db153949d4d164b76
-U drh
-Z b08c39293252863d670f80901346b8c8
+P 2bda4fca06ab6be5ad02377a7d1fd9fb9586e3181f1052e4b4937958bdd45efe
+R 12b2c22b8ec2610d9abb28e0edce627b
+U dan
+Z 31e4b968c08d2950ff44e5d5f67d5a40
 # Remove this line to create a well-formed Fossil manifest.
