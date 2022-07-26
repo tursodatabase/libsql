@@ -4088,7 +4088,7 @@ expr_code_doover:
                               pCol->iSorterColumn, target);
         if( pCol->iColumn<0 ){
           VdbeComment((v,"%s.rowid",pTab->zName));
-        }else{
+        }else if( pTab!=0 ){
           VdbeComment((v,"%s.%s", 
               pTab->zName, pTab->aCol[pCol->iColumn].zCnName));
           if( pTab->aCol[pCol->iColumn].affinity==SQLITE_AFF_REAL ){
