@@ -1,5 +1,5 @@
-C Fix\san\sassert()\sthat\swas\smade\sout-of-date\sby\s[b52393ac28debe98].
-D 2022-07-25T23:34:14.245
+C Performance\soptimization:\s\savoid\sunnecessary\scalls\sto\scomputeLimitRegisters().
+D 2022-07-26T01:20:18.198
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -570,7 +570,7 @@ F src/printf.c e99ee9741e79ae3873458146f59644276657340385ade4e76a5f5d1c25793764
 F src/random.c 097dc8b31b8fba5a9aca1697aeb9fd82078ec91be734c16bffda620ced7ab83c
 F src/resolve.c efea4e5fbecfd6d0a9071b0be0d952620991673391b6ffaaf4c277b0bb674633
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c a9516e1453241986f1eb73c00a0e7cf23d23081fd2eb50e67fcbb96fe7bf6f00
+F src/select.c 2219591ff134d612e2e3e9d401665634bac45956f2c12100280c04efb0d99bb8
 F src/shell.c.in 29749b34bbd19d0004fdb6f61f62659096e1c0b4dfb1ad2314e7fafbe9dd8d37
 F src/sqlite.h.in be265991edca9aea69986758b58ba81cbf5ae403fe0c4ea1d0c9df0cdc8f25ed
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1981,8 +1981,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 98b0e830bc7effa3c9cbb77aebe7c128afc3b210af336b7516108d6435705ba0
-R 30abdb0021008a8a1927382f64246cc3
+P db8230e80ed894fc2801cdbb53c2cd9de00192d7f4d8328c29cc214e2e0adde9
+R ff9bb5a29a45c7eaa1b390df1d36ecd7
 U drh
-Z a20715ac16e756fff0bd1afe1caf81e7
+Z 3b35c17a3beaeddc52e4b88d9f02979e
 # Remove this line to create a well-formed Fossil manifest.
