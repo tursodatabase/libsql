@@ -1141,7 +1141,7 @@ void sqlite3VdbeChangeP1(Vdbe *p, int addr, int val){
   sqlite3VdbeGetOp(p,addr)->p1 = val;
 }
 void sqlite3VdbeChangeP2(Vdbe *p, int addr, int val){
-  assert( addr>=0 );
+  assert( addr>=0 || p->db->mallocFailed );
   sqlite3VdbeGetOp(p,addr)->p2 = val;
 }
 void sqlite3VdbeChangeP3(Vdbe *p, int addr, int val){
