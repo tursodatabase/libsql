@@ -214,7 +214,7 @@ mod test {
         let mut s = [0u8; 10];
         blob.read_at_exact(&mut s, 0).unwrap();
         assert_eq!(&s, &one2ten, "write should go through");
-        assert!(blob.read_at_exact(&mut s, 1).is_err());
+        blob.read_at_exact(&mut s, 1).unwrap_err();
 
         blob.read_at_exact(&mut s, 0).unwrap();
         assert_eq!(&s, &one2ten, "should be unchanged");
@@ -225,13 +225,13 @@ mod test {
 
         blob.read_at_exact(&mut fives, 5).unwrap();
         assert_eq!(&fives, &[6u8, 7, 8, 9, 10]);
-        assert!(blob.read_at_exact(&mut fives, 7).is_err());
-        assert!(blob.read_at_exact(&mut fives, 12).is_err());
-        assert!(blob.read_at_exact(&mut fives, 10).is_err());
-        assert!(blob.read_at_exact(&mut fives, i32::MAX as usize).is_err());
-        assert!(blob
-            .read_at_exact(&mut fives, i32::MAX as usize + 1)
-            .is_err());
+        blob.read_at_exact(&mut fives, 7).unwrap_err();
+        blob.read_at_exact(&mut fives, 12).unwrap_err();
+        blob.read_at_exact(&mut fives, 10).unwrap_err();
+        blob.read_at_exact(&mut fives, i32::MAX as usize)
+            .unwrap_err();
+        blob.read_at_exact(&mut fives, i32::MAX as usize + 1)
+            .unwrap_err();
 
         // zero length writes are fine if in bounds
         blob.read_at_exact(&mut [], 10).unwrap();
@@ -242,13 +242,11 @@ mod test {
         blob.read_at_exact(&mut s, 0).unwrap();
         assert_eq!(&s, &[1u8, 2, 3, 4, 5, 16, 17, 18, 19, 20]);
 
-        assert!(blob.write_at(&[100, 99, 98, 97, 96], 6).is_err());
-        assert!(blob
-            .write_at(&[100, 99, 98, 97, 96], i32::MAX as usize)
-            .is_err());
-        assert!(blob
-            .write_at(&[100, 99, 98, 97, 96], i32::MAX as usize + 1)
-            .is_err());
+        blob.write_at(&[100, 99, 98, 97, 96], 6).unwrap_err();
+        blob.write_at(&[100, 99, 98, 97, 96], i32::MAX as usize)
+            .unwrap_err();
+        blob.write_at(&[100, 99, 98, 97, 96], i32::MAX as usize + 1)
+            .unwrap_err();
 
         blob.read_at_exact(&mut s, 0).unwrap();
         assert_eq!(&s, &[1u8, 2, 3, 4, 5, 16, 17, 18, 19, 20]);
@@ -265,7 +263,7 @@ mod test {
             blob.raw_read_at_exact(&mut empty, 0).unwrap().as_ptr(),
             empty.as_ptr().cast(),
         ));
-        assert!(blob.raw_read_at_exact(&mut s2, 5).is_err());
+        blob.raw_read_at_exact(&mut s2, 5).unwrap_err();
 
         let end_pos = blob.seek(std::io::SeekFrom::Current(0)).unwrap();
         assert_eq!(end_pos, 1);

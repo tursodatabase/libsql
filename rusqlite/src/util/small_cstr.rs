@@ -163,8 +163,8 @@ mod test {
         assert_eq!(SmallCString::new("").unwrap().0.as_slice(), b"\0");
         assert_eq!(SmallCString::new("").unwrap().as_bytes_without_nul(), b"");
 
-        assert!(SmallCString::new("\0").is_err());
-        assert!(SmallCString::new("\0abc").is_err());
-        assert!(SmallCString::new("abc\0").is_err());
+        SmallCString::new("\0").unwrap_err();
+        SmallCString::new("\0abc").unwrap_err();
+        SmallCString::new("abc\0").unwrap_err();
     }
 }

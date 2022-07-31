@@ -849,7 +849,7 @@ mod test {
 
         db.remove_function("half", 1)?;
         let result: Result<f64> = db.query_row("SELECT half(6)", [], |r| r.get(0));
-        assert!(result.is_err());
+        result.unwrap_err();
         Ok(())
     }
 

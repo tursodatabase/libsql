@@ -278,7 +278,7 @@ mod test {
         let _a: &[&dyn ToSql] = crate::params![a];
         let r = ToSql::to_sql(&a);
 
-        assert!(r.is_ok());
+        r.unwrap();
     }
 
     #[test]
@@ -287,10 +287,10 @@ mod test {
         let s = "str";
         let cow: Cow<str> = Cow::Borrowed(s);
         let r = cow.to_sql();
-        assert!(r.is_ok());
+        r.unwrap();
         let cow: Cow<str> = Cow::Owned::<str>(String::from(s));
         let r = cow.to_sql();
-        assert!(r.is_ok());
+        r.unwrap();
         // Ensure this compiles.
         let _p: &[&dyn ToSql] = crate::params![cow];
     }
@@ -301,7 +301,7 @@ mod test {
         let _s: &[&dyn ToSql] = crate::params![s];
         let r = ToSql::to_sql(&s);
 
-        assert!(r.is_ok());
+        r.unwrap();
     }
 
     #[test]
@@ -310,7 +310,7 @@ mod test {
         let _s: &[&dyn ToSql] = crate::params![s];
         let r = s.to_sql();
 
-        assert!(r.is_ok());
+        r.unwrap();
     }
 
     #[test]
@@ -319,7 +319,7 @@ mod test {
         let _s: &[&dyn ToSql] = crate::params![s];
         let r = ToSql::to_sql(&s);
 
-        assert!(r.is_ok());
+        r.unwrap();
     }
 
     #[test]
@@ -331,32 +331,32 @@ mod test {
         let s: Rc<Box<str>> = Rc::new(source_str.clone());
         let _s: &[&dyn ToSql] = crate::params![s];
         let r = s.to_sql();
-        assert!(r.is_ok());
+        r.unwrap();
 
         let s: Arc<Box<str>> = Arc::new(source_str.clone());
         let _s: &[&dyn ToSql] = crate::params![s];
         let r = s.to_sql();
-        assert!(r.is_ok());
+        r.unwrap();
 
         let s: Arc<str> = Arc::from(&*source_str);
         let _s: &[&dyn ToSql] = crate::params![s];
         let r = s.to_sql();
-        assert!(r.is_ok());
+        r.unwrap();
 
         let s: Arc<dyn ToSql> = Arc::new(source_str.clone());
         let _s: &[&dyn ToSql] = crate::params![s];
         let r = s.to_sql();
-        assert!(r.is_ok());
+        r.unwrap();
 
         let s: Rc<str> = Rc::from(&*source_str);
         let _s: &[&dyn ToSql] = crate::params![s];
         let r = s.to_sql();
-        assert!(r.is_ok());
+        r.unwrap();
 
         let s: Rc<dyn ToSql> = Rc::new(source_str);
         let _s: &[&dyn ToSql] = crate::params![s];
         let r = s.to_sql();
-        assert!(r.is_ok());
+        r.unwrap();
     }
 
     #[cfg(feature = "i128_blob")]

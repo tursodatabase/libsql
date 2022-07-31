@@ -287,15 +287,15 @@ mod test {
     fn test_sqlite_functions() -> Result<()> {
         let db = checked_memory_handle()?;
         let result: Result<NaiveTime> = db.query_row("SELECT CURRENT_TIME", [], |r| r.get(0));
-        assert!(result.is_ok());
+        result.unwrap();
         let result: Result<NaiveDate> = db.query_row("SELECT CURRENT_DATE", [], |r| r.get(0));
-        assert!(result.is_ok());
+        result.unwrap();
         let result: Result<NaiveDateTime> =
             db.query_row("SELECT CURRENT_TIMESTAMP", [], |r| r.get(0));
-        assert!(result.is_ok());
+        result.unwrap();
         let result: Result<DateTime<Utc>> =
             db.query_row("SELECT CURRENT_TIMESTAMP", [], |r| r.get(0));
-        assert!(result.is_ok());
+        result.unwrap();
         Ok(())
     }
 
@@ -303,7 +303,7 @@ mod test {
     fn test_naive_date_time_param() -> Result<()> {
         let db = checked_memory_handle()?;
         let result: Result<bool> = db.query_row("SELECT 1 WHERE ? BETWEEN datetime('now', '-1 minute') AND datetime('now', '+1 minute')", [Utc::now().naive_utc()], |r| r.get(0));
-        assert!(result.is_ok());
+        result.unwrap();
         Ok(())
     }
 
@@ -311,13 +311,13 @@ mod test {
     fn test_date_time_param() -> Result<()> {
         let db = checked_memory_handle()?;
         let result: Result<bool> = db.query_row("SELECT 1 WHERE ? BETWEEN datetime('now', '-1 minute') AND datetime('now', '+1 minute')", [Utc::now()], |r| r.get(0));
-        assert!(result.is_ok());
+        result.unwrap();
         Ok(())
     }
 
     #[test]
     fn test_lenient_parse_timezone() {
-        assert!(DateTime::<Utc>::column_result(ValueRef::Text(b"1970-01-01T00:00:00Z")).is_ok());
-        assert!(DateTime::<Utc>::column_result(ValueRef::Text(b"1970-01-01T00:00:00+00")).is_ok());
+        DateTime::<Utc>::column_result(ValueRef::Text(b"1970-01-01T00:00:00Z")).unwrap();
+        DateTime::<Utc>::column_result(ValueRef::Text(b"1970-01-01T00:00:00+00")).unwrap();
     }
 }
