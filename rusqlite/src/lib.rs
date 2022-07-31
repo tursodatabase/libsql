@@ -1286,17 +1286,16 @@ mod test {
 
     #[test]
     fn test_open() {
-        assert!(Connection::open_in_memory().is_ok());
+        Connection::open_in_memory().unwrap();
 
         let db = checked_memory_handle();
-        assert!(db.close().is_ok());
+        db.close().unwrap();
     }
 
     #[test]
     fn test_open_failure() {
         let filename = "no_such_file.db";
         let result = Connection::open_with_flags(filename, OpenFlags::SQLITE_OPEN_READ_ONLY);
-        assert!(result.is_err());
         let err = result.unwrap_err();
         if let Error::SqliteFailure(e, Some(msg)) = err {
             assert_eq!(ErrorCode::CannotOpen, e.code);
@@ -1391,7 +1390,7 @@ mod test {
             OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_READ_WRITE,
             OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_CREATE,
         ] {
-            assert!(Connection::open_in_memory_with_flags(*bad_flags).is_err());
+            Connection::open_in_memory_with_flags(*bad_flags).unwrap_err();
         }
     }
 
@@ -1409,7 +1408,7 @@ mod test {
 
         db.execute_batch("UPDATE foo SET x = 3 WHERE x < 3")?;
 
-        assert!(db.execute_batch("INVALID SQL").is_err());
+        db.execute_batch("INVALID SQL").unwrap_err();
         Ok(())
     }
 
@@ -1572,7 +1571,7 @@ mod test {
 
         let bad_query_result = db.query_row("NOT A PROPER QUERY; test123", [], |_| Ok(()));
 
-        assert!(bad_query_result.is_err());
+        bad_query_result.unwrap_err();
         Ok(())
     }
 
@@ -1596,7 +1595,7 @@ mod test {
 
         let bad_query_result: Result<i64> = db.query_row("NOT A PROPER QUERY", [], |r| r.get(0));
         let bad_query_result = bad_query_result.optional();
-        assert!(bad_query_result.is_err());
+        bad_query_result.unwrap_err();
         Ok(())
     }
 
@@ -1707,7 +1706,6 @@ mod test {
         db.execute_batch("CREATE TABLE foo(x NOT NULL)")?;
 
         let result = db.execute("INSERT INTO foo (x) VALUES (NULL)", []);
-        assert!(result.is_err());
 
         match result.unwrap_err() {
             Error::SqliteFailure(err, _) => {

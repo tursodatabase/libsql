@@ -154,7 +154,7 @@ mod test {
         let db = Connection::open_in_memory()?;
         let result: Result<OffsetDateTime> =
             db.query_row("SELECT CURRENT_TIMESTAMP", [], |r| r.get(0));
-        assert!(result.is_ok());
+        result.unwrap();
         Ok(())
     }
 
@@ -162,7 +162,7 @@ mod test {
     fn test_param() -> Result<()> {
         let db = Connection::open_in_memory()?;
         let result: Result<bool> = db.query_row("SELECT 1 WHERE ? BETWEEN datetime('now', '-1 minute') AND datetime('now', '+1 minute')", [OffsetDateTime::now_utc()], |r| r.get(0));
-        assert!(result.is_ok());
+        result.unwrap();
         Ok(())
     }
 }

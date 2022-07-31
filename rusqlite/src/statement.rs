@@ -1474,10 +1474,10 @@ mod test {
         let conn = Connection::open_in_memory()?;
         let mut stmt = conn.prepare("")?;
         assert_eq!(0, stmt.column_count());
-        assert!(stmt.parameter_index("test").is_ok());
-        assert!(stmt.step().is_err());
+        stmt.parameter_index("test").unwrap();
+        stmt.step().unwrap_err();
         stmt.reset();
-        assert!(stmt.execute([]).is_err());
+        stmt.execute([]).unwrap_err();
         Ok(())
     }
 
@@ -1542,7 +1542,6 @@ mod test {
         use crate::ffi::ErrorCode;
         let db = Connection::open_in_memory()?;
         let r = db.execute_batch("SELECT CURRENT_TIMESTANP;");
-        assert!(r.is_err());
         match r.unwrap_err() {
             Error::SqlInputError { error, offset, .. } => {
                 assert_eq!(error.code, ErrorCode::Unknown);
