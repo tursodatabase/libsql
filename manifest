@@ -1,5 +1,5 @@
-C Restore\sa\sVDBE\scoverage\smacro\sthat\sis\smistakenly\sdeleted\sfor\ncheck-in\s[92ac01d41d46ab73].
-D 2022-07-26T19:10:13.436
+C In\sthe\sxUpdate\smethod\sof\sthe\sGeoPoly\svirtual\stable,\smake\ssure\sthat\sthe\nnumber\sof\supdated\scolumns\sdoes\snot\sexceed\sthe\sunderlying\simplementation,\seven\nif\sthe\svirtual\stable\sobject\srecords\san\sexcess\snumber\sof\scolumn\sin\sthe\snAux\nfield\sdue\sto\stable\sconstraints\sin\sthe\stable\sdefinition.\nFix\sfor\sthe\sproblem\sreported\sby\n[forum:/forumpost/a096ab7d96bb057a|forum\spost\sa096ab7d96bb057a].
+D 2022-08-01T13:14:03.301
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -413,7 +413,7 @@ F ext/repair/test/checkfreelist01.test 3e8aa6aeb4007680c94a8d07b41c339aa635cc782
 F ext/repair/test/checkindex01.test b530f141413b587c9eb78ff734de6bb79bc3515c335096108c12c01bddbadcec
 F ext/repair/test/test.tcl 686d76d888dffd021f64260abf29a55c57b2cedfa7fc69150b42b1d6119aac3c
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/geopoly.c cc3f89c11abcf114fa60d74709ae8b5bc1eae5a261b30bc1bb7085089c03bfab
+F ext/rtree/geopoly.c bb0dcd013dbb3fe0335b6bbae0d9c29fcfffda93d5ef6c31daa47e802132e435
 F ext/rtree/rtree.c d7b4b8b81d8d54376a7f81de5be85ec58b37c11604bcf42984a8418b34158d93
 F ext/rtree/rtree.h 4a690463901cb5e6127cf05eb8e642f127012fd5003830dbc974eca5802d9412
 F ext/rtree/rtree1.test d47f58832145fcfed9067bc457ca8664962196c4566c17a1ebd679367db55d11
@@ -1981,8 +1981,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8e12c6f59bcb67be4ff131feecc5af68f4bb0afbcced2e2f7e73289aaf95d99d
-R d0d3075ca4c78be3d08a2ae674010fb3
+P 01de7ec44fb1e8e6f847eaef433216b3163a44a8789451718e1c419ef840ddfb
+R 6e9af4a1fd48ba4a0b2f74feb2fb7ec8
 U drh
-Z 2ec897bd518817fd9fabfa62106fc627
+Z b4532202f959fae679f2c4c7df6a9a48
 # Remove this line to create a well-formed Fossil manifest.
