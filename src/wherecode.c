@@ -622,8 +622,8 @@ static int codeEqualityTerm(
         }
         sqlite3ExprDelete(db, pX);
       }else{
-        aiMap = (int*)sqlite3DbMallocZero(pParse->db,
-                             sizeof(int)*sqlite3ExprVectorSize(pX->pLeft));
+        int n = sqlite3ExprVectorSize(pX->pLeft);
+        aiMap = (int*)sqlite3DbMallocZero(pParse->db, sizeof(int)*MAX(nEq,n));
         eType = sqlite3FindInIndex(pParse, pX, IN_INDEX_LOOP, 0, aiMap, &iTab);
       }
       pX = pExpr;
