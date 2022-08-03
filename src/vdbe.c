@@ -1731,7 +1731,6 @@ case OP_Subtract:              /* same as TK_MINUS, in1, in2, out3 */
 case OP_Multiply:              /* same as TK_STAR, in1, in2, out3 */
 case OP_Divide:                /* same as TK_SLASH, in1, in2, out3 */
 case OP_Remainder: {           /* same as TK_REM, in1, in2, out3 */
-  u16 flags;      /* Combined MEM_* flags from both inputs */
   u16 type1;      /* Numeric type of left operand */
   u16 type2;      /* Numeric type of right operand */
   i64 iA;         /* Integer value of left operand */
@@ -1740,12 +1739,12 @@ case OP_Remainder: {           /* same as TK_REM, in1, in2, out3 */
   double rB;      /* Real value of right operand */
 
   pIn1 = &aMem[pOp->p1];
-  type1 = numericType(pIn1);
+  type1 = pIn1->flags;
   pIn2 = &aMem[pOp->p2];
-  type2 = numericType(pIn2);
+  type2 = pIn2->flags;
   pOut = &aMem[pOp->p3];
-  flags = pIn1->flags | pIn2->flags;
   if( (type1 & type2 & MEM_Int)!=0 ){
+int_math:
     iA = pIn1->u.i;
     iB = pIn2->u.i;
     switch( pOp->opcode ){
@@ -1767,9 +1766,12 @@ case OP_Remainder: {           /* same as TK_REM, in1, in2, out3 */
     }
     pOut->u.i = iB;
     MemSetTypeFlag(pOut, MEM_Int);
-  }else if( (flags & MEM_Null)!=0 ){
+  }else if( ((type1 | type2) & MEM_Null)!=0 ){
     goto arithmetic_result_is_null;
   }else{
+    type1 = numericType(pIn1);
+    type2 = numericType(pIn2);
+    if( (type1 & type2 & MEM_Int)!=0 ) goto int_math;
 fp_math:
     rA = sqlite3VdbeRealValue(pIn1);
     rB = sqlite3VdbeRealValue(pIn2);
