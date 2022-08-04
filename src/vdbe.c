@@ -7216,7 +7216,7 @@ case OP_IfPos: {        /* jump, in1 */
 ** Synopsis: if r[P1]>0 then r[P2]=r[P1]+max(0,r[P3]) else r[P2]=(-1)
 **
 ** This opcode performs a commonly used computation associated with
-** LIMIT and OFFSET process.  r[P1] holds the limit counter.  r[P3]
+** LIMIT and OFFSET processing.  r[P1] holds the limit counter.  r[P3]
 ** holds the offset counter.  The opcode computes the combined value
 ** of the LIMIT and OFFSET and stores that value in r[P2].  The r[P2]
 ** value computed is the total number of rows that will need to be
