@@ -1688,7 +1688,7 @@ static void generateSortTail(
     if( addrOnce ) sqlite3VdbeJumpHere(v, addrOnce);
     addr = 1 + sqlite3VdbeAddOp2(v, OP_SorterSort, iTab, addrBreak);
     VdbeCoverage(v);
-    codeOffset(v, p->iOffset, addrContinue);
+    assert( p->iLimit==0 && p->iOffset==0 );
     sqlite3VdbeAddOp3(v, OP_SorterData, iTab, regSortOut, iSortTab);
     bSeq = 0;
   }else{
@@ -1696,6 +1696,9 @@ static void generateSortTail(
     codeOffset(v, p->iOffset, addrContinue);
     iSortTab = iTab;
     bSeq = 1;
+    if( p->iOffset>0 ){
+      sqlite3VdbeAddOp2(v, OP_AddImm, p->iLimit, -1);
+    }
   }
   for(i=0, iCol=nKey+bSeq-1; i<nColumn; i++){
 #ifdef SQLITE_ENABLE_SORTER_REFERENCES
