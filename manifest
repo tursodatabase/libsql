@@ -1,5 +1,5 @@
-C Avoid\shaving\sfts3\sread\suninitialized\svalues\swhen\sprocessing\sdeferred\stokens.
-D 2022-08-05T17:16:00.185
+C Fix\sa\srounding\serror\scaused\sby\sscalar->logarithm->scalar\sconversion\swhen\susing\sstat4\sdata\sto\sestimate\ssome\srange\sscans.
+D 2022-08-06T15:28:37.948
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -657,7 +657,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c b9df133a705093da8977da5eb202eaadb844839f1c7297c08d33471f5491843d
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
-F src/where.c 1049685e84bd74692ad76984a3411a21c5a1e6ddd08c981ec94d2f11f769e07f
+F src/where.c 8bfe41220558a03be393d064ef3d942cd1ceaf57cd88a85b6cb59b7dda555202
 F src/whereInt.h b48ca529ffe293c18cbfa8326af18a09e39910de66fb3e96ef788c7cbf8ef3a7
 F src/wherecode.c 719a5bb0102711a6ebed8d4385b831a27ce679172f3ae8e9aaec0dc1e415a95a
 F src/whereexpr.c 55a39f42aaf982574fbf52906371a84cceed98a994422198dfd03db4fce4cc46
@@ -1981,8 +1981,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e36217f2536d89f7a15a879fe3ead32307909c71ced42e1ae7b35f43d4744a80
-R 9810d4cb92a49345fdc5e6b1d4c32ce1
+P 98729c5fa6c4c418ca9779c35e6874c930e5cee5a90b5eb32b284a0f3762269e
+R 33e8f2d20ee794e5cf556ebabd2d9ca9
 U dan
-Z 17935eeb35e00b5bc2c7ef71b0671232
+Z b5ab7076fb09a8652a3894b7ab774d07
 # Remove this line to create a well-formed Fossil manifest.
