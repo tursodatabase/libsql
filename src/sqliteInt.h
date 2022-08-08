@@ -4888,6 +4888,7 @@ int sqlite3FixSelect(DbFixer*, Select*);
 int sqlite3FixExpr(DbFixer*, Expr*);
 int sqlite3FixTriggerStep(DbFixer*, TriggerStep*);
 int sqlite3RealSameAsInt(double,sqlite3_int64);
+i64 sqlite3RealToI64(double);
 void sqlite3Int64ToText(i64,char*);
 int sqlite3AtoF(const char *z, double*, int, u8);
 int sqlite3GetInt32(const char *, int*);
