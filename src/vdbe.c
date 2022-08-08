@@ -314,7 +314,9 @@ static VdbeCursor *allocateCursor(
 ** return false.
 */
 static int alsoAnInt(Mem *pRec, double rValue, i64 *piValue){
-  i64 iValue = (double)rValue;
+  i64 iValue;
+  if( rValue>(double)LARGEST_INT64 || rValue<(double)SMALLEST_INT64 ) return 0;
+  iValue = (double)rValue;
   if( sqlite3RealSameAsInt(rValue,iValue) ){
     *piValue = iValue;
     return 1;
