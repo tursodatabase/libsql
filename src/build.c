@@ -4036,7 +4036,7 @@ void sqlite3CreateIndex(
     }
     if( !IN_RENAME_OBJECT ){
       if( !db->init.busy ){
-        if( sqlite3FindTable(db, zName, 0)!=0 ){
+        if( sqlite3FindTable(db, zName, pDb->zDbSName)!=0 ){
           sqlite3ErrorMsg(pParse, "there is already a table named %s", zName);
           goto exit_create_index;
         }
