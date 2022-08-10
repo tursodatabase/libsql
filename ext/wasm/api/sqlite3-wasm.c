@@ -213,8 +213,7 @@ const char * sqlite3_wasm_enum_json(void){
   DefGroup(blobFinalizers) {
     /* SQLITE_STATIC/TRANSIENT need to be handled explicitly as
     ** integers to avoid casting-related warnings. */
-    out("\"SQLITE_STATIC\":0, "
-        "\"SQLITE_TRANSIENT\":-1");
+    out("\"SQLITE_STATIC\":0, \"SQLITE_TRANSIENT\":-1");
   } _DefGroup;
 
   DefGroup(udfFlags) {
@@ -312,8 +311,8 @@ const char * sqlite3_wasm_enum_json(void){
   **   }
   ** }
   **
-  ** Detailed documentation for those bits are in an external
-  ** file (StackBinder.md, as of this writing).
+  ** Detailed documentation for those bits are in the docs for the
+  ** Jaccwabyt JS-side component.
   */
 
   /** Macros for emitting StructBinder description. */

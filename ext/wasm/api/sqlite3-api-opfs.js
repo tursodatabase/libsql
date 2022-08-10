@@ -32,7 +32,8 @@
 // FileSystemFileHandle
 // FileSystemFileHandle.prototype.createSyncAccessHandle
 self.sqlite3.postInit.push(function(self, sqlite3){
-  const warn = console.warn.bind(console);
+  const warn = console.warn.bind(console),
+        error = console.error.bind(console);
   if(!self.importScripts || !self.FileSystemFileHandle
      || !self.FileSystemFileHandle.prototype.createSyncAccessHandle){
     warn("OPFS not found or its sync API is not available in this environment.");
@@ -44,7 +45,6 @@ self.sqlite3.postInit.push(function(self, sqlite3){
   //warn('self.FileSystemFileHandle =',self.FileSystemFileHandle);
   //warn('self.FileSystemFileHandle.prototype =',self.FileSystemFileHandle.prototype);
   const toss = (...args)=>{throw new Error(args.join(' '))};
-  /* This is a web worker, so init the worker-based API. */
   const capi = sqlite3.capi,
         wasm = capi.wasm;
   const sqlite3_vfs = capi.sqlite3_vfs
@@ -54,8 +54,7 @@ self.sqlite3.postInit.push(function(self, sqlite3){
   const sqlite3_io_methods = capi.sqlite3_io_methods
         || toss("Missing sqlite3.capi.sqlite3_io_methods object.");
   const StructBinder = sqlite3.StructBinder || toss("Missing sqlite3.StructBinder.");
-  const error = console.error.bind(console),
-        debug = console.debug.bind(console),
+  const debug = console.debug.bind(console),
         log = console.log.bind(console);
   warn("UNDER CONSTRUCTION: setting up OPFS VFS...");
 
