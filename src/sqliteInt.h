@@ -2889,6 +2889,7 @@ struct Select {
 #define SF_Converted      0x10000  /* By convertCompoundSelectToSubquery() */
 #define SF_IncludeHidden  0x20000  /* Include hidden columns in output */
 #define SF_ComplexResult  0x40000  /* Result contains subquery or function */
+#define SF_NoopOrderBy   0x0400000 /* ORDER BY is ignored for this query */
 
 /*
 ** The results of a SELECT can be distributed in several ways, as defined

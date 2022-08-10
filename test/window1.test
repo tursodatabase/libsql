@@ -1167,6 +1167,19 @@ do_execsql_test 29.2 {
   11 K cc 'xyz' K |
 }
 
+
+#-------------------------------------------------------------------------
+# Test that the SQL in ticket [c8d3b9f0a75] - CVE-2020-13871 - does not
+# cause a problem for this version.
+#
+reset_db
+do_execsql_test 30.0 {
+  CREATE TABLE a(b);
+}
+
+do_execsql_test 30.1 {
+  SELECT(SELECT b FROM a GROUP BY b HAVING(NULL AND b IN((SELECT COUNT() OVER(ORDER BY b) = lead(b) OVER(ORDER BY 3.100000 * SUM(DISTINCT CASE WHEN b LIKE 'SM PACK' THEN b * b ELSE 0 END) / b))))) FROM a EXCEPT SELECT b FROM a ORDER BY b, b, b;
+}
+
+
 finish_test
-
-
