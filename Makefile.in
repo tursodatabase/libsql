@@ -1564,9 +1564,9 @@ fiddle_generated = $(fiddle_module_js) $(fiddle_module_js).gz \
                    $(fiddle_dir)/fiddle-module.wasm.gz \
                    $(fiddle_dir)/fiddle.js.gz
 
-clean-wasm:
+clean-fiddle:
 	rm -f $(fiddle_generated)
-clean: clean-wasm
+clean: clean-fiddle
 fiddle: $(fiddle_module_js) $(fiddle_dir)/fiddle.js.gz
 wasm: fiddle
 ########################################################################
