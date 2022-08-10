@@ -4757,7 +4757,7 @@ seek_not_found:
 **      sqlite3BtreeNext() calls, then jump to This.P2, which will land just
 **      past the OP_IdxGT or OP_IdxGE opcode that follows the OP_SeekGE.
 **
-** <li> If the cursor ends up past the target row (indicating the the target
+** <li> If the cursor ends up past the target row (indicating that the target
 **      row does not exist in the btree) then jump to SeekOP.P2. 
 ** </ol>
 */
