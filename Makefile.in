@@ -1524,13 +1524,12 @@ sqlite3.dll: $(REAL_LIBOBJ) sqlite3.def
 #
 # fiddle/wasm section
 #
-fiddle_dir = ext/fiddle
-fiddle_dir_abs = $(TOP)/$(fiddle_dir)
+wasm_dir = ext/wasm
+wasm_dir_abs = $(TOP)/ext/wasm
 # ^^^ some emcc opts require absolute paths
-fiddle_html = $(fiddle_dir)/fiddle.html
+fiddle_dir = $(wasm_dir)/fiddle
+fiddle_dir_abs = $(TOP)/$(fiddle_dir)
 fiddle_module_js = $(fiddle_dir)/fiddle-module.js
-sqlite3_wasm_js = $(fiddle_dir)/sqlite3.js
-sqlite3_wasm = $(fiddle_dir)/sqlite3.wasm
 #emcc_opt = -O0
 #emcc_opt = -O1
 #emcc_opt = -O2
@@ -1542,54 +1541,34 @@ emcc_flags = $(emcc_opt) \
         -sSTRICT_JS \
         -sENVIRONMENT=web \
         -sMODULARIZE \
-        -sEXPORTED_RUNTIME_METHODS=@$(fiddle_dir_abs)/EXPORTED_RUNTIME_METHODS \
+        -sEXPORTED_RUNTIME_METHODS=@$(wasm_dir_abs)/EXPORTED_RUNTIME_METHODS.fiddle \
         -sDYNAMIC_EXECUTION=0 \
         --minify 0 \
-        -I. $(SHELL_OPT)
+        -I. $(SHELL_OPT) \
+        -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_UTF16 -DSQLITE_OMIT_DEPRECATED
 $(fiddle_module_js): Makefile sqlite3.c shell.c \
-    $(fiddle_dir)/EXPORTED_RUNTIME_METHODS \
-    $(fiddle_dir)/EXPORTED_FUNCTIONS.fiddle
+    $(wasm_dir)/EXPORTED_RUNTIME_METHODS.fiddle \
+    $(wasm_dir)/EXPORTED_FUNCTIONS.fiddle
 	emcc -o $@ $(emcc_flags) \
         -sEXPORT_NAME=initFiddleModule \
-        -sEXPORTED_FUNCTIONS=@$(fiddle_dir_abs)/EXPORTED_FUNCTIONS.fiddle \
+        -sEXPORTED_FUNCTIONS=@$(wasm_dir_abs)/EXPORTED_FUNCTIONS.fiddle \
         -DSQLITE_SHELL_FIDDLE \
         sqlite3.c shell.c
 	gzip < $@ > $@.gz
 	gzip < $(fiddle_dir)/fiddle-module.wasm > $(fiddle_dir)/fiddle-module.wasm.gz
-$(sqlite3_wasm_js): Makefile sqlite3.c $(fiddle_dir)/wasm_util.c \
-    $(fiddle_dir)/sqlite3-api.js \
-    $(fiddle_dir)/EXPORTED_RUNTIME_METHODS \
-    $(fiddle_dir)/EXPORTED_FUNCTIONS.sqlite3-api
-	emcc -o $@ $(emcc_flags) \
-        -sEXPORT_NAME=sqlite3InitModule \
-        -sEXPORTED_FUNCTIONS=@$(fiddle_dir_abs)/EXPORTED_FUNCTIONS.sqlite3-api \
-        --post-js=$(fiddle_dir)/sqlite3-api.js \
-        --no-entry \
-        sqlite3.c $(fiddle_dir)/wasm_util.c
-	gzip < $@ > $@.gz
-	gzip < $(sqlite3_wasm) > $(sqlite3_wasm).gz
-	gzip < $(fiddle_dir)/sqlite3-api.js > $(fiddle_dir)/sqlite3-api.js.gz
 $(fiddle_dir)/fiddle.js.gz: $(fiddle_dir)/fiddle.js
-	gzip < $< > $@
-$(fiddle_dir)/sqlite3-api.js.gz: $(fiddle_dir)/sqlite3-api.js
 	gzip < $< > $@
 
 fiddle_generated = $(fiddle_module_js) $(fiddle_module_js).gz \
                    $(fiddle_dir)/fiddle-module.wasm \
                    $(fiddle_dir)/fiddle-module.wasm.gz \
                    $(fiddle_dir)/fiddle.js.gz
-sqlite3_wasm_generated = \
-                   $(sqlite3_wasm) $(sqlite3_wasm).gz \
-                   $(sqlite3_wasm_js) $(sqlite3_wasm_js).gz \
-                   $(fiddle_dir)/sqlite3.js.gz \
-                   $(fiddle_dir)/sqlite3-api.js.gz
 
 clean-wasm:
-	rm -f $(fiddle_generated) $(sqlite3_wasm_generated)
+	rm -f $(fiddle_generated)
 clean: clean-wasm
 fiddle: $(fiddle_module_js) $(fiddle_dir)/fiddle.js.gz
-sqlite3-wasm: $(sqlite3_wasm_js)
-wasm: fiddle sqlite3-wasm
+wasm: fiddle
 ########################################################################
 # Explanation of the emcc build flags follows. Full docs for these can
 # be found at:

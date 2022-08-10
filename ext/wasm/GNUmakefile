@@ -6,11 +6,6 @@ default:
 clean:
 	$(MAKE) -C ../../ clean-wasm
 
-fiddle_files = emscripten.css fiddle.html \
-             fiddle.js fiddle-module.js \
-             fiddle-module.wasm fiddle-worker.js \
-             $(wildcard *.wasm.gz) $(wildcard *.js.gz)
-
 # fiddle_remote is the remote destination for the fiddle app. It
 # must be a [user@]HOST:/path for rsync.
 # Note that the target "should probably" contain a symlink of
@@ -31,4 +26,4 @@ push-fiddle: $(fiddle_files)
 		echo "fiddle_remote must be a [user@]HOST:/path for rsync"; \
 		exit 1; \
 	fi
-	rsync -va $(fiddle_files) $(fiddle_remote)
+	rsync -va fiddle/ $(fiddle_remote)
