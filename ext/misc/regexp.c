@@ -825,7 +825,7 @@ static void re_bytecode_func(
     }
     sqlite3_str_appendf(pStr, "\n");
   }
-  for(i=0; i<pRe->nState; i++){
+  for(i=0; (unsigned)i<pRe->nState; i++){
     sqlite3_str_appendf(pStr, "%-8s %4d\n",
          ReOpName[(unsigned char)pRe->aOp[i]], pRe->aArg[i]);
   }

@@ -330,4 +330,108 @@ do_execsql_test select3.10.100 {
   FROM t1;
 } {{} {}}
 
+#-------------------------------------------------------------------------
+# dbsqlfuzz crash-8e17857db2c5a9294c975123ac807156a6559f13.txt
+# Associated with the flatten-left-join branch circa 2022-06-23.
+#
+foreach {tn sql} {
+  1 {
+    CREATE TABLE t1(a TEXT);
+    CREATE TABLE t2(x INT);
+    CREATE INDEX t2x ON t2(x);
+    INSERT INTO t1 VALUES('abc');
+  }
+  2 {
+    CREATE TABLE t1(a TEXT);
+    CREATE TABLE t2(x INT);
+    INSERT INTO t1 VALUES('abc');
+  }
+  3 {
+    CREATE TABLE t1(a TEXT);
+    CREATE TABLE t2(x INT);
+    INSERT INTO t1 VALUES('abc');
+    PRAGMA automatic_index=OFF;
+  }
+} {
+  reset_db
+  do_execsql_test select3-11.$tn.1 $sql 
+  do_execsql_test select3.11.$tn.2 {
+    SELECT max(a), val FROM t1 LEFT JOIN (
+        SELECT 'constant' AS val FROM t2 WHERE x=1234
+    )
+  } {abc {}}
+  do_execsql_test select3.11.$tn.3 {
+    INSERT INTO t2 VALUES(123);
+    SELECT max(a), val FROM t1 LEFT JOIN (
+        SELECT 'constant' AS val FROM t2 WHERE x=1234
+    )
+  } {abc {}}
+  do_execsql_test select3.11.$tn.4 {
+    INSERT INTO t2 VALUES(1234);
+    SELECT max(a), val FROM t1 LEFT JOIN (
+        SELECT 'constant' AS val FROM t2 WHERE x=1234
+    )
+  } {abc constant}
+}
+
+reset_db
+do_execsql_test 12.0 {
+  CREATE TABLE t1(a);
+  CREATE TABLE t2(x);
+}
+do_execsql_test 12.1 {
+  SELECT count(x), m FROM t1 LEFT JOIN (SELECT x, 59 AS m FROM t2) GROUP BY a;
+}
+do_execsql_test 12.2 {
+  INSERT INTO t1 VALUES(1), (1), (2), (3);
+  SELECT count(x), m FROM t1 LEFT JOIN (SELECT x, 59 AS m FROM t2) GROUP BY a;
+} {
+  0 {}
+  0 {}
+  0 {}
+}
+do_execsql_test 12.3 {
+  INSERT INTO t2 VALUES(45);
+  SELECT count(x), m FROM t1 LEFT JOIN (SELECT x, 59 AS m FROM t2) GROUP BY a;
+} {
+  2 59
+  1 59
+  1 59
+}
+do_execsql_test 12.4 {
+  INSERT INTO t2 VALUES(210);
+  SELECT count(x), m FROM t1 LEFT JOIN (SELECT x, 59 AS m FROM t2) GROUP BY a;
+} {
+  4 59
+  2 59
+  2 59
+}
+do_execsql_test 12.5 {
+  INSERT INTO t2 VALUES(NULL);
+  SELECT count(x), m FROM t1 LEFT JOIN (SELECT x, 59 AS m FROM t2) GROUP BY a;
+} {
+  4 59
+  2 59
+  2 59
+}
+do_execsql_test 12.6 {
+  DELETE FROM t2;
+  DELETE FROM t1;
+  INSERT INTO t1 VALUES('value');
+  INSERT INTO t2 VALUES('hello');
+} {}
+do_execsql_test 12.7 {
+  SELECT group_concat(x), m FROM t1 
+    LEFT JOIN (SELECT x, 59 AS m FROM t2) GROUP BY a;
+} {
+  hello 59
+}
+do_execsql_test 12.8 {
+  SELECT group_concat(x), m, n FROM t1 
+    LEFT JOIN (SELECT x, 59 AS m, 60 AS n FROM t2) GROUP BY a;
+} {
+  hello 59 60
+}
+
 finish_test
+

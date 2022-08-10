@@ -447,9 +447,10 @@ void sqlite3DeleteFrom(
     }
     for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
       assert( pIdx->pSchema==pTab->pSchema );
-      sqlite3VdbeAddOp2(v, OP_Clear, pIdx->tnum, iDb);
       if( IsPrimaryKeyIndex(pIdx) && !HasRowid(pTab) ){
-        sqlite3VdbeChangeP3(v, -1, memCnt ? memCnt : -1);
+        sqlite3VdbeAddOp3(v, OP_Clear, pIdx->tnum, iDb, memCnt ? memCnt : -1);
+      }else{
+        sqlite3VdbeAddOp2(v, OP_Clear, pIdx->tnum, iDb);
       }
     }
   }else
