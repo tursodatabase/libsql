@@ -1524,6 +1524,11 @@ sqlite3.dll: $(REAL_LIBOBJ) sqlite3.def
 #
 # fiddle/wasm section
 #
+# Maintenance reminder: we can/should move this into the wasm-specific
+# GNU Make makefile, but we currently need it here for access to
+# $(SHELL_OPT). The rest of the wasm-related bits are handled via GNU
+# Make in ext/wasm/...
+#
 wasm_dir = ext/wasm
 wasm_dir_abs = $(TOP)/ext/wasm
 # ^^^ some emcc opts require absolute paths

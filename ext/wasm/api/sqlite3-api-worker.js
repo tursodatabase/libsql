@@ -84,10 +84,9 @@ self.sqlite3.initWorkerAPI = function(){
   if('function' !== typeof importScripts){
     toss("Cannot initalize the sqlite3 worker API in the main thread.");
   }
-    /* This is a web worker, so init the worker-based API. */
   const self = this.self;
-  const sqlite3 = this.sqlite3 || toss("Missing self.sqlite3 object.");
-  const SQLite3 = sqlite3.oo1 || toss("Missing self.sqlite3.oo1 OO API.");
+  const sqlite3 = this.sqlite3 || toss("Missing this.sqlite3 object.");
+  const SQLite3 = sqlite3.oo1 || toss("Missing this.sqlite3.oo1 OO API.");
   const DB = SQLite3.DB;
 
   /**
