@@ -1542,7 +1542,7 @@ $(sqlite3_wasm_c): sqlite3.c
 #emcc_opt = -O2
 #emcc_opt = -O3
 emcc_opt = -Oz
-emcc_flags_opfs = -sWASMFS -pthread
+emcc_flags_opfs = -sWASMFS -pthread '-DSQLITE_DEFAULT_UNIX_VFS="unix-none"'
 emcc_flags = $(emcc_opt) \
         -sALLOW_TABLE_GROWTH \
         -sABORTING_MALLOC \

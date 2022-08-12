@@ -1,9 +1,9 @@
-C Updated\sfiddle\sdeps\sto\sensure\sthat\ssqlite3.c\sis\sbuilt\sfirst.
-D 2022-08-12T18:07:22.516
+C Use\snew\s-DSQLITE_DEFAULT_UNIX_VFS="unix-none"\sfor\sfiddle\sbuild\sto\sbypass\sOPFS\slocking\serrors.
+D 2022-08-12T18:54:08.424
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in a4002278db76f5f959d73bf3fedfd1b1c24ca198e150eadb327a7daa597cce6a
+F Makefile.in 5d0dfceebf19ccbce323181fa14fe15c3bc470293420a6b680fc76a1b1779087
 F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
 F Makefile.msc d547a2fdba38a1c6cd1954977d0b0cc017f5f8fbfbc65287bf8d335808938016
 F README.md 8b8df9ca852aeac4864eb1e400002633ee6db84065bd01b78c33817f97d31f5e
@@ -572,7 +572,7 @@ F src/os.c b1c4f2d485961e9a5b6b648c36687d25047c252222e9660b7cc25a6e1ea436ab
 F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
-F src/os_unix.c 2df2b33db88f00af13805d4573ee126bc5973f9e3b91d03c575fa7ba64e7dc41
+F src/os_unix.c 81e24bcad127faf32da162a4bb06e7a4604bea76fe7b1ed5b01742e9eb320554
 F src/os_win.c a8ea80037e81127ca01959daa87387cc135f325c88dc745376c4f760de852a10
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 74596fc3d5d8a50de32c37225fc300cccd5ea27ea303c5f4b845d6572f999c5f
@@ -1999,8 +1999,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a16f0a46ec88c560f73d5664e4bf53fb5dd1a22e99a92c11b5c8d784816c3282
-R 68c3995263b343f69486af69573b8b41
+P f0ca02611484f5031076d7fae88845e9931715e9108ec0572629200d4f6636ef 49828bdec5f926cd18a069d39a5db0b1e1f3528a2affcfbaa1cf7b98aca51b3b
+R cdc00c7ef64a776b22c16fe2546768af
 U stephan
-Z 571a8d3aad5e0e97b4f122d411b8daa9
+Z abf4f77a1cc7fc6241b9153ec6b252c6
 # Remove this line to create a well-formed Fossil manifest.
