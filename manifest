@@ -1,5 +1,5 @@
-C Minor\swasm-related\sdoc\sclarification\sand\sremove\san\sobsolete\scode\scomment.
-D 2022-08-12T17:55:18.237
+C Add\sthe\s(undocumented)\sSQLITE_DEFAULT_UNIX_VFS\scompile-time\soption.
+D 2022-08-12T18:46:01.170
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -572,7 +572,7 @@ F src/os.c b1c4f2d485961e9a5b6b648c36687d25047c252222e9660b7cc25a6e1ea436ab
 F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
-F src/os_unix.c 2df2b33db88f00af13805d4573ee126bc5973f9e3b91d03c575fa7ba64e7dc41
+F src/os_unix.c 81e24bcad127faf32da162a4bb06e7a4604bea76fe7b1ed5b01742e9eb320554
 F src/os_win.c a8ea80037e81127ca01959daa87387cc135f325c88dc745376c4f760de852a10
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 74596fc3d5d8a50de32c37225fc300cccd5ea27ea303c5f4b845d6572f999c5f
@@ -1999,8 +1999,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4c10b9b18feca82440273f8192fef951ad051bbfd8aad4d3c840cf6375130afd
-R 3e055b525bbc2100d8c4c001b630489b
-U stephan
-Z 4d766400503717808861a1e631c17801
+P 1b1f650a08da93da97ed3a96b9a3e4eac567472c266188c02a9bffe1cf620e53
+R 9329740380d01abc186d0aa46eefc155
+U drh
+Z 7c0cd408e2c2d1d7e9656e705ea4f22c
 # Remove this line to create a well-formed Fossil manifest.
