@@ -168,12 +168,13 @@ emcc.cflags :=
 emcc.cflags += -std=c99 -fPIC
 # -------------^^^^^^^^ we currently need c99 for WASM-specific sqlite3 APIs.
 emcc.cflags += -I. -I$(dir.top) # $(SQLITE_OPT)
+emcc.cflags += -pthread
 
 ########################################################################
 # emcc flags specific to building the final .js/.wasm file...
 emcc.jsflags := -fPIC
 emcc.jsflags += --no-entry
-emcc.jsflags += -sENVIRONMENT=web
+emcc.jsflags += -sENVIRONMENT=web,worker
 emcc.jsflags += -sMODULARIZE
 emcc.jsflags += -sSTRICT_JS
 emcc.jsflags += -sDYNAMIC_EXECUTION=0
@@ -182,6 +183,7 @@ emcc.jsflags += -sEXPORTED_FUNCTIONS=@$(dir.wasm)/EXPORTED_FUNCTIONS.api
 emcc.jsflags += -sEXPORTED_RUNTIME_METHODS=FS,wasmMemory # wasmMemory==>for -sIMPORTED_MEMORY
 emcc.jsflags += -sUSE_CLOSURE_COMPILER=0
 emcc.jsflags += -sIMPORTED_MEMORY
+emcc.jsflags += -pthread -sWASMFS
 #emcc.jsflags += -sINITIAL_MEMORY=13107200
 #emcc.jsflags += -sTOTAL_STACK=4194304
 emcc.jsflags += -sEXPORT_NAME=sqlite3InitModule
