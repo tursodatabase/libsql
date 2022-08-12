@@ -1,8 +1,9 @@
 # sqlite3-api.js And Friends
 
-This is the README for the files `sqlite3-*.js`. This collection of
-files is used to build a single-file distribution of the sqlite3 WASM
-API. It is broken into multiple files because:
+This is the README for the files `sqlite3-*.js` and
+`sqlite3-wasm.c`. This collection of files is used to build a
+single-file distribution of the sqlite3 WASM API. It is broken into
+multiple JS files because:
 
 1. To facilitate including or excluding certain components for
    specific use cases. e.g. by removing `sqlite3-api-oo1.js` if the
@@ -93,3 +94,8 @@ files, and `sqlite3.js`, which is the Emscripten-generated amalgamated
 output and includes the `post-js-*.js` parts, as well as the
 Emscripten-provided module loading pieces.
 
+The non-JS outlier file is `sqlite3-wasm.c`: it is a proxy for
+`sqlite3.c` which `#include`'s that file and adds a couple more
+WASM-specific helper functions, at least one of which requires access
+to private/static `sqlite3.c` internals. `sqlite3.wasm` is compiled
+from this file rather than `sqlite3.c`.

@@ -6,10 +6,11 @@
 **
 ** For purposes of certain hand-crafted C/Wasm function bindings, we
 ** need a way of reporting errors which is consistent with the rest of
-** the C API. To that end, this internal-use-only function is a thin
-** proxy around sqlite3ErrorWithMessage(). The intent is that it only
-** be used from Wasm bindings such as sqlite3_prepare_v2/v3(), and
-** definitely not from client code.
+** the C API, as opposed to throwing JS exceptions. To that end, this
+** internal-use-only function is a thin proxy around
+** sqlite3ErrorWithMessage(). The intent is that it only be used from
+** Wasm bindings such as sqlite3_prepare_v2/v3(), and definitely not
+** from client code.
 **
 ** Returns err_code.
 */

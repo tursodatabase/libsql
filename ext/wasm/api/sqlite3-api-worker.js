@@ -351,7 +351,7 @@ self.sqlite3.initWorkerAPI = function(){
      form:
 
      { type: apiCommand,
-       dbId: optional DB ID value (not currently used!)
+       dbId: optional DB ID value (else uses a default db handle)
        data: apiArguments
      }
 
