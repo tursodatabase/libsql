@@ -1535,6 +1535,8 @@ wasm_dir_abs = $(TOP)/ext/wasm
 fiddle_dir = $(wasm_dir)/fiddle
 fiddle_dir_abs = $(TOP)/$(fiddle_dir)
 fiddle_module_js = $(fiddle_dir)/fiddle-module.js
+sqlite3_wasm_c = $(wasm_dir)/api/sqlite3-wasm.c
+$(sqlite3_wasm_c): sqlite3.c
 #emcc_opt = -O0
 #emcc_opt = -O1
 #emcc_opt = -O2
@@ -1555,14 +1557,14 @@ emcc_flags = $(emcc_opt) \
         -DSQLITE_OMIT_UTF16 \
         -DSQLITE_OMIT_DEPRECATED \
         $(emcc_flags_opfs)
-$(fiddle_module_js): Makefile $(wasm_dir)/api/sqlite3-wasm.c shell.c \
+$(fiddle_module_js): Makefile $(sqlite3_wasm_c) shell.c \
     $(wasm_dir)/EXPORTED_RUNTIME_METHODS.fiddle \
     $(wasm_dir)/EXPORTED_FUNCTIONS.fiddle
 	emcc -o $@ $(emcc_flags) \
         -sEXPORT_NAME=initFiddleModule \
         -sEXPORTED_FUNCTIONS=@$(wasm_dir_abs)/EXPORTED_FUNCTIONS.fiddle \
         -DSQLITE_SHELL_FIDDLE \
-        $(wasm_dir)/api/sqlite3-wasm.c shell.c
+        $(sqlite3_wasm_c) shell.c
 	gzip < $@ > $@.gz
 	gzip < $(fiddle_dir)/fiddle-module.wasm > $(fiddle_dir)/fiddle-module.wasm.gz
 $(fiddle_dir)/fiddle.js.gz: $(fiddle_dir)/fiddle.js

@@ -1,9 +1,9 @@
-C Build\sfiddle\swith\sWASMFS\sOPFS\ssupport\sand\sattempt\sto\suse\sit\sif\savailable.\sIt\sdoes\snot\swork\sbecause\sof\san\sinexplicable\sexception\sin\sEmscripten-generated\scode\sand\sperpetually-locked\sdb,\sbut\sit's\snot\syet\sclear\swhy.
-D 2022-08-12T17:57:09.467
+C Updated\sfiddle\sdeps\sto\sensure\sthat\ssqlite3.c\sis\sbuilt\sfirst.
+D 2022-08-12T18:07:22.516
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in bada766cb44d202e405eca68e32bb3bcf11cad5b85c75f7fb16ac39e863f03f5
+F Makefile.in a4002278db76f5f959d73bf3fedfd1b1c24ca198e150eadb327a7daa597cce6a
 F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
 F Makefile.msc d547a2fdba38a1c6cd1954977d0b0cc017f5f8fbfbc65287bf8d335808938016
 F README.md 8b8df9ca852aeac4864eb1e400002633ee6db84065bd01b78c33817f97d31f5e
@@ -1999,11 +1999,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1b1f650a08da93da97ed3a96b9a3e4eac567472c266188c02a9bffe1cf620e53
-R a893d12114f31061d4e8d4e31dd72df1
-T *branch * fiddle-opfs
-T *sym-fiddle-opfs *
-T -sym-trunk * Cancelled\sby\sbranch.
+P a16f0a46ec88c560f73d5664e4bf53fb5dd1a22e99a92c11b5c8d784816c3282
+R 68c3995263b343f69486af69573b8b41
 U stephan
-Z e55c83b0eefdc75c613c24a829476f39
+Z 571a8d3aad5e0e97b4f122d411b8daa9
 # Remove this line to create a well-formed Fossil manifest.
