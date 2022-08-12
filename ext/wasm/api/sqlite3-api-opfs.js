@@ -194,7 +194,7 @@ self.sqlite3.postInit.push(function(self, sqlite3){
     f.$pMethods = oIom.pointer;
     __opfsHandles[pFile] = f;
     f.opfsHandle = null /* TODO */;
-    if(capi.SQLITE_OPEN_DELETEONCLOSE){
+    if(flags & capi.SQLITE_OPEN_DELETEONCLOSE){
       f.deleteOnClose = true;
     }
     f.filename = zName ? wasm.cstringToJs(zName) : randomFilename();
