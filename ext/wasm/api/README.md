@@ -31,7 +31,7 @@ browser client:
   the next step can pass in a config object which abstracts away parts
   of the WASM environment, to facilitate plugging it in to arbitrary
   WASM toolchains.
-- `whwasmutil.js`\  
+- `../common/whwasmutil.js`\  
   A semi-third-party collection of JS/WASM utility code intended to
   replace much of the Emscripten glue. The sqlite3 APIs internally use
   these APIs instead of their Emscripten counterparts, in order to be
@@ -40,7 +40,7 @@ browser client:
   toolchains. It is "semi-third-party" in that it was created in order
   to support this tree but is standalone and maintained together
   with...
-- `jaccwabyt.js`\  
+- `../jaccwabyt/jaccwabyt.js`\  
   Another semi-third-party API which creates bindings between JS
   and C structs, such that changes to the struct state from either JS
   or C are visible to the other end of the connection. This is also an

@@ -325,15 +325,7 @@
         //log("int64_min/max() =",minMaxI64, typeof minMaxI64[0]);
         w.xCall('jaccwabyt_test_int64_minmax', pMin, pMax);
         T.assert(g64(pMin) === minMaxI64[0], "int64 mismatch").
-          assert(g64(pMax) === minMaxI64[1], "int64 mismatch")
-        /* ^^^ that will fail, as of this writing, due to
-           mismatched getMemValue()/setMemValue() impls in the
-           Emscripten-generated glue.  We install a
-           replacement getMemValue() in sqlite3-api.js to work
-           around that bug:
-
-           https://github.com/emscripten-core/emscripten/issues/17322
-        */;
+          assert(g64(pMax) === minMaxI64[1], "int64 mismatch");
         //log("pMin",g64(pMin), "pMax",g64(pMax));
         w.setMemValue(pMin, minMaxI64[0], ptrType64);
         T.assert(g64(pMin) === minMaxI64[0]).
@@ -348,7 +340,7 @@
         log("No BigInt support. Skipping related tests.");
         log("\"The problem\" here is that we can manipulate, at the byte level,",
             "heap memory to set 64-bit values, but we can't get those values",
-            "back into JS because of the lack of 64-bit number support.");
+            "back into JS because of the lack of 64-bit integer support.");
       }
     }finally{
       const x = w.scopedAlloc(1), y = w.scopedAlloc(1), z = w.scopedAlloc(1);

@@ -1,5 +1,5 @@
-C wasm:\sdocument\sthe\srole\sof\ssqlite3-wasm.c.\sOther\sminor\sdoc\supdates.
-D 2022-08-12T13:07:21.618
+C Minor\swasm-related\sdoc\sclarification\sand\sremove\san\sobsolete\scode\scomment.
+D 2022-08-12T17:55:18.237
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -478,7 +478,7 @@ F ext/wasm/GNUmakefile 5359a37fc13b68fad2259228590450339a0c59687744edd0db7bb93d3
 F ext/wasm/README.md 4b00ae7c7d93c4591251245f0996a319e2651361013c98d2efb0b026771b7331
 F ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-api c5eaceabb9e759aaae7d3101a4a3e542f96ab2c99d89a80ce20ec18c23115f33
 F ext/wasm/api/EXPORTED_RUNTIME_METHODS.sqlite3-api 1ec3c73e7d66e95529c3c64ac3de2470b0e9e7fbf7a5b41261c367cf4f1b7287
-F ext/wasm/api/README.md b3c502bda9a7da0621edcbbd055b9c498a0cfed09ffed59aa026461e6e514ed1
+F ext/wasm/api/README.md b6d0fb64bfdf7bf9ce6938ea4104228f6f5bbef600f5d910b2f8c8694195988c
 F ext/wasm/api/post-js-footer.js b64319261d920211b8700004d08b956a6c285f3b0bba81456260a713ed04900c
 F ext/wasm/api/post-js-header.js 0e853b78db83cb1c06b01663549e0e8b4f377f12f5a2d9a4a06cb776c003880b
 F ext/wasm/api/sqlite3-api-cleanup.js 149fd63a0400cd1d69548887ffde2ed89c13283384a63c2e9fcfc695e38a9e11
@@ -503,7 +503,7 @@ F ext/wasm/jaccwabyt/jaccwabyt.md 447cc02b598f7792edaa8ae6853a7847b8178a18ed356a
 F ext/wasm/jaccwabyt/jaccwabyt_test.c 39e4b865a33548f943e2eb9dd0dc8d619a80de05d5300668e9960fff30d0d36f
 F ext/wasm/jaccwabyt/jaccwabyt_test.exports 5ff001ef975c426ffe88d7d8a6e96ec725e568d2c2307c416902059339c06f19
 F ext/wasm/testing1.html 0bf3ff224628c1f1e3ed22a2dc1837c6c73722ad8c0ad9c8e6fb9e6047667231
-F ext/wasm/testing1.js aef553114aada187eef125f5361fd1e58bf5e8e97acfa65c10cb41dd60295daa
+F ext/wasm/testing1.js cba7134901a965743fa9289d82447ab71de4690b1ee5d06f6cb83e8b569d7943
 F ext/wasm/testing2.html 73e5048e666fd6fb28b6e635677a9810e1e139c599ddcf28d687c982134b92b8
 F ext/wasm/testing2.js d37433c601f88ed275712c1cfc92d3fb36c7c22e1ed8c7396fb2359e42238ebc
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
@@ -1999,8 +1999,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 06b6113783dd81252a5dd125e1cddb52a9d4e387c74cfb3ba88475e47a31060a
-R a62abfa1bd7be911f96cf33e0210940f
+P 4c10b9b18feca82440273f8192fef951ad051bbfd8aad4d3c840cf6375130afd
+R 3e055b525bbc2100d8c4c001b630489b
 U stephan
-Z 65285bd6e6db388430367f6dfb4bd451
+Z 4d766400503717808861a1e631c17801
 # Remove this line to create a well-formed Fossil manifest.
