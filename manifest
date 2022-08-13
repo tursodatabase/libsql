@@ -1,5 +1,5 @@
-C Cleanups\sin\sthe\swasmfs/opfs\sintegration\sbut\sdisable\sit\sin\sorder\sto\sget\sthe\sbuild\sinto\sa\sknown-working\sstate\sbefore\scontinuing\swith\sexperimentation.
-D 2022-08-13T13:56:00.886
+C Add\sscratchpad/test\sapp\sfor\sWASMFS/OPFS\srunning\sin\sthe\smain\swindow\sthread.\sEnable\sWASMFS\sby\sdefault\sin\sthe\slibrary\sbuild.
+D 2022-08-13T16:11:38.873
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -474,7 +474,7 @@ F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
 F ext/userauth/userauth.c 7f00cded7dcaa5d47f54539b290a43d2e59f4b1eb5f447545fa865f002fc80cb
 F ext/wasm/EXPORTED_FUNCTIONS.fiddle db7a4602f043cf4a5e4135be3609a487f9f1c83f05778bfbdf93766be4541b96
 F ext/wasm/EXPORTED_RUNTIME_METHODS.fiddle a004bd5eeeda6d3b28d16779b7f1a80305bfe009dfc7f0721b042967f0d39d02
-F ext/wasm/GNUmakefile 15ee5d1e182bcee23f0a5fa8062697f4135606c642efe600fa2d5e794ad71588
+F ext/wasm/GNUmakefile 1bcfcde973bfbf1ea59acc551728aaf0fc74fcb52ddcd219a9b0f93e42c744f0
 F ext/wasm/README.md 4b00ae7c7d93c4591251245f0996a319e2651361013c98d2efb0b026771b7331
 F ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-api 77ef4bcf37e362b9ad61f9c175dfc0f1b3e571563fb311b96581cf422ee6a8ec
 F ext/wasm/api/EXPORTED_RUNTIME_METHODS.sqlite3-api 1ec3c73e7d66e95529c3c64ac3de2470b0e9e7fbf7a5b41261c367cf4f1b7287
@@ -502,6 +502,8 @@ F ext/wasm/jaccwabyt/jaccwabyt.js 0d7f32817456a0f3937fcfd934afeb32154ca33580ab26
 F ext/wasm/jaccwabyt/jaccwabyt.md 447cc02b598f7792edaa8ae6853a7847b8178a18ed356afacbdbf312b2588106
 F ext/wasm/jaccwabyt/jaccwabyt_test.c 39e4b865a33548f943e2eb9dd0dc8d619a80de05d5300668e9960fff30d0d36f
 F ext/wasm/jaccwabyt/jaccwabyt_test.exports 5ff001ef975c426ffe88d7d8a6e96ec725e568d2c2307c416902059339c06f19
+F ext/wasm/scratchpad-opfs-main.html 079b6ec0b3a6c35c9ac92e639ede1b253b901c52ec6a793e5411babb708ace40
+F ext/wasm/scratchpad-opfs-main.js 55ac5a0841d6436ac2990a4c26fea7f7fb98b0cfbb02ac169dc91f3c9ed5303d
 F ext/wasm/testing1.html 0bf3ff224628c1f1e3ed22a2dc1837c6c73722ad8c0ad9c8e6fb9e6047667231
 F ext/wasm/testing1.js a25069e20d5f8dc548cc98bcf7002cec812084421a1f7f70ffae2c706d1167b2
 F ext/wasm/testing2.html 73e5048e666fd6fb28b6e635677a9810e1e139c599ddcf28d687c982134b92b8
@@ -1999,8 +2001,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3bc510a614973eafa60960a99bedb063594a693bdbfd80d7eb480b293b4ab811
-R a2b4eef7c61958031f6931d9df602912
+P 41045be752a5bd7966849638f3ca56f4905308df70f79f2cb6196ca7dce9d525
+R 767e1ce7730172518cd5acb6e01d575b
 U stephan
-Z 3b291cb3c0f3e97625538cf3bb7fa23a
+Z 6b8d7c0e41c798b0afb745ee9b8f505a
 # Remove this line to create a well-formed Fossil manifest.

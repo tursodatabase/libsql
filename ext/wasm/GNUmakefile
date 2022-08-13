@@ -168,7 +168,6 @@ emcc.cflags :=
 emcc.cflags += -std=c99 -fPIC
 # -------------^^^^^^^^ we currently need c99 for WASM-specific sqlite3 APIs.
 emcc.cflags += -I. -I$(dir.top) # $(SQLITE_OPT)
-emcc.cflags += -pthread
 
 ########################################################################
 # emcc flags specific to building the final .js/.wasm file...
@@ -183,36 +182,38 @@ emcc.jsflags += -sEXPORTED_RUNTIME_METHODS=FS,wasmMemory # wasmMemory==>for -sIM
 emcc.jsflags += -sUSE_CLOSURE_COMPILER=0
 emcc.jsflags += -sIMPORTED_MEMORY
 emcc.environment := -sENVIRONMENT=web
-ifeq (0,1)
+ENABLE_WASMFS := 1
+ifneq (0,$(ENABLE_WASMFS))
+  emcc.cflags += -pthread
   emcc.jsflags += -pthread -sWASMFS -sPTHREAD_POOL_SIZE=2
   emcc.environment := $(emcc.environment),worker
+else
+  emcc.jsflags += -sALLOW_MEMORY_GROWTH
+  # emcc: warning: USE_PTHREADS + ALLOW_MEMORY_GROWTH may run non-wasm code
+  #       slowly, see https://github.com/WebAssembly/design/issues/1271
+  #       [-Wpthreads-mem-growth]
 endif
 emcc.jsflags += $(emcc.environment)
 #emcc.jsflags += -sINITIAL_MEMORY=13107200
 #emcc.jsflags += -sTOTAL_STACK=4194304
 emcc.jsflags += -sEXPORT_NAME=sqlite3InitModule
 emcc.jsflags += -sGLOBAL_BASE=4096 # HYPOTHETICALLY keep func table indexes from overlapping w/ heap addr.
-emcc.jsflags +=--post-js=$(post-js.js)
+emcc.jsflags += --post-js=$(post-js.js)
 #emcc.jsflags += -sSTRICT # fails due to missing __syscall_...()
 #emcc.jsflags += -sALLOW_UNIMPLEMENTED_SYSCALLS
 #emcc.jsflags += -sFILESYSTEM=0 # only for experimentation. sqlite3 needs the FS API
 #emcc.jsflags += -sABORTING_MALLOC
-emcc.jsflags += -sALLOW_MEMORY_GROWTH
 emcc.jsflags += -sALLOW_TABLE_GROWTH
 emcc.jsflags += -Wno-limited-postlink-optimizations
 # ^^^^^ it likes to warn when we have "limited optimizations" via the -g3 flag.
-#emcc.jsflags += -sMALLOC=emmalloc
-#emcc.jsflags += -sMALLOC=dlmalloc # a good 8k larger than emmalloc
 #emcc.jsflags += -sSTANDALONE_WASM # causes OOM errors, not sure why
-#emcc.jsflags += --import=foo_bar
-#emcc.jsflags += --no-gc-sections
 # https://lld.llvm.org/WebAssembly.html
 emcc.jsflags += -sERROR_ON_UNDEFINED_SYMBOLS=0
 emcc.jsflags += -sLLD_REPORT_UNDEFINED
 #emcc.jsflags += --allow-undefined
 emcc.jsflags += --import-undefined
 #emcc.jsflags += --unresolved-symbols=import-dynamic --experimental-pic
-#emcc.jsflags +=  --experimental-pic --unresolved-symbols=ingore-all --import-undefined
+#emcc.jsflags += --experimental-pic --unresolved-symbols=ingore-all --import-undefined
 #emcc.jsflags += --unresolved-symbols=ignore-all
 enable_bigint ?= 1
 ifneq (0,$(enable_bigint))
@@ -228,7 +229,7 @@ emcc.jsflags += -sMEMORY64=0
 #  new Uint8Array(heapWrappers().HEAP8U.buffer, ptr, n)
 #
 # because ptr is now a BigInt, so is invalid for passing to arguments
-# which have strict must-be-a-number requirements.
+# which have strict must-be-a-Number requirements.
 ########################################################################
 
 
