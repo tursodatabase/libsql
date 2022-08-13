@@ -1,5 +1,5 @@
-C Use\snew\s-DSQLITE_DEFAULT_UNIX_VFS="unix-none"\sfor\sfiddle\sbuild\sto\sbypass\sOPFS\slocking\serrors.
-D 2022-08-12T18:54:08.424
+C Corrected\sTextDecoder.decode()\susage\sto\srun\swhen\sits\sinput\sreferences\sa\sSharedArrayBuffer.
+D 2022-08-13T13:42:07.359
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -493,12 +493,12 @@ F ext/wasm/api/sqlite3-worker.js 1325ca8d40129a82531902a3a077b795db2eeaee81746e5
 F ext/wasm/common/SqliteTestUtil.js e41a1406f18da9224523fad0c48885caf995b56956a5b9852909c0989e687e90
 F ext/wasm/common/emscripten.css 3d253a6fdb8983a2ac983855bfbdd4b6fa1ff267c28d69513dd6ef1f289ada3f
 F ext/wasm/common/testing.css 572cf1ffae0b6eb7ca63684d3392bf350217a07b90e7a896e4fa850700c989b0
-F ext/wasm/common/whwasmutil.js 3d9deda1be718e2b10e2b6b474ba6ba857d905be314201ae5b3df5eef79f66aa
+F ext/wasm/common/whwasmutil.js 41b8e097e0a9cb07c24c0ede3c81b72470a63f4a4efb07f75586dc131569f5ae
 F ext/wasm/fiddle/emscripten.css 3d253a6fdb8983a2ac983855bfbdd4b6fa1ff267c28d69513dd6ef1f289ada3f
 F ext/wasm/fiddle/fiddle-worker.js c9d66230269cc26d33aa84501ae601c24f8697c3711be5d769c4c687bfcaba8f
 F ext/wasm/fiddle/fiddle.html 550c5aafce40bd218de9bf26192749f69f9b10bc379423ecd2e162bcef885c08
 F ext/wasm/fiddle/fiddle.js bef4b30e078445a7cd2255fba07acd083aa1c3cc074a73b38ea847fd340f1adc
-F ext/wasm/jaccwabyt/jaccwabyt.js 99b424b4d467d4544e82615b58e2fe07532a898540bf9de2a985f3c21e7082b2
+F ext/wasm/jaccwabyt/jaccwabyt.js 0d7f32817456a0f3937fcfd934afeb32154ca33580ab264dab6c285e6dbbd215
 F ext/wasm/jaccwabyt/jaccwabyt.md 447cc02b598f7792edaa8ae6853a7847b8178a18ed356afacbdbf312b2588106
 F ext/wasm/jaccwabyt/jaccwabyt_test.c 39e4b865a33548f943e2eb9dd0dc8d619a80de05d5300668e9960fff30d0d36f
 F ext/wasm/jaccwabyt/jaccwabyt_test.exports 5ff001ef975c426ffe88d7d8a6e96ec725e568d2c2307c416902059339c06f19
@@ -1999,8 +1999,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f0ca02611484f5031076d7fae88845e9931715e9108ec0572629200d4f6636ef 49828bdec5f926cd18a069d39a5db0b1e1f3528a2affcfbaa1cf7b98aca51b3b
-R cdc00c7ef64a776b22c16fe2546768af
+P b3a93ec75acb38535691d6eaceb5a1a218a5ee3f755a1e12c9255b90567fc795
+R 243b6e88d1ed7db99fd955f733548f1c
 U stephan
-Z abf4f77a1cc7fc6241b9153ec6b252c6
+Z ddf468f7ec78d048a46e361913445144
 # Remove this line to create a well-formed Fossil manifest.

@@ -669,6 +669,18 @@ self.WhWasmUtilInstaller = function(target){
     return pos - ptr;
   };
 
+  /** Internal helper to use in operations which need to distinguish
+      between SharedArrayBuffer heap memory and non-shared heap. */
+  const __SAB = ('undefined'===typeof SharedArrayBuffer)
+        ? function(){} : SharedArrayBuffer;
+  const __utf8Decode = function(arrayBuffer, begin, end){
+    return cache.utf8Decoder.decode(
+      (arrayBuffer.buffer instanceof __SAB)
+        ? arrayBuffer.slice(begin, end)
+        : arrayBuffer.subarray(begin, end)
+    );
+  };
+
   /**
      Expects ptr to be a pointer into the WASM heap memory which
      refers to a NUL-terminated C-style string encoded as UTF-8. This
@@ -678,11 +690,7 @@ self.WhWasmUtilInstaller = function(target){
   */
   target.cstringToJs = function(ptr){
     const n = this.cstrlen(ptr);
-    if(null===n) return n;
-    return n
-      ? cache.utf8Decoder.decode(
-        new Uint8Array(heapWrappers().HEAP8U.buffer, ptr, n)
-      ) : "";
+    return n ? __utf8Decode(heapWrappers().HEAP8U, ptr, ptr+n) : (null===n ? n : "");
   }.bind(target);
 
   /**
@@ -1070,11 +1078,11 @@ self.WhWasmUtilInstaller = function(target){
   
   /**
      Looks up a WASM-exported function named fname from
-     target.exports.  If found, it is called, passed all remaining
+     target.exports. If found, it is called, passed all remaining
      arguments, and its return value is returned to xCall's caller. If
      not found, an exception is thrown. This function does no
-     conversion of argument or return types, but see xWrap()
-     and xCallWrapped() for variants which do.
+     conversion of argument or return types, but see xWrap() and
+     xCallWrapped() for variants which do.
 
      As a special case, if passed only 1 argument after the name and
      that argument in an Array, that array's entries become the
