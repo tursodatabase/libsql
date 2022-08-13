@@ -576,6 +576,55 @@ self.sqlite3ApiBootstrap = function(config){
       ["sqlite3_total_changes64", "i64", ["sqlite3*"]]
   ];
 
+  /** State for sqlite3_web_persistent_dir(). */
+  let __persistentDir;
+  /**
+     An experiment. Do not use.
+
+     If the wasm environment has a persistent storage directory,
+     its path is returned by this function. If it does not then
+     it returns one of:
+
+     - `undefined` if initIfNeeded is false and this function has
+       never been called before.
+
+     - `""` if no persistent storage is available.
+
+     Note that in both cases the return value is falsy.
+  */
+  capi.sqlite3_web_persistent_dir = function(initIfNeeded=true){
+    if(undefined !== __persistentDir) return __persistentDir;
+    else if(!initIfNeeded) return;
+    // If we have no OPFS, there is no persistent dir
+    if(!self.FileSystemHandle || !self.FileSystemDirectoryHandle
+       || !self.FileSystemFileHandle){
+      return __persistentDir = "";
+    }
+    try{
+      if(0===this.wasm.xCall('sqlite3_wasm_init_opfs')){
+        /** OPFS does not support locking and will trigger errors if
+            we try to lock. We don't _really_ want to
+            _unconditionally_ install a non-locking sqlite3 VFS as the
+            default, but we do so here for simplicy's sake for the
+            time being. That said: locking is a no-op on all of the
+            current WASM storage, so this isn't (currently) as bad as
+            it may initially seem. */
+        const pVfs = this.sqlite3_vfs_find("unix-none");
+        if(pVfs){
+          this.sqlite3_vfs_register(pVfs,1);
+          //warn("Installed 'unix-none' as the default sqlite3 VFS.");
+        }
+        return __persistentDir =
+          "/persistent" /* name is hard-coded in sqlite3_wasm_init_opfs()!*/;
+      }else{
+        return __persistentDir = "";
+      }
+    }catch(e){
+      // sqlite3_wasm_init_opfs() is not available
+      return __persistentDir = "";
+    }
+  }.bind(capi);
+
   /* The remainder of the API will be set up in later steps. */
   return {
     capi,

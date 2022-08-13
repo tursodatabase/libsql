@@ -127,9 +127,9 @@ sqlite3-api.jses := \
   $(dir.jacc)/jaccwabyt.js \
   $(dir.api)/sqlite3-api-glue.js \
   $(dir.api)/sqlite3-api-oo1.js \
-  $(dir.api)/sqlite3-api-worker.js \
-  $(dir.api)/sqlite3-api-opfs.js \
-  $(dir.api)/sqlite3-api-cleanup.js
+  $(dir.api)/sqlite3-api-worker.js
+#sqlite3-api.jses += $(dir.api)/sqlite3-api-opfs.js 
+sqlite3-api.jses += $(dir.api)/sqlite3-api-cleanup.js
 
 sqlite3-api.js := $(dir.api)/sqlite3-api.js
 CLEAN_FILES += $(sqlite3-api.js)
@@ -174,7 +174,6 @@ emcc.cflags += -pthread
 # emcc flags specific to building the final .js/.wasm file...
 emcc.jsflags := -fPIC
 emcc.jsflags += --no-entry
-emcc.jsflags += -sENVIRONMENT=web,worker
 emcc.jsflags += -sMODULARIZE
 emcc.jsflags += -sSTRICT_JS
 emcc.jsflags += -sDYNAMIC_EXECUTION=0
@@ -183,7 +182,12 @@ emcc.jsflags += -sEXPORTED_FUNCTIONS=@$(dir.wasm)/EXPORTED_FUNCTIONS.api
 emcc.jsflags += -sEXPORTED_RUNTIME_METHODS=FS,wasmMemory # wasmMemory==>for -sIMPORTED_MEMORY
 emcc.jsflags += -sUSE_CLOSURE_COMPILER=0
 emcc.jsflags += -sIMPORTED_MEMORY
-emcc.jsflags += -pthread -sWASMFS
+emcc.environment := -sENVIRONMENT=web
+ifeq (0,1)
+  emcc.jsflags += -pthread -sWASMFS -sPTHREAD_POOL_SIZE=2
+  emcc.environment := $(emcc.environment),worker
+endif
+emcc.jsflags += $(emcc.environment)
 #emcc.jsflags += -sINITIAL_MEMORY=13107200
 #emcc.jsflags += -sTOTAL_STACK=4194304
 emcc.jsflags += -sEXPORT_NAME=sqlite3InitModule
@@ -235,11 +239,14 @@ $(dir.api)/sqlite3-wasm.o: $(dir.top)/sqlite3.c
 $(dir.api)/wasm_util.o: emcc.cflags += $(SQLITE_OPT)
 sqlite3.wasm.c := $(dir.api)/sqlite3-wasm.c \
     $(dir.jacc)/jaccwabyt_test.c
-# ^^^ FIXME (how?): jaccwabyt_test.c is only needed for the test
-# apps. However, we want to test the release builds with those apps,
-# so we cannot simply elide that file in release builds. That
-# component is critical to the VFS bindings so needs to be tested
-# along with the core APIs.
+# ^^^ FIXME (how?): jaccwabyt_test.c is only needed for the test apps,
+# so we don't really want to include it in release builds. However, we
+# want to test the release builds with those apps, so we cannot simply
+# elide that file in release builds. That component is critical to the
+# VFS bindings so needs to be tested along with the core APIs.
+ifneq (,$(filter -sWASMFS,$(emcc.jsflags)))
+  $(dir.api)/sqlite3-wasm.o: emcc.cflags+=-DSQLITE_WASM_OPFS
+endif
 define WASM_C_COMPILE
 $(1).o := $$(subst .c,.o,$(1))
 sqlite3.wasm.obj += $$($(1).o)

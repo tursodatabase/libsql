@@ -20,7 +20,7 @@
     id: undefined
   };
   const eOutput = document.querySelector('#test-output');
-  const log = console.log.bind(console)
+  const log = console.log.bind(console);
   const logHtml = function(cssClass,...args){
     log.apply(this, args);
     const ln = document.createElement('div');

@@ -19,7 +19,8 @@
   const toss = function(...args){throw new Error(args.join(' '))};
   const debug = console.debug.bind(console);
   const eOutput = document.querySelector('#test-output');
-  const log = console.log.bind(console)
+  const log = console.log.bind(console),
+        warn = console.warn.bind(console);
   const logHtml = function(...args){
     log.apply(this, args);
     const ln = document.createElement('div');
@@ -1012,7 +1013,7 @@
           wasm = capi.wasm;
     log("Loaded module:",capi.sqlite3_libversion(), capi.sqlite3_sourceid());
     log("Build options:",wasm.compileOptionUsed());
-
+    capi.sqlite3_web_persistent_dir()/*will install OPFS if available, plus a and non-locking VFS*/;
     if(1){
       /* Let's grab those last few lines of test coverage for
          sqlite3-api.js... */
