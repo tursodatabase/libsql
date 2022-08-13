@@ -24,7 +24,7 @@
   const stderr = error;
 
   const test1 = function(db){
-    db.execMulti("create table if not exists t(a);")
+    db.exec("create table if not exists t(a);")
       .callInTransaction(function(db){
         db.prepare("insert into t(a) values(?)")
           .bind(new Date().getTime())

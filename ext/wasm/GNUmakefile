@@ -182,9 +182,10 @@ emcc.jsflags += -sEXPORTED_RUNTIME_METHODS=FS,wasmMemory # wasmMemory==>for -sIM
 emcc.jsflags += -sUSE_CLOSURE_COMPILER=0
 emcc.jsflags += -sIMPORTED_MEMORY
 emcc.environment := -sENVIRONMENT=web
-ENABLE_WASMFS := 1
+ENABLE_WASMFS ?= 1
 ifneq (0,$(ENABLE_WASMFS))
   emcc.cflags += -pthread
+  emcc.cflags += '-DSQLITE_DEFAULT_UNIX_VFS="unix-none"'
   emcc.jsflags += -pthread -sWASMFS -sPTHREAD_POOL_SIZE=2
   emcc.environment := $(emcc.environment),worker
 else
