@@ -296,23 +296,7 @@
      emcc ... -sMODULARIZE=1 -sEXPORT_NAME=initFiddleModule
   */
   initFiddleModule(fiddleModule).then(function(thisModule){
-    fiddleModule.fsUnlink = fiddleModule.cwrap('sqlite3_wasm_vfs_unlink','number',['string']);
-    (function initOpfs(){
-      if(!self.FileSystemHandle || !self.FileSystemDirectoryHandle
-         || !self.FileSystemFileHandle){
-        stdout("OPFS unavailable. All DB state is transient.");
-        return;
-      }
-      try {
-        if(0===fiddleModule.ccall('sqlite3_wasm_init_opfs', undefined)){
-          stdout("Initialized OPFS WASMFS backend.");
-        }else{
-          stderr("Initialization of OPFS WASMFS backend failed.");
-        }
-      }catch(e){
-        stderr("Apparently missing WASMFS:",e.message);
-      }
-    })();
+    thisModule.fsUnlink = thisModule.cwrap('sqlite3_wasm_vfs_unlink','number',['string']);
     wMsg('fiddle-ready');
   });
 })();
