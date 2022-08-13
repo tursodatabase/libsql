@@ -1,5 +1,5 @@
-C wasmfs:\suse\sunix-none\sVFS\sby\sdefault\sto\savoid\slocking\serrors\sin\snon-OPFS\smode.
-D 2022-08-13T16:36:06.930
+C Add\sworker-style\svariant\sof\sthe\stests\sadded\sin\s[ae24ac0f7dd9],\sbut\sbuilding\sthis\swith\swasmfs\scauses\sthem\sto\sthrow\sinexplicable\sexceptions\sfrom\sthe\sEmscripten\sglue\s(without\swasmfs\sit\sbuilds\sand\sruns\sfine,\sbut\sstorage\sis\snot\spersistent).
+D 2022-08-13T17:13:16.407
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -481,6 +481,7 @@ F ext/wasm/api/EXPORTED_RUNTIME_METHODS.sqlite3-api 1ec3c73e7d66e95529c3c64ac3de
 F ext/wasm/api/README.md b6d0fb64bfdf7bf9ce6938ea4104228f6f5bbef600f5d910b2f8c8694195988c
 F ext/wasm/api/post-js-footer.js b64319261d920211b8700004d08b956a6c285f3b0bba81456260a713ed04900c
 F ext/wasm/api/post-js-header.js 0e853b78db83cb1c06b01663549e0e8b4f377f12f5a2d9a4a06cb776c003880b
+F ext/wasm/api/scratchpad-opfs-worker.js ccafcbc548f8ead91e5151c26ea7fb4ded705fd6b65c4557c6c2bcd6a8922d85
 F ext/wasm/api/sqlite3-api-cleanup.js 149fd63a0400cd1d69548887ffde2ed89c13283384a63c2e9fcfc695e38a9e11
 F ext/wasm/api/sqlite3-api-glue.js 82c09f49c69984009ba5af2b628e67cc26c5dd203d383cd3091d40dab4e6514b
 F ext/wasm/api/sqlite3-api-oo1.js a3469bbb217b9787ba9aa6216423ec55cf9457fecefb9698e433d0e1cc4cc918
@@ -504,6 +505,8 @@ F ext/wasm/jaccwabyt/jaccwabyt_test.c 39e4b865a33548f943e2eb9dd0dc8d619a80de05d5
 F ext/wasm/jaccwabyt/jaccwabyt_test.exports 5ff001ef975c426ffe88d7d8a6e96ec725e568d2c2307c416902059339c06f19
 F ext/wasm/scratchpad-opfs-main.html 079b6ec0b3a6c35c9ac92e639ede1b253b901c52ec6a793e5411babb708ace40
 F ext/wasm/scratchpad-opfs-main.js a819ed26047c5539630cea59add6a5082ba04cdf82da2df2e0707d4d69af6cb1
+F ext/wasm/scratchpad-opfs-worker.html 66c1d15d678f3bd306373d76b61c6c8aef988f61f4a8dd40185d452f9c6d2bf5
+F ext/wasm/scratchpad-opfs-worker.js c42a10db96e1c313175e2817766789aa4ce175c9574532e76082e69ba7d08f05
 F ext/wasm/testing1.html 0bf3ff224628c1f1e3ed22a2dc1837c6c73722ad8c0ad9c8e6fb9e6047667231
 F ext/wasm/testing1.js a25069e20d5f8dc548cc98bcf7002cec812084421a1f7f70ffae2c706d1167b2
 F ext/wasm/testing2.html 73e5048e666fd6fb28b6e635677a9810e1e139c599ddcf28d687c982134b92b8
@@ -2001,8 +2004,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ae24ac0f7dd9e12a40de0f6ccd61a16f010804da454085f886c217cc600cdba4
-R 04c2d08427afe72dca8dfa59a558b201
+P 75561dea1a1afe9cb0a7d58dd82fa519e51cf42e330922cfd8e9ccdf6db4dc0f
+R 2cbf5edf37d119630242142baab50d57
 U stephan
-Z 16beafa09646f238ac043a3e648d875d
+Z 4aeebb4853d4fddddabda504cb5e02f4
 # Remove this line to create a well-formed Fossil manifest.
