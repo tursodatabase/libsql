@@ -13,7 +13,6 @@
 # The focus of this file is testing of the proper handling of conversions
 # to the native text representation.
 #
-# $Id: enc3.test,v 1.8 2008/01/22 01:48:09 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
