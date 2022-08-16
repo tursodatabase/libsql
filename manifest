@@ -1,5 +1,5 @@
-C Extra\stest\sfor\sSQLITE_MAX_COMPOUND_SELECT.
-D 2022-08-15T19:23:15.090
+C Add\sassert()\sstatements\sto\sverify\sthat\sthe\sSQLITE_OPEN_EXCLUSIVE\sflag\sis\salways\spassed\sto\sthe\sVFS\swhen\sopening\sa\stemporary\sfile.
+D 2022-08-16T10:52:35.403
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -560,7 +560,7 @@ F src/mem2.c c8bfc9446fd0798bddd495eb5d9dbafa7d4b7287d8c22d50a83ac9daa26d8a75
 F src/mem3.c 30301196cace2a085cbedee1326a49f4b26deff0af68774ca82c1f7c06fda4f6
 F src/mem5.c 5a3dbd8ac8a6501152a4fc1fcae9b0900c2d7eb0589c4ec7456fdde15725a26c
 F src/memdb.c c2dc88f97c410eb68a24468344b65526685e18354ddfd15906750c1eaf9dc2dd
-F src/memjournal.c 8bd50ae6d9c6d34b3a96cc3b4f567f9935dc358444d872ab48901a8c11ad82a6
+F src/memjournal.c c283c6c95d940eb9dc70f1863eef3ee40382dbd35e5a1108026e7817c206e8a0
 F src/msvc.h 3a15918220367a8876be3fa4f2abe423a861491e84b864fb2b7426bf022a28f8
 F src/mutex.c 5e3409715552348732e97b9194abe92fdfcd934cfb681df4ba0ab87ac6c18d25
 F src/mutex.h a7b2293c48db5f27007c3bdb21d438873637d12658f5a0bf8ad025bb96803c4a
@@ -568,14 +568,14 @@ F src/mutex_noop.c 9d4309c075ba9cc7249e19412d3d62f7f94839c4
 F src/mutex_unix.c dd2b3f1cc1863079bc1349ac0fec395a500090c4fe4e11ab775310a49f2f956d
 F src/mutex_w32.c caa50e1c0258ac4443f52e00fe8aaea73b6d0728bd8856bedfff822cae418541
 F src/notify.c 89a97dc854c3aa62ad5f384ef50c5a4a11d70fcc69f86de3e991573421130ed6
-F src/os.c b1c4f2d485961e9a5b6b648c36687d25047c252222e9660b7cc25a6e1ea436ab
+F src/os.c 0eb831ba3575af5277e47f4edd14fdfc90025c67eb25ce5cda634518d308d4e9
 F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c 81e24bcad127faf32da162a4bb06e7a4604bea76fe7b1ed5b01742e9eb320554
 F src/os_win.c a8ea80037e81127ca01959daa87387cc135f325c88dc745376c4f760de852a10
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c 74596fc3d5d8a50de32c37225fc300cccd5ea27ea303c5f4b845d6572f999c5f
+F src/pager.c c60031c483960660853dfecf14c8e830503baab1f638ac997f0144f1bd3e1781
 F src/pager.h f82e9844166e1585f5786837ddc7709966138ced17f568c16af7ccf946c2baa3
 F src/parse.y 8e67d820030d2655b9942ffe61c1e7e6b96cea2f2f72183533299393907d0564
 F src/pcache.c 084e638432c610f95aea72b8509f0845d2791293f39d1b82f0c0a7e089c3bb6b
@@ -1999,8 +1999,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6170e638ebeb12cc40c3247324237978401f701afc270de88ad03e183e82cefc
-R 5fdd415975dfc9f1efaf302c20079f22
+P c271096736889530f392ff37e631a77f3bc9c46b290dbda245fa05249f4410fc
+R 3f7d8ed697988ef9ad8d4dda04b632a0
 U dan
-Z 538d1647acf283a5b618d8240e7b7cf4
+Z 207999dde59e8e595694810745e7b969
 # Remove this line to create a well-formed Fossil manifest.
