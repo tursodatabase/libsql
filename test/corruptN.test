@@ -141,12 +141,15 @@ do_test 2.0 {
 | end c-b92b.txt.db
 }]} {}
 
-prng_seed 0 db
-do_catchsql_test 2.1 {
-SELECT count(*) FROM sqlite_schema;
-WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<1000)
-INSERT INTO t1(a) SELECT randomblob(null) FROM c;
-} {1 {database disk image is malformed}}
+# This test only works with the legacy RC4 PRNG
+if 0 {
+  prng_seed 0 db
+  do_catchsql_test 2.1 {
+  SELECT count(*) FROM sqlite_schema;
+  WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<1000)
+  INSERT INTO t1(a) SELECT randomblob(null) FROM c;
+  } {1 {database disk image is malformed}}
+}
 
 reset_db
 if {![info exists ::G(perm:presql)]} {
