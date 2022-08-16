@@ -607,6 +607,7 @@ mod bindings {
         }
 
         bindings
+            .layout_tests(false)
             .generate()
             .unwrap_or_else(|_| panic!("could not run bindgen on header {}", header))
             .write(Box::new(&mut output))
