@@ -45,6 +45,7 @@ SQLITE_OPT = \
   -DSQLITE_OMIT_LOAD_EXTENSION \
   -DSQLITE_OMIT_DEPRECATED \
   -DSQLITE_OMIT_UTF16 \
+  -DSQLITE_OMIT_SHARED_CACHE \
   -DSQLITE_THREADSAFE=0
 #SQLITE_OPT += -DSQLITE_ENABLE_MEMSYS5
 $(dir.top)/sqlite3.c:
@@ -131,7 +132,7 @@ sqlite3-api.jses := \
 #sqlite3-api.jses += $(dir.api)/sqlite3-api-opfs.js 
 sqlite3-api.jses += $(dir.api)/sqlite3-api-cleanup.js
 
-sqlite3-api.js := $(dir.api)/sqlite3-api.js
+sqlite3-api.js := sqlite3-api.js
 CLEAN_FILES += $(sqlite3-api.js)
 $(sqlite3-api.js): $(sqlite3-api.jses) $(MAKEFILE)
 	@echo "Making $@..."
@@ -141,7 +142,7 @@ $(sqlite3-api.js): $(sqlite3-api.jses) $(MAKEFILE)
 		echo "/* END FILE: $$i */"; \
 	done > $@
 
-post-js.js := $(dir.api)/post-js.js
+post-js.js := post-js.js
 CLEAN_FILES += $(post-js.js)
 post-jses := \
   $(dir.api)/post-js-header.js \
@@ -185,8 +186,8 @@ emcc.environment := -sENVIRONMENT=web
 ENABLE_WASMFS ?= 1
 ifneq (0,$(ENABLE_WASMFS))
   emcc.cflags += -pthread
-  emcc.cflags += '-DSQLITE_DEFAULT_UNIX_VFS="unix-none"'
   emcc.jsflags += -pthread -sWASMFS -sPTHREAD_POOL_SIZE=2
+  emcc.cflags += '-DSQLITE_DEFAULT_UNIX_VFS="unix-none"'
   emcc.environment := $(emcc.environment),worker
 else
   emcc.jsflags += -sALLOW_MEMORY_GROWTH
@@ -234,8 +235,13 @@ emcc.jsflags += -sMEMORY64=0
 ########################################################################
 
 
-sqlite3.js := $(dir.api)/sqlite3.js
-sqlite3.wasm := $(dir.api)/sqlite3.wasm
+########################################################################
+# Maintenance reminder: the output .js and .wasm files of emcc must be
+# in _this_ dir, rather than a subdir, or else parts of the generated
+# code get confused and cannot load property (namely, the
+# sqlite3.worker.js generated in conjunction with -sWASMFS).
+sqlite3.js := sqlite3.js
+sqlite3.wasm := sqlite3.wasm
 $(dir.api)/sqlite3-wasm.o: emcc.cflags += $(SQLITE_OPT)
 $(dir.api)/sqlite3-wasm.o: $(dir.top)/sqlite3.c
 $(dir.api)/wasm_util.o: emcc.cflags += $(SQLITE_OPT)
@@ -261,7 +267,7 @@ $(sqlite3.js):
 $(sqlite3.js): $(MAKEFILE) $(sqlite3.wasm.obj) \
     EXPORTED_FUNCTIONS.api \
     $(post-js.js)
-	$(emcc.bin) -o $@ $(emcc_opt) $(emcc.flags) $(emcc.jsflags) $(sqlite3.wasm.obj)
+	$(emcc.bin) -o $(sqlite3.js) $(emcc_opt) $(emcc.flags) $(emcc.jsflags) $(sqlite3.wasm.obj)
 	chmod -x $(sqlite3.wasm)
 ifneq (,$(wasm-strip))
 	$(wasm-strip) $(sqlite3.wasm)

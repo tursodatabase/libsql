@@ -1,9 +1,9 @@
-C Add\sworker-style\svariant\sof\sthe\stests\sadded\sin\s[ae24ac0f7dd9],\sbut\sbuilding\sthis\swith\swasmfs\scauses\sthem\sto\sthrow\sinexplicable\sexceptions\sfrom\sthe\sEmscripten\sglue\s(without\swasmfs\sit\sbuilds\sand\sruns\sfine,\sbut\sstorage\sis\snot\spersistent).
-D 2022-08-13T17:13:16.407
+C wasm:\sdisable\sshared\scache\smode\sby\sdefault.\sExperimentally\smove\swasm-build\sgenerated\sfiles\sup\sone\sdir\sto\srule\sthe\sextra\sdir\sout\sas\sa\sproblem\sfor\sEmscripten-related\sworker-loading\sfailures.
+D 2022-08-16T16:06:12.337
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in 419791c8e6f5fda6bf33977680e8f3bf782f5f6ec56b5c22567912c7f8fef353
+F Makefile.in 7d19258e83981c69dcdc63c46dfa83de907fc1c1c0472a6dc0d31b2fae376764
 F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
 F Makefile.msc d547a2fdba38a1c6cd1954977d0b0cc017f5f8fbfbc65287bf8d335808938016
 F README.md 8b8df9ca852aeac4864eb1e400002633ee6db84065bd01b78c33817f97d31f5e
@@ -474,7 +474,7 @@ F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
 F ext/userauth/userauth.c 7f00cded7dcaa5d47f54539b290a43d2e59f4b1eb5f447545fa865f002fc80cb
 F ext/wasm/EXPORTED_FUNCTIONS.fiddle db7a4602f043cf4a5e4135be3609a487f9f1c83f05778bfbdf93766be4541b96
 F ext/wasm/EXPORTED_RUNTIME_METHODS.fiddle a004bd5eeeda6d3b28d16779b7f1a80305bfe009dfc7f0721b042967f0d39d02
-F ext/wasm/GNUmakefile 5c9b08139739819fc6223954c1b832d90398e9115789189ab39e5fbc6c764269
+F ext/wasm/GNUmakefile e3f2a8ce484eea0f087b31f5580b83c136fb6237da26f33f2c1d69f0f31ab94b
 F ext/wasm/README.md 4b00ae7c7d93c4591251245f0996a319e2651361013c98d2efb0b026771b7331
 F ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-api 77ef4bcf37e362b9ad61f9c175dfc0f1b3e571563fb311b96581cf422ee6a8ec
 F ext/wasm/api/EXPORTED_RUNTIME_METHODS.sqlite3-api 1ec3c73e7d66e95529c3c64ac3de2470b0e9e7fbf7a5b41261c367cf4f1b7287
@@ -2004,8 +2004,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 75561dea1a1afe9cb0a7d58dd82fa519e51cf42e330922cfd8e9ccdf6db4dc0f
-R 2cbf5edf37d119630242142baab50d57
+P 6401595e59179c5c0f6e51c5362cf4391787e7a55b9c6ca655746e30d3251f2b
+R 658c31cfb5b14194f7082d626102688f
 U stephan
-Z 4aeebb4853d4fddddabda504cb5e02f4
+Z ece080cb3d48a7dbb6a6c937a212c0a6
 # Remove this line to create a well-formed Fossil manifest.

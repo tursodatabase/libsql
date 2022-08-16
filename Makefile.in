@@ -1565,6 +1565,7 @@ emcc_flags = $(emcc_opt) \
         -DSQLITE_THREADSAFE=0 \
         -DSQLITE_OMIT_UTF16 \
         -DSQLITE_OMIT_DEPRECATED \
+        -DSQLITE_OMIT_SHARED_CACHE \
         $(emcc_flags_opfs)
 $(fiddle_module_js): Makefile $(sqlite3_wasm_c) shell.c \
     $(wasm_dir)/EXPORTED_RUNTIME_METHODS.fiddle \
