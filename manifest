@@ -1,5 +1,5 @@
-C Omit\san\sunnecessary\stest\scase\sfrom\scorruptN.test\sthat\sdoes\snot\swork\swith\sthe\nnew\sRFC-7539\sPRNG.
-D 2022-08-16T14:09:51.629
+C Fix\san\soff-by-one\serror\sin\sthe\sChaCha20\sinitialization\scode.
+D 2022-08-16T16:40:54.599
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -585,7 +585,7 @@ F src/pragma.c 6637d624c37a8909d3edfa9d7cf694d79b49d2a0827d8c52ef15dceb641783fa
 F src/pragma.h e690a356c18e98414d2e870ea791c1be1545a714ba623719deb63f7f226d8bb7
 F src/prepare.c c62820c15dcb63013519c8e41d9f928d7478672cc902cfd0581c733c271dbf45
 F src/printf.c e99ee9741e79ae3873458146f59644276657340385ade4e76a5f5d1c25793764
-F src/random.c ff4b47317d22c9b6af581e25cb9243190082c57daaf175ae93c4adaa223a1e5e
+F src/random.c af089dd588a3cbf85df14f9711c347f70050fcb73bc003376c8491065f6c317b
 F src/resolve.c efea4e5fbecfd6d0a9071b0be0d952620991673391b6ffaaf4c277b0bb674633
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 4750fbe9d8ecb7236baf7a9bea4299bb87126e08c209645666a0ae8f0efbe0fc
@@ -1999,8 +1999,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 084d8776fa95c75440530028171c56547a341c9a952ba2f29bb533b538603c78
-R 4a1be98000c410a528d0befc32c8b6da
+P d9e8c65ed25c4f6222c737f4244d5362dbe433d357f7d133765157446cf4e925
+R 6547827ce11f2be716204766ff5dff1b
 U drh
-Z af7ba7ff2c1330aa966ddca9675bb3a2
+Z 947a70a0b2c6f8310490779060824f95
 # Remove this line to create a well-formed Fossil manifest.

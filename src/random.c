@@ -108,7 +108,7 @@ void sqlite3_randomness(int N, void *pBuf){
     }else{
       sqlite3OsRandomness(pVfs, 44, (char*)&wsdPrng.s[4]);
     }
-    wsdPrng.s[16] = wsdPrng.s[12];
+    wsdPrng.s[15] = wsdPrng.s[12];
     wsdPrng.s[12] = 0;
     wsdPrng.n = 0;
   }
