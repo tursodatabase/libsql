@@ -15,14 +15,13 @@
 */
 'use strict';
 (function(){
-  const T = self.SqliteTestUtil;
   const toss = function(...args){throw new Error(args.join(' '))};
   const debug = console.debug.bind(console),
         log = console.log.bind(console),
         warn = console.warn.bind(console),
         error = console.error.bind(console);
 
-  const demo1 = function(sqlite3,EmModule){
+  const demo1 = function(sqlite3){
     const capi = sqlite3.capi,
           oo = sqlite3.oo1,
           wasm = capi.wasm;
@@ -206,6 +205,7 @@
           oo = sqlite3.oo1,
           wasm = capi.wasm;
     log("Loaded module:",capi.sqlite3_libversion(), capi.sqlite3_sourceid());
+    log("sqlite3 namespace:",sqlite3);
     try {
       [ demo1 ].forEach((f)=>f(sqlite3, Module))
     }catch(e){
