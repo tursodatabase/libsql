@@ -34,7 +34,7 @@
   };
 
   const stdout = console.log.bind(console);
-  const stderr = function(...args){wMsg('stderr', args);};
+  const stderr = console.error.bind(console);//function(...args){wMsg('stderr', args);};
 
   const test1 = function(db){
     db.execMulti("create table if not exists t(a);")

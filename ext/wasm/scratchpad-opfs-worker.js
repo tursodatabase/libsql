@@ -11,7 +11,7 @@
   ***********************************************************************
 
   A basic test script for sqlite3-api.js. This file must be run in
-  main JS thread and sqlite3.js must have been loaded before it.
+  main JS thread. It will load sqlite3.js in a worker thread.
 */
 'use strict';
 (function(){
@@ -19,8 +19,7 @@
   const log = console.log.bind(console),
         warn = console.warn.bind(console),
         error = console.error.bind(console);
-
-  const W = new Worker("api/scratchpad-opfs-worker.js");
+  const W = new Worker("scratchpad-opfs-worker2.js");
   self.onmessage = function(ev){
     ev = ev.data;
     const d = ev.data;
