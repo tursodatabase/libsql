@@ -27,12 +27,15 @@ static SQLITE_WSD struct sqlite3PrngType {
   u8 n;                      /* Output bytes remaining */
 } sqlite3Prng;
 
+
+/* The RFC-7539 ChaCha20 block function
+*/
 #define ROTL(a,b) (((a) << (b)) | ((a) >> (32 - (b))))
-#define QR(a, b, c, d) (			\
-	a += b,  d ^= a,  d = ROTL(d,16),	\
-	c += d,  b ^= c,  b = ROTL(b,12),	\
-	a += b,  d ^= a,  d = ROTL(d, 8),	\
-	c += d,  b ^= c,  b = ROTL(b, 7))
+#define QR(a, b, c, d) (	\
+    a += b, d ^= a, d = ROTL(d,16),	\
+    c += d, b ^= c, b = ROTL(b,12),	\
+    a += b, d ^= a, d = ROTL(d, 8),	\
+    c += d, b ^= c, b = ROTL(b, 7))
 static void chacha_block(u32 *out, const u32 *in){
   int i;
   u32 x[16];
@@ -89,13 +92,7 @@ void sqlite3_randomness(int N, void *pBuf){
   }
 
   /* Initialize the state of the random number generator once,
-  ** the first time this routine is called.  The seed value does
-  ** not need to contain a lot of randomness since we are not
-  ** trying to do secure encryption or anything like that...
-  **
-  ** Nothing in this file or anywhere else in SQLite does any kind of
-  ** encryption.  The RC4 algorithm is being used as a PRNG (pseudo-random
-  ** number generator) not as an encryption device.
+  ** the first time this routine is called.
   */
   if( wsdPrng.s[0]==0 ){
     sqlite3_vfs *pVfs = sqlite3_vfs_find(0);
