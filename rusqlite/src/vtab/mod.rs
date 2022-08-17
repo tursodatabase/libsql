@@ -187,7 +187,7 @@ pub fn eponymous_only_module<'vtab, T: VTab<'vtab>>() -> &'static Module<'vtab, 
 /// Virtual table configuration options
 #[repr(i32)]
 #[non_exhaustive]
-#[cfg(feature = "modern_sqlite")] // 3.7.7
+#[cfg(any(feature = "modern_sqlite", feature = "buildtime_bindgen"))] // 3.7.7
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum VTabConfig {
     /// Equivalent to SQLITE_VTAB_CONSTRAINT_SUPPORT
@@ -203,7 +203,7 @@ pub struct VTabConnection(*mut ffi::sqlite3);
 
 impl VTabConnection {
     /// Configure various facets of the virtual table interface
-    #[cfg(feature = "modern_sqlite")] // 3.7.7
+    #[cfg(any(feature = "modern_sqlite", feature = "buildtime_bindgen"))] // 3.7.7
     #[cfg_attr(docsrs, doc(cfg(feature = "modern_sqlite")))]
     pub fn config(&mut self, config: VTabConfig) -> Result<()> {
         crate::error::check(unsafe { ffi::sqlite3_vtab_config(self.0, config as c_int) })
@@ -369,7 +369,7 @@ impl From<u8> for IndexConstraintOp {
     }
 }
 
-#[cfg(feature = "modern_sqlite")] // 3.9.0
+#[cfg(any(feature = "modern_sqlite", feature = "buildtime_bindgen"))] // 3.9.0
 bitflags::bitflags! {
     /// Virtual table scan flags
     /// See [Function Flags](https://sqlite.org/c3ref/c_index_scan_unique.html) for details.
@@ -474,7 +474,7 @@ impl IndexInfo {
     }
 
     /// Estimated number of rows returned.
-    #[cfg(feature = "modern_sqlite")] // SQLite >= 3.8.2
+    #[cfg(any(feature = "modern_sqlite", feature = "buildtime_bindgen"))] // SQLite >= 3.8.2
     #[cfg_attr(docsrs, doc(cfg(feature = "modern_sqlite")))]
     #[inline]
     pub fn set_estimated_rows(&mut self, estimated_rows: i64) {
@@ -484,7 +484,7 @@ impl IndexInfo {
     }
 
     /// Mask of SQLITE_INDEX_SCAN_* flags.
-    #[cfg(feature = "modern_sqlite")] // SQLite >= 3.9.0
+    #[cfg(any(feature = "modern_sqlite", feature = "buildtime_bindgen"))] // SQLite >= 3.9.0
     #[cfg_attr(docsrs, doc(cfg(feature = "modern_sqlite")))]
     #[inline]
     pub fn set_idx_flags(&mut self, flags: IndexFlags) {
@@ -492,7 +492,7 @@ impl IndexInfo {
     }
 
     /// Mask of columns used by statement
-    #[cfg(feature = "modern_sqlite")] // SQLite >= 3.10.0
+    #[cfg(any(feature = "modern_sqlite", feature = "buildtime_bindgen"))] // SQLite >= 3.10.0
     #[cfg_attr(docsrs, doc(cfg(feature = "modern_sqlite")))]
     #[inline]
     pub fn col_used(&self) -> u64 {
@@ -1334,7 +1334,7 @@ pub mod csvtab;
 #[cfg(feature = "series")]
 #[cfg_attr(docsrs, doc(cfg(feature = "series")))]
 pub mod series; // SQLite >= 3.9.0
-#[cfg(test)]
+#[cfg(all(test, feature = "modern_sqlite"))]
 mod vtablog;
 
 #[cfg(test)]
