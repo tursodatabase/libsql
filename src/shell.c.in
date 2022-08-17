@@ -1909,15 +1909,37 @@ static int shellAuth(
 **
 ** This routine converts some CREATE TABLE statements for shadow tables
 ** in FTS3/4/5 into CREATE TABLE IF NOT EXISTS statements.
+**
+** If the schema statement in z[] contains a start-of-comment and if
+** sqlite3_complete() returns false, try to terminate the comment before
+** printing the result.  https://sqlite.org/forum/forumpost/d7be961c5c
 */
 static void printSchemaLine(FILE *out, const char *z, const char *zTail){
+  char *zToFree = 0;
   if( z==0 ) return;
   if( zTail==0 ) return;
+  if( zTail[0]==';' && (strstr(z, "/*")!=0 || strstr(z,"--")!=0) ){
+    const char *zOrig = z;
+    static const char *azTerm[] = { "", "*/", "\n" };
+    int i;
+    for(i=0; i<ArraySize(azTerm); i++){
+      char *zNew = sqlite3_mprintf("%s%s;", zOrig, azTerm[i]);
+      if( sqlite3_complete(zNew) ){
+        size_t n = strlen(zNew);
+        zNew[n-1] = 0;
+        zToFree = zNew;
+        z = zNew;
+        break;
+      }
+      sqlite3_free(zNew);
+    }
+  }
   if( sqlite3_strglob("CREATE TABLE ['\"]*", z)==0 ){
     utf8_printf(out, "CREATE TABLE IF NOT EXISTS %s%s", z+13, zTail);
   }else{
     utf8_printf(out, "%s%s", z, zTail);
   }
+  sqlite3_free(zToFree);
 }
 static void printSchemaLineN(FILE *out, char *z, int n, const char *zTail){
   char c = z[n];
