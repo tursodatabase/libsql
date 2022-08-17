@@ -202,7 +202,7 @@ impl Statement<'_> {
     /// }
     /// ```
     ///
-    /// Or, equivalently (but without the [`params!`] macro).
+    /// Or, equivalently (but without the [`crate::params!`] macro).
     ///
     /// ```rust,no_run
     /// # use rusqlite::{Connection, Result};
