@@ -322,15 +322,14 @@
       }
     },
     /**
-       Similar to this.filename but will return NULL for
-       special names like ":memory:". Not of much use until
-       we have filesystem support. Throws if the DB has
-       been closed. If passed an argument it then it will return
-       the filename of the ATTACHEd db with that name, else it assumes
-       a name of `main`.
+       Similar to this.filename but will return NULL for special names
+       like ":memory:". Not of much use until we have filesystem
+       support. Throws if the DB has been closed. If passed an
+       argument it then it will return the filename of the ATTACHEd db
+       with that name, else it assumes a name of `main`.
     */
-    fileName: function(dbName){
-      return capi.sqlite3_db_filename(affirmDbOpen(this).pointer, dbName||"main");
+    fileName: function(dbName='main'){
+      return capi.sqlite3_db_filename(affirmDbOpen(this).pointer, dbName);
     },
     /**
        Returns true if this db instance has a name which resolves to a
@@ -759,7 +758,7 @@
                   capi.sqlite3_result_null(pCx);
                   break;
                 }else if(util.isBindableTypedArray(val)){
-                  const pBlob = capi.wasm.mallocFromTypedArray(val);
+                  const pBlob = capi.wasm.allocFromTypedArray(val);
                   capi.sqlite3_result_blob(pCx, pBlob, val.byteLength,
                                           capi.SQLITE_TRANSIENT);
                   capi.wasm.dealloc(pBlob);
@@ -1072,7 +1071,7 @@
               capi.wasm.scopedAllocPop(stack);
             }
           }else{
-            const pBlob = capi.wasm.mallocFromTypedArray(val);
+            const pBlob = capi.wasm.allocFromTypedArray(val);
             try{
               rc = capi.sqlite3_bind_blob(stmt.pointer, ndx, pBlob, val.byteLength,
                                          capi.SQLITE_TRANSIENT);

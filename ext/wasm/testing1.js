@@ -163,10 +163,10 @@
     }
 
     try {
-      throw new capi.WasmAllocError;
+      throw new sqlite3.WasmAllocError;
     }catch(e){
       T.assert(e instanceof Error)
-        .assert(e instanceof capi.WasmAllocError);
+        .assert(e instanceof sqlite3.WasmAllocError);
     }
 
     try {

@@ -128,7 +128,7 @@ sqlite3-api.jses := \
   $(dir.jacc)/jaccwabyt.js \
   $(dir.api)/sqlite3-api-glue.js \
   $(dir.api)/sqlite3-api-oo1.js \
-  $(dir.api)/sqlite3-api-worker.js
+  $(dir.api)/sqlite3-api-worker1.js
 #sqlite3-api.jses += $(dir.api)/sqlite3-api-opfs.js 
 sqlite3-api.jses += $(dir.api)/sqlite3-api-cleanup.js
 

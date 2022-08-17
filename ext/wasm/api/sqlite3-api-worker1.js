@@ -10,26 +10,40 @@
 
   ***********************************************************************
 
-  This file implements a Worker-based wrapper around SQLite3 OO API
-  #1.
+  This file implements the initializer for the sqlite3 "Worker API
+  #1", a very basic DB access API intended to be scripted from a main
+  window thread via Worker-style messages. Because of limitations in
+  that type of communication, this API is minimalistic and only
+  capable of serving relatively basic DB requests (e.g. it cannot
+  process nested query loops concurrently).
+
+  This file requires that the core C-style sqlite3 API and OO API #1
+  have been loaded.
+*/
+
+/**
+  This function implements a Worker-based wrapper around SQLite3 OO
+  API #1, colloquially known as "Worker API #1".
 
   In order to permit this API to be loaded in worker threads without
   automatically registering onmessage handlers, initializing the
-  worker API requires calling initWorkerAPI(). If this function
+  worker API requires calling initWorker1API(). If this function
   is called from a non-worker thread then it throws an exception.
 
-  When initialized, it installs message listeners to receive messages
-  from the main thread and then it posts a message in the form:
+  When initialized, it installs message listeners to receive Worker
+  messages and then it posts a message in the form:
 
   ```
-  {type:'sqlite3-api',data:'worker-ready'}
+  {type:'sqlite3-api',data:'worker1-ready'}
   ```
 
-  This file requires that the core C-style sqlite3 API and OO API #1
-  have been loaded and that self.sqlite3 contains both,
-  as documented for those APIs.
+  to let the client know that it has been initialized. Clients may
+  optionally depend on this function not returning until
+  initialization is complete, as the initialization is synchronous.
+  In some contexts, however, listening for the above message is
+  a better fit.
 */
-self.sqlite3.initWorkerAPI = function(){
+self.sqlite3.initWorker1API = function(){
   'use strict';
   /**
      UNDER CONSTRUCTION
@@ -39,39 +53,12 @@ self.sqlite3.initWorkerAPI = function(){
      cannot pass callback functions between the window thread and a
      worker thread, so we have to receive all db results via
      asynchronous message-passing. That requires an asychronous API
-     with a distinctly different shape that the main OO API.
+     with a distinctly different shape than OO API #1.
 
-     Certain important considerations here include:
+     TODOs include, but are not necessarily limited to:
 
-     - Support only one db connection or multiple? The former is far
-     easier, but there's always going to be a user out there who wants
-     to juggle six database handles at once. Do we add that complexity
-     or tell such users to write their own code using the provided
-     lower-level APIs?
-
-     - Fetching multiple results: do we pass them on as a series of
-     messages, with start/end messages on either end, or do we collect
-     all results and bundle them back in a single message?  The former
-     is, generically speaking, more memory-efficient but the latter
-     far easier to implement in this environment. The latter is
-     untennable for large data sets. Despite a web page hypothetically
-     being a relatively limited environment, there will always be
-     those users who feel that they should/need to be able to work
-     with multi-hundred-meg (or larger) blobs, and passing around
-     arrays of those may quickly exhaust the JS engine's memory.
-
-     TODOs include, but are not limited to:
-
-     - The ability to manage multiple DB handles. This can
-     potentially be done via a simple mapping of DB.filename or
-     DB.pointer (`sqlite3*` handle) to DB objects. The open()
-     interface would need to provide an ID (probably DB.pointer) back
-     to the user which can optionally be passed as an argument to
-     the other APIs (they'd default to the first-opened DB, for
-     ease of use). Client-side usability of this feature would
-     benefit from making another wrapper class (or a singleton)
-     available to the main thread, with that object proxying all(?)
-     communication with the worker.
+     - Support for handling multiple DBs via this interface is under
+     development.
 
      - Revisit how virtual files are managed. We currently delete DBs
      from the virtual filesystem when we close them, for the sake of
@@ -79,6 +66,8 @@ self.sqlite3.initWorkerAPI = function(){
      require that we give up that habit. Similarly, fully supporting
      ATTACH, where a user can upload multiple DBs and ATTACH them,
      also requires the that we manage the VFS entries better.
+     Related: we most definitely do not want to delete persistent DBs
+     (e.g. stored on OPFS) when they're closed.
   */
   const toss = (...args)=>{throw new Error(args.join(' '))};
   if('function' !== typeof importScripts){
@@ -116,8 +105,7 @@ self.sqlite3.initWorkerAPI = function(){
       // same filename and close/reopen it (or just pass it back as is?).
       if(!arg && this.defaultDb) return this.defaultDb;
       //???if(this.defaultDb) this.defaultDb.close();
-      let db;
-      db = (Array.isArray(arg) ? new DB(...arg) : new DB(arg));
+      const db = (Array.isArray(arg) ? new DB(...arg) : new DB(arg));
       this.dbs[getDbId(db)] = db;
       if(!this.defaultDb) this.defaultDb = db;
       return db;
@@ -125,13 +113,17 @@ self.sqlite3.initWorkerAPI = function(){
     close: function(db,alsoUnlink){
       if(db){
         delete this.dbs[getDbId(db)];
-        db.close(alsoUnlink);
+        const filename = db.fileName();
+        db.close();
         if(db===this.defaultDb) this.defaultDb = undefined;
+        if(alsoUnlink && filename){
+          sqlite3.capi.sqlite3_wasm_vfs_unlink(filename);
+        }
       }
     },
     post: function(type,data,xferList){
       if(xferList){
-        self.postMessage({type, data},xferList);
+        self.postMessage( {type, data}, xferList );
         xferList.length = 0;
       }else{
         self.postMessage({type, data});
@@ -172,6 +164,68 @@ self.sqlite3.initWorkerAPI = function(){
   */
   const wMsgHandler = {
     xfer: [/*Temp holder for "transferable" postMessage() state.*/],
+    /**
+       Proxy for the DB constructor. Expects to be passed a single
+       object or a falsy value to use defaults. The object may
+       have a filename property to name the db file (see the DB
+       constructor for peculiarities and transformations) and/or a
+       buffer property (a Uint8Array holding a complete database
+       file's contents). The response is an object:
+
+       {
+         filename: db filename (possibly differing from the input),
+
+         dbId: an opaque ID value which must be passed to other calls
+               in this API to tell them which db to use. If it is not
+               provided to future calls, they will default to
+               operating on the first-opened db.
+
+          messageId: if the client-sent message included this field,
+              it is mirrored in the response.
+       }
+    */
+    open: function(ev){
+      const args = [], data = (ev.data || {});
+      if(data.simulateError){ // undocumented internal testing option
+        toss("Throwing because of simulateError flag.");
+      }
+      if(data.filename) args.push(data.filename);
+      const db = wState.open(args);
+      return {
+        filename: db.filename,
+        dbId: getDbId(db)
+      };
+    },
+    /**
+       Proxy for DB.close(). If ev.data may either be a boolean or
+       an object with an `unlink` property. If that value is
+       truthy then the db file (if the db is currently open) will
+       be unlinked from the virtual filesystem, else it will be
+       kept intact. The response object is:
+
+       {
+         filename: db filename _if_ the db is opened when this
+                   is called, else the undefined value,
+         unlink: boolean. If true, unlink() (delete) the db file
+                 after closing int. Any error while deleting it is
+                 ignored.
+       }
+
+       It does not error if the given db is already closed or no db is
+       provided. It is simply does nothing useful in that case.
+    */
+    close: function(ev){
+      const db = getMsgDb(ev,false);
+      const response = {
+        filename: db && db.filename,
+        dbId: db ? getDbId(db) : undefined
+      };
+      if(db){
+        wState.close(db, !!((ev.data && 'object'===typeof ev.data)
+                            ? ev.data.unlink : false));
+      }
+      return response;
+    },
     /**
        Proxy for DB.exec() which expects a single argument of type
        string (SQL to execute) or an options object in the form
@@ -266,10 +320,16 @@ self.sqlite3.initWorkerAPI = function(){
        exports of ":memory:" and "" (temp file) DBs. The latter is
        ostensibly easy because the file is (potentially) on disk, but
        the former does not have a structure which maps directly to a
-       db file image.
+       db file image. We can VACUUM INTO a :memory:/temp db into a
+       file for that purpose, though.
     */
     export: function(ev){
       toss("export() requires reimplementing for portability reasons.");
+      /**
+         We need to reimplement this to use the Emscripten FS
+         interface. That part used to be in the OO#1 API but that
+         dependency was removed from that level of the API.
+      */
       /**const db = getMsgDb(ev);
       const response = {
         buffer: db.exportBinaryImage(),
@@ -279,66 +339,6 @@ self.sqlite3.initWorkerAPI = function(){
       this.xfer.push(response.buffer.buffer);
       return response;**/
     }/*export()*/,
-    /**
-       Proxy for the DB constructor. Expects to be passed a single
-       object or a falsy value to use defaults. The object may
-       have a filename property to name the db file (see the DB
-       constructor for peculiarities and transformations) and/or a
-       buffer property (a Uint8Array holding a complete database
-       file's contents). The response is an object:
-
-       {
-         filename: db filename (possibly differing from the input),
-
-         id: an opaque ID value intended for future distinction
-             between multiple db handles. Messages including a specific
-             ID will use the DB for that ID.
-
-       }
-
-       If the Worker's db is currently opened, this call closes it
-       before proceeding.
-    */
-    open: function(ev){
-      wState.close(/*true???*/);
-      const args = [], data = (ev.data || {});
-      if(data.simulateError){
-        toss("Throwing because of open.simulateError flag.");
-      }
-      if(data.filename) args.push(data.filename);
-      if(data.buffer){
-        args.push(data.buffer);
-        this.xfer.push(data.buffer.buffer);
-      }
-      const db = wState.open(args);
-      return {
-        filename: db.filename,
-        dbId: getDbId(db)
-      };
-    },
-    /**
-       Proxy for DB.close(). If ev.data may either be a boolean or
-       an object with an `unlink` property. If that value is
-       truthy then the db file (if the db is currently open) will
-       be unlinked from the virtual filesystem, else it will be
-       kept intact. The response object is:
-
-       {
-         filename: db filename _if_ the db is opened when this
-                   is called, else the undefined value
-       }
-    */
-    close: function(ev){
-      const db = getMsgDb(ev,false);
-      const response = {
-        filename: db && db.filename
-      };
-      if(db){
-        wState.close(db, !!((ev.data && 'object'===typeof ev.data)
-                            ? ev.data.unlink : ev.data));
-      }
-      return response;
-    },
     toss: function(ev){
       toss("Testing worker exception");
     }
@@ -352,7 +352,8 @@ self.sqlite3.initWorkerAPI = function(){
 
      { type: apiCommand,
        dbId: optional DB ID value (else uses a default db handle)
-       data: apiArguments
+       data: apiArguments,
+       messageId: optional client-specific value
      }
 
      As a rule, these commands respond with a postMessage() of their
@@ -416,5 +417,5 @@ self.sqlite3.initWorkerAPI = function(){
     response.departureTime = ev.departureTime;
     wState.post(evType, response, wMsgHandler.xfer);
   };
-  setTimeout(()=>self.postMessage({type:'sqlite3-api',data:'worker-ready'}), 0);
+  setTimeout(()=>self.postMessage({type:'sqlite3-api',data:'worker1-ready'}), 0);
 }.bind({self, sqlite3: self.sqlite3});

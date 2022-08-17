@@ -60,17 +60,17 @@ browser client:
   high-level sqlite3 JS wrappers and should feel relatively familiar
   to anyone familiar with such APIs. That said, it is not a "required
   component" and can be elided from builds which do not want it.
-- `sqlite3-api-worker.js`\  
+- `sqlite3-api-worker1.js`\  
   A Worker-thread-based API which uses OO API #1 to provide an
   interface to a database which can be driven from the main Window
   thread via the Worker message-passing interface. Like OO API #1,
   this is an optional component, offering one of any number of
   potential implementations for such an API.
-    - `sqlite3-worker.js`\  
+    - `sqlite3-worker1.js`\  
       Is not part of the amalgamated sources and is intended to be
       loaded by a client Worker thread. It loads the sqlite3 module
-      and runs the Worker API which is implemented in
-      `sqlite3-api-worker.js`.
+      and runs the Worker #1 API which is implemented in
+      `sqlite3-api-worker1.js`.
 - `sqlite3-api-opfs.js`\  
   is an in-development/experimental sqlite3 VFS wrapper, the goal of
   which being to use Google Chrome's Origin-Private FileSystem (OPFS)

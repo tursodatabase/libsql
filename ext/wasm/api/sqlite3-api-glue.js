@@ -128,7 +128,7 @@
   */
   __prepare.basic = wasm.xWrap('sqlite3_prepare_v3',
                                "int", ["sqlite3*", "string",
-                                       "int"/*MUST always be negative*/,
+                                       "int"/*ignored for this impl!*/,
                                        "int", "**",
                                        "**"/*MUST be 0 or null or undefined!*/]);
   /**
@@ -148,19 +148,10 @@
 
   /* Documented in the api object's initializer. */
   capi.sqlite3_prepare_v3 = function f(pDb, sql, sqlLen, prepFlags, ppStmt, pzTail){
-    /* 2022-07-08: xWrap() 'string' arg handling may be able do this
-       special-case handling for us. It needs to be tested. Or maybe
-       not: we always want to treat pzTail as null when passed a
-       non-pointer SQL string and the argument adapters don't have
-       enough state to know that. Maybe they could/should, by passing
-       the currently-collected args as an array as the 2nd arg to the
-       argument adapters? Or maybe we collect all args in an array,
-       pass that to an optional post-args-collected callback, and give
-       it a chance to manipulate the args before we pass them on? */
     if(util.isSQLableTypedArray(sql)) sql = util.typedArrayToString(sql);
     switch(typeof sql){
         case 'string': return __prepare.basic(pDb, sql, -1, prepFlags, ppStmt, null);
-        case 'number': return __prepare.full(pDb, sql, sqlLen||-1, prepFlags, ppStmt, pzTail);
+        case 'number': return __prepare.full(pDb, sql, sqlLen, prepFlags, ppStmt, pzTail);
         default:
           return util.sqlite3_wasm_db_error(
             pDb, capi.SQLITE_MISUSE,

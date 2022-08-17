@@ -10,12 +10,12 @@
 
   ***********************************************************************
 
-  A basic test script for sqlite3-worker.js.
+  A basic test script for sqlite3-worker1.js.
 */
 'use strict';
 (function(){
   const T = self.SqliteTestUtil;
-  const SW = new Worker("sqlite3-worker.js");
+  const SW = new Worker("sqlite3-worker1.js");
   const DbState = {
     id: undefined
   };
@@ -48,7 +48,7 @@
   };
 
   let startTime;
-  
+
   /**
      A queue for callbacks which are to be run in response to async
      DB commands. See the notes in runTests() for why we need
@@ -261,16 +261,8 @@
        will fail and we have no way of cancelling them once they've
        been posted to the worker.
 
-       We currently do (2) because (A) it's certainly the most
-       client-friendly thing to do and (B) it seems likely that most
-       apps using this API will only have a single db to work with so
-       won't need to juggle multiple DB ids. If we revert to (1) then
-       the following call to runTests2() needs to be moved into the
-       callback function of the runOneTest() check for the 'open'
-       command. Note, also, that using approach (2) does not keep the
-       user from instead using approach (1), noting that doing so
-       requires explicit handling of the 'open' message to account for
-       it.
+       Which approach we use below depends on the boolean value of
+       waitForOpen.
     */
     const waitForOpen = 1,
           simulateOpenError = 0 /* if true, the remaining tests will
@@ -315,7 +307,7 @@
     switch(ev.type){
         case 'sqlite3-api':
           switch(ev.data){
-              case 'worker-ready':
+              case 'worker1-ready':
                 log("Message:",ev);
                 self.sqlite3TestModule.setStatus(null);
                 runTests();
