@@ -1796,9 +1796,7 @@ void sqlite3Pragma(
             }
             sqlite3VdbeJumpHere(v, jmp2);
           }
-          if( (pTab->tabFlags & TF_Strict)!=0
-           && pCol->eCType!=COLTYPE_ANY
-          ){
+          if( bStrict && pCol->eCType!=COLTYPE_ANY ){
             jmp2 = sqlite3VdbeAddOp3(v, OP_IsNullOrType, 3, 0, 
                                      sqlite3StdTypeMap[pCol->eCType-1]);
             VdbeCoverage(v);

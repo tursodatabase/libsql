@@ -1,5 +1,5 @@
-C Change\sthe\slegacy\sRC4-based\sPRNG\sto\suse\sthe\sRFC-7539\schacha20\salgorithm.
-D 2022-08-16T17:18:00.622
+C Minor\scode\ssimplification\sin\sthe\scode\sgenerator\sfor\sPRAGMA\sintegrity\scheck.
+D 2022-08-17T17:14:36.514
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -581,7 +581,7 @@ F src/parse.y 8e67d820030d2655b9942ffe61c1e7e6b96cea2f2f72183533299393907d0564
 F src/pcache.c 084e638432c610f95aea72b8509f0845d2791293f39d1b82f0c0a7e089c3bb6b
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c 0b4245cd4964e635f2630908c2533cd8e9da7af3ca592e23ae8730aa25ae5eb9
-F src/pragma.c 6637d624c37a8909d3edfa9d7cf694d79b49d2a0827d8c52ef15dceb641783fa
+F src/pragma.c f857ee5dfdaa9ea00a04c37dbd33075d9d12b6f8c59cc8dec6de691d7bf08d3f
 F src/pragma.h e690a356c18e98414d2e870ea791c1be1545a714ba623719deb63f7f226d8bb7
 F src/prepare.c c62820c15dcb63013519c8e41d9f928d7478672cc902cfd0581c733c271dbf45
 F src/printf.c e99ee9741e79ae3873458146f59644276657340385ade4e76a5f5d1c25793764
@@ -1999,9 +1999,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e123da49ccae61d591abded52f4721aa10f20d75935c9a3e3fe826a9b8df2317 a0d224c6a69941dad1f2b35edcc7ddee343b99eae2aeed74043461f3e97ef5b4
-R d14b7d3bd2befa6e359a3420d9b0b1d1
-T +closed a0d224c6a69941dad1f2b35edcc7ddee343b99eae2aeed74043461f3e97ef5b4
+P a0f801151925e882e120f6ab685dcacb9d3268d25b52bc665c5b927bcc7dda1e
+R b8c3444adb3f1879cc53cf493efeffeb
 U drh
-Z c066b8669f45d6d3a5c825d691d523b1
+Z a499216437f80b2eceb710f14f96178a
 # Remove this line to create a well-formed Fossil manifest.
