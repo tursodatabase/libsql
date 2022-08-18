@@ -26,13 +26,9 @@
           oo = sqlite3.oo1,
           wasm = capi.wasm;
 
-    // If we have persistent storage, maybe init and mount it:
-    const dbDir = true
-          ? "" // this demo works better without persistent storage.
-          : capi.sqlite3_web_persistent_dir();
-            // ^^^ returns name of persistent mount point or "" if we have none
-
+    const dbDir = 1 ? "" : capi.sqlite3_web_persistent_dir();
     const db = new oo.DB(dbDir+"/mydb.sqlite3");
+    log("db =",db.filename);
     /**
        Never(!) rely on garbage collection to clean up DBs and
        (especially) statements. Always wrap their lifetimes in
@@ -164,14 +160,39 @@
       }
 
       try {
-        db.callInTransaction( function(D) {
+        db.transaction( function(D) {
           D.exec("delete from t");
           log("In transaction: count(*) from t =",db.selectValue("select count(*) from t"));
-          throw new sqlite3.SQLite3Error("Demonstrating callInTransaction() rollback");
+          throw new sqlite3.SQLite3Error("Demonstrating transaction() rollback");
         });
       }catch(e){
         if(e instanceof sqlite3.SQLite3Error){
-          log("Got expected exception:",e.message);
+          log("Got expected exception from db.transaction():",e.message);
+          log("count(*) from t =",db.selectValue("select count(*) from t"));
+        }else{
+          throw e;
+        }
+      }
+
+      try {
+        db.savepoint( function(D) {
+          D.exec("delete from t");
+          log("In savepoint: count(*) from t =",db.selectValue("select count(*) from t"));
+          D.savepoint(function(DD){
+            const rows = [];
+            D.execMulti({
+              sql: ["insert into t(a,b) values(99,100);",
+                    "select count(*) from t"],
+              rowMode: 0,
+              resultRows: rows
+            });
+            log("In nested savepoint. Row count =",rows[0]);
+            throw new sqlite3.SQLite3Error("Demonstrating nested savepoint() rollback");
+          })
+        });
+      }catch(e){
+        if(e instanceof sqlite3.SQLite3Error){
+          log("Got expected exception from nested db.savepoint():",e.message);
           log("count(*) from t =",db.selectValue("select count(*) from t"));
         }else{
           throw e;
@@ -205,13 +226,11 @@
   const runDemos = function(Module){
     //log("Module",Module);
     const sqlite3 = Module.sqlite3,
-          capi = sqlite3.capi,
-          oo = sqlite3.oo1,
-          wasm = capi.wasm;
+          capi = sqlite3.capi;
     log("Loaded module:",capi.sqlite3_libversion(), capi.sqlite3_sourceid());
     log("sqlite3 namespace:",sqlite3);
     try {
-      [ demo1 ].forEach((f)=>f(sqlite3, Module))
+      demo1(sqlite3);
     }catch(e){
       error("Exception:",e.message);
       throw e;

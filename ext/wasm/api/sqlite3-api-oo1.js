@@ -59,12 +59,16 @@
      enabling clients to unambiguously identify such exceptions.
   */
   class SQLite3Error extends Error {
+    /**
+       Constructs this object with a message equal to all arguments
+       concatenated with a space between each one.
+    */
     constructor(...args){
-      super(...args);
+      super(args.join(' '));
       this.name = 'SQLite3Error';
     }
   };
-  const toss3 = (...args)=>{throw new SQLite3Error(args)};
+  const toss3 = (...args)=>{throw new SQLite3Error(...args)};
   sqlite3.SQLite3Error = SQLite3Error;
 
   /**
@@ -195,7 +199,7 @@
   };
 
   /**
-     Expects to be passed (arguments) from DB.exec() and
+     Expects to be passed the `arguments` object from DB.exec() and
      DB.execMulti(). Does the argument processing/validation, throws
      on error, and returns a new object on success:
 
@@ -842,26 +846,47 @@
 
     /**
        Starts a transaction, calls the given callback, and then either
-       rolls back or commits the transaction, depending on whether the
-       callback throw. The callback is pass this db object as its only
-       argument.  On success, returns the result of the callback.
-       Throws on error.
+       rolls back or commits the savepoint, depending on whether the
+       callback throws. The callback is passed this db object as its
+       only argument. On success, returns the result of the
+       callback. Throws on error.
+
+       Note that transactions may not be nested, so this will throw if
+       it is called recursively. For nested transactions, use the
+       savepoint() method or manually manage SAVEPOINTs using exec().
      */
-    callInTransaction: function(callback){
-      affirmDbOpen(this);
-      let err, rc;
-      this.exec("BEGIN");
-      try { rc = callback(this); }
-      catch(e){
-        err = e;
+    transaction: function(callback){
+      affirmDbOpen(this).exec("BEGIN");
+      try {
+        const rc = callback(this);
+        this.exec("COMMIT");
+        return rc;
+      }catch(e){
+        this.exec("ROLLBACK");
         throw e;
-      }finally{
-        if(err) this.exec("ROLLBACK");
-        else this.exec("COMMIT");
       }
-      return rc;
     },
 
+    /**
+       This works similarly to transaction() but uses sqlite3's SAVEPOINT
+       feature. This function starts a savepoint (with an unspecified name)
+       and calls the given callback function, passing it this db object.
+       If the callback returns, the savepoint is released (committed). If
+       the callback throws, the savepoint is rolled back. If it does not
+       throw, it returns the result of the callback.
+    */
+    savepoint: function(callback){
+      affirmDbOpen(this).exec("SAVEPOINT oo1");
+      try {
+        const rc = callback(this);
+        this.exec("RELEASE oo1");
+        return rc;
+      }catch(e){
+        this.execMulti("ROLLBACK to SAVEPOINT oo1; RELEASE SAVEPOINT oo1");
+        throw e;
+      }
+    },
+    
     /**
        This function currently does nothing and always throws.  It
        WILL BE REMOVED pending other refactoring, to eliminate a hard
