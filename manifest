@@ -1,5 +1,5 @@
-C javascript:\srename\sand\ssimplify\sDB.callInTransaction()\sas\sDB.transaction().\sAdd\sDB.savepoint(),\swhich\sworks\sthe\ssame\sas\stransaction()\sbut\suses\ssavepoints.\sCorrect\sconcatenation\sof\sarguments\sto\sSQLite3Error\sto\suse\sspaces\sinstead\sof\scommas.\sTest\sthat\sdemo-oo1.js\sworks\swith\spersistent\sOPFS\sstorage\s(output\sdiffers\sdue\sto\spersistent\srows,\sbut\sthe\sdemo\sworks).
-D 2022-08-18T12:21:58.613
+C Add\snotes\sto\sext/wasm/README.md\sexplaining\show\sto\srun\stests\son\sa\sremote\nmachine.
+D 2022-08-18T15:53:27.160
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -475,7 +475,7 @@ F ext/userauth/userauth.c 7f00cded7dcaa5d47f54539b290a43d2e59f4b1eb5f447545fa865
 F ext/wasm/EXPORTED_FUNCTIONS.fiddle db7a4602f043cf4a5e4135be3609a487f9f1c83f05778bfbdf93766be4541b96
 F ext/wasm/EXPORTED_RUNTIME_METHODS.fiddle a004bd5eeeda6d3b28d16779b7f1a80305bfe009dfc7f0721b042967f0d39d02
 F ext/wasm/GNUmakefile 19c21ce4df5583278cc495bffbe03c69dc64af60fa9dac01766d0192bd191ac6
-F ext/wasm/README.md 4b00ae7c7d93c4591251245f0996a319e2651361013c98d2efb0b026771b7331
+F ext/wasm/README.md e1ee1e7c321c6a250bf78a84ca6f5882890a237a450ba5a0649c7a8399194c52
 F ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-api 77ef4bcf37e362b9ad61f9c175dfc0f1b3e571563fb311b96581cf422ee6a8ec
 F ext/wasm/api/EXPORTED_RUNTIME_METHODS.sqlite3-api 1ec3c73e7d66e95529c3c64ac3de2470b0e9e7fbf7a5b41261c367cf4f1b7287
 F ext/wasm/api/README.md d876597edd2b9542b6ea031adaaff1c042076fde7b670b1dc6d8a87b28a6631b
@@ -2006,8 +2006,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 55e1b775fa7ec492817cc847036df7794c3c22b78558e9e9c513f24c775dedab
-R c7dd436c51b79816d21badfd7965a0c6
-U stephan
-Z 56fa2cd60f3999351a57836a87a9c295
+P e8c323f12b6223bc9dcbbec40698969c7917128aa50cf599c247df23f607ae61
+R 391fcad47fcff47ace5e5b589a55467a
+U drh
+Z 306b6860fc24abe35b9649e8ac4acacb
 # Remove this line to create a well-formed Fossil manifest.
