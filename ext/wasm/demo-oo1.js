@@ -170,8 +170,12 @@
           throw new sqlite3.SQLite3Error("Demonstrating callInTransaction() rollback");
         });
       }catch(e){
-        log("Got expected exception:",e.message);
-        log("count(*) from t =",db.selectValue("select count(*) from t"));
+        if(e instanceof sqlite3.SQLite3Error){
+          log("Got expected exception:",e.message);
+          log("count(*) from t =",db.selectValue("select count(*) from t"));
+        }else{
+          throw e;
+        }
       }
 
     }finally{
