@@ -1,5 +1,5 @@
-C Enhance\sthe\senforcement\sof\sSQLITE_VTAB_DIRECTONLY\sso\sthat\sit\sapplies\sto\nDML\sstatements\swithin\striggers.\s\sDo\snot\sallow\sDML\sstratements\sagainst\nvirtual\stables\swithin\striggers\sunless\seither\sthe\svirtual\stable\sis\nSQLITE_VTAB_INNOCUOUS\sor\sPRAGMA\strusted_schema\sis\sON.
-D 2022-08-20T19:33:04.530
+C Merge\sthe\stest\scase\sfor\sdbsqlfuzz\s18fe4e257be7fa3ecfb0424ab7427e41e97ef9e3\nassertion\sfault,\swhich\sis\sfixed\swith\sthe\sprevious\scheck-in.
+D 2022-08-20T19:45:41.430
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -885,7 +885,7 @@ F test/dbfuzz001.test 55e1a3504f8dea84155e09912fe3b1c3ad77e0b1a938ec42ca03b8e51b
 F test/dbfuzz2-seed1.db e6225c6f3d7b63f9c5b6867146a5f329d997ab105bee64644dc2b3a2f2aebaee
 F test/dbfuzz2.c 4b3c12de4d98b1b2d908ab03d217d4619e47c8b23d5e67f8a6f2b1bdee7cae23
 F test/dbpage.test fce29035c7566fd7835ec0f19422cb4b9c6944ce0e1b936ff8452443f92e887d
-F test/dbpagefault.test e917cd250018b836e8d7d1a659c63bcd25737a8f31f15925b891b8f92247fdf9
+F test/dbpagefault.test 20fe3a2a295f1c8cb30195b7b58a010530ecbc060e53e146af9e3e4fde4cab15
 F test/dbstatus.test 4a4221a883025ffd39696b3d1b3910b928fb097d77e671351acb35f3aed42759
 F test/dbstatus2.test f5fe0afed3fa45e57cfa70d1147606c20d2ba23feac78e9a172f2fe8ab5b78ef
 F test/decimal.test fcf403fd5585f47342234e153c4a4338cd737b8e0884ac66fc484df47dbcf1a7
@@ -1999,8 +1999,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 96e112da1ac56767cf49f26132833745b6020d2c60f5c36f86ca84f87ad30c81
-R b2aaecc820aeeb861481321e6e0d526f
+P 9433ea4070f52135be64569057f439e7bdb4b3f425d87167c9ebda50011210c1 8372468bb5d8922cf20b8bbee34cfd6044ceb09c26a4efa79a5e6df2c7c4b730
+R 8a2bc608dd9e0c10d3cc034d5ec85f92
+T +closed 8372468bb5d8922cf20b8bbee34cfd6044ceb09c26a4efa79a5e6df2c7c4b730
 U drh
-Z 057552ff6703cfb91f8abf2e3faed7e1
+Z 96d7e346000d7bc7e6cdccdd39e9e0b9
 # Remove this line to create a well-formed Fossil manifest.
