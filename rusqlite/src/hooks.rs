@@ -181,7 +181,7 @@ pub enum AuthAction<'c> {
         operation: TransactionOperation,
         savepoint_name: &'c str,
     },
-    #[cfg(feature = "modern_sqlite")]
+    #[cfg(not(feature = "old_sqlite"))]
     Recursive,
 }
 
@@ -285,7 +285,7 @@ impl<'c> AuthAction<'c> {
                 operation: TransactionOperation::from_str(operation_str),
                 savepoint_name,
             },
-            #[cfg(feature = "modern_sqlite")] // 3.8.3
+            #[cfg(not(feature = "old_sqlite"))] // 3.8.3
             (ffi::SQLITE_RECURSIVE, ..) => Self::Recursive,
             (code, arg1, arg2) => Self::Unknown { code, arg1, arg2 },
         }

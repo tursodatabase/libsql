@@ -12,7 +12,7 @@ keywords = ["sqlite", "sqlcipher", "ffi"]
 categories = ["external-ffi-bindings"]
 
 [features]
-default = ["min_sqlite_version_3_6_8"]
+default = ["min_sqlite_version_3_14_0"]
 bundled = ["cc", "bundled_bindings"]
 bundled-windows = ["cc", "bundled_bindings"]
 bundled-sqlcipher = ["bundled"]
@@ -20,9 +20,8 @@ bundled-sqlcipher-vendored-openssl = ["bundled-sqlcipher", "openssl-sys/vendored
 buildtime_bindgen = ["bindgen", "pkg-config", "vcpkg"]
 sqlcipher = []
 min_sqlite_version_3_6_8 = ["pkg-config", "vcpkg"]
-min_sqlite_version_3_6_23 = ["pkg-config", "vcpkg"]
-min_sqlite_version_3_7_7 = ["pkg-config", "vcpkg"]
 min_sqlite_version_3_7_16 = ["pkg-config", "vcpkg"]
+min_sqlite_version_3_14_0 = ["pkg-config", "vcpkg"]
 # Bundle only the bindings file. Note that this does nothing if
 # `buildtime_bindgen` is enabled.
 bundled_bindings = []

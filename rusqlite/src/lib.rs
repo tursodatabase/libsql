@@ -318,7 +318,7 @@ pub const TEMP_DB: DatabaseName<'static> = DatabaseName::Temp;
     feature = "backup",
     feature = "blob",
     feature = "session",
-    feature = "modern_sqlite"
+    not(feature = "old_sqlite")
 ))]
 impl DatabaseName<'_> {
     #[inline]
@@ -961,22 +961,22 @@ impl Connection {
 
     /// Determine if all associated prepared statements have been reset.
     #[inline]
-    #[cfg(feature = "modern_sqlite")] // 3.8.6
-    #[cfg_attr(docsrs, doc(cfg(feature = "modern_sqlite")))]
+    #[cfg(not(feature = "old_sqlite"))] // 3.8.6
+    #[cfg_attr(docsrs, doc(cfg(not(feature = "old_sqlite"))))]
     pub fn is_busy(&self) -> bool {
         self.db.borrow().is_busy()
     }
 
     /// Flush caches to disk mid-transaction
-    #[cfg(feature = "modern_sqlite")] // 3.10.0
-    #[cfg_attr(docsrs, doc(cfg(feature = "modern_sqlite")))]
+    #[cfg(not(feature = "old_sqlite"))] // 3.10.0
+    #[cfg_attr(docsrs, doc(cfg(not(feature = "old_sqlite"))))]
     pub fn cache_flush(&self) -> Result<()> {
         self.db.borrow_mut().cache_flush()
     }
 
     /// Determine if a database is read-only
-    #[cfg(feature = "modern_sqlite")] // 3.7.11
-    #[cfg_attr(docsrs, doc(cfg(feature = "modern_sqlite")))]
+    #[cfg(not(feature = "old_sqlite"))] // 3.7.11
+    #[cfg_attr(docsrs, doc(cfg(not(feature = "old_sqlite"))))]
     pub fn is_readonly(&self, db_name: DatabaseName<'_>) -> Result<bool> {
         self.db.borrow().db_readonly(db_name)
     }
@@ -1176,7 +1176,7 @@ impl InterruptHandle {
     }
 }
 
-#[cfg(feature = "modern_sqlite")] // 3.7.10
+#[cfg(not(feature = "old_sqlite"))] // 3.7.10
 unsafe fn db_filename(db: *mut ffi::sqlite3) -> Option<PathBuf> {
     let db_name = DatabaseName::Main.as_cstring().unwrap();
     let db_filename = ffi::sqlite3_db_filename(db, db_name.as_ptr());
@@ -1186,7 +1186,7 @@ unsafe fn db_filename(db: *mut ffi::sqlite3) -> Option<PathBuf> {
         CStr::from_ptr(db_filename).to_str().ok().map(PathBuf::from)
     }
 }
-#[cfg(not(feature = "modern_sqlite"))]
+#[cfg(feature = "old_sqlite")]
 unsafe fn db_filename(_: *mut ffi::sqlite3) -> Option<PathBuf> {
     None
 }
@@ -1664,7 +1664,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature = "modern_sqlite")]
+    #[cfg(not(feature = "old_sqlite"))]
     fn test_is_busy() -> Result<()> {
         let db = Connection::open_in_memory()?;
         assert!(!db.is_busy());
@@ -1695,11 +1695,11 @@ mod test {
     fn test_notnull_constraint_error() -> Result<()> {
         // extended error codes for constraints were added in SQLite 3.7.16; if we're
         // running on our bundled version, we know the extended error code exists.
-        #[cfg(feature = "modern_sqlite")]
+        #[cfg(not(feature = "old_sqlite"))]
         fn check_extended_code(extended_code: c_int) {
             assert_eq!(extended_code, ffi::SQLITE_CONSTRAINT_NOTNULL);
         }
-        #[cfg(not(feature = "modern_sqlite"))]
+        #[cfg(feature = "old_sqlite")]
         fn check_extended_code(_extended_code: c_int) {}
 
         let db = Connection::open_in_memory()?;
@@ -2109,14 +2109,14 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature = "modern_sqlite")]
+    #[cfg(not(feature = "old_sqlite"))]
     fn test_cache_flush() -> Result<()> {
         let db = Connection::open_in_memory()?;
         db.cache_flush()
     }
 
     #[test]
-    #[cfg(feature = "modern_sqlite")]
+    #[cfg(not(feature = "old_sqlite"))]
     pub fn db_readonly() -> Result<()> {
         let db = Connection::open_in_memory()?;
         assert!(!db.is_readonly(MAIN_DB)?);

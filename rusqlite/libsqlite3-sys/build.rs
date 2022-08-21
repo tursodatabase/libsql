@@ -474,13 +474,18 @@ mod bindings {
     use std::path::Path;
 
     static PREBUILT_BINDGEN_PATHS: &[&str] = &[
+        #[cfg(feature = "min_sqlite_version_3_6_8")]
         "bindgen-bindings/bindgen_3.6.8.rs",
-        #[cfg(feature = "min_sqlite_version_3_6_23")]
-        "bindgen-bindings/bindgen_3.6.23.rs",
-        #[cfg(feature = "min_sqlite_version_3_7_7")]
-        "bindgen-bindings/bindgen_3.7.7.rs",
         #[cfg(feature = "min_sqlite_version_3_7_16")]
         "bindgen-bindings/bindgen_3.7.16.rs",
+        #[cfg(any(
+            feature = "min_sqlite_version_3_14_0",
+            not(any(
+                feature = "min_sqlite_version_3_7_16",
+                feature = "min_sqlite_version_3_6_8"
+            ))
+        ))]
+        "bindgen-bindings/bindgen_3.14.0.rs",
     ];
 
     pub fn write_to_out_dir(_header: HeaderLocation, out_path: &Path) {
