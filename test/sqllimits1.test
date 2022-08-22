@@ -910,4 +910,17 @@ do_catchsql_test sqllimits1-17.1 "
   CREATE TABLE $nm (x PRIMARY KEY)
 " {1 {string or blob too big}}
 
+#-------------------------------------------------------------------------
+#
+sqlite3_limit db SQLITE_LIMIT_COMPOUND_SELECT 10
+do_catchsql_test sqllimits1-18.1 {
+  CREATE TABLE b1(x);
+  INSERT INTO b1 VALUES(1), (2), (3), (4), (5), (6), (7), (8), (9), (10), (11);
+} {0 {}}
+
+do_catchsql_test sqllimits1-18.2 {
+  INSERT INTO b1 VALUES(1), (2), (3), (4), (5), (6), (7), (8), (9), (10)
+    UNION VALUES(11);
+} {1 {too many terms in compound SELECT}}
+
 finish_test

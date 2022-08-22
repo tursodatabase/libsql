@@ -683,9 +683,6 @@ static const char * const sqlite3azCompileOpt[] = {
 #ifdef SQLITE_OMIT_XFER_OPT
   "OMIT_XFER_OPT",
 #endif
-#ifdef SQLITE_PCACHE_SEPARATE_HEADER
-  "PCACHE_SEPARATE_HEADER",
-#endif
 #ifdef SQLITE_PERFORMANCE_TRACE
   "PERFORMANCE_TRACE",
 #endif

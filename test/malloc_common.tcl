@@ -664,6 +664,7 @@ proc do_write_test {name tbl sql} {
 
   if {$::DO_MALLOC_TEST } {
     set answers [list {1 {out of memory}} {0 {}}]
+    lappend answers [list 1 {unable to open a temporary database file for storing temporary tables}]
     if {$::DO_MALLOC_TEST==1} {
       set modes {100000 persistent}
     } else {

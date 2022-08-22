@@ -141,3 +141,5 @@ do_eqp_test 111 {
      `--RIGHT
         `--SCAN generate_series VIRTUAL TABLE INDEX 23:
 }
+
+finish_test

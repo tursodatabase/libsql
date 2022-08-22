@@ -47,7 +47,7 @@ proc populate_text_widget {db} {
 
   set line [$db one {SELECT line FROM frame WHERE frame = $frame}]
   if {$line ne ""} {
-    foreach {file line} [split $line :] {}
+    regexp {^([^:]*):([0-9]*)} $line -> file line
     set content [$db one "SELECT content FROM file WHERE name = '$file'"]
     $::O(text) delete 0.0 end
 

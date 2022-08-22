@@ -19,6 +19,11 @@ if {[run_thread_tests]==0} { finish_test ; return }
 db close
 set ::testprefix sharedA
 
+ifcapable !shared_cache {
+  finish_test
+  return
+}
+
 if {[atomic_batch_write test.db]} {
   finish_test
   return

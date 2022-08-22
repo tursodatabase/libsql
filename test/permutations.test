@@ -132,6 +132,10 @@ set allquicktests [test_set $alltests -exclude {
 
   rtree4.test
   sessionbig.test
+
+  writecrash.test view3.test 
+  fts5dlidx.test fts5ac.test fts4merge3.test fts5prefix.test
+  sessionB.test
 }]
 if {[info exists ::env(QUICKTEST_INCLUDE)]} {
   set allquicktests [concat $allquicktests $::env(QUICKTEST_INCLUDE)]
