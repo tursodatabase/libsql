@@ -81,7 +81,7 @@ fn main() -> Result<()> {
 
 ### Supported SQLite Versions
 
-The base `rusqlite` package supports SQLite version 3.6.8 or newer. If you need
+The base `rusqlite` package supports SQLite version 3.14.0 or newer. If you need
 support for older versions, please file an issue. Some cargo features require a
 newer SQLite version; see details below.
 
@@ -191,7 +191,6 @@ minimum SQLite version that supports your chosen features. If you are using
 `libsqlite3-sys` directly, you can use the same features to choose which
 pregenerated bindings are chosen:
 
-* `min_sqlite_version_3_6_8` - SQLite 3.6.8 bindings
 * `min_sqlite_version_3_7_16` - SQLite 3.7.16 bindings
 * `min_sqlite_version_3_14_0` - SQLite 3.14.0 bindings (this is the default)
 

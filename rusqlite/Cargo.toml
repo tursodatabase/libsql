@@ -69,8 +69,6 @@ series = ["vtab"]
 extra_check = []
 # ]3.14.0, last]
 modern_sqlite = ["libsqlite3-sys/bundled_bindings"]
-# [3.6.8, 3.14.0[
-old_sqlite = ["libsqlite3-sys/min_sqlite_version_3_6_8"]
 in_gecko = ["modern_sqlite", "libsqlite3-sys/in_gecko"]
 bundled-windows = ["libsqlite3-sys/bundled-windows"]
 # Build bundled sqlite with -fsanitize=address

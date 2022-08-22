@@ -170,8 +170,6 @@ jobs:
       - run: cargo clippy --all-targets --workspace --features bundled -- -D warnings
       # Clippy with all non-conflicting features
       - run: cargo clippy --all-targets --workspace --features 'bundled-full session buildtime_bindgen' -- -D warnings
-      # Clippy with SQLite 3.6.8
-      - run: cargo clippy --all-targets --workspace --no-default-features --features 'old_sqlite' -- -D warnings
 
   # Ensure patch is formatted.
   fmt:
