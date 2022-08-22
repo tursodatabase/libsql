@@ -391,6 +391,16 @@ do_setup_rec_test $tn.18.1 {
   SEARCH SomeObject USING COVERING INDEX SomeObject_idx_00000078 (x=?)
 }
 
+
+do_setup_rec_test $tn.19.0 {
+  CREATE TABLE t1("index");
+} {
+  SELECT * FROM t1 ORDER BY "index";
+} {
+  CREATE INDEX t1_idx_01a7214e ON t1('index');
+  SCAN t1 USING COVERING INDEX t1_idx_01a7214e
+}
+
 }
 
 proc do_candidates_test {tn sql res} {

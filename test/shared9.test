@@ -19,7 +19,7 @@ source $testdir/tester.tcl
 source $testdir/lock_common.tcl
 set testprefix shared9
 
-ifcapable !view||!trigger {
+ifcapable !view||!trigger||!shared_cache {
   finish_test
   return
 }

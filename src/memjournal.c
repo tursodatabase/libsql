@@ -359,6 +359,8 @@ int sqlite3JournalOpen(
 ){
   MemJournal *p = (MemJournal*)pJfd;
 
+  assert( zName || nSpill<0 || (flags & SQLITE_OPEN_EXCLUSIVE) );
+
   /* Zero the file-handle object. If nSpill was passed zero, initialize
   ** it using the sqlite3OsOpen() function of the underlying VFS. In this
   ** case none of the code in this module is executed as a result of calls

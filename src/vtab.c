@@ -340,7 +340,8 @@ void sqlite3VtabUnlockList(sqlite3 *db){
 */
 void sqlite3VtabClear(sqlite3 *db, Table *p){
   assert( IsVirtual(p) );
-  if( !db || db->pnBytesFreed==0 ) vtabDisconnectAll(0, p);
+  assert( db!=0 );
+  if( db->pnBytesFreed==0 ) vtabDisconnectAll(0, p);
   if( p->u.vtab.azArg ){
     int i;
     for(i=0; i<p->u.vtab.nArg; i++){

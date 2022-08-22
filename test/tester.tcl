@@ -2172,13 +2172,13 @@ proc memdebug_log_sql {filename} {
   }
 
   set escaped "BEGIN; ${tbl}${tbl2}${tbl3}${sql} ; COMMIT;"
-  set escaped [string map [list "{" "\\{" "}" "\\}"] $escaped] 
+  set escaped [string map [list "{" "\\{" "}" "\\}" "\\" "\\\\"] $escaped] 
 
   set fd [open $filename w]
   puts $fd "set BUILTIN {"
   puts $fd $escaped
   puts $fd "}"
-  puts $fd {set BUILTIN [string map [list "\\{" "{" "\\}" "}"] $BUILTIN]}
+  puts $fd {set BUILTIN [string map [list "\\{" "{" "\\}" "}" "\\\\" "\\"] $BUILTIN]}
   set mtv [open $::testdir/malloctraceviewer.tcl]
   set txt [read $mtv]
   close $mtv

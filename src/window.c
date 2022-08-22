@@ -900,7 +900,6 @@ static ExprList *exprListAppendList(
     for(i=0; i<pAppend->nExpr; i++){
       sqlite3 *db = pParse->db;
       Expr *pDup = sqlite3ExprDup(db, pAppend->a[i].pExpr, 0);
-      assert( pDup==0 || !ExprHasProperty(pDup, EP_MemToken) );
       if( db->mallocFailed ){
         sqlite3ExprDelete(db, pDup);
         break;
@@ -2171,10 +2170,9 @@ static void windowCodeRangeTest(
 
     /* This block runs if reg1 is not NULL, but reg2 is. */
     sqlite3VdbeJumpHere(v, addr);
-    sqlite3VdbeAddOp2(v, OP_IsNull, reg2, lbl); VdbeCoverage(v);
-    if( op==OP_Gt || op==OP_Ge ){
-      sqlite3VdbeChangeP2(v, -1, addrDone);
-    }
+    sqlite3VdbeAddOp2(v, OP_IsNull, reg2,
+                      (op==OP_Gt || op==OP_Ge) ? addrDone : lbl);
+    VdbeCoverage(v);
   }
 
   /* Register reg1 currently contains csr1.peerVal (the peer-value from csr1).
