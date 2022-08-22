@@ -168,6 +168,33 @@
         }
         f.ui.status.classList.add('hidden');
       }
+    },
+    /**
+       Config options used by the Emscripten-dependent initialization
+       which happens via this.initSqlite3(). This object gets
+       (indirectly) passed to sqlite3ApiBootstrap() to configure the
+       sqlite3 API.
+    */
+    sqlite3ApiConfig: {
+      persistentDirName: "/persistent"
+    },
+    /**
+       Intended to be called by apps which need to call the
+       Emscripten-installed sqlite3InitModule() routine. This function
+       temporarily installs this.sqlite3ApiConfig into the self
+       object, calls it sqlite3InitModule(), and removes
+       self.sqlite3ApiConfig after initialization is done. Returns the
+       promise from sqlite3InitModule(), and the next then() handler
+       will get the Emscripten module object as its argument. That
+       module has the sqlite3's main namespace object installed as its
+       `sqlite3` property.
+    */
+    initSqlite3: function(){
+      self.sqlite3ApiConfig = this.sqlite3ApiConfig;
+      return self.sqlite3InitModule(this).then(function(M){
+        delete self.sqlite3ApiConfig;
+        return M;
+      });
     }
   };
 })(self/*window or worker*/);

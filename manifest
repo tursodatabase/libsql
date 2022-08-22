@@ -1,5 +1,5 @@
-C Merge\sin\strunk.
-D 2022-08-22T14:03:11.661
+C More\sexperimentation\swith\show\sclient-side\sconfig\sstate\scan\sbe\spassed\son\sto\sinitialize\sthe\sJS-side\ssqlite3\sAPI.
+D 2022-08-22T21:37:17.339
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -481,20 +481,20 @@ F ext/wasm/api/EXPORTED_RUNTIME_METHODS.sqlite3-api 1ec3c73e7d66e95529c3c64ac3de
 F ext/wasm/api/README.md d876597edd2b9542b6ea031adaaff1c042076fde7b670b1dc6d8a87b28a6631b
 F ext/wasm/api/post-js-footer.js b64319261d920211b8700004d08b956a6c285f3b0bba81456260a713ed04900c
 F ext/wasm/api/post-js-header.js 0e853b78db83cb1c06b01663549e0e8b4f377f12f5a2d9a4a06cb776c003880b
-F ext/wasm/api/sqlite3-api-cleanup.js eee5ac931fa0aee2cace52a0dff0cf22ae56a1993a88d911bd0dd384fb380c9a
+F ext/wasm/api/sqlite3-api-cleanup.js acf798ce96285c0d52738466a96c9deb9d66647f711a40caecab90b5ce66ac3c
 F ext/wasm/api/sqlite3-api-glue.js 67ca83974410961953eeaa1dfed3518530d68381729ed1d27f95122f5baeabd3
 F ext/wasm/api/sqlite3-api-oo1.js f6dcaac3270182471f97efcfda25bd4a4ac1777b8ec52ebd1c6846721160e54c
 F ext/wasm/api/sqlite3-api-opfs.js 011799db398157cbd254264b6ebae00d7234b93d0e9e810345f213a5774993c0
-F ext/wasm/api/sqlite3-api-prologue.js 5d1b13b23af48ce952e30a0f2d6dff4bc4b33f2dc36fdcaf69c164fd9a72b60f
+F ext/wasm/api/sqlite3-api-prologue.js 6e0e7787ed955ea2b6158e0bb7608f63b54236847700d183e49e1f10d0525b8f
 F ext/wasm/api/sqlite3-api-worker1.js ceb1fc88d8a3742c069632e88fd05c14d5a79eb86bdb9e12969ec37f64fbf42b
 F ext/wasm/api/sqlite3-wasi.h 25356084cfe0d40458a902afb465df8c21fc4152c1d0a59b563a3fba59a068f9
 F ext/wasm/api/sqlite3-wasm.c 0d81282eaeff2a6e9fc5c28a388c5c5b45cf25a9393992fa511ac009b27df982
-F ext/wasm/common/SqliteTestUtil.js e41a1406f18da9224523fad0c48885caf995b56956a5b9852909c0989e687e90
+F ext/wasm/common/SqliteTestUtil.js 04156a3b714b1b17a7261d21dd51341a8aeb9880a223e1e7519de98c2cceb414
 F ext/wasm/common/emscripten.css 3d253a6fdb8983a2ac983855bfbdd4b6fa1ff267c28d69513dd6ef1f289ada3f
 F ext/wasm/common/testing.css 572cf1ffae0b6eb7ca63684d3392bf350217a07b90e7a896e4fa850700c989b0
 F ext/wasm/common/whwasmutil.js 41b8e097e0a9cb07c24c0ede3c81b72470a63f4a4efb07f75586dc131569f5ae
 F ext/wasm/demo-oo1.html 75646855b38405d82781246fd08c852a2b3bee05dd9f0fe10ab655a8cffb79aa
-F ext/wasm/demo-oo1.js 8be9c6be3c8e579eab4e7a5ee720ed122e38275a1f105169c6826193e42cf102
+F ext/wasm/demo-oo1.js 04e947b64a36ed8d6fe6d5e3ccee16ffc8b4461dd186e84f4baf44d53cc3aa72
 F ext/wasm/fiddle/emscripten.css 3d253a6fdb8983a2ac983855bfbdd4b6fa1ff267c28d69513dd6ef1f289ada3f
 F ext/wasm/fiddle/fiddle-worker.js bccf46045be8824752876f3eec01c223be0616ccac184bffd0024cfe7a3262b8
 F ext/wasm/fiddle/fiddle.html 550c5aafce40bd218de9bf26192749f69f9b10bc379423ecd2e162bcef885c08
@@ -510,7 +510,7 @@ F ext/wasm/scratchpad-opfs-worker.js 3ec2868c669713145c76eb5877c64a1b20741f74181
 F ext/wasm/scratchpad-opfs-worker2.js 5f2237427ac537b8580b1c659ff14ad2621d1694043eaaf41ae18dbfef2e48c0
 F ext/wasm/sqlite3-worker1.js e93fe8e5da7cb56dcf4d1bb0aa44bf681b509e1c56f2a75885c0f408f034c42b
 F ext/wasm/testing1.html 528001c7e32ee567abc195aa071fd9820cc3c8ffc9c8a39a75e680db05f0c409
-F ext/wasm/testing1.js 9a97a7e45ce122b479b4a706ae1024abded67fd5f34a5764e41ff5efde8dfa17
+F ext/wasm/testing1.js 2def7a86c52ff28b145cb86188d5c7a49d5993f9b78c50d140e1c31551220955
 F ext/wasm/testing2.html a66951c38137ff1d687df79466351f3c734fa9c6d9cce71d3cf97c291b2167e3
 F ext/wasm/testing2.js e16ae385cd24c4a4ec5de6f1c02e621d243e1f179204ac8df31068faa9e31b1a
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
@@ -2006,8 +2006,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9dbe9a6aecec43b51057375ef1d2d632db0d17eac8b7552c20cc91fc2f1a55d1 e5eaa80e81fdf86f2875a912b880272b8d099b82b08e945a7988c5dd0fe9d6b5
-R 98198d4c07340458e933c1601dce5a74
+P e215d55a97e1ccbca3101621374444d2381d87ef8e8fde5271e31c8b714e43e9
+R 46e3280ce6b3dabfd5a5df8623d5cf20
 U stephan
-Z cff3826d5874cd44103730340fc5de2d
+Z e9aff16acc00367edea41a90ce619433
 # Remove this line to create a well-formed Fossil manifest.

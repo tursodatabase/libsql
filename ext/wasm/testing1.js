@@ -1068,13 +1068,7 @@
     log('capi.wasm.exports',capi.wasm.exports);
   };
 
-  sqlite3InitModule(self.sqlite3TestModule).then(function(theModule){
-    /** Use a timeout so that we are (hopefully) out from under
-        the module init stack when our setup gets run. Just on
-        principle, not because we _need_ to be. */
-    //console.debug("theModule =",theModule);
-    //setTimeout(()=>runTests(theModule), 0);
-    // ^^^ Chrome warns: "VIOLATION: setTimeout() handler took A WHOLE 50ms!"
+  self.sqlite3TestModule.initSqlite3().then(function(theModule){
     self._MODULE = theModule /* this is only to facilitate testing from the console */
     runTests(theModule);
   });

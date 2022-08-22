@@ -26,8 +26,13 @@
           oo = sqlite3.oo1,
           wasm = capi.wasm;
 
-    const dbDir = 1 ? "" : capi.sqlite3_web_persistent_dir();
-    const db = new oo.DB(dbDir+"/mydb.sqlite3");
+    const dbName = (
+      0 ? "" : capi.sqlite3_web_persistent_dir()
+    )+"/mydb.sqlite3"
+    if(0 && capi.sqlite3_web_persistent_dir()){
+      capi.sqlite3_wasm_vfs_unlink(dbName);
+    }
+    const db = new oo.DB(dbName);
     log("db =",db.filename);
     /**
        Never(!) rely on garbage collection to clean up DBs and
@@ -224,7 +229,7 @@
   }/*demo1()*/;
 
   const runDemos = function(Module){
-    //log("Module",Module);
+    //log("Module.sqlite3",Module);
     const sqlite3 = Module.sqlite3,
           capi = sqlite3.capi;
     log("Loaded module:",capi.sqlite3_libversion(), capi.sqlite3_sourceid());
@@ -237,5 +242,6 @@
     }
   };
 
-  sqlite3InitModule(self.sqlite3TestModule).then(runDemos);
+  //self.sqlite3TestModule.sqlite3ApiConfig.persistentDirName = "/hi";
+  self.sqlite3TestModule.initSqlite3().then(runDemos);
 })();

@@ -134,7 +134,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(apiConfig){
     return sqlite3ApiBootstrap.sqlite3;
   }
 
-  apiConfig = apiConfig||{};
+  apiConfig = apiConfig || {};
   const config = Object.create(null);
   {
     const configDefaults = {
@@ -147,8 +147,14 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(apiConfig){
       persistentDirName: '/persistent'
     };
     Object.keys(configDefaults).forEach(function(k){
-      config[k] = Object.prototype.hasOwnProperty.call(apiConfig, k)
+      config[k] = Object.getOwnPropertyDescriptor(apiConfig, k)
         ? apiConfig[k] : configDefaults[k];
+    });
+    // Copy over any properties apiConfig defines but configDefaults does not...
+    Object.keys(apiConfig).forEach(function(k){
+      if(!Object.getOwnPropertyDescriptor(config, k)){
+        config[k] = apiConfig[k];
+      }
     });
   }
 
