@@ -358,6 +358,7 @@ foreach {tn uri error} "
   do_test 10.$tn { open_uri_error $uri } $error
 }
 
+ifcapable shared_cache {
 # EVIDENCE-OF: R-23027-03515 Setting it to "shared" is equivalent to
 # setting the SQLITE_OPEN_SHAREDCACHE bit in the flags argument passed
 # to sqlite3_open_v2().
@@ -430,6 +431,7 @@ foreach {tn uri flags shared_default isshared} {
   db close
 }
 sqlite3_enable_shared_cache $orig
+}  ;#  End ifcapable shared_chache
 
 # EVIDENCE-OF: R-63472-46769 Specifying an unknown parameter in the
 # query component of a URI is not an error.

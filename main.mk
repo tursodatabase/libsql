@@ -424,6 +424,7 @@ TESTSRC2 = \
   $(TOP)/src/select.c \
   $(TOP)/src/threads.c \
   $(TOP)/src/tokenize.c \
+  $(TOP)/src/treeview.c \
   $(TOP)/src/utf.c \
   $(TOP)/src/util.c \
   $(TOP)/src/vdbeapi.c \
@@ -959,6 +960,12 @@ valgrindfuzz:	fuzzcheck$(EXE) $(FUZZDATA) sessionfuzz$(EXE) $(TOP)/test/sessionf
 tcltest:	./testfixture$(EXE)
 	./testfixture$(EXE) $(TOP)/test/veryquick.test $(TESTOPTS)
 
+# Runs all the same tests cases as the "tcltest" target but uses
+# the testrunner.tcl script to run them in multiple cores
+# concurrently.
+testrunner:	testfixture$(EXE)
+	./testfixture$(EXE) $(TOP)/test/testrunner.tcl
+
 # A very quick test using only testfixture and omitting all the slower
 # tests.  Designed to run in under 3 minutes on a workstation.
 #
@@ -968,6 +975,7 @@ quicktest:	./testfixture$(EXE)
 # The default test case.  Runs most of the faster standard TCL tests,
 # and fuzz tests, and sqlite3_analyzer and sqldiff tests.
 test:	fuzztest sourcetest $(TESTPROGS) tcltest
+
 
 # Run a test using valgrind.  This can take a really long time
 # because valgrind is so much slower than a native machine.

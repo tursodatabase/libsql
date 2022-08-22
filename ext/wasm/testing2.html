@@ -4,13 +4,12 @@
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
-    <link rel="stylesheet" href="emscripten.css"/>
-    <link rel="stylesheet" href="testing.css"/>
-    <title>sqlite3-api.js tests</title>
-    <style></style>
+    <link rel="stylesheet" href="common/emscripten.css"/>
+    <link rel="stylesheet" href="common/testing.css"/>
+    <title>sqlite3-worker.js tests</title>
   </head>
   <body>
-    <header id='titlebar'><span>sqlite3-api.js tests</span></header>
+    <header id='titlebar'><span>sqlite3-worker.js tests</span></header>
     <!-- emscripten bits -->
     <figure id="module-spinner">
       <div class="spinner"></div>
@@ -25,9 +24,10 @@
     <div class="emscripten">
       <progress value="0" max="100" id="module-progress" hidden='1'></progress>  
     </div><!-- /emscripten bits -->
-    <div>Everything on this page happens in the dev console.</div>
-    <script src="sqlite3.js"></script>
-    <script src="SqliteTestUtil.js"></script>
-    <script src="testing1.js"></script>
+    <div>Most stuff on this page happens in the dev console.</div>
+    <hr>
+    <div id='test-output'></div>
+    <script src="common/SqliteTestUtil.js"></script>
+    <script src="testing2.js"></script>
   </body>
 </html>

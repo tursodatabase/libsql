@@ -505,6 +505,7 @@ TESTSRC2 = \
   $(TOP)/src/pcache1.c \
   $(TOP)/src/select.c \
   $(TOP)/src/tokenize.c \
+  $(TOP)/src/treeview.c \
   $(TOP)/src/utf.c \
   $(TOP)/src/util.c \
   $(TOP)/src/vdbeapi.c \
@@ -876,7 +877,7 @@ hash.lo:	$(TOP)/src/hash.c $(HDR)
 insert.lo:	$(TOP)/src/insert.c $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/insert.c
 
-json.lo:	$(TOP)/src/json.c
+json.lo:	$(TOP)/src/json.c $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/json.c
 
 legacy.lo:	$(TOP)/src/legacy.c $(HDR)
@@ -1282,6 +1283,12 @@ valgrindfuzz:	fuzzcheck$(TEXT) $(FUZZDATA) sessionfuzz$(TEXE) $(TOP)/test/sessio
 tcltest:	./testfixture$(TEXE)
 	./testfixture$(TEXE) $(TOP)/test/veryquick.test $(TESTOPTS)
 
+# Runs all the same tests cases as the "tcltest" target but uses
+# the testrunner.tcl script to run them in multiple cores
+# concurrently.
+testrunner:	testfixture$(TEXE)
+	./testfixture$(TEXE) $(TOP)/test/testrunner.tcl
+
 # Minimal testing that runs in less than 3 minutes
 #
 quicktest:	./testfixture$(TEXE)
@@ -1519,66 +1526,56 @@ sqlite3.dll: $(REAL_LIBOBJ) sqlite3.def
 #
 # fiddle/wasm section
 #
-fiddle_dir = ext/fiddle
-fiddle_dir_abs = $(TOP)/$(fiddle_dir)
+# Maintenance reminder: we can/should move this into the wasm-specific
+# GNU Make makefile, but we currently need it here for access to
+# $(SHELL_OPT). The rest of the wasm-related bits are handled via GNU
+# Make in ext/wasm/...
+#
+wasm_dir = ext/wasm
+wasm_dir_abs = $(TOP)/ext/wasm
 # ^^^ some emcc opts require absolute paths
-fiddle_html = $(fiddle_dir)/fiddle.html
+fiddle_dir = $(wasm_dir)/fiddle
+fiddle_dir_abs = $(TOP)/$(fiddle_dir)
 fiddle_module_js = $(fiddle_dir)/fiddle-module.js
-sqlite3_wasm_js = $(fiddle_dir)/sqlite3.js
-sqlite3_wasm = $(fiddle_dir)/sqlite3.wasm
 #emcc_opt = -O0
 #emcc_opt = -O1
 #emcc_opt = -O2
 #emcc_opt = -O3
 emcc_opt = -Oz
-emcc_flags = $(emcc_opt) -sALLOW_TABLE_GROWTH -sSTRICT_JS \
-        -sENVIRONMENT=web -sMODULARIZE \
-        -sEXPORTED_RUNTIME_METHODS=@$(fiddle_dir_abs)/EXPORTED_RUNTIME_METHODS \
+emcc_flags = $(emcc_opt) \
+        -sALLOW_TABLE_GROWTH \
+        -sABORTING_MALLOC \
+        -sSTRICT_JS \
+        -sENVIRONMENT=web \
+        -sMODULARIZE \
+        -sEXPORTED_RUNTIME_METHODS=@$(wasm_dir_abs)/EXPORTED_RUNTIME_METHODS.fiddle \
         -sDYNAMIC_EXECUTION=0 \
-        -I. $(SHELL_OPT)
+        --minify 0 \
+        -I. $(SHELL_OPT) \
+        -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_UTF16 -DSQLITE_OMIT_DEPRECATED
 $(fiddle_module_js): Makefile sqlite3.c shell.c \
-    $(fiddle_dir)/EXPORTED_RUNTIME_METHODS \
-    $(fiddle_dir)/EXPORTED_FUNCTIONS.fiddle
+    $(wasm_dir)/EXPORTED_RUNTIME_METHODS.fiddle \
+    $(wasm_dir)/EXPORTED_FUNCTIONS.fiddle
 	emcc -o $@ $(emcc_flags) \
         -sEXPORT_NAME=initFiddleModule \
-        -sEXPORTED_FUNCTIONS=@$(fiddle_dir_abs)/EXPORTED_FUNCTIONS.fiddle \
+        -sEXPORTED_FUNCTIONS=@$(wasm_dir_abs)/EXPORTED_FUNCTIONS.fiddle \
+        -DSQLITE_SHELL_FIDDLE \
         sqlite3.c shell.c
 	gzip < $@ > $@.gz
 	gzip < $(fiddle_dir)/fiddle-module.wasm > $(fiddle_dir)/fiddle-module.wasm.gz
-$(sqlite3_wasm_js): Makefile sqlite3.c \
-    $(fiddle_dir)/sqlite3-api.js \
-    $(fiddle_dir)/EXPORTED_RUNTIME_METHODS \
-    $(fiddle_dir)/EXPORTED_FUNCTIONS.sqlite3-api
-	emcc -o $@ $(emcc_flags) \
-        -sEXPORT_NAME=initSqlite3Module \
-        -sEXPORTED_FUNCTIONS=@$(fiddle_dir_abs)/EXPORTED_FUNCTIONS.sqlite3-api \
-        --post-js=$(fiddle_dir)/sqlite3-api.js \
-        --no-entry \
-        sqlite3.c
-	gzip < $@ > $@.gz
-	gzip < $(sqlite3_wasm) > $(sqlite3_wasm).gz
-	gzip < $(fiddle_dir)/sqlite3-api.js > $(fiddle_dir)/sqlite3-api.js.gz
 $(fiddle_dir)/fiddle.js.gz: $(fiddle_dir)/fiddle.js
-	gzip < $< > $@
-$(fiddle_dir)/sqlite3-api.js.gz: $(fiddle_dir)/sqlite3-api.js
 	gzip < $< > $@
 
 fiddle_generated = $(fiddle_module_js) $(fiddle_module_js).gz \
                    $(fiddle_dir)/fiddle-module.wasm \
                    $(fiddle_dir)/fiddle-module.wasm.gz \
                    $(fiddle_dir)/fiddle.js.gz
-sqlite3_wasm_generated = \
-                   $(sqlite3_wasm) $(sqlite3_wasm).gz \
-                   $(sqlite3_wasm_js) $(sqlite3_wasm_js).gz \
-                   $(fiddle_dir)/sqlite3.js.gz \
-                   $(fiddle_dir)/sqlite3-api.js.gz
 
-clean-wasm:
-	rm -f $(fiddle_generated) $(sqlite3_wasm_generated)
-clean: clean-wasm
+clean-fiddle:
+	rm -f $(fiddle_generated)
+clean: clean-fiddle
 fiddle: $(fiddle_module_js) $(fiddle_dir)/fiddle.js.gz
-sqlite3-wasm: $(sqlite3_wasm_js)
-wasm: fiddle sqlite3-wasm
+wasm: fiddle
 ########################################################################
 # Explanation of the emcc build flags follows. Full docs for these can
 # be found at:
@@ -1592,7 +1589,7 @@ wasm: fiddle sqlite3-wasm
 #
 # -sMODULARIZE: changes how the generated code is structured to avoid
 #  declaring a global Module object and instead installing a function
-#  which loads and initialized the module. The function is named...
+#  which loads and initializes the module. The function is named...
 #
 # -sEXPORT_NAME=jsFunctionName (see -sMODULARIZE)
 #
@@ -1612,7 +1609,15 @@ wasm: fiddle sqlite3-wasm
 #  results in build errors.
 #
 # -sALLOW_TABLE_GROWTH is required for (at a minimum) the UDF-binding
-#  feature.
+#  feature. Without it, JS functions cannot be made to proxy C-side
+#  callbacks.
+#
+# -sABORTING_MALLOC causes the JS-bound _malloc() to abort rather than
+#  return 0 on OOM. If set to 0 then all code which uses _malloc()
+#  must, just like in C, check the result before using it, else
+#  they're likely to corrupt the JS/WASM heap by writing to its
+#  address of 0. It is, as of this writing, enabled in Emscripten by
+#  default but we enable it explicitly in case that default changes.
 #
 # -sDYNAMIC_EXECUTION=0 disables eval() and the Function constructor.
 #  If the build runs without these, it's preferable to use this flag
@@ -1644,4 +1649,16 @@ wasm: fiddle sqlite3-wasm
 #  primarily because -Oz will shrink the wasm file notably. JS-side
 #  minification makes little difference in terms of overall
 #  distributable size.
+#
+# --minify 0: disables minification of the generated JS code,
+#  regardless of optimization level. Minification of the JS has
+#  minimal overall effect in the larger scheme of things and results
+#  in JS files which can neither be edited nor viewed as text files in
+#  Fossil (which flags them as binary because of their extreme line
+#  lengths). Interestingly, whether or not the comments in the
+#  generated JS file get stripped is unaffected by this setting and
+#  depends entirely on the optimization level. Higher optimization
+#  levels reduce the size of the JS considerably even without
+#  minification.
+#
 ########################################################################

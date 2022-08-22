@@ -4087,7 +4087,9 @@ static void fts5WriteAppendRowid(
       fts5BufferAppendVarint(&p->rc, &pPage->buf, iRowid);
     }else{
       assert_nc( p->rc || iRowid>pWriter->iPrevRowid );
-      fts5BufferAppendVarint(&p->rc, &pPage->buf, iRowid - pWriter->iPrevRowid);
+      fts5BufferAppendVarint(&p->rc, &pPage->buf, 
+          (u64)iRowid - (u64)pWriter->iPrevRowid
+      );
     }
     pWriter->iPrevRowid = iRowid;
     pWriter->bFirstRowidInDoclist = 0;
@@ -4851,7 +4853,7 @@ int sqlite3Fts5IndexMerge(Fts5Index *p, int nMerge){
 
 static void fts5AppendRowid(
   Fts5Index *p,
-  i64 iDelta,
+  u64 iDelta,
   Fts5Iter *pUnused,
   Fts5Buffer *pBuf
 ){
@@ -4861,7 +4863,7 @@ static void fts5AppendRowid(
 
 static void fts5AppendPoslist(
   Fts5Index *p,
-  i64 iDelta,
+  u64 iDelta,
   Fts5Iter *pMulti,
   Fts5Buffer *pBuf
 ){
@@ -4936,10 +4938,10 @@ static void fts5MergeAppendDocid(
 }
 #endif
 
-#define fts5MergeAppendDocid(pBuf, iLastRowid, iRowid) {       \
-  assert( (pBuf)->n!=0 || (iLastRowid)==0 );                   \
-  fts5BufferSafeAppendVarint((pBuf), (iRowid) - (iLastRowid)); \
-  (iLastRowid) = (iRowid);                                     \
+#define fts5MergeAppendDocid(pBuf, iLastRowid, iRowid) {                 \
+  assert( (pBuf)->n!=0 || (iLastRowid)==0 );                             \
+  fts5BufferSafeAppendVarint((pBuf), (u64)(iRowid) - (u64)(iLastRowid)); \
+  (iLastRowid) = (iRowid);                                               \
 }
 
 /*
@@ -5210,7 +5212,7 @@ static void fts5SetupPrefixIter(
   int nMerge = 1;
 
   void (*xMerge)(Fts5Index*, Fts5Buffer*, int, Fts5Buffer*);
-  void (*xAppend)(Fts5Index*, i64, Fts5Iter*, Fts5Buffer*);
+  void (*xAppend)(Fts5Index*, u64, Fts5Iter*, Fts5Buffer*);
   if( p->pConfig->eDetail==FTS5_DETAIL_NONE ){
     xMerge = fts5MergeRowidLists;
     xAppend = fts5AppendRowid;
@@ -5249,7 +5251,7 @@ static void fts5SetupPrefixIter(
         Fts5SegIter *pSeg = &p1->aSeg[ p1->aFirst[1].iFirst ];
         p1->xSetOutputs(p1, pSeg);
         if( p1->base.nData ){
-          xAppend(p, p1->base.iRowid-iLastRowid, p1, &doclist);
+          xAppend(p, (u64)p1->base.iRowid-(u64)iLastRowid, p1, &doclist);
           iLastRowid = p1->base.iRowid;
         }
       }
@@ -5297,7 +5299,7 @@ static void fts5SetupPrefixIter(
         iLastRowid = 0;
       }
 
-      xAppend(p, p1->base.iRowid-iLastRowid, p1, &doclist);
+      xAppend(p, (u64)p1->base.iRowid-(u64)iLastRowid, p1, &doclist);
       iLastRowid = p1->base.iRowid;
     }
 

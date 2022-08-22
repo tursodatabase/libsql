@@ -314,7 +314,8 @@ static VdbeCursor *allocateCursor(
 ** return false.
 */
 static int alsoAnInt(Mem *pRec, double rValue, i64 *piValue){
-  i64 iValue = (double)rValue;
+  i64 iValue;
+  iValue = sqlite3RealToI64(rValue);
   if( sqlite3RealSameAsInt(rValue,iValue) ){
     *piValue = iValue;
     return 1;
@@ -476,17 +477,18 @@ static u16 SQLITE_NOINLINE computeNumericType(Mem *pMem){
 ** But it does set pMem->u.r and pMem->u.i appropriately.
 */
 static u16 numericType(Mem *pMem){
-  if( pMem->flags & (MEM_Int|MEM_Real|MEM_IntReal) ){
+  assert( (pMem->flags & MEM_Null)==0
+       || pMem->db==0 || pMem->db->mallocFailed );
+  if( pMem->flags & (MEM_Int|MEM_Real|MEM_IntReal|MEM_Null) ){
     testcase( pMem->flags & MEM_Int );
     testcase( pMem->flags & MEM_Real );
     testcase( pMem->flags & MEM_IntReal );
-    return pMem->flags & (MEM_Int|MEM_Real|MEM_IntReal);
+    return pMem->flags & (MEM_Int|MEM_Real|MEM_IntReal|MEM_Null);
   }
-  if( pMem->flags & (MEM_Str|MEM_Blob) ){
-    testcase( pMem->flags & MEM_Str );
-    testcase( pMem->flags & MEM_Blob );
-    return computeNumericType(pMem);
-  }
+  assert( pMem->flags & (MEM_Str|MEM_Blob) );
+  testcase( pMem->flags & MEM_Str );
+  testcase( pMem->flags & MEM_Blob );
+  return computeNumericType(pMem);
   return 0;
 }
 
@@ -1731,7 +1733,6 @@ case OP_Subtract:              /* same as TK_MINUS, in1, in2, out3 */
 case OP_Multiply:              /* same as TK_STAR, in1, in2, out3 */
 case OP_Divide:                /* same as TK_SLASH, in1, in2, out3 */
 case OP_Remainder: {           /* same as TK_REM, in1, in2, out3 */
-  u16 flags;      /* Combined MEM_* flags from both inputs */
   u16 type1;      /* Numeric type of left operand */
   u16 type2;      /* Numeric type of right operand */
   i64 iA;         /* Integer value of left operand */
@@ -1740,12 +1741,12 @@ case OP_Remainder: {           /* same as TK_REM, in1, in2, out3 */
   double rB;      /* Real value of right operand */
 
   pIn1 = &aMem[pOp->p1];
-  type1 = numericType(pIn1);
+  type1 = pIn1->flags;
   pIn2 = &aMem[pOp->p2];
-  type2 = numericType(pIn2);
+  type2 = pIn2->flags;
   pOut = &aMem[pOp->p3];
-  flags = pIn1->flags | pIn2->flags;
   if( (type1 & type2 & MEM_Int)!=0 ){
+int_math:
     iA = pIn1->u.i;
     iB = pIn2->u.i;
     switch( pOp->opcode ){
@@ -1767,9 +1768,12 @@ case OP_Remainder: {           /* same as TK_REM, in1, in2, out3 */
     }
     pOut->u.i = iB;
     MemSetTypeFlag(pOut, MEM_Int);
-  }else if( (flags & MEM_Null)!=0 ){
+  }else if( ((type1 | type2) & MEM_Null)!=0 ){
     goto arithmetic_result_is_null;
   }else{
+    type1 = numericType(pIn1);
+    type2 = numericType(pIn2);
+    if( (type1 & type2 & MEM_Int)!=0 ) goto int_math;
 fp_math:
     rA = sqlite3VdbeRealValue(pIn1);
     rB = sqlite3VdbeRealValue(pIn2);
@@ -2639,11 +2643,14 @@ case OP_NotNull: {            /* same as TK_NOTNULL, jump, in1 */
 ** If it is, then set register P3 to NULL and jump immediately to P2.
 ** If P1 is not on a NULL row, then fall through without making any
 ** changes.
+**
+** If P1 is not an open cursor, then this opcode is a no-op.
 */
 case OP_IfNullRow: {         /* jump */
+  VdbeCursor *pC;
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
-  assert( p->apCsr[pOp->p1]!=0 );
-  if( p->apCsr[pOp->p1]->nullRow ){
+  pC = p->apCsr[pOp->p1];
+  if( ALWAYS(pC) && pC->nullRow ){
     sqlite3VdbeMemSetNull(aMem + pOp->p3);
     goto jump_to_p2;
   }
@@ -4786,7 +4793,7 @@ seek_not_found:
 **      sqlite3BtreeNext() calls, then jump to This.P2, which will land just
 **      past the OP_IdxGT or OP_IdxGE opcode that follows the OP_SeekGE.
 **
-** <li> If the cursor ends up past the target row (indicating the the target
+** <li> If the cursor ends up past the target row (indicating that the target
 **      row does not exist in the btree) then jump to SeekOP.P2. 
 ** </ol>
 */
@@ -7247,7 +7254,7 @@ case OP_IfPos: {        /* jump, in1 */
 ** Synopsis: if r[P1]>0 then r[P2]=r[P1]+max(0,r[P3]) else r[P2]=(-1)
 **
 ** This opcode performs a commonly used computation associated with
-** LIMIT and OFFSET process.  r[P1] holds the limit counter.  r[P3]
+** LIMIT and OFFSET processing.  r[P1] holds the limit counter.  r[P3]
 ** holds the offset counter.  The opcode computes the combined value
 ** of the LIMIT and OFFSET and stores that value in r[P2].  The r[P2]
 ** value computed is the total number of rows that will need to be
