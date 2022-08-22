@@ -14,10 +14,9 @@
   WASM build. It requires that sqlite3-api-glue.js has already run
   and it installs its deliverable as self.sqlite3.oo1.
 */
-(function(self){
+self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   const toss = (...args)=>{throw new Error(args.join(' '))};
 
-  const sqlite3 = self.sqlite3 || toss("Missing main sqlite3 object.");
   const capi = sqlite3.capi, util = capi.util;
   /* What follows is colloquially known as "OO API #1". It is a
      binding of the sqlite3 API which is designed to be run within
@@ -1547,5 +1546,6 @@
     },
     DB,
     Stmt
-  }/*SQLite3 object*/;
-})(self);
+  }/*oo1 object*/;
+});
+

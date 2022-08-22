@@ -43,7 +43,8 @@
   In some contexts, however, listening for the above message is
   a better fit.
 */
-self.sqlite3.initWorker1API = function(){
+self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
+sqlite3.initWorker1API = function(){
   'use strict';
   /**
      UNDER CONSTRUCTION
@@ -418,4 +419,6 @@ self.sqlite3.initWorker1API = function(){
     wState.post(evType, response, wMsgHandler.xfer);
   };
   setTimeout(()=>self.postMessage({type:'sqlite3-api',data:'worker1-ready'}), 0);
-}.bind({self, sqlite3: self.sqlite3});
+}.bind({self, sqlite3});
+});
+

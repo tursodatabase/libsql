@@ -16,23 +16,9 @@
   initializes the main API pieces so that the downstream components
   (e.g. sqlite3-api-oo1.js) have all that they need.
 */
-(function(self){
+self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   'use strict';
   const toss = (...args)=>{throw new Error(args.join(' '))};
-
-  self.sqlite3 = self.sqlite3ApiBootstrap({
-    Module: Module /* ==> Emscripten-style Module object. Currently
-                      needs to be exposed here for test code. NOT part
-                      of the public API. */,
-    exports: Module['asm'],
-    memory: Module.wasmMemory /* gets set if built with -sIMPORT_MEMORY */,
-    bigIntEnabled: !!self.BigInt64Array,
-    allocExportName: 'malloc',
-    deallocExportName: 'free'
-  });
-  delete self.sqlite3ApiBootstrap;
-
-  const sqlite3 = self.sqlite3;
   const capi = sqlite3.capi, wasm = capi.wasm, util = capi.util;
   self.WhWasmUtilInstaller(capi.wasm);
   delete self.WhWasmUtilInstaller;
@@ -57,7 +43,7 @@
       return oldP(v);
     };
     wasm.xWrap.argAdapter('.pointer', adapter);
-  }
+  } /* ".pointer" xWrap() argument adapter */
 
   // WhWasmUtil.xWrap() bindings...
   {
@@ -78,7 +64,7 @@
       capi[e[0]] = wasm.xWrap.apply(null, e);
     }
 
-    /* For functions which cannot work properly unless
+    /* For C API functions which cannot work properly unless
        wasm.bigIntEnabled is true, install a bogus impl which
        throws if called when bigIntEnabled is false. */
     const fI64Disabled = function(fname){
@@ -198,5 +184,4 @@
       capi[s.name] = sqlite3.StructBinder(s);
     }
   }
-
-})(self);
+});

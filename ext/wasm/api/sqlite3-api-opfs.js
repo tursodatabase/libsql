@@ -31,12 +31,13 @@
 // FileSystemDirectoryHandle
 // FileSystemFileHandle
 // FileSystemFileHandle.prototype.createSyncAccessHandle
-self.sqlite3.postInit.push(function(self, sqlite3){
+self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   const warn = console.warn.bind(console),
         error = console.error.bind(console);
-  if(!self.importScripts || !self.FileSystemFileHandle
-     || !self.FileSystemFileHandle.prototype.createSyncAccessHandle){
-    warn("OPFS not found or its sync API is not available in this environment.");
+  if(!self.importScripts || !self.FileSystemFileHandle){
+    //|| !self.FileSystemFileHandle.prototype.createSyncAccessHandle){
+    // ^^^ sync API is not required with WASMFS/OPFS backend.
+    warn("OPFS is not available in this environment.");
     return;
   }else if(!sqlite3.capi.wasm.bigIntEnabled){
     error("OPFS requires BigInt support but sqlite3.capi.wasm.bigIntEnabled is false.");
