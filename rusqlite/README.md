@@ -191,7 +191,6 @@ minimum SQLite version that supports your chosen features. If you are using
 `libsqlite3-sys` directly, you can use the same features to choose which
 pregenerated bindings are chosen:
 
-* `min_sqlite_version_3_7_16` - SQLite 3.7.16 bindings
 * `min_sqlite_version_3_14_0` - SQLite 3.14.0 bindings (this is the default)
 
 If you use any of the `bundled` features, you will get pregenerated bindings for the
