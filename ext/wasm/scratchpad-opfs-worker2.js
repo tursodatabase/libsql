@@ -38,7 +38,7 @@
 
   const test1 = function(db){
     db.execMulti("create table if not exists t(a);")
-      .callInTransaction(function(db){
+      .transaction(function(db){
         db.prepare("insert into t(a) values(?)")
           .bind(new Date().getTime())
           .stepFinalize();
