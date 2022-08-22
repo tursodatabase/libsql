@@ -9,6 +9,8 @@
 #
 #***********************************************************************
 #
+# TESTRUNNER: slow
+#
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -86,7 +88,7 @@ do_multiclient_test tn {
       INSERT INTO t1 VALUES(3, 4);
       INSERT INTO t1 VALUES(5, 6);
     }
-    code1 { db timeout 2000 }
+    code1 { db timeout 1100 }
   } {}
 
   do_test 2.$tn.2 {

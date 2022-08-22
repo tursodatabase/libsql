@@ -293,6 +293,8 @@ int sqlite3_db_status(
       sqlite3BtreeEnterAll(db);
       bReleaseSchema = sqlite3LockReusableSchema(db);
       db->pnBytesFreed = &nByte;
+      assert( db->lookaside.pEnd==db->lookaside.pTrueEnd );
+      db->lookaside.pEnd = db->lookaside.pStart;
       for(i=0; i<db->nDb; i++){
         Schema *pSchema;
 #ifdef SQLITE_ENABLE_SHARED_SCHEMA
@@ -336,6 +338,7 @@ int sqlite3_db_status(
       }
       sqlite3UnlockReusableSchema(db, bReleaseSchema);
       db->pnBytesFreed = 0;
+      db->lookaside.pEnd = db->lookaside.pTrueEnd;
       sqlite3BtreeLeaveAll(db);
 
       *pHighwater = 0;
@@ -353,9 +356,12 @@ int sqlite3_db_status(
       int nByte = 0;              /* Used to accumulate return value */
 
       db->pnBytesFreed = &nByte;
+      assert( db->lookaside.pEnd==db->lookaside.pTrueEnd );
+      db->lookaside.pEnd = db->lookaside.pStart;
       for(pVdbe=db->pVdbe; pVdbe; pVdbe=pVdbe->pNext){
         sqlite3VdbeDelete(pVdbe);
       }
+      db->lookaside.pEnd = db->lookaside.pTrueEnd;
       db->pnBytesFreed = 0;
 
       *pHighwater = 0;  /* IMP: R-64479-57858 */

@@ -1,0 +1,10 @@
+_jaccwabyt_test_intptr
+_jaccwabyt_test_int64ptr
+_jaccwabyt_test_int64_max
+_jaccwabyt_test_int64_min
+_jaccwabyt_test_int64_minmax
+_jaccwabyt_test_int64_times2
+_jaccwabyt_test_struct
+_jaccwabyt_test_ctype_json
+_jaccwabyt_test_stack_overflow
+_jaccwabyt_test_str_hello

@@ -1,7 +1,5 @@
-This directory houses a "fiddle"-style application which embeds a
-[Web Assembly (WASM)](https://en.wikipedia.org/wiki/WebAssembly)
-build of the sqlite3 shell app into an HTML page, effectively running
-the shell in a client-side browser.
+This directory houses the [Web Assembly (WASM)](https://en.wikipedia.org/wiki/WebAssembly)
+parts of the sqlite3 build.
 
 It requires [emscripten][] and that the build environment be set up for
 emscripten. A mini-HOWTO for setting that up follows...
@@ -22,8 +20,15 @@ $ ./emsdk install latest
 $ ./emsdk activate latest
 ```
 
-Those parts only need to be run once. The following needs to be run for each
-shell instance which needs the `emcc` compiler:
+Those parts only need to be run once, but the SDK can be updated using:
+
+```
+$ git pull
+$ ./emsdk activate latest
+```
+
+The following needs to be run for each shell instance which needs the
+`emcc` compiler:
 
 ```
 # Activate PATH and other environment variables in the current terminal:
@@ -33,8 +38,11 @@ $ which emcc
 /path/to/emsdk/upstream/emscripten/emcc
 ```
 
-That `env` script needs to be sourced for building this application from the
-top of the sqlite3 build tree:
+Optionally, add that to your login shell's resource file (`~/.bashrc`
+or equivalent).
+
+That `env` script needs to be sourced for building this application
+from the top of the sqlite3 build tree:
 
 ```
 $ make fiddle
@@ -43,28 +51,29 @@ $ make fiddle
 Or:
 
 ```
-$ cd ext/fiddle
+$ cd ext/wasm
 $ make
 ```
 
 That will generate the fiddle application under
-[ext/fiddle](/dir/ext/fiddle), as `fiddle.html`. That application
+[ext/fiddle](/dir/ext/wasm/fiddle), as `fiddle.html`. That application
 cannot, due to XMLHttpRequest security limitations, run if the HTML
 file is opened directly in the browser (i.e. if it is opened using a
 `file://` URL), so it needs to be served via an HTTP server.  For
 example, using [althttpd][]:
 
 ```
-$ cd ext/fiddle
-$ althttpd -debug 1 -jail 0 -port 9090 -root .
+$ cd ext/wasm/fiddle
+$ althttpd -page fiddle.html
 ```
 
-Then browse to `http://localhost:9090/fiddle.html`.
+That will open the system's browser and run the fiddle app's page.
 
 Note that when serving this app via [althttpd][], it must be a version
 from 2022-05-17 or newer so that it recognizes the `.wasm` file
 extension and responds with the mimetype `application/wasm`, as the
 WASM loader is pedantic about that detail.
+
 
 # Known Quirks and Limitations
 

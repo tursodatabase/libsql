@@ -1513,8 +1513,7 @@ static int defragmentPage(MemPage *pPage, int nMaxFrag){
   assert( pPage->pBt->usableSize <= SQLITE_MAX_PAGE_SIZE );
   assert( pPage->nOverflow==0 );
   assert( sqlite3_mutex_held(pPage->pBt->mutex) );
-  temp = 0;
-  src = data = pPage->aData;
+  data = pPage->aData;
   hdr = pPage->hdrOffset;
   cellOffset = pPage->cellOffset;
   nCell = pPage->nCell;
@@ -1568,39 +1567,38 @@ static int defragmentPage(MemPage *pPage, int nMaxFrag){
   cbrk = usableSize;
   iCellLast = usableSize - 4;
   iCellStart = get2byte(&data[hdr+5]);
-  for(i=0; i<nCell; i++){
-    u8 *pAddr;     /* The i-th cell pointer */
-    pAddr = &data[cellOffset + i*2];
-    pc = get2byte(pAddr);
-    testcase( pc==iCellFirst );
-    testcase( pc==iCellLast );
-    /* These conditions have already been verified in btreeInitPage()
-    ** if PRAGMA cell_size_check=ON.
-    */
-    if( pc<iCellStart || pc>iCellLast ){
-      return SQLITE_CORRUPT_PAGE(pPage);
+  if( nCell>0 ){
+    temp = sqlite3PagerTempSpace(pPage->pBt->pPager);
+    memcpy(&temp[iCellStart], &data[iCellStart], usableSize - iCellStart);
+    src = temp;
+    for(i=0; i<nCell; i++){
+      u8 *pAddr;     /* The i-th cell pointer */
+      pAddr = &data[cellOffset + i*2];
+      pc = get2byte(pAddr);
+      testcase( pc==iCellFirst );
+      testcase( pc==iCellLast );
+      /* These conditions have already been verified in btreeInitPage()
+      ** if PRAGMA cell_size_check=ON.
+      */
+      if( pc<iCellStart || pc>iCellLast ){
+        return SQLITE_CORRUPT_PAGE(pPage);
+      }
+      assert( pc>=iCellStart && pc<=iCellLast );
+      size = pPage->xCellSize(pPage, &src[pc]);
+      cbrk -= size;
+      if( cbrk<iCellStart || pc+size>usableSize ){
+        return SQLITE_CORRUPT_PAGE(pPage);
+      }
+      assert( cbrk+size<=usableSize && cbrk>=iCellStart );
+      testcase( cbrk+size==usableSize );
+      testcase( pc+size==usableSize );
+      put2byte(pAddr, cbrk);
+      memcpy(&data[cbrk], &src[pc], size);
     }
-    assert( pc>=iCellStart && pc<=iCellLast );
-    size = pPage->xCellSize(pPage, &src[pc]);
-    cbrk -= size;
-    if( cbrk<iCellStart || pc+size>usableSize ){
-      return SQLITE_CORRUPT_PAGE(pPage);
-    }
-    assert( cbrk+size<=usableSize && cbrk>=iCellStart );
-    testcase( cbrk+size==usableSize );
-    testcase( pc+size==usableSize );
-    put2byte(pAddr, cbrk);
-    if( temp==0 ){
-      if( cbrk==pc ) continue;
-      temp = sqlite3PagerTempSpace(pPage->pBt->pPager);
-      memcpy(&temp[iCellStart], &data[iCellStart], usableSize - iCellStart);
-      src = temp;
-    }
-    memcpy(&data[cbrk], &src[pc], size);
   }
   data[hdr+7] = 0;
 
- defragment_out:
+defragment_out:
   assert( pPage->nFree>=0 );
   if( data[hdr+7]+cbrk-iCellFirst!=pPage->nFree ){
     return SQLITE_CORRUPT_PAGE(pPage);
@@ -1673,9 +1671,9 @@ static u8 *pageFindSlot(MemPage *pPg, int nByte, int *pRc){
     iAddr = pc;
     pTmp = &aData[pc];
     pc = get2byte(pTmp);
-    if( pc<=iAddr+size ){
+    if( pc<=iAddr ){
       if( pc ){
-        /* The next slot in the chain is not past the end of the current slot */
+        /* The next slot in the chain comes before the current slot */
         *pRc = SQLITE_CORRUPT_PAGE(pPg);
       }
       return 0;
@@ -1827,7 +1825,7 @@ static int freeSpace(MemPage *pPage, u16 iStart, u16 iSize){
     iFreeBlk = 0;  /* Shortcut for the case when the freelist is empty */
   }else{
     while( (iFreeBlk = get2byte(&data[iPtr]))<iStart ){
-      if( iFreeBlk<iPtr+4 ){
+      if( iFreeBlk<=iPtr ){
         if( iFreeBlk==0 ) break; /* TH3: corrupt082.100 */
         return SQLITE_CORRUPT_PAGE(pPage);
       }
@@ -2309,9 +2307,7 @@ getAndInitPage_error1:
     pCur->pPage = pCur->apPage[pCur->iPage];
   }
   testcase( pgno==0 );
-  assert( pgno!=0 || rc==SQLITE_CORRUPT 
-                  || rc==SQLITE_IOERR_NOMEM
-                  || rc==SQLITE_NOMEM );
+  assert( pgno!=0 || rc!=SQLITE_OK );
   return rc;
 }
 
@@ -5253,8 +5249,6 @@ const void *sqlite3BtreePayloadFetch(BtCursor *pCur, u32 *pAmt){
 ** vice-versa).
 */
 static int moveToChild(BtCursor *pCur, u32 newPgno){
-  BtShared *pBt = pCur->pBt;
-
   assert( cursorOwnsBtShared(pCur) );
   assert( pCur->eState==CURSOR_VALID );
   assert( pCur->iPage<BTCURSOR_MAX_DEPTH );
@@ -5268,7 +5262,8 @@ static int moveToChild(BtCursor *pCur, u32 newPgno){
   pCur->apPage[pCur->iPage] = pCur->pPage;
   pCur->ix = 0;
   pCur->iPage++;
-  return getAndInitPage(pBt, newPgno, &pCur->pPage, pCur, pCur->curPagerFlags);
+  return getAndInitPage(pCur->pBt, newPgno, &pCur->pPage, pCur,
+                        pCur->curPagerFlags);
 }
 
 #ifdef SQLITE_DEBUG
@@ -5374,7 +5369,7 @@ static int moveToRoot(BtCursor *pCur){
       }
       sqlite3BtreeClearCursor(pCur);
     }
-    rc = getAndInitPage(pCur->pBtree->pBt, pCur->pgnoRoot, &pCur->pPage,
+    rc = getAndInitPage(pCur->pBt, pCur->pgnoRoot, &pCur->pPage,
                         0, pCur->curPagerFlags);
     if( rc!=SQLITE_OK ){
       pCur->eState = CURSOR_INVALID;
@@ -7015,12 +7010,6 @@ static void dropCell(MemPage *pPage, int idx, int sz, int *pRC){
   assert( pPage->pBt->usableSize > (u32)(ptr-data) );
   pc = get2byte(ptr);
   hdr = pPage->hdrOffset;
-#if 0  /* Not required.  Omit for efficiency */
-  if( pc<hdr+pPage->nCell*2 ){
-    *pRC = SQLITE_CORRUPT_BKPT;
-    return;
-  }
-#endif
   testcase( pc==(u32)get2byte(&data[hdr+5]) );
   testcase( pc+sz==pPage->pBt->usableSize );
   if( pc+sz > pPage->pBt->usableSize ){
