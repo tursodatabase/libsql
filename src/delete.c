@@ -676,7 +676,7 @@ delete_from_cleanup:
   sqlite3ExprListDelete(db, pOrderBy);
   sqlite3ExprDelete(db, pLimit);
 #endif
-  sqlite3DbFree(db, aToOpen);
+  if( aToOpen ) sqlite3DbNNFreeNN(db, aToOpen);
   return;
 }
 /* Make sure "isView" and other macros defined above are undefined. Otherwise
