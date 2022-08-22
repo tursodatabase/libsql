@@ -215,12 +215,15 @@ do_faultsim_test 8.1 -faults oom* -prep {
   faultsim_test_result {0 {}}
 }
 
+set ::TMPDBERROR [list 1 \
+  {unable to open a temporary database file for storing temporary tables}
+]
 do_faultsim_test 8.2 -faults oom* -prep {
   faultsim_restore_and_reopen
 } -body {
   execsql { ALTER TABLE t8 RENAME TO t8ii }
 } -test {
-  faultsim_test_result {0 {}}
+  faultsim_test_result {0 {}} $::TMPDBERROR
 }
 
 #-------------------------------------------------------------------------

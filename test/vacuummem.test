@@ -12,6 +12,7 @@
 # focus of this file is testing that the VACUUM statement correctly
 # frees any memory used for a temporary cache.
 #
+# TESTRUNNER: slow
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl

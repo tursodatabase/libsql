@@ -749,6 +749,16 @@ int sqlite3RealSameAsInt(double r1, sqlite3_int64 i){
           && i >= -2251799813685248LL && i < 2251799813685248LL);
 }
 
+/* Convert a floating point value to its closest integer.  Do so in
+** a way that avoids 'outside the range of representable values' warnings
+** from UBSAN.
+*/
+i64 sqlite3RealToI64(double r){
+  if( r<=(double)SMALLEST_INT64 ) return SMALLEST_INT64;
+  if( r>=(double)LARGEST_INT64) return LARGEST_INT64;
+  return (i64)r;
+}
+
 /*
 ** Convert pMem so that it has type MEM_Real or MEM_Int.
 ** Invalidate any prior representations.
@@ -770,7 +780,7 @@ int sqlite3VdbeMemNumerify(Mem *pMem){
     assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
     rc = sqlite3AtoF(pMem->z, &pMem->u.r, pMem->n, pMem->enc);
     if( ((rc==0 || rc==1) && sqlite3Atoi64(pMem->z, &ix, pMem->n, pMem->enc)<=1)
-     || sqlite3RealSameAsInt(pMem->u.r, (ix = (i64)pMem->u.r))
+     || sqlite3RealSameAsInt(pMem->u.r, (ix = sqlite3RealToI64(pMem->u.r)))
     ){
       pMem->u.i = ix;
       MemSetTypeFlag(pMem, MEM_Int);

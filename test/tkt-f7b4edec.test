@@ -16,6 +16,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+ifcapable !shared_cache { finish_test ; return }
 
 # Open two database connections to the same database file in
 # shared cache mode.  Create update hooks that will fire on

@@ -12,6 +12,8 @@
 # focus of this script is recovery from transient manditory locks
 # that sometimes appear on database files due to anti-virus software.
 #
+# TESTRUNNER: slow
+#
 
 if {$tcl_platform(platform)!="windows"} return
 
