@@ -22,7 +22,6 @@ if {[permutation] == "inmemory_journal"} {
 
 set testprefix dbpagefault
 
-
 faultsim_save_and_close
 do_faultsim_test 1 -prep {
   faultsim_restore_and_reopen
@@ -49,4 +48,26 @@ do_faultsim_test 2 -prep {
   faultsim_test_result {1 {no such schema}}  {1 {SQL logic error}}
 }
 
+reset_db
+do_execsql_test 3.0 {
+  CREATE TABLE x1(z, b);
+  CREATE TRIGGER BEFORE INSERT ON x1 BEGIN
+    DELETE FROM sqlite_dbpage WHERE pgno=100;
+    UPDATE sqlite_dbpage SET data=null WHERE pgno=100;
+  END;
+}
+
+do_faultsim_test 3 -prep {
+  catch { db close }
+  sqlite3 db test.db
+  execsql { PRAGMA trusted_schema = true }
+} -body {
+  execsql { INSERT INTO x1 DEFAULT VALUES; }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
+
 finish_test
+
+

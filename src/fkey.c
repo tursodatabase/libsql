@@ -1439,11 +1439,12 @@ void sqlite3FkDelete(sqlite3 *db, Table *pTab){
   FKey *pNext;                    /* Copy of pFKey->pNextFrom */
 
   assert( IsOrdinaryTable(pTab) );
+  assert( db!=0 );
   for(pFKey=pTab->u.tab.pFKey; pFKey; pFKey=pNext){
     assert( db==0 || sqlite3SchemaMutexHeld(db, 0, pTab->pSchema) );
 
     /* Remove the FK from the fkeyHash hash table. */
-    if( !db || db->pnBytesFreed==0 ){
+    if( db->pnBytesFreed==0 ){
       if( pFKey->pPrevTo ){
         pFKey->pPrevTo->pNextTo = pFKey->pNextTo;
       }else{
