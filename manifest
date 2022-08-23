@@ -1,5 +1,5 @@
-C Add\smksourceid\sbinary\sto\sthe\sclean\srules\sand\s$(TESTPROGS)\sto\sdistclean.
-D 2022-08-23T16:55:19.945
+C Enhance\sassert()\sstatements\sto\senforce\stighter\sbounds\son\sthe\sP5\soperand\sof\nthe\sOP_Next\sand\sOP_Prev\sopcodes.
+D 2022-08-23T17:51:39.777
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -660,7 +660,7 @@ F src/upsert.c 8789047a8f0a601ea42fa0256d1ba3190c13746b6ba940fe2d25643a7e991937
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c 602fe229f32a96ceccae4f40824129669582096f7c355f53dbac156c9fecef23
 F src/vacuum.c bb346170b0b54c6683bba4a5983aea40485597fdf605c87ec8bc2e199fe88cd8
-F src/vdbe.c 4e57ac969bb2252598024ee3ebcb0885cb7976f1606e2bd77975a506da93ed50
+F src/vdbe.c 0150d16da21cb96b2b0f2880aad6acd80ddedf93a9f3eb2c5200aef864854fe6
 F src/vdbe.h 64619af62603dc3c4f5ff6ff6d2c8f389abd667a29ce6007ed44bd22b3211cd0
 F src/vdbeInt.h 2cad0aeeb106371ed0e0946bab89f60627087068847afc2451c05056961c18da
 F src/vdbeapi.c 6af7b32ada7ef8facafa91f57aedabd91633f254b34e9c0901ab402d4238e553
@@ -1999,8 +1999,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c296a9d958ec360fc8d217363348b4918d665bccb3c4f27503a2dcef7db49052
-R 4d963a20dc8f72472e7e2a5f270fe9b3
-U stephan
-Z 2103395859f5e5eeef13bbb4c1cea65e
+P ae3e82f5a3332bea261aca6a0dd02063cf7056c023204cc10f1ae18d75249f91
+R 51ff0f60ce02e5f4651845198beeb063
+U drh
+Z 8ad404d5ff9703f3fbcf09dd071d939b
 # Remove this line to create a well-formed Fossil manifest.
