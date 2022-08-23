@@ -1476,6 +1476,7 @@ clean:
 	rm -rf .libs .deps
 	rm -f lemon$(BEXE) lempar.c parse.* sqlite*.tar.gz
 	rm -f mkkeywordhash$(BEXE) keywordhash.h
+	rm -f mksourceid$(BEXE)
 	rm -f *.da *.bb *.bbg gmon.out
 	rm -rf tsrc .target_source
 	rm -f tclsqlite3$(TEXE)
@@ -1500,7 +1501,8 @@ clean:
 	rm -f threadtest5
 
 distclean:	clean
-	rm -f config.h config.log config.status libtool Makefile sqlite3.pc
+	rm -f config.h config.log config.status libtool Makefile sqlite3.pc \
+		$(TESTPROGS)
 
 #
 # Windows section
