@@ -420,7 +420,7 @@ struct DblquoteStr {
 */
 struct Vdbe {
   sqlite3 *db;            /* The database connection that owns this statement */
-  Vdbe *pPrev,*pNext;     /* Linked list of VDBEs with the same Vdbe.db */
+  Vdbe **ppVPrev,*pVNext; /* Linked list of VDBEs with the same Vdbe.db */
   Parse *pParse;          /* Parsing context used to create this Vdbe */
   ynVar nVar;             /* Number of entries in aVar[] */
   int nMem;               /* Number of memory locations currently allocated */

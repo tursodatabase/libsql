@@ -1811,7 +1811,7 @@ sqlite3_stmt *sqlite3_next_stmt(sqlite3 *pDb, sqlite3_stmt *pStmt){
   if( pStmt==0 ){
     pNext = (sqlite3_stmt*)pDb->pVdbe;
   }else{
-    pNext = (sqlite3_stmt*)((Vdbe*)pStmt)->pNext;
+    pNext = (sqlite3_stmt*)((Vdbe*)pStmt)->pVNext;
   }
   sqlite3_mutex_leave(pDb->mutex);
   return pNext;

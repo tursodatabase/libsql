@@ -30,10 +30,10 @@ Vdbe *sqlite3VdbeCreate(Parse *pParse){
   memset(&p->aOp, 0, sizeof(Vdbe)-offsetof(Vdbe,aOp));
   p->db = db;
   if( db->pVdbe ){
-    db->pVdbe->pPrev = p;
+    db->pVdbe->ppVPrev = &p->pVNext;
   }
-  p->pNext = db->pVdbe;
-  p->pPrev = 0;
+  p->pVNext = db->pVdbe;
+  p->ppVPrev = &db->pVdbe;
   db->pVdbe = p;
   assert( p->eVdbeState==VDBE_INIT_STATE );
   p->pParse = pParse;
@@ -125,18 +125,18 @@ int sqlite3VdbeUsesDoubleQuotedString(
 ** finalized.
 */
 void sqlite3VdbeSwap(Vdbe *pA, Vdbe *pB){
-  Vdbe tmp, *pTmp;
+  Vdbe tmp, *pTmp, **ppTmp;
   char *zTmp;
   assert( pA->db==pB->db );
   tmp = *pA;
   *pA = *pB;
   *pB = tmp;
-  pTmp = pA->pNext;
-  pA->pNext = pB->pNext;
-  pB->pNext = pTmp;
-  pTmp = pA->pPrev;
-  pA->pPrev = pB->pPrev;
-  pB->pPrev = pTmp;
+  pTmp = pA->pVNext;
+  pA->pVNext = pB->pVNext;
+  pB->pVNext = pTmp;
+  ppTmp = pA->ppVPrev;
+  pA->ppVPrev = pB->ppVPrev;
+  pB->ppVPrev = ppTmp;
   zTmp = pA->zSql;
   pA->zSql = pB->zSql;
   pB->zSql = zTmp;
@@ -3020,7 +3020,7 @@ static void checkActiveVdbeCnt(sqlite3 *db){
       if( p->readOnly==0 ) nWrite++;
       if( p->bIsReader ) nRead++;
     }
-    p = p->pNext;
+    p = p->pVNext;
   }
   assert( cnt==db->nVdbeActive );
   assert( nWrite==db->nVdbeWrite );
@@ -3600,14 +3600,10 @@ void sqlite3VdbeDelete(Vdbe *p){
   assert( sqlite3_mutex_held(db->mutex) );
   sqlite3VdbeClearObject(db, p);
   if( db->pnBytesFreed==0 ){
-    if( p->pPrev ){
-      p->pPrev->pNext = p->pNext;
-    }else{
-      assert( db->pVdbe==p );
-      db->pVdbe = p->pNext;
-    }
-    if( p->pNext ){
-      p->pNext->pPrev = p->pPrev;
+    assert( p->ppVPrev!=0 );
+    *p->ppVPrev = p->pVNext;
+    if( p->pVNext ){
+      p->pVNext->ppVPrev = p->ppVPrev;
     }
   }
   sqlite3DbNNFreeNN(db, p);
@@ -5105,7 +5101,7 @@ void sqlite3VdbeCountChanges(Vdbe *v){
 */
 void sqlite3ExpirePreparedStatements(sqlite3 *db, int iCode){
   Vdbe *p;
-  for(p = db->pVdbe; p; p=p->pNext){
+  for(p = db->pVdbe; p; p=p->pVNext){
     p->expired = iCode+1;
   }
 }

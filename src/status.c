@@ -338,7 +338,7 @@ int sqlite3_db_status(
       db->pnBytesFreed = &nByte;
       assert( db->lookaside.pEnd==db->lookaside.pTrueEnd );
       db->lookaside.pEnd = db->lookaside.pStart;
-      for(pVdbe=db->pVdbe; pVdbe; pVdbe=pVdbe->pNext){
+      for(pVdbe=db->pVdbe; pVdbe; pVdbe=pVdbe->pVNext){
         sqlite3VdbeDelete(pVdbe);
       }
       db->lookaside.pEnd = db->lookaside.pTrueEnd;
