@@ -1543,15 +1543,20 @@ $(sqlite3_wasm_c): sqlite3.c
 #emcc_opt = -O3
 emcc_opt = -Oz
 emcc_environment = web
-# WASMFS OPFS is currently completely broken under fiddle but the
-# root cause has not yet been determined.
-emcc_flags_opfs =
-#emcc_flags_opfs += -sWASMFS -pthread
+# WASMFS/OPFS currently (2022-08-23) does not work with fiddle
+# because (A) fiddle is primarily implemented as a Worker and (B) the
+# Emscripten-based Worker loading process does not properly handle the
+# case of nested Workers (necessary for it to load the WASMFS-specific
+# Worker thread).
+emcc_flags_wasmfs =
+# To enable WASMFS/OPFS, uncomment these options:
+#emcc_flags_wasmfs += -sWASMFS -pthread
 #emcc_environment = web,worker
-#emcc_flags_opfs += -DSQLITE_WASM_OPFS
-#emcc_flags_opfs += '-DSQLITE_DEFAULT_UNIX_VFS="unix-none"'
-#emcc_flags_opfs += -sPTHREAD_POOL_SIZE=2
-#emcc_flags_opfs += -sPTHREAD_POOL_SIZE_STRICT=2
+#emcc_flags_wasmfs += -DSQLITE_WASM_OPFS
+#emcc_flags_wasmfs += -sPTHREAD_POOL_SIZE=2
+#emcc_flags_wasmfs += -sPTHREAD_POOL_SIZE_STRICT=2
+# (Thread pool settings may require tweaking.)
+#/end of WASMFS/OPFS options.
 emcc_flags = $(emcc_opt) \
         -sALLOW_TABLE_GROWTH \
         -sABORTING_MALLOC \
@@ -1563,10 +1568,12 @@ emcc_flags = $(emcc_opt) \
         --minify 0 \
         -I. $(SHELL_OPT) \
         -DSQLITE_THREADSAFE=0 \
+        -DSQLITE_TEMP_STORE=3 \
         -DSQLITE_OMIT_UTF16 \
         -DSQLITE_OMIT_DEPRECATED \
         -DSQLITE_OMIT_SHARED_CACHE \
-        $(emcc_flags_opfs)
+        '-DSQLITE_DEFAULT_UNIX_VFS="unix-none"' \
+        $(emcc_flags_wasmfs)
 $(fiddle_module_js): Makefile $(sqlite3_wasm_c) shell.c \
     $(wasm_dir)/EXPORTED_RUNTIME_METHODS.fiddle \
     $(wasm_dir)/EXPORTED_FUNCTIONS.fiddle

@@ -18,6 +18,7 @@ else
 endif
 fiddle:
 	$(MAKE) -C ../.. fiddle -e emcc_opt=$(fiddle_opt)
+all: fiddle
 
 clean:
 	$(MAKE) -C ../../ clean-fiddle
@@ -46,8 +47,12 @@ SQLITE_OPT = \
   -DSQLITE_OMIT_DEPRECATED \
   -DSQLITE_OMIT_UTF16 \
   -DSQLITE_OMIT_SHARED_CACHE \
-  -DSQLITE_THREADSAFE=0
+  -DSQLITE_THREADSAFE=0 \
+  -DSQLITE_TEMP_STORE=3
 #SQLITE_OPT += -DSQLITE_ENABLE_MEMSYS5
+# ^^^ MEMSYS5 is hypothetically useful for non-Emscripten builds but
+# requires adding more infrastructure and fixing one spot in the
+# sqlite3 internals which calls malloc() early on.
 $(dir.top)/sqlite3.c:
 	$(MAKE) -C $(dir.top) sqlite3.c
 
