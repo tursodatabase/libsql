@@ -348,6 +348,16 @@
 #endif
 
 /*
+** Set the default maximum statement cache size
+*/
+#if !defined(SQLITE_DEFAULT_STMTCACHE_SIZE)
+# define SQLITE_DEFAULT_STMTCACHE_SIZE 10
+#endif
+#if SQLITE_DEFAULT_STMTCACHE_SIZE<0 || SQLITE_DEFAULT_STMTCACHE_SIZE>254
+# error SQLITE_DEFAULT_STMTCACHE_SIZE must be between 0 and 254
+#endif
+
+/*
 ** Exactly one of the following macros must be defined in order to
 ** specify which memory allocation subsystem to use.
 **
@@ -1560,6 +1570,7 @@ struct sqlite3 {
   u8 noSharedCache;             /* True if no shared-cache backends */
   u8 nSqlExec;                  /* Number of pending OP_SqlExec opcodes */
   u8 eOpenState;                /* Current condition of the connection */
+  u8 mxCache, nCache;           /* Max and current size of statement cache */
   int nextPagesize;             /* Pagesize after VACUUM if >0 */
   i64 nChange;                  /* Value returned by sqlite3_changes() */
   i64 nTotalChange;             /* Value returned by sqlite3_total_changes() */

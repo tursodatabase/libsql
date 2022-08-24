@@ -686,6 +686,7 @@ static int sqlite3Prepare(
   int rc = SQLITE_OK;       /* Result code */
   int i;                    /* Loop counter */
   Parse sParse;             /* Parsing context */
+  u32 hSql = 0;             /* Hash of the input SQL */
 
   /* sqlite3ParseObjectInit(&sParse, db); // inlined for performance */
   memset(PARSE_HDR(&sParse), 0, PARSE_HDR_SZ);
@@ -698,10 +699,24 @@ static int sqlite3Prepare(
   if( db->mallocFailed ) sqlite3ErrorMsg(&sParse, "out of memory");
   assert( sqlite3_mutex_held(db->mutex) );
 
-  /* For a long-term use prepared statement avoid the use of
-  ** lookaside memory.
-  */
   if( prepFlags & SQLITE_PREPARE_PERSISTENT ){
+    /* Check to see if the prepared statement can be resolved from cache. */
+    if( db->mxCache>0 ){
+      Vdbe *pCache;
+      if( nBytes<0 ) nBytes = sqlite3Strlen30(zSql);
+      pCache = sqlite3VdbeFindInStmtCache(db, zSql, nBytes, &hSql);
+      if( pCache ){
+        *ppStmt = (sqlite3_stmt*)pCache;
+        if( pzTail ){
+          *pzTail = &zSql[nBytes];
+        }
+        goto end_prepare;
+      }
+    }
+
+    /* For a long-term use prepared statement should avoid the use of
+    ** lookaside memory.
+    */
     sParse.disableLookaside++;
     DisableLookaside;
   }
@@ -776,7 +791,8 @@ static int sqlite3Prepare(
   }
 
   if( db->init.busy==0 ){
-    sqlite3VdbeSetSql(sParse.pVdbe, zSql, (int)(sParse.zTail-zSql), prepFlags);
+    sqlite3VdbeSetSql(sParse.pVdbe, zSql, (int)(sParse.zTail-zSql),
+                      prepFlags, hSql);
   }
   if( db->mallocFailed ){
     sParse.rc = SQLITE_NOMEM_BKPT;

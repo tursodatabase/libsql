@@ -2128,7 +2128,61 @@ struct sqlite3_mem_methods {
 ** non-zero [error code] if a discontinued or unsupported configuration option
 ** is invoked.
 **
+** Most of these configuration options are used to set, clear, or query flags.
+** All such options take two arguments:  And integer (X) and a pointer to an
+** integer (P).  If the X argument is greater than zero, the flag is set.  If
+** X is equal to zero, the flag is cleared.  If X is less than zero, the flag
+** remains unchanged.  In all cases, the value of the flag after any changes
+** (either 0 or 1) is written into the integer pointed to by P.  All of the
+** configuration options listed below operate this way, with the following
+** exceptions:
+**
+** <ul>
+** <li> [SQLITE_DBCONFIG_MAINDBNAME]
+** <li> [SQLITE_DBCONFIG_LOOKASIDE]
+** <li> [SQLITE_DBCONFIG_STMTCACHE_SIZE]
+** </ul>
+**
 ** <dl>
+** [[SQLITE_DBCONFIG_STMTCACHE_SIZE]] <dt>SQLITE_DBCONFIG_STMTCACHE_SIZE</dt>
+** <dd> The SQLITE_DBCONFIG_STMTCACHE_SIZE option is used to query or change
+** the maximum number of [prepared statements] that SQLite will cache.  Prepared
+** statements are only candidates for caching if they are prepared using
+** [sqlite3_prepare_v3()] with the [SQLITE_PREPARE_PERSISTENT] option.  If
+** SQLite chooses to cache a perpared statement, that means that when
+** [sqlite3_finalize()] is called on the prepared statement, the statement is
+** not immediately deleted, but instead is put into the cache.  Subsequent
+** calls to any of the [sqlite3_prepare()] ineterfaces with the exact same
+** SQL text may reuse the cached prepared statement rather than creating a new
+** prepared statement.  This setting adjusts the maximum number of prepared
+** statements that SQLite will keep in cache.  The default value is
+** SQLITE_DEFAULT_STMTCACHE_SIZE which is 10 unless overridden at compile-time.
+** Setting the maximum cache size to zero disables the cache.  The cache is
+** automatically trimmed back to its maximum size when the cache size is
+** reduced.  Hence the cache can be flushed, by set the cache size to zero
+** then set it back to its original value.
+** <p>This configuration option takes two parameters. The first parameter (N) is
+** an integer which is the desired new size of the statement cache.  A negative
+** value for N leaves the cache size unchanged.  The second parameter (P) 
+** is a pointer to an integer into which the new cache size is written.
+** The database connection is free to limit or truncate the N value that is
+** passed in, so the new cache size returned in P is not necessarily the same
+** as the N argument.
+** </dd>
+**
+** [[SQLITE_DBCONFIG_MAINDBNAME]] <dt>SQLITE_DBCONFIG_MAINDBNAME</dt>
+** <dd> ^This option is used to change the name of the "main" database
+** schema.  ^The sole argument is a pointer to a constant UTF8 string
+** which will become the new schema name in place of "main".  ^SQLite
+** does not make a copy of the new main schema name string, so the application
+** must ensure that the argument passed into this DBCONFIG option is unchanged
+** until after the database connection closes.  The application is responsible
+** for managing the storage associated with the string passed in as the
+** argument.  SQLite does not attempt to free the string, or do anything else
+** to reclaim storage space associated with the string, when the database
+** connection closes.
+** </dd>
+**
 ** [[SQLITE_DBCONFIG_LOOKASIDE]]
 ** <dt>SQLITE_DBCONFIG_LOOKASIDE</dt>
 ** <dd> ^This option takes three additional arguments that determine the 
@@ -2227,15 +2281,6 @@ struct sqlite3_mem_methods {
 ** is written 0 or 1 to indicate whether [sqlite3_load_extension()] interface
 ** is disabled or enabled following this call.  The second parameter may
 ** be a NULL pointer, in which case the new setting is not reported back.
-** </dd>
-**
-** [[SQLITE_DBCONFIG_MAINDBNAME]] <dt>SQLITE_DBCONFIG_MAINDBNAME</dt>
-** <dd> ^This option is used to change the name of the "main" database
-** schema.  ^The sole argument is a pointer to a constant UTF8 string
-** which will become the new schema name in place of "main".  ^SQLite
-** does not make a copy of the new main schema name string, so the application
-** must ensure that the argument passed into this DBCONFIG option is unchanged
-** until after the database connection closes.
 ** </dd>
 **
 ** [[SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE]] 
@@ -2396,6 +2441,7 @@ struct sqlite3_mem_methods {
 ** </dd>
 ** </dl>
 */
+#define SQLITE_DBCONFIG_STMTCACHE_SIZE         999 /* int int* */
 #define SQLITE_DBCONFIG_MAINDBNAME            1000 /* const char* */
 #define SQLITE_DBCONFIG_LOOKASIDE             1001 /* void* int int */
 #define SQLITE_DBCONFIG_ENABLE_FKEY           1002 /* int int* */
@@ -4047,11 +4093,19 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 ** <dd>The SQLITE_PREPARE_NO_VTAB flag causes the SQL compiler
 ** to return an error (error code SQLITE_ERROR) if the statement uses
 ** any virtual tables.
+**
+** [[SQLITE_PREPARE_CACHE]] <td>SQLITE_PREPARE_CACHE</dt>
+** <dd>The SQLITE_PREPARE_CACHE flag gives SQLite permission to attempt
+** to cache the prepared statement after it is
+** [sqlite3_finalized|finalized] and attempt to reuse it as the
+** return value for the next call to a [sqlite3_prepare()] that has
+** the same SQL.  This flag also implies [SQLITE_PREPARE_PERSISTENT].
 ** </dl>
 */
 #define SQLITE_PREPARE_PERSISTENT              0x01
 #define SQLITE_PREPARE_NORMALIZE               0x02
 #define SQLITE_PREPARE_NO_VTAB                 0x04
+#define SQLITE_PREPARE_CACHE                   0x08
 
 /*
 ** CAPI3REF: Compiling An SQL Statement
@@ -8576,6 +8630,7 @@ int sqlite3_stmt_status(sqlite3_stmt*, int op,int resetFlg);
 #define SQLITE_STMTSTATUS_RUN               6
 #define SQLITE_STMTSTATUS_FILTER_MISS       7
 #define SQLITE_STMTSTATUS_FILTER_HIT        8
+#define SQLITE_STMTSTATUS_STATE             98
 #define SQLITE_STMTSTATUS_MEMUSED           99
 
 /*

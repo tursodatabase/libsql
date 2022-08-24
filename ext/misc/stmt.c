@@ -31,7 +31,7 @@ SQLITE_EXTENSION_INIT1
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 
 
-#define STMT_NUM_INTEGER_COLUMN 10
+#define STMT_NUM_INTEGER_COLUMN 11
 typedef struct StmtRow StmtRow;
 struct StmtRow {
   sqlite3_int64 iRowid;                /* Rowid value */
@@ -95,11 +95,12 @@ static int stmtConnect(
 #define STMT_COLUMN_REPREP  8   /* SQLITE_STMTSTATUS_REPREPARE */
 #define STMT_COLUMN_RUN     9   /* SQLITE_STMTSTATUS_RUN */
 #define STMT_COLUMN_MEM    10   /* SQLITE_STMTSTATUS_MEMUSED */
+#define STMT_COLUMN_STATE  11   /* SQLITE_STMTSTATUS_STATE */
 
 
   rc = sqlite3_declare_vtab(db,
      "CREATE TABLE x(sql,ncol,ro,busy,nscan,nsort,naidx,nstep,"
-                    "reprep,run,mem)");
+                    "reprep,run,mem,state)");
   if( rc==SQLITE_OK ){
     pNew = sqlite3_malloc64( sizeof(*pNew) );
     *ppVtab = (sqlite3_vtab*)pNew;
@@ -175,6 +176,10 @@ static int stmtColumn(
   StmtRow *pRow = pCur->pRow;
   if( i==STMT_COLUMN_SQL ){
     sqlite3_result_text(ctx, pRow->zSql, -1, SQLITE_TRANSIENT);
+  }else if( i==STMT_COLUMN_STATE ){
+    const char *azStateName[] = { "INIT", "READY", "RUN", "HALT", "CACHE" };
+    int j = pRow->aCol[i];
+    sqlite3_result_text(ctx, azStateName[j%5], -1, SQLITE_STATIC);
   }else{
     sqlite3_result_int(ctx, pRow->aCol[i]);
   }
@@ -252,6 +257,9 @@ static int stmtFilter(
     );
     pNew->aCol[STMT_COLUMN_MEM] = sqlite3_stmt_status(
         p, SQLITE_STMTSTATUS_MEMUSED, 0
+    );
+    pNew->aCol[STMT_COLUMN_STATE] = sqlite3_stmt_status(
+        p, SQLITE_STMTSTATUS_STATE, 0
     );
     pNew->iRowid = iRowid++;
     *ppRow = pNew;

@@ -143,6 +143,9 @@ while test "$1" != ""; do
         SPEEDTEST_OPTS="$SPEEDTEST_OPTS --testset rtree"
         CC_OPTS="$CC_OPTS -DSQLITE_ENABLE_RTREE"
         ;;
+    --persist)
+        SPEEDTEST_OPTS="$SPEEDTEST_OPTS --persist"
+        ;;
     --orm)
         SPEEDTEST_OPTS="$SPEEDTEST_OPTS --testset orm"
         ;;

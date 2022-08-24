@@ -67,7 +67,13 @@ void sqlite3VdbeError(Vdbe *p, const char *zFormat, ...){
 /*
 ** Remember the SQL string for a prepared statement.
 */
-void sqlite3VdbeSetSql(Vdbe *p, const char *z, int n, u8 prepFlags){
+void sqlite3VdbeSetSql(
+  Vdbe *p,               /* The VDBE whose SQL text is to be set */
+  const char *z,         /* the SQL text */
+  int n,                 /* Number of bytes in z[] */
+  u8 prepFlags,          /* prepFlags */
+  u32 hSql               /* Hash of z[] used for fast cache lookups */
+){
   if( p==0 ) return;
   p->prepFlags = prepFlags;
   if( (prepFlags & SQLITE_PREPARE_SAVESQL)==0 ){
@@ -75,7 +81,60 @@ void sqlite3VdbeSetSql(Vdbe *p, const char *z, int n, u8 prepFlags){
   }
   assert( p->zSql==0 );
   p->zSql = sqlite3DbStrNDup(p->db, z, n);
+  p->nSql = n;
+  p->hSql = hSql;
 }
+
+/*
+** Search for a cached VDBE that that implements the given SQL.
+*/
+Vdbe *sqlite3VdbeFindInStmtCache(
+  sqlite3 *db,          /* The database connection holding the cache */
+  const char *zSql,     /* Input SQL text */
+  int nSql,             /* Size of zSql[] in bytes */
+  u32 *phSql            /* Write the hash value here if not found */
+){
+  int i;                /* Loop counter */
+  Vdbe *pCache;         /* Candidate statement */
+  u32 c;                /* One character of SQL input */
+  u32 hSql;             /* A hash of the SQL input */
+  int n;                /* Number of SQL input characters to be hashed */
+
+  hSql = 0;
+  n = nSql;
+  if( n>100 ) n = 100;
+  for(i=0; i<n && (c = ((u8*)zSql)[i])!=';'; i++){
+    hSql = (hSql + c) * 0x9e3779b1;
+  }
+  hSql |= 1;
+  if( db->nCache ){
+    for(pCache = db->pVdbe; pCache; pCache=pCache->pVNext){
+      if( pCache->hSql==hSql
+       && pCache->eVdbeState==VDBE_CACHE_STATE
+       && pCache->nSql==nSql
+       && strncmp(zSql, pCache->zSql, nSql)==0
+      ){
+        pCache->eVdbeState = VDBE_READY_STATE;
+        db->nCache--;
+        if( pCache!=db->pVdbe ){
+          if( pCache->pVNext ){
+            pCache->pVNext->ppVPrev = pCache->ppVPrev;
+          }
+          *pCache->ppVPrev = pCache->pVNext;
+          pCache->pVNext = db->pVdbe;
+          pCache->ppVPrev = &db->pVdbe;
+          db->pVdbe->ppVPrev = &pCache->pVNext;
+          db->pVdbe = pCache;
+        }
+        sqlite3VdbeCheckActiveVdbeCount(db);
+        return pCache;
+      }
+    }
+  }
+  *phSql = hSql;
+  return 0;
+}
+
 
 #ifdef SQLITE_ENABLE_NORMALIZE
 /*
@@ -3008,7 +3067,7 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
 ** This is a no-op if NDEBUG is defined.
 */
 #ifndef NDEBUG
-static void checkActiveVdbeCnt(sqlite3 *db){
+void sqlite3VdbeCheckActiveVdbeCount(sqlite3 *db){
   Vdbe *p;
   int cnt = 0;
   int nWrite = 0;
@@ -3026,9 +3085,35 @@ static void checkActiveVdbeCnt(sqlite3 *db){
   assert( nWrite==db->nVdbeWrite );
   assert( nRead==db->nVdbeRead );
 }
-#else
-#define checkActiveVdbeCnt(x)
 #endif
+
+/*
+** Attempt to change the statement cache size.  If the statement cache
+** size is reduced remove excess elements from the cache.
+**
+** The argument is the *desired* new statement cache size.  The new
+** statement cache size will not necessarily be the same size.
+*/
+void sqlite3VdbeChangeStmtCacheSize(sqlite3 *db, int szDesired){
+  assert( szDesired>=0 );
+  if( szDesired>100 ) szDesired = 100;
+  if( db->nCache>szDesired ){
+    Vdbe *p, *pNext;
+    int n = szDesired;
+    for(p=db->pVdbe; p; p=pNext){
+      pNext = p->pVNext;
+      if( p->hSql==0 ) continue;
+      if( p->eVdbeState!=VDBE_CACHE_STATE ) continue;
+      if( n>0 ){ n--; continue; }
+      sqlite3VdbeDelete(p);
+      assert( db->nCache>szDesired );
+      db->nCache--;
+    }
+    assert( db->nCache==szDesired );
+  }
+  db->mxCache = szDesired;
+  sqlite3VdbeCheckActiveVdbeCount(db);
+}
 
 /*
 ** If the Vdbe passed as the first argument opened a statement-transaction,
@@ -3158,7 +3243,7 @@ int sqlite3VdbeHalt(Vdbe *p){
     p->rc = SQLITE_NOMEM_BKPT;
   }
   closeAllCursors(p);
-  checkActiveVdbeCnt(db);
+  sqlite3VdbeCheckActiveVdbeCount(db);
 
   /* No commit or rollback needed if the program never started or if the
   ** SQL statement does not read or write a database file.  */
@@ -3317,7 +3402,7 @@ int sqlite3VdbeHalt(Vdbe *p){
   assert( db->nVdbeRead>=db->nVdbeWrite );
   assert( db->nVdbeWrite>=0 );
   p->eVdbeState = VDBE_HALT_STATE;
-  checkActiveVdbeCnt(db);
+  sqlite3VdbeCheckActiveVdbeCount(db);
   if( db->mallocFailed ){
     p->rc = SQLITE_NOMEM_BKPT;
   }
@@ -5103,6 +5188,12 @@ void sqlite3ExpirePreparedStatements(sqlite3 *db, int iCode){
   Vdbe *p;
   for(p = db->pVdbe; p; p=p->pVNext){
     p->expired = iCode+1;
+  }
+  if( db->nCache>0 ){
+    u8 mxCache = db->mxCache;
+    sqlite3VdbeChangeStmtCacheSize(db, 0);
+    assert( db->nCache==0 );
+    db->mxCache = mxCache;
   }
 }
 

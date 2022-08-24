@@ -262,7 +262,9 @@ int sqlite3VdbeSetColName(Vdbe*, int, int, const char *, void(*)(void*));
 void sqlite3VdbeCountChanges(Vdbe*);
 sqlite3 *sqlite3VdbeDb(Vdbe*);
 u8 sqlite3VdbePrepareFlags(Vdbe*);
-void sqlite3VdbeSetSql(Vdbe*, const char *z, int n, u8);
+void sqlite3VdbeSetSql(Vdbe*, const char *z, int n, u8, u32);
+Vdbe *sqlite3VdbeFindInStmtCache(sqlite3*,const char*,int,u32*);
+void sqlite3VdbeChangeStmtCacheSize(sqlite3*,int);
 #ifdef SQLITE_ENABLE_NORMALIZE
 void sqlite3VdbeAddDblquoteStr(sqlite3*,Vdbe*,const char*);
 int sqlite3VdbeUsesDoubleQuotedString(Vdbe*,const char*);

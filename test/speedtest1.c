@@ -25,6 +25,7 @@ static const char zHelp[] =
   "  --output FILE       Store SQL output in FILE\n"
   "  --pagesize N        Set the page size to N\n"
   "  --pcache N SZ       Configure N pages of pagecache each of size SZ bytes\n"
+  "  --persist           Use the SQLITE_PREPARE_PERSISTENT flag\n"
   "  --primarykey        Use PRIMARY KEY instead of UNIQUE where appropriate\n"
   "  --repeat N          Repeat each SELECT N times (default: 1)\n"
   "  --reprepare         Reprepare each statement upon every invocation\n"
@@ -87,6 +88,7 @@ static struct Global {
   sqlite3_int64 iTotal;      /* Total time */
   int bWithoutRowid;         /* True for --without-rowid */
   int bReprepare;            /* True to reprepare the SQL on each rerun */
+  unsigned int mPrepFlags;   /* Flags passed into sqlite3_prepare_v3() */
   int bSqlOnly;              /* True to print the SQL once only */
   int bExplain;              /* Print SQL with EXPLAIN prefix */
   int bVerify;               /* Try to verify that results are correct */
@@ -496,7 +498,7 @@ char *speedtest1_once(const char *zFormat, ...){
   if( g.bSqlOnly ){
     printSql(zSql);
   }else{
-    int rc = sqlite3_prepare_v2(g.db, zSql, -1, &pStmt, 0);
+    int rc = sqlite3_prepare_v3(g.db, zSql, -1, 0, &pStmt, 0);
     if( rc ){
       fatal_error("SQL error: %s\n", sqlite3_errmsg(g.db));
     }
@@ -523,7 +525,7 @@ void speedtest1_prepare(const char *zFormat, ...){
   }else{
     int rc;
     if( g.pStmt ) sqlite3_finalize(g.pStmt);
-    rc = sqlite3_prepare_v2(g.db, zSql, -1, &g.pStmt, 0);
+    rc = sqlite3_prepare_v3(g.db, zSql, -1, g.mPrepFlags, &g.pStmt, 0);
     if( rc ){
       fatal_error("SQL error: %s\n", sqlite3_errmsg(g.db));
     }
@@ -586,8 +588,16 @@ void speedtest1_run(void){
 #if SQLITE_VERSION_NUMBER>=3006001
   if( g.bReprepare ){
     sqlite3_stmt *pNew;
-    sqlite3_prepare_v2(g.db, sqlite3_sql(g.pStmt), -1, &pNew, 0);
-    sqlite3_finalize(g.pStmt);
+    if( g.mPrepFlags & SQLITE_PREPARE_PERSISTENT ){
+      char zBuf[1000];
+      strncpy(zBuf, sqlite3_sql(g.pStmt), sizeof(zBuf));
+      zBuf[sizeof(zBuf)-1] = 0;
+      sqlite3_finalize(g.pStmt);
+      sqlite3_prepare_v3(g.db, zBuf, -1, g.mPrepFlags, &pNew, 0);
+    }else{
+      sqlite3_prepare_v2(g.db, sqlite3_sql(g.pStmt), -1, &pNew, 0);
+      sqlite3_finalize(g.pStmt);
+    }
     g.pStmt = pNew;
   }else
 #endif
@@ -2273,6 +2283,8 @@ int main(int argc, char **argv){
         if( i>=argc-1 ) fatal_error("missing arguments on %s\n", argv[i]);
         g.nRepeat = integerValue(argv[i+1]);
         i += 1;
+      }else if( strcmp(z,"persist")==0 ){
+        g.mPrepFlags |= SQLITE_PREPARE_PERSISTENT;
       }else if( strcmp(z,"reprepare")==0 ){
         g.bReprepare = 1;
 #if SQLITE_VERSION_NUMBER>=3006000

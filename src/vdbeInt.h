@@ -470,6 +470,8 @@ struct Vdbe {
   yDbMask btreeMask;      /* Bitmask of db->aDb[] entries referenced */
   yDbMask lockMask;       /* Subset of btreeMask that requires a lock */
   u32 aCounter[9];        /* Counters used by sqlite3_stmt_status() */
+  u32 hSql;               /* Hash for zSql */
+  int nSql;               /* Number of bytes in zSql[] */
   char *zSql;             /* Text of the SQL statement that generated this */
 #ifdef SQLITE_ENABLE_NORMALIZE
   char *zNormSql;         /* Normalization of the associated SQL statement */
@@ -496,6 +498,7 @@ struct Vdbe {
 #define VDBE_READY_STATE    1   /* Ready to run but not yet started */
 #define VDBE_RUN_STATE      2   /* Run in progress */
 #define VDBE_HALT_STATE     3   /* Finished.  Need reset() or finalize() */
+#define VDBE_CACHE_STATE    4   /* In statement cache */
 
 /*
 ** Structure used to store the context required by the 
@@ -653,9 +656,11 @@ int sqlite3VdbeSorterCompare(const VdbeCursor *, Mem *, int, int *);
 #ifdef SQLITE_DEBUG
   void sqlite3VdbeIncrWriteCounter(Vdbe*, VdbeCursor*);
   void sqlite3VdbeAssertAbortable(Vdbe*);
+  void sqlite3VdbeCheckActiveVdbeCount(sqlite3*);
 #else
 # define sqlite3VdbeIncrWriteCounter(V,C)
 # define sqlite3VdbeAssertAbortable(V)
+# define sqlite3VdbeCheckActiveVdbeCount(D)
 #endif
 
 #if !defined(SQLITE_OMIT_SHARED_CACHE) 

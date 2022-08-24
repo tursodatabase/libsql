@@ -917,6 +917,16 @@ int sqlite3_db_config(sqlite3 *db, int op, ...){
   int rc;
   va_start(ap, op);
   switch( op ){
+    case SQLITE_DBCONFIG_STMTCACHE_SIZE: {
+      int szDesired = va_arg(ap,int);
+      int *pszNew = va_arg(ap,int*);
+      if( szDesired>=0 ){
+        sqlite3VdbeChangeStmtCacheSize(db, szDesired);
+      }
+      *pszNew = (int)db->mxCache;
+      rc = SQLITE_OK;
+      break;
+    }
     case SQLITE_DBCONFIG_MAINDBNAME: {
       /* IMP: R-06824-28531 */
       /* IMP: R-36257-52125 */
@@ -1212,6 +1222,7 @@ static int sqlite3Close(sqlite3 *db, int forceZombie){
   }
 
   /* Force xDisconnect calls on all virtual tables */
+  sqlite3VdbeChangeStmtCacheSize(db, 0);
   disconnectAllVtab(db);
 
   /* If a transaction is open, the disconnectAllVtab() call above
@@ -3250,6 +3261,7 @@ static int openDatabase(
   db->autoCommit = 1;
   db->nextAutovac = -1;
   db->szMmap = sqlite3GlobalConfig.szMmap;
+  db->mxCache = SQLITE_DEFAULT_STMTCACHE_SIZE;
   db->nextPagesize = 0;
   db->init.azInit = sqlite3StdType; /* Any array of string ptrs will do */
 #ifdef SQLITE_ENABLE_SORTER_MMAP

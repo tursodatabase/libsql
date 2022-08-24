@@ -110,7 +110,20 @@ int sqlite3_finalize(sqlite3_stmt *pStmt){
     checkProfileCallback(db, v);
     assert( v->eVdbeState>=VDBE_READY_STATE );
     rc = sqlite3VdbeReset(v);
-    sqlite3VdbeDelete(v);
+    if( rc==SQLITE_OK
+     && v->hSql>0
+     && db->mxCache>0
+     && v->expired==0
+    ){
+      v->eVdbeState = VDBE_CACHE_STATE;
+      db->nCache++;
+      if( db->nCache>db->mxCache){
+        sqlite3VdbeChangeStmtCacheSize(db, db->mxCache);
+      }
+    }else{
+      sqlite3VdbeDelete(v);
+    }
+    sqlite3VdbeCheckActiveVdbeCount(db);
     rc = sqlite3ApiExit(db, rc);
     sqlite3LeaveMutexAndCloseZombie(db);
   }
@@ -689,6 +702,7 @@ static int sqlite3Step(Vdbe *p){
       if( p->bIsReader ) db->nVdbeRead++;
       p->pc = 0;
       p->eVdbeState = VDBE_RUN_STATE;
+      sqlite3VdbeCheckActiveVdbeCount(db);
     }else
 
     if( ALWAYS(p->eVdbeState==VDBE_HALT_STATE) ){
@@ -1842,6 +1856,8 @@ int sqlite3_stmt_status(sqlite3_stmt *pStmt, int op, int resetFlag){
     db->pnBytesFreed = 0;
     db->lookaside.pEnd = db->lookaside.pTrueEnd;
     sqlite3_mutex_leave(db->mutex);
+  }else if( op==SQLITE_STMTSTATUS_STATE ){
+    v = pVdbe->eVdbeState;
   }else{
     v = pVdbe->aCounter[op];
     if( resetFlag ) pVdbe->aCounter[op] = 0;
