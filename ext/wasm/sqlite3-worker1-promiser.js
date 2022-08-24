@@ -18,7 +18,7 @@
   slightly simpler client-side interface than the slightly-lower-level
   Worker API does.
 
-  This script necessarily exposes on global symbol, but clients may
+  This script necessarily exposes one global symbol, but clients may
   freely `delete` that symbol after calling it.
 */
 'use strict';
@@ -81,8 +81,8 @@
    information about messages.
 
 
-   This function returns a stateful factory function with the following
-   interfaces:
+   This function returns a stateful factory function with the
+   following interfaces:
 
    - Promise function(messageType, messageArgs)
    - Promise function({message object})
@@ -183,7 +183,11 @@ self.sqlite3Worker1Promiser = function callee(config = callee.defaultConfig){
         default:
           break;
     }
-    msgHandler.resolve(ev);
+    try {
+      msgHandler.resolve(ev);
+    }catch(e){
+      msgHandler.reject(e);
+    }
   }/*worker.onmessage()*/;
   return function(/*(msgType, msgArgs) || (msg)*/){
     let msg;
@@ -214,19 +218,19 @@ self.sqlite3Worker1Promiser = function callee(config = callee.defaultConfig){
       }
     }
     //debug("requestWork", msg);
-    const p = new Promise(function(resolve, reject){
+    let p = new Promise(function(resolve, reject){
       proxy.resolve = resolve;
       proxy.reject = reject;
       handlerMap[msg.messageId] = proxy;
       debug("Posting",msg.type,"message to Worker dbId="+(config.dbId||'default')+':',msg);
       config.worker.postMessage(msg);
     });
-    if(cbId) p.finally(()=>delete handlerMap[cbId]);
+    if(cbId) p = p.finally(()=>delete handlerMap[cbId]);
     return p;
   };
 }/*sqlite3Worker1Promiser()*/;
 self.sqlite3Worker1Promiser.defaultConfig = {
   worker: ()=>new Worker('sqlite3-worker1.js'),
-  onerror: console.error.bind(console),
+  onerror: (...args)=>console.error('worker1 error',...args),
   dbId: undefined
 };

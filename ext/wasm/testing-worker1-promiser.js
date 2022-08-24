@@ -29,16 +29,6 @@
   };
 
   let startTime;
-  const logEventResult = async function(evd){
-    logHtml(evd.errorClass ? 'error' : '',
-            "response to",evd.messageId,"Worker time =",
-            (evd.workerRespondTime - evd.workerReceivedTime),"ms.",
-            "Round-trip event time =",
-            (performance.now() - evd.departureTime),"ms.",
-            (evd.errorClass ? evd.message : "")
-           );
-  };
-
   const testCount = async ()=>{
     logHtml("","Total test count:",T.counter+". Total time =",(performance.now() - startTime),"ms");
   };
@@ -70,26 +60,28 @@
   delete self.sqlite3Worker1Promiser;
 
   const wtest = async function(msgType, msgArgs, callback){
-    let p = workerPromise({type: msgType, args:msgArgs});
-    if(callback) p.then(callback).finally(testCount);
-    return p;
+    const p = workerPromise({type: msgType, args:msgArgs});
+    return callback ? p.then(callback).finally(testCount) : p;
   };
 
   const runTests = async function(){
+    const dbFilename = '/testing2.sqlite3';
     logHtml('',
             "Sending 'open' message and waiting for its response before continuing.");
     startTime = performance.now();
-    wtest('open', {
-      filename:'testing2.sqlite3',
-      simulateError: 0 /* if true, fail the 'open' */
+    await wtest('open', {
+      filename: dbFilename,
+      persistent: true,
+      simulateError: 0 /* if true, fail the 'open' */,
     }, function(ev){
       log("then open result",ev);
-      T.assert('testing2.sqlite3'===ev.result.filename)
+      T.assert(1 && (dbFilename===ev.result.filename
+               || (sqlite3TestModule.sqlite3ApiConfig.persistentDirName
+                   + dbFilename)==ev.result.filename))
         .assert(ev.dbId)
         .assert(ev.messageId)
         .assert(promiserConfig.dbId === ev.dbId);
-    }).then(runTests2)
-      .catch((err)=>error("error response:",err));
+    }).then(runTests2);
   };
 
   const runTests2 = async function(){

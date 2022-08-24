@@ -21,7 +21,7 @@ if('undefined' !== typeof Module){ // presumably an Emscripten build
      Install a suitable default configuration for sqlite3ApiBootstrap().
   */
   const SABC = self.sqlite3ApiBootstrap.defaultConfig;
-  SABC.Module = Module /* ==>  Current needs to be exposed here for test code. NOT part
+  SABC.Module = Module /* ==>  Currently needs to be exposed here for test code. NOT part
                           of the public API. */;
   SABC.exports = Module['asm'];
   SABC.memory = Module.wasmMemory /* gets set if built with -sIMPORT_MEMORY */;

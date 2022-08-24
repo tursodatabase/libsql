@@ -180,7 +180,7 @@ sqlite3.initWorker1API = function(){
         toss("Throwing because of simulateError flag.");
       }
       if(args.persistent && args.filename){
-        oargs.filaname = sqlite3.capi.sqlite3_web_persistent_dir() + args.filename;
+        oargs.filename = sqlite3.capi.sqlite3_web_persistent_dir() + args.filename;
       }else if('' === args.filename){
         oargs.filename = args.filename;
       }else{

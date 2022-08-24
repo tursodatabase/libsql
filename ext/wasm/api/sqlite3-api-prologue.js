@@ -173,7 +173,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       config[k] = config[k]();
     }
   });
-  
+
   /** Throws a new Error, the message of which is the concatenation
       all args with a space between each. */
   const toss = (...args)=>{throw new Error(args.join(' '))};
