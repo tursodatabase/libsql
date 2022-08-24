@@ -14,7 +14,7 @@
   sqlite3.js, initializes the module, and postMessage()'s a message
   after the module is initialized:
 
-  {type: 'sqlite3-api', data: 'worker1-ready'}
+  {type: 'sqlite3-api', result: 'worker1-ready'}
 
   This seemingly superfluous level of indirection is necessary when
   loading sqlite3.js via a Worker. Instantiating a worker with new

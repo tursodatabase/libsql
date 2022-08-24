@@ -34,7 +34,7 @@
   messages and then it posts a message in the form:
 
   ```
-  {type:'sqlite3-api',data:'worker1-ready'}
+  {type:'sqlite3-api',result:'worker1-ready'}
   ```
 
   to let the client know that it has been initialized. Clients may
@@ -60,15 +60,6 @@ sqlite3.initWorker1API = function(){
 
      - Support for handling multiple DBs via this interface is under
      development.
-
-     - Revisit how virtual files are managed. We currently delete DBs
-     from the virtual filesystem when we close them, for the sake of
-     saving memory (the VFS lives in RAM). Supporting multiple DBs may
-     require that we give up that habit. Similarly, fully supporting
-     ATTACH, where a user can upload multiple DBs and ATTACH them,
-     also requires the that we manage the VFS entries better.
-     Related: we most definitely do not want to delete persistent DBs
-     (e.g. stored on OPFS) when they're closed.
   */
   const toss = (...args)=>{throw new Error(args.join(' '))};
   if('function' !== typeof importScripts){
@@ -102,10 +93,9 @@ sqlite3.initWorker1API = function(){
     idSeq: 0,
     idMap: new WeakMap,
     open: function(arg){
-      // TODO: if arg is a filename, look for a db in this.dbs with the
+      // TODO? if arg is a filename, look for a db in this.dbs with the
       // same filename and close/reopen it (or just pass it back as is?).
       if(!arg && this.defaultDb) return this.defaultDb;
-      //???if(this.defaultDb) this.defaultDb.close();
       const db = (Array.isArray(arg) ? new DB(...arg) : new DB(arg));
       this.dbs[getDbId(db)] = db;
       if(!this.defaultDb) this.defaultDb = db;
@@ -122,12 +112,12 @@ sqlite3.initWorker1API = function(){
         }
       }
     },
-    post: function(type,data,xferList){
+    post: function(msg,xferList){
       if(xferList){
-        self.postMessage( {type, data}, xferList );
+        self.postMessage( msg, xferList );
         xferList.length = 0;
       }else{
-        self.postMessage({type, data});
+        self.postMessage(msg);
       }
     },
     /** Map of DB IDs to DBs. */
@@ -167,49 +157,42 @@ sqlite3.initWorker1API = function(){
     xfer: [/*Temp holder for "transferable" postMessage() state.*/],
     /**
        Proxy for the DB constructor. Expects to be passed a single
-       object or a falsy value to use defaults. The object may
-       have a filename property to name the db file (see the DB
-       constructor for peculiarities and transformations) and/or a
-       buffer property (a Uint8Array holding a complete database
-       file's contents). The response is an object:
+       object or a falsy value to use defaults. The object may have a
+       filename property to name the db file (see the DB constructor
+       for peculiarities and transformations). The response is an
+       object:
 
        {
          filename: db filename (possibly differing from the input),
 
-         dbId: an opaque ID value which must be passed to other calls
-               in this API to tell them which db to use. If it is not
-               provided to future calls, they will default to
-               operating on the first-opened db.
-
-          messageId: if the client-sent message included this field,
-              it is mirrored in the response.
+         dbId: an opaque ID value which must be passed in the message
+               envelope to other calls in this API to tell them which
+               db to use. If it is not provided to future calls, they
+               will default to operating on the first-opened db.
        }
     */
     open: function(ev){
-      const args = [], data = (ev.data || {});
-      if(data.simulateError){ // undocumented internal testing option
+      const oargs = [], args = (ev.args || {});
+      if(args.simulateError){ // undocumented internal testing option
         toss("Throwing because of simulateError flag.");
       }
-      if(data.filename) args.push(data.filename);
-      const db = wState.open(args);
+      if(args.filename) oargs.push(args.filename);
+      const db = wState.open(oargs);
       return {
         filename: db.filename,
         dbId: getDbId(db)
       };
     },
     /**
-       Proxy for DB.close(). If ev.data may either be a boolean or
-       an object with an `unlink` property. If that value is
-       truthy then the db file (if the db is currently open) will
-       be unlinked from the virtual filesystem, else it will be
-       kept intact. The response object is:
+       Proxy for DB.close(). ev.args may either be a boolean or an
+       object with an `unlink` property. If that value is truthy then
+       the db file (if the db is currently open) will be unlinked from
+       the virtual filesystem, else it will be kept intact. The
+       result object is:
 
        {
          filename: db filename _if_ the db is opened when this
-                   is called, else the undefined value,
-         unlink: boolean. If true, unlink() (delete) the db file
-                 after closing int. Any error while deleting it is
-                 ignored.
+                   is called, else the undefined value
        }
 
        It does not error if the given db is already closed or no db is
@@ -222,8 +205,8 @@ sqlite3.initWorker1API = function(){
         dbId: db ? getDbId(db) : undefined
       };
       if(db){
-        wState.close(db, !!((ev.data && 'object'===typeof ev.data)
-                            ? ev.data.unlink : false));
+        wState.close(db, ((ev.args && 'object'===typeof ev.args)
+                          ? !!ev.args.unlink : false));
       }
       return response;
     },
@@ -242,11 +225,11 @@ sqlite3.initWorker1API = function(){
        message type key, in which case a callback function will be
        applied which posts each row result via:
 
-       postMessage({type: thatKeyType, data: theRow})
+       postMessage({type: thatKeyType, row: theRow})
 
        And, at the end of the result set (whether or not any
        result rows were produced), it will post an identical
-       message with data:null to alert the caller than the result
+       message with row:null to alert the caller than the result
        set is completed.
 
        The callback proxy must not recurse into this interface, or
@@ -264,8 +247,8 @@ sqlite3.initWorker1API = function(){
     */
     exec: function(ev){
       const opt = (
-        'string'===typeof ev.data
-      ) ? {sql: ev.data} : (ev.data || Object.create(null));
+        'string'===typeof ev.args
+      ) ? {sql: ev.args} : (ev.args || Object.create(null));
       if(undefined===opt.rowMode){
         /* Since the default rowMode of 'stmt' is not useful
            for the Worker interface, we'll default to
@@ -286,13 +269,13 @@ sqlite3.initWorker1API = function(){
            row as a message of that type. */
         const that = this;
         opt.callback =
-          (row)=>wState.post(callbackMsgType,row,this.xfer);
+          (row)=>wState.post({type: callbackMsgType, row:row}, this.xfer);
       }
       try {
         db.exec(opt);
         if(opt.callback instanceof Function){
           opt.callback = callbackMsgType;
-          wState.post(callbackMsgType, null);
+          wState.post({type: callbackMsgType, row: null});
         }
       }/*catch(e){
          console.warn("Worker is propagating:",e);throw e;
@@ -305,7 +288,7 @@ sqlite3.initWorker1API = function(){
       return opt;
     }/*exec()*/,
     /**
-       TO(re)DO, once we can abstract away access to the
+       TO(RE)DO, once we can abstract away access to the
        JS environment's virtual filesystem. Currently this
        always throws.
 
@@ -352,73 +335,77 @@ sqlite3.initWorker1API = function(){
      form:
 
      { type: apiCommand,
-       dbId: optional DB ID value (else uses a default db handle)
-       data: apiArguments,
+       dbId: optional DB ID value (else uses a default db handle),
+       args: apiArguments,
        messageId: optional client-specific value
      }
 
      As a rule, these commands respond with a postMessage() of their
-     own in the same form, but will, if needed, transform the `data`
-     member to an object and may add state to it. The responses
-     always have an object-format `data` part. If the inbound `data`
-     is an object which has a `messageId` property, that property is
+     own in the form:
+
+     TODO: refactoring is underway.
+
+     The responses always have an object-format `result` part. If the
+     inbound object has a `messageId` property, that property is
      always mirrored in the result object, for use in client-side
      dispatching of these asynchronous results. Exceptions thrown
-     during processing result in an `error`-type event with a
-     payload in the form:
+     during processing result in an `error`-type event with a payload
+     in the form:
 
-     {
-       message: error string,
-       errorClass: class name of the error type,
+     { type: 'error',
        dbId: DB handle ID,
-       input: ev.data,
-       [messageId: if set in the inbound message]
+       [messageId: if set in the inbound message],
+       result: {
+         message: error string,
+         errorClass: class name of the error type,
+         input: ev.data
+       }
      }
 
      The individual APIs are documented in the wMsgHandler object.
   */
   self.onmessage = function(ev){
     ev = ev.data;
-    let response, dbId = ev.dbId, evType = ev.type;
+    let result, dbId = ev.dbId, evType = ev.type;
     const arrivalTime = performance.now();
     try {
       if(wMsgHandler.hasOwnProperty(evType) &&
          wMsgHandler[evType] instanceof Function){
-        response = wMsgHandler[evType](ev);
+        result = wMsgHandler[evType](ev);
       }else{
         toss("Unknown db worker message type:",ev.type);
       }
     }catch(err){
       evType = 'error';
-      response = {
+      result = {
         message: err.message,
         errorClass: err.name,
         input: ev
       };
       if(err.stack){
-        response.stack = ('string'===typeof err.stack)
+        result.stack = ('string'===typeof err.stack)
           ? err.stack.split('\n') : err.stack;
       }
       if(0) console.warn("Worker is propagating an exception to main thread.",
-                         "Reporting it _here_ for the stack trace:",err,response);
-    }
-    if(!response.messageId && ev.data
-       && 'object'===typeof ev.data && ev.data.messageId){
-      response.messageId = ev.data.messageId;
+                         "Reporting it _here_ for the stack trace:",err,result);
     }
     if(!dbId){
-      dbId = response.dbId/*from 'open' cmd*/
+      dbId = result.dbId/*from 'open' cmd*/
         || getDefaultDbId();
     }
-    if(!response.dbId) response.dbId = dbId;
     // Timing info is primarily for use in testing this API. It's not part of
     // the public API. arrivalTime = when the worker got the message.
-    response.workerReceivedTime = arrivalTime;
-    response.workerRespondTime = performance.now();
-    response.departureTime = ev.departureTime;
-    wState.post(evType, response, wMsgHandler.xfer);
+    wState.post({
+      type: evType,
+      dbId: dbId,
+      messageId: ev.messageId,
+      workerReceivedTime: arrivalTime,
+      workerRespondTime: performance.now(),
+      departureTime: ev.departureTime,
+      result: result
+    }, wMsgHandler.xfer);
   };
-  setTimeout(()=>self.postMessage({type:'sqlite3-api',data:'worker1-ready'}), 0);
+  setTimeout(()=>self.postMessage({type:'sqlite3-api',result:'worker1-ready'}), 0);
 }.bind({self, sqlite3});
 });
 

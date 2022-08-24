@@ -31,17 +31,6 @@
   const warn = console.warn.bind(console);
   const error = console.error.bind(console);
   const toss = (...args)=>{throw new Error(args.join(' '))};
-  /** Posts a worker message as {type:type, data:data}. */
-  const wMsg = function(type,data){
-    log("Posting message to worker dbId="+(DbState.id||'default')+':',data);
-    SW.postMessage({
-      type,
-      dbId: DbState.id,
-      data,
-      departureTime: performance.now()
-    });
-    return SW;
-  };
 
   SW.onerror = function(event){
     error("onerror",event);
@@ -74,28 +63,37 @@
     logHtml("","Total test count:",T.counter+". Total time =",(performance.now() - startTime),"ms");
   };
 
-  const logEventResult = function(evd){
+  const logEventResult = function(ev){
+    const evd = ev.result;
     logHtml(evd.errorClass ? 'error' : '',
-            "runOneTest",evd.messageId,"Worker time =",
-            (evd.workerRespondTime - evd.workerReceivedTime),"ms.",
+            "runOneTest",ev.messageId,"Worker time =",
+            (ev.workerRespondTime - ev.workerReceivedTime),"ms.",
             "Round-trip event time =",
-            (performance.now() - evd.departureTime),"ms.",
-            (evd.errorClass ? evd.message : "")
+            (performance.now() - ev.departureTime),"ms.",
+            (evd.errorClass ? ev.message : ""), evd
            );
   };
 
-  const runOneTest = function(eventType, eventData, callback){
-    T.assert(eventData && 'object'===typeof eventData);
+  const runOneTest = function(eventType, eventArgs, callback){
+    T.assert(eventArgs && 'object'===typeof eventArgs);
     /* ^^^ that is for the testing and messageId-related code, not
        a hard requirement of all of the Worker-exposed APIs. */
-    eventData.messageId = MsgHandlerQueue.push(eventType,function(ev){
-      logEventResult(ev.data);
+    const messageId = MsgHandlerQueue.push(eventType,function(ev){
+      logEventResult(ev);
       if(callback instanceof Function){
         callback(ev);
         testCount();
       }
     });
-    wMsg(eventType, eventData);
+    const msg = {
+      type: eventType,
+      args: eventArgs,
+      dbId: DbState.id,
+      messageId: messageId,
+      departureTime: performance.now()
+    };
+    log("Posting",eventType,"message to worker dbId="+(DbState.id||'default')+':',msg);
+    SW.postMessage(msg);
   };
 
   /** Methods which map directly to onmessage() event.type keys.
@@ -103,23 +101,23 @@
   const dbMsgHandler = {
     open: function(ev){
       DbState.id = ev.dbId;
-      log("open result",ev.data);
+      log("open result",ev);
     },
     exec: function(ev){
-      log("exec result",ev.data);
+      log("exec result",ev);
     },
     export: function(ev){
-      log("export result",ev.data);
+      log("export result",ev);
     },
     error: function(ev){
-      error("ERROR from the worker:",ev.data);
-      logEventResult(ev.data);
+      error("ERROR from the worker:",ev);
+      logEventResult(ev);
     },
     resultRowTest1: function f(ev){
       if(undefined === f.counter) f.counter = 0;
-      if(ev.data) ++f.counter;
-      //log("exec() result row:",ev.data);
-      T.assert(null===ev.data || 'number' === typeof ev.data.b);
+      if(ev.row) ++f.counter;
+      //log("exec() result row:",ev.row);
+      T.assert(null===ev.row || 'number' === typeof ev.row.b);
     }
   };
 
@@ -149,7 +147,7 @@
       multi: true,
       resultRows: [], columnNames: []
     }, function(ev){
-      ev = ev.data;
+      ev = ev.result;
       T.assert(0===ev.resultRows.length)
         .assert(0===ev.columnNames.length);
     });
@@ -157,7 +155,7 @@
       sql: 'select a a, b b from t order by a',
       resultRows: [], columnNames: [],
     }, function(ev){
-      ev = ev.data;
+      ev = ev.result;
       T.assert(3===ev.resultRows.length)
         .assert(1===ev.resultRows[0][0])
         .assert(6===ev.resultRows[2][1])
@@ -169,7 +167,7 @@
       resultRows: [], columnNames: [],
       rowMode: 'object'
     }, function(ev){
-      ev = ev.data;
+      ev = ev.result;
       T.assert(3===ev.resultRows.length)
         .assert(1===ev.resultRows[0].a)
         .assert(6===ev.resultRows[2].b)
@@ -181,7 +179,7 @@
       resultRows: [],
       //rowMode: 'array', // array is the default in the Worker interface
     }, function(ev){
-      ev = ev.data;
+      ev = ev.result;
       T.assert(1 === ev.resultRows.length)
         .assert(1 === ev.resultRows[0][0]);
     });
@@ -206,7 +204,7 @@
       rowMode: 1,
       resultRows: []
     },function(ev){
-      const rows = ev.data.resultRows;
+      const rows = ev.result.resultRows;
       T.assert(3===rows.length).
         assert(6===rows[0]);
     });
@@ -215,14 +213,14 @@
       sql: 'select count(a) from t',
       resultRows: []
     },function(ev){
-      ev = ev.data;
+      ev = ev.result;
       T.assert(1===ev.resultRows.length)
         .assert(2===ev.resultRows[0][0]);
     });
     if(0){
       // export requires reimpl. for portability reasons.
       runOneTest('export',{}, function(ev){
-        ev = ev.data;
+        ev = ev.result;
         T.assert('string' === typeof ev.filename)
           .assert(ev.buffer instanceof Uint8Array)
           .assert(ev.buffer.length > 1024)
@@ -231,11 +229,11 @@
     }
     /***** close() tests must come last. *****/
     runOneTest('close',{unlink:true},function(ev){
-      ev = ev.data;
+      ev = ev.result;
       T.assert('string' === typeof ev.filename);
     });
     runOneTest('close',{unlink:true},function(ev){
-      ev = ev.data;
+      ev = ev.result;
       T.assert(undefined === ev.filename);
     });
   };
@@ -276,11 +274,11 @@
       filename:'testing2.sqlite3',
       simulateError: simulateOpenError
     }, function(ev){
-      //log("open result",ev);
-      T.assert('testing2.sqlite3'===ev.data.filename)
-        .assert(ev.data.dbId)
-        .assert(ev.data.messageId);
-      DbState.id = ev.data.dbId;
+      log("open result",ev);
+      T.assert('testing2.sqlite3'===ev.result.filename)
+        .assert(ev.dbId)
+        .assert(ev.messageId);
+      DbState.id = ev.dbId;
       if(waitForOpen) setTimeout(runTests2, 0);
     });
     if(!waitForOpen) runTests2();
@@ -293,7 +291,7 @@
     }
     ev = ev.data/*expecting a nested object*/;
     //log("main window onmessage:",ev);
-    if(ev.data && ev.data.messageId){
+    if(ev.result && ev.messageId){
       /* We're expecting a queued-up callback handler. */
       const f = MsgHandlerQueue.shift();
       if('error'===ev.type){
@@ -306,7 +304,7 @@
     }
     switch(ev.type){
         case 'sqlite3-api':
-          switch(ev.data){
+          switch(ev.result){
               case 'worker1-ready':
                 log("Message:",ev);
                 self.sqlite3TestModule.setStatus(null);
