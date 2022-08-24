@@ -115,9 +115,15 @@
     },
     resultRowTest1: function f(ev){
       if(undefined === f.counter) f.counter = 0;
-      if(ev.row) ++f.counter;
-      //log("exec() result row:",ev.row);
-      T.assert(null===ev.row || 'number' === typeof ev.row.b);
+      if(null === ev.rowNumber){
+        /* End of result set. */
+        T.assert(undefined === ev.row);
+      }else{
+        T.assert(ev.rowNumber > 0);
+        ++f.counter;
+      }
+      //log("exec() result row:",ev);
+      T.assert(null === ev.rowNumber || 'number' === typeof ev.row.b);
     }
   };
 

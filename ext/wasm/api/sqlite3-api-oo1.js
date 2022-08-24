@@ -252,6 +252,21 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
               out.cbArg = (stmt)=>stmt.get(out.opt.rowMode);
               break;
             }
+            /*
+              TODO?: how can we define rowMode such that it uses
+              rowMode of 'object' and returns a given named field from
+              the object. Something like:
+
+              if(?what goes here?){
+                out.cbArg = function f(stmt){return stmt.get(this.obj)[this.colName]}
+                  .bind({obj:{}, colName: ???what goes here???}});
+                break;
+              }
+
+              Maybe rowMode:['colName1',... 'colNameN']? That could be
+              ambiguous: might mean "return an object with just these
+              columns".
+            */
             toss3("Invalid rowMode:",out.opt.rowMode);
       }
     }

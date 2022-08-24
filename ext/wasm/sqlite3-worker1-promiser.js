@@ -27,7 +27,7 @@
    manipulated via a Promise-based interface and returns a factory
    function which returns Promises for communicating with the worker.
    This proxy has an _almost_ identical interface to the normal
-   worker API, with any exceptions noted below.
+   worker API, with any exceptions documented below.
 
    It requires a configuration object with the following properties:
 
@@ -127,26 +127,34 @@
    - exec's {callback: STRING} option does not work via this
    interface (it triggers an exception), but {callback: function}
    does and works exactly like the STRING form does in the Worker:
-   the callback is called one time for each row of the result set
-   and once more, at the end, passed only `null`, to indicate that
+   the callback is called one time for each row of the result set,
+   passed the same worker message format as the worker API emits:
+
+     {type:typeString, row:VALUE, rowNumber:1-based-#}
+
+   Where `typeString` is an internally-synthesized message type string
+   used temporarily for worker message dispatching. It can be ignored
+   by all client code except that which tests this API. The `row`
+   property contains the row result in the form implied by the
+   `rowMode` option (defaulting to `'array'`). The `rowNumber` is a
+   1-based integer value incremented by 1 on each call into th 
+   callback.
+
+   At the end of the result set, the same event is fired with
+   (row=undefined, rowNumber=null) to indicate that
    the end of the result set has been reached. Note that the rows
    arrive via worker-posted messages, with all the implications
    of that.
-
-
-   TODO?: a config option which causes it to queue up events to fire
-   one at a time and flush the event queue on the first error. The
-   main use for this is test runs which must fail at the first error.
 */
 self.sqlite3Worker1Promiser = function callee(config = callee.defaultConfig){
   // Inspired by: https://stackoverflow.com/a/52439530
-  let idNumber = 0;
   const handlerMap = Object.create(null);
   const noop = function(){};
   const err = config.onerror || noop;
   const debug = config.debug || noop;
+  const idTypeMap = config.generateMessageId ? undefined : Object.create(null);
   const genMsgId = config.generateMessageId || function(msg){
-    return msg.type+'#'+(++idNumber);
+    return msg.type+'#'+(idTypeMap[msg.type] = (idTypeMap[msg.type]||0) + 1);
   };
   const toss = (...args)=>{throw new Error(args.join(' '))};
   if('function'===typeof config.worker) config.worker = config.worker();
@@ -162,7 +170,7 @@ self.sqlite3Worker1Promiser = function callee(config = callee.defaultConfig){
       }
       msgHandler = handlerMap[ev.type] /* check for exec per-row callback */;
       if(msgHandler && msgHandler.onrow){
-        msgHandler.onrow(ev.row);
+        msgHandler.onrow(ev);
         return;
       }        
       if(config.onunhandled) config.onunhandled(arguments[0]);
@@ -183,13 +191,10 @@ self.sqlite3Worker1Promiser = function callee(config = callee.defaultConfig){
         default:
           break;
     }
-    try {
-      msgHandler.resolve(ev);
-    }catch(e){
-      msgHandler.reject(e);
-    }
+    try {msgHandler.resolve(ev)}
+    catch(e){msgHandler.reject(e)}
   }/*worker.onmessage()*/;
-  return function(/*(msgType, msgArgs) || (msg)*/){
+  return function(/*(msgType, msgArgs) || (msgEnvelope)*/){
     let msg;
     if(1===arguments.length){
       msg = arguments[0];
@@ -206,15 +211,29 @@ self.sqlite3Worker1Promiser = function callee(config = callee.defaultConfig){
     msg.departureTime = performance.now();
     const proxy = Object.create(null);
     proxy.message = msg;
-    let cbId /* message handler ID for exec on-row callback proxy */;
+    let rowCallbackId /* message handler ID for exec on-row callback proxy */;
     if('exec'===msg.type && msg.args){
       if('function'===typeof msg.args.callback){
-        cbId = genMsgId(msg)+':row';
+        rowCallbackId = msg.messageId+':row';
         proxy.onrow = msg.args.callback;
-        msg.args.callback = cbId;
-        handlerMap[cbId] = proxy;
+        msg.args.callback = rowCallbackId;
+        handlerMap[rowCallbackId] = proxy;
       }else if('string' === typeof msg.args.callback){
         toss("exec callback may not be a string when using the Promise interface.");
+        /**
+           Design note: the reason for this limitation is that this
+           API takes over worker.onmessage() and the client has no way
+           of adding their own message-type handlers to it. Per-row
+           callbacks are implemented as short-lived message.type
+           mappings for worker.onmessage().
+
+           We "could" work around this by providing a new
+           config.fallbackMessageHandler (or some such) which contains
+           a map of event type names to callbacks. Seems like overkill
+           for now, seeing as the client can pass callback functions
+           to this interface (whereas the string-form "callback" is
+           needed for the over-the-Worker interface).
+        */
       }
     }
     //debug("requestWork", msg);
@@ -225,7 +244,7 @@ self.sqlite3Worker1Promiser = function callee(config = callee.defaultConfig){
       debug("Posting",msg.type,"message to Worker dbId="+(config.dbId||'default')+':',msg);
       config.worker.postMessage(msg);
     });
-    if(cbId) p = p.finally(()=>delete handlerMap[cbId]);
+    if(rowCallbackId) p = p.finally(()=>delete handlerMap[rowCallbackId]);
     return p;
   };
 }/*sqlite3Worker1Promiser()*/;

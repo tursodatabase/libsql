@@ -60,24 +60,41 @@
   delete self.sqlite3Worker1Promiser;
 
   const wtest = async function(msgType, msgArgs, callback){
+    if(2===arguments.length && 'function'===typeof msgArgs){
+      callback = msgArgs;
+      msgArgs = undefined;
+    }
     const p = workerPromise({type: msgType, args:msgArgs});
     return callback ? p.then(callback).finally(testCount) : p;
   };
 
   const runTests = async function(){
     const dbFilename = '/testing2.sqlite3';
-    logHtml('',
-            "Sending 'open' message and waiting for its response before continuing.");
     startTime = performance.now();
+
+    let sqConfig;
+    await wtest('config-get', (ev)=>{
+      const r = ev.result;
+      log('sqlite3.config subset:', r);
+      T.assert('boolean' === typeof r.bigIntEnabled)
+        .assert('string'===typeof r.persistentDirName)
+        .assert('boolean' === typeof r.persistenceEnabled);
+      sqConfig = r;
+    });
+    logHtml('',
+            "Sending 'open' message and waiting for its response before continuing...");
+    
     await wtest('open', {
       filename: dbFilename,
-      persistent: true,
+      persistent: sqConfig.persistenceEnabled,
       simulateError: 0 /* if true, fail the 'open' */,
     }, function(ev){
-      log("then open result",ev);
-      T.assert(1 && (dbFilename===ev.result.filename
-               || (sqlite3TestModule.sqlite3ApiConfig.persistentDirName
-                   + dbFilename)==ev.result.filename))
+      const r = ev.result;
+      log("then open result",r);
+      T.assert(r.persistent === sqConfig.persistenceEnabled)
+        .assert(r.persistent
+               ? (dbFilename!==r.filename)
+               : (dbFilename==r.filename))
         .assert(ev.dbId)
         .assert(ev.messageId)
         .assert(promiserConfig.dbId === ev.dbId);
@@ -145,11 +162,17 @@
         .assert(3 === ev.resultRows[1][0]);
     });
 
-    const resultRowTest1 = function f(row){
+    const resultRowTest1 = function f(ev){
       if(undefined === f.counter) f.counter = 0;
-      if(row) ++f.counter;
-      //log("exec() result row:",row);
-      T.assert(null===row || 'number' === typeof row.b);
+      if(null === ev.rowNumber){
+        /* End of result set. */
+        T.assert(undefined === ev.row);
+      }else{
+        T.assert(ev.rowNumber > 0);
+        ++f.counter;
+      }
+      log("exec() result row:",ev);
+      T.assert(null === ev.rowNumber || 'number' === typeof ev.row.b);
     };
     await wtest('exec',{
       sql: 'select a a, b b from t order by a',
@@ -195,10 +218,9 @@
       T.assert('string' === typeof ev.result.filename);
     });
 
-    await wtest('close').then((ev)=>{
+    await wtest('close', (ev)=>{
       T.assert(undefined === ev.result.filename);
-      log("That's all, folks!");
-    });
+    }).finally(()=>log("That's all, folks!"));
   }/*runTests2()*/;
 
   
