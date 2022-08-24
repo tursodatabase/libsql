@@ -923,7 +923,7 @@ int sqlite3_db_config(sqlite3 *db, int op, ...){
       if( szDesired>=0 ){
         sqlite3VdbeChangeStmtCacheSize(db, szDesired);
       }
-      *pszNew = (int)db->mxCache;
+      if( pszNew ) *pszNew = (int)db->mxCache;
       rc = SQLITE_OK;
       break;
     }

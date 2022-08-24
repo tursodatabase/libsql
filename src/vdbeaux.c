@@ -65,6 +65,19 @@ void sqlite3VdbeError(Vdbe *p, const char *zFormat, ...){
 }
 
 /*
+** Compute a hash on the SQL used to generate a prepared statement.
+*/
+static u32 sqlHash(const char *zSql, int nSql){
+  u32 hSql = 0;
+  int i;
+  for(i=0; i<nSql; i++){
+    hSql = (hSql + zSql[i]) * 0x9e3779b1;
+  }
+  hSql |= 1;
+  return hSql;
+}
+
+/*
 ** Remember the SQL string for a prepared statement.
 */
 void sqlite3VdbeSetSql(
@@ -82,7 +95,12 @@ void sqlite3VdbeSetSql(
   assert( p->zSql==0 );
   p->zSql = sqlite3DbStrNDup(p->db, z, n);
   p->nSql = n;
-  p->hSql = hSql;
+  if( prepFlags & SQLITE_PREPARE_CACHE ){
+    if( hSql==0 ) hSql = sqlHash(z, n);
+    p->hSql = hSql;
+  }else{
+    p->hSql = 0;
+  }
 }
 
 /*
@@ -94,19 +112,11 @@ Vdbe *sqlite3VdbeFindInStmtCache(
   int nSql,             /* Size of zSql[] in bytes */
   u32 *phSql            /* Write the hash value here if not found */
 ){
-  int i;                /* Loop counter */
   Vdbe *pCache;         /* Candidate statement */
-  u32 c;                /* One character of SQL input */
   u32 hSql;             /* A hash of the SQL input */
-  int n;                /* Number of SQL input characters to be hashed */
 
-  hSql = 0;
-  n = nSql;
-  if( n>100 ) n = 100;
-  for(i=0; i<n && (c = ((u8*)zSql)[i])!=';'; i++){
-    hSql = (hSql + c) * 0x9e3779b1;
-  }
-  hSql |= 1;
+  assert( nSql>=0 );
+  hSql = sqlHash(zSql, nSql);
   if( db->nCache ){
     for(pCache = db->pVdbe; pCache; pCache=pCache->pVNext){
       if( pCache->hSql==hSql

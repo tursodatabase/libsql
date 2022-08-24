@@ -699,24 +699,25 @@ static int sqlite3Prepare(
   if( db->mallocFailed ) sqlite3ErrorMsg(&sParse, "out of memory");
   assert( sqlite3_mutex_held(db->mutex) );
 
-  if( prepFlags & SQLITE_PREPARE_PERSISTENT ){
-    /* Check to see if the prepared statement can be resolved from cache. */
-    if( db->mxCache>0 ){
-      Vdbe *pCache;
-      if( nBytes<0 ) nBytes = sqlite3Strlen30(zSql);
-      pCache = sqlite3VdbeFindInStmtCache(db, zSql, nBytes, &hSql);
-      if( pCache ){
-        *ppStmt = (sqlite3_stmt*)pCache;
-        if( pzTail ){
-          *pzTail = &zSql[nBytes];
-        }
-        goto end_prepare;
+  if( db->nCache>0 ){
+    Vdbe *pCache;
+    if( nBytes<0 ) nBytes = sqlite3Strlen30(zSql);
+    pCache = sqlite3VdbeFindInStmtCache(db, zSql, nBytes, &hSql);
+    if( pCache ){
+      *ppStmt = (sqlite3_stmt*)pCache;
+      if( pzTail ){
+        *pzTail = &zSql[nBytes];
       }
+      goto end_prepare;
     }
+  }
 
-    /* For a long-term use prepared statement should avoid the use of
-    ** lookaside memory.
-    */
+  /* For a long-term use prepared statement should avoid the use of
+  ** lookaside memory.
+  */
+  if( prepFlags & (SQLITE_PREPARE_PERSISTENT|SQLITE_PREPARE_CACHE) ){
+    testcase( prepFlags & SQLITE_PREPARE_PERSISTENT );
+    testcase( prepFlags & SQLITE_PREPARE_CACHE );
     sParse.disableLookaside++;
     DisableLookaside;
   }

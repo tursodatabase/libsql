@@ -37,6 +37,7 @@ static const char zHelp[] =
   "  --size N            Relative test size.  Default=100\n"
   "  --strict            Use STRICT table where appropriate\n"
   "  --stats             Show statistics at the end\n"
+  "  --stmtcache N       Use a statement cache of size N\n"
   "  --temp N            N from 0 to 9.  0: no temp table. 9: all temp tables\n"
   "  --testset T         Run test-set T (main, cte, rtree, orm, fp, debug)\n"
   "  --trace             Turn on SQL tracing\n"
@@ -98,6 +99,7 @@ static struct Global {
   int nRepeat;               /* Repeat selects this many times */
   int doCheckpoint;          /* Run PRAGMA wal_checkpoint after each trans */
   int nReserve;              /* Reserve bytes */
+  int szStmtCache;           /* Size of the statement cache */
   const char *zWR;           /* Might be WITHOUT ROWID */
   const char *zNN;           /* Might be NOT NULL */
   const char *zPK;           /* Might be UNIQUE or PRIMARY KEY */
@@ -588,7 +590,7 @@ void speedtest1_run(void){
 #if SQLITE_VERSION_NUMBER>=3006001
   if( g.bReprepare ){
     sqlite3_stmt *pNew;
-    if( g.mPrepFlags & SQLITE_PREPARE_PERSISTENT ){
+    if( g.mPrepFlags & SQLITE_PREPARE_CACHE ){
       char zBuf[1000];
       strncpy(zBuf, sqlite3_sql(g.pStmt), sizeof(zBuf));
       zBuf[sizeof(zBuf)-1] = 0;
@@ -2300,6 +2302,10 @@ int main(int argc, char **argv){
       }else if( strcmp(z,"size")==0 ){
         if( i>=argc-1 ) fatal_error("missing argument on %s\n", argv[i]);
         g.szTest = integerValue(argv[++i]);
+      }else if( strcmp(z,"stmtcache")==0 ){
+        if( i>=argc-1 ) fatal_error("missing argument on %s\n", argv[i]);
+        g.szStmtCache = integerValue(argv[++i]);
+        g.mPrepFlags |= SQLITE_PREPARE_CACHE;
       }else if( strcmp(z,"stats")==0 ){
         showStats = 1;
       }else if( strcmp(z,"temp")==0 ){
@@ -2394,6 +2400,14 @@ int main(int argc, char **argv){
     if( rc ) fatal_error("lookaside configuration failed: %d\n", rc);
   }
 #endif
+#ifdef SQLITE_DBCONFIG_STMTCACHE_SIZE
+  if( g.mPrepFlags & SQLITE_PREPARE_CACHE ){
+    int nCache = 0;
+    rc = sqlite3_db_config(g.db, SQLITE_DBCONFIG_STMTCACHE_SIZE,
+                           g.szStmtCache, &nCache);
+    if( rc ) fatal_error("statement cache configuration failed: %d\n", rc);
+  }
+#endif /* SQLITE_DBCONFIG_STMTCACHE_SIZE */
   if( g.nReserve>0 ){
     sqlite3_file_control(g.db, 0, SQLITE_FCNTL_RESERVE_BYTES, &g.nReserve);
   }

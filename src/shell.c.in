@@ -1112,6 +1112,7 @@ struct ShellState {
   int cnt;               /* Number of records displayed so far */
   int lineno;            /* Line number of last line read from in */
   int openFlags;         /* Additional flags to open.  (SQLITE_OPEN_NOFOLLOW) */
+  int prepFlags;         /* Flags for sqlite3_prepare_v3() */
   FILE *in;              /* Read commands from this stream */
   FILE *out;             /* Write results here */
   FILE *traceOut;        /* Output for sqlite3_trace() */
@@ -2649,7 +2650,7 @@ static int run_table_dump_query(
   int nResult;
   int i;
   const char *z;
-  rc = sqlite3_prepare_v2(p->db, zSelect, -1, &pSelect, 0);
+  rc = sqlite3_prepare_v3(p->db, zSelect, -1, p->prepFlags, &pSelect, 0);
   if( rc!=SQLITE_OK || !pSelect ){
     char *zContext = shell_error_context(zSelect, p->db);
     utf8_printf(p->out, "/**** ERROR: (%d) %s *****/\n%s", rc,
@@ -3845,7 +3846,7 @@ static int shell_exec(
 
   while( zSql[0] && (SQLITE_OK == rc) ){
     static const char *zStmtSql;
-    rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, &zLeftover);
+    rc = sqlite3_prepare_v3(db, zSql, -1, pArg->prepFlags, &pStmt, &zLeftover);
     if( SQLITE_OK != rc ){
       if( pzErrMsg ){
         *pzErrMsg = save_err_msg(db, "in prepare", rc, zSql);
@@ -3911,7 +3912,7 @@ static int shell_exec(
           sqlite3_db_config(db, SQLITE_DBCONFIG_TRIGGER_EQP, 0, 0);
           /* Reprepare pStmt before reactiving trace modes */
           sqlite3_finalize(pStmt);
-          sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
+          sqlite3_prepare_v3(db, zSql, -1, pArg->prepFlags, &pStmt, 0);
           if( pArg ) pArg->pStmt = pStmt;
         }
         restore_debug_trace_modes();
@@ -4010,7 +4011,7 @@ static char **tableColumnList(ShellState *p, const char *zTab){
 
   zSql = sqlite3_mprintf("PRAGMA table_info=%Q", zTab);
   shell_check_oom(zSql);
-  rc = sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
+  rc = sqlite3_prepare_v3(p->db, zSql, -1, p->prepFlags, &pStmt, 0);
   sqlite3_free(zSql);
   if( rc ) return 0;
   while( sqlite3_step(pStmt)==SQLITE_ROW ){
@@ -4055,7 +4056,7 @@ static char **tableColumnList(ShellState *p, const char *zTab){
     zSql = sqlite3_mprintf("SELECT 1 FROM pragma_index_list(%Q)"
                            " WHERE origin='pk'", zTab);
     shell_check_oom(zSql);
-    rc = sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
+    rc = sqlite3_prepare_v3(p->db, zSql, -1, p->prepFlags, &pStmt, 0);
     sqlite3_free(zSql);
     if( rc ){
       freeColumnList(azCol);
@@ -8307,8 +8308,10 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
   }else
 
-  /* The undocumented ".breakpoint" command causes a call to the no-op
-  ** routine named test_breakpoint().
+  /* UNDOCUMENTED COMMAND:    .breakpoint
+  **
+  ** Causes a call to the no-op routine named test_breakpoint().  This provides
+  ** a convenient function on which to set a breakpoint.
   */
   if( c=='b' && n>=3 && strncmp(azArg[0], "breakpoint", n)==0 ){
     test_breakpoint();
@@ -8487,6 +8490,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         { "load_extension",     SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION },
         { "no_ckpt_on_close",   SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE      },
         { "reset_database",     SQLITE_DBCONFIG_RESET_DATABASE        },
+        { "stmtcache_size",     SQLITE_DBCONFIG_STMTCACHE_SIZE        },
         { "trigger_eqp",        SQLITE_DBCONFIG_TRIGGER_EQP           },
         { "trusted_schema",     SQLITE_DBCONFIG_TRUSTED_SCHEMA        },
         { "writable_schema",    SQLITE_DBCONFIG_WRITABLE_SCHEMA       },
@@ -8494,12 +8498,22 @@ static int do_meta_command(char *zLine, ShellState *p){
     int ii, v;
     open_db(p, 0);
     for(ii=0; ii<ArraySize(aDbConfig); ii++){
+      int op;
       if( nArg>1 && strcmp(azArg[1], aDbConfig[ii].zName)!=0 ) continue;
+      op = aDbConfig[ii].op;
       if( nArg>=3 ){
-        sqlite3_db_config(p->db, aDbConfig[ii].op, booleanValue(azArg[2]), 0);
+        if( op==SQLITE_DBCONFIG_STMTCACHE_SIZE ){
+          sqlite3_db_config(p->db, op, (int)integerValue(azArg[2]), 0);
+        }else{
+          sqlite3_db_config(p->db, op, booleanValue(azArg[2]), 0);
+        }
       }
-      sqlite3_db_config(p->db, aDbConfig[ii].op, -1, &v);
-      utf8_printf(p->out, "%19s %s\n", aDbConfig[ii].zName, v ? "on" : "off");
+      sqlite3_db_config(p->db, op, -1, &v);
+      if( op==SQLITE_DBCONFIG_STMTCACHE_SIZE ){
+        utf8_printf(p->out, "%19s %d\n", aDbConfig[ii].zName, v);
+      }else{
+        utf8_printf(p->out, "%19s %s\n", aDbConfig[ii].zName, v ? "on" : "off");
+      }
       if( nArg>1 ) break;
     }
     if( nArg>1 && ii==ArraySize(aDbConfig) ){
@@ -9913,6 +9927,47 @@ static int do_meta_command(char *zLine, ShellState *p){
     showHelp(p->out, "parameter");
   }else
 
+  /* UNDOCUMENTED COMMAND:    .prepflags  (+|-)FLAG ...
+  **
+  ** For SQLite core debugging use only.
+  **
+  ** Change the value of ShellState.prepFlags which becomes the flags
+  ** parameter to sqlite3_prepare_v3() in some calls in this application.
+  */
+  if( c=='p' && n>=3 && strncmp(azArg[0], "prepflags", n)==0 ){
+    int i;
+    for(i=1; i<nArg; i++){
+      int op = 0;
+      if( azArg[i][0]!='-' && azArg[i][0]!='+' ){
+        utf8_printf(p->out, "unknown option: \"%s\"\n", azArg[i]);
+        rc = 1;
+        goto meta_command_exit;
+      }
+      if( strcmp(azArg[i]+1, "persist")==0 ){
+        op = SQLITE_PREPARE_PERSISTENT;
+      }else if( strcmp(azArg[i]+1, "no-vtab")==0 ){
+        op = SQLITE_PREPARE_NO_VTAB;
+      }else if( strcmp(azArg[i]+1, "cache")==0 ){
+        op = SQLITE_PREPARE_CACHE;
+      }else{
+        utf8_printf(p->out, "option \"%s\" should be one of: \"%cpersist\""
+                            "\"%cno-vtab\" \"%ccache\"\n",
+          azArg[i], azArg[i][0],azArg[i][0],azArg[i][0]);
+        rc = 1;
+        goto meta_command_exit;
+      }
+      if( azArg[i][0]=='+' ){
+        p->prepFlags |= op;
+      }else{
+        p->prepFlags &= ~op;
+      }
+    }
+    utf8_printf(p->out, "  prepflags:");
+    utf8_printf(p->out, " %cpersist", (p->prepFlags & SQLITE_PREPARE_PERSISTENT)?'+':'-');
+    utf8_printf(p->out, " %cno-vtab", (p->prepFlags & SQLITE_PREPARE_NO_VTAB)?'+':'-');
+    utf8_printf(p->out, " %ccache\n", (p->prepFlags & SQLITE_PREPARE_CACHE)?'+':'-');
+  }else
+
   if( c=='p' && n>=3 && strncmp(azArg[0], "print", n)==0 ){
     int i;
     for(i=1; i<nArg; i++){
@@ -10229,6 +10284,13 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
   }else
 
+  /* UNDOCUMENTED COMMAND:    .treetrace N
+  **
+  ** For SQLite core debugging use only.
+  **
+  ** Set the treetrace mask to N.  Also called ".selectrace" for historical
+  ** compatibility.
+  */
   if( (c=='s' && n==11 && strncmp(azArg[0], "selecttrace", n)==0)
    || (c=='t' && n==9  && strncmp(azArg[0], "treetrace", n)==0)
   ){
@@ -10730,6 +10792,9 @@ static int do_meta_command(char *zLine, ShellState *p){
       rc = 1;
       goto meta_command_exit;
     }
+    utf8_printf(p->out,"%12.12s: ", "colseparator");
+      output_c_string(p->out, p->colSeparator);
+      raw_printf(p->out, "\n");
     utf8_printf(p->out, "%12.12s: %s\n","echo",
                 azBool[ShellHasFlag(p, SHFLG_Echo)]);
     utf8_printf(p->out, "%12.12s: %s\n","eqp", azBool[p->autoEQP&3]);
@@ -10752,9 +10817,10 @@ static int do_meta_command(char *zLine, ShellState *p){
       raw_printf(p->out, "\n");
     utf8_printf(p->out,"%12.12s: %s\n","output",
             strlen30(p->outfile) ? p->outfile : "stdout");
-    utf8_printf(p->out,"%12.12s: ", "colseparator");
-      output_c_string(p->out, p->colSeparator);
-      raw_printf(p->out, "\n");
+    utf8_printf(p->out,"%12.12s:", "prepflags");
+      utf8_printf(p->out," %cpersist",(p->prepFlags&SQLITE_PREPARE_PERSISTENT)?'+':'-');
+      utf8_printf(p->out," %cno-vtab",(p->prepFlags&SQLITE_PREPARE_NO_VTAB)?'+':'-');
+      utf8_printf(p->out," %ccache\n",(p->prepFlags&SQLITE_PREPARE_CACHE)?'+':'-');
     utf8_printf(p->out,"%12.12s: ", "rowseparator");
       output_c_string(p->out, p->rowSeparator);
       raw_printf(p->out, "\n");
@@ -11368,6 +11434,12 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
   }else
 
+  /* UNDOCUMENTED COMMMAND:  .wheretrace NUMBER
+  **
+  ** For SQLite core debugging use only.
+  **
+  ** See the wheretrace mask to NUMBER.
+  */
   if( c=='w' && strncmp(azArg[0], "wheretrace", n)==0 ){
     unsigned int x = nArg>=2 ? (unsigned int)integerValue(azArg[1]) : 0xffffffff;
     sqlite3_test_control(SQLITE_TESTCTRL_TRACEFLAGS, 3, &x);
