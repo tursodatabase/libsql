@@ -117,7 +117,9 @@
       if(undefined === f.counter) f.counter = 0;
       if(null === ev.rowNumber){
         /* End of result set. */
-        T.assert(undefined === ev.row);
+        T.assert(undefined === ev.row)
+          .assert(Array.isArray(ev.columnNames))
+          .assert(ev.columnNames.length);
       }else{
         T.assert(ev.rowNumber > 0);
         ++f.counter;

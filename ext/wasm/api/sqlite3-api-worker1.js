@@ -249,7 +249,11 @@ sqlite3.initWorker1API = function(){
        message type key, in which case a callback function will be
        applied which posts each row result via:
 
-       postMessage({type: thatKeyType, rowNumber: 1-based-#, row: theRow})
+       postMessage({type: thatKeyType,
+                    rowNumber: 1-based-#,
+                    row: theRow,
+                    columnNames: anArray
+                    })
 
        And, at the end of the result set (whether or not any result
        rows were produced), it will post an identical message with
@@ -280,12 +284,7 @@ sqlite3.initWorker1API = function(){
       const rc = (
         'string'===typeof ev.args
       ) ? {sql: ev.args} : (ev.args || Object.create(null));
-      if(undefined===rc.rowMode){
-        /* Since the default rowMode of 'stmt' is not useful
-           for the Worker interface, we'll default to
-           something else. */
-        rc.rowMode = 'array';
-      }else if('stmt'===rc.rowMode){
+      if('stmt'===rc.rowMode){
         toss("Invalid rowMode for 'exec': stmt mode",
              "does not work in the Worker API.");
       }
@@ -294,25 +293,40 @@ sqlite3.initWorker1API = function(){
         // Part of a copy-avoidance optimization for blobs
         db._blobXfer = wState.xfer;
       }
-      const callbackMsgType = rc.callback;
+      const theCallback = rc.callback;
       let rowNumber = 0;
-      if('string' === typeof callbackMsgType){
+      const hadColNames = !!rc.columnNames;
+      if('string' === typeof theCallback){
+        if(!hadColNames) rc.columnNames = [];
         /* Treat this as a worker message type and post each
            row as a message of that type. */
-        rc.callback =
-          (row)=>wState.post({type: callbackMsgType, rowNumber:++rowNumber, row:row}, wState.xfer);
+        rc.callback = function(row,stmt){
+          wState.post({
+            type: theCallback,
+            columnNames: rc.columnNames,
+            rowNumber: ++rowNumber,
+            row: row
+          }, wState.xfer);
+        }
       }
       try {
         db.exec(rc);
         if(rc.callback instanceof Function){
-          rc.callback = callbackMsgType;
-          wState.post({type: callbackMsgType, rowNumber: null, row: undefined});
+          rc.callback = theCallback;
+          /* Post a sentinel message to tell the client that the end
+             of the result set has been reached (possibly with zero
+             rows). */
+          wState.post({
+            type: theCallback,
+            columnNames: rc.columnNames,
+            rowNumber: null /*null to distinguish from "property not set"*/,
+            row: undefined /*undefined because null is a legal row value
+                             for some rowType values, but undefined is not*/
+          });
         }
       }finally{
         delete db._blobXfer;
-        if(rc.callback){
-          rc.callback = callbackMsgType;
-        }
+        if(rc.callback) rc.callback = theCallback;
       }
       return rc;
     }/*exec()*/,

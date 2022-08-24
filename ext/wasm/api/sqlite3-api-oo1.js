@@ -236,14 +236,14 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     }
     if(out.opt.callback || out.opt.resultRows){
       switch((undefined===out.opt.rowMode)
-             ? 'stmt' : out.opt.rowMode) {
+             ? 'array' : out.opt.rowMode) {
           case 'object': out.cbArg = (stmt)=>stmt.get({}); break;
           case 'array': out.cbArg = (stmt)=>stmt.get([]); break;
           case 'stmt':
             if(Array.isArray(out.opt.resultRows)){
-              toss3("Invalid rowMode for resultRows array: must",
+              toss3("Invalid rowMode for a resultRows array: must",
                     "be one of 'array', 'object',",
-                    "or a result column number.");
+                    "a result column number, or column name reference.");
             }
             out.cbArg = (stmt)=>stmt;
             break;
@@ -251,22 +251,16 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             if(util.isInt32(out.opt.rowMode)){
               out.cbArg = (stmt)=>stmt.get(out.opt.rowMode);
               break;
-            }
-            /*
-              TODO?: how can we define rowMode such that it uses
-              rowMode of 'object' and returns a given named field from
-              the object. Something like:
-
-              if(?what goes here?){
-                out.cbArg = function f(stmt){return stmt.get(this.obj)[this.colName]}
-                  .bind({obj:{}, colName: ???what goes here???}});
+            }else if('string'===typeof out.opt.rowMode && out.opt.rowMode.length>1){
+              /* "$X", ":X", and "@X" fetch column named "X" (case-sensitive!) */
+              const prefix = out.opt.rowMode[0];
+              if(':'===prefix || '@'===prefix || '$'===prefix){
+                out.cbArg = function(stmt){
+                  return stmt.get(this.obj)[this.colName];
+                }.bind({obj:{}, colName: out.opt.rowMode.substr(1)})
                 break;
               }
-
-              Maybe rowMode:['colName1',... 'colNameN']? That could be
-              ambiguous: might mean "return an object with just these
-              columns".
-            */
+            }
             toss3("Invalid rowMode:",out.opt.rowMode);
       }
     }
@@ -449,7 +443,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             if(rowTarget) rowTarget.push(row);
             if(opt.callback){
               stmt._isLocked = true;
-              opt.callback(row, stmt);
+              opt.callback(row,stmt);
               stmt._isLocked = false;
             }
           }
@@ -494,23 +488,40 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        if that statement has any result _rows_. The callback's "this"
        is the options object. The second argument passed to the
        callback is always the current Stmt object (so that the caller
-       may collect column names, or similar). The first argument
-       passed to the callback defaults to the current Stmt object but
-       may be changed with ...
+       may collect column names, or similar). The 2nd argument to the
+       callback is always the Stmt instance, as it's needed if the
+       caller wants to fetch the column names or some such. The first
+       argument passed to the callback defaults to the current Stmt
+       object but may be changed with ...
 
-       - .rowMode = either a string describing what type of argument
-       should be passed as the first argument to the callback or an
-       integer representing a result column index. A `rowMode` of
-       'object' causes the results of `stmt.get({})` to be passed to
-       the `callback` and/or appended to `resultRows`. A value of
-       'array' causes the results of `stmt.get([])` to be passed to
-       passed on.  A value of 'stmt' is equivalent to the default,
-       passing the current Stmt to the callback (noting that it's
-       always passed as the 2nd argument), but this mode will trigger
-       an exception if `resultRows` is an array. If `rowMode` is an
-       integer, only the single value from that result column will be
-       passed on. Any other value for the option triggers an
-       exception.
+       - .rowMode = may take one of several forms:
+
+       A) If `rowMode` is an integer, only the single value from that
+       result column (0-based) will be passed on.
+
+       B) A string describing what type of argument should be passed
+       as the first argument to the callback:
+
+         B.1) 'array' (the default) causes the results of
+         `stmt.get([])` to be passed to passed on and/or appended to
+         `resultRows`.
+
+         B.2) 'object' causes the results of `stmt.get({})` to be
+         passed to the `callback` and/or appended to `resultRows`.
+
+         B.3) 'stmt' causes the current Stmt to be passed to the
+         callback, but this mode will trigger an exception if
+         `resultRows` is an array because appending the statement to
+         the array would be unhelpful.
+
+       C) A string with a minimum length of 2 and leading character of
+       ':', '$', or '@' will fetch the row as an object, extract that
+       one field, and pass that field's value to the callback. Note
+       that these keys are case-sensitive so must match the case used
+       in the SQL. e.g. `"select a A from t"` with a `rowMode` of '$A'
+       would work but '$a' would not (it would result in `undefined`).
+
+       Any other `rowMode` value triggers an exception.
 
        - .resultRows: if this is an array, it functions similarly to
        the `callback` option: each row of the result set (if any) of
@@ -584,7 +595,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         else wasm.jstrcpy(arg.sql, wasm.heap8(), pSql, sqlByteLen, false);
         wasm.setMemValue(pSql + sqlByteLen, 0/*NUL terminator*/);
         while(wasm.getMemValue(pSql, 'i8')
-              /* Maintenance reminder:   ^^^^ _must_ be i8 or else we
+              /* Maintenance reminder:^^^ _must_ be 'i8' or else we
                  will very likely cause an endless loop. What that's
                  doing is checking for a terminating NUL byte. If we
                  use i32 or similar then we read 4 bytes, read stuff
@@ -615,7 +626,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
               stmt._isLocked = true;
               const row = arg.cbArg(stmt);
               if(resultRows) resultRows.push(row);
-              if(callback) callback(row, stmt);
+              if(callback) callback(row,stmt);
               stmt._isLocked = false;
             }
             rowMode = undefined;

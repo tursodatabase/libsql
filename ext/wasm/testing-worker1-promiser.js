@@ -166,21 +166,66 @@
       if(undefined === f.counter) f.counter = 0;
       if(null === ev.rowNumber){
         /* End of result set. */
-        T.assert(undefined === ev.row);
+        T.assert(undefined === ev.row)
+          .assert(2===ev.columnNames.length)
+          .assert('a'===ev.columnNames[0])
+          .assert('B'===ev.columnNames[1]);
       }else{
         T.assert(ev.rowNumber > 0);
         ++f.counter;
       }
       log("exec() result row:",ev);
-      T.assert(null === ev.rowNumber || 'number' === typeof ev.row.b);
+      T.assert(null === ev.rowNumber || 'number' === typeof ev.row.B);
     };
     await wtest('exec',{
-      sql: 'select a a, b b from t order by a',
+      sql: 'select a a, b B from t order by a limit 3',
       callback: resultRowTest1,
       rowMode: 'object'
     }, function(ev){
       T.assert(3===resultRowTest1.counter);
       resultRowTest1.counter = 0;
+    });
+
+    const resultRowTest2 = function f(ev){
+      if(null === ev.rowNumber){
+        /* End of result set. */
+        T.assert(undefined === ev.row)
+          .assert(1===ev.columnNames.length)
+          .assert('a'===ev.columnNames[0])
+      }else{
+        T.assert(ev.rowNumber > 0);
+        f.counter = ev.rowNumber;
+      }
+      log("exec() result row:",ev);
+      T.assert(null === ev.rowNumber || 'number' === typeof ev.row);
+    };
+    await wtest('exec',{
+      sql: 'select a a from t limit 3',
+      callback: resultRowTest2,
+      rowMode: 0
+    }, function(ev){
+      T.assert(3===resultRowTest2.counter);
+    });
+
+    const resultRowTest3 = function f(ev){
+      if(null === ev.rowNumber){
+        T.assert(3===ev.columnNames.length)
+          .assert('foo'===ev.columnNames[0])
+          .assert('bar'===ev.columnNames[1])
+          .assert('baz'===ev.columnNames[2]);
+      }else{
+        f.counter = ev.rowNumber;
+        T.assert('number' === typeof ev.row);
+      }
+    };
+    await wtest('exec',{
+      sql: "select 'foo' foo, a bar, 'baz' baz  from t limit 2",
+      callback: resultRowTest3,
+      columnNames: [],
+      rowMode: ':bar'
+    }, function(ev){
+      log("exec() result row:",ev);
+      T.assert(2===resultRowTest3.counter);
     });
 
     await wtest('exec',{
@@ -220,7 +265,7 @@
 
     await wtest('close', (ev)=>{
       T.assert(undefined === ev.result.filename);
-    }).finally(()=>log("That's all, folks!"));
+    }).finally(()=>logHtml('',"That's all, folks!"));
   }/*runTests2()*/;
 
   
