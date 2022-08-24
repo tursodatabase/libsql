@@ -1,5 +1,5 @@
-C Significant\srestructuring\sof\sthe\sWorker\s#1\srequest/response\sobject\sstructures\sto\simprove\sreadability\sand\sclarity.
-D 2022-08-24T00:10:45.121
+C The\svery\sbasics\sof\sa\sPromise-based\sproxy\sfor\sthe\sWorker\s#1\sAPI.\sStill\srequires\sconsiderable\scleanup,\stesting,\sand\sa\ssolution\sfor\sthe\sexec-callback-via-event-type-name\sproblem.
+D 2022-08-24T00:51:39.887
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -489,7 +489,7 @@ F ext/wasm/api/sqlite3-api-prologue.js 6e0e7787ed955ea2b6158e0bb7608f63b54236847
 F ext/wasm/api/sqlite3-api-worker1.js c9e4edb89f41a4fa65d136ae180c1bc0beb694eb95f7d9e6936fbb702914c160
 F ext/wasm/api/sqlite3-wasi.h 25356084cfe0d40458a902afb465df8c21fc4152c1d0a59b563a3fba59a068f9
 F ext/wasm/api/sqlite3-wasm.c 0d81282eaeff2a6e9fc5c28a388c5c5b45cf25a9393992fa511ac009b27df982
-F ext/wasm/common/SqliteTestUtil.js 04156a3b714b1b17a7261d21dd51341a8aeb9880a223e1e7519de98c2cceb414
+F ext/wasm/common/SqliteTestUtil.js eb96275bed43fdb364b7d65bcded0ca5e22aaacff120d593d1385f852f486247
 F ext/wasm/common/emscripten.css 3d253a6fdb8983a2ac983855bfbdd4b6fa1ff267c28d69513dd6ef1f289ada3f
 F ext/wasm/common/testing.css 572cf1ffae0b6eb7ca63684d3392bf350217a07b90e7a896e4fa850700c989b0
 F ext/wasm/common/whwasmutil.js 41b8e097e0a9cb07c24c0ede3c81b72470a63f4a4efb07f75586dc131569f5ae
@@ -509,6 +509,8 @@ F ext/wasm/scratchpad-opfs-worker.html 66c1d15d678f3bd306373d76b61c6c8aef988f61f
 F ext/wasm/scratchpad-opfs-worker.js 3ec2868c669713145c76eb5877c64a1b20741f741817b87c907a154b676283a9
 F ext/wasm/scratchpad-opfs-worker2.js 5f2237427ac537b8580b1c659ff14ad2621d1694043eaaf41ae18dbfef2e48c0
 F ext/wasm/sqlite3-worker1.js 0c1e7626304543969c3846573e080c082bf43bcaa47e87d416458af84f340a9e
+F ext/wasm/testing-worker-promise.html ba3d5423cfbdc96c332af3632dfcb61527ba8fd7e487b3bf3f07542f890c3e08
+F ext/wasm/testing-worker-promise.js c05c46a3a22b1910f6a1db11f3da6df701259eaa1277ddba085247b7f9059423
 F ext/wasm/testing1.html 528001c7e32ee567abc195aa071fd9820cc3c8ffc9c8a39a75e680db05f0c409
 F ext/wasm/testing1.js 2def7a86c52ff28b145cb86188d5c7a49d5993f9b78c50d140e1c31551220955
 F ext/wasm/testing2.html a66951c38137ff1d687df79466351f3c734fa9c6d9cce71d3cf97c291b2167e3
@@ -2006,8 +2008,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c8eb3aa8e0f487f14791214caf70d1aa03866e01345c7fa1d5607c24c39dde1d
-R ea27eb9ac1a6ed815943946a889ca949
+P 03b9db9b98cb36faa7de5a8a64d2e13c4aeaadfefb33ac92bb41056f6be3f121
+R 5b16a785d8c414a8eb9d618c8d9d8cea
 U stephan
-Z 3af622548a101a1182c5d00aa6a9dd08
+Z fdaa5cf9f1bfd4215c6ebf07223819c1
 # Remove this line to create a well-formed Fossil manifest.

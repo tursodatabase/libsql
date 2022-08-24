@@ -191,10 +191,7 @@
     */
     initSqlite3: function(){
       self.sqlite3ApiConfig = this.sqlite3ApiConfig;
-      return self.sqlite3InitModule(this).then(function(M){
-        delete self.sqlite3ApiConfig;
-        return M;
-      });
+      return self.sqlite3InitModule(this).finally(()=>delete self.sqlite3ApiConfig);
     }
   };
 })(self/*window or worker*/);
