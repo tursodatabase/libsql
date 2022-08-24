@@ -93,16 +93,16 @@
 
    The config object properties include:
 
-   - `Module`: Emscripten-style module object. Currently only required
+   - `Module`[^1]: Emscripten-style module object. Currently only required
      by certain test code and is _not_ part of the public interface.
      (TODO: rename this to EmscriptenModule to be more explicit.)
 
-   - `exports`: the "exports" object for the current WASM
+   - `exports`[^1]: the "exports" object for the current WASM
      environment. In an Emscripten build, this should be set to
      `Module['asm']`.
 
-   - `memory`: optional WebAssembly.Memory object, defaulting to
-     `exports.memory`.  In Emscripten environments this should be set
+   - `memory`[^1]: optional WebAssembly.Memory object, defaulting to
+     `exports.memory`. In Emscripten environments this should be set
      to `Module.wasmMemory` if the build uses `-sIMPORT_MEMORY`, or be
      left undefined/falsy to default to `exports.memory` when using
      WASM-exported memory.
@@ -120,20 +120,26 @@
      the `free(3)`-compatible routine for the WASM
      environment. Defaults to `"free"`.
 
-   - `persistentDirName`: if the environment supports persistent storage, this
+   - `persistentDirName`[^1]: if the environment supports persistent storage, this
      directory names the "mount point" for that directory. It must be prefixed
      by `/` and may currently contain only a single directory-name part. Using
      the root directory name is not supported by any current persistent backend.
+
+
+   [^1] = This property may optionally be a function, in which case this
+          function re-assigns it to the value returned from that function,
+          enabling delayed evaluation.
+
 */
-self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(apiConfig){
-  'use strict';
-  
+'use strict';
+self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
+  apiConfig = (sqlite3ApiBootstrap.defaultConfig || self.sqlite3ApiConfig)
+){
   if(sqlite3ApiBootstrap.sqlite3){ /* already initalized */
     console.warn("sqlite3ApiBootstrap() called multiple times.",
                  "Config and external initializers are ignored on calls after the first.");
     return sqlite3ApiBootstrap.sqlite3;
   }
-
   apiConfig = apiConfig || {};
   const config = Object.create(null);
   {
@@ -158,6 +164,16 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(apiConfig){
     });
   }
 
+  [
+    // If any of these config options are functions, replace them with
+    // the result of calling that function...
+    'Module', 'exports', 'memory', 'persistentDirName'
+  ].forEach((k)=>{
+    if('function' === typeof config[k]){
+      config[k] = config[k]();
+    }
+  });
+  
   /** Throws a new Error, the message of which is the concatenation
       all args with a space between each. */
   const toss = (...args)=>{throw new Error(args.join(' '))};
@@ -750,4 +766,16 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(apiConfig){
   this array is deleted.
 */
 self.sqlite3ApiBootstrap.initializers = [];
-self.sqlite3ApiBootstrap.sqlite3 = undefined /* installed at first call */;
+/**
+   Client code may assign sqlite3ApiBootstrap.defaultConfig an
+   object-type value before calling sqlite3ApiBootstrap() (without
+   arguments) in order to tell that call to use this object as its
+   default config value. The intention of this is to provide
+   downstream clients with a reasonably flexible approach for plugging in
+   an environment-suitable configuration without having to define a new
+   global-scope symbol.
+*/
+self.sqlite3ApiBootstrap.defaultConfig = Object.create(null);
+/** Placeholder: gets installed by the first call to
+    self.sqlite3ApiBootstrap(). */
+self.sqlite3ApiBootstrap.sqlite3 = undefined;

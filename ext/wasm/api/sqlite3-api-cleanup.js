@@ -18,44 +18,24 @@
 'use strict';
 if('undefined' !== typeof Module){ // presumably an Emscripten build
   /**
-     Replace sqlite3ApiBootstrap() with a variant which plugs in the
-     Emscripten-based config for all config options which the client
-     does not provide.
+     Install a suitable default configuration for sqlite3ApiBootstrap().
   */
-  const SAB = self.sqlite3ApiBootstrap;
-  self.sqlite3ApiBootstrap = function(apiConfig){
-    apiConfig = apiConfig || {};
-    const configDefaults = {
-      Module: Module /* ==> Emscripten-style Module object. Currently
-                        needs to be exposed here for test code. NOT part
-                        of the public API. */,
-      exports: Module['asm'],
-      memory: Module.wasmMemory /* gets set if built with -sIMPORT_MEMORY */
-    };
-    const config = {};
-    Object.keys(configDefaults).forEach(function(k){
-      config[k] = Object.getOwnPropertyDescriptor(apiConfig, k)
-        ? apiConfig[k] : configDefaults[k];
-    });
-    // Copy over any properties apiConfig defines but configDefaults does not...
-    Object.keys(apiConfig).forEach(function(k){
-      if(!Object.getOwnPropertyDescriptor(config, k)){
-        config[k] = apiConfig[k];
-      }
-    });
-    return SAB(config);
-  };
+  const SABC = self.sqlite3ApiBootstrap.defaultConfig;
+  SABC.Module = Module /* ==>  Current needs to be exposed here for test code. NOT part
+                          of the public API. */;
+  SABC.exports = Module['asm'];
+  SABC.memory = Module.wasmMemory /* gets set if built with -sIMPORT_MEMORY */;
 
   /**
      For current (2022-08-22) purposes, automatically call
      sqlite3ApiBootstrap().  That decision will be revisited at some
      point, as we really want client code to be able to call this to
-     configure certain parts. If the global sqliteApiConfig property
-     is available, it is assumed to be a config object for
-     sqlite3ApiBootstrap().
+     configure certain parts. Clients may modify
+     self.sqlite3ApiBootstrap.defaultConfig to tweak the default
+     configuration used by a no-args call to sqlite3ApiBootstrap().
   */
   //console.warn("self.sqlite3ApiConfig = ",self.sqlite3ApiConfig);
-  const sqlite3 = self.sqlite3ApiBootstrap(self.sqlite3ApiConfig || Object.create(null));
+  const sqlite3 = self.sqlite3ApiBootstrap();
   delete self.sqlite3ApiBootstrap;
 
   if(self.location && +self.location.port > 1024){
@@ -67,4 +47,9 @@ if('undefined' !== typeof Module){ // presumably an Emscripten build
   delete sqlite3.capi.util /* arguable, but these are (currently) internal-use APIs */;
   //console.warn("Module.sqlite3 =",Module.sqlite3);
   Module.sqlite3 = sqlite3 /* Currently needed by test code and sqlite3-worker1.js */;
+}else{
+  console.warn("This is not running in an Emscripten module context, so",
+               "self.sqlite3ApiBootstrap() is _not_ being called due to lack",
+               "of config info for the WASM environment.",
+               "It must be called manually.");
 }

@@ -92,11 +92,8 @@ sqlite3.initWorker1API = function(){
     defaultDb: undefined,
     idSeq: 0,
     idMap: new WeakMap,
-    open: function(arg){
-      // TODO? if arg is a filename, look for a db in this.dbs with the
-      // same filename and close/reopen it (or just pass it back as is?).
-      if(!arg && this.defaultDb) return this.defaultDb;
-      const db = (Array.isArray(arg) ? new DB(...arg) : new DB(arg));
+    open: function(opt){
+      const db = new DB(opt.filename);
       this.dbs[getDbId(db)] = db;
       if(!this.defaultDb) this.defaultDb = db;
       return db;
@@ -169,14 +166,26 @@ sqlite3.initWorker1API = function(){
                envelope to other calls in this API to tell them which
                db to use. If it is not provided to future calls, they
                will default to operating on the first-opened db.
+
+          persistent: prepend sqlite3.capi.sqlite3_web_persistent_dir()
+                      to the given filename so that it is stored
+                      in persistent storage _if_ the environment supports it.
+                      If persistent storage is not supported, the filename
+                      is used as-is.
        }
     */
     open: function(ev){
-      const oargs = [], args = (ev.args || {});
+      const oargs = Object.create(null), args = (ev.args || Object.create(null));
       if(args.simulateError){ // undocumented internal testing option
         toss("Throwing because of simulateError flag.");
       }
-      if(args.filename) oargs.push(args.filename);
+      if(args.persistent && args.filename){
+        oargs.filaname = sqlite3.capi.sqlite3_web_persistent_dir() + args.filename;
+      }else if('' === args.filename){
+        oargs.filename = args.filename;
+      }else{
+        oargs.filename = args.filename || ':memory:';
+      }      
       const db = wState.open(oargs);
       return {
         filename: db.filename,
@@ -184,15 +193,15 @@ sqlite3.initWorker1API = function(){
       };
     },
     /**
-       Proxy for DB.close(). ev.args may either be a boolean or an
-       object with an `unlink` property. If that value is truthy then
-       the db file (if the db is currently open) will be unlinked from
-       the virtual filesystem, else it will be kept intact. The
-       result object is:
+       Proxy for DB.close(). ev.args may be elided or an object with
+       an `unlink` property. If that value is truthy then the db file
+       (if the db is currently open) will be unlinked from the virtual
+       filesystem, else it will be kept intact. The result object is:
 
        {
          filename: db filename _if_ the db is opened when this
                    is called, else the undefined value
+         dbId: the ID of the closed b, or undefined if none is closed
        }
 
        It does not error if the given db is already closed or no db is
@@ -356,6 +365,7 @@ sqlite3.initWorker1API = function(){
        dbId: DB handle ID,
        [messageId: if set in the inbound message],
        result: {
+         operation: "inbound message's 'type' value",
          message: error string,
          errorClass: class name of the error type,
          input: ev.data
@@ -378,6 +388,7 @@ sqlite3.initWorker1API = function(){
     }catch(err){
       evType = 'error';
       result = {
+        operation: ev.type,
         message: err.message,
         errorClass: err.name,
         input: ev
@@ -405,7 +416,7 @@ sqlite3.initWorker1API = function(){
       result: result
     }, wMsgHandler.xfer);
   };
-  setTimeout(()=>self.postMessage({type:'sqlite3-api',result:'worker1-ready'}), 0);
+  self.postMessage({type:'sqlite3-api',result:'worker1-ready'});
 }.bind({self, sqlite3});
 });
 
