@@ -6627,6 +6627,7 @@ case OP_CreateBtree: {          /* out2 */
   Db *pDb;
 
   sqlite3VdbeIncrWriteCounter(p, 0);
+  p->hSql = 0;
   pOut = out2Prerelease(p, pOp);
   pgno = 0;
   assert( pOp->p3==BTREE_INTKEY || pOp->p3==BTREE_BLOBKEY );

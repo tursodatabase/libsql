@@ -2791,6 +2791,7 @@ void sqlite3EndTable(
 #ifndef SQLITE_OMIT_VIEW
     }else{
       /* A view */
+      sqlite3VdbeRunOnlyOnce(v);
       zType = "view";
       zType2 = "VIEW";
 #endif

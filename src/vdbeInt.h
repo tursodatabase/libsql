@@ -470,7 +470,7 @@ struct Vdbe {
   yDbMask btreeMask;      /* Bitmask of db->aDb[] entries referenced */
   yDbMask lockMask;       /* Subset of btreeMask that requires a lock */
   u32 aCounter[9];        /* Counters used by sqlite3_stmt_status() */
-  u32 hSql;               /* Hash for zSql */
+  u32 hSql;               /* Hash for zSql.  0 if non-cacheable. */
   int nSql;               /* Number of bytes in zSql[] */
   char *zSql;             /* Text of the SQL statement that generated this */
 #ifdef SQLITE_ENABLE_NORMALIZE
