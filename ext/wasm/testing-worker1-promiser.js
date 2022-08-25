@@ -44,7 +44,7 @@
       w.onerror = (event)=>error("worker.onerror",event);
       return w;
     },
-    //debug: (...args)=>console.debug('worker debug',...args),
+    debug: 1 ? undefined : (...args)=>console.debug('worker debug',...args),
     onunhandled: function(ev){
       error("Unhandled worker message:",ev.data);
     },
@@ -95,7 +95,7 @@
         .assert(r.persistent
                ? (dbFilename!==r.filename)
                : (dbFilename==r.filename))
-        .assert(ev.dbId)
+        .assert(ev.dbId === r.dbId)
         .assert(ev.messageId)
         .assert(promiserConfig.dbId === ev.dbId);
     }).then(runTests2);

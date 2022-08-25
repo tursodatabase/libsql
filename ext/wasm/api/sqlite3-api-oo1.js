@@ -412,7 +412,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        Stmt.getColumnNames() to append the column names to it
        (regardless of whether the query produces any result
        rows). If the query has no result columns, this value is
-       unchanged.
+       unchanged. (TODO: support this in execMulti() as well.)
 
        The following options to execMulti() are _not_ supported by
        this method (they are simply ignored):

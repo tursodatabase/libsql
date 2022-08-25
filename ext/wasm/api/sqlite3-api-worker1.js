@@ -22,19 +22,20 @@
 */
 
 /**
-  This function implements a Worker-based wrapper around SQLite3 OO
-  API #1, colloquially known as "Worker API #1".
+  sqlite3.initWorker1API() implements a Worker-based wrapper around
+  SQLite3 OO API #1, colloquially known as "Worker API #1".
 
   In order to permit this API to be loaded in worker threads without
   automatically registering onmessage handlers, initializing the
-  worker API requires calling initWorker1API(). If this function
-  is called from a non-worker thread then it throws an exception.
+  worker API requires calling initWorker1API(). If this function is
+  called from a non-worker thread then it throws an exception.  It
+  must only be called once per Worker.
 
   When initialized, it installs message listeners to receive Worker
   messages and then it posts a message in the form:
 
   ```
-  {type:'sqlite3-api',result:'worker1-ready'}
+  {type:'sqlite3-api', result:'worker1-ready'}
   ```
 
   to let the client know that it has been initialized. Clients may
@@ -50,8 +51,275 @@
   Promise-based wrapper for this API (`sqlite3-worker1-promiser.js`)
   is more comfortable to use in that regard.
 
+  The documentation for the input and output worker messages for
+  this API follows...
 
-  TODO: hoist the message API docs from deep in this code to here.
+  ====================================================================
+  Common message format...
+
+  Each message posted to the worker has an operation-independent
+  envelope and operation-dependent arguments:
+
+  ```
+  {
+    type: string, // one of: 'open', 'close', 'exec', 'config-get'
+
+    messageId: OPTIONAL arbitrary value. The worker will copy it as-is
+    into response messages to assist in client-side dispatching.
+
+    dbId: a db identifier string (returned by 'open') which tells the
+    operation which database instance to work on. If not provided, the
+    first-opened db is used. This is an "opaque" value, with no
+    inherently useful syntax or information. Its value is subject to
+    change with any given build of this API and cannot be used as a
+    basis for anything useful beyond its one intended purpose.
+
+    args: ...operation-dependent arguments...
+
+    // the framework may add other properties for testing or debugging
+    // purposes.
+
+  }
+  ```
+
+  Response messages, posted back to the main thread, look like:
+
+  ```
+  {
+    type: string. Same as above except for error responses, which have the type
+    'error',
+
+    messageId: same value, if any, provided by the inbound message
+
+    dbId: the id of the db which was operated on, if any, as returned
+    by the corresponding 'open' operation.
+
+    result: ...operation-dependent result...
+
+  }
+  ```
+
+  ====================================================================
+  Error responses
+
+  Errors are reported messages in an operation-independent format:
+
+  ```
+  {
+    type: 'error',
+
+    messageId: ...as above...,
+
+    dbId: ...as above...
+
+    result: {
+
+      operation: type of the triggering operation: 'open', 'close', ...
+
+      message: ...error message text...
+
+      errorClass: string. The ErrorClass.name property from the thrown exception.
+
+      input: the message object which triggered the error.
+
+      stack: _if available_, a stack trace array.
+
+    }
+
+  }
+  ```
+
+
+  ====================================================================
+  "config-get"
+
+  This operation fetches the serializable parts of the sqlite3 API
+  configuration.
+
+  Message format:
+
+  ```
+  {
+    type: "config-get",
+    messageId: ...as above...,
+    args: currently ignored and may be elided.
+  }
+  ```
+
+  Response:
+
+  ```
+  {
+    type: 'config',
+    messageId: ...as above...,
+    result: {
+
+      persistentDirName: path prefix, if any, of persistent storage.
+      An empty string denotes that no persistent storage is available.
+
+      bigIntEnabled: bool. True if BigInt support is enabled.
+
+      persistenceEnabled: true if persistent storage is enabled in the
+      current environment. Only files stored under persistentDirName
+      will persist, however.
+
+   }
+  }
+  ```
+
+
+  ====================================================================
+  "open" a database
+
+  Message format:
+
+  ```
+  {
+    type: "open",
+    messageId: ...as above...,
+    args:{
+
+      filename [=":memory:" or "" (unspecified)]: the db filename.
+      See the sqlite3.oo1.DB constructor for peculiarities and transformations,
+
+      persistent [=false]: if true and filename is not one of ("",
+      ":memory:"), prepend sqlite3.capi.sqlite3_web_persistent_dir()
+      to the given filename so that it is stored in persistent storage
+      _if_ the environment supports it.  If persistent storage is not
+      supported, the filename is used as-is.
+
+    }
+  }
+  ```
+
+  Response:
+
+  ```
+  {
+    type: 'open',
+    messageId: ...as above...,
+    result: {
+      filename: db filename, possibly differing from the input.
+
+      dbId: an opaque ID value which must be passed in the message
+      envelope to other calls in this API to tell them which db to
+      use. If it is not provided to future calls, they will default to
+      operating on the first-opened db. This property is, for API
+      consistency's sake, also part of the contaning message envelope.
+      Only the `open` operation includes it in the `result` property.
+
+      persistent: true if the given filename resides in the
+      known-persistent storage, else false. This determination is
+      independent of the `persistent` input argument.
+   }
+  }
+  ```
+
+  ====================================================================
+  "close" a database
+
+  Message format:
+
+  ```
+  {
+    type: "close",
+    messageId: ...as above...
+    dbId: ...as above...
+    args: OPTIONAL: {
+
+      unlink: if truthy, the associated db will be unlinked (removed)
+      from the virtual filesystems. Failure to unlink is silently
+      ignored.
+
+    }
+  }
+  ```
+
+  If the dbId does not refer to an opened ID, this is a no-op. The
+  inability to close a db (because it's not opened) or delete its
+  file does not trigger an error.
+
+  Response:
+
+  ```
+  {
+    type: 'close',
+    messageId: ...as above...,
+    result: {
+
+      filename: filename of closed db, or undefined if no db was closed
+
+    }
+  }
+  ```
+
+  ====================================================================
+  "exec" SQL
+
+  All SQL execution is processed through the exec operation. It offers
+  most of the features of the oo1.DB.exec() method, with a few limitations
+  imposed by the state having to cross thread boundaries.
+
+  Message format:
+
+  ```
+  {
+    type: "exec",
+    messageId: ...as above...
+    dbId: ...as above...
+    args: string (SQL) or {... see below ...}
+  }
+  ```
+
+  Response:
+
+  ```
+  {
+    type: 'exec',
+    messageId: ...as above...,
+    dbId: ...as above...
+    result: {
+      input arguments, possibly modified. See below.
+    }
+  }
+  ```
+
+  The arguments are in the same form accepted by oo1.DB.exec(), with
+  the exceptions noted below.
+
+  A function-type args.callback property cannot cross
+  the window/Worker boundary, so is not useful here. If
+  args.callback is a string then it is assumed to be a
+  message type key, in which case a callback function will be
+  applied which posts each row result via:
+
+  postMessage({type: thatKeyType,
+               rowNumber: 1-based-#,
+               row: theRow,
+               columnNames: anArray
+               })
+
+  And, at the end of the result set (whether or not any result rows
+  were produced), it will post an identical message with
+  (row=undefined, rowNumber=null) to alert the caller than the result
+  set is completed. Note that a row value of `null` is a legal row
+  result for certain arg.rowMode values.
+
+    (Design note: we don't use (row=undefined, rowNumber=undefined) to
+    indicate end-of-results because fetching those would be
+    indistinguishable from fetching from an empty object unless the
+    client used hasOwnProperty() (or similar) to distinguish "missing
+    property" from "property with the undefined value".  Similarly,
+    `null` is a legal value for `row` in some case , whereas the db
+    layer won't emit a result value of `undefined`.)
+
+  The callback proxy must not recurse into this interface. An exec()
+  call will type up the Worker thread, causing any recursion attempt
+  to wait until the first exec() is completed.
+
+  The response is the input options object (or a synthesized one if
+  passed only a string), noting that options.resultRows and
+  options.columnNames may be populated by the call to db.exec().
 
 */
 self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
@@ -85,10 +353,15 @@ sqlite3.initWorker1API = function(){
      Internal helper for managing Worker-level state.
   */
   const wState = {
+    /** First-opened db is the default for future operations when no
+        dbId is provided by the client. */
     defaultDb: undefined,
+    /** Sequence number of dbId generation. */
     idSeq: 0,
+    /** Map of DB instances to dbId. */
     idMap: new WeakMap,
-    xfer: [/*Temp holder for "transferable" postMessage() state.*/],
+    /** Temp holder for "transferable" postMessage() state. */
+    xfer: [],
     open: function(opt){
       const db = new DB(opt.filename);
       this.dbs[getDbId(db)] = db;
@@ -122,6 +395,8 @@ sqlite3.initWorker1API = function(){
     },
     /** Map of DB IDs to DBs. */
     dbs: Object.create(null),
+    /** Fetch the DB for the given id. Throw if require=true and the
+        id is not valid, else return the db or undefined. */
     getDb: function(id,require=true){
       return this.dbs[id]
         || (require ? toss("Unknown (or closed) DB ID:",id) : undefined);
@@ -154,37 +429,6 @@ sqlite3.initWorker1API = function(){
      on error.
   */
   const wMsgHandler = {
-    /**
-       Proxy for the DB constructor. Expects to be passed a single
-       object or a falsy value to use defaults:
-
-       {
-         filename [=":memory:" or "" (unspecified)]: the db filename.
-         See the sqlite3.oo1.DB constructor for peculiarities and transformations,
-
-         persistent [=false]: if true and filename is not one of ("",
-         ":memory:"), prepend
-         sqlite3.capi.sqlite3_web_persistent_dir() to the given
-         filename so that it is stored in persistent storage _if_ the
-         environment supports it.  If persistent storage is not
-         supported, the filename is used as-is.
-       }
-
-       The response object looks like:
-
-       {
-         filename: db filename, possibly differing from the input.
-
-         dbId: an opaque ID value which must be passed in the message
-         envelope to other calls in this API to tell them which db to
-         use. If it is not provided to future calls, they will default
-         to operating on the first-opened db.
-
-         persistent: true if the given filename resides in the
-         known-persistent storage, else false. This determination is
-         independent of the `persistent` input argument.
-       }
-    */
     open: function(ev){
       const oargs = Object.create(null), args = (ev.args || Object.create(null));
       if(args.simulateError){ // undocumented internal testing option
@@ -205,28 +449,11 @@ sqlite3.initWorker1API = function(){
       rc.dbId = getDbId(db);
       return rc;
     },
-    /**
-       Proxy for DB.close(). ev.args may be elided or an object with
-       an `unlink` property. If that value is truthy then the db file
-       (if the db is currently open) will be unlinked from the virtual
-       filesystem, else it will be kept intact, noting that unlink
-       failure is ignored. The result object is:
 
-       {
-         filename: db filename _if_ the db is opened when this
-         is called, else the undefined value
-
-         dbId: the ID of the closed b, or undefined if none is closed
-       }
-
-       It does not error if the given db is already closed or no db is
-       provided. It is simply does nothing useful in that case.
-    */
     close: function(ev){
       const db = getMsgDb(ev,false);
       const response = {
-        filename: db && db.filename,
-        dbId: db && getDbId(db)
+        filename: db && db.filename
       };
       if(db){
         wState.close(db, ((ev.args && 'object'===typeof ev.args)
@@ -234,52 +461,7 @@ sqlite3.initWorker1API = function(){
       }
       return response;
     },
-    /**
-       Proxy for oo1.DB.exec() which expects a single argument of type
-       string (SQL to execute) or an options object in the form
-       expected by exec(). The notable differences from exec()
-       include:
 
-       - The default value for options.rowMode is 'array' because
-       the normal default cannot cross the window/Worker boundary.
-
-       - A function-type options.callback property cannot cross
-       the window/Worker boundary, so is not useful here. If
-       options.callback is a string then it is assumed to be a
-       message type key, in which case a callback function will be
-       applied which posts each row result via:
-
-       postMessage({type: thatKeyType,
-                    rowNumber: 1-based-#,
-                    row: theRow,
-                    columnNames: anArray
-                    })
-
-       And, at the end of the result set (whether or not any result
-       rows were produced), it will post an identical message with
-       (row=undefined, rowNumber=null) to alert the caller than the
-       result set is completed. Note that a row value of `null` is
-       a legal row result for certain `rowMode` values.
-
-       (Design note: we don't use (row=undefined, rowNumber=undefined)
-       to indicate end-of-results because fetching those would be
-       indistinguishable from fetching from an empty object unless the
-       client used hasOwnProperty() (or similar) to distinguish
-       "missing property" from "property with the undefined value".
-       Similarly, `null` is a legal value for `row` in some case ,
-       whereas the db layer won't emit a result value of `undefined`.)
-
-       The callback proxy must not recurse into this interface, or
-       results are undefined. (It hypothetically cannot recurse
-       because an exec() call will be tying up the Worker thread,
-       causing any recursion attempt to wait until the first
-       exec() is completed.)
-
-       The response is the input options object (or a synthesized
-       one if passed only a string), noting that
-       options.resultRows and options.columnNames may be populated
-       by the call to db.exec().
-    */
     exec: function(ev){
       const rc = (
         'string'===typeof ev.args
@@ -287,6 +469,8 @@ sqlite3.initWorker1API = function(){
       if('stmt'===rc.rowMode){
         toss("Invalid rowMode for 'exec': stmt mode",
              "does not work in the Worker API.");
+      }else if(!rc.sql){
+        toss("'exec' requires input SQL.");
       }
       const db = getMsgDb(ev);
       if(rc.callback || Array.isArray(rc.resultRows)){
@@ -330,21 +514,7 @@ sqlite3.initWorker1API = function(){
       }
       return rc;
     }/*exec()*/,
-    /**
-       Returns a JSON-friendly form of a _subset_ of sqlite3.config,
-       sans any parts which cannot be serialized. Because we cannot,
-       from here, distingush whether or not certain objects can be
-       serialized, this routine selectively copies certain properties
-       rather than trying JSON.stringify() and seeing what happens
-       (the results are horrid if the config object contains an
-       Emscripten module object).
 
-       In addition to the "real" config properties, it sythesizes
-       the following:
-
-       - persistenceEnabled: true if persistent dir support is available,
-       else false.
-    */
     'config-get': function(){
       const rc = Object.create(null), src = sqlite3.config;
       [
@@ -355,6 +525,7 @@ sqlite3.initWorker1API = function(){
       rc.persistenceEnabled = !!sqlite3.capi.sqlite3_web_persistent_dir();
       return rc;
     },
+
     /**
        TO(RE)DO, once we can abstract away access to the
        JS environment's virtual filesystem. Currently this
@@ -391,58 +562,12 @@ sqlite3.initWorker1API = function(){
       wState.xfer.push(response.buffer.buffer);
       return response;**/
     }/*export()*/,
+
     toss: function(ev){
       toss("Testing worker exception");
     }
   }/*wMsgHandler*/;
 
-  /**
-     UNDER CONSTRUCTION!
-
-     A subset of the DB API is accessible via Worker messages in the
-     form:
-
-     { type: apiCommand,
-       args: apiArguments,
-       dbId: optional DB ID value (else uses a default db handle),
-       messageId: optional client-specific value
-     }
-
-     As a rule, these commands respond with a postMessage() of their
-     own. The responses always have a `type` property equal to the
-     input message's type and an object-format `result` part. If
-     the inbound object has a `messageId` property, that property is
-     always mirrored in the result object, for use in client-side
-     dispatching of these asynchronous results. For example:
-
-     {
-       type: 'open',
-       messageId: ...copied from inbound message...,
-       dbId: ID of db which was opened,
-       result: {
-         dbId: repeat of ^^^, for API consistency's sake,
-         filename: ...,
-         persistent: false
-       },
-       ...possibly other framework-internal/testing/debugging info...
-     }
-
-     Exceptions thrown during processing result in an `error`-type
-     event with a payload in the form:
-
-     { type: 'error',
-       dbId: DB handle ID,
-       [messageId: if set in the inbound message],
-       result: {
-         operation: "inbound message's 'type' value",
-         message: error string,
-         errorClass: class name of the error type,
-         input: ev.data
-       }
-     }
-
-     The individual APIs are documented in the wMsgHandler object.
-  */
   self.onmessage = function(ev){
     ev = ev.data;
     let result, dbId = ev.dbId, evType = ev.type;

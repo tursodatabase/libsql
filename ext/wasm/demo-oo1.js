@@ -136,8 +136,10 @@
       db.exec({
         sql: "select a, twice(a), twice(''||a) from t order by a desc limit 3",
         columnNames: columnNames,
+        rowMode: 'stmt',
         callback: function(row){
-          log("a =",row.get(0), "twice(a) =", row.get(1), "twice(''||a) =",row.get(2));
+          log("a =",row.get(0), "twice(a) =", row.get(1),
+              "twice(''||a) =",row.get(2));
         }
       });
       log("Result column names:",columnNames);
