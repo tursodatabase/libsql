@@ -1065,7 +1065,7 @@ void testset_main(void){
     " WHERE t4.a BETWEEN ?1 AND ?2\n"
     "   AND t3.a=t4.b\n"
     "   AND z2.a=t3.b\n"
-    "   AND z1.c=z2.c"
+    "   AND z1.c=z2.c;"
   );
   for(i=1; i<=n; i++){
     x1 = speedtest1_random()%sz + 1;

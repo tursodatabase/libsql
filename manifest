@@ -1,5 +1,5 @@
-C Add\sthe\s--script\soption\sto\sspeedtest1.
-D 2022-08-25T19:19:25.119
+C Ensure\sthat\ssqlite3_prepare()\sinputs\salways\shave\sa\ssemicolon\sterminator\sin\nspeedtest1.
+D 2022-08-25T19:29:35.476
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1480,7 +1480,7 @@ F test/speed3.test 694affeb9100526007436334cf7d08f3d74b85ef
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 377a0c48e5a92e0b11c1c5ebb1bc9d83a7312c922bc0cb05970ef5d6a96d1f0c
-F test/speedtest1.c 8146658813bb1451369258dbb525d6176001265861845e51e5c120f708111749
+F test/speedtest1.c 8bf7ebac9ac316feed6656951249db531dc380c73fb3e3b22e224ffda96beff6
 F test/spellfix.test 951a6405d49d1a23d6b78027d3877b4a33eeb8221dcab5704b499755bb4f552e
 F test/spellfix2.test dfc8f519a3fc204cb2dfa8b4f29821ae90f6f8c3
 F test/spellfix3.test 0f9efaaa502a0e0a09848028518a6fb096c8ad33
@@ -1999,8 +1999,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b573e2cffa5fedc893ed30e76e47022b3617ac5583e1eb486afa810b2514c419
-R 23f5860feef99c79720c0e0c9fd78020
+P 1c87d7c58d5aec83f9e2ae3771a81aa17cfae0cf06169025a5db085e2d5749f9
+R 03aae009b62262596bf019082ce9ceed
 U drh
-Z c96eb730eff0b666933a1a2c900265aa
+Z 8bd158a0ccc4257762e239c65a25bd98
 # Remove this line to create a well-formed Fossil manifest.
