@@ -753,14 +753,20 @@ int sqlite3VdbeExec(
     nProgressLimit = LARGEST_UINT64;
   }
 #endif
-  if( p->rc==SQLITE_NOMEM ){
-    /* This happens if a malloc() inside a call to sqlite3_column_text() or
-    ** sqlite3_column_text16() failed.  */
-    goto no_mem;
+  if( p->rc ){
+    if( p->rc==SQLITE_NOMEM ){
+      /* This happens if a malloc() inside a call to sqlite3_column_text() or
+      ** sqlite3_column_text16() failed.  */
+      goto no_mem;
+    }
+    if( p->rc==SQLITE_TOOBIG ){
+      /* This happens if the SQLITE_LENGTH is reduced on a cached prepared
+      ** statement. */
+      goto too_big;
+    }
+    assert( (p->rc&0xff)==SQLITE_BUSY );
+    p->rc = SQLITE_OK;
   }
-  assert( p->rc==SQLITE_OK || (p->rc&0xff)==SQLITE_BUSY );
-  testcase( p->rc!=SQLITE_OK );
-  p->rc = SQLITE_OK;
   assert( p->bIsReader || p->readOnly!=0 );
   p->iCurrentTime = 0;
   assert( p->explain==0 );

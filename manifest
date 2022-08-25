@@ -1,5 +1,5 @@
-C Do\snot\sattempt\sto\scache\sDDL\sstatement.
-D 2022-08-25T17:12:30.497
+C Fix\sthe\sbytecode\sengine\sso\sthat\sit\sis\sable\sto\shandle\san\sincoming\nSQLITE_TOOBIG\serror,\swhich\sis\snow\spossible\susing\sthe\sstatement\scache.
+D 2022-08-25T18:29:12.551
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -660,7 +660,7 @@ F src/upsert.c 8789047a8f0a601ea42fa0256d1ba3190c13746b6ba940fe2d25643a7e991937
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c 602fe229f32a96ceccae4f40824129669582096f7c355f53dbac156c9fecef23
 F src/vacuum.c bb346170b0b54c6683bba4a5983aea40485597fdf605c87ec8bc2e199fe88cd8
-F src/vdbe.c cbf9c38a51f6bbe45ff386f0d9811cdf94d28d91e90bfeb693cabb5aa5b3c04d
+F src/vdbe.c ec5135855d28092766a202b86f948f7a8db7ed9aaadea20706dbcfd484c3379f
 F src/vdbe.h c4c9defdf2ad9465f9c9c7f79c3b03555f47aa930ea2744f358d9b27269763c7
 F src/vdbeInt.h 1c58993f8bdf604706120838d018495289ab82dfb8d575748293a3396cd3e2d0
 F src/vdbeapi.c ba51a59b3c0ecbf76f337de087089986464da83d1bf42b4fdebef8d74de173b2
@@ -1999,8 +1999,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P da9aa5476c342ed02a982e81eb8272cb33adb2ed3d0b5df44b2c88b27d80a94c
-R c6f3d91c98266046c86cdaf96018b0c0
+P 8f6a1f77b8d11c4eea315672353ea18a1ac50aa46a8e3f06f7d3b81de25f88c6
+R 6ffd21feaece31fc5448d33df0c08e02
 U drh
-Z c8d5bba02eefdba3ca6e8e763c1b1b34
+Z 62ca46546847d8bd63f163cb7dd3fa3a
 # Remove this line to create a well-formed Fossil manifest.
