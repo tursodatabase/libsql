@@ -110,8 +110,7 @@ int sqlite3_finalize(sqlite3_stmt *pStmt){
     checkProfileCallback(db, v);
     assert( v->eVdbeState>=VDBE_READY_STATE );
     rc = sqlite3VdbeReset(v);
-    if( rc==SQLITE_OK
-     && v->hSql>0
+    if( v->hSql>0
      && db->mxCache>0
      && v->expired==0
     ){

@@ -712,16 +712,20 @@ static int sqlite3Prepare(
     }
   }
 
-  /* For a long-term use prepared statement should avoid the use of
-  ** lookaside memory.
-  */
-  if( prepFlags & (SQLITE_PREPARE_PERSISTENT|SQLITE_PREPARE_CACHE) ){
-    testcase( prepFlags & SQLITE_PREPARE_PERSISTENT );
-    testcase( prepFlags & SQLITE_PREPARE_CACHE );
-    sParse.disableLookaside++;
-    DisableLookaside;
+  if( prepFlags!=0 ){
+    /* For a long-term use prepared statement should avoid the use of
+    ** lookaside memory.
+    */
+    if( prepFlags & (SQLITE_PREPARE_PERSISTENT|SQLITE_PREPARE_CACHE) ){
+      testcase( prepFlags & SQLITE_PREPARE_PERSISTENT );
+      testcase( prepFlags & SQLITE_PREPARE_CACHE );
+      sParse.disableLookaside++;
+      DisableLookaside;
+    }
+    if( prepFlags & SQLITE_PREPARE_NO_VTAB ){
+      sParse.disableVtab = 1;
+    }
   }
-  sParse.disableVtab = (prepFlags & SQLITE_PREPARE_NO_VTAB)!=0;
 
   /* Check to verify that it is possible to get a read lock on all
   ** database schemas.  The inability to get a read lock indicates that

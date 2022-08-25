@@ -67,6 +67,10 @@ static const char zHelp[] =
 # define sqlite3_int64 sqlite_int64
 #endif
 
+#ifndef SQLITE_PREPARE_CACHE
+# define SQLITE_PREPARE_CACHE 0x40000000
+#endif
+
 typedef sqlite3_uint64 u64;
 
 /*

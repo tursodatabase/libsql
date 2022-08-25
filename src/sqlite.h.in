@@ -8614,6 +8614,15 @@ int sqlite3_stmt_status(sqlite3_stmt*, int op,int resetFlg);
 ** times that the Bloom filter returned a find, and thus the join step
 ** had to be processed as normal.
 **
+** [[SQLITE_STMTSTATUS_STATE]] <dt>SQLITE_STMTSTATUS_STATE</dt>
+** <dd>During its lifetime, a prepare statement transitions through
+** various "states".  This interface returns the current state of the
+** prepared statement, as an integer.  This information is intended
+** for use by SQLite core developers only.  The internal state numbers
+** for prepared statements can and do change from one release of
+** SQLite to the next.  Hence the value returned for this property
+** code can change from one release of SQLite to the next.
+**
 ** [[SQLITE_STMTSTATUS_MEMUSED]] <dt>SQLITE_STMTSTATUS_MEMUSED</dt>
 ** <dd>^This is the approximate number of bytes of heap memory
 ** used to store the prepared statement.  ^This value is not actually
