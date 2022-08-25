@@ -70,7 +70,7 @@
             (ev.workerRespondTime - ev.workerReceivedTime),"ms.",
             "Round-trip event time =",
             (performance.now() - ev.departureTime),"ms.",
-            (evd.errorClass ? ev.message : ""), evd
+            (evd.errorClass ? ev.message : "")//, JSON.stringify(evd)
            );
   };
 
@@ -149,10 +149,9 @@
       throw new Error("This is not supposed to be reached.");
     };
     runOneTest('exec',{
-      sql: ["create table t(a,b)",
+      sql: ["create table t(a,b);",
             "insert into t(a,b) values(1,2),(3,4),(5,6)"
-           ].join(';'),
-      multi: true,
+           ],
       resultRows: [], columnNames: []
     }, function(ev){
       ev = ev.result;
@@ -161,7 +160,7 @@
     });
     runOneTest('exec',{
       sql: 'select a a, b b from t order by a',
-      resultRows: [], columnNames: [],
+      resultRows: [], columnNames: [], saveSql:[]
     }, function(ev){
       ev = ev.result;
       T.assert(3===ev.resultRows.length)
@@ -170,6 +169,7 @@
         .assert(2===ev.columnNames.length)
         .assert('b'===ev.columnNames[1]);
     });
+    //if(1){ error("Returning prematurely for testing."); return; }
     runOneTest('exec',{
       sql: 'select a a, b b from t order by a',
       resultRows: [], columnNames: [],
@@ -200,12 +200,12 @@
       dbMsgHandler.resultRowTest1.counter = 0;
     });
     runOneTest('exec',{
-      multi: true,
       sql:[
-        'pragma foreign_keys=0;',
+        "pragma foreign_keys=0;",
         // ^^^ arbitrary query with no result columns
-        'select a, b from t order by a desc; select a from t;'
-        // multi-exec only honors results from the first
+        "select a, b from t order by a desc;",
+        "select a from t;"
+        // multi-statement exec only honors results from the first
         // statement with result columns (regardless of whether)
         // it has any rows).
       ],

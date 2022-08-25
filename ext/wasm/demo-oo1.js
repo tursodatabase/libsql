@@ -144,23 +144,6 @@
       });
       log("Result column names:",columnNames);
 
-      /**
-         Main differences between exec() and execMulti():
-
-         - execMulti() traverses all statements in the input SQL
-
-         - exec() supports a couple options not supported by execMulti(),
-           and vice versa.
-
-         - execMulti() result callback/array only activates for the
-           first statement which has result columns. It is arguable
-           whether it should support a callback at all, and that
-           feature may be removed.
-
-         - execMulti() column-bind data only activates for the first statement
-           with bindable columns. This feature is arguable and may be removed.
-       */
-      
       if(0){
         warn("UDF will throw because of incorrect arg count...");
         db.exec("select twice(1,2,3)");
@@ -187,7 +170,7 @@
           log("In savepoint: count(*) from t =",db.selectValue("select count(*) from t"));
           D.savepoint(function(DD){
             const rows = [];
-            D.execMulti({
+            D.exec({
               sql: ["insert into t(a,b) values(99,100);",
                     "select count(*) from t"],
               rowMode: 0,

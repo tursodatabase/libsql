@@ -198,9 +198,9 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   };
 
   /**
-     Expects to be passed the `arguments` object from DB.exec() and
-     DB.execMulti(). Does the argument processing/validation, throws
-     on error, and returns a new object on success:
+     Expects to be passed the `arguments` object from DB.exec(). Does
+     the argument processing/validation, throws on error, and returns
+     a new object on success:
 
      { sql: the SQL, opt: optionsObj, cbArg: function}
 
@@ -237,11 +237,11 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     if(out.opt.callback || out.opt.resultRows){
       switch((undefined===out.opt.rowMode)
              ? 'array' : out.opt.rowMode) {
-          case 'object': out.cbArg = (stmt)=>stmt.get({}); break;
+          case 'object': out.cbArg = (stmt)=>stmt.get(Object.create(null)); break;
           case 'array': out.cbArg = (stmt)=>stmt.get([]); break;
           case 'stmt':
             if(Array.isArray(out.opt.resultRows)){
-              toss3("Invalid rowMode for a resultRows array: must",
+              toss3("exec(): invalid rowMode for a resultRows array: must",
                     "be one of 'array', 'object',",
                     "a result column number, or column name reference.");
             }
@@ -256,8 +256,12 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
               const prefix = out.opt.rowMode[0];
               if(':'===prefix || '@'===prefix || '$'===prefix){
                 out.cbArg = function(stmt){
-                  return stmt.get(this.obj)[this.colName];
-                }.bind({obj:{}, colName: out.opt.rowMode.substr(1)})
+                  const rc = stmt.get(this.obj)[this.colName];
+                  return (undefined===rc) ? toss3("exec(): unknown result column:",this.colName) : rc;
+                }.bind({
+                  obj:Object.create(null),
+                  colName: out.opt.rowMode.substr(1)
+                });
                 break;
               }
             }
@@ -395,70 +399,6 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       return stmt;
     },
     /**
-       This function works like execMulti(), and takes most of the
-       same arguments, but is more efficient (performs much less
-       work) when the input SQL is only a single statement. If
-       passed a multi-statement SQL, it only processes the first
-       one.
-
-       This function supports the following additional options not
-       supported by execMulti():
-
-       - .multi: if true, this function acts as a proxy for
-       execMulti() and behaves identically to that function.
-
-       - .columnNames: if this is an array and the query has
-       result columns, the array is passed to
-       Stmt.getColumnNames() to append the column names to it
-       (regardless of whether the query produces any result
-       rows). If the query has no result columns, this value is
-       unchanged. (TODO: support this in execMulti() as well.)
-
-       The following options to execMulti() are _not_ supported by
-       this method (they are simply ignored):
-
-       - .saveSql
-    */
-    exec: function(/*(sql [,optionsObj]) or (optionsObj)*/){
-      affirmDbOpen(this);
-      const arg = parseExecArgs(arguments);
-      if(!arg.sql) return this;
-      else if(arg.opt.multi){
-        return this.execMulti(arg, undefined, BindTypes);
-      }
-      const opt = arg.opt;
-      let stmt, rowTarget;
-      try {
-        if(Array.isArray(opt.resultRows)){
-          rowTarget = opt.resultRows;
-        }
-        stmt = this.prepare(arg.sql);
-        if(stmt.columnCount && Array.isArray(opt.columnNames)){
-          stmt.getColumnNames(opt.columnNames);
-        }
-        if(opt.bind) stmt.bind(opt.bind);
-        if(opt.callback || rowTarget){
-          while(stmt.step()){
-            const row = arg.cbArg(stmt);
-            if(rowTarget) rowTarget.push(row);
-            if(opt.callback){
-              stmt._isLocked = true;
-              opt.callback(row,stmt);
-              stmt._isLocked = false;
-            }
-          }
-        }else{
-          stmt.step();
-        }
-      }finally{
-        if(stmt){
-          delete stmt._isLocked;
-          stmt.finalize();
-        }
-      }
-      return this;
-    }/*exec()*/,
-    /**
        Executes one or more SQL statements in the form of a single
        string. Its arguments must be either (sql,optionsObject) or
        (optionsObject). In the latter case, optionsObject.sql
@@ -473,109 +413,115 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        properties:
 
        - .sql = the SQL to run (unless it's provided as the first
-       argument). This must be of type string, Uint8Array, or an
-       array of strings (in which case they're concatenated
-       together as-is, with no separator between elements,
-       before evaluation).
+       argument). This must be of type string, Uint8Array, or an array
+       of strings. In the latter case they're concatenated together
+       as-is, _with no separator_ between elements, before evaluation.
+       The array form is often simpler for long hand-written queries.
 
        - .bind = a single value valid as an argument for
-       Stmt.bind(). This is ONLY applied to the FIRST non-empty
-       statement in the SQL which has any bindable
-       parameters. (Empty statements are skipped entirely.)
+       Stmt.bind(). This is _only_ applied to the _first_ non-empty
+       statement in the SQL which has any bindable parameters. (Empty
+       statements are skipped entirely.)
+
+       - .saveSql = an optional array. If set, the SQL of each
+       executed statement is appended to this array before the
+       statement is executed (but after it is prepared - we
+       don't have the string until after that). Empty SQL
+       statements are elided.
+
+       ==================================================================
+       The following options apply _only_ to the _first_ statement
+       which has a non-zero result column count, regardless of whether
+       the statement actually produces any result rows.
+       ==================================================================
 
        - .callback = a function which gets called for each row of the
-       FIRST statement in the SQL which has result _columns_, but only
-       if that statement has any result _rows_. The callback's "this"
-       is the options object. The second argument passed to the
-       callback is always the current Stmt object (so that the caller
-       may collect column names, or similar). The 2nd argument to the
-       callback is always the Stmt instance, as it's needed if the
-       caller wants to fetch the column names or some such. The first
-       argument passed to the callback defaults to the current Stmt
-       object but may be changed with ...
+       result set, but only if that statement has any result
+       _rows_. The callback's "this" is the options object. The second
+       argument passed to the callback is always the current Stmt
+       object (so that the caller may collect column names, or
+       similar). The 2nd argument to the callback is always the Stmt
+       instance, as it's needed if the caller wants to fetch the
+       column names or some such (noting that they could also be
+       fetched via `this.columnNames`, if the client provides the
+       `columnNames` option).
 
-       - .rowMode = may take one of several forms:
+       ACHTUNG: The callback MUST NOT modify the Stmt object. Calling
+       any of the Stmt.get() variants, Stmt.getColumnName(), or
+       similar, is legal, but calling step() or finalize() is
+       not. Routines which are illegal in this context will trigger an
+       exception.
 
-       A) If `rowMode` is an integer, only the single value from that
-       result column (0-based) will be passed on.
+       The first argument passed to the callback defaults to an array of
+       values from the current result row but may be changed with ...
 
-       B) A string describing what type of argument should be passed
+       - .rowMode = specifies the type of he callback's first argument.
+       It may be any of...
+
+       A) A string describing what type of argument should be passed
        as the first argument to the callback:
 
-         B.1) 'array' (the default) causes the results of
+         A.1) 'array' (the default) causes the results of
          `stmt.get([])` to be passed to passed on and/or appended to
          `resultRows`.
 
-         B.2) 'object' causes the results of `stmt.get({})` to be
-         passed to the `callback` and/or appended to `resultRows`.
+         A.2) 'object' causes the results of
+         `stmt.get(Object.create(null))` to be passed to the
+         `callback` and/or appended to `resultRows`.  Achtung: an SQL
+         result may have multiple columns with identical names. In
+         that case, the right-most column will be the one set in this
+         object!
 
-         B.3) 'stmt' causes the current Stmt to be passed to the
+         A.3) 'stmt' causes the current Stmt to be passed to the
          callback, but this mode will trigger an exception if
          `resultRows` is an array because appending the statement to
          the array would be unhelpful.
+
+       B) An integer, indicating a zero-based column in the result
+       row. Only that one single value will be passed on.
 
        C) A string with a minimum length of 2 and leading character of
        ':', '$', or '@' will fetch the row as an object, extract that
        one field, and pass that field's value to the callback. Note
        that these keys are case-sensitive so must match the case used
        in the SQL. e.g. `"select a A from t"` with a `rowMode` of '$A'
-       would work but '$a' would not (it would result in `undefined`).
+       would work but '$a' would not. A reference to a column not in
+       the result set will trigger an exception on the first row (as
+       the check is not performed until rows are fetched).
 
        Any other `rowMode` value triggers an exception.
 
        - .resultRows: if this is an array, it functions similarly to
-       the `callback` option: each row of the result set (if any) of
-       the FIRST first statement which has result _columns_ is
-       appended to the array in the format specified for the `rowMode`
-       option, with the exception that the only legal values for
-       `rowMode` in this case are 'array', 'object', or an integer,
-       none of which are the default for `rowMode`. It is legal to use
-       both `resultRows` and `callback`, but `resultRows` is likely
-       much simpler to use for small data sets and can be used over a
-       WebWorker-style message interface.  execMulti() throws if
-       `resultRows` is set and `rowMode` is 'stmt' (which is the
-       default!).
+       the `callback` option: each row of the result set (if any),
+       with the exception that the `rowMode` 'stmt' is not legal. It
+       is legal to use both `resultRows` and `callback`, but
+       `resultRows` is likely much simpler to use for small data sets
+       and can be used over a WebWorker-style message interface.
+       exec() throws if `resultRows` is set and `rowMode` is 'stmt'.
 
-       - saveSql = an optional array. If set, the SQL of each
-       executed statement is appended to this array before the
-       statement is executed (but after it is prepared - we
-       don't have the string until after that). Empty SQL
-       statements are elided.
-
-       See also the exec() method, which is a close cousin of this
-       one.
-
-       ACHTUNG #1: The callback MUST NOT modify the Stmt
-       object. Calling any of the Stmt.get() variants,
-       Stmt.getColumnName(), or similar, is legal, but calling
-       step() or finalize() is not. Routines which are illegal
-       in this context will trigger an exception.
-
-       ACHTUNG #2: The semantics of the `bind` and `callback`
-       options may well change or those options may be removed
-       altogether for this function (but retained for exec()).
-       Generally speaking, neither bind parameters nor a callback
-       are generically useful when executing multi-statement SQL.
+       - .columnNames: if this is an array, the column names of the
+       result set are stored in this array before the callback (if
+       any) is triggered (regardless of whether the query produces any
+       result rows). If no statement has result columns, this value is
+       unchanged. Achtung: an SQL result may have multiple columns with
+       identical names.
     */
-    execMulti: function(/*(sql [,obj]) || (obj)*/){
+    exec: function(/*(sql [,obj]) || (obj)*/){
       affirmDbOpen(this);
       const wasm = capi.wasm;
-      const arg = (BindTypes===arguments[2]
-                   /* ^^^ Being passed on from exec() */
-                   ? arguments[0] : parseExecArgs(arguments));
-      if(!arg.sql) return this;
+      const arg = parseExecArgs(arguments);
+      if(!arg.sql){
+        return (''===arg.sql) ? this : toss3("exec() requires an SQL string.");
+      }
       const opt = arg.opt;
       const callback = opt.callback;
-      const resultRows = (Array.isArray(opt.resultRows)
+      let resultRows = (Array.isArray(opt.resultRows)
                           ? opt.resultRows : undefined);
-      if(resultRows && 'stmt'===opt.rowMode){
-        toss3("rowMode 'stmt' is not valid in combination",
-              "with a resultRows array.");
-      }
       let rowMode = (((callback||resultRows) && (undefined!==opt.rowMode))
                      ? opt.rowMode : undefined);
       let stmt;
       let bind = opt.bind;
+      let doneFirstQuery = false/*true once we handle a result-returning query*/;
       const stack = wasm.scopedAllocPush();
       try{
         const isTA = util.isSQLableTypedArray(arg.sql)
@@ -604,8 +550,8 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
                  re-preparing an empty statement. */ ){
           wasm.setMemValue(ppStmt, 0, wasm.ptrIR);
           wasm.setMemValue(pzTail, 0, wasm.ptrIR);
-          DB.checkRc(this, capi.sqlite3_prepare_v2(
-            this.pointer, pSql, sqlByteLen, ppStmt, pzTail
+          DB.checkRc(this, capi.sqlite3_prepare_v3(
+            this.pointer, pSql, sqlByteLen, 0, ppStmt, pzTail
           ));
           const pStmt = wasm.getMemValue(ppStmt, wasm.ptrIR);
           pSql = wasm.getMemValue(pzTail, wasm.ptrIR);
@@ -619,17 +565,20 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             stmt.bind(bind);
             bind = null;
           }
-          if(stmt.columnCount && undefined!==rowMode){
+          if(!doneFirstQuery && stmt.columnCount){
             /* Only forward SELECT results for the FIRST query
                in the SQL which potentially has them. */
+            doneFirstQuery = true;
+            if(Array.isArray(opt.columnNames)){
+              stmt.getColumnNames(opt.columnNames);
+            }
             while(stmt.step()){
               stmt._isLocked = true;
               const row = arg.cbArg(stmt);
               if(resultRows) resultRows.push(row);
-              if(callback) callback(row,stmt);
+              if(callback) callback.apply(opt,[row,stmt]);
               stmt._isLocked = false;
             }
-            rowMode = undefined;
           }else{
             // Do we need to while(stmt.step()){} here?
             stmt.step();
@@ -637,10 +586,10 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           stmt.finalize();
           stmt = null;
         }
-      }catch(e){
-        console.warn("DB.execMulti() is propagating exception",opt,e);
+      }/*catch(e){
+        console.warn("DB.exec() is propagating exception",opt,e);
         throw e;
-      }finally{
+      }*/finally{
         if(stmt){
           delete stmt._isLocked;
           stmt.finalize();
@@ -648,7 +597,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         wasm.scopedAllocPop(stack);
       }
       return this;
-    }/*execMulti()*/,
+    }/*exec()*/,
     /**
        Creates a new scalar UDF (User-Defined Function) which is
        accessible via SQL code. This function may be called in any
@@ -907,7 +856,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         this.exec("RELEASE oo1");
         return rc;
       }catch(e){
-        this.execMulti("ROLLBACK to SAVEPOINT oo1; RELEASE SAVEPOINT oo1");
+        this.exec("ROLLBACK to SAVEPOINT oo1; RELEASE SAVEPOINT oo1");
         throw e;
       }
     },
