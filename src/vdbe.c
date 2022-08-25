@@ -6317,10 +6317,10 @@ case OP_IdxRowid: {           /* out2 */
   ** of sqlite3VdbeCursorRestore() and sqlite3VdbeIdxRowid(). */
   rc = sqlite3VdbeCursorRestore(pC);
 
-  /* sqlite3VbeCursorRestore() can only fail if the record has been deleted
-  ** out from under the cursor.  That will never happens for an IdxRowid
-  ** or Seek opcode */
-  if( NEVER(rc!=SQLITE_OK) ) goto abort_due_to_error;
+  /* sqlite3VdbeCursorRestore() may fail if the cursor has been disturbed
+  ** since it was last positioned and an error (e.g. OOM or an IO error)
+  ** occurs while trying to reposition it. */
+  if( rc!=SQLITE_OK ) goto abort_due_to_error;
 
   if( !pC->nullRow ){
     rowid = 0;  /* Not needed.  Only used to silence a warning. */
