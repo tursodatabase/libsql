@@ -29,6 +29,7 @@ static const char zHelp[] =
   "  --repeat N          Repeat each SELECT N times (default: 1)\n"
   "  --reprepare         Reprepare each statement upon every invocation\n"
   "  --reserve N         Reserve N bytes on each database page\n"
+  "  --script FILE       Write an SQL script for the test into FILE\n"
   "  --serialized        Set serialized threading mode\n"
   "  --singlethread      Set single-threaded mode - disables all mutexing\n"
   "  --sqlonly           No-op.  Only show the SQL that would have been run.\n"
@@ -103,6 +104,7 @@ static struct Global {
   u64 nResByte;              /* Total number of result bytes */
   int nResult;               /* Size of the current result */
   char zResult[3000];        /* Text of the current result */
+  FILE *pScript;             /* Write an SQL script into this file */
 #ifndef SPEEDTEST_OMIT_HASH
   FILE *hashFile;            /* Store all hash results in this file */
   HashContext hash;          /* Hash of all output */
@@ -473,7 +475,11 @@ void speedtest1_exec(const char *zFormat, ...){
     printSql(zSql);
   }else{
     char *zErrMsg = 0;
-    int rc = sqlite3_exec(g.db, zSql, 0, 0, &zErrMsg);
+    int rc;
+    if( g.pScript ){
+      fprintf(g.pScript,"%s;\n",zSql);
+    }
+    rc = sqlite3_exec(g.db, zSql, 0, 0, &zErrMsg);
     if( zErrMsg ) fatal_error("SQL error: %s\n%s\n", zErrMsg, zSql);
     if( rc!=SQLITE_OK ) fatal_error("exec error: %s\n", sqlite3_errmsg(g.db));
   }
@@ -499,6 +505,11 @@ char *speedtest1_once(const char *zFormat, ...){
     int rc = sqlite3_prepare_v2(g.db, zSql, -1, &pStmt, 0);
     if( rc ){
       fatal_error("SQL error: %s\n", sqlite3_errmsg(g.db));
+    }
+    if( g.pScript ){
+      char *z = sqlite3_expanded_sql(pStmt);
+      fprintf(g.pScript,"%s\n",z);
+      sqlite3_free(z);
     }
     if( sqlite3_step(pStmt)==SQLITE_ROW ){
       const char *z = (const char*)sqlite3_column_text(pStmt, 0);
@@ -537,6 +548,11 @@ void speedtest1_run(void){
   if( g.bSqlOnly ) return;
   assert( g.pStmt );
   g.nResult = 0;
+  if( g.pScript ){
+    char *z = sqlite3_expanded_sql(g.pStmt);
+    fprintf(g.pScript,"%s\n",z);
+    sqlite3_free(z);
+  }
   while( sqlite3_step(g.pStmt)==SQLITE_ROW ){
     n = sqlite3_column_count(g.pStmt);
     for(i=0; i<n; i++){
@@ -1049,7 +1065,7 @@ void testset_main(void){
     " WHERE t4.a BETWEEN ?1 AND ?2\n"
     "   AND t3.a=t4.b\n"
     "   AND z2.a=t3.b\n"
-    "   AND z1.c=z2.c"
+    "   AND z1.c=z2.c;"
   );
   for(i=1; i<=n; i++){
     x1 = speedtest1_random()%sz + 1;
@@ -2281,6 +2297,13 @@ int main(int argc, char **argv){
       }else if( strcmp(z,"singlethread")==0 ){
         sqlite3_config(SQLITE_CONFIG_SINGLETHREAD);
 #endif
+      }else if( strcmp(z,"script")==0 ){
+        if( i>=argc-1 ) fatal_error("missing arguments on %s\n", argv[i]);
+        if( g.pScript ) fclose(g.pScript);
+        g.pScript = fopen(argv[++i], "wb");
+        if( g.pScript==0 ){
+          fatal_error("unable to open output file \"%s\"\n", argv[i]);
+        }
       }else if( strcmp(z,"sqlonly")==0 ){
         g.bSqlOnly = 1;
       }else if( strcmp(z,"shrink-memory")==0 ){
@@ -2547,6 +2570,9 @@ int main(int argc, char **argv){
     displayLinuxIoStats(stdout);
   }
 #endif
+  if( g.pScript ){
+    fclose(g.pScript);
+  }
 
   /* Release memory */
   free( pLook );

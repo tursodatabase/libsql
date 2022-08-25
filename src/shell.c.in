@@ -1500,10 +1500,23 @@ static void outputModePop(ShellState *p){
 */
 static void output_hex_blob(FILE *out, const void *pBlob, int nBlob){
   int i;
-  char *zBlob = (char *)pBlob;
-  raw_printf(out,"X'");
-  for(i=0; i<nBlob; i++){ raw_printf(out,"%02x",zBlob[i]&0xff); }
-  raw_printf(out,"'");
+  unsigned char *aBlob = (unsigned char*)pBlob;
+
+  char *zStr = sqlite3_malloc(nBlob*2 + 1);
+  shell_check_oom(zStr);
+
+  for(i=0; i<nBlob; i++){
+    static const char aHex[] = {
+        '0', '1', '2', '3', '4', '5', '6', '7',
+        '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
+    };
+    zStr[i*2] = aHex[ (aBlob[i] >> 4) ];
+    zStr[i*2+1] = aHex[ (aBlob[i] & 0x0F) ];
+  }
+  zStr[i*2] = '\0';
+
+  raw_printf(out,"X'%s'", zStr);
+  sqlite3_free(zStr);
 }
 
 /*

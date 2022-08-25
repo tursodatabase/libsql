@@ -6093,7 +6093,9 @@ case OP_SorterNext: {  /* jump */
 
 case OP_Prev:          /* jump */
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
-  assert( pOp->p5<ArraySize(p->aCounter) );
+  assert( pOp->p5==0
+       || pOp->p5==SQLITE_STMTSTATUS_FULLSCAN_STEP
+       || pOp->p5==SQLITE_STMTSTATUS_AUTOINDEX);
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
   assert( pC->deferredMoveto==0 );
@@ -6106,7 +6108,9 @@ case OP_Prev:          /* jump */
 
 case OP_Next:          /* jump */
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
-  assert( pOp->p5<ArraySize(p->aCounter) );
+  assert( pOp->p5==0
+       || pOp->p5==SQLITE_STMTSTATUS_FULLSCAN_STEP
+       || pOp->p5==SQLITE_STMTSTATUS_AUTOINDEX);
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
   assert( pC->deferredMoveto==0 );
@@ -6313,10 +6317,10 @@ case OP_IdxRowid: {           /* out2 */
   ** of sqlite3VdbeCursorRestore() and sqlite3VdbeIdxRowid(). */
   rc = sqlite3VdbeCursorRestore(pC);
 
-  /* sqlite3VbeCursorRestore() can only fail if the record has been deleted
-  ** out from under the cursor.  That will never happens for an IdxRowid
-  ** or Seek opcode */
-  if( NEVER(rc!=SQLITE_OK) ) goto abort_due_to_error;
+  /* sqlite3VdbeCursorRestore() may fail if the cursor has been disturbed
+  ** since it was last positioned and an error (e.g. OOM or an IO error)
+  ** occurs while trying to reposition it. */
+  if( rc!=SQLITE_OK ) goto abort_due_to_error;
 
   if( !pC->nullRow ){
     rowid = 0;  /* Not needed.  Only used to silence a warning. */

@@ -824,18 +824,19 @@ static int setupLookaside(sqlite3 *db, void *pBuf, int sz, int cnt){
     db->lookaside.bMalloced = pBuf==0 ?1:0;
     db->lookaside.nSlot = nBig+nSm;
   }else{
-    db->lookaside.pStart = db;
+    db->lookaside.pStart = 0;
 #ifndef SQLITE_OMIT_TWOSIZE_LOOKASIDE
     db->lookaside.pSmallInit = 0;
     db->lookaside.pSmallFree = 0;
-    db->lookaside.pMiddle = db;
+    db->lookaside.pMiddle = 0;
 #endif /* SQLITE_OMIT_TWOSIZE_LOOKASIDE */
-    db->lookaside.pEnd = db;
+    db->lookaside.pEnd = 0;
     db->lookaside.bDisable = 1;
     db->lookaside.sz = 0;
     db->lookaside.bMalloced = 0;
     db->lookaside.nSlot = 0;
   }
+  db->lookaside.pTrueEnd = db->lookaside.pEnd;
   assert( sqlite3LookasideUsed(db,0)==0 );
 #endif /* SQLITE_OMIT_LOOKASIDE */
   return SQLITE_OK;
@@ -914,6 +915,7 @@ int sqlite3_db_cacheflush(sqlite3 *db){
 int sqlite3_db_config(sqlite3 *db, int op, ...){
   va_list ap;
   int rc;
+  sqlite3_mutex_enter(db->mutex);
   va_start(ap, op);
   switch( op ){
     case SQLITE_DBCONFIG_MAINDBNAME: {
@@ -979,6 +981,7 @@ int sqlite3_db_config(sqlite3 *db, int op, ...){
     }
   }
   va_end(ap);
+  sqlite3_mutex_leave(db->mutex);
   return rc;
 }
 
