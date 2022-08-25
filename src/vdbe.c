@@ -7698,6 +7698,7 @@ case OP_Expire: {
   }else{
     p->expired = pOp->p2+1;
   }
+  p->hSql = 0;
   break;
 }
 
