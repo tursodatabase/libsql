@@ -101,6 +101,20 @@ struct PCache {
 #endif
 
 /*
+** Return 1 if pPg is on the dirty list for pCache.  Return 0 if not.
+** This routine runs inside of assert() statements only.
+*/
+#ifdef SQLITE_DEBUG
+static int pageOnDirtyList(PCache *pCache, PgHdr *pPg){
+  PgHdr *p;
+  for(p=pCache->pDirty; p; p=p->pDirtyNext){
+    if( p==pPg ) return 1;
+  }
+  return 0;
+}
+#endif
+
+/*
 ** Check invariants on a PgHdr entry.  Return true if everything is OK.
 ** Return false if any invariant is violated.
 **
@@ -118,13 +132,13 @@ int sqlite3PcachePageSanity(PgHdr *pPg){
   assert( pCache!=0 );      /* Every page has an associated PCache */
   if( pPg->flags & PGHDR_CLEAN ){
     assert( (pPg->flags & PGHDR_DIRTY)==0 );/* Cannot be both CLEAN and DIRTY */
-    assert( pCache->pDirty!=pPg );          /* CLEAN pages not on dirty list */
-    assert( pCache->pDirtyTail!=pPg );
+    assert( !pageOnDirtyList(pCache, pPg) );/* CLEAN pages not on dirty list */
   }else{
     assert( (pPg->flags & PGHDR_DIRTY)!=0 );/* If not CLEAN must be DIRTY */
     assert( pPg->pDirtyNext==0 || pPg->pDirtyNext->pDirtyPrev==pPg );
     assert( pPg->pDirtyPrev==0 || pPg->pDirtyPrev->pDirtyNext==pPg );
     assert( pPg->pDirtyPrev!=0 || pCache->pDirty==pPg );
+    assert( pageOnDirtyList(pCache, pPg) );
   }
   /* WRITEABLE pages must also be DIRTY */
   if( pPg->flags & PGHDR_WRITEABLE ){
@@ -528,6 +542,7 @@ void SQLITE_NOINLINE sqlite3PcacheRelease(PgHdr *p){
       pcacheUnpin(p);
     }else{
       pcacheManageDirtyList(p, PCACHE_DIRTYLIST_FRONT);
+      assert( sqlite3PcachePageSanity(p) );
     }
   }
 }
@@ -571,6 +586,7 @@ void sqlite3PcacheMakeDirty(PgHdr *p){
       pcacheTrace(("%p.DIRTY %d\n",p->pCache,p->pgno));
       assert( (p->flags & (PGHDR_DIRTY|PGHDR_CLEAN))==PGHDR_DIRTY );
       pcacheManageDirtyList(p, PCACHE_DIRTYLIST_ADD);
+      assert( sqlite3PcachePageSanity(p) );
     }
     assert( sqlite3PcachePageSanity(p) );
   }
@@ -641,6 +657,7 @@ void sqlite3PcacheMove(PgHdr *p, Pgno newPgno){
   p->pgno = newPgno;
   if( (p->flags&PGHDR_DIRTY) && (p->flags&PGHDR_NEED_SYNC) ){
     pcacheManageDirtyList(p, PCACHE_DIRTYLIST_FRONT);
+    assert( sqlite3PcachePageSanity(p) );
   }
 }
 
