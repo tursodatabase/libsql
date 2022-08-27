@@ -66,12 +66,20 @@ struct PCache {
   int sqlite3PcacheTrace = 2;       /* 0: off  1: simple  2: cache dumps */
   int sqlite3PcacheMxDump = 9999;   /* Max cache entries for pcacheDump() */
 # define pcacheTrace(X) if(sqlite3PcacheTrace){sqlite3DebugPrintf X;}
-  void pcacheDump(PCache *pCache){
-    int N;
-    int i, j;
-    sqlite3_pcache_page *pLower;
+  static void pcachePageTrace(int i, sqlite3_pcache_page *pLower){
     PgHdr *pPg;
     unsigned char *a;
+    int j;
+    pPg = (PgHdr*)pLower->pExtra;
+    printf("%3d: nRef %2d flgs %02x data ", i, pPg->nRef, pPg->flags);
+    a = (unsigned char *)pLower->pBuf;
+    for(j=0; j<12; j++) printf("%02x", a[j]);
+    printf(" ptr %p\n", pPg);
+  }
+  static void pcacheDump(PCache *pCache){
+    int N;
+    int i;
+    sqlite3_pcache_page *pLower;
   
     if( sqlite3PcacheTrace<2 ) return;
     if( pCache->pCache==0 ) return;
@@ -80,18 +88,15 @@ struct PCache {
     for(i=1; i<=N; i++){
        pLower = sqlite3GlobalConfig.pcache2.xFetch(pCache->pCache, i, 0);
        if( pLower==0 ) continue;
-       pPg = (PgHdr*)pLower->pExtra;
-       printf("%3d: nRef %2d flgs %02x data ", i, pPg->nRef, pPg->flags);
-       a = (unsigned char *)pLower->pBuf;
-       for(j=0; j<12; j++) printf("%02x", a[j]);
-       printf("\n");
-       if( pPg->pPage==0 ){
+       pcachePageTrace(i, pLower);
+       if( ((PgHdr*)pLower)->pPage==0 ){
          sqlite3GlobalConfig.pcache2.xUnpin(pCache->pCache, pLower, 0);
        }
     }
   }
-  #else
+#else
 # define pcacheTrace(X)
+# define pcachePageTrace(PGNO, X)
 # define pcacheDump(X)
 #endif
 
@@ -115,6 +120,11 @@ int sqlite3PcachePageSanity(PgHdr *pPg){
     assert( (pPg->flags & PGHDR_DIRTY)==0 );/* Cannot be both CLEAN and DIRTY */
     assert( pCache->pDirty!=pPg );          /* CLEAN pages not on dirty list */
     assert( pCache->pDirtyTail!=pPg );
+  }else{
+    assert( (pPg->flags & PGHDR_DIRTY)!=0 );/* If not CLEAN must be DIRTY */
+    assert( pPg->pDirtyNext==0 || pPg->pDirtyNext->pDirtyPrev==pPg );
+    assert( pPg->pDirtyPrev==0 || pPg->pDirtyPrev->pDirtyNext==pPg );
+    assert( pPg->pDirtyPrev!=0 || pCache->pDirty==pPg );
   }
   /* WRITEABLE pages must also be DIRTY */
   if( pPg->flags & PGHDR_WRITEABLE ){
@@ -388,8 +398,9 @@ sqlite3_pcache_page *sqlite3PcacheFetch(
   assert( createFlag==0 || pCache->eCreate==eCreate );
   assert( createFlag==0 || eCreate==1+(!pCache->bPurgeable||!pCache->pDirty) );
   pRes = sqlite3GlobalConfig.pcache2.xFetch(pCache->pCache, pgno, eCreate);
-  pcacheTrace(("%p.FETCH %d%s (result: %p)\n",pCache,pgno,
+  pcacheTrace(("%p.FETCH %d%s (result: %p) ",pCache,pgno,
                createFlag?" create":"",pRes));
+  pcachePageTrace(pgno, pRes);
   return pRes;
 }
 

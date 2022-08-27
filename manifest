@@ -1,5 +1,5 @@
-C Ensure\sthat\ssqlite3_prepare()\sinputs\salways\shave\sa\ssemicolon\sterminator\sin\nspeedtest1.
-D 2022-08-25T19:29:35.476
+C Ensure\sthat\severy\spcache\spage\salways\shas\seither\sthe\sPGHDR_DIRTY\sor\sthe\nPGHDR_CLEAN\sbit\sset,\seven\sduring\stransient\spage\sreshuffling\sduring\sbtree\nbalancing.
+D 2022-08-27T14:43:34.272
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -528,7 +528,7 @@ F src/auth.c f4fa91b6a90bbc8e0d0f738aa284551739c9543a367071f55574681e0f24f8cf
 F src/backup.c a2891172438e385fdbe97c11c9745676bec54f518d4447090af97189fd8e52d7
 F src/bitvec.c 7c849aac407230278445cb069bebc5f89bf2ddd87c5ed9459b070a9175707b3d
 F src/btmutex.c 6ffb0a22c19e2f9110be0964d0731d2ef1c67b5f7fabfbaeb7b9dabc4b7740ca
-F src/btree.c 4a8d349b9ed4dc6d252c535227699d75319b633058a56432ebf43c9f56f9085e
+F src/btree.c 971276350a2f5703da4ee9b333b0bb14d67e180b9775df6860e09ef4233c60a2
 F src/btree.h 74d64b8f28cfa4a894d14d4ed64fa432cd697b98b61708d4351482ae15913e22
 F src/btreeInt.h 8ce1332edd89dfd2461d561ac10a0ab5601c8e06200cb5230596c3caaf54482e
 F src/build.c 898884afd67d953808cb687babc15b66a10213f99fe2ce7db98960e959881f98
@@ -578,7 +578,7 @@ F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c c60031c483960660853dfecf14c8e830503baab1f638ac997f0144f1bd3e1781
 F src/pager.h f82e9844166e1585f5786837ddc7709966138ced17f568c16af7ccf946c2baa3
 F src/parse.y 8e67d820030d2655b9942ffe61c1e7e6b96cea2f2f72183533299393907d0564
-F src/pcache.c 084e638432c610f95aea72b8509f0845d2791293f39d1b82f0c0a7e089c3bb6b
+F src/pcache.c e82ef04f65c0d8c28648f79be10b5ed28f4c5e1b887e21364b09a290109bfdba
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c 0b4245cd4964e635f2630908c2533cd8e9da7af3ca592e23ae8730aa25ae5eb9
 F src/pragma.c b57a859a366472131194a9ad35cd76d5920577226b04c884b1b9085605faa280
@@ -1999,8 +1999,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1c87d7c58d5aec83f9e2ae3771a81aa17cfae0cf06169025a5db085e2d5749f9
-R 03aae009b62262596bf019082ce9ceed
+P c72756b0f2db30c622f00f43be9245d50e36049bd7740ee6332164f0c48f9c3d
+R ec0ec294ce77eea8b112655cdb3d953c
 U drh
-Z 8bd158a0ccc4257762e239c65a25bd98
+Z ddf747439ae76e336531030fc778367f
 # Remove this line to create a well-formed Fossil manifest.
