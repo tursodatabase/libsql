@@ -202,6 +202,7 @@ else
 endif
 emcc.jsflags += $(emcc.environment)
 #emcc.jsflags += -sINITIAL_MEMORY=13107200
+emcc.jsflags += -sINITIAL_MEMORY=64225280
 #emcc.jsflags += -sTOTAL_STACK=4194304
 emcc.jsflags += -sEXPORT_NAME=sqlite3InitModule
 emcc.jsflags += -sGLOBAL_BASE=4096 # HYPOTHETICALLY keep func table indexes from overlapping w/ heap addr.

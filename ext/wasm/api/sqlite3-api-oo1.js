@@ -521,7 +521,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
                      ? opt.rowMode : undefined);
       let stmt;
       let bind = opt.bind;
-      let doneFirstQuery = false/*true once we handle a result-returning query*/;
+      let runFirstQuery = !!(arg.cbArg || opt.columnNames) /* true to evaluate the first result-returning query */;
       const stack = wasm.scopedAllocPush();
       try{
         const isTA = util.isSQLableTypedArray(arg.sql)
@@ -565,14 +565,14 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             stmt.bind(bind);
             bind = null;
           }
-          if(!doneFirstQuery && stmt.columnCount){
+          if(runFirstQuery && stmt.columnCount){
             /* Only forward SELECT results for the FIRST query
                in the SQL which potentially has them. */
-            doneFirstQuery = true;
+            runFirstQuery = false;
             if(Array.isArray(opt.columnNames)){
               stmt.getColumnNames(opt.columnNames);
             }
-            while(stmt.step()){
+            while(!!arg.cbArg && stmt.step()){
               stmt._isLocked = true;
               const row = arg.cbArg(stmt);
               if(resultRows) resultRows.push(row);
