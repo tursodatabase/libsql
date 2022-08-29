@@ -24,35 +24,48 @@
     <div class="emscripten">
       <progress value="0" max="100" id="module-progress" hidden='1'></progress>  
     </div><!-- /emscripten bits -->
-    <p class='warning'>ACHTUNG: this file requires a generated input list
+    <p>
+      This page is for running extracts from the output of <tt>speedtest --script</tt>.
+    </p>
+    <p id='warn-list' class='warning'>ACHTUNG: this file requires a generated input list
       file. Run "make batch" from this directory to generate it.
     </p>
-    <p class='warning'>WARNING: if the WASMFS/OPFS layer crashes, this page may
+    <p id='warn-opfs' class='warning'>WARNING: if the WASMFS/OPFS layer crashes, this page may
       become completely unresponsive and need to be closed and
       reloaded to recover.
     </p>
     <hr>
     <div>
-      <select id='sql-select'>
+      <select class='disable-during-eval' id='sql-select'>
         <option disabled selected>Populated via script code</option>
       </select>
-      <button id='sql-run'>Run selected SQL</button>
+      <button class='disable-during-eval' id='sql-run'>Run selected SQL</button>
+      <button class='disable-during-eval' id='sql-run-next'>Run next...</button>
+      <button class='disable-during-eval' id='sql-run-remaining'>Run all remaining...</button>
+      <button class='disable-during-eval' id='db-reset'>Reset db</button>
       <button id='output-clear'>Clear output</button>
     </div>
     <hr>
+    <div>(Log output is in reverse order, newest first!)</div>
     <div id='test-output'></div>
     
     <script src="sqlite3.js"></script>
     <script src="common/SqliteTestUtil.js"></script>
     <script src="batch-runner.js"></script>
     <style>
+      body {
+          display: flex;
+          flex-direction: column;
+          flex-wrap: wrap;
+      }
       .warning { color: firebrick; } 
       #test-output {
           border: 1px inset;
           padding: 0.25em;
-          max-height: 20em;
+          /*max-height: 30em;*/
           overflow: auto;
           white-space: break-spaces;
+          display: flex; flex-direction: column-reverse;
       }
     </style>
   </body>

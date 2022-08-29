@@ -540,7 +540,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         if(isTA) wasm.heap8().set(arg.sql, pSql);
         else wasm.jstrcpy(arg.sql, wasm.heap8(), pSql, sqlByteLen, false);
         wasm.setMemValue(pSql + sqlByteLen, 0/*NUL terminator*/);
-        while(wasm.getMemValue(pSql, 'i8')
+        while(pSql && wasm.getMemValue(pSql, 'i8')
               /* Maintenance reminder:^^^ _must_ be 'i8' or else we
                  will very likely cause an endless loop. What that's
                  doing is checking for a terminating NUL byte. If we
@@ -548,8 +548,8 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
                  around the NUL terminator, and get stuck in and
                  endless loop at the end of the SQL, endlessly
                  re-preparing an empty statement. */ ){
-          wasm.setMemValue(ppStmt, 0, wasm.ptrIR);
-          wasm.setMemValue(pzTail, 0, wasm.ptrIR);
+          wasm.setPtrValue(ppStmt, 0);
+          wasm.setPtrValue(pzTail, 0);
           DB.checkRc(this, capi.sqlite3_prepare_v3(
             this.pointer, pSql, sqlByteLen, 0, ppStmt, pzTail
           ));

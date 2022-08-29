@@ -294,10 +294,12 @@ $(speedtest1):
 	$(MAKE) -C ../.. speedtest1
 speedtest1.sql: $(speedtest1)
 	$(speedtest1) --script $@
-batch-sql.in := $(sort $(wildcard *.sql))
-batch-runner.list: $(batch-sql.in) $(MAKEFILE) speedtest1.sql
+speedtest1-000.sql:
+	echo "select 1;" > $@
+batch-runner.list: $(MAKEFILE) speedtest1.sql speedtest1-000.sql
 	bash split-speedtest1-script.sh speedtest1.sql
-	ls -1 *.sql | sort > $@
+	ls -1 *.sql | grep -v speedtest1.sql | sort > $@
+CLEAN_FILES += batch-runner.list speedtest1*.sql
 batch: batch-runner.list
 
 ########################################################################

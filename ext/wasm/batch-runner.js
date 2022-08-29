@@ -17,15 +17,19 @@
 (function(){
   const T = self.SqliteTestUtil;
   const toss = function(...args){throw new Error(args.join(' '))};
-  const debug = console.debug.bind(console);
+  const warn = console.warn.bind(console);
 
   const App = {
     e: {
       output: document.querySelector('#test-output'),
       selSql: document.querySelector('#sql-select'),
       btnRun: document.querySelector('#sql-run'),
-      btnClear: document.querySelector('#output-clear')
+      btnRunNext: document.querySelector('#sql-run-next'),
+      btnRunRemaining: document.querySelector('#sql-run-remaining'),
+      btnClear: document.querySelector('#output-clear'),
+      btnReset: document.querySelector('#db-reset')
     },
+    cache:{},
     log: console.log.bind(console),
     warn: console.warn.bind(console),
     cls: function(){this.e.output.innerHTML = ''},
@@ -34,6 +38,7 @@
       if(cssClass) ln.classList.add(cssClass);
       ln.append(document.createTextNode(args.join(' ')));
       this.e.output.append(ln);
+      //this.e.output.lastElementChild.scrollIntoViewIfNeeded();
     },
     logHtml: function(...args){
       console.log(...args);
@@ -44,29 +49,38 @@
       if(1) this.logHtml2('error', ...args);
     },
 
-    openDb: function(fn){
-      if(this.pDb){
+    openDb: function(fn, unlinkFirst=true){
+      if(this.db && this.db.ptr){
         toss("Already have an opened db.");
       }
       const capi = this.sqlite3.capi, wasm = capi.wasm;
       const stack = wasm.scopedAllocPush();
       let pDb = 0;
       try{
+        /*if(unlinkFirst && fn && ':memory:'!==fn){
+          capi.sqlite3_wasm_vfs_unlink(fn);
+        }*/
         const oFlags = capi.SQLITE_OPEN_CREATE | capi.SQLITE_OPEN_READWRITE;
         const ppDb = wasm.scopedAllocPtr();
         const rc = capi.sqlite3_open_v2(fn, ppDb, oFlags, null);
+        if(rc) toss("sqlite3_open_v2() failed with code",rc);
         pDb = wasm.getPtrValue(ppDb)
       }finally{
         wasm.scopedAllocPop(stack);
       }
-      this.logHtml("Opened db:",capi.sqlite3_db_filename(pDb, 'main'));
-      return this.pDb = pDb;
+      this.db = Object.create(null);
+      this.db.filename = fn;
+      this.db.ptr = pDb;
+      this.logHtml("Opened db:",fn);
+      return this.db.ptr;
     },
 
-    closeDb: function(){
-      if(this.pDb){
-        this.sqlite3.capi.sqlite3_close_v2(this.pDb);
-        this.pDb = undefined;
+    closeDb: function(unlink=false){
+      if(this.db && this.db.ptr){
+        this.sqlite3.capi.sqlite3_close_v2(this.db.ptr);
+        this.logHtml("Closed db",this.db.filename);
+        if(unlink) capi.sqlite3_wasm_vfs_unlink(this.db.filename);
+        this.db.ptr = this.db.filename = undefined;
       }
     },
 
@@ -84,13 +98,15 @@
         }
         if(!r.ok) toss("Loading",infile,"failed:",r.statusText);
         txt = await r.text();
+        const warning = document.querySelector('#warn-list');
+        if(warning) warning.remove();
       }catch(e){
         this.logErr(e.message);
         throw e;
       }finally{
         this.blockControls(false);
       }
-      const list = txt.split('\n');
+      const list = txt.split(/\n+/);
       let opt;
       if(0){
         opt = document.createElement('option');
@@ -101,6 +117,7 @@
         sel.appendChild(opt);
       }
       list.forEach(function(fn){
+        if(!fn) return;
         opt = document.createElement('option');
         opt.value = opt.innerText = fn;
         sel.appendChild(opt);
@@ -109,7 +126,8 @@
     },
 
     /** Fetch ./fn and return its contents as a Uint8Array. */
-    fetchFile: async function(fn){
+    fetchFile: async function(fn, cacheIt=false){
+      if(cacheIt && this.cache[fn]) return this.cache[fn];
       this.logHtml("Fetching",fn,"...");
       let sql;
       try {
@@ -121,25 +139,28 @@
         throw e;
       }
       this.logHtml("Fetched",sql.length,"bytes from",fn);
+      if(cacheIt) this.cache[fn] = sql;
       return sql;
-    },
+    }/*fetchFile()*/,
 
+    /** Throws if the given sqlite3 result code is not 0. */
     checkRc: function(rc){
-      if(rc){
-        toss("Prepare failed:",this.sqlite3.capi.sqlite3_errmsg(this.pDb));
+      if(this.db.ptr && rc){
+        toss("Prepare failed:",this.sqlite3.capi.sqlite3_errmsg(this.db.ptr));
       }
     },
 
-    blockControls: function(block){
-      [
-        this.e.selSql, this.e.btnRun, this.e.btnClear
-      ].forEach((e)=>e.disabled = block);
+    /** Disable or enable certain UI controls. */
+    blockControls: function(disable){
+      document.querySelectorAll('.disable-during-eval').forEach((e)=>e.disabled = disable);
     },
-    
+
     /** Fetch ./fn and eval it as an SQL blob. */
     evalFile: async function(fn){
       const sql = await this.fetchFile(fn);
-      this.logHtml("Running",fn,'...');
+      const banner = "========================================";
+      this.logHtml(banner,
+                   "Running",fn,'('+sql.length,'bytes)...');
       const capi = this.sqlite3.capi, wasm = capi.wasm;
       let pStmt = 0, pSqlBegin;
       const stack = wasm.scopedAllocPush();
@@ -147,35 +168,41 @@
       metrics.prepTotal = metrics.stepTotal = 0;
       metrics.stmtCount = 0;
       this.blockControls(true);
-      // Use setTimeout() so that the above log messages run before the loop starts.
-      setTimeout((function(){
-        metrics.timeStart = performance.now();
+      if(this.gotErr){
+        this.logErr("Cannot run ["+fn+"]: error cleanup is pending.");
+        return;
+      }
+      // Run this async so that the UI can be updated for the above header...
+      const ff = function(resolve, reject){
+        metrics.evalFileStart = performance.now();
         try {
           let t;
           let sqlByteLen = sql.byteLength;
           const [ppStmt, pzTail] = wasm.scopedAllocPtr(2);
-          pSqlBegin = wasm.alloc( sqlByteLen + 1/*SQL + NUL*/);
+          pSqlBegin = wasm.alloc( sqlByteLen + 1/*SQL + NUL*/) || toss("alloc(",sqlByteLen,") failed");
           let pSql = pSqlBegin;
           const pSqlEnd = pSqlBegin + sqlByteLen;
           wasm.heap8().set(sql, pSql);
           wasm.setMemValue(pSql + sqlByteLen, 0);
-          while(wasm.getMemValue(pSql,'i8')){
-            pStmt = 0;
+          let breaker = 0;
+          while(pSql && wasm.getMemValue(pSql,'i8')){
             wasm.setPtrValue(ppStmt, 0);
             wasm.setPtrValue(pzTail, 0);
             t = performance.now();
             let rc = capi.sqlite3_prepare_v3(
-              this.pDb, pSql, sqlByteLen, 0, ppStmt, pzTail
+              this.db.ptr, pSql, sqlByteLen, 0, ppStmt, pzTail
             );
             metrics.prepTotal += performance.now() - t;
             this.checkRc(rc);
-            ++metrics.stmtCount;
             pStmt = wasm.getPtrValue(ppStmt);
             pSql = wasm.getPtrValue(pzTail);
             sqlByteLen = pSqlEnd - pSql;
             if(!pStmt) continue/*empty statement*/;
+            ++metrics.stmtCount;
             t = performance.now();
             rc = capi.sqlite3_step(pStmt);
+            capi.sqlite3_finalize(pStmt);
+            pStmt = 0;
             metrics.stepTotal += performance.now() - t;
             switch(rc){
                 case capi.SQLITE_ROW:
@@ -184,50 +211,88 @@
             }
           }
         }catch(e){
-          this.logErr(e.message);
-          throw e;
+          if(pStmt) capi.sqlite3_finalize(pStmt);
+          this.gotErr = e;
+          //throw e;
+          reject(e);
+          return;
         }finally{
           wasm.dealloc(pSqlBegin);
           wasm.scopedAllocPop(stack);
           this.blockControls(false);
         }
-        metrics.timeEnd = performance.now();
-        metrics.timeTotal = (metrics.timeEnd - metrics.timeStart);
+        metrics.evalFileEnd = performance.now();
+        metrics.evalTimeTotal = (metrics.evalFileEnd - metrics.evalFileStart);
         this.logHtml("Metrics:");//,JSON.stringify(metrics, undefined, ' '));
         this.logHtml("prepare() count:",metrics.stmtCount);
         this.logHtml("Time in prepare_v2():",metrics.prepTotal,"ms",
                      "("+(metrics.prepTotal / metrics.stmtCount),"ms per prepare())");
         this.logHtml("Time in step():",metrics.stepTotal,"ms",
                      "("+(metrics.stepTotal / metrics.stmtCount),"ms per step())");
-        this.logHtml("Total runtime:",metrics.timeTotal,"ms");
+        this.logHtml("Total runtime:",metrics.evalTimeTotal,"ms");
         this.logHtml("Overhead (time - prep - step):",
-                     (metrics.timeTotal - metrics.prepTotal - metrics.stepTotal)+"ms");
-      }.bind(this)), 10);
-    },
+                     (metrics.evalTimeTotal - metrics.prepTotal - metrics.stepTotal)+"ms");
+        this.logHtml(banner,"End of",fn);
+        resolve(this);
+      }.bind(this);
+      let p;
+      if(1){
+        p = new Promise(function(res,rej){
+          setTimeout(()=>ff(res, rej), 50)/*give UI a chance to output the "running" banner*/;
+        });
+      }else{
+        p = new Promise(ff);
+      }
+      return p.catch((e)=>this.logErr("Error via evalFile("+fn+"):",e.message));
+    }/*evalFile()*/,
 
     run: function(sqlite3){
+      delete this.run;
       this.sqlite3 = sqlite3;
       const capi = sqlite3.capi, wasm = capi.wasm;
       this.logHtml("Loaded module:",capi.sqlite3_libversion(), capi.sqlite3_sourceid());
       this.logHtml("WASM heap size =",wasm.heap8().length);
-      this.logHtml("WARNING: if the WASMFS/OPFS layer crashes, this page may",
-                   "become unresponsive and need to be closed and ",
-                   "reloaded to recover.");
+      this.loadSqlList();
       const pDir = capi.sqlite3_web_persistent_dir();
       const dbFile = pDir ? pDir+"/speedtest.db" : ":memory:";
-      if(pDir){
-        // We initially need a clean db file, so...
-        capi.sqlite3_wasm_vfs_unlink(dbFile);
+      if(!pDir){
+        document.querySelector('#warn-opfs').remove();
       }
-      this.openDb(dbFile);
-      this.loadSqlList();
+      this.openDb(dbFile, !!pDir);
       const who = this;
       this.e.btnClear.addEventListener('click', ()=>this.cls(), false);
       this.e.btnRun.addEventListener('click', function(){
         if(!who.e.selSql.value) return;
         who.evalFile(who.e.selSql.value);
       }, false);
-    }
+      this.e.btnRunNext.addEventListener('click', function(){
+        ++who.e.selSql.selectedIndex;
+        if(!who.e.selSql.value) return;
+        who.evalFile(who.e.selSql.value);
+      }, false);
+      this.e.btnReset.addEventListener('click', function(){
+        const fn = who.db.filename;
+        if(fn){
+          who.closeDb(true);
+          who.openDb(fn,true);
+        }
+      }, false);
+      this.e.btnRunRemaining.addEventListener('click', async function(){
+        let v = who.e.selSql.value;
+        const timeStart = performance.now();
+        while(v){
+          await who.evalFile(v);
+          if(who.gotError){
+            who.logErr("Error handling script",v,":",who.gotError.message);
+            break;
+          }
+          ++who.e.selSql.selectedIndex;
+          v = who.e.selSql.value;
+        }
+        const timeTotal = performance.now() - timeStart;
+        who.logHtml("Run-remaining time:",timeTotal,"ms ("+(timeTotal/1000/60)+" minute(s))");
+      }, false);
+    }/*run()*/
   }/*App*/;
 
   self.sqlite3TestModule.initSqlite3().then(function(theEmccModule){
