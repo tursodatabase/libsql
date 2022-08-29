@@ -387,7 +387,9 @@ void speedtest1_begin_test(int iTestNum, const char *zTestName, ...){
     n = NAMEWIDTH;
   }
   if( g.pScript ){
-    fprintf(g.pScript,"-- begin test %d\n", iTestNumber);
+    fprintf(g.pScript,"-- begin test %d %.*s\n", iTestNumber, n, zName)
+      /* maintenance reminder: ^^^ code in ext/wasm expects %d to be
+      ** field #4 (as in: cut -d' ' -f4). */;
   }
   if( g.bSqlOnly ){
     printf("/* %4d - %s%.*s */\n", iTestNum, zName, NAMEWIDTH-n, zDots);

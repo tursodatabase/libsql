@@ -1,5 +1,5 @@
-C Add\sbatch-runner.js\sfor\srunning\sbatch\sSQL\sscripts\swith\stiming\sinfo.
-D 2022-08-29T12:39:34.874
+C Add\stest\sdescriptions\sto\sthe\sspeedtest1\s'--\sbegin'\smarkers\sfor\spotential\sdisplay\sby\sthe\sdownstream\sJS\scode\swhich\suses\sthose\smarkers.
+D 2022-08-29T17:41:16.571
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -510,7 +510,7 @@ F ext/wasm/scratchpad-opfs-main.js 69e960e9161f6412fd0c30f355d4112f1894d6609eb43
 F ext/wasm/scratchpad-opfs-worker.html 66c1d15d678f3bd306373d76b61c6c8aef988f61f4a8dd40185d452f9c6d2bf5
 F ext/wasm/scratchpad-opfs-worker.js 3ec2868c669713145c76eb5877c64a1b20741f741817b87c907a154b676283a9
 F ext/wasm/scratchpad-opfs-worker2.js 5f2237427ac537b8580b1c659ff14ad2621d1694043eaaf41ae18dbfef2e48c0
-F ext/wasm/split-speedtest1-script.sh dc187a66b692e21343a84767627e9e408dde504d9e92d4dfa63a2b43cedab292 x
+F ext/wasm/split-speedtest1-script.sh 7138e474122686fecb274d78050f9bee6525bc64b72ff1af39f6fc0753ccfc1f x
 F ext/wasm/sqlite3-worker1-promiser.js 92b8da5f38439ffec459a8215775d30fa498bc0f1ab929ff341fc3dd479660b9
 F ext/wasm/sqlite3-worker1.js 0c1e7626304543969c3846573e080c082bf43bcaa47e87d416458af84f340a9e
 F ext/wasm/testing-worker1-promiser.html 6eaec6e04a56cf24cf4fa8ef49d78ce8905dde1354235c9125dca6885f7ce893
@@ -1493,7 +1493,7 @@ F test/speed3.test 694affeb9100526007436334cf7d08f3d74b85ef
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 377a0c48e5a92e0b11c1c5ebb1bc9d83a7312c922bc0cb05970ef5d6a96d1f0c
-F test/speedtest1.c ad03c49d993b6fd4e8e6ad1df561edd1c17ec85226edd2137c355e404a0f985d
+F test/speedtest1.c 995c78f884e2388106b2b42de9e5a527e7cac01384b8f317ca0cc7b0814c9a18
 F test/spellfix.test 951a6405d49d1a23d6b78027d3877b4a33eeb8221dcab5704b499755bb4f552e
 F test/spellfix2.test dfc8f519a3fc204cb2dfa8b4f29821ae90f6f8c3
 F test/spellfix3.test 0f9efaaa502a0e0a09848028518a6fb096c8ad33
@@ -2012,8 +2012,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 24d70fc458c6002d5ff3c9f8ce7c66bde299b32aca6417c2dd1236e1412b036d
-R ed1761d31b9a32171fc27afe1d89c1b7
+P 11f3ed61150c5940da6c157e5063e70c3aa0628dfd0023c47bb65b00af74ab1f
+R 2ae8456ec9776838052861c3fb138f8f
 U stephan
-Z 4abbcdb5df49f5d67360636a18d94c2b
+Z 47d6dbc110cfca896ac7235ddcb7f7bf
 # Remove this line to create a well-formed Fossil manifest.
