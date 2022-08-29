@@ -194,15 +194,17 @@ ifneq (0,$(ENABLE_WASMFS))
   emcc.jsflags += -pthread -sWASMFS -sPTHREAD_POOL_SIZE=2
   emcc.cflags += '-DSQLITE_DEFAULT_UNIX_VFS="unix-none"'
   emcc.environment := $(emcc.environment),worker
+  emcc.jsflags += -sINITIAL_MEMORY=128450560
 else
   emcc.jsflags += -sALLOW_MEMORY_GROWTH
   # emcc: warning: USE_PTHREADS + ALLOW_MEMORY_GROWTH may run non-wasm code
   #       slowly, see https://github.com/WebAssembly/design/issues/1271
   #       [-Wpthreads-mem-growth]
+  emcc.jsflags += -sINITIAL_MEMORY=13107200
+  #emcc.jsflags += -sINITIAL_MEMORY=64225280
+  # ^^^^ 64MB is not enough for WASMFS/OPFS test runs using batch-runner.js
 endif
 emcc.jsflags += $(emcc.environment)
-#emcc.jsflags += -sINITIAL_MEMORY=13107200
-emcc.jsflags += -sINITIAL_MEMORY=64225280
 #emcc.jsflags += -sTOTAL_STACK=4194304
 emcc.jsflags += -sEXPORT_NAME=sqlite3InitModule
 emcc.jsflags += -sGLOBAL_BASE=4096 # HYPOTHETICALLY keep func table indexes from overlapping w/ heap addr.
@@ -285,6 +287,18 @@ all: $(sqlite3.js)
 # End main Emscripten-based module build
 ########################################################################
 
+########################################################################
+# Bits for use with batch-runner.js...
+speedtest1 := ../../speedtest1
+$(speedtest1):
+	$(MAKE) -C ../.. speedtest1
+speedtest1.sql: $(speedtest1)
+	$(speedtest1) --script $@
+batch-sql.in := $(sort $(wildcard *.sql))
+batch-runner.list: $(batch-sql.in) $(MAKEFILE) speedtest1.sql
+	bash split-speedtest1-script.sh speedtest1.sql
+	ls -1 *.sql | sort > $@
+batch: batch-runner.list
 
 ########################################################################
 # fiddle_remote is the remote destination for the fiddle app. It

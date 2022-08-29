@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
+    <link rel="stylesheet" href="common/emscripten.css"/>
+    <link rel="stylesheet" href="common/testing.css"/>
+    <title>sqlite3-api batch SQL runner</title>
+  </head>
+  <body>
+    <header id='titlebar'><span>sqlite3-api batch SQL runner</span></header>
+    <!-- emscripten bits -->
+    <figure id="module-spinner">
+      <div class="spinner"></div>
+      <div class='center'><strong>Initializing app...</strong></div>
+      <div class='center'>
+        On a slow internet connection this may take a moment.  If this
+        message displays for "a long time", intialization may have
+        failed and the JavaScript console may contain clues as to why.
+      </div>
+    </figure>
+    <div class="emscripten" id="module-status">Downloading...</div>
+    <div class="emscripten">
+      <progress value="0" max="100" id="module-progress" hidden='1'></progress>  
+    </div><!-- /emscripten bits -->
+    <p class='warning'>ACHTUNG: this file requires a generated input list
+      file. Run "make batch" from this directory to generate it.
+    </p>
+    <p class='warning'>WARNING: if the WASMFS/OPFS layer crashes, this page may
+      become completely unresponsive and need to be closed and
+      reloaded to recover.
+    </p>
+    <hr>
+    <div>
+      <select id='sql-select'>
+        <option disabled selected>Populated via script code</option>
+      </select>
+      <button id='sql-run'>Run selected SQL</button>
+      <button id='output-clear'>Clear output</button>
+    </div>
+    <hr>
+    <div id='test-output'></div>
+    
+    <script src="sqlite3.js"></script>
+    <script src="common/SqliteTestUtil.js"></script>
+    <script src="batch-runner.js"></script>
+    <style>
+      .warning { color: firebrick; } 
+      #test-output {
+          border: 1px inset;
+          padding: 0.25em;
+          max-height: 20em;
+          overflow: auto;
+          white-space: break-spaces;
+      }
+    </style>
+  </body>
+</html>
