@@ -372,10 +372,12 @@ int speedtest1_numbername(unsigned int n, char *zOut, int nOut){
 #define NAMEWIDTH 60
 static const char zDots[] =
   ".......................................................................";
+static int iTestNumber = 0;  /* Current test # for begin/end_test(). */
 void speedtest1_begin_test(int iTestNum, const char *zTestName, ...){
   int n = (int)strlen(zTestName);
   char *zName;
   va_list ap;
+  iTestNumber = iTestNum;
   va_start(ap, zTestName);
   zName = sqlite3_vmprintf(zTestName, ap);
   va_end(ap);
@@ -383,6 +385,9 @@ void speedtest1_begin_test(int iTestNum, const char *zTestName, ...){
   if( n>NAMEWIDTH ){
     zName[NAMEWIDTH] = 0;
     n = NAMEWIDTH;
+  }
+  if( g.pScript ){
+    fprintf(g.pScript,"-- begin test %d\n", iTestNumber);
   }
   if( g.bSqlOnly ){
     printf("/* %4d - %s%.*s */\n", iTestNum, zName, NAMEWIDTH-n, zDots);
@@ -404,6 +409,10 @@ void speedtest1_exec(const char*,...);
 void speedtest1_end_test(void){
   sqlite3_int64 iElapseTime = speedtest1_timestamp() - g.iStart;
   if( g.doCheckpoint ) speedtest1_exec("PRAGMA wal_checkpoint;");
+  assert( iTestNumber > 0 );
+  if( g.pScript ){
+    fprintf(g.pScript,"-- end test %d\n", iTestNumber);
+  }
   if( !g.bSqlOnly ){
     g.iTotal += iElapseTime;
     printf("%4d.%03ds\n", (int)(iElapseTime/1000), (int)(iElapseTime%1000));
@@ -412,6 +421,7 @@ void speedtest1_end_test(void){
     sqlite3_finalize(g.pStmt);
     g.pStmt = 0;
   }
+  iTestNumber = 0;
 }
 
 /* Report end of testing */
