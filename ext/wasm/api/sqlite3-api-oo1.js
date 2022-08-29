@@ -553,8 +553,8 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           DB.checkRc(this, capi.sqlite3_prepare_v3(
             this.pointer, pSql, sqlByteLen, 0, ppStmt, pzTail
           ));
-          const pStmt = wasm.getMemValue(ppStmt, wasm.ptrIR);
-          pSql = wasm.getMemValue(pzTail, wasm.ptrIR);
+          const pStmt = wasm.getPtrValue(ppStmt);
+          pSql = wasm.getPtrValue(pzTail);
           sqlByteLen = pSqlEnd - pSql;
           if(!pStmt) continue;
           if(Array.isArray(opt.saveSql)){

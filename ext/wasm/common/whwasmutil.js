@@ -654,6 +654,15 @@ self.WhWasmUtilInstaller = function(target){
     toss('Invalid type for setMemValue(): ' + type);
   };
 
+
+  /** Convenience form of getMemValue() intended for fetching
+      pointer-to-pointer values. */
+  target.getPtrValue = (ptr)=>target.getMemValue(ptr, ptrIR);
+
+  /** Convenience form of setMemValue() intended for setting
+      pointer-to-pointer values. */
+  target.setPtrValue = (ptr, value)=>target.setMemValue(ptr, value, ptrIR);
+
   /**
      Expects ptr to be a pointer into the WASM heap memory which
      refers to a NUL-terminated C-style string encoded as UTF-8.
