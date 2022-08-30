@@ -119,7 +119,8 @@
       list.forEach(function(fn){
         if(!fn) return;
         opt = document.createElement('option');
-        opt.value = opt.innerText = fn;
+        opt.value = fn;
+        opt.innerText = fn.split('/').pop();
         sel.appendChild(opt);
       });
       this.logHtml("Loaded",infile);

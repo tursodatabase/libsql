@@ -289,18 +289,19 @@ all: $(sqlite3.js)
 
 ########################################################################
 # Bits for use with batch-runner.js...
+dir.sql := sql
 speedtest1 := ../../speedtest1
+speedtest1.sql := $(dir.sql)/speedtest1.sql
 $(speedtest1):
 	$(MAKE) -C ../.. speedtest1
-speedtest1.sql: $(speedtest1)
+$(speedtest1.sql): $(speedtest1)
 	$(speedtest1) --script $@
-speedtest1-000.sql:
-	echo "select 1;" > $@
-batch-runner.list: $(MAKEFILE) speedtest1.sql speedtest1-000.sql
-	bash split-speedtest1-script.sh speedtest1.sql
-	ls -1 *.sql | grep -v speedtest1.sql | sort > $@
-CLEAN_FILES += batch-runner.list speedtest1*.sql
+batch-runner.list: $(MAKEFILE) $(speedtest1.sql) $(dir.sql)/000-mandelbrot.sql
+	bash split-speedtest1-script.sh $(dir.sql)/speedtest1.sql
+	ls -1 $(dir.sql)/*.sql | grep -v speedtest1.sql | sort > $@
+CLEAN_FILES += batch-runner.list $(dir.sql)/speedtest1*.sql
 batch: batch-runner.list
+all: batch
 
 ########################################################################
 # fiddle_remote is the remote destination for the fiddle app. It

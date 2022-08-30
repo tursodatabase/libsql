@@ -7,9 +7,11 @@ if [ x = "x${testnums}" ]; then
   echo "Could not parse any begin/end blocks out of $infile" 1>&2
   exit 1
 fi
+odir=${infile%%/*}
+if [ "$odir" = "$infile" ]; then odir="."; fi
 #echo testnums=$testnums
 for n in $testnums; do
-  ofile=$(printf "speedtest1-%03d.sql" $n)
+  ofile=$odir/$(printf "speedtest1-%03d.sql" $n)
   sed -n -e "/^-- begin test $n /,/^-- end test $n\$/p" $infile > $ofile
   echo -e "$n\t$ofile"
 done
