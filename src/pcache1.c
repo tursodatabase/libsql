@@ -106,19 +106,24 @@ typedef struct PGroup PGroup;
 ** corrupt, code at the b-tree layer may overread the page buffer and 
 ** read part of this structure before the corruption is detected. This
 ** can cause a valgrind error if the unitialized gap is accessed. Using u16
-** ensures there is no such gap, and therefore no bytes of unitialized memory
-** in the structure.
+** ensures there is no such gap, and therefore no bytes of uninitialized
+** memory in the structure.
+**
+** The pLruNext and pLruPrev pointers form a double-linked circular list
+** of all pages that are unpinned.  The PGroup.lru element (which should be
+** the only element on the list with PgHdr1.isAnchor set to 1) forms the
+** beginning and the end of the list.
 */
 struct PgHdr1 {
-  sqlite3_pcache_page page;      /* Base class. Must be first. pBuf & pExtra */
-  unsigned int iKey;             /* Key value (page number) */
-  u16 isBulkLocal;               /* This page from bulk local storage */
-  u16 isAnchor;                  /* This is the PGroup.lru element */
-  PgHdr1 *pNext;                 /* Next in hash table chain */
-  PCache1 *pCache;               /* Cache that currently owns this page */
-  PgHdr1 *pLruNext;              /* Next in LRU list of unpinned pages */
-  PgHdr1 *pLruPrev;              /* Previous in LRU list of unpinned pages */
-                                 /* NB: pLruPrev is only valid if pLruNext!=0 */
+  sqlite3_pcache_page page; /* Base class. Must be first. pBuf & pExtra */
+  unsigned int iKey;        /* Key value (page number) */
+  u16 isBulkLocal;          /* This page from bulk local storage */
+  u16 isAnchor;             /* This is the PGroup.lru element */
+  PgHdr1 *pNext;            /* Next in hash table chain */
+  PCache1 *pCache;          /* Cache that currently owns this page */
+  PgHdr1 *pLruNext;         /* Next in circular LRU list of unpinned pages */
+  PgHdr1 *pLruPrev;         /* Previous in LRU list of unpinned pages */
+                            /* NB: pLruPrev is only valid if pLruNext!=0 */
 };
 
 /*
