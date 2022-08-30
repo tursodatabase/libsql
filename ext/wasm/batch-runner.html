@@ -42,11 +42,16 @@
       <button class='disable-during-eval' id='sql-run'>Run selected SQL</button>
       <button class='disable-during-eval' id='sql-run-next'>Run next...</button>
       <button class='disable-during-eval' id='sql-run-remaining'>Run all remaining...</button>
+      <button class='disable-during-eval' id='export-metrics'>Export metrics (WIP)</button>
       <button class='disable-during-eval' id='db-reset'>Reset db</button>
       <button id='output-clear'>Clear output</button>
+      <span class='input-wrapper'>
+        <input type='checkbox' class='disable-during-eval' id='cb-reverse-log-order' checked></input>
+        <label for='cb-reverse-log-order'>Reverse log order</label>
+      </span>
     </div>
     <hr>
-    <div>(Log output is in reverse order, newest first!)</div>
+    <div id='reverse-log-notice' class='hidden'>(Log output is in reverse order, newest first!)</div>
     <div id='test-output'></div>
     
     <script src="sqlite3.js"></script>
@@ -58,14 +63,26 @@
           flex-direction: column;
           flex-wrap: wrap;
       }
-      .warning { color: firebrick; } 
+      .warning { color: firebrick; }
+      .input-wrapper {
+          white-space: nowrap;
+      }
       #test-output {
           border: 1px inset;
           padding: 0.25em;
           /*max-height: 30em;*/
           overflow: auto;
           white-space: break-spaces;
-          display: flex; flex-direction: column-reverse;
+          display: flex; flex-direction: column;
+      }
+      #test-output.reverse {
+          flex-direction: column-reverse;
+      }
+      .hidden {
+          position: absolute !important;
+          opacity: 0 !important;
+          pointer-events: none !important;
+          display: none !important;
       }
     </style>
   </body>

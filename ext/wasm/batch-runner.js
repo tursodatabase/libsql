@@ -26,10 +26,22 @@
       btnRun: document.querySelector('#sql-run'),
       btnRunNext: document.querySelector('#sql-run-next'),
       btnRunRemaining: document.querySelector('#sql-run-remaining'),
+      btnExportMetrics: document.querySelector('#export-metrics'),
       btnClear: document.querySelector('#output-clear'),
-      btnReset: document.querySelector('#db-reset')
+      btnReset: document.querySelector('#db-reset'),
+      cbReverseLog: document.querySelector('#cb-reverse-log-order')
     },
     cache:{},
+    metrics:{
+      /**
+         Map of sql-file to timing metrics. We currently only store
+         the most recent run of each file, but we really should store
+         all runs so that we can average out certain values which vary
+         significantly across runs. e.g. a mandelbrot-generating query
+         will have a wide range of runtimes when run 10 times in a
+         row.         
+      */
+    },
     log: console.log.bind(console),
     warn: console.warn.bind(console),
     cls: function(){this.e.output.innerHTML = ''},
@@ -63,8 +75,11 @@
         const oFlags = capi.SQLITE_OPEN_CREATE | capi.SQLITE_OPEN_READWRITE;
         const ppDb = wasm.scopedAllocPtr();
         const rc = capi.sqlite3_open_v2(fn, ppDb, oFlags, null);
-        if(rc) toss("sqlite3_open_v2() failed with code",rc);
         pDb = wasm.getPtrValue(ppDb)
+        if(rc){
+          if(pDb) capi.sqlite3_close_v2(pDb);
+          toss("sqlite3_open_v2() failed with code",rc);
+        }
       }finally{
         wasm.scopedAllocPop(stack);
       }
@@ -84,6 +99,12 @@
       }
     },
 
+    /**
+       Loads batch-runner.list and populates the selection list from
+       it. Returns a promise which resolves to nothing in particular
+       when it completes. Only intended to be run once at the start
+       of the app.
+     */
     loadSqlList: async function(){
       const sel = this.e.selSql;
       sel.innerHTML = '';
@@ -156,7 +177,62 @@
       document.querySelectorAll('.disable-during-eval').forEach((e)=>e.disabled = disable);
     },
 
-    /** Fetch ./fn and eval it as an SQL blob. */
+    /**
+       Converts this.metrics() to a form which is suitable for easy conversion to
+       CSV. It returns an array of arrays. The first sub-array is the column names.
+       The 2nd and subsequent are the values, one per test file (only the most recent
+       metrics are kept for any given file).
+    */
+    metricsToArrays: function(){
+      const rc = [];
+      Object.keys(this.metrics).sort().forEach((k)=>{
+        const m = this.metrics[k];
+        delete m.evalFileStart;
+        delete m.evalFileEnd;
+        const mk = Object.keys(m).sort();
+        if(!rc.length){
+          rc.push(['file', ...mk]);
+        }
+        const row = [k.split('/').pop()/*remove dir prefix from filename*/];
+        rc.push(row);
+        mk.forEach((kk)=>row.push(m[kk]));
+      });
+      return rc;
+    },
+
+    metricsToBlob: function(colSeparator='\t'){
+      const ar = [], ma = this.metricsToArrays();
+      if(!ma.length){
+        this.logErr("Metrics are empty. Run something.");
+        return;
+      }
+      ma.forEach(function(row){
+        ar.push(row.join(colSeparator),'\n');
+      });
+      return new Blob(ar);
+    },
+    
+    downloadMetrics: function(){
+      const b = this.metricsToBlob();
+      if(!b) return;
+      const url = URL.createObjectURL(b);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'batch-runner-metrics-'+((new Date().getTime()/1000) | 0)+'.csv';
+      this.logHtml("Triggering download of",a.download);
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(()=>{
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 500);
+    },
+
+    /**
+       Fetch file fn and eval it as an SQL blob. This is an async
+       operation and returns a Promise which resolves to this
+       object on success.
+    */
     evalFile: async function(fn){
       const sql = await this.fetchFile(fn);
       const banner = "========================================";
@@ -165,9 +241,11 @@
       const capi = this.sqlite3.capi, wasm = capi.wasm;
       let pStmt = 0, pSqlBegin;
       const stack = wasm.scopedAllocPush();
-      const metrics = Object.create(null);
+      const metrics = this.metrics[fn] = Object.create(null);
       metrics.prepTotal = metrics.stepTotal = 0;
       metrics.stmtCount = 0;
+      metrics.malloc = 0;
+      metrics.strcpy = 0;
       this.blockControls(true);
       if(this.gotErr){
         this.logErr("Cannot run ["+fn+"]: error cleanup is pending.");
@@ -180,11 +258,16 @@
           let t;
           let sqlByteLen = sql.byteLength;
           const [ppStmt, pzTail] = wasm.scopedAllocPtr(2);
+          t = performance.now();
           pSqlBegin = wasm.alloc( sqlByteLen + 1/*SQL + NUL*/) || toss("alloc(",sqlByteLen,") failed");
+          metrics.malloc = performance.now() - t;
+          metrics.byteLength = sqlByteLen;
           let pSql = pSqlBegin;
           const pSqlEnd = pSqlBegin + sqlByteLen;
+          t = performance.now();
           wasm.heap8().set(sql, pSql);
           wasm.setMemValue(pSql + sqlByteLen, 0);
+          metrics.strcpy = performance.now() - t;
           let breaker = 0;
           while(pSql && wasm.getMemValue(pSql,'i8')){
             wasm.setPtrValue(ppStmt, 0);
@@ -261,6 +344,20 @@
       }
       this.openDb(dbFile, !!pDir);
       const who = this;
+      const eReverseLogNotice = document.querySelector('#reverse-log-notice');
+      if(this.e.cbReverseLog.checked){
+        eReverseLogNotice.classList.remove('hidden');
+        this.e.output.classList.add('reverse');
+      }
+      this.e.cbReverseLog.addEventListener('change', function(){
+        if(this.checked){
+          who.e.output.classList.add('reverse');
+          eReverseLogNotice.classList.remove('hidden');
+        }else{
+          who.e.output.classList.remove('reverse');
+          eReverseLogNotice.classList.add('hidden');
+        }
+      }, false);
       this.e.btnClear.addEventListener('click', ()=>this.cls(), false);
       this.e.btnRun.addEventListener('click', function(){
         if(!who.e.selSql.value) return;
@@ -278,6 +375,12 @@
           who.openDb(fn,true);
         }
       }, false);
+      this.e.btnExportMetrics.addEventListener('click', function(){
+        who.logHtml2('warning',"Metrics export is a Work in Progress. See output in dev console.");
+        who.downloadMetrics();
+        const m = who.metricsToArrays();
+        console.log("Metrics:",who.metrics, m);
+      });
       this.e.btnRunRemaining.addEventListener('click', async function(){
         let v = who.e.selSql.value;
         const timeStart = performance.now();

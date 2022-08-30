@@ -62,10 +62,13 @@ $(dir.top)/sqlite3.c:
 emcc_opt ?= -O0
 .PHONY: release
 release:
-	$(MAKE) 'emcc_opt=-Os -g3'
+	$(MAKE) 'emcc_opt=-Os -g3 -flto'
 # ^^^^^ target-specific vars, e.g.:
 #   release: emcc_opt=...
 # apparently only work for file targets, not PHONY targets?
+#
+# ^^^ -flto improves runtime speed at -O0 considerably but doubles
+# build time.
 #
 # ^^^^ -O3, -Oz, -Os minify symbol names and there appears to be no
 # way around that except to use -g3, but -g3 causes the binary file
@@ -284,6 +287,7 @@ endif
 
 CLEAN_FILES += $(sqlite3.js) $(sqlite3.wasm)
 all: $(sqlite3.js)
+wasm: $(sqlite3.js)
 # End main Emscripten-based module build
 ########################################################################
 
