@@ -867,4 +867,22 @@ do_catchsql_test json-18.5 {
   SELECT json_extract('{"":8}', '$.');
 } {1 {JSON path error near ''}}
 
+# 2022-08-29 https://sqlite.org/forum/forumpost/9b9e4716c0d7bbd1
+# This is not a problem specifically with JSON functions.  It is
+# a problem with transaction control.  But the json() function makes
+# the problem more easily accessible, so it is tested here.
+#
+do_execsql_test json-19.1 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(x);
+} {}
+do_catchsql_test json-19.2 {
+  BEGIN;
+  INSERT INTO t1 VALUES(0), (json('not-valid-json'));
+} {1 {malformed JSON}}
+do_execsql_test json-19.3 {
+  COMMIT;
+  SELECT * FROM t1;
+} {}
+
 finish_test
