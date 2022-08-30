@@ -730,7 +730,8 @@
 -- only that part is executed.
 -- ================================================
 .help`},
-                {name: "Timer on", sql: ".timer on"},
+              //{name: "Timer on", sql: ".timer on"},
+              // ^^^ re-enable if emscripten re-enables getrusage()
                 {name: "Setup table T", sql:`.nullvalue NULL
 CREATE TABLE t(a,b);
 INSERT INTO t(a,b) VALUES('abc',123),('def',456),(NULL,789),('ghi',012);

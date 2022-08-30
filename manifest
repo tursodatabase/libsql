@@ -1,5 +1,5 @@
-C wasm\sutil:\sremove\ssuperfluous\sfunction.bind()\scalls\sto\seliminate\sa\slevel\sof\scall()\sindirection.
-D 2022-08-30T09:49:30.007
+C Remove\sthe\s.timer\sscript\sentry\sfrom\sfiddle\sapp\sbecause\semscripten\shas\sremoved\sgetrusage(),\swhich\sbreaks\sthe\stimer.
+D 2022-08-30T09:51:24.863
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -500,7 +500,7 @@ F ext/wasm/demo-oo1.js aad38cb90b6fa7fd4d1184e759b25056fb4ed45c4957c458896354281
 F ext/wasm/fiddle/emscripten.css 3d253a6fdb8983a2ac983855bfbdd4b6fa1ff267c28d69513dd6ef1f289ada3f
 F ext/wasm/fiddle/fiddle-worker.js bccf46045be8824752876f3eec01c223be0616ccac184bffd0024cfe7a3262b8
 F ext/wasm/fiddle/fiddle.html 550c5aafce40bd218de9bf26192749f69f9b10bc379423ecd2e162bcef885c08
-F ext/wasm/fiddle/fiddle.js bef4b30e078445a7cd2255fba07acd083aa1c3cc074a73b38ea847fd340f1adc
+F ext/wasm/fiddle/fiddle.js 4ffcfc9a235beebaddec689a549e9e0dfad6dca5c1f0b41f03468d7e76480686
 F ext/wasm/jaccwabyt/jaccwabyt.js 0d7f32817456a0f3937fcfd934afeb32154ca33580ab264dab6c285e6dbbd215
 F ext/wasm/jaccwabyt/jaccwabyt.md 447cc02b598f7792edaa8ae6853a7847b8178a18ed356afacbdbf312b2588106
 F ext/wasm/jaccwabyt/jaccwabyt_test.c 39e4b865a33548f943e2eb9dd0dc8d619a80de05d5300668e9960fff30d0d36f
@@ -2012,8 +2012,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 24b82b9504db3d8e1335c2300b133f897dc1a541026dc24be5b0ffd8be66d977
-R c9f285330e60c2a709dc88c6f308d17d
+P 1aab9627983ef0f016b01f78564e79cf815ed14d4b1b6dc04ec627b96f1b2f70
+R 7a91cd8f075d71f1129b2c16dc0c7e0d
 U stephan
-Z 746ec57f2eb86d7d664aa6615f7c7bf3
+Z fa99287ead67c43b637178f52d6fe01b
 # Remove this line to create a well-formed Fossil manifest.
