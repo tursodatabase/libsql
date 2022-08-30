@@ -57,9 +57,9 @@
       const stack = wasm.scopedAllocPush();
       let pDb = 0;
       try{
-        /*if(unlinkFirst && fn && ':memory:'!==fn){
+        if(unlinkFirst && fn && ':memory:'!==fn){
           capi.sqlite3_wasm_vfs_unlink(fn);
-        }*/
+        }
         const oFlags = capi.SQLITE_OPEN_CREATE | capi.SQLITE_OPEN_READWRITE;
         const ppDb = wasm.scopedAllocPtr();
         const rc = capi.sqlite3_open_v2(fn, ppDb, oFlags, null);

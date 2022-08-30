@@ -1,5 +1,5 @@
-C batch-runner.js:\smove\sgenerated\sSQL\sfiles\sinto\s./sql\sand\sstart\sadding\shand-written\sones\s(like\sthe\sMandelbrot)\sto\sthat\sset.
-D 2022-08-30T10:04:08.374
+C batch-runner.js:\sre-enable\sunlink-before-run\sso\sthat\sOPFS\sspeedtest1\sbatch\scan\swork.
+D 2022-08-30T10:26:33.223
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -490,7 +490,7 @@ F ext/wasm/api/sqlite3-api-worker1.js 73579555563b789785ae83724014eaf31811073aad
 F ext/wasm/api/sqlite3-wasi.h 25356084cfe0d40458a902afb465df8c21fc4152c1d0a59b563a3fba59a068f9
 F ext/wasm/api/sqlite3-wasm.c 0d81282eaeff2a6e9fc5c28a388c5c5b45cf25a9393992fa511ac009b27df982
 F ext/wasm/batch-runner.html e5c3edd4a6c9359f6d9e6c99cb5f87f09007d98fa1c705ed3efa370abcd4323e
-F ext/wasm/batch-runner.js e5b4b93b8008b2cc53694025042b7322267790063d1f0c96cf1b17e9d5a75c7d
+F ext/wasm/batch-runner.js da471fb7b5c6c918cfe59adaebedc3af24a1268084d09d90143653c71b2493dd
 F ext/wasm/common/SqliteTestUtil.js eb96275bed43fdb364b7d65bcded0ca5e22aaacff120d593d1385f852f486247
 F ext/wasm/common/emscripten.css 3d253a6fdb8983a2ac983855bfbdd4b6fa1ff267c28d69513dd6ef1f289ada3f
 F ext/wasm/common/testing.css 572cf1ffae0b6eb7ca63684d3392bf350217a07b90e7a896e4fa850700c989b0
@@ -2013,8 +2013,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9034f19ae50f196cc2b94478edfcc8d765b08bcf383166f6212b3522dea63c01
-R 3fee411065930bf42f56509feb119f8a
+P 06c106a7d23e4486dbed092757b7588688226ad35539ecc31378a8497f59d1ec
+R 4e67c8f75eba175d0066f0954616ff1b
 U stephan
-Z 41ba67db7a03bd9c0e2ce1f308cc01b3
+Z 9d799461f6bdad041adab908a7c4bd92
 # Remove this line to create a well-formed Fossil manifest.
