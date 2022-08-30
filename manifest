@@ -1,5 +1,5 @@
-C Lots\sof\stweaking\sin\sbatch-runner.js.\sMinor\sinternal\sAPI\supdate\sin\sOO\s#1\sAPI.
-D 2022-08-29T18:58:38.025
+C wasm\sutil:\sremove\ssuperfluous\sfunction.bind()\scalls\sto\seliminate\sa\slevel\sof\scall()\sindirection.
+D 2022-08-30T09:49:30.007
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -494,7 +494,7 @@ F ext/wasm/batch-runner.js 84a465acde760de81d0372415cce56737799876395a878c44a7d3
 F ext/wasm/common/SqliteTestUtil.js eb96275bed43fdb364b7d65bcded0ca5e22aaacff120d593d1385f852f486247
 F ext/wasm/common/emscripten.css 3d253a6fdb8983a2ac983855bfbdd4b6fa1ff267c28d69513dd6ef1f289ada3f
 F ext/wasm/common/testing.css 572cf1ffae0b6eb7ca63684d3392bf350217a07b90e7a896e4fa850700c989b0
-F ext/wasm/common/whwasmutil.js e1c6779c977c8614053e24311d489dd4872962cb58c27013d4778f0dd7329e9c
+F ext/wasm/common/whwasmutil.js 3d68a9cd87a2d8f7e6d5a78f3b829a927f2e28422685e029139f6e75d4ed42e4
 F ext/wasm/demo-oo1.html 75646855b38405d82781246fd08c852a2b3bee05dd9f0fe10ab655a8cffb79aa
 F ext/wasm/demo-oo1.js aad38cb90b6fa7fd4d1184e759b25056fb4ed45c4957c458896354281259515f
 F ext/wasm/fiddle/emscripten.css 3d253a6fdb8983a2ac983855bfbdd4b6fa1ff267c28d69513dd6ef1f289ada3f
@@ -2012,8 +2012,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e5b7006f0f57f10a490d7eaeb7df77251a2f684602fed8ff161d8ce60033e7bc
-R ac09921b66efbf8cc7311954674841d9
+P 24b82b9504db3d8e1335c2300b133f897dc1a541026dc24be5b0ffd8be66d977
+R c9f285330e60c2a709dc88c6f308d17d
 U stephan
-Z 16cfbad53a69907d89a4919845ccdd35
+Z 746ec57f2eb86d7d664aa6615f7c7bf3
 # Remove this line to create a well-formed Fossil manifest.

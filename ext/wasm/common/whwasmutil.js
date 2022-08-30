@@ -326,7 +326,7 @@ self.WhWasmUtilInstaller = function(target){
           if(c.HEAP64) return unsigned ? c.HEAP64U : c.HEAP64;
           break;
         default:
-          if(this.bigIntEnabled){
+          if(target.bigIntEnabled){
             if(n===self['BigUint64Array']) return c.HEAP64U;
             else if(n===self['BigInt64Array']) return c.HEAP64;
             break;
@@ -334,7 +334,7 @@ self.WhWasmUtilInstaller = function(target){
     }
     toss("Invalid heapForSize() size: expecting 8, 16, 32,",
          "or (if BigInt is enabled) 64.");
-  }.bind(target);
+  };
 
   /**
      Returns the WASM-exported "indirect function table."
@@ -346,16 +346,16 @@ self.WhWasmUtilInstaller = function(target){
         - Use `__indirect_function_table` as the import name for the
         table, which is what LLVM does.
     */
-  }.bind(target);
+  };
 
   /**
      Given a function pointer, returns the WASM function table entry
      if found, else returns a falsy value.
   */
   target.functionEntry = function(fptr){
-    const ft = this.functionTable();
+    const ft = target.functionTable();
     return fptr < ft.length ? ft.get(fptr) : undefined;
-  }.bind(target);
+  };
 
   /**
      Creates a WASM function which wraps the given JS function and
@@ -504,7 +504,7 @@ self.WhWasmUtilInstaller = function(target){
      https://github.com/emscripten-core/emscripten/issues/17323
   */
   target.installFunction = function f(func, sig){
-    const ft = this.functionTable();
+    const ft = target.functionTable();
     const oldLen = ft.length;
     let ptr;
     while(cache.freeFuncIndexes.length){
@@ -532,13 +532,13 @@ self.WhWasmUtilInstaller = function(target){
     }
     // It's not a WASM-exported function, so compile one...
     try {
-      ft.set(ptr, this.jsFuncToWasm(func, sig));
+      ft.set(ptr, target.jsFuncToWasm(func, sig));
     }catch(e){
       if(ptr===oldLen) cache.freeFuncIndexes.push(oldLen);
       throw e;
     }
     return ptr;      
-  }.bind(target);
+  };
 
   /**
      Requires a pointer value previously returned from
@@ -551,12 +551,12 @@ self.WhWasmUtilInstaller = function(target){
   */
   target.uninstallFunction = function(ptr){
     const fi = cache.freeFuncIndexes;
-    const ft = this.functionTable();
+    const ft = target.functionTable();
     fi.push(ptr);
     const rc = ft.get(ptr);
     ft.set(ptr, null);
     return rc;
-  }.bind(target);
+  };
 
   /**
      Given a WASM heap memory address and a data type name in the form
@@ -614,14 +614,14 @@ self.WhWasmUtilInstaller = function(target){
         case 'i16': return c.HEAP16[ptr>>1];
         case 'i32': return c.HEAP32[ptr>>2];
         case 'i64':
-          if(this.bigIntEnabled) return BigInt(c.HEAP64[ptr>>3]);
+          if(target.bigIntEnabled) return BigInt(c.HEAP64[ptr>>3]);
           break;
         case 'float': case 'f32': return c.HEAP32F[ptr>>2];
         case 'double': case 'f64': return Number(c.HEAP64F[ptr>>3]);
         default: break;
     }
     toss('Invalid type for getMemValue():',type);
-  }.bind(target);
+  };
 
   /**
      The counterpart of getMemValue(), this sets a numeric value at
@@ -698,9 +698,9 @@ self.WhWasmUtilInstaller = function(target){
      ptr is falsy, `null` is returned.
   */
   target.cstringToJs = function(ptr){
-    const n = this.cstrlen(ptr);
+    const n = target.cstrlen(ptr);
     return n ? __utf8Decode(heapWrappers().HEAP8U, ptr, ptr+n) : (null===n ? n : "");
-  }.bind(target);
+  };
 
   /**
      Given a JS string, this function returns its UTF-8 length in
@@ -828,16 +828,16 @@ self.WhWasmUtilInstaller = function(target){
   */
   target.cstrncpy = function(tgtPtr, srcPtr, n){
     if(!tgtPtr || !srcPtr) toss("cstrncpy() does not accept NULL strings.");
-    if(n<0) n = this.cstrlen(strPtr)+1;
+    if(n<0) n = target.cstrlen(strPtr)+1;
     else if(!(n>0)) return 0;
-    const heap = this.heap8u();
+    const heap = target.heap8u();
     let i = 0, ch;
     for(; i < n && (ch = heap[srcPtr+i]); ++i){
       heap[tgtPtr+i] = ch;
     }
     if(i<n) heap[tgtPtr + i++] = 0;
     return i;
-  }.bind(target);
+  };
 
   /**
      For the given JS string, returns a Uint8Array of its contents
@@ -882,13 +882,13 @@ self.WhWasmUtilInstaller = function(target){
   };
 
   const __allocCStr = function(jstr, returnWithLength, allocator, funcName){
-    __affirmAlloc(this, funcName);
+    __affirmAlloc(target, funcName);
     if('string'!==typeof jstr) return null;
-    const n = this.jstrlen(jstr),
+    const n = target.jstrlen(jstr),
           ptr = allocator(n+1);
-    this.jstrcpy(jstr, this.heap8u(), ptr, n+1, true);
+    target.jstrcpy(jstr, target.heap8u(), ptr, n+1, true);
     return returnWithLength ? [ptr, n] : ptr;
-  }.bind(target);
+  };
 
   /**
      Uses target.alloc() to allocate enough memory for jstrlen(jstr)+1
@@ -941,11 +941,11 @@ self.WhWasmUtilInstaller = function(target){
      alloc levels are currently active.
    */
   target.scopedAllocPush = function(){
-    __affirmAlloc(this, 'scopedAllocPush');
+    __affirmAlloc(target, 'scopedAllocPush');
     const a = [];
     cache.scopedAlloc.push(a);
     return a;
-  }.bind(target);
+  };
 
   /**
      Cleans up all allocations made using scopedAlloc() in the context
@@ -970,15 +970,15 @@ self.WhWasmUtilInstaller = function(target){
      trivial code that may be a non-issue.
   */
   target.scopedAllocPop = function(state){
-    __affirmAlloc(this, 'scopedAllocPop');
+    __affirmAlloc(target, 'scopedAllocPop');
     const n = arguments.length
           ? cache.scopedAlloc.indexOf(state)
           : cache.scopedAlloc.length-1;
     if(n<0) toss("Invalid state object for scopedAllocPop().");
     if(0===arguments.length) state = cache.scopedAlloc[n];
     cache.scopedAlloc.splice(n,1);
-    for(let p; (p = state.pop()); ) this.dealloc(p);
-  }.bind(target);
+    for(let p; (p = state.pop()); ) target.dealloc(p);
+  };
 
   /**
      Allocates n bytes of memory using this.alloc() and records that
@@ -1000,10 +1000,10 @@ self.WhWasmUtilInstaller = function(target){
     if(!cache.scopedAlloc.length){
       toss("No scopedAllocPush() scope is active.");
     }
-    const p = this.alloc(n);
+    const p = target.alloc(n);
     cache.scopedAlloc[cache.scopedAlloc.length-1].push(p);
     return p;
-  }.bind(target);
+  };
 
   Object.defineProperty(target.scopedAlloc, 'level', {
     configurable: false, enumerable: false,
@@ -1030,15 +1030,15 @@ self.WhWasmUtilInstaller = function(target){
      result of calling func().
   */
   target.scopedAllocCall = function(func){
-    this.scopedAllocPush();
-    try{ return func() } finally{ this.scopedAllocPop() }
-  }.bind(target);
+    target.scopedAllocPush();
+    try{ return func() } finally{ target.scopedAllocPop() }
+  };
 
   /** Internal impl for allocPtr() and scopedAllocPtr(). */
   const __allocPtr = function(howMany, method){
-    __affirmAlloc(this, method);
-    let m = this[method](howMany * ptrSizeof);
-    this.setMemValue(m, 0, ptrIR)
+    __affirmAlloc(target, method);
+    let m = target[method](howMany * ptrSizeof);
+    target.setMemValue(m, 0, ptrIR)
     if(1===howMany){
       return m;
     }
@@ -1046,10 +1046,10 @@ self.WhWasmUtilInstaller = function(target){
     for(let i = 1; i < howMany; ++i){
       m += ptrSizeof;
       a[i] = m;
-      this.setMemValue(m, 0, ptrIR);
+      target.setMemValue(m, 0, ptrIR);
     }
     return a;
-  }.bind(target);  
+  };
 
   /**
      Allocates a single chunk of memory capable of holding `howMany`
@@ -1099,7 +1099,7 @@ self.WhWasmUtilInstaller = function(target){
      not legal to pass an Array object to a WASM function.)
   */
   target.xCall = function(fname, ...args){
-    const f = this.xGet(fname);
+    const f = target.xGet(fname);
     if(!(f instanceof Function)) toss("Exported symbol",fname,"is not a function.");
     if(f.length!==args.length) __argcMismatch(fname,f.length)
     /* This is arguably over-pedantic but we want to help clients keep
@@ -1107,7 +1107,7 @@ self.WhWasmUtilInstaller = function(target){
     return (2===arguments.length && Array.isArray(arguments[1]))
       ? f.apply(null, arguments[1])
       : f.apply(null, args);
-  }.bind(target);
+  };
 
   /**
      State for use with xWrap()
@@ -1181,19 +1181,19 @@ self.WhWasmUtilInstaller = function(target){
     */
     xcv.arg['func-ptr'] = function(v){
       if(!(v instanceof Function)) return xcv.arg[ptrIR];
-      const f = this.jsFuncToWasm(v, WHAT_SIGNATURE);
-    }.bind(target);
+      const f = target.jsFuncToWasm(v, WHAT_SIGNATURE);
+    };
   }
 
-  const __xArgAdapter =
+  const __xArgAdapterCheck =
         (t)=>xcv.arg[t] || toss("Argument adapter not found:",t);
 
-  const __xResultAdapter =
+  const __xResultAdapterCheck =
         (t)=>xcv.result[t] || toss("Result adapter not found:",t);
   
-  cache.xWrap.convertArg = (t,v)=>__xArgAdapter(t)(v);
+  cache.xWrap.convertArg = (t,v)=>__xArgAdapterCheck(t)(v);
   cache.xWrap.convertResult =
-    (t,v)=>(null===t ? v : (t ? __xResultAdapter(t)(v) : undefined));
+    (t,v)=>(null===t ? v : (t ? __xResultAdapterCheck(t)(v) : undefined));
 
   /**
      Creates a wrapper for the WASM-exported function fname. Uses
@@ -1327,34 +1327,32 @@ self.WhWasmUtilInstaller = function(target){
     if(3===arguments.length && Array.isArray(arguments[2])){
       argTypes = arguments[2];
     }
-    const xf = this.xGet(fname);
-    if(argTypes.length!==xf.length) __argcMismatch(fname, xf.length)
+    const xf = target.xGet(fname);
+    if(argTypes.length!==xf.length) __argcMismatch(fname, xf.length);
     if((null===resultType) && 0===xf.length){
       /* Func taking no args with an as-is return. We don't need a wrapper. */
       return xf;
     }
     /*Verify the arg type conversions are valid...*/;
-    if(undefined!==resultType && null!==resultType) __xResultAdapter(resultType);
-    argTypes.forEach(__xArgAdapter)
+    if(undefined!==resultType && null!==resultType) __xResultAdapterCheck(resultType);
+    argTypes.forEach(__xArgAdapterCheck);
     if(0===xf.length){
       // No args to convert, so we can create a simpler wrapper...
-      return function(){
-        return (arguments.length
-                ? __argcMismatch(fname, xf.length)
-                : cache.xWrap.convertResult(resultType, xf.call(null)));
-      };
+      return (...args)=>(args.length
+                         ? __argcMismatch(fname, xf.length)
+                         : cache.xWrap.convertResult(resultType, xf.call(null)));
     }
     return function(...args){
       if(args.length!==xf.length) __argcMismatch(fname, xf.length);
-      const scope = this.scopedAllocPush();
+      const scope = target.scopedAllocPush();
       try{
         const rc = xf.apply(null,args.map((v,i)=>cache.xWrap.convertArg(argTypes[i], v)));
         return cache.xWrap.convertResult(resultType, rc);
       }finally{
-        this.scopedAllocPop(scope);
+        target.scopedAllocPop(scope);
       }
-    }.bind(this);
-  }.bind(target)/*xWrap()*/;
+    };
+  }/*xWrap()*/;
 
   /** Internal impl for xWrap.resultAdapter() and argAdaptor(). */
   const __xAdapter = function(func, argc, typeName, adapter, modeName, xcvPart){
@@ -1458,8 +1456,8 @@ self.WhWasmUtilInstaller = function(target){
   */
   target.xCallWrapped = function(fname, resultType, argTypes, ...args){
     if(Array.isArray(arguments[3])) args = arguments[3];
-    return this.xWrap(fname, resultType, argTypes||[]).apply(null, args||[]);
-  }.bind(target);
+    return target.xWrap(fname, resultType, argTypes||[]).apply(null, args||[]);
+  };
   
   return target;
 };
@@ -1539,10 +1537,11 @@ self.WhWasmUtilInstaller.yawl = function(config){
           || toss("Missing 'memory' object!");
       }
       if(!tgt.alloc && arg.instance.exports.malloc){
+        const exports = arg.instance.exports;
         tgt.alloc = function(n){
-          return this(n) || toss("Allocation of",n,"bytes failed.");
-        }.bind(arg.instance.exports.malloc);
-        tgt.dealloc = function(m){this(m)}.bind(arg.instance.exports.free);
+          return exports.malloc(n) || toss("Allocation of",n,"bytes failed.");
+        };
+        tgt.dealloc = function(m){exports.free(m)};
       }
       wui(tgt);
     }
