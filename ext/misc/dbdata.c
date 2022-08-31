@@ -660,6 +660,18 @@ static int dbdataEof(sqlite3_vtab_cursor *pCursor){
   return pCsr->aPage==0;
 }
 
+/*
+** Return true if nul-terminated string zSchema ends in "()". Or false
+** otherwise.
+*/
+static int dbdataIsFunction(const char *zSchema){
+  int n = strlen(zSchema);
+  if( n>2 && zSchema[n-2]=='(' && zSchema[n-1]==')' ){
+    return n-2;
+  }
+  return 0;
+}
+
 /* 
 ** Determine the size in pages of database zSchema (where zSchema is
 ** "main", "temp" or the name of an attached database) and set 
@@ -670,10 +682,16 @@ static int dbdataDbsize(DbdataCursor *pCsr, const char *zSchema){
   DbdataTable *pTab = (DbdataTable*)pCsr->base.pVtab;
   char *zSql = 0;
   int rc, rc2;
+  int nFunc = 0;
   sqlite3_stmt *pStmt = 0;
 
-  zSql = sqlite3_mprintf("PRAGMA %Q.page_count", zSchema);
+  if( (nFunc = dbdataIsFunction(zSchema))>0 ){
+    zSql = sqlite3_mprintf("SELECT %.*s(0)", nFunc, zSchema);
+  }else{
+    zSql = sqlite3_mprintf("PRAGMA %Q.page_count", zSchema);
+  }
   if( zSql==0 ) return SQLITE_NOMEM;
+
   rc = sqlite3_prepare_v2(pTab->db, zSql, -1, &pStmt, 0);
   sqlite3_free(zSql);
   if( rc==SQLITE_OK && sqlite3_step(pStmt)==SQLITE_ROW ){
@@ -711,9 +729,18 @@ static int dbdataFilter(
   }
 
   if( rc==SQLITE_OK ){
+    int nFunc = 0;
     if( pTab->pStmt ){
       pCsr->pStmt = pTab->pStmt;
       pTab->pStmt = 0;
+    }else if( (nFunc = dbdataIsFunction(zSchema))>0 ){
+      char *zSql = sqlite3_mprintf("SELECT %.*s(?2)", nFunc, zSchema);
+      if( zSql==0 ){
+        rc = SQLITE_NOMEM;
+      }else{
+        rc = sqlite3_prepare_v2(pTab->db, zSql, -1, &pCsr->pStmt, 0);
+        sqlite3_free(zSql);
+      }
     }else{
       rc = sqlite3_prepare_v2(pTab->db, 
           "SELECT data FROM sqlite_dbpage(?) WHERE pgno=?", -1,
@@ -732,7 +759,7 @@ static int dbdataFilter(
   return rc;
 }
 
-/* 
+/*
 ** Return a column for the sqlite_dbdata or sqlite_dbptr table.
 */
 static int dbdataColumn(
