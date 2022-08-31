@@ -1122,9 +1122,11 @@ static void pcache1Rekey(
   unsigned int h; 
   assert( pPage->iKey==iOld );
   assert( pPage->pCache==pCache );
+  assert( iOld!=iNew );               /* The page number really is changing */
 
   pcache1EnterMutex(pCache->pGroup);
-
+  
+  assert( pcache1FetchNoMutex(p, iOld, 0)==pPage ); /* pPg really is iOld */
   h = iOld%pCache->nHash;
   pp = &pCache->apHash[h];
   while( (*pp)!=pPage ){
@@ -1132,6 +1134,7 @@ static void pcache1Rekey(
   }
   *pp = pPage->pNext;
 
+  assert( pcache1FetchNoMutex(p, iNew, 0)==0 ); /* iNew not previously used */
   h = iNew%pCache->nHash;
   pPage->iKey = iNew;
   pPage->pNext = pCache->apHash[h];
