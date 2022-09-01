@@ -40,9 +40,11 @@ proc compare_dbs {db1 db2} {
 
 proc do_recover_test {tn} {
   forcedelete test.db2
+  forcedelete rstate.db
 
   uplevel [list do_test $tn.1 {
     set R [sqlite3_recover_init db main test.db2]
+    $R config testdb rstate.db
     $R step
     $R finish
   } {}]

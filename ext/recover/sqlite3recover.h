@@ -38,7 +38,8 @@ sqlite3_recover *sqlite3_recover_init(
 /* Details TBD. */
 int sqlite3_recover_config(sqlite3_recover*, int op, void *pArg);
 
-#define SQLITE_RECOVER_TESTDB 789
+#define SQLITE_RECOVER_TESTDB         789
+#define SQLITE_RECOVER_LOST_AND_FOUND 790
 
 /* Step the recovery object. Return SQLITE_DONE if recovery is complete,
 ** SQLITE_OK if recovery is not complete but no error has occurred, or

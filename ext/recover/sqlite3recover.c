@@ -48,6 +48,12 @@ struct RecoverTable {
   RecoverTable *pNext;
 };
 
+typedef struct RecoverBitmap RecoverBitmap;
+struct RecoverBitmap {
+  i64 nPg;                        /* Size of bitmap */
+  u32 aElem[0];                   /* Array of 32-bit bitmasks */
+};
+
 /*
 ** 
 */
@@ -59,7 +65,7 @@ struct RecoverTable {
 "      pgno, child, PRIMARY KEY(child, pgno)"                  \
 "  ) WITHOUT ROWID;"                                           \
 "  CREATE TABLE recovery.map("                                 \
-"      pgno INTEGER PRIMARY KEY, maxlen INT, intkey, root INT" \
+"      pgno INTEGER PRIMARY KEY, parent INT"                   \
 "  );"                                                         \
 "  CREATE TABLE recovery.schema("                              \
 "      type, name, tbl_name, rootpage, sql"                    \
@@ -75,11 +81,14 @@ struct sqlite3_recover {
   char *zDb;
   char *zUri;
   RecoverTable *pTblList;
+  RecoverBitmap *pUsed;           /* Used by recoverWriteLostAndFound() */
 
   int errCode;                    /* For sqlite3_recover_errcode() */
   char *zErrMsg;                  /* For sqlite3_recover_errmsg() */
 
   char *zStateDb;
+  int bLostAndFound;
+
 };
 
 /*
@@ -123,6 +132,41 @@ static int recoverError(
   p->errCode = errCode;
   return errCode;
 }
+
+
+static RecoverBitmap *recoverBitmapAlloc(sqlite3_recover *p, i64 nPg){
+  int nElem = (nPg+1+31) / 32;
+  int nByte = sizeof(RecoverBitmap) + nElem*sizeof(u32);
+  RecoverBitmap *pRet = (RecoverBitmap*)recoverMalloc(p, nByte);
+
+  if( pRet ){
+    pRet->nPg = nPg;
+  }
+  return pRet;
+}
+
+static void recoverBitmapFree(RecoverBitmap *pMap){
+  sqlite3_free(pMap);
+}
+
+static void recoverBitmapSet(RecoverBitmap *pMap, i64 iPg){
+  if( iPg<=pMap->nPg ){
+    int iElem = (iPg / 32);
+    int iBit = (iPg % 32);
+    pMap->aElem[iElem] |= (((u32)1) << iBit);
+  }
+}
+
+static int recoverBitmapQuery(RecoverBitmap *pMap, i64 iPg){
+  int ret = 1;
+  if( iPg<=pMap->nPg ){
+    int iElem = (iPg / 32);
+    int iBit = (iPg % 32);
+    ret = (pMap->aElem[iElem] & (((u32)1) << iBit)) ? 1 : 0;
+  }
+  return ret;
+}
+
 
 static int recoverDbError(sqlite3_recover *p, sqlite3 *db){
   return recoverError(p, sqlite3_errcode(db), "%s", sqlite3_errmsg(db));
@@ -195,6 +239,24 @@ static int recoverExec(sqlite3_recover *p, sqlite3 *db, const char *zSql){
 }
 
 /*
+** Execute "PRAGMA page_count" against the input database. If successful,
+** return the integer result. Or, if an error occurs, leave an error code 
+** and error message in the sqlite3_recover handle.
+*/
+static i64 recoverPageCount(sqlite3_recover *p){
+  i64 nPg = 0;
+  if( p->errCode==SQLITE_OK ){
+    sqlite3_stmt *pStmt = 0;
+    pStmt = recoverPreparePrintf(p, p->dbIn, "PRAGMA %Q.page_count", p->zDb);
+    if( pStmt && SQLITE_ROW==sqlite3_step(pStmt) ){
+      nPg = sqlite3_column_int64(pStmt, 0);
+    }
+    recoverFinalize(p, pStmt);
+  }
+  return nPg;
+}
+
+/*
 ** The implementation of a user-defined SQL function invoked by the 
 ** sqlite_dbdata and sqlite_dbptr virtual table modules to access pages
 ** of the database being recovered.
@@ -219,24 +281,23 @@ static void recoverGetPage(
 
   assert( nArg==1 );
   if( pgno==0 ){
-    pStmt = recoverPreparePrintf(p, p->dbIn, "PRAGMA %Q.page_count", p->zDb);
-  }else if( p->pGetPage==0 ){
-    pStmt = recoverPreparePrintf(
-        p, p->dbIn, "SELECT data FROM sqlite_dbpage(%Q) WHERE pgno=?", p->zDb
-    );
+    sqlite3_result_int64(pCtx, recoverPageCount(p));
+    return;
   }else{
-    pStmt = p->pGetPage;
-  }
-
-  if( pStmt ){
-    if( pgno ) sqlite3_bind_int64(pStmt, 1, pgno);
-    if( SQLITE_ROW==sqlite3_step(pStmt) ){
-      sqlite3_result_value(pCtx, sqlite3_column_value(pStmt, 0));
-    }
-    if( pgno ){
-      p->pGetPage = recoverReset(p, pStmt);
+    if( p->pGetPage==0 ){
+      pStmt = recoverPreparePrintf(
+          p, p->dbIn, "SELECT data FROM sqlite_dbpage(%Q) WHERE pgno=?", p->zDb
+          );
     }else{
-      recoverFinalize(p, pStmt);
+      pStmt = p->pGetPage;
+    }
+
+    if( pStmt ){
+      sqlite3_bind_int64(pStmt, 1, pgno);
+      if( SQLITE_ROW==sqlite3_step(pStmt) ){
+        sqlite3_result_value(pCtx, sqlite3_column_value(pStmt, 0));
+      }
+        p->pGetPage = recoverReset(p, pStmt);
     }
   }
 
@@ -311,7 +372,7 @@ static int recoverCacheSchema(sqlite3_recover *p){
     "WITH RECURSIVE pages(p) AS ("
     "  SELECT 1"
     "    UNION"
-    "  SELECT child FROM recovery.dbptr, pages WHERE pgno=p"
+    "  SELECT child FROM sqlite_dbptr('getpage()'), pages WHERE pgno=p"
     ")"
     "INSERT INTO recovery.schema SELECT"
     "  max(CASE WHEN field=0 THEN value ELSE NULL END),"
@@ -504,6 +565,77 @@ static RecoverTable *recoverFindTable(sqlite3_recover *p, u32 iRoot){
   return pRet;
 }
 
+static int recoverWriteLostAndFound(sqlite3_recover *p){
+  i64 nPg = 0;
+  RecoverBitmap *pMap = 0;
+
+  nPg = recoverPageCount(p);
+  pMap = p->pUsed = recoverBitmapAlloc(p, nPg);
+  if( pMap ){
+    sqlite3_stmt *pStmt = 0;
+    char *zField = 0;
+    const char *zSep = 0;
+    int ii;
+
+    sqlite3_stmt *pStmt = recoverPrepare(
+        p, p->dbOut,
+        "WITH RECURSIVE used(page) AS ("
+        "  SELECT rootpage FROM recovery.schema WHERE rootpage>0"
+        "    UNION"
+        "  SELECT child FROM sqlite_dbptr('getpage()'), used "
+        "    WHERE pgno=page"
+        ") "
+        "SELECT page FROM used"
+    );
+    while( pStmt && sqlite3_step(pStmt) ){
+      i64 iPg = sqlite3_column_int64(pStmt);
+      recoverBitmapSet(pMap, iPg);
+    }
+    recoverFinalize(pStmt);
+
+    pStmt = recoverPreparePrintf(
+        p, p->dbOut,
+        "WITH RECURSIVE seq(ii) AS ("
+        "  SELECT 1 UNION ALL SELECT ii+1 FROM seq WHERE ii<%lld"
+        ")"
+        "INSERT INTO recover.map(pgno) "
+        "    SELECT ii FROM seq WHERE !page_is_used(ii)"
+    );
+    sqlite3_step(pStmt);
+    recoverFinalize(pStmt);
+
+    pStmt = recoverPrepare(
+        p, p->dbOut,
+        "UPDATE recover.map SET parent = ptr.pgno "
+        "    FROM sqlite_dbptr('getpage()') WHERE recover.map.pgno=ptr.child"
+    );
+    sqlite3_step(pStmt);
+    recoverFinalize(pStmt);
+      
+    pStmt = recoverPrepare(
+        p, p->dbOut,
+        "SELECT max(field) FROM sqlite_dbdata('getpage') WHERE pgno IN ("
+        "  SELECT pgno FROM recover.map"
+        ")"
+    );
+    if( pStmt && sqlite3_step(pStmt) ){
+      nMaxField = sqlite3_column_int64(pStmt, 0);
+    }
+    recoverFinalize(pStmt);
+
+    if( nMaxField==0 || p->errCode!=SQLITE_OK ) return p->errCode;
+
+    zSep = "rootpgno INTEGER, pgno INTEGER, nfield INTEGER, id INTEGER, ";
+    for(ii=0; ii<nMaxField; ii++){
+      zField = sqlite3_mprintf("%z%sc%d", zField, zSep, ii);
+      zSep = ", ";
+      if( zField==0 ){
+        p->errCode = SQLITE_NOMEM;
+      }
+    }
+  }
+}
+
 static int recoverWriteData(sqlite3_recover *p){
   RecoverTable *pTbl;
   int nMax = 0;
@@ -522,7 +654,8 @@ static int recoverWriteData(sqlite3_recover *p){
       "WITH RECURSIVE pages(root, page) AS ("
       "  SELECT rootpage, rootpage FROM recovery.schema"
       "    UNION"
-      "   SELECT root, child FROM recovery.dbptr, pages WHERE pgno=page"
+      "   SELECT root, child FROM sqlite_dbptr('getpage()'), pages "
+      "    WHERE pgno=page"
       ") "
       "SELECT root, page, cell, field, value "
       "FROM sqlite_dbdata('getpage()') d, pages p WHERE p.page=d.pgno "
@@ -677,6 +810,10 @@ int sqlite3_recover_config(sqlite3_recover *p, int op, void *pArg){
       p->zStateDb = sqlite3_mprintf("%s", (char*)pArg);
       break;
 
+    case SQLITE_RECOVER_LOST_AND_FOUND:
+      p->bLostAndFound = (pArg ? 1 : 0);
+      break;
+
     default:
       rc = SQLITE_NOTFOUND;
       break;
@@ -695,6 +832,7 @@ static void recoverStep(sqlite3_recover *p){
     if( recoverCacheSchema(p) ) return;
     if( recoverWriteSchema1(p) ) return;
     if( recoverWriteData(p) ) return;
+    if( p->bLostAndFound && recoverWriteLostAndFound(p) ) return;
     if( recoverWriteSchema2(p) ) return;
   }
 }
@@ -722,6 +860,7 @@ int sqlite3_recover_finish(sqlite3_recover *p){
   p->pGetPage = 0;
   rc = p->errCode;
 
+  sqlite3_free(p->zStateDb);
   sqlite3_free(p);
   return rc;
 }
