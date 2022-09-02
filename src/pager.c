@@ -7376,7 +7376,7 @@ int sqlite3PagerGetJournalMode(Pager *pPager){
 int sqlite3PagerOkToChangeJournalMode(Pager *pPager){
   assert( assert_pager_state(pPager) );
   if( pPager->eState>=PAGER_WRITER_CACHEMOD ) return 0;
-  if( NEVER(isOpen(pPager->jfd) && pPager->journalOff>0) ) return 0;
+  if( isOpen(pPager->jfd) && pPager->journalOff>0 ) return 0;
   return 1;
 }
 
