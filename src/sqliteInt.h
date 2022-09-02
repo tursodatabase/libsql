@@ -199,6 +199,11 @@
 #include "sqlite3.h"
 
 /*
+** Reuse the STATIC_LRU for mutex access to sqlite3_temp_directory.
+*/
+#define SQLITE_MUTEX_STATIC_TEMPDIR SQLITE_MUTEX_STATIC_VFS1
+
+/*
 ** Include the configuration header output by 'configure' if we're using the
 ** autoconf-based build
 */
