@@ -5576,7 +5576,7 @@ static BOOL winIsVerbatimPathname(
 ** pathname into zOut[].  zOut[] will be at least pVfs->mxPathname
 ** bytes in size.
 */
-static int winFullPathname(
+static int winFullPathnameNoMutex(
   sqlite3_vfs *pVfs,            /* Pointer to vfs object */
   const char *zRelative,        /* Possibly relative input path */
   int nFull,                    /* Size of output buffer in bytes */
@@ -5600,7 +5600,6 @@ static int winFullPathname(
   SimulateIOError( return SQLITE_ERROR );
   UNUSED_PARAMETER(nFull);
   assert( nFull>=pVfs->mxPathname );
-  sqlite3_mutex_enter(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_TEMPDIR));
   if ( sqlite3_data_directory && !winIsVerbatimPathname(zRelative) ){
     /*
     ** NOTE: We are dealing with a relative path name and the data
@@ -5651,7 +5650,6 @@ static int winFullPathname(
       sqlite3_free(zOut);
     }
   }
-  sqlite3_mutex_leave(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_TEMPDIR));
   return SQLITE_OK;
 #endif
 
@@ -5659,7 +5657,6 @@ static int winFullPathname(
   SimulateIOError( return SQLITE_ERROR );
   /* WinCE has no concept of a relative pathname, or so I am told. */
   /* WinRT has no way to convert a relative path to an absolute one. */
-  sqlite3_mutex_enter(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_TEMPDIR));
   if ( sqlite3_data_directory && !winIsVerbatimPathname(zRelative) ){
     /*
     ** NOTE: We are dealing with a relative path name and the data
@@ -5672,7 +5669,6 @@ static int winFullPathname(
   }else{
     sqlite3_snprintf(MIN(nFull, pVfs->mxPathname), zFull, "%s", zRelative);
   }
-  sqlite3_mutex_leave(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_TEMPDIR));
   return SQLITE_OK;
 #endif
 
@@ -5683,7 +5679,6 @@ static int winFullPathname(
   ** current working directory has been unlinked.
   */
   SimulateIOError( return SQLITE_ERROR );
-  sqlite3_mutex_enter(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_TEMPDIR));
   if ( sqlite3_data_directory && !winIsVerbatimPathname(zRelative) ){
     /*
     ** NOTE: We are dealing with a relative path name and the data
@@ -5693,7 +5688,6 @@ static int winFullPathname(
     */
     sqlite3_snprintf(MIN(nFull, pVfs->mxPathname), zFull, "%s%c%s",
                      sqlite3_data_directory, winGetDirSep(), zRelative);
-    sqlite3_mutex_leave(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_TEMPDIR));
     return SQLITE_OK;
   }
   zConverted = winConvertFromUtf8Filename(zRelative);
@@ -5760,6 +5754,19 @@ static int winFullPathname(
     return SQLITE_IOERR_NOMEM_BKPT;
   }
 #endif
+}
+static int winFullPathname(
+  sqlite3_vfs *pVfs,            /* Pointer to vfs object */
+  const char *zRelative,        /* Possibly relative input path */
+  int nFull,                    /* Size of output buffer in bytes */
+  char *zFull                   /* Output buffer */
+){
+  int rc;
+  sqlite3_mutex *pMutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_TEMPDIR);
+  sqlite3_mutex_enter(pMutex);
+  rc = winFullPathnameNoMutex(pVfs, zRelative, nFull, zFull);
+  sqlite3_mutex_leave(pMutex);
+  return rc;
 }
 
 #ifndef SQLITE_OMIT_LOAD_EXTENSION

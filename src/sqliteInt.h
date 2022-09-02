@@ -201,7 +201,7 @@
 /*
 ** Reuse the STATIC_LRU for mutex access to sqlite3_temp_directory.
 */
-#define SQLITE_MUTEX_STATIC_TEMPDIR SQLITE_MUTEX_STATIC_LRU
+#define SQLITE_MUTEX_STATIC_TEMPDIR SQLITE_MUTEX_STATIC_VFS1
 
 /*
 ** Include the configuration header output by 'configure' if we're using the
@@ -4561,6 +4561,7 @@ int sqlite3IndexHasDuplicateRootPage(Index*);
 int sqlite3Init(sqlite3*, char**);
 int sqlite3InitCallback(void*, int, char**, char**);
 int sqlite3InitOne(sqlite3*, int, char**, u32);
+char *sqlite3TempDirectory(void);
 void sqlite3Pragma(Parse*,Token*,Token*,Token*,int);
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 Module *sqlite3PragmaVtabRegister(sqlite3*,const char *zName);
