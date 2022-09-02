@@ -295,7 +295,6 @@ impl InnerConnection {
         unsafe { ffi::sqlite3_get_autocommit(self.db()) != 0 }
     }
 
-    #[cfg(feature = "modern_sqlite")] // 3.8.6
     pub fn is_busy(&self) -> bool {
         let db = self.db();
         unsafe {
@@ -310,7 +309,6 @@ impl InnerConnection {
         false
     }
 
-    #[cfg(feature = "modern_sqlite")] // 3.10.0
     pub fn cache_flush(&mut self) -> Result<()> {
         crate::error::check(unsafe { ffi::sqlite3_db_cacheflush(self.db()) })
     }
@@ -319,7 +317,6 @@ impl InnerConnection {
     #[inline]
     fn remove_hooks(&mut self) {}
 
-    #[cfg(feature = "modern_sqlite")] // 3.7.11
     pub fn db_readonly(&self, db_name: super::DatabaseName<'_>) -> Result<bool> {
         let name = db_name.as_cstring()?;
         let r = unsafe { ffi::sqlite3_db_readonly(self.db, name.as_ptr()) };

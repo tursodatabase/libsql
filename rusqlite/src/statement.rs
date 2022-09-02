@@ -796,21 +796,11 @@ impl Statement<'_> {
         self.conn.decode_result(stmt.finalize())
     }
 
-    #[cfg(all(feature = "modern_sqlite", feature = "extra_check"))]
+    #[cfg(feature = "extra_check")]
     #[inline]
     fn check_update(&self) -> Result<()> {
         // sqlite3_column_count works for DML but not for DDL (ie ALTER)
         if self.column_count() > 0 && self.stmt.readonly() {
-            return Err(Error::ExecuteReturnedResults);
-        }
-        Ok(())
-    }
-
-    #[cfg(all(not(feature = "modern_sqlite"), feature = "extra_check"))]
-    #[inline]
-    fn check_update(&self) -> Result<()> {
-        // sqlite3_column_count works for DML but not for DDL (ie ALTER)
-        if self.column_count() > 0 {
             return Err(Error::ExecuteReturnedResults);
         }
         Ok(())
@@ -825,8 +815,6 @@ impl Statement<'_> {
 
     /// Returns a string containing the SQL text of prepared statement with
     /// bound parameters expanded.
-    #[cfg(feature = "modern_sqlite")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "modern_sqlite")))]
     pub fn expanded_sql(&self) -> Option<String> {
         self.stmt
             .expanded_sql()
@@ -1407,7 +1395,6 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature = "modern_sqlite")]
     fn test_expanded_sql() -> Result<()> {
         let db = Connection::open_in_memory()?;
         let stmt = db.prepare("SELECT ?")?;
@@ -1537,7 +1524,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(all(feature = "modern_sqlite", not(feature = "bundled-sqlcipher")))] // SQLite >= 3.38.0
+    #[cfg(feature = "modern_sqlite")] // SQLite >= 3.38.0
     fn test_error_offset() -> Result<()> {
         use crate::ffi::ErrorCode;
         let db = Connection::open_in_memory()?;

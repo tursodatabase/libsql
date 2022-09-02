@@ -35,16 +35,16 @@ members = ["libsqlite3-sys"]
 [features]
 load_extension = []
 # hot-backup interface: 3.6.11 (2009-02-18)
-backup = ["libsqlite3-sys/min_sqlite_version_3_6_23"]
+backup = []
 # sqlite3_blob_reopen: 3.7.4
-blob = ["libsqlite3-sys/min_sqlite_version_3_7_7"]
+blob = []
 collation = []
 # sqlite3_create_function_v2: 3.7.3 (2010-10-08)
-functions = ["libsqlite3-sys/min_sqlite_version_3_7_7"]
+functions = []
 # sqlite3_log: 3.6.23 (2010-03-09)
-trace = ["libsqlite3-sys/min_sqlite_version_3_6_23"]
+trace = []
 # sqlite3_db_release_memory: 3.7.10 (2012-01-16)
-release_memory = ["libsqlite3-sys/min_sqlite_version_3_7_16"]
+release_memory = []
 bundled = ["libsqlite3-sys/bundled", "modern_sqlite"]
 bundled-sqlcipher = ["libsqlite3-sys/bundled-sqlcipher", "bundled"]
 bundled-sqlcipher-vendored-openssl = ["libsqlite3-sys/bundled-sqlcipher-vendored-openssl", "bundled-sqlcipher"]
@@ -55,7 +55,7 @@ i128_blob = []
 sqlcipher = ["libsqlite3-sys/sqlcipher"]
 unlock_notify = ["libsqlite3-sys/unlock_notify"]
 # xSavepoint, xRelease and xRollbackTo: 3.7.7 (2011-06-23)
-vtab = ["libsqlite3-sys/min_sqlite_version_3_7_7"]
+vtab = []
 csvtab = ["csv", "vtab"]
 # pointer passing interfaces: 3.20.0
 array = ["vtab"]
@@ -67,6 +67,7 @@ window = ["functions"]
 series = ["vtab"]
 # check for invalid query.
 extra_check = []
+# ]3.14.0, last]
 modern_sqlite = ["libsqlite3-sys/bundled_bindings"]
 in_gecko = ["modern_sqlite", "libsqlite3-sys/in_gecko"]
 bundled-windows = ["libsqlite3-sys/bundled-windows"]
