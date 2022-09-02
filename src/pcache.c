@@ -649,11 +649,20 @@ void sqlite3PcacheClearSyncFlags(PCache *pCache){
 */
 void sqlite3PcacheMove(PgHdr *p, Pgno newPgno){
   PCache *pCache = p->pCache;
+  sqlite3_pcache_page *pOther;
   assert( p->nRef>0 );
   assert( newPgno>0 );
   assert( sqlite3PcachePageSanity(p) );
   pcacheTrace(("%p.MOVE %d -> %d\n",pCache,p->pgno,newPgno));
+  pOther = sqlite3GlobalConfig.pcache2.xFetch(pCache->pCache, newPgno, 0);
   sqlite3GlobalConfig.pcache2.xRekey(pCache->pCache, p->pPage, p->pgno,newPgno);
+  if( pOther ){
+    PgHdr *pPg = (PgHdr*)pOther->pExtra;
+    pPg->pgno = p->pgno;
+    if( pPg->pPage==0 ){
+      sqlite3GlobalConfig.pcache2.xUnpin(pCache->pCache, pOther, 0);
+    }
+  }
   p->pgno = newPgno;
   if( (p->flags&PGHDR_DIRTY) && (p->flags&PGHDR_NEED_SYNC) ){
     pcacheManageDirtyList(p, PCACHE_DIRTYLIST_FRONT);

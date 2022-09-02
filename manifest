@@ -1,5 +1,5 @@
-C Enhance\sthe\spcache1\simplementation\sso\sthat\sduring\san\sxRekey\soperation\sif\nanother\spage\salready\sexists\sat\sthe\sdestination,\sthat\sother\spage\sgets\smoved\nto\sthe\ssource\skey.
-D 2022-09-02T14:29:54.641
+C If\ssqlite3PcacheMove()\sreally\sperforms\sa\sswap,\sthen\sbe\ssure\sto\srenumber\sthe\nsecond\spage.
+D 2022-09-02T15:09:55.423
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -578,7 +578,7 @@ F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c c60031c483960660853dfecf14c8e830503baab1f638ac997f0144f1bd3e1781
 F src/pager.h f82e9844166e1585f5786837ddc7709966138ced17f568c16af7ccf946c2baa3
 F src/parse.y 8e67d820030d2655b9942ffe61c1e7e6b96cea2f2f72183533299393907d0564
-F src/pcache.c 5a64e084260560910d9a61bc0e760394fa88aaa22201477ab3e49e278db92edb
+F src/pcache.c 22a6ebe498d1d26c85fd1e3bcb246d97b882c060027c1e1688fbea905f5ac3cf
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c 849a26ea9dc1e6a176b75dc576672a598170b0b46aeef87a981dd25e0af0ccf9
 F src/pragma.c 9bf7d8a2a9ad3bc36df3ec0d61817a44c38a1da527d59c26c203047f906e334a
@@ -1999,8 +1999,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8e6ad3a3e942a326cf16432e16d6596c7206c05b6f45cd0ff3a9b836bcfc9deb
-R 01ad42a8d2f31eadbe33e5f4a288db74
+P aadd38f99a3e5abcf9bef49f4367752f163cc79500a28f812bb71969d7de419c
+R 15f4aa96b5fcd17c040bad40e6f9e29d
 U drh
-Z dced8cd032db7b035db78c488a02a704
+Z 44f09c245350ada0933c5922c4c18b91
 # Remove this line to create a well-formed Fossil manifest.
