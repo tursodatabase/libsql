@@ -1,5 +1,5 @@
-C Defer\sdeleting\sa\stransient\sSELECT\sstatement\sassociated\swith\sa\sflattening\nof\sone\sarm\sof\sa\scompound\sSELECT\suntil\safter\sthe\sparse\shas\scompleted.
-D 2022-09-01T14:33:28.453
+C Mutex\sprotect\saccess\sto\sthe\ssqlite3_test_directory\sand\ssqlite3_data_directory\nglobal\svariables.\s\sSee\n[forum:/forumpost/719a11e1314d1c70|forum\sthread\s719a11e1314d1c70].
+D 2022-09-02T12:12:46.513
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -554,8 +554,8 @@ F src/os.c b1c4f2d485961e9a5b6b648c36687d25047c252222e9660b7cc25a6e1ea436ab
 F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
-F src/os_unix.c 2df2b33db88f00af13805d4573ee126bc5973f9e3b91d03c575fa7ba64e7dc41
-F src/os_win.c a8ea80037e81127ca01959daa87387cc135f325c88dc745376c4f760de852a10
+F src/os_unix.c e020676e334a0a78c3affb7dd1789a240071ed6af98309f1bef76948cb8382bd
+F src/os_win.c d55025aeb5b36b5d92d7c09fe709edaf2be901420782540ba4adad86729636a0
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 74596fc3d5d8a50de32c37225fc300cccd5ea27ea303c5f4b845d6572f999c5f
 F src/pager.h f82e9844166e1585f5786837ddc7709966138ced17f568c16af7ccf946c2baa3
@@ -563,7 +563,7 @@ F src/parse.y 8e67d820030d2655b9942ffe61c1e7e6b96cea2f2f72183533299393907d0564
 F src/pcache.c 084e638432c610f95aea72b8509f0845d2791293f39d1b82f0c0a7e089c3bb6b
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c 54881292a9a5db202b2c0ac541c5e3ef9a5e8c4f1c1383adb2601d5499a60e65
-F src/pragma.c d1aead03e8418ff586c7cfca344c50a914b8eb06abd841e8e91a982d823671da
+F src/pragma.c 404c0fe37b51f6def2c9ec6b07c80f0355673f0e74d720dc9a58a78725502417
 F src/pragma.h e690a356c18e98414d2e870ea791c1be1545a714ba623719deb63f7f226d8bb7
 F src/prepare.c c62820c15dcb63013519c8e41d9f928d7478672cc902cfd0581c733c271dbf45
 F src/printf.c e99ee9741e79ae3873458146f59644276657340385ade4e76a5f5d1c25793764
@@ -575,7 +575,7 @@ F src/shell.c.in 2b85128ca8ea13fc2dc32f971d628d9f688a324a30f469619b817ce490764fc
 F src/sqlite.h.in 01573eae96721f2a8ee2a9e3b7140ceeba2e9c44350911890b89b8ff0dcf6781
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h a988810c9b21c0dc36dc7a62735012339dc76fc7ab448fb0792721d30eacb69d
-F src/sqliteInt.h 059d5a017ebf488c7484f79ea507f56b2bf4bb700f340abf91c5d2227869f275
+F src/sqliteInt.h 9491831b5faa77584f0f7f52c087b48ba573714fa20a448a1550180ce42ef5aa
 F src/sqliteLimit.h d7323ffea5208c6af2734574bae933ca8ed2ab728083caa117c9738581a31657
 F src/status.c 4a3da6d77eeb3531cb0dbdf7047772a2a1b99f98c69e90ce009c75fe6328b2c0
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -1978,9 +1978,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5f93239a8c0fc724837b208fb3d48fd709c5b60c15e90dbb82fd046c0b735b04
-Q +1c4157c71cd1e062a9c2c79787d17e34e340f28ce1e40573851dfe174f5da7d7
-R b4a5bfbadcfae5c34625a68fc28894a1
+P 8403c0d5d626eaf6c4830e6d706af3ea2d84a9a12b8eecc6f549fa2ca24352b7
+Q +8e6ad3a3e942a326cf16432e16d6596c7206c05b6f45cd0ff3a9b836bcfc9deb
+R 32dac0bfcf2fe03201fd40ac7e94d211
 U drh
-Z 15bbf733e3ef371954fec2ba5159af74
+Z c93f1b045942c173ef76373f667879fe
 # Remove this line to create a well-formed Fossil manifest.
