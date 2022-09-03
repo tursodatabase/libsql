@@ -79,7 +79,8 @@ static int testRecoverCmd(
   switch( iSub ){
     case 0:  assert( sqlite3_stricmp("config", aSub[iSub].zSub)==0 ); {
       const char *aOp[] = {
-        "testdb",    /* 0 */
+        "testdb",          /* 0 */
+        "lostandfound",    /* 1 */
         0
       };
       int iOp = 0;
@@ -89,8 +90,13 @@ static int testRecoverCmd(
       }
       switch( iOp ){
         case 0:
-          res = sqlite3_recover_config(
-              pTest->p, SQLITE_RECOVER_TESTDB, (void*)Tcl_GetString(objv[3])
+          res = sqlite3_recover_config(pTest->p, 
+              SQLITE_RECOVER_TESTDB, (void*)Tcl_GetString(objv[3])
+          );
+          break;
+        case 1:
+          res = sqlite3_recover_config(pTest->p, 
+              SQLITE_RECOVER_LOST_AND_FOUND, (void*)Tcl_GetString(objv[3])
           );
           break;
       }

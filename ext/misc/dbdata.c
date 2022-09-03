@@ -477,6 +477,7 @@ static int dbdataNext(sqlite3_vtab_cursor *pCursor){
         rc = dbdataLoadPage(pCsr, pCsr->iPgno, &pCsr->aPage, &pCsr->nPage);
         if( rc!=SQLITE_OK ) return rc;
         if( pCsr->aPage ) break;
+        if( pCsr->bOnePage ) return SQLITE_OK;
         pCsr->iPgno++;
       }
       pCsr->iCell = pTab->bPtr ? -2 : 0;

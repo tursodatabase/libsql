@@ -22,6 +22,9 @@ typedef sqlite3_int64 i64;
 
 typedef struct RecoverColumn RecoverColumn;
 struct RecoverColumn {
+  int iField;                     /* Field in record on disk */
+  int iBind;                      /* Binding to use in INSERT */
+  int bIPK;                       /* True for IPK column */
   char *zCol;
   int eHidden;
 };
@@ -35,6 +38,9 @@ struct RecoverColumn {
 ** When running the ".recover" command, each output table, and the special
 ** orphaned row table if it is required, is represented by an instance
 ** of the following struct.
+**
+** aCol[]:
+**  Array of nCol columns. In the order in which they appear in the table.
 */
 typedef struct RecoverTable RecoverTable;
 struct RecoverTable {
@@ -43,7 +49,6 @@ struct RecoverTable {
   int nCol;                       /* Number of columns in table */
   RecoverColumn *aCol;            /* Array of columns */
   int bIntkey;                    /* True for intkey, false for without rowid */
-  int iPk;                        /* Index of IPK column, if bIntkey */
 
   RecoverTable *pNext;
 };
@@ -81,13 +86,13 @@ struct sqlite3_recover {
   char *zDb;
   char *zUri;
   RecoverTable *pTblList;
-  RecoverBitmap *pUsed;           /* Used by recoverWriteLostAndFound() */
+  RecoverBitmap *pUsed;           /* Used by recoverLostAndFound() */
 
   int errCode;                    /* For sqlite3_recover_errcode() */
   char *zErrMsg;                  /* For sqlite3_recover_errmsg() */
 
   char *zStateDb;
-  int bLostAndFound;
+  char *zLostAndFound;            /* Name of lost-and-found table (or NULL) */
 
 };
 
@@ -238,6 +243,21 @@ static int recoverExec(sqlite3_recover *p, sqlite3 *db, const char *zSql){
   return p->errCode;
 }
 
+static char *recoverPrintf(sqlite3_recover *p, const char *zFmt, ...){
+  va_list ap;
+  char *z;
+  va_start(ap, zFmt);
+  z = sqlite3_vmprintf(zFmt, ap);
+  va_end(ap);
+  if( p->errCode==SQLITE_OK ){
+    if( z==0 ) p->errCode = SQLITE_NOMEM;
+  }else{
+    sqlite3_free(z);
+    z = 0;
+  }
+  return z;
+}
+
 /*
 ** Execute "PRAGMA page_count" against the input database. If successful,
 ** return the integer result. Or, if an error occurs, leave an error code 
@@ -254,6 +274,24 @@ static i64 recoverPageCount(sqlite3_recover *p){
     recoverFinalize(p, pStmt);
   }
   return nPg;
+}
+
+/*
+** SELECT page_is_used(pgno);
+*/
+static void recoverPageIsUsed(
+  sqlite3_context *pCtx,
+  int nArg,
+  sqlite3_value **apArg
+){
+  sqlite3_recover *p = (sqlite3_recover*)sqlite3_user_data(pCtx);
+  sqlite3_int64 pgno = sqlite3_value_int64(apArg[0]);
+  sqlite3_stmt *pStmt = 0;
+  int bRet;
+
+  assert( nArg==1 );
+  bRet = recoverBitmapQuery(p->pUsed, pgno);
+  sqlite3_result_int(pCtx, bRet);
 }
 
 /*
@@ -281,13 +319,14 @@ static void recoverGetPage(
 
   assert( nArg==1 );
   if( pgno==0 ){
-    sqlite3_result_int64(pCtx, recoverPageCount(p));
+    i64 nPg = recoverPageCount(p);
+    sqlite3_result_int64(pCtx, nPg);
     return;
   }else{
     if( p->pGetPage==0 ){
       pStmt = recoverPreparePrintf(
           p, p->dbIn, "SELECT data FROM sqlite_dbpage(%Q) WHERE pgno=?", p->zDb
-          );
+      );
     }else{
       pStmt = p->pGetPage;
     }
@@ -322,6 +361,9 @@ static int recoverOpenOutput(sqlite3_recover *p){
 
     rc = sqlite3_open_v2(p->zUri, &db, flags, 0);
     if( rc==SQLITE_OK ){
+      rc = sqlite3_exec(db, "PRAGMA writable_schema = 1", 0, 0, 0);
+    }
+    if( rc==SQLITE_OK ){
       const char *zPath = p->zStateDb ? p->zStateDb : ":memory:";
       char *zSql = sqlite3_mprintf("ATTACH %Q AS recovery", zPath);
       if( zSql==0 ){
@@ -331,6 +373,7 @@ static int recoverOpenOutput(sqlite3_recover *p){
       }
       sqlite3_free(zSql);
     }
+
 
     if( rc==SQLITE_OK ){
       sqlite3_backup *pBackup = sqlite3_backup_init(db, "main", db, "recovery");
@@ -347,6 +390,11 @@ static int recoverOpenOutput(sqlite3_recover *p){
       sqlite3_dbdata_init(db, 0, 0);
       rc = sqlite3_create_function(
           db, "getpage", 1, SQLITE_UTF8, (void*)p, recoverGetPage, 0, 0
+      );
+    }
+    if( rc==SQLITE_OK ){
+      rc = sqlite3_create_function(
+          db, "page_is_used", 1, SQLITE_UTF8, (void*)p, recoverPageIsUsed, 0, 0
       );
     }
 
@@ -392,6 +440,7 @@ static void recoverAddTable(sqlite3_recover *p, const char *zName, i64 iRoot){
   );
 
   if( pStmt ){
+    int iPk = -1;
     RecoverTable *pNew = 0;
     int nCol = 0;
     int nName = recoverStrlen(zName);
@@ -406,24 +455,37 @@ static void recoverAddTable(sqlite3_recover *p, const char *zName, i64 iRoot){
     pNew = recoverMalloc(p, nByte);
     if( pNew ){
       int i = 0;
+      int iField = 0;
+      int iBind = 1;
       char *csr = 0;
       pNew->aCol = (RecoverColumn*)&pNew[1];
       pNew->zTab = csr = (char*)&pNew->aCol[nCol];
       pNew->nCol = nCol;
       pNew->iRoot = iRoot;
-      pNew->iPk = -1;
       memcpy(csr, zName, nName);
       csr += nName+1;
 
       for(i=0; sqlite3_step(pStmt)==SQLITE_ROW; i++){
-        int bPk = sqlite3_column_int(pStmt, 5);
+        int iPKF = sqlite3_column_int(pStmt, 5);
         int n = sqlite3_column_bytes(pStmt, 1);
         const char *z = (const char*)sqlite3_column_text(pStmt, 1);
+        const char *zType = (const char*)sqlite3_column_text(pStmt, 2);
         int eHidden = sqlite3_column_int(pStmt, 6);
 
-        if( bPk ) pNew->iPk = i;
+        if( iPk==-1 && iPKF==1 && !sqlite3_stricmp("integer", zType) ) iPk = i;
+        if( iPKF>1 ) iPk = -2;
         pNew->aCol[i].zCol = csr;
         pNew->aCol[i].eHidden = eHidden;
+        if( eHidden==RECOVER_EHIDDEN_VIRTUAL ){
+          pNew->aCol[i].iField = -1;
+        }else{
+          pNew->aCol[i].iField = iField++;
+        }
+        if( eHidden!=RECOVER_EHIDDEN_VIRTUAL
+         && eHidden!=RECOVER_EHIDDEN_STORED
+        ){
+          pNew->aCol[i].iBind = iBind++;
+        }
         memcpy(csr, z, n);
         csr += (n+1);
       }
@@ -434,18 +496,26 @@ static void recoverAddTable(sqlite3_recover *p, const char *zName, i64 iRoot){
 
     recoverFinalize(p, pStmt);
 
-    pStmt = recoverPreparePrintf(p, p->dbOut, "PRAGMA index_info(%Q)", zName);
-    if( pStmt && sqlite3_step(pStmt)!=SQLITE_ROW ){
-      pNew->bIntkey = 1;
-    }else{
-      pNew->iPk = -1;
+    pNew->bIntkey = 1;
+    pStmt = recoverPreparePrintf(p, p->dbOut, "PRAGMA index_xinfo(%Q)", zName);
+    while( pStmt && sqlite3_step(pStmt)==SQLITE_ROW ){
+      int iField = sqlite3_column_int(pStmt, 0);
+      int iCol = sqlite3_column_int(pStmt, 1);
+
+      assert( iField<pNew->nCol && iCol<pNew->nCol );
+      pNew->aCol[iCol].iField = iField;
+
+      pNew->bIntkey = 0;
+      iPk = -2;
     }
     recoverFinalize(p, pStmt);
+
+    if( iPk>=0 ) pNew->aCol[iPk].bIPK = 1;
   }
 }
 
 /*
-**  
+**
 */
 static int recoverWriteSchema1(sqlite3_recover *p){
   sqlite3_stmt *pSelect = 0;
@@ -453,7 +523,8 @@ static int recoverWriteSchema1(sqlite3_recover *p){
 
   pSelect = recoverPrepare(p, p->dbOut,
       "SELECT rootpage, sql, type='table' FROM recovery.schema "
-      "  WHERE type='table' OR (type='index' AND sql LIKE '%unique%')"
+      "  WHERE type='table' OR (type='index' AND sql LIKE '%unique%') "
+      "  ORDER BY type!='table', name!='sqlite_sequence'"
   );
 
   pTblname = recoverPrepare(p, p->dbOut,
@@ -545,8 +616,9 @@ static sqlite3_stmt *recoverInsertStmt(
     if( eHidden!=RECOVER_EHIDDEN_VIRTUAL
      && eHidden!=RECOVER_EHIDDEN_STORED
     ){
+      assert( pTab->aCol[ii].iField>=0 && pTab->aCol[ii].iBind>=1 );
       zSql = recoverMPrintf(p, "%z%s%Q", zSql, zSep, pTab->aCol[ii].zCol);
-      zBind = recoverMPrintf(p, "%z%s?", zBind, zSep);
+      zBind = recoverMPrintf(p, "%z%s?%d", zBind, zSep, pTab->aCol[ii].iBind);
       zSep = ", ";
     }
   }
@@ -565,74 +637,268 @@ static RecoverTable *recoverFindTable(sqlite3_recover *p, u32 iRoot){
   return pRet;
 }
 
-static int recoverWriteLostAndFound(sqlite3_recover *p){
+/*
+** This function attempts to create a lost and found table within the 
+** output db. If successful, it returns a pointer to a buffer containing
+** the name of the new table. It is the responsibility of the caller to
+** eventually free this buffer using sqlite3_free().
+**
+** If an error occurs, NULL is returned and an error code and error 
+** message left in the recover handle.
+*/
+static char *recoverLostAndFoundCreate(
+  sqlite3_recover *p,             /* Recover object */
+  int nField                      /* Number of column fields in new table */
+){
+  char *zTbl = 0;
+  sqlite3_stmt *pProbe = 0;
+  int ii = 0;
+
+  pProbe = recoverPrepare(p, p->dbOut,
+    "SELECT 1 FROM sqlite_schema WHERE name=?"
+  );
+  for(ii=-1; zTbl==0 && p->errCode==SQLITE_OK && ii<1000; ii++){
+    int bFail = 0;
+    if( ii<0 ){
+      zTbl = recoverPrintf(p, "%s", p->zLostAndFound);
+    }else{
+      zTbl = recoverPrintf(p, "%s_%d", p->zLostAndFound, ii);
+    }
+
+    if( p->errCode==SQLITE_OK ){
+      sqlite3_bind_text(pProbe, 1, zTbl, -1, SQLITE_STATIC);
+      if( SQLITE_ROW==sqlite3_step(pProbe) ){
+        bFail = 1;
+      }
+      recoverReset(p, pProbe);
+    }
+
+    if( bFail ){
+      sqlite3_clear_bindings(pProbe);
+      sqlite3_free(zTbl);
+      zTbl = 0;
+    }
+  }
+  recoverFinalize(p, pProbe);
+
+  if( zTbl ){
+    const char *zSep = 0;
+    char *zField = 0;
+    char *zSql = 0;
+
+    zSep = "rootpgno INTEGER, pgno INTEGER, nfield INTEGER, id INTEGER, ";
+    for(ii=0; p->errCode==SQLITE_OK && ii<nField; ii++){
+      zField = recoverMPrintf(p, "%z%sc%d", zField, zSep, ii);
+      zSep = ", ";
+    }
+
+    zSql = recoverPrintf(p, "CREATE TABLE %s(%s)", zTbl, zField);
+    sqlite3_free(zField);
+
+    recoverExec(p, p->dbOut, zSql);
+    sqlite3_free(zSql);
+  }else if( p->errCode==SQLITE_OK ){
+    recoverError(
+        p, SQLITE_ERROR, "failed to create %s output table", p->zLostAndFound
+    );
+  }
+
+  return zTbl;
+}
+
+/*
+** Synthesize and prepare an INSERT statement to write to the lost_and_found
+** table in the output database. The name of the table is zTab, and it has
+** nField c* fields.
+*/
+static sqlite3_stmt *recoverLostAndFoundInsert(
+  sqlite3_recover *p,
+  const char *zTab,
+  int nField
+){
+  int nTotal = nField + 4;
+  int ii;
+  char *zBind = 0;
+  const char *zSep = "";
+  sqlite3_stmt *pRet = 0;
+
+  for(ii=0; ii<nTotal; ii++){
+    zBind = recoverMPrintf(p, "%z%s?", zBind, zBind?", ":"", ii);
+  }
+
+  pRet = recoverPreparePrintf(
+      p, p->dbOut, "INSERT INTO %s VALUES(%s)", zTab, zBind
+  );
+  sqlite3_free(zBind);
+  return pRet;
+}
+
+static void recoverLostAndFoundPopulate(
+  sqlite3_recover *p, 
+  sqlite3_stmt *pInsert,
+  int nField
+){
+  sqlite3_stmt *pStmt = recoverPrepare(p, p->dbOut,
+      "WITH RECURSIVE pages(root, page) AS ("
+      "  SELECT pgno, pgno FROM recovery.map WHERE parent IS NULL"
+      "    UNION"
+      "  SELECT root, child FROM sqlite_dbptr('getpage()'), pages "
+      "    WHERE pgno=page"
+      ") "
+      "SELECT root, page, cell, field, value "
+      "FROM sqlite_dbdata('getpage()') d, pages p WHERE p.page=d.pgno "
+      "  AND NOT page_is_used(page) "
+      "UNION ALL "
+      "SELECT 0, 0, 0, 0, 0"
+  );
+
+  sqlite3_value **apVal = 0;
+  int nVal = -1;
+  i64 iRowid = 0;
+  int bHaveRowid = 0;
+  int ii;
+
+  i64 iPrevRoot = -1;
+  i64 iPrevPage = -1;
+  int iPrevCell = -1;
+
+  apVal = (sqlite3_value**)recoverMalloc(p, nField*sizeof(sqlite3_value*));
+  while( p->errCode==SQLITE_OK && SQLITE_ROW==sqlite3_step(pStmt) ){
+    i64 iRoot = sqlite3_column_int64(pStmt, 0);
+    i64 iPage = sqlite3_column_int64(pStmt, 1);
+    int iCell = sqlite3_column_int64(pStmt, 2);
+    int iField = sqlite3_column_int64(pStmt, 3);
+
+    if( iPrevRoot>0 && (
+      iPrevRoot!=iRoot || iPrevPage!=iPage || iPrevCell!=iCell
+    )){
+      /* Insert the new row */
+      sqlite3_bind_int64(pInsert, 1, iPrevRoot);  /* rootpgno */
+      sqlite3_bind_int64(pInsert, 2, iPrevPage);  /* pgno */
+      sqlite3_bind_int(pInsert, 3, nVal);         /* nfield */
+      if( bHaveRowid ){
+        sqlite3_bind_int64(pInsert, 4, iRowid);   /* id */
+      }
+      for(ii=0; ii<nVal; ii++){
+        sqlite3_bind_value(pInsert, 5+ii, apVal[ii]);
+      }
+      sqlite3_step(pInsert);
+      recoverReset(p, pInsert);
+
+      /* Discard the accumulated row data */
+      for(ii=0; ii<nVal; ii++){
+        sqlite3_value_free(apVal[ii]);
+        apVal[ii] = 0;
+      }
+      bHaveRowid = 0;
+      nVal = -1;
+    }
+
+    if( iField<0 ){
+      assert( nVal==-1 );
+      iRowid = sqlite3_column_int64(pStmt, 4);
+      bHaveRowid = 1;
+      nVal = 0;
+    }else if( iField<nField && iRoot!=0 ){
+      sqlite3_value *pVal = sqlite3_column_value(pStmt, 4);
+      apVal[iField] = sqlite3_value_dup(pVal);
+      assert( iField==nVal || (nVal==-1 && iField==0) );
+      nVal = iField+1;
+    }
+
+    iPrevRoot = iRoot;
+    iPrevPage = iPage;
+    iPrevCell = iCell;
+  }
+  recoverFinalize(p, pStmt);
+
+  for(ii=0; ii<nVal; ii++){
+    sqlite3_value_free(apVal[ii]);
+    apVal[ii] = 0;
+  }
+  sqlite3_free(apVal);
+}
+
+static int recoverLostAndFound(sqlite3_recover *p){
   i64 nPg = 0;
   RecoverBitmap *pMap = 0;
 
   nPg = recoverPageCount(p);
   pMap = p->pUsed = recoverBitmapAlloc(p, nPg);
   if( pMap ){
-    sqlite3_stmt *pStmt = 0;
-    char *zField = 0;
-    const char *zSep = 0;
-    int ii;
+    char *zTab = 0;               /* Name of lost_and_found table */
+    sqlite3_stmt *pInsert = 0;    /* INSERT INTO lost_and_found ... */
+    int nField = 0;
 
+    /* Add all pages that are part of any tree in the recoverable part of
+    ** the input database schema to the bitmap. */
     sqlite3_stmt *pStmt = recoverPrepare(
         p, p->dbOut,
-        "WITH RECURSIVE used(page) AS ("
+        "WITH roots(r) AS ("
+        "  SELECT 1 UNION ALL"
         "  SELECT rootpage FROM recovery.schema WHERE rootpage>0"
+        "),"
+        "used(page) AS ("
+        "  SELECT r FROM roots"
         "    UNION"
         "  SELECT child FROM sqlite_dbptr('getpage()'), used "
         "    WHERE pgno=page"
         ") "
         "SELECT page FROM used"
     );
-    while( pStmt && sqlite3_step(pStmt) ){
-      i64 iPg = sqlite3_column_int64(pStmt);
+    while( pStmt && SQLITE_ROW==sqlite3_step(pStmt) ){
+      i64 iPg = sqlite3_column_int64(pStmt, 0);
       recoverBitmapSet(pMap, iPg);
     }
-    recoverFinalize(pStmt);
+    recoverFinalize(p, pStmt);
 
+    /* Add an entry for each page not already added to the bitmap to 
+    ** the recovery.map table. This loop leaves the "parent" column
+    ** of each recovery.map row set to NULL - to be filled in below.  */
     pStmt = recoverPreparePrintf(
         p, p->dbOut,
         "WITH RECURSIVE seq(ii) AS ("
         "  SELECT 1 UNION ALL SELECT ii+1 FROM seq WHERE ii<%lld"
         ")"
-        "INSERT INTO recover.map(pgno) "
-        "    SELECT ii FROM seq WHERE !page_is_used(ii)"
+        "INSERT INTO recovery.map(pgno) "
+        "    SELECT ii FROM seq WHERE NOT page_is_used(ii)", nPg
     );
     sqlite3_step(pStmt);
-    recoverFinalize(pStmt);
+    recoverFinalize(p, pStmt);
 
+    /* Set the "parent" column for each row of the recovery.map table */
     pStmt = recoverPrepare(
         p, p->dbOut,
-        "UPDATE recover.map SET parent = ptr.pgno "
-        "    FROM sqlite_dbptr('getpage()') WHERE recover.map.pgno=ptr.child"
+        "UPDATE recovery.map SET parent = ptr.pgno "
+        "    FROM sqlite_dbptr('getpage()') AS ptr "
+        "    WHERE recovery.map.pgno=ptr.child"
     );
     sqlite3_step(pStmt);
-    recoverFinalize(pStmt);
+    recoverFinalize(p, pStmt);
       
+    /* Figure out the number of fields in the longest record that will be
+    ** recovered into the lost_and_found table. Set nField to this value. */
     pStmt = recoverPrepare(
         p, p->dbOut,
-        "SELECT max(field) FROM sqlite_dbdata('getpage') WHERE pgno IN ("
-        "  SELECT pgno FROM recover.map"
+        "SELECT max(field)+1 FROM sqlite_dbdata('getpage') WHERE pgno IN ("
+        "  SELECT pgno FROM recovery.map"
         ")"
     );
-    if( pStmt && sqlite3_step(pStmt) ){
-      nMaxField = sqlite3_column_int64(pStmt, 0);
+    if( pStmt && SQLITE_ROW==sqlite3_step(pStmt) ){
+      nField = sqlite3_column_int64(pStmt, 0);
     }
-    recoverFinalize(pStmt);
+    recoverFinalize(p, pStmt);
 
-    if( nMaxField==0 || p->errCode!=SQLITE_OK ) return p->errCode;
-
-    zSep = "rootpgno INTEGER, pgno INTEGER, nfield INTEGER, id INTEGER, ";
-    for(ii=0; ii<nMaxField; ii++){
-      zField = sqlite3_mprintf("%z%sc%d", zField, zSep, ii);
-      zSep = ", ";
-      if( zField==0 ){
-        p->errCode = SQLITE_NOMEM;
-      }
+    if( nField>0 ){
+      zTab = recoverLostAndFoundCreate(p, nField);
+      pInsert = recoverLostAndFoundInsert(p, zTab, nField);
+      recoverLostAndFoundPopulate(p, pInsert, nField);
+      recoverFinalize(p, pInsert);
+      sqlite3_free(zTab);
     }
+
+    recoverBitmapFree(pMap);
+    p->pUsed = 0;
   }
 }
 
@@ -647,7 +913,7 @@ static int recoverWriteData(sqlite3_recover *p){
     if( pTbl->nCol>nMax ) nMax = pTbl->nCol;
   }
 
-  apVal = (sqlite3_value**)recoverMalloc(p, sizeof(sqlite3_value*) * nMax);
+  apVal = (sqlite3_value**)recoverMalloc(p, sizeof(sqlite3_value*) * (nMax+1));
   if( apVal==0 ) return p->errCode;
 
   pSel = recoverPrepare(p, p->dbOut, 
@@ -697,26 +963,15 @@ static int recoverWriteData(sqlite3_recover *p){
               nInsert = nVal;
             }
 
-            for(ii=0; ii<pTab->nCol && iVal<nVal; ii++){
-              int eHidden = pTab->aCol[ii].eHidden;
-              switch( eHidden ){
-                case RECOVER_EHIDDEN_NONE:
-                case RECOVER_EHIDDEN_HIDDEN:
-                  if( ii==pTab->iPk ){
-                    sqlite3_bind_int64(pInsert, iBind, iRowid);
-                  }else{
-                    sqlite3_bind_value(pInsert, iBind, apVal[iVal]);
-                  }
-                  iBind++;
-                  iVal++;
-                  break;
+            for(ii=0; ii<pTab->nCol; ii++){
+              RecoverColumn *pCol = &pTab->aCol[ii];
 
-                case RECOVER_EHIDDEN_VIRTUAL:
-                  break;
-
-                case RECOVER_EHIDDEN_STORED:
-                  iVal++;
-                  break;
+              if( pCol->iBind>0 ){
+                if( pCol->bIPK ){
+                  sqlite3_bind_int64(pInsert, pCol->iBind, iRowid);
+                }else if( pCol->iField<nVal ){
+                  sqlite3_bind_value(pInsert, pCol->iBind, apVal[pCol->iField]);
+                }
               }
             }
 
@@ -811,7 +1066,13 @@ int sqlite3_recover_config(sqlite3_recover *p, int op, void *pArg){
       break;
 
     case SQLITE_RECOVER_LOST_AND_FOUND:
-      p->bLostAndFound = (pArg ? 1 : 0);
+      const char *zArg = (const char*)pArg;
+      sqlite3_free(p->zLostAndFound);
+      if( zArg ){
+        p->zLostAndFound = recoverPrintf(p, "%s", zArg);
+      }else{
+        p->zLostAndFound = 0;
+      }
       break;
 
     default:
@@ -832,7 +1093,7 @@ static void recoverStep(sqlite3_recover *p){
     if( recoverCacheSchema(p) ) return;
     if( recoverWriteSchema1(p) ) return;
     if( recoverWriteData(p) ) return;
-    if( p->bLostAndFound && recoverWriteLostAndFound(p) ) return;
+    if( p->zLostAndFound && recoverLostAndFound(p) ) return;
     if( recoverWriteSchema2(p) ) return;
   }
 }
@@ -861,6 +1122,7 @@ int sqlite3_recover_finish(sqlite3_recover *p){
   rc = p->errCode;
 
   sqlite3_free(p->zStateDb);
+  sqlite3_free(p->zLostAndFound);
   sqlite3_free(p);
   return rc;
 }

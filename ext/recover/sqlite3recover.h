@@ -38,6 +38,18 @@ sqlite3_recover *sqlite3_recover_init(
 /* Details TBD. */
 int sqlite3_recover_config(sqlite3_recover*, int op, void *pArg);
 
+/*
+** SQLITE_RECOVER_TESTDB:
+**
+**
+** SQLITE_RECOVER_LOST_AND_FOUND:
+**   The pArg argument points to a string buffer containing the name
+**   of a "lost-and-found" table in the output database, or NULL. If
+**   the argument is non-NULL and the database contains seemingly
+**   valid pages that cannot be associated with any table in the
+**   recovered part of the schema, data is extracted from these
+**   pages to add to the lost-and-found table.
+*/
 #define SQLITE_RECOVER_TESTDB         789
 #define SQLITE_RECOVER_LOST_AND_FOUND 790
 
