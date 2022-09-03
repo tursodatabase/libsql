@@ -167,9 +167,12 @@ $(post-js.js): $(post-jses) $(MAKEFILE)
 
 
 ########################################################################
-# emcc flags for .c/.o/.wasm.
+# emcc flags for .c/.o/.wasm/.js.
 emcc.flags =
 #emcc.flags += -v # _very_ loud but also informative about what it's doing
+# -g is needed to keep -O2 and higher from creating broken JS via
+# minification.
+emcc.flags += -g
 
 ########################################################################
 # emcc flags for .c/.o.
@@ -181,6 +184,7 @@ emcc.cflags += -I. -I$(dir.top) # $(SQLITE_OPT)
 ########################################################################
 # emcc flags specific to building the final .js/.wasm file...
 emcc.jsflags := -fPIC
+emcc.jsflags := --minify 0
 emcc.jsflags += --no-entry
 emcc.jsflags += -sMODULARIZE
 emcc.jsflags += -sSTRICT_JS
@@ -303,7 +307,11 @@ $(speedtest1.sql): $(speedtest1)
 batch-runner.list: $(MAKEFILE) $(speedtest1.sql) $(dir.sql)/000-mandelbrot.sql
 	bash split-speedtest1-script.sh $(dir.sql)/speedtest1.sql
 	ls -1 $(dir.sql)/*.sql | grep -v speedtest1.sql | sort > $@
-CLEAN_FILES += batch-runner.list $(dir.sql)/speedtest1*.sql
+clean-batch:
+	rm -f batch-runner.list $(dir.sql)/speedtest1*.sql
+# ^^^ we don't do this along with 'clean' because we clean/rebuild on
+# a regular basis with different -Ox flags and rebuilding the batch
+# pieces each time is an unnecessary time sink.
 batch: batch-runner.list
 all: batch
 

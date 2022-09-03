@@ -122,6 +122,11 @@
      sqlite3InitModule() factory function.
   */
   self.sqlite3TestModule = {
+    /**
+       Array of functions to call after Emscripten has initialized the
+       wasm module. Each gets passed the Emscripten module object
+       (which is _this_ object).
+    */
     postRun: [
       /* function(theModule){...} */
     ],
@@ -135,10 +140,10 @@
       console.error.apply(console, Array.prototype.slice.call(arguments));
     },
     /**
-       Called by the module init bits to report loading
-       progress. It gets passed an empty argument when loading is
-       done (after onRuntimeInitialized() and any this.postRun
-       callbacks have been run).
+       Called by the Emscripten module init bits to report loading
+       progress. It gets passed an empty argument when loading is done
+       (after onRuntimeInitialized() and any this.postRun callbacks
+       have been run).
     */
     setStatus: function f(text){
       if(!f.last){

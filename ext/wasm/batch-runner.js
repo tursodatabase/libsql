@@ -10,12 +10,11 @@
 
   ***********************************************************************
 
-  A basic batch SQL running for sqlite3-api.js. This file must be run in
+  A basic batch SQL runner for sqlite3-api.js. This file must be run in
   main JS thread and sqlite3.js must have been loaded before it.
 */
 'use strict';
 (function(){
-  const T = self.SqliteTestUtil;
   const toss = function(...args){throw new Error(args.join(' '))};
   const warn = console.warn.bind(console);
 
@@ -218,7 +217,7 @@
       const url = URL.createObjectURL(b);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'batch-runner-metrics-'+((new Date().getTime()/1000) | 0)+'.csv';
+      a.download = 'batch-runner-js-'+((new Date().getTime()/1000) | 0)+'.csv';
       this.logHtml("Triggering download of",a.download);
       document.body.appendChild(a);
       a.click();
@@ -376,10 +375,10 @@
         }
       }, false);
       this.e.btnExportMetrics.addEventListener('click', function(){
-        who.logHtml2('warning',"Metrics export is a Work in Progress. See output in dev console.");
+        who.logHtml2('warning',"Triggering download of metrics CSV. Check your downloads folder.");
         who.downloadMetrics();
-        const m = who.metricsToArrays();
-        console.log("Metrics:",who.metrics, m);
+        //const m = who.metricsToArrays();
+        //console.log("Metrics:",who.metrics, m);
       });
       this.e.btnRunRemaining.addEventListener('click', async function(){
         let v = who.e.selSql.value;
