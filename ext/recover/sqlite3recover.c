@@ -107,7 +107,7 @@ static int recoverStrlen(const char *zStr){
   return nRet;
 }
 
-static void *recoverMalloc(sqlite3_recover *p, sqlite3_int64 nByte){
+static void *recoverMalloc(sqlite3_recover *p, i64 nByte){
   void *pRet = 0;
   assert( nByte>0 );
   if( p->errCode==SQLITE_OK ){
@@ -277,6 +277,36 @@ static i64 recoverPageCount(sqlite3_recover *p){
 }
 
 /*
+** Scalar function "read_i32". The first argument to this function
+** must be a blob. The second a non-negative integer. This function
+** reads and returns a 32-bit big-endian integer from byte
+** offset (4*<arg2>) of the blob.
+*/
+static void recoverReadI32(
+  sqlite3_context *context, 
+  int argc, 
+  sqlite3_value **argv
+){
+  const unsigned char *pBlob;
+  int nBlob;
+  int iInt;
+
+  assert( argc==2 );
+  nBlob = sqlite3_value_bytes(argv[0]);
+  pBlob = (const unsigned char*)sqlite3_value_blob(argv[0]);
+  iInt = sqlite3_value_int(argv[1]);
+
+  if( iInt>=0 && (iInt+1)*4<=nBlob ){
+    const unsigned char *a = &pBlob[iInt*4];
+    i64 iVal = ((i64)a[0]<<24)
+             + ((i64)a[1]<<16)
+             + ((i64)a[2]<< 8)
+             + ((i64)a[3]<< 0);
+    sqlite3_result_int64(context, iVal);
+  }
+}
+
+/*
 ** SELECT page_is_used(pgno);
 */
 static void recoverPageIsUsed(
@@ -285,7 +315,7 @@ static void recoverPageIsUsed(
   sqlite3_value **apArg
 ){
   sqlite3_recover *p = (sqlite3_recover*)sqlite3_user_data(pCtx);
-  sqlite3_int64 pgno = sqlite3_value_int64(apArg[0]);
+  i64 pgno = sqlite3_value_int64(apArg[0]);
   sqlite3_stmt *pStmt = 0;
   int bRet;
 
@@ -314,7 +344,7 @@ static void recoverGetPage(
   sqlite3_value **apArg
 ){
   sqlite3_recover *p = (sqlite3_recover*)sqlite3_user_data(pCtx);
-  sqlite3_int64 pgno = sqlite3_value_int64(apArg[0]);
+  i64 pgno = sqlite3_value_int64(apArg[0]);
   sqlite3_stmt *pStmt = 0;
 
   assert( nArg==1 );
@@ -395,6 +425,11 @@ static int recoverOpenOutput(sqlite3_recover *p){
     if( rc==SQLITE_OK ){
       rc = sqlite3_create_function(
           db, "page_is_used", 1, SQLITE_UTF8, (void*)p, recoverPageIsUsed, 0, 0
+      );
+    }
+    if( rc==SQLITE_OK ){
+      rc = sqlite3_create_function(
+          db, "read_i32", 2, SQLITE_UTF8, (void*)p, recoverReadI32, 0, 0
       );
     }
 
@@ -845,6 +880,29 @@ static int recoverLostAndFound(sqlite3_recover *p){
         "    WHERE pgno=page"
         ") "
         "SELECT page FROM used"
+    );
+    while( pStmt && SQLITE_ROW==sqlite3_step(pStmt) ){
+      i64 iPg = sqlite3_column_int64(pStmt, 0);
+      recoverBitmapSet(pMap, iPg);
+    }
+    recoverFinalize(p, pStmt);
+
+    /* Add all pages that appear to be part of the freelist to the bitmap. */
+    pStmt = recoverPrepare(p, p->dbOut,
+      "WITH trunk(pgno) AS ("
+      "  SELECT read_i32(getpage(1), 8) AS x WHERE x>0"
+      "    UNION"
+      "  SELECT read_i32(getpage(trunk.pgno), 0) AS x FROM trunk WHERE x>0"
+      "),"
+      "trunkdata(pgno, data) AS ("
+      "  SELECT pgno, getpage(pgno) FROM trunk"
+      "),"
+      "freelist(data, n, freepgno) AS ("
+      "  SELECT data, min(16384, read_i32(data, 1)-1), pgno FROM trunkdata"
+      "    UNION ALL"
+      "  SELECT data, n-1, read_i32(data, 2+n) FROM freelist WHERE n>=0"
+      ")"
+      "SELECT freepgno FROM freelist"
     );
     while( pStmt && SQLITE_ROW==sqlite3_step(pStmt) ){
       i64 iPg = sqlite3_column_int64(pStmt, 0);

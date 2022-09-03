@@ -131,6 +131,23 @@ do_recover_test 2.4.1 {
   2 2 3 {} 8 9 7
 }
 
+do_execsql_test 2.5 {
+  CREATE TABLE x1(a, b, c);
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<100
+  )
+  INSERT INTO x1 SELECT i, i, hex(randomblob(500)) FROM s;
+  DROP TABLE x1;
+}
+do_recover_test 2.5.1 {
+  SELECT name FROM sqlite_master;
+  SELECT * FROM lost_and_found_1;
+} {lost_and_found lost_and_found_0 lost_and_found_1
+  2 2 3 {} 2 3 1
+  2 2 3 {} 5 6 4
+  2 2 3 {} 8 9 7
+}
+
 #-------------------------------------------------------------------------
 breakpoint
 reset_db
