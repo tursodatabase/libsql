@@ -81,6 +81,7 @@ static int testRecoverCmd(
       const char *aOp[] = {
         "testdb",          /* 0 */
         "lostandfound",    /* 1 */
+        "freelistcorrupt", /* 2 */
         0
       };
       int iOp = 0;
@@ -99,6 +100,14 @@ static int testRecoverCmd(
               SQLITE_RECOVER_LOST_AND_FOUND, (void*)Tcl_GetString(objv[3])
           );
           break;
+        case 2: {
+          int iVal = 0;
+          if( Tcl_GetIntFromObj(interp, objv[3], &iVal) ) return TCL_ERROR;
+          res = sqlite3_recover_config(pTest->p, 
+              SQLITE_RECOVER_FREELIST_CORRUPT, (void*)iVal
+          );
+          break;
+        }
       }
       Tcl_SetObjResult(interp, Tcl_NewIntObj(res));
       break;

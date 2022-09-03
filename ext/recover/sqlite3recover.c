@@ -93,7 +93,7 @@ struct sqlite3_recover {
 
   char *zStateDb;
   char *zLostAndFound;            /* Name of lost-and-found table (or NULL) */
-
+  int bFreelistCorrupt;
 };
 
 /*
@@ -888,27 +888,29 @@ static int recoverLostAndFound(sqlite3_recover *p){
     recoverFinalize(p, pStmt);
 
     /* Add all pages that appear to be part of the freelist to the bitmap. */
-    pStmt = recoverPrepare(p, p->dbOut,
-      "WITH trunk(pgno) AS ("
-      "  SELECT read_i32(getpage(1), 8) AS x WHERE x>0"
-      "    UNION"
-      "  SELECT read_i32(getpage(trunk.pgno), 0) AS x FROM trunk WHERE x>0"
-      "),"
-      "trunkdata(pgno, data) AS ("
-      "  SELECT pgno, getpage(pgno) FROM trunk"
-      "),"
-      "freelist(data, n, freepgno) AS ("
-      "  SELECT data, min(16384, read_i32(data, 1)-1), pgno FROM trunkdata"
-      "    UNION ALL"
-      "  SELECT data, n-1, read_i32(data, 2+n) FROM freelist WHERE n>=0"
-      ")"
-      "SELECT freepgno FROM freelist"
-    );
-    while( pStmt && SQLITE_ROW==sqlite3_step(pStmt) ){
-      i64 iPg = sqlite3_column_int64(pStmt, 0);
-      recoverBitmapSet(pMap, iPg);
+    if( p->bFreelistCorrupt==0 ){
+      pStmt = recoverPrepare(p, p->dbOut,
+          "WITH trunk(pgno) AS ("
+          "  SELECT read_i32(getpage(1), 8) AS x WHERE x>0"
+          "    UNION"
+          "  SELECT read_i32(getpage(trunk.pgno), 0) AS x FROM trunk WHERE x>0"
+          "),"
+          "trunkdata(pgno, data) AS ("
+          "  SELECT pgno, getpage(pgno) FROM trunk"
+          "),"
+          "freelist(data, n, freepgno) AS ("
+          "  SELECT data, min(16384, read_i32(data, 1)-1), pgno FROM trunkdata"
+          "    UNION ALL"
+          "  SELECT data, n-1, read_i32(data, 2+n) FROM freelist WHERE n>=0"
+          ")"
+          "SELECT freepgno FROM freelist"
+      );
+      while( pStmt && SQLITE_ROW==sqlite3_step(pStmt) ){
+        i64 iPg = sqlite3_column_int64(pStmt, 0);
+        recoverBitmapSet(pMap, iPg);
+      }
+      recoverFinalize(p, pStmt);
     }
-    recoverFinalize(p, pStmt);
 
     /* Add an entry for each page not already added to the bitmap to 
     ** the recovery.map table. This loop leaves the "parent" column
@@ -1131,6 +1133,10 @@ int sqlite3_recover_config(sqlite3_recover *p, int op, void *pArg){
       }else{
         p->zLostAndFound = 0;
       }
+      break;
+
+    case SQLITE_RECOVER_FREELIST_CORRUPT:
+      p->bFreelistCorrupt = (pArg ? 1 : 0);
       break;
 
     default:
