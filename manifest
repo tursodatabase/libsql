@@ -1,5 +1,5 @@
-C Fix\sthe\swindows\sbuild\sso\sthat\sit\sworks\swith\s-DSQLITE_OMIT_AUTOINIT.
-D 2022-09-05T18:17:03.632
+C Add\sthe\stool/omittest-msvc.tcl\sscript\sthat\swill\stry\sto\sbuild\susing\sMSVC\nusing\svarious\scompile-time\soptions,\sto\sensure\sthat\sthe\scompile-time\soptions\nall\sbuild\swithout\serrors.
+D 2022-09-05T22:54:36.015
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1942,6 +1942,7 @@ F tool/mksqlite3h.tcl 1f5e4a1dbbbc43c83cc6e74fe32c6c620502240b66c7c0f33a51378e78
 F tool/mksqlite3internalh.tcl eb994013e833359137eb53a55acdad0b5ae1049b
 F tool/mkvsix.tcl b9e0777a213c23156b6542842c238479e496ebf5
 F tool/offsets.c 8ed2b344d33f06e71366a9b93ccedaa38c096cc1dbd4c3c26ad08c6115285845
+F tool/omittest-msvc.tcl d6b8f501ac1d7798c4126065030f89812379012cad98a1735d6d7221492abc08
 F tool/omittest.tcl 3bc9609aceea871e1ca6ed6749df9ce79b89369d22b492f6ce6078f40647cc3f
 F tool/opcodesum.tcl 740ed206ba8c5040018988129abbf3089a0ccf4a
 F tool/pagesig.c ff0ca355fd3c2398e933da5e22439bbff89b803b
@@ -1999,8 +2000,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P da7af290960ab8a04a1f55cdc5eeac36b47fa194edf67f0a05daa4b7f2a4071c
-R 6331ff40a11387db72be313b77cf6d6b
+P f74a5ea8c986dc33d3afcda169c38abbe55728c56716cf9991a5e2ef7fc4917a 82b89f8a074858a81d841dfc26436e8d39ce4907b8f989eba4d848db16758303
+R 6ca49c20c002174082011fae5352b9a2
+T +closed 82b89f8a074858a81d841dfc26436e8d39ce4907b8f989eba4d848db16758303
 U drh
-Z c1acc1c86c32ffeafe2e7e809812c8dc
+Z 072f191f34018bff25742e9863a6762e
 # Remove this line to create a well-formed Fossil manifest.
