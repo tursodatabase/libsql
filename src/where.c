@@ -1433,7 +1433,7 @@ static int whereKeyStats(
 #endif
   assert( pRec!=0 );
   assert( pIdx->nSample>0 );
-  assert( pRec->nField>0 && pRec->nField<=pIdx->nSampleCol );
+  assert( pRec->nField>0 );
 
   /* Do a binary search to find the first sample greater than or equal
   ** to pRec. If pRec contains a single field, the set of samples to search
@@ -1479,7 +1479,7 @@ static int whereKeyStats(
   ** it is extended to two fields. The duplicates that this creates do not 
   ** cause any problems.
   */
-  nField = pRec->nField;
+  nField = MIN(pRec->nField, pIdx->nSample);
   iCol = 0;
   iSample = pIdx->nSample * nField;
   do{
@@ -4168,6 +4168,7 @@ static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
   sqlite3 *db = pWInfo->pParse->db;
   int rc = SQLITE_OK;
   int bFirstPastRJ = 0;
+  int hasRightJoin = 0;
   WhereLoop *pNew;
 
 
@@ -4188,15 +4189,16 @@ static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
       ** prevents the right operand of a RIGHT JOIN from being swapped with
       ** other elements even further to the right.
       **
-      ** The JT_LTORJ term prevents any FROM-clause term reordering for terms
-      ** to the left of a RIGHT JOIN.  This is conservative.  Relaxing this
-      ** constraint somewhat to prevent terms from crossing from the right
-      ** side of a LEFT JOIN over to the left side when they are on the
-      ** left side of a RIGHT JOIN would be sufficient for all known failure
-      ** cases.  FIX ME: Implement this optimization.
+      ** The JT_LTORJ case and the hasRightJoin flag work together to
+      ** prevent FROM-clause terms from moving from the right side of
+      ** a LEFT JOIN over to the left side of that join if the LEFT JOIN
+      ** is itself on the left side of a RIGHT JOIN.
       */
+      if( pItem->fg.jointype & JT_LTORJ ) hasRightJoin = 1;
       mPrereq |= mPrior;
       bFirstPastRJ = (pItem->fg.jointype & JT_RIGHT)!=0;
+    }else if( !hasRightJoin ){
+      mPrereq = 0;
     }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
     if( IsVirtual(pItem->pTab) ){

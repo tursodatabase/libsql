@@ -751,4 +751,35 @@ do_execsql_test 32.1 {
   WHERE a=1234 OR a<=567;
 } {500 502}
 
+# 2022-07-15
+# https://sqlite.org/forum/forumpost/3607259d3c
+#
+reset_db
+do_execsql_test 33.1 {
+  CREATE TABLE t1(a INT, b INT PRIMARY KEY) WITHOUT ROWID;
+  INSERT INTO t1(a, b) VALUES (0, 1),(15,-7),(3,100);
+  ANALYZE;
+} {}
+do_execsql_test 33.2 {
+  SELECT * FROM t1 WHERE (b,a) BETWEEN (0,5) AND (99,-2);
+} {0 1}
+do_execsql_test 33.3 {
+  SELECT * FROM t1 WHERE (b,a) BETWEEN (-8,5) AND (0,-2);
+} {15 -7}
+do_execsql_test 33.3 {
+  SELECT * FROM t1 WHERE (b,a) BETWEEN (3,5) AND (100,4);
+} {3 100}
+do_execsql_test 33.3 {
+  SELECT * FROM t1 WHERE (b,a) BETWEEN (3,5) AND (100,2);
+} {}
+do_execsql_test 33.3 {
+  SELECT * FROM t1 WHERE (a,b) BETWEEN (-2,99) AND (1,0);
+} {0 1}
+do_execsql_test 33.3 {
+  SELECT * FROM t1 WHERE (a,b) BETWEEN (14,99) AND (16,0);
+} {15 -7}
+do_execsql_test 33.3 {
+  SELECT * FROM t1 WHERE (a,b) BETWEEN (2,99) AND (4,0);
+} {3 100}
+
 finish_test

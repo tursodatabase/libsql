@@ -504,6 +504,7 @@ TESTSRC2 = \
   $(TOP)/src/pcache1.c \
   $(TOP)/src/select.c \
   $(TOP)/src/tokenize.c \
+  $(TOP)/src/treeview.c \
   $(TOP)/src/utf.c \
   $(TOP)/src/util.c \
   $(TOP)/src/vdbeapi.c \
@@ -876,7 +877,7 @@ hash.lo:	$(TOP)/src/hash.c $(HDR)
 insert.lo:	$(TOP)/src/insert.c $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/insert.c
 
-json.lo:	$(TOP)/src/json.c
+json.lo:	$(TOP)/src/json.c $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/json.c
 
 legacy.lo:	$(TOP)/src/legacy.c $(HDR)

@@ -4112,8 +4112,11 @@ int sqlite3_test_control(int op, ...){
         sqlite3ShowTriggerStepList(0);
         sqlite3ShowTrigger(0);
         sqlite3ShowTriggerList(0);
+#ifndef SQLITE_OMIT_WINDOWFUNC
         sqlite3ShowWindow(0);
         sqlite3ShowWinFunc(0);
+#endif
+        sqlite3ShowSelect(0);
       }
 #endif
       break;
