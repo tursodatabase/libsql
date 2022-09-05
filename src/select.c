@@ -1688,7 +1688,7 @@ static void generateSortTail(
     if( addrOnce ) sqlite3VdbeJumpHere(v, addrOnce);
     addr = 1 + sqlite3VdbeAddOp2(v, OP_SorterSort, iTab, addrBreak);
     VdbeCoverage(v);
-    codeOffset(v, p->iOffset, addrContinue);
+    assert( p->iLimit==0 && p->iOffset==0 );
     sqlite3VdbeAddOp3(v, OP_SorterData, iTab, regSortOut, iSortTab);
     bSeq = 0;
   }else{
@@ -1696,6 +1696,9 @@ static void generateSortTail(
     codeOffset(v, p->iOffset, addrContinue);
     iSortTab = iTab;
     bSeq = 1;
+    if( p->iOffset>0 ){
+      sqlite3VdbeAddOp2(v, OP_AddImm, p->iLimit, -1);
+    }
   }
   for(i=0, iCol=nKey+bSeq-1; i<nColumn; i++){
 #ifdef SQLITE_ENABLE_SORTER_REFERENCES
@@ -3688,10 +3691,11 @@ static int multiSelectOrderBy(
   */
   sqlite3VdbeResolveLabel(v, labelEnd);
 
-  /* Reassembly the compound query so that it will be freed correctly
+  /* Reassemble the compound query so that it will be freed correctly
   ** by the calling function */
   if( pSplit->pPrior ){
-    sqlite3SelectDelete(db, pSplit->pPrior);
+    sqlite3ParserAddCleanup(pParse, 
+       (void(*)(sqlite3*,void*))sqlite3SelectDelete, pSplit->pPrior);
   }
   pSplit->pPrior = pPrior;
   pPrior->pNext = pSplit;
@@ -5210,6 +5214,7 @@ static Table *isSimpleCount(Select *p, AggInfo *pAggInfo){
    || p->pSrc->nSrc!=1
    || p->pSrc->a[0].pSelect
    || pAggInfo->nFunc!=1
+   || p->pHaving
   ){
     return 0;
   }

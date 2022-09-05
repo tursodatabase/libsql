@@ -5821,6 +5821,7 @@ static int pager_open_journal(Pager *pPager){
   if( rc!=SQLITE_OK ){
     sqlite3BitvecDestroy(pPager->pInJournal);
     pPager->pInJournal = 0;
+    pPager->journalOff = 0;
   }else{
     assert( pPager->eState==PAGER_WRITER_LOCKED );
     pPager->eState = PAGER_WRITER_CACHEMOD;
@@ -7376,7 +7377,7 @@ int sqlite3PagerGetJournalMode(Pager *pPager){
 int sqlite3PagerOkToChangeJournalMode(Pager *pPager){
   assert( assert_pager_state(pPager) );
   if( pPager->eState>=PAGER_WRITER_CACHEMOD ) return 0;
-  if( NEVER(isOpen(pPager->jfd) && pPager->journalOff>0) ) return 0;
+  if( isOpen(pPager->jfd) && pPager->journalOff>0 ) return 0;
   return 1;
 }
 
