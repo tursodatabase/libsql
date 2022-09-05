@@ -1918,8 +1918,9 @@ int sqlite3_win32_set_directory8(
   const char *zValue  /* New value for directory being set or reset */
 ){
   char **ppDirectory = 0;
+  int rc;
 #ifndef SQLITE_OMIT_AUTOINIT
-  int rc = sqlite3_initialize();
+  rc = sqlite3_initialize();
   if( rc ) return rc;
 #endif
   sqlite3_mutex_enter(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_TEMPDIR));

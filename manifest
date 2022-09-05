@@ -1,5 +1,5 @@
-C Ensure\sthe\sPager.journalOff\svariable\sis\szeroed\sif\san\serror\soccurs\swhile\swriting\sthe\sinitial\sheader\sto\sthe\sjournal\sfile.
-D 2022-09-02T21:19:24.442
+C Fix\sthe\swindows\sbuild\sso\sthat\sit\sworks\swith\s-DSQLITE_OMIT_AUTOINIT.
+D 2022-09-05T18:17:03.632
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -573,7 +573,7 @@ F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c 102f7e5c5b59c18ea3dbc929dc3be8acb3afc0e0b6ad572e032335c9c27f44f1
-F src/os_win.c d55025aeb5b36b5d92d7c09fe709edaf2be901420782540ba4adad86729636a0
+F src/os_win.c e9454cb141908e8eef2102180bad353a36480612d5b736e4c2bd5777d9b25a34
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 6176d9752eb580419e8fef4592dc417a6b00ddfd43ee22f818819bf8840ceee8
 F src/pager.h f82e9844166e1585f5786837ddc7709966138ced17f568c16af7ccf946c2baa3
@@ -1999,8 +1999,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 54251f81ebc43839cc97f91d2df4c320c1b96b5690cc11ce45b60c087c9becd6
-R 87dafa73318986b955e7b84411151a61
-U dan
-Z acee053f656d75b425260930781b7440
+P da7af290960ab8a04a1f55cdc5eeac36b47fa194edf67f0a05daa4b7f2a4071c
+R 6331ff40a11387db72be313b77cf6d6b
+U drh
+Z c1acc1c86c32ffeafe2e7e809812c8dc
 # Remove this line to create a well-formed Fossil manifest.
