@@ -64,12 +64,6 @@ struct RecoverBitmap {
 ** 
 */
 #define RECOVERY_SCHEMA \
-"  CREATE TABLE recovery.freelist("                            \
-"      pgno INTEGER PRIMARY KEY"                               \
-"  );"                                                         \
-"  CREATE TABLE recovery.dbptr("                               \
-"      pgno, child, PRIMARY KEY(child, pgno)"                  \
-"  ) WITHOUT ROWID;"                                           \
 "  CREATE TABLE recovery.map("                                 \
 "      pgno INTEGER PRIMARY KEY, parent INT"                   \
 "  );"                                                         \
@@ -96,6 +90,9 @@ struct sqlite3_recover {
   char *zLostAndFound;            /* Name of lost-and-found table (or NULL) */
   int bFreelistCorrupt;
   int bRecoverRowid;
+
+  void *pSqlCtx;
+  int (*xSql)(void*,const char*);
 };
 
 /*
@@ -445,13 +442,6 @@ static int recoverOpenOutput(sqlite3_recover *p){
   return rc;
 }
 
-static int recoverCacheDbptr(sqlite3_recover *p){
-  return recoverExec(p, p->dbOut,
-    "INSERT INTO recovery.dbptr "
-    "SELECT pgno, child FROM sqlite_dbptr('getpage()')"
-  );
-}
-
 static int recoverCacheSchema(sqlite3_recover *p){
   return recoverExec(p, p->dbOut,
     "WITH RECURSIVE pages(p) AS ("
@@ -555,6 +545,15 @@ static void recoverAddTable(sqlite3_recover *p, const char *zName, i64 iRoot){
   }
 }
 
+static void recoverSqlCallback(sqlite3_recover *p, const char *zSql){
+  if( p->errCode==SQLITE_OK && p->xSql ){
+    int res = p->xSql(p->pSqlCtx, zSql);
+    if( res ){
+      recoverError(p, SQLITE_ERROR, "callback returned an error - %d", res);
+    }
+  }
+}
+
 /*
 **
 */
@@ -581,6 +580,7 @@ static int recoverWriteSchema1(sqlite3_recover *p){
 
       int rc = sqlite3_exec(p->dbOut, zSql, 0, 0, 0);
       if( rc==SQLITE_OK ){
+        recoverSqlCallback(p, zSql);
         if( bTable ){
           if( SQLITE_ROW==sqlite3_step(pTblname) ){
             const char *zName = sqlite3_column_text(pTblname, 0);
@@ -614,6 +614,8 @@ static int recoverWriteSchema2(sqlite3_recover *p){
       int rc = sqlite3_exec(p->dbOut, zSql, 0, 0, 0);
       if( rc!=SQLITE_OK && rc!=SQLITE_ERROR ){
         recoverDbError(p, p->dbOut);
+      }else if( rc==SQLITE_OK ){
+        recoverSqlCallback(p, zSql);
       }
     }
   }
@@ -644,9 +646,12 @@ static sqlite3_stmt *recoverInsertStmt(
   int nField
 ){
   const char *zSep = "";
+  const char *zSqlSep = "";
   char *zSql = 0;
+  char *zFinal = 0;
   char *zBind = 0;
   int ii;
+  int bSql = p->xSql ? 1 : 0;
   sqlite3_stmt *pRet = 0;
 
   assert( nField<=pTab->nCol );
@@ -656,9 +661,16 @@ static sqlite3_stmt *recoverInsertStmt(
   if( pTab->iRowidBind ){
     assert( pTab->bIntkey );
     zSql = recoverMPrintf(p, "%z_rowid_", zSql);
-    zBind = recoverMPrintf(p, "%z?%d", zBind, pTab->iRowidBind);
+    if( bSql ){
+      zBind = recoverMPrintf(p, "%zquote(?%d)", zBind, pTab->iRowidBind);
+    }else{
+      zBind = recoverMPrintf(p, "%z?%d", zBind, pTab->iRowidBind);
+    }
+    zSqlSep = "||', '||";
     zSep = ", ";
   }
+
+
   for(ii=0; ii<nField; ii++){
     int eHidden = pTab->aCol[ii].eHidden;
     if( eHidden!=RECOVER_EHIDDEN_VIRTUAL
@@ -666,14 +678,31 @@ static sqlite3_stmt *recoverInsertStmt(
     ){
       assert( pTab->aCol[ii].iField>=0 && pTab->aCol[ii].iBind>=1 );
       zSql = recoverMPrintf(p, "%z%s%Q", zSql, zSep, pTab->aCol[ii].zCol);
-      zBind = recoverMPrintf(p, "%z%s?%d", zBind, zSep, pTab->aCol[ii].iBind);
+
+      if( bSql ){
+        zBind = recoverMPrintf(
+            p, "%z%squote(?%d)", zBind, zSqlSep, pTab->aCol[ii].iBind
+        );
+        zSqlSep = "||', '||";
+      }else{
+        zBind = recoverMPrintf(p, "%z%s?%d", zBind, zSep, pTab->aCol[ii].iBind);
+      }
       zSep = ", ";
     }
   }
-  zSql = recoverMPrintf(p, "%z) VALUES (%z)", zSql, zBind);
 
-  pRet = recoverPrepare(p, p->dbOut, zSql);
+  if( bSql ){
+    zFinal = recoverMPrintf(p, "SELECT %Q || ') VALUES (' || %s || ')'", 
+        zSql, zBind
+    );
+  }else{
+    zFinal = recoverMPrintf(p, "%s) VALUES (%s)", zSql, zBind);
+  }
+
+  pRet = recoverPrepare(p, p->dbOut, zFinal);
   sqlite3_free(zSql);
+  sqlite3_free(zBind);
+  sqlite3_free(zFinal);
   
   return pRet;
 }
@@ -744,6 +773,7 @@ static char *recoverLostAndFoundCreate(
     sqlite3_free(zField);
 
     recoverExec(p, p->dbOut, zSql);
+    recoverSqlCallback(p, zSql);
     sqlite3_free(zSql);
   }else if( p->errCode==SQLITE_OK ){
     recoverError(
@@ -838,6 +868,7 @@ static void recoverLostAndFoundPopulate(
         sqlite3_value_free(apVal[ii]);
         apVal[ii] = 0;
       }
+      sqlite3_clear_bindings(pInsert);
       bHaveRowid = 0;
       nVal = -1;
     }
@@ -1052,7 +1083,10 @@ static int recoverWriteData(sqlite3_recover *p){
               sqlite3_bind_int64(pInsert, pTab->iRowidBind, iRowid);
             }
 
-            sqlite3_step(pInsert);
+            if( SQLITE_ROW==sqlite3_step(pInsert) && p->xSql ){
+              const char *zSql = (const char*)sqlite3_column_text(pInsert, 0);
+              recoverSqlCallback(p, zSql);
+            }
             recoverReset(p, pInsert);
             assert( p->errCode || pInsert );
             if( pInsert ) sqlite3_clear_bindings(pInsert);
@@ -1098,10 +1132,12 @@ static int recoverWriteData(sqlite3_recover *p){
   return p->errCode;
 }
 
-sqlite3_recover *sqlite3_recover_init(
+sqlite3_recover *recoverInit(
   sqlite3* db, 
   const char *zDb, 
-  const char *zUri
+  const char *zUri,
+  int (*xSql)(void*, const char*),
+  void *pSqlCtx
 ){
   sqlite3_recover *pRet = 0;
   int nDb = 0;
@@ -1123,9 +1159,28 @@ sqlite3_recover *sqlite3_recover_init(
     pRet->zUri = &pRet->zDb[nDb+1];
     memcpy(pRet->zDb, zDb, nDb);
     memcpy(pRet->zUri, zUri, nUri);
+    pRet->xSql = xSql;
+    pRet->pSqlCtx = pSqlCtx;
   }
 
   return pRet;
+}
+
+sqlite3_recover *sqlite3_recover_init(
+  sqlite3* db, 
+  const char *zDb, 
+  const char *zUri
+){
+  return recoverInit(db, zDb, zUri, 0, 0);
+}
+
+sqlite3_recover *sqlite3_recover_init_sql(
+  sqlite3* db, 
+  const char *zDb, 
+  int (*xSql)(void*, const char*),
+  void *pSqlCtx
+){
+  return recoverInit(db, zDb, "", xSql, pSqlCtx);
 }
 
 const char *sqlite3_recover_errmsg(sqlite3_recover *p){
@@ -1176,7 +1231,6 @@ static void recoverStep(sqlite3_recover *p){
 
   if( p->dbOut==0 ){
     if( recoverOpenOutput(p) ) return;
-    if( recoverCacheDbptr(p) ) return;
     if( recoverCacheSchema(p) ) return;
     if( recoverWriteSchema1(p) ) return;
     if( recoverWriteData(p) ) return;

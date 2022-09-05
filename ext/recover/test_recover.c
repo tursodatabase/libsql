@@ -20,7 +20,30 @@
 typedef struct TestRecover TestRecover;
 struct TestRecover {
   sqlite3_recover *p;
+  Tcl_Interp *interp;
+  Tcl_Obj *pScript;
 };
+
+static int xSqlCallback(void *pSqlArg, const char *zSql){
+  TestRecover *p = (TestRecover*)pSqlArg;
+  Tcl_Obj *pEval = 0;
+  int res = 0;
+
+  pEval = Tcl_DuplicateObj(p->pScript);
+  Tcl_IncrRefCount(pEval);
+
+  res = Tcl_ListObjAppendElement(p->interp, pEval, Tcl_NewStringObj(zSql, -1));
+  if( res==TCL_OK ){
+    res = Tcl_EvalObjEx(p->interp, pEval, 0);
+  }
+
+  Tcl_DecrRefCount(pEval);
+  if( res ){
+    Tcl_BackgroundError(p->interp);
+    return TCL_ERROR;
+  }
+  return SQLITE_OK;
+}
 
 static int getDbPointer(Tcl_Interp *interp, Tcl_Obj *pObj, sqlite3 **pDb){
   Tcl_CmdInfo info;
@@ -171,17 +194,26 @@ static int test_sqlite3_recover_init(
   const char *zDb = 0;
   const char *zUri = 0;
   char zCmd[128];
+  int bSql = clientData ? 1 : 0;
 
   if( objc!=4 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "DB DBNAME URI");
+    const char *zErr = (bSql ? "DB DBNAME SCRIPT" : "DB DBNAME URI");
+    Tcl_WrongNumArgs(interp, 1, objv, zErr);
     return TCL_ERROR;
   }
   if( getDbPointer(interp, objv[1], &db) ) return TCL_ERROR;
   zDb = Tcl_GetString(objv[2]);
-  zUri = Tcl_GetString(objv[3]);
 
   pNew = ckalloc(sizeof(TestRecover));
-  pNew->p = sqlite3_recover_init(db, zDb, zUri);
+  if( bSql==0 ){
+    zUri = Tcl_GetString(objv[3]);
+    pNew->p = sqlite3_recover_init(db, zDb, zUri);
+  }else{
+    pNew->interp = interp;
+    pNew->pScript = objv[3];
+    Tcl_IncrRefCount(pNew->pScript);
+    pNew->p = sqlite3_recover_init_sql(db, zDb, xSqlCallback, (void*)pNew);
+  }
 
   sprintf(zCmd, "sqlite_recover%d", iTestRecoverCmd++);
   Tcl_CreateObjCommand(interp, zCmd, testRecoverCmd, (void*)pNew, 0);
@@ -194,14 +226,16 @@ int TestRecover_Init(Tcl_Interp *interp){
   struct Cmd {
     const char *zCmd;
     Tcl_ObjCmdProc *xProc;
+    void *pArg;
   } aCmd[] = {
-    { "sqlite3_recover_init", test_sqlite3_recover_init },
+    { "sqlite3_recover_init", test_sqlite3_recover_init, 0 },
+    { "sqlite3_recover_init_sql", test_sqlite3_recover_init, (void*)1 },
   };
   int i;
 
   for(i=0; i<sizeof(aCmd)/sizeof(struct Cmd); i++){
     struct Cmd *p = &aCmd[i];
-    Tcl_CreateObjCommand(interp, p->zCmd, p->xProc, 0, 0);
+    Tcl_CreateObjCommand(interp, p->zCmd, p->xProc, p->pArg, 0);
   }
 
   return TCL_OK;

@@ -52,8 +52,27 @@ proc do_recover_test {tn} {
   sqlite3 db2 test.db2
   uplevel [list do_test $tn.2 [list compare_dbs db db2] {}]
   db2 close
+
+  forcedelete test.db2
+  forcedelete rstate.db
+
+  uplevel [list do_test $tn.3 {
+    set ::sqlhook [list]
+    set R [sqlite3_recover_init_sql db main my_sql_hook]
+    $R config testdb rstate.db
+    $R step
+    $R finish
+  } {}]
+
+  sqlite3 db2 test.db2
+  execsql [join $::sqlhook ";"] db2
+  uplevel [list do_test $tn.4 [list compare_dbs db db2] {}]
+  db2 close
 }
 
+proc my_sql_hook {sql} {
+  lappend ::sqlhook $sql
+}
 
 do_execsql_test 1.0 {
   CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
@@ -112,6 +131,7 @@ do_execsql_test 7.1 {
   SELECT * FROM t2
 } {10 11 ten}
 
+breakpoint
 do_recover_test 7.2
 
 finish_test

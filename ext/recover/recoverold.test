@@ -53,12 +53,36 @@ proc do_recover_test {tn {tsql {}} {res {}}} {
   sqlite3 db2 test.db2
 
   if {$tsql==""} {
-    uplevel [list do_test $tn [list compare_dbs db db2] {}]
+    uplevel [list do_test $tn.1 [list compare_dbs db db2] {}]
   } else {
-    uplevel [list do_execsql_test -db db2 $tn $tsql $res]
+    uplevel [list do_execsql_test -db db2 $tn.1 $tsql $res]
+  }
+  db2 close
+
+  forcedelete test.db2
+  forcedelete rstate.db
+
+  set ::sqlhook [list]
+  set R [sqlite3_recover_init_sql db main my_sql_hook]
+  $R config lostandfound lost_and_found
+  $R step
+  $R finish
+  
+  sqlite3 db2 test.db2
+  db2 eval [join $::sqlhook ";"]
+
+  if {$tsql==""} {
+    uplevel [list do_test $tn.sql [list compare_dbs db db2] {}]
+  } else {
+    uplevel [list do_execsql_test -db db2 $tn.sql $tsql $res]
   }
   db2 close
 }
+
+proc my_sql_hook {sql} {
+  lappend ::sqlhook $sql
+}
+
 
 set doc {
   hello

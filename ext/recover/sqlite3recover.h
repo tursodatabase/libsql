@@ -24,7 +24,8 @@ extern "C" {
 
 typedef struct sqlite3_recover sqlite3_recover;
 
-/* Create an object to recover data from database zDb (e.g. "main")
+/* 
+** Create an object to recover data from database zDb (e.g. "main")
 ** opened by handle db. Data will be recovered into the database
 ** identified by parameter zUri. Database zUri is clobbered if it
 ** already exists.
@@ -33,6 +34,13 @@ sqlite3_recover *sqlite3_recover_init(
   sqlite3* db, 
   const char *zDb, 
   const char *zUri
+);
+
+sqlite3_recover *sqlite3_recover_init_sql(
+  sqlite3* db, 
+  const char *zDb, 
+  int (*xSql)(void*, const char*),
+  void *pCtx
 );
 
 /* Details TBD. */
@@ -60,6 +68,8 @@ int sqlite3_recover_config(sqlite3_recover*, int op, void *pArg);
 **   database, but often ends up "recovering" deleted records.
 **
 ** SQLITE_RECOVER_ROWIDS:
+**
+** SQLITE_RECOVER_SQLHOOK:
 */
 #define SQLITE_RECOVER_TESTDB           789
 #define SQLITE_RECOVER_LOST_AND_FOUND   790
