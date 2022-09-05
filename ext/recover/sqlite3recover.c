@@ -800,13 +800,24 @@ static sqlite3_stmt *recoverLostAndFoundInsert(
   const char *zSep = "";
   sqlite3_stmt *pRet = 0;
 
-  for(ii=0; ii<nTotal; ii++){
-    zBind = recoverMPrintf(p, "%z%s?", zBind, zBind?", ":"", ii);
+  if( p->xSql==0 ){
+    for(ii=0; ii<nTotal; ii++){
+      zBind = recoverMPrintf(p, "%z%s?", zBind, zBind?", ":"", ii);
+    }
+    pRet = recoverPreparePrintf(
+        p, p->dbOut, "INSERT INTO %s VALUES(%s)", zTab, zBind
+    );
+  }else{
+    const char *zSep = "";
+    for(ii=0; ii<nTotal; ii++){
+      zBind = recoverMPrintf(p, "%z%squote(?)", zBind, zSep);
+      zSep = "|| ', ' ||";
+    }
+    pRet = recoverPreparePrintf(
+        p, p->dbOut, "SELECT 'INSERT INTO %s VALUES(' || %s || ')'", zTab, zBind
+    );
   }
 
-  pRet = recoverPreparePrintf(
-      p, p->dbOut, "INSERT INTO %s VALUES(%s)", zTab, zBind
-  );
   sqlite3_free(zBind);
   return pRet;
 }
@@ -860,7 +871,9 @@ static void recoverLostAndFoundPopulate(
       for(ii=0; ii<nVal; ii++){
         sqlite3_bind_value(pInsert, 5+ii, apVal[ii]);
       }
-      sqlite3_step(pInsert);
+      if( sqlite3_step(pInsert)==SQLITE_ROW && p->xSql ){
+        recoverSqlCallback(p, sqlite3_column_text(pInsert, 0));
+      }
       recoverReset(p, pInsert);
 
       /* Discard the accumulated row data */
@@ -1229,6 +1242,8 @@ static void recoverStep(sqlite3_recover *p){
 
   assert( p->errCode==SQLITE_OK );
 
+  recoverSqlCallback(p, "PRAGMA writable_schema = on");
+
   if( p->dbOut==0 ){
     if( recoverOpenOutput(p) ) return;
     if( recoverCacheSchema(p) ) return;
@@ -1237,6 +1252,8 @@ static void recoverStep(sqlite3_recover *p){
     if( p->zLostAndFound && recoverLostAndFound(p) ) return;
     if( recoverWriteSchema2(p) ) return;
   }
+
+  recoverSqlCallback(p, "PRAGMA writable_schema = off");
 }
 
 int sqlite3_recover_step(sqlite3_recover *p){
