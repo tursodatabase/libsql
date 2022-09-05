@@ -126,7 +126,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     try {
       const ppDb = capi.wasm.scopedAllocPtr() /* output (sqlite3**) arg */;
       const rc = capi.sqlite3_open_v2(fn, ppDb, oflags, null);
-      ptr = capi.wasm.getMemValue(ppDb, '*');
+      ptr = capi.wasm.getPtrValue(ppDb);
       ctor.checkRc(ptr, rc);
     }catch( e ){
       if( ptr ) capi.sqlite3_close_v2(ptr);
@@ -166,6 +166,15 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      For purposes of passing a Stmt instance to C-style sqlite3
      functions, its read-only `pointer` property holds its `sqlite3_stmt*`
      pointer value.
+
+     Other non-function properties include:
+
+     - `db`: the DB object which created the statement.
+
+     - `columnCount`: the number of result columns in the query, or 0 for
+     queries which cannot return results.
+
+     - `parameterCount`: the number of bindable paramters in the query.
   */
   const Stmt = function(){
     if(BindTypes!==arguments[2]){
@@ -272,22 +281,25 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   };
 
   /**
-     Expects to be given a DB instance or an `sqlite3*` pointer, and an
-     sqlite3 API result code. If the result code is not falsy, this
-     function throws an SQLite3Error with an error message from
-     sqlite3_errmsg(), using dbPtr as the db handle. Note that if it's
-     passed a non-error code like SQLITE_ROW or SQLITE_DONE, it will
-     still throw but the error string might be "Not an error."  The
-     various non-0 non-error codes need to be checked for in client
-     code where they are expected.
+     Expects to be given a DB instance or an `sqlite3*` pointer (may
+     be null) and an sqlite3 API result code. If the result code is
+     not falsy, this function throws an SQLite3Error with an error
+     message from sqlite3_errmsg(), using dbPtr as the db handle, or
+     sqlite3_errstr() if dbPtr is falsy. Note that if it's passed a
+     non-error code like SQLITE_ROW or SQLITE_DONE, it will still
+     throw but the error string might be "Not an error."  The various
+     non-0 non-error codes need to be checked for in
+     client code where they are expected.
   */
   DB.checkRc = function(dbPtr, sqliteResultCode){
     if(sqliteResultCode){
       if(dbPtr instanceof DB) dbPtr = dbPtr.pointer;
-      throw new SQLite3Error([
+      throw new SQLite3Error(
         "sqlite result code",sqliteResultCode+":",
-        capi.sqlite3_errmsg(dbPtr) || "Unknown db error."
-      ].join(' '));
+        (dbPtr
+         ? capi.sqlite3_errmsg(dbPtr)
+         : capi.sqlite3_errstr(sqliteResultCode))
+      );
     }
   };
 
@@ -379,9 +391,8 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        required to check `stmt.pointer` after calling `prepare()` in
        order to determine whether the Stmt instance is empty or not.
        Long-time practice (with other sqlite3 script bindings)
-       suggests that the empty-prepare case is sufficiently rare (and
-       useless) that supporting it here would simply hurt overall
-       usability.
+       suggests that the empty-prepare case is sufficiently rare that
+       supporting it here would simply hurt overall usability.
     */
     prepare: function(sql){
       affirmDbOpen(this);
@@ -390,7 +401,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       try{
         ppStmt = capi.wasm.scopedAllocPtr()/* output (sqlite3_stmt**) arg */;
         DB.checkRc(this, capi.sqlite3_prepare_v2(this.pointer, sql, -1, ppStmt, null));
-        pStmt = capi.wasm.getMemValue(ppStmt, '*');
+        pStmt = capi.wasm.getPtrValue(ppStmt);
       }
       finally {capi.wasm.scopedAllocPop(stack)}
       if(!pStmt) toss3("Cannot prepare empty SQL.");
@@ -412,22 +423,21 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        The optional options object may contain any of the following
        properties:
 
-       - .sql = the SQL to run (unless it's provided as the first
+       - `.sql` = the SQL to run (unless it's provided as the first
        argument). This must be of type string, Uint8Array, or an array
        of strings. In the latter case they're concatenated together
        as-is, _with no separator_ between elements, before evaluation.
        The array form is often simpler for long hand-written queries.
 
-       - .bind = a single value valid as an argument for
+       - `.bind` = a single value valid as an argument for
        Stmt.bind(). This is _only_ applied to the _first_ non-empty
        statement in the SQL which has any bindable parameters. (Empty
        statements are skipped entirely.)
 
-       - .saveSql = an optional array. If set, the SQL of each
+       - `.saveSql` = an optional array. If set, the SQL of each
        executed statement is appended to this array before the
-       statement is executed (but after it is prepared - we
-       don't have the string until after that). Empty SQL
-       statements are elided.
+       statement is executed (but after it is prepared - we don't have
+       the string until after that). Empty SQL statements are elided.
 
        ==================================================================
        The following options apply _only_ to the _first_ statement
@@ -435,8 +445,8 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        the statement actually produces any result rows.
        ==================================================================
 
-       - .callback = a function which gets called for each row of the
-       result set, but only if that statement has any result
+       - `.callback` = a function which gets called for each row of
+       the result set, but only if that statement has any result
        _rows_. The callback's "this" is the options object. The second
        argument passed to the callback is always the current Stmt
        object (so that the caller may collect column names, or
@@ -455,24 +465,24 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        The first argument passed to the callback defaults to an array of
        values from the current result row but may be changed with ...
 
-       - .rowMode = specifies the type of he callback's first argument.
+       - `.rowMode` = specifies the type of he callback's first argument.
        It may be any of...
 
        A) A string describing what type of argument should be passed
        as the first argument to the callback:
 
-         A.1) 'array' (the default) causes the results of
+         A.1) `'array'` (the default) causes the results of
          `stmt.get([])` to be passed to passed on and/or appended to
          `resultRows`.
 
-         A.2) 'object' causes the results of
+         A.2) `'object'` causes the results of
          `stmt.get(Object.create(null))` to be passed to the
          `callback` and/or appended to `resultRows`.  Achtung: an SQL
          result may have multiple columns with identical names. In
          that case, the right-most column will be the one set in this
          object!
 
-         A.3) 'stmt' causes the current Stmt to be passed to the
+         A.3) `'stmt'` causes the current Stmt to be passed to the
          callback, but this mode will trigger an exception if
          `resultRows` is an array because appending the statement to
          the array would be unhelpful.
@@ -491,7 +501,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
        Any other `rowMode` value triggers an exception.
 
-       - .resultRows: if this is an array, it functions similarly to
+       - `.resultRows`: if this is an array, it functions similarly to
        the `callback` option: each row of the result set (if any),
        with the exception that the `rowMode` 'stmt' is not legal. It
        is legal to use both `resultRows` and `callback`, but
@@ -499,12 +509,12 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        and can be used over a WebWorker-style message interface.
        exec() throws if `resultRows` is set and `rowMode` is 'stmt'.
 
-       - .columnNames: if this is an array, the column names of the
+       - `.columnNames`: if this is an array, the column names of the
        result set are stored in this array before the callback (if
        any) is triggered (regardless of whether the query produces any
        result rows). If no statement has result columns, this value is
-       unchanged. Achtung: an SQL result may have multiple columns with
-       identical names.
+       unchanged. Achtung: an SQL result may have multiple columns
+       with identical names.
     */
     exec: function(/*(sql [,obj]) || (obj)*/){
       affirmDbOpen(this);
@@ -517,11 +527,9 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       const callback = opt.callback;
       let resultRows = (Array.isArray(opt.resultRows)
                           ? opt.resultRows : undefined);
-      let rowMode = (((callback||resultRows) && (undefined!==opt.rowMode))
-                     ? opt.rowMode : undefined);
       let stmt;
       let bind = opt.bind;
-      let runFirstQuery = !!(arg.cbArg || opt.columnNames) /* true to evaluate the first result-returning query */;
+      let evalFirstResult = !!(arg.cbArg || opt.columnNames) /* true to evaluate the first result-returning query */;
       const stack = wasm.scopedAllocPush();
       try{
         const isTA = util.isSQLableTypedArray(arg.sql)
@@ -565,10 +573,10 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             stmt.bind(bind);
             bind = null;
           }
-          if(runFirstQuery && stmt.columnCount){
+          if(evalFirstResult && stmt.columnCount){
             /* Only forward SELECT results for the FIRST query
                in the SQL which potentially has them. */
-            runFirstQuery = false;
+            evalFirstResult = false;
             if(Array.isArray(opt.columnNames)){
               stmt.getColumnNames(opt.columnNames);
             }
@@ -580,7 +588,6 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
               stmt._isLocked = false;
             }
           }else{
-            // Do we need to while(stmt.step()){} here?
             stmt.step();
           }
           stmt.finalize();
@@ -679,8 +686,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           let i, pVal, valType, arg;
           const tgt = [];
           for(i = 0; i < argc; ++i){
-            pVal = capi.wasm.getMemValue(pArgv + (capi.wasm.ptrSizeof * i),
-                                        capi.wasm.ptrIR);
+            pVal = capi.wasm.getPtrValue(pArgv + (capi.wasm.ptrSizeof * i));
             /**
                Curiously: despite ostensibly requiring 8-byte
                alignment, the pArgv array is parcelled into chunks of
