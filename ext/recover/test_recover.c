@@ -82,6 +82,7 @@ static int testRecoverCmd(
         "testdb",          /* 0 */
         "lostandfound",    /* 1 */
         "freelistcorrupt", /* 2 */
+        "rowids",          /* 3 */
         0
       };
       int iOp = 0;
@@ -102,9 +103,17 @@ static int testRecoverCmd(
           break;
         case 2: {
           int iVal = 0;
-          if( Tcl_GetIntFromObj(interp, objv[3], &iVal) ) return TCL_ERROR;
+          if( Tcl_GetBooleanFromObj(interp, objv[3], &iVal) ) return TCL_ERROR;
           res = sqlite3_recover_config(pTest->p, 
               SQLITE_RECOVER_FREELIST_CORRUPT, (void*)iVal
+          );
+          break;
+        }
+        case 3: {
+          int iVal = 0;
+          if( Tcl_GetBooleanFromObj(interp, objv[3], &iVal) ) return TCL_ERROR;
+          res = sqlite3_recover_config(pTest->p, 
+              SQLITE_RECOVER_ROWIDS, (void*)iVal
           );
           break;
         }

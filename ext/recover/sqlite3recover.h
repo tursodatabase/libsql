@@ -58,10 +58,13 @@ int sqlite3_recover_config(sqlite3_recover*, int op, void *pArg);
 **   appear to be linked into the freelist. Otherwise, pages on the freelist
 **   are ignored. Setting this option can recover more data from the
 **   database, but often ends up "recovering" deleted records.
+**
+** SQLITE_RECOVER_ROWIDS:
 */
 #define SQLITE_RECOVER_TESTDB           789
 #define SQLITE_RECOVER_LOST_AND_FOUND   790
 #define SQLITE_RECOVER_FREELIST_CORRUPT 791
+#define SQLITE_RECOVER_ROWIDS           792
 
 /* Step the recovery object. Return SQLITE_DONE if recovery is complete,
 ** SQLITE_OK if recovery is not complete but no error has occurred, or

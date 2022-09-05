@@ -49,6 +49,7 @@ struct RecoverTable {
   int nCol;                       /* Number of columns in table */
   RecoverColumn *aCol;            /* Array of columns */
   int bIntkey;                    /* True for intkey, false for without rowid */
+  int iRowidBind;                 /* If >0, bind rowid to INSERT here */
 
   RecoverTable *pNext;
 };
@@ -94,6 +95,7 @@ struct sqlite3_recover {
   char *zStateDb;
   char *zLostAndFound;            /* Name of lost-and-found table (or NULL) */
   int bFreelistCorrupt;
+  int bRecoverRowid;
 };
 
 /*
@@ -476,6 +478,7 @@ static void recoverAddTable(sqlite3_recover *p, const char *zName, i64 iRoot){
 
   if( pStmt ){
     int iPk = -1;
+    int iBind = 1;
     RecoverTable *pNew = 0;
     int nCol = 0;
     int nName = recoverStrlen(zName);
@@ -491,7 +494,6 @@ static void recoverAddTable(sqlite3_recover *p, const char *zName, i64 iRoot){
     if( pNew ){
       int i = 0;
       int iField = 0;
-      int iBind = 1;
       char *csr = 0;
       pNew->aCol = (RecoverColumn*)&pNew[1];
       pNew->zTab = csr = (char*)&pNew->aCol[nCol];
@@ -545,7 +547,11 @@ static void recoverAddTable(sqlite3_recover *p, const char *zName, i64 iRoot){
     }
     recoverFinalize(p, pStmt);
 
-    if( iPk>=0 ) pNew->aCol[iPk].bIPK = 1;
+    if( iPk>=0 ){
+      pNew->aCol[iPk].bIPK = 1;
+    }else if( pNew->bIntkey ){
+      pNew->iRowidBind = iBind++;
+    }
   }
 }
 
@@ -646,6 +652,13 @@ static sqlite3_stmt *recoverInsertStmt(
   assert( nField<=pTab->nCol );
 
   zSql = recoverMPrintf(p, "INSERT OR IGNORE INTO %Q(", pTab->zTab);
+
+  if( pTab->iRowidBind ){
+    assert( pTab->bIntkey );
+    zSql = recoverMPrintf(p, "%z_rowid_", zSql);
+    zBind = recoverMPrintf(p, "%z?%d", zBind, pTab->iRowidBind);
+    zSep = ", ";
+  }
   for(ii=0; ii<nField; ii++){
     int eHidden = pTab->aCol[ii].eHidden;
     if( eHidden!=RECOVER_EHIDDEN_VIRTUAL
@@ -995,6 +1008,7 @@ static int recoverWriteData(sqlite3_recover *p){
     i64 iPrevRoot = -1;
     i64 iPrevPage = -1;
     int iPrevCell = -1;
+    int bHaveRowid = 0;           /* True if iRowid is valid */
     i64 iRowid = 0;
     int nVal = -1;
 
@@ -1034,6 +1048,9 @@ static int recoverWriteData(sqlite3_recover *p){
                 }
               }
             }
+            if( p->bRecoverRowid && pTab->iRowidBind>0 && bHaveRowid ){
+              sqlite3_bind_int64(pInsert, pTab->iRowidBind, iRowid);
+            }
 
             sqlite3_step(pInsert);
             recoverReset(p, pInsert);
@@ -1046,6 +1063,7 @@ static int recoverWriteData(sqlite3_recover *p){
             apVal[ii] = 0;
           }
           nVal = -1;
+          bHaveRowid = 0;
         }
 
         if( iRoot==0 ) continue;
@@ -1061,6 +1079,7 @@ static int recoverWriteData(sqlite3_recover *p){
         iRowid = sqlite3_column_int64(pSel, 4);
         assert( nVal==-1 );
         nVal = 0;
+        bHaveRowid = 1;
       }else if( iField<nMax ){
         assert( apVal[iField]==0 );
         apVal[iField] = sqlite3_value_dup( pVal );
@@ -1137,6 +1156,10 @@ int sqlite3_recover_config(sqlite3_recover *p, int op, void *pArg){
 
     case SQLITE_RECOVER_FREELIST_CORRUPT:
       p->bFreelistCorrupt = (pArg ? 1 : 0);
+      break;
+
+    case SQLITE_RECOVER_ROWIDS:
+      p->bRecoverRowid = (pArg ? 1 : 0);
       break;
 
     default:
