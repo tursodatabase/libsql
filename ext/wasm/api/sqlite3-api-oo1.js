@@ -197,7 +197,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
       Reminder: this will also fail after the statement is finalized
       but the resulting error will be about an out-of-bounds column
-      index.
+      index rather than a statement-is-finalized error.
   */
   const affirmColIndex = function(stmt,ndx){
     if((ndx !== (ndx|0)) || ndx<0 || ndx>=stmt.columnCount){
@@ -213,10 +213,14 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
      { sql: the SQL, opt: optionsObj, cbArg: function}
 
-     cbArg is only set if the opt.callback is set, in which case
-     it's a function which expects to be passed the current Stmt
-     and returns the callback argument of the type indicated by
-     the input arguments.
+     The opt object is a normalized copy of any passed to this
+     function. The sql will be converted to a string if it is provided
+     in one of the supported non-string formats.
+
+     cbArg is only set if the opt.callback or opt.resultRows are set,
+     in which case it's a function which expects to be passed the
+     current Stmt and returns the callback argument of the type
+     indicated by the input arguments.
   */
   const parseExecArgs = function(args){
     const out = Object.create(null);

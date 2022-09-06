@@ -1,5 +1,5 @@
-C Merge\strunk\sinto\sfiddle-opfs\sbranch.
-D 2022-09-06T09:59:06.910
+C Minor\sinternal\sdoc\sclarifications.
+D 2022-09-06T16:35:54.448
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -483,7 +483,7 @@ F ext/wasm/api/post-js-footer.js b64319261d920211b8700004d08b956a6c285f3b0bba814
 F ext/wasm/api/post-js-header.js 0e853b78db83cb1c06b01663549e0e8b4f377f12f5a2d9a4a06cb776c003880b
 F ext/wasm/api/sqlite3-api-cleanup.js 1a12e64060c2cb0defd34656a76a9b1d7ed58459c290249bb31567c806fd44de
 F ext/wasm/api/sqlite3-api-glue.js 67ca83974410961953eeaa1dfed3518530d68381729ed1d27f95122f5baeabd3
-F ext/wasm/api/sqlite3-api-oo1.js 8818c96272ed70e8a95d09b10f2381df94a79de0d722ef9057005e6594db2f33
+F ext/wasm/api/sqlite3-api-oo1.js b06a1ac982c7d433396b8304550ce1493a63671a3bf653c3b5646a9075e0ca41
 F ext/wasm/api/sqlite3-api-opfs.js 011799db398157cbd254264b6ebae00d7234b93d0e9e810345f213a5774993c0
 F ext/wasm/api/sqlite3-api-prologue.js 2d5c5d3355f55eefe51922cec5bfedbec0f8300db98a17685ab7a34a03953c7a
 F ext/wasm/api/sqlite3-api-worker1.js 73579555563b789785ae83724014eaf31811073aad9be6596c8336ffb51edd71
@@ -2015,8 +2015,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4488cb5798f34cbba14eb8e2aa5da8420c14a85d37d278d357406aedd5c3a9e5 6b00ecb59fd303f7985902c35a46db9e729201d4beaedea46596b728d9e4b1c8
-R fe1e5247661b941e3cd5ee02be72aa3d
+P 7f76eaec793720db87415a476ddf539bc4dea3e74c8e5406d6739206aebdacc2
+R ddf4f26b01c2c564d2354931a4072700
 U stephan
-Z 52c5dac4d2eba4046599a7e7052e5fe2
+Z d6b7c42fac31d9af4682922126e1ce62
 # Remove this line to create a well-formed Fossil manifest.
