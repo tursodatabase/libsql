@@ -259,10 +259,11 @@ emcc.jsflags += -sMEMORY64=0
 # sqlite3.worker.js generated in conjunction with -sWASMFS).
 sqlite3.js := sqlite3.js
 sqlite3.wasm := sqlite3.wasm
-$(dir.api)/sqlite3-wasm.o: emcc.cflags += $(SQLITE_OPT)
-$(dir.api)/sqlite3-wasm.o: $(dir.top)/sqlite3.c
+sqlite3-wasm.o := $(dir.api)/sqlite3-wasm.o
+$(sqlite3-wasm.o): emcc.cflags += $(SQLITE_OPT)
+$(sqlite3-wasm.o): $(dir.top)/sqlite3.c
 $(dir.api)/wasm_util.o: emcc.cflags += $(SQLITE_OPT)
-sqlite3.wasm.c := $(dir.api)/sqlite3-wasm.c \
+sqlite3-wasm.c := $(dir.api)/sqlite3-wasm.c \
     $(dir.jacc)/jaccwabyt_test.c
 # ^^^ FIXME (how?): jaccwabyt_test.c is only needed for the test apps,
 # so we don't really want to include it in release builds. However, we
@@ -270,7 +271,7 @@ sqlite3.wasm.c := $(dir.api)/sqlite3-wasm.c \
 # elide that file in release builds. That component is critical to the
 # VFS bindings so needs to be tested along with the core APIs.
 ifneq (,$(filter -sWASMFS,$(emcc.jsflags)))
-  $(dir.api)/sqlite3-wasm.o: emcc.cflags+=-DSQLITE_WASM_OPFS
+  $(sqlite3-wasm.o): emcc.cflags+=-DSQLITE_WASM_OPFS
 endif
 define WASM_C_COMPILE
 $(1).o := $$(subst .c,.o,$(1))
@@ -279,7 +280,7 @@ $$($(1).o): $$(MAKEFILE) $(1)
 	$$(emcc.bin) $$(emcc_opt) $$(emcc.flags) $$(emcc.cflags) -c $(1) -o $$@
 CLEAN_FILES += $$($(1).o)
 endef
-$(foreach c,$(sqlite3.wasm.c),$(eval $(call WASM_C_COMPILE,$(c))))
+$(foreach c,$(sqlite3-wasm.c),$(eval $(call WASM_C_COMPILE,$(c))))
 $(sqlite3.js): 
 $(sqlite3.js): $(MAKEFILE) $(sqlite3.wasm.obj) \
     EXPORTED_FUNCTIONS.api \
@@ -298,7 +299,7 @@ wasm: $(sqlite3.js)
 ########################################################################
 
 ########################################################################
-# Bits for use with batch-runner.js...
+# batch-runner.js...
 dir.sql := sql
 speedtest1 := ../../speedtest1
 speedtest1.c := ../../test/speedtest1.c
@@ -317,24 +318,38 @@ clean-batch:
 # pieces each time is an unnecessary time sink.
 batch: batch-runner.list
 all: batch
+# end batch-runner.js
+########################################################################
+# speedtest1.js...
+emcc.speedtest1-flags := -g $(emcc_opt)
+ifneq (0,$(ENABLE_WASMFS))
+  emcc.speedtest1-flags += -pthread -sWASMFS -sPTHREAD_POOL_SIZE=2
+  emcc.speedtest1-flags += -DSQLITE_WASM_OPFS
+endif
+emcc.speedtest1-flags += -sINVOKE_RUN=0
+#emcc.speedtest1-flags += --no-entry
+emcc.speedtest1-flags += -flto
+emcc.speedtest1-flags += -sABORTING_MALLOC
+emcc.speedtest1-flags += -sINITIAL_MEMORY=128450560
+emcc.speedtest1-flags += -sSTRICT_JS
+emcc.speedtest1-flags += $(emcc.environment)
+emcc.speedtest1-flags += -sMODULARIZE
+emcc.speedtest1-flags += -sEXPORT_NAME=sqlite3Speedtest1InitModule
+emcc.speedtest1-flags += -Wno-limited-postlink-optimizations
+emcc.speedtest1-flags += -sEXPORTED_FUNCTIONS=_main,_malloc,_free,_sqlite3_wasm_vfs_unlink,_sqlite3_wasm_init_opfs
+emcc.speedtest1-flags += -sDYNAMIC_EXECUTION=0
+emcc.speedtest1-flags += --minify 0
 
 speedtest1.js := speedtest1.js
+speedtest1.wasm := $(subst .js,.wasm,$(speedtest1.js))
 $(speedtest1.js): emcc.cflags+=
-$(speedtest1.js): $(speedtest1.c) $(MAKEFILE)
-	$(emcc.bin) -g $(emcc_opt) \
-        -sINVOKE_RUN=0 \
-        --no-entry \
-        -sALLOW_TABLE_GROWTH \
-        -sABORTING_MALLOC \
-        -sINITIAL_MEMORY=128450560 \
-        -sSTRICT_JS \
-        -sENVIRONMENT=web \
-        -sMODULARIZE \
-        -sEXPORT_NAME=sqlite3Speedtest1InitModule \
-        -Wno-limited-postlink-optimizations \
-        -sEXPORTED_FUNCTIONS=_main,_malloc,_free \
-        -sDYNAMIC_EXECUTION=0 \
-        --minify 0 \
+# speedtest1 notes re. sqlite3-wasm.o vs sqlite3-wasm.c: building against
+# the latter (predictably) results in a slightly faster binary, but we're
+# close enough to the target speed requirements that the 500ms makes a
+# difference.
+$(speedtest1.js): $(speedtest1.c) $(sqlite3-wasm.c) $(MAKEFILE)
+	$(emcc.bin) \
+        $(emcc.speedtest1-flags) \
         -I. -I$(dir.top) \
         -DSQLITE_THREADSAFE=0 \
         -DSQLITE_TEMP_STORE=3 \
@@ -343,13 +358,16 @@ $(speedtest1.js): $(speedtest1.c) $(MAKEFILE)
         -DSQLITE_OMIT_SHARED_CACHE \
         '-DSQLITE_DEFAULT_UNIX_VFS="unix-none"' \
         -DSQLITE_SPEEDTEST1_WASM \
-        $(emcc_flags_wasmfs) \
-        -o $@ $(speedtest1.c) $(sqlite3.c) -lm
+        -o $@ $(speedtest1.c) $(sqlite3-wasm.c) -lm
+ifneq (,$(wasm-strip))
+	$(wasm-strip) $(speedtest1.wasm)
+endif
+	ls -la $@ $(speedtest1.wasm)
 
 speedtest1: $(speedtest1.js)
 all: $(speedtest1.js)
-CLEAN_FILES += $(speedtest1.js) $(subst .js,.wasm,$(speedtest1.js))
-
+CLEAN_FILES += $(speedtest1.js) $(speedtest1.wasm)
+# end speedtest1.js
 ########################################################################
 # fiddle_remote is the remote destination for the fiddle app. It
 # must be a [user@]HOST:/path for rsync.

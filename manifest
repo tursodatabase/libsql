@@ -1,5 +1,5 @@
-C Initial\sbuild\sof\sspeedtest1.wasm\sand\sspeedtest1.html\swith\swhich\sto\srun\sit.
-D 2022-09-06T16:47:43.072
+C Get\sspeedtest1.js\sworking\swith\sWASMFS/OPFS.
+D 2022-09-06T20:17:15.425
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -474,7 +474,7 @@ F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
 F ext/userauth/userauth.c 7f00cded7dcaa5d47f54539b290a43d2e59f4b1eb5f447545fa865f002fc80cb
 F ext/wasm/EXPORTED_FUNCTIONS.fiddle db7a4602f043cf4a5e4135be3609a487f9f1c83f05778bfbdf93766be4541b96
 F ext/wasm/EXPORTED_RUNTIME_METHODS.fiddle a004bd5eeeda6d3b28d16779b7f1a80305bfe009dfc7f0721b042967f0d39d02
-F ext/wasm/GNUmakefile 445b81c44804f029bcc938aa777ca3fe450a0061a586a21be411362575c7cf61
+F ext/wasm/GNUmakefile 2333e782a412c56438e9c08b56b8e26d402d70067760925e6900df5cb4165b66
 F ext/wasm/README.md e1ee1e7c321c6a250bf78a84ca6f5882890a237a450ba5a0649c7a8399194c52
 F ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-api 77ef4bcf37e362b9ad61f9c175dfc0f1b3e571563fb311b96581cf422ee6a8ec
 F ext/wasm/api/EXPORTED_RUNTIME_METHODS.sqlite3-api 1ec3c73e7d66e95529c3c64ac3de2470b0e9e7fbf7a5b41261c367cf4f1b7287
@@ -488,13 +488,13 @@ F ext/wasm/api/sqlite3-api-opfs.js 011799db398157cbd254264b6ebae00d7234b93d0e9e8
 F ext/wasm/api/sqlite3-api-prologue.js 2d5c5d3355f55eefe51922cec5bfedbec0f8300db98a17685ab7a34a03953c7a
 F ext/wasm/api/sqlite3-api-worker1.js 73579555563b789785ae83724014eaf31811073aad9be6596c8336ffb51edd71
 F ext/wasm/api/sqlite3-wasi.h 25356084cfe0d40458a902afb465df8c21fc4152c1d0a59b563a3fba59a068f9
-F ext/wasm/api/sqlite3-wasm.c 0d81282eaeff2a6e9fc5c28a388c5c5b45cf25a9393992fa511ac009b27df982
+F ext/wasm/api/sqlite3-wasm.c 19c3797edc35821e362a8b60ce45d1adfe6d24fca7cd1f55f89d2086ef33870e
 F ext/wasm/batch-runner.html 2d44d99a556c46f586d3319003dd281dd0eb6a13eeadde3eab05ba81eec9ff8a
 F ext/wasm/batch-runner.js a727cbbffe63fd17fb5a590dc679f0b13bd51880e8f84b461d7df246417689e8
 F ext/wasm/common/SqliteTestUtil.js 7a543e238c2ebda922c85076abda017d0480944fdfee576692a0c3a580319ebd
 F ext/wasm/common/emscripten.css 3d253a6fdb8983a2ac983855bfbdd4b6fa1ff267c28d69513dd6ef1f289ada3f
 F ext/wasm/common/testing.css 572cf1ffae0b6eb7ca63684d3392bf350217a07b90e7a896e4fa850700c989b0
-F ext/wasm/common/whwasmutil.js ed10ab537b800e1f8fac9d5ecec00908f4d4b0e1a270de196e43782600ae59f7
+F ext/wasm/common/whwasmutil.js f7282ef36c9625330d4e6e82d1beec6678cd101e95e7108cd85db587a788c145
 F ext/wasm/demo-oo1.html 75646855b38405d82781246fd08c852a2b3bee05dd9f0fe10ab655a8cffb79aa
 F ext/wasm/demo-oo1.js aad38cb90b6fa7fd4d1184e759b25056fb4ed45c4957c458896354281259515f
 F ext/wasm/fiddle/emscripten.css 3d253a6fdb8983a2ac983855bfbdd4b6fa1ff267c28d69513dd6ef1f289ada3f
@@ -510,7 +510,7 @@ F ext/wasm/scratchpad-opfs-main.js 69e960e9161f6412fd0c30f355d4112f1894d6609eb43
 F ext/wasm/scratchpad-opfs-worker.html 66c1d15d678f3bd306373d76b61c6c8aef988f61f4a8dd40185d452f9c6d2bf5
 F ext/wasm/scratchpad-opfs-worker.js 3ec2868c669713145c76eb5877c64a1b20741f741817b87c907a154b676283a9
 F ext/wasm/scratchpad-opfs-worker2.js 5f2237427ac537b8580b1c659ff14ad2621d1694043eaaf41ae18dbfef2e48c0
-F ext/wasm/speedtest1.html e5b6ca8d09e15ab77fcec95ab30a330cc5376795f3d3b7cc05b9377b08824071
+F ext/wasm/speedtest1.html a1204f5cbbd592baa191535dc7eaa2d875f661aefb2a70a4631df0a925e19f4b
 F ext/wasm/split-speedtest1-script.sh a3e271938d4d14ee49105eb05567c6a69ba4c1f1293583ad5af0cd3a3779e205 x
 F ext/wasm/sql/000-mandelbrot.sql 775337a4b80938ac8146aedf88808282f04d02d983d82675bd63d9c2d97a15f0
 F ext/wasm/sql/001-sudoku.sql 35b7cb7239ba5d5f193bc05ec379bcf66891bce6f2a5b3879f2f78d0917299b5
@@ -2016,8 +2016,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 09796cc2bfce7bc4ce11db9673d20737259e9928f0484660cba3a9751f7d01c5
-R 98ebaeee264c8d9d604307fc8843d5b6
+P 4441535e3e54dc1881f700fa3878964eb8554a6790fd6aa32945f7cc104a8467
+R 63d4e2043bd53d54be9ba5bac375f852
 U stephan
-Z 0a749029dbb2383547531131a6904c9b
+Z 29ed13e3400f211a842f97710dcb5fd5
 # Remove this line to create a well-formed Fossil manifest.

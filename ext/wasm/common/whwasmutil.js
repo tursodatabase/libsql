@@ -1482,7 +1482,7 @@ self.WhWasmUtilInstaller = function(target){
     if(Array.isArray(arguments[3])) args = arguments[3];
     return target.xWrap(fname, resultType, argTypes||[]).apply(null, args||[]);
   };
-  
+
   return target;
 };
 
