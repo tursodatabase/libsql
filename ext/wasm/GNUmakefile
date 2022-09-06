@@ -253,6 +253,16 @@ emcc.jsflags += -sMEMORY64=0
 
 
 ########################################################################
+# -sSINGLE_FILE:
+# https://github.com/emscripten-core/emscripten/blob/main/src/settings.js#L1704
+# -sSINGLE_FILE=1 would be really nice but we have to build with -g
+# for -O2 and higher to work (else minification breaks the code) and
+# cannot wasm-strip the binary before it gets encoded into the JS
+# file. The result is that the generated JS file is, because of the -g
+# debugging info, _huge_.
+########################################################################
+
+########################################################################
 # Maintenance reminder: the output .js and .wasm files of emcc must be
 # in _this_ dir, rather than a subdir, or else parts of the generated
 # code get confused and cannot load property (namely, the

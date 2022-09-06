@@ -1,5 +1,5 @@
-C Get\sspeedtest1.js\sworking\swith\sWASMFS/OPFS.
-D 2022-09-06T20:17:15.425
+C Add\sa\snote\sabout\sEmscripten's\s-sSINGLE_FILE\sflag,\swhy\sit\swould\sbe\snice,\sand\swhy\swe\scan't\suse\sit.
+D 2022-09-06T23:04:51.823
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -474,7 +474,7 @@ F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
 F ext/userauth/userauth.c 7f00cded7dcaa5d47f54539b290a43d2e59f4b1eb5f447545fa865f002fc80cb
 F ext/wasm/EXPORTED_FUNCTIONS.fiddle db7a4602f043cf4a5e4135be3609a487f9f1c83f05778bfbdf93766be4541b96
 F ext/wasm/EXPORTED_RUNTIME_METHODS.fiddle a004bd5eeeda6d3b28d16779b7f1a80305bfe009dfc7f0721b042967f0d39d02
-F ext/wasm/GNUmakefile 2333e782a412c56438e9c08b56b8e26d402d70067760925e6900df5cb4165b66
+F ext/wasm/GNUmakefile 5c566211fe64a45659064bae65e032150e451a0b9dca00be6552f3f6b7252693
 F ext/wasm/README.md e1ee1e7c321c6a250bf78a84ca6f5882890a237a450ba5a0649c7a8399194c52
 F ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-api 77ef4bcf37e362b9ad61f9c175dfc0f1b3e571563fb311b96581cf422ee6a8ec
 F ext/wasm/api/EXPORTED_RUNTIME_METHODS.sqlite3-api 1ec3c73e7d66e95529c3c64ac3de2470b0e9e7fbf7a5b41261c367cf4f1b7287
@@ -2016,8 +2016,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4441535e3e54dc1881f700fa3878964eb8554a6790fd6aa32945f7cc104a8467
-R 63d4e2043bd53d54be9ba5bac375f852
+P 40e60f570d4f489d58d12e27c1c067b41d6c5a5e374c5fce0baa8881ef183216
+R 0096ecafc15630b25658c12eafbbea1b
 U stephan
-Z 29ed13e3400f211a842f97710dcb5fd5
+Z 7b5e51ab80c88507303a95f3b8f5d0e1
 # Remove this line to create a well-formed Fossil manifest.
