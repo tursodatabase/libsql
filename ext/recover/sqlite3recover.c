@@ -403,14 +403,22 @@ static int recoverOpenOutput(sqlite3_recover *p){
       sqlite3_free(zSql);
     }
 
-
+    /* Truncate the output database. This is done by opening a new, empty,
+    ** temp db, then using the backup API to clobber any existing output db
+    ** with a copy of it. */
     if( rc==SQLITE_OK ){
-      sqlite3_backup *pBackup = sqlite3_backup_init(db, "main", db, "recovery");
-      if( pBackup ){
-        while( sqlite3_backup_step(pBackup, 1000)==SQLITE_OK );
-        rc = sqlite3_backup_finish(pBackup);
+      sqlite3 *db2 = 0;
+      rc = sqlite3_open("", &db2);
+      if( rc==SQLITE_OK ){
+        sqlite3_backup *pBackup = sqlite3_backup_init(db, "main", db2, "main");
+        if( pBackup ){
+          while( sqlite3_backup_step(pBackup, 1000)==SQLITE_OK );
+          rc = sqlite3_backup_finish(pBackup);
+        }
       }
+      sqlite3_close(db2);
     }
+
     if( rc==SQLITE_OK ){
       rc = sqlite3_exec(db, RECOVERY_SCHEMA, 0, 0, 0);
     }

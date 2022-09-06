@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sscript\smode\sand\slost-and-found\stables.
-D 2022-09-05T21:22:35.859
+C Tests\sand\sa\sfix\sfor\sthe\sSQLITE_RECOVER_ROWIDS\soption.
+D 2022-09-06T19:38:06.927
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -390,7 +390,8 @@ F ext/rbu/test_rbu.c 03f6f177096a5f822d68d8e4069ad8907fe572c62ff2d19b141f5974282
 F ext/recover/recover1.test ae8ce9828210aa6c466bf88e23b0933849d5bb43091abe48cf2e56d636e51e93
 F ext/recover/recover_common.tcl 6679af7dffc858e345053a91c9b0a897595b4a13007aceffafca75304ccb137c
 F ext/recover/recoverold.test f368a6ae2db12b6017257b332a19ab5df527f4061e43f12f5c85d8e2b236f074
-F ext/recover/sqlite3recover.c 5dca1b3904cb028bef7348a5e0726a253c48f7fcd5da5ec687a44e4e665a24bf
+F ext/recover/recoverrowid.test ec4436cd69e6cdacb48dd2963ff6dd9dbd5fe648376de5e7c0c2f4f6cbacb417
+F ext/recover/sqlite3recover.c 297fdef9da8523ef7fa3f88adb31356340826dac56c1fb13db2dd3e167806efe
 F ext/recover/sqlite3recover.h 32f89b66f0235c0d94dfee0f1c3e9ed1ad726b3c4f3716ef0262b31cc33e8301
 F ext/recover/test_recover.c be0d74f0eba44fe7964e22d287dba0f3fa2baf197f630d51f0f9066af9b5eb2a
 F ext/repair/README.md 92f5e8aae749a4dae14f02eea8e1bb42d4db2b6ce5e83dbcdd6b1446997e0c15
@@ -2005,8 +2006,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 73058416e7da6581000898b7988a7010e2ce6632246f4c12b4398700c7744b83
-R 9dcaa53e272447eefaba97715f5d61ae
+P 09ec588d2fe24dd321e88318fe90a9ae912cbc73c8a2d59a10c821625dd12d9d
+R 2900e793f9b609ad9d5a7b230af64f99
 U dan
-Z 82e767f579594364114308f585b07fed
+Z a6081cceac978cdb593b5cd251ae6a63
 # Remove this line to create a well-formed Fossil manifest.
