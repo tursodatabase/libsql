@@ -212,9 +212,10 @@ self.WhWasmUtilInstaller = function(target){
      that will certainly change.
   */
   const ptrIR = target.pointerIR || 'i32';
-  const ptrSizeof = ('i32'===ptrIR ? 4
-                     : ('i64'===ptrIR
-                        ? 8 : toss("Unhandled ptrSizeof:",ptrIR)));
+  const ptrSizeof = target.ptrSizeof =
+        ('i32'===ptrIR ? 4
+         : ('i64'===ptrIR
+            ? 8 : toss("Unhandled ptrSizeof:",ptrIR)));
   /** Stores various cached state. */
   const cache = Object.create(null);
   /** Previously-recorded size of cache.memory.buffer, noted so that
@@ -1020,6 +1021,29 @@ self.WhWasmUtilInstaller = function(target){
   target.scopedAllocCString =
     (jstr, returnWithLength=false)=>__allocCStr(jstr, returnWithLength,
                                                 target.scopedAlloc, 'scopedAllocCString()');
+
+  /**
+     Creates an array, using scopedAlloc(), suitable for passing to a
+     C-level main() routine. The input is a collection with a length
+     property and a forEach() method. A block of memory list.length
+     entries long is allocated and each pointer-sized block of that
+     memory is populated with a scopedAllocCString() conversion of the
+     (''+value) of each element. Returns a pointer to the start of the
+     list, suitable for passing as the 2nd argument to a C-style
+     main() function.
+
+     Throws if list.length is falsy or scopedAllocPush() is not active.
+  */
+  target.scopedAllocMainArgv = function(list){
+    if(!list.length) toss("Cannot allocate empty array.");
+    const pList = target.scopedAlloc(list.length * target.ptrSizeof);
+    let i = 0;
+    list.forEach((e)=>{
+      target.setPtrValue(pList + (target.ptrSizeof * i++),
+                         target.scopedAllocCString(""+e));
+    });
+    return pList;
+  };
 
   /**
      Wraps function call func() in a scopedAllocPush() and

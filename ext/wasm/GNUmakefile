@@ -33,6 +33,10 @@ dir.jacc := jaccwabyt
 dir.common := common
 CLEAN_FILES := *~ $(dir.jacc)/*~ $(dir.api)/*~ $(dir.common)/*~
 
+sqlite3.c := $(dir.top)/sqlite3.c
+$(sqlite3.c):
+	$(MAKE) -C $(dir.top) sqlite3.c
+
 SQLITE_OPT = \
   -DSQLITE_ENABLE_FTS4 \
   -DSQLITE_ENABLE_RTREE \
@@ -53,8 +57,6 @@ SQLITE_OPT = \
 # ^^^ MEMSYS5 is hypothetically useful for non-Emscripten builds but
 # requires adding more infrastructure and fixing one spot in the
 # sqlite3 internals which calls malloc() early on.
-$(dir.top)/sqlite3.c:
-	$(MAKE) -C $(dir.top) sqlite3.c
 
 # SQLITE_OMIT_LOAD_EXTENSION: if this is true, sqlite3_vfs::xDlOpen
 # and friends may be NULL.
@@ -299,6 +301,7 @@ wasm: $(sqlite3.js)
 # Bits for use with batch-runner.js...
 dir.sql := sql
 speedtest1 := ../../speedtest1
+speedtest1.c := ../../test/speedtest1.c
 speedtest1.sql := $(dir.sql)/speedtest1.sql
 $(speedtest1):
 	$(MAKE) -C ../.. speedtest1
@@ -314,6 +317,38 @@ clean-batch:
 # pieces each time is an unnecessary time sink.
 batch: batch-runner.list
 all: batch
+
+speedtest1.js := speedtest1.js
+$(speedtest1.js): emcc.cflags+=
+$(speedtest1.js): $(speedtest1.c) $(MAKEFILE)
+	$(emcc.bin) -g $(emcc_opt) \
+        -sINVOKE_RUN=0 \
+        --no-entry \
+        -sALLOW_TABLE_GROWTH \
+        -sABORTING_MALLOC \
+        -sINITIAL_MEMORY=128450560 \
+        -sSTRICT_JS \
+        -sENVIRONMENT=web \
+        -sMODULARIZE \
+        -sEXPORT_NAME=sqlite3Speedtest1InitModule \
+        -Wno-limited-postlink-optimizations \
+        -sEXPORTED_FUNCTIONS=_main,_malloc,_free \
+        -sDYNAMIC_EXECUTION=0 \
+        --minify 0 \
+        -I. -I$(dir.top) \
+        -DSQLITE_THREADSAFE=0 \
+        -DSQLITE_TEMP_STORE=3 \
+        -DSQLITE_OMIT_UTF16 \
+        -DSQLITE_OMIT_DEPRECATED \
+        -DSQLITE_OMIT_SHARED_CACHE \
+        '-DSQLITE_DEFAULT_UNIX_VFS="unix-none"' \
+        -DSQLITE_SPEEDTEST1_WASM \
+        $(emcc_flags_wasmfs) \
+        -o $@ $(speedtest1.c) $(sqlite3.c) -lm
+
+speedtest1: $(speedtest1.js)
+all: $(speedtest1.js)
+CLEAN_FILES += $(speedtest1.js) $(subst .js,.wasm,$(speedtest1.js))
 
 ########################################################################
 # fiddle_remote is the remote destination for the fiddle app. It

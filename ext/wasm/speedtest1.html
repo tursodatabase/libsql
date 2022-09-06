@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
+    <link rel="stylesheet" href="common/emscripten.css"/>
+    <link rel="stylesheet" href="common/testing.css"/>
+    <title>speedtest1.wasm</title>
+  </head>
+  <body>
+    <header id='titlebar'><span>speedtest1.wasm</span></header>
+    <!-- emscripten bits -->
+    <figure id="module-spinner">
+      <div class="spinner"></div>
+      <div class='center'><strong>Initializing app...</strong></div>
+      <div class='center'>
+        On a slow internet connection this may take a moment.  If this
+        message displays for "a long time", intialization may have
+        failed and the JavaScript console may contain clues as to why.
+      </div>
+    </figure>
+    <div class="emscripten" id="module-status">Downloading...</div>
+    <div class="emscripten">
+      <progress value="0" max="100" id="module-progress" hidden='1'></progress>  
+    </div><!-- /emscripten bits -->
+    <div>Output is sent to the dev console because we cannot update the UI while the
+      speedtest is running unless/until we move the speedtest to a worker thread.</div>
+    <hr>
+    <div id='test-output'></div>
+    <script src="common/whwasmutil.js"></script>
+    <script src="common/SqliteTestUtil.js"></script>
+    <script src="speedtest1.js"></script>
+    <script>
+      (function(){
+        const eOut = document.querySelector('#test-output');
+        const logHtml2 = async function(cssClass,...args){
+          const ln = document.createElement('div');
+          if(cssClass) ln.classList.add(cssClass);
+          ln.append(document.createTextNode(args.join(' ')));
+          eOut.append(ln);
+          //this.e.output.lastElementChild.scrollIntoViewIfNeeded();
+        };
+        const doHtmlOutput = false
+        /* can't update DOM while speedtest is running unless we run
+           speedtest in a worker thread. */;
+        const logHtml = (...args)=>{
+          console.log(...args);
+          if(doHtmlOutput) logHtml2('', ...args);
+        };
+        const logErr = function(...args){
+          console.error(...args);
+          if(doHtmlOutput) this.logHtml2('error', ...args);
+        };
+
+        const runTests = function(EmscriptenModule){
+          console.log("Module inited.");
+          const wasm = {
+            exports: EmscriptenModule.asm,
+            alloc: (n)=>EmscriptenModule._malloc(n),
+            dealloc: (m)=>EmscriptenModule._free(m)
+          };
+          //console.debug('Emscripten Module =',EmscriptenModule);
+          //console.debug('wasm =',wasm);
+          self.WhWasmUtilInstaller(wasm);
+          const scope = wasm.scopedAllocPush();
+          try{
+            const maxArgc = 12;
+            const aArgs = [
+              // TODO: accept flags via URL arguments and/or a
+              // UI control. A multi-SELECT element should do
+              // nicely.
+              "speedtest1",
+              "--memdb",
+              "--stats"
+            ];
+            wasm.xCall('__main_argc_argv', aArgs.length,
+                       wasm.scopedAllocMainArgv(aArgs));
+          }finally{
+            wasm.scopedAllocPop(scope);
+          }
+        };
+
+        self.sqlite3TestModule.print = logHtml;
+        self.sqlite3TestModule.printErr = logErr;
+        sqlite3Speedtest1InitModule(self.sqlite3TestModule).then(function(M){
+          setTimeout(()=>runTests(M), 100);
+        });
+      })();
+    </script>
+  </body>
+</html>
