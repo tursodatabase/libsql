@@ -655,14 +655,14 @@ void sqlite3PcacheMove(PgHdr *p, Pgno newPgno){
   assert( sqlite3PcachePageSanity(p) );
   pcacheTrace(("%p.MOVE %d -> %d\n",pCache,p->pgno,newPgno));
   pOther = sqlite3GlobalConfig.pcache2.xFetch(pCache->pCache, newPgno, 0);
-  sqlite3GlobalConfig.pcache2.xRekey(pCache->pCache, p->pPage, p->pgno,newPgno);
   if( pOther ){
-    PgHdr *pPg = (PgHdr*)pOther->pExtra;
-    pPg->pgno = p->pgno;
-    if( pPg->pPage==0 ){
-      sqlite3GlobalConfig.pcache2.xUnpin(pCache->pCache, pOther, 0);
-    }
+    PgHdr *pXPage = (PgHdr*)pOther->pExtra;
+    assert( pXPage->nRef==0 );
+    pXPage->nRef++;
+    pCache->nRefSum++;
+    sqlite3PcacheDrop(pXPage);
   }
+  sqlite3GlobalConfig.pcache2.xRekey(pCache->pCache, p->pPage, p->pgno,newPgno);
   p->pgno = newPgno;
   if( (p->flags&PGHDR_DIRTY) && (p->flags&PGHDR_NEED_SYNC) ){
     pcacheManageDirtyList(p, PCACHE_DIRTYLIST_FRONT);
