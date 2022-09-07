@@ -1134,7 +1134,7 @@ static void pcache1Rekey(
   }
   *pp = pPage->pNext;
 
-  assert( pcache1FetchNoMutex(p, iOld, 0)==0 ); /* iOld not in cache */
+  assert( pcache1FetchNoMutex(p, iNew, 0)==0 ); /* iNew not in cache */
   hNew = iNew%pCache->nHash;
   pPage->iKey = iNew;
   pPage->pNext = pCache->apHash[hNew];
