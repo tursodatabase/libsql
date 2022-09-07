@@ -13,6 +13,7 @@
 */
 
 #include "sqlite3recover.h"
+#include "sqliteInt.h"
 
 #include <tcl.h>
 #include <assert.h>
@@ -128,7 +129,7 @@ static int testRecoverCmd(
           int iVal = 0;
           if( Tcl_GetBooleanFromObj(interp, objv[3], &iVal) ) return TCL_ERROR;
           res = sqlite3_recover_config(pTest->p, 
-              SQLITE_RECOVER_FREELIST_CORRUPT, (void*)iVal
+              SQLITE_RECOVER_FREELIST_CORRUPT, SQLITE_INT_TO_PTR(iVal)
           );
           break;
         }
@@ -136,7 +137,7 @@ static int testRecoverCmd(
           int iVal = 0;
           if( Tcl_GetBooleanFromObj(interp, objv[3], &iVal) ) return TCL_ERROR;
           res = sqlite3_recover_config(pTest->p, 
-              SQLITE_RECOVER_ROWIDS, (void*)iVal
+              SQLITE_RECOVER_ROWIDS, SQLITE_INT_TO_PTR(iVal)
           );
           break;
         }

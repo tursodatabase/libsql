@@ -234,15 +234,15 @@ static void recoverFinalize(sqlite3_recover *p, sqlite3_stmt *pStmt){
 
 static int recoverExec(sqlite3_recover *p, sqlite3 *db, const char *zSql){
   if( p->errCode==SQLITE_OK ){
-    int rc = sqlite3_exec(p->dbOut, zSql, 0, 0, 0);
+    int rc = sqlite3_exec(db, zSql, 0, 0, 0);
     if( rc ){
-      recoverDbError(p, p->dbOut);
+      recoverDbError(p, db);
     }
   }
   return p->errCode;
 }
 
-static char *recoverPrintf(sqlite3_recover *p, const char *zFmt, ...){
+static char *recoverMPrintf(sqlite3_recover *p, const char *zFmt, ...){
   va_list ap;
   char *z;
   va_start(ap, zFmt);
@@ -375,79 +375,187 @@ static void recoverGetPage(
   }
 }
 
+/*
+** Find a string that is not found anywhere in z[].  Return a pointer
+** to that string.
+**
+** Try to use zA and zB first.  If both of those are already found in z[]
+** then make up some string and store it in the buffer zBuf.
+*/
+static const char *unused_string(
+  const char *z,                    /* Result must not appear anywhere in z */
+  const char *zA, const char *zB,   /* Try these first */
+  char *zBuf                        /* Space to store a generated string */
+){
+  unsigned i = 0;
+  if( strstr(z, zA)==0 ) return zA;
+  if( strstr(z, zB)==0 ) return zB;
+  do{
+    sqlite3_snprintf(20,zBuf,"(%s%u)", zA, i++);
+  }while( strstr(z,zBuf)!=0 );
+  return zBuf;
+}
+
+
+/*
+** Scalar function "escape_crnl".  The argument passed to this function is the
+** output of built-in function quote(). If the first character of the input is
+** "'", indicating that the value passed to quote() was a text value, then this
+** function searches the input for "\n" and "\r" characters and adds a wrapper
+** similar to the following:
+**
+**   replace(replace(<input>, '\n', char(10), '\r', char(13));
+**
+** Or, if the first character of the input is not "'", then a copy
+** of the input is returned.
+*/
+static void recoverEscapeCrnl(
+  sqlite3_context *context, 
+  int argc, 
+  sqlite3_value **argv
+){
+  const char *zText = (const char*)sqlite3_value_text(argv[0]);
+  if( zText && zText[0]=='\'' ){
+    int nText = sqlite3_value_bytes(argv[0]);
+    int i;
+    char zBuf1[20];
+    char zBuf2[20];
+    const char *zNL = 0;
+    const char *zCR = 0;
+    int nCR = 0;
+    int nNL = 0;
+
+    for(i=0; zText[i]; i++){
+      if( zNL==0 && zText[i]=='\n' ){
+        zNL = unused_string(zText, "\\n", "\\012", zBuf1);
+        nNL = (int)strlen(zNL);
+      }
+      if( zCR==0 && zText[i]=='\r' ){
+        zCR = unused_string(zText, "\\r", "\\015", zBuf2);
+        nCR = (int)strlen(zCR);
+      }
+    }
+
+    if( zNL || zCR ){
+      int iOut = 0;
+      i64 nMax = (nNL > nCR) ? nNL : nCR;
+      i64 nAlloc = nMax * nText + (nMax+64)*2;
+      char *zOut = (char*)sqlite3_malloc64(nAlloc);
+      if( zOut==0 ){
+        sqlite3_result_error_nomem(context);
+        return;
+      }
+
+      if( zNL && zCR ){
+        memcpy(&zOut[iOut], "replace(replace(", 16);
+        iOut += 16;
+      }else{
+        memcpy(&zOut[iOut], "replace(", 8);
+        iOut += 8;
+      }
+      for(i=0; zText[i]; i++){
+        if( zText[i]=='\n' ){
+          memcpy(&zOut[iOut], zNL, nNL);
+          iOut += nNL;
+        }else if( zText[i]=='\r' ){
+          memcpy(&zOut[iOut], zCR, nCR);
+          iOut += nCR;
+        }else{
+          zOut[iOut] = zText[i];
+          iOut++;
+        }
+      }
+
+      if( zNL ){
+        memcpy(&zOut[iOut], ",'", 2); iOut += 2;
+        memcpy(&zOut[iOut], zNL, nNL); iOut += nNL;
+        memcpy(&zOut[iOut], "', char(10))", 12); iOut += 12;
+      }
+      if( zCR ){
+        memcpy(&zOut[iOut], ",'", 2); iOut += 2;
+        memcpy(&zOut[iOut], zCR, nCR); iOut += nCR;
+        memcpy(&zOut[iOut], "', char(13))", 12); iOut += 12;
+      }
+
+      sqlite3_result_text(context, zOut, iOut, SQLITE_TRANSIENT);
+      sqlite3_free(zOut);
+      return;
+    }
+  }
+
+  sqlite3_result_value(context, argv[0]);
+}
+
+
 #ifdef _WIN32
 __declspec(dllexport)
 #endif
 int sqlite3_dbdata_init(sqlite3*, char**, const sqlite3_api_routines*);
 
 static int recoverOpenOutput(sqlite3_recover *p){
-  int rc = SQLITE_OK;
-  if( p->dbOut==0 ){
-    const int flags = SQLITE_OPEN_URI|SQLITE_OPEN_CREATE|SQLITE_OPEN_READWRITE;
-    sqlite3 *db = 0;
+  struct Func {
+    const char *zName;
+    int nArg;
+    void (*xFunc)(sqlite3_context*,int,sqlite3_value **);
+  } aFunc[] = {
+    { "getpage", 1, recoverGetPage },
+    { "page_is_used", 1, recoverPageIsUsed },
+    { "read_i32", 2, recoverReadI32 },
+    { "escape_crnl", 1, recoverEscapeCrnl },
+  };
 
-    assert( p->dbOut==0 );
+  const int flags = SQLITE_OPEN_URI|SQLITE_OPEN_CREATE|SQLITE_OPEN_READWRITE;
+  sqlite3 *db = 0;                /* New database handle */
+  int ii;                         /* For iterating through aFunc[] */
 
-    rc = sqlite3_open_v2(p->zUri, &db, flags, 0);
-    if( rc==SQLITE_OK ){
-      rc = sqlite3_exec(db, "PRAGMA writable_schema = 1", 0, 0, 0);
-    }
-    if( rc==SQLITE_OK ){
-      const char *zPath = p->zStateDb ? p->zStateDb : ":memory:";
-      char *zSql = sqlite3_mprintf("ATTACH %Q AS recovery", zPath);
-      if( zSql==0 ){
-        rc = p->errCode = SQLITE_NOMEM;
-      }else{
-        rc = sqlite3_exec(db, zSql, 0, 0, 0);
-      }
-      sqlite3_free(zSql);
-    }
+  assert( p->dbOut==0 );
 
-    /* Truncate the output database. This is done by opening a new, empty,
-    ** temp db, then using the backup API to clobber any existing output db
-    ** with a copy of it. */
-    if( rc==SQLITE_OK ){
-      sqlite3 *db2 = 0;
-      rc = sqlite3_open("", &db2);
-      if( rc==SQLITE_OK ){
-        sqlite3_backup *pBackup = sqlite3_backup_init(db, "main", db2, "main");
-        if( pBackup ){
-          while( sqlite3_backup_step(pBackup, 1000)==SQLITE_OK );
-          rc = sqlite3_backup_finish(pBackup);
-        }
-      }
-      sqlite3_close(db2);
-    }
-
-    if( rc==SQLITE_OK ){
-      rc = sqlite3_exec(db, RECOVERY_SCHEMA, 0, 0, 0);
-    }
-
-    if( rc==SQLITE_OK ){
-      sqlite3_dbdata_init(db, 0, 0);
-      rc = sqlite3_create_function(
-          db, "getpage", 1, SQLITE_UTF8, (void*)p, recoverGetPage, 0, 0
-      );
-    }
-    if( rc==SQLITE_OK ){
-      rc = sqlite3_create_function(
-          db, "page_is_used", 1, SQLITE_UTF8, (void*)p, recoverPageIsUsed, 0, 0
-      );
-    }
-    if( rc==SQLITE_OK ){
-      rc = sqlite3_create_function(
-          db, "read_i32", 2, SQLITE_UTF8, (void*)p, recoverReadI32, 0, 0
-      );
-    }
-
-    if( rc!=SQLITE_OK ){
-      if( p->errCode==SQLITE_OK ) rc = recoverDbError(p, db);
-      sqlite3_close(db);
-    }else{
-      p->dbOut = db;
-    }
+  if( sqlite3_open_v2(p->zUri, &db, flags, 0) ){
+    recoverDbError(p, db);
+  }else{
+    char *zSql = recoverMPrintf(p, "ATTACH %Q AS recovery;", p->zStateDb);
+    recoverExec(p, db, zSql);
+    recoverExec(p, db,
+        "PRAGMA writable_schema = 1;"
+        "CREATE TABLE recovery.map(pgno INTEGER PRIMARY KEY, parent INT);" 
+        "CREATE TABLE recovery.schema(type, name, tbl_name, rootpage, sql);"
+    );
+    sqlite3_free(zSql);
   }
-  return rc;
+
+  /* Register the sqlite_dbdata and sqlite_dbptr virtual table modules.
+  ** These two are registered with the output database handle - this
+  ** module depends on the input handle supporting the sqlite_dbpage
+  ** virtual table only.  */
+  if( p->errCode==SQLITE_OK ){
+    p->errCode = sqlite3_dbdata_init(db, 0, 0);
+  }
+
+  /* Register the custom user-functions with the output handle. */
+  for(ii=0; p->errCode==SQLITE_OK && ii<sizeof(aFunc)/sizeof(aFunc[0]); ii++){
+    p->errCode = sqlite3_create_function(db, aFunc[ii].zName, 
+        aFunc[ii].nArg, SQLITE_UTF8, (void*)p, aFunc[ii].xFunc, 0, 0
+    );
+  }
+
+  /* Truncate the output database to 0 pages in size. This is done by 
+  ** opening a new, empty, temp db, then using the backup API to clobber 
+  ** any existing output db with a copy of it. */
+  if( p->errCode==SQLITE_OK ){
+    sqlite3 *db2 = 0;
+    int rc = sqlite3_open("", &db2);
+    if( rc==SQLITE_OK ){
+      sqlite3_backup *pBackup = sqlite3_backup_init(db, "main", db2, "main");
+      if( pBackup ){
+        while( sqlite3_backup_step(pBackup, 1000)==SQLITE_OK );
+        p->errCode = sqlite3_backup_finish(pBackup);
+      }
+    }
+    sqlite3_close(db2);
+  }
+
+  p->dbOut = db;
+  return p->errCode;
 }
 
 static int recoverCacheSchema(sqlite3_recover *p){
@@ -632,22 +740,6 @@ static int recoverWriteSchema2(sqlite3_recover *p){
   return p->errCode;
 }
 
-
-static char *recoverMPrintf(sqlite3_recover *p, const char *zFmt, ...){
-  char *zRet = 0;
-  if( p->errCode==SQLITE_OK ){
-    va_list ap;
-    char *z;
-    va_start(ap, zFmt);
-    zRet = sqlite3_vmprintf(zFmt, ap);
-    va_end(ap);
-    if( zRet==0 ){
-      p->errCode = SQLITE_NOMEM;
-    }
-  }
-  return zRet;
-}
-
 static sqlite3_stmt *recoverInsertStmt(
   sqlite3_recover *p, 
   RecoverTable *pTab,
@@ -688,8 +780,8 @@ static sqlite3_stmt *recoverInsertStmt(
       zSql = recoverMPrintf(p, "%z%s%Q", zSql, zSep, pTab->aCol[ii].zCol);
 
       if( bSql ){
-        zBind = recoverMPrintf(
-            p, "%z%squote(?%d)", zBind, zSqlSep, pTab->aCol[ii].iBind
+        zBind = recoverMPrintf(p, 
+            "%z%sescape_crnl(quote(?%d))", zBind, zSqlSep, pTab->aCol[ii].iBind
         );
         zSqlSep = "||', '||";
       }else{
@@ -745,9 +837,9 @@ static char *recoverLostAndFoundCreate(
   for(ii=-1; zTbl==0 && p->errCode==SQLITE_OK && ii<1000; ii++){
     int bFail = 0;
     if( ii<0 ){
-      zTbl = recoverPrintf(p, "%s", p->zLostAndFound);
+      zTbl = recoverMPrintf(p, "%s", p->zLostAndFound);
     }else{
-      zTbl = recoverPrintf(p, "%s_%d", p->zLostAndFound, ii);
+      zTbl = recoverMPrintf(p, "%s_%d", p->zLostAndFound, ii);
     }
 
     if( p->errCode==SQLITE_OK ){
@@ -777,7 +869,7 @@ static char *recoverLostAndFoundCreate(
       zSep = ", ";
     }
 
-    zSql = recoverPrintf(p, "CREATE TABLE %s(%s)", zTbl, zField);
+    zSql = recoverMPrintf(p, "CREATE TABLE %s(%s)", zTbl, zField);
     sqlite3_free(zField);
 
     recoverExec(p, p->dbOut, zSql);
@@ -1217,14 +1309,14 @@ int sqlite3_recover_config(sqlite3_recover *p, int op, void *pArg){
   switch( op ){
     case SQLITE_RECOVER_TESTDB:
       sqlite3_free(p->zStateDb);
-      p->zStateDb = sqlite3_mprintf("%s", (char*)pArg);
+      p->zStateDb = recoverMPrintf(p, "%s", (char*)pArg);
       break;
 
     case SQLITE_RECOVER_LOST_AND_FOUND:
       const char *zArg = (const char*)pArg;
       sqlite3_free(p->zLostAndFound);
       if( zArg ){
-        p->zLostAndFound = recoverPrintf(p, "%s", zArg);
+        p->zLostAndFound = recoverMPrintf(p, "%s", zArg);
       }else{
         p->zLostAndFound = 0;
       }
@@ -1247,21 +1339,47 @@ int sqlite3_recover_config(sqlite3_recover *p, int op, void *pArg){
 }
 
 static void recoverStep(sqlite3_recover *p){
-
+  RecoverTable *pTab = 0;
+  RecoverTable *pNext = 0;
+  int rc = SQLITE_OK;
   assert( p->errCode==SQLITE_OK );
 
+  recoverSqlCallback(p, "BEGIN");
   recoverSqlCallback(p, "PRAGMA writable_schema = on");
 
-  if( p->dbOut==0 ){
-    if( recoverOpenOutput(p) ) return;
-    if( recoverCacheSchema(p) ) return;
-    if( recoverWriteSchema1(p) ) return;
-    if( recoverWriteData(p) ) return;
-    if( p->zLostAndFound && recoverLostAndFound(p) ) return;
-    if( recoverWriteSchema2(p) ) return;
-  }
+  /* Open the output database. And register required virtual tables and 
+  ** user functions with the new handle. */
+  recoverOpenOutput(p);
+
+  /* Open transactions on both the input and output databases. */
+  recoverExec(p, p->dbIn, "BEGIN");
+  recoverExec(p, p->dbOut, "BEGIN");
+
+  recoverCacheSchema(p);
+  recoverWriteSchema1(p);
+  recoverWriteData(p);
+  if( p->zLostAndFound ) recoverLostAndFound(p);
+  recoverWriteSchema2(p);
+
+  /* If no error has occurred, commit the write transaction on the output
+  ** database. Then end the read transaction on the input database, regardless
+  ** of whether or not prior errors have occurred.  */
+  recoverExec(p, p->dbOut, "COMMIT");
+  rc = sqlite3_exec(p->dbIn, "END", 0, 0, 0);
+  if( p->errCode==SQLITE_OK ) p->errCode = rc;
 
   recoverSqlCallback(p, "PRAGMA writable_schema = off");
+  recoverSqlCallback(p, "COMMIT");
+
+  for(pTab=p->pTblList; pTab; pTab=pNext){
+    pNext = pTab->pNext;
+    sqlite3_free(pTab);
+  }
+  p->pTblList = 0;
+
+  sqlite3_finalize(p->pGetPage);
+  sqlite3_close(p->dbOut);
+  p->pGetPage = 0;
 }
 
 int sqlite3_recover_step(sqlite3_recover *p){
@@ -1272,21 +1390,8 @@ int sqlite3_recover_step(sqlite3_recover *p){
 }
 
 int sqlite3_recover_finish(sqlite3_recover *p){
-  RecoverTable *pTab;
-  RecoverTable *pNext;
-  int rc;
-
-  for(pTab=p->pTblList; pTab; pTab=pNext){
-    pNext = pTab->pNext;
-    sqlite3_free(pTab);
-  }
-
-  sqlite3_finalize(p->pGetPage);
-  rc = sqlite3_close(p->dbOut);
-  assert( rc==SQLITE_OK );
-  p->pGetPage = 0;
-  rc = p->errCode;
-
+  int rc = p->errCode;
+  sqlite3_free(p->zErrMsg);
   sqlite3_free(p->zStateDb);
   sqlite3_free(p->zLostAndFound);
   sqlite3_free(p);
