@@ -10,6 +10,31 @@
 **
 *************************************************************************
 **
+** This file contains the public interface to the "recover" extension -
+** an SQLite extension designed to recover data from corrupted database
+** files.
+*/
+
+/*
+** OVERVIEW:
+**
+** To use the API to recover data from a corrupted database, an
+** application:
+**
+** 1) Creates an sqlite3_recover handle by calling either
+**    sqlite3_recover_init() or sqlite3_recover_init_sql().
+**
+** 2) Configures the new handle using one or more calls to
+**    sqlite3_recover_config().
+**
+** 3) Executes the recovery by calling sqlite3_recover_run() on the handle.
+**
+** 4) Retrieves any error code and English language error message using the
+**    sqlite3_recover_errcode() and sqlite3_recover_errmsg() APIs,
+**    respectively.
+**
+** 5) Destroys the sqlite3_recover handle and frees all resources
+**    using sqlite3_recover_finish().
 */
 
 
@@ -22,20 +47,46 @@
 extern "C" {
 #endif
 
+/*
+** Opaque handle type.
+*/
 typedef struct sqlite3_recover sqlite3_recover;
 
 /* 
-** Create an object to recover data from database zDb (e.g. "main")
-** opened by handle db. Data will be recovered into the database
-** identified by parameter zUri. Database zUri is clobbered if it
-** already exists.
+** These two APIs attempt to create and return a new sqlite3_recover object.
+** In both cases the first two arguments identify the (possibly
+** corrupt) database to recover data from. The first argument is an open
+** database handle and the second the name of a database attached to that
+** handle (i.e. "main", "temp" or the name of an attached database).
+**
+** If sqlite3_recover_init() is used to create the new sqlite3_recover
+** handle, then data is recovered into a new database, identified by
+** string parameter zUri. zUri may be an absolute or relative file path,
+** or may be an SQLite URI. If the identified database file already exists,
+** it is overwritten.
+**
+** If sqlite3_recover_init_sql() is invoked, then any recovered data will
+** be returned to the user as a series of SQL statements. Executing these
+** SQL statements results in the same database as would have been created
+** had sqlite3_recover_init() been used. For each SQL statement in the
+** output, the callback function passed as the third argument (xSql) is 
+** invoked once. The first parameter is a passed a copy of the fourth argument
+** to this function (pCtx) as its first parameter, and a pointer to a
+** nul-terminated buffer containing the SQL statement formated as UTF-8 as 
+** the second. If the xSql callback returns any value other than SQLITE_OK,
+** then processing is immediately abandoned and the value returned used as
+** the recover handle error code (see below).
+**
+** If an out-of-memory error occurs, NULL may be returned instead of
+** a valid handle. In all other cases, it is the responsibility of the
+** application to avoid resource leaks by ensuring that
+** sqlite3_recover_finish() is called on all allocated handles.
 */
 sqlite3_recover *sqlite3_recover_init(
   sqlite3* db, 
   const char *zDb, 
   const char *zUri
 );
-
 sqlite3_recover *sqlite3_recover_init_sql(
   sqlite3* db, 
   const char *zDb, 
@@ -43,7 +94,9 @@ sqlite3_recover *sqlite3_recover_init_sql(
   void *pCtx
 );
 
-/* Details TBD. */
+/*
+**
+*/
 int sqlite3_recover_config(sqlite3_recover*, int op, void *pArg);
 
 /*
@@ -76,21 +129,31 @@ int sqlite3_recover_config(sqlite3_recover*, int op, void *pArg);
 #define SQLITE_RECOVER_FREELIST_CORRUPT 791
 #define SQLITE_RECOVER_ROWIDS           792
 
-/* Step the recovery object. Return SQLITE_DONE if recovery is complete,
-** SQLITE_OK if recovery is not complete but no error has occurred, or
-** an SQLite error code if an error has occurred.
+/* 
+** Run the recovery. Return an SQLite error code if an error occurs, or
+** SQLITE_OK otherwise. 
 */
-int sqlite3_recover_step(sqlite3_recover*);
+int sqlite3_recover_run(sqlite3_recover*);
 
+/*
+** Return a pointer to a buffer containing the English language error
+** message stored in the sqlite3_recover handle. If no error message
+** is available (including in the case where no error has occurred),
+** NULL is returned.
+*/
 const char *sqlite3_recover_errmsg(sqlite3_recover*);
 
+/*
+** Return the recover handle error code. SQLITE_OK is returned if no error
+** has occurred.
+*/
 int sqlite3_recover_errcode(sqlite3_recover*);
 
-/* Clean up a recovery object created by a call to sqlite3_recover_init().
-** This function returns SQLITE_DONE if the new database was created,
-** SQLITE_OK if it processing was abandoned before it as finished or
-** an SQLite error code (e.g. SQLITE_IOERR, SQLITE_NOMEM etc.) if an
-** error occurred.  */
+/* 
+** Clean up a recovery object created by a call to sqlite3_recover_init().
+** This function returns SQLITE_OK if no error occurred, or else a copy
+** of the recover handle error code.
+*/
 int sqlite3_recover_finish(sqlite3_recover*);
 
 

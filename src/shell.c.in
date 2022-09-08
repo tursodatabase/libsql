@@ -7314,7 +7314,7 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
   sqlite3_recover_config(p, SQLITE_RECOVER_ROWIDS, (void*)&bRowids);
   sqlite3_recover_config(p, SQLITE_RECOVER_FREELIST_CORRUPT,(void*)&bFreelist);
 
-  sqlite3_recover_step(p);
+  sqlite3_recover_run(p);
   if( sqlite3_recover_errcode(p)!=SQLITE_OK ){
     const char *zErr = sqlite3_recover_errmsg(p);
     int errCode = sqlite3_recover_errcode(p);

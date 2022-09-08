@@ -1395,7 +1395,7 @@ static void recoverStep(sqlite3_recover *p){
   p->pGetPage = 0;
 }
 
-int sqlite3_recover_step(sqlite3_recover *p){
+int sqlite3_recover_run(sqlite3_recover *p){
   if( p && p->errCode==SQLITE_OK ){
     recoverStep(p);
   }

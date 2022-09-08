@@ -146,7 +146,7 @@ static int testRecoverCmd(
       break;
     }
     case 1:  assert( sqlite3_stricmp("step", aSub[iSub].zSub)==0 ); {
-      int res = sqlite3_recover_step(pTest->p);
+      int res = sqlite3_recover_run(pTest->p);
       Tcl_SetObjResult(interp, Tcl_NewIntObj(res));
       break;
     }
