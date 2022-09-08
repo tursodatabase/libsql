@@ -1,5 +1,5 @@
-C Compiles\swithout\serror,\sbut\suntested.
-D 2022-09-08T16:27:50.573
+C Compiles\sand\sloads\sas\san\sextension.\s\sStarts\sto\srun\sbut\squickly\shits\sissues.
+D 2022-09-08T17:12:12.069
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -335,7 +335,7 @@ F ext/misc/uint.c 053fed3bce2e89583afcd4bf804d75d659879bbcedac74d0fa9ed548839a03
 F ext/misc/unionvtab.c 36237f0607ca954ac13a4a0e2d2ac40c33bc6e032a5f55f431713061ef1625f9
 F ext/misc/urifuncs.c f71360d14fa9e7626b563f1f781c6148109462741c5235ac63ae0f8917b9c751
 F ext/misc/uuid.c 5bb2264c1b64d163efa46509544fd7500cb8769cb7c16dd52052da8d961505cf
-F ext/misc/vfskv.c f21561436948a853c4df512c68a814ef69d8a278dbbbacbf2acceed1aa477d02
+F ext/misc/vfskv.c 8664e43778e5d7cda6abd2e57ec374e7e0eb424ff4da093847bac7aa154c7789
 F ext/misc/vfslog.c 3932ab932eeb2601dbc4447cb14d445aaa9fbe43b863ef5f014401c3420afd20
 F ext/misc/vfsstat.c 474d08efc697b8eba300082cb1eb74a5f0f3df31ed257db1cb07e72ab0e53dfb
 F ext/misc/vtablog.c 5538acd0c8ddaae372331bee11608d76973436b77d6a91e8635cfc9432fba5ae
@@ -2001,8 +2001,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 51e267696d25f2f83b5bb847d5254ab15573ef1a16ea3d7dd8279c73c0bee539
-R 3f65efdb484bcd33ce484018dd231698
+P a329939c32e33d8d00066ba3d4327f07cca1b4e67de0b8d85f1e7f98afe40954
+R 3c0347d709594b19afa07b9bd97b3623
 U drh
-Z e40c8d61375542bcfdfb80455dd845c0
+Z c98d8a23118cf655e6b32d119c295b3c
 # Remove this line to create a well-formed Fossil manifest.

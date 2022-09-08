@@ -195,7 +195,7 @@ static int kvstorageWrite(
   kvstorageMakeKey(pStore, zKey);
   fd = fopen(pStore->zKey, "wb");
   if( fd ){
-    KVVFS_TRACE(("KVVFS-WRITE  %-12s (%d) %.30s\n", pStore->zKey,
+    KVVFS_TRACE(("KVVFS-WRITE  %-14s (%d) %.30s\n", pStore->zKey,
                  (int)strlen(zData), zData));
     fputs(zData, fd);
     fclose(fd);
@@ -210,7 +210,7 @@ static int kvstorageWrite(
 static int kvstorageDelete(KVStorage *pStore, const char *zKey){
   kvstorageMakeKey(pStore, zKey);
   unlink(pStore->zKey);
-  KVVFS_TRACE(("KVVFS-DELETE %-12s\n", pStore->zKey));
+  KVVFS_TRACE(("KVVFS-DELETE %-14s\n", pStore->zKey));
   return 0;
 }
 
@@ -239,14 +239,14 @@ static int kvstorageRead(
    || stat(pStore->zKey, &buf)!=0
    || !S_ISREG(buf.st_mode)
   ){
-    KVVFS_TRACE(("KVVFS-READ   %-12s (-1)\n", pStore->zKey));
+    KVVFS_TRACE(("KVVFS-READ   %-14s (-1)\n", pStore->zKey));
     return -1;
   }
   if( nBuf<0 ){
     return (int)buf.st_size;
   }else if( nBuf==1 ){
     zBuf[0] = 0;
-    KVVFS_TRACE(("KVVFS-READ   %-12s (%d)\n", pStore->zKey,
+    KVVFS_TRACE(("KVVFS-READ   %-14s (%d)\n", pStore->zKey,
                  (int)buf.st_size));
     return (int)buf.st_size;
   }
@@ -255,12 +255,12 @@ static int kvstorageRead(
   }
   fd = fopen(pStore->zKey, "rb");
   if( fd==0 ){
-    KVVFS_TRACE(("KVVFS-READ   %-12s (-1)\n", pStore->zKey));
+    KVVFS_TRACE(("KVVFS-READ   %-14s (-1)\n", pStore->zKey));
     return -1;
   }else{
     fread(zBuf, nBuf-1, 1, fd);
     fclose(fd);
-    KVVFS_TRACE(("KVVFS-READ   %-12s (%d) %.30s\n", pStore->zKey,
+    KVVFS_TRACE(("KVVFS-READ   %-14s (%d) %.30s\n", pStore->zKey,
                  nBuf-1, zBuf));
     return nBuf-1;
   }
@@ -456,7 +456,6 @@ static int kvvfsReadFromDb(
   int got, n;
   char zKey[30];
   char aData[131073];
-  assert( pFile->szDb>=0 );
   assert( iOfst>=0 );
   assert( iAmt>=0 );
   if( (iOfst % iAmt)!=0 ){
@@ -472,10 +471,11 @@ static int kvvfsReadFromDb(
   sqlite3_snprintf(sizeof(zKey), zKey, "pg-%u", pgno);
   got = kvstorageRead(pFile->pVfs->pStore, zKey, aData, sizeof(aData)-1);
   if( got<0 ){
-    return SQLITE_IOERR_READ;
+    n = 0;
+  }else{
+    aData[got] = 0;
+    n = kvvfsDecode(aData, zBuf, iAmt);
   }
-  aData[got] = 0;
-  n = kvvfsDecode(aData, zBuf, iAmt);
   if( n<iAmt ){
     memset(zBuf+n, 0, iAmt-n);
     return SQLITE_IOERR_SHORT_READ;
@@ -848,5 +848,6 @@ int sqlite3_vfskv_init(
   const sqlite3_api_routines *pApi
 ){
   SQLITE_EXTENSION_INIT2(pApi);
-  return sqlite3_vfs_register(&kvvfs_vfs.base, 1);
+  sqlite3_vfs_register(&kvvfs_vfs.base, 1);
+  return SQLITE_OK_LOAD_PERMANENTLY;
 }
