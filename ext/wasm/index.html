@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
+    <link rel="stylesheet" href="common/testing.css"/>
+    <title>sqlite3 WASM Testing Page Index</title>
+  </head>
+  <body>
+    <header id='titlebar'><span>sqlite3 WASM test pages</span></header>
+    <hr>
+    <div>Below is the list of test pages for the sqlite3 WASM
+      builds. All of them require that this directory have been
+      "make"d first. The intent is that <em>this</em> page be run
+      using:</div>
+    <blockquote><pre>althttpd -page index.html</pre></blockquote>
+    <div>and the individual tests be started in their own tab.</div>
+    <div>Warnings and Caveats:
+      <ul class='warning'>
+        <li>Some of these pages require that
+          the web server emit the so-called COOP and COEP headers. The
+          default build of althttpd <em>does not</em>.
+        </li>
+        <li>Whether or not WASMFS/OPFS support is enabled on any given
+          page may depend on build-time options which are <em>off by
+          default</em> because they currently (as of 2022-09-08) break
+          with Worker-based pages.
+        </li>
+      </ul>
+    </div>
+    <div>The tests...
+      <ul id='test-list'>
+        <li><a href='testing1.html'>testing1</a>: sanity tests of the core APIs and surrounding utility code.</li>
+        <li><a href='testing2.html'>testing2</a>: Worker-based test of OO API #1.</li>
+        <li><a href='testing-worker1-promiser.html'>testing-worker1-promiser</a>:
+          tests for the Promise-based wrapper of the Worker-based API.</li>
+        <li><a href='batch-runner.html'>batch-runner</a>: runs batches of SQL exported from speedtest1.</li>
+        <li><a href='speedtest1.html'>speedtest1</a>: a main-thread WASM build of speedtest1.</li>
+        <li><a href='speedtest1-worker.html'>speedtest1-worker</a>: an interactive Worker-thread variant of speedtest1.</li>
+        <li><a href='demo-oo1.html'>demo-oo1</a>: demonstration of the OO API #1.</li>
+        <!--li><a href='x.html'></a></li-->
+      </ul>
+    </div>
+    <style>
+      #test-list { font-size: 120%; }
+    </style>
+    <script>//Assign a distinct target tab name for each test page...
+      document.querySelectorAll('a').forEach(function(e){
+          e.target = e.href;
+      });
+    </script>
+  </body>
+</html>

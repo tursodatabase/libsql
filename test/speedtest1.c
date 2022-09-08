@@ -2204,6 +2204,12 @@ int main(int argc, char **argv){
   int i;                        /* Loop counter */
   int rc;                       /* API return code */
 
+#ifdef SQLITE_SPEEDTEST1_WASM
+  /* Resetting all state is important for the WASM build, which may
+  ** call main() multiple times. */
+  memset(&g, 0, sizeof(g));
+  iTestNumber = 0;
+#endif
 #ifdef SQLITE_CKSUMVFS_STATIC
   sqlite3_register_cksumvfs(0);
 #endif

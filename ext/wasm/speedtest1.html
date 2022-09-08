@@ -10,6 +10,7 @@
   </head>
   <body>
     <header id='titlebar'><span>speedtest1.wasm</span></header>
+    <div>See also: <a href='speedtest1-worker.html'>A Worker-thread variant of this page.</a></div>
     <!-- emscripten bits -->
     <figure id="module-spinner">
       <div class="spinner"></div>
@@ -24,6 +25,9 @@
     <div class="emscripten">
       <progress value="0" max="100" id="module-progress" hidden='1'></progress>  
     </div><!-- /emscripten bits -->
+    <div class='warning'>This page starts running the main exe when it loads, which will
+      block the UI until it finishes! Adding UI controls to manually configure and start it
+      are TODO.</div>
     <div>Output is sent to the dev console because we cannot update the UI while the
       speedtest is running unless/until we move the speedtest to a worker thread.</div>
     <hr>
