@@ -60,17 +60,6 @@ struct RecoverBitmap {
   u32 aElem[0];                   /* Array of 32-bit bitmasks */
 };
 
-/*
-** 
-*/
-#define RECOVERY_SCHEMA \
-"  CREATE TABLE recovery.map("                                 \
-"      pgno INTEGER PRIMARY KEY, parent INT"                   \
-"  );"                                                         \
-"  CREATE TABLE recovery.schema("                              \
-"      type, name, tbl_name, rootpage, sql"                    \
-"  );" 
-
 
 struct sqlite3_recover {
   sqlite3 *dbIn;
@@ -1123,6 +1112,8 @@ static int recoverWriteData(sqlite3_recover *p){
   RecoverTable *pTbl;
   int nMax = 0;
   sqlite3_value **apVal = 0;
+
+  sqlite3_stmt *pTbls = 0;
   sqlite3_stmt *pSel = 0;
 
   /* Figure out the maximum number of columns for any table in the schema */
@@ -1133,113 +1124,129 @@ static int recoverWriteData(sqlite3_recover *p){
   apVal = (sqlite3_value**)recoverMalloc(p, sizeof(sqlite3_value*) * (nMax+1));
   if( apVal==0 ) return p->errCode;
 
+  pTbls = recoverPrepare(p, p->dbOut,
+      "SELECT rootpage FROM recovery.schema WHERE type='table'"
+      "  ORDER BY (tbl_name='sqlite_sequence') ASC"
+  );
+
   pSel = recoverPrepare(p, p->dbOut, 
-      "WITH RECURSIVE pages(root, page) AS ("
-      "  SELECT rootpage, rootpage FROM recovery.schema"
+      "WITH RECURSIVE pages(page) AS ("
+      "  SELECT ?1"
       "    UNION"
-      "   SELECT root, child FROM sqlite_dbptr('getpage()'), pages "
+      "  SELECT child FROM sqlite_dbptr('getpage()'), pages "
       "    WHERE pgno=page"
       ") "
-      "SELECT root, page, cell, field, value "
+      "SELECT page, cell, field, value "
       "FROM sqlite_dbdata('getpage()') d, pages p WHERE p.page=d.pgno "
       "UNION ALL "
-      "SELECT 0, 0, 0, 0, 0"
+      "SELECT 0, 0, 0, 0"
   );
   if( pSel ){
-    RecoverTable *pTab = 0;
-    sqlite3_stmt *pInsert = 0;
-    int nInsert = -1;
-    i64 iPrevRoot = -1;
-    i64 iPrevPage = -1;
-    int iPrevCell = -1;
-    int bHaveRowid = 0;           /* True if iRowid is valid */
-    i64 iRowid = 0;
-    int nVal = -1;
 
-    while( p->errCode==SQLITE_OK && sqlite3_step(pSel)==SQLITE_ROW ){
-      i64 iRoot = sqlite3_column_int64(pSel, 0);
-      i64 iPage = sqlite3_column_int64(pSel, 1);
-      int iCell = sqlite3_column_int(pSel, 2);
-      int iField = sqlite3_column_int(pSel, 3);
-      sqlite3_value *pVal = sqlite3_column_value(pSel, 4);
+    /* The outer loop runs once for each table to recover. */
+    while( sqlite3_step(pTbls)==SQLITE_ROW ){
+      i64 iRoot = sqlite3_column_int64(pTbls, 0);
+      RecoverTable *pTab = recoverFindTable(p, iRoot);
+      if( pTab ){
+        int ii;
+        sqlite3_stmt *pInsert = 0;
+        int nInsert = -1;
+        i64 iPrevPage = -1;
+        int iPrevCell = -1;
+        int bHaveRowid = 0;           /* True if iRowid is valid */
+        i64 iRowid = 0;
+        int nVal = -1;
 
-      int bNewCell = (iPrevRoot!=iRoot || iPrevPage!=iPage || iPrevCell!=iCell);
-      assert( bNewCell==0 || (iField==-1 || iField==0) );
-      assert( bNewCell || iField==nVal );
+        if( sqlite3_stricmp("sqlite_sequence", pTab->zTab)==0 ){
+          recoverExec(p, p->dbOut, "DELETE FROM sqlite_sequence");
+          recoverSqlCallback(p, "DELETE FROM sqlite_sequence");
+        }
 
-      if( bNewCell ){
-        if( nVal>=0 ){
-          int ii;
+        sqlite3_bind_int64(pSel, 1, iRoot);
+        while( p->errCode==SQLITE_OK && sqlite3_step(pSel)==SQLITE_ROW ){
+          i64 iPage = sqlite3_column_int64(pSel, 0);
+          int iCell = sqlite3_column_int(pSel, 1);
+          int iField = sqlite3_column_int(pSel, 2);
+          sqlite3_value *pVal = sqlite3_column_value(pSel, 3);
 
-          if( pTab ){
-            int iVal = 0;
-            int iBind = 1;
+          int bNewCell = (iPrevPage!=iPage || iPrevCell!=iCell);
+          assert( bNewCell==0 || (iField==-1 || iField==0) );
+          assert( bNewCell || iField==nVal );
 
-            if( pInsert==0 || nVal!=nInsert ){
-              recoverFinalize(p, pInsert);
-              pInsert = recoverInsertStmt(p, pTab, nVal);
-              nInsert = nVal;
-            }
+          if( bNewCell ){
+            if( nVal>=0 ){
+              int ii;
+              int iVal = 0;
+              int iBind = 1;
 
-            for(ii=0; ii<pTab->nCol; ii++){
-              RecoverColumn *pCol = &pTab->aCol[ii];
+              if( pInsert==0 || nVal!=nInsert ){
+                recoverFinalize(p, pInsert);
+                pInsert = recoverInsertStmt(p, pTab, nVal);
+                nInsert = nVal;
+              }
 
-              if( pCol->iBind>0 ){
-                if( pCol->bIPK ){
-                  sqlite3_bind_int64(pInsert, pCol->iBind, iRowid);
-                }else if( pCol->iField<nVal ){
-                  sqlite3_bind_value(pInsert, pCol->iBind, apVal[pCol->iField]);
+              for(ii=0; ii<pTab->nCol; ii++){
+                RecoverColumn *pCol = &pTab->aCol[ii];
+
+                if( pCol->iBind>0 ){
+                  if( pCol->bIPK ){
+                    sqlite3_bind_int64(pInsert, pCol->iBind, iRowid);
+                  }else if( pCol->iField<nVal ){
+                    sqlite3_bind_value(pInsert,pCol->iBind,apVal[pCol->iField]);
+                  }
                 }
               }
-            }
-            if( p->bRecoverRowid && pTab->iRowidBind>0 && bHaveRowid ){
-              sqlite3_bind_int64(pInsert, pTab->iRowidBind, iRowid);
+              if( p->bRecoverRowid && pTab->iRowidBind>0 && bHaveRowid ){
+                sqlite3_bind_int64(pInsert, pTab->iRowidBind, iRowid);
+              }
+
+              if( SQLITE_ROW==sqlite3_step(pInsert) && p->xSql ){
+                const char *zSql = (const char*)sqlite3_column_text(pInsert, 0);
+                recoverSqlCallback(p, zSql);
+              }
+              recoverReset(p, pInsert);
+              assert( p->errCode || pInsert );
+              if( pInsert ) sqlite3_clear_bindings(pInsert);
             }
 
-            if( SQLITE_ROW==sqlite3_step(pInsert) && p->xSql ){
-              const char *zSql = (const char*)sqlite3_column_text(pInsert, 0);
-              recoverSqlCallback(p, zSql);
+            for(ii=0; ii<nVal; ii++){
+              sqlite3_value_free(apVal[ii]);
+              apVal[ii] = 0;
             }
-            recoverReset(p, pInsert);
-            assert( p->errCode || pInsert );
-            if( pInsert ) sqlite3_clear_bindings(pInsert);
+            nVal = -1;
+            bHaveRowid = 0;
           }
 
-          for(ii=0; ii<nVal; ii++){
-            sqlite3_value_free(apVal[ii]);
-            apVal[ii] = 0;
+          if( iPage!=0 ){
+            if( iField<0 ){
+              iRowid = sqlite3_column_int64(pSel, 3);
+              assert( nVal==-1 );
+              nVal = 0;
+              bHaveRowid = 1;
+            }else if( iField<nMax ){
+              assert( apVal[iField]==0 );
+              apVal[iField] = sqlite3_value_dup( pVal );
+              nVal = iField+1;
+            }
+            iPrevCell = iCell;
+            iPrevPage = iPage;
           }
-          nVal = -1;
-          bHaveRowid = 0;
         }
 
-        if( iRoot==0 ) continue;
-
-        if( iRoot!=iPrevRoot ){
-          pTab = recoverFindTable(p, iRoot);
-          recoverFinalize(p, pInsert);
-          pInsert = 0;
+        recoverReset(p, pSel);
+        recoverFinalize(p, pInsert);
+        pInsert = 0;
+        for(ii=0; ii<nVal; ii++){
+          sqlite3_value_free(apVal[ii]);
+          apVal[ii] = 0;
         }
       }
-
-      if( iField<0 ){
-        iRowid = sqlite3_column_int64(pSel, 4);
-        assert( nVal==-1 );
-        nVal = 0;
-        bHaveRowid = 1;
-      }else if( iField<nMax ){
-        assert( apVal[iField]==0 );
-        apVal[iField] = sqlite3_value_dup( pVal );
-        nVal = iField+1;
-      }
-      iPrevRoot = iRoot;
-      iPrevCell = iCell;
-      iPrevPage = iPage;
     }
 
-    recoverFinalize(p, pInsert);
-    recoverFinalize(p, pSel);
   }
+
+  recoverFinalize(p, pTbls);
+  recoverFinalize(p, pSel);
 
   sqlite3_free(apVal);
   return p->errCode;
