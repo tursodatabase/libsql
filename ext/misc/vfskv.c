@@ -14,14 +14,25 @@
 ** Key/Value storage engine where both keys and values must be pure
 ** text.
 */
-#include "sqlite3.h"
+#include <sqlite3ext.h>
+SQLITE_EXTENSION_INIT1
 #include <string.h>
 #include <assert.h>
 #include <stdio.h>
-#include <stat/types.h>
+#include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <assert.h>
+#include <stdlib.h>
+
+/*****************************************************************************
+** Debugging logic
+*/
+#if 1
+#define KVVFS_TRACE(X)  printf X;
+#else
+#define KVVFS_TRACE(X)
+#endif
 
 
 /*****************************************************************************
@@ -37,7 +48,6 @@ static KVStorage *kvstorageOpen(void);
 static void kvstorageClose(KVStorage*);
 static int kvstorageWrite(KVStorage*, const char *zKey, const char *zData);
 static int kvstorageDelete(KVStorage*, const char *zKey);
-static int kvstorageSize(KVStorage*, const char *zKey);
 static int kvstorageRead(KVStorage*, const char *zKey, char *zBuf, int nBuf);
 
 
@@ -93,13 +103,9 @@ static int kvvfsDelete(sqlite3_vfs*, const char *zName, int syncDir);
 static int kvvfsAccess(sqlite3_vfs*, const char *zName, int flags, int *);
 static int kvvfsFullPathname(sqlite3_vfs*, const char *zName, int, char *zOut);
 static void *kvvfsDlOpen(sqlite3_vfs*, const char *zFilename);
-static void kvvfsDlError(sqlite3_vfs*, int nByte, char *zErrMsg);
-static void (*kvvfsDlSym(sqlite3_vfs *pVfs, void *p, const char*zSym))(void);
-static void kvvfsDlClose(sqlite3_vfs*, void*);
 static int kvvfsRandomness(sqlite3_vfs*, int nByte, char *zOut);
 static int kvvfsSleep(sqlite3_vfs*, int microseconds);
 static int kvvfsCurrentTime(sqlite3_vfs*, double*);
-static int kvvfsGetLastError(sqlite3_vfs*, int, char *);
 static int kvvfsCurrentTimeInt64(sqlite3_vfs*, sqlite3_int64*);
 
 static KVVfsVfs kvvfs_vfs = {
@@ -122,7 +128,7 @@ static KVVfsVfs kvvfs_vfs = {
     kvvfsSleep,                   /* xSleep */
     kvvfsCurrentTime,             /* xCurrentTime */
     0,                            /* xGetLastError */
-    kvvfsCurrentTimeInt64,        /* xCurrentTimeInt64 */
+    kvvfsCurrentTimeInt64         /* xCurrentTimeInt64 */
   },
   0,
   0
@@ -141,7 +147,7 @@ static sqlite3_io_methods kvvfs_io_methods = {
   kvvfsCheckReservedLock,         /* xCheckReservedLock */
   kvvfsFileControl,               /* xFileControl */
   kvvfsSectorSize,                /* xSectorSize */
-  kvvfsDeviceCharacteristics      /* xDeviceCharacteristics */
+  kvvfsDeviceCharacteristics,     /* xDeviceCharacteristics */
   0,                              /* xShmMap */
   0,                              /* xShmLock */
   0,                              /* xShmBarrier */
@@ -188,12 +194,15 @@ static int kvstorageWrite(
   FILE *fd;
   kvstorageMakeKey(pStore, zKey);
   fd = fopen(pStore->zKey, "wb");
-  if( fd==0 ) return 1;
   if( fd ){
+    KVVFS_TRACE(("KVVFS-WRITE  %-12s (%d) %.30s\n", pStore->zKey,
+                 (int)strlen(zData), zData));
     fputs(zData, fd);
     fclose(fd);
+    return 0;
+  }else{
+    return 1;
   }
-  return 0;
 }
 
 /* Delete a key
@@ -201,6 +210,7 @@ static int kvstorageWrite(
 static int kvstorageDelete(KVStorage *pStore, const char *zKey){
   kvstorageMakeKey(pStore, zKey);
   unlink(pStore->zKey);
+  KVVFS_TRACE(("KVVFS-DELETE %-12s\n", pStore->zKey));
   return 0;
 }
 
@@ -229,22 +239,31 @@ static int kvstorageRead(
    || stat(pStore->zKey, &buf)!=0
    || !S_ISREG(buf.st_mode)
   ){
+    KVVFS_TRACE(("KVVFS-READ   %-12s (-1)\n", pStore->zKey));
     return -1;
   }
   if( nBuf<0 ){
     return (int)buf.st_size;
   }else if( nBuf==1 ){
     zBuf[0] = 0;
+    KVVFS_TRACE(("KVVFS-READ   %-12s (%d)\n", pStore->zKey,
+                 (int)buf.st_size));
     return (int)buf.st_size;
   }
   if( nBuf-1 > buf.st_size ){
     nBuf = buf.st_size + 1;
   }
   fd = fopen(pStore->zKey, "rb");
-  if( fd==0 ) return -1;
-  fread(zBuf, nBuf-1, 1, fd);
-  fclose(fd);
-  return nBuf-1;
+  if( fd==0 ){
+    KVVFS_TRACE(("KVVFS-READ   %-12s (-1)\n", pStore->zKey));
+    return -1;
+  }else{
+    fread(zBuf, nBuf-1, 1, fd);
+    fclose(fd);
+    KVVFS_TRACE(("KVVFS-READ   %-12s (%d) %.30s\n", pStore->zKey,
+                 nBuf-1, zBuf));
+    return nBuf-1;
+  }
 }
 
 
@@ -274,7 +293,7 @@ static int kvvfsClose(sqlite3_file *pProtoFile){
       pX = pX->pNext; 
     }
   }
-  sqlite3_free(pFile->aData);
+  sqlite3_free(pFile->aJrnl);
   sqlite3_free(pFile);
   return SQLITE_OK;
 }
@@ -289,7 +308,7 @@ static int kvvfsClose(sqlite3_file *pProtoFile){
 */
 static int kvvfsEncode(const char *aData, int nData, char *aOut){
   int i, j;
-  const unsigned *a = (const unsigned char*)aData;
+  const unsigned char *a = (const unsigned char*)aData;
   for(i=j=0; i<nData; i++){
     unsigned char c = a[i];
     if( c!=0 ){
@@ -328,8 +347,7 @@ static char kvvfsHexToBinary(char c){
 ** The return value is the number of bytes actually written into aOut[].
 */
 static int kvvfsDecode(const char *aIn, char *aOut, int nOut){
-  char *aOut;
-  int i, j, k;
+  int i, j;
   int c;
   i = 0;
   j = 0;
@@ -416,12 +434,12 @@ static int kvvfsReadFromJournal(
     kvstorageRead(pFile->pVfs->pStore, "journal", aTxt, szTxt+1);
     kvvfsDecodeJournal(pFile, aTxt, szTxt);
     sqlite3_free(aTxt);
-    if( pFile->aData==0 ) return SQLITE_IOERR;
+    if( pFile->aJrnl==0 ) return SQLITE_IOERR;
   }
   if( iOfst+iAmt>pFile->nJrnl ){
     return SQLITE_IOERR_SHORT_READ;
   }
-  mcmcpy(zBuf, pFile->aJrnl+iOfst, iAmt);
+  memcpy(zBuf, pFile->aJrnl+iOfst, iAmt);
   return SQLITE_OK;
 }
 
@@ -435,8 +453,7 @@ static int kvvfsReadFromDb(
   sqlite_int64 iOfst
 ){
   unsigned int pgno;
-  KVVfsPage *pPage;
-  int got;
+  int got, n;
   char zKey[30];
   char aData[131073];
   assert( pFile->szDb>=0 );
@@ -452,7 +469,7 @@ static int kvvfsReadFromDb(
     pFile->szPage = iAmt;
   }
   pgno = 1 + iOfst/iAmt;
-  sqlite3_snprintf(sizeof(zKey), zKey, "pg-%u", pgno)
+  sqlite3_snprintf(sizeof(zKey), zKey, "pg-%u", pgno);
   got = kvstorageRead(pFile->pVfs->pStore, zKey, aData, sizeof(aData)-1);
   if( got<0 ){
     return SQLITE_IOERR_READ;
@@ -542,8 +559,8 @@ static int kvvfsWriteToDb(
   assert( iAmt>=512 && iAmt<=65536 );
   assert( (iAmt & (iAmt-1))==0 );
   pgno = 1 + iOfst/iAmt;
-  sqlite3_snprintf(sizeof(zKey), zKey, "pg-%u", pgno)
-  nData = kvvfsEncode(zBuf, iAmt, aData);
+  sqlite3_snprintf(sizeof(zKey), zKey, "pg-%u", pgno);
+  kvvfsEncode(zBuf, iAmt, aData);
   kvstorageWrite(pFile->pVfs->pStore, zKey, aData);
   if( iOfst+iAmt > pFile->szDb ){
     pFile->szDb = iOfst + iAmt;
@@ -579,9 +596,9 @@ static int kvvfsTruncate(sqlite3_file *pProtoFile, sqlite_int64 size){
   if( pFile->isJournal ){
     assert( size==0 );
     kvstorageDelete(pFile->pVfs->pStore, "journal");
-    sqlite3_free(pFile->aData);
-    pFile->aData = 0;
-    pFile->nData = 0;
+    sqlite3_free(pFile->aJrnl);
+    pFile->aJrnl = 0;
+    pFile->nJrnl = 0;
     return SQLITE_OK;
   }
   if( pFile->szDb>size
@@ -598,7 +615,7 @@ static int kvvfsTruncate(sqlite3_file *pProtoFile, sqlite_int64 size){
       pgno++;
     }
     pFile->szDb = size;
-    kvvfsWriteFileSize(pFile->pVfs->pStore, size);
+    kvvfsWriteFileSize(pFile, size);
     return SQLITE_OK;
   }
   return SQLITE_IOERR;
@@ -608,7 +625,7 @@ static int kvvfsTruncate(sqlite3_file *pProtoFile, sqlite_int64 size){
 ** Sync an kvvfs-file.
 */
 static int kvvfsSync(sqlite3_file *pProtoFile, int flags){
-  int i, k, n;
+  int i, n;
   KVVfsFile *pFile = (KVVfsFile *)pProtoFile;
   char *zOut;
   if( !pFile->isJournal ){
@@ -633,13 +650,13 @@ static int kvvfsSync(sqlite3_file *pProtoFile, int flags){
   kvvfsEncode(pFile->aJrnl, pFile->nJrnl, &zOut[i]);
   kvstorageWrite(pFile->pVfs->pStore, "journal", zOut);
   sqlite3_free(zOut);
-  return rc;
+  return SQLITE_OK;
 }
 
 /*
 ** Return the current file-size of an kvvfs-file.
 */
-static int kvvfsFileSize(sqlite3_file *pFile, sqlite_int64 *pSize){
+static int kvvfsFileSize(sqlite3_file *pProtoFile, sqlite_int64 *pSize){
   KVVfsFile *pFile = (KVVfsFile *)pProtoFile;
   if( pFile->isJournal ){
     *pSize = pFile->nJrnl;
@@ -652,7 +669,7 @@ static int kvvfsFileSize(sqlite3_file *pFile, sqlite_int64 *pSize){
 /*
 ** Lock an kvvfs-file.
 */
-static int kvvfsLock(sqlite3_file *pFile, int eLock){
+static int kvvfsLock(sqlite3_file *pProtoFile, int eLock){
   KVVfsFile *pFile = (KVVfsFile *)pProtoFile;
   assert( !pFile->isJournal );
   if( eLock!=SQLITE_LOCK_NONE ){
@@ -664,7 +681,7 @@ static int kvvfsLock(sqlite3_file *pFile, int eLock){
 /*
 ** Unlock an kvvfs-file.
 */
-static int kvvfsUnlock(sqlite3_file *pFile, int eLock){
+static int kvvfsUnlock(sqlite3_file *pProtoFile, int eLock){
   KVVfsFile *pFile = (KVVfsFile *)pProtoFile;
   assert( !pFile->isJournal );
   if( eLock==SQLITE_LOCK_NONE ){
@@ -676,22 +693,16 @@ static int kvvfsUnlock(sqlite3_file *pFile, int eLock){
 /*
 ** Check if another file-handle holds a RESERVED lock on an kvvfs-file.
 */
-static int kvvfsCheckReservedLock(sqlite3_file *pFile, int *pResOut){
-  int rc;
-  KVVfsFile *pFile = (KVVfsFile *)pProtoFile;
+static int kvvfsCheckReservedLock(sqlite3_file *pProtoFile, int *pResOut){
   *pResOut = 0;
-  rc = SQLITE_OK;
-  return rc;
+  return SQLITE_OK;
 }
 
 /*
 ** File control method. For custom operations on an kvvfs-file.
 */
-static int kvvfsFileControl(sqlite3_file *pFile, int op, void *pArg){
-  int rc;
-  KVVfsFile *pFile = (KVVfsFile *)pProtoFile;
-  rc = SQLITE_NOTFOUND;
-  return rc;
+static int kvvfsFileControl(sqlite3_file *pProtoFile, int op, void *pArg){
+  return SQLITE_NOTFOUND;
 }
 
 /*
@@ -704,7 +715,7 @@ static int kvvfsSectorSize(sqlite3_file *pFile){
 /*
 ** Return the device characteristic flags supported by an kvvfs-file.
 */
-static int kvvfsDeviceCharacteristics(sqlite3_file *pFile){
+static int kvvfsDeviceCharacteristics(sqlite3_file *pProtoFile){
   return 0;
 }
 
@@ -726,7 +737,13 @@ static int kvvfsOpen(
   pFile->isJournal = sqlite3_strglob("*-journal", zName)==0;
   pFile->szPage = -1;
   pFile->szDb = -1;
-  
+  pFile->base.pMethods = &kvvfs_io_methods;
+  pFile->pVfs = pVfs;
+  if( pVfs->pFiles==0 ){
+    pVfs->pStore = kvstorageOpen();
+  }
+  pFile->pNext = pVfs->pFiles;
+  pVfs->pFiles = pFile;
   return SQLITE_OK;
 }
 
@@ -776,7 +793,7 @@ static int kvvfsFullPathname(
   size_t nPath = strlen(zPath);
   if( nOut<nPath+1 ) nPath = nOut - 1;
   memcpy(zOut, zPath, nPath);
-  zPath[nPath] = 0;
+  zOut[nPath] = 0;
   return SQLITE_OK;
 }
 
@@ -816,9 +833,20 @@ static int kvvfsCurrentTimeInt64(sqlite3_vfs *pVfs, sqlite3_int64 *pTimeOut){
   return SQLITE_OK;
 }
 
-/*
-** Register debugvfs as the default VFS for this process.
+#ifdef _WIN32
+__declspec(dllexport)
+#endif
+/* 
+** This routine is called when the extension is loaded.
+**
+** Register the new VFS.  Make arrangement to register the virtual table
+** for each new database connection.
 */
-int sqlite3_register_kvvfs(const char *zArg){
+int sqlite3_vfskv_init(
+  sqlite3 *db, 
+  char **pzErrMsg, 
+  const sqlite3_api_routines *pApi
+){
+  SQLITE_EXTENSION_INIT2(pApi);
   return sqlite3_vfs_register(&kvvfs_vfs.base, 1);
 }
