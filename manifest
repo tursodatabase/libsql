@@ -1,5 +1,5 @@
-C Add\sspeedtest1-worker.html,\san\sinteractive\sWorker-thread\svariant\sof\sspeedtest1.html.\sAdd\sext/wasm/index.html\sto\sact\sas\sa\sgateway\sto\sthe\svarious\stest\spages.
-D 2022-09-08T15:30:59.731
+C Experimentally\sadd\s--nomutex\sflag\sto\sspeedtest1\sto\shave\sit\sopen\sdb\swith\sthe\sSQLITE_OPEN_NOMUTEX\sflag.
+D 2022-09-08T19:53:59.576
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1499,7 +1499,7 @@ F test/speed3.test 694affeb9100526007436334cf7d08f3d74b85ef
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 377a0c48e5a92e0b11c1c5ebb1bc9d83a7312c922bc0cb05970ef5d6a96d1f0c
-F test/speedtest1.c 55ef13e008cbb7dbea032478e60686599679b0b6192e44845c100fdabd14f8ff
+F test/speedtest1.c 345566965466923762c1d7f29295d766a05c87bf48115b3030ceec7592cd1cca
 F test/spellfix.test 951a6405d49d1a23d6b78027d3877b4a33eeb8221dcab5704b499755bb4f552e
 F test/spellfix2.test dfc8f519a3fc204cb2dfa8b4f29821ae90f6f8c3
 F test/spellfix3.test 0f9efaaa502a0e0a09848028518a6fb096c8ad33
@@ -2019,8 +2019,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5ea0623630d769a8f3f07a40cd119be86b631192cdb5178131876b01b40ee5e0
-R b5dc0101db445e11af3bccae9adaef48
+P f16c68ee6d5ebb8dec2ab656dbab2ddb5f1d5133153ad553f986b31020adaa38
+R 7f356b1a33873f45424fcff13841218e
 U stephan
-Z 2c78924308cfac29c905a5ead30d4718
+Z 0d8d2c17b5d2ef83d66b0d6f4d0cb65c
 # Remove this line to create a well-formed Fossil manifest.

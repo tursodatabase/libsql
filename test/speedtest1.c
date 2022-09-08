@@ -20,6 +20,7 @@ static const char zHelp[] =
   "  --mmap SZ           MMAP the first SZ bytes of the database file\n"
   "  --multithread       Set multithreaded mode\n"
   "  --nomemstat         Disable memory statistics\n"
+  "  --nomutex           Open db with SQLITE_OPEN_NOMUTEX\n"
   "  --nosync            Set PRAGMA synchronous=OFF\n"
   "  --notnull           Add NOT NULL constraints to table columns\n"
   "  --output FILE       Store SQL output in FILE\n"
@@ -2192,6 +2193,8 @@ int main(int argc, char **argv){
   int nThread = 0;              /* --threads value */
   int mmapSize = 0;             /* How big of a memory map to use */
   int memDb = 0;                /* --memdb.  Use an in-memory database */
+  int openFlags = SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE
+    ;                           /* SQLITE_OPEN_xxx flags. */
   char *zTSet = "main";         /* Which --testset torun */
   int doTrace = 0;              /* True for --trace */
   const char *zEncoding = 0;    /* --utf16be or --utf16le */
@@ -2272,6 +2275,8 @@ int main(int argc, char **argv){
         if( i>=argc-1 ) fatal_error("missing argument on %s\n", argv[i]);
         mmapSize = integerValue(argv[++i]);
  #endif
+      }else if( strcmp(z,"nomutex")==0 ){
+        openFlags |= SQLITE_OPEN_NOMUTEX;
       }else if( strcmp(z,"nosync")==0 ){
         noSync = 1;
       }else if( strcmp(z,"notnull")==0 ){
@@ -2413,7 +2418,8 @@ int main(int argc, char **argv){
   sqlite3_initialize();
 
   /* Open the database and the input file */
-  if( sqlite3_open(memDb ? ":memory:" : zDbName, &g.db) ){
+  if( sqlite3_open_v2(memDb ? ":memory:" : zDbName, &g.db,
+                      openFlags, 0) ){
     fatal_error("Cannot open database file: %s\n", zDbName);
   }
 #if SQLITE_VERSION_NUMBER>=3006001
