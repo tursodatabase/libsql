@@ -50,12 +50,27 @@
         <label for='cb-reverse-log-order' id='lbl-reverse-log-order'>Reverse log order</label>
       </span>
     </div>
-    <div id='test-output'></div>
+    <div id='test-output'>
+    </div>
+    <div id='tips'>
+      <strong>Tips:</strong>
+      <ul>
+        <li>Control-click the flags to (de)select multiple flags.</li>
+        <li>The easiest way to try different optimization levels is,
+          from this directory:
+          <pre>$ rm -f speedtest1.js; make -e emcc_opt='-O2' speedtest1.js</pre>
+          Then reload this page. -O2 seems to consistently produce the fastest results.
+        </li>
+        <li>TODO: add a link in this app which launches the main-thread
+          version with the same flags.</li>
+        </ul>
+    </div>
     <style>
       #test-output {
           white-space: break-spaces;
           overflow: auto;
       }
+      div#tips { margin-top: 1em; }
       #toolbar {
           display: flex;
           flex-direction: row;
@@ -174,6 +189,7 @@
         //flags["mmap"] = "SZ           MMAP the first SZ bytes of the database file";
         flags["multithread"] = "Set multithreaded mode";
         flags["nomemstat"] = "Disable memory statistics";
+        flags["nomutex"] = "Open db with SQLITE_OPEN_NOMUTEX";
         flags["nosync"] = "Set PRAGMA synchronous=OFF";
         flags["notnull"] = "Add NOT NULL constraints to table columns";
         //flags["output"] = "FILE       Store SQL output in FILE";
@@ -280,26 +296,21 @@
         }
       };
 
-      log("Control-click the flags to (de)select multiple flags.");
-      logWarn("\nThe easiest way to try different optimization levels is, from this directory:\n"+
-              "  $ make clean; make -e emcc_opt='-O2' speedtest1\n"+
-              "Then reload this page. -O2 seems to consistently produce the fastest results.\n");
-      logWarn('\nAchtung: the Worker thread overhead slightly reduces the speed',
-              'compared to running the same options via speedtest1.html.\n'+
-              'TODO: add a link in this app which launches the main-thread',
-              'version with the same flags.\n');
-
       W.onmessage = function(msg){
         msg = msg.data;
         switch(msg.type){
-            case 'ready': log("Worker is ready."); eControls.classList.remove('hidden'); break;
+            case 'ready':
+              log("Worker is ready.");
+              eControls.classList.remove('hidden');
+              break;
             case 'stdout': log(msg.data); break;
             case 'stdout': logErr(msg.data); break;
             case 'run-start':
               eControls.disabled = true;
               log("Running speedtest1 with argv =",msg.data.join(' '));
               break;
-            case 'run-end': log("speedtest1 finished.");
+            case 'run-end':
+              log("speedtest1 finished.");
               eControls.disabled = false;
               // app output is in msg.data
               break;

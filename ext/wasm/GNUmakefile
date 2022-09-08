@@ -273,8 +273,8 @@ sqlite3-wasm.o := $(dir.api)/sqlite3-wasm.o
 $(sqlite3-wasm.o): emcc.cflags += $(SQLITE_OPT)
 $(sqlite3-wasm.o): $(dir.top)/sqlite3.c
 $(dir.api)/wasm_util.o: emcc.cflags += $(SQLITE_OPT)
-sqlite3-wasm.c := $(dir.api)/sqlite3-wasm.c \
-    $(dir.jacc)/jaccwabyt_test.c
+sqlite3-wasm.c := $(dir.api)/sqlite3-wasm.c
+jaccwabyt_test.c := $(dir.jacc)/jaccwabyt_test.c
 # ^^^ FIXME (how?): jaccwabyt_test.c is only needed for the test apps,
 # so we don't really want to include it in release builds. However, we
 # want to test the release builds with those apps, so we cannot simply
@@ -290,7 +290,7 @@ $$($(1).o): $$(MAKEFILE) $(1)
 	$$(emcc.bin) $$(emcc_opt) $$(emcc.flags) $$(emcc.cflags) -c $(1) -o $$@
 CLEAN_FILES += $$($(1).o)
 endef
-$(foreach c,$(sqlite3-wasm.c),$(eval $(call WASM_C_COMPILE,$(c))))
+$(foreach c,$(sqlite3-wasm.c) $(jaccwabyt_test.c),$(eval $(call WASM_C_COMPILE,$(c))))
 $(sqlite3.js): 
 $(sqlite3.js): $(MAKEFILE) $(sqlite3.wasm.obj) \
     EXPORTED_FUNCTIONS.api \
