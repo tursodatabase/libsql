@@ -7,6 +7,7 @@ static const char zHelp[] =
   "Usage: %s [--options] DATABASE\n"
   "Options:\n"
   "  --autovacuum        Enable AUTOVACUUM mode\n"
+  "  --big-transactions  Add BEGIN/END around large tests which normally don't\n"
   "  --cachesize N       Set the cache size to N\n"
   "  --checkpoint        Run PRAGMA wal_checkpoint after each test case\n"
   "  --exclusive         Enable locking_mode=EXCLUSIVE\n"
@@ -98,6 +99,7 @@ static struct Global {
   int nRepeat;               /* Repeat selects this many times */
   int doCheckpoint;          /* Run PRAGMA wal_checkpoint after each trans */
   int nReserve;              /* Reserve bytes */
+  int doBigTransactions;     /* Enable transactions on tests 410 and 510 */
   const char *zWR;           /* Might be WITHOUT ROWID */
   const char *zNN;           /* Might be NOT NULL */
   const char *zPK;           /* Might be UNIQUE or PRIMARY KEY */
@@ -1118,11 +1120,23 @@ void testset_main(void){
   speedtest1_exec("COMMIT");
   speedtest1_end_test();
   speedtest1_begin_test(410, "%d SELECTS on an IPK", n);
+  if( g.doBigTransactions ){
+    /* Historical note: tests 410 and 510 have historically not used
+    ** explicit transactions. The --big-transactions flag was added
+    ** 2022-09-08 to support the WASM/OPFS build, as the run-times
+    ** approach 1 minute for each of these tests if they're not in an
+    ** explicit transaction. The run-time effect of --big-transaciions
+    ** on native builds is negligible. */
+    speedtest1_exec("BEGIN");
+  }
   speedtest1_prepare("SELECT b FROM t5 WHERE a=?1; --  %d times",n);
   for(i=1; i<=n; i++){
     x1 = swizzle(i,maxb);
     sqlite3_bind_int(g.pStmt, 1, (sqlite3_int64)x1);
     speedtest1_run();
+  }
+  if( g.doBigTransactions ){
+    speedtest1_exec("COMMIT");
   }
   speedtest1_end_test();
 
@@ -1145,12 +1159,19 @@ void testset_main(void){
   speedtest1_exec("COMMIT");
   speedtest1_end_test();
   speedtest1_begin_test(510, "%d SELECTS on a TEXT PK", n);
+  if( g.doBigTransactions ){
+    /* See notes for test 410. */
+    speedtest1_exec("BEGIN");
+  }
   speedtest1_prepare("SELECT b FROM t6 WHERE a=?1; --  %d times",n);
   for(i=1; i<=n; i++){
     x1 = swizzle(i,maxb);
     speedtest1_numbername(x1, zNum, sizeof(zNum));
     sqlite3_bind_text(g.pStmt, 1, zNum, -1, SQLITE_STATIC);
     speedtest1_run();
+  }
+  if( g.doBigTransactions ){
+    speedtest1_exec("COMMIT");
   }
   speedtest1_end_test();
   speedtest1_begin_test(520, "%d SELECT DISTINCT", n);
@@ -2233,6 +2254,8 @@ int main(int argc, char **argv){
       do{ z++; }while( z[0]=='-' );
       if( strcmp(z,"autovacuum")==0 ){
         doAutovac = 1;
+      }else if( strcmp(z,"big-transactions")==0 ){
+        g.doBigTransactions = 1;
       }else if( strcmp(z,"cachesize")==0 ){
         if( i>=argc-1 ) fatal_error("missing argument on %s\n", argv[i]);
         i++;
