@@ -1,5 +1,5 @@
-C Add\sspeedtest1\s--big-transactions\sflag\sto\scause\sits\slarge\stests\swhich\srely\son\simplicit\stransactions\sto\sbe\swrapped\sin\sBEGIN/COMMIT,\sper\s/chat\sdiscussion.\sAdded\sto\ssupport\sof\sthe\sWASMFS\sbuild,\swhich\sslows\sdown\ssignificantly\swhen\sthousands\sof\simplicit\stransactions\sare\sused.
-D 2022-09-08T21:09:42.601
+C Make\suse\sof\sthe\s--big-transactions\sflag\sin\sthe\sspeedtest1\sJS\sapps.
+D 2022-09-08T21:33:50.335
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -511,9 +511,9 @@ F ext/wasm/scratchpad-opfs-main.js 69e960e9161f6412fd0c30f355d4112f1894d6609eb43
 F ext/wasm/scratchpad-opfs-worker.html 66c1d15d678f3bd306373d76b61c6c8aef988f61f4a8dd40185d452f9c6d2bf5
 F ext/wasm/scratchpad-opfs-worker.js 3ec2868c669713145c76eb5877c64a1b20741f741817b87c907a154b676283a9
 F ext/wasm/scratchpad-opfs-worker2.js 5f2237427ac537b8580b1c659ff14ad2621d1694043eaaf41ae18dbfef2e48c0
-F ext/wasm/speedtest1-worker.html 22938a087c4cf0ef1a8711d675d851f3ca5f25c2ea5a2a68c548c3c032d4b841
+F ext/wasm/speedtest1-worker.html 23b91da39859b890d73b28bd74629442c6873f38dc4d7ca94cacdc1be1202fb1
 F ext/wasm/speedtest1-worker.js 356b9953add4449acf199793db9b76b11ee016021918d8daffd19f08ec68d305
-F ext/wasm/speedtest1.html 75b5ab41b29188e1c173e443c999ce70058a77f04aa6ba92603b89dc9064f66a
+F ext/wasm/speedtest1.html ffda8a118c09d5429bc34b1ddfd05a963b6786ac83f2deae4f5241c2f5437f83
 F ext/wasm/split-speedtest1-script.sh a3e271938d4d14ee49105eb05567c6a69ba4c1f1293583ad5af0cd3a3779e205 x
 F ext/wasm/sql/000-mandelbrot.sql 775337a4b80938ac8146aedf88808282f04d02d983d82675bd63d9c2d97a15f0
 F ext/wasm/sql/001-sudoku.sql 35b7cb7239ba5d5f193bc05ec379bcf66891bce6f2a5b3879f2f78d0917299b5
@@ -2019,8 +2019,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5240fb4d795dea826f23cf5d2152b519f5a46f49bb2499ea868fa7c7f4ce788b
-R b4518397db2d29dbb2157e07b557b159
+P 51395c005da46b7fa5a5f28809dd8fea263a6bac2b1492759b3d5a5aa7d399ca
+R 838553aa9700f04488b76fccfa35dc26
 U stephan
-Z 5034bb533c4e0d8f568aa6b28ab174ab
+Z 42d1e2550cb35842fb99b726ce6e4b2a
 # Remove this line to create a well-formed Fossil manifest.

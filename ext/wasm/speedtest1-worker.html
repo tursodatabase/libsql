@@ -176,6 +176,7 @@
            controls and some of them make little sense here
            (e.g. --script FILE). */
         flags["autovacuum"] = "Enable AUTOVACUUM mode";
+        flags["big-transactions"] = "Important for tests 410 and 510!";
         //flags["cachesize"] = "N       Set the cache size to N";
         flags["checkpoint"] = "Run PRAGMA wal_checkpoint after each test case";
         flags["exclusive"] = "Enable locking_mode=EXCLUSIVE";
@@ -221,8 +222,9 @@
         flags["verify"] = "Run additional verification steps.";
         flags["without"] = "rowid     Use WITHOUT ROWID where appropriate";
         const preselectedFlags = [
-          'singlethread',
-          'memdb'
+          'big-transactions',
+          'memdb',
+          'singlethread'
         ];
         Object.keys(flags).sort().forEach(function(f){
           const opt = document.createElement('option');
@@ -317,7 +319,7 @@
             case 'error': logErr(msg.data); break;
             case 'load-status': updateLoadStatus(msg.data); break;
             default:
-              logErr("Unhandled worker message type:",arguments[0]);
+              logErr("Unhandled worker message type:",msg);
               break;
         }
       };
