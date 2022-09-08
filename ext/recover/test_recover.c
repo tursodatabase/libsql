@@ -129,7 +129,7 @@ static int testRecoverCmd(
           int iVal = 0;
           if( Tcl_GetBooleanFromObj(interp, objv[3], &iVal) ) return TCL_ERROR;
           res = sqlite3_recover_config(pTest->p, 
-              SQLITE_RECOVER_FREELIST_CORRUPT, SQLITE_INT_TO_PTR(iVal)
+              SQLITE_RECOVER_FREELIST_CORRUPT, (void*)&iVal
           );
           break;
         }
@@ -137,7 +137,7 @@ static int testRecoverCmd(
           int iVal = 0;
           if( Tcl_GetBooleanFromObj(interp, objv[3], &iVal) ) return TCL_ERROR;
           res = sqlite3_recover_config(pTest->p, 
-              SQLITE_RECOVER_ROWIDS, SQLITE_INT_TO_PTR(iVal)
+              SQLITE_RECOVER_ROWIDS, (void*)&iVal
           );
           break;
         }

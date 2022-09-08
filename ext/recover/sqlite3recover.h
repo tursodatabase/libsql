@@ -16,7 +16,7 @@
 #ifndef _SQLITE_RECOVER_H
 #define _SQLITE_RECOVER_H
 
-#include "sqlite3.h"              /* Required for error code definitions */
+#include "sqlite3.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -58,9 +58,9 @@ int sqlite3_recover_config(sqlite3_recover*, int op, void *pArg);
 **   pages to add to the lost-and-found table.
 **
 ** SQLITE_RECOVER_FREELIST_CORRUPT:
-**   The pArg value must actually be integer (type "int") value 0 or 1
-**   cast as a (void*). If this option is set (argument is 1) and
-**   a lost-and-found table has been configured using
+**   The pArg value must actually be a pointer to a value of type
+**   int containing value 0 or 1 cast as a (void*). If this option is set
+**   (argument is 1) and a lost-and-found table has been configured using
 **   SQLITE_RECOVER_LOST_AND_FOUND, then is assumed that the freelist is 
 **   corrupt and an attempt is made to recover records from pages that
 **   appear to be linked into the freelist. Otherwise, pages on the freelist

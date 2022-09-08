@@ -84,6 +84,11 @@ struct sqlite3_recover {
   int (*xSql)(void*,const char*);
 };
 
+/* 
+** Default value for SQLITE_RECOVER_ROWIDS (sqlite3_recover.bRecoverRowid).
+*/
+#define RECOVER_ROWID_DEFAULT 1
+
 /*
 ** Like strlen(). But handles NULL pointer arguments.
 */
@@ -371,7 +376,7 @@ static void recoverGetPage(
 ** Try to use zA and zB first.  If both of those are already found in z[]
 ** then make up some string and store it in the buffer zBuf.
 */
-static const char *unused_string(
+static const char *recoverUnusedString(
   const char *z,                    /* Result must not appear anywhere in z */
   const char *zA, const char *zB,   /* Try these first */
   char *zBuf                        /* Space to store a generated string */
@@ -416,11 +421,11 @@ static void recoverEscapeCrnl(
 
     for(i=0; zText[i]; i++){
       if( zNL==0 && zText[i]=='\n' ){
-        zNL = unused_string(zText, "\\n", "\\012", zBuf1);
+        zNL = recoverUnusedString(zText, "\\n", "\\012", zBuf1);
         nNL = (int)strlen(zNL);
       }
       if( zCR==0 && zText[i]=='\r' ){
-        zCR = unused_string(zText, "\\r", "\\015", zBuf2);
+        zCR = recoverUnusedString(zText, "\\r", "\\015", zBuf2);
         nCR = (int)strlen(zCR);
       }
     }
@@ -1281,6 +1286,7 @@ sqlite3_recover *recoverInit(
     memcpy(pRet->zUri, zUri, nUri);
     pRet->xSql = xSql;
     pRet->pSqlCtx = pSqlCtx;
+    pRet->bRecoverRowid = RECOVER_ROWID_DEFAULT;
   }
 
   return pRet;
@@ -1330,11 +1336,11 @@ int sqlite3_recover_config(sqlite3_recover *p, int op, void *pArg){
       break;
 
     case SQLITE_RECOVER_FREELIST_CORRUPT:
-      p->bFreelistCorrupt = (pArg ? 1 : 0);
+      p->bFreelistCorrupt = *(int*)pArg;
       break;
 
     case SQLITE_RECOVER_ROWIDS:
-      p->bRecoverRowid = (pArg ? 1 : 0);
+      p->bRecoverRowid = *(int*)pArg;
       break;
 
     default:

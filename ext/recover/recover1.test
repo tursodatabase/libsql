@@ -45,7 +45,6 @@ proc do_recover_test {tn} {
   uplevel [list do_test $tn.1 {
     set R [sqlite3_recover_init db main test.db2]
     $R config testdb rstate.db
-    $R config rowids 1
     $R step
     $R finish
   } {}]
@@ -68,7 +67,6 @@ proc do_recover_test {tn} {
 
   sqlite3 db2 test.db2
   execsql [join $::sqlhook ";"] db2
-  # puts [join $::sqlhook ";\n"]
   uplevel [list do_test $tn.4 [list compare_dbs db db2] {}]
   db2 close
 }
