@@ -672,9 +672,17 @@ static int recoverWriteSchema1(sqlite3_recover *p){
   sqlite3_stmt *pTblname = 0;
 
   pSelect = recoverPrepare(p, p->dbOut,
-      "SELECT rootpage, sql, type='table' FROM recovery.schema "
-      "  WHERE type='table' OR (type='index' AND sql LIKE '%unique%') "
-      "  ORDER BY type!='table', name!='sqlite_sequence'"
+      "WITH dbschema(rootpage, name, sql, tbl, isVirtual, isUnique) AS ("
+      "  SELECT rootpage, name, sql, "
+      "    type='table', "
+      "    sql LIKE 'create virtual%',"
+      "    (type='index' AND sql LIKE '%unique%')"
+      "  FROM recovery.schema"
+      ")"
+      "SELECT rootpage, tbl, isVirtual, name, sql"
+      " FROM dbschema "
+      "  WHERE tbl OR isUnique"
+      "  ORDER BY tbl DESC, name=='sqlite_sequence' DESC"
   );
 
   pTblname = recoverPrepare(p, p->dbOut,
@@ -685,13 +693,23 @@ static int recoverWriteSchema1(sqlite3_recover *p){
   if( pSelect ){
     while( sqlite3_step(pSelect)==SQLITE_ROW ){
       i64 iRoot = sqlite3_column_int64(pSelect, 0);
-      const char *zSql = (const char*)sqlite3_column_text(pSelect, 1);
-      int bTable = sqlite3_column_int(pSelect, 2);
+      int bTable = sqlite3_column_int(pSelect, 1);
+      int bVirtual = sqlite3_column_int(pSelect, 2);
+      const char *zName = (const char*)sqlite3_column_text(pSelect, 3);
+      const char *zSql = (const char*)sqlite3_column_text(pSelect, 4);
+      char *zFree = 0;
+      int rc = SQLITE_OK;
 
-      int rc = sqlite3_exec(p->dbOut, zSql, 0, 0, 0);
+      if( bVirtual ){
+        zSql = (const char*)(zFree = recoverMPrintf(p,
+            "INSERT INTO sqlite_schema VALUES('table', %Q, %Q, 0, %Q)",
+            zName, zName, zSql
+        ));
+      }
+      rc = sqlite3_exec(p->dbOut, zSql, 0, 0, 0);
       if( rc==SQLITE_OK ){
         recoverSqlCallback(p, zSql);
-        if( bTable ){
+        if( bTable && !bVirtual ){
           if( SQLITE_ROW==sqlite3_step(pTblname) ){
             const char *zName = sqlite3_column_text(pTblname, 0);
             recoverAddTable(p, zName, iRoot);
@@ -701,6 +719,7 @@ static int recoverWriteSchema1(sqlite3_recover *p){
       }else if( rc!=SQLITE_ERROR ){
         recoverDbError(p, p->dbOut);
       }
+      sqlite3_free(zFree);
     }
   }
   recoverFinalize(p, pSelect);
@@ -1130,7 +1149,8 @@ static int recoverWriteData(sqlite3_recover *p){
   if( apVal==0 ) return p->errCode;
 
   pTbls = recoverPrepare(p, p->dbOut,
-      "SELECT rootpage FROM recovery.schema WHERE type='table'"
+      "SELECT rootpage FROM recovery.schema "
+      "  WHERE type='table' AND (sql NOT LIKE 'create virtual%')"
       "  ORDER BY (tbl_name='sqlite_sequence') ASC"
   );
 

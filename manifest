@@ -1,5 +1,5 @@
-C Update\scomments\sin\ssqlite3recover.h.
-D 2022-09-08T21:43:18.230
+C Handle\srecovery\sof\svirtual\stables\sby\srecovering\seach\sshadow\stable\sindividually,\sthen\swriting\sthe\sCREATE\sVIRTUAL\sTABLE\sstatement\sdirectly\sinto\sthe\ssqlite_schema\stable.
+D 2022-09-09T16:25:19.064
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -387,12 +387,12 @@ F ext/rbu/rbuvacuum4.test a78898e438a44803eb2bc897ba3323373c9f277418e2d6d76e90f2
 F ext/rbu/sqlite3rbu.c 8737cabdfbee84bb25a7851ecef8b1312be332761238da9be6ddb10c62ad4291
 F ext/rbu/sqlite3rbu.h 1dc88ab7bd32d0f15890ea08d23476c4198d3da3056985403991f8c9cd389812
 F ext/rbu/test_rbu.c 03f6f177096a5f822d68d8e4069ad8907fe572c62ff2d19b141f59742821828a
-F ext/recover/recover1.test aa9f7f46b7209cae6d52321052d4440bc8f82b93991e693c4bad20a6f05a53e5
+F ext/recover/recover1.test 942016356f9098ca36933536b194b5878827a3a749e0bf41a83d83530c0d0ea8
 F ext/recover/recover_common.tcl 6679af7dffc858e345053a91c9b0a897595b4a13007aceffafca75304ccb137c
 F ext/recover/recoverclobber.test e6537ebf99f57bfff6cca59550b5f4278319b57a89865abb98d755a8fd561d84
 F ext/recover/recoverold.test f368a6ae2db12b6017257b332a19ab5df527f4061e43f12f5c85d8e2b236f074
 F ext/recover/recoverrowid.test ec4436cd69e6cdacb48dd2963ff6dd9dbd5fe648376de5e7c0c2f4f6cbacb417
-F ext/recover/sqlite3recover.c aaab721cf1ade0703162e95f1d154b811eef962be42a861b59ef015514bc3b65
+F ext/recover/sqlite3recover.c 7ed9a573d081435a16982b972c6bb963d273a0a457ec69fa16b0918165991e9d
 F ext/recover/sqlite3recover.h 73648878cea3492427b9a8facebdad0464ed15b161ed1cd70f349a02456e8879
 F ext/recover/test_recover.c b973526785e145e7d9d7920ccde72112025ee5204e22b332db9d86796be73f00
 F ext/repair/README.md 92f5e8aae749a4dae14f02eea8e1bb42d4db2b6ce5e83dbcdd6b1446997e0c15
@@ -517,7 +517,7 @@ F ext/wasm/testing2.js d37433c601f88ed275712c1cfc92d3fb36c7c22e1ed8c7396fb2359e4
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 8c9965c408aaa8b93d0dd52e83445894835e1a42dc360c77435393f80f8d8d1d
+F main.mk 3e2a50cc103bd3386bbac9c96bf3650f91174b26e092701164aa42875bff24c9
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -931,7 +931,7 @@ F test/e_totalchanges.test c927f7499dc3aa28b9b556b7d6d115a2f0fe41f012b128d16bf1f
 F test/e_update.test f46c2554d915c9197548681e8d8c33a267e84528
 F test/e_uri.test 86564382132d9c453845eeb5293c7e375487b625900ab56c181a0464908417d8
 F test/e_vacuum.test 89fc48e8beee2f9dfd6de1fbb2edea6542dae9121dc0fbe6313764169e742104
-F test/e_wal.test ae9a593207a77d711443ee69ffe081fda9243625
+F test/e_wal.test db7c33642711cf3c7959714b5f012aca08cacfa78da0382f95e849eb3ba66aa4
 F test/e_walauto.test 248af31e73c98df23476a22bdb815524c9dc3ba8
 F test/e_walckpt.test 28c371a6bb5e5fe7f31679c1df1763a19d19e8a0
 F test/e_walhook.test 01b494287ba9e60b70f6ebf3c6c62e0ffe01788e344a4846b08e5de0b344cb66
@@ -2007,8 +2007,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ae832e77084eddd696c80cb926d070a5db9d45dce34156a02522b3140e8f5e8b
-R 260b6b87f29011e60d0280e7bdf9107f
+P 14164047c43e3ca43aa010c77ea00dfa85400e15645ee0f5b90a677898b6a836
+R e52e610730a5083b962d51491c2e90a5
 U dan
-Z c0005f6f4d932e314a4bcb73861ec3e0
+Z 0661ae93944ad96dd9dbcc27159d9d3c
 # Remove this line to create a well-formed Fossil manifest.

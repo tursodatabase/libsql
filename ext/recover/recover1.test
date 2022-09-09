@@ -67,6 +67,8 @@ proc do_recover_test {tn} {
 
   sqlite3 db2 test.db2
   execsql [join $::sqlhook ";"] db2
+  db2 close
+  sqlite3 db2 test.db2
   uplevel [list do_test $tn.4 [list compare_dbs db db2] {}]
   db2 close
 }
@@ -153,6 +155,17 @@ do_execsql_test 8.0 {
 }
 
 do_recover_test 8
+
+#-------------------------------------------------------------------------
+reset_db
+ifcapable fts5 {
+  do_execsql_test 9.1 {
+    CREATE VIRTUAL TABLE ft5 USING fts5(a, b);
+    INSERT INTO ft5 VALUES('hello', 'world');
+  }
+  do_recover_test 9 
+}
+
 
 
 

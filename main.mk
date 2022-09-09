@@ -763,6 +763,8 @@ SHELL_SRC = \
 	$(TOP)/ext/misc/zipfile.c \
 	$(TOP)/ext/misc/memtrace.c \
 	$(TOP)/ext/misc/dbdata.c \
+	$(TOP)/ext/recover/sqlite3recover.c \
+	$(TOP)/ext/recover/sqlite3recover.h \
         $(TOP)/src/test_windirent.c
 
 shell.c:	$(SHELL_SRC) $(TOP)/tool/mkshellc.tcl
