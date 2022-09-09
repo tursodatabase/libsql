@@ -28,10 +28,15 @@ SQLITE_EXTENSION_INIT1
 /*****************************************************************************
 ** Debugging logic
 */
-#if 1
+#if 0
 #define KVVFS_TRACE(X)  printf X;
 #else
 #define KVVFS_TRACE(X)
+#endif
+#if 0
+#define KVVFS_LOG(X)  printf X;
+#else
+#define KVVFS_LOG(X)
 #endif
 
 
@@ -258,11 +263,12 @@ static int kvstorageRead(
     KVVFS_TRACE(("KVVFS-READ   %-14s (-1)\n", pStore->zKey));
     return -1;
   }else{
-    fread(zBuf, nBuf-1, 1, fd);
+    sqlite3_int64 n = fread(zBuf, 1, nBuf-1, fd);
     fclose(fd);
-    KVVFS_TRACE(("KVVFS-READ   %-14s (%d) %.30s\n", pStore->zKey,
-                 nBuf-1, zBuf));
-    return nBuf-1;
+    zBuf[n] = 0;
+    KVVFS_TRACE(("KVVFS-READ   %-14s (%lld) %.30s\n", pStore->zKey,
+                 n, zBuf));
+    return (int)n;
   }
 }
 
@@ -276,6 +282,7 @@ static int kvvfsClose(sqlite3_file *pProtoFile){
   KVVfsFile *pFile = (KVVfsFile *)pProtoFile;
   KVVfsVfs *pVfs = pFile->pVfs;
 
+  KVVFS_LOG(("xClose %s\n", pFile->isJournal ? "journal" : "db"));
   if( pVfs->pFiles==pFile ){
     pVfs->pFiles = pFile->pNext;
     if( pVfs->pFiles==0 ){
@@ -294,7 +301,6 @@ static int kvvfsClose(sqlite3_file *pProtoFile){
     }
   }
   sqlite3_free(pFile->aJrnl);
-  sqlite3_free(pFile);
   return SQLITE_OK;
 }
 
@@ -321,8 +327,8 @@ static int kvvfsEncode(const char *aData, int nData, char *aOut){
       ** and so forth.
       */
       int k;
-      for(k=1; a[i+k]==0 && i+k<nData; k++){}
-      i += k;
+      for(k=1; i+k<nData && a[i+k]==0; k++){}
+      i += k-1;
       while( k>0 ){
         aOut[j++] = 'a'+(k%26);
         k /= 26;
@@ -336,7 +342,7 @@ static int kvvfsEncode(const char *aData, int nData, char *aOut){
 /* Convert hex to binary */
 static char kvvfsHexToBinary(char c){
   if( c>='0' && c<='9' ) return c - '0';
-  if( c>='a' && c<='f' ) return c - 'a' + 10;
+  if( c>='A' && c<='F' ) return c - 'A' + 10;
   return 0;
 }
 
@@ -366,10 +372,8 @@ static int kvvfsDecode(const char *aIn, char *aOut, int nOut){
       }
     }else{
       if( j>nOut ) return -1;
-      aOut[j] = kvvfsHexToBinary(aIn[i])<<4;
-      i++;
-      aOut[j] += kvvfsHexToBinary(aIn[i]);
-      i++;
+      aOut[j] = kvvfsHexToBinary(aIn[i++])<<4;
+      aOut[j++] += kvvfsHexToBinary(aIn[i++]);
     }
   }
   return j;
@@ -423,6 +427,7 @@ static int kvvfsReadFromJournal(
   sqlite_int64 iOfst
 ){
   assert( pFile->isJournal );
+  KVVFS_LOG(("xRead('journal',%d,%lld)\n", iAmt, iOfst));
   if( pFile->aJrnl==0 ){
     int szTxt = kvstorageRead(pFile->pVfs->pStore, "journal", 0, 0);
     char *aTxt;
@@ -458,23 +463,36 @@ static int kvvfsReadFromDb(
   char aData[131073];
   assert( iOfst>=0 );
   assert( iAmt>=0 );
-  if( (iOfst % iAmt)!=0 ){
-    return SQLITE_IOERR_READ;
-  }
-  if( iAmt!=100 || iOfst!=0 ){
+  KVVFS_LOG(("xRead('db',%d,%lld)\n", iAmt, iOfst));
+  if( iOfst+iAmt>=512 ){
+    if( (iOfst % iAmt)!=0 ){
+      return SQLITE_IOERR_READ;
+    }
     if( (iAmt & (iAmt-1))!=0 || iAmt<512 || iAmt>65536 ){
       return SQLITE_IOERR_READ;
     }
     pFile->szPage = iAmt;
+    pgno = 1 + iOfst/iAmt;
+  }else{
+    pgno = 1;
   }
-  pgno = 1 + iOfst/iAmt;
   sqlite3_snprintf(sizeof(zKey), zKey, "pg-%u", pgno);
   got = kvstorageRead(pFile->pVfs->pStore, zKey, aData, sizeof(aData)-1);
   if( got<0 ){
     n = 0;
   }else{
     aData[got] = 0;
-    n = kvvfsDecode(aData, zBuf, iAmt);
+    if( iOfst+iAmt<512 ){
+      n = kvvfsDecode(aData, &aData[1000], 1000);
+      if( n>=iOfst+iAmt ){
+        memcpy(zBuf, &aData[1000+iOfst], iAmt);
+        n = iAmt;
+      }else{
+        n = 0;
+      }
+    }else{
+      n = kvvfsDecode(aData, zBuf, iAmt);
+    }
   }
   if( n<iAmt ){
     memset(zBuf+n, 0, iAmt-n);
@@ -500,6 +518,7 @@ static int kvvfsRead(
   }else{
     rc = kvvfsReadFromDb(pFile,zBuf,iAmt,iOfst);
   }
+  KVVFS_LOG(("xRead result: 0x%x\n", rc));
   return rc;
 }
 
@@ -528,6 +547,7 @@ static int kvvfsWriteToJournal(
   sqlite_int64 iOfst
 ){
   sqlite3_int64 iEnd = iOfst+iAmt;
+  KVVFS_LOG(("xWrite('journal',%d,%lld)\n", iAmt, iOfst));
   if( iEnd>=0x10000000 ) return SQLITE_FULL;
   if( pFile->aJrnl==0 || pFile->nJrnl<iEnd ){
     char *aNew = sqlite3_realloc(pFile->aJrnl, iEnd);
@@ -556,6 +576,7 @@ static int kvvfsWriteToDb(
   unsigned int pgno;
   char zKey[30];
   char aData[131073];
+  KVVFS_LOG(("xWrite('db',%d,%lld)\n", iAmt, iOfst));
   assert( iAmt>=512 && iAmt<=65536 );
   assert( (iAmt & (iAmt-1))==0 );
   pgno = 1 + iOfst/iAmt;
@@ -585,6 +606,7 @@ static int kvvfsWrite(
   }else{
     rc = kvvfsWriteToDb(pFile,zBuf,iAmt,iOfst);
   }
+  KVVFS_LOG(("xWrite result: 0x%x\n", rc));
   return rc;
 }
 
@@ -594,6 +616,7 @@ static int kvvfsWrite(
 static int kvvfsTruncate(sqlite3_file *pProtoFile, sqlite_int64 size){
   KVVfsFile *pFile = (KVVfsFile *)pProtoFile;
   if( pFile->isJournal ){
+    KVVFS_LOG(("xTruncate('journal',%lld)\n", size));
     assert( size==0 );
     kvstorageDelete(pFile->pVfs->pStore, "journal");
     sqlite3_free(pFile->aJrnl);
@@ -607,6 +630,7 @@ static int kvvfsTruncate(sqlite3_file *pProtoFile, sqlite_int64 size){
   ){
     char zKey[50];
     unsigned int pgno, pgnoMax;
+    KVVFS_LOG(("xTruncate('db',%lld)\n", size));
     pgno = 1 + size/pFile->szPage;
     pgnoMax = 2 + pFile->szDb/pFile->szPage;
     while( pgno<=pgnoMax ){
@@ -629,11 +653,13 @@ static int kvvfsSync(sqlite3_file *pProtoFile, int flags){
   KVVfsFile *pFile = (KVVfsFile *)pProtoFile;
   char *zOut;
   if( !pFile->isJournal ){
+    KVVFS_LOG(("xSync('db')\n"));
     if( pFile->szDb>0 ){
       kvvfsWriteFileSize(pFile, pFile->szDb);
     }
     return SQLITE_OK;
   }
+  KVVFS_LOG(("xSync('journal')\n"));
   if( pFile->nJrnl<=0 ){
      return kvvfsTruncate(pProtoFile, 0);
   }
@@ -659,10 +685,17 @@ static int kvvfsSync(sqlite3_file *pProtoFile, int flags){
 static int kvvfsFileSize(sqlite3_file *pProtoFile, sqlite_int64 *pSize){
   KVVfsFile *pFile = (KVVfsFile *)pProtoFile;
   if( pFile->isJournal ){
+    KVVFS_LOG(("xFileSize('journal')\n"));
     *pSize = pFile->nJrnl;
   }else{
-    *pSize = pFile->szDb;
+    KVVFS_LOG(("xFileSize('db')\n"));
+    if( pFile->szDb>=0 ){
+      *pSize = pFile->szDb;
+    }else{
+      *pSize = kvvfsReadFileSize(pFile);
+    }
   }
+  KVVFS_LOG(("xFileSize: %lld\n", *pSize));
   return SQLITE_OK;
 }
 
@@ -672,6 +705,8 @@ static int kvvfsFileSize(sqlite3_file *pProtoFile, sqlite_int64 *pSize){
 static int kvvfsLock(sqlite3_file *pProtoFile, int eLock){
   KVVfsFile *pFile = (KVVfsFile *)pProtoFile;
   assert( !pFile->isJournal );
+  KVVFS_LOG(("xLock(%d)\n", eLock));
+
   if( eLock!=SQLITE_LOCK_NONE ){
     pFile->szDb = kvvfsReadFileSize(pFile);
   }
@@ -684,6 +719,7 @@ static int kvvfsLock(sqlite3_file *pProtoFile, int eLock){
 static int kvvfsUnlock(sqlite3_file *pProtoFile, int eLock){
   KVVfsFile *pFile = (KVVfsFile *)pProtoFile;
   assert( !pFile->isJournal );
+  KVVFS_LOG(("xUnlock(%d)\n", eLock));
   if( eLock==SQLITE_LOCK_NONE ){
     pFile->szDb = -1;
   }
@@ -694,6 +730,7 @@ static int kvvfsUnlock(sqlite3_file *pProtoFile, int eLock){
 ** Check if another file-handle holds a RESERVED lock on an kvvfs-file.
 */
 static int kvvfsCheckReservedLock(sqlite3_file *pProtoFile, int *pResOut){
+  KVVFS_LOG(("xCheckReservedLock\n"));
   *pResOut = 0;
   return SQLITE_OK;
 }
@@ -732,6 +769,7 @@ static int kvvfsOpen(
 ){
   KVVfsFile *pFile = (KVVfsFile*)pProtoFile;
   KVVfsVfs *pVfs = (KVVfsVfs*)pProtoVfs;
+  KVVFS_LOG(("xOpen(\"%s\")\n", zName));
   pFile->aJrnl = 0;
   pFile->nJrnl = 0;
   pFile->isJournal = sqlite3_strglob("*-journal", zName)==0;
@@ -771,11 +809,15 @@ static int kvvfsAccess(
   int *pResOut
 ){
   KVVfsVfs *pVfs = (KVVfsVfs*)pProtoVfs;
+  KVVFS_LOG(("xAccess(\"%s\")\n", zPath));
   if( sqlite3_strglob("*-journal", zPath)==0 ){
     *pResOut = kvstorageRead(pVfs->pStore, "journal", 0, 0)>0;
+  }else if( sqlite3_strglob("*-wal", zPath)==0 ){
+    *pResOut = 0;
   }else{
     *pResOut = 1;
   }
+  KVVFS_LOG(("xAccess returns %d\n",*pResOut));
   return SQLITE_OK;
 }
 
@@ -791,6 +833,7 @@ static int kvvfsFullPathname(
   char *zOut
 ){
   size_t nPath = strlen(zPath);
+  KVVFS_LOG(("xFullPathname(\"%s\")\n", zPath));
   if( nOut<nPath+1 ) nPath = nOut - 1;
   memcpy(zOut, zPath, nPath);
   zOut[nPath] = 0;
