@@ -20,7 +20,76 @@
 typedef unsigned int u32;
 typedef sqlite3_int64 i64;
 
+typedef struct RecoverTable RecoverTable;
 typedef struct RecoverColumn RecoverColumn;
+
+/*
+** When recovering rows of data that can be associated with table
+** definitions recovered from the sqlite_schema table, each table is
+** represented by an instance of the following object.
+**
+** iRoot:
+**   The root page in the original database. Not necessarily (and usually
+**   not) the same in the recovered database.
+**
+** zTab:
+**   Name of the table.
+**
+** nCol/aCol[]:
+**   aCol[] is an array of nCol columns. In the order in which they appear 
+**   in the table.
+**
+** bIntkey:
+**   Set to true for intkey tables, false for WITHOUT ROWID.
+**
+** iRowidBind:
+**   Each column in the aCol[] array has associated with it the index of
+**   the bind parameter its values will be bound to in the INSERT statement
+**   used to construct the output database. If the table does has a rowid
+**   but not an INTEGER PRIMARY KEY column, then iRowidBind contains the
+**   index of the bind paramater to which the rowid value should be bound.
+**   Otherwise, it contains -1. If the table does contain an INTEGER PRIMARY 
+**   KEY column, then the rowid value should be bound to the index associated
+**   with the column.
+**
+** pNext:
+**   All RecoverTable objects used by the recovery operation are allocated
+**   and populated as part of creating the recovered database schema in
+**   the output database, before any non-schema data are recovered. They
+**   are then stored in a singly-linked list linked by this variable beginning
+**   at sqlite3_recover.pTblList.
+*/
+struct RecoverTable {
+  u32 iRoot;                      /* Root page in original database */
+  char *zTab;                     /* Name of table */
+  int nCol;                       /* Number of columns in table */
+  RecoverColumn *aCol;            /* Array of columns */
+  int bIntkey;                    /* True for intkey, false for without rowid */
+  int iRowidBind;                 /* If >0, bind rowid to INSERT here */
+  RecoverTable *pNext;
+};
+
+/*
+** Each database column is represented by an instance of the following object
+** stored in the RecoverTable.aCol[] array of the associated table.
+**
+** iField:
+**   The index of the associated field within database records. Or -1 if
+**   there is no associated field (e.g. for virtual generated columns).
+**
+** iBind:
+**   The bind index of the INSERT statement to bind this columns values
+**   to. Or 0 if there is no such index (iff (iField<0)).
+**
+** bIPK:
+**   True if this is the INTEGER PRIMARY KEY column.
+**
+** zCol:
+**   Name of column.
+**
+** eHidden:
+**   A RECOVER_EHIDDEN_* constant value (see below for interpretation of each).
+*/
 struct RecoverColumn {
   int iField;                     /* Field in record on disk */
   int iBind;                      /* Binding to use in INSERT */
@@ -29,59 +98,62 @@ struct RecoverColumn {
   int eHidden;
 };
 
-#define RECOVER_EHIDDEN_NONE    0
-#define RECOVER_EHIDDEN_HIDDEN  1
-#define RECOVER_EHIDDEN_VIRTUAL 2
-#define RECOVER_EHIDDEN_STORED  3
+#define RECOVER_EHIDDEN_NONE    0      /* Normal database column */
+#define RECOVER_EHIDDEN_HIDDEN  1      /* Column is __HIDDEN__ */
+#define RECOVER_EHIDDEN_VIRTUAL 2      /* Virtual generated column */
+#define RECOVER_EHIDDEN_STORED  3      /* Stored generated column */
 
 /*
-** When running the ".recover" command, each output table, and the special
-** orphaned row table if it is required, is represented by an instance
-** of the following struct.
+** Bitmap object used to track pages in the input database. Allocated
+** and manipulated only by the following functions:
 **
-** aCol[]:
-**  Array of nCol columns. In the order in which they appear in the table.
+**     recoverBitmapAlloc()
+**     recoverBitmapFree()
+**     recoverBitmapSet()
+**     recoverBitmapQuery()
+**
+** nPg:
+**   Largest page number that may be stored in the bitmap. The range
+**   of valid keys is 1 to nPg, inclusive.
+**
+** aElem[]:
+**   Array large enough to contain a bit for each key. For key value
+**   iKey, the associated bit is the bit (iKey%32) of aElem[iKey/32].
+**   In other words, the following is true if bit iKey is set, or 
+**   false if it is clear:
+**
+**       (aElem[iKey/32] & (1 << (iKey%32))) ? 1 : 0
 */
-typedef struct RecoverTable RecoverTable;
-struct RecoverTable {
-  u32 iRoot;                      /* Root page in original database */
-  char *zTab;                     /* Name of table */
-  int nCol;                       /* Number of columns in table */
-  RecoverColumn *aCol;            /* Array of columns */
-  int bIntkey;                    /* True for intkey, false for without rowid */
-  int iRowidBind;                 /* If >0, bind rowid to INSERT here */
-
-  RecoverTable *pNext;
-};
-
 typedef struct RecoverBitmap RecoverBitmap;
 struct RecoverBitmap {
   i64 nPg;                        /* Size of bitmap */
   u32 aElem[0];                   /* Array of 32-bit bitmasks */
 };
 
-
+/*
+**
+*/
 struct sqlite3_recover {
-  sqlite3 *dbIn;
-  sqlite3 *dbOut;
+  sqlite3 *dbIn;                  /* Input database */
+  sqlite3 *dbOut;                 /* Output database */
 
-  sqlite3_stmt *pGetPage;
+  sqlite3_stmt *pGetPage;         /* SELECT against input db sqlite_dbdata */
 
-  char *zDb;
-  char *zUri;
-  RecoverTable *pTblList;
+  char *zDb;                      /* Name of input db ("main" etc.) */
+  char *zUri;                     /* URI for output database */
+  RecoverTable *pTblList;         /* List of tables recovered from schem */
   RecoverBitmap *pUsed;           /* Used by recoverLostAndFound() */
 
   int errCode;                    /* For sqlite3_recover_errcode() */
   char *zErrMsg;                  /* For sqlite3_recover_errmsg() */
 
-  char *zStateDb;
+  char *zStateDb;                 /* State database to use (or NULL) */
   char *zLostAndFound;            /* Name of lost-and-found table (or NULL) */
-  int bFreelistCorrupt;
-  int bRecoverRowid;
+  int bFreelistCorrupt;           /* SQLITE_RECOVER_FREELIST_CORRUPT setting */
+  int bRecoverRowid;              /* SQLITE_RECOVER_ROWIDS setting */
 
-  void *pSqlCtx;
-  int (*xSql)(void*,const char*);
+  void *pSqlCtx;                  /* SQL callback context */
+  int (*xSql)(void*,const char*); /* Pointer to SQL callback function */
 };
 
 /* 
@@ -1340,7 +1412,7 @@ int sqlite3_recover_config(sqlite3_recover *p, int op, void *pArg){
   int rc = SQLITE_OK;
 
   switch( op ){
-    case SQLITE_RECOVER_TESTDB:
+    case 789:
       sqlite3_free(p->zStateDb);
       p->zStateDb = recoverMPrintf(p, "%s", (char*)pArg);
       break;

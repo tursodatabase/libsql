@@ -1,5 +1,5 @@
-C Handle\srecovery\sof\svirtual\stables\sby\srecovering\seach\sshadow\stable\sindividually,\sthen\swriting\sthe\sCREATE\sVIRTUAL\sTABLE\sstatement\sdirectly\sinto\sthe\ssqlite_schema\stable.
-D 2022-09-09T16:25:19.064
+C Further\sfixes\sto\scomments\sin\ssqlite3recover.h.\sAlso\srework\ssome\sdata\sstructures\sin\ssqlite3recover.c.
+D 2022-09-09T20:44:56.135
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -392,9 +392,9 @@ F ext/recover/recover_common.tcl 6679af7dffc858e345053a91c9b0a897595b4a13007acef
 F ext/recover/recoverclobber.test e6537ebf99f57bfff6cca59550b5f4278319b57a89865abb98d755a8fd561d84
 F ext/recover/recoverold.test f368a6ae2db12b6017257b332a19ab5df527f4061e43f12f5c85d8e2b236f074
 F ext/recover/recoverrowid.test ec4436cd69e6cdacb48dd2963ff6dd9dbd5fe648376de5e7c0c2f4f6cbacb417
-F ext/recover/sqlite3recover.c 7ed9a573d081435a16982b972c6bb963d273a0a457ec69fa16b0918165991e9d
-F ext/recover/sqlite3recover.h 73648878cea3492427b9a8facebdad0464ed15b161ed1cd70f349a02456e8879
-F ext/recover/test_recover.c b973526785e145e7d9d7920ccde72112025ee5204e22b332db9d86796be73f00
+F ext/recover/sqlite3recover.c e8d0eae7da7ba24e733f6247082c12d7a030ce794eb5c42d64993f55c12882f5
+F ext/recover/sqlite3recover.h 81108efb8c4618d3d9c6da4df785212b0e4501aa0d25edfc463405fe839a6640
+F ext/recover/test_recover.c ed8d0cc8703ab29cf562f793623b045de109b7937f254108ff4132f35abb37fb
 F ext/repair/README.md 92f5e8aae749a4dae14f02eea8e1bb42d4db2b6ce5e83dbcdd6b1446997e0c15
 F ext/repair/checkfreelist.c e21f06995ff4efdc1622dcceaea4dcba2caa83ca2f31a1607b98a8509168a996
 F ext/repair/checkindex.c 4383e4469c21e5b9ae321d0d63cec53e981af9d7a6564be6374f0eeb93dfc890
@@ -1398,7 +1398,7 @@ F test/rowvaluefault.test 963ae9cdaed30a85a29668dd514e639f3556cae903ee9f172ea972
 F test/rowvaluevtab.test cd9747bb3f308086944c07968f547ad6b05022e698d80b9ffbdfe09ce0b8da6f
 F test/rtree.test 0c8d9dd458d6824e59683c19ab2ffa9ef946f798
 F test/run-wordcount.sh 891e89c4c2d16e629cd45951d4ed899ad12afc09
-F test/savepoint.test 1f8a6b1aea9a0d05837adc463d4bf47bd9d0f1c842f1c2a9caccd639baf34bf9
+F test/savepoint.test 6e9804a17767f08432c7a5e738b9a8f4b891d243110b63d3a41d270d3d1378ec
 F test/savepoint2.test 9b8543940572a2f01a18298c3135ad0c9f4f67d7
 F test/savepoint4.test c8f8159ade6d2acd9128be61e1230f1c1edc6cc0
 F test/savepoint5.test 0735db177e0ebbaedc39812c8d065075d563c4fd
@@ -2007,8 +2007,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 14164047c43e3ca43aa010c77ea00dfa85400e15645ee0f5b90a677898b6a836
-R e52e610730a5083b962d51491c2e90a5
+P 5f2d5ccd56c06c3468377126acfd4be39b79b05bb6fb09b674b2e185df143aa3
+R d4558eaeefd2a718275b323dc4307f9b
 U dan
-Z 0661ae93944ad96dd9dbcc27159d9d3c
+Z 6e64e7331e56e0c44a533586bb618920
 # Remove this line to create a well-formed Fossil manifest.

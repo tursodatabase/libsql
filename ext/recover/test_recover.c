@@ -117,7 +117,7 @@ static int testRecoverCmd(
       switch( iOp ){
         case 0:
           res = sqlite3_recover_config(pTest->p, 
-              SQLITE_RECOVER_TESTDB, (void*)Tcl_GetString(objv[3])
+              789, (void*)Tcl_GetString(objv[3]) /* MAGIC NUMBER! */
           );
           break;
         case 1:
