@@ -32,10 +32,11 @@
           <select id='select-flags' size='10' multiple></select>
           <div>TODO? Options which require values are not represented here.</div>
         </div>
-        <div class='toolbar-inner-vertical' id='toolbar-selected-flags'>
-          <button id='btn-reset-flags'>Reset Flags</button>
-          <button id='btn-output-clear'>Clear output</button>
-          <button id='btn-run'>Run</button>
+        <div class='toolbar-inner-vertical'>
+          <div id='toolbar-selected-flags'></div>
+          <span>&rarr; <a id='link-main-thread' href='#' target='main-thread'
+                          title='Start speedtest1.html with the selected flags'>speedtest1.html</a>
+          </span>
         </div>
         <div class='toolbar-inner-vertical' id='toolbar-runner-controls'>
           <button id='btn-reset-flags'>Reset Flags</button>
@@ -105,6 +106,8 @@
         content:"Selected flags: ";
       }
       #toolbar-selected-flags {
+        display: flex;
+        flex-direction: column;
         font-family: monospace;
         justify-content: flex-start;
       }
@@ -138,14 +141,14 @@
         log2('warning', ...args);
       };
 
-      const spacePad = function(str,len=18){
+      const spacePad = function(str,len=21){
         if(str.length===len) return str;
         else if(str.length>len) return str.substr(0,len);
         const a = []; a.length = len - str.length;
         return str+a.join(' ');
       };
       // OPTION elements seem to ignore white-space:pre, so do this the hard way...
-      const nbspPad = function(str,len=18){
+      const nbspPad = function(str,len=21){
         if(str.length===len) return str;
         else if(str.length>len) return str.substr(0,len);
         const a = []; a.length = len - str.length;
@@ -159,15 +162,20 @@
 
       const eFlags = E('#select-flags');
       const eSelectedFlags = E('#toolbar-selected-flags');
-      
+      const eLinkMainThread = E('#link-main-thread');
       const getSelectedFlags = ()=>Array.prototype.map.call(eFlags.selectedOptions, (v)=>v.value);
       const updateSelectedFlags = function(){
         eSelectedFlags.innerText = '';
-        getSelectedFlags().forEach(function(f){
+        const flags = getSelectedFlags();
+        flags.forEach(function(f){
           const e = document.createElement('span');
           e.innerText = f;
           eSelectedFlags.appendChild(e);
         });
+        const rxStripDash = /^(-+)?/;
+        const comma = flags.map((v)=>v.replace(rxStripDash,'')).join(',');
+        eLinkMainThread.setAttribute('target', 'main-thread-'+comma);
+        eLinkMainThread.href = 'speedtest1.html?flags='+comma;
       };
       eFlags.addEventListener('change', updateSelectedFlags );
       {

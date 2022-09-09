@@ -113,6 +113,46 @@
       ++this.counter;
       if(!this.toBool(expr)) throw new Error(msg || "throwUnless() failed");
       return this;
+    },
+
+    /**
+       Parses window.location.search-style string into an object
+       containing key/value pairs of URL arguments (already
+       urldecoded). The object is created using Object.create(null),
+       so contains only parsed-out properties and has no prototype
+       (and thus no inherited properties).
+
+       If the str argument is not passed (arguments.length==0) then
+       window.location.search.substring(1) is used by default. If
+       neither str is passed in nor window exists then false is returned.
+
+       On success it returns an Object containing the key/value pairs
+       parsed from the string. Keys which have no value are treated
+       has having the boolean true value.
+
+       Pedantic licensing note: this code has appeared in other source
+       trees, but was originally written by the same person who pasted
+       it into those trees.
+    */
+    processUrlArgs: function(str) {
+      if( 0 === arguments.length ) {
+        if( ('undefined' === typeof window) ||
+            !window.location ||
+            !window.location.search )  return false;
+        else str = (''+window.location.search).substring(1);
+      }
+      if( ! str ) return false;
+      str = (''+str).split(/#/,2)[0]; // remove #... to avoid it being added as part of the last value.
+      const args = Object.create(null);
+      const sp = str.split(/&+/);
+      const rx = /^([^=]+)(=(.+))?/;
+      var i, m;
+      for( i in sp ) {
+        m = rx.exec( sp[i] );
+        if( ! m ) continue;
+        args[decodeURIComponent(m[1])] = (m[3] ? decodeURIComponent(m[3]) : true);
+      }
+      return args;
     }
   };
 

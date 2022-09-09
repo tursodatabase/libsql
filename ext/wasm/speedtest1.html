@@ -28,16 +28,14 @@
     <div class='warning'>This page starts running the main exe when it loads, which will
       block the UI until it finishes! Adding UI controls to manually configure and start it
       are TODO.</div>
-    <div>Output is sent to the dev console because we cannot update the UI while the
-      speedtest is running unless/until we move the speedtest to a worker thread.
     </div>
-      <div class='warning'>Achtung: running it with the dev tools open <em>drastically</em>
-        slows it down: by a factor of 2.5+. For faster results, keep the dev tools closed
-        when running it!
+    <div class='warning'>Achtung: running it with the dev tools open may
+      <em>drastically</em> slow it down. For faster results, keep the dev
+      tools closed when running it!
     </div>
-    <hr>
-    <div id='test-output'>
-    </div>
+    <div>Output is delayed/buffered because we cannot update the UI while the
+      speedtest is running. Output will appear below when ready...
+    <div id='test-output'></div>
     <script src="common/whwasmutil.js"></script>
     <script src="common/SqliteTestUtil.js"></script>
     <script src="speedtest1.js"></script>
@@ -78,16 +76,20 @@
           eOut.append(ln);
           //this.e.output.lastElementChild.scrollIntoViewIfNeeded();
         };
-        const doHtmlOutput = false
+        const logList = [];
+        const dumpLogList = function(){
+          logList.forEach((v)=>log2('',v));
+          logList.length = 0;
+        };
         /* can't update DOM while speedtest is running unless we run
            speedtest in a worker thread. */;
         const log = (...args)=>{
           console.log(...args);
-          if(doHtmlOutput) log2('', ...args);
+          logList.push(args.join(' '));
         };
         const logErr = function(...args){
           console.error(...args);
-          if(doHtmlOutput) log2('error', ...args);
+          logList.push('ERROR: '+args.join(' '));
         };
 
         const runTests = function(EmscriptenModule){
@@ -107,31 +109,38 @@
           }
           const scope = wasm.scopedAllocPush();
           const dbFile = 0 ? "" : pDir+"/speedtest1.db";
-          const argv = [
-            // TODO: accept flags via URL arguments and/or a
-            // UI control. A multi-SELECT element should do
-            // nicely.
-            "speedtest1",
-            "--singlethread",
-            "--nomutex",
-            "--nosync",
-            "--nomemstat",
-            "--big-transactions", // important for tests 410 and 510!
+          const urlArgs = self.SqliteTestUtil.processUrlArgs();
+          const argv = ["speedtest1"];
+          if(urlArgs.flags){
+            // transform flags=a,b,c to ["--a", "--b", "--c"]
+            argv.push(...(urlArgs.flags.split(',').map((v)=>'--'+v)));
+          }else{
+            argv.push(
+              "--singlethread",
+              "--nomutex",
+              "--nosync",
+              "--nomemstat"
+            );
             //"--memdb", // note that memdb trumps the filename arg
-            dbFile
-          ];
+            argv.push("--big-transactions"/*important for tests 410 and 510!*/,
+                      dbFile);
+          }
           console.log("argv =",argv);
           // These log messages are not emitted to the UI until after main() returns. Fixing that
           // requires moving the main() call and related cleanup into a timeout handler.
-          log2('',"Starting native main() with flags:",argv.join(' '));
-          log2('',"This will take a while and the browser might warn about the runaway JS. Give it time.");
+          if(pDir) unlink(dbFile);
+          log2('',"Starting native app:\n ",argv.join(' '));
+          log2('',"This will take a while and the browser might warn about the runaway JS.",
+               "Give it time...");
+          logList.length = 0;
           setTimeout(function(){
               wasm.xCall('__main_argc_argv', argv.length,
                          wasm.scopedAllocMainArgv(argv));
               wasm.scopedAllocPop(scope);
               if(pDir) unlink(dbFile);
-              log2('',"Done running native main(). Check dev console for output.");
-          }, 100);
+              logList.unshift("Done running native main(). Output:");
+              dumpLogList();
+          }, 50);
         }/*runTests()*/;
 
         self.sqlite3TestModule.print = log;
