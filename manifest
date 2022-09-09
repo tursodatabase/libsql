@@ -1,5 +1,5 @@
-C speedtest1\swasm:\sadd\sa\slink\sin\sthe\sworker\svariant\swhich\slaunches\sthe\smain-thread\svariant\swith\sthe\sselected\sCLI\sflags.\sAppend\scollected\sstdout/stderr\sto\sthe\smain-thread\spage\safter\sexecution\sis\sfinished\sto\savoid\shaving\sto\sopen\sthe\sdev\stools\s(which\sinexplicably\sslows\sdown\swasm\sexecution).
-D 2022-09-09T04:50:18.498
+C Remove\sa\sreference\sto\sa\scompleted\sTODO.
+D 2022-09-09T05:39:36.904
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -511,7 +511,7 @@ F ext/wasm/scratchpad-opfs-main.js 69e960e9161f6412fd0c30f355d4112f1894d6609eb43
 F ext/wasm/scratchpad-opfs-worker.html 66c1d15d678f3bd306373d76b61c6c8aef988f61f4a8dd40185d452f9c6d2bf5
 F ext/wasm/scratchpad-opfs-worker.js 3ec2868c669713145c76eb5877c64a1b20741f741817b87c907a154b676283a9
 F ext/wasm/scratchpad-opfs-worker2.js 5f2237427ac537b8580b1c659ff14ad2621d1694043eaaf41ae18dbfef2e48c0
-F ext/wasm/speedtest1-worker.html 516f8434623e229d98554d34be64faeb9651083f20f2d0ebac2e67ea715574e8
+F ext/wasm/speedtest1-worker.html 6b5fda04d0b69e8c2651689356cb0c28fd33aa1a82b03dcbc8b0d68fbd7ed57f
 F ext/wasm/speedtest1-worker.js 356b9953add4449acf199793db9b76b11ee016021918d8daffd19f08ec68d305
 F ext/wasm/speedtest1.html 8f61cbe68300acca25dd9fa74dce79b774786e2b4feeb9bcbc46e1cefbfa6262
 F ext/wasm/split-speedtest1-script.sh a3e271938d4d14ee49105eb05567c6a69ba4c1f1293583ad5af0cd3a3779e205 x
@@ -2019,8 +2019,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f2846dcbcaac7880394fb14597c3a60ed310419128c4c5b863cd771a7e5cdeb5
-R 76ac17000a84c98911a70f4e46426ce1
+P 02709ee2beab36d144b807fd9ffaee639e3c1bdd1908a34e05f3fd23dad2ef66
+R bd063a67330eab4c443bec97e40e0753
 U stephan
-Z 8dd38cd18f4d355043f091ca5e469e89
+Z bd537cef11d41fe7e8fbc4a9611dc217
 # Remove this line to create a well-formed Fossil manifest.
