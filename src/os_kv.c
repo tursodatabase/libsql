@@ -165,26 +165,28 @@ static sqlite3_io_methods kvvfs_jrnl_io_methods = {
 
 /* Forward declarations for the low-level storage engine
 */
-#define KVSTORAGE_KEY_SZ  24
-#define KVSTORAGE_KEY_PREFIX  "kvvfs-"
+#define KVSTORAGE_KEY_SZ  32
 static int kvstorageWrite(const char*, const char *zKey, const char *zData);
 static int kvstorageDelete(const char*, const char *zKey);
 static int kvstorageRead(const char*, const char *zKey, char *zBuf, int nBuf);
 
 
 /* Expand the key name with an appropriate prefix and put the result
-** in pStore->zKey[]
+** zKeyOut[].  The zKeyOut[] buffer is assumed to hold at least
+** KVSTORAGE_KEY_SZ bytes.
 */
 static void kvstorageMakeKey(
   const char *zClass,
   const char *zKeyIn,
   char *zKeyOut
 ){
-  sqlite3_snprintf(KVSTORAGE_KEY_SZ, zKeyOut, "%s-%s", zClass, zKeyIn);
+  sqlite3_snprintf(KVSTORAGE_KEY_SZ, zKeyOut, "kvvfs-%s-%s", zClass, zKeyIn);
 }
 
-/* Write content into a key.  zKey is of limited size.  zData should be
-** pure text.  In other words, zData has already been encoded.
+/* Write content into a key.  zClass is the particular namespace of the
+** underlying key/value store to use - either "local" or "session".
+**
+** Both zKey and zData are zero-terminated pure text strings.
 **
 ** Return the number of errors.
 */
@@ -209,7 +211,9 @@ static int kvstorageWrite(
   }
 }
 
-/* Delete a key
+/* Delete a key (with its corresponding data) from the key/value
+** namespace given by zClass.  If the key does not previously exist,
+** this routine is a no-op.
 */
 static int kvstorageDelete(const char *zClass, const char *zKey){
   char zXKey[KVSTORAGE_KEY_SZ];
@@ -219,16 +223,17 @@ static int kvstorageDelete(const char *zClass, const char *zKey){
   return 0;
 }
 
-/* Read the value associated with a key and put the result in the first
+/* Read the value associated with a zKey from the key/value namespace given
+** by zClass and put the text data associated with that key in the first
 ** nBuf bytes of zBuf[].  The value might be truncated if zBuf is not large
-** enough to hold it all.  The value put into zBuf will always be zero
-** terminated.
+** enough to hold it all.  The value put into zBuf must always be zero
+** terminated, even if it gets truncated because nBuf is not large enough.
 **
 ** Return the total number of bytes in the data, without truncation, and
 ** not counting the final zero terminator.   Return -1 if the key does
 ** not exist.
 **
-** If nBuf==0 then this routine simply returns the size of the data without
+** If nBuf<=0 then this routine simply returns the size of the data without
 ** actually reading it.
 */
 static int kvstorageRead(
@@ -248,7 +253,7 @@ static int kvstorageRead(
     SQLITE_KV_TRACE(("KVVFS-READ   %-15s (-1)\n", zXKey));
     return -1;
   }
-  if( nBuf<0 ){
+  if( nBuf<=0 ){
     return (int)buf.st_size;
   }else if( nBuf==1 ){
     zBuf[0] = 0;
@@ -274,7 +279,6 @@ static int kvstorageRead(
 }
 
 /****** Utility subroutines ************************************************/
-
 
 /*
 ** Encode binary into the text encoded used to persist on disk.
@@ -446,7 +450,7 @@ static int kvvfsReadJrnl(
   assert( pFile->isJournal );
   SQLITE_KV_LOG(("xRead('%s-journal',%d,%lld)\n", pFile->zClass, iAmt, iOfst));
   if( pFile->aJrnl==0 ){
-    int szTxt = kvstorageRead(pFile->zClass, "jrnl", 0, -1);
+    int szTxt = kvstorageRead(pFile->zClass, "jrnl", 0, 0);
     char *aTxt;
     if( szTxt<=4 ){
       return SQLITE_IOERR;
@@ -752,9 +756,9 @@ static int kvvfsOpen(
     return SQLITE_CANTOPEN;
   }
   if( zName[0]=='s' ){
-    pFile->zClass = KVSTORAGE_KEY_PREFIX "ses";
+    pFile->zClass = "session";
   }else{
-    pFile->zClass = KVSTORAGE_KEY_PREFIX "loc";
+    pFile->zClass = "local";
   }
   pFile->aJrnl = 0;
   pFile->nJrnl = 0;
@@ -770,10 +774,10 @@ static int kvvfsOpen(
 */
 static int kvvfsDelete(sqlite3_vfs *pVfs, const char *zPath, int dirSync){
   if( strcmp(zPath, "local-journal")==0 ){
-    kvstorageDelete(KVSTORAGE_KEY_PREFIX "loc", "jrnl");
+    kvstorageDelete("local", "jrnl");
   }else
   if( strcmp(zPath, "session-journal")==0 ){
-    kvstorageDelete(KVSTORAGE_KEY_PREFIX "ses", "jrnl");
+    kvstorageDelete("session", "jrnl");
   }
   return SQLITE_OK;
 }
@@ -790,16 +794,16 @@ static int kvvfsAccess(
 ){
   SQLITE_KV_LOG(("xAccess(\"%s\")\n", zPath));
   if( strcmp(zPath, "local-journal")==0 ){
-    *pResOut = kvstorageRead(KVSTORAGE_KEY_PREFIX "loc", "jrnl", 0, -1)>0;
+    *pResOut = kvstorageRead("local", "jrnl", 0, 0)>0;
   }else
   if( strcmp(zPath, "session-journal")==0 ){
-    *pResOut = kvstorageRead(KVSTORAGE_KEY_PREFIX "ses", "jrnl", 0, -1)>0;
+    *pResOut = kvstorageRead("session", "jrnl", 0, 0)>0;
   }else
   if( strcmp(zPath, "local")==0 ){
-    *pResOut = kvstorageRead(KVSTORAGE_KEY_PREFIX "loc", "sz", 0, -1)>0;
+    *pResOut = kvstorageRead("local", "sz", 0, 0)>0;
   }else
   if( strcmp(zPath, "session")==0 ){
-    *pResOut = kvstorageRead(KVSTORAGE_KEY_PREFIX "ses", "sz", 0, -1)>0;
+    *pResOut = kvstorageRead("session", "sz", 0, 0)>0;
   }else
   {
     *pResOut = 0;

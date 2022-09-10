@@ -1,5 +1,5 @@
-C Move\sthe\svfskv.c\sextension\sto\ssrc/os_kv.c\sand\smake\sit\spart\sof\sthe\samalgamation,\nactivated\sif\sand\sonly\sif\sSQLITE_OS_KV\sis\strue.
-D 2022-09-10T18:20:59.146
+C Improved\scomments\sin\sos_kv.c.\s\sBetter\snames\sfor\sthe\skey/value\sname\sspaces.
+D 2022-09-10T18:38:21.976
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -571,7 +571,7 @@ F src/notify.c 89a97dc854c3aa62ad5f384ef50c5a4a11d70fcc69f86de3e991573421130ed6
 F src/os.c 0eb831ba3575af5277e47f4edd14fdfc90025c67eb25ce5cda634518d308d4e9
 F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
-F src/os_kv.c dc409476c3e533def81d022849726f2892e69e6529d4a40a637224cfb3f5df68 w ext/misc/vfskv.c
+F src/os_kv.c c658ddfb433b982afb3d12d133117e8db9eee11af33db41c30a6f30375f9b99a
 F src/os_setup.h 0711dbc4678f3ac52d7fe736951b6384a0615387c4ba5135a4764e4e31f4b6a6
 F src/os_unix.c 102f7e5c5b59c18ea3dbc929dc3be8acb3afc0e0b6ad572e032335c9c27f44f1
 F src/os_win.c e9454cb141908e8eef2102180bad353a36480612d5b736e4c2bd5777d9b25a34
@@ -2001,8 +2001,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c8e41279294ea7c2f041c7d4cbbd85fce47d55f2f56180ca837316f7dfd75237
-R 781601077fda92ceda7382ba24a16664
+P f6632e69c2ec1a7ddc4e51f3567e3bc082ee94a6dd51fdafdc0c3bf386a32d4c
+R 8cd4482ba17a8f6c143ea61b8462f46c
 U drh
-Z b2ad663d300b47ac24999ede7b88d1e7
+Z 81846bec91bdcab04bc60c9c032d039e
 # Remove this line to create a well-formed Fossil manifest.
