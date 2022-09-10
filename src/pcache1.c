@@ -1129,7 +1129,7 @@ static void pcache1Rekey(
   assert( iOld!=iNew );               /* The page number really is changing */
 
   pcache1EnterMutex(pCache->pGroup);
-
+  
   assert( pcache1FetchNoMutex(p, iOld, 0)==pPage ); /* pPg really is iOld */
   hOld = iOld%pCache->nHash;
   pp = &pCache->apHash[hOld];
