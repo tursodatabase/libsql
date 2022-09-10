@@ -1,9 +1,9 @@
-C Database\smust\sbe\snamed\seither\s"local"\sor\s"session".\s\sEach\shas\sa\sdistinct\nnamespace.
-D 2022-09-09T16:16:33.749
+C Move\sthe\svfskv.c\sextension\sto\ssrc/os_kv.c\sand\smake\sit\spart\sof\sthe\samalgamation,\nactivated\sif\sand\sonly\sif\sSQLITE_OS_KV\sis\strue.
+D 2022-09-10T18:20:59.146
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in 525bccb89e36a927f9312a231f054a2dc029f6af75901c7fc1a781d51b260323
+F Makefile.in ee179f405fd5f8845473f888517c4ada46099306c33ae1f27dd1aef53fe8e867
 F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
 F Makefile.msc d547a2fdba38a1c6cd1954977d0b0cc017f5f8fbfbc65287bf8d335808938016
 F README.md 8b8df9ca852aeac4864eb1e400002633ee6db84065bd01b78c33817f97d31f5e
@@ -335,7 +335,6 @@ F ext/misc/uint.c 053fed3bce2e89583afcd4bf804d75d659879bbcedac74d0fa9ed548839a03
 F ext/misc/unionvtab.c 36237f0607ca954ac13a4a0e2d2ac40c33bc6e032a5f55f431713061ef1625f9
 F ext/misc/urifuncs.c f71360d14fa9e7626b563f1f781c6148109462741c5235ac63ae0f8917b9c751
 F ext/misc/uuid.c 5bb2264c1b64d163efa46509544fd7500cb8769cb7c16dd52052da8d961505cf
-F ext/misc/vfskv.c f154254c7585a0434d50d1b0fa0bb27b03ae4231a9045961e58a046dc5ea40ab
 F ext/misc/vfslog.c 3932ab932eeb2601dbc4447cb14d445aaa9fbe43b863ef5f014401c3420afd20
 F ext/misc/vfsstat.c 474d08efc697b8eba300082cb1eb74a5f0f3df31ed257db1cb07e72ab0e53dfb
 F ext/misc/vtablog.c 5538acd0c8ddaae372331bee11608d76973436b77d6a91e8635cfc9432fba5ae
@@ -510,7 +509,7 @@ F ext/wasm/testing2.js d37433c601f88ed275712c1cfc92d3fb36c7c22e1ed8c7396fb2359e4
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 20801eed419dc58936ff9449b04041edbbbc0488a9fc683e72471dded050e0bb
+F main.mk b1b02927b2e0b73d025f93e388f2f7fba07614e972453983bddc65cd2bf33bb1
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -553,7 +552,7 @@ F src/insert.c aea5361767817f917b0f0f647a1f0b1621bd858938ae6ae545c3b6b9814b798f
 F src/json.c 7749b98c62f691697c7ee536b570c744c0583cab4a89200fdd0fc2aa8cc8cbd6
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 853385cc7a604157e137585097949252d5d0c731768e16b044608e5c95c3614b
-F src/main.c 8983b4a316d7e09946dd731913aa41712f02e2b55cb5c6c92126ccfe2473244a
+F src/main.c e11267cdd380be68d95d4292666636a7f1dff5f17a395f3d55be910d7e9350fb
 F src/malloc.c b7a3430cbe91d3e8e04fc10c2041b3a19794e63556ad2441a13d8dadd9b2bafc
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
@@ -572,7 +571,8 @@ F src/notify.c 89a97dc854c3aa62ad5f384ef50c5a4a11d70fcc69f86de3e991573421130ed6
 F src/os.c 0eb831ba3575af5277e47f4edd14fdfc90025c67eb25ce5cda634518d308d4e9
 F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
-F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
+F src/os_kv.c dc409476c3e533def81d022849726f2892e69e6529d4a40a637224cfb3f5df68 w ext/misc/vfskv.c
+F src/os_setup.h 0711dbc4678f3ac52d7fe736951b6384a0615387c4ba5135a4764e4e31f4b6a6
 F src/os_unix.c 102f7e5c5b59c18ea3dbc929dc3be8acb3afc0e0b6ad572e032335c9c27f44f1
 F src/os_win.c e9454cb141908e8eef2102180bad353a36480612d5b736e4c2bd5777d9b25a34
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
@@ -594,7 +594,7 @@ F src/shell.c.in e7e7c2c69ae86c5ee9e8ad66227203d46ff6dce8700a1b1dababff01c71d33d
 F src/sqlite.h.in b9b7fd73239d94db20332bb6e504688001e5564b655e1318a4427a1caef4b99e
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h a988810c9b21c0dc36dc7a62735012339dc76fc7ab448fb0792721d30eacb69d
-F src/sqliteInt.h 94e7fc2a5f0fa5d1f0af84513fd2d1c70a9f6e772556b9dfef16feee63291eae
+F src/sqliteInt.h 44eb45c25d379361ee1bd7fc49205471c6cb8a3727aed42372cf4716f653ebf2
 F src/sqliteLimit.h d7323ffea5208c6af2734574bae933ca8ed2ab728083caa117c9738581a31657
 F src/status.c 160c445d7d28c984a0eae38c144f6419311ed3eace59b44ac6dafc20db4af749
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -1938,7 +1938,7 @@ F tool/mkshellc.tcl df5d249617f9cc94d5c48eb0401673eb3f31f383ecbc54e8a13ca3dd97e8
 F tool/mksourceid.c 36aa8020014aed0836fd13c51d6dc9219b0df1761d6b5f58ff5b616211b079b9
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl 4f7cfef5152b0c91920355cbfc1d608a4ad242cb819f1aea07f6d0274f584a7f
-F tool/mksqlite3c.tcl eee7e9d9c58abb1045f6ed74ad95ad26e8d22be29fdc431deea5267fb3fa049c
+F tool/mksqlite3c.tcl 4fc26a9bfa0c4505b203d7ca0cf086e75ebcd4d63eb719c82f37e3fecdf23d37
 F tool/mksqlite3h.tcl 1f5e4a1dbbbc43c83cc6e74fe32c6c620502240b66c7c0f33a51378e78fc4edf
 F tool/mksqlite3internalh.tcl eb994013e833359137eb53a55acdad0b5ae1049b
 F tool/mkvsix.tcl b9e0777a213c23156b6542842c238479e496ebf5
@@ -2001,8 +2001,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 74fbf6c2a97729e481d5562344e960d0c237aeb1f07240262d32a24fb1f4b5a3
-R ef722c3c17f5bd16a7c59b26dec45e05
+P c8e41279294ea7c2f041c7d4cbbd85fce47d55f2f56180ca837316f7dfd75237
+R 781601077fda92ceda7382ba24a16664
 U drh
-Z c4e335313d89d964aa7abb0331378ddc
+Z b2ad663d300b47ac24999ede7b88d1e7
 # Remove this line to create a well-formed Fossil manifest.

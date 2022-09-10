@@ -1268,11 +1268,11 @@ typedef int VList;
 ** "BusyHandler" typedefs. vdbe.h also requires a few of the opaque
 ** pointer types (i.e. FuncDef) defined above.
 */
+#include "os.h"
 #include "pager.h"
 #include "btree.h"
 #include "vdbe.h"
 #include "pcache.h"
-#include "os.h"
 #include "mutex.h"
 
 /* The SQLITE_EXTRA_DURABLE compile-time option used to set the default
