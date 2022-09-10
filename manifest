@@ -1,5 +1,5 @@
-C Further\sfixes\sto\scomments\sin\ssqlite3recover.h.\sAlso\srework\ssome\sdata\sstructures\sin\ssqlite3recover.c.
-D 2022-09-09T20:44:56.135
+C Rework\srecover\sextension\scode\sfor\sreadability.
+D 2022-09-10T20:01:49.308
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -392,7 +392,7 @@ F ext/recover/recover_common.tcl 6679af7dffc858e345053a91c9b0a897595b4a13007acef
 F ext/recover/recoverclobber.test e6537ebf99f57bfff6cca59550b5f4278319b57a89865abb98d755a8fd561d84
 F ext/recover/recoverold.test f368a6ae2db12b6017257b332a19ab5df527f4061e43f12f5c85d8e2b236f074
 F ext/recover/recoverrowid.test ec4436cd69e6cdacb48dd2963ff6dd9dbd5fe648376de5e7c0c2f4f6cbacb417
-F ext/recover/sqlite3recover.c e8d0eae7da7ba24e733f6247082c12d7a030ce794eb5c42d64993f55c12882f5
+F ext/recover/sqlite3recover.c 4ed53fd33639ede83505f4397b8e1e46b6c0c5a5188c42f28f8372487141170a
 F ext/recover/sqlite3recover.h 81108efb8c4618d3d9c6da4df785212b0e4501aa0d25edfc463405fe839a6640
 F ext/recover/test_recover.c ed8d0cc8703ab29cf562f793623b045de109b7937f254108ff4132f35abb37fb
 F ext/repair/README.md 92f5e8aae749a4dae14f02eea8e1bb42d4db2b6ce5e83dbcdd6b1446997e0c15
@@ -2007,8 +2007,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5f2d5ccd56c06c3468377126acfd4be39b79b05bb6fb09b674b2e185df143aa3
-R d4558eaeefd2a718275b323dc4307f9b
+P 599d1f8ec2f9e24924a6f9e66c85664360c7b95531b07a4efe1dd8c096b3fc99
+R cd56b05532a91c08b9e673fffba829f5
 U dan
-Z 6e64e7331e56e0c44a533586bb618920
+Z 624cfda4b7c658530a41a87671068e55
 # Remove this line to create a well-formed Fossil manifest.
