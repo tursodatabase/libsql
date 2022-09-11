@@ -649,9 +649,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     ["sqlite3_value_text", "string", "*"],
     ["sqlite3_value_type", "int", "*"],
     ["sqlite3_vfs_find", "*", "string"],
-    ["sqlite3_vfs_register", "int", "*", "int"],
-    ["sqlite3_wasm_vfs_unlink", "int", "string"],
-    ["sqlite3_wasm__emjs_test", "int", "int"]
+    ["sqlite3_vfs_register", "int", "*", "int"]
   ]/*capi.wasm.bindingSignatures*/;
 
   if(false && capi.wasm.compileOptionUsed('SQLITE_ENABLE_NORMALIZE')){
@@ -671,6 +669,15 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       ["sqlite3_changes64","i64", ["sqlite3*"]],
       ["sqlite3_column_int64","i64", ["sqlite3_stmt*", "int"]],
       ["sqlite3_total_changes64", "i64", ["sqlite3*"]]
+  ];
+
+  /**
+     Functions which are intended solely for API-internal use by the
+     WASM components, not client code. These get installed into
+     capi.wasm.
+  */
+  capi.wasm.bindingSignatures.wasm = [
+    ["sqlite3_wasm_vfs_unlink", "int", "string"]
   ];
 
   /** State for sqlite3_web_persistent_dir(). */

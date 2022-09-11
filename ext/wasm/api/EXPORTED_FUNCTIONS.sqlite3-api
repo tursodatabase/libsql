@@ -66,11 +66,5 @@ _sqlite3_value_text
 _sqlite3_value_type
 _sqlite3_vfs_find
 _sqlite3_vfs_register
-_sqlite3_wasm_db_error
-_sqlite3_wasm_enum_json
-_sqlite3_wasm_init_opfs
-_sqlite3_wasm_vfs_unlink
-_sqlite3_wasm__emjs_test
-_sqlite3_wasm__kvvfsMakeKey
 _malloc
 _free

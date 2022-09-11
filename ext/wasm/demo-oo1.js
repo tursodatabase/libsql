@@ -30,7 +30,7 @@
       0 ? "" : capi.sqlite3_web_persistent_dir()
     )+"/mydb.sqlite3"
     if(0 && capi.sqlite3_web_persistent_dir()){
-      capi.sqlite3_wasm_vfs_unlink(dbName);
+      capi.wasm.sqlite3_wasm_vfs_unlink(dbName);
     }
     const db = new oo.DB(dbName);
     log("db =",db.filename);

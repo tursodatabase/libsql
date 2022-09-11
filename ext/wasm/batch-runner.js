@@ -69,7 +69,7 @@
       let pDb = 0;
       try{
         if(unlinkFirst && fn && ':memory:'!==fn){
-          capi.sqlite3_wasm_vfs_unlink(fn);
+          capi.wasm.sqlite3_wasm_vfs_unlink(fn);
         }
         const oFlags = capi.SQLITE_OPEN_CREATE | capi.SQLITE_OPEN_READWRITE;
         const ppDb = wasm.scopedAllocPtr();
@@ -93,7 +93,7 @@
       if(this.db && this.db.ptr){
         this.sqlite3.capi.sqlite3_close_v2(this.db.ptr);
         this.logHtml("Closed db",this.db.filename);
-        if(unlink) capi.sqlite3_wasm_vfs_unlink(this.db.filename);
+        if(unlink) capi.wasm.sqlite3_wasm_vfs_unlink(this.db.filename);
         this.db.ptr = this.db.filename = undefined;
       }
     },

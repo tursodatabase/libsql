@@ -1,4 +1,38 @@
+/*
+** This file requires access to sqlite3.c static state in order to
+** implement certain WASM-specific features. Unlike the rest of
+** sqlite3.c, this file requires compiling with -std=c99 (or
+** equivalent, or a later C version) because it makes use of features
+** not available in C89.
+*/
 #include "sqlite3.c"
+
+/*
+** WASM_KEEP is identical to EMSCRIPTEN_KEEPALIVE but is not
+** Emscripten-specific. It explicitly includes marked functions for
+** export into the target wasm file without requiring explicit listing
+** of those functions in Emscripten's -sEXPORTED_FUNCTIONS=... list
+** (or equivalent in other build platforms). Any function with neither
+** this attribute nor which is listed as an explicit export will not
+** be exported from the wasm file (but may still be used internally
+** within the wasm file).
+**
+** The functions in this file (sqlite3-wasm.c) which require exporting
+** are marked with this flag. They may also be added to any explicit
+** build-time export list but need not be. All of these APIs are
+** intended for use only within the project's own JS/WASM code, and
+** not by client code, so an argument can be made for reducing their
+** visibility by not including them in any build-time export lists.
+**
+** 2022-09-11: it's not yet _proven_ that this approach works in
+** non-Emscripten builds. If not, such builds will need to export
+** those using the --export=... wasm-ld flag (or equivalent). As of
+** this writing we are tied to Emscripten for various reasons
+** and cannot test the library with other build environments.
+*/
+#define WASM_KEEP __attribute__((used,visibility("default")))
+// See also:
+//__attribute__((export_name("theExportedName"), used, visibility("default")))
 
 /*
 ** This function is NOT part of the sqlite3 public API. It is strictly
@@ -14,8 +48,8 @@
 **
 ** Returns err_code.
 */
-int sqlite3_wasm_db_error(sqlite3*db, int err_code,
-                          const char *zMsg){
+WASM_KEEP
+int sqlite3_wasm_db_error(sqlite3*db, int err_code, const char *zMsg){
   if(0!=zMsg){
     const int nMsg = sqlite3Strlen30(zMsg);
     sqlite3ErrorWithMsg(db, err_code, "%.*s", nMsg, zMsg);
@@ -40,6 +74,7 @@ int sqlite3_wasm_db_error(sqlite3*db, int err_code,
 ** buffer is not large enough for the generated JSON. In debug builds
 ** that will trigger an assert().
 */
+WASM_KEEP
 const char * sqlite3_wasm_enum_json(void){
   static char strBuf[1024 * 8] = {0} /* where the JSON goes */;
   int n = 0, childCount = 0, structCount = 0
@@ -421,6 +456,7 @@ const char * sqlite3_wasm_enum_json(void){
 ** found, or it has no xDelete method, SQLITE_MISUSE is returned, else
 ** the result of the xDelete() call is returned.
 */
+WASM_KEEP
 int sqlite3_wasm_vfs_unlink(const char * zName){
   int rc = SQLITE_MISUSE /* ??? */;
   sqlite3_vfs * const pVfs = sqlite3_vfs_find(0);
@@ -433,6 +469,7 @@ int sqlite3_wasm_vfs_unlink(const char * zName){
 #if defined(__EMSCRIPTEN__) && defined(SQLITE_WASM_OPFS)
 #include <emscripten/wasmfs.h>
 #include <emscripten/console.h>
+
 /*
 ** This function is NOT part of the sqlite3 public API. It is strictly
 ** for use by the sqlite project's own JS/WASM bindings, specifically
@@ -454,6 +491,7 @@ int sqlite3_wasm_vfs_unlink(const char * zName){
 ** the virtual FS fails. In builds compiled without SQLITE_WASM_OPFS
 ** defined, SQLITE_NOTFOUND is returned without side effects.
 */
+WASM_KEEP
 int sqlite3_wasm_init_opfs(const char *zMountPoint){
   static backend_t pOpfs = 0;
   if( !zMountPoint || !*zMountPoint ) zMountPoint = "/persistent";
@@ -479,13 +517,15 @@ int sqlite3_wasm_init_opfs(const char *zMountPoint){
   return pOpfs ? 0 : SQLITE_NOMEM;
 }
 #else
+WASM_KEEP
 int sqlite3_wasm_init_opfs(void){
   return SQLITE_NOTFOUND;
 }
 #endif /* __EMSCRIPTEN__ && SQLITE_WASM_OPFS */
 
 #if defined(__EMSCRIPTEN__) // && defined(SQLITE_OS_KV)
-#include "emscripten.h"
+#include <emscripten.h>
+#include <emscripten/console.h>
 
 #ifndef KVSTORAGE_KEY_SZ
 /* We can remove this once kvvfs and this bit is merged. */
@@ -511,6 +551,7 @@ static void kvstorageMakeKey(
 ** Maintenance reminder: Emscripten will install this in the Module
 ** init scope and will prefix its name with "_".
 */
+WASM_KEEP
 int sqlite3_wasm__kvvfsMakeKey(const char *zClass,
                                   const char *zKeyIn,
                                   char *zKeyOut){
@@ -522,9 +563,11 @@ int sqlite3_wasm__kvvfsMakeKey(const char *zClass,
 /*
 ** Alternately, we can implement kvstorageMakeKey() in JS in such a
 ** way that it's visible to kvstorageWrite/Delete/Read() but not the
-** rest of the world. This impl is considerably more verbose than
-** the C impl because writing directly to memory requires more code in
-** JS.
+** rest of the world. This impl is considerably more verbose than the
+** C impl because writing directly to memory requires more code in
+** JS. Though more verbose, this approach enables removal of
+** sqlite3_wasm__kvvfsMakeKey(). The only catch is that the
+** KVSTORAGE_KEY_SZ constant has to be hard-coded into this function.
 */
 EM_JS(void, kvstorageMakeKeyJS,
       (const char *zClass, const char *zKeyIn, char *zKeyOut),{
@@ -673,11 +716,13 @@ EM_JS(int, kvstorageRead,
 ** functions. It is not part of the public API and its signature
 ** and semantics may change at any time.
 */
-int sqlite3_wasm__emjs_test(int whichOp){
+WASM_KEEP
+int sqlite3_wasm__emjs_keep(int whichOp){
+  int rc = 0;
   const char * zClass = "session";
   const char * zKey = "hello";
-  int rc = 0;
   switch( whichOp ){
+    case 0: break;
     case 1:
       kvstorageWrite(zClass, zKey, "world");
       break;
@@ -685,17 +730,19 @@ int sqlite3_wasm__emjs_test(int whichOp){
       char buffer[128] = {0};
       char * zBuf = &buffer[0];
       rc = kvstorageRead(zClass, zKey, zBuf, (int)sizeof(buffer));
-      printf("kvstorageRead()=%d %s\n", rc, zBuf);
+      emscripten_console_logf("kvstorageRead()=%d %s\n", rc, zBuf);
       break;
     }
     case 3:
       kvstorageDelete(zClass, zKey);
       break;
-  default:
-    kvstorageMakeKeyOnJSStack(0,0) /* force Emscripten to include this */;
-    break;
+    case 4:
+      kvstorageMakeKeyOnJSStack(0,0) /* force Emscripten to include this */;
+      break;
+    default: break;
   }
   return rc;
 }
+#endif /* ifdef __EMSCRIPTEN__  (kvvfs method impls) */
 
-#endif /* ifdef __EMSCRIPTEN__ */
+#undef WASM_KEEP

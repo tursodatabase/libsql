@@ -375,7 +375,7 @@ sqlite3.initWorker1API = function(){
         db.close();
         if(db===this.defaultDb) this.defaultDb = undefined;
         if(alsoUnlink && filename){
-          sqlite3.capi.sqlite3_wasm_vfs_unlink(filename);
+          sqlite3.capi.wasm.sqlite3_wasm_vfs_unlink(filename);
         }
       }
     },

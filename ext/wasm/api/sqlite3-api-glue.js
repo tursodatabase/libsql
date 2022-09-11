@@ -63,6 +63,9 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     for(const e of wasm.bindingSignatures){
       capi[e[0]] = wasm.xWrap.apply(null, e);
     }
+    for(const e of wasm.bindingSignatures.wasm){
+      capi.wasm[e[0]] = wasm.xWrap.apply(null, e);
+    }
 
     /* For C API functions which cannot work properly unless
        wasm.bigIntEnabled is true, install a bogus impl which
