@@ -483,3 +483,147 @@ int sqlite3_wasm_init_opfs(void){
   return SQLITE_NOTFOUND;
 }
 #endif /* __EMSCRIPTEN__ && SQLITE_WASM_OPFS */
+
+#if defined(__EMSCRIPTEN__) // && defined(SQLITE_OS_KV)
+#include "emscripten.h"
+
+#ifndef KVSTORAGE_KEY_SZ
+/* We can remove this once kvvfs and this bit is merged. */
+#  define KVSTORAGE_KEY_SZ 32
+static void kvstorageMakeKey(
+  const char *zClass,
+  const char *zKeyIn,
+  char *zKeyOut
+){
+  sqlite3_snprintf(KVSTORAGE_KEY_SZ, zKeyOut, "kvvfs-%s-%s", zClass, zKeyIn);
+}
+#endif
+
+/*
+** An internal level of indirection for accessing the static
+** kvstorageMakeKey() from EM_JS()-generated functions. This must be
+** made available for export via Emscripten but is not intended to be
+** used from client code. If called with a NULL zClass it is a no-op.
+** It returns KVSTORAGE_KEY_SZ, so JS code (which cannot see that
+** constant) may call it with NULL arguments to get the size of the
+** allocation they'll need for a kvvfs key.
+**
+** Maintenance reminder: Emscripten will install this in the Module
+** init scope and will prefix its name with "_".
+*/
+int sqlite3_wasm__kvvfsMakeKey(const char *zClass,
+                                  const char *zKeyIn,
+                                  char *zKeyOut){
+  if(zClass) kvstorageMakeKey(zClass, zKeyIn, zKeyOut);
+  return KVSTORAGE_KEY_SZ;
+}
+
+#if 0
+/*
+** Alternately, we can implement kvstorageMakeKey() in JS in such a
+** way that it's visible to kvstorageWrite/Delete/Read() but not the
+** rest of the world. This impl is considerably more verbose than
+** the C impl because writing directly to memory requires more code in
+** JS.
+*/
+EM_JS(void, kvstorageMakeKeyJS,
+      (const char *zClass, const char *zKeyIn, char *zKeyOut),{
+  const max = 32;
+  if(!arguments.length) return max;
+  let n = 0, i = 0, ch = 0;
+  // Write key prefix to dest...
+  if(0){
+    const prefix = "kvvfs-";
+    for(i in prefix) setValue(zKeyOut+(n++), prefix.charCodeAt(i));
+  }else{
+    // slightly optimized but less readable...
+    setValue(zKeyOut + (n++), 107/*'k'*/);
+    setValue(zKeyOut + (n++), 118/*'v'*/);
+    setValue(zKeyOut + (n++), 118/*'v'*/);
+    setValue(zKeyOut + (n++), 102/*'f'*/);
+    setValue(zKeyOut + (n++), 115/*'s'*/);
+    setValue(zKeyOut + (n++),  45/*'-'*/);
+  }
+  // Write zClass to dest...
+  for(i = 0; n < max && (ch = getValue(zClass+i)); ++n, ++i){
+    setValue(zKeyOut + n, ch);
+  }
+  // Write "-" separator to dest...
+  if(n<max) setValue(zKeyOut + (n++), 45/* == '-'*/);
+  // Write zKeyIn to dest...
+  for(i = 0; n < max && (ch = getValue(zKeyIn+i)); ++n, ++i){
+    setValue(zKeyOut + n, ch);
+  }
+  // NUL terminate...
+  if(n<max) setValue(zKeyOut + n, 0);
+});
+#endif
+
+EM_JS(int, kvstorageWrite,
+      (const char *zClass, const char *zKey, const char *zData),{
+  const stack = stackSave();
+  try {
+    //const zXKey = stackAlloc(kvstorageMakeKeyJS());
+    //kvstorageMakeKeyJS(zClass, zKey, zXKey);
+    const zXKey = stackAlloc(_sqlite3_wasm__kvvfsMakeKey(0,0,0));
+    _sqlite3_wasm__kvvfsMakeKey(zClass, zKey, zXKey);
+    const jKey = UTF8ToString(zXKey);
+    /**
+       We could simplify this function and eliminate the
+       kvstorageMakeKey() symbol acrobatics if we'd simply hard-code
+       the key algo into the 3 functions which need it:
+
+       const jKey = "kvvfs-"+UTF8ToString(zClass)+"-"+UTF8ToString(zKey);
+    */
+    ((115/*=='s'*/===getValue(zClass))
+     ? sessionStorage : localStorage).setItem(jKey, UTF8ToString(zData));
+  }catch(e){
+    console.error("kvstorageWrite()",e);
+    return 1; // Can't access SQLITE_xxx from here
+  }finally{
+    stackRestore(stack);
+  }
+  return 0;
+});
+
+EM_JS(int, kvstorageDelete,
+      (const char *zClass, const char *zKey),{
+  const stack = stackSave();
+  try {
+    const zXKey = stackAlloc(_sqlite3_wasm__kvvfsMakeKey(0,0,0));
+    _sqlite3_wasm__kvvfsMakeKey(zClass, zKey, zXKey);
+    const jKey = UTF8ToString(zXKey);
+    ((115/*=='s'*/===getValue(zClass))
+     ? sessionStorage : localStorage).removeItem(jKey);
+  }catch(e){
+    console.error("kvstorageDelete()",e);
+    return 1;
+  }finally{
+    stackRestore(stack);
+  }
+  return 0;
+});
+
+/*
+** This function exists for (1) WASM testing purposes and (2) as a
+** hook to get Emscripten to export several EM_JS()-generated
+** functions. It is not part of the public API and its signature
+** and semantics may change at any time.
+*/
+void sqlite3_wasm__emjs_test(int whichOp){
+  const char * zClass = "session";
+  const char * zKey = "hello";
+  switch( whichOp ){
+    case 1:
+      kvstorageWrite(zClass, zKey, "world");
+      break;
+    case 2:
+      kvstorageDelete(zClass, zKey);
+      break;
+  default:
+    //kvstorageMakeKeyJS(0,0,0) /* force Emscripten to include this */;
+    break;
+  }
+}
+
+#endif /* ifdef __EMSCRIPTEN__ */

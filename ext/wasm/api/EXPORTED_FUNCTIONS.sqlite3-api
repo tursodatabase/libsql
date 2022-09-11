@@ -70,5 +70,7 @@ _sqlite3_wasm_db_error
 _sqlite3_wasm_enum_json
 _sqlite3_wasm_init_opfs
 _sqlite3_wasm_vfs_unlink
+_sqlite3_wasm__emjs_test
+_sqlite3_wasm__kvvfsMakeKey
 _malloc
 _free
