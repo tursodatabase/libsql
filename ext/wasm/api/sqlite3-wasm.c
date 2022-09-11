@@ -641,7 +641,7 @@ EM_JS(int, kvstorageRead,
   const stack = stackSave();
   try {
     const zXKey = kvstorageMakeKeyOnJSStack(zClass,zKey);
-    if(!zXKey) return 1/*OOM*/;
+    if(!zXKey) return -3/*OOM*/;
     const jKey = UTF8ToString(zXKey);
     const jV = ((115/*=='s'*/===getValue(zClass))
                 ? sessionStorage : localStorage).getItem(jKey);
@@ -661,7 +661,7 @@ EM_JS(int, kvstorageRead,
     return nBuf - 1;
   }catch(e){
     console.error("kvstorageRead()",e);
-    return -1;
+    return -2;
   }finally{
     stackRestore(stack);
   }
