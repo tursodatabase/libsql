@@ -193,8 +193,9 @@ emcc.jsflags += -sSTRICT_JS
 emcc.jsflags += -sDYNAMIC_EXECUTION=0
 emcc.jsflags += -sNO_POLYFILL
 emcc.jsflags += -sEXPORTED_FUNCTIONS=@$(dir.wasm)/EXPORTED_FUNCTIONS.api
-emcc.jsflags += -sEXPORTED_RUNTIME_METHODS=FS,wasmMemory
+emcc.jsflags += -sEXPORTED_RUNTIME_METHODS=FS,wasmMemory,allocateUTF8OnStack
                 # wasmMemory ==> required by our code for use with -sIMPORTED_MEMORY
+                # allocateUTF8OnStack => for kvvp internals
 emcc.jsflags += -sUSE_CLOSURE_COMPILER=0
 emcc.jsflags += -sIMPORTED_MEMORY
 emcc.environment := -sENVIRONMENT=web

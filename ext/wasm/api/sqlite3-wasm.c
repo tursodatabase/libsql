@@ -604,26 +604,67 @@ EM_JS(int, kvstorageDelete,
   return 0;
 });
 
+EM_JS(int, kvstorageRead,
+      (const char *zClass, const char *zKey, char *zBuf, int nBuf),{
+  const stack = stackSave();
+  try {
+    const zXKey = stackAlloc(_sqlite3_wasm__kvvfsMakeKey(0,0,0));
+    _sqlite3_wasm__kvvfsMakeKey(zClass, zKey, zXKey);
+    const jKey = UTF8ToString(zXKey);
+    const storage = (115/*=='s'*/===getValue(zClass))
+      ? sessionStorage : localStorage;
+    const jV = storage.getItem(jKey);
+    if(!jV) return -1;
+    const nV = jV.length /* Note that we are relying 100% on v being
+                            ASCII so that jV.length is equal to the
+                            C-string's byte length. */;
+    if(nBuf<=0) return nV;
+    else if(1===nBuf){
+      setValue(zBuf, 0);
+      return nV;
+    }
+    const zV = allocateUTF8OnStack(jV);
+    if(nBuf > nV + 1) nBuf = nV + 1;
+    HEAPU8.copyWithin(zBuf, zV, zV + nBuf - 1);
+    setValue( zBuf + nBuf - 1, 0 );
+    return nBuf - 1;
+  }catch(e){
+    console.error("kvstorageRead()",e);
+    return -1;
+  }finally{
+    stackRestore(stack);
+  }
+});
+
 /*
 ** This function exists for (1) WASM testing purposes and (2) as a
 ** hook to get Emscripten to export several EM_JS()-generated
 ** functions. It is not part of the public API and its signature
 ** and semantics may change at any time.
 */
-void sqlite3_wasm__emjs_test(int whichOp){
+int sqlite3_wasm__emjs_test(int whichOp){
   const char * zClass = "session";
   const char * zKey = "hello";
+  int rc = 0;
   switch( whichOp ){
     case 1:
       kvstorageWrite(zClass, zKey, "world");
       break;
-    case 2:
+    case 2: {
+      char buffer[128] = {0};
+      char * zBuf = &buffer[0];
+      rc = kvstorageRead(zClass, zKey, zBuf, (int)sizeof(buffer));
+      printf("kvstorageRead()=%d %s\n", rc, zBuf);
+      break;
+    }
+    case 3:
       kvstorageDelete(zClass, zKey);
       break;
   default:
     //kvstorageMakeKeyJS(0,0,0) /* force Emscripten to include this */;
     break;
   }
+  return rc;
 }
 
 #endif /* ifdef __EMSCRIPTEN__ */

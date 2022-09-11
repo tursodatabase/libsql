@@ -651,7 +651,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     ["sqlite3_vfs_find", "*", "string"],
     ["sqlite3_vfs_register", "int", "*", "int"],
     ["sqlite3_wasm_vfs_unlink", "int", "string"],
-    ["sqlite3_wasm__emjs_test", undefined, "int"]
+    ["sqlite3_wasm__emjs_test", "int", "int"]
   ]/*capi.wasm.bindingSignatures*/;
 
   if(false && capi.wasm.compileOptionUsed('SQLITE_ENABLE_NORMALIZE')){
