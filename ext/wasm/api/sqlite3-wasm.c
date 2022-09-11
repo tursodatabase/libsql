@@ -503,7 +503,7 @@ static void kvstorageMakeKey(
 ** An internal level of indirection for accessing the static
 ** kvstorageMakeKey() from EM_JS()-generated functions. This must be
 ** made available for export via Emscripten but is not intended to be
-** used from client code. If called with a NULL zClass it is a no-op.
+** used from client code. If called with a NULL zKeyOut it is a no-op.
 ** It returns KVSTORAGE_KEY_SZ, so JS code (which cannot see that
 ** constant) may call it with NULL arguments to get the size of the
 ** allocation they'll need for a kvvfs key.
@@ -514,7 +514,7 @@ static void kvstorageMakeKey(
 int sqlite3_wasm__kvvfsMakeKey(const char *zClass,
                                   const char *zKeyIn,
                                   char *zKeyOut){
-  if(zClass) kvstorageMakeKey(zClass, zKeyIn, zKeyOut);
+  if(zKeyOut) kvstorageMakeKey(zClass, zKeyIn, zKeyOut);
   return KVSTORAGE_KEY_SZ;
 }
 
@@ -559,14 +559,33 @@ EM_JS(void, kvstorageMakeKeyJS,
 });
 #endif
 
+/*
+** Internal helper for kvstorageWrite/Read/Delete() which creates a
+** storage key for the given zClass/zKeyIn combination. Returns a
+** pointer to the key: a C string allocated on the WASM stack, or 0 if
+** allocation fails. It is up to the caller to save/restore the stack
+** before/after this operation.
+*/
+EM_JS(const char *, kvstorageMakeKeyOnJSStack,
+      (const char *zClass, const char *zKeyIn),{
+  if( 0==zClass || 0==zKeyIn) return 0;
+  const zXKey = stackAlloc(_sqlite3_wasm__kvvfsMakeKey(0,0,0));
+  if(zXKey) _sqlite3_wasm__kvvfsMakeKey(zClass, zKeyIn, zXKey);
+  return zXKey;
+});
+
+/*
+** JS impl of kvstorageWrite(). Main docs are in the C impl. This impl
+** writes zData to the global sessionStorage (if zClass starts with
+** 's') or localStorage, using a storage key derived from zClass and
+** zKey.
+*/
 EM_JS(int, kvstorageWrite,
       (const char *zClass, const char *zKey, const char *zData),{
   const stack = stackSave();
   try {
-    //const zXKey = stackAlloc(kvstorageMakeKeyJS());
-    //kvstorageMakeKeyJS(zClass, zKey, zXKey);
-    const zXKey = stackAlloc(_sqlite3_wasm__kvvfsMakeKey(0,0,0));
-    _sqlite3_wasm__kvvfsMakeKey(zClass, zKey, zXKey);
+    const zXKey = kvstorageMakeKeyOnJSStack(zClass,zKey);
+    if(!zXKey) return 1/*OOM*/;
     const jKey = UTF8ToString(zXKey);
     /**
        We could simplify this function and eliminate the
@@ -586,11 +605,18 @@ EM_JS(int, kvstorageWrite,
   return 0;
 });
 
+/*
+** JS impl of kvstorageDelete(). Main docs are in the C impl. This
+** impl generates a key derived from zClass and zKey, and removes the
+** matching entry (if any) from global sessionStorage (if zClass
+** starts with 's') or localStorage.
+*/
 EM_JS(int, kvstorageDelete,
       (const char *zClass, const char *zKey),{
   const stack = stackSave();
   try {
-    const zXKey = stackAlloc(_sqlite3_wasm__kvvfsMakeKey(0,0,0));
+    const zXKey = kvstorageMakeKeyOnJSStack(zClass,zKey);
+    if(!zXKey) return 1/*OOM*/;
     _sqlite3_wasm__kvvfsMakeKey(zClass, zKey, zXKey);
     const jKey = UTF8ToString(zXKey);
     ((115/*=='s'*/===getValue(zClass))
@@ -604,16 +630,21 @@ EM_JS(int, kvstorageDelete,
   return 0;
 });
 
+/*
+** JS impl of kvstorageRead(). Main docs are in the C impl. This impl
+** reads its data from the global sessionStorage (if zClass starts
+** with 's') or localStorage, using a storage key derived from zClass
+** and zKey.
+*/
 EM_JS(int, kvstorageRead,
       (const char *zClass, const char *zKey, char *zBuf, int nBuf),{
   const stack = stackSave();
   try {
-    const zXKey = stackAlloc(_sqlite3_wasm__kvvfsMakeKey(0,0,0));
-    _sqlite3_wasm__kvvfsMakeKey(zClass, zKey, zXKey);
+    const zXKey = kvstorageMakeKeyOnJSStack(zClass,zKey);
+    if(!zXKey) return 1/*OOM*/;
     const jKey = UTF8ToString(zXKey);
-    const storage = (115/*=='s'*/===getValue(zClass))
-      ? sessionStorage : localStorage;
-    const jV = storage.getItem(jKey);
+    const jV = ((115/*=='s'*/===getValue(zClass))
+                ? sessionStorage : localStorage).getItem(jKey);
     if(!jV) return -1;
     const nV = jV.length /* Note that we are relying 100% on v being
                             ASCII so that jV.length is equal to the
@@ -661,7 +692,7 @@ int sqlite3_wasm__emjs_test(int whichOp){
       kvstorageDelete(zClass, zKey);
       break;
   default:
-    //kvstorageMakeKeyJS(0,0,0) /* force Emscripten to include this */;
+    kvstorageMakeKeyOnJSStack(0,0) /* force Emscripten to include this */;
     break;
   }
   return rc;
