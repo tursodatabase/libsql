@@ -284,7 +284,6 @@ EM_JS(int, kvstorageDelete,
   try {
     const zXKey = kvstorageMakeKeyOnJSStack(zClass,zKey);
     if(!zXKey) return 1/*OOM*/;
-    _sqlite3_wasm__kvvfsMakeKey(zClass, zKey, zXKey);
     const jKey = UTF8ToString(zXKey);
     ((115/*=='s'*/===getValue(zClass))
      ? sessionStorage : localStorage).removeItem(jKey);
