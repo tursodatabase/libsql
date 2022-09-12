@@ -284,7 +284,6 @@ EM_JS(int, kvstorageDelete,
   try {
     const zXKey = kvstorageMakeKeyOnJSStack(zClass,zKey);
     if(!zXKey) return 1/*OOM*/;
-    _sqlite3_wasm__kvvfsMakeKey(zClass, zKey, zXKey);
     const jKey = UTF8ToString(zXKey);
     ((115/*=='s'*/===getValue(zClass))
      ? sessionStorage : localStorage).removeItem(jKey);
@@ -527,12 +526,25 @@ static int kvvfsEncode(const char *aData, int nData, char *aOut){
   return j;
 }
 
-/* Convert hex to binary */
-static char kvvfsHexToBinary(char c){
-  if( c>='0' && c<='9' ) return c - '0';
-  if( c>='A' && c<='F' ) return c - 'A' + 10;
-  return 0;
-}
+static const signed char kvvfsHexValue[256] = {
+  -1, -1, -1, -1, -1, -1, -1, -1,   -1, -1, -1, -1, -1, -1, -1, -1,
+  -1, -1, -1, -1, -1, -1, -1, -1,   -1, -1, -1, -1, -1, -1, -1, -1,
+  -1, -1, -1, -1, -1, -1, -1, -1,   -1, -1, -1, -1, -1, -1, -1, -1,
+   0,  1,  2,  3,  4,  5,  6,  7,    8,  9, -1, -1, -1, -1, -1, -1,
+  -1, 10, 11, 12, 13, 14, 15, -1,   -1, -1, -1, -1, -1, -1, -1, -1,
+  -1, -1, -1, -1, -1, -1, -1, -1,   -1, -1, -1, -1, -1, -1, -1, -1,
+  -1, -1, -1, -1, -1, -1, -1, -1,   -1, -1, -1, -1, -1, -1, -1, -1,
+  -1, -1, -1, -1, -1, -1, -1, -1,   -1, -1, -1, -1, -1, -1, -1, -1,
+
+  -1, -1, -1, -1, -1, -1, -1, -1,   -1, -1, -1, -1, -1, -1, -1, -1,
+  -1, -1, -1, -1, -1, -1, -1, -1,   -1, -1, -1, -1, -1, -1, -1, -1,
+  -1, -1, -1, -1, -1, -1, -1, -1,   -1, -1, -1, -1, -1, -1, -1, -1,
+  -1, -1, -1, -1, -1, -1, -1, -1,   -1, -1, -1, -1, -1, -1, -1, -1,
+  -1, -1, -1, -1, -1, -1, -1, -1,   -1, -1, -1, -1, -1, -1, -1, -1,
+  -1, -1, -1, -1, -1, -1, -1, -1,   -1, -1, -1, -1, -1, -1, -1, -1,
+  -1, -1, -1, -1, -1, -1, -1, -1,   -1, -1, -1, -1, -1, -1, -1, -1,
+  -1, -1, -1, -1, -1, -1, -1, -1,   -1, -1, -1, -1, -1, -1, -1, -1
+};
 
 /*
 ** Decode the text encoding back to binary.  The binary content is
@@ -540,28 +552,35 @@ static char kvvfsHexToBinary(char c){
 **
 ** The return value is the number of bytes actually written into aOut[].
 */
-static int kvvfsDecode(const char *aIn, char *aOut, int nOut){
+static int kvvfsDecode(const char *a, char *aOut, int nOut){
   int i, j;
   int c;
+  const unsigned char *aIn = (const unsigned char*)a;
   i = 0;
   j = 0;
-  while( (c = aIn[i])!=0 ){
-    if( c>='a' ){
+  while( 1 ){
+    c = kvvfsHexValue[aIn[i]];
+    if( c<0 ){
       int n = 0;
       int mult = 1;
+      c = aIn[i];
+      if( c==0 ) break;
       while( c>='a' && c<='z' ){
         n += (c - 'a')*mult;
         mult *= 26;
         c = aIn[++i];
       }
       if( j+n>nOut ) return -1;
-      while( n-->0 ){
-        aOut[j++] = 0;
-      }
+      memset(&aOut[j], 0, n);
+      j += n;
+      c = aIn[i];
+      if( c==0 ) break;
     }else{
-      if( j>nOut ) return -1;
-      aOut[j] = kvvfsHexToBinary(aIn[i++])<<4;
-      aOut[j++] += kvvfsHexToBinary(aIn[i++]);
+      aOut[j] = c<<4;
+      c = kvvfsHexValue[aIn[++i]];
+      if( c<0 ) break;
+      aOut[j++] += c;
+      i++;
     }
   }
   return j;
@@ -1021,7 +1040,11 @@ static int kvvfsFullPathname(
   int nOut, 
   char *zOut
 ){
-  size_t nPath = strlen(zPath);
+  size_t nPath;
+#ifdef SQLITE_OS_KV_ALWAYS_LOCAL
+  zPath = "local";
+#endif
+  nPath = strlen(zPath);
   SQLITE_KV_LOG(("xFullPathname(\"%s\")\n", zPath));
   if( nOut<nPath+1 ) nPath = nOut - 1;
   memcpy(zOut, zPath, nPath);
@@ -1057,11 +1080,18 @@ static int kvvfsSleep(sqlite3_vfs *pVfs, int nMicro){
 ** Return the current time as a Julian Day number in *pTimeOut.
 */
 static int kvvfsCurrentTime(sqlite3_vfs *pVfs, double *pTimeOut){
-  *pTimeOut = 2459829.13362986;
-  return SQLITE_OK;
+  sqlite3_int64 i = 0;
+  int rc;
+  rc = kvvfsCurrentTimeInt64(0, &i);
+  *pTimeOut = i/86400000.0;
+  return rc;
 }
+#include <sys/time.h>
 static int kvvfsCurrentTimeInt64(sqlite3_vfs *pVfs, sqlite3_int64 *pTimeOut){
-  *pTimeOut = (sqlite3_int64)(2459829.13362986*86400000.0);
+  static const sqlite3_int64 unixEpoch = 24405875*(sqlite3_int64)8640000;
+  struct timeval sNow;
+  (void)gettimeofday(&sNow, 0);  /* Cannot fail given valid arguments */
+  *pTimeOut = unixEpoch + 1000*(sqlite3_int64)sNow.tv_sec + sNow.tv_usec/1000;
   return SQLITE_OK;
 }
 

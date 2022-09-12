@@ -354,22 +354,20 @@ emcc.speedtest1-flags += --minify 0
 
 speedtest1.js := speedtest1.js
 speedtest1.wasm := $(subst .js,.wasm,$(speedtest1.js))
+speedtest1.cflags := \
+  -I. -I$(dir.top) \
+  -DSQLITE_SPEEDTEST1_WASM
+
 $(speedtest1.js): emcc.cflags+=
 # speedtest1 notes re. sqlite3-wasm.o vs sqlite3-wasm.c: building against
 # the latter (predictably) results in a slightly faster binary, but we're
 # close enough to the target speed requirements that the 500ms makes a
 # difference.
-$(speedtest1.js): $(speedtest1.c) $(sqlite3-wasm.c) $(MAKEFILE)
+$(speedtest1.js): $(speedtest1.c) $(sqlite3-wasm.c) $(MAKEFILE) $(sqlite3.c)
 	$(emcc.bin) \
-        $(emcc.speedtest1-flags) \
-        -I. -I$(dir.top) \
-        -DSQLITE_THREADSAFE=0 \
-        -DSQLITE_TEMP_STORE=3 \
-        -DSQLITE_OMIT_UTF16 \
-        -DSQLITE_OMIT_DEPRECATED \
-        -DSQLITE_OMIT_SHARED_CACHE \
+        $(emcc.speedtest1-flags) $(speedtest1.cflags) \
+        $(SQLITE_OPT) \
         '-DSQLITE_DEFAULT_UNIX_VFS="unix-none"' \
-        -DSQLITE_SPEEDTEST1_WASM \
         -o $@ $(speedtest1.c) $(sqlite3-wasm.c) -lm
 ifneq (,$(wasm-strip))
 	$(wasm-strip) $(speedtest1.wasm)
@@ -377,7 +375,7 @@ endif
 	ls -la $@ $(speedtest1.wasm)
 
 speedtest1: $(speedtest1.js)
-all: $(speedtest1.js)
+all: speedtest1
 CLEAN_FILES += $(speedtest1.js) $(speedtest1.wasm)
 # end speedtest1.js
 ########################################################################

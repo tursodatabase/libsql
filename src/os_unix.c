@@ -93,7 +93,7 @@
 #include <sys/ioctl.h>
 #include <unistd.h>      /* amalgamator: keep */
 #include <time.h>
-#include <sys/time.h>
+#include <sys/time.h>    /* amalgamator: keep */
 #include <errno.h>
 #if !defined(SQLITE_OMIT_WAL) || SQLITE_MAX_MMAP_SIZE>0
 # include <sys/mman.h>

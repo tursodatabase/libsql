@@ -70,10 +70,12 @@ ifneq (0,$(enable_bigint))
 kvvfs.jsflags += -sWASM_BIGINT
 endif
 
-$(kvvfs.js): $(MAKEFILE) $(MAKEFILE.kvvfs) $(kvvfs.wasm.c) \
+$(kvvfs.js): $(MAKEFILE) $(MAKEFILE.kvvfs) $(kvvfs.wasm.c) $(sqlite3.c) \
     EXPORTED_FUNCTIONS.api \
     $(post-js.js)
-	$(emcc.bin) -o $@ $(emcc_opt) $(emcc.flags) $(kvvfs.cflags) $(kvvfs.jsflags) $(kvvfs.wasm.c)
+	$(emcc.bin) -o $@ $(emcc_opt) $(emcc.flags) \
+  $(SQLITE_OPT) \
+  $(kvvfs.cflags) $(kvvfs.jsflags) $(kvvfs.wasm.c)
 	chmod -x $(kvvfs.wasm)
 ifneq (,$(wasm-strip))
 	$(wasm-strip) $(kvvfs.wasm)
@@ -82,3 +84,22 @@ endif
 
 kvvfs: $(kvvfs.js)
 all: kvvfs
+
+########################################################################
+# speedtest1-kvvfs
+speedtest1-kvvfs.js := speedtest1-kvvfs.js
+speedtest1-kvvfs.wasm := speedtest1-kvvfs.wasm
+CLEAN_FILES += $(speedtest1-kvvfs.js) $(speedtest1-kvvfs.wasm)
+$(speedtest1-kvvfs.js): $(speedtest1.c) $(sqlite3-wasm.c) $(sqlite3.c) $(MAKEFILE.kvvfs)
+	$(emcc.bin) \
+        $(emcc.speedtest1-flags) $(speedtest1.cflags) \
+        $(SQLITE_OPT) \
+        -sEXIT_RUNTIME=1 \
+        $(kvvfs.cflags) \
+        -o $@ $(speedtest1.c) $(sqlite3-wasm.c) -lm
+ifneq (,$(wasm-strip))
+	$(wasm-strip) $(speedtest1-kvvfs.wasm)
+endif
+	ls -la $@ $(speedtest1-kvvfs.wasm)
+
+speedtest1: $(speedtest1-kvvfs.js)
