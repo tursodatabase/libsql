@@ -262,6 +262,7 @@ all: $(sqlite3.js)
 # End main Emscripten-based module build
 ########################################################################
 
+include kvvfs.make
 
 ########################################################################
 # fiddle_remote is the remote destination for the fiddle app. It

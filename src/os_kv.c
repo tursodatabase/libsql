@@ -166,10 +166,6 @@ static sqlite3_io_methods kvvfs_jrnl_io_methods = {
 /* Forward declarations for the low-level storage engine
 */
 #define KVSTORAGE_KEY_SZ  32
-static int kvstorageWrite(const char*, const char *zKey, const char *zData);
-static int kvstorageDelete(const char*, const char *zKey);
-static int kvstorageRead(const char*, const char *zKey, char *zBuf, int nBuf);
-
 
 /* Expand the key name with an appropriate prefix and put the result
 ** zKeyOut[].  The zKeyOut[] buffer is assumed to hold at least
@@ -182,6 +178,207 @@ static void kvstorageMakeKey(
 ){
   sqlite3_snprintf(KVSTORAGE_KEY_SZ, zKeyOut, "kvvfs-%s-%s", zClass, zKeyIn);
 }
+
+#ifdef __EMSCRIPTEN__
+/* Provide Emscripten-based impls of kvstorageWrite/Read/Delete()... */
+#include <emscripten.h>
+#include <emscripten/console.h>
+
+/*
+** WASM_KEEP is identical to EMSCRIPTEN_KEEPALIVE but is not
+** Emscripten-specific. It explicitly includes marked functions for
+** export into the target wasm file without requiring explicit listing
+** of those functions in Emscripten's -sEXPORTED_FUNCTIONS=... list
+** (or equivalent in other build platforms). Any function with neither
+** this attribute nor which is listed as an explicit export will not
+** be exported from the wasm file (but may still be used internally
+** within the wasm file).
+**
+** The functions in this file (sqlite3-wasm.c) which require exporting
+** are marked with this flag. They may also be added to any explicit
+** build-time export list but need not be. All of these APIs are
+** intended for use only within the project's own JS/WASM code, and
+** not by client code, so an argument can be made for reducing their
+** visibility by not including them in any build-time export lists.
+**
+** 2022-09-11: it's not yet _proven_ that this approach works in
+** non-Emscripten builds. If not, such builds will need to export
+** those using the --export=... wasm-ld flag (or equivalent). As of
+** this writing we are tied to Emscripten for various reasons
+** and cannot test the library with other build environments.
+*/
+#define WASM_KEEP __attribute__((used,visibility("default")))
+/*
+** An internal level of indirection for accessing the static
+** kvstorageMakeKey() from EM_JS()-generated functions. This must be
+** made available for export via Emscripten but is not intended to be
+** used from client code. If called with a NULL zKeyOut it is a no-op.
+** It returns KVSTORAGE_KEY_SZ, so JS code (which cannot see that
+** constant) may call it with NULL arguments to get the size of the
+** allocation they'll need for a kvvfs key.
+**
+** Maintenance reminder: Emscripten will install this in the Module
+** init scope and will prefix its name with "_".
+*/
+WASM_KEEP
+int sqlite3_wasm__kvvfsMakeKey(const char *zClass, const char *zKeyIn,
+                               char *zKeyOut){
+  if( 0!=zKeyOut ) kvstorageMakeKey(zClass, zKeyIn, zKeyOut);
+  return KVSTORAGE_KEY_SZ;
+}
+/*
+** Internal helper for kvstorageWrite/Read/Delete() which creates a
+** storage key for the given zClass/zKeyIn combination. Returns a
+** pointer to the key: a C string allocated on the WASM stack, or 0 if
+** allocation fails. It is up to the caller to save/restore the stack
+** before/after this operation.
+*/
+EM_JS(const char *, kvstorageMakeKeyOnJSStack,
+      (const char *zClass, const char *zKeyIn),{
+  if( 0==zClass || 0==zKeyIn) return 0;
+  const zXKey = stackAlloc(_sqlite3_wasm__kvvfsMakeKey(0,0,0));
+  if(zXKey) _sqlite3_wasm__kvvfsMakeKey(zClass, zKeyIn, zXKey);
+  return zXKey;
+});
+
+/*
+** JS impl of kvstorageWrite(). Main docs are in the C impl. This impl
+** writes zData to the global sessionStorage (if zClass starts with
+** 's') or localStorage, using a storage key derived from zClass and
+** zKey.
+*/
+EM_JS(int, kvstorageWrite,
+      (const char *zClass, const char *zKey, const char *zData),{
+  const stack = stackSave();
+  try {
+    const zXKey = kvstorageMakeKeyOnJSStack(zClass,zKey);
+    if(!zXKey) return 1/*OOM*/;
+    const jKey = UTF8ToString(zXKey);
+    /**
+       We could simplify this function and eliminate the
+       kvstorageMakeKey() symbol acrobatics if we'd simply hard-code
+       the key algo into the 3 functions which need it:
+
+       const jKey = "kvvfs-"+UTF8ToString(zClass)+"-"+UTF8ToString(zKey);
+    */
+    ((115/*=='s'*/===getValue(zClass))
+     ? sessionStorage : localStorage).setItem(jKey, UTF8ToString(zData));
+  }catch(e){
+    console.error("kvstorageWrite()",e);
+    return 1; // Can't access SQLITE_xxx from here
+  }finally{
+    stackRestore(stack);
+  }
+  return 0;
+});
+
+/*
+** JS impl of kvstorageDelete(). Main docs are in the C impl. This
+** impl generates a key derived from zClass and zKey, and removes the
+** matching entry (if any) from global sessionStorage (if zClass
+** starts with 's') or localStorage.
+*/
+EM_JS(int, kvstorageDelete,
+      (const char *zClass, const char *zKey),{
+  const stack = stackSave();
+  try {
+    const zXKey = kvstorageMakeKeyOnJSStack(zClass,zKey);
+    if(!zXKey) return 1/*OOM*/;
+    _sqlite3_wasm__kvvfsMakeKey(zClass, zKey, zXKey);
+    const jKey = UTF8ToString(zXKey);
+    ((115/*=='s'*/===getValue(zClass))
+     ? sessionStorage : localStorage).removeItem(jKey);
+  }catch(e){
+    console.error("kvstorageDelete()",e);
+    return 1;
+  }finally{
+    stackRestore(stack);
+  }
+  return 0;
+});
+
+/*
+** JS impl of kvstorageRead(). Main docs are in the C impl. This impl
+** reads its data from the global sessionStorage (if zClass starts
+** with 's') or localStorage, using a storage key derived from zClass
+** and zKey.
+*/
+EM_JS(int, kvstorageRead,
+      (const char *zClass, const char *zKey, char *zBuf, int nBuf),{
+  const stack = stackSave();
+  try {
+    const zXKey = kvstorageMakeKeyOnJSStack(zClass,zKey);
+    if(!zXKey) return -3/*OOM*/;
+    const jKey = UTF8ToString(zXKey);
+    const jV = ((115/*=='s'*/===getValue(zClass))
+                ? sessionStorage : localStorage).getItem(jKey);
+    if(!jV) return -1;
+    const nV = jV.length /* Note that we are relying 100% on v being
+                            ASCII so that jV.length is equal to the
+                            C-string's byte length. */;
+    if(nBuf<=0) return nV;
+    else if(1===nBuf){
+      setValue(zBuf, 0);
+      return nV;
+    }
+    const zV = allocateUTF8OnStack(jV);
+    if(nBuf > nV + 1) nBuf = nV + 1;
+    HEAPU8.copyWithin(zBuf, zV, zV + nBuf - 1);
+    setValue( zBuf + nBuf - 1, 0 );
+    return nBuf - 1;
+  }catch(e){
+    console.error("kvstorageRead()",e);
+    return -2;
+  }finally{
+    stackRestore(stack);
+  }
+});
+
+/*
+** This function exists for (1) WASM testing purposes and (2) as a
+** hook to get Emscripten to export several EM_JS()-generated
+** functions (if we don't reference them from exported C functions
+** then they get stripped away at build time). It is not part of the
+** public API and its signature and semantics may change at any time.
+** It's not even part of the private API, for that matter - it's part
+** of the Emscripten C/JS/WASM glue.
+*/
+WASM_KEEP
+int sqlite3__wasm_emjs_kvvfs(int whichOp){
+  int rc = 0;
+  const char * zClass =
+    "sezzion" /*don't collide with "session" records!*/;
+  const char * zKey = "hello";
+  switch( whichOp ){
+    case 0: break;
+    case 1:
+      kvstorageWrite(zClass, zKey, "world");
+      break;
+    case 2: {
+      char buffer[128] = {0};
+      char * zBuf = &buffer[0];
+      rc = kvstorageRead(zClass, zKey, zBuf, (int)sizeof(buffer));
+      emscripten_console_logf("kvstorageRead()=%d %s\n", rc, zBuf);
+      break;
+    }
+    case 3:
+      kvstorageDelete(zClass, zKey);
+      break;
+    case 4:
+      kvstorageMakeKeyOnJSStack(0,0);
+      break;
+    default: break;
+  }
+  return rc;
+}
+
+#undef WASM_KEEP
+#else /* end ifdef __EMSCRIPTEN__ */
+/* Forward declarations for the low-level storage engine
+*/
+static int kvstorageWrite(const char*, const char *zKey, const char *zData);
+static int kvstorageDelete(const char*, const char *zKey);
+static int kvstorageRead(const char*, const char *zKey, char *zBuf, int nBuf);
 
 /* Write content into a key.  zClass is the particular namespace of the
 ** underlying key/value store to use - either "local" or "session".
@@ -277,6 +474,7 @@ static int kvstorageRead(
     return (int)n;
   }
 }
+#endif /* ifdef __EMSCRIPTEN__ */
 
 /****** Utility subroutines ************************************************/
 
