@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarning\sseen\swith\sMSVC.
-D 2022-09-09T17:50:29.375
+C New\srun-time\soptions\sto\sthe\sspeed-check.sh\sscript.
+D 2022-09-12T16:07:24.415
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1958,7 +1958,7 @@ F tool/showstat4.c 0682ebea7abf4d3657f53c4a243f2e7eab48eab344ed36a94bb75dcd19a5c
 F tool/showwal.c 0253c187ae16fdae9cde89e63e1dfcd3bb35e5416d066415f99e2f8cac6ab03d
 F tool/soak1.tcl 8d407956e1a45b485a8e072470a3e629a27037fe
 F tool/spaceanal.tcl 1b5be34c6223cb1af06da2a10fb77863eb869b1962d055820b0a11cf2336ab45
-F tool/speed-check.sh ff74a68bb95a0341275f4d3c9a7d8a3800bd278aceecf1913295a1f0175bc3e6
+F tool/speed-check.sh 13f8e07dbfe25f3aecda33fb6068894665af61ca1360a7b654be0ad0c3f3ae0b
 F tool/speedtest.tcl 06c76698485ccf597b9e7dbb1ac70706eb873355
 F tool/speedtest16.c ecb6542862151c3e6509bbc00509b234562ae81e
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
@@ -2000,8 +2000,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 42105eb43a916a7cd839fa6c582eaffaef17f50b23c3e05142400c379feb73c7
-R fd5aff581be86e15a91eeaa3f20f7912
-U mistachkin
-Z bd0ebecde4dd76aef42010e0aed5496b
+P 73c4c68d3b4c16caf8281dabddd7365d24691e5ee2da89b1783eca66bfbd9280
+R 8caad88aec151feccca0c9cd18faaecf
+U drh
+Z 5694145593725214ff362dc6756dc32c
 # Remove this line to create a well-formed Fossil manifest.
