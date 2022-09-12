@@ -1,5 +1,5 @@
-C Initial\sbuild\sof\skvvfs\sin\swasm.\sIt\sloads\sbut\scannot\sfind\sthe\sVFS\sfor\sas-yet-unknown\sreasons\s(sqlite3\sshell\sworks\sfine),\sand\smost\sAPIs\sthrow\s"null\sfunction\sor\sfunction\ssignature\smismatch"\sfrom\sdeep\swithin\swasm,\spresumably\sas\sa\sside\seffect\sof\sthe\s"missing"\sVFS.
-D 2022-09-12T12:39:28.819
+C Fix\sthe\samalgamation\sso\sthat\sit\sbuilds\swith\sthe\sstandard\sunix\sbackend\sagain.
+D 2022-09-12T12:41:07.918
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -576,7 +576,7 @@ F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_kv.c a188e92dac693b1c1b512d93b0c4dc85c1baad11e322b01121f87057996e4d11
 F src/os_setup.h 0711dbc4678f3ac52d7fe736951b6384a0615387c4ba5135a4764e4e31f4b6a6
-F src/os_unix.c 102f7e5c5b59c18ea3dbc929dc3be8acb3afc0e0b6ad572e032335c9c27f44f1
+F src/os_unix.c d6322b78130d995160bb9cfb7850678ad6838b08c1d13915461b33326a406c04
 F src/os_win.c e9454cb141908e8eef2102180bad353a36480612d5b736e4c2bd5777d9b25a34
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 6176d9752eb580419e8fef4592dc417a6b00ddfd43ee22f818819bf8840ceee8
@@ -2004,8 +2004,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8e1652a3856765c9146cc2a7e3b598a2dc7dc84c556b35eab9a35184514384b9
-R 87fbf09a4dec22281b7328e04378fb76
-U stephan
-Z bc0b4e3041260a10b10ef1c5f11f1ba3
+P 1a2f24a0bdfc6eaae478916b8f4f9c6b63ead9964534fc2951fb4e995ffe61f1
+R fe9e8080b230bfa064abaa9f8e686ee1
+U drh
+Z 78a6c00935086fa910a2a1532a85cf90
 # Remove this line to create a well-formed Fossil manifest.
