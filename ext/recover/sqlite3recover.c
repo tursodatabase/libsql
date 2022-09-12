@@ -406,6 +406,18 @@ static int recoverExec(sqlite3_recover *p, sqlite3 *db, const char *zSql){
   return p->errCode;
 }
 
+static void recoverBindValue(
+  sqlite3_recover *p, 
+  sqlite3_stmt *pStmt, 
+  int iBind, 
+  sqlite3_value *pVal
+){
+  if( p->errCode==SQLITE_OK ){
+    int rc = sqlite3_bind_value(pStmt, iBind, pVal);
+    if( rc ) recoverError(p, rc, 0);
+  }
+}
+
 /*
 ** This function is a no-op if recover handle p already contains an error
 ** (if p->errCode!=SQLITE_OK). NULL is returned in this case.
@@ -1305,7 +1317,7 @@ static void recoverLostAndFoundPopulate(
         sqlite3_bind_int64(pInsert, 4, iRowid);   /* id */
       }
       for(ii=0; ii<nVal; ii++){
-        sqlite3_bind_value(pInsert, 5+ii, apVal[ii]);
+        recoverBindValue(p, pInsert, 5+ii, apVal[ii]);
       }
       if( sqlite3_step(pInsert)==SQLITE_ROW && p->xSql ){
         recoverSqlCallback(p, sqlite3_column_text(pInsert, 0));
@@ -1332,6 +1344,9 @@ static void recoverLostAndFoundPopulate(
       apVal[iField] = sqlite3_value_dup(pVal);
       assert( iField==nVal || (nVal==-1 && iField==0) );
       nVal = iField+1;
+      if( apVal[iField]==0 ){
+        recoverError(p, SQLITE_NOMEM, 0);
+      }
     }
 
     iPrevRoot = iRoot;
@@ -1553,7 +1568,7 @@ static int recoverWriteData(sqlite3_recover *p){
                     if( pCol->bIPK ){
                       sqlite3_bind_int64(pInsert, iBind, iRowid);
                     }else if( pCol->iField<nVal ){
-                      sqlite3_bind_value(pInsert, iBind, apVal[pCol->iField]);
+                      recoverBindValue(p, pInsert, iBind, apVal[pCol->iField]);
                     }
                   }
                 }

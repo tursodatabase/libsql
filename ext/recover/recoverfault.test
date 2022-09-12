@@ -44,19 +44,14 @@ do_execsql_test 1.0 {
   INSERT INTO t1 VALUES(1, 2, 3);
   INSERT INTO t1 VALUES(2, hex(randomblob(1000)), randomblob(2000));
   CREATE INDEX i1 ON t1(b, c);
-  CREATE TABLE t2(a INTEGER PRIMARY KEY, b, c);
-  INSERT INTO t2 VALUES(1, 2, 3);
-  INSERT INTO t2 VALUES(2, hex(randomblob(1000)), randomblob(2000));
   ANALYZE;
-  PRAGMA writable_schema = 1;
-  DELETE FROM sqlite_schema WHERE name='t2';
 }
+faultsim_save_and_close
 
 do_faultsim_test 1 -faults oom* -prep {
   faultsim_restore_and_reopen
 } -body {
   set R [sqlite3_recover_init db main test.db2]
-  $R config lostandfound lost_and_found
   $R step
   $R finish
 } -test {
@@ -66,6 +61,26 @@ do_faultsim_test 1 -faults oom* -prep {
     compare_dbs db db2
     db2 close
   }
+}
+
+faultsim_restore_and_reopen 
+do_execsql_test 2.0 {
+  CREATE TABLE t2(a INTEGER PRIMARY KEY, b, c);
+  INSERT INTO t2 VALUES(1, 2, 3);
+  INSERT INTO t2 VALUES(2, hex(randomblob(1000)), hex(randomblob(2000)));
+  PRAGMA writable_schema = 1;
+  DELETE FROM sqlite_schema WHERE name='t2';
+}
+
+do_faultsim_test 2 -faults oom* -prep {
+  faultsim_restore_and_reopen
+} -body {
+  set R [sqlite3_recover_init db main test.db2]
+  $R config lostandfound lost_and_found
+  $R step
+  $R finish
+} -test {
+  faultsim_test_result {0 {}} {1 {}}
 }
 
 finish_test
