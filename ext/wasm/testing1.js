@@ -252,7 +252,7 @@
     db.exec({
       sql:new TextEncoder('utf-8').encode([
         // ^^^ testing string-vs-typedarray handling in execMulti()
-        "attach 'foo.db' as foo;",
+        "attach 'session' as foo;" /* name 'session' is magic for kvvfs! */,
         "create table foo.bar(a);",
         "insert into foo.bar(a) values(1),(2),(3);",
         "select a from foo.bar order by a;"
@@ -744,7 +744,7 @@
         .assert('sqlite3_vfs' === dVfs.structName)
         .assert(!!dVfs.structInfo)
         .assert(SB.StructType.hasExternalPointer(dVfs))
-        .assert(3===dVfs.$iVersion)
+        .assert(dVfs.$iVersion>0)
         .assert('number'===typeof dVfs.$zName)
         .assert('number'===typeof dVfs.$xSleep)
         .assert(capi.wasm.functionEntry(dVfs.$xOpen))
@@ -1046,9 +1046,18 @@
       T.assert(capi.wasm[k] instanceof Function);
     });
 
-    const db = new oo.DB(':memory:'), startTime = performance.now();
+    let dbName = "/testing1.sqlite3";
+    let vfsName = undefined;
+    if(oo.DB.clearKvvfsStorage){
+      dbName = "local";
+      vfsName = 'kvvfs';
+      logHtml("Found kvvfs. Clearing db(s) from sessionStorage and localStorage",
+              "and selecting kvvfs-friendly db name:",dbName);
+      oo.DB.clearKvvfsStorage();
+    }
+    const db = new oo.DB(dbName,'c',vfsName), startTime = performance.now();
     try {
-      log("DB filename:",db.filename,db.fileName());
+      log("db.filename =",db.filename,"db.fileName() =",db.fileName());
       const banner1 = '>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>',
             banner2 = '<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<';
       [

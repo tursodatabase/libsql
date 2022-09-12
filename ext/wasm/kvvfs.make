@@ -34,6 +34,12 @@ kvvfs.cflags += -std=c99 -fPIC -g
 kvvfs.cflags += -I. -I$(dir.top)
 kvvfs.cflags += -DSQLITE_OS_KV=1 $(SQLITE_OPT)
 
+kvvfs.extra.c :=
+ifeq (1,1)
+  # To get testing1.js to run with $(kvvfs.js) we need...
+  kvvfs.extra.c += $(jaccwabyt_test.c)
+endif
+
 ########################################################################
 # emcc flags specific to building the final .js/.wasm file...
 kvvfs.jsflags := -fPIC
@@ -44,7 +50,12 @@ kvvfs.jsflags += -sMODULARIZE
 kvvfs.jsflags += -sSTRICT_JS
 kvvfs.jsflags += -sDYNAMIC_EXECUTION=0
 kvvfs.jsflags += -sNO_POLYFILL
-kvvfs.jsflags += -sEXPORTED_FUNCTIONS=@$(dir.api)/EXPORTED_FUNCTIONS.sqlite3-api
+ifeq (,$(kvvfs.extra.c))
+  kvvfs.jsflags += -sEXPORTED_FUNCTIONS=@$(dir.api)/EXPORTED_FUNCTIONS.sqlite3-api
+else
+  # need more exports for jaccwabyt test code...
+  kvvfs.jsflags += -sEXPORTED_FUNCTIONS=@$(dir.wasm)/EXPORTED_FUNCTIONS.api
+endif
 kvvfs.jsflags += -sEXPORTED_RUNTIME_METHODS=FS,wasmMemory,allocateUTF8OnStack
                                             # wasmMemory ==> for -sIMPORTED_MEMORY
                                             # allocateUTF8OnStack ==> kvvfs internals
@@ -69,13 +80,12 @@ kvvfs.jsflags += -sMEMORY64=0
 ifneq (0,$(enable_bigint))
 kvvfs.jsflags += -sWASM_BIGINT
 endif
-
-$(kvvfs.js): $(MAKEFILE) $(MAKEFILE.kvvfs) $(kvvfs.wasm.c) $(sqlite3.c) \
-    EXPORTED_FUNCTIONS.api \
+$(kvvfs.js): $(kvvfs.wasm.c) $(sqlite3.c) $(kvvfs.extra.c) \
+    EXPORTED_FUNCTIONS.api $(MAKEFILE) $(MAKEFILE.kvvfs) \
     $(post-js.js)
 	$(emcc.bin) -o $@ $(emcc_opt) $(emcc.flags) \
   $(SQLITE_OPT) \
-  $(kvvfs.cflags) $(kvvfs.jsflags) $(kvvfs.wasm.c)
+  $(kvvfs.cflags) $(kvvfs.jsflags) $(kvvfs.wasm.c) $(kvvfs.extra.c)
 	chmod -x $(kvvfs.wasm)
 ifneq (,$(wasm-strip))
 	$(wasm-strip) $(kvvfs.wasm)

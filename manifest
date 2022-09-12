@@ -1,5 +1,5 @@
-C Merge\skv-vfs\sbranch\sinto\sfiddle-opfs\sand\sadd\sspeedtest1-kvvfs.html\stest\sapp\s(which\scurrently\sfails\searly\son).
-D 2022-09-12T20:18:28.723
+C Get\stesting1.js\sworking\swith\sa\skvvfs\sbuild.
+D 2022-09-12T22:27:00.037
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -474,7 +474,7 @@ F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
 F ext/userauth/userauth.c 7f00cded7dcaa5d47f54539b290a43d2e59f4b1eb5f447545fa865f002fc80cb
 F ext/wasm/EXPORTED_FUNCTIONS.fiddle db7a4602f043cf4a5e4135be3609a487f9f1c83f05778bfbdf93766be4541b96
 F ext/wasm/EXPORTED_RUNTIME_METHODS.fiddle a004bd5eeeda6d3b28d16779b7f1a80305bfe009dfc7f0721b042967f0d39d02
-F ext/wasm/GNUmakefile 0434268aa7e042ec265c13e85a82cc3a760be02851ba428aa996a36d4ba77dfd
+F ext/wasm/GNUmakefile b175a00599c976fe9e7bc02bbc1337b5e3b81d042320c3a0be1621d2c7a21b21
 F ext/wasm/README.md e1ee1e7c321c6a250bf78a84ca6f5882890a237a450ba5a0649c7a8399194c52
 F ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-api 1dfd067b3cbd9a49cb204097367cf2f8fe71b5a3b245d9d82a24779fd4ac2394
 F ext/wasm/api/EXPORTED_RUNTIME_METHODS.sqlite3-api 1ec3c73e7d66e95529c3c64ac3de2470b0e9e7fbf7a5b41261c367cf4f1b7287
@@ -506,7 +506,7 @@ F ext/wasm/jaccwabyt/jaccwabyt.js 0d7f32817456a0f3937fcfd934afeb32154ca33580ab26
 F ext/wasm/jaccwabyt/jaccwabyt.md 447cc02b598f7792edaa8ae6853a7847b8178a18ed356afacbdbf312b2588106
 F ext/wasm/jaccwabyt/jaccwabyt_test.c 39e4b865a33548f943e2eb9dd0dc8d619a80de05d5300668e9960fff30d0d36f
 F ext/wasm/jaccwabyt/jaccwabyt_test.exports 5ff001ef975c426ffe88d7d8a6e96ec725e568d2c2307c416902059339c06f19
-F ext/wasm/kvvfs.make 1858354b02ebdccc459fb2d235552f8951d6ce28340083da9bb230bcf2533789
+F ext/wasm/kvvfs.make bfa0aaac384d9f200d2c8e31efb3536b40d139667b88e6eba9c0a71e23da6a5c
 F ext/wasm/kvvfs1.html 83bac238d1e93ed102a461672fc58fe74e611e426708e9a5c66002c01eadb942
 F ext/wasm/kvvfs1.js 53721a42e0ec45f6978cc723e5de47f882517867d0fcff4c6ff05f4c422e27c4
 F ext/wasm/scratchpad-opfs-main.html 4565cf194e66188190d35f70e82553e2e2d72b9809b73c94ab67b8cfd14d2e0c
@@ -525,8 +525,8 @@ F ext/wasm/sqlite3-worker1-promiser.js 92b8da5f38439ffec459a8215775d30fa498bc0f1
 F ext/wasm/sqlite3-worker1.js 0c1e7626304543969c3846573e080c082bf43bcaa47e87d416458af84f340a9e
 F ext/wasm/testing-worker1-promiser.html 6eaec6e04a56cf24cf4fa8ef49d78ce8905dde1354235c9125dca6885f7ce893
 F ext/wasm/testing-worker1-promiser.js c62b5879339eef0b21aebd9d75bc125c86530edc17470afff18077f931cb704a
-F ext/wasm/testing1.html 528001c7e32ee567abc195aa071fd9820cc3c8ffc9c8a39a75e680db05f0c409
-F ext/wasm/testing1.js 2def7a86c52ff28b145cb86188d5c7a49d5993f9b78c50d140e1c31551220955
+F ext/wasm/testing1.html 50575755e43232dbe4c2f97c9086b3118eb91ec2ee1fae931e6d7669fb17fcae
+F ext/wasm/testing1.js 735120231d6e55b92964924fcb54a66484d8b2e30fe5a18c71081b3590344a5f
 F ext/wasm/testing2.html a66951c38137ff1d687df79466351f3c734fa9c6d9cce71d3cf97c291b2167e3
 F ext/wasm/testing2.js 25584bcc30f19673ce13a6f301f89f8820a59dfe044e0c4f2913941f4097fe3c
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
@@ -2024,8 +2024,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d845c6c22bd5d3fffc66e0566df346d690dd8bd1fc1688e312161b1a1edcfd79 878cc93e779c3857adc711f212520f007256274fcd3f6f3d72c754a937fcd198
-R af6be1e15f44117c1188e0c623230580
+P 8b1608a9a37131121cb3a0cb1e8dbad5e39dc1fc2a341d056f09537f179b2e7a
+R 77095a41dfb9b784dcab0078822e6eff
 U stephan
-Z 1b00f3836ac4e8ae817bece731c1dd12
+Z c624cb9efadffe8972e3df15b8dc9939
 # Remove this line to create a well-formed Fossil manifest.

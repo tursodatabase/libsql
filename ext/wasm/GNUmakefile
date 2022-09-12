@@ -316,10 +316,11 @@ dir.sql := sql
 speedtest1 := ../../speedtest1
 speedtest1.c := ../../test/speedtest1.c
 speedtest1.sql := $(dir.sql)/speedtest1.sql
+speedtest1.cliflags := --size 100
 $(speedtest1):
 	$(MAKE) -C ../.. speedtest1
-$(speedtest1.sql): $(speedtest1)
-	$(speedtest1) --script $@
+$(speedtest1.sql): $(speedtest1) $(MAKEFILE)
+	$(speedtest1) $(speedtest1.cliflags) --script $@
 batch-runner.list: $(MAKEFILE) $(speedtest1.sql) $(dir.sql)/000-mandelbrot.sql
 	bash split-speedtest1-script.sh $(dir.sql)/speedtest1.sql
 	ls -1 $(dir.sql)/*.sql | grep -v speedtest1.sql | sort > $@
