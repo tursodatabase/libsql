@@ -1581,17 +1581,30 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   }/*oo1 object*/;
 
   if( self.window===self && 0!==capi.sqlite3_vfs_find('kvvfs') ){
-    /* In the main window thread, add a couple of convenience proxies
-       for localStorage and sessionStorage DBs... */
-    let klass = sqlite3.oo1.LocalStorageDb = function(){
-      dbCtorHelper.call(this, 'local', 'c', 'kvvfs');
+    /* Features specific to kvvfs... */
+    /**
+       Clears all storage used by the kvvfs DB backend, deleting any
+       DB(s) stored there. Its argument must be either 'session',
+       'local', or ''. In the first two cases, only sessionStorage
+       resp. localStorage is cleared. If it's an empty string (the
+       default) then both are cleared. Only storage keys which match
+       the pattern used by kvvfs are cleared: any other client-side
+       data are retained.
+    */
+    DB.clearKvvfsStorage = function(which=''){
+      const prefix = 'kvvfs-'+which;
+      const stores = [];
+      if('session'===which || ''===which) stores.push(sessionStorage);
+      if('local'===which || ''===which) stores.push(localStorage);
+      stores.forEach(function(s){
+        const toRm = [];
+        let i = 0, k;
+        for( i = 0; (k = s.key(i)); ++i ){
+          if(k.startsWith(prefix)) toRm.push(k);
+        }
+        toRm.forEach((kk)=>s.removeItem(kk));
+      });
     };
-    klass.prototype = DB.prototype;
-
-    klass = sqlite3.oo1.SessionStorageDb = function(){
-      dbCtorHelper.call(this, 'session', 'c', 'kvvfs');
-    };
-    klass.prototype = DB.prototype;
-  }
+  }/* main-window-only bits */
 });
 

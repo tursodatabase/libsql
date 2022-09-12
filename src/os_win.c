@@ -5763,7 +5763,8 @@ static int winFullPathname(
   char *zFull                   /* Output buffer */
 ){
   int rc;
-  sqlite3_mutex *pMutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_TEMPDIR);
+  MUTEX_LOGIC( sqlite3_mutex *pMutex; )
+  MUTEX_LOGIC( pMutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_TEMPDIR); )
   sqlite3_mutex_enter(pMutex);
   rc = winFullPathnameNoMutex(pVfs, zRelative, nFull, zFull);
   sqlite3_mutex_leave(pMutex);
