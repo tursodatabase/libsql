@@ -36,10 +36,42 @@
     log("Loaded module:",capi.sqlite3_libversion(), capi.sqlite3_sourceid());
     log("Build options:",wasm.compileOptionUsed());
     self.S = sqlite3;
-
-    log("vfs(null) =",capi.sqlite3_vfs_find(null))
-    log("vfs('kvvfs') =",capi.sqlite3_vfs_find('kvvfs'))
-    //const db = new oo.DB("session");
+    T.assert(0 === capi.sqlite3_vfs_find(null));
+    S.capi.sqlite3_initialize();
+    T.assert( Number.isFinite( capi.sqlite3_vfs_find(null) ) );
+    const stores = {
+      local: localStorage,
+      session: sessionStorage
+    };
+    const cleanupStore = function(n){
+      const s = stores[n];
+      const isKv = (key)=>key.startsWith('kvvfs-'+n);
+      let i, k, toRemove = [];
+      for( i = 0; (k = s.key(i)); ++i) {
+        if(isKv(k)) toRemove.push(k);
+      }
+      toRemove.forEach((k)=>s.removeItem(k));
+    };
+    const dbStorage = 1 ? 'session' : 'local';
+    const db = new oo.DB(dbStorage);
+    try {
+      db.exec("create table if not exists t(a)");
+      if(undefined===db.selectValue("select a from t limit 1")){
+        log("New db. Populating..");
+        db.exec("insert into t(a) values(1),(2),(3)");
+      }else{
+        log("Found existing table data:");
+        db.exec({
+          sql: "select * from t order by a",
+          rowMode: 0,
+          callback: function(v){log(v)}
+        });
+      }
+    }finally{
+      const n = db.filename;
+      db.close();
+      //cleanupStore(n);
+    }
     
     log("Init done. Proceed from the dev console.");
   };
