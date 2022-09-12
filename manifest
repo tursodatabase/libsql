@@ -1,5 +1,5 @@
-C Faster\stext\sdecoder\sfor\skv_os.c.
-D 2022-09-12T17:44:35.983
+C Fix\sa\sdebugging/testing\sedit\sin\sthe\sprevious\scheck-in.
+D 2022-09-12T18:10:41.031
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -574,7 +574,7 @@ F src/notify.c 89a97dc854c3aa62ad5f384ef50c5a4a11d70fcc69f86de3e991573421130ed6
 F src/os.c 0eb831ba3575af5277e47f4edd14fdfc90025c67eb25ce5cda634518d308d4e9
 F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
-F src/os_kv.c 3f4c2f56375d50b210ddadfbfd652001c63e8b8138b8b2c9339e32d610107558
+F src/os_kv.c 226d9051af316dc547a37629b269ba2aebff8fa21915b91a9b41f7872bb4cc05
 F src/os_setup.h 0711dbc4678f3ac52d7fe736951b6384a0615387c4ba5135a4764e4e31f4b6a6
 F src/os_unix.c d6322b78130d995160bb9cfb7850678ad6838b08c1d13915461b33326a406c04
 F src/os_win.c e9454cb141908e8eef2102180bad353a36480612d5b736e4c2bd5777d9b25a34
@@ -2004,8 +2004,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e49682c5eac91958f143e639c5656ca54560d14f5805d514bf4aa0c206e63844
-R 81ed8ce798a46ae2544ed3d032a07983
+P 3354a2edb762d70ccc31d4d25f81b70e644d76e01cb1e81d2e97b5414d809d30
+R 742e0e4f6e4e5630d202911ef2cdc14a
 U drh
-Z 85de880a922a0287811e4245e97cc473
+Z 0a81f46489fd3e0c2c270769139a2009
 # Remove this line to create a well-formed Fossil manifest.

@@ -1042,8 +1042,9 @@ static int kvvfsFullPathname(
   char *zOut
 ){
   size_t nPath;
-
-zPath = "local";
+#ifdef SQLITE_OS_KV_ALWAYS_LOCAL
+  zPath = "local";
+#endif
   nPath = strlen(zPath);
   SQLITE_KV_LOG(("xFullPathname(\"%s\")\n", zPath));
   if( nOut<nPath+1 ) nPath = nOut - 1;
