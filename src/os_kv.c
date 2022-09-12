@@ -1081,11 +1081,18 @@ static int kvvfsSleep(sqlite3_vfs *pVfs, int nMicro){
 ** Return the current time as a Julian Day number in *pTimeOut.
 */
 static int kvvfsCurrentTime(sqlite3_vfs *pVfs, double *pTimeOut){
-  *pTimeOut = 2459829.13362986;
-  return SQLITE_OK;
+  sqlite3_int64 i = 0;
+  int rc;
+  rc = kvvfsCurrentTimeInt64(0, &i);
+  *pTimeOut = i/86400000.0;
+  return rc;
 }
+#include <sys/time.h>
 static int kvvfsCurrentTimeInt64(sqlite3_vfs *pVfs, sqlite3_int64 *pTimeOut){
-  *pTimeOut = (sqlite3_int64)(2459829.13362986*86400000.0);
+  static const sqlite3_int64 unixEpoch = 24405875*(sqlite3_int64)8640000;
+  struct timeval sNow;
+  (void)gettimeofday(&sNow, 0);  /* Cannot fail given valid arguments */
+  *pTimeOut = unixEpoch + 1000*(sqlite3_int64)sNow.tv_sec + sNow.tv_usec/1000;
   return SQLITE_OK;
 }
 
