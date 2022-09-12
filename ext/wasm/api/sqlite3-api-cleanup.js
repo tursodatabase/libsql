@@ -39,7 +39,7 @@ if('undefined' !== typeof Module){ // presumably an Emscripten build
   delete self.sqlite3ApiBootstrap;
 
   if(self.location && +self.location.port > 1024){
-    console.warn("Installing sqlite3 bits as global S for dev-testing purposes.");
+    console.warn("Installing sqlite3 bits as global S for local dev/test purposes.");
     self.S = sqlite3;
   }
 

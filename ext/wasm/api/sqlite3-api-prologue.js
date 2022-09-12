@@ -713,7 +713,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       return __persistentDir = "";
     }
     try{
-      if(pdir && 0===this.wasm.xCallWrapped(
+      if(pdir && 0===capi.wasm.xCallWrapped(
         'sqlite3_wasm_init_opfs', 'i32', ['string'], pdir
       )){
         /** OPFS does not support locking and will trigger errors if
@@ -736,7 +736,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       // sqlite3_wasm_init_opfs() is not available
       return __persistentDir = "";
     }
-  }.bind(capi);
+  };
 
   /**
      Returns true if sqlite3.capi.sqlite3_web_persistent_dir() is a
@@ -744,9 +744,15 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      prefix, else returns false.
   */
   capi.sqlite3_web_filename_is_persistent = function(name){
-    const p = this.sqlite3_web_persistent_dir();
+    const p = capi.sqlite3_web_persistent_dir();
     return (p && name) ? name.startsWith(p) : false;
-  }.bind(capi);
+  };
+  
+  if(0===capi.wasm.exports.sqlite3_vfs_find(0)){
+    /* Assume that sqlite3_initialize() has not yet been called.
+       This will be the case in an SQLITE_OS_KV build. */
+    capi.wasm.exports.sqlite3_initialize();
+  }
 
   /* The remainder of the API will be set up in later steps. */
   const sqlite3 = {

@@ -381,6 +381,8 @@ all: $(speedtest1.js)
 CLEAN_FILES += $(speedtest1.js) $(speedtest1.wasm)
 # end speedtest1.js
 ########################################################################
+
+########################################################################
 # fiddle_remote is the remote destination for the fiddle app. It
 # must be a [user@]HOST:/path for rsync.
 # Note that the target "should probably" contain a symlink of
@@ -402,3 +404,5 @@ push-fiddle: $(fiddle_files)
 	rsync -va fiddle/ $(fiddle_remote)
 # end fiddle remote push
 ########################################################################
+
+include kvvfs.make

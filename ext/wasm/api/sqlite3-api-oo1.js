@@ -70,6 +70,74 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   const toss3 = (...args)=>{throw new SQLite3Error(...args)};
   sqlite3.SQLite3Error = SQLite3Error;
 
+  // Documented in DB.checkRc()
+  const checkSqlite3Rc = function(dbPtr, sqliteResultCode){
+    if(sqliteResultCode){
+      if(dbPtr instanceof DB) dbPtr = dbPtr.pointer;
+      throw new SQLite3Error(
+        "sqlite result code",sqliteResultCode+":",
+        (dbPtr
+         ? capi.sqlite3_errmsg(dbPtr)
+         : capi.sqlite3_errstr(sqliteResultCode))
+      );
+    }
+  };
+
+  /**
+     A proxy for DB class constructors. It must be called with the
+     being-construct DB object as its "this".
+  */
+  const dbCtorHelper = function ctor(fn=':memory:', flags='c', vfsName){
+    if(!ctor._name2vfs){
+      // Map special filenames which we handle here (instead of in C)
+      // to some helpful metadata...
+      ctor._name2vfs = Object.create(null);
+      const isWorkerThread = (self.window===self /*===running in main window*/)
+          ? false
+          : (n)=>toss3("The VFS for",n,"is only available in the main window thread.")
+      ctor._name2vfs[':localStorage:'] = {
+        vfs: 'kvvfs',
+        filename: isWorkerThread || (()=>'local')
+      };
+      ctor._name2vfs[':sessionStorage:'] = {
+        vfs: 'kvvfs',
+        filename: isWorkerThread || (()=>'session')
+      };
+    }
+    if('string'!==typeof fn){
+      toss3("Invalid filename for DB constructor.");
+    }
+    const vfsCheck = ctor._name2vfs[fn];
+    if(vfsCheck){
+      vfsName = vfsCheck.vfs;
+      fn = vfsCheck.filename(fn);
+    }
+    let ptr, oflags = 0;
+    if( flags.indexOf('c')>=0 ){
+      oflags |= capi.SQLITE_OPEN_CREATE | capi.SQLITE_OPEN_READWRITE;
+    }
+    if( flags.indexOf('w')>=0 ) oflags |= capi.SQLITE_OPEN_READWRITE;
+    if( 0===oflags ) oflags |= capi.SQLITE_OPEN_READONLY;
+    oflags |= capi.SQLITE_OPEN_EXRESCODE;
+    const stack = capi.wasm.scopedAllocPush();
+    try {
+      const ppDb = capi.wasm.scopedAllocPtr() /* output (sqlite3**) arg */;
+      const pVfsName = vfsName ? capi.wasm.scopedAllocCString(vfsName) : 0;
+      const rc = capi.sqlite3_open_v2(fn, ppDb, oflags, pVfsName);
+      ptr = capi.wasm.getPtrValue(ppDb);
+      checkSqlite3Rc(ptr, rc);
+    }catch( e ){
+      if( ptr ) capi.sqlite3_close_v2(ptr);
+      throw e;
+    }finally{
+      capi.wasm.scopedAllocPop(stack);
+    }
+    this.filename = fn;
+    __ptrMap.set(this, ptr);
+    __stmtMap.set(this, Object.create(null));
+    __udfMap.set(this, Object.create(null));
+  };
+  
   /**
      The DB class provides a high-level OO wrapper around an sqlite3
      db handle.
@@ -102,42 +170,29 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      "c". These modes are ignored for the special ":memory:" and ""
      names.
 
-     The final argument is currently unimplemented but will eventually
-     be used to specify an optional sqlite3 VFS implementation name,
-     as for the final argument to sqlite3_open_v2().
+     The final argument is analogous to the final argument of
+     sqlite3_open_v2(): the name of an sqlite3 VFS. Pass a falsy value,
+     or not at all, to use the default. If passed a value, it must
+     be the string name of a VFS
 
      For purposes of passing a DB instance to C-style sqlite3
      functions, the DB object's read-only `pointer` property holds its
      `sqlite3*` pointer value. That property can also be used to check
      whether this DB instance is still open.
+
+
+     EXPERIMENTAL: in the main window thread, the filenames
+     ":localStorage:" and ":sessionStorage:" are special: they cause
+     the db to use either localStorage or sessionStorage for storing
+     the database. In this mode, only a single database is permitted
+     in each storage object. This feature is experimental and subject
+     to any number of changes (including outright removal). This
+     support requires a specific build of sqlite3, the existence of
+     which can be determined at runtime by checking for a non-0 return
+     value from sqlite3.capi.sqlite3_vfs_find("kvvfs").
   */
-  const DB = function ctor(fn=':memory:', flags='c', vtab="not yet implemented"){
-    if('string'!==typeof fn){
-      toss3("Invalid filename for DB constructor.");
-    }
-    let ptr, oflags = 0;
-    if( flags.indexOf('c')>=0 ){
-      oflags |= capi.SQLITE_OPEN_CREATE | capi.SQLITE_OPEN_READWRITE;
-    }
-    if( flags.indexOf('w')>=0 ) oflags |= capi.SQLITE_OPEN_READWRITE;
-    if( 0===oflags ) oflags |= capi.SQLITE_OPEN_READONLY;
-    oflags |= capi.SQLITE_OPEN_EXRESCODE;
-    const stack = capi.wasm.scopedAllocPush();
-    try {
-      const ppDb = capi.wasm.scopedAllocPtr() /* output (sqlite3**) arg */;
-      const rc = capi.sqlite3_open_v2(fn, ppDb, oflags, null);
-      ptr = capi.wasm.getPtrValue(ppDb);
-      ctor.checkRc(ptr, rc);
-    }catch( e ){
-      if( ptr ) capi.sqlite3_close_v2(ptr);
-      throw e;
-    }finally{
-      capi.wasm.scopedAllocPop(stack);
-    }
-    this.filename = fn;
-    __ptrMap.set(this, ptr);
-    __stmtMap.set(this, Object.create(null));
-    __udfMap.set(this, Object.create(null));
+  const DB = function ctor(fn=':memory:', flags='c', vfsName){
+    dbCtorHelper.apply(this, Array.prototype.slice.call(arguments));
   };
 
   /**
@@ -232,6 +287,8 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           }else if(args[0] && 'object'===typeof args[0]){
             out.opt = args[0];
             out.sql = out.opt.sql;
+          }else if(Array.isArray(args[0])){
+            out.sql = args[0];
           }
           break;
         case 2:
@@ -295,17 +352,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      non-0 non-error codes need to be checked for in
      client code where they are expected.
   */
-  DB.checkRc = function(dbPtr, sqliteResultCode){
-    if(sqliteResultCode){
-      if(dbPtr instanceof DB) dbPtr = dbPtr.pointer;
-      throw new SQLite3Error(
-        "sqlite result code",sqliteResultCode+":",
-        (dbPtr
-         ? capi.sqlite3_errmsg(dbPtr)
-         : capi.sqlite3_errstr(sqliteResultCode))
-      );
-    }
-  };
+  DB.checkRc = checkSqlite3Rc;
 
   DB.prototype = {
     /**
@@ -1532,5 +1579,19 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     DB,
     Stmt
   }/*oo1 object*/;
+
+  if( self.window===self && 0!==capi.sqlite3_vfs_find('kvvfs') ){
+    /* In the main window thread, add a couple of convenience proxies
+       for localStorage and sessionStorage DBs... */
+    let klass = sqlite3.oo1.LocalStorageDb = function(){
+      dbCtorHelper.call(this, 'local', 'c', 'kvvfs');
+    };
+    klass.prototype = DB.prototype;
+
+    klass = sqlite3.oo1.SessionStorageDb = function(){
+      dbCtorHelper.call(this, 'session', 'c', 'kvvfs');
+    };
+    klass.prototype = DB.prototype;
+  }
 });
 
