@@ -165,9 +165,7 @@ static int testRecoverCmd(
       int res2;
       if( res!=SQLITE_OK ){
         const char *zErr = sqlite3_recover_errmsg(pTest->p);
-        char *zRes = sqlite3_mprintf("(%d) - %s", res, zErr);
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(zRes, -1));
-        sqlite3_free(zRes);
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(zErr, -1));
       }
       res2 = sqlite3_recover_finish(pTest->p);
       assert( res2==res );

@@ -226,12 +226,13 @@ static int recoverError(
   int errCode, 
   const char *zFmt, ...
 ){
+  char *z = 0;
   va_list ap;
-  char *z;
   va_start(ap, zFmt);
-  z = sqlite3_vmprintf(zFmt, ap);
-  va_end(ap);
-
+  if( zFmt ){
+    z = sqlite3_vmprintf(zFmt, ap);
+    va_end(ap);
+  }
   sqlite3_free(p->zErrMsg);
   p->zErrMsg = z;
   p->errCode = errCode;
@@ -448,7 +449,8 @@ static i64 recoverPageCount(sqlite3_recover *p){
   if( p->errCode==SQLITE_OK ){
     sqlite3_stmt *pStmt = 0;
     pStmt = recoverPreparePrintf(p, p->dbIn, "PRAGMA %Q.page_count", p->zDb);
-    if( pStmt && SQLITE_ROW==sqlite3_step(pStmt) ){
+    if( pStmt ){
+      sqlite3_step(pStmt);
       nPg = sqlite3_column_int64(pStmt, 0);
     }
     recoverFinalize(p, pStmt);
@@ -866,11 +868,11 @@ static void recoverAddTable(
 
       pNew->pNext = p->pTblList;
       p->pTblList = pNew;
+      pNew->bIntkey = 1;
     }
 
     recoverFinalize(p, pStmt);
 
-    pNew->bIntkey = 1;
     pStmt = recoverPreparePrintf(p, p->dbOut, "PRAGMA index_xinfo(%Q)", zName);
     while( pStmt && sqlite3_step(pStmt)==SQLITE_ROW ){
       int iField = sqlite3_column_int(pStmt, 0);
@@ -884,10 +886,12 @@ static void recoverAddTable(
     }
     recoverFinalize(p, pStmt);
 
-    if( iPk>=0 ){
-      pNew->aCol[iPk].bIPK = 1;
-    }else if( pNew->bIntkey ){
-      pNew->iRowidBind = iBind++;
+    if( p->errCode==SQLITE_OK ){
+      if( iPk>=0 ){
+        pNew->aCol[iPk].bIPK = 1;
+      }else if( pNew->bIntkey ){
+        pNew->iRowidBind = iBind++;
+      }
     }
   }
 }
@@ -1068,6 +1072,7 @@ static sqlite3_stmt *recoverInsertStmt(
   RecoverTable *pTab,
   int nField
 ){
+  sqlite3_stmt *pRet = 0;
   const char *zSep = "";
   const char *zSqlSep = "";
   char *zSql = 0;
@@ -1075,7 +1080,8 @@ static sqlite3_stmt *recoverInsertStmt(
   char *zBind = 0;
   int ii;
   int bSql = p->xSql ? 1 : 0;
-  sqlite3_stmt *pRet = 0;
+
+  if( nField<=0 ) return 0;
 
   assert( nField<=pTab->nCol );
 
@@ -1525,7 +1531,7 @@ static int recoverWriteData(sqlite3_recover *p){
 
           int bNewCell = (iPrevPage!=iPage || iPrevCell!=iCell);
           assert( bNewCell==0 || (iField==-1 || iField==0) );
-          assert( bNewCell || iField==nVal );
+          assert( bNewCell || iField==nVal || nVal==pTab->nCol );
 
           if( bNewCell ){
             if( nVal>=0 ){
@@ -1538,29 +1544,31 @@ static int recoverWriteData(sqlite3_recover *p){
                 pInsert = recoverInsertStmt(p, pTab, nVal);
                 nInsert = nVal;
               }
+              if( nVal>0 ){
+                for(ii=0; ii<pTab->nCol; ii++){
+                  RecoverColumn *pCol = &pTab->aCol[ii];
 
-              for(ii=0; ii<pTab->nCol; ii++){
-                RecoverColumn *pCol = &pTab->aCol[ii];
-
-                if( pCol->iBind>0 ){
-                  if( pCol->bIPK ){
-                    sqlite3_bind_int64(pInsert, pCol->iBind, iRowid);
-                  }else if( pCol->iField<nVal ){
-                    sqlite3_bind_value(pInsert,pCol->iBind,apVal[pCol->iField]);
+                  if( pCol->iBind>0 ){
+                    int iBind = pCol->iBind;
+                    if( pCol->bIPK ){
+                      sqlite3_bind_int64(pInsert, iBind, iRowid);
+                    }else if( pCol->iField<nVal ){
+                      sqlite3_bind_value(pInsert, iBind, apVal[pCol->iField]);
+                    }
                   }
                 }
-              }
-              if( p->bRecoverRowid && pTab->iRowidBind>0 && bHaveRowid ){
-                sqlite3_bind_int64(pInsert, pTab->iRowidBind, iRowid);
-              }
+                if( p->bRecoverRowid && pTab->iRowidBind>0 && bHaveRowid ){
+                  sqlite3_bind_int64(pInsert, pTab->iRowidBind, iRowid);
+                }
 
-              if( SQLITE_ROW==sqlite3_step(pInsert) && p->xSql ){
-                const char *zSql = (const char*)sqlite3_column_text(pInsert, 0);
-                recoverSqlCallback(p, zSql);
+                if( SQLITE_ROW==sqlite3_step(pInsert) && p->xSql ){
+                  const char *z = (const char*)sqlite3_column_text(pInsert, 0);
+                  recoverSqlCallback(p, z);
+                }
+                recoverReset(p, pInsert);
+                assert( p->errCode || pInsert );
+                if( pInsert ) sqlite3_clear_bindings(pInsert);
               }
-              recoverReset(p, pInsert);
-              assert( p->errCode || pInsert );
-              if( pInsert ) sqlite3_clear_bindings(pInsert);
             }
 
             for(ii=0; ii<nVal; ii++){
@@ -1577,9 +1585,12 @@ static int recoverWriteData(sqlite3_recover *p){
               assert( nVal==-1 );
               nVal = 0;
               bHaveRowid = 1;
-            }else if( iField<nMax ){
+            }else if( iField<pTab->nCol ){
               assert( apVal[iField]==0 );
               apVal[iField] = sqlite3_value_dup( pVal );
+              if( apVal[iField]==0 ){
+                recoverError(p, SQLITE_NOMEM, 0);
+              }
               nVal = iField+1;
             }
             iPrevCell = iCell;
@@ -1686,7 +1697,6 @@ sqlite3_recover *recoverInit(
   int nByte = 0;
 
   if( zDb==0 ){ zDb = "main"; }
-  if( zUri==0 ){ zUri = ""; }
 
   nDb = recoverStrlen(zDb);
   nUri = recoverStrlen(zUri);
@@ -1699,7 +1709,7 @@ sqlite3_recover *recoverInit(
     pRet->zDb = (char*)&pRet[1];
     pRet->zUri = &pRet->zDb[nDb+1];
     memcpy(pRet->zDb, zDb, nDb);
-    memcpy(pRet->zUri, zUri, nUri);
+    if( nUri>0 ) memcpy(pRet->zUri, zUri, nUri);
     pRet->xSql = xSql;
     pRet->pSqlCtx = pSqlCtx;
     pRet->bRecoverRowid = RECOVER_ROWID_DEFAULT;
@@ -1730,14 +1740,14 @@ sqlite3_recover *sqlite3_recover_init_sql(
   int (*xSql)(void*, const char*),
   void *pSqlCtx
 ){
-  return recoverInit(db, zDb, "", xSql, pSqlCtx);
+  return recoverInit(db, zDb, 0, xSql, pSqlCtx);
 }
 
 /*
 ** Return the handle error message, if any.
 */
 const char *sqlite3_recover_errmsg(sqlite3_recover *p){
-  return p ? p->zErrMsg : "not an error";
+  return (p && p->errCode!=SQLITE_NOMEM) ? p->zErrMsg : "out of memory";
 }
 
 /*
@@ -1753,6 +1763,7 @@ int sqlite3_recover_errcode(sqlite3_recover *p){
 int sqlite3_recover_config(sqlite3_recover *p, int op, void *pArg){
   int rc = SQLITE_OK;
 
+  if( p==0 ) return SQLITE_NOMEM;
   switch( op ){
     case 789:
       sqlite3_free(p->zStateDb);
@@ -1791,8 +1802,12 @@ int sqlite3_recover_config(sqlite3_recover *p, int op, void *pArg){
 */
 int sqlite3_recover_run(sqlite3_recover *p){
   if( p ){
+    recoverExec(p, p->dbIn, "PRAGMA writable_schema=1");
     if( p->bRun ) return SQLITE_MISUSE;     /* Has already run */
     if( p->errCode==SQLITE_OK ) recoverRun(p);
+    if( sqlite3_exec(p->dbIn, "PRAGMA writable_schema=0", 0, 0, 0) ){
+      recoverDbError(p, p->dbIn);
+    }
   }
   return p ? p->errCode : SQLITE_NOMEM;
 }
@@ -1807,11 +1822,16 @@ int sqlite3_recover_run(sqlite3_recover *p){
 ** not been called on this handle.
 */
 int sqlite3_recover_finish(sqlite3_recover *p){
-  int rc = p->errCode;
-  sqlite3_free(p->zErrMsg);
-  sqlite3_free(p->zStateDb);
-  sqlite3_free(p->zLostAndFound);
-  sqlite3_free(p);
+  int rc;
+  if( p==0 ){
+    rc = SQLITE_NOMEM;
+  }else{
+    rc = p->errCode;
+    sqlite3_free(p->zErrMsg);
+    sqlite3_free(p->zStateDb);
+    sqlite3_free(p->zLostAndFound);
+    sqlite3_free(p);
+  }
   return rc;
 }
 
