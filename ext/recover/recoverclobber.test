@@ -25,7 +25,7 @@ ifcapable !vtab {
 
 proc recover {db output} {
   set R [sqlite3_recover_init db main test.db2]
-  $R step
+  $R run
   $R finish
 }
 

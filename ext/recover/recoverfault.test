@@ -52,7 +52,7 @@ do_faultsim_test 1 -faults oom* -prep {
   faultsim_restore_and_reopen
 } -body {
   set R [sqlite3_recover_init db main test.db2]
-  $R step
+  $R run
   $R finish
 } -test {
   faultsim_test_result {0 {}} {1 {}}
@@ -77,7 +77,7 @@ do_faultsim_test 2 -faults oom* -prep {
 } -body {
   set R [sqlite3_recover_init db main test.db2]
   $R config lostandfound lost_and_found
-  $R step
+  $R run
   $R finish
 } -test {
   faultsim_test_result {0 {}} {1 {}}

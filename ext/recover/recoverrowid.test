@@ -28,7 +28,7 @@ proc recover {db bRowids output} {
 
   set R [sqlite3_recover_init db main test.db2]
   $R config rowids $bRowids
-  $R step
+  $R run
   $R finish
 }
 

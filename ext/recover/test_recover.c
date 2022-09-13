@@ -42,8 +42,16 @@ static int xSqlCallback(void *pSqlArg, const char *zSql){
   if( res ){
     Tcl_BackgroundError(p->interp);
     return TCL_ERROR;
+  }else{
+    Tcl_Obj *pObj = Tcl_GetObjResult(p->interp);
+    if( Tcl_GetCharLength(pObj)==0 ){
+      res = 0;
+    }else if( Tcl_GetIntFromObj(p->interp, pObj, &res) ){
+      Tcl_BackgroundError(p->interp);
+      return TCL_ERROR;
+    }
   }
-  return SQLITE_OK;
+  return res;
 }
 
 static int getDbPointer(Tcl_Interp *interp, Tcl_Obj *pObj, sqlite3 **pDb){
@@ -60,7 +68,7 @@ static int getDbPointer(Tcl_Interp *interp, Tcl_Obj *pObj, sqlite3 **pDb){
 ** Implementation of the command created by [sqlite3_recover_init]:
 **
 **     $cmd config OP ARG
-**     $cmd step
+**     $cmd run
 **     $cmd errmsg
 **     $cmd errcode
 **     $cmd finalize
@@ -77,7 +85,7 @@ static int testRecoverCmd(
     const char *zMsg;
   } aSub[] = {
     { "config",    2, "REBASE-BLOB" }, /* 0 */
-    { "step",      0, ""            }, /* 1 */
+    { "run",      0, ""             }, /* 1 */
     { "errmsg",    0, ""            }, /* 2 */
     { "errcode",   0, ""            }, /* 3 */
     { "finish",  0, ""              }, /* 4 */
@@ -145,7 +153,7 @@ static int testRecoverCmd(
       Tcl_SetObjResult(interp, Tcl_NewIntObj(res));
       break;
     }
-    case 1:  assert( sqlite3_stricmp("step", aSub[iSub].zSub)==0 ); {
+    case 1:  assert( sqlite3_stricmp("run", aSub[iSub].zSub)==0 ); {
       int res = sqlite3_recover_run(pTest->p);
       Tcl_SetObjResult(interp, Tcl_NewIntObj(res));
       break;

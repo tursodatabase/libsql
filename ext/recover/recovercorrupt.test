@@ -58,7 +58,7 @@ for {set ii 200} {$ii < 10000} {incr ii} {
   do_test 1.2.$ii {
     set R [sqlite3_recover_init db main test.db2]
     $R config lostandfound lost_and_found
-    $R step
+    $R run
     $R finish
   } {}
 }

@@ -45,7 +45,7 @@ proc do_recover_test {tn} {
   uplevel [list do_test $tn.1 {
     set R [sqlite3_recover_init db main test.db2]
     $R config testdb rstate.db
-    $R step
+    $R run
     $R finish
   } {}]
 
@@ -61,7 +61,7 @@ proc do_recover_test {tn} {
     set R [sqlite3_recover_init_sql db main my_sql_hook]
     $R config testdb rstate.db
     $R config rowids 1
-    $R step
+    $R run
     $R finish
   } {}]
 
@@ -75,6 +75,7 @@ proc do_recover_test {tn} {
 
 proc my_sql_hook {sql} {
   lappend ::sqlhook $sql
+  return 0
 }
 
 do_execsql_test 1.0 {

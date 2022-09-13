@@ -406,6 +406,11 @@ static int recoverExec(sqlite3_recover *p, sqlite3 *db, const char *zSql){
   return p->errCode;
 }
 
+/*
+** Bind the value pVal to parameter iBind of statement pStmt. Leave an
+** error in the recover handle passed as the first argument if an error
+** (e.g. an OOM) occurs.
+*/
 static void recoverBindValue(
   sqlite3_recover *p, 
   sqlite3_stmt *pStmt, 
@@ -559,7 +564,7 @@ static void recoverGetPage(
     return;
   }else{
     if( p->pGetPage==0 ){
-      pStmt = recoverPreparePrintf(
+      pStmt = p->pGetPage = recoverPreparePrintf(
           p, p->dbIn, "SELECT data FROM sqlite_dbpage(%Q) WHERE pgno=?", p->zDb
       );
     }else{
@@ -567,11 +572,12 @@ static void recoverGetPage(
     }
 
     if( pStmt ){
+      int rc = SQLITE_OK;
       sqlite3_bind_int64(pStmt, 1, pgno);
       if( SQLITE_ROW==sqlite3_step(pStmt) ){
         sqlite3_result_value(pCtx, sqlite3_column_value(pStmt, 0));
       }
-        p->pGetPage = recoverReset(p, pStmt);
+      recoverReset(p, pStmt);
     }
   }
 

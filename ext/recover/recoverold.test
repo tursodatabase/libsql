@@ -47,7 +47,7 @@ proc do_recover_test {tn {tsql {}} {res {}}} {
 
   set R [sqlite3_recover_init db main test.db2]
   $R config lostandfound lost_and_found
-  $R step
+  $R run
   $R finish
   
   sqlite3 db2 test.db2
@@ -65,7 +65,7 @@ proc do_recover_test {tn {tsql {}} {res {}}} {
   set ::sqlhook [list]
   set R [sqlite3_recover_init_sql db main my_sql_hook]
   $R config lostandfound lost_and_found
-  $R step
+  $R run
   $R finish
   
   sqlite3 db2 test.db2
@@ -81,6 +81,7 @@ proc do_recover_test {tn {tsql {}} {res {}}} {
 
 proc my_sql_hook {sql} {
   lappend ::sqlhook $sql
+  return 0
 }
 
 
@@ -154,6 +155,7 @@ do_recover_test 2.4.1 {
   2 2 3 {} 8 9 7
 }
 
+breakpoint
 do_execsql_test 2.5 {
   CREATE TABLE x1(a, b, c);
   WITH s(i) AS (
@@ -176,7 +178,7 @@ do_test 2.6 {
   set R [sqlite3_recover_init db main test.db2]
   $R config lostandfound lost_and_found
   $R config freelistcorrupt 1
-  $R step
+  $R run
   $R finish
   sqlite3 db2 test.db2
   execsql { SELECT count(*) FROM lost_and_found_1; } db2
