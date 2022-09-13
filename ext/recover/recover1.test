@@ -167,6 +167,32 @@ ifcapable fts5 {
   do_recover_test 9 
 }
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 10.1 {
+  CREATE TABLE x1(a PRIMARY KEY, str TEXT) WITHOUT ROWID;
+  INSERT INTO x1 VALUES(1, '
+    \nhello\012world(\n0)(\n1)
+  ');
+  INSERT INTO x1 VALUES(2, '
+    \nhello
+  ');
+}
+do_execsql_test 10.2 "
+  INSERT INTO x1 VALUES(3, '\012hello there\015world');
+  INSERT INTO x1 VALUES(4, '\015hello there\015world');
+"
+do_recover_test 10 
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 11.1 {
+  PRAGMA encoding='utf16';
+  CREATE TABLE u1(u, v);
+  INSERT INTO u1 VALUES('edvin marton', 'bond');
+  INSERT INTO u1 VALUES(1, 4.0);
+}
+do_recover_test 11 
 
 
 
