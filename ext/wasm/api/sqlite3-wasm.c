@@ -76,7 +76,7 @@ int sqlite3_wasm_db_error(sqlite3*db, int err_code, const char *zMsg){
 */
 WASM_KEEP
 const char * sqlite3_wasm_enum_json(void){
-  static char strBuf[1024 * 8] = {0} /* where the JSON goes */;
+  static char strBuf[1024 * 12] = {0} /* where the JSON goes */;
   int n = 0, childCount = 0, structCount = 0
     /* output counters for figuring out where commas go */;
   char * pos = &strBuf[1] /* skip first byte for now to help protect
@@ -259,7 +259,8 @@ const char * sqlite3_wasm_enum_json(void){
   } _DefGroup;
 
   DefGroup(openFlags) {
-    /* Noting that not all of these will have any effect in WASM-space. */
+    /* Noting that not all of these will have any effect in
+    ** WASM-space. */
     DefInt(SQLITE_OPEN_READONLY);
     DefInt(SQLITE_OPEN_READWRITE);
     DefInt(SQLITE_OPEN_CREATE);
@@ -320,6 +321,49 @@ const char * sqlite3_wasm_enum_json(void){
     DefInt(SQLITE_IOCAP_POWERSAFE_OVERWRITE);
     DefInt(SQLITE_IOCAP_IMMUTABLE);
     DefInt(SQLITE_IOCAP_BATCH_ATOMIC);
+  } _DefGroup;
+
+  DefGroup(fcntl) {
+    DefInt(SQLITE_FCNTL_LOCKSTATE);
+    DefInt(SQLITE_FCNTL_GET_LOCKPROXYFILE);
+    DefInt(SQLITE_FCNTL_SET_LOCKPROXYFILE);
+    DefInt(SQLITE_FCNTL_LAST_ERRNO);
+    DefInt(SQLITE_FCNTL_SIZE_HINT);
+    DefInt(SQLITE_FCNTL_CHUNK_SIZE);
+    DefInt(SQLITE_FCNTL_FILE_POINTER);
+    DefInt(SQLITE_FCNTL_SYNC_OMITTED);
+    DefInt(SQLITE_FCNTL_WIN32_AV_RETRY);
+    DefInt(SQLITE_FCNTL_PERSIST_WAL);
+    DefInt(SQLITE_FCNTL_OVERWRITE);
+    DefInt(SQLITE_FCNTL_VFSNAME);
+    DefInt(SQLITE_FCNTL_POWERSAFE_OVERWRITE);
+    DefInt(SQLITE_FCNTL_PRAGMA);
+    DefInt(SQLITE_FCNTL_BUSYHANDLER);
+    DefInt(SQLITE_FCNTL_TEMPFILENAME);
+    DefInt(SQLITE_FCNTL_MMAP_SIZE);
+    DefInt(SQLITE_FCNTL_TRACE);
+    DefInt(SQLITE_FCNTL_HAS_MOVED);
+    DefInt(SQLITE_FCNTL_SYNC);
+    DefInt(SQLITE_FCNTL_COMMIT_PHASETWO);
+    DefInt(SQLITE_FCNTL_WIN32_SET_HANDLE);
+    DefInt(SQLITE_FCNTL_WAL_BLOCK);
+    DefInt(SQLITE_FCNTL_ZIPVFS);
+    DefInt(SQLITE_FCNTL_RBU);
+    DefInt(SQLITE_FCNTL_VFS_POINTER);
+    DefInt(SQLITE_FCNTL_JOURNAL_POINTER);
+    DefInt(SQLITE_FCNTL_WIN32_GET_HANDLE);
+    DefInt(SQLITE_FCNTL_PDB);
+    DefInt(SQLITE_FCNTL_BEGIN_ATOMIC_WRITE);
+    DefInt(SQLITE_FCNTL_COMMIT_ATOMIC_WRITE);
+    DefInt(SQLITE_FCNTL_ROLLBACK_ATOMIC_WRITE);
+    DefInt(SQLITE_FCNTL_LOCK_TIMEOUT);
+    DefInt(SQLITE_FCNTL_DATA_VERSION);
+    DefInt(SQLITE_FCNTL_SIZE_LIMIT);
+    DefInt(SQLITE_FCNTL_CKPT_DONE);
+    DefInt(SQLITE_FCNTL_RESERVE_BYTES);
+    DefInt(SQLITE_FCNTL_CKPT_START);
+    DefInt(SQLITE_FCNTL_EXTERNAL_READER);
+    DefInt(SQLITE_FCNTL_CKSM_FILE);
   } _DefGroup;
 
   DefGroup(access){

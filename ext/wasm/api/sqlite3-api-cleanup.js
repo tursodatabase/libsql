@@ -20,11 +20,17 @@ if('undefined' !== typeof Module){ // presumably an Emscripten build
   /**
      Install a suitable default configuration for sqlite3ApiBootstrap().
   */
-  const SABC = self.sqlite3ApiBootstrap.defaultConfig;
-  SABC.Module = Module /* ==>  Currently needs to be exposed here for test code. NOT part
-                          of the public API. */;
-  SABC.exports = Module['asm'];
-  SABC.memory = Module.wasmMemory /* gets set if built with -sIMPORT_MEMORY */;
+  const SABC = self.sqlite3ApiConfig || Object.create(null);
+  if(undefined===SABC.Module){
+    SABC.Module = Module /* ==> Currently needs to be exposed here for
+                            test code. NOT part of the public API. */;
+  }
+  if(undefined===SABC.exports){
+    SABC.exports = Module['asm'];
+  }
+  if(undefined===SABC.memory){
+    SABC.memory = Module.wasmMemory /* gets set if built with -sIMPORT_MEMORY */;
+  }
 
   /**
      For current (2022-08-22) purposes, automatically call
@@ -35,8 +41,15 @@ if('undefined' !== typeof Module){ // presumably an Emscripten build
      configuration used by a no-args call to sqlite3ApiBootstrap().
   */
   //console.warn("self.sqlite3ApiConfig = ",self.sqlite3ApiConfig);
-  const sqlite3 = self.sqlite3ApiBootstrap();
-  delete self.sqlite3ApiBootstrap;
+  const rmApiConfig = (SABC !== self.sqlite3ApiConfig);
+  self.sqlite3ApiConfig = SABC;
+  let sqlite3;
+  try{
+    sqlite3 = self.sqlite3ApiBootstrap();
+  }finally{
+    delete self.sqlite3ApiBootstrap;
+    if(rmApiConfig) delete self.sqlite3ApiConfig;
+  }
 
   if(self.location && +self.location.port > 1024){
     console.warn("Installing sqlite3 bits as global S for local dev/test purposes.");

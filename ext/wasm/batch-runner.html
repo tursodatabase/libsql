@@ -55,7 +55,9 @@
     <hr>
     <div id='reverse-log-notice' class='hidden'>(Log output is in reverse order, newest first!)</div>
     <div id='test-output'></div>
-    
+    <!-- batch-runner.js "should" work with sqlite3-kvvfs so long as
+         its data sets don't violate the the storage limits. -->
+    <!--script src="sqlite3-kvvfs.js"></script-->
     <script src="sqlite3.js"></script>
     <script src="common/SqliteTestUtil.js"></script>
     <script src="batch-runner.js"></script>

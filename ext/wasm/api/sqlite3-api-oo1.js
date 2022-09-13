@@ -496,6 +496,13 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        the statement actually produces any result rows.
        ==================================================================
 
+       - `.columnNames`: if this is an array, the column names of the
+       result set are stored in this array before the callback (if
+       any) is triggered (regardless of whether the query produces any
+       result rows). If no statement has result columns, this value is
+       unchanged. Achtung: an SQL result may have multiple columns
+       with identical names.
+
        - `.callback` = a function which gets called for each row of
        the result set, but only if that statement has any result
        _rows_. The callback's "this" is the options object. The second
@@ -523,8 +530,8 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        as the first argument to the callback:
 
          A.1) `'array'` (the default) causes the results of
-         `stmt.get([])` to be passed to passed on and/or appended to
-         `resultRows`.
+         `stmt.get([])` to be passed to the `callback` and/or appended
+         to `resultRows`.
 
          A.2) `'object'` causes the results of
          `stmt.get(Object.create(null))` to be passed to the
@@ -536,7 +543,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
          A.3) `'stmt'` causes the current Stmt to be passed to the
          callback, but this mode will trigger an exception if
          `resultRows` is an array because appending the statement to
-         the array would be unhelpful.
+         the array would be downright unhelpful.
 
        B) An integer, indicating a zero-based column in the result
        row. Only that one single value will be passed on.
@@ -545,10 +552,14 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        ':', '$', or '@' will fetch the row as an object, extract that
        one field, and pass that field's value to the callback. Note
        that these keys are case-sensitive so must match the case used
-       in the SQL. e.g. `"select a A from t"` with a `rowMode` of '$A'
-       would work but '$a' would not. A reference to a column not in
-       the result set will trigger an exception on the first row (as
-       the check is not performed until rows are fetched).
+       in the SQL. e.g. `"select a A from t"` with a `rowMode` of
+       `'$A'` would work but `'$a'` would not. A reference to a column
+       not in the result set will trigger an exception on the first
+       row (as the check is not performed until rows are fetched).
+       Note also that `$` is a legal identifier character in JS so
+       need not be quoted. (Design note: those 3 characters were
+       chosen because they are the characters support for naming bound
+       parameters.)
 
        Any other `rowMode` value triggers an exception.
 
@@ -560,12 +571,17 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        and can be used over a WebWorker-style message interface.
        exec() throws if `resultRows` is set and `rowMode` is 'stmt'.
 
-       - `.columnNames`: if this is an array, the column names of the
-       result set are stored in this array before the callback (if
-       any) is triggered (regardless of whether the query produces any
-       result rows). If no statement has result columns, this value is
-       unchanged. Achtung: an SQL result may have multiple columns
-       with identical names.
+
+       Potential TODOs:
+
+       - `.bind`: permit an array of arrays/objects to bind. The first
+       sub-array would act on the first statement which has bindable
+       parameters (as it does now). The 2nd would act on the next such
+       statement, etc.
+
+       - `.callback` and `.resultRows`: permit an array entries with
+       semantics similar to those described for `.bind` above.
+
     */
     exec: function(/*(sql [,obj]) || (obj)*/){
       affirmDbOpen(this);
@@ -1580,31 +1596,5 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     Stmt
   }/*oo1 object*/;
 
-  if( self.window===self && 0!==capi.sqlite3_vfs_find('kvvfs') ){
-    /* Features specific to kvvfs... */
-    /**
-       Clears all storage used by the kvvfs DB backend, deleting any
-       DB(s) stored there. Its argument must be either 'session',
-       'local', or ''. In the first two cases, only sessionStorage
-       resp. localStorage is cleared. If it's an empty string (the
-       default) then both are cleared. Only storage keys which match
-       the pattern used by kvvfs are cleared: any other client-side
-       data are retained.
-    */
-    DB.clearKvvfsStorage = function(which=''){
-      const prefix = 'kvvfs-'+which;
-      const stores = [];
-      if('session'===which || ''===which) stores.push(sessionStorage);
-      if('local'===which || ''===which) stores.push(localStorage);
-      stores.forEach(function(s){
-        const toRm = [];
-        let i = 0, k;
-        for( i = 0; (k = s.key(i)); ++i ){
-          if(k.startsWith(prefix)) toRm.push(k);
-        }
-        toRm.forEach((kk)=>s.removeItem(kk));
-      });
-    };
-  }/* main-window-only bits */
 });
 

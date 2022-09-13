@@ -33,6 +33,8 @@
     return v1>=(v2-factor) && v1<=(v2+factor);
   };
 
+  let sqlite3;
+  
   const testBasicSanity = function(db,sqlite3){
     const capi = sqlite3.capi;
     log("Basic sanity tests...");
@@ -1005,10 +1007,17 @@
     }
   }/*testWasmUtil()*/;
 
+  const clearKvvfs = function(){
+    const sz = sqlite3.capi.sqlite3_web_kvvfs_size();
+    const n = sqlite3.capi.sqlite3_web_kvvfs_clear('');
+    log("Cleared kvvfs local/sessionStorage:",
+        n,"entries totaling approximately",sz,"bytes.");
+  };
+
   const runTests = function(Module){
     //log("Module",Module);
-    const sqlite3 = Module.sqlite3,
-          capi = sqlite3.capi,
+    sqlite3 = Module.sqlite3;
+    const capi = sqlite3.capi,
           oo = sqlite3.oo1,
           wasm = capi.wasm;
     log("Loaded module:",capi.sqlite3_libversion(), capi.sqlite3_sourceid());
@@ -1048,14 +1057,15 @@
 
     let dbName = "/testing1.sqlite3";
     let vfsName = undefined;
-    if(oo.DB.clearKvvfsStorage){
+    if(capi.sqlite3_web_db_is_kvvfs()){
       dbName = "local";
       vfsName = 'kvvfs';
       logHtml("Found kvvfs. Clearing db(s) from sessionStorage and localStorage",
               "and selecting kvvfs-friendly db name:",dbName);
-      oo.DB.clearKvvfsStorage();
+      clearKvvfs();
     }
     const db = new oo.DB(dbName,'c',vfsName), startTime = performance.now();
+    log("capi.sqlite3_web_db_is_kvvfs() ==",capi.sqlite3_web_db_is_kvvfs(db.pointer));
     try {
       log("db.filename =",db.filename,"db.fileName() =",db.fileName());
       const banner1 = '>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>',
@@ -1072,6 +1082,7 @@
       });
     }finally{
       db.close();
+      if('kvvfs'===vfsName) clearKvvfs();
     }
     logHtml("Total Test count:",T.counter,"in",(performance.now() - startTime),"ms");
     log('capi.wasm.exports',capi.wasm.exports);

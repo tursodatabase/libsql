@@ -17,6 +17,7 @@
 (function(){
   const toss = function(...args){throw new Error(args.join(' '))};
   const warn = console.warn.bind(console);
+  let sqlite3;
 
   const App = {
     e: {
@@ -30,6 +31,7 @@
       btnReset: document.querySelector('#db-reset'),
       cbReverseLog: document.querySelector('#cb-reverse-log-order')
     },
+    db: Object.create(null),
     cache:{},
     metrics:{
       /**
@@ -61,15 +63,16 @@
     },
 
     openDb: function(fn, unlinkFirst=true){
-      if(this.db && this.db.ptr){
+      if(this.db.ptr){
         toss("Already have an opened db.");
       }
       const capi = this.sqlite3.capi, wasm = capi.wasm;
       const stack = wasm.scopedAllocPush();
       let pDb = 0;
       try{
-        if(unlinkFirst && fn && ':memory:'!==fn){
-          capi.wasm.sqlite3_wasm_vfs_unlink(fn);
+        if(unlinkFirst && fn){
+          if(':'!==fn[0]) capi.wasm.sqlite3_wasm_vfs_unlink(fn);
+          this.clearStorage();
         }
         const oFlags = capi.SQLITE_OPEN_CREATE | capi.SQLITE_OPEN_READWRITE;
         const ppDb = wasm.scopedAllocPtr();
@@ -82,7 +85,6 @@
       }finally{
         wasm.scopedAllocPop(stack);
       }
-      this.db = Object.create(null);
       this.db.filename = fn;
       this.db.ptr = pDb;
       this.logHtml("Opened db:",fn);
@@ -90,10 +92,13 @@
     },
 
     closeDb: function(unlink=false){
-      if(this.db && this.db.ptr){
+      if(this.db.ptr){
         this.sqlite3.capi.sqlite3_close_v2(this.db.ptr);
         this.logHtml("Closed db",this.db.filename);
-        if(unlink) capi.wasm.sqlite3_wasm_vfs_unlink(this.db.filename);
+        if(unlink){
+          capi.wasm.sqlite3_wasm_vfs_unlink(this.db.filename);
+          this.clearStorage();
+        }
         this.db.ptr = this.db.filename = undefined;
       }
     },
@@ -329,6 +334,21 @@
       return p.catch((e)=>this.logErr("Error via evalFile("+fn+"):",e.message));
     }/*evalFile()*/,
 
+    clearStorage: function(){
+      const sz = sqlite3.capi.sqlite3_web_kvvfs_size();
+      const n = sqlite3.capi.sqlite3_web_kvvfs_clear(this.db.filename || '');
+      this.logHtml("Cleared kvvfs local/sessionStorage:",
+                   n,"entries totaling approximately",sz,"bytes.");
+    },
+
+    resetDb: function(){
+      if(this.db.ptr){
+        const fn = this.db.filename;
+        this.closeDb(true);
+        this.openDb(fn,false);
+      }
+    },
+
     run: function(sqlite3){
       delete this.run;
       this.sqlite3 = sqlite3;
@@ -336,9 +356,14 @@
       this.logHtml("Loaded module:",capi.sqlite3_libversion(), capi.sqlite3_sourceid());
       this.logHtml("WASM heap size =",wasm.heap8().length);
       this.loadSqlList();
-      const pDir = capi.sqlite3_web_persistent_dir();
-      const dbFile = pDir ? pDir+"/speedtest.db" : ":memory:";
-      if(!pDir){
+      const pDir = 1 ? '' : capi.sqlite3_web_persistent_dir();
+      const dbFile = pDir ? pDir+"/speedtest.db" : (
+        sqlite3.capi.sqlite3_vfs_find('kvvfs') ? 'local' : ':memory:'
+      );
+      this.clearStorage();
+      if(pDir){
+        logHtml("Using persistent storage:",dbFile);
+      }else{
         document.querySelector('#warn-opfs').remove();
       }
       this.openDb(dbFile, !!pDir);
@@ -368,11 +393,7 @@
         who.evalFile(who.e.selSql.value);
       }, false);
       this.e.btnReset.addEventListener('click', function(){
-        const fn = who.db.filename;
-        if(fn){
-          who.closeDb(true);
-          who.openDb(fn,true);
-        }
+        who.resetDb();
       }, false);
       this.e.btnExportMetrics.addEventListener('click', function(){
         who.logHtml2('warning',"Triggering download of metrics CSV. Check your downloads folder.");
@@ -394,12 +415,14 @@
         }
         const timeTotal = performance.now() - timeStart;
         who.logHtml("Run-remaining time:",timeTotal,"ms ("+(timeTotal/1000/60)+" minute(s))");
+        who.clearStorage();
       }, false);
     }/*run()*/
   }/*App*/;
 
   self.sqlite3TestModule.initSqlite3().then(function(theEmccModule){
     self._MODULE = theEmccModule /* this is only to facilitate testing from the console */;
+    sqlite3 = theEmccModule.sqlite3;
     App.run(theEmccModule.sqlite3);
   });
 })();

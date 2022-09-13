@@ -43,10 +43,7 @@
 
   - Insofar as possible, support client-side storage using JS
     filesystem APIs. As of this writing, such things are still very
-    much TODO. Initial testing with using IndexedDB as backing storage
-    showed it to work reasonably well, but it's also too easy to
-    corrupt by using a web page in two browser tabs because IndexedDB
-    lacks the locking features needed to support that.
+    much under development.
 
   Specific non-goals of this project:
 
@@ -54,8 +51,10 @@
     Encodings in that realm, there are no currently plans to support
     the UTF16-related sqlite3 APIs. They would add a complication to
     the bindings for no appreciable benefit. Though web-related
-    implementation details take priority, the lower-level WASM module
-    "should" work in non-web WASM environments.
+    implementation details take priority, and the JavaScript
+    components of the API specifically focus on browser clients, the
+    lower-level WASM module "should" work in non-web WASM
+    environments.
 
   - Supporting old or niche-market platforms. WASM is built for a
     modern web and requires modern platforms.
@@ -78,17 +77,18 @@
 */
 
 /**
-   sqlite3ApiBootstrap() is the only global symbol exposed by this
-   API. It is intended to be called one time at the end of the API
-   amalgamation process, passed configuration details for the current
-   environment, and then optionally be removed from the global object
-   using `delete self.sqlite3ApiBootstrap`.
+   sqlite3ApiBootstrap() is the only global symbol persistently
+   exposed by this API. It is intended to be called one time at the
+   end of the API amalgamation process, passed configuration details
+   for the current environment, and then optionally be removed from
+   the global object using `delete self.sqlite3ApiBootstrap`.
 
    This function expects a configuration object, intended to abstract
    away details specific to any given WASM environment, primarily so
    that it can be used without any _direct_ dependency on
-   Emscripten. The config object is only honored the first time this
-   is called. Subsequent calls ignore the argument and return the same
+   Emscripten. (Note the default values for the config object!) The
+   config object is only honored the first time this is
+   called. Subsequent calls ignore the argument and return the same
    (configured) object which gets initialized by the first call.
 
    The config object properties include:
@@ -133,7 +133,7 @@
 */
 'use strict';
 self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
-  apiConfig = (sqlite3ApiBootstrap.defaultConfig || self.sqlite3ApiConfig)
+  apiConfig = (self.sqlite3ApiConfig || sqlite3ApiBootstrap.defaultConfig)
 ){
   if(sqlite3ApiBootstrap.sqlite3){ /* already initalized */
     console.warn("sqlite3ApiBootstrap() called multiple times.",
@@ -567,18 +567,22 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     ) ? !!capi.sqlite3_compileoption_used(optName) : false;
   }/*compileOptionUsed()*/;
 
-  capi.wasm.bindingSignatures = [
-    /**
-       Signatures for the WASM-exported C-side functions. Each entry
-       is an array with 2+ elements:
+  /**
+     Signatures for the WASM-exported C-side functions. Each entry
+     is an array with 2+ elements:
 
-       ["c-side name",
-        "result type" (capi.wasm.xWrap() syntax),
-         [arg types in xWrap() syntax]
-         // ^^^ this needn't strictly be an array: it can be subsequent
-         // elements instead: [x,y,z] is equivalent to x,y,z
-       ]
-    */
+     [ "c-side name",
+       "result type" (capi.wasm.xWrap() syntax),
+       [arg types in xWrap() syntax]
+       // ^^^ this needn't strictly be an array: it can be subsequent
+       // elements instead: [x,y,z] is equivalent to x,y,z
+     ]
+
+     Note that support for the API-specific data types in the
+     result/argument type strings gets plugged in at a later phase in
+     the API initialization process.
+  */
+  capi.wasm.bindingSignatures = [
     // Please keep these sorted by function name!
     ["sqlite3_bind_blob","int", "sqlite3_stmt*", "int", "*", "int", "*"],
     ["sqlite3_bind_double","int", "sqlite3_stmt*", "int", "f64"],
@@ -604,6 +608,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      "sqlite3*", "string", "int", "int", "*", "*", "*", "*", "*"],
     ["sqlite3_data_count", "int", "sqlite3_stmt*"],
     ["sqlite3_db_filename", "string", "sqlite3*", "string"],
+    ["sqlite3_db_handle", "sqlite3*", "sqlite3_stmt*"],
     ["sqlite3_db_name", "string", "sqlite3*", "int"],
     ["sqlite3_errmsg", "string", "sqlite3*"],
     ["sqlite3_error_offset", "int", "sqlite3*"],
@@ -614,6 +619,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     ["sqlite3_expanded_sql", "string", "sqlite3_stmt*"],
     ["sqlite3_extended_errcode", "int", "sqlite3*"],
     ["sqlite3_extended_result_codes", "int", "sqlite3*", "int"],
+    ["sqlite3_file_control", "int", "sqlite3*", "string", "int", "*"],
     ["sqlite3_finalize", "int", "sqlite3_stmt*"],
     ["sqlite3_initialize", undefined],
     ["sqlite3_interrupt", undefined, "sqlite3*"
@@ -740,19 +746,131 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
 
   /**
      Returns true if sqlite3.capi.sqlite3_web_persistent_dir() is a
-     non-empty string and the given name has that string as its
-     prefix, else returns false.
+     non-empty string and the given name starts with (that string +
+     '/'), else returns false.
+
+     Potential (but arguable) TODO: return true if the name is one of
+     (":localStorage:", "local", ":sessionStorage:", "session") and
+     kvvfs is available.
   */
   capi.sqlite3_web_filename_is_persistent = function(name){
     const p = capi.sqlite3_web_persistent_dir();
-    return (p && name) ? name.startsWith(p) : false;
+    return (p && name) ? name.startsWith(p+'/') : false;
   };
-  
+
   if(0===capi.wasm.exports.sqlite3_vfs_find(0)){
     /* Assume that sqlite3_initialize() has not yet been called.
        This will be the case in an SQLITE_OS_KV build. */
     capi.wasm.exports.sqlite3_initialize();
   }
+
+  if( self.window===self ){
+    /* Features specific to the main window thread... */
+
+    /**
+       Internal helper for sqlite3_web_kvvfs_clear() and friends.
+       Its argument should be one of ('local','session','').
+    */
+    const __kvvfsInfo = function(which){
+      const rc = Object.create(null);
+      rc.prefix = 'kvvfs-'+which;
+      rc.stores = [];
+      if('session'===which || ''===which) rc.stores.push(self.sessionStorage);
+      if('local'===which || ''===which) rc.stores.push(self.localStorage);
+      return rc;
+    };
+
+    /**
+       Clears all storage used by the kvvfs DB backend, deleting any
+       DB(s) stored there. Its argument must be either 'session',
+       'local', or ''. In the first two cases, only sessionStorage
+       resp. localStorage is cleared. If it's an empty string (the
+       default) then both are cleared. Only storage keys which match
+       the pattern used by kvvfs are cleared: any other client-side
+       data are retained.
+
+       This function is only available in the main window thread.
+
+       Returns the number of entries cleared.
+    */
+    capi.sqlite3_web_kvvfs_clear = function(which=''){
+      let rc = 0;
+      const kvinfo = __kvvfsInfo(which);
+      kvinfo.stores.forEach((s)=>{
+        const toRm = [] /* keys to remove */;
+        let i;
+        for( i = 0; i < s.length; ++i ){
+          const k = s.key(i);
+          if(k.startsWith(kvinfo.prefix)) toRm.push(k);
+        }
+        toRm.forEach((kk)=>s.removeItem(kk));
+        rc += toRm.length;
+      });
+      return rc;
+    };
+
+    /**
+       This routine guesses the approximate amount of
+       window.localStorage and/or window.sessionStorage in use by the
+       kvvfs database backend.  Its argument must be one of
+       ('session', 'local', ''). In the first two cases, only
+       sessionStorage resp. localStorage is counted. If it's an empty
+       string (the default) then both are counted. Only storage keys
+       which match the pattern used by kvvfs are counted. The returned
+       value is the "length" value of every matching key and value,
+       noting that the kvvf uses only ASCII keys and values.
+
+       Note that the returned size is not authoritative from the
+       perspective of how much data can fit into localStorage and
+       sessionStorage, as the precise algorithms for determining
+       those limits are unspecified and may include per-entry
+       overhead invisible to clients.
+    */
+    capi.sqlite3_web_kvvfs_size = function(which=''){
+      let sz = 0;
+      const kvinfo = __kvvfsInfo(which);
+      kvinfo.stores.forEach((s)=>{
+        let i;
+        for(i = 0; i < s.length; ++i){
+          const k = s.key(i);
+          if(k.startsWith(kvinfo.prefix)){
+            sz += k.length;
+            sz += s.getItem(k).length;
+          }
+        }
+      });
+      return sz;
+    };
+
+    /**
+       Given an `sqlite3*`, returns a truthy value (see below) if that
+       db handle uses the "kvvfs" VFS, else returns false. If pDb is
+       NULL then this function returns true if the default VFS is
+       "kvvfs". Results are undefined if pDb is truthy but refers to
+       an invalid pointer.
+
+       The truthy value it returns is a pointer to the kvvfs
+       `sqlite3_vfs` object.
+    */
+    capi.sqlite3_web_db_is_kvvfs = function(pDb){
+      const pK = capi.sqlite3_vfs_find("kvvfs");
+      if(!pK) return false;
+      else if(!pDb){
+        return capi.sqlite3_vfs_find(0) && pK;
+      }
+      const scope = capi.wasm.scopedAllocPush();
+      try{
+        const ppVfs = capi.wasm.scopedAllocPtr();
+        return (
+          (0===capi.sqlite3_file_control(
+            pDb, "main", capi.SQLITE_FCNTL_VFS_POINTER, ppVfs
+          )) && (capi.wasm.getPtrValue(ppVfs) === pK)
+        ) ? pK : false;
+      }finally{
+        capi.wasm.scopedAllocPop(scope);
+      }
+    };
+  }/* main-window-only bits */
 
   /* The remainder of the API will be set up in later steps. */
   const sqlite3 = {
@@ -790,6 +908,11 @@ self.sqlite3ApiBootstrap.initializers = [];
    global-scope symbol.
 */
 self.sqlite3ApiBootstrap.defaultConfig = Object.create(null);
-/** Placeholder: gets installed by the first call to
-    self.sqlite3ApiBootstrap(). */
+/**
+   Placeholder: gets installed by the first call to
+   self.sqlite3ApiBootstrap(). However, it is recommended that the
+   caller of sqlite3ApiBootstrap() capture its return value and delete
+   self.sqlite3ApiBootstrap after calling it. It returns the same
+   value which will be stored here.
+*/
 self.sqlite3ApiBootstrap.sqlite3 = undefined;

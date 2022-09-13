@@ -48,35 +48,35 @@
           wasm = capi.wasm;
     log("Loaded module:",capi.sqlite3_libversion(), capi.sqlite3_sourceid());
     T.assert( 0 !== capi.sqlite3_vfs_find(null) );
-    if(!oo.DB.clearKvvfsStorage){
+    if(!capi.sqlite3_vfs_find('kvvfs')){
       warn("This build is not kvvfs-capable.");
       return;
     }
     
-    const dbStorage = 1 ? ':sessionStorage:' : ':localStorage:';
-    const theStore = 's'===dbStorage[1] ? sessionStorage : localStorage;
+    const dbStorage = 1 ? 'session' : 'local';
+    const theStore = 's'===dbStorage[0] ? sessionStorage : localStorage;
     /**
        The names ':sessionStorage:' and ':localStorage:' are handled
        via the DB class constructor, not the C level. In the C API,
        the names "local" and "session" are the current (2022-09-12)
        names for those keys, but that is subject to change.
     */
-    const db = new oo.DB( dbStorage );
+    const db = new oo.DB( dbStorage, 'c', 'kvvfs' );
 
     document.querySelector('#btn-clear-storage').addEventListener('click',function(){
-      oo.DB.clearKvvfsStorage();
-      log("kvvfs localStorage and sessionStorage cleared.");
+      const sz = capi.sqlite3_web_kvvfs_clear();
+      log("kvvfs localStorage and sessionStorage cleared:",sz,"entries.");
     });
     document.querySelector('#btn-clear-log').addEventListener('click',function(){
       eOutput.innerText = '';
     });
     document.querySelector('#btn-init-db').addEventListener('click',function(){
-      const saveSql = [];
       try{
+        const saveSql = [];
         db.exec({
-          sql:["drop table if exists t;",
-               "create table if not exists t(a);",
-               "insert into t(a) values(?),(?),(?)"],
+          sql: ["drop table if exists t;",
+                "create table if not exists t(a);",
+                "insert into t(a) values(?),(?),(?)"],
           bind: [performance.now() >> 0,
                  (performance.now() * 2) >> 0,
                  (performance.now() / 2) >> 0],
@@ -100,6 +100,10 @@
       }catch(e){
         error(e.message);
       }
+    });
+    document.querySelector('#btn-storage-size').addEventListener('click',function(){
+      log("sqlite3_web_kvvfs_size(",dbStorage,") says", capi.sqlite3_web_kvvfs_size(dbStorage),
+         "bytes");
     });
     log("Storage backend:",db.filename /* note that the name was internally translated */);
     if(0===db.selectValue('select count(*) from sqlite_master')){

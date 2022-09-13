@@ -55,6 +55,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     */
     const aPtr = wasm.xWrap.argAdapter('*');
     wasm.xWrap.argAdapter('sqlite3*', aPtr)('sqlite3_stmt*', aPtr);
+    wasm.xWrap.resultAdapter('sqlite3*', aPtr)('sqlite3_stmt*', aPtr);
 
     /**
        Populate api object with sqlite3_...() by binding the "raw" wasm
@@ -174,7 +175,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     wasm.ctype = JSON.parse(wasm.cstringToJs(cJson));
     //console.debug('wasm.ctype length =',wasm.cstrlen(cJson));
     for(const t of ['access', 'blobFinalizers', 'dataTypes',
-                    'encodings', 'flock', 'ioCap',
+                    'encodings', 'fcntl', 'flock', 'ioCap',
                     'openFlags', 'prepareFlags', 'resultCodes',
                     'syncFlags', 'udfFlags', 'version'
                    ]){
