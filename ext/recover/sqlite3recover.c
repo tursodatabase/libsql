@@ -495,9 +495,9 @@ static void recoverReadI32(
   assert( argc==2 );
   nBlob = sqlite3_value_bytes(argv[0]);
   pBlob = (const unsigned char*)sqlite3_value_blob(argv[0]);
-  iInt = sqlite3_value_int(argv[1]);
+  iInt = sqlite3_value_int(argv[1]) & 0xFFFF;
 
-  if( iInt>=0 && (iInt+1)*4<=nBlob ){
+  if( (iInt+1)*4<=nBlob ){
     const unsigned char *a = &pBlob[iInt*4];
     i64 iVal = ((i64)a[0]<<24)
              + ((i64)a[1]<<16)
@@ -770,7 +770,11 @@ static int recoverOpenOutput(sqlite3_recover *p){
       if( pBackup ){
         while( sqlite3_backup_step(pBackup, 1000)==SQLITE_OK );
         p->errCode = sqlite3_backup_finish(pBackup);
+      }else{
+        recoverDbError(p, db);
       }
+    }else{
+      recoverDbError(p, db2);
     }
     sqlite3_close(db2);
   }
@@ -1791,7 +1795,7 @@ int sqlite3_recover_config(sqlite3_recover *p, int op, void *pArg){
       p->zStateDb = recoverMPrintf(p, "%s", (char*)pArg);
       break;
 
-    case SQLITE_RECOVER_LOST_AND_FOUND:
+    case SQLITE_RECOVER_LOST_AND_FOUND: {
       const char *zArg = (const char*)pArg;
       sqlite3_free(p->zLostAndFound);
       if( zArg ){
@@ -1800,6 +1804,7 @@ int sqlite3_recover_config(sqlite3_recover *p, int op, void *pArg){
         p->zLostAndFound = 0;
       }
       break;
+    }
 
     case SQLITE_RECOVER_FREELIST_CORRUPT:
       p->bFreelistCorrupt = *(int*)pArg;
