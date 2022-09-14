@@ -30,6 +30,7 @@ do_execsql_test 1.0 {
   ANALYZE;
   PRAGMA writable_schema = 1;
   UPDATE sqlite_schema SET sql = 'CREATE INDEX i1 ON o(world)' WHERE name='i1'; 
+  DELETE FROM sqlite_schema WHERE name='sqlite_stat4';
 }
 
 do_test 1.1 {
@@ -45,7 +46,6 @@ do_execsql_test -db db2 1.2 {
   {CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c)}
   {CREATE TABLE t2(a PRIMARY KEY, b, c) WITHOUT ROWID} 
   {CREATE TABLE sqlite_stat1(tbl,idx,stat)} 
-  {CREATE TABLE sqlite_stat4(tbl,idx,neq,nlt,ndlt,sample)}
 }
 db2 close
 
@@ -66,7 +66,6 @@ do_execsql_test -db db2 1.5 {
 } {
   {CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c)}
   {CREATE TABLE sqlite_stat1(tbl,idx,stat)} 
-  {CREATE TABLE sqlite_stat4(tbl,idx,neq,nlt,ndlt,sample)}
 }
 db2 close
 
