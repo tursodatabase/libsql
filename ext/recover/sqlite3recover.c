@@ -768,7 +768,7 @@ static int recoverOpenOutput(sqlite3_recover *p){
     if( rc==SQLITE_OK ){
       sqlite3_backup *pBackup = sqlite3_backup_init(db, "main", db2, "main");
       if( pBackup ){
-        while( sqlite3_backup_step(pBackup, 1000)==SQLITE_OK );
+        sqlite3_backup_step(pBackup, -1);
         p->errCode = sqlite3_backup_finish(pBackup);
       }else{
         recoverDbError(p, db);
@@ -1042,10 +1042,10 @@ static int recoverWriteSchema2(sqlite3_recover *p){
       i64 iRoot = sqlite3_column_int64(pSelect, 0);
       const char *zSql = (const char*)sqlite3_column_text(pSelect, 1);
       int rc = sqlite3_exec(p->dbOut, zSql, 0, 0, 0);
-      if( rc!=SQLITE_OK && rc!=SQLITE_ERROR ){
-        recoverDbError(p, p->dbOut);
-      }else if( rc==SQLITE_OK ){
+      if( rc==SQLITE_OK ){
         recoverSqlCallback(p, zSql);
+      }else if( rc!=SQLITE_ERROR ){
+        recoverDbError(p, p->dbOut);
       }
     }
   }
@@ -1316,9 +1316,7 @@ static void recoverLostAndFoundPopulate(
     int iCell = sqlite3_column_int64(pStmt, 2);
     int iField = sqlite3_column_int64(pStmt, 3);
 
-    if( iPrevRoot>0 && (
-      iPrevRoot!=iRoot || iPrevPage!=iPage || iPrevCell!=iCell
-    )){
+    if( iPrevRoot>0 && (iPrevPage!=iPage || iPrevCell!=iCell) ){
       /* Insert the new row */
       sqlite3_bind_int64(pInsert, 1, iPrevRoot);  /* rootpgno */
       sqlite3_bind_int64(pInsert, 2, iPrevPage);  /* pgno */
@@ -1329,7 +1327,7 @@ static void recoverLostAndFoundPopulate(
       for(ii=0; ii<nVal; ii++){
         recoverBindValue(p, pInsert, 5+ii, apVal[ii]);
       }
-      if( sqlite3_step(pInsert)==SQLITE_ROW && p->xSql ){
+      if( sqlite3_step(pInsert)==SQLITE_ROW ){
         recoverSqlCallback(p, sqlite3_column_text(pInsert, 0));
       }
       recoverReset(p, pInsert);
@@ -1586,7 +1584,7 @@ static int recoverWriteData(sqlite3_recover *p){
                   sqlite3_bind_int64(pInsert, pTab->iRowidBind, iRowid);
                 }
 
-                if( SQLITE_ROW==sqlite3_step(pInsert) && p->xSql ){
+                if( SQLITE_ROW==sqlite3_step(pInsert) ){
                   const char *z = (const char*)sqlite3_column_text(pInsert, 0);
                   recoverSqlCallback(p, z);
                 }

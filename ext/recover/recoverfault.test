@@ -72,6 +72,7 @@ do_execsql_test 2.0 {
   PRAGMA writable_schema = 1;
   DELETE FROM sqlite_schema WHERE name='t2';
 }
+faultsim_save_and_close
 
 do_faultsim_test 2 -faults oom* -prep {
   faultsim_restore_and_reopen

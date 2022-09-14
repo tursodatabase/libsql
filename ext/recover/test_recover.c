@@ -84,7 +84,7 @@ static int testRecoverCmd(
     int nArg;
     const char *zMsg;
   } aSub[] = {
-    { "config",    2, "REBASE-BLOB" }, /* 0 */
+    { "config",    2, "ARG"         }, /* 0 */
     { "run",      0, ""             }, /* 1 */
     { "errmsg",    0, ""            }, /* 2 */
     { "errcode",   0, ""            }, /* 3 */
@@ -115,6 +115,7 @@ static int testRecoverCmd(
         "lostandfound",    /* 1 */
         "freelistcorrupt", /* 2 */
         "rowids",          /* 3 */
+        "invalid",         /* 4 */
         0
       };
       int iOp = 0;
@@ -128,11 +129,13 @@ static int testRecoverCmd(
               789, (void*)Tcl_GetString(objv[3]) /* MAGIC NUMBER! */
           );
           break;
-        case 1:
+        case 1: {
+          const char *zStr = Tcl_GetString(objv[3]);
           res = sqlite3_recover_config(pTest->p, 
-              SQLITE_RECOVER_LOST_AND_FOUND, (void*)Tcl_GetString(objv[3])
+              SQLITE_RECOVER_LOST_AND_FOUND, (void*)(zStr[0] ? zStr : 0)
           );
           break;
+        }
         case 2: {
           int iVal = 0;
           if( Tcl_GetBooleanFromObj(interp, objv[3], &iVal) ) return TCL_ERROR;
@@ -147,6 +150,10 @@ static int testRecoverCmd(
           res = sqlite3_recover_config(pTest->p, 
               SQLITE_RECOVER_ROWIDS, (void*)&iVal
           );
+          break;
+        }
+        case 4: {
+          res = sqlite3_recover_config(pTest->p, 12345, 0);
           break;
         }
       }
@@ -210,6 +217,7 @@ static int test_sqlite3_recover_init(
   }
   if( getDbPointer(interp, objv[1], &db) ) return TCL_ERROR;
   zDb = Tcl_GetString(objv[2]);
+  if( zDb[0]=='\0' ) zDb = 0;
 
   pNew = ckalloc(sizeof(TestRecover));
   if( bSql==0 ){

@@ -195,7 +195,19 @@ do_execsql_test 11.1 {
 
 do_recover_test 11 
 
+do_test 12.1 {
+  set R [sqlite3_recover_init db "" test.db2]
+  $R config lostandfound ""
+  $R config invalid xyz
+} {12}
+do_test 12.2 {
+  $R run
+  $R run
+} {21}
 
+do_test 12.3 {
+  $R finish
+} {}
 
 finish_test
 
