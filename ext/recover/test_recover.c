@@ -229,6 +229,40 @@ static int test_sqlite3_recover_init(
   return TCL_OK;
 }
 
+/*
+** Declaration for public API function in file dbdata.c. This may be called
+** with NULL as the final two arguments to register the sqlite_dbptr and
+** sqlite_dbdata virtual tables with a database handle.
+*/
+#ifdef _WIN32
+__declspec(dllexport)
+#endif
+int sqlite3_dbdata_init(sqlite3*, char**, const sqlite3_api_routines*);
+
+/*
+** sqlite3_recover_init DB DBNAME URI
+*/
+static int test_sqlite3_dbdata_init(
+  void *clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3 *db = 0;
+
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB");
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, objv[1], &db) ) return TCL_ERROR;
+  sqlite3_dbdata_init(db, 0, 0);
+
+  Tcl_ResetResult(interp);
+  return TCL_OK;
+}
+
+
+
 int TestRecover_Init(Tcl_Interp *interp){
   struct Cmd {
     const char *zCmd;
@@ -237,6 +271,7 @@ int TestRecover_Init(Tcl_Interp *interp){
   } aCmd[] = {
     { "sqlite3_recover_init", test_sqlite3_recover_init, 0 },
     { "sqlite3_recover_init_sql", test_sqlite3_recover_init, (void*)1 },
+    { "sqlite3_dbdata_init", test_sqlite3_dbdata_init, (void*)1 },
   };
   int i;
 

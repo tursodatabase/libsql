@@ -192,6 +192,7 @@ do_execsql_test 11.1 {
   INSERT INTO u1 VALUES('edvin marton', 'bond');
   INSERT INTO u1 VALUES(1, 4.0);
 }
+
 do_recover_test 11 
 
 

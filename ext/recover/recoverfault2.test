@@ -78,7 +78,6 @@ ifcapable utf16 {
   faultsim_save_and_close
   
   proc my_sql_hook {sql} {
-  puts "HOOK $sql"
     lappend ::lSql $sql
     return 0
   }

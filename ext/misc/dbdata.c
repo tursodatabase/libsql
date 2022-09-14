@@ -75,6 +75,7 @@
 #include "sqlite3ext.h"
 
 typedef unsigned char u8;
+typedef unsigned int u32;
 
 #endif
 SQLITE_EXTENSION_INIT1
@@ -107,6 +108,7 @@ struct DbdataCursor {
   int iField;                     /* Current field number */
   u8 *pHdrPtr;
   u8 *pPtr;
+  u32 enc;                        /* Text encoding */
   
   sqlite3_int64 iIntkey;          /* Integer key value */
 };
@@ -299,14 +301,14 @@ static int dbdataClose(sqlite3_vtab_cursor *pCursor){
 /* 
 ** Utility methods to decode 16 and 32-bit big-endian unsigned integers. 
 */
-static unsigned int get_uint16(unsigned char *a){
+static u32 get_uint16(unsigned char *a){
   return (a[0]<<8)|a[1];
 }
-static unsigned int get_uint32(unsigned char *a){
-  return ((unsigned int)a[0]<<24)
-       | ((unsigned int)a[1]<<16)
-       | ((unsigned int)a[2]<<8)
-       | ((unsigned int)a[3]);
+static u32 get_uint32(unsigned char *a){
+  return ((u32)a[0]<<24)
+       | ((u32)a[1]<<16)
+       | ((u32)a[2]<<8)
+       | ((u32)a[3]);
 }
 
 /*
@@ -321,7 +323,7 @@ static unsigned int get_uint32(unsigned char *a){
 */
 static int dbdataLoadPage(
   DbdataCursor *pCsr,             /* Cursor object */
-  unsigned int pgno,              /* Page number of page to load */
+  u32 pgno,                       /* Page number of page to load */
   u8 **ppPage,                    /* OUT: pointer to page buffer */
   int *pnPage                     /* OUT: Size of (*ppPage) in bytes */
 ){
@@ -405,6 +407,7 @@ static int dbdataValueBytes(int eType){
 */
 static void dbdataValue(
   sqlite3_context *pCtx, 
+  u32 enc,
   int eType, 
   u8 *pData,
   int nData
@@ -449,7 +452,17 @@ static void dbdataValue(
       default: {
         int n = ((eType-12) / 2);
         if( eType % 2 ){
-          sqlite3_result_text(pCtx, (const char*)pData, n, SQLITE_TRANSIENT);
+          switch( enc ){
+            case SQLITE_UTF16BE:
+              sqlite3_result_text16be(pCtx, (void*)pData, n, SQLITE_TRANSIENT);
+              break;
+            case SQLITE_UTF16LE:
+              sqlite3_result_text16le(pCtx, (void*)pData, n, SQLITE_TRANSIENT);
+              break;
+            default:
+              sqlite3_result_text(pCtx, (char*)pData, n, SQLITE_TRANSIENT);
+              break;
+          }
         }else{
           sqlite3_result_blob(pCtx, pData, n, SQLITE_TRANSIENT);
         }
@@ -588,7 +601,7 @@ static int dbdataNext(sqlite3_vtab_cursor *pCursor){
             /* Load content from overflow pages */
             if( nPayload>nLocal ){
               sqlite3_int64 nRem = nPayload - nLocal;
-              unsigned int pgnoOvfl = get_uint32(&pCsr->aPage[iOff]);
+              u32 pgnoOvfl = get_uint32(&pCsr->aPage[iOff]);
               while( nRem>0 ){
                 u8 *aOvfl = 0;
                 int nOvfl = 0;
@@ -703,6 +716,25 @@ static int dbdataDbsize(DbdataCursor *pCsr, const char *zSchema){
   return rc;
 }
 
+/*
+** Attempt to figure out the encoding of the database by retrieving page 1
+** and inspecting the header field. If successful, set the pCsr->enc variable
+** and return SQLITE_OK. Otherwise, return an SQLite error code.
+*/
+static int dbdataGetEncoding(DbdataCursor *pCsr){
+  int rc = SQLITE_OK;
+  int nPg1 = 0;
+  u8 *aPg1 = 0;
+  rc = dbdataLoadPage(pCsr, 1, &aPg1, &nPg1);
+  assert( rc!=SQLITE_OK || nPg1==0 || nPg1>=512 );
+  if( rc==SQLITE_OK && nPg1>0 ){
+    pCsr->enc = get_uint32(&aPg1[56]);
+  }
+  sqlite3_free(aPg1);
+  return rc;
+}
+
+
 /* 
 ** xFilter method for sqlite_dbdata and sqlite_dbptr.
 */
@@ -725,7 +757,6 @@ static int dbdataFilter(
     pCsr->iPgno = sqlite3_value_int(argv[(idxNum & 0x01)]);
     pCsr->bOnePage = 1;
   }else{
-    pCsr->nPage = dbdataDbsize(pCsr, zSchema);
     rc = dbdataDbsize(pCsr, zSchema);
   }
 
@@ -754,6 +785,13 @@ static int dbdataFilter(
   }else{
     pTab->base.zErrMsg = sqlite3_mprintf("%s", sqlite3_errmsg(pTab->db));
   }
+
+  /* Try to determine the encoding of the db by inspecting the header
+  ** field on page 1. */
+  if( rc==SQLITE_OK ){
+    rc = dbdataGetEncoding(pCsr);
+  }
+
   if( rc==SQLITE_OK ){
     rc = dbdataNext(pCursor);
   }
@@ -808,7 +846,8 @@ static int dbdataColumn(
           sqlite3_int64 iType;
           dbdataGetVarint(pCsr->pHdrPtr, &iType);
           dbdataValue(
-              ctx, iType, pCsr->pPtr, &pCsr->pRec[pCsr->nRec] - pCsr->pPtr
+              ctx, pCsr->enc, iType, pCsr->pPtr, 
+              &pCsr->pRec[pCsr->nRec] - pCsr->pPtr
           );
         }
         break;
