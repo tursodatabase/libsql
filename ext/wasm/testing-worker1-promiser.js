@@ -150,7 +150,6 @@
     await wtest('exec',{
       sql:'select 1 union all select 3',
       resultRows: [],
-      //rowMode: 'array', // array is the default in the Worker interface
     }, function(ev){
       ev = ev.result;
       T.assert(2 === ev.resultRows.length)

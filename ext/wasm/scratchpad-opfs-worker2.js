@@ -18,7 +18,7 @@
 'use strict';
 (function(){
   const toss = function(...args){throw new Error(args.join(' '))};
-  importScripts('sqlite3.js');
+  importScripts('sqlite3-wasmfs.js');
 
   /**
      Posts a message in the form {type,data} unless passed more than 2

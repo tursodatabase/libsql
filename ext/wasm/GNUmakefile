@@ -199,22 +199,13 @@ emcc.jsflags += -sEXPORTED_RUNTIME_METHODS=FS,wasmMemory,allocateUTF8OnStack
 emcc.jsflags += -sUSE_CLOSURE_COMPILER=0
 emcc.jsflags += -sIMPORTED_MEMORY
 emcc.environment := -sENVIRONMENT=web
-ENABLE_WASMFS ?= 0
-ifneq (0,$(ENABLE_WASMFS))
-  emcc.cflags += -pthread
-  emcc.jsflags += -pthread -sWASMFS -sPTHREAD_POOL_SIZE=2
-  emcc.cflags += '-DSQLITE_DEFAULT_UNIX_VFS="unix-none"'
-  emcc.environment := $(emcc.environment),worker
-  emcc.jsflags += -sINITIAL_MEMORY=128450560
-else
-  emcc.jsflags += -sALLOW_MEMORY_GROWTH
-  # emcc: warning: USE_PTHREADS + ALLOW_MEMORY_GROWTH may run non-wasm code
-  #       slowly, see https://github.com/WebAssembly/design/issues/1271
-  #       [-Wpthreads-mem-growth]
-  emcc.jsflags += -sINITIAL_MEMORY=13107200
-  #emcc.jsflags += -sINITIAL_MEMORY=64225280
-  # ^^^^ 64MB is not enough for WASMFS/OPFS test runs using batch-runner.js
-endif
+emcc.jsflags += -sALLOW_MEMORY_GROWTH
+# emcc: warning: USE_PTHREADS + ALLOW_MEMORY_GROWTH may run non-wasm code
+#       slowly, see https://github.com/WebAssembly/design/issues/1271
+#       [-Wpthreads-mem-growth]
+emcc.jsflags += -sINITIAL_MEMORY=13107200
+#emcc.jsflags += -sINITIAL_MEMORY=64225280
+# ^^^^ 64MB is not enough for WASMFS/OPFS test runs using batch-runner.js
 emcc.jsflags += $(emcc.environment)
 #emcc.jsflags += -sTOTAL_STACK=4194304
 emcc.jsflags += -sEXPORT_NAME=sqlite3InitModule
@@ -274,7 +265,6 @@ sqlite3.wasm := sqlite3.wasm
 sqlite3-wasm.o := $(dir.api)/sqlite3-wasm.o
 $(sqlite3-wasm.o): emcc.cflags += $(SQLITE_OPT)
 $(sqlite3-wasm.o): $(dir.top)/sqlite3.c
-$(dir.api)/wasm_util.o: emcc.cflags += $(SQLITE_OPT)
 sqlite3-wasm.c := $(dir.api)/sqlite3-wasm.c
 jaccwabyt_test.c := $(dir.jacc)/jaccwabyt_test.c
 # ^^^ FIXME (how?): jaccwabyt_test.c is only needed for the test apps,
@@ -282,9 +272,6 @@ jaccwabyt_test.c := $(dir.jacc)/jaccwabyt_test.c
 # want to test the release builds with those apps, so we cannot simply
 # elide that file in release builds. That component is critical to the
 # VFS bindings so needs to be tested along with the core APIs.
-ifneq (,$(filter -sWASMFS,$(emcc.jsflags)))
-  $(sqlite3-wasm.o): emcc.cflags+=-DSQLITE_WASM_OPFS
-endif
 define WASM_C_COMPILE
 $(1).o := $$(subst .c,.o,$(1))
 sqlite3.wasm.obj += $$($(1).o)
@@ -293,10 +280,10 @@ $$($(1).o): $$(MAKEFILE) $(1)
 CLEAN_FILES += $$($(1).o)
 endef
 $(foreach c,$(sqlite3-wasm.c) $(jaccwabyt_test.c),$(eval $(call WASM_C_COMPILE,$(c))))
-$(sqlite3.js): 
 $(sqlite3.js): $(MAKEFILE) $(sqlite3.wasm.obj) \
     EXPORTED_FUNCTIONS.api \
     $(post-js.js)
+	@echo "Building $@ ..."
 	$(emcc.bin) -o $(sqlite3.js) $(emcc_opt) $(emcc.flags) $(emcc.jsflags) $(sqlite3.wasm.obj)
 	chmod -x $(sqlite3.wasm)
 ifneq (,$(wasm-strip))
@@ -335,10 +322,6 @@ all: batch
 ########################################################################
 # speedtest1.js...
 emcc.speedtest1-flags := -g $(emcc_opt)
-ifneq (0,$(ENABLE_WASMFS))
-  emcc.speedtest1-flags += -pthread -sWASMFS -sPTHREAD_POOL_SIZE=2
-  emcc.speedtest1-flags += -DSQLITE_WASM_OPFS
-endif
 emcc.speedtest1-flags += -sINVOKE_RUN=0
 #emcc.speedtest1-flags += --no-entry
 emcc.speedtest1-flags += -flto
@@ -365,6 +348,7 @@ $(speedtest1.js): emcc.cflags+=
 # close enough to the target speed requirements that the 500ms makes a
 # difference.
 $(speedtest1.js): $(speedtest1.c) $(sqlite3-wasm.c) $(MAKEFILE) $(sqlite3.c)
+	@echo "Building $@ ..."
 	$(emcc.bin) \
         $(emcc.speedtest1-flags) $(speedtest1.cflags) \
         $(SQLITE_OPT) \
@@ -405,3 +389,4 @@ push-fiddle: $(fiddle_files)
 ########################################################################
 
 include kvvfs.make
+include wasmfs.make
