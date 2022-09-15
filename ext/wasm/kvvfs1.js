@@ -105,7 +105,7 @@
       log("sqlite3_web_kvvfs_size(",dbStorage,") says", capi.sqlite3_web_kvvfs_size(dbStorage),
          "bytes");
     });
-    log("Storage backend:",db.filename /* note that the name was internally translated */);
+    log("Storage backend:",db.filename);
     if(0===db.selectValue('select count(*) from sqlite_master')){
       log("DB is empty. Use the init button to populate it.");
     }else{

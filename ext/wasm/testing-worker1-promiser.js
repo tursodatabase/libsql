@@ -145,10 +145,6 @@
       mustNotReach
     ).catch((e)=>{
       warn("Intentional error:",e);
-      // Why does the browser report console.error "Uncaught (in
-      // promise)" when we catch(), and does so _twice_ if we don't
-      // catch()? According to all docs, that error must be supressed
-      // if we explicitly catch().
     });
 
     await wtest('exec',{

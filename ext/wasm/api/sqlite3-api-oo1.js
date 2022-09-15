@@ -505,20 +505,19 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
        - `.callback` = a function which gets called for each row of
        the result set, but only if that statement has any result
-       _rows_. The callback's "this" is the options object. The second
-       argument passed to the callback is always the current Stmt
-       object (so that the caller may collect column names, or
-       similar). The 2nd argument to the callback is always the Stmt
-       instance, as it's needed if the caller wants to fetch the
-       column names or some such (noting that they could also be
-       fetched via `this.columnNames`, if the client provides the
-       `columnNames` option).
+       _rows_. The callback's "this" is the options object, noting
+       that this function synthesizes one if the caller does not pass
+       one to exec(). The second argument passed to the callback is
+       always the current Stmt object, as it's needed if the caller
+       wants to fetch the column names or some such (noting that they
+       could also be fetched via `this.columnNames`, if the client
+       provides the `columnNames` option).
 
        ACHTUNG: The callback MUST NOT modify the Stmt object. Calling
        any of the Stmt.get() variants, Stmt.getColumnName(), or
        similar, is legal, but calling step() or finalize() is
-       not. Routines which are illegal in this context will trigger an
-       exception.
+       not. Member methods which are illegal in this context will
+       trigger an exception.
 
        The first argument passed to the callback defaults to an array of
        values from the current result row but may be changed with ...
