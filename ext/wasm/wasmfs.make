@@ -4,15 +4,6 @@
 # This is a sub-make for building a standalone wasmfs-based
 # sqlite3.wasm.  It is intended to be "include"d from the main
 # GNUMakefile.
-#
-# Notable potential TODOs:
-#
-# - Trim down a custom sqlite3-api.js for this build. We can elimate
-#   the jaccwabyt dependency, for example, because this build won't
-#   make use of the VFS bits. Similarly, we can eliminate or replace
-#   parts of the OO1 API, or provide a related API which manages
-#   singletons of the localStorage/sessionStorage instances.
-#
 ########################################################################
 MAKEFILE.wasmfs := $(lastword $(MAKEFILE_LIST))
 

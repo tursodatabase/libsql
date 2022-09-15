@@ -18,7 +18,7 @@
 'use strict';
 (function(){
   const toss = function(...args){throw new Error(args.join(' '))};
-  importScripts('sqlite3-wasmfs.js');
+  importScripts('sqlite3.js');
 
   /**
      Posts a message in the form {type,data} unless passed more than 2
@@ -37,7 +37,7 @@
   const stderr = console.error.bind(console);//function(...args){wMsg('stderr', args);};
 
   const test1 = function(db){
-    db.execMulti("create table if not exists t(a);")
+    db.exec("create table if not exists t(a);")
       .transaction(function(db){
         db.prepare("insert into t(a) values(?)")
           .bind(new Date().getTime())

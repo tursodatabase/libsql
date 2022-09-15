@@ -1,5 +1,5 @@
-C Split\swasmfs-enabled\sbuild\sof\ssqlite3.js/wasm\sinto\ssqlite3-wasmfs.js/wasm,\sas\senabling\swasmfs\sbreaks\sall\stests/demos\swhich\srun\sfrom\sa\sWorker\sthread.
-D 2022-09-15T03:09:00.109
+C Remove\ssome\sstale\scomments.\sGet\sscratchpad-opfs-worker2.js\srunning\sagain\sin\sprep\sfor\sreuse\sin\sexperimenting\swith\sthe\sOPFS\sall-synchronous\sAPI.
+D 2022-09-15T03:16:49.402
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -501,7 +501,7 @@ F ext/wasm/fiddle/emscripten.css 3d253a6fdb8983a2ac983855bfbdd4b6fa1ff267c28d695
 F ext/wasm/fiddle/fiddle-worker.js bccf46045be8824752876f3eec01c223be0616ccac184bffd0024cfe7a3262b8
 F ext/wasm/fiddle/fiddle.html 550c5aafce40bd218de9bf26192749f69f9b10bc379423ecd2e162bcef885c08
 F ext/wasm/fiddle/fiddle.js 4ffcfc9a235beebaddec689a549e9e0dfad6dca5c1f0b41f03468d7e76480686
-F ext/wasm/index.html 97968cdfa957c9ede7c81df55c9a2276b1a9784dc41a9802d3d94ad9c30ba2ed
+F ext/wasm/index.html 7e38070c8c64738eb3893be19e1291d66629fc424f1a70e12c4b459d51dbeffe
 F ext/wasm/jaccwabyt/jaccwabyt.js 0d7f32817456a0f3937fcfd934afeb32154ca33580ab264dab6c285e6dbbd215
 F ext/wasm/jaccwabyt/jaccwabyt.md 447cc02b598f7792edaa8ae6853a7847b8178a18ed356afacbdbf312b2588106
 F ext/wasm/jaccwabyt/jaccwabyt_test.c 39e4b865a33548f943e2eb9dd0dc8d619a80de05d5300668e9960fff30d0d36f
@@ -509,11 +509,11 @@ F ext/wasm/jaccwabyt/jaccwabyt_test.exports 5ff001ef975c426ffe88d7d8a6e96ec725e5
 F ext/wasm/kvvfs.make 99d61a438232d03f7a39fff05a5738d00d5af629e54b3f03caf87f041c194d51
 F ext/wasm/kvvfs1.html 13bb24190bfb276a57b228499519badcc1bf39ed07e4b37bc2a425ce6418fed1
 F ext/wasm/kvvfs1.js ec1c1d071bb055711f9151df05616111432cf3e6bf7ac7f8dcbcfb56c9d9ed48
-F ext/wasm/scratchpad-opfs-worker.html 66c1d15d678f3bd306373d76b61c6c8aef988f61f4a8dd40185d452f9c6d2bf5
+F ext/wasm/scratchpad-opfs-worker.html 5fdda167571264300f388847d34f00b77dd48984a8dba2ee9c099c3ffa05db66
 F ext/wasm/scratchpad-opfs-worker.js 3ec2868c669713145c76eb5877c64a1b20741f741817b87c907a154b676283a9
-F ext/wasm/scratchpad-opfs-worker2.js 779500d97140812509c04ba182de5bf76727052bdcbc09b3cedfb71a8574e07b
-F ext/wasm/scratchpad-wasmfs-main.html 20cf6f1a8f368e70d01e8c17200e3eaa90f1c8e1029186d836d14b83845fbe06 w ext/wasm/scratchpad-opfs-main.html
-F ext/wasm/scratchpad-wasmfs-main.js 69e960e9161f6412fd0c30f355d4112f1894d6609eb431e2d16d207d1380518e w ext/wasm/scratchpad-opfs-main.js
+F ext/wasm/scratchpad-opfs-worker2.js 8cd4961e1c96fbaad9743a34cd17d0d27b9286b845e77242d444a4c78fe2a810
+F ext/wasm/scratchpad-wasmfs-main.html 20cf6f1a8f368e70d01e8c17200e3eaa90f1c8e1029186d836d14b83845fbe06
+F ext/wasm/scratchpad-wasmfs-main.js 69e960e9161f6412fd0c30f355d4112f1894d6609eb431e2d16d207d1380518e
 F ext/wasm/speedtest1-kvvfs.html fe7d314343b275f8b241af83267ca56274ea995535c6abca4d6e568a98fa31e3
 F ext/wasm/speedtest1-worker.html 6b5fda04d0b69e8c2651689356cb0c28fd33aa1a82b03dcbc8b0d68fbd7ed57f
 F ext/wasm/speedtest1-worker.js 356b9953add4449acf199793db9b76b11ee016021918d8daffd19f08ec68d305
@@ -529,7 +529,7 @@ F ext/wasm/testing1.html 50575755e43232dbe4c2f97c9086b3118eb91ec2ee1fae931e6d766
 F ext/wasm/testing1.js 7cd8ab255c238b030d928755ae8e91e7d90a12f2ae601b1b8f7827aaa4fb258e
 F ext/wasm/testing2.html a66951c38137ff1d687df79466351f3c734fa9c6d9cce71d3cf97c291b2167e3
 F ext/wasm/testing2.js 25584bcc30f19673ce13a6f301f89f8820a59dfe044e0c4f2913941f4097fe3c
-F ext/wasm/wasmfs.make 86ce03d75a462ef4431e0c2d851f707156975bca5347daa8d8a1cb430ba83a62
+F ext/wasm/wasmfs.make 44c35734f531199dab7c49f82ed265344c86aa03d741fd7911ddb4de0c551ddd
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
@@ -2025,8 +2025,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 925fdbfc6c1f9f06951346bc0d4fb81ffb5797d5f1123728931973f6cb1a0efa
-R a69df33d531c68d33c70b5a00ef5df51
+P 08476f3c218d45846e7496bdae0b06e2122466111fdf2aa2aabb1805b15ef982
+R 520f42f1cc70efba1aa8d99f68fa03bf
 U stephan
-Z bd73fd5e630d2b9c280c487da7e4705d
+Z a50915abdf47f7036b78a2ce4e5a53d8
 # Remove this line to create a well-formed Fossil manifest.
