@@ -137,7 +137,7 @@ struct RecoverColumn {
 typedef struct RecoverBitmap RecoverBitmap;
 struct RecoverBitmap {
   i64 nPg;                        /* Size of bitmap */
-  u32 aElem[0];                   /* Array of 32-bit bitmasks */
+  u32 aElem[1];                   /* Array of 32-bit bitmasks */
 };
 
 /*
@@ -999,8 +999,8 @@ static int recoverWriteSchema1(sqlite3_recover *p){
         recoverSqlCallback(p, zSql);
         if( bTable && !bVirtual ){
           if( SQLITE_ROW==sqlite3_step(pTblname) ){
-            const char *zName = sqlite3_column_text(pTblname, 0);
-            recoverAddTable(p, zName, iRoot);
+            const char *zTbl = (const char*)sqlite3_column_text(pTblname, 0);
+            recoverAddTable(p, zTbl, iRoot);
           }
           recoverReset(p, pTblname);
         }
@@ -1252,7 +1252,6 @@ static sqlite3_stmt *recoverLostAndFoundInsert(
   int nTotal = nField + 4;
   int ii;
   char *zBind = 0;
-  const char *zSep = "";
   sqlite3_stmt *pRet = 0;
 
   if( p->xSql==0 ){
@@ -1328,7 +1327,7 @@ static void recoverLostAndFoundPopulate(
         recoverBindValue(p, pInsert, 5+ii, apVal[ii]);
       }
       if( sqlite3_step(pInsert)==SQLITE_ROW ){
-        recoverSqlCallback(p, sqlite3_column_text(pInsert, 0));
+        recoverSqlCallback(p, (const char*)sqlite3_column_text(pInsert, 0));
       }
       recoverReset(p, pInsert);
 
@@ -1376,7 +1375,7 @@ static void recoverLostAndFoundPopulate(
 ** db and writes all orphaned rows to it. Or, if the recover handle is
 ** in SQL callback mode, issues equivalent callbacks.
 */
-static int recoverLostAndFound(sqlite3_recover *p){
+static void recoverLostAndFound(sqlite3_recover *p){
   i64 nPg = 0;
   RecoverBitmap *pMap = 0;
 
@@ -1558,9 +1557,7 @@ static int recoverWriteData(sqlite3_recover *p){
 
           if( bNewCell ){
             if( nVal>=0 ){
-              int ii;
               int iVal = 0;
-              int iBind = 1;
 
               if( pInsert==0 || nVal!=nInsert ){
                 recoverFinalize(p, pInsert);
@@ -1570,9 +1567,8 @@ static int recoverWriteData(sqlite3_recover *p){
               if( nVal>0 ){
                 for(ii=0; ii<pTab->nCol; ii++){
                   RecoverColumn *pCol = &pTab->aCol[ii];
-
-                  if( pCol->iBind>0 ){
-                    int iBind = pCol->iBind;
+		  int iBind = pCol->iBind;
+                  if( iBind>0 ){
                     if( pCol->bIPK ){
                       sqlite3_bind_int64(pInsert, iBind, iRowid);
                     }else if( pCol->iField<nVal ){
