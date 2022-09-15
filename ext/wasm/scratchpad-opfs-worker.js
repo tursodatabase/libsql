@@ -16,11 +16,26 @@
 'use strict';
 (function(){
   const toss = function(...args){throw new Error(args.join(' '))};
-  const log = console.log.bind(console),
-        warn = console.warn.bind(console),
-        error = console.error.bind(console);
+  const eOutput = document.querySelector('#test-output');
+  const logHtml = function(cssClass,...args){
+    if(Array.isArray(args[0])) args = args[0];
+    const ln = document.createElement('div');
+    if(cssClass) ln.classList.add(cssClass);
+    ln.append(document.createTextNode(args.join(' ')));
+    eOutput.append(ln);
+  };
+  const log = function(...args){
+    logHtml('',...args);
+  };
+  const error = function(...args){
+    logHtml('error',...args);
+  };
+  const warn = function(...args){
+    logHtml('warning',...args);
+  };
+
   const W = new Worker("scratchpad-opfs-worker2.js");
-  self.onmessage = function(ev){
+  W.onmessage = function(ev){
     ev = ev.data;
     const d = ev.data;
     switch(ev.type){

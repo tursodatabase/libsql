@@ -720,7 +720,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     }
     try{
       if(pdir && 0===capi.wasm.xCallWrapped(
-        'sqlite3_wasm_init_opfs', 'i32', ['string'], pdir
+        'sqlite3_wasm_init_wasmfs', 'i32', ['string'], pdir
       )){
         /** OPFS does not support locking and will trigger errors if
             we try to lock. We don't _really_ want to
@@ -739,7 +739,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
         return __persistentDir = "";
       }
     }catch(e){
-      // sqlite3_wasm_init_opfs() is not available
+      // sqlite3_wasm_init_wasmfs() is not available
       return __persistentDir = "";
     }
   };

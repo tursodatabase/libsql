@@ -510,7 +510,7 @@ int sqlite3_wasm_vfs_unlink(const char * zName){
   return rc;
 }
 
-#if defined(__EMSCRIPTEN__) && defined(SQLITE_WASM_OPFS)
+#if defined(__EMSCRIPTEN__) && defined(SQLITE_WASM_WASMFS)
 #include <emscripten/wasmfs.h>
 #include <emscripten/console.h>
 
@@ -532,11 +532,11 @@ int sqlite3_wasm_vfs_unlink(const char * zName){
 **
 ** Returns 0 on success, SQLITE_NOMEM if instantiation of the backend
 ** object fails, SQLITE_IOERR if mkdir() of the zMountPoint dir in
-** the virtual FS fails. In builds compiled without SQLITE_WASM_OPFS
+** the virtual FS fails. In builds compiled without SQLITE_WASM_WASMFS
 ** defined, SQLITE_NOTFOUND is returned without side effects.
 */
 WASM_KEEP
-int sqlite3_wasm_init_opfs(const char *zMountPoint){
+int sqlite3_wasm_init_wasmfs(const char *zMountPoint){
   static backend_t pOpfs = 0;
   if( !zMountPoint || !*zMountPoint ) zMountPoint = "/persistent";
   if( !pOpfs ){
@@ -562,10 +562,10 @@ int sqlite3_wasm_init_opfs(const char *zMountPoint){
 }
 #else
 WASM_KEEP
-int sqlite3_wasm_init_opfs(void){
+int sqlite3_wasm_init_wasmfs(void){
   return SQLITE_NOTFOUND;
 }
-#endif /* __EMSCRIPTEN__ && SQLITE_WASM_OPFS */
+#endif /* __EMSCRIPTEN__ && SQLITE_WASM_WASMFS */
 
 
 #undef WASM_KEEP

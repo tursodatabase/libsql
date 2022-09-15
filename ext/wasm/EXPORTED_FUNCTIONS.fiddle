@@ -5,5 +5,3 @@ _fiddle_the_db
 _fiddle_db_arg
 _fiddle_db_filename
 _fiddle_reset_db
-_sqlite3_wasm_init_opfs
-_sqlite3_wasm_vfs_unlink

@@ -34,9 +34,14 @@
         </div>
         <div class='toolbar-inner-vertical'>
           <div id='toolbar-selected-flags'></div>
-          <span>&rarr; <a id='link-main-thread' href='#' target='main-thread'
-                          title='Start speedtest1.html with the selected flags'>speedtest1.html</a>
-          </span>
+          <div class='toolbar-inner-vertical'>
+            <span>&rarr; <a id='link-main-thread' href='#' target='speedtest-main'
+                            title='Start speedtest1.html with the selected flags'>speedtest1.html</a>
+            </span>
+            <span>&rarr; <a id='link-wasmfs' href='#' target='speedtest-wasmfs'
+                            title='Start speedtest1-wasmfs.html with the selected flags'>speedtest1-wasmfs.html</a>
+            </span>
+          </div>
         </div>
         <div class='toolbar-inner-vertical' id='toolbar-runner-controls'>
           <button id='btn-reset-flags'>Reset Flags</button>
@@ -167,6 +172,7 @@
       const eFlags = E('#select-flags');
       const eSelectedFlags = E('#toolbar-selected-flags');
       const eLinkMainThread = E('#link-main-thread');
+      const eLinkWasmfs = E('#link-wasmfs');
       const getSelectedFlags = ()=>Array.prototype.map.call(eFlags.selectedOptions, (v)=>v.value);
       const updateSelectedFlags = function(){
         eSelectedFlags.innerText = '';
@@ -178,8 +184,10 @@
         });
         const rxStripDash = /^(-+)?/;
         const comma = flags.map((v)=>v.replace(rxStripDash,'')).join(',');
-        eLinkMainThread.setAttribute('target', 'main-thread-'+comma);
+        eLinkMainThread.setAttribute('target', 'speedtest1-main-'+comma);
         eLinkMainThread.href = 'speedtest1.html?flags='+comma;
+        eLinkWasmfs.setAttribute('target', 'speedtest1-wasmfs-'+comma);
+        eLinkWasmfs.href = 'speedtest1-wasmfs.html?flags='+comma;
       };
       eFlags.addEventListener('change', updateSelectedFlags );
       {

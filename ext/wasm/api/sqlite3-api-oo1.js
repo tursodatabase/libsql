@@ -1383,12 +1383,11 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       return this.reset();
     },
     /**
-       Functions like step() except that
-       it finalizes this statement immediately after stepping unless
-       the step cannot be performed because the statement is
-       locked. Throws on error, but any error other than the
-       statement-is-locked case will also trigger finalization of this
-       statement.
+       Functions like step() except that it finalizes this statement
+       immediately after stepping unless the step cannot be performed
+       because the statement is locked. Throws on error, but any error
+       other than the statement-is-locked case will also trigger
+       finalization of this statement.
 
        On success, it returns true if the step indicated that a row of
        data was available, else it returns false.

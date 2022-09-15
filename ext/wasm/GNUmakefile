@@ -9,10 +9,11 @@
 # components).
 SHELL := $(shell which bash 2>/dev/null)
 all:
+emcc_opt ?= -O0
 
 .PHONY: fiddle
 ifneq (,$(wildcard /home/stephan))
-  fiddle_opt ?= -O0
+  fiddle_opt ?= $(emcc_opt)
 else
   fiddle_opt = -Os
 endif
@@ -61,7 +62,6 @@ SQLITE_OPT = \
 # SQLITE_OMIT_LOAD_EXTENSION: if this is true, sqlite3_vfs::xDlOpen
 # and friends may be NULL.
 
-emcc_opt ?= -O0
 .PHONY: release
 release:
 	$(MAKE) 'emcc_opt=-Os -g3 -flto'
@@ -101,12 +101,12 @@ wasm-strip ?= $(shell which wasm-strip 2>/dev/null)
 ifeq (,$(filter clean,$(MAKECMDGOALS)))
 ifeq (,$(wasm-strip))
   $(info WARNING: *******************************************************************)
-  $(info WARNING: builds using -O3/-Os/-Oz will minify WASM-exported names,)
+  $(info WARNING: builds using -O2/-O3/-Os/-Oz will minify WASM-exported names,)
   $(info WARNING: breaking _All The Things_. The workaround for that is to build)
   $(info WARNING: with -g3 (which explodes the file size) and then strip the debug)
   $(info WARNING: info after compilation, using wasm-strip, to shrink the wasm file.)
   $(info WARNING: wasm-strip was not found in the PATH so we cannot strip those.)
-  $(info WARNING: If this build uses any optimization level higher than -O2 then)
+  $(info WARNING: If this build uses any optimization level higher than -O1 then)
   $(info WARNING: the ***resulting WASM binary WILL NOT BE USABLE***.)
   $(info WARNING: wasm-strip is part of the wabt package:)
   $(info WARNING:    https://github.com/WebAssembly/wabt)
@@ -115,6 +115,13 @@ ifeq (,$(wasm-strip))
   $(info WARNING: *******************************************************************)
 endif
 endif # 'make clean' check
+
+
+ifeq (,$(wasm-strip))
+  maybe-wasm-strip = echo "not wasm-stripping"
+else
+  maybe-wasm-strip = $(wasm-strip)
+endif
 
 ifeq (release,$(filter release,$(MAKECMDGOALS)))
   ifeq (,$(wasm-strip))
@@ -286,9 +293,7 @@ $(sqlite3.js): $(MAKEFILE) $(sqlite3.wasm.obj) \
 	@echo "Building $@ ..."
 	$(emcc.bin) -o $(sqlite3.js) $(emcc_opt) $(emcc.flags) $(emcc.jsflags) $(sqlite3.wasm.obj)
 	chmod -x $(sqlite3.wasm)
-ifneq (,$(wasm-strip))
-	$(wasm-strip) $(sqlite3.wasm)
-endif
+	$(maybe-wasm-strip) $(sqlite3.wasm)
 	@ls -la $@ $(sqlite3.wasm)
 
 CLEAN_FILES += $(sqlite3.js) $(sqlite3.wasm)
@@ -321,25 +326,28 @@ all: batch
 # end batch-runner.js
 ########################################################################
 # speedtest1.js...
-emcc.speedtest1-flags := -g $(emcc_opt)
-emcc.speedtest1-flags += -sINVOKE_RUN=0
-#emcc.speedtest1-flags += --no-entry
-emcc.speedtest1-flags += -flto
-emcc.speedtest1-flags += -sABORTING_MALLOC
-emcc.speedtest1-flags += -sINITIAL_MEMORY=128450560
-emcc.speedtest1-flags += -sSTRICT_JS
-emcc.speedtest1-flags += $(emcc.environment)
-emcc.speedtest1-flags += -sMODULARIZE
-emcc.speedtest1-flags += -sEXPORT_NAME=sqlite3Speedtest1InitModule
-emcc.speedtest1-flags += -Wno-limited-postlink-optimizations
-emcc.speedtest1-flags += -sEXPORTED_FUNCTIONS=_main,_malloc,_free,_sqlite3_wasm_vfs_unlink,_sqlite3_wasm_init_opfs
-emcc.speedtest1-flags += -sDYNAMIC_EXECUTION=0
-emcc.speedtest1-flags += --minify 0
+# speedtest1-common.eflags = emcc flags used by multiple builds of speedtest1
+# speedtest1.eflags = emcc flags used by main build of speedtest1
+speedtest1-common.eflags := -g $(emcc_opt)
+speedtest1.eflags :=
+speedtest1-common.eflags += -sINVOKE_RUN=0
+#speedtest1-common.eflags += --no-entry
+speedtest1-common.eflags += -flto
+speedtest1-common.eflags += -sABORTING_MALLOC
+speedtest1-common.eflags += -sINITIAL_MEMORY=128450560
+speedtest1-common.eflags += -sSTRICT_JS
+speedtest1-common.eflags += -sMODULARIZE
+speedtest1-common.eflags += -Wno-limited-postlink-optimizations
+speedtest1-common.eflags += -sEXPORTED_FUNCTIONS=_main,_malloc,_free
+speedtest1-common.eflags += -sDYNAMIC_EXECUTION=0
+speedtest1-common.eflags += --minify 0
+speedtest1-common.eflags += -sEXPORT_NAME=sqlite3Speedtest1InitModule
+speedtest1.eflags += -sENVIRONMENT=web
 
 speedtest1.js := speedtest1.js
 speedtest1.wasm := $(subst .js,.wasm,$(speedtest1.js))
 speedtest1.cflags := \
-  -I. -I$(dir.top) \
+  -I. -I.. -I$(dir.top) \
   -DSQLITE_SPEEDTEST1_WASM
 
 $(speedtest1.js): emcc.cflags+=
@@ -350,13 +358,11 @@ $(speedtest1.js): emcc.cflags+=
 $(speedtest1.js): $(speedtest1.c) $(sqlite3-wasm.c) $(MAKEFILE) $(sqlite3.c)
 	@echo "Building $@ ..."
 	$(emcc.bin) \
-        $(emcc.speedtest1-flags) $(speedtest1.cflags) \
+        $(speedtest1.eflags) $(speedtest1-common.eflags) $(speedtest1.cflags) \
         $(SQLITE_OPT) \
         '-DSQLITE_DEFAULT_UNIX_VFS="unix-none"' \
         -o $@ $(speedtest1.c) $(sqlite3-wasm.c) -lm
-ifneq (,$(wasm-strip))
-	$(wasm-strip) $(speedtest1.wasm)
-endif
+	$(maybe-wasm-strip) $(speedtest1.wasm)
 	ls -la $@ $(speedtest1.wasm)
 
 speedtest1: $(speedtest1.js)
@@ -388,5 +394,26 @@ push-fiddle: $(fiddle_files)
 # end fiddle remote push
 ########################################################################
 
+########################################################################
+# Convenience rules to rebuild with various -Ox levels. Much
+# experimentation shows -O2 to be the clear winner in terms of speed.
+# Note that build times with anything higher than -O0 are somewhat
+# painful.
+.PHONY: o0 o1 o2 o3 os oz
+o0:
+	$(MAKE) clean; $(MAKE) -e emcc_opt=-O0
+o1:
+	$(MAKE) clean; $(MAKE) -e emcc_opt=-O1
+o2:
+	$(MAKE) clean; $(MAKE) -e emcc_opt=-O2
+o3:
+	$(MAKE) clean; $(MAKE) -e emcc_opt=-O3
+os:
+	$(MAKE) clean; $(MAKE) -e emcc_opt=-Os
+oz:
+	$(MAKE) clean; $(MAKE) -e emcc_opt=-Oz
+
+########################################################################
+# Sub-makes...
 include kvvfs.make
 include wasmfs.make

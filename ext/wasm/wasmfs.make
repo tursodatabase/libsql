@@ -7,89 +7,114 @@
 ########################################################################
 MAKEFILE.wasmfs := $(lastword $(MAKEFILE_LIST))
 
-wasmfs.js     := sqlite3-wasmfs.js
-wasmfs.wasm   := sqlite3-wasmfs.wasm
-wasmfs.wasm.c := $(dir.api)/sqlite3-wasm.c
+sqlite3-wasmfs.js     := sqlite3-wasmfs.js
+sqlite3-wasmfs.wasm   := sqlite3-wasmfs.wasm
+sqlite3-wasmfs.wasm.c := $(dir.api)/sqlite3-wasm.c
 
-CLEAN_FILES += $(wasmfs.js) $(wasmfs.wasm)
+CLEAN_FILES += $(sqlite3-wasmfs.js) $(sqlite3-wasmfs.wasm) \
+    $(subst .js,.worker.js,$(sqlite3-wasmfs.js))
 
 ########################################################################
 # emcc flags for .c/.o/.wasm.
-wasmfs.flags =
-#wasmfs.flags += -v # _very_ loud but also informative about what it's doing
+sqlite3-wasmfs.flags =
+#sqlite3-wasmfs.flags += -v # _very_ loud but also informative about what it's doing
 
 ########################################################################
 # emcc flags for .c/.o.
-wasmfs.cflags :=
-wasmfs.cflags += -std=c99 -fPIC -g
-wasmfs.cflags += -pthread
-wasmfs.cflags += -I. -I$(dir.top)
-wasmfs.cflags += $(SQLITE_OPT) -DSQLITE_WASM_OPFS
-wasmfs.cflags += '-DSQLITE_DEFAULT_UNIX_VFS="unix-none"'
+sqlite3-wasmfs.cflags :=
+sqlite3-wasmfs.cflags += -std=c99 -fPIC -g
+sqlite3-wasmfs.cflags += -pthread
+sqlite3-wasmfs.cflags += -I. -I.. -I$(dir.top)
+sqlite3-wasmfs.cflags += $(SQLITE_OPT) -DSQLITE_WASM_WASMFS
+sqlite3-wasmfs.cflags += '-DSQLITE_DEFAULT_UNIX_VFS="unix-none"'
 
-wasmfs.extra.c :=
+sqlite3-wasmfs.extra.c :=
 ifeq (1,1)
-  # To get testing1.js to run with $(wasmfs.js) we need...
-  wasmfs.extra.c += $(jaccwabyt_test.c)
+  # To get testing1.js to run with $(sqlite3-wasmfs.js) we need...
+  sqlite3-wasmfs.extra.c += $(jaccwabyt_test.c)
 endif
 
 ########################################################################
 # emcc flags specific to building the final .js/.wasm file...
-wasmfs.jsflags := -fPIC
-wasmfs.jsflags += --no-entry
-wasmfs.jsflags += --minify 0
-wasmfs.jsflags += -sENVIRONMENT=web,worker
-wasmfs.jsflags += -sMODULARIZE
-wasmfs.jsflags += -sSTRICT_JS
-wasmfs.jsflags += -sDYNAMIC_EXECUTION=0
-wasmfs.jsflags += -sNO_POLYFILL
-ifeq (,$(wasmfs.extra.c))
-  wasmfs.jsflags += -sEXPORTED_FUNCTIONS=@$(dir.api)/EXPORTED_FUNCTIONS.sqlite3-api
+sqlite3-wasmfs.jsflags := -fPIC
+sqlite3-wasmfs.jsflags += --no-entry
+sqlite3-wasmfs.jsflags += --minify 0
+sqlite3-wasmfs.jsflags += -sMODULARIZE
+sqlite3-wasmfs.jsflags += -sSTRICT_JS
+sqlite3-wasmfs.jsflags += -sDYNAMIC_EXECUTION=0
+sqlite3-wasmfs.jsflags += -sNO_POLYFILL
+ifeq (,$(sqlite3-wasmfs.extra.c))
+  sqlite3-wasmfs.jsflags += -sEXPORTED_FUNCTIONS=@$(dir.api)/EXPORTED_FUNCTIONS.sqlite3-api
 else
   # need more exports for jaccwabyt test code...
-  wasmfs.jsflags += -sEXPORTED_FUNCTIONS=@$(dir.wasm)/EXPORTED_FUNCTIONS.api
+  sqlite3-wasmfs.jsflags += -sEXPORTED_FUNCTIONS=@$(dir.wasm)/EXPORTED_FUNCTIONS.api
 endif
-wasmfs.jsflags += -sEXPORTED_RUNTIME_METHODS=FS,wasmMemory,allocateUTF8OnStack
+sqlite3-wasmfs.jsflags += -sEXPORTED_RUNTIME_METHODS=FS,wasmMemory,allocateUTF8OnStack
                                             # wasmMemory ==> for -sIMPORTED_MEMORY
                                             # allocateUTF8OnStack ==> wasmfs internals
-wasmfs.jsflags += -sUSE_CLOSURE_COMPILER=0
-wasmfs.jsflags += -sIMPORTED_MEMORY
-#wasmfs.jsflags += -sINITIAL_MEMORY=13107200
-#wasmfs.jsflags += -sTOTAL_STACK=4194304
-wasmfs.jsflags += -sEXPORT_NAME=sqlite3InitModule
-wasmfs.jsflags += -sGLOBAL_BASE=4096 # HYPOTHETICALLY keep func table indexes from overlapping w/ heap addr.
-wasmfs.jsflags += --post-js=$(post-js.js)
-#wasmfs.jsflags += -sFILESYSTEM=0 # only for experimentation. sqlite3 needs the FS API
+sqlite3-wasmfs.jsflags += -sUSE_CLOSURE_COMPILER=0
+sqlite3-wasmfs.jsflags += -sIMPORTED_MEMORY
+#sqlite3-wasmfs.jsflags += -sINITIAL_MEMORY=13107200
+#sqlite3-wasmfs.jsflags += -sTOTAL_STACK=4194304
+sqlite3-wasmfs.jsflags += -sEXPORT_NAME=sqlite3InitModule
+sqlite3-wasmfs.jsflags += -sGLOBAL_BASE=4096 # HYPOTHETICALLY keep func table indexes from overlapping w/ heap addr.
+sqlite3-wasmfs.jsflags += --post-js=$(post-js.js)
+#sqlite3-wasmfs.jsflags += -sFILESYSTEM=0 # only for experimentation. sqlite3 needs the FS API
 #                                Perhaps the wasmfs build doesn't?
-#wasmfs.jsflags += -sABORTING_MALLOC
-wasmfs.jsflags += -sALLOW_TABLE_GROWTH
-wasmfs.jsflags += -Wno-limited-postlink-optimizations
+#sqlite3-wasmfs.jsflags += -sABORTING_MALLOC
+sqlite3-wasmfs.jsflags += -sALLOW_TABLE_GROWTH
+sqlite3-wasmfs.jsflags += -Wno-limited-postlink-optimizations
 # ^^^^^ it likes to warn when we have "limited optimizations" via the -g3 flag.
-wasmfs.jsflags += -sERROR_ON_UNDEFINED_SYMBOLS=0
-wasmfs.jsflags += -sLLD_REPORT_UNDEFINED
-#wasmfs.jsflags += --import-undefined
-wasmfs.jsflags += -sMEMORY64=0
-wasmfs.jsflags += -pthread -sWASMFS -sPTHREAD_POOL_SIZE=2
-wasmfs.jsflags += -sINITIAL_MEMORY=128450560
-#wasmfs.jsflags += -sALLOW_MEMORY_GROWTH
+sqlite3-wasmfs.jsflags += -sERROR_ON_UNDEFINED_SYMBOLS=0
+sqlite3-wasmfs.jsflags += -sLLD_REPORT_UNDEFINED
+#sqlite3-wasmfs.jsflags += --import-undefined
+sqlite3-wasmfs.jsflags += -sMEMORY64=0
+sqlite3-wasmfs.jsflags += -sINITIAL_MEMORY=128450560
+sqlite3-wasmfs.fsflags := -pthread -sWASMFS -sPTHREAD_POOL_SIZE=2 -sENVIRONMENT=web,worker
+sqlite3-wasmfs.jsflags += $(sqlite3-wasmfs.fsflags)
+#sqlite3-wasmfs.jsflags += -sALLOW_MEMORY_GROWTH
 #^^^ using ALLOW_MEMORY_GROWTH produces a warning from emcc:
 #   USE_PTHREADS + ALLOW_MEMORY_GROWTH may run non-wasm code slowly,
 #   see https://github.com/WebAssembly/design/issues/1271 [-Wpthreads-mem-growth]
 ifneq (0,$(enable_bigint))
-wasmfs.jsflags += -sWASM_BIGINT
+sqlite3-wasmfs.jsflags += -sWASM_BIGINT
 endif
 
-$(wasmfs.js): $(wasmfs.wasm.c) $(sqlite3.c) $(wasmfs.extra.c) \
+$(sqlite3-wasmfs.js): $(sqlite3-wasmfs.wasm.c) $(sqlite3.c) $(sqlite3-wasmfs.extra.c) \
     EXPORTED_FUNCTIONS.api $(MAKEFILE) $(MAKEFILE.wasmfs) \
     $(post-js.js)
 	@echo "Building $@ ..."
 	$(emcc.bin) -o $@ $(emcc_opt) $(emcc.flags) \
-  $(wasmfs.cflags) $(wasmfs.jsflags) $(wasmfs.wasm.c) $(wasmfs.extra.c)
-	chmod -x $(wasmfs.wasm)
-ifneq (,$(wasm-strip))
-	$(wasm-strip) $(wasmfs.wasm)
-endif
-	@ls -la $@ $(wasmfs.wasm)
+      $(sqlite3-wasmfs.cflags) $(sqlite3-wasmfs.jsflags) $(sqlite3-wasmfs.wasm.c) $(sqlite3-wasmfs.extra.c)
+	chmod -x $(sqlite3-wasmfs.wasm)
+	$(maybe-wasm-strip) $(sqlite3-wasmfs.wasm)
+	@ls -la $@ $(sqlite3-wasmfs.wasm)
 
-wasmfs: $(wasmfs.js)
+wasmfs: $(sqlite3-wasmfs.js)
 all: wasmfs
+
+########################################################################
+# speedtest1 for wasmfs. Re. sqlite3-wasm.o vs sqlite3-wasm.c:
+# building against the latter (predictably) results in a slightly
+# faster binary.
+speedtest1-wasmfs.js := speedtest1-wasmfs.js
+speedtest1-wasmfs.wasm := $(subst .js,.wasm,$(speedtest1-wasmfs.js))
+speedtest1-wasmfs.eflags := -sENVIRONMENT=web,worker $(sqlite3-wasmfs.fsflags)
+speedtest1-wasmfs.eflags += $(SQLITE_OPT) -DSQLITE_WASM_WASMFS
+$(speedtest1-wasmfs.js): $(MAKEFILE) $(MAKEFILE.wasmfs)
+#$(speedtest1-wasmfs.js): $(sqlite3-wasmfs.js)
+$(speedtest1-wasmfs.js): $(speedtest1.c) $(sqlite3-wasm.c)
+	@echo "Building $@ ..."
+	$(emcc.bin) \
+        $(speedtest1-wasmfs.eflags) $(speedtest1-common.eflags) \
+        $(speedtest1.cflags) \
+        $(sqlite3-wasmfs.cflags) \
+        -o $@ $(speedtest1.c) $(sqlite3-wasm.c) -lm
+	$(maybe-wasm-strip) $(speedtest1-wasmfs.wasm)
+	ls -la $@ $(speedtest1-wasmfs.wasm)
+
+speedtest1: $(speedtest1-wasmfs.js)
+CLEAN_FILES += $(speedtest1-wasmfs.js) $(speedtest1-wasmfs.wasm) \
+     $(subst .js,.worker.js,$(speedtest1-wasmfs.js))
+# end speedtest1.js
+########################################################################

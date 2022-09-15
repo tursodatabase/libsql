@@ -16,14 +16,14 @@
     }
     try{
       if(0===wasmUtil.xCallWrapped(
-        'sqlite3_wasm_init_opfs', 'i32', ['string'], pdir
+        'sqlite3_wasm_init_wasmfs', 'i32', ['string'], pdir
       )){
         return f._ = pdir;
       }else{
         return f._ = "";
       }
     }catch(e){
-      // sqlite3_wasm_init_opfs() is not available
+      // sqlite3_wasm_init_wasmfs() is not available
       return f._ = "";
     }
   };
@@ -91,9 +91,8 @@
     self.WhWasmUtilInstaller(App.wasm);
     App.unlink = App.wasm.xWrap("sqlite3_wasm_vfs_unlink", "int", ["string"]);
     App.pDir = opfsDir(App.wasm);
-    if(App.pDir){
-      log("Persistent storage:",pDir);
-    }
+    if(App.pDir) log("Persistent storage:",pDir);
+    else log("Using transient storage.");
     mPost('ready',true);
   });
 })();

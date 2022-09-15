@@ -6,10 +6,10 @@
     <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
     <link rel="stylesheet" href="common/emscripten.css"/>
     <link rel="stylesheet" href="common/testing.css"/>
-    <title>speedtest1.wasm</title>
+    <title>speedtest1-wasmfs.wasm</title>
   </head>
   <body>
-    <header id='titlebar'><span>speedtest1.wasm</span></header>
+    <header id='titlebar'><span>speedtest1-wasmfs.wasm</span></header>
     <div>See also: <a href='speedtest1-worker.html'>A Worker-thread variant of this page.</a></div>
     <!-- emscripten bits -->
     <figure id="module-spinner">
@@ -38,7 +38,7 @@
     <div id='test-output'></div>
     <script src="common/whwasmutil.js"></script>
     <script src="common/SqliteTestUtil.js"></script>
-    <script src="speedtest1.js"></script>
+    <script src="speedtest1-wasmfs.js"></script>
     <script>(function(){
         /**
            If this environment contains OPFS, this function initializes it and
@@ -104,8 +104,10 @@
           self.WhWasmUtilInstaller(wasm);
           const unlink = wasm.xWrap("sqlite3_wasm_vfs_unlink", "int", ["string"]);
           const pDir = opfsDir(wasm);
-          if(pDir){
-            console.warn("Persistent storage:",pDir);
+          if(pDir) log2('',"Persistent storage:",pDir);
+          else{
+            log2('error',"Expecting persistent storage in this build.");
+            return;
           }
           const scope = wasm.scopedAllocPush();
           const dbFile = 0 ? "" : pDir+"/speedtest1.db";
@@ -122,6 +124,9 @@
               "--nomemstat"
             );
             //"--memdb", // note that memdb trumps the filename arg
+          }
+          if(argv.indexOf('--memdb')>=0){
+              log2('error',"WARNING: --memdb flag trumps db filename.");
           }
           argv.push("--big-transactions"/*important for tests 410 and 510!*/,
                     dbFile);
