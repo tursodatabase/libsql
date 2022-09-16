@@ -351,7 +351,7 @@ int sqlite3__wasm_emjs_kvvfs(int whichOp){
   switch( whichOp ){
     case 0: break;
     case 1:
-      kvstorageWrite(zClass, zKey, "world");
+      rc = kvstorageWrite(zClass, zKey, "world");
       break;
     case 2: {
       char buffer[128] = {0};
@@ -602,7 +602,7 @@ static void kvvfsDecodeJournal(
   const char *zTxt,      /* Text encoding.  Zero-terminated */
   int nTxt               /* Bytes in zTxt, excluding zero terminator */
 ){
-  unsigned int n = 0;
+  unsigned int n;
   int c, i, mult;
   i = 0;
   mult = 1;
@@ -634,10 +634,10 @@ static sqlite3_int64 kvvfsReadFileSize(KVVfsFile *pFile){
   kvstorageRead(pFile->zClass, "sz", zData, sizeof(zData)-1);
   return strtoll(zData, 0, 0);
 }
-static void kvvfsWriteFileSize(KVVfsFile *pFile, sqlite3_int64 sz){
+static int kvvfsWriteFileSize(KVVfsFile *pFile, sqlite3_int64 sz){
   char zData[50];
   sqlite3_snprintf(sizeof(zData), zData, "%lld", sz);
-  kvstorageWrite(pFile->zClass, "sz", zData);
+  return kvstorageWrite(pFile->zClass, "sz", zData);
 }
 
 /****** sqlite3_io_methods methods ******************************************/
@@ -788,7 +788,9 @@ static int kvvfsWriteDb(
   pgno = 1 + iOfst/iAmt;
   sqlite3_snprintf(sizeof(zKey), zKey, "%u", pgno);
   kvvfsEncode(zBuf, iAmt, aData);
-  kvstorageWrite(pFile->zClass, zKey, aData);
+  if( kvstorageWrite(pFile->zClass, zKey, aData) ){
+    return SQLITE_IOERR;
+  }
   if( iOfst+iAmt > pFile->szDb ){
     pFile->szDb = iOfst + iAmt;
   }
@@ -825,8 +827,7 @@ static int kvvfsTruncateDb(sqlite3_file *pProtoFile, sqlite_int64 size){
       pgno++;
     }
     pFile->szDb = size;
-    kvvfsWriteFileSize(pFile, size);
-    return SQLITE_OK;
+    return kvvfsWriteFileSize(pFile, size) ? SQLITE_IOERR : SQLITE_OK;
   }
   return SQLITE_IOERR;
 }
@@ -854,17 +855,18 @@ static int kvvfsSyncJrnl(sqlite3_file *pProtoFile, int flags){
   }while( n>0 );
   zOut[i++] = ' ';
   kvvfsEncode(pFile->aJrnl, pFile->nJrnl, &zOut[i]);
-  kvstorageWrite(pFile->zClass, "jrnl", zOut);
+  i = kvstorageWrite(pFile->zClass, "jrnl", zOut);
   sqlite3_free(zOut);
-  return SQLITE_OK;
+  return i ? SQLITE_IOERR : SQLITE_OK;
 }
 static int kvvfsSyncDb(sqlite3_file *pProtoFile, int flags){
   KVVfsFile *pFile = (KVVfsFile *)pProtoFile;
+  int rc = SQLITE_OK;
   SQLITE_KV_LOG(("xSync('%s-db')\n", pFile->zClass));
-  if( pFile->szDb>0 ){
-    kvvfsWriteFileSize(pFile, pFile->szDb);
+  if( pFile->szDb>0 && 0!=kvvfsWriteFileSize(pFile, pFile->szDb) ){
+    rc = SQLITE_IOERR;
   }
-  return SQLITE_OK;
+  return rc;
 }
 
 /*
