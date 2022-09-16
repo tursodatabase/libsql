@@ -330,6 +330,7 @@ all: batch
 # speedtest1.eflags = emcc flags used by main build of speedtest1
 speedtest1-common.eflags := -g $(emcc_opt)
 speedtest1.eflags :=
+speedtest1.eflags += -sENVIRONMENT=web
 speedtest1-common.eflags += -sINVOKE_RUN=0
 #speedtest1-common.eflags += --no-entry
 speedtest1-common.eflags += -flto
@@ -342,7 +343,24 @@ speedtest1-common.eflags += -sEXPORTED_FUNCTIONS=_main,_malloc,_free
 speedtest1-common.eflags += -sDYNAMIC_EXECUTION=0
 speedtest1-common.eflags += --minify 0
 speedtest1-common.eflags += -sEXPORT_NAME=sqlite3Speedtest1InitModule
-speedtest1.eflags += -sENVIRONMENT=web
+speedtest1.exit-runtime0 := -sEXIT_RUNTIME=0
+speedtest1.exit-runtime1 := -sEXIT_RUNTIME=1
+# Re -sEXIT_RUNTIME=1 vs 0: if it's 1 and speedtest1 crashes, we get
+# this error from emscripten:
+#
+# > native function `free` called after runtime exit (use
+# NO_EXIT_RUNTIME to keep it alive after main() exits))
+#
+# If it's 0 and it crashes, we get:
+#
+# > stdio streams had content in them that was not flushed. you should
+# set EXIT_RUNTIME to 1 (see the FAQ), or make sure to emit a newline
+# when you printf etc.
+#
+# and pending output is not flushed because it didn't end with a
+# newline (by design). The lesser of the two evils seems to be
+# -sEXIT_RUNTIME=1 but we need EXIT_RUNTIME=0 for the worker-based app
+# which runs speedtest1 multiple times.
 
 speedtest1.js := speedtest1.js
 speedtest1.wasm := $(subst .js,.wasm,$(speedtest1.js))
@@ -360,6 +378,7 @@ $(speedtest1.js): $(speedtest1.c) $(sqlite3-wasm.c) $(MAKEFILE) $(sqlite3.c)
 	$(emcc.bin) \
         $(speedtest1.eflags) $(speedtest1-common.eflags) $(speedtest1.cflags) \
         $(SQLITE_OPT) \
+        $(speedtest1.exit-runtime0) \
         '-DSQLITE_DEFAULT_UNIX_VFS="unix-none"' \
         -o $@ $(speedtest1.c) $(sqlite3-wasm.c) -lm
 	$(maybe-wasm-strip) $(speedtest1.wasm)

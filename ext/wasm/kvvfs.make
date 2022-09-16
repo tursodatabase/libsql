@@ -103,7 +103,7 @@ $(speedtest1-kvvfs.js): $(speedtest1.c) $(sqlite3-wasm.c) $(sqlite3.c) $(MAKEFIL
 	$(emcc.bin) \
       $(speedtest1.eflags) $(speedtest1-common.eflags) $(speedtest1.cflags) \
       $(SQLITE_OPT) \
-      -sEXIT_RUNTIME=1 \
+      $(speedtest1.exit-runtime1) \
       $(kvvfs.cflags) \
       -o $@ $(speedtest1.c) $(sqlite3-wasm.c) -lm
 	$(maybe-wasm-strip) $(speedtest1-kvvfs.wasm)

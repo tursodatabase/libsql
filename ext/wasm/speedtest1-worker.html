@@ -41,6 +41,9 @@
             <span>&rarr; <a id='link-wasmfs' href='#' target='speedtest-wasmfs'
                             title='Start speedtest1-wasmfs.html with the selected flags'>speedtest1-wasmfs.html</a>
             </span>
+            <span>&rarr; <a id='link-kvvfs' href='#' target='speedtest-kvvfs'
+                            title='Start speedtest1-kvvfs.html with the selected flags'>speedtest1-kvvfs.html</a>
+            </span>
           </div>
         </div>
         <div class='toolbar-inner-vertical' id='toolbar-runner-controls'>
@@ -173,6 +176,7 @@
       const eSelectedFlags = E('#toolbar-selected-flags');
       const eLinkMainThread = E('#link-main-thread');
       const eLinkWasmfs = E('#link-wasmfs');
+      const eLinkKvvfs = E('#link-kvvfs');
       const getSelectedFlags = ()=>Array.prototype.map.call(eFlags.selectedOptions, (v)=>v.value);
       const updateSelectedFlags = function(){
         eSelectedFlags.innerText = '';
@@ -188,6 +192,8 @@
         eLinkMainThread.href = 'speedtest1.html?flags='+comma;
         eLinkWasmfs.setAttribute('target', 'speedtest1-wasmfs-'+comma);
         eLinkWasmfs.href = 'speedtest1-wasmfs.html?flags='+comma;
+        eLinkKvvfs.setAttribute('target', 'speedtest1-kvvfs-'+comma);
+        eLinkKvvfs.href = 'speedtest1-kvvfs.html?flags='+comma;
       };
       eFlags.addEventListener('change', updateSelectedFlags );
       {

@@ -6,10 +6,10 @@
     <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
     <link rel="stylesheet" href="common/emscripten.css"/>
     <link rel="stylesheet" href="common/testing.css"/>
-    <title>speedtest1.wasm</title>
+    <title>speedtest1-kvvfs.wasm</title>
   </head>
   <body>
-    <header id='titlebar'><span>speedtest1.wasm</span></header>
+    <header id='titlebar'><span>speedtest1-kvvfs.wasm</span></header>
     <div>See also: <a href='speedtest1-worker.html'>A Worker-thread variant of this page.</a></div>
     <!-- emscripten bits -->
     <figure id="module-spinner">
@@ -63,12 +63,28 @@
           console.error(...args);
           logList.push('ERROR: '+args.join(' '));
         };
+
+        const guessStorageSize = function(which=''){
+          let sz = 0;
+          const prefix = 'kvvfs-'+which;
+          [localStorage,sessionStorage].forEach((s)=>{
+            let i;
+            for(i = 0; i < s.length; ++i){
+              const k = s.key(i);
+              if(k.startsWith(prefix)){
+                sz += k.length;
+                sz += s.getItem(k).length;
+              }
+            }
+          });
+          return sz;
+        };
         const clearStorage = function(){
             sessionStorage.clear();
             localStorage.clear();
         };
         const runTests = function(EmscriptenModule){
-            console.log("Module inited.",EmscriptenModule);
+          console.log("Module inited.",EmscriptenModule);
             
           const wasm = {
             exports: EmscriptenModule.asm,
@@ -83,7 +99,7 @@
           const scope = wasm.scopedAllocPush();
           const dbFile = 0 ? "session" : "local";
           const urlArgs = self.SqliteTestUtil.processUrlArgs();
-          const argv = ["speedtest1", "--size", "1"];
+          const argv = ["speedtest1", "--size", "5"];
           if(urlArgs.flags){
             // transform flags=a,b,c to ["--a", "--b", "--c"]
             argv.push(...(urlArgs.flags.split(',').map((v)=>'--'+v)));
@@ -93,10 +109,14 @@
               "--nomutex",
               "--nosync",
               "--nomemstat"
+              //"--sqlonly"
             );
             //argv.push("--memdb" /* note that memdb trumps the filename arg */);
-            argv.push("--big-transactions"/*important for tests 410 and 510!*/,
-                      dbFile);
+          }
+          argv.push("--big-transactions"/*important for tests 410 and 510!*/,
+                    dbFile);
+          if(argv.indexOf('--memdb')>=0){
+              log2('error',"WARNING: --memdb flag trumps db filename.");
           }
           console.log("argv =",argv);
           // These log messages are not emitted to the UI until after main() returns. Fixing that
@@ -119,8 +139,9 @@
             wasm.scopedAllocPop(scope);
             logList.unshift("Done running native main(). Output:");
             dumpLogList();
-            log2('warning',"Clearing session/local storage.");
-            clearStorage();
+            log2('',"Approximate",dbFile,"storage usage:",guessStorageSize(),"bytes");
+            log2('warning',"Clearing",dbFile,"storage.");
+            clearStorage(dbFile);
           });
         }/*runTests()*/;
 
