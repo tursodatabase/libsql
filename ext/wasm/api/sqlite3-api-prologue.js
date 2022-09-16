@@ -818,7 +818,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        string (the default) then both are counted. Only storage keys
        which match the pattern used by kvvfs are counted. The returned
        value is the "length" value of every matching key and value,
-       noting that the kvvf uses only ASCII keys and values.
+       noting that JavaScript stores each character in 2 bytes.
 
        Note that the returned size is not authoritative from the
        perspective of how much data can fit into localStorage and
@@ -839,7 +839,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
           }
         }
       });
-      return sz;
+      return sz * 2 /* because JS uses UC16 encoding */;
     };
 
     /**

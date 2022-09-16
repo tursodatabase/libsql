@@ -77,7 +77,7 @@
               }
             }
           });
-          return sz;
+          return sz * 2 /* for 16-bit-char encoding */;
         };
         const clearStorage = function(){
             sessionStorage.clear();
