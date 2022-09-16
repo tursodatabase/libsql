@@ -118,9 +118,6 @@
           if(argv.indexOf('--memdb')>=0){
               log2('error',"WARNING: --memdb flag trumps db filename.");
           }
-          if(argv.indexOf('--nosync')>=0){
-              log2('error',"WARNING: --nosync flag is known to cause this test to fail.");
-          }
           console.log("argv =",argv);
           // These log messages are not emitted to the UI until after main() returns. Fixing that
           // requires moving the main() call and related cleanup into a timeout handler.

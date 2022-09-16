@@ -71,7 +71,8 @@ static int kvvfsFileSizeJrnl(sqlite3_file*, sqlite3_int64 *pSize);
 static int kvvfsLock(sqlite3_file*, int);
 static int kvvfsUnlock(sqlite3_file*, int);
 static int kvvfsCheckReservedLock(sqlite3_file*, int *pResOut);
-static int kvvfsFileControl(sqlite3_file*, int op, void *pArg);
+static int kvvfsFileControlDb(sqlite3_file*, int op, void *pArg);
+static int kvvfsFileControlJrnl(sqlite3_file*, int op, void *pArg);
 static int kvvfsSectorSize(sqlite3_file*);
 static int kvvfsDeviceCharacteristics(sqlite3_file*);
 
@@ -123,7 +124,7 @@ static sqlite3_io_methods kvvfs_db_io_methods = {
   kvvfsLock,                      /* xLock */
   kvvfsUnlock,                    /* xUnlock */
   kvvfsCheckReservedLock,         /* xCheckReservedLock */
-  kvvfsFileControl,               /* xFileControl */
+  kvvfsFileControlDb,             /* xFileControl */
   kvvfsSectorSize,                /* xSectorSize */
   kvvfsDeviceCharacteristics,     /* xDeviceCharacteristics */
   0,                              /* xShmMap */
@@ -147,7 +148,7 @@ static sqlite3_io_methods kvvfs_jrnl_io_methods = {
   kvvfsLock,                      /* xLock */
   kvvfsUnlock,                    /* xUnlock */
   kvvfsCheckReservedLock,         /* xCheckReservedLock */
-  kvvfsFileControl,               /* xFileControl */
+  kvvfsFileControlJrnl,           /* xFileControl */
   kvvfsSectorSize,                /* xSectorSize */
   kvvfsDeviceCharacteristics,     /* xDeviceCharacteristics */
   0,                              /* xShmMap */
@@ -860,13 +861,7 @@ static int kvvfsSyncJrnl(sqlite3_file *pProtoFile, int flags){
   return i ? SQLITE_IOERR : SQLITE_OK;
 }
 static int kvvfsSyncDb(sqlite3_file *pProtoFile, int flags){
-  KVVfsFile *pFile = (KVVfsFile *)pProtoFile;
-  int rc = SQLITE_OK;
-  SQLITE_KV_LOG(("xSync('%s-db')\n", pFile->zClass));
-  if( pFile->szDb>0 && 0!=kvvfsWriteFileSize(pFile, pFile->szDb) ){
-    rc = SQLITE_IOERR;
-  }
-  return rc;
+  return SQLITE_OK;
 }
 
 /*
@@ -928,7 +923,21 @@ static int kvvfsCheckReservedLock(sqlite3_file *pProtoFile, int *pResOut){
 /*
 ** File control method. For custom operations on an kvvfs-file.
 */
-static int kvvfsFileControl(sqlite3_file *pProtoFile, int op, void *pArg){
+static int kvvfsFileControlJrnl(sqlite3_file *pProtoFile, int op, void *pArg){
+  SQLITE_KV_LOG(("xFileControl(%d) on journal\n", op));
+  return SQLITE_NOTFOUND;
+}
+static int kvvfsFileControlDb(sqlite3_file *pProtoFile, int op, void *pArg){
+  SQLITE_KV_LOG(("xFileControl(%d) on database\n", op));
+  if( op==SQLITE_FCNTL_SYNC ){
+    KVVfsFile *pFile = (KVVfsFile *)pProtoFile;
+    int rc = SQLITE_OK;
+    SQLITE_KV_LOG(("xSync('%s-db')\n", pFile->zClass));
+    if( pFile->szDb>0 && 0!=kvvfsWriteFileSize(pFile, pFile->szDb) ){
+      rc = SQLITE_IOERR;
+    }
+    return rc;
+  }
   return SQLITE_NOTFOUND;
 }
 

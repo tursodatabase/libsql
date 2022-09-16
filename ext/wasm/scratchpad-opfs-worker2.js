@@ -439,7 +439,7 @@ const initOpfsBits = async function(sqlite3){
       let errCount = 0;
       [
         'FileSystemHandle', 'FileSystemFileHandle', 'FileSystemDirectoryHandle',
-        'FileSystemHandle', 'FileSystemFileHandle', 'FileSystemDirectoryHandle'
+        'FileSystemSyncAccessHandle'
       ].forEach(function(n){
         const f = self[n];
         if(f){
@@ -452,6 +452,7 @@ const initOpfsBits = async function(sqlite3){
       });
       if(errCount) return;
     }
+    warn('self',self);
     await initOpfsBits(sqlite3);
 
     if(1) return;

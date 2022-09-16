@@ -1,5 +1,5 @@
-C Add\sbatch-runner-kvvfs.html,\sa\skvvfs-specific\sbuild\sof\sbatch-runner.html.\sReduce\sthe\sspeedtest1\s--size\sX\svalue\sfor\sthe\sbatch\slist\sgeneration\sto\s5\sso\sthat\sthe\skvvfs\sbatch\srunner\scan\shandle\sit.
-D 2022-09-16T02:30:49.153
+C Merge\skv-vfs\sbranch\sinto\sfiddle-opfs\sbranch\sfor\s[21915af560b1|synchronous=off\sfix].\sRemove\ssome\sduplicate\sdebug\soutput\sin\sOPFS\stest\scode.
+D 2022-09-16T11:45:09.066
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -512,10 +512,10 @@ F ext/wasm/kvvfs1.html 13bb24190bfb276a57b228499519badcc1bf39ed07e4b37bc2a425ce6
 F ext/wasm/kvvfs1.js ec1c1d071bb055711f9151df05616111432cf3e6bf7ac7f8dcbcfb56c9d9ed48
 F ext/wasm/scratchpad-opfs-worker.html 5fdda167571264300f388847d34f00b77dd48984a8dba2ee9c099c3ffa05db66
 F ext/wasm/scratchpad-opfs-worker.js cf6c4554d3b099c1a50013e50d19b3dc60e183511b4b4dbe7fabc2b9d3360567
-F ext/wasm/scratchpad-opfs-worker2.js 2424d7d7b8801fc143f6540fbdd8a96f3f2e5b811f0f545714d06147ccce58bf
+F ext/wasm/scratchpad-opfs-worker2.js 8c980370bbd5a262d96af8627c443936e11b87d0263a02123769d5953fc146da
 F ext/wasm/scratchpad-wasmfs-main.html 20cf6f1a8f368e70d01e8c17200e3eaa90f1c8e1029186d836d14b83845fbe06
 F ext/wasm/scratchpad-wasmfs-main.js 69e960e9161f6412fd0c30f355d4112f1894d6609eb431e2d16d207d1380518e
-F ext/wasm/speedtest1-kvvfs.html ad08e2018c67cde7c459f692122a7d675b54a3709726c094ecbeed230f36abd3
+F ext/wasm/speedtest1-kvvfs.html 6e6e918d44b819a9ea1a146f260bd69022bdccd854439ee2d8c646f5073c2ea8
 F ext/wasm/speedtest1-wasmfs.html 6a67a6812f03a2058eb5c6ad0c8dea4bf749d0160ed9d6b826dabe7b766c3cf7
 F ext/wasm/speedtest1-worker.html d8881ae802d15fb8adb94049265173e99f350e07e1d4e6f9e1cbd8969fe63a04
 F ext/wasm/speedtest1-worker.js fb5d282c0b8aed18daf41c57f768cbf434f8137dbff707d53dcedcd7d4cb60ef
@@ -597,7 +597,7 @@ F src/notify.c 89a97dc854c3aa62ad5f384ef50c5a4a11d70fcc69f86de3e991573421130ed6
 F src/os.c 0eb831ba3575af5277e47f4edd14fdfc90025c67eb25ce5cda634518d308d4e9
 F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
-F src/os_kv.c d4909b439043183f9b6aec65528a7433cee49d41cca95b9a3a4c8fb6bbedc0c2
+F src/os_kv.c 554a2c109f8810b743af2eed4ba732d18dfdbc4d073e3a9bd8b8e828215a9692
 F src/os_setup.h 0711dbc4678f3ac52d7fe736951b6384a0615387c4ba5135a4764e4e31f4b6a6
 F src/os_unix.c 0fa91925f0b8831fc0156a9c04d39d86f85baf9eef66c98712395e1715cb75cc
 F src/os_win.c 8d129ae3e59e0fa900e20d0ad789e96f2e08177f0b00b53cdda65c40331e0902
@@ -2027,8 +2027,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ad0677e8abcc077636d1cf1d8485be4943506382581edf832e6b8a2021560040
-R 6eaf6290c7f1da025383bc24b7d47eee
+P d8df25920a047d5cf2093cc6233128c5e6057a9104d0c4397e643645bd646fe1 21915af560b111aeeaee751790356151a5f063c2fc703dd4b35b22dc393409fb
+R 9d036c771fee3f8c011441c0aa641532
 U stephan
-Z 5b7d05db593e0eeb6d33327ff3472ed8
+Z 6c79830061a07791b98ec477a66ca0ad
 # Remove this line to create a well-formed Fossil manifest.
