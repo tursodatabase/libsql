@@ -700,7 +700,7 @@ static int kvvfsReadDb(
   unsigned int pgno;
   int got, n;
   char zKey[30];
-  char aData[131073];
+  char aData[133073];
   assert( iOfst>=0 );
   assert( iAmt>=0 );
   SQLITE_KV_LOG(("xRead('%s-db',%d,%lld)\n", pFile->zClass, iAmt, iOfst));
@@ -723,9 +723,11 @@ static int kvvfsReadDb(
   }else{
     aData[got] = 0;
     if( iOfst+iAmt<512 ){
-      n = kvvfsDecode(aData, &aData[1000], 1000);
+      int k = iOfst+iAmt;
+      aData[k*2] = 0;
+      n = kvvfsDecode(aData, &aData[2000], sizeof(aData)-2000);
       if( n>=iOfst+iAmt ){
-        memcpy(zBuf, &aData[1000+iOfst], iAmt);
+        memcpy(zBuf, &aData[2000+iOfst], iAmt);
         n = iAmt;
       }else{
         n = 0;
