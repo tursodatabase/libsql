@@ -99,7 +99,10 @@
           const scope = wasm.scopedAllocPush();
           const dbFile = 0 ? "session" : "local";
           const urlArgs = self.SqliteTestUtil.processUrlArgs();
-          const argv = ["speedtest1", "--size", "5"];
+          const argv = ["speedtest1",
+                        "--size", "2",
+                        "--pagesize", "4096" /*1024, 2096 fail with --size > 1.*/
+                       ];
           if(urlArgs.flags){
             // transform flags=a,b,c to ["--a", "--b", "--c"]
             argv.push(...(urlArgs.flags.split(',').map((v)=>'--'+v)));

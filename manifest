@@ -1,5 +1,5 @@
-C When\scalculating\skvvfs\ssessionStorage/localStorage\ssize,\smultiply\sit\sby\s2\sto\saccount\sfor\sJS\susing\s16-bit\scharacters.
-D 2022-09-16T12:49:45.564
+C Merge\skv-vfs\sbranch\sinto\sfiddle-opfs\sbranch.\sAdjust\sspeedtest1\s--size\sflags\sto\saccount\sfor\snew\ssize\slimit.
+D 2022-09-16T20:16:50.240
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -474,7 +474,7 @@ F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
 F ext/userauth/userauth.c 7f00cded7dcaa5d47f54539b290a43d2e59f4b1eb5f447545fa865f002fc80cb
 F ext/wasm/EXPORTED_FUNCTIONS.fiddle 7fb73f7150ab79d83bb45a67d257553c905c78cd3d693101699243f36c5ae6c3
 F ext/wasm/EXPORTED_RUNTIME_METHODS.fiddle a004bd5eeeda6d3b28d16779b7f1a80305bfe009dfc7f0721b042967f0d39d02
-F ext/wasm/GNUmakefile ab4a43ee7aaa5abf8e30f02cedfb803a18f632bb6554e800d96616050ccab37d
+F ext/wasm/GNUmakefile 0323a7597383bf0dab473304f3a8a7e29d49298d92b5413692c012be2dfa84bf
 F ext/wasm/README.md e1ee1e7c321c6a250bf78a84ca6f5882890a237a450ba5a0649c7a8399194c52
 F ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-api 150a793a47205b8009ac934f3b6d6ebf67b965c072339aaa25ce808a19e116cc
 F ext/wasm/api/EXPORTED_RUNTIME_METHODS.sqlite3-api 1ec3c73e7d66e95529c3c64ac3de2470b0e9e7fbf7a5b41261c367cf4f1b7287
@@ -515,7 +515,7 @@ F ext/wasm/scratchpad-opfs-worker.js cf6c4554d3b099c1a50013e50d19b3dc60e183511b4
 F ext/wasm/scratchpad-opfs-worker2.js 8c980370bbd5a262d96af8627c443936e11b87d0263a02123769d5953fc146da
 F ext/wasm/scratchpad-wasmfs-main.html 20cf6f1a8f368e70d01e8c17200e3eaa90f1c8e1029186d836d14b83845fbe06
 F ext/wasm/scratchpad-wasmfs-main.js 69e960e9161f6412fd0c30f355d4112f1894d6609eb431e2d16d207d1380518e
-F ext/wasm/speedtest1-kvvfs.html 20f47314ea1b892cfb9248d63e2514573be089d7ab1949dddadd4fed761e07a9
+F ext/wasm/speedtest1-kvvfs.html c8b65c20e2b35298dc02d8e0a394d5e1eb857fd22e504468388234aee13aef08
 F ext/wasm/speedtest1-wasmfs.html 6a67a6812f03a2058eb5c6ad0c8dea4bf749d0160ed9d6b826dabe7b766c3cf7
 F ext/wasm/speedtest1-worker.html d8881ae802d15fb8adb94049265173e99f350e07e1d4e6f9e1cbd8969fe63a04
 F ext/wasm/speedtest1-worker.js fb5d282c0b8aed18daf41c57f768cbf434f8137dbff707d53dcedcd7d4cb60ef
@@ -597,7 +597,7 @@ F src/notify.c 89a97dc854c3aa62ad5f384ef50c5a4a11d70fcc69f86de3e991573421130ed6
 F src/os.c 0eb831ba3575af5277e47f4edd14fdfc90025c67eb25ce5cda634518d308d4e9
 F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
-F src/os_kv.c 554a2c109f8810b743af2eed4ba732d18dfdbc4d073e3a9bd8b8e828215a9692
+F src/os_kv.c 3a2d319988df9da8f3a4d0c753a1492542bd3017ff7ae5d07814460eac6b0b19
 F src/os_setup.h 0711dbc4678f3ac52d7fe736951b6384a0615387c4ba5135a4764e4e31f4b6a6
 F src/os_unix.c 0fa91925f0b8831fc0156a9c04d39d86f85baf9eef66c98712395e1715cb75cc
 F src/os_win.c 8d129ae3e59e0fa900e20d0ad789e96f2e08177f0b00b53cdda65c40331e0902
@@ -2027,8 +2027,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 13899bb98c80525276d2484598b94e4206358f243f06d45c02700024f7e226fd
-R 9d9ce1010dbc2786b3b027fc9d4d0a5f
+P 52d1b185b9f6cee1eb3dec436f47e0f52e4621a127abfad8c27f92fd78147889 ef54961ce69fddb4cfeeff0860288de2858a6f7a5aa396691e8e99933eb9af54
+R e35abbf6d1d9b2b828d30426a9a9f018
 U stephan
-Z a004dca4566819b88df76b8693bd15c3
+Z 0ddb259c4784fc46ece386ccc85309e5
 # Remove this line to create a well-formed Fossil manifest.
