@@ -1,5 +1,5 @@
-C Add\sreturn\svalue\schecks\sto\skvstorageWrite(),\snecessary\sfor\srecognizing\sstorage-full\serrors\sin\sthe\sJS\sbinding.\sspeedtest1-kvvfs.html\sruns\ssuccessfully\son\slocalStorage\swith\s--size\s1\sto\s6\sand\sstarts\sfailing\swith\sstorage\sshortage\sat\s--size\s7.
-D 2022-09-16T01:05:19.939
+C Remove\s--nosync\sflag\sfrom\sspeedtest1-kvvfs.html,\sas\sthat\sseems\sto\sbe\sthe\strigger\sfor\sthe\s'no\ssuch\stable:\sz1'\serror.\sThat\sapp\snow\swarns\sif\sthat\sflag\sis\spassed\sto\sit\svia\sURL\sargs.
+D 2022-09-16T02:28:03.733
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -514,7 +514,7 @@ F ext/wasm/scratchpad-opfs-worker.js cf6c4554d3b099c1a50013e50d19b3dc60e183511b4
 F ext/wasm/scratchpad-opfs-worker2.js 2424d7d7b8801fc143f6540fbdd8a96f3f2e5b811f0f545714d06147ccce58bf
 F ext/wasm/scratchpad-wasmfs-main.html 20cf6f1a8f368e70d01e8c17200e3eaa90f1c8e1029186d836d14b83845fbe06
 F ext/wasm/scratchpad-wasmfs-main.js 69e960e9161f6412fd0c30f355d4112f1894d6609eb431e2d16d207d1380518e
-F ext/wasm/speedtest1-kvvfs.html c9cb752f9c81cdcf9ccdc09146bd8c9c77970ed44ab10908ed15f1cce95c0f8d
+F ext/wasm/speedtest1-kvvfs.html ad08e2018c67cde7c459f692122a7d675b54a3709726c094ecbeed230f36abd3
 F ext/wasm/speedtest1-wasmfs.html 6a67a6812f03a2058eb5c6ad0c8dea4bf749d0160ed9d6b826dabe7b766c3cf7
 F ext/wasm/speedtest1-worker.html d8881ae802d15fb8adb94049265173e99f350e07e1d4e6f9e1cbd8969fe63a04
 F ext/wasm/speedtest1-worker.js fb5d282c0b8aed18daf41c57f768cbf434f8137dbff707d53dcedcd7d4cb60ef
@@ -2026,8 +2026,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 00ee49a3a2c148480f614e49a0ee5b35a255758c0a53693f0b464b31e7a4045b
-R a6e9c244c29b55941f4ad5b4e78621c2
+P 13839759f8f45e4eb0aa6a5052801f3964d5b2dc2e427e5e91ee6692176381eb
+R bad0de454d5232b2bfe356090d3af869
 U stephan
-Z daf2b8c0bbcd601af0a5bcd00e934942
+Z 949ebd6be72bc73feff93f2475059791
 # Remove this line to create a well-formed Fossil manifest.
