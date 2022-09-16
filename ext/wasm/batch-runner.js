@@ -356,17 +356,24 @@
       this.logHtml("Loaded module:",capi.sqlite3_libversion(), capi.sqlite3_sourceid());
       this.logHtml("WASM heap size =",wasm.heap8().length);
       this.loadSqlList();
-      const pDir = 1 ? '' : capi.sqlite3_web_persistent_dir();
-      const dbFile = pDir ? pDir+"/speedtest.db" : (
-        sqlite3.capi.sqlite3_vfs_find('kvvfs') ? 'local' : ':memory:'
-      );
-      this.clearStorage();
-      if(pDir){
-        logHtml("Using persistent storage:",dbFile);
+      let pDir, dbFile;
+      if(sqlite3.capi.sqlite3_vfs_find('kvvfs')){
+        dbFile = 1 ? 'local' : 'session';
+        this.logHtml("Using KVVFS storage:",dbFile);
       }else{
+        pDir = capi.sqlite3_web_persistent_dir();
+        if(pDir){
+          dbFile = pDir+"/speedtest.db";
+          this.logHtml("Using persistent storage:",dbFile);
+        }else{
+          dbFile = ':memory:';
+          this.logHtml("Using",dbFile,"storage.");
+        }
+      }
+      if(!pDir){
         document.querySelector('#warn-opfs').remove();
       }
-      this.openDb(dbFile, !!pDir);
+      this.openDb(dbFile, true);
       const who = this;
       const eReverseLogNotice = document.querySelector('#reverse-log-notice');
       if(this.e.cbReverseLog.checked){
