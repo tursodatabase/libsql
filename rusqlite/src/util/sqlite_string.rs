@@ -131,7 +131,8 @@ impl SqliteMallocString {
                     //   (everything is aligned to 1)
                     // - `size` is also never zero, although this function doesn't actually require
                     //   it now.
-                    let layout = Layout::from_size_align_unchecked(s.len().saturating_add(1), 1);
+                    let len = s.len().saturating_add(1).min(isize::MAX as usize);
+                    let layout = Layout::from_size_align_unchecked(len, 1);
                     // Note: This call does not return.
                     handle_alloc_error(layout);
                 });
