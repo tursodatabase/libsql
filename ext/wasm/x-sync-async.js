@@ -47,13 +47,14 @@ const initOpfsVfs = function(sqlite3){
   warn("This file is very much experimental and under construction.",self.location.pathname);
 
   if(self.window===self ||
-     !self.SharedBufferArray ||
+     !self.SharedArrayBuffer ||
      !self.FileSystemHandle ||
      !self.FileSystemDirectoryHandle ||
      !self.FileSystemFileHandle ||
      !self.FileSystemFileHandle.prototype.createSyncAccessHandle ||
      !navigator.storage.getDirectory){
     warn("This environment does not have OPFS support.");
+    return;
   }
 
   const capi = sqlite3.capi;
@@ -282,7 +283,11 @@ const initOpfsVfs = function(sqlite3){
      are in alphabetical order to simplify finding them.
   */
   const vfsSyncWrappers = {
-    // TODO: xAccess
+    xAccess: function(pVfs,zName,flags,pOut){
+      const rc = opRun('xAccess', wasm.cstringToJs(zName));
+      wasm.setMemValue(pOut, rc ? 0 : 1, 'i32');
+      return 0;
+    },
     xCurrentTime: function(pVfs,pOut){
       /* If it turns out that we need to adjust for timezone, see:
          https://stackoverflow.com/a/11760121/1458521 */
@@ -397,17 +402,25 @@ const initOpfsVfs = function(sqlite3){
       const fid = sq3File.pointer;
       const openFlags = capi.SQLITE_OPEN_CREATE
             | capi.SQLITE_OPEN_READWRITE
-            | capi.SQLITE_OPEN_DELETEONCLOSE
+            //| capi.SQLITE_OPEN_DELETEONCLOSE
             | capi.SQLITE_OPEN_MAIN_DB;
       const pOut = wasm.scopedAlloc(8);
       const dbFile = "/sanity/check/file";
-      let rc = vfsSyncWrappers.xOpen(opfsVfs.pointer, dbFile,
-                                     fid, openFlags, pOut);
+      const zDbFile = wasm.scopedAllocCString(dbFile);
+      let rc;
+      vfsSyncWrappers.xAccess(opfsVfs.pointer, zDbFile, 0, pOut);
+      rc = wasm.getMemValue(pOut,'i32');
+      log("xAccess(",dbFile,") exists ?=",rc);
+      rc = vfsSyncWrappers.xOpen(opfsVfs.pointer, zDbFile,
+                                fid, openFlags, pOut);
       log("open rc =",rc,"state.opSABView[xOpen] =",state.opSABView[state.opIds.xOpen]);
       if(isWorkerErrCode(rc)){
         error("open failed with code",rc);
         return;
       }
+      vfsSyncWrappers.xAccess(opfsVfs.pointer, zDbFile, 0, pOut);
+      rc = wasm.getMemValue(pOut,'i32');
+      if(!rc) toss("xAccess() failed to detect file.");
       rc = ioSyncWrappers.xSync(sq3File.pointer, 0);
       if(rc) toss('sync failed w/ rc',rc);
       rc = ioSyncWrappers.xTruncate(sq3File.pointer, 1024);
@@ -417,11 +430,14 @@ const initOpfsVfs = function(sqlite3){
       if(rc) toss('xFileSize failed w/ rc',rc);
       log("xFileSize says:",wasm.getMemValue(pOut, 'i64'));
       log("xSleep()ing before close()ing...");
-      opRun('xSleep',1500);
+      opRun('xSleep',1000);
       rc = ioSyncWrappers.xClose(fid);
       log("xClose rc =",rc,"opSABView =",state.opSABView);
       log("Deleting file:",dbFile);
-      opRun('xDelete', dbFile);
+      vfsSyncWrappers.xDelete(opfsVfs.pointer, zDbFile, 0x1234);
+      vfsSyncWrappers.xAccess(opfsVfs.pointer, zDbFile, 0, pOut);
+      rc = wasm.getMemValue(pOut,'i32');
+      if(rc) toss("Expecting 0 from xAccess(",dbFile,") after xDelete().");
     }finally{
       sq3File.dispose();
       wasm.scopedAllocPop(scope);

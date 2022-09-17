@@ -72,9 +72,17 @@ warn("This file is very much experimental and under construction.",self.location
 const __openFiles = Object.create(null);
 
 /**
-   Map of dir names to FileSystemDirectoryHandle objects.
+   Expects an OPFS file path. It gets resolved, such that ".."
+   components are properly expanded, and returned. If the 2nd
+   are is true, it's returned as an array of path elements,
+   else it's returned as an absolute path string.
 */
-const __dirCache = new Map;
+const getResolvedPath = function(filename,splitIt){
+  const p = new URL(
+    filename, 'file://irrelevant'
+  ).pathname;
+  return splitIt ? p.split('/').filter((v)=>!!v) : p;
+}
 
 /**
    Takes the absolute path to a filesystem element. Returns an array
@@ -83,21 +91,13 @@ const __dirCache = new Map;
    along the way. Throws if any creation or resolution fails.
 */
 const getDirForPath = async function f(absFilename, createDirs = false){
-  const url = new URL(
-    absFilename, 'file://xyz'
-  ) /* use URL to resolve path pieces such as a/../b */;
-  const path = url.pathname.split('/').filter((v)=>!!v);
+  const path = getResolvedPath(absFilename, true);
   const filename = path.pop();
-  const allDirs = '/'+path.join('/');
-  let dh = __dirCache.get(allDirs);
-  if(!dh){
-    dh = state.rootDir;
-    for(const dirName of path){
-      if(dirName){
-        dh = await dh.getDirectoryHandle(dirName, {create: !!createDirs});
-      }
+  let dh = state.rootDir;
+  for(const dirName of path){
+    if(dirName){
+      dh = await dh.getDirectoryHandle(dirName, {create: !!createDirs});
     }
-    __dirCache.set(allDirs, dh);
   }
   return [dh, filename];
 };
@@ -113,14 +113,6 @@ const storeAndNotify = (opName, value)=>{
   Atomics.notify(state.opSABView, state.opIds[opName]);
 };
 
-const isInt32 = function(n){
-  return ('bigint'!==typeof n /*TypeError: can't convert BigInt to number*/)
-    && !!(n===(n|0) && n<=2147483647 && n>=-2147483648);
-};
-const affirm32Bits = function(n){
-  return isInt32(n) || toss("Number is too large (>31 bits) (FIXME!):",n);
-};
-
 /**
    Throws if fh is a file-holding object which is flagged as read-only.
 */
@@ -134,9 +126,26 @@ const affirmNotRO = function(opName,fh){
    to simplify finding them.
 */
 const vfsAsyncImpls = {
-  xAccess: async function({filename, exists, readWrite}){
-    warn("xAccess(",arguments[0],") is TODO");
-    const rc = state.sq3Codes.SQLITE_IOERR;
+  xAccess: async function(filename){
+    log("xAccess(",arguments[0],")");
+    /* OPFS cannot support the full range of xAccess() queries sqlite3
+       calls for. We can essentially just tell if the file is
+       accessible, but if it is it's automatically writable (unless
+       it's locked, which we cannot(?) know without trying to open
+       it). OPFS does not have the notion of read-only.
+
+       The return semantics of this function differ from sqlite3's
+       xAccess semantics because we are limited in what we can
+       communicate back to our synchronous communication partner: 0 =
+       accessible, non-0 means not accessible.
+    */
+    let rc = 0;
+    try{
+      const [dh, fn] = await getDirForPath(filename);
+      await dh.getFileHandle(fn);
+    }catch(e){
+      rc = state.sq3Codes.SQLITE_IOERR;
+    }
     storeAndNotify('xAccess', rc);
   },
   xClose: async function(fid){
@@ -156,12 +165,34 @@ const vfsAsyncImpls = {
     }
   },
   xDelete: async function({filename, syncDir/*ignored*/}){
+    /* The syncDir flag is, for purposes of the VFS API's semantics,
+       ignored here. However, if it has the value 0x1234 then: after
+       deleting the given file, recursively try to delete any empty
+       directories left behind in its wake (ignoring any errors and
+       stopping at the first failure).
+
+       That said: we don't know for sure that removeEntry() fails if
+       the dir is not empty because the API is not documented. It has,
+       however, a "recursive" flag which defaults to false, so
+       presumably it will fail if the dir is not empty and that flag
+       is false.
+    */
     log("xDelete(",arguments[0],")");
     try {
-      const [hDir, filenamePart] = await getDirForPath(filename, false);
-      await hDir.removeEntry(filenamePart);
+      while(filename){
+        const [hDir, filenamePart] = await getDirForPath(filename, false);
+        //log("Removing:",hDir, filenamePart);
+        if(!filenamePart) break;
+        await hDir.removeEntry(filenamePart);
+        if(0x1234 !== syncDir) break;
+        filename = getResolvedPath(filename, true);
+        filename.pop();
+        filename = filename.join('/');
+      }
     }catch(e){
-      /* Ignoring: _presumably_ the file can't be found. */
+      /* Ignoring: _presumably_ the file can't be found or a dir is
+         not empty. */
+      //error("Delete failed",filename, e.message);
     }
     storeAndNotify('xDelete', 0);
   },
@@ -268,8 +299,8 @@ const vfsAsyncImpls = {
   xWrite: async function({fid,src,n,offset}){
     log("xWrite(",arguments[0],")");
     let rc;
+    const fh = __openFiles[fid];
     try{
-      const fh = __openFiles[fid];
       affirmNotRO('xWrite', fh);
       const nOut = fh.accessHandle.write(new UInt8Array(fh.sab, 0, n), {at: offset});
       rc = (nOut===n) ? 0 : state.sq3Codes.SQLITE_IOERR_WRITE;
@@ -324,4 +355,4 @@ navigator.storage.getDirectory().then(function(d){
     }
   };
   wMsg('loaded');
-});
+}).catch((e)=>error(e));
