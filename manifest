@@ -1,5 +1,5 @@
-C Include\sthe\skv-vfs\sas\san\soptional\sVFS\son\sunix\sbuilds\sif\sthe\nSQLITE_OS_KV_OPTIONAL\scompile-time\soption\sis\spresent.
-D 2022-09-17T18:29:49.617
+C Fix\san\suninitialized\svariable\sin\sthe\sdecoder\skv-vfs.
+D 2022-09-17T18:31:31.300
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -574,7 +574,7 @@ F src/notify.c 89a97dc854c3aa62ad5f384ef50c5a4a11d70fcc69f86de3e991573421130ed6
 F src/os.c 0eb831ba3575af5277e47f4edd14fdfc90025c67eb25ce5cda634518d308d4e9
 F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
-F src/os_kv.c 96c4062e9ca8f3bb70f43e05b766dcd30fe5c2f125fd70c51ed6ef01474a6593
+F src/os_kv.c cf02a39ab3271d237890c7de03a49e5ecc19c930b8f4ad6afd43651dc05c9400
 F src/os_setup.h 0711dbc4678f3ac52d7fe736951b6384a0615387c4ba5135a4764e4e31f4b6a6
 F src/os_unix.c 287aa5f5691a2b356780c63e83abaa33549add84227b8313395f04088486d79c
 F src/os_win.c 8d129ae3e59e0fa900e20d0ad789e96f2e08177f0b00b53cdda65c40331e0902
@@ -2004,8 +2004,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 37c7ca25a6e837e7f83b96a32e2b1a455730e48a48012c458ae2e734a3ccdd1f
-R 32beb89ba30390bdb85cd8d5b10c9a35
+P 852812d1e2ec3c53ad7c6c64662b37d861fefcf1baeee3d58eba88bcb3f6d8df
+R 9c6620d4dc4ed0d3ddc9cc9e79cbabf7
 U drh
-Z 6831abb42712ac9e23b5b00f249e84e3
+Z 7ef728d647d25bb1b8240f0a67ed5ff5
 # Remove this line to create a well-formed Fossil manifest.
