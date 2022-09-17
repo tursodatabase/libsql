@@ -10,10 +10,10 @@
 
   ***********************************************************************
 
-  A EXTREMELY INCOMPLETE and UNDER CONSTRUCTION experiment for OPFS: a
-  Worker which manages asynchronous OPFS handles on behalf of a
-  synchronous API which controls it via a combination of Worker
-  messages, SharedArrayBuffer, and Atomics.
+  An INCOMPLETE and UNDER CONSTRUCTION experiment for OPFS: a Worker
+  which manages asynchronous OPFS handles on behalf of a synchronous
+  API which controls it via a combination of Worker messages,
+  SharedArrayBuffer, and Atomics.
 
   Highly indebted to:
 
@@ -109,8 +109,8 @@ const getDirForPath = async function f(absFilename, createDirs = false){
 */
 const storeAndNotify = (opName, value)=>{
   log(opName+"() is notify()ing w/ value:",value);
-  Atomics.store(state.opBuf, state.opIds[opName], value);
-  Atomics.notify(state.opBuf, state.opIds[opName]);
+  Atomics.store(state.opSABView, state.opIds[opName], value);
+  Atomics.notify(state.opSABView, state.opIds[opName]);
 };
 
 const isInt32 = function(n){
@@ -294,8 +294,8 @@ navigator.storage.getDirectory().then(function(d){
           state.verbose = opt.verbose ?? 2;
           state.fileBufferSize = opt.fileBufferSize;
           state.fbInt64Offset = opt.fbInt64Offset;
-          state.opSab = opt.opSab;
-          state.opBuf = new Int32Array(state.opSab);
+          state.opSAB = opt.opSAB;
+          state.opSABView = new Int32Array(state.opSAB);
           state.opIds = opt.opIds;
           state.sq3Codes = opt.sq3Codes;
           Object.keys(vfsAsyncImpls).forEach((k)=>{

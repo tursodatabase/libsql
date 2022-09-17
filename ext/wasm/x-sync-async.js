@@ -10,10 +10,20 @@
 
   ***********************************************************************
 
-  A EXTREMELY INCOMPLETE and UNDER CONSTRUCTION experiment for OPFS.
+  An INCOMPLETE and UNDER CONSTRUCTION experiment for OPFS.
   This file holds the synchronous half of an sqlite3_vfs
   implementation which proxies, in a synchronous fashion, the
-  asynchronous OPFS APIs using a second Worker.
+  asynchronous OPFS APIs using a second Worker, implemented
+  in sqlite3-opfs-async-proxy.js.
+
+  Summary of how this works:
+
+  This file uses the sqlite3.StructBinder-created struct wrappers for
+  sqlite3_vfs, sqlite3_io_methods, ans sqlite3_file to set up a
+  conventional sqlite3_vfs (except that it's implemented in JS). The
+  methods which require OPFS APIs use a separate worker (hereafter called the
+  OPFS worker) to access that functionality. This worker and that one
+  use SharedBufferArray
 */
 'use strict';
 /**
@@ -36,6 +46,16 @@ const initOpfsVfs = function(sqlite3){
   };
   warn("This file is very much experimental and under construction.",self.location.pathname);
 
+  if(self.window===self ||
+     !self.SharedBufferArray ||
+     !self.FileSystemHandle ||
+     !self.FileSystemDirectoryHandle ||
+     !self.FileSystemFileHandle ||
+     !self.FileSystemFileHandle.prototype.createSyncAccessHandle ||
+     !navigator.storage.getDirectory){
+    warn("This environment does not have OPFS support.");
+  }
+
   const capi = sqlite3.capi;
   const wasm = capi.wasm;
   const sqlite3_vfs = capi.sqlite3_vfs
@@ -44,7 +64,6 @@ const initOpfsVfs = function(sqlite3){
         || toss("Missing sqlite3.capi.sqlite3_file object.");
   const sqlite3_io_methods = capi.sqlite3_io_methods
         || toss("Missing sqlite3.capi.sqlite3_io_methods object.");
-  const StructBinder = sqlite3.StructBinder || toss("Missing sqlite3.StructBinder.");
 
   const W = new Worker("sqlite3-opfs-async-proxy.js");
   const wMsg = (type,payload)=>W.postMessage({type,payload});
@@ -72,7 +91,7 @@ const initOpfsVfs = function(sqlite3){
     state.opIds.xSync = i++;
     state.opIds.xTruncate = i++;
     state.opIds.xWrite = i++;
-    state.opSab = new SharedArrayBuffer(i * 4);
+    state.opSAB = new SharedArrayBuffer(i * 4/*sizeof int32*/);
   }
 
   state.sq3Codes = Object.create(null);
@@ -91,13 +110,13 @@ const initOpfsVfs = function(sqlite3){
 
   const isWorkerErrCode = (n)=>!!state.sq3Codes._reverse[n];
   
-  const opStore = (op,val=-1)=>Atomics.store(state.opBuf, state.opIds[op], val);
-  const opWait = (op,val=-1)=>Atomics.wait(state.opBuf, state.opIds[op], val);
+  const opStore = (op,val=-1)=>Atomics.store(state.opSABView, state.opIds[op], val);
+  const opWait = (op,val=-1)=>Atomics.wait(state.opSABView, state.opIds[op], val);
 
   /**
      Runs the given operation in the async worker counterpart, waits
      for its response, and returns the result which the async worker
-     writes to the given op's index in state.opBuf. The 2nd argument
+     writes to the given op's index in state.opSABView. The 2nd argument
      must be a single object or primitive value, depending on the
      given operation's signature in the async API counterpart.
   */
@@ -105,7 +124,7 @@ const initOpfsVfs = function(sqlite3){
     opStore(op);
     wMsg(op, args);
     opWait(op);
-    return Atomics.load(state.opBuf, state.opIds[op]);
+    return Atomics.load(state.opSABView, state.opIds[op]);
   };
 
   const wait = (ms,value)=>{
@@ -151,16 +170,17 @@ const initOpfsVfs = function(sqlite3){
   opfsVfs.$szOsFile = capi.sqlite3_file.structInfo.sizeof;
   opfsVfs.$mxPathname = 1024/*sure, why not?*/;
   opfsVfs.$zName = wasm.allocCString("opfs");
+  // All C-side memory of opfsVfs is zeroed out, but just to be explicit:
+  opfsVfs.$xDlOpen = opfsVfs.$xDlError = opfsVfs.$xDlSym = opfsVfs.$xDlClose = null;
   opfsVfs.ondispose = [
     '$zName', opfsVfs.$zName,
-    'cleanup dVfs', ()=>(dVfs ? dVfs.dispose() : null)
+    'cleanup default VFS wrapper', ()=>(dVfs ? dVfs.dispose() : null),
+    'cleanup opfsIoMethods', ()=>opfsIoMethods.dispose()
   ];
   if(dVfs){
     opfsVfs.$xSleep = dVfs.$xSleep;
     opfsVfs.$xRandomness = dVfs.$xRandomness;
   }
-  // All C-side memory of opfsVfs is zeroed out, but just to be explicit:
-  opfsVfs.$xDlOpen = opfsVfs.$xDlError = opfsVfs.$xDlSym = opfsVfs.$xDlClose = null;
   /**
      Pedantic sidebar about opfsVfs.ondispose: the entries in that array
      are items to clean up when opfsVfs.dispose() is called, but in this
@@ -383,7 +403,7 @@ const initOpfsVfs = function(sqlite3){
       const dbFile = "/sanity/check/file";
       let rc = vfsSyncWrappers.xOpen(opfsVfs.pointer, dbFile,
                                      fid, openFlags, pOut);
-      log("open rc =",rc,"state.opBuf[xOpen] =",state.opBuf[state.opIds.xOpen]);
+      log("open rc =",rc,"state.opSABView[xOpen] =",state.opSABView[state.opIds.xOpen]);
       if(isWorkerErrCode(rc)){
         error("open failed with code",rc);
         return;
@@ -399,7 +419,7 @@ const initOpfsVfs = function(sqlite3){
       log("xSleep()ing before close()ing...");
       opRun('xSleep',1500);
       rc = ioSyncWrappers.xClose(fid);
-      log("xClose rc =",rc,"opBuf =",state.opBuf);
+      log("xClose rc =",rc,"opSABView =",state.opSABView);
       log("Deleting file:",dbFile);
       opRun('xDelete', dbFile);
     }finally{
@@ -416,13 +436,31 @@ const initOpfsVfs = function(sqlite3){
           /*Pass our config and shared state on to the async worker.*/
           wMsg('init',state);
           break;
-        case 'inited':
+        case 'inited':{
           /*Indicates that the async partner has received the 'init',
             so we now know that the state object is no longer subject to
             being copied by a pending postMessage() call.*/
-          state.opBuf = new Int32Array(state.opSab);
-          sanityCheck();
+          try {
+            const rc = capi.sqlite3_vfs_register(opfsVfs.pointer, opfsVfs.$zName);
+            if(rc){
+              opfsVfs.dispose();
+              toss("sqlite3_vfs_register(OPFS) failed with rc",rc);
+            }
+            if(opfsVfs.pointer !== capi.sqlite3_vfs_find("opfs")){
+              toss("BUG: sqlite3_vfs_find() failed for just-installed OPFS VFS");
+            }
+            capi.sqlite3_vfs_register.addReference(opfsVfs, opfsIoMethods);
+            state.opSABView = new Int32Array(state.opSAB);
+            if(self.location && +self.location.port > 1024){
+              log("Running sanity check for dev mode...");
+              sanityCheck();
+            }
+            warn("End of (very incomplete) OPFS setup.", opfsVfs);
+          }catch(e){
+            error(e);
+          }
           break;
+        }
         default:
           error("Unexpected message from the async worker:",data);
           break;

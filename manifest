@@ -1,5 +1,5 @@
-C Add\sthe\sremaining\svfs/io_methods\swrappers\sto\sthe\sOPFS\ssync/async\sproxy,\sbut\smost\sare\snot\syet\stested.
-D 2022-09-17T20:50:12.684
+C Generic\scleanups\sin\sthe\sOPFS\ssync/async\sproxy.
+D 2022-09-17T21:13:26.228
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -523,7 +523,7 @@ F ext/wasm/speedtest1.html fbb8e4d1639028443f3687a683be660beca6927920545cf6b1fdf
 F ext/wasm/split-speedtest1-script.sh a3e271938d4d14ee49105eb05567c6a69ba4c1f1293583ad5af0cd3a3779e205 x
 F ext/wasm/sql/000-mandelbrot.sql 775337a4b80938ac8146aedf88808282f04d02d983d82675bd63d9c2d97a15f0
 F ext/wasm/sql/001-sudoku.sql 35b7cb7239ba5d5f193bc05ec379bcf66891bce6f2a5b3879f2f78d0917299b5
-F ext/wasm/sqlite3-opfs-async-proxy.js 62024877ad13fdff1834581ca1951ab58bda431e4d548aaaf4506ea54f0ed2de
+F ext/wasm/sqlite3-opfs-async-proxy.js ceb5e3a190bfd42d25fc137b3aaf09adf6469b5f1e33528a64ce7ff74e5ef5b1
 F ext/wasm/sqlite3-worker1-promiser.js 92b8da5f38439ffec459a8215775d30fa498bc0f1ab929ff341fc3dd479660b9
 F ext/wasm/sqlite3-worker1.js 0c1e7626304543969c3846573e080c082bf43bcaa47e87d416458af84f340a9e
 F ext/wasm/testing-worker1-promiser.html 6eaec6e04a56cf24cf4fa8ef49d78ce8905dde1354235c9125dca6885f7ce893
@@ -534,7 +534,7 @@ F ext/wasm/testing2.html a66951c38137ff1d687df79466351f3c734fa9c6d9cce71d3cf97c2
 F ext/wasm/testing2.js 25584bcc30f19673ce13a6f301f89f8820a59dfe044e0c4f2913941f4097fe3c
 F ext/wasm/wasmfs.make 21a5cf297954a689e0dc2a95299ae158f681cae5e90c10b99d986097815fd42d
 F ext/wasm/x-sync-async.html 717b0d3bee96e49cbd36731bead497ab27a8bf3a3b23dd11e40e61d4ac9e8b80
-F ext/wasm/x-sync-async.js 05c0b49adae0600c5ad12f3325e0873ab1f07b99c2bb017f32b50a4f701490f1
+F ext/wasm/x-sync-async.js c99a6f98a8b0ccb43b2883a1bc1da42d0d84b26b5d4fd99d2f053ffe209a0a1f
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
@@ -2030,8 +2030,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 38da059b472415da52f57de7332fbeb8a91e3add1f4be3ff9c1924b52672f77c
-R 8887512b2075b067b4aa7969d08f1316
+P 44db9132145b3072488ea91db53f6c06be74544beccad5fd07efd22c0f03dc04
+R 75c9aa6717389505aa78f157abdf6d44
 U stephan
-Z 1bf4c438e48bd1dc1717362060b2f357
+Z 6a0a0bcb470dbb44e9d0c87c09f1fedd
 # Remove this line to create a well-formed Fossil manifest.
