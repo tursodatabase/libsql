@@ -13,16 +13,10 @@
     <div>This is an experiment in wrapping the
       asynchronous OPFS APIs behind a fully synchronous proxy. It is
       very much incomplete, under construction, and experimental.
-      See the dev console for all output.
+      <strong>See the dev console for all output.</strong>
     </div>
     <div id='test-output'>
     </div>
-    <!--script src="common/whwasmutil.js"></script-->
-    <!--script src="common/SqliteTestUtil.js"></script-->
-    <script>
-(function(){
-    new Worker("x-sync-async.js");
-})();
-    </script>
+    <script>new Worker("x-sync-async.js");</script>
   </body>
 </html>
