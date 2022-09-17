@@ -1,5 +1,5 @@
-C Corrections\sto\sthe\sxRead\smethod\sfor\sdatabases\sin\sthe\sos_kv.c\sVFS\sso\sthat\sit\ncorrectly\sreads\sthe\sheader,\sand\sthus\savoids\sunnecessary\scache\sflushes.\s\sThis\nchanges\salso\sincludes\san\soptimization\sto\sthe\sheader\sread\slogic.
-D 2022-09-16T15:19:04.113
+C Merge\sthe\slatest\strunk\senhancements\sinto\sthe\skv-vfs\sbranch.
+D 2022-09-17T17:26:44.762
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -577,14 +577,14 @@ F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_kv.c 3a2d319988df9da8f3a4d0c753a1492542bd3017ff7ae5d07814460eac6b0b19
 F src/os_setup.h 0711dbc4678f3ac52d7fe736951b6384a0615387c4ba5135a4764e4e31f4b6a6
 F src/os_unix.c 0fa91925f0b8831fc0156a9c04d39d86f85baf9eef66c98712395e1715cb75cc
-F src/os_win.c e9454cb141908e8eef2102180bad353a36480612d5b736e4c2bd5777d9b25a34
+F src/os_win.c 8d129ae3e59e0fa900e20d0ad789e96f2e08177f0b00b53cdda65c40331e0902
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 6176d9752eb580419e8fef4592dc417a6b00ddfd43ee22f818819bf8840ceee8
 F src/pager.h f82e9844166e1585f5786837ddc7709966138ced17f568c16af7ccf946c2baa3
 F src/parse.y 8e67d820030d2655b9942ffe61c1e7e6b96cea2f2f72183533299393907d0564
-F src/pcache.c 22a6ebe498d1d26c85fd1e3bcb246d97b882c060027c1e1688fbea905f5ac3cf
+F src/pcache.c f4268f7f73c6a3db12ce22fd25bc68dc42315d19599414ab1207d7cf32f79197
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
-F src/pcache1.c 849a26ea9dc1e6a176b75dc576672a598170b0b46aeef87a981dd25e0af0ccf9
+F src/pcache1.c dee95e3cd2b61e6512dc814c5ab76d5eb36f0bfc9441dbb4260fccc0d12bbddc
 F src/pragma.c 9bf7d8a2a9ad3bc36df3ec0d61817a44c38a1da527d59c26c203047f906e334a
 F src/pragma.h e690a356c18e98414d2e870ea791c1be1545a714ba623719deb63f7f226d8bb7
 F src/prepare.c 971d5819a4bda88038c2283d71fc0a2974ffc3dd480f9bd941341017abacfd1b
@@ -1962,7 +1962,7 @@ F tool/showstat4.c 0682ebea7abf4d3657f53c4a243f2e7eab48eab344ed36a94bb75dcd19a5c
 F tool/showwal.c 0253c187ae16fdae9cde89e63e1dfcd3bb35e5416d066415f99e2f8cac6ab03d
 F tool/soak1.tcl 8d407956e1a45b485a8e072470a3e629a27037fe
 F tool/spaceanal.tcl 1b5be34c6223cb1af06da2a10fb77863eb869b1962d055820b0a11cf2336ab45
-F tool/speed-check.sh ff74a68bb95a0341275f4d3c9a7d8a3800bd278aceecf1913295a1f0175bc3e6
+F tool/speed-check.sh 13f8e07dbfe25f3aecda33fb6068894665af61ca1360a7b654be0ad0c3f3ae0b
 F tool/speedtest.tcl 06c76698485ccf597b9e7dbb1ac70706eb873355
 F tool/speedtest16.c ecb6542862151c3e6509bbc00509b234562ae81e
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
@@ -2004,8 +2004,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 21915af560b111aeeaee751790356151a5f063c2fc703dd4b35b22dc393409fb
-R 64099072882bb903603d527810cdf234
+P ef54961ce69fddb4cfeeff0860288de2858a6f7a5aa396691e8e99933eb9af54 ff46bc9d2a844dde9dafa157114f4d9ee157205ca5c08ed9ee32f018de310e62
+R 4de08b84ca8222edc80a9a00d8c86ac4
 U drh
-Z 33c23cb0033c7cdf863f626ff2ea91a9
+Z f60f4623d1ae77ea9ba72cf01682f06f
 # Remove this line to create a well-formed Fossil manifest.

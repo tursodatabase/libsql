@@ -1125,7 +1125,7 @@ static void pcache1Rekey(
   assert( iOld!=iNew );               /* The page number really is changing */
 
   pcache1EnterMutex(pCache->pGroup);
-  
+
   assert( pcache1FetchNoMutex(p, iOld, 0)==pPage ); /* pPg really is iOld */
   hOld = iOld%pCache->nHash;
   pp = &pCache->apHash[hOld];
@@ -1134,23 +1134,8 @@ static void pcache1Rekey(
   }
   *pp = pPage->pNext;
 
+  assert( pcache1FetchNoMutex(p, iNew, 0)==0 ); /* iNew not in cache */
   hNew = iNew%pCache->nHash;
-  pp = &pCache->apHash[hNew];
-  while( *pp ){
-    if( (*pp)->iKey==iNew ){
-      /* If there is already another pcache entry at iNew, change it to iOld,
-      ** thus swapping the positions of iNew and iOld */
-      PgHdr1 *pOld = *pp;
-      *pp = pOld->pNext;
-      pOld->pNext = pCache->apHash[hOld];
-      pCache->apHash[hOld] = pOld;
-      pOld->iKey = iOld;
-      break;
-    }else{
-      pp = &(*pp)->pNext;
-    }
-  }
-
   pPage->iKey = iNew;
   pPage->pNext = pCache->apHash[hNew];
   pCache->apHash[hNew] = pPage;
