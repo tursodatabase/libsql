@@ -15,7 +15,7 @@
 ** text.
 */
 #include <sqliteInt.h>
-#if SQLITE_OS_KV
+#if SQLITE_OS_KV || (SQLITE_OS_UNIX && defined(SQLITE_OS_KV_OPTIONAL))
 
 /*****************************************************************************
 ** Debugging logic
@@ -89,7 +89,7 @@ static int kvvfsSleep(sqlite3_vfs*, int microseconds);
 static int kvvfsCurrentTime(sqlite3_vfs*, double*);
 static int kvvfsCurrentTimeInt64(sqlite3_vfs*, sqlite3_int64*);
 
-static sqlite3_vfs kvvfs_vfs = {
+static sqlite3_vfs sqlite3OsKvvfsObject = {
   1,                              /* iVersion */
   sizeof(KVVfsFile),              /* szOsFile */
   1024,                           /* mxPathname */
@@ -1107,14 +1107,22 @@ static int kvvfsCurrentTimeInt64(sqlite3_vfs *pVfs, sqlite3_int64 *pTimeOut){
   *pTimeOut = unixEpoch + 1000*(sqlite3_int64)sNow.tv_sec + sNow.tv_usec/1000;
   return SQLITE_OK;
 }
+#endif /* SQLITE_OS_KV || SQLITE_OS_UNIX */
 
+#if SQLITE_OS_KV
 /* 
 ** This routine is called initialize the KV-vfs as the default VFS.
 */
 int sqlite3_os_init(void){
-  return sqlite3_vfs_register(&kvvfs_vfs, 1);
+  return sqlite3_vfs_register(&sqlite3OsKvvfsObject, 1);
 }
 int sqlite3_os_end(void){
   return SQLITE_OK;
 }
 #endif /* SQLITE_OS_KV */
+
+#if SQLITE_OS_UNIX && defined(SQLITE_OS_KV_OPTIONAL)
+int sqlite3KvvfsInit(void){
+  return sqlite3_vfs_register(&sqlite3OsKvvfsObject, 0);
+}
+#endif
