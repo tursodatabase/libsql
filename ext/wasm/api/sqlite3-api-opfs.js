@@ -34,11 +34,12 @@
 self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   const warn = console.warn.bind(console),
         error = console.error.bind(console);
-  if(!self.importScripts || !self.FileSystemFileHandle){
-    //|| !self.FileSystemFileHandle.prototype.createSyncAccessHandle){
-    // ^^^ sync API is not required with WASMFS/OPFS backend.
+  if(self.window===self || !self.importScripts || !self.FileSystemFileHandle
+     || !self.FileSystemFileHandle.prototype.createSyncAccessHandle){
     warn("OPFS is not available in this environment.");
     return;
+  }else if(!navigator.storage.getDirectory){
+    warn("The OPFS VFS requires navigator.storage.getDirectory.");
   }else if(!sqlite3.capi.wasm.bigIntEnabled){
     error("OPFS requires BigInt support but sqlite3.capi.wasm.bigIntEnabled is false.");
     return;
