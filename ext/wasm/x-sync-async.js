@@ -76,7 +76,7 @@ const initOpfsVfs = function(sqlite3){
      of data may be added to it.
   */
   const state = Object.create(null);
-  state.verbose = 3;
+  state.verbose = 2;
   state.fileBufferSize = 1024 * 64 + 8 /* size of fileHandle.sab. 64k = max sqlite3 page size */;
   state.fbInt64Offset = state.fileBufferSize - 8 /*spot in fileHandle.sab to store an int64*/;
   state.opIds = Object.create(null);
@@ -239,10 +239,11 @@ const initOpfsVfs = function(sqlite3){
     },
     xRead: function(pFile,pDest,n,offset){
       /* int (*xRead)(sqlite3_file*, void*, int iAmt, sqlite3_int64 iOfst) */
-      const f = __opfsHandles[pFile];
+      const f = __openFiles[pFile];
+      let rc;
       try {
         // FIXME(?): block until we finish copying the xRead result buffer. How?
-        let rc = opRun('xRead',{fid:pFile, n, offset});
+        rc = opRun('xRead',{fid:pFile, n, offset});
         if(0!==rc) return rc;
         let i = 0;
         for(; i < n; ++i) wasm.setMemValue(pDest + i, f.sabView[i]);
@@ -265,7 +266,7 @@ const initOpfsVfs = function(sqlite3){
     },
     xWrite: function(pFile,pSrc,n,offset){
     /* int (*xWrite)(sqlite3_file*, const void*, int iAmt, sqlite3_int64 iOfst) */
-      const f = __opfsHandles[pFile];
+      const f = __openFiles[pFile];
       try {
         let i = 0;
         // FIXME(?): block from here until we finish the xWrite. How?
@@ -429,6 +430,14 @@ const initOpfsVfs = function(sqlite3){
       rc = ioSyncWrappers.xFileSize(sq3File.pointer, pOut);
       if(rc) toss('xFileSize failed w/ rc',rc);
       log("xFileSize says:",wasm.getMemValue(pOut, 'i64'));
+      rc = ioSyncWrappers.xWrite(sq3File.pointer, zDbFile, 10, 0);
+      if(rc) toss("xWrite() failed!");
+      const readBuf = wasm.scopedAlloc(16);
+      rc = ioSyncWrappers.xRead(sq3File.pointer, readBuf, 6, 1);
+      wasm.setMemValue(readBuf+6,0);
+      let jRead = wasm.cstringToJs(readBuf);
+      log("xRead() got:",jRead);
+      if("sanity"!==jRead) toss("Unexpected xRead() value.");
       log("xSleep()ing before close()ing...");
       opRun('xSleep',1000);
       rc = ioSyncWrappers.xClose(fid);

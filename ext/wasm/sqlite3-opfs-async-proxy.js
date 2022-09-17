@@ -259,10 +259,10 @@ const vfsAsyncImpls = {
     let rc = 0;
     const fh = __openFiles[fid];
     try{
-      const aRead = new Uint8array(fh.sab, n);
+      const aRead = new Uint8Array(fh.sab, 0, n);
       const nRead = fh.accessHandle.read(aRead, {at: offset});
       if(nRead < n){/* Zero-fill remaining bytes */
-        new Uint8array(fh.sab).fill(0, nRead, n);
+        new Uint8Array(fh.sab).fill(0, nRead, n);
         rc = state.sq3Codes.SQLITE_IOERR_SHORT_READ;
       }
     }catch(e){
@@ -302,7 +302,7 @@ const vfsAsyncImpls = {
     const fh = __openFiles[fid];
     try{
       affirmNotRO('xWrite', fh);
-      const nOut = fh.accessHandle.write(new UInt8Array(fh.sab, 0, n), {at: offset});
+      const nOut = fh.accessHandle.write(new Uint8Array(fh.sab, 0, n), {at: offset});
       rc = (nOut===n) ? 0 : state.sq3Codes.SQLITE_IOERR_WRITE;
     }catch(e){
       error("xWrite():",e,fh);
