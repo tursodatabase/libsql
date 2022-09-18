@@ -139,14 +139,13 @@ EXPORTED_FUNCTIONS.api: $(EXPORTED_FUNCTIONS.api.in) $(MAKEFILE)
 	cat $(EXPORTED_FUNCTIONS.api.in) > $@
 CLEAN_FILES += EXPORTED_FUNCTIONS.api
 
-sqlite3-api.jses := \
-  $(dir.api)/sqlite3-api-prologue.js \
-  $(dir.common)/whwasmutil.js \
-  $(dir.jacc)/jaccwabyt.js \
-  $(dir.api)/sqlite3-api-glue.js \
-  $(dir.api)/sqlite3-api-oo1.js \
-  $(dir.api)/sqlite3-api-worker1.js
-#sqlite3-api.jses += $(dir.api)/sqlite3-api-opfs.js 
+sqlite3-api.jses := $(dir.api)/sqlite3-api-prologue.js
+sqlite3-api.jses += $(dir.common)/whwasmutil.js
+sqlite3-api.jses += $(dir.jacc)/jaccwabyt.js
+sqlite3-api.jses += $(dir.api)/sqlite3-api-glue.js
+sqlite3-api.jses += $(dir.api)/sqlite3-api-oo1.js
+sqlite3-api.jses += $(dir.api)/sqlite3-api-worker1.js
+sqlite3-api.jses += $(dir.api)/sqlite3-api-opfs.js
 sqlite3-api.jses += $(dir.api)/sqlite3-api-cleanup.js
 
 sqlite3-api.js := sqlite3-api.js
