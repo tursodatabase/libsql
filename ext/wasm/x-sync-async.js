@@ -44,7 +44,6 @@ const initOpfsVfs = function(sqlite3){
   const error =  (...args)=>{
     console.error(logPrefix,...args);
   };
-  warn("This file is very much experimental and under construction.",self.location.pathname);
 
   if(self.window===self ||
      !self.SharedArrayBuffer ||
@@ -56,7 +55,7 @@ const initOpfsVfs = function(sqlite3){
     warn("This environment does not have OPFS support.");
     return;
   }
-
+  warn("This file is very much experimental and under construction.",self.location.pathname);
   const capi = sqlite3.capi;
   const wasm = capi.wasm;
   const sqlite3_vfs = capi.sqlite3_vfs
@@ -65,6 +64,8 @@ const initOpfsVfs = function(sqlite3){
         || toss("Missing sqlite3.capi.sqlite3_file object.");
   const sqlite3_io_methods = capi.sqlite3_io_methods
         || toss("Missing sqlite3.capi.sqlite3_io_methods object.");
+  const StructBinder = sqlite3.StructBinder || toss("Missing sqlite3.StructBinder.");
+  const thisUrl = new URL(self.location.href);
 
   const W = new Worker("sqlite3-opfs-async-proxy.js");
   const wMsg = (type,payload)=>W.postMessage({type,payload});
@@ -76,7 +77,7 @@ const initOpfsVfs = function(sqlite3){
      of data may be added to it.
   */
   const state = Object.create(null);
-  state.verbose = 2;
+  state.verbose = thisUrl.searchParams.has('opfs-verbose') ? 3 : 2;
   state.fileBufferSize = 1024 * 64 + 8 /* size of fileHandle.sab. 64k = max sqlite3 page size */;
   state.fbInt64Offset = state.fileBufferSize - 8 /*spot in fileHandle.sab to store an int64*/;
   state.opIds = Object.create(null);
@@ -110,7 +111,6 @@ const initOpfsVfs = function(sqlite3){
   });
 
   const isWorkerErrCode = (n)=>!!state.sq3Codes._reverse[n];
-  
   const opStore = (op,val=-1)=>Atomics.store(state.opSABView, state.opIds[op], val);
   const opWait = (op,val=-1)=>Atomics.wait(state.opSABView, state.opIds[op], val);
 
@@ -126,12 +126,6 @@ const initOpfsVfs = function(sqlite3){
     wMsg(op, args);
     opWait(op);
     return Atomics.load(state.opSABView, state.opIds[op]);
-  };
-
-  const wait = (ms,value)=>{
-    return new Promise((resolve)=>{
-      setTimeout(()=>resolve(value), ms);
-    });
   };
 
   /**
@@ -194,6 +188,75 @@ const initOpfsVfs = function(sqlite3){
      environment or the other when sqlite3_os_end() is called (_if_ it
      gets called at all in a wasm build, which is undefined).
   */
+
+  /**
+     Installs a StructBinder-bound function pointer member of the
+     given name and function in the given StructType target object.
+     It creates a WASM proxy for the given function and arranges for
+     that proxy to be cleaned up when tgt.dispose() is called.  Throws
+     on the slightest hint of error (e.g. tgt is-not-a StructType,
+     name does not map to a struct-bound member, etc.).
+
+     Returns a proxy for this function which is bound to tgt and takes
+     2 args (name,func). That function returns the same thing,
+     permitting calls to be chained.
+
+     If called with only 1 arg, it has no side effects but returns a
+     func with the same signature as described above.
+  */
+  const installMethod = function callee(tgt, name, func){
+    if(!(tgt instanceof StructBinder.StructType)){
+      toss("Usage error: target object is-not-a StructType.");
+    }
+    if(1===arguments.length){
+      return (n,f)=>callee(tgt,n,f);
+    }
+    if(!callee.argcProxy){
+      callee.argcProxy = function(func,sig){
+        return function(...args){
+          if(func.length!==arguments.length){
+            toss("Argument mismatch. Native signature is:",sig);
+          }
+          return func.apply(this, args);
+        }
+      };
+      callee.removeFuncList = function(){
+        if(this.ondispose.__removeFuncList){
+          this.ondispose.__removeFuncList.forEach(
+            (v,ndx)=>{
+              if('number'===typeof v){
+                try{wasm.uninstallFunction(v)}
+                catch(e){/*ignore*/}
+              }
+              /* else it's a descriptive label for the next number in
+                 the list. */
+            }
+          );
+          delete this.ondispose.__removeFuncList;
+        }
+      };
+    }/*static init*/
+    const sigN = tgt.memberSignature(name);
+    if(sigN.length<2){
+      toss("Member",name," is not a function pointer. Signature =",sigN);
+    }
+    const memKey = tgt.memberKey(name);
+    //log("installMethod",tgt, name, sigN);
+    const fProxy = 1
+          // We can remove this proxy middle-man once the VFS is working
+          ? callee.argcProxy(func, sigN)
+          : func;
+    const pFunc = wasm.installFunction(fProxy, tgt.memberSignature(name, true));
+    tgt[memKey] = pFunc;
+    if(!tgt.ondispose) tgt.ondispose = [];
+    if(!tgt.ondispose.__removeFuncList){
+      tgt.ondispose.push('ondispose.__removeFuncList handler',
+                         callee.removeFuncList);
+      tgt.ondispose.__removeFuncList = [];
+    }
+    tgt.ondispose.__removeFuncList.push(memKey, pFunc);
+    return (n,f)=>callee(tgt, n, f);
+  }/*installMethod*/;
   
   /**
      Impls for the sqlite3_io_methods methods. Maintenance reminder:
@@ -390,10 +453,11 @@ const initOpfsVfs = function(sqlite3){
     vfsSyncWrappers.xSleep = (pVfs,ms)=>opRun('xSleep',ms);
   }
 
-  /*
-    TODO: plug in the above functions in to opfsVfs and opfsIoMethods.
-    Code for doing so is in api/sqlite3-api-opfs.js.
-  */
+  /* Install the vfs/io_methods into their C-level shared instances... */
+  let inst = installMethod(opfsIoMethods);
+  for(let k of Object.keys(ioSyncWrappers)) inst(k, ioSyncWrappers[k]);
+  inst = installMethod(opfsVfs);
+  for(let k of Object.keys(vfsSyncWrappers)) inst(k, vfsSyncWrappers[k]);
   
   const sanityCheck = async function(){
     //state.ioBuf = new Uint8Array(state.sabIo);
@@ -430,10 +494,10 @@ const initOpfsVfs = function(sqlite3){
       rc = ioSyncWrappers.xFileSize(sq3File.pointer, pOut);
       if(rc) toss('xFileSize failed w/ rc',rc);
       log("xFileSize says:",wasm.getMemValue(pOut, 'i64'));
-      rc = ioSyncWrappers.xWrite(sq3File.pointer, zDbFile, 10, 0);
+      rc = ioSyncWrappers.xWrite(sq3File.pointer, zDbFile, 10, 1);
       if(rc) toss("xWrite() failed!");
       const readBuf = wasm.scopedAlloc(16);
-      rc = ioSyncWrappers.xRead(sq3File.pointer, readBuf, 6, 1);
+      rc = ioSyncWrappers.xRead(sq3File.pointer, readBuf, 6, 2);
       wasm.setMemValue(readBuf+6,0);
       let jRead = wasm.cstringToJs(readBuf);
       log("xRead() got:",jRead);
@@ -453,9 +517,8 @@ const initOpfsVfs = function(sqlite3){
     }
   };
 
-  
   W.onmessage = function({data}){
-    log("Worker.onmessage:",data);
+    //log("Worker.onmessage:",data);
     switch(data.type){
         case 'loaded':
           /*Pass our config and shared state on to the async worker.*/
@@ -476,8 +539,9 @@ const initOpfsVfs = function(sqlite3){
             }
             capi.sqlite3_vfs_register.addReference(opfsVfs, opfsIoMethods);
             state.opSABView = new Int32Array(state.opSAB);
-            if(self.location && +self.location.port > 1024){
-              log("Running sanity check for dev mode...");
+
+            if(thisUrl.searchParams.has('opfs-sanity-check')){
+              warn("Running sanity checks because of opfs-sanity-check URL arg...");
               sanityCheck();
             }
             warn("End of (very incomplete) OPFS setup.", opfsVfs);

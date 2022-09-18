@@ -1,5 +1,5 @@
-C Correct\sOPFS\sxRead()\sand\sxWrite()\simpls\sand\sadd\sa\svery\sbasic\ssanity\stest\sfor\sthem.
-D 2022-09-17T23:47:20.619
+C Plug\sOPFS\smethods\sin\sto\stheir\ssqlite3_vfs/io_methods\scounterparts.\sAdd\sURL\sargs\sto\scontrol\sdebug\soutput\sand\srunning\sof\ssanity-checks\sin\sthe\sOPFS\sinit\scode.
+D 2022-09-18T00:16:12.445
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -502,7 +502,7 @@ F ext/wasm/fiddle/emscripten.css 3d253a6fdb8983a2ac983855bfbdd4b6fa1ff267c28d695
 F ext/wasm/fiddle/fiddle-worker.js bccf46045be8824752876f3eec01c223be0616ccac184bffd0024cfe7a3262b8
 F ext/wasm/fiddle/fiddle.html 550c5aafce40bd218de9bf26192749f69f9b10bc379423ecd2e162bcef885c08
 F ext/wasm/fiddle/fiddle.js 4ffcfc9a235beebaddec689a549e9e0dfad6dca5c1f0b41f03468d7e76480686
-F ext/wasm/index.html 8365e47e2aff1829923f0481292948487b27a0755fde9c0d3ad15f7ea0118992
+F ext/wasm/index.html b8a47afa96d0c7ac3081c6d469e1fd7be6b87c64b94e4fb62e26984a1564cac4
 F ext/wasm/jaccwabyt/jaccwabyt.js 0d7f32817456a0f3937fcfd934afeb32154ca33580ab264dab6c285e6dbbd215
 F ext/wasm/jaccwabyt/jaccwabyt.md 447cc02b598f7792edaa8ae6853a7847b8178a18ed356afacbdbf312b2588106
 F ext/wasm/jaccwabyt/jaccwabyt_test.c 39e4b865a33548f943e2eb9dd0dc8d619a80de05d5300668e9960fff30d0d36f
@@ -533,8 +533,8 @@ F ext/wasm/testing1.js 7cd8ab255c238b030d928755ae8e91e7d90a12f2ae601b1b8f7827aaa
 F ext/wasm/testing2.html a66951c38137ff1d687df79466351f3c734fa9c6d9cce71d3cf97c291b2167e3
 F ext/wasm/testing2.js 25584bcc30f19673ce13a6f301f89f8820a59dfe044e0c4f2913941f4097fe3c
 F ext/wasm/wasmfs.make 21a5cf297954a689e0dc2a95299ae158f681cae5e90c10b99d986097815fd42d
-F ext/wasm/x-sync-async.html 717b0d3bee96e49cbd36731bead497ab27a8bf3a3b23dd11e40e61d4ac9e8b80
-F ext/wasm/x-sync-async.js 961eb6c268086babd20d7b5e07cad72dc3118f9c46954e9a73b8b826deb4f771
+F ext/wasm/x-sync-async.html d85cb9b1ab398ef5a20ce64a689ce4bf9a347ffe69edd46c2d3dc57b869a8925
+F ext/wasm/x-sync-async.js 2cd04d73ddc515479cc2e4b9246d6da21b3f494020261d47470f4b710c84c0da
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
@@ -2030,8 +2030,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c342b5d745f301104c59851c753287ebbbe95a69a56cb522d376d0f3e352c30f
-R 70b6b0622f3dd6730d580a81783f068d
+P cd06cc670029763955cf60ffcf944b36d41cb005b859d9b9fd0eea1b6741d0e9
+R af48df928e44c11df9f0c9eb2cf8376e
 U stephan
-Z 5c4a37b98dc31ffc6cd63d317f5738d7
+Z 07b2e0eb2359d701cc905c5402ed9c24
 # Remove this line to create a well-formed Fossil manifest.
