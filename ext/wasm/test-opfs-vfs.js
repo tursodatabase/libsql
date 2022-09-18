@@ -25,20 +25,39 @@
 const tryOpfsVfs = function(sqlite3){
   const toss = function(...args){throw new Error(args.join(' '))};
   const logPrefix = "OPFS tester:";
-  const log = (...args)=>{
-    console.log(logPrefix,...args);
-  };
-  const warn =  (...args)=>{
-    console.warn(logPrefix,...args);
-  };
-  const error =  (...args)=>{
-    console.error(logPrefix,...args);
-  };
+  const log = (...args)=>console.log(logPrefix,...args);
+  const warn =  (...args)=>console.warn(logPrefix,...args);
+  const error =  (...args)=>console.error(logPrefix,...args);
   log("tryOpfsVfs()");
   const capi = sqlite3.capi;
   const pVfs = capi.sqlite3_vfs_find("opfs") || toss("Unexpectedly missing 'opfs' VFS.");
-  const oVfs = capi.sqlite3_vfs.instanceForPointer(pVfs);
+  const oVfs = capi.sqlite3_vfs.instanceForPointer(pVfs) || toss("Unexpected instanceForPointer() result.");;
   log("OPFS VFS:",pVfs, oVfs);
+
+  const dbFile = "my-persistent.db";
+  const db = new sqlite3.oo1.DB(dbFile, "c", "opfs");
+  log("db file:",db.filename);
+  try{
+    let n = db.selectValue("select count(*) from sqlite_schema");
+    if(n){
+      log("Persistent data found. sqlite_schema entry count =",n);
+    }
+    db.transaction((db)=>{
+      db.exec({
+        sql:[
+          "create table if not exists t(a);",
+          "insert into t(a) values(?),(?),(?);",
+        ],
+        bind: [performance.now() | 0,
+               (performance.now() |0) / 2,
+               (performance.now() |0) / 4]
+      });
+    });
+    log("count(*) from t =",db.selectValue("select count(*) from t"));
+  }finally{
+    db.close();
+  }
+
   log("Done!");
 }/*tryOpfsVfs()*/;
 
@@ -48,6 +67,5 @@ self.sqlite3InitModule().then((EmscriptenModule)=>{
     .then((sqlite3)=>tryOpfsVfs(sqlite3))
     .catch((e)=>{
       console.error("Error initializing OPFS VFS:",e);
-      throw e;
     });
 });
