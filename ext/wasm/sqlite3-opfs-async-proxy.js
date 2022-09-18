@@ -164,7 +164,7 @@ const vfsAsyncImpls = {
       storeAndNotify(opName, state.sq3Codes.SQLITE_NOFOUND);
     }
   },
-  xDelete: async function({filename, syncDir/*ignored*/}){
+  xDeleteNoWait: async function({filename, syncDir, recursive = false}){
     /* The syncDir flag is, for purposes of the VFS API's semantics,
        ignored here. However, if it has the value 0x1234 then: after
        deleting the given file, recursively try to delete any empty
@@ -178,12 +178,13 @@ const vfsAsyncImpls = {
        is false.
     */
     log("xDelete(",arguments[0],")");
+    let rc = 0;
     try {
       while(filename){
         const [hDir, filenamePart] = await getDirForPath(filename, false);
         //log("Removing:",hDir, filenamePart);
         if(!filenamePart) break;
-        await hDir.removeEntry(filenamePart);
+        await hDir.removeEntry(filenamePart, {recursive});
         if(0x1234 !== syncDir) break;
         filename = getResolvedPath(filename, true);
         filename.pop();
@@ -193,8 +194,23 @@ const vfsAsyncImpls = {
       /* Ignoring: _presumably_ the file can't be found or a dir is
          not empty. */
       //error("Delete failed",filename, e.message);
+      rc = state.sq3Codes.SQLITE_IOERR_DELETE;
     }
-    storeAndNotify('xDelete', 0);
+    return rc;
+  },
+  xDelete: async function(...args){
+    const rc = await vfsAsyncImpls.xDeleteNoWait(...args);
+    storeAndNotify('xDelete', rc);
+  },
+  mkdir: async function(dirname){
+    let rc = 0;
+    try {
+        await getDirForPath(dirname+"/filepart", true);
+    }catch(e){
+      //error("mkdir failed",filename, e.message);
+      rc = state.sq3Codes.SQLITE_IOERR;
+    }
+    storeAndNotify('mkdir', rc);
   },
   xFileSize: async function(fid){
     log("xFileSize(",arguments,")");

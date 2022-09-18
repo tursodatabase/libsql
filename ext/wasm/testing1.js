@@ -1057,7 +1057,7 @@
 
     let dbName = "/testing1.sqlite3";
     let vfsName = undefined;
-    if(capi.sqlite3_web_db_is_kvvfs()){
+    if(capi.sqlite3_web_db_uses_vfs(0,"kvvfs")){
       dbName = "local";
       vfsName = 'kvvfs';
       logHtml("Found kvvfs. Clearing db(s) from sessionStorage and localStorage",
@@ -1065,9 +1065,9 @@
       clearKvvfs();
     }
     const db = new oo.DB(dbName,'c',vfsName), startTime = performance.now();
-    log("capi.sqlite3_web_db_is_kvvfs() ==",capi.sqlite3_web_db_is_kvvfs(db.pointer));
+    log("db is kvvfs?",capi.sqlite3_web_db_uses_vfs(db.pointer,"kvvfs"));
     try {
-      log("db.filename =",db.filename,"db.fileName() =",db.fileName());
+      log("db.filename =",db.filename,"db.fileName() =",db.getFilename());
       const banner1 = '>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>',
             banner2 = '<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<';
       [

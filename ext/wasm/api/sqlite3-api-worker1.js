@@ -371,10 +371,14 @@ sqlite3.initWorker1API = function(){
     close: function(db,alsoUnlink){
       if(db){
         delete this.dbs[getDbId(db)];
-        const filename = db.fileName();
+        const filename = db.getFilename();
         db.close();
         if(db===this.defaultDb) this.defaultDb = undefined;
         if(alsoUnlink && filename){
+          /* This isn't necessarily correct: the db might be using a
+             VFS other than the default. How do we best resolve this
+             without having to special-case the kvvfs and opfs
+             VFSes? */
           sqlite3.capi.wasm.sqlite3_wasm_vfs_unlink(filename);
         }
       }

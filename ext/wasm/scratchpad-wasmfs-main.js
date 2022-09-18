@@ -52,7 +52,7 @@
     let db;
     try {
       db = new oo.DB(persistentDir+'/foo.db');
-      stdout("DB filename:",db.filename,db.fileName());
+      stdout("DB filename:",db.filename,db.getFilename());
       const banner1 = '>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>',
             banner2 = '<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<';
       [

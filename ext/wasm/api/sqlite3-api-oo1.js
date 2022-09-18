@@ -85,9 +85,24 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
   /**
      A proxy for DB class constructors. It must be called with the
-     being-construct DB object as its "this".
+     being-construct DB object as its "this". See the DB constructor
+     for the argument docs. This is split into a separate function
+     in order to enable simple creation of special-case DB constructors,
+     e.g. a hypothetical LocalStorageDB or OpfsDB.
+
+     Expects to be passed a configuration object with the following
+     properties:
+
+     - `.filename`: the db filename. It may be a special name like ":memory:"
+       or "".
+
+     - `.flags`: as documented in the DB constructor.
+
+     - `.vfs`: as documented in the DB constructor.
+
+     It also accepts those as the first 3 arguments.
   */
-  const dbCtorHelper = function ctor(fn=':memory:', flags='c', vfsName){
+  const dbCtorHelper = function ctor(...args){
     if(!ctor._name2vfs){
       // Map special filenames which we handle here (instead of in C)
       // to some helpful metadata...
@@ -104,25 +119,33 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         filename: isWorkerThread || (()=>'session')
       };
     }
-    if('string'!==typeof fn){
-      toss3("Invalid filename for DB constructor.");
+    const opt = ctor.normalizeArgs(...args);
+    let fn = opt.filename, vfsName = opt.vfs, flagsStr = opt.flags;
+    if(('string'!==typeof fn && 'number'!==typeof fn)
+       || 'string'!==typeof flagsStr
+       || (vfsName && ('string'!==typeof vfsName && 'number'!==typeof vfsName))){
+      console.error("Invalid DB ctor args",opt,arguments);
+      toss3("Invalid arguments for DB constructor.");
     }
-    const vfsCheck = ctor._name2vfs[fn];
+    let fnJs = ('number'===typeof fn) ? capi.wasm.cstringToJs(fn) : fn;
+    const vfsCheck = ctor._name2vfs[fnJs];
     if(vfsCheck){
       vfsName = vfsCheck.vfs;
-      fn = vfsCheck.filename(fn);
+      fn = fnJs = vfsCheck.filename(fnJs);
     }
     let ptr, oflags = 0;
-    if( flags.indexOf('c')>=0 ){
+    if( flagsStr.indexOf('c')>=0 ){
       oflags |= capi.SQLITE_OPEN_CREATE | capi.SQLITE_OPEN_READWRITE;
     }
-    if( flags.indexOf('w')>=0 ) oflags |= capi.SQLITE_OPEN_READWRITE;
+    if( flagsStr.indexOf('w')>=0 ) oflags |= capi.SQLITE_OPEN_READWRITE;
     if( 0===oflags ) oflags |= capi.SQLITE_OPEN_READONLY;
     oflags |= capi.SQLITE_OPEN_EXRESCODE;
     const stack = capi.wasm.scopedAllocPush();
     try {
       const ppDb = capi.wasm.scopedAllocPtr() /* output (sqlite3**) arg */;
-      const pVfsName = vfsName ? capi.wasm.scopedAllocCString(vfsName) : 0;
+      const pVfsName = vfsName ? (
+        ('number'===typeof vfsName ? vfsName : capi.wasm.scopedAllocCString(vfsName))
+      ): 0;
       const rc = capi.sqlite3_open_v2(fn, ppDb, oflags, pVfsName);
       ptr = capi.wasm.getPtrValue(ppDb);
       checkSqlite3Rc(ptr, rc);
@@ -132,10 +155,35 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     }finally{
       capi.wasm.scopedAllocPop(stack);
     }
-    this.filename = fn;
+    this.filename = fnJs;
     __ptrMap.set(this, ptr);
     __stmtMap.set(this, Object.create(null));
     __udfMap.set(this, Object.create(null));
+  };
+
+  /**
+     A helper for DB constructors. It accepts either a single
+     config-style object or up to 3 arguments (filename, dbOpenFlags,
+     dbVfsName). It returns a new object containing:
+
+     { filename: ..., flags: ..., vfs: ... }
+
+     If passed an object, any additional properties it has are copied
+     as-is into the new object.
+  */
+  dbCtorHelper.normalizeArgs = function(filename,flags = 'c',vfs = null){
+    const arg = {};
+    if(1===arguments.length && 'object'===typeof arguments[0]){
+      const x = arguments[0];
+      Object.keys(x).forEach((k)=>arg[k] = x[k]);
+      if(undefined===arg.flags) arg.flags = 'c';
+      if(undefined===arg.vfs) arg.vfs = null;
+    }else{
+      arg.filename = filename;
+      arg.flags = flags;
+      arg.vfs = vfs;
+    }
+    return arg;
   };
   
   /**
@@ -175,6 +223,17 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      or not at all, to use the default. If passed a value, it must
      be the string name of a VFS
 
+     The constructor optionally (and preferably) takes its arguments
+     in the form of a single configuration object with the following
+     properties:
+
+     - `.filename`: database file name
+     - `.flags`: open-mode flags
+     - `.vfs`: the VFS fname
+
+     The `filename` and `vfs` arguments may be either JS strings or
+     C-strings allocated via WASM.
+
      For purposes of passing a DB instance to C-style sqlite3
      functions, the DB object's read-only `pointer` property holds its
      `sqlite3*` pointer value. That property can also be used to check
@@ -187,12 +246,12 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      the database. In this mode, only a single database is permitted
      in each storage object. This feature is experimental and subject
      to any number of changes (including outright removal). This
-     support requires a specific build of sqlite3, the existence of
-     which can be determined at runtime by checking for a non-0 return
-     value from sqlite3.capi.sqlite3_vfs_find("kvvfs").
+     support requires the kvvfs sqlite3 VFS, the existence of which
+     can be determined at runtime by checking for a non-0 return value
+     from sqlite3.capi.sqlite3_vfs_find("kvvfs").
   */
-  const DB = function ctor(fn=':memory:', flags='c', vfsName){
-    dbCtorHelper.apply(this, Array.prototype.slice.call(arguments));
+  const DB = function(...args){
+    dbCtorHelper.apply(this, args);
   };
 
   /**
@@ -361,12 +420,31 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        closed. After calling close(), `this.pointer` will resolve to
        `undefined`, so that can be used to check whether the db
        instance is still opened.
+
+       If this.onclose.before is a function then it is called before
+       any close-related cleanup.
+
+       If this.onclose.after is a function then it is called after the
+       db is closed but before auxiliary state like this.filename is
+       cleared.
+
+       Both onclose handlers are passed this object. If this db is not
+       opened, neither of the handlers are called. Any exceptions the
+       handlers throw are ignored because "destructors must not
+       throw."
+
+       Note that garbage collection of a db handle, if it happens at
+       all, will never trigger close(), so onclose handlers are not a
+       reliable way to implement close-time cleanup or maintenance of
+       a db.
     */
     close: function(){
       if(this.pointer){
+        if(this.onclose && (this.onclose.before instanceof Function)){
+          try{this.onclose.before(this)}
+          catch(e){/*ignore*/}
+        }
         const pDb = this.pointer;
-        let s;
-        const that = this;
         Object.keys(__stmtMap.get(this)).forEach((k,s)=>{
           if(s && s.pointer) s.finalize();
         });
@@ -377,6 +455,10 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         __stmtMap.delete(this);
         __udfMap.delete(this);
         capi.sqlite3_close_v2(pDb);
+        if(this.onclose && (this.onclose.after instanceof Function)){
+          try{this.onclose.after(this)}
+          catch(e){/*ignore*/}
+        }
         delete this.filename;
       }
     },
@@ -401,13 +483,13 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       }
     },
     /**
-       Similar to this.filename but will return NULL for special names
-       like ":memory:". Not of much use until we have filesystem
-       support. Throws if the DB has been closed. If passed an
-       argument it then it will return the filename of the ATTACHEd db
-       with that name, else it assumes a name of `main`.
+       Similar to this.filename but will return a falsy value for
+       special names like ":memory:". Throws if the DB has been
+       closed. If passed an argument it then it will return the
+       filename of the ATTACHEd db with that name, else it assumes a
+       name of `main`.
     */
-    fileName: function(dbName='main'){
+    getFilename: function(dbName='main'){
       return capi.sqlite3_db_filename(affirmDbOpen(this).pointer, dbName);
     },
     /**
@@ -1591,7 +1673,8 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       ooApi: "0.1"
     },
     DB,
-    Stmt
+    Stmt,
+    dbCtorHelper
   }/*oo1 object*/;
 
 });

@@ -15,8 +15,10 @@
       very much incomplete, under construction, and experimental.
       <strong>See the dev console for all output.</strong>
     </div>
-    <div id='test-output'>
+    <div>
+      <a href='?delete'>Use this link</a> to delete the persistent OPFS-side db (if any).
     </div>
+    <div id='test-output'></div>
     <script>new Worker("test-opfs-vfs.js"+self.location.search);</script>
   </body>
 </html>

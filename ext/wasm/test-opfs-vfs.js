@@ -34,12 +34,16 @@ const tryOpfsVfs = function(sqlite3){
   const oVfs = capi.sqlite3_vfs.instanceForPointer(pVfs) || toss("Unexpected instanceForPointer() result.");;
   log("OPFS VFS:",pVfs, oVfs);
 
+  const urlArgs = new URL(self.location.href).searchParams;
   const dbFile = "my-persistent.db";
-  const db = new sqlite3.oo1.DB(dbFile, "c", "opfs");
+  if(urlArgs.has('delete')) sqlite3.opfs.deleteEntry(dbFile);
+
+  const opfs = sqlite3.opfs;
+  const db = new opfs.OpfsDb(dbFile);
   log("db file:",db.filename);
   try{
-    let n = db.selectValue("select count(*) from sqlite_schema");
-    if(n){
+    if(opfs.entryExists(dbFile)){
+      let n = db.selectValue("select count(*) from sqlite_schema");
       log("Persistent data found. sqlite_schema entry count =",n);
     }
     db.transaction((db)=>{
@@ -54,6 +58,17 @@ const tryOpfsVfs = function(sqlite3){
       });
     });
     log("count(*) from t =",db.selectValue("select count(*) from t"));
+
+    // Some sanity checks of the opfs utility functions...
+    const testDir = '/sqlite3-opfs-'+opfs.randomFilename(12);
+    const aDir = testDir+'/test/dir';
+    opfs.mkdir(aDir) || toss("mkdir failed");
+    opfs.mkdir(aDir) || toss("mkdir must pass if the dir exists");
+    opfs.deleteEntry(testDir+'/test') && toss("delete 1 should have failed (dir not empty)");
+    opfs.deleteEntry(testDir+'/test/dir') || toss("delete 2 failed");
+    opfs.deleteEntry(testDir+'/test/dir') && toss("delete 2b should have failed (dir already deleted)");
+    opfs.deleteEntry(testDir,true) || toss("delete 3 failed");
+    opfs.entryExists(testDir) && toss("entryExists(",testDir,") should have failed");
   }finally{
     db.close();
   }
@@ -62,10 +77,9 @@ const tryOpfsVfs = function(sqlite3){
 }/*tryOpfsVfs()*/;
 
 importScripts('sqlite3.js');
-self.sqlite3InitModule().then((EmscriptenModule)=>{
-  EmscriptenModule.sqlite3.installOpfsVfs()
-    .then((sqlite3)=>tryOpfsVfs(sqlite3))
-    .catch((e)=>{
-      console.error("Error initializing OPFS VFS:",e);
-    });
-});
+self.sqlite3InitModule()
+  .then((EmscriptenModule)=>EmscriptenModule.sqlite3.installOpfsVfs())
+  .then((sqlite3)=>tryOpfsVfs(sqlite3))
+  .catch((e)=>{
+    console.error("Error initializing module:",e);
+  });

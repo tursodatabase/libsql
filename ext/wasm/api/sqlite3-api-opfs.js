@@ -42,8 +42,8 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     that number will increase as the OPFS API matures).
 
   - The OPFS features used here are only available in dedicated Worker
-    threads. This file tries to detect that case and becomes a no-op
-    if those features do not seem to be available.
+    threads. This file tries to detect that case, resulting in a
+    rejected Promise if those features do not seem to be available.
 
   - It requires the SharedArrayBuffer and Atomics classes, and the
     former is only available if the HTTP server emits the so-called
@@ -72,7 +72,8 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      returned Promise resolves.
 
    On success, the Promise resolves to the top-most sqlite3 namespace
-   object.
+   object and that object gets a new object installed in its
+   `opfs` property, containing several OPFS-specific utilities.
 */
 sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri){
   const options = (asyncProxyUri && 'object'===asyncProxyUri) ? asyncProxyUri : {
@@ -89,6 +90,13 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
     options.proxyUri = callee.defaultProxyUri;
   }
   delete sqlite3.installOpfsVfs;
+
+  /**
+     Generic utilities for working with OPFS. This will get filled out
+     by the Promise setup and, on success, installed as sqlite3.opfs.
+  */
+  const opfsUtil = Object.create(null);
+
   const thePromise = new Promise(function(promiseResolve, promiseReject){
     const logPrefix = "OPFS syncer:";
     const warn =  (...args)=>{
@@ -118,9 +126,8 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
     const sqlite3_vfs = capi.sqlite3_vfs;
     const sqlite3_file = capi.sqlite3_file;
     const sqlite3_io_methods = capi.sqlite3_io_methods;
-    const StructBinder = sqlite3.StructBinder;
     const W = new Worker(options.proxyUri);
-    const workerOrigOnError = W.onrror;
+    W._originalOnError = W.onerror /* will be restored later */;
     W.onerror = function(err){
       promiseReject(new Error("Loading OPFS async Worker failed for unknown reasons."));
     };
@@ -131,17 +138,37 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
        This object must initially contain only cloneable or sharable
        objects. After the worker's "inited" message arrives, other types
        of data may be added to it.
+
+       For purposes of Atomics.wait() and Atomics.notify(), we use a
+       SharedArrayBuffer with one slot reserved for each of the API
+       proxy's methods. The sync side of the API uses Atomics.wait()
+       on the corresponding slot and the async side uses
+       Atomics.notify() on that slot.
+
+       The approach of using a single SAB to serialize comms for all
+       instances might(?) lead to deadlock situations in multi-db
+       cases. We should probably have one SAB here with a single slot
+       for locking a per-file initialization step and then allocate a
+       separate SAB like the above one for each file. That will
+       require a bit of acrobatics but should be feasible.
     */
     const state = Object.create(null);
     state.verbose = options.verbose;
-    state.fileBufferSize = 1024 * 64 + 8 /* size of fileHandle.sab. 64k = max sqlite3 page size */;
-    state.fbInt64Offset = state.fileBufferSize - 8 /*spot in fileHandle.sab to store an int64*/;
+    state.fileBufferSize =
+      1024 * 64 + 8 /* size of aFileHandle.sab. 64k = max sqlite3 page
+                       size. The additional bytes are space for
+                       holding BigInt results, since we cannot store
+                       those via the Atomics API (which only works on
+                       an Int32Array). */;
+    state.fbInt64Offset =
+      state.fileBufferSize - 8 /*spot in fileHandle.sab to store an int64 result */;
     state.opIds = Object.create(null);
     {
       let i = 0;
       state.opIds.xAccess = i++;
       state.opIds.xClose = i++;
       state.opIds.xDelete = i++;
+      state.opIds.xDeleteNoWait = i++;
       state.opIds.xFileSize = i++;
       state.opIds.xOpen = i++;
       state.opIds.xRead = i++;
@@ -149,14 +176,8 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
       state.opIds.xSync = i++;
       state.opIds.xTruncate = i++;
       state.opIds.xWrite = i++;
+      state.opIds.mkdir = i++;
       state.opSAB = new SharedArrayBuffer(i * 4/*sizeof int32*/);
-      /* The approach of using a single SAB to serialize comms for all
-         instances may(?) lead to deadlock situations in multi-db
-         cases. We should probably have one SAB here with a single slot
-         for locking a per-file initialization step and then allocate a
-         separate SAB like the above one for each file. That will
-         require a bit of acrobatics but should be feasible.
-      */
     }
 
     state.sq3Codes = Object.create(null);
@@ -167,15 +188,14 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
       'SQLITE_IOERR_READ', 'SQLITE_IOERR_SHORT_READ',
       'SQLITE_IOERR_WRITE', 'SQLITE_IOERR_FSYNC',
       'SQLITE_IOERR_TRUNCATE', 'SQLITE_IOERR_DELETE',
-      'SQLITE_IOERR_ACCESS', 'SQLITE_IOERR_CLOSE'
+      'SQLITE_IOERR_ACCESS', 'SQLITE_IOERR_CLOSE',
+      'SQLITE_IOERR_DELETE'
     ].forEach(function(k){
       state.sq3Codes[k] = capi[k] || toss("Maintenance required: not found:",k);
       state.sq3Codes._reverse[capi[k]] = k;
     });
 
     const isWorkerErrCode = (n)=>!!state.sq3Codes._reverse[n];
-    const opStore = (op,val=-1)=>Atomics.store(state.opSABView, state.opIds[op], val);
-    const opWait = (op,val=-1)=>Atomics.wait(state.opSABView, state.opIds[op], val);
 
     /**
        Runs the given operation in the async worker counterpart, waits
@@ -185,9 +205,9 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
        given operation's signature in the async API counterpart.
     */
     const opRun = (op,args)=>{
-      opStore(op);
+      Atomics.store(state.opSABView, state.opIds[op], -1);
       wMsg(op, args);
-      opWait(op);
+      Atomics.wait(state.opSABView, state.opIds[op], -1);
       return Atomics.load(state.opSABView, state.opIds[op]);
     };
 
@@ -268,7 +288,7 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
        func with the same signature as described above.
     */
     const installMethod = function callee(tgt, name, func){
-      if(!(tgt instanceof StructBinder.StructType)){
+      if(!(tgt instanceof sqlite3.StructBinder.StructType)){
         toss("Usage error: target object is-not-a StructType.");
       }
       if(1===arguments.length){
@@ -429,7 +449,10 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
         return 0;
       },
       xDelete: function(pVfs, zName, doSyncDir){
-        return opRun('xDelete', {filename: wasm.cstringToJs(zName), syncDir: doSyncDir});
+        opRun('xDelete', {filename: wasm.cstringToJs(zName), syncDir: doSyncDir});
+        /* We're ignoring errors because we cannot yet differentiate
+           between harmless and non-harmless failures. */
+        return 0;
       },
       xFullPathname: function(pVfs,zName,nOut,pOut){
         /* Until/unless we have some notion of "current dir"
@@ -521,6 +544,65 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
     for(let k of Object.keys(ioSyncWrappers)) inst(k, ioSyncWrappers[k]);
     inst = installMethod(opfsVfs);
     for(let k of Object.keys(vfsSyncWrappers)) inst(k, vfsSyncWrappers[k]);
+
+
+    /**
+       Syncronously deletes the given OPFS filesystem entry, ignoring
+       any errors. As this environment has no notion of "current
+       directory", the given name must be an absolute path. If the 2nd
+       argument is truthy, deletion is recursive (use with caution!).
+
+       Returns true if the deletion succeeded and fails if it fails,
+       but cannot report the nature of the failure.
+    */
+    opfsUtil.deleteEntry = function(fsEntryName,recursive){
+      return 0===opRun('xDelete', {filename:fsEntryName, recursive});
+    };
+    /**
+       Exactly like deleteEntry() but runs asynchronously.
+    */
+    opfsUtil.deleteEntryAsync = async function(fsEntryName,recursive){
+      wMsg('xDeleteNoWait', {filename: fsEntryName, recursive});
+    };
+    /**
+       Synchronously creates the given directory name, recursively, in
+       the OPFS filesystem. Returns true if it succeeds or the
+       directory already exists, else false.
+    */
+    opfsUtil.mkdir = async function(absDirName){
+      return 0===opRun('mkdir', absDirName);
+    };
+    /**
+       Synchronously checks whether the given OPFS filesystem exists,
+       returning true if it does, false if it doesn't.
+    */
+    opfsUtil.entryExists = function(fsEntryName){
+      return 0===opRun('xAccess', fsEntryName);
+    };
+
+    /**
+       Generates a random ASCII string, intended for use as a
+       temporary file name. Its argument is the length of the string,
+       defaulting to 16.
+    */
+    opfsUtil.randomFilename = randomFilename;
+    
+    if(sqlite3.oo1){
+      opfsUtil.OpfsDb = function(...args){
+        const opt = sqlite3.oo1.dbCtorHelper.normalizeArgs(...args);
+        opt.vfs = opfsVfs.$zName;
+        sqlite3.oo1.dbCtorHelper.call(this, opt);
+      };
+      opfsUtil.OpfsDb.prototype = Object.create(sqlite3.oo1.DB.prototype);
+    }
+
+    /**
+       Potential TODOs:
+
+       - Expose one or both of the Worker objects via opfsUtil and
+         publish an interface for proxying the higher-level OPFS
+         features like getting a directory listing.
+    */
     
     const sanityCheck = async function(){
       const scope = wasm.scopedAllocPush();
@@ -605,7 +687,9 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
                 warn("Running sanity checks because of opfs-sanity-check URL arg...");
                 sanityCheck();
               }
-              W.onerror = workerOrigOnError;
+              W.onerror = W._originalOnError;
+              delete W._originalOnError;
+              sqlite3.opfs = opfsUtil;
               promiseResolve(sqlite3);
               log("End of OPFS sqlite3_vfs setup.", opfsVfs);
             }catch(e){

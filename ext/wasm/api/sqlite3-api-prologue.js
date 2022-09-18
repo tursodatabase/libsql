@@ -689,7 +689,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   /** State for sqlite3_web_persistent_dir(). */
   let __persistentDir;
   /**
-     An experiment. Do not use.
+     An experiment. Do not use in client code.
 
      If the wasm environment has a persistent storage directory,
      its path is returned by this function. If it does not then
@@ -699,14 +699,18 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      environment to determine whether persistence filesystem support
      is available and, if it is, enables it (if needed).
 
+     This function currently only recognizes the WASMFS/OPFS storage
+     combination. "Plain" OPFS is provided via a separate VFS which
+     can optionally be installed (if OPFS is available on the system)
+     using sqlite3.installOpfsVfs().
+
      TODOs and caveats:
 
      - If persistent storage is available at the root of the virtual
        filesystem, this interface cannot currently distinguish that
-       from the lack of persistence. That case cannot currently (with
-       WASMFS/OPFS) happen, but it is conceivably possible in future
-       environments or non-browser runtimes (none of which are yet
-       supported targets).
+       from the lack of persistence. That can (in the mean time)
+       happen when using the JS-native "opfs" VFS, as opposed to the
+       WASMFS/OPFS combination.
   */
   capi.sqlite3_web_persistent_dir = function(){
     if(undefined !== __persistentDir) return __persistentDir;
@@ -764,6 +768,49 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     capi.wasm.exports.sqlite3_initialize();
   }
 
+  /**
+     Given an `sqlite3*` and an sqlite3_vfs name, returns a truthy
+     value (see below) if that db handle uses that VFS, else returns
+     false. If pDb is falsy then this function returns a truthy value
+     if the default VFS is that VFS. Results are undefined if pDb is
+     truthy but refers to an invalid pointer.
+
+     The 2nd argument may either be a JS string or a C-string
+     allocated from the wasm environment.
+
+     The truthy value it returns is a pointer to the `sqlite3_vfs`
+     object.
+
+     To permit safe use of this function from APIs which may be called
+     via the C stack (like SQL UDFs), this function does not throw: if
+     bad arguments cause a conversion error when passing into
+     wasm-space, false is returned.
+  */
+  capi.sqlite3_web_db_uses_vfs = function(pDb,vfsName){
+    try{
+      const pK = ('number'===vfsName)
+            ? capi.wasm.exports.sqlite3_vfs_find(vfsName)
+            : capi.sqlite3_vfs_find(vfsName);
+      if(!pK) return false;
+      else if(!pDb){
+        return capi.sqlite3_vfs_find(0)===pK ? pK : false;
+      }
+      const ppVfs = capi.wasm.allocPtr();
+      try{
+        return (
+          (0===capi.sqlite3_file_control(
+            pDb, "main", capi.SQLITE_FCNTL_VFS_POINTER, ppVfs
+          )) && (capi.wasm.getPtrValue(ppVfs) === pK)
+        ) ? pK : false;
+      }finally{
+        capi.wasm.dealloc(ppVfs);
+      }
+    }catch(e){
+      /* Ignore - probably bad args to a wasm-bound function. */
+      return false;
+    }
+  };
+
   if( self.window===self ){
     /* Features specific to the main window thread... */
 
@@ -812,7 +859,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     /**
        This routine guesses the approximate amount of
        window.localStorage and/or window.sessionStorage in use by the
-       kvvfs database backend.  Its argument must be one of
+       kvvfs database backend. Its argument must be one of
        ('session', 'local', ''). In the first two cases, only
        sessionStorage resp. localStorage is counted. If it's an empty
        string (the default) then both are counted. Only storage keys
@@ -842,34 +889,6 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       return sz * 2 /* because JS uses UC16 encoding */;
     };
 
-    /**
-       Given an `sqlite3*`, returns a truthy value (see below) if that
-       db handle uses the "kvvfs" VFS, else returns false. If pDb is
-       NULL then this function returns true if the default VFS is
-       "kvvfs". Results are undefined if pDb is truthy but refers to
-       an invalid pointer.
-
-       The truthy value it returns is a pointer to the kvvfs
-       `sqlite3_vfs` object.
-    */
-    capi.sqlite3_web_db_is_kvvfs = function(pDb){
-      const pK = capi.sqlite3_vfs_find("kvvfs");
-      if(!pK) return false;
-      else if(!pDb){
-        return capi.sqlite3_vfs_find(0) && pK;
-      }
-      const scope = capi.wasm.scopedAllocPush();
-      try{
-        const ppVfs = capi.wasm.scopedAllocPtr();
-        return (
-          (0===capi.sqlite3_file_control(
-            pDb, "main", capi.SQLITE_FCNTL_VFS_POINTER, ppVfs
-          )) && (capi.wasm.getPtrValue(ppVfs) === pK)
-        ) ? pK : false;
-      }finally{
-        capi.wasm.scopedAllocPop(scope);
-      }
-    };
   }/* main-window-only bits */
 
   /* The remainder of the API will be set up in later steps. */
