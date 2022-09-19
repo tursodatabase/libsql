@@ -49,18 +49,20 @@ const state = Object.create(null);
 */
 state.verbose = 2;
 
-const __logPrefix = "OPFS asyncer:";
-const log = (...args)=>{
-  if(state.verbose>2) console.log(__logPrefix,...args);
+const loggers = {
+  0:console.error.bind(console),
+  1:console.warn.bind(console),
+  2:console.log.bind(console)
 };
-const warn =  (...args)=>{
-  if(state.verbose>1) console.warn(__logPrefix,...args);
+const logImpl = (level,...args)=>{
+  if(state.verbose>level) loggers[level]("OPFS asyncer:",...args);
 };
-const error =  (...args)=>{
-  if(state.verbose) console.error(__logPrefix,...args);
-};
+const log =    (...args)=>logImpl(2, ...args);
+const warn =   (...args)=>logImpl(1, ...args);
+const error =  (...args)=>logImpl(0, ...args);
 
-warn("This file is very much experimental and under construction.",self.location.pathname);
+warn("This file is very much experimental and under construction.",
+     self.location.pathname);
 
 /**
    Map of sqlite3_file pointers (integers) to metadata related to a
@@ -82,7 +84,7 @@ const getResolvedPath = function(filename,splitIt){
     filename, 'file://irrelevant'
   ).pathname;
   return splitIt ? p.split('/').filter((v)=>!!v) : p;
-}
+};
 
 /**
    Takes the absolute path to a filesystem element. Returns an array

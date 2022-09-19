@@ -76,51 +76,46 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
    `opfs` property, containing several OPFS-specific utilities.
 */
 sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri){
+  delete sqlite3.installOpfsVfs;
+  if(self.window===self ||
+     !self.SharedArrayBuffer ||
+     !self.FileSystemHandle ||
+     !self.FileSystemDirectoryHandle ||
+     !self.FileSystemFileHandle ||
+     !self.FileSystemFileHandle.prototype.createSyncAccessHandle ||
+     !navigator.storage.getDirectory){
+    return Promise.reject(
+      new Error("This environment does not have OPFS support.")
+    );
+  }
   const options = (asyncProxyUri && 'object'===asyncProxyUri) ? asyncProxyUri : {
     proxyUri: asyncProxyUri
   };
-  const thisUrl = new URL(self.location.href);
+  const urlParams = new URL(self.location.href).searchParams;
   if(undefined===options.verbose){
-    options.verbose = thisUrl.searchParams.has('opfs-verbose') ? 3 : 2;
+    options.verbose = urlParams.has('opfs-verbose') ? 3 : 2;
   }
   if(undefined===options.sanityChecks){
-    options.sanityChecks = thisUrl.searchParams.has('opfs-sanity-check');
+    options.sanityChecks = urlParams.has('opfs-sanity-check');
   }
   if(undefined===options.proxyUri){
     options.proxyUri = callee.defaultProxyUri;
   }
-  delete sqlite3.installOpfsVfs;
-
-  /**
-     Generic utilities for working with OPFS. This will get filled out
-     by the Promise setup and, on success, installed as sqlite3.opfs.
-  */
-  const opfsUtil = Object.create(null);
 
   const thePromise = new Promise(function(promiseResolve, promiseReject){
-    const logPrefix = "OPFS syncer:";
-    const warn =  (...args)=>{
-      if(options.verbose>1) console.warn(logPrefix,...args);
+    const loggers = {
+      0:console.error.bind(console),
+      1:console.warn.bind(console),
+      2:console.log.bind(console)
     };
-    if(self.window===self ||
-       !self.SharedArrayBuffer ||
-       !self.FileSystemHandle ||
-       !self.FileSystemDirectoryHandle ||
-       !self.FileSystemFileHandle ||
-       !self.FileSystemFileHandle.prototype.createSyncAccessHandle ||
-       !navigator.storage.getDirectory){
-      warn("This environment does not have OPFS support.");
-      promiseReject(new Error("This environment does not have OPFS support."));
-      return;
-    }
+    const logImpl = (level,...args)=>{
+      if(options.verbose>level) loggers[level]("OPFS syncer:",...args);
+    };
+    const log =    (...args)=>logImpl(2, ...args);
+    const warn =   (...args)=>logImpl(1, ...args);
+    const error =  (...args)=>logImpl(0, ...args);
     warn("The OPFS VFS feature is very much experimental and under construction.");
     const toss = function(...args){throw new Error(args.join(' '))};
-    const log = (...args)=>{
-      if(options.verbose>2) console.log(logPrefix,...args);
-    };
-    const error =  (...args)=>{
-      if(options.verbose>0) console.error(logPrefix,...args);
-    };
     const capi = sqlite3.capi;
     const wasm = capi.wasm;
     const sqlite3_vfs = capi.sqlite3_vfs;
@@ -129,9 +124,16 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
     const W = new Worker(options.proxyUri);
     W._originalOnError = W.onerror /* will be restored later */;
     W.onerror = function(err){
+      // The error object doesn't contain any useful info when the
+      // failure is, e.g., that the remote script is 404.
       promiseReject(new Error("Loading OPFS async Worker failed for unknown reasons."));
     };
     const wMsg = (type,payload)=>W.postMessage({type,payload});
+    /**
+       Generic utilities for working with OPFS. This will get filled out
+       by the Promise setup and, on success, installed as sqlite3.opfs.
+    */
+    const opfsUtil = Object.create(null);
 
     /**
        State which we send to the async-api Worker or share with it.
@@ -625,7 +627,8 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
         log("xAccess(",dbFile,") exists ?=",rc);
         rc = vfsSyncWrappers.xOpen(opfsVfs.pointer, zDbFile,
                                    fid, openFlags, pOut);
-        log("open rc =",rc,"state.opSABView[xOpen] =",state.opSABView[state.opIds.xOpen]);
+        log("open rc =",rc,"state.opSABView[xOpen] =",
+            state.opSABView[state.opIds.xOpen]);
         if(isWorkerErrCode(rc)){
           error("open failed with code",rc);
           return;
@@ -696,8 +699,8 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
               W.onerror = W._originalOnError;
               delete W._originalOnError;
               sqlite3.opfs = opfsUtil;
-              promiseResolve(sqlite3);
               log("End of OPFS sqlite3_vfs setup.", opfsVfs);
+              promiseResolve(sqlite3);
             }catch(e){
               error(e);
               promiseReject(e);
