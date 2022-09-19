@@ -61,6 +61,25 @@ const log =    (...args)=>logImpl(2, ...args);
 const warn =   (...args)=>logImpl(1, ...args);
 const error =  (...args)=>logImpl(0, ...args);
 const metrics = Object.create(null);
+metrics.reset = ()=>{
+  let k;
+  const r = (m)=>(m.count = m.time = 0);
+  for(k in state.opIds){
+    r(metrics[k] = Object.create(null));
+  }
+};
+metrics.dump = ()=>{
+  let k, n = 0, t = 0, w = 0;
+  for(k in state.opIds){
+    const m = metrics[k];
+    n += m.count;
+    t += m.time;
+    m.avgTime = (m.count && m.time) ? (m.time / m.count) : 0;
+  }
+  console.log(self.location.href,
+              "metrics for",self.location.href,":",metrics,
+              "\nTotal of",n,"op(s) for",t,"ms");
+};
 
 warn("This file is very much experimental and under construction.",
      self.location.pathname);
@@ -123,14 +142,39 @@ const affirmNotRO = function(opName,fh){
   if(fh.readOnly) toss(opName+"(): File is read-only: "+fh.filenameAbs);
 };
 
+
+const opTimer = Object.create(null);
+opTimer.op = undefined;
+opTimer.start = undefined;
+const mTimeStart = (op)=>{
+  opTimer.start = performance.now();
+  opTimer.op = op;
+  //metrics[op] || toss("Maintenance required: missing metrics for",op);
+  ++metrics[op].count;
+};
+const mTimeEnd = ()=>(
+  metrics[opTimer.op].time += performance.now() - opTimer.start
+);
+
 /**
    Asynchronous wrappers for sqlite3_vfs and sqlite3_io_methods
    methods. Maintenance reminder: members are in alphabetical order
    to simplify finding them.
 */
 const vfsAsyncImpls = {
+  mkdir: async function(dirname){
+    let rc = 0;
+    try {
+        await getDirForPath(dirname+"/filepart", true);
+    }catch(e){
+      //error("mkdir failed",filename, e.message);
+      rc = state.sq3Codes.SQLITE_IOERR;
+    }
+    storeAndNotify('mkdir', rc);
+  },
   xAccess: async function(filename){
     log("xAccess(",arguments[0],")");
+    mTimeStart('xAccess');
     /* OPFS cannot support the full range of xAccess() queries sqlite3
        calls for. We can essentially just tell if the file is
        accessible, but if it is it's automatically writable (unless
@@ -150,9 +194,11 @@ const vfsAsyncImpls = {
       rc = state.sq3Codes.SQLITE_IOERR;
     }
     storeAndNotify('xAccess', rc);
+    mTimeEnd();
   },
   xClose: async function(fid){
     const opName = 'xClose';
+    mTimeStart(opName);
     log(opName+"(",arguments[0],")");
     const fh = __openFiles[fid];
     if(fh){
@@ -166,6 +212,7 @@ const vfsAsyncImpls = {
     }else{
       storeAndNotify(opName, state.sq3Codes.SQLITE_NOFOUND);
     }
+    mTimeEnd();
   },
   xDeleteNoWait: async function({filename, syncDir, recursive = false}){
     /* The syncDir flag is, for purposes of the VFS API's semantics,
@@ -202,20 +249,13 @@ const vfsAsyncImpls = {
     return rc;
   },
   xDelete: async function(...args){
+    mTimeStart('xDelete');
     const rc = await vfsAsyncImpls.xDeleteNoWait(...args);
     storeAndNotify('xDelete', rc);
-  },
-  mkdir: async function(dirname){
-    let rc = 0;
-    try {
-        await getDirForPath(dirname+"/filepart", true);
-    }catch(e){
-      //error("mkdir failed",filename, e.message);
-      rc = state.sq3Codes.SQLITE_IOERR;
-    }
-    storeAndNotify('mkdir', rc);
+    mTimeEnd();
   },
   xFileSize: async function(fid){
+    mTimeStart('xFileSize');
     log("xFileSize(",arguments,")");
     const fh = __openFiles[fid];
     let sz;
@@ -228,6 +268,7 @@ const vfsAsyncImpls = {
       sz = state.sq3Codes.SQLITE_IOERR;
     }
     storeAndNotify('xFileSize', sz);
+    mTimeEnd();
   },
   xOpen: async function({
     fid/*sqlite3_file pointer*/,
@@ -237,6 +278,7 @@ const vfsAsyncImpls = {
     create = false, readOnly = false, deleteOnClose = false
   }){
     const opName = 'xOpen';
+    mTimeStart(opName);
     try{
       if(create) readOnly = false;
       log(opName+"(",arguments[0],")");
@@ -245,6 +287,7 @@ const vfsAsyncImpls = {
         [hDir, filenamePart] = await getDirForPath(filename, !!create);
       }catch(e){
         storeAndNotify(opName, state.sql3Codes.SQLITE_NOTFOUND);
+        mTimeEnd();
         return;
       }
       const hFile = await hDir.getFileHandle(filenamePart, {create: !!create});
@@ -256,6 +299,7 @@ const vfsAsyncImpls = {
       fobj.fileHandle = hFile;
       fobj.fileType = fileType;
       fobj.sab = sab;
+      fobj.sabView = new Uint8Array(sab,0,state.fbInt64Offset);
       fobj.sabViewFileSize = new DataView(sab,state.fbInt64Offset,8);
       fobj.create = !!create;
       fobj.readOnly = !!readOnly;
@@ -272,16 +316,20 @@ const vfsAsyncImpls = {
       error(opName,e);
       storeAndNotify(opName, state.sq3Codes.SQLITE_IOERR);
     }
+    mTimeEnd();
   },
   xRead: async function({fid,n,offset}){
+    mTimeStart('xRead');
     log("xRead(",arguments[0],")");
     let rc = 0;
-    const fh = __openFiles[fid];
     try{
-      const aRead = new Uint8Array(fh.sab, 0, n);
-      const nRead = fh.accessHandle.read(aRead, {at: Number(offset)});
+      const fh = __openFiles[fid];
+      const nRead = fh.accessHandle.read(
+        fh.sabView.subarray(0, n),
+        {at: Number(offset)}
+      );
       if(nRead < n){/* Zero-fill remaining bytes */
-        new Uint8Array(fh.sab).fill(0, nRead, n);
+        fh.sabView.fill(0, nRead, n);
         rc = state.sq3Codes.SQLITE_IOERR_SHORT_READ;
       }
     }catch(e){
@@ -289,14 +337,18 @@ const vfsAsyncImpls = {
       rc = state.sq3Codes.SQLITE_IOERR_READ;
     }
     storeAndNotify('xRead',rc);
+    mTimeEnd();
   },
   xSync: async function({fid,flags/*ignored*/}){
+    mTimeStart('xSync');
     log("xSync(",arguments[0],")");
     const fh = __openFiles[fid];
     if(!fh.readOnly && fh.accessHandle) await fh.accessHandle.flush();
     storeAndNotify('xSync',0);
+    mTimeEnd();
   },
   xTruncate: async function({fid,size}){
+    mTimeStart('xTruncate');
     log("xTruncate(",arguments[0],")");
     let rc = 0;
     const fh = __openFiles[fid];
@@ -308,21 +360,25 @@ const vfsAsyncImpls = {
       rc = state.sq3Codes.SQLITE_IOERR_TRUNCATE;
     }
     storeAndNotify('xTruncate',rc);
+    mTimeEnd();
   },
-  xWrite: async function({fid,src,n,offset}){
+  xWrite: async function({fid,n,offset}){
+    mTimeStart('xWrite');
     log("xWrite(",arguments[0],")");
     let rc;
-    const fh = __openFiles[fid];
     try{
+      const fh = __openFiles[fid];
       affirmNotRO('xWrite', fh);
-      const nOut = fh.accessHandle.write(new Uint8Array(fh.sab, 0, n),
-                                         {at: Number(offset)});
-      rc = (nOut===n) ? 0 : state.sq3Codes.SQLITE_IOERR_WRITE;
+      rc = (
+        n === fh.accessHandle.write(fh.sabView.subarray(0, n),
+                                    {at: Number(offset)})
+      ) ? 0 : state.sq3Codes.SQLITE_IOERR_WRITE;
     }catch(e){
       error("xWrite():",e,fh);
       rc = state.sq3Codes.SQLITE_IOERR_WRITE;
     }
     storeAndNotify('xWrite',rc);
+    mTimeEnd();
   }
 };
 
@@ -348,6 +404,7 @@ navigator.storage.getDirectory().then(function(d){
               toss("Maintenance required: missing state.opIds[",k,"]");
             }
           });
+          metrics.reset();
           log("init state",state);
           wMsg('inited');
           break;

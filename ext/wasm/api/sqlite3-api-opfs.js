@@ -140,16 +140,19 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
     */
     opfsUtil.metrics = {
       dump: function(){
-        let k, n = 0, t = 0;
-        for(k in metrics){
+        let k, n = 0, t = 0, w = 0;
+        for(k in state.opIds){
           const m = metrics[k];
           n += m.count;
           t += m.time;
+          w += m.wait;
           m.avgTime = (m.count && m.time) ? (m.time / m.count) : 0;
           m.avgWait = (m.count && m.wait) ? (m.wait / m.count) : 0;
         }
-        console.log("metrics for",self.location.href,":",metrics,
-                    "\nTotal of",n,"op(s) for",t,"ms");
+        console.log(self.location.href,
+                    "metrics for",self.location.href,":",metrics,
+                    "\nTotal of",n,"op(s) for",t,
+                    "ms (incl. "+w+" ms of waiting on the async side)");
       },
       reset: function(){
         let k;
@@ -157,9 +160,9 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
         for(k in state.opIds){
           r(metrics[k] = Object.create(null));
         }
-        [ // timed routines which are not in state.opIds
-          'xFileControl'
-        ].forEach((k)=>r(metrics[k] = Object.create(null)));
+        //[ // timed routines which are not in state.opIds
+        //  'xFileControl'
+        //].forEach((k)=>r(metrics[k] = Object.create(null)));
       }
     }/*metrics*/;      
 
@@ -209,6 +212,7 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
       state.opIds.xWrite = i++;
       state.opIds.mkdir = i++;
       state.opSAB = new SharedArrayBuffer(i * 4/*sizeof int32*/);
+      state.opIds.xFileControl = state.opIds.xSync /* special case */;
       opfsUtil.metrics.reset();
     }
 
@@ -413,18 +417,20 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
       },
       xFileControl: function(pFile, opId, pArg){
         mTimeStart('xFileControl');
-        if(capi.SQLITE_FCNTL_SYNC===opId){
-          return opRun('xSync', {fid:pFile, flags:0});
-        }
+        const rc = (capi.SQLITE_FCNTL_SYNC===opId)
+              ? opRun('xSync', {fid:pFile, flags:0})
+              : capi.SQLITE_NOTFOUND;
         mTimeEnd();
-        return capi.SQLITE_NOTFOUND;
+        return rc;
       },
       xFileSize: function(pFile,pSz64){
         mTimeStart('xFileSize');
         const rc = opRun('xFileSize', pFile);
         if(!isWorkerErrCode(rc)){
-          const f = __openFiles[pFile];
-          wasm.setMemValue(pSz64, f.sabViewFileSize.getBigInt64(0,true) ,'i64');
+          wasm.setMemValue(
+            pSz64, __openFiles[pFile].sabViewFileSize.getBigInt64(0,true),
+            'i64'
+          );
         }
         mTimeEnd();
         return rc;
@@ -454,6 +460,7 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
         return rc;
       },
       xSync: function(pFile,flags){
+        ++metrics.xSync.count;
         return 0; // impl'd in xFileControl(). opRun('xSync', {fid:pFile, flags});
       },
       xTruncate: function(pFile,sz64){
@@ -492,8 +499,9 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
     const vfsSyncWrappers = {
       xAccess: function(pVfs,zName,flags,pOut){
         mTimeStart('xAccess');
-        const rc = opRun('xAccess', wasm.cstringToJs(zName));
-        wasm.setMemValue(pOut, rc ? 0 : 1, 'i32');
+        wasm.setMemValue(
+          pOut, (opRun('xAccess', wasm.cstringToJs(zName)) ? 0 : 1), 'i32'
+        );
         mTimeEnd();
         return 0;
       },
