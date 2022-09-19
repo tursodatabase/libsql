@@ -45,7 +45,7 @@
 
   const runSpeedtest = function(cliFlagsArray){
     const scope = App.wasm.scopedAllocPush();
-    const dbFile = App.pDir+"/speedtest1.db";
+    const dbFile = App.pDir+"/speedtest1.sqlite3";
     App.unlink(dbFile);
     try{
       const argv = [

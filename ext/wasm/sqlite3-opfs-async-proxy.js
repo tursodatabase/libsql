@@ -60,6 +60,7 @@ const logImpl = (level,...args)=>{
 const log =    (...args)=>logImpl(2, ...args);
 const warn =   (...args)=>logImpl(1, ...args);
 const error =  (...args)=>logImpl(0, ...args);
+const metrics = Object.create(null);
 
 warn("This file is very much experimental and under construction.",
      self.location.pathname);
@@ -220,7 +221,7 @@ const vfsAsyncImpls = {
     let sz;
     try{
       sz = await fh.accessHandle.getSize();
-      fh.sabViewFileSize.setBigInt64(0, BigInt(sz));
+      fh.sabViewFileSize.setBigInt64(0, BigInt(sz), true);
       sz = 0;
     }catch(e){
       error("xFileSize():",e, fh);

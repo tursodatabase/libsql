@@ -603,6 +603,10 @@ self.WhWasmUtilInstaller = function(target){
      out) the pointer's value, else it will contain an essentially
      random value.
 
+     ACHTUNG: calling this often, e.g. in a loop, can have a noticably
+     painful impact on performance. Rather than doing so, use
+     heapForSize() to fetch the heap object and read directly from it.
+
      See: setMemValue()
   */
   target.getMemValue = function(ptr, type='i8'){
@@ -633,6 +637,10 @@ self.WhWasmUtilInstaller = function(target){
      this function behaves as if the 3rd argument were `i32`.
 
      This function returns itself.
+
+     ACHTUNG: calling this often, e.g. in a loop, can have a noticably
+     painful impact on performance. Rather than doing so, use
+     heapForSize() to fetch the heap object and assign directly to it.
   */
   target.setMemValue = function f(ptr, value, type='i8'){
     if (type.endsWith('*')) type = ptrIR;
