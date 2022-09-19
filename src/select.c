@@ -4326,7 +4326,7 @@ static int flattenSubquery(
   **          must not be part of an outer join.
   **
   **   (29b)  The subquery itself must not be the right operand of a 
-  **          NATURAL join or a join that as an ON or USING clause.
+  **          NATURAL join or a join that has an ON or USING clause.
   **
   ** These conditions are sufficient to keep an EP_OuterON from being
   ** flattened into an EP_InnerON.  Restrictions (3a) and (27a) prevent
