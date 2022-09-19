@@ -2197,7 +2197,6 @@ static int xCompileOptions(void *pCtx, int nVal, char **azVal, char **azCol){
   printf("-- Compile option: %s\n", azVal[0]);
   return SQLITE_OK;
 }
-
 int main(int argc, char **argv){
   int doAutovac = 0;            /* True for --autovacuum */
   int cacheSize = 0;            /* Desired cache size.  0 means default */
@@ -2634,3 +2633,13 @@ int main(int argc, char **argv){
   free( pHeap );
   return 0;
 }
+
+#ifdef SQLITE_SPEEDTEST1_WASM
+/*
+** A workaround for some inconsistent behaviour with how
+** main() does (or does not) get exported to WASM.
+*/
+int wasm_main(int argc, char **argv){
+  return main(argc, argv);
+}
+#endif

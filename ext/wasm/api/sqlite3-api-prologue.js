@@ -749,6 +749,8 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   };
 
   /**
+     Experimental and subject to change or removal.
+
      Returns true if sqlite3.capi.sqlite3_web_persistent_dir() is a
      non-empty string and the given name starts with (that string +
      '/'), else returns false.

@@ -45,7 +45,7 @@
            returns the name of the dir on which OPFS is mounted, else it returns
            an empty string.
         */
-        const opfsDir = function f(wasmUtil){
+        const wasmfsDir = function f(wasmUtil){
           if(undefined !== f._) return f._;
           const pdir = '/persistent';
           if( !self.FileSystemHandle
@@ -66,7 +66,7 @@
             return f._ = "";
           }
         };
-        opfsDir._ = undefined;
+        wasmfsDir._ = undefined;
 
         const eOut = document.querySelector('#test-output');
         const log2 = function(cssClass,...args){
@@ -92,28 +92,41 @@
           logList.push('ERROR: '+args.join(' '));
         };
 
-        const runTests = function(EmscriptenModule){
-          console.log("Module inited.",EmscriptenModule);
-          const wasm = {
-            exports: EmscriptenModule.asm,
-            alloc: (n)=>EmscriptenModule._malloc(n),
-            dealloc: (m)=>EmscriptenModule._free(m),
-            memory: EmscriptenModule.asm.memory || EmscriptenModule.wasmMemory
-          };
-          //console.debug('wasm =',wasm);
-          self.WhWasmUtilInstaller(wasm);
+        const runTests = function(sqlite3){
+          const capi = sqlite3.capi, wasm = capi.wasm;
+          //console.debug('sqlite3 =',sqlite3);
           const unlink = wasm.xWrap("sqlite3_wasm_vfs_unlink", "int", ["string"]);
-          const pDir = opfsDir(wasm);
+          const pDir = wasmfsDir(wasm);
           if(pDir){
             console.warn("Persistent storage:",pDir);
           }
           const scope = wasm.scopedAllocPush();
-          const dbFile = 0 ? "" : pDir+"/speedtest1.db";
-          const urlArgs = self.SqliteTestUtil.processUrlArgs();
+          let dbFile = pDir+"/speedtest1.db";
+          const urlParams = self.SqliteTestUtil.processUrlArgs();
           const argv = ["speedtest1"];
-          if(urlArgs.flags){
+          if('string'===typeof urlParams.vfs){
+              if(!capi.sqlite3_vfs_find(urlParams.vfs)){
+                  log2('error',"Unknown VFS:",urlParams.vfs);
+                  return;
+              }
+              argv.push("--vfs", urlParams.vfs);
+              log2('',"Using VFS:",urlParams.vfs);
+              if('kvvfs' === urlParams.vfs){
+                  urlParams.size = 1;
+                  dbFile = 'session';
+                  log2('',"kvvfs VFS: forcing --size 1 and filename 'session'");
+                  capi.sqlite3_web_kvvfs_clear('session');
+              }
+          }
+          [
+              'size'
+          ].forEach(function(k){
+              const v = urlParams[k];
+              if(v) argv.push('--'+k, urlParams[k]);
+          });
+          if(urlParams.flags){
             // transform flags=a,b,c to ["--a", "--b", "--c"]
-            argv.push(...(urlArgs.flags.split(',').map((v)=>'--'+v)));
+            argv.push(...(urlParams.flags.split(',').map((v)=>'--'+v)));
           }else{
             argv.push(
               "--singlethread",
@@ -134,7 +147,7 @@
                "Give it time...");
           logList.length = 0;
           setTimeout(function(){
-              wasm.xCall('__main_argc_argv', argv.length,
+              wasm.xCall('wasm_main', argv.length,
                          wasm.scopedAllocMainArgv(argv));
               wasm.scopedAllocPop(scope);
               if(pDir) unlink(dbFile);
@@ -145,8 +158,11 @@
 
         self.sqlite3TestModule.print = log;
         self.sqlite3TestModule.printErr = logErr;
-        sqlite3Speedtest1InitModule(self.sqlite3TestModule).then(function(M){
-          setTimeout(()=>runTests(M), 100);
+        sqlite3Speedtest1InitModule(self.sqlite3TestModule)
+        .then((EmscriptenModule)=>{
+            return EmscriptenModule.sqlite3.installOpfsVfs()
+                .catch((e)=>{console.warn(e.message)})
+                .then(()=>runTests(EmscriptenModule.sqlite3));
         });
       })();
     </script>

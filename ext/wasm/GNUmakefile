@@ -53,7 +53,8 @@ SQLITE_OPT = \
   -DSQLITE_OMIT_UTF16 \
   -DSQLITE_OMIT_SHARED_CACHE \
   -DSQLITE_THREADSAFE=0 \
-  -DSQLITE_TEMP_STORE=3
+  -DSQLITE_TEMP_STORE=3 \
+  -DSQLITE_OS_KV_OPTIONAL=1
 #SQLITE_OPT += -DSQLITE_ENABLE_MEMSYS5
 # ^^^ MEMSYS5 is hypothetically useful for non-Emscripten builds but
 # requires adding more infrastructure and fixing one spot in the
@@ -192,16 +193,19 @@ emcc.cflags += -I. -I$(dir.top) # $(SQLITE_OPT)
 ########################################################################
 # emcc flags specific to building the final .js/.wasm file...
 emcc.jsflags := -fPIC
-emcc.jsflags := --minify 0
+emcc.jsflags += --minify 0
 emcc.jsflags += --no-entry
 emcc.jsflags += -sMODULARIZE
 emcc.jsflags += -sSTRICT_JS
 emcc.jsflags += -sDYNAMIC_EXECUTION=0
 emcc.jsflags += -sNO_POLYFILL
 emcc.jsflags += -sEXPORTED_FUNCTIONS=@$(dir.wasm)/EXPORTED_FUNCTIONS.api
-emcc.jsflags += -sEXPORTED_RUNTIME_METHODS=FS,wasmMemory,allocateUTF8OnStack
-                # wasmMemory ==> required by our code for use with -sIMPORTED_MEMORY
-                # allocateUTF8OnStack => for kvvp internals
+emcc.exportedRuntimeMethods := \
+    -sEXPORTED_RUNTIME_METHODS=FS,wasmMemory,allocateUTF8OnStack
+    # FS ==> stdio/POSIX I/O proxies
+    # wasmMemory ==> required by our code for use with -sIMPORTED_MEMORY
+    # allocateUTF8OnStack => for kvvfs internals
+emcc.jsflags += $(emcc.exportedRuntimeMethods)
 emcc.jsflags += -sUSE_CLOSURE_COMPILER=0
 emcc.jsflags += -sIMPORTED_MEMORY
 emcc.environment := -sENVIRONMENT=web
@@ -332,17 +336,23 @@ speedtest1-common.eflags := -g $(emcc_opt)
 speedtest1.eflags :=
 speedtest1.eflags += -sENVIRONMENT=web
 speedtest1-common.eflags += -sINVOKE_RUN=0
-#speedtest1-common.eflags += --no-entry
-speedtest1-common.eflags += -flto
+speedtest1-common.eflags += --no-entry
+#speedtest1-common.eflags += -flto
 speedtest1-common.eflags += -sABORTING_MALLOC
 speedtest1-common.eflags += -sINITIAL_MEMORY=128450560
 speedtest1-common.eflags += -sSTRICT_JS
 speedtest1-common.eflags += -sMODULARIZE
 speedtest1-common.eflags += -Wno-limited-postlink-optimizations
-speedtest1-common.eflags += -sEXPORTED_FUNCTIONS=_main,_malloc,_free
+speedtest1-common.eflags += -sEXPORTED_FUNCTIONS=@$(dir.wasm)/EXPORTED_FUNCTIONS.speedtest1
+speedtest1-common.eflags += $(emcc.exportedRuntimeMethods)
+speedtest1-common.eflags += -sALLOW_TABLE_GROWTH
 speedtest1-common.eflags += -sDYNAMIC_EXECUTION=0
 speedtest1-common.eflags += --minify 0
 speedtest1-common.eflags += -sEXPORT_NAME=sqlite3Speedtest1InitModule
+speedtest1-common.eflags += --post-js=$(post-js.js)
+ifneq (0,$(enable_bigint))
+speedtest1-common.eflags += -sWASM_BIGINT
+endif
 speedtest1.exit-runtime0 := -sEXIT_RUNTIME=0
 speedtest1.exit-runtime1 := -sEXIT_RUNTIME=1
 # Re -sEXIT_RUNTIME=1 vs 0: if it's 1 and speedtest1 crashes, we get
@@ -362,25 +372,29 @@ speedtest1.exit-runtime1 := -sEXIT_RUNTIME=1
 # -sEXIT_RUNTIME=1 but we need EXIT_RUNTIME=0 for the worker-based app
 # which runs speedtest1 multiple times.
 
+EXPORTED_FUNCTIONS.speedtest1: EXPORTED_FUNCTIONS.api
+	{ echo _wasm_main; cat EXPORTED_FUNCTIONS.api; } > $@
+CLEAN_FILES += EXPORTED_FUNCTIONS.speedtest1
 speedtest1.js := speedtest1.js
 speedtest1.wasm := $(subst .js,.wasm,$(speedtest1.js))
 speedtest1.cflags := \
   -I. -I.. -I$(dir.top) \
   -DSQLITE_SPEEDTEST1_WASM
-
+speedtest1.cs := $(speedtest1.c) $(sqlite3-wasm.c) $(jaccwabyt_test.c)
 $(speedtest1.js): emcc.cflags+=
 # speedtest1 notes re. sqlite3-wasm.o vs sqlite3-wasm.c: building against
 # the latter (predictably) results in a slightly faster binary, but we're
 # close enough to the target speed requirements that the 500ms makes a
 # difference.
-$(speedtest1.js): $(speedtest1.c) $(sqlite3-wasm.c) $(MAKEFILE) $(sqlite3.c)
+$(speedtest1.js): $(MAKEFILE) $(speedtest1.cs) $(post-js.js) \
+    EXPORTED_FUNCTIONS.speedtest1
 	@echo "Building $@ ..."
 	$(emcc.bin) \
         $(speedtest1.eflags) $(speedtest1-common.eflags) $(speedtest1.cflags) \
         $(SQLITE_OPT) \
         $(speedtest1.exit-runtime0) \
         '-DSQLITE_DEFAULT_UNIX_VFS="unix-none"' \
-        -o $@ $(speedtest1.c) $(sqlite3-wasm.c) -lm
+        -o $@ $(speedtest1.cs) -lm
 	$(maybe-wasm-strip) $(speedtest1.wasm)
 	ls -la $@ $(speedtest1.wasm)
 
@@ -434,7 +448,6 @@ oz:
 
 ########################################################################
 # Sub-makes...
-include kvvfs.make
 
 ########################################################################
 # Some platforms do not support the WASMFS build. Raspberry Pi OS is one

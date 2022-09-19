@@ -139,7 +139,7 @@
                "Give it time...");
           logList.length = 0;
           setTimeout(function(){
-              wasm.xCall('__main_argc_argv', argv.length,
+              wasm.xCall('wasm_main', argv.length,
                          wasm.scopedAllocMainArgv(argv));
               wasm.scopedAllocPop(scope);
               if(pDir) unlink(dbFile);

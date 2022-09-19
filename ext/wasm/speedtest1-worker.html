@@ -30,7 +30,9 @@
       <div id='toolbar'>
         <div id='toolbar-select'>
           <select id='select-flags' size='10' multiple></select>
-          <div>TODO? Options which require values are not represented here.</div>
+          <div>The following flags can be passed as URL parameters:
+            vfs=NAME, size=N
+          </div>
         </div>
         <div class='toolbar-inner-vertical'>
           <div id='toolbar-selected-flags'></div>
@@ -124,6 +126,7 @@
         justify-content: flex-start;
       }
     </style>
+    <script src="common/SqliteTestUtil.js"></script>
     <script>(function(){
       'use strict';
       const E = (sel)=>document.querySelector(sel);
@@ -167,7 +170,7 @@
         return str+a.join('&nbsp;');
       };
 
-      const W = new Worker("speedtest1-worker.js");
+      const W = new Worker("speedtest1-worker.js"+self.location.search);
       const mPost = function(msgType,payload){
         W.postMessage({type: msgType, data: payload});
       };
@@ -177,7 +180,16 @@
       const eLinkMainThread = E('#link-main-thread');
       const eLinkWasmfs = E('#link-wasmfs');
       const eLinkKvvfs = E('#link-kvvfs');
-      const getSelectedFlags = ()=>Array.prototype.map.call(eFlags.selectedOptions, (v)=>v.value);
+      const urlParams = new URL(self.location.href).searchParams;
+      const getSelectedFlags = ()=>{
+          const f = Array.prototype.map.call(eFlags.selectedOptions, (v)=>v.value);
+          [
+              'size', 'vfs'
+          ].forEach(function(k){
+              if(urlParams.has(k)) f.push('--'+k, urlParams.get(k));
+          });
+          return f;
+      };
       const updateSelectedFlags = function(){
         eSelectedFlags.innerText = '';
         const flags = getSelectedFlags();

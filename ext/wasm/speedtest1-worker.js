@@ -6,7 +6,7 @@
      returns the name of the dir on which OPFS is mounted, else it returns
      an empty string.
   */
-  const opfsDir = function f(wasmUtil){
+  const wasmfsDir = function f(wasmUtil){
     if(undefined !== f._) return f._;
     const pdir = '/persistent';
     if( !self.FileSystemHandle
@@ -27,7 +27,7 @@
       return f._ = "";
     }
   };
-  opfsDir._ = undefined;
+  wasmfsDir._ = undefined;
 
   const mPost = function(msgType,payload){
     postMessage({type: msgType, data: payload});
@@ -42,7 +42,7 @@
   };
   const log = (...args)=>logMsg('stdout',args);
   const logErr = (...args)=>logMsg('stderr',args);
-  
+
   const runSpeedtest = function(cliFlagsArray){
     const scope = App.wasm.scopedAllocPush();
     const dbFile = 0 ? "" : App.pDir+"/speedtest1.db";
@@ -52,7 +52,7 @@
       ];
       App.logBuffer.length = 0;
       mPost('run-start', [...argv]);
-      App.wasm.xCall('__main_argc_argv', argv.length,
+      App.wasm.xCall('wasm_main', argv.length,
                      App.wasm.scopedAllocMainArgv(argv));
     }catch(e){
       mPost('error',e.message);
@@ -79,20 +79,18 @@
     printErr: logErr,
     setStatus: (text)=>mPost('load-status',text)
   };
-  self.sqlite3Speedtest1InitModule(EmscriptenModule).then(function(EmscriptenModule){
+  self.sqlite3Speedtest1InitModule(EmscriptenModule).then(function(EModule){
+    const S = EModule.sqlite3;
     log("Module inited.");
-    App.wasm = {
-      exports: EmscriptenModule.asm,
-      alloc: (n)=>EmscriptenModule._malloc(n),
-      dealloc: (m)=>EmscriptenModule._free(m),
-      memory: EmscriptenModule.asm.memory || EmscriptenModule.wasmMemory
-    };
-    //console.debug('wasm =',wasm);
-    self.WhWasmUtilInstaller(App.wasm);
-    App.unlink = App.wasm.xWrap("sqlite3_wasm_vfs_unlink", "int", ["string"]);
-    App.pDir = opfsDir(App.wasm);
-    if(App.pDir) log("Persistent storage:",pDir);
-    else log("Using transient storage.");
-    mPost('ready',true);
+    return S.installOpfsVfs()
+      .catch((e)=>console.warn(e.message))
+      .then(()=>{
+        App.unlink = S.capi.wasm.xWrap("sqlite3_wasm_vfs_unlink", "int", ["string"]);
+        App.pDir = wasmfsDir(S.wasm);
+        App.wasm = S.capi.wasm;
+        //if(App.pDir) log("Persistent storage:",pDir);
+        //else log("Using transient storage.");
+        mPost('ready',true);
+      });
   });
 })();

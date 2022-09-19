@@ -10,8 +10,9 @@
 
   ***********************************************************************
 
-  A basic test script for sqlite3-kvvfs.wasm. This file must be run in
-  main JS thread and sqlite3-kvvfs.js must have been loaded before it.
+  A basic test script for sqlite3.wasm with kvvfs support. This file
+  must be run in main JS thread and sqlite3.js must have been loaded
+  before it.
 */
 'use strict';
 (function(){
@@ -39,7 +40,7 @@
   const error = function(...args){
     logHtml('error',...args);
   };
-
+  
   const runTests = function(Module){
     //log("Module",Module);
     const sqlite3 = Module.sqlite3,
@@ -49,7 +50,7 @@
     log("Loaded module:",capi.sqlite3_libversion(), capi.sqlite3_sourceid());
     T.assert( 0 !== capi.sqlite3_vfs_find(null) );
     if(!capi.sqlite3_vfs_find('kvvfs')){
-      warn("This build is not kvvfs-capable.");
+      error("This build is not kvvfs-capable.");
       return;
     }
     
