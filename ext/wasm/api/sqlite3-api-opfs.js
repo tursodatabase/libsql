@@ -386,9 +386,10 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
         try {
           // FIXME(?): block until we finish copying the xRead result buffer. How?
           rc = opRun('xRead',{fid:pFile, n, offset});
-          if(0!==rc) return rc;
-          let i = 0;
-          for(; i < n; ++i) wasm.setMemValue(pDest + i, f.sabView[i]);
+          if(0===rc || capi.SQLITE_IOERR_SHORT_READ===rc){
+            let i = 0;
+            for(; i < n; ++i) wasm.setMemValue(pDest + i, f.sabView[i]);
+          }
         }catch(e){
           error("xRead(",arguments,") failed:",e,f);
           rc = capi.SQLITE_IOERR_READ;
