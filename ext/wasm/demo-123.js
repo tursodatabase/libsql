@@ -10,7 +10,7 @@
 
   ***********************************************************************
 
-  A basic demonstration of the SQLite3 OO API.
+  A basic demonstration of the SQLite3 "OO#1" API.
 */
 'use strict';
 (function(){
@@ -47,11 +47,11 @@
     log("transient b =",db.filename);
     /**
        Never(!) rely on garbage collection to clean up DBs and
-       (especially) statements. Always wrap their lifetimes in
-       try/finally construct, as demonstrated below. By and large,
-       client code can avoid lifetime-related complications of
-       prepared statement objects by using the DB.exec() method for
-       SQL execution.
+       (especially) prepared statements. Always wrap their lifetimes
+       in a try/finally construct, as demonstrated below. By and
+       large, client code can entirely avoid lifetime-related
+       complications of prepared statement objects by using the
+       DB.exec() method for SQL execution.
     */
     try {
       log("Create a table...");

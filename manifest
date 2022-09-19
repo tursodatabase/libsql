@@ -1,5 +1,5 @@
-C Generic\scleanups\sin\sthe\sOPFS\sVFS\sproxies.
-D 2022-09-19T09:58:01.741
+C Minor\sdoc\simprovements\sin\sdemo-123.js.
+D 2022-09-19T10:13:01.255
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -498,7 +498,7 @@ F ext/wasm/common/testing.css 3a5143699c2b73a85b962271e1a9b3241b30d90e30d895e4f5
 F ext/wasm/common/whwasmutil.js f7282ef36c9625330d4e6e82d1beec6678cd101e95e7108cd85db587a788c145
 F ext/wasm/demo-123-worker.html e419b66495d209b5211ec64903b4cfb3ca7df20d652b41fcd28bf018a773234f
 F ext/wasm/demo-123.html aa281d33b7eefa755f3122b7b5a18f39a42dc5fb69c8879171bf14b4c37c4ec4
-F ext/wasm/demo-123.js 2c5e7775339624819067fd169d202004faeddc9d8ef452dd1f95aa4b3972a5b2
+F ext/wasm/demo-123.js 234655683e35a4543a23de7b10800d76b0369947b33e089e5613171fa7795afb
 F ext/wasm/fiddle/emscripten.css 3d253a6fdb8983a2ac983855bfbdd4b6fa1ff267c28d69513dd6ef1f289ada3f
 F ext/wasm/fiddle/fiddle-worker.js bccf46045be8824752876f3eec01c223be0616ccac184bffd0024cfe7a3262b8
 F ext/wasm/fiddle/fiddle.html 550c5aafce40bd218de9bf26192749f69f9b10bc379423ecd2e162bcef885c08
@@ -2028,8 +2028,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 56668f9902c6e896b6c63621a444444c6f58ee20f88a5feae97f1699be35892d
-R b87c8cb1e595f1f55de64a473bfd1ee8
+P 7d5f6adc3b964413fc96ad8d2735312c3e58348024cabdd2099682cbf696eaf7
+R 2fec471b1001d01ad7dc38d9c67df837
 U stephan
-Z 85b747fc9dead0d23b6c33a91c074db8
+Z d026bdd80c48b40067e840d055db82e8
 # Remove this line to create a well-formed Fossil manifest.
