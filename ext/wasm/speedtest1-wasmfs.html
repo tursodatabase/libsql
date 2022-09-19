@@ -36,7 +36,6 @@
     <div>Output is delayed/buffered because we cannot update the UI while the
       speedtest is running. Output will appear below when ready...
     <div id='test-output'></div>
-    <script src="common/whwasmutil.js"></script>
     <script src="common/SqliteTestUtil.js"></script>
     <script src="speedtest1-wasmfs.js"></script>
     <script>(function(){
@@ -45,7 +44,7 @@
            returns the name of the dir on which OPFS is mounted, else it returns
            an empty string.
         */
-        const opfsDir = function f(wasmUtil){
+        const wasmfsDir = function f(wasmUtil){
           if(undefined !== f._) return f._;
           const pdir = '/persistent';
           if( !self.FileSystemHandle
@@ -66,7 +65,7 @@
             return f._ = "";
           }
         };
-        opfsDir._ = undefined;
+        wasmfsDir._ = undefined;
 
         const eOut = document.querySelector('#test-output');
         const log2 = function(cssClass,...args){
@@ -92,29 +91,24 @@
           logList.push('ERROR: '+args.join(' '));
         };
 
-        const runTests = function(EmscriptenModule){
-          console.log("Module inited.",EmscriptenModule);
-          const wasm = {
-            exports: EmscriptenModule.asm,
-            alloc: (n)=>EmscriptenModule._malloc(n),
-            dealloc: (m)=>EmscriptenModule._free(m),
-            memory: EmscriptenModule.asm.memory || EmscriptenModule.wasmMemory
-          };
-          //console.debug('wasm =',wasm);
-          self.WhWasmUtilInstaller(wasm);
+        const runTests = function(sqlite3){
+          console.log("Module inited.");
+          const wasm = sqlite3.capi.wasm;
           const unlink = wasm.xWrap("sqlite3_wasm_vfs_unlink", "int", ["string"]);
-          const pDir = opfsDir(wasm);
+          const pDir = wasmfsDir(wasm);
           if(pDir) log2('',"Persistent storage:",pDir);
           else{
             log2('error',"Expecting persistent storage in this build.");
             return;
           }
           const scope = wasm.scopedAllocPush();
-          const dbFile = 0 ? "" : pDir+"/speedtest1.db";
-          const urlArgs = self.SqliteTestUtil.processUrlArgs();
+          const dbFile = pDir+"/speedtest1.db";
+          const urlParams = self.SqliteTestUtil.processUrlArgs();
           const argv = ["speedtest1"];
-          if(urlArgs.flags){
-            argv.push(...(urlArgs.flags.split(',')));
+          if(urlParams.flags){
+            argv.push(...(urlParams.flags.split(',')));
+            let i = argv.indexOf('--vfs');
+            if(i>=0) argv.splice(i,2);
           }else{
             argv.push(
               "--singlethread",
@@ -124,8 +118,9 @@
             );
             //"--memdb", // note that memdb trumps the filename arg
           }
+
           if(argv.indexOf('--memdb')>=0){
-              log2('error',"WARNING: --memdb flag trumps db filename.");
+            log2('error',"WARNING: --memdb flag trumps db filename.");
           }
           argv.push("--big-transactions"/*important for tests 410 and 510!*/,
                     dbFile);
@@ -138,19 +133,19 @@
                "Give it time...");
           logList.length = 0;
           setTimeout(function(){
-              wasm.xCall('wasm_main', argv.length,
-                         wasm.scopedAllocMainArgv(argv));
-              wasm.scopedAllocPop(scope);
-              if(pDir) unlink(dbFile);
-              logList.unshift("Done running native main(). Output:");
-              dumpLogList();
-          }, 50);
+            wasm.xCall('wasm_main', argv.length,
+                       wasm.scopedAllocMainArgv(argv));
+            wasm.scopedAllocPop(scope);
+            if(pDir) unlink(dbFile);
+            logList.unshift("Done running native main(). Output:");
+            dumpLogList();
+          }, 25);
         }/*runTests()*/;
 
         self.sqlite3TestModule.print = log;
         self.sqlite3TestModule.printErr = logErr;
         sqlite3Speedtest1InitModule(self.sqlite3TestModule).then(function(M){
-          setTimeout(()=>runTests(M), 100);
+            runTests(M.sqlite3);
         });
       })();
     </script>

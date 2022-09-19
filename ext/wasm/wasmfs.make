@@ -72,6 +72,7 @@ sqlite3-wasmfs.jsflags += -sMEMORY64=0
 sqlite3-wasmfs.jsflags += -sINITIAL_MEMORY=128450560
 sqlite3-wasmfs.fsflags := -pthread -sWASMFS -sPTHREAD_POOL_SIZE=2 -sENVIRONMENT=web,worker
 sqlite3-wasmfs.jsflags += $(sqlite3-wasmfs.fsflags)
+speedtest1-common.eflags += -sEXPORTED_FUNCTIONS=@$(dir.wasm)/EXPORTED_FUNCTIONS.speedtest1
 #sqlite3-wasmfs.jsflags += -sALLOW_MEMORY_GROWTH
 #^^^ using ALLOW_MEMORY_GROWTH produces a warning from emcc:
 #   USE_PTHREADS + ALLOW_MEMORY_GROWTH may run non-wasm code slowly,
@@ -80,12 +81,12 @@ ifneq (0,$(enable_bigint))
 sqlite3-wasmfs.jsflags += -sWASM_BIGINT
 endif
 
-$(sqlite3-wasmfs.js): $(sqlite3-wasmfs.wasm.c) $(sqlite3.c) $(sqlite3-wasmfs.extra.c) \
-    EXPORTED_FUNCTIONS.api $(MAKEFILE) $(MAKEFILE.wasmfs) \
+$(sqlite3-wasmfs.js): $(sqlite3-wasmfs.wasm.c) $(sqlite3-wasm.c) $(sqlite3-wasmfs.extra.c) \
+    EXPORTED_FUNCTIONS.api $(sqlite3-wasm.js) $(MAKEFILE) $(MAKEFILE.wasmfs) \
     $(post-js.js)
 	@echo "Building $@ ..."
 	$(emcc.bin) -o $@ $(emcc_opt) $(emcc.flags) \
-      $(sqlite3-wasmfs.cflags) $(sqlite3-wasmfs.jsflags) $(sqlite3-wasmfs.wasm.c) $(sqlite3-wasmfs.extra.c)
+      $(sqlite3-wasmfs.cflags) $(speedtest1-common.eflags) $(sqlite3-wasmfs.jsflags) $(sqlite3-wasmfs.wasm.c) $(sqlite3-wasmfs.extra.c)
 	chmod -x $(sqlite3-wasmfs.wasm)
 	$(maybe-wasm-strip) $(sqlite3-wasmfs.wasm)
 	@ls -la $@ $(sqlite3-wasmfs.wasm)
@@ -99,17 +100,19 @@ all: wasmfs
 # faster binary.
 speedtest1-wasmfs.js := speedtest1-wasmfs.js
 speedtest1-wasmfs.wasm := $(subst .js,.wasm,$(speedtest1-wasmfs.js))
-speedtest1-wasmfs.eflags := -sENVIRONMENT=web,worker $(sqlite3-wasmfs.fsflags)
+speedtest1-wasmfs.eflags := $(sqlite3-wasmfs.fsflags)
 speedtest1-wasmfs.eflags += $(SQLITE_OPT) -DSQLITE_WASM_WASMFS
+speedtest1-wasmfs.eflags += --post-js=$(sqlite3-wasmfs.js)
 $(speedtest1-wasmfs.js): $(MAKEFILE) $(MAKEFILE.wasmfs)
 #$(speedtest1-wasmfs.js): $(sqlite3-wasmfs.js)
-$(speedtest1-wasmfs.js): $(speedtest1.c) $(sqlite3-wasm.c)
+$(speedtest1-wasmfs.js): $(speedtest1.cs) $(sqlite3-wasmfs.js) \
+  EXPORTED_FUNCTIONS.speedtest1
 	@echo "Building $@ ..."
 	$(emcc.bin) \
         $(speedtest1-wasmfs.eflags) $(speedtest1-common.eflags) \
         $(speedtest1.cflags) \
         $(sqlite3-wasmfs.cflags) \
-        -o $@ $(speedtest1.c) $(sqlite3-wasm.c) -lm
+        -o $@ $(speedtest1.cs) -lm
 	$(maybe-wasm-strip) $(speedtest1-wasmfs.wasm)
 	ls -la $@ $(speedtest1-wasmfs.wasm)
 

@@ -301,7 +301,7 @@ const vfsAsyncImpls = {
     const fh = __openFiles[fid];
     try{
       affirmNotRO('xTruncate', fh);
-      await fh.accessHandle.truncate(size);
+      await fh.accessHandle.truncate(Number(size));
     }catch(e){
       error("xTruncate():",e,fh);
       rc = state.sq3Codes.SQLITE_IOERR_TRUNCATE;
