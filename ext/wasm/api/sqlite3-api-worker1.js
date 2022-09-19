@@ -326,13 +326,12 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 sqlite3.initWorker1API = function(){
   'use strict';
   const toss = (...args)=>{throw new Error(args.join(' '))};
-  if('function' !== typeof importScripts){
-    toss("Cannot initalize the sqlite3 worker API in the main thread.");
+  if(self.window === self || 'function' !== typeof importScripts){
+    toss("initWorker1API() must be run from a Worker thread.");
   }
   const self = this.self;
   const sqlite3 = this.sqlite3 || toss("Missing this.sqlite3 object.");
-  const SQLite3 = sqlite3.oo1 || toss("Missing this.sqlite3.oo1 OO API.");
-  const DB = SQLite3.DB;
+  const DB = sqlite3.oo1.DB;
 
   /**
      Returns the app-wide unique ID for the given db, creating one if

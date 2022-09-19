@@ -1,5 +1,5 @@
 /*
-  2022-08-16
+  2022-09-19
 
   The author disclaims copyright to this source code.  In place of a
   legal notice, here is a blessing:
@@ -10,34 +10,48 @@
 
   ***********************************************************************
 
-  A basic demonstration of the SQLite3 OO API #1, shorn of assertions
-  and the like to improve readability.
+  A basic demonstration of the SQLite3 OO API.
 */
 'use strict';
 (function(){
-  const toss = function(...args){throw new Error(args.join(' '))};
-  const debug = console.debug.bind(console),
-        log = console.log.bind(console),
-        warn = console.warn.bind(console),
-        error = console.error.bind(console);
+  /**
+     Set up our output channel differently depending
+     on whether we are running in a worker thread or
+     the main (UI) thread.
+  */
+  let logHtml;
+  if(self.window === self /* UI thread */){
+    logHtml = function(cssClass,...args){
+      const ln = document.createElement('div');
+      if(cssClass) ln.classList.add(cssClass);
+      ln.append(document.createTextNode(args.join(' ')));
+      document.body.append(ln);
+    };
+  }else{ /* Worker thread */
+    logHtml = function(cssClass,...args){
+      postMessage({
+        type:'log',
+        payload:{cssClass, args}
+      });
+    };
+  }
+  const log = (...args)=>logHtml('',...args);
+  const warn = (...args)=>logHtml('warning',...args);
+  const error = (...args)=>logHtml('error',...args);
 
   const demo1 = function(sqlite3){
-    const capi = sqlite3.capi,
-          oo = sqlite3.oo1,
-          wasm = capi.wasm;
-
-    const dbName = (
-      0 ? "" : capi.sqlite3_web_persistent_dir()
-    )+"/mydb.sqlite3"
-    if(0 && capi.sqlite3_web_persistent_dir()){
-      capi.wasm.sqlite3_wasm_vfs_unlink(dbName);
-    }
-    const db = new oo.DB(dbName);
-    log("db =",db.filename);
+    const capi = sqlite3.capi/*C-style API*/,
+          oo = sqlite3.oo1/*high-level OO API*/;
+    log("sqlite3 version",capi.sqlite3_libversion(), capi.sqlite3_sourceid());
+    const db = new oo.DB("/mydb.sqlite3");
+    log("transient b =",db.filename);
     /**
        Never(!) rely on garbage collection to clean up DBs and
        (especially) statements. Always wrap their lifetimes in
-       try/finally construct...
+       try/finally construct, as demonstrated below. By and large,
+       client code can avoid lifetime-related complications of
+       prepared statement objects by using the DB.exec() method for
+       SQL execution.
     */
     try {
       log("Create a table...");
@@ -48,10 +62,13 @@
         // ... numerous other options ... 
       });
       // SQL can be either a string or a byte array
+      // or an array of strings which get concatenated
+      // together as-is (so be sure to end each statement
+      // with a semicolon).
 
       log("Insert some data using exec()...");
       let i;
-      for( i = 1; i <= 5; ++i ){
+      for( i = 20; i <= 25; ++i ){
         db.exec({
           sql: "insert into t(a,b) values (?,?)",
           // bind by parameter index...
@@ -60,7 +77,7 @@
         db.exec({
           sql: "insert into t(a,b) values ($a,$b)",
           // bind by parameter name...
-          bind: {$a: i * 3, $b: i * 4}
+          bind: {$a: i * 10, $b: i * 20}
         });
       }    
 
@@ -93,7 +110,7 @@
         sql: "select a as aa, b as bb from t order by aa limit 3",
         rowMode: 'object',
         callback: function(row){
-          log("row ",++this.counter,"=",row);
+          log("row ",++this.counter,"=",JSON.stringify(row));
         }.bind({counter: 0})
       });
 
@@ -115,6 +132,15 @@
         }.bind({counter: 0})
       });
 
+      log("Query data with exec() using rowMode $COLNAME (result column name)...");
+      db.exec({
+        sql: "select a a, b from t order by a limit 3",
+        rowMode: '$a',
+        callback: function(value){
+          log("row ",++this.counter,"a =",value);
+        }.bind({counter: 0})
+      });
+
       log("Query data with exec() without a callback...");
       let resultRows = [];
       db.exec({
@@ -122,7 +148,7 @@
         rowMode: 'object',
         resultRows: resultRows
       });
-      log("Result rows:",resultRows);
+      log("Result rows:",JSON.stringify(resultRows,undefined,2));
 
       log("Create a scalar UDF...");
       db.createFunction({
@@ -144,9 +170,12 @@
       });
       log("Result column names:",columnNames);
 
-      if(0){
-        warn("UDF will throw because of incorrect arg count...");
+      try{
+        log("The following use of the twice() UDF will",
+            "fail because of incorrect arg count...");
         db.exec("select twice(1,2,3)");
+      }catch(e){
+        warn("Got expected exception:",e.message);
       }
 
       try {
@@ -170,7 +199,7 @@
           log("In savepoint: count(*) from t =",db.selectValue("select count(*) from t"));
           D.savepoint(function(DD){
             const rows = [];
-            D.exec({
+            DD.exec({
               sql: ["insert into t(a,b) values(99,100);",
                     "select count(*) from t"],
               rowMode: 0,
@@ -188,17 +217,17 @@
           throw e;
         }
       }
-
     }finally{
       db.close();
     }
 
+    log("That's all, folks!");
+
     /**
-       Misc. DB features:
+       Some of the features of the OO API not demonstrated above...
 
        - get change count (total or statement-local, 32- or 64-bit)
-       - get its file name
-       - selectValue() takes SQL and returns first column of first row.
+       - get a DB's file name
     
        Misc. Stmt features:
 
@@ -213,20 +242,21 @@
     */
   }/*demo1()*/;
 
-  const runDemos = function(Module){
-    //log("Module.sqlite3",Module);
-    const sqlite3 = Module.sqlite3,
-          capi = sqlite3.capi;
-    log("Loaded module:",capi.sqlite3_libversion(), capi.sqlite3_sourceid());
-    log("sqlite3 namespace:",sqlite3);
+  log("Loading and initializing sqlite3 module...");
+  if(self.window!==self) /*worker thread*/{
+    importScripts("sqlite3.js");
+  }
+  self.sqlite3InitModule({
+    // We can redirect any stdout/stderr from the module
+    // like so...
+    print: log,
+    printErr: error
+  }).then(function(EmscriptenModule){
+    log("Done initializing. Running demo...");
     try {
-      demo1(sqlite3);
+      demo1(EmscriptenModule.sqlite3);
     }catch(e){
       error("Exception:",e.message);
-      throw e;
     }
-  };
-
-  //self.sqlite3TestModule.sqlite3ApiConfig.persistentDirName = "/hi";
-  self.sqlite3TestModule.initSqlite3().then(runDemos);
+  });
 })();

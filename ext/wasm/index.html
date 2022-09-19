@@ -22,20 +22,30 @@
           the web server emit the so-called COOP and COEP headers. The
           default build of althttpd <em>does not</em>.
         </li>
+        <li>Any OPFS-related pages require very recent
+          version of Chrome or Chromium (v102 at least, possibly
+          newer). OPFS support in the other major browsers is
+          pending.</li>
         <li>Whether or not WASMFS/OPFS support is enabled on any given
           page may depend on build-time options which are <em>off by
           default</em> because they currently (as of 2022-09-08) break
-          with Worker-based pages.
+          with Worker-based pages. Similarly, WASMFS does not work on
+          some platforms, e.g. Raspberry Pi 4.
         </li>
       </ul>
     </div>
     <div>The tests...
       <ul id='test-list'>
+        <li><a href='demo-123.html'>demo-123</a> provides a
+          no-nonsense example of adding sqlite3 support to a
+          web page. </li>
+        <li><a href='demo-123-worker.html'>demo-123-worker</a> is the
+          same as <code>demo-123</code> but loads and run sqlite3 from
+          a Worker thread.</li>
         <li><a href='testing1.html'>testing1</a>: sanity tests of the core APIs and surrounding utility code.</li>
         <li><a href='testing2.html'>testing2</a>: Worker-based test of OO API #1.</li>
         <li><a href='testing-worker1-promiser.html'>testing-worker1-promiser</a>:
           tests for the Promise-based wrapper of the Worker-based API.</li>
-        <li><a href='demo-oo1.html'>demo-oo1</a>: demonstration of the OO API #1.</li>
         <li><a href='batch-runner.html'>batch-runner</a>: runs batches of SQL exported from speedtest1.</li>
         <li><a href='batch-runner-kvvfs.html'>batch-runner-kvvfs</a>: KVVFS-specific variant of batch-runner.html.</li>
         <li><a href='speedtest1.html'>speedtest1</a>: a main-thread WASM build of speedtest1.</li>

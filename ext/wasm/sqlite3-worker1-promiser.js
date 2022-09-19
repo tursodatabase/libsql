@@ -42,7 +42,7 @@
    arguments when the worker fires its initial
    'sqlite3-api'/'worker1-ready' message, which it does when
    sqlite3.initWorker1API() completes its initialization. This is
-   the simplest way to tell the worker to kick of work at the
+   the simplest way to tell the worker to kick off work at the
    earliest opportunity.
 
    - `onerror` (optional): a callback to pass error-type events from
@@ -55,18 +55,18 @@
    are not handled by this proxy. Ideally that "should" never
    happen, as this proxy aims to handle all known message types.
 
-   - `generateMessageId` (optional): a function which, when passed
-   an about-to-be-posted message object, generates a _unique_
-   message ID for the message, which this API then assigns as the
-   messageId property of the message. It _must_ generate unique
-   IDs so that dispatching can work. If not defined, a default
-   generator is used.
+   - `generateMessageId` (optional): a function which, when passed an
+   about-to-be-posted message object, generates a _unique_ message ID
+   for the message, which this API then assigns as the messageId
+   property of the message. It _must_ generate unique IDs on each call
+   so that dispatching can work. If not defined, a default generator
+   is used (which should be sufficient for most or all cases).
 
    - `dbId` (optional): is the database ID to be used by the
    worker. This must initially be unset or a falsy value. The
    first `open` message sent to the worker will cause this config
    entry to be assigned to the ID of the opened database. That ID
-   "should" be set as the `dbId` property of the message sent in
+   "should" be set as the `dbId` property of the messages sent in
    future requests, so that the worker uses that database.
    However, if the worker is not given an explicit dbId, it will
    use the first-opened database by default. If client code needs
@@ -80,7 +80,6 @@
    - `debug` (optional): a console.debug()-style function for logging
    information about messages.
 
-
    This function returns a stateful factory function with the
    following interfaces:
 
@@ -90,13 +89,13 @@
    The first form expects the "type" and "args" values for a Worker
    message. The second expects an object in the form {type:...,
    args:...}  plus any other properties the client cares to set. This
-   function will always set the messageId property on the object,
-   even if it's already set, and will set the dbId property to
-   config.dbId if it is _not_ set in the message object.
+   function will always set the `messageId` property on the object,
+   even if it's already set, and will set the `dbId` property to
+   `config.dbId` if it is _not_ set in the message object.
 
    The function throws on error.
 
-   The function installs a temporarily message listener, posts a
+   The function installs a temporary message listener, posts a
    message to the configured Worker, and handles the message's
    response via the temporary message listener. The then() callback
    of the returned Promise is passed the `message.data` property from
@@ -108,14 +107,14 @@
 
    ```
    const config = {...};
-   const eventPromiser = sqlite3Worker1Promiser(config);
-   eventPromiser('open', {filename:"/foo.db"}).then(function(msg){
+   const sq3Promiser = sqlite3Worker1Promiser(config);
+   sq3Promiser('open', {filename:"/foo.db"}).then(function(msg){
      console.log("open response",msg); // => {type:'open', result: {filename:'/foo.db'}, ...}
      // Recall that config.dbId will be set for the first 'open'
      // call and cleared for a matching 'close' call.
    });
-   eventPromiser({type:'close'}).then((msg)=>{
-     console.log("open response",msg); // => {type:'open', result: {filename:'/foo.db'}, ...}
+   sq3Promiser({type:'close'}).then((msg)=>{
+     console.log("close response",msg); // => {type:'close', result: {filename:'/foo.db'}, ...}
      // Recall that config.dbId will be used by default for the message's dbId if
      // none is explicitly provided, and a 'close' op will clear config.dbId if it
      // closes that exact db.
