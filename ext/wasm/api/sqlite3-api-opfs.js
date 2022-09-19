@@ -255,10 +255,6 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
       'cleanup default VFS wrapper', ()=>(dVfs ? dVfs.dispose() : null),
       'cleanup opfsIoMethods', ()=>opfsIoMethods.dispose()
     ];
-    if(dVfs){
-      opfsVfs.$xSleep = dVfs.$xSleep;
-      opfsVfs.$xRandomness = dVfs.$xRandomness;
-    }
     /**
        Pedantic sidebar about opfsVfs.ondispose: the entries in that array
        are items to clean up when opfsVfs.dispose() is called, but in this
@@ -468,6 +464,7 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
         warn("OPFS xGetLastError() has nothing sensible to return.");
         return 0;
       },
+      //xSleep is optionally defined below
       xOpen: function f(pVfs, zName, pFile, flags, pOutFlags){
         if(!f._){
           f._ = {
@@ -522,6 +519,10 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
       }/*xOpen()*/
     }/*vfsSyncWrappers*/;
 
+    if(dVfs){
+      opfsVfs.$xRandomness = dVfs.$xRandomness;
+      opfsVfs.$xSleep = dVfs.$xSleep;
+    }
     if(!opfsVfs.$xRandomness){
       /* If the default VFS has no xRandomness(), add a basic JS impl... */
       vfsSyncWrappers.xRandomness = function(pVfs, nOut, pOut){
@@ -533,10 +534,12 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
     }
     if(!opfsVfs.$xSleep){
       /* If we can inherit an xSleep() impl from the default VFS then
-         use it, otherwise install one which is certainly less accurate
-         because it has to go round-trip through the async worker, but
-         provides the only option for a synchronous sleep() in JS. */
-      vfsSyncWrappers.xSleep = (pVfs,ms)=>opRun('xSleep',ms);
+         assume it's sane and use it, otherwise install a JS-based
+         one. */
+      vfsSyncWrappers.xSleep = function(pVfs,ms){
+        Atomics.wait(state.opSABView, state.opIds.xSleep, 0, ms);
+        return 0;
+      };
     }
 
     /* Install the vfs/io_methods into their C-level shared instances... */
@@ -544,7 +547,6 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
     for(let k of Object.keys(ioSyncWrappers)) inst(k, ioSyncWrappers[k]);
     inst = installMethod(opfsVfs);
     for(let k of Object.keys(vfsSyncWrappers)) inst(k, vfsSyncWrappers[k]);
-
 
     /**
        Syncronously deletes the given OPFS filesystem entry, ignoring
@@ -646,8 +648,11 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
         let jRead = wasm.cstringToJs(readBuf);
         log("xRead() got:",jRead);
         if("sanity"!==jRead) toss("Unexpected xRead() value.");
-        log("xSleep()ing before close()ing...");
-        opRun('xSleep',1000);
+        if(vfsSyncWrappers.xSleep){
+          log("xSleep()ing before close()ing...");
+          vfsSyncWrappers.xSleep(opfsVfs.pointer,2000);
+          log("waking up from xSleep()");
+        }
         rc = ioSyncWrappers.xClose(fid);
         log("xClose rc =",rc,"opSABView =",state.opSABView);
         log("Deleting file:",dbFile);

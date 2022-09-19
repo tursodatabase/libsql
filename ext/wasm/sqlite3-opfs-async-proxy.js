@@ -287,12 +287,6 @@ const vfsAsyncImpls = {
     }
     storeAndNotify('xRead',rc);
   },
-  xSleep: async function f(ms){
-    log("xSleep(",ms,")");
-    await new Promise((resolve)=>{
-      setTimeout(()=>resolve(), ms);
-    }).finally(()=>storeAndNotify('xSleep',0));
-  },
   xSync: async function({fid,flags/*ignored*/}){
     log("xSync(",arguments[0],")");
     const fh = __openFiles[fid];
