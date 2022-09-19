@@ -5456,4 +5456,8 @@ void sqlite3VectorErrorMsg(Parse*, Expr*);
 const char **sqlite3CompileOptions(int *pnOpt);
 #endif
 
+#if SQLITE_OS_UNIX && defined(SQLITE_OS_KV_OPTIONAL)
+int sqlite3KvvfsInit(void);
+#endif
+
 #endif /* SQLITEINT_H */

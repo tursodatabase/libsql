@@ -45,7 +45,8 @@ static const char zHelp[] =
   "  --threads N         Use up to N threads for sorting\n"
   "  --utf16be           Set text encoding to UTF-16BE\n"
   "  --utf16le           Set text encoding to UTF-16LE\n"
-  "  --verify            Run additional verification steps.\n"
+  "  --verify            Run additional verification steps\n"
+  "  --vfs NAME          Use the given (preinstalled) VFS\n"
   "  --without-rowid     Use WITHOUT ROWID where appropriate\n"
 ;
 
@@ -2217,6 +2218,7 @@ int main(int argc, char **argv){
   int openFlags = SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE
     ;                           /* SQLITE_OPEN_xxx flags. */
   char *zTSet = "main";         /* Which --testset torun */
+  const char * zVfs = 0;        /* --vfs NAME */
   int doTrace = 0;              /* True for --trace */
   const char *zEncoding = 0;    /* --utf16be or --utf16le */
   const char *zDbName = 0;      /* Name of the test database */
@@ -2237,7 +2239,10 @@ int main(int argc, char **argv){
 #ifdef SQLITE_CKSUMVFS_STATIC
   sqlite3_register_cksumvfs(0);
 #endif
-
+  /*
+  ** Confirms that argc has at least N arguments following argv[i]. */
+#define ARGC_VALUE_CHECK(N)                                       \
+  if( i>=argc-(N) ) fatal_error("missing argument on %s\n", argv[i])
   /* Display the version of SQLite being tested */
   printf("-- Speedtest1 for SQLite %s %.48s\n",
          sqlite3_libversion(), sqlite3_sourceid());
@@ -2257,9 +2262,8 @@ int main(int argc, char **argv){
       }else if( strcmp(z,"big-transactions")==0 ){
         g.doBigTransactions = 1;
       }else if( strcmp(z,"cachesize")==0 ){
-        if( i>=argc-1 ) fatal_error("missing argument on %s\n", argv[i]);
-        i++;
-        cacheSize = integerValue(argv[i]);
+        ARGC_VALUE_CHECK(1);
+        cacheSize = integerValue(argv[++i]);
       }else if( strcmp(z,"exclusive")==0 ){
         doExclusive = 1;
       }else if( strcmp(z,"checkpoint")==0 ){
@@ -2268,20 +2272,20 @@ int main(int argc, char **argv){
         g.bSqlOnly = 1;
         g.bExplain = 1;
       }else if( strcmp(z,"heap")==0 ){
-        if( i>=argc-2 ) fatal_error("missing arguments on %s\n", argv[i]);
+        ARGC_VALUE_CHECK(2);
         nHeap = integerValue(argv[i+1]);
         mnHeap = integerValue(argv[i+2]);
         i += 2;
       }else if( strcmp(z,"incrvacuum")==0 ){
         doIncrvac = 1;
       }else if( strcmp(z,"journal")==0 ){
-        if( i>=argc-1 ) fatal_error("missing argument on %s\n", argv[i]);
+        ARGC_VALUE_CHECK(1);
         zJMode = argv[++i];
       }else if( strcmp(z,"key")==0 ){
-        if( i>=argc-1 ) fatal_error("missing argument on %s\n", argv[i]);
+        ARGC_VALUE_CHECK(1);
         zKey = argv[++i];
       }else if( strcmp(z,"lookaside")==0 ){
-        if( i>=argc-2 ) fatal_error("missing arguments on %s\n", argv[i]);
+        ARGC_VALUE_CHECK(2);
         nLook = integerValue(argv[i+1]);
         szLook = integerValue(argv[i+2]);
         i += 2;
@@ -2295,7 +2299,7 @@ int main(int argc, char **argv){
 #endif
 #if SQLITE_VERSION_NUMBER>=3007017
       }else if( strcmp(z, "mmap")==0 ){
-        if( i>=argc-1 ) fatal_error("missing argument on %s\n", argv[i]);
+        ARGC_VALUE_CHECK(1);
         mmapSize = integerValue(argv[++i]);
  #endif
       }else if( strcmp(z,"nomutex")==0 ){
@@ -2309,7 +2313,7 @@ int main(int argc, char **argv){
         fatal_error("The --output option is not supported with"
                     " -DSPEEDTEST_OMIT_HASH\n");
 #else
-        if( i>=argc-1 ) fatal_error("missing argument on %s\n", argv[i]);
+        ARGC_VALUE_CHECK(1);
         i++;
         if( strcmp(argv[i],"-")==0 ){
           g.hashFile = stdout;
@@ -2321,10 +2325,10 @@ int main(int argc, char **argv){
         }
 #endif
       }else if( strcmp(z,"pagesize")==0 ){
-        if( i>=argc-1 ) fatal_error("missing argument on %s\n", argv[i]);
+        ARGC_VALUE_CHECK(1);
         pageSize = integerValue(argv[++i]);
       }else if( strcmp(z,"pcache")==0 ){
-        if( i>=argc-2 ) fatal_error("missing arguments on %s\n", argv[i]);
+        ARGC_VALUE_CHECK(2);
         nPCache = integerValue(argv[i+1]);
         szPCache = integerValue(argv[i+2]);
         doPCache = 1;
@@ -2332,9 +2336,8 @@ int main(int argc, char **argv){
       }else if( strcmp(z,"primarykey")==0 ){
         g.zPK = "PRIMARY KEY";
       }else if( strcmp(z,"repeat")==0 ){
-        if( i>=argc-1 ) fatal_error("missing arguments on %s\n", argv[i]);
-        g.nRepeat = integerValue(argv[i+1]);
-        i += 1;
+        ARGC_VALUE_CHECK(1);
+        g.nRepeat = integerValue(argv[++i]);
       }else if( strcmp(z,"reprepare")==0 ){
         g.bReprepare = 1;
 #if SQLITE_VERSION_NUMBER>=3006000
@@ -2344,7 +2347,7 @@ int main(int argc, char **argv){
         sqlite3_config(SQLITE_CONFIG_SINGLETHREAD);
 #endif
       }else if( strcmp(z,"script")==0 ){
-        if( i>=argc-1 ) fatal_error("missing arguments on %s\n", argv[i]);
+        ARGC_VALUE_CHECK(1);
         if( g.pScript ) fclose(g.pScript);
         g.pScript = fopen(argv[++i], "wb");
         if( g.pScript==0 ){
@@ -2355,24 +2358,24 @@ int main(int argc, char **argv){
       }else if( strcmp(z,"shrink-memory")==0 ){
         g.bMemShrink = 1;
       }else if( strcmp(z,"size")==0 ){
-        if( i>=argc-1 ) fatal_error("missing argument on %s\n", argv[i]);
+        ARGC_VALUE_CHECK(1);
         g.szTest = integerValue(argv[++i]);
       }else if( strcmp(z,"stats")==0 ){
         showStats = 1;
       }else if( strcmp(z,"temp")==0 ){
-        if( i>=argc-1 ) fatal_error("missing argument on %s\n", argv[i]);
+        ARGC_VALUE_CHECK(1);
         i++;
         if( argv[i][0]<'0' || argv[i][0]>'9' || argv[i][1]!=0 ){
           fatal_error("argument to --temp should be integer between 0 and 9");
         }
         g.eTemp = argv[i][0] - '0';
       }else if( strcmp(z,"testset")==0 ){
-        if( i>=argc-1 ) fatal_error("missing argument on %s\n", argv[i]);
+        ARGC_VALUE_CHECK(1);
         zTSet = argv[++i];
       }else if( strcmp(z,"trace")==0 ){
         doTrace = 1;
       }else if( strcmp(z,"threads")==0 ){
-        if( i>=argc-1 ) fatal_error("missing argument on %s\n", argv[i]);
+        ARGC_VALUE_CHECK(1);
         nThread = integerValue(argv[++i]);
       }else if( strcmp(z,"utf16le")==0 ){
         zEncoding = "utf16le";
@@ -2383,8 +2386,11 @@ int main(int argc, char **argv){
 #ifndef SPEEDTEST_OMIT_HASH
         HashInit();
 #endif
+      }else if( strcmp(z,"vfs")==0 ){
+        ARGC_VALUE_CHECK(1);
+        zVfs = argv[++i];
       }else if( strcmp(z,"reserve")==0 ){
-        if( i>=argc-1 ) fatal_error("missing argument on %s\n", argv[i]);
+        ARGC_VALUE_CHECK(1);
         g.nReserve = atoi(argv[++i]);
       }else if( strcmp(z,"without-rowid")==0 ){
         if( strstr(g.zWR,"WITHOUT")!=0 ){
@@ -2417,6 +2423,7 @@ int main(int argc, char **argv){
                   argv[i], argv[0]);
     }
   }
+#undef ARGC_VALUE_CHECK
   if( zDbName!=0 ) unlink(zDbName);
 #if SQLITE_VERSION_NUMBER>=3006001
   if( nHeap>0 ){
@@ -2442,7 +2449,7 @@ int main(int argc, char **argv){
 
   /* Open the database and the input file */
   if( sqlite3_open_v2(memDb ? ":memory:" : zDbName, &g.db,
-                      openFlags, 0) ){
+                      openFlags, zVfs) ){
     fatal_error("Cannot open database file: %s\n", zDbName);
   }
 #if SQLITE_VERSION_NUMBER>=3006001

@@ -8065,6 +8065,9 @@ int sqlite3_os_init(void){
     sqlite3_vfs_register(&aVfs[i], i==0);
 #endif
   }
+#ifdef SQLITE_OS_KV_OPTIONAL
+  sqlite3KvvfsInit();
+#endif
   unixBigLock = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_VFS1);
 
 #ifndef SQLITE_OMIT_WAL

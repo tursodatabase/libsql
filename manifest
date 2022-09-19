@@ -1,5 +1,5 @@
-C Minor\sdoc\simprovements\sin\sdemo-123.js.
-D 2022-09-19T10:13:01.255
+C speedtest1:\sadd\s--vfs\sNAME\sflag\sand\seliminate\scode\sduplication\sin\sargc\ssize\sverification\sfor\sall\sflags\swhich\stake\sa\svalue.
+D 2022-09-19T11:47:38.781
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -598,9 +598,9 @@ F src/notify.c 89a97dc854c3aa62ad5f384ef50c5a4a11d70fcc69f86de3e991573421130ed6
 F src/os.c 0eb831ba3575af5277e47f4edd14fdfc90025c67eb25ce5cda634518d308d4e9
 F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
-F src/os_kv.c 3a2d319988df9da8f3a4d0c753a1492542bd3017ff7ae5d07814460eac6b0b19
+F src/os_kv.c cf02a39ab3271d237890c7de03a49e5ecc19c930b8f4ad6afd43651dc05c9400
 F src/os_setup.h 0711dbc4678f3ac52d7fe736951b6384a0615387c4ba5135a4764e4e31f4b6a6
-F src/os_unix.c 0fa91925f0b8831fc0156a9c04d39d86f85baf9eef66c98712395e1715cb75cc
+F src/os_unix.c 287aa5f5691a2b356780c63e83abaa33549add84227b8313395f04088486d79c
 F src/os_win.c 8d129ae3e59e0fa900e20d0ad789e96f2e08177f0b00b53cdda65c40331e0902
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 6176d9752eb580419e8fef4592dc417a6b00ddfd43ee22f818819bf8840ceee8
@@ -621,7 +621,7 @@ F src/shell.c.in e7e7c2c69ae86c5ee9e8ad66227203d46ff6dce8700a1b1dababff01c71d33d
 F src/sqlite.h.in b9b7fd73239d94db20332bb6e504688001e5564b655e1318a4427a1caef4b99e
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h a988810c9b21c0dc36dc7a62735012339dc76fc7ab448fb0792721d30eacb69d
-F src/sqliteInt.h 44eb45c25d379361ee1bd7fc49205471c6cb8a3727aed42372cf4716f653ebf2
+F src/sqliteInt.h 587be0322bf30f248350e9b0d1d36feeece94f30bcf057686c6425c36b8ed3c5
 F src/sqliteLimit.h d7323ffea5208c6af2734574bae933ca8ed2ab728083caa117c9738581a31657
 F src/status.c 160c445d7d28c984a0eae38c144f6419311ed3eace59b44ac6dafc20db4af749
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -1508,7 +1508,7 @@ F test/speed3.test 694affeb9100526007436334cf7d08f3d74b85ef
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 377a0c48e5a92e0b11c1c5ebb1bc9d83a7312c922bc0cb05970ef5d6a96d1f0c
-F test/speedtest1.c 4001e0fcdbe5f136829319b547771d4a0d9b069cdd2d5d878222bed5d61e0b56
+F test/speedtest1.c 4be5c905c7b3ee72d8e54dea3a846b8c3e7f9674cf3d080968e0e6651ba3c302
 F test/spellfix.test 951a6405d49d1a23d6b78027d3877b4a33eeb8221dcab5704b499755bb4f552e
 F test/spellfix2.test dfc8f519a3fc204cb2dfa8b4f29821ae90f6f8c3
 F test/spellfix3.test 0f9efaaa502a0e0a09848028518a6fb096c8ad33
@@ -2028,8 +2028,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7d5f6adc3b964413fc96ad8d2735312c3e58348024cabdd2099682cbf696eaf7
-R 2fec471b1001d01ad7dc38d9c67df837
+P 9370ce94780e974da03d5c74cf9a5983eed333e7b3bc54e605c5f30b3fa99287 354726aa6c399053785f29104de15091629ce4bc275b9e2205cb3656a9e81cd7
+R 00556834ec19d453fd785f2bebf86235
 U stephan
-Z d026bdd80c48b40067e840d055db82e8
+Z 19b45de03e5674211a91148844c56c0b
 # Remove this line to create a well-formed Fossil manifest.
