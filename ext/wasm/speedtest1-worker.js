@@ -45,7 +45,8 @@
 
   const runSpeedtest = function(cliFlagsArray){
     const scope = App.wasm.scopedAllocPush();
-    const dbFile = 0 ? "" : App.pDir+"/speedtest1.db";
+    const dbFile = App.pDir+"/speedtest1.db";
+    App.unlink(dbFile);
     try{
       const argv = [
         "speedtest1.wasm", ...cliFlagsArray, dbFile
@@ -85,12 +86,17 @@
     return S.installOpfsVfs()
       .catch((e)=>console.warn(e.message))
       .then(()=>{
-        App.unlink = S.capi.wasm.xWrap("sqlite3_wasm_vfs_unlink", "int", ["string"]);
+        const vfsUnlink = S.capi.wasm.xWrap("sqlite3_wasm_vfs_unlink", "int", ["string"]);
+        App.unlink = function(fname){
+          vfsUnlink(fname);
+          if(S.opfs) S.opfs.deleteEntry(fname);
+        };
         App.pDir = wasmfsDir(S.wasm);
         App.wasm = S.capi.wasm;
         //if(App.pDir) log("Persistent storage:",pDir);
         //else log("Using transient storage.");
         mPost('ready',true);
+        log("Registered VFSes:", ...S.capi.sqlite3_web_vfs_list());
       });
   });
 })();

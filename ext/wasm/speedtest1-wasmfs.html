@@ -114,8 +114,7 @@
           const urlArgs = self.SqliteTestUtil.processUrlArgs();
           const argv = ["speedtest1"];
           if(urlArgs.flags){
-            // transform flags=a,b,c to ["--a", "--b", "--c"]
-            argv.push(...(urlArgs.flags.split(',').map((v)=>'--'+v)));
+            argv.push(...(urlArgs.flags.split(',')));
           }else{
             argv.push(
               "--singlethread",

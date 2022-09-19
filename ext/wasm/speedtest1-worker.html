@@ -126,7 +126,6 @@
         justify-content: flex-start;
       }
     </style>
-    <script src="common/SqliteTestUtil.js"></script>
     <script>(function(){
       'use strict';
       const E = (sel)=>document.querySelector(sel);
@@ -199,7 +198,7 @@
           eSelectedFlags.appendChild(e);
         });
         const rxStripDash = /^(-+)?/;
-        const comma = flags.map((v)=>v.replace(rxStripDash,'')).join(',');
+        const comma = flags.join(',');
         eLinkMainThread.setAttribute('target', 'speedtest1-main-'+comma);
         eLinkMainThread.href = 'speedtest1.html?flags='+comma;
         eLinkWasmfs.setAttribute('target', 'speedtest1-wasmfs-'+comma);

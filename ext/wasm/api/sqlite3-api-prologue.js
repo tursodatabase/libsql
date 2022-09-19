@@ -813,6 +813,22 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     }
   };
 
+  /**
+     Returns an array of the names of all currently-registered sqlite3
+     VFSes.
+  */
+  capi.sqlite3_web_vfs_list = function(){
+    const rc = [];
+    let pVfs = capi.sqlite3_vfs_find(0);
+    while(pVfs){
+      const oVfs = new capi.sqlite3_vfs(pVfs);
+      rc.push(capi.wasm.cstringToJs(oVfs.$zName));
+      pVfs = oVfs.$pNext;
+      oVfs.dispose();
+    }
+    return rc;
+  };
+
   if( self.window===self ){
     /* Features specific to the main window thread... */
 

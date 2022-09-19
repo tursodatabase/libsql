@@ -125,8 +125,7 @@
               if(v) argv.push('--'+k, urlParams[k]);
           });
           if(urlParams.flags){
-            // transform flags=a,b,c to ["--a", "--b", "--c"]
-            argv.push(...(urlParams.flags.split(',').map((v)=>'--'+v)));
+            argv.push(...(urlParams.flags.split(',')));
           }else{
             argv.push(
               "--singlethread",

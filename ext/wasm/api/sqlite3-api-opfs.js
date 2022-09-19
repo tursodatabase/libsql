@@ -560,13 +560,13 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
        Returns true if the deletion succeeded and fails if it fails,
        but cannot report the nature of the failure.
     */
-    opfsUtil.deleteEntry = function(fsEntryName,recursive){
+    opfsUtil.deleteEntry = function(fsEntryName,recursive=false){
       return 0===opRun('xDelete', {filename:fsEntryName, recursive});
     };
     /**
        Exactly like deleteEntry() but runs asynchronously.
     */
-    opfsUtil.deleteEntryAsync = async function(fsEntryName,recursive){
+    opfsUtil.deleteEntryAsync = async function(fsEntryName,recursive=false){
       wMsg('xDeleteNoWait', {filename: fsEntryName, recursive});
     };
     /**
@@ -682,7 +682,7 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
               so we now know that the state object is no longer subject to
               being copied by a pending postMessage() call.*/
             try {
-              const rc = capi.sqlite3_vfs_register(opfsVfs.pointer, opfsVfs.$zName);
+              const rc = capi.sqlite3_vfs_register(opfsVfs.pointer, 0);
               if(rc){
                 opfsVfs.dispose();
                 toss("sqlite3_vfs_register(OPFS) failed with rc",rc);
