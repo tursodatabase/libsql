@@ -435,4 +435,15 @@ oz:
 ########################################################################
 # Sub-makes...
 include kvvfs.make
+
+########################################################################
+# Some platforms do not support the WASMFS build. Raspberry Pi OS is one
+# of them. As such platforms are discovered, add their (uname -m) name
+# to PLATFORMS_WITH_NO_WASMFS to exclude the wasmfs build parts.
+PLATFORMS_WITH_NO_WASMFS := aarch64 # add any others here
+THIS_ARCH := $(shell /usr/bin/uname -m)
+ifneq (,$(filter $(THIS_ARCH),$(PLATFORMS_WITH_NO_WASMFS)))
+$(info This platform does not support the WASMFS build.)
+else
 include wasmfs.make
+endif
