@@ -1,5 +1,5 @@
-C Fix\san\suninitialized\svariable\sin\sthe\sdecoder\skv-vfs.
-D 2022-09-17T18:31:31.300
+C When\scompiled\swith\sSQLITE_OS_KV_OPTIONAL,\sthe\smagic\snames\s":localStorage:"\nand\s":sessionStorage:"\sare\srecognized\sand\sconverted\sto\suse\sthe\skv-vfs.
+D 2022-09-20T14:36:53.844
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -555,7 +555,7 @@ F src/insert.c aea5361767817f917b0f0f647a1f0b1621bd858938ae6ae545c3b6b9814b798f
 F src/json.c 7749b98c62f691697c7ee536b570c744c0583cab4a89200fdd0fc2aa8cc8cbd6
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 853385cc7a604157e137585097949252d5d0c731768e16b044608e5c95c3614b
-F src/main.c e11267cdd380be68d95d4292666636a7f1dff5f17a395f3d55be910d7e9350fb
+F src/main.c b434b8e4aca38419962de3d1c55fb9279807ba6a8802998a427b1635dc8250f6
 F src/malloc.c b7a3430cbe91d3e8e04fc10c2041b3a19794e63556ad2441a13d8dadd9b2bafc
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
@@ -2004,8 +2004,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 852812d1e2ec3c53ad7c6c64662b37d861fefcf1baeee3d58eba88bcb3f6d8df
-R 9c6620d4dc4ed0d3ddc9cc9e79cbabf7
+P 354726aa6c399053785f29104de15091629ce4bc275b9e2205cb3656a9e81cd7
+R 2a2a6e9f98f7c53c15ad912991ea899c
+T *branch * kv-vfs-magic-names
+T *sym-kv-vfs-magic-names *
+T -sym-kv-vfs *
 U drh
-Z 7ef728d647d25bb1b8240f0a67ed5ff5
+Z 6a8bdecbcdd0ef58e91af5aa4ad5d7c2
 # Remove this line to create a well-formed Fossil manifest.
