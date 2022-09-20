@@ -131,8 +131,8 @@ const getDirForPath = async function f(absFilename, createDirs = false){
 */
 const storeAndNotify = (opName, value)=>{
   log(opName+"() is notify()ing w/ value:",value);
-  Atomics.store(state.opSABView, state.opIds[opName], value);
-  Atomics.notify(state.opSABView, state.opIds[opName]);
+  Atomics.store(state.sabOPView, state.opIds[opName], value);
+  Atomics.notify(state.sabOPView, state.opIds[opName]);
 };
 
 /**
@@ -214,6 +214,12 @@ const vfsAsyncImpls = {
     }
     mTimeEnd();
   },
+  xDelete: async function(...args){
+    mTimeStart('xDelete');
+    const rc = await vfsAsyncImpls.xDeleteNoWait(...args);
+    storeAndNotify('xDelete', rc);
+    mTimeEnd();
+  },
   xDeleteNoWait: async function({filename, syncDir, recursive = false}){
     /* The syncDir flag is, for purposes of the VFS API's semantics,
        ignored here. However, if it has the value 0x1234 then: after
@@ -248,12 +254,6 @@ const vfsAsyncImpls = {
     }
     return rc;
   },
-  xDelete: async function(...args){
-    mTimeStart('xDelete');
-    const rc = await vfsAsyncImpls.xDeleteNoWait(...args);
-    storeAndNotify('xDelete', rc);
-    mTimeEnd();
-  },
   xFileSize: async function(fid){
     mTimeStart('xFileSize');
     log("xFileSize(",arguments,")");
@@ -261,6 +261,9 @@ const vfsAsyncImpls = {
     let sz;
     try{
       sz = await fh.accessHandle.getSize();
+      if(!fh.sabViewFileSize){
+        fh.sabViewFileSize = new DataView(state.sabIO,state.fbInt64Offset,8);
+      }
       fh.sabViewFileSize.setBigInt64(0, BigInt(sz), true);
       sz = 0;
     }catch(e){
@@ -272,16 +275,15 @@ const vfsAsyncImpls = {
   },
   xOpen: async function({
     fid/*sqlite3_file pointer*/,
-    sab/*file-specific SharedArrayBuffer*/,
     filename,
-    fileType = undefined /*mainDb, mainJournal, etc.*/,
-    create = false, readOnly = false, deleteOnClose = false
+    flags
   }){
     const opName = 'xOpen';
     mTimeStart(opName);
+    log(opName+"(",arguments[0],")");
+    const deleteOnClose = (state.sq3Codes.SQLITE_OPEN_DELETEONCLOSE & flags);
+    const create = (state.sq3Codes.SQLITE_OPEN_CREATE & flags);
     try{
-      if(create) readOnly = false;
-      log(opName+"(",arguments[0],")");
       let hDir, filenamePart;
       try {
         [hDir, filenamePart] = await getDirForPath(filename, !!create);
@@ -290,20 +292,8 @@ const vfsAsyncImpls = {
         mTimeEnd();
         return;
       }
-      const hFile = await hDir.getFileHandle(filenamePart, {create: !!create});
-      log(opName,"filenamePart =",filenamePart, 'hDir =',hDir);
-      const fobj = __openFiles[fid] = Object.create(null);
-      fobj.filenameAbs = filename;
-      fobj.filenamePart = filenamePart;
-      fobj.dirHandle = hDir;
-      fobj.fileHandle = hFile;
-      fobj.fileType = fileType;
-      fobj.sab = sab;
-      fobj.sabView = new Uint8Array(sab,0,state.fbInt64Offset);
-      fobj.sabViewFileSize = new DataView(sab,state.fbInt64Offset,8);
-      fobj.create = !!create;
-      fobj.readOnly = !!readOnly;
-      fobj.deleteOnClose = !!deleteOnClose;
+      const hFile = await hDir.getFileHandle(filenamePart, {create});
+      const fobj = Object.create(null);
       /**
          wa-sqlite, at this point, grabs a SyncAccessHandle and
          assigns it to the accessHandle prop of the file state
@@ -311,6 +301,14 @@ const vfsAsyncImpls = {
          places that limitation on it.
       */
       fobj.accessHandle = await hFile.createSyncAccessHandle();
+      __openFiles[fid] = fobj;
+      fobj.filenameAbs = filename;
+      fobj.filenamePart = filenamePart;
+      fobj.dirHandle = hDir;
+      fobj.fileHandle = hFile;
+      fobj.sabView = state.sabFileBufView;
+      fobj.readOnly = create ? false : (state.sq3Codes.SQLITE_OPEN_READONLY & flags);
+      fobj.deleteOnClose = deleteOnClose;
       storeAndNotify(opName, 0);
     }catch(e){
       error(opName,e);
@@ -395,8 +393,10 @@ navigator.storage.getDirectory().then(function(d){
           state.verbose = opt.verbose ?? 2;
           state.fileBufferSize = opt.fileBufferSize;
           state.fbInt64Offset = opt.fbInt64Offset;
-          state.opSAB = opt.opSAB;
-          state.opSABView = new Int32Array(state.opSAB);
+          state.sabOP = opt.sabOP;
+          state.sabOPView = new Int32Array(state.sabOP);
+          state.sabIO = opt.sabIO;
+          state.sabFileBufView = new Uint8Array(state.sabIO, 0, state.fileBufferSize);
           state.opIds = opt.opIds;
           state.sq3Codes = opt.sq3Codes;
           Object.keys(vfsAsyncImpls).forEach((k)=>{
