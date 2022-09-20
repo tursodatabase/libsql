@@ -1155,6 +1155,24 @@ do_execsql_test join-27.8 {
                        ON c IN (SELECT x FROM t3)) AS t99 ON b IN (1,2,3);
 } {}
 
+do_execsql_test join-27.9 {
+  DELETE FROM t1;
+  DELETE FROM t2;
+  DELETE FROM t3;
+  INSERT INTO t1 VALUES(4,3,5);
+  INSERT INTO t2 VALUES(1,2);
+  INSERT INTO t3 VALUES(5);
+  SELECT * FROM t2 JOIN (SELECT b FROM t2 LEFT JOIN t1
+                       ON c IN (SELECT x FROM t3)) AS t99 ON b IS NULL;
+} {}
+do_execsql_test join-27.10 {
+  WITH t99(b) AS (
+    SELECT coalesce(b,3) FROM t2 AS x LEFT JOIN t1 ON c IN (SELECT x FROM t3)
+  )
+  SELECT d, e, b FROM t2 JOIN t99 ON b IN (1,2,3);
+} {}
+
+
 # 2022-09-19 https://sqlite.org/forum/forumpost/96b9e5709cf47cda
 # Performance regression relative to version 3.38.0 that resulted from
 # a new query flattener restriction that was added to fixes the join-27.*

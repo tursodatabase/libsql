@@ -1,5 +1,5 @@
-C New\stest\scases\sfor\squery\sflattening\swhen\sthere\sare\sON\sclauses\sand\souter\sjoins.
-D 2022-09-20T19:45:04.738
+C Add\snew\stest\scases\sthat\s(current)\sget\san\sincorrect\sanswer.
+D 2022-09-20T21:07:52.356
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1180,7 +1180,7 @@ F test/ioerr4.test f130fe9e71008577b342b8874d52984bd04ede2c
 F test/ioerr5.test 2edfa4fb0f896f733071303b42224df8bedd9da4
 F test/ioerr6.test a395a6ab144b26a9e3e21059a1ab6a7149cca65b
 F test/istrue.test e7f285bb70282625c258e866ce6337d4c762922f5a300e1b50f958aef6e7d9c9
-F test/join.test 41203c37d22e27b6b7211e3b1b875b6f0fc3c9fb2ea8fe31d3a8683ae3cf1a45
+F test/join.test 37d48f2d22688e44bd858b27738265e4408919de40dbc85591217090a44e03c7
 F test/join2.test 466b07233820f5deee66a6c3bf6e4500c8bbf7b83649e67606f5f649c07928c0
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
 F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
@@ -2000,8 +2000,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1292d68caa7086610ddda343f3852e63de8da1eb66536ee4716b6529f5a31bc6
-R eab6511b05ba7254ebaf6e3422ee1bf8
+P db55387b1972bc7bc6855bd3497af744a111e7d28d09893cd985fbb01be41bcc
+R 07f8452158d8de57be929257c37c037f
 U drh
-Z 0a097f1ec50fb2c86025df8ed078e191
+Z 2388624530fdd8581cf3228402a79d3a
 # Remove this line to create a well-formed Fossil manifest.
