@@ -65,7 +65,7 @@ SQLITE_OPT = \
 
 .PHONY: release
 release:
-	$(MAKE) 'emcc_opt=-Os -g3 -flto'
+	$(MAKE) "emcc_opt=-Os -g3 -flto" fiddle_opt=-Os
 # ^^^^^ target-specific vars, e.g.:
 #   release: emcc_opt=...
 # apparently only work for file targets, not PHONY targets?
@@ -311,8 +311,7 @@ dir.sql := sql
 speedtest1 := ../../speedtest1
 speedtest1.c := ../../test/speedtest1.c
 speedtest1.sql := $(dir.sql)/speedtest1.sql
-speedtest1.cliflags := --size 1 --big-transactions
-#  --------------------^^^^^^^^ small size is needed for batch-runner-kvvfs.html
+speedtest1.cliflags := --size 100 --big-transactions
 $(speedtest1):
 	$(MAKE) -C ../.. speedtest1
 $(speedtest1.sql): $(speedtest1) $(MAKEFILE)
@@ -432,19 +431,22 @@ push-fiddle: $(fiddle_files)
 # experimentation shows -O2 to be the clear winner in terms of speed.
 # Note that build times with anything higher than -O0 are somewhat
 # painful.
+
 .PHONY: o0 o1 o2 o3 os oz
+o-xtra :=
+#o-xtra += -flto
 o0:
-	$(MAKE) clean; $(MAKE) -e emcc_opt=-O0
+	$(MAKE) clean; $(MAKE) -e "emcc_opt=-O0 $(o-xtra)" fiddle_opt=-O0
 o1:
-	$(MAKE) clean; $(MAKE) -e emcc_opt=-O1
+	$(MAKE) clean; $(MAKE) -e "emcc_opt=-O1 $(o-xtra)" fiddle_opt=-O1
 o2:
-	$(MAKE) clean; $(MAKE) -e emcc_opt=-O2
+	$(MAKE) clean; $(MAKE) -e "emcc_opt=-O2 $(o-xtra)" fiddle_opt=-O2
 o3:
-	$(MAKE) clean; $(MAKE) -e emcc_opt=-O3
+	$(MAKE) clean; $(MAKE) -e "emcc_opt=-O3 $(o-xtra)" fiddle_opt=-O3
 os:
-	$(MAKE) clean; $(MAKE) -e emcc_opt=-Os
+	$(MAKE) clean; $(MAKE) -e "emcc_opt=-Os $(o-xtra)" fiddle_opt=-Os
 oz:
-	$(MAKE) clean; $(MAKE) -e emcc_opt=-Oz
+	$(MAKE) clean; $(MAKE) -e "emcc_opt=-Oz $(o-xtra)" fiddle_opt=-Oz
 
 ########################################################################
 # Sub-makes...

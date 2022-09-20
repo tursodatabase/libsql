@@ -128,7 +128,6 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
       // failure is, e.g., that the remote script is 404.
       promiseReject(new Error("Loading OPFS async Worker failed for unknown reasons."));
     };
-    const wMsg = (type,args)=>W.postMessage({type,args});
     /**
        Generic utilities for working with OPFS. This will get filled out
        by the Promise setup and, on success, installed as sqlite3.opfs.
@@ -153,6 +152,7 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
                     "metrics for",self.location.href,":",metrics,
                     "\nTotal of",n,"op(s) for",t,
                     "ms (incl. "+w+" ms of waiting on the async side)");
+        console.log("Serialization metrics:",JSON.stringify(metrics.s11n,0,2));
       },
       reset: function(){
         let k;
@@ -160,177 +160,17 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
         for(k in state.opIds){
           r(metrics[k] = Object.create(null));
         }
+        let s = metrics.s11n = Object.create(null);
+        s = s.serialize = Object.create(null);
+        s.count = s.time = 0;
+        s = metrics.s11n.deserialize = Object.create(null);
+        s.count = s.time = 0;
         //[ // timed routines which are not in state.opIds
         //  'xFileControl'
         //].forEach((k)=>r(metrics[k] = Object.create(null)));
       }
     }/*metrics*/;      
 
-    /**
-       State which we send to the async-api Worker or share with it.
-       This object must initially contain only cloneable or sharable
-       objects. After the worker's "inited" message arrives, other types
-       of data may be added to it.
-
-       For purposes of Atomics.wait() and Atomics.notify(), we use a
-       SharedArrayBuffer with one slot reserved for each of the API
-       proxy's methods. The sync side of the API uses Atomics.wait()
-       on the corresponding slot and the async side uses
-       Atomics.notify() on that slot.
-
-       The approach of using a single SAB to serialize comms for all
-       instances might(?) lead to deadlock situations in multi-db
-       cases. We should probably have one SAB here with a single slot
-       for locking a per-file initialization step and then allocate a
-       separate SAB like the above one for each file. That will
-       require a bit of acrobatics but should be feasible.
-    */
-    const state = Object.create(null);
-    state.littleEndian = true;
-    state.verbose = options.verbose;
-    state.fileBufferSize =
-      1024 * 64 /* size of aFileHandle.sab. 64k = max sqlite3 page
-                   size. */;
-    state.sabS11nOffset = state.fileBufferSize;
-    state.sabS11nSize = 2048;
-    state.sabIO = new SharedArrayBuffer(
-      state.fileBufferSize
-        + state.sabS11nSize/* arg/result serialization block */
-    );
-    state.opIds = Object.create(null);
-    state.rcIds = Object.create(null);
-    const metrics = Object.create(null);
-    {
-      let i = 0;
-      state.opIds.whichOp = i++;
-      state.opIds.nothing = i++;
-      state.opIds.xAccess = i++;
-      state.rcIds.xAccess = i++;
-      state.opIds.xClose = i++;
-      state.rcIds.xClose = i++;
-      state.opIds.xDelete = i++;
-      state.rcIds.xDelete = i++;
-      state.opIds.xDeleteNoWait = i++;
-      state.rcIds.xDeleteNoWait = i++;
-      state.opIds.xFileSize = i++;
-      state.rcIds.xFileSize = i++;
-      state.opIds.xOpen = i++;
-      state.rcIds.xOpen = i++;
-      state.opIds.xRead = i++;
-      state.rcIds.xRead = i++;
-      state.opIds.xSleep = i++;
-      state.rcIds.xSleep = i++;
-      state.opIds.xSync = i++;
-      state.rcIds.xSync = i++;
-      state.opIds.xTruncate = i++;
-      state.rcIds.xTruncate = i++;
-      state.opIds.xWrite = i++;
-      state.rcIds.xWrite = i++;
-      state.opIds.mkdir = i++;
-      state.rcIds.mkdir = i++;
-      state.sabOP = new SharedArrayBuffer(i * 4/*sizeof int32*/);
-      state.opIds.xFileControl = state.opIds.xSync /* special case */;
-      opfsUtil.metrics.reset();
-    }
-
-    state.sq3Codes = Object.create(null);
-    state.sq3Codes._reverse = Object.create(null);
-    [ // SQLITE_xxx constants to export to the async worker counterpart...
-      'SQLITE_ERROR', 'SQLITE_IOERR',
-      'SQLITE_NOTFOUND', 'SQLITE_MISUSE',
-      'SQLITE_IOERR_READ', 'SQLITE_IOERR_SHORT_READ',
-      'SQLITE_IOERR_WRITE', 'SQLITE_IOERR_FSYNC',
-      'SQLITE_IOERR_TRUNCATE', 'SQLITE_IOERR_DELETE',
-      'SQLITE_IOERR_ACCESS', 'SQLITE_IOERR_CLOSE',
-      'SQLITE_IOERR_DELETE',
-      'SQLITE_OPEN_CREATE', 'SQLITE_OPEN_DELETEONCLOSE',
-      'SQLITE_OPEN_READONLY'
-    ].forEach(function(k){
-      state.sq3Codes[k] = capi[k] || toss("Maintenance required: not found:",k);
-      state.sq3Codes._reverse[capi[k]] = k;
-    });
-
-    const isWorkerErrCode = (n)=>!!state.sq3Codes._reverse[n];
-
-    /**
-       Runs the given operation in the async worker counterpart, waits
-       for its response, and returns the result which the async worker
-       writes to the given op's index in state.sabOPView. The 2nd argument
-       must be a single object or primitive value, depending on the
-       given operation's signature in the async API counterpart.
-    */
-    const opRun = (op,...args)=>{
-      const t = performance.now();
-      Atomics.store(state.sabOPView, state.opIds[op], -1);
-      wMsg(op, args);
-      Atomics.wait(state.sabOPView, state.opIds[op], -1);
-      metrics[op].wait += performance.now() - t;
-      return Atomics.load(state.sabOPView, state.opIds[op]);
-    };
-
-    const initS11n = ()=>{
-      // Achtung: this code is 100% duplicated in the other half of this proxy!
-      if(state.s11n) return state.s11n;
-      const jsonDecoder = new TextDecoder(),
-            jsonEncoder = new TextEncoder('utf-8'),
-            viewSz = new DataView(state.sabIO, state.sabS11nOffset, 4),
-            viewJson = new Uint8Array(state.sabIO, state.sabS11nOffset+4, state.sabS11nSize-4);
-      state.s11n = Object.create(null);
-      /**
-         Returns an array of the state serialized by the most recent
-         serialize() operation (here or in the counterpart thread), or
-         null if the serialization buffer is empty.
-      */
-      state.s11n.deserialize = function(){
-        const sz = viewSz.getInt32(0, state.littleEndian);
-        const json = sz ? jsonDecoder.decode(
-          viewJson.slice(0, sz)
-          /* slice() (copy) needed, instead of subarray() (reference),
-             because TextDecoder throws if asked to decode from an
-             SAB. */
-        ) : null;
-        return JSON.parse(json);
-      }
-      /**
-         Serializes all arguments to the shared buffer for consumption
-         by the counterpart thread. This impl currently uses JSON for
-         serialization for simplicy of implementation, but if that
-         proves imperformant then a lower-level approach will be
-         created.
-      */
-      state.s11n.serialize = function(...args){
-        const json = jsonEncoder.encode(JSON.stringify(args));
-        viewSz.setInt32(0, json.byteLength, state.littleEndian);
-        viewJson.set(json);
-      };
-      return state.s11n;
-    };
-
-    /**
-       Generates a random ASCII string len characters long, intended for
-       use as a temporary file name.
-    */
-    const randomFilename = function f(len=16){
-      if(!f._chars){
-        f._chars = "abcdefghijklmnopqrstuvwxyz"+
-          "ABCDEFGHIJKLMNOPQRSTUVWXYZ"+
-          "012346789";
-        f._n = f._chars.length;
-      }
-      const a = [];
-      let i = 0;
-      for( ; i < len; ++i){
-        const ndx = Math.random() * (f._n * 64) % f._n | 0;
-        a[i] = f._chars[ndx];
-      }
-      return a.join('');
-    };
-
-    /**
-       Map of sqlite3_file pointers to objects constructed by xOpen().
-    */
-    const __openFiles = Object.create(null);
-    
     const pDVfs = capi.sqlite3_vfs_find(null)/*pointer to default VFS*/;
     const dVfs = pDVfs
           ? new sqlite3_vfs(pDVfs)
@@ -362,6 +202,258 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
        environment or the other when sqlite3_os_end() is called (_if_ it
        gets called at all in a wasm build, which is undefined).
     */
+
+    /**
+       State which we send to the async-api Worker or share with it.
+       This object must initially contain only cloneable or sharable
+       objects. After the worker's "inited" message arrives, other types
+       of data may be added to it.
+
+       For purposes of Atomics.wait() and Atomics.notify(), we use a
+       SharedArrayBuffer with one slot reserved for each of the API
+       proxy's methods. The sync side of the API uses Atomics.wait()
+       on the corresponding slot and the async side uses
+       Atomics.notify() on that slot.
+
+       The approach of using a single SAB to serialize comms for all
+       instances might(?) lead to deadlock situations in multi-db
+       cases. We should probably have one SAB here with a single slot
+       for locking a per-file initialization step and then allocate a
+       separate SAB like the above one for each file. That will
+       require a bit of acrobatics but should be feasible.
+    */
+    const state = Object.create(null);
+    state.littleEndian = true;
+    state.verbose = options.verbose;
+    /* Size of file I/O buffer block. 64k = max sqlite3 page size. */
+    state.fileBufferSize =
+      1024 * 64;
+    state.sabS11nOffset = state.fileBufferSize;
+    /**
+       The size of the block in our SAB for serializing arguments and
+       result values. Need to be large enough to hold serialized
+       values of any of the proxied APIs. Filenames are the largest
+       part but are limited to opfsVfs.$mxPathname bytes.
+    */
+    state.sabS11nSize = opfsVfs.$mxPathname * 2;
+    /**
+       The SAB used for all data I/O (files and arg/result s11n).
+    */
+    state.sabIO = new SharedArrayBuffer(
+      state.fileBufferSize/* file i/o block */
+      + state.sabS11nSize/* argument/result serialization block */
+    );
+    state.opIds = Object.create(null);
+    const metrics = Object.create(null);
+    {
+      /* Indexes for use in our SharedArrayBuffer... */
+      let i = 0;
+      /* SAB slot used to communicate which operation is desired
+         between both workers. This worker writes to it and the other
+         listens for changes. */
+      state.opIds.whichOp = i++;
+      /* Slot for storing return values. This work listens to that
+         slot and the other worker writes to it. */
+      state.opIds.rc = i++;
+      /* Each function gets an ID which this worker writes to
+         the whichOp slot. The async-api worker uses Atomic.wait()
+         on the whichOp slot to figure out which operation to run
+         next. */
+      state.opIds.xAccess = i++;
+      state.opIds.xClose = i++;
+      state.opIds.xDelete = i++;
+      state.opIds.xDeleteNoWait = i++;
+      state.opIds.xFileSize = i++;
+      state.opIds.xOpen = i++;
+      state.opIds.xRead = i++;
+      state.opIds.xSleep = i++;
+      state.opIds.xSync = i++;
+      state.opIds.xTruncate = i++;
+      state.opIds.xWrite = i++;
+      state.opIds.mkdir = i++;
+      state.opIds.xFileControl = i++;
+      state.sabOP = new SharedArrayBuffer(i * 4/*sizeof int32*/);
+      opfsUtil.metrics.reset();
+    }
+
+    /**
+       SQLITE_xxx constants to export to the async worker
+       counterpart...
+    */
+    state.sq3Codes = Object.create(null);
+    state.sq3Codes._reverse = Object.create(null);
+    [
+      'SQLITE_ERROR', 'SQLITE_IOERR',
+      'SQLITE_NOTFOUND', 'SQLITE_MISUSE',
+      'SQLITE_IOERR_READ', 'SQLITE_IOERR_SHORT_READ',
+      'SQLITE_IOERR_WRITE', 'SQLITE_IOERR_FSYNC',
+      'SQLITE_IOERR_TRUNCATE', 'SQLITE_IOERR_DELETE',
+      'SQLITE_IOERR_ACCESS', 'SQLITE_IOERR_CLOSE',
+      'SQLITE_IOERR_DELETE',
+      'SQLITE_OPEN_CREATE', 'SQLITE_OPEN_DELETEONCLOSE',
+      'SQLITE_OPEN_READONLY'
+    ].forEach(function(k){
+      state.sq3Codes[k] = capi[k] || toss("Maintenance required: not found:",k);
+      state.sq3Codes._reverse[capi[k]] = k;
+    });
+
+    const isWorkerErrCode = (n)=>!!state.sq3Codes._reverse[n];
+
+    /**
+       Runs the given operation (by name) in the async worker
+       counterpart, waits for its response, and returns the result
+       which the async worker writes to SAB[state.opIds.rc]. The
+       2nd and subsequent arguments must be the aruguments for the
+       async op.
+    */
+    const opRun = (op,...args)=>{
+      const opNdx = state.opIds[op] || toss("Invalid op ID:",op);
+      state.s11n.serialize(...args);
+      Atomics.store(state.sabOPView, state.opIds.rc, -1);
+      Atomics.store(state.sabOPView, state.opIds.whichOp, opNdx);
+      Atomics.notify(state.sabOPView, state.opIds.whichOp) /* async thread will take over here */;
+      const t = performance.now();
+      Atomics.wait(state.sabOPView, state.opIds.rc, -1);
+      const rc = Atomics.load(state.sabOPView, state.opIds.rc);
+      metrics[op].wait += performance.now() - t;
+      return rc;
+    };
+
+    const initS11n = ()=>{
+      /**
+         ACHTUNG: this code is 100% duplicated in the other half of
+         this proxy!
+
+         Historical note: this impl was initially about 5% this size by using
+         using JSON.stringify/parse(), but using fit-to-purpose serialization
+         saves considerable runtime.
+      */
+      if(state.s11n) return state.s11n;
+      const textDecoder = new TextDecoder(),
+      textEncoder = new TextEncoder('utf-8'),
+      viewU8 = new Uint8Array(state.sabIO, state.sabS11nOffset, state.sabS11nSize),
+      viewDV = new DataView(state.sabIO, state.sabS11nOffset, state.sabS11nSize);
+      state.s11n = Object.create(null);
+      const TypeIds = Object.create(null);
+      TypeIds.number  = { id: 1, size: 8, getter: 'getFloat64', setter: 'setFloat64' };
+      TypeIds.bigint  = { id: 2, size: 8, getter: 'getBigInt64', setter: 'setBigInt64' };
+      TypeIds.boolean = { id: 3, size: 4, getter: 'getInt32', setter: 'setInt32' };
+      TypeIds.string =  { id: 4 };
+      const getTypeId = (v)=>{
+        return TypeIds[typeof v] || toss("This value type cannot be serialized.",v);
+      };
+      const getTypeIdById = (tid)=>{
+        switch(tid){
+        case TypeIds.number.id: return TypeIds.number;
+        case TypeIds.bigint.id: return TypeIds.bigint;
+        case TypeIds.boolean.id: return TypeIds.boolean;
+        case TypeIds.string.id: return TypeIds.string;
+        default: toss("Invalid type ID:",tid);
+        }
+      };
+      /**
+         Returns an array of the state serialized by the most recent
+         serialize() operation (here or in the counterpart thread), or
+         null if the serialization buffer is empty.
+      */
+      state.s11n.deserialize = function(){
+        ++metrics.s11n.deserialize.count;
+        const t = performance.now();
+        let rc = null;
+        const argc = viewU8[0];
+        if(argc){
+          rc = [];
+          let offset = 1, i, n, v, typeIds = [];
+          for(i = 0; i < argc; ++i, ++offset){
+            typeIds.push(getTypeIdById(viewU8[offset]));
+          }
+          for(i = 0; i < argc; ++i){
+            const t = typeIds[i];
+            if(t.getter){
+              v = viewDV[t.getter](offset, state.littleEndian);
+              offset += t.size;
+            }else{
+              n = viewDV.getInt32(offset, state.littleEndian);
+              offset += 4;
+              v = textDecoder.decode(viewU8.slice(offset, offset+n));
+              offset += n;
+            }
+            rc.push(v);
+          }
+        }
+        //log("deserialize:",argc, rc);
+        metrics.s11n.deserialize.time += performance.now() - t;
+        return rc;
+      };
+      /**
+         Serializes all arguments to the shared buffer for consumption
+         by the counterpart thread.
+
+         This routine is only intended for serializing OPFS VFS
+         arguments and (in at least one special case) result values,
+         and the buffer is sized to be able to comfortably handle
+         those.
+
+         If passed no arguments then it zeroes out the serialization
+         state.
+      */
+      state.s11n.serialize = function(...args){
+        ++metrics.s11n.serialize.count;
+        const t = performance.now();
+        if(args.length){
+          //log("serialize():",args);
+          let i = 0, offset = 1, typeIds = [];
+          viewU8[0] = args.length & 0xff;
+          for(; i < args.length; ++i, ++offset){
+            typeIds.push(getTypeId(args[i]));
+            viewU8[offset] = typeIds[i].id;
+          }
+          for(i = 0; i < args.length; ++i) {
+            const t = typeIds[i];
+            if(t.setter){
+              viewDV[t.setter](offset, args[i], state.littleEndian);
+              offset += t.size;
+            }else{
+              const s = textEncoder.encode(args[i]);
+              viewDV.setInt32(offset, s.byteLength, state.littleEndian);
+              offset += 4;
+              viewU8.set(s, offset);
+              offset += s.byteLength;
+            }
+          }
+          //log("serialize() result:",viewU8.slice(0,offset));
+        }else{
+          viewU8[0] = 0;
+        }
+        metrics.s11n.serialize.time += performance.now() - t;
+      };
+      return state.s11n;
+    }/*initS11n()*/;
+
+    /**
+       Generates a random ASCII string len characters long, intended for
+       use as a temporary file name.
+    */
+    const randomFilename = function f(len=16){
+      if(!f._chars){
+        f._chars = "abcdefghijklmnopqrstuvwxyz"+
+          "ABCDEFGHIJKLMNOPQRSTUVWXYZ"+
+          "012346789";
+        f._n = f._chars.length;
+      }
+      const a = [];
+      let i = 0;
+      for( ; i < len; ++i){
+        const ndx = Math.random() * (f._n * 64) % f._n | 0;
+        a[i] = f._chars[ndx];
+      }
+      return a.join('');
+    };
+
+    /**
+       Map of sqlite3_file pointers to objects constructed by xOpen().
+    */
+    const __openFiles = Object.create(null);
 
     /**
        Installs a StructBinder-bound function pointer member of the
@@ -416,7 +508,7 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
       }
       const memKey = tgt.memberKey(name);
       //log("installMethod",tgt, name, sigN);
-      const fProxy = 1
+      const fProxy = 0
       // We can remove this proxy middle-man once the VFS is working
             ? callee.argcProxy(func, sigN)
             : func;
@@ -552,9 +644,8 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
     const vfsSyncWrappers = {
       xAccess: function(pVfs,zName,flags,pOut){
         mTimeStart('xAccess');
-        wasm.setMemValue(
-          pOut, (opRun('xAccess', wasm.cstringToJs(zName)) ? 0 : 1), 'i32'
-        );
+        const rc = opRun('xAccess', wasm.cstringToJs(zName));
+        wasm.setMemValue( pOut, (rc ? 0 : 1), 'i32' );
         mTimeEnd();
         return 0;
       },
@@ -687,21 +778,11 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
       return 0===opRun('xDelete', fsEntryName, 0, recursive);
     };
     /**
-       Exactly like deleteEntry() but runs asynchronously. This is a
-       "fire and forget" operation: it does not return a promise
-       because the counterpart operation happens in another thread and
-       waiting on that result in a Promise would block the OPFS VFS
-       from acting until it completed.
-    */
-    opfsUtil.deleteEntryAsync = function(fsEntryName,recursive=false){
-      wMsg('xDeleteNoWait', [fsEntryName, 0, recursive]);
-    };
-    /**
        Synchronously creates the given directory name, recursively, in
        the OPFS filesystem. Returns true if it succeeds or the
        directory already exists, else false.
     */
-    opfsUtil.mkdir = async function(absDirName){
+    opfsUtil.mkdir = function(absDirName){
       return 0===opRun('mkdir', absDirName);
     };
     /**
@@ -736,7 +817,7 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
          features like getting a directory listing.
     */
     
-    const sanityCheck = async function(){
+    const sanityCheck = function(){
       const scope = wasm.scopedAllocPush();
       const sq3File = new sqlite3_file();
       try{
@@ -746,7 +827,7 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
         //| capi.SQLITE_OPEN_DELETEONCLOSE
               | capi.SQLITE_OPEN_MAIN_DB;
         const pOut = wasm.scopedAlloc(8);
-        const dbFile = "/sanity/check/file";
+        const dbFile = "/sanity/check/file"+randomFilename(8);
         const zDbFile = wasm.scopedAllocCString(dbFile);
         let rc;
         vfsSyncWrappers.xAccess(opfsVfs.pointer, zDbFile, 0, pOut);
@@ -791,6 +872,7 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
         vfsSyncWrappers.xAccess(opfsVfs.pointer, zDbFile, 0, pOut);
         rc = wasm.getMemValue(pOut,'i32');
         if(rc) toss("Expecting 0 from xAccess(",dbFile,") after xDelete().");
+        warn("End of OPFS sanity checks.");
       }finally{
         sq3File.dispose();
         wasm.scopedAllocPop(scope);
@@ -803,7 +885,7 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
       switch(data.type){
           case 'opfs-async-loaded':
             /*Pass our config and shared state on to the async worker.*/
-            wMsg('opfs-async-init',state);
+            W.postMessage({type: 'opfs-async-init',args: state});
             break;
           case 'opfs-async-inited':{
             /*Indicates that the async partner has received the 'init',
