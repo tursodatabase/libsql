@@ -77,8 +77,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 */
 sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri){
   delete sqlite3.installOpfsVfs;
-  if(self.window===self ||
-     !self.SharedArrayBuffer ||
+  if(!self.SharedArrayBuffer ||
      !self.FileSystemHandle ||
      !self.FileSystemDirectoryHandle ||
      !self.FileSystemFileHandle ||
