@@ -649,6 +649,9 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     ["sqlite3_strglob", "int", "string","string"],
     ["sqlite3_strlike", "int", "string","string","int"],
     ["sqlite3_total_changes", "int", "sqlite3*"],
+    ["sqlite3_uri_boolean", "int", "string", "string", "int"],
+    ["sqlite3_uri_key", "string", "string", "int"],
+    ["sqlite3_uri_parameter", "string", "string", "string"],
     ["sqlite3_value_blob", "*", "*"],
     ["sqlite3_value_bytes","int", "*"],
     ["sqlite3_value_double","f64", "*"],
@@ -671,10 +674,11 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      dummy impls, depending on the capabilities of the environment.
   */
   capi.wasm.bindingSignatures.int64 = [
-      ["sqlite3_bind_int64","int", ["sqlite3_stmt*", "int", "i64"]],
-      ["sqlite3_changes64","i64", ["sqlite3*"]],
-      ["sqlite3_column_int64","i64", ["sqlite3_stmt*", "int"]],
-      ["sqlite3_total_changes64", "i64", ["sqlite3*"]]
+    ["sqlite3_bind_int64","int", ["sqlite3_stmt*", "int", "i64"]],
+    ["sqlite3_changes64","i64", ["sqlite3*"]],
+    ["sqlite3_column_int64","i64", ["sqlite3_stmt*", "int"]],
+    ["sqlite3_total_changes64", "i64", ["sqlite3*"]],
+    ["sqlite3_uri_int64", "i64", ["string", "string", "i64"]]
   ];
 
   /**

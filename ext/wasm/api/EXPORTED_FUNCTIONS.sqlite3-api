@@ -61,6 +61,10 @@ _sqlite3_strglob
 _sqlite3_strlike
 _sqlite3_total_changes
 _sqlite3_total_changes64
+_sqlite3_uri_boolean
+_sqlite3_uri_int64
+_sqlite3_uri_key
+_sqlite3_uri_parameter
 _sqlite3_value_blob
 _sqlite3_value_bytes
 _sqlite3_value_double
