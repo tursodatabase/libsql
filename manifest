@@ -1,5 +1,5 @@
-C Clarify\scomments\sthat\sdescribe\squery\sflattener\srestrictions\sassociated\swith\nouter\sjoins.\s\sNo\scode\schanges.
-D 2022-09-19T19:25:15.448
+C Is\sthe\squery\sflattener\srestriction\s29\s(do\snot\sallow\sboth\sEP_InnerON\sand\nEP_OuterON\sconstraints\son\sthe\ssame\sFROM\sclause\sterm)\sreally\snecessary?\s\s\sThis\nbranch\sexplores\swhat\shappens\sif\swe\somit\sthat\srestriction.\s\sThis\sis\san\seffort\nto\saddress\sthe\sperformance\sregression\sreported\sby\n[forum:/forumpost/96b9e5709cf47cda|forum\spost\s96b9e5709cf47cda]\sthat\sis\scaused\nby\sflattener\srestriction\s29.
+D 2022-09-20T16:57:49.607
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -539,7 +539,7 @@ F src/date.c 94ce83b4cd848a387680a5f920c9018c16655db778c4d36525af0a0f34679ac5
 F src/dbpage.c 5808e91bc27fa3981b028000f8fadfdc10ce9e59a34ce7dc4e035a69be3906ec
 F src/dbstat.c 861e08690fcb0f2ee1165eff0060ea8d4f3e2ea10f80dab7d32ad70443a6ff2d
 F src/delete.c 86573edae75e3d3e9a8b590d87db8e47222103029df4f3e11fa56044459b514e
-F src/expr.c 24e828db6b2fab8aabfb5d2c0d83dbdfc5a1972b1147fa893350e317ab7e282f
+F src/expr.c a6692ca00680c8ac4ec6cf637e04df1ca331e1a68e311b425eea61f0c8477019
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 722f20779f5342a787922deded3628d8c74b5249cab04098cf17ee2f2aaff002
 F src/func.c 8f72e88cccdee22185133c10f96ccd61dc34c5ea4b1fa9a73c237ef59b2e64f1
@@ -588,7 +588,7 @@ F src/printf.c e99ee9741e79ae3873458146f59644276657340385ade4e76a5f5d1c25793764
 F src/random.c 546d6feb15ec69c1aafe9bb351a277cbb498fd5410e646add673acb805714960
 F src/resolve.c efea4e5fbecfd6d0a9071b0be0d952620991673391b6ffaaf4c277b0bb674633
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c dcfd2df77e4601555cef48174e3c61723f72fccfdd5b80caa5da63e23338c040
+F src/select.c 57813f5b8d716d69f3375053022d45150b7bb913bde8eac9cd6e64a519c13f8a
 F src/shell.c.in e7e7c2c69ae86c5ee9e8ad66227203d46ff6dce8700a1b1dababff01c71d33df
 F src/sqlite.h.in b9b7fd73239d94db20332bb6e504688001e5564b655e1318a4427a1caef4b99e
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -2000,8 +2000,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8032db4ade66f70a102abb9d3a49e20620e204c45ad7a954a49d20403985bf07
-R 279e5ed5d3d08518a51dc0906b1aae25
+P 2647d73bb1876d01851f52cb3fd6af08a962ab336b6d51c160d27b1baf94f75f
+R 60a74f8c958f8f5c6d2d000c0573265e
+T *branch * flattener-omit-restriction-29
+T *sym-flattener-omit-restriction-29 *
+T -sym-trunk *
 U drh
-Z 9a3376787d630872f605d6b2d292568c
+Z a7b69d349e01c35beb24d52a569b48a5
 # Remove this line to create a well-formed Fossil manifest.

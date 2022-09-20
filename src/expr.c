@@ -3223,6 +3223,7 @@ void sqlite3CodeRhsOfIN(
     sqlite3VdbeChangeP4(v, addr, (void *)pKeyInfo, P4_KEYINFO);
   }
   if( addrOnce ){
+    sqlite3VdbeAddOp2(v, OP_Rewind, iTab, sqlite3VdbeCurrentAddr(v)+1);
     sqlite3VdbeJumpHere(v, addrOnce);
     /* Subroutine return */
     assert( ExprUseYSub(pExpr) );

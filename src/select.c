@@ -3724,7 +3724,7 @@ static int multiSelectOrderBy(
 ** the left operands of a RIGHT JOIN.  In either case, we need to potentially
 ** bypass the substituted expression with OP_IfNullRow.
 **
-** Suppose the original expression integer constant.  Even though the table
+** Suppose the original expression is an integer constant. Even though the table
 ** has the nullRow flag set, because the expression is an integer constant,
 ** it will not be NULLed out.  So instead, we insert an OP_IfNullRow opcode
 ** that checks to see if the nullRow flag is set on the table.  If the nullRow
@@ -4296,15 +4296,6 @@ static int flattenSubquery(
     }
     isOuterJoin = 1;
   }
-#ifdef SQLITE_EXTRA_IFNULLROW
-  else if( iFrom>0 && !isAgg ){
-    /* Setting isOuterJoin to -1 causes OP_IfNullRow opcodes to be generated for
-    ** every reference to any result column from subquery in a join, even
-    ** though they are not necessary.  This will stress-test the OP_IfNullRow 
-    ** opcode. */
-    isOuterJoin = -1;
-  }
-#endif
 
   assert( pSubSrc->nSrc>0 );  /* True by restriction (7) */
   if( iFrom>0 && (pSubSrc->a[0].fg.jointype & JT_LTORJ)!=0 ){
@@ -4314,6 +4305,7 @@ static int flattenSubquery(
     return 0;       /* (28) */
   }
 
+#if 0  /* NO LONGER REQUIRED */
   /* Restriction (29): 
   **
   ** We do not want two constraints on the same FROM-clause term of the
@@ -4340,6 +4332,7 @@ static int flattenSubquery(
       return 0;
     }
   }
+#endif /* NO LONGER REQUIRED */
 
   /* Restriction (17): If the sub-query is a compound SELECT, then it must
   ** use only the UNION ALL operator. And none of the simple select queries
