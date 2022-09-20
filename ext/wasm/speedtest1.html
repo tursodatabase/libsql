@@ -111,9 +111,10 @@
               argv.push("--vfs", urlParams.vfs);
               log2('',"Using VFS:",urlParams.vfs);
               if('kvvfs' === urlParams.vfs){
-                  urlParams.size = 1;
+                  urlParams.size = 2;
                   dbFile = 'session';
-                  log2('',"kvvfs VFS: forcing --size 1 and filename 'session'");
+                  log2('warning',"kvvfs VFS: forcing --size",urlParams.size,
+                       "and filename '"+dbFile+"'.");
                   capi.sqlite3_web_kvvfs_clear('session');
               }
           }
@@ -128,8 +129,8 @@
           }else{
             argv.push(
               "--singlethread",
-              "--nomutex",
-              "--nosync",
+              //"--nomutex",
+              //"--nosync",
               "--nomemstat"
             );
             //"--memdb", // note that memdb trumps the filename arg

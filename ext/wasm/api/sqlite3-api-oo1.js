@@ -104,12 +104,24 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   */
   const dbCtorHelper = function ctor(...args){
     if(!ctor._name2vfs){
-      // Map special filenames which we handle here (instead of in C)
-      // to some helpful metadata...
+      /**
+         Map special filenames which we handle here (instead of in C)
+         to some helpful metadata...
+
+         As of 2022-09-20, the C API supports the names :localStorage:
+         and :sessionStorage: for kvvfs. However, C code cannot
+         determine (without embedded JS code, e.g. via Emscripten's
+         EM_JS()) whether the kvvfs is legal in the current browser
+         context (namely the main UI thread). In order to help client
+         code fail early on, instead of it being delayed until they
+         try to read or write a kvvfs-backed db, we'll check for those
+         names here and throw if they're not legal in the current
+         context.
+      */
       ctor._name2vfs = Object.create(null);
-      const isWorkerThread = (self.window===self /*===running in main window*/)
-          ? false
-          : (n)=>toss3("The VFS for",n,"is only available in the main window thread.")
+      const isWorkerThread = ('function'===typeof importScripts/*===running in worker thread*/)
+            ? (n)=>toss3("The VFS for",n,"is only available in the main window thread.")
+            : false;
       ctor._name2vfs[':localStorage:'] = {
         vfs: 'kvvfs',
         filename: isWorkerThread || (()=>'local')
