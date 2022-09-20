@@ -152,6 +152,7 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
                     "metrics for",self.location.href,":",metrics,
                     "\nTotal of",n,"op(s) for",t,
                     "ms (incl. "+w+" ms of waiting on the async side)");
+        console.log("Serialization metrics:",JSON.stringify(metrics.s11n,0,2));
       },
       reset: function(){
         let k;
@@ -159,6 +160,11 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
         for(k in state.opIds){
           r(metrics[k] = Object.create(null));
         }
+        let s = metrics.s11n = Object.create(null);
+        s = s.serialize = Object.create(null);
+        s.count = s.time = 0;
+        s = metrics.s11n.deserialize = Object.create(null);
+        s.count = s.time = 0;
         //[ // timed routines which are not in state.opIds
         //  'xFileControl'
         //].forEach((k)=>r(metrics[k] = Object.create(null)));
@@ -314,56 +320,115 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
     };
 
     const initS11n = ()=>{
-      // Achtung: this code is 100% duplicated in the other half of this proxy!
+      /**
+         ACHTUNG: this code is 100% duplicated in the other half of
+         this proxy!
+
+         Historical note: this impl was initially about 5% this size by using
+         using JSON.stringify/parse(), but using fit-to-purpose serialization
+         saves considerable runtime.
+      */
       if(state.s11n) return state.s11n;
-      const jsonDecoder = new TextDecoder(),
-            jsonEncoder = new TextEncoder('utf-8'),
-            viewSz = new DataView(state.sabIO, state.sabS11nOffset, 4),
-            viewJson = new Uint8Array(state.sabIO, state.sabS11nOffset+4, state.sabS11nSize-4);
+      const textDecoder = new TextDecoder(),
+      textEncoder = new TextEncoder('utf-8'),
+      viewU8 = new Uint8Array(state.sabIO, state.sabS11nOffset, state.sabS11nSize),
+      viewDV = new DataView(state.sabIO, state.sabS11nOffset, state.sabS11nSize);
       state.s11n = Object.create(null);
+      const TypeIds = Object.create(null);
+      TypeIds.number  = { id: 1, size: 8, getter: 'getFloat64', setter: 'setFloat64' };
+      TypeIds.bigint  = { id: 2, size: 8, getter: 'getBigInt64', setter: 'setBigInt64' };
+      TypeIds.boolean = { id: 3, size: 4, getter: 'getInt32', setter: 'setInt32' };
+      TypeIds.string =  { id: 4 };
+      const getTypeId = (v)=>{
+        return TypeIds[typeof v] || toss("This value type cannot be serialized.",v);
+      };
+      const getTypeIdById = (tid)=>{
+        switch(tid){
+        case TypeIds.number.id: return TypeIds.number;
+        case TypeIds.bigint.id: return TypeIds.bigint;
+        case TypeIds.boolean.id: return TypeIds.boolean;
+        case TypeIds.string.id: return TypeIds.string;
+        default: toss("Invalid type ID:",tid);
+        }
+      };
       /**
          Returns an array of the state serialized by the most recent
          serialize() operation (here or in the counterpart thread), or
          null if the serialization buffer is empty.
       */
       state.s11n.deserialize = function(){
-        const sz = viewSz.getInt32(0, state.littleEndian);
-        const json = sz ? jsonDecoder.decode(
-          viewJson.slice(0, sz)
-          /* slice() (copy) needed, instead of subarray() (reference),
-             because TextDecoder throws if asked to decode from an
-             SAB. */
-        ) : null;
-        return JSON.parse(json);
-      }
+        ++metrics.s11n.deserialize.count;
+        const t = performance.now();
+        let rc = null;
+        const argc = viewU8[0];
+        if(argc){
+          rc = [];
+          let offset = 1, i, n, v, typeIds = [];
+          for(i = 0; i < argc; ++i, ++offset){
+            typeIds.push(getTypeIdById(viewU8[offset]));
+          }
+          for(i = 0; i < argc; ++i){
+            const t = typeIds[i];
+            if(t.getter){
+              v = viewDV[t.getter](offset, state.littleEndian);
+              offset += t.size;
+            }else{
+              n = viewDV.getInt32(offset, state.littleEndian);
+              offset += 4;
+              v = textDecoder.decode(viewU8.slice(offset, offset+n));
+              offset += n;
+            }
+            rc.push(v);
+          }
+        }
+        //log("deserialize:",argc, rc);
+        metrics.s11n.deserialize.time += performance.now() - t;
+        return rc;
+      };
       /**
          Serializes all arguments to the shared buffer for consumption
-         by the counterpart thread. This impl currently uses JSON for
-         serialization for simplicy of implementation, but if that
-         proves imperformant then a lower-level approach will be
-         created.
+         by the counterpart thread.
 
-         If passed "too much data" (more that the shared buffer size
-         it will either throw or truncate the data (not certain
-         which)). This routine is only intended for serializing OPFS
-         VFS arguments and (in at least one special case) result
-         values, and the buffer is sized to be able to comfortably
-         handle those.
+         This routine is only intended for serializing OPFS VFS
+         arguments and (in at least one special case) result values,
+         and the buffer is sized to be able to comfortably handle
+         those.
 
          If passed no arguments then it zeroes out the serialization
          state.
       */
       state.s11n.serialize = function(...args){
+        ++metrics.s11n.serialize.count;
+        const t = performance.now();
         if(args.length){
-          const json = jsonEncoder.encode(JSON.stringify(args));
-          viewSz.setInt32(0, json.byteLength, state.littleEndian);
-          viewJson.set(json);
+          //log("serialize():",args);
+          let i = 0, offset = 1, typeIds = [];
+          viewU8[0] = args.length & 0xff;
+          for(; i < args.length; ++i, ++offset){
+            typeIds.push(getTypeId(args[i]));
+            viewU8[offset] = typeIds[i].id;
+          }
+          for(i = 0; i < args.length; ++i) {
+            const t = typeIds[i];
+            if(t.setter){
+              viewDV[t.setter](offset, args[i], state.littleEndian);
+              offset += t.size;
+            }else{
+              const s = textEncoder.encode(args[i]);
+              viewDV.setInt32(offset, s.byteLength, state.littleEndian);
+              offset += 4;
+              viewU8.set(s, offset);
+              offset += s.byteLength;
+            }
+          }
+          //log("serialize() result:",viewU8.slice(0,offset));
         }else{
-          viewSz.setInt32(0, 0, state.littleEndian);
+          viewU8[0] = 0;
         }
+        metrics.s11n.serialize.time += performance.now() - t;
       };
       return state.s11n;
-    };
+    }/*initS11n()*/;
 
     /**
        Generates a random ASCII string len characters long, intended for
@@ -762,7 +827,7 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
         //| capi.SQLITE_OPEN_DELETEONCLOSE
               | capi.SQLITE_OPEN_MAIN_DB;
         const pOut = wasm.scopedAlloc(8);
-        const dbFile = "/sanity/check/file";
+        const dbFile = "/sanity/check/file"+randomFilename(8);
         const zDbFile = wasm.scopedAllocCString(dbFile);
         let rc;
         vfsSyncWrappers.xAccess(opfsVfs.pointer, zDbFile, 0, pOut);
