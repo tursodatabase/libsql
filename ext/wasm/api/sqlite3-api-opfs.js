@@ -128,7 +128,6 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
       // failure is, e.g., that the remote script is 404.
       promiseReject(new Error("Loading OPFS async Worker failed for unknown reasons."));
     };
-    const wMsg = (type,args)=>W.postMessage({type,args});
     /**
        Generic utilities for working with OPFS. This will get filled out
        by the Promise setup and, on success, installed as sqlite3.opfs.
@@ -203,7 +202,6 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
     {
       let i = 0;
       state.opIds.whichOp = i++;
-      state.opIds.nothing = i++;
       state.opIds.xAccess = i++;
       state.rcIds.xAccess = i++;
       state.opIds.xClose = i++;
@@ -228,8 +226,9 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
       state.rcIds.xWrite = i++;
       state.opIds.mkdir = i++;
       state.rcIds.mkdir = i++;
+      state.opIds.xFileControl = i++;
+      state.rcIds.xFileControl = i++;
       state.sabOP = new SharedArrayBuffer(i * 4/*sizeof int32*/);
-      state.opIds.xFileControl = state.opIds.xSync /* special case */;
       opfsUtil.metrics.reset();
     }
 
@@ -260,12 +259,17 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
        given operation's signature in the async API counterpart.
     */
     const opRun = (op,...args)=>{
+      const rcNdx = state.rcIds[op] || toss("Invalid rc ID:",op);
+      const opNdx = state.opIds[op] || toss("Invalid op ID:",op);
+      state.s11n.serialize(...args);
+      Atomics.store(state.sabOPView, rcNdx, -1);
+      Atomics.store(state.sabOPView, state.opIds.whichOp, opNdx);
+      Atomics.notify(state.sabOPView, state.opIds.whichOp) /* async thread will take over here */;
       const t = performance.now();
-      Atomics.store(state.sabOPView, state.opIds[op], -1);
-      wMsg(op, args);
-      Atomics.wait(state.sabOPView, state.opIds[op], -1);
+      Atomics.wait(state.sabOPView, rcNdx, -1);
+      const rc = Atomics.load(state.sabOPView, rcNdx);
       metrics[op].wait += performance.now() - t;
-      return Atomics.load(state.sabOPView, state.opIds[op]);
+      return rc;
     };
 
     const initS11n = ()=>{
@@ -297,11 +301,25 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
          serialization for simplicy of implementation, but if that
          proves imperformant then a lower-level approach will be
          created.
+
+         If passed "too much data" (more that the shared buffer size
+         it will either throw or truncate the data (not certain
+         which)). This routine is only intended for serializing OPFS
+         VFS arguments and (in at least one special case) result
+         values, and the buffer is sized to be able to comfortably
+         handle those.
+
+         If passed no arguments then it zeroes out the serialization
+         state.
       */
       state.s11n.serialize = function(...args){
-        const json = jsonEncoder.encode(JSON.stringify(args));
-        viewSz.setInt32(0, json.byteLength, state.littleEndian);
-        viewJson.set(json);
+        if(args.length){
+          const json = jsonEncoder.encode(JSON.stringify(args));
+          viewSz.setInt32(0, json.byteLength, state.littleEndian);
+          viewJson.set(json);
+        }else{
+          viewSz.setInt32(0, 0, state.littleEndian);
+        }
       };
       return state.s11n;
     };
@@ -552,9 +570,8 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
     const vfsSyncWrappers = {
       xAccess: function(pVfs,zName,flags,pOut){
         mTimeStart('xAccess');
-        wasm.setMemValue(
-          pOut, (opRun('xAccess', wasm.cstringToJs(zName)) ? 0 : 1), 'i32'
-        );
+        const rc = opRun('xAccess', wasm.cstringToJs(zName));
+        wasm.setMemValue( pOut, (rc ? 0 : 1), 'i32' );
         mTimeEnd();
         return 0;
       },
@@ -687,21 +704,11 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
       return 0===opRun('xDelete', fsEntryName, 0, recursive);
     };
     /**
-       Exactly like deleteEntry() but runs asynchronously. This is a
-       "fire and forget" operation: it does not return a promise
-       because the counterpart operation happens in another thread and
-       waiting on that result in a Promise would block the OPFS VFS
-       from acting until it completed.
-    */
-    opfsUtil.deleteEntryAsync = function(fsEntryName,recursive=false){
-      wMsg('xDeleteNoWait', [fsEntryName, 0, recursive]);
-    };
-    /**
        Synchronously creates the given directory name, recursively, in
        the OPFS filesystem. Returns true if it succeeds or the
        directory already exists, else false.
     */
-    opfsUtil.mkdir = async function(absDirName){
+    opfsUtil.mkdir = function(absDirName){
       return 0===opRun('mkdir', absDirName);
     };
     /**
@@ -736,7 +743,7 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
          features like getting a directory listing.
     */
     
-    const sanityCheck = async function(){
+    const sanityCheck = function(){
       const scope = wasm.scopedAllocPush();
       const sq3File = new sqlite3_file();
       try{
@@ -791,6 +798,7 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
         vfsSyncWrappers.xAccess(opfsVfs.pointer, zDbFile, 0, pOut);
         rc = wasm.getMemValue(pOut,'i32');
         if(rc) toss("Expecting 0 from xAccess(",dbFile,") after xDelete().");
+        log("End of OPFS sanity checks.");
       }finally{
         sq3File.dispose();
         wasm.scopedAllocPop(scope);
@@ -803,7 +811,7 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
       switch(data.type){
           case 'opfs-async-loaded':
             /*Pass our config and shared state on to the async worker.*/
-            wMsg('opfs-async-init',state);
+            W.postMessage({type: 'opfs-async-init',args: state});
             break;
           case 'opfs-async-inited':{
             /*Indicates that the async partner has received the 'init',

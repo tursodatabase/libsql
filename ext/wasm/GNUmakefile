@@ -65,7 +65,7 @@ SQLITE_OPT = \
 
 .PHONY: release
 release:
-	$(MAKE) 'emcc_opt=-Os -g3 -flto'
+	$(MAKE) "emcc_opt=-Os -g3 -flto" fiddle_opt=-Os
 # ^^^^^ target-specific vars, e.g.:
 #   release: emcc_opt=...
 # apparently only work for file targets, not PHONY targets?
@@ -432,19 +432,20 @@ push-fiddle: $(fiddle_files)
 # experimentation shows -O2 to be the clear winner in terms of speed.
 # Note that build times with anything higher than -O0 are somewhat
 # painful.
+
 .PHONY: o0 o1 o2 o3 os oz
 o0:
-	$(MAKE) clean; $(MAKE) -e emcc_opt=-O0
+	$((MAKE) clean; $(MAKE) -e "emcc_opt=-O0 -flto" fiddle_opt=-O0
 o1:
-	$(MAKE) clean; $(MAKE) -e emcc_opt=-O1
+	$(MAKE) clean; $(MAKE) -e "emcc_opt=-O1 -flto" fiddle_opt=-O1
 o2:
-	$(MAKE) clean; $(MAKE) -e emcc_opt=-O2
+	$(MAKE) clean; $(MAKE) -e "emcc_opt=-O2 -flto" fiddle_opt=-O2
 o3:
-	$(MAKE) clean; $(MAKE) -e emcc_opt=-O3
+	$(MAKE) clean; $(MAKE) -e "emcc_opt=-O3 -flto" fiddle_opt=-O3
 os:
-	$(MAKE) clean; $(MAKE) -e emcc_opt=-Os
+	$(MAKE) clean; $(MAKE) -e "emcc_opt=-Os -flto" fiddle_opt=-Os
 oz:
-	$(MAKE) clean; $(MAKE) -e emcc_opt=-Oz
+	$(MAKE) clean; $(MAKE) -e "emcc_opt=-Oz -flto" fiddle_opt=-Oz
 
 ########################################################################
 # Sub-makes...

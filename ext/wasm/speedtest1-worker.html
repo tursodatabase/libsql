@@ -212,70 +212,71 @@
         /* TODO? Flags which require values need custom UI
            controls and some of them make little sense here
            (e.g. --script FILE). */
-        flags["autovacuum"] = "Enable AUTOVACUUM mode";
-        flags["big-transactions"] = "Important for tests 410 and 510!";
-        //flags["cachesize"] = "N       Set the cache size to N";
-        flags["checkpoint"] = "Run PRAGMA wal_checkpoint after each test case";
-        flags["exclusive"] = "Enable locking_mode=EXCLUSIVE";
-        flags["explain"] = "Like --sqlonly but with added EXPLAIN keywords";
-        //flags["heap"] = "SZ MIN       Memory allocator uses SZ bytes & min allocation MIN";
-        flags["incrvacuum"] = "Enable incremenatal vacuum mode";
-        //flags["journal"] = "M         Set the journal_mode to M";
-        //flags["key"] = "KEY           Set the encryption key to KEY";
-        //flags["lookaside"] = "N SZ    Configure lookaside for N slots of SZ bytes each";
-        flags["memdb"] = "Use an in-memory database";
-        //flags["mmap"] = "SZ           MMAP the first SZ bytes of the database file";
-        flags["multithread"] = "Set multithreaded mode";
-        flags["nomemstat"] = "Disable memory statistics";
-        flags["nomutex"] = "Open db with SQLITE_OPEN_NOMUTEX";
-        flags["nosync"] = "Set PRAGMA synchronous=OFF";
-        flags["notnull"] = "Add NOT NULL constraints to table columns";
-        //flags["output"] = "FILE       Store SQL output in FILE";
-        //flags["pagesize"] = "N        Set the page size to N";
-        //flags["pcache"] = "N SZ       Configure N pages of pagecache each of size SZ bytes";
-        //flags["primarykey"] = "Use PRIMARY KEY instead of UNIQUE where appropriate";
-        //flags["repeat"] = "N          Repeat each SELECT N times (default: 1)";
-        flags["reprepare"] = "Reprepare each statement upon every invocation";
-        //flags["reserve"] = "N         Reserve N bytes on each database page";
-        //flags["script"] = "FILE       Write an SQL script for the test into FILE";
-        flags["serialized"] = "Set serialized threading mode";
-        flags["singlethread"] = "Set single-threaded mode - disables all mutexing";
-        flags["sqlonly"] = "No-op.  Only show the SQL that would have been run.";
-        flags["shrink"] = "memory     Invoke sqlite3_db_release_memory() frequently.";
-        //flags["size"] = "N            Relative test size.  Default=100";
-        flags["strict"] = "Use STRICT table where appropriate";
-        flags["stats"] = "Show statistics at the end";
-        //flags["temp"] = "N            N from 0 to 9.  0: no temp table. 9: all temp tables";
-        //flags["testset"] = "T         Run test-set T (main, cte, rtree, orm, fp, debug)";
-        flags["trace"] = "Turn on SQL tracing";
-        //flags["threads"] = "N         Use up to N threads for sorting";
+        flags["--autovacuum"] = "Enable AUTOVACUUM mode";
+        flags["--big-transactions"] = "Important for tests 410 and 510!";
+        //flags["--cachesize"] = "N       Set the cache size to N";
+        flags["--checkpoint"] = "Run PRAGMA wal_checkpoint after each test case";
+        flags["--exclusive"] = "Enable locking_mode=EXCLUSIVE";
+        flags["--explain"] = "Like --sqlonly but with added EXPLAIN keywords";
+        //flags["--heap"] = "SZ MIN       Memory allocator uses SZ bytes & min allocation MIN";
+        flags["--incrvacuum"] = "Enable incremenatal vacuum mode";
+        //flags["--journal"] = "M         Set the journal_mode to M";
+        //flags["--key"] = "KEY           Set the encryption key to KEY";
+        //flags["--lookaside"] = "N SZ    Configure lookaside for N slots of SZ bytes each";
+        flags["--memdb"] = "Use an in-memory database";
+        //flags["--mmap"] = "SZ           MMAP the first SZ bytes of the database file";
+        flags["--multithread"] = "Set multithreaded mode";
+        flags["--nomemstat"] = "Disable memory statistics";
+        flags["--nomutex"] = "Open db with SQLITE_OPEN_NOMUTEX";
+        flags["--nosync"] = "Set PRAGMA synchronous=OFF";
+        flags["--notnull"] = "Add NOT NULL constraints to table columns";
+        //flags["--output"] = "FILE       Store SQL output in FILE";
+        //flags["--pagesize"] = "N        Set the page size to N";
+        //flags["--pcache"] = "N SZ       Configure N pages of pagecache each of size SZ bytes";
+        //flags["--primarykey"] = "Use PRIMARY KEY instead of UNIQUE where appropriate";
+        //flags["--repeat"] = "N          Repeat each SELECT N times (default: 1)";
+        flags["--reprepare"] = "Reprepare each statement upon every invocation";
+        //flags["--reserve"] = "N         Reserve N bytes on each database page";
+        //flags["--script"] = "FILE       Write an SQL script for the test into FILE";
+        flags["--serialized"] = "Set serialized threading mode";
+        flags["--singlethread"] = "Set single-threaded mode - disables all mutexing";
+        flags["--sqlonly"] = "No-op.  Only show the SQL that would have been run.";
+        flags["--shrink"] = "memory     Invoke sqlite3_db_release_memory() frequently.";
+        //flags["--size"] = "N            Relative test size.  Default=100";
+        flags["--strict"] = "Use STRICT table where appropriate";
+        flags["--stats"] = "Show statistics at the end";
+        //flags["--temp"] = "N            N from 0 to 9.  0: no temp table. 9: all temp tables";
+        //flags["--testset"] = "T         Run test-set T (main, cte, rtree, orm, fp, debug)";
+        flags["--trace"] = "Turn on SQL tracing";
+        //flags["--threads"] = "N         Use up to N threads for sorting";
         /*
           The core API's WASM build does not support UTF16, but in
           this app it's not an issue because the data are not crossing
           JS/WASM boundaries.
         */
-        flags["utf16be"] = "Set text encoding to UTF-16BE";
-        flags["utf16le"] = "Set text encoding to UTF-16LE";
-        flags["verify"] = "Run additional verification steps.";
-        flags["without"] = "rowid     Use WITHOUT ROWID where appropriate";
+        flags["--utf16be"] = "Set text encoding to UTF-16BE";
+        flags["--utf16le"] = "Set text encoding to UTF-16LE";
+        flags["--verify"] = "Run additional verification steps.";
+        flags["--without"] = "rowid     Use WITHOUT ROWID where appropriate";
         const preselectedFlags = [
-          'big-transactions',
-          'singlethread'
+          '--big-transactions',
+          '--singlethread'
         ];
-        if('opfs'!==urlParams.get('vfs')){
-          preselectedFlags.push('memdb');
+        if(urlParams.has('flags')){
+          preselectedFlags.push(...urlParams.get('flags').split(','));
         }
-
+          if('opfs'!==urlParams.get('vfs')){
+          preselectedFlags.push('--memdb');
+        }
         Object.keys(flags).sort().forEach(function(f){
           const opt = document.createElement('option');
           eFlags.appendChild(opt);
-          const lbl = nbspPad('--'+f)+flags[f];
+          const lbl = nbspPad(f)+flags[f];
           //opt.innerText = lbl;
           opt.innerHTML = lbl;
-          opt.value = '--'+f;
+          opt.value = f;
           if(preselectedFlags.indexOf(f) >= 0) opt.selected = true;
-        });
-        
+        });    
         const cbReverseLog = E('#cb-reverse-log-order');
         const lblReverseLog = E('#lbl-reverse-log-order');
         if(cbReverseLog.checked){
