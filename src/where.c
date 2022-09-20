@@ -2876,6 +2876,11 @@ static int whereLoopAddBtreeIndex(
       ){
         continue;
       }
+      if( (pSrc->fg.jointype & (JT_LEFT|JT_RIGHT))!=0
+       && ExprHasProperty(pTerm->pExpr, EP_InnerON)
+      ){
+        continue;
+      }
     }
 
     if( IsUniqueIndex(pProbe) && saved_nEq==pProbe->nKeyCol-1 ){
