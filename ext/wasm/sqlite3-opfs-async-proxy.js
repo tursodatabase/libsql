@@ -220,7 +220,7 @@ const vfsAsyncImpls = {
     storeAndNotify('xDelete', rc);
     mTimeEnd();
   },
-  xDeleteNoWait: async function({filename, syncDir, recursive = false}){
+  xDeleteNoWait: async function(filename, syncDir = 0, recursive = false){
     /* The syncDir flag is, for purposes of the VFS API's semantics,
        ignored here. However, if it has the value 0x1234 then: after
        deleting the given file, recursively try to delete any empty
@@ -261,10 +261,7 @@ const vfsAsyncImpls = {
     let sz;
     try{
       sz = await fh.accessHandle.getSize();
-      if(!fh.sabViewFileSize){
-        fh.sabViewFileSize = new DataView(state.sabIO,state.fbInt64Offset,8);
-      }
-      fh.sabViewFileSize.setBigInt64(0, BigInt(sz), true);
+      state.s11n.serialize(Number(sz));
       sz = 0;
     }catch(e){
       error("xFileSize():",e, fh);
@@ -273,11 +270,7 @@ const vfsAsyncImpls = {
     storeAndNotify('xFileSize', sz);
     mTimeEnd();
   },
-  xOpen: async function({
-    fid/*sqlite3_file pointer*/,
-    filename,
-    flags
-  }){
+  xOpen: async function(fid/*sqlite3_file pointer*/, filename, flags){
     const opName = 'xOpen';
     mTimeStart(opName);
     log(opName+"(",arguments[0],")");
@@ -316,7 +309,7 @@ const vfsAsyncImpls = {
     }
     mTimeEnd();
   },
-  xRead: async function({fid,n,offset}){
+  xRead: async function(fid,n,offset){
     mTimeStart('xRead');
     log("xRead(",arguments[0],")");
     let rc = 0;
@@ -337,7 +330,7 @@ const vfsAsyncImpls = {
     storeAndNotify('xRead',rc);
     mTimeEnd();
   },
-  xSync: async function({fid,flags/*ignored*/}){
+  xSync: async function(fid,flags/*ignored*/){
     mTimeStart('xSync');
     log("xSync(",arguments[0],")");
     const fh = __openFiles[fid];
@@ -345,14 +338,14 @@ const vfsAsyncImpls = {
     storeAndNotify('xSync',0);
     mTimeEnd();
   },
-  xTruncate: async function({fid,size}){
+  xTruncate: async function(fid,size){
     mTimeStart('xTruncate');
     log("xTruncate(",arguments[0],")");
     let rc = 0;
     const fh = __openFiles[fid];
     try{
       affirmNotRO('xTruncate', fh);
-      await fh.accessHandle.truncate(Number(size));
+      await fh.accessHandle.truncate(size);
     }catch(e){
       error("xTruncate():",e,fh);
       rc = state.sq3Codes.SQLITE_IOERR_TRUNCATE;
@@ -360,7 +353,7 @@ const vfsAsyncImpls = {
     storeAndNotify('xTruncate',rc);
     mTimeEnd();
   },
-  xWrite: async function({fid,n,offset}){
+  xWrite: async function(fid,n,offset){
     mTimeStart('xWrite');
     log("xWrite(",arguments[0],")");
     let rc;
@@ -380,6 +373,70 @@ const vfsAsyncImpls = {
   }
 };
 
+
+const initS11n = ()=>{
+  // Achtung: this code is 100% duplicated in the other half of this proxy!
+  if(state.s11n) return state.s11n;
+  const jsonDecoder = new TextDecoder(),
+        jsonEncoder = new TextEncoder('utf-8'),
+        viewSz = new DataView(state.sabIO, state.sabS11nOffset, 4),
+        viewJson = new Uint8Array(state.sabIO, state.sabS11nOffset+4, state.sabS11nSize-4);
+  state.s11n = Object.create(null);
+  /**
+     Returns an array of the state serialized by the most recent
+     serialize() operation (here or in the counterpart thread), or
+     null if the serialization buffer is empty.
+  */
+  state.s11n.deserialize = function(){
+    const sz = viewSz.getInt32(0, state.littleEndian);
+    const json = sz ? jsonDecoder.decode(
+      viewJson.slice(0, sz)
+      /* slice() (copy) needed, instead of subarray() (reference),
+         because TextDecoder throws if asked to decode from an
+         SAB. */
+    ) : null;
+    return JSON.parse(json);
+  }
+  /**
+     Serializes all arguments to the shared buffer for consumption
+     by the counterpart thread. This impl currently uses JSON for
+     serialization for simplicy of implementation, but if that
+     proves imperformant then a lower-level approach will be
+     created.
+  */
+  state.s11n.serialize = function(...args){
+    const json = jsonEncoder.encode(JSON.stringify(args));
+    viewSz.setInt32(0, json.byteLength, state.littleEndian);
+    viewJson.set(json);
+  };
+  return state.s11n;
+};
+
+const waitLoop = function(){
+  const opHandlers = Object.create(null);
+  for(let k of Object.keys(state.opIds)){
+    const o = Object.create(null);
+    opHandlers[state.opIds[k]] = o;
+    o.key = k;
+  }
+  const sabOP = state.sabOP;
+  for(;;){
+    try {
+      Atomics.store(sabOP, state.opIds.whichOp, 0);
+      Atomic.wait(sabOP, state.opIds.whichOp);
+      const opId = Atomics.load(sabOP, state.opIds.whichOp);
+      const hnd = opHandlers[opId] ?? toss("No waitLoop handler for whichOp #",opId);
+      const args = state.s11n.deserialize();
+      log("whichOp =",opId,hnd,args);
+      const rc = 0/*TODO: run op*/;
+      Atomics.store(sabOP, state.rcIds[hnd.key], rc);
+      Atomics.notify(sabOP, state.rcIds[hnd.key]);
+    }catch(e){
+      error('in waitLoop():',e.message);
+    }
+  }
+};
+
 navigator.storage.getDirectory().then(function(d){
   const wMsg = (type)=>postMessage({type});
   state.rootDir = d;
@@ -387,33 +444,38 @@ navigator.storage.getDirectory().then(function(d){
   self.onmessage = async function({data}){
     log("self.onmessage()",data);
     switch(data.type){
-        case 'init':{
+        case 'opfs-async-init':{
           /* Receive shared state from synchronous partner */
-          const opt = data.payload;
+          const opt = data.args;
+          state.littleEndian = opt.littleEndian;
           state.verbose = opt.verbose ?? 2;
           state.fileBufferSize = opt.fileBufferSize;
-          state.fbInt64Offset = opt.fbInt64Offset;
+          state.sabS11nOffset = opt.sabS11nOffset;
+          state.sabS11nSize = opt.sabS11nSize;
           state.sabOP = opt.sabOP;
           state.sabOPView = new Int32Array(state.sabOP);
           state.sabIO = opt.sabIO;
           state.sabFileBufView = new Uint8Array(state.sabIO, 0, state.fileBufferSize);
+          state.sabS11nView = new Uint8Array(state.sabIO, state.sabS11nOffset, state.sabS11nSize);
           state.opIds = opt.opIds;
+          state.rcIds = opt.rcIds;
           state.sq3Codes = opt.sq3Codes;
           Object.keys(vfsAsyncImpls).forEach((k)=>{
             if(!Number.isFinite(state.opIds[k])){
               toss("Maintenance required: missing state.opIds[",k,"]");
             }
           });
+          initS11n();
           metrics.reset();
           log("init state",state);
-          wMsg('inited');
+          wMsg('opfs-async-inited');
           break;
         }
         default:{
           let err;
           const m = vfsAsyncImpls[data.type] || toss("Unknown message type:",data.type);
           try {
-            await m(data.payload).catch((e)=>err=e);
+            await m(...data.args).catch((e)=>err=e);
           }catch(e){
             err = e;
           }
@@ -425,5 +487,5 @@ navigator.storage.getDirectory().then(function(d){
         }
     }
   };
-  wMsg('loaded');
+  wMsg('opfs-async-loaded');
 }).catch((e)=>error(e));

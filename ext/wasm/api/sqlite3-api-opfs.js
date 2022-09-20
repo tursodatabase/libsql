@@ -128,7 +128,7 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
       // failure is, e.g., that the remote script is 404.
       promiseReject(new Error("Loading OPFS async Worker failed for unknown reasons."));
     };
-    const wMsg = (type,payload)=>W.postMessage({type,payload});
+    const wMsg = (type,args)=>W.postMessage({type,args});
     /**
        Generic utilities for working with OPFS. This will get filled out
        by the Promise setup and, on success, installed as sqlite3.opfs.
@@ -186,36 +186,48 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
        require a bit of acrobatics but should be feasible.
     */
     const state = Object.create(null);
+    state.littleEndian = true;
     state.verbose = options.verbose;
     state.fileBufferSize =
       1024 * 64 /* size of aFileHandle.sab. 64k = max sqlite3 page
                    size. */;
-    state.sabOffsetS11n = state.fileBufferSize;
+    state.sabS11nOffset = state.fileBufferSize;
+    state.sabS11nSize = 2048;
     state.sabIO = new SharedArrayBuffer(
       state.fileBufferSize
-        + 4096/* arg/result serialization */
-        + 8 /* to be removed - porting crutch */
+        + state.sabS11nSize/* arg/result serialization block */
     );
-    state.fbInt64Offset =
-      state.sabIO.byteLength - 8 /*spot in fileHandle.sab to store an int64 result.
-                                  to be removed. Porting crutch. */;
     state.opIds = Object.create(null);
+    state.rcIds = Object.create(null);
     const metrics = Object.create(null);
     {
       let i = 0;
+      state.opIds.whichOp = i++;
       state.opIds.nothing = i++;
       state.opIds.xAccess = i++;
+      state.rcIds.xAccess = i++;
       state.opIds.xClose = i++;
+      state.rcIds.xClose = i++;
       state.opIds.xDelete = i++;
+      state.rcIds.xDelete = i++;
       state.opIds.xDeleteNoWait = i++;
+      state.rcIds.xDeleteNoWait = i++;
       state.opIds.xFileSize = i++;
+      state.rcIds.xFileSize = i++;
       state.opIds.xOpen = i++;
+      state.rcIds.xOpen = i++;
       state.opIds.xRead = i++;
+      state.rcIds.xRead = i++;
       state.opIds.xSleep = i++;
+      state.rcIds.xSleep = i++;
       state.opIds.xSync = i++;
+      state.rcIds.xSync = i++;
       state.opIds.xTruncate = i++;
+      state.rcIds.xTruncate = i++;
       state.opIds.xWrite = i++;
+      state.rcIds.xWrite = i++;
       state.opIds.mkdir = i++;
+      state.rcIds.mkdir = i++;
       state.sabOP = new SharedArrayBuffer(i * 4/*sizeof int32*/);
       state.opIds.xFileControl = state.opIds.xSync /* special case */;
       opfsUtil.metrics.reset();
@@ -247,13 +259,51 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
        must be a single object or primitive value, depending on the
        given operation's signature in the async API counterpart.
     */
-    const opRun = (op,args)=>{
+    const opRun = (op,...args)=>{
       const t = performance.now();
       Atomics.store(state.sabOPView, state.opIds[op], -1);
       wMsg(op, args);
       Atomics.wait(state.sabOPView, state.opIds[op], -1);
       metrics[op].wait += performance.now() - t;
       return Atomics.load(state.sabOPView, state.opIds[op]);
+    };
+
+    const initS11n = ()=>{
+      // Achtung: this code is 100% duplicated in the other half of this proxy!
+      if(state.s11n) return state.s11n;
+      const jsonDecoder = new TextDecoder(),
+            jsonEncoder = new TextEncoder('utf-8'),
+            viewSz = new DataView(state.sabIO, state.sabS11nOffset, 4),
+            viewJson = new Uint8Array(state.sabIO, state.sabS11nOffset+4, state.sabS11nSize-4);
+      state.s11n = Object.create(null);
+      /**
+         Returns an array of the state serialized by the most recent
+         serialize() operation (here or in the counterpart thread), or
+         null if the serialization buffer is empty.
+      */
+      state.s11n.deserialize = function(){
+        const sz = viewSz.getInt32(0, state.littleEndian);
+        const json = sz ? jsonDecoder.decode(
+          viewJson.slice(0, sz)
+          /* slice() (copy) needed, instead of subarray() (reference),
+             because TextDecoder throws if asked to decode from an
+             SAB. */
+        ) : null;
+        return JSON.parse(json);
+      }
+      /**
+         Serializes all arguments to the shared buffer for consumption
+         by the counterpart thread. This impl currently uses JSON for
+         serialization for simplicy of implementation, but if that
+         proves imperformant then a lower-level approach will be
+         created.
+      */
+      state.s11n.serialize = function(...args){
+        const json = jsonEncoder.encode(JSON.stringify(args));
+        viewSz.setInt32(0, json.byteLength, state.littleEndian);
+        viewJson.set(json);
+      };
+      return state.s11n;
     };
 
     /**
@@ -425,7 +475,7 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
       xFileControl: function(pFile, opId, pArg){
         mTimeStart('xFileControl');
         const rc = (capi.SQLITE_FCNTL_SYNC===opId)
-              ? opRun('xSync', {fid:pFile, flags:0})
+              ? opRun('xSync', pFile, 0)
               : capi.SQLITE_NOTFOUND;
         mTimeEnd();
         return rc;
@@ -434,10 +484,8 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
         mTimeStart('xFileSize');
         const rc = opRun('xFileSize', pFile);
         if(!isWorkerErrCode(rc)){
-          wasm.setMemValue(
-            pSz64, __openFiles[pFile].sabViewFileSize.getBigInt64(0,true),
-            'i64'
-          );
+          const sz = state.s11n.deserialize()[0];
+          wasm.setMemValue(pSz64, BigInt(sz), 'i64');
         }
         mTimeEnd();
         return rc;
@@ -447,14 +495,13 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
         //warn("xLock(",arguments,") is a no-op");
         return 0;
       },
-      xRead: function(pFile,pDest,n,offset){
+      xRead: function(pFile,pDest,n,offset64){
         /* int (*xRead)(sqlite3_file*, void*, int iAmt, sqlite3_int64 iOfst) */
         mTimeStart('xRead');
         const f = __openFiles[pFile];
         let rc;
         try {
-          // FIXME(?): block until we finish copying the xRead result buffer. How?
-          rc = opRun('xRead',{fid:pFile, n, offset});
+          rc = opRun('xRead',pFile, n, Number(offset64));
           if(0===rc || capi.SQLITE_IOERR_SHORT_READ===rc){
             // set() seems to be the fastest way to copy this...
             wasm.heap8u().set(f.sabView.subarray(0, n), pDest);
@@ -468,11 +515,11 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
       },
       xSync: function(pFile,flags){
         ++metrics.xSync.count;
-        return 0; // impl'd in xFileControl(). opRun('xSync', {fid:pFile, flags});
+        return 0; // impl'd in xFileControl()
       },
       xTruncate: function(pFile,sz64){
         mTimeStart('xTruncate');
-        const rc = opRun('xTruncate', {fid:pFile, size: sz64});
+        const rc = opRun('xTruncate', pFile, Number(sz64));
         mTimeEnd();
         return rc;
       },
@@ -481,15 +528,14 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
         //warn("xUnlock(",arguments,") is a no-op");
         return 0;
       },
-      xWrite: function(pFile,pSrc,n,offset){
+      xWrite: function(pFile,pSrc,n,offset64){
         /* int (*xWrite)(sqlite3_file*, const void*, int iAmt, sqlite3_int64 iOfst) */
         mTimeStart('xWrite');
         const f = __openFiles[pFile];
         let rc;
         try {
-          // FIXME(?): block from here until we finish the xWrite. How?
           f.sabView.set(wasm.heap8u().subarray(pSrc, pSrc+n));
-          rc = opRun('xWrite',{fid:pFile, n, offset});
+          rc = opRun('xWrite', pFile, n, Number(offset64));
         }catch(e){
           error("xWrite(",arguments,") failed:",e,f);
           rc = capi.SQLITE_IOERR_WRITE;
@@ -527,7 +573,7 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
       },
       xDelete: function(pVfs, zName, doSyncDir){
         mTimeStart('xDelete');
-        opRun('xDelete', {filename: wasm.cstringToJs(zName), syncDir: doSyncDir});
+        opRun('xDelete', wasm.cstringToJs(zName), doSyncDir, false);
         /* We're ignoring errors because we cannot yet differentiate
            between harmless and non-harmless failures. */
         mTimeEnd();
@@ -577,24 +623,22 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
         }else if('number'===typeof zName){
           zName = wasm.cstringToJs(zName);
         }
-        const args = Object.create(null);
-        args.fid = pFile;
-        args.filename = zName;
-        args.sab = new SharedArrayBuffer(state.fileBufferSize);
-        args.flags = flags;
-        const rc = opRun('xOpen', args);
+        const fh = Object.create(null);
+        fh.fid = pFile;
+        fh.filename = zName;
+        fh.sab = new SharedArrayBuffer(state.fileBufferSize);
+        fh.flags = flags;
+        const rc = opRun('xOpen', pFile, zName, flags);
         if(!rc){
           /* Recall that sqlite3_vfs::xClose() will be called, even on
              error, unless pFile->pMethods is NULL. */
-          if(args.readOnly){
+          if(fh.readOnly){
             wasm.setMemValue(pOutFlags, capi.SQLITE_OPEN_READONLY, 'i32');
           }
-          __openFiles[pFile] = args;
-          args.sabView = new Uint8Array(state.sabIO, 0, state.fileBufferSize);
-          args.sabViewFileSize = new DataView(state.sabIO, state.fbInt64Offset, 8);
-          args.sq3File = new sqlite3_file(pFile);
-          args.sq3File.$pMethods = opfsIoMethods.pointer;
-          args.ba = new Uint8Array(args.sab);
+          __openFiles[pFile] = fh;
+          fh.sabView = state.sabFileBufView;
+          fh.sq3File = new sqlite3_file(pFile);
+          fh.sq3File.$pMethods = opfsIoMethods.pointer;
         }
         mTimeEnd();
         return rc;
@@ -640,13 +684,17 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
        but cannot report the nature of the failure.
     */
     opfsUtil.deleteEntry = function(fsEntryName,recursive=false){
-      return 0===opRun('xDelete', {filename:fsEntryName, recursive});
+      return 0===opRun('xDelete', fsEntryName, 0, recursive);
     };
     /**
-       Exactly like deleteEntry() but runs asynchronously.
+       Exactly like deleteEntry() but runs asynchronously. This is a
+       "fire and forget" operation: it does not return a promise
+       because the counterpart operation happens in another thread and
+       waiting on that result in a Promise would block the OPFS VFS
+       from acting until it completed.
     */
-    opfsUtil.deleteEntryAsync = async function(fsEntryName,recursive=false){
-      wMsg('xDeleteNoWait', {filename: fsEntryName, recursive});
+    opfsUtil.deleteEntryAsync = function(fsEntryName,recursive=false){
+      wMsg('xDeleteNoWait', [fsEntryName, 0, recursive]);
     };
     /**
        Synchronously creates the given directory name, recursively, in
@@ -753,11 +801,11 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
     W.onmessage = function({data}){
       //log("Worker.onmessage:",data);
       switch(data.type){
-          case 'loaded':
+          case 'opfs-async-loaded':
             /*Pass our config and shared state on to the async worker.*/
-            wMsg('init',state);
+            wMsg('opfs-async-init',state);
             break;
-          case 'inited':{
+          case 'opfs-async-inited':{
             /*Indicates that the async partner has received the 'init',
               so we now know that the state object is no longer subject to
               being copied by a pending postMessage() call.*/
@@ -772,7 +820,9 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
               }
               capi.sqlite3_vfs_register.addReference(opfsVfs, opfsIoMethods);
               state.sabOPView = new Int32Array(state.sabOP);
-              state.sabFileBufView = new Uint8Array(state.sabFileBufView, 0, state.fileBufferSize);
+              state.sabFileBufView = new Uint8Array(state.sabIO, 0, state.fileBufferSize);
+              state.sabS11nView = new Uint8Array(state.sabIO, state.sabS11nOffset, state.sabS11nSize);
+              initS11n();
               if(options.sanityChecks){
                 warn("Running sanity checks because of opfs-sanity-check URL arg...");
                 sanityCheck();
