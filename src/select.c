@@ -4188,11 +4188,6 @@ static void renumberCursors(
 **
 **  (28)  The subquery is not a MATERIALIZED CTE.
 **
-**  (29)  Either the subquery is not the right-hand operand of a join with an
-**        ON or USING clause nor the right-hand operand of a NATURAL JOIN, or
-**        the right-most table within the FROM clause of the subquery
-**        is not part of an outer join.
-**
 **
 ** In this routine, the "p" parameter is a pointer to the outer query.
 ** The subquery is p->pSrc->a[iFrom].  isAgg is true if the outer query
@@ -4304,35 +4299,6 @@ static int flattenSubquery(
   if( pSubitem->fg.isCte && pSubitem->u2.pCteUse->eM10d==M10d_Yes ){
     return 0;       /* (28) */
   }
-
-#if 0  /* NO LONGER REQUIRED */
-  /* Restriction (29): 
-  **
-  ** We do not want two constraints on the same FROM-clause term of the
-  ** flattened query where one constraint has the EP_InnerON flag and the
-  ** other has the EP_OuterON flag.
-  **
-  ** To prevent this, one or the other of the following conditions must be
-  ** false:
-  **
-  **   (29a)  The right-most entry in the FROM clause of the subquery
-  **          must not be part of an outer join.
-  **
-  **   (29b)  The subquery itself must not be the right operand of a 
-  **          NATURAL join or a join that has an ON or USING clause.
-  */
-  if( pSubSrc->nSrc>=2
-   && (pSubSrc->a[pSubSrc->nSrc-1].fg.jointype & JT_OUTER)!=0
-  ){
-    if( (pSubitem->fg.jointype & JT_NATURAL)!=0
-     || pSubitem->fg.isUsing
-     || NEVER(pSubitem->u3.pOn!=0) /* ON clause already shifted into WHERE */
-     || pSubitem->fg.isOn
-    ){
-      return 0;
-    }
-  }
-#endif /* NO LONGER REQUIRED */
 
   /* Restriction (17): If the sub-query is a compound SELECT, then it must
   ** use only the UNION ALL operator. And none of the simple select queries

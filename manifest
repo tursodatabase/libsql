@@ -1,5 +1,5 @@
-C Merge\sthe\sfuzzcheck\sfix\sfrom\strunk\sinto\sthe\sflattener\simprovement\sbranch.
-D 2022-09-20T17:43:40.500
+C Remove\scode\sthat\shas\sbeen\spreviously\scommented\sout.
+D 2022-09-20T18:18:00.607
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -588,7 +588,7 @@ F src/printf.c e99ee9741e79ae3873458146f59644276657340385ade4e76a5f5d1c25793764
 F src/random.c 546d6feb15ec69c1aafe9bb351a277cbb498fd5410e646add673acb805714960
 F src/resolve.c efea4e5fbecfd6d0a9071b0be0d952620991673391b6ffaaf4c277b0bb674633
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c 57813f5b8d716d69f3375053022d45150b7bb913bde8eac9cd6e64a519c13f8a
+F src/select.c bb18acf4eded647fef88d4d543c673874dbebff516fbeba90a85e6c13f2a58cd
 F src/shell.c.in e7e7c2c69ae86c5ee9e8ad66227203d46ff6dce8700a1b1dababff01c71d33df
 F src/sqlite.h.in b9b7fd73239d94db20332bb6e504688001e5564b655e1318a4427a1caef4b99e
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -2000,8 +2000,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 19270577ad1d08c9e6e5f0600396b8a1ccda9df1e67a0df845aee6b60437f379 8d8c124349d2a25200ace9a60d76751594b722468ad0c39d927a5d2c6e2464e0
-R e0204c145e73869d816b572fd2b71bc8
+P 930a8c1561d0d5dc70dc5378edac77f79ac59ab6569b561de3dfb02f160c38c5
+R dcb98f6a73c54efed4da4f980f298d5b
 U drh
-Z dcbf3f74b6eb7e493002c755cbf2f6d6
+Z 1cd83b2593765cf9bcd77e53d7a14363
 # Remove this line to create a well-formed Fossil manifest.
