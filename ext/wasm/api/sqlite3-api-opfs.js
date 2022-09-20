@@ -165,6 +165,38 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
       }
     }/*metrics*/;      
 
+    const pDVfs = capi.sqlite3_vfs_find(null)/*pointer to default VFS*/;
+    const dVfs = pDVfs
+          ? new sqlite3_vfs(pDVfs)
+          : null /* dVfs will be null when sqlite3 is built with
+                    SQLITE_OS_OTHER. Though we cannot currently handle
+                    that case, the hope is to eventually be able to. */;
+    const opfsVfs = new sqlite3_vfs();
+    const opfsIoMethods = new sqlite3_io_methods();
+    opfsVfs.$iVersion = 2/*yes, two*/;
+    opfsVfs.$szOsFile = capi.sqlite3_file.structInfo.sizeof;
+    opfsVfs.$mxPathname = 1024/*sure, why not?*/;
+    opfsVfs.$zName = wasm.allocCString("opfs");
+    // All C-side memory of opfsVfs is zeroed out, but just to be explicit:
+    opfsVfs.$xDlOpen = opfsVfs.$xDlError = opfsVfs.$xDlSym = opfsVfs.$xDlClose = null;
+    opfsVfs.ondispose = [
+      '$zName', opfsVfs.$zName,
+      'cleanup default VFS wrapper', ()=>(dVfs ? dVfs.dispose() : null),
+      'cleanup opfsIoMethods', ()=>opfsIoMethods.dispose()
+    ];
+    /**
+       Pedantic sidebar about opfsVfs.ondispose: the entries in that array
+       are items to clean up when opfsVfs.dispose() is called, but in this
+       environment it will never be called. The VFS instance simply
+       hangs around until the WASM module instance is cleaned up. We
+       "could" _hypothetically_ clean it up by "importing" an
+       sqlite3_os_end() impl into the wasm build, but the shutdown order
+       of the wasm engine and the JS one are undefined so there is no
+       guaranty that the opfsVfs instance would be available in one
+       environment or the other when sqlite3_os_end() is called (_if_ it
+       gets called at all in a wasm build, which is undefined).
+    */
+
     /**
        State which we send to the async-api Worker or share with it.
        This object must initially contain only cloneable or sharable
@@ -187,54 +219,64 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
     const state = Object.create(null);
     state.littleEndian = true;
     state.verbose = options.verbose;
+    /* Size of file I/O buffer block. 64k = max sqlite3 page size. */
     state.fileBufferSize =
-      1024 * 64 /* size of aFileHandle.sab. 64k = max sqlite3 page
-                   size. */;
+      1024 * 64;
     state.sabS11nOffset = state.fileBufferSize;
-    state.sabS11nSize = 2048;
+    /**
+       The size of the block in our SAB for serializing arguments and
+       result values. Need to be large enough to hold serialized
+       values of any of the proxied APIs. Filenames are the largest
+       part but are limited to opfsVfs.$mxPathname bytes.
+    */
+    state.sabS11nSize = opfsVfs.$mxPathname * 2;
+    /**
+       The SAB used for all data I/O (files and arg/result s11n).
+    */
     state.sabIO = new SharedArrayBuffer(
-      state.fileBufferSize
-        + state.sabS11nSize/* arg/result serialization block */
+      state.fileBufferSize/* file i/o block */
+      + state.sabS11nSize/* argument/result serialization block */
     );
     state.opIds = Object.create(null);
-    state.rcIds = Object.create(null);
     const metrics = Object.create(null);
     {
+      /* Indexes for use in our SharedArrayBuffer... */
       let i = 0;
+      /* SAB slot used to communicate which operation is desired
+         between both workers. This worker writes to it and the other
+         listens for changes. */
       state.opIds.whichOp = i++;
+      /* Slot for storing return values. This work listens to that
+         slot and the other worker writes to it. */
+      state.opIds.rc = i++;
+      /* Each function gets an ID which this worker writes to
+         the whichOp slot. The async-api worker uses Atomic.wait()
+         on the whichOp slot to figure out which operation to run
+         next. */
       state.opIds.xAccess = i++;
-      state.rcIds.xAccess = i++;
       state.opIds.xClose = i++;
-      state.rcIds.xClose = i++;
       state.opIds.xDelete = i++;
-      state.rcIds.xDelete = i++;
       state.opIds.xDeleteNoWait = i++;
-      state.rcIds.xDeleteNoWait = i++;
       state.opIds.xFileSize = i++;
-      state.rcIds.xFileSize = i++;
       state.opIds.xOpen = i++;
-      state.rcIds.xOpen = i++;
       state.opIds.xRead = i++;
-      state.rcIds.xRead = i++;
       state.opIds.xSleep = i++;
-      state.rcIds.xSleep = i++;
       state.opIds.xSync = i++;
-      state.rcIds.xSync = i++;
       state.opIds.xTruncate = i++;
-      state.rcIds.xTruncate = i++;
       state.opIds.xWrite = i++;
-      state.rcIds.xWrite = i++;
       state.opIds.mkdir = i++;
-      state.rcIds.mkdir = i++;
       state.opIds.xFileControl = i++;
-      state.rcIds.xFileControl = i++;
       state.sabOP = new SharedArrayBuffer(i * 4/*sizeof int32*/);
       opfsUtil.metrics.reset();
     }
 
+    /**
+       SQLITE_xxx constants to export to the async worker
+       counterpart...
+    */
     state.sq3Codes = Object.create(null);
     state.sq3Codes._reverse = Object.create(null);
-    [ // SQLITE_xxx constants to export to the async worker counterpart...
+    [
       'SQLITE_ERROR', 'SQLITE_IOERR',
       'SQLITE_NOTFOUND', 'SQLITE_MISUSE',
       'SQLITE_IOERR_READ', 'SQLITE_IOERR_SHORT_READ',
@@ -252,22 +294,21 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
     const isWorkerErrCode = (n)=>!!state.sq3Codes._reverse[n];
 
     /**
-       Runs the given operation in the async worker counterpart, waits
-       for its response, and returns the result which the async worker
-       writes to the given op's index in state.sabOPView. The 2nd argument
-       must be a single object or primitive value, depending on the
-       given operation's signature in the async API counterpart.
+       Runs the given operation (by name) in the async worker
+       counterpart, waits for its response, and returns the result
+       which the async worker writes to SAB[state.opIds.rc]. The
+       2nd and subsequent arguments must be the aruguments for the
+       async op.
     */
     const opRun = (op,...args)=>{
-      const rcNdx = state.rcIds[op] || toss("Invalid rc ID:",op);
       const opNdx = state.opIds[op] || toss("Invalid op ID:",op);
       state.s11n.serialize(...args);
-      Atomics.store(state.sabOPView, rcNdx, -1);
+      Atomics.store(state.sabOPView, state.opIds.rc, -1);
       Atomics.store(state.sabOPView, state.opIds.whichOp, opNdx);
       Atomics.notify(state.sabOPView, state.opIds.whichOp) /* async thread will take over here */;
       const t = performance.now();
-      Atomics.wait(state.sabOPView, rcNdx, -1);
-      const rc = Atomics.load(state.sabOPView, rcNdx);
+      Atomics.wait(state.sabOPView, state.opIds.rc, -1);
+      const rc = Atomics.load(state.sabOPView, state.opIds.rc);
       metrics[op].wait += performance.now() - t;
       return rc;
     };
@@ -348,38 +389,6 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
        Map of sqlite3_file pointers to objects constructed by xOpen().
     */
     const __openFiles = Object.create(null);
-    
-    const pDVfs = capi.sqlite3_vfs_find(null)/*pointer to default VFS*/;
-    const dVfs = pDVfs
-          ? new sqlite3_vfs(pDVfs)
-          : null /* dVfs will be null when sqlite3 is built with
-                    SQLITE_OS_OTHER. Though we cannot currently handle
-                    that case, the hope is to eventually be able to. */;
-    const opfsVfs = new sqlite3_vfs();
-    const opfsIoMethods = new sqlite3_io_methods();
-    opfsVfs.$iVersion = 2/*yes, two*/;
-    opfsVfs.$szOsFile = capi.sqlite3_file.structInfo.sizeof;
-    opfsVfs.$mxPathname = 1024/*sure, why not?*/;
-    opfsVfs.$zName = wasm.allocCString("opfs");
-    // All C-side memory of opfsVfs is zeroed out, but just to be explicit:
-    opfsVfs.$xDlOpen = opfsVfs.$xDlError = opfsVfs.$xDlSym = opfsVfs.$xDlClose = null;
-    opfsVfs.ondispose = [
-      '$zName', opfsVfs.$zName,
-      'cleanup default VFS wrapper', ()=>(dVfs ? dVfs.dispose() : null),
-      'cleanup opfsIoMethods', ()=>opfsIoMethods.dispose()
-    ];
-    /**
-       Pedantic sidebar about opfsVfs.ondispose: the entries in that array
-       are items to clean up when opfsVfs.dispose() is called, but in this
-       environment it will never be called. The VFS instance simply
-       hangs around until the WASM module instance is cleaned up. We
-       "could" _hypothetically_ clean it up by "importing" an
-       sqlite3_os_end() impl into the wasm build, but the shutdown order
-       of the wasm engine and the JS one are undefined so there is no
-       guaranty that the opfsVfs instance would be available in one
-       environment or the other when sqlite3_os_end() is called (_if_ it
-       gets called at all in a wasm build, which is undefined).
-    */
 
     /**
        Installs a StructBinder-bound function pointer member of the
@@ -798,7 +807,7 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
         vfsSyncWrappers.xAccess(opfsVfs.pointer, zDbFile, 0, pOut);
         rc = wasm.getMemValue(pOut,'i32');
         if(rc) toss("Expecting 0 from xAccess(",dbFile,") after xDelete().");
-        log("End of OPFS sanity checks.");
+        warn("End of OPFS sanity checks.");
       }finally{
         sq3File.dispose();
         wasm.scopedAllocPop(scope);

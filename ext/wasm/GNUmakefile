@@ -434,18 +434,20 @@ push-fiddle: $(fiddle_files)
 # painful.
 
 .PHONY: o0 o1 o2 o3 os oz
+o-xtra :=
+#o-xtra += -flto
 o0:
-	$((MAKE) clean; $(MAKE) -e "emcc_opt=-O0 -flto" fiddle_opt=-O0
+	$(MAKE) clean; $(MAKE) -e "emcc_opt=-O0 $(o-xtra)" fiddle_opt=-O0
 o1:
-	$(MAKE) clean; $(MAKE) -e "emcc_opt=-O1 -flto" fiddle_opt=-O1
+	$(MAKE) clean; $(MAKE) -e "emcc_opt=-O1 $(o-xtra)" fiddle_opt=-O1
 o2:
-	$(MAKE) clean; $(MAKE) -e "emcc_opt=-O2 -flto" fiddle_opt=-O2
+	$(MAKE) clean; $(MAKE) -e "emcc_opt=-O2 $(o-xtra)" fiddle_opt=-O2
 o3:
-	$(MAKE) clean; $(MAKE) -e "emcc_opt=-O3 -flto" fiddle_opt=-O3
+	$(MAKE) clean; $(MAKE) -e "emcc_opt=-O3 $(o-xtra)" fiddle_opt=-O3
 os:
-	$(MAKE) clean; $(MAKE) -e "emcc_opt=-Os -flto" fiddle_opt=-Os
+	$(MAKE) clean; $(MAKE) -e "emcc_opt=-Os $(o-xtra)" fiddle_opt=-Os
 oz:
-	$(MAKE) clean; $(MAKE) -e "emcc_opt=-Oz -flto" fiddle_opt=-Oz
+	$(MAKE) clean; $(MAKE) -e "emcc_opt=-Oz $(o-xtra)" fiddle_opt=-Oz
 
 ########################################################################
 # Sub-makes...

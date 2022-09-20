@@ -134,9 +134,9 @@ const getDirForPath = async function f(absFilename, createDirs = false){
    and then Atomics.notify()'s it.
 */
 const storeAndNotify = (opName, value)=>{
-  log(opName+"() => notify(",state.rcIds[opName],",",value,")");
-  Atomics.store(state.sabOPView, state.rcIds[opName], value);
-  Atomics.notify(state.sabOPView, state.rcIds[opName]);
+  log(opName+"() => notify(",state.opIds.rc,",",value,")");
+  Atomics.store(state.sabOPView, state.opIds.rc, value);
+  Atomics.notify(state.sabOPView, state.opIds.rc);
 };
 
 /**
@@ -460,17 +460,19 @@ const initS11n = ()=>{
 
 const waitLoop = async function f(){
   const opHandlers = Object.create(null);
-  for(let k of Object.keys(state.rcIds)){
+  for(let k of Object.keys(state.opIds)){
+    const vi = vfsAsyncImpls[k];
+    if(!vi) continue;
     const o = Object.create(null);
     opHandlers[state.opIds[k]] = o;
     o.key = k;
-    o.f = vfsAsyncImpls[k];// || toss("No vfsAsyncImpls[",k,"]");
+    o.f = vi;// || toss("No vfsAsyncImpls[",k,"]");
   }
   let metricsTimer = self.location.port>=1024 ? performance.now() : 0;
   // ^^^ in dev environment, dump out these metrics one time after a delay.
   while(true){
     try {
-      if('timed-out'===Atomics.wait(state.sabOPView, state.opIds.whichOp, 0, 150)){
+      if('timed-out'===Atomics.wait(state.sabOPView, state.opIds.whichOp, 0, 500)){
         continue;
       }
       const opId = Atomics.load(state.sabOPView, state.opIds.whichOp);
@@ -513,7 +515,6 @@ navigator.storage.getDirectory().then(function(d){
           state.sabFileBufView = new Uint8Array(state.sabIO, 0, state.fileBufferSize);
           state.sabS11nView = new Uint8Array(state.sabIO, state.sabS11nOffset, state.sabS11nSize);
           state.opIds = opt.opIds;
-          state.rcIds = opt.rcIds;
           state.sq3Codes = opt.sq3Codes;
           Object.keys(vfsAsyncImpls).forEach((k)=>{
             if(!Number.isFinite(state.opIds[k])){
