@@ -443,7 +443,7 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
       }
       const memKey = tgt.memberKey(name);
       //log("installMethod",tgt, name, sigN);
-      const fProxy = 1
+      const fProxy = 0
       // We can remove this proxy middle-man once the VFS is working
             ? callee.argcProxy(func, sigN)
             : func;
