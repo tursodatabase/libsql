@@ -102,8 +102,8 @@
     });
   };
 
-  const stdout = function(){wMsg('stdout', Array.prototype.slice.call(arguments));};
-  const stderr = function(){wMsg('stderr', Array.prototype.slice.call(arguments));};
+  const stdout = (...args)=>wMsg('stdout', args);
+  const stderr = (...args)=>wMsg('stderr', args);
   
   self.onerror = function(/*message, source, lineno, colno, error*/) {
     const err = arguments[4];
@@ -288,7 +288,7 @@
     }
   };
 
-  importScripts('fiddle-module.js');
+  importScripts('fiddle-module.js'+self.location.search);
   /**
      initFiddleModule() is installed via fiddle-module.js due to
      building with:
@@ -296,7 +296,20 @@
      emcc ... -sMODULARIZE=1 -sEXPORT_NAME=initFiddleModule
   */
   initFiddleModule(fiddleModule).then(function(thisModule){
-    thisModule.fsUnlink = thisModule.cwrap('sqlite3_wasm_vfs_unlink','number',['string']);
-    wMsg('fiddle-ready');
+    const S = thisModule.sqlite3;
+    const atEnd = ()=>{
+      thisModule.fsUnlink = thisModule.cwrap('sqlite3_wasm_vfs_unlink','number',['string']);
+      wMsg('fiddle-ready');
+    };
+    if(0){
+      S.installOpfsVfs().finally(function(){
+        if(S.opfs){
+          stdout("OPFS is available.");
+        }
+        atEnd();
+      });
+    }else{
+      atEnd();
+    }
   });
 })();

@@ -47,6 +47,7 @@ dir.jacc := jaccwabyt
 dir.common := common
 dir.fiddle := fiddle
 CLEAN_FILES := *~ $(dir.jacc)/*~ $(dir.api)/*~ $(dir.common)/*~
+emcc_enable_bigint ?= 1
 sqlite3.c := $(dir.top)/sqlite3.c
 SQLITE_OPT = \
   -DSQLITE_ENABLE_FTS4 \
@@ -65,7 +66,8 @@ SQLITE_OPT = \
   -DSQLITE_THREADSAFE=0 \
   -DSQLITE_TEMP_STORE=3 \
   -DSQLITE_OS_KV_OPTIONAL=1 \
-  '-DSQLITE_DEFAULT_UNIX_VFS="unix-none"'
+  '-DSQLITE_DEFAULT_UNIX_VFS="unix-none"' \
+  -DSQLITE_USE_URI=1
 #SQLITE_OPT += -DSQLITE_ENABLE_MEMSYS5
 # ^^^ MEMSYS5 is hypothetically useful for non-Emscripten builds but
 # requires adding more infrastructure and fixing one spot in the
@@ -221,11 +223,7 @@ emcc.jsflags += --import-undefined
 #emcc.jsflags += --unresolved-symbols=import-dynamic --experimental-pic
 #emcc.jsflags += --experimental-pic --unresolved-symbols=ingore-all --import-undefined
 #emcc.jsflags += --unresolved-symbols=ignore-all
-enable_bigint ?= 1
-ifneq (0,$(enable_bigint))
-emcc.jsflags += -sWASM_BIGINT
-endif
-emcc.jsflags += -sMEMORY64=0
+emcc.jsflags += -sWASM_BIGINT=$(emcc_enable_bigint)
 # ^^^^ MEMORY64=1 fails to load, erroring with:
 #  invalid memory limits flags 0x5
 #    (enable via --experimental-wasm-memory64)
@@ -333,9 +331,7 @@ speedtest1-common.eflags += -sDYNAMIC_EXECUTION=0
 speedtest1-common.eflags += --minify 0
 speedtest1-common.eflags += -sEXPORT_NAME=sqlite3Speedtest1InitModule
 speedtest1-common.eflags += --post-js=$(post-js.js)
-ifneq (0,$(enable_bigint))
-speedtest1-common.eflags += -sWASM_BIGINT
-endif
+speedtest1-common.eflags += -sWASM_BIGINT=$(emcc_enable_bigint)
 speedtest1.exit-runtime0 := -sEXIT_RUNTIME=0
 speedtest1.exit-runtime1 := -sEXIT_RUNTIME=1
 # Re -sEXIT_RUNTIME=1 vs 0: if it's 1 and speedtest1 crashes, we get

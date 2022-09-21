@@ -32,12 +32,12 @@ fiddle.emcc-flags = \
   -sENVIRONMENT=web,worker \
   -sMODULARIZE \
   -sDYNAMIC_EXECUTION=0 \
+  -sWASM_BIGINT=$(emcc_enable_bigint) \
   -sEXPORT_NAME=initFiddleModule \
   -sEXPORTED_RUNTIME_METHODS=@$(dir.wasm)/EXPORTED_RUNTIME_METHODS.fiddle \
   -sEXPORTED_FUNCTIONS=@$(dir.wasm)/EXPORTED_FUNCTIONS.fiddle \
   --post-js=$(post-js.js) \
   $(SQLITE_OPT) $(SHELL_OPT) \
-  -D_POSIX_SOURCE \
   -DSQLITE_SHELL_FIDDLE
 # -D_POSIX_C_SOURCE is needed for strdup() with emcc
 
@@ -52,9 +52,13 @@ fiddle-module.js := $(dir.fiddle)/fiddle-module.js
 fiddle-module.wasm := $(subst .js,.wasm,$(fiddle-module.js))
 fiddle.cs := $(dir.top)/shell.c $(sqlite3-wasm.c)
 
+SOAP.js := sqlite3-opfs-async-proxy.js
+$(dir.fiddle)/$(SOAP.js): $(SOAP.js)
+	cp $< $@
+
 $(fiddle-module.js): $(MAKEFILE) $(MAKEFILE.fiddle) \
     EXPORTED_FUNCTIONS.fiddle EXPORTED_RUNTIME_METHODS.fiddle \
-    $(fiddle.cs) $(post-js.js)
+    $(fiddle.cs) $(post-js.js) $(dir.fiddle)/$(SOAP.js)
 	$(emcc.bin) -o $@ $(fiddle.emcc-flags) $(fiddle.cs)
 	$(maybe-wasm-strip) $(fiddle-module.wasm)
 	gzip < $@ > $@.gz
@@ -67,6 +71,7 @@ clean: clean-fiddle
 clean-fiddle:
 	rm -f $(fiddle-module.js) $(fiddle-module.js).gz \
         $(fiddle-module.wasm) $(fiddle-module.wasm).gz \
+        $(dir.fiddle)/$(SOAP.js) \
         EXPORTED_FUNCTIONS.fiddle
 .PHONY: fiddle
 fiddle: $(fiddle-module.js) $(dir.fiddle)/fiddle.js.gz

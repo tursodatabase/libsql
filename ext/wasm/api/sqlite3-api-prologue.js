@@ -147,7 +147,10 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       Module: undefined/*needed for some test code, not part of the public API*/,
       exports: undefined,
       memory: undefined,
-      bigIntEnabled: !!self.BigInt64Array,
+      bigIntEnabled: (()=>{
+        if('undefined'!==typeof Module) return !!Module.HEAPU64;
+        return !!self.BigInt64Array;
+      })(),
       allocExportName: 'malloc',
       deallocExportName: 'free',
       persistentDirName: '/persistent'

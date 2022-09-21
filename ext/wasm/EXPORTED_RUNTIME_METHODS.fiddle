@@ -12,3 +12,4 @@ stackAlloc
 stackRestore
 stackSave
 stringToUTF8Array
+wasmMemory

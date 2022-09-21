@@ -326,7 +326,7 @@
         }
     }
 
-    SF.worker = new Worker('fiddle-worker.js');
+    SF.worker = new Worker('fiddle-worker.js'+self.location.search);
     SF.worker.onmessage = (ev)=>SF.runMsgHandlers(ev.data);
     SF.addMsgHandler(['stdout', 'stderr'], (ev)=>SF.echo(ev.data));
 

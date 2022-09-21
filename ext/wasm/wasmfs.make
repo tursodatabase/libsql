@@ -76,9 +76,7 @@ speedtest1-common.eflags += -sEXPORTED_FUNCTIONS=@$(dir.wasm)/EXPORTED_FUNCTIONS
 #^^^ using ALLOW_MEMORY_GROWTH produces a warning from emcc:
 #   USE_PTHREADS + ALLOW_MEMORY_GROWTH may run non-wasm code slowly,
 #   see https://github.com/WebAssembly/design/issues/1271 [-Wpthreads-mem-growth]
-ifneq (0,$(enable_bigint))
-sqlite3-wasmfs.jsflags += -sWASM_BIGINT
-endif
+sqlite3-wasmfs.jsflags += -sWASM_BIGINT=$(emcc_enable_bigint)
 
 $(sqlite3-wasmfs.js): $(sqlite3-wasmfs.wasm.c) $(sqlite3-wasm.c) $(sqlite3-wasmfs.extra.c) \
     EXPORTED_FUNCTIONS.api $(sqlite3-wasm.js) $(MAKEFILE) $(MAKEFILE.wasmfs) \

@@ -1,11 +1,44 @@
 /*
 ** This file requires access to sqlite3.c static state in order to
-** implement certain WASM-specific features. Unlike the rest of
-** sqlite3.c, this file requires compiling with -std=c99 (or
-** equivalent, or a later C version) because it makes use of features
-** not available in C89.
+** implement certain WASM-specific features, and thus directly
+** includes that file. Unlike the rest of sqlite3.c, this file
+** requires compiling with -std=c99 (or equivalent, or a later C
+** version) because it makes use of features not available in C89.
+**
+** At it's simplest, to build sqlite3.wasm either place this file
+** in the same directory as sqlite3.c/h before compilation or use the
+** -I/path flag to tell the compiler where to find both of those
+** files, then compile this file. For example:
+**
+** emcc -o sqlite3.wasm ... -I/path/to/sqlite3-c-and-h sqlite3-wasm.c
 */
-#include "sqlite3.c"
+
+#ifndef SQLITE_DEFAULT_UNIX_VFS
+# define SQLITE_DEFAULT_UNIX_VFS "unix-none"
+#endif
+#ifndef SQLITE_OMIT_DEPRECATED
+# define SQLITE_OMIT_DEPRECATED
+#endif
+#ifndef SQLITE_OMIT_LOAD_EXTENSION
+# define SQLITE_OMIT_LOAD_EXTENSION
+#endif
+#ifndef SQLITE_OMIT_SHARED_CACHE
+# define SQLITE_OMIT_SHARED_CACHE
+#endif
+#ifndef SQLITE_OMIT_UTF16
+# define SQLITE_OMIT_UTF16
+#endif
+#ifndef SQLITE_OS_KV_OPTIONAL
+# define SQLITE_OS_KV_OPTIONAL 1
+#endif
+#ifndef SQLITE_TEMP_STORE
+# define SQLITE_TEMP_STORE 3
+#endif
+#ifndef SQLITE_THREADSAFE
+# define SQLITE_THREADSAFE 0
+#endif
+
+#include "sqlite3.c" /* yes, .c instead of .h. */
 
 /*
 ** WASM_KEEP is identical to EMSCRIPTEN_KEEPALIVE but is not
