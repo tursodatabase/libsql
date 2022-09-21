@@ -85,6 +85,14 @@
 # define _LARGEFILE_SOURCE 1
 #endif
 
+#if defined(SQLITE_SHELL_FIDDLE) && !defined(_POSIX_SOURCE)
+/*
+** emcc requires _POSIX_SOURCE (or one of several similar defines)
+** to expose strdup().
+*/
+# define _POSIX_SOURCE
+#endif
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>

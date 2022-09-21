@@ -1,5 +1,5 @@
-C Correct\smistyped\s--shrink-memory\sflag\sin\sspeedtest1-worker.\sMinor\sOPFS\sproxy\scleanups.
-D 2022-09-21T14:02:47.634
+C shell.c.in:\swhen\sbuilding\sin\sfiddle\smode,\sdefine\s_POSIX_SOURCE\s(ifndef)\sso\sthat\semcc's\sstring.h\sreveals\sstrdup().
+D 2022-09-21T16:21:21.314
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -615,7 +615,7 @@ F src/random.c 546d6feb15ec69c1aafe9bb351a277cbb498fd5410e646add673acb805714960
 F src/resolve.c efea4e5fbecfd6d0a9071b0be0d952620991673391b6ffaaf4c277b0bb674633
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c d69dfb5b082f9a25e6700e152ddb3d942359b847b1df504eb09f9b4531844f8d
-F src/shell.c.in e7e7c2c69ae86c5ee9e8ad66227203d46ff6dce8700a1b1dababff01c71d33df
+F src/shell.c.in fd57bd685265eda436f98b06adca63c6a6cc170e12c7cd9b0c44826ea65cc6be
 F src/sqlite.h.in b9b7fd73239d94db20332bb6e504688001e5564b655e1318a4427a1caef4b99e
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h a988810c9b21c0dc36dc7a62735012339dc76fc7ab448fb0792721d30eacb69d
@@ -2026,8 +2026,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5c5e80652825cf883e6c17809cb98f2bf17d5feac2d263f6f492479154730dab
-R 47f6cfb5732f21f9dd8243259a29763d
+P 86e2b55ec9483fa5add51a479c6509d73461f1ac6fca5d49e057b1c66f4314d2
+R e68dc13d6d9761750c3d366ba59d0406
 U stephan
-Z efa6548d913df45daccab7f9511bade7
+Z b0eba7fb6b60a68e1a0205556e35b01a
 # Remove this line to create a well-formed Fossil manifest.
