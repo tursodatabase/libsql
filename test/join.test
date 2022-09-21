@@ -1130,5 +1130,81 @@ do_execsql_test join-27.5 {
     ) AS t99 ON b IN (1,2,3);
 } {}
 
+db null NULL
+do_execsql_test join-27.6 {
+  INSERT INTO t1 VALUES(3,4,NULL);
+  INSERT INTO t2 VALUES(1,2);
+  WITH t99(b) AS (
+    SELECT coalesce(b,3) FROM t2 AS x LEFT JOIN t1 ON c IN (SELECT x FROM t3)
+  )
+  SELECT d, e, b FROM t2 JOIN t99 ON b IN (1,2,3) ORDER BY +d;
+} {NULL NULL 3 NULL NULL 3 1 2 3 1 2 3}
+do_execsql_test join-27.7 {
+  SELECT d, e, b2
+    FROM t2 
+         JOIN (SELECT coalesce(b,3) AS b2 FROM t2 AS x LEFT JOIN t1
+                ON c IN (SELECT x FROM t3)) AS t99
+            ON b2 IN (1,2,3) ORDER BY +d;
+} {NULL NULL 3 NULL NULL 3 1 2 3 1 2 3}
+
+do_execsql_test join-27.8 {
+  DELETE FROM t1;
+  DELETE FROM t2 WHERE d IS NOT NULL;
+  DELETE FROM t3;
+  SELECT * FROM t2 JOIN (SELECT b FROM t2 LEFT JOIN t1
+                       ON c IN (SELECT x FROM t3)) AS t99 ON b IN (1,2,3);
+} {}
+
+do_execsql_test join-27.9 {
+  DELETE FROM t1;
+  DELETE FROM t2;
+  DELETE FROM t3;
+  INSERT INTO t1 VALUES(4,3,5);
+  INSERT INTO t2 VALUES(1,2);
+  INSERT INTO t3 VALUES(5);
+  SELECT * FROM t2 JOIN (SELECT b FROM t2 LEFT JOIN t1
+                       ON c IN (SELECT x FROM t3)) AS t99 ON b IS NULL;
+} {}
+do_execsql_test join-27.10 {
+  WITH t99(b) AS (
+    SELECT b FROM t2 AS x LEFT JOIN t1 ON c IN (SELECT x FROM t3)
+  )
+  SELECT d, e, b FROM t2 JOIN t99 ON b IS NULL;
+} {}
+
+
+# 2022-09-19 https://sqlite.org/forum/forumpost/96b9e5709cf47cda
+# Performance regression relative to version 3.38.0 that resulted from
+# a new query flattener restriction that was added to fixes the join-27.*
+# tests above.  The restriction needed to be removed and the join-27.*
+# problem fixed another way.
+#
+reset_db
+do_execsql_test join-28.1 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b INT, c INT);
+  CREATE TABLE t2(d INTEGER PRIMARY KEY, e INT);
+  CREATE VIEW t3(a,b,c,d,e) AS SELECT * FROM t1 LEFT JOIN t2 ON d=c;
+  CREATE TABLE t4(x INT, y INT);
+  INSERT INTO t1 VALUES(1,2,3);
+  INSERT INTO t2 VALUES(1,5);
+  INSERT INTO t4 VALUES(1,4);
+  SELECT a, b, y FROM t4 JOIN t3 ON a=x;
+} {1 2 4}
+do_eqp_test join-28.2 {
+  SELECT a, b, y FROM t4 JOIN t3 ON a=x;
+} {
+  QUERY PLAN
+  |--SCAN t4
+  `--SEARCH t1 USING INTEGER PRIMARY KEY (rowid=?)
+}
+# ^^^^^^^ Without the fix (if the query flattening optimization does not
+# run) the query plan above would look like this:
+#
+#   QUERY PLAN
+#   |--MATERIALIZE t3
+#   |  |--SCAN t1
+#   |  `--SEARCH t2 USING INTEGER PRIMARY KEY (rowid=?) LEFT-JOIN
+#   |--SCAN t4
+#   `--SEARCH t3 USING AUTOMATIC COVERING INDEX (a=?)
 
 finish_test

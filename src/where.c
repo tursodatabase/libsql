@@ -743,6 +743,38 @@ static void whereTraceIndexInfoOutputs(sqlite3_index_info *p){
 #define whereTraceIndexInfoOutputs(A)
 #endif
 
+/*
+** We know that pSrc is an operand of an outer join.  Return true if
+** pTerm is a constraint that is compatible with that join.
+**
+** pTerm must be EP_OuterON if pSrc is the right operand of an
+** outer join.  pTerm can be either EP_OuterON or EP_InnerON if pSrc
+** is the left operand of a RIGHT join.
+*/
+static int constraintCompatibleWithOuterJoin(
+  const WhereTerm *pTerm,       /* WHERE clause term to check */
+  const SrcItem *pSrc           /* Table we are trying to access */
+){
+  assert( (pSrc->fg.jointype&(JT_LEFT|JT_LTORJ|JT_RIGHT))!=0 ); /* By caller */
+  testcase( (pSrc->fg.jointype & (JT_LEFT|JT_LTORJ|JT_RIGHT))==JT_LEFT );
+  testcase( (pSrc->fg.jointype & (JT_LEFT|JT_LTORJ|JT_RIGHT))==JT_LTORJ );
+  testcase( ExprHasProperty(pTerm->pExpr, EP_OuterON) )
+  testcase( ExprHasProperty(pTerm->pExpr, EP_InnerON) );
+  if( !ExprHasProperty(pTerm->pExpr, EP_OuterON|EP_InnerON)
+   || pTerm->pExpr->w.iJoin != pSrc->iCursor
+  ){
+    return 0;
+  }
+  if( (pSrc->fg.jointype & (JT_LEFT|JT_RIGHT))!=0
+   && ExprHasProperty(pTerm->pExpr, EP_InnerON)
+  ){
+    return 0;
+  }
+  return 1;
+}
+ 
+
+
 #ifndef SQLITE_OMIT_AUTOMATIC_INDEX
 /*
 ** Return TRUE if the WHERE clause term pTerm is of a form where it
@@ -758,16 +790,10 @@ static int termCanDriveIndex(
   if( pTerm->leftCursor!=pSrc->iCursor ) return 0;
   if( (pTerm->eOperator & (WO_EQ|WO_IS))==0 ) return 0;
   assert( (pSrc->fg.jointype & JT_RIGHT)==0 );
-  if( (pSrc->fg.jointype & (JT_LEFT|JT_LTORJ|JT_RIGHT))!=0 ){
-    testcase( (pSrc->fg.jointype & (JT_LEFT|JT_LTORJ|JT_RIGHT))==JT_LEFT );
-    testcase( (pSrc->fg.jointype & (JT_LEFT|JT_LTORJ|JT_RIGHT))==JT_LTORJ );
-    testcase( ExprHasProperty(pTerm->pExpr, EP_OuterON) )
-    testcase( ExprHasProperty(pTerm->pExpr, EP_InnerON) );
-    if( !ExprHasProperty(pTerm->pExpr, EP_OuterON|EP_InnerON)
-     || pTerm->pExpr->w.iJoin != pSrc->iCursor
-    ){
-      return 0;  /* See tag-20191211-001 */
-    }
+  if( (pSrc->fg.jointype & (JT_LEFT|JT_LTORJ|JT_RIGHT))!=0
+   && !constraintCompatibleWithOuterJoin(pTerm,pSrc)
+  ){
+    return 0;
   }
   if( (pTerm->prereqRight & notReady)!=0 ) return 0;
   assert( (pTerm->eOperator & (WO_OR|WO_AND))==0 );
@@ -1184,17 +1210,10 @@ static sqlite3_index_info *allocateIndexInfo(
     ** right-hand table of a LEFT JOIN nor to the either table of a
     ** RIGHT JOIN.  See tag-20191211-001 for the
     ** equivalent restriction for ordinary tables. */
-    if( (pSrc->fg.jointype & (JT_LEFT|JT_LTORJ|JT_RIGHT))!=0 ){
-      testcase( (pSrc->fg.jointype & (JT_LEFT|JT_LTORJ|JT_RIGHT))==JT_LEFT );
-      testcase( (pSrc->fg.jointype & (JT_LEFT|JT_LTORJ|JT_RIGHT))==JT_RIGHT );
-      testcase( (pSrc->fg.jointype & (JT_LEFT|JT_LTORJ|JT_RIGHT))==JT_LTORJ );
-      testcase( ExprHasProperty(pTerm->pExpr, EP_OuterON) );
-      testcase( ExprHasProperty(pTerm->pExpr, EP_InnerON) );
-      if( !ExprHasProperty(pTerm->pExpr, EP_OuterON|EP_InnerON)
-       || pTerm->pExpr->w.iJoin != pSrc->iCursor
-      ){
-        continue;
-      }
+    if( (pSrc->fg.jointype & (JT_LEFT|JT_LTORJ|JT_RIGHT))!=0
+     && !constraintCompatibleWithOuterJoin(pTerm,pSrc)
+    ){
+      continue;
     }
     nTerm++;
     pTerm->wtFlags |= TERM_OK;
@@ -2865,17 +2884,10 @@ static int whereLoopAddBtreeIndex(
     ** 2022-06-10: The same condition applies to termCanDriveIndex() above.
     ** https://sqlite.org/forum/forumpost/51e6959f61
     */
-    if( (pSrc->fg.jointype & (JT_LEFT|JT_LTORJ|JT_RIGHT))!=0 ){
-      testcase( (pSrc->fg.jointype & (JT_LEFT|JT_LTORJ|JT_RIGHT))==JT_LEFT );
-      testcase( (pSrc->fg.jointype & (JT_LEFT|JT_LTORJ|JT_RIGHT))==JT_RIGHT );
-      testcase( (pSrc->fg.jointype & (JT_LEFT|JT_LTORJ|JT_RIGHT))==JT_LTORJ );
-      testcase( ExprHasProperty(pTerm->pExpr, EP_OuterON) )
-      testcase( ExprHasProperty(pTerm->pExpr, EP_InnerON) );
-      if( !ExprHasProperty(pTerm->pExpr, EP_OuterON|EP_InnerON)
-       || pTerm->pExpr->w.iJoin != pSrc->iCursor
-      ){
-        continue;
-      }
+    if( (pSrc->fg.jointype & (JT_LEFT|JT_LTORJ|JT_RIGHT))!=0
+     && !constraintCompatibleWithOuterJoin(pTerm,pSrc)
+    ){
+      continue;
     }
 
     if( IsUniqueIndex(pProbe) && saved_nEq==pProbe->nKeyCol-1 ){
