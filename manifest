@@ -1,5 +1,5 @@
-C Do\snot\sallow\sEP_InnerON\sterms\sto\sbe\sused\son\sa\souter\sjoin.
-D 2022-09-20T22:19:13.998
+C Break\sout\sthe\sdecision\sof\swhether\sor\snot\sa\sconstraint\sterm\sis\susable\sby\nan\souter\sjoin\sinto\sa\ssubroutine:\sconstraintCompatibleWithOuterJoin().
+D 2022-09-21T00:16:59.294
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -675,7 +675,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c b9df133a705093da8977da5eb202eaadb844839f1c7297c08d33471f5491843d
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
-F src/where.c 075de11bb3a7be19cfe27e104d52e19d30096925ef2524341bf5a6bfcdbc4127
+F src/where.c 3774d9831a6f4ac81f201fa9e2ec1bb40c99b7207dce7663c2e39fb73cc1bfd5
 F src/whereInt.h 70cd30de9ed784aa33fa6bd1245f060617de7a00d992469b6d8e419eed915743
 F src/wherecode.c 6bb1cf9d0a4e3e04dab0bf0ea4a8d936a0dcc05a7e2207beeda6c61aea6dd341
 F src/whereexpr.c 55a39f42aaf982574fbf52906371a84cceed98a994422198dfd03db4fce4cc46
@@ -2000,8 +2000,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fe5c37736444e397ace387b761ec2491229785d7a437f3f60232aedf9d1f00ec
-R b7bb9d0f74cad7fddb9b6178bd7d10bc
+P f47aa745690c018800243bf76930b2499ff4537411c4e27b4b16ba3854cc2bf8
+R ffb250842cc4325c51d9fb2f2a7cd199
 U drh
-Z 62c9c805d4ceaa75bf6aed42a5148e09
+Z 35e62397d6a559d77545ee94797c3cd6
 # Remove this line to create a well-formed Fossil manifest.
