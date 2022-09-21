@@ -26,7 +26,6 @@ sqlite3-wasmfs.cflags += -std=c99 -fPIC -g
 sqlite3-wasmfs.cflags += -pthread
 sqlite3-wasmfs.cflags += -I. -I.. -I$(dir.top)
 sqlite3-wasmfs.cflags += $(SQLITE_OPT) -DSQLITE_WASM_WASMFS
-sqlite3-wasmfs.cflags += '-DSQLITE_DEFAULT_UNIX_VFS="unix-none"'
 
 sqlite3-wasmfs.extra.c :=
 ifeq (1,1)

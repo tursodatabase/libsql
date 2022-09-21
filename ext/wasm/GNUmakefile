@@ -1,95 +1,11 @@
-# This GNU makefile exists primarily to simplify/speed up development
-# of the sqlite3 WASM components. It is not part of the canonical
-# build process.
-#
-# Maintenance notes: the fiddle build is currently performed in the
-# top-level ../../Makefile.in. It may be moved into this file at some
-# point, as GNU Make has been deemed acceptable for the WASM-related
-# components (whereas POSIX Make is required for the more conventional
-# components).
-SHELL := $(shell which bash 2>/dev/null)
-all:
-emcc_opt ?= -O0
-
-.PHONY: fiddle
-ifneq (,$(wildcard /home/stephan))
-  fiddle_opt ?= $(emcc_opt)
-else
-  fiddle_opt = -Os
-endif
-fiddle:
-	$(MAKE) -C ../.. fiddle -e emcc_opt=$(fiddle_opt)
-all: fiddle
-
-clean:
-	$(MAKE) -C ../../ clean-fiddle
-	-rm -f $(CLEAN_FILES)
-
-MAKEFILE := $(lastword $(MAKEFILE_LIST))
-dir.top := ../..
-# Reminder: some Emscripten flags require absolute paths
-dir.wasm := $(patsubst %/,%,$(dir $(abspath $(MAKEFILE))))
-dir.api := api
-dir.jacc := jaccwabyt
-dir.common := common
-CLEAN_FILES := *~ $(dir.jacc)/*~ $(dir.api)/*~ $(dir.common)/*~
-
-sqlite3.c := $(dir.top)/sqlite3.c
-$(sqlite3.c):
-	$(MAKE) -C $(dir.top) sqlite3.c
-
-SQLITE_OPT = \
-  -DSQLITE_ENABLE_FTS4 \
-  -DSQLITE_ENABLE_RTREE \
-  -DSQLITE_ENABLE_EXPLAIN_COMMENTS \
-  -DSQLITE_ENABLE_UNKNOWN_SQL_FUNCTION \
-  -DSQLITE_ENABLE_STMTVTAB \
-  -DSQLITE_ENABLE_DBPAGE_VTAB \
-  -DSQLITE_ENABLE_DBSTAT_VTAB \
-  -DSQLITE_ENABLE_BYTECODE_VTAB \
-  -DSQLITE_ENABLE_OFFSET_SQL_FUNC \
-  -DSQLITE_OMIT_LOAD_EXTENSION \
-  -DSQLITE_OMIT_DEPRECATED \
-  -DSQLITE_OMIT_UTF16 \
-  -DSQLITE_OMIT_SHARED_CACHE \
-  -DSQLITE_THREADSAFE=0 \
-  -DSQLITE_TEMP_STORE=3 \
-  -DSQLITE_OS_KV_OPTIONAL=1
-#SQLITE_OPT += -DSQLITE_ENABLE_MEMSYS5
-# ^^^ MEMSYS5 is hypothetically useful for non-Emscripten builds but
-# requires adding more infrastructure and fixing one spot in the
-# sqlite3 internals which calls malloc() early on.
-
-# SQLITE_OMIT_LOAD_EXTENSION: if this is true, sqlite3_vfs::xDlOpen
-# and friends may be NULL.
-
-.PHONY: release
-release:
-	$(MAKE) "emcc_opt=-Os -g3 -flto" fiddle_opt=-Os
-# ^^^^^ target-specific vars, e.g.:
-#   release: emcc_opt=...
-# apparently only work for file targets, not PHONY targets?
-#
-# ^^^ -flto improves runtime speed at -O0 considerably but doubles
-# build time.
-#
-# ^^^^ -O3, -Oz, -Os minify symbol names and there appears to be no
-# way around that except to use -g3, but -g3 causes the binary file
-# size to absolutely explode (approx. 5x larger). This minification
-# utterly breaks the resulting module, making it unsable except as
-# self-contained/self-referential-only code, as ALL of the exported
-# symbols get minified names.
-#
-# However, we have an option for using -Oz or -Os:
-#
-# Build with (-Os -g3) or (-Oz -g3) then use wasm-strip, from the wabt
-# tools package (https://github.com/WebAssembly/wabt), to strip the
-# debugging symbols. That results in a small build with unmangled
-# symbol names. -Oz gives ever-so-slightly better compression than
-# -Os: not quite 1% in some completely unscientific tests. Runtime
-# speed for the unit tests is all over the place either way so it's
-# difficult to say whether -Os gives any speed benefit over -Oz.
 ########################################################################
+# This GNU makefile drives the build of the sqlite3 WASM
+# components. It is not part of the canonical build process.
+########################################################################
+SHELL := $(shell which bash 2>/dev/null)
+MAKEFILE := $(lastword $(MAKEFILE_LIST))
+all:
+release: all
 
 # Emscripten SDK home dir and related binaries...
 EMSDK_HOME ?= $(word 1,$(wildcard $(HOME)/src/emsdk $(HOME)/emsdk))
@@ -117,12 +33,81 @@ ifeq (,$(wasm-strip))
 endif
 endif # 'make clean' check
 
-
 ifeq (,$(wasm-strip))
   maybe-wasm-strip = echo "not wasm-stripping"
 else
   maybe-wasm-strip = $(wasm-strip)
 endif
+
+dir.top := ../..
+# Reminder: some Emscripten flags require absolute paths
+dir.wasm := $(patsubst %/,%,$(dir $(abspath $(MAKEFILE))))
+dir.api := api
+dir.jacc := jaccwabyt
+dir.common := common
+dir.fiddle := fiddle
+CLEAN_FILES := *~ $(dir.jacc)/*~ $(dir.api)/*~ $(dir.common)/*~
+sqlite3.c := $(dir.top)/sqlite3.c
+SQLITE_OPT = \
+  -DSQLITE_ENABLE_FTS4 \
+  -DSQLITE_ENABLE_RTREE \
+  -DSQLITE_ENABLE_EXPLAIN_COMMENTS \
+  -DSQLITE_ENABLE_UNKNOWN_SQL_FUNCTION \
+  -DSQLITE_ENABLE_STMTVTAB \
+  -DSQLITE_ENABLE_DBPAGE_VTAB \
+  -DSQLITE_ENABLE_DBSTAT_VTAB \
+  -DSQLITE_ENABLE_BYTECODE_VTAB \
+  -DSQLITE_ENABLE_OFFSET_SQL_FUNC \
+  -DSQLITE_OMIT_LOAD_EXTENSION \
+  -DSQLITE_OMIT_DEPRECATED \
+  -DSQLITE_OMIT_UTF16 \
+  -DSQLITE_OMIT_SHARED_CACHE \
+  -DSQLITE_THREADSAFE=0 \
+  -DSQLITE_TEMP_STORE=3 \
+  -DSQLITE_OS_KV_OPTIONAL=1 \
+  '-DSQLITE_DEFAULT_UNIX_VFS="unix-none"'
+#SQLITE_OPT += -DSQLITE_ENABLE_MEMSYS5
+# ^^^ MEMSYS5 is hypothetically useful for non-Emscripten builds but
+# requires adding more infrastructure and fixing one spot in the
+# sqlite3 internals which calls malloc() early on.
+
+# SQLITE_OMIT_LOAD_EXTENSION: if this is true, sqlite3_vfs::xDlOpen
+# and friends may be NULL.
+
+ifneq (,$(filter release,$(MAKECMDGOALS)))
+emcc_opt ?= -Oz -g3 -flto
+else
+emcc_opt ?= -O0 -g
+# ^^^^ build times for -O levels higher than 0 are painful at
+# dev-time.
+endif
+# ^^^ -flto improves runtime speed at -O0 considerably but doubles
+# build time.
+#
+# ^^^^ -O3, -Oz, -Os minify symbol names and there appears to be no
+# way around that except to use -g3, but -g3 causes the binary file
+# size to absolutely explode (approx. 5x larger). This minification
+# utterly breaks the resulting module, making it unsable except as
+# self-contained/self-referential-only code, as ALL of the exported
+# symbols get minified names.
+#
+# However, we have an option for using -Oz or -Os:
+#
+# Build with (-Os -g3) or (-Oz -g3) then use wasm-strip, from the wabt
+# tools package (https://github.com/WebAssembly/wabt), to strip the
+# debugging symbols. That results in a small build with unmangled
+# symbol names. -Oz gives ever-so-slightly better compression than
+# -Os: not quite 1% in some completely unscientific tests. Runtime
+# speed for the unit tests is all over the place either way so it's
+# difficult to say whether -Os gives any speed benefit over -Oz.
+########################################################################
+
+
+$(sqlite3.c):
+	$(MAKE) -C $(dir.top) sqlite3.c
+
+clean:
+	-rm -f $(CLEAN_FILES)
 
 ifeq (release,$(filter release,$(MAKECMDGOALS)))
   ifeq (,$(wasm-strip))
@@ -181,14 +166,13 @@ emcc.flags =
 #emcc.flags += -v # _very_ loud but also informative about what it's doing
 # -g is needed to keep -O2 and higher from creating broken JS via
 # minification.
-emcc.flags += -g
 
 ########################################################################
 # emcc flags for .c/.o.
 emcc.cflags :=
 emcc.cflags += -std=c99 -fPIC
 # -------------^^^^^^^^ we currently need c99 for WASM-specific sqlite3 APIs.
-emcc.cflags += -I. -I$(dir.top) # $(SQLITE_OPT)
+emcc.cflags += -I. -I$(dir.top)
 
 ########################################################################
 # emcc flags specific to building the final .js/.wasm file...
@@ -392,7 +376,6 @@ $(speedtest1.js): $(MAKEFILE) $(speedtest1.cs) $(post-js.js) \
         $(speedtest1.eflags) $(speedtest1-common.eflags) $(speedtest1.cflags) \
         $(SQLITE_OPT) \
         $(speedtest1.exit-runtime0) \
-        '-DSQLITE_DEFAULT_UNIX_VFS="unix-none"' \
         -o $@ $(speedtest1.cs) -lm
 	$(maybe-wasm-strip) $(speedtest1.wasm)
 	ls -la $@ $(speedtest1.wasm)
@@ -451,6 +434,8 @@ oz:
 ########################################################################
 # Sub-makes...
 
+include fiddle.make
+
 ########################################################################
 # Some platforms do not support the WASMFS build. Raspberry Pi OS is one
 # of them. As such platforms are discovered, add their (uname -m) name
@@ -462,3 +447,19 @@ $(info This platform does not support the WASMFS build.)
 else
 include wasmfs.make
 endif
+
+########################################################################
+# Push files to public wasm-testing.sqlite.org server
+wasm-testing.include = *.wasm *.js *.html \
+    batch-runner.list sql common fiddle jaccwabyt
+wasm-testing.exclude = sql/speedtest1.sql
+wasm-testing.dir     = /jail/sites/wasm-testing
+wasm-testing.dest   ?= wasm-testing:$(wasm-testing.dir)
+# ---------------------^^^^^^^^^^^^ ssh alias
+push:
+	rsync -z -e ssh --ignore-times --chown=stephan:www-data --group -r \
+    $(patsubst %,--exclude=%,$(wasm-testing.exclude)) \
+    $(wasm-testing.include) $(wasm-testing.dest)
+	ssh wasm-testing 'cd $(wasm-testing.dir) && bash .gzip' || \
+    echo "SSH failed: it's likely that stale content will be served via old gzip files." 
+
