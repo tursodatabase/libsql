@@ -79,7 +79,7 @@ SQLITE_OPT = \
 ifneq (,$(filter release,$(MAKECMDGOALS)))
 emcc_opt ?= -Oz -g3 -flto
 else
-emcc_opt ?= -O0 -g
+emcc_opt ?= -O0 -g3
 # ^^^^ build times for -O levels higher than 0 are painful at
 # dev-time.
 endif
@@ -414,18 +414,18 @@ push-fiddle: $(fiddle_files)
 .PHONY: o0 o1 o2 o3 os oz
 o-xtra :=
 #o-xtra += -flto
-o0:
-	$(MAKE) clean; $(MAKE) -e "emcc_opt=-O0 $(o-xtra)" fiddle_opt=-O0
-o1:
-	$(MAKE) clean; $(MAKE) -e "emcc_opt=-O1 $(o-xtra)" fiddle_opt=-O1
-o2:
-	$(MAKE) clean; $(MAKE) -e "emcc_opt=-O2 $(o-xtra)" fiddle_opt=-O2
-o3:
-	$(MAKE) clean; $(MAKE) -e "emcc_opt=-O3 $(o-xtra)" fiddle_opt=-O3
-os:
-	$(MAKE) clean; $(MAKE) -e "emcc_opt=-Os $(o-xtra)" fiddle_opt=-Os
-oz:
-	$(MAKE) clean; $(MAKE) -e "emcc_opt=-Oz $(o-xtra)" fiddle_opt=-Oz
+o0: clean
+	$(MAKE) -e "emcc_opt=-O0 $(o-xtra)" fiddle_opt=-O0
+o1: clean
+	$(MAKE) -e "emcc_opt=-O1 $(o-xtra)" fiddle_opt=-O1
+o2: clean
+	$(MAKE) -e "emcc_opt=-O2 $(o-xtra)" fiddle_opt=-O2
+o3: clean
+	$(MAKE) -e "emcc_opt=-O3 $(o-xtra)" fiddle_opt=-O3
+os: clean
+	$(MAKE) -e "emcc_opt=-Os $(o-xtra)" fiddle_opt=-Os
+oz: clean
+	$(MAKE) -e "emcc_opt=-Oz $(o-xtra)" fiddle_opt=-Oz
 
 ########################################################################
 # Sub-makes...

@@ -179,8 +179,10 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
                     'openFlags', 'prepareFlags', 'resultCodes',
                     'syncFlags', 'udfFlags', 'version'
                    ]){
-      for(const [k,v] of Object.entries(wasm.ctype[t])){
-        capi[k] = v;
+      for(const e of Object.entries(wasm.ctype[t])){
+        // ^^^ [k,v] there triggers a buggy code transormation via one
+        // of the Emscripten-driven optimizers.
+        capi[e[0]] = e[1];
       }
     }
     /* Bind all registered C-side structs... */
