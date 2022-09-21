@@ -1,5 +1,5 @@
-C Move\sfiddle\sbuild\srules\sinto\sthe\swasm-centric\sbuild\sfiles.\sAdd\srule\sto\spush\swasm\sbits\sto\sthe\swasm\stest\sserver.
-D 2022-09-21T08:39:03.936
+C Add\sa\slink\sto\sfiddle.html\sin\sthe\swasm\stest\sapp\sindex.html.
+D 2022-09-21T08:41:40.128
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -472,7 +472,7 @@ F ext/session/test_session.c f433f68a8a8c64b0f5bc74dc725078f12483301ad4ae8375205
 F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
 F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
 F ext/userauth/userauth.c 7f00cded7dcaa5d47f54539b290a43d2e59f4b1eb5f447545fa865f002fc80cb
-F ext/wasm/EXPORTED_FUNCTIONS.fiddle.in 7fb73f7150ab79d83bb45a67d257553c905c78cd3d693101699243f36c5ae6c3 w ext/wasm/EXPORTED_FUNCTIONS.fiddle
+F ext/wasm/EXPORTED_FUNCTIONS.fiddle.in 7fb73f7150ab79d83bb45a67d257553c905c78cd3d693101699243f36c5ae6c3
 F ext/wasm/EXPORTED_RUNTIME_METHODS.fiddle a004bd5eeeda6d3b28d16779b7f1a80305bfe009dfc7f0721b042967f0d39d02
 F ext/wasm/GNUmakefile 45b2815443729ed7de33acb4a2716038f8a41005529cd96bac81f7f0d97d1ded
 F ext/wasm/README.md e1ee1e7c321c6a250bf78a84ca6f5882890a237a450ba5a0649c7a8399194c52
@@ -505,7 +505,7 @@ F ext/wasm/fiddle/emscripten.css 3d253a6fdb8983a2ac983855bfbdd4b6fa1ff267c28d695
 F ext/wasm/fiddle/fiddle-worker.js bccf46045be8824752876f3eec01c223be0616ccac184bffd0024cfe7a3262b8
 F ext/wasm/fiddle/fiddle.html 550c5aafce40bd218de9bf26192749f69f9b10bc379423ecd2e162bcef885c08
 F ext/wasm/fiddle/fiddle.js 4ffcfc9a235beebaddec689a549e9e0dfad6dca5c1f0b41f03468d7e76480686
-F ext/wasm/index.html 4b74ea334f0bba9923a61246d807a1873784fcef4d3fb342b698613d0a29fd9c
+F ext/wasm/index.html 5cb26db659696ef59e55a2d61a3c1cb924843527b3265e3449d9b718cf041778
 F ext/wasm/jaccwabyt/jaccwabyt.js 0d7f32817456a0f3937fcfd934afeb32154ca33580ab264dab6c285e6dbbd215
 F ext/wasm/jaccwabyt/jaccwabyt.md 447cc02b598f7792edaa8ae6853a7847b8178a18ed356afacbdbf312b2588106
 F ext/wasm/jaccwabyt/jaccwabyt_test.c 39e4b865a33548f943e2eb9dd0dc8d619a80de05d5300668e9960fff30d0d36f
@@ -2026,8 +2026,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1b5f1b4a6c1457f98c258459e23e321fc59793de298fecb84031b87f02156cd5
-R 00dda2c5015c98fa272f7dff83ac1143
+P 113f8204dc4ac849d5632d3de1680b6e0da871e107ef484c8d7273799bee3d88
+R 337ac284fad2396684acb37bb3bd23e5
 U stephan
-Z c50873d6fe9ef43a35ee904cdd659788
+Z 31d6498de398e0445783a30c20bccccb
 # Remove this line to create a well-formed Fossil manifest.
