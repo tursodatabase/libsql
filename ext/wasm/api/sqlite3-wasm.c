@@ -9,10 +9,10 @@
 
 /*
 ** WASM_KEEP is identical to EMSCRIPTEN_KEEPALIVE but is not
-** Emscripten-specific. It explicitly includes marked functions for
-** export into the target wasm file without requiring explicit listing
-** of those functions in Emscripten's -sEXPORTED_FUNCTIONS=... list
-** (or equivalent in other build platforms). Any function with neither
+** Emscripten-specific. It explicitly marks functions for export into
+** the target wasm file without requiring explicit listing of those
+** functions in Emscripten's -sEXPORTED_FUNCTIONS=... list (or
+** equivalent in other build platforms). Any function with neither
 ** this attribute nor which is listed as an explicit export will not
 ** be exported from the wasm file (but may still be used internally
 ** within the wasm file).

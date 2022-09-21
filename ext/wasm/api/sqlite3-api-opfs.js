@@ -16,9 +16,7 @@
   Worker, implemented in sqlite3-opfs-async-proxy.js.  This file is
   intended to be appended to the main sqlite3 JS deliverable somewhere
   after sqlite3-api-glue.js and before sqlite3-api-cleanup.js.
-
 */
-
 'use strict';
 self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 /**
@@ -314,55 +312,98 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
       const t = performance.now();
       Atomics.wait(state.sabOPView, state.opIds.rc, -1);
       const rc = Atomics.load(state.sabOPView, state.opIds.rc);
+      if(rc){
+        const err = state.s11n.deserialize();
+        if(err) error(op+"() async error:",...err);
+      }
       metrics[op].wait += performance.now() - t;
       return rc;
     };
 
     const initS11n = ()=>{
       /**
-         ACHTUNG: this code is 100% duplicated in the other half of
-         this proxy!
+         ACHTUNG: this code is 100% duplicated in the other half of this
+         proxy! The documentation is maintained in the "synchronous half".
 
-         Historical note: this impl was initially about 5% this size by using
-         using JSON.stringify/parse(), but using fit-to-purpose serialization
-         saves considerable runtime.
+         This proxy de/serializes cross-thread function arguments and
+         output-pointer values via the state.sabIO SharedArrayBuffer,
+         using the region defined by (state.sabS11nOffset,
+         state.sabS11nOffset]. Only one dataset is recorded at a time.
+
+         This is not a general-purpose format. It only supports the range
+         of operations, and data sizes, needed by the sqlite3_vfs and
+         sqlite3_io_methods operations.
+
+         The data format can be succinctly summarized as:
+
+         Nt...Td...D
+
+         Where:
+
+         - N = number of entries (1 byte)
+
+         - t = type ID of first argument (1 byte)
+
+         - ...T = type IDs of the 2nd and subsequent arguments (1 byte
+         each).
+
+         - d = raw bytes of first argument (per-type size).
+
+         - ...D = raw bytes of the 2nd and subsequent arguments (per-type
+         size).
+
+         All types except strings have fixed sizes. Strings are stored
+         using their TextEncoder/TextDecoder representations. It would
+         arguably make more sense to store them as Int16Arrays of
+         their JS character values, but how best/fastest to get that
+         in and out of string form us an open point.
+
+         Historical note: this impl was initially about 1% this size by
+         using using JSON.stringify/parse(), but using fit-to-purpose
+         serialization saves considerable runtime.
       */
       if(state.s11n) return state.s11n;
       const textDecoder = new TextDecoder(),
-      textEncoder = new TextEncoder('utf-8'),
-      viewU8 = new Uint8Array(state.sabIO, state.sabS11nOffset, state.sabS11nSize),
-      viewDV = new DataView(state.sabIO, state.sabS11nOffset, state.sabS11nSize);
+            textEncoder = new TextEncoder('utf-8'),
+            viewU8 = new Uint8Array(state.sabIO, state.sabS11nOffset, state.sabS11nSize),
+            viewDV = new DataView(state.sabIO, state.sabS11nOffset, state.sabS11nSize);
       state.s11n = Object.create(null);
+      /* Only arguments and return values of these types may be
+         serialized. This covers the whole range of types needed by the
+         sqlite3_vfs API. */
       const TypeIds = Object.create(null);
       TypeIds.number  = { id: 1, size: 8, getter: 'getFloat64', setter: 'setFloat64' };
       TypeIds.bigint  = { id: 2, size: 8, getter: 'getBigInt64', setter: 'setBigInt64' };
       TypeIds.boolean = { id: 3, size: 4, getter: 'getInt32', setter: 'setInt32' };
       TypeIds.string =  { id: 4 };
-      const getTypeId = (v)=>{
-        return TypeIds[typeof v] || toss("This value type cannot be serialized.",v);
-      };
+
+      const getTypeId = (v)=>(
+        TypeIds[typeof v]
+          || toss("Maintenance required: this value type cannot be serialized.",v)
+      );
       const getTypeIdById = (tid)=>{
         switch(tid){
-        case TypeIds.number.id: return TypeIds.number;
-        case TypeIds.bigint.id: return TypeIds.bigint;
-        case TypeIds.boolean.id: return TypeIds.boolean;
-        case TypeIds.string.id: return TypeIds.string;
-        default: toss("Invalid type ID:",tid);
+            case TypeIds.number.id: return TypeIds.number;
+            case TypeIds.bigint.id: return TypeIds.bigint;
+            case TypeIds.boolean.id: return TypeIds.boolean;
+            case TypeIds.string.id: return TypeIds.string;
+            default: toss("Invalid type ID:",tid);
         }
       };
+
       /**
-         Returns an array of the state serialized by the most recent
-         serialize() operation (here or in the counterpart thread), or
-         null if the serialization buffer is empty.
+         Returns an array of the deserialized state stored by the most
+         recent serialize() operation (from from this thread or the
+         counterpart thread), or null if the serialization buffer is empty.
       */
       state.s11n.deserialize = function(){
         ++metrics.s11n.deserialize.count;
         const t = performance.now();
-        let rc = null;
         const argc = viewU8[0];
+        const rc = argc ? [] : null;
         if(argc){
-          rc = [];
-          let offset = 1, i, n, v, typeIds = [];
+          const typeIds = [];
+          let offset = 1, i, n, v;
           for(i = 0; i < argc; ++i, ++offset){
             typeIds.push(getTypeIdById(viewU8[offset]));
           }
@@ -371,7 +412,7 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
             if(t.getter){
               v = viewDV[t.getter](offset, state.littleEndian);
               offset += t.size;
-            }else{
+            }else{/*String*/
               n = viewDV.getInt32(offset, state.littleEndian);
               offset += 4;
               v = textDecoder.decode(viewU8.slice(offset, offset+n));
@@ -384,6 +425,7 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
         metrics.s11n.deserialize.time += performance.now() - t;
         return rc;
       };
+
       /**
          Serializes all arguments to the shared buffer for consumption
          by the counterpart thread.
@@ -397,22 +439,27 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
          state.
       */
       state.s11n.serialize = function(...args){
-        ++metrics.s11n.serialize.count;
         const t = performance.now();
+        ++metrics.s11n.serialize.count;
         if(args.length){
           //log("serialize():",args);
-          let i = 0, offset = 1, typeIds = [];
-          viewU8[0] = args.length & 0xff;
+          const typeIds = [];
+          let i = 0, offset = 1;
+          viewU8[0] = args.length & 0xff /* header = # of args */;
           for(; i < args.length; ++i, ++offset){
+            /* Write the TypeIds.id value into the next args.length
+               bytes. */
             typeIds.push(getTypeId(args[i]));
             viewU8[offset] = typeIds[i].id;
           }
           for(i = 0; i < args.length; ++i) {
+            /* Deserialize the following bytes based on their
+               corresponding TypeIds.id from the header. */
             const t = typeIds[i];
             if(t.setter){
               viewDV[t.setter](offset, args[i], state.littleEndian);
               offset += t.size;
-            }else{
+            }else{/*String*/
               const s = textEncoder.encode(args[i]);
               viewDV.setInt32(offset, s.byteLength, state.littleEndian);
               offset += 4;
@@ -774,7 +821,10 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
        but cannot report the nature of the failure.
     */
     opfsUtil.deleteEntry = function(fsEntryName,recursive=false){
-      return 0===opRun('xDelete', fsEntryName, 0, recursive);
+      mTimeStart('xDelete');
+      const rc = opRun('xDelete', fsEntryName, 0, recursive);
+      mTimeEnd();
+      return 0===rc;
     };
     /**
        Synchronously creates the given directory name, recursively, in
@@ -782,7 +832,10 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
        directory already exists, else false.
     */
     opfsUtil.mkdir = function(absDirName){
-      return 0===opRun('mkdir', absDirName);
+      mTimeStart('mkdir');
+      const rc = opRun('mkdir', absDirName);
+      mTimeEnd();
+      return 0===rc;
     };
     /**
        Synchronously checks whether the given OPFS filesystem exists,

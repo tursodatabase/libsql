@@ -136,8 +136,8 @@ const getDirForPath = async function f(absFilename, createDirs = false){
 
 
 /**
-   Stores the given value at the array index reserved for the given op
-   and then Atomics.notify()'s it.
+   Stores the given value at state.sabOPView[state.opIds.rc] and then
+   Atomics.notify()'s it.
 */
 const storeAndNotify = (opName, value)=>{
   log(opName+"() => notify(",state.opIds.rc,",",value,")");
@@ -190,10 +190,11 @@ const vfsAsyncImpls = {
     try {
         await getDirForPath(dirname+"/filepart", true);
     }catch(e){
-      //error("mkdir failed",filename, e.message);
+      state.s11n.serialize(e.message);
       rc = state.sq3Codes.SQLITE_IOERR;
+    }finally{
+      wTimeEnd();
     }
-    wTimeEnd();
     storeAndNotify('mkdir', rc);
     mTimeEnd();
   },
@@ -216,9 +217,11 @@ const vfsAsyncImpls = {
       const [dh, fn] = await getDirForPath(filename);
       await dh.getFileHandle(fn);
     }catch(e){
+      state.s11n.serialize(e.message);
       rc = state.sq3Codes.SQLITE_IOERR;
+    }finally{
+      wTimeEnd();
     }
-    wTimeEnd();
     storeAndNotify('xAccess', rc);
     mTimeEnd();
   },
@@ -236,6 +239,7 @@ const vfsAsyncImpls = {
         catch(e){ warn("Ignoring dirHandle.removeEntry() failure of",fh,e) }
       }
     }else{
+      state.s11n.serialize();
       rc = state.sq3Codes.SQLITE_NOTFOUND;
     }
     wTimeEnd();
@@ -274,9 +278,7 @@ const vfsAsyncImpls = {
         filename = filename.join('/');
       }
     }catch(e){
-      /* Ignoring: _presumably_ the file can't be found or a dir is
-         not empty. */
-      //error("Delete failed",filename, e.message);
+      state.s11n.serialize(e.message);
       rc = state.sq3Codes.SQLITE_IOERR_DELETE;
     }
     wTimeEnd();
@@ -292,7 +294,7 @@ const vfsAsyncImpls = {
       state.s11n.serialize(Number(sz));
       sz = 0;
     }catch(e){
-      error("xFileSize():",e, fh);
+      state.s11n.serialize(e.message);
       sz = state.sq3Codes.SQLITE_IOERR;
     }
     wTimeEnd();
@@ -337,6 +339,7 @@ const vfsAsyncImpls = {
     }catch(e){
       wTimeEnd();
       error(opName,e);
+      state.s11n.serialize(e.message);
       storeAndNotify(opName, state.sq3Codes.SQLITE_IOERR);
     }
     mTimeEnd();
@@ -358,6 +361,7 @@ const vfsAsyncImpls = {
       }
     }catch(e){
       error("xRead() failed",e,fh);
+      state.s11n.serialize(e.message);
       rc = state.sq3Codes.SQLITE_IOERR_READ;
     }
     storeAndNotify('xRead',rc);
@@ -366,12 +370,18 @@ const vfsAsyncImpls = {
   xSync: async function(fid,flags/*ignored*/){
     mTimeStart('xSync');
     const fh = __openFiles[fid];
+    let rc = 0;
     if(!fh.readOnly && fh.accessHandle){
-      wTimeStart('xSync');
-      await fh.accessHandle.flush();
-      wTimeEnd();
+      try {
+        wTimeStart('xSync');
+        await fh.accessHandle.flush();
+      }catch(e){
+        state.s11n.serialize(e.message);
+      }finally{
+        wTimeEnd();
+      }
     }
-    storeAndNotify('xSync',0);
+    storeAndNotify('xSync',rc);
     mTimeEnd();
   },
   xTruncate: async function(fid,size){
@@ -384,6 +394,7 @@ const vfsAsyncImpls = {
       await fh.accessHandle.truncate(size);
     }catch(e){
       error("xTruncate():",e,fh);
+      state.s11n.serialize(e.message);
       rc = state.sq3Codes.SQLITE_IOERR_TRUNCATE;
     }
     wTimeEnd();
@@ -403,6 +414,7 @@ const vfsAsyncImpls = {
       ) ? 0 : state.sq3Codes.SQLITE_IOERR_WRITE;
     }catch(e){
       error("xWrite():",e,fh);
+      state.s11n.serialize(e.message);
       rc = state.sq3Codes.SQLITE_IOERR_WRITE;
     }finally{
       wTimeEnd();
@@ -413,53 +425,42 @@ const vfsAsyncImpls = {
 };
 
 const initS11n = ()=>{
-  // Achtung: this code is 100% duplicated in the other half of this proxy!
-
   /**
-     Historical note: this impl was initially about 1% this size by using
-     using JSON.stringify/parse(), but using fit-to-purpose serialization
-     saves considerable runtime.
+     ACHTUNG: this code is 100% duplicated in the other half of this
+     proxy! The documentation is maintained in the "synchronous half".
   */
-
   if(state.s11n) return state.s11n;
   const textDecoder = new TextDecoder(),
   textEncoder = new TextEncoder('utf-8'),
   viewU8 = new Uint8Array(state.sabIO, state.sabS11nOffset, state.sabS11nSize),
   viewDV = new DataView(state.sabIO, state.sabS11nOffset, state.sabS11nSize);
   state.s11n = Object.create(null);
-
   const TypeIds = Object.create(null);
   TypeIds.number  = { id: 1, size: 8, getter: 'getFloat64', setter: 'setFloat64' };
   TypeIds.bigint  = { id: 2, size: 8, getter: 'getBigInt64', setter: 'setBigInt64' };
   TypeIds.boolean = { id: 3, size: 4, getter: 'getInt32', setter: 'setInt32' };
   TypeIds.string =  { id: 4 };
-
-  const getTypeId = (v)=>{
-    return TypeIds[typeof v] || toss("This value type cannot be serialized.",v);
-  };
+  const getTypeId = (v)=>(
+    TypeIds[typeof v]
+      || toss("Maintenance required: this value type cannot be serialized.",v)
+  );
   const getTypeIdById = (tid)=>{
     switch(tid){
-    case TypeIds.number.id: return TypeIds.number;
-    case TypeIds.bigint.id: return TypeIds.bigint;
-    case TypeIds.boolean.id: return TypeIds.boolean;
-    case TypeIds.string.id: return TypeIds.string;
-    default: toss("Invalid type ID:",tid);
+      case TypeIds.number.id: return TypeIds.number;
+      case TypeIds.bigint.id: return TypeIds.bigint;
+      case TypeIds.boolean.id: return TypeIds.boolean;
+      case TypeIds.string.id: return TypeIds.string;
+      default: toss("Invalid type ID:",tid);
     }
   };
-
-  /**
-     Returns an array of the state serialized by the most recent
-     serialize() operation (here or in the counterpart thread), or
-     null if the serialization buffer is empty.
-  */
   state.s11n.deserialize = function(){
     ++metrics.s11n.deserialize.count;
     const t = performance.now();
-    let rc = null;
     const argc = viewU8[0];
+    const rc = argc ? [] : null;
     if(argc){
-      rc = [];
-      let offset = 1, i, n, v, typeIds = [];
+      const typeIds = [];
+      let offset = 1, i, n, v;
       for(i = 0; i < argc; ++i, ++offset){
         typeIds.push(getTypeIdById(viewU8[offset]));
       }
@@ -468,7 +469,7 @@ const initS11n = ()=>{
         if(t.getter){
           v = viewDV[t.getter](offset, state.littleEndian);
           offset += t.size;
-        }else{
+        }else{/*String*/
           n = viewDV.getInt32(offset, state.littleEndian);
           offset += 4;
           v = textDecoder.decode(viewU8.slice(offset, offset+n));
@@ -481,36 +482,28 @@ const initS11n = ()=>{
     metrics.s11n.deserialize.time += performance.now() - t;
     return rc;
   };
-
-  /**
-     Serializes all arguments to the shared buffer for consumption
-     by the counterpart thread.
-
-     This routine is only intended for serializing OPFS VFS
-     arguments and (in at least one special case) result values,
-     and the buffer is sized to be able to comfortably handle
-     those.
-
-     If passed no arguments then it zeroes out the serialization
-     state.
-  */
   state.s11n.serialize = function(...args){
-    ++metrics.s11n.serialize.count;
     const t = performance.now();
+    ++metrics.s11n.serialize.count;
     if(args.length){
       //log("serialize():",args);
-      let i = 0, offset = 1, typeIds = [];
-      viewU8[0] = args.length & 0xff;
+      const typeIds = [];
+      let i = 0, offset = 1;
+      viewU8[0] = args.length & 0xff /* header = # of args */;
       for(; i < args.length; ++i, ++offset){
+        /* Write the TypeIds.id value into the next args.length
+           bytes. */
         typeIds.push(getTypeId(args[i]));
         viewU8[offset] = typeIds[i].id;
       }
       for(i = 0; i < args.length; ++i) {
+        /* Deserialize the following bytes based on their
+           corresponding TypeIds.id from the header. */
         const t = typeIds[i];
         if(t.setter){
           viewDV[t.setter](offset, args[i], state.littleEndian);
           offset += t.size;
-        }else{
+        }else{/*String*/
           const s = textEncoder.encode(args[i]);
           viewDV.setInt32(offset, s.byteLength, state.littleEndian);
           offset += 4;
@@ -548,6 +541,9 @@ const waitLoop = async function f(){
       Atomics.store(state.sabOPView, state.opIds.whichOp, 0);
       const hnd = opHandlers[opId] ?? toss("No waitLoop handler for whichOp #",opId);
       const args = state.s11n.deserialize();
+      state.s11n.serialize()/* clear s11n to keep the caller from
+                               confusing this with an exception string
+                               written by the upcoming operation */;
       //warn("waitLoop() whichOp =",opId, hnd, args);
       if(hnd.f) await hnd.f(...args);
       else error("Missing callback for opId",opId);
