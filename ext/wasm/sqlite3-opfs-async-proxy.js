@@ -190,7 +190,7 @@ const vfsAsyncImpls = {
     try {
         await getDirForPath(dirname+"/filepart", true);
     }catch(e){
-      state.s11n.serialize(e.message);
+      state.s11n.storeException(e);
       rc = state.sq3Codes.SQLITE_IOERR;
     }finally{
       wTimeEnd();
@@ -217,7 +217,7 @@ const vfsAsyncImpls = {
       const [dh, fn] = await getDirForPath(filename);
       await dh.getFileHandle(fn);
     }catch(e){
-      state.s11n.serialize(e.message);
+      state.s11n.storeException(e);
       rc = state.sq3Codes.SQLITE_IOERR;
     }finally{
       wTimeEnd();
@@ -278,7 +278,7 @@ const vfsAsyncImpls = {
         filename = filename.join('/');
       }
     }catch(e){
-      state.s11n.serialize(e.message);
+      state.s11n.storeException(e);
       rc = state.sq3Codes.SQLITE_IOERR_DELETE;
     }
     wTimeEnd();
@@ -294,7 +294,7 @@ const vfsAsyncImpls = {
       state.s11n.serialize(Number(sz));
       sz = 0;
     }catch(e){
-      state.s11n.serialize(e.message);
+      state.s11n.storeException(e);
       sz = state.sq3Codes.SQLITE_IOERR;
     }
     wTimeEnd();
@@ -339,7 +339,7 @@ const vfsAsyncImpls = {
     }catch(e){
       wTimeEnd();
       error(opName,e);
-      state.s11n.serialize(e.message);
+      state.s11n.storeException(e);
       storeAndNotify(opName, state.sq3Codes.SQLITE_IOERR);
     }
     mTimeEnd();
@@ -361,7 +361,7 @@ const vfsAsyncImpls = {
       }
     }catch(e){
       error("xRead() failed",e,fh);
-      state.s11n.serialize(e.message);
+      state.s11n.storeException(e);
       rc = state.sq3Codes.SQLITE_IOERR_READ;
     }
     storeAndNotify('xRead',rc);
@@ -376,7 +376,7 @@ const vfsAsyncImpls = {
         wTimeStart('xSync');
         await fh.accessHandle.flush();
       }catch(e){
-        state.s11n.serialize(e.message);
+        state.s11n.storeException(e);
       }finally{
         wTimeEnd();
       }
@@ -394,7 +394,7 @@ const vfsAsyncImpls = {
       await fh.accessHandle.truncate(size);
     }catch(e){
       error("xTruncate():",e,fh);
-      state.s11n.serialize(e.message);
+      state.s11n.storeException(e);
       rc = state.sq3Codes.SQLITE_IOERR_TRUNCATE;
     }
     wTimeEnd();
@@ -414,7 +414,7 @@ const vfsAsyncImpls = {
       ) ? 0 : state.sq3Codes.SQLITE_IOERR_WRITE;
     }catch(e){
       error("xWrite():",e,fh);
-      state.s11n.serialize(e.message);
+      state.s11n.storeException(e);
       rc = state.sq3Codes.SQLITE_IOERR_WRITE;
     }finally{
       wTimeEnd();
@@ -517,6 +517,11 @@ const initS11n = ()=>{
     }
     metrics.s11n.serialize.time += performance.now() - t;
   };
+
+  state.s11n.storeException = state.asyncS11nExceptions
+    ? ((e)=>state.s11n.serialize(e.message))
+    : ()=>{};
+
   return state.s11n;
 }/*initS11n()*/;
 
@@ -570,6 +575,7 @@ navigator.storage.getDirectory().then(function(d){
           /* Receive shared state from synchronous partner */
           const opt = data.args;
           state.littleEndian = opt.littleEndian;
+          state.asyncS11nExceptions = opt.asyncS11nExceptions;
           state.verbose = opt.verbose ?? 2;
           state.fileBufferSize = opt.fileBufferSize;
           state.sabS11nOffset = opt.sabS11nOffset;

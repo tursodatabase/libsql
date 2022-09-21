@@ -99,7 +99,7 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
     options.proxyUri = callee.defaultProxyUri;
   }
 
-  const thePromise = new Promise(function(promiseResolve, promiseReject){
+  const thePromise = new Promise(function(promiseResolve, promiseReject_){
     const loggers = {
       0:console.error.bind(console),
       1:console.warn.bind(console),
@@ -118,13 +118,6 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
     const sqlite3_vfs = capi.sqlite3_vfs;
     const sqlite3_file = capi.sqlite3_file;
     const sqlite3_io_methods = capi.sqlite3_io_methods;
-    const W = new Worker(options.proxyUri);
-    W._originalOnError = W.onerror /* will be restored later */;
-    W.onerror = function(err){
-      // The error object doesn't contain any useful info when the
-      // failure is, e.g., that the remote script is 404.
-      promiseReject(new Error("Loading OPFS async Worker failed for unknown reasons."));
-    };
     /**
        Generic utilities for working with OPFS. This will get filled out
        by the Promise setup and, on success, installed as sqlite3.opfs.
@@ -200,6 +193,18 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
        gets called at all in a wasm build, which is undefined).
     */
 
+    const promiseReject = function(err){
+      opfsVfs.dispose();
+      return promiseReject_(err);
+    };
+    const W = new Worker(options.proxyUri);
+    W._originalOnError = W.onerror /* will be restored later */;
+    W.onerror = function(err){
+      // The error object doesn't contain any useful info when the
+      // failure is, e.g., that the remote script is 404.
+      promiseReject(new Error("Loading OPFS async Worker failed for unknown reasons."));
+    };
+
     /**
        State which we send to the async-api Worker or share with it.
        This object must initially contain only cloneable or sharable
@@ -220,15 +225,20 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
        require a bit of acrobatics but should be feasible.
     */
     const state = Object.create(null);
-    state.littleEndian = true;
     state.verbose = options.verbose;
+    state.littleEndian = true;
+    /** If true, the async counterpart should log exceptions to
+        the serialization channel. That produces a great deal of
+        noise for seemingly innocuous things like xAccess() checks
+        for missing files. */
+    state.asyncS11nExceptions = false;
     /* Size of file I/O buffer block. 64k = max sqlite3 page size. */
     state.fileBufferSize =
       1024 * 64;
     state.sabS11nOffset = state.fileBufferSize;
     /**
        The size of the block in our SAB for serializing arguments and
-       result values. Need to be large enough to hold serialized
+       result values. Needs to be large enough to hold serialized
        values of any of the proxied APIs. Filenames are the largest
        part but are limited to opfsVfs.$mxPathname bytes.
     */
@@ -278,7 +288,6 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
        counterpart...
     */
     state.sq3Codes = Object.create(null);
-    state.sq3Codes._reverse = Object.create(null);
     [
       'SQLITE_ERROR', 'SQLITE_IOERR',
       'SQLITE_NOTFOUND', 'SQLITE_MISUSE',
@@ -291,10 +300,7 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
       'SQLITE_OPEN_READONLY'
     ].forEach(function(k){
       state.sq3Codes[k] = capi[k] || toss("Maintenance required: not found:",k);
-      state.sq3Codes._reverse[capi[k]] = k;
     });
-
-    const isWorkerErrCode = (n)=>!!state.sq3Codes._reverse[n];
 
     /**
        Runs the given operation (by name) in the async worker
@@ -312,11 +318,11 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
       const t = performance.now();
       Atomics.wait(state.sabOPView, state.opIds.rc, -1);
       const rc = Atomics.load(state.sabOPView, state.opIds.rc);
-      if(rc){
+      metrics[op].wait += performance.now() - t;
+      if(rc && state.asyncS11nExceptions){
         const err = state.s11n.deserialize();
         if(err) error(op+"() async error:",...err);
       }
-      metrics[op].wait += performance.now() - t;
       return rc;
     };
 
@@ -621,7 +627,7 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
       xFileSize: function(pFile,pSz64){
         mTimeStart('xFileSize');
         const rc = opRun('xFileSize', pFile);
-        if(!isWorkerErrCode(rc)){
+        if(0==rc){
           const sz = state.s11n.deserialize()[0];
           wasm.setMemValue(pSz64, BigInt(sz), 'i64');
         }
@@ -882,6 +888,10 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
         const dbFile = "/sanity/check/file"+randomFilename(8);
         const zDbFile = wasm.scopedAllocCString(dbFile);
         let rc;
+        state.s11n.serialize("This is ä string.");
+        rc = state.s11n.deserialize();
+        log("deserialize() says:",rc);
+        if("This is ä string."!==rc[0]) toss("String d13n error.");
         vfsSyncWrappers.xAccess(opfsVfs.pointer, zDbFile, 0, pOut);
         rc = wasm.getMemValue(pOut,'i32');
         log("xAccess(",dbFile,") exists ?=",rc);
@@ -889,7 +899,7 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
                                    fid, openFlags, pOut);
         log("open rc =",rc,"state.sabOPView[xOpen] =",
             state.sabOPView[state.opIds.xOpen]);
-        if(isWorkerErrCode(rc)){
+        if(0!==rc){
           error("open failed with code",rc);
           return;
         }
@@ -936,17 +946,17 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
       //log("Worker.onmessage:",data);
       switch(data.type){
           case 'opfs-async-loaded':
-            /*Pass our config and shared state on to the async worker.*/
+            /*Arrives as soon as the asyc proxy finishes loading.
+              Pass our config and shared state on to the async worker.*/
             W.postMessage({type: 'opfs-async-init',args: state});
             break;
           case 'opfs-async-inited':{
-            /*Indicates that the async partner has received the 'init',
-              so we now know that the state object is no longer subject to
-              being copied by a pending postMessage() call.*/
+            /*Indicates that the async partner has received the 'init'
+              and has finished initializing, so the real work can
+              begin...*/
             try {
               const rc = capi.sqlite3_vfs_register(opfsVfs.pointer, 0);
               if(rc){
-                opfsVfs.dispose();
                 toss("sqlite3_vfs_register(OPFS) failed with rc",rc);
               }
               if(opfsVfs.pointer !== capi.sqlite3_vfs_find("opfs")){
