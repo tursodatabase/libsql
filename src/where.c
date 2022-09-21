@@ -750,6 +750,11 @@ static void whereTraceIndexInfoOutputs(sqlite3_index_info *p){
 ** pTerm must be EP_OuterON if pSrc is the right operand of an
 ** outer join.  pTerm can be either EP_OuterON or EP_InnerON if pSrc
 ** is the left operand of a RIGHT join.
+**
+** See https://sqlite.org/forum/forumpost/206d99a16dd9212f
+** for an example of a WHERE clause constraints that may not be used on
+** the right table of a RIGHT JOIN because the constraint implies a
+** not-NULL condition on the left table of the RIGHT JOIN.
 */
 static int constraintCompatibleWithOuterJoin(
   const WhereTerm *pTerm,       /* WHERE clause term to check */
@@ -793,7 +798,7 @@ static int termCanDriveIndex(
   if( (pSrc->fg.jointype & (JT_LEFT|JT_LTORJ|JT_RIGHT))!=0
    && !constraintCompatibleWithOuterJoin(pTerm,pSrc)
   ){
-    return 0;
+    return 0;  /* See https://sqlite.org/forum/forumpost/51e6959f61 */
   }
   if( (pTerm->prereqRight & notReady)!=0 ) return 0;
   assert( (pTerm->eOperator & (WO_OR|WO_AND))==0 );
@@ -1205,11 +1210,6 @@ static sqlite3_index_info *allocateIndexInfo(
     assert( (pTerm->eOperator & (WO_OR|WO_AND))==0 );
     assert( pTerm->u.x.leftColumn>=XN_ROWID );
     assert( pTerm->u.x.leftColumn<pTab->nCol );
-
-    /* tag-20191211-002: WHERE-clause constraints are not useful to the
-    ** right-hand table of a LEFT JOIN nor to the either table of a
-    ** RIGHT JOIN.  See tag-20191211-001 for the
-    ** equivalent restriction for ordinary tables. */
     if( (pSrc->fg.jointype & (JT_LEFT|JT_LTORJ|JT_RIGHT))!=0
      && !constraintCompatibleWithOuterJoin(pTerm,pSrc)
     ){
@@ -2871,25 +2871,11 @@ static int whereLoopAddBtreeIndex(
     ** to mix with a lower range bound from some other source */
     if( pTerm->wtFlags & TERM_LIKEOPT && pTerm->eOperator==WO_LT ) continue;
 
-    /* tag-20191211-001:  Do not allow constraints from the WHERE clause to
-    ** be used by the right table of a LEFT JOIN nor by the left table of a
-    ** RIGHT JOIN.  Only constraints in the ON clause are allowed.
-    ** See tag-20191211-002 for the vtab equivalent.  
-    **
-    ** 2022-06-06: See https://sqlite.org/forum/forumpost/206d99a16dd9212f
-    ** for an example of a WHERE clause constraints that may not be used on
-    ** the right table of a RIGHT JOIN because the constraint implies a
-    ** not-NULL condition on the left table of the RIGHT JOIN.
-    **
-    ** 2022-06-10: The same condition applies to termCanDriveIndex() above.
-    ** https://sqlite.org/forum/forumpost/51e6959f61
-    */
     if( (pSrc->fg.jointype & (JT_LEFT|JT_LTORJ|JT_RIGHT))!=0
      && !constraintCompatibleWithOuterJoin(pTerm,pSrc)
     ){
       continue;
     }
-
     if( IsUniqueIndex(pProbe) && saved_nEq==pProbe->nKeyCol-1 ){
       pBuilder->bldFlags1 |= SQLITE_BLDF1_UNIQUE;
     }else{
