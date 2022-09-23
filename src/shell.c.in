@@ -7261,7 +7261,7 @@ end_ar_command:
 */
 static int recoverSqlCb(void *pCtx, const char *zSql){
   ShellState *pState = (ShellState*)pCtx;
-  raw_printf(stdout, "%s;\n", zSql);
+  utf8_printf(pState->out, "%s;\n", zSql);
   return SQLITE_OK;
 }
 

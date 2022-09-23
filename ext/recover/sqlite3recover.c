@@ -526,12 +526,8 @@ static void recoverPageIsUsed(
 ){
   sqlite3_recover *p = (sqlite3_recover*)sqlite3_user_data(pCtx);
   i64 pgno = sqlite3_value_int64(apArg[0]);
-  sqlite3_stmt *pStmt = 0;
-  int bRet;
-
   assert( nArg==1 );
-  bRet = recoverBitmapQuery(p->pUsed, pgno);
-  sqlite3_result_int(pCtx, bRet);
+  sqlite3_result_int(pCtx, recoverBitmapQuery(p->pUsed, pgno));
 }
 
 /*
@@ -572,7 +568,6 @@ static void recoverGetPage(
     }
 
     if( pStmt ){
-      int rc = SQLITE_OK;
       sqlite3_bind_int64(pStmt, 1, pgno);
       if( SQLITE_ROW==sqlite3_step(pStmt) ){
         sqlite3_result_value(pCtx, sqlite3_column_value(pStmt, 0));
@@ -1039,7 +1034,6 @@ static int recoverWriteSchema2(sqlite3_recover *p){
 
   if( pSelect ){
     while( sqlite3_step(pSelect)==SQLITE_ROW ){
-      i64 iRoot = sqlite3_column_int64(pSelect, 0);
       const char *zSql = (const char*)sqlite3_column_text(pSelect, 1);
       int rc = sqlite3_exec(p->dbOut, zSql, 0, 0, 0);
       if( rc==SQLITE_OK ){
@@ -1557,8 +1551,6 @@ static int recoverWriteData(sqlite3_recover *p){
 
           if( bNewCell ){
             if( nVal>=0 ){
-              int iVal = 0;
-
               if( pInsert==0 || nVal!=nInsert ){
                 recoverFinalize(p, pInsert);
                 pInsert = recoverInsertStmt(p, pTab, nVal);
