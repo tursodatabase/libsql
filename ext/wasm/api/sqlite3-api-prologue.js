@@ -148,7 +148,11 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       exports: undefined,
       memory: undefined,
       bigIntEnabled: (()=>{
-        if('undefined'!==typeof Module) return !!Module.HEAPU64;
+        if('undefined'!==typeof Module){
+          /* Emscripten module will contain HEAPU64 when build with
+             -sWASM_BIGINT=1, else it will not. */
+          return !!Module.HEAPU64;
+        }
         return !!self.BigInt64Array;
       })(),
       allocExportName: 'malloc',
@@ -771,7 +775,8 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     return (p && name) ? name.startsWith(p+'/') : false;
   };
 
-  if(0===capi.wasm.exports.sqlite3_vfs_find(0)){
+  // This bit is highly arguable and is incompatible with the fiddle shell.
+  if(false && 0===capi.wasm.exports.sqlite3_vfs_find(0)){
     /* Assume that sqlite3_initialize() has not yet been called.
        This will be the case in an SQLITE_OS_KV build. */
     capi.wasm.exports.sqlite3_initialize();

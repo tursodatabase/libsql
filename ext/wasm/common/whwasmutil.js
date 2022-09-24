@@ -1030,6 +1030,22 @@ self.WhWasmUtilInstaller = function(target){
     (jstr, returnWithLength=false)=>__allocCStr(jstr, returnWithLength,
                                                 target.scopedAlloc, 'scopedAllocCString()');
 
+  // impl for allocMainArgv() and scopedAllocMainArgv().
+  const __allocMainArgv = function(isScoped, list){
+    if(!list.length) toss("Cannot allocate empty array.");
+    const pList = target[
+      isScoped ? 'scopedAlloc' : 'alloc'
+    ](list.length * target.ptrSizeof);
+    let i = 0;
+    list.forEach((e)=>{
+      target.setPtrValue(pList + (target.ptrSizeof * i++),
+                         target[
+                           isScoped ? 'scopedAllocCString' : 'allocCString'
+                         ](""+e));
+    });
+    return pList;
+  };
+
   /**
      Creates an array, using scopedAlloc(), suitable for passing to a
      C-level main() routine. The input is a collection with a length
@@ -1042,16 +1058,13 @@ self.WhWasmUtilInstaller = function(target){
 
      Throws if list.length is falsy or scopedAllocPush() is not active.
   */
-  target.scopedAllocMainArgv = function(list){
-    if(!list.length) toss("Cannot allocate empty array.");
-    const pList = target.scopedAlloc(list.length * target.ptrSizeof);
-    let i = 0;
-    list.forEach((e)=>{
-      target.setPtrValue(pList + (target.ptrSizeof * i++),
-                         target.scopedAllocCString(""+e));
-    });
-    return pList;
-  };
+  target.scopedAllocMainArgv = (list)=>__allocMainArgv(true, list);
+
+  /**
+     Identical to scopedAllocMainArgv() but uses alloc() instead of
+     scopedAllocMainArgv
+  */
+  target.allocMainArgv = (list)=>__allocMainArgv(false, list);
 
   /**
      Wraps function call func() in a scopedAllocPush() and

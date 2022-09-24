@@ -104,6 +104,8 @@
 
   const stdout = (...args)=>wMsg('stdout', args);
   const stderr = (...args)=>wMsg('stderr', args);
+
+  const fixmeOPFS = "(FIXME: won't work with vanilla OPFS.)";
   
   self.onerror = function(/*message, source, lineno, colno, error*/) {
     const err = arguments[4];
@@ -125,13 +127,43 @@
       if(!f._) f._ = fiddleModule.cwrap('fiddle_db_filename', "string", ['string']);
       return f._();
     },
+    runMain: function f(){
+      if(f.argv) return f.argv.rc;
+      const dbName = "/fiddle.sqlite3";
+      f.argv = [
+        'sqlite3-fiddle.wasm',
+        '-bail', '-safe',
+        dbName
+        /* Reminder: because of how we run fiddle, we have to ensure
+           that any argv strings passed to its main() are valid until
+           the wasm environment shuts down. */
+      ];
+      const capi = fiddleModule.sqlite3.capi;
+      f.argv.pArgv = capi.wasm.allocMainArgv(f.argv);
+      f.argv.rc = capi.wasm.exports.fiddle_main(
+        f.argv.length, f.argv.pArgv
+      );
+      if(f.argv.rc){
+        stderr("Fatal error initializing sqlite3 shell.");
+        fiddleModule.isDead = true;
+        return false;
+      }
+      stdout("SQLite version", capi.sqlite3_libversion(),
+             capi.sqlite3_sourceid().substr(0,19));
+      stdout('Welcome to the "fiddle" shell');
+      stdout('Enter ".help" for usage hints.');
+      return true;
+    },
     /**
        Runs the given text through the shell as if it had been typed
        in by a user. Fires a working/start event before it starts and
        working/end event when it finishes.
     */
     exec: function f(sql){
-      if(!f._) f._ = fiddleModule.cwrap('fiddle_exec', null, ['string']);
+      if(!f._){
+        if(!this.runMain()) return;
+        f._ = fiddleModule.cwrap('fiddle_exec', null, ['string']);
+      }
       if(fiddleModule.isDead){
         stderr("shell module has exit()ed. Cannot run SQL.");
         return;
@@ -140,18 +172,18 @@
       try {
         if(f._running){
           stderr('Cannot run multiple commands concurrently.');
-        }else{
+        }else if(sql){
           f._running = true;
           f._(sql);
         }
-      } finally {
+      }finally{
         delete f._running;
         wMsg('working','end');
       }
     },
     resetDb: function f(){
       if(!f._) f._ = fiddleModule.cwrap('fiddle_reset_db', null);
-      stdout("Resetting database.");
+      stdout("Resetting database.",fixmeOPFS);
       f._();
       stdout("Reset",this.dbFilename());
     },
@@ -189,7 +221,7 @@
           */
         case 'db-export': {
           const fn = Sqlite3Shell.dbFilename();
-          stdout("Exporting",fn+".");
+          stdout("Exporting",fn+".",fixmeOPFS);
           const fn2 = fn ? fn.split(/[/\\]/).pop() : null;
           try{
             if(!fn2) throw new Error("DB appears to be closed.");
@@ -298,18 +330,19 @@
   initFiddleModule(fiddleModule).then(function(thisModule){
     const S = thisModule.sqlite3;
     const atEnd = ()=>{
-      thisModule.fsUnlink = thisModule.cwrap('sqlite3_wasm_vfs_unlink','number',['string']);
+      thisModule.fsUnlink = function(fn){
+        stderr("unlink:",fixmeOPFS);
+        return thisModule.ccall('sqlite3_wasm_vfs_unlink','number',['string']);
+      };
       wMsg('fiddle-ready');
     };
-    if(0){
+    if(1){
       S.installOpfsVfs().finally(function(){
-        if(S.opfs){
-          stdout("OPFS is available.");
-        }
+        if(S.opfs) stdout("OPFS is available.");
         atEnd();
       });
     }else{
       atEnd();
     }
-  });
+  })/*then()*/;
 })();
