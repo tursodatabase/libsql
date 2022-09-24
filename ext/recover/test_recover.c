@@ -89,6 +89,7 @@ static int testRecoverCmd(
     { "errmsg",    0, ""            }, /* 2 */
     { "errcode",   0, ""            }, /* 3 */
     { "finish",  0, ""              }, /* 4 */
+    { "step",  0, ""                }, /* 5 */
     { 0 }
   };
   int rc = TCL_OK;
@@ -115,7 +116,8 @@ static int testRecoverCmd(
         "lostandfound",    /* 1 */
         "freelistcorrupt", /* 2 */
         "rowids",          /* 3 */
-        "invalid",         /* 4 */
+        "slowindexes",     /* 4 */
+        "invalid",         /* 5 */
         0
       };
       int iOp = 0;
@@ -153,6 +155,14 @@ static int testRecoverCmd(
           break;
         }
         case 4: {
+          int iVal = 0;
+          if( Tcl_GetBooleanFromObj(interp, objv[3], &iVal) ) return TCL_ERROR;
+          res = sqlite3_recover_config(pTest->p, 
+              SQLITE_RECOVER_SLOWINDEXES, (void*)&iVal
+          );
+          break;
+        }
+        case 5: {
           res = sqlite3_recover_config(pTest->p, 12345, 0);
           break;
         }
@@ -185,6 +195,11 @@ static int testRecoverCmd(
       res2 = sqlite3_recover_finish(pTest->p);
       assert( res2==res );
       if( res ) return TCL_ERROR;
+      break;
+    }
+    case 5:  assert( sqlite3_stricmp("step", aSub[iSub].zSub)==0 ); {
+      int res = sqlite3_recover_step(pTest->p);
+      Tcl_SetObjResult(interp, Tcl_NewIntObj(res));
       break;
     }
   }

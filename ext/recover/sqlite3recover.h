@@ -145,10 +145,28 @@ int sqlite3_recover_config(sqlite3_recover*, int op, void *pArg);
 **   that are not also INTEGER PRIMARY KEY values. If this option is
 **   clear, then new rowids are assigned to all recovered rows. The
 **   default value is 1 (set).
+**
+** SQLITE_RECOVER_SLOWINDEXES:
+**   The pArg value must actually be a pointer to a value of type
+**   int containing value 0 or 1 cast as a (void*). If this option is clear
+**   (argument is 0), then when creating an output database, the recover 
+**   module creates and populates non-UNIQUE indexes right at the end of the
+**   recovery operation - after all recoverable data has been inserted
+**   into the new database. This is faster overall, but means that the
+**   final call to sqlite3_recover_step() for a recovery operation may
+**   be need to create a large number of indexes, which may be very slow.
+**
+**   Or, if this option is set (argument is 1), then non-UNIQUE indexes
+**   are created in the output database before it is populated with 
+**   recovered data. This is slower overall, but avoids the slow call
+**   to sqlite3_recover_step() at the end of the recovery operation.
+**
+**   The default option value is 0.
 */
 #define SQLITE_RECOVER_LOST_AND_FOUND   1
 #define SQLITE_RECOVER_FREELIST_CORRUPT 2
 #define SQLITE_RECOVER_ROWIDS           3
+#define SQLITE_RECOVER_SLOWINDEXES      4
 
 /*
 ** Perform a unit of work towards the recovery operation. This function 

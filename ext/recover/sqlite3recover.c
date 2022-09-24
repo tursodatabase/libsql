@@ -173,6 +173,7 @@ struct sqlite3_recover {
   char *zLostAndFound;            /* Name of lost-and-found table (or NULL) */
   int bFreelistCorrupt;           /* SQLITE_RECOVER_FREELIST_CORRUPT setting */
   int bRecoverRowid;              /* SQLITE_RECOVER_ROWIDS setting */
+  int bSlowIndexes;               /* SQLITE_RECOVER_SLOWINDEXES setting */
 
   /* Error code and error message */
   int errCode;                    /* For sqlite3_recover_errcode() */
@@ -991,16 +992,16 @@ static int recoverWriteSchema1(sqlite3_recover *p){
   sqlite3_stmt *pTblname = 0;
 
   pSelect = recoverPrepare(p, p->dbOut,
-      "WITH dbschema(rootpage, name, sql, tbl, isVirtual, isUnique) AS ("
+      "WITH dbschema(rootpage, name, sql, tbl, isVirtual, isIndex) AS ("
       "  SELECT rootpage, name, sql, "
       "    type='table', "
       "    sql LIKE 'create virtual%',"
-      "    (type='index' AND sql LIKE '%unique%')"
+      "    (type='index' AND (sql LIKE '%unique%' OR ?1))"
       "  FROM recovery.schema"
       ")"
       "SELECT rootpage, tbl, isVirtual, name, sql"
       " FROM dbschema "
-      "  WHERE tbl OR isUnique"
+      "  WHERE tbl OR isIndex"
       "  ORDER BY tbl DESC, name=='sqlite_sequence' DESC"
   );
 
@@ -1010,6 +1011,7 @@ static int recoverWriteSchema1(sqlite3_recover *p){
   );
 
   if( pSelect ){
+    sqlite3_bind_int(pSelect, 1, p->bSlowIndexes);
     while( sqlite3_step(pSelect)==SQLITE_ROW ){
       i64 iRoot = sqlite3_column_int64(pSelect, 0);
       int bTable = sqlite3_column_int(pSelect, 1);
@@ -1064,6 +1066,10 @@ static int recoverWriteSchema2(sqlite3_recover *p){
   sqlite3_stmt *pSelect = 0;
 
   pSelect = recoverPrepare(p, p->dbOut,
+      p->bSlowIndexes ?
+      "SELECT rootpage, sql FROM recovery.schema "
+      "  WHERE type!='table' AND type!='index'"
+      :
       "SELECT rootpage, sql FROM recovery.schema "
       "  WHERE type!='table' AND (type!='index' OR sql NOT LIKE '%unique%')"
   );
@@ -1895,6 +1901,10 @@ int sqlite3_recover_config(sqlite3_recover *p, int op, void *pArg){
 
       case SQLITE_RECOVER_ROWIDS:
         p->bRecoverRowid = *(int*)pArg;
+        break;
+
+      case SQLITE_RECOVER_SLOWINDEXES:
+        p->bSlowIndexes = *(int*)pArg;
         break;
 
       default:
