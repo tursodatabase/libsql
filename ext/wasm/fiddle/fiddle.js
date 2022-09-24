@@ -290,8 +290,8 @@
             return this;
           },
           /* Posts a message in the form {type, data} to the db worker. Returns this. */
-          wMsg: function(type,data){
-            this.worker.postMessage({type, data});
+          wMsg: function(type,data,transferables){
+            this.worker.postMessage({type, data}, transferables || []);
             return this;
           },
           /**
@@ -558,7 +558,8 @@
         SF.echo("Export failed:",ev.error);
         return;
       }
-      const blob = new Blob([ev.buffer], {type:"application/x-sqlite3"});
+      const blob = new Blob([ev.buffer],
+                            {type:"application/x-sqlite3"});
       const a = document.createElement('a');
       document.body.appendChild(a);
       a.href = window.URL.createObjectURL(blob);
@@ -593,7 +594,7 @@
         SF.wMsg('open',{
           filename: f.name,
           buffer: this.result
-        });
+        }, [this.result]);
       });
       r.addEventListener('error',function(){
         enableMutatingElements(true);
@@ -800,7 +801,8 @@ SELECT group_concat(rtrim(t),x'0a') as Mandelbrot FROM a;`}
             'may prove interesting or useful but is not an officially',
             'supported deliverable of the sqlite project. It is subject to',
             'any number of changes or outright removal at any time.\n');
-    SF.dbExec(null);
+    const urlParams = new URL(self.location.href).searchParams;
+    SF.dbExec(urlParams.get('sql') || null);
     delete ForceResizeKludge.$disabled;
     ForceResizeKludge();
   }/*onSFLoaded()*/;

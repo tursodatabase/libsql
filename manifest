@@ -1,5 +1,5 @@
-C Resolve\s"already\sconfigured"\swarnings\sfrom\sshell's\smain()\swhen\sstarting\sit\sup\sin\sfiddle\smode.
-D 2022-09-24T10:15:08.912
+C Fiddle:\smove,\srather\sthan\scopy,\sdata\sbuffers\sbetween\sthe\sthreads.\sFix\sthe\scase\sof\san\suploaded\sdb\sfailing\sto\sinstall\sbecause\sits\sfilename\sis\sthe\ssame\sas\sthe\sopened\sdb.
+D 2022-09-24T11:32:00.293
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -502,9 +502,9 @@ F ext/wasm/demo-kvvfs1.html 7d4f28873de67f51ac18c584b7d920825139866a96049a49c424
 F ext/wasm/demo-kvvfs1.js e884ea35022d772c0d1dd884b40011413696438394f605c6cd4808cfb1642a4a
 F ext/wasm/fiddle.make fd56fa21bada6ecbf860686a9a789ebda7cc3d9b60835927000fcb00246ea50f
 F ext/wasm/fiddle/emscripten.css 3d253a6fdb8983a2ac983855bfbdd4b6fa1ff267c28d69513dd6ef1f289ada3f
-F ext/wasm/fiddle/fiddle-worker.js 462dee066849c6cb1a0347e90d3c010ca8abb1640e63b3ed3813e88ae3558d64
+F ext/wasm/fiddle/fiddle-worker.js d3e4d1e442a9a86cc34f8bd646059d848cf3345b5220883379268b03b3c3cdfa
 F ext/wasm/fiddle/fiddle.html 5daf54e8f3d7777cbb1ca4f93affe28858dbfff25841cb4ab81d694efed28ec2
-F ext/wasm/fiddle/fiddle.js e7c6dee946818d0e6a10c89b640440fd5d93cbb9bddea490b98cf54e8bb67ae6
+F ext/wasm/fiddle/fiddle.js aa44051be6e48c53fd23c829177d43f557dcc6f0998ccfcbae7c473ff405f0c6
 F ext/wasm/index.html 8b4b7ea052d558262c8466f94326fb455c21049b2d1d3577ed0a5fce15101ba8
 F ext/wasm/jaccwabyt/jaccwabyt.js 0d7f32817456a0f3937fcfd934afeb32154ca33580ab264dab6c285e6dbbd215
 F ext/wasm/jaccwabyt/jaccwabyt.md 447cc02b598f7792edaa8ae6853a7847b8178a18ed356afacbdbf312b2588106
@@ -2026,8 +2026,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ef503ced5c2ca842be9aea9ef13719a378ed3020e884032db09afee1b8eba0a1
-R 8ff71a36ad5ceae355c6a421e1d0952c
+P 114ef3552af977b272a0baddeb9a2326484b60acfc75284e43c55530f86b413f
+R 2919c32f82c004411030482647bf2402
 U stephan
-Z e3192f3e3789b47f0628d3187b22766d
+Z 37118e27ece07b1ea1fafa2d63837d11
 # Remove this line to create a well-formed Fossil manifest.

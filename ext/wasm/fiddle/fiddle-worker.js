@@ -90,18 +90,13 @@
 "use strict";
 (function(){
   /**
-     Posts a message in the form {type,data} unless passed more than 2
-     args, in which case it posts {type, data:[arg1...argN]}.
-  */
-  const wMsg = function(type,data){
-    postMessage({
-      type,
-      data: arguments.length<3
-        ? data
-        : Array.prototype.slice.call(arguments,1)
-    });
-  };
-
+     Posts a message in the form {type,data}. If passed more than 2
+     args, the 3rd must be an array of "transferable" values to pass
+     as the 2nd argument to postMessage(). */
+  const wMsg =
+        (type,data,transferables)=>{
+          postMessage({type, data}, transferables || []);
+        };
   const stdout = (...args)=>wMsg('stdout', args);
   const stderr = (...args)=>wMsg('stderr', args);
 
@@ -242,10 +237,10 @@
           const fn2 = fn ? fn.split(/[/\\]/).pop() : null;
           try{
             if(!fn2) throw new Error("DB appears to be closed.");
-            wMsg('db-export',{
-              filename: fn2,
-              buffer: fiddleModule.FS.readFile(fn, {encoding:"binary"})
-            });
+            const buffer = fiddleModule.FS.readFile(
+              fn, {encoding:"binary"}
+            ).buffer;
+            wMsg('db-export',{filename: fn2, buffer}, [buffer]);
           }catch(e){
             /* Post a failure message so that UI elements disabled
                during the export can be re-enabled. */
@@ -258,16 +253,17 @@
         }
         case 'open': {
           /* Expects: {
-             buffer: ArrayBuffer | Uint8Array,
-             filename: for logging/informational purposes only
-             } */
+               buffer: ArrayBuffer | Uint8Array,
+               filename: the filename for the db. Any dir part is
+                         stripped.
+              }
+          */
           const opt = ev.data;
           let buffer = opt.buffer;
           stderr('open():',fixmeOPFS);
-          if(buffer instanceof Uint8Array){
-          }else if(buffer instanceof ArrayBuffer){
+          if(buffer instanceof ArrayBuffer){
             buffer = new Uint8Array(buffer);
-          }else{
+          }else if(!(buffer instanceof Uint8Array)){
             stderr("'open' expects {buffer:Uint8Array} containing an uploaded db.");
             return;
           }
@@ -277,18 +273,30 @@
               : ("db-"+((Math.random() * 10000000) | 0)+
                  "-"+((Math.random() * 10000000) | 0)+".sqlite3")
           );
-          /* We cannot delete the existing db file until the new one
-             is installed, which means that we risk overflowing our
-             quota (if any) by having both the previous and current
-             db briefly installed in the virtual filesystem. */
-          fiddleModule.FS.createDataFile("/", fn, buffer, true, true);
-          const oldName = Sqlite3Shell.dbFilename();
-          Sqlite3Shell.exec('.open "/'+fn+'"');
-          if(oldName && oldName !== fn){
-            try{fiddleModule.fsUnlink(oldName);}
-            catch(e){/*ignored*/}
+          try {
+            /* We cannot delete the existing db file until the new one
+               is installed, which means that we risk overflowing our
+               quota (if any) by having both the previous and current
+               db briefly installed in the virtual filesystem. */
+            const fnAbs = '/'+fn;
+            const oldName = Sqlite3Shell.dbFilename();
+            if(oldName && oldName===fnAbs){
+              /* We cannot create the replacement file while the current file
+                 is opened, nor does the shell have a .close command, so we
+                 must temporarily switch to another db... */
+              Sqlite3Shell.exec('.open :memory:');
+              fiddleModule.FS.unlink(fnAbs);
+            }
+            fiddleModule.FS.createDataFile("/", fn, buffer, true, true);
+            Sqlite3Shell.exec('.open "'+fnAbs+'"');
+            if(oldName && oldName!==fnAbs){
+              try{fiddleModule.fsUnlink(oldName)}
+              catch(e){/*ignored*/}
+            }
+            stdout("Replaced DB with",fn+".");
+          }catch(e){
+            stderr("Error installing db",fn+":",e.message);
           }
-          stdout("Replaced DB with",fn+".");
           return;
         }
     };
