@@ -203,7 +203,7 @@ do_test 12.1 {
 do_test 12.2 {
   $R run
   $R run
-} {21}
+} {0}
 
 do_test 12.3 {
   $R finish
