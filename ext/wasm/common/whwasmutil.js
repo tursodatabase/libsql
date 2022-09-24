@@ -1164,21 +1164,27 @@ self.WhWasmUtilInstaller = function(target){
   /** Map of type names to return result conversion functions. */
   cache.xWrap.convert.result = Object.create(null);
 
-  xcv.arg.i64 = (i)=>BigInt(i);
+  if(target.bigIntEnabled){
+    xcv.arg.i64 = (i)=>BigInt(i);
+  }
   xcv.arg.i32 = (i)=>(i | 0);
   xcv.arg.i16 = (i)=>((i | 0) & 0xFFFF);
   xcv.arg.i8  = (i)=>((i | 0) & 0xFF);
   xcv.arg.f32 = xcv.arg.float = (i)=>Number(i).valueOf();
   xcv.arg.f64 = xcv.arg.double = xcv.arg.f32;
   xcv.arg.int = xcv.arg.i32;
-  xcv.result['*'] = xcv.result['pointer'] = xcv.arg[ptrIR];
+  xcv.result['*'] = xcv.result['pointer'] = xcv.arg['**'] = xcv.arg[ptrIR];
+  xcv.result['number'] = (v)=>Number(v);
 
-  for(const t of ['i8', 'i16', 'i32', 'int', 'i64',
-                  'f32', 'float', 'f64', 'double']){
-    xcv.arg[t+'*'] = xcv.result[t+'*'] = xcv.arg[ptrIR]
-    xcv.result[t] = xcv.arg[t] || toss("Missing arg converter:",t);
+  {
+    const copyToResult = ['i8', 'i16', 'i32', 'int',
+                          'f32', 'float', 'f64', 'double'];
+    if(target.bigIntEnabled) copyToResult.push('i64');
+    for(const t of copyToResult){
+      xcv.arg[t+'*'] = xcv.result[t+'*'] = xcv.arg[ptrIR];
+      xcv.result[t] = xcv.arg[t] || toss("Missing arg converter:",t);
+    }
   }
-  xcv.arg['**'] = xcv.arg[ptrIR];
 
   /**
      In order for args of type string to work in various contexts in
@@ -1301,11 +1307,17 @@ self.WhWasmUtilInstaller = function(target){
        type. It's primarily intended to mark output-pointer arguments.
 
      - `i64` (args and results): passes the value to BigInt() to
-       convert it to an int64.
+       convert it to an int64. Only available if bigIntEnabled is
+       true.
 
      - `f32` (`float`), `f64` (`double`) (args and results): pass
        their argument to Number(). i.e. the adaptor does not currently
        distinguish between the two types of floating-point numbers.
+
+     - `number` (results): converts the result to a JS Number using
+       Number(theValue).valueOf(). Note that this is for result
+       conversions only, as it's not possible to generically know
+       which type of number to convert arguments to.
 
      Non-numeric conversions include:
 

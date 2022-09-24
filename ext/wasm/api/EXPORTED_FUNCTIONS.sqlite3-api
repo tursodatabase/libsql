@@ -54,6 +54,7 @@ _sqlite3_result_error_toobig
 _sqlite3_result_int
 _sqlite3_result_null
 _sqlite3_result_text
+_sqlite3_shutdown
 _sqlite3_sourceid
 _sqlite3_sql
 _sqlite3_step

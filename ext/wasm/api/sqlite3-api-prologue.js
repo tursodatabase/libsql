@@ -650,6 +650,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     ["sqlite3_result_int",undefined, "*", "int"],
     ["sqlite3_result_null",undefined, "*"],
     ["sqlite3_result_text",undefined, "*", "string", "int", "*"],
+    ["sqlite3_shutdown", undefined],
     ["sqlite3_sourceid", "string"],
     ["sqlite3_sql", "string", "sqlite3_stmt*"],
     ["sqlite3_step", "int", "sqlite3_stmt*"],

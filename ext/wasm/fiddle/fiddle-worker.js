@@ -128,7 +128,7 @@
       return f._();
     },
     runMain: function f(){
-      if(f.argv) return f.argv.rc;
+      if(f.argv) return 0===f.argv.rc;
       const dbName = "/fiddle.sqlite3";
       f.argv = [
         'sqlite3-fiddle.wasm',
@@ -138,9 +138,16 @@
            that any argv strings passed to its main() are valid until
            the wasm environment shuts down. */
       ];
-      const capi = fiddleModule.sqlite3.capi;
-      f.argv.pArgv = capi.wasm.allocMainArgv(f.argv);
-      f.argv.rc = capi.wasm.exports.fiddle_main(
+      const S = fiddleModule.sqlite3;
+      /* We need to call sqlite3_shutdown() in order to avoid numerous
+         legitimate warnings from the shell about it being initialized
+         after sqlite3_initialize() has been called. This mean ,
+         however, that any initialization done by the JS code may need
+         to be re-done (e.g.  re-registration of dynamically-loaded
+         VFSes). */
+      S.capi.sqlite3_shutdown();
+      f.argv.pArgv = S.capi.wasm.allocMainArgv(f.argv);
+      f.argv.rc = S.capi.wasm.exports.fiddle_main(
         f.argv.length, f.argv.pArgv
       );
       if(f.argv.rc){
@@ -148,10 +155,20 @@
         fiddleModule.isDead = true;
         return false;
       }
-      stdout("SQLite version", capi.sqlite3_libversion(),
-             capi.sqlite3_sourceid().substr(0,19));
-      stdout('Welcome to the "fiddle" shell');
-      stdout('Enter ".help" for usage hints.');
+      stdout("SQLite version", S.capi.sqlite3_libversion(),
+             S.capi.sqlite3_sourceid().substr(0,19));
+      stdout('Welcome to the "fiddle" shell.');
+      if(S.opfs){
+        stdout("\nOPFS is available. To open a persistent db, use:\n\n",
+               "  .open file:name?vfs=opfs\n\nbut note that some",
+               "features (e.g. export) do not yet work with OPFS.");
+        S.opfs.reregisterVfs();
+      }
+      stdout('\nEnter ".help" for usage hints.');
+      this.exec([ // initialization commands...
+        '.nullvalue NULL',
+        '.headers on'
+      ].join('\n'));
       return true;
     },
     /**
@@ -246,6 +263,7 @@
              } */
           const opt = ev.data;
           let buffer = opt.buffer;
+          stderr('open():',fixmeOPFS);
           if(buffer instanceof Uint8Array){
           }else if(buffer instanceof ArrayBuffer){
             buffer = new Uint8Array(buffer);
@@ -330,19 +348,13 @@
   initFiddleModule(fiddleModule).then(function(thisModule){
     const S = thisModule.sqlite3;
     const atEnd = ()=>{
-      thisModule.fsUnlink = function(fn){
+      thisModule.fsUnlink = (fn)=>{
         stderr("unlink:",fixmeOPFS);
-        return thisModule.ccall('sqlite3_wasm_vfs_unlink','number',['string']);
+        return S.capi.wasm.sqlite3_wasm_vfs_unlink(fn);
       };
       wMsg('fiddle-ready');
     };
-    if(1){
-      S.installOpfsVfs().finally(function(){
-        if(S.opfs) stdout("OPFS is available.");
-        atEnd();
-      });
-    }else{
-      atEnd();
-    }
+    if(S.installOpfsVfs) S.installOpfsVfs().finally(atEnd);
+    else atEnd();
   })/*then()*/;
 })();
