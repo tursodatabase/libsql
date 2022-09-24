@@ -84,11 +84,10 @@ metrics.dump = ()=>{
   }
   console.log(self.location.href,
               "metrics for",self.location.href,":\n",
-              JSON.stringify(metrics,0,2)
-              /*dev console can't expand this object!*/,
+              metrics,
               "\nTotal of",n,"op(s) for",t,"ms",
               "approx",w,"ms spent waiting on OPFS APIs.");
-  console.log("Serialization metrics:",JSON.stringify(metrics.s11n,0,2));
+  console.log("Serialization metrics:",metrics.s11n);
 };
 
 warn("This file is very much experimental and under construction.",
@@ -122,7 +121,7 @@ const getResolvedPath = function(filename,splitIt){
    truthy then each directory element leading to the file is created
    along the way. Throws if any creation or resolution fails.
 */
-const getDirForPath = async function f(absFilename, createDirs = false){
+const getDirForFilename = async function f(absFilename, createDirs = false){
   const path = getResolvedPath(absFilename, true);
   const filename = path.pop();
   let dh = state.rootDir;
@@ -183,14 +182,20 @@ const wTimeEnd = ()=>(
    to simplify finding them.
 */
 const vfsAsyncImpls = {
-  mkdir: async function(dirname){
+  'async-metrics': async ()=>{
+    mTimeStart('async-metrics');
+    metrics.dump();
+    storeAndNotify('async-metrics', 0);
+    mTimeEnd();
+  },
+  mkdir: async (dirname)=>{
     mTimeStart('mkdir');
     let rc = 0;
     wTimeStart('mkdir');
     try {
-        await getDirForPath(dirname+"/filepart", true);
+        await getDirForFilename(dirname+"/filepart", true);
     }catch(e){
-      state.s11n.storeException(e);
+      state.s11n.storeException(2,e);
       rc = state.sq3Codes.SQLITE_IOERR;
     }finally{
       wTimeEnd();
@@ -198,7 +203,7 @@ const vfsAsyncImpls = {
     storeAndNotify('mkdir', rc);
     mTimeEnd();
   },
-  xAccess: async function(filename){
+  xAccess: async (filename)=>{
     mTimeStart('xAccess');
     /* OPFS cannot support the full range of xAccess() queries sqlite3
        calls for. We can essentially just tell if the file is
@@ -214,10 +219,10 @@ const vfsAsyncImpls = {
     let rc = 0;
     wTimeStart('xAccess');
     try{
-      const [dh, fn] = await getDirForPath(filename);
+      const [dh, fn] = await getDirForFilename(filename);
       await dh.getFileHandle(fn);
     }catch(e){
-      state.s11n.storeException(e);
+      state.s11n.storeException(2,e);
       rc = state.sq3Codes.SQLITE_IOERR;
     }finally{
       wTimeEnd();
@@ -269,7 +274,7 @@ const vfsAsyncImpls = {
     wTimeStart('xDelete');
     try {
       while(filename){
-        const [hDir, filenamePart] = await getDirForPath(filename, false);
+        const [hDir, filenamePart] = await getDirForFilename(filename, false);
         if(!filenamePart) break;
         await hDir.removeEntry(filenamePart, {recursive});
         if(0x1234 !== syncDir) break;
@@ -278,7 +283,7 @@ const vfsAsyncImpls = {
         filename = filename.join('/');
       }
     }catch(e){
-      state.s11n.storeException(e);
+      state.s11n.storeException(2,e);
       rc = state.sq3Codes.SQLITE_IOERR_DELETE;
     }
     wTimeEnd();
@@ -294,7 +299,7 @@ const vfsAsyncImpls = {
       state.s11n.serialize(Number(sz));
       sz = 0;
     }catch(e){
-      state.s11n.storeException(e);
+      state.s11n.storeException(2,e);
       sz = state.sq3Codes.SQLITE_IOERR;
     }
     wTimeEnd();
@@ -310,7 +315,7 @@ const vfsAsyncImpls = {
     try{
       let hDir, filenamePart;
       try {
-        [hDir, filenamePart] = await getDirForPath(filename, !!create);
+        [hDir, filenamePart] = await getDirForFilename(filename, !!create);
       }catch(e){
         storeAndNotify(opName, state.sql3Codes.SQLITE_NOTFOUND);
         mTimeEnd();
@@ -339,7 +344,7 @@ const vfsAsyncImpls = {
     }catch(e){
       wTimeEnd();
       error(opName,e);
-      state.s11n.storeException(e);
+      state.s11n.storeException(1,e);
       storeAndNotify(opName, state.sq3Codes.SQLITE_IOERR);
     }
     mTimeEnd();
@@ -361,7 +366,7 @@ const vfsAsyncImpls = {
       }
     }catch(e){
       error("xRead() failed",e,fh);
-      state.s11n.storeException(e);
+      state.s11n.storeException(1,e);
       rc = state.sq3Codes.SQLITE_IOERR_READ;
     }
     storeAndNotify('xRead',rc);
@@ -376,7 +381,7 @@ const vfsAsyncImpls = {
         wTimeStart('xSync');
         await fh.accessHandle.flush();
       }catch(e){
-        state.s11n.storeException(e);
+        state.s11n.storeException(2,e);
       }finally{
         wTimeEnd();
       }
@@ -394,7 +399,7 @@ const vfsAsyncImpls = {
       await fh.accessHandle.truncate(size);
     }catch(e){
       error("xTruncate():",e,fh);
-      state.s11n.storeException(e);
+      state.s11n.storeException(2,e);
       rc = state.sq3Codes.SQLITE_IOERR_TRUNCATE;
     }
     wTimeEnd();
@@ -414,7 +419,7 @@ const vfsAsyncImpls = {
       ) ? 0 : state.sq3Codes.SQLITE_IOERR_WRITE;
     }catch(e){
       error("xWrite():",e,fh);
-      state.s11n.storeException(e);
+      state.s11n.storeException(1,e);
       rc = state.sq3Codes.SQLITE_IOERR_WRITE;
     }finally{
       wTimeEnd();
@@ -519,7 +524,11 @@ const initS11n = ()=>{
   };
 
   state.s11n.storeException = state.asyncS11nExceptions
-    ? ((e)=>state.s11n.serialize(e.message))
+    ? ((priority,e)=>{
+      if(priority<=state.asyncS11nExceptions){
+        state.s11n.serialize(e.message);
+      }
+    })
     : ()=>{};
 
   return state.s11n;
@@ -533,10 +542,8 @@ const waitLoop = async function f(){
     const o = Object.create(null);
     opHandlers[state.opIds[k]] = o;
     o.key = k;
-    o.f = vi;// || toss("No vfsAsyncImpls[",k,"]");
+    o.f = vi || toss("No vfsAsyncImpls[",k,"]");
   }
-  let metricsTimer = self.location.port>=1024 ? performance.now() : 0;
-  // ^^^ in dev environment, dump out these metrics one time after a delay.
   while(true){
     try {
       if('timed-out'===Atomics.wait(state.sabOPView, state.opIds.whichOp, 0, 500)){
@@ -545,7 +552,7 @@ const waitLoop = async function f(){
       const opId = Atomics.load(state.sabOPView, state.opIds.whichOp);
       Atomics.store(state.sabOPView, state.opIds.whichOp, 0);
       const hnd = opHandlers[opId] ?? toss("No waitLoop handler for whichOp #",opId);
-      const args = state.s11n.deserialize();
+      const args = state.s11n.deserialize() || [];
       state.s11n.serialize()/* clear s11n to keep the caller from
                                confusing this with an exception string
                                written by the upcoming operation */;
@@ -554,14 +561,6 @@ const waitLoop = async function f(){
       else error("Missing callback for opId",opId);
     }catch(e){
       error('in waitLoop():',e.message);
-    }finally{
-      // We can't call metrics.dump() from the dev console because this
-      // thread is continually tied up in Atomics.wait(), so let's
-      // do, for dev purposes only, a dump one time after 60 seconds.
-      if(metricsTimer && (performance.now() > metricsTimer + 60000)){
-        metrics.dump();
-        metricsTimer = 0;
-      }
     }
   };
 };

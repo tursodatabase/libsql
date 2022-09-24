@@ -142,7 +142,8 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
                     "metrics for",self.location.href,":",metrics,
                     "\nTotal of",n,"op(s) for",t,
                     "ms (incl. "+w+" ms of waiting on the async side)");
-        console.log("Serialization metrics:",JSON.stringify(metrics.s11n,0,2));
+        console.log("Serialization metrics:",metrics.s11n);
+        opRun('async-metrics');
       },
       reset: function(){
         let k;
@@ -160,7 +161,17 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
         //].forEach((k)=>r(metrics[k] = Object.create(null)));
       }
     }/*metrics*/;      
-
+    const promiseReject = function(err){
+      opfsVfs.dispose();
+      return promiseReject_(err);
+    };
+    const W = new Worker(options.proxyUri);
+    W._originalOnError = W.onerror /* will be restored later */;
+    W.onerror = function(err){
+      // The error object doesn't contain any useful info when the
+      // failure is, e.g., that the remote script is 404.
+      promiseReject(new Error("Loading OPFS async Worker failed for unknown reasons."));
+    };
     const pDVfs = capi.sqlite3_vfs_find(null)/*pointer to default VFS*/;
     const dVfs = pDVfs
           ? new sqlite3_vfs(pDVfs)
@@ -193,18 +204,6 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
        gets called at all in a wasm build, which is undefined).
     */
 
-    const promiseReject = function(err){
-      opfsVfs.dispose();
-      return promiseReject_(err);
-    };
-    const W = new Worker(options.proxyUri);
-    W._originalOnError = W.onerror /* will be restored later */;
-    W.onerror = function(err){
-      // The error object doesn't contain any useful info when the
-      // failure is, e.g., that the remote script is 404.
-      promiseReject(new Error("Loading OPFS async Worker failed for unknown reasons."));
-    };
-
     /**
        State which we send to the async-api Worker or share with it.
        This object must initially contain only cloneable or sharable
@@ -227,11 +226,19 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
     const state = Object.create(null);
     state.verbose = options.verbose;
     state.littleEndian = true;
-    /** If true, the async counterpart should log exceptions to
+    /** Whether the async counterpart should log exceptions to
         the serialization channel. That produces a great deal of
         noise for seemingly innocuous things like xAccess() checks
-        for missing files. */
-    state.asyncS11nExceptions = false;
+        for missing files, so this option may have one of 3 values:
+
+        0 = no exception logging
+
+        1 = only log exceptions for "significant" ops like xOpen(),
+        xRead(), and xWrite().
+
+        2 = log all exceptions.
+    */
+    state.asyncS11nExceptions = 1;
     /* Size of file I/O buffer block. 64k = max sqlite3 page size. */
     state.fileBufferSize =
       1024 * 64;
@@ -270,6 +277,7 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
       state.opIds.xClose = i++;
       state.opIds.xDelete = i++;
       state.opIds.xDeleteNoWait = i++;
+      state.opIds.xFileControl = i++;
       state.opIds.xFileSize = i++;
       state.opIds.xOpen = i++;
       state.opIds.xRead = i++;
@@ -278,7 +286,7 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
       state.opIds.xTruncate = i++;
       state.opIds.xWrite = i++;
       state.opIds.mkdir = i++;
-      state.opIds.xFileControl = i++;
+      state.opIds['async-metrics'] = i++;
       state.sabOP = new SharedArrayBuffer(i * 4/*sizeof int32*/);
       opfsUtil.metrics.reset();
     }
@@ -857,6 +865,27 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
        defaulting to 16.
     */
     opfsUtil.randomFilename = randomFilename;
+
+    /**
+       Re-registers the OPFS VFS. This is intended only for odd use
+       cases which have to call sqlite3_shutdown() as part of their
+       initialization process, which will unregister the VFS
+       registered by installOpfsVfs(). If passed a truthy value, the
+       OPFS VFS is registered as the default VFS, else it is not made
+       the default. Returns the result of the the
+       sqlite3_vfs_register() call.
+
+       Design note: the problem of having to re-register things after
+       a shutdown/initialize pair is more general. How to best plug
+       that in to the library is unclear. In particular, we cannot
+       hook in to any C-side calls to sqlite3_initialize(), so we
+       cannot add an after-initialize callback mechanism.
+    */
+    opfsUtil.reregisterVfs = (asDefault=false)=>{
+      return capi.wasm.exports.sqlite3_vfs_register(
+        opfsVfs.pointer, asDefault ? 1 : 0
+      );
+    };
     
     if(sqlite3.oo1){
       opfsUtil.OpfsDb = function(...args){
@@ -940,7 +969,6 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
         wasm.scopedAllocPop(scope);
       }
     }/*sanityCheck()*/;
-
     
     W.onmessage = function({data}){
       //log("Worker.onmessage:",data);
