@@ -1,5 +1,5 @@
-C Update\sthings\sto\suse\ssqlite3_recover_step()\sinternally.
-D 2022-09-24T18:05:52.914
+C Add\ssqlite3_recover_step()\sto\sheader\sfile\ssqlite3recover.h.\sUpdate\sthe\sAPI\sdocs\sin\sthis\sfile.
+D 2022-09-24T19:17:20.785
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -397,8 +397,8 @@ F ext/recover/recoverfault2.test 321036336af23e778a87f148c4cc4407f88fbdab1fd72dd
 F ext/recover/recoverold.test 46e9d99b595fac583d4c67f74d7d89c20a435c752ef6eeb3e918b599940c88e0
 F ext/recover/recoverrowid.test 1694a1a5526d825f71279f3d02ab02a1ee4c5265de18858bf54cb8ec54487ac8
 F ext/recover/recoversql.test f9872ff2114e13ffd8ee31e1de06919f62b9b48bc080191b5bd076d10becb60f
-F ext/recover/sqlite3recover.c efed077977b195d2ac6c12f1485abf9c7e8c8d282834b05beee7151dabf21e88
-F ext/recover/sqlite3recover.h 81108efb8c4618d3d9c6da4df785212b0e4501aa0d25edfc463405fe839a6640
+F ext/recover/sqlite3recover.c 7752d374356a2346b5959161d5512d6f8a0bd7fb259ea81fd2473ad00dd39132
+F ext/recover/sqlite3recover.h 09a0f70b821954fc219d7583d74871e8578e4f1e9267304ec029c2bfc02bd27a
 F ext/recover/test_recover.c 72a765616a3fa9dae2ed537d79b00f365d9f639d347858341b71bda7a3a45f56
 F ext/repair/README.md 92f5e8aae749a4dae14f02eea8e1bb42d4db2b6ce5e83dbcdd6b1446997e0c15
 F ext/repair/checkfreelist.c e21f06995ff4efdc1622dcceaea4dcba2caa83ca2f31a1607b98a8509168a996
@@ -2013,8 +2013,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 73926d5c8cd1ecece134b5a73b44ee1dfca74dc200606e3f009b06cdecf8cee9
-R 0646ea13d6a7cac9dceb7b54cdbc6bf0
+P f4b15aad3005237b7ac507eed2b9b07e0f5c9407ab28f2656a21c9845f13d35f
+R b60fe138c3457719a54bec9e37633f69
 U dan
-Z 958e4f167968f03754a4ebdb81e44d68
+Z c514b2b66b0aba624f215b19ab2fba51
 # Remove this line to create a well-formed Fossil manifest.

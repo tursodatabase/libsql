@@ -21,20 +21,30 @@
 ** To use the API to recover data from a corrupted database, an
 ** application:
 **
-** 1) Creates an sqlite3_recover handle by calling either
-**    sqlite3_recover_init() or sqlite3_recover_init_sql().
+**   1) Creates an sqlite3_recover handle by calling either
+**      sqlite3_recover_init() or sqlite3_recover_init_sql().
 **
-** 2) Configures the new handle using one or more calls to
-**    sqlite3_recover_config().
+**   2) Configures the new handle using one or more calls to
+**      sqlite3_recover_config().
 **
-** 3) Executes the recovery by calling sqlite3_recover_run() on the handle.
+**   3) Executes the recovery by repeatedly calling sqlite3_recover_step() on
+**      the handle until it returns something other than SQLITE_OK. If it
+**      returns SQLITE_DONE, then the recovery operation completed without 
+**      error. If it returns some other non-SQLITE_OK value, then an error 
+**      has occurred.
 **
-** 4) Retrieves any error code and English language error message using the
-**    sqlite3_recover_errcode() and sqlite3_recover_errmsg() APIs,
-**    respectively.
+**   4) Retrieves any error code and English language error message using the
+**      sqlite3_recover_errcode() and sqlite3_recover_errmsg() APIs,
+**      respectively.
 **
-** 5) Destroys the sqlite3_recover handle and frees all resources
-**    using sqlite3_recover_finish().
+**   5) Destroys the sqlite3_recover handle and frees all resources
+**      using sqlite3_recover_finish().
+**
+** The application may abandon the recovery operation at any point 
+** before it is finished by passing the sqlite3_recover handle to
+** sqlite3_recover_finish(). This is not an error, but the final state
+** of the output database, or the results of running the partial script
+** delivered to the SQL callback, are undefined.
 */
 
 #ifndef _SQLITE_RECOVER_H
@@ -95,10 +105,13 @@ sqlite3_recover *sqlite3_recover_init_sql(
 
 /*
 ** Configure an sqlite3_recover object that has just been created using
-** sqlite3_recover_init() or sqlite3_recover_init_sql(). The second
-** argument passed to this function must be one of the SQLITE_RECOVER_*
-** symbols defined below. Valid values for the third argument depend
-** on the specific SQLITE_RECOVER_* symbol in use.
+** sqlite3_recover_init() or sqlite3_recover_init_sql(). This function
+** may only be called before the first call to sqlite3_recover_step()
+** or sqlite3_recover_run() on the object.
+**
+** The second argument passed to this function must be one of the
+** SQLITE_RECOVER_* symbols defined below. Valid values for the third argument
+** depend on the specific SQLITE_RECOVER_* symbol in use.
 **
 ** SQLITE_OK is returned if the configuration operation was successful,
 ** or an SQLite error code otherwise.
@@ -137,52 +150,49 @@ int sqlite3_recover_config(sqlite3_recover*, int op, void *pArg);
 #define SQLITE_RECOVER_FREELIST_CORRUPT 2
 #define SQLITE_RECOVER_ROWIDS           3
 
-/* 
-** Run the recovery operation. This function does not return until the 
-** recovery operation is completed - either the new database has been
-** created and populated (sqlite3_recover_init()) or all SQL statements have
-** been passed to the callback (sqlite3_recover_init_sql()) - or an error
-** occurs. If the recovery is completed without error, SQLITE_OK
-** is returned. It is not considered an error if data cannot be recovered
+/*
+** Perform a unit of work towards the recovery operation. This function 
+** must normally be called multiple times to complete database recovery.
+**
+** If no error occurs but the recovery operation is not completed, this
+** function returns SQLITE_OK. If recovery has been completed successfully
+** then SQLITE_DONE is returned. If an error has occurred, then an SQLite
+** error code (e.g. SQLITE_IOERR or SQLITE_NOMEM) is returned. It is not
+** considered an error if some or all of the data cannot be recovered
 ** due to database corruption.
 **
-** If an error (for example an out-of-memory or IO error) occurs, then
-** an SQLite error code is returned. The final state of the output database
-** or the results of running any SQL statements already passed to the
-** callback in this case are undefined. An English language error 
-** message corresponding to the error may be available via the 
-** sqlite3_recover_errmsg() API.
+** Once sqlite3_recover_step() has returned a value other than SQLITE_OK,
+** all further such calls on the same recover handle are no-ops that return
+** the same non-SQLITE_OK value.
+*/
+int sqlite3_recover_step(sqlite3_recover*);
+
+/* 
+** Run the recovery operation to completion. Return SQLITE_OK if successful,
+** or an SQLite error code otherwise. Calling this function is the same
+** as executing:
 **
-** This function may only be called once on an sqlite3_recover handle.
-** If it is called more than once, the second and subsequent calls
-** return SQLITE_MISUSE. The error code and error message returned
-** by sqlite3_recover_errcode() and sqlite3_recover_errmsg() are not
-** updated in this case.
+**     while( SQLITE_OK==sqlite3_recover_step(p) );
+**     return sqlite3_recover_errcode(p);
 */
 int sqlite3_recover_run(sqlite3_recover*);
 
 /*
-** If this is called on an sqlite3_recover handle before 
-** sqlite3_recover_run() has been called, or if the call to
-** sqlite3_recover_run() returned SQLITE_OK, then this API always returns
-** a NULL pointer.
+** If an error has been encountered during a prior call to
+** sqlite3_recover_step(), then this function attempts to return a 
+** pointer to a buffer containing an English language explanation of 
+** the error. If no error message is available, or if an out-of memory 
+** error occurs while attempting to allocate a buffer in which to format
+** the error message, NULL is returned.
 **
-** Otherwise, an attempt is made to return a pointer to a buffer containing 
-** an English language error message related to the error that occurred
-** within the sqlite3_recover_run() call. If no error message is available,
-** or if an out-of-memory error occurs while attempting to allocate a buffer
-** for one, NULL may still be returned.
-**
-** The buffer remains valid until the sqlite3_recover handle is destroyed
-** using sqlite3_recover_finish().
+** The returned buffer remains valid until the sqlite3_recover handle is
+** destroyed using sqlite3_recover_finish().
 */
 const char *sqlite3_recover_errmsg(sqlite3_recover*);
 
 /*
-** If this function is called on an sqlite3_recover handle before
-** sqlite3_recover_run() has been called, it always returns SQLITE_OK.
-** Otherwise, it returns a copy of the value returned by the first
-** sqlite3_recover_run() call made on the handle.
+** If this function is called on an sqlite3_recover handle after
+** an error occurs, an SQLite error code is returned. Otherwise, SQLITE_OK.
 */
 int sqlite3_recover_errcode(sqlite3_recover*);
 
@@ -191,10 +201,7 @@ int sqlite3_recover_errcode(sqlite3_recover*);
 ** The results of using a recovery object with any API after it has been
 ** passed to this function are undefined.
 **
-** If this function is called on an sqlite3_recover handle before
-** sqlite3_recover_run() has been called, it always returns SQLITE_OK.
-** Otherwise, it returns a copy of the value returned by the first
-** sqlite3_recover_run() call made on the handle.
+** This function returns the same value as sqlite3_recover_errcode().
 */
 int sqlite3_recover_finish(sqlite3_recover*);
 
