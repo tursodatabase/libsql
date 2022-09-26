@@ -185,9 +185,20 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         capi[e[0]] = e[1];
       }
     }
+    const __rcMap = Object.create(null);
+    for(const t of ['resultCodes']){
+      for(const e of Object.entries(wasm.ctype[t])){
+        __rcMap[e[1]] = e[0];
+      }
+    }
+    /**
+       For the given integer, returns the SQLITE_xxx result code as a
+       string, or undefined if no such mapping is found.
+    */
+    capi.sqlite3_wasm_rc_str = (rc)=>__rcMap[rc];
     /* Bind all registered C-side structs... */
     for(const s of wasm.ctype.structs){
       capi[s.name] = sqlite3.StructBinder(s);
     }
-  }
+  }/*end C constant imports*/
 });

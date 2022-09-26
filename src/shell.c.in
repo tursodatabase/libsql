@@ -12632,27 +12632,13 @@ int fiddle_experiment(int a,int b){
    return a + b;
 }
 
-/* Only for emcc experimentation purposes.
-
-  Define this function in JS using:
-
-  emcc ... --js-library somefile.js
-
-  containing:
-
-mergeInto(LibraryManager.library, {
-    my_foo: function(){
-        console.debug("my_foo()",arguments);
-    }
-});
+/*
+** Returns a pointer to the current DB handle.
 */
-/*extern void my_foo(sqlite3 *);*/
-/* Only for emcc experimentation purposes. */
-sqlite3 * fiddle_the_db(){
-    printf("fiddle_the_db(%p)\n", (const void*)globalDb);
-    /*my_foo(globalDb);*/
+sqlite3 * fiddle_db_handle(){
     return globalDb;
 }
+
 /* Only for emcc experimentation purposes. */
 sqlite3 * fiddle_db_arg(sqlite3 *arg){
     printf("fiddle_db_arg(%p)\n", (const void*)arg);
@@ -12701,6 +12687,55 @@ void fiddle_reset_db(void){
   open_db(&shellState, 0);
   sqlite3_free(zFilename);
 }
+
+/*
+** This is a bit of a workaround: returns true if the current db uses
+** the "opfs" VFS, else false.
+*/
+int fiddle_db_is_opfs(void){
+  sqlite3_vfs * pVfs = 0;
+  if( 0!=shellState.db ){
+    sqlite3_file_control( shellState.db, "main",
+                          SQLITE_FCNTL_VFS_POINTER, &pVfs );
+  }
+  return pVfs ? 0==strcmp("opfs", pVfs->zName) : 0;
+}
+
+#if 0
+/* TODO: test whether this impl works properly wrt xSize() in the
+** unix-none VFS. The JS impl works fine for OPFS but not unix-none
+** because xSize() is returning a garbage size.
+*/
+int fiddle_export_db( int (*callback)(unsigned const char *zOut, int n) ){
+  sqlite3_int64 nSize = 0;
+  sqlite3_int64 nPos = 0;
+  sqlite3_vfs * pVfs = 0;
+  sqlite3_file * pFile = 0;
+  unsigned char buf[1024 * 4];
+  const int nBuf = (int)sizeof(buf);
+  int rc = shellState.db
+    ? sqlite3_file_control(shellState.db, "main",
+                           SQLITE_FCNTL_VFS_POINTER, &pVfs)
+    : 0;
+  if( rc ) return rc;
+  else if( 0==pVfs ) return SQLITE_NOTFOUND;
+  rc = sqlite3_file_control(shellState.db, "main",
+                            SQLITE_FCNTL_FILE_POINTER, &pFile);
+  if( rc ) return rc;
+  rc = pFile->pMethods->xFileSize(pFile, &nSize);
+  if(rc) return rc;
+  for( ; 0==rc && nPos<nSize; nPos += nBuf ){
+    rc = pFile->pMethods->xRead(pFile, buf, nBuf, nPos);
+    if(SQLITE_IOERR_SHORT_READ == rc){
+      rc = (nPos + nBuf) < nSize ? rc : 0/*assume EOF*/;
+    }
+    if(rc) return rc;
+    nPos += nBuf;
+    rc = callback(buf, nBuf);
+  }
+  return rc;
+}
+#endif
 
 /*
 ** Trivial exportable function for emscripten. It processes zSql as if

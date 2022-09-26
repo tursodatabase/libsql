@@ -15,40 +15,49 @@
       "make"d first. The intent is that <em>this</em> page be run
       using:</div>
     <blockquote><pre>althttpd -page index.html</pre></blockquote>
-    <div>and the individual tests be started in their own tab.</div>
-    <div>Warnings and Caveats:
+    <div>and the individual tests be started in their own tab.
+      Warnings and Caveats:
       <ul class='warning'>
         <li>Some of these pages require that
-          the web server emit the so-called COOP and COEP headers. The
-          default build of althttpd <em>does not</em>.
+          the web server emit the so-called
+          <a href='https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cross-Origin-Opener-Policy'>COOP</a>
+          and
+          <a href='https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cross-Origin-Embedder-Policy'>COEP</a>
+          headers. The default build
+          of <a href='https://sqlite.org/althttpd'>althttpd</a>
+          <em>does not</em>.
         </li>
-        <li>Any OPFS-related pages require very recent
-          version of Chrome or Chromium (v102 at least, possibly
-          newer). OPFS support in the other major browsers is
-          pending.</li>
+        <li>Any OPFS-related pages require very recent version of
+          Chrome or Chromium (v102 at least, possibly newer). OPFS
+          support in the other major browsers is pending. Development
+          and testing is currently done against a dev-channel release
+          of Chrome (v107 as of 2022-09-26).
+        </li>
         <li>Whether or not WASMFS/OPFS support is enabled on any given
           page may depend on build-time options which are <em>off by
           default</em> because they currently (as of 2022-09-08) break
-          with Worker-based pages. Similarly, WASMFS does not work on
-          some platforms, e.g. Raspberry Pi 4.
+          with Worker-based pages.
+          <!-- Similarly, WASMFS does not work on some platforms,
+               e.g. Raspberry Pi 4 (for which there is no Chrome
+               build, so it's currently a moot point). -->
         </li>
       </ul>
     </div>
-    <div>The tests...
+    <div>The tests and demos...
       <ul id='test-list'>
         <li>High-level apps and demos...
           <ul>
             <li><a href='fiddle/fiddle.html'>fiddle</a> is an HTML front-end
               to a wasm build of the sqlite3 shell.</li>
             <li><a href='demo-123.html'>demo-123</a> provides a
-              no-nonsense example of adding sqlite3 support to a
-              web page. </li>
-            <li><a href='demo-123-worker.html'>demo-123-worker</a> is the
-              same as <code>demo-123</code> but loads and run sqlite3 from
-              a Worker thread.</li>
+              no-nonsense example of adding sqlite3 support to a web
+              page in the UI thread.</li>
+            <li><a href='demo-123-worker.html'>demo-123-worker</a> is
+              the same as <code>demo-123</code> but loads and runs
+              sqlite3 from a Worker thread.</li>
             <li><a href='demo-kvvfs1.html'>demo-kvvfs1</a>: very basic
-              demo of using the key-value vfs for storing a persistent db
-              in JS localStorage or sessionStorage.</li>
+              demo of using the key-value VFS for storing a persistent db
+              in JS <code>localStorage</code> or <code>sessionStorage</code>.</li>
           </ul>
         </li>
         <li>speedtest1 ports (sqlite3's primary benchmarking tool)...

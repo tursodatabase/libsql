@@ -99,7 +99,9 @@
         };
   const stdout = (...args)=>wMsg('stdout', args);
   const stderr = (...args)=>wMsg('stderr', args);
-
+  const toss = (...args)=>{
+    throw new Error(args.join(' '));
+  };
   const fixmeOPFS = "(FIXME: won't work with vanilla OPFS.)";
   
   self.onerror = function(/*message, source, lineno, colno, error*/) {
@@ -136,7 +138,7 @@
       const S = fiddleModule.sqlite3;
       /* We need to call sqlite3_shutdown() in order to avoid numerous
          legitimate warnings from the shell about it being initialized
-         after sqlite3_initialize() has been called. This mean ,
+         after sqlite3_initialize() has been called. This means,
          however, that any initialization done by the JS code may need
          to be re-done (e.g.  re-registration of dynamically-loaded
          VFSes). */
@@ -156,7 +158,7 @@
       if(S.opfs){
         stdout("\nOPFS is available. To open a persistent db, use:\n\n",
                "  .open file:name?vfs=opfs\n\nbut note that some",
-               "features (e.g. export) do not yet work with OPFS.");
+               "features (e.g. upload) do not yet work with OPFS.");
         S.opfs.reregisterVfs();
       }
       stdout('\nEnter ".help" for usage hints.');
@@ -207,6 +209,69 @@
       f._();
     }
   };
+
+  /**
+     Exports the shell's current db file in such a way that it can
+     export DBs hosted in the Emscripten-supplied FS or in native OPFS
+     (and, hypothetically, kvvfs). Throws on error. On success returns
+     a Blob containing the whole db contents.
+
+     Bug: xFileSize() is returning garbage for the default VFS but
+     works in OPFS. Thus for exporting that impl we'll use the
+     fiddleModule.FS API for the time being.
+  */
+  const exportDbFileToBlob = function(){
+    const S = fiddleModule.sqlite3, capi = S.capi, wasm = capi.wasm;
+    const pDb = wasm.xCall("fiddle_db_handle");
+    if(!pDb) toss("No db is opened.");
+    const scope = wasm.scopedAllocPush();
+    try{
+      const ppFile = wasm.scopedAlloc(12/*sizeof(i32 + i64)*/);
+      const pFileSize = ppFile + 4;
+      wasm.setMemValue(ppFile, 0, 'i32');
+      let rc = capi.sqlite3_file_control(
+        pDb, "main", capi.SQLITE_FCNTL_FILE_POINTER, ppFile
+      );
+      if(rc) toss("Cannot get sqlite3_file handle.");
+      const jFile = new capi.sqlite3_file(wasm.getPtrValue(ppFile));
+      const jIom = new capi.sqlite3_io_methods(jFile.$pMethods);
+      console.warn("jIom =",jIom);
+      const xFileSize = wasm.functionEntry(jIom.$xFileSize);
+      const xRead = wasm.functionEntry(jIom.$xRead);
+      wasm.setMemValue(pFileSize, 0n, 'i64');
+      //stderr("nFileSize =",wasm.getMemValue(pFileSize,'i64'),"pFileSize =",pFileSize);
+      rc = xFileSize( jFile.pointer, pFileSize );
+      if(rc) toss("Cannot get db file size.");
+      //stderr("nFileSize =",wasm.getMemValue(pFileSize,'i64'),"pFileSize =",pFileSize);
+      const nFileSize = Number( wasm.getMemValue(pFileSize,'i64') );
+      if(nFileSize <= 0n || nFileSize>=Number.MAX_SAFE_INTEGER){
+        toss("Unexpected DB size:",nFileSize);
+      }
+      //stderr("nFileSize =",nFileSize,"pFileSize =",pFileSize);
+      const nIobuf = 1024 * 4;
+      const iobuf = wasm.scopedAlloc(nIobuf);
+      let nPos = 0;
+      const blobList = [];
+      const heap = wasm.heap8u();
+      for( ; nPos < nFileSize; nPos += nIobuf ){
+        rc = xRead(jFile.pointer, iobuf, nIobuf, BigInt(nPos));
+        if(rc){
+          if(capi.SQLITE_IOERR_SHORT_READ === rc){
+            //stderr('rc =',rc,'nPos =',nPos,'nIobuf =',nIobuf,'nFileSize =',nFileSize);
+            rc = ((nPos + nIobuf) < nFileSize) ? rc : 0/*assume EOF*/;
+          }
+          if(rc) toss("xRead() SQLITE_xxx error #"+rc,capi.sqlite3_wasm_rc_str(rc));
+        }
+        blobList.push(heap.slice(iobuf, iobuf+nIobuf));
+      }
+      return new Blob(blobList);
+    }catch(e){
+      console.error('exportDbFileToBlob()',e);
+      stderr("exportDbFileToBlob():",e.message);
+    }finally{
+      wasm.scopedAllocPop(scope);
+    }
+  }/*exportDbFileToBlob()*/;
   
   self.onmessage = function f(ev){
     ev = ev.data;
@@ -233,14 +298,22 @@
           */
         case 'db-export': {
           const fn = Sqlite3Shell.dbFilename();
-          stdout("Exporting",fn+".",fixmeOPFS);
+          stdout("Exporting",fn+".");
           const fn2 = fn ? fn.split(/[/\\]/).pop() : null;
           try{
             if(!fn2) throw new Error("DB appears to be closed.");
-            const buffer = fiddleModule.FS.readFile(
-              fn, {encoding:"binary"}
-            ).buffer;
-            wMsg('db-export',{filename: fn2, buffer}, [buffer]);
+            if(fiddleModule.sqlite3.capi.wasm.xCall(
+              'fiddle_db_is_opfs'
+            )){
+              exportDbFileToBlob().arrayBuffer().then((buffer)=>{
+                wMsg('db-export',{filename: fn2, buffer}, [buffer]);
+              });
+            }else{
+              const buffer = fiddleModule.FS.readFile(
+                fn, {encoding:"binary"}
+              ).buffer;
+              wMsg('db-export',{filename: fn2, buffer}, [buffer]);
+            }
           }catch(e){
             /* Post a failure message so that UI elements disabled
                during the export can be re-enabled. */

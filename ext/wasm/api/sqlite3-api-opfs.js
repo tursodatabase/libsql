@@ -999,11 +999,14 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
                 warn("Running sanity checks because of opfs-sanity-check URL arg...");
                 sanityCheck();
               }
-              W.onerror = W._originalOnError;
-              delete W._originalOnError;
-              sqlite3.opfs = opfsUtil;
-              log("End of OPFS sqlite3_vfs setup.", opfsVfs);
-              promiseResolve(sqlite3);
+              navigator.storage.getDirectory().then((d)=>{
+                W.onerror = W._originalOnError;
+                delete W._originalOnError;
+                sqlite3.opfs = opfsUtil;
+                opfsUtil.rootDirectory = d;
+                log("End of OPFS sqlite3_vfs setup.", opfsVfs);
+                promiseResolve(sqlite3);
+              });
             }catch(e){
               error(e);
               promiseReject(e);
