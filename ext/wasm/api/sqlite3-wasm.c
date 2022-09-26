@@ -503,7 +503,7 @@ const char * sqlite3_wasm_enum_json(void){
 
 #define CurrentStruct sqlite3_file
     StructBinder {
-      M(pMethods,"P");
+      M(pMethods,"p");
     } _StructBinder;
 #undef CurrentStruct
 

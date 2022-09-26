@@ -717,17 +717,14 @@
       //log("sfile",sfile,sfile.constructor.prototype);
       T.assert(0===sfile.$pMethods).assert(iom.pointer > 0);
       //log("iom",iom);
-      /** Some of the following tests require that pMethods has a
-          signature of "P", as opposed to "p". */
-      sfile.$pMethods = iom;
-      T.assert(iom === sfile.$pMethods);
       sfile.$pMethods = iom.pointer;
-      T.assert(iom === sfile.$pMethods)
+      T.assert(iom.pointer === sfile.$pMethods)
         .assert(IOM.resolveToInstance(iom))
         .assert(undefined ===IOM.resolveToInstance(sfile))
         .mustThrow(()=>IOM.resolveToInstance(0,true))
         .assert(S3F.resolveToInstance(sfile.pointer))
-        .assert(undefined===S3F.resolveToInstance(iom));
+        .assert(undefined===S3F.resolveToInstance(iom))
+        .assert(iom===IOM.resolveToInstance(sfile.$pMethods));
       T.assert(0===iom.$iVersion);
       installIOMethods(iom);
       T.assert(1===iom.$iVersion);
