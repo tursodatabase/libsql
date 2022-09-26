@@ -157,6 +157,22 @@ struct RecoverStateW1 {
   int iPrevCell;
 };
 
+typedef struct RecoverStateLAF RecoverStateLAF;
+struct RecoverStateLAF {
+  RecoverBitmap *pUsed;
+  i64 nPg;                        /* Size of db in pages */
+  sqlite3_stmt *pAllAndParent;
+  sqlite3_stmt *pMapInsert;
+  sqlite3_stmt *pMaxField;
+  sqlite3_stmt *pUsedPages;
+  sqlite3_stmt *pFindRoot;
+  sqlite3_stmt *pInsert;          /* INSERT INTO lost_and_found ... */
+  sqlite3_stmt *pAllPage;
+  sqlite3_stmt *pPageData;
+  sqlite3_value **apVal;
+  int nMaxField;
+};
+
 /*
 ** Main recover handle structure.
 */
@@ -185,11 +201,13 @@ struct sqlite3_recover {
   /* Variables used with eState==RECOVER_STATE_WRITING */
   RecoverStateW1 w1;
 
+  /* Variables used with states RECOVER_STATE_LOSTANDFOUND* */
+  RecoverStateLAF laf;
+
   /* Fields used within sqlite3_recover_run() */
   sqlite3 *dbOut;                 /* Output database */
   sqlite3_stmt *pGetPage;         /* SELECT against input db sqlite_dbdata */
   RecoverTable *pTblList;         /* List of tables recovered from schema */
-  RecoverBitmap *pUsed;           /* Used by recoverLostAndFound() */
 };
 
 /*
@@ -199,12 +217,28 @@ struct sqlite3_recover {
 **    The object is initially created in this state. sqlite3_recover_step()
 **    has yet to be called. This is the only state in which it is permitted
 **    to call sqlite3_recover_config().
+**
+**   RECOVER_STATE_WRITING:
+**
+**   RECOVER_STATE_LOSTANDFOUND1:
+**    State to populate the bitmap of pages used by other tables or the
+**    database freelist.
+**
+**   RECOVER_STATE_LOSTANDFOUND2:
+**    Populate the recovery.map table - used to figure out a "root" page
+**    for each lost page from in the database from which records are
+**    extracted.
+**
+**   RECOVER_STATE_LOSTANDFOUND3:
+**    Populate the lost-and-found table itself.
 */
-#define RECOVER_STATE_INIT          0
-#define RECOVER_STATE_WRITING       1
-#define RECOVER_STATE_LOSTANDFOUND  2
-#define RECOVER_STATE_SCHEMA2       3
-#define RECOVER_STATE_DONE          4
+#define RECOVER_STATE_INIT           0
+#define RECOVER_STATE_WRITING        1
+#define RECOVER_STATE_LOSTANDFOUND1  2
+#define RECOVER_STATE_LOSTANDFOUND2  3
+#define RECOVER_STATE_LOSTANDFOUND3  4
+#define RECOVER_STATE_SCHEMA2        5
+#define RECOVER_STATE_DONE           6
 
 /* 
 ** Default value for SQLITE_RECOVER_ROWIDS (sqlite3_recover.bRecoverRowid).
@@ -320,7 +354,7 @@ static void recoverBitmapSet(RecoverBitmap *pMap, i64 iPg){
 */
 static int recoverBitmapQuery(RecoverBitmap *pMap, i64 iPg){
   int ret = 1;
-  if( iPg<=pMap->nPg ){
+  if( iPg<=pMap->nPg && iPg>0 ){
     int iElem = (iPg / 32);
     int iBit = (iPg % 32);
     ret = (pMap->aElem[iElem] & (((u32)1) << iBit)) ? 1 : 0;
@@ -548,7 +582,7 @@ static void recoverReadI32(
 ** Implementation of SQL scalar function "page_is_used". This function
 ** is used as part of the procedure for locating orphan rows for the
 ** lost-and-found table, and it depends on those routines having populated
-** the sqlite3_recover.pUsed variable.
+** the sqlite3_recover.laf.pUsed variable.
 **
 ** The only argument to this function is a page-number. It returns true 
 ** if the page has already been used somehow during data recovery, or false
@@ -564,7 +598,7 @@ static void recoverPageIsUsed(
   sqlite3_recover *p = (sqlite3_recover*)sqlite3_user_data(pCtx);
   i64 pgno = sqlite3_value_int64(apArg[0]);
   assert( nArg==1 );
-  sqlite3_result_int(pCtx, recoverBitmapQuery(p->pUsed, pgno));
+  sqlite3_result_int(pCtx, recoverBitmapQuery(p->laf.pUsed, pgno));
 }
 
 /*
@@ -600,13 +634,14 @@ static void recoverGetPage(
       pStmt = p->pGetPage = recoverPreparePrintf(
           p, p->dbIn, "SELECT data FROM sqlite_dbpage(%Q) WHERE pgno=?", p->zDb
       );
-    }else{
+    }else if( p->errCode==SQLITE_OK ){
       pStmt = p->pGetPage;
     }
 
     if( pStmt ){
       sqlite3_bind_int64(pStmt, 1, pgno);
       if( SQLITE_ROW==sqlite3_step(pStmt) ){
+        assert( p->errCode==SQLITE_OK );
         sqlite3_result_value(pCtx, sqlite3_column_value(pStmt, 0));
       }
       recoverReset(p, pStmt);
@@ -1312,49 +1347,59 @@ static sqlite3_stmt *recoverLostAndFoundInsert(
   return pRet;
 }
 
-/*
-** Helper function for recoverLostAndFound().
-*/
-static void recoverLostAndFoundPopulate(
+static int recoverLostAndFoundFindRoot(
   sqlite3_recover *p, 
-  sqlite3_stmt *pInsert,
-  int nField
+  i64 iPg,
+  i64 *piRoot
 ){
-  sqlite3_stmt *pStmt = recoverPrepare(p, p->dbOut,
-      "WITH RECURSIVE pages(root, page) AS ("
-      "  SELECT pgno, pgno FROM recovery.map WHERE parent IS NULL"
-      "    UNION"
-      "  SELECT root, child FROM sqlite_dbptr('getpage()'), pages "
-      "    WHERE pgno=page"
-      ") "
-      "SELECT root, page, cell, field, value "
-      "FROM sqlite_dbdata('getpage()') d, pages p WHERE p.page=d.pgno "
-      "  AND NOT page_is_used(page) "
-      "UNION ALL "
-      "SELECT 0, 0, 0, 0, 0"
-  );
+  RecoverStateLAF *pLaf = &p->laf;
 
-  sqlite3_value **apVal = 0;
+  if( pLaf->pFindRoot==0 ){
+    pLaf->pFindRoot = recoverPrepare(p, p->dbOut,
+        "WITH RECURSIVE p(pgno) AS ("
+        "  SELECT ?"
+        "    UNION"
+        "  SELECT parent FROM recovery.map AS m, p WHERE m.pgno=p.pgno"
+        ") "
+        "SELECT p.pgno FROM p, recovery.map m WHERE m.pgno=p.pgno "
+        "    AND m.parent IS NULL"
+    );
+  }
+  if( p->errCode==SQLITE_OK ){
+    sqlite3_bind_int64(pLaf->pFindRoot, 1, iPg);
+    if( sqlite3_step(pLaf->pFindRoot)==SQLITE_ROW ){
+      *piRoot = sqlite3_column_int64(pLaf->pFindRoot, 0);
+    }else{
+      *piRoot = iPg;
+    }
+    recoverReset(p, pLaf->pFindRoot);
+  }
+  return p->errCode;
+}
+
+static void recoverLostAndFoundOnePage(sqlite3_recover *p, i64 iPage){
+  RecoverStateLAF *pLaf = &p->laf;
+  sqlite3_value **apVal = pLaf->apVal;
+  sqlite3_stmt *pPageData = pLaf->pPageData;
+  sqlite3_stmt *pInsert = pLaf->pInsert;
+
   int nVal = -1;
-  i64 iRowid = 0;
+  int iPrevCell = 0;
+  i64 iRoot = 0;
   int bHaveRowid = 0;
-  int ii;
+  i64 iRowid = 0;
+  int ii = 0;
 
-  i64 iPrevRoot = -1;
-  i64 iPrevPage = -1;
-  int iPrevCell = -1;
+  if( recoverLostAndFoundFindRoot(p, iPage, &iRoot) ) return;
+  sqlite3_bind_int64(pPageData, 1, iPage);
+  while( p->errCode==SQLITE_OK && SQLITE_ROW==sqlite3_step(pPageData) ){
+    int iCell = sqlite3_column_int64(pPageData, 0);
+    int iField = sqlite3_column_int64(pPageData, 1);
 
-  apVal = (sqlite3_value**)recoverMalloc(p, nField*sizeof(sqlite3_value*));
-  while( p->errCode==SQLITE_OK && SQLITE_ROW==sqlite3_step(pStmt) ){
-    i64 iRoot = sqlite3_column_int64(pStmt, 0);
-    i64 iPage = sqlite3_column_int64(pStmt, 1);
-    int iCell = sqlite3_column_int64(pStmt, 2);
-    int iField = sqlite3_column_int64(pStmt, 3);
-
-    if( iPrevRoot>0 && (iPrevPage!=iPage || iPrevCell!=iCell) ){
+    if( iPrevCell!=iCell && nVal>=0 ){
       /* Insert the new row */
-      sqlite3_bind_int64(pInsert, 1, iPrevRoot);  /* rootpgno */
-      sqlite3_bind_int64(pInsert, 2, iPrevPage);  /* pgno */
+      sqlite3_bind_int64(pInsert, 1, iRoot);      /* rootpgno */
+      sqlite3_bind_int64(pInsert, 2, iPage);      /* pgno */
       sqlite3_bind_int(pInsert, 3, nVal);         /* nfield */
       if( bHaveRowid ){
         sqlite3_bind_int64(pInsert, 4, iRowid);   /* id */
@@ -1377,13 +1422,15 @@ static void recoverLostAndFoundPopulate(
       nVal = -1;
     }
 
+    if( iCell<0 ) break;
+
     if( iField<0 ){
       assert( nVal==-1 );
-      iRowid = sqlite3_column_int64(pStmt, 4);
+      iRowid = sqlite3_column_int64(pPageData, 2);
       bHaveRowid = 1;
       nVal = 0;
-    }else if( iField<nField && iRoot!=0 ){
-      sqlite3_value *pVal = sqlite3_column_value(pStmt, 4);
+    }else if( iField<pLaf->nMaxField ){
+      sqlite3_value *pVal = sqlite3_column_value(pPageData, 2);
       apVal[iField] = sqlite3_value_dup(pVal);
       assert( iField==nVal || (nVal==-1 && iField==0) );
       nVal = iField+1;
@@ -1392,122 +1439,65 @@ static void recoverLostAndFoundPopulate(
       }
     }
 
-    iPrevRoot = iRoot;
-    iPrevPage = iPage;
     iPrevCell = iCell;
   }
-  recoverFinalize(p, pStmt);
+  recoverReset(p, pPageData);
 
   for(ii=0; ii<nVal; ii++){
     sqlite3_value_free(apVal[ii]);
     apVal[ii] = 0;
   }
-  sqlite3_free(apVal);
 }
 
-/*
-** This function searches for orphaned rows in the input database. If
-** any are found, it creates the lost-and-found table in the output
-** db and writes all orphaned rows to it. Or, if the recover handle is
-** in SQL callback mode, issues equivalent callbacks.
-*/
-static void recoverLostAndFound(sqlite3_recover *p){
-  i64 nPg = 0;
-  RecoverBitmap *pMap = 0;
-
-  nPg = recoverPageCount(p);
-  pMap = p->pUsed = recoverBitmapAlloc(p, nPg);
-  if( pMap ){
-    char *zTab = 0;               /* Name of lost_and_found table */
-    sqlite3_stmt *pInsert = 0;    /* INSERT INTO lost_and_found ... */
-    int nField = 0;
-
-    /* Add all pages that are part of any tree in the recoverable part of
-    ** the input database schema to the bitmap. And, if !p->bFreelistCorrupt, 
-    ** add all pages that appear to be part of the freelist to the bitmap. 
-    */
-    sqlite3_stmt *pStmt = recoverPrepare(
-        p, p->dbOut,
-        "WITH trunk(pgno) AS ("
-        "  SELECT read_i32(getpage(1), 8) AS x WHERE x>0"
-        "    UNION"
-        "  SELECT read_i32(getpage(trunk.pgno), 0) AS x FROM trunk WHERE x>0"
-        "),"
-        "trunkdata(pgno, data) AS ("
-        "  SELECT pgno, getpage(pgno) FROM trunk"
-        "),"
-        "freelist(data, n, freepgno) AS ("
-        "  SELECT data, min(16384, read_i32(data, 1)-1), pgno FROM trunkdata"
-        "    UNION ALL"
-        "  SELECT data, n-1, read_i32(data, 2+n) FROM freelist WHERE n>=0"
-        "),"
-        ""
-        "roots(r) AS ("
-        "  SELECT 1 UNION ALL"
-        "  SELECT rootpage FROM recovery.schema WHERE rootpage>0"
-        "),"
-        "used(page) AS ("
-        "  SELECT r FROM roots"
-        "    UNION"
-        "  SELECT child FROM sqlite_dbptr('getpage()'), used "
-        "    WHERE pgno=page"
-        ") "
-        "SELECT page FROM used"
-        " UNION ALL "
-        "SELECT freepgno FROM freelist WHERE NOT ?"
-    );
-    if( pStmt ) sqlite3_bind_int(pStmt, 1, p->bFreelistCorrupt);
-    while( pStmt && SQLITE_ROW==sqlite3_step(pStmt) ){
-      i64 iPg = sqlite3_column_int64(pStmt, 0);
-      recoverBitmapSet(pMap, iPg);
+static int recoverLostAndFound3Step(sqlite3_recover *p){
+  RecoverStateLAF *pLaf = &p->laf;
+  if( p->errCode==SQLITE_OK ){
+    if( pLaf->pInsert==0 ){
+      return SQLITE_DONE;
+    }else{
+      if( p->errCode==SQLITE_OK ){
+        int res = sqlite3_step(pLaf->pAllPage);
+        if( res==SQLITE_ROW ){
+          i64 iPage = sqlite3_column_int64(pLaf->pAllPage, 0);
+          if( recoverBitmapQuery(pLaf->pUsed, iPage)==0 ){
+            recoverLostAndFoundOnePage(p, iPage);
+          }
+        }else{
+          recoverReset(p, pLaf->pAllPage);
+          return SQLITE_DONE;
+        }
+      }
     }
-    recoverFinalize(p, pStmt);
+  }
+  return SQLITE_OK;
+}
 
+static void recoverLostAndFound3Init(sqlite3_recover *p){
+  RecoverStateLAF *pLaf = &p->laf;
 
-    /* Add an entry for each page not already added to the bitmap to 
-    ** the recovery.map table. This loop leaves the "parent" column
-    ** of each recovery.map row set to NULL - to be filled in below.  */
-    pStmt = recoverPreparePrintf(
-        p, p->dbOut,
+  if( pLaf->nMaxField>0 ){
+    char *zTab = 0;               /* Name of lost_and_found table */
+
+    zTab = recoverLostAndFoundCreate(p, pLaf->nMaxField);
+    pLaf->pInsert = recoverLostAndFoundInsert(p, zTab, pLaf->nMaxField);
+    sqlite3_free(zTab);
+
+    pLaf->pAllPage = recoverPreparePrintf(p, p->dbOut,
         "WITH RECURSIVE seq(ii) AS ("
         "  SELECT 1 UNION ALL SELECT ii+1 FROM seq WHERE ii<%lld"
         ")"
-        "INSERT INTO recovery.map(pgno) "
-        "    SELECT ii FROM seq WHERE NOT page_is_used(ii)", nPg
+        "SELECT ii FROM seq" , p->laf.nPg
     );
-    sqlite3_step(pStmt);
-    recoverFinalize(p, pStmt);
+    pLaf->pPageData = recoverPrepare(p, p->dbOut,
+        "SELECT cell, field, value "
+        "FROM sqlite_dbdata('getpage()') d WHERE d.pgno=? "
+        "UNION ALL "
+        "SELECT -1, -1, -1"
+    );
 
-    /* Set the "parent" column for each row of the recovery.map table */
-    pStmt = recoverPrepare(
-        p, p->dbOut,
-        "UPDATE recovery.map SET parent = ptr.pgno "
-        "    FROM sqlite_dbptr('getpage()') AS ptr "
-        "    WHERE recovery.map.pgno=ptr.child"
+    pLaf->apVal = (sqlite3_value**)recoverMalloc(p, 
+        pLaf->nMaxField*sizeof(sqlite3_value*)
     );
-    sqlite3_step(pStmt);
-    recoverFinalize(p, pStmt);
-      
-    /* Figure out the number of fields in the longest record that will be
-    ** recovered into the lost_and_found table. Set nField to this value. */
-    pStmt = recoverPrepare(
-        p, p->dbOut,
-        "SELECT max(field)+1 FROM sqlite_dbdata('getpage') WHERE pgno IN ("
-        "  SELECT pgno FROM recovery.map"
-        ")"
-    );
-    if( pStmt && SQLITE_ROW==sqlite3_step(pStmt) ){
-      nField = sqlite3_column_int64(pStmt, 0);
-    }
-    recoverFinalize(p, pStmt);
-
-    if( nField>0 ){
-      zTab = recoverLostAndFoundCreate(p, nField);
-      pInsert = recoverLostAndFoundInsert(p, zTab, nField);
-      recoverLostAndFoundPopulate(p, pInsert, nField);
-      recoverFinalize(p, pInsert);
-      sqlite3_free(zTab);
-    }
   }
 }
 
@@ -1689,11 +1679,152 @@ static int recoverWriteDataStep(sqlite3_recover *p){
   return p->errCode;
 }
 
+static void recoverLostAndFound1Init(sqlite3_recover *p){
+  RecoverStateLAF *pLaf = &p->laf;
+  sqlite3_stmt *pStmt = 0;
+
+  assert( p->laf.pUsed==0 );
+  pLaf->nPg = recoverPageCount(p);
+  pLaf->pUsed = recoverBitmapAlloc(p, pLaf->nPg);
+
+  /* Prepare a statement to iterate through all pages that are part of any tree
+  ** in the recoverable part of the input database schema to the bitmap. And,
+  ** if !p->bFreelistCorrupt, add all pages that appear to be part of the
+  ** freelist.  */
+  pStmt = recoverPrepare(
+      p, p->dbOut,
+      "WITH trunk(pgno) AS ("
+      "  SELECT read_i32(getpage(1), 8) AS x WHERE x>0"
+      "    UNION"
+      "  SELECT read_i32(getpage(trunk.pgno), 0) AS x FROM trunk WHERE x>0"
+      "),"
+      "trunkdata(pgno, data) AS ("
+      "  SELECT pgno, getpage(pgno) FROM trunk"
+      "),"
+      "freelist(data, n, freepgno) AS ("
+      "  SELECT data, min(16384, read_i32(data, 1)-1), pgno FROM trunkdata"
+      "    UNION ALL"
+      "  SELECT data, n-1, read_i32(data, 2+n) FROM freelist WHERE n>=0"
+      "),"
+      ""
+      "roots(r) AS ("
+      "  SELECT 1 UNION ALL"
+      "  SELECT rootpage FROM recovery.schema WHERE rootpage>0"
+      "),"
+      "used(page) AS ("
+      "  SELECT r FROM roots"
+      "    UNION"
+      "  SELECT child FROM sqlite_dbptr('getpage()'), used "
+      "    WHERE pgno=page"
+      ") "
+      "SELECT page FROM used"
+      " UNION ALL "
+      "SELECT freepgno FROM freelist WHERE NOT ?"
+  );
+  if( pStmt ) sqlite3_bind_int(pStmt, 1, p->bFreelistCorrupt);
+  pLaf->pUsedPages = pStmt;
+}
+
+static int recoverLostAndFound1Step(sqlite3_recover *p){
+  RecoverStateLAF *pLaf = &p->laf;
+  int rc = p->errCode;
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_step(pLaf->pUsedPages);
+    if( rc==SQLITE_ROW ){
+      i64 iPg = sqlite3_column_int64(pLaf->pUsedPages, 0);
+      recoverBitmapSet(pLaf->pUsed, iPg);
+      rc = SQLITE_OK;
+    }else{
+      recoverFinalize(p, pLaf->pUsedPages);
+      pLaf->pUsedPages = 0;
+    }
+  }
+  return rc;
+}
+
+static void recoverLostAndFound2Init(sqlite3_recover *p){
+  RecoverStateLAF *pLaf = &p->laf;
+
+  assert( p->laf.pAllAndParent==0 );
+  assert( p->laf.pMapInsert==0 );
+  assert( p->laf.pMaxField==0 );
+  assert( p->laf.nMaxField==0 );
+
+  pLaf->pMapInsert = recoverPrepare(p, p->dbOut,
+      "INSERT OR IGNORE INTO recovery.map(pgno, parent) VALUES(?, ?)"
+  );
+  pLaf->pAllAndParent = recoverPreparePrintf(p, p->dbOut,
+      "WITH RECURSIVE seq(ii) AS ("
+      "  SELECT 1 UNION ALL SELECT ii+1 FROM seq WHERE ii<%lld"
+      ")"
+      "SELECT pgno, child FROM sqlite_dbptr('getpage()') "
+      " UNION ALL "
+      "SELECT NULL, ii FROM seq", p->laf.nPg
+  );
+  pLaf->pMaxField = recoverPreparePrintf(p, p->dbOut,
+      "SELECT max(field)+1 FROM sqlite_dbdata('getpage') WHERE pgno = ?"
+  );
+}
+
+static int recoverLostAndFound2Step(sqlite3_recover *p){
+  RecoverStateLAF *pLaf = &p->laf;
+  if( p->errCode==SQLITE_OK ){
+    int res = sqlite3_step(pLaf->pAllAndParent);
+    if( res==SQLITE_ROW ){
+      i64 iChild = sqlite3_column_int(pLaf->pAllAndParent, 1);
+      if( recoverBitmapQuery(pLaf->pUsed, iChild)==0 ){
+        sqlite3_bind_int64(pLaf->pMapInsert, 1, iChild);
+        sqlite3_bind_value(pLaf->pMapInsert, 2, 
+            sqlite3_column_value(pLaf->pAllAndParent, 0)
+        );
+        sqlite3_step(pLaf->pMapInsert);
+        recoverReset(p, pLaf->pMapInsert);
+        sqlite3_bind_int64(pLaf->pMaxField, 1, iChild);
+        if( SQLITE_ROW==sqlite3_step(pLaf->pMaxField) ){
+          int nMax = sqlite3_column_int(pLaf->pMaxField, 0);
+          if( nMax>pLaf->nMaxField ) pLaf->nMaxField = nMax;
+        }
+        recoverReset(p, pLaf->pMaxField);
+      }
+    }else{
+      recoverFinalize(p, pLaf->pAllAndParent);
+      pLaf->pAllAndParent =0;
+      return SQLITE_DONE;
+    }
+  }
+  return p->errCode;
+}
+
+static void recoverLostAndFoundCleanup(sqlite3_recover *p){
+  recoverBitmapFree(p->laf.pUsed);
+  p->laf.pUsed = 0;
+  sqlite3_finalize(p->laf.pUsedPages);
+  sqlite3_finalize(p->laf.pAllAndParent);
+  sqlite3_finalize(p->laf.pMapInsert);
+  sqlite3_finalize(p->laf.pMaxField);
+  sqlite3_finalize(p->laf.pFindRoot);
+  sqlite3_finalize(p->laf.pInsert);
+  sqlite3_finalize(p->laf.pAllPage);
+  sqlite3_finalize(p->laf.pPageData);
+  p->laf.pUsedPages = 0;
+  p->laf.pAllAndParent = 0;
+  p->laf.pMapInsert = 0;
+  p->laf.pMaxField = 0;
+  p->laf.pFindRoot = 0;
+  p->laf.pInsert = 0;
+  p->laf.pAllPage = 0;
+  p->laf.pPageData = 0;
+  sqlite3_free(p->laf.apVal);
+  p->laf.apVal = 0;
+}
+
 static void recoverFinalCleanup(sqlite3_recover *p){
   RecoverTable *pTab = 0;
   RecoverTable *pNext = 0;
 
   recoverWriteDataCleanup(p);
+  recoverLostAndFoundCleanup(p);
+
   for(pTab=p->pTblList; pTab; pTab=pNext){
     pNext = pTab->pNext;
     sqlite3_free(pTab);
@@ -1701,8 +1832,7 @@ static void recoverFinalCleanup(sqlite3_recover *p){
   p->pTblList = 0;
   sqlite3_finalize(p->pGetPage);
   p->pGetPage = 0;
-  recoverBitmapFree(p->pUsed);
-  p->pUsed = 0;
+
   {
     int res = sqlite3_close(p->dbOut);
     assert( res==SQLITE_OK );
@@ -1742,7 +1872,7 @@ static void recoverStep(sqlite3_recover *p){
       if( SQLITE_DONE==recoverWriteDataStep(p) ){
         recoverWriteDataCleanup(p);
         if( p->zLostAndFound ){
-          p->eState = RECOVER_STATE_LOSTANDFOUND;
+          p->eState = RECOVER_STATE_LOSTANDFOUND1;
         }else{
           p->eState = RECOVER_STATE_SCHEMA2;
         }
@@ -1750,9 +1880,32 @@ static void recoverStep(sqlite3_recover *p){
       break;
     }
 
-    case RECOVER_STATE_LOSTANDFOUND: {
-      recoverLostAndFound(p);
-      p->eState = RECOVER_STATE_SCHEMA2;
+    case RECOVER_STATE_LOSTANDFOUND1: {
+      if( p->laf.pUsed==0 ){
+        recoverLostAndFound1Init(p);
+      }
+      if( SQLITE_DONE==recoverLostAndFound1Step(p) ){
+        p->eState = RECOVER_STATE_LOSTANDFOUND2;
+      }
+      break;
+    }
+    case RECOVER_STATE_LOSTANDFOUND2: {
+      if( p->laf.pAllAndParent==0 ){
+        recoverLostAndFound2Init(p);
+      }
+      if( SQLITE_DONE==recoverLostAndFound2Step(p) ){
+        p->eState = RECOVER_STATE_LOSTANDFOUND3;
+      }
+      break;
+    }
+
+    case RECOVER_STATE_LOSTANDFOUND3: {
+      if( p->laf.pInsert==0 ){
+        recoverLostAndFound3Init(p);
+      }
+      if( SQLITE_DONE==recoverLostAndFound3Step(p) ){
+        p->eState = RECOVER_STATE_SCHEMA2;
+      }
       break;
     }
 
