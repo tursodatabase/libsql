@@ -1,5 +1,5 @@
-C Get\sfiddle\sdb\sexport\sworking\sfor\sOPFS\sVFS.\sAdd\sroot\sdir\shandle\sto\sthe\smain\sOPFS\sVFS\sworker\sto\senable\screation\sof\scertain\sutility\sfunctions\swithout\sdelegating\sto\sthe\sasync\sworker.\sAdd\ssqlite3.capi.sqlite3_wasm_rc_str()\sto\smap\sinteger\sresult\scodes\sback\sto\stheir\sSQLITE_xxx\scounterparts.\sMinor\sdoc\stouchups.
-D 2022-09-26T11:38:58.930
+C Fiddle:\sreplace\sdb\sexport\sroutine\swith\sa\sC-side\sone\swhich\sworks\sfor\sboth\sEmscripten\sFS-hosted\sand\sOPFS-hosted\sdb\sfiles.\sMinor\scode-adjacent\scleanups.
+D 2022-09-26T13:55:10.137
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -472,7 +472,7 @@ F ext/session/test_session.c f433f68a8a8c64b0f5bc74dc725078f12483301ad4ae8375205
 F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
 F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
 F ext/userauth/userauth.c 7f00cded7dcaa5d47f54539b290a43d2e59f4b1eb5f447545fa865f002fc80cb
-F ext/wasm/EXPORTED_FUNCTIONS.fiddle.in 48af0d812e2e1099798ae0e27f1d4836d572d0d068c83b3e2088ef4d97c45c2f
+F ext/wasm/EXPORTED_FUNCTIONS.fiddle.in 27450c8b8c70875a260aca55435ec927068b34cef801a96205adb81bdcefc65c
 F ext/wasm/EXPORTED_RUNTIME_METHODS.fiddle 0e88c8cfc3719e4b7e74980d9da664c709e68acf863e48386cda376edfd3bfb0
 F ext/wasm/GNUmakefile 34a84e30e6b25e24959a8264e9dec020dffa82d96879dc55ad65d3c31c95d3b1
 F ext/wasm/README.md e1ee1e7c321c6a250bf78a84ca6f5882890a237a450ba5a0649c7a8399194c52
@@ -483,9 +483,9 @@ F ext/wasm/api/post-js-footer.js b64319261d920211b8700004d08b956a6c285f3b0bba814
 F ext/wasm/api/post-js-header.js 2e5c886398013ba2af88028ecbced1e4b22dc96a86467f1ecc5ba9e64ef90a8b
 F ext/wasm/api/sqlite3-api-cleanup.js 8564a6077cdcaea9a9f428a019af8a05887f0131e6a2a1e72a7ff1145fadfe77
 F ext/wasm/api/sqlite3-api-glue.js fe5ca21ac519e6411f5e7a6403d06fe92c51ef81cca8e07ea8895df8ec9c2e4e
-F ext/wasm/api/sqlite3-api-oo1.js f974e79d9af8f26bf33928c5730b0988cc706d14f59a5fe36394739b92249841
-F ext/wasm/api/sqlite3-api-opfs.js 151f8bab445915dd4fa8fe3329accc5250351e7bf0af1518cb5cc49886c123d2
-F ext/wasm/api/sqlite3-api-prologue.js 76db12cce58ec6724ec01a977dfbedabfd4916e915a6e7679ffc24dd52eef64e
+F ext/wasm/api/sqlite3-api-oo1.js 455fcb28dd77b9781e087aac77392fb78f8ee8e5b125a99c1488604de27a5bb1
+F ext/wasm/api/sqlite3-api-opfs.js e0dfae09aedc6fe414d8d350e7228a6a88de030a0cb19a748ac8269aef9b11db
+F ext/wasm/api/sqlite3-api-prologue.js d39bda7d83aaeb8e15574afe8308221ed11c6f24865ccff06cf0424b665e681e
 F ext/wasm/api/sqlite3-api-worker1.js 2eeb2a24e1a90322d84a9b88a99919b806623de62792436446099c0988f2030b
 F ext/wasm/api/sqlite3-wasi.h 25356084cfe0d40458a902afb465df8c21fc4152c1d0a59b563a3fba59a068f9
 F ext/wasm/api/sqlite3-wasm.c 7010405f1981cd5929568403a618f80398f7acbf76b3eb11c4f23789206eb164
@@ -494,7 +494,7 @@ F ext/wasm/batch-runner.js 6f5b86e0b5519a9a941d9f17ee9c5ecdc63f452f157602fe7fdf8
 F ext/wasm/common/SqliteTestUtil.js 529161a624265ba84271a52db58da022649832fa1c71309fb1e02cc037327a2b
 F ext/wasm/common/emscripten.css 3d253a6fdb8983a2ac983855bfbdd4b6fa1ff267c28d69513dd6ef1f289ada3f
 F ext/wasm/common/testing.css 3a5143699c2b73a85b962271e1a9b3241b30d90e30d895e4f55665e648572962
-F ext/wasm/common/whwasmutil.js 2a8cd8b0c936da5812971aa39c8d989306c2ad8fc841dcd037c3be62737dc652
+F ext/wasm/common/whwasmutil.js 20291bbf4955358d0b5ead58db4c575be269b4976e39c43a93331547e3b86363
 F ext/wasm/demo-123-worker.html e419b66495d209b5211ec64903b4cfb3ca7df20d652b41fcd28bf018a773234f
 F ext/wasm/demo-123.html aa281d33b7eefa755f3122b7b5a18f39a42dc5fb69c8879171bf14b4c37c4ec4
 F ext/wasm/demo-123.js 234655683e35a4543a23de7b10800d76b0369947b33e089e5613171fa7795afb
@@ -502,7 +502,7 @@ F ext/wasm/demo-kvvfs1.html 7d4f28873de67f51ac18c584b7d920825139866a96049a49c424
 F ext/wasm/demo-kvvfs1.js e884ea35022d772c0d1dd884b40011413696438394f605c6cd4808cfb1642a4a
 F ext/wasm/fiddle.make fd56fa21bada6ecbf860686a9a789ebda7cc3d9b60835927000fcb00246ea50f
 F ext/wasm/fiddle/emscripten.css 3d253a6fdb8983a2ac983855bfbdd4b6fa1ff267c28d69513dd6ef1f289ada3f
-F ext/wasm/fiddle/fiddle-worker.js 42c31065660e57844afa796bcf120666348c060fc4c656c335151b62da7fc60d
+F ext/wasm/fiddle/fiddle-worker.js 1fe173ba963314df99df9eb8f0f45f1c3a72c056f16510e47787eb1790cb5531
 F ext/wasm/fiddle/fiddle.html 5daf54e8f3d7777cbb1ca4f93affe28858dbfff25841cb4ab81d694efed28ec2
 F ext/wasm/fiddle/fiddle.js aa44051be6e48c53fd23c829177d43f557dcc6f0998ccfcbae7c473ff405f0c6
 F ext/wasm/index.html a39d14f6de6bd1294d39522fcf40eca3c9f0b6da44bb8df6948378e9f30468f5
@@ -615,7 +615,7 @@ F src/random.c 546d6feb15ec69c1aafe9bb351a277cbb498fd5410e646add673acb805714960
 F src/resolve.c efea4e5fbecfd6d0a9071b0be0d952620991673391b6ffaaf4c277b0bb674633
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c d69dfb5b082f9a25e6700e152ddb3d942359b847b1df504eb09f9b4531844f8d
-F src/shell.c.in 00a72221c8b2df823f3a9d712457ae8bebe627b5989fefa1ccfe099eafab5139
+F src/shell.c.in 2980312ab57fc5ccf298d1f0682588ec3832f52a878bea8abe34647d2cf31d05
 F src/sqlite.h.in b9b7fd73239d94db20332bb6e504688001e5564b655e1318a4427a1caef4b99e
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h a988810c9b21c0dc36dc7a62735012339dc76fc7ab448fb0792721d30eacb69d
@@ -2026,8 +2026,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 85f2e877e53899860af4dc6630044b471a9c7c82faba1f4e1e60ae991460b943
-R 021d11845b25e048635a4d675c2c9f1f
+P 9b2244e1c8a40efe6547094a1b57acc8f2173145a8731abb0e36268ce0a8ef41
+R ee45c68d4b4cfbf2a729d26cea95ac0e
 U stephan
-Z 684fe82520a24a3caf4c9fdd7b640f27
+Z a7778a8aaef90b52f5b829e56bd6cae3
 # Remove this line to create a well-formed Fossil manifest.

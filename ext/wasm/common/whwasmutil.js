@@ -63,7 +63,7 @@
    - WASM-exported "indirect function table" access and
      manipulation. e.g.  creating new WASM-side functions using JS
      functions, analog to Emscripten's addFunction() and
-     removeFunction() but slightly different.
+     uninstallFunction() but slightly different.
 
    - Get/set specific heap memory values, analog to Emscripten's
      getValue() and setValue().
@@ -483,8 +483,11 @@ self.WhWasmUtilInstaller = function(target){
      available slot of this.functionTable(), and returns the
      function's index in that table (which acts as a pointer to that
      function). The returned pointer can be passed to
-     removeFunction() to uninstall it and free up the table slot for
+     uninstallFunction() to uninstall it and free up the table slot for
      reuse.
+
+     If passed (string,function) arguments then it treats the first
+     argument as the signature and second as the function.
 
      As a special case, if the passed-in function is a WASM-exported
      function then the signature argument is ignored and func is
@@ -499,12 +502,20 @@ self.WhWasmUtilInstaller = function(target){
      Sidebar: this function differs from Emscripten's addFunction()
      _primarily_ in that it does not share that function's
      undocumented behavior of reusing a function if it's passed to
-     addFunction() more than once, which leads to removeFunction()
+     addFunction() more than once, which leads to uninstallFunction()
      breaking clients which do not take care to avoid that case:
 
      https://github.com/emscripten-core/emscripten/issues/17323
   */
   target.installFunction = function f(func, sig){
+    if(2!==arguments.length){
+      toss("installFunction() requires exactly 2 arguments");
+    }
+    if('string'===typeof func && sig instanceof Function){
+      const x = sig;
+      sig = func;
+      func = x;
+    }
     const ft = target.functionTable();
     const oldLen = ft.length;
     let ptr;

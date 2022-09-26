@@ -1025,51 +1025,6 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         this.exec("ROLLBACK to SAVEPOINT oo1; RELEASE SAVEPOINT oo1");
         throw e;
       }
-    },
-    
-    /**
-       This function currently does nothing and always throws.  It
-       WILL BE REMOVED pending other refactoring, to eliminate a hard
-       dependency on Emscripten. This feature will be moved into a
-       higher-level API or a runtime-configurable feature.
-
-       That said, what its replacement should eventually do is...
-
-       Exports a copy of this db's file as a Uint8Array and
-       returns it. It is technically not legal to call this while
-       any prepared statement are currently active because,
-       depending on the platform, it might not be legal to read
-       the db while a statement is locking it. Throws if this db
-       is not open or has any opened statements.
-
-       The resulting buffer can be passed to this class's
-       constructor to restore the DB.
-
-       Maintenance reminder: the corresponding sql.js impl of this
-       feature closes the current db, finalizing any active
-       statements and (seemingly unnecessarily) destroys any UDFs,
-       copies the file, and then re-opens it (without restoring
-       the UDFs). Those gymnastics are not necessary on the tested
-       platform but might be necessary on others. Because of that
-       eventuality, this interface currently enforces that no
-       statements are active when this is run. It will throw if
-       any are.
-    */
-    exportBinaryImage: function(){
-      toss3("exportBinaryImage() is slated for removal for portability reasons.");
-      /***********************
-         The following is currently kept only for reference when
-         porting to some other layer, noting that we may well not be
-         able to implement this, at this level, when using the OPFS
-         VFS because of its exclusive locking policy.
-
-         affirmDbOpen(this);
-         if(this.openStatementCount()>0){
-           toss3("Cannot export with prepared statements active!",
-                 "finalize() all statements and try again.");
-         }
-         return MODCFG.FS.readFile(this.filename, {encoding:"binary"});
-      ***********************/
     }
   }/*DB.prototype*/;
 

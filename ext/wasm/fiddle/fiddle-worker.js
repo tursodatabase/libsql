@@ -103,7 +103,8 @@
     throw new Error(args.join(' '));
   };
   const fixmeOPFS = "(FIXME: won't work with vanilla OPFS.)";
-  
+  let sqlite3 /* gets assigned when the wasm module is loaded */;
+
   self.onerror = function(/*message, source, lineno, colno, error*/) {
     const err = arguments[4];
     if(err && 'ExitStatus'==err.name){
@@ -121,8 +122,17 @@
   const Sqlite3Shell = {
     /** Returns the name of the currently-opened db. */
     dbFilename: function f(){
-      if(!f._) f._ = fiddleModule.cwrap('fiddle_db_filename', "string", ['string']);
+      if(!f._) f._ = sqlite3.capi.wasm.xWrap('fiddle_db_filename', "string", ['string']);
+      return f._(0);
+    },
+    dbHandle: function f(){
+      if(!f._) f._ = sqlite3.capi.wasm.xWrap("fiddle_db_handle", "sqlite3*");
       return f._();
+    },
+    dbIsOpfs: function f(){
+      return sqlite3.opfs && sqlite3.capi.sqlite3_web_db_uses_vfs(
+        this.dbHandle(), "opfs"
+      );
     },
     runMain: function f(){
       if(f.argv) return 0===f.argv.rc;
@@ -141,7 +151,8 @@
          after sqlite3_initialize() has been called. This means,
          however, that any initialization done by the JS code may need
          to be re-done (e.g.  re-registration of dynamically-loaded
-         VFSes). */
+         VFSes). We need a more generic approach to running such
+         init-level code. */
       S.capi.sqlite3_shutdown();
       f.argv.pArgv = S.capi.wasm.allocMainArgv(f.argv);
       f.argv.rc = S.capi.wasm.exports.fiddle_main(
@@ -196,6 +207,12 @@
       }
     },
     resetDb: function f(){
+      if(Sqlite3Shell.dbIsOpfs()){
+        /* The problem is that fiddle_reset_db() uses the POSIX APIs
+           for file removal, which cannot see OPFS-hosted files. */
+        stderr("TODO: cannot currently reset an OPFS-hosted db.");
+        return;
+      }
       if(!f._) f._ = fiddleModule.cwrap('fiddle_reset_db', null);
       stdout("Resetting database.",fixmeOPFS);
       f._();
@@ -216,29 +233,30 @@
      (and, hypothetically, kvvfs). Throws on error. On success returns
      a Blob containing the whole db contents.
 
-     Bug: xFileSize() is returning garbage for the default VFS but
-     works in OPFS. Thus for exporting that impl we'll use the
-     fiddleModule.FS API for the time being.
+     Bug/to investigate: xFileSize() is returning garbage for the
+     default VFS but works in OPFS. Thus for exporting that impl we'll
+     use the fiddleModule.FS API for the time being. The equivalent
+     native impl, fiddle_export_db(), works okay with both VFSes, so
+     the bug is apparently in (or via) this code.
   */
-  const exportDbFileToBlob = function(){
+  const brokenExportDbFileToBlob = function(){
     const S = fiddleModule.sqlite3, capi = S.capi, wasm = capi.wasm;
-    const pDb = wasm.xCall("fiddle_db_handle");
+    const pDb = Sqlite3Shell.dbHandle();
     if(!pDb) toss("No db is opened.");
     const scope = wasm.scopedAllocPush();
     try{
       const ppFile = wasm.scopedAlloc(12/*sizeof(i32 + i64)*/);
       const pFileSize = ppFile + 4;
-      wasm.setMemValue(ppFile, 0, 'i32');
+      wasm.setMemValue(ppFile, 0, '*');
       let rc = capi.sqlite3_file_control(
         pDb, "main", capi.SQLITE_FCNTL_FILE_POINTER, ppFile
       );
       if(rc) toss("Cannot get sqlite3_file handle.");
       const jFile = new capi.sqlite3_file(wasm.getPtrValue(ppFile));
       const jIom = new capi.sqlite3_io_methods(jFile.$pMethods);
-      console.warn("jIom =",jIom);
       const xFileSize = wasm.functionEntry(jIom.$xFileSize);
       const xRead = wasm.functionEntry(jIom.$xRead);
-      wasm.setMemValue(pFileSize, 0n, 'i64');
+      wasm.setMemValue(pFileSize, 0, 'i64');
       //stderr("nFileSize =",wasm.getMemValue(pFileSize,'i64'),"pFileSize =",pFileSize);
       rc = xFileSize( jFile.pointer, pFileSize );
       if(rc) toss("Cannot get db file size.");
@@ -272,6 +290,30 @@
       wasm.scopedAllocPop(scope);
     }
   }/*exportDbFileToBlob()*/;
+
+  const exportDbFileToBlob = function f(){
+    if(!f._){
+      f._ = sqlite3.capi.wasm.xWrap('fiddle_export_db', 'int', '*');
+    }
+    const capi = sqlite3.capi;
+    const wasm = capi.wasm;
+    const blobList = [];
+    const heap = wasm.heap8u();
+    const callback = wasm.installFunction('ipi', function(buf, n){
+      blobList.push(heap.slice(buf, buf+n));
+      return 0;
+    });
+    try {
+      const rc = wasm.exports.fiddle_export_db( callback );
+      if(rc) toss("DB export failed with code", capi.sqlite3_wasm_rc_str(rc));
+      return new Blob(blobList);
+    }catch(e){
+      console.error("exportDbFileToBlob():",e.message);
+      throw(e);
+    }finally{
+      wasm.uninstallFunction(callback);
+    }
+  }/*exportDbFileToBlob()*/;
   
   self.onmessage = function f(ev){
     ev = ev.data;
@@ -302,18 +344,9 @@
           const fn2 = fn ? fn.split(/[/\\]/).pop() : null;
           try{
             if(!fn2) throw new Error("DB appears to be closed.");
-            if(fiddleModule.sqlite3.capi.wasm.xCall(
-              'fiddle_db_is_opfs'
-            )){
-              exportDbFileToBlob().arrayBuffer().then((buffer)=>{
-                wMsg('db-export',{filename: fn2, buffer}, [buffer]);
-              });
-            }else{
-              const buffer = fiddleModule.FS.readFile(
-                fn, {encoding:"binary"}
-              ).buffer;
+            exportDbFileToBlob().arrayBuffer().then((buffer)=>{
               wMsg('db-export',{filename: fn2, buffer}, [buffer]);
-            }
+            });
           }catch(e){
             /* Post a failure message so that UI elements disabled
                during the export can be re-enabled. */
@@ -427,15 +460,15 @@
      emcc ... -sMODULARIZE=1 -sEXPORT_NAME=initFiddleModule
   */
   initFiddleModule(fiddleModule).then(function(thisModule){
-    const S = thisModule.sqlite3;
+    sqlite3 = thisModule.sqlite3;
     const atEnd = ()=>{
       thisModule.fsUnlink = (fn)=>{
         stderr("unlink:",fixmeOPFS);
-        return S.capi.wasm.sqlite3_wasm_vfs_unlink(fn);
+        return sqlite3.capi.wasm.sqlite3_wasm_vfs_unlink(fn);
       };
       wMsg('fiddle-ready');
     };
-    if(S.installOpfsVfs) S.installOpfsVfs().finally(atEnd);
+    if(sqlite3.installOpfsVfs) sqlite3.installOpfsVfs().finally(atEnd);
     else atEnd();
   })/*then()*/;
 })();

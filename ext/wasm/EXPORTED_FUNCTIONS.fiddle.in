@@ -6,4 +6,5 @@ _fiddle_interrupt
 _fiddle_main
 _fiddle_reset_db
 _fiddle_db_handle
-_fiddle_db_is_opfs
+_fiddle_db_vfs
+_fiddle_export_db

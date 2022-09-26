@@ -12629,14 +12629,28 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 #ifdef SQLITE_SHELL_FIDDLE
 /* Only for emcc experimentation purposes. */
 int fiddle_experiment(int a,int b){
-   return a + b;
+  return a + b;
 }
 
 /*
 ** Returns a pointer to the current DB handle.
 */
 sqlite3 * fiddle_db_handle(){
-    return globalDb;
+  return globalDb;
+}
+
+/*
+** Returns a pointer to the given DB name's VFS. If zDbName is 0 then
+** "main" is assumed. Returns 0 if no db with the given name is
+** open.
+*/
+sqlite3_vfs * fiddle_db_vfs(const char *zDbName){
+  sqlite3_vfs * pVfs = 0;
+  if(globalDb){
+    sqlite3_file_control(globalDb, zDbName ? zDbName : "main",
+                         SQLITE_FCNTL_VFS_POINTER, &pVfs);
+  }
+  return pVfs;
 }
 
 /* Only for emcc experimentation purposes. */
@@ -12652,7 +12666,7 @@ sqlite3 * fiddle_db_arg(sqlite3 *arg){
 ** portable enough to make real use of.
 */
 void fiddle_interrupt(void){
-  if(globalDb) sqlite3_interrupt(globalDb);
+  if( globalDb ) sqlite3_interrupt(globalDb);
 }
 
 /*
@@ -12673,7 +12687,7 @@ const char * fiddle_db_filename(const char * zDbName){
 */
 void fiddle_reset_db(void){
   char *zFilename = 0;
-  if(0==globalDb){
+  if( 0==globalDb ){
     shellState.pAuxDb->zDbFilename = shellState.wasm.zDefaultDbName;
   }else{
     zFilename =
@@ -12689,53 +12703,46 @@ void fiddle_reset_db(void){
 }
 
 /*
-** This is a bit of a workaround: returns true if the current db uses
-** the "opfs" VFS, else false.
+** Uses the current database's VFS xRead to stream the db file's
+** contents out to the given callback. The callback gets a single
+** chunk of size n (its 2nd argument) on each call and must return 0
+** on success, non-0 on error. This function returns 0 on success,
+** SQLITE_NOTFOUND if no db is open, or propagates any other non-0
+** code from the callback. Note that this is not thread-friendly: it
+** expects that it will be the only thread reading the db file and
+** takes no measures to ensure that is the case.
 */
-int fiddle_db_is_opfs(void){
-  sqlite3_vfs * pVfs = 0;
-  if( 0!=shellState.db ){
-    sqlite3_file_control( shellState.db, "main",
-                          SQLITE_FCNTL_VFS_POINTER, &pVfs );
-  }
-  return pVfs ? 0==strcmp("opfs", pVfs->zName) : 0;
-}
-
-#if 0
-/* TODO: test whether this impl works properly wrt xSize() in the
-** unix-none VFS. The JS impl works fine for OPFS but not unix-none
-** because xSize() is returning a garbage size.
-*/
-int fiddle_export_db( int (*callback)(unsigned const char *zOut, int n) ){
+int fiddle_export_db( int (*xCallback)(unsigned const char *zOut, int n) ){
   sqlite3_int64 nSize = 0;
   sqlite3_int64 nPos = 0;
-  sqlite3_vfs * pVfs = 0;
   sqlite3_file * pFile = 0;
-  unsigned char buf[1024 * 4];
-  const int nBuf = (int)sizeof(buf);
+  unsigned char buf[1024 * 8];
+  int nBuf = (int)sizeof(buf);
   int rc = shellState.db
     ? sqlite3_file_control(shellState.db, "main",
-                           SQLITE_FCNTL_VFS_POINTER, &pVfs)
-    : 0;
-  if( rc ) return rc;
-  else if( 0==pVfs ) return SQLITE_NOTFOUND;
-  rc = sqlite3_file_control(shellState.db, "main",
-                            SQLITE_FCNTL_FILE_POINTER, &pFile);
+                           SQLITE_FCNTL_FILE_POINTER, &pFile)
+    : SQLITE_NOTFOUND;
   if( rc ) return rc;
   rc = pFile->pMethods->xFileSize(pFile, &nSize);
-  if(rc) return rc;
+  if( rc ) return rc;
+  if(nSize % nBuf){
+    /* DB size is not an even multiple of the buffer size. Reduce
+    ** buffer size so that we do not unduly inflate the db size when
+    ** exporting. */
+    if(0 == nSize % 4096) nBuf = 4096;
+    else if(0 == nSize % 2048) nBuf = 2048;
+    else if(0 == nSize % 1024) nBuf = 1024;
+    else nBuf = 512;
+  }
   for( ; 0==rc && nPos<nSize; nPos += nBuf ){
     rc = pFile->pMethods->xRead(pFile, buf, nBuf, nPos);
     if(SQLITE_IOERR_SHORT_READ == rc){
       rc = (nPos + nBuf) < nSize ? rc : 0/*assume EOF*/;
     }
-    if(rc) return rc;
-    nPos += nBuf;
-    rc = callback(buf, nBuf);
+    if( 0==rc ) rc = xCallback(buf, nBuf);
   }
   return rc;
 }
-#endif
 
 /*
 ** Trivial exportable function for emscripten. It processes zSql as if

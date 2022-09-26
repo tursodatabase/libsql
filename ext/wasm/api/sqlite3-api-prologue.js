@@ -784,13 +784,16 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   }
 
   /**
-     Given an `sqlite3*` and an sqlite3_vfs name, returns a truthy
-     value (see below) if that db handle uses that VFS, else returns
-     false. If pDb is falsy then this function returns a truthy value
-     if the default VFS is that VFS. Results are undefined if pDb is
-     truthy but refers to an invalid pointer.
+     Given an `sqlite3*`, an sqlite3_vfs name, and an optional db
+     name, returns a truthy value (see below) if that db handle uses
+     that VFS, else returns false. If pDb is falsy then the 3rd
+     argument is ignored and this function returns a truthy value if
+     the default VFS name matches that of the 2nd argument. Results
+     are undefined if pDb is truthy but refers to an invalid
+     pointer. The 3rd argument specifies the database name of the
+     given database connection to check, defaulting to the main db.
 
-     The 2nd argument may either be a JS string or a C-string
+     The 2nd and 3rd arguments may either be a JS string or a C-string
      allocated from the wasm environment.
 
      The truthy value it returns is a pointer to the `sqlite3_vfs`
@@ -801,11 +804,9 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      bad arguments cause a conversion error when passing into
      wasm-space, false is returned.
   */
-  capi.sqlite3_web_db_uses_vfs = function(pDb,vfsName){
+  capi.sqlite3_web_db_uses_vfs = function(pDb,vfsName,dbName="main"){
     try{
-      const pK = ('number'===vfsName)
-            ? capi.wasm.exports.sqlite3_vfs_find(vfsName)
-            : capi.sqlite3_vfs_find(vfsName);
+      const pK = capi.sqlite3_vfs_find(vfsName);
       if(!pK) return false;
       else if(!pDb){
         return capi.sqlite3_vfs_find(0)===pK ? pK : false;
@@ -814,7 +815,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       try{
         return (
           (0===capi.sqlite3_file_control(
-            pDb, "main", capi.SQLITE_FCNTL_VFS_POINTER, ppVfs
+            pDb, dbName, capi.SQLITE_FCNTL_VFS_POINTER, ppVfs
           )) && (capi.wasm.getPtrValue(ppVfs) === pK)
         ) ? pK : false;
       }finally{

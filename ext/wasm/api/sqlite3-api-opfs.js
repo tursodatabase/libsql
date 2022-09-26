@@ -637,7 +637,7 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
         const rc = opRun('xFileSize', pFile);
         if(0==rc){
           const sz = state.s11n.deserialize()[0];
-          wasm.setMemValue(pSz64, BigInt(sz), 'i64');
+          wasm.setMemValue(pSz64, sz, 'i64');
         }
         mTimeEnd();
         return rc;
@@ -820,10 +820,12 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
     }
 
     /* Install the vfs/io_methods into their C-level shared instances... */
-    let inst = installMethod(opfsIoMethods);
-    for(let k of Object.keys(ioSyncWrappers)) inst(k, ioSyncWrappers[k]);
-    inst = installMethod(opfsVfs);
-    for(let k of Object.keys(vfsSyncWrappers)) inst(k, vfsSyncWrappers[k]);
+    for(let k of Object.keys(ioSyncWrappers)){
+      installMethod(opfsIoMethods, k, ioSyncWrappers[k]);
+    }
+    for(let k of Object.keys(vfsSyncWrappers)){
+      installMethod(opfsVfs, k, vfsSyncWrappers[k]);
+    }
 
     /**
        Syncronously deletes the given OPFS filesystem entry, ignoring
@@ -831,7 +833,7 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
        directory", the given name must be an absolute path. If the 2nd
        argument is truthy, deletion is recursive (use with caution!).
 
-       Returns true if the deletion succeeded and fails if it fails,
+       Returns true if the deletion succeeded and false if it fails,
        but cannot report the nature of the failure.
     */
     opfsUtil.deleteEntry = function(fsEntryName,recursive=false){
