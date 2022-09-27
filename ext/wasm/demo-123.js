@@ -104,7 +104,7 @@
       log("Query data with exec() using rowMode 'array'...");
       db.exec({
         sql: "select a from t order by a limit 3",
-        rowMode: 'array', // 'array', 'object', or 'stmt' (default)
+        rowMode: 'array', // 'array' (default), 'object', or 'stmt'
         callback: function(row){
           log("row ",++this.counter,"=",row);
         }.bind({counter: 0})
@@ -122,7 +122,7 @@
       log("Query data with exec() using rowMode 'stmt'...");
       db.exec({
         sql: "select a from t order by a limit 3",
-        rowMode: 'stmt', // stmt === the default
+        rowMode: 'stmt',
         callback: function(row){
           log("row ",++this.counter,"get(0) =",row.get(0));
         }.bind({counter: 0})

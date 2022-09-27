@@ -1,5 +1,5 @@
-C Comment\sthe\s-O2\swasm\sbuilds\sas\sbeing\sbroken\s(mysteriously\smissing\sJS\sbits).
-D 2022-09-27T14:31:34.448
+C Minor\sdoc\scorrection.
+D 2022-09-27T17:03:01.635
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -497,7 +497,7 @@ F ext/wasm/common/testing.css 3a5143699c2b73a85b962271e1a9b3241b30d90e30d895e4f5
 F ext/wasm/common/whwasmutil.js 20291bbf4955358d0b5ead58db4c575be269b4976e39c43a93331547e3b86363
 F ext/wasm/demo-123-worker.html e419b66495d209b5211ec64903b4cfb3ca7df20d652b41fcd28bf018a773234f
 F ext/wasm/demo-123.html aa281d33b7eefa755f3122b7b5a18f39a42dc5fb69c8879171bf14b4c37c4ec4
-F ext/wasm/demo-123.js c8445093856f88ecc51b8ef6a99efc48869e2937d8ae248cc53476ee2dd11efd
+F ext/wasm/demo-123.js d8490189cd2f7a47940d42174fe562d8b6a5cbab521eec4c602dead055b12414
 F ext/wasm/demo-kvvfs1.html 7d4f28873de67f51ac18c584b7d920825139866a96049a49c424d6f5a0ea5e7f
 F ext/wasm/demo-kvvfs1.js e884ea35022d772c0d1dd884b40011413696438394f605c6cd4808cfb1642a4a
 F ext/wasm/fiddle.make fd56fa21bada6ecbf860686a9a789ebda7cc3d9b60835927000fcb00246ea50f
@@ -2026,8 +2026,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c42a8cb090cad1108dfd6be574202d744c59e053b505bc4c17252dc6b65d26bf
-R e4d946fe3ba9ab85a5625004bd1df248
+P f61475ef8244fd1f6553eca9cc2317e5de2cc04443e24afb7b91ebd3fc1bd402
+R 1038455075fe2f7dad3cc913763db9e3
 U stephan
-Z 349a6ed1b952e9385ce6d2315be314bf
+Z 68a3ada68256719e5271aa1c9a7ddec7
 # Remove this line to create a well-formed Fossil manifest.
