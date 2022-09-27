@@ -883,12 +883,15 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
        hook in to any C-side calls to sqlite3_initialize(), so we
        cannot add an after-initialize callback mechanism.
     */
-    opfsUtil.reregisterVfs = (asDefault=false)=>{
+    opfsUtil.registerVfs = (asDefault=false)=>{
       return capi.wasm.exports.sqlite3_vfs_register(
         opfsVfs.pointer, asDefault ? 1 : 0
       );
     };
-    
+
+    //TODO to support fiddle db upload:
+    //opfsUtil.createFile = function(absName, content=undefined){...}
+
     if(sqlite3.oo1){
       opfsUtil.OpfsDb = function(...args){
         const opt = sqlite3.oo1.dbCtorHelper.normalizeArgs(...args);

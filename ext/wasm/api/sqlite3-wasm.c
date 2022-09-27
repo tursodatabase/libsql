@@ -571,7 +571,7 @@ int sqlite3_wasm_vfs_unlink(const char * zName){
 WASM_KEEP
 int sqlite3_wasm_init_wasmfs(const char *zMountPoint){
   static backend_t pOpfs = 0;
-  if( !zMountPoint || !*zMountPoint ) zMountPoint = "/persistent";
+  if( !zMountPoint || !*zMountPoint ) zMountPoint = "/opfs";
   if( !pOpfs ){
     pOpfs = wasmfs_create_opfs_backend();
     if( pOpfs ){
@@ -595,7 +595,8 @@ int sqlite3_wasm_init_wasmfs(const char *zMountPoint){
 }
 #else
 WASM_KEEP
-int sqlite3_wasm_init_wasmfs(void){
+int sqlite3_wasm_init_wasmfs(const char *zUnused){
+  if(zUnused){/*unused*/}
   return SQLITE_NOTFOUND;
 }
 #endif /* __EMSCRIPTEN__ && SQLITE_WASM_WASMFS */

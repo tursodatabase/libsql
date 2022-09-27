@@ -495,24 +495,25 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       }
     },
     /**
-       Similar to this.filename but will return a falsy value for
-       special names like ":memory:". Throws if the DB has been
-       closed. If passed an argument it then it will return the
+       Similar to the this.filename property but will return a falsy
+       value for special names like ":memory:". Throws if the DB has
+       been closed. If passed an argument it then it will return the
        filename of the ATTACHEd db with that name, else it assumes a
-       name of `main`.
+       name of `main`. The argument may be either a JS string or
+       a pointer to a WASM-allocated C-string.
     */
     getFilename: function(dbName='main'){
       return capi.sqlite3_db_filename(affirmDbOpen(this).pointer, dbName);
     },
     /**
        Returns true if this db instance has a name which resolves to a
-       file. If the name is "" or ":memory:", it resolves to false.
+       file. If the name is "" or starts with ":", it resolves to false.
        Note that it is not aware of the peculiarities of URI-style
        names and a URI-style name for a ":memory:" db will fool it.
        Returns false if this db is closed.
     */
     hasFilename: function(){
-      return this.filename && ':memory'!==this.filename;
+      return this.filename && ':'!==this.filename[0];
     },
     /**
        Returns the name of the given 0-based db number, as documented
@@ -525,9 +526,13 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        Compiles the given SQL and returns a prepared Stmt. This is
        the only way to create new Stmt objects. Throws on error.
 
-       The given SQL must be a string, a Uint8Array holding SQL, or a
-       WASM pointer to memory holding the NUL-terminated SQL string.
-       If the SQL contains no statements, an SQLite3Error is thrown.
+       The given SQL must be a string, a Uint8Array holding SQL, a
+       WASM pointer to memory holding the NUL-terminated SQL string,
+       or an array of strings. In the latter case, the array is
+       concatenated together, with no separators, to form the SQL
+       string (arrays are often a convenient way to formulate long
+       statements).  If the SQL contains no statements, an
+       SQLite3Error is thrown.
 
        Design note: the C API permits empty SQL, reporting it as a 0
        result code and a NULL stmt pointer. Supporting that case here
@@ -541,6 +546,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     */
     prepare: function(sql){
       affirmDbOpen(this);
+      if(Array.isArray(sql)) sql = sql.join('');
       const stack = capi.wasm.scopedAllocPush();
       let ppStmt, pStmt;
       try{

@@ -170,7 +170,7 @@
         stdout("\nOPFS is available. To open a persistent db, use:\n\n",
                "  .open file:name?vfs=opfs\n\nbut note that some",
                "features (e.g. upload) do not yet work with OPFS.");
-        S.opfs.reregisterVfs();
+        S.opfs.registerVfs();
       }
       stdout('\nEnter ".help" for usage hints.');
       this.exec([ // initialization commands...

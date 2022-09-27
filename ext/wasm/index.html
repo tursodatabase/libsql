@@ -14,7 +14,7 @@
       builds. All of them require that this directory have been
       "make"d first. The intent is that <em>this</em> page be run
       using:</div>
-    <blockquote><pre>althttpd -page index.html</pre></blockquote>
+    <blockquote><pre>althttpd -enable-sab -page index.html</pre></blockquote>
     <div>and the individual tests be started in their own tab.
       Warnings and Caveats:
       <ul class='warning'>
@@ -23,9 +23,8 @@
           <a href='https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cross-Origin-Opener-Policy'>COOP</a>
           and
           <a href='https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cross-Origin-Embedder-Policy'>COEP</a>
-          headers. The default build
-          of <a href='https://sqlite.org/althttpd'>althttpd</a>
-          <em>does not</em>.
+          headers. <a href='https://sqlite.org/althttpd'>althttpd</a> requires the
+          <code>-enable-sab</code> flag for that.
         </li>
         <li>Any OPFS-related pages require very recent version of
           Chrome or Chromium (v102 at least, possibly newer). OPFS
@@ -37,9 +36,6 @@
           page may depend on build-time options which are <em>off by
           default</em> because they currently (as of 2022-09-08) break
           with Worker-based pages.
-          <!-- Similarly, WASMFS does not work on some platforms,
-               e.g. Raspberry Pi 4 (for which there is no Chrome
-               build, so it's currently a moot point). -->
         </li>
       </ul>
     </div>
@@ -63,9 +59,9 @@
         <li>speedtest1 ports (sqlite3's primary benchmarking tool)...
           <ul>
             <li><a href='speedtest1.html'>speedtest1</a>: a main-thread WASM build of speedtest1.</li>
-            <li><a href='speedtest1-wasmfs.html'>speedtest1-wasmfs</a>: a variant of speedtest1 built solely for the wasmfs/opfs feature.</li>
+            <li><a href='speedtest1-wasmfs.html?flags=--size,25'>speedtest1-wasmfs</a>: a variant of speedtest1 built solely for the wasmfs/opfs feature.</li>
             <li><a href='speedtest1.html?vfs=kvvfs'>speedtest1-kvvfs</a>: speedtest1 with the kvvfs.</li>
-            <li><a href='speedtest1-worker.html'>speedtest1-worker</a>: an interactive Worker-thread variant of speedtest1.</li>
+            <li><a href='speedtest1-worker.html?size=25'>speedtest1-worker</a>: an interactive Worker-thread variant of speedtest1.</li>
             <li><a href='speedtest1-worker.html?vfs=opfs&size=25'>speedtest1-worker-opfs</a>: speedtest1-worker with the
               OPFS VFS preselected and configured for a moderate workload.</li>
           </ul>

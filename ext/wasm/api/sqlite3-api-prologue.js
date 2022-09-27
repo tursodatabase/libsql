@@ -120,7 +120,7 @@
      the `free(3)`-compatible routine for the WASM
      environment. Defaults to `"free"`.
 
-   - `persistentDirName`[^1]: if the environment supports persistent storage, this
+   - `wasmfsOpfsDir`[^1]: if the environment supports persistent storage, this
      directory names the "mount point" for that directory. It must be prefixed
      by `/` and may currently contain only a single directory-name part. Using
      the root directory name is not supported by any current persistent backend.
@@ -157,7 +157,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       })(),
       allocExportName: 'malloc',
       deallocExportName: 'free',
-      persistentDirName: '/persistent'
+      wasmfsOpfsDir: '/opfs'
     };
     Object.keys(configDefaults).forEach(function(k){
       config[k] = Object.getOwnPropertyDescriptor(apiConfig, k)
@@ -174,7 +174,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   [
     // If any of these config options are functions, replace them with
     // the result of calling that function...
-    'Module', 'exports', 'memory', 'persistentDirName'
+    'Module', 'exports', 'memory', 'wasmfsOpfsDir'
   ].forEach((k)=>{
     if('function' === typeof config[k]){
       config[k] = config[k]();
@@ -185,8 +185,8 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       all args with a space between each. */
   const toss = (...args)=>{throw new Error(args.join(' '))};
 
-  if(config.persistentDirName && !/^\/[^/]+$/.test(config.persistentDirName)){
-    toss("config.persistentDirName must be falsy or in the form '/dir-name'.");
+  if(config.wasmfsOpfsDir && !/^\/[^/]+$/.test(config.wasmfsOpfsDir)){
+    toss("config.wasmfsOpfsDir must be falsy or in the form '/dir-name'.");
   }
 
   /**
@@ -727,7 +727,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   capi.sqlite3_web_persistent_dir = function(){
     if(undefined !== __persistentDir) return __persistentDir;
     // If we have no OPFS, there is no persistent dir
-    const pdir = config.persistentDirName;
+    const pdir = config.wasmfsOpfsDir;
     if(!pdir
        || !self.FileSystemHandle
        || !self.FileSystemDirectoryHandle
@@ -748,7 +748,6 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
         const pVfs = sqlite3.capi.sqlite3_vfs_find("unix-none");
         if(pVfs){
           capi.sqlite3_vfs_register(pVfs,1);
-          console.warn("Installed 'unix-none' as the default sqlite3 VFS.");
         }
         return __persistentDir = pdir;
       }else{

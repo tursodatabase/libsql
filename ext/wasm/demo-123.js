@@ -44,7 +44,7 @@
           oo = sqlite3.oo1/*high-level OO API*/;
     log("sqlite3 version",capi.sqlite3_libversion(), capi.sqlite3_sourceid());
     const db = new oo.DB("/mydb.sqlite3");
-    log("transient b =",db.filename);
+    log("transient db =",db.filename);
     /**
        Never(!) rely on garbage collection to clean up DBs and
        (especially) prepared statements. Always wrap their lifetimes
@@ -82,7 +82,12 @@
       }    
 
       log("Insert using a prepared statement...");
-      let q = db.prepare("insert into t(a,b) values(?,?)");
+      let q = db.prepare([
+        // SQL may be a string or array of strings
+        // (concatenated w/o separators).
+        "insert into t(a,b) ",
+        "values(?,?)"
+      ]);
       try {
         for( i = 100; i < 103; ++i ){
           q.bind( [i, i*2] ).step();

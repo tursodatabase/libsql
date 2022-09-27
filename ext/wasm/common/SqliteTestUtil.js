@@ -221,7 +221,7 @@
        sqlite3 API.
     */
     sqlite3ApiConfig: {
-      persistentDirName: "/persistent"
+      wasmfsOpfsDir: "/opfs"
     },
     /**
        Intended to be called by apps which need to call the

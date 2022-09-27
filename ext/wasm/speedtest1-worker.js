@@ -8,7 +8,7 @@
   */
   const wasmfsDir = function f(wasmUtil){
     if(undefined !== f._) return f._;
-    const pdir = '/persistent';
+    const pdir = '/opfs';
     if( !self.FileSystemHandle
         || !self.FileSystemDirectoryHandle
         || !self.FileSystemFileHandle){

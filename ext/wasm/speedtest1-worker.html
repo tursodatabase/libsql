@@ -127,75 +127,75 @@
       }
     </style>
     <script>(function(){
-      'use strict';
-      const E = (sel)=>document.querySelector(sel);
-      const eOut = E('#test-output');
-      const log2 = function(cssClass,...args){
+    'use strict';
+    const E = (sel)=>document.querySelector(sel);
+    const eOut = E('#test-output');
+    const log2 = function(cssClass,...args){
         let ln;
         if(1 || cssClass){
-          ln = document.createElement('div');
-          if(cssClass) ln.classList.add(cssClass);
-          ln.append(document.createTextNode(args.join(' ')));
+            ln = document.createElement('div');
+            if(cssClass) ln.classList.add(cssClass);
+            ln.append(document.createTextNode(args.join(' ')));
         }else{
-          // This doesn't work with the "reverse order" option!
-          ln = document.createTextNode(args.join(' ')+'\n');
+            // This doesn't work with the "reverse order" option!
+            ln = document.createTextNode(args.join(' ')+'\n');
         }
         eOut.append(ln);
-      };
-      const log = (...args)=>{
+    };
+    const log = (...args)=>{
         //console.log(...args);
         log2('', ...args);
-      };
-      const logErr = function(...args){
+    };
+    const logErr = function(...args){
         console.error(...args);
         log2('error', ...args);
-      };
-      const logWarn = function(...args){
+    };
+    const logWarn = function(...args){
         console.warn(...args);
         log2('warning', ...args);
-      };
+    };
 
-      const spacePad = function(str,len=21){
+    const spacePad = function(str,len=21){
         if(str.length===len) return str;
         else if(str.length>len) return str.substr(0,len);
         const a = []; a.length = len - str.length;
         return str+a.join(' ');
-      };
-      // OPTION elements seem to ignore white-space:pre, so do this the hard way...
-      const nbspPad = function(str,len=21){
+    };
+    // OPTION elements seem to ignore white-space:pre, so do this the hard way...
+    const nbspPad = function(str,len=21){
         if(str.length===len) return str;
         else if(str.length>len) return str.substr(0,len);
         const a = []; a.length = len - str.length;
         return str+a.join('&nbsp;');
-      };
+    };
 
-      const W = new Worker("speedtest1-worker.js"+self.location.search);
-      const mPost = function(msgType,payload){
+    const W = new Worker("speedtest1-worker.js"+self.location.search);
+    const mPost = function(msgType,payload){
         W.postMessage({type: msgType, data: payload});
-      };
+    };
 
-      const eFlags = E('#select-flags');
-      const eSelectedFlags = E('#toolbar-selected-flags');
-      const eLinkMainThread = E('#link-main-thread');
-      const eLinkWasmfs = E('#link-wasmfs');
-      const eLinkKvvfs = E('#link-kvvfs');
-      const urlParams = new URL(self.location.href).searchParams;
-      const getSelectedFlags = ()=>{
-          const f = Array.prototype.map.call(eFlags.selectedOptions, (v)=>v.value);
-          [
-              'size', 'vfs'
-          ].forEach(function(k){
-              if(urlParams.has(k)) f.push('--'+k, urlParams.get(k));
-          });
-          return f;
-      };
-      const updateSelectedFlags = function(){
+    const eFlags = E('#select-flags');
+    const eSelectedFlags = E('#toolbar-selected-flags');
+    const eLinkMainThread = E('#link-main-thread');
+    const eLinkWasmfs = E('#link-wasmfs');
+    const eLinkKvvfs = E('#link-kvvfs');
+    const urlParams = new URL(self.location.href).searchParams;
+    const getSelectedFlags = ()=>{
+        const f = Array.prototype.map.call(eFlags.selectedOptions, (v)=>v.value);
+        [
+            'size', 'vfs'
+        ].forEach(function(k){
+            if(urlParams.has(k)) f.push('--'+k, urlParams.get(k));
+        });
+        return f;
+    };
+    const updateSelectedFlags = function(){
         eSelectedFlags.innerText = '';
         const flags = getSelectedFlags();
         flags.forEach(function(f){
-          const e = document.createElement('span');
-          e.innerText = f;
-          eSelectedFlags.appendChild(e);
+            const e = document.createElement('span');
+            e.innerText = f;
+            eSelectedFlags.appendChild(e);
         });
         const rxStripDash = /^(-+)?/;
         const comma = flags.join(',');
@@ -205,9 +205,9 @@
         eLinkWasmfs.href = 'speedtest1-wasmfs.html?flags='+comma;
         eLinkKvvfs.setAttribute('target', 'speedtest1-kvvfs-'+comma);
         eLinkKvvfs.href = 'speedtest1-kvvfs.html?flags='+comma;
-      };
-      eFlags.addEventListener('change', updateSelectedFlags );
-      {
+    };
+    eFlags.addEventListener('change', updateSelectedFlags );
+    {
         const flags = Object.create(null);
         /* TODO? Flags which require values need custom UI
            controls and some of them make little sense here
@@ -259,111 +259,111 @@
         flags["--verify"] = "Run additional verification steps.";
         flags["--without"] = "rowid     Use WITHOUT ROWID where appropriate";
         const preselectedFlags = [
-          '--big-transactions',
-          '--singlethread'
+            '--big-transactions',
+            '--singlethread'
         ];
         if(urlParams.has('flags')){
-          preselectedFlags.push(...urlParams.get('flags').split(','));
+            preselectedFlags.push(...urlParams.get('flags').split(','));
         }
-          if('opfs'!==urlParams.get('vfs')){
-          preselectedFlags.push('--memdb');
+        if('opfs'!==urlParams.get('vfs')){
+            preselectedFlags.push('--memdb');
         }
         Object.keys(flags).sort().forEach(function(f){
-          const opt = document.createElement('option');
-          eFlags.appendChild(opt);
-          const lbl = nbspPad(f)+flags[f];
-          //opt.innerText = lbl;
-          opt.innerHTML = lbl;
-          opt.value = f;
-          if(preselectedFlags.indexOf(f) >= 0) opt.selected = true;
+            const opt = document.createElement('option');
+            eFlags.appendChild(opt);
+            const lbl = nbspPad(f)+flags[f];
+            //opt.innerText = lbl;
+            opt.innerHTML = lbl;
+            opt.value = f;
+            if(preselectedFlags.indexOf(f) >= 0) opt.selected = true;
         });    
         const cbReverseLog = E('#cb-reverse-log-order');
         const lblReverseLog = E('#lbl-reverse-log-order');
         if(cbReverseLog.checked){
-          lblReverseLog.classList.add('warning');
-          eOut.classList.add('reverse');
+            lblReverseLog.classList.add('warning');
+            eOut.classList.add('reverse');
         }
         cbReverseLog.addEventListener('change', function(){
-          if(this.checked){
-            eOut.classList.add('reverse');
-            lblReverseLog.classList.add('warning');
-          }else{
-            eOut.classList.remove('reverse');
-            lblReverseLog.classList.remove('warning');
-          }
+            if(this.checked){
+                eOut.classList.add('reverse');
+                lblReverseLog.classList.add('warning');
+            }else{
+                eOut.classList.remove('reverse');
+                lblReverseLog.classList.remove('warning');
+            }
         }, false);
         updateSelectedFlags();
-      }
-      E('#btn-output-clear').addEventListener('click', ()=>{
+    }
+    E('#btn-output-clear').addEventListener('click', ()=>{
         eOut.innerText = '';
-      });
-      E('#btn-reset-flags').addEventListener('click',()=>{
+    });
+    E('#btn-reset-flags').addEventListener('click',()=>{
         eFlags.value = '';
         updateSelectedFlags();
-      });
-      E('#btn-run').addEventListener('click',function(){
+    });
+    E('#btn-run').addEventListener('click',function(){
         log("Running speedtest1. UI controls will be disabled until it completes.");
         mPost('run', getSelectedFlags());
-      });
+    });
 
-      const eControls = E('#ui-controls');
-      /** Update Emscripten-related UI elements while loading the module. */
-      const updateLoadStatus = function f(text){
+    const eControls = E('#ui-controls');
+    /** Update Emscripten-related UI elements while loading the module. */
+    const updateLoadStatus = function f(text){
         if(!f.last){
-          f.last = { text: '', step: 0 };
-          const E = (cssSelector)=>document.querySelector(cssSelector);
-          f.ui = {
-            status: E('#module-status'),
-            progress: E('#module-progress'),
-            spinner: E('#module-spinner')
-          };
+            f.last = { text: '', step: 0 };
+            const E = (cssSelector)=>document.querySelector(cssSelector);
+            f.ui = {
+                status: E('#module-status'),
+                progress: E('#module-progress'),
+                spinner: E('#module-spinner')
+            };
         }
         if(text === f.last.text) return;
         f.last.text = text;
         if(f.ui.progress){
-          f.ui.progress.value = f.last.step;
-          f.ui.progress.max = f.last.step + 1;
+            f.ui.progress.value = f.last.step;
+            f.ui.progress.max = f.last.step + 1;
         }
         ++f.last.step;
         if(text) {
-          f.ui.status.classList.remove('hidden');
-          f.ui.status.innerText = text;
+            f.ui.status.classList.remove('hidden');
+            f.ui.status.innerText = text;
         }else{
-          if(f.ui.progress){
-            f.ui.progress.remove();
-            f.ui.spinner.remove();
-            delete f.ui.progress;
-            delete f.ui.spinner;
-          }
-          f.ui.status.classList.add('hidden');
+            if(f.ui.progress){
+                f.ui.progress.remove();
+                f.ui.spinner.remove();
+                delete f.ui.progress;
+                delete f.ui.spinner;
+            }
+            f.ui.status.classList.add('hidden');
         }
-      };
+    };
 
-      W.onmessage = function(msg){
+    W.onmessage = function(msg){
         msg = msg.data;
         switch(msg.type){
             case 'ready':
-              log("Worker is ready.");
-              eControls.classList.remove('hidden');
-              break;
+                log("Worker is ready.");
+                eControls.classList.remove('hidden');
+                break;
             case 'stdout': log(msg.data); break;
             case 'stdout': logErr(msg.data); break;
             case 'run-start':
-              eControls.disabled = true;
-              log("Running speedtest1 with argv =",msg.data.join(' '));
-              break;
+                eControls.disabled = true;
+                log("Running speedtest1 with argv =",msg.data.join(' '));
+                break;
             case 'run-end':
-              log("speedtest1 finished.");
-              eControls.disabled = false;
-              // app output is in msg.data
-              break;
+                log("speedtest1 finished.");
+                eControls.disabled = false;
+                // app output is in msg.data
+                break;
             case 'error': logErr(msg.data); break;
             case 'load-status': updateLoadStatus(msg.data); break;
             default:
-              logErr("Unhandled worker message type:",msg);
-              break;
+                logErr("Unhandled worker message type:",msg);
+                break;
         }
-      };
-    })();</script>
+    };
+})();</script>
   </body>
 </html>
