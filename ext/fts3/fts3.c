@@ -2888,7 +2888,7 @@ static int fts3TermSelectMerge(
     **
     ** Similar padding is added in the fts3DoclistOrMerge() function.
     */
-    pTS->aaOutput[0] = sqlite3_malloc(nDoclist + FTS3_VARINT_MAX + 1);
+    pTS->aaOutput[0] = sqlite3_malloc64((i64)nDoclist + FTS3_VARINT_MAX + 1);
     pTS->anOutput[0] = nDoclist;
     if( pTS->aaOutput[0] ){
       memcpy(pTS->aaOutput[0], aDoclist, nDoclist);
@@ -4745,7 +4745,7 @@ static int fts3EvalIncrPhraseNext(
       if( bEof==0 ){
         int nList = 0;
         int nByte = a[p->nToken-1].nList;
-        char *aDoclist = sqlite3_malloc(nByte+FTS3_BUFFER_PADDING);
+        char *aDoclist = sqlite3_malloc64((i64)nByte+FTS3_BUFFER_PADDING);
         if( !aDoclist ) return SQLITE_NOMEM;
         memcpy(aDoclist, a[p->nToken-1].pList, nByte+1);
         memset(&aDoclist[nByte], 0, FTS3_BUFFER_PADDING);
