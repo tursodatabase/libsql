@@ -698,8 +698,8 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     ["sqlite3_wasm_vfs_unlink", "int", "string"]
   ];
 
-  /** State for sqlite3_web_persistent_dir(). */
-  let __persistentDir;
+  /** State for sqlite3_wasmfs_opfs_dir(). */
+  let __persistentDir = undefined;
   /**
      An experiment. Do not use in client code.
 
@@ -713,8 +713,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
 
      This function currently only recognizes the WASMFS/OPFS storage
      combination. "Plain" OPFS is provided via a separate VFS which
-     can optionally be installed (if OPFS is available on the system)
-     using sqlite3.installOpfsVfs().
+     is optionally be installed via sqlite3.asyncPostInit().
 
      TODOs and caveats:
 
@@ -724,7 +723,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        happen when using the JS-native "opfs" VFS, as opposed to the
        WASMFS/OPFS combination.
   */
-  capi.sqlite3_web_persistent_dir = function(){
+  capi.sqlite3_wasmfs_opfs_dir = function(){
     if(undefined !== __persistentDir) return __persistentDir;
     // If we have no OPFS, there is no persistent dir
     const pdir = config.wasmfsOpfsDir;
@@ -738,17 +737,6 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       if(pdir && 0===capi.wasm.xCallWrapped(
         'sqlite3_wasm_init_wasmfs', 'i32', ['string'], pdir
       )){
-        /** OPFS does not support locking and will trigger errors if
-            we try to lock. We don't _really_ want to
-            _unconditionally_ install a non-locking sqlite3 VFS as the
-            default, but we do so here for simplicy's sake for the
-            time being. That said: locking is a no-op on all of the
-            current WASM storage, so this isn't (currently) as bad as
-            it may initially seem. */
-        const pVfs = sqlite3.capi.sqlite3_vfs_find("unix-none");
-        if(pVfs){
-          capi.sqlite3_vfs_register(pVfs,1);
-        }
         return __persistentDir = pdir;
       }else{
         return __persistentDir = "";
@@ -762,7 +750,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   /**
      Experimental and subject to change or removal.
 
-     Returns true if sqlite3.capi.sqlite3_web_persistent_dir() is a
+     Returns true if sqlite3.capi.sqlite3_wasmfs_opfs_dir() is a
      non-empty string and the given name starts with (that string +
      '/'), else returns false.
 
@@ -771,7 +759,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      kvvfs is available.
   */
   capi.sqlite3_web_filename_is_persistent = function(name){
-    const p = capi.sqlite3_web_persistent_dir();
+    const p = capi.sqlite3_wasmfs_opfs_dir();
     return (p && name) ? name.startsWith(p+'/') : false;
   };
 
@@ -922,11 +910,42 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
 
   }/* main-window-only bits */
 
+
   /* The remainder of the API will be set up in later steps. */
   const sqlite3 = {
     WasmAllocError: WasmAllocError,
     capi,
-    config
+    config,
+    /**
+       Performs any optional asynchronous library-level initialization
+       which might be required. This function returns a Promise which
+       resolves to the sqlite3 namespace object. It _ignores any
+       errors_ in the asynchronous init process, as such components
+       are all optional. If called more than once, the second and
+       subsequent calls are no-ops which return a pre-resolved
+       Promise.
+
+       If called at all, this function must be called by client-level
+       code, which must not use the library until the returned promise
+       resolves.
+
+       Bug: if called while a prior call is still resolving, the 2nd
+       call will resolve prematurely, before the 1st call has finished
+       resolving.
+    */
+    asyncPostInit: async function(){
+      let lip = sqlite3ApiBootstrap.initializersAsync;
+      delete sqlite3ApiBootstrap.initializersAsync;
+      if(!lip || !lip.length) return Promise.resolve(sqlite3);
+      // Is it okay to resolve these in parallel or do we need them
+      // to resolve in order? We currently only have 1, so it
+      // makes no difference.
+      lip = lip.map((f)=>f(sqlite3).catch(()=>{}));
+      //let p = lip.shift();
+      //while(lip.length) p = p.then(lip.shift());
+      //return p.then(()=>sqlite3);
+      return Promise.all(lip).then(()=>sqlite3);
+    }
   };
   sqlite3ApiBootstrap.initializers.forEach((f)=>f(sqlite3));
   delete sqlite3ApiBootstrap.initializers;
@@ -946,8 +965,29 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   their features (noting that most will also require that certain
   features alread have been installed).  At the end of that process,
   this array is deleted.
+
+  Note that the order of insertion into this array is significant for
+  some pieces. e.g. sqlite3.capi.wasm cannot be fully utilized until
+  the whwasmutil.js part is plugged in.
 */
 self.sqlite3ApiBootstrap.initializers = [];
+/**
+  self.sqlite3ApiBootstrap.initializersAsync is an internal detail
+  used by the sqlite3 API's amalgamation process. It must not be
+  modified by client code except when plugging such code into the
+  amalgamation process.
+
+  Counterpart of self.sqlite3ApiBootstrap.initializers, specifically
+  for initializers which are asynchronous. All functions in this list
+  take the sqlite3 object as their argument and MUST return a
+  Promise. Both the resolved value and rejection cases are ignored.
+
+  This list is not processed until the client calls
+  sqlite3.asyncPostInit(). This means, for example, that intializers
+  added to self.sqlite3ApiBootstrap.initializers may push entries to
+   this list.
+*/
+self.sqlite3ApiBootstrap.initializersAsync = [];
 /**
    Client code may assign sqlite3ApiBootstrap.defaultConfig an
    object-type value before calling sqlite3ApiBootstrap() (without

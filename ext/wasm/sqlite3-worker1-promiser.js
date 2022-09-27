@@ -248,7 +248,10 @@ self.sqlite3Worker1Promiser = function callee(config = callee.defaultConfig){
   };
 }/*sqlite3Worker1Promiser()*/;
 self.sqlite3Worker1Promiser.defaultConfig = {
-  worker: ()=>new Worker('sqlite3-worker1.js'),
+  worker: ()=>{
+    //const p = self.location.pathname.replace(/[^/]*$/, "sqlite3-worker1.js");
+    return new Worker("sqlite3-worker1.js");
+  },
   onerror: (...args)=>console.error('worker1 error',...args),
   dbId: undefined
 };

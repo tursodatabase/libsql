@@ -30,7 +30,7 @@ const tryOpfsVfs = function(sqlite3){
   const error =  (...args)=>console.error(logPrefix,...args);
   log("tryOpfsVfs()");
   const capi = sqlite3.capi;
-  const pVfs = capi.sqlite3_vfs_find("opfs") || toss("Unexpectedly missing 'opfs' VFS.");
+  const pVfs = capi.sqlite3_vfs_find("opfs") || toss("Missing 'opfs' VFS.");
   const oVfs = capi.sqlite3_vfs.instanceForPointer(pVfs) || toss("Unexpected instanceForPointer() result.");;
   log("OPFS VFS:",pVfs, oVfs);
 
@@ -78,7 +78,7 @@ const tryOpfsVfs = function(sqlite3){
 
 importScripts('sqlite3.js');
 self.sqlite3InitModule()
-  .then((EmscriptenModule)=>EmscriptenModule.sqlite3.installOpfsVfs())
+  .then((EmscriptenModule)=>EmscriptenModule.sqlite3.asyncPostInit())
   .then((sqlite3)=>tryOpfsVfs(sqlite3))
   .catch((e)=>{
     console.error("Error initializing module:",e);

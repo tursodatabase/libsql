@@ -81,11 +81,10 @@
     setStatus: (text)=>mPost('load-status',text)
   };
   self.sqlite3Speedtest1InitModule(EmscriptenModule).then(function(EModule){
-    const S = EModule.sqlite3;
     log("Module inited.");
-    return S.installOpfsVfs()
-      .catch((e)=>console.warn(e.message))
-      .then(()=>{
+    return EModule.sqlite3.asyncPostInit()
+      .then((sqlite3)=>{
+        const S = sqlite3;
         const vfsUnlink = S.capi.wasm.xWrap("sqlite3_wasm_vfs_unlink", "int", ["string"]);
         App.unlink = function(fname){
           vfsUnlink(fname);

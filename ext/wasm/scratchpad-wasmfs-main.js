@@ -42,7 +42,7 @@
           oo = sqlite3.oo1,
           wasm = capi.wasm;
     stdout("Loaded sqlite3:",capi.sqlite3_libversion(), capi.sqlite3_sourceid());
-    const persistentDir = capi.sqlite3_web_persistent_dir();
+    const persistentDir = capi.sqlite3_wasmfs_opfs_dir();
     if(persistentDir){
       stdout("Persistent storage dir:",persistentDir);
     }else{

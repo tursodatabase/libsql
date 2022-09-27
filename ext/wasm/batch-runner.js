@@ -361,7 +361,7 @@
         dbFile = 1 ? 'local' : 'session';
         this.logHtml("Using KVVFS storage:",dbFile);
       }else{
-        pDir = capi.sqlite3_web_persistent_dir();
+        pDir = capi.sqlite3_wasmfs_opfs_dir();
         if(pDir){
           dbFile = pDir+"/speedtest.db";
           this.logHtml("Using persistent storage:",dbFile);

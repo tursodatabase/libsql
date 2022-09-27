@@ -543,9 +543,10 @@ int sqlite3_wasm_vfs_unlink(const char * zName){
   return rc;
 }
 
-#if defined(__EMSCRIPTEN__) && defined(SQLITE_WASM_WASMFS)
-#include <emscripten/wasmfs.h>
+#if defined(__EMSCRIPTEN__)
 #include <emscripten/console.h>
+#if defined(SQLITE_WASM_WASMFS)
+#include <emscripten/wasmfs.h>
 
 /*
 ** This function is NOT part of the sqlite3 public API. It is strictly
@@ -596,10 +597,11 @@ int sqlite3_wasm_init_wasmfs(const char *zMountPoint){
 #else
 WASM_KEEP
 int sqlite3_wasm_init_wasmfs(const char *zUnused){
+  emscripten_console_warn("WASMFS OPFS is not compiled in.");
   if(zUnused){/*unused*/}
   return SQLITE_NOTFOUND;
 }
 #endif /* __EMSCRIPTEN__ && SQLITE_WASM_WASMFS */
-
+#endif
 
 #undef WASM_KEEP

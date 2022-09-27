@@ -1019,7 +1019,7 @@
           wasm = capi.wasm;
     log("Loaded module:",capi.sqlite3_libversion(), capi.sqlite3_sourceid());
     log("Build options:",wasm.compileOptionUsed());
-    capi.sqlite3_web_persistent_dir()/*will install OPFS if available, plus a and non-locking VFS*/;
+    capi.sqlite3_wasmfs_opfs_dir()/*will install OPFS if available, plus a and non-locking VFS*/;
     if(1){
       /* Let's grab those last few lines of test coverage for
          sqlite3-api.js... */

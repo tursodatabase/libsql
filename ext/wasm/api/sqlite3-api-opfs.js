@@ -20,7 +20,7 @@
 'use strict';
 self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 /**
-   sqlite3.installOpfsVfs() returns a Promise which, on success, installs
+   installOpfsVfs() returns a Promise which, on success, installs
    an sqlite3_vfs named "opfs", suitable for use with all sqlite3 APIs
    which accept a VFS. It uses the Origin-Private FileSystem API for
    all file storage. On error it is rejected with an exception
@@ -31,7 +31,6 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
    - The environment does not support OPFS. That includes when
      this function is called from the main window thread.
-
 
   Significant notes and limitations:
 
@@ -73,8 +72,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
    object and that object gets a new object installed in its
    `opfs` property, containing several OPFS-specific utilities.
 */
-sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri){
-  delete sqlite3.installOpfsVfs;
+const installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri){
   if(!self.SharedArrayBuffer ||
      !self.FileSystemHandle ||
      !self.FileSystemDirectoryHandle ||
@@ -1027,5 +1025,9 @@ sqlite3.installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri)
   })/*thePromise*/;
   return thePromise;
 }/*installOpfsVfs()*/;
-sqlite3.installOpfsVfs.defaultProxyUri = "sqlite3-opfs-async-proxy.js";
+installOpfsVfs.defaultProxyUri =
+    //self.location.pathname.replace(/[^/]*$/, "sqlite3-opfs-async-proxy.js");
+  "sqlite3-opfs-async-proxy.js";
+//console.warn("sqlite3.installOpfsVfs.defaultProxyUri =",sqlite3.installOpfsVfs.defaultProxyUri);
+self.sqlite3ApiBootstrap.initializersAsync.push(async (sqlite3)=>installOpfsVfs());
 }/*sqlite3ApiBootstrap.initializers.push()*/);

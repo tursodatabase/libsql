@@ -154,12 +154,12 @@
     messageId: ...as above...,
     result: {
 
-      persistentDirName: path prefix, if any, of persistent storage.
+      wasmfsOpfsDir: path prefix, if any, of persistent storage.
       An empty string denotes that no persistent storage is available.
 
       bigIntEnabled: bool. True if BigInt support is enabled.
 
-      persistenceEnabled: true if persistent storage is enabled in the
+      wasmfsOpfsEnabled: true if persistent storage is enabled in the
       current environment. Only files stored under persistentDirName
       will persist, however.
 
@@ -183,7 +183,7 @@
       See the sqlite3.oo1.DB constructor for peculiarities and transformations,
 
       persistent [=false]: if true and filename is not one of ("",
-      ":memory:"), prepend sqlite3.capi.sqlite3_web_persistent_dir()
+      ":memory:"), prepend sqlite3.capi.sqlite3_wasmfs_opfs_dir()
       to the given filename so that it is stored in persistent storage
       _if_ the environment supports it.  If persistent storage is not
       supported, the filename is used as-is.
@@ -438,7 +438,7 @@ sqlite3.initWorker1API = function(){
         toss("Throwing because of simulateError flag.");
       }
       const rc = Object.create(null);
-      const pDir = sqlite3.capi.sqlite3_web_persistent_dir();
+      const pDir = sqlite3.capi.sqlite3_wasmfs_opfs_dir();
       if(!args.filename || ':memory:'===args.filename){
         oargs.filename = args.filename || '';
       }else if(pDir){
@@ -521,11 +521,11 @@ sqlite3.initWorker1API = function(){
     'config-get': function(){
       const rc = Object.create(null), src = sqlite3.config;
       [
-        'persistentDirName', 'bigIntEnabled'
+        'wasmfsOpfsDir', 'bigIntEnabled'
       ].forEach(function(k){
         if(Object.getOwnPropertyDescriptor(src, k)) rc[k] = src[k];
       });
-      rc.persistenceEnabled = !!sqlite3.capi.sqlite3_web_persistent_dir();
+      rc.wasmfsOpfsEnabled = !!sqlite3.capi.sqlite3_wasmfs_opfs_dir();
       return rc;
     },
 

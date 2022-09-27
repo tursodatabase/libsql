@@ -77,8 +77,8 @@
       const r = ev.result;
       log('sqlite3.config subset:', r);
       T.assert('boolean' === typeof r.bigIntEnabled)
-        .assert('string'===typeof r.persistentDirName)
-        .assert('boolean' === typeof r.persistenceEnabled);
+        .assert('string'===typeof r.wasmfsOpfsDir)
+        .assert('boolean' === typeof r.wasmfsOpfsEnabled);
       sqConfig = r;
     });
     logHtml('',
@@ -86,12 +86,12 @@
     
     await wtest('open', {
       filename: dbFilename,
-      persistent: sqConfig.persistenceEnabled,
+      persistent: sqConfig.wasmfsOpfsEnabled,
       simulateError: 0 /* if true, fail the 'open' */,
     }, function(ev){
       const r = ev.result;
       log("then open result",r);
-      T.assert(r.persistent === sqConfig.persistenceEnabled)
+      T.assert(r.persistent === sqConfig.wasmfsOpfsEnabled)
         .assert(r.persistent
                ? (dbFilename!==r.filename)
                : (dbFilename==r.filename))
