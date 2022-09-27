@@ -1,5 +1,5 @@
-C Enhance\sthe\sb-tree\spage\ssorting\scode\sto\sensure\sthat\ssqlite3PagerRekey()\snever\noverloads\sa\spage\snumber\sand\suses\sonly\sthe\sPENDING_BYTE\spage\sfor\stemporary\nstorage.
-D 2022-09-10T13:50:33.163
+C Enhance\sdefensive\smode\sso\sthat\sit\sdisallows\sCREATE\sTRIGGER\sstatements\sif\nthe\sstatements\swithin\sthe\strigger\sattempt\sto\swrite\son\sa\sshadow\stable.\s\sAlso\nmake\sthe\slegacy\sFTS3\scode\smore\srobust\sagainst\sinteger\soverflow\sduring\nmemory\sallocation.
+D 2022-09-27T02:04:52.894
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -102,25 +102,25 @@ F ext/fts3/README.content b9078d0843a094d86af0d48dffbff13c906702b4c3558012e67b9c
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers b92bdeb8b46503f0dd301d364efc5ef59ef9fa8e2758b8e742f39fa93a2e422d
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c b20bd583991e740c1e14371896f3ab61d7b6c033740646366bbf6667191bc4e2
+F ext/fts3/fts3.c 46c116ee0868fc09520d61a1b747c62343c71c399ba67a3d0395b0be29b1a19f
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3Int.h dafdc371f9fbab175744b06cfe019d5f040cdfdbd11fea752f5dc28d45b04c05
+F ext/fts3/fts3Int.h ae2a44b04cddb5fb35cac4ea5f7f819b2894fd258186465777a19f7acfdf84ed
 F ext/fts3/fts3_aux.c f0dc9bd98582615b7750218899bd0c729879b6bbf94d1be57ca1833ff49afc6f
 F ext/fts3/fts3_expr.c 903bfb9433109fffb10e910d7066c49cbf8eeae316adc93f0499c4da7dfc932a
 F ext/fts3/fts3_hash.c 8b6e31bfb0844c27dc6092c2620bdb1fca17ed613072db057d96952c6bdb48b7
 F ext/fts3/fts3_hash.h 39cf6874dc239d6b4e30479b1975fe5b22a3caaf
 F ext/fts3/fts3_icu.c 305ce7fb6036484085b5556a9c8e62acdc7763f0f4cdf5fd538212a9f3720116
-F ext/fts3/fts3_porter.c 3565faf04b626cddf85f03825e86056a4562c009
+F ext/fts3/fts3_porter.c e19807ce0ae31c1c6e9898e89ecc93183d7ec224ea101af039722a4f49e5f2b8
 F ext/fts3/fts3_snippet.c f9a8149173553113f3c495a503843e30028b5dc3723d0ca798c5ad6142e130e6
 F ext/fts3/fts3_term.c f45a1e7c6ef464abb1231245d123dae12266b69e05cc56e14045b76591ae92d1
 F ext/fts3/fts3_test.c d8d7b2734f894e8a489987447658e374cdd3a3bc8575c401decf1911cb7c6454
 F ext/fts3/fts3_tokenize_vtab.c a95feda3590f3c3e17672fe35b67ea6112471aeea4c07ef7744a6606b66549aa
 F ext/fts3/fts3_tokenizer.c 6d8fc150c48238955d5182bf661498db0dd473c8a2a80e00c16994a646fa96e7
 F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
-F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
+F ext/fts3/fts3_tokenizer1.c c1de4ae28356ad98ccb8b2e3388a7fdcce7607b5523738c9afb6275dab765154
 F ext/fts3/fts3_unicode.c de426ff05c1c2e7bce161cf6b706638419c3a1d9c2667de9cb9dc0458c18e226
 F ext/fts3/fts3_unicode2.c 416eb7e1e81142703520d284b768ca2751d40e31fa912cae24ba74860532bf0f
-F ext/fts3/fts3_write.c 85279b980f99253c296006503a13f92957ec49b716123083f021acc74545ecfc
+F ext/fts3/fts3_write.c 4fb644df0ff840267e47a724286c7a1fa5540273a7ce15756dd5913a101ec302
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/tool/fts3cov.sh c331d006359456cf6f8f953e37f2b9c7d568f3863f00bb5f7eb87fea4ac01b73
 F ext/fts3/tool/fts3view.c 413c346399159df81f86c4928b7c4a455caab73bfbc8cd68f950f632e5751674
@@ -636,7 +636,7 @@ F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 36eb0799e487759bbe73e5742b82ee676f06cea2515ff578d03c59a74ccf2d6c
 F src/treeview.c 07787f67cd297a6d09d04b8d70c06769c60c9c1d9080378f93929c16f8fd3298
-F src/trigger.c 61bea163b1fa3039bc572ed8312461b978e5c527e5301f302b078f4c1ccdec6a
+F src/trigger.c bc70c58e713dcfb6cabe5cc0bed71aedb02c3e9e128c6089a78aca945ba4d720
 F src/update.c c52a7991bece0453d22c77c08469512ee2f1391c12503fd347d1c939220c5877
 F src/upsert.c 8789047a8f0a601ea42fa0256d1ba3190c13746b6ba940fe2d25643a7e991937
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
@@ -1978,9 +1978,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 461511cc99e5b1f936d0acbfcfe117c4ceb721a28eed50bb6db7a2244aedb599
-Q +5007742886bd20de20be3973737cf46b010359911615eb3da69cd262bd9a2435
-R 442893cbcb260f464928862f7b907724
-U dan
-Z b34a6024bd57313b837f90e9db41d0da
+P aa6a5b729782dee75f14ae4e780302c4446074c20d1eb300346fbe874eb64706
+Q +3283bbd12a60f472ed03cb7c6209a605a3bf9f3d9083371e17840b56e8b3f559
+Q +5517bc50988b5339c2fd071b29de1b5ca03037b0b635c3b112cf7108fab54d5f
+R da345219a785a3d3782573497cad71f9
+U drh
+Z d81e0b6ecd027953a8aaf7b63c63dfeb
 # Remove this line to create a well-formed Fossil manifest.
