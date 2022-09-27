@@ -257,6 +257,7 @@
     print: log,
     printErr: error
   }).then(function(EmscriptenModule){
+    //console.log('EmscriptenModule.sqlite3 =',EmscriptenModule.sqlite3);
     log("Done initializing. Running demo...");
     try {
       demo1(EmscriptenModule.sqlite3);

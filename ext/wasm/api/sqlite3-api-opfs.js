@@ -972,7 +972,7 @@ const installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri){
         wasm.scopedAllocPop(scope);
       }
     }/*sanityCheck()*/;
-    
+
     W.onmessage = function({data}){
       //log("Worker.onmessage:",data);
       switch(data.type){

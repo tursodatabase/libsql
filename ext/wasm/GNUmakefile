@@ -423,6 +423,7 @@ o2: clean
 o3: clean
 	$(MAKE) -e "emcc_opt=-O3 $(o-xtra)" fiddle_opt=-O3
 os: clean
+	@echo "WARNING: -Os can result in a build with mysteriously missing pieces!"
 	$(MAKE) -e "emcc_opt=-Os $(o-xtra)" fiddle_opt=-Os
 oz: clean
 	$(MAKE) -e "emcc_opt=-Oz $(o-xtra)" fiddle_opt=-Oz

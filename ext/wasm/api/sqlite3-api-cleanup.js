@@ -58,8 +58,8 @@ if('undefined' !== typeof Module){ // presumably an Emscripten build
 
   /* Clean up temporary references to our APIs... */
   delete sqlite3.capi.util /* arguable, but these are (currently) internal-use APIs */;
-  //console.warn("Module.sqlite3 =",Module.sqlite3);
   Module.sqlite3 = sqlite3 /* Currently needed by test code and sqlite3-worker1.js */;
+  //console.warn("Module.sqlite3 =",Module.sqlite3);
 }else{
   console.warn("This is not running in an Emscripten module context, so",
                "self.sqlite3ApiBootstrap() is _not_ being called due to lack",
