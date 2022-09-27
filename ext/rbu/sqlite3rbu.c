@@ -2597,14 +2597,16 @@ static void rbuSetupCheckpoint(sqlite3rbu *p, RbuState *pState){
     if( rc2!=SQLITE_INTERNAL ) p->rc = rc2;
   }
 
-  if( p->rc==SQLITE_OK ){
+  if( p->rc==SQLITE_OK && p->nFrame>0 ){
     p->eStage = RBU_STAGE_CKPT;
     p->nStep = (pState ? pState->nRow : 0);
     p->aBuf = rbuMalloc(p, p->pgsz);
     p->iWalCksum = rbuShmChecksum(p);
   }
 
-  if( p->rc==SQLITE_OK && pState && pState->iWalCksum!=p->iWalCksum ){
+  if( p->rc==SQLITE_OK 
+  && (p->nFrame==0 || (pState && pState->iWalCksum!=p->iWalCksum))
+  ){
     p->rc = SQLITE_DONE;
     p->eStage = RBU_STAGE_DONE;
   }
