@@ -412,8 +412,14 @@ push-fiddle: $(fiddle_files)
 # painful.
 
 .PHONY: o0 o1 o2 o3 os oz
-o-xtra :=
-#o-xtra += -flto
+o-xtra := -g3
+# ^^^ -g3 is important to keep higher -O levels from mangling (via
+# minification), or outright removing, otherwise working code.
+
+o-xtra += -flto
+# ^^^^ -flto can have a considerably performance boost at -O0 but
+# doubles the build time and seems to have negligible effect on
+# higher optimization levels.
 o0: clean
 	$(MAKE) -e "emcc_opt=-O0 $(o-xtra)" fiddle_opt=-O0
 o1: clean

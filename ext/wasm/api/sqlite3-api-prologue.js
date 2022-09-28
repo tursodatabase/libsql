@@ -282,7 +282,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        https://www.sqlite.org/c3ref/open.html
 
        - The flags for use with its 3rd argument are installed in this
-       object using the C-cide names, e.g. SQLITE_OPEN_CREATE.
+       object using their C-side names, e.g. SQLITE_OPEN_CREATE.
 
        - If the combination of flags passed to it are invalid,
        behavior is undefined. Thus is is never okay to call this
@@ -293,18 +293,17 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        and cache-related flags, but they are retained in this
        API for consistency's sake.
 
-       - The final argument to this function specifies the VFS to
-       use, which is largely (but not entirely!) meaningless in
-       the WASM environment. It should always be null or
-       undefined, and it is safe to elide that argument when
-       calling this function.
+       - The final argument to this function specifies the VFS to use,
+       which is largely (but not entirely!) meaningless in the WASM
+       environment. It may be null, undefined, or 0 to denote the
+       default.
     */
     sqlite3_open_v2: function(filename,dbPtrPtr,flags,vfsStr){}/*installed later*/,
     /**
        The sqlite3_prepare_v3() binding handles two different uses
        with differing JS/WASM semantics:
 
-       1) sqlite3_prepare_v3(pDb, sqlString, -1, prepFlags, ppStmt [, null])
+       1) sqlite3_prepare_v3(pDb, sqlString, -1, prepFlags, ppStmt , null)
 
        2) sqlite3_prepare_v3(pDb, sqlPointer, sqlByteLen, prepFlags, ppStmt, sqlPointerToPointer)
 
@@ -325,44 +324,36 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
 
        (pDb, sqlAsString, -1, prepFlags, ppStmt, null)
 
-       The pzTail argument is ignored in this case because its result
-       is meaningless when a string-type value is passed through
-       (because the string goes through another level of internal
+       The `pzTail` argument is ignored in this case because its
+       result is meaningless when a string-type value is passed
+       through: the string goes through another level of internal
        conversion for WASM's sake and the result pointer would refer
        to that transient conversion's memory, not the passed-in
-       string).
+       string.
 
        If the sql argument is not a string, it must be a _pointer_ to
        a NUL-terminated string which was allocated in the WASM memory
-       (e.g. using cwapi.wasm.alloc() or equivalent). In that case,
+       (e.g. using capi.wasm.alloc() or equivalent). In that case,
        the final argument may be 0/null/undefined or must be a pointer
        to which the "tail" of the compiled SQL is written, as
        documented for the C-side sqlite3_prepare_v3(). In case (2),
        the underlying C function is called with the equivalent of:
 
-       (pDb, sqlAsPointer, (sqlByteLen||-1), prepFlags, ppStmt, pzTail)
+       (pDb, sqlAsPointer, sqlByteLen, prepFlags, ppStmt, pzTail)
 
        It returns its result and compiled statement as documented in
        the C API. Fetching the output pointers (5th and 6th
-       parameters) requires using capi.wasm.getMemValue() (or
-       equivalent) and the pzTail will point to an address relative to
-       the sqlAsPointer value.
+       parameters) requires using `capi.wasm.getMemValue()` (or
+       equivalent) and the `pzTail` will point to an address relative to
+       the `sqlAsPointer` value.
 
        If passed an invalid 2nd argument type, this function will
-       return SQLITE_MISUSE but will unfortunately be able to return
-       any additional error information because we have no way to set
-       the db's error state such that this function could return a
-       non-0 integer and the client could call sqlite3_errcode() or
-       sqlite3_errmsg() to fetch it. See the RFE at:
+       return SQLITE_MISUSE and sqlite3_errmsg() will contain a string
+       describing the problem.
 
-       https://sqlite.org/forum/forumpost/f9eb79b11aefd4fc81d
-
-       The alternative would be to throw an exception for that case,
-       but that would be in strong constrast to the rest of the
-       C-level API and seems likely to cause more confusion.
-
-       Side-note: in the C API the function does not fail if provided
-       an empty string but its result output pointer will be NULL.
+       Side-note: if given an empty string, or one which contains only
+       comments or an empty SQL expression, 0 is returned but the result
+       output pointer will be NULL.
     */
     sqlite3_prepare_v3: function(dbPtr, sql, sqlByteLen, prepFlags,
                                  stmtPtrPtr, strPtrPtr){}/*installed later*/,

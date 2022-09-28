@@ -27,11 +27,11 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     /*  "The problem" is that the following isn't type-safe.
         OTOH, nothing about WASM pointers is. */
     /**
-       Add the `.pointer` xWrap() signature entry to extend
-       the `pointer` arg handler to check for a `pointer`
-       property. This can be used to permit, e.g., passing
-       an SQLite3.DB instance to a C-style sqlite3_xxx function
-       which takes an `sqlite3*` argument.
+       Add the `.pointer` xWrap() signature entry to extend the
+       `pointer` arg handler to check for a `pointer` property. This
+       can be used to permit, e.g., passing an sqlite3.oo1.DB instance
+       to a C-style sqlite3_xxx function which takes an `sqlite3*`
+       argument.
     */
     const oldP = wasm.xWrap.argAdapter('pointer');
     const adapter = function(v){
