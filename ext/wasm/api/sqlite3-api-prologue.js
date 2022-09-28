@@ -611,9 +611,10 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     ["sqlite3_errmsg", "string", "sqlite3*"],
     ["sqlite3_error_offset", "int", "sqlite3*"],
     ["sqlite3_errstr", "string", "int"],
-    //["sqlite3_exec", "int", "sqlite3*", "string", "*", "*", "**"],
-    // ^^^ TODO: we need a wrapper to support passing a function pointer or a function
-    // for the callback.
+    ["sqlite3_exec", "int", "sqlite3*", "string", "*", "*", "**"],
+    // TODO?: ^^^ add a wrapper around sqlite3_exec() which accepts a
+    // JS callback function and handles the (un)installation of that
+    // function before/after the exec call.
     ["sqlite3_expanded_sql", "string", "sqlite3_stmt*"],
     ["sqlite3_extended_errcode", "int", "sqlite3*"],
     ["sqlite3_extended_result_codes", "int", "sqlite3*", "int"],

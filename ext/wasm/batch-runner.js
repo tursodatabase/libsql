@@ -67,8 +67,9 @@
     const capi = sqlite3.capi, wasm = capi.wasm;
     const scope = wasm.scopedAllocPush();
     try {
-      const toDrop = [];
+      const toDrop = [/* type, name pairs */];
       const ppStmt = wasm.scopedAllocPtr();
+      // Collect list of tables/etc we can drop...
       let rc = capi.sqlite3_prepare_v2(db.handle, sqlToDrop, -1, ppStmt, null);
       checkSqliteRc(db.handle,rc);
       pStmt = wasm.getPtrValue(ppStmt);
@@ -78,34 +79,31 @@
       }
       capi.sqlite3_finalize(pStmt);
       pStmt = 0;
-      let doBreak = !toDrop.length;
-      while(!doBreak){
+      // Build SQL to delete them...
+      const sqlDrop = [];
+      const doDrop = 0!==toDrop.length;
+      while(doDrop){
         const name = toDrop.pop();
-        const type = toDrop.pop();
-        let sql2;
         if(name){
+          const type = toDrop.pop();
           switch(type){
               case 'table': case 'view': case 'trigger': case 'index':
-                sql2 = 'DROP '+type+' '+name;
+                sqlDrop.push('DROP '+type+' '+name);
                 break;
               default:
                 warn("Unhandled db entry type:",type,name);
                 continue;
           }
         }else{
-          sql2 = "VACUUM";
-          doBreak = true;
+          sqlDrop.push("VACUUM");
           break;
         }
-        wasm.setPtrValue(ppStmt, 0);
-        warn(db.id,':',sql2);
-        rc = capi.sqlite3_prepare_v2(db.handle, sql2, -1, ppStmt, null);
-        checkSqliteRc(db.handle,rc);
-        pStmt = wasm.getPtrValue(ppStmt);
-        capi.sqlite3_step(pStmt);
-        capi.sqlite3_finalize(pStmt);
-        pStmt = 0;
-      }        
+      }
+      if(sqlDrop.length){
+        const sqlClean = sqlDrop.join(';\n');
+        console.log("Cleaning up",db.id,":",sqlClean);
+        capi.sqlite3_exec(db.handle, sqlClean, 0, 0, 0);
+      }
     }finally{
       if(pStmt) capi.sqlite3_finalize(pStmt);
       wasm.scopedAllocPop(scope);
