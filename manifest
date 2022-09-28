@@ -1,5 +1,5 @@
-C Work\saround\sbroken\s-Os\swasm\sbuilds\sby\sadding\sthe\s-g3\sflag.\sUnrelated\sdocumentation\stweaks.
-D 2022-09-28T07:53:47.790
+C Correct\sduplicate\scopies\sof\ssqlite3-api.js\sbeing\sembedded\sin\sthe\swasmfs-based\sbuilds.
+D 2022-09-28T13:01:49.194
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -474,7 +474,7 @@ F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
 F ext/userauth/userauth.c 7f00cded7dcaa5d47f54539b290a43d2e59f4b1eb5f447545fa865f002fc80cb
 F ext/wasm/EXPORTED_FUNCTIONS.fiddle.in 27450c8b8c70875a260aca55435ec927068b34cef801a96205adb81bdcefc65c
 F ext/wasm/EXPORTED_RUNTIME_METHODS.fiddle 0e88c8cfc3719e4b7e74980d9da664c709e68acf863e48386cda376edfd3bfb0
-F ext/wasm/GNUmakefile 984c33a37fa34786d6be2c79ef19421b3c1a054dfdb56ea09313077de4aa19f6
+F ext/wasm/GNUmakefile 86ee7562063275779b108957db5bc7fdb18df4f6c506abbe28132b4fb071988e
 F ext/wasm/README.md e1ee1e7c321c6a250bf78a84ca6f5882890a237a450ba5a0649c7a8399194c52
 F ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-api 77a5ee8bd209b5e75dd0e822bc3f6e7319dc9b36431463d4175c775170f92126
 F ext/wasm/api/EXPORTED_RUNTIME_METHODS.sqlite3-api 1ec3c73e7d66e95529c3c64ac3de2470b0e9e7fbf7a5b41261c367cf4f1b7287
@@ -489,8 +489,8 @@ F ext/wasm/api/sqlite3-api-prologue.js 2a0dedb8127e8983d3199edea55151a45186b4626
 F ext/wasm/api/sqlite3-api-worker1.js d5d5b7fac4c4731c38c7e03f4f404b2a95c388a2a1d8bcf361caada572f107e0
 F ext/wasm/api/sqlite3-wasi.h 25356084cfe0d40458a902afb465df8c21fc4152c1d0a59b563a3fba59a068f9
 F ext/wasm/api/sqlite3-wasm.c b756b9c1fee9d0598f715e6df6bf089b750da24aa91bb7ef9277a037d81e7612
-F ext/wasm/batch-runner.html 2857a6db7292ac83d1581af865d643fd34235db2df830d10b43b01388c599e04
-F ext/wasm/batch-runner.js b1f443bc63a779aac97ba6d54fc731a707ece2783b94e3b019abbfa79108e9a1
+F ext/wasm/batch-runner.html 168fda0f66369edec6427991683af3ed3919f3713158b70571d296f9a269a281
+F ext/wasm/batch-runner.js c8d13f673a68e2094264a0284f8775dbda4a12e609d20c501316fe641a05c760
 F ext/wasm/common/SqliteTestUtil.js c997c12188c97109f344701a58dd627b9c0f98f32cc6a88413f6171f2191531c
 F ext/wasm/common/emscripten.css 3d253a6fdb8983a2ac983855bfbdd4b6fa1ff267c28d69513dd6ef1f289ada3f
 F ext/wasm/common/testing.css 3a5143699c2b73a85b962271e1a9b3241b30d90e30d895e4f55665e648572962
@@ -530,7 +530,7 @@ F ext/wasm/testing1.html 50575755e43232dbe4c2f97c9086b3118eb91ec2ee1fae931e6d766
 F ext/wasm/testing1.js 20b37766d29815180e2e932bfc6132b649403ece1f1bf612a4712db131287970
 F ext/wasm/testing2.html a66951c38137ff1d687df79466351f3c734fa9c6d9cce71d3cf97c291b2167e3
 F ext/wasm/testing2.js 34737da985c4cbd4812b2e7f200942662cae991c5a58ffa5d0350be089d0d410
-F ext/wasm/wasmfs.make 52f24bc9c10e404d26bd0b0ee28d450269808a78e359d6ddedc45d31e7b9c29c
+F ext/wasm/wasmfs.make fb4d0b4a6596ec2ed7815508a43b77bd7d14d3910ac387eb795643e33f5a3652
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
@@ -2026,8 +2026,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 093f6e4b36db294e8e47df2fc75a4bc4fc101e2b6ff0201c912ccd1dcf394479
-R f13bcaf00e26043effcfda9235e61887
+P f5d6bf8616341037fa3e229edf820d19acef3e0a6207a652b2b143de0a493214
+R 2d5aa67e77362d00ccd0491d8ca53ec4
 U stephan
-Z ec2d0b4aa25d1549f3750ebec3c29f7f
+Z c9260f6deeb302437c703eb12e2e08ac
 # Remove this line to create a well-formed Fossil manifest.

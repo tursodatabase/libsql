@@ -83,7 +83,7 @@ $(sqlite3-wasmfs.js): $(sqlite3-wasmfs.wasm.c) $(sqlite3-wasm.c) $(sqlite3-wasmf
     $(post-js.js)
 	@echo "Building $@ ..."
 	$(emcc.bin) -o $@ $(emcc_opt) $(emcc.flags) \
-      $(sqlite3-wasmfs.cflags) $(speedtest1-common.eflags) $(sqlite3-wasmfs.jsflags) $(sqlite3-wasmfs.wasm.c) $(sqlite3-wasmfs.extra.c)
+      $(sqlite3-wasmfs.cflags) $(sqlite3-wasmfs.jsflags) $(sqlite3-wasmfs.wasm.c) $(sqlite3-wasmfs.extra.c)
 	chmod -x $(sqlite3-wasmfs.wasm)
 	$(maybe-wasm-strip) $(sqlite3-wasmfs.wasm)
 	@ls -la $@ $(sqlite3-wasmfs.wasm)
@@ -99,7 +99,6 @@ speedtest1-wasmfs.js := speedtest1-wasmfs.js
 speedtest1-wasmfs.wasm := $(subst .js,.wasm,$(speedtest1-wasmfs.js))
 speedtest1-wasmfs.eflags := $(sqlite3-wasmfs.fsflags)
 speedtest1-wasmfs.eflags += $(SQLITE_OPT) -DSQLITE_WASM_WASMFS
-speedtest1-wasmfs.eflags += --post-js=$(sqlite3-wasmfs.js)
 $(speedtest1-wasmfs.js): $(MAKEFILE) $(MAKEFILE.wasmfs)
 #$(speedtest1-wasmfs.js): $(sqlite3-wasmfs.js)
 $(speedtest1-wasmfs.js): $(speedtest1.cs) $(sqlite3-wasmfs.js) \
