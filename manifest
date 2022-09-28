@@ -1,5 +1,5 @@
-C Correct\sduplicate\scopies\sof\ssqlite3-api.js\sbeing\sembedded\sin\sthe\swasmfs-based\sbuilds.
-D 2022-09-28T13:01:49.194
+C More\swork\son\sbatch-runner.html/js\sto\sfacilitate\sspeed\scomparisons\sbetween\svarious\sVFSes\sand\sWebSQL.
+D 2022-09-28T17:52:52.224
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -489,8 +489,8 @@ F ext/wasm/api/sqlite3-api-prologue.js 2a0dedb8127e8983d3199edea55151a45186b4626
 F ext/wasm/api/sqlite3-api-worker1.js d5d5b7fac4c4731c38c7e03f4f404b2a95c388a2a1d8bcf361caada572f107e0
 F ext/wasm/api/sqlite3-wasi.h 25356084cfe0d40458a902afb465df8c21fc4152c1d0a59b563a3fba59a068f9
 F ext/wasm/api/sqlite3-wasm.c b756b9c1fee9d0598f715e6df6bf089b750da24aa91bb7ef9277a037d81e7612
-F ext/wasm/batch-runner.html 168fda0f66369edec6427991683af3ed3919f3713158b70571d296f9a269a281
-F ext/wasm/batch-runner.js c8d13f673a68e2094264a0284f8775dbda4a12e609d20c501316fe641a05c760
+F ext/wasm/batch-runner.html c363032aba7a525920f61f8be112a29459f73f07e46f0ba3b7730081a617826e
+F ext/wasm/batch-runner.js 756528ff41c0a2d81607fe82d088f305c379279cc84661c9422a7993b3ac544d
 F ext/wasm/common/SqliteTestUtil.js c997c12188c97109f344701a58dd627b9c0f98f32cc6a88413f6171f2191531c
 F ext/wasm/common/emscripten.css 3d253a6fdb8983a2ac983855bfbdd4b6fa1ff267c28d69513dd6ef1f289ada3f
 F ext/wasm/common/testing.css 3a5143699c2b73a85b962271e1a9b3241b30d90e30d895e4f55665e648572962
@@ -2026,8 +2026,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f5d6bf8616341037fa3e229edf820d19acef3e0a6207a652b2b143de0a493214
-R 2d5aa67e77362d00ccd0491d8ca53ec4
+P bbfcfba260f39a9c91e82d87e06b1c2cb297c03498b4530aa3e7e01ef9916012
+R 0e9f94b500e19b6ceb4224cc315ebb8b
 U stephan
-Z c9260f6deeb302437c703eb12e2e08ac
+Z cfbdefed825643b9f5c5b839e4caa73f
 # Remove this line to create a well-formed Fossil manifest.

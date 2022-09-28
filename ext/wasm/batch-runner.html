@@ -41,25 +41,27 @@
       SQL statements, and not used within string literals or the like.
     </p>
     <hr>
-    <div id='toolbar'>
-      <select class='disable-during-eval' id='sql-select'>
-        <option disabled selected>Populated via script code</option>
-      </select>
-      <button class='disable-during-eval' id='sql-run'>Run selected SQL</button>
-      <button class='disable-during-eval' id='sql-run-next'>Run next...</button>
-      <button class='disable-during-eval' id='sql-run-remaining'>Run all remaining...</button>
-      <button class='disable-during-eval' id='export-metrics'>Export metrics (WIP)</button>
-      <button class='disable-during-eval' id='db-reset'>Reset db</button>
-      <button id='output-clear'>Clear output</button>
-      <span class='input-wrapper flex-col'>
-        <label for='select-impl'>Storage impl:</label>
-        <select id='select-impl'>
-          <option value='virtualfs'>Virtual filesystem</option>
-          <option value='memdb'>:memory:</option>
-          <option value='wasmfs-opfs'>WASMFS OPFS</option>
-          <option value='websql'>WebSQL</option>
+    <fieldset id='toolbar'>
+      <div>
+        <select class='disable-during-eval' id='sql-select'>
+          <option disabled selected>Populated via script code</option>
         </select>
-      </span>
+        <button class='disable-during-eval' id='sql-run'>Run selected SQL</button>
+        <button class='disable-during-eval' id='sql-run-next'>Run next...</button>
+        <button class='disable-during-eval' id='sql-run-remaining'>Run all remaining...</button>
+        <button class='disable-during-eval' id='export-metrics' disabled>Export metrics (WIP)<br>(broken by refactoring)</button>
+        <button class='disable-during-eval' id='db-reset'>Reset db</button>
+        <button id='output-clear'>Clear output</button>
+        <span class='input-wrapper flex-col'>
+          <label for='select-impl'>Storage impl:</label>
+          <select id='select-impl'>
+            <option value='virtualfs'>Virtual filesystem</option>
+            <option value='memdb'>:memory:</option>
+            <option value='wasmfs-opfs'>WASMFS OPFS</option>
+            <option value='websql'>WebSQL</option>
+          </select>
+        </span>
+      </fieldset>
     </div>
     <hr>
       <span class='input-wrapper'>
@@ -77,12 +79,12 @@
           display: flex;
           flex-direction: column;
       }
-      #toolbar {
+      #toolbar > div {
           display: flex;
           flex-direction: row;
           flex-wrap: wrap;
       }
-      #toolbar > * {
+      #toolbar > div > * {
           margin: 0.25em;
       }
     </style>

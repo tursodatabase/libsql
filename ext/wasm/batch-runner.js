@@ -42,14 +42,14 @@
           const name = JSON.stringify(row.name);
           const type = row.type;
           switch(type){
-              case 'table': case 'view': case 'trigger':{
+              case 'index': case 'table':
+              case 'trigger': case 'view': {
                 const sql2 = 'DROP '+type+' '+name;
-                warn(db.id,':',sql2);
-                tx.executeSql(sql2, [], atEnd, onErr);
+                tx.executeSql(sql2, [], ()=>{}, onErr);
                 break;
               }
               default:
-                warn("Unhandled db entry type:",type,name);
+                warn("Unhandled db entry type:",type,'name =',name);
                 break;
           }
         }
@@ -78,17 +78,24 @@
       }
       capi.sqlite3_finalize(pStmt);
       pStmt = 0;
-      while(toDrop.length){
+      let doBreak = !toDrop.length;
+      while(!doBreak){
         const name = toDrop.pop();
         const type = toDrop.pop();
         let sql2;
-        switch(type){
-            case 'table': case 'view': case 'trigger':
-              sql2 = 'DROP '+type+' '+name;
-              break;
-            default:
-              warn("Unhandled db entry type:",type,name);
-              continue;
+        if(name){
+          switch(type){
+              case 'table': case 'view': case 'trigger': case 'index':
+                sql2 = 'DROP '+type+' '+name;
+                break;
+              default:
+                warn("Unhandled db entry type:",type,name);
+                continue;
+          }
+        }else{
+          sql2 = "VACUUM";
+          doBreak = true;
+          break;
         }
         wasm.setPtrValue(ppStmt, 0);
         warn(db.id,':',sql2);
@@ -118,7 +125,8 @@
       btnClear: E('#output-clear'),
       btnReset: E('#db-reset'),
       cbReverseLog: E('#cb-reverse-log-order'),
-      selImpl: E('#select-impl')
+      selImpl: E('#select-impl'),
+      fsToolbar: E('#toolbar')
     },
     db: Object.create(null),
     dbs: Object.create(null),
@@ -161,10 +169,10 @@
         return;
       }
       // Run this async so that the UI can be updated for the above header...
-      const dumpMetrics = ()=>{
+      const endRun = ()=>{
         metrics.evalSqlEnd = performance.now();
         metrics.evalTimeTotal = (metrics.evalSqlEnd - metrics.evalSqlStart);
-        this.logHtml(db.id,"metrics:");//,JSON.stringify(metrics, undefined, ' '));
+        this.logHtml(db.id,"metrics:",JSON.stringify(metrics, undefined, ' '));
         this.logHtml("prepare() count:",metrics.stmtCount);
         this.logHtml("Time in prepare_v2():",metrics.prepTotal,"ms",
                      "("+(metrics.prepTotal / metrics.stmtCount),"ms per prepare())");
@@ -182,35 +190,59 @@
           /* WebSQL cannot execute multiple statements, nor can it execute SQL without
              an explicit transaction. Thus we have to do some fragile surgery on the
              input SQL. Since we're only expecting carefully curated inputs, the hope is
-             that this will suffice. */
-          metrics.evalSqlStart = performance.now();
+             that this will suffice. PS: it also can't run most SQL functions, e.g. even
+             instr() results in "not authorized". */
+          if('string'!==typeof sql){ // assume TypedArray
+            sql = new TextDecoder().decode(sql);
+          }
+          sql = sql.replace(/-- [^\n]+\n/g,''); // comment lines interfere with our split()
           const sqls = sql.split(/;+\n/);
-          const rxBegin = /^BEGIN/i, rxCommit = /^COMMIT/i, rxComment = /^\s*--/;
+          const rxBegin = /^BEGIN/i, rxCommit = /^COMMIT/i;
           try {
             const nextSql = ()=>{
               let x = sqls.shift();
-              while(x && rxComment.test(x)) x = sqls.shift();
+              while(sqls.length && !x) x = sqls.shift();
               return x && x.trim();
             };
+            const who = this;
             const transaction = function(tx){
-              let s;
-              for(;s = nextSql(); s = s.nextSql()){
-                if(rxBegin.test(s)) continue;
-                else if(rxCommit.test(s)) break;
-                ++metrics.stmtCount;
-                const t = performance.now();
-                tx.executeSql(s);
-                metrics.stepTotal += performance.now() - t;
+              try {
+                let s;
+                /* Try to approximate the spirit of the input scripts
+                   by running batches bound by BEGIN/COMMIT statements. */
+                for(s = nextSql(); !!s; s = nextSql()){
+                  if(rxBegin.test(s)) continue;
+                  else if(rxCommit.test(s)) break;
+                  //console.log("websql sql again",sqls.length, s);
+                  ++metrics.stmtCount;
+                  const t = performance.now();
+                  tx.executeSql(s,[], ()=>{}, (t,e)=>{
+                    console.error("WebSQL error",e,"SQL =",s);
+                    who.logErr(e.message);
+                    throw e;
+                  });
+                  metrics.stepTotal += performance.now() - t;
+                }
+              }catch(e){
+                who.logErr("transaction():",e.message);
+                throw e;
               }
             };
-            while(sqls.length){
-              db.handle.transaction(transaction);
-            }
-            resolve(this);
+            const n = sqls.length;
+            const nextBatch = function(){
+              if(sqls.length){
+                console.log("websql sqls.length",sqls.length,'of',n);
+                db.handle.transaction(transaction, reject, nextBatch);
+              }else{
+                resolve(who);
+              }
+            };
+            metrics.evalSqlStart = performance.now();
+            nextBatch();
           }catch(e){
-            this.gotErr = e;
+            //this.gotErr = e;
+            console.error("websql error:",e);
             reject(e);
-            return;
           }
         }.bind(this);
       }else{/*sqlite3 db...*/
@@ -259,9 +291,8 @@
             resolve(this);
           }catch(e){
             if(pStmt) capi.sqlite3_finalize(pStmt);
-            this.gotErr = e;
+            //this.gotErr = e;
             reject(e);
-            return;
           }finally{
             wasm.scopedAllocPop(stack);
           }
@@ -278,7 +309,7 @@
       return p.catch(
         (e)=>this.logErr("Error via execSql("+name+",...):",e.message)
       ).finally(()=>{
-        dumpMetrics();
+        endRun();
         this.blockControls(false);
       });
     },
@@ -363,7 +394,8 @@
 
     /** Disable or enable certain UI controls. */
     blockControls: function(disable){
-      document.querySelectorAll('.disable-during-eval').forEach((e)=>e.disabled = disable);
+      //document.querySelectorAll('.disable-during-eval').forEach((e)=>e.disabled = disable);
+      this.e.fsToolbar.disabled = disable;
     },
 
     /**
@@ -374,8 +406,9 @@
     */
     metricsToArrays: function(){
       const rc = [];
-      Object.keys(this.metrics).sort().forEach((k)=>{
-        const m = this.metrics[k];
+      Object.keys(this.dbs).sort().forEach((k)=>{
+        const d = this.dbs[k];
+        const m = d.metrics;
         delete m.evalSqlStart;
         delete m.evalSqlEnd;
         const mk = Object.keys(m).sort();
@@ -384,16 +417,12 @@
         }
         const row = [k.split('/').pop()/*remove dir prefix from filename*/];
         rc.push(row);
-        mk.forEach((kk)=>row.push(m[kk]));
+        row.push(...mk.map((kk)=>m[kk]));
       });
       return rc;
     },
 
     metricsToBlob: function(colSeparator='\t'){
-      if(1){
-        this.logErr("TODO: re-do metrics dump");
-        return;
-      }
       const ar = [], ma = this.metricsToArrays();
       if(!ma.length){
         this.logErr("Metrics are empty. Run something.");
@@ -437,15 +466,15 @@
        databases to clean them up.
     */
     clearStorage: function(onlySelectedDb=false){
-      const list = onlySelectDb
-            ? [('boolean'===typeof onlySelectDb)
+      const list = onlySelectedDb
+            ? [('boolean'===typeof onlySelectedDb)
                 ? this.dbs[this.e.selImpl.value]
-                : onlySelectDb]
+                : onlySelectedDb]
             : Object.values(this.dbs);
       for(let db of list){
         if(db && db.handle){
           this.logHtml("Clearing db",db.id);
-          d.clear();
+          db.clear();
         }
       }
     },
@@ -467,7 +496,9 @@
                 d.filename = ':memory:';
                 break;
               case 'wasmfs-opfs':
-                d.filename = 'file:'+(this.sqlite3.capi.sqlite3_wasmfs_opfs_dir())+'/wasmfs-opfs.sqlite3';
+                d.filename = 'file:'+(
+                  this.sqlite3.capi.sqlite3_wasmfs_opfs_dir()
+                )+'/wasmfs-opfs.sqlite3b';
                 break;
               case 'websql':
                 d.filename = 'websql.db';
@@ -579,6 +610,7 @@
     self._MODULE = theEmccModule /* this is only to facilitate testing from the console */;
     sqlite3 = theEmccModule.sqlite3;
     console.log("App",App);
+    self.App = App;
     App.run(theEmccModule.sqlite3);
   });
 })();
