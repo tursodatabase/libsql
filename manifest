@@ -1,5 +1,5 @@
-C Provide\sthe\sSQLITE_MAX_ALLOCATION_SIZE\scompile-time\soption\sfor\slimiting\sthe\nmaximum\smemory\sallocation\ssize.
-D 2022-09-27T16:35:06.221
+C Fix\smisuse\sof\sthe\ssqlite3_set_auxdata()\sinterface\sin\sthe\sICU\sextension.
+D 2022-09-28T19:14:01.801
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -239,7 +239,7 @@ F ext/fts5/tool/loadfts5.tcl 95b03429ee6b138645703c6ca192c3ac96eaf093
 F ext/fts5/tool/mkfts5c.tcl 3eba8e9bee4221ed165f3304b51b2a74a705f4ec5df3d044573a2be539534af8
 F ext/fts5/tool/showfts5.tcl d54da0e067306663e2d5d523965ca487698e722c
 F ext/icu/README.txt 7ab7ced8ae78e3a645b57e78570ff589d4c672b71370f5aa9e1cd7024f400fc9
-F ext/icu/icu.c 91c021c7e3e8bbba286960810fa303295c622e323567b2e6def4ce58e4466e60
+F ext/icu/icu.c c074519b46baa484bb5396c7e01e051034da8884bad1a1cb7f09bbe6be3f0282
 F ext/icu/sqliteicu.h fa373836ed5a1ee7478bdf8a1650689294e41d0c89c1daab26e9ae78a32075a8
 F ext/lsm1/Makefile a553b728bba6c11201b795188c5708915cc4290f02b7df6ba7e8c4c943fd5cd9
 F ext/lsm1/Makefile.msc f8c878b467232226de288da320e1ac71c131f5ec91e08b21f502303347260013
@@ -2000,8 +2000,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5517bc50988b5339c2fd071b29de1b5ca03037b0b635c3b112cf7108fab54d5f
-R d334d68f4ee6840cbb06511749063d29
+P 584de6a996c78b8e41bdfcd05a8e2a3844664c6b4efedb5883c8b8af388462b5
+R d79b3651cd76ebe372f6bfce59942639
 U drh
-Z 739e270ad16b7bf5c87cbcd809fe00c5
+Z 79f3fdc2db5301812c92ae8ca64cb084
 # Remove this line to create a well-formed Fossil manifest.
