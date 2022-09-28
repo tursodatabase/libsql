@@ -2385,6 +2385,20 @@ void sqlite3Pragma(
     break;
   }
 
+#if !defined(SQLITE_OMIT_VACUUM) && !defined(SQLITE_OMIT_ATTACH)
+  /*
+  **   PRAGMA schema.reset_database
+  **   PRAGMA reset_database
+  **
+  ** Remove all content from a database file.  Bring the size of the
+  ** file back to zero.
+  */
+  case PragTyp_RESET_DATABASE: {
+    sqlite3VdbeAddOp3(v, OP_Vacuum, iDb, 0, 1);
+    break;
+  }
+#endif
+
 #if defined(SQLITE_DEBUG) || defined(SQLITE_TEST)
   /*
   ** Report the current state of file logs for all databases

@@ -286,9 +286,6 @@ int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg, u32 mFlags){
   for(i=0; i<ArraySize(meta); i++){
     sqlite3BtreeGetMeta(pDb->pBt, i+1, (u32 *)&meta[i]);
   }
-  if( (db->flags & SQLITE_ResetDatabase)!=0 ){
-    memset(meta, 0, sizeof(meta));
-  }
   pDb->pSchema->schema_cookie = meta[BTREE_SCHEMA_VERSION-1];
 
   /* If opening a non-empty database, check the text encoding. For the

@@ -7636,7 +7636,7 @@ case OP_JournalMode: {    /* out2 */
 #endif /* SQLITE_OMIT_PRAGMA */
 
 #if !defined(SQLITE_OMIT_VACUUM) && !defined(SQLITE_OMIT_ATTACH)
-/* Opcode: Vacuum P1 P2 * * *
+/* Opcode: Vacuum P1 P2 P3 * *
 **
 ** Vacuum the entire database P1.  P1 is 0 for "main", and 2 or more
 ** for an attached database.  The "temp" database may not be vacuumed.
@@ -7644,11 +7644,15 @@ case OP_JournalMode: {    /* out2 */
 ** If P2 is not zero, then it is a register holding a string which is
 ** the file into which the result of vacuum should be written.  When
 ** P2 is zero, the vacuum overwrites the original database.
+**
+** If P3 is not zero, then delete all database content as part of the
+** vacuum.  It is not allowed for both P2 and P3 to be non-zero at the
+** same time.
 */
 case OP_Vacuum: {
   assert( p->readOnly==0 );
   rc = sqlite3RunVacuum(&p->zErrMsg, db, pOp->p1,
-                        pOp->p2 ? &aMem[pOp->p2] : 0);
+                        pOp->p2 ? &aMem[pOp->p2] : 0, pOp->p3);
   if( rc ) goto abort_due_to_error;
   break;
 }

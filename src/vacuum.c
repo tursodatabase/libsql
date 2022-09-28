@@ -144,7 +144,8 @@ SQLITE_NOINLINE int sqlite3RunVacuum(
   char **pzErrMsg,        /* Write error message here */
   sqlite3 *db,            /* Database connection */
   int iDb,                /* Which attached DB to vacuum */
-  sqlite3_value *pOut     /* Write results here, if not NULL. VACUUM INTO */
+  sqlite3_value *pOut,    /* Write results here, if not NULL. VACUUM INTO */
+  int bReset              /* Reset the database if true */
 ){
   int rc = SQLITE_OK;     /* Return code from service routines */
   Btree *pMain;           /* The database being vacuumed */
@@ -162,6 +163,8 @@ SQLITE_NOINLINE int sqlite3RunVacuum(
   const char *zDbMain;    /* Schema name of database to vacuum */
   const char *zOut;       /* Name of output file */
 
+  assert( bReset==0 || pOut==0 );
+  if( (db->flags & SQLITE_ResetDatabase)!=0 && pOut==0 ) bReset = 1;
   if( !db->autoCommit ){
     sqlite3SetString(pzErrMsg, db, "cannot VACUUM from within a transaction");
     return SQLITE_ERROR; /* IMP: R-12218-18073 */
@@ -269,53 +272,58 @@ SQLITE_NOINLINE int sqlite3RunVacuum(
                                            sqlite3BtreeGetAutoVacuum(pMain));
 #endif
 
-  /* Query the schema of the main database. Create a mirror schema
-  ** in the temporary database.
-  */
-  db->init.iDb = nDb; /* force new CREATE statements into vacuum_db */
-  rc = execSqlF(db, pzErrMsg,
-      "SELECT sql FROM \"%w\".sqlite_schema"
-      " WHERE type='table'AND name<>'sqlite_sequence'"
-      " AND coalesce(rootpage,1)>0",
-      zDbMain
-  );
-  if( rc!=SQLITE_OK ) goto end_of_vacuum;
-  rc = execSqlF(db, pzErrMsg,
-      "SELECT sql FROM \"%w\".sqlite_schema"
-      " WHERE type='index'",
-      zDbMain
-  );
-  if( rc!=SQLITE_OK ) goto end_of_vacuum;
-  db->init.iDb = 0;
-
-  /* Loop through the tables in the main database. For each, do
-  ** an "INSERT INTO vacuum_db.xxx SELECT * FROM main.xxx;" to copy
-  ** the contents to the temporary database.
-  */
-  rc = execSqlF(db, pzErrMsg,
-      "SELECT'INSERT INTO vacuum_db.'||quote(name)"
-      "||' SELECT*FROM\"%w\".'||quote(name)"
-      "FROM vacuum_db.sqlite_schema "
-      "WHERE type='table'AND coalesce(rootpage,1)>0",
-      zDbMain
-  );
-  assert( (db->mDbFlags & DBFLAG_Vacuum)!=0 );
-  db->mDbFlags &= ~DBFLAG_Vacuum;
-  if( rc!=SQLITE_OK ) goto end_of_vacuum;
-
-  /* Copy the triggers, views, and virtual tables from the main database
-  ** over to the temporary database.  None of these objects has any
-  ** associated storage, so all we have to do is copy their entries
-  ** from the schema table.
-  */
-  rc = execSqlF(db, pzErrMsg,
-      "INSERT INTO vacuum_db.sqlite_schema"
-      " SELECT*FROM \"%w\".sqlite_schema"
-      " WHERE type IN('view','trigger')"
-      " OR(type='table'AND rootpage=0)",
-      zDbMain
-  );
+  if( !bReset ){
+    /* Query the schema of the main database. Create a mirror schema
+    ** in the temporary database.
+    */
+    db->init.iDb = nDb; /* force new CREATE statements into vacuum_db */
+    rc = execSqlF(db, pzErrMsg,
+        "SELECT sql FROM \"%w\".sqlite_schema"
+        " WHERE type='table'AND name<>'sqlite_sequence'"
+        " AND coalesce(rootpage,1)>0",
+        zDbMain
+    );
+    if( rc!=SQLITE_OK ) goto end_of_vacuum;
+    rc = execSqlF(db, pzErrMsg,
+        "SELECT sql FROM \"%w\".sqlite_schema"
+        " WHERE type='index'",
+        zDbMain
+    );
+    if( rc!=SQLITE_OK ) goto end_of_vacuum;
+    db->init.iDb = 0;
+  
+    /* Loop through the tables in the main database. For each, do
+    ** an "INSERT INTO vacuum_db.xxx SELECT * FROM main.xxx;" to copy
+    ** the contents to the temporary database.
+    */
+    rc = execSqlF(db, pzErrMsg,
+        "SELECT'INSERT INTO vacuum_db.'||quote(name)"
+        "||' SELECT*FROM\"%w\".'||quote(name)"
+        "FROM vacuum_db.sqlite_schema "
+        "WHERE type='table'AND coalesce(rootpage,1)>0",
+        zDbMain
+    );
+    assert( (db->mDbFlags & DBFLAG_Vacuum)!=0 );
+    db->mDbFlags &= ~DBFLAG_Vacuum;
+    if( rc!=SQLITE_OK ) goto end_of_vacuum;
+  
+    /* Copy the triggers, views, and virtual tables from the main database
+    ** over to the temporary database.  None of these objects has any
+    ** associated storage, so all we have to do is copy their entries
+    ** from the schema table.
+    */
+    rc = execSqlF(db, pzErrMsg,
+        "INSERT INTO vacuum_db.sqlite_schema"
+        " SELECT*FROM \"%w\".sqlite_schema"
+        " WHERE type IN('view','trigger')"
+        " OR(type='table'AND rootpage=0)",
+        zDbMain
+    );
+  }else{
+    rc = sqlite3BtreeBeginTrans(pTemp, 2, 0);
+  }
   if( rc ) goto end_of_vacuum;
+
 
   /* At this point, there is a write transaction open on both the 
   ** vacuum database and the main database. Assuming no error occurs,

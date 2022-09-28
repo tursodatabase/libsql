@@ -4739,7 +4739,7 @@ Index *sqlite3FindIndex(sqlite3*,const char*, const char*);
 void sqlite3UnlinkAndDeleteTable(sqlite3*,int,const char*);
 void sqlite3UnlinkAndDeleteIndex(sqlite3*,int,const char*);
 void sqlite3Vacuum(Parse*,Token*,Expr*);
-int sqlite3RunVacuum(char**, sqlite3*, int, sqlite3_value*);
+int sqlite3RunVacuum(char**, sqlite3*, int, sqlite3_value*, int);
 char *sqlite3NameFromToken(sqlite3*, const Token*);
 int sqlite3ExprCompare(const Parse*,const Expr*,const Expr*, int);
 int sqlite3ExprCompareSkip(Expr*,Expr*,int);

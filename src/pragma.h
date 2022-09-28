@@ -38,19 +38,20 @@
 #define PragTyp_OPTIMIZE                      30
 #define PragTyp_PAGE_SIZE                     31
 #define PragTyp_PRAGMA_LIST                   32
-#define PragTyp_SECURE_DELETE                 33
-#define PragTyp_SHRINK_MEMORY                 34
-#define PragTyp_SOFT_HEAP_LIMIT               35
-#define PragTyp_SYNCHRONOUS                   36
-#define PragTyp_TABLE_INFO                    37
-#define PragTyp_TABLE_LIST                    38
-#define PragTyp_TEMP_STORE                    39
-#define PragTyp_TEMP_STORE_DIRECTORY          40
-#define PragTyp_THREADS                       41
-#define PragTyp_WAL_AUTOCHECKPOINT            42
-#define PragTyp_WAL_CHECKPOINT                43
-#define PragTyp_LOCK_STATUS                   44
-#define PragTyp_STATS                         45
+#define PragTyp_RESET_DATABASE                33
+#define PragTyp_SECURE_DELETE                 34
+#define PragTyp_SHRINK_MEMORY                 35
+#define PragTyp_SOFT_HEAP_LIMIT               36
+#define PragTyp_SYNCHRONOUS                   37
+#define PragTyp_TABLE_INFO                    38
+#define PragTyp_TABLE_LIST                    39
+#define PragTyp_TEMP_STORE                    40
+#define PragTyp_TEMP_STORE_DIRECTORY          41
+#define PragTyp_THREADS                       42
+#define PragTyp_WAL_AUTOCHECKPOINT            43
+#define PragTyp_WAL_CHECKPOINT                44
+#define PragTyp_LOCK_STATUS                   45
+#define PragTyp_STATS                         46
 
 /* Property flags associated with various pragma. */
 #define PragFlg_NeedSchema 0x01 /* Force schema load before running */
@@ -500,6 +501,15 @@ static const PragmaName aPragmaName[] = {
   /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns1,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ SQLITE_RecTriggers },
+#endif
+#if !defined(SQLITE_OMIT_VACUUM) && !defined(SQLITE_OMIT_ATTACH)
+ {/* zName:     */ "reset_database",
+  /* ePragTyp:  */ PragTyp_RESET_DATABASE,
+  /* ePragFlg:  */ 0,
+  /* ColNames:  */ 0, 0,
+  /* iArg:      */ 0 },
+#endif
+#if !defined(SQLITE_OMIT_FLAG_PRAGMAS)
  {/* zName:     */ "reverse_unordered_selects",
   /* ePragTyp:  */ PragTyp_FLAG,
   /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns1,
@@ -657,4 +667,4 @@ static const PragmaName aPragmaName[] = {
   /* iArg:      */ SQLITE_WriteSchema|SQLITE_NoSchemaError },
 #endif
 };
-/* Number of pragmas: 68 on by default, 78 total. */
+/* Number of pragmas: 69 on by default, 79 total. */

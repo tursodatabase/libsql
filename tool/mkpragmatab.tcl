@@ -398,6 +398,9 @@ set pragma_def {
   TYPE: FLAG
   ARG:  SQLITE_LegacyAlter
   IF:   !defined(SQLITE_OMIT_FLAG_PRAGMAS)
+
+  NAME: reset_database
+  IF:   !defined(SQLITE_OMIT_VACUUM) && !defined(SQLITE_OMIT_ATTACH)
 }
 
 # Open the output file

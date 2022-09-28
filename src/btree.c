@@ -3502,16 +3502,16 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag, int *pSchemaVersion){
   }
   assert( pBt->inTransaction==TRANS_WRITE || IfNotOmitAV(pBt->bDoTruncate)==0 );
 
-  if( (p->db->flags & SQLITE_ResetDatabase) 
-   && sqlite3PagerIsreadonly(pPager)==0 
-  ){
-    pBt->btsFlags &= ~BTS_READ_ONLY;
-  }
-
   /* Write transactions are not possible on a read-only database */
   if( (pBt->btsFlags & BTS_READ_ONLY)!=0 && wrflag ){
-    rc = SQLITE_READONLY;
-    goto trans_begun;
+    if( (p->db->flags & SQLITE_ResetDatabase) 
+     && sqlite3PagerIsreadonly(pPager)==0 
+    ){
+      pBt->btsFlags &= ~BTS_READ_ONLY;
+    }else{
+      rc = SQLITE_READONLY;
+      goto trans_begun;
+    }
   }
 
 #ifndef SQLITE_OMIT_SHARED_CACHE
