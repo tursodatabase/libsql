@@ -143,9 +143,7 @@
 
     self.sqlite3TestModule.print = log;
     self.sqlite3TestModule.printErr = logErr;
-    sqlite3Speedtest1InitModule(self.sqlite3TestModule).then(function(M){
-        runTests(M.sqlite3);
-    });
+    sqlite3InitModule(self.sqlite3TestModule).then(runTests);
 })();</script>
   </body>
 </html>

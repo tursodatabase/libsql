@@ -256,11 +256,11 @@
     // like so...
     print: log,
     printErr: error
-  }).then(function(EmscriptenModule){
-    //console.log('EmscriptenModule.sqlite3 =',EmscriptenModule.sqlite3);
+  }).then(function(sqlite3){
+    //console.log('sqlite3 =',sqlite3);
     log("Done initializing. Running demo...");
     try {
-      demo1(EmscriptenModule.sqlite3);
+      demo1(sqlite3);
     }catch(e){
       error("Exception:",e.message);
     }

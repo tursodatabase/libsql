@@ -28,9 +28,7 @@
 */
 "use strict";
 importScripts('sqlite3.js');
-sqlite3InitModule().then((EmscriptenModule)=>{
-  EmscriptenModule.sqlite3.asyncPostInit().then((sqlite3)=>{
-    sqlite3.capi.sqlite3_wasmfs_opfs_dir();
-    sqlite3.initWorker1API();
-  });
+sqlite3InitModule().then((sqlite3)=>{
+  sqlite3.capi.sqlite3_wasmfs_opfs_dir();
+  sqlite3.initWorker1API();
 });

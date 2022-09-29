@@ -80,22 +80,18 @@
     printErr: logErr,
     setStatus: (text)=>mPost('load-status',text)
   };
-  self.sqlite3Speedtest1InitModule(EmscriptenModule).then(function(EModule){
-    log("Module inited.");
-    return EModule.sqlite3.asyncPostInit()
-      .then((sqlite3)=>{
-        const S = sqlite3;
-        const vfsUnlink = S.capi.wasm.xWrap("sqlite3_wasm_vfs_unlink", "int", ["string"]);
-        App.unlink = function(fname){
-          vfsUnlink(fname);
-          if(S.opfs) S.opfs.deleteEntry(fname);
-        };
-        App.pDir = wasmfsDir(S.wasm);
-        App.wasm = S.capi.wasm;
-        //if(App.pDir) log("Persistent storage:",pDir);
-        //else log("Using transient storage.");
-        mPost('ready',true);
-        log("Registered VFSes:", ...S.capi.sqlite3_web_vfs_list());
-      });
+  self.sqlite3InitModule(EmscriptenModule).then((sqlite3)=>{
+    const S = sqlite3;
+    const vfsUnlink = S.capi.wasm.xWrap("sqlite3_wasm_vfs_unlink", "int", ["string"]);
+    App.unlink = function(fname){
+      vfsUnlink(fname);
+      if(S.opfs) S.opfs.deleteEntry(fname);
+    };
+    App.pDir = wasmfsDir(S.wasm);
+    App.wasm = S.capi.wasm;
+    //if(App.pDir) log("Persistent storage:",pDir);
+    //else log("Using transient storage.");
+    mPost('ready',true);
+    log("Registered VFSes:", ...S.capi.sqlite3_web_vfs_list());
   });
 })();

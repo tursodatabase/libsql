@@ -55,9 +55,9 @@ sqlite3-wasmfs.jsflags += -sUSE_CLOSURE_COMPILER=0
 sqlite3-wasmfs.jsflags += -sIMPORTED_MEMORY
 #sqlite3-wasmfs.jsflags += -sINITIAL_MEMORY=13107200
 #sqlite3-wasmfs.jsflags += -sTOTAL_STACK=4194304
-sqlite3-wasmfs.jsflags += -sEXPORT_NAME=sqlite3InitModule
+sqlite3-wasmfs.jsflags += -sEXPORT_NAME=$(sqlite3.js.init-func)
 sqlite3-wasmfs.jsflags += -sGLOBAL_BASE=4096 # HYPOTHETICALLY keep func table indexes from overlapping w/ heap addr.
-sqlite3-wasmfs.jsflags += --post-js=$(post-js.js)
+sqlite3-wasmfs.jsflags += $(sqlite3.js.flags.--post-js)
 #sqlite3-wasmfs.jsflags += -sFILESYSTEM=0 # only for experimentation. sqlite3 needs the FS API
 #                                Perhaps the wasmfs build doesn't?
 #sqlite3-wasmfs.jsflags += -sABORTING_MALLOC
@@ -80,7 +80,7 @@ sqlite3-wasmfs.jsflags += -sWASM_BIGINT=$(emcc_enable_bigint)
 
 $(sqlite3-wasmfs.js): $(sqlite3-wasmfs.wasm.c) $(sqlite3-wasm.c) $(sqlite3-wasmfs.extra.c) \
     EXPORTED_FUNCTIONS.api $(sqlite3-wasm.js) $(MAKEFILE) $(MAKEFILE.wasmfs) \
-    $(post-js.js)
+    $(post-jses.deps)
 	@echo "Building $@ ..."
 	$(emcc.bin) -o $@ $(emcc_opt) $(emcc.flags) \
       $(sqlite3-wasmfs.cflags) $(sqlite3-wasmfs.jsflags) $(sqlite3-wasmfs.wasm.c) $(sqlite3-wasmfs.extra.c)

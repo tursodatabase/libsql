@@ -41,10 +41,8 @@
     logHtml('error',...args);
   };
   
-  const runTests = function(Module){
-    //log("Module",Module);
-    const sqlite3 = Module.sqlite3,
-          capi = sqlite3.capi,
+  const runTests = function(sqlite3){
+    const capi = sqlite3.capi,
           oo = sqlite3.oo1,
           wasm = capi.wasm;
     log("Loaded module:",capi.sqlite3_libversion(), capi.sqlite3_sourceid());
@@ -115,9 +113,7 @@
     }
   };
 
-  sqlite3InitModule(self.sqlite3TestModule).then(function(theModule){
-    console.warn("Installing Emscripten module as global EM for dev console access.");
-    self.EM = theModule;
-    runTests(theModule);
+  sqlite3InitModule(self.sqlite3TestModule).then((sqlite3)=>{
+    runTests(sqlite3);
   });
 })();

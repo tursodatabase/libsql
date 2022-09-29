@@ -924,6 +924,9 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        Bug: if called while a prior call is still resolving, the 2nd
        call will resolve prematurely, before the 1st call has finished
        resolving.
+
+       In Emscripten-based builds, this function is called
+       automatically and deleted from this object.
     */
     asyncPostInit: async function(){
       let lip = sqlite3ApiBootstrap.initializersAsync;

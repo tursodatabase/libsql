@@ -163,12 +163,7 @@
 
     self.sqlite3TestModule.print = log;
     self.sqlite3TestModule.printErr = logErr;
-    sqlite3Speedtest1InitModule(self.sqlite3TestModule)
-        .then((EmscriptenModule)=>{
-            return EmscriptenModule.sqlite3.installOpfsVfs()
-                .catch((e)=>{console.warn(e.message)})
-                .then(()=>runTests(EmscriptenModule.sqlite3));
-        });
+    sqlite3InitModule(self.sqlite3TestModule).then(runTests);
 })();</script>
 </body>
 </html>

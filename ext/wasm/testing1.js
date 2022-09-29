@@ -33,7 +33,7 @@
     return v1>=(v2-factor) && v1<=(v2+factor);
   };
 
-  let sqlite3;
+  let sqlite3 /* loaded later */;
   
   const testBasicSanity = function(db,sqlite3){
     const capi = sqlite3.capi;
@@ -270,7 +270,7 @@
     T.mustThrow(()=>db.exec("select * from foo.bar"));
   };
 
-  const testIntPtr = function(db,S,Module){
+  const testIntPtr = function(db,S){
     const w = S.capi.wasm;
     const stack = w.scopedAllocPush();
     let ptrInt;
@@ -1011,9 +1011,8 @@
         n,"entries totaling approximately",sz,"bytes.");
   };
 
-  const runTests = function(Module){
-    //log("Module",Module);
-    sqlite3 = Module.sqlite3;
+  const runTests = function(_sqlite3){
+    sqlite3 = _sqlite3;
     const capi = sqlite3.capi,
           oo = sqlite3.oo1,
           wasm = capi.wasm;
@@ -1074,7 +1073,7 @@
       ].forEach((f)=>{
         const t = T.counter, n = performance.now();
         logHtml(banner1,"Running",f.name+"()...");
-        f(db, sqlite3, Module);
+        f(db, sqlite3);
         logHtml(banner2,f.name+"():",T.counter - t,'tests in',(performance.now() - n),"ms");
       });
     }finally{
@@ -1085,8 +1084,7 @@
     log('capi.wasm.exports',capi.wasm.exports);
   };
 
-  self.sqlite3TestModule.initSqlite3().then(function(theModule){
-    self._MODULE = theModule /* this is only to facilitate testing from the console */
-    runTests(theModule);
+  self.sqlite3TestModule.initSqlite3().then((S)=>{
+    runTests(S);
   });
 })();

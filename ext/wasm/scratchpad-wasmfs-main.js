@@ -34,11 +34,8 @@
       });
   };
 
-  const runTests = function(Module){
-    //stdout("Module",Module);
-    self._MODULE = Module /* this is only to facilitate testing from the console */;
-    const sqlite3 = Module.sqlite3,
-          capi = sqlite3.capi,
+  const runTests = function(sqlite3){
+    const capi = sqlite3.capi,
           oo = sqlite3.oo1,
           wasm = capi.wasm;
     stdout("Loaded sqlite3:",capi.sqlite3_libversion(), capi.sqlite3_sourceid());
@@ -60,7 +57,7 @@
       ].forEach((f)=>{
         const n = performance.now();
         stdout(banner1,"Running",f.name+"()...");
-        f(db, sqlite3, Module);
+        f(db, sqlite3);
         stdout(banner2,f.name+"() took ",(performance.now() - n),"ms");
       });
     }finally{

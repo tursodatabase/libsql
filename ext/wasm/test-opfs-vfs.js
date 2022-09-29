@@ -28,7 +28,13 @@ const tryOpfsVfs = function(sqlite3){
   const log = (...args)=>console.log(logPrefix,...args);
   const warn =  (...args)=>console.warn(logPrefix,...args);
   const error =  (...args)=>console.error(logPrefix,...args);
+  const opfs = sqlite3.opfs;
   log("tryOpfsVfs()");
+  if(!sqlite3.opfs){
+    const e = toss("OPFS is not available.");
+    error(e);
+    throw e;
+  }
   const capi = sqlite3.capi;
   const pVfs = capi.sqlite3_vfs_find("opfs") || toss("Missing 'opfs' VFS.");
   const oVfs = capi.sqlite3_vfs.instanceForPointer(pVfs) || toss("Unexpected instanceForPointer() result.");;
@@ -38,7 +44,6 @@ const tryOpfsVfs = function(sqlite3){
   const dbFile = "my-persistent.db";
   if(urlArgs.has('delete')) sqlite3.opfs.deleteEntry(dbFile);
 
-  const opfs = sqlite3.opfs;
   const db = new opfs.OpfsDb(dbFile);
   log("db file:",db.filename);
   try{
@@ -78,7 +83,6 @@ const tryOpfsVfs = function(sqlite3){
 
 importScripts('sqlite3.js');
 self.sqlite3InitModule()
-  .then((EmscriptenModule)=>EmscriptenModule.sqlite3.asyncPostInit())
   .then((sqlite3)=>tryOpfsVfs(sqlite3))
   .catch((e)=>{
     console.error("Error initializing module:",e);

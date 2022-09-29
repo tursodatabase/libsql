@@ -230,9 +230,7 @@
        object, calls it sqlite3InitModule(), and removes
        self.sqlite3ApiConfig after initialization is done. Returns the
        promise from sqlite3InitModule(), and the next then() handler
-       will get the Emscripten module object as its argument. That
-       module has the sqlite3's main namespace object installed as its
-       `sqlite3` property.
+       will get the sqlite3 API object as its argument.
     */
     initSqlite3: function(){
       self.sqlite3ApiConfig = this.sqlite3ApiConfig;

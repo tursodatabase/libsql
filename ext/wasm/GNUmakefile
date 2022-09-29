@@ -152,7 +152,6 @@ post-jses := \
   $(dir.api)/post-js-header.js \
   $(sqlite3-api.js) \
   $(dir.api)/post-js-footer.js
-
 $(post-js.js): $(post-jses) $(MAKEFILE)
 	@echo "Making $@..."
 	@for i in $(post-jses); do \
@@ -160,7 +159,9 @@ $(post-js.js): $(post-jses) $(MAKEFILE)
 		cat $$i; \
 		echo "/* END FILE: $$i */"; \
 	done > $@
-
+extern-post-js.js := $(dir.api)/extern-post-js.js
+sqlite3.js.flags.--post-js := --post-js=$(post-js.js) --extern-post-js=$(extern-post-js.js)
+post-jses.deps := $(post-js.js) $(extern-post-js.js)
 
 ########################################################################
 # emcc flags for .c/.o/.wasm/.js.
@@ -204,9 +205,12 @@ emcc.jsflags += -sINITIAL_MEMORY=13107200
 # ^^^^ 64MB is not enough for WASMFS/OPFS test runs using batch-runner.js
 emcc.jsflags += $(emcc.environment)
 #emcc.jsflags += -sTOTAL_STACK=4194304
-emcc.jsflags += -sEXPORT_NAME=sqlite3InitModule
+
+sqlite3.js.init-func := sqlite3InitModule
+# ^^^^ $(sqlite3.js.init-func) symbol name is hard-coded in $(extern-post-js.js)
+
+emcc.jsflags += -sEXPORT_NAME=$(sqlite3.js.init-func)
 emcc.jsflags += -sGLOBAL_BASE=4096 # HYPOTHETICALLY keep func table indexes from overlapping w/ heap addr.
-emcc.jsflags += --post-js=$(post-js.js)
 #emcc.jsflags += -sSTRICT # fails due to missing __syscall_...()
 #emcc.jsflags += -sALLOW_UNIMPLEMENTED_SYSCALLS
 #emcc.jsflags += -sFILESYSTEM=0 # only for experimentation. sqlite3 needs the FS API
@@ -253,6 +257,7 @@ emcc.jsflags += -sWASM_BIGINT=$(emcc_enable_bigint)
 # code get confused and cannot load property (namely, the
 # sqlite3.worker.js generated in conjunction with -sWASMFS).
 sqlite3.js := sqlite3.js
+emcc.jsflags += $(sqlite3.js.flags.--post-js)
 sqlite3.wasm := sqlite3.wasm
 sqlite3-wasm.o := $(dir.api)/sqlite3-wasm.o
 $(sqlite3-wasm.o): emcc.cflags += $(SQLITE_OPT)
@@ -274,9 +279,9 @@ endef
 $(foreach c,$(sqlite3-wasm.c) $(jaccwabyt_test.c),$(eval $(call WASM_C_COMPILE,$(c))))
 $(sqlite3.js): $(MAKEFILE) $(sqlite3.wasm.obj) \
     EXPORTED_FUNCTIONS.api \
-    $(post-js.js)
+    $(post-jses.deps)
 	@echo "Building $@ ..."
-	$(emcc.bin) -o $(sqlite3.js) $(emcc_opt) $(emcc.flags) $(emcc.jsflags) $(sqlite3.wasm.obj)
+	$(emcc.bin) -o $@ $(emcc_opt) $(emcc.flags) $(emcc.jsflags) $(sqlite3.wasm.obj)
 	chmod -x $(sqlite3.wasm)
 	$(maybe-wasm-strip) $(sqlite3.wasm)
 	@ls -la $@ $(sqlite3.wasm)
@@ -329,8 +334,8 @@ speedtest1-common.eflags += $(emcc.exportedRuntimeMethods)
 speedtest1-common.eflags += -sALLOW_TABLE_GROWTH
 speedtest1-common.eflags += -sDYNAMIC_EXECUTION=0
 speedtest1-common.eflags += --minify 0
-speedtest1-common.eflags += -sEXPORT_NAME=sqlite3Speedtest1InitModule
-speedtest1-common.eflags += --post-js=$(post-js.js)
+speedtest1-common.eflags += -sEXPORT_NAME=$(sqlite3.js.init-func)
+speedtest1-common.eflags += $(sqlite3.js.flags.--post-js)
 speedtest1-common.eflags += -sWASM_BIGINT=$(emcc_enable_bigint)
 speedtest1.exit-runtime0 := -sEXIT_RUNTIME=0
 speedtest1.exit-runtime1 := -sEXIT_RUNTIME=1
@@ -365,7 +370,7 @@ $(speedtest1.js): emcc.cflags+=
 # the latter (predictably) results in a slightly faster binary, but we're
 # close enough to the target speed requirements that the 500ms makes a
 # difference.
-$(speedtest1.js): $(MAKEFILE) $(speedtest1.cs) $(post-js.js) \
+$(speedtest1.js): $(MAKEFILE) $(speedtest1.cs) $(post-jses.deps) \
     EXPORTED_FUNCTIONS.speedtest1
 	@echo "Building $@ ..."
 	$(emcc.bin) \

@@ -604,11 +604,8 @@
     }/*run()*/
   }/*App*/;
 
-  self.sqlite3TestModule.initSqlite3().then(function(theEmccModule){
-    self._MODULE = theEmccModule /* this is only to facilitate testing from the console */;
-    sqlite3 = theEmccModule.sqlite3;
-    console.log("App",App);
-    self.App = App;
-    App.run(theEmccModule.sqlite3);
+  self.sqlite3TestModule.initSqlite3().then(function(sqlite3){
+    self.App = App /* only to facilitate dev console access */;
+    App.run(sqlite3);
   });
 })();
