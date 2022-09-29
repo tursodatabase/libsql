@@ -77,12 +77,17 @@ SQLITE_OPT = \
 # and friends may be NULL.
 
 ifneq (,$(filter release,$(MAKECMDGOALS)))
-emcc_opt ?= -Oz -g3 -flto
+emcc_opt ?= -Oz -flto
 else
-emcc_opt ?= -O0 -g3
+emcc_opt ?= -O0
 # ^^^^ build times for -O levels higher than 0 are painful at
 # dev-time.
 endif
+# When passing emcc_opt from the CLI, += and re-assignment have no
+# effect, so emcc_opt+=-g3 doesn't work. So...
+emcc_opt_full := $(emcc_opt) -g3
+# ^^^ ALWAYS use -g3. See below for why.
+#
 # ^^^ -flto improves runtime speed at -O0 considerably but doubles
 # build time.
 #
@@ -102,6 +107,8 @@ endif
 # -Os: not quite 1% in some completely unscientific tests. Runtime
 # speed for the unit tests is all over the place either way so it's
 # difficult to say whether -Os gives any speed benefit over -Oz.
+#
+# (Much later: -O2 consistently gives the best speeds.)
 ########################################################################
 
 
@@ -273,7 +280,7 @@ define WASM_C_COMPILE
 $(1).o := $$(subst .c,.o,$(1))
 sqlite3.wasm.obj += $$($(1).o)
 $$($(1).o): $$(MAKEFILE) $(1)
-	$$(emcc.bin) $$(emcc_opt) $$(emcc.flags) $$(emcc.cflags) -c $(1) -o $$@
+	$$(emcc.bin) $$(emcc_opt_full) $$(emcc.flags) $$(emcc.cflags) -c $(1) -o $$@
 CLEAN_FILES += $$($(1).o)
 endef
 $(foreach c,$(sqlite3-wasm.c) $(jaccwabyt_test.c),$(eval $(call WASM_C_COMPILE,$(c))))
@@ -281,7 +288,7 @@ $(sqlite3.js): $(MAKEFILE) $(sqlite3.wasm.obj) \
     EXPORTED_FUNCTIONS.api \
     $(post-jses.deps)
 	@echo "Building $@ ..."
-	$(emcc.bin) -o $@ $(emcc_opt) $(emcc.flags) $(emcc.jsflags) $(sqlite3.wasm.obj)
+	$(emcc.bin) -o $@ $(emcc_opt_full) $(emcc.flags) $(emcc.jsflags) $(sqlite3.wasm.obj)
 	chmod -x $(sqlite3.wasm)
 	$(maybe-wasm-strip) $(sqlite3.wasm)
 	@ls -la $@ $(sqlite3.wasm)
@@ -318,7 +325,7 @@ all: batch
 # speedtest1.js...
 # speedtest1-common.eflags = emcc flags used by multiple builds of speedtest1
 # speedtest1.eflags = emcc flags used by main build of speedtest1
-speedtest1-common.eflags := -g $(emcc_opt)
+speedtest1-common.eflags := $(emcc_opt_full)
 speedtest1.eflags :=
 speedtest1.eflags += -sENVIRONMENT=web
 speedtest1-common.eflags += -sINVOKE_RUN=0
@@ -426,18 +433,18 @@ o-xtra += -flto
 # doubles the build time and seems to have negligible effect on
 # higher optimization levels.
 o0: clean
-	$(MAKE) -e "emcc_opt=-O0 $(o-xtra)" fiddle_opt=-O0
+	$(MAKE) -e "emcc_opt=-O0 $(o-xtra)"
 o1: clean
-	$(MAKE) -e "emcc_opt=-O1 $(o-xtra)" fiddle_opt=-O1
+	$(MAKE) -e "emcc_opt=-O1 $(o-xtra)"
 o2: clean
-	$(MAKE) -e "emcc_opt=-O2 $(o-xtra)" fiddle_opt=-O2
+	$(MAKE) -e "emcc_opt=-O2 $(o-xtra)"
 o3: clean
-	$(MAKE) -e "emcc_opt=-O3 $(o-xtra)" fiddle_opt=-O3
+	$(MAKE) -e "emcc_opt=-O3 $(o-xtra)"
 os: clean
 	@echo "WARNING: -Os can result in a build with mysteriously missing pieces!"
-	$(MAKE) -e "emcc_opt=-Os $(o-xtra)" fiddle_opt=-Os
+	$(MAKE) -e "emcc_opt=-Os $(o-xtra)"
 oz: clean
-	$(MAKE) -e "emcc_opt=-Oz $(o-xtra)" fiddle_opt=-Oz
+	$(MAKE) -e "emcc_opt=-Oz $(o-xtra)"
 
 ########################################################################
 # Sub-makes...

@@ -82,7 +82,7 @@ $(sqlite3-wasmfs.js): $(sqlite3-wasmfs.wasm.c) $(sqlite3-wasm.c) $(sqlite3-wasmf
     EXPORTED_FUNCTIONS.api $(sqlite3-wasm.js) $(MAKEFILE) $(MAKEFILE.wasmfs) \
     $(post-jses.deps)
 	@echo "Building $@ ..."
-	$(emcc.bin) -o $@ $(emcc_opt) $(emcc.flags) \
+	$(emcc.bin) -o $@ $(emcc_opt_full) $(emcc.flags) \
       $(sqlite3-wasmfs.cflags) $(sqlite3-wasmfs.jsflags) $(sqlite3-wasmfs.wasm.c) $(sqlite3-wasmfs.extra.c)
 	chmod -x $(sqlite3-wasmfs.wasm)
 	$(maybe-wasm-strip) $(sqlite3-wasmfs.wasm)

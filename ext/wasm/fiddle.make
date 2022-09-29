@@ -24,7 +24,7 @@ $(dir.top)/shell.c: $(SHELL_SRC) $(dir.top)/tool/mkshellc.tcl
 ########################################################################
 
 fiddle.emcc-flags = \
-  $(emcc.cflags) $(emcc_opt) \
+  $(emcc.cflags) $(emcc_opt_full) \
   --minify 0 \
   -sALLOW_TABLE_GROWTH \
   -sABORTING_MALLOC \
