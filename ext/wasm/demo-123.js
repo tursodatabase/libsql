@@ -21,6 +21,7 @@
   */
   let logHtml;
   if(self.window === self /* UI thread */){
+    console.log("Running demo from main UI thread.");
     logHtml = function(cssClass,...args){
       const ln = document.createElement('div');
       if(cssClass) ln.classList.add(cssClass);
@@ -28,6 +29,7 @@
       document.body.append(ln);
     };
   }else{ /* Worker thread */
+    console.log("Running demo from Worker thread.");
     logHtml = function(cssClass,...args){
       postMessage({
         type:'log',

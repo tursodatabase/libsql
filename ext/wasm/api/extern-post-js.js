@@ -1,4 +1,4 @@
-/* emscripten-js-addenda.js must be appended to the resulting sqlite3.js
+/* extern-post-js.js must be appended to the resulting sqlite3.js
    file. */
 (function(){
   /**

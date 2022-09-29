@@ -25,6 +25,7 @@ Those parts only need to be run once, but the SDK can be updated using:
 
 ```
 $ git pull
+$ ./emsdk install latest
 $ ./emsdk activate latest
 ```
 

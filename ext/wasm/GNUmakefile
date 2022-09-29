@@ -153,6 +153,10 @@ $(sqlite3-api.js): $(sqlite3-api.jses) $(MAKEFILE)
 		echo "/* END FILE: $$i */"; \
 	done > $@
 
+########################################################################
+# --post-js and --pre-js are emcc flags we use to append/prepend JS to
+# the generated emscripten module file.
+pre-js.js := $(dir.api)/pre-js.js
 post-js.js := post-js.js
 CLEAN_FILES += $(post-js.js)
 post-jses := \
@@ -167,8 +171,28 @@ $(post-js.js): $(post-jses) $(MAKEFILE)
 		echo "/* END FILE: $$i */"; \
 	done > $@
 extern-post-js.js := $(dir.api)/extern-post-js.js
-sqlite3.js.flags.--post-js := --post-js=$(post-js.js) --extern-post-js=$(extern-post-js.js)
-post-jses.deps := $(post-js.js) $(extern-post-js.js)
+extern-pre-js.js := $(dir.api)/extern-pre-js.js
+pre-post-common.flags := \
+  --post-js=$(post-js.js) \
+  --extern-post-js=$(extern-post-js.js) \
+  --extern-pre-js=$(extern-pre-js.js)
+pre-post-jses.deps := $(post-js.js) \
+  $(extern-post-js.js) $(extern-pre-js.js)
+########################################################################
+# call-make-pre-js creates rules for pre-js-$(1).js. $1 = the base
+# name of the JS file on whose behalf this pre-js is for.
+define call-make-pre-js
+pre-post-$(1).flags ?=
+pre-js-$(1).js: $$(pre-js.js) $$(MAKEFILE)
+	cp $$(pre-js.js) $$@
+	echo "Module[xInstantiateWasm].uri = '$(1).wasm';" >> $$@
+CLEAN_FILES += pre-js-$(1).js
+pre-post-$(1).deps := $$(pre-post-jses.deps) pre-js-$(1).js
+pre-post-$(1).flags += --pre-js=pre-js-$(1).js
+endef
+#$(error $(call call-make-pre-js,sqlite3-wasmfs))
+# /post-js and pre-js
+########################################################################
 
 ########################################################################
 # emcc flags for .c/.o/.wasm/.js.
@@ -202,7 +226,7 @@ emcc.exportedRuntimeMethods := \
 emcc.jsflags += $(emcc.exportedRuntimeMethods)
 emcc.jsflags += -sUSE_CLOSURE_COMPILER=0
 emcc.jsflags += -sIMPORTED_MEMORY
-emcc.environment := -sENVIRONMENT=web
+emcc.environment := -sENVIRONMENT=web,worker
 emcc.jsflags += -sALLOW_MEMORY_GROWTH
 # emcc: warning: USE_PTHREADS + ALLOW_MEMORY_GROWTH may run non-wasm code
 #       slowly, see https://github.com/WebAssembly/design/issues/1271
@@ -264,7 +288,6 @@ emcc.jsflags += -sWASM_BIGINT=$(emcc_enable_bigint)
 # code get confused and cannot load property (namely, the
 # sqlite3.worker.js generated in conjunction with -sWASMFS).
 sqlite3.js := sqlite3.js
-emcc.jsflags += $(sqlite3.js.flags.--post-js)
 sqlite3.wasm := sqlite3.wasm
 sqlite3-wasm.o := $(dir.api)/sqlite3-wasm.o
 $(sqlite3-wasm.o): emcc.cflags += $(SQLITE_OPT)
@@ -276,19 +299,25 @@ jaccwabyt_test.c := $(dir.jacc)/jaccwabyt_test.c
 # want to test the release builds with those apps, so we cannot simply
 # elide that file in release builds. That component is critical to the
 # VFS bindings so needs to be tested along with the core APIs.
-define WASM_C_COMPILE
+########################################################################
+# call-wasm-c-compile sets up build rules
+# for $1.o. $1 must be the name of a C file (with extension).
+define call-wasm-c-compile
 $(1).o := $$(subst .c,.o,$(1))
 sqlite3.wasm.obj += $$($(1).o)
 $$($(1).o): $$(MAKEFILE) $(1)
 	$$(emcc.bin) $$(emcc_opt_full) $$(emcc.flags) $$(emcc.cflags) -c $(1) -o $$@
 CLEAN_FILES += $$($(1).o)
 endef
-$(foreach c,$(sqlite3-wasm.c) $(jaccwabyt_test.c),$(eval $(call WASM_C_COMPILE,$(c))))
+$(foreach c,$(sqlite3-wasm.c) $(jaccwabyt_test.c),$(eval $(call call-wasm-c-compile,$(c))))
+$(eval $(call call-make-pre-js,sqlite3))
 $(sqlite3.js): $(MAKEFILE) $(sqlite3.wasm.obj) \
     EXPORTED_FUNCTIONS.api \
-    $(post-jses.deps)
+    $(pre-post-sqlite3.deps)
 	@echo "Building $@ ..."
-	$(emcc.bin) -o $@ $(emcc_opt_full) $(emcc.flags) $(emcc.jsflags) $(sqlite3.wasm.obj)
+	$(emcc.bin) -o $@ $(emcc_opt_full) $(emcc.flags) \
+    $(emcc.jsflags) $(pre-post-common.flags) $(pre-post-sqlite3.flags) \
+    $(sqlite3.wasm.obj)
 	chmod -x $(sqlite3.wasm)
 	$(maybe-wasm-strip) $(sqlite3.wasm)
 	@ls -la $@ $(sqlite3.wasm)
@@ -342,8 +371,8 @@ speedtest1-common.eflags += -sALLOW_TABLE_GROWTH
 speedtest1-common.eflags += -sDYNAMIC_EXECUTION=0
 speedtest1-common.eflags += --minify 0
 speedtest1-common.eflags += -sEXPORT_NAME=$(sqlite3.js.init-func)
-speedtest1-common.eflags += $(sqlite3.js.flags.--post-js)
 speedtest1-common.eflags += -sWASM_BIGINT=$(emcc_enable_bigint)
+speedtest1-common.eflags += $(pre-post-common.flags) 
 speedtest1.exit-runtime0 := -sEXIT_RUNTIME=0
 speedtest1.exit-runtime1 := -sEXIT_RUNTIME=1
 # Re -sEXIT_RUNTIME=1 vs 0: if it's 1 and speedtest1 crashes, we get
@@ -377,11 +406,14 @@ $(speedtest1.js): emcc.cflags+=
 # the latter (predictably) results in a slightly faster binary, but we're
 # close enough to the target speed requirements that the 500ms makes a
 # difference.
-$(speedtest1.js): $(MAKEFILE) $(speedtest1.cs) $(post-jses.deps) \
+$(eval $(call call-make-pre-js,speedtest1))
+$(speedtest1.js): $(MAKEFILE) $(speedtest1.cs) \
+    $(pre-post-speedtest1.deps) \
     EXPORTED_FUNCTIONS.speedtest1
 	@echo "Building $@ ..."
 	$(emcc.bin) \
         $(speedtest1.eflags) $(speedtest1-common.eflags) $(speedtest1.cflags) \
+        $(pre-post-speedtest1.flags) \
         $(SQLITE_OPT) \
         $(speedtest1.exit-runtime0) \
         -o $@ $(speedtest1.cs) -lm

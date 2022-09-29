@@ -57,10 +57,13 @@ SOAP.js := sqlite3-opfs-async-proxy.js
 $(dir.fiddle)/$(SOAP.js): $(SOAP.js)
 	cp $< $@
 
+$(eval $(call call-make-pre-js,fiddle-module))
 $(fiddle-module.js): $(MAKEFILE) $(MAKEFILE.fiddle) \
     EXPORTED_FUNCTIONS.fiddle EXPORTED_RUNTIME_METHODS.fiddle \
-    $(fiddle.cs) $(post-jses.deps) $(dir.fiddle)/$(SOAP.js)
-	$(emcc.bin) -o $@ $(fiddle.emcc-flags) $(fiddle.cs)
+    $(fiddle.cs) $(pre-post-fiddle.deps) $(dir.fiddle)/$(SOAP.js)
+	$(emcc.bin) -o $@ $(fiddle.emcc-flags) \
+    $(pre-post-common.flags) $(pre-post-fiddle.flags) \
+    $(fiddle.cs)
 	$(maybe-wasm-strip) $(fiddle-module.wasm)
 	gzip < $@ > $@.gz
 	gzip < $(fiddle-module.wasm) > $(fiddle-module.wasm).gz

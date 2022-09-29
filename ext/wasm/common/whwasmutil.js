@@ -1538,7 +1538,7 @@ self.WhWasmUtilInstaller = function(target){
 
    - `onload(loadResult,config)`: optional callback. The first
      argument is the result object from
-     WebAssembly.instanitate[Streaming](). The 2nd is the config
+     WebAssembly.instantiate[Streaming](). The 2nd is the config
      object passed to this function. Described in more detail below.
 
    - `imports`: optional imports object for
