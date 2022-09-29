@@ -1,5 +1,5 @@
-C Fix\smisuse\sof\sthe\ssqlite3_set_auxdata()\sinterface\sin\sthe\sICU\sextension.
-D 2022-09-28T19:19:11.704
+C Version\s3.39.4
+D 2022-09-29T15:55:41.801
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1978,9 +1978,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a4342fc020a41bc5eed2d8f02ec4a759a78c5b0cbc1ae5e8dc167dcc69aa698d
-Q +f25cf63471cbed1edb27591e57fead62550d4046dbdcb61312288f0f6f24c646
+P 6607dd010359d0f2e07e49ce69d4bfd1e57c3505df5d667cf7735facf34112d7
 R 7ddc9e480f1c6dbefb10e119ae3343ea
+T +sym-release *
+T +sym-version-3.39.4 *
 U drh
-Z 8ffca79ac2647376563522dac85a397d
+Z 191c67622a74f691de0b6643916bb1a3
 # Remove this line to create a well-formed Fossil manifest.
