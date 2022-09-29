@@ -341,7 +341,7 @@
       .querySelector(arguments[arguments.length-1]);
   };
 
-  /** Handles status updates from the Module object. */
+  /** Handles status updates from the Emscripten Module object. */
   SF.addMsgHandler('module', function f(ev){
     ev = ev.data;
     if('status'!==ev.type){
@@ -722,43 +722,49 @@
     (function(){
       const xElem = E('#select-examples');
       const examples = [
-        {name: "Help", sql:
-`-- ================================================
--- Use ctrl-enter or shift-enter to execute sqlite3
--- shell commands and SQL.
--- If a subset of the text is currently selected,
--- only that part is executed.
--- ================================================
-.help`},
+        {name: "Help", sql: [
+          "-- ================================================\n",
+          "-- Use ctrl-enter or shift-enter to execute sqlite3\n",
+          "-- shell commands and SQL.\n",
+          "-- If a subset of the text is currently selected,\n",
+          "-- only that part is executed.\n",
+          "-- ================================================\n",
+          ".help\n"
+        ]},
               //{name: "Timer on", sql: ".timer on"},
               // ^^^ re-enable if emscripten re-enables getrusage()
-                {name: "Setup table T", sql:`.nullvalue NULL
-CREATE TABLE t(a,b);
-INSERT INTO t(a,b) VALUES('abc',123),('def',456),(NULL,789),('ghi',012);
-SELECT * FROM t;`},
-                {name: "Table list", sql: ".tables"},
-                {name: "Box Mode", sql: ".mode box"},
-                {name: "JSON Mode", sql: ".mode json"},
-                {name: "Mandlebrot", sql: `WITH RECURSIVE
-  xaxis(x) AS (VALUES(-2.0) UNION ALL SELECT x+0.05 FROM xaxis WHERE x<1.2),
-  yaxis(y) AS (VALUES(-1.0) UNION ALL SELECT y+0.1 FROM yaxis WHERE y<1.0),
-  m(iter, cx, cy, x, y) AS (
-    SELECT 0, x, y, 0.0, 0.0 FROM xaxis, yaxis
-    UNION ALL
-    SELECT iter+1, cx, cy, x*x-y*y + cx, 2.0*x*y + cy FROM m 
-     WHERE (x*x + y*y) < 4.0 AND iter<28
-  ),
-  m2(iter, cx, cy) AS (
-    SELECT max(iter), cx, cy FROM m GROUP BY cx, cy
-  ),
-  a(t) AS (
-    SELECT group_concat( substr(' .+*#', 1+min(iter/7,4), 1), '') 
-    FROM m2 GROUP BY cy
-  )
-SELECT group_concat(rtrim(t),x'0a') as Mandelbrot FROM a;`}
+        {name: "Setup table T", sql:[
+          ".nullvalue NULL\n",
+          "CREATE TABLE t(a,b);\n",
+          "INSERT INTO t(a,b) VALUES('abc',123),('def',456),(NULL,789),('ghi',012);\n",
+          "SELECT * FROM t;\n"
+        ]},
+        {name: "Table list", sql: ".tables"},
+        {name: "Box Mode", sql: ".mode box"},
+        {name: "JSON Mode", sql: ".mode json"},
+        {name: "Mandlebrot", sql:[
+          "WITH RECURSIVE",
+          "  xaxis(x) AS (VALUES(-2.0) UNION ALL SELECT x+0.05 FROM xaxis WHERE x<1.2),\n",
+          "  yaxis(y) AS (VALUES(-1.0) UNION ALL SELECT y+0.1 FROM yaxis WHERE y<1.0),\n",
+          "  m(iter, cx, cy, x, y) AS (\n",
+          "    SELECT 0, x, y, 0.0, 0.0 FROM xaxis, yaxis\n",
+          "    UNION ALL\n",
+          "    SELECT iter+1, cx, cy, x*x-y*y + cx, 2.0*x*y + cy FROM m \n",
+          "     WHERE (x*x + y*y) < 4.0 AND iter<28\n",
+          "  ),\n",
+          "  m2(iter, cx, cy) AS (\n",
+          "    SELECT max(iter), cx, cy FROM m GROUP BY cx, cy\n",
+          "  ),\n",
+          "  a(t) AS (\n",
+          "    SELECT group_concat( substr(' .+*#', 1+min(iter/7,4), 1), '') \n",
+          "    FROM m2 GROUP BY cy\n",
+          "  )\n",
+          "SELECT group_concat(rtrim(t),x'0a') as Mandelbrot FROM a;\n",
+        ]}
       ];
       const newOpt = function(lbl,val){
         const o = document.createElement('option');
+        if(Array.isArray(val)) val = val.join('');
         o.value = val;
         if(!val) o.setAttribute('disabled',true);
         o.appendChild(document.createTextNode(lbl));

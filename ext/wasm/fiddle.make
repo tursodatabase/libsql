@@ -33,7 +33,8 @@ fiddle.emcc-flags = \
   -sMODULARIZE \
   -sDYNAMIC_EXECUTION=0 \
   -sWASM_BIGINT=$(emcc_enable_bigint) \
-  -sEXPORT_NAME=initFiddleModule \
+  -sEXPORT_NAME=$(sqlite3.js.init-func) \
+  $(sqlite3.js.flags.--post-js) \
   -sEXPORTED_RUNTIME_METHODS=@$(dir.wasm)/EXPORTED_RUNTIME_METHODS.fiddle \
   -sEXPORTED_FUNCTIONS=@$(dir.wasm)/EXPORTED_FUNCTIONS.fiddle \
   --post-js=$(post-js.js) \
@@ -58,7 +59,7 @@ $(dir.fiddle)/$(SOAP.js): $(SOAP.js)
 
 $(fiddle-module.js): $(MAKEFILE) $(MAKEFILE.fiddle) \
     EXPORTED_FUNCTIONS.fiddle EXPORTED_RUNTIME_METHODS.fiddle \
-    $(fiddle.cs) $(post-js.js) $(dir.fiddle)/$(SOAP.js)
+    $(fiddle.cs) $(post-jses.deps) $(dir.fiddle)/$(SOAP.js)
 	$(emcc.bin) -o $@ $(fiddle.emcc-flags) $(fiddle.cs)
 	$(maybe-wasm-strip) $(fiddle-module.wasm)
 	gzip < $@ > $@.gz
@@ -72,6 +73,7 @@ clean-fiddle:
 	rm -f $(fiddle-module.js) $(fiddle-module.js).gz \
         $(fiddle-module.wasm) $(fiddle-module.wasm).gz \
         $(dir.fiddle)/$(SOAP.js) \
+        $(dir.fiddle)/fiddle-module.worker.js \
         EXPORTED_FUNCTIONS.fiddle
 .PHONY: fiddle
 fiddle: $(fiddle-module.js) $(dir.fiddle)/fiddle.js.gz

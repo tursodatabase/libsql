@@ -93,10 +93,6 @@
 
    The config object properties include:
 
-   - `Module`[^1]: Emscripten-style module object. Currently only required
-     by certain test code and is _not_ part of the public interface.
-     (TODO: rename this to EmscriptenModule to be more explicit.)
-
    - `exports`[^1]: the "exports" object for the current WASM
      environment. In an Emscripten build, this should be set to
      `Module['asm']`.
@@ -144,12 +140,11 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   const config = Object.create(null);
   {
     const configDefaults = {
-      Module: undefined/*needed for some test code, not part of the public API*/,
       exports: undefined,
       memory: undefined,
       bigIntEnabled: (()=>{
         if('undefined'!==typeof Module){
-          /* Emscripten module will contain HEAPU64 when build with
+          /* Emscripten module will contain HEAPU64 when built with
              -sWASM_BIGINT=1, else it will not. */
           return !!Module.HEAPU64;
         }
@@ -174,7 +169,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   [
     // If any of these config options are functions, replace them with
     // the result of calling that function...
-    'Module', 'exports', 'memory', 'wasmfsOpfsDir'
+    'exports', 'memory', 'wasmfsOpfsDir'
   ].forEach((k)=>{
     if('function' === typeof config[k]){
       config[k] = config[k]();

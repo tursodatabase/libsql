@@ -145,7 +145,7 @@
            that any argv strings passed to its main() are valid until
            the wasm environment shuts down. */
       ];
-      const S = fiddleModule.sqlite3;
+      const capi = sqlite3.capi;
       /* We need to call sqlite3_shutdown() in order to avoid numerous
          legitimate warnings from the shell about it being initialized
          after sqlite3_initialize() has been called. This means,
@@ -153,9 +153,9 @@
          to be re-done (e.g.  re-registration of dynamically-loaded
          VFSes). We need a more generic approach to running such
          init-level code. */
-      S.capi.sqlite3_shutdown();
-      f.argv.pArgv = S.capi.wasm.allocMainArgv(f.argv);
-      f.argv.rc = S.capi.wasm.exports.fiddle_main(
+      capi.sqlite3_shutdown();
+      f.argv.pArgv = capi.wasm.allocMainArgv(f.argv);
+      f.argv.rc = capi.wasm.exports.fiddle_main(
         f.argv.length, f.argv.pArgv
       );
       if(f.argv.rc){
@@ -163,8 +163,8 @@
         fiddleModule.isDead = true;
         return false;
       }
-      stdout("SQLite version", S.capi.sqlite3_libversion(),
-             S.capi.sqlite3_sourceid().substr(0,19));
+      stdout("SQLite version", capi.sqlite3_libversion(),
+             capi.sqlite3_sourceid().substr(0,19));
       stdout('Welcome to the "fiddle" shell.');
       if(S.opfs){
         stdout("\nOPFS is available. To open a persistent db, use:\n\n",
@@ -187,7 +187,7 @@
     exec: function f(sql){
       if(!f._){
         if(!this.runMain()) return;
-        f._ = fiddleModule.cwrap('fiddle_exec', null, ['string']);
+        f._ = sqlite3.capi.wasm.xWrap('fiddle_exec', null, ['string']);
       }
       if(fiddleModule.isDead){
         stderr("shell module has exit()ed. Cannot run SQL.");
@@ -198,6 +198,7 @@
         if(f._running){
           stderr('Cannot run multiple commands concurrently.');
         }else if(sql){
+          if(Array.isArray(sql)) sql = sql.join('');
           f._running = true;
           f._(sql);
         }
@@ -213,7 +214,7 @@
         stderr("TODO: cannot currently reset an OPFS-hosted db.");
         return;
       }
-      if(!f._) f._ = fiddleModule.cwrap('fiddle_reset_db', null);
+      if(!f._) f._ = sqlite3.capi.wasm.xWrap('fiddle_reset_db', null);
       stdout("Resetting database.",fixmeOPFS);
       f._();
       stdout("Reset",this.dbFilename());
@@ -221,7 +222,7 @@
     /* Interrupt can't work: this Worker is tied up working, so won't get the
        interrupt event which would be needed to perform the interrupt. */
     interrupt: function f(){
-      if(!f._) f._ = fiddleModule.cwrap('fiddle_interrupt', null);
+      if(!f._) f._ = sqlite3.capi.wasm.xWrap('fiddle_interrupt', null);
       stdout("Requesting interrupt.");
       f._();
     }
@@ -240,7 +241,7 @@
      the bug is apparently in (or via) this code.
   */
   const brokenExportDbFileToBlob = function(){
-    const S = fiddleModule.sqlite3, capi = S.capi, wasm = capi.wasm;
+    const capi = sqlite3.capi, wasm = capi.wasm;
     const pDb = Sqlite3Shell.dbHandle();
     if(!pDb) toss("No db is opened.");
     const scope = wasm.scopedAllocPush();
@@ -289,7 +290,7 @@
     }finally{
       wasm.scopedAllocPop(scope);
     }
-  }/*exportDbFileToBlob()*/;
+  }/*brokenExportDbFileToBlob()*/;
 
   const exportDbFileToBlob = function f(){
     if(!f._){
@@ -459,16 +460,12 @@
 
      emcc ... -sMODULARIZE=1 -sEXPORT_NAME=initFiddleModule
   */
-  initFiddleModule(fiddleModule).then(function(thisModule){
-    sqlite3 = thisModule.sqlite3;
-    const atEnd = ()=>{
-      thisModule.fsUnlink = (fn)=>{
-        stderr("unlink:",fixmeOPFS);
-        return sqlite3.capi.wasm.sqlite3_wasm_vfs_unlink(fn);
-      };
-      wMsg('fiddle-ready');
+  sqlite3InitModule(fiddleModule).then((_sqlite3)=>{
+    sqlite3 = _sqlite3;
+    fiddleModule.fsUnlink = (fn)=>{
+      stderr("unlink:",fixmeOPFS);
+      return sqlite3.capi.wasm.sqlite3_wasm_vfs_unlink(fn);
     };
-    if(sqlite3.installOpfsVfs) sqlite3.installOpfsVfs().finally(atEnd);
-    else atEnd();
+    wMsg('fiddle-ready');
   })/*then()*/;
 })();
