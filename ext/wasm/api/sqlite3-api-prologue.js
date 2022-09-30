@@ -927,13 +927,16 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        subsequent calls are no-ops which return a pre-resolved
        Promise.
 
-       If called at all, this function must be called by client-level
-       code, which must not use the library until the returned promise
-       resolves.
+       Ideally this function is called as part of the Promise chain
+       which handles the loading and bootstrapping of the API.  If not
+       then it must be called by client-level code, which must not use
+       the library until the returned promise resolves.
 
        Bug: if called while a prior call is still resolving, the 2nd
        call will resolve prematurely, before the 1st call has finished
-       resolving.
+       resolving. The current build setup precludes that possibility,
+       so it's only a hypothetical problem if/when this function
+       ever needs to be invoked by clients.
 
        In Emscripten-based builds, this function is called
        automatically and deleted from this object.

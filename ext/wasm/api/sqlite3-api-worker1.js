@@ -154,15 +154,20 @@
     messageId: ...as above...,
     result: {
 
-      wasmfsOpfsDir: path prefix, if any, of persistent storage.
-      An empty string denotes that no persistent storage is available.
+      version: sqlite3.version object
 
       bigIntEnabled: bool. True if BigInt support is enabled.
 
-      wasmfsOpfsEnabled: true if persistent storage is enabled in the
-      current environment. Only files stored under persistentDirName
-      will persist, however.
+      wasmfsOpfsDir: path prefix, if any, _intended_ for use with
+      OPFS persistent storage.
 
+      wasmfsOpfsEnabled: true if persistent storage is enabled in the
+      current environment. Only files stored under wasmfsOpfsDir
+      will persist using that mechanism, however. It is legal to use
+      the non-WASMFS OPFS VFS to open a database via a URI-style
+      db filename.
+
+      vfses: result of sqlite3.capi.sqlite3_web_vfs_list()
    }
   }
   ```
@@ -180,13 +185,17 @@
     args:{
 
       filename [=":memory:" or "" (unspecified)]: the db filename.
-      See the sqlite3.oo1.DB constructor for peculiarities and transformations,
+      See the sqlite3.oo1.DB constructor for peculiarities and
+      transformations,
 
       persistent [=false]: if true and filename is not one of ("",
       ":memory:"), prepend sqlite3.capi.sqlite3_wasmfs_opfs_dir()
       to the given filename so that it is stored in persistent storage
       _if_ the environment supports it.  If persistent storage is not
       supported, the filename is used as-is.
+
+      // TODO?: ^^^^ maybe rework that, now that we have the non-WASMFS
+      // OFPS.
 
     }
   }
@@ -211,6 +220,7 @@
       persistent: true if the given filename resides in the
       known-persistent storage, else false. This determination is
       independent of the `persistent` input argument.
+
    }
   }
   ```
@@ -448,7 +458,8 @@ sqlite3.initWorker1API = function(){
       }
       const db = wState.open(oargs);
       rc.filename = db.filename;
-      rc.persistent = !!pDir && db.filename.startsWith(pDir);
+      rc.persistent = (!!pDir && db.filename.startsWith(pDir))
+        || sqlite3.capi.sqlite3_web_db_uses_vfs(db.pointer, "opfs");
       rc.dbId = getDbId(db);
       return rc;
     },
@@ -526,6 +537,8 @@ sqlite3.initWorker1API = function(){
         if(Object.getOwnPropertyDescriptor(src, k)) rc[k] = src[k];
       });
       rc.wasmfsOpfsEnabled = !!sqlite3.capi.sqlite3_wasmfs_opfs_dir();
+      rc.version = sqlite3.version;
+      rc.vfses = sqlite3.capi.sqlite3_web_vfs_list();
       return rc;
     },
 
@@ -542,12 +555,10 @@ sqlite3.initWorker1API = function(){
          mimetype: 'application/x-sqlite3'
        }
 
-       TODO is to determine how/whether this feature can support
-       exports of ":memory:" and "" (temp file) DBs. The latter is
-       ostensibly easy because the file is (potentially) on disk, but
-       the former does not have a structure which maps directly to a
-       db file image. We can VACUUM INTO a :memory:/temp db into a
-       file for that purpose, though.
+       2022-09-30: we have shell.c:fiddle_export_db() which works fine
+       for disk-based databases (even if it's a virtual disk like an
+       Emscripten VFS). sqlite3_serialize() can return this for
+       :memory: and temp databases.
     */
     export: function(ev){
       toss("export() requires reimplementing for portability reasons.");

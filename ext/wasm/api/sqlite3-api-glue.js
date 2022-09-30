@@ -202,4 +202,9 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       capi[s.name] = sqlite3.StructBinder(s);
     }
   }/*end C constant imports*/
+
+  sqlite3.version = Object.assign(Object.create(null),{
+    library: sqlite3.capi.sqlite3_libversion(),
+    sourceId: sqlite3.capi.sqlite3_sourceid()
+  });
 });
