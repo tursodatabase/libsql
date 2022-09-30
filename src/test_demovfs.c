@@ -468,7 +468,7 @@ static int demoDelete(sqlite3_vfs *pVfs, const char *zPath, int dirSync){
     /* Figure out the directory name from the path of the file deleted. */
     sqlite3_snprintf(MAXPATHNAME, zDir, "%s", zPath);
     zDir[MAXPATHNAME] = '\0';
-    zSlash = strrchr(zPath,'/');
+    zSlash = strrchr(zDir,'/');
     if( zSlash ){
       /* Open a file-descriptor on the directory. Sync. Close. */
       zSlash[0] = 0;
