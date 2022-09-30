@@ -33,20 +33,27 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        to a C-style sqlite3_xxx function which takes an `sqlite3*`
        argument.
     */
-    const oldP = wasm.xWrap.argAdapter('pointer');
+    const xPointer = wasm.xWrap.argAdapter('pointer');
     const adapter = function(v){
-      if(v && 'object'===typeof v && v.constructor){
+      if(v && v.constructor){
         const x = v.pointer;
         if(Number.isInteger(x)) return x;
-        else toss("Invalid (object) type for pointer-type argument.");
+        else toss("Invalid (object) type for .pointer-type argument.");
       }
-      return oldP(v);
+      return xPointer(v);
     };
     wasm.xWrap.argAdapter('.pointer', adapter);
   } /* ".pointer" xWrap() argument adapter */
 
-  // WhWasmUtil.xWrap() bindings...
-  {
+  if(1){/* Convert Arrays and certain TypedArrays to strings for
+           'flexible-string'-type arguments */
+    const xString = wasm.xWrap.argAdapter('string');
+    wasm.xWrap.argAdapter(
+      'flexible-string', (v)=>xString(util.arrayToString(v))
+    );
+  }
+  
+  if(1){// WhWasmUtil.xWrap() bindings...
     /**
        Add some descriptive xWrap() aliases for '*' intended to
        (A) initially improve readability/correctness of capi.signatures
@@ -107,51 +114,139 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   }/*xWrap() bindings*/;
 
   /**
-     Scope-local holder of the two impls of sqlite3_prepare_v2/v3().
+     Internal helper to assist in validating call argument counts in
+     the hand-written sqlite3_xyz() wrappers. We do this only for
+     consistency with non-special-case wrappings.
   */
-  const __prepare = Object.create(null);
-  /**
-     This binding expects a JS string as its 2nd argument and
-     null as its final argument. In order to compile multiple
-     statements from a single string, the "full" impl (see
-     below) must be used.
-  */
-  __prepare.basic = wasm.xWrap('sqlite3_prepare_v3',
-                               "int", ["sqlite3*", "string",
-                                       "int"/*ignored for this impl!*/,
-                                       "int", "**",
-                                       "**"/*MUST be 0 or null or undefined!*/]);
-  /**
-     Impl which requires that the 2nd argument be a pointer
-     to the SQL string, instead of being converted to a
-     string. This variant is necessary for cases where we
-     require a non-NULL value for the final argument
-     (exec()'ing multiple statements from one input
-     string). For simpler cases, where only the first
-     statement in the SQL string is required, the wrapper
-     named sqlite3_prepare_v2() is sufficient and easier to
-     use because it doesn't require dealing with pointers.
-  */
-  __prepare.full = wasm.xWrap('sqlite3_prepare_v3',
-                              "int", ["sqlite3*", "*", "int", "int",
-                                      "**", "**"]);
-
-  /* Documented in the api object's initializer. */
-  capi.sqlite3_prepare_v3 = function f(pDb, sql, sqlLen, prepFlags, ppStmt, pzTail){
-    if(util.isSQLableTypedArray(sql)) sql = util.typedArrayToString(sql);
-    switch(typeof sql){
-        case 'string': return __prepare.basic(pDb, sql, -1, prepFlags, ppStmt, null);
-        case 'number': return __prepare.full(pDb, sql, sqlLen, prepFlags, ppStmt, pzTail);
-        default:
-          return util.sqlite3_wasm_db_error(
-            pDb, capi.SQLITE_MISUSE,
-            "Invalid SQL argument type for sqlite3_prepare_v2/v3()."
-          );
-    }
+  const __dbArgcMismatch = (pDb,f,n)=>{
+    return sqlite3.util.sqlite3_wasm_db_error(pDb, capi.SQLITE_MISUSE,
+                                              f+"() requires "+n+" argument"+
+                                              (1===n?'':'s')+".");
   };
 
-  capi.sqlite3_prepare_v2 =
-    (pDb, sql, sqlLen, ppStmt, pzTail)=>capi.sqlite3_prepare_v3(pDb, sql, sqlLen, 0, ppStmt, pzTail);
+  /**
+     Helper for flexible-string conversions which require a
+     byte-length counterpart argument. Passed a value and its
+     ostensible length, this function returns [V,N], where V
+     is either v or a transformed copy of v and N is either n,
+     -1, or the byte length of v (if it's a byte array).
+  */
+  const __flexiString = function(v,n){
+    if('string'===typeof v){
+      n = -1;
+    }else if(util.isSQLableTypedArray(v)){
+      n = v.byteLength;
+      v = util.typedArrayToString(v);
+    }else if(Array.isArray(v)){
+      v = v.join('');
+      n = -1;
+    }
+    return [v, n];
+  };
+
+  if(1){/* Special-case handling of sqlite3_exec() */
+    const __exec = wasm.xWrap("sqlite3_exec", "int",
+                              ["sqlite3*", "flexible-string", "*", "*", "**"]);
+    /* Documented in the api object's initializer. */
+    capi.sqlite3_exec = function(pDb, sql, callback, pVoid, pErrMsg){
+      if(5!==arguments.length){
+        return __dbArgcMismatch(pDb,"sqlite3_exec",5);
+      }else if('function' !== typeof callback){
+        return __exec(pDb, sql, callback, pVoid, pErrMsg);
+      }
+      /* Wrap the callback in a WASM-bound function and convert the callback's
+         `(char**)` arguments to arrays of strings... */
+      const wasm = capi.wasm;
+      const cbwrap = function(pVoid, nCols, pColVals, pColNames){
+        let rc = capi.SQLITE_ERROR;
+        try {
+          let aVals = [], aNames = [], i = 0, offset = 0;
+          for( ; i < nCols; offset += (wasm.ptrSizeof * ++i) ){
+            aVals.push( wasm.cstringToJs(wasm.getPtrValue(pColVals + offset)) );
+            aNames.push( wasm.cstringToJs(wasm.getPtrValue(pColNames + offset)) );
+          }
+          rc = callback(pVoid, nCols, aVals, aNames) | 0;
+          /* The first 2 args of the callback are useless for JS but
+             we want the JS mapping of the C API to be as close to the
+             C API as possible. */
+        }catch(e){
+          /* If we set the db error state here, the higher-level exec() call
+             replaces it with its own, so we have no way of reporting the
+             exception message except the console. We must not propagate
+             exceptions through the C API. */
+        }
+        return rc;
+      };
+      let pFunc, rc;
+      try{
+        pFunc = wasm.installFunction("ipipp", cbwrap);
+        rc = __exec(pDb, sql, pFunc, pVoid, pErrMsg);
+      }catch(e){
+        rc = util.sqlite3_wasm_db_error(pDb, capi.SQLITE_ERROR,
+                                        "Error running exec(): "+e.message);
+      }finally{
+        if(pFunc) wasm.uninstallFunction(pFunc);
+      }
+      return rc;
+    };
+  }/*sqlite3_exec() proxy*/;
+
+  if(1){/* Special-case handling of sqlite3_prepare_v2() and
+      sqlite3_prepare_v3() */
+    /**
+       Scope-local holder of the two impls of sqlite3_prepare_v2/v3().
+    */
+    const __prepare = Object.create(null);
+    /**
+       This binding expects a JS string as its 2nd argument and
+       null as its final argument. In order to compile multiple
+       statements from a single string, the "full" impl (see
+       below) must be used.
+    */
+    __prepare.basic = wasm.xWrap('sqlite3_prepare_v3',
+                                 "int", ["sqlite3*", "string",
+                                         "int"/*ignored for this impl!*/,
+                                         "int", "**",
+                                         "**"/*MUST be 0 or null or undefined!*/]);
+    /**
+       Impl which requires that the 2nd argument be a pointer
+       to the SQL string, instead of being converted to a
+       string. This variant is necessary for cases where we
+       require a non-NULL value for the final argument
+       (exec()'ing multiple statements from one input
+       string). For simpler cases, where only the first
+       statement in the SQL string is required, the wrapper
+       named sqlite3_prepare_v2() is sufficient and easier to
+       use because it doesn't require dealing with pointers.
+    */
+    __prepare.full = wasm.xWrap('sqlite3_prepare_v3',
+                                "int", ["sqlite3*", "*", "int", "int",
+                                        "**", "**"]);
+
+    /* Documented in the api object's initializer. */
+    capi.sqlite3_prepare_v3 = function f(pDb, sql, sqlLen, prepFlags, ppStmt, pzTail){
+      if(6!==arguments.length){
+        return __dbArgcMismatch(pDb,"sqlite3_prepare_v3",6);
+      }
+      const [xSql, xSqlLen] = __flexiString(sql, sqlLen);
+      switch(typeof xSql){
+          case 'string': return __prepare.basic(pDb, xSql, xSqlLen, prepFlags, ppStmt, null);
+          case 'number': return __prepare.full(pDb, xSql, xSqlLen, prepFlags, ppStmt, pzTail);
+          default:
+            return util.sqlite3_wasm_db_error(
+              pDb, capi.SQLITE_MISUSE,
+              "Invalid SQL argument type for sqlite3_prepare_v2/v3()."
+            );
+      }
+    };
+
+    /* Documented in the api object's initializer. */
+    capi.sqlite3_prepare_v2 = function(pDb, sql, sqlLen, ppStmt, pzTail){
+      return (5==arguments.length)
+        ? capi.sqlite3_prepare_v3(pDb, sql, sqlLen, 0, ppStmt, pzTail)
+        : __dbArgcMismatch(pDb,"sqlite3_prepare_v2",5);
+    };
+  }/*sqlite3_prepare_v2/v3()*/;
 
   /**
      Install JS<->C struct bindings for the non-opaque struct types we
@@ -208,3 +303,4 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     sourceId: sqlite3.capi.sqlite3_sourceid()
   });
 });
+

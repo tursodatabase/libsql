@@ -244,6 +244,17 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   };
 
   /**
+     If v is-a Array, its join('') result is returned.  If
+     isSQLableTypedArray(v) then typedArrayToString(v) is
+     returned. Else v is returned as-is.
+  */
+  const arrayToString = function(v){
+    if(isSQLableTypedArray(v)) return typedArrayToString(v);
+    else if(Array.isArray(v)) return v.join('');
+    return v;
+  };
+
+  /**
      An Error subclass specifically for reporting Wasm-level malloc()
      failure and enabling clients to unambiguously identify such
      exceptions.
@@ -350,15 +361,34 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        comments or an empty SQL expression, 0 is returned but the result
        output pointer will be NULL.
     */
-    sqlite3_prepare_v3: function(dbPtr, sql, sqlByteLen, prepFlags,
-                                 stmtPtrPtr, strPtrPtr){}/*installed later*/,
+    sqlite3_prepare_v3: (dbPtr, sql, sqlByteLen, prepFlags,
+                         stmtPtrPtr, strPtrPtr)=>{}/*installed later*/,
 
     /**
        Equivalent to calling sqlite3_prapare_v3() with 0 as its 4th argument.
     */
-    sqlite3_prepare_v2: function(dbPtr, sql, sqlByteLen, stmtPtrPtr,
-                                 strPtrPtr){}/*installed later*/,
+    sqlite3_prepare_v2: (dbPtr, sql, sqlByteLen,
+                         stmtPtrPtr,strPtrPtr)=>{}/*installed later*/,
 
+    /**
+       This binding enables the callback argument to be a JavaScript.
+
+       If the callback is a function, then for the duration of the
+       sqlite3_exec() call, it installs a WASM-bound function which
+       acts as a proxy for the given callback. That proxy will
+       also perform a conversion of the callback's arguments from
+       `(char**)` to JS arrays of strings. However, for API
+       consistency's sake it will still honor the C-level
+       callback parameter order and will call it like:
+
+       `callback(pVoid, colCount, listOfValues, listOfColNames)`
+
+       If the callback is not a JS function then this binding performs
+       no translation of the callback, but the sql argument is still
+       converted to a WASM string for the call using the
+       "flexible-string" argument converter.
+    */
+    sqlite3_exec: (pDb, sql, callback, pVoid, pErrMsg)=>{}/*installed later*/,
     /**
        Various internal-use utilities are added here as needed. They
        are bound to an object only so that we have access to them in
@@ -367,8 +397,9 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        removed.
     */
     util:{
-      isInt32, isTypedArray, isBindableTypedArray, isSQLableTypedArray,
-      affirmBindableTypedArray, typedArrayToString,
+      affirmBindableTypedArray, arrayToString, isBindableTypedArray,
+      isInt32, isSQLableTypedArray, isTypedArray, 
+      typedArrayToString,
       isMainWindow: ()=>{
         return self.window===self && self.document;
       }
@@ -614,10 +645,9 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     ["sqlite3_errmsg", "string", "sqlite3*"],
     ["sqlite3_error_offset", "int", "sqlite3*"],
     ["sqlite3_errstr", "string", "int"],
-    ["sqlite3_exec", "int", "sqlite3*", "string", "*", "*", "**"],
-    // TODO?: ^^^ add a wrapper around sqlite3_exec() which accepts a
-    // JS callback function and handles the (un)installation of that
-    // function before/after the exec call.
+    /*["sqlite3_exec", "int", "sqlite3*", "string", "*", "*", "**"
+      Handled seperately to perform translation of the callback
+      into a WASM-usable one. ],*/
     ["sqlite3_expanded_sql", "string", "sqlite3_stmt*"],
     ["sqlite3_extended_errcode", "int", "sqlite3*"],
     ["sqlite3_extended_result_codes", "int", "sqlite3*", "int"],

@@ -46,6 +46,9 @@ if('undefined' !== typeof Module){ // presumably an Emscripten build
   let sqlite3;
   try{
     sqlite3 = self.sqlite3ApiBootstrap();
+  }catch(e){
+    console.error("sqlite3ApiBootstrap() error:",e);
+    throw e;
   }finally{
     delete self.sqlite3ApiBootstrap;
     if(rmApiConfig) delete self.sqlite3ApiConfig;

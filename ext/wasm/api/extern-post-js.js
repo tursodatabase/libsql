@@ -15,7 +15,6 @@
   if(!originalInit){
     throw new Error("Expecting self.sqlite3InitModule to be defined by the Emscripten build.");
   }
-  self.sqlite3InitModule.ready = originalInit.ready;
   self.sqlite3InitModule = (...args)=>{
     //console.warn("Using replaced sqlite3InitModule()",self.location);
     return originalInit(...args).then((EmscriptenModule)=>{
@@ -35,7 +34,11 @@
       const f = EmscriptenModule.sqlite3.asyncPostInit;
       delete EmscriptenModule.sqlite3.asyncPostInit;
       return f();
+    }).catch((e)=>{
+      console.error("Exception loading sqlite3 module:",e);
+      throw e;
     });
   };
+  self.sqlite3InitModule.ready = originalInit.ready;
   //console.warn("Replaced sqlite3InitModule()");
 })();

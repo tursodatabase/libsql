@@ -247,7 +247,9 @@
     runOneTest('close',{unlink:true},function(ev){
       ev = ev.result;
       T.assert(undefined === ev.filename);
+      logHtml('warning',"This is the final test.");
     });
+    logHtml('warning',"Finished posting tests. Waiting on async results.");
   };
 
   const runTests = function(){

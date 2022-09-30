@@ -186,7 +186,7 @@
     // Custom db error message handling via sqlite3_prepare_v2/v3()
     if(capi.wasm.exports.sqlite3_wasm_db_error){
       log("Testing custom error message via prepare_v3()...");
-      let rc = capi.sqlite3_prepare_v3(db.pointer, [/*invalid*/], -1, 0, null, null);
+      let rc = capi.sqlite3_prepare_v3(db.pointer, {/*invalid*/}, -1, 0, null, null);
       T.assert(capi.SQLITE_MISUSE === rc)
         .assert(0 === capi.sqlite3_errmsg(db.pointer).indexOf("Invalid SQL"));
       log("errmsg =",capi.sqlite3_errmsg(db.pointer));
@@ -253,7 +253,7 @@
     const resultRows = [];
     db.exec({
       sql:new TextEncoder('utf-8').encode([
-        // ^^^ testing string-vs-typedarray handling in execMulti()
+        // ^^^ testing string-vs-typedarray handling in exec()
         "attach 'session' as foo;" /* name 'session' is magic for kvvfs! */,
         "create table foo.bar(a);",
         "insert into foo.bar(a) values(1),(2),(3);",
@@ -266,6 +266,26 @@
     T.assert(3===resultRows.length)
       .assert(2===resultRows[1]);
     T.assert(2===db.selectValue('select a from foo.bar where a>1 order by a'));
+    let colCount = 0, rowCount = 0;
+    const execCallback = function(pVoid, nCols, aVals, aNames){
+      colCount = nCols;
+      ++rowCount;
+      T.assert(2===aVals.length)
+        .assert(2===aNames.length)
+        .assert(+(aVals[1]) === 2 * +(aVals[0]));
+    };
+    const capi = sqlite3.capi;
+    let rc = capi.sqlite3_exec(
+      db.pointer, "select a, a*2 from foo.bar", execCallback,
+      0, 0
+    );
+    T.assert(0===rc).assert(3===rowCount).assert(2===colCount);
+    rc = capi.sqlite3_exec(
+      db.pointer, "select a from foo.bar", ()=>{
+        toss("Testing throwing from exec() callback.");
+      }, 0, 0
+    );
+    T.assert(capi.SQLITE_ABORT === rc);
     db.exec("detach foo");
     T.mustThrow(()=>db.exec("select * from foo.bar"));
   };
