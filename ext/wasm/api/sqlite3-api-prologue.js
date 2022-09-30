@@ -685,6 +685,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     ["sqlite3_changes64","i64", ["sqlite3*"]],
     ["sqlite3_column_int64","i64", ["sqlite3_stmt*", "int"]],
     ["sqlite3_malloc64", "*","i64"],
+    ["sqlite3_msize", "i64", "*"],
     ["sqlite3_realloc64", "*","*", "i64"],
     ["sqlite3_total_changes64", "i64", ["sqlite3*"]],
     ["sqlite3_uri_int64", "i64", ["string", "string", "i64"]]

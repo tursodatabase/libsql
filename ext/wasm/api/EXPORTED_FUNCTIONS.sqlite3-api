@@ -44,6 +44,7 @@ _sqlite3_libversion
 _sqlite3_libversion_number
 _sqlite3_malloc
 _sqlite3_malloc64
+_sqlite3_msize
 _sqlite3_open
 _sqlite3_open_v2
 _sqlite3_prepare_v2
