@@ -426,6 +426,14 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   DB.checkRc = checkSqlite3Rc;
 
   DB.prototype = {
+    /** Returns true if this db handle is open, else false. */
+    isOpen: function(){
+      return !!this.pointer;
+    },
+    /** Throws if this given DB has been closed, else returns `this`. */
+    affirmOpen: function(){
+      return affirmDbOpen(this);
+    },
     /**
        Finalizes all open statements and closes this database
        connection. This is a no-op if the db has already been
@@ -1666,8 +1674,28 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         vfs: "kvvfs"
       });
     };
-    sqlite3.oo1.JsStorageDb.prototype = Object.create(DB.prototype);
-  }
+    const jdb = sqlite3.oo1.JsStorageDb;
+    jdb.prototype = Object.create(DB.prototype);
+    /** Equivalent to sqlite3_web_kvvfs_clear(). */
+    jdb.clearStorage = capi.sqlite3_web_kvvfs_clear;
+    /**
+       Clears this database instance's storage or throws if this
+       instance has been closed. Returns the number of
+       database blocks which were cleaned up.
+    */
+    jdb.prototype.clearStorage = function(){
+      return jdb.clearStorage(affirmDbOpen(this).filename);
+    };
+    /** Equivalent to sqlite3_web_kvvfs_size(). */
+    jdb.storageSize = capi.sqlite3_web_kvvfs_size;
+    /**
+       Returns the _approximate_ number of bytes this database takes
+       up in its storage or throws if this instance has been closed.
+    */
+    jdb.prototype.storageSize = function(){
+      return jdb.storageSize(affirmDbOpen(this).filename);
+    };
+  }/*main-window-only bits*/
 
 });
 

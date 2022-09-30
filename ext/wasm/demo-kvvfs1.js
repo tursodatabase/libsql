@@ -56,10 +56,10 @@
     const theStore = 's'===dbStorage[0] ? sessionStorage : localStorage;
     const db = new oo.JsStorageDb( dbStorage );
     // Or: oo.DB(dbStorage, 'c', 'kvvfs')
-
+    log("db.storageSize():",db.storageSize());
     document.querySelector('#btn-clear-storage').addEventListener('click',function(){
-      const sz = capi.sqlite3_web_kvvfs_clear();
-      log("kvvfs localStorage and sessionStorage cleared:",sz,"entries.");
+      const sz = db.clearStorage();
+      log("kvvfs",db.filename+"Storage cleared:",sz,"entries.");
     });
     document.querySelector('#btn-clear-log').addEventListener('click',function(){
       eOutput.innerText = '';
@@ -96,8 +96,8 @@
       }
     });
     document.querySelector('#btn-storage-size').addEventListener('click',function(){
-      log("sqlite3_web_kvvfs_size(",dbStorage,") says", capi.sqlite3_web_kvvfs_size(dbStorage),
-         "bytes");
+      log("size.storageSize(",dbStorage,") says", db.storageSize(),
+          "bytes");
     });
     log("Storage backend:",db.filename);
     if(0===db.selectValue('select count(*) from sqlite_master')){
