@@ -184,6 +184,7 @@
 
       let runner;
       if('websql'===db.id){
+        const who = this;
         runner = function(resolve, reject){
           /* WebSQL cannot execute multiple statements, nor can it execute SQL without
              an explicit transaction. Thus we have to do some fragile surgery on the
@@ -217,7 +218,8 @@
                   tx.executeSql(s,[], ()=>{}, (t,e)=>{
                     console.error("WebSQL error",e,"SQL =",s);
                     who.logErr(e.message);
-                    throw e;
+                    //throw e;
+                    return false;
                   });
                   metrics.stepTotal += performance.now() - t;
                 }
@@ -230,7 +232,11 @@
             const nextBatch = function(){
               if(sqls.length){
                 console.log("websql sqls.length",sqls.length,'of',n);
-                db.handle.transaction(transaction, reject, nextBatch);
+                db.handle.transaction(transaction, (e)=>{
+                  who.logErr("Ignoring and contiuing:",e.message)
+                  //reject(e);
+                  return false;
+                }, nextBatch);
               }else{
                 resolve(who);
               }
@@ -240,7 +246,8 @@
           }catch(e){
             //this.gotErr = e;
             console.error("websql error:",e);
-            reject(e);
+            who.logErr(e.message);
+            //reject(e);
           }
         }.bind(this);
       }else{/*sqlite3 db...*/
@@ -292,6 +299,7 @@
             //this.gotErr = e;
             reject(e);
           }finally{
+            capi.sqlite3_exec(db.handle,"rollback;",0,0,0);
             wasm.scopedAllocPop(stack);
           }
         }.bind(this);
@@ -604,7 +612,8 @@
     }/*run()*/
   }/*App*/;
 
-  self.sqlite3TestModule.initSqlite3().then(function(sqlite3){
+  self.sqlite3TestModule.initSqlite3().then(function(sqlite3_){
+    sqlite3 = sqlite3_;
     self.App = App /* only to facilitate dev console access */;
     App.run(sqlite3);
   });
