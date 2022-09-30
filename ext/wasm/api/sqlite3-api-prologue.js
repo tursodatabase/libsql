@@ -368,7 +368,10 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     */
     util:{
       isInt32, isTypedArray, isBindableTypedArray, isSQLableTypedArray,
-      affirmBindableTypedArray, typedArrayToString
+      affirmBindableTypedArray, typedArrayToString,
+      isMainWindow: ()=>{
+        return self.window===self && self.document;
+      }
     },
     
     /**
@@ -603,6 +606,11 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     ["sqlite3_db_filename", "string", "sqlite3*", "string"],
     ["sqlite3_db_handle", "sqlite3*", "sqlite3_stmt*"],
     ["sqlite3_db_name", "string", "sqlite3*", "int"],
+    ["sqlite3_deserialize", "int", "sqlite3*", "string", "*", "i64", "i64", "int"]
+    /* Careful! Short version: de/serialize() are problematic because they
+       might use a different allocator that the user for managing the
+       deserialized block. de/serialize() are ONLY safe to use with
+       sqlite3_malloc(), sqlite3_free(), and its 64-bit variants. */,
     ["sqlite3_errmsg", "string", "sqlite3*"],
     ["sqlite3_error_offset", "int", "sqlite3*"],
     ["sqlite3_errstr", "string", "int"],
@@ -615,6 +623,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     ["sqlite3_extended_result_codes", "int", "sqlite3*", "int"],
     ["sqlite3_file_control", "int", "sqlite3*", "string", "int", "*"],
     ["sqlite3_finalize", "int", "sqlite3_stmt*"],
+    ["sqlite3_free", undefined,"*"],
     ["sqlite3_initialize", undefined],
     ["sqlite3_interrupt", undefined, "sqlite3*"
      /* ^^^ we cannot actually currently support this because JS is
@@ -622,11 +631,13 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
         from 2 SharedWorkers concurrently. */],
     ["sqlite3_libversion", "string"],
     ["sqlite3_libversion_number", "int"],
+    ["sqlite3_malloc", "*","int"],
     ["sqlite3_open", "int", "string", "*"],
     ["sqlite3_open_v2", "int", "string", "*", "int", "string"],
     /* sqlite3_prepare_v2() and sqlite3_prepare_v3() are handled
        separately due to us requiring two different sets of semantics
        for those, depending on how their SQL argument is provided. */
+    ["sqlite3_realloc", "*","*","int"],
     ["sqlite3_reset", "int", "sqlite3_stmt*"],
     ["sqlite3_result_blob",undefined, "*", "*", "int", "*"],
     ["sqlite3_result_double",undefined, "*", "f64"],
@@ -637,6 +648,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     ["sqlite3_result_int",undefined, "*", "int"],
     ["sqlite3_result_null",undefined, "*"],
     ["sqlite3_result_text",undefined, "*", "string", "int", "*"],
+    ["sqlite3_serialize","*", "sqlite3*", "string", "*", "int"],
     ["sqlite3_shutdown", undefined],
     ["sqlite3_sourceid", "string"],
     ["sqlite3_sql", "string", "sqlite3_stmt*"],
@@ -672,6 +684,8 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     ["sqlite3_bind_int64","int", ["sqlite3_stmt*", "int", "i64"]],
     ["sqlite3_changes64","i64", ["sqlite3*"]],
     ["sqlite3_column_int64","i64", ["sqlite3_stmt*", "int"]],
+    ["sqlite3_malloc64", "*","i64"],
+    ["sqlite3_realloc64", "*","*", "i64"],
     ["sqlite3_total_changes64", "i64", ["sqlite3*"]],
     ["sqlite3_uri_int64", "i64", ["string", "string", "i64"]]
   ];
@@ -817,7 +831,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     return rc;
   };
 
-  if( self.window===self ){
+  if( capi.util.isMainWindow() ){
     /* Features specific to the main window thread... */
 
     /**

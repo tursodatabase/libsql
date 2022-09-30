@@ -1,5 +1,5 @@
-C Add\sJS\sinfrastructure\sto\sostensibly\sallow\sus\sto\scustomize\sthe\swasm\simports,\swhich\swill\shypothetically\sallow\sus\sto\seliminate\sthe\sdependency\son\sEM_JS(),\sbut\sthe\scorresponding\sEmscripten\sglue-level\sfeature\scurrently\sbreaks\sfatally\swith\sWASMFS\sbuilds\sso\sit's\sdisabled.
-D 2022-09-29T22:08:22.784
+C wasm:\sexpose\ssqlite3_de/serialize(),\ssqlite3_malloc/free()\sand\sfriends,\snoting\sthat\sthe\sformer\sexplicitly\slies\son\suse\sof\sthe\slatter\sfor\smemory\smanagement\sso\sis\snot\sgenerically\ssafe\sfor\suse\sin\swasm.
+D 2022-09-30T10:55:28.630
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -476,7 +476,7 @@ F ext/wasm/EXPORTED_FUNCTIONS.fiddle.in 27450c8b8c70875a260aca55435ec927068b34ce
 F ext/wasm/EXPORTED_RUNTIME_METHODS.fiddle 0e88c8cfc3719e4b7e74980d9da664c709e68acf863e48386cda376edfd3bfb0
 F ext/wasm/GNUmakefile b313a82060c733c990b91afa981e10f5e21a0b33a483f33b739ce932ed6bc725
 F ext/wasm/README.md 1e5b28158b74ab3ffc9d54fcbc020f0bbeb82c2ff8bbd904214c86c70e8a3066
-F ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-api 77a5ee8bd209b5e75dd0e822bc3f6e7319dc9b36431463d4175c775170f92126
+F ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-api 8b7f9344964880421721b5cc7daf2d6c420e4a15d3e02d431cb042a79fe9264e
 F ext/wasm/api/EXPORTED_RUNTIME_METHODS.sqlite3-api 1ec3c73e7d66e95529c3c64ac3de2470b0e9e7fbf7a5b41261c367cf4f1b7287
 F ext/wasm/api/README.md f54102d74cfde01ebe242fa1411e126a9cda8f19b3ac378afd1103b21abfad05
 F ext/wasm/api/extern-post-js.js b0df294159c290bec06cd67cce1a882d61944959ffe66a2f4ccbcb337e357781
@@ -485,13 +485,13 @@ F ext/wasm/api/post-js-footer.js b64319261d920211b8700004d08b956a6c285f3b0bba814
 F ext/wasm/api/post-js-header.js 2e5c886398013ba2af88028ecbced1e4b22dc96a86467f1ecc5ba9e64ef90a8b
 F ext/wasm/api/pre-js.js 04cb47eeeb421b7c41481f131bfa395ce9afa7f05c680f697269ea9d9f582518
 F ext/wasm/api/sqlite3-api-cleanup.js 98905936119a555659b5cf43844211809ab9f436c52a569004e5585d2842b5c2
-F ext/wasm/api/sqlite3-api-glue.js 3b164f0ef690a838da8613a2aaec4fc49d29ad5e8fe39c8cdc0f5281f08f9d0b
+F ext/wasm/api/sqlite3-api-glue.js 81b06946223181727b9a1d731b4f3c2ba97a33ae43bc0bbda7e8fa02400a207e
 F ext/wasm/api/sqlite3-api-oo1.js 97a786b366fcac442e1557c3eedef3afa96877411bd6239094d4db5fd5b3c353
 F ext/wasm/api/sqlite3-api-opfs.js af65e056b9f5bc6182499f7e7767e3d01abc3772a62c8abbcc04e4c7bb0affc6
-F ext/wasm/api/sqlite3-api-prologue.js 97b6073ec313ec4bcbf5d9aeac3ede548485642e56b3e1573beef198f38cc565
+F ext/wasm/api/sqlite3-api-prologue.js dfc9065bd9d300fd712db2e6c69d19d51eaa43613cb6edb4612fc3a588ccc2df
 F ext/wasm/api/sqlite3-api-worker1.js d5d5b7fac4c4731c38c7e03f4f404b2a95c388a2a1d8bcf361caada572f107e0
 F ext/wasm/api/sqlite3-wasi.h 25356084cfe0d40458a902afb465df8c21fc4152c1d0a59b563a3fba59a068f9
-F ext/wasm/api/sqlite3-wasm.c b756b9c1fee9d0598f715e6df6bf089b750da24aa91bb7ef9277a037d81e7612
+F ext/wasm/api/sqlite3-wasm.c 336389b23c9b83763177499e49a0967949c392b2f7d84fbbb52ad6678e159f18
 F ext/wasm/batch-runner.html c363032aba7a525920f61f8be112a29459f73f07e46f0ba3b7730081a617826e
 F ext/wasm/batch-runner.js a94dd0005b34cb4e654a799fbe6357a66070510bbbe5d116cf1a8d4f9901bd80
 F ext/wasm/common/SqliteTestUtil.js 647bf014bd30bdd870a7e9001e251d12fc1c9ec9ce176a1004b838a4b33c5c05
@@ -2029,8 +2029,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 27d24d5d270e272af07d96cf07bdbe79ba07a9c69ba3c70beb76ebf4f90fc97a
-R e715779808f61e9926a53ef0cba366ca
+P 88d9253b0db5494bf1c9b6d24f22524eeec856b89e64a66ffb30d945f0df21d3
+R 4c948bf2f5f40778abbc8384f6bd98eb
 U stephan
-Z ef9d6a37e9ad2048fe7dc4931182a2c4
+Z cb568b9e06886e80ca2b65ac2606f3dd
 # Remove this line to create a well-formed Fossil manifest.

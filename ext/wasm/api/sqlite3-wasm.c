@@ -13,6 +13,24 @@
 ** emcc -o sqlite3.wasm ... -I/path/to/sqlite3-c-and-h sqlite3-wasm.c
 */
 
+/*
+** Threading and file locking: JS is single-threaded. Each Worker
+** thread is a separate instance of the JS engine so can never access
+** the same db handle as another thread, thus multi-threading support
+** is unnecessary in the library. Because the filesystems are virtual
+** and local to a given wasm runtime instance, two Workers can never
+** access the same db file at once, with the exception of OPFS. As of
+** this writing (2022-09-30), OPFS exclusively locks a file when
+** opening it, so two Workers can never open the same OPFS-backed file
+** at once. That situation will change if and when lower-level locking
+** features are added to OPFS (as is currently planned, per folks
+** involved with its development).
+**
+** Summary: except for the case of future OPFS, which supports
+** locking, and any similar future filesystems, threading and file
+** locking support are unnecessary in the wasm build.
+*/
+#undef SQLITE_OMIT_DESERIALIZE
 #ifndef SQLITE_DEFAULT_UNIX_VFS
 # define SQLITE_DEFAULT_UNIX_VFS "unix-none"
 #endif
@@ -144,10 +162,137 @@ const char * sqlite3_wasm_enum_json(void){
   outf("%s\"%s\": \"%s\"", (n++ ? ", " : ""), #KEY, KEY)
 #define _DefGroup CloseBrace(1)
 
-  DefGroup(version) {
-    DefInt(SQLITE_VERSION_NUMBER);
-    DefStr(SQLITE_VERSION);
-    DefStr(SQLITE_SOURCE_ID);
+  /* The following groups are sorted alphabetic by group name. */
+  DefGroup(access){
+    DefInt(SQLITE_ACCESS_EXISTS);
+    DefInt(SQLITE_ACCESS_READWRITE);
+    DefInt(SQLITE_ACCESS_READ)/*docs say this is unused*/;
+  } _DefGroup;
+
+  DefGroup(blobFinalizers) {
+    /* SQLITE_STATIC/TRANSIENT need to be handled explicitly as
+    ** integers to avoid casting-related warnings. */
+    out("\"SQLITE_STATIC\":0, \"SQLITE_TRANSIENT\":-1");
+  } _DefGroup;
+
+  DefGroup(dataTypes) {
+    DefInt(SQLITE_INTEGER);
+    DefInt(SQLITE_FLOAT);
+    DefInt(SQLITE_TEXT);
+    DefInt(SQLITE_BLOB);
+    DefInt(SQLITE_NULL);
+  } _DefGroup;
+
+  DefGroup(encodings) {
+    /* Noting that the wasm binding only aims to support UTF-8. */
+    DefInt(SQLITE_UTF8);
+    DefInt(SQLITE_UTF16LE);
+    DefInt(SQLITE_UTF16BE);
+    DefInt(SQLITE_UTF16);
+    /*deprecated DefInt(SQLITE_ANY); */
+    DefInt(SQLITE_UTF16_ALIGNED);
+  } _DefGroup;
+
+  DefGroup(fcntl) {
+    DefInt(SQLITE_FCNTL_LOCKSTATE);
+    DefInt(SQLITE_FCNTL_GET_LOCKPROXYFILE);
+    DefInt(SQLITE_FCNTL_SET_LOCKPROXYFILE);
+    DefInt(SQLITE_FCNTL_LAST_ERRNO);
+    DefInt(SQLITE_FCNTL_SIZE_HINT);
+    DefInt(SQLITE_FCNTL_CHUNK_SIZE);
+    DefInt(SQLITE_FCNTL_FILE_POINTER);
+    DefInt(SQLITE_FCNTL_SYNC_OMITTED);
+    DefInt(SQLITE_FCNTL_WIN32_AV_RETRY);
+    DefInt(SQLITE_FCNTL_PERSIST_WAL);
+    DefInt(SQLITE_FCNTL_OVERWRITE);
+    DefInt(SQLITE_FCNTL_VFSNAME);
+    DefInt(SQLITE_FCNTL_POWERSAFE_OVERWRITE);
+    DefInt(SQLITE_FCNTL_PRAGMA);
+    DefInt(SQLITE_FCNTL_BUSYHANDLER);
+    DefInt(SQLITE_FCNTL_TEMPFILENAME);
+    DefInt(SQLITE_FCNTL_MMAP_SIZE);
+    DefInt(SQLITE_FCNTL_TRACE);
+    DefInt(SQLITE_FCNTL_HAS_MOVED);
+    DefInt(SQLITE_FCNTL_SYNC);
+    DefInt(SQLITE_FCNTL_COMMIT_PHASETWO);
+    DefInt(SQLITE_FCNTL_WIN32_SET_HANDLE);
+    DefInt(SQLITE_FCNTL_WAL_BLOCK);
+    DefInt(SQLITE_FCNTL_ZIPVFS);
+    DefInt(SQLITE_FCNTL_RBU);
+    DefInt(SQLITE_FCNTL_VFS_POINTER);
+    DefInt(SQLITE_FCNTL_JOURNAL_POINTER);
+    DefInt(SQLITE_FCNTL_WIN32_GET_HANDLE);
+    DefInt(SQLITE_FCNTL_PDB);
+    DefInt(SQLITE_FCNTL_BEGIN_ATOMIC_WRITE);
+    DefInt(SQLITE_FCNTL_COMMIT_ATOMIC_WRITE);
+    DefInt(SQLITE_FCNTL_ROLLBACK_ATOMIC_WRITE);
+    DefInt(SQLITE_FCNTL_LOCK_TIMEOUT);
+    DefInt(SQLITE_FCNTL_DATA_VERSION);
+    DefInt(SQLITE_FCNTL_SIZE_LIMIT);
+    DefInt(SQLITE_FCNTL_CKPT_DONE);
+    DefInt(SQLITE_FCNTL_RESERVE_BYTES);
+    DefInt(SQLITE_FCNTL_CKPT_START);
+    DefInt(SQLITE_FCNTL_EXTERNAL_READER);
+    DefInt(SQLITE_FCNTL_CKSM_FILE);
+  } _DefGroup;
+
+  DefGroup(flock) {
+    DefInt(SQLITE_LOCK_NONE);
+    DefInt(SQLITE_LOCK_SHARED);
+    DefInt(SQLITE_LOCK_RESERVED);
+    DefInt(SQLITE_LOCK_PENDING);
+    DefInt(SQLITE_LOCK_EXCLUSIVE);
+  } _DefGroup;
+
+  DefGroup(ioCap) {
+    DefInt(SQLITE_IOCAP_ATOMIC);
+    DefInt(SQLITE_IOCAP_ATOMIC512);
+    DefInt(SQLITE_IOCAP_ATOMIC1K);
+    DefInt(SQLITE_IOCAP_ATOMIC2K);
+    DefInt(SQLITE_IOCAP_ATOMIC4K);
+    DefInt(SQLITE_IOCAP_ATOMIC8K);
+    DefInt(SQLITE_IOCAP_ATOMIC16K);
+    DefInt(SQLITE_IOCAP_ATOMIC32K);
+    DefInt(SQLITE_IOCAP_ATOMIC64K);
+    DefInt(SQLITE_IOCAP_SAFE_APPEND);
+    DefInt(SQLITE_IOCAP_SEQUENTIAL);
+    DefInt(SQLITE_IOCAP_UNDELETABLE_WHEN_OPEN);
+    DefInt(SQLITE_IOCAP_POWERSAFE_OVERWRITE);
+    DefInt(SQLITE_IOCAP_IMMUTABLE);
+    DefInt(SQLITE_IOCAP_BATCH_ATOMIC);
+  } _DefGroup;
+
+  DefGroup(openFlags) {
+    /* Noting that not all of these will have any effect in
+    ** WASM-space. */
+    DefInt(SQLITE_OPEN_READONLY);
+    DefInt(SQLITE_OPEN_READWRITE);
+    DefInt(SQLITE_OPEN_CREATE);
+    DefInt(SQLITE_OPEN_URI);
+    DefInt(SQLITE_OPEN_MEMORY);
+    DefInt(SQLITE_OPEN_NOMUTEX);
+    DefInt(SQLITE_OPEN_FULLMUTEX);
+    DefInt(SQLITE_OPEN_SHAREDCACHE);
+    DefInt(SQLITE_OPEN_PRIVATECACHE);
+    DefInt(SQLITE_OPEN_EXRESCODE);
+    DefInt(SQLITE_OPEN_NOFOLLOW);
+    /* OPEN flags for use with VFSes... */
+    DefInt(SQLITE_OPEN_MAIN_DB);
+    DefInt(SQLITE_OPEN_MAIN_JOURNAL);
+    DefInt(SQLITE_OPEN_TEMP_DB);
+    DefInt(SQLITE_OPEN_TEMP_JOURNAL);
+    DefInt(SQLITE_OPEN_TRANSIENT_DB);
+    DefInt(SQLITE_OPEN_SUBJOURNAL);
+    DefInt(SQLITE_OPEN_SUPER_JOURNAL);
+    DefInt(SQLITE_OPEN_WAL);
+    DefInt(SQLITE_OPEN_DELETEONCLOSE);
+    DefInt(SQLITE_OPEN_EXCLUSIVE);
+  } _DefGroup;
+
+  DefGroup(prepareFlags) {
+    DefInt(SQLITE_PREPARE_PERSISTENT);
+    DefInt(SQLITE_PREPARE_NORMALIZE);
+    DefInt(SQLITE_PREPARE_NO_VTAB);
   } _DefGroup;
 
   DefGroup(resultCodes) {
@@ -182,7 +327,6 @@ const char * sqlite3_wasm_enum_json(void){
     DefInt(SQLITE_WARNING);
     DefInt(SQLITE_ROW);
     DefInt(SQLITE_DONE);
-
     // Extended Result Codes
     DefInt(SQLITE_ERROR_MISSING_COLLSEQ);
     DefInt(SQLITE_ERROR_RETRY);
@@ -261,61 +405,10 @@ const char * sqlite3_wasm_enum_json(void){
     //DefInt(SQLITE_OK_SYMLINK) /* internal use only */;
   } _DefGroup;
 
-  DefGroup(dataTypes) {
-    DefInt(SQLITE_INTEGER);
-    DefInt(SQLITE_FLOAT);
-    DefInt(SQLITE_TEXT);
-    DefInt(SQLITE_BLOB);
-    DefInt(SQLITE_NULL);
-  } _DefGroup;
-
-  DefGroup(encodings) {
-    /* Noting that the wasm binding only aims to support UTF-8. */
-    DefInt(SQLITE_UTF8);
-    DefInt(SQLITE_UTF16LE);
-    DefInt(SQLITE_UTF16BE);
-    DefInt(SQLITE_UTF16);
-    /*deprecated DefInt(SQLITE_ANY); */
-    DefInt(SQLITE_UTF16_ALIGNED);
-  } _DefGroup;
-
-  DefGroup(blobFinalizers) {
-    /* SQLITE_STATIC/TRANSIENT need to be handled explicitly as
-    ** integers to avoid casting-related warnings. */
-    out("\"SQLITE_STATIC\":0, \"SQLITE_TRANSIENT\":-1");
-  } _DefGroup;
-
-  DefGroup(udfFlags) {
-    DefInt(SQLITE_DETERMINISTIC);
-    DefInt(SQLITE_DIRECTONLY);
-    DefInt(SQLITE_INNOCUOUS);
-  } _DefGroup;
-
-  DefGroup(openFlags) {
-    /* Noting that not all of these will have any effect in
-    ** WASM-space. */
-    DefInt(SQLITE_OPEN_READONLY);
-    DefInt(SQLITE_OPEN_READWRITE);
-    DefInt(SQLITE_OPEN_CREATE);
-    DefInt(SQLITE_OPEN_URI);
-    DefInt(SQLITE_OPEN_MEMORY);
-    DefInt(SQLITE_OPEN_NOMUTEX);
-    DefInt(SQLITE_OPEN_FULLMUTEX);
-    DefInt(SQLITE_OPEN_SHAREDCACHE);
-    DefInt(SQLITE_OPEN_PRIVATECACHE);
-    DefInt(SQLITE_OPEN_EXRESCODE);
-    DefInt(SQLITE_OPEN_NOFOLLOW);
-    /* OPEN flags for use with VFSes... */
-    DefInt(SQLITE_OPEN_MAIN_DB);
-    DefInt(SQLITE_OPEN_MAIN_JOURNAL);
-    DefInt(SQLITE_OPEN_TEMP_DB);
-    DefInt(SQLITE_OPEN_TEMP_JOURNAL);
-    DefInt(SQLITE_OPEN_TRANSIENT_DB);
-    DefInt(SQLITE_OPEN_SUBJOURNAL);
-    DefInt(SQLITE_OPEN_SUPER_JOURNAL);
-    DefInt(SQLITE_OPEN_WAL);
-    DefInt(SQLITE_OPEN_DELETEONCLOSE);
-    DefInt(SQLITE_OPEN_EXCLUSIVE);
+  DefGroup(serialize){
+    DefInt(SQLITE_DESERIALIZE_FREEONCLOSE);
+    DefInt(SQLITE_DESERIALIZE_READONLY);
+    DefInt(SQLITE_DESERIALIZE_RESIZEABLE);
   } _DefGroup;
 
   DefGroup(syncFlags) {
@@ -324,85 +417,16 @@ const char * sqlite3_wasm_enum_json(void){
     DefInt(SQLITE_SYNC_DATAONLY);
   } _DefGroup;
 
-  DefGroup(prepareFlags) {
-    DefInt(SQLITE_PREPARE_PERSISTENT);
-    DefInt(SQLITE_PREPARE_NORMALIZE);
-    DefInt(SQLITE_PREPARE_NO_VTAB);
+  DefGroup(udfFlags) {
+    DefInt(SQLITE_DETERMINISTIC);
+    DefInt(SQLITE_DIRECTONLY);
+    DefInt(SQLITE_INNOCUOUS);
   } _DefGroup;
 
-  DefGroup(flock) {
-    DefInt(SQLITE_LOCK_NONE);
-    DefInt(SQLITE_LOCK_SHARED);
-    DefInt(SQLITE_LOCK_RESERVED);
-    DefInt(SQLITE_LOCK_PENDING);
-    DefInt(SQLITE_LOCK_EXCLUSIVE);
-  } _DefGroup;
-
-  DefGroup(ioCap) {
-    DefInt(SQLITE_IOCAP_ATOMIC);
-    DefInt(SQLITE_IOCAP_ATOMIC512);
-    DefInt(SQLITE_IOCAP_ATOMIC1K);
-    DefInt(SQLITE_IOCAP_ATOMIC2K);
-    DefInt(SQLITE_IOCAP_ATOMIC4K);
-    DefInt(SQLITE_IOCAP_ATOMIC8K);
-    DefInt(SQLITE_IOCAP_ATOMIC16K);
-    DefInt(SQLITE_IOCAP_ATOMIC32K);
-    DefInt(SQLITE_IOCAP_ATOMIC64K);
-    DefInt(SQLITE_IOCAP_SAFE_APPEND);
-    DefInt(SQLITE_IOCAP_SEQUENTIAL);
-    DefInt(SQLITE_IOCAP_UNDELETABLE_WHEN_OPEN);
-    DefInt(SQLITE_IOCAP_POWERSAFE_OVERWRITE);
-    DefInt(SQLITE_IOCAP_IMMUTABLE);
-    DefInt(SQLITE_IOCAP_BATCH_ATOMIC);
-  } _DefGroup;
-
-  DefGroup(fcntl) {
-    DefInt(SQLITE_FCNTL_LOCKSTATE);
-    DefInt(SQLITE_FCNTL_GET_LOCKPROXYFILE);
-    DefInt(SQLITE_FCNTL_SET_LOCKPROXYFILE);
-    DefInt(SQLITE_FCNTL_LAST_ERRNO);
-    DefInt(SQLITE_FCNTL_SIZE_HINT);
-    DefInt(SQLITE_FCNTL_CHUNK_SIZE);
-    DefInt(SQLITE_FCNTL_FILE_POINTER);
-    DefInt(SQLITE_FCNTL_SYNC_OMITTED);
-    DefInt(SQLITE_FCNTL_WIN32_AV_RETRY);
-    DefInt(SQLITE_FCNTL_PERSIST_WAL);
-    DefInt(SQLITE_FCNTL_OVERWRITE);
-    DefInt(SQLITE_FCNTL_VFSNAME);
-    DefInt(SQLITE_FCNTL_POWERSAFE_OVERWRITE);
-    DefInt(SQLITE_FCNTL_PRAGMA);
-    DefInt(SQLITE_FCNTL_BUSYHANDLER);
-    DefInt(SQLITE_FCNTL_TEMPFILENAME);
-    DefInt(SQLITE_FCNTL_MMAP_SIZE);
-    DefInt(SQLITE_FCNTL_TRACE);
-    DefInt(SQLITE_FCNTL_HAS_MOVED);
-    DefInt(SQLITE_FCNTL_SYNC);
-    DefInt(SQLITE_FCNTL_COMMIT_PHASETWO);
-    DefInt(SQLITE_FCNTL_WIN32_SET_HANDLE);
-    DefInt(SQLITE_FCNTL_WAL_BLOCK);
-    DefInt(SQLITE_FCNTL_ZIPVFS);
-    DefInt(SQLITE_FCNTL_RBU);
-    DefInt(SQLITE_FCNTL_VFS_POINTER);
-    DefInt(SQLITE_FCNTL_JOURNAL_POINTER);
-    DefInt(SQLITE_FCNTL_WIN32_GET_HANDLE);
-    DefInt(SQLITE_FCNTL_PDB);
-    DefInt(SQLITE_FCNTL_BEGIN_ATOMIC_WRITE);
-    DefInt(SQLITE_FCNTL_COMMIT_ATOMIC_WRITE);
-    DefInt(SQLITE_FCNTL_ROLLBACK_ATOMIC_WRITE);
-    DefInt(SQLITE_FCNTL_LOCK_TIMEOUT);
-    DefInt(SQLITE_FCNTL_DATA_VERSION);
-    DefInt(SQLITE_FCNTL_SIZE_LIMIT);
-    DefInt(SQLITE_FCNTL_CKPT_DONE);
-    DefInt(SQLITE_FCNTL_RESERVE_BYTES);
-    DefInt(SQLITE_FCNTL_CKPT_START);
-    DefInt(SQLITE_FCNTL_EXTERNAL_READER);
-    DefInt(SQLITE_FCNTL_CKSM_FILE);
-  } _DefGroup;
-
-  DefGroup(access){
-    DefInt(SQLITE_ACCESS_EXISTS);
-    DefInt(SQLITE_ACCESS_READWRITE);
-    DefInt(SQLITE_ACCESS_READ)/*docs say this is unused*/;
+  DefGroup(version) {
+    DefInt(SQLITE_VERSION_NUMBER);
+    DefStr(SQLITE_VERSION);
+    DefStr(SQLITE_SOURCE_ID);
   } _DefGroup;
   
 #undef DefGroup

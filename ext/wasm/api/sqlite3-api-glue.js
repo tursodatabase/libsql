@@ -177,7 +177,8 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     for(const t of ['access', 'blobFinalizers', 'dataTypes',
                     'encodings', 'fcntl', 'flock', 'ioCap',
                     'openFlags', 'prepareFlags', 'resultCodes',
-                    'syncFlags', 'udfFlags', 'version'
+                    'serialize', 'syncFlags', 'udfFlags',
+                    'version'
                    ]){
       for(const e of Object.entries(wasm.ctype[t])){
         // ^^^ [k,v] there triggers a buggy code transormation via one
