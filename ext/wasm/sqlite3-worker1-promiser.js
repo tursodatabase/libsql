@@ -45,11 +45,6 @@
    the simplest way to tell the worker to kick off work at the
    earliest opportunity.
 
-   - `onerror` (optional): a callback to pass error-type events from
-   the worker. The object passed to it will be the error message
-   payload from the worker. This is _not_ the same as the
-   worker.onerror property!
-
    - `onunhandled` (optional): a callback which gets passed the
    message event object for any worker.onmessage() events which
    are not handled by this proxy. Ideally that "should" never
@@ -61,21 +56,6 @@
    property of the message. It _must_ generate unique IDs on each call
    so that dispatching can work. If not defined, a default generator
    is used (which should be sufficient for most or all cases).
-
-   - `dbId` (optional): is the database ID to be used by the
-   worker. This must initially be unset or a falsy value. The
-   first `open` message sent to the worker will cause this config
-   entry to be assigned to the ID of the opened database. That ID
-   "should" be set as the `dbId` property of the messages sent in
-   future requests, so that the worker uses that database.
-   However, if the worker is not given an explicit dbId, it will
-   use the first-opened database by default. If client code needs
-   to work with multiple database IDs, the client-level code will
-   need to juggle those themselves. A `close` message will clear
-   this property if it matches the ID of the closed db. Potential
-   TODO: add a config callback specifically for reporting `open`
-   and `close` message results, so that clients may track those
-   values.
 
    - `debug` (optional): a console.debug()-style function for logging
    information about messages.
@@ -110,14 +90,9 @@
    const sq3Promiser = sqlite3Worker1Promiser(config);
    sq3Promiser('open', {filename:"/foo.db"}).then(function(msg){
      console.log("open response",msg); // => {type:'open', result: {filename:'/foo.db'}, ...}
-     // Recall that config.dbId will be set for the first 'open'
-     // call and cleared for a matching 'close' call.
    });
    sq3Promiser({type:'close'}).then((msg)=>{
      console.log("close response",msg); // => {type:'close', result: {filename:'/foo.db'}, ...}
-     // Recall that config.dbId will be used by default for the message's dbId if
-     // none is explicitly provided, and a 'close' op will clear config.dbId if it
-     // closes that exact db.
    });
    ```
 
@@ -151,13 +126,14 @@ self.sqlite3Worker1Promiser = function callee(config = callee.defaultConfig){
     const f = config;
     config = Object.assign(Object.create(null), callee.defaultConfig);
     config.onready = f;
+  }else{
+    config = Object.assign(Object.create(null), callee.defaultConfig, config);
   }
-  /* Maintenance reminder: when passed a config object, the reference
-     must be used as-is, instead of normalizing it to another object,
-     so that we can communicate the dbId through it. */
   const handlerMap = Object.create(null);
   const noop = function(){};
-  const err = config.onerror || noop;
+  const err = config.onerror
+        || noop /* config.onerror is intentionally undocumented
+                   pending finding a less ambiguous name */;
   const debug = config.debug || noop;
   const idTypeMap = config.generateMessageId ? undefined : Object.create(null);
   const genMsgId = config.generateMessageId || function(msg){
@@ -166,6 +142,7 @@ self.sqlite3Worker1Promiser = function callee(config = callee.defaultConfig){
   const toss = (...args)=>{throw new Error(args.join(' '))};
   if(!config.worker) config.worker = callee.defaultConfig.worker;
   if('function'===typeof config.worker) config.worker = config.worker();
+  let dbId;
   config.worker.onmessage = function(ev){
     ev = ev.data;
     debug('worker1.onmessage',ev);
@@ -191,10 +168,10 @@ self.sqlite3Worker1Promiser = function callee(config = callee.defaultConfig){
           msgHandler.reject(ev);
           return;
         case 'open':
-          if(!config.dbId) config.dbId = ev.dbId;
+          if(!dbId) dbId = ev.dbId;
           break;
         case 'close':
-          if(config.dbId === ev.dbId) config.dbId = undefined;
+          if(ev.dbId===dbId) dbId = undefined;
           break;
         default:
           break;
@@ -214,7 +191,7 @@ self.sqlite3Worker1Promiser = function callee(config = callee.defaultConfig){
     }else{
       toss("Invalid arugments for sqlite3Worker1Promiser()-created factory.");
     }
-    if(!msg.dbId) msg.dbId = config.dbId;
+    if(!msg.dbId) msg.dbId = dbId;
     msg.messageId = genMsgId(msg);
     msg.departureTime = performance.now();
     const proxy = Object.create(null);
@@ -249,7 +226,7 @@ self.sqlite3Worker1Promiser = function callee(config = callee.defaultConfig){
       proxy.resolve = resolve;
       proxy.reject = reject;
       handlerMap[msg.messageId] = proxy;
-      debug("Posting",msg.type,"message to Worker dbId="+(config.dbId||'default')+':',msg);
+      debug("Posting",msg.type,"message to Worker dbId="+(dbId||'default')+':',msg);
       config.worker.postMessage(msg);
     });
     if(rowCallbackId) p = p.finally(()=>delete handlerMap[rowCallbackId]);
@@ -261,6 +238,5 @@ self.sqlite3Worker1Promiser.defaultConfig = {
     //const p = self.location.pathname.replace(/[^/]*$/, "sqlite3-worker1.js");
     return new Worker("sqlite3-worker1.js");
   },
-  onerror: (...args)=>console.error('worker1 error',...args),
-  dbId: undefined
+  onerror: (...args)=>console.error('worker1 promiser error',...args)
 };

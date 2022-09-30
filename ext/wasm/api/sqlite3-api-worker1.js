@@ -225,13 +225,7 @@
     type: "close",
     messageId: ...as above...
     dbId: ...as above...
-    args: OPTIONAL: {
-
-      unlink: if truthy, the associated db will be unlinked (removed)
-      from the virtual filesystems. Failure to unlink is silently
-      ignored. Does not currently work for all storage backends.
-
-    }
+    args: none
   }
   ```
 
@@ -460,6 +454,8 @@ sqlite3.initWorker1API = function(){
         filename: db && db.filename
       };
       if(db){
+        // Keep the "unlink" flag undocumented until we figure out how
+        // to apply it consistently, independent of the db storage.
         wState.close(db, ((ev.args && 'object'===typeof ev.args)
                           ? !!ev.args.unlink : false));
       }

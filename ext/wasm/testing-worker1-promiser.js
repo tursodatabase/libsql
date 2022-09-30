@@ -91,8 +91,8 @@
       const r = ev.result;
       log("then open result",r);
       T.assert(ev.dbId === r.dbId)
-        .assert(ev.messageId)
-        .assert(promiserConfig.dbId === ev.dbId);
+        .assert(ev.messageId);
+      promiserConfig.dbId = ev.dbId;
     }).then(runTests2);
   };
 
@@ -248,8 +248,7 @@
     });
 
     /***** close() tests must come last. *****/
-    await wtest('close',{unlink:true},function(ev){
-      T.assert(!promiserConfig.dbId);
+    await wtest('close',{},function(ev){
       T.assert('string' === typeof ev.result.filename);
     });
 
@@ -258,6 +257,5 @@
     }).finally(()=>logHtml('',"That's all, folks!"));
   }/*runTests2()*/;
 
-  
   log("Init complete, but async init bits may still be running.");
 })();
