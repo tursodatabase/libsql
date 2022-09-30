@@ -4954,7 +4954,7 @@ static int accessPayload(
   assert( pPage );
   assert( eOp==0 || eOp==1 );
   assert( pCur->eState==CURSOR_VALID );
-  if( NEVER(pCur->ix>=pPage->nCell) ){
+  if( pCur->ix>=pPage->nCell ){
     return SQLITE_CORRUPT_PAGE(pPage);
   }
   assert( cursorHoldsMutex(pCur) );
