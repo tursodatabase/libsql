@@ -86,16 +86,11 @@
     
     await wtest('open', {
       filename: dbFilename,
-      persistent: sqConfig.wasmfsOpfsEnabled,
       simulateError: 0 /* if true, fail the 'open' */,
     }, function(ev){
       const r = ev.result;
       log("then open result",r);
-      T.assert(r.persistent === sqConfig.wasmfsOpfsEnabled)
-        .assert(r.persistent
-               ? (dbFilename!==r.filename)
-               : (dbFilename==r.filename))
-        .assert(ev.dbId === r.dbId)
+      T.assert(ev.dbId === r.dbId)
         .assert(ev.messageId)
         .assert(promiserConfig.dbId === ev.dbId);
     }).then(runTests2);

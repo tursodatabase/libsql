@@ -32,10 +32,10 @@
    It requires a configuration object with the following properties:
 
    - `worker` (required): a Worker instance which loads
-   `sqlite3-worker1.js` or a functional equivalent. Note that this
-   function replaces the worker.onmessage property. This property
-   may alternately be a function, in which case this function
-   re-assigns this property with the result of calling that
+   `sqlite3-worker1.js` or a functional equivalent. Note that the
+   promiser factory replaces the worker.onmessage property. This
+   config option may alternately be a function, in which case this
+   function re-assigns this property with the result of calling that
    function, enabling delayed instantiation of a Worker.
 
    - `onready` (optional, but...): this callback is called with no
@@ -147,6 +147,14 @@
 */
 self.sqlite3Worker1Promiser = function callee(config = callee.defaultConfig){
   // Inspired by: https://stackoverflow.com/a/52439530
+  if(1===arguments.length && 'function'===typeof arguments[0]){
+    const f = config;
+    config = Object.assign(Object.create(null), callee.defaultConfig);
+    config.onready = f;
+  }
+  /* Maintenance reminder: when passed a config object, the reference
+     must be used as-is, instead of normalizing it to another object,
+     so that we can communicate the dbId through it. */
   const handlerMap = Object.create(null);
   const noop = function(){};
   const err = config.onerror || noop;
@@ -156,6 +164,7 @@ self.sqlite3Worker1Promiser = function callee(config = callee.defaultConfig){
     return msg.type+'#'+(idTypeMap[msg.type] = (idTypeMap[msg.type]||0) + 1);
   };
   const toss = (...args)=>{throw new Error(args.join(' '))};
+  if(!config.worker) config.worker = callee.defaultConfig.worker;
   if('function'===typeof config.worker) config.worker = config.worker();
   config.worker.onmessage = function(ev){
     ev = ev.data;

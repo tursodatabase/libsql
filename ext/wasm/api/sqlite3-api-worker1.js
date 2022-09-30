@@ -159,7 +159,7 @@
       bigIntEnabled: bool. True if BigInt support is enabled.
 
       wasmfsOpfsDir: path prefix, if any, _intended_ for use with
-      OPFS persistent storage.
+      WASMFS OPFS persistent storage.
 
       wasmfsOpfsEnabled: true if persistent storage is enabled in the
       current environment. Only files stored under wasmfsOpfsDir
@@ -188,15 +188,6 @@
       See the sqlite3.oo1.DB constructor for peculiarities and
       transformations,
 
-      persistent [=false]: if true and filename is not one of ("",
-      ":memory:"), prepend sqlite3.capi.sqlite3_wasmfs_opfs_dir()
-      to the given filename so that it is stored in persistent storage
-      _if_ the environment supports it.  If persistent storage is not
-      supported, the filename is used as-is.
-
-      // TODO?: ^^^^ maybe rework that, now that we have the non-WASMFS
-      // OFPS.
-
     }
   }
   ```
@@ -218,8 +209,7 @@
       Only the `open` operation includes it in the `result` property.
 
       persistent: true if the given filename resides in the
-      known-persistent storage, else false. This determination is
-      independent of the `persistent` input argument.
+      known-persistent storage, else false.
 
    }
   }
@@ -239,7 +229,7 @@
 
       unlink: if truthy, the associated db will be unlinked (removed)
       from the virtual filesystems. Failure to unlink is silently
-      ignored.
+      ignored. Does not currently work for all storage backends.
 
     }
   }
@@ -324,7 +314,7 @@
     layer won't emit a result value of `undefined`.)
 
   The callback proxy must not recurse into this interface. An exec()
-  call will type up the Worker thread, causing any recursion attempt
+  call will tie up the Worker thread, causing any recursion attempt
   to wait until the first exec() is completed.
 
   The response is the input options object (or a synthesized one if
