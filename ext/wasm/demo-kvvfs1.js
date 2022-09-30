@@ -52,15 +52,10 @@
       return;
     }
     
-    const dbStorage = 1 ? 'session' : 'local';
+    const dbStorage = 0 ? 'session' : 'local';
     const theStore = 's'===dbStorage[0] ? sessionStorage : localStorage;
-    /**
-       The names ':sessionStorage:' and ':localStorage:' are handled
-       via the DB class constructor, not the C level. In the C API,
-       the names "local" and "session" are the current (2022-09-12)
-       names for those keys, but that is subject to change.
-    */
-    const db = new oo.DB( dbStorage, 'c', 'kvvfs' );
+    const db = new oo.JsStorageDb( dbStorage );
+    // Or: oo.DB(dbStorage, 'c', 'kvvfs')
 
     document.querySelector('#btn-clear-storage').addEventListener('click',function(){
       const sz = capi.sqlite3_web_kvvfs_clear();

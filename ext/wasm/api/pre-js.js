@@ -12,15 +12,15 @@ const xInstantiateWasm = 1
       ? 'emscripten-bug-17951'
       : 'instantiateWasm';
 Module[xInstantiateWasm] = function callee(imports,onSuccess){
-  imports.foo = function(){};
+  imports.env.foo = function(){};
   console.warn("instantiateWasm() uri =",callee.uri, self.location.href);
   const wfetch = ()=>fetch(callee.uri, {credentials: 'same-origin'});
   const loadWasm = WebAssembly.instantiateStreaming
-        ? function loadWasmStreaming(){
+        ? async ()=>{
           return WebAssembly.instantiateStreaming(wfetch(), imports)
             .then((arg)=>onSuccess(arg.instance, arg.module));
         }
-        : function loadWasmOldSchool(){ // Safari < v15
+        : async ()=>{ // Safari < v15
           return wfetch()
             .then(response => response.arrayBuffer())
             .then(bytes => WebAssembly.instantiate(bytes, imports))
@@ -30,11 +30,12 @@ Module[xInstantiateWasm] = function callee(imports,onSuccess){
   return {};
 };
 /*
-  It is literally impossible to get the name of a Worker's own script,
-  so impossible to derive X.wasm from script name X.js. Thus we need,
-  at build-time, to redifine Module['instantiateWasm'].uri by
-  appending it to a build-specific copy of this file with the name of
-  the wasm file. This is apparently why Emscripten hard-codes the name of
-  the wasm file into their glue scripts.
+  It is literally impossible to reliably get the name of _this_ script
+  at runtime, so impossible to derive X.wasm from script name
+  X.js. Thus we need, at build-time, to redefine
+  Module[xInstantiateWasm].uri by appending it to a build-specific
+  copy of this file with the name of the wasm file. This is apparently
+  why Emscripten hard-codes the name of the wasm file into their glue
+  scripts.
 */
 Module[xInstantiateWasm].uri = 'sqlite3.wasm';

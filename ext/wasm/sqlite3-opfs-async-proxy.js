@@ -90,8 +90,7 @@ metrics.dump = ()=>{
   console.log("Serialization metrics:",metrics.s11n);
 };
 
-warn("This file is very much experimental and under construction.",
-     self.location.pathname);
+//warn("This file is very much experimental and under construction.",self.location.pathname);
 
 /**
    Map of sqlite3_file pointers (integers) to metadata related to a

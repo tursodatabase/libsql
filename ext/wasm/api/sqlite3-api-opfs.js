@@ -74,6 +74,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 */
 const installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri){
   if(!self.SharedArrayBuffer ||
+     !self.Atomics ||
      !self.FileSystemHandle ||
      !self.FileSystemDirectoryHandle ||
      !self.FileSystemFileHandle ||
@@ -109,7 +110,7 @@ const installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri){
     const log =    (...args)=>logImpl(2, ...args);
     const warn =   (...args)=>logImpl(1, ...args);
     const error =  (...args)=>logImpl(0, ...args);
-    warn("The OPFS VFS feature is very much experimental and under construction.");
+    //warn("The OPFS VFS feature is very much experimental and under construction.");
     const toss = function(...args){throw new Error(args.join(' '))};
     const capi = sqlite3.capi;
     const wasm = capi.wasm;

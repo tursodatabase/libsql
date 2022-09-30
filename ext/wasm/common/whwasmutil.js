@@ -1542,7 +1542,7 @@ self.WhWasmUtilInstaller = function(target){
      object passed to this function. Described in more detail below.
 
    - `imports`: optional imports object for
-     WebAssembly.instantiate[Streaming](). The default is am empty set
+     WebAssembly.instantiate[Streaming](). The default is an empty set
      of imports. If the module requires any imports, this object
      must include them.
 

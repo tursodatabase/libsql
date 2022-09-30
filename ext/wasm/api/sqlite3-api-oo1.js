@@ -1638,7 +1638,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     Object.defineProperty(Stmt.prototype, 'pointer', prop);
     Object.defineProperty(DB.prototype, 'pointer', prop);
   }
-  
+
   /** The OO API's public namespace. */
   sqlite3.oo1 = {
     version: {
@@ -1649,6 +1649,25 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     Stmt,
     dbCtorHelper
   }/*oo1 object*/;
+
+  if(util.isMainWindow()){
+    /**
+       Functionally equivalent to DB(storageName,'c','kvvfs') except
+       that it throws if the given storage name is not one of 'local'
+       or 'session'.
+    */
+    sqlite3.oo1.JsStorageDb = function(storageName='session'){
+      if('session'!==storageName && 'local'!==storageName){
+        toss3("JsStorageDb db name must be one of 'session' or 'local'.");
+      }
+      dbCtorHelper.call(this, {
+        filename: storageName,
+        flags: 'c',
+        vfs: "kvvfs"
+      });
+    };
+    sqlite3.oo1.JsStorageDb.prototype = Object.create(DB.prototype);
+  }
 
 });
 
