@@ -136,9 +136,9 @@ WASM_KEEP void * sqlite3_wasm_stack_alloc(int n){
 */
 static unsigned char PStack_mem[512 * 8] = {0};
 static struct {
-  unsigned char const * pBegin;  /* Start (inclusive) of memory range */
-  unsigned char const * pEnd;    /* One-after-the-end of memory range */
-  unsigned char * pPos;          /* Current "stack pointer" */
+  unsigned const char * const pBegin;/* Start (inclusive) of memory */
+  unsigned const char * const pEnd;  /* One-after-the-end of memory */
+  unsigned char * pPos;              /* Current stack pointer */
 } PStack = {
   &PStack_mem[0],
   &PStack_mem[0] + sizeof(PStack_mem),
