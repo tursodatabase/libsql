@@ -129,6 +129,19 @@ int fuzz_invariant(
       return SQLITE_CORRUPT;
     }
     sqlite3_finalize(pCk);
+    if( sqlite3_strlike("%group%by%order%by%desc%",sqlite3_sql(pStmt),0)==0 ){
+      /* dbsqlfuzz crash-647c162051c9b23ce091b7bbbe5125ce5f00e922
+      ** Original statement is:
+      **
+      **    SELECT a,c,d,b,'' FROM t1 GROUP BY 1 HAVING d<>345 ORDER BY a DESC;
+      **
+      ** The values of c, d, and b are indeterminate and change when the
+      ** enclosed in the test query because the DESC is dropped.
+      **
+      **    SELECT * FROM (...) WHERE "a"==0
+      */
+      goto not_a_fault;
+    }
     rc = sqlite3_prepare_v2(db, 
             "SELECT 1 FROM bytecode(?1) WHERE opcode='VOpen'", -1, &pCk, 0);
     if( rc==SQLITE_OK ){
@@ -143,6 +156,7 @@ int fuzz_invariant(
       printf("invariant-error ignored due to the use of virtual tables\n");
     }
   }
+not_a_fault:
   sqlite3_finalize(pTestStmt);
   return SQLITE_OK;
 }

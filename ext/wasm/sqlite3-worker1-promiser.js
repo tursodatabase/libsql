@@ -237,6 +237,6 @@ self.sqlite3Worker1Promiser = function callee(config = callee.defaultConfig){
   };
 }/*sqlite3Worker1Promiser()*/;
 self.sqlite3Worker1Promiser.defaultConfig = {
-  worker: ()=>new Worker("sqlite3-worker1.js"),
+  worker: ()=>new Worker("sqlite3-worker1.js"+self.location.search),
   onerror: (...args)=>console.error('worker1 promiser error',...args)
 };

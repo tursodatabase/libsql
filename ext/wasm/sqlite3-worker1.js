@@ -27,8 +27,13 @@
   above in order to know when the module has completed initialization.
 */
 "use strict";
-importScripts('sqlite3.js');
-sqlite3InitModule().then((sqlite3)=>{
-  sqlite3.capi.sqlite3_wasmfs_opfs_dir();
-  sqlite3.initWorker1API();
-});
+(()=>{
+  const urlParams = new URL(self.location.href).searchParams;
+  importScripts(urlParams.has('wasmfs')
+                ? 'sqlite3-wasmfs.js'
+                : 'sqlite3.js');
+  sqlite3InitModule().then((sqlite3)=>{
+    sqlite3.capi.sqlite3_wasmfs_opfs_dir();
+    sqlite3.initWorker1API();
+  });
+})();

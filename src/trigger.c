@@ -351,6 +351,23 @@ void sqlite3FinishTrigger(
     Vdbe *v;
     char *z;
 
+    /* If this is a new CREATE TABLE statement, and if shadow tables
+    ** are read-only, and the trigger makes a change to a shadow table,
+    ** then raise an error - do not allow the trigger to be created. */
+    if( sqlite3ReadOnlyShadowTables(db) ){
+      TriggerStep *pStep;
+      for(pStep=pTrig->step_list; pStep; pStep=pStep->pNext){
+        if( pStep->zTarget!=0
+         && sqlite3ShadowTableName(db, pStep->zTarget)
+        ){
+          sqlite3ErrorMsg(pParse, 
+            "trigger \"%s\" may not write to shadow table \"%s\"",
+            pTrig->zName, pStep->zTarget);
+          goto triggerfinish_cleanup;
+        }
+      }
+    }
+
     /* Make an entry in the sqlite_schema table */
     v = sqlite3GetVdbe(pParse);
     if( v==0 ) goto triggerfinish_cleanup;

@@ -621,7 +621,7 @@ static int porterNext(
       if( n>c->nAllocated ){
         char *pNew;
         c->nAllocated = n+20;
-        pNew = sqlite3_realloc(c->zToken, c->nAllocated);
+        pNew = sqlite3_realloc64(c->zToken, c->nAllocated);
         if( !pNew ) return SQLITE_NOMEM;
         c->zToken = pNew;
       }

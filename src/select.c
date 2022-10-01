@@ -3724,7 +3724,7 @@ static int multiSelectOrderBy(
 ** the left operands of a RIGHT JOIN.  In either case, we need to potentially
 ** bypass the substituted expression with OP_IfNullRow.
 **
-** Suppose the original expression integer constant.  Even though the table
+** Suppose the original expression is an integer constant. Even though the table
 ** has the nullRow flag set, because the expression is an integer constant,
 ** it will not be NULLed out.  So instead, we insert an OP_IfNullRow opcode
 ** that checks to see if the nullRow flag is set on the table.  If the nullRow
@@ -4181,18 +4181,12 @@ static void renumberCursors(
 **        See also (3) for restrictions on LEFT JOIN.
 **
 **  (27)  The subquery may not contain a FULL or RIGHT JOIN unless it
-**        is the first element of the parent query.  This must be the
-**        the case if:
-**        (27a) the subquery is not compound query, and
+**        is the first element of the parent query.  Two subcases:
+**        (27a) the subquery is not a compound query.
 **        (27b) the subquery is a compound query and the RIGHT JOIN occurs
 **              in any arm of the compound query.  (See also (17g).)
 **
 **  (28)  The subquery is not a MATERIALIZED CTE.
-**
-**  (29)  Either the subquery is not the right-hand operand of a join with an
-**        ON or USING clause nor the right-hand operand of a NATURAL JOIN, or
-**        the right-most table within the FROM clause of the subquery
-**        is not part of an outer join.
 **
 **
 ** In this routine, the "p" parameter is a pointer to the outer query.
@@ -4297,15 +4291,6 @@ static int flattenSubquery(
     }
     isOuterJoin = 1;
   }
-#ifdef SQLITE_EXTRA_IFNULLROW
-  else if( iFrom>0 && !isAgg ){
-    /* Setting isOuterJoin to -1 causes OP_IfNullRow opcodes to be generated for
-    ** every reference to any result column from subquery in a join, even
-    ** though they are not necessary.  This will stress-test the OP_IfNullRow 
-    ** opcode. */
-    isOuterJoin = -1;
-  }
-#endif
 
   assert( pSubSrc->nSrc>0 );  /* True by restriction (7) */
   if( iFrom>0 && (pSubSrc->a[0].fg.jointype & JT_LTORJ)!=0 ){
@@ -4313,35 +4298,6 @@ static int flattenSubquery(
   }
   if( pSubitem->fg.isCte && pSubitem->u2.pCteUse->eM10d==M10d_Yes ){
     return 0;       /* (28) */
-  }
-
-  /* Restriction (29): 
-  **
-  ** We do not want two constraints on the same term of the flattened
-  ** query where one constraint has EP_InnerON and the other is EP_OuterON.
-  ** To prevent this, one or the other of the following conditions must be
-  ** false:
-  **
-  **   (29a)  The right-most entry in the FROM clause of the subquery
-  **          must not be part of an outer join.
-  **
-  **   (29b)  The subquery itself must not be the right operand of a 
-  **          NATURAL join or a join that as an ON or USING clause.
-  **
-  ** These conditions are sufficient to keep an EP_OuterON from being
-  ** flattened into an EP_InnerON.  Restrictions (3a) and (27a) prevent
-  ** an EP_InnerON from being flattened into an EP_OuterON.
-  */
-  if( pSubSrc->nSrc>=2
-   && (pSubSrc->a[pSubSrc->nSrc-1].fg.jointype & JT_OUTER)!=0
-  ){
-    if( (pSubitem->fg.jointype & JT_NATURAL)!=0
-     || pSubitem->fg.isUsing
-     || NEVER(pSubitem->u3.pOn!=0) /* ON clause already shifted into WHERE */
-     || pSubitem->fg.isOn
-    ){
-      return 0;
-    }
   }
 
   /* Restriction (17): If the sub-query is a compound SELECT, then it must
