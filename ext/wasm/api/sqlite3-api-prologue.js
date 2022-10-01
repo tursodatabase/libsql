@@ -941,7 +941,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     if(!pDb) toss('Invalid sqlite3* argument.');
     const wasm = capi.wasm;
     if(!wasm.bigIntEnabled) toss('BigInt64 support is not enabled.');
-    const stack = wasm.pstack.pointer();
+    const stack = wasm.pstack.pointer;
     let pOut;
     try{
       const pSize = wasm.pstack.alloc(8/*i64*/ + wasm.ptrSizeof);

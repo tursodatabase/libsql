@@ -1,5 +1,5 @@
-C Pedantic\sconstness\stweak.
-D 2022-10-01T18:55:10.530
+C Correct\sfiddle\sdb\sexport\sbreakage\scaused\sby\sa\spost-testing\sAPI\schange\smade\sin\s[1fa019c88dea].
+D 2022-10-01T19:21:52.215
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -488,7 +488,7 @@ F ext/wasm/api/sqlite3-api-cleanup.js 5d22d1d3818ecacb23bfa223d5970cd0617d8cdbb4
 F ext/wasm/api/sqlite3-api-glue.js b15a51b88aaa472d36bf82d5123dbfdafe8ddf6ca75fba934510e4a20bbe4adb
 F ext/wasm/api/sqlite3-api-oo1.js 9caed0757a5e039ed92467e827fd3ca347fa08f19fe086fcbdd14a4ebe9c2f01
 F ext/wasm/api/sqlite3-api-opfs.js 1b097808b7b081b0f0700cf97d49ef19760e401706168edff9cd45cf9169f541
-F ext/wasm/api/sqlite3-api-prologue.js 895b5f9ee425b8ba4a5fc5c85f144da9e2b785fea9226830f068d5c3b71e0fba
+F ext/wasm/api/sqlite3-api-prologue.js 8692571345efc0f6844092e5ffa86cbd72af0fa23696599c04cc28d64c5d1d11
 F ext/wasm/api/sqlite3-api-worker1.js 7f4f46cb6b512a48572d7567233896e6a9c46570c44bdc3d13419730c7c221c8
 F ext/wasm/api/sqlite3-wasi.h 25356084cfe0d40458a902afb465df8c21fc4152c1d0a59b563a3fba59a068f9
 F ext/wasm/api/sqlite3-wasm.c d72aecf0e50a4403402095ef4e8d6a814fdc2256589944c1dc974c70d2f65b7e
@@ -2029,8 +2029,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1fa019c88deac6b6e5155b620bdab1d7145846290daafb9adbefcf4f0fe542cf
-R 2c97da3c3d7ce21103ef6ff81fa2f604
+P c8a173cf16d2567bf9b13f52904077a2e7209776c76613c7bff59cd66e24bf11
+R d4bf3165ea62de5a9f288d66d4a2cd95
 U stephan
-Z 0bcedaf6559a7f7aaaa984c6907036c1
+Z a03f054bd345e55a260c4a080b874912
 # Remove this line to create a well-formed Fossil manifest.
