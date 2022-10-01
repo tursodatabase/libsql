@@ -227,94 +227,6 @@
       f._();
     }
   };
-
-  /**
-     Exports the shell's current db file in such a way that it can
-     export DBs hosted in the Emscripten-supplied FS or in native OPFS
-     (and, hypothetically, kvvfs). Throws on error. On success returns
-     a Blob containing the whole db contents.
-
-     Bug/to investigate: xFileSize() is returning garbage for the
-     default VFS but works in OPFS. Thus for exporting that impl we'll
-     use the fiddleModule.FS API for the time being. The equivalent
-     native impl, fiddle_export_db(), works okay with both VFSes, so
-     the bug is apparently in (or via) this code.
-  */
-  const brokenExportDbFileToBlob = function(){
-    const capi = sqlite3.capi, wasm = capi.wasm;
-    const pDb = Sqlite3Shell.dbHandle();
-    if(!pDb) toss("No db is opened.");
-    const scope = wasm.scopedAllocPush();
-    try{
-      const ppFile = wasm.scopedAlloc(12/*sizeof(i32 + i64)*/);
-      const pFileSize = ppFile + 4;
-      wasm.setMemValue(ppFile, 0, '*');
-      let rc = capi.sqlite3_file_control(
-        pDb, "main", capi.SQLITE_FCNTL_FILE_POINTER, ppFile
-      );
-      if(rc) toss("Cannot get sqlite3_file handle.");
-      const jFile = new capi.sqlite3_file(wasm.getPtrValue(ppFile));
-      const jIom = new capi.sqlite3_io_methods(jFile.$pMethods);
-      const xFileSize = wasm.functionEntry(jIom.$xFileSize);
-      const xRead = wasm.functionEntry(jIom.$xRead);
-      wasm.setMemValue(pFileSize, 0, 'i64');
-      //stderr("nFileSize =",wasm.getMemValue(pFileSize,'i64'),"pFileSize =",pFileSize);
-      rc = xFileSize( jFile.pointer, pFileSize );
-      if(rc) toss("Cannot get db file size.");
-      //stderr("nFileSize =",wasm.getMemValue(pFileSize,'i64'),"pFileSize =",pFileSize);
-      const nFileSize = Number( wasm.getMemValue(pFileSize,'i64') );
-      if(nFileSize <= 0n || nFileSize>=Number.MAX_SAFE_INTEGER){
-        toss("Unexpected DB size:",nFileSize);
-      }
-      //stderr("nFileSize =",nFileSize,"pFileSize =",pFileSize);
-      const nIobuf = 1024 * 4;
-      const iobuf = wasm.scopedAlloc(nIobuf);
-      let nPos = 0;
-      const blobList = [];
-      const heap = wasm.heap8u();
-      for( ; nPos < nFileSize; nPos += nIobuf ){
-        rc = xRead(jFile.pointer, iobuf, nIobuf, BigInt(nPos));
-        if(rc){
-          if(capi.SQLITE_IOERR_SHORT_READ === rc){
-            //stderr('rc =',rc,'nPos =',nPos,'nIobuf =',nIobuf,'nFileSize =',nFileSize);
-            rc = ((nPos + nIobuf) < nFileSize) ? rc : 0/*assume EOF*/;
-          }
-          if(rc) toss("xRead() SQLITE_xxx error #"+rc,capi.sqlite3_wasm_rc_str(rc));
-        }
-        blobList.push(heap.slice(iobuf, iobuf+nIobuf));
-      }
-      return new Blob(blobList);
-    }catch(e){
-      console.error('exportDbFileToBlob()',e);
-      stderr("exportDbFileToBlob():",e.message);
-    }finally{
-      wasm.scopedAllocPop(scope);
-    }
-  }/*brokenExportDbFileToBlob()*/;
-
-  const exportDbFileToBlob = function f(){
-    if(!f._){
-      f._ = sqlite3.capi.wasm.xWrap('fiddle_export_db', 'int', '*');
-    }
-    const capi = sqlite3.capi;
-    const wasm = capi.wasm;
-    const blobList = [];
-    const heap = wasm.heap8u();
-    const callback = wasm.installFunction('ipi', function(buf, n){
-      blobList.push(heap.slice(buf, buf+n));
-      return 0;
-    });
-    try {
-      const rc = wasm.exports.fiddle_export_db( callback );
-      if(rc) toss("DB export failed with code", capi.sqlite3_wasm_rc_str(rc));
-      return new Blob(blobList);
-    }catch(e){
-      console.error("exportDbFileToBlob():",e.message);
-      throw(e);
-    }finally{
-      wasm.uninstallFunction(callback);
-    }
-  }/*exportDbFileToBlob()*/;
   
   self.onmessage = function f(ev){
     ev = ev.data;
@@ -344,11 +256,13 @@
           stdout("Exporting",fn+".");
           const fn2 = fn ? fn.split(/[/\\]/).pop() : null;
           try{
-            if(!fn2) throw new Error("DB appears to be closed.");
-            exportDbFileToBlob().arrayBuffer().then((buffer)=>{
-              wMsg('db-export',{filename: fn2, buffer}, [buffer]);
-            });
+            if(!fn2) toss("DB appears to be closed.");
+            const buffer = sqlite3.capi.sqlite3_web_db_export(
+              Sqlite3Shell.dbHandle()
+            );
+            wMsg('db-export',{filename: fn2, buffer: buffer.buffer}, [buffer.buffer]);
           }catch(e){
+            console.error("Export failed:",e);
             /* Post a failure message so that UI elements disabled
                during the export can be re-enabled. */
             wMsg('db-export',{

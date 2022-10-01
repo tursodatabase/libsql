@@ -291,7 +291,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        For the given integer, returns the SQLITE_xxx result code as a
        string, or undefined if no such mapping is found.
     */
-    capi.sqlite3_wasm_rc_str = (rc)=>__rcMap[rc];
+    capi.sqlite3_web_rc_str = (rc)=>__rcMap[rc];
     /* Bind all registered C-side structs... */
     for(const s of wasm.ctype.structs){
       capi[s.name] = sqlite3.StructBinder(s);

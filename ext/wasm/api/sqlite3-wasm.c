@@ -406,6 +406,7 @@ const char * sqlite3_wasm_enum_json(void){
   } _DefGroup;
 
   DefGroup(serialize){
+    DefInt(SQLITE_SERIALIZE_NOCOPY);
     DefInt(SQLITE_DESERIALIZE_FREEONCLOSE);
     DefInt(SQLITE_DESERIALIZE_READONLY);
     DefInt(SQLITE_DESERIALIZE_RESIZEABLE);
@@ -566,6 +567,83 @@ int sqlite3_wasm_vfs_unlink(const char * zName){
   }
   return rc;
 }
+
+/*
+** Uses the current database's VFS xRead to stream the db file's
+** contents out to the given callback. The callback gets a single
+** chunk of size n (its 2nd argument) on each call and must return 0
+** on success, non-0 on error. This function returns 0 on success,
+** SQLITE_NOTFOUND if no db is open, or propagates any other non-0
+** code from the callback. Note that this is not thread-friendly: it
+** expects that it will be the only thread reading the db file and
+** takes no measures to ensure that is the case.
+**
+** This implementation appears to work fine, but
+** sqlite3_wasm_db_serialize() is arguably the better way to achieve
+** this.
+*/
+WASM_KEEP
+int sqlite3_wasm_db_export_chunked( sqlite3* pDb,
+                                    int (*xCallback)(unsigned const char *zOut, int n) ){
+  sqlite3_int64 nSize = 0;
+  sqlite3_int64 nPos = 0;
+  sqlite3_file * pFile = 0;
+  unsigned char buf[1024 * 8];
+  int nBuf = (int)sizeof(buf);
+  int rc = pDb
+    ? sqlite3_file_control(pDb, "main",
+                           SQLITE_FCNTL_FILE_POINTER, &pFile)
+    : SQLITE_NOTFOUND;
+  if( rc ) return rc;
+  rc = pFile->pMethods->xFileSize(pFile, &nSize);
+  if( rc ) return rc;
+  if(nSize % nBuf){
+    /* DB size is not an even multiple of the buffer size. Reduce
+    ** buffer size so that we do not unduly inflate the db size
+    ** with zero-padding when exporting. */
+    if(0 == nSize % 4096) nBuf = 4096;
+    else if(0 == nSize % 2048) nBuf = 2048;
+    else if(0 == nSize % 1024) nBuf = 1024;
+    else nBuf = 512;
+  }
+  for( ; 0==rc && nPos<nSize; nPos += nBuf ){
+    rc = pFile->pMethods->xRead(pFile, buf, nBuf, nPos);
+    if(SQLITE_IOERR_SHORT_READ == rc){
+      rc = (nPos + nBuf) < nSize ? rc : 0/*assume EOF*/;
+    }
+    if( 0==rc ) rc = xCallback(buf, nBuf);
+  }
+  return rc;
+}
+
+/*
+** A proxy for sqlite3_serialize() which serializes the "main" schema
+** of pDb, placing the serialized output in pOut and nOut. nOut may be
+** NULL. If pDb or pOut are NULL then SQLITE_MISUSE is returned. If
+** allocation of the serialized copy fails, SQLITE_NOMEM is returned.
+** On success, 0 is returned and `*pOut` will contain a pointer to the
+** memory unless mFlags includes SQLITE_SERIALIZE_NOCOPY and the
+** database has no contiguous memory representation, in which case
+** `*pOut` will be NULL but 0 will be returned.
+**
+** If `*pOut` is not NULL, the caller is responsible for passing it to
+** sqlite3_free() to free it.
+*/
+WASM_KEEP
+int sqlite3_wasm_db_serialize( sqlite3* pDb, unsigned char **pOut, sqlite3_int64 * nOut,
+                               unsigned int mFlags ){
+  unsigned char * z;
+  if( !pDb || !pOut ) return SQLITE_MISUSE;
+  if(nOut) *nOut = 0;
+  z = sqlite3_serialize(pDb, "main", nOut, mFlags);
+  if( z || (SQLITE_SERIALIZE_NOCOPY & mFlags) ){
+    *pOut = z;
+    return 0;
+  }else{
+    return SQLITE_NOMEM;
+  }
+}
+
 
 #if defined(__EMSCRIPTEN__)
 #include <emscripten/console.h>

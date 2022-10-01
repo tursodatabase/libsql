@@ -37,7 +37,6 @@ fiddle.emcc-flags = \
   $(sqlite3.js.flags.--post-js) \
   -sEXPORTED_RUNTIME_METHODS=@$(dir.wasm)/EXPORTED_RUNTIME_METHODS.fiddle \
   -sEXPORTED_FUNCTIONS=@$(dir.wasm)/EXPORTED_FUNCTIONS.fiddle \
-  --post-js=$(post-js.js) \
   $(SQLITE_OPT) $(SHELL_OPT) \
   -DSQLITE_SHELL_FIDDLE
 # -D_POSIX_C_SOURCE is needed for strdup() with emcc
@@ -60,9 +59,9 @@ $(dir.fiddle)/$(SOAP.js): $(SOAP.js)
 $(eval $(call call-make-pre-js,fiddle-module))
 $(fiddle-module.js): $(MAKEFILE) $(MAKEFILE.fiddle) \
     EXPORTED_FUNCTIONS.fiddle EXPORTED_RUNTIME_METHODS.fiddle \
-    $(fiddle.cs) $(pre-post-fiddle.deps) $(dir.fiddle)/$(SOAP.js)
+    $(fiddle.cs) $(pre-post-fiddle-module.deps) $(dir.fiddle)/$(SOAP.js)
 	$(emcc.bin) -o $@ $(fiddle.emcc-flags) \
-    $(pre-post-common.flags) $(pre-post-fiddle.flags) \
+    $(pre-post-common.flags) $(pre-post-fiddle-module.flags) \
     $(fiddle.cs)
 	$(maybe-wasm-strip) $(fiddle-module.wasm)
 	gzip < $@ > $@.gz

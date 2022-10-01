@@ -870,6 +870,51 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     return rc;
   };
 
+  /**
+     Serializes the given `sqlite3*` pointer to a Uint8Array, as per
+     sqlite3_serialize(). On success it returns a Uint8Array. On
+     error it throws with a description of the problem.
+  */
+  capi.sqlite3_web_db_export = function(pDb){
+    if(!pDb) toss('Invalid sqlite3* argument.');
+    const wasm = capi.wasm;
+    if(!wasm.bigIntEnabled) toss('BigInt64 support is not enabled.');
+    const scope = wasm.scopedAllocPush();
+    let pOut;
+    try{
+      const pSize = wasm.scopedAlloc(8/*i64*/ + wasm.ptrSizeof);
+      const ppOut = pSize + 8;
+      /**
+         Maintenance reminder, since this cost a full hour of grief
+         and confusion: if the order of pSize/ppOut are reversed in
+         that memory block, fetching the value of pSize after the
+         export reads a garbage size because it's not on an 8-byte
+         memory boundary!
+      */
+      wasm.setPtrValue(ppOut, 0);
+      wasm.setMemValue(pSize, 0, 'i64');
+      let rc = wasm.exports.sqlite3_wasm_db_serialize(
+        pDb, ppOut, pSize, 0
+      );
+      if(rc){
+        toss("Database serialization failed with code",
+             sqlite3.capi.sqlite3_web_rc_str(rc));
+      }
+      const pOut = wasm.getPtrValue(ppOut);
+      const nOut = wasm.getMemValue(pSize, 'i64');
+      rc = nOut
+        ? wasm.heap8u().slice(pOut, pOut + Number(nOut))
+        : new Uint8Array();
+      return rc;
+    }catch(e){
+      console.error('internal error?',e);
+      throw w;
+    }finally{
+      if(pOut) wasm.exports.sqlite3_free(pOut);
+      wasm.scopedAllocPop(scope);
+    }
+  };
+  
   if( capi.util.isMainWindow() ){
     /* Features specific to the main window thread... */
 
@@ -945,7 +990,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
           }
         }
       });
-      return sz * 2 /* because JS uses UC16 encoding */;
+      return sz * 2 /* because JS uses 2-byte char encoding */;
     };
 
   }/* main-window-only bits */

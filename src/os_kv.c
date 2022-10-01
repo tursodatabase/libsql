@@ -195,12 +195,12 @@ static void kvstorageMakeKey(
 ** be exported from the wasm file (but may still be used internally
 ** within the wasm file).
 **
-** The functions in this file (sqlite3-wasm.c) which require exporting
-** are marked with this flag. They may also be added to any explicit
-** build-time export list but need not be. All of these APIs are
-** intended for use only within the project's own JS/WASM code, and
-** not by client code, so an argument can be made for reducing their
-** visibility by not including them in any build-time export lists.
+** The functions in this filewhich require exporting are marked with
+** this flag. They may also be added to any explicit build-time export
+** list but need not be. All of these APIs are intended for use only
+** within the project's own JS/WASM code, and not by client code, so
+** an argument can be made for reducing their visibility by not
+** including them in any build-time export lists.
 **
 ** 2022-09-11: it's not yet _proven_ that this approach works in
 ** non-Emscripten builds. If not, such builds will need to export
