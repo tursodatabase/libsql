@@ -875,7 +875,7 @@
 
     log("cstrncpy()...");
     {
-      w.scopedAllocPush();
+      const scope = w.scopedAllocPush();
       try {
         let cStr = w.scopedAllocCString("hello");
         const n = w.cstrlen(cStr);
@@ -892,7 +892,7 @@
           assert(chr('!') === w.getMemValue(cpy+2)).
           assert(chr('l') === w.getMemValue(cpy+3));
       }finally{
-        w.scopedAllocPop();
+        w.scopedAllocPop(scope);
       }
     }
 
@@ -1024,6 +1024,38 @@
     }
   }/*testWasmUtil()*/;
 
+
+  /**
+     Tests for sqlite3.capi.wasm.pstack().
+   */
+  const testPstack = function(db,sqlite3){
+    const w = sqlite3.capi.wasm, P = w.pstack;
+    const stack = P.pointer;
+    T.assert(0===stack % 8 /* must be 8-byte aligned */);
+    try{
+      const quota = P.remaining;
+      log("pstack quota",quota);
+      T.assert(quota >= 4096)
+        .assert(0 === P.alloc(0))
+        .assert(0 === P.alloc(-1));
+      let p1 = P.alloc(12);
+      T.assert(p1 === stack - 16/*8-byte aligned*/)
+        .assert(P.pointer === p1);
+      let p2 = P.alloc(7);
+      T.assert(p2 === p1-8/*8-byte aligned, stack grows downwards*/)
+        .assert(0 === P.alloc(quota))
+        .assert(24 === stack - p2)
+        .assert(P.pointer === p2);
+      let n = quota - (stack - p2);
+      let p3 = P.alloc(n);
+      T.assert(p3 === stack-quota)
+        .assert(0 === P.alloc(1));
+    }finally{
+      P.restore(stack);
+      T.assert(P.pointer === stack);
+    }
+  }/*testPstack()*/;
+
   const clearKvvfs = function(){
     const sz = sqlite3.capi.sqlite3_web_kvvfs_size();
     const n = sqlite3.capi.sqlite3_web_kvvfs_clear('');
@@ -1089,7 +1121,7 @@
       [
         testWasmUtil, testBasicSanity, testUDF,
         testAttach, testIntPtr, testStructStuff,
-        testSqliteStructs        
+        testSqliteStructs, testPstack
       ].forEach((f)=>{
         const t = T.counter, n = performance.now();
         logHtml(banner1,"Running",f.name+"()...");

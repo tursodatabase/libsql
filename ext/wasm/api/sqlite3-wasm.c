@@ -56,6 +56,7 @@
 # define SQLITE_THREADSAFE 0
 #endif
 
+#include <assert.h>
 #include "sqlite3.c" /* yes, .c instead of .h. */
 
 /*
@@ -84,6 +85,110 @@
 #define WASM_KEEP __attribute__((used,visibility("default")))
 // See also:
 //__attribute__((export_name("theExportedName"), used, visibility("default")))
+
+
+#if 0
+/*
+** An EXPERIMENT in implementing a stack-based allocator analog to
+** Emscripten's stackSave(), stackAlloc(), stackRestore().
+** Unfortunately, this cannot work together with Emscripten because
+** Emscripten defines its own native one and we'd stomp on each
+** other's memory. Other than that complication, basic tests show it
+** to work just fine.
+**
+** Another option is to malloc() a chunk of our own and call that our
+** "stack".
+*/
+WASM_KEEP void * sqlite3_wasm_stack_end(void){
+  extern void __heap_base
+    /* see https://stackoverflow.com/questions/10038964 */;
+  return &__heap_base;
+}
+WASM_KEEP void * sqlite3_wasm_stack_begin(void){
+  extern void __data_end;
+  return &__data_end;
+}
+static void * sq3StackPtr = 0;
+WASM_KEEP void * sqlite3_wasm_stack_ptr(void){
+  if(!sq3StackPtr) sq3StackPtr = sqlite3_wasm_stack_end();
+  return sq3StackPtr;
+}
+WASM_KEEP void sqlite3_wasm_stack_restore(void * p){
+  sq3StackPtr = p;
+}
+WASM_KEEP void * sqlite3_wasm_stack_alloc(int n){
+  if(n<=0) return 0;
+  n = (n + 7) & ~7 /* align to 8-byte boundary */;
+  unsigned char * const p = (unsigned char *)sqlite3_wasm_stack_ptr();
+  unsigned const char * const b = (unsigned const char *)sqlite3_wasm_stack_begin();
+  if(b + n >= p || b + n < b/*overflow*/) return 0;
+  return sq3StackPtr = p - n;
+}
+#endif /* stack allocator experiment */
+
+/*
+** State for the "pseudo-stack" allocator implemented in
+** sqlite3_wasm_pstack_xyz(). In order to avoid colliding with
+** Emscripten-controled stack space, it carves out a bit of stack
+** memory to use for that purpose. This memory ends up in the
+** WASM-managed memory, such that routines which manipulate the wasm
+** heap can also be used to manipulate this memory.
+*/
+static unsigned char PStack_mem[512 * 8] = {0};
+static struct {
+  unsigned char const * pBegin;  /* Start (inclusive) of memory range */
+  unsigned char const * pEnd;    /* One-after-the-end of memory range */
+  unsigned char * pPos;          /* Current "stack pointer" */
+} PStack = {
+  &PStack_mem[0],
+  &PStack_mem[0] + sizeof(PStack_mem),
+  &PStack_mem[0] + sizeof(PStack_mem)
+};
+/*
+** Returns the current pstack position.
+*/
+WASM_KEEP void * sqlite3_wasm_pstack_ptr(void){
+  return PStack.pPos;
+}
+/*
+** Sets the pstack position poitner to p. Results are undefined if the
+** given value did not come from sqlite3_wasm_pstack_ptr().
+*/
+WASM_KEEP void sqlite3_wasm_pstack_restore(unsigned char * p){
+  assert(p>=PStack.pBegin && p<=PStack.pEnd && p>=PStack.pPos);
+  assert(0==(p & 0x7));
+  if(p>=PStack.pBegin && p<=PStack.pEnd /*&& p>=PStack.pPos*/){
+    PStack.pPos = p;
+  }
+}
+/*
+** Allocate and zero out n bytes from the pstack. Returns a pointer to
+** the memory on success, 0 on error (including a negative n value). n
+** is always adjusted to be a multiple of 8 and returned memory is
+** always zeroed out before returning (because this keeps the client
+** JS code from having to do so, and most uses of the pstack will
+** call for doing so).
+*/
+WASM_KEEP void * sqlite3_wasm_pstack_alloc(int n){
+  if( n<=0 ) return 0;
+  //if( n & 0x7 ) n += 8 - (n & 0x7) /* align to 8-byte boundary */;
+  n = (n + 7) & ~7 /* align to 8-byte boundary */;
+  unsigned char * const p = PStack.pPos;
+  unsigned const char * const b = PStack.pBegin;
+  if( b + n > p || b + n <= b/*overflow*/ ) return 0;
+  memset((PStack.pPos = p - n), 0, (unsigned int)n);
+  return PStack.pPos;
+}
+/*
+** Return the number of bytes left which can be
+** sqlite3_wasm_pstack_alloc()'d.
+*/
+WASM_KEEP int sqlite3_wasm_pstack_remaining(void){
+  assert(PStack.pPos >= PStack.pBegin);
+  assert(PStack.pPos <= PStack.pEnd);
+  return (int)(PStack.pPos - PStack.pBegin);
+}
+
 
 /*
 ** This function is NOT part of the sqlite3 public API. It is strictly

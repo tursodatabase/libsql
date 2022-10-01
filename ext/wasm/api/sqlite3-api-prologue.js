@@ -738,30 +738,92 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     ["sqlite3_wasm_vfs_unlink", "int", "string"]
   ];
 
+
+  /**
+     sqlite3.capi.wasm.pstack (pseudo-stack) holds a special-case
+     stack-style allocator intended only for use with _small_ data of
+     not more than (in total) a few kb in size, managed as if it were
+     stack-based.
+
+     It has only a single intended usage:
+
+     ```
+     const stackPos = pstack.pointer;
+     try{
+       const ptr = pstack.alloc(8);
+       // ==> pstack.pointer === ptr
+       const otherPtr = pstack.alloc(8);
+       // ==> pstack.pointer === otherPtr
+       ...
+     }finally{
+       pstack.restore(stackPos);
+       // ==> pstack.pointer === stackPos
+     }
+     ```
+
+     This allocator is much faster than a general-purpose one but is
+     limited to usage patterns like the one shown above.
+
+     It operates from a static range of memory which lives outside of
+     space managed by Emscripten's stack-management, so does not
+     collide with Emscripten-provided stack allocation APIs. The
+     memory lives in the WASM heap and can be used with routines such
+     as wasm.setMemValue() and any wasm.heap8u().slice().
+  */
+  capi.wasm.pstack = Object.assign(Object.create(null),{
+    /**
+       Sets the current ppstack position to the given pointer.
+       Results are undefined if the passed-in value did not come from
+       this.pointer.
+    */
+    restore: capi.wasm.exports.sqlite3_wasm_pstack_restore,
+    /**
+       Attempts to allocate the given number of bytes from the
+       pstack. On success, it zeroes out a block of memory of the
+       given size, adjusts the pstack pointer, and returns a pointer
+       to the memory. On error, returns 0. The memory must eventually
+       be released using restore().
+
+       This method always adjusts the given value to be a multiple
+       of 8 in order to keep alignment guarantees.
+    */
+    alloc: capi.wasm.exports.sqlite3_wasm_pstack_alloc
+  });
+  /**
+     sqlite3.capi.wasm.pstack.pointer resolves to the current pstack
+     position pointer. This value is intended _only_ to be passed to restore().
+  */
+  Object.defineProperty(capi.wasm.pstack, 'pointer', {
+    configurable: false, iterable: true, writeable: false,
+    get: capi.wasm.exports.sqlite3_wasm_pstack_ptr
+    //Whether or not a setter as an alternative to restore() is
+    //clearer or would just lead to confusion is unclear.
+    //set: capi.wasm.exports.sqlite3_wasm_pstack_restore
+  });
+  /**
+     sqlite3.capi.wasm.pstack.remaining resolves to the amount of
+     space remaining in the pstack.
+  */
+  Object.defineProperty(capi.wasm.pstack, 'remaining', {
+    configurable: false, iterable: true, writeable: false,
+    get: capi.wasm.exports.sqlite3_wasm_pstack_remaining
+  });
+
+
   /** State for sqlite3_wasmfs_opfs_dir(). */
   let __persistentDir = undefined;
   /**
-     An experiment. Do not use in client code.
-
-     If the wasm environment has a persistent storage directory,
-     its path is returned by this function. If it does not then
-     it returns "" (noting that "" is a falsy value).
+     If the wasm environment has a WASMFS/OPFS-backed persistent
+     storage directory, its path is returned by this function. If it
+     does not then it returns "" (noting that "" is a falsy value).
 
      The first time this is called, this function inspects the current
-     environment to determine whether persistence filesystem support
-     is available and, if it is, enables it (if needed).
+     environment to determine whether persistence support is available
+     and, if it is, enables it (if needed).
 
      This function currently only recognizes the WASMFS/OPFS storage
-     combination. "Plain" OPFS is provided via a separate VFS which
-     is optionally be installed via sqlite3.asyncPostInit().
-
-     TODOs and caveats:
-
-     - If persistent storage is available at the root of the virtual
-       filesystem, this interface cannot currently distinguish that
-       from the lack of persistence. That can (in the mean time)
-       happen when using the JS-native "opfs" VFS, as opposed to the
-       WASMFS/OPFS combination.
+     combination and its path refers to storage rooted in the
+     Emscripten-managed virtual filesystem.
   */
   capi.sqlite3_wasmfs_opfs_dir = function(){
     if(undefined !== __persistentDir) return __persistentDir;
@@ -879,10 +941,10 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     if(!pDb) toss('Invalid sqlite3* argument.');
     const wasm = capi.wasm;
     if(!wasm.bigIntEnabled) toss('BigInt64 support is not enabled.');
-    const scope = wasm.scopedAllocPush();
+    const stack = wasm.pstack.pointer();
     let pOut;
     try{
-      const pSize = wasm.scopedAlloc(8/*i64*/ + wasm.ptrSizeof);
+      const pSize = wasm.pstack.alloc(8/*i64*/ + wasm.ptrSizeof);
       const ppOut = pSize + 8;
       /**
          Maintenance reminder, since this cost a full hour of grief
@@ -891,8 +953,6 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
          export reads a garbage size because it's not on an 8-byte
          memory boundary!
       */
-      wasm.setPtrValue(ppOut, 0);
-      wasm.setMemValue(pSize, 0, 'i64');
       let rc = wasm.exports.sqlite3_wasm_db_serialize(
         pDb, ppOut, pSize, 0
       );
@@ -900,7 +960,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
         toss("Database serialization failed with code",
              sqlite3.capi.sqlite3_web_rc_str(rc));
       }
-      const pOut = wasm.getPtrValue(ppOut);
+      pOut = wasm.getPtrValue(ppOut);
       const nOut = wasm.getMemValue(pSize, 'i64');
       rc = nOut
         ? wasm.heap8u().slice(pOut, pOut + Number(nOut))
@@ -911,7 +971,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       throw w;
     }finally{
       if(pOut) wasm.exports.sqlite3_free(pOut);
-      wasm.scopedAllocPop(scope);
+      wasm.pstack.restore(stack);
     }
   };
   
