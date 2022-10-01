@@ -611,13 +611,21 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   */
   capi.wasm.bindingSignatures = [
     // Please keep these sorted by function name!
-    ["sqlite3_bind_blob","int", "sqlite3_stmt*", "int", "*", "int", "*"],
+    ["sqlite3_bind_blob","int", "sqlite3_stmt*", "int", "*", "int", "*"
+     /* We should arguably write a custom wrapper which knows how
+        to handle Blob, TypedArrays, and JS strings. */
+    ],
     ["sqlite3_bind_double","int", "sqlite3_stmt*", "int", "f64"],
     ["sqlite3_bind_int","int", "sqlite3_stmt*", "int", "int"],
     ["sqlite3_bind_null",undefined, "sqlite3_stmt*", "int"],
     ["sqlite3_bind_parameter_count", "int", "sqlite3_stmt*"],
     ["sqlite3_bind_parameter_index","int", "sqlite3_stmt*", "string"],
-    ["sqlite3_bind_text","int", "sqlite3_stmt*", "int", "string", "int", "int"],
+    ["sqlite3_bind_text","int", "sqlite3_stmt*", "int", "string", "int", "int"
+     /* We should arguably create a hand-written binding
+        which does more flexible text conversion, along the lines of
+        sqlite3_prepare_v3(). The slightly problematic part is the
+        final argument (text destructor). */
+    ],
     ["sqlite3_close_v2", "int", "sqlite3*"],
     ["sqlite3_changes", "int", "sqlite3*"],
     ["sqlite3_clear_bindings","int", "sqlite3_stmt*"],

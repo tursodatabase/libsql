@@ -104,7 +104,10 @@
    the callback is called one time for each row of the result set,
    passed the same worker message format as the worker API emits:
 
-     {type:typeString, row:VALUE, rowNumber:1-based-#}
+     {type:typeString,
+      row:VALUE,
+      rowNumber:1-based-#,
+      columnNames: array}
 
    Where `typeString` is an internally-synthesized message type string
    used temporarily for worker message dispatching. It can be ignored
@@ -234,9 +237,6 @@ self.sqlite3Worker1Promiser = function callee(config = callee.defaultConfig){
   };
 }/*sqlite3Worker1Promiser()*/;
 self.sqlite3Worker1Promiser.defaultConfig = {
-  worker: ()=>{
-    //const p = self.location.pathname.replace(/[^/]*$/, "sqlite3-worker1.js");
-    return new Worker("sqlite3-worker1.js");
-  },
+  worker: ()=>new Worker("sqlite3-worker1.js"),
   onerror: (...args)=>console.error('worker1 promiser error',...args)
 };
