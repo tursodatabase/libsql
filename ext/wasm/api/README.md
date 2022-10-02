@@ -108,3 +108,22 @@ The non-JS outlier file is `sqlite3-wasm.c`: it is a proxy for
 WASM-specific helper functions, at least one of which requires access
 to private/static `sqlite3.c` internals. `sqlite3.wasm` is compiled
 from this file rather than `sqlite3.c`.
+
+The following files are part of the build process but are injected
+into the build-generated `sqlite3.js` along with `sqlite3-api.js`.
+
+- `extern-pre-js.js`\  
+  Emscripten-specific header for Emscripten's `--extern-pre-js`
+  flag. As of this writing, that file is only used for experimentation
+  purposes and holds no code relevant to the production deliverables.
+- `pre-js.js`\  
+  Emscripten-specific header for Emscripten's `--pre-js` flag. This
+  file is intended as a place to override certain Emscripten behavior
+  before it starts up, but corner-case Emscripten bugs keep that from
+  being a reality.
+- `extern-post-js.js`\  
+  Emscripten-specific header for Emscripten's `--extern-post-js`
+  flag. This file overwrites the Emscripten-installed
+  `sqlite3InitModule()` function with one which, after the module is
+  loaded, also initializes the asynchronous parts of the sqlite3
+  module. For example, the OPFS VFS support.
