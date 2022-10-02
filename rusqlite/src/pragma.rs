@@ -369,7 +369,7 @@ mod test {
     fn pragma() -> Result<()> {
         let db = Connection::open_in_memory()?;
         let mut columns = Vec::new();
-        db.pragma(None, "table_info", &"sqlite_master", |row| {
+        db.pragma(None, "table_info", "sqlite_master", |row| {
             let column: String = row.get(1)?;
             columns.push(column);
             Ok(())
@@ -412,8 +412,8 @@ mod test {
             journal_mode,
         );
         // Sanity checks to ensure the move to a generic `ToSql` wasn't breaking
-        let mode = db
-            .pragma_update_and_check(None, "journal_mode", &"OFF", |row| row.get::<_, String>(0))?;
+        let mode =
+            db.pragma_update_and_check(None, "journal_mode", "OFF", |row| row.get::<_, String>(0))?;
         assert!(mode == "off" || mode == "memory", "mode: {:?}", mode);
 
         let param: &dyn crate::ToSql = &"OFF";
@@ -448,7 +448,7 @@ mod test {
     #[test]
     fn locking_mode() -> Result<()> {
         let db = Connection::open_in_memory()?;
-        let r = db.pragma_update(None, "locking_mode", &"exclusive");
+        let r = db.pragma_update(None, "locking_mode", "exclusive");
         if cfg!(feature = "extra_check") {
             r.unwrap_err();
         } else {

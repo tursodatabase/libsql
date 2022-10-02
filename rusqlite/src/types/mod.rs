@@ -153,7 +153,7 @@ mod test {
         let db = checked_memory_handle()?;
 
         let v1234 = vec![1u8, 2, 3, 4];
-        db.execute("INSERT INTO foo(b) VALUES (?)", &[&v1234])?;
+        db.execute("INSERT INTO foo(b) VALUES (?)", [&v1234])?;
 
         let v: Vec<u8> = db.query_row("SELECT b FROM foo", [], |r| r.get(0))?;
         assert_eq!(v, v1234);
@@ -165,7 +165,7 @@ mod test {
         let db = checked_memory_handle()?;
 
         let empty = vec![];
-        db.execute("INSERT INTO foo(b) VALUES (?)", &[&empty])?;
+        db.execute("INSERT INTO foo(b) VALUES (?)", [&empty])?;
 
         let v: Vec<u8> = db.query_row("SELECT b FROM foo", [], |r| r.get(0))?;
         assert_eq!(v, empty);
@@ -177,7 +177,7 @@ mod test {
         let db = checked_memory_handle()?;
 
         let s = "hello, world!";
-        db.execute("INSERT INTO foo(t) VALUES (?)", &[&s])?;
+        db.execute("INSERT INTO foo(t) VALUES (?)", [&s])?;
 
         let from: String = db.query_row("SELECT t FROM foo", [], |r| r.get(0))?;
         assert_eq!(from, s);
@@ -216,8 +216,8 @@ mod test {
         let s = Some("hello, world!");
         let b = Some(vec![1u8, 2, 3, 4]);
 
-        db.execute("INSERT INTO foo(t) VALUES (?)", &[&s])?;
-        db.execute("INSERT INTO foo(b) VALUES (?)", &[&b])?;
+        db.execute("INSERT INTO foo(t) VALUES (?)", [&s])?;
+        db.execute("INSERT INTO foo(b) VALUES (?)", [&b])?;
 
         let mut stmt = db.prepare("SELECT t, b FROM foo ORDER BY ROWID ASC")?;
         let mut rows = stmt.query([])?;

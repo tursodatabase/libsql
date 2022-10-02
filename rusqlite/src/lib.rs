@@ -1260,7 +1260,7 @@ mod test {
         }
 
         let path_string = path.to_str().unwrap();
-        let db = Connection::open(&path_string)?;
+        let db = Connection::open(path_string)?;
         let the_answer: Result<i64> = db.query_row("SELECT x FROM foo", [], |r| r.get(0));
 
         assert_eq!(42i64, the_answer?);
