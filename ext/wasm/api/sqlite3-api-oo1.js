@@ -38,12 +38,6 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   */
   const __ptrMap = new WeakMap();
   /**
-     Map of DB instances to objects, each object being a map of UDF
-     names to wasm function _pointers_ added to that DB handle via
-     createFunction().
-  */
-  const __udfMap = new WeakMap();
-  /**
      Map of DB instances to objects, each object being a map of Stmt
      wasm pointers to Stmt objects.
   */
@@ -154,7 +148,6 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     this.filename = fnJs;
     __ptrMap.set(this, ptr);
     __stmtMap.set(this, Object.create(null));
-    __udfMap.set(this, Object.create(null));
   };
 
   /**
@@ -453,12 +446,8 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         Object.keys(__stmtMap.get(this)).forEach((k,s)=>{
           if(s && s.pointer) s.finalize();
         });
-        Object.values(__udfMap.get(this)).forEach(
-          wasm.uninstallFunction.bind(capi.wasm)
-        );
         __ptrMap.delete(this);
         __stmtMap.delete(this);
-        __udfMap.delete(this);
         capi.sqlite3_close_v2(pDb);
         if(this.onclose && (this.onclose.after instanceof Function)){
           try{this.onclose.after(this)}
@@ -785,15 +774,11 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
        On success, returns this object. Throws on error.
 
-       When called from SQL, arguments to the UDF, and its result,
-       will be converted between JS and SQL with as much fidelity
-       as is feasible, triggering an exception if a type
-       conversion cannot be determined. Some freedom is afforded
-       to numeric conversions due to friction between the JS and C
-       worlds: integers which are larger than 32 bits will be
-       treated as doubles, as JS does not support 64-bit integers
-       and it is (as of this writing) illegal to use WASM
-       functions which take or return 64-bit integers from JS.
+       When called from SQL arguments to the UDF, and its result,
+       will be converted between JS and SQL with as much fidelity as
+       is feasible, triggering an exception if a type conversion
+       cannot be determined. The docs for sqlite3_create_function_v2()
+       describe the conversions in more detail.
 
        The optional options object may contain flags to modify how
        the function is defined:
@@ -813,11 +798,6 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        - .deterministic = SQLITE_DETERMINISTIC
        - .directOnly = SQLITE_DIRECTONLY
        - .innocuous = SQLITE_INNOCUOUS
-
-       Maintenance reminder: the ability to add new
-       WASM-accessible functions to the runtime requires that the
-       WASM build is compiled with emcc's `-sALLOW_TABLE_GROWTH`
-       flag.
     */
     createFunction: function f(name, callback,opt){
       switch(arguments.length){
@@ -840,113 +820,16 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       }else if('string' !== typeof name){
         toss3("Invalid arguments: missing function name.");
       }
-      if(!f._extractArgs){
-        /* Static init */
-        f._extractArgs = function(argc, pArgv){
-          let i, pVal, valType, arg;
-          const tgt = [];
-          for(i = 0; i < argc; ++i){
-            pVal = wasm.getPtrValue(pArgv + (wasm.ptrSizeof * i));
-            /**
-               Curiously: despite ostensibly requiring 8-byte
-               alignment, the pArgv array is parcelled into chunks of
-               4 bytes (1 pointer each). The values those point to
-               have 8-byte alignment but the individual argv entries
-               do not.
-            */            
-            valType = capi.sqlite3_value_type(pVal);
-            switch(valType){
-                case capi.SQLITE_INTEGER:
-                case capi.SQLITE_FLOAT:
-                  arg = capi.sqlite3_value_double(pVal);
-                  break;
-                case capi.SQLITE_TEXT:
-                  arg = capi.sqlite3_value_text(pVal);
-                  break;
-                case capi.SQLITE_BLOB:{
-                  const n = capi.sqlite3_value_bytes(pVal);
-                  const pBlob = capi.sqlite3_value_blob(pVal);
-                  arg = new Uint8Array(n);
-                  let i;
-                  const heap = n ? wasm.heap8() : false;
-                  for(i = 0; i < n; ++i) arg[i] = heap[pBlob+i];
-                  break;
-                }
-                case capi.SQLITE_NULL:
-                  arg = null; break;
-                default:
-                  toss3("Unhandled sqlite3_value_type()",valType,
-                        "is possibly indicative of incorrect",
-                        "pointer size assumption.");
-            }
-            tgt.push(arg);
-          }
-          return tgt;
-        }/*_extractArgs()*/;
-        f._setResult = function(pCx, val){
-          switch(typeof val) {
-              case 'boolean':
-                capi.sqlite3_result_int(pCx, val ? 1 : 0);
-                break;
-              case 'number': {
-                (util.isInt32(val)
-                 ? capi.sqlite3_result_int
-                 : capi.sqlite3_result_double)(pCx, val);
-                break;
-              }
-              case 'string':
-                capi.sqlite3_result_text(pCx, val, -1, capi.SQLITE_TRANSIENT);
-                break;
-              case 'object':
-                if(null===val) {
-                  capi.sqlite3_result_null(pCx);
-                  break;
-                }else if(util.isBindableTypedArray(val)){
-                  const pBlob = wasm.allocFromTypedArray(val);
-                  capi.sqlite3_result_blob(pCx, pBlob, val.byteLength,
-                                          capi.SQLITE_TRANSIENT);
-                  wasm.dealloc(pBlob);
-                  break;
-                }
-                // else fall through
-              default:
-                toss3("Don't not how to handle this UDF result value:",val);
-          };
-        }/*_setResult()*/;
-      }/*static init*/
-      const wrapper = function(pCx, argc, pArgv){
-        try{
-          f._setResult(pCx, callback.apply(null, f._extractArgs(argc, pArgv)));
-        }catch(e){
-          if(e instanceof capi.WasmAllocError){
-            capi.sqlite3_result_error_nomem(pCx);
-          }else{
-            capi.sqlite3_result_error(pCx, e.message, -1);
-          }
-        }
-      };
-      const pUdf = wasm.installFunction(wrapper, "v(iii)");
       let fFlags = 0 /*flags for sqlite3_create_function_v2()*/;
       if(getOwnOption(opt, 'deterministic')) fFlags |= capi.SQLITE_DETERMINISTIC;
       if(getOwnOption(opt, 'directOnly')) fFlags |= capi.SQLITE_DIRECTONLY;
       if(getOwnOption(opt, 'innocuous')) fFlags |= capi.SQLITE_INNOCUOUS;
       name = name.toLowerCase();
-      try {
-        DB.checkRc(this, capi.sqlite3_create_function_v2(
-          this.pointer, name,
-          (opt.hasOwnProperty('arity') ? +opt.arity : callback.length),
-          capi.SQLITE_UTF8 | fFlags, null/*pApp*/, pUdf,
-          null/*xStep*/, null/*xFinal*/, null/*xDestroy*/));
-      }catch(e){
-        wasm.uninstallFunction(pUdf);
-        throw e;
-      }
-      const udfMap = __udfMap.get(this);
-      if(udfMap[name]){
-        try{wasm.uninstallFunction(udfMap[name])}
-        catch(e){/*ignore*/}
-      }
-      udfMap[name] = pUdf;
+      DB.checkRc(this, capi.sqlite3_create_function_v2(
+        this.pointer, name,
+        (opt.hasOwnProperty('arity') ? +opt.arity : callback.length),
+        capi.SQLITE_UTF8 | fFlags, null/*pApp*/, callback,
+        null/*xStep*/, null/*xFinal*/, null/*xDestroy*/));
       return this;
     }/*createFunction()*/,
     /**

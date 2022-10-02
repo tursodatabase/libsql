@@ -47,13 +47,9 @@ browser client:
   independent spinoff project, conceived for the sqlite3 project but
   maintained separately.
 - `sqlite3-api-glue.js`\  
-  Invokes the function exposed by `sqlite3-api-prologue.js`, passing
-  it a configuration object to configure it for the current WASM
-  toolchain (noting that it currently requires Emscripten), then
-  removes that function from the global scope. The result of this file
-  is a global-scope `sqlite3` object which acts as a namespace for the
-  API's functionality. This object gets removed from the global scope
-  after the following files have attached their own features to it.
+  Invokes functionality exposed by the previous two files to
+  flesh out low-level parts of `sqlite3-api-prologue.js`. Most of
+  these pieces related to the `sqlite3.capi.wasm` object.
 - `sqlite3-api-oo1.js`\  
   Provides a high-level object-oriented wrapper to the lower-level C
   API, colloquially known as OO API #1. Its API is similar to other

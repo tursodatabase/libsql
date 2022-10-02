@@ -192,6 +192,183 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     };
   }/*sqlite3_exec() proxy*/;
 
+  if(1){/* Special-case handling of sqlite3_create_function_v2() */
+    const sqlite3CreateFunction = wasm.xWrap(
+      "sqlite3_create_function_v2", "int",
+      ["sqlite3*", "string", "int", "int", "*",
+       "*", "*", "*", "*"]
+    );
+    const __setResult = function(pCx, val){
+      switch(typeof val) {
+          case 'boolean':
+            capi.sqlite3_result_int(pCx, val ? 1 : 0);
+            break;
+          case 'number': {
+            (util.isInt32(val)
+             ? capi.sqlite3_result_int
+             : capi.sqlite3_result_double)(pCx, val);
+            break;
+          }
+          case 'string':
+            capi.sqlite3_result_text(pCx, val, -1, capi.SQLITE_TRANSIENT);
+            break;
+          case 'object':
+            if(null===val) {
+              capi.sqlite3_result_null(pCx);
+              break;
+            }else if(util.isBindableTypedArray(val)){
+              const pBlob = wasm.allocFromTypedArray(val);
+              capi.sqlite3_result_blob(pCx, pBlob, val.byteLength,
+                                       capi.SQLITE_TRANSIENT);
+              wasm.dealloc(pBlob);
+              break;
+            }
+            // else fall through
+          default:
+            toss3("Don't not how to handle this UDF result value:",val);
+      };
+    }/*__setResult()*/;
+    const __extractArgs = function(argc, pArgv){
+      let i, pVal, valType, arg;
+      const tgt = [];
+      for(i = 0; i < argc; ++i){
+        pVal = wasm.getPtrValue(pArgv + (wasm.ptrSizeof * i));
+        /**
+           Curiously: despite ostensibly requiring 8-byte
+           alignment, the pArgv array is parcelled into chunks of
+           4 bytes (1 pointer each). The values those point to
+           have 8-byte alignment but the individual argv entries
+           do not.
+        */            
+        valType = capi.sqlite3_value_type(pVal);
+        switch(valType){
+            case capi.SQLITE_INTEGER:
+            case capi.SQLITE_FLOAT:
+              arg = capi.sqlite3_value_double(pVal);
+              break;
+            case capi.SQLITE_TEXT:
+              arg = capi.sqlite3_value_text(pVal);
+              break;
+            case capi.SQLITE_BLOB:{
+              const n = capi.sqlite3_value_bytes(pVal);
+              const pBlob = capi.sqlite3_value_blob(pVal);
+              arg = new Uint8Array(n);
+              let i;
+              const heap = n ? wasm.heap8() : false;
+              for(i = 0; i < n; ++i) arg[i] = heap[pBlob+i];
+              break;
+            }
+            case capi.SQLITE_NULL:
+              arg = null; break;
+            default:
+              toss3("Unhandled sqlite3_value_type()",valType,
+                    "is possibly indicative of incorrect",
+                    "pointer size assumption.");
+        }
+        tgt.push(arg);
+      }
+      return tgt;
+    }/*__extractArgs()*/;
+
+    const __setCxErr = (pCx, e)=>{
+      if(e instanceof capi.WasmAllocError){
+        capi.sqlite3_result_error_nomem(pCx);
+      }else{
+        capi.sqlite3_result_error(pCx, e.message, -1);
+      }
+    };
+    
+    const __xFunc = function(callback){
+      return function(pCx, argc, pArgv){
+        try{__setResult(pCx, callback(...__extractArgs(argc, pArgv)))}
+        catch(e){ __setCxErr(pCx, e) }
+      };
+    };
+
+    const __xStep = function(callback){
+      return function(pCx, argc, pArgv){
+        try{ callback(...__extractArgs(argc, pArgv)) }
+        catch(e){ __setCxErr(pCx, e) }
+      };
+    };
+
+    const __xFinal = function(callback){
+      return function(pCx){
+        try{ __setResult(pCx, callback()) }
+        catch(e){ __setCxErr(pCx, e) }
+      };
+    };
+
+    const __xDestroy = function(callback){
+      return function(pVoid){
+        try{ callback(pVoid) }
+        catch(e){
+          console.error("UDF xDestroy method threw:",e);
+        }
+      };
+    };
+    /* Documented in the api object's initializer. */
+    capi.sqlite3_create_function_v2 = function f(
+      pDb, funcName, nArg, eTextRep, pApp,
+      xFunc,   //void (*xFunc)(sqlite3_context*,int,sqlite3_value**)
+      xStep,   //void (*xStep)(sqlite3_context*,int,sqlite3_value**)
+      xFinal,  //void (*xFinal)(sqlite3_context*)
+      xDestroy //void (*xDestroy)(void*)
+    ){
+      if(9!==arguments.length){
+        return __dbArgcMismatch(pDb,"sqlite3_create_function_v2",9);
+      }
+      if(!f._sigs){
+        f._wrap = Object.assign(Object.create(null), {
+          xFunc:    {sig:'v(pip)', f:__xFunc},
+          xStep:    {sig:'v(pip)', f:__xStep},
+          xFinal:   {sig:'v(p)',   f:__xFinal},
+          xDestroy: {sig:'v(p)',   f:__xDestroy}
+        });
+      }
+      const callbacks = [];
+      /* Wrap the callbacks in a WASM-bound functions... */
+      const wasm = capi.wasm;
+      const funcArgs = [], uninstall = [/*funcs to uninstall on error*/],
+            theFuncs = {xFunc, xStep, xFinal, xDestroy};
+      let rc;
+      try{
+        let k;
+        for(k in theFuncs){
+          let fArg = theFuncs[k];
+          if('function'===typeof fArg){
+            const w = f._wrap[k];
+            fArg = wasm.installFunction(w.sig, w.f(fArg));
+            uninstall.push(fArg);
+          }
+          funcArgs.push(fArg);
+        }
+        rc = sqlite3CreateFunction(pDb, funcName, nArg, eTextRep,
+                                   pApp, ...funcArgs);
+      }catch(e){
+        console.error("sqlite3_create_function_v2() setup threw:",e);
+        for(let v of uninstall){
+          wasm.uninstallFunction(v);
+        }
+        rc = util.sqlite3_wasm_db_error(pDb, capi.SQLITE_ERROR,
+                                        "Creation of UDF threw: "+e.message);
+      }
+      return rc;
+    };
+
+    capi.sqlite3_create_function = function(
+      pDb, funcName, nArg, eTextRep, pApp,
+      xFunc, xStep, xFinal
+    ){
+      if(8!==arguments.length){
+        return __dbArgcMismatch(pDb,"sqlite3_create_function",8);
+      }
+      return capi.sqlite3_create_function_v2(pDb, funcName, nArg, eTextRep,
+                                             pApp, xFunc, xStep, xFinal, 0);
+
+    };
+  }/*sqlite3_create_function_v2() proxy*/;
+
   if(1){/* Special-case handling of sqlite3_prepare_v2() and
       sqlite3_prepare_v3() */
     /**

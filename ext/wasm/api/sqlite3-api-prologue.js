@@ -285,29 +285,94 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   */
   const capi = {
     /**
-       When using sqlite3_open_v2() it is important to keep the following
-       in mind:
+       sqlite3_create_function_v2() differs from its native
+       counterpart only in the following ways:
 
-       https://www.sqlite.org/c3ref/open.html
+       1) The fourth argument (`eTextRep`) argument must not specify
+       any encoding other than sqlite.SQLITE_UTF8. The JS API does not
+       currently support any other encoding and likely never
+       will. This function does not replace that argument on its own
+       because it may contain other flags.
 
-       - The flags for use with its 3rd argument are installed in this
-       object using their C-side names, e.g. SQLITE_OPEN_CREATE.
+       2) Any of the four final arguments may be either WASM pointers
+       (assumed to be function pointers) or JS Functions. In the
+       latter case, each gets bound to WASM using
+       sqlite3.capi.wasm.installFunction() and that wrapper is passed
+       on to the native implementation.
 
-       - If the combination of flags passed to it are invalid,
-       behavior is undefined. Thus is is never okay to call this
-       with fewer than 3 arguments, as JS will default the
-       missing arguments to `undefined`, which will result in a
-       flag value of 0. Most of the available SQLITE_OPEN_xxx
-       flags are meaningless in the WASM build, e.g. the mutext-
-       and cache-related flags, but they are retained in this
-       API for consistency's sake.
+       The semantics of JS functions are:
 
-       - The final argument to this function specifies the VFS to use,
-       which is largely (but not entirely!) meaningless in the WASM
-       environment. It may be null, undefined, or 0 to denote the
-       default.
+       xFunc: is passed `(arrayOfValues)`.  Its return value becomes
+       the new SQL function's result.
+
+       xStep: is passed `(arrayOfValues)`.  Its return value is
+       ignored.
+
+       xFinal: is passed no arguments. Its return value becomes the
+       new aggragate SQL function's result.
+
+       xDestroy: is passed `(void*)`. Its return value is ignored. The
+       pointer passed to it is the one from the 5th argument to
+       sqlite3_create_function_v2().
+
+       Note that JS callback implementations have different call
+       signatures than their native counterparts (namely, they do not
+       get passed an `sqlite3_context*` argument) because practice has
+       shown that this is almost always more convenient and desirable
+       in JS code. Clients which need access to the full range of
+       native arguments will have to create a WASM-bound function
+       themselves (using wasm.installFunction() or equivalent) and
+       pass that function's WASM pointer to this function, rather than
+       passing a JS function. Be warned, however, that working with
+       UDFs at that level from JS is quite tedious.
+
+       For xFunc(), xStep(), and xFinal():
+
+       - When called from SQL, arguments to the UDF, and its result,
+         will be converted between JS and SQL with as much fidelity as
+         is feasible, triggering an exception if a type conversion
+         cannot be determined. Some freedom is afforded to numeric
+         conversions due to friction between the JS and C worlds:
+         integers which are larger than 32 bits will be treated as
+         doubles. TODO: use BigInt support if enabled. That feature
+         was added after this functionality was implemented.
+
+       If any JS-side functions throw, those exceptions are
+       intercepted and converted to database-side errors with
+       the exception of xFinal(): any exception from it is
+       ignored, possibly generating a console.error() message.
+       Destructors must not throw.
+
+       Once installed, there is currently no way to uninstall the
+       bound methods from WASM. They can be uninstalled from the
+       database as documented in the C API, but this wrapper currently
+       has no infrastructure in place to also free the WASM-bound JS
+       wrappers, effectively resulting in a memory leak if the client
+       uninstalls the UDF. Improving that is a potential TODO, but
+       removing client-installed UDFs is rare in practice.
+
+       Maintenance reminder: the ability to add new
+       WASM-accessible functions to the runtime requires that the
+       WASM build is compiled with emcc's `-sALLOW_TABLE_GROWTH`
+       flag.
     */
-    sqlite3_open_v2: function(filename,dbPtrPtr,flags,vfsStr){}/*installed later*/,
+    sqlite3_create_function_v2: function(
+      pDb, funcName, nArg, eTextRep, pApp,
+      xFunc,   //function(arrayOfValues)
+      xStep,   //function(arrayOfValues)
+      xFinal,  //function()
+      xDestroy //function(void*)
+    ){/*installed later*/},
+    /**
+       Equivalent to passing the same arguments to
+       sqlite3_create_function_v2(), with 0 as the final argument.
+    */
+    sqlite3_create_function:function(
+      pDb, funcName, nArg, eTextRep, pApp,
+      xFunc,   //function(arrayOfValues)
+      xStep,   //function(arrayOfValues)
+      xFinal   //function()
+    ){/*installed later*/},
     /**
        The sqlite3_prepare_v3() binding handles two different uses
        with differing JS/WASM semantics:
@@ -642,8 +707,8 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     ["sqlite3_column_type","int", "sqlite3_stmt*", "int"],
     ["sqlite3_compileoption_get", "string", "int"],
     ["sqlite3_compileoption_used", "int", "string"],
-    ["sqlite3_create_function_v2", "int",
-     "sqlite3*", "string", "int", "int", "*", "*", "*", "*", "*"],
+    /* sqlite3_create_function_v2() is handled separate to simplify conversion
+       of its callback argument */
     ["sqlite3_data_count", "int", "sqlite3_stmt*"],
     ["sqlite3_db_filename", "string", "sqlite3*", "string"],
     ["sqlite3_db_handle", "sqlite3*", "sqlite3_stmt*"],

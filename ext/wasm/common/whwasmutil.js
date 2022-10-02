@@ -15,11 +15,17 @@
 
   https://fossil.wanderinghorse.net/r/jaccwabyt
 
+  and sqlite3:
+
+  https://sqlite.org
+
+  This file is kept in sync between both of those trees.
+
   Maintenance reminder: If you're reading this in a tree other than
-  the Jaccwabyt tree, note that this copy may be replaced with
+  one of those listed above, note that this copy may be replaced with
   upstream copies of that one from time to time. Thus the code
-  installed by this function "should not" be edited outside of that
-  project, else it risks getting overwritten.
+  installed by this function "should not" be edited outside of those
+  projects, else it risks getting overwritten.
 */
 /**
    This function is intended to simplify porting around various bits
@@ -109,8 +115,8 @@
      following symbols:
 
      - `memory`: a WebAssembly.Memory object representing the WASM
-       memory. _Alternately_, the `memory` property can be set on the
-       target instance, in particular if the WASM heap memory is
+       memory. _Alternately_, the `memory` property can be set as
+       `target.memory`, in particular if the WASM heap memory is
        initialized in JS an _imported_ into WASM, as opposed to being
        initialized in WASM and exported to JS.
 
@@ -132,7 +138,11 @@
    false. If it is false, certain BigInt-related features will trigger
    an exception if invoked. This property, if not set when this is
    called, will get a default value of true only if the BigInt64Array
-   constructor is available, else it will default to false.
+   constructor is available, else it will default to false. Note that
+   having the BigInt type is not sufficient for full int64 integration
+   with WASM: the target WASM file must also have been built with
+   that support. In Emscripten that's done using the `-sWASM_BIGINT`
+   flag.
 
    Some optional APIs require that the target have the following
    methods:
@@ -295,7 +305,7 @@ self.WhWasmUtilInstaller = function(target){
      an integer as the first argument and unsigned is truthy then
      the "U" (unsigned) variant of that view is returned, else the
      signed variant is returned. If passed a TypedArray value, the
-     2nd argument is ignores. Note that Float32Array and
+     2nd argument is ignored. Note that Float32Array and
      Float64Array views are not supported by this function.
 
      Note that growth of the heap will invalidate any references to
@@ -511,7 +521,7 @@ self.WhWasmUtilInstaller = function(target){
     if(2!==arguments.length){
       toss("installFunction() requires exactly 2 arguments");
     }
-    if('string'===typeof func && sig instanceof Function){
+    if('string'===typeof func){
       const x = sig;
       sig = func;
       func = x;
@@ -1137,7 +1147,7 @@ self.WhWasmUtilInstaller = function(target){
      e.g. using setMemValue() or getMemValue(), it is important that
      the pointer in question be aligned to an 8-byte boundary or else
      it will not be fetched or written properly and will corrupt or
-     read neighboring memory. It i only safe to pass false when the
+     read neighboring memory. It is only safe to pass false when the
      client code is certain that it will only get/fetch 4-byte values
      (or smaller).
   */
@@ -1239,12 +1249,12 @@ self.WhWasmUtilInstaller = function(target){
     return v ? xcv.arg[ptrIR](v) : null;
   };
   xcv.result.string = (i)=>target.cstringToJs(i);
-  xcv.result['string:free'] = function(i){
+  xcv.result['string:free'] = (i)=>{
     try { return i ? target.cstringToJs(i) : null }
     finally{ target.dealloc(i) }
   };
   xcv.result.json = (i)=>JSON.parse(target.cstringToJs(i));
-  xcv.result['json:free'] = function(i){
+  xcv.result['json:free'] = (i)=>{
     try{ return i ? JSON.parse(target.cstringToJs(i)) : null }
     finally{ target.dealloc(i) }
   }
@@ -1374,14 +1384,26 @@ self.WhWasmUtilInstaller = function(target){
        C-string, ownership of which has just been transfered to the
        caller. It copies the C-string to a JS string, frees the
        C-string, and returns the JS string. If such a result value is
-       NULL, the JS result is `null`.
+       NULL, the JS result is `null`. Achtung: when using an API which
+       returns results from a specific allocator, e.g. `my_malloc()`,
+       this conversion _is not legal_. Instead, an equivalent conversion
+       which uses the appropriate deallocator is required. For example:  
+
+```js
+   target.xWrap.resultAdaptor('string:my_free',(i)=>{
+      try { return i ? target.cstringToJs(i) : null }
+      finally{ target.exports.my_free(i) }
+   };
+```
 
      - `json` (results): treats the result as a const C-string and
        returns the result of passing the converted-to-JS string to
        JSON.parse(). Returns `null` if the C-string is a NULL pointer.
 
      - `json:free` (results): works exactly like `string:free` but
-       returns the same thing as the `json` adapter.
+       returns the same thing as the `json` adapter. Note the
+       warning in `string:free` regarding maching allocators and
+       deallocators.
 
      The type names for results and arguments are validated when
      xWrap() is called and any unknown names will trigger an
@@ -1532,11 +1554,10 @@ self.WhWasmUtilInstaller = function(target){
      type name, as documented for xWrap() (use a falsy value or an
      empty array for nullary functions). The 4th+ arguments are
      arguments for the call, with the special case that if the 4th
-     argument is an array, it is used as the arguments for the call
-     (again, falsy or an empty array for nullary functions). Returns
-     the converted result of the call.
+     argument is an array, it is used as the arguments for the
+     call. Returns the converted result of the call.
 
-     This is just a thin wrapp around xWrap(). If the given function
+     This is just a thin wrapper around xWrap(). If the given function
      is to be called more than once, it's more efficient to use
      xWrap() to create a wrapper, then to call that wrapper as many
      times as needed. For one-shot calls, however, this variant is
