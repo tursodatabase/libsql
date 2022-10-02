@@ -149,9 +149,9 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     const __exec = wasm.xWrap("sqlite3_exec", "int",
                               ["sqlite3*", "flexible-string", "*", "*", "**"]);
     /* Documented in the api object's initializer. */
-    capi.sqlite3_exec = function(pDb, sql, callback, pVoid, pErrMsg){
-      if(5!==arguments.length){
-        return __dbArgcMismatch(pDb,"sqlite3_exec",5);
+    capi.sqlite3_exec = function f(pDb, sql, callback, pVoid, pErrMsg){
+      if(f.length!==arguments.length){
+        return __dbArgcMismatch(pDb,"sqlite3_exec",f.length);
       }else if('function' !== typeof callback){
         return __exec(pDb, sql, callback, pVoid, pErrMsg);
       }
@@ -192,11 +192,20 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     };
   }/*sqlite3_exec() proxy*/;
 
-  if(1){/* Special-case handling of sqlite3_create_function_v2() */
+  if(1){/* Special-case handling of sqlite3_create_function_v2()
+           and sqlite3_create_window_function() */
     const sqlite3CreateFunction = wasm.xWrap(
       "sqlite3_create_function_v2", "int",
-      ["sqlite3*", "string", "int", "int", "*",
-       "*", "*", "*", "*"]
+      ["sqlite3*", "string"/*funcName*/, "int"/*nArg*/,
+       "int"/*eTextRep*/, "*"/*pApp*/,
+       "*"/*xStep*/,"*"/*xFinal*/, "*"/*xValue*/, "*"/*xDestroy*/]
+    );
+    const sqlite3CreateWindowFunction = wasm.xWrap(
+      "sqlite3_create_window_function", "int",
+      ["sqlite3*", "string"/*funcName*/, "int"/*nArg*/,
+       "int"/*eTextRep*/, "*"/*pApp*/,
+       "*"/*xStep*/,"*"/*xFinal*/, "*"/*xValue*/,
+       "*"/*xInverse*/, "*"/*xDestroy*/]
     );
     const __setResult = function(pCx, val){
       switch(typeof val) {
@@ -213,14 +222,15 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             capi.sqlite3_result_text(pCx, val, -1, capi.SQLITE_TRANSIENT);
             break;
           case 'object':
-            if(null===val) {
+            if(null===val/*yes, typeof null === 'object'*/) {
               capi.sqlite3_result_null(pCx);
               break;
             }else if(util.isBindableTypedArray(val)){
               const pBlob = wasm.allocFromTypedArray(val);
-              capi.sqlite3_result_blob(pCx, pBlob, val.byteLength,
-                                       capi.SQLITE_TRANSIENT);
-              wasm.dealloc(pBlob);
+              capi.sqlite3_result_blob(
+                pCx, pBlob, val.byteLength,
+                wasm.exports[sqlite3.config.deallocExportName]
+              );
               break;
             }
             // else fall through
@@ -277,22 +287,27 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         capi.sqlite3_result_error(pCx, e.message, -1);
       }
     };
-    
+
+    /* TODO: pass on the pCx pointer to all callbacks. This requires
+       fixing test code and updating oodles of docs. Once that is in place,
+       export sqlite3_aggregate_context().
+    */
+
     const __xFunc = function(callback){
       return function(pCx, argc, pArgv){
-        try{__setResult(pCx, callback(...__extractArgs(argc, pArgv)))}
+        try{ __setResult(pCx, callback(...__extractArgs(argc, pArgv))) }
         catch(e){ __setCxErr(pCx, e) }
       };
     };
 
-    const __xStep = function(callback){
+    const __xInverseAndStep = function(callback){
       return function(pCx, argc, pArgv){
         try{ callback(...__extractArgs(argc, pArgv)) }
         catch(e){ __setCxErr(pCx, e) }
       };
     };
 
-    const __xFinal = function(callback){
+    const __xFinalAndValue = function(callback){
       return function(pCx){
         try{ __setResult(pCx, callback()) }
         catch(e){ __setCxErr(pCx, e) }
@@ -302,11 +317,34 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     const __xDestroy = function(callback){
       return function(pVoid){
         try{ callback(pVoid) }
-        catch(e){
-          console.error("UDF xDestroy method threw:",e);
-        }
+        catch(e){ console.error("UDF xDestroy method threw:",e) }
       };
     };
+
+    const __xMap = Object.assign(Object.create(null), {
+      xFunc:    {sig:'v(pip)', f:__xFunc},
+      xStep:    {sig:'v(pip)', f:__xInverseAndStep},
+      xInverse: {sig:'v(pip)', f:__xInverseAndStep},
+      xFinal:   {sig:'v(p)',   f:__xFinalAndValue},
+      xValue:   {sig:'v(p)',   f:__xFinalAndValue},
+      xDestroy: {sig:'v(p)',   f:__xDestroy}
+    });
+
+    const __xWrapFuncs = function(theFuncs, tgtUninst){
+      const rc = []
+      let k;
+      for(k in theFuncs){
+        let fArg = theFuncs[k];
+        if('function'===typeof fArg){
+          const w = __xMap[k];
+          fArg = wasm.installFunction(w.sig, w.f(fArg));
+          tgtUninst.push(fArg);
+        }
+        rc.push(fArg);
+      }
+      return rc;
+    };
+
     /* Documented in the api object's initializer. */
     capi.sqlite3_create_function_v2 = function f(
       pDb, funcName, nArg, eTextRep, pApp,
@@ -315,34 +353,16 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       xFinal,  //void (*xFinal)(sqlite3_context*)
       xDestroy //void (*xDestroy)(void*)
     ){
-      if(9!==arguments.length){
-        return __dbArgcMismatch(pDb,"sqlite3_create_function_v2",9);
+      if(f.length!==arguments.length){
+        return __dbArgcMismatch(pDb,"sqlite3_create_function_v2",f.length);
       }
-      if(!f._sigs){
-        f._wrap = Object.assign(Object.create(null), {
-          xFunc:    {sig:'v(pip)', f:__xFunc},
-          xStep:    {sig:'v(pip)', f:__xStep},
-          xFinal:   {sig:'v(p)',   f:__xFinal},
-          xDestroy: {sig:'v(p)',   f:__xDestroy}
-        });
-      }
-      const callbacks = [];
       /* Wrap the callbacks in a WASM-bound functions... */
       const wasm = capi.wasm;
-      const funcArgs = [], uninstall = [/*funcs to uninstall on error*/],
-            theFuncs = {xFunc, xStep, xFinal, xDestroy};
+      const uninstall = [/*funcs to uninstall on error*/];
       let rc;
       try{
-        let k;
-        for(k in theFuncs){
-          let fArg = theFuncs[k];
-          if('function'===typeof fArg){
-            const w = f._wrap[k];
-            fArg = wasm.installFunction(w.sig, w.f(fArg));
-            uninstall.push(fArg);
-          }
-          funcArgs.push(fArg);
-        }
+        const funcArgs =  __xWrapFuncs({xFunc, xStep, xFinal, xDestroy},
+                                       uninstall);
         rc = sqlite3CreateFunction(pDb, funcName, nArg, eTextRep,
                                    pApp, ...funcArgs);
       }catch(e){
@@ -356,21 +376,52 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       return rc;
     };
 
-    capi.sqlite3_create_function = function(
+    capi.sqlite3_create_function = function f(
       pDb, funcName, nArg, eTextRep, pApp,
       xFunc, xStep, xFinal
     ){
-      if(8!==arguments.length){
-        return __dbArgcMismatch(pDb,"sqlite3_create_function",8);
-      }
-      return capi.sqlite3_create_function_v2(pDb, funcName, nArg, eTextRep,
-                                             pApp, xFunc, xStep, xFinal, 0);
-
+      return (f.length===arguments.length)
+        ? capi.sqlite3_create_function_v2(pDb, funcName, nArg, eTextRep,
+                                          pApp, xFunc, xStep, xFinal, 0)
+        : __dbArgcMismatch(pDb,"sqlite3_create_function",f.length);
     };
-  }/*sqlite3_create_function_v2() proxy*/;
+
+    /* Documented in the api object's initializer. */
+    capi.sqlite3_create_window_function = function f(
+      pDb, funcName, nArg, eTextRep, pApp,
+      xStep,   //void (*xStep)(sqlite3_context*,int,sqlite3_value**)
+      xFinal,  //void (*xFinal)(sqlite3_context*)
+      xValue,  //void (*xFinal)(sqlite3_context*)
+      xInverse,//void (*xStep)(sqlite3_context*,int,sqlite3_value**)
+      xDestroy //void (*xDestroy)(void*)
+    ){
+      if(f.length!==arguments.length){
+        return __dbArgcMismatch(pDb,"sqlite3_create_window_function",f.length);
+      }
+      /* Wrap the callbacks in a WASM-bound functions... */
+      const wasm = capi.wasm;
+      const uninstall = [/*funcs to uninstall on error*/];
+      let rc;
+      try{
+        const funcArgs = __xWrapFuncs({xStep, xFinal, xValue, xInverse, xDestroy},
+                                      uninstall);
+        rc = sqlite3CreateFunction(pDb, funcName, nArg, eTextRep,
+                                   pApp, ...funcArgs);
+      }catch(e){
+        console.error("sqlite3_create_function_v2() setup threw:",e);
+        for(let v of uninstall){
+          wasm.uninstallFunction(v);
+        }
+        rc = util.sqlite3_wasm_db_error(pDb, capi.SQLITE_ERROR,
+                                        "Creation of UDF threw: "+e.message);
+      }
+      return rc;
+    };
+
+  }/*sqlite3_create_function_v2() and sqlite3_create_window_function() proxies*/;
 
   if(1){/* Special-case handling of sqlite3_prepare_v2() and
-      sqlite3_prepare_v3() */
+           sqlite3_prepare_v3() */
     /**
        Scope-local holder of the two impls of sqlite3_prepare_v2/v3().
     */
@@ -403,8 +454,8 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
     /* Documented in the api object's initializer. */
     capi.sqlite3_prepare_v3 = function f(pDb, sql, sqlLen, prepFlags, ppStmt, pzTail){
-      if(6!==arguments.length){
-        return __dbArgcMismatch(pDb,"sqlite3_prepare_v3",6);
+      if(f.length!==arguments.length){
+        return __dbArgcMismatch(pDb,"sqlite3_prepare_v3",f.length);
       }
       const [xSql, xSqlLen] = __flexiString(sql, sqlLen);
       switch(typeof xSql){
@@ -419,10 +470,10 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     };
 
     /* Documented in the api object's initializer. */
-    capi.sqlite3_prepare_v2 = function(pDb, sql, sqlLen, ppStmt, pzTail){
-      return (5==arguments.length)
+    capi.sqlite3_prepare_v2 = function f(pDb, sql, sqlLen, ppStmt, pzTail){
+      return (f.length===arguments.length)
         ? capi.sqlite3_prepare_v3(pDb, sql, sqlLen, 0, ppStmt, pzTail)
-        : __dbArgcMismatch(pDb,"sqlite3_prepare_v2",5);
+        : __dbArgcMismatch(pDb,"sqlite3_prepare_v2",f.length);
     };
   }/*sqlite3_prepare_v2/v3()*/;
 

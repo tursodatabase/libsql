@@ -136,35 +136,21 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
                  "Config and external initializers are ignored on calls after the first.");
     return sqlite3ApiBootstrap.sqlite3;
   }
-  apiConfig = apiConfig || {};
-  const config = Object.create(null);
-  {
-    const configDefaults = {
-      exports: undefined,
-      memory: undefined,
-      bigIntEnabled: (()=>{
-        if('undefined'!==typeof Module){
-          /* Emscripten module will contain HEAPU64 when built with
-             -sWASM_BIGINT=1, else it will not. */
-          return !!Module.HEAPU64;
-        }
-        return !!self.BigInt64Array;
-      })(),
-      allocExportName: 'malloc',
-      deallocExportName: 'free',
-      wasmfsOpfsDir: '/opfs'
-    };
-    Object.keys(configDefaults).forEach(function(k){
-      config[k] = Object.getOwnPropertyDescriptor(apiConfig, k)
-        ? apiConfig[k] : configDefaults[k];
-    });
-    // Copy over any properties apiConfig defines but configDefaults does not...
-    Object.keys(apiConfig).forEach(function(k){
-      if(!Object.getOwnPropertyDescriptor(config, k)){
-        config[k] = apiConfig[k];
+  const config = Object.assign(Object.create(null),{
+    exports: undefined,
+    memory: undefined,
+    bigIntEnabled: (()=>{
+      if('undefined'!==typeof Module){
+        /* Emscripten module will contain HEAPU64 when built with
+           -sWASM_BIGINT=1, else it will not. */
+        return !!Module.HEAPU64;
       }
-    });
-  }
+      return !!self.BigInt64Array;
+    })(),
+    allocExportName: 'malloc',
+    deallocExportName: 'free',
+    wasmfsOpfsDir: '/opfs'
+  }, apiConfig || {});
 
   [
     // If any of these config options are functions, replace them with
@@ -302,10 +288,10 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
 
        The semantics of JS functions are:
 
-       xFunc: is passed `(arrayOfValues)`.  Its return value becomes
+       xFunc: is passed `(arrayOfValues)`. Its return value becomes
        the new SQL function's result.
 
-       xStep: is passed `(arrayOfValues)`.  Its return value is
+       xStep: is passed `(arrayOfValues)`. Its return value is
        ignored.
 
        xFinal: is passed no arguments. Its return value becomes the
@@ -372,6 +358,21 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       xFunc,   //function(arrayOfValues)
       xStep,   //function(arrayOfValues)
       xFinal   //function()
+    ){/*installed later*/},
+    /**
+       The sqlite3_create_window_function() JS wrapper differs from
+       its native implementation in the exact same way that
+       sqlite3_create_function_v2() does. The additional function,
+       xInverse(), is treated identically to xStep() by the wrapping
+       layer.
+    */
+    sqlite3_create_window_function: function(
+      pDb, funcName, nArg, eTextRep, pApp,
+      xStep,   //function(arrayOfValues)
+      xFinal,  //function()
+      xValue,  //function()
+      xInverse,//function(arrayOfValues)
+      xDestroy //function(void*)
     ){/*installed later*/},
     /**
        The sqlite3_prepare_v3() binding handles two different uses
@@ -577,10 +578,10 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   */
   capi.wasm.allocFromTypedArray = function(srcTypedArray){
     affirmBindableTypedArray(srcTypedArray);
-    const pRet = this.alloc(srcTypedArray.byteLength || 1);
-    this.heapForSize(srcTypedArray.constructor).set(srcTypedArray.byteLength ? srcTypedArray : [0], pRet);
+    const pRet = capi.wasm.alloc(srcTypedArray.byteLength || 1);
+    capi.wasm.heapForSize(srcTypedArray.constructor).set(srcTypedArray.byteLength ? srcTypedArray : [0], pRet);
     return pRet;
-  }.bind(capi.wasm);
+  };
 
   const keyAlloc = config.allocExportName || 'malloc',
         keyDealloc =  config.deallocExportName || 'free';
@@ -590,10 +591,10 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   }
 
   capi.wasm.alloc = function(n){
-    const m = this.exports[keyAlloc](n);
+    const m = capi.wasm.exports[keyAlloc](n);
     if(!m) throw new WasmAllocError("Failed to allocate "+n+" bytes.");
     return m;
-  }.bind(capi.wasm)
+  };
 
   capi.wasm.dealloc = (m)=>capi.wasm.exports[keyDealloc](m);
 
