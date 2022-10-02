@@ -1,3 +1,4 @@
+_sqlite3_aggregate_context
 _sqlite3_bind_blob
 _sqlite3_bind_double
 _sqlite3_bind_int
@@ -61,6 +62,7 @@ _sqlite3_result_error_code
 _sqlite3_result_error_nomem
 _sqlite3_result_error_toobig
 _sqlite3_result_int
+_sqlite3_result_int64
 _sqlite3_result_null
 _sqlite3_result_text
 _sqlite3_serialize
@@ -76,9 +78,12 @@ _sqlite3_uri_boolean
 _sqlite3_uri_int64
 _sqlite3_uri_key
 _sqlite3_uri_parameter
+_sqlite3_user_data
 _sqlite3_value_blob
 _sqlite3_value_bytes
 _sqlite3_value_double
+_sqlite3_value_int
+_sqlite3_value_int64
 _sqlite3_value_text
 _sqlite3_value_type
 _sqlite3_vfs_find

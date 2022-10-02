@@ -176,9 +176,38 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      double-type DB operations for integer values in order to keep
      more precision.
   */
-  const isInt32 = function(n){
+  const isInt32 = (n)=>{
     return ('bigint'!==typeof n /*TypeError: can't convert BigInt to number*/)
       && !!(n===(n|0) && n<=2147483647 && n>=-2147483648);
+  };
+  /**
+     Returns true if the given BigInt value is small enough to fit
+     into an int64 value, else false.
+  */
+  const bigIntFits64 = function f(b){
+    if(!f._max){
+      f._max = BigInt("0x7fffffffffffffff");
+      f._min = ~f._max;
+    }
+    return b >= f._min && b <= f._max;
+  };
+
+  /**
+     Returns true if the given BigInt value is small enough to fit
+     into an int32, else false.
+  */
+  const bigIntFits32 = (b)=>(b >= (-0x7fffffffn - 1n) && b <= 0x7fffffffn);
+
+  /**
+     Returns true if the given BigInt value is small enough to fit
+     into a double value without loss of precision, else false.
+  */
+  const bigIntFitsDouble = function f(b){
+    if(!f._min){
+      f._min = Number.MIN_SAFE_INTEGER;
+      f._max = Number.MAX_SAFE_INTEGER;
+    }
+    return b >= f._min && b <= f._max;
   };
 
   /** Returns v if v appears to be a TypedArray, else false. */
@@ -288,29 +317,52 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
 
        The semantics of JS functions are:
 
-       xFunc: is passed `(arrayOfValues)`. Its return value becomes
+       xFunc: is passed `(pCtx, ...values)`. Its return value becomes
        the new SQL function's result.
 
-       xStep: is passed `(arrayOfValues)`. Its return value is
+       xStep: is passed `(pCtx, ...values)`. Its return value is
        ignored.
 
-       xFinal: is passed no arguments. Its return value becomes the
-       new aggragate SQL function's result.
+       xFinal: is passed `(pCtx)`. Its return value becomes the new
+       aggregate SQL function's result.
 
        xDestroy: is passed `(void*)`. Its return value is ignored. The
        pointer passed to it is the one from the 5th argument to
        sqlite3_create_function_v2().
 
-       Note that JS callback implementations have different call
-       signatures than their native counterparts (namely, they do not
-       get passed an `sqlite3_context*` argument) because practice has
-       shown that this is almost always more convenient and desirable
-       in JS code. Clients which need access to the full range of
-       native arguments will have to create a WASM-bound function
-       themselves (using wasm.installFunction() or equivalent) and
-       pass that function's WASM pointer to this function, rather than
-       passing a JS function. Be warned, however, that working with
-       UDFs at that level from JS is quite tedious.
+       Note that:
+
+       - `pCtx` in the above descriptions is a `sqlite3_context*`. 99
+         times out of a hundred, or maybe more, that initial argument
+         will be irrelevant for JS UDF bindings, but it needs to be
+         there so that the cases where it _is_ relevant, in particular
+         with window and aggregate functions, have full access to the
+         underlying sqlite3 APIs.
+
+       - When wrapping JS functions, the remaining arguments arrive as
+         positional arguments, not as an array of arguments, because
+         that allows callback definitions to be more JS-idiomatic than
+         C-like, for example `(pCtx,a,b)=>a+b` is more intuitive and
+         legible than `(pCtx,args)=>args[0]+args[1]`. For cases where
+         an array of arguments would be more convenient, the callbacks
+         simply need to be declared like `(pCtx,...args)=>{...}`, in
+         which case `args` will be an array.
+
+       - If a JS wrapper throws, it gets translated to
+         sqlite3_result_error() or sqlite3_result_error_nomem(),
+         depending on whether the exception is an
+         sqlite3.WasmAllocError object or not.
+
+       - When passing on WASM function pointers, arguments are _not_
+         converted or reformulated. They are passed on as-is in raw
+         pointer form using their native C signatures. Only JS
+         functions passed in to this routine, and thus wrapped by this
+         routine, get automatic conversions of arguments and result
+         values. The routines which perform those conversions are
+         exposed for client-side use as
+         sqlite3_create_function_v2.convertUdfArgs() and
+         sqlite3_create_function_v2.setUdfResult(). sqlite3_create_function()
+         and sqlite3_create_window_function() have those same methods.
 
        For xFunc(), xStep(), and xFinal():
 
@@ -323,19 +375,26 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
          doubles. TODO: use BigInt support if enabled. That feature
          was added after this functionality was implemented.
 
-       If any JS-side functions throw, those exceptions are
-       intercepted and converted to database-side errors with
-       the exception of xFinal(): any exception from it is
-       ignored, possibly generating a console.error() message.
-       Destructors must not throw.
+       If any JS-side bound functions throw, those exceptions are
+       intercepted and converted to database-side errors with the
+       exception of xDestroy(): any exception from it is ignored,
+       possibly generating a console.error() message.  Destructors
+       must not throw.
 
        Once installed, there is currently no way to uninstall the
-       bound methods from WASM. They can be uninstalled from the
-       database as documented in the C API, but this wrapper currently
-       has no infrastructure in place to also free the WASM-bound JS
-       wrappers, effectively resulting in a memory leak if the client
-       uninstalls the UDF. Improving that is a potential TODO, but
-       removing client-installed UDFs is rare in practice.
+       automatically-converted WASM-bound JS functions from WASM. They
+       can be uninstalled from the database as documented in the C
+       API, but this wrapper currently has no infrastructure in place
+       to also free the WASM-bound JS wrappers, effectively resulting
+       in a memory leak if the client uninstalls the UDF. Improving that
+       is a potential TODO, but removing client-installed UDFs is rare
+       in practice. If this factor is relevant for a given client,
+       they can create WASM-bound JS functions themselves, hold on to their
+       pointers, and pass the pointers in to here. Later on, they can
+       free those pointers (using `wasm.uninstallFunction()` or
+       equivalent).
+
+       C reference: https://www.sqlite.org/c3ref/create_function.html
 
        Maintenance reminder: the ability to add new
        WASM-accessible functions to the runtime requires that the
@@ -344,10 +403,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     */
     sqlite3_create_function_v2: function(
       pDb, funcName, nArg, eTextRep, pApp,
-      xFunc,   //function(arrayOfValues)
-      xStep,   //function(arrayOfValues)
-      xFinal,  //function()
-      xDestroy //function(void*)
+      xFunc, xStep, xFinal, xDestroy
     ){/*installed later*/},
     /**
        Equivalent to passing the same arguments to
@@ -355,9 +411,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     */
     sqlite3_create_function:function(
       pDb, funcName, nArg, eTextRep, pApp,
-      xFunc,   //function(arrayOfValues)
-      xStep,   //function(arrayOfValues)
-      xFinal   //function()
+      xFunc, xStep, xFinal
     ){/*installed later*/},
     /**
        The sqlite3_create_window_function() JS wrapper differs from
@@ -368,11 +422,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     */
     sqlite3_create_window_function: function(
       pDb, funcName, nArg, eTextRep, pApp,
-      xStep,   //function(arrayOfValues)
-      xFinal,  //function()
-      xValue,  //function()
-      xInverse,//function(arrayOfValues)
-      xDestroy //function(void*)
+      xStep, xFinal, xValue, xInverse, xDestroy
     ){/*installed later*/},
     /**
        The sqlite3_prepare_v3() binding handles two different uses
@@ -466,7 +516,9 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        removed.
     */
     util:{
-      affirmBindableTypedArray, arrayToString, isBindableTypedArray,
+      affirmBindableTypedArray, arrayToString,
+      bigIntFits32, bigIntFits64, bigIntFitsDouble,
+      isBindableTypedArray,
       isInt32, isSQLableTypedArray, isTypedArray, 
       typedArrayToString,
       isMainWindow: ()=>{
@@ -680,6 +732,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   */
   capi.wasm.bindingSignatures = [
     // Please keep these sorted by function name!
+    ["sqlite3_aggregate_context","void*", "sqlite3_context*", "int"],
     ["sqlite3_bind_blob","int", "sqlite3_stmt*", "int", "*", "int", "*"
      /* We should arguably write a custom wrapper which knows how
         to handle Blob, TypedArrays, and JS strings. */
@@ -766,11 +819,13 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     ["sqlite3_uri_boolean", "int", "string", "string", "int"],
     ["sqlite3_uri_key", "string", "string", "int"],
     ["sqlite3_uri_parameter", "string", "string", "string"],
-    ["sqlite3_value_blob", "*", "*"],
-    ["sqlite3_value_bytes","int", "*"],
-    ["sqlite3_value_double","f64", "*"],
-    ["sqlite3_value_text", "string", "*"],
-    ["sqlite3_value_type", "int", "*"],
+    ["sqlite3_user_data","void*", "sqlite3_context*"],
+    ["sqlite3_value_blob", "*", "sqlite3_value*"],
+    ["sqlite3_value_bytes","int", "sqlite3_value*"],
+    ["sqlite3_value_double","f64", "sqlite3_value*"],
+    ["sqlite3_value_int","int", "sqlite3_value*"],
+    ["sqlite3_value_text", "string", "sqlite3_value*"],
+    ["sqlite3_value_type", "int", "sqlite3_value*"],
     ["sqlite3_vfs_find", "*", "string"],
     ["sqlite3_vfs_register", "int", "*", "int"]
   ]/*capi.wasm.bindingSignatures*/;
@@ -794,8 +849,10 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     ["sqlite3_malloc64", "*","i64"],
     ["sqlite3_msize", "i64", "*"],
     ["sqlite3_realloc64", "*","*", "i64"],
+    ["sqlite3_result_int64",undefined, "*", "i64"],
     ["sqlite3_total_changes64", "i64", ["sqlite3*"]],
-    ["sqlite3_uri_int64", "i64", ["string", "string", "i64"]]
+    ["sqlite3_uri_int64", "i64", ["string", "string", "i64"]],
+    ["sqlite3_value_int64","i64", "sqlite3_value*"],
   ];
 
   /**

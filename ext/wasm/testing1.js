@@ -194,38 +194,37 @@
   }/*testBasicSanity()*/;
 
   const testUDF = function(db){
-    db.createFunction("foo",function(a,b){return a+b});
+    db.createFunction("foo",(pCx,a,b)=>a+b);
     T.assert(7===db.selectValue("select foo(3,4)")).
       assert(5===db.selectValue("select foo(3,?)",2)).
       assert(5===db.selectValue("select foo(?,?2)",[1,4])).
       assert(5===db.selectValue("select foo($a,$b)",{$a:0,$b:5}));
     db.createFunction("bar", {
       arity: -1,
-      callback: function(){
+      callback: function(pCx){
         var rc = 0;
-        for(let i = 0; i < arguments.length; ++i) rc += arguments[i];
+        for(let i = 1; i < arguments.length; ++i) rc += arguments[i];
         return rc;
       }
     }).createFunction({
       name: "asis",
-      callback: (arg)=>arg
+      callback: (pCx,arg)=>arg
     });
-    
+
     //log("Testing DB::selectValue() w/ UDF...");
     T.assert(0===db.selectValue("select bar()")).
       assert(1===db.selectValue("select bar(1)")).
       assert(3===db.selectValue("select bar(1,2)")).
       assert(-1===db.selectValue("select bar(1,2,-4)")).
-      assert('hi'===db.selectValue("select asis('hi')"));
-    
-    T.assert('hi' === db.selectValue("select ?",'hi')).
-      assert(null===db.selectValue("select null")).
-      assert(null === db.selectValue("select ?",null)).
-      assert(null === db.selectValue("select ?",[null])).
-      assert(null === db.selectValue("select $a",{$a:null})).
+      assert('hi' === db.selectValue("select asis('hi')")).
+      assert('hi' === db.selectValue("select ?",'hi')).
+      assert(null === db.selectValue("select null")).
+      assert(null === db.selectValue("select asis(null)")).
+      assert(1 === db.selectValue("select ?",1)).
+      assert(2 === db.selectValue("select ?",[2])).
+      assert(3 === db.selectValue("select $a",{$a:3})).
       assert(eqApprox(3.1,db.selectValue("select 3.0 + 0.1"))).
-      assert(eqApprox(1.3,db.selectValue("select asis(1 + 0.3)")))
-    ;
+      assert(eqApprox(1.3,db.selectValue("select asis(1 + 0.3)")));
 
     //log("Testing binding and UDF propagation of blobs...");
     let blobArg = new Uint8Array(2);
@@ -354,7 +353,7 @@
         T.assert(g64(pMin) === minMaxI64[0]).
           assert(minMaxI64[0] === db.selectValue("select ?",g64(pMin))).
           assert(minMaxI64[1] === db.selectValue("select ?",g64(pMax)));
-        const rxRange = /out of range for storing as int64/;
+        const rxRange = /too big/;
         T.mustThrowMatching(()=>{db.prepare("select ?").bind(minMaxI64[0] - BigInt(1))},
                           rxRange).
           mustThrowMatching(()=>{db.prepare("select ?").bind(minMaxI64[1] + BigInt(1))},

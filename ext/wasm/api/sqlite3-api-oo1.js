@@ -784,12 +784,21 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        the function is defined:
 
        - .arity: the number of arguments which SQL calls to this
-       function expect or require. The default value is the
-       callback's length property (i.e. the number of declared
-       parameters it has). A value of -1 means that the function
-       is variadic and may accept any number of arguments, up to
-       sqlite3's compile-time limits. sqlite3 will enforce the
-       argument count if is zero or greater.
+       function expect or require. The default value is
+       `callback.length` (i.e. the number of declared parameters it
+       has) **MINUS 1** (see below for why). As a special case, if
+       callback.length is 0, its arity is also 0 instead of -1. A
+       negative arity value means that the function is variadic and
+       may accept any number of arguments, up to sqlite3's
+       compile-time limits. sqlite3 will enforce the argument count if
+       is zero or greater.
+
+       The callback always receives a pointer to an `sqlite3_context`
+       object as its first argument. Any arguments after that are from
+       SQL code. The leading context argument does _not_ count towards
+       the function's arity. See the docs for
+       sqlite3.capi.sqlite3_create_function_v2() for why that argument
+       is needed in the interface.
 
        The following properties correspond to flags documented at:
 
@@ -827,7 +836,9 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       name = name.toLowerCase();
       DB.checkRc(this, capi.sqlite3_create_function_v2(
         this.pointer, name,
-        (opt.hasOwnProperty('arity') ? +opt.arity : callback.length),
+        (opt.hasOwnProperty('arity')
+         ? +opt.arity
+         : (callback.length ? callback.length-1/*for pCtx arg*/ : 0)),
         capi.SQLITE_UTF8 | fFlags, null/*pApp*/, callback,
         null/*xStep*/, null/*xFinal*/, null/*xDestroy*/));
       return this;
@@ -992,10 +1003,9 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   const bindOne = function f(stmt,ndx,bindType,val){
     affirmUnlocked(stmt, 'bind()');
     if(!f._){
-      if(wasm.bigIntEnabled){
-        f._maxInt = BigInt("0x7fffffffffffffff");
-        f._minInt = ~f._maxInt;
-      }
+      f._tooBigInt = (v)=>toss3(
+        "BigInt value is too big to store without precision loss:", v
+      );
       /* Reminder: when not in BigInt mode, it's impossible for
          JS to represent a number out of the range we can bind,
          so we have no range checking. */
@@ -1041,15 +1051,15 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           let m;
           if(util.isInt32(val)) m = capi.sqlite3_bind_int;
           else if('bigint'===typeof val){
-            if(val<f._minInt || val>f._maxInt){
-              toss3("BigInt value is out of range for storing as int64: "+val);
+            if(!util.bigIntFits64(val)){
+              f._tooBigInt(val);
             }else if(wasm.bigIntEnabled){
               m = capi.sqlite3_bind_int64;
-            }else if(val >= Number.MIN_SAFE_INTEGER && val <= Number.MAX_SAFE_INTEGER){
+            }else if(util.bigIntFitsDouble(val)){
               val = Number(val);
               m = capi.sqlite3_bind_double;
             }else{
-              toss3("BigInt value is out of range for storing as double: "+val);
+              f._tooBigInt(val);
             }
           }else{ // !int32, !bigint
             val = Number(val);
@@ -1298,8 +1308,9 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           case capi.SQLITE_ROW: return this._mayGet = true;
           default:
             this._mayGet = false;
-            console.warn("sqlite3_step() rc=",rc,"SQL =",
-                         capi.sqlite3_sql(this.pointer));
+            console.warn("sqlite3_step() rc=",rc,
+                         capi.sqlite3_web_rc_str(rc),
+                         "SQL =", capi.sqlite3_sql(this.pointer));
             DB.checkRc(this.db.pointer, rc);
       }
     },

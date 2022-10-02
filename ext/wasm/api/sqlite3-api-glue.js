@@ -19,6 +19,7 @@
 self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   'use strict';
   const toss = (...args)=>{throw new Error(args.join(' '))};
+  const toss3 = sqlite3.SQLite3Error.toss;
   const capi = sqlite3.capi, wasm = capi.wasm, util = capi.util;
   self.WhWasmUtilInstaller(capi.wasm);
   delete self.WhWasmUtilInstaller;
@@ -62,8 +63,15 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        `sqlite3_vfs*` via capi.sqlite3_vfs.pointer.
     */
     const aPtr = wasm.xWrap.argAdapter('*');
-    wasm.xWrap.argAdapter('sqlite3*', aPtr)('sqlite3_stmt*', aPtr);
-    wasm.xWrap.resultAdapter('sqlite3*', aPtr)('sqlite3_stmt*', aPtr);
+    wasm.xWrap.argAdapter('sqlite3*', aPtr)
+    ('sqlite3_stmt*', aPtr)
+    ('sqlite3_context*', aPtr)
+    ('sqlite3_value*', aPtr)
+    ('void*', aPtr);
+    wasm.xWrap.resultAdapter('sqlite3*', aPtr)
+    ('sqlite3_stmt*', aPtr)
+    ('sqlite3_context*', aPtr)
+    ('void*', aPtr);
 
     /**
        Populate api object with sqlite3_...() by binding the "raw" wasm
@@ -207,38 +215,53 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        "*"/*xStep*/,"*"/*xFinal*/, "*"/*xValue*/,
        "*"/*xInverse*/, "*"/*xDestroy*/]
     );
-    const __setResult = function(pCx, val){
+
+    const __setUdfResult = function(pCtx, val){
+      //console.warn("setUdfResult",typeof val, val);
       switch(typeof val) {
           case 'boolean':
-            capi.sqlite3_result_int(pCx, val ? 1 : 0);
+            capi.sqlite3_result_int(pCtx, val ? 1 : 0);
+            break;
+          case 'bigint':
+            if(wasm.bigIntEnabled){
+              if(util.bigIntFits64(val)) capi.sqlite3_result_int64(pCtx, val);
+              else toss3("BigInt value",val.toString(),"is too BigInt for int64.");
+            }else if(util.bigIntFits32(val)){
+              capi.sqlite3_result_int(pCtx, Number(val));
+            }else if(util.bigIntFitsDouble(val)){
+              capi.sqlite3_result_double(pCtx, Number(val));
+            }else{
+              toss3("BigInt value",val.toString(),"is too BigInt.");
+            }
             break;
           case 'number': {
             (util.isInt32(val)
              ? capi.sqlite3_result_int
-             : capi.sqlite3_result_double)(pCx, val);
+             : capi.sqlite3_result_double)(pCtx, val);
             break;
           }
           case 'string':
-            capi.sqlite3_result_text(pCx, val, -1, capi.SQLITE_TRANSIENT);
+            capi.sqlite3_result_text(pCtx, val, -1, capi.SQLITE_TRANSIENT);
             break;
           case 'object':
             if(null===val/*yes, typeof null === 'object'*/) {
-              capi.sqlite3_result_null(pCx);
+              capi.sqlite3_result_null(pCtx);
               break;
             }else if(util.isBindableTypedArray(val)){
               const pBlob = wasm.allocFromTypedArray(val);
               capi.sqlite3_result_blob(
-                pCx, pBlob, val.byteLength,
+                pCtx, pBlob, val.byteLength,
                 wasm.exports[sqlite3.config.deallocExportName]
               );
               break;
             }
             // else fall through
           default:
-            toss3("Don't not how to handle this UDF result value:",val);
+          toss3("Don't not how to handle this UDF result value:",(typeof val), val);
       };
-    }/*__setResult()*/;
-    const __extractArgs = function(argc, pArgv){
+    }/*__setUdfResult()*/;
+
+    const __convertUdfArgs = function(argc, pArgv){
       let i, pVal, valType, arg;
       const tgt = [];
       for(i = 0; i < argc; ++i){
@@ -253,6 +276,12 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         valType = capi.sqlite3_value_type(pVal);
         switch(valType){
             case capi.SQLITE_INTEGER:
+              if(wasm.bigIntEnabled){
+                arg = capi.sqlite3_value_int64(pVal);
+                if(util.bigIntFitsDouble(arg)) arg = Number(arg);
+              }
+              else arg = capi.sqlite3_value_double(pVal)/*yes, double, for larger integers*/;
+              break;
             case capi.SQLITE_FLOAT:
               arg = capi.sqlite3_value_double(pVal);
               break;
@@ -262,10 +291,10 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             case capi.SQLITE_BLOB:{
               const n = capi.sqlite3_value_bytes(pVal);
               const pBlob = capi.sqlite3_value_blob(pVal);
-              arg = new Uint8Array(n);
-              let i;
-              const heap = n ? wasm.heap8() : false;
-              for(i = 0; i < n; ++i) arg[i] = heap[pBlob+i];
+              if(n && !pBlob) sqlite3.WasmAllocError.toss(
+                "Cannot allocate memory for blob argument of",n,"byte(s)"
+              );
+              arg = n ? wasm.heap8u().slice(pBlob, pBlob + Number(n)) : null;
               break;
             }
             case capi.SQLITE_NULL:
@@ -278,39 +307,37 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         tgt.push(arg);
       }
       return tgt;
-    }/*__extractArgs()*/;
+    }/*__convertUdfArgs()*/;
 
-    const __setCxErr = (pCx, e)=>{
-      if(e instanceof capi.WasmAllocError){
-        capi.sqlite3_result_error_nomem(pCx);
+    const __setUdfError = (pCtx, e)=>{
+      if(e instanceof sqlite3.WasmAllocError){
+        capi.sqlite3_result_error_nomem(pCtx);
       }else{
-        capi.sqlite3_result_error(pCx, e.message, -1);
+        capi.sqlite3_result_error(pCtx, e.message, -1);
       }
     };
 
-    /* TODO: pass on the pCx pointer to all callbacks. This requires
-       fixing test code and updating oodles of docs. Once that is in place,
-       export sqlite3_aggregate_context().
-    */
-
     const __xFunc = function(callback){
-      return function(pCx, argc, pArgv){
-        try{ __setResult(pCx, callback(...__extractArgs(argc, pArgv))) }
-        catch(e){ __setCxErr(pCx, e) }
+      return function(pCtx, argc, pArgv){
+        try{ __setUdfResult(pCtx, callback(pCtx, ...__convertUdfArgs(argc, pArgv))) }
+        catch(e){
+          //console.error('xFunc() caught:',e);
+          __setUdfError(pCtx, e);
+        }
       };
     };
 
     const __xInverseAndStep = function(callback){
-      return function(pCx, argc, pArgv){
-        try{ callback(...__extractArgs(argc, pArgv)) }
-        catch(e){ __setCxErr(pCx, e) }
+      return function(pCtx, argc, pArgv){
+        try{ callback(pCtx, ...__convertUdfArgs(argc, pArgv)) }
+        catch(e){ __setUdfError(pCtx, e) }
       };
     };
 
     const __xFinalAndValue = function(callback){
-      return function(pCx){
-        try{ __setResult(pCx, callback()) }
-        catch(e){ __setCxErr(pCx, e) }
+      return function(pCtx){
+        try{ __setUdfResult(pCtx, callback(pCtx)) }
+        catch(e){ __setUdfError(pCtx, e) }
       };
     };
 
@@ -417,6 +444,57 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       }
       return rc;
     };
+    /**
+       A helper for UDFs implemented in JS and bound to WASM by the
+       client. Given a JS value, setUdfResult(pCtx,X) calls one of the
+       sqlite3_result_xyz(pCtx,...)  routines, depending on X's data
+       type:
+
+       - `null`: sqlite3_result_null()
+       - `boolean`: sqlite3_result_int()
+       - `number': sqlite3_result_int() or sqlite3_result_double()
+       - `string`: sqlite3_result_text()
+       - Uint8Array or Int8Array: sqlite3_result_blob()
+
+       Anything else triggers sqlite3_result_error().
+    */
+    capi.sqlite3_create_function_v2.setUdfResult =
+      capi.sqlite3_create_function.setUdfResult =
+      capi.sqlite3_create_window_function.setUdfResult = __setUdfResult;
+
+    /**
+       A helper for UDFs implemented in JS and bound to WASM by the
+       client. When passed the
+       (argc,argv) values from the UDF-related functions which receive
+       them (xFunc, xStep, xInverse), it creates a JS array
+       representing those arguments, converting each to JS in a manner
+       appropriate to its data type: numeric, text, blob
+       (Uint8Array()), or null.
+
+       Results are undefined if it's passed anything other than those
+       two arguments from those specific contexts.
+
+       Thus an argc of 4 will result in a length-4 array containing
+       the converted values from the corresponding argv.
+
+       The conversion will throw only on allocation error or an internal
+       error.
+    */
+    capi.sqlite3_create_function_v2.convertUdfArgs =
+      capi.sqlite3_create_function.convertUdfArgs =
+      capi.sqlite3_create_window_function.convertUdfArgs = __convertUdfArgs;
+
+    /**
+       A helper for UDFs implemented in JS and bound to WASM by the
+       client. It expects to be a passed `(sqlite3_context*, Error)`
+       (i.e. an exception object). And it sets the current UDF's
+       result to sqlite3_result_error_nomem() or sqlite3_result_error(),
+       depending on whether the 2nd argument is a
+       sqlite3.WasmAllocError object or not.
+    */
+    capi.sqlite3_create_function_v2.setUdfError =
+      capi.sqlite3_create_function.setUdfError =
+      capi.sqlite3_create_window_function.setUdfError = __setUdfError;
 
   }/*sqlite3_create_function_v2() and sqlite3_create_window_function() proxies*/;
 
