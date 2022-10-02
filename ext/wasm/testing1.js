@@ -354,7 +354,7 @@
         T.assert(g64(pMin) === minMaxI64[0]).
           assert(minMaxI64[0] === db.selectValue("select ?",g64(pMin))).
           assert(minMaxI64[1] === db.selectValue("select ?",g64(pMax)));
-        const rxRange = /out of range for int64/;
+        const rxRange = /out of range for storing as int64/;
         T.mustThrowMatching(()=>{db.prepare("select ?").bind(minMaxI64[0] - BigInt(1))},
                           rxRange).
           mustThrowMatching(()=>{db.prepare("select ?").bind(minMaxI64[1] + BigInt(1))},

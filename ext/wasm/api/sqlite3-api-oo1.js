@@ -16,6 +16,7 @@
 */
 self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   const toss = (...args)=>{throw new Error(args.join(' '))};
+  const toss3 = (...args)=>{throw new sqlite3.SQLite3Error(...args)};
 
   const capi = sqlite3.capi, util = capi.util;
   /* What follows is colloquially known as "OO API #1". It is a
@@ -53,28 +54,11 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   const getOwnOption = (opts, p, dflt)=>
         opts.hasOwnProperty(p) ? opts[p] : dflt;
 
-  /**
-     An Error subclass specifically for reporting DB-level errors and
-     enabling clients to unambiguously identify such exceptions.
-  */
-  class SQLite3Error extends Error {
-    /**
-       Constructs this object with a message equal to all arguments
-       concatenated with a space between each one.
-    */
-    constructor(...args){
-      super(args.join(' '));
-      this.name = 'SQLite3Error';
-    }
-  };
-  const toss3 = (...args)=>{throw new SQLite3Error(...args)};
-  sqlite3.SQLite3Error = SQLite3Error;
-
   // Documented in DB.checkRc()
   const checkSqlite3Rc = function(dbPtr, sqliteResultCode){
     if(sqliteResultCode){
       if(dbPtr instanceof DB) dbPtr = dbPtr.pointer;
-      throw new SQLite3Error(
+      toss3(
         "sqlite result code",sqliteResultCode+":",
         (dbPtr
          ? capi.sqlite3_errmsg(dbPtr)
@@ -183,13 +167,14 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      If passed an object, any additional properties it has are copied
      as-is into the new object.
   */
-  dbCtorHelper.normalizeArgs = function(filename,flags = 'c',vfs = null){
+  dbCtorHelper.normalizeArgs = function(filename=':memory:',flags = 'c',vfs = null){
     const arg = {};
     if(1===arguments.length && 'object'===typeof arguments[0]){
       const x = arguments[0];
       Object.keys(x).forEach((k)=>arg[k] = x[k]);
       if(undefined===arg.flags) arg.flags = 'c';
       if(undefined===arg.vfs) arg.vfs = null;
+      if(undefined===arg.filename) arg.filename = ':memory:';
     }else{
       arg.filename = filename;
       arg.flags = flags;
@@ -232,7 +217,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
      The final argument is analogous to the final argument of
      sqlite3_open_v2(): the name of an sqlite3 VFS. Pass a falsy value,
-     or not at all, to use the default. If passed a value, it must
+     or none at all, to use the default. If passed a value, it must
      be the string name of a VFS
 
      The constructor optionally (and preferably) takes its arguments
@@ -554,15 +539,16 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     */
     prepare: function(sql){
       affirmDbOpen(this);
-      if(Array.isArray(sql)) sql = sql.join('');
-      const stack = capi.wasm.scopedAllocPush();
+      const stack = capi.wasm.pstack.pointer;
       let ppStmt, pStmt;
       try{
-        ppStmt = capi.wasm.scopedAllocPtr()/* output (sqlite3_stmt**) arg */;
+        ppStmt = capi.wasm.pstack.alloc(8)/* output (sqlite3_stmt**) arg */;
         DB.checkRc(this, capi.sqlite3_prepare_v2(this.pointer, sql, -1, ppStmt, null));
         pStmt = capi.wasm.getPtrValue(ppStmt);
       }
-      finally {capi.wasm.scopedAllocPop(stack)}
+      finally {
+        capi.wasm.pstack.restore(stack);
+      }
       if(!pStmt) toss3("Cannot prepare empty SQL.");
       const stmt = new Stmt(this, pStmt, BindTypes);
       __stmtMap.get(this)[pStmt] = stmt;
@@ -977,7 +963,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        SQLITE_{typename} constants. Passing the undefined value is
        the same as not passing a value.
 
-       Throws on error (e.g. malformedSQL).
+       Throws on error (e.g. malformed SQL).
     */
     selectValue: function(sql,bind,asType){
       let stmt, rc;
@@ -1157,7 +1143,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           }
         }
       };
-    }
+    }/* static init */
     affirmSupportedBindType(val);
     ndx = affirmParamIndex(stmt,ndx);
     let rc = 0;
@@ -1171,15 +1157,24 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         case BindTypes.number: {
           let m;
           if(util.isInt32(val)) m = capi.sqlite3_bind_int;
-          else if(capi.wasm.bigIntEnabled && ('bigint'===typeof val)){
+          else if('bigint'===typeof val){
             if(val<f._minInt || val>f._maxInt){
-              toss3("BigInt value is out of range for int64: "+val);
+              toss3("BigInt value is out of range for storing as int64: "+val);
+            }else if(capi.wasm.bigIntEnabled){
+              m = capi.sqlite3_bind_int64;
+            }else if(val >= Number.MIN_SAFE_INTEGER && val <= Number.MAX_SAFE_INTEGER){
+              val = Number(val);
+              m = capi.sqlite3_bind_double;
+            }else{
+              toss3("BigInt value is out of range for storing as double: "+val);
             }
-            m = capi.sqlite3_bind_int64;
-          }else if(Number.isInteger(val)){
-            m = capi.sqlite3_bind_int64;
-          }else{
-            m = capi.sqlite3_bind_double;
+          }else{ // !int32, !bigint
+            val = Number(val);
+            if(capi.wasm.bigIntEnabled && Number.isInteger(val)){
+              m = capi.sqlite3_bind_int64;
+            }else{
+              m = capi.sqlite3_bind_double;
+            }
           }
           rc = m(stmt.pointer, ndx, val);
           break;
@@ -1283,31 +1278,32 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        - null is bound as NULL.
 
        - undefined as a standalone value is a no-op intended to
-       simplify certain client-side use cases: passing undefined
-       as a value to this function will not actually bind
-       anything and this function will skip confirmation that
-       binding is even legal. (Those semantics simplify certain
-       client-side uses.) Conversely, a value of undefined as an
-       array or object property when binding an array/object
-       (see below) is treated the same as null.
+         simplify certain client-side use cases: passing undefined as
+         a value to this function will not actually bind anything and
+         this function will skip confirmation that binding is even
+         legal. (Those semantics simplify certain client-side uses.)
+         Conversely, a value of undefined as an array or object
+         property when binding an array/object (see below) is treated
+         the same as null.
 
-       - Numbers are bound as either doubles or integers: doubles
-       if they are larger than 32 bits, else double or int32,
-       depending on whether they have a fractional part. (It is,
-       as of this writing, illegal to call (from JS) a WASM
-       function which either takes or returns an int64.)
-       Booleans are bound as integer 0 or 1. It is not expected
-       the distinction of binding doubles which have no
-       fractional parts is integers is significant for the
-       majority of clients due to sqlite3's data typing
-       model. If capi.wasm.bigIntEnabled is true then this
-       routine will bind BigInt values as 64-bit integers.
+       - Numbers are bound as either doubles or integers: doubles if
+         they are larger than 32 bits, else double or int32, depending
+         on whether they have a fractional part. Booleans are bound as
+         integer 0 or 1. It is not expected the distinction of binding
+         doubles which have no fractional parts is integers is
+         significant for the majority of clients due to sqlite3's data
+         typing model. If [BigInt] support is enabled then this
+         routine will bind BigInt values as 64-bit integers if they'll
+         fit in 64 bits. If that support disabled, it will store the
+         BigInt as an int32 or a double if it can do so without loss
+         of precision. If the BigInt is _too BigInt_ then it will
+         throw.
 
        - Strings are bound as strings (use bindAsBlob() to force
-       blob binding).
+         blob binding).
 
        - Uint8Array and Int8Array instances are bound as blobs.
-       (TODO: binding the other TypedArray types.)
+         (TODO: binding the other TypedArray types.)
 
        If passed an array, each element of the array is bound at
        the parameter index equal to the array index plus 1
@@ -1458,7 +1454,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        This is intended to simplify use cases such as:
 
        ```
-       aDb.prepare("insert in foo(a) values(?)").bind(123).stepFinalize();
+       aDb.prepare("insert into foo(a) values(?)").bind(123).stepFinalize();
        ```
     */
     stepFinalize: function(){
@@ -1595,7 +1591,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     },
     // Design note: the only reason most of these getters have a 'get'
     // prefix is for consistency with getVALUE_TYPE().  The latter
-    // arguablly really need that prefix for API readability and the
+    // arguably really need that prefix for API readability and the
     // rest arguably don't, but consistency is a powerful thing.
     /**
        Returns the result column name of the given index, or
@@ -1616,9 +1612,8 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        cannot have result columns. This object's columnCount member
        holds the number of columns.
     */
-    getColumnNames: function(tgt){
+    getColumnNames: function(tgt=[]){
       affirmColIndex(affirmStmtOpen(this),0);
-      if(!tgt) tgt = [];
       for(let i = 0; i < this.columnCount; ++i){
         tgt.push(capi.sqlite3_column_name(this.pointer, i));
       }

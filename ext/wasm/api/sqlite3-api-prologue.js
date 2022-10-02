@@ -785,7 +785,9 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        be released using restore().
 
        This method always adjusts the given value to be a multiple
-       of 8 in order to keep alignment guarantees.
+       of 8 bytes because failing to do so can lead to incorrect
+       results when reading and writing 64-bit values from/to the WASM
+       heap.
     */
     alloc: capi.wasm.exports.sqlite3_wasm_pstack_alloc
   });
@@ -808,6 +810,24 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     configurable: false, iterable: true, writeable: false,
     get: capi.wasm.exports.sqlite3_wasm_pstack_remaining
   });
+
+  /**
+     An Error subclass specifically for reporting DB-level errors and
+     enabling clients to unambiguously identify such exceptions.
+     The C-level APIs never throw, but some of the higher-level
+     C-style APIs do and the object-oriented APIs use exceptions
+     exclusively to report errors.
+  */
+  class SQLite3Error extends Error {
+    /**
+       Constructs this object with a message equal to all arguments
+       concatenated with a space between each one.
+    */
+    constructor(...args){
+      super(args.join(' '));
+      this.name = 'SQLite3Error';
+    }
+  };
 
 
   /** State for sqlite3_wasmfs_opfs_dir(). */
@@ -1059,6 +1079,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   /* The remainder of the API will be set up in later steps. */
   const sqlite3 = {
     WasmAllocError: WasmAllocError,
+    SQLite3Error: SQLite3Error,
     capi,
     config,
     /**
