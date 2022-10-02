@@ -1132,8 +1132,8 @@ self.WhWasmUtilInstaller = function(target){
 
      The reason for the 2nd argument is..
 
-     When one of the pointers will refer to a 64-bit value, e.g. a
-     double or int64, an that value must be written or fetch,
+     When one of the returned pointers will refer to a 64-bit value,
+     e.g. a double or int64, an that value must be written or fetched,
      e.g. using setMemValue() or getMemValue(), it is important that
      the pointer in question be aligned to an 8-byte boundary or else
      it will not be fetched or written properly and will corrupt or

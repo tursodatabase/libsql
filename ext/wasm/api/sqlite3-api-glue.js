@@ -276,21 +276,21 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     /**
        A convenience wrapper for allocChunks() which sizes each chunks
        as either 8 bytes (safePtrSize is truthy) or wasm.ptrSizeof (if
-       safePtrSize is truthy).
+       safePtrSize is falsy).
 
        How it returns its result differs depending on its first
        argument: if it's 1, it returns a single pointer value. If it's
        more than 1, it returns the same as allocChunks().
 
-       When one of the pointers refers to a 64-bit value, e.g. a
-       double or int64, and that value must be written or fetch,
+       When a returned pointers will refer to a 64-bit value, e.g. a
+       double or int64, and that value must be written or fetched,
        e.g. using wasm.setMemValue() or wasm.getMemValue(), it is
        important that the pointer in question be aligned to an 8-byte
        boundary or else it will not be fetched or written properly and
        will corrupt or read neighboring memory.
 
-       However, when all pointers involved are "small", it is safe to
-       pass a falsy value to save to memory.
+       However, when all pointers involved point to "small" data, it
+       is safe to pass a falsy value to save to memory.
     */
     wasm.pstack.allocPtr = (n=1,safePtrSize=true) =>{
       return 1===n
