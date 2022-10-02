@@ -235,7 +235,7 @@ impl Connection {
                 table.as_ptr(),
                 column.as_ptr(),
                 row_id,
-                if read_only { 0 } else { 1 },
+                !read_only as std::os::raw::c_int,
                 &mut blob,
             )
         };

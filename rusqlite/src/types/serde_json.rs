@@ -41,7 +41,7 @@ mod test {
         let data: serde_json::Value = serde_json::from_str(json).unwrap();
         db.execute(
             "INSERT INTO foo (t, b) VALUES (?, ?)",
-            &[&data as &dyn ToSql, &json.as_bytes()],
+            [&data as &dyn ToSql, &json.as_bytes()],
         )?;
 
         let t: serde_json::Value = db.query_row("SELECT t FROM foo", [], |r| r.get(0))?;

@@ -208,7 +208,7 @@ mod test {
         {
             let mut stmt = db.prepare("SELECT value from rarray(?);")?;
 
-            let rows = stmt.query_map(&[&ptr], |row| row.get::<_, i64>(0))?;
+            let rows = stmt.query_map([&ptr], |row| row.get::<_, i64>(0))?;
             assert_eq!(2, Rc::strong_count(&ptr));
             let mut count = 0;
             for (i, value) in rows.enumerate() {

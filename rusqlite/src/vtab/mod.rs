@@ -457,7 +457,7 @@ impl IndexInfo {
     #[inline]
     pub fn set_order_by_consumed(&mut self, order_by_consumed: bool) {
         unsafe {
-            (*self.0).orderByConsumed = if order_by_consumed { 1 } else { 0 };
+            (*self.0).orderByConsumed = order_by_consumed as c_int;
         }
     }
 
@@ -613,7 +613,7 @@ impl IndexConstraintUsage<'_> {
     /// if `omit`, do not code a test for this constraint
     #[inline]
     pub fn set_omit(&mut self, omit: bool) {
-        self.0.omit = if omit { 1 } else { 0 };
+        self.0.omit = omit as std::os::raw::c_uchar;
     }
 }
 
