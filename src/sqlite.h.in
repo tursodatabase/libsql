@@ -5628,7 +5628,7 @@ void sqlite3_value_free(sqlite3_value*);
 **
 ** ^The sqlite3_aggregate_context(C,N) routine returns a NULL pointer 
 ** when first called if N is less than or equal to zero or if a memory
-** allocate error occurs.
+** allocation error occurs.
 **
 ** ^(The amount of space allocated by sqlite3_aggregate_context(C,N) is
 ** determined by the N parameter on first successful call.  Changing the
