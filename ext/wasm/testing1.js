@@ -1030,31 +1030,60 @@
    */
   const testPstack = function(db,sqlite3){
     const w = sqlite3.capi.wasm, P = w.pstack;
+    const isAllocErr = (e)=>e instanceof sqlite3.WasmAllocError;
     const stack = P.pointer;
     T.assert(0===stack % 8 /* must be 8-byte aligned */);
     try{
       const quota = P.remaining;
       log("pstack quota",quota);
       T.assert(quota >= 4096)
-        .assert(0 === P.alloc(0))
-        .assert(0 === P.alloc(-1));
+        .mustThrowMatching(()=>P.alloc(0), isAllocErr)
+        .mustThrowMatching(()=>P.alloc(-1), isAllocErr);
       let p1 = P.alloc(12);
       T.assert(p1 === stack - 16/*8-byte aligned*/)
         .assert(P.pointer === p1);
       let p2 = P.alloc(7);
       T.assert(p2 === p1-8/*8-byte aligned, stack grows downwards*/)
-        .assert(0 === P.alloc(quota))
+        .mustThrowMatching(()=>P.alloc(quota), isAllocErr)
         .assert(24 === stack - p2)
         .assert(P.pointer === p2);
       let n = quota - (stack - p2);
       let p3 = P.alloc(n);
       T.assert(p3 === stack-quota)
-        .assert(0 === P.alloc(1));
+        .mustThrowMatching(()=>P.alloc(1), isAllocErr);
     }finally{
       P.restore(stack);
-      T.assert(P.pointer === stack);
     }
-  }/*testPstack()*/;
+
+    T.assert(P.pointer === stack);
+    try {
+      const [p1, p2, p3] = P.allocChunks(3,4);
+      T.assert(P.pointer === stack-16/*always rounded to multiple of 8*/)
+        .assert(p2 === p1 + 4)
+        .assert(p3 === p2 + 4);
+      T.mustThrowMatching(()=>P.allocChunks(1024, 1024 * 16),
+                          (e)=>e instanceof sqlite3.WasmAllocError)
+    }finally{
+      P.restore(stack);
+    }
+
+    T.assert(P.pointer === stack);
+    try {
+      let [p1, p2, p3] = P.allocPtr(3,false);
+      let sPos = stack-16/*always rounded to multiple of 8*/;
+      T.assert(P.pointer === sPos)
+        .assert(p2 === p1 + 4)
+        .assert(p3 === p2 + 4);
+      [p1, p2, p3] = P.allocPtr(3);
+      T.assert(P.pointer === sPos-24/*3 x 8 bytes*/)
+        .assert(p2 === p1 + 8)
+        .assert(p3 === p2 + 8);
+      p1 = P.allocPtr();
+      T.assert('number'===typeof p1);
+    }finally{
+      P.restore(stack);
+    }
+}/*testPstack()*/;
 
   const clearKvvfs = function(){
     const sz = sqlite3.capi.sqlite3_web_kvvfs_size();

@@ -265,6 +265,9 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       this.name = 'WasmAllocError';
     }
   };
+  WasmAllocError.toss = (...args)=>{
+    throw new WasmAllocError(args.join(' '));
+  };
 
   /** 
       The main sqlite3 binding API gets installed into this object,
@@ -733,6 +736,9 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      Functions which are intended solely for API-internal use by the
      WASM components, not client code. These get installed into
      capi.wasm.
+
+     TODO: get rid of sqlite3_wasm_vfs_unlink(). It is ill-conceived
+     and only rarely actually useful.
   */
   capi.wasm.bindingSignatures.wasm = [
     ["sqlite3_wasm_vfs_unlink", "int", "string"]
@@ -781,15 +787,21 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        Attempts to allocate the given number of bytes from the
        pstack. On success, it zeroes out a block of memory of the
        given size, adjusts the pstack pointer, and returns a pointer
-       to the memory. On error, returns 0. The memory must eventually
-       be released using restore().
+       to the memory. On error, returns throws a WasmAllocError. The
+       memory must eventually be released using restore().
 
        This method always adjusts the given value to be a multiple
        of 8 bytes because failing to do so can lead to incorrect
        results when reading and writing 64-bit values from/to the WASM
        heap.
     */
-    alloc: capi.wasm.exports.sqlite3_wasm_pstack_alloc
+    alloc: (n)=>{
+      return capi.wasm.exports.sqlite3_wasm_pstack_alloc(n)
+        || WasmAllocError.toss("Could not allocate",n,
+                               "bytes from the pstack.");
+    }
+    // More methods get added after the capi.wasm object is populated
+    // by WhWasmUtilInstaller.
   });
   /**
      sqlite3.capi.wasm.pstack.pointer resolves to the current pstack
@@ -828,7 +840,9 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       this.name = 'SQLite3Error';
     }
   };
-
+  SQLite3Error.toss = (...args)=>{
+    throw new SQLite3Error(args.join(' '));
+  };
 
   /** State for sqlite3_wasmfs_opfs_dir(). */
   let __persistentDir = undefined;

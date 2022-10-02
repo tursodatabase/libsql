@@ -59,6 +59,10 @@
 #include <assert.h>
 #include "sqlite3.c" /* yes, .c instead of .h. */
 
+#if defined(__EMSCRIPTEN__)
+#  include <emscripten/console.h>
+#endif
+
 /*
 ** WASM_KEEP is identical to EMSCRIPTEN_KEEPALIVE but is not
 ** Emscripten-specific. It explicitly marks functions for export into
@@ -667,6 +671,9 @@ WASM_KEEP
 int sqlite3_wasm_vfs_unlink(const char * zName){
   int rc = SQLITE_MISUSE /* ??? */;
   sqlite3_vfs * const pVfs = sqlite3_vfs_find(0);
+#if defined(__EMSCRIPTEN__)
+  emscripten_console_warn("sqlite3_wasm_vfs_unlink() will be removed.");
+#endif
   if( zName && pVfs && pVfs->xDelete ){
     rc = pVfs->xDelete(pVfs, zName, 1);
   }
@@ -750,9 +757,7 @@ int sqlite3_wasm_db_serialize( sqlite3* pDb, unsigned char **pOut, sqlite3_int64
 }
 
 
-#if defined(__EMSCRIPTEN__)
-#include <emscripten/console.h>
-#if defined(SQLITE_WASM_WASMFS)
+#if defined(__EMSCRIPTEN__) && defined(SQLITE_WASM_WASMFS)
 #include <emscripten/wasmfs.h>
 
 /*
@@ -809,6 +814,5 @@ int sqlite3_wasm_init_wasmfs(const char *zUnused){
   return SQLITE_NOTFOUND;
 }
 #endif /* __EMSCRIPTEN__ && SQLITE_WASM_WASMFS */
-#endif
 
 #undef WASM_KEEP

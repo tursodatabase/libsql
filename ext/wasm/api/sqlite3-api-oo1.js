@@ -18,7 +18,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   const toss = (...args)=>{throw new Error(args.join(' '))};
   const toss3 = (...args)=>{throw new sqlite3.SQLite3Error(...args)};
 
-  const capi = sqlite3.capi, util = capi.util;
+  const capi = sqlite3.capi, wasm = capi.wasm, util = capi.util;
   /* What follows is colloquially known as "OO API #1". It is a
      binding of the sqlite3 API which is designed to be run within
      the same thread (main or worker) as the one in which the
@@ -33,7 +33,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      accessor and store their real values in this map. Keys = DB/Stmt
      objects, values = pointer values. This also unifies how those are
      accessed, for potential use downstream via custom
-     capi.wasm.xWrap() function signatures which know how to extract
+     wasm.xWrap() function signatures which know how to extract
      it.
   */
   const __ptrMap = new WeakMap();
@@ -72,7 +72,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      being-construct DB object as its "this". See the DB constructor
      for the argument docs. This is split into a separate function
      in order to enable simple creation of special-case DB constructors,
-     e.g. a hypothetical LocalStorageDB or OpfsDB.
+     e.g. JsStorageDB and OpfsDB.
 
      Expects to be passed a configuration object with the following
      properties:
@@ -123,7 +123,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       console.error("Invalid DB ctor args",opt,arguments);
       toss3("Invalid arguments for DB constructor.");
     }
-    let fnJs = ('number'===typeof fn) ? capi.wasm.cstringToJs(fn) : fn;
+    let fnJs = ('number'===typeof fn) ? wasm.cstringToJs(fn) : fn;
     const vfsCheck = ctor._name2vfs[fnJs];
     if(vfsCheck){
       vfsName = vfsCheck.vfs;
@@ -136,20 +136,20 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     if( flagsStr.indexOf('w')>=0 ) oflags |= capi.SQLITE_OPEN_READWRITE;
     if( 0===oflags ) oflags |= capi.SQLITE_OPEN_READONLY;
     oflags |= capi.SQLITE_OPEN_EXRESCODE;
-    const stack = capi.wasm.scopedAllocPush();
+    const scope = wasm.scopedAllocPush();
     try {
-      const ppDb = capi.wasm.scopedAllocPtr() /* output (sqlite3**) arg */;
+      const ppDb = wasm.allocPtr() /* output (sqlite3**) arg */;
       const pVfsName = vfsName ? (
-        ('number'===typeof vfsName ? vfsName : capi.wasm.scopedAllocCString(vfsName))
+        ('number'===typeof vfsName ? vfsName : wasm.scopedAllocCString(vfsName))
       ): 0;
       const rc = capi.sqlite3_open_v2(fn, ppDb, oflags, pVfsName);
-      ptr = capi.wasm.getPtrValue(ppDb);
+      ptr = wasm.getPtrValue(ppDb);
       checkSqlite3Rc(ptr, rc);
     }catch( e ){
       if( ptr ) capi.sqlite3_close_v2(ptr);
       throw e;
     }finally{
-      capi.wasm.scopedAllocPop(stack);
+      wasm.scopedAllocPop(scope);
     }
     this.filename = fnJs;
     __ptrMap.set(this, ptr);
@@ -265,7 +265,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     blob: 5
   };
   BindTypes['undefined'] == BindTypes.null;
-  if(capi.wasm.bigIntEnabled){
+  if(wasm.bigIntEnabled){
     BindTypes.bigint = BindTypes.number;
   }
 
@@ -454,7 +454,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           if(s && s.pointer) s.finalize();
         });
         Object.values(__udfMap.get(this)).forEach(
-          capi.wasm.uninstallFunction.bind(capi.wasm)
+          wasm.uninstallFunction.bind(capi.wasm)
         );
         __ptrMap.delete(this);
         __stmtMap.delete(this);
@@ -539,15 +539,15 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     */
     prepare: function(sql){
       affirmDbOpen(this);
-      const stack = capi.wasm.pstack.pointer;
+      const stack = wasm.pstack.pointer;
       let ppStmt, pStmt;
       try{
-        ppStmt = capi.wasm.pstack.alloc(8)/* output (sqlite3_stmt**) arg */;
+        ppStmt = wasm.pstack.alloc(8)/* output (sqlite3_stmt**) arg */;
         DB.checkRc(this, capi.sqlite3_prepare_v2(this.pointer, sql, -1, ppStmt, null));
-        pStmt = capi.wasm.getPtrValue(ppStmt);
+        pStmt = wasm.getPtrValue(ppStmt);
       }
       finally {
-        capi.wasm.pstack.restore(stack);
+        wasm.pstack.restore(stack);
       }
       if(!pStmt) toss3("Cannot prepare empty SQL.");
       const stmt = new Stmt(this, pStmt, BindTypes);
@@ -846,7 +846,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           let i, pVal, valType, arg;
           const tgt = [];
           for(i = 0; i < argc; ++i){
-            pVal = capi.wasm.getPtrValue(pArgv + (capi.wasm.ptrSizeof * i));
+            pVal = wasm.getPtrValue(pArgv + (wasm.ptrSizeof * i));
             /**
                Curiously: despite ostensibly requiring 8-byte
                alignment, the pArgv array is parcelled into chunks of
@@ -868,7 +868,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
                   const pBlob = capi.sqlite3_value_blob(pVal);
                   arg = new Uint8Array(n);
                   let i;
-                  const heap = n ? capi.wasm.heap8() : false;
+                  const heap = n ? wasm.heap8() : false;
                   for(i = 0; i < n; ++i) arg[i] = heap[pBlob+i];
                   break;
                 }
@@ -902,10 +902,10 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
                   capi.sqlite3_result_null(pCx);
                   break;
                 }else if(util.isBindableTypedArray(val)){
-                  const pBlob = capi.wasm.allocFromTypedArray(val);
+                  const pBlob = wasm.allocFromTypedArray(val);
                   capi.sqlite3_result_blob(pCx, pBlob, val.byteLength,
                                           capi.SQLITE_TRANSIENT);
-                  capi.wasm.dealloc(pBlob);
+                  wasm.dealloc(pBlob);
                   break;
                 }
                 // else fall through
@@ -925,7 +925,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           }
         }
       };
-      const pUdf = capi.wasm.installFunction(wrapper, "v(iii)");
+      const pUdf = wasm.installFunction(wrapper, "v(iii)");
       let fFlags = 0 /*flags for sqlite3_create_function_v2()*/;
       if(getOwnOption(opt, 'deterministic')) fFlags |= capi.SQLITE_DETERMINISTIC;
       if(getOwnOption(opt, 'directOnly')) fFlags |= capi.SQLITE_DIRECTONLY;
@@ -938,12 +938,12 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           capi.SQLITE_UTF8 | fFlags, null/*pApp*/, pUdf,
           null/*xStep*/, null/*xFinal*/, null/*xDestroy*/));
       }catch(e){
-        capi.wasm.uninstallFunction(pUdf);
+        wasm.uninstallFunction(pUdf);
         throw e;
       }
       const udfMap = __udfMap.get(this);
       if(udfMap[name]){
-        try{capi.wasm.uninstallFunction(udfMap[name])}
+        try{wasm.uninstallFunction(udfMap[name])}
         catch(e){/*ignore*/}
       }
       udfMap[name] = pUdf;
@@ -1049,7 +1049,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         case BindTypes.string:
           return t;
         case BindTypes.bigint:
-          if(capi.wasm.bigIntEnabled) return t;
+          if(wasm.bigIntEnabled) return t;
           /* else fall through */
         default:
           //console.log("isSupportedBindType",t,v);
@@ -1109,7 +1109,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   const bindOne = function f(stmt,ndx,bindType,val){
     affirmUnlocked(stmt, 'bind()');
     if(!f._){
-      if(capi.wasm.bigIntEnabled){
+      if(wasm.bigIntEnabled){
         f._maxInt = BigInt("0x7fffffffffffffff");
         f._minInt = ~f._maxInt;
       }
@@ -1120,25 +1120,25 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         string: function(stmt, ndx, val, asBlob){
           if(1){
             /* _Hypothetically_ more efficient than the impl in the 'else' block. */
-            const stack = capi.wasm.scopedAllocPush();
+            const stack = wasm.scopedAllocPush();
             try{
-              const n = capi.wasm.jstrlen(val);
-              const pStr = capi.wasm.scopedAlloc(n);
-              capi.wasm.jstrcpy(val, capi.wasm.heap8u(), pStr, n, false);
+              const n = wasm.jstrlen(val);
+              const pStr = wasm.scopedAlloc(n);
+              wasm.jstrcpy(val, wasm.heap8u(), pStr, n, false);
               const f = asBlob ? capi.sqlite3_bind_blob : capi.sqlite3_bind_text;
               return f(stmt.pointer, ndx, pStr, n, capi.SQLITE_TRANSIENT);
             }finally{
-              capi.wasm.scopedAllocPop(stack);
+              wasm.scopedAllocPop(stack);
             }
           }else{
-            const bytes = capi.wasm.jstrToUintArray(val,false);
-            const pStr = capi.wasm.alloc(bytes.length || 1);
-            capi.wasm.heap8u().set(bytes.length ? bytes : [0], pStr);
+            const bytes = wasm.jstrToUintArray(val,false);
+            const pStr = wasm.alloc(bytes.length || 1);
+            wasm.heap8u().set(bytes.length ? bytes : [0], pStr);
             try{
               const f = asBlob ? capi.sqlite3_bind_blob : capi.sqlite3_bind_text;
               return f(stmt.pointer, ndx, pStr, bytes.length, capi.SQLITE_TRANSIENT);
             }finally{
-              capi.wasm.dealloc(pStr);
+              wasm.dealloc(pStr);
             }
           }
         }
@@ -1160,7 +1160,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           else if('bigint'===typeof val){
             if(val<f._minInt || val>f._maxInt){
               toss3("BigInt value is out of range for storing as int64: "+val);
-            }else if(capi.wasm.bigIntEnabled){
+            }else if(wasm.bigIntEnabled){
               m = capi.sqlite3_bind_int64;
             }else if(val >= Number.MIN_SAFE_INTEGER && val <= Number.MAX_SAFE_INTEGER){
               val = Number(val);
@@ -1170,7 +1170,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             }
           }else{ // !int32, !bigint
             val = Number(val);
-            if(capi.wasm.bigIntEnabled && Number.isInteger(val)){
+            if(wasm.bigIntEnabled && Number.isInteger(val)){
               m = capi.sqlite3_bind_int64;
             }else{
               m = capi.sqlite3_bind_double;
@@ -1190,22 +1190,22 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
                   "that it be a string, Uint8Array, or Int8Array.");
           }else if(1){
             /* _Hypothetically_ more efficient than the impl in the 'else' block. */
-            const stack = capi.wasm.scopedAllocPush();
+            const stack = wasm.scopedAllocPush();
             try{
-              const pBlob = capi.wasm.scopedAlloc(val.byteLength || 1);
-              capi.wasm.heap8().set(val.byteLength ? val : [0], pBlob)
+              const pBlob = wasm.scopedAlloc(val.byteLength || 1);
+              wasm.heap8().set(val.byteLength ? val : [0], pBlob)
               rc = capi.sqlite3_bind_blob(stmt.pointer, ndx, pBlob, val.byteLength,
                                          capi.SQLITE_TRANSIENT);
             }finally{
-              capi.wasm.scopedAllocPop(stack);
+              wasm.scopedAllocPop(stack);
             }
           }else{
-            const pBlob = capi.wasm.allocFromTypedArray(val);
+            const pBlob = wasm.allocFromTypedArray(val);
             try{
               rc = capi.sqlite3_bind_blob(stmt.pointer, ndx, pBlob, val.byteLength,
                                          capi.SQLITE_TRANSIENT);
             }finally{
-              capi.wasm.dealloc(pBlob);
+              wasm.dealloc(pBlob);
             }
           }
           break;
@@ -1518,7 +1518,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
              : asType){
           case capi.SQLITE_NULL: return null;
           case capi.SQLITE_INTEGER:{
-            if(capi.wasm.bigIntEnabled){
+            if(wasm.bigIntEnabled){
               const rc = capi.sqlite3_column_int64(this.pointer, ndx);
               if(rc>=Number.MIN_SAFE_INTEGER && rc<=Number.MAX_SAFE_INTEGER){
                 /* Coerce "normal" number ranges to normal number values,
@@ -1549,8 +1549,8 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             const n = capi.sqlite3_column_bytes(this.pointer, ndx),
                   ptr = capi.sqlite3_column_blob(this.pointer, ndx),
                   rc = new Uint8Array(n);
-            //heap = n ? capi.wasm.heap8() : false;
-            if(n) rc.set(capi.wasm.heap8u().slice(ptr, ptr+n), 0);
+            //heap = n ? wasm.heap8() : false;
+            if(n) rc.set(wasm.heap8u().slice(ptr, ptr+n), 0);
             //for(let i = 0; i < n; ++i) rc[i] = heap[ptr + i];
             if(n && this.db._blobXfer instanceof Array){
               /* This is an optimization soley for the

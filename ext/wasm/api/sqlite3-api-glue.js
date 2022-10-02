@@ -55,10 +55,11 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   
   if(1){// WhWasmUtil.xWrap() bindings...
     /**
-       Add some descriptive xWrap() aliases for '*' intended to
-       (A) initially improve readability/correctness of capi.signatures
-       and (B) eventually perhaps provide some sort of type-safety
-       in their conversions.
+       Add some descriptive xWrap() aliases for '*' intended to (A)
+       initially improve readability/correctness of capi.signatures
+       and (B) eventually perhaps provide automatic conversion from
+       higher-level representations, e.g. capi.sqlite3_vfs to
+       `sqlite3_vfs*` via capi.sqlite3_vfs.pointer.
     */
     const aPtr = wasm.xWrap.argAdapter('*');
     wasm.xWrap.argAdapter('sqlite3*', aPtr)('sqlite3_stmt*', aPtr);
@@ -247,6 +248,56 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         : __dbArgcMismatch(pDb,"sqlite3_prepare_v2",5);
     };
   }/*sqlite3_prepare_v2/v3()*/;
+
+  if(1){// Extend wasm.pstack, now that the wasm utils are installed
+    /**
+       Allocates n chunks, each sz bytes, as a single memory block and
+       returns the addresses as an array of n element, each holding
+       the address of one chunk.
+
+       Throws a WasmAllocError if allocation fails.
+
+       Example:
+
+       ```
+       const [p1, p2, p3] = wasm.pstack.allocChunks(3,4);
+       ```
+    */
+    wasm.pstack.allocChunks = (n,sz)=>{
+      const mem = wasm.pstack.alloc(n * sz);
+      const rc = [];
+      let i = 0, offset = 0;
+      for(; i < n; offset = (sz * ++i)){
+        rc.push(mem + offset);
+      }
+      return rc;
+    };
+
+    /**
+       A convenience wrapper for allocChunks() which sizes each chunks
+       as either 8 bytes (safePtrSize is truthy) or wasm.ptrSizeof (if
+       safePtrSize is truthy).
+
+       How it returns its result differs depending on its first
+       argument: if it's 1, it returns a single pointer value. If it's
+       more than 1, it returns the same as allocChunks().
+
+       When one of the pointers refers to a 64-bit value, e.g. a
+       double or int64, and that value must be written or fetch,
+       e.g. using wasm.setMemValue() or wasm.getMemValue(), it is
+       important that the pointer in question be aligned to an 8-byte
+       boundary or else it will not be fetched or written properly and
+       will corrupt or read neighboring memory.
+
+       However, when all pointers involved are "small", it is safe to
+       pass a falsy value to save to memory.
+    */
+    wasm.pstack.allocPtr = (n=1,safePtrSize=true) =>{
+      return 1===n
+        ? wasm.pstack.alloc(safePtrSize ? 8 : wasm.ptrSizeof)
+        : wasm.pstack.allocChunks(n, safePtrSize ? 8 : wasm.ptrSizeof);
+    };
+  }/*wasm.pstack filler*/
 
   /**
      Install JS<->C struct bindings for the non-opaque struct types we

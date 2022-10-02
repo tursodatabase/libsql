@@ -1091,28 +1091,36 @@ self.WhWasmUtilInstaller = function(target){
   };
 
   /** Internal impl for allocPtr() and scopedAllocPtr(). */
-  const __allocPtr = function(howMany, method){
+  const __allocPtr = function(howMany, safePtrSize, method){
     __affirmAlloc(target, method);
-    let m = target[method](howMany * ptrSizeof);
-    target.setMemValue(m, 0, ptrIR)
+    const pIr = safePtrSize ? 'i64' : ptrIR;
+    let m = target[method](howMany * (safePtrSize ? 8 : ptrSizeof));
+    target.setMemValue(m, 0, pIr)
     if(1===howMany){
       return m;
     }
     const a = [m];
     for(let i = 1; i < howMany; ++i){
-      m += ptrSizeof;
+      m += (safePtrSize ? 8 : ptrSizeof);
       a[i] = m;
-      target.setMemValue(m, 0, ptrIR);
+      target.setMemValue(m, 0, pIr);
     }
     return a;
   };
 
   /**
-     Allocates a single chunk of memory capable of holding `howMany`
-     pointers and zeroes them out. If `howMany` is 1 then the memory
-     chunk is returned directly, else an array of pointer addresses is
-     returned, which can optionally be used with "destructuring
-     assignment" like this:
+     Allocates one or more pointers as a single chunk of memory and
+     zeroes them out.
+
+     The first argument is the number of pointers to allocate. The
+     second specifies whether they should use a "safe" pointer size (8
+     bytes) or whether they may use the default pointer size
+     (typically 4 but also possibly 8).
+
+     How the result is returned depends on its first argument: if
+     passed 1, it returns the allocated memory address. If passed more
+     than one then an array of pointer addresses is returned, which
+     can optionally be used with "destructuring assignment" like this:
 
      ```
      const [p1, p2, p3] = allocPtr(3);
@@ -1121,14 +1129,27 @@ self.WhWasmUtilInstaller = function(target){
      ACHTUNG: when freeing the memory, pass only the _first_ result
      value to dealloc(). The others are part of the same memory chunk
      and must not be freed separately.
+
+     The reason for the 2nd argument is..
+
+     When one of the pointers will refer to a 64-bit value, e.g. a
+     double or int64, an that value must be written or fetch,
+     e.g. using setMemValue() or getMemValue(), it is important that
+     the pointer in question be aligned to an 8-byte boundary or else
+     it will not be fetched or written properly and will corrupt or
+     read neighboring memory. It i only safe to pass false when the
+     client code is certain that it will only get/fetch 4-byte values
+     (or smaller).
   */
-  target.allocPtr = (howMany=1)=>__allocPtr(howMany, 'alloc');
+  target.allocPtr =
+    (howMany=1, safePtrSize=true)=>__allocPtr(howMany, safePtrSize, 'alloc');
 
   /**
      Identical to allocPtr() except that it allocates using scopedAlloc()
      instead of alloc().
   */
-  target.scopedAllocPtr = (howMany=1)=>__allocPtr(howMany, 'scopedAlloc');
+  target.scopedAllocPtr =
+    (howMany=1, safePtrSize=true)=>__allocPtr(howMany, safePtrSize, 'scopedAlloc');
 
   /**
      If target.exports[name] exists, it is returned, else an
