@@ -24,27 +24,32 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   self.WhWasmUtilInstaller(capi.wasm);
   delete self.WhWasmUtilInstaller;
 
+  /**
+     Install JS<->C struct bindings for the non-opaque struct types we
+     need... */
+  sqlite3.StructBinder = self.Jaccwabyt({
+    heap: 0 ? wasm.memory : wasm.heap8u,
+    alloc: wasm.alloc,
+    dealloc: wasm.dealloc,
+    functionTable: wasm.functionTable,
+    bigIntEnabled: wasm.bigIntEnabled,
+    memberPrefix: '$'
+  });
+  delete self.Jaccwabyt;
+
   if(0){
-    /*  "The problem" is that the following isn't type-safe.
-        OTOH, nothing about WASM pointers is. */
-    /**
-       Add the `.pointer` xWrap() signature entry to extend the
-       `pointer` arg handler to check for a `pointer` property. This
-       can be used to permit, e.g., passing an sqlite3.oo1.DB instance
-       to a C-style sqlite3_xxx function which takes an `sqlite3*`
-       argument.
-    */
-    const xPointer = wasm.xWrap.argAdapter('pointer');
-    const adapter = function(v){
-      if(v && v.constructor){
-        const x = v.pointer;
-        if(Number.isInteger(x)) return x;
-        else toss("Invalid (object) type for .pointer-type argument.");
+    /*  "The problem" is that the following isn't even remotely
+        type-safe. OTOH, nothing about WASM pointers is. */
+    const argPointer = wasm.xWrap.argAdapter('*');
+    wasm.xWrap.argAdapter('StructType', (v)=>{
+      if(v && v.constructor && v instanceof StructBinder.StructType){
+        v = v.pointer;
       }
-      return xPointer(v);
-    };
-    wasm.xWrap.argAdapter('.pointer', adapter);
-  } /* ".pointer" xWrap() argument adapter */
+      return (v === (v | 0) /* v is a 32-bit integer */)
+        ? argPointer(v)
+        : toss("Invalid (object) type for StructType-type argument.");
+    });
+  }
 
   if(1){/* Convert Arrays and certain TypedArrays to strings for
            'flexible-string'-type arguments */
@@ -604,19 +609,6 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         : wasm.pstack.allocChunks(n, safePtrSize ? 8 : wasm.ptrSizeof);
     };
   }/*wasm.pstack filler*/
-
-  /**
-     Install JS<->C struct bindings for the non-opaque struct types we
-     need... */
-  sqlite3.StructBinder = self.Jaccwabyt({
-    heap: 0 ? wasm.memory : wasm.heap8u,
-    alloc: wasm.alloc,
-    dealloc: wasm.dealloc,
-    functionTable: wasm.functionTable,
-    bigIntEnabled: wasm.bigIntEnabled,
-    memberPrefix: '$'
-  });
-  delete self.Jaccwabyt;
 
   {/* Import C-level constants and structs... */
     const cJson = wasm.xCall('sqlite3_wasm_enum_json');

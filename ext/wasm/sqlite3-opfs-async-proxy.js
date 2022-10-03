@@ -25,6 +25,13 @@
   access to the sqlite3 JS/WASM bits, so any bits which it needs (most
   notably SQLITE_xxx integer codes) have to be imported into it via an
   initialization process.
+
+  Potential TODOs:
+
+  - When idle for "a long time", close the sync access handle in order
+  to release the lock, then re-open it on demand. Similarly, delay
+  fetching of the sync access handle until we need it. The intent
+  would be to help multi-tab access to a db avoid locking issues.
 */
 'use strict';
 const toss = function(...args){throw new Error(args.join(' '))};
@@ -132,6 +139,17 @@ const getDirForFilename = async function f(absFilename, createDirs = false){
   return [dh, filename];
 };
 
+/**
+   Returns the sync access handle associated with the given file
+   handle object (which must be a valid handle object), lazily opening
+   it if needed.
+*/
+const getSyncHandle = async (f)=>(
+  f.accessHandle || (
+    f.accessHandle =
+      await f.fileHandle.createSyncAccessHandle()
+  )
+);
 
 /**
    Stores the given value at state.sabOPView[state.opIds.rc] and then
@@ -294,7 +312,7 @@ const vfsAsyncImpls = {
     let sz;
     wTimeStart('xFileSize');
     try{
-      sz = await fh.accessHandle.getSize();
+      sz = await (await getSyncHandle(fh)).getSize();
       state.s11n.serialize(Number(sz));
       sz = 0;
     }catch(e){
@@ -322,23 +340,24 @@ const vfsAsyncImpls = {
         return;
       }
       const hFile = await hDir.getFileHandle(filenamePart, {create});
-      const fobj = Object.create(null);
       /**
          wa-sqlite, at this point, grabs a SyncAccessHandle and
          assigns it to the accessHandle prop of the file state
          object, but only for certain cases and it's unclear why it
          places that limitation on it.
       */
-      fobj.accessHandle = await hFile.createSyncAccessHandle();
       wTimeEnd();
+      const fobj = Object.assign(Object.create(null),{
+        filenameAbs: filename,
+        filenamePart: filenamePart,
+        dirHandle: hDir,
+        fileHandle: hFile,
+        sabView: state.sabFileBufView,
+        readOnly: create
+          ? false : (state.sq3Codes.SQLITE_OPEN_READONLY & flags),
+        deleteOnClose: deleteOnClose
+      });
       __openFiles[fid] = fobj;
-      fobj.filenameAbs = filename;
-      fobj.filenamePart = filenamePart;
-      fobj.dirHandle = hDir;
-      fobj.fileHandle = hFile;
-      fobj.sabView = state.sabFileBufView;
-      fobj.readOnly = create ? false : (state.sq3Codes.SQLITE_OPEN_READONLY & flags);
-      fobj.deleteOnClose = deleteOnClose;
       storeAndNotify(opName, 0);
     }catch(e){
       wTimeEnd();
@@ -354,7 +373,7 @@ const vfsAsyncImpls = {
     try{
       const fh = __openFiles[fid];
       wTimeStart('xRead');
-      const nRead = fh.accessHandle.read(
+      const nRead = (await getSyncHandle(fh)).read(
         fh.sabView.subarray(0, n),
         {at: Number(offset)}
       );
@@ -395,7 +414,7 @@ const vfsAsyncImpls = {
     wTimeStart('xTruncate');
     try{
       affirmNotRO('xTruncate', fh);
-      await fh.accessHandle.truncate(size);
+      await (await getSyncHandle(fh)).truncate(size);
     }catch(e){
       error("xTruncate():",e,fh);
       state.s11n.storeException(2,e);
@@ -413,8 +432,9 @@ const vfsAsyncImpls = {
       const fh = __openFiles[fid];
       affirmNotRO('xWrite', fh);
       rc = (
-        n === fh.accessHandle.write(fh.sabView.subarray(0, n),
-                                    {at: Number(offset)})
+        n === (await getSyncHandle(fh))
+          .write(fh.sabView.subarray(0, n),
+                 {at: Number(offset)})
       ) ? 0 : state.sq3Codes.SQLITE_IOERR_WRITE;
     }catch(e){
       error("xWrite():",e,fh);

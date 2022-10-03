@@ -371,16 +371,16 @@ self.WhWasmUtilInstaller = function(target){
   /**
      Creates a WASM function which wraps the given JS function and
      returns the JS binding of that WASM function. The signature
-     argument must be the Jaccwabyt-format or Emscripten
+     string must be the Jaccwabyt-format or Emscripten
      addFunction()-format function signature string. In short: in may
      have one of the following formats:
 
-     - Emscripten: `x...`, where the first x is a letter representing
+     - Emscripten: `"x..."`, where the first x is a letter representing
        the result type and subsequent letters represent the argument
        types. Functions with no arguments have only a single
        letter. See below.
 
-     - Jaccwabyt: `x(...)` where `x` is the letter representing the
+     - Jaccwabyt: `"x(...)"` where `x` is the letter representing the
        result type and letters in the parens (if any) represent the
        argument types. Functions with no arguments use `x()`. See
        below.
@@ -451,9 +451,9 @@ self.WhWasmUtilInstaller = function(target){
                   // is not yet documented on MDN. 
         sigToWasm: function(sig){
           const rc = {parameters:[], results: []};
-          if('v'!==sig[0]) rc.results.push(f._.letterType(sig[0]));
+          if('v'!==sig[0]) rc.results.push(f.sigTypes(sig[0]));
           for(const x of f._.sigParams(sig)){
-            rc.parameters.push(f._.letterType(x));
+            rc.parameters.push(f._.typeCodes(x));
           }
           return rc;
         },************/
