@@ -31,7 +31,7 @@
         <div id='toolbar-select'>
           <select id='select-flags' size='10' multiple></select>
           <div>The following flags can be passed as URL parameters:
-            vfs=NAME, size=N
+            vfs=NAME, size=N, journal=MODE
           </div>
         </div>
         <div class='toolbar-inner-vertical'>
@@ -183,7 +183,7 @@
     const getSelectedFlags = ()=>{
         const f = Array.prototype.map.call(eFlags.selectedOptions, (v)=>v.value);
         [
-            'size', 'vfs'
+            'size', 'vfs', 'journal'
         ].forEach(function(k){
             if(urlParams.has(k)) f.push('--'+k, urlParams.get(k));
         });
