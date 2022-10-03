@@ -55,6 +55,9 @@
 #ifndef SQLITE_THREADSAFE
 # define SQLITE_THREADSAFE 0
 #endif
+#ifndef SQLITE_OMIT_WAL
+# define SQLITE_OMIT_WAL
+#endif
 
 #include <assert.h>
 #include "sqlite3.c" /* yes, .c instead of .h. */
