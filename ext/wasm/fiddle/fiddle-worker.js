@@ -208,14 +208,8 @@
       }
     },
     resetDb: function f(){
-      if(Sqlite3Shell.dbIsOpfs()){
-        /* The problem is that fiddle_reset_db() uses the POSIX APIs
-           for file removal, which cannot see OPFS-hosted files. */
-        stderr("TODO: cannot currently reset an OPFS-hosted db.");
-        return;
-      }
       if(!f._) f._ = sqlite3.capi.wasm.xWrap('fiddle_reset_db', null);
-      stdout("Resetting database.",fixmeOPFS);
+      stdout("Resetting database.");
       f._();
       stdout("Reset",this.dbFilename());
     },

@@ -1,5 +1,5 @@
-C Experimentally\srelinquish\sthe\sOPFS\sVFS\ssync\saccess\shandle\swhen\sthe\sdb\sis\sidle\sand\sreacquire\sit\son\sdemand,\sthe\sgoal\sbeing\sto\shelp\salleviate\scross-tab\slocking\sissues.
-D 2022-10-03T11:33:35.536
+C Reimplement\sfiddle_reset_db()\sso\sthat\sit\sworks\swith\sall\sVFSes.
+D 2022-10-03T11:42:45.345
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -505,7 +505,7 @@ F ext/wasm/demo-kvvfs1.html 7d4f28873de67f51ac18c584b7d920825139866a96049a49c424
 F ext/wasm/demo-kvvfs1.js 105596bd2ccd0b1deb5fde8e99b536e8242d4bb5932fac0c8403ff3a6bc547e8
 F ext/wasm/fiddle.make 3f4efd62bc2a9c883bfcea52ae2755114a62d444d6d042df287f4aef301d6c6c
 F ext/wasm/fiddle/emscripten.css 3d253a6fdb8983a2ac983855bfbdd4b6fa1ff267c28d69513dd6ef1f289ada3f
-F ext/wasm/fiddle/fiddle-worker.js ebf6e95fe031738cd9f79d1ccdf6d80640a2884a43f7006a5e3459995f93069b
+F ext/wasm/fiddle/fiddle-worker.js 531859a471924a0ea48afa218e6877f0c164ca324d51e15843ed6ecc1c65c7ee
 F ext/wasm/fiddle/fiddle.html 5daf54e8f3d7777cbb1ca4f93affe28858dbfff25841cb4ab81d694efed28ec2
 F ext/wasm/fiddle/fiddle.js 974b995119ac443685d7d94d3b3c58c6a36540e9eb3fed7069d5653284071715
 F ext/wasm/index.html 63b370619e4f849ac76f1baed435c05edc29dbb6795bc7c1c935561ff667dd27
@@ -618,7 +618,7 @@ F src/random.c 546d6feb15ec69c1aafe9bb351a277cbb498fd5410e646add673acb805714960
 F src/resolve.c efea4e5fbecfd6d0a9071b0be0d952620991673391b6ffaaf4c277b0bb674633
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c bb18acf4eded647fef88d4d543c673874dbebff516fbeba90a85e6c13f2a58cd
-F src/shell.c.in 2980312ab57fc5ccf298d1f0682588ec3832f52a878bea8abe34647d2cf31d05
+F src/shell.c.in 1c3c4694470c1f61d667a96b29ffa8036d34391efbbdd251692b06f34b46e393
 F src/sqlite.h.in b9b7fd73239d94db20332bb6e504688001e5564b655e1318a4427a1caef4b99e
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h a988810c9b21c0dc36dc7a62735012339dc76fc7ab448fb0792721d30eacb69d
@@ -2029,8 +2029,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5c43e8d2ec23f28fdce63874d9d4c8ccbb4a8f81030b19d65ff5711a7c32697e
-R 1a27bfc63f0ef541783eed07221dd339
+P 2703ac9842335962e488e597168d70b1389b95a6ad39edf70a211b95979b4708
+R 0bcb919ac67ff690a464f41cfdc2aecd
 U stephan
-Z 39513e5d3a3cf9877958a5d88a7ecd20
+Z 78ecb20703c7cf55fa5a9c67c82bb309
 # Remove this line to create a well-formed Fossil manifest.
