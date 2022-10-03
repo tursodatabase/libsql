@@ -1,5 +1,5 @@
-C Minor\sJS\sdoc\supdates\sand\stypo\sfixes.
-D 2022-10-03T22:38:00.357
+C Add\sa\s--cachesize\sflag\sto\sthe\sspeedtest1-worker-opfs\slink\sin\sindex.html\sbecause\sopfs\sis\smuch\sfaster\swith\sthat.
+D 2022-10-03T22:51:24.381
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -508,7 +508,7 @@ F ext/wasm/fiddle/emscripten.css 3d253a6fdb8983a2ac983855bfbdd4b6fa1ff267c28d695
 F ext/wasm/fiddle/fiddle-worker.js 531859a471924a0ea48afa218e6877f0c164ca324d51e15843ed6ecc1c65c7ee
 F ext/wasm/fiddle/fiddle.html 5daf54e8f3d7777cbb1ca4f93affe28858dbfff25841cb4ab81d694efed28ec2
 F ext/wasm/fiddle/fiddle.js 974b995119ac443685d7d94d3b3c58c6a36540e9eb3fed7069d5653284071715
-F ext/wasm/index.html 63b370619e4f849ac76f1baed435c05edc29dbb6795bc7c1c935561ff667dd27
+F ext/wasm/index.html 067171cadf2acbb8a0a87d20480c0d47d740dccda55045bed05505efe80cc245
 F ext/wasm/jaccwabyt/jaccwabyt.js 0d7f32817456a0f3937fcfd934afeb32154ca33580ab264dab6c285e6dbbd215
 F ext/wasm/jaccwabyt/jaccwabyt.md 9aa6951b529a8b29f578ec8f0355713c39584c92cf1708f63ba0cf917cb5b68e
 F ext/wasm/jaccwabyt/jaccwabyt_test.c 39e4b865a33548f943e2eb9dd0dc8d619a80de05d5300668e9960fff30d0d36f
@@ -2029,8 +2029,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2ab065133bec19f71a1dc382946fdbd020920b2e38a526f4126a3a1e8df5de87
-R 1dacfb5e365c4f4cd2a2faf9c5eccc99
+P 3cfcc14dfd220536141aeffb902fdc8db1cea055b2a0609b88e092fc3df94688
+R c3ddc7f08af0e1dfea53de525fac120d
 U stephan
-Z 5fe50f9b4908846a058264def7451aab
+Z c791e943ea41f9bead968e082bef6c31
 # Remove this line to create a well-formed Fossil manifest.
