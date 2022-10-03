@@ -11,18 +11,9 @@
   ***********************************************************************
 
   A testing ground for the OPFS VFS.
-
-  Summary of how this works:
-
-  This file uses the sqlite3.StructBinder-created struct wrappers for
-  sqlite3_vfs, sqlite3_io_methods, ans sqlite3_file to set up a
-  conventional sqlite3_vfs (except that it's implemented in JS). The
-  methods which require OPFS APIs use a separate worker (hereafter called the
-  OPFS worker) to access that functionality. This worker and that one
-  use SharedArrayBuffer.
 */
 'use strict';
-const tryOpfsVfs = function(sqlite3){
+const tryOpfsVfs = async function(sqlite3){
   const toss = function(...args){throw new Error(args.join(' '))};
   const logPrefix = "OPFS tester:";
   const log = (...args)=>console.log(logPrefix,...args);
@@ -40,17 +31,27 @@ const tryOpfsVfs = function(sqlite3){
   const oVfs = capi.sqlite3_vfs.instanceForPointer(pVfs) || toss("Unexpected instanceForPointer() result.");;
   log("OPFS VFS:",pVfs, oVfs);
 
+  const wait = async (ms)=>{
+    return new Promise((resolve)=>setTimeout(resolve, ms));
+  };
+  const waitForRelinquish = async ()=>{
+    log("Waiting briefly to test sync handle relinquishing...");
+    return wait(1500);
+  };
+
   const urlArgs = new URL(self.location.href).searchParams;
   const dbFile = "my-persistent.db";
   if(urlArgs.has('delete')) sqlite3.opfs.deleteEntry(dbFile);
 
   const db = new opfs.OpfsDb(dbFile);
   log("db file:",db.filename);
+  await waitForRelinquish();
   try{
     if(opfs.entryExists(dbFile)){
       let n = db.selectValue("select count(*) from sqlite_schema");
       log("Persistent data found. sqlite_schema entry count =",n);
     }
+    await waitForRelinquish();
     db.transaction((db)=>{
       db.exec({
         sql:[
@@ -62,6 +63,7 @@ const tryOpfsVfs = function(sqlite3){
                (performance.now() |0) / 4]
       });
     });
+    await waitForRelinquish();
     log("count(*) from t =",db.selectValue("select count(*) from t"));
 
     // Some sanity checks of the opfs utility functions...

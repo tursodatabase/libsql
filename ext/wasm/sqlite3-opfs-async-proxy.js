@@ -142,14 +142,28 @@ const getDirForFilename = async function f(absFilename, createDirs = false){
 /**
    Returns the sync access handle associated with the given file
    handle object (which must be a valid handle object), lazily opening
-   it if needed.
+   it if needed. Timestamps the handle for use in relinquishing it
+   during idle time.
 */
-const getSyncHandle = async (f)=>(
-  f.accessHandle || (
-    f.accessHandle =
-      await f.fileHandle.createSyncAccessHandle()
-  )
-);
+const getSyncHandle = async (fh)=>{
+  if(!fh.syncHandle){
+    //const t = performance.now();
+    //warn("Creating sync handle for",fh.filenameAbs);
+    fh.syncHandle = await fh.fileHandle.createSyncAccessHandle();
+    //warn("Got sync handle for",fh.filenameAbs,'in',performance.now() - t,'ms');
+  }
+  fh.syncHandleTime = performance.now();
+  return fh.syncHandle;
+};
+
+const closeSyncHandle = async (fh)=>{
+  if(fh.syncHandle){
+    //warn("Closing sync handle for",fh.filenameAbs);
+    const h = fh.syncHandle;
+    delete fh.syncHandle;
+    return h.close();
+  }
+};
 
 /**
    Stores the given value at state.sabOPView[state.opIds.rc] and then
@@ -255,7 +269,7 @@ const vfsAsyncImpls = {
     wTimeStart('xClose');
     if(fh){
       delete __openFiles[fid];
-      if(fh.accessHandle) await fh.accessHandle.close();
+      await closeSyncHandle(fh);
       if(fh.deleteOnClose){
         try{ await fh.dirHandle.removeEntry(fh.filenamePart) }
         catch(e){ warn("Ignoring dirHandle.removeEntry() failure of",fh,e) }
@@ -342,12 +356,12 @@ const vfsAsyncImpls = {
       const hFile = await hDir.getFileHandle(filenamePart, {create});
       /**
          wa-sqlite, at this point, grabs a SyncAccessHandle and
-         assigns it to the accessHandle prop of the file state
+         assigns it to the syncHandle prop of the file state
          object, but only for certain cases and it's unclear why it
          places that limitation on it.
       */
       wTimeEnd();
-      const fobj = Object.assign(Object.create(null),{
+      __openFiles[fid] = Object.assign(Object.create(null),{
         filenameAbs: filename,
         filenamePart: filenamePart,
         dirHandle: hDir,
@@ -357,7 +371,6 @@ const vfsAsyncImpls = {
           ? false : (state.sq3Codes.SQLITE_OPEN_READONLY & flags),
         deleteOnClose: deleteOnClose
       });
-      __openFiles[fid] = fobj;
       storeAndNotify(opName, 0);
     }catch(e){
       wTimeEnd();
@@ -370,8 +383,8 @@ const vfsAsyncImpls = {
   xRead: async function(fid,n,offset){
     mTimeStart('xRead');
     let rc = 0;
+    const fh = __openFiles[fid];
     try{
-      const fh = __openFiles[fid];
       wTimeStart('xRead');
       const nRead = (await getSyncHandle(fh)).read(
         fh.sabView.subarray(0, n),
@@ -394,10 +407,10 @@ const vfsAsyncImpls = {
     mTimeStart('xSync');
     const fh = __openFiles[fid];
     let rc = 0;
-    if(!fh.readOnly && fh.accessHandle){
+    if(!fh.readOnly && fh.syncHandle){
       try {
         wTimeStart('xSync');
-        await fh.accessHandle.flush();
+        await fh.syncHandle.flush();
       }catch(e){
         state.s11n.storeException(2,e);
       }finally{
@@ -563,23 +576,58 @@ const waitLoop = async function f(){
     o.key = k;
     o.f = vi || toss("No vfsAsyncImpls[",k,"]");
   }
+  /**
+     waitTime is how long (ms) to wait for each Atomics.wait().
+     We need to wait up periodically to give the thread a chance
+     to do other things.
+  */
+  const waitTime = 250;
+  /**
+     relinquishTime defines the_approximate_ number of ms
+     after which a db sync access handle will be relinquished
+     so that we do not hold a persistent lock on it. When the following loop
+     times out while waiting, every (approximate) increment of this
+     value it will relinquish any db handles which have been idle for
+     at least this much time.
+
+     Reaquisition of a sync handle seems to take an average of
+     0.6-0.9ms on this dev machine but takes anywhere from 1-3ms
+     every once in a while (maybe 1 time in 5 or 10).
+  */
+  const relinquishTime = 1000;
+  let lastOpTime = performance.now();
+  let now;
   while(true){
     try {
-      if('timed-out'===Atomics.wait(state.sabOPView, state.opIds.whichOp, 0, 500)){
+      if('timed-out'===Atomics.wait(
+        state.sabOPView, state.opIds.whichOp, 0, waitTime
+      )){
+        if(relinquishTime &&
+           (lastOpTime + relinquishTime <= (now = performance.now()))){
+          for(const fh of Object.values(__openFiles)){
+            if(fh.syncHandle && (
+              now - relinquishTime >= fh.syncHandleTime
+            )){
+              //warn("Relinquishing for timeout:",fh.filenameAbs);
+              closeSyncHandle(fh)/*async!*/;
+            }
+          }
+        }
         continue;
       }
+      lastOpTime = performance.now();
       const opId = Atomics.load(state.sabOPView, state.opIds.whichOp);
       Atomics.store(state.sabOPView, state.opIds.whichOp, 0);
       const hnd = opHandlers[opId] ?? toss("No waitLoop handler for whichOp #",opId);
       const args = state.s11n.deserialize() || [];
-      state.s11n.serialize()/* clear s11n to keep the caller from
-                               confusing this with an exception string
-                               written by the upcoming operation */;
+      state.s11n.serialize(/* clear s11n to keep the caller from
+                              confusing this with an exception string
+                              written by the upcoming operation */);
       //warn("waitLoop() whichOp =",opId, hnd, args);
       if(hnd.f) await hnd.f(...args);
       else error("Missing callback for opId",opId);
     }catch(e){
-      error('in waitLoop():',e.message);
+      error('in waitLoop():',e);
     }
   };
 };
