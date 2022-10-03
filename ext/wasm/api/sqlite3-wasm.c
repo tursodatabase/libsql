@@ -58,6 +58,26 @@
 #ifndef SQLITE_OMIT_WAL
 # define SQLITE_OMIT_WAL
 #endif
+#ifndef SQLITE_DEFAULT_CACHE_SIZE
+/*
+** The OPFS impls benefit tremendously from an increased cache size
+** when working on large workloads, e.g. speedtest1 --size 50 or
+** higher. On smaller workloads, e.g. speedtest1 --size 25, they
+** clearly benefit from having 4mb of cache, but not as much as a
+** larger cache benefits the larger workloads. Speed differences
+** between 2x and nearly 3x have been measured with ample page cache.
+*/
+# define SQLITE_DEFAULT_CACHE_SIZE -16777216
+#endif
+
+#if 0
+/*
+** TODO: experiment with this when back on the opfs-capable machine.
+*/
+#ifndef SQLITE_DEFAULT_PAGE_SIZE
+# define SQLITE_DEFAULT_PAGE_SIZE 8192 /*4096*/
+#endif
+#endif
 
 #include <assert.h>
 #include "sqlite3.c" /* yes, .c instead of .h. */
@@ -140,6 +160,11 @@ WASM_KEEP void * sqlite3_wasm_stack_alloc(int n){
 ** memory to use for that purpose. This memory ends up in the
 ** WASM-managed memory, such that routines which manipulate the wasm
 ** heap can also be used to manipulate this memory.
+**
+** This particular allocator is intended for small allocations such as
+** storage for output pointers. We cannot reasonably size it large
+** enough for general-purpose string conversions because some of our
+** tests use input files (strings) of 16MB+.
 */
 static unsigned char PStack_mem[512 * 8] = {0};
 static struct {
@@ -239,35 +264,35 @@ int sqlite3_wasm_db_error(sqlite3*db, int err_code, const char *zMsg){
 */
 WASM_KEEP
 const char * sqlite3_wasm_enum_json(void){
-  static char strBuf[1024 * 12] = {0} /* where the JSON goes */;
-  int n = 0, childCount = 0, structCount = 0
+  static char azBuffer[1024 * 12] = {0} /* where the JSON goes */;
+  int n = 0, nChildren = 0, nStruct = 0
     /* output counters for figuring out where commas go */;
-  char * pos = &strBuf[1] /* skip first byte for now to help protect
+  char * zPos = &azBuffer[1] /* skip first byte for now to help protect
                           ** against a small race condition */;
-  char const * const zEnd = pos + sizeof(strBuf) /* one-past-the-end */;
-  if(strBuf[0]) return strBuf;
-  /* Leave strBuf[0] at 0 until the end to help guard against a tiny
+  char const * const zEnd = &azBuffer[0] + sizeof(azBuffer) /* one-past-the-end */;
+  if(azBuffer[0]) return azBuffer;
+  /* Leave azBuffer[0] at 0 until the end to help guard against a tiny
   ** race condition. If this is called twice concurrently, they might
-  ** end up both writing to strBuf, but they'll both write the same
+  ** end up both writing to azBuffer, but they'll both write the same
   ** thing, so that's okay. If we set byte 0 up front then the 2nd
   ** instance might return and use the string before the 1st instance
   ** is done filling it. */
 
 /* Core output macros... */
-#define lenCheck assert(pos < zEnd - 128 \
+#define lenCheck assert(zPos < zEnd - 128 \
   && "sqlite3_wasm_enum_json() buffer is too small."); \
-  if(pos >= zEnd - 128) return 0
+  if( zPos >= zEnd - 128 ) return 0
 #define outf(format,...) \
-  pos += snprintf(pos, ((size_t)(zEnd - pos)), format, __VA_ARGS__); \
+  zPos += snprintf(zPos, ((size_t)(zEnd - zPos)), format, __VA_ARGS__); \
   lenCheck
 #define out(TXT) outf("%s",TXT)
 #define CloseBrace(LEVEL) \
-  assert(LEVEL<5); memset(pos, '}', LEVEL); pos+=LEVEL; lenCheck
+  assert(LEVEL<5); memset(zPos, '}', LEVEL); zPos+=LEVEL; lenCheck
 
 /* Macros for emitting maps of integer- and string-type macros to
 ** their values. */
 #define DefGroup(KEY) n = 0; \
-  outf("%s\"" #KEY "\": {",(childCount++ ? "," : ""));
+  outf("%s\"" #KEY "\": {",(nChildren++ ? "," : ""));
 #define DefInt(KEY)                                     \
   outf("%s\"%s\": %d", (n++ ? ", " : ""), #KEY, (int)KEY)
 #define DefStr(KEY)                                     \
@@ -575,7 +600,7 @@ const char * sqlite3_wasm_enum_json(void){
   /** Macros for emitting StructBinder description. */
 #define StructBinder__(TYPE)                 \
   n = 0;                                     \
-  outf("%s{", (structCount++ ? ", " : ""));  \
+  outf("%s{", (nStruct++ ? ", " : ""));  \
   out("\"name\": \"" # TYPE "\",");         \
   outf("\"sizeof\": %d", (int)sizeof(TYPE)); \
   out(",\"members\": {");
@@ -591,7 +616,7 @@ const char * sqlite3_wasm_enum_json(void){
        (int)sizeof(((CurrentStruct*)0)->MEMBER),              \
        SIG)
 
-  structCount = 0;
+  nStruct = 0;
   out(", \"structs\": ["); {
 
 #define CurrentStruct sqlite3_vfs
@@ -654,9 +679,9 @@ const char * sqlite3_wasm_enum_json(void){
   } out( "]"/*structs*/);
 
   out("}"/*top-level object*/);
-  *pos = 0;
-  strBuf[0] = '{'/*end of the race-condition workaround*/;
-  return strBuf;
+  *zPos = 0;
+  azBuffer[0] = '{'/*end of the race-condition workaround*/;
+  return azBuffer;
 #undef StructBinder
 #undef StructBinder_
 #undef StructBinder__
