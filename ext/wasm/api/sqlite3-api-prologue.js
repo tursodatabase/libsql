@@ -815,6 +815,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     ["sqlite3_step", "int", "sqlite3_stmt*"],
     ["sqlite3_strglob", "int", "string","string"],
     ["sqlite3_strlike", "int", "string","string","int"],
+    ["sqlite3_trace_v2", "int", "sqlite3*", "int", "*", "*"],
     ["sqlite3_total_changes", "int", "sqlite3*"],
     ["sqlite3_uri_boolean", "int", "string", "string", "int"],
     ["sqlite3_uri_key", "string", "string", "int"],

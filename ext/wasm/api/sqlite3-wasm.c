@@ -527,6 +527,13 @@ const char * sqlite3_wasm_enum_json(void){
     DefInt(SQLITE_SYNC_DATAONLY);
   } _DefGroup;
 
+  DefGroup(trace) {
+    DefInt(SQLITE_TRACE_STMT);
+    DefInt(SQLITE_TRACE_PROFILE);
+    DefInt(SQLITE_TRACE_ROW);
+    DefInt(SQLITE_TRACE_CLOSE);
+  } _DefGroup;
+
   DefGroup(udfFlags) {
     DefInt(SQLITE_DETERMINISTIC);
     DefInt(SQLITE_DIRECTONLY);
@@ -676,6 +683,28 @@ int sqlite3_wasm_vfs_unlink(const char * zName){
 #endif
   if( zName && pVfs && pVfs->xDelete ){
     rc = pVfs->xDelete(pVfs, zName, 1);
+  }
+  return rc;
+}
+
+/*
+** This function is NOT part of the sqlite3 public API. It is strictly
+** for use by the sqlite project's own JS/WASM bindings.
+**
+** This function resets the given db pointer's database as described at
+**
+** https://www.sqlite.org/c3ref/c_dbconfig_defensive.html#sqlitedbconfigresetdatabase
+**
+** Returns 0 on success, an SQLITE_xxx code on error. Returns
+** SQLITE_MISUSE if pDb is NULL.
+*/
+WASM_KEEP
+int sqlite3_wasm_db_reset(sqlite3*pDb){
+  int rc = SQLITE_MISUSE;
+  if( pDb ){
+    rc = sqlite3_db_config(pDb, SQLITE_DBCONFIG_RESET_DATABASE, 1, 0);
+    if( 0==rc ) rc = sqlite3_exec(pDb, "VACUUM", 0, 0, 0);
+    sqlite3_db_config(pDb, SQLITE_DBCONFIG_RESET_DATABASE, 0, 0);
   }
   return rc;
 }

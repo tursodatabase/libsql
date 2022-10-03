@@ -43,7 +43,7 @@ const tryOpfsVfs = async function(sqlite3){
   const dbFile = "my-persistent.db";
   if(urlArgs.has('delete')) sqlite3.opfs.deleteEntry(dbFile);
 
-  const db = new opfs.OpfsDb(dbFile);
+  const db = new opfs.OpfsDb(dbFile,'ct');
   log("db file:",db.filename);
   await waitForRelinquish();
   try{

@@ -621,7 +621,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     for(const t of ['access', 'blobFinalizers', 'dataTypes',
                     'encodings', 'fcntl', 'flock', 'ioCap',
                     'openFlags', 'prepareFlags', 'resultCodes',
-                    'serialize', 'syncFlags', 'udfFlags',
+                    'serialize', 'syncFlags', 'trace', 'udfFlags',
                     'version'
                    ]){
       for(const e of Object.entries(wasm.ctype[t])){

@@ -74,6 +74,7 @@ _sqlite3_strglob
 _sqlite3_strlike
 _sqlite3_total_changes
 _sqlite3_total_changes64
+_sqlite3_trace_v2
 _sqlite3_uri_boolean
 _sqlite3_uri_int64
 _sqlite3_uri_key

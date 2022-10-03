@@ -609,7 +609,11 @@ const waitLoop = async function f(){
               now - relinquishTime >= fh.syncHandleTime
             )){
               //warn("Relinquishing for timeout:",fh.filenameAbs);
-              closeSyncHandle(fh)/*async!*/;
+              await closeSyncHandle(fh)
+              /* Testing shows that we have to wait on this async
+                 op to finish, else we might try to re-open it
+                 before the close has run. The FS layer does not
+                 retain the order those operations, apparently. */;
             }
           }
         }

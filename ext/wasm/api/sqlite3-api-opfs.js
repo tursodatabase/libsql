@@ -898,8 +898,14 @@ const installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri){
         sqlite3.oo1.dbCtorHelper.call(this, opt);
       };
       opfsUtil.OpfsDb.prototype = Object.create(sqlite3.oo1.DB.prototype);
+      sqlite3.oo1.dbCtorHelper.setVfsPostOpenSql(
+        opfsVfs.pointer,
+        /* Truncate journal mode is faster than delete or wal for
+           OPFS, per speedtest1. */
+        "pragma journal_mode=truncate"
+      );
     }
-    
+
     /**
        Potential TODOs:
 
@@ -907,7 +913,6 @@ const installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri){
          publish an interface for proxying the higher-level OPFS
          features like getting a directory listing.
     */
-    
     const sanityCheck = function(){
       const scope = wasm.scopedAllocPush();
       const sq3File = new sqlite3_file();
