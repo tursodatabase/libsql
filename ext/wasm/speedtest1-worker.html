@@ -31,7 +31,7 @@
         <div id='toolbar-select'>
           <select id='select-flags' size='10' multiple></select>
           <div>The following flags can be passed as URL parameters:
-            vfs=NAME, size=N, journal=MODE
+            vfs=NAME, size=N, journal=MODE, cachesize=BYTES
           </div>
         </div>
         <div class='toolbar-inner-vertical'>
@@ -183,7 +183,7 @@
     const getSelectedFlags = ()=>{
         const f = Array.prototype.map.call(eFlags.selectedOptions, (v)=>v.value);
         [
-            'size', 'vfs', 'journal'
+            'size', 'vfs', 'journal', 'cachesize'
         ].forEach(function(k){
             if(urlParams.has(k)) f.push('--'+k, urlParams.get(k));
         });
@@ -214,7 +214,7 @@
            (e.g. --script FILE). */
         flags["--autovacuum"] = "Enable AUTOVACUUM mode";
         flags["--big-transactions"] = "Important for tests 410 and 510!";
-        //flags["--cachesize"] = "N       Set the cache size to N";
+        //flags["--cachesize"] = "N       Set the cache size to N pages";
         flags["--checkpoint"] = "Run PRAGMA wal_checkpoint after each test case";
         flags["--exclusive"] = "Enable locking_mode=EXCLUSIVE";
         flags["--explain"] = "Like --sqlonly but with added EXPLAIN keywords";

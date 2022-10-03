@@ -45,7 +45,7 @@
     const capi = sqlite3.capi/*C-style API*/,
           oo = sqlite3.oo1/*high-level OO API*/;
     log("sqlite3 version",capi.sqlite3_libversion(), capi.sqlite3_sourceid());
-    const db = new oo.DB("/mydb.sqlite3");
+    const db = new oo.DB("/mydb.sqlite3",'ct');
     log("transient db =",db.filename);
     /**
        Never(!) rely on garbage collection to clean up DBs and

@@ -18,6 +18,11 @@
   const toss = function(...args){throw new Error(args.join(' '))};
   const warn = console.warn.bind(console);
   let sqlite3;
+  const urlParams = new URL(self.location.href).searchParams;
+  const cacheSize = (()=>{
+    if(urlParams.has('cachesize')) return +urlParams.get('cachesize');
+    return 200;
+  })();
 
   /** Throws if the given sqlite3 result code is not 0. */
   const checkSqliteRc = (dbh,rc)=>{
@@ -63,51 +68,8 @@
     // This would be SO much easier with the oo1 API, but we specifically want to
     // inject metrics we can't get via that API, and we cannot reliably (OPFS)
     // open the same DB twice to clear it using that API, so...
-    let pStmt = 0, pSqlBegin;
-    const capi = sqlite3.capi, wasm = capi.wasm;
-    const scope = wasm.scopedAllocPush();
-    try {
-      const toDrop = [/* type, name pairs */];
-      const ppStmt = wasm.scopedAllocPtr();
-      // Collect list of tables/etc we can drop...
-      let rc = capi.sqlite3_prepare_v2(db.handle, sqlToDrop, -1, ppStmt, null);
-      checkSqliteRc(db.handle,rc);
-      pStmt = wasm.getPtrValue(ppStmt);
-      while(capi.SQLITE_ROW===capi.sqlite3_step(pStmt)){
-        toDrop.push(capi.sqlite3_column_text(pStmt,0),
-                    capi.sqlite3_column_text(pStmt,1));
-      }
-      capi.sqlite3_finalize(pStmt);
-      pStmt = 0;
-      // Build SQL to delete them...
-      const sqlDrop = [];
-      const doDrop = 0!==toDrop.length;
-      while(doDrop){
-        const name = toDrop.pop();
-        if(name){
-          const type = toDrop.pop();
-          switch(type){
-              case 'table': case 'view': case 'trigger': case 'index':
-                sqlDrop.push('DROP '+type+' '+name);
-                break;
-              default:
-                warn("Unhandled db entry type:",type,name);
-                continue;
-          }
-        }else{
-          sqlDrop.push("VACUUM");
-          break;
-        }
-      }
-      if(sqlDrop.length){
-        const sqlClean = sqlDrop.join(';\n');
-        console.log("Cleaning up",db.id,":",sqlClean);
-        capi.sqlite3_exec(db.handle, sqlClean, 0, 0, 0);
-      }
-    }finally{
-      if(pStmt) capi.sqlite3_finalize(pStmt);
-      wasm.scopedAllocPop(scope);
-    }
+    const rc = sqlite3.capi.wasm.exports.sqlite3_wasm_db_reset(db.handle);
+    App.logHtml("reset db rc =",rc,db.id, db.filename);
   };
 
   
@@ -521,6 +483,10 @@
       if('websql' === dbId){
         d.handle = self.openDatabase('batch-runner', '0.1', 'foo', 1024 * 1024 * 50);
         d.clear = ()=>clearDbWebSQL(d);
+        d.handle.transaction(function(tx){
+          tx.executeSql("PRAGMA cache_size="+cacheSize);
+          App.logHtml(dbId,"cache_size =",cacheSize);
+        });
       }else{
         const capi = this.sqlite3.capi, wasm = capi.wasm;
         const stack = wasm.scopedAllocPush();
@@ -531,6 +497,8 @@
           const rc = capi.sqlite3_open_v2(d.filename, ppDb, oFlags, null);
           pDb = wasm.getPtrValue(ppDb)
           if(rc) toss("sqlite3_open_v2() failed with code",rc);
+          capi.sqlite3_exec(pDb, "PRAGMA cache_size="+cacheSize, 0, 0, 0);
+          this.logHtml(dbId,"cache_size =",cacheSize);
         }catch(e){
           if(pDb) capi.sqlite3_close_v2(pDb);
         }finally{
@@ -540,7 +508,7 @@
         d.clear = ()=>clearDbSqlite(d);
       }
       d.clear();
-      this.logHtml("Opened db:",dbId);
+      this.logHtml("Opened db:",dbId,d.filename);
       console.log("db =",d);
       return d;
     },
