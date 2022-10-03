@@ -260,10 +260,10 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
 
   /**
      If v is-a Array, its join('') result is returned.  If
-     isSQLableTypedArray(v) then typedArrayToString(v) is
+     isSQLableTypedArray(v) is true then typedArrayToString(v) is
      returned. Else v is returned as-is.
   */
-  const arrayToString = function(v){
+  const flexibleString = function(v){
     if(isSQLableTypedArray(v)) return typedArrayToString(v);
     else if(Array.isArray(v)) return v.join('');
     return v;
@@ -516,7 +516,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        removed.
     */
     util:{
-      affirmBindableTypedArray, arrayToString,
+      affirmBindableTypedArray, flexibleString,
       bigIntFits32, bigIntFits64, bigIntFitsDouble,
       isBindableTypedArray,
       isInt32, isSQLableTypedArray, isTypedArray, 

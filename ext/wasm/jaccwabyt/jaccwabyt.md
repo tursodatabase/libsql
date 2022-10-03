@@ -275,10 +275,10 @@ supported letters are:
 
 - **`v`** = `void` (only used as return type for function pointer members)
 - **`i`** = `int32` (4 bytes)
-- **`j`** = `int64` (8 bytes) is only really usable if this code is built
-  with BigInt support (e.g. using the Emscripten `-sWASM_BIGINT` build
-  flag). Without that, this API may throw when encountering the `j`
-  signature entry.
+- **`j`** or **`I`** = `int64` (8 bytes) is only really usable if this
+  code is built with BigInt support (e.g. using the Emscripten
+  `-sWASM_BIGINT` build flag). Without that, this API may throw when
+  encountering this signature entry.
 - **`f`** = `float` (4 bytes)
 - **`d`** = `double` (8 bytes)
 - **`p`** = `int32` (but see below!)

@@ -50,7 +50,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
            'flexible-string'-type arguments */
     const xString = wasm.xWrap.argAdapter('string');
     wasm.xWrap.argAdapter(
-      'flexible-string', (v)=>xString(util.arrayToString(v))
+      'flexible-string', (v)=>xString(util.flexibleString(v))
     );
   }
   
@@ -216,8 +216,8 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        "*"/*xInverse*/, "*"/*xDestroy*/]
     );
 
-    const __setUdfResult = function(pCtx, val){
-      //console.warn("setUdfResult",typeof val, val);
+    const __udfSetResult = function(pCtx, val){
+      //console.warn("udfSetResult",typeof val, val);
       switch(typeof val) {
           case 'boolean':
             capi.sqlite3_result_int(pCtx, val ? 1 : 0);
@@ -259,9 +259,9 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           default:
           toss3("Don't not how to handle this UDF result value:",(typeof val), val);
       };
-    }/*__setUdfResult()*/;
+    }/*__udfSetResult()*/;
 
-    const __convertUdfArgs = function(argc, pArgv){
+    const __udfConvertArgs = function(argc, pArgv){
       let i, pVal, valType, arg;
       const tgt = [];
       for(i = 0; i < argc; ++i){
@@ -307,9 +307,9 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         tgt.push(arg);
       }
       return tgt;
-    }/*__convertUdfArgs()*/;
+    }/*__udfConvertArgs()*/;
 
-    const __setUdfError = (pCtx, e)=>{
+    const __udfSetError = (pCtx, e)=>{
       if(e instanceof sqlite3.WasmAllocError){
         capi.sqlite3_result_error_nomem(pCtx);
       }else{
@@ -319,25 +319,25 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
     const __xFunc = function(callback){
       return function(pCtx, argc, pArgv){
-        try{ __setUdfResult(pCtx, callback(pCtx, ...__convertUdfArgs(argc, pArgv))) }
+        try{ __udfSetResult(pCtx, callback(pCtx, ...__udfConvertArgs(argc, pArgv))) }
         catch(e){
           //console.error('xFunc() caught:',e);
-          __setUdfError(pCtx, e);
+          __udfSetError(pCtx, e);
         }
       };
     };
 
     const __xInverseAndStep = function(callback){
       return function(pCtx, argc, pArgv){
-        try{ callback(pCtx, ...__convertUdfArgs(argc, pArgv)) }
-        catch(e){ __setUdfError(pCtx, e) }
+        try{ callback(pCtx, ...__udfConvertArgs(argc, pArgv)) }
+        catch(e){ __udfSetError(pCtx, e) }
       };
     };
 
     const __xFinalAndValue = function(callback){
       return function(pCtx){
-        try{ __setUdfResult(pCtx, callback(pCtx)) }
-        catch(e){ __setUdfError(pCtx, e) }
+        try{ __udfSetResult(pCtx, callback(pCtx)) }
+        catch(e){ __udfSetError(pCtx, e) }
       };
     };
 
@@ -446,7 +446,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     };
     /**
        A helper for UDFs implemented in JS and bound to WASM by the
-       client. Given a JS value, setUdfResult(pCtx,X) calls one of the
+       client. Given a JS value, udfSetResult(pCtx,X) calls one of the
        sqlite3_result_xyz(pCtx,...)  routines, depending on X's data
        type:
 
@@ -458,9 +458,9 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
        Anything else triggers sqlite3_result_error().
     */
-    capi.sqlite3_create_function_v2.setUdfResult =
-      capi.sqlite3_create_function.setUdfResult =
-      capi.sqlite3_create_window_function.setUdfResult = __setUdfResult;
+    capi.sqlite3_create_function_v2.udfSetResult =
+      capi.sqlite3_create_function.udfSetResult =
+      capi.sqlite3_create_window_function.udfSetResult = __udfSetResult;
 
     /**
        A helper for UDFs implemented in JS and bound to WASM by the
@@ -480,9 +480,9 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        The conversion will throw only on allocation error or an internal
        error.
     */
-    capi.sqlite3_create_function_v2.convertUdfArgs =
-      capi.sqlite3_create_function.convertUdfArgs =
-      capi.sqlite3_create_window_function.convertUdfArgs = __convertUdfArgs;
+    capi.sqlite3_create_function_v2.udfConvertArgs =
+      capi.sqlite3_create_function.udfConvertArgs =
+      capi.sqlite3_create_window_function.udfConvertArgs = __udfConvertArgs;
 
     /**
        A helper for UDFs implemented in JS and bound to WASM by the
@@ -492,9 +492,9 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        depending on whether the 2nd argument is a
        sqlite3.WasmAllocError object or not.
     */
-    capi.sqlite3_create_function_v2.setUdfError =
-      capi.sqlite3_create_function.setUdfError =
-      capi.sqlite3_create_window_function.setUdfError = __setUdfError;
+    capi.sqlite3_create_function_v2.udfSetError =
+      capi.sqlite3_create_function.udfSetError =
+      capi.sqlite3_create_window_function.udfSetError = __udfSetError;
 
   }/*sqlite3_create_function_v2() and sqlite3_create_window_function() proxies*/;
 

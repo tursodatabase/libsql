@@ -377,17 +377,19 @@ self.WhWasmUtilInstaller = function(target){
 
      - Emscripten: `x...`, where the first x is a letter representing
        the result type and subsequent letters represent the argument
-       types. See below.
+       types. Functions with no arguments have only a single
+       letter. See below.
 
      - Jaccwabyt: `x(...)` where `x` is the letter representing the
        result type and letters in the parens (if any) represent the
-       argument types. See below.
+       argument types. Functions with no arguments use `x()`. See
+       below.
 
      Supported letters:
 
      - `i` = int32
      - `p` = int32 ("pointer")
-     - `j` = int64
+     - `j` or `I` = int64
      - `f` = float32
      - `d` = float64
      - `v` = void, only legal for use as the result type
@@ -402,6 +404,9 @@ self.WhWasmUtilInstaller = function(target){
 
      Sidebar: this code is developed together with Jaccwabyt, thus the
      support for its signature format.
+
+     The arguments may be supplied in either order: (func,sig) or
+     (sig,func).
   */
   target.jsFuncToWasm = function f(func, sig){
     /** Attribution: adapted up from Emscripten-generated glue code,
@@ -410,9 +415,14 @@ self.WhWasmUtilInstaller = function(target){
     if(!f._){/*static init...*/
       f._ = {
         // Map of signature letters to type IR values
-        sigTypes: Object.create(null),
+        sigTypes: Object.assign(Object.create(null),{
+          i: 'i32', p: 'i32', P: 'i32', s: 'i32',
+          j: 'i64', I: 'i64', f: 'f32', d: 'f64'
+        }),
         // Map of type IR values to WASM type code values
-        typeCodes: Object.create(null),
+        typeCodes: Object.assign(Object.create(null),{
+          f64: 0x7c, f32: 0x7d, i64: 0x7e, i32: 0x7f
+        }),
         /** Encodes n, which must be <2^14 (16384), into target array
             tgt, as a little-endian value, using the given method
             ('push' or 'unshift'). */
@@ -452,11 +462,12 @@ self.WhWasmUtilInstaller = function(target){
             invalid. */
         pushSigType: (dest, letter)=>dest.push(f._.typeCodes[f._.letterType(letter)])
       };
-      f._.sigTypes.i = f._.sigTypes.p = f._.sigTypes.P = f._.sigTypes.s = 'i32';
-      f._.sigTypes.j = 'i64'; f._.sigTypes.f = 'f32'; f._.sigTypes.d = 'f64';
-      f._.typeCodes['i32'] = 0x7f; f._.typeCodes['i64'] = 0x7e;
-      f._.typeCodes['f32'] = 0x7d; f._.typeCodes['f64'] = 0x7c;
     }/*static init*/
+    if('string'===typeof func){
+      const x = sig;
+      sig = func;
+      func = x;
+    }
     const sigParams = f._.sigParams(sig);
     const wasmCode = [0x01/*count: 1*/, 0x60/*function*/];
     f._.uleb128Encode(wasmCode, 'push', sigParams.length);
