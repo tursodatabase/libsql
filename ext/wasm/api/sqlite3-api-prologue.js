@@ -304,7 +304,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        counterpart only in the following ways:
 
        1) The fourth argument (`eTextRep`) argument must not specify
-       any encoding other than sqlite.SQLITE_UTF8. The JS API does not
+       any encoding other than sqlite3.SQLITE_UTF8. The JS API does not
        currently support any other encoding and likely never
        will. This function does not replace that argument on its own
        because it may contain other flags.
@@ -332,21 +332,22 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
 
        Note that:
 
-       - `pCtx` in the above descriptions is a `sqlite3_context*`. 99
-         times out of a hundred, or maybe more, that initial argument
-         will be irrelevant for JS UDF bindings, but it needs to be
-         there so that the cases where it _is_ relevant, in particular
-         with window and aggregate functions, have full access to the
-         underlying sqlite3 APIs.
+       - `pCtx` in the above descriptions is a `sqlite3_context*`. At
+         least 99 times out of a hundred, that initial argument will
+         be irrelevant for JS UDF bindings, but it needs to be there
+         so that the cases where it _is_ relevant, in particular with
+         window and aggregate functions, have full access to the
+         lower-level sqlite3 APIs.
 
-       - When wrapping JS functions, the remaining arguments arrive as
-         positional arguments, not as an array of arguments, because
-         that allows callback definitions to be more JS-idiomatic than
-         C-like, for example `(pCtx,a,b)=>a+b` is more intuitive and
-         legible than `(pCtx,args)=>args[0]+args[1]`. For cases where
-         an array of arguments would be more convenient, the callbacks
-         simply need to be declared like `(pCtx,...args)=>{...}`, in
-         which case `args` will be an array.
+       - When wrapping JS functions, the remaining arguments are passd
+         to them as positional arguments, not as an array of
+         arguments, because that allows callback definitions to be
+         more JS-idiomatic than C-like. For example `(pCtx,a,b)=>a+b`
+         is more intuitive and legible than
+         `(pCtx,args)=>args[0]+args[1]`. For cases where an array of
+         arguments would be more convenient, the callbacks simply need
+         to be declared like `(pCtx,...args)=>{...}`, in which case
+         `args` will be an array.
 
        - If a JS wrapper throws, it gets translated to
          sqlite3_result_error() or sqlite3_result_error_nomem(),
@@ -371,9 +372,8 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
          is feasible, triggering an exception if a type conversion
          cannot be determined. Some freedom is afforded to numeric
          conversions due to friction between the JS and C worlds:
-         integers which are larger than 32 bits will be treated as
-         doubles. TODO: use BigInt support if enabled. That feature
-         was added after this functionality was implemented.
+         integers which are larger than 32 bits may be treated as
+         doubles or BigInts.
 
        If any JS-side bound functions throw, those exceptions are
        intercepted and converted to database-side errors with the

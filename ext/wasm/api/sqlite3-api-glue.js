@@ -457,7 +457,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
        - `null`: sqlite3_result_null()
        - `boolean`: sqlite3_result_int()
-       - `number': sqlite3_result_int() or sqlite3_result_double()
+       - `number`: sqlite3_result_int() or sqlite3_result_double()
        - `string`: sqlite3_result_text()
        - Uint8Array or Int8Array: sqlite3_result_blob()
 
@@ -474,7 +474,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        them (xFunc, xStep, xInverse), it creates a JS array
        representing those arguments, converting each to JS in a manner
        appropriate to its data type: numeric, text, blob
-       (Uint8Array()), or null.
+       (Uint8Array), or null.
 
        Results are undefined if it's passed anything other than those
        two arguments from those specific contexts.
