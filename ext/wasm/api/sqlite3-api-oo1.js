@@ -242,20 +242,20 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        is ignored.
 
      - "t": enable tracing of SQL executed on this database handle,
-       sending it to `console.log()`. Once enabled, it cannot
-       currently be easily switched off (TODO).
+       sending it to `console.log()`. To disable it later, call
+       `sqlite3.capi.sqlite3_trace_v2(thisDb.pointer, 0, 0, 0)`.
 
-     If "w" is not provided, the db is implicitly read-only, noting that
-     "rc" is meaningless
+     If "w" is not provided, the db is implicitly read-only, noting
+     that "rc" is meaningless
 
      Any other letters are currently ignored. The default is
      "c". These modes are ignored for the special ":memory:" and ""
-     names.
+     names and _may_ be ignored altogether for certain VFSes.
 
      The final argument is analogous to the final argument of
      sqlite3_open_v2(): the name of an sqlite3 VFS. Pass a falsy value,
      or none at all, to use the default. If passed a value, it must
-     be the string name of a VFS
+     be the string name of a VFS.
 
      The constructor optionally (and preferably) takes its arguments
      in the form of a single configuration object with the following
@@ -266,17 +266,20 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      - `.vfs`: the VFS fname
 
      The `filename` and `vfs` arguments may be either JS strings or
-     C-strings allocated via WASM.
+     C-strings allocated via WASM. `flags` is required to be a JS
+     string (because it's specific to this API, which is specific
+     to JS).
 
      For purposes of passing a DB instance to C-style sqlite3
      functions, the DB object's read-only `pointer` property holds its
      `sqlite3*` pointer value. That property can also be used to check
      whether this DB instance is still open.
 
-     In the main window thread, the filenames ":localStorage:" and
-     ":sessionStorage:" are special: they cause the db to use either
+     In the main window thread, the filenames `":localStorage:"` and
+     `":sessionStorage:"` are special: they cause the db to use either
      localStorage or sessionStorage for storing the database using
-     the kvvfs.
+     the kvvfs. If one of these names are used, they trump
+     any vfs name set in the arguments.
   */
   const DB = function(...args){
     dbCtorHelper.apply(this, args);
