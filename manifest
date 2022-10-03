@@ -1,5 +1,5 @@
-C Add\sthe\s--vfs\soption\sto\sspeedtest1.
-D 2022-10-03T13:45:03.604
+C Copy\sall\sof\sthe\sfiddle-opfs\schanges\sto\sspeedtest1\sinto\strunk.
+D 2022-10-03T13:56:52.781
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1480,7 +1480,7 @@ F test/speed3.test 694affeb9100526007436334cf7d08f3d74b85ef
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 377a0c48e5a92e0b11c1c5ebb1bc9d83a7312c922bc0cb05970ef5d6a96d1f0c
-F test/speedtest1.c 8a9f6b6f6b5b1a18739b9a2eca8dd3ad131f28946c14eb5ae33fefeeada466b7
+F test/speedtest1.c 752fc1cad512f7c94271d3fdb46d6d90c9f6b61d0a4722a28c7028f53952fb1d
 F test/spellfix.test 951a6405d49d1a23d6b78027d3877b4a33eeb8221dcab5704b499755bb4f552e
 F test/spellfix2.test dfc8f519a3fc204cb2dfa8b4f29821ae90f6f8c3
 F test/spellfix3.test 0f9efaaa502a0e0a09848028518a6fb096c8ad33
@@ -2000,8 +2000,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 372802aaa22a830bf498bb0d9561ae02b32e5e191c4d7d771ea152140f6685a1
-R bb0d587e0921cce1f37f5122ed804b2c
+P aeb884029ac1c68f0d7361dda0a545cff19ed265b608c1e329a1926397c5c8a3
+R 9ef7b22777f981a0530dc8b380258dc2
 U drh
-Z 3f01ed1217459ee72edb7ee3c272f0cd
+Z 4bdd14d37dfc0c4e0295fe6f5fd60fb3
 # Remove this line to create a well-formed Fossil manifest.
