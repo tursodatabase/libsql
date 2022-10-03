@@ -44,6 +44,7 @@ static const char zHelp[] =
   "  --utf16be           Set text encoding to UTF-16BE\n"
   "  --utf16le           Set text encoding to UTF-16LE\n"
   "  --verify            Run additional verification steps.\n"
+  "  --vfs NAME          Specify the VFS to use.\n"
   "  --without-rowid     Use WITHOUT ROWID where appropriate\n"
 ;
 
@@ -2184,6 +2185,7 @@ int main(int argc, char **argv){
   int doTrace = 0;              /* True for --trace */
   const char *zEncoding = 0;    /* --utf16be or --utf16le */
   const char *zDbName = 0;      /* Name of the test database */
+  const char *zVfs = 0;         /* VFS to use.  NULL means use the default */
 
   void *pHeap = 0;              /* Allocated heap space */
   void *pLook = 0;              /* Allocated lookaside space */
@@ -2357,6 +2359,9 @@ int main(int argc, char **argv){
         }else{
           g.zWR = "STRICT";
         }
+      }else if( strcmp(z,"vfs")==0 ){
+        if( i>=argc-1 ) fatal_error("missing argument on %s\n", argv[i]);
+        zVfs = argv[++i];
       }else if( strcmp(z, "help")==0 || strcmp(z,"?")==0 ){
         printf(zHelp, argv[0]);
         exit(0);
@@ -2395,7 +2400,8 @@ int main(int argc, char **argv){
   sqlite3_initialize();
 
   /* Open the database and the input file */
-  if( sqlite3_open(memDb ? ":memory:" : zDbName, &g.db) ){
+  if( sqlite3_open_v2(memDb ? ":memory:" : zDbName, &g.db,
+                      SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, zVfs) ){
     fatal_error("Cannot open database file: %s\n", zDbName);
   }
 #if SQLITE_VERSION_NUMBER>=3006001
