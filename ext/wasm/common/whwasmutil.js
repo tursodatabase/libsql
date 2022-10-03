@@ -389,7 +389,7 @@ self.WhWasmUtilInstaller = function(target){
 
      - `i` = int32
      - `p` = int32 ("pointer")
-     - `j` or `I` = int64
+     - `j` = int64
      - `f` = float32
      - `d` = float64
      - `v` = void, only legal for use as the result type
@@ -417,7 +417,7 @@ self.WhWasmUtilInstaller = function(target){
         // Map of signature letters to type IR values
         sigTypes: Object.assign(Object.create(null),{
           i: 'i32', p: 'i32', P: 'i32', s: 'i32',
-          j: 'i64', I: 'i64', f: 'f32', d: 'f64'
+          j: 'i64', f: 'f32', d: 'f64'
         }),
         // Map of type IR values to WASM type code values
         typeCodes: Object.assign(Object.create(null),{

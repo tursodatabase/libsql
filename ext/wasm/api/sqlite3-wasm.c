@@ -615,9 +615,9 @@ const char * sqlite3_wasm_enum_json(void){
     StructBinder {
       M(iVersion,"i");
       M(xClose,"i(p)");
-      M(xRead,"i(ppiI)");
-      M(xWrite,"i(ppiI)");
-      M(xTruncate,"i(pI)");
+      M(xRead,"i(ppij)");
+      M(xWrite,"i(ppij)");
+      M(xTruncate,"i(pj)");
       M(xSync,"i(pi)");
       M(xFileSize,"i(pp)");
       M(xLock,"i(pi)");
@@ -630,8 +630,8 @@ const char * sqlite3_wasm_enum_json(void){
       M(xShmLock,"i(piii)");
       M(xShmBarrier,"v(p)");
       M(xShmUnmap,"i(pi)");
-      M(xFetch,"i(pIip)");
-      M(xUnfetch,"i(pIp)");
+      M(xFetch,"i(pjip)");
+      M(xUnfetch,"i(pjp)");
     } _StructBinder;
 #undef CurrentStruct
 

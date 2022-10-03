@@ -123,7 +123,7 @@ self.Jaccwabyt = function StructBinderFactory(config){
     switch(sigLetter(s)){
         case 'i': return 'i32';
         case 'p': case 'P': case 's': return ptrIR;
-        case 'j': case 'I': return 'i64';
+        case 'j': return 'i64';
         case 'f': return 'float';
         case 'd': return 'double';
     }
@@ -135,7 +135,7 @@ self.Jaccwabyt = function StructBinderFactory(config){
     switch(sigLetter(s)){
         case 'i': return 4;
         case 'p': case 'P': case 's': return ptrSizeof;
-        case 'j': case 'I': return 8;
+        case 'j': return 8;
         case 'f': return 4 /* C-side floats, not JS-side */;
         case 'd': return 8;
     }
@@ -168,7 +168,7 @@ self.Jaccwabyt = function StructBinderFactory(config){
           break;
         }
         case 'i': return 'getInt32';
-        case 'j': case 'I': return affirmBigIntArray() && 'getBigInt64';
+        case 'j': return affirmBigIntArray() && 'getBigInt64';
         case 'f': return 'getFloat32';
         case 'd': return 'getFloat64';
     }
@@ -186,7 +186,7 @@ self.Jaccwabyt = function StructBinderFactory(config){
           break;
         }
         case 'i': return 'setInt32';
-        case 'j': case 'I': return affirmBigIntArray() && 'setBigInt64';
+        case 'j': return affirmBigIntArray() && 'setBigInt64';
         case 'f': return 'setFloat32';
         case 'd': return 'setFloat64';
     }
@@ -200,7 +200,7 @@ self.Jaccwabyt = function StructBinderFactory(config){
   const sigDVSetWrapper = function(s){
     switch(sigLetter(s)) {
         case 'i': case 'f': case 'd': return Number;
-        case 'j': case 'I': return affirmBigIntArray() && BigInt;
+        case 'j': return affirmBigIntArray() && BigInt;
         case 'p': case 'P': case 's':
           switch(ptrSizeof){
               case 4: return Number;
@@ -361,7 +361,7 @@ self.Jaccwabyt = function StructBinderFactory(config){
      framework's native format or in Emscripten format.
   */
   const __memberSignature = function f(obj,memberName,emscriptenFormat=false){
-    if(!f._) f._ = (x)=>x.replace(/[^viIpPsjrd]/g,'').replace(/[pPs]/g,'i');
+    if(!f._) f._ = (x)=>x.replace(/[^vipPsjrd]/g,'').replace(/[pPs]/g,'i');
     const m = __lookupMember(obj.structInfo, memberName, true);
     return emscriptenFormat ? f._(m.signature) : m.signature;
   };
@@ -571,7 +571,7 @@ self.Jaccwabyt = function StructBinderFactory(config){
         direct reuse in each accessor function. */
       f._ = {getters: {}, setters: {}, sw:{}};
       const a = ['i','p','P','s','f','d','v()'];
-      if(bigIntEnabled) a.push('j','I');
+      if(bigIntEnabled) a.push('j');
       a.forEach(function(v){
         //const ir = sigIR(v);
         f._.getters[v] = sigDVGetter(v) /* DataView[MethodName] values for GETTERS */;
@@ -579,8 +579,8 @@ self.Jaccwabyt = function StructBinderFactory(config){
         f._.sw[v] = sigDVSetWrapper(v)  /* BigInt or Number ctor to wrap around values
                                            for conversion */;
       });
-      const rxSig1 = /^[iIpPsjfd]$/,
-            rxSig2 = /^[viIpPsjfd]\([iIpPsjfd]*\)$/;
+      const rxSig1 = /^[ipPsjfd]$/,
+            rxSig2 = /^[vipPsjfd]\([ipPsjfd]*\)$/;
       f.sigCheck = function(obj, name, key,sig){
         if(Object.prototype.hasOwnProperty.call(obj, key)){
           toss(obj.structName,'already has a property named',key+'.');
