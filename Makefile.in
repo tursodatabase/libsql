@@ -35,7 +35,7 @@ TCC += -I${TOP}/ext/fts3 -I${TOP}/ext/async -I${TOP}/ext/session
 TCC += -I${TOP}/ext/userauth
 
 # Define this for the autoconf-based build, so that the code knows it can
-# include the generated config.h
+# include the generated sqlite_cfg.h
 #
 TCC += -D_HAVE_SQLITE_CONFIG_H -DBUILD_sqlite
 
@@ -377,7 +377,7 @@ SRC += \
   opcodes.h \
   parse.c \
   parse.h \
-  config.h \
+  sqlite_cfg.h \
   shell.c \
   sqlite3.h
 
@@ -555,7 +555,7 @@ HDR = \
    $(TOP)/src/vdbeInt.h \
    $(TOP)/src/vxworks.h \
    $(TOP)/src/whereInt.h \
-   config.h
+   sqlite_cfg.h
 
 # Header files used by extensions
 #
@@ -1501,7 +1501,7 @@ clean:
 	rm -f threadtest5
 
 distclean:	clean
-	rm -f config.h config.log config.status libtool Makefile sqlite3.pc \
+	rm -f sqlite_cfg.h config.log config.status libtool Makefile sqlite3.pc \
 		$(TESTPROGS)
 
 #
