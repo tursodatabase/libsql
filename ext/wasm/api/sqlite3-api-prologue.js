@@ -977,8 +977,10 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   Object.defineProperties(wasm.pstack, {
     /**
        sqlite3.wasm.pstack.pointer resolves to the current pstack
-       position pointer. This value is intended _only_ to be passed to
-       restore().
+       position pointer. This value is intended _only_ to be saved
+       for passing to restore(). Writing to this memory, without
+       first reserving it via wasm.pstack.alloc() and friends, leads
+       to undefined results.
     */
     pointer: {
       configurable: false, iterable: true, writeable: false,

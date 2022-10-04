@@ -1,5 +1,5 @@
-C Minor\scleanups\sand\sadditions\sin\ssqlite3.capi.wasm.pstack.
-D 2022-10-04T01:11:10.003
+C Minor\spstack\sdoc\supdate.
+D 2022-10-04T01:21:34.715
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -488,7 +488,7 @@ F ext/wasm/api/sqlite3-api-cleanup.js 5d22d1d3818ecacb23bfa223d5970cd0617d8cdbb4
 F ext/wasm/api/sqlite3-api-glue.js a5a1bd620e2e2c26b6e843cf439548b35c5bb5ed21b24b89a412e0b0a8592c42
 F ext/wasm/api/sqlite3-api-oo1.js ac1e08d36bdfb5aa0a2d75b7d4c892fd51819d34c932370c3282810672bcc086
 F ext/wasm/api/sqlite3-api-opfs.js d82870cffef9eef6511c650759c3798b59f10c8338587789abd84be2d9d845c3
-F ext/wasm/api/sqlite3-api-prologue.js 8f7e46105f9bea362894725531d6f8aa52981f5ef3f1679dd8caa7c85c135566
+F ext/wasm/api/sqlite3-api-prologue.js baf88cf253a35153674b068b5125238993ea2a7804152d238b5e40140b506ef5
 F ext/wasm/api/sqlite3-api-worker1.js 7f4f46cb6b512a48572d7567233896e6a9c46570c44bdc3d13419730c7c221c8
 F ext/wasm/api/sqlite3-wasi.h 25356084cfe0d40458a902afb465df8c21fc4152c1d0a59b563a3fba59a068f9
 F ext/wasm/api/sqlite3-wasm.c 0c8cb242b80b8de27b74f05ed781f427958e04c9339c4720f30c3a7e78ee6242
@@ -2029,8 +2029,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7d0bcff4e9b899cd25b393b9f0a02c5dcee2e229f0a0fa01719c7dcd7dcbe7c1
-R 7320921a42fda536d083483db8ee576c
+P 97bd670d3859bd3f2e62c15065b238b85ef614f26479e56a14be42c5784aedf4
+R 507991812d835888d4cf650d3fac598a
 U stephan
-Z 3678381f6d3f10154c88d71945cdf539
+Z 20bbab2b0ec42159d665e1e1931c635b
 # Remove this line to create a well-formed Fossil manifest.
