@@ -610,12 +610,14 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     }/*wasm*/
   }/*capi*/;
 
+  const wasm = capi.wasm;
+
   /**
-     capi.wasm.alloc()'s srcTypedArray.byteLength bytes,
+     wasm.alloc()'s srcTypedArray.byteLength bytes,
      populates them with the values from the source
      TypedArray, and returns the pointer to that memory. The
      returned pointer must eventually be passed to
-     capi.wasm.dealloc() to clean it up.
+     wasm.dealloc() to clean it up.
 
      As a special case, to avoid further special cases where
      this is used, if srcTypedArray.byteLength is 0, it
@@ -628,27 +630,27 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      Int8Array types and will throw if srcTypedArray is of
      any other type.
   */
-  capi.wasm.allocFromTypedArray = function(srcTypedArray){
+  wasm.allocFromTypedArray = function(srcTypedArray){
     affirmBindableTypedArray(srcTypedArray);
-    const pRet = capi.wasm.alloc(srcTypedArray.byteLength || 1);
-    capi.wasm.heapForSize(srcTypedArray.constructor).set(srcTypedArray.byteLength ? srcTypedArray : [0], pRet);
+    const pRet = wasm.alloc(srcTypedArray.byteLength || 1);
+    wasm.heapForSize(srcTypedArray.constructor).set(srcTypedArray.byteLength ? srcTypedArray : [0], pRet);
     return pRet;
   };
 
   const keyAlloc = config.allocExportName || 'malloc',
         keyDealloc =  config.deallocExportName || 'free';
   for(const key of [keyAlloc, keyDealloc]){
-    const f = capi.wasm.exports[key];
+    const f = wasm.exports[key];
     if(!(f instanceof Function)) toss("Missing required exports[",key,"] function.");
   }
 
-  capi.wasm.alloc = function(n){
-    const m = capi.wasm.exports[keyAlloc](n);
+  wasm.alloc = function(n){
+    const m = wasm.exports[keyAlloc](n);
     if(!m) throw new WasmAllocError("Failed to allocate "+n+" bytes.");
     return m;
   };
 
-  capi.wasm.dealloc = (m)=>capi.wasm.exports[keyDealloc](m);
+  wasm.dealloc = (m)=>wasm.exports[keyDealloc](m);
 
   /**
      Reports info about compile-time options using
@@ -679,7 +681,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      "SQLITE_" prefix. When it returns an object of all options,
      the prefix is elided.
   */
-  capi.wasm.compileOptionUsed = function f(optName){
+  wasm.compileOptionUsed = function f(optName){
     if(!arguments.length){
       if(f._result) return f._result;
       else if(!f._opt){
@@ -720,7 +722,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      is an array with 2+ elements:
 
      [ "c-side name",
-       "result type" (capi.wasm.xWrap() syntax),
+       "result type" (wasm.xWrap() syntax),
        [arg types in xWrap() syntax]
        // ^^^ this needn't strictly be an array: it can be subsequent
        // elements instead: [x,y,z] is equivalent to x,y,z
@@ -730,7 +732,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      result/argument type strings gets plugged in at a later phase in
      the API initialization process.
   */
-  capi.wasm.bindingSignatures = [
+  wasm.bindingSignatures = [
     // Please keep these sorted by function name!
     ["sqlite3_aggregate_context","void*", "sqlite3_context*", "int"],
     ["sqlite3_bind_blob","int", "sqlite3_stmt*", "int", "*", "int", "*"
@@ -829,13 +831,13 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     ["sqlite3_value_type", "int", "sqlite3_value*"],
     ["sqlite3_vfs_find", "*", "string"],
     ["sqlite3_vfs_register", "int", "*", "int"]
-  ]/*capi.wasm.bindingSignatures*/;
+  ]/*wasm.bindingSignatures*/;
 
-  if(false && capi.wasm.compileOptionUsed('SQLITE_ENABLE_NORMALIZE')){
+  if(false && wasm.compileOptionUsed('SQLITE_ENABLE_NORMALIZE')){
     /* ^^^ "the problem" is that this is an option feature and the
        build-time function-export list does not currently take
        optional features into account. */
-    capi.wasm.bindingSignatures.push(["sqlite3_normalized_sql", "string", "sqlite3_stmt*"]);
+    wasm.bindingSignatures.push(["sqlite3_normalized_sql", "string", "sqlite3_stmt*"]);
   }
   
   /**
@@ -843,7 +845,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      the others because we need to conditionally bind them or apply
      dummy impls, depending on the capabilities of the environment.
   */
-  capi.wasm.bindingSignatures.int64 = [
+  wasm.bindingSignatures.int64 = [
     ["sqlite3_bind_int64","int", ["sqlite3_stmt*", "int", "i64"]],
     ["sqlite3_changes64","i64", ["sqlite3*"]],
     ["sqlite3_column_int64","i64", ["sqlite3_stmt*", "int"]],
@@ -859,18 +861,18 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   /**
      Functions which are intended solely for API-internal use by the
      WASM components, not client code. These get installed into
-     capi.wasm.
+     wasm.
 
      TODO: get rid of sqlite3_wasm_vfs_unlink(). It is ill-conceived
      and only rarely actually useful.
   */
-  capi.wasm.bindingSignatures.wasm = [
+  wasm.bindingSignatures.wasm = [
     ["sqlite3_wasm_vfs_unlink", "int", "string"]
   ];
 
 
   /**
-     sqlite3.capi.wasm.pstack (pseudo-stack) holds a special-case
+     sqlite3.wasm.pstack (pseudo-stack) holds a special-case
      stack-style allocator intended only for use with _small_ data of
      not more than (in total) a few kb in size, managed as if it were
      stack-based.
@@ -900,13 +902,13 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      memory lives in the WASM heap and can be used with routines such
      as wasm.setMemValue() and any wasm.heap8u().slice().
   */
-  capi.wasm.pstack = Object.assign(Object.create(null),{
+  wasm.pstack = Object.assign(Object.create(null),{
     /**
        Sets the current ppstack position to the given pointer.
        Results are undefined if the passed-in value did not come from
        this.pointer.
     */
-    restore: capi.wasm.exports.sqlite3_wasm_pstack_restore,
+    restore: wasm.exports.sqlite3_wasm_pstack_restore,
     /**
        Attempts to allocate the given number of bytes from the
        pstack. On success, it zeroes out a block of memory of the
@@ -920,31 +922,89 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        heap.
     */
     alloc: (n)=>{
-      return capi.wasm.exports.sqlite3_wasm_pstack_alloc(n)
+      return wasm.exports.sqlite3_wasm_pstack_alloc(n)
         || WasmAllocError.toss("Could not allocate",n,
                                "bytes from the pstack.");
+    },
+    /**
+       Allocates n chunks, each sz bytes, as a single memory block and
+       returns the addresses as an array of n element, each holding
+       the address of one chunk.
+
+       Throws a WasmAllocError if allocation fails.
+
+       Example:
+
+       ```
+       const [p1, p2, p3] = wasm.pstack.allocChunks(3,4);
+       ```
+    */
+    allocChunks: (n,sz)=>{
+      const mem = wasm.pstack.alloc(n * sz);
+      const r 
+= [];
+      let i = 0, offset = 0;
+      for(; i < n; offset = (sz * ++i)){
+        rc.push(mem + offset);
+      }
+      return rc;
+    },
+    /**
+       A convenience wrapper for allocChunks() which sizes each chunks
+       as either 8 bytes (safePtrSize is truthy) or wasm.ptrSizeof (if
+       safePtrSize is falsy).
+
+       How it returns its result differs depending on its first
+       argument: if it's 1, it returns a single pointer value. If it's
+       more than 1, it returns the same as allocChunks().
+
+       When a returned pointers will refer to a 64-bit value, e.g. a
+       double or int64, and that value must be written or fetched,
+       e.g. using wasm.setMemValue() or wasm.getMemValue(), it is
+       important that the pointer in question be aligned to an 8-byte
+       boundary or else it will not be fetched or written properly and
+       will corrupt or read neighboring memory.
+
+       However, when all pointers involved point to "small" data, it
+       is safe to pass a falsy value to save to memory.
+    */
+    allocPtr: (n=1,safePtrSize=true)=>{
+      return 1===n
+        ? wasm.pstack.alloc(safePtrSize ? 8 : wasm.ptrSizeof)
+        : wasm.pstack.allocChunks(n, safePtrSize ? 8 : wasm.ptrSizeof);
     }
-    // More methods get added after the capi.wasm object is populated
-    // by WhWasmUtilInstaller.
-  });
+  })/*wasm.pstack*/;
+  Object.defineProperties(wasm.pstack, {
+    /**
+       sqlite3.wasm.pstack.pointer resolves to the current pstack
+       position pointer. This value is intended _only_ to be passed to
+       restore().
+    */
+    pointer: {
+      configurable: false, iterable: true, writeable: false,
+      get: wasm.exports.sqlite3_wasm_pstack_ptr
+      //Whether or not a setter as an alternative to restore() is
+      //clearer or would just lead to confusion is unclear.
+      //set: wasm.exports.sqlite3_wasm_pstack_restore
+    },
+    /**
+      Resolves to the total number of bytes available in the pstack,
+      including any space which is currently allocated. This value is
+      a compile-time constant.
+    */
+    quota: {
+      configurable: false, iterable: true, writeable: false,
+      get: wasm.exports.sqlite3_wasm_pstack_quota
+    }    
+  })/*wasm.pstack properties*/;
+
   /**
-     sqlite3.capi.wasm.pstack.pointer resolves to the current pstack
-     position pointer. This value is intended _only_ to be passed to restore().
-  */
-  Object.defineProperty(capi.wasm.pstack, 'pointer', {
-    configurable: false, iterable: true, writeable: false,
-    get: capi.wasm.exports.sqlite3_wasm_pstack_ptr
-    //Whether or not a setter as an alternative to restore() is
-    //clearer or would just lead to confusion is unclear.
-    //set: capi.wasm.exports.sqlite3_wasm_pstack_restore
-  });
-  /**
-     sqlite3.capi.wasm.pstack.remaining resolves to the amount of
+     sqlite3.wasm.pstack.remaining resolves to the amount of
      space remaining in the pstack.
   */
-  Object.defineProperty(capi.wasm.pstack, 'remaining', {
+  Object.defineProperty(wasm.pstack, 'remaining', {
     configurable: false, iterable: true, writeable: false,
-    get: capi.wasm.exports.sqlite3_wasm_pstack_remaining
+    get: wasm.exports.sqlite3_wasm_pstack_remaining
   });
 
   /**
@@ -994,7 +1054,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       return __persistentDir = "";
     }
     try{
-      if(pdir && 0===capi.wasm.xCallWrapped(
+      if(pdir && 0===wasm.xCallWrapped(
         'sqlite3_wasm_init_wasmfs', 'i32', ['string'], pdir
       )){
         return __persistentDir = pdir;
@@ -1024,10 +1084,10 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   };
 
   // This bit is highly arguable and is incompatible with the fiddle shell.
-  if(false && 0===capi.wasm.exports.sqlite3_vfs_find(0)){
+  if(false && 0===wasm.exports.sqlite3_vfs_find(0)){
     /* Assume that sqlite3_initialize() has not yet been called.
        This will be the case in an SQLITE_OS_KV build. */
-    capi.wasm.exports.sqlite3_initialize();
+    wasm.exports.sqlite3_initialize();
   }
 
   /**
@@ -1058,15 +1118,15 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       else if(!pDb){
         return capi.sqlite3_vfs_find(0)===pK ? pK : false;
       }
-      const ppVfs = capi.wasm.allocPtr();
+      const ppVfs = wasm.allocPtr();
       try{
         return (
           (0===capi.sqlite3_file_control(
             pDb, dbName, capi.SQLITE_FCNTL_VFS_POINTER, ppVfs
-          )) && (capi.wasm.getPtrValue(ppVfs) === pK)
+          )) && (wasm.getPtrValue(ppVfs) === pK)
         ) ? pK : false;
       }finally{
-        capi.wasm.dealloc(ppVfs);
+        wasm.dealloc(ppVfs);
       }
     }catch(e){
       /* Ignore - probably bad args to a wasm-bound function. */
@@ -1083,7 +1143,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     let pVfs = capi.sqlite3_vfs_find(0);
     while(pVfs){
       const oVfs = new capi.sqlite3_vfs(pVfs);
-      rc.push(capi.wasm.cstringToJs(oVfs.$zName));
+      rc.push(wasm.cstringToJs(oVfs.$zName));
       pVfs = oVfs.$pNext;
       oVfs.dispose();
     }
@@ -1097,7 +1157,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   */
   capi.sqlite3_web_db_export = function(pDb){
     if(!pDb) toss('Invalid sqlite3* argument.');
-    const wasm = capi.wasm;
+    const wasm = wasm;
     if(!wasm.bigIntEnabled) toss('BigInt64 support is not enabled.');
     const stack = wasm.pstack.pointer;
     let pOut;
@@ -1278,7 +1338,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
 
   Note that the order of insertion into this array is significant for
   some pieces. e.g. sqlite3.capi.wasm cannot be fully utilized until
-  the whwasmutil.js part is plugged in.
+  the whwasmutil.js part is plugged in via sqlite3-api-glue.js.
 */
 self.sqlite3ApiBootstrap.initializers = [];
 /**
@@ -1290,12 +1350,15 @@ self.sqlite3ApiBootstrap.initializers = [];
   Counterpart of self.sqlite3ApiBootstrap.initializers, specifically
   for initializers which are asynchronous. All functions in this list
   take the sqlite3 object as their argument and MUST return a
-  Promise. Both the resolved value and rejection cases are ignored.
+  Promise. The resolved value and ignored and rejection will kill the
+  asyncPostInit() process but will be otherwise ignored because the
+  post-synchronous-init async initialization parts are (as of this
+  writing) all optional.
 
   This list is not processed until the client calls
   sqlite3.asyncPostInit(). This means, for example, that intializers
   added to self.sqlite3ApiBootstrap.initializers may push entries to
-   this list.
+  this list.
 */
 self.sqlite3ApiBootstrap.initializersAsync = [];
 /**

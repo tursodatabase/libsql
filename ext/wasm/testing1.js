@@ -1033,9 +1033,10 @@
     const stack = P.pointer;
     T.assert(0===stack % 8 /* must be 8-byte aligned */);
     try{
-      const quota = P.remaining;
-      log("pstack quota",quota);
-      T.assert(quota >= 4096)
+      const remaining = P.remaining;
+      log("pstack quota, remaining",P.quota,remaining);
+      T.assert(P.quota >= 4096)
+        .assert(remaining === P.quota)
         .mustThrowMatching(()=>P.alloc(0), isAllocErr)
         .mustThrowMatching(()=>P.alloc(-1), isAllocErr);
       let p1 = P.alloc(12);
@@ -1043,12 +1044,12 @@
         .assert(P.pointer === p1);
       let p2 = P.alloc(7);
       T.assert(p2 === p1-8/*8-byte aligned, stack grows downwards*/)
-        .mustThrowMatching(()=>P.alloc(quota), isAllocErr)
+        .mustThrowMatching(()=>P.alloc(remaining), isAllocErr)
         .assert(24 === stack - p2)
         .assert(P.pointer === p2);
-      let n = quota - (stack - p2);
+      let n = remaining - (stack - p2);
       let p3 = P.alloc(n);
-      T.assert(p3 === stack-quota)
+      T.assert(p3 === stack-remaining)
         .mustThrowMatching(()=>P.alloc(1), isAllocErr);
     }finally{
       P.restore(stack);

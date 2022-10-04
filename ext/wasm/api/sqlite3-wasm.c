@@ -135,13 +135,13 @@ WASM_KEEP void * sqlite3_wasm_stack_begin(void){
   extern void __data_end;
   return &__data_end;
 }
-static void * sq3StackPtr = 0;
+static void * pWasmStackPtr = 0;
 WASM_KEEP void * sqlite3_wasm_stack_ptr(void){
-  if(!sq3StackPtr) sq3StackPtr = sqlite3_wasm_stack_end();
-  return sq3StackPtr;
+  if(!pWasmStackPtr) pWasmStackPtr = sqlite3_wasm_stack_end();
+  return pWasmStackPtr;
 }
 WASM_KEEP void sqlite3_wasm_stack_restore(void * p){
-  sq3StackPtr = p;
+  pWasmStackPtr = p;
 }
 WASM_KEEP void * sqlite3_wasm_stack_alloc(int n){
   if(n<=0) return 0;
@@ -149,7 +149,7 @@ WASM_KEEP void * sqlite3_wasm_stack_alloc(int n){
   unsigned char * const p = (unsigned char *)sqlite3_wasm_stack_ptr();
   unsigned const char * const b = (unsigned const char *)sqlite3_wasm_stack_begin();
   if(b + n >= p || b + n < b/*overflow*/) return 0;
-  return sq3StackPtr = p - n;
+  return pWasmStackPtr = p - n;
 }
 #endif /* stack allocator experiment */
 
@@ -205,10 +205,9 @@ WASM_KEEP void * sqlite3_wasm_pstack_alloc(int n){
   if( n<=0 ) return 0;
   //if( n & 0x7 ) n += 8 - (n & 0x7) /* align to 8-byte boundary */;
   n = (n + 7) & ~7 /* align to 8-byte boundary */;
-  unsigned char * const p = PStack.pPos;
-  unsigned const char * const b = PStack.pBegin;
-  if( b + n > p || b + n <= b/*overflow*/ ) return 0;
-  memset((PStack.pPos = p - n), 0, (unsigned int)n);
+  if( PStack.pBegin + n > PStack.pPos /*not enough space left*/
+      || PStack.pBegin + n <= PStack.pBegin /*overflow*/ ) return 0;
+  memset((PStack.pPos = PStack.pPos - n), 0, (unsigned int)n);
   return PStack.pPos;
 }
 /*
@@ -221,6 +220,14 @@ WASM_KEEP int sqlite3_wasm_pstack_remaining(void){
   return (int)(PStack.pPos - PStack.pBegin);
 }
 
+/*
+** Return the total number of bytes available in the pstack, including
+** any space which is currently allocated. This value is a
+** compile-time constant.
+*/
+WASM_KEEP int sqlite3_wasm_pstack_quota(void){
+  return (int)(PStack.pEnd - PStack.pBegin);
+}
 
 /*
 ** This function is NOT part of the sqlite3 public API. It is strictly
@@ -254,26 +261,26 @@ int sqlite3_wasm_db_error(sqlite3*db, int err_code, const char *zMsg){
 ** variadic macros.
 **
 ** Returns a string containing a JSON-format "enum" of C-level
-** constants intended to be imported into the JS environment. The JSON
-** is initialized the first time this function is called and that
-** result is reused for all future calls.
+** constants and struct-related metadata intended to be imported into
+** the JS environment. The JSON is initialized the first time this
+** function is called and that result is reused for all future calls.
 **
 ** If this function returns NULL then it means that the internal
-** buffer is not large enough for the generated JSON. In debug builds
-** that will trigger an assert().
+** buffer is not large enough for the generated JSON and needs to be
+** increased. In debug builds that will trigger an assert().
 */
 WASM_KEEP
 const char * sqlite3_wasm_enum_json(void){
-  static char azBuffer[1024 * 12] = {0} /* where the JSON goes */;
+  static char aBuffer[1024 * 12] = {0} /* where the JSON goes */;
   int n = 0, nChildren = 0, nStruct = 0
     /* output counters for figuring out where commas go */;
-  char * zPos = &azBuffer[1] /* skip first byte for now to help protect
+  char * zPos = &aBuffer[1] /* skip first byte for now to help protect
                           ** against a small race condition */;
-  char const * const zEnd = &azBuffer[0] + sizeof(azBuffer) /* one-past-the-end */;
-  if(azBuffer[0]) return azBuffer;
-  /* Leave azBuffer[0] at 0 until the end to help guard against a tiny
+  char const * const zEnd = &aBuffer[0] + sizeof(aBuffer) /* one-past-the-end */;
+  if(aBuffer[0]) return aBuffer;
+  /* Leave aBuffer[0] at 0 until the end to help guard against a tiny
   ** race condition. If this is called twice concurrently, they might
-  ** end up both writing to azBuffer, but they'll both write the same
+  ** end up both writing to aBuffer, but they'll both write the same
   ** thing, so that's okay. If we set byte 0 up front then the 2nd
   ** instance might return and use the string before the 1st instance
   ** is done filling it. */
@@ -680,8 +687,8 @@ const char * sqlite3_wasm_enum_json(void){
 
   out("}"/*top-level object*/);
   *zPos = 0;
-  azBuffer[0] = '{'/*end of the race-condition workaround*/;
-  return azBuffer;
+  aBuffer[0] = '{'/*end of the race-condition workaround*/;
+  return aBuffer;
 #undef StructBinder
 #undef StructBinder_
 #undef StructBinder__
