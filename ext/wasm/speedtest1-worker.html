@@ -38,13 +38,13 @@
           <div id='toolbar-selected-flags'></div>
           <div class='toolbar-inner-vertical'>
             <span>&rarr; <a id='link-main-thread' href='#' target='speedtest-main'
-                            title='Start speedtest1.html with the selected flags'>speedtest1.html</a>
+                            title='Start speedtest1.html with the selected flags'>speedtest1</a>
             </span>
             <span>&rarr; <a id='link-wasmfs' href='#' target='speedtest-wasmfs'
-                            title='Start speedtest1-wasmfs.html with the selected flags'>speedtest1-wasmfs.html</a>
+                            title='Start speedtest1-wasmfs.html with the selected flags'>speedtest1-wasmfs</a>
             </span>
             <span>&rarr; <a id='link-kvvfs' href='#' target='speedtest-kvvfs'
-                            title='Start speedtest1-kvvfs.html with the selected flags'>speedtest1-kvvfs.html</a>
+                            title='Start kvvfs speedtest1 with the selected flags'>speedtest1-kvvfs</a>
             </span>
           </div>
         </div>
@@ -204,7 +204,7 @@
         eLinkWasmfs.setAttribute('target', 'speedtest1-wasmfs-'+comma);
         eLinkWasmfs.href = 'speedtest1-wasmfs.html?flags='+comma;
         eLinkKvvfs.setAttribute('target', 'speedtest1-kvvfs-'+comma);
-        eLinkKvvfs.href = 'speedtest1-kvvfs.html?flags='+comma;
+        eLinkKvvfs.href = 'speedtest1.html?vfs=kvvfs&flags='+comma;
     };
     eFlags.addEventListener('change', updateSelectedFlags );
     {
