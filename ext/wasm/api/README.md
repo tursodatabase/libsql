@@ -23,8 +23,6 @@ The overall idea is that the following files get concatenated
 together, in the listed order, the resulting file is loaded by a
 browser client:
 
-- `post-js-header.js`\  
-  Emscripten-specific header for the `--post-js` input.
 - `sqlite3-api-prologue.js`\  
   Contains the initial bootstrap setup of the sqlite3 API
   objects. This is exposed as a function, rather than objects, so that
@@ -81,17 +79,17 @@ browser client:
       directly to the (async) OPFS API and channels those results back
       to its synchronous counterpart. This file, because it must be
       started in its own Worker, is not part of the amalgamation.
-- `sqlite3-api-cleanup.js`\  
-  the previous files temporarily create global objects in order to
-  communicate their state to the files which follow them, and _this_
-  file connects any final components together and cleans up those
-  globals. As of this writing, this code ensures that the previous
-  files leave no more than a single global symbol installed. When
-  adapting the API for non-Emscripten toolchains, this "should"
-  be the only file where changes are needed.
-- `post-js-footer.js`\  
-  Emscripten-specific footer for the `--post-js` input. This closes
-  off the lexical scope opened by `post-js-header.js`.
+- **`api/sqlite3-api-cleanup.js`**\  
+  The previous files do not immediately extend the library. Instead
+  they add callback functions to be called during its
+  bootstrapping. Some also temporarily create global objects in order
+  to communicate their state to the files which follow them. This file
+  cleans up any dangling globals and runs the API bootstrapping
+  process, which is what finally executes the initialization code
+  installed by the previous files. As of this writing, this code
+  ensures that the previous files leave no more than a single global
+  symbol installed. When adapting the API for non-Emscripten
+  toolchains, this "should" be the only file where changes are needed.
 
 The build process glues those files together, resulting in
 `sqlite3-api.js`, which is everything except for the `post-js-*.js`
@@ -117,6 +115,12 @@ into the build-generated `sqlite3.js` along with `sqlite3-api.js`.
   file is intended as a place to override certain Emscripten behavior
   before it starts up, but corner-case Emscripten bugs keep that from
   being a reality.
+- `post-js-header.js`\  
+  Emscripten-specific header for the `--post-js` input. It opens up
+  a lexical scope by starting a post-run handler for Emscripten.
+- `post-js-footer.js`\  
+  Emscripten-specific footer for the `--post-js` input. This closes
+  off the lexical scope opened by `post-js-header.js`.
 - `extern-post-js.js`\  
   Emscripten-specific header for Emscripten's `--extern-post-js`
   flag. This file overwrites the Emscripten-installed
