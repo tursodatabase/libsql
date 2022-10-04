@@ -106,9 +106,11 @@ int sqlite3OsFileSize(sqlite3_file *id, i64 *pSize){
 }
 int sqlite3OsLock(sqlite3_file *id, int lockType){
   DO_OS_MALLOC_TEST(id);
+  assert( lockType>=SQLITE_LOCK_SHARED && lockType<=SQLITE_LOCK_EXCLUSIVE );
   return id->pMethods->xLock(id, lockType);
 }
 int sqlite3OsUnlock(sqlite3_file *id, int lockType){
+  assert( lockType==SQLITE_LOCK_NONE || lockType==SQLITE_LOCK_SHARED );
   return id->pMethods->xUnlock(id, lockType);
 }
 int sqlite3OsCheckReservedLock(sqlite3_file *id, int *pResOut){
