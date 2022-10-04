@@ -28,6 +28,7 @@ __declspec(dllexport)
 int sqlite3_dbdata_init(sqlite3*, char**, const sqlite3_api_routines*);
 
 typedef unsigned int u32;
+typedef unsigned char u8;
 typedef sqlite3_int64 i64;
 
 typedef struct RecoverTable RecoverTable;
@@ -240,10 +241,29 @@ struct sqlite3_recover {
 #define RECOVER_STATE_SCHEMA2        5
 #define RECOVER_STATE_DONE           6
 
+
+/*
+** Global variables used by this extension.
+*/
+typedef struct RecoverGlobal RecoverGlobal;
+struct RecoverGlobal {
+  const sqlite3_io_methods *pMethods;
+};
+static RecoverGlobal recover_g;
+
+/*
+** Use this static SQLite mutex to protect the globals during the
+** first call to sqlite3_recover_step().
+*/ 
+#define RECOVER_MUTEX_ID SQLITE_MUTEX_STATIC_APP2
+
+
+
 /* 
 ** Default value for SQLITE_RECOVER_ROWIDS (sqlite3_recover.bRecoverRowid).
 */
 #define RECOVER_ROWID_DEFAULT 1
+
 
 /*
 ** Like strlen(). But handles NULL pointer arguments.
@@ -1840,6 +1860,247 @@ static void recoverFinalCleanup(sqlite3_recover *p){
   p->dbOut = 0;
 }
 
+static int recoverVfsClose(sqlite3_file*);
+static int recoverVfsRead(sqlite3_file*, void*, int iAmt, sqlite3_int64 iOfst);
+static int recoverVfsWrite(sqlite3_file*, const void*, int, sqlite3_int64);
+static int recoverVfsTruncate(sqlite3_file*, sqlite3_int64 size);
+static int recoverVfsSync(sqlite3_file*, int flags);
+static int recoverVfsFileSize(sqlite3_file*, sqlite3_int64 *pSize);
+static int recoverVfsLock(sqlite3_file*, int);
+static int recoverVfsUnlock(sqlite3_file*, int);
+static int recoverVfsCheckReservedLock(sqlite3_file*, int *pResOut);
+static int recoverVfsFileControl(sqlite3_file*, int op, void *pArg);
+static int recoverVfsSectorSize(sqlite3_file*);
+static int recoverVfsDeviceCharacteristics(sqlite3_file*);
+static int recoverVfsShmMap(sqlite3_file*, int, int, int, void volatile**);
+static int recoverVfsShmLock(sqlite3_file*, int offset, int n, int flags);
+static void recoverVfsShmBarrier(sqlite3_file*);
+static int recoverVfsShmUnmap(sqlite3_file*, int deleteFlag);
+
+static sqlite3_io_methods recover_methods = {
+  2, /* iVersion */
+  recoverVfsClose,
+  recoverVfsRead,
+  recoverVfsWrite,
+  recoverVfsTruncate,
+  recoverVfsSync,
+  recoverVfsFileSize,
+  recoverVfsLock,
+  recoverVfsUnlock,
+  recoverVfsCheckReservedLock,
+  recoverVfsFileControl,
+  recoverVfsSectorSize,
+  recoverVfsDeviceCharacteristics,
+  recoverVfsShmMap,
+  recoverVfsShmLock,
+  recoverVfsShmBarrier,
+  recoverVfsShmUnmap,
+  0, 0
+};
+
+static int recoverVfsClose(sqlite3_file *pFd){
+  assert( pFd->pMethods!=&recover_methods );
+  return pFd->pMethods->xClose(pFd);
+}
+
+static u32 recoverGetU16(const u8 *a){
+  return (((u32)a[0])<<8) + ((u32)a[1]);
+}
+static u32 recoverGetU32(const u8 *a){
+  return (((u32)a[0])<<24) + (((u32)a[1])<<16) + (((u32)a[2])<<8) + ((u32)a[3]);
+}
+
+static void recoverPutU16(u8 *a, u32 v){
+  a[0] = (v>>8) & 0x00FF;
+  a[1] = (v>>0) & 0x00FF;
+}
+static u32 recoverPutU32(u8 *a, u32 v){
+  a[0] = (v>>24) & 0x00FF;
+  a[1] = (v>>16) & 0x00FF;
+  a[2] = (v>>8) & 0x00FF;
+  a[3] = (v>>0) & 0x00FF;
+}
+
+static int recoverVfsRead(sqlite3_file *pFd, void *aBuf, int nByte, i64 iOff){
+  int rc = SQLITE_OK;
+  if( pFd->pMethods==&recover_methods ){
+    pFd->pMethods = recover_g.pMethods;
+    rc = pFd->pMethods->xRead(pFd, aBuf, nByte, iOff);
+    if( rc==SQLITE_OK && iOff==0 && nByte>=100 ){
+      /* Ensure that the database has a valid header file. The only fields
+      ** that really matter to recovery are:
+      **
+      **   + Database page size (16-bits at offset 16)
+      **   + Size of db in pages (32-bits at offset 28)
+      **   + Database encoding (32-bits at offset 56)
+      **
+      ** Also preserved are:
+      **
+      **   + first freelist page (32-bits at offset 32)
+      **   + size of freelist (32-bits at offset 36)
+      **
+      ** We also try to preserve the auto-vacuum, incr-value, user-version
+      ** and application-id fields - all 32 bit quantities at offsets 
+      ** 52, 60, 64 and 68. All other fields are set to known good values.
+      */
+      const int aPreserve[] = {32, 36, 52, 60, 64, 68};
+      u8 aHdr[100] = {
+        0x53, 0x51, 0x4c, 0x69, 0x74, 0x65, 0x20, 0x66, 
+        0x6f, 0x72, 0x6d, 0x61, 0x74, 0x20, 0x33, 0x00,
+        0xFF, 0xFF, 0x01, 0x01, 0x00, 0x40, 0x20, 0x20,
+        0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF,
+        0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04,
+        0x00, 0x00, 0x10, 0x00, 0xFF, 0xFF, 0xFF, 0xFF,
+        0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+        0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x2e, 0x5b, 0x30
+      };
+      u8 *a = (u8*)aBuf;
+
+      u32 pgsz = recoverGetU16(&a[16]);
+      u32 enc = recoverGetU32(&a[56]);
+      u32 dbsz = 0;
+      i64 dbFileSize = 0;
+      int ii;
+
+      if( pgsz==0x01 ) pgsz = 65536;
+      rc = pFd->pMethods->xFileSize(pFd, &dbFileSize);
+
+      dbsz = dbFileSize / pgsz;
+      if( enc!=SQLITE_UTF8 && enc!=SQLITE_UTF16BE && enc!=SQLITE_UTF16LE ){
+        enc = SQLITE_UTF8;
+      }
+
+      recoverPutU32(&aHdr[28], dbsz);
+      recoverPutU32(&aHdr[56], enc);
+      if( pgsz==65536 ) pgsz = 1;
+      recoverPutU16(&aHdr[16], pgsz);
+      for(ii=0; ii<sizeof(aPreserve)/sizeof(aPreserve[0]); ii++){
+        memcpy(&aHdr[aPreserve[ii]], &a[aPreserve[ii]], 4);
+      }
+      memcpy(aBuf, aHdr, sizeof(aHdr));
+    }
+    pFd->pMethods = &recover_methods;
+  }else{
+    rc = pFd->pMethods->xRead(pFd, aBuf, nByte, iOff);
+  }
+  return rc;
+}
+
+#define RECOVER_VFS_WRAPPER(code)                         \
+  int rc = SQLITE_OK;                                     \
+  if( pFd->pMethods==&recover_methods ){                  \
+    pFd->pMethods = recover_g.pMethods;                   \
+    rc = code;                                            \
+    pFd->pMethods = &recover_methods;                     \
+  }else{                                                  \
+    rc = code;                                            \
+  }                                                       \
+  return rc;                                              
+
+static int recoverVfsWrite(
+  sqlite3_file *pFd, const void *aBuf, int nByte, i64 iOff
+){
+  RECOVER_VFS_WRAPPER (
+      pFd->pMethods->xWrite(pFd, aBuf, nByte, iOff)
+  );
+}
+static int recoverVfsTruncate(sqlite3_file *pFd, sqlite3_int64 size){
+  RECOVER_VFS_WRAPPER (
+      pFd->pMethods->xTruncate(pFd, size)
+  );
+}
+
+static int recoverVfsSync(sqlite3_file *pFd, int flags){
+  RECOVER_VFS_WRAPPER (
+      pFd->pMethods->xSync(pFd, flags)
+  );
+}
+static int recoverVfsFileSize(sqlite3_file *pFd, sqlite3_int64 *pSize){
+  RECOVER_VFS_WRAPPER (
+      pFd->pMethods->xFileSize(pFd, pSize)
+  );
+}
+static int recoverVfsLock(sqlite3_file *pFd, int eLock){
+  RECOVER_VFS_WRAPPER (
+      pFd->pMethods->xLock(pFd, eLock)
+  );
+}
+static int recoverVfsUnlock(sqlite3_file *pFd, int eLock){
+  RECOVER_VFS_WRAPPER (
+      pFd->pMethods->xUnlock(pFd, eLock)
+  );
+}
+static int recoverVfsCheckReservedLock(sqlite3_file *pFd, int *pResOut){
+  RECOVER_VFS_WRAPPER (
+      pFd->pMethods->xCheckReservedLock(pFd, pResOut)
+  );
+}
+static int recoverVfsFileControl(sqlite3_file *pFd, int op, void *pArg){
+  RECOVER_VFS_WRAPPER (
+      pFd->pMethods->xFileControl(pFd, op, pArg)
+  );
+}
+static int recoverVfsSectorSize(sqlite3_file *pFd){
+  RECOVER_VFS_WRAPPER (
+      pFd->pMethods->xSectorSize(pFd)
+  );
+}
+static int recoverVfsDeviceCharacteristics(sqlite3_file *pFd){
+  RECOVER_VFS_WRAPPER (
+      pFd->pMethods->xDeviceCharacteristics(pFd)
+  );
+}
+static int recoverVfsShmMap(
+  sqlite3_file *pFd, int iPg, int pgsz, int bExtend, void volatile **pp
+){
+  RECOVER_VFS_WRAPPER (
+      pFd->pMethods->xShmMap(pFd, iPg, pgsz, bExtend, pp)
+  );
+}
+static int recoverVfsShmLock(sqlite3_file *pFd, int offset, int n, int flags){
+  RECOVER_VFS_WRAPPER (
+      pFd->pMethods->xShmLock(pFd, offset, n, flags)
+  );
+}
+static void recoverVfsShmBarrier(sqlite3_file *pFd){
+  if( pFd->pMethods==&recover_methods ){
+    pFd->pMethods = recover_g.pMethods;
+    pFd->pMethods->xShmBarrier(pFd);
+    pFd->pMethods = &recover_methods;
+  }else{
+    pFd->pMethods->xShmBarrier(pFd);
+  }
+}
+static int recoverVfsShmUnmap(sqlite3_file *pFd, int deleteFlag){
+  RECOVER_VFS_WRAPPER (
+      pFd->pMethods->xShmUnmap(pFd, deleteFlag)
+  );
+}
+
+static void recoverInstallWrapper(sqlite3_recover *p){
+  sqlite3_file *pFd = 0;
+  assert( recover_g.pMethods==0 );
+  sqlite3_file_control(p->dbIn, p->zDb, SQLITE_FCNTL_FILE_POINTER, (void*)&pFd);
+  if( pFd ){
+    recover_g.pMethods = pFd->pMethods;
+    pFd->pMethods = &recover_methods;
+  }
+}
+static void recoverUninstallWrapper(sqlite3_recover *p){
+  if( recover_g.pMethods ){
+    sqlite3_file *pFd = 0;
+    sqlite3_file_control(p->dbIn, p->zDb,SQLITE_FCNTL_FILE_POINTER,(void*)&pFd);
+    assert( pFd );
+    pFd->pMethods = recover_g.pMethods;
+    recover_g.pMethods = 0;
+  }
+}
+
 static void recoverStep(sqlite3_recover *p){
   assert( p && p->errCode==SQLITE_OK );
   switch( p->eState ){
@@ -1853,6 +2114,9 @@ static void recoverStep(sqlite3_recover *p){
       ** user functions with the new handle. */
       recoverOpenOutput(p);
 
+      sqlite3_mutex_enter( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_APP2) );
+      recoverInstallWrapper(p);
+
       /* Open transactions on both the input and output databases. */
       recoverExec(p, p->dbIn, "PRAGMA writable_schema = on");
       recoverExec(p, p->dbIn, "BEGIN");
@@ -1860,8 +2124,11 @@ static void recoverStep(sqlite3_recover *p){
       recoverExec(p, p->dbOut, "BEGIN");
 
       recoverCacheSchema(p);
-      recoverWriteSchema1(p);
 
+      recoverUninstallWrapper(p);
+      sqlite3_mutex_leave( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_APP2) );
+
+      recoverWriteSchema1(p);
       p->eState = RECOVER_STATE_WRITING;
       break;
       
