@@ -5,7 +5,7 @@
 
 # What is libSQL?
 
-libSQL is a fork of the popular SQLite database.
+[libSQL](http://libsql.org) is an open source, open contribution fork of SQLite. We aim to evolve it to suit many more use cases than SQLite was originally designed for.
 
 ## We like SQLite a lot, and with modifications.
 
