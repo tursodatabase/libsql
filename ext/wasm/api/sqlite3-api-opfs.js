@@ -169,6 +169,7 @@ const installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri){
     W.onerror = function(err){
       // The error object doesn't contain any useful info when the
       // failure is, e.g., that the remote script is 404.
+      error("Error initializing OPFS asyncer:",err);
       promiseReject(new Error("Loading OPFS async Worker failed for unknown reasons."));
     };
     const pDVfs = capi.sqlite3_vfs_find(null)/*pointer to default VFS*/;
@@ -202,7 +203,6 @@ const installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri){
        environment or the other when sqlite3_os_end() is called (_if_ it
        gets called at all in a wasm build, which is undefined).
     */
-
     /**
        State which we send to the async-api Worker or share with it.
        This object must initially contain only cloneable or sharable
@@ -224,7 +224,12 @@ const installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri){
     */
     const state = Object.create(null);
     state.verbose = options.verbose;
-    state.littleEndian = true;
+    state.littleEndian = (()=>{
+      const buffer = new ArrayBuffer(2);
+      new DataView(buffer).setInt16(0, 256, true /* littleEndian */);
+      // Int16Array uses the platform's endianness.
+      return new Int16Array(buffer)[0] === 256;
+    })();
     /** Whether the async counterpart should log exceptions to
         the serialization channel. That produces a great deal of
         noise for seemingly innocuous things like xAccess() checks
@@ -265,7 +270,7 @@ const installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri){
          between both workers. This worker writes to it and the other
          listens for changes. */
       state.opIds.whichOp = i++;
-      /* Slot for storing return values. This work listens to that
+      /* Slot for storing return values. This worker listens to that
          slot and the other worker writes to it. */
       state.opIds.rc = i++;
       /* Each function gets an ID which this worker writes to
@@ -278,11 +283,13 @@ const installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri){
       state.opIds.xDeleteNoWait = i++;
       state.opIds.xFileControl = i++;
       state.opIds.xFileSize = i++;
+      state.opIds.xLock = i++;
       state.opIds.xOpen = i++;
       state.opIds.xRead = i++;
       state.opIds.xSleep = i++;
       state.opIds.xSync = i++;
       state.opIds.xTruncate = i++;
+      state.opIds.xUnlock = i++;
       state.opIds.xWrite = i++;
       state.opIds.mkdir = i++;
       state.opIds['opfs-async-metrics'] = i++;
@@ -290,7 +297,6 @@ const installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri){
       state.sabOP = new SharedArrayBuffer(i * 4/*sizeof int32*/);
       opfsUtil.metrics.reset();
     }
-
     /**
        SQLITE_xxx constants to export to the async worker
        counterpart...
@@ -304,10 +310,17 @@ const installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri){
       'SQLITE_IOERR_TRUNCATE', 'SQLITE_IOERR_DELETE',
       'SQLITE_IOERR_ACCESS', 'SQLITE_IOERR_CLOSE',
       'SQLITE_IOERR_DELETE',
+      'SQLITE_LOCK_NONE',
+      'SQLITE_LOCK_SHARED',
+      'SQLITE_LOCK_RESERVED',
+      'SQLITE_LOCK_PENDING',
+      'SQLITE_LOCK_EXCLUSIVE',
       'SQLITE_OPEN_CREATE', 'SQLITE_OPEN_DELETEONCLOSE',
       'SQLITE_OPEN_READONLY'
-    ].forEach(function(k){
-      state.sq3Codes[k] = capi[k] || toss("Maintenance required: not found:",k);
+    ].forEach((k)=>{
+      if(undefined === (state.sq3Codes[k] = capi[k])){
+        toss("Maintenance required: not found:",k);
+      }
     });
 
     /**
@@ -605,7 +618,8 @@ const installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri){
       xCheckReservedLock: function(pFile,pOut){
         // Exclusive lock is automatically acquired when opened
         //warn("xCheckReservedLock(",arguments,") is a no-op");
-        wasm.setMemValue(pOut,1,'i32');
+        const f = __openFiles[pFile];
+        wasm.setMemValue(pOut, f.lockMode ? 1 : 0, 'i32');
         return 0;
       },
       xClose: function(pFile){
@@ -643,9 +657,17 @@ const installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri){
         return rc;
       },
       xLock: function(pFile,lockType){
-        //2022-09: OPFS handles lock when opened
-        //warn("xLock(",arguments,") is a no-op");
-        return 0;
+        mTimeStart('xLock');
+        const f = __openFiles[pFile];
+        let rc = 0;
+        if( capi.SQLITE_LOCK_NONE === f.lockType ) {
+          rc = opRun('xLock', pFile, lockType);
+          if( 0===rc ) f.lockType = lockType;
+        }else{
+          f.lockType = lockType;
+        }
+        mTimeEnd();
+        return rc;
       },
       xRead: function(pFile,pDest,n,offset64){
         /* int (*xRead)(sqlite3_file*, void*, int iAmt, sqlite3_int64 iOfst) */
@@ -676,9 +698,16 @@ const installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri){
         return rc;
       },
       xUnlock: function(pFile,lockType){
-        //2022-09: OPFS handles lock when opened
-        //warn("xUnlock(",arguments,") is a no-op");
-        return 0;
+        mTimeStart('xUnlock');
+        const f = __openFiles[pFile];
+        let rc = 0;
+        if( capi.SQLITE_LOCK_NONE === lockType
+          && f.lockType ){
+          rc = opRun('xUnlock', pFile, lockType);
+        }
+        if( 0===rc ) f.lockType = lockType;
+        mTimeEnd();
+        return rc;
       },
       xWrite: function(pFile,pSrc,n,offset64){
         /* int (*xWrite)(sqlite3_file*, const void*, int iAmt, sqlite3_int64 iOfst) */
@@ -696,7 +725,7 @@ const installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri){
         return rc;
       }
     }/*ioSyncWrappers*/;
-    
+
     /**
        Impls for the sqlite3_vfs methods. Maintenance reminder: members
        are in alphabetical order to simplify finding them.
@@ -790,6 +819,7 @@ const installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri){
           fh.sabView = state.sabFileBufView;
           fh.sq3File = new sqlite3_file(pFile);
           fh.sq3File.$pMethods = opfsIoMethods.pointer;
+          fh.lockType = capi.SQLITE_LOCK_NONE;
         }
         mTimeEnd();
         return rc;
@@ -1061,5 +1091,12 @@ installOpfsVfs.defaultProxyUri =
     //self.location.pathname.replace(/[^/]*$/, "sqlite3-opfs-async-proxy.js");
   "sqlite3-opfs-async-proxy.js";
 //console.warn("sqlite3.installOpfsVfs.defaultProxyUri =",sqlite3.installOpfsVfs.defaultProxyUri);
-self.sqlite3ApiBootstrap.initializersAsync.push(async (sqlite3)=>installOpfsVfs());
+self.sqlite3ApiBootstrap.initializersAsync.push(async (sqlite3)=>{
+  try{
+    return installOpfsVfs();
+  }catch(e){
+    console.error("installOpfsVfs() exception:",e);
+    throw e;
+  }
+});
 }/*sqlite3ApiBootstrap.initializers.push()*/);

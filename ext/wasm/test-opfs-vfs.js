@@ -34,10 +34,6 @@ const tryOpfsVfs = async function(sqlite3){
   const wait = async (ms)=>{
     return new Promise((resolve)=>setTimeout(resolve, ms));
   };
-  const waitForRelinquish = async ()=>{
-    log("Waiting briefly to test sync handle relinquishing...");
-    return wait(1500);
-  };
 
   const urlArgs = new URL(self.location.href).searchParams;
   const dbFile = "my-persistent.db";
@@ -45,13 +41,11 @@ const tryOpfsVfs = async function(sqlite3){
 
   const db = new opfs.OpfsDb(dbFile,'ct');
   log("db file:",db.filename);
-  await waitForRelinquish();
   try{
     if(opfs.entryExists(dbFile)){
       let n = db.selectValue("select count(*) from sqlite_schema");
       log("Persistent data found. sqlite_schema entry count =",n);
     }
-    await waitForRelinquish();
     db.transaction((db)=>{
       db.exec({
         sql:[
@@ -63,7 +57,6 @@ const tryOpfsVfs = async function(sqlite3){
                (performance.now() |0) / 4]
       });
     });
-    await waitForRelinquish();
     log("count(*) from t =",db.selectValue("select count(*) from t"));
 
     // Some sanity checks of the opfs utility functions...

@@ -1312,14 +1312,25 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       // Is it okay to resolve these in parallel or do we need them
       // to resolve in order? We currently only have 1, so it
       // makes no difference.
-      lip = lip.map((f)=>f(sqlite3).catch(()=>{}));
+      lip = lip.map((f)=>f(sqlite3).catch((e)=>{
+        console.error("An async sqlite3 initializer failed:",e);
+      }));
       //let p = lip.shift();
       //while(lip.length) p = p.then(lip.shift());
       //return p.then(()=>sqlite3);
       return Promise.all(lip).then(()=>sqlite3);
     }
   };
-  sqlite3ApiBootstrap.initializers.forEach((f)=>f(sqlite3));
+  try{
+    sqlite3ApiBootstrap.initializers.forEach((f)=>{
+      f(sqlite3);
+    });
+  }catch(e){
+    /* If we don't report this here, it can get completely swallowed
+       up and disappear into the abyss of Promises and Workers. */
+    console.error("sqlite3 bootstrap initializer threw:",e);
+    throw e;
+  }
   delete sqlite3ApiBootstrap.initializers;
   sqlite3ApiBootstrap.sqlite3 = sqlite3;
   return sqlite3;

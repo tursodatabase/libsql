@@ -41,6 +41,9 @@ if(self.window === self){
 }else if(!navigator.storage.getDirectory){
   toss("This API requires navigator.storage.getDirectory.");
 }
+
+//warn("This file is very much experimental and under construction.",self.location.pathname);
+
 /**
    Will hold state copied to this object from the syncronous side of
    this API.
@@ -97,8 +100,6 @@ metrics.dump = ()=>{
   console.log("Serialization metrics:",metrics.s11n);
 };
 
-//warn("This file is very much experimental and under construction.",self.location.pathname);
-
 /**
    Map of sqlite3_file pointers (integers) to metadata related to a
    given OPFS file handles. The pointers are, in this side of the
@@ -142,8 +143,7 @@ const getDirForFilename = async function f(absFilename, createDirs = false){
 /**
    Returns the sync access handle associated with the given file
    handle object (which must be a valid handle object), lazily opening
-   it if needed. Timestamps the handle for use in relinquishing it
-   during idle time.
+   it if needed.
 
    In order to help alleviate cross-tab contention for a dabase,
    if an exception is thrown while acquiring the handle, this routine
@@ -177,13 +177,12 @@ const getSyncHandle = async (fh)=>{
     }
     log("Got sync handle for",fh.filenameAbs,'in',performance.now() - t,'ms');
   }
-  fh.syncHandleTime = performance.now();
   return fh.syncHandle;
 };
 
 const closeSyncHandle = async (fh)=>{
   if(fh.syncHandle){
-    //warn("Closing sync handle for",fh.filenameAbs);
+    log("Closing sync handle for",fh.filenameAbs);
     const h = fh.syncHandle;
     delete fh.syncHandle;
     return h.close();
@@ -238,6 +237,7 @@ const wTimeEnd = ()=>(
    file's state while the tight waitLoop() is running.
 */
 let flagAsyncShutdown = false;
+
 
 /**
    Asynchronous wrappers for sqlite3_vfs and sqlite3_io_methods
@@ -373,6 +373,20 @@ const vfsAsyncImpls = {
     storeAndNotify('xFileSize', sz);
     mTimeEnd();
   },
+  xLock: async function(fid,lockType){
+    mTimeStart('xLock');
+    const fh = __openFiles[fid];
+    let rc = 0;
+    if( !fh.syncHandle ){
+      try { await getSyncHandle(fh) }
+      catch(e){
+        state.s11n.storeException(1,e);
+        rc = state.sq3Codes.SQLITE_IOERR;
+      }
+    }
+    storeAndNotify('xLock',rc);
+    mTimeEnd();
+  },
   xOpen: async function(fid/*sqlite3_file pointer*/, filename, flags){
     const opName = 'xOpen';
     mTimeStart(opName);
@@ -473,6 +487,23 @@ const vfsAsyncImpls = {
     storeAndNotify('xTruncate',rc);
     mTimeEnd();
   },
+  xUnlock: async function(fid,lockType){
+    mTimeStart('xUnlock');
+    let rc = 0;
+    const fh = __openFiles[fid];
+    if( state.sq3Codes.SQLITE_LOCK_NONE===lockType
+        && fh.syncHandle ){
+      try { await closeSyncHandle(fh) }
+      catch(e){
+        state.s11n.storeException(1,e);
+        rc = state.sq3Codes.SQLITE_IOERR;
+        /* Maybe we want to not report this? "Destructors do not
+           throw." */
+      }
+    }
+    storeAndNotify('xUnlock',rc);
+    mTimeEnd();
+  },
   xWrite: async function(fid,n,offset){
     mTimeStart('xWrite');
     let rc;
@@ -495,7 +526,7 @@ const vfsAsyncImpls = {
     storeAndNotify('xWrite',rc);
     mTimeEnd();
   }
-};
+}/*vfsAsyncImpls*/;
 
 const initS11n = ()=>{
   /**
@@ -617,21 +648,7 @@ const waitLoop = async function f(){
      We need to wake up periodically to give the thread a chance
      to do other things.
   */
-  const waitTime = 500;
-  /**
-     relinquishTime defines the_approximate_ number of ms after which
-     a db sync access handle will be relinquished so that we do not
-     hold a persistent lock on it. When the following loop times out
-     while waiting, every (approximate) increment of this value it
-     will relinquish any db handles which have been idle for at least
-     this much time.
-
-     Reaquisition of a sync handle seems to take an average of
-     0.6-0.9ms on this dev machine but takes anywhere from 1-3ms every
-     once in a while (maybe 1 time in 5 or 10). Outliers as long as
-     7ms have been witnessed, but they're rare.
-  */
-  const relinquishTime = 500;
+  const waitTime = 1000;
   let lastOpTime = performance.now();
   let now;
   while(!flagAsyncShutdown){
@@ -639,21 +656,6 @@ const waitLoop = async function f(){
       if('timed-out'===Atomics.wait(
         state.sabOPView, state.opIds.whichOp, 0, waitTime
       )){
-        if(relinquishTime &&
-           (lastOpTime + relinquishTime <= (now = performance.now()))){
-          for(const fh of Object.values(__openFiles)){
-            if(fh.syncHandle && (
-              now - relinquishTime >= fh.syncHandleTime
-            )){
-              log("Relinquishing for timeout:",fh.filenameAbs);
-              await closeSyncHandle(fh)
-              /* Testing shows that we have to wait on this async
-                 op to finish, else we might try to re-open it
-                 before the close has run. The FS layer does not
-                 retain the order those operations, apparently. */;
-            }
-          }
-        }
         continue;
       }
       lastOpTime = performance.now();
@@ -719,4 +721,4 @@ navigator.storage.getDirectory().then(function(d){
     }
   };
   wMsg('opfs-async-loaded');
-}).catch((e)=>error(e));
+}).catch((e)=>error("error initializing OPFS asyncer:",e));
