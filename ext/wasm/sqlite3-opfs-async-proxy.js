@@ -208,16 +208,27 @@ const wTimeEnd = ()=>(
 );
 
 /**
+   Set to true by the 'opfs-async-shutdown' command to quite the wait loop.
+   This is only intended for debugging purposes: we cannot inspect this
+   file's state while the tight waitLoop() is running.
+*/
+let flagAsyncShutdown = false;
+
+/**
    Asynchronous wrappers for sqlite3_vfs and sqlite3_io_methods
    methods. Maintenance reminder: members are in alphabetical order
    to simplify finding them.
 */
 const vfsAsyncImpls = {
-  'async-metrics': async ()=>{
-    mTimeStart('async-metrics');
+  'opfs-async-metrics': async ()=>{
+    mTimeStart('opfs-async-metrics');
     metrics.dump();
-    storeAndNotify('async-metrics', 0);
+    storeAndNotify('opfs-async-metrics', 0);
     mTimeEnd();
+  },
+  'opfs-async-shutdown': async ()=>{
+    flagAsyncShutdown = true;
+    storeAndNotify('opfs-async-shutdown', 0);
   },
   mkdir: async (dirname)=>{
     mTimeStart('mkdir');
@@ -597,7 +608,7 @@ const waitLoop = async function f(){
   const relinquishTime = 1000;
   let lastOpTime = performance.now();
   let now;
-  while(true){
+  while(!flagAsyncShutdown){
     try {
       if('timed-out'===Atomics.wait(
         state.sabOPView, state.opIds.whichOp, 0, waitTime
@@ -669,6 +680,16 @@ navigator.storage.getDirectory().then(function(d){
           waitLoop();
           break;
         }
+        case 'opfs-async-restart':
+          if(flagAsyncShutdown){
+            warn("Restarting after opfs-async-shutdown. Might or might not work.");
+            flagAsyncShutdown = false;
+            waitLoop();
+          }
+          break;
+        case 'opfs-async-metrics':
+          metrics.dump();
+          break;
     }
   };
   wMsg('opfs-async-loaded');

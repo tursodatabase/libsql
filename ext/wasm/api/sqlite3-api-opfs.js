@@ -142,7 +142,7 @@ const installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri){
                     "\nTotal of",n,"op(s) for",t,
                     "ms (incl. "+w+" ms of waiting on the async side)");
         console.log("Serialization metrics:",metrics.s11n);
-        opRun('async-metrics');
+        W.postMessage({type:'opfs-async-metrics'});
       },
       reset: function(){
         let k;
@@ -285,7 +285,8 @@ const installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri){
       state.opIds.xTruncate = i++;
       state.opIds.xWrite = i++;
       state.opIds.mkdir = i++;
-      state.opIds['async-metrics'] = i++;
+      state.opIds['opfs-async-metrics'] = i++;
+      state.opIds['opfs-async-shutdown'] = i++;
       state.sabOP = new SharedArrayBuffer(i * 4/*sizeof int32*/);
       opfsUtil.metrics.reset();
     }
@@ -888,6 +889,20 @@ const installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri){
       );
     };
 
+    /**
+       Only for test/development use.
+    */
+    opfsUtil.debug = {
+      asyncShutdown: ()=>{
+        warn("Shutting down OPFS async listener. OPFS will no longer work.");
+        opRun('opfs-async-shutdown');
+      },
+      asyncRestart: ()=>{
+        warn("Attempting to restart OPFS async listener. Might work, might not.");
+        W.postMessage({type: 'opfs-async-restart'});
+      }
+    };
+
     //TODO to support fiddle db upload:
     //opfsUtil.createFile = function(absName, content=undefined){...}
 
@@ -1028,6 +1043,7 @@ const installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri){
             break;
       }
     };
+
   })/*thePromise*/;
   return thePromise;
 }/*installOpfsVfs()*/;
