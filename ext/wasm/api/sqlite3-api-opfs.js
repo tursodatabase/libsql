@@ -915,9 +915,19 @@ const installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri){
       opfsUtil.OpfsDb.prototype = Object.create(sqlite3.oo1.DB.prototype);
       sqlite3.oo1.dbCtorHelper.setVfsPostOpenSql(
         opfsVfs.pointer,
-        /* Truncate journal mode is faster than delete or wal for
-           OPFS, per speedtest1. */
-        "pragma journal_mode=truncate"
+        [
+          /* Truncate journal mode is faster than delete or wal for
+             this vfs, per speedtest1. */
+          "pragma journal_mode=truncate;",
+          /*
+            This vfs benefits hugely from cache on moderate/large
+            speedtest1 --size 50 and --size 100 workloads. We currently
+            rely on setting a non-default cache size when building
+            sqlite3.wasm. If that policy changes, the cache can
+            be set here.
+          */
+          //"pragma cache_size=-8388608;"
+        ].join('')
       );
     }
 

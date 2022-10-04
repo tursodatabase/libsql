@@ -144,13 +144,38 @@ const getDirForFilename = async function f(absFilename, createDirs = false){
    handle object (which must be a valid handle object), lazily opening
    it if needed. Timestamps the handle for use in relinquishing it
    during idle time.
+
+   In order to help alleviate cross-tab contention for a dabase,
+   if an exception is thrown while acquiring the handle, this routine
+   will wait briefly and try again, up to 3 times. If acquisition
+   still fails at that point it will give up and propagate the
+   exception.
 */
 const getSyncHandle = async (fh)=>{
   if(!fh.syncHandle){
-    //const t = performance.now();
-    //warn("Creating sync handle for",fh.filenameAbs);
-    fh.syncHandle = await fh.fileHandle.createSyncAccessHandle();
-    //warn("Got sync handle for",fh.filenameAbs,'in',performance.now() - t,'ms');
+    const t = performance.now();
+    log("Acquiring sync handle for",fh.filenameAbs);
+    const maxTries = 3;
+    let i = 1, ms = 300;
+    for(; true; ms *= ++i){
+      try {
+        //if(1===i) toss("Just testing.");
+        //TODO? A config option which tells it to throw here
+        //randomly every now and then.
+        fh.syncHandle = await fh.fileHandle.createSyncAccessHandle();
+        break;
+      }catch(e){
+        if(i === maxTries){
+          toss("Error getting sync handle.",maxTries,
+               "attempts failed. ",fh.filenameAbs, ":", e.message);
+          throw e;
+        }
+        error("Error getting sync handle. Waiting",ms,
+              "ms and trying again.",fh.filenameAbs,e);
+        Atomics.wait(state.sabOPView, state.opIds.xSleep, 0, ms);
+      }
+    }
+    log("Got sync handle for",fh.filenameAbs,'in',performance.now() - t,'ms');
   }
   fh.syncHandleTime = performance.now();
   return fh.syncHandle;
@@ -589,23 +614,24 @@ const waitLoop = async function f(){
   }
   /**
      waitTime is how long (ms) to wait for each Atomics.wait().
-     We need to wait up periodically to give the thread a chance
+     We need to wake up periodically to give the thread a chance
      to do other things.
   */
-  const waitTime = 250;
+  const waitTime = 200;
   /**
-     relinquishTime defines the_approximate_ number of ms
-     after which a db sync access handle will be relinquished
-     so that we do not hold a persistent lock on it. When the following loop
-     times out while waiting, every (approximate) increment of this
-     value it will relinquish any db handles which have been idle for
-     at least this much time.
+     relinquishTime defines the_approximate_ number of ms after which
+     a db sync access handle will be relinquished so that we do not
+     hold a persistent lock on it. When the following loop times out
+     while waiting, every (approximate) increment of this value it
+     will relinquish any db handles which have been idle for at least
+     this much time.
 
      Reaquisition of a sync handle seems to take an average of
-     0.6-0.9ms on this dev machine but takes anywhere from 1-3ms
-     every once in a while (maybe 1 time in 5 or 10).
+     0.6-0.9ms on this dev machine but takes anywhere from 1-3ms every
+     once in a while (maybe 1 time in 5 or 10). Outliers as long as
+     7ms have been witnessed, but they're rare.
   */
-  const relinquishTime = 1000;
+  const relinquishTime = 750;
   let lastOpTime = performance.now();
   let now;
   while(!flagAsyncShutdown){
@@ -619,7 +645,7 @@ const waitLoop = async function f(){
             if(fh.syncHandle && (
               now - relinquishTime >= fh.syncHandleTime
             )){
-              //warn("Relinquishing for timeout:",fh.filenameAbs);
+              log("Relinquishing for timeout:",fh.filenameAbs);
               await closeSyncHandle(fh)
               /* Testing shows that we have to wait on this async
                  op to finish, else we might try to re-open it
