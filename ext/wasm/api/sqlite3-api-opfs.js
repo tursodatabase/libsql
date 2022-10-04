@@ -918,7 +918,7 @@ const installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri){
         [
           /* Truncate journal mode is faster than delete or wal for
              this vfs, per speedtest1. */
-          "pragma journal_mode=truncate;",
+          "pragma journal_mode=truncate;"
           /*
             This vfs benefits hugely from cache on moderate/large
             speedtest1 --size 50 and --size 100 workloads. We currently

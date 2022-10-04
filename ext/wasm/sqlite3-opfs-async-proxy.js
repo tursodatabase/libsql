@@ -617,7 +617,7 @@ const waitLoop = async function f(){
      We need to wake up periodically to give the thread a chance
      to do other things.
   */
-  const waitTime = 200;
+  const waitTime = 500;
   /**
      relinquishTime defines the_approximate_ number of ms after which
      a db sync access handle will be relinquished so that we do not
@@ -631,7 +631,7 @@ const waitLoop = async function f(){
      once in a while (maybe 1 time in 5 or 10). Outliers as long as
      7ms have been witnessed, but they're rare.
   */
-  const relinquishTime = 750;
+  const relinquishTime = 500;
   let lastOpTime = performance.now();
   let now;
   while(!flagAsyncShutdown){
