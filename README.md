@@ -5,7 +5,7 @@
 
 # What is libSQL?
 
-[libSQL](http://libsql.org) is an open source, open contribution fork of SQLite. We aim to evolve it to suit many more use cases than SQLite was originally designed for.
+[libSQL](https://libsql.org) is an open source, open contribution fork of SQLite. We aim to evolve it to suit many more use cases than SQLite was originally designed for.
 
 ## We like SQLite a lot, and with modifications.
 
@@ -15,7 +15,7 @@ Wildly successful, and broadly useful, SQLite has solidified its place in modern
 It seems to us that there are two obvious avenues to modify SQLite: forking the code to add features directly to it, or running it on top of a modified OS. History suggests that neither of these work well. The way we see it, this is a result of one major limitation of the software: SQLite is open source but does not accept contributions, so community improvements cannot be widely enjoyed.
 
 ## SQLite needs to open contributions.
-We want to see a world where everyone can benefit from all of the great ideas and hard work that the SQLite community contributes back to the codebase.  Community contributions work well, because we’ve done it before. If this was possible, what do you think SQLite could become?
+We want to see a world where everyone can benefit from all of the great ideas and hard work that the SQLite community contributes back to the codebase.  Community contributions work well, because [we’ve done it before][qemu-sqlite]. If this was possible, what do you think SQLite could become?
 
 ## Could SQLite become a distributed database?
 
@@ -62,3 +62,4 @@ We are strong believers in open source that is also open to community contributi
 ## Adhere to a code of conduct
 We take our code of conduct seriously, and unlike SQLite, we do not substitute it with an [unclear alternative](https://sqlite.org/codeofethics.html).  We strive to foster a community that values diversity, equity, and inclusion.  We encourage others to speak up if they feel uncomfortable.
 
+[qemu-sqlite]: https://glaubercosta-11125.medium.com/sqlite-qemu-all-over-again-aedad19c9a1c
