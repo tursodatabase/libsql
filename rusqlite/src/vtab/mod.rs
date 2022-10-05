@@ -1324,7 +1324,7 @@ pub mod csvtab;
 #[cfg(feature = "series")]
 #[cfg_attr(docsrs, doc(cfg(feature = "series")))]
 pub mod series; // SQLite >= 3.9.0
-#[cfg(test)]
+#[cfg(all(test, feature = "modern_sqlite"))]
 mod vtablog;
 
 #[cfg(test)]
