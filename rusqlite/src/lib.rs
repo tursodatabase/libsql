@@ -1058,9 +1058,9 @@ bitflags::bitflags! {
         /// The database is created if it does not already exist
         const SQLITE_OPEN_CREATE = ffi::SQLITE_OPEN_CREATE;
         /// The filename can be interpreted as a URI if this flag is set.
-        const SQLITE_OPEN_URI = 0x0000_0040;
+        const SQLITE_OPEN_URI = ffi::SQLITE_OPEN_URI;
         /// The database will be opened as an in-memory database.
-        const SQLITE_OPEN_MEMORY = 0x0000_0080;
+        const SQLITE_OPEN_MEMORY = ffi::SQLITE_OPEN_MEMORY;
         /// The new database connection will not use a per-connection mutex (the
         /// connection will use the "multi-thread" threading mode, in SQLite
         /// parlance).
