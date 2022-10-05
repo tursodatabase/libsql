@@ -192,6 +192,10 @@ struct sqlite3_recover {
   int bRecoverRowid;              /* SQLITE_RECOVER_ROWIDS setting */
   int bSlowIndexes;               /* SQLITE_RECOVER_SLOWINDEXES setting */
 
+  int pgsz;
+  u8 *pPage1Disk;
+  u8 *pPage1Cache;
+
   /* Error code and error message */
   int errCode;                    /* For sqlite3_recover_errcode() */
   char *zErrMsg;                  /* For sqlite3_recover_errmsg() */
@@ -248,6 +252,7 @@ struct sqlite3_recover {
 typedef struct RecoverGlobal RecoverGlobal;
 struct RecoverGlobal {
   const sqlite3_io_methods *pMethods;
+  sqlite3_recover *p;
 };
 static RecoverGlobal recover_g;
 
@@ -661,8 +666,20 @@ static void recoverGetPage(
     if( pStmt ){
       sqlite3_bind_int64(pStmt, 1, pgno);
       if( SQLITE_ROW==sqlite3_step(pStmt) ){
+        int bDone = 0;
         assert( p->errCode==SQLITE_OK );
-        sqlite3_result_value(pCtx, sqlite3_column_value(pStmt, 0));
+        if( pgno==1 ){
+          const u8 *aPg = sqlite3_column_blob(pStmt, 0);
+          int nPg = sqlite3_column_bytes(pStmt, 0);
+          if( nPg==p->pgsz && 0==memcmp(p->pPage1Cache, aPg, nPg) ){
+            sqlite3_result_blob(pCtx, p->pPage1Disk, nPg, SQLITE_STATIC);
+            bDone = 1;
+          }
+        }
+        
+        if( !bDone ){
+          sqlite3_result_value(pCtx, sqlite3_column_value(pStmt, 0));
+        }
       }
       recoverReset(p, pStmt);
     }
@@ -1914,7 +1931,7 @@ static void recoverPutU16(u8 *a, u32 v){
   a[0] = (v>>8) & 0x00FF;
   a[1] = (v>>0) & 0x00FF;
 }
-static u32 recoverPutU32(u8 *a, u32 v){
+static void recoverPutU32(u8 *a, u32 v){
   a[0] = (v>>24) & 0x00FF;
   a[1] = (v>>16) & 0x00FF;
   a[2] = (v>>8) & 0x00FF;
@@ -1926,7 +1943,10 @@ static int recoverVfsRead(sqlite3_file *pFd, void *aBuf, int nByte, i64 iOff){
   if( pFd->pMethods==&recover_methods ){
     pFd->pMethods = recover_g.pMethods;
     rc = pFd->pMethods->xRead(pFd, aBuf, nByte, iOff);
-    if( rc==SQLITE_OK && iOff==0 && nByte>=100 ){
+    if( nByte==16 ){
+      sqlite3_randomness(16, aBuf);
+    }else
+    if( rc==SQLITE_OK && iOff==0 && nByte>=108 ){
       /* Ensure that the database has a valid header file. The only fields
       ** that really matter to recovery are:
       **
@@ -1942,9 +1962,12 @@ static int recoverVfsRead(sqlite3_file *pFd, void *aBuf, int nByte, i64 iOff){
       ** We also try to preserve the auto-vacuum, incr-value, user-version
       ** and application-id fields - all 32 bit quantities at offsets 
       ** 52, 60, 64 and 68. All other fields are set to known good values.
+      **
+      ** Byte offset 105 should also contain the page-size as a 16-bit 
+      ** integer.
       */
       const int aPreserve[] = {32, 36, 52, 60, 64, 68};
-      u8 aHdr[100] = {
+      u8 aHdr[108] = {
         0x53, 0x51, 0x4c, 0x69, 0x74, 0x65, 0x20, 0x66, 
         0x6f, 0x72, 0x6d, 0x61, 0x74, 0x20, 0x33, 0x00,
         0xFF, 0xFF, 0x01, 0x01, 0x00, 0x40, 0x20, 0x20,
@@ -1957,7 +1980,9 @@ static int recoverVfsRead(sqlite3_file *pFd, void *aBuf, int nByte, i64 iOff){
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x2e, 0x5b, 0x30
+        0x00, 0x2e, 0x5b, 0x30,
+
+        0x0D, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0x00
       };
       u8 *a = (u8*)aBuf;
 
@@ -1966,23 +1991,44 @@ static int recoverVfsRead(sqlite3_file *pFd, void *aBuf, int nByte, i64 iOff){
       u32 dbsz = 0;
       i64 dbFileSize = 0;
       int ii;
+      sqlite3_recover *p = recover_g.p;
 
       if( pgsz==0x01 ) pgsz = 65536;
       rc = pFd->pMethods->xFileSize(pFd, &dbFileSize);
 
-      dbsz = dbFileSize / pgsz;
+      if( pgsz ){
+        dbsz = dbFileSize / pgsz;
+      }
       if( enc!=SQLITE_UTF8 && enc!=SQLITE_UTF16BE && enc!=SQLITE_UTF16LE ){
         enc = SQLITE_UTF8;
       }
 
-      recoverPutU32(&aHdr[28], dbsz);
-      recoverPutU32(&aHdr[56], enc);
-      if( pgsz==65536 ) pgsz = 1;
-      recoverPutU16(&aHdr[16], pgsz);
-      for(ii=0; ii<sizeof(aPreserve)/sizeof(aPreserve[0]); ii++){
-        memcpy(&aHdr[aPreserve[ii]], &a[aPreserve[ii]], 4);
+      sqlite3_free(p->pPage1Cache);
+      p->pPage1Cache = 0;
+      p->pPage1Disk = 0;
+
+      p->pgsz = nByte;
+      p->pPage1Cache = (u8*)recoverMalloc(p, nByte*2);
+      if( p->pPage1Cache ){
+        p->pPage1Disk = &p->pPage1Cache[nByte];
+        memcpy(p->pPage1Disk, aBuf, nByte);
+
+        recoverPutU32(&aHdr[28], dbsz);
+        recoverPutU32(&aHdr[56], enc);
+        recoverPutU16(&aHdr[105], pgsz);
+        if( pgsz==65536 ) pgsz = 1;
+        recoverPutU16(&aHdr[16], pgsz);
+        for(ii=0; ii<sizeof(aPreserve)/sizeof(aPreserve[0]); ii++){
+          memcpy(&aHdr[aPreserve[ii]], &a[aPreserve[ii]], 4);
+        }
+        memcpy(aBuf, aHdr, sizeof(aHdr));
+        memset(&((u8*)aBuf)[sizeof(aHdr)], 0, nByte-sizeof(aHdr));
+
+        memcpy(p->pPage1Cache, aBuf, nByte);
+      }else{
+        rc = p->errCode;
       }
-      memcpy(aBuf, aHdr, sizeof(aHdr));
+
     }
     pFd->pMethods = &recover_methods;
   }else{
@@ -2088,6 +2134,7 @@ static void recoverInstallWrapper(sqlite3_recover *p){
   sqlite3_file_control(p->dbIn, p->zDb, SQLITE_FCNTL_FILE_POINTER, (void*)&pFd);
   if( pFd ){
     recover_g.pMethods = pFd->pMethods;
+    recover_g.p = p;
     pFd->pMethods = &recover_methods;
   }
 }
@@ -2098,6 +2145,7 @@ static void recoverUninstallWrapper(sqlite3_recover *p){
     assert( pFd );
     pFd->pMethods = recover_g.pMethods;
     recover_g.pMethods = 0;
+    recover_g.p = 0;
   }
 }
 
@@ -2384,6 +2432,7 @@ int sqlite3_recover_finish(sqlite3_recover *p){
     sqlite3_free(p->zErrMsg);
     sqlite3_free(p->zStateDb);
     sqlite3_free(p->zLostAndFound);
+    sqlite3_free(p->pPage1Cache);
     sqlite3_free(p);
   }
   return rc;

@@ -18,6 +18,8 @@ source $testdir/tester.tcl
 
 set testprefix recovercorrupt
 
+database_may_be_corrupt
+
 do_execsql_test 1.0 {
   PRAGMA page_size = 512;
   CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
@@ -46,19 +48,21 @@ proc toggle_bit {blob bit} {
 
 
 db_save_and_close
-for {set ii 200} {$ii < 10000} {incr ii} {
+for {set ii 0} {$ii < 10000} {incr ii} {
   db_restore_and_reopen
   db func toggle_bit toggle_bit
-  set pg [expr {($ii / 512)+1}]
-  set byte [expr {$ii % 512}]
+  set bitsperpage [expr 512*8]
+
+  set pg [expr {($ii / $bitsperpage)+1}]
+  set byte [expr {$ii % $bitsperpage}]
   db eval {
     UPDATE sqlite_dbpage SET data = toggle_bit(data, $byte) WHERE pgno=$pg
   }
 
-  do_test 1.2.$ii {
     set R [sqlite3_recover_init db main test.db2]
     $R config lostandfound lost_and_found
     $R run
+  do_test 1.2.$ii {
     $R finish
   } {}
 }
