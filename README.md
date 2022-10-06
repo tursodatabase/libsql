@@ -1,5 +1,5 @@
 
-[![License](https://img.shields.io/badge/license-Apache%202.0-blue)](https://github.com/libsql/libsql/blob/master/LICENSE)
+[![License](https://img.shields.io/badge/license-MIT-blue)](https://github.com/libsql/libsql/blob/master/LICENSE.md)
 [![Discord](https://img.shields.io/discord/1026540227218640906?color=5865F2&label=discord&logo=discord&logoColor=8a9095)](https://discord.gg/TxwbQTWHSr)
 
 
@@ -46,7 +46,7 @@ We’ve decided that now is the time to take SQLite to the places where the comm
 # Our plan
 
 ## Start with a fork of SQLite
-There is nothing to be gained in reinventing greatness, so we will simply build upon that with a fork of core SQLite.  Unlike SQLite, this fork will be both fully open source (Apache-2.0) and open to community contributions.
+There is nothing to be gained in reinventing greatness, so we will simply build upon that with a fork of core SQLite.  Unlike SQLite, this fork will be both fully open source (MIT) and open to community contributions.
 
 ## Preserve compatibility
 We are committed to preserving compatibility with everything that was previously written for SQLite.  All of your favorite tools and libraries will continue to work as-is.
