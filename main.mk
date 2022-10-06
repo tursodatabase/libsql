@@ -354,6 +354,7 @@ TESTSRC = \
   $(TOP)/src/test_thread.c \
   $(TOP)/src/test_vdbecov.c \
   $(TOP)/src/test_vfs.c \
+  $(TOP)/src/test_vfs_custom_page_alloc.c \
   $(TOP)/src/test_windirent.c \
   $(TOP)/src/test_window.c \
   $(TOP)/src/test_wsd.c
