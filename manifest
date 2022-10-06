@@ -1,5 +1,5 @@
-C Attempt\sto\sclarify\sthe\soperation\sof\sthe\sxLock\sand\sxUnlock\sVFS\sI/O\smethods.\nAssert()\sstatements\sadded\sto\sprove\sthat\sthey\sbehave\sas\sthe\sdocumentation\ssays.
-D 2022-10-04T14:50:46.626
+C Fix\sa\sproblem\sthat\soccurred\swhen\susing\sa\sbloom\sfilter\sto\soptimize\san\s(ipk\s=\s?)\slookup\sin\sthe\scase\swhere\sthe\sRHS\sof\sthe\sexpression\sis\sa\sTEXT\svalue.\sFirst\sreported\sby\s[forum:/forumpost/f61a8b7053|forum\spost\sf61a8b7053].
+D 2022-10-06T14:10:11.073
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -677,7 +677,7 @@ F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
 F src/where.c 63e712bcad47f70e94c2150976cd7da5040933699e3938d4189d064acbe40891
 F src/whereInt.h 70cd30de9ed784aa33fa6bd1245f060617de7a00d992469b6d8e419eed915743
-F src/wherecode.c 6bb1cf9d0a4e3e04dab0bf0ea4a8d936a0dcc05a7e2207beeda6c61aea6dd341
+F src/wherecode.c 7ec238362d5fab3a67e3a77704f1cfdd2172f6da6f03065706922c114d8f39c3
 F src/whereexpr.c 55a39f42aaf982574fbf52906371a84cceed98a994422198dfd03db4fce4cc46
 F src/window.c 928e215840e2f2d9a2746e018c9643ef42c66c4ab6630ef0df7fa388fa145e86
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -781,6 +781,7 @@ F test/bind2.test 918bc35135f4141809ead7585909cde57d44db90a7a62aef540127148f91aa
 F test/bindxfer.test efecd12c580c14df5f4ad3b3e83c667744a4f7e0
 F test/bitvec.test 75894a880520164d73b1305c1c3f96882615e142
 F test/blob.test e7ac6c7d3a985cc4678c64f325292529a69ae252
+F test/bloom1.test 5318eb0648dff073ca9b9a54387ec2c0a7a07ed3490461fe2db0d074b2eb0e7f
 F test/boundary1.tcl 6421b2d920d8b09539503a8673339d32f7609eb1
 F test/boundary1.test 66d7f4706ccdb42d58eafdb081de07b0eb42d77b
 F test/boundary2.tcl e34ef4e930cf1083150d4d2c603e146bd3b76bcb
@@ -2000,8 +2001,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 897e187cad981126fc5f6ea8e382e937825af10b0c9589b0a23b9fbaa4ca58b8
-R e2ac55c08c3f1d2d33e5a2d4f6cdf937
-U drh
-Z d8fbc7d6453f3413769ceb23c01d9355
+P 3efa811251d4510a074231a1e0b667783cc5f90777466b9dcae675cd9892b423
+R 24754a870bbabf6f9b268855f112e8aa
+U dan
+Z 222c3385a356b2c2fe407bcca5d59288
 # Remove this line to create a well-formed Fossil manifest.
