@@ -1877,6 +1877,123 @@ static void recoverFinalCleanup(sqlite3_recover *p){
   p->dbOut = 0;
 }
 
+static u32 recoverGetU16(const u8 *a){
+  return (((u32)a[0])<<8) + ((u32)a[1]);
+}
+static u32 recoverGetU32(const u8 *a){
+  return (((u32)a[0])<<24) + (((u32)a[1])<<16) + (((u32)a[2])<<8) + ((u32)a[3]);
+}
+static int recoverGetVarint(const u8 *a, i64 *pVal){
+  sqlite3_int64 v = 0;
+  int i;
+  for(i=0; i<8; i++){
+    v = (v<<7) + (a[i]&0x7f);
+    if( (a[i]&0x80)==0 ){ *pVal = v; return i+1; }
+  }
+  v = (v<<8) + (a[i]&0xff);
+  *pVal = v;
+  return 9;
+}
+
+/*
+** The second argument points to a buffer n bytes in size. If this buffer
+** or a prefix thereof appears to contain a well-formed SQLite b-tree page, 
+** return the page-size in bytes. Otherwise, if the buffer does not 
+** appear to contain a well-formed b-tree page, return 0.
+*/
+static int recoverIsValidPage(u8 *aTmp, const u8 *a, int n){
+  u8 *aUsed = aTmp;
+  int nFrag = 0;
+  int nActual = 0;
+  int iFree = 0;
+  int nCell = 0;                  /* Number of cells on page */
+  int iCellOff = 0;               /* Offset of cell array in page */
+  int iContent = 0;
+  int eType = 0;
+  int ii = 0;
+
+  eType = (int)a[0];
+  if( eType!=0x02 && eType!=0x05 && eType!=0x0A && eType!=0x0D ) return 0;
+
+  iFree = (int)recoverGetU16(&a[1]);
+  nCell = (int)recoverGetU16(&a[3]);
+  iContent = (int)recoverGetU16(&a[5]);
+  if( iContent==0 ) iContent = 65536;
+  nFrag = (int)a[7];
+
+  if( iContent>n ) return 0;
+
+  memset(aUsed, 0, n);
+  memset(aUsed, 0xFF, iContent);
+
+  /* Follow the free-list. This is the same format for all b-tree pages. */
+  if( iFree && iFree<=iContent ) return 0;
+  while( iFree ){
+    int iNext = 0;
+    int nByte = 0;
+    if( iFree>(n-4) ) return 0;
+    iNext = recoverGetU16(&a[iFree]);
+    nByte = recoverGetU16(&a[iFree+2]);
+    if( iFree+nByte>n ) return 0;
+    if( iNext<iFree+nByte ) return 0;
+    memset(&aUsed[iFree], 0xFF, nByte);
+    iFree = iNext;
+  }
+
+  /* Run through the cells */
+  if( eType==0x02 || eType==0x05 ){
+    iCellOff = 12;
+  }else{
+    iCellOff = 8;
+  }
+  if( (iCellOff + 2*nCell)>iContent ) return 0;
+  for(ii=0; ii<nCell; ii++){
+    int iByte;
+    i64 nPayload = 0;
+    int nByte = 0;
+    int iOff = recoverGetU16(&a[iCellOff + 2*ii]);
+    if( iOff<iContent || iOff>n ){
+      return 0;
+    }
+    if( eType==0x05 || eType==0x02 ) nByte += 4;
+    nByte += recoverGetVarint(&a[iOff+nByte], &nPayload);
+    if( eType==0x0D ){
+      i64 dummy = 0;
+      nByte += recoverGetVarint(&a[iOff+nByte], &dummy);
+    }
+    if( eType!=0x05 ){
+      int X = (eType==0x0D) ? n-35 : (((n-12)*64/255)-23);
+      int M = ((n-12)*32/255)-23;
+      int K = M+((nPayload-M)%(n-4));
+
+      if( nPayload<X ){
+        nByte += nPayload;
+      }else if( K<=X ){
+        nByte += K+4;
+      }else{
+        nByte += M+4;
+      }
+    }
+
+    if( iOff+nByte>n ){
+      return 0;
+    }
+    for(iByte=iOff; iByte<(iOff+nByte); iByte++){
+      if( aUsed[iByte]!=0 ){
+        return 0;
+      }
+      aUsed[iByte] = 0xFF;
+    }
+  }
+
+  nActual = 0;
+  for(ii=0; ii<n; ii++){
+    if( aUsed[ii]==0 ) nActual++;
+  }
+  return (nActual==nFrag);
+}
+
+
 static int recoverVfsClose(sqlite3_file*);
 static int recoverVfsRead(sqlite3_file*, void*, int iAmt, sqlite3_int64 iOfst);
 static int recoverVfsWrite(sqlite3_file*, const void*, int, sqlite3_int64);
@@ -1920,13 +2037,6 @@ static int recoverVfsClose(sqlite3_file *pFd){
   return pFd->pMethods->xClose(pFd);
 }
 
-static u32 recoverGetU16(const u8 *a){
-  return (((u32)a[0])<<8) + ((u32)a[1]);
-}
-static u32 recoverGetU32(const u8 *a){
-  return (((u32)a[0])<<24) + (((u32)a[1])<<16) + (((u32)a[2])<<8) + ((u32)a[3]);
-}
-
 static void recoverPutU16(u8 *a, u32 v){
   a[0] = (v>>8) & 0x00FF;
   a[1] = (v>>0) & 0x00FF;
@@ -1936,6 +2046,43 @@ static void recoverPutU32(u8 *a, u32 v){
   a[1] = (v>>16) & 0x00FF;
   a[2] = (v>>8) & 0x00FF;
   a[3] = (v>>0) & 0x00FF;
+}
+
+static int recoverVfsDetectPagesize(sqlite3_file *pFd, i64 nSz, u32 *pPgsz){
+  int rc = SQLITE_OK;
+  const int nMin = 512;
+  const int nMax = 65536;
+  const int nMaxBlk = 4;
+  u32 pgsz = 0;
+  int iBlk = 0;
+  u8 *aPg = 0;
+  u8 *aTmp = 0;
+
+  aPg = (u8*)sqlite3_malloc(2*nMax);
+  if( aPg==0 ) return SQLITE_NOMEM;
+  aTmp = &aPg[nMax];
+
+  for(iBlk=0; rc==SQLITE_OK && iBlk<((nSz+nMax-1)/nMax); iBlk++){
+    int nByte = (nSz>=((iBlk+1)*nMax)) ? nMax : (nSz % nMax);
+    memset(aPg, 0, nMax);
+    rc = pFd->pMethods->xRead(pFd, aPg, nByte, iBlk*nMax);
+    if( rc==SQLITE_OK ){
+      int pgsz2;
+      for(pgsz2=(pgsz ? pgsz*2 : nMin); pgsz2<=nMax; pgsz2=pgsz2*2){
+        int iOff;
+        for(iOff=0; iOff<nMax; iOff+=pgsz2){
+          if( recoverIsValidPage(aTmp, &aPg[iOff], pgsz2) ){
+            pgsz = pgsz2;
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  *pPgsz = pgsz;
+  sqlite3_free(aPg);
+  return rc;
 }
 
 static int recoverVfsRead(sqlite3_file *pFd, void *aBuf, int nByte, i64 iOff){
@@ -1995,6 +2142,14 @@ static int recoverVfsRead(sqlite3_file *pFd, void *aBuf, int nByte, i64 iOff){
 
       if( pgsz==0x01 ) pgsz = 65536;
       rc = pFd->pMethods->xFileSize(pFd, &dbFileSize);
+
+      if( rc==SQLITE_OK ){
+        u32 pgsz2 = 0;
+        rc = recoverVfsDetectPagesize(pFd, dbFileSize, &pgsz2);
+        if( pgsz2!=0 ){
+          pgsz = pgsz2;
+        }
+      }
 
       if( pgsz ){
         dbsz = dbFileSize / pgsz;

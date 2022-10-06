@@ -86,7 +86,6 @@ do_execsql_test 1.0 {
   )
   INSERT INTO t1 SELECT i*2, hex(randomblob(250)) FROM s;
   INSERT INTO t2 SELECT * FROM t1;
-
 }
 
 do_recover_test 1

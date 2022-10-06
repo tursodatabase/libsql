@@ -1,5 +1,5 @@
-C Improve\shandling\sof\scorruption\sin\sthe\ssqlite_schema\stable\sb-tree\sstructure.
-D 2022-10-05T16:58:28.898
+C Add\scode\sto\sdetermine\sthe\sdatabase\spage-size\sby\ssearching\sfor\swell-formed\spages.
+D 2022-10-06T17:20:12.045
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -386,7 +386,7 @@ F ext/rbu/rbuvacuum4.test a78898e438a44803eb2bc897ba3323373c9f277418e2d6d76e90f2
 F ext/rbu/sqlite3rbu.c 8737cabdfbee84bb25a7851ecef8b1312be332761238da9be6ddb10c62ad4291
 F ext/rbu/sqlite3rbu.h 1dc88ab7bd32d0f15890ea08d23476c4198d3da3056985403991f8c9cd389812
 F ext/rbu/test_rbu.c 03f6f177096a5f822d68d8e4069ad8907fe572c62ff2d19b141f59742821828a
-F ext/recover/recover1.test 2b0f048ba572c3ca4e4235b632bf75702975a9656146eab766f6c75861f946a0
+F ext/recover/recover1.test d9844f37b2e6da021816d699424d4aaf85712f50a9a207bf5f85f8ea7b48eb9b
 F ext/recover/recover_common.tcl 6679af7dffc858e345053a91c9b0a897595b4a13007aceffafca75304ccb137c
 F ext/recover/recoverclobber.test 294dcc894124ab4ca3a7b35766630742a3d25810fceac22220beb64f70a33a60
 F ext/recover/recovercorrupt.test 69af3d68aedc2cf1c3c41dbd6afb45b3cebadb57796d513550b5fd1e2a8b3fba
@@ -397,7 +397,7 @@ F ext/recover/recoverold.test 46e9d99b595fac583d4c67f74d7d89c20a435c752ef6eeb3e9
 F ext/recover/recoverrowid.test 1694a1a5526d825f71279f3d02ab02a1ee4c5265de18858bf54cb8ec54487ac8
 F ext/recover/recoverslowidx.test 7e3889e50758c614b9b3e75187eeeea425c0ca8a2387441fc19ae749a96a7949
 F ext/recover/recoversql.test f9872ff2114e13ffd8ee31e1de06919f62b9b48bc080191b5bd076d10becb60f
-F ext/recover/sqlite3recover.c c40381677e18f841be9e878591bf68cab043e99b408374561179829d0b041095
+F ext/recover/sqlite3recover.c 1b68d2593b83a130cea794c8921ad7af564cfafd848ccc80e4b9a0e893942c51
 F ext/recover/sqlite3recover.h f698ccc94bd4da38761035415ad08c4549a408491ff9fd5f52d34d2214f64e36
 F ext/recover/test_recover.c 61ec931e47abca6b2210f46239cafd9f3060741605e3d3c45a7c7a53f63dd957
 F ext/repair/README.md 92f5e8aae749a4dae14f02eea8e1bb42d4db2b6ce5e83dbcdd6b1446997e0c15
@@ -2014,8 +2014,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b0feecaa84b88f534edb49056cf7e92256f4a687c8b4c44e1d1186709a304378
-R c8e986f8000e60f0f5539ba1d6775390
+P 2be0dba12fb9b98cd9632f1ff3f30aeb29661a2e121b68c2f3335617b027797b
+R 428f4add1572ea8a473b960c2888f37e
 U dan
-Z 4a7b8684cf08c1b2ec449e50db6581b5
+Z 0bbefdeff86a57418ac328248f517762
 # Remove this line to create a well-formed Fossil manifest.
