@@ -1435,7 +1435,7 @@ typedef struct sqlite3_api_routines sqlite3_api_routines;
 typedef struct sqlite3_vfs sqlite3_vfs;
 typedef void (*sqlite3_syscall_ptr)(void);
 struct sqlite3_vfs {
-  int iVersion;            /* Structure version number (currently 3) */
+  int iVersion;            /* Structure version number (currently 700 (libSQL)) */
   int szOsFile;            /* Size of subclassed sqlite3_file */
   int mxPathname;          /* Maximum file pathname length */
   sqlite3_vfs *pNext;      /* Next registered VFS */
@@ -1471,6 +1471,23 @@ struct sqlite3_vfs {
   ** New fields may be appended in future versions.  The iVersion
   ** value will increment whenever this happens. 
   */
+
+  /* libSQL extensions:
+  **  - Virtual page allocation
+  **    for use cases where the default freelist becomes a contention point.
+  **    While this is not directly a file system routine, it's logically tightly coupled with VFS
+  **    and is expected to be modified along with providing a custom VFS implementation.
+  **    The new implementations are assumed to not touch the internal page structure, and need to
+  **    implement their own logic for persisting the state (which pages are free, how many of them, etc).
+  **    For improved backward compatibility, these entries can be NULL, in which case the default
+  **    freelist implementation is used to manage free pages.
+  **    Overriding xAllocatePage implies that xFreePage needs to be overridden as well.
+  **
+  **      xAllocatePage:     allocate a new page (default: freelist based on offsets 32, 36)
+  **      xFreePage:         deallocate a page   (default: freelist based on offsets 32, 36)
+  */
+  int (*xAllocatePage)(sqlite3_file* fd, unsigned *pgno, unsigned char mode);
+  int (*xFreePage)(sqlite3_file* fd, unsigned pgno);
 };
 
 /*
