@@ -806,6 +806,120 @@ static void recoverEscapeCrnl(
 ** (if p->errCode!=SQLITE_OK). A copy of the error code is returned in
 ** this case. 
 **
+** Otherwise, attempt to populate temporary table "recovery.schema" with the
+** parts of the database schema that can be extracted from the input database.
+**
+** If no error occurs, SQLITE_OK is returned. Otherwise, an error code
+** and error message are left in the recover handle and a copy of the
+** error code returned. It is not considered an error if part of all of
+** the database schema cannot be recovered due to corruption.
+*/
+static int recoverCacheSchema(sqlite3_recover *p){
+  return recoverExec(p, p->dbOut,
+    "WITH RECURSIVE pages(p) AS ("
+    "  SELECT 1"
+    "    UNION"
+    "  SELECT child FROM sqlite_dbptr('getpage()'), pages WHERE pgno=p"
+    ")"
+    "INSERT INTO recovery.schema SELECT"
+    "  max(CASE WHEN field=0 THEN value ELSE NULL END),"
+    "  max(CASE WHEN field=1 THEN value ELSE NULL END),"
+    "  max(CASE WHEN field=2 THEN value ELSE NULL END),"
+    "  max(CASE WHEN field=3 THEN value ELSE NULL END),"
+    "  max(CASE WHEN field=4 THEN value ELSE NULL END)"
+    "FROM sqlite_dbdata('getpage()') WHERE pgno IN ("
+    "  SELECT p FROM pages"
+    ") GROUP BY pgno, cell"
+  );
+}
+
+/*
+** If this recover handle is not in SQL callback mode (i.e. was not created 
+** using sqlite3_recover_init_sql()) of if an error has already occurred, 
+** this function is a no-op. Otherwise, issue a callback with SQL statement
+** zSql as the parameter. 
+**
+** If the callback returns non-zero, set the recover handle error code to
+** the value returned (so that the caller will abandon processing).
+*/
+static void recoverSqlCallback(sqlite3_recover *p, const char *zSql){
+  if( p->errCode==SQLITE_OK && p->xSql ){
+    int res = p->xSql(p->pSqlCtx, zSql);
+    if( res ){
+      recoverError(p, SQLITE_ERROR, "callback returned an error - %d", res);
+    }
+  }
+}
+
+/*
+** Transfer the following settings from the input database to the output
+** database:
+**
+**   + page-size,
+**   + auto-vacuum settings,
+**   + database encoding,
+**   + user-version (PRAGMA user_version), and
+**   + application-id (PRAGMA application_id), and
+*/
+static void recoverTransferSettings(sqlite3_recover *p){
+  const char *aPragma[] = {
+    "encoding",
+    "page_size",
+    "auto_vacuum",
+    "user_version",
+    "application_id"
+  };
+  int ii;
+
+  /* Truncate the output database to 0 pages in size. This is done by 
+  ** opening a new, empty, temp db, then using the backup API to clobber 
+  ** any existing output db with a copy of it. */
+  if( p->errCode==SQLITE_OK ){
+    sqlite3 *db2 = 0;
+    int rc = sqlite3_open("", &db2);
+    if( rc!=SQLITE_OK ){
+      recoverDbError(p, db2);
+      return;
+    }
+
+    for(ii=0; ii<sizeof(aPragma)/sizeof(aPragma[0]); ii++){
+      const char *zPrag = aPragma[ii];
+      sqlite3_stmt *p1 = 0;
+      p1 = recoverPreparePrintf(p, p->dbIn, "PRAGMA %Q.%s", p->zDb, zPrag);
+      if( p->errCode==SQLITE_OK && sqlite3_step(p1)==SQLITE_ROW ){
+        const char *zArg = (const char*)sqlite3_column_text(p1, 0);
+        char *z2 = recoverMPrintf(p, "PRAGMA %s = %Q", zPrag, zArg);
+        recoverSqlCallback(p, z2);
+        recoverExec(p, db2, z2);
+        sqlite3_free(z2);
+        if( zArg==0 ){
+          recoverError(p, SQLITE_NOMEM, 0);
+        }
+      }
+      recoverFinalize(p, p1);
+    }
+    recoverExec(p, db2, "CREATE TABLE t1(a); DROP TABLE t1;");
+
+    if( p->errCode==SQLITE_OK ){
+      sqlite3 *db = p->dbOut;
+      sqlite3_backup *pBackup = sqlite3_backup_init(db, "main", db2, "main");
+      if( pBackup ){
+        sqlite3_backup_step(pBackup, -1);
+        p->errCode = sqlite3_backup_finish(pBackup);
+      }else{
+        recoverDbError(p, db);
+      }
+    }
+
+    sqlite3_close(db2);
+  }
+}
+
+/*
+** This function is a no-op if recover handle p already contains an error
+** (if p->errCode!=SQLITE_OK). A copy of the error code is returned in
+** this case. 
+**
 ** Otherwise, an attempt is made to open the output database, attach
 ** and create the schema of the temporary database used to store
 ** intermediate data, and to register all required user functions and
@@ -833,19 +947,8 @@ static int recoverOpenOutput(sqlite3_recover *p){
 
   assert( p->dbOut==0 );
 
-  if( p->errCode==SQLITE_OK ){
-    if( sqlite3_open_v2(p->zUri, &db, flags, 0) ){
-      recoverDbError(p, db);
-    }else{
-      char *zSql = recoverMPrintf(p, "ATTACH %Q AS recovery;", p->zStateDb);
-      recoverExec(p, db, zSql);
-      recoverExec(p, db,
-          "PRAGMA writable_schema = 1;"
-          "CREATE TABLE recovery.map(pgno INTEGER PRIMARY KEY, parent INT);" 
-          "CREATE TABLE recovery.schema(type, name, tbl_name, rootpage, sql);"
-      );
-      sqlite3_free(zSql);
-    }
+  if( sqlite3_open_v2(p->zUri, &db, flags, 0) ){
+    recoverDbError(p, db);
   }
 
   /* Register the sqlite_dbdata and sqlite_dbptr virtual table modules.
@@ -863,61 +966,21 @@ static int recoverOpenOutput(sqlite3_recover *p){
     );
   }
 
-  /* Truncate the output database to 0 pages in size. This is done by 
-  ** opening a new, empty, temp db, then using the backup API to clobber 
-  ** any existing output db with a copy of it. */
-  if( p->errCode==SQLITE_OK ){
-    sqlite3 *db2 = 0;
-    int rc = sqlite3_open("", &db2);
-    if( rc==SQLITE_OK ){
-      sqlite3_backup *pBackup = sqlite3_backup_init(db, "main", db2, "main");
-      if( pBackup ){
-        sqlite3_backup_step(pBackup, -1);
-        p->errCode = sqlite3_backup_finish(pBackup);
-      }else{
-        recoverDbError(p, db);
-      }
-    }else{
-      recoverDbError(p, db2);
-    }
-    sqlite3_close(db2);
-  }
-
   p->dbOut = db;
   return p->errCode;
 }
 
-/*
-** This function is a no-op if recover handle p already contains an error
-** (if p->errCode!=SQLITE_OK). A copy of the error code is returned in
-** this case. 
-**
-** Otherwise, attempt to populate temporary table "recovery.schema" with the
-** parts of the database schema that can be extracted from the input database.
-**
-** If no error occurs, SQLITE_OK is returned. Otherwise, an error code
-** and error message are left in the recover handle and a copy of the
-** error code returned. It is not considered an error if part of all of
-** the database schema cannot be recovered due to corruption.
-*/
-static int recoverCacheSchema(sqlite3_recover *p){
-  return recoverExec(p, p->dbOut,
-    "WITH RECURSIVE pages(p) AS ("
-    "  SELECT 1"
-    "    UNION"
-    "  SELECT child FROM sqlite_dbptr('getpage()'), pages WHERE pgno=p"
-    ")"
-    "INSERT INTO recovery.schema SELECT"
-    "  max(CASE WHEN field=0 THEN value ELSE NULL END),"
-    "  max(CASE WHEN field=1 THEN value ELSE NULL END),"
-    "  max(CASE WHEN field=2 THEN value ELSE NULL END),"
-    "  max(CASE WHEN field=3 THEN value ELSE NULL END),"
-    "  max(CASE WHEN field=4 THEN value ELSE NULL END)"
-    "FROM sqlite_dbdata('getpage()') WHERE pgno IN ("
-    "  SELECT p FROM pages"
-    ") GROUP BY pgno, cell"
+static void recoverOpenRecovery(sqlite3_recover *p){
+  char *zSql = recoverMPrintf(p, "ATTACH %Q AS recovery;", p->zStateDb);
+  recoverExec(p, p->dbOut, zSql);
+  recoverExec(p, p->dbOut,
+      "PRAGMA writable_schema = 1;"
+      "CREATE TABLE recovery.map(pgno INTEGER PRIMARY KEY, parent INT);" 
+      "CREATE TABLE recovery.schema(type, name, tbl_name, rootpage, sql);"
   );
+  sqlite3_free(zSql);
 }
+
 
 /*
 ** This function is a no-op if recover handle p already contains an error
@@ -1018,24 +1081,6 @@ static void recoverAddTable(
       }else if( pNew->bIntkey ){
         pNew->iRowidBind = iBind++;
       }
-    }
-  }
-}
-
-/*
-** If this recover handle is not in SQL callback mode (i.e. was not created 
-** using sqlite3_recover_init_sql()) of if an error has already occurred, 
-** this function is a no-op. Otherwise, issue a callback with SQL statement
-** zSql as the parameter. 
-**
-** If the callback returns non-zero, set the recover handle error code to
-** the value returned (so that the caller will abandon processing).
-*/
-static void recoverSqlCallback(sqlite3_recover *p, const char *zSql){
-  if( p->errCode==SQLITE_OK && p->xSql ){
-    int res = p->xSql(p->pSqlCtx, zSql);
-    if( res ){
-      recoverError(p, SQLITE_ERROR, "callback returned an error - %d", res);
     }
   }
 }
@@ -2057,12 +2102,16 @@ static int recoverVfsDetectPagesize(sqlite3_file *pFd, i64 nSz, u32 *pPgsz){
   int iBlk = 0;
   u8 *aPg = 0;
   u8 *aTmp = 0;
+  int nBlk = 0;
 
   aPg = (u8*)sqlite3_malloc(2*nMax);
   if( aPg==0 ) return SQLITE_NOMEM;
   aTmp = &aPg[nMax];
 
-  for(iBlk=0; rc==SQLITE_OK && iBlk<((nSz+nMax-1)/nMax); iBlk++){
+  nBlk = (nSz+nMax-1)/nMax;
+  if( nBlk>nMaxBlk ) nBlk = nMaxBlk;
+
+  for(iBlk=0; rc==SQLITE_OK && iBlk<nBlk; iBlk++){
     int nByte = (nSz>=((iBlk+1)*nMax)) ? nMax : (nSz % nMax);
     memset(aPg, 0, nMax);
     rc = pFd->pMethods->xRead(pFd, aPg, nByte, iBlk*nMax);
@@ -2313,23 +2362,26 @@ static void recoverStep(sqlite3_recover *p){
       recoverSqlCallback(p, "BEGIN");
       recoverSqlCallback(p, "PRAGMA writable_schema = on");
 
+      sqlite3_mutex_enter( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_APP2) );
+      recoverInstallWrapper(p);
+
       /* Open the output database. And register required virtual tables and 
       ** user functions with the new handle. */
       recoverOpenOutput(p);
-
-      sqlite3_mutex_enter( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_APP2) );
-      recoverInstallWrapper(p);
 
       /* Open transactions on both the input and output databases. */
       recoverExec(p, p->dbIn, "PRAGMA writable_schema = on");
       recoverExec(p, p->dbIn, "BEGIN");
       if( p->errCode==SQLITE_OK ) p->bCloseTransaction = 1;
-      recoverExec(p, p->dbOut, "BEGIN");
-
+      recoverExec(p, p->dbIn, "SELECT 1 FROM sqlite_schema");
+      recoverTransferSettings(p);
+      recoverOpenRecovery(p);
       recoverCacheSchema(p);
 
       recoverUninstallWrapper(p);
       sqlite3_mutex_leave( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_APP2) );
+
+      recoverExec(p, p->dbOut, "BEGIN");
 
       recoverWriteSchema1(p);
       p->eState = RECOVER_STATE_WRITING;

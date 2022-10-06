@@ -17,7 +17,7 @@ if {![info exists testdir]} {
 } 
 source [file join [file dirname [info script]] recover_common.tcl]
 source $testdir/tester.tcl
-set testprefix recoverrowid
+set testprefix recoverslowidx
 
 ifcapable !vtab {
   finish_test; return
@@ -46,6 +46,11 @@ do_test 1.2 {
 } [list {*}{
   {BEGIN}
   {PRAGMA writable_schema = on}
+  {PRAGMA encoding = 'UTF-8'}
+  {PRAGMA page_size = '1024'}
+  {PRAGMA auto_vacuum = '0'}
+  {PRAGMA user_version = '0'}
+  {PRAGMA application_id = '0'}
   {CREATE TABLE t1(a, b)}
   {INSERT OR IGNORE INTO 't1'(_rowid_, 'a', 'b') VALUES (1, 1, 1)}
   {INSERT OR IGNORE INTO 't1'(_rowid_, 'a', 'b') VALUES (2, 2, 2)}
@@ -69,6 +74,11 @@ do_test 1.4 {
 } [list {*}{
   {BEGIN}
   {PRAGMA writable_schema = on}
+  {PRAGMA encoding = 'UTF-8'}
+  {PRAGMA page_size = '1024'}
+  {PRAGMA auto_vacuum = '0'}
+  {PRAGMA user_version = '0'}
+  {PRAGMA application_id = '0'}
   {CREATE TABLE t1(a, b)}
   {CREATE INDEX i1 ON t1(a)}
   {INSERT OR IGNORE INTO 't1'(_rowid_, 'a', 'b') VALUES (1, 1, 1)}

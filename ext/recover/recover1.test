@@ -36,6 +36,12 @@ proc compare_dbs {db1 db2} {
   foreach tbl [$db1 eval {SELECT name FROM sqlite_master WHERE type='table'}] {
     compare_result $db1 $db2 "SELECT * FROM $tbl"
   }
+
+  compare_result $db1 $db2 "PRAGMA page_size"
+  compare_result $db1 $db2 "PRAGMA auto_vacuum"
+  compare_result $db1 $db2 "PRAGMA encoding"
+  compare_result $db1 $db2 "PRAGMA user_version"
+  compare_result $db1 $db2 "PRAGMA application_id"
 }
 
 proc do_recover_test {tn} {
@@ -186,11 +192,19 @@ do_recover_test 10
 #-------------------------------------------------------------------------
 reset_db
 do_execsql_test 11.1 {
+  PRAGMA page_size = 4096;
   PRAGMA encoding='utf16';
+  PRAGMA auto_vacuum = 2;
+  PRAGMA user_version = 45;
+  PRAGMA application_id = 22;
+
   CREATE TABLE u1(u, v);
   INSERT INTO u1 VALUES('edvin marton', 'bond');
   INSERT INTO u1 VALUES(1, 4.0);
 }
+do_execsql_test 11.1a {
+  PRAGMA auto_vacuum;
+} {2}
 
 do_recover_test 11 
 
