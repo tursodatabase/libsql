@@ -4721,7 +4721,7 @@ seek_not_found:
 }
 
 
-/* Opcode: SeekScan  P1 P2 * * *
+/* Opcode: SeekScan  P1 P2 * * P5
 ** Synopsis: Scan-ahead up to P1 rows
 **
 ** This opcode is a prefix opcode to OP_SeekGE.  In other words, this
@@ -4731,8 +4731,8 @@ seek_not_found:
 ** This opcode uses the P1 through P4 operands of the subsequent
 ** OP_SeekGE.  In the text that follows, the operands of the subsequent
 ** OP_SeekGE opcode are denoted as SeekOP.P1 through SeekOP.P4.   Only
-** the P1 and P2 operands of this opcode are also used, and  are called
-** This.P1 and This.P2.
+** the P1, P2 and P5 operands of this opcode are also used, and  are called
+** This.P1, This.P2 and This.P5.
 **
 ** This opcode helps to optimize IN operators on a multi-column index
 ** where the IN operator is on the later terms of the index by avoiding
@@ -4742,29 +4742,51 @@ seek_not_found:
 **
 ** The SeekGE.P3 and SeekGE.P4 operands identify an unpacked key which
 ** is the desired entry that we want the cursor SeekGE.P1 to be pointing
-** to.  Call this SeekGE.P4/P5 row the "target".
+** to.  Call this SeekGE.P3/P4 row the "target".
 **
 ** If the SeekGE.P1 cursor is not currently pointing to a valid row,
 ** then this opcode is a no-op and control passes through into the OP_SeekGE.
 **
 ** If the SeekGE.P1 cursor is pointing to a valid row, then that row
 ** might be the target row, or it might be near and slightly before the
-** target row.  This opcode attempts to position the cursor on the target
-** row by, perhaps by invoking sqlite3BtreeStep() on the cursor
-** between 0 and This.P1 times.
+** target row, or it might be after the target row.  If the cursor is
+** currently before the target row, then this opcode attempts to position
+** the cursor on or after the target row by invoking sqlite3BtreeStep()
+** on the cursor between 1 and This.P1 times.
 **
-** There are three possible outcomes from this opcode:<ol>
+** The This.P5 parameter is a flag that indicates what to do if the
+** cursor ends up pointing at a valid row that is past the target
+** row.  If This.P5 is false (0) then a jump is made to SeekGE.P2.  If
+** This.P5 is true (non-zero) then a jump is made to This.P2.  The P5==0
+** case occurs when there are no inequality constraints to the right of
+** the IN constraing.  The jump to SeekGE.P2 ends the loop.  The P5!=0 case
+** occurs when there are inequality constraints to the right of the IN
+** operator.  In that case, the This.P2 will point either directly to or
+** to setup code prior to the OP_IdxGT or OP_IdxGE opcode that checks for
+** loop terminate.
 **
-** <li> If after This.P1 steps, the cursor is still pointing to a place that
-**      is earlier in the btree than the target row, then fall through
-**      into the subsquence OP_SeekGE opcode.
+** Possible outcomes from this opcode:<ol>
 **
-** <li> If the cursor is successfully moved to the target row by 0 or more
-**      sqlite3BtreeNext() calls, then jump to This.P2, which will land just
-**      past the OP_IdxGT or OP_IdxGE opcode that follows the OP_SeekGE.
+** <li> If the cursor is initally not pointed to any valid row, then
+**      fall through into the subsequent OP_SeekGE opcode.
 **
-** <li> If the cursor ends up past the target row (indicating that the target
-**      row does not exist in the btree) then jump to SeekOP.P2. 
+** <li> If the cursor is left pointing to a row that is before the target
+**      row, even after making as many as This.P1 calls to
+**      sqlite3BtreeNext(), then also fall through into OP_SeekGE.
+**
+** <li> If the cursor is left pointing at the target row, either because it
+**      was at the target row to begin with or because one or more
+**      sqlite3BtreeNext() calls moved the cursor to the target row,
+**      then jump to This.P2..,
+**
+** <li> If the cursor started out before the target row and a call to
+**      to sqlite3BtreeNext() moved the cursor off the end of the index
+**      (indicating that the target row definitely does not exist in the
+**      btree) then jump to SeekGE.P2, ending the loop.
+**
+** <li> If the cursor ends up on a valid row that is past the target row 
+**      (indicating that the target row does not exist in the btree) then
+**      jump to SeekOP.P2 if This.P5==0 or to This.P2 if This.P5>0.
 ** </ol>
 */
 case OP_SeekScan: {
@@ -4775,14 +4797,25 @@ case OP_SeekScan: {
 
   assert( pOp[1].opcode==OP_SeekGE );
 
-  /* pOp->p2 points to the first instruction past the OP_IdxGT that
-  ** follows the OP_SeekGE.  */
+  /* If pOp->p5 is clear, then pOp->p2 points to the first instruction past the
+  ** OP_IdxGT that follows the OP_SeekGE. Otherwise, it points to the first
+  ** opcode past the OP_SeekGE itself.  */
   assert( pOp->p2>=(int)(pOp-aOp)+2 );
-  assert( aOp[pOp->p2-1].opcode==OP_IdxGT || aOp[pOp->p2-1].opcode==OP_IdxGE );
-  testcase( aOp[pOp->p2-1].opcode==OP_IdxGE );
-  assert( pOp[1].p1==aOp[pOp->p2-1].p1 );
-  assert( pOp[1].p2==aOp[pOp->p2-1].p2 );
-  assert( pOp[1].p3==aOp[pOp->p2-1].p3 );
+#ifdef SQLITE_DEBUG
+  if( pOp->p5==0 ){
+    /* There are no inequality constraints following the IN constraint. */
+    assert( pOp[1].p1==aOp[pOp->p2-1].p1 );
+    assert( pOp[1].p2==aOp[pOp->p2-1].p2 );
+    assert( pOp[1].p3==aOp[pOp->p2-1].p3 );
+    assert( aOp[pOp->p2-1].opcode==OP_IdxGT 
+         || aOp[pOp->p2-1].opcode==OP_IdxGE );
+    testcase( aOp[pOp->p2-1].opcode==OP_IdxGE );
+  }else{
+    /* There are inequality constraints.  */
+    assert( pOp->p2==(int)(pOp-aOp)+2 );
+    assert( aOp[pOp->p2-1].opcode==OP_SeekGE );
+  }
+#endif
 
   assert( pOp->p1>0 );
   pC = p->apCsr[pOp[1].p1];
@@ -4816,8 +4849,9 @@ case OP_SeekScan: {
   while(1){
     rc = sqlite3VdbeIdxKeyCompare(db, pC, &r, &res);
     if( rc ) goto abort_due_to_error;
-    if( res>0 ){
+    if( res>0 && pOp->p5==0 ){
       seekscan_search_fail:
+      /* Jump to SeekGE.P2, ending the loop */
 #ifdef SQLITE_DEBUG
       if( db->flags&SQLITE_VdbeTrace ){
         printf("... %d steps and then skip\n", pOp->p1 - nStep);
@@ -4827,7 +4861,8 @@ case OP_SeekScan: {
       pOp++;
       goto jump_to_p2;
     }
-    if( res==0 ){
+    if( res>=0 ){
+      /* Jump to This.P2, bypassing the OP_SeekGE opcode */
 #ifdef SQLITE_DEBUG
       if( db->flags&SQLITE_VdbeTrace ){
         printf("... %d steps and then success\n", pOp->p1 - nStep);
