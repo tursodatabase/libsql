@@ -4652,7 +4652,13 @@ case OP_SeekGT: {       /* jump, in3, group */
 
     r.aMem = &aMem[pOp->p3];
 #ifdef SQLITE_DEBUG
-    { int i; for(i=0; i<r.nField; i++) assert( memIsValid(&r.aMem[i]) ); }
+    {
+      int i;
+      for(i=0; i<r.nField; i++){
+        assert( memIsValid(&r.aMem[i]) );
+        if( i>0 ) REGISTER_TRACE(pOp->p3+i, &r.aMem[i]);
+      }
+    }
 #endif
     r.eqSeen = 0;
     rc = sqlite3BtreeIndexMoveto(pC->uc.pCursor, &r, &res);
