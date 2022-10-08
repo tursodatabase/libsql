@@ -115,6 +115,7 @@ unsafe impl<'vtab> VTab<'vtab> for SeriesTab {
         }
         if idx_num.contains(QueryPlanFlags::BOTH) {
             // Both start= and stop= boundaries are available.
+            //#[allow(clippy::bool_to_int_with_if)]
             info.set_estimated_cost(f64::from(
                 2 - if idx_num.contains(QueryPlanFlags::STEP) {
                     1

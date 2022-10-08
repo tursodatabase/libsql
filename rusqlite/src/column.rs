@@ -33,7 +33,7 @@ impl Statement<'_> {
     /// calling this method.
     pub fn column_names(&self) -> Vec<&str> {
         let n = self.column_count();
-        let mut cols = Vec::with_capacity(n as usize);
+        let mut cols = Vec::with_capacity(n);
         for i in 0..n {
             let s = self.column_name_unwrap(i);
             cols.push(s);
@@ -95,6 +95,7 @@ impl Statement<'_> {
     pub fn column_name(&self, col: usize) -> Result<&str> {
         self.stmt
             .column_name(col)
+            // clippy::or_fun_call (nightly) vs clippy::unnecessary-lazy-evaluations (stable)
             .ok_or(Error::InvalidColumnIndex(col))
             .map(|slice| {
                 str::from_utf8(slice.to_bytes()).expect("Invalid UTF-8 sequence in column name")
@@ -137,7 +138,7 @@ impl Statement<'_> {
     #[cfg_attr(docsrs, doc(cfg(feature = "column_decltype")))]
     pub fn columns(&self) -> Vec<Column> {
         let n = self.column_count();
-        let mut cols = Vec::with_capacity(n as usize);
+        let mut cols = Vec::with_capacity(n);
         for i in 0..n {
             let name = self.column_name_unwrap(i);
             let slice = self.stmt.column_decltype(i);

@@ -58,11 +58,7 @@ impl Connection {
     pub fn busy_handler(&self, callback: Option<fn(i32) -> bool>) -> Result<()> {
         unsafe extern "C" fn busy_handler_callback(p_arg: *mut c_void, count: c_int) -> c_int {
             let handler_fn: fn(i32) -> bool = mem::transmute(p_arg);
-            if let Ok(true) = catch_unwind(|| handler_fn(count)) {
-                1
-            } else {
-                0
-            }
+            c_int::from(catch_unwind(|| handler_fn(count)).unwrap_or_default())
         }
         let c = self.db.borrow_mut();
         let r = match callback {
