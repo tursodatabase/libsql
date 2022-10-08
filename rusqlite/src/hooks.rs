@@ -426,11 +426,7 @@ impl InnerConnection {
                 let boxed_hook: *mut F = p_arg.cast::<F>();
                 (*boxed_hook)()
             });
-            if let Ok(true) = r {
-                1
-            } else {
-                0
-            }
+            c_int::from(r.unwrap_or_default())
         }
 
         // unlike `sqlite3_create_function_v2`, we cannot specify a `xDestroy` with
@@ -568,11 +564,7 @@ impl InnerConnection {
                 let boxed_handler: *mut F = p_arg.cast::<F>();
                 (*boxed_handler)()
             });
-            if let Ok(true) = r {
-                1
-            } else {
-                0
-            }
+            c_int::from(r.unwrap_or_default())
         }
 
         if let Some(handler) = handler {

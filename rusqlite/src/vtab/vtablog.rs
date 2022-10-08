@@ -163,7 +163,7 @@ impl<'vtab> UpdateVTab<'vtab> for VTabLog {
             self.i_inst,
             args.iter().collect::<Vec<ValueRef<'_>>>()
         );
-        Ok(self.n_row as i64)
+        Ok(self.n_row)
     }
 
     fn update(&mut self, args: &Values<'_>) -> Result<()> {
