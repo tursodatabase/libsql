@@ -95,7 +95,8 @@ impl Statement<'_> {
     pub fn column_name(&self, col: usize) -> Result<&str> {
         self.stmt
             .column_name(col)
-            .ok_or_else(|| Error::InvalidColumnIndex(col))
+            // clippy::or_fun_call (nightly) vs clippy::unnecessary-lazy-evaluations (stable)
+            .ok_or(Error::InvalidColumnIndex(col))
             .map(|slice| {
                 str::from_utf8(slice.to_bytes()).expect("Invalid UTF-8 sequence in column name")
             })
