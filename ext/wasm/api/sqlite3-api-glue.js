@@ -680,7 +680,6 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           kvvfsImpls[k]
         );
     }
-    console.warn('kvvfs stuff',kvvfsMethods);
   }/*kvvfs*/
 
   sqlite3.version = Object.assign(Object.create(null),{
