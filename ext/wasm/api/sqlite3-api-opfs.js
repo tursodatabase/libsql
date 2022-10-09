@@ -1093,7 +1093,9 @@ installOpfsVfs.defaultProxyUri =
 //console.warn("sqlite3.installOpfsVfs.defaultProxyUri =",sqlite3.installOpfsVfs.defaultProxyUri);
 self.sqlite3ApiBootstrap.initializersAsync.push(async (sqlite3)=>{
   try{
-    return installOpfsVfs();
+    return installOpfsVfs().catch((e)=>{
+      console.warn("Ignoring inability to install OPFS sqlite3_vfs:",e);
+    });
   }catch(e){
     console.error("installOpfsVfs() exception:",e);
     throw e;

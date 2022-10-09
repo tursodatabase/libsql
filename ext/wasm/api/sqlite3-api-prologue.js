@@ -1285,9 +1285,11 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     /**
        Performs any optional asynchronous library-level initialization
        which might be required. This function returns a Promise which
-       resolves to the sqlite3 namespace object. It _ignores any
-       errors_ in the asynchronous init process, as such components
-       are all optional. If called more than once, the second and
+       resolves to the sqlite3 namespace object. Any error in the
+       async init will be fatal to the init as a whole, but init
+       routines are themselves welcome to install dummy catch()
+       handlers which are not fatal if their failure should be
+       considered non-fatal. If called more than once, the second and
        subsequent calls are no-ops which return a pre-resolved
        Promise.
 
@@ -1312,9 +1314,13 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       // Is it okay to resolve these in parallel or do we need them
       // to resolve in order? We currently only have 1, so it
       // makes no difference.
-      lip = lip.map((f)=>f(sqlite3).catch((e)=>{
-        console.error("Ignoring error: an async sqlite3 initializer failed:",e);
-      }));
+      lip = lip.map((f)=>{
+        const p = (f instanceof Promise) ? f : f(sqlite3);
+        return p.catch((e)=>{
+          console.error("an async sqlite3 initializer failed:",e);
+          throw e;
+        });
+      });
       //let p = lip.shift();
       //while(lip.length) p = p.then(lip.shift());
       //return p.then(()=>sqlite3);
@@ -1350,8 +1356,9 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   this array is deleted.
 
   Note that the order of insertion into this array is significant for
-  some pieces. e.g. sqlite3.capi.wasm cannot be fully utilized until
-  the whwasmutil.js part is plugged in via sqlite3-api-glue.js.
+  some pieces. e.g. sqlite3.capi and sqlite3.capi.wasm cannot be fully
+  utilized until the whwasmutil.js part is plugged in via
+  sqlite3-api-glue.js.
 */
 self.sqlite3ApiBootstrap.initializers = [];
 /**
@@ -1360,13 +1367,15 @@ self.sqlite3ApiBootstrap.initializers = [];
   modified by client code except when plugging such code into the
   amalgamation process.
 
-  Counterpart of self.sqlite3ApiBootstrap.initializers, specifically
-  for initializers which are asynchronous. All functions in this list
-  take the sqlite3 object as their argument and MUST return a
-  Promise. The resolved value and ignored and rejection will kill the
-  asyncPostInit() process but will be otherwise ignored because the
-  post-synchronous-init async initialization parts are (as of this
-  writing) all optional.
+  The counterpart of self.sqlite3ApiBootstrap.initializers,
+  specifically for initializers which are asynchronous. All entries in
+  this list must be either async functions, non-async functions which
+  return a Promise, or a Promise. Each function in the list is called
+  with the sqlite3 ojbect as its only argument.
+
+  The resolved value of any Promise is ignored and rejection will kill
+  the asyncPostInit() process (at an indeterminate point because all
+  of them are run asynchronously in parallel).
 
   This list is not processed until the client calls
   sqlite3.asyncPostInit(). This means, for example, that intializers
