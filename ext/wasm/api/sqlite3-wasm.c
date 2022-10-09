@@ -13,6 +13,8 @@
 ** emcc -o sqlite3.wasm ... -I/path/to/sqlite3-c-and-h sqlite3-wasm.c
 */
 
+#define SQLITE_WASM
+
 /*
 ** Threading and file locking: JS is single-threaded. Each Worker
 ** thread is a separate instance of the JS engine so can never access
@@ -87,7 +89,7 @@
 #endif
 
 /*
-** WASM_KEEP is identical to EMSCRIPTEN_KEEPALIVE but is not
+** SQLITE_WASM_KEEP is identical to EMSCRIPTEN_KEEPALIVE but is not
 ** Emscripten-specific. It explicitly marks functions for export into
 ** the target wasm file without requiring explicit listing of those
 ** functions in Emscripten's -sEXPORTED_FUNCTIONS=... list (or
@@ -683,6 +685,14 @@ const char * sqlite3_wasm_enum_json(void){
     } _StructBinder;
 #undef CurrentStruct
 
+#define CurrentStruct sqlite3_kvvfs_methods
+    StructBinder {
+      M(xRead,"i(sspi)");
+      M(xWrite,"i(sss)");
+      M(xDelete,"i(ss)");
+      M(nKeySize,"i");
+    } _StructBinder;
+
   } out( "]"/*structs*/);
 
   out("}"/*top-level object*/);
@@ -820,6 +830,39 @@ int sqlite3_wasm_db_serialize( sqlite3* pDb, unsigned char **pOut, sqlite3_int64
   }
 }
 
+/*
+** This function is NOT part of the sqlite3 public API. It is strictly
+** for use by the sqlite project's own JS/WASM bindings.
+**
+** Allocates sqlite3KvvfsMethods.nKeySize bytes from
+** sqlite3_wasm_pstack_alloc() and returns 0 if that allocation fails,
+** else it passes that string to kvstorageMakeKey() and returns a
+** NUL-terminated pointer to that string. It is up to the caller to
+** use sqlite3_wasm_pstack_restore() to free the returned pointer.
+*/
+WASM_KEEP
+char * sqlite3_wasm_kvvfsMakeKeyOnPstack(const char *zClass,
+                                         const char *zKeyIn){
+  assert(sqlite3KvvfsMethods.nKeySize>24);
+  char *zKeyOut =
+    (char *)sqlite3_wasm_pstack_alloc(sqlite3KvvfsMethods.nKeySize);
+  if(zKeyOut){
+    kvstorageMakeKey(zClass, zKeyIn, zKeyOut);
+  }
+  return zKeyOut;
+}
+
+/*
+** This function is NOT part of the sqlite3 public API. It is strictly
+** for use by the sqlite project's own JS/WASM bindings.
+**
+** Returns the pointer to the singleton object which holds the kvvfs
+** I/O methods and associated state.
+*/
+WASM_KEEP
+sqlite3_kvvfs_methods * sqlite3_wasm_kvvfs_methods(void){
+  return &sqlite3KvvfsMethods;
+}
 
 #if defined(__EMSCRIPTEN__) && defined(SQLITE_WASM_WASMFS)
 #include <emscripten/wasmfs.h>

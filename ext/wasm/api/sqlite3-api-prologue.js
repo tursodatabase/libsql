@@ -1313,7 +1313,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       // to resolve in order? We currently only have 1, so it
       // makes no difference.
       lip = lip.map((f)=>f(sqlite3).catch((e)=>{
-        console.error("An async sqlite3 initializer failed:",e);
+        console.error("Ignoring error: an async sqlite3 initializer failed:",e);
       }));
       //let p = lip.shift();
       //while(lip.length) p = p.then(lip.shift());
