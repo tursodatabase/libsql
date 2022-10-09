@@ -635,6 +635,7 @@ FUZZCHECK_OPT += -DSQLITE_ENABLE_DBSTAT_VTAB
 FUZZCHECK_OPT += -DSQLITE_ENABLE_BYTECODE_VTAB
 FUZZCHECK_SRC = $(TOP)/test/fuzzcheck.c $(TOP)/test/ossfuzz.c $(TOP)/test/fuzzinvariants.c
 DBFUZZ_OPT =
+ST_OPT = -DSQLITE_OS_KV_OPTIONAL
 
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
@@ -1392,7 +1393,7 @@ LogEst$(TEXE):	$(TOP)/tool/logest.c sqlite3.h
 wordcount$(TEXE):	$(TOP)/test/wordcount.c sqlite3.lo
 	$(LTLINK) -o $@ $(TOP)/test/wordcount.c sqlite3.lo $(TLIBS)
 
-speedtest1$(TEXE):	$(TOP)/test/speedtest1.c sqlite3.c
+speedtest1$(TEXE):	$(TOP)/test/speedtest1.c sqlite3.c Makefile
 	$(LTLINK) $(ST_OPT) -o $@ $(TOP)/test/speedtest1.c sqlite3.c $(TLIBS)
 
 startup$(TEXE):	$(TOP)/test/startup.c sqlite3.c

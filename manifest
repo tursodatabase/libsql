@@ -1,9 +1,9 @@
-C Replace\stime-based\sauto-unlock\sof\sopfs\ssync\shandles\swith\slock\sacquisition/release\svia\ssqlite3_io_methods::xLock/xUnlock().
-D 2022-10-04T17:06:51.812
+C Add\s-DSQLITE_OS_KV_OPTIONAL\sto\sspeedtest1\sflags\sfor\skvvfs\stesting\spurposes.
+D 2022-10-09T11:42:12.888
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in 2fbc1de74212fba94e0c3eca5549b894c91c1c17fb5e6fd23ca90a616523c5f5
+F Makefile.in c6ec4ad6d44bab836eb7b2c142c43388b79c3729cdfd770450dc73df126620f5
 F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
 F Makefile.msc d547a2fdba38a1c6cd1954977d0b0cc017f5f8fbfbc65287bf8d335808938016
 F README.md 8b8df9ca852aeac4864eb1e400002633ee6db84065bd01b78c33817f97d31f5e
@@ -513,6 +513,7 @@ F ext/wasm/jaccwabyt/jaccwabyt.js 0d7f32817456a0f3937fcfd934afeb32154ca33580ab26
 F ext/wasm/jaccwabyt/jaccwabyt.md 9aa6951b529a8b29f578ec8f0355713c39584c92cf1708f63ba0cf917cb5b68e
 F ext/wasm/jaccwabyt/jaccwabyt_test.c 39e4b865a33548f943e2eb9dd0dc8d619a80de05d5300668e9960fff30d0d36f
 F ext/wasm/jaccwabyt/jaccwabyt_test.exports 5ff001ef975c426ffe88d7d8a6e96ec725e568d2c2307c416902059339c06f19
+F ext/wasm/kvvfs.make 7cc9cf10e744c3ba523c3eaf5c4af47028f3a5bb76db304ea8044a9b2a9d496f
 F ext/wasm/scratchpad-wasmfs-main.html 20cf6f1a8f368e70d01e8c17200e3eaa90f1c8e1029186d836d14b83845fbe06
 F ext/wasm/scratchpad-wasmfs-main.js 1aa32c1035cf1440a226a28fefcbb5762fbbcb020ccbe5895f8736d701695c63
 F ext/wasm/speedtest1-wasmfs.html bc28eb29b69a73864b8d7aae428448f8b7e1de81d8bfb9bba99541322054dbd0
@@ -2029,8 +2030,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 35f33c23e5849de1c43c4499ee0a7fa11d26ae34949c1e820c3fa8e8873f9c2b
-R 447ab40d8f9d9bacdb3bbf1fc5e8416f
+P 2625b7cfe1640c1d7e779ec1f37db970541598c0dc3e22e5eecf3c772d95ad40
+R 7aaffd9c020ac6e72a26849a8062d65e
 U stephan
-Z 1f6ebc0e7b8d0de3ff6621f210427c47
+Z 7690e0fae23fd2c65e8199412cec0d90
 # Remove this line to create a well-formed Fossil manifest.
