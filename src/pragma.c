@@ -1752,8 +1752,9 @@ void sqlite3Pragma(
         int loopTop;
         int iDataCur, iIdxCur;
         int r1 = -1;
-        int bStrict;
+        int bStrict;            /* True for a STRICT table */
         int r2;                 /* Previous key for WITHOUT ROWID tables */
+        int mxCol;              /* Maximum non-virtual column number */
 
         if( !IsOrdinaryTable(pTab) ) continue;
         if( pObjTab && pObjTab!=pTab ) continue;
@@ -1778,10 +1779,20 @@ void sqlite3Pragma(
         assert( sqlite3NoTempsInRange(pParse,1,7+j) );
         sqlite3VdbeAddOp2(v, OP_Rewind, iDataCur, 0); VdbeCoverage(v);
         loopTop = sqlite3VdbeAddOp2(v, OP_AddImm, 7, 1);
-        /* Sanity check on record header decoding */
-        sqlite3VdbeAddOp3(v, OP_Column, iDataCur, pTab->nNVCol-1,3);
-        sqlite3VdbeChangeP5(v, OPFLAG_TYPEOFARG);
-        VdbeComment((v, "(right-most column)"));
+
+        /* Fetch the right-most column from the table.  This will cause
+        ** the entire record header to be parsed and sanity checked.  It
+        ** will also prepopulate the  */
+        mxCol = pTab->nCol-1;
+        while( mxCol>=0
+            && ((pTab->aCol[mxCol].colFlags & COLFLAG_VIRTUAL)!=0
+                || pTab->iPKey==mxCol) ) mxCol--;
+        if( mxCol>=0 ){
+          sqlite3ExprCodeGetColumnOfTable(v, pTab, iDataCur, mxCol, 3);
+          if( sqlite3VdbeGetLastOp(v)->opcode==OP_Column ){
+            sqlite3VdbeChangeP5(v, OPFLAG_TYPEOFARG);
+          }
+        }
         if( !isQuick ){
           if( pPk ){
             /* Verify WITHOUT ROWID keys are in ascending order */
@@ -1826,7 +1837,7 @@ void sqlite3Pragma(
             doTypeCheck = pCol->affinity>SQLITE_AFF_BLOB;
           }
           if( pCol->notNull==0 && !doTypeCheck ) continue;
-          p4 = 0x10;
+          p4 = SQLITE_NULL;
           if( pCol->colFlags & COLFLAG_VIRTUAL ){
             sqlite3ExprCodeGetColumnOfTable(v, pTab, iDataCur, j, 3);
             p1 = -1;
