@@ -1782,7 +1782,9 @@ void sqlite3Pragma(
 
         /* Fetch the right-most column from the table.  This will cause
         ** the entire record header to be parsed and sanity checked.  It
-        ** will also prepopulate the  */
+        ** will also prepopulate the cursor column cache that is used
+        ** by the OP_IsType code, so it is a required step.
+        */
         mxCol = pTab->nCol-1;
         while( mxCol>=0
             && ((pTab->aCol[mxCol].colFlags & COLFLAG_VIRTUAL)!=0
@@ -1793,6 +1795,7 @@ void sqlite3Pragma(
             sqlite3VdbeChangeP5(v, OPFLAG_TYPEOFARG);
           }
         }
+
         if( !isQuick ){
           if( pPk ){
             /* Verify WITHOUT ROWID keys are in ascending order */
@@ -1826,9 +1829,10 @@ void sqlite3Pragma(
         for(j=0; j<pTab->nCol; j++){
           char *zErr;
           Column *pCol = pTab->aCol + j;  /* The column to be checked */
-          int doError, jmp2;
-          int p1, p3, p4;    /* Operands to the OP_IsType opcode */
-          int doTypeCheck;   /* Data type check (other than NOT NULL) needed */
+          int labelError;               /* Jump here to report an error */
+          int labelOk;                  /* Jump here if all looks ok */
+          int p1, p3, p4;               /* Operands to the OP_IsType opcode */
+          int doTypeCheck;              /* Check datatypes (besides NOT NULL) */
 
           if( j==pTab->iPKey ) continue;
           if( bStrict ){
@@ -1837,6 +1841,8 @@ void sqlite3Pragma(
             doTypeCheck = pCol->affinity>SQLITE_AFF_BLOB;
           }
           if( pCol->notNull==0 && !doTypeCheck ) continue;
+
+          /* Compute the operands that will be needed for OP_IsType */
           p4 = SQLITE_NULL;
           if( pCol->colFlags & COLFLAG_VIRTUAL ){
             sqlite3ExprCodeGetColumnOfTable(v, pTab, iDataCur, j, 3);
@@ -1861,21 +1867,23 @@ void sqlite3Pragma(
               testcase( p3!=j);
             }
           }
-          doError = doTypeCheck ? sqlite3VdbeMakeLabel(pParse) : 0;
+
+          labelError = sqlite3VdbeMakeLabel(pParse);
+          labelOk = sqlite3VdbeMakeLabel(pParse);
           if( pCol->notNull ){
             /* (1) NOT NULL columns may not contain a NULL */
-            jmp2 = sqlite3VdbeAddOp4Int(v, OP_IsType, p1, 0, p3, p4);
+            int jmp2 = sqlite3VdbeAddOp4Int(v, OP_IsType, p1, labelOk, p3, p4);
             sqlite3VdbeChangeP5(v, 0x0f);
             VdbeCoverage(v);
             zErr = sqlite3MPrintf(db, "NULL value in %s.%s", pTab->zName,
                                 pCol->zCnName);
             sqlite3VdbeAddOp4(v, OP_String8, 0, 3, 0, zErr, P4_DYNAMIC);
-            if( bStrict && pCol->eCType!=COLTYPE_ANY ){
-              sqlite3VdbeGoto(v, doError);
+            if( doTypeCheck ){
+              sqlite3VdbeGoto(v, labelError);
+              sqlite3VdbeJumpHere(v, jmp2);
             }else{
-              integrityCheckResultRow(v);
+              /* VDBE byte code will fall thru */
             }
-            sqlite3VdbeJumpHere(v, jmp2);
           }
           if( bStrict && doTypeCheck ){
             /* (2) Datatype must be exact for non-ANY columns in STRICT tables*/
@@ -1887,7 +1895,7 @@ void sqlite3Pragma(
                0x13,    /* REAL */
                0x14     /* TEXT */
             };
-            jmp2 = sqlite3VdbeAddOp4Int(v, OP_IsType, p1, 0, p3, p4);
+            sqlite3VdbeAddOp4Int(v, OP_IsType, p1, labelOk, p3, p4);
             assert( pCol->eCType>=1 && pCol->eCType<=sizeof(aStdTypeMask) );
             sqlite3VdbeChangeP5(v, aStdTypeMask[pCol->eCType-1]);
             VdbeCoverage(v);
@@ -1895,45 +1903,35 @@ void sqlite3Pragma(
                                   sqlite3StdType[pCol->eCType-1],
                                   pTab->zName, pTab->aCol[j].zCnName);
             sqlite3VdbeAddOp4(v, OP_String8, 0, 3, 0, zErr, P4_DYNAMIC);
-            sqlite3VdbeResolveLabel(v, doError);
-            integrityCheckResultRow(v);
-            sqlite3VdbeJumpHere(v, jmp2);
-          }
-          if( !bStrict && pCol->affinity==SQLITE_AFF_TEXT ){
+          }else if( !bStrict && pCol->affinity==SQLITE_AFF_TEXT ){
             /* (3) Datatype for TEXT columns in non-STRICT tables must be
             **     NULL, TEXT, or BLOB. */
-            jmp2 = sqlite3VdbeAddOp4Int(v, OP_IsType, p1, 0, p3, p4);
+            sqlite3VdbeAddOp4Int(v, OP_IsType, p1, labelOk, p3, p4);
             sqlite3VdbeChangeP5(v, 0x1c); /* NULL, TEXT, or BLOB */
             VdbeCoverage(v);
             zErr = sqlite3MPrintf(db, "NUMERIC value in %s.%s",
                                   pTab->zName, pTab->aCol[j].zCnName);
             sqlite3VdbeAddOp4(v, OP_String8, 0, 3, 0, zErr, P4_DYNAMIC);
-            sqlite3VdbeResolveLabel(v, doError);
-            integrityCheckResultRow(v);
-            sqlite3VdbeJumpHere(v, jmp2);
-          }
-          if( !bStrict && pCol->affinity>=SQLITE_AFF_NUMERIC ){
+          }else if( !bStrict && pCol->affinity>=SQLITE_AFF_NUMERIC ){
             /* (4) Datatype for numeric columns in non-STRICT tables must not
             **     be a TEXT value that can be converted to numeric. */
-            int jmp3;
-            jmp2 = sqlite3VdbeAddOp4Int(v, OP_IsType, p1, 0, p3, p4);
+            sqlite3VdbeAddOp4Int(v, OP_IsType, p1, labelOk, p3, p4);
             sqlite3VdbeChangeP5(v, 0x1b); /* NULL, INT, FLOAT, or BLOB */
             VdbeCoverage(v);
             if( p1>=0 ){
               sqlite3ExprCodeGetColumnOfTable(v, pTab, iDataCur, j, 3);
             }
             sqlite3VdbeAddOp4(v, OP_Affinity, 3, 1, 0, "C", P4_STATIC);
-            jmp3 = sqlite3VdbeAddOp4Int(v, OP_IsType, -1, 0, 3, p4);
+            sqlite3VdbeAddOp4Int(v, OP_IsType, -1, labelOk, 3, p4);
             sqlite3VdbeChangeP5(v, 0x1c); /* NULL, TEXT, or BLOB */
             VdbeCoverage(v);
             zErr = sqlite3MPrintf(db, "TEXT value in %s.%s",
                                   pTab->zName, pTab->aCol[j].zCnName);
             sqlite3VdbeAddOp4(v, OP_String8, 0, 3, 0, zErr, P4_DYNAMIC);
-            sqlite3VdbeResolveLabel(v, doError);
-            integrityCheckResultRow(v);
-            sqlite3VdbeJumpHere(v, jmp2);
-            sqlite3VdbeJumpHere(v, jmp3);         
           }
+          sqlite3VdbeResolveLabel(v, labelError);
+          integrityCheckResultRow(v);
+          sqlite3VdbeResolveLabel(v, labelOk);
         }
         /* Verify CHECK constraints */
         if( pTab->pCheck && (db->flags & SQLITE_IgnoreChecks)==0 ){

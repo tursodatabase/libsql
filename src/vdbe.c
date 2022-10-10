@@ -2613,7 +2613,7 @@ case OP_IsNull: {            /* same as TK_ISNULL, jump, in1 */
 ** P5 bitmask.
 **
 */
-case OP_IsType: {
+case OP_IsType: {        /* jump */
   VdbeCursor *pC;
   u16 typeMask;
   u32 serialType;
@@ -2624,7 +2624,7 @@ case OP_IsType: {
     pC = p->apCsr[pOp->p1];
     assert( pC!=0 );
     assert( pOp->p3>=0 );
-    if( pOp->p3<(u32)pC->nHdrParsed ){
+    if( pOp->p3<pC->nHdrParsed ){
       serialType = pC->aType[pOp->p3];
       if( serialType==0 ){
         typeMask = 0x10;   /* SQLITE_NULL */
