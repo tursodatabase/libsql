@@ -2626,23 +2626,47 @@ case OP_IsType: {        /* jump */
     assert( pOp->p3>=0 );
     if( pOp->p3<pC->nHdrParsed ){
       serialType = pC->aType[pOp->p3];
-      if( serialType==0 ){
-        typeMask = 0x10;   /* SQLITE_NULL */
-      }else if( serialType==7 ){
-        typeMask = 0x02;   /* SQLITE_FLOAT */
-      }else if( serialType<12 ){
-        typeMask = 0x01;   /* SQLITE_INTEGER */
-      }else if( serialType&1 ){
-        typeMask = 0x04;   /* SQLITE_TEXT */
+      if( serialType>=12 ){
+        if( serialType&1 ){
+          typeMask = 0x04;   /* SQLITE_TEXT */
+        }else{
+          typeMask = 0x08;   /* SQLITE_BLOB */
+        }
       }else{
-        typeMask = 0x08;   /* SQLITE_BLOB */
+        static const unsigned char aMask[] = {
+           0x10, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x2,
+           0x01, 0x01, 0x10, 0x10
+        };
+        testcase( serialType==0 );
+        testcase( serialType==1 );
+        testcase( serialType==2 );
+        testcase( serialType==3 );
+        testcase( serialType==4 );
+        testcase( serialType==5 );
+        testcase( serialType==6 );
+        testcase( serialType==7 );
+        testcase( serialType==8 );
+        testcase( serialType==9 );
+        testcase( serialType==10 );
+        testcase( serialType==11 );
+        typeMask = aMask[serialType];
       }
     }else{
       typeMask = 1 << (pOp->p4.i - 1);
+      testcase( typeMask==0x01 );
+      testcase( typeMask==0x02 );
+      testcase( typeMask==0x04 );
+      testcase( typeMask==0x08 );
+      testcase( typeMask==0x10 );
     }
   }else{
     assert( memIsValid(&aMem[pOp->p3]) );
     typeMask = 1 << (sqlite3_value_type((sqlite3_value*)&aMem[pOp->p3])-1);
+    testcase( typeMask==0x01 );
+    testcase( typeMask==0x02 );
+    testcase( typeMask==0x04 );
+    testcase( typeMask==0x08 );
+    testcase( typeMask==0x10 );
   }
   VdbeBranchTaken( (typeMask & pOp->p5)!=0, 2);
   if( typeMask & pOp->p5 ){
