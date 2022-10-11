@@ -1,5 +1,6 @@
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
+#[link(name="add")]
+extern "C" {
+    fn add(a: i32, b: i32) -> i32;
 }
 
 #[cfg(test)]
@@ -8,7 +9,9 @@ mod tests {
 
     #[test]
     fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
+        let res = unsafe {
+            add(17, 25)
+        };
+        println!("17 + 25 = {}", res);
     }
 }
