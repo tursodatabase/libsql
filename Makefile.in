@@ -1310,7 +1310,7 @@ valgrindtest:	$(TESTPROGS) valgrindfuzz
 smoketest:	$(TESTPROGS) fuzzcheck$(TEXE)
 	./testfixture$(TEXE) $(TOP)/test/main.test $(TESTOPTS)
 
-shelltest: $(TESTPROGS) $(top)/test/rust/src/callback.c
+shelltest: $(TESTPROGS)
 	./testfixture$(TEXT) $(TOP)/test/permutations.test shell
 
 # Runs tests in test/rust directory.
