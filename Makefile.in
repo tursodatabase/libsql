@@ -1310,8 +1310,16 @@ valgrindtest:	$(TESTPROGS) valgrindfuzz
 smoketest:	$(TESTPROGS) fuzzcheck$(TEXE)
 	./testfixture$(TEXE) $(TOP)/test/main.test $(TESTOPTS)
 
-shelltest: $(TESTPROGS)
+shelltest: $(TESTPROGS) $(top)/test/rust/src/callback.c
 	./testfixture$(TEXT) $(TOP)/test/permutations.test shell
+
+# Runs tests in test/rust directory.
+rusttest: sqlite3.o $(TOP)/test/rust/src/callback.c $(TOP)/test/rust/src/callback.h $(TOP)/test/rust/src/build.rs $(TOP)/test/rust/src/lib.rs
+	mkdir test-rust
+	cp -r $(TOP)/test/rust/* test-rust
+	cd test-rust/src && $(CC) -c callback.c && \
+	ar rcs libcallback.a callback.o && ar rcs libsqlite3.a ../../sqlite3.o
+	cd test-rust && cargo test
 
 sqlite3_analyzer.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/spaceanal.tcl $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqlite3_analyzer.c.in
 	$(TCLSH_CMD) $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqlite3_analyzer.c.in >sqlite3_analyzer.c
@@ -1499,6 +1507,7 @@ clean:
 	rm -f dbhash dbhash.exe
 	rm -f fts5.* fts5parse.*
 	rm -f threadtest5
+	rm -rf test-rust
 
 distclean:	clean
 	rm -f config.h config.log config.status libtool Makefile sqlite3.pc sqlite3session.h \
