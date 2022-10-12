@@ -2,6 +2,7 @@ body {
   display: flex;
   flex-direction: column;
   flex-wrap: wrap;
+  white-space: break-spaces;
 }
 textarea {
     font-family: monospace;
