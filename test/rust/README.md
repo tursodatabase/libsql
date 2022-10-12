@@ -9,7 +9,7 @@ make rusttest
 # Testing in `src/rust`
 ```
 cd src/
-ar rcs libsqlite3.a <path-to-build-directory> /sqlite3.o
+ar rcs libsqlite3.a <path-to-build-directory>/sqlite3.o
 gcc -c -o callback.o callback.c
 ar rcs libcallback.a callback.o
 cargo test
