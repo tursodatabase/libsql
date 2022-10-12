@@ -1,5 +1,5 @@
-C Minor\sdoc\scleanups\sand\scorrections\sin\ssqlite3-wasm.c
-D 2022-10-12T15:40:16.122
+C Add\sinitial\sinfrastructure\sfor\ssetting\sup\sfunction/regression\stests\sfor\sthe\sJS/WASM\sAPIs.
+D 2022-10-12T15:54:28.657
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -527,6 +527,9 @@ F ext/wasm/sqlite3-worker1-promiser.js 307d7837420ca6a9d3780dfc81194f1c0715637e6
 F ext/wasm/sqlite3-worker1.js 466e9bd39409ab03f3e00999887aaffc11e95b416e2689596e3d7f1516673fdf
 F ext/wasm/test-opfs-vfs.html eb69dda21eb414b8f5e3f7c1cc0f774103cc9c0f87b2d28a33419e778abfbab5
 F ext/wasm/test-opfs-vfs.js 56c3d725044c668fa7910451e96c1195d25ad95825f9ac79f747a7759d1973d0
+F ext/wasm/tester1-worker.html 9d24bfc5aec4d81ce00695dea2dbed262eb486f59e3ce75746de9f5b58b128a0
+F ext/wasm/tester1.html 13ad0dc087bdd8be1e9a4869d591d0c9915e89c8e191bce7803dc23b45cdd912
+F ext/wasm/tester1.js 2f05d90d7c8f519ff6a09bb5a7a1a3ad853aea72c4e51553f2c004446465b179
 F ext/wasm/testing-worker1-promiser.html 6eaec6e04a56cf24cf4fa8ef49d78ce8905dde1354235c9125dca6885f7ce893
 F ext/wasm/testing-worker1-promiser.js bd788e33c1807e0a6dda9c9a9d784bd3350ca49c9dd8ae2cc8719b506b6e013e
 F ext/wasm/testing1.html 50575755e43232dbe4c2f97c9086b3118eb91ec2ee1fae931e6d7669fb17fcae
@@ -2029,8 +2032,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4d8eb90a370054d4482c20637ab56f5e01f4d10215f2af4e35fb9a1f85ecb700
-R ec480873b71afa3a4f3e56bd5ade8bb5
+P 5144c122a921e4240901cf4eb46347b92213273eec7cf0977952ab2b60722c27
+R a82c7637aadf073be20dddba63284e1f
 U stephan
-Z 751b3d56cb87f4b752682f04e4cf1f99
+Z 2f8d1fea1ed0d036410539dd7b357510
 # Remove this line to create a well-formed Fossil manifest.
