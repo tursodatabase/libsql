@@ -318,6 +318,9 @@ int sqlite3_value_type(sqlite3_value* pVal){
 #endif
   return aType[pVal->flags&MEM_AffMask];
 }
+int sqlite3_value_encoding(sqlite3_value *pVal){
+  return pVal->enc;
+}
 
 /* Return true if a parameter to xUpdate represents an unchanged column */
 int sqlite3_value_nochange(sqlite3_value *pVal){

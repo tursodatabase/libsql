@@ -1968,6 +1968,9 @@ int sqlite3ValueBytes(sqlite3_value *pVal, u8 enc){
   if( (p->flags & MEM_Str)!=0 && pVal->enc==enc ){
     return p->n;
   }
+  if( (p->flags & MEM_Str)!=0 && enc!=SQLITE_UTF8 && pVal->enc!=SQLITE_UTF8 ){
+    return p->n;
+  }
   if( (p->flags & MEM_Blob)!=0 ){
     if( p->flags & MEM_Zero ){
       return p->n + p->u.nZero;
