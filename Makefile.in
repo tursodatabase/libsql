@@ -184,7 +184,7 @@ LIBOBJS0 = alter.lo analyze.lo attach.lo auth.lo \
          main.lo malloc.lo mem0.lo mem1.lo mem2.lo mem3.lo mem5.lo \
          memdb.lo memjournal.lo \
          mutex.lo mutex_noop.lo mutex_unix.lo mutex_w32.lo \
-         notify.lo opcodes.lo os.lo os_unix.lo os_win.lo \
+         notify.lo opcodes.lo os.lo os_kv.lo os_unix.lo os_win.lo \
          pager.lo parse.lo pcache.lo pcache1.lo pragma.lo prepare.lo printf.lo \
          random.lo resolve.lo rowset.lo rtree.lo \
          sqlite3session.lo select.lo sqlite3rbu.lo status.lo stmt.lo \
@@ -257,6 +257,7 @@ SRC = \
   $(TOP)/src/os.h \
   $(TOP)/src/os_common.h \
   $(TOP)/src/os_setup.h \
+  $(TOP)/src/os_kv.c \
   $(TOP)/src/os_unix.c \
   $(TOP)/src/os_win.c \
   $(TOP)/src/os_win.h \
@@ -492,6 +493,7 @@ TESTSRC2 = \
   $(TOP)/src/main.c \
   $(TOP)/src/mem5.c \
   $(TOP)/src/os.c \
+  $(TOP)/src/os_kv.c \
   $(TOP)/src/os_unix.c \
   $(TOP)/src/os_win.c \
   $(TOP)/src/pager.c \
@@ -633,6 +635,7 @@ FUZZCHECK_OPT += -DSQLITE_ENABLE_DBSTAT_VTAB
 FUZZCHECK_OPT += -DSQLITE_ENABLE_BYTECODE_VTAB
 FUZZCHECK_SRC = $(TOP)/test/fuzzcheck.c $(TOP)/test/ossfuzz.c $(TOP)/test/fuzzinvariants.c
 DBFUZZ_OPT =
+ST_OPT = -DSQLITE_OS_KV_OPTIONAL
 
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
@@ -937,6 +940,9 @@ pcache1.lo:	$(TOP)/src/pcache1.c $(HDR) $(TOP)/src/pcache.h
 
 os.lo:	$(TOP)/src/os.c $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/os.c
+
+os_kv.lo:	$(TOP)/src/os_kv.c $(HDR)
+	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/os_kv.c
 
 os_unix.lo:	$(TOP)/src/os_unix.c $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/os_unix.c
@@ -1387,7 +1393,7 @@ LogEst$(TEXE):	$(TOP)/tool/logest.c sqlite3.h
 wordcount$(TEXE):	$(TOP)/test/wordcount.c sqlite3.lo
 	$(LTLINK) -o $@ $(TOP)/test/wordcount.c sqlite3.lo $(TLIBS)
 
-speedtest1$(TEXE):	$(TOP)/test/speedtest1.c sqlite3.c
+speedtest1$(TEXE):	$(TOP)/test/speedtest1.c sqlite3.c Makefile
 	$(LTLINK) $(ST_OPT) -o $@ $(TOP)/test/speedtest1.c sqlite3.c $(TLIBS)
 
 startup$(TEXE):	$(TOP)/test/startup.c sqlite3.c
@@ -1522,143 +1528,8 @@ sqlite3.dll: $(REAL_LIBOBJ) sqlite3.def
 	$(TCC) -shared -o $@ sqlite3.def \
 		-Wl,"--strip-all" $(REAL_LIBOBJ)
 
-
 #
-# fiddle/wasm section
+# Fiddle app
 #
-# Maintenance reminder: we can/should move this into the wasm-specific
-# GNU Make makefile, but we currently need it here for access to
-# $(SHELL_OPT). The rest of the wasm-related bits are handled via GNU
-# Make in ext/wasm/...
-#
-wasm_dir = ext/wasm
-wasm_dir_abs = $(TOP)/ext/wasm
-# ^^^ some emcc opts require absolute paths
-fiddle_dir = $(wasm_dir)/fiddle
-fiddle_dir_abs = $(TOP)/$(fiddle_dir)
-fiddle_module_js = $(fiddle_dir)/fiddle-module.js
-#emcc_opt = -O0
-#emcc_opt = -O1
-#emcc_opt = -O2
-#emcc_opt = -O3
-emcc_opt = -Oz
-emcc_flags = $(emcc_opt) \
-        -sALLOW_TABLE_GROWTH \
-        -sABORTING_MALLOC \
-        -sSTRICT_JS \
-        -sENVIRONMENT=web \
-        -sMODULARIZE \
-        -sEXPORTED_RUNTIME_METHODS=@$(wasm_dir_abs)/EXPORTED_RUNTIME_METHODS.fiddle \
-        -sDYNAMIC_EXECUTION=0 \
-        --minify 0 \
-        -I. $(SHELL_OPT) \
-        -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_UTF16 -DSQLITE_OMIT_DEPRECATED
-$(fiddle_module_js): Makefile sqlite3.c shell.c \
-    $(wasm_dir)/EXPORTED_RUNTIME_METHODS.fiddle \
-    $(wasm_dir)/EXPORTED_FUNCTIONS.fiddle
-	emcc -o $@ $(emcc_flags) \
-        -sEXPORT_NAME=initFiddleModule \
-        -sEXPORTED_FUNCTIONS=@$(wasm_dir_abs)/EXPORTED_FUNCTIONS.fiddle \
-        -DSQLITE_SHELL_FIDDLE \
-        sqlite3.c shell.c
-	gzip < $@ > $@.gz
-	gzip < $(fiddle_dir)/fiddle-module.wasm > $(fiddle_dir)/fiddle-module.wasm.gz
-$(fiddle_dir)/fiddle.js.gz: $(fiddle_dir)/fiddle.js
-	gzip < $< > $@
-
-fiddle_generated = $(fiddle_module_js) $(fiddle_module_js).gz \
-                   $(fiddle_dir)/fiddle-module.wasm \
-                   $(fiddle_dir)/fiddle-module.wasm.gz \
-                   $(fiddle_dir)/fiddle.js.gz
-
-clean-fiddle:
-	rm -f $(fiddle_generated)
-clean: clean-fiddle
-fiddle: $(fiddle_module_js) $(fiddle_dir)/fiddle.js.gz
-wasm: fiddle
-########################################################################
-# Explanation of the emcc build flags follows. Full docs for these can
-# be found at:
-#
-#  https://github.com/emscripten-core/emscripten/blob/main/src/settings.js
-#
-# -sENVIRONMENT=web: elides bootstrap code related to non-web JS
-#  environments like node.js. Removing this makes the output a tiny
-#  tick larger but hypothetically makes it more portable to
-#  non-browser JS environments.
-#
-# -sMODULARIZE: changes how the generated code is structured to avoid
-#  declaring a global Module object and instead installing a function
-#  which loads and initializes the module. The function is named...
-#
-# -sEXPORT_NAME=jsFunctionName (see -sMODULARIZE)
-#
-# -sEXPORTED_RUNTIME_METHODS=@/absolute/path/to/file: a file
-#  containing a list of emscripten-supplied APIs, one per line, which
-#  must be exported into the generated JS. Must be an absolute path!
-#
-# -sEXPORTED_FUNCTIONS=@/absolute/path/to/file: a file containing a
-#  list of C functions, one per line, which must be exported via wasm
-#  so they're visible to JS. C symbols names in that file must all
-#  start with an underscore for reasons known only to the emcc
-#  developers. e.g., _sqlite3_open_v2 and _sqlite3_finalize. Must be
-#  an absolute path!
-#
-# -sSTRICT_JS ensures that the emitted JS code includes the 'use
-#  strict' option. Note that -sSTRICT is more broadly-scoped and
-#  results in build errors.
-#
-# -sALLOW_TABLE_GROWTH is required for (at a minimum) the UDF-binding
-#  feature. Without it, JS functions cannot be made to proxy C-side
-#  callbacks.
-#
-# -sABORTING_MALLOC causes the JS-bound _malloc() to abort rather than
-#  return 0 on OOM. If set to 0 then all code which uses _malloc()
-#  must, just like in C, check the result before using it, else
-#  they're likely to corrupt the JS/WASM heap by writing to its
-#  address of 0. It is, as of this writing, enabled in Emscripten by
-#  default but we enable it explicitly in case that default changes.
-#
-# -sDYNAMIC_EXECUTION=0 disables eval() and the Function constructor.
-#  If the build runs without these, it's preferable to use this flag
-#  because certain execution environments disallow those constructs.
-#  This flag is not strictly necessary, however.
-#
-# -sWASM_BIGINT is UNTESTED but "should" allow the int64-using C APIs
-#  to work with JS/wasm, insofar as the JS environment supports the
-#  BigInt type. That support requires an extremely recent browser:
-#  Safari didn't get that support until late 2020.
-#
-# --no-entry: for compiling library code with no main(). If this is
-#  not supplied and the code has a main(), it is called as part of the
-#  module init process. Note that main() is #if'd out of shell.c
-#  (renamed) when building in wasm mode.
-#
-# --pre-js/--post-js=FILE relative or absolute paths to JS files to
-#  prepend/append to the emcc-generated bootstrapping JS. It's
-#  easier/faster to develop with separate JS files (reduces rebuilding
-#  requirements) but certain configurations, namely -sMODULARIZE, may
-#  require using at least a --pre-js file. They can be used
-#  individually and need not be paired.
-#
-# -O0..-O3 and -Oz: optimization levels affect not only C-style
-#  optimization but whether or not the resulting generated JS code
-#  gets minified. -O0 compiles _much_ more quickly than -O3 or -Oz,
-#  and doesn't minimize any JS code, so is recommended for
-#  development. -O3 or -Oz are recommended for deployment, but
-#  primarily because -Oz will shrink the wasm file notably. JS-side
-#  minification makes little difference in terms of overall
-#  distributable size.
-#
-# --minify 0: disables minification of the generated JS code,
-#  regardless of optimization level. Minification of the JS has
-#  minimal overall effect in the larger scheme of things and results
-#  in JS files which can neither be edited nor viewed as text files in
-#  Fossil (which flags them as binary because of their extreme line
-#  lengths). Interestingly, whether or not the comments in the
-#  generated JS file get stripped is unaffected by this setting and
-#  depends entirely on the optimization level. Higher optimization
-#  levels reduce the size of the JS considerably even without
-#  minification.
-#
-########################################################################
+fiddle: sqlite3.c shell.c
+	make -C ext/wasm fiddle

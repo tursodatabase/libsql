@@ -85,6 +85,14 @@
 # define _LARGEFILE_SOURCE 1
 #endif
 
+#if defined(SQLITE_SHELL_FIDDLE) && !defined(_POSIX_SOURCE)
+/*
+** emcc requires _POSIX_SOURCE (or one of several similar defines)
+** to expose strdup().
+*/
+# define _POSIX_SOURCE
+#endif
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -1164,6 +1172,7 @@ struct ShellState {
   struct {
     const char * zInput; /* Input string from wasm/JS proxy */
     const char * zPos;   /* Cursor pos into zInput */
+    const char * zDefaultDbName; /* Default name for db file */
   } wasm;
 #endif
 };
@@ -12050,6 +12059,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 #ifdef SQLITE_SHELL_FIDDLE
   stdin_is_interactive = 0;
   stdout_is_console = 1;
+  data.wasm.zDefaultDbName = "/fiddle.sqlite3";
 #else
   stdin_is_interactive = isatty(0);
   stdout_is_console = isatty(1);
@@ -12620,30 +12630,30 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 #ifdef SQLITE_SHELL_FIDDLE
 /* Only for emcc experimentation purposes. */
 int fiddle_experiment(int a,int b){
-   return a + b;
+  return a + b;
 }
 
-/* Only for emcc experimentation purposes.
-
-  Define this function in JS using:
-
-  emcc ... --js-library somefile.js
-
-  containing:
-
-mergeInto(LibraryManager.library, {
-    my_foo: function(){
-        console.debug("my_foo()",arguments);
-    }
-});
+/*
+** Returns a pointer to the current DB handle.
 */
-/*extern void my_foo(sqlite3 *);*/
-/* Only for emcc experimentation purposes. */
-sqlite3 * fiddle_the_db(){
-    printf("fiddle_the_db(%p)\n", (const void*)globalDb);
-    /*my_foo(globalDb);*/
-    return globalDb;
+sqlite3 * fiddle_db_handle(){
+  return globalDb;
 }
+
+/*
+** Returns a pointer to the given DB name's VFS. If zDbName is 0 then
+** "main" is assumed. Returns 0 if no db with the given name is
+** open.
+*/
+sqlite3_vfs * fiddle_db_vfs(const char *zDbName){
+  sqlite3_vfs * pVfs = 0;
+  if(globalDb){
+    sqlite3_file_control(globalDb, zDbName ? zDbName : "main",
+                         SQLITE_FCNTL_VFS_POINTER, &pVfs);
+  }
+  return pVfs;
+}
+
 /* Only for emcc experimentation purposes. */
 sqlite3 * fiddle_db_arg(sqlite3 *arg){
     printf("fiddle_db_arg(%p)\n", (const void*)arg);
@@ -12657,7 +12667,7 @@ sqlite3 * fiddle_db_arg(sqlite3 *arg){
 ** portable enough to make real use of.
 */
 void fiddle_interrupt(void){
-  if(globalDb) sqlite3_interrupt(globalDb);
+  if( globalDb ) sqlite3_interrupt(globalDb);
 }
 
 /*
@@ -12671,71 +12681,73 @@ const char * fiddle_db_filename(const char * zDbName){
 }
 
 /*
-** Closes, unlinks, and reopens the db using its current filename (or
-** the default if the db is currently closed). It is assumed, for
-** purposes of the fiddle build, that the file is in a transient
-** virtual filesystem within the browser.
+** Completely wipes out the contents of the currently-opened database
+** but leaves its storage intact for reuse.
 */
 void fiddle_reset_db(void){
-  char *zFilename = 0;
-  if(0==globalDb){
-    shellState.pAuxDb->zDbFilename = "/fiddle.sqlite3";
-  }else{
-    zFilename =
-      sqlite3_mprintf("%s", sqlite3_db_filename(globalDb, "main"));
-    shell_check_oom(zFilename);
-    close_db(globalDb);
-    shellDeleteFile(zFilename);
-    shellState.db = 0;
-    shellState.pAuxDb->zDbFilename = zFilename;
+  if( globalDb ){
+    int rc = sqlite3_db_config(globalDb, SQLITE_DBCONFIG_RESET_DATABASE, 1, 0);
+    if( 0==rc ) rc = sqlite3_exec(globalDb, "VACUUM", 0, 0, 0);
+    sqlite3_db_config(globalDb, SQLITE_DBCONFIG_RESET_DATABASE, 0, 0);
   }
-  open_db(&shellState, 0);
-  sqlite3_free(zFilename);
 }
 
 /*
-** Trivial exportable function for emscripten. Needs to be exported using:
-**
-** emcc ..flags... -sEXPORTED_FUNCTIONS=_fiddle_exec -sEXPORTED_RUNTIME_METHODS=ccall,cwrap
-**
-** (Note the underscore before the function name.) It processes zSql
-** as if it were input to the sqlite3 shell and redirects all output
-** to the wasm binding.
+** Uses the current database's VFS xRead to stream the db file's
+** contents out to the given callback. The callback gets a single
+** chunk of size n (its 2nd argument) on each call and must return 0
+** on success, non-0 on error. This function returns 0 on success,
+** SQLITE_NOTFOUND if no db is open, or propagates any other non-0
+** code from the callback. Note that this is not thread-friendly: it
+** expects that it will be the only thread reading the db file and
+** takes no measures to ensure that is the case.
+*/
+int fiddle_export_db( int (*xCallback)(unsigned const char *zOut, int n) ){
+  sqlite3_int64 nSize = 0;
+  sqlite3_int64 nPos = 0;
+  sqlite3_file * pFile = 0;
+  unsigned char buf[1024 * 8];
+  int nBuf = (int)sizeof(buf);
+  int rc = shellState.db
+    ? sqlite3_file_control(shellState.db, "main",
+                           SQLITE_FCNTL_FILE_POINTER, &pFile)
+    : SQLITE_NOTFOUND;
+  if( rc ) return rc;
+  rc = pFile->pMethods->xFileSize(pFile, &nSize);
+  if( rc ) return rc;
+  if(nSize % nBuf){
+    /* DB size is not an even multiple of the buffer size. Reduce
+    ** buffer size so that we do not unduly inflate the db size when
+    ** exporting. */
+    if(0 == nSize % 4096) nBuf = 4096;
+    else if(0 == nSize % 2048) nBuf = 2048;
+    else if(0 == nSize % 1024) nBuf = 1024;
+    else nBuf = 512;
+  }
+  for( ; 0==rc && nPos<nSize; nPos += nBuf ){
+    rc = pFile->pMethods->xRead(pFile, buf, nBuf, nPos);
+    if(SQLITE_IOERR_SHORT_READ == rc){
+      rc = (nPos + nBuf) < nSize ? rc : 0/*assume EOF*/;
+    }
+    if( 0==rc ) rc = xCallback(buf, nBuf);
+  }
+  return rc;
+}
+
+/*
+** Trivial exportable function for emscripten. It processes zSql as if
+** it were input to the sqlite3 shell and redirects all output to the
+** wasm binding. If fiddle_main() has not been called by the time this
+** is called, this function calls it with a conservative set of
+** flags.
 */
 void fiddle_exec(const char * zSql){
-  static int once = 0;
-  int rc = 0;
-  if(!once){
-    /* Simulate an argv array for main() */
-    static char * argv[] = {"fiddle",
-                            "-bail",
-                            "-safe"};
-    rc = fiddle_main((int)(sizeof(argv)/sizeof(argv[0])), argv);
-    once = rc ? -1 : 1;
-    memset(&shellState.wasm, 0, sizeof(shellState.wasm));
-    printf(
-        "SQLite version %s %.19s\n" /*extra-version-info*/,
-        sqlite3_libversion(), sqlite3_sourceid()
-    );
-    puts("WASM shell");
-    puts("Enter \".help\" for usage hints.");
-    if(once>0){
-      fiddle_reset_db();
-    }
-    if(shellState.db){
-      printf("Connected to %s.\n", fiddle_db_filename(NULL));
-    }else{
-      fprintf(stderr,"ERROR initializing db!\n");
-      return;
-    }
-  }
-  if(once<0){
-    puts("DB init failed. Not executing SQL.");
-  }else if(zSql && *zSql){
+  if(zSql && *zSql){
+    if('.'==*zSql) puts(zSql);
     shellState.wasm.zInput = zSql;
     shellState.wasm.zPos = zSql;
     process_input(&shellState);
-    memset(&shellState.wasm, 0, sizeof(shellState.wasm));
+    shellState.wasm.zInput = shellState.wasm.zPos = 0;
   }
 }
 #endif /* SQLITE_SHELL_FIDDLE */

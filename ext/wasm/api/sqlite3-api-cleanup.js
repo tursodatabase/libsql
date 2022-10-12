@@ -11,34 +11,61 @@
   ***********************************************************************
 
   This file is the tail end of the sqlite3-api.js constellation,
-  intended to be appended after all other files so that it can clean
-  up any global systems temporarily used for setting up the API's
-  various subsystems.
+  intended to be appended after all other sqlite3-api-*.js files so
+  that it can finalize any setup and clean up any global symbols
+  temporarily used for setting up the API's various subsystems.
 */
 'use strict';
-self.sqlite3.postInit.forEach(
-  self.importScripts/*global is a Worker*/
-    ? function(f){
-      /** We try/catch/report for the sake of failures which happen in
-          a Worker, as those exceptions can otherwise get completely
-          swallowed, leading to confusing downstream errors which have
-          nothing to do with this failure. */
-      try{ f(self, self.sqlite3) }
-      catch(e){
-        console.error("Error in postInit() function:",e);
-        throw e;
-      }
-    }
-  : (f)=>f(self, self.sqlite3)
-);
-delete self.sqlite3.postInit;
-if(self.location && +self.location.port > 1024){
-  console.warn("Installing sqlite3 bits as global S for dev-testing purposes.");
-  self.S = self.sqlite3;
+if('undefined' !== typeof Module){ // presumably an Emscripten build
+  /**
+     Install a suitable default configuration for sqlite3ApiBootstrap().
+  */
+  const SABC = self.sqlite3ApiConfig || Object.create(null);
+  if(undefined===SABC.Module){
+    SABC.Module = Module /* ==> Currently needs to be exposed here for
+                            test code. NOT part of the public API. */;
+  }
+  if(undefined===SABC.exports){
+    SABC.exports = Module['asm'];
+  }
+  if(undefined===SABC.memory){
+    SABC.memory = Module.wasmMemory /* gets set if built with -sIMPORT_MEMORY */;
+  }
+
+  /**
+     For current (2022-08-22) purposes, automatically call
+     sqlite3ApiBootstrap().  That decision will be revisited at some
+     point, as we really want client code to be able to call this to
+     configure certain parts. Clients may modify
+     self.sqlite3ApiBootstrap.defaultConfig to tweak the default
+     configuration used by a no-args call to sqlite3ApiBootstrap().
+  */
+  //console.warn("self.sqlite3ApiConfig = ",self.sqlite3ApiConfig);
+  const rmApiConfig = (SABC !== self.sqlite3ApiConfig);
+  self.sqlite3ApiConfig = SABC;
+  let sqlite3;
+  try{
+    sqlite3 = self.sqlite3ApiBootstrap();
+  }catch(e){
+    console.error("sqlite3ApiBootstrap() error:",e);
+    throw e;
+  }finally{
+    delete self.sqlite3ApiBootstrap;
+    if(rmApiConfig) delete self.sqlite3ApiConfig;
+  }
+
+  if(self.location && +self.location.port > 1024){
+    console.warn("Installing sqlite3 bits as global S for local dev/test purposes.");
+    self.S = sqlite3;
+  }
+
+  /* Clean up temporary references to our APIs... */
+  delete sqlite3.capi.util /* arguable, but these are (currently) internal-use APIs */;
+  Module.sqlite3 = sqlite3 /* Needed for customized sqlite3InitModule() to be able to
+                              pass the sqlite3 object off to the client. */;
+}else{
+  console.warn("This is not running in an Emscripten module context, so",
+               "self.sqlite3ApiBootstrap() is _not_ being called due to lack",
+               "of config info for the WASM environment.",
+               "It must be called manually.");
 }
-/* Clean up temporary global-scope references to our APIs... */
-self.sqlite3.config.Module.sqlite3 = self.sqlite3
-/* ^^^^ Currently needed by test code and Worker API setup */;
-delete self.sqlite3.capi.util /* arguable, but these are (currently) internal-use APIs */;
-delete self.sqlite3 /* clean up our global-scope reference */;
-//console.warn("Module.sqlite3 =",Module.sqlite3);

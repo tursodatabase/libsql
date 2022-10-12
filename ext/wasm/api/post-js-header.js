@@ -10,17 +10,16 @@
 if(!Module.postRun) Module.postRun = [];
 Module.postRun.push(function(Module/*the Emscripten-style module object*/){
   'use strict';
-  /* This function will contain:
+  /* This function will contain at least the following:
 
      - post-js-header.js (this file)
      - sqlite3-api-prologue.js  => Bootstrapping bits to attach the rest to
-     - sqlite3-api-whwasmutil.js  => Replacements for much of Emscripten's glue
-     - sqlite3-api-jaccwabyt.js => Jaccwabyt (C/JS struct binding)
+     - common/whwasmutil.js     => Replacements for much of Emscripten's glue
+     - jaccwaby/jaccwabyt.js    => Jaccwabyt (C/JS struct binding)
      - sqlite3-api-glue.js      => glues previous parts together
-     - sqlite3-api-oo.js        => SQLite3 OO API #1.
-     - sqlite3-api-worker.js    => Worker-based API
+     - sqlite3-api-oo.js        => SQLite3 OO API #1
+     - sqlite3-api-worker1.js   => Worker-based API
+     - sqlite3-api-opfs.js      => OPFS VFS
      - sqlite3-api-cleanup.js   => final API cleanup
      - post-js-footer.js        => closes this postRun() function
-
-     Whew!
   */
