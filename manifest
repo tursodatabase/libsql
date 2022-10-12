@@ -1,5 +1,5 @@
-C Correct\smismatched\sH1\stags\sin\stest\scode.\sMinor\sCSS\stweaks.
-D 2022-10-12T14:39:15.726
+C Minor\sdoc\scleanups\sand\scorrections\sin\ssqlite3-wasm.c
+D 2022-10-12T15:40:16.122
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -491,7 +491,7 @@ F ext/wasm/api/sqlite3-api-opfs.js 5a8ab3b76880c8ada8710ca9ba1ca5b160872edfd8bd5
 F ext/wasm/api/sqlite3-api-prologue.js daf288df965cab1e8eabee4451f6ba3beb03d5a579722b0b0f90e5203962f515
 F ext/wasm/api/sqlite3-api-worker1.js 7f4f46cb6b512a48572d7567233896e6a9c46570c44bdc3d13419730c7c221c8
 F ext/wasm/api/sqlite3-wasi.h 25356084cfe0d40458a902afb465df8c21fc4152c1d0a59b563a3fba59a068f9
-F ext/wasm/api/sqlite3-wasm.c ea456d398bda1c5f4b2c4a54512de7b9ca4513c2b0ab326b99a46fb51cef0b42
+F ext/wasm/api/sqlite3-wasm.c a321f12ceedac8611c1377ccfb5df0c0547bd9395f7fd7613827de365d994948
 F ext/wasm/batch-runner.html cf1a410c92bad50fcec2ddc71390b4e9df63a6ea1bef12a5163a66a0af4d78d9
 F ext/wasm/batch-runner.js 5bae81684728b6be157d1f92b39824153f0fd019345b39f2ab8930f7ee2a57d8
 F ext/wasm/common/SqliteTestUtil.js 647bf014bd30bdd870a7e9001e251d12fc1c9ec9ce176a1004b838a4b33c5c05
@@ -2029,8 +2029,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 56ff42053f7b73b380c103a84f29e285cfbfb6e18a25b3a50a6d78e32610914e
-R 05647e42780f3b3d4973106aac02535b
+P 4d8eb90a370054d4482c20637ab56f5e01f4d10215f2af4e35fb9a1f85ecb700
+R ec480873b71afa3a4f3e56bd5ade8bb5
 U stephan
-Z 9edc725f213a1258fdc6680a6f64d9ac
+Z 751b3d56cb87f4b752682f04e4cf1f99
 # Remove this line to create a well-formed Fossil manifest.

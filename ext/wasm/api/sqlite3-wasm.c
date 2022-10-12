@@ -5,7 +5,7 @@
 ** requires compiling with -std=c99 (or equivalent, or a later C
 ** version) because it makes use of features not available in C89.
 **
-** At it's simplest, to build sqlite3.wasm either place this file
+** At its simplest, to build sqlite3.wasm either place this file
 ** in the same directory as sqlite3.c/h before compilation or use the
 ** -I/path flag to tell the compiler where to find both of those
 ** files, then compile this file. For example:
@@ -111,7 +111,7 @@
 ** this writing we are tied to Emscripten for various reasons
 ** and cannot test the library with other build environments.
 */
-#define WASM_KEEP __attribute__((used,visibility("default")))
+#define SQLITE_WASM_KEEP __attribute__((used,visibility("default")))
 // See also:
 //__attribute__((export_name("theExportedName"), used, visibility("default")))
 
@@ -128,24 +128,24 @@
 ** Another option is to malloc() a chunk of our own and call that our
 ** "stack".
 */
-WASM_KEEP void * sqlite3_wasm_stack_end(void){
+SQLITE_WASM_KEEP void * sqlite3_wasm_stack_end(void){
   extern void __heap_base
     /* see https://stackoverflow.com/questions/10038964 */;
   return &__heap_base;
 }
-WASM_KEEP void * sqlite3_wasm_stack_begin(void){
+SQLITE_WASM_KEEP void * sqlite3_wasm_stack_begin(void){
   extern void __data_end;
   return &__data_end;
 }
 static void * pWasmStackPtr = 0;
-WASM_KEEP void * sqlite3_wasm_stack_ptr(void){
+SQLITE_WASM_KEEP void * sqlite3_wasm_stack_ptr(void){
   if(!pWasmStackPtr) pWasmStackPtr = sqlite3_wasm_stack_end();
   return pWasmStackPtr;
 }
-WASM_KEEP void sqlite3_wasm_stack_restore(void * p){
+SQLITE_WASM_KEEP void sqlite3_wasm_stack_restore(void * p){
   pWasmStackPtr = p;
 }
-WASM_KEEP void * sqlite3_wasm_stack_alloc(int n){
+SQLITE_WASM_KEEP void * sqlite3_wasm_stack_alloc(int n){
   if(n<=0) return 0;
   n = (n + 7) & ~7 /* align to 8-byte boundary */;
   unsigned char * const p = (unsigned char *)sqlite3_wasm_stack_ptr();
@@ -181,14 +181,14 @@ static struct {
 /*
 ** Returns the current pstack position.
 */
-WASM_KEEP void * sqlite3_wasm_pstack_ptr(void){
+SQLITE_WASM_KEEP void * sqlite3_wasm_pstack_ptr(void){
   return PStack.pPos;
 }
 /*
 ** Sets the pstack position poitner to p. Results are undefined if the
 ** given value did not come from sqlite3_wasm_pstack_ptr().
 */
-WASM_KEEP void sqlite3_wasm_pstack_restore(unsigned char * p){
+SQLITE_WASM_KEEP void sqlite3_wasm_pstack_restore(unsigned char * p){
   assert(p>=PStack.pBegin && p<=PStack.pEnd && p>=PStack.pPos);
   assert(0==(p & 0x7));
   if(p>=PStack.pBegin && p<=PStack.pEnd /*&& p>=PStack.pPos*/){
@@ -203,7 +203,7 @@ WASM_KEEP void sqlite3_wasm_pstack_restore(unsigned char * p){
 ** JS code from having to do so, and most uses of the pstack will
 ** call for doing so).
 */
-WASM_KEEP void * sqlite3_wasm_pstack_alloc(int n){
+SQLITE_WASM_KEEP void * sqlite3_wasm_pstack_alloc(int n){
   if( n<=0 ) return 0;
   //if( n & 0x7 ) n += 8 - (n & 0x7) /* align to 8-byte boundary */;
   n = (n + 7) & ~7 /* align to 8-byte boundary */;
@@ -216,7 +216,7 @@ WASM_KEEP void * sqlite3_wasm_pstack_alloc(int n){
 ** Return the number of bytes left which can be
 ** sqlite3_wasm_pstack_alloc()'d.
 */
-WASM_KEEP int sqlite3_wasm_pstack_remaining(void){
+SQLITE_WASM_KEEP int sqlite3_wasm_pstack_remaining(void){
   assert(PStack.pPos >= PStack.pBegin);
   assert(PStack.pPos <= PStack.pEnd);
   return (int)(PStack.pPos - PStack.pBegin);
@@ -227,7 +227,7 @@ WASM_KEEP int sqlite3_wasm_pstack_remaining(void){
 ** any space which is currently allocated. This value is a
 ** compile-time constant.
 */
-WASM_KEEP int sqlite3_wasm_pstack_quota(void){
+SQLITE_WASM_KEEP int sqlite3_wasm_pstack_quota(void){
   return (int)(PStack.pEnd - PStack.pBegin);
 }
 
@@ -245,9 +245,9 @@ WASM_KEEP int sqlite3_wasm_pstack_quota(void){
 **
 ** Returns err_code.
 */
-WASM_KEEP
+SQLITE_WASM_KEEP
 int sqlite3_wasm_db_error(sqlite3*db, int err_code, const char *zMsg){
-  if(0!=zMsg){
+  if( 0!=zMsg ){
     const int nMsg = sqlite3Strlen30(zMsg);
     sqlite3ErrorWithMsg(db, err_code, "%.*s", nMsg, zMsg);
   }else{
@@ -271,7 +271,7 @@ int sqlite3_wasm_db_error(sqlite3*db, int err_code, const char *zMsg){
 ** buffer is not large enough for the generated JSON and needs to be
 ** increased. In debug builds that will trigger an assert().
 */
-WASM_KEEP
+SQLITE_WASM_KEEP
 const char * sqlite3_wasm_enum_json(void){
   static char aBuffer[1024 * 12] = {0} /* where the JSON goes */;
   int n = 0, nChildren = 0, nStruct = 0
@@ -714,12 +714,16 @@ const char * sqlite3_wasm_enum_json(void){
 ** This function is NOT part of the sqlite3 public API. It is strictly
 ** for use by the sqlite project's own JS/WASM bindings.
 **
+** Do not use this function, even for internal use: it was
+** ill-conceived and will be removed once the JS code which still
+** calls it has been weeded out.
+**
 ** This function invokes the xDelete method of the default VFS,
 ** passing on the given filename. If zName is NULL, no default VFS is
 ** found, or it has no xDelete method, SQLITE_MISUSE is returned, else
 ** the result of the xDelete() call is returned.
 */
-WASM_KEEP
+SQLITE_WASM_KEEP
 int sqlite3_wasm_vfs_unlink(const char * zName){
   int rc = SQLITE_MISUSE /* ??? */;
   sqlite3_vfs * const pVfs = sqlite3_vfs_find(0);
@@ -743,7 +747,7 @@ int sqlite3_wasm_vfs_unlink(const char * zName){
 ** Returns 0 on success, an SQLITE_xxx code on error. Returns
 ** SQLITE_MISUSE if pDb is NULL.
 */
-WASM_KEEP
+SQLITE_WASM_KEEP
 int sqlite3_wasm_db_reset(sqlite3*pDb){
   int rc = SQLITE_MISUSE;
   if( pDb ){
@@ -755,7 +759,7 @@ int sqlite3_wasm_db_reset(sqlite3*pDb){
 }
 
 /*
-** Uses the current database's VFS xRead to stream the db file's
+** Uses the given database's VFS xRead to stream the db file's
 ** contents out to the given callback. The callback gets a single
 ** chunk of size n (its 2nd argument) on each call and must return 0
 ** on success, non-0 on error. This function returns 0 on success,
@@ -768,7 +772,7 @@ int sqlite3_wasm_db_reset(sqlite3*pDb){
 ** sqlite3_wasm_db_serialize() is arguably the better way to achieve
 ** this.
 */
-WASM_KEEP
+SQLITE_WASM_KEEP
 int sqlite3_wasm_db_export_chunked( sqlite3* pDb,
                                     int (*xCallback)(unsigned const char *zOut, int n) ){
   sqlite3_int64 nSize = 0;
@@ -815,9 +819,9 @@ int sqlite3_wasm_db_export_chunked( sqlite3* pDb,
 ** If `*pOut` is not NULL, the caller is responsible for passing it to
 ** sqlite3_free() to free it.
 */
-WASM_KEEP
-int sqlite3_wasm_db_serialize( sqlite3* pDb, unsigned char **pOut, sqlite3_int64 * nOut,
-                               unsigned int mFlags ){
+SQLITE_WASM_KEEP
+int sqlite3_wasm_db_serialize( sqlite3* pDb, unsigned char **pOut,
+                               sqlite3_int64 * nOut, unsigned int mFlags ){
   unsigned char * z;
   if( !pDb || !pOut ) return SQLITE_MISUSE;
   if(nOut) *nOut = 0;
@@ -840,7 +844,7 @@ int sqlite3_wasm_db_serialize( sqlite3* pDb, unsigned char **pOut, sqlite3_int64
 ** NUL-terminated pointer to that string. It is up to the caller to
 ** use sqlite3_wasm_pstack_restore() to free the returned pointer.
 */
-WASM_KEEP
+SQLITE_WASM_KEEP
 char * sqlite3_wasm_kvvfsMakeKeyOnPstack(const char *zClass,
                                          const char *zKeyIn){
   assert(sqlite3KvvfsMethods.nKeySize>24);
@@ -859,7 +863,7 @@ char * sqlite3_wasm_kvvfsMakeKeyOnPstack(const char *zClass,
 ** Returns the pointer to the singleton object which holds the kvvfs
 ** I/O methods and associated state.
 */
-WASM_KEEP
+SQLITE_WASM_KEEP
 sqlite3_kvvfs_methods * sqlite3_wasm_kvvfs_methods(void){
   return &sqlite3KvvfsMethods;
 }
@@ -881,14 +885,14 @@ sqlite3_kvvfs_methods * sqlite3_wasm_kvvfs_methods(void){
 ** This function may be passed a "mount point" name, which must have a
 ** leading "/" and is currently restricted to a single path component,
 ** e.g. "/foo" is legal but "/foo/" and "/foo/bar" are not. If it is
-** NULL or empty, it defaults to "/persistent".
+** NULL or empty, it defaults to "/opfs".
 **
 ** Returns 0 on success, SQLITE_NOMEM if instantiation of the backend
 ** object fails, SQLITE_IOERR if mkdir() of the zMountPoint dir in
 ** the virtual FS fails. In builds compiled without SQLITE_WASM_WASMFS
 ** defined, SQLITE_NOTFOUND is returned without side effects.
 */
-WASM_KEEP
+SQLITE_WASM_KEEP
 int sqlite3_wasm_init_wasmfs(const char *zMountPoint){
   static backend_t pOpfs = 0;
   if( !zMountPoint || !*zMountPoint ) zMountPoint = "/opfs";
@@ -914,7 +918,7 @@ int sqlite3_wasm_init_wasmfs(const char *zMountPoint){
   return pOpfs ? 0 : SQLITE_NOMEM;
 }
 #else
-WASM_KEEP
+SQLITE_WASM_KEEP
 int sqlite3_wasm_init_wasmfs(const char *zUnused){
   emscripten_console_warn("WASMFS OPFS is not compiled in.");
   if(zUnused){/*unused*/}
@@ -922,4 +926,4 @@ int sqlite3_wasm_init_wasmfs(const char *zUnused){
 }
 #endif /* __EMSCRIPTEN__ && SQLITE_WASM_WASMFS */
 
-#undef WASM_KEEP
+#undef SQLITE_WASM_KEEP
