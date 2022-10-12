@@ -832,6 +832,7 @@ int sqlite3VdbeMemCast(Mem *pMem, u8 aff, u8 encoding){
       sqlite3ValueApplyAffinity(pMem, SQLITE_AFF_TEXT, encoding);
       assert( pMem->flags & MEM_Str || pMem->db->mallocFailed );
       pMem->flags &= ~(MEM_Int|MEM_Real|MEM_IntReal|MEM_Blob|MEM_Zero);
+      if( encoding!=SQLITE_UTF8 ) pMem->n &= ~1;
       return sqlite3VdbeChangeEncoding(pMem, encoding);
     }
   }
@@ -1965,6 +1966,9 @@ int sqlite3ValueBytes(sqlite3_value *pVal, u8 enc){
   Mem *p = (Mem*)pVal;
   assert( (p->flags & MEM_Null)==0 || (p->flags & (MEM_Str|MEM_Blob))==0 );
   if( (p->flags & MEM_Str)!=0 && pVal->enc==enc ){
+    return p->n;
+  }
+  if( (p->flags & MEM_Str)!=0 && enc!=SQLITE_UTF8 && pVal->enc!=SQLITE_UTF8 ){
     return p->n;
   }
   if( (p->flags & MEM_Blob)!=0 ){

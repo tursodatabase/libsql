@@ -1422,6 +1422,8 @@ static SQLITE_NOINLINE void filterPullDown(
       testcase( pTerm->wtFlags & TERM_VIRTUAL );
       regRowid = sqlite3GetTempReg(pParse);
       regRowid = codeEqualityTerm(pParse, pTerm, pLevel, 0, 0, regRowid);
+      sqlite3VdbeAddOp2(pParse->pVdbe, OP_MustBeInt, regRowid, addrNxt);
+      VdbeCoverage(pParse->pVdbe);
       sqlite3VdbeAddOp4Int(pParse->pVdbe, OP_Filter, pLevel->regFilter,
                            addrNxt, regRowid, 1);
       VdbeCoverage(pParse->pVdbe);
@@ -1683,6 +1685,8 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     if( iRowidReg!=iReleaseReg ) sqlite3ReleaseTempReg(pParse, iReleaseReg);
     addrNxt = pLevel->addrNxt;
     if( pLevel->regFilter ){
+      sqlite3VdbeAddOp2(v, OP_MustBeInt, iRowidReg, addrNxt);
+      VdbeCoverage(v);
       sqlite3VdbeAddOp4Int(v, OP_Filter, pLevel->regFilter, addrNxt,
                            iRowidReg, 1);
       VdbeCoverage(v);
@@ -2034,6 +2038,11 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         ** guess. */
         addrSeekScan = sqlite3VdbeAddOp1(v, OP_SeekScan, 
                                          (pIdx->aiRowLogEst[0]+9)/10);
+        if( pRangeStart ){
+          sqlite3VdbeChangeP5(v, 1);
+          sqlite3VdbeChangeP2(v, addrSeekScan, sqlite3VdbeCurrentAddr(v)+1);
+          addrSeekScan = 0;
+        }
         VdbeCoverage(v);
       }
       sqlite3VdbeAddOp4Int(v, op, iIdxCur, addrNxt, regBase, nConstraint);

@@ -680,7 +680,7 @@ static char *local_getline(char *zLine, FILE *in){
   if( stdin_is_interactive && in==stdin ){
     char *zTrans = sqlite3_win32_mbcs_to_utf8_v2(zLine, 0);
     if( zTrans ){
-      int nTrans = strlen30(zTrans)+1;
+      i64 nTrans = strlen(zTrans)+1;
       if( nTrans>nLine ){
         zLine = realloc(zLine, nTrans);
         shell_check_oom(zLine);
@@ -816,9 +816,9 @@ static void freeText(ShellText *p){
 ** quote character for zAppend.
 */
 static void appendText(ShellText *p, const char *zAppend, char quote){
-  int len;
-  int i;
-  int nAppend = strlen30(zAppend);
+  i64 len;
+  i64 i;
+  i64 nAppend = strlen30(zAppend);
 
   len = nAppend+p->n+1;
   if( quote ){
@@ -1685,9 +1685,9 @@ static void output_c_string(FILE *out, const char *z){
 /*
 ** Output the given string as a quoted according to JSON quoting rules.
 */
-static void output_json_string(FILE *out, const char *z, int n){
+static void output_json_string(FILE *out, const char *z, i64 n){
   unsigned int c;
-  if( n<0 ) n = (int)strlen(z);
+  if( n<0 ) n = strlen(z);
   fputc('"', out);
   while( n-- ){
     c = *(z++);
@@ -1990,7 +1990,7 @@ static int wsToEol(const char *z){
 */
 static void eqp_append(ShellState *p, int iEqpId, int p2, const char *zText){
   EQPGraphRow *pNew;
-  int nText = strlen30(zText);
+  i64 nText = strlen(zText);
   if( p->autoEQPtest ){
     utf8_printf(p->out, "%d,%d,%s\n", iEqpId, p2, zText);
   }
@@ -2035,14 +2035,14 @@ static EQPGraphRow *eqp_next_row(ShellState *p, int iEqpId, EQPGraphRow *pOld){
 */
 static void eqp_render_level(ShellState *p, int iEqpId){
   EQPGraphRow *pRow, *pNext;
-  int n = strlen30(p->sGraph.zPrefix);
+  i64 n = strlen(p->sGraph.zPrefix);
   char *z;
   for(pRow = eqp_next_row(p, iEqpId, 0); pRow; pRow = pNext){
     pNext = eqp_next_row(p, iEqpId, pRow);
     z = pRow->zText;
     utf8_printf(p->out, "%s%s%s\n", p->sGraph.zPrefix,
                 pNext ? "|--" : "`--", z);
-    if( n<(int)sizeof(p->sGraph.zPrefix)-7 ){
+    if( n<(i64)sizeof(p->sGraph.zPrefix)-7 ){
       memcpy(&p->sGraph.zPrefix[n], pNext ? "|  " : "   ", 4);
       eqp_render_level(p, pRow->iEqpId);
       p->sGraph.zPrefix[n] = 0;
@@ -4954,28 +4954,28 @@ static void shellEscapeCrnl(
   const char *zText = (const char*)sqlite3_value_text(argv[0]);
   UNUSED_PARAMETER(argc);
   if( zText && zText[0]=='\'' ){
-    int nText = sqlite3_value_bytes(argv[0]);
-    int i;
+    i64 nText = sqlite3_value_bytes(argv[0]);
+    i64 i;
     char zBuf1[20];
     char zBuf2[20];
     const char *zNL = 0;
     const char *zCR = 0;
-    int nCR = 0;
-    int nNL = 0;
+    i64 nCR = 0;
+    i64 nNL = 0;
 
     for(i=0; zText[i]; i++){
       if( zNL==0 && zText[i]=='\n' ){
         zNL = unused_string(zText, "\\n", "\\012", zBuf1);
-        nNL = (int)strlen(zNL);
+        nNL = strlen(zNL);
       }
       if( zCR==0 && zText[i]=='\r' ){
         zCR = unused_string(zText, "\\r", "\\015", zBuf2);
-        nCR = (int)strlen(zCR);
+        nCR = strlen(zCR);
       }
     }
 
     if( zNL || zCR ){
-      int iOut = 0;
+      i64 iOut = 0;
       i64 nMax = (nNL > nCR) ? nNL : nCR;
       i64 nAlloc = nMax * nText + (nMax+64)*2;
       char *zOut = (char*)sqlite3_malloc64(nAlloc);
@@ -5216,8 +5216,8 @@ static char **readline_completion(const char *zText, int iStart, int iEnd){
 ** Linenoise completion callback
 */
 static void linenoise_completion(const char *zLine, linenoiseCompletions *lc){
-  int nLine = strlen30(zLine);
-  int i, iStart;
+  i64 nLine = strlen(zLine);
+  i64 i, iStart;
   sqlite3_stmt *pStmt = 0;
   char *zSql;
   char zBuf[1000];
@@ -5383,7 +5383,7 @@ static int sql_trace_callback(
   ShellState *p = (ShellState*)pArg;
   sqlite3_stmt *pStmt;
   const char *zSql;
-  int nSql;
+  i64 nSql;
   if( p->traceOut==0 ) return 0;
   if( mType==SQLITE_TRACE_CLOSE ){
     utf8_printf(p->traceOut, "-- closing database connection\n");
@@ -5411,17 +5411,18 @@ static int sql_trace_callback(
     }
   }
   if( zSql==0 ) return 0;
-  nSql = strlen30(zSql);
+  nSql = strlen(zSql);
+  if( nSql>1000000000 ) nSql = 1000000000;
   while( nSql>0 && zSql[nSql-1]==';' ){ nSql--; }
   switch( mType ){
     case SQLITE_TRACE_ROW:
     case SQLITE_TRACE_STMT: {
-      utf8_printf(p->traceOut, "%.*s;\n", nSql, zSql);
+      utf8_printf(p->traceOut, "%.*s;\n", (int)nSql, zSql);
       break;
     }
     case SQLITE_TRACE_PROFILE: {
       sqlite3_int64 nNanosec = *(sqlite3_int64*)pX;
-      utf8_printf(p->traceOut, "%.*s; -- %lld ns\n", nSql, zSql, nNanosec);
+      utf8_printf(p->traceOut, "%.*s; -- %lld ns\n", (int)nSql, zSql, nNanosec);
       break;
     }
   }
@@ -11618,7 +11619,7 @@ static char *one_input_line(FILE *in, char *zPrior, int isContinuation){
   const char *zBegin = shellState.wasm.zPos;
   const char *z = zBegin;
   char *zLine = 0;
-  int nZ = 0;
+  i64 nZ = 0;
 
   UNUSED_PARAMETER(in);
   UNUSED_PARAMETER(isContinuation);
@@ -11634,7 +11635,7 @@ static char *one_input_line(FILE *in, char *zPrior, int isContinuation){
   shellState.wasm.zPos = z;
   zLine = realloc(zPrior, nZ+1);
   shell_check_oom(zLine);
-  memcpy(zLine, zBegin, (size_t)nZ);
+  memcpy(zLine, zBegin, nZ);
   zLine[nZ] = 0;
   return zLine;
 }
@@ -11652,12 +11653,12 @@ static char *one_input_line(FILE *in, char *zPrior, int isContinuation){
 static int process_input(ShellState *p){
   char *zLine = 0;          /* A single input line */
   char *zSql = 0;           /* Accumulated SQL text */
-  int nLine;                /* Length of current line */
-  int nSql = 0;             /* Bytes of zSql[] used */
-  int nAlloc = 0;           /* Allocated zSql[] space */
+  i64 nLine;                /* Length of current line */
+  i64 nSql = 0;             /* Bytes of zSql[] used */
+  i64 nAlloc = 0;           /* Allocated zSql[] space */
   int rc;                   /* Error code */
   int errCnt = 0;           /* Number of errors seen */
-  int startline = 0;        /* Line number for start of current input */
+  i64 startline = 0;        /* Line number for start of current input */
   QuickScanState qss = QSS_Start; /* Accumulated line status (so far) */
 
   if( p->inputNesting==MAX_INPUT_NESTING ){
@@ -11707,7 +11708,7 @@ static int process_input(ShellState *p){
       continue;
     }
     /* No single-line dispositions remain; accumulate line(s). */
-    nLine = strlen30(zLine);
+    nLine = strlen(zLine);
     if( nSql+nLine+2>=nAlloc ){
       /* Grow buffer by half-again increments when big. */
       nAlloc = nSql+(nSql>>1)+nLine+100;
@@ -11715,7 +11716,7 @@ static int process_input(ShellState *p){
       shell_check_oom(zSql);
     }
     if( nSql==0 ){
-      int i;
+      i64 i;
       for(i=0; zLine[i] && IsSpace(zLine[i]); i++){}
       assert( nAlloc>0 && zSql!=0 );
       memcpy(zSql, zLine+i, nLine+1-i);
@@ -11815,7 +11816,7 @@ static char *find_home_dir(int clearFlag){
 #endif /* !_WIN32_WCE */
 
   if( home_dir ){
-    int n = strlen30(home_dir) + 1;
+    i64 n = strlen(home_dir) + 1;
     char *z = malloc( n );
     if( z ) memcpy(z, home_dir, n);
     home_dir = z;
@@ -12108,9 +12109,9 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   argv = argvToFree + argc;
   for(i=0; i<argc; i++){
     char *z = sqlite3_win32_unicode_to_utf8(wargv[i]);
-    int n;
+    i64 n;
     shell_check_oom(z);
-    n = (int)strlen(z);
+    n = strlen(z);
     argv[i] = malloc( n+1 );
     shell_check_oom(argv[i]);
     memcpy(argv[i], z, n+1);
