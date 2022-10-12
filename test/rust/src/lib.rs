@@ -30,12 +30,12 @@ extern "C" {
 }
 
 //TODO: fix this:
-fn callback(notUsed: *mut c_void, argc: c_int, argv: mut*mut* c_char, azColName: *mut*mut c_char) -> c_int {
-    for i = 0..argc {
-        println!("{} = {}", azColName[i], if argv.is_null() { "NULL" } else azColName[i]);
+fn callback(notUsed: *mut c_void, argc: c_int, argv: *mut*mut c_char, azColName: *mut*mut c_char) -> c_int {
+    for i in 0..argc {
+        println!("{} = {}", azColName[i], if argv.is_null() { "NULL" } else { azColName[i] });
     }
     0
-  }
+}
 
 #[cfg(test)]
 mod tests {
