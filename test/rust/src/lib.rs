@@ -1,6 +1,10 @@
+#[cfg(test)]
 use std::ffi::{c_char, c_int, c_void};
-type sqlite3 = c_void; //TODO
+#[cfg(test)]
+#[allow(non_camel_case_types)]
+type sqlite3 = c_void;
 
+#[cfg(test)]
 #[link(name="sqlite3")]
 extern "C" {
     fn sqlite3_open(
@@ -15,7 +19,7 @@ extern "C" {
     fn sqlite3_exec(
         ppDb: *mut sqlite3, 
         sql: *const c_char, 
-        callback: unsafe extern "C" fn(*mut c_void, *mut*mut c_char, *mut*mut c_char) -> c_int,
+        callback: unsafe extern "C" fn(*mut c_void, c_int, *mut*mut c_char, *mut*mut c_char) -> c_int,
         arg1: *mut c_void,
         errmsg: *mut*mut c_char,
     ) -> c_int;
@@ -29,25 +33,28 @@ extern "C" {
     ) -> *const c_char;
 }
 
-//TODO: fix this:
-fn callback(notUsed: *mut c_void, argc: c_int, argv: *mut*mut c_char, azColName: *mut*mut c_char) -> c_int {
-    for i in 0..argc {
-        println!("{} = {}", azColName[i], if argv.is_null() { "NULL" } else { azColName[i] });
-    }
-    0
+#[cfg(test)]
+#[link(name="callback")]
+extern "C" {
+    fn callback(
+        notUsed: *mut c_void, 
+        argc: c_int, 
+        argv: *mut*mut c_char, 
+        azColName: *mut*mut c_char
+    ) -> c_int;
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::str;
+    use std::{str, fs};
     use std::ffi::{CString, CStr};
 
     #[test]
     fn test_select_42() {
-        let db: *mut sqlite3 = std::ptr::null_mut();
+        let mut db: *mut sqlite3 = std::ptr::null_mut();
         let sql = CString::new("SELECT 42").expect("CString::new failed");
-        let db_name = CString::new("Hello!").expect("CString::new failed");
+        let db_name = CString::new("db").expect("CString::new failed");
 
         let db_ptr = &mut db as *mut*mut c_void;
         let rc = unsafe { sqlite3_open(db_name.as_ptr(), db_ptr) };
@@ -69,7 +76,7 @@ mod tests {
         }
         assert_eq!(rc, 0);
 
-        let s: *mut c_char = std::ptr::null_mut();
+        let mut s: *mut c_char = std::ptr::null_mut();
         let s_ptr = &mut s as *mut*mut c_char; 
         let rc = unsafe { sqlite3_exec(db, sql.as_ptr(), callback, std::ptr::null_mut(), s_ptr) };
         if rc != 0 {
@@ -88,5 +95,9 @@ mod tests {
             eprintln!("Error: sqlite3_close() returns {}: {}", rc, errmsg);
         }
         assert_eq!(rc, 0);
+
+        let out = "test_select_42.out";
+        let contents = fs::read_to_string(format!("./{out}")).expect(&*format!("Unable to read {out}"));
+        assert_eq!(contents, "42 = 42\n");
     }
 }
