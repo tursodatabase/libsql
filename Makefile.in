@@ -1315,7 +1315,7 @@ shelltest: $(TESTPROGS)
 
 # Runs tests in test/rust directory.
 rusttest: sqlite3.o $(TOP)/test/rust/src/callback.c $(TOP)/test/rust/src/callback.h $(TOP)/test/rust/src/build.rs $(TOP)/test/rust/src/lib.rs
-	mkdir test-rust
+	mkdir -p test-rust
 	cp -r $(TOP)/test/rust/* test-rust
 	cd test-rust/src && $(CC) -c callback.c && \
 	ar rcs libcallback.a callback.o && ar rcs libsqlite3.a ../../sqlite3.o
