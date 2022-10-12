@@ -1251,7 +1251,7 @@ LIBOBJS0 = vdbe.lo parse.lo alter.lo analyze.lo attach.lo auth.lo \
          main.lo malloc.lo mem0.lo mem1.lo mem2.lo mem3.lo mem5.lo \
          memdb.lo memjournal.lo \
          mutex.lo mutex_noop.lo mutex_unix.lo mutex_w32.lo \
-         notify.lo opcodes.lo os.lo os_unix.lo os_win.lo \
+         notify.lo opcodes.lo os.lo os_kv.lo os_unix.lo os_win.lo \
          pager.lo pcache.lo pcache1.lo pragma.lo prepare.lo printf.lo \
          random.lo resolve.lo rowset.lo rtree.lo \
          sqlite3session.lo select.lo sqlite3rbu.lo status.lo stmt.lo \
@@ -1332,6 +1332,7 @@ SRC00 = \
   $(TOP)\src\mutex_w32.c \
   $(TOP)\src\notify.c \
   $(TOP)\src\os.c \
+  $(TOP)\src\os_kv.c \
   $(TOP)\src\os_unix.c \
   $(TOP)\src\os_win.c
 
@@ -2052,6 +2053,9 @@ pcache1.lo:	$(TOP)\src\pcache1.c $(HDR) $(TOP)\src\pcache.h
 
 os.lo:	$(TOP)\src\os.c $(HDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\os.c
+
+os_kv.lo:	$(TOP)\src\os_kv.c $(HDR)
+	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\os_kv.c
 
 os_unix.lo:	$(TOP)\src\os_unix.c $(HDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\os_unix.c

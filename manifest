@@ -1,11 +1,11 @@
-C Merge\sfiddle-opfs\sbranch\sinto\strunk.
-D 2022-10-12T18:13:52.265
+C Changes\sto\sMakefile.msc\sto\sfix\sthe\sbuild\son\sWindows\sfollowing\sthe\sprevious\nmerge.
+D 2022-10-12T18:30:08.886
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
 F Makefile.in d7c7b4f0751ab67b5f15119bf9d22a153ef5ce47c3db0f1f4f91236a10e0ea66
 F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
-F Makefile.msc d547a2fdba38a1c6cd1954977d0b0cc017f5f8fbfbc65287bf8d335808938016
+F Makefile.msc 905b7205ef708fea740b17f35d8a8ec7a7aa1e034ee53b708b75c094eeab4e21
 F README.md 8b8df9ca852aeac4864eb1e400002633ee6db84065bd01b78c33817f97d31f5e
 F VERSION 8868ddfa6e1eee218286021a94b3e22d13e550c76c72d878857547ca001de24a
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -471,7 +471,7 @@ F ext/session/test_session.c f433f68a8a8c64b0f5bc74dc725078f12483301ad4ae8375205
 F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
 F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
 F ext/userauth/userauth.c 7f00cded7dcaa5d47f54539b290a43d2e59f4b1eb5f447545fa865f002fc80cb
-F ext/wasm/EXPORTED_FUNCTIONS.fiddle.in 27450c8b8c70875a260aca55435ec927068b34cef801a96205adb81bdcefc65c w ext/wasm/EXPORTED_FUNCTIONS.fiddle
+F ext/wasm/EXPORTED_FUNCTIONS.fiddle.in 27450c8b8c70875a260aca55435ec927068b34cef801a96205adb81bdcefc65c
 F ext/wasm/EXPORTED_RUNTIME_METHODS.fiddle 0e88c8cfc3719e4b7e74980d9da664c709e68acf863e48386cda376edfd3bfb0
 F ext/wasm/GNUmakefile 8ab74ed186a15d956a21b28fa0800b84af2b8a289392ae2dff8126ff033bd3f9
 F ext/wasm/README.md 1e5b28158b74ab3ffc9d54fcbc020f0bbeb82c2ff8bbd904214c86c70e8a3066
@@ -488,7 +488,7 @@ F ext/wasm/api/sqlite3-api-glue.js 3b2a43c7b2ceb2b60f5f4a1afefbd93508c2fe0f2e667
 F ext/wasm/api/sqlite3-api-oo1.js ac1e08d36bdfb5aa0a2d75b7d4c892fd51819d34c932370c3282810672bcc086
 F ext/wasm/api/sqlite3-api-opfs.js 5a8ab3b76880c8ada8710ca9ba1ca5b160872edfd8bd5322e4f179a7f41cc616
 F ext/wasm/api/sqlite3-api-prologue.js daf288df965cab1e8eabee4451f6ba3beb03d5a579722b0b0f90e5203962f515
-F ext/wasm/api/sqlite3-api-worker1.js 7f4f46cb6b512a48572d7567233896e6a9c46570c44bdc3d13419730c7c221c8 w ext/wasm/api/sqlite3-api-worker.js
+F ext/wasm/api/sqlite3-api-worker1.js 7f4f46cb6b512a48572d7567233896e6a9c46570c44bdc3d13419730c7c221c8
 F ext/wasm/api/sqlite3-wasi.h 25356084cfe0d40458a902afb465df8c21fc4152c1d0a59b563a3fba59a068f9
 F ext/wasm/api/sqlite3-wasm.c a321f12ceedac8611c1377ccfb5df0c0547bd9395f7fd7613827de365d994948
 F ext/wasm/batch-runner.html cf1a410c92bad50fcec2ddc71390b4e9df63a6ea1bef12a5163a66a0af4d78d9
@@ -523,7 +523,7 @@ F ext/wasm/sql/000-mandelbrot.sql 775337a4b80938ac8146aedf88808282f04d02d983d826
 F ext/wasm/sql/001-sudoku.sql 35b7cb7239ba5d5f193bc05ec379bcf66891bce6f2a5b3879f2f78d0917299b5
 F ext/wasm/sqlite3-opfs-async-proxy.js 40fc1f779e18e08b31404ef832381ffd36b9d11447007aaf96223198324e4467
 F ext/wasm/sqlite3-worker1-promiser.js 307d7837420ca6a9d3780dfc81194f1c0715637e6d9540e935514086b96913d8
-F ext/wasm/sqlite3-worker1.js 466e9bd39409ab03f3e00999887aaffc11e95b416e2689596e3d7f1516673fdf w ext/wasm/api/sqlite3-worker.js
+F ext/wasm/sqlite3-worker1.js 466e9bd39409ab03f3e00999887aaffc11e95b416e2689596e3d7f1516673fdf
 F ext/wasm/test-opfs-vfs.html eb69dda21eb414b8f5e3f7c1cc0f774103cc9c0f87b2d28a33419e778abfbab5
 F ext/wasm/test-opfs-vfs.js 56c3d725044c668fa7910451e96c1195d25ad95825f9ac79f747a7759d1973d0
 F ext/wasm/tester1-worker.html 9d24bfc5aec4d81ce00695dea2dbed262eb486f59e3ce75746de9f5b58b128a0
@@ -2034,9 +2034,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d6d449978245b4fa66c152132da468eea7977eab4d1fe53bb2fe3ef543d8030f 5e1848ce384a78fe5dfa1b5c1b2acb9c2fac34a8f0ba6c652e0541dcf24e9027
-R adcad742e1699a0071e5b7c35c0ae37c
-T +closed 5e1848ce384a78fe5dfa1b5c1b2acb9c2fac34a8f0ba6c652e0541dcf24e9027 Closed\sby\sintegrate-merge.
-U stephan
-Z 961b9c0cc90eaad2ec9486f80b7d7b18
+P 98f954942a8d4824b5c4bd1d27cfeff7a71a029dc5a54220b76d59e367996581
+R 54aab607449d14558025d70793f3c47c
+U drh
+Z e026cd3c8f91b1cd55f89d31b35f702a
 # Remove this line to create a well-formed Fossil manifest.
