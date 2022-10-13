@@ -941,8 +941,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     */
     allocChunks: (n,sz)=>{
       const mem = wasm.pstack.alloc(n * sz);
-      const r 
-= [];
+      const rc = [];
       let i = 0, offset = 0;
       for(; i < n; offset = (sz * ++i)){
         rc.push(mem + offset);
