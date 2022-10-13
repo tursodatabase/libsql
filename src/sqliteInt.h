@@ -1277,6 +1277,10 @@ typedef int VList;
 #include "pcache.h"
 #include "mutex.h"
 
+#ifdef LIBSQL_ENABLE_WASM_RUNTIME
+#include <wasm.h>
+#endif
+
 /* The SQLITE_EXTRA_DURABLE compile-time option used to set the default
 ** synchronous setting to EXTRA.  It is no longer supported.
 */
@@ -1532,6 +1536,12 @@ void sqlite3CryptFunc(sqlite3_context*,int,sqlite3_value**);
 */
 #define SQLITE_MAX_DB (SQLITE_MAX_ATTACHED+2)
 
+#ifdef LIBSQL_ENABLE_WASM_RUNTIME
+typedef struct libsql_wasm_ctx {
+  wasm_engine_t *engine;
+} libsql_wasm_ctx;
+#endif
+
 /*
 ** Each database connection is an instance of the following structure.
 */
@@ -1674,6 +1684,9 @@ struct sqlite3 {
 #endif
 #ifdef SQLITE_USER_AUTHENTICATION
   sqlite3_userauth auth;        /* User authentication information */
+#endif
+#ifdef LIBSQL_ENABLE_WASM_RUNTIME
+  libsql_wasm_ctx wasm;        /* WebAssembly runtime context */
 #endif
 };
 

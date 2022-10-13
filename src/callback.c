@@ -16,6 +16,12 @@
 
 #include "sqliteInt.h"
 
+#ifdef LIBSQL_ENABLE_WASM_RUNTIME
+#include <wasm.h>
+#include <wasmtime.h>
+#include <wasmtime/error.h>
+#endif
+
 /*
 ** Invoke the 'collation needed' callback to request a collation sequence
 ** in the encoding enc of name zName, length nName.
@@ -371,8 +377,119 @@ void sqlite3InsertBuiltinFuncs(
     }
   }
 }
-  
-  
+
+
+
+#ifdef LIBSQL_ENABLE_WASM_RUNTIME
+void run_wasm(sqlite3_context *context, int argc, sqlite3_value **argv);
+
+static void free_wasm_module(void *module) {
+  wasmtime_module_delete(*(wasmtime_module_t **)module);
+}
+
+static FuncDef *maybe_instantiate_wasm_function(sqlite3 *db, const char *zName, int nName, int nArg) {
+  FuncDef *pBest = NULL;
+  FuncDef *pOther = NULL;
+  const unsigned char *pSrcBody = NULL;
+  int nBody = 0;
+  sqlite3_stmt *stmt;
+  int rc;
+
+  if (!db->aDb || !db->aDb->pSchema) {
+    return NULL;
+  }
+  Table *tab = sqlite3HashFind(&db->aDb->pSchema->tblHash, "libsql_wasm_func_table");
+  if (!tab) {
+    return NULL;
+  }
+  rc = sqlite3_prepare_v2(db, "SELECT body FROM libsql_wasm_func_table WHERE name = ?", -1, &stmt, 0);
+  if (rc != SQLITE_OK) {
+    sqlite3_finalize(stmt);
+    return NULL;
+  }
+  rc = sqlite3_bind_text(stmt, 1, zName, -1, SQLITE_STATIC);
+  if (rc != SQLITE_OK) {
+    sqlite3_finalize(stmt);
+    return NULL;
+  }
+
+  rc = sqlite3_step(stmt);
+  if (rc != SQLITE_ROW) {
+    sqlite3_finalize(stmt);
+    return NULL;
+  }
+
+  pSrcBody = sqlite3_column_text(stmt, 0);
+
+  if (!db->wasm.engine) {
+    db->wasm.engine = wasm_engine_new();
+  }
+  wasm_byte_vec_t compiled_wasm;
+  wasmtime_error_t *error = wasmtime_wat2wasm(pSrcBody, sqlite3Strlen30(pSrcBody), &compiled_wasm);
+  if (error) {
+#ifdef SQLITE_DEBUG
+    wasm_name_t message;
+    wasmtime_error_message(error, &message);
+    sqlite3DebugPrintf("Failed to compile wasm: %s\n", message.data);
+    wasm_byte_vec_delete(&message);
+#endif
+    return NULL;
+  }
+
+  wasmtime_module_t *module = NULL;
+  error = wasmtime_module_new(db->wasm.engine, (uint8_t *)compiled_wasm.data, compiled_wasm.size, &module);
+  wasm_byte_vec_delete(&compiled_wasm);
+  if (error) {
+#ifdef SQLITE_DEBUG
+    wasm_name_t message;
+    wasmtime_error_message(error, &message);
+    sqlite3DebugPrintf("Failed to instantiate module: %s\n", message.data);
+    wasm_byte_vec_delete(&message);
+#endif
+    return NULL;
+  }
+
+  pBest = sqlite3DbMallocZero(db, sizeof(*pBest)+sizeof(module)+nName+1);
+  memcpy(&pBest[1], &module, sizeof(module));
+  pBest->zName = (const char*)&pBest[1] + sizeof(module);
+  memcpy((char *)pBest->zName, zName, nName + 1);
+
+  pBest->funcFlags = 0;
+  pBest->xSFunc = run_wasm;
+  pBest->xFinalize = NULL;
+  pBest->xValue = NULL;
+  pBest->xInverse = NULL;
+  pBest->pUserData = &pBest[1];
+  pBest->nArg = (i8)nArg;
+
+  pBest->u.pDestructor = (FuncDestructor *)sqlite3Malloc(sizeof(FuncDestructor));
+  if(!pBest->u.pDestructor) {
+    sqlite3OomFault(db);
+    free_wasm_module(pBest);
+    return NULL;
+  }
+  pBest->u.pDestructor->nRef = 1;
+  pBest->u.pDestructor->xDestroy = free_wasm_module;
+  pBest->u.pDestructor->pUserData = &pBest[1];
+
+  sqlite3_finalize(stmt);
+
+  // Register the function dynamically
+  for(u8 *z = (u8*)pBest->zName; *z; z++) {
+    *z = sqlite3UpperToLower[*z];
+  };
+  pOther = (FuncDef*)sqlite3HashInsert(&db->aFunc, pBest->zName, pBest);
+  if ( pOther==pBest ) {
+    sqlite3DbFree(db, pBest);
+    sqlite3OomFault(db);
+    return NULL;
+  } else {
+    pBest->pNext = pOther;
+  }
+
+  return pBest;
+}
+#endif // LIBSQL_ENABLE_WASM_RUNTIME
 
 /*
 ** Locate a user function given a name, a number of arguments and a flag
@@ -462,7 +579,7 @@ FuncDef *sqlite3FindFunction(
     memcpy((char*)&pBest[1], zName, nName+1);
     for(z=(u8*)pBest->zName; *z; z++) *z = sqlite3UpperToLower[*z];
     pOther = (FuncDef*)sqlite3HashInsert(&db->aFunc, pBest->zName, pBest);
-    if( pOther==pBest ){
+    if(pOther == pBest) {
       sqlite3DbFree(db, pBest);
       sqlite3OomFault(db);
       return 0;
@@ -474,6 +591,11 @@ FuncDef *sqlite3FindFunction(
   if( pBest && (pBest->xSFunc || createFlag) ){
     return pBest;
   }
+
+#ifdef LIBSQL_ENABLE_WASM_RUNTIME
+  return maybe_instantiate_wasm_function(db, zName, nName, nArg);
+#endif
+
   return 0;
 }
 
