@@ -68,14 +68,10 @@ SQLITE_OPT = \
   -DSQLITE_TEMP_STORE=3 \
   -DSQLITE_OS_KV_OPTIONAL=1 \
   '-DSQLITE_DEFAULT_UNIX_VFS="unix-none"' \
-  -DSQLITE_USE_URI=1
-#SQLITE_OPT += -DSQLITE_ENABLE_MEMSYS5
-# ^^^ MEMSYS5 is hypothetically useful for non-Emscripten builds but
-# requires adding more infrastructure and fixing one spot in the
-# sqlite3 internals which calls malloc() early on.
-
-# SQLITE_OMIT_LOAD_EXTENSION: if this is true, sqlite3_vfs::xDlOpen
-# and friends may be NULL.
+  -DSQLITE_USE_URI=1 \
+  -DSQLITE_WASM_ENABLE_C_TESTS
+# ^^^ most flags are set in sqlite3-wasm.c but we need them
+# made explicit here for building speedtest1.c.
 
 ifneq (,$(filter release,$(MAKECMDGOALS)))
 emcc_opt ?= -Oz -flto
@@ -128,8 +124,7 @@ else
   $(info Development build. Use '$(MAKE) release' for a smaller release build.)
 endif
 
-EXPORTED_FUNCTIONS.api.in := $(dir.api)/EXPORTED_FUNCTIONS.sqlite3-api \
-    $(dir.jacc)/jaccwabyt_test.exports
+EXPORTED_FUNCTIONS.api.in := $(dir.api)/EXPORTED_FUNCTIONS.sqlite3-api
 
 EXPORTED_FUNCTIONS.api: $(EXPORTED_FUNCTIONS.api.in) $(MAKEFILE)
 	cat $(EXPORTED_FUNCTIONS.api.in) > $@
@@ -294,12 +289,6 @@ sqlite3-wasm.o := $(dir.api)/sqlite3-wasm.o
 $(sqlite3-wasm.o): emcc.cflags += $(SQLITE_OPT)
 $(sqlite3-wasm.o): $(dir.top)/sqlite3.c
 sqlite3-wasm.c := $(dir.api)/sqlite3-wasm.c
-jaccwabyt_test.c := $(dir.jacc)/jaccwabyt_test.c
-# ^^^ FIXME (how?): jaccwabyt_test.c is only needed for the test apps,
-# so we don't really want to include it in release builds. However, we
-# want to test the release builds with those apps, so we cannot simply
-# elide that file in release builds. That component is critical to the
-# VFS bindings so needs to be tested along with the core APIs.
 ########################################################################
 # call-wasm-c-compile sets up build rules
 # for $1.o. $1 must be the name of a C file (with extension).
@@ -310,7 +299,7 @@ $$($(1).o): $$(MAKEFILE) $(1)
 	$$(emcc.bin) $$(emcc_opt_full) $$(emcc.flags) $$(emcc.cflags) -c $(1) -o $$@
 CLEAN_FILES += $$($(1).o)
 endef
-$(foreach c,$(sqlite3-wasm.c) $(jaccwabyt_test.c),$(eval $(call call-wasm-c-compile,$(c))))
+$(foreach c,$(sqlite3-wasm.c),$(eval $(call call-wasm-c-compile,$(c))))
 $(eval $(call call-make-pre-js,sqlite3))
 $(sqlite3.js): $(MAKEFILE) $(sqlite3.wasm.obj) \
     EXPORTED_FUNCTIONS.api \
@@ -401,7 +390,7 @@ speedtest1.wasm := $(subst .js,.wasm,$(speedtest1.js))
 speedtest1.cflags := \
   -I. -I.. -I$(dir.top) \
   -DSQLITE_SPEEDTEST1_WASM
-speedtest1.cs := $(speedtest1.c) $(sqlite3-wasm.c) $(jaccwabyt_test.c)
+speedtest1.cs := $(speedtest1.c) $(sqlite3-wasm.c)
 $(speedtest1.js): emcc.cflags+=
 # speedtest1 notes re. sqlite3-wasm.o vs sqlite3-wasm.c: building against
 # the latter (predictably) results in a slightly faster binary, but we're

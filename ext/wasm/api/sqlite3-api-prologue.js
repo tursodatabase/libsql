@@ -949,7 +949,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       return rc;
     },
     /**
-       A convenience wrapper for allocChunks() which sizes each chunks
+       A convenience wrapper for allocChunks() which sizes each chunk
        as either 8 bytes (safePtrSize is truthy) or wasm.ptrSizeof (if
        safePtrSize is falsy).
 

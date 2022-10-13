@@ -1255,12 +1255,13 @@ self.WhWasmUtilInstaller = function(target){
      Would that be too much magic concentrated in one place, ready to
      backfire?
   */
-  xcv.arg.string = xcv.arg['pointer'] = xcv.arg['*'] = function(v){
-    if('string'===typeof v) return target.scopedAllocCString(v);
-    return v ? xcv.arg[ptrIR](v) : null;
-  };
-  xcv.result.string = (i)=>target.cstringToJs(i);
-  xcv.result['string:free'] = (i)=>{
+  xcv.arg.string = xcv.arg.utf8 = xcv.arg['pointer'] = xcv.arg['*']
+    = function(v){
+      if('string'===typeof v) return target.scopedAllocCString(v);
+      return v ? xcv.arg[ptrIR](v) : null;
+    };
+  xcv.result.string = xcv.result.utf8 = (i)=>target.cstringToJs(i);
+  xcv.result['string:free'] = xcv.result['utf8:free'] = (i)=>{
     try { return i ? target.cstringToJs(i) : null }
     finally{ target.dealloc(i) }
   };
@@ -1374,31 +1375,33 @@ self.WhWasmUtilInstaller = function(target){
 
      Non-numeric conversions include:
 
-     - `string` (args): has two different semantics in order to
-       accommodate various uses of certain C APIs (e.g. output-style
-       strings)...
+     - `string` or `utf8` (args): has two different semantics in order
+       to accommodate various uses of certain C APIs
+       (e.g. output-style strings)...
 
-       - If the arg is a string, it creates a _temporary_ C-string to
-         pass to the exported function, cleaning it up before the
-         wrapper returns. If a long-lived C-string pointer is
-         required, that requires client-side code to create the
-         string, then pass its pointer to the function.
+       - If the arg is a string, it creates a _temporary_
+         UTF-8-encoded C-string to pass to the exported function,
+         cleaning it up before the wrapper returns. If a long-lived
+         C-string pointer is required, that requires client-side code
+         to create the string, then pass its pointer to the function.
 
        - Else the arg is assumed to be a pointer to a string the
          client has already allocated and it's passed on as
          a WASM pointer.
 
-     - `string` (results): treats the result value as a const C-string,
-       copies it to a JS string, and returns that JS string.
+       - `string` or `utf8` (results): treats the result value as a
+         const C-string, encoded as UTF-8, copies it to a JS string,
+         and returns that JS string.
 
-     - `string:free` (results): treats the result value as a non-const
-       C-string, ownership of which has just been transfered to the
-       caller. It copies the C-string to a JS string, frees the
-       C-string, and returns the JS string. If such a result value is
-       NULL, the JS result is `null`. Achtung: when using an API which
-       returns results from a specific allocator, e.g. `my_malloc()`,
-       this conversion _is not legal_. Instead, an equivalent conversion
-       which uses the appropriate deallocator is required. For example:  
+     - `string:free` or `utf8:free) (results): treats the result value
+       as a non-const UTF-8 C-string, ownership of which has just been
+       transfered to the caller. It copies the C-string to a JS
+       string, frees the C-string, and returns the JS string. If such
+       a result value is NULL, the JS result is `null`. Achtung: when
+       using an API which returns results from a specific allocator,
+       e.g. `my_malloc()`, this conversion _is not legal_. Instead, an
+       equivalent conversion which uses the appropriate deallocator is
+       required. For example:
 
 ```js
    target.xWrap.resultAdaptor('string:my_free',(i)=>{

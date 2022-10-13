@@ -592,8 +592,14 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     */
     capi.sqlite3_web_rc_str = (rc)=>__rcMap[rc];
     /* Bind all registered C-side structs... */
+    const notThese = Object.assign(Object.create(null),{
+      // Structs NOT to register
+      WasmTestStruct: true
+    });
     for(const s of wasm.ctype.structs){
-      capi[s.name] = sqlite3.StructBinder(s);
+      if(!notThese[s.name]){
+        capi[s.name] = sqlite3.StructBinder(s);
+      }
     }
   }/*end C constant imports*/
 

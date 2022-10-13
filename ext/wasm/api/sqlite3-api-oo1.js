@@ -806,12 +806,16 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        - (optionsObject)
 
        In the final two cases, the function must be defined as the
-       'callback' property of the options object. In the final
+       `callback` property of the options object (optionally called
+       `xFunc` to align with the C API documentation). In the final
        case, the function's name must be the 'name' property.
 
-       This can only be used to create scalar functions, not
-       aggregate or window functions. UDFs cannot be removed from
-       a DB handle after they're added.
+       This can currently only be used to create scalar functions, not
+       aggregate or window functions (requires only a bit of
+       refactoring to support aggregates and window functions).
+
+       UDFs cannot currently be removed from a DB handle after they're
+       added.
 
        On success, returns this object. Throws on error.
 
@@ -848,18 +852,22 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        - .deterministic = SQLITE_DETERMINISTIC
        - .directOnly = SQLITE_DIRECTONLY
        - .innocuous = SQLITE_INNOCUOUS
+
+       TODO: for the (optionsObject) form, accept callbacks for
+       aggregate and window functions.
+
     */
-    createFunction: function f(name, callback,opt){
+    createFunction: function f(name, callback, opt){
       switch(arguments.length){
           case 1: /* (optionsObject) */
             opt = name;
             name = opt.name;
-            callback = opt.callback;
+            callback = opt.xFunc || opt.callback;
             break;
           case 2: /* (name, callback|optionsObject) */
             if(!(callback instanceof Function)){
               opt = callback;
-              callback = opt.callback;
+              callback = opt.xFunc || opt.callback;
             }
             break;
           default: break;

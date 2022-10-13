@@ -14,6 +14,16 @@
 */
 
 #define SQLITE_WASM
+#ifdef SQLITE_WASM_ENABLE_C_TESTS
+/*
+** Functions blocked off by SQLITE_WASM_TESTS are intended solely for
+** use in unit/regression testing. They may be safely omitted from
+** client-side builds.
+*/
+#  define SQLITE_WASM_TESTS 1
+#else
+#  define SQLITE_WASM_TESTS 0
+#endif
 
 /*
 ** Threading and file locking: JS is single-threaded. Each Worker
@@ -32,34 +42,20 @@
 ** locking, and any similar future filesystems, threading and file
 ** locking support are unnecessary in the wasm build.
 */
+
+/*
+** Undefine any SQLITE_... config flags which we specifically do not
+** want undefined. Please keep these alphabetized.
+*/
 #undef SQLITE_OMIT_DESERIALIZE
-#ifndef SQLITE_DEFAULT_UNIX_VFS
-# define SQLITE_DEFAULT_UNIX_VFS "unix-none"
-#endif
-#ifndef SQLITE_OMIT_DEPRECATED
-# define SQLITE_OMIT_DEPRECATED
-#endif
-#ifndef SQLITE_OMIT_LOAD_EXTENSION
-# define SQLITE_OMIT_LOAD_EXTENSION
-#endif
-#ifndef SQLITE_OMIT_SHARED_CACHE
-# define SQLITE_OMIT_SHARED_CACHE
-#endif
-#ifndef SQLITE_OMIT_UTF16
-# define SQLITE_OMIT_UTF16
-#endif
-#ifndef SQLITE_OS_KV_OPTIONAL
-# define SQLITE_OS_KV_OPTIONAL 1
-#endif
-#ifndef SQLITE_TEMP_STORE
-# define SQLITE_TEMP_STORE 3
-#endif
-#ifndef SQLITE_THREADSAFE
-# define SQLITE_THREADSAFE 0
-#endif
-#ifndef SQLITE_OMIT_WAL
-# define SQLITE_OMIT_WAL
-#endif
+
+/*
+** Define any SQLITE_... config defaults we want if they aren't
+** overridden by the builder. Please keep these alphabetized.
+*/
+
+/**********************************************************************/
+/* SQLITE_DEFAULT_... */
 #ifndef SQLITE_DEFAULT_CACHE_SIZE
 /*
 ** The OPFS impls benefit tremendously from an increased cache size
@@ -71,14 +67,78 @@
 */
 # define SQLITE_DEFAULT_CACHE_SIZE -16777216
 #endif
-
-#if 0
-/*
-** TODO: experiment with this when back on the opfs-capable machine.
-*/
-#ifndef SQLITE_DEFAULT_PAGE_SIZE
+#if 0 && !defined(SQLITE_DEFAULT_PAGE_SIZE)
+/* TODO: experiment with this. */
 # define SQLITE_DEFAULT_PAGE_SIZE 8192 /*4096*/
 #endif
+#ifndef SQLITE_DEFAULT_UNIX_VFS
+# define SQLITE_DEFAULT_UNIX_VFS "unix-none"
+#endif
+
+/**********************************************************************/
+/* SQLITE_ENABLE_... */
+#ifndef SQLITE_ENABLE_BYTECODE_VTAB
+#  define SQLITE_ENABLE_BYTECODE_VTAB 1
+#endif
+#ifndef SQLITE_ENABLE_DBPAGE_VTAB
+#  define SQLITE_ENABLE_DBPAGE_VTAB 1
+#endif
+#ifndef SQLITE_ENABLE_DBSTAT_VTAB
+#  define SQLITE_ENABLE_DBSTAT_VTAB 1
+#endif
+#ifndef SQLITE_ENABLE_EXPLAIN_COMMENTS
+#  define SQLITE_ENABLE_EXPLAIN_COMMENTS 1
+#endif
+#ifndef SQLITE_ENABLE_FTS4
+#  define SQLITE_ENABLE_FTS4 1
+#endif
+#ifndef SQLITE_ENABLE_OFFSET_SQL_FUNC
+#  define SQLITE_ENABLE_OFFSET_SQL_FUNC 1
+#endif
+#ifndef SQLITE_ENABLE_RTREE
+#  define SQLITE_ENABLE_RTREE 1
+#endif
+#ifndef SQLITE_ENABLE_STMTVTAB
+#  define SQLITE_ENABLE_STMTVTAB 1
+#endif
+#ifndef SQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
+#  define SQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
+#endif
+
+/**********************************************************************/
+/* SQLITE_O... */
+#ifndef SQLITE_OMIT_DEPRECATED
+# define SQLITE_OMIT_DEPRECATED 1
+#endif
+#ifndef SQLITE_OMIT_LOAD_EXTENSION
+# define SQLITE_OMIT_LOAD_EXTENSION 1
+#endif
+#ifndef SQLITE_OMIT_SHARED_CACHE
+# define SQLITE_OMIT_SHARED_CACHE 1
+#endif
+#ifndef SQLITE_OMIT_UTF16
+# define SQLITE_OMIT_UTF16 1
+#endif
+#ifndef SQLITE_OMIT_WAL
+# define SQLITE_OMIT_WAL 1
+#endif
+#ifndef SQLITE_OS_KV_OPTIONAL
+# define SQLITE_OS_KV_OPTIONAL 1
+#endif
+
+/**********************************************************************/
+/* SQLITE_T... */
+#ifndef SQLITE_TEMP_STORE
+# define SQLITE_TEMP_STORE 3
+#endif
+#ifndef SQLITE_THREADSAFE
+# define SQLITE_THREADSAFE 0
+#endif
+
+/**********************************************************************/
+/* SQLITE_USE_... */
+#ifndef SQLITE_USE_URI
+#  define SQLITE_USE_URI 1
 #endif
 
 #include <assert.h>
@@ -89,11 +149,11 @@
 #endif
 
 /*
-** SQLITE_WASM_KEEP is identical to EMSCRIPTEN_KEEPALIVE but is not
-** Emscripten-specific. It explicitly marks functions for export into
-** the target wasm file without requiring explicit listing of those
-** functions in Emscripten's -sEXPORTED_FUNCTIONS=... list (or
-** equivalent in other build platforms). Any function with neither
+** SQLITE_WASM_KEEP is functionally identical to EMSCRIPTEN_KEEPALIVE
+** but is not Emscripten-specific. It explicitly marks functions for
+** export into the target wasm file without requiring explicit listing
+** of those functions in Emscripten's -sEXPORTED_FUNCTIONS=... list
+** (or equivalent in other build platforms). Any function with neither
 ** this attribute nor which is listed as an explicit export will not
 ** be exported from the wasm file (but may still be used internally
 ** within the wasm file).
@@ -255,6 +315,28 @@ int sqlite3_wasm_db_error(sqlite3*db, int err_code, const char *zMsg){
   }
   return err_code;
 }
+
+#if SQLITE_WASM_TESTS
+struct WasmTestStruct {
+  int v4;
+  void * ppV;
+  const char * cstr;
+  int64_t v8;
+  void (*xFunc)(void*);
+};
+typedef struct WasmTestStruct WasmTestStruct;
+SQLITE_WASM_KEEP
+void sqlite3_wasm_test_struct(WasmTestStruct * s){
+  if(s){
+    s->v4 *= 2;
+    s->v8 = s->v4 * 2;
+    s->ppV = s;
+    s->cstr = __FILE__;
+    if(s->xFunc) s->xFunc(s);
+  }
+  return;
+}
+#endif /* SQLITE_WASM_TESTS */
 
 /*
 ** This function is NOT part of the sqlite3 public API. It is strictly
@@ -692,6 +774,19 @@ const char * sqlite3_wasm_enum_json(void){
       M(xDelete,"i(ss)");
       M(nKeySize,"i");
     } _StructBinder;
+#undef CurrentStruct
+
+#if SQLITE_WASM_TESTS
+#define CurrentStruct WasmTestStruct
+    StructBinder {
+      M(v4,"i");
+      M(cstr,"s");
+      M(ppV,"p");
+      M(v8,"j");
+      M(xFunc,"v(p)");
+    } _StructBinder;
+#undef CurrentStruct
+#endif
 
   } out( "]"/*structs*/);
 
@@ -925,5 +1020,57 @@ int sqlite3_wasm_init_wasmfs(const char *zUnused){
   return SQLITE_NOTFOUND;
 }
 #endif /* __EMSCRIPTEN__ && SQLITE_WASM_WASMFS */
+
+#if SQLITE_WASM_TESTS
+
+SQLITE_WASM_KEEP
+int sqlite3_wasm_test_intptr(int * p){
+  return *p = *p * 2;
+}
+
+SQLITE_WASM_KEEP
+int64_t sqlite3_wasm_test_int64_max(void){
+  return (int64_t)0x7fffffffffffffff;
+}
+
+SQLITE_WASM_KEEP
+int64_t sqlite3_wasm_test_int64_min(void){
+  return ~sqlite3_wasm_test_int64_max();
+}
+
+SQLITE_WASM_KEEP
+int64_t sqlite3_wasm_test_int64_times2(int64_t x){
+  return x * 2;
+}
+
+SQLITE_WASM_KEEP
+void sqlite3_wasm_test_int64_minmax(int64_t * min, int64_t *max){
+  *max = sqlite3_wasm_test_int64_max();
+  *min = sqlite3_wasm_test_int64_min();
+  /*printf("minmax: min=%lld, max=%lld\n", *min, *max);*/
+}
+
+SQLITE_WASM_KEEP
+int64_t sqlite3_wasm_test_int64ptr(int64_t * p){
+  /*printf("sqlite3_wasm_test_int64ptr( @%lld = 0x%llx )\n", (int64_t)p, *p);*/
+  return *p = *p * 2;
+}
+
+SQLITE_WASM_KEEP
+void sqlite3_wasm_test_stack_overflow(int recurse){
+  if(recurse) sqlite3_wasm_test_stack_overflow(recurse);
+}
+
+/* For testing the 'string-free' whwasmutil.xWrap() conversion. */
+SQLITE_WASM_KEEP
+char * sqlite3_wasm_test_str_hello(int fail){
+  char * s = fail ? 0 : (char *)malloc(6);
+  if(s){
+    memcpy(s, "hello", 5);
+    s[5] = 0;
+  }
+  return s;
+}
+#endif /* SQLITE_WASM_TESTS */
 
 #undef SQLITE_WASM_KEEP
