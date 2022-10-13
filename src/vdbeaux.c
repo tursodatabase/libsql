@@ -1161,13 +1161,9 @@ void sqlite3VdbeChangeP5(Vdbe *p, u16 p5){
 ** opcode.
 */
 void sqlite3VdbeTypeofColumn(Vdbe *p, int iDest){
-  if( p->nOp>0 ){
-    VdbeOp *pOp = &p->aOp[p->nOp-1];
-    if( pOp->opcode==OP_Column && pOp->p3==iDest ){
-      pOp->p5 |= OPFLAG_TYPEOFARG;
-    }
-  }else{
-    assert( p->db->mallocFailed );
+  VdbeOp *pOp = sqlite3VdbeGetLastOp(p);
+  if( pOp->p3==iDest && pOp->opcode==OP_Column ){
+    pOp->p5 |= OPFLAG_TYPEOFARG;
   }
 }
 
