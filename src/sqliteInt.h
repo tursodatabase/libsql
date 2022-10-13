@@ -1189,6 +1189,7 @@ typedef struct FuncDef FuncDef;
 typedef struct FuncDefHash FuncDefHash;
 typedef struct IdList IdList;
 typedef struct Index Index;
+typedef struct IndexExpr IndexExpr;
 typedef struct IndexSample IndexSample;
 typedef struct KeyClass KeyClass;
 typedef struct KeyInfo KeyInfo;
@@ -2616,6 +2617,7 @@ struct Index {
   unsigned bNoQuery:1;     /* Do not use this index to optimize queries */
   unsigned bAscKeyBug:1;   /* True if the bba7b69f9849b5bf bug applies */
   unsigned bHasVCol:1;     /* Index references one or more VIRTUAL columns */
+  unsigned bHasExpr:1;     /* This is an index on an expression */
 #ifdef SQLITE_ENABLE_STAT4
   int nSample;             /* Number of elements in aSample[] */
   int nSampleCol;          /* Size of IndexSample.anEq[] and so on */
@@ -3564,6 +3566,23 @@ struct TriggerPrg {
 #endif
 
 /*
+** If there is an index on an expression in scope such that the value
+** of the expression pExpr can be read out of the index with cursor iCur
+** at column iCol, then an instance of this object records that fact.
+**
+** A linked list of these objects is attached to Parse and records all
+** expressions that can be short-circuited by extracting a valid from
+** an index.
+*/
+struct IndexExpr {
+  Expr *pExpr;            /* The expression contained in the index */
+  int iDataCur;           /* The data cursor associated with the index */
+  int iIdxCur;            /* The index cursor */
+  int iIdxCol;            /* The column of the index that contains pExpr */
+  IndexExpr *pIENext;     /* Next in a list of all indexed expressions */
+};
+
+/*
 ** An instance of the ParseCleanup object specifies an operation that
 ** should be performed after parsing to deallocation resources obtained
 ** during the parse and which are no longer needed.
@@ -3621,6 +3640,7 @@ struct Parse {
   int nLabelAlloc;     /* Number of slots in aLabel */
   int *aLabel;         /* Space to hold the labels */
   ExprList *pConstExpr;/* Constant expressions */
+  IndexExpr *pIdxExpr; /* List of all expression in active indexes */
   Token constraintName;/* Name of the constraint currently being parsed */
   yDbMask writeMask;   /* Start a write transaction on these databases */
   yDbMask cookieMask;  /* Bitmask of schema verified databases */

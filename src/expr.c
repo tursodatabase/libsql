@@ -4043,6 +4043,26 @@ static int exprCodeInlineFunction(
   return target;
 }
 
+/*
+** Check to see if pExpr is one of the indexed expression on pParse->pIdxExpr.
+** If it is, then resolve the expression by reading from the index and
+** return the register into which the value has been read.  If there is
+** no match, return negative.
+*/
+static SQLITE_NOINLINE int sqlite3ExprIndexLookup(
+  Parse *pParse,   /* The parsing context */
+  Expr *pExpr,     /* The expression to potentially bypass */
+  int target       /* Where to store the result of the expression */
+){
+  IndexExpr *p;
+  for(p=pParse->pIdxExpr; p; p=p->pIENext){
+    if( sqlite3ExprCompare(0, pExpr, p->pExpr, p->iDataCur)!=0 ) continue;
+    sqlite3VdbeAddOp3(pParse->pVdbe, OP_Column, p->iIdxCur, p->iIdxCol, target);
+    return target;
+  }
+  return -1;  /* Not found */
+}
+
 
 /*
 ** Generate code into the current Vdbe to evaluate the given
@@ -4067,6 +4087,14 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
 
   assert( target>0 && target<=pParse->nMem );
   assert( v!=0 );
+
+  if( pParse->pIdxExpr!=0 
+   && pExpr!=0
+   && !ExprHasProperty(pExpr, EP_Leaf)
+   && (r1 = sqlite3ExprIndexLookup(pParse, pExpr, target))>=0
+  ){
+    return r1;
+  }
 
 expr_code_doover:
   if( pExpr==0 ){

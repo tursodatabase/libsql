@@ -5384,6 +5384,55 @@ static SQLITE_NOINLINE void whereCheckIfBloomFilterIsUseful(
 }
 
 /*
+** This is an sqlite3ParserAddCleanup() callback that is invoked to
+** free the Parse->pIdxExpr list when the Parse object is destroyed.
+*/
+static void whereIndexExprCleanup(sqlite3 *db, void *pObject){
+  Parse *pParse = (Parse*)pObject;
+  while( pParse->pIdxExpr!=0 ){
+    IndexExpr *p = pParse->pIdxExpr;
+    pParse->pIdxExpr = p->pIENext;
+    sqlite3ExprDelete(db, p->pExpr);
+    sqlite3DbFreeNN(db, p);
+  }
+}
+
+/*
+** The index pIdx is used by a query and contains one or more expressions.
+** In other words pIdx is an index on an expression.  iIdxCur is the cursor
+** number for the index and iDataCur is the cursor number for the corresponding
+** table.
+**
+** This routine adds IndexExpr entries to the Parse->pIdxExpr field for
+** each of the expressions in the index so that the expression code generator
+** will know to replace occurrences of the indexed expression with
+** references to the corresponding column of the index.
+*/
+static SQLITE_NOINLINE void whereAddIndexExpr(
+  Parse *pParse,    /* Add IndexExpr entries to pParse->pIdxExpr */
+  Index *pIdx,      /* The index-on-expression that contains the expressions */
+  int iIdxCur,      /* Cursor number for pIdx */
+  int iDataCur      /* Cursor for the corresponding table */
+){
+  int i;
+  IndexExpr *p;
+  for(i=0; i<pIdx->nColumn; i++){
+    if( pIdx->aiColumn[i]!=XN_EXPR ) continue;
+    p = sqlite3DbMallocRaw(pParse->db, sizeof(IndexExpr));
+    if( p==0 ) break;
+    p->pIENext = pParse->pIdxExpr;
+    p->pExpr = sqlite3ExprDup(pParse->db, pIdx->aColExpr->a[i].pExpr, 0);
+    p->iDataCur = iDataCur;
+    p->iIdxCur = iIdxCur;
+    p->iIdxCol = i;
+    pParse->pIdxExpr = p;
+    if( p->pIENext==0 ){
+      sqlite3ParserAddCleanup(pParse, whereIndexExprCleanup, pParse);
+    }
+  }
+}
+
+/*
 ** Generate the beginning of the loop used for WHERE clause processing.
 ** The return value is a pointer to an opaque structure that contains
 ** information needed to terminate the loop.  Later, the calling routine
@@ -5928,6 +5977,9 @@ WhereInfo *sqlite3WhereBegin(
         op = OP_ReopenIdx;
       }else{
         iIndexCur = pParse->nTab++;
+        if( pIx->bHasExpr ){
+          whereAddIndexExpr(pParse, pIx, iIndexCur, pTabItem->iCursor);
+        }
       }
       pLevel->iIdxCur = iIndexCur;
       assert( pIx!=0 );
