@@ -1791,9 +1791,7 @@ void sqlite3Pragma(
                 || pTab->iPKey==mxCol) ) mxCol--;
         if( mxCol>=0 ){
           sqlite3ExprCodeGetColumnOfTable(v, pTab, iDataCur, mxCol, 3);
-          if( sqlite3VdbeGetLastOp(v)->opcode==OP_Column ){
-            sqlite3VdbeChangeP5(v, OPFLAG_TYPEOFARG);
-          }
+          sqlite3VdbeTypeofColumn(v, 3);
         }
 
         if( !isQuick ){

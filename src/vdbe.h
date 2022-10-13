@@ -228,6 +228,7 @@ void sqlite3VdbeChangeP1(Vdbe*, int addr, int P1);
 void sqlite3VdbeChangeP2(Vdbe*, int addr, int P2);
 void sqlite3VdbeChangeP3(Vdbe*, int addr, int P3);
 void sqlite3VdbeChangeP5(Vdbe*, u16 P5);
+void sqlite3VdbeTypeofColumn(Vdbe*, int);
 void sqlite3VdbeJumpHere(Vdbe*, int addr);
 void sqlite3VdbeJumpHereOrPopInst(Vdbe*, int addr);
 int sqlite3VdbeChangeToNoop(Vdbe*, int addr);
