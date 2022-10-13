@@ -70,11 +70,11 @@
 #        target platform.  "" for Unix and ".exe" for windows.
 #
 # This configure.in file is easy to reuse on other projects.  Just
-# change the argument to AC_INIT().  And disable any features that
+# change the argument to AC_INIT.  And disable any features that
 # you don't need (for example BLT) by erasing or commenting out
 # the corresponding code.
 #
-AC_INIT(sqlite, m4_esyscmd([cat VERSION | tr -d '\n']))
+AC_INIT([sqlite],[m4_esyscmd(cat VERSION | tr -d '\n')])
 
 dnl Make sure the local VERSION file matches this configure script
 sqlite_version_sanity_check=`cat $srcdir/VERSION | tr -d '\n'`
@@ -88,7 +88,7 @@ fi
 #########
 # Programs needed
 #
-AC_PROG_LIBTOOL
+LT_INIT
 AC_PROG_INSTALL
 
 #########
@@ -179,7 +179,7 @@ AC_SUBST(BUILD_CC)
 # Do we want to support multithreaded use of sqlite
 #
 AC_ARG_ENABLE(threadsafe, 
-AC_HELP_STRING([--disable-threadsafe],[Disable mutexing]))
+AS_HELP_STRING([--disable-threadsafe],[Disable mutexing]))
 AC_MSG_CHECKING([whether to support threadsafe operation])
 if test "$enable_threadsafe" = "no"; then
   SQLITE_THREADSAFE=0
@@ -199,7 +199,7 @@ fi
 # Do we want to support release
 #
 AC_ARG_ENABLE(releasemode, 
-AC_HELP_STRING([--enable-releasemode],[Support libtool link to release mode]),,enable_releasemode=no)
+AS_HELP_STRING([--enable-releasemode],[Support libtool link to release mode]),,enable_releasemode=no)
 AC_MSG_CHECKING([whether to support shared library linked as release mode or not])
 if test "$enable_releasemode" = "no"; then
   ALLOWRELEASE=""
@@ -214,7 +214,7 @@ AC_SUBST(ALLOWRELEASE)
 # Do we want temporary databases in memory
 #
 AC_ARG_ENABLE(tempstore, 
-AC_HELP_STRING([--enable-tempstore],[Use an in-ram database for temporary tables (never,no,yes,always)]),,enable_tempstore=no)
+AS_HELP_STRING([--enable-tempstore],[Use an in-ram database for temporary tables (never,no,yes,always)]),,enable_tempstore=no)
 AC_MSG_CHECKING([whether to use an in-ram database for temporary tables])
 case "$enable_tempstore" in
   never ) 
@@ -254,7 +254,15 @@ else
   AC_MSG_RESULT(unknown)
 fi
 if test "$CYGWIN" != "yes"; then
-  AC_CYGWIN
+  m4_warn([obsolete],
+[AC_CYGWIN is obsolete: use AC_CANONICAL_HOST and check if $host_os
+matches *cygwin*])dnl
+AC_CANONICAL_HOST
+case $host_os in
+  *cygwin* ) CYGWIN=yes;;
+	 * ) CYGWIN=no;;
+esac
+
 fi
 if test "$CYGWIN" = "yes"; then
   BUILD_EXEEXT=.exe
@@ -289,10 +297,10 @@ AC_SUBST(TARGET_EXEEXT)
 # Those macros could not be used directly since we have to make some
 # minor changes to accomodate systems that do not have TCL installed.
 #
-AC_ARG_ENABLE(tcl, AC_HELP_STRING([--disable-tcl],[do not build TCL extension]),
+AC_ARG_ENABLE(tcl, AS_HELP_STRING([--disable-tcl],[do not build TCL extension]),
       [use_tcl=$enableval],[use_tcl=yes])
 if test "${use_tcl}" = "yes" ; then
-  AC_ARG_WITH(tcl, AC_HELP_STRING([--with-tcl=DIR],[directory containing tcl configuration (tclConfig.sh)]), with_tclconfig=${withval})
+  AC_ARG_WITH(tcl, AS_HELP_STRING([--with-tcl=DIR],[directory containing tcl configuration (tclConfig.sh)]), with_tclconfig=${withval})
   AC_MSG_CHECKING([for Tcl configuration])
   AC_CACHE_VAL(ac_cv_c_tclconfig,[
     # First check to see if --with-tcl was specified.
@@ -474,11 +482,11 @@ TARGET_READLINE_INC=""
 TARGET_HAVE_READLINE=0
 TARGET_HAVE_EDITLINE=0
 AC_ARG_ENABLE([editline],
-	[AC_HELP_STRING([--enable-editline],[enable BSD editline support])],
+	[AS_HELP_STRING([--enable-editline],[enable BSD editline support])],
 	[with_editline=$enableval],
 	[with_editline=auto])
 AC_ARG_ENABLE([readline],
-	[AC_HELP_STRING([--disable-readline],[disable readline support])],
+	[AS_HELP_STRING([--disable-readline],[disable readline support])],
 	[with_readline=$enableval],
 	[with_readline=auto])
 
@@ -494,7 +502,7 @@ if test x"$with_readline" != xno; then
 	found="yes"
 
 	AC_ARG_WITH([readline-lib],
-		[AC_HELP_STRING([--with-readline-lib],[specify readline library])],
+		[AS_HELP_STRING([--with-readline-lib],[specify readline library])],
 		[with_readline_lib=$withval],
 		[with_readline_lib="auto"])
 	if test "x$with_readline_lib" = xauto; then
@@ -509,7 +517,7 @@ if test x"$with_readline" != xno; then
 	fi
 
 	AC_ARG_WITH([readline-inc],
-		[AC_HELP_STRING([--with-readline-inc],[specify readline include paths])],
+		[AS_HELP_STRING([--with-readline-inc],[specify readline include paths])],
 		[with_readline_inc=$withval],
 		[with_readline_inc="auto"])
 	if test "x$with_readline_inc" = xauto; then
@@ -557,7 +565,7 @@ AC_SEARCH_LIBS(fdatasync, [rt])
 
 #########
 # check for debug enabled
-AC_ARG_ENABLE(debug, AC_HELP_STRING([--enable-debug],[enable debugging & verbose explain]))
+AC_ARG_ENABLE(debug, AS_HELP_STRING([--enable-debug],[enable debugging & verbose explain]))
 AC_MSG_CHECKING([build type])
 if test "${enable_debug}" = "yes" ; then
   TARGET_DEBUG="-DSQLITE_DEBUG=1 -DSQLITE_ENABLE_SELECTTRACE -DSQLITE_ENABLE_WHERETRACE -O0"
@@ -570,8 +578,7 @@ AC_SUBST(TARGET_DEBUG)
 
 #########
 # See whether we should use the amalgamation to build
-AC_ARG_ENABLE(amalgamation, AC_HELP_STRING([--disable-amalgamation],
-      [Disable the amalgamation and instead build all files separately]))
+AC_ARG_ENABLE(amalgamation, AS_HELP_STRING([--disable-amalgamation],[Disable the amalgamation and instead build all files separately]))
 if test "${enable_amalgamation}" = "no" ; then
   USE_AMALGAMATION=0
 fi
@@ -585,8 +592,7 @@ AC_SUBST(HAVE_ZLIB)
 
 #########
 # See whether we should allow loadable extensions
-AC_ARG_ENABLE(load-extension, AC_HELP_STRING([--disable-load-extension],
-      [Disable loading of external extensions]),,[enable_load_extension=yes])
+AC_ARG_ENABLE(load-extension, AS_HELP_STRING([--disable-load-extension],[Disable loading of external extensions]),,[enable_load_extension=yes])
 if test "${enable_load_extension}" = "yes" ; then
   OPT_FEATURE_FLAGS=""
   AC_SEARCH_LIBS(dlopen, dl)
@@ -598,7 +604,7 @@ fi
 # Do we want to support math functions
 #
 AC_ARG_ENABLE(math, 
-AC_HELP_STRING([--disable-math],[Disable math functions]))
+AS_HELP_STRING([--disable-math],[Disable math functions]))
 AC_MSG_CHECKING([whether to support math functions])
 if test "$enable_math" = "no"; then
   AC_MSG_RESULT([no])
@@ -612,7 +618,7 @@ fi
 # Do we want to support JSON functions
 #
 AC_ARG_ENABLE(json, 
-AC_HELP_STRING([--disable-json],[Disable JSON functions]))
+AS_HELP_STRING([--disable-json],[Disable JSON functions]))
 AC_MSG_CHECKING([whether to support JSON functions])
 if test "$enable_json" = "no"; then
   AC_MSG_RESULT([no])
@@ -621,17 +627,30 @@ else
   AC_MSG_RESULT([yes])
 fi
 
+##########
+# Do we want to support WebAssembly runtime
+#
+AC_ARG_ENABLE(wasm_runtime, 
+AS_HELP_STRING([--enable-wasm-runtime],[Enable WebAssembly runtime integration]))
+AC_MSG_CHECKING([whether to support WebAssembly integration])
+if test "$enable_wasm_runtime" = "yes"; then
+  AC_MSG_RESULT([yes])
+  OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DLIBSQL_ENABLE_WASM_RUNTIME"
+  AC_SEARCH_LIBS(wasmtime_store_new, wasmtime)
+else
+  AC_MSG_RESULT([no])
+fi
+
 ########
 # The --enable-all argument is short-hand to enable
 # multiple extensions.
-AC_ARG_ENABLE(all, AC_HELP_STRING([--enable-all],
-      [Enable FTS4, FTS5, Geopoly, RTree, Sessions]))
+AC_ARG_ENABLE(all, AS_HELP_STRING([--enable-all],[Enable FTS4, FTS5, Geopoly, RTree, Sessions]))
 
 ##########
 # Do we want to support memsys3 and/or memsys5
 #
 AC_ARG_ENABLE(memsys5, 
-  AC_HELP_STRING([--enable-memsys5],[Enable MEMSYS5]))
+  AS_HELP_STRING([--enable-memsys5],[Enable MEMSYS5]))
 AC_MSG_CHECKING([whether to support MEMSYS5])
 if test "${enable_memsys5}" = "yes"; then
   OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_MEMSYS5"
@@ -640,7 +659,7 @@ else
   AC_MSG_RESULT([no])
 fi
 AC_ARG_ENABLE(memsys3, 
-  AC_HELP_STRING([--enable-memsys3],[Enable MEMSYS3]))
+  AS_HELP_STRING([--enable-memsys3],[Enable MEMSYS3]))
 AC_MSG_CHECKING([whether to support MEMSYS3])
 if test "${enable_memsys3}" = "yes" -a "${enable_memsys5}" = "no"; then
   OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_MEMSYS3"
@@ -651,8 +670,7 @@ fi
 
 #########
 # See whether we should enable Full Text Search extensions
-AC_ARG_ENABLE(fts3, AC_HELP_STRING([--enable-fts3],
-      [Enable the FTS3 extension]))
+AC_ARG_ENABLE(fts3, AS_HELP_STRING([--enable-fts3],[Enable the FTS3 extension]))
 AC_MSG_CHECKING([whether to support FTS3])
 if test "${enable_fts3}" = "yes" ; then
   OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_FTS3"
@@ -660,8 +678,7 @@ if test "${enable_fts3}" = "yes" ; then
 else
   AC_MSG_RESULT([no])
 fi
-AC_ARG_ENABLE(fts4, AC_HELP_STRING([--enable-fts4],
-      [Enable the FTS4 extension]))
+AC_ARG_ENABLE(fts4, AS_HELP_STRING([--enable-fts4],[Enable the FTS4 extension]))
 AC_MSG_CHECKING([whether to support FTS4])
 if test "${enable_fts4}" = "yes" -o "${enable_all}" = "yes" ; then
   AC_MSG_RESULT([yes])
@@ -670,8 +687,7 @@ if test "${enable_fts4}" = "yes" -o "${enable_all}" = "yes" ; then
 else
   AC_MSG_RESULT([no])
 fi
-AC_ARG_ENABLE(fts5, AC_HELP_STRING([--enable-fts5],
-      [Enable the FTS5 extension]))
+AC_ARG_ENABLE(fts5, AS_HELP_STRING([--enable-fts5],[Enable the FTS5 extension]))
 AC_MSG_CHECKING([whether to support FTS5])
 if test "${enable_fts5}" = "yes" -o "${enable_all}" = "yes" ; then
   AC_MSG_RESULT([yes])
@@ -684,8 +700,7 @@ fi
 #########
 # See whether we should enable the LIMIT clause on UPDATE and DELETE
 # statements.
-AC_ARG_ENABLE(update-limit, AC_HELP_STRING([--enable-update-limit],
-      [Enable the UPDATE/DELETE LIMIT clause]))
+AC_ARG_ENABLE(update-limit, AS_HELP_STRING([--enable-update-limit],[Enable the UPDATE/DELETE LIMIT clause]))
 AC_MSG_CHECKING([whether to support LIMIT on UPDATE and DELETE statements])
 if test "${enable_update_limit}" = "yes" ; then
   OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_UPDATE_DELETE_LIMIT"
@@ -696,8 +711,7 @@ fi
 
 #########
 # See whether we should enable GEOPOLY
-AC_ARG_ENABLE(geopoly, AC_HELP_STRING([--enable-geopoly],
-      [Enable the GEOPOLY extension]),
+AC_ARG_ENABLE(geopoly, AS_HELP_STRING([--enable-geopoly],[Enable the GEOPOLY extension]),
       [enable_geopoly=yes],[enable_geopoly=no])
 AC_MSG_CHECKING([whether to support GEOPOLY])
 if test "${enable_geopoly}" = "yes" -o "${enable_all}" = "yes" ; then
@@ -710,8 +724,7 @@ fi
 
 #########
 # See whether we should enable RTREE
-AC_ARG_ENABLE(rtree, AC_HELP_STRING([--enable-rtree],
-      [Enable the RTREE extension]))
+AC_ARG_ENABLE(rtree, AS_HELP_STRING([--enable-rtree],[Enable the RTREE extension]))
 AC_MSG_CHECKING([whether to support RTREE])
 if test "${enable_rtree}" = "yes" ; then
   OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_RTREE"
@@ -722,8 +735,7 @@ fi
 
 #########
 # See whether we should enable the SESSION extension
-AC_ARG_ENABLE(session, AC_HELP_STRING([--enable-session],
-      [Enable the SESSION extension]))
+AC_ARG_ENABLE(session, AS_HELP_STRING([--enable-session],[Enable the SESSION extension]))
 AC_MSG_CHECKING([whether to support SESSION])
 if test "${enable_session}" = "yes" -o "${enable_all}" = "yes" ; then
   OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_SESSION"
@@ -786,8 +798,7 @@ BUILD_CFLAGS=$ac_temp_BUILD_CFLAGS
 
 #########
 # See whether we should use GCOV
-AC_ARG_ENABLE(gcov, AC_HELP_STRING([--enable-gcov],
-      [Enable coverage testing using gcov]))
+AC_ARG_ENABLE(gcov, AS_HELP_STRING([--enable-gcov],[Enable coverage testing using gcov]))
 if test "${use_gcov}" = "yes" ; then
   USE_GCOV=1
 else
@@ -815,7 +826,8 @@ AC_CONFIG_HEADERS(sqlite_cfg.h)
 # Generate the output files.
 #
 AC_SUBST(BUILD_CFLAGS)
-AC_OUTPUT([
+AC_CONFIG_FILES([
 Makefile
 sqlite3.pc
 ])
+AC_OUTPUT
