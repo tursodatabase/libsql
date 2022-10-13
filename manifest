@@ -1,5 +1,5 @@
-C Port\sthe\sfirst\s180-odd\sunit\stests\sfrom\stesting1.*\sinto\sthe\snew\stester1.*.\sFix\sa\sstray-keystroke-induced\stypo\swhich\sbroke\spstack.allocChunks().
-D 2022-10-13T08:03:31.255
+C Fix\sa\stypo\sin\sthe\sdocumentation\sof\sthe\sOP_Column\sopcode.\n[forum:/forumpost/a2b5bd6d43|Forum\spost\sa2b5bd6d43].
+D 2022-10-13T14:01:11.049
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -692,7 +692,7 @@ F src/upsert.c 8789047a8f0a601ea42fa0256d1ba3190c13746b6ba940fe2d25643a7e991937
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c 0be191521ff6d2805995f4910f0b6231b42843678b2efdc1abecaf39929a673f
 F src/vacuum.c bb346170b0b54c6683bba4a5983aea40485597fdf605c87ec8bc2e199fe88cd8
-F src/vdbe.c 4e51ba30edcdcec171fdb1db1133147ea1084d8b6842bc601b174e8a0e4b3b7f
+F src/vdbe.c 76c402850156e69eaf43c32fc8e5ecffa2c4a0cf0c2dc24c23e48a60d1bf388a
 F src/vdbe.h 64619af62603dc3c4f5ff6ff6d2c8f389abd667a29ce6007ed44bd22b3211cd0
 F src/vdbeInt.h 17b7461ffcf9ee760d1341731715a419f6b8c763089a7ece25c2e8098d702b3f
 F src/vdbeapi.c 1e8713d0b653acb43cd1bdf579c40e005c4844ea90f414f065946a83db3c27fb
@@ -2034,8 +2034,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4ca16a304ad10fbb48f78b4384b347fe883e1a4f222f113ac981e89845c3e113
-R 624f8080126a42bc3dcbc00f2cc651c0
-U stephan
-Z 26dc7314d65c80886c8a3b55a6ce8b4e
+P ef689e33e464829f5cbe4ca24a53d9dba59abe74d3d80a37a91b93a4eccccf2d
+R be99ac3662eff783728d08e4d117e169
+U drh
+Z 157d4043f80d56e9469d6c0aa37164a1
 # Remove this line to create a well-formed Fossil manifest.
