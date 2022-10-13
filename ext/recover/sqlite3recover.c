@@ -193,6 +193,7 @@ struct sqlite3_recover {
   int bSlowIndexes;               /* SQLITE_RECOVER_SLOWINDEXES setting */
 
   int pgsz;
+  int detected_pgsz;
   u8 *pPage1Disk;
   u8 *pPage1Cache;
 
@@ -1980,7 +1981,7 @@ static int recoverIsValidPage(u8 *aTmp, const u8 *a, int n){
     iNext = recoverGetU16(&a[iFree]);
     nByte = recoverGetU16(&a[iFree+2]);
     if( iFree+nByte>n ) return 0;
-    if( iNext<iFree+nByte ) return 0;
+    if( iNext && iNext<iFree+nByte ) return 0;
     memset(&aUsed[iFree], 0xFF, nByte);
     iFree = iNext;
   }
@@ -2093,7 +2094,11 @@ static void recoverPutU32(u8 *a, u32 v){
   a[3] = (v>>0) & 0x00FF;
 }
 
-static int recoverVfsDetectPagesize(sqlite3_file *pFd, i64 nSz, u32 *pPgsz){
+static int recoverVfsDetectPagesize(
+  sqlite3_recover *p,
+  sqlite3_file *pFd, 
+  i64 nSz
+){
   int rc = SQLITE_OK;
   const int nMin = 512;
   const int nMax = 65536;
@@ -2129,7 +2134,7 @@ static int recoverVfsDetectPagesize(sqlite3_file *pFd, i64 nSz, u32 *pPgsz){
     }
   }
 
-  *pPgsz = pgsz;
+  p->detected_pgsz = pgsz;
   sqlite3_free(aPg);
   return rc;
 }
@@ -2192,12 +2197,12 @@ static int recoverVfsRead(sqlite3_file *pFd, void *aBuf, int nByte, i64 iOff){
       if( pgsz==0x01 ) pgsz = 65536;
       rc = pFd->pMethods->xFileSize(pFd, &dbFileSize);
 
-      if( rc==SQLITE_OK ){
+      if( rc==SQLITE_OK && p->detected_pgsz==0 ){
         u32 pgsz2 = 0;
-        rc = recoverVfsDetectPagesize(pFd, dbFileSize, &pgsz2);
-        if( pgsz2!=0 ){
-          pgsz = pgsz2;
-        }
+        rc = recoverVfsDetectPagesize(p, pFd, dbFileSize);
+      }
+      if( p->detected_pgsz ){
+        pgsz = p->detected_pgsz;
       }
 
       if( pgsz ){
