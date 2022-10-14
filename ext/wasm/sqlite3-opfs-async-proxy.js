@@ -25,13 +25,6 @@
   access to the sqlite3 JS/WASM bits, so any bits which it needs (most
   notably SQLITE_xxx integer codes) have to be imported into it via an
   initialization process.
-
-  Potential TODOs:
-
-  - When idle for "a long time", close the sync access handle in order
-  to release the lock, then re-open it on demand. Similarly, delay
-  fetching of the sync access handle until we need it. The intent
-  would be to help multi-tab access to a db avoid locking issues.
 */
 'use strict';
 const toss = function(...args){throw new Error(args.join(' '))};
@@ -41,8 +34,6 @@ if(self.window === self){
 }else if(!navigator.storage.getDirectory){
   toss("This API requires navigator.storage.getDirectory.");
 }
-
-//warn("This file is very much experimental and under construction.",self.location.pathname);
 
 /**
    Will hold state copied to this object from the syncronous side of
@@ -161,7 +152,7 @@ const getSyncHandle = async (fh)=>{
       try {
         //if(1===i) toss("Just testing.");
         //TODO? A config option which tells it to throw here
-        //randomly every now and then.
+        //randomly every now and then, for testing purposes.
         fh.syncHandle = await fh.fileHandle.createSyncAccessHandle();
         break;
       }catch(e){
@@ -170,7 +161,7 @@ const getSyncHandle = async (fh)=>{
                "attempts failed. ",fh.filenameAbs, ":", e.message);
           throw e;
         }
-        error("Error getting sync handle. Waiting",ms,
+        warn("Error getting sync handle. Waiting",ms,
               "ms and trying again.",fh.filenameAbs,e);
         Atomics.wait(state.sabOPView, state.opIds.xSleep, 0, ms);
       }
