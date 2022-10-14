@@ -1,5 +1,5 @@
-C This\sexperimental\sbranch\sattempts\sto\suse\scolumns\sfor\san\sindex-on-expression\nin\splace\sof\sthe\sexpression\sthat\sis\sbeing\sindexed.\s\sThis\sparticular\scheck-in\nmostly\sworks,\sbut\sthere\sare\sstill\sissues.
-D 2022-10-13T21:08:34.457
+C Cancel\sIndexExpr\sobjects\swhen\sthey\sgo\sout\sof\sscope.
+D 2022-10-14T02:00:54.507
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -704,7 +704,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c b9df133a705093da8977da5eb202eaadb844839f1c7297c08d33471f5491843d
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
-F src/where.c 5cd2a96f99841e0ba3e5564d53b5ad397d3e8a42ce6e4694cd332da4e2c527f1
+F src/where.c 39889861616d7751efacb9e5aa84ec5635dbf12a137725f57aa25fc6b622e15c
 F src/whereInt.h 70cd30de9ed784aa33fa6bd1245f060617de7a00d992469b6d8e419eed915743
 F src/wherecode.c bb88be457df3a6a01c844074ab79a9ba74279e73185f1362383aa697e3cae5dc
 F src/whereexpr.c bf8c155212c886621d71c951053660de6fcc4ee907b17aa02da0a96a39aa9405
@@ -2031,11 +2031,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4e2a8aff2dd4b6e148f45184e2523ebe47815257eca97fa3d32bcbf9625f0def
-R 6b28e91c7f03fb2da80daeebeb46b73a
-T *branch * index-expr-opt
-T *sym-index-expr-opt *
-T -sym-trunk *
+P 2e8d4fd4cfd9e82f33c707ba246fe2bb3ca01762cf5ac5905058fbc7adf0abe7
+R 6e639b412a6a288ed64157bd3e723cf0
 U drh
-Z 4c1c25db22a8599a4330b36a4516d3d7
+Z c5e6e161a1559a577698a45d0fdb903e
 # Remove this line to create a well-formed Fossil manifest.

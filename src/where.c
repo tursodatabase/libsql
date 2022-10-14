@@ -6376,6 +6376,17 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       }else{
         last = pWInfo->iEndWhere;
       }
+      if( pIdx->bHasExpr ){
+        IndexExpr *p = pParse->pIdxExpr;
+        while( p ){
+          if( p->iIdxCur==pLevel->iIdxCur ){
+            p->iDataCur = -1;
+            p->iIdxCur = -1;
+            p->pExpr->op = TK_ILLEGAL;
+          }
+          p = p->pIENext;
+        }
+      }
       k = pLevel->addrBody + 1;
 #ifdef SQLITE_DEBUG
       if( db->flags & SQLITE_VdbeAddopTrace ){
