@@ -222,5 +222,29 @@ do_test 12.3 {
   $R finish
 } {}
 
+
+
+#-------------------------------------------------------------------------
+reset_db
+file_control_reservebytes db 16
+do_execsql_test 12.1 {
+  PRAGMA auto_vacuum = 2;
+  PRAGMA user_version = 45;
+  PRAGMA application_id = 22;
+
+  CREATE TABLE u1(u, v);
+  CREATE UNIQUE INDEX i1 ON u1(u, v);
+  INSERT INTO u1 VALUES(1, 2), (3, 4);
+
+  CREATE TABLE u2(u, v);
+  CREATE UNIQUE INDEX i2 ON u1(u, v);
+  INSERT INTO u2 VALUES(hex(randomblob(500)), hex(randomblob(1000)));
+  INSERT INTO u2 VALUES(hex(randomblob(500)), hex(randomblob(1000)));
+  INSERT INTO u2 VALUES(hex(randomblob(500)), hex(randomblob(1000)));
+  INSERT INTO u2 VALUES(hex(randomblob(50000)), hex(randomblob(20000)));
+}
+
+do_recover_test 12 
+
 finish_test
 
