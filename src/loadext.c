@@ -508,7 +508,9 @@ static const sqlite3_api_routines sqlite3Apis = {
   0,
   0,
 #endif
-  sqlite3_db_name
+  sqlite3_db_name,
+  /* Version 3.40.0 and later */
+  sqlite3_value_type
 };
 
 /* True if x is the directory separator character

@@ -1,5 +1,5 @@
-C Generic\sminor\scleanups\sand\sdocs\sin\sthe\sOPFS\sasync\sproxy.
-D 2022-10-14T15:52:29.231
+C Add\smissing\sinitializer\sfrom\sthe\sextension\sloader.\s\sFix\sfor\s\ncheck-in\s[d6d449978245b4fa].
+D 2022-10-14T19:21:12.300
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -579,7 +579,7 @@ F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c aea5361767817f917b0f0f647a1f0b1621bd858938ae6ae545c3b6b9814b798f
 F src/json.c 7749b98c62f691697c7ee536b570c744c0583cab4a89200fdd0fc2aa8cc8cbd6
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
-F src/loadext.c 853385cc7a604157e137585097949252d5d0c731768e16b044608e5c95c3614b
+F src/loadext.c 8086232d10e51e183a7f64199815bad1c579896354db69435347665f62f481e9
 F src/main.c b434b8e4aca38419962de3d1c55fb9279807ba6a8802998a427b1635dc8250f6
 F src/malloc.c dfddca1e163496c0a10250cedeafaf56dff47673e0f15888fb0925340a8e3f90
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
@@ -2031,8 +2031,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2da677c45b643482eec39e4db7079c772760bc966dc71bf6c01658cc468f5823
-R bd5efaaf882b3ae0c03e0e5a6693b37e
-U stephan
-Z c8a3d40e488aded9faa8a7e4d2f0c359
+P a4423ca234453c14eb40db7fe5943f63b30fd9dc2207388e8a2966733a004e9d
+R 657c639cfdb29ba1717741ed5fd9ad00
+U drh
+Z ac4a2afa493b2e100552976a88fb6b99
 # Remove this line to create a well-formed Fossil manifest.
