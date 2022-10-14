@@ -10,10 +10,10 @@
 
   ***********************************************************************
 
-  An INCOMPLETE and UNDER CONSTRUCTION experiment for OPFS: a Worker
-  which manages asynchronous OPFS handles on behalf of a synchronous
-  API which controls it via a combination of Worker messages,
-  SharedArrayBuffer, and Atomics.
+  An Worker which manages asynchronous OPFS handles on behalf of a
+  synchronous API which controls it via a combination of Worker
+  messages, SharedArrayBuffer, and Atomics. It is the asynchronous
+  counterpart of the API defined in sqlite3-api-opfs.js.
 
   Highly indebted to:
 
@@ -25,13 +25,6 @@
   access to the sqlite3 JS/WASM bits, so any bits which it needs (most
   notably SQLITE_xxx integer codes) have to be imported into it via an
   initialization process.
-
-  Potential TODOs:
-
-  - When idle for "a long time", close the sync access handle in order
-  to release the lock, then re-open it on demand. Similarly, delay
-  fetching of the sync access handle until we need it. The intent
-  would be to help multi-tab access to a db avoid locking issues.
 */
 'use strict';
 const toss = function(...args){throw new Error(args.join(' '))};
@@ -41,8 +34,6 @@ if(self.window === self){
 }else if(!navigator.storage.getDirectory){
   toss("This API requires navigator.storage.getDirectory.");
 }
-
-//warn("This file is very much experimental and under construction.",self.location.pathname);
 
 /**
    Will hold state copied to this object from the syncronous side of
@@ -111,9 +102,9 @@ const __openFiles = Object.create(null);
 
 /**
    Expects an OPFS file path. It gets resolved, such that ".."
-   components are properly expanded, and returned. If the 2nd
-   are is true, it's returned as an array of path elements,
-   else it's returned as an absolute path string.
+   components are properly expanded, and returned. If the 2nd arg is
+   true, the result is returned as an array of path elements, else an
+   absolute path string is returned.
 */
 const getResolvedPath = function(filename,splitIt){
   const p = new URL(
@@ -124,9 +115,9 @@ const getResolvedPath = function(filename,splitIt){
 
 /**
    Takes the absolute path to a filesystem element. Returns an array
-   of [handleOfContainingDir, filename]. If the 2nd argument is
-   truthy then each directory element leading to the file is created
-   along the way. Throws if any creation or resolution fails.
+   of [handleOfContainingDir, filename]. If the 2nd argument is truthy
+   then each directory element leading to the file is created along
+   the way. Throws if any creation or resolution fails.
 */
 const getDirForFilename = async function f(absFilename, createDirs = false){
   const path = getResolvedPath(absFilename, true);
@@ -161,7 +152,7 @@ const getSyncHandle = async (fh)=>{
       try {
         //if(1===i) toss("Just testing.");
         //TODO? A config option which tells it to throw here
-        //randomly every now and then.
+        //randomly every now and then, for testing purposes.
         fh.syncHandle = await fh.fileHandle.createSyncAccessHandle();
         break;
       }catch(e){
@@ -170,7 +161,7 @@ const getSyncHandle = async (fh)=>{
                "attempts failed. ",fh.filenameAbs, ":", e.message);
           throw e;
         }
-        error("Error getting sync handle. Waiting",ms,
+        warn("Error getting sync handle. Waiting",ms,
               "ms and trying again.",fh.filenameAbs,e);
         Atomics.wait(state.sabOPView, state.opIds.xSleep, 0, ms);
       }
@@ -180,6 +171,16 @@ const getSyncHandle = async (fh)=>{
   return fh.syncHandle;
 };
 
+/**
+   If the given file-holding object has a sync handle attached to it,
+   that handle is remove and asynchronously closed. Though it may
+   sound sensible to continue work as soon as the close() returns
+   (noting that it's asynchronous), doing so can cause operations
+   performed soon afterwards, e.g. a call to getSyncHandle() to fail
+   because they may happen out of order from the close(). OPFS does
+   not guaranty that the actual order of operations is retained in
+   such cases. i.e.  always "await" on the result of this function.
+*/
 const closeSyncHandle = async (fh)=>{
   if(fh.syncHandle){
     log("Closing sync handle for",fh.filenameAbs);
@@ -206,43 +207,50 @@ const affirmNotRO = function(opName,fh){
   if(fh.readOnly) toss(opName+"(): File is read-only: "+fh.filenameAbs);
 };
 
-
-const opTimer = Object.create(null);
-opTimer.op = undefined;
-opTimer.start = undefined;
+/**
+   We track 2 different timers: the "metrics" timer records how much
+   time we spend performing work. The "wait" timer records how much
+   time we spend waiting on the underlying OPFS timer. See the calls
+   to mTimeStart(), mTimeEnd(), wTimeStart(), and wTimeEnd()
+   throughout this file to see how they're used.
+*/
+const __mTimer = Object.create(null);
+__mTimer.op = undefined;
+__mTimer.start = undefined;
 const mTimeStart = (op)=>{
-  opTimer.start = performance.now();
-  opTimer.op = op;
+  __mTimer.start = performance.now();
+  __mTimer.op = op;
   //metrics[op] || toss("Maintenance required: missing metrics for",op);
   ++metrics[op].count;
 };
 const mTimeEnd = ()=>(
-  metrics[opTimer.op].time += performance.now() - opTimer.start
+  metrics[__mTimer.op].time += performance.now() - __mTimer.start
 );
-const waitTimer = Object.create(null);
-waitTimer.op = undefined;
-waitTimer.start = undefined;
+const __wTimer = Object.create(null);
+__wTimer.op = undefined;
+__wTimer.start = undefined;
 const wTimeStart = (op)=>{
-  waitTimer.start = performance.now();
-  waitTimer.op = op;
+  __wTimer.start = performance.now();
+  __wTimer.op = op;
   //metrics[op] || toss("Maintenance required: missing metrics for",op);
 };
 const wTimeEnd = ()=>(
-  metrics[waitTimer.op].wait += performance.now() - waitTimer.start
+  metrics[__wTimer.op].wait += performance.now() - __wTimer.start
 );
 
 /**
-   Set to true by the 'opfs-async-shutdown' command to quite the wait loop.
-   This is only intended for debugging purposes: we cannot inspect this
-   file's state while the tight waitLoop() is running.
+   Gets set to true by the 'opfs-async-shutdown' command to quit the
+   wait loop. This is only intended for debugging purposes: we cannot
+   inspect this file's state while the tight waitLoop() is running and
+   need a way to stop that loop for introspection purposes.
 */
 let flagAsyncShutdown = false;
 
 
 /**
    Asynchronous wrappers for sqlite3_vfs and sqlite3_io_methods
-   methods. Maintenance reminder: members are in alphabetical order
-   to simplify finding them.
+   methods, as well as helpers like mkdir(). Maintenance reminder:
+   members are in alphabetical order to simplify finding them.
 */
 const vfsAsyncImpls = {
   'opfs-async-metrics': async ()=>{
@@ -378,11 +386,13 @@ const vfsAsyncImpls = {
     const fh = __openFiles[fid];
     let rc = 0;
     if( !fh.syncHandle ){
+      wTimeStart('xLock');
       try { await getSyncHandle(fh) }
       catch(e){
         state.s11n.storeException(1,e);
         rc = state.sq3Codes.SQLITE_IOERR;
       }
+      wTimeEnd();
     }
     storeAndNotify('xLock',rc);
     mTimeEnd();
@@ -432,11 +442,11 @@ const vfsAsyncImpls = {
   },
   xRead: async function(fid,n,offset){
     mTimeStart('xRead');
-    let rc = 0;
+    let rc = 0, nRead;
     const fh = __openFiles[fid];
     try{
       wTimeStart('xRead');
-      const nRead = (await getSyncHandle(fh)).read(
+      nRead = (await getSyncHandle(fh)).read(
         fh.sabView.subarray(0, n),
         {at: Number(offset)}
       );
@@ -446,6 +456,7 @@ const vfsAsyncImpls = {
         rc = state.sq3Codes.SQLITE_IOERR_SHORT_READ;
       }
     }catch(e){
+      if(undefined===nRead) wTimeEnd();
       error("xRead() failed",e,fh);
       state.s11n.storeException(1,e);
       rc = state.sq3Codes.SQLITE_IOERR_READ;
@@ -463,9 +474,8 @@ const vfsAsyncImpls = {
         await fh.syncHandle.flush();
       }catch(e){
         state.s11n.storeException(2,e);
-      }finally{
-        wTimeEnd();
       }
+      wTimeEnd();
     }
     storeAndNotify('xSync',rc);
     mTimeEnd();
@@ -493,13 +503,13 @@ const vfsAsyncImpls = {
     const fh = __openFiles[fid];
     if( state.sq3Codes.SQLITE_LOCK_NONE===lockType
         && fh.syncHandle ){
+      wTimeStart('xUnlock');
       try { await closeSyncHandle(fh) }
       catch(e){
         state.s11n.storeException(1,e);
         rc = state.sq3Codes.SQLITE_IOERR;
-        /* Maybe we want to not report this? "Destructors do not
-           throw." */
       }
+      wTimeEnd();
     }
     storeAndNotify('xUnlock',rc);
     mTimeEnd();
@@ -520,9 +530,8 @@ const vfsAsyncImpls = {
       error("xWrite():",e,fh);
       state.s11n.storeException(1,e);
       rc = state.sq3Codes.SQLITE_IOERR_WRITE;
-    }finally{
-      wTimeEnd();
     }
+    wTimeEnd();
     storeAndNotify('xWrite',rc);
     mTimeEnd();
   }
@@ -641,7 +650,7 @@ const waitLoop = async function f(){
     const o = Object.create(null);
     opHandlers[state.opIds[k]] = o;
     o.key = k;
-    o.f = vi || toss("No vfsAsyncImpls[",k,"]");
+    o.f = vi;
   }
   /**
      waitTime is how long (ms) to wait for each Atomics.wait().
@@ -649,8 +658,6 @@ const waitLoop = async function f(){
      to do other things.
   */
   const waitTime = 1000;
-  let lastOpTime = performance.now();
-  let now;
   while(!flagAsyncShutdown){
     try {
       if('timed-out'===Atomics.wait(
@@ -658,7 +665,6 @@ const waitLoop = async function f(){
       )){
         continue;
       }
-      lastOpTime = performance.now();
       const opId = Atomics.load(state.sabOPView, state.opIds.whichOp);
       Atomics.store(state.sabOPView, state.opIds.whichOp, 0);
       const hnd = opHandlers[opId] ?? toss("No waitLoop handler for whichOp #",opId);
@@ -672,7 +678,7 @@ const waitLoop = async function f(){
     }catch(e){
       error('in waitLoop():',e);
     }
-  };
+  }
 };
 
 navigator.storage.getDirectory().then(function(d){

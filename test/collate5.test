@@ -19,6 +19,8 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+set testprefix collate5
+
 
 #
 # Tests are organised as follows:
@@ -26,6 +28,7 @@ source $testdir/tester.tcl
 # collate5-2.* - Compound SELECT
 # collate5-3.* - ORDER BY on compound SELECT
 # collate5-4.* - GROUP BY
+# collate5-5.* - Collation sequence cases
 
 # Create the collation sequence 'TEXT', purely for asthetic reasons. The
 # test cases in this script could just as easily use BINARY.
@@ -288,5 +291,38 @@ do_test collate5-4.3 {
     DROP TABLE collate5t1;
   }
 } {}
+
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 5.0 {
+  CREATE TABLE t1(a, b COLLATE nocase);
+  CREATE TABLE t2(c, d);
+  INSERT INTO t2 VALUES(1, 'bbb');
+}
+do_execsql_test 5.1 {
+  SELECT * FROM (
+      SELECT a, b FROM t1 UNION ALL SELECT c, d FROM t2
+  ) WHERE b='BbB';
+} {1 bbb}
+
+reset_db
+do_execsql_test 5.2 {
+  CREATE TABLE t1(a,b,c COLLATE NOCASE);
+  INSERT INTO t1 VALUES(NULL,'C','c');
+  CREATE VIEW v2 AS
+    SELECT a,b,c FROM t1 INTERSECT SELECT a,b,b FROM t1
+    WHERE 'eT"3qRkL+oJMJjQ9z0'>=b
+    ORDER BY a,b,c;
+}
+
+do_execsql_test 5.3 {
+  SELECT * FROM v2;
+} { {} C c }
+
+do_execsql_test 5.4 {
+  SELECT * FROM v2 WHERE c='c';
+} { {} C c }
+
 
 finish_test
