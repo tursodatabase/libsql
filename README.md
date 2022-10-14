@@ -50,7 +50,8 @@ There is nothing to be gained in reinventing greatness, so we will simply build 
 
 ## Preserve compatibility
 We are committed to preserving compatibility with everything that was previously written for SQLite.  All of your favorite tools and libraries will continue to work as-is.
-Preserve stability
+
+## Preserve stability
 SQLite is a very well-tested piece of software.  We admire that, and commit to preserving the existing test suite while expanding it for the new code we add.
 
 ## Use Rust for new features
