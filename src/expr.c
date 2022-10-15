@@ -5618,7 +5618,13 @@ int sqlite3ExprCompare(
     if( pB->op==TK_COLLATE && sqlite3ExprCompare(pParse, pA,pB->pLeft,iTab)<2 ){
       return 1;
     }
-    return 2;
+    if( pA->op==TK_AGG_COLUMN && pB->op==TK_COLUMN 
+     && pB->iTable<0 && pA->iTable==iTab
+    ){
+      /* fall through */
+    }else{
+      return 2;
+    }
   }
   assert( !ExprHasProperty(pA, EP_IntValue) );
   assert( !ExprHasProperty(pB, EP_IntValue) );
