@@ -3579,6 +3579,7 @@ struct IndexExpr {
   int iDataCur;           /* The data cursor associated with the index */
   int iIdxCur;            /* The index cursor */
   int iIdxCol;            /* The column of the index that contains pExpr */
+  u8 bMaybeNullRow;       /* True if we need an OP_IfNullRow check */
   IndexExpr *pIENext;     /* Next in a list of all indexed expressions */
 };
 

@@ -4055,9 +4055,29 @@ static SQLITE_NOINLINE int sqlite3ExprIndexLookup(
   int target       /* Where to store the result of the expression */
 ){
   IndexExpr *p;
+  Vdbe *v;
   for(p=pParse->pIdxExpr; p; p=p->pIENext){
+    if( p->iDataCur<0 ) continue;
     if( sqlite3ExprCompare(0, pExpr, p->pExpr, p->iDataCur)!=0 ) continue;
-    sqlite3VdbeAddOp3(pParse->pVdbe, OP_Column, p->iIdxCur, p->iIdxCol, target);
+    v = pParse->pVdbe;
+    assert( v!=0 );
+    if( p->bMaybeNullRow ){
+      /* If the index is on a NULL row due to an outer join, then we
+      ** cannot extract the value from the index.  The value must be
+      ** computed using the original expression. */
+      int addr = sqlite3VdbeCurrentAddr(v);
+      sqlite3VdbeAddOp3(v, OP_IfNullRow, p->iIdxCur, addr+3, target);
+      VdbeCoverage(v);
+      sqlite3VdbeAddOp3(v, OP_Column, p->iIdxCur, p->iIdxCol, target);
+      sqlite3VdbeGoto(v, 0);
+      p = pParse->pIdxExpr;
+      pParse->pIdxExpr = 0;
+      sqlite3ExprCode(pParse, pExpr, target);
+      pParse->pIdxExpr = p;
+      sqlite3VdbeJumpHere(v, addr+2);
+    }else{
+      sqlite3VdbeAddOp3(v, OP_Column, p->iIdxCur, p->iIdxCol, target);
+    }
     return target;
   }
   return -1;  /* Not found */

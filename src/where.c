@@ -5409,22 +5409,23 @@ static void whereIndexExprCleanup(sqlite3 *db, void *pObject){
 ** references to the corresponding column of the index.
 */
 static SQLITE_NOINLINE void whereAddIndexExpr(
-  Parse *pParse,    /* Add IndexExpr entries to pParse->pIdxExpr */
-  Index *pIdx,      /* The index-on-expression that contains the expressions */
-  int iIdxCur,      /* Cursor number for pIdx */
-  int iDataCur      /* Cursor for the corresponding table */
+  Parse *pParse,     /* Add IndexExpr entries to pParse->pIdxExpr */
+  Index *pIdx,       /* The index-on-expression that contains the expressions */
+  int iIdxCur,       /* Cursor number for pIdx */
+  SrcItem *pTabItem  /* The FROM clause entry for the table */
 ){
   int i;
   IndexExpr *p;
   for(i=0; i<pIdx->nColumn; i++){
     if( pIdx->aiColumn[i]!=XN_EXPR ) continue;
-    p = sqlite3DbMallocRaw(pParse->db, sizeof(IndexExpr));
+    p = sqlite3DbMallocRaw(pParse->db,  sizeof(IndexExpr));
     if( p==0 ) break;
     p->pIENext = pParse->pIdxExpr;
     p->pExpr = sqlite3ExprDup(pParse->db, pIdx->aColExpr->a[i].pExpr, 0);
-    p->iDataCur = iDataCur;
+    p->iDataCur = pTabItem->iCursor;
     p->iIdxCur = iIdxCur;
     p->iIdxCol = i;
+    p->bMaybeNullRow = (pTabItem->fg.jointype & (JT_LEFT|JT_LTORJ))!=0;
     pParse->pIdxExpr = p;
     if( p->pIENext==0 ){
       sqlite3ParserAddCleanup(pParse, whereIndexExprCleanup, pParse);
@@ -5978,7 +5979,7 @@ WhereInfo *sqlite3WhereBegin(
       }else{
         iIndexCur = pParse->nTab++;
         if( pIx->bHasExpr ){
-          whereAddIndexExpr(pParse, pIx, iIndexCur, pTabItem->iCursor);
+          whereAddIndexExpr(pParse, pIx, iIndexCur, pTabItem);
         }
       }
       pLevel->iIdxCur = iIndexCur;
@@ -6382,7 +6383,6 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
           if( p->iIdxCur==pLevel->iIdxCur ){
             p->iDataCur = -1;
             p->iIdxCur = -1;
-            p->pExpr->op = TK_ILLEGAL;
           }
           p = p->pIENext;
         }
