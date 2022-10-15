@@ -130,6 +130,7 @@ set allquicktests [test_set $alltests -exclude {
   fts4merge5.test
   fts3cov.test fts3snippet.test fts3corrupt2.test fts3an.test
   fts3defer.test fts4langid.test fts3sort.test fts5unicode.test
+  recovercorrupt.test
 
   rtree4.test
   sessionbig.test
