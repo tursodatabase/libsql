@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
+    <link rel="stylesheet" href="common/emscripten.css"/>
+    <link rel="stylesheet" href="common/testing.css"/>
+    <title>speedtest1-wasmfs.wasm</title>
+  </head>
+  <body>
+    <header id='titlebar'><span>speedtest1-wasmfs.wasm</span></header>
+    <div>See also: <a href='speedtest1-worker.html'>A Worker-thread variant of this page.</a></div>
+    <!-- emscripten bits -->
+    <figure id="module-spinner">
+      <div class="spinner"></div>
+      <div class='center'><strong>Initializing app...</strong></div>
+      <div class='center'>
+        On a slow internet connection this may take a moment.  If this
+        message displays for "a long time", intialization may have
+        failed and the JavaScript console may contain clues as to why.
+      </div>
+    </figure>
+    <div class="emscripten" id="module-status">Downloading...</div>
+    <div class="emscripten">
+      <progress value="0" max="100" id="module-progress" hidden='1'></progress>  
+    </div><!-- /emscripten bits -->
+    <div class='warning'>This page starts running the main exe when it loads, which will
+      block the UI until it finishes! Adding UI controls to manually configure and start it
+      are TODO.</div>
+    </div>
+    <div class='warning'>Achtung: running it with the dev tools open may
+      <em>drastically</em> slow it down. For faster results, keep the dev
+      tools closed when running it!
+    </div>
+    <div>Output is delayed/buffered because we cannot update the UI while the
+      speedtest is running. Output will appear below when ready...
+    <div id='test-output'></div>
+    <script src="common/SqliteTestUtil.js"></script>
+    <script src="speedtest1-wasmfs.js"></script>
+    <script>(function(){
+    /**
+       If this environment contains OPFS, this function initializes it and
+       returns the name of the dir on which OPFS is mounted, else it returns
+       an empty string.
+    */
+    const wasmfsDir = function f(wasmUtil,dirName="/opfs"){
+        if(undefined !== f._) return f._;
+        if( !self.FileSystemHandle
+            || !self.FileSystemDirectoryHandle
+            || !self.FileSystemFileHandle){
+            return f._ = "";
+        }
+        try{
+            if(0===wasmUtil.xCallWrapped(
+                'sqlite3_wasm_init_wasmfs', 'i32', ['string'], dirName
+            )){
+                return f._ = dirName;
+            }else{
+                return f._ = "";
+            }
+        }catch(e){
+            // sqlite3_wasm_init_wasmfs() is not available
+            return f._ = "";
+        }
+    };
+    wasmfsDir._ = undefined;
+
+    const eOut = document.querySelector('#test-output');
+    const log2 = function(cssClass,...args){
+        const ln = document.createElement('div');
+        if(cssClass) ln.classList.add(cssClass);
+        ln.append(document.createTextNode(args.join(' ')));
+        eOut.append(ln);
+        //this.e.output.lastElementChild.scrollIntoViewIfNeeded();
+    };
+    const logList = [];
+    const dumpLogList = function(){
+        logList.forEach((v)=>log2('',v));
+        logList.length = 0;
+    };
+    /* can't update DOM while speedtest is running unless we run
+       speedtest in a worker thread. */;
+    const log = (...args)=>{
+        console.log(...args);
+        logList.push(args.join(' '));
+    };
+    const logErr = function(...args){
+        console.error(...args);
+        logList.push('ERROR: '+args.join(' '));
+    };
+
+    const runTests = function(sqlite3){
+        console.log("Module inited.");
+        const wasm = sqlite3.capi.wasm;
+        const unlink = wasm.xWrap("sqlite3_wasm_vfs_unlink", "int", ["string"]);
+        const pDir = wasmfsDir(wasm);
+        if(pDir) log2('',"Persistent storage:",pDir);
+        else{
+            log2('error',"Expecting persistent storage in this build.");
+            return;
+        }
+        const scope = wasm.scopedAllocPush();
+        const dbFile = pDir+"/speedtest1.db";
+        const urlParams = new URL(self.location.href).searchParams;
+        const argv = ["speedtest1"];
+        if(urlParams.has('flags')){
+            argv.push(...(urlParams.get('flags').split(',')));
+            let i = argv.indexOf('--vfs');
+            if(i>=0) argv.splice(i,2);
+        }else{
+            argv.push(
+                "--singlethread",
+                "--nomutex",
+                "--nosync",
+                "--nomemstat"
+            );
+            //"--memdb", // note that memdb trumps the filename arg
+        }
+
+        if(argv.indexOf('--memdb')>=0){
+            log2('error',"WARNING: --memdb flag trumps db filename.");
+        }
+        argv.push("--big-transactions"/*important for tests 410 and 510!*/,
+                  dbFile);
+        console.log("argv =",argv);
+        // These log messages are not emitted to the UI until after main() returns. Fixing that
+        // requires moving the main() call and related cleanup into a timeout handler.
+        if(pDir) unlink(dbFile);
+        log2('',"Starting native app:\n ",argv.join(' '));
+        log2('',"This will take a while and the browser might warn about the runaway JS.",
+             "Give it time...");
+        logList.length = 0;
+        setTimeout(function(){
+            wasm.xCall('wasm_main', argv.length,
+                       wasm.scopedAllocMainArgv(argv));
+            wasm.scopedAllocPop(scope);
+            if(pDir) unlink(dbFile);
+            logList.unshift("Done running native main(). Output:");
+            dumpLogList();
+        }, 25);
+    }/*runTests()*/;
+
+    self.sqlite3TestModule.print = log;
+    self.sqlite3TestModule.printErr = logErr;
+    sqlite3InitModule(self.sqlite3TestModule).then(runTests);
+})();</script>
+  </body>
+</html>

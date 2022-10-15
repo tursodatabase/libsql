@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
+    <link rel="stylesheet" href="common/testing.css"/>
+    <title>sqlite3 WASM Testing Page Index</title>
+  </head>
+  <body>
+    <header id='titlebar'><span>sqlite3 WASM test pages</span></header>
+    <hr>
+    <div>Below is the list of test pages for the sqlite3 WASM
+      builds. All of them require that this directory have been
+      "make"d first. The intent is that <em>this</em> page be run
+      using:</div>
+    <blockquote><pre>althttpd -enable-sab -page index.html</pre></blockquote>
+    <div>and the individual tests be started in their own tab.
+      Warnings and Caveats:
+      <ul class='warning'>
+        <li>Some of these pages require that
+          the web server emit the so-called
+          <a href='https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cross-Origin-Opener-Policy'>COOP</a>
+          and
+          <a href='https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cross-Origin-Embedder-Policy'>COEP</a>
+          headers. <a href='https://sqlite.org/althttpd'>althttpd</a> requires the
+          <code>-enable-sab</code> flag for that.
+        </li>
+        <li>Any OPFS-related pages require very recent version of
+          Chrome or Chromium (v102 at least, possibly newer). OPFS
+          support in the other major browsers is pending. Development
+          and testing is currently done against a dev-channel release
+          of Chrome (v107 as of 2022-09-26).
+        </li>
+        <li>Whether or not WASMFS/OPFS support is enabled on any given
+          page may depend on build-time options which are <em>off by
+          default</em> because they currently (as of 2022-09-08) break
+          with Worker-based pages.
+        </li>
+      </ul>
+    </div>
+    <div>The tests and demos...
+      <ul id='test-list'>
+        <li>Core-most tests
+          <ul>
+            <li><a href='tester1.html'>tester1</a>: Core unit and
+              regression tests for the various APIs and surrounding
+              utility code.</li>
+            <li><a href='tester1.html'>tester1-worker</a>: same thing
+            but running in a Worker.</li>
+          </ul>
+        </li>
+        <li>High-level apps and demos...
+          <ul>
+            <li><a href='fiddle/fiddle.html'>fiddle</a> is an HTML front-end
+              to a wasm build of the sqlite3 shell.</li>
+            <li><a href='demo-123.html'>demo-123</a> provides a
+              no-nonsense example of adding sqlite3 support to a web
+              page in the UI thread.</li>
+            <li><a href='demo-123-worker.html'>demo-123-worker</a> is
+              the same as <code>demo-123</code> but loads and runs
+              sqlite3 from a Worker thread.</li>
+            <li><a href='demo-kvvfs1.html'>demo-kvvfs1</a>: very basic
+              demo of using the key-value VFS for storing a persistent db
+              in JS <code>localStorage</code> or <code>sessionStorage</code>.</li>
+          </ul>
+        </li>
+        <li>speedtest1 ports (sqlite3's primary benchmarking tool)...
+          <ul>
+            <li><a href='speedtest1.html'>speedtest1</a>: a main-thread WASM build of speedtest1.</li>
+            <li><a href='speedtest1-wasmfs.html?flags=--size,25'>speedtest1-wasmfs</a>: a variant of speedtest1 built solely for the wasmfs/opfs feature.</li>
+            <li><a href='speedtest1.html?vfs=kvvfs'>speedtest1-kvvfs</a>: speedtest1 with the kvvfs.</li>
+            <li><a href='speedtest1-worker.html?size=25'>speedtest1-worker</a>: an interactive Worker-thread variant of speedtest1.</li>
+            <li><a href='speedtest1-worker.html?vfs=opfs&size=25'>speedtest1-worker-opfs</a>: speedtest1-worker with the
+              OPFS VFS preselected and configured for a moderate workload.</li>
+          </ul>
+        </li>
+        <li>The obligatory "misc." category...
+          <ul>
+            <li><a href='testing2.html'>testing2</a>: Worker-based test of OO API #1.</li>
+            <li><a href='testing-worker1-promiser.html'>testing-worker1-promiser</a>:
+              tests for the Promise-based wrapper of the Worker-based API.</li>
+            <li><a href='batch-runner.html'>batch-runner</a>: runs batches of SQL exported from speedtest1.</li>
+            <li><a href='scratchpad-wasmfs-main.html'>scratchpad-wasmfs-main</a>:
+              experimenting with WASMFS/OPFS-based persistence. Maintenance
+              reminder: we cannot currently (2022-09-15) load WASMFS in a
+              worker due to an Emscripten limitation.</li>
+            <li><a href='test-opfs-vfs.html'>test-opfs-vfs</a>
+              (<a href='test-opfs-vfs.html?opfs-sanity-check&opfs-verbose'>same
+                with verbose output and sanity-checking tests</a>) is an
+              experiment in implementing a syncronous sqlite3 VFS proxy
+              for a fully asynchronous backend interface (namely OPFS),
+              using SharedArrayBuffer and the Atomics APIs to regulate
+              communication between the synchronous interface and the
+              async impl.
+            </li>
+          </ul>
+        </li>
+        <!--li><a href='x.html'></a></li-->
+      </ul>
+    </div>
+    <style>
+      #test-list { font-size: 120%; }
+    </style>
+    <script>//Assign a distinct target tab name for each test page...
+      document.querySelectorAll('a').forEach(function(e){
+          e.target = e.href;
+      });
+    </script>
+  </body>
+</html>

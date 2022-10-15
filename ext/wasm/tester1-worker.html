@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
+    <link rel="stylesheet" href="../common/emscripten.css"/>
+    <link rel="stylesheet" href="../common/testing.css"/>
+    <title>sqlite3 tester #1 (Worker thread)</title>
+    <style>
+      body {
+          font-family: monospace;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>sqlite3 WASM/JS tester #1 (Worker thread)</h1>
+    <div id='test-output'></div>
+    <script>(function(){
+      const logTarget = document.querySelector('#test-output');
+      const logHtml = function(cssClass,...args){
+        const ln = document.createElement('div');
+        if(cssClass) ln.classList.add(cssClass);
+        ln.append(document.createTextNode(args.join(' ')));
+        logTarget.append(ln);
+      };
+      const w = new Worker("tester1.js");
+      w.onmessage = function({data}){
+        switch(data.type){
+            case 'log':
+              logHtml(data.payload.cssClass, ...data.payload.args);
+              break;
+            default:
+              logHtml('error',"Unhandled message:",data.type);
+        };
+      };
+    })();</script>
+  </body>
+</html>

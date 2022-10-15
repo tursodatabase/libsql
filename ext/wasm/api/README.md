@@ -23,8 +23,6 @@ The overall idea is that the following files get concatenated
 together, in the listed order, the resulting file is loaded by a
 browser client:
 
-- `post-js-header.js`\  
-  Emscripten-specific header for the `--post-js` input.
 - `sqlite3-api-prologue.js`\  
   Contains the initial bootstrap setup of the sqlite3 API
   objects. This is exposed as a function, rather than objects, so that
@@ -47,46 +45,51 @@ browser client:
   independent spinoff project, conceived for the sqlite3 project but
   maintained separately.
 - `sqlite3-api-glue.js`\  
-  Invokes the function exposed by `sqlite3-api-prologue.js`, passing
-  it a configuration object to configure it for the current WASM
-  toolchain (noting that it currently requires Emscripten), then
-  removes that function from the global scope. The result of this file
-  is a global-scope `sqlite3` object which acts as a namespace for the
-  API's functionality. This object gets removed from the global scope
-  after the following files have attached their own features to it.
+  Invokes functionality exposed by the previous two files to
+  flesh out low-level parts of `sqlite3-api-prologue.js`. Most of
+  these pieces related to the `sqlite3.capi.wasm` object.
 - `sqlite3-api-oo1.js`\  
   Provides a high-level object-oriented wrapper to the lower-level C
   API, colloquially known as OO API #1. Its API is similar to other
   high-level sqlite3 JS wrappers and should feel relatively familiar
   to anyone familiar with such APIs. That said, it is not a "required
   component" and can be elided from builds which do not want it.
-- `sqlite3-api-worker.js`\  
+- `sqlite3-api-worker1.js`\  
   A Worker-thread-based API which uses OO API #1 to provide an
   interface to a database which can be driven from the main Window
   thread via the Worker message-passing interface. Like OO API #1,
   this is an optional component, offering one of any number of
   potential implementations for such an API.
-    - `sqlite3-worker.js`\  
+    - `../sqlite3-worker1.js`\  
       Is not part of the amalgamated sources and is intended to be
       loaded by a client Worker thread. It loads the sqlite3 module
-      and runs the Worker API which is implemented in
-      `sqlite3-api-worker.js`.
+      and runs the Worker #1 API which is implemented in
+      `sqlite3-api-worker1.js`.
+    - `../sqlite3-worker1-promiser.js`\  
+      Is likewise not part of the amalgamated sources and provides
+      a Promise-based interface into the Worker #1 API. This is
+      a far user-friendlier way to interface with databases running
+      in a Worker thread.
 - `sqlite3-api-opfs.js`\  
-  is an in-development/experimental sqlite3 VFS wrapper, the goal of
-  which being to use Google Chrome's Origin-Private FileSystem (OPFS)
-  storage layer to provide persistent storage for database files in a
-  browser. It is far from complete.
-- `sqlite3-api-cleanup.js`\  
-  the previous files temporarily create global objects in order to
-  communicate their state to the files which follow them, and _this_
-  file connects any final components together and cleans up those
-  globals. As of this writing, this code ensures that the previous
-  files leave no global symbols installed, and it moves the sqlite3
-  namespace object into the in-scope Emscripten module. Abstracting
-  this for other WASM toolchains is TODO.
-- `post-js-footer.js`\  
-  Emscripten-specific footer for the `--post-js` input. This closes
-  off the lexical scope opened by `post-js-header.js`.
+  is an sqlite3 VFS implementation which supports Google Chrome's
+  Origin-Private FileSystem (OPFS) as a storage layer to provide
+  persistent storage for database files in a browser. It requires...
+    - `../sqlite3-opfs-async-proxy.js`\  
+      is the asynchronous backend part of the OPFS proxy. It speaks
+      directly to the (async) OPFS API and channels those results back
+      to its synchronous counterpart. This file, because it must be
+      started in its own Worker, is not part of the amalgamation.
+- **`api/sqlite3-api-cleanup.js`**\  
+  The previous files do not immediately extend the library. Instead
+  they add callback functions to be called during its
+  bootstrapping. Some also temporarily create global objects in order
+  to communicate their state to the files which follow them. This file
+  cleans up any dangling globals and runs the API bootstrapping
+  process, which is what finally executes the initialization code
+  installed by the previous files. As of this writing, this code
+  ensures that the previous files leave no more than a single global
+  symbol installed. When adapting the API for non-Emscripten
+  toolchains, this "should" be the only file where changes are needed.
 
 The build process glues those files together, resulting in
 `sqlite3-api.js`, which is everything except for the `post-js-*.js`
@@ -99,3 +102,28 @@ The non-JS outlier file is `sqlite3-wasm.c`: it is a proxy for
 WASM-specific helper functions, at least one of which requires access
 to private/static `sqlite3.c` internals. `sqlite3.wasm` is compiled
 from this file rather than `sqlite3.c`.
+
+The following files are part of the build process but are injected
+into the build-generated `sqlite3.js` along with `sqlite3-api.js`.
+
+- `extern-pre-js.js`\  
+  Emscripten-specific header for Emscripten's `--extern-pre-js`
+  flag. As of this writing, that file is only used for experimentation
+  purposes and holds no code relevant to the production deliverables.
+- `pre-js.js`\  
+  Emscripten-specific header for Emscripten's `--pre-js` flag. This
+  file is intended as a place to override certain Emscripten behavior
+  before it starts up, but corner-case Emscripten bugs keep that from
+  being a reality.
+- `post-js-header.js`\  
+  Emscripten-specific header for the `--post-js` input. It opens up
+  a lexical scope by starting a post-run handler for Emscripten.
+- `post-js-footer.js`\  
+  Emscripten-specific footer for the `--post-js` input. This closes
+  off the lexical scope opened by `post-js-header.js`.
+- `extern-post-js.js`\  
+  Emscripten-specific header for Emscripten's `--extern-post-js`
+  flag. This file overwrites the Emscripten-installed
+  `sqlite3InitModule()` function with one which, after the module is
+  loaded, also initializes the asynchronous parts of the sqlite3
+  module. For example, the OPFS VFS support.

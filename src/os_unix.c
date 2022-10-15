@@ -87,13 +87,13 @@
 /*
 ** standard include files.
 */
-#include <sys/types.h>
-#include <sys/stat.h>
+#include <sys/types.h>   /* amalgamator: keep */
+#include <sys/stat.h>    /* amalgamator: keep */
 #include <fcntl.h>
 #include <sys/ioctl.h>
-#include <unistd.h>
+#include <unistd.h>      /* amalgamator: keep */
 #include <time.h>
-#include <sys/time.h>
+#include <sys/time.h>    /* amalgamator: keep */
 #include <errno.h>
 #if !defined(SQLITE_OMIT_WAL) || SQLITE_MAX_MMAP_SIZE>0
 # include <sys/mman.h>
@@ -8065,6 +8065,9 @@ int sqlite3_os_init(void){
     sqlite3_vfs_register(&aVfs[i], i==0);
 #endif
   }
+#ifdef SQLITE_OS_KV_OPTIONAL
+  sqlite3KvvfsInit();
+#endif
   unixBigLock = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_VFS1);
 
 #ifndef SQLITE_OMIT_WAL

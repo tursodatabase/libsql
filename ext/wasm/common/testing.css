@@ -1,3 +1,8 @@
+body {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+}
 textarea {
     font-family: monospace;
 }
@@ -29,4 +34,21 @@ span.labeled-input {
     color: red;
     background-color: yellow;
 }
-#test-output { font-family: monospace }
+.warning { color: firebrick; }
+.green { color: darkgreen; }
+.group-start { color: blue; }
+.group-end { color: blue; }
+.input-wrapper { white-space: nowrap; }
+#test-output {
+  border: 1px inset;
+  border-radius: 0.25em;
+  padding: 0.25em;
+  /*max-height: 30em;*/
+  overflow: auto;
+  white-space: break-spaces;
+  display: flex; flex-direction: column;
+  font-family: monospace;
+}
+#test-output.reverse {
+  flex-direction: column-reverse;
+}

@@ -15,11 +15,17 @@
 
   https://fossil.wanderinghorse.net/r/jaccwabyt
 
+  and sqlite3:
+
+  https://sqlite.org
+
+  This file is kept in sync between both of those trees.
+
   Maintenance reminder: If you're reading this in a tree other than
-  the Jaccwabyt tree, note that this copy may be replaced with
+  one of those listed above, note that this copy may be replaced with
   upstream copies of that one from time to time. Thus the code
-  installed by this function "should not" be edited outside of that
-  project, else it risks getting overwritten.
+  installed by this function "should not" be edited outside of those
+  projects, else it risks getting overwritten.
 */
 /**
    This function is intended to simplify porting around various bits
@@ -63,7 +69,7 @@
    - WASM-exported "indirect function table" access and
      manipulation. e.g.  creating new WASM-side functions using JS
      functions, analog to Emscripten's addFunction() and
-     removeFunction() but slightly different.
+     uninstallFunction() but slightly different.
 
    - Get/set specific heap memory values, analog to Emscripten's
      getValue() and setValue().
@@ -109,8 +115,8 @@
      following symbols:
 
      - `memory`: a WebAssembly.Memory object representing the WASM
-       memory. _Alternately_, the `memory` property can be set on the
-       target instance, in particular if the WASM heap memory is
+       memory. _Alternately_, the `memory` property can be set as
+       `target.memory`, in particular if the WASM heap memory is
        initialized in JS an _imported_ into WASM, as opposed to being
        initialized in WASM and exported to JS.
 
@@ -132,7 +138,11 @@
    false. If it is false, certain BigInt-related features will trigger
    an exception if invoked. This property, if not set when this is
    called, will get a default value of true only if the BigInt64Array
-   constructor is available, else it will default to false.
+   constructor is available, else it will default to false. Note that
+   having the BigInt type is not sufficient for full int64 integration
+   with WASM: the target WASM file must also have been built with
+   that support. In Emscripten that's done using the `-sWASM_BIGINT`
+   flag.
 
    Some optional APIs require that the target have the following
    methods:
@@ -212,9 +222,10 @@ self.WhWasmUtilInstaller = function(target){
      that will certainly change.
   */
   const ptrIR = target.pointerIR || 'i32';
-  const ptrSizeof = ('i32'===ptrIR ? 4
-                     : ('i64'===ptrIR
-                        ? 8 : toss("Unhandled ptrSizeof:",ptrIR)));
+  const ptrSizeof = target.ptrSizeof =
+        ('i32'===ptrIR ? 4
+         : ('i64'===ptrIR
+            ? 8 : toss("Unhandled ptrSizeof:",ptrIR)));
   /** Stores various cached state. */
   const cache = Object.create(null);
   /** Previously-recorded size of cache.memory.buffer, noted so that
@@ -294,7 +305,7 @@ self.WhWasmUtilInstaller = function(target){
      an integer as the first argument and unsigned is truthy then
      the "U" (unsigned) variant of that view is returned, else the
      signed variant is returned. If passed a TypedArray value, the
-     2nd argument is ignores. Note that Float32Array and
+     2nd argument is ignored. Note that Float32Array and
      Float64Array views are not supported by this function.
 
      Note that growth of the heap will invalidate any references to
@@ -326,7 +337,7 @@ self.WhWasmUtilInstaller = function(target){
           if(c.HEAP64) return unsigned ? c.HEAP64U : c.HEAP64;
           break;
         default:
-          if(this.bigIntEnabled){
+          if(target.bigIntEnabled){
             if(n===self['BigUint64Array']) return c.HEAP64U;
             else if(n===self['BigInt64Array']) return c.HEAP64;
             break;
@@ -334,7 +345,7 @@ self.WhWasmUtilInstaller = function(target){
     }
     toss("Invalid heapForSize() size: expecting 8, 16, 32,",
          "or (if BigInt is enabled) 64.");
-  }.bind(target);
+  };
 
   /**
      Returns the WASM-exported "indirect function table."
@@ -346,31 +357,33 @@ self.WhWasmUtilInstaller = function(target){
         - Use `__indirect_function_table` as the import name for the
         table, which is what LLVM does.
     */
-  }.bind(target);
+  };
 
   /**
      Given a function pointer, returns the WASM function table entry
      if found, else returns a falsy value.
   */
   target.functionEntry = function(fptr){
-    const ft = this.functionTable();
+    const ft = target.functionTable();
     return fptr < ft.length ? ft.get(fptr) : undefined;
-  }.bind(target);
+  };
 
   /**
      Creates a WASM function which wraps the given JS function and
      returns the JS binding of that WASM function. The signature
-     argument must be the Jaccwabyt-format or Emscripten
+     string must be the Jaccwabyt-format or Emscripten
      addFunction()-format function signature string. In short: in may
      have one of the following formats:
 
-     - Emscripten: `x...`, where the first x is a letter representing
+     - Emscripten: `"x..."`, where the first x is a letter representing
        the result type and subsequent letters represent the argument
-       types. See below.
+       types. Functions with no arguments have only a single
+       letter. See below.
 
-     - Jaccwabyt: `x(...)` where `x` is the letter representing the
+     - Jaccwabyt: `"x(...)"` where `x` is the letter representing the
        result type and letters in the parens (if any) represent the
-       argument types. See below.
+       argument types. Functions with no arguments use `x()`. See
+       below.
 
      Supported letters:
 
@@ -391,6 +404,9 @@ self.WhWasmUtilInstaller = function(target){
 
      Sidebar: this code is developed together with Jaccwabyt, thus the
      support for its signature format.
+
+     The arguments may be supplied in either order: (func,sig) or
+     (sig,func).
   */
   target.jsFuncToWasm = function f(func, sig){
     /** Attribution: adapted up from Emscripten-generated glue code,
@@ -399,9 +415,14 @@ self.WhWasmUtilInstaller = function(target){
     if(!f._){/*static init...*/
       f._ = {
         // Map of signature letters to type IR values
-        sigTypes: Object.create(null),
+        sigTypes: Object.assign(Object.create(null),{
+          i: 'i32', p: 'i32', P: 'i32', s: 'i32',
+          j: 'i64', f: 'f32', d: 'f64'
+        }),
         // Map of type IR values to WASM type code values
-        typeCodes: Object.create(null),
+        typeCodes: Object.assign(Object.create(null),{
+          f64: 0x7c, f32: 0x7d, i64: 0x7e, i32: 0x7f
+        }),
         /** Encodes n, which must be <2^14 (16384), into target array
             tgt, as a little-endian value, using the given method
             ('push' or 'unshift'). */
@@ -430,9 +451,9 @@ self.WhWasmUtilInstaller = function(target){
                   // is not yet documented on MDN. 
         sigToWasm: function(sig){
           const rc = {parameters:[], results: []};
-          if('v'!==sig[0]) rc.results.push(f._.letterType(sig[0]));
+          if('v'!==sig[0]) rc.results.push(f.sigTypes(sig[0]));
           for(const x of f._.sigParams(sig)){
-            rc.parameters.push(f._.letterType(x));
+            rc.parameters.push(f._.typeCodes(x));
           }
           return rc;
         },************/
@@ -441,11 +462,12 @@ self.WhWasmUtilInstaller = function(target){
             invalid. */
         pushSigType: (dest, letter)=>dest.push(f._.typeCodes[f._.letterType(letter)])
       };
-      f._.sigTypes.i = f._.sigTypes.p = f._.sigTypes.P = f._.sigTypes.s = 'i32';
-      f._.sigTypes.j = 'i64'; f._.sigTypes.f = 'f32'; f._.sigTypes.d = 'f64';
-      f._.typeCodes['i32'] = 0x7f; f._.typeCodes['i64'] = 0x7e;
-      f._.typeCodes['f32'] = 0x7d; f._.typeCodes['f64'] = 0x7c;
     }/*static init*/
+    if('string'===typeof func){
+      const x = sig;
+      sig = func;
+      func = x;
+    }
     const sigParams = f._.sigParams(sig);
     const wasmCode = [0x01/*count: 1*/, 0x60/*function*/];
     f._.uleb128Encode(wasmCode, 'push', sigParams.length);
@@ -482,8 +504,11 @@ self.WhWasmUtilInstaller = function(target){
      available slot of this.functionTable(), and returns the
      function's index in that table (which acts as a pointer to that
      function). The returned pointer can be passed to
-     removeFunction() to uninstall it and free up the table slot for
+     uninstallFunction() to uninstall it and free up the table slot for
      reuse.
+
+     If passed (string,function) arguments then it treats the first
+     argument as the signature and second as the function.
 
      As a special case, if the passed-in function is a WASM-exported
      function then the signature argument is ignored and func is
@@ -498,13 +523,21 @@ self.WhWasmUtilInstaller = function(target){
      Sidebar: this function differs from Emscripten's addFunction()
      _primarily_ in that it does not share that function's
      undocumented behavior of reusing a function if it's passed to
-     addFunction() more than once, which leads to removeFunction()
+     addFunction() more than once, which leads to uninstallFunction()
      breaking clients which do not take care to avoid that case:
 
      https://github.com/emscripten-core/emscripten/issues/17323
   */
   target.installFunction = function f(func, sig){
-    const ft = this.functionTable();
+    if(2!==arguments.length){
+      toss("installFunction() requires exactly 2 arguments");
+    }
+    if('string'===typeof func){
+      const x = sig;
+      sig = func;
+      func = x;
+    }
+    const ft = target.functionTable();
     const oldLen = ft.length;
     let ptr;
     while(cache.freeFuncIndexes.length){
@@ -532,13 +565,13 @@ self.WhWasmUtilInstaller = function(target){
     }
     // It's not a WASM-exported function, so compile one...
     try {
-      ft.set(ptr, this.jsFuncToWasm(func, sig));
+      ft.set(ptr, target.jsFuncToWasm(func, sig));
     }catch(e){
       if(ptr===oldLen) cache.freeFuncIndexes.push(oldLen);
       throw e;
     }
     return ptr;      
-  }.bind(target);
+  };
 
   /**
      Requires a pointer value previously returned from
@@ -551,12 +584,12 @@ self.WhWasmUtilInstaller = function(target){
   */
   target.uninstallFunction = function(ptr){
     const fi = cache.freeFuncIndexes;
-    const ft = this.functionTable();
+    const ft = target.functionTable();
     fi.push(ptr);
     const rc = ft.get(ptr);
     ft.set(ptr, null);
     return rc;
-  }.bind(target);
+  };
 
   /**
      Given a WASM heap memory address and a data type name in the form
@@ -602,6 +635,10 @@ self.WhWasmUtilInstaller = function(target){
      out) the pointer's value, else it will contain an essentially
      random value.
 
+     ACHTUNG: calling this often, e.g. in a loop, can have a noticably
+     painful impact on performance. Rather than doing so, use
+     heapForSize() to fetch the heap object and read directly from it.
+
      See: setMemValue()
   */
   target.getMemValue = function(ptr, type='i8'){
@@ -614,14 +651,14 @@ self.WhWasmUtilInstaller = function(target){
         case 'i16': return c.HEAP16[ptr>>1];
         case 'i32': return c.HEAP32[ptr>>2];
         case 'i64':
-          if(this.bigIntEnabled) return BigInt(c.HEAP64[ptr>>3]);
+          if(target.bigIntEnabled) return BigInt(c.HEAP64[ptr>>3]);
           break;
         case 'float': case 'f32': return c.HEAP32F[ptr>>2];
         case 'double': case 'f64': return Number(c.HEAP64F[ptr>>3]);
         default: break;
     }
     toss('Invalid type for getMemValue():',type);
-  }.bind(target);
+  };
 
   /**
      The counterpart of getMemValue(), this sets a numeric value at
@@ -632,6 +669,10 @@ self.WhWasmUtilInstaller = function(target){
      this function behaves as if the 3rd argument were `i32`.
 
      This function returns itself.
+
+     ACHTUNG: calling this often, e.g. in a loop, can have a noticably
+     painful impact on performance. Rather than doing so, use
+     heapForSize() to fetch the heap object and assign directly to it.
   */
   target.setMemValue = function f(ptr, value, type='i8'){
     if (type.endsWith('*')) type = ptrIR;
@@ -654,6 +695,15 @@ self.WhWasmUtilInstaller = function(target){
     toss('Invalid type for setMemValue(): ' + type);
   };
 
+
+  /** Convenience form of getMemValue() intended for fetching
+      pointer-to-pointer values. */
+  target.getPtrValue = (ptr)=>target.getMemValue(ptr, ptrIR);
+
+  /** Convenience form of setMemValue() intended for setting
+      pointer-to-pointer values. */
+  target.setPtrValue = (ptr, value)=>target.setMemValue(ptr, value, ptrIR);
+
   /**
      Expects ptr to be a pointer into the WASM heap memory which
      refers to a NUL-terminated C-style string encoded as UTF-8.
@@ -669,6 +719,18 @@ self.WhWasmUtilInstaller = function(target){
     return pos - ptr;
   };
 
+  /** Internal helper to use in operations which need to distinguish
+      between SharedArrayBuffer heap memory and non-shared heap. */
+  const __SAB = ('undefined'===typeof SharedArrayBuffer)
+        ? function(){} : SharedArrayBuffer;
+  const __utf8Decode = function(arrayBuffer, begin, end){
+    return cache.utf8Decoder.decode(
+      (arrayBuffer.buffer instanceof __SAB)
+        ? arrayBuffer.slice(begin, end)
+        : arrayBuffer.subarray(begin, end)
+    );
+  };
+
   /**
      Expects ptr to be a pointer into the WASM heap memory which
      refers to a NUL-terminated C-style string encoded as UTF-8. This
@@ -677,13 +739,9 @@ self.WhWasmUtilInstaller = function(target){
      ptr is falsy, `null` is returned.
   */
   target.cstringToJs = function(ptr){
-    const n = this.cstrlen(ptr);
-    if(null===n) return n;
-    return n
-      ? cache.utf8Decoder.decode(
-        new Uint8Array(heapWrappers().HEAP8U.buffer, ptr, n)
-      ) : "";
-  }.bind(target);
+    const n = target.cstrlen(ptr);
+    return n ? __utf8Decode(heapWrappers().HEAP8U, ptr, ptr+n) : (null===n ? n : "");
+  };
 
   /**
      Given a JS string, this function returns its UTF-8 length in
@@ -811,16 +869,16 @@ self.WhWasmUtilInstaller = function(target){
   */
   target.cstrncpy = function(tgtPtr, srcPtr, n){
     if(!tgtPtr || !srcPtr) toss("cstrncpy() does not accept NULL strings.");
-    if(n<0) n = this.cstrlen(strPtr)+1;
+    if(n<0) n = target.cstrlen(strPtr)+1;
     else if(!(n>0)) return 0;
-    const heap = this.heap8u();
+    const heap = target.heap8u();
     let i = 0, ch;
     for(; i < n && (ch = heap[srcPtr+i]); ++i){
       heap[tgtPtr+i] = ch;
     }
     if(i<n) heap[tgtPtr + i++] = 0;
     return i;
-  }.bind(target);
+  };
 
   /**
      For the given JS string, returns a Uint8Array of its contents
@@ -865,13 +923,13 @@ self.WhWasmUtilInstaller = function(target){
   };
 
   const __allocCStr = function(jstr, returnWithLength, allocator, funcName){
-    __affirmAlloc(this, funcName);
+    __affirmAlloc(target, funcName);
     if('string'!==typeof jstr) return null;
-    const n = this.jstrlen(jstr),
+    const n = target.jstrlen(jstr),
           ptr = allocator(n+1);
-    this.jstrcpy(jstr, this.heap8u(), ptr, n+1, true);
+    target.jstrcpy(jstr, target.heap8u(), ptr, n+1, true);
     return returnWithLength ? [ptr, n] : ptr;
-  }.bind(target);
+  };
 
   /**
      Uses target.alloc() to allocate enough memory for jstrlen(jstr)+1
@@ -924,11 +982,11 @@ self.WhWasmUtilInstaller = function(target){
      alloc levels are currently active.
    */
   target.scopedAllocPush = function(){
-    __affirmAlloc(this, 'scopedAllocPush');
+    __affirmAlloc(target, 'scopedAllocPush');
     const a = [];
     cache.scopedAlloc.push(a);
     return a;
-  }.bind(target);
+  };
 
   /**
      Cleans up all allocations made using scopedAlloc() in the context
@@ -953,15 +1011,15 @@ self.WhWasmUtilInstaller = function(target){
      trivial code that may be a non-issue.
   */
   target.scopedAllocPop = function(state){
-    __affirmAlloc(this, 'scopedAllocPop');
+    __affirmAlloc(target, 'scopedAllocPop');
     const n = arguments.length
           ? cache.scopedAlloc.indexOf(state)
           : cache.scopedAlloc.length-1;
     if(n<0) toss("Invalid state object for scopedAllocPop().");
     if(0===arguments.length) state = cache.scopedAlloc[n];
     cache.scopedAlloc.splice(n,1);
-    for(let p; (p = state.pop()); ) this.dealloc(p);
-  }.bind(target);
+    for(let p; (p = state.pop()); ) target.dealloc(p);
+  };
 
   /**
      Allocates n bytes of memory using this.alloc() and records that
@@ -983,10 +1041,10 @@ self.WhWasmUtilInstaller = function(target){
     if(!cache.scopedAlloc.length){
       toss("No scopedAllocPush() scope is active.");
     }
-    const p = this.alloc(n);
+    const p = target.alloc(n);
     cache.scopedAlloc[cache.scopedAlloc.length-1].push(p);
     return p;
-  }.bind(target);
+  };
 
   Object.defineProperty(target.scopedAlloc, 'level', {
     configurable: false, enumerable: false,
@@ -1004,6 +1062,42 @@ self.WhWasmUtilInstaller = function(target){
     (jstr, returnWithLength=false)=>__allocCStr(jstr, returnWithLength,
                                                 target.scopedAlloc, 'scopedAllocCString()');
 
+  // impl for allocMainArgv() and scopedAllocMainArgv().
+  const __allocMainArgv = function(isScoped, list){
+    if(!list.length) toss("Cannot allocate empty array.");
+    const pList = target[
+      isScoped ? 'scopedAlloc' : 'alloc'
+    ](list.length * target.ptrSizeof);
+    let i = 0;
+    list.forEach((e)=>{
+      target.setPtrValue(pList + (target.ptrSizeof * i++),
+                         target[
+                           isScoped ? 'scopedAllocCString' : 'allocCString'
+                         ](""+e));
+    });
+    return pList;
+  };
+
+  /**
+     Creates an array, using scopedAlloc(), suitable for passing to a
+     C-level main() routine. The input is a collection with a length
+     property and a forEach() method. A block of memory list.length
+     entries long is allocated and each pointer-sized block of that
+     memory is populated with a scopedAllocCString() conversion of the
+     (''+value) of each element. Returns a pointer to the start of the
+     list, suitable for passing as the 2nd argument to a C-style
+     main() function.
+
+     Throws if list.length is falsy or scopedAllocPush() is not active.
+  */
+  target.scopedAllocMainArgv = (list)=>__allocMainArgv(true, list);
+
+  /**
+     Identical to scopedAllocMainArgv() but uses alloc() instead of
+     scopedAllocMainArgv
+  */
+  target.allocMainArgv = (list)=>__allocMainArgv(false, list);
+
   /**
      Wraps function call func() in a scopedAllocPush() and
      scopedAllocPop() block, such that all calls to scopedAlloc() and
@@ -1013,33 +1107,41 @@ self.WhWasmUtilInstaller = function(target){
      result of calling func().
   */
   target.scopedAllocCall = function(func){
-    this.scopedAllocPush();
-    try{ return func() } finally{ this.scopedAllocPop() }
-  }.bind(target);
+    target.scopedAllocPush();
+    try{ return func() } finally{ target.scopedAllocPop() }
+  };
 
   /** Internal impl for allocPtr() and scopedAllocPtr(). */
-  const __allocPtr = function(howMany, method){
-    __affirmAlloc(this, method);
-    let m = this[method](howMany * ptrSizeof);
-    this.setMemValue(m, 0, ptrIR)
+  const __allocPtr = function(howMany, safePtrSize, method){
+    __affirmAlloc(target, method);
+    const pIr = safePtrSize ? 'i64' : ptrIR;
+    let m = target[method](howMany * (safePtrSize ? 8 : ptrSizeof));
+    target.setMemValue(m, 0, pIr)
     if(1===howMany){
       return m;
     }
     const a = [m];
     for(let i = 1; i < howMany; ++i){
-      m += ptrSizeof;
+      m += (safePtrSize ? 8 : ptrSizeof);
       a[i] = m;
-      this.setMemValue(m, 0, ptrIR);
+      target.setMemValue(m, 0, pIr);
     }
     return a;
-  }.bind(target);  
+  };
 
   /**
-     Allocates a single chunk of memory capable of holding `howMany`
-     pointers and zeroes them out. If `howMany` is 1 then the memory
-     chunk is returned directly, else an array of pointer addresses is
-     returned, which can optionally be used with "destructuring
-     assignment" like this:
+     Allocates one or more pointers as a single chunk of memory and
+     zeroes them out.
+
+     The first argument is the number of pointers to allocate. The
+     second specifies whether they should use a "safe" pointer size (8
+     bytes) or whether they may use the default pointer size
+     (typically 4 but also possibly 8).
+
+     How the result is returned depends on its first argument: if
+     passed 1, it returns the allocated memory address. If passed more
+     than one then an array of pointer addresses is returned, which
+     can optionally be used with "destructuring assignment" like this:
 
      ```
      const [p1, p2, p3] = allocPtr(3);
@@ -1048,14 +1150,27 @@ self.WhWasmUtilInstaller = function(target){
      ACHTUNG: when freeing the memory, pass only the _first_ result
      value to dealloc(). The others are part of the same memory chunk
      and must not be freed separately.
+
+     The reason for the 2nd argument is..
+
+     When one of the returned pointers will refer to a 64-bit value,
+     e.g. a double or int64, an that value must be written or fetched,
+     e.g. using setMemValue() or getMemValue(), it is important that
+     the pointer in question be aligned to an 8-byte boundary or else
+     it will not be fetched or written properly and will corrupt or
+     read neighboring memory. It is only safe to pass false when the
+     client code is certain that it will only get/fetch 4-byte values
+     (or smaller).
   */
-  target.allocPtr = (howMany=1)=>__allocPtr(howMany, 'alloc');
+  target.allocPtr =
+    (howMany=1, safePtrSize=true)=>__allocPtr(howMany, safePtrSize, 'alloc');
 
   /**
      Identical to allocPtr() except that it allocates using scopedAlloc()
      instead of alloc().
   */
-  target.scopedAllocPtr = (howMany=1)=>__allocPtr(howMany, 'scopedAlloc');
+  target.scopedAllocPtr =
+    (howMany=1, safePtrSize=true)=>__allocPtr(howMany, safePtrSize, 'scopedAlloc');
 
   /**
      If target.exports[name] exists, it is returned, else an
@@ -1070,11 +1185,11 @@ self.WhWasmUtilInstaller = function(target){
   
   /**
      Looks up a WASM-exported function named fname from
-     target.exports.  If found, it is called, passed all remaining
+     target.exports. If found, it is called, passed all remaining
      arguments, and its return value is returned to xCall's caller. If
      not found, an exception is thrown. This function does no
-     conversion of argument or return types, but see xWrap()
-     and xCallWrapped() for variants which do.
+     conversion of argument or return types, but see xWrap() and
+     xCallWrapped() for variants which do.
 
      As a special case, if passed only 1 argument after the name and
      that argument in an Array, that array's entries become the
@@ -1082,7 +1197,7 @@ self.WhWasmUtilInstaller = function(target){
      not legal to pass an Array object to a WASM function.)
   */
   target.xCall = function(fname, ...args){
-    const f = this.xGet(fname);
+    const f = target.xGet(fname);
     if(!(f instanceof Function)) toss("Exported symbol",fname,"is not a function.");
     if(f.length!==args.length) __argcMismatch(fname,f.length)
     /* This is arguably over-pedantic but we want to help clients keep
@@ -1090,7 +1205,7 @@ self.WhWasmUtilInstaller = function(target){
     return (2===arguments.length && Array.isArray(arguments[1]))
       ? f.apply(null, arguments[1])
       : f.apply(null, args);
-  }.bind(target);
+  };
 
   /**
      State for use with xWrap()
@@ -1102,21 +1217,27 @@ self.WhWasmUtilInstaller = function(target){
   /** Map of type names to return result conversion functions. */
   cache.xWrap.convert.result = Object.create(null);
 
-  xcv.arg.i64 = (i)=>BigInt(i);
+  if(target.bigIntEnabled){
+    xcv.arg.i64 = (i)=>BigInt(i);
+  }
   xcv.arg.i32 = (i)=>(i | 0);
   xcv.arg.i16 = (i)=>((i | 0) & 0xFFFF);
   xcv.arg.i8  = (i)=>((i | 0) & 0xFF);
   xcv.arg.f32 = xcv.arg.float = (i)=>Number(i).valueOf();
   xcv.arg.f64 = xcv.arg.double = xcv.arg.f32;
   xcv.arg.int = xcv.arg.i32;
-  xcv.result['*'] = xcv.result['pointer'] = xcv.arg[ptrIR];
+  xcv.result['*'] = xcv.result['pointer'] = xcv.arg['**'] = xcv.arg[ptrIR];
+  xcv.result['number'] = (v)=>Number(v);
 
-  for(const t of ['i8', 'i16', 'i32', 'int', 'i64',
-                  'f32', 'float', 'f64', 'double']){
-    xcv.arg[t+'*'] = xcv.result[t+'*'] = xcv.arg[ptrIR]
-    xcv.result[t] = xcv.arg[t] || toss("Missing arg converter:",t);
+  {
+    const copyToResult = ['i8', 'i16', 'i32', 'int',
+                          'f32', 'float', 'f64', 'double'];
+    if(target.bigIntEnabled) copyToResult.push('i64');
+    for(const t of copyToResult){
+      xcv.arg[t+'*'] = xcv.result[t+'*'] = xcv.arg[ptrIR];
+      xcv.result[t] = xcv.arg[t] || toss("Missing arg converter:",t);
+    }
   }
-  xcv.arg['**'] = xcv.arg[ptrIR];
 
   /**
      In order for args of type string to work in various contexts in
@@ -1134,17 +1255,18 @@ self.WhWasmUtilInstaller = function(target){
      Would that be too much magic concentrated in one place, ready to
      backfire?
   */
-  xcv.arg.string = xcv.arg['pointer'] = xcv.arg['*'] = function(v){
-    if('string'===typeof v) return target.scopedAllocCString(v);
-    return v ? xcv.arg[ptrIR](v) : null;
-  };
-  xcv.result.string = (i)=>target.cstringToJs(i);
-  xcv.result['string:free'] = function(i){
+  xcv.arg.string = xcv.arg.utf8 = xcv.arg['pointer'] = xcv.arg['*']
+    = function(v){
+      if('string'===typeof v) return target.scopedAllocCString(v);
+      return v ? xcv.arg[ptrIR](v) : null;
+    };
+  xcv.result.string = xcv.result.utf8 = (i)=>target.cstringToJs(i);
+  xcv.result['string:free'] = xcv.result['utf8:free'] = (i)=>{
     try { return i ? target.cstringToJs(i) : null }
     finally{ target.dealloc(i) }
   };
   xcv.result.json = (i)=>JSON.parse(target.cstringToJs(i));
-  xcv.result['json:free'] = function(i){
+  xcv.result['json:free'] = (i)=>{
     try{ return i ? JSON.parse(target.cstringToJs(i)) : null }
     finally{ target.dealloc(i) }
   }
@@ -1164,19 +1286,19 @@ self.WhWasmUtilInstaller = function(target){
     */
     xcv.arg['func-ptr'] = function(v){
       if(!(v instanceof Function)) return xcv.arg[ptrIR];
-      const f = this.jsFuncToWasm(v, WHAT_SIGNATURE);
-    }.bind(target);
+      const f = target.jsFuncToWasm(v, WHAT_SIGNATURE);
+    };
   }
 
-  const __xArgAdapter =
+  const __xArgAdapterCheck =
         (t)=>xcv.arg[t] || toss("Argument adapter not found:",t);
 
-  const __xResultAdapter =
+  const __xResultAdapterCheck =
         (t)=>xcv.result[t] || toss("Result adapter not found:",t);
   
-  cache.xWrap.convertArg = (t,v)=>__xArgAdapter(t)(v);
+  cache.xWrap.convertArg = (t,v)=>__xArgAdapterCheck(t)(v);
   cache.xWrap.convertResult =
-    (t,v)=>(null===t ? v : (t ? __xResultAdapter(t)(v) : undefined));
+    (t,v)=>(null===t ? v : (t ? __xResultAdapterCheck(t)(v) : undefined));
 
   /**
      Creates a wrapper for the WASM-exported function fname. Uses
@@ -1239,43 +1361,63 @@ self.WhWasmUtilInstaller = function(target){
        type. It's primarily intended to mark output-pointer arguments.
 
      - `i64` (args and results): passes the value to BigInt() to
-       convert it to an int64.
+       convert it to an int64. Only available if bigIntEnabled is
+       true.
 
      - `f32` (`float`), `f64` (`double`) (args and results): pass
        their argument to Number(). i.e. the adaptor does not currently
        distinguish between the two types of floating-point numbers.
 
+     - `number` (results): converts the result to a JS Number using
+       Number(theValue).valueOf(). Note that this is for result
+       conversions only, as it's not possible to generically know
+       which type of number to convert arguments to.
+
      Non-numeric conversions include:
 
-     - `string` (args): has two different semantics in order to
-       accommodate various uses of certain C APIs (e.g. output-style
-       strings)...
+     - `string` or `utf8` (args): has two different semantics in order
+       to accommodate various uses of certain C APIs
+       (e.g. output-style strings)...
 
-       - If the arg is a string, it creates a _temporary_ C-string to
-         pass to the exported function, cleaning it up before the
-         wrapper returns. If a long-lived C-string pointer is
-         required, that requires client-side code to create the
-         string, then pass its pointer to the function.
+       - If the arg is a string, it creates a _temporary_
+         UTF-8-encoded C-string to pass to the exported function,
+         cleaning it up before the wrapper returns. If a long-lived
+         C-string pointer is required, that requires client-side code
+         to create the string, then pass its pointer to the function.
 
        - Else the arg is assumed to be a pointer to a string the
          client has already allocated and it's passed on as
          a WASM pointer.
 
-     - `string` (results): treats the result value as a const C-string,
-       copies it to a JS string, and returns that JS string.
+       - `string` or `utf8` (results): treats the result value as a
+         const C-string, encoded as UTF-8, copies it to a JS string,
+         and returns that JS string.
 
-     - `string:free` (results): treats the result value as a non-const
-       C-string, ownership of which has just been transfered to the
-       caller. It copies the C-string to a JS string, frees the
-       C-string, and returns the JS string. If such a result value is
-       NULL, the JS result is `null`.
+     - `string:free` or `utf8:free) (results): treats the result value
+       as a non-const UTF-8 C-string, ownership of which has just been
+       transfered to the caller. It copies the C-string to a JS
+       string, frees the C-string, and returns the JS string. If such
+       a result value is NULL, the JS result is `null`. Achtung: when
+       using an API which returns results from a specific allocator,
+       e.g. `my_malloc()`, this conversion _is not legal_. Instead, an
+       equivalent conversion which uses the appropriate deallocator is
+       required. For example:
+
+```js
+   target.xWrap.resultAdaptor('string:my_free',(i)=>{
+      try { return i ? target.cstringToJs(i) : null }
+      finally{ target.exports.my_free(i) }
+   };
+```
 
      - `json` (results): treats the result as a const C-string and
        returns the result of passing the converted-to-JS string to
        JSON.parse(). Returns `null` if the C-string is a NULL pointer.
 
      - `json:free` (results): works exactly like `string:free` but
-       returns the same thing as the `json` adapter.
+       returns the same thing as the `json` adapter. Note the
+       warning in `string:free` regarding maching allocators and
+       deallocators.
 
      The type names for results and arguments are validated when
      xWrap() is called and any unknown names will trigger an
@@ -1310,34 +1452,32 @@ self.WhWasmUtilInstaller = function(target){
     if(3===arguments.length && Array.isArray(arguments[2])){
       argTypes = arguments[2];
     }
-    const xf = this.xGet(fname);
-    if(argTypes.length!==xf.length) __argcMismatch(fname, xf.length)
+    const xf = target.xGet(fname);
+    if(argTypes.length!==xf.length) __argcMismatch(fname, xf.length);
     if((null===resultType) && 0===xf.length){
       /* Func taking no args with an as-is return. We don't need a wrapper. */
       return xf;
     }
     /*Verify the arg type conversions are valid...*/;
-    if(undefined!==resultType && null!==resultType) __xResultAdapter(resultType);
-    argTypes.forEach(__xArgAdapter)
+    if(undefined!==resultType && null!==resultType) __xResultAdapterCheck(resultType);
+    argTypes.forEach(__xArgAdapterCheck);
     if(0===xf.length){
       // No args to convert, so we can create a simpler wrapper...
-      return function(){
-        return (arguments.length
-                ? __argcMismatch(fname, xf.length)
-                : cache.xWrap.convertResult(resultType, xf.call(null)));
-      };
+      return (...args)=>(args.length
+                         ? __argcMismatch(fname, xf.length)
+                         : cache.xWrap.convertResult(resultType, xf.call(null)));
     }
     return function(...args){
       if(args.length!==xf.length) __argcMismatch(fname, xf.length);
-      const scope = this.scopedAllocPush();
+      const scope = target.scopedAllocPush();
       try{
         const rc = xf.apply(null,args.map((v,i)=>cache.xWrap.convertArg(argTypes[i], v)));
         return cache.xWrap.convertResult(resultType, rc);
       }finally{
-        this.scopedAllocPop(scope);
+        target.scopedAllocPop(scope);
       }
-    }.bind(this);
-  }.bind(target)/*xWrap()*/;
+    };
+  }/*xWrap()*/;
 
   /** Internal impl for xWrap.resultAdapter() and argAdaptor(). */
   const __xAdapter = function(func, argc, typeName, adapter, modeName, xcvPart){
@@ -1428,11 +1568,10 @@ self.WhWasmUtilInstaller = function(target){
      type name, as documented for xWrap() (use a falsy value or an
      empty array for nullary functions). The 4th+ arguments are
      arguments for the call, with the special case that if the 4th
-     argument is an array, it is used as the arguments for the call
-     (again, falsy or an empty array for nullary functions). Returns
-     the converted result of the call.
+     argument is an array, it is used as the arguments for the
+     call. Returns the converted result of the call.
 
-     This is just a thin wrapp around xWrap(). If the given function
+     This is just a thin wrapper around xWrap(). If the given function
      is to be called more than once, it's more efficient to use
      xWrap() to create a wrapper, then to call that wrapper as many
      times as needed. For one-shot calls, however, this variant is
@@ -1441,9 +1580,9 @@ self.WhWasmUtilInstaller = function(target){
   */
   target.xCallWrapped = function(fname, resultType, argTypes, ...args){
     if(Array.isArray(arguments[3])) args = arguments[3];
-    return this.xWrap(fname, resultType, argTypes||[]).apply(null, args||[]);
-  }.bind(target);
-  
+    return target.xWrap(fname, resultType, argTypes||[]).apply(null, args||[]);
+  };
+
   return target;
 };
 
@@ -1455,11 +1594,11 @@ self.WhWasmUtilInstaller = function(target){
 
    - `onload(loadResult,config)`: optional callback. The first
      argument is the result object from
-     WebAssembly.instanitate[Streaming](). The 2nd is the config
+     WebAssembly.instantiate[Streaming](). The 2nd is the config
      object passed to this function. Described in more detail below.
 
    - `imports`: optional imports object for
-     WebAssembly.instantiate[Streaming](). The default is am empty set
+     WebAssembly.instantiate[Streaming](). The default is an empty set
      of imports. If the module requires any imports, this object
      must include them.
 
@@ -1522,10 +1661,11 @@ self.WhWasmUtilInstaller.yawl = function(config){
           || toss("Missing 'memory' object!");
       }
       if(!tgt.alloc && arg.instance.exports.malloc){
+        const exports = arg.instance.exports;
         tgt.alloc = function(n){
-          return this(n) || toss("Allocation of",n,"bytes failed.");
-        }.bind(arg.instance.exports.malloc);
-        tgt.dealloc = function(m){this(m)}.bind(arg.instance.exports.free);
+          return exports.malloc(n) || toss("Allocation of",n,"bytes failed.");
+        };
+        tgt.dealloc = function(m){exports.free(m)};
       }
       wui(tgt);
     }
