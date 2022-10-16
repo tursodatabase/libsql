@@ -1,5 +1,5 @@
-C Minor\stweak\sto\sget\sbring\san\sedge\scase\sof\soo1.DB.createFunction()\sinto\saggreement\swith\sits\sdocs.
-D 2022-10-16T18:57:15.939
+C Typo\sfix.
+D 2022-10-16T23:33:24.941
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -508,7 +508,7 @@ F ext/wasm/fiddle/emscripten.css 3d253a6fdb8983a2ac983855bfbdd4b6fa1ff267c28d695
 F ext/wasm/fiddle/fiddle-worker.js 531859a471924a0ea48afa218e6877f0c164ca324d51e15843ed6ecc1c65c7ee
 F ext/wasm/fiddle/fiddle.html 5daf54e8f3d7777cbb1ca4f93affe28858dbfff25841cb4ab81d694efed28ec2
 F ext/wasm/fiddle/fiddle.js 974b995119ac443685d7d94d3b3c58c6a36540e9eb3fed7069d5653284071715
-F ext/wasm/index.html f41ff0b3cef07196b18f3f917c46560a0d5289064d344b438b254c41ed0f2c76
+F ext/wasm/index.html d75b516236c6869568ff691b9b7ff61307d6436e059b5657dadc473b6f41e581
 F ext/wasm/jaccwabyt/jaccwabyt.js 0d7f32817456a0f3937fcfd934afeb32154ca33580ab264dab6c285e6dbbd215
 F ext/wasm/jaccwabyt/jaccwabyt.md 9aa6951b529a8b29f578ec8f0355713c39584c92cf1708f63ba0cf917cb5b68e
 F ext/wasm/scratchpad-wasmfs-main.html 20cf6f1a8f368e70d01e8c17200e3eaa90f1c8e1029186d836d14b83845fbe06
@@ -2033,8 +2033,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a7db6e4b50beebfb1c97e0c4de49538d8199c166b18a0b1b175736c593128a00
-R 3422110515a596def98dff69dd1bdfc7
+P 8d59ccd9f357fbed0b0790508ca9027194fc4b0131029f9f460c7b4bde806a5f
+R 7eb92d13aa47fc635e45e77480d0d518
 U stephan
-Z eb1680ea30bd7067803bb7e8ee35441a
+Z e9d4f2e253f6a0945cb00e8689db7471
 # Remove this line to create a well-formed Fossil manifest.
