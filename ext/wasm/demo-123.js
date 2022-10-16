@@ -160,7 +160,7 @@
       log("Create a scalar UDF...");
       db.createFunction({
         name: 'twice',
-        callback: function(pCx, arg){ // note the call arg count
+        xFunc: function(pCx, arg){ // note the call arg count
           return arg + arg;
         }
       });

@@ -1179,14 +1179,14 @@
         assert(5===db.selectValue("select foo($a,$b)",{$a:0,$b:5}));
       db.createFunction("bar", {
         arity: -1,
-        callback: function(pCx){
-          var rc = 0;
-          for(let i = 1; i < arguments.length; ++i) rc += arguments[i];
+        xFunc: (pCx,...args)=>{
+          let rc = 0;
+          for(const v of args) rc += v;
           return rc;
         }
       }).createFunction({
         name: "asis",
-        callback: (pCx,arg)=>arg
+        xFunc: (pCx,arg)=>arg
       });
       T.assert(0===db.selectValue("select bar()")).
         assert(1===db.selectValue("select bar(1)")).
@@ -1225,9 +1225,64 @@
 
   ////////////////////////////////////////////////////////////////////
     .t({
-      name: 'Aggregate UDFs (tests are TODO)',
-      predicate: testIsTodo
-    })
+      name: 'Aggregate UDFs',
+      test: function(sqlite3){
+        const db = this.db;
+        const aggState = {summer: 0, summerN: 0};
+        db.createFunction({
+          name: 'summer',
+          xStep: function(pCtx, n){
+            aggState.summer += n;
+          },
+          xFinal: function(pCtx){
+            const rc = aggState.summer;
+            aggState.summer = 0;
+            return rc;
+          }
+        });
+        let v = db.selectValue([
+          "with cte(v) as (",
+          "select 3 union all select 5 union all select 7",
+          ") select summer(v) from cte"
+        ]);
+        T.assert(15===v);
+        T.mustThrowMatching(()=>db.selectValue("select summer(1,2)"),
+                            /wrong number of arguments/);
+        db.createFunction({
+          name: 'summerN',
+          arity: -1,
+          xStep: function(pCtx, ...args){
+            for(const v of args) aggState.summerN += v;
+          },
+          xFinal: function(pCtx){
+            const rc = aggState.summerN;
+            aggState.summerN = 0;
+            return rc;
+          }
+        }); 
+        T.assert(18===db.selectValue('select summerN(1,8,9)'));
+        T.mustThrowMatching(()=>{
+          db.createFunction('nope',{
+            xFunc: ()=>{}, xStep: ()=>{}
+          });
+        }, /scalar or aggregate\?/);
+        T.mustThrowMatching(()=>{
+          db.createFunction('nope',{xStep: ()=>{}});
+        }, /Missing xFinal/);
+        T.mustThrowMatching(()=>{
+          db.createFunction('nope',{xFinal: ()=>{}});
+        }, /Missing xStep/);
+        T.mustThrowMatching(()=>{
+          db.createFunction('nope',{});
+        }, /Missing function-type properties/);
+        T.mustThrowMatching(()=>{
+          db.createFunction('nope',{xFunc:()=>{}, xDestroy:'nope'});
+        }, /xDestroy property must be a function/);
+        T.mustThrowMatching(()=>{
+          db.createFunction('nope',{xFunc:()=>{}, pApp:'nope'});
+        }, /Invalid value for pApp/);
+     }
+    }/*aggregate UDFs*/)
 
   ////////////////////////////////////////////////////////////////////
     .t({
