@@ -696,10 +696,10 @@
         if(autoResolvePtr){
           wts.$ppV = 0;
           T.assert(!wts.$ppV);
-          WTStruct.debugFlags(0x03);
+          //WTStruct.debugFlags(0x03);
           wts.$ppV = wts;
           T.assert(wts === wts.$ppV)
-          WTStruct.debugFlags(0);
+          //WTStruct.debugFlags(0);
         }
         wts.setMemberCString('cstr', "A C-string.");
         T.assert(Array.isArray(wts.ondispose)).
@@ -1022,7 +1022,7 @@
   ;/*end of C/WASM utils checks*/
 
   ////////////////////////////////////////////////////////////////////////
-  T.g('sqlite3.oo1 sanity checks')
+  T.g('sqlite3.oo1')
     .t('Create db', function(sqlite3){
       const db = this.db = new sqlite3.oo1.DB();
       T.assert(Number.isInteger(db.pointer)).
@@ -1037,8 +1037,7 @@
     })
 
   ////////////////////////////////////////////////////////////////////
-    .t('DB.Stmt sanity checks', function(S){
-      let pId;
+    .t('DB.Stmt', function(S){
       let st = this.db.prepare(
         new TextEncoder('utf-8').encode("select 3 as a")
       );
@@ -1073,7 +1072,6 @@
           .assert(false===st.step())
           .assert(!st._mayGet)
         ;
-        pId = st.pointer;
         T.assert(0===capi.sqlite3_strglob("*.txt", "foo.txt")).
           assert(0!==capi.sqlite3_strglob("*.txt", "foo.xtx")).
           assert(0===capi.sqlite3_strlike("%.txt", "foo.txt", 0)).

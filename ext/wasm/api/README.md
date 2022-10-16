@@ -48,6 +48,10 @@ browser client:
   Invokes functionality exposed by the previous two files to
   flesh out low-level parts of `sqlite3-api-prologue.js`. Most of
   these pieces related to the `sqlite3.capi.wasm` object.
+- `sqlite3-api-build-version.js`\  
+  Gets created by the build process and populates the
+  `sqlite3.version` object. This part is not critical, but records the
+  version of the library against which this module was built.
 - `sqlite3-api-oo1.js`\  
   Provides a high-level object-oriented wrapper to the lower-level C
   API, colloquially known as OO API #1. Its API is similar to other

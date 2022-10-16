@@ -1282,6 +1282,17 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     capi,
     config,
     /**
+       Holds the version info of the sqlite3 source tree from which
+       the generated sqlite3-api.js gets built. Note that its version
+       may well differ from that reported by sqlite3_libversion(), but
+       that should be considered a source file mismatch, as the JS and
+       WASM files are intended to be built and distributed together.
+
+       This object is initially a placeholder which gets replaced by a
+       build-generated object.
+    */
+    version: Object.create(null),
+    /**
        Performs any optional asynchronous library-level initialization
        which might be required. This function returns a Promise which
        resolves to the sqlite3 namespace object. Any error in the
