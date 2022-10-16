@@ -915,8 +915,9 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         toss3("Missing function-type properties.");
       }
       const pApp = opt.pApp;
-      if(undefined!==pApp && (('number'!==typeof pApp)
-                              || !capi.util.isInt32(pApp))){
+      if(undefined!==pApp &&
+         null!==pApp &&
+         (('number'!==typeof pApp) || !capi.util.isInt32(pApp))){
         toss3("Invalid value for pApp property. Must be a legal WASM pointer value.");
       }
       const xDestroy = opt.xDestroy;
