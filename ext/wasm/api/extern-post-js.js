@@ -1,5 +1,6 @@
 /* extern-post-js.js must be appended to the resulting sqlite3.js
-   file. */
+   file. It gets its name from being used as the value for
+   the --extern-post-js=... Emscripten flag. */
 (function(){
   /**
      In order to hide the sqlite3InitModule()'s resulting Emscripten
