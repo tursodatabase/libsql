@@ -1,5 +1,5 @@
-C Initial\sdraft\sof\sarchive\sgeneration\sfor\sthe\swasm/js\sdeliverables.
-D 2022-10-17T17:34:41.824
+C Add\sext/wasm/README-dist.txt,\sintended\sto\shave\sbeen\sin\sthe\sprevious\scheckin.
+D 2022-10-17T17:36:11.919
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -474,6 +474,7 @@ F ext/userauth/userauth.c 7f00cded7dcaa5d47f54539b290a43d2e59f4b1eb5f447545fa865
 F ext/wasm/EXPORTED_FUNCTIONS.fiddle.in 27450c8b8c70875a260aca55435ec927068b34cef801a96205adb81bdcefc65c
 F ext/wasm/EXPORTED_RUNTIME_METHODS.fiddle 0e88c8cfc3719e4b7e74980d9da664c709e68acf863e48386cda376edfd3bfb0
 F ext/wasm/GNUmakefile 2fd83d7183bce3f9236fdd2dbe20a4ea37b1d7b26e1a422054ec63008319f065
+F ext/wasm/README-dist.txt bc1fb4f90a28ad2ed0e555a637f393b9249d8d928ac509dad6293b7cae628ea4
 F ext/wasm/README.md 1e5b28158b74ab3ffc9d54fcbc020f0bbeb82c2ff8bbd904214c86c70e8a3066
 F ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-api 89983a8d122c35a90c65ec667844b95a78bcd04f3198a99c1e0c8368c1a0b03a
 F ext/wasm/api/EXPORTED_RUNTIME_METHODS.sqlite3-api 1ec3c73e7d66e95529c3c64ac3de2470b0e9e7fbf7a5b41261c367cf4f1b7287
@@ -2034,8 +2035,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6e511df500c63e27f932be9d601b641144562614dead99371477eca4594fb3fd
-R ac89799bd8dcc9e62a5727e545f26c38
+P f6cee114c71e11ca1f508c8f60be5753871cbd4fd6c45ce397824bddbf00ffd9
+R 94e4f6969f6fba48019898e2b4d88284
 U stephan
-Z 4dda775375ae46314750ace83110f63b
+Z 0dd260cfe444ff6950e06a618165a6ba
 # Remove this line to create a well-formed Fossil manifest.
