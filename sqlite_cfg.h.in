@@ -1,4 +1,4 @@
-/* config.h.in.  Generated from configure.ac by autoheader.  */
+/* sqlite_cfg.h.in.  Generated from configure.ac by autoheader.  */
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
@@ -45,16 +45,16 @@
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 
-/* Define to 1 if you have the pread() function. */
+/* Define to 1 if you have the `pread' function. */
 #undef HAVE_PREAD
 
-/* Define to 1 if you have the pread64() function. */
+/* Define to 1 if you have the `pread64' function. */
 #undef HAVE_PREAD64
 
-/* Define to 1 if you have the pwrite() function. */
+/* Define to 1 if you have the `pwrite' function. */
 #undef HAVE_PWRITE
 
-/* Define to 1 if you have the pwrite64() function. */
+/* Define to 1 if you have the `pwrite64' function. */
 #undef HAVE_PWRITE64
 
 /* Define to 1 if you have the <stdint.h> header file. */
@@ -63,7 +63,7 @@
 /* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
 
-/* Define to 1 if you have the strchrnul() function */
+/* Define to 1 if you have the `strchrnul' function. */
 #undef HAVE_STRCHRNUL
 
 /* Define to 1 if you have the <strings.h> header file. */
@@ -99,8 +99,11 @@
 /* Define to 1 if you have the `usleep' function. */
 #undef HAVE_USLEEP
 
-/* Define to 1 if you have the utime() library function. */
+/* Define to 1 if you have the `utime' function. */
 #undef HAVE_UTIME
+
+/* Define to 1 if you have the <zlib.h> header file. */
+#undef HAVE_ZLIB_H
 
 /* Define to the sub-directory in which libtool stores uninstalled libraries.
    */
@@ -118,11 +121,19 @@
 /* Define to the one symbol short name of this package. */
 #undef PACKAGE_TARNAME
 
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
+
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
+
+/* Enable large inode numbers on Mac OS X 10.5.  */
+#ifndef _DARWIN_USE_64_BIT_INODE
+# define _DARWIN_USE_64_BIT_INODE 1
+#endif
 
 /* Number of bits in a file offset, on hosts where this is settable. */
 #undef _FILE_OFFSET_BITS

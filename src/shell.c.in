@@ -85,6 +85,14 @@
 # define _LARGEFILE_SOURCE 1
 #endif
 
+#if defined(SQLITE_SHELL_FIDDLE) && !defined(_POSIX_SOURCE)
+/*
+** emcc requires _POSIX_SOURCE (or one of several similar defines)
+** to expose strdup().
+*/
+# define _POSIX_SOURCE
+#endif
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -672,7 +680,7 @@ static char *local_getline(char *zLine, FILE *in){
   if( stdin_is_interactive && in==stdin ){
     char *zTrans = sqlite3_win32_mbcs_to_utf8_v2(zLine, 0);
     if( zTrans ){
-      int nTrans = strlen30(zTrans)+1;
+      i64 nTrans = strlen(zTrans)+1;
       if( nTrans>nLine ){
         zLine = realloc(zLine, nTrans);
         shell_check_oom(zLine);
@@ -808,9 +816,9 @@ static void freeText(ShellText *p){
 ** quote character for zAppend.
 */
 static void appendText(ShellText *p, const char *zAppend, char quote){
-  int len;
-  int i;
-  int nAppend = strlen30(zAppend);
+  i64 len;
+  i64 i;
+  i64 nAppend = strlen30(zAppend);
 
   len = nAppend+p->n+1;
   if( quote ){
@@ -1164,6 +1172,7 @@ struct ShellState {
   struct {
     const char * zInput; /* Input string from wasm/JS proxy */
     const char * zPos;   /* Cursor pos into zInput */
+    const char * zDefaultDbName; /* Default name for db file */
   } wasm;
 #endif
 };
@@ -1676,9 +1685,9 @@ static void output_c_string(FILE *out, const char *z){
 /*
 ** Output the given string as a quoted according to JSON quoting rules.
 */
-static void output_json_string(FILE *out, const char *z, int n){
+static void output_json_string(FILE *out, const char *z, i64 n){
   unsigned int c;
-  if( n<0 ) n = (int)strlen(z);
+  if( n<0 ) n = strlen(z);
   fputc('"', out);
   while( n-- ){
     c = *(z++);
@@ -1981,7 +1990,7 @@ static int wsToEol(const char *z){
 */
 static void eqp_append(ShellState *p, int iEqpId, int p2, const char *zText){
   EQPGraphRow *pNew;
-  int nText = strlen30(zText);
+  i64 nText = strlen(zText);
   if( p->autoEQPtest ){
     utf8_printf(p->out, "%d,%d,%s\n", iEqpId, p2, zText);
   }
@@ -2026,14 +2035,14 @@ static EQPGraphRow *eqp_next_row(ShellState *p, int iEqpId, EQPGraphRow *pOld){
 */
 static void eqp_render_level(ShellState *p, int iEqpId){
   EQPGraphRow *pRow, *pNext;
-  int n = strlen30(p->sGraph.zPrefix);
+  i64 n = strlen(p->sGraph.zPrefix);
   char *z;
   for(pRow = eqp_next_row(p, iEqpId, 0); pRow; pRow = pNext){
     pNext = eqp_next_row(p, iEqpId, pRow);
     z = pRow->zText;
     utf8_printf(p->out, "%s%s%s\n", p->sGraph.zPrefix,
                 pNext ? "|--" : "`--", z);
-    if( n<(int)sizeof(p->sGraph.zPrefix)-7 ){
+    if( n<(i64)sizeof(p->sGraph.zPrefix)-7 ){
       memcpy(&p->sGraph.zPrefix[n], pNext ? "|  " : "   ", 4);
       eqp_render_level(p, pRow->iEqpId);
       p->sGraph.zPrefix[n] = 0;
@@ -4945,28 +4954,28 @@ static void shellEscapeCrnl(
   const char *zText = (const char*)sqlite3_value_text(argv[0]);
   UNUSED_PARAMETER(argc);
   if( zText && zText[0]=='\'' ){
-    int nText = sqlite3_value_bytes(argv[0]);
-    int i;
+    i64 nText = sqlite3_value_bytes(argv[0]);
+    i64 i;
     char zBuf1[20];
     char zBuf2[20];
     const char *zNL = 0;
     const char *zCR = 0;
-    int nCR = 0;
-    int nNL = 0;
+    i64 nCR = 0;
+    i64 nNL = 0;
 
     for(i=0; zText[i]; i++){
       if( zNL==0 && zText[i]=='\n' ){
         zNL = unused_string(zText, "\\n", "\\012", zBuf1);
-        nNL = (int)strlen(zNL);
+        nNL = strlen(zNL);
       }
       if( zCR==0 && zText[i]=='\r' ){
         zCR = unused_string(zText, "\\r", "\\015", zBuf2);
-        nCR = (int)strlen(zCR);
+        nCR = strlen(zCR);
       }
     }
 
     if( zNL || zCR ){
-      int iOut = 0;
+      i64 iOut = 0;
       i64 nMax = (nNL > nCR) ? nNL : nCR;
       i64 nAlloc = nMax * nText + (nMax+64)*2;
       char *zOut = (char*)sqlite3_malloc64(nAlloc);
@@ -5207,8 +5216,8 @@ static char **readline_completion(const char *zText, int iStart, int iEnd){
 ** Linenoise completion callback
 */
 static void linenoise_completion(const char *zLine, linenoiseCompletions *lc){
-  int nLine = strlen30(zLine);
-  int i, iStart;
+  i64 nLine = strlen(zLine);
+  i64 i, iStart;
   sqlite3_stmt *pStmt = 0;
   char *zSql;
   char zBuf[1000];
@@ -5374,7 +5383,7 @@ static int sql_trace_callback(
   ShellState *p = (ShellState*)pArg;
   sqlite3_stmt *pStmt;
   const char *zSql;
-  int nSql;
+  i64 nSql;
   if( p->traceOut==0 ) return 0;
   if( mType==SQLITE_TRACE_CLOSE ){
     utf8_printf(p->traceOut, "-- closing database connection\n");
@@ -5402,17 +5411,18 @@ static int sql_trace_callback(
     }
   }
   if( zSql==0 ) return 0;
-  nSql = strlen30(zSql);
+  nSql = strlen(zSql);
+  if( nSql>1000000000 ) nSql = 1000000000;
   while( nSql>0 && zSql[nSql-1]==';' ){ nSql--; }
   switch( mType ){
     case SQLITE_TRACE_ROW:
     case SQLITE_TRACE_STMT: {
-      utf8_printf(p->traceOut, "%.*s;\n", nSql, zSql);
+      utf8_printf(p->traceOut, "%.*s;\n", (int)nSql, zSql);
       break;
     }
     case SQLITE_TRACE_PROFILE: {
       sqlite3_int64 nNanosec = *(sqlite3_int64*)pX;
-      utf8_printf(p->traceOut, "%.*s; -- %lld ns\n", nSql, zSql, nNanosec);
+      utf8_printf(p->traceOut, "%.*s; -- %lld ns\n", (int)nSql, zSql, nNanosec);
       break;
     }
   }
@@ -11609,7 +11619,7 @@ static char *one_input_line(FILE *in, char *zPrior, int isContinuation){
   const char *zBegin = shellState.wasm.zPos;
   const char *z = zBegin;
   char *zLine = 0;
-  int nZ = 0;
+  i64 nZ = 0;
 
   UNUSED_PARAMETER(in);
   UNUSED_PARAMETER(isContinuation);
@@ -11625,7 +11635,7 @@ static char *one_input_line(FILE *in, char *zPrior, int isContinuation){
   shellState.wasm.zPos = z;
   zLine = realloc(zPrior, nZ+1);
   shell_check_oom(zLine);
-  memcpy(zLine, zBegin, (size_t)nZ);
+  memcpy(zLine, zBegin, nZ);
   zLine[nZ] = 0;
   return zLine;
 }
@@ -11643,12 +11653,12 @@ static char *one_input_line(FILE *in, char *zPrior, int isContinuation){
 static int process_input(ShellState *p){
   char *zLine = 0;          /* A single input line */
   char *zSql = 0;           /* Accumulated SQL text */
-  int nLine;                /* Length of current line */
-  int nSql = 0;             /* Bytes of zSql[] used */
-  int nAlloc = 0;           /* Allocated zSql[] space */
+  i64 nLine;                /* Length of current line */
+  i64 nSql = 0;             /* Bytes of zSql[] used */
+  i64 nAlloc = 0;           /* Allocated zSql[] space */
   int rc;                   /* Error code */
   int errCnt = 0;           /* Number of errors seen */
-  int startline = 0;        /* Line number for start of current input */
+  i64 startline = 0;        /* Line number for start of current input */
   QuickScanState qss = QSS_Start; /* Accumulated line status (so far) */
 
   if( p->inputNesting==MAX_INPUT_NESTING ){
@@ -11698,7 +11708,7 @@ static int process_input(ShellState *p){
       continue;
     }
     /* No single-line dispositions remain; accumulate line(s). */
-    nLine = strlen30(zLine);
+    nLine = strlen(zLine);
     if( nSql+nLine+2>=nAlloc ){
       /* Grow buffer by half-again increments when big. */
       nAlloc = nSql+(nSql>>1)+nLine+100;
@@ -11706,7 +11716,7 @@ static int process_input(ShellState *p){
       shell_check_oom(zSql);
     }
     if( nSql==0 ){
-      int i;
+      i64 i;
       for(i=0; zLine[i] && IsSpace(zLine[i]); i++){}
       assert( nAlloc>0 && zSql!=0 );
       memcpy(zSql, zLine+i, nLine+1-i);
@@ -11806,7 +11816,7 @@ static char *find_home_dir(int clearFlag){
 #endif /* !_WIN32_WCE */
 
   if( home_dir ){
-    int n = strlen30(home_dir) + 1;
+    i64 n = strlen(home_dir) + 1;
     char *z = malloc( n );
     if( z ) memcpy(z, home_dir, n);
     home_dir = z;
@@ -12049,6 +12059,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 #ifdef SQLITE_SHELL_FIDDLE
   stdin_is_interactive = 0;
   stdout_is_console = 1;
+  data.wasm.zDefaultDbName = "/fiddle.sqlite3";
 #else
   stdin_is_interactive = isatty(0);
   stdout_is_console = isatty(1);
@@ -12098,9 +12109,9 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   argv = argvToFree + argc;
   for(i=0; i<argc; i++){
     char *z = sqlite3_win32_unicode_to_utf8(wargv[i]);
-    int n;
+    i64 n;
     shell_check_oom(z);
-    n = (int)strlen(z);
+    n = strlen(z);
     argv[i] = malloc( n+1 );
     shell_check_oom(argv[i]);
     memcpy(argv[i], z, n+1);
@@ -12619,30 +12630,30 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 #ifdef SQLITE_SHELL_FIDDLE
 /* Only for emcc experimentation purposes. */
 int fiddle_experiment(int a,int b){
-   return a + b;
+  return a + b;
 }
 
-/* Only for emcc experimentation purposes.
-
-  Define this function in JS using:
-
-  emcc ... --js-library somefile.js
-
-  containing:
-
-mergeInto(LibraryManager.library, {
-    my_foo: function(){
-        console.debug("my_foo()",arguments);
-    }
-});
+/*
+** Returns a pointer to the current DB handle.
 */
-/*extern void my_foo(sqlite3 *);*/
-/* Only for emcc experimentation purposes. */
-sqlite3 * fiddle_the_db(){
-    printf("fiddle_the_db(%p)\n", (const void*)globalDb);
-    /*my_foo(globalDb);*/
-    return globalDb;
+sqlite3 * fiddle_db_handle(){
+  return globalDb;
 }
+
+/*
+** Returns a pointer to the given DB name's VFS. If zDbName is 0 then
+** "main" is assumed. Returns 0 if no db with the given name is
+** open.
+*/
+sqlite3_vfs * fiddle_db_vfs(const char *zDbName){
+  sqlite3_vfs * pVfs = 0;
+  if(globalDb){
+    sqlite3_file_control(globalDb, zDbName ? zDbName : "main",
+                         SQLITE_FCNTL_VFS_POINTER, &pVfs);
+  }
+  return pVfs;
+}
+
 /* Only for emcc experimentation purposes. */
 sqlite3 * fiddle_db_arg(sqlite3 *arg){
     printf("fiddle_db_arg(%p)\n", (const void*)arg);
@@ -12656,7 +12667,7 @@ sqlite3 * fiddle_db_arg(sqlite3 *arg){
 ** portable enough to make real use of.
 */
 void fiddle_interrupt(void){
-  if(globalDb) sqlite3_interrupt(globalDb);
+  if( globalDb ) sqlite3_interrupt(globalDb);
 }
 
 /*
@@ -12670,71 +12681,73 @@ const char * fiddle_db_filename(const char * zDbName){
 }
 
 /*
-** Closes, unlinks, and reopens the db using its current filename (or
-** the default if the db is currently closed). It is assumed, for
-** purposes of the fiddle build, that the file is in a transient
-** virtual filesystem within the browser.
+** Completely wipes out the contents of the currently-opened database
+** but leaves its storage intact for reuse.
 */
 void fiddle_reset_db(void){
-  char *zFilename = 0;
-  if(0==globalDb){
-    shellState.pAuxDb->zDbFilename = "/fiddle.sqlite3";
-  }else{
-    zFilename =
-      sqlite3_mprintf("%s", sqlite3_db_filename(globalDb, "main"));
-    shell_check_oom(zFilename);
-    close_db(globalDb);
-    shellDeleteFile(zFilename);
-    shellState.db = 0;
-    shellState.pAuxDb->zDbFilename = zFilename;
+  if( globalDb ){
+    int rc = sqlite3_db_config(globalDb, SQLITE_DBCONFIG_RESET_DATABASE, 1, 0);
+    if( 0==rc ) rc = sqlite3_exec(globalDb, "VACUUM", 0, 0, 0);
+    sqlite3_db_config(globalDb, SQLITE_DBCONFIG_RESET_DATABASE, 0, 0);
   }
-  open_db(&shellState, 0);
-  sqlite3_free(zFilename);
 }
 
 /*
-** Trivial exportable function for emscripten. Needs to be exported using:
-**
-** emcc ..flags... -sEXPORTED_FUNCTIONS=_fiddle_exec -sEXPORTED_RUNTIME_METHODS=ccall,cwrap
-**
-** (Note the underscore before the function name.) It processes zSql
-** as if it were input to the sqlite3 shell and redirects all output
-** to the wasm binding.
+** Uses the current database's VFS xRead to stream the db file's
+** contents out to the given callback. The callback gets a single
+** chunk of size n (its 2nd argument) on each call and must return 0
+** on success, non-0 on error. This function returns 0 on success,
+** SQLITE_NOTFOUND if no db is open, or propagates any other non-0
+** code from the callback. Note that this is not thread-friendly: it
+** expects that it will be the only thread reading the db file and
+** takes no measures to ensure that is the case.
+*/
+int fiddle_export_db( int (*xCallback)(unsigned const char *zOut, int n) ){
+  sqlite3_int64 nSize = 0;
+  sqlite3_int64 nPos = 0;
+  sqlite3_file * pFile = 0;
+  unsigned char buf[1024 * 8];
+  int nBuf = (int)sizeof(buf);
+  int rc = shellState.db
+    ? sqlite3_file_control(shellState.db, "main",
+                           SQLITE_FCNTL_FILE_POINTER, &pFile)
+    : SQLITE_NOTFOUND;
+  if( rc ) return rc;
+  rc = pFile->pMethods->xFileSize(pFile, &nSize);
+  if( rc ) return rc;
+  if(nSize % nBuf){
+    /* DB size is not an even multiple of the buffer size. Reduce
+    ** buffer size so that we do not unduly inflate the db size when
+    ** exporting. */
+    if(0 == nSize % 4096) nBuf = 4096;
+    else if(0 == nSize % 2048) nBuf = 2048;
+    else if(0 == nSize % 1024) nBuf = 1024;
+    else nBuf = 512;
+  }
+  for( ; 0==rc && nPos<nSize; nPos += nBuf ){
+    rc = pFile->pMethods->xRead(pFile, buf, nBuf, nPos);
+    if(SQLITE_IOERR_SHORT_READ == rc){
+      rc = (nPos + nBuf) < nSize ? rc : 0/*assume EOF*/;
+    }
+    if( 0==rc ) rc = xCallback(buf, nBuf);
+  }
+  return rc;
+}
+
+/*
+** Trivial exportable function for emscripten. It processes zSql as if
+** it were input to the sqlite3 shell and redirects all output to the
+** wasm binding. If fiddle_main() has not been called by the time this
+** is called, this function calls it with a conservative set of
+** flags.
 */
 void fiddle_exec(const char * zSql){
-  static int once = 0;
-  int rc = 0;
-  if(!once){
-    /* Simulate an argv array for main() */
-    static char * argv[] = {"fiddle",
-                            "-bail",
-                            "-safe"};
-    rc = fiddle_main((int)(sizeof(argv)/sizeof(argv[0])), argv);
-    once = rc ? -1 : 1;
-    memset(&shellState.wasm, 0, sizeof(shellState.wasm));
-    printf(
-        "SQLite version %s %.19s\n" /*extra-version-info*/,
-        sqlite3_libversion(), sqlite3_sourceid()
-    );
-    puts("WASM shell");
-    puts("Enter \".help\" for usage hints.");
-    if(once>0){
-      fiddle_reset_db();
-    }
-    if(shellState.db){
-      printf("Connected to %s.\n", fiddle_db_filename(NULL));
-    }else{
-      fprintf(stderr,"ERROR initializing db!\n");
-      return;
-    }
-  }
-  if(once<0){
-    puts("DB init failed. Not executing SQL.");
-  }else if(zSql && *zSql){
+  if(zSql && *zSql){
+    if('.'==*zSql) puts(zSql);
     shellState.wasm.zInput = zSql;
     shellState.wasm.zPos = zSql;
     process_input(&shellState);
-    memset(&shellState.wasm, 0, sizeof(shellState.wasm));
+    shellState.wasm.zInput = shellState.wasm.zPos = 0;
   }
 }
 #endif /* SQLITE_SHELL_FIDDLE */

@@ -809,9 +809,7 @@ common:
   A read-only numeric property which is the "pointer" returned by the
   configured allocator when this object is constructed. After
   `dispose()` (inherited from [StructType][]) is called, this property
-  has the `undefined` value. When passing instances of this struct to
-  C-bound code, `pointer` is the value which must be passed in place
-  of a C-side struct pointer. When calling C-side code which takes a
+  has the `undefined` value. When calling C-side code which takes a
   pointer to a struct of this type, simply pass it `myStruct.pointer`.
 
 <a name='appendices'></a>
