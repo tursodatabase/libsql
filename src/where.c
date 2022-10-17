@@ -5413,12 +5413,23 @@ static SQLITE_NOINLINE void whereAddIndexExpr(
 ){
   int i;
   IndexExpr *p;
+  Table *pTab;
+  assert( pIdx->bHasExpr );
+  pTab = pIdx->pTable;
   for(i=0; i<pIdx->nColumn; i++){
-    if( pIdx->aiColumn[i]!=XN_EXPR ) continue;
+    Expr *pExpr;
+    int j = pIdx->aiColumn[i];
+    if( j==XN_EXPR ){
+      pExpr = pIdx->aColExpr->a[i].pExpr;
+    }else if( j>=0 && (pTab->aCol[j].colFlags & COLFLAG_VIRTUAL)!=0 ){
+      pExpr = sqlite3ColumnExpr(pTab, &pTab->aCol[j]);
+    }else{
+      continue;
+    }
     p = sqlite3DbMallocRaw(pParse->db,  sizeof(IndexExpr));
     if( p==0 ) break;
     p->pIENext = pParse->pIdxExpr;
-    p->pExpr = sqlite3ExprDup(pParse->db, pIdx->aColExpr->a[i].pExpr, 0);
+    p->pExpr = sqlite3ExprDup(pParse->db, pExpr, 0);
     p->iDataCur = pTabItem->iCursor;
     p->iIdxCur = iIdxCur;
     p->iIdxCol = i;

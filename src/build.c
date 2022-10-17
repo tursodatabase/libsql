@@ -4204,6 +4204,7 @@ void sqlite3CreateIndex(
         }
         if( pTab->aCol[j].colFlags & COLFLAG_VIRTUAL ){
           pIndex->bHasVCol = 1;
+          pIndex->bHasExpr = 1;
         }
       }
       pIndex->aiColumn[i] = (i16)j;
