@@ -521,9 +521,9 @@ endif
 
 ########################################################################
 # Create deliverables: TODO
-#ifneq (,$(filter dist,$(MAKECMDGOALS)))
-#include dist.make
-#endif
+ifneq (,$(filter dist,$(MAKECMDGOALS)))
+include dist.make
+endif
 
 ########################################################################
 # Push files to public wasm-testing.sqlite.org server
@@ -539,4 +539,3 @@ push:
     $(wasm-testing.include) $(wasm-testing.dest)
 	ssh wasm-testing 'cd $(wasm-testing.dir) && bash .gzip' || \
     echo "SSH failed: it's likely that stale content will be served via old gzip files." 
-
