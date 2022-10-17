@@ -806,7 +806,7 @@ AC_SUBST(AMALGAMATION_LINE_MACROS)
 
 #########
 # Output the config header
-AC_CONFIG_HEADERS(config.h)
+AC_CONFIG_HEADERS(sqlite_cfg.h)
 
 #########
 # Generate the output files.

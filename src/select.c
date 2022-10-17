@@ -3750,6 +3750,7 @@ typedef struct SubstContext {
   int iNewTable;            /* New table number */
   int isOuterJoin;          /* Add TK_IF_NULL_ROW opcodes on each replacement */
   ExprList *pEList;         /* Replacement expressions */
+  ExprList *pCList;         /* Collation sequences for replacement expr */
 } SubstContext;
 
 /* Forward Declarations */
@@ -3791,9 +3792,10 @@ static Expr *substExpr(
 #endif
     {
       Expr *pNew;
-      Expr *pCopy = pSubst->pEList->a[pExpr->iColumn].pExpr;
+      int iColumn = pExpr->iColumn;
+      Expr *pCopy = pSubst->pEList->a[iColumn].pExpr;
       Expr ifNullRow;
-      assert( pSubst->pEList!=0 && pExpr->iColumn<pSubst->pEList->nExpr );
+      assert( pSubst->pEList!=0 && iColumn<pSubst->pEList->nExpr );
       assert( pExpr->pRight==0 );
       if( sqlite3ExprIsVector(pCopy) ){
         sqlite3VectorErrorMsg(pSubst->pParse, pCopy);
@@ -3831,11 +3833,16 @@ static Expr *substExpr(
 
         /* Ensure that the expression now has an implicit collation sequence,
         ** just as it did when it was a column of a view or sub-query. */
-        if( pExpr->op!=TK_COLUMN && pExpr->op!=TK_COLLATE ){
-          CollSeq *pColl = sqlite3ExprCollSeq(pSubst->pParse, pExpr);
-          pExpr = sqlite3ExprAddCollateString(pSubst->pParse, pExpr, 
-              (pColl ? pColl->zName : "BINARY")
+        {
+          CollSeq *pNat = sqlite3ExprCollSeq(pSubst->pParse, pExpr);
+          CollSeq *pColl = sqlite3ExprCollSeq(pSubst->pParse,
+                pSubst->pCList->a[iColumn].pExpr
           );
+          if( pNat!=pColl || (pExpr->op!=TK_COLUMN && pExpr->op!=TK_COLLATE) ){
+            pExpr = sqlite3ExprAddCollateString(pSubst->pParse, pExpr,
+                (pColl ? pColl->zName : "BINARY")
+            );
+          }
         }
         ExprClearProperty(pExpr, EP_Collate);
       }
@@ -4027,6 +4034,18 @@ static void renumberCursors(
   sqlite3WalkSelect(&w, p);
 }
 #endif /* !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW) */
+
+/*
+** If pSel is not part of a compound SELECT, return a pointer to its
+** expression list. Otherwise, return a pointer to the expression list
+** of the leftmost SELECT in the compound.
+*/
+static ExprList *findLeftmostExprlist(Select *pSel){
+  while( pSel->pPrior ){
+    pSel = pSel->pPrior;
+  }
+  return pSel->pEList;
+}
 
 #if !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW)
 /*
@@ -4580,6 +4599,7 @@ static int flattenSubquery(
       x.iNewTable = iNewParent;
       x.isOuterJoin = isOuterJoin;
       x.pEList = pSub->pEList;
+      x.pCList = findLeftmostExprlist(pSub);
       substSelect(&x, pParent, 0);
     }
   
@@ -5062,6 +5082,7 @@ static int pushDownWhereTerms(
       x.iNewTable = pSrc->iCursor;
       x.isOuterJoin = 0;
       x.pEList = pSubq->pEList;
+      x.pCList = findLeftmostExprlist(pSubq);
       pNew = substExpr(&x, pNew);
 #ifndef SQLITE_OMIT_WINDOWFUNC
       if( pSubq->pWin && 0==pushDownWindowCheck(pParse, pSubq, pNew) ){

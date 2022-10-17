@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
+    <link rel="stylesheet" href="common/emscripten.css"/>
+    <link rel="stylesheet" href="common/testing.css"/>
+    <title>Async-behind-Sync experiment</title>
+  </head>
+  <body>
+    <header id='titlebar'><span>Async-behind-Sync Experiment</span></header>
+    <div>This is an experiment in wrapping the
+      asynchronous OPFS APIs behind a fully synchronous proxy. It is
+      very much incomplete, under construction, and experimental.
+      <strong>See the dev console for all output.</strong>
+    </div>
+    <div>
+      <a href='?delete'>Use this link</a> to delete the persistent OPFS-side db (if any).
+    </div>
+    <div id='test-output'></div>
+    <script>new Worker("test-opfs-vfs.js"+self.location.search);</script>
+  </body>
+</html>

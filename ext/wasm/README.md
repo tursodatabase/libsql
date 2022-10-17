@@ -10,6 +10,7 @@ below for Linux environments:
 
 ```
 # Clone the emscripten repository:
+$ sudo apt install git
 $ git clone https://github.com/emscripten-core/emsdk.git
 $ cd emsdk
 
@@ -24,6 +25,7 @@ Those parts only need to be run once, but the SDK can be updated using:
 
 ```
 $ git pull
+$ ./emsdk install latest
 $ ./emsdk activate latest
 ```
 
@@ -73,6 +75,32 @@ Note that when serving this app via [althttpd][], it must be a version
 from 2022-05-17 or newer so that it recognizes the `.wasm` file
 extension and responds with the mimetype `application/wasm`, as the
 WASM loader is pedantic about that detail.
+
+# Testing on a remote machine that is accessed via SSH
+
+*NB: The following are developer notes, last validated on 2022-08-18*
+
+  *  Remote: Install git, emsdk, and althttpd
+     *  Use a [version of althttpd](https://sqlite.org/althttpd/timeline?r=enable-atomics)
+        that adds HTTP reply header lines to enable SharedArrayBuffers.  These header
+        lines are required:
+```
+            Cross-Origin-Opener-Policy: same-origin
+            Cross-Origin-Embedder-Policy: require-corp
+```
+  *  Remote: Install the SQLite source tree.  CD to ext/wasm
+  *  Remote: "`make`" to build WASM
+  *  Remote: althttpd --port 8080 --popup
+  *  Local:  ssh -L 8180:localhost:8080 remote
+  *  Local:  Point your web-browser at http://localhost:8180/testing1.html
+
+In order to enable [SharedArrayBuffers](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/SharedArrayBuffer),
+the web-browser requires that the two extra Cross-Origin lines be present
+in HTTP reply headers and that the request must come from "localhost".
+Since the web-server is on a different machine from
+the web-broser, the localhost requirement means that the connection must be tunneled
+using SSH.
+
 
 
 # Known Quirks and Limitations

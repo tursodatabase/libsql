@@ -1006,4 +1006,12 @@ do_test like-2.126.3 {
 } {126}
 
 
+do_test like-3.1 {
+  db eval "SELECT '\u01C0' LIKE '%\x80'"
+} {0}
+do_test like-3.2 {
+  db eval "SELECT '\u0080' LIKE '%\x80'"
+} {1}
+
+
 finish_test

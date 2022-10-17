@@ -11875,7 +11875,7 @@ fi
 
 #########
 # Output the config header
-ac_config_headers="$ac_config_headers config.h"
+ac_config_headers="$ac_config_headers sqlite_cfg.h"
 
 
 #########
@@ -12838,7 +12838,7 @@ for ac_config_target in $ac_config_targets
 do
   case $ac_config_target in
     "libtool") CONFIG_COMMANDS="$CONFIG_COMMANDS libtool" ;;
-    "config.h") CONFIG_HEADERS="$CONFIG_HEADERS config.h" ;;
+    "sqlite_cfg.h") CONFIG_HEADERS="$CONFIG_HEADERS sqlite_cfg.h" ;;
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
     "sqlite3.pc") CONFIG_FILES="$CONFIG_FILES sqlite3.pc" ;;
 
