@@ -1990,7 +1990,9 @@ static int wsToEol(const char *z){
 */
 static void eqp_append(ShellState *p, int iEqpId, int p2, const char *zText){
   EQPGraphRow *pNew;
-  i64 nText = strlen(zText);
+  i64 nText;
+  if( zText==0 ) return;
+  nText = strlen(zText);
   if( p->autoEQPtest ){
     utf8_printf(p->out, "%d,%d,%s\n", iEqpId, p2, zText);
   }
