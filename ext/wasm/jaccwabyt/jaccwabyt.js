@@ -394,7 +394,17 @@ self.Jaccwabyt = function StructBinderFactory(config){
 
   const __utf8Decoder = new TextDecoder('utf-8');
   const __utf8Encoder = new TextEncoder();
-
+  /** Internal helper to use in operations which need to distinguish
+      between SharedArrayBuffer heap memory and non-shared heap. */
+  const __SAB = ('undefined'===typeof SharedArrayBuffer)
+        ? function(){} : SharedArrayBuffer;
+  const __utf8Decode = function(arrayBuffer, begin, end){
+    return __utf8Decoder.decode(
+      (arrayBuffer.buffer instanceof __SAB)
+        ? arrayBuffer.slice(begin, end)
+        : arrayBuffer.subarray(begin, end)
+    );
+  };
   /**
      Uses __lookupMember() to find the given obj.structInfo key.
      Returns that member if it is a string, else returns false. If the
@@ -437,8 +447,7 @@ self.Jaccwabyt = function StructBinderFactory(config){
       //log("mem[",pos,"]",mem[pos]);
     };
     //log("addr =",addr,"pos =",pos);
-    if(addr===pos) return "";
-    return __utf8Decoder.decode(new Uint8Array(mem.buffer, addr, pos-addr));
+    return (addr===pos) ? "" : __utf8Decode(mem, addr, pos);
   };
 
   /**

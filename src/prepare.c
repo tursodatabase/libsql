@@ -705,7 +705,7 @@ static int sqlite3Prepare(
     sParse.disableLookaside++;
     DisableLookaside;
   }
-  sParse.disableVtab = (prepFlags & SQLITE_PREPARE_NO_VTAB)!=0;
+  sParse.prepFlags = prepFlags & 0xff;
 
   /* Check to verify that it is possible to get a read lock on all
   ** database schemas.  The inability to get a read lock indicates that
@@ -746,7 +746,9 @@ static int sqlite3Prepare(
     }
   }
 
-  sqlite3VtabUnlockList(db);
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+  if( db->pDisconnect ) sqlite3VtabUnlockList(db);
+#endif
 
   if( nBytes>=0 && (nBytes==0 || zSql[nBytes-1]!=0) ){
     char *zSqlCopy;

@@ -357,6 +357,8 @@ struct sqlite3_api_routines {
   unsigned char *(*serialize)(sqlite3*,const char *,sqlite3_int64*,
                               unsigned int);
   const char *(*db_name)(sqlite3*,int);
+  /* Version 3.40.0 and later */
+  int (*value_encoding)(sqlite3_value*);
 };
 
 /*
@@ -681,6 +683,8 @@ typedef int (*sqlite3_loadext_entry)(
 #define sqlite3_serialize              sqlite3_api->serialize
 #endif
 #define sqlite3_db_name                sqlite3_api->db_name
+/* Version 3.40.0 and later */
+#define sqlite3_value_encoding         sqlite3_api->value_encoding
 #endif /* !defined(SQLITE_CORE) && !defined(SQLITE_OMIT_LOAD_EXTENSION) */
 
 #if !defined(SQLITE_CORE) && !defined(SQLITE_OMIT_LOAD_EXTENSION)

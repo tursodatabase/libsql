@@ -2588,19 +2588,90 @@ case OP_IsNull: {            /* same as TK_ISNULL, jump, in1 */
   break;
 }
 
-/* Opcode: IsNullOrType P1 P2 P3 * *
-** Synopsis: if typeof(r[P1]) IN (P3,5) goto P2
+/* Opcode: IsType P1 P2 P3 P4 P5
+** Synopsis: if typeof(P1.P3) in P5 goto P2
 **
-** Jump to P2 if the value in register P1 is NULL or has a datatype P3.
-** P3 is an integer which should be one of SQLITE_INTEGER, SQLITE_FLOAT,
-** SQLITE_BLOB, SQLITE_NULL, or SQLITE_TEXT.
+** Jump to P2 if the type of a column in a btree is one of the types specified
+** by the P5 bitmask.
+**
+** P1 is normally a cursor on a btree for which the row decode cache is
+** valid through at least column P3.  In other words, there should have been
+** a prior OP_Column for column P3 or greater.  If the cursor is not valid,
+** then this opcode might give spurious results.
+** The the btree row has fewer than P3 columns, then use P4 as the
+** datatype.
+**
+** If P1 is -1, then P3 is a register number and the datatype is taken
+** from the value in that register.
+**
+** P5 is a bitmask of data types.  SQLITE_INTEGER is the least significant
+** (0x01) bit. SQLITE_FLOAT is the 0x02 bit. SQLITE_TEXT is 0x04.
+** SQLITE_BLOB is 0x08.  SQLITE_NULL is 0x10.
+**
+** Take the jump to address P2 if and only if the datatype of the
+** value determined by P1 and P3 corresponds to one of the bits in the
+** P5 bitmask.
+**
 */
-case OP_IsNullOrType: {      /* jump, in1 */
-  int doTheJump;
-  pIn1 = &aMem[pOp->p1];
-  doTheJump = (pIn1->flags & MEM_Null)!=0 || sqlite3_value_type(pIn1)==pOp->p3;
-  VdbeBranchTaken( doTheJump, 2);
-  if( doTheJump ) goto jump_to_p2;
+case OP_IsType: {        /* jump */
+  VdbeCursor *pC;
+  u16 typeMask;
+  u32 serialType;
+
+  assert( pOp->p1>=(-1) && pOp->p1<p->nCursor );
+  assert( pOp->p1>=0 || (pOp->p3>=0 && pOp->p3<=(p->nMem+1 - p->nCursor)) );
+  if( pOp->p1>=0 ){
+    pC = p->apCsr[pOp->p1];
+    assert( pC!=0 );
+    assert( pOp->p3>=0 );
+    if( pOp->p3<pC->nHdrParsed ){
+      serialType = pC->aType[pOp->p3];
+      if( serialType>=12 ){
+        if( serialType&1 ){
+          typeMask = 0x04;   /* SQLITE_TEXT */
+        }else{
+          typeMask = 0x08;   /* SQLITE_BLOB */
+        }
+      }else{
+        static const unsigned char aMask[] = {
+           0x10, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x2,
+           0x01, 0x01, 0x10, 0x10
+        };
+        testcase( serialType==0 );
+        testcase( serialType==1 );
+        testcase( serialType==2 );
+        testcase( serialType==3 );
+        testcase( serialType==4 );
+        testcase( serialType==5 );
+        testcase( serialType==6 );
+        testcase( serialType==7 );
+        testcase( serialType==8 );
+        testcase( serialType==9 );
+        testcase( serialType==10 );
+        testcase( serialType==11 );
+        typeMask = aMask[serialType];
+      }
+    }else{
+      typeMask = 1 << (pOp->p4.i - 1);
+      testcase( typeMask==0x01 );
+      testcase( typeMask==0x02 );
+      testcase( typeMask==0x04 );
+      testcase( typeMask==0x08 );
+      testcase( typeMask==0x10 );
+    }
+  }else{
+    assert( memIsValid(&aMem[pOp->p3]) );
+    typeMask = 1 << (sqlite3_value_type((sqlite3_value*)&aMem[pOp->p3])-1);
+    testcase( typeMask==0x01 );
+    testcase( typeMask==0x02 );
+    testcase( typeMask==0x04 );
+    testcase( typeMask==0x08 );
+    testcase( typeMask==0x10 );
+  }
+  VdbeBranchTaken( (typeMask & pOp->p5)!=0, 2);
+  if( typeMask & pOp->p5 ){
+    goto jump_to_p2;
+  }
   break;
 }
 
@@ -2701,7 +2772,7 @@ case OP_Offset: {          /* out3 */
 ** Interpret the data that cursor P1 points to as a structure built using
 ** the MakeRecord instruction.  (See the MakeRecord opcode for additional
 ** information about the format of the data.)  Extract the P2-th column
-** from this record.  If there are less that (P2+1) 
+** from this record.  If there are less than (P2+1) 
 ** values in the record, extract a NULL.
 **
 ** The value extracted is stored in register P3.
@@ -2710,10 +2781,12 @@ case OP_Offset: {          /* out3 */
 ** if the P4 argument is a P4_MEM use the value of the P4 argument as
 ** the result.
 **
-** If the OPFLAG_LENGTHARG and OPFLAG_TYPEOFARG bits are set on P5 then
-** the result is guaranteed to only be used as the argument of a length()
-** or typeof() function, respectively.  The loading of large blobs can be
-** skipped for length() and all content loading can be skipped for typeof().
+** If the OPFLAG_LENGTHARG bit is set in P5 then the result is guaranteed
+** to only be used by the length() function or the equivalent.  The content
+** of large blobs is not loaded, thus saving CPU cycles.  If the
+** OPFLAG_TYPEOFARG bit is set then the result will only be used by the
+** typeof() function or the IS NULL or IS NOT NULL operators or the
+** equivalent.  In this case, all content loading can be omitted.
 */
 case OP_Column: {
   u32 p2;            /* column number to retrieve */
@@ -4652,7 +4725,13 @@ case OP_SeekGT: {       /* jump, in3, group */
 
     r.aMem = &aMem[pOp->p3];
 #ifdef SQLITE_DEBUG
-    { int i; for(i=0; i<r.nField; i++) assert( memIsValid(&r.aMem[i]) ); }
+    {
+      int i;
+      for(i=0; i<r.nField; i++){
+        assert( memIsValid(&r.aMem[i]) );
+        if( i>0 ) REGISTER_TRACE(pOp->p3+i, &r.aMem[i]);
+      }
+    }
 #endif
     r.eqSeen = 0;
     rc = sqlite3BtreeIndexMoveto(pC->uc.pCursor, &r, &res);
@@ -4715,7 +4794,7 @@ seek_not_found:
 }
 
 
-/* Opcode: SeekScan  P1 P2 * * *
+/* Opcode: SeekScan  P1 P2 * * P5
 ** Synopsis: Scan-ahead up to P1 rows
 **
 ** This opcode is a prefix opcode to OP_SeekGE.  In other words, this
@@ -4725,8 +4804,8 @@ seek_not_found:
 ** This opcode uses the P1 through P4 operands of the subsequent
 ** OP_SeekGE.  In the text that follows, the operands of the subsequent
 ** OP_SeekGE opcode are denoted as SeekOP.P1 through SeekOP.P4.   Only
-** the P1 and P2 operands of this opcode are also used, and  are called
-** This.P1 and This.P2.
+** the P1, P2 and P5 operands of this opcode are also used, and  are called
+** This.P1, This.P2 and This.P5.
 **
 ** This opcode helps to optimize IN operators on a multi-column index
 ** where the IN operator is on the later terms of the index by avoiding
@@ -4736,29 +4815,51 @@ seek_not_found:
 **
 ** The SeekGE.P3 and SeekGE.P4 operands identify an unpacked key which
 ** is the desired entry that we want the cursor SeekGE.P1 to be pointing
-** to.  Call this SeekGE.P4/P5 row the "target".
+** to.  Call this SeekGE.P3/P4 row the "target".
 **
 ** If the SeekGE.P1 cursor is not currently pointing to a valid row,
 ** then this opcode is a no-op and control passes through into the OP_SeekGE.
 **
 ** If the SeekGE.P1 cursor is pointing to a valid row, then that row
 ** might be the target row, or it might be near and slightly before the
-** target row.  This opcode attempts to position the cursor on the target
-** row by, perhaps by invoking sqlite3BtreeStep() on the cursor
-** between 0 and This.P1 times.
+** target row, or it might be after the target row.  If the cursor is
+** currently before the target row, then this opcode attempts to position
+** the cursor on or after the target row by invoking sqlite3BtreeStep()
+** on the cursor between 1 and This.P1 times.
 **
-** There are three possible outcomes from this opcode:<ol>
+** The This.P5 parameter is a flag that indicates what to do if the
+** cursor ends up pointing at a valid row that is past the target
+** row.  If This.P5 is false (0) then a jump is made to SeekGE.P2.  If
+** This.P5 is true (non-zero) then a jump is made to This.P2.  The P5==0
+** case occurs when there are no inequality constraints to the right of
+** the IN constraing.  The jump to SeekGE.P2 ends the loop.  The P5!=0 case
+** occurs when there are inequality constraints to the right of the IN
+** operator.  In that case, the This.P2 will point either directly to or
+** to setup code prior to the OP_IdxGT or OP_IdxGE opcode that checks for
+** loop terminate.
 **
-** <li> If after This.P1 steps, the cursor is still pointing to a place that
-**      is earlier in the btree than the target row, then fall through
-**      into the subsquence OP_SeekGE opcode.
+** Possible outcomes from this opcode:<ol>
 **
-** <li> If the cursor is successfully moved to the target row by 0 or more
-**      sqlite3BtreeNext() calls, then jump to This.P2, which will land just
-**      past the OP_IdxGT or OP_IdxGE opcode that follows the OP_SeekGE.
+** <li> If the cursor is initally not pointed to any valid row, then
+**      fall through into the subsequent OP_SeekGE opcode.
 **
-** <li> If the cursor ends up past the target row (indicating that the target
-**      row does not exist in the btree) then jump to SeekOP.P2. 
+** <li> If the cursor is left pointing to a row that is before the target
+**      row, even after making as many as This.P1 calls to
+**      sqlite3BtreeNext(), then also fall through into OP_SeekGE.
+**
+** <li> If the cursor is left pointing at the target row, either because it
+**      was at the target row to begin with or because one or more
+**      sqlite3BtreeNext() calls moved the cursor to the target row,
+**      then jump to This.P2..,
+**
+** <li> If the cursor started out before the target row and a call to
+**      to sqlite3BtreeNext() moved the cursor off the end of the index
+**      (indicating that the target row definitely does not exist in the
+**      btree) then jump to SeekGE.P2, ending the loop.
+**
+** <li> If the cursor ends up on a valid row that is past the target row 
+**      (indicating that the target row does not exist in the btree) then
+**      jump to SeekOP.P2 if This.P5==0 or to This.P2 if This.P5>0.
 ** </ol>
 */
 case OP_SeekScan: {
@@ -4769,14 +4870,25 @@ case OP_SeekScan: {
 
   assert( pOp[1].opcode==OP_SeekGE );
 
-  /* pOp->p2 points to the first instruction past the OP_IdxGT that
-  ** follows the OP_SeekGE.  */
+  /* If pOp->p5 is clear, then pOp->p2 points to the first instruction past the
+  ** OP_IdxGT that follows the OP_SeekGE. Otherwise, it points to the first
+  ** opcode past the OP_SeekGE itself.  */
   assert( pOp->p2>=(int)(pOp-aOp)+2 );
-  assert( aOp[pOp->p2-1].opcode==OP_IdxGT || aOp[pOp->p2-1].opcode==OP_IdxGE );
-  testcase( aOp[pOp->p2-1].opcode==OP_IdxGE );
-  assert( pOp[1].p1==aOp[pOp->p2-1].p1 );
-  assert( pOp[1].p2==aOp[pOp->p2-1].p2 );
-  assert( pOp[1].p3==aOp[pOp->p2-1].p3 );
+#ifdef SQLITE_DEBUG
+  if( pOp->p5==0 ){
+    /* There are no inequality constraints following the IN constraint. */
+    assert( pOp[1].p1==aOp[pOp->p2-1].p1 );
+    assert( pOp[1].p2==aOp[pOp->p2-1].p2 );
+    assert( pOp[1].p3==aOp[pOp->p2-1].p3 );
+    assert( aOp[pOp->p2-1].opcode==OP_IdxGT 
+         || aOp[pOp->p2-1].opcode==OP_IdxGE );
+    testcase( aOp[pOp->p2-1].opcode==OP_IdxGE );
+  }else{
+    /* There are inequality constraints.  */
+    assert( pOp->p2==(int)(pOp-aOp)+2 );
+    assert( aOp[pOp->p2-1].opcode==OP_SeekGE );
+  }
+#endif
 
   assert( pOp->p1>0 );
   pC = p->apCsr[pOp[1].p1];
@@ -4810,8 +4922,9 @@ case OP_SeekScan: {
   while(1){
     rc = sqlite3VdbeIdxKeyCompare(db, pC, &r, &res);
     if( rc ) goto abort_due_to_error;
-    if( res>0 ){
+    if( res>0 && pOp->p5==0 ){
       seekscan_search_fail:
+      /* Jump to SeekGE.P2, ending the loop */
 #ifdef SQLITE_DEBUG
       if( db->flags&SQLITE_VdbeTrace ){
         printf("... %d steps and then skip\n", pOp->p1 - nStep);
@@ -4821,7 +4934,8 @@ case OP_SeekScan: {
       pOp++;
       goto jump_to_p2;
     }
-    if( res==0 ){
+    if( res>=0 ){
+      /* Jump to This.P2, bypassing the OP_SeekGE opcode */
 #ifdef SQLITE_DEBUG
       if( db->flags&SQLITE_VdbeTrace ){
         printf("... %d steps and then success\n", pOp->p1 - nStep);

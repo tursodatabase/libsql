@@ -462,21 +462,23 @@ static int demoDelete(sqlite3_vfs *pVfs, const char *zPath, int dirSync){
   if( rc==0 && dirSync ){
     int dfd;                      /* File descriptor open on directory */
     int i;                        /* Iterator variable */
+    char *zSlash;
     char zDir[MAXPATHNAME+1];     /* Name of directory containing file zPath */
 
     /* Figure out the directory name from the path of the file deleted. */
     sqlite3_snprintf(MAXPATHNAME, zDir, "%s", zPath);
     zDir[MAXPATHNAME] = '\0';
-    for(i=strlen(zDir); i>1 && zDir[i]!='/'; i++);
-    zDir[i] = '\0';
-
-    /* Open a file-descriptor on the directory. Sync. Close. */
-    dfd = open(zDir, O_RDONLY, 0);
-    if( dfd<0 ){
-      rc = -1;
-    }else{
-      rc = fsync(dfd);
-      close(dfd);
+    zSlash = strrchr(zDir,'/');
+    if( zSlash ){
+      /* Open a file-descriptor on the directory. Sync. Close. */
+      zSlash[0] = 0;
+      dfd = open(zDir, O_RDONLY, 0);
+      if( dfd<0 ){
+        rc = -1;
+      }else{
+        rc = fsync(dfd);
+        close(dfd);
+      }
     }
   }
   return (rc==0 ? SQLITE_OK : SQLITE_IOERR_DELETE);

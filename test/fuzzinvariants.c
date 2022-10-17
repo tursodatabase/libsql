@@ -46,11 +46,14 @@ static void reportInvariantFailed(sqlite3_stmt*,sqlite3_stmt*,int);
 **
 **     SQLITE_OK          This check was successful.
 **
-**     SQLITE_DONE        iCnt is out of range.
+**     SQLITE_DONE        iCnt is out of range.  The caller typically sets
+**                        up a loop on iCnt starting with zero, and increments
+**                        iCnt until this code is returned.
 **
 **     SQLITE_CORRUPT     The invariant failed, but the underlying database
 **                        file is indicating that it is corrupt, which might
-**                        be the cause of the malfunction.
+**                        be the cause of the malfunction.  The *pCorrupt
+**                        value will also be set.
 **
 **     SQLITE_INTERNAL    The invariant failed, and the database file is not
 **                        corrupt.  (This never happens because this function
@@ -142,6 +145,20 @@ int fuzz_invariant(
       */
       goto not_a_fault;
     }
+    if( sqlite3_strlike("%limit%)%order%by%", sqlite3_sql(pTestStmt),0)==0 ){
+      /* crash-89bd6a6f8c6166e9a4c5f47b3e70b225f69b76c6
+      ** Original statement is:
+      **
+      **    SELECT a,b,c* FROM t1 LIMIT 1%5<4
+      **
+      ** When running:
+      **
+      **    SELECT * FROM (...) ORDER BY 1
+      **
+      ** A different subset of the rows come out
+      */
+      goto not_a_fault;
+    }
     rc = sqlite3_prepare_v2(db, 
             "SELECT 1 FROM bytecode(?1) WHERE opcode='VOpen'", -1, &pCk, 0);
     if( rc==SQLITE_OK ){
@@ -166,6 +183,24 @@ not_a_fault:
 ** Generate SQL used to test a statement invariant.
 **
 ** Return 0 if the iCnt is out of range.
+**
+** iCnt meanings:
+**
+**   0     SELECT * FROM (<query>)
+**   1     SELECT DISTINCT * FROM (<query>)
+**   2     SELECT * FROM (<query>) WHERE ORDER BY 1
+**   3     SELECT DISTINCT * FROM (<query>) ORDER BY 1
+**   4     SELECT * FROM (<query>) WHERE <all-columns>=<all-values>
+**   5     SELECT DISTINCT * FROM (<query>) WHERE <all-columns=<all-values
+**   6     SELECT * FROM (<query>) WHERE <all-column>=<all-value> ORDER BY 1
+**   7     SELECT DISTINCT * FROM (<query>) WHERE <all-column>=<all-value>
+**                           ORDER BY 1
+**   N+0   SELECT * FROM (<query>) WHERE <nth-column>=<value>
+**   N+1   SELECT DISTINCT * FROM (<query>) WHERE <Nth-column>=<value>
+**   N+2   SELECT * FROM (<query>) WHERE <Nth-column>=<value> ORDER BY 1
+**   N+3   SELECT DISTINCT * FROM (<query>) WHERE <Nth-column>=<value>
+**                           ORDER BY N
+**
 */
 static char *fuzz_invariant_sql(sqlite3_stmt *pStmt, int iCnt){
   const char *zIn;
@@ -182,7 +217,6 @@ static char *fuzz_invariant_sql(sqlite3_stmt *pStmt, int iCnt){
   int bOrderBy = 0;
   int nParam = sqlite3_bind_parameter_count(pStmt);
 
-  iCnt++;
   switch( iCnt % 4 ){
     case 1:  bDistinct = 1;              break;
     case 2:  bOrderBy = 1;               break;
@@ -197,9 +231,10 @@ static char *fuzz_invariant_sql(sqlite3_stmt *pStmt, int iCnt){
   while( nIn>0 && (isspace(zIn[nIn-1]) || zIn[nIn-1]==';') ) nIn--;
   if( strchr(zIn, '?') ) return 0;
   pTest = sqlite3_str_new(0);
-  sqlite3_str_appendf(pTest, "SELECT %s* FROM (%s",
-                      bDistinct ? "DISTINCT " : "", zIn);
-  sqlite3_str_appendf(pTest, ")");
+  sqlite3_str_appendf(pTest, "SELECT %s* FROM (",  
+                      bDistinct ? "DISTINCT " : "");
+  sqlite3_str_append(pTest, zIn, nIn);
+  sqlite3_str_append(pTest, ")", 1);
   rc = sqlite3_prepare_v2(db, sqlite3_str_value(pTest), -1, &pBase, 0);
   if( rc ){
     sqlite3_finalize(pBase);
@@ -216,7 +251,8 @@ static char *fuzz_invariant_sql(sqlite3_stmt *pStmt, int iCnt){
       ** WHERE clause. */
       continue;
     }
-    if( i+1!=iCnt ) continue;
+    if( iCnt==0 ) continue;
+    if( iCnt>1 && i+2!=iCnt ) continue;
     if( zColName==0 ) continue;
     if( sqlite3_column_type(pStmt, i)==SQLITE_NULL ){
       sqlite3_str_appendf(pTest, " %s \"%w\" ISNULL", zAnd, zColName);
@@ -228,7 +264,7 @@ static char *fuzz_invariant_sql(sqlite3_stmt *pStmt, int iCnt){
   }
   if( pBase!=pStmt ) sqlite3_finalize(pBase);
   if( bOrderBy ){
-    sqlite3_str_appendf(pTest, " ORDER BY 1");
+    sqlite3_str_appendf(pTest, " ORDER BY %d", iCnt>2 ? iCnt-1 : 1);
   }
   return sqlite3_str_finish(pTest);
 }
@@ -259,10 +295,30 @@ static int sameValue(sqlite3_stmt *pS1, int i1, sqlite3_stmt *pS2, int i2){
       break;
     }
     case SQLITE_TEXT: {
-      const char *z1 = (const char*)sqlite3_column_text(pS1,i1);
-      const char *z2 = (const char*)sqlite3_column_text(pS2,i2);
-      x = ((z1==0 && z2==0) || (z1!=0 && z2!=0 && strcmp(z1,z1)==0));
-      break;
+      int e1 = sqlite3_value_encoding(sqlite3_column_value(pS1,i1));
+      int e2 = sqlite3_value_encoding(sqlite3_column_value(pS2,i2));
+      if( e1!=e2 ){
+        const char *z1 = (const char*)sqlite3_column_text(pS1,i1);
+        const char *z2 = (const char*)sqlite3_column_text(pS2,i2);
+        x = ((z1==0 && z2==0) || (z1!=0 && z2!=0 && strcmp(z1,z1)==0));
+        printf("Encodings differ.  %d on left and %d on right\n", e1, e2);
+        break;
+      }
+      if( e1!=SQLITE_UTF8 ){
+        int len1 = sqlite3_column_bytes16(pS1,i1);
+        const unsigned char *b1 = sqlite3_column_blob(pS1,i1);
+        int len2 = sqlite3_column_bytes16(pS2,i2);
+        const unsigned char *b2 = sqlite3_column_blob(pS2,i2);
+        if( len1!=len2 ){
+          x = 0;
+        }else if( len1==0 ){
+          x = 1;
+        }else{
+          x = (b1!=0 && b2!=0 && memcmp(b1,b2,len1)==0);
+        }
+        break;
+      }
+      /* Fall through into the SQLITE_BLOB case */
     }
     case SQLITE_BLOB: {
       int len1 = sqlite3_column_bytes(pS1,i1);
@@ -283,10 +339,22 @@ static int sameValue(sqlite3_stmt *pS1, int i1, sqlite3_stmt *pS2, int i2){
 }
 
 /*
+** Print binary data as hex
+*/
+static void printHex(const unsigned char *a, int n, int mx){
+  int j;
+  for(j=0; j<mx && j<n; j++){
+    printf("%02x", a[j]);
+  }
+  if( j<n ) printf("...");
+}
+
+/*
 ** Print a single row from the prepared statement
 */
 static void printRow(sqlite3_stmt *pStmt, int iRow){
-  int i, nCol;
+  int i, n, nCol;
+  unsigned const char *data;
   nCol = sqlite3_column_count(pStmt);
   for(i=0; i<nCol; i++){
     printf("row%d.col%d = ", iRow, i);
@@ -304,18 +372,44 @@ static void printRow(sqlite3_stmt *pStmt, int iRow){
         break;
       }
       case SQLITE_TEXT: {
-        printf("(text) \"%s\"\n", sqlite3_column_text(pStmt, i));
+        switch( sqlite3_value_encoding(sqlite3_column_value(pStmt,i)) ){
+          case SQLITE_UTF8: {
+            printf("(utf8) x'");
+            n = sqlite3_column_bytes(pStmt, i);
+            data = sqlite3_column_blob(pStmt, i);
+            printHex(data, n, 35);
+            printf("'\n");
+            break;
+          }
+          case SQLITE_UTF16BE: {
+            printf("(utf16be) x'");
+            n = sqlite3_column_bytes16(pStmt, i);
+            data = sqlite3_column_blob(pStmt, i);
+            printHex(data, n, 35);
+            printf("'\n");
+            break;
+          }
+          case SQLITE_UTF16LE: {
+            printf("(utf16le) x'");
+            n = sqlite3_column_bytes16(pStmt, i);
+            data = sqlite3_column_blob(pStmt, i);
+            printHex(data, n, 35);
+            printf("'\n");
+            break;
+          }
+          default: {
+            printf("Illegal return from sqlite3_value_encoding(): %d\n",
+                sqlite3_value_encoding(sqlite3_column_value(pStmt,i)));
+            abort();
+          }
+        }
         break;
       }
       case SQLITE_BLOB: {
-        int n = sqlite3_column_bytes(pStmt, i);
-        int j;
-        unsigned const char *data = sqlite3_column_blob(pStmt, i);
+        n = sqlite3_column_bytes(pStmt, i);
+        data = sqlite3_column_blob(pStmt, i);
         printf("(blob %d bytes) x'", n);
-        for(j=0; j<20 && j<n; j++){
-          printf("%02x", data[j]);
-        }
-        if( j<n ) printf("...");
+        printHex(data, n, 35);
         printf("'\n");
         break;
       }
