@@ -1,5 +1,5 @@
-C Missing\sfile-rename\sfor\sthe\sprevious\scheckin.
-D 2022-10-17T15:53:16.486
+C Fix\sa\spotential\scall\sto\sstrlen()\swith\sa\snull\sargument\sin\sthe\scommand-line\sshell\nfollowing\san\sOOM\serror.\s[forum:/forumpost/9c4f2ebe22|forum\spost\s9c4f2ebe22].
+D 2022-10-17T16:09:33.721
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -533,7 +533,7 @@ F ext/wasm/testing-worker1-promiser.js bd788e33c1807e0a6dda9c9a9d784bd3350ca49c9
 F ext/wasm/testing1.html 50575755e43232dbe4c2f97c9086b3118eb91ec2ee1fae931e6d7669fb17fcae
 F ext/wasm/testing2.html a66951c38137ff1d687df79466351f3c734fa9c6d9cce71d3cf97c291b2167e3
 F ext/wasm/testing2.js 88f40ef3cd8201bdadd120a711c36bbf0ce56cc0eab1d5e7debb71fed7822494
-F ext/wasm/version-info.c 03c6fb4efefd7c5b14f618b36648e71da741e39059ea5059c39495fdceaed144 w ext/wasm/version-json.c
+F ext/wasm/version-info.c 03c6fb4efefd7c5b14f618b36648e71da741e39059ea5059c39495fdceaed144
 F ext/wasm/wasmfs.make 3cce1820006196de140f90f2da4b4ea657083fb5bfee7d125be43f7a85748c8f
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
@@ -620,7 +620,7 @@ F src/random.c 546d6feb15ec69c1aafe9bb351a277cbb498fd5410e646add673acb805714960
 F src/resolve.c efea4e5fbecfd6d0a9071b0be0d952620991673391b6ffaaf4c277b0bb674633
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c b795f31a326564ffc448bb26f863c64f0796b2a5e0585a3358aff7877b72ed82
-F src/shell.c.in 2915eaf22bda89ad6533851a051de4773c249185360fe1fc7b4477b8f9063b2c
+F src/shell.c.in a4c0754470d4fcc2c3da2f0cda0363cecf4a84273d3cc3865325c2df06d5e56b
 F src/sqlite.h.in d9c8a6243fc0a1c270d69db33758e34b810af3462f9bc5b4af113b347e07c69d
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 5336beea1868d99d2f62e628dbea55e97267dbff8193291ab175e960c5df9141
@@ -2033,8 +2033,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 36e197cb3d0cbb76e4c1381d77f7d8856e7391f2ef6671c13b9b6b0133315814
-R 913b0f5c6deb44215505d33b5b2a96aa
-U stephan
-Z 279fbd3aa8e8b6ab1074595f5c42e719
+P e9b407a4d0a0fcd9f26d457beede19d41141327befe84be621681952be5d1e69
+R fd5bd78c383b3a5ac313c836d503f5ef
+U drh
+Z 6ca21d53ba6df71519b0f06bf84205e6
 # Remove this line to create a well-formed Fossil manifest.
