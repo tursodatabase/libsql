@@ -49,6 +49,7 @@ dir.fiddle := fiddle
 CLEAN_FILES := *~ $(dir.jacc)/*~ $(dir.api)/*~ $(dir.common)/*~
 emcc_enable_bigint ?= 1
 sqlite3.c := $(dir.top)/sqlite3.c
+sqlite3.h := $(dir.top)/sqlite3.h
 SQLITE_OPT = \
   -DSQLITE_ENABLE_FTS4 \
   -DSQLITE_ENABLE_RTREE \
@@ -109,7 +110,7 @@ emcc_opt_full := $(emcc_opt) -g3
 ########################################################################
 
 
-$(sqlite3.c):
+$(sqlite3.c) $(sqlite3.h):
 	$(MAKE) -C $(dir.top) sqlite3.c
 
 clean:
@@ -124,16 +125,25 @@ else
   $(info Development build. Use '$(MAKE) release' for a smaller release build.)
 endif
 
+version-json: version-json.c $(sqlite3.c) $(MAKEFILE)
+	$(CC) -O0 -I$(dir.top) -o $@ $(SQLITE_OPT) -DHAVE_MREMAP=0 $< $(sqlite3.c)
+CLEAN_FILES := version-json
+
 EXPORTED_FUNCTIONS.api.in := $(dir.api)/EXPORTED_FUNCTIONS.sqlite3-api
 
 EXPORTED_FUNCTIONS.api: $(EXPORTED_FUNCTIONS.api.in) $(MAKEFILE)
 	cat $(EXPORTED_FUNCTIONS.api.in) > $@
 CLEAN_FILES += EXPORTED_FUNCTIONS.api
 
-sqlite3-api.jses := $(dir.api)/sqlite3-api-prologue.js
+sqlite3-license-version.js := sqlite3-license-version.js
+sqlite3-license-version-header.js := $(dir.api)/sqlite3-license-version-header.js
+sqlite3-api-build-version.js := $(dir.api)/sqlite3-api-build-version.js
+sqlite3-api.jses := $(sqlite3-license-version.js)
+sqlite3-api.jses += $(dir.api)/sqlite3-api-prologue.js
 sqlite3-api.jses += $(dir.common)/whwasmutil.js
 sqlite3-api.jses += $(dir.jacc)/jaccwabyt.js
 sqlite3-api.jses += $(dir.api)/sqlite3-api-glue.js
+sqlite3-api.jses += $(sqlite3-api-build-version.js)
 sqlite3-api.jses += $(dir.api)/sqlite3-api-oo1.js
 sqlite3-api.jses += $(dir.api)/sqlite3-api-worker1.js
 sqlite3-api.jses += $(dir.api)/sqlite3-api-opfs.js
@@ -141,6 +151,8 @@ sqlite3-api.jses += $(dir.api)/sqlite3-api-cleanup.js
 
 sqlite3-api.js := sqlite3-api.js
 CLEAN_FILES += $(sqlite3-api.js)
+CLEAN_FILES += $(sqlite3-license-version.js)
+CLEAN_FILES += $(sqlite3-api-build-version.js)
 $(sqlite3-api.js): $(sqlite3-api.jses) $(MAKEFILE)
 	@echo "Making $@..."
 	@for i in $(sqlite3-api.jses); do \
@@ -148,6 +160,16 @@ $(sqlite3-api.js): $(sqlite3-api.jses) $(MAKEFILE)
 		cat $$i; \
 		echo "/* END FILE: $$i */"; \
 	done > $@
+
+$(sqlite3-api-build-version.js): version-json
+	@echo "Making $@..."
+	@{ \
+  echo 'self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){'; \
+	echo -n '  sqlite3.version = '; \
+  ./version-json; \
+  echo ';'; \
+	echo '});'; \
+  } > $@
 
 ########################################################################
 # --post-js and --pre-js are emcc flags we use to append/prepend JS to
@@ -171,9 +193,20 @@ extern-pre-js.js := $(dir.api)/extern-pre-js.js
 pre-post-common.flags := \
   --post-js=$(post-js.js) \
   --extern-post-js=$(extern-post-js.js) \
-  --extern-pre-js=$(extern-pre-js.js)
+  --extern-pre-js=$(dir.wasm)/$(sqlite3-license-version.js)
 pre-post-jses.deps := $(post-js.js) \
-  $(extern-post-js.js) $(extern-pre-js.js)
+  $(extern-post-js.js) $(extern-pre-js.js) $(sqlite3-license-version.js)
+$(sqlite3-license-version.js): $(sqlite3.h) $(sqlite3-license-version-header.js) $(MAKEFILE)
+	@echo "Making $@..."; { \
+    cat $(sqlite3-license-version-header.js); \
+    echo '/*'; \
+    echo '** This code was built from sqlite3 version...'; \
+    echo "** "; \
+    awk -e '/define SQLITE_VERSION/{$$1=""; print "**" $$0}' \
+        -e '/define SQLITE_SOURCE_ID/{$$1=""; print "**" $$0}' $(sqlite3.h); \
+    echo '*/'; \
+   } > $@
+
 ########################################################################
 # call-make-pre-js creates rules for pre-js-$(1).js. $1 = the base
 # name of the JS file on whose behalf this pre-js is for.

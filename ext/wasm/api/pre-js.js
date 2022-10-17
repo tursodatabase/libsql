@@ -1,3 +1,9 @@
+/**
+   BEGIN FILE: api/pre-js.js
+
+   This file is intended to be prepended to the sqlite3.js build using
+   Emscripten's --pre-js=THIS_FILE flag (or equivalent).
+*/
 Module['locateFile'] = function(path, prefix) {
   return prefix + path;
 };
@@ -39,3 +45,4 @@ Module[xInstantiateWasm] = function callee(imports,onSuccess){
   scripts.
 */
 Module[xInstantiateWasm].uri = 'sqlite3.wasm';
+/* END FILE: api/pre-js.js */

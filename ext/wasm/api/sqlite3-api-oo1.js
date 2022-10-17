@@ -45,8 +45,10 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
   /** If object opts has _its own_ property named p then that
       property's value is returned, else dflt is returned. */
-  const getOwnOption = (opts, p, dflt)=>
-        opts.hasOwnProperty(p) ? opts[p] : dflt;
+  const getOwnOption = (opts, p, dflt)=>{
+    const d = Object.getOwnPropertyDescriptor(opts,p);
+    return d ? d.value : dflt;
+  };
 
   // Documented in DB.checkRc()
   const checkSqlite3Rc = function(dbPtr, sqliteResultCode){
@@ -810,12 +812,14 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        `xFunc` to align with the C API documentation). In the final
        case, the function's name must be the 'name' property.
 
-       This can currently only be used to create scalar functions, not
-       aggregate or window functions (requires only a bit of
-       refactoring to support aggregates and window functions).
+       The first two call forms can only be used for creating scalar
+       functions. Creating an aggregate function requires the
+       options-object form (see below for details).
 
        UDFs cannot currently be removed from a DB handle after they're
-       added.
+       added. More correctly, they can be removed as documented for
+       sqlite3_create_function_v2(), but doing so will "leak" the
+       JS-created WASM binding of those functions.
 
        On success, returns this object. Throws on error.
 
@@ -825,18 +829,35 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        cannot be determined. The docs for sqlite3_create_function_v2()
        describe the conversions in more detail.
 
+       The values set in the options object differ for scalar and
+       aggregate functions:
+
+       - Scalar: set the `xFunc` function-type property to the UDF
+         function.
+
+       - Aggregate: set the `xStep` and `xFinal` function-type
+         properties to the "step" and "final" callbacks for the
+         aggregate. Do not set the `xFunc` property.
+
+       The options object may optionally have an `xDestroy`
+       function-type property, as per
+       sqlite3_create_function_v2(). Its argument will be the
+       WASM-pointer-type value of the `pApp` property, and this
+       function will throw if `pApp` is defined but is not null,
+       undefined, or a numeric (WASM pointer) value.
+
        The optional options object may contain flags to modify how
        the function is defined:
 
-       - .arity: the number of arguments which SQL calls to this
-       function expect or require. The default value is
-       `callback.length` (i.e. the number of declared parameters it
-       has) **MINUS 1** (see below for why). As a special case, if
-       callback.length is 0, its arity is also 0 instead of -1. A
-       negative arity value means that the function is variadic and
-       may accept any number of arguments, up to sqlite3's
-       compile-time limits. sqlite3 will enforce the argument count if
-       is zero or greater.
+       - `arity`: the number of arguments which SQL calls to this
+       function expect or require. The default value is `xFunc.length`
+       or `xStep.length` (i.e. the number of declared parameters it
+       has) **MINUS 1** (see below for why). As a special case, if the
+       `length` is 0, its arity is also 0 instead of -1. A negative
+       arity value means that the function is variadic and may accept
+       any number of arguments, up to sqlite3's compile-time
+       limits. sqlite3 will enforce the argument count if is zero or
+       greater.
 
        The callback always receives a pointer to an `sqlite3_context`
        object as its first argument. Any arguments after that are from
@@ -852,44 +873,71 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        - .deterministic = SQLITE_DETERMINISTIC
        - .directOnly = SQLITE_DIRECTONLY
        - .innocuous = SQLITE_INNOCUOUS
-
-       TODO: for the (optionsObject) form, accept callbacks for
-       aggregate and window functions.
-
     */
-    createFunction: function f(name, callback, opt){
+    createFunction: function f(name, xFunc, opt){
+      let xStep, xFinal;
+      const isFunc = (f)=>(f instanceof Function);
       switch(arguments.length){
           case 1: /* (optionsObject) */
             opt = name;
             name = opt.name;
-            callback = opt.xFunc || opt.callback;
+            xFunc = opt.xFunc;
             break;
           case 2: /* (name, callback|optionsObject) */
-            if(!(callback instanceof Function)){
-              opt = callback;
-              callback = opt.xFunc || opt.callback;
+            if(!isFunc(xFunc)){
+              opt = xFunc;
+              xFunc = opt.xFunc;
             }
+            break;
+          case 3: /* name, xFunc, opt */
             break;
           default: break;
       }
       if(!opt) opt = {};
-      if(!(callback instanceof Function)){
-        toss3("Invalid arguments: expecting a callback function.");
-      }else if('string' !== typeof name){
+      if('string' !== typeof name){
         toss3("Invalid arguments: missing function name.");
+      }
+      xStep = opt.xStep;
+      xFinal = opt.xFinal;
+      if(isFunc(xFunc)){
+        if(isFunc(xStep) || isFunc(xFinal)){
+          toss3("Ambiguous arguments: scalar or aggregate?");
+        }
+        xStep = xFinal = null;
+      }else if(isFunc(xStep)){
+        if(!isFunc(xFinal)){
+          toss3("Missing xFinal() callback for aggregate UDF.");
+        }
+        xFunc = null;
+      }else if(isFunc(xFinal)){
+        toss3("Missing xStep() callback for aggregate UDF.");
+      }else{
+        toss3("Missing function-type properties.");
+      }
+      const pApp = opt.pApp;
+      if(undefined!==pApp &&
+         null!==pApp &&
+         (('number'!==typeof pApp) || !capi.util.isInt32(pApp))){
+        toss3("Invalid value for pApp property. Must be a legal WASM pointer value.");
+      }
+      const xDestroy = opt.xDestroy;
+      if(xDestroy && !isFunc(xDestroy)){
+        toss3("xDestroy property must be a function.");
       }
       let fFlags = 0 /*flags for sqlite3_create_function_v2()*/;
       if(getOwnOption(opt, 'deterministic')) fFlags |= capi.SQLITE_DETERMINISTIC;
       if(getOwnOption(opt, 'directOnly')) fFlags |= capi.SQLITE_DIRECTONLY;
       if(getOwnOption(opt, 'innocuous')) fFlags |= capi.SQLITE_INNOCUOUS;
       name = name.toLowerCase();
+      const xArity = xFunc || xStep;
+      const arity = getOwnOption(opt, 'arity');
       DB.checkRc(this, capi.sqlite3_create_function_v2(
         this.pointer, name,
-        (opt.hasOwnProperty('arity')
-         ? +opt.arity
-         : (callback.length ? callback.length-1/*for pCtx arg*/ : 0)),
-        capi.SQLITE_UTF8 | fFlags, null/*pApp*/, callback,
-        null/*xStep*/, null/*xFinal*/, null/*xDestroy*/));
+        ('number'===typeof arity
+         ? arity
+         : (xArity.length ? xArity.length-1/*for pCtx arg*/ : 0)),
+        capi.SQLITE_UTF8 | fFlags, pApp,
+        xFunc, xStep, xFinal, xDestroy));
       return this;
     }/*createFunction()*/,
     /**

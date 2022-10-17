@@ -46,7 +46,7 @@
             <li><a href='tester1.html'>tester1</a>: Core unit and
               regression tests for the various APIs and surrounding
               utility code.</li>
-            <li><a href='tester1.html'>tester1-worker</a>: same thing
+            <li><a href='tester1-worker.html'>tester1-worker</a>: same thing
             but running in a Worker.</li>
           </ul>
         </li>
@@ -87,12 +87,11 @@
               worker due to an Emscripten limitation.</li>
             <li><a href='test-opfs-vfs.html'>test-opfs-vfs</a>
               (<a href='test-opfs-vfs.html?opfs-sanity-check&opfs-verbose'>same
-                with verbose output and sanity-checking tests</a>) is an
-              experiment in implementing a syncronous sqlite3 VFS proxy
-              for a fully asynchronous backend interface (namely OPFS),
-              using SharedArrayBuffer and the Atomics APIs to regulate
-              communication between the synchronous interface and the
-              async impl.
+              with verbose output and sanity-checking tests</a>) is an
+              sqlite3_vfs OPFS proxy using SharedArrayBuffer and the
+              Atomics APIs to regulate communication between the
+              synchronous sqlite3_vfs interface and the async OPFS
+              impl.
             </li>
           </ul>
         </li>
