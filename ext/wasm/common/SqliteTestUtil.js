@@ -113,6 +113,46 @@
       ++this.counter;
       if(!this.toBool(expr)) throw new Error(msg || "throwUnless() failed");
       return this;
+    },
+
+    /**
+       Parses window.location.search-style string into an object
+       containing key/value pairs of URL arguments (already
+       urldecoded). The object is created using Object.create(null),
+       so contains only parsed-out properties and has no prototype
+       (and thus no inherited properties).
+
+       If the str argument is not passed (arguments.length==0) then
+       window.location.search.substring(1) is used by default. If
+       neither str is passed in nor window exists then false is returned.
+
+       On success it returns an Object containing the key/value pairs
+       parsed from the string. Keys which have no value are treated
+       has having the boolean true value.
+
+       Pedantic licensing note: this code has appeared in other source
+       trees, but was originally written by the same person who pasted
+       it into those trees.
+    */
+    processUrlArgs: function(str) {
+      if( 0 === arguments.length ) {
+        if( ('undefined' === typeof window) ||
+            !window.location ||
+            !window.location.search )  return false;
+        else str = (''+window.location.search).substring(1);
+      }
+      if( ! str ) return false;
+      str = (''+str).split(/#/,2)[0]; // remove #... to avoid it being added as part of the last value.
+      const args = Object.create(null);
+      const sp = str.split(/&+/);
+      const rx = /^([^=]+)(=(.+))?/;
+      var i, m;
+      for( i in sp ) {
+        m = rx.exec( sp[i] );
+        if( ! m ) continue;
+        args[decodeURIComponent(m[1])] = (m[3] ? decodeURIComponent(m[3]) : true);
+      }
+      return args;
     }
   };
 
@@ -122,6 +162,11 @@
      sqlite3InitModule() factory function.
   */
   self.sqlite3TestModule = {
+    /**
+       Array of functions to call after Emscripten has initialized the
+       wasm module. Each gets passed the Emscripten module object
+       (which is _this_ object).
+    */
     postRun: [
       /* function(theModule){...} */
     ],
@@ -135,10 +180,10 @@
       console.error.apply(console, Array.prototype.slice.call(arguments));
     },
     /**
-       Called by the module init bits to report loading
-       progress. It gets passed an empty argument when loading is
-       done (after onRuntimeInitialized() and any this.postRun
-       callbacks have been run).
+       Called by the Emscripten module init bits to report loading
+       progress. It gets passed an empty argument when loading is done
+       (after onRuntimeInitialized() and any this.postRun callbacks
+       have been run).
     */
     setStatus: function f(text){
       if(!f.last){
@@ -168,6 +213,28 @@
         }
         f.ui.status.classList.add('hidden');
       }
+    },
+    /**
+       Config options used by the Emscripten-dependent initialization
+       which happens via this.initSqlite3(). This object gets
+       (indirectly) passed to sqlite3ApiBootstrap() to configure the
+       sqlite3 API.
+    */
+    sqlite3ApiConfig: {
+      wasmfsOpfsDir: "/opfs"
+    },
+    /**
+       Intended to be called by apps which need to call the
+       Emscripten-installed sqlite3InitModule() routine. This function
+       temporarily installs this.sqlite3ApiConfig into the self
+       object, calls it sqlite3InitModule(), and removes
+       self.sqlite3ApiConfig after initialization is done. Returns the
+       promise from sqlite3InitModule(), and the next then() handler
+       will get the sqlite3 API object as its argument.
+    */
+    initSqlite3: function(){
+      self.sqlite3ApiConfig = this.sqlite3ApiConfig;
+      return self.sqlite3InitModule(this).finally(()=>delete self.sqlite3ApiConfig);
     }
   };
 })(self/*window or worker*/);

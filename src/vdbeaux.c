@@ -1156,6 +1156,18 @@ void sqlite3VdbeChangeP5(Vdbe *p, u16 p5){
 }
 
 /*
+** If the previous opcode is an OP_Column that delivers results
+** into register iDest, then add the OPFLAG_TYPEOFARG flag to that
+** opcode.
+*/
+void sqlite3VdbeTypeofColumn(Vdbe *p, int iDest){
+  VdbeOp *pOp = sqlite3VdbeGetLastOp(p);
+  if( pOp->p3==iDest && pOp->opcode==OP_Column ){
+    pOp->p5 |= OPFLAG_TYPEOFARG;
+  }
+}
+
+/*
 ** Change the P2 operand of instruction addr so that it points to
 ** the address of the next instruction to be coded.
 */
