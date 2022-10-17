@@ -1,5 +1,5 @@
-C Remove\sa\suse\sof\salloca()\sthat\sdoes\smore\sharm\sthan\sgood.
-D 2022-10-17T09:56:51.582
+C Make\suse\sof\salloca()\sin\swherePathSolver()\swhen\sSQLITE_USE_ALLOCA\sis\sdefined.
+D 2022-10-17T10:15:41.927
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -624,7 +624,7 @@ F src/shell.c.in 2915eaf22bda89ad6533851a051de4773c249185360fe1fc7b4477b8f9063b2
 F src/sqlite.h.in d9c8a6243fc0a1c270d69db33758e34b810af3462f9bc5b4af113b347e07c69d
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 5336beea1868d99d2f62e628dbea55e97267dbff8193291ab175e960c5df9141
-F src/sqliteInt.h d15694b228fe5082587e13ac14f3e449621a5fe6d5933f5dee6e3c9491260da3
+F src/sqliteInt.h 27916b91f3aafd09d1b50f62948e0d506a58933f4cf5f5c136233658fbd39e60
 F src/sqliteLimit.h d7323ffea5208c6af2734574bae933ca8ed2ab728083caa117c9738581a31657
 F src/status.c 160c445d7d28c984a0eae38c144f6419311ed3eace59b44ac6dafc20db4af749
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -706,7 +706,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c b9df133a705093da8977da5eb202eaadb844839f1c7297c08d33471f5491843d
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
-F src/where.c 63e712bcad47f70e94c2150976cd7da5040933699e3938d4189d064acbe40891
+F src/where.c ab74681d07e310fb81c01c2bb1068378764cfff9e431e2b01aacc7a3678a018d
 F src/whereInt.h 70cd30de9ed784aa33fa6bd1245f060617de7a00d992469b6d8e419eed915743
 F src/wherecode.c 8ec5a413f12af06638dcca36d0954be2151eea6f293d3c67397cef6a90d6adf1
 F src/whereexpr.c 55a39f42aaf982574fbf52906371a84cceed98a994422198dfd03db4fce4cc46
@@ -2033,8 +2033,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 650126c92aa191d6361a32ec90ca7def60a2df22ba6bec1d2354692fe3504423
-R 0976ce63c2884a014f8f48854ee7e700
+P 2ab3cf4d71b23a4c0b69f977828d82df7bbc080c29ae189e0d78d38efee50c96
+R fd1636fa451b5b8e84570a9195b2236a
 U drh
-Z eaf9cf4bd31fd72933cff88a3ffeecd2
+Z 2743069ef130a7abdc131b5ac7f77275
 # Remove this line to create a well-formed Fossil manifest.

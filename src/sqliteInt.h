@@ -4391,12 +4391,16 @@ int sqlite3HeapNearlyFull(void);
 */
 #ifdef SQLITE_USE_ALLOCA
 # define sqlite3StackAllocRaw(D,N)   alloca(N)
+# define sqlite3StackAllocRawNN(D,N) alloca(N)
 # define sqlite3StackAllocZero(D,N)  memset(alloca(N), 0, N)
 # define sqlite3StackFree(D,P)
+# define sqlite3StackFreeNN(D,P)
 #else
 # define sqlite3StackAllocRaw(D,N)   sqlite3DbMallocRaw(D,N)
+# define sqlite3StackAllocRawNN(D,N) sqlite3DbMallocRawNN(D,N)
 # define sqlite3StackAllocZero(D,N)  sqlite3DbMallocZero(D,N)
 # define sqlite3StackFree(D,P)       sqlite3DbFree(D,P)
+# define sqlite3StackFreeNN(D,P)     sqlite3DbFreeNN(D,P)
 #endif
 
 /* Do not allow both MEMSYS5 and MEMSYS3 to be defined together.  If they
