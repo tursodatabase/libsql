@@ -5384,10 +5384,10 @@ static SQLITE_NOINLINE void whereCheckIfBloomFilterIsUseful(
 ** This is an sqlite3ParserAddCleanup() callback that is invoked to
 ** free the Parse->pIdxExpr list when the Parse object is destroyed.
 */
-static void whereIndexExprCleanup(sqlite3 *db, void *pObject){
+static void whereIndexedExprCleanup(sqlite3 *db, void *pObject){
   Parse *pParse = (Parse*)pObject;
   while( pParse->pIdxExpr!=0 ){
-    IndexExpr *p = pParse->pIdxExpr;
+    IndexedExpr *p = pParse->pIdxExpr;
     pParse->pIdxExpr = p->pIENext;
     sqlite3ExprDelete(db, p->pExpr);
     sqlite3DbFreeNN(db, p);
@@ -5400,19 +5400,19 @@ static void whereIndexExprCleanup(sqlite3 *db, void *pObject){
 ** number for the index and iDataCur is the cursor number for the corresponding
 ** table.
 **
-** This routine adds IndexExpr entries to the Parse->pIdxExpr field for
+** This routine adds IndexedExpr entries to the Parse->pIdxExpr field for
 ** each of the expressions in the index so that the expression code generator
 ** will know to replace occurrences of the indexed expression with
 ** references to the corresponding column of the index.
 */
-static SQLITE_NOINLINE void whereAddIndexExpr(
-  Parse *pParse,     /* Add IndexExpr entries to pParse->pIdxExpr */
+static SQLITE_NOINLINE void whereAddIndexedExpr(
+  Parse *pParse,     /* Add IndexedExpr entries to pParse->pIdxExpr */
   Index *pIdx,       /* The index-on-expression that contains the expressions */
   int iIdxCur,       /* Cursor number for pIdx */
   SrcItem *pTabItem  /* The FROM clause entry for the table */
 ){
   int i;
-  IndexExpr *p;
+  IndexedExpr *p;
   Table *pTab;
   assert( pIdx->bHasExpr );
   pTab = pIdx->pTable;
@@ -5426,7 +5426,7 @@ static SQLITE_NOINLINE void whereAddIndexExpr(
     }else{
       continue;
     }
-    p = sqlite3DbMallocRaw(pParse->db,  sizeof(IndexExpr));
+    p = sqlite3DbMallocRaw(pParse->db,  sizeof(IndexedExpr));
     if( p==0 ) break;
     p->pIENext = pParse->pIdxExpr;
     p->pExpr = sqlite3ExprDup(pParse->db, pExpr, 0);
@@ -5436,7 +5436,7 @@ static SQLITE_NOINLINE void whereAddIndexExpr(
     p->bMaybeNullRow = (pTabItem->fg.jointype & (JT_LEFT|JT_LTORJ))!=0;
     pParse->pIdxExpr = p;
     if( p->pIENext==0 ){
-      sqlite3ParserAddCleanup(pParse, whereIndexExprCleanup, pParse);
+      sqlite3ParserAddCleanup(pParse, whereIndexedExprCleanup, pParse);
     }
   }
 }
@@ -5987,7 +5987,7 @@ WhereInfo *sqlite3WhereBegin(
       }else{
         iIndexCur = pParse->nTab++;
         if( pIx->bHasExpr ){
-          whereAddIndexExpr(pParse, pIx, iIndexCur, pTabItem);
+          whereAddIndexedExpr(pParse, pIx, iIndexCur, pTabItem);
         }
       }
       pLevel->iIdxCur = iIndexCur;
@@ -6386,7 +6386,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
         last = pWInfo->iEndWhere;
       }
       if( pIdx->bHasExpr ){
-        IndexExpr *p = pParse->pIdxExpr;
+        IndexedExpr *p = pParse->pIdxExpr;
         while( p ){
           if( p->iIdxCur==pLevel->iIdxCur ){
             p->iDataCur = -1;

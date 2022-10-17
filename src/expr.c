@@ -4044,17 +4044,17 @@ static int exprCodeInlineFunction(
 }
 
 /*
-** Check to see if pExpr is one of the indexed expression on pParse->pIdxExpr.
+** Check to see if pExpr is one of the indexed expressions on pParse->pIdxExpr.
 ** If it is, then resolve the expression by reading from the index and
-** return the register into which the value has been read.  If there is
-** no match, return negative.
+** return the register into which the value has been read.  If pExpr is
+** not an indexed expression, then return negative.
 */
-static SQLITE_NOINLINE int sqlite3ExprIndexLookup(
+static SQLITE_NOINLINE int sqlite3IndexedExprLookup(
   Parse *pParse,   /* The parsing context */
   Expr *pExpr,     /* The expression to potentially bypass */
   int target       /* Where to store the result of the expression */
 ){
-  IndexExpr *p;
+  IndexedExpr *p;
   Vdbe *v;
   for(p=pParse->pIdxExpr; p; p=p->pIENext){
     if( p->iDataCur<0 ) continue;
@@ -4111,7 +4111,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
   if( pParse->pIdxExpr!=0 
    && pExpr!=0
    && !ExprHasProperty(pExpr, EP_Leaf)
-   && (r1 = sqlite3ExprIndexLookup(pParse, pExpr, target))>=0
+   && (r1 = sqlite3IndexedExprLookup(pParse, pExpr, target))>=0
   ){
     return r1;
   }
