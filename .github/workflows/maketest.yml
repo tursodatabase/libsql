@@ -22,3 +22,6 @@ jobs:
       
     - name: Run tests
       run: make test
+
+    - name: Run Rust tests
+      run: make rusttest
