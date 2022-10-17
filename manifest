@@ -1,5 +1,5 @@
-C Typo\sfix.
-D 2022-10-16T23:33:24.941
+C Remove\sa\suse\sof\salloca()\sthat\sdoes\smore\sharm\sthan\sgood.
+D 2022-10-17T09:56:51.582
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -708,7 +708,7 @@ F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
 F src/where.c 63e712bcad47f70e94c2150976cd7da5040933699e3938d4189d064acbe40891
 F src/whereInt.h 70cd30de9ed784aa33fa6bd1245f060617de7a00d992469b6d8e419eed915743
-F src/wherecode.c bb88be457df3a6a01c844074ab79a9ba74279e73185f1362383aa697e3cae5dc
+F src/wherecode.c 8ec5a413f12af06638dcca36d0954be2151eea6f293d3c67397cef6a90d6adf1
 F src/whereexpr.c 55a39f42aaf982574fbf52906371a84cceed98a994422198dfd03db4fce4cc46
 F src/window.c 928e215840e2f2d9a2746e018c9643ef42c66c4ab6630ef0df7fa388fa145e86
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -2033,8 +2033,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8d59ccd9f357fbed0b0790508ca9027194fc4b0131029f9f460c7b4bde806a5f
-R 7eb92d13aa47fc635e45e77480d0d518
-U stephan
-Z e9d4f2e253f6a0945cb00e8689db7471
+P 650126c92aa191d6361a32ec90ca7def60a2df22ba6bec1d2354692fe3504423
+R 0976ce63c2884a014f8f48854ee7e700
+U drh
+Z eaf9cf4bd31fd72933cff88a3ffeecd2
 # Remove this line to create a well-formed Fossil manifest.
