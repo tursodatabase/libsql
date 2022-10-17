@@ -1,5 +1,5 @@
-C Make\suse\sof\salloca()\sin\swherePathSolver()\swhen\sSQLITE_USE_ALLOCA\sis\sdefined.
-D 2022-10-17T10:15:41.927
+C Rework\sext/wasm/version-info.c\sto\smake\sit\smore\suseful\sfor\sthe\supcoming\sdist\sbuild\srules.
+D 2022-10-17T15:52:12.372
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -473,7 +473,7 @@ F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
 F ext/userauth/userauth.c 7f00cded7dcaa5d47f54539b290a43d2e59f4b1eb5f447545fa865f002fc80cb
 F ext/wasm/EXPORTED_FUNCTIONS.fiddle.in 27450c8b8c70875a260aca55435ec927068b34cef801a96205adb81bdcefc65c
 F ext/wasm/EXPORTED_RUNTIME_METHODS.fiddle 0e88c8cfc3719e4b7e74980d9da664c709e68acf863e48386cda376edfd3bfb0
-F ext/wasm/GNUmakefile ce1eb95ca32b23ce3400b26e99c23f6b2737a5356cb4eff2b8b364d7630a8cc9
+F ext/wasm/GNUmakefile 0fd09868726368d849c2cf03e6ac9884a07d236855c7802a89f0f8a16c034d10
 F ext/wasm/README.md 1e5b28158b74ab3ffc9d54fcbc020f0bbeb82c2ff8bbd904214c86c70e8a3066
 F ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-api 89983a8d122c35a90c65ec667844b95a78bcd04f3198a99c1e0c8368c1a0b03a
 F ext/wasm/api/EXPORTED_RUNTIME_METHODS.sqlite3-api 1ec3c73e7d66e95529c3c64ac3de2470b0e9e7fbf7a5b41261c367cf4f1b7287
@@ -2033,8 +2033,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2ab3cf4d71b23a4c0b69f977828d82df7bbc080c29ae189e0d78d38efee50c96
-R fd1636fa451b5b8e84570a9195b2236a
-U drh
-Z 2743069ef130a7abdc131b5ac7f77275
+P 45752471521f8d4a6cad4bce40f907018acd403ffd3b8170020c34e4e0b6b91b
+R d0d2c913cf0284c12f6d5ab66c60618d
+U stephan
+Z 389e498f7feafb90497b4f68916517e0
 # Remove this line to create a well-formed Fossil manifest.

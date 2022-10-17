@@ -125,9 +125,9 @@ else
   $(info Development build. Use '$(MAKE) release' for a smaller release build.)
 endif
 
-version-json: version-json.c $(sqlite3.c) $(MAKEFILE)
-	$(CC) -O0 -I$(dir.top) -o $@ $(SQLITE_OPT) -DHAVE_MREMAP=0 $< $(sqlite3.c)
-CLEAN_FILES := version-json
+version-info: version-info.c $(sqlite3.c) $(MAKEFILE)
+	$(CC) -O0 -I$(dir.top) -o $@ $(SQLITE_OPT) $< $(sqlite3.c)
+CLEAN_FILES := version-info
 
 EXPORTED_FUNCTIONS.api.in := $(dir.api)/EXPORTED_FUNCTIONS.sqlite3-api
 
@@ -161,12 +161,12 @@ $(sqlite3-api.js): $(sqlite3-api.jses) $(MAKEFILE)
 		echo "/* END FILE: $$i */"; \
 	done > $@
 
-$(sqlite3-api-build-version.js): version-json
+$(sqlite3-api-build-version.js): version-info
 	@echo "Making $@..."
 	@{ \
   echo 'self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){'; \
 	echo -n '  sqlite3.version = '; \
-  ./version-json; \
+  ./version-info --json; \
   echo ';'; \
 	echo '});'; \
   } > $@
@@ -517,6 +517,12 @@ $(info This platform does not support the WASMFS build.)
 else
 include wasmfs.make
 endif
+
+########################################################################
+# Create deliverables: TODO
+#ifneq (,$(filter dist,$(MAKECMDGOALS)))
+#include dist.make
+#endif
 
 ########################################################################
 # Push files to public wasm-testing.sqlite.org server
