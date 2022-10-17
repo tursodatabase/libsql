@@ -1298,6 +1298,9 @@ testrunner:	testfixture$(TEXE)
 quicktest:	./testfixture$(TEXE)
 	./testfixture$(TEXE) $(TOP)/test/extraquick.test $(TESTOPTS)
 
+rusttest:	sqlite3.h libsqlite3.la
+	( cd test/rust_suite; cargo test )
+
 # This is the common case.  Run many tests that do not take too long,
 # including fuzzcheck, sqlite3_analyzer, and sqldiff tests.
 #
