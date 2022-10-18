@@ -1,5 +1,5 @@
-C Merge\srecent\strunk\sfixes\sinto\sthe\sindex-expr-opt\sbranch.
-D 2022-10-18T16:32:22.335
+C Fix\sthe\sindexed\sexpression\sresolver\sfor\sgenerated\scolumns\sso\sthat\sit\spicks\nthe\scorrect\stable\sin\sa\sself-join.
+D 2022-10-18T16:47:41.814
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -571,7 +571,7 @@ F src/date.c 94ce83b4cd848a387680a5f920c9018c16655db778c4d36525af0a0f34679ac5
 F src/dbpage.c 5808e91bc27fa3981b028000f8fadfdc10ce9e59a34ce7dc4e035a69be3906ec
 F src/dbstat.c 861e08690fcb0f2ee1165eff0060ea8d4f3e2ea10f80dab7d32ad70443a6ff2d
 F src/delete.c 86573edae75e3d3e9a8b590d87db8e47222103029df4f3e11fa56044459b514e
-F src/expr.c ba67701bd7621ebba9c472fcc2dbd4f6444260530e694fa9d87281f9aedec93c
+F src/expr.c 74a947891247873696385bf910e60c60e50283bbc0e8ef90b571ac60bc4b6279
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 722f20779f5342a787922deded3628d8c74b5249cab04098cf17ee2f2aaff002
 F src/func.c fe2a795ad647ce42054873ac91c43beb7b5d204892903a67f6e7e314379b9d4a
@@ -2036,8 +2036,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c7b9cc645b394a1b638a9a13ca83d321215aaa78d69ca70c6baa0ee692ed21bf 740a2eb0928d54fdf735a8e573c6a61a34dbd295b46e5b6ef39e957fd2623293
-R f7f5f954c4cc82eef2f394d97ecd28bc
+P 6198ab4b871c464448ae303072bde0a810cac566a516cc29b1bf806fbd0a6c7b
+R 51dcaf4cc6cc82ca16d600c0c30b38d8
 U drh
-Z 298a7ba276579f138f35bb1c8d732eed
+Z c6035e9224ad1746d908acc7b5320c40
 # Remove this line to create a well-formed Fossil manifest.

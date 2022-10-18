@@ -4057,8 +4057,13 @@ static SQLITE_NOINLINE int sqlite3IndexedExprLookup(
   IndexedExpr *p;
   Vdbe *v;
   for(p=pParse->pIdxExpr; p; p=p->pIENext){
-    if( p->iDataCur<0 ) continue;
-    if( sqlite3ExprCompare(0, pExpr, p->pExpr, p->iDataCur)!=0 ) continue;
+    int iDataCur = p->iDataCur;
+    if( iDataCur<0 ) continue;
+    if( pParse->iSelfTab ){
+      if( p->iDataCur!=pParse->iSelfTab-1 ) continue;
+      iDataCur = -1;
+    }
+    if( sqlite3ExprCompare(0, pExpr, p->pExpr, iDataCur)!=0 ) continue;
     v = pParse->pVdbe;
     assert( v!=0 );
     if( p->bMaybeNullRow ){
@@ -4108,17 +4113,14 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
   assert( target>0 && target<=pParse->nMem );
   assert( v!=0 );
 
-  if( pParse->pIdxExpr!=0 
-   && pExpr!=0
+expr_code_doover:
+  if( pExpr==0 ){
+    op = TK_NULL;
+  }else if( pParse->pIdxExpr!=0 
    && !ExprHasProperty(pExpr, EP_Leaf)
    && (r1 = sqlite3IndexedExprLookup(pParse, pExpr, target))>=0
   ){
     return r1;
-  }
-
-expr_code_doover:
-  if( pExpr==0 ){
-    op = TK_NULL;
   }else{
     assert( !ExprHasVVAProperty(pExpr,EP_Immutable) );
     op = pExpr->op;
