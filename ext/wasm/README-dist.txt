@@ -15,10 +15,10 @@ This archive contains two related deliverables:
   but is less portable than the main build, so is provided
   as a separate binary.
 
-Both directories contain small demonstration apps. Browsers will not
-server WASM files from file:// URLs, so the demonstrations require a
-web server and that server must include the following headers in its
-response when serving the files:
+Both directories contain small demonstration and test apps. Browsers
+will not serve WASM files from file:// URLs, so the demo/test apps
+require a web server and that server must include the following
+headers in its response when serving the files:
 
     Cross-Origin-Opener-Policy: same-origin
     Cross-Origin-Embedder-Policy: require-corp

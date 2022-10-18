@@ -1,5 +1,5 @@
-C Add\snew\stest\sfile\swindowE.test,\sto\stest\sthe\swindow\sfunctions\smodules\sresponse\sto\san\sinconsistent\scollation\ssequence.
-D 2022-10-18T15:02:08.725
+C More\swork\son\sthe\sJS\send-user\sdeliverables.\sAdd\stool/stripccomments.c\sto\ssupport\sthat.
+D 2022-10-18T20:36:50.562
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -473,8 +473,8 @@ F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
 F ext/userauth/userauth.c 7f00cded7dcaa5d47f54539b290a43d2e59f4b1eb5f447545fa865f002fc80cb
 F ext/wasm/EXPORTED_FUNCTIONS.fiddle.in 27450c8b8c70875a260aca55435ec927068b34cef801a96205adb81bdcefc65c
 F ext/wasm/EXPORTED_RUNTIME_METHODS.fiddle 0e88c8cfc3719e4b7e74980d9da664c709e68acf863e48386cda376edfd3bfb0
-F ext/wasm/GNUmakefile 2fd83d7183bce3f9236fdd2dbe20a4ea37b1d7b26e1a422054ec63008319f065
-F ext/wasm/README-dist.txt bc1fb4f90a28ad2ed0e555a637f393b9249d8d928ac509dad6293b7cae628ea4
+F ext/wasm/GNUmakefile 279fd4589ba602e24d8e66ca795ec5a2275a0e329405e4e984e8ea0579339bae
+F ext/wasm/README-dist.txt 170be2d47b4b52504ef09088ca2f143aab657de0f9ac04d3a68e366f40929c3d
 F ext/wasm/README.md 1e5b28158b74ab3ffc9d54fcbc020f0bbeb82c2ff8bbd904214c86c70e8a3066
 F ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-api 89983a8d122c35a90c65ec667844b95a78bcd04f3198a99c1e0c8368c1a0b03a
 F ext/wasm/api/EXPORTED_RUNTIME_METHODS.sqlite3-api 1ec3c73e7d66e95529c3c64ac3de2470b0e9e7fbf7a5b41261c367cf4f1b7287
@@ -504,7 +504,7 @@ F ext/wasm/demo-123.html 7c239c9951d1b113f9f532969ac039294cf1dcfee2b3ae0a2c1ed2b
 F ext/wasm/demo-123.js e0cbeb3495e14103763d5c49794a24d67cf3d78e0ed5b82843be70c0c2ee4b3b
 F ext/wasm/demo-kvvfs1.html 7d4f28873de67f51ac18c584b7d920825139866a96049a49c424d6f5a0ea5e7f
 F ext/wasm/demo-kvvfs1.js 105596bd2ccd0b1deb5fde8e99b536e8242d4bb5932fac0c8403ff3a6bc547e8
-F ext/wasm/dist.make d7076e90f04396f1cc54cb41ee106451496179c10d54bbdebb65ae7b1ae12211
+F ext/wasm/dist.make 1d59fafdfcf6fc5ee0f3351b21199585dba21afcf0518241789fd5d37a1c011d
 F ext/wasm/fiddle.make b609dfde299b4523d7123b7e0cecaa1a0aff0dd984e62cea653aae91f5063c90
 F ext/wasm/fiddle/emscripten.css 3d253a6fdb8983a2ac983855bfbdd4b6fa1ff267c28d69513dd6ef1f289ada3f
 F ext/wasm/fiddle/fiddle-worker.js 531859a471924a0ea48afa218e6877f0c164ca324d51e15843ed6ecc1c65c7ee
@@ -2007,6 +2007,7 @@ F tool/sqltclsh.c.in 1bcc2e9da58fadf17b0bf6a50e68c1159e602ce057210b655d50bad5aaa
 F tool/sqltclsh.tcl 862f4cf1418df5e1315b5db3b5ebe88969e2a784525af5fbf9596592f14ed848
 F tool/srcck1.c 371de5363b70154012955544f86fdee8f6e5326f
 F tool/stack_usage.tcl f8e71b92cdb099a147dad572375595eae55eca43
+F tool/stripccomments.c 20b8aabc4694d0d4af5566e42da1f1a03aff057689370326e9269a9ddcffdc37
 F tool/symbols-mingw.sh 4dbcea7e74768305384c9fd2ed2b41bbf9f0414d
 F tool/symbols.sh 1612bd947750e21e7b47befad5f6b3825b06cce0705441f903bf35ced65ae9b9
 F tool/varint.c 5d94cb5003db9dbbcbcc5df08d66f16071aee003
@@ -2036,8 +2037,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 904b54625d985e742888e06ba792cab316b9ec9d6669d9cf509bac48030373ca
-R 609c010622cb8a1edf242ffa07ea33a0
-U dan
-Z 47ec91d5045ad14459bc2cd80292963b
+P 740a2eb0928d54fdf735a8e573c6a61a34dbd295b46e5b6ef39e957fd2623293
+R f3423b9e5fdd1b3c8749326c161b8bbf
+U stephan
+Z 8ed4b03e8c6243f1d25f4dc2d31715c7
 # Remove this line to create a well-formed Fossil manifest.

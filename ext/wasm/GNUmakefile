@@ -1,11 +1,29 @@
 ########################################################################
 # This GNU makefile drives the build of the sqlite3 WASM
 # components. It is not part of the canonical build process.
+#
+# This build assumes a Linux platform and is not intended for
+# client-level use. It is for the sqlite project's own development of
+# the JS/WASM components.
+#
+# Primary targets:
+#
+#  default, all = build in dev mode
+#
+#  o0, o1, o2, o3, os, oz = full clean/rebuild with the -Ox level indicated
+#      by the target name. Rebuild is necessary for all components to get
+#      the desired optimization level.
+#
+#  dist = create end user deliverables. Add dist-opt=oX to build with a
+#      specific optimization level, where oX is one of the above-listed
+#      o? target names.
+#
+#  clean = clean up
 ########################################################################
 SHELL := $(shell which bash 2>/dev/null)
 MAKEFILE := $(lastword $(MAKEFILE_LIST))
-all:
-release: all
+default: all
+release: default
 
 # Emscripten SDK home dir and related binaries...
 EMSDK_HOME ?= $(word 1,$(wildcard $(HOME)/src/emsdk $(HOME)/emsdk))
@@ -46,7 +64,9 @@ dir.api := api
 dir.jacc := jaccwabyt
 dir.common := common
 dir.fiddle := fiddle
+dir.tool := $(dir.top)/tool
 CLEAN_FILES := *~ $(dir.jacc)/*~ $(dir.api)/*~ $(dir.common)/*~
+DISTCLEAN_FILES := ./-dummy
 emcc_enable_bigint ?= 1
 sqlite3.c := $(dir.top)/sqlite3.c
 sqlite3.h := $(dir.top)/sqlite3.h
@@ -113,8 +133,11 @@ emcc_opt_full := $(emcc_opt) -g3
 $(sqlite3.c) $(sqlite3.h):
 	$(MAKE) -C $(dir.top) sqlite3.c
 
+.PHONY: clean distclean
 clean:
 	-rm -f $(CLEAN_FILES)
+distclean: clean
+	-rm -f $(DISTCLEAN_FILES)
 
 ifeq (release,$(filter release,$(MAKECMDGOALS)))
   ifeq (,$(wasm-strip))
@@ -128,7 +151,12 @@ endif
 version-info := $(dir.wasm)/version-info
 $(version-info): $(dir.wasm)/version-info.c $(sqlite3.h) $(MAKEFILE)
 	$(CC) -O0 -I$(dir.top) -o $@ $<
-CLEAN_FILES := $(version-info)
+DISTCLEAN_FILES += $(version-info)
+
+stripccomments := $(dir.tool)/stripccomments
+$(stripccomments): $(stripccomments).c $(MAKEFILE)
+	$(CC) -o $@ $<
+DISTCLEAN_FILES += $(stripccomments)
 
 EXPORTED_FUNCTIONS.api.in := $(dir.api)/EXPORTED_FUNCTIONS.sqlite3-api
 
@@ -480,11 +508,7 @@ push-fiddle: $(fiddle_files)
 # painful.
 
 .PHONY: o0 o1 o2 o3 os oz
-o-xtra := -g3
-# ^^^ -g3 is important to keep higher -O levels from mangling (via
-# minification), or outright removing, otherwise working code.
-
-o-xtra += -flto
+o-xtra := -flto
 # ^^^^ -flto can have a considerably performance boost at -O0 but
 # doubles the build time and seems to have negligible effect on
 # higher optimization levels.
@@ -515,7 +539,9 @@ PLATFORMS_WITH_NO_WASMFS := aarch64 # add any others here
 THIS_ARCH := $(shell /usr/bin/uname -m)
 ifneq (,$(filter $(THIS_ARCH),$(PLATFORMS_WITH_NO_WASMFS)))
 $(info This platform does not support the WASMFS build.)
+HAVE_WASMFS := 0
 else
+HAVE_WASMFS := 1
 include wasmfs.make
 endif
 
