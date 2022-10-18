@@ -243,7 +243,7 @@ columnname(A) ::= nm(A) typetoken(Y). {sqlite3AddColumn(pParse,A,Y);}
 // at the beginning.
 //
 %token ABORT ACTION AFTER ANALYZE ASC ATTACH BEFORE BEGIN BY CASCADE CAST.
-%token CONFLICT DATABASE DEFERRED DESC DETACH EACH END EXCLUSIVE EXPLAIN FAIL.
+%token CONFLICT DATABASE DEFERRED DESC DETACH EACH END EXCLUSIVE EXPLAIN FAIL FUNCTION LANGUAGE.
 %token OR AND NOT IS MATCH LIKE_KW BETWEEN IN ISNULL NOTNULL NE EQ.
 %token GT LE LT GE ESCAPE.
 
@@ -254,8 +254,8 @@ columnname(A) ::= nm(A) typetoken(Y). {sqlite3AddColumn(pParse,A,Y);}
 %fallback ID
   ABORT ACTION AFTER ANALYZE ASC ATTACH BEFORE BEGIN BY CASCADE CAST COLUMNKW
   CONFLICT DATABASE DEFERRED DESC DETACH DO
-  EACH END EXCLUSIVE EXPLAIN FAIL FOR
-  IGNORE IMMEDIATE INITIALLY INSTEAD LIKE_KW MATCH NO PLAN
+  EACH END EXCLUSIVE EXPLAIN FAIL FOR FUNCTION
+  IGNORE IMMEDIATE INITIALLY INSTEAD LANGUAGE LIKE_KW MATCH NO PLAN
   QUERY KEY OF OFFSET PRAGMA RAISE RANDOM RECURSIVE RELEASE REPLACE RESTRICT ROW ROWS
   ROLLBACK SAVEPOINT TEMP TRIGGER VACUUM VIEW VIRTUAL WITH WITHOUT
   NULLS FIRST LAST
@@ -491,6 +491,22 @@ cmd ::= DROP VIEW ifexists(E) fullname(X). {
   sqlite3DropTable(pParse, X, 1, E);
 }
 %endif  SQLITE_OMIT_VIEW
+
+%ifdef LIBSQL_ENABLE_WASM_RUNTIME
+///////////////////// The CREATE FUNCTION statement /////////////////////////
+//
+
+cmd ::= createkw FUNCTION ifnotexists(E) nm(N) LANGUAGE nm(L) AS STRING(B). {
+  libsql_create_function(pParse, &N, &L, &B, E);
+}
+
+///////////////////// The DROP FUNCTION statement ///////////////////////////
+//
+
+cmd ::= DROP FUNCTION ifexists(E) nm(N). {
+  libsql_drop_function(pParse, &N, E);
+}
+%endif
 
 //////////////////////// The SELECT statement /////////////////////////////////
 //
