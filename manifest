@@ -1,5 +1,5 @@
-C Add\sext/wasm/README-dist.txt,\sintended\sto\shave\sbeen\sin\sthe\sprevious\scheckin.
-D 2022-10-17T17:36:11.919
+C Fix\ssqlite3VdbeRecordCompareWithSkip()\sso\sthat\sit\ssorts\sthe\sinternal-use\nserial-type\sof\s10\stogether\swith\sNULLs.\ndbsqlfuzz\s5ff35e9d49a5fcca5051e23960ff2f483a538bab
+D 2022-10-18T10:27:06.495
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -697,7 +697,7 @@ F src/vdbe.c 0c7cb1b934ad8611e14e7efaf2c3a95df7dd3f7964d63ea07fef42a23df86131
 F src/vdbe.h 58675f47dcf3105bab182c3ad3726efd60ffd003e954386904ac9107d0d2b743
 F src/vdbeInt.h 17b7461ffcf9ee760d1341731715a419f6b8c763089a7ece25c2e8098d702b3f
 F src/vdbeapi.c 1e8713d0b653acb43cd1bdf579c40e005c4844ea90f414f065946a83db3c27fb
-F src/vdbeaux.c 6946c7082a0d61566794bd35253f0ccd013a9dba3f33488a23fd5360a5744e5b
+F src/vdbeaux.c fe4e8d270582d5eb7c4d44222b74584d8e47c5e6ba90849416115ce5eb47d5a4
 F src/vdbeblob.c 5e61ce31aca17db8fb60395407457a8c1c7fb471dde405e0cd675974611dcfcd
 F src/vdbemem.c 6cfed43758d57b6e3b99d9cdedfeccd86e45a07e427b22d8487cbdbebb6c522a
 F src/vdbesort.c 43756031ca7430f7aec3ef904824a7883c4ede783e51f280d99b9b65c0796e35
@@ -2035,8 +2035,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f6cee114c71e11ca1f508c8f60be5753871cbd4fd6c45ce397824bddbf00ffd9
-R 94e4f6969f6fba48019898e2b4d88284
-U stephan
-Z 0dd260cfe444ff6950e06a618165a6ba
+P c9080b6505b839cc0bb5bd25ce7df0daa91a0a303d037ffe6e77888c8584b932
+R c6933aa36b3965399e80dc36fb15b922
+U drh
+Z f66ba4d30fb256e3ce3a8281933b3c32
 # Remove this line to create a well-formed Fossil manifest.
