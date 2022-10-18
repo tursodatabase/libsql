@@ -41,4 +41,16 @@ tclsqlite.lo
 tclsqlite.o
 testdir/
 tsrc/
-
+dbhash
+fuzzcheck
+sessionfuzz
+sqldiff
+sqlite3_analyzer
+sqlite3_analyzer.c
+sqlite_cfg.h
+sqltclsh
+sqltclsh.c
+srcck1
+test-out.txt
+test/rust_suite/target
+testfixture
