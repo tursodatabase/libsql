@@ -5426,6 +5426,7 @@ static SQLITE_NOINLINE void whereAddIndexedExpr(
     }else{
       continue;
     }
+    if( sqlite3ExprIsConstant(pExpr) ) continue;
     p = sqlite3DbMallocRaw(pParse->db,  sizeof(IndexedExpr));
     if( p==0 ) break;
     p->pIENext = pParse->pIdxExpr;
