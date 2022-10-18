@@ -4074,6 +4074,7 @@ static SQLITE_NOINLINE int sqlite3IndexedExprLookup(
       sqlite3VdbeAddOp3(v, OP_IfNullRow, p->iIdxCur, addr+3, target);
       VdbeCoverage(v);
       sqlite3VdbeAddOp3(v, OP_Column, p->iIdxCur, p->iIdxCol, target);
+      VdbeComment((v, "%s expr-column %d", p->zIdxName, p->iIdxCol));
       sqlite3VdbeGoto(v, 0);
       p = pParse->pIdxExpr;
       pParse->pIdxExpr = 0;
@@ -4082,6 +4083,7 @@ static SQLITE_NOINLINE int sqlite3IndexedExprLookup(
       sqlite3VdbeJumpHere(v, addr+2);
     }else{
       sqlite3VdbeAddOp3(v, OP_Column, p->iIdxCur, p->iIdxCol, target);
+      VdbeComment((v, "%s expr-column %d", p->zIdxName, p->iIdxCol));
     }
     return target;
   }

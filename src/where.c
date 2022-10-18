@@ -5434,6 +5434,9 @@ static SQLITE_NOINLINE void whereAddIndexedExpr(
     p->iIdxCur = iIdxCur;
     p->iIdxCol = i;
     p->bMaybeNullRow = (pTabItem->fg.jointype & (JT_LEFT|JT_LTORJ))!=0;
+#ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
+    p->zIdxName = pIdx->zName;
+#endif
     pParse->pIdxExpr = p;
     if( p->pIENext==0 ){
       sqlite3ParserAddCleanup(pParse, whereIndexedExprCleanup, pParse);
