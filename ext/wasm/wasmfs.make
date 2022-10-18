@@ -9,7 +9,6 @@ MAKEFILE.wasmfs := $(lastword $(MAKEFILE_LIST))
 
 sqlite3-wasmfs.js     := sqlite3-wasmfs.js
 sqlite3-wasmfs.wasm   := sqlite3-wasmfs.wasm
-sqlite3-wasmfs.wasm.c := $(dir.api)/sqlite3-wasm.c
 
 CLEAN_FILES += $(sqlite3-wasmfs.js) $(sqlite3-wasmfs.wasm) \
     $(subst .js,.worker.js,$(sqlite3-wasmfs.js))
@@ -27,12 +26,6 @@ sqlite3-wasmfs.cflags += -pthread
 sqlite3-wasmfs.cflags += -I. -I.. -I$(dir.top)
 sqlite3-wasmfs.cflags += $(SQLITE_OPT) -DSQLITE_WASM_WASMFS
 
-sqlite3-wasmfs.extra.c :=
-ifeq (1,1)
-  # To get testing1.js to run with $(sqlite3-wasmfs.js) we need...
-  sqlite3-wasmfs.extra.c += $(jaccwabyt_test.c)
-endif
-
 ########################################################################
 # emcc flags specific to building the final .js/.wasm file...
 sqlite3-wasmfs.jsflags := -fPIC
@@ -42,12 +35,7 @@ sqlite3-wasmfs.jsflags += -sMODULARIZE
 sqlite3-wasmfs.jsflags += -sSTRICT_JS
 sqlite3-wasmfs.jsflags += -sDYNAMIC_EXECUTION=0
 sqlite3-wasmfs.jsflags += -sNO_POLYFILL
-ifeq (,$(sqlite3-wasmfs.extra.c))
-  sqlite3-wasmfs.jsflags += -sEXPORTED_FUNCTIONS=@$(dir.api)/EXPORTED_FUNCTIONS.sqlite3-api
-else
-  # need more exports for jaccwabyt test code...
-  sqlite3-wasmfs.jsflags += -sEXPORTED_FUNCTIONS=@$(dir.wasm)/EXPORTED_FUNCTIONS.api
-endif
+sqlite3-wasmfs.jsflags += -sEXPORTED_FUNCTIONS=@$(dir.api)/EXPORTED_FUNCTIONS.sqlite3-api
 sqlite3-wasmfs.jsflags += -sEXPORTED_RUNTIME_METHODS=FS,wasmMemory,allocateUTF8OnStack
                                             # wasmMemory ==> for -sIMPORTED_MEMORY
                                             # allocateUTF8OnStack ==> wasmfs internals
@@ -78,17 +66,17 @@ sqlite3-wasmfs.jsflags += $(sqlite3-wasmfs.fsflags)
 sqlite3-wasmfs.jsflags += -sWASM_BIGINT=$(emcc_enable_bigint)
 $(eval $(call call-make-pre-js,sqlite3-wasmfs))
 sqlite3-wasmfs.jsflags += $(pre-post-common.flags) $(pre-post-sqlite3-wasmfs.flags)
-$(sqlite3-wasmfs.js): $(sqlite3-wasmfs.wasm.c) $(sqlite3-wasm.c) $(sqlite3-wasmfs.extra.c) \
+$(sqlite3-wasmfs.js): $(sqlite3-wasm.c) \
     EXPORTED_FUNCTIONS.api $(MAKEFILE) $(MAKEFILE.wasmfs) \
     $(pre-post-sqlite3-wasmfs.deps)
 	@echo "Building $@ ..."
 	$(emcc.bin) -o $@ $(emcc_opt_full) $(emcc.flags) \
       $(sqlite3-wasmfs.cflags) $(sqlite3-wasmfs.jsflags) \
-     $(sqlite3-wasmfs.wasm.c) $(sqlite3-wasmfs.extra.c)
+     $(sqlite3-wasm.c)
 	chmod -x $(sqlite3-wasmfs.wasm)
 	$(maybe-wasm-strip) $(sqlite3-wasmfs.wasm)
 	@ls -la $@ $(sqlite3-wasmfs.wasm)
-
+$(sqlite3-wasmfs.wasm): $(sqlite3-wasmfs.js)
 wasmfs: $(sqlite3-wasmfs.js)
 all: wasmfs
 

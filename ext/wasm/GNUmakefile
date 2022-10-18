@@ -125,9 +125,10 @@ else
   $(info Development build. Use '$(MAKE) release' for a smaller release build.)
 endif
 
-version-info: version-info.c $(sqlite3.c) $(MAKEFILE)
-	$(CC) -O0 -I$(dir.top) -o $@ $(SQLITE_OPT) $< $(sqlite3.c)
-CLEAN_FILES := version-info
+version-info := $(dir.wasm)/version-info
+$(version-info): $(dir.wasm)/version-info.c $(sqlite3.h) $(MAKEFILE)
+	$(CC) -O0 -I$(dir.top) -o $@ $<
+CLEAN_FILES := $(version-info)
 
 EXPORTED_FUNCTIONS.api.in := $(dir.api)/EXPORTED_FUNCTIONS.sqlite3-api
 
@@ -161,12 +162,12 @@ $(sqlite3-api.js): $(sqlite3-api.jses) $(MAKEFILE)
 		echo "/* END FILE: $$i */"; \
 	done > $@
 
-$(sqlite3-api-build-version.js): version-info
+$(sqlite3-api-build-version.js): $(version-info)
 	@echo "Making $@..."
 	@{ \
   echo 'self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){'; \
 	echo -n '  sqlite3.version = '; \
-  ./version-info --json; \
+  $(version-info) --json; \
   echo ';'; \
 	echo '});'; \
   } > $@
@@ -344,7 +345,7 @@ $(sqlite3.js): $(MAKEFILE) $(sqlite3.wasm.obj) \
 	chmod -x $(sqlite3.wasm)
 	$(maybe-wasm-strip) $(sqlite3.wasm)
 	@ls -la $@ $(sqlite3.wasm)
-
+$(sqlite3.wasm): $(sqlite3.js)
 CLEAN_FILES += $(sqlite3.js) $(sqlite3.wasm)
 all: $(sqlite3.js)
 wasm: $(sqlite3.js)
@@ -520,9 +521,9 @@ endif
 
 ########################################################################
 # Create deliverables: TODO
-#ifneq (,$(filter dist,$(MAKECMDGOALS)))
-#include dist.make
-#endif
+ifneq (,$(filter dist,$(MAKECMDGOALS)))
+include dist.make
+endif
 
 ########################################################################
 # Push files to public wasm-testing.sqlite.org server
@@ -538,4 +539,3 @@ push:
     $(wasm-testing.include) $(wasm-testing.dest)
 	ssh wasm-testing 'cd $(wasm-testing.dir) && bash .gzip' || \
     echo "SSH failed: it's likely that stale content will be served via old gzip files." 
-

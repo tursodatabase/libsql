@@ -46,11 +46,11 @@ fiddle.EXPORTED_FUNCTIONS.in := \
     EXPORTED_FUNCTIONS.api
 
 EXPORTED_FUNCTIONS.fiddle: $(fiddle.EXPORTED_FUNCTIONS.in) $(MAKEFILE.fiddle)
-	grep -h -v jaccwabyt $(fiddle.EXPORTED_FUNCTIONS.in) | sort -u > $@
+	sort -u $(fiddle.EXPORTED_FUNCTIONS.in) > $@
 
 fiddle-module.js := $(dir.fiddle)/fiddle-module.js
 fiddle-module.wasm := $(subst .js,.wasm,$(fiddle-module.js))
-fiddle.cs := $(dir.top)/shell.c $(sqlite3-wasm.c)
+fiddle.cses := $(dir.top)/shell.c $(sqlite3-wasm.c)
 
 SOAP.js := sqlite3-opfs-async-proxy.js
 $(dir.fiddle)/$(SOAP.js): $(SOAP.js)
@@ -59,10 +59,10 @@ $(dir.fiddle)/$(SOAP.js): $(SOAP.js)
 $(eval $(call call-make-pre-js,fiddle-module))
 $(fiddle-module.js): $(MAKEFILE) $(MAKEFILE.fiddle) \
     EXPORTED_FUNCTIONS.fiddle EXPORTED_RUNTIME_METHODS.fiddle \
-    $(fiddle.cs) $(pre-post-fiddle-module.deps) $(dir.fiddle)/$(SOAP.js)
+    $(fiddle.cses) $(pre-post-fiddle-module.deps) $(dir.fiddle)/$(SOAP.js)
 	$(emcc.bin) -o $@ $(fiddle.emcc-flags) \
     $(pre-post-common.flags) $(pre-post-fiddle-module.flags) \
-    $(fiddle.cs)
+    $(fiddle.cses)
 	$(maybe-wasm-strip) $(fiddle-module.wasm)
 	gzip < $@ > $@.gz
 	gzip < $(fiddle-module.wasm) > $(fiddle-module.wasm).gz
