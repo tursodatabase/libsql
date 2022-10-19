@@ -5686,3 +5686,101 @@ void sqlite3WithDelete(sqlite3 *db, With *pWith){
   }
 }
 #endif /* !defined(SQLITE_OMIT_CTE) */
+
+#ifdef LIBSQL_ENABLE_WASM_RUNTIME
+
+FuncDef *try_instantiate_wasm_function(sqlite3 *, const char *, int, const char *, int , int , wasm_byte_vec_t *);
+int deregister_wasm_function(sqlite3 *, const char *);
+
+void libsql_create_function(
+  Parse *pParse,     /* The parsing context */
+  Token *pName,      /* Function name */
+  Token *pLang,      /* Language of the function */
+  Token *pBody,      /* Body of the function */
+  int noErr          /* Suppress error messages if FUNCTION already exists */
+) {
+  if (pLang->n != 4 && sqlite3_strnicmp("wasm", pLang->z, 4) != 0) {
+    sqlite3ErrorMsg(pParse, "The only supported language for user-defined functions is 'wasm'");
+    return;
+  }
+
+  Token table = {"libsql_wasm_func_table", 22};
+  Token name = {"name", 4};
+  Token body = {"body", 4};
+
+  // strip single quotes
+  pBody->n -= 2;
+  pBody->z += 1;
+
+  wasm_byte_vec_t err_msg;
+  if (!try_instantiate_wasm_function(pParse->db, pName->z, pName->n, pBody->z, pBody->n, -1, &err_msg)) {
+    sqlite3ErrorMsg(pParse, "Failed to instantiate Wasm function: %s", err_msg.data);
+    wasm_byte_vec_delete(&err_msg);
+    return;
+  }
+
+  SrcList* tab_list = sqlite3SrcListAppend(pParse, NULL, &table, NULL);
+  if (!tab_list) {
+    sqlite3ErrorMsg(pParse, "Failed to allocate tab list");
+    return;
+  }
+  IdList* id_list = sqlite3IdListAppend(pParse, NULL, &name);
+  if (!id_list) {
+    sqlite3ErrorMsg(pParse, "Failed to allocate id list");
+    sqlite3SrcListDelete(pParse->db, tab_list);
+    return;
+  }
+  id_list = sqlite3IdListAppend(pParse, id_list, &body);
+  ExprList* expr_list = sqlite3ExprListAppend(pParse, NULL, sqlite3ExprAlloc(pParse->db, TK_STRING, pName, 0));
+  if (!expr_list) {
+    sqlite3ErrorMsg(pParse, "Failed to allocate expr list");
+    sqlite3SrcListDelete(pParse->db, tab_list);
+    sqlite3IdListDelete(pParse->db, id_list);
+    return;
+  }
+  expr_list = sqlite3ExprListAppend(pParse, expr_list, sqlite3ExprAlloc(pParse->db, TK_STRING, pBody, 0));
+  Select* select = sqlite3SelectNew(pParse, expr_list, 0, 0, 0, 0, 0, SF_Values|SF_MultiValue, 0);
+  if (!select) {
+    sqlite3ErrorMsg(pParse, "Failed to allocate select");
+    sqlite3SrcListDelete(pParse->db, tab_list);
+    sqlite3IdListDelete(pParse->db, id_list);
+    sqlite3ExprListDelete(pParse->db, expr_list);
+    return;
+  }
+  sqlite3Insert(pParse, tab_list, select, id_list, noErr ? OE_Ignore : OE_Default, NULL);
+}
+
+void libsql_drop_function(
+  Parse *pParse,     /* The parsing context */
+  Token *pName,      /* Function name */
+  int noErr          /* Suppress error messages if FUNCTION does not exist */
+) {
+  char *zName = sqlite3NameFromToken(pParse->db, pName);
+  if (!zName) {
+    sqlite3DbFreeNN(pParse->db, zName);
+    sqlite3OomFault(pParse->db);
+    return;
+  }
+
+  int dropped = deregister_wasm_function(pParse->db, zName);
+  if (!dropped && !noErr) {
+    sqlite3ErrorMsg(pParse, "no such function: %s", zName);
+    sqlite3DbFreeNN(pParse->db, zName);
+    return;
+  }
+  sqlite3DbFreeNN(pParse->db, zName);
+
+  Token table = {"libsql_wasm_func_table", 22};
+  SrcList* tab_list = sqlite3SrcListAppend(pParse, NULL, &table, NULL);
+  if (!tab_list) {
+    sqlite3ErrorMsg(pParse, "Failed to allocate tab list");
+    return;
+  }
+  Token name = {"name", 4};
+  Expr* where = sqlite3PExpr(pParse, TK_EQ,
+                             sqlite3ExprAlloc(pParse->db, TK_ID, &name, 0),
+                             sqlite3ExprAlloc(pParse->db, TK_STRING, pName, 0));
+
+  sqlite3DeleteFrom(pParse, tab_list, where, NULL, NULL);
+}
+#endif
