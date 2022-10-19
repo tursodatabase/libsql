@@ -3483,6 +3483,13 @@ static int openDatabase(
 
   sqlite3_wal_autocheckpoint(db, SQLITE_DEFAULT_WAL_AUTOCHECKPOINT);
 
+#ifdef LIBSQL_ENABLE_WASM_RUNTIME
+  rc = libsql_initialize_wasm_func_table(db);
+  if (rc) {
+    sqlite3Error(db, rc);
+  }
+#endif
+
 opendb_out:
   if( db ){
     assert( db->mutex!=0 || isThreadsafe==0
