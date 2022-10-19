@@ -1189,6 +1189,7 @@ typedef struct FuncDef FuncDef;
 typedef struct FuncDefHash FuncDefHash;
 typedef struct IdList IdList;
 typedef struct Index Index;
+typedef struct IndexedExpr IndexedExpr;
 typedef struct IndexSample IndexSample;
 typedef struct KeyClass KeyClass;
 typedef struct KeyInfo KeyInfo;
@@ -2616,6 +2617,8 @@ struct Index {
   unsigned bNoQuery:1;     /* Do not use this index to optimize queries */
   unsigned bAscKeyBug:1;   /* True if the bba7b69f9849b5bf bug applies */
   unsigned bHasVCol:1;     /* Index references one or more VIRTUAL columns */
+  unsigned bHasExpr:1;     /* Index contains an expression, either a literal
+                           ** expression, or a reference to a VIRTUAL column */
 #ifdef SQLITE_ENABLE_STAT4
   int nSample;             /* Number of elements in aSample[] */
   int nSampleCol;          /* Size of IndexSample.anEq[] and so on */
@@ -3564,6 +3567,28 @@ struct TriggerPrg {
 #endif
 
 /*
+** For each index X that has as one of its arguments either an expression
+** or the name of a virtual generated column, and if X is in scope such that
+** the value of the expression can simply be read from the index, then
+** there is an instance of this object on the Parse.pIdxExpr list.
+**
+** During code generation, while generating code to evaluate expressions,
+** this list is consulted and if a matching expression is found, the value
+** is read from the index rather than being recomputed.
+*/
+struct IndexedExpr {
+  Expr *pExpr;            /* The expression contained in the index */
+  int iDataCur;           /* The data cursor associated with the index */
+  int iIdxCur;            /* The index cursor */
+  int iIdxCol;            /* The index column that contains value of pExpr */
+  u8 bMaybeNullRow;       /* True if we need an OP_IfNullRow check */
+  IndexedExpr *pIENext;   /* Next in a list of all indexed expressions */
+#ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
+  const char *zIdxName;   /* Name of index, used only for bytecode comments */
+#endif
+};
+
+/*
 ** An instance of the ParseCleanup object specifies an operation that
 ** should be performed after parsing to deallocation resources obtained
 ** during the parse and which are no longer needed.
@@ -3621,6 +3646,7 @@ struct Parse {
   int nLabelAlloc;     /* Number of slots in aLabel */
   int *aLabel;         /* Space to hold the labels */
   ExprList *pConstExpr;/* Constant expressions */
+  IndexedExpr *pIdxExpr;/* List of expressions used by active indexes */
   Token constraintName;/* Name of the constraint currently being parsed */
   yDbMask writeMask;   /* Start a write transaction on these databases */
   yDbMask cookieMask;  /* Bitmask of schema verified databases */
