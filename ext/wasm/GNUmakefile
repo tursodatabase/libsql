@@ -185,17 +185,17 @@ else
   $(info Development build. Use '$(MAKE) release' for a smaller release build.)
 endif
 
-version-info := $(dir.wasm)/version-info
+bin.version-info := $(dir.wasm)/bin.version-info
 # ^^^^ NOT in $(dir.tmp) because we need it to survive the cleanup
 # process for the dist build to work properly.
-$(version-info): $(dir.wasm)/version-info.c $(sqlite3.h) $(MAKEFILE)
+$(bin.version-info): $(dir.wasm)/version-info.c $(sqlite3.h) $(MAKEFILE)
 	$(CC) -O0 -I$(dir.top) -o $@ $<
-DISTCLEAN_FILES += $(version-info)
+DISTCLEAN_FILES += $(bin.version-info)
 
-stripccomments := $(dir.tool)/stripccomments
-$(stripccomments): $(stripccomments).c $(MAKEFILE)
+bin.stripccomments := $(dir.tool)/stripccomments
+$(bin.stripccomments): $(bin.stripccomments).c $(MAKEFILE)
 	$(CC) -o $@ $<
-DISTCLEAN_FILES += $(stripccomments)
+DISTCLEAN_FILES += $(bin.stripccomments)
 
 EXPORTED_FUNCTIONS.api.in := $(abspath $(dir.api)/EXPORTED_FUNCTIONS.sqlite3-api)
 EXPORTED_FUNCTIONS.api := $(dir.tmp)/EXPORTED_FUNCTIONS.api
@@ -241,12 +241,12 @@ $(sqlite3-api.js): $(sqlite3-api.jses) $(MAKEFILE)
 		echo "/* END FILE: $$i */"; \
 	done > $@
 
-$(sqlite3-api-build-version.js): $(version-info) $(MAKEFILE)
+$(sqlite3-api-build-version.js): $(bin.version-info) $(MAKEFILE)
 	@echo "Making $@..."
 	@{ \
   echo 'self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){'; \
 	echo -n '  sqlite3.version = '; \
-  $(version-info) --json; \
+  $(bin.version-info) --json; \
   echo ';'; \
 	echo '});'; \
   } > $@
@@ -543,7 +543,7 @@ o-xtra := -flto
 # doubles the build time and seems to have negligible effect on
 # higher optimization levels.
 o0: clean
-	$(MAKE) -e "emcc_opt=-O0 $(o-xtra)"
+	$(MAKE) -e "emcc_opt=-O0"
 o1: clean
 	$(MAKE) -e "emcc_opt=-O1 $(o-xtra)"
 o2: clean

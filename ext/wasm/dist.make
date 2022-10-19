@@ -10,14 +10,11 @@
 MAKEFILE.dist := $(lastword $(MAKEFILE_LIST))
 
 ########################################################################
-# Chicken/egg situation: we need $(version-info) to get the version
+# Chicken/egg situation: we need $(bin.version-info) to get the version
 # info for the archive name, but that binary may not yet be built, and
 # won't be built until we expand the dependencies. We have to use a
 # temporary name for the archive.
 dist-name = sqlite-wasm-TEMP
-dist-archive = $(dist-name).zip
-.PHONY: $(dist-archive)
-CLEAN_FILES += $(wildcard sqlite-wasm-*.zip)
 #ifeq (0,1)
 #  $(info WARNING  *******************************************************************)
 #  $(info ** Be sure to create the desired build configuration before creating the)
@@ -40,52 +37,58 @@ CLEAN_FILES += $(wildcard sqlite-wasm-*.zip)
 # date.
 dist-build ?= oz
 
-demo-123.html := $(dir.wasm)/demo-123.html
-demo-123-worker.html := $(dir.wasm)/demo-123-worker.html
-demo-123.js := $(dir.wasm)/demo-123.js
-demo-files := $(demo-123.js) $(demo-123.html) $(demo-123-worker.html) \
-              tester1.html tester1.js tester1-worker.html
-README-dist := $(dir.wasm)/README-dist.txt
-dist-dir-main := $(dist-name)/jswasm
-dist.main.extras := \
-    sqlite3-opfs-async-proxy.js \
-    sqlite3-worker1.js \
-    sqlite3-worker1-promiser.js
+dist-dir.top := $(dist-name)
+dist-dir.jswasm := $(dist-dir.top)/$(notdir $(dir.dout))
+dist-dir.common := $(dist-dir.top)/common
+dist.top.extras := \
+    demo-123.html demo-123-worker.html demo-123.js \
+    tester1.html tester1-worker.html tester1.js
+dist.jswasm.extras := $(sqlite3-api.ext.jses) $(sqlite3.wasm)
+dist.common.extras := $(wildcard $(dir.common)/*.css)
 
+.PHONY: dist
 ########################################################################
-# $(dist-archive): create the end-user deliverable archive.
+# dist: create the end-user deliverable archive.
 #
-# Maintenance reminder: because $(dist-archive) depends on
-# $(dist-build), and $(dist-build) will depend on clean, having any deps
-# on $(dist-archive) which themselves may be cleaned up by the clean
+# Maintenance reminder: because dist depends on $(dist-build), and
+# $(dist-build) will depend on clean, having any deps on
+# $(dist-archive) which themselves may be cleaned up by the clean
 # target will lead to grief in parallel builds (-j #). Thus
 # $(dist-target)'s deps must be trimmed to non-generated files or
 # files which are _not_ cleaned up by the clean target.
-$(dist-archive): \
-    $(stripccomments) $(version-info) \
+#
+# Note that we require $(bin.version-info) in order to figure out the
+# dist file's name, so cannot (without a recursive make) have the
+# target name equal to the archive name.
+dist: \
+    $(bin.stripccomments) $(bin.version-info) \
     $(dist-build) \
     $(MAKEFILE) $(MAKEFILE.dist)
 	@echo "Making end-user deliverables..."
-	@rm -fr $(dist-name)
-	@mkdir -p $(dist-dir-main)
-	@cp -p $(README-dist) $(dist-name)/README.txt
-	@cp -p $(sqlite3.wasm) $(dist.main.extras) $(dist-dir-main)
-	@$(stripccomments) -k -k < $(sqlite3.js) \
-		> $(dist-dir-main)/$(notdir $(sqlite3.js))
-	@cp -p $(demo-files) $(dist-dir-main)
-	@vnum=$$($(version-info) --version-number); \
-	vdir=sqlite-wasm-$$vnum; \
-	arc=$$vdir.zip; \
-	echo "Making $$arc ..."; \
-	rm -f $$arc; \
-	mv $(dist-name) $$vdir; \
-	zip -qr $$arc $$vdir; \
-	rm -fr $$vdir; \
-	ls -la $$arc; \
-	unzip -lv $$arc || echo "Missing unzip app? Not fatal."
+	@rm -fr $(dist-dir.top)
+	@mkdir -p $(dist-dir.jswasm) $(dist-dir.common)
+	@cp -p $(dist.top.extras) $(dist-dir.top)
+	@cp -p README-dist.txt $(dist-dir.top)/README.txt
+	@cp -p index-dist.html $(dist-dir.top)/index.html
+	@cp -p $(dist.jswasm.extras) $(dist-dir.jswasm)
+	@$(bin.stripccomments) -k -k < $(sqlite3.js) \
+		> $(dist-dir.jswasm)/$(notdir $(sqlite3.js))
+	@cp -p $(dist.common.extras) $(dist-dir.common)
+	@vnum=$$($(bin.version-info) --version-number); \
+		vdir=sqlite-wasm-$$vnum; \
+		arczip=$$vdir.zip; \
+		echo "Making $$arczip ..."; \
+		rm -f $$arczip; \
+		mv $(dist-dir.top) $$vdir; \
+		zip -qr $$arczip $$vdir; \
+		rm -fr $$vdir; \
+		ls -la $$arczip; \
+		unzip -lv $$arczip || echo "Missing unzip app? Not fatal."
 
-#$(shell $(version-info) --version-number)
-dist: $(dist-archive)
-clean-dist:
-	rm -f $(dist-archive)
-clean: clean-dist
+# We need a separate `clean` rule to account for weirdness in
+# a sub-make, where we get a copy of the $(dist-name) dir
+# copied into the new $(dist-name) dir.
+.PHONY: dist-clean
+clean: dist-clean
+dist-clean:
+	rm -fr $(dist-name) $(wildcard sqlite-wasm-*.zip)
