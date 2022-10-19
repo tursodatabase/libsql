@@ -1,5 +1,5 @@
-C Rename\sseveral\sdemo/test\sfiles\sand\sinclude\smore\sof\sthem\sin\sthe\send-user\sdist\sarchive.
-D 2022-10-19T07:34:36.266
+C Update\sthe\swasm/js\s'push'\srule\sto\saccount\sfor\sthis\smorning's\schanges.
+D 2022-10-19T07:51:12.703
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -472,7 +472,7 @@ F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
 F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
 F ext/userauth/userauth.c 7f00cded7dcaa5d47f54539b290a43d2e59f4b1eb5f447545fa865f002fc80cb
 F ext/wasm/EXPORTED_FUNCTIONS.fiddle.in 27450c8b8c70875a260aca55435ec927068b34cef801a96205adb81bdcefc65c
-F ext/wasm/GNUmakefile 1c60c998df5c33f49d1490a5746425e2d477389f4c9337613c507ff5a5a60c70
+F ext/wasm/GNUmakefile 6cd57a8ce51424220917c6ff766e8a7b7998cbdc6a1e364c4366992a77f11de4
 F ext/wasm/README-dist.txt e78e44a58772d5b5d7a5a179b5bf639cd67b62249aac66138e2c319bd02dd243
 F ext/wasm/README.md 1e5b28158b74ab3ffc9d54fcbc020f0bbeb82c2ff8bbd904214c86c70e8a3066
 F ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-api 89983a8d122c35a90c65ec667844b95a78bcd04f3198a99c1e0c8368c1a0b03a
@@ -504,12 +504,12 @@ F ext/wasm/common/whwasmutil.js 50d2ede0b0fa01c1d467e1801fab79f5e46bb02bcbd2b023
 F ext/wasm/demo-123-worker.html a0b58d9caef098a626a1a1db567076fca4245e8d60ba94557ede8684350a81ed
 F ext/wasm/demo-123.html 8c70a412ce386bd3796534257935eb1e3ea5c581e5d5aea0490b8232e570a508
 F ext/wasm/demo-123.js ebae30756585bca655b4ab2553ec9236a87c23ad24fc8652115dcedb06d28df6
-F ext/wasm/demo-jsstorage.html 409c4be4af5f207fb2877160724b91b33ea36a3cd8c204e8da1acb828ffe588e w ext/wasm/demo-kvvfs1.html
-F ext/wasm/demo-jsstorage.js 105596bd2ccd0b1deb5fde8e99b536e8242d4bb5932fac0c8403ff3a6bc547e8 w ext/wasm/demo-kvvfs1.js
-F ext/wasm/demo-worker1-promiser.html 1de7c248c7c2cfd4a5783d2aa154bce62d74c6de98ab22f5786620b3354ed15f w ext/wasm/testing-worker1-promiser.html
-F ext/wasm/demo-worker1-promiser.js f68ffbbe1c6086e18ce7961b8fc2b40dd88db174f59052e228c06b07484945ca w ext/wasm/testing-worker1-promiser.js
-F ext/wasm/demo-worker1.html 2c178c1890a2beb5a5fecb1453e796d067a4b8d3d2a04d65ca2eb1ab2c68ef5d w ext/wasm/testing2.html
-F ext/wasm/demo-worker1.js 8ba51d94c4601fa5c313d9e59b63b238f5305b5d5739ad21f4782a0161e6682e w ext/wasm/testing2.js
+F ext/wasm/demo-jsstorage.html 409c4be4af5f207fb2877160724b91b33ea36a3cd8c204e8da1acb828ffe588e
+F ext/wasm/demo-jsstorage.js 105596bd2ccd0b1deb5fde8e99b536e8242d4bb5932fac0c8403ff3a6bc547e8
+F ext/wasm/demo-worker1-promiser.html 1de7c248c7c2cfd4a5783d2aa154bce62d74c6de98ab22f5786620b3354ed15f
+F ext/wasm/demo-worker1-promiser.js f68ffbbe1c6086e18ce7961b8fc2b40dd88db174f59052e228c06b07484945ca
+F ext/wasm/demo-worker1.html 2c178c1890a2beb5a5fecb1453e796d067a4b8d3d2a04d65ca2eb1ab2c68ef5d
+F ext/wasm/demo-worker1.js 8ba51d94c4601fa5c313d9e59b63b238f5305b5d5739ad21f4782a0161e6682e
 F ext/wasm/dist.make b3b156061ff6a35ce59715632c9446cb58e0fc497021a93c778fed051a04fde1
 F ext/wasm/fiddle.make acdb1a402864f9b05a4c89805c5e91d88f5080652d8861f0865655b172243847
 F ext/wasm/fiddle/emscripten.css 3d253a6fdb8983a2ac983855bfbdd4b6fa1ff267c28d69513dd6ef1f289ada3f
@@ -2036,8 +2036,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bcbee1ec010ae74f0749aa7fda008698198a8cd52a7aa12d6458d43d3e739eb0
-R 86acac49fd52bddbad82feb56257fc0d
+P 9c85835f6f50eb3b1a2b89c817816335743f04440c48bfa05aa89ec519cc0d51
+R a9a6139814485c7e9bf06cc091e7f39f
 U stephan
-Z 7a4c1fad2692e602692868ef64880c6e
+Z dc0807c91bdea09652a27e395e493617
 # Remove this line to create a well-formed Fossil manifest.

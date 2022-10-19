@@ -593,8 +593,8 @@ endif
 
 ########################################################################
 # Push files to public wasm-testing.sqlite.org server
-wasm-testing.include = *.wasm *.js *.html \
-    batch-runner.list sql common fiddle jaccwabyt
+wasm-testing.include = $(dir.dout) *.js *.html \
+    batch-runner.list $(dir.sql) $(dir.common) $(dir.fiddle) $(dir.jacc)
 wasm-testing.exclude = sql/speedtest1.sql
 wasm-testing.dir     = /jail/sites/wasm-testing
 wasm-testing.dest   ?= wasm-testing:$(wasm-testing.dir)
