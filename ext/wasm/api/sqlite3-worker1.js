@@ -26,11 +26,8 @@
   Worker constructor and then listen for an event in the form shown
   above in order to know when the module has completed initialization.
 
-  This file accepts a couple of URL arguments to adjust how it loads
-  sqlite3.js:
+  This file accepts a URL arguments to adjust how it loads sqlite3.js:
 
-  - `sqlite3.js`, if set, is used as the URI to `sqlite3.js` and it
-    may contain path elements, e.g. `sqlite3.js=foo/bar/my-sqlite3.js`.
   - `sqlite3.dir`, if set, treats the given directory name as the
     directory from which `sqlite3.js` will be loaded.
 
@@ -40,9 +37,7 @@
 (()=>{
   const urlParams = new URL(self.location.href).searchParams;
   let theJs = 'sqlite3.js';
-  if(urlParams.has('sqlite3.js')){
-    theJs = urlParams.get('sqlite3.js');
-  }else if(urlParams.has('sqlite3.dir')){
+  if(urlParams.has('sqlite3.dir')){
     theJs = urlParams.get('sqlite3.dir') + '/' + theJs;
   }
   importScripts(theJs);

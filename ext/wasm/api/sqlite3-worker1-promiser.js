@@ -70,8 +70,8 @@
    message. The second expects an object in the form {type:...,
    args:...}  plus any other properties the client cares to set. This
    function will always set the `messageId` property on the object,
-   even if it's already set, and will set the `dbId` property to
-   `config.dbId` if it is _not_ set in the message object.
+   even if it's already set, and will set the `dbId` property to the
+   current database ID if it is _not_ set in the message object.
 
    The function throws on error.
 

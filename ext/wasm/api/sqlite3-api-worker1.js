@@ -106,7 +106,7 @@
 
   ```
   {
-    type: 'error',
+    type: "error",
 
     messageId: ...as above...,
 
@@ -150,7 +150,7 @@
 
   ```
   {
-    type: 'config',
+    type: "config-get",
     messageId: ...as above...,
     result: {
 
@@ -167,7 +167,7 @@
       the non-WASMFS OPFS VFS to open a database via a URI-style
       db filename.
 
-      vfses: result of sqlite3.capi.sqlite3_web_vfs_list()
+      vfsList: result of sqlite3.capi.sqlite3_web_vfs_list()
    }
   }
   ```
@@ -196,7 +196,7 @@
 
   ```
   {
-    type: 'open',
+    type: "open",
     messageId: ...as above...,
     result: {
       filename: db filename, possibly differing from the input.
@@ -205,7 +205,7 @@
       envelope to other calls in this API to tell them which db to
       use. If it is not provided to future calls, they will default to
       operating on the first-opened db. This property is, for API
-      consistency's sake, also part of the contaning message envelope.
+      consistency's sake, also part of the containing message envelope.
       Only the `open` operation includes it in the `result` property.
 
       persistent: true if the given filename resides in the
@@ -237,7 +237,7 @@
 
   ```
   {
-    type: 'close',
+    type: "close",
     messageId: ...as above...,
     result: {
 
@@ -269,7 +269,7 @@
 
   ```
   {
-    type: 'exec',
+    type: "exec",
     messageId: ...as above...,
     dbId: ...as above...
     result: {
@@ -370,8 +370,7 @@ sqlite3.initWorker1API = function(){
         if(alsoUnlink && filename){
           /* This isn't necessarily correct: the db might be using a
              VFS other than the default. How do we best resolve this
-             without having to special-case the kvvfs and opfs
-             VFSes? */
+             without having to special-case the opfs VFSes? */
           sqlite3.capi.wasm.sqlite3_wasm_vfs_unlink(filename);
         }
       }
@@ -524,7 +523,7 @@ sqlite3.initWorker1API = function(){
       });
       rc.wasmfsOpfsEnabled = !!sqlite3.capi.sqlite3_wasmfs_opfs_dir();
       rc.version = sqlite3.version;
-      rc.vfses = sqlite3.capi.sqlite3_web_vfs_list();
+      rc.vfsList = sqlite3.capi.sqlite3_web_vfs_list();
       return rc;
     },
 

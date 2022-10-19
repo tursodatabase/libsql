@@ -42,9 +42,14 @@ dist-dir.jswasm := $(dist-dir.top)/$(notdir $(dir.dout))
 dist-dir.common := $(dist-dir.top)/common
 dist.top.extras := \
     demo-123.html demo-123-worker.html demo-123.js \
-    tester1.html tester1-worker.html tester1.js
+    tester1.html tester1-worker.html tester1.js \
+    demo-jsstorage.html demo-jsstorage.js \
+    demo-worker1.html demo-worker1.js \
+    demo-worker1-promiser.html demo-worker1-promiser.js
 dist.jswasm.extras := $(sqlite3-api.ext.jses) $(sqlite3.wasm)
-dist.common.extras := $(wildcard $(dir.common)/*.css)
+dist.common.extras := \
+    $(wildcard $(dir.common)/*.css) \
+    $(dir.common)/SqliteTestUtil.js
 
 .PHONY: dist
 ########################################################################
