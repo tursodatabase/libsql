@@ -1315,6 +1315,9 @@ quicktest:	./testfixture$(TEXE)
 rusttest:	sqlite3.h libsqlite3.la
 	( cd test/rust_suite; LD_LIBRARY_PATH=../../.libs cargo test )
 
+rusttestwasm:	sqlite3.h libsqlite3.la
+	( cd test/rust_suite; cargo test --features udf )
+
 # This is the common case.  Run many tests that do not take too long,
 # including fuzzcheck, sqlite3_analyzer, and sqldiff tests.
 #
