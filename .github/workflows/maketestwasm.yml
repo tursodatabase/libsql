@@ -1,0 +1,31 @@
+name: Makefile CI with Wasm enabled
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: get TCL
+      run: sudo apt-get install -y tcl8.6-dev
+
+    - name: get Wasmtime
+      run: wget -q -O - https://github.com/bytecodealliance/wasmtime/releases/download/v1.0.1/wasmtime-v1.0.1-x86_64-linux-c-api.tar.xz | tar -xvJ
+            && sudo cp -vr wasmtime*/include /usr/ && sudo cp -vr wasmtime*/lib /usr/
+
+    - name: configure with Wasm
+      run: ./configure --enable-wasm-runtime
+      
+    - name: Run tests
+      run: make test
+
+    - name: Run Rust tests with Wasm
+      run: make rusttestwasm
