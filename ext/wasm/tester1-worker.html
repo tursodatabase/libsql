@@ -24,7 +24,7 @@
         ln.append(document.createTextNode(args.join(' ')));
         logTarget.append(ln);
       };
-      const w = new Worker("tester1.js");
+      const w = new Worker("tester1.js?sqlite3.dir=jswasm");
       w.onmessage = function({data}){
         switch(data.type){
             case 'log':

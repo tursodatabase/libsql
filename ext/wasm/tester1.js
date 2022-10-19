@@ -65,7 +65,7 @@
   };
   const normalizeArgs = (args)=>args.map(mapToString);
   if( isUIThread() ){
-    console.log("Running in UI thread.");
+    console.log("Running in the UI thread.");
     const logTarget = document.querySelector('#test-output');
     logClass = function(cssClass,...args){
       const ln = document.createElement('div');
@@ -74,7 +74,7 @@
       logTarget.append(ln);
     };
   }else{ /* Worker thread */
-    console.log("Running Worker thread.");
+    console.log("Running in a Worker thread.");
     logClass = function(cssClass,...args){
       postMessage({
         type:'log',
@@ -1428,7 +1428,26 @@
   ////////////////////////////////////////////////////////////////////////
   log("Loading and initializing sqlite3 WASM module...");
   if(!isUIThread()){
-    importScripts("sqlite3.js");
+    /*
+      If sqlite3.js is in a directory other than this script, in order
+      to get sqlite3.js to resolve sqlite3.wasm properly, we have to
+      explicitly tell it where sqlite3.js is being loaded from. We do
+      that by passing the `sqlite3.dir=theDirName` URL argument to
+      _this_ script. That URL argument will be seen by the JS/WASM
+      loader and it will adjust the sqlite3.wasm path accordingly. If
+      sqlite3.js/.wasm are in the same directory as this script then
+      that's not needed.
+
+      URL arguments passed as part of the filename via importScripts()
+      are simply lost, and such scripts see the self.location of
+      _this_ script.
+    */
+    let sqlite3Js = 'sqlite3.js';
+    const urlParams = new URL(self.location.href).searchParams;
+    if(urlParams.has('sqlite3.dir')){
+      sqlite3Js = urlParams.get('sqlite3.dir') + '/' + sqlite3Js;
+    }
+    importScripts(sqlite3Js);
   }
   self.sqlite3InitModule({
     print: log,

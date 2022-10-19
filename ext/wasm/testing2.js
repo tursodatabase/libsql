@@ -19,7 +19,7 @@
 'use strict';
 (function(){
   const T = self.SqliteTestUtil;
-  const SW = new Worker("sqlite3-worker1.js");
+  const SW = new Worker("jswasm/sqlite3-worker1.js");
   const DbState = {
     id: undefined
   };

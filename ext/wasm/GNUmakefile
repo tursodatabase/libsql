@@ -90,7 +90,7 @@ dir.tool := $(dir.top)/tool
 # the loading-from-worker case...
 #
 # dir.dout = output dir for deliverables.
-dir.dout := $(dir.wasm)
+dir.dout := $(dir.wasm)/jswasm
 # dir.tmp = output dir for intermediary build files, as opposed to
 # end-user deliverables.
 dir.tmp := $(dir.wasm)/bld
@@ -217,6 +217,20 @@ sqlite3-api.jses += $(dir.api)/sqlite3-api-oo1.js
 sqlite3-api.jses += $(dir.api)/sqlite3-api-worker1.js
 sqlite3-api.jses += $(dir.api)/sqlite3-api-opfs.js
 sqlite3-api.jses += $(dir.api)/sqlite3-api-cleanup.js
+
+# "External" API files which are part of our distribution
+# but not part of the sqlite3-api.js amalgamation.
+SOAP.js := $(dir.api)/sqlite3-opfs-async-proxy.js
+sqlite3-worker1.js := $(dir.api)/sqlite3-worker1.js
+sqlite3-worker1-promiser.js := $(dir.api)/sqlite3-worker1-promiser.js
+define CP_XAPI
+sqlite3-api.ext.jses += $$(dir.dout)/$$(notdir $(1))
+$$(dir.dout)/$$(notdir $(1)): $(1) $$(MAKEFILE)
+	cp $$< $$@
+endef
+$(foreach X,$(SOAP.js) $(sqlite3-worker1.js) $(sqlite3-worker1-promiser.js),\
+  $(eval $(call CP_XAPI,$(X))))
+all: $(sqlite3-api.ext.jses)
 
 sqlite3-api.js := $(dir.tmp)/sqlite3-api.js
 $(sqlite3-api.js): $(sqlite3-api.jses) $(MAKEFILE)
@@ -384,6 +398,7 @@ sqlite3-wasm.c := $(dir.api)/sqlite3-wasm.c
 # difference. Thus we build all binaries against sqlite3-wasm.c
 # instead of building a shared copy of sqlite3-wasm.o.
 $(eval $(call call-make-pre-js,sqlite3))
+$(sqlite3.js):
 $(sqlite3.js): $(MAKEFILE) $(sqlite3.wasm.obj) \
     $(EXPORTED_FUNCTIONS.api) \
     $(pre-post-sqlite3.deps)

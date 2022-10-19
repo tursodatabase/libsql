@@ -53,14 +53,14 @@ fiddle-module.js := $(dir.fiddle)/fiddle-module.js
 fiddle-module.wasm := $(subst .js,.wasm,$(fiddle-module.js))
 fiddle.cses := $(dir.top)/shell.c $(sqlite3-wasm.c)
 
-SOAP.js := sqlite3-opfs-async-proxy.js
-$(dir.fiddle)/$(SOAP.js): $(SOAP.js)
+fiddle.SOAP.js := $(dir.fiddle)/$(notdir $(SOAP.js))
+$(fiddle.SOAP.js): $(SOAP.js)
 	cp $< $@
 
 $(eval $(call call-make-pre-js,fiddle-module))
 $(fiddle-module.js): $(MAKEFILE) $(MAKEFILE.fiddle) \
     $(EXPORTED_FUNCTIONS.fiddle) \
-    $(fiddle.cses) $(pre-post-fiddle-module.deps) $(dir.fiddle)/$(SOAP.js)
+    $(fiddle.cses) $(pre-post-fiddle-module.deps) $(fiddle.SOAP.js)
 	$(emcc.bin) -o $@ $(fiddle.emcc-flags) \
     $(pre-post-common.flags) $(pre-post-fiddle-module.flags) \
     $(fiddle.cses)

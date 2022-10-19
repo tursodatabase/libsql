@@ -169,7 +169,7 @@
         return str+a.join('&nbsp;');
     };
 
-    const W = new Worker("speedtest1-worker.js"+self.location.search);
+    const W = new Worker("speedtest1-worker.js?sqlite3.dir=jswasm");
     const mPost = function(msgType,payload){
         W.postMessage({type: msgType, data: payload});
     };

@@ -98,6 +98,9 @@ const installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri){
     options.proxyUri = callee.defaultProxyUri;
   }
 
+  if('function' === typeof options.proxyUri){
+    options.proxyUri = options.proxyUri();
+  }
   const thePromise = new Promise(function(promiseResolve, promiseReject_){
     const loggers = {
       0:console.error.bind(console),
@@ -1092,9 +1095,18 @@ installOpfsVfs.defaultProxyUri =
   "sqlite3-opfs-async-proxy.js";
 //console.warn("sqlite3.installOpfsVfs.defaultProxyUri =",sqlite3.installOpfsVfs.defaultProxyUri);
 self.sqlite3ApiBootstrap.initializersAsync.push(async (sqlite3)=>{
+  if(sqlite3.scriptInfo && !sqlite3.scriptInfo.isWorker){
+    return;
+  }
   try{
+    let proxyJs = installOpfsVfs.defaultProxyUri;
+    if(sqlite3.scriptInfo.sqlite3Dir){
+      installOpfsVfs.defaultProxyUri =
+        sqlite3.scriptInfo.sqlite3Dir + proxyJs;
+      //console.warn("installOpfsVfs.defaultProxyUri =",installOpfsVfs.defaultProxyUri);
+    }
     return installOpfsVfs().catch((e)=>{
-      console.warn("Ignoring inability to install OPFS sqlite3_vfs:",e);
+      console.warn("Ignoring inability to install OPFS sqlite3_vfs:",e.message);
     });
   }catch(e){
     console.error("installOpfsVfs() exception:",e);
