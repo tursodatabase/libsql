@@ -35,8 +35,8 @@ do_execsql_test 1.0 {
 }
 
 do_test 1.1 {
-  file size test.db
-} {5120}
+  expr [file size test.db]>3072
+} {1}
 
 proc toggle_bit {blob bit} {
   set byte [expr {$bit / 8}]

@@ -1046,7 +1046,7 @@ INCLUDE ../ext/expert/sqlite3expert.h
 INCLUDE ../ext/expert/sqlite3expert.c
 
 #if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_ENABLE_DBPAGE_VTAB)
-INCLUDE ../ext/misc/dbdata.c
+INCLUDE ../ext/recover/dbdata.c
 INCLUDE ../ext/recover/sqlite3recover.h
 INCLUDE ../ext/recover/sqlite3recover.c
 #endif
