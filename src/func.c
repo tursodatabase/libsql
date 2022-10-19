@@ -2590,3 +2590,16 @@ void sqlite3RegisterBuiltinFunctions(void){
   }
 #endif
 }
+
+#ifdef LIBSQL_ENABLE_WASM_RUNTIME
+int libsql_initialize_wasm_func_table(sqlite3 *db) {
+  int rc = sqlite3_exec(db, "CREATE TABLE IF NOT EXISTS libsql_wasm_func_table (name text PRIMARY KEY, body text)", NULL, NULL, NULL);
+  if (rc == SQLITE_READONLY) {
+    sqlite3_exec(db, "CREATE TEMP TABLE IF NOT EXISTS libsql_wasm_func_table (name text PRIMARY KEY, body text)", NULL, NULL, NULL);
+  }
+  // This initialization is best-effort: failing to initialize a Wasm func table
+  // does not prevent users from using this database
+  db->errCode = SQLITE_OK;
+  return SQLITE_OK;
+}
+#endif
