@@ -1007,7 +1007,7 @@ int sqlite3_wasm_init_wasmfs(const char *zMountPoint){
        hypothetically suffice for the transient wasm-based virtual
        filesystem we're currently running in. */
     const int rc = wasmfs_create_directory(zMountPoint, 0777, pOpfs);
-    emscripten_console_logf("OPFS mkdir(%s) rc=%d", zMountPoint, rc);
+    /*emscripten_console_logf("OPFS mkdir(%s) rc=%d", zMountPoint, rc);*/
     if(rc) return SQLITE_IOERR;
   }
   return pOpfs ? 0 : SQLITE_NOMEM;

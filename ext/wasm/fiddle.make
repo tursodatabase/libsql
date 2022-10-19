@@ -23,6 +23,7 @@ $(dir.top)/shell.c: $(SHELL_SRC) $(dir.top)/tool/mkshellc.tcl
 # /shell.c
 ########################################################################
 
+EXPORTED_FUNCTIONS.fiddle := $(dir.tmp)/EXPORTED_FUNCTIONS.fiddle
 fiddle.emcc-flags = \
   $(emcc.cflags) $(emcc_opt_full) \
   --minify 0 \
@@ -35,17 +36,17 @@ fiddle.emcc-flags = \
   -sWASM_BIGINT=$(emcc_enable_bigint) \
   -sEXPORT_NAME=$(sqlite3.js.init-func) \
   $(sqlite3.js.flags.--post-js) \
-  -sEXPORTED_RUNTIME_METHODS=@$(dir.wasm)/EXPORTED_RUNTIME_METHODS.fiddle \
-  -sEXPORTED_FUNCTIONS=@$(dir.wasm)/EXPORTED_FUNCTIONS.fiddle \
+  $(emcc.exportedRuntimeMethods) \
+  -sEXPORTED_FUNCTIONS=@$(abspath $(EXPORTED_FUNCTIONS.fiddle)) \
   $(SQLITE_OPT) $(SHELL_OPT) \
   -DSQLITE_SHELL_FIDDLE
 # -D_POSIX_C_SOURCE is needed for strdup() with emcc
 
 fiddle.EXPORTED_FUNCTIONS.in := \
     EXPORTED_FUNCTIONS.fiddle.in \
-    EXPORTED_FUNCTIONS.api
+    $(EXPORTED_FUNCTIONS.api)
 
-EXPORTED_FUNCTIONS.fiddle: $(fiddle.EXPORTED_FUNCTIONS.in) $(MAKEFILE.fiddle)
+$(EXPORTED_FUNCTIONS.fiddle): $(fiddle.EXPORTED_FUNCTIONS.in) $(MAKEFILE.fiddle)
 	sort -u $(fiddle.EXPORTED_FUNCTIONS.in) > $@
 
 fiddle-module.js := $(dir.fiddle)/fiddle-module.js
@@ -58,7 +59,7 @@ $(dir.fiddle)/$(SOAP.js): $(SOAP.js)
 
 $(eval $(call call-make-pre-js,fiddle-module))
 $(fiddle-module.js): $(MAKEFILE) $(MAKEFILE.fiddle) \
-    EXPORTED_FUNCTIONS.fiddle EXPORTED_RUNTIME_METHODS.fiddle \
+    $(EXPORTED_FUNCTIONS.fiddle) \
     $(fiddle.cses) $(pre-post-fiddle-module.deps) $(dir.fiddle)/$(SOAP.js)
 	$(emcc.bin) -o $@ $(fiddle.emcc-flags) \
     $(pre-post-common.flags) $(pre-post-fiddle-module.flags) \

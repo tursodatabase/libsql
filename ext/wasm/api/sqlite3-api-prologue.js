@@ -1158,7 +1158,6 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   */
   capi.sqlite3_web_db_export = function(pDb){
     if(!pDb) toss('Invalid sqlite3* argument.');
-    const wasm = wasm;
     if(!wasm.bigIntEnabled) toss('BigInt64 support is not enabled.');
     const stack = wasm.pstack.pointer;
     let pOut;

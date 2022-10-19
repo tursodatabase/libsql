@@ -43,3 +43,11 @@
   self.sqlite3InitModule.ready = originalInit.ready;
   //console.warn("Replaced sqlite3InitModule()");
 })();
+
+if(0){
+  console.warn("self.location.href =",self.location.href);
+  if('undefined' !== typeof document){
+    console.warn("document.currentScript.src =",
+                 document?.currentScript?.src);
+  }
+}

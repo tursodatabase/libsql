@@ -1,4 +1,4 @@
-########################################################################
+#######################################################################
 # This GNU makefile drives the build of the sqlite3 WASM
 # components. It is not part of the canonical build process.
 #
@@ -22,8 +22,10 @@
 ########################################################################
 SHELL := $(shell which bash 2>/dev/null)
 MAKEFILE := $(lastword $(MAKEFILE_LIST))
+CLEAN_FILES :=
+DISTCLEAN_FILES := ./--dummy--
 default: all
-release: default
+release: oz
 
 # Emscripten SDK home dir and related binaries...
 EMSDK_HOME ?= $(word 1,$(wildcard $(HOME)/src/emsdk $(HOME)/emsdk))
@@ -58,15 +60,50 @@ else
 endif
 
 dir.top := ../..
-# Reminder: some Emscripten flags require absolute paths
-dir.wasm := $(patsubst %/,%,$(dir $(abspath $(MAKEFILE))))
+# Reminder: some Emscripten flags require absolute paths but we want
+# relative paths for most stuff simply to reduce noise. The
+# $(abspath...) GNU make function can transform relative paths to
+# absolute.
+dir.wasm := $(patsubst %/,%,$(dir $(MAKEFILE)))
 dir.api := api
 dir.jacc := jaccwabyt
 dir.common := common
 dir.fiddle := fiddle
 dir.tool := $(dir.top)/tool
-CLEAN_FILES := *~ $(dir.jacc)/*~ $(dir.api)/*~ $(dir.common)/*~
-DISTCLEAN_FILES := ./-dummy
+########################################################################
+# MAINTENANCE REMINDER: the output .js and .wasm files of emcc must be
+# in _this_ dir, rather than a subdir, or else parts of the generated
+# code get confused and cannot load property. Specifically, when X.js
+# loads X.wasm, whether or not X.js uses the correct path for X.wasm
+# depends on how it's loaded: an HTML script tag will resolve it
+# intuitively, whereas a Worker's call to importScripts() will not.
+# That's a fundamental incompatibility with how URL resolution in
+# JS happens between those two contexts. See:
+#
+# https://zzz.buzz/2017/03/14/relative-uris-in-web-development/
+#
+# We unfortunately have no way, from Worker-initiated code, to
+# automatically resolve the path from X.js to X.wasm.
+#
+# In case we ever find a solution to that which does not require
+# duplicating the X.js files only to swap out the path to X.wasm for
+# the loading-from-worker case...
+#
+# dir.dout = output dir for deliverables.
+dir.dout := $(dir.wasm)
+# dir.tmp = output dir for intermediary build files, as opposed to
+# end-user deliverables.
+dir.tmp := $(dir.wasm)/bld
+#CLEAN_FILES += $(wildcard $(dir.dout)/*) $(wildcard $(dir.tmp)/*)
+ifeq (,$(wildcard $(dir.dout)))
+  dir._tmp := $(shell mkdir -p $(dir.dout))
+endif
+ifeq (,$(wildcard $(dir.tmp)))
+  dir._tmp := $(shell mkdir -p $(dir.tmp))
+endif
+
+cflags.common :=  -I. -I.. -I$(dir.top)
+CLEAN_FILES += *~ $(dir.jacc)/*~ $(dir.api)/*~ $(dir.common)/*~
 emcc_enable_bigint ?= 1
 sqlite3.c := $(dir.top)/sqlite3.c
 sqlite3.h := $(dir.top)/sqlite3.h
@@ -149,6 +186,8 @@ else
 endif
 
 version-info := $(dir.wasm)/version-info
+# ^^^^ NOT in $(dir.tmp) because we need it to survive the cleanup
+# process for the dist build to work properly.
 $(version-info): $(dir.wasm)/version-info.c $(sqlite3.h) $(MAKEFILE)
 	$(CC) -O0 -I$(dir.top) -o $@ $<
 DISTCLEAN_FILES += $(version-info)
@@ -158,15 +197,16 @@ $(stripccomments): $(stripccomments).c $(MAKEFILE)
 	$(CC) -o $@ $<
 DISTCLEAN_FILES += $(stripccomments)
 
-EXPORTED_FUNCTIONS.api.in := $(dir.api)/EXPORTED_FUNCTIONS.sqlite3-api
-
-EXPORTED_FUNCTIONS.api: $(EXPORTED_FUNCTIONS.api.in) $(MAKEFILE)
+EXPORTED_FUNCTIONS.api.in := $(abspath $(dir.api)/EXPORTED_FUNCTIONS.sqlite3-api)
+EXPORTED_FUNCTIONS.api := $(dir.tmp)/EXPORTED_FUNCTIONS.api
+$(EXPORTED_FUNCTIONS.api): $(EXPORTED_FUNCTIONS.api.in) $(MAKEFILE)
 	cat $(EXPORTED_FUNCTIONS.api.in) > $@
-CLEAN_FILES += EXPORTED_FUNCTIONS.api
 
-sqlite3-license-version.js := sqlite3-license-version.js
+sqlite3-license-version.js := $(dir.tmp)/sqlite3-license-version.js
 sqlite3-license-version-header.js := $(dir.api)/sqlite3-license-version-header.js
-sqlite3-api-build-version.js := $(dir.api)/sqlite3-api-build-version.js
+sqlite3-api-build-version.js := $(dir.tmp)/sqlite3-api-build-version.js
+# sqlite3-api.jses = the list of JS files which make up $(sqlite3-api.js), in
+# the order they need to be assembled.
 sqlite3-api.jses := $(sqlite3-license-version.js)
 sqlite3-api.jses += $(dir.api)/sqlite3-api-prologue.js
 sqlite3-api.jses += $(dir.common)/whwasmutil.js
@@ -178,10 +218,7 @@ sqlite3-api.jses += $(dir.api)/sqlite3-api-worker1.js
 sqlite3-api.jses += $(dir.api)/sqlite3-api-opfs.js
 sqlite3-api.jses += $(dir.api)/sqlite3-api-cleanup.js
 
-sqlite3-api.js := sqlite3-api.js
-CLEAN_FILES += $(sqlite3-api.js)
-CLEAN_FILES += $(sqlite3-license-version.js)
-CLEAN_FILES += $(sqlite3-api-build-version.js)
+sqlite3-api.js := $(dir.tmp)/sqlite3-api.js
 $(sqlite3-api.js): $(sqlite3-api.jses) $(MAKEFILE)
 	@echo "Making $@..."
 	@for i in $(sqlite3-api.jses); do \
@@ -190,7 +227,7 @@ $(sqlite3-api.js): $(sqlite3-api.jses) $(MAKEFILE)
 		echo "/* END FILE: $$i */"; \
 	done > $@
 
-$(sqlite3-api-build-version.js): $(version-info)
+$(sqlite3-api-build-version.js): $(version-info) $(MAKEFILE)
 	@echo "Making $@..."
 	@{ \
   echo 'self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){'; \
@@ -204,8 +241,7 @@ $(sqlite3-api-build-version.js): $(version-info)
 # --post-js and --pre-js are emcc flags we use to append/prepend JS to
 # the generated emscripten module file.
 pre-js.js := $(dir.api)/pre-js.js
-post-js.js := post-js.js
-CLEAN_FILES += $(post-js.js)
+post-js.js := $(dir.tmp)/post-js.js
 post-jses := \
   $(dir.api)/post-js-header.js \
   $(sqlite3-api.js) \
@@ -222,7 +258,7 @@ extern-pre-js.js := $(dir.api)/extern-pre-js.js
 pre-post-common.flags := \
   --post-js=$(post-js.js) \
   --extern-post-js=$(extern-post-js.js) \
-  --extern-pre-js=$(dir.wasm)/$(sqlite3-license-version.js)
+  --extern-pre-js=$(sqlite3-license-version.js)
 pre-post-jses.deps := $(post-js.js) \
   $(extern-post-js.js) $(extern-pre-js.js) $(sqlite3-license-version.js)
 $(sqlite3-license-version.js): $(sqlite3.h) $(sqlite3-license-version-header.js) $(MAKEFILE)
@@ -275,12 +311,11 @@ emcc.jsflags += -sMODULARIZE
 emcc.jsflags += -sSTRICT_JS
 emcc.jsflags += -sDYNAMIC_EXECUTION=0
 emcc.jsflags += -sNO_POLYFILL
-emcc.jsflags += -sEXPORTED_FUNCTIONS=@$(dir.wasm)/EXPORTED_FUNCTIONS.api
+emcc.jsflags += -sEXPORTED_FUNCTIONS=@$(EXPORTED_FUNCTIONS.api)
 emcc.exportedRuntimeMethods := \
-    -sEXPORTED_RUNTIME_METHODS=FS,wasmMemory,allocateUTF8OnStack
+    -sEXPORTED_RUNTIME_METHODS=FS,wasmMemory
     # FS ==> stdio/POSIX I/O proxies
     # wasmMemory ==> required by our code for use with -sIMPORTED_MEMORY
-    # allocateUTF8OnStack => for kvvfs internals
 emcc.jsflags += $(emcc.exportedRuntimeMethods)
 emcc.jsflags += -sUSE_CLOSURE_COMPILER=0
 emcc.jsflags += -sIMPORTED_MEMORY
@@ -312,7 +347,7 @@ emcc.jsflags += -Wno-limited-postlink-optimizations
 emcc.jsflags += -sERROR_ON_UNDEFINED_SYMBOLS=0
 emcc.jsflags += -sLLD_REPORT_UNDEFINED
 #emcc.jsflags += --allow-undefined
-emcc.jsflags += --import-undefined
+#emcc.jsflags += --import-undefined
 #emcc.jsflags += --unresolved-symbols=import-dynamic --experimental-pic
 #emcc.jsflags += --experimental-pic --unresolved-symbols=ingore-all --import-undefined
 #emcc.jsflags += --unresolved-symbols=ignore-all
@@ -340,36 +375,22 @@ emcc.jsflags += -sWASM_BIGINT=$(emcc_enable_bigint)
 # debugging info, _huge_.
 ########################################################################
 
-########################################################################
-# Maintenance reminder: the output .js and .wasm files of emcc must be
-# in _this_ dir, rather than a subdir, or else parts of the generated
-# code get confused and cannot load property (namely, the
-# sqlite3.worker.js generated in conjunction with -sWASMFS).
-sqlite3.js := sqlite3.js
-sqlite3.wasm := sqlite3.wasm
-sqlite3-wasm.o := $(dir.api)/sqlite3-wasm.o
-$(sqlite3-wasm.o): emcc.cflags += $(SQLITE_OPT)
-$(sqlite3-wasm.o): $(dir.top)/sqlite3.c
+sqlite3.js := $(dir.dout)/sqlite3.js
+sqlite3.wasm := $(dir.dout)/sqlite3.wasm
 sqlite3-wasm.c := $(dir.api)/sqlite3-wasm.c
-########################################################################
-# call-wasm-c-compile sets up build rules
-# for $1.o. $1 must be the name of a C file (with extension).
-define call-wasm-c-compile
-$(1).o := $$(subst .c,.o,$(1))
-sqlite3.wasm.obj += $$($(1).o)
-$$($(1).o): $$(MAKEFILE) $(1)
-	$$(emcc.bin) $$(emcc_opt_full) $$(emcc.flags) $$(emcc.cflags) -c $(1) -o $$@
-CLEAN_FILES += $$($(1).o)
-endef
-$(foreach c,$(sqlite3-wasm.c),$(eval $(call call-wasm-c-compile,$(c))))
+# sqlite3-wasm.o vs sqlite3-wasm.c: building against the latter
+# (predictably) results in a slightly faster binary, but we're close
+# enough to the target speed requirements that the 500ms makes a
+# difference. Thus we build all binaries against sqlite3-wasm.c
+# instead of building a shared copy of sqlite3-wasm.o.
 $(eval $(call call-make-pre-js,sqlite3))
 $(sqlite3.js): $(MAKEFILE) $(sqlite3.wasm.obj) \
-    EXPORTED_FUNCTIONS.api \
+    $(EXPORTED_FUNCTIONS.api) \
     $(pre-post-sqlite3.deps)
 	@echo "Building $@ ..."
 	$(emcc.bin) -o $@ $(emcc_opt_full) $(emcc.flags) \
     $(emcc.jsflags) $(pre-post-common.flags) $(pre-post-sqlite3.flags) \
-    $(sqlite3.wasm.obj)
+    $(cflags.common) $(SQLITE_OPT) $(sqlite3-wasm.c)
 	chmod -x $(sqlite3.wasm)
 	$(maybe-wasm-strip) $(sqlite3.wasm)
 	@ls -la $@ $(sqlite3.wasm)
@@ -417,7 +438,8 @@ speedtest1-common.eflags += -sINITIAL_MEMORY=128450560
 speedtest1-common.eflags += -sSTRICT_JS
 speedtest1-common.eflags += -sMODULARIZE
 speedtest1-common.eflags += -Wno-limited-postlink-optimizations
-speedtest1-common.eflags += -sEXPORTED_FUNCTIONS=@$(dir.wasm)/EXPORTED_FUNCTIONS.speedtest1
+EXPORTED_FUNCTIONS.speedtest1 := $(abspath $(dir.tmp)/EXPORTED_FUNCTIONS.speedtest1)
+speedtest1-common.eflags += -sEXPORTED_FUNCTIONS=@$(EXPORTED_FUNCTIONS.speedtest1)
 speedtest1-common.eflags += $(emcc.exportedRuntimeMethods)
 speedtest1-common.eflags += -sALLOW_TABLE_GROWTH
 speedtest1-common.eflags += -sDYNAMIC_EXECUTION=0
@@ -444,31 +466,24 @@ speedtest1.exit-runtime1 := -sEXIT_RUNTIME=1
 # -sEXIT_RUNTIME=1 but we need EXIT_RUNTIME=0 for the worker-based app
 # which runs speedtest1 multiple times.
 
-EXPORTED_FUNCTIONS.speedtest1: EXPORTED_FUNCTIONS.api
-	{ echo _wasm_main; cat EXPORTED_FUNCTIONS.api; } > $@
-CLEAN_FILES += EXPORTED_FUNCTIONS.speedtest1
-speedtest1.js := speedtest1.js
+$(EXPORTED_FUNCTIONS.speedtest1): $(EXPORTED_FUNCTIONS.api)
+	@echo "Making $@ ..."
+	@{ echo _wasm_main; cat $(EXPORTED_FUNCTIONS.api); } > $@
+speedtest1.js := $(dir.dout)/speedtest1.js
 speedtest1.wasm := $(subst .js,.wasm,$(speedtest1.js))
-speedtest1.cflags := \
-  -I. -I.. -I$(dir.top) \
-  -DSQLITE_SPEEDTEST1_WASM
-speedtest1.cs := $(speedtest1.c) $(sqlite3-wasm.c)
-$(speedtest1.js): emcc.cflags+=
-# speedtest1 notes re. sqlite3-wasm.o vs sqlite3-wasm.c: building against
-# the latter (predictably) results in a slightly faster binary, but we're
-# close enough to the target speed requirements that the 500ms makes a
-# difference.
+speedtest1.cflags := $(cflags.common) -DSQLITE_SPEEDTEST1_WASM
+speedtest1.cses := $(speedtest1.c) $(sqlite3-wasm.c)
 $(eval $(call call-make-pre-js,speedtest1))
-$(speedtest1.js): $(MAKEFILE) $(speedtest1.cs) \
+$(speedtest1.js): $(MAKEFILE) $(speedtest1.cses) \
     $(pre-post-speedtest1.deps) \
-    EXPORTED_FUNCTIONS.speedtest1
+    $(EXPORTED_FUNCTIONS.speedtest1)
 	@echo "Building $@ ..."
 	$(emcc.bin) \
         $(speedtest1.eflags) $(speedtest1-common.eflags) $(speedtest1.cflags) \
         $(pre-post-speedtest1.flags) \
         $(SQLITE_OPT) \
         $(speedtest1.exit-runtime0) \
-        -o $@ $(speedtest1.cs) -lm
+        -o $@ $(speedtest1.cses) -lm
 	$(maybe-wasm-strip) $(speedtest1.wasm)
 	ls -la $@ $(speedtest1.wasm)
 
@@ -531,6 +546,13 @@ oz: clean
 
 include fiddle.make
 
+ifneq (,$(filter wasmfs,$(MAKECMDGOALS)))
+# wasmfs build disabled 2022-10-19 per /chat
+# discussion. OPFS-over-wasmfs was initially a stopgap measure and a
+# convenient point of comparison for the OPFS sqlite3_vfs's
+# performance, but it currently doubles our deliverables for very
+# little, if any, benefit.
+#
 ########################################################################
 # Some platforms do not support the WASMFS build. Raspberry Pi OS is one
 # of them. As such platforms are discovered, add their (uname -m) name
@@ -544,9 +566,12 @@ else
 HAVE_WASMFS := 1
 include wasmfs.make
 endif
+endif
+# /wasmfs
+########################################################################
 
 ########################################################################
-# Create deliverables: TODO
+# Create deliverables:
 ifneq (,$(filter dist,$(MAKECMDGOALS)))
 include dist.make
 endif

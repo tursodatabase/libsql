@@ -25,13 +25,29 @@
   Worker-specific API needs to pass _this_ file (or equivalent) to the
   Worker constructor and then listen for an event in the form shown
   above in order to know when the module has completed initialization.
+
+  This file accepts a couple of URL arguments to adjust how it loads
+  sqlite3.js:
+
+  - `sqlite3.dir`, if set, treats the given directory name as the
+    directory from which `sqlite3.js` will be loaded.
+  - `sqlite3.js`, if set, is used as the URI to `sqlite3.js` and it
+    may contain path elements, e.g. `sqlite3.js=foo/bar/my-sqlite3.js`.
+
+  By default is loads 'sqlite3.js'.
 */
 "use strict";
 (()=>{
   const urlParams = new URL(self.location.href).searchParams;
-  importScripts(urlParams.has('wasmfs')
-                ? 'sqlite3-wasmfs.js'
-                : 'sqlite3.js');
+  let theJs;
+  if(urlParams.has('sqlite3.js')){
+    theJs = urlParams.get('sqlite3.js');
+  }else if(urlParams.has('sqlite3.dir')){
+    theJs = urlParams.get('sqlite3.dir')+'/sqlite3.js';
+  }else{
+    theJs = 'sqlite3.js';
+  }
+  importScripts(theJs);
   sqlite3InitModule().then((sqlite3)=>{
     sqlite3.capi.sqlite3_wasmfs_opfs_dir();
     sqlite3.initWorker1API();
