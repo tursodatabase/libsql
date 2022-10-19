@@ -4619,7 +4619,7 @@ static int flattenSubquery(
       pSub->pLimit = 0;
     }
 
-    /* Recompute the SrcList_item.colUsed masks for the flattened
+    /* Recompute the SrcItem.colUsed masks for the flattened
     ** tables. */
     for(i=0; i<nSubSrc; i++){
       recomputeColumnsUsed(pParent, &pSrc->a[i+iFrom]);
@@ -5607,9 +5607,9 @@ void sqlite3SelectPopWith(Walker *pWalker, Select *p){
 #endif
 
 /*
-** The SrcList_item structure passed as the second argument represents a
+** The SrcItem structure passed as the second argument represents a
 ** sub-query in the FROM clause of a SELECT statement. This function
-** allocates and populates the SrcList_item.pTab object. If successful,
+** allocates and populates the SrcItem.pTab object. If successful,
 ** SQLITE_OK is returned. Otherwise, if an OOM error is encountered,
 ** SQLITE_NOMEM.
 */
@@ -6442,7 +6442,7 @@ static void havingToWhere(Parse *pParse, Select *p){
 
 /*
 ** Check to see if the pThis entry of pTabList is a self-join of a prior view.
-** If it is, then return the SrcList_item for the prior view.  If it is not,
+** If it is, then return the SrcItem for the prior view.  If it is not,
 ** then return 0.
 */
 static SrcItem *isSelfJoinView(

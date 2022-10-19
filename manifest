@@ -1,5 +1,5 @@
-C If\sa\squery\suses\san\sindex\swhere\sone\sor\smore\sof\sthe\scolumns\sof\sthe\sindex\sis\nan\sexpression\sor\sa\svirtual\scolumn,\sand\sif\sthe\scorresponding\sexpression\sis\nused\selsewhere\sin\sthe\squery,\sthen\sstrive\sto\sread\sthe\svalue\sof\sthe\sexpression\nout\sof\sthe\sindex,\srather\sthan\srecomputing\sit.\s\sThis\sis\sthe\n"Indexed\sExpression\sOptimizations".
-D 2022-10-19T10:56:05.300
+C Fix\sreferences\sto\s"SrcList_item"\sin\scomments\sas\sthat\sobject\shas\ssince\n[bfd5bf2c73110fcb]\s(2021-02-21)\sbeen\scalled\s"SrcItem".\s\sComment\schanges\nonly.\s\sNo\schanges\sto\scode.
+D 2022-10-19T11:58:24.911
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -620,7 +620,7 @@ F src/printf.c e99ee9741e79ae3873458146f59644276657340385ade4e76a5f5d1c25793764
 F src/random.c 546d6feb15ec69c1aafe9bb351a277cbb498fd5410e646add673acb805714960
 F src/resolve.c efea4e5fbecfd6d0a9071b0be0d952620991673391b6ffaaf4c277b0bb674633
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c b795f31a326564ffc448bb26f863c64f0796b2a5e0585a3358aff7877b72ed82
+F src/select.c 3f7238ebb3252f4768a8fb46ad95b62700d27baddcab8a21548129f4f9305d52
 F src/shell.c.in a4c0754470d4fcc2c3da2f0cda0363cecf4a84273d3cc3865325c2df06d5e56b
 F src/sqlite.h.in d9c8a6243fc0a1c270d69db33758e34b810af3462f9bc5b4af113b347e07c69d
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -708,7 +708,7 @@ F src/wal.c b9df133a705093da8977da5eb202eaadb844839f1c7297c08d33471f5491843d
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
 F src/where.c 5dcd88d080ad302da4278f55acce12fd1c1f91eff2bcbfa2c0806d33fa230a5f
-F src/whereInt.h 70cd30de9ed784aa33fa6bd1245f060617de7a00d992469b6d8e419eed915743
+F src/whereInt.h 89a0ae1af68264c925f9729c247ae01457b3d2400b8f0626345e2a15bb30d7b8
 F src/wherecode.c 8ec5a413f12af06638dcca36d0954be2151eea6f293d3c67397cef6a90d6adf1
 F src/whereexpr.c bf8c155212c886621d71c951053660de6fcc4ee907b17aa02da0a96a39aa9405
 F src/window.c 928e215840e2f2d9a2746e018c9643ef42c66c4ab6630ef0df7fa388fa145e86
@@ -2036,9 +2036,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c4a0f745fbaf6f950810f92765cbe66dde66e226b78ec5dd9017473bf4c9c268 c21eb903f06a16d4fafa5f895be08414fa58e6a91c148030aec8676b40c2d66d
-R 099250bc6a2990d79990297a12d3039b
-T +closed c21eb903f06a16d4fafa5f895be08414fa58e6a91c148030aec8676b40c2d66d
+P 2435112867fbd7b6ebb7f2c2b9da57cdf1e23fab6c2869870b66133a9f9faedc
+R 766b448614fab16fb83d46c28ed5755d
 U drh
-Z 09e5a4ee4f8f7eb5b6479975bdf31b92
+Z 302f41db1560793249aef3cf7bc0796f
 # Remove this line to create a well-formed Fossil manifest.
