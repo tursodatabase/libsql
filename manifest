@@ -1,5 +1,5 @@
-C Update\sthe\sdist\srules\sfor\sthis\sevening's\sjs/wasm\sbuild\schanges\sand\sinclude\san\sindex.html\sspecifically\sfor\sthe\ssubset\sof\sapps\sincluded\sin\sthe\sdist\sarchive.
-D 2022-10-19T06:06:42.551
+C Minor\swasm/js\sbuild\stweaks.
+D 2022-10-19T06:14:24.574
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -506,8 +506,8 @@ F ext/wasm/demo-123.html 8c70a412ce386bd3796534257935eb1e3ea5c581e5d5aea0490b823
 F ext/wasm/demo-123.js ebae30756585bca655b4ab2553ec9236a87c23ad24fc8652115dcedb06d28df6
 F ext/wasm/demo-kvvfs1.html c4a69d2ded9cabad3e2eea75cd2936d9a13002ab4f10b9f1bac6130a0dee84dd
 F ext/wasm/demo-kvvfs1.js 105596bd2ccd0b1deb5fde8e99b536e8242d4bb5932fac0c8403ff3a6bc547e8
-F ext/wasm/dist.make 0db045760d5740f7bb688bac68332af3c974d331f4bdd4cec623f37687b92d6b
-F ext/wasm/fiddle.make e5a8966be370bf8592cdffb2520ad8c3bf6a64d08ea91c8ed17dc88624967697
+F ext/wasm/dist.make a4054056e6757bbc1ba7693c883c334b448c7b474f3ec0102eebdaaca080fb52
+F ext/wasm/fiddle.make acdb1a402864f9b05a4c89805c5e91d88f5080652d8861f0865655b172243847
 F ext/wasm/fiddle/emscripten.css 3d253a6fdb8983a2ac983855bfbdd4b6fa1ff267c28d69513dd6ef1f289ada3f
 F ext/wasm/fiddle/fiddle-worker.js 531859a471924a0ea48afa218e6877f0c164ca324d51e15843ed6ecc1c65c7ee
 F ext/wasm/fiddle/fiddle.html 5daf54e8f3d7777cbb1ca4f93affe28858dbfff25841cb4ab81d694efed28ec2
@@ -2036,8 +2036,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6d468dab9eb84d4548f68014959f02fe4f66455472ff24fe729382bb2972e3d1
-R c3bcb52d1a251087b76c2618ae8668d8
+P a0ef0f32e96638b502b3951e524d590bdfb09dd39be453686b075102da67b7db
+R dd2c6bc27c1ee39a3214f089113c267d
 U stephan
-Z f3f479298121a0f7f76d8d380e2cd8a4
+Z 0031e9fd6a3aaf1c9c22f1905a3b97fd
 # Remove this line to create a well-formed Fossil manifest.

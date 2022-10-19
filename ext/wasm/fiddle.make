@@ -35,6 +35,7 @@ fiddle.emcc-flags = \
   -sDYNAMIC_EXECUTION=0 \
   -sWASM_BIGINT=$(emcc_enable_bigint) \
   -sEXPORT_NAME=$(sqlite3.js.init-func) \
+  -Wno-limited-postlink-optimizations \
   $(sqlite3.js.flags.--post-js) \
   $(emcc.exportedRuntimeMethods) \
   -sEXPORTED_FUNCTIONS=@$(abspath $(EXPORTED_FUNCTIONS.fiddle)) \

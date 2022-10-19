@@ -26,7 +26,7 @@ dist-name = sqlite-wasm-TEMP
 #endif
 
 ########################################################################
-# dist-build must be the name of a target which triggers the
+# dist.build must be the name of a target which triggers the
 # build of the files to be packed into the dist archive.  The
 # intention is that it be one of (o0, o1, o2, o3, os, oz), each of
 # which uses like-named -Ox optimization level flags. The o2 target
@@ -35,7 +35,7 @@ dist-name = sqlite-wasm-TEMP
 # file sizes. Note that -O2 (the o2 target) results in faster binaries
 # than both -O3 and -Os (the o3 and os targets) in all tests run to
 # date.
-dist-build ?= oz
+dist.build ?= oz
 
 dist-dir.top := $(dist-name)
 dist-dir.jswasm := $(dist-dir.top)/$(notdir $(dir.dout))
@@ -50,8 +50,8 @@ dist.common.extras := $(wildcard $(dir.common)/*.css)
 ########################################################################
 # dist: create the end-user deliverable archive.
 #
-# Maintenance reminder: because dist depends on $(dist-build), and
-# $(dist-build) will depend on clean, having any deps on
+# Maintenance reminder: because dist depends on $(dist.build), and
+# $(dist.build) will depend on clean, having any deps on
 # $(dist-archive) which themselves may be cleaned up by the clean
 # target will lead to grief in parallel builds (-j #). Thus
 # $(dist-target)'s deps must be trimmed to non-generated files or
@@ -62,7 +62,7 @@ dist.common.extras := $(wildcard $(dir.common)/*.css)
 # target name equal to the archive name.
 dist: \
     $(bin.stripccomments) $(bin.version-info) \
-    $(dist-build) \
+    $(dist.build) \
     $(MAKEFILE) $(MAKEFILE.dist)
 	@echo "Making end-user deliverables..."
 	@rm -fr $(dist-dir.top)
@@ -78,7 +78,7 @@ dist: \
 		vdir=sqlite-wasm-$$vnum; \
 		arczip=$$vdir.zip; \
 		echo "Making $$arczip ..."; \
-		rm -f $$arczip; \
+		rm -fr $$arczip $$vdir; \
 		mv $(dist-dir.top) $$vdir; \
 		zip -qr $$arczip $$vdir; \
 		rm -fr $$vdir; \
