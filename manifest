@@ -1,5 +1,5 @@
-C Rework\ssqlite3_wasm_vfs_unlink(),\sadd\ssqlite3_wasm_db_vfs(),\supdate\ssome\sdocs.
-D 2022-10-20T05:14:37.931
+C Fix\sminor\sproblems\sin\stest1.c\stest\scode.
+D 2022-10-20T10:46:17.479
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -630,7 +630,7 @@ F src/sqliteLimit.h d7323ffea5208c6af2734574bae933ca8ed2ab728083caa117c9738581a3
 F src/status.c 160c445d7d28c984a0eae38c144f6419311ed3eace59b44ac6dafc20db4af749
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
 F src/tclsqlite.c 4e64ba300a5a26e0f1170e09032429faeb65e45e8f3d1a7833e8edb69fc2979e
-F src/test1.c 1356984e97bff07e4a8cc3863e892f05b3348678a74783bb6f350b76316736f1
+F src/test1.c 790c8cd24d1ac39b8cf4e2f618ce16ecc028accfcde60660f7bd983e0f4c7d28
 F src/test2.c 3efb99ab7f1fc8d154933e02ae1378bac9637da5
 F src/test3.c 61798bb0d38b915067a8c8e03f5a534b431181f802659a6616f9b4ff7d872644
 F src/test4.c 4533b76419e7feb41b40582554663ed3cd77aaa54e135cf76b3205098cd6e664
@@ -2036,8 +2036,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 818ef0b5c909e733b643455278f7cc45533178f1cc6617058c00ed64fa44896a
-R 22a24d1afe390b6788cce5394d5651d5
-U stephan
-Z 9c3f3340fe7a38ca23b0d884852c3c53
+P cdd46858f0e63bc7bfce8e339b3db9efdec43b6443ee76563a847f53d0176831
+R ce083a526f8539552e7d3cfc7a645ff7
+U dan
+Z 0e03056726a19a84c80763f2bed74dfa
 # Remove this line to create a well-formed Fossil manifest.
