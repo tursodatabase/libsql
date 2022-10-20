@@ -1,5 +1,5 @@
-C Only\senable\sthe\sbMaybeNullRow\sflag\son\sIndexedExpr\sfor\san\sindex\son\san\nexpression,\snot\son\sa\svirtual\scolumn.\s\sBut\sdo\senable\sit\sfor\sthe\sright\soperand\nof\sa\sright\sjoin.
-D 2022-10-20T16:12:02.250
+C Add\stest\scase\sfor\sprevious\scommit.
+D 2022-10-20T16:22:39.053
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1228,7 +1228,7 @@ F test/joinC.test 1f1a602c2127f55f136e2cbd3bf2d26546614bf8cffe5902ec1ac9c07f87f2
 F test/joinD.test 2ce62e7353a0702ca5e70008faf319c1d4686aa19fba34275c6d1da0e960be28
 F test/joinE.test d5d182f3812771e2c0d97c9dcf5dbe4c41c8e21c82560e59358731c4a3981d6b
 F test/joinF.test 53dd66158806823ea680dd7543b5406af151b5aafa5cd06a7f3231cd94938127
-F test/joinH.test e67d1d6a8c7141caf981a07386caa7fda0362baa09e03669f9a4fbee812806d0
+F test/joinH.test 15f501b33d848521964afde9865a92aeca79c8c41fa84dc4dc3f865c9ed8c868
 F test/journal1.test c7b768041b7f494471531e17abc2f4f5ebf9e5096984f43ed17c4eb80ba34497
 F test/journal2.test 9dac6b4ba0ca79c3b21446bbae993a462c2397c4
 F test/journal3.test 7c3cf23ffc77db06601c1fcfc9743de8441cb77db9d1aa931863d94f5ffa140e
@@ -2036,8 +2036,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 56442c9bdd7844454c79acf83323380ea3509cb2e0b9a3d538a6b51726ae6d07
-R e70ce67783291a6229c63e36a2977c0f
-U drh
-Z e1dee37038322a647b6bc84c263beb82
+P a9657c87c53c19228a42559c82c54b504a5ad729e407e9e2c7dabcc0c949b261
+R a04920b2ec7699abc02d2feb1be4368c
+U dan
+Z eaf5c421745263e3ad4c933ff5bd21f5
 # Remove this line to create a well-formed Fossil manifest.
