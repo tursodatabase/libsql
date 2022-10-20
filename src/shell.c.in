@@ -8773,6 +8773,12 @@ static int do_meta_command(char *zLine, ShellState *p){
   }else
 #endif /* !defined(SQLITE_OMIT_TEST_CONTROL) */
 
+#ifdef LIBSQL_ENABLE_WASM_RUNTIME
+  if( c=='i' && strncmp(azArg[0], "init_wasm_func_table", n)==0 ){
+    libsql_try_initialize_wasm_func_table(p->db);
+  }else
+#endif
+
 #ifdef SQLITE_ENABLE_IOTRACE
   if( c=='i' && cli_strncmp(azArg[0], "iotrace", n)==0 ){
     SQLITE_API extern void (SQLITE_CDECL *sqlite3IoTrace)(const char*, ...);
