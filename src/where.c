@@ -5407,10 +5407,16 @@ static SQLITE_NOINLINE void whereAddIndexedExpr(
   for(i=0; i<pIdx->nColumn; i++){
     Expr *pExpr;
     int j = pIdx->aiColumn[i];
+    int bMaybeNullRow;
     if( j==XN_EXPR ){
       pExpr = pIdx->aColExpr->a[i].pExpr;
+      testcase( pTabItem->fg.jointype & JT_LEFT );
+      testcase( pTabItem->fg.jointype & JT_RIGHT );
+      testcase( pTabItem->fg.jointype & JT_LTORJ );
+      bMaybeNullRow = (pTabItem->fg.jointype & (JT_LEFT|JT_LTORJ|JT_RIGHT))!=0;
     }else if( j>=0 && (pTab->aCol[j].colFlags & COLFLAG_VIRTUAL)!=0 ){
       pExpr = sqlite3ColumnExpr(pTab, &pTab->aCol[j]);
+      bMaybeNullRow = 0;
     }else{
       continue;
     }
@@ -5422,7 +5428,7 @@ static SQLITE_NOINLINE void whereAddIndexedExpr(
     p->iDataCur = pTabItem->iCursor;
     p->iIdxCur = iIdxCur;
     p->iIdxCol = i;
-    p->bMaybeNullRow = (pTabItem->fg.jointype & (JT_LEFT|JT_LTORJ))!=0;
+    p->bMaybeNullRow = bMaybeNullRow;
 #ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
     p->zIdxName = pIdx->zName;
 #endif
