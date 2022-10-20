@@ -49,9 +49,14 @@ fn fib(n: i32) -> i32 {
     }
 }
 
+extern {
+    fn libsql_try_initialize_wasm_func_table(db: *mut libsqlite3_sys::sqlite3);
+}
+
 #[test]
 fn test_create_drop_fib() {
     let conn = Connection::open_in_memory().unwrap();
+    unsafe { libsql_try_initialize_wasm_func_table(conn.handle()) }
 
     conn.execute("CREATE TABLE t (id)", ()).unwrap();
     for i in 1..7 {

@@ -7,6 +7,7 @@ edition = "2021"
 
 [dev-dependencies]
 rusqlite = { version = "0.28", features = ["buildtime_bindgen"] }
+libsqlite3-sys = "0.25"
 
 [features]
 default = []
