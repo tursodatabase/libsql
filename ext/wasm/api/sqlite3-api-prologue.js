@@ -280,6 +280,14 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       this.name = 'WasmAllocError';
     }
   };
+  /**
+     Functionally equivalent to the WasmAllocError constructor but may
+     be used as part of an expression, e.g.:
+
+     ```
+     return someAllocatingFunction(x) || WasmAllocError.toss(...);
+     ```
+  */
   WasmAllocError.toss = (...args)=>{
     throw new WasmAllocError(args.join(' '));
   };
@@ -508,6 +516,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        "flexible-string" argument converter.
     */
     sqlite3_exec: (pDb, sql, callback, pVoid, pErrMsg)=>{}/*installed later*/,
+
     /**
        Various internal-use utilities are added here as needed. They
        are bound to an object only so that we have access to them in
@@ -1024,6 +1033,14 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       this.name = 'SQLite3Error';
     }
   };
+  /**
+     Functionally equivalent to the SQLite3Error constructor but may
+     be used as part of an expression, e.g.:
+
+     ```
+     return someFunction(x) || SQLite3Error.toss(...);
+     ```
+  */
   SQLite3Error.toss = (...args)=>{
     throw new SQLite3Error(args.join(' '));
   };
@@ -1096,8 +1113,10 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      pointer. The 3rd argument specifies the database name of the
      given database connection to check, defaulting to the main db.
 
-     The 2nd and 3rd arguments may either be a JS string or a C-string
-     allocated from the wasm environment.
+     The 2nd and 3rd arguments may either be a JS string or a WASM
+     C-string. If the 2nd argument is a NULL WASM pointer, the default
+     VFS is assumed. If the 3rd is a NULL WASM pointer, "main" is
+     assumed.
 
      The truthy value it returns is a pointer to the `sqlite3_vfs`
      object.
@@ -1112,17 +1131,9 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       const pK = capi.sqlite3_vfs_find(vfsName);
       if(!pK) return false;
       else if(!pDb){
-        return capi.sqlite3_vfs_find(0)===pK ? pK : false;
-      }
-      const ppVfs = wasm.allocPtr();
-      try{
-        return (
-          (0===capi.sqlite3_file_control(
-            pDb, dbName, capi.SQLITE_FCNTL_VFS_POINTER, ppVfs
-          )) && (wasm.getPtrValue(ppVfs) === pK)
-        ) ? pK : false;
-      }finally{
-        wasm.dealloc(ppVfs);
+        return pK===capi.sqlite3_vfs_find(0) ? pK : false;
+      }else{
+        return pK===capi.sqlite3_js_db_vfs(pDb) ? pK : false;
       }
     }catch(e){
       /* Ignore - probably bad args to a wasm-bound function. */
@@ -1179,13 +1190,31 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
         ? wasm.heap8u().slice(pOut, pOut + Number(nOut))
         : new Uint8Array();
       return rc;
-    }catch(e){
-      console.error('internal error?',e);
-      throw w;
     }finally{
       if(pOut) wasm.exports.sqlite3_free(pOut);
       wasm.pstack.restore(stack);
     }
+  };
+
+  /**
+     Given a `sqlite3*` and a database name (JS string or WASM
+     C-string pointer, which may be 0), returns a pointer to the
+     sqlite3_vfs responsible for it. If the given db name is null/0,
+     or not provided, then "main" is assumed.
+  */
+  capi.sqlite3_js_db_vfs =
+    (dbPointer, dbName=0)=>wasm.sqlite3_wasm_db_vfs(dbPointer, dbName);
+
+  /**
+     A thin wrapper around capi.sqlite3_aggregate_context() which
+     behaves the same except that it throws a WasmAllocError if that
+     function returns 0.
+  */
+  capi.sqlite3_js_aggregate_context = (pCtx, n)=>{
+    return capi.sqlite3_aggregate_context(pCtx, n)
+      || WasmAllocError.toss(
+        "Cannot allocate",n,"bytes for sqlite3_aggregate_context()"
+      );
   };
   
   if( capi.util.isMainWindow() ){

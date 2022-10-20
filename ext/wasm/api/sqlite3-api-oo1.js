@@ -149,9 +149,9 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     if( flagsStr.indexOf('w')>=0 ) oflags |= capi.SQLITE_OPEN_READWRITE;
     if( 0===oflags ) oflags |= capi.SQLITE_OPEN_READONLY;
     oflags |= capi.SQLITE_OPEN_EXRESCODE;
-    const scope = wasm.scopedAllocPush();
+    const stack = wasm.pstack.pointer;
     try {
-      const pPtr = wasm.allocPtr() /* output (sqlite3**) arg */;
+      const pPtr = wasm.pstack.allocPtr() /* output (sqlite3**) arg */;
       const pVfsName = vfsName ? (
         ('number'===typeof vfsName ? vfsName : wasm.scopedAllocCString(vfsName))
       ): 0;
@@ -163,21 +163,19 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
                               __dbTraceToConsole, 0);
       }
       // Check for per-VFS post-open SQL...
-      wasm.setPtrValue(pPtr, 0);
-      if(0===capi.sqlite3_file_control(
-        pDb, "main", capi.SQLITE_FCNTL_VFS_POINTER, pPtr
-      )){
-        const postInitSql = __vfsPostOpenSql[wasm.getPtrValue(pPtr)];
-        if(postInitSql){
-          rc = capi.sqlite3_exec(pDb, postInitSql, 0, 0, 0);
-          checkSqlite3Rc(pDb, rc);
-        }
+      const pVfs = capi.sqlite3_js_db_vfs(pDb);
+      //console.warn("Opened db",fn,"with vfs",vfsName,pVfs);
+      if(!pVfs) toss3("Internal error: cannot get VFS for new db handle.");
+      const postInitSql = __vfsPostOpenSql[pVfs];
+      if(postInitSql){
+        rc = capi.sqlite3_exec(pDb, postInitSql, 0, 0, 0);
+        checkSqlite3Rc(pDb, rc);
       }      
     }catch( e ){
       if( pDb ) capi.sqlite3_close_v2(pDb);
       throw e;
     }finally{
-      wasm.scopedAllocPop(scope);
+      wasm.pstack.restore(stack);
     }
     this.filename = fnJs;
     __ptrMap.set(this, pDb);

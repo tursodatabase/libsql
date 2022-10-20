@@ -1083,6 +1083,47 @@
         .assert(0===this.db.openStatementCount());
     })
 
+  ////////////////////////////////////////////////////////////////////////
+    .t('sqlite3_js_...()', function(){
+      const db = this.db;
+      if(1){
+        const vfsList = capi.sqlite3_js_vfs_list();
+        T.assert(vfsList.length>1);
+        T.assert('string'===typeof vfsList[0]);
+
+        for(const v of vfsList){
+          T.assert('string' === typeof v)
+            .assert(capi.sqlite3_vfs_find(v) > 0);
+        }
+      }
+      /**
+         Trivia: the magic db name ":memory:" does not actually use the
+         "memdb" VFS unless "memdb" is _explicitly_ provided as the VFS
+         name. Instead, it uses the default VFS with an in-memory btree.
+         Thus this.db's VFS may not be memdb even though it's an in-memory
+         db.
+      */
+      const pVfsMem = capi.sqlite3_vfs_find('memdb'),
+            pVfsDflt = capi.sqlite3_vfs_find(0),
+            pVfsDb = capi.sqlite3_js_db_vfs(db.pointer);
+      T.assert(pVfsMem > 0)
+        .assert(pVfsDflt > 0)
+        .assert(pVfsDb > 0)
+        .assert(pVfsMem !== pVfsDflt
+                /* memdb lives on top of the default vfs */)
+        .assert(':memory:' === db.filename)
+        .assert(pVfsDb === pVfsDflt || pVfsdb === pVfsMem)
+      ;
+      /*const vMem = new capi.sqlite3_vfs(pVfsMem),
+        vDflt = new capi.sqlite3_vfs(pVfsDflt),
+        vDb = new capi.sqlite3_vfs(pVfsDb);*/
+      const duv = capi.sqlite3_js_db_uses_vfs;
+      T.assert(pVfsDflt === duv(db.pointer, 0)
+               || pVfsMem === duv(db.pointer,0))
+        .assert(!duv(db.pointer, "foo"))
+      ;
+    }/*sqlite3_js_...()*/)
+
   ////////////////////////////////////////////////////////////////////
     .t('Table t', function(sqlite3){
       const db = this.db;
@@ -1168,6 +1209,14 @@
           .assert(0==e.message.indexOf('Cannot prepare empty'));
       }
     })
+  ////////////////////////////////////////////////////////////////////////
+    .t('sqlite3_js_db_export()', function(){
+      const db = this.db;
+      const xp = capi.sqlite3_js_db_export(db.pointer);
+      T.assert(xp instanceof Uint8Array)
+        .assert(xp.byteLength>0)
+        .assert(0 === xp.byteLength % 512);
+    }/*sqlite3_js_db_export()*/)
 
   ////////////////////////////////////////////////////////////////////
     .t('Scalar UDFs', function(sqlite3){
@@ -1228,39 +1277,40 @@
       name: 'Aggregate UDFs',
       test: function(sqlite3){
         const db = this.db;
-        const aggState = {summer: 0, summerN: 0};
+        const sjac = capi.sqlite3_js_aggregate_context;
         db.createFunction({
           name: 'summer',
           xStep: function(pCtx, n){
-            aggState.summer += n;
+            const pAgg = sjac(pCtx, 4);
+            wasm.setMemValue(pAgg, wasm.getMemValue(pAgg,'i32') + Number(n), 'i32');
           },
-          xFinal: function(pCtx){
-            const rc = aggState.summer;
-            aggState.summer = 0;
-            return rc;
-          }
+          xFinal: (pCtx)=>wasm.getMemValue(sjac(pCtx, 4),'i32')
         });
         let v = db.selectValue([
           "with cte(v) as (",
           "select 3 union all select 5 union all select 7",
-          ") select summer(v) from cte"
+          ") select summer(v), summer(v+1) from cte"
+          /* ------------------^^^^^^^^^^^ ensures that we're handling
+              sqlite3_aggregate_context() properly. */
         ]);
         T.assert(15===v);
         T.mustThrowMatching(()=>db.selectValue("select summer(1,2)"),
                             /wrong number of arguments/);
+
         db.createFunction({
           name: 'summerN',
           arity: -1,
           xStep: function(pCtx, ...args){
-            for(const v of args) aggState.summerN += v;
+            const pAgg = sjac(pCtx, 4);
+            let sum = wasm.getMemValue(pAgg, 'i32');
+            for(const v of args) sum += Number(v);
+            wasm.setMemValue(pAgg, sum, 'i32');
           },
           xFinal: function(pCtx){
-            const rc = aggState.summerN;
-            aggState.summerN = 0;
-            return rc;
+            return wasm.getMemValue(sjac(pCtx, 4),'i32')
           }
         }); 
-        T.assert(18===db.selectValue('select summerN(1,8,9)'));
+        T.assert(18===db.selectValue('select summerN(1,8,9), summerN(2,3,4)'));
         T.mustThrowMatching(()=>{
           db.createFunction('nope',{
             xFunc: ()=>{}, xStep: ()=>{}
@@ -1281,6 +1331,30 @@
         T.mustThrowMatching(()=>{
           db.createFunction('nope',{xFunc:()=>{}, pApp:'nope'});
         }, /Invalid value for pApp/);
+     }
+    }/*aggregate UDFs*/)
+
+  ////////////////////////////////////////////////////////////////////////
+    .t({
+      name: 'Aggregate UDFs (64-bit)',
+      predicate: ()=>wasm.bigIntEnabled,
+      test: function(sqlite3){
+        const db = this.db;
+        const sjac = capi.sqlite3_js_aggregate_context;
+        db.createFunction({
+          name: 'summer64',
+          xStep: function(pCtx, n){
+            const pAgg = sjac(pCtx, 8);
+            wasm.setMemValue(pAgg, wasm.getMemValue(pAgg,'i64') + BigInt(n), 'i64');
+          },
+          xFinal: (pCtx)=>wasm.getMemValue(sjac(pCtx, 8),'i64')
+        });
+        let v = db.selectValue([
+            "with cte(v) as (",
+          "select 3 union all select 5 union all select 7",
+          ") select summer64(v*10), summer64(v+1) from cte"
+        ]);
+        T.assert(150n===BigInt(v));
      }
     }/*aggregate UDFs*/)
 

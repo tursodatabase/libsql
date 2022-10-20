@@ -1,5 +1,5 @@
-C Apply\smagic.txt\scorrection\sand\saddition\sreported\sin\s[forum\spost\s2d2366a04a0385|forum:2d2366a04a0385].
-D 2022-10-20T18:58:14.289
+C Add\smore\sJS\stests.\sFlesh\sout\sthe\saggregate\sUDF\stests\sto\suse\ssqlite3_aggregate_context()\sso\sthat\sthey\scan\seach\sbe\sused\smultiple\stimes\sin\sthe\ssame\sstatement.\sAdd\ssqlite3_js_aggregate_context()\sconvenience\shelper.
+D 2022-10-20T21:28:31.440
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -485,14 +485,14 @@ F ext/wasm/api/post-js-header.js 2e5c886398013ba2af88028ecbced1e4b22dc96a86467f1
 F ext/wasm/api/pre-js.js 151e0616614a49f3db19ed544fa13b38c87c108959fbcd4029ea8399a562d94f
 F ext/wasm/api/sqlite3-api-cleanup.js 4d07a7524dc9b7b050acfde57163e839243ad2383bd7ee0de0178b1b3e988588
 F ext/wasm/api/sqlite3-api-glue.js 0b5240bd325d2561f269cd0d82bf686336526e5e276251c2241adfbda802abf8
-F ext/wasm/api/sqlite3-api-oo1.js dc9b6a61649ad32836044de388c5248790239d62ced4e1116023135fcb0fc68b
+F ext/wasm/api/sqlite3-api-oo1.js 0e278d131dad72e9eb348a3dda6a4ff734a9e08925b4ed7e6e5a688d2edaf525
 F ext/wasm/api/sqlite3-api-opfs.js 22d60ba956e873b65e2e0591e239178082bd53a6d563c3c58db7dc03e562e8f7
-F ext/wasm/api/sqlite3-api-prologue.js 1366d538a7b388c299a389f441a79cf0b18af50208343545bd318936b6232acd
-F ext/wasm/api/sqlite3-api-worker1.js cb07b321164483524a27cf2207d4358b905703c410fcd8256e0acca5ab2fffb2
+F ext/wasm/api/sqlite3-api-prologue.js bb7a98a8c62545bf07b5fdee831c0d40c86f98c0094b00d8497a9de8976a0544
+F ext/wasm/api/sqlite3-api-worker1.js a7f38f03275d6c27ab2aef3e83215d3c97ce09c43e6904df47c3764d9d4572b4
 F ext/wasm/api/sqlite3-license-version-header.js a661182fc93fc2cf212dfd0b987f8e138a3ac98f850b1112e29b5fbdaecc87c3
 F ext/wasm/api/sqlite3-opfs-async-proxy.js 206ce6bbc3c30ad51a37d9c25e3a2712e70b586e0f9a2cf8cb0b9619017c2671
 F ext/wasm/api/sqlite3-wasi.h 25356084cfe0d40458a902afb465df8c21fc4152c1d0a59b563a3fba59a068f9
-F ext/wasm/api/sqlite3-wasm.c e1fcda97775dd149b4a2e0a4f16a22cede96daa5a91795ba214bdb3c2e680f4a
+F ext/wasm/api/sqlite3-wasm.c dde771a10e6a8d01ae516d32abc4cdd2d542cb3339e35c5b4be8ebbc1dc1ccc1
 F ext/wasm/api/sqlite3-worker1-promiser.js 0c7a9826dbf82a5ed4e4f7bf7816e825a52aff253afbf3350431f5773faf0e4b
 F ext/wasm/api/sqlite3-worker1.js dbe54b69c1520a2d25eae148cd2750ded2dd7f219ea4ee46f83e0a851dca5974
 F ext/wasm/batch-runner.html 4deeed44fe41496dc6898d9fb17938ea3291f40f4bfb977e29d0cef96fbbe4c8
@@ -533,7 +533,7 @@ F ext/wasm/test-opfs-vfs.html 1f2d672f3f3fce810dfd48a8d56914aba22e45c6834e262555
 F ext/wasm/test-opfs-vfs.js 48fc59110e8775bb43c9be25b6d634fc07ebadab7da8fbd44889e8129c6e2548
 F ext/wasm/tester1-worker.html 048c341f124fdb61ca14dfd1bd1f78742490f208aa3bb1e84399f83f1e7e6a74
 F ext/wasm/tester1.html 37ccc958fa0d95074af2d72b7241c8e2d982bbec6dda4dc790241af3d933c3b6
-F ext/wasm/tester1.js 44d71175e2941bf1d7c27afa0c395fe81c83cbd74cd10e34e0688dd833042f1e
+F ext/wasm/tester1.js 6e1c8e4d48add1d49fb7901dfee04fdf6cdd5bc39adcbf15c097f61b581a893c
 F ext/wasm/version-info.c 5fa356d38859d71a0369b5c37e1935def7413fcc8a4e349a39d9052c1d0479f4
 F ext/wasm/wasmfs.make ee0004813e16c283ff633e08b482008d56adf9b7d42f6c5612f7ab002b924f69
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
@@ -2036,8 +2036,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ac9af71b72a749b0a040273a88480d56f49570b569389a4ea20cc055f494d8ff
-R b44d84c26c2f9b06f7e9b798ca72a049
+P 9bf26e2aa3579f354ed2d314e1bf3e3ef117cbd71500ef5f76caa1de5cce1edc
+R dbe97bbb80fe6071199461fb846ef1aa
 U stephan
-Z e01cdee717736d0716b4f5500835f6af
+Z 83bd13decfea9b8d2129079a8ff06725
 # Remove this line to create a well-formed Fossil manifest.

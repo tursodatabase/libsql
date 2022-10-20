@@ -231,7 +231,7 @@
 
   If the `dbId` does not refer to an opened ID, this is a no-op. If
   the `args` object contains a truthy `unlink` value then the database
-  will unlinked (deleted) after closing it. The inability to close a
+  will be unlinked (deleted) after closing it. The inability to close a
   db (because it's not opened) or delete its file does not trigger an
   error.
 

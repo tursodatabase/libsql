@@ -48,6 +48,7 @@
 ** want undefined. Please keep these alphabetized.
 */
 #undef SQLITE_OMIT_DESERIALIZE
+#undef SQLITE_OMIT_MEMORYDB
 
 /*
 ** Define any SQLITE_... config defaults we want if they aren't
