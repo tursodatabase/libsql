@@ -1,5 +1,5 @@
-C Rename\ssqlite3_web_...\sto\ssqlite3_js_...\sDocument\sthe\sworker1.close.unlink\soption.\sFix\sunlink\susage\sin\sspeedtest1.html.\sMinor\sJS\sbuild\scleanups.
-D 2022-10-20T18:31:32.249
+C Apply\smagic.txt\scorrection\sand\saddition\sreported\sin\s[forum\spost\s2d2366a04a0385|forum:2d2366a04a0385].
+D 2022-10-20T18:58:14.289
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -538,7 +538,7 @@ F ext/wasm/version-info.c 5fa356d38859d71a0369b5c37e1935def7413fcc8a4e349a39d905
 F ext/wasm/wasmfs.make ee0004813e16c283ff633e08b482008d56adf9b7d42f6c5612f7ab002b924f69
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
-F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
+F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
 F main.mk b1b02927b2e0b73d025f93e388f2f7fba07614e972453983bddc65cd2bf33bb1
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
@@ -2036,8 +2036,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 56df1482ab45d4d41f937b27c5a877b52fa082bfc6809ea682b62b47a51333de
-R afcc999df723d6bf12746efb0e783132
+P ac9af71b72a749b0a040273a88480d56f49570b569389a4ea20cc055f494d8ff
+R b44d84c26c2f9b06f7e9b798ca72a049
 U stephan
-Z 97b1f226f03f5d4357dc526c8056da42
+Z e01cdee717736d0716b4f5500835f6af
 # Remove this line to create a well-formed Fossil manifest.
