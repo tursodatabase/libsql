@@ -266,7 +266,7 @@ static int isLikeOrGlob(
         if( pLeft->op!=TK_COLUMN 
          || sqlite3ExprAffinity(pLeft)!=SQLITE_AFF_TEXT 
          || (ALWAYS( ExprUseYTab(pLeft) )
-             && pLeft->y.pTab
+             && ALWAYS(pLeft->y.pTab)
              && IsVirtual(pLeft->y.pTab))  /* Might be numeric */
         ){
           int isNum;
@@ -383,8 +383,7 @@ static int isAuxiliaryVtabOperator(
     **       MATCH(expression,vtab_column)
     */
     pCol = pList->a[1].pExpr;
-    assert( pCol->op!=TK_COLUMN || ExprUseYTab(pCol) );
-    testcase( pCol->op==TK_COLUMN && pCol->y.pTab==0 );
+    assert( pCol->op!=TK_COLUMN || (ExprUseYTab(pCol) && pCol->y.pTab!=0) );
     if( ExprIsVtab(pCol) ){
       for(i=0; i<ArraySize(aOp); i++){
         assert( !ExprHasProperty(pExpr, EP_IntValue) );
@@ -409,7 +408,7 @@ static int isAuxiliaryVtabOperator(
     */
     pCol = pList->a[0].pExpr;
     assert( pCol->op!=TK_COLUMN || ExprUseYTab(pCol) );
-    testcase( pCol->op==TK_COLUMN && pCol->y.pTab==0 );
+    assert( pCol->op!=TK_COLUMN || (ExprUseYTab(pCol) && pCol->y.pTab!=0) );
     if( ExprIsVtab(pCol) ){
       sqlite3_vtab *pVtab;
       sqlite3_module *pMod;
@@ -434,13 +433,12 @@ static int isAuxiliaryVtabOperator(
     int res = 0;
     Expr *pLeft = pExpr->pLeft;
     Expr *pRight = pExpr->pRight;
-    assert( pLeft->op!=TK_COLUMN || ExprUseYTab(pLeft) );
-    testcase( pLeft->op==TK_COLUMN && pLeft->y.pTab==0 );
+    assert( pLeft->op!=TK_COLUMN || (ExprUseYTab(pLeft) && pLeft->y.pTab!=0) );
     if( ExprIsVtab(pLeft) ){
       res++;
     }
-    assert( pRight==0 || pRight->op!=TK_COLUMN || ExprUseYTab(pRight) );
-    testcase( pRight && pRight->op==TK_COLUMN && pRight->y.pTab==0 );
+    assert( pRight==0 || pRight->op!=TK_COLUMN
+            || (ExprUseYTab(pRight) && pRight->y.pTab!=0) );
     if( pRight && ExprIsVtab(pRight) ){
       res++;
       SWAP(Expr*, pLeft, pRight);

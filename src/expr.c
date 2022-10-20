@@ -55,9 +55,8 @@ char sqlite3ExprAffinity(const Expr *pExpr){
   if( op==TK_REGISTER ) op = pExpr->op2;
   if( op==TK_COLUMN || op==TK_AGG_COLUMN ){
     assert( ExprUseYTab(pExpr) );
-    if( pExpr->y.pTab ){
-      return sqlite3TableColumnAffinity(pExpr->y.pTab, pExpr->iColumn);
-    }
+    assert( pExpr->y.pTab!=0 );
+    return sqlite3TableColumnAffinity(pExpr->y.pTab, pExpr->iColumn);
   }
   if( op==TK_SELECT ){
     assert( ExprUseXSelect(pExpr) );
@@ -175,17 +174,14 @@ CollSeq *sqlite3ExprCollSeq(Parse *pParse, const Expr *pExpr){
     int op = p->op;
     if( op==TK_REGISTER ) op = p->op2;
     if( op==TK_AGG_COLUMN || op==TK_COLUMN || op==TK_TRIGGER ){
+      int j;
       assert( ExprUseYTab(p) );
-      if( p->y.pTab!=0 ){
-        /* op==TK_REGISTER && p->y.pTab!=0 happens when pExpr was originally
-        ** a TK_COLUMN but was previously evaluated and cached in a register */
-        int j = p->iColumn;
-        if( j>=0 ){
-          const char *zColl = sqlite3ColumnColl(&p->y.pTab->aCol[j]);
-          pColl = sqlite3FindCollSeq(db, ENC(db), zColl, 0);
-        }
-        break;
+      assert( p->y.pTab!=0 );
+      if( (j = p->iColumn)>=0 ){
+        const char *zColl = sqlite3ColumnColl(&p->y.pTab->aCol[j]);
+        pColl = sqlite3FindCollSeq(db, ENC(db), zColl, 0);
       }
+      break;
     }
     if( op==TK_CAST || op==TK_UPLUS ){
       p = p->pLeft;
@@ -3790,10 +3786,7 @@ void sqlite3ExprCodeGetColumnOfTable(
 ){
   Column *pCol;
   assert( v!=0 );
-  if( pTab==0 ){
-    sqlite3VdbeAddOp3(v, OP_Column, iTabCur, iCol, regOut);
-    return;
-  }
+  assert( pTab!=0 );
   if( iCol<0 || iCol==pTab->iPKey ){
     sqlite3VdbeAddOp2(v, OP_Rowid, iTabCur, regOut);
     VdbeComment((v, "%s.rowid", pTab->zName));
@@ -4168,11 +4161,8 @@ expr_code_doover:
         int aff;
         iReg = sqlite3ExprCodeTarget(pParse, pExpr->pLeft,target);
         assert( ExprUseYTab(pExpr) );
-        if( pExpr->y.pTab ){
-          aff = sqlite3TableColumnAffinity(pExpr->y.pTab, pExpr->iColumn);
-        }else{
-          aff = pExpr->affExpr;
-        }
+        assert( pExpr->y.pTab!=0 );
+        aff = sqlite3TableColumnAffinity(pExpr->y.pTab, pExpr->iColumn);
         if( aff>SQLITE_AFF_BLOB ){
           static const char zAff[] = "B\000C\000D\000E";
           assert( SQLITE_AFF_BLOB=='A' );
@@ -4234,12 +4224,10 @@ expr_code_doover:
         }
       }
       assert( ExprUseYTab(pExpr) );
+      assert( pExpr->y.pTab!=0 );
       iReg = sqlite3ExprCodeGetColumn(pParse, pExpr->y.pTab,
                                pExpr->iColumn, iTab, target,
                                pExpr->op2);
-      if( pExpr->y.pTab==0 && pExpr->affExpr==SQLITE_AFF_REAL ){
-        sqlite3VdbeAddOp1(v, OP_RealAffinity, iReg);
-      }
       return iReg;
     }
     case TK_INTEGER: {
@@ -5930,10 +5918,10 @@ static int impliesNotNullRow(Walker *pWalker, Expr *pExpr){
       assert( pLeft->op!=TK_COLUMN || ExprUseYTab(pLeft) );
       assert( pRight->op!=TK_COLUMN || ExprUseYTab(pRight) );
       if( (pLeft->op==TK_COLUMN
-           && pLeft->y.pTab!=0
+           && ALWAYS(pLeft->y.pTab!=0)
            && IsVirtual(pLeft->y.pTab))
        || (pRight->op==TK_COLUMN
-           && pRight->y.pTab!=0
+           && ALWAYS(pRight->y.pTab!=0)
            && IsVirtual(pRight->y.pTab))
       ){
         return WRC_Prune;

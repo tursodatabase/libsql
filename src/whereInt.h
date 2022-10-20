@@ -450,20 +450,6 @@ struct WhereLoopBuilder {
 #endif
 
 /*
-** Each instance of this object records a change to a single node
-** in an expression tree to cause that node to point to a column
-** of an index rather than an expression or a virtual column.  All
-** such transformations need to be undone at the end of WHERE clause
-** processing.
-*/
-typedef struct WhereExprMod WhereExprMod;
-struct WhereExprMod {
-  WhereExprMod *pNext;  /* Next translation on a list of them all */
-  Expr *pExpr;          /* The Expr node that was transformed */
-  Expr orig;            /* Original value of the Expr node */
-};
-
-/*
 ** The WHERE clause processing routine has two halves.  The
 ** first part does the start of the WHERE loop and the second
 ** half does the tail of the WHERE loop.  An instance of
@@ -478,7 +464,9 @@ struct WhereInfo {
   SrcList *pTabList;        /* List of tables in the join */
   ExprList *pOrderBy;       /* The ORDER BY clause or NULL */
   ExprList *pResultSet;     /* Result set of the query */
+#if WHERETRACE_ENABLED
   Expr *pWhere;             /* The complete WHERE clause */
+#endif
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   Select *pLimit;           /* Used to access LIMIT expr/registers for vtabs */
 #endif
@@ -500,7 +488,6 @@ struct WhereInfo {
   int iTop;                 /* The very beginning of the WHERE loop */
   int iEndWhere;            /* End of the WHERE clause itself */
   WhereLoop *pLoops;        /* List of all WhereLoop objects */
-  WhereExprMod *pExprMods;  /* Expression modifications */
   WhereMemBlock *pMemToFree;/* Memory to free when this object destroyed */
   Bitmask revMask;          /* Mask of ORDER BY terms that need reversing */
   WhereClause sWC;          /* Decomposition of the WHERE clause */
