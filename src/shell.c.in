@@ -12757,9 +12757,8 @@ int fiddle_export_db( int (*xCallback)(unsigned const char *zOut, int n) ){
 /*
 ** Trivial exportable function for emscripten. It processes zSql as if
 ** it were input to the sqlite3 shell and redirects all output to the
-** wasm binding. If fiddle_main() has not been called by the time this
-** is called, this function calls it with a conservative set of
-** flags.
+** wasm binding. fiddle_main() must have been called before this
+** is called, or results are undefined.
 */
 void fiddle_exec(const char * zSql){
   if(zSql && *zSql){

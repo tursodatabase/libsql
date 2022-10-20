@@ -365,13 +365,11 @@ sqlite3.initWorker1API = function(){
       if(db){
         delete this.dbs[getDbId(db)];
         const filename = db.getFilename();
+        const pVfs = sqlite3.capi.wasm.sqlite3_wasm_db_vfs(db.pointer, 0);
         db.close();
         if(db===this.defaultDb) this.defaultDb = undefined;
-        if(alsoUnlink && filename){
-          /* This isn't necessarily correct: the db might be using a
-             VFS other than the default. How do we best resolve this
-             without having to special-case the opfs VFSes? */
-          sqlite3.capi.wasm.sqlite3_wasm_vfs_unlink(filename);
+        if(alsoUnlink && filename && pVfs){
+          sqlite3.capi.wasm.sqlite3_wasm_vfs_unlink(pVfs, filename);
         }
       }
     },

@@ -51,7 +51,7 @@
   const runSpeedtest = function(cliFlagsArray){
     const scope = App.wasm.scopedAllocPush();
     const dbFile = App.pDir+"/speedtest1.sqlite3";
-    App.unlink(dbFile);
+    App.vfsUnlink(0, dbFile);
     try{
       const argv = [
         "speedtest1.wasm", ...cliFlagsArray, dbFile
@@ -64,7 +64,7 @@
       mPost('error',e.message);
     }finally{
       App.wasm.scopedAllocPop(scope);
-      App.unlink(dbFile);
+      App.vfsUnlink(0, dbFile);
       mPost('run-end', App.logBuffer.join('\n'));
       App.logBuffer.length = 0;
     }
@@ -87,10 +87,9 @@
   };
   self.sqlite3InitModule(EmscriptenModule).then((sqlite3)=>{
     const S = sqlite3;
-    const vfsUnlink = S.capi.wasm.xWrap("sqlite3_wasm_vfs_unlink", "int", ["string"]);
-    App.unlink = function(fname){
-      vfsUnlink(fname);
-      if(S.opfs) S.opfs.deleteEntry(fname);
+    App.vfsUnlink = function(pDb, fname){
+      const pVfs = S.capi.wasm.sqlite3_wasm_db_vfs(pDb, fname||0);
+      if(pVfs) S.capi.wasm.sqlite3_wasm_vfs_unlink(pVfs, fname||0);
     };
     App.pDir = wasmfsDir(S.wasm);
     App.wasm = S.capi.wasm;

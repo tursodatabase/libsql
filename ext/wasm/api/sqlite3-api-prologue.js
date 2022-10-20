@@ -861,13 +861,12 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   /**
      Functions which are intended solely for API-internal use by the
      WASM components, not client code. These get installed into
-     wasm.
-
-     TODO: get rid of sqlite3_wasm_vfs_unlink(). It is ill-conceived
-     and only rarely actually useful.
+     capi.wasm.
   */
   wasm.bindingSignatures.wasm = [
-    ["sqlite3_wasm_vfs_unlink", "int", "string"]
+    ["sqlite3_wasm_db_reset", "int", "sqlite3*"],
+    ["sqlite3_wasm_db_vfs", "sqlite3_vfs*", "sqlite3*","string"],
+    ["sqlite3_wasm_vfs_unlink", "int", "sqlite3_vfs*","string"]
   ];
 
 
@@ -919,7 +918,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        This method always adjusts the given value to be a multiple
        of 8 bytes because failing to do so can lead to incorrect
        results when reading and writing 64-bit values from/to the WASM
-       heap.
+       heap. Similarly, the returned address is always 8-byte aligned.
     */
     alloc: (n)=>{
       return wasm.exports.sqlite3_wasm_pstack_alloc(n)
@@ -1074,12 +1073,8 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      Returns true if sqlite3.capi.sqlite3_wasmfs_opfs_dir() is a
      non-empty string and the given name starts with (that string +
      '/'), else returns false.
-
-     Potential (but arguable) TODO: return true if the name is one of
-     (":localStorage:", "local", ":sessionStorage:", "session") and
-     kvvfs is available.
   */
-  capi.sqlite3_web_filename_is_persistent = function(name){
+  capi.sqlite3_wasmfs_filename_is_persistent = function(name){
     const p = capi.sqlite3_wasmfs_opfs_dir();
     return (p && name) ? name.startsWith(p+'/') : false;
   };

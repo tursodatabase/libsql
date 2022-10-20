@@ -102,7 +102,7 @@
   const toss = (...args)=>{
     throw new Error(args.join(' '));
   };
-  const fixmeOPFS = "(FIXME: won't work with vanilla OPFS.)";
+  const fixmeOPFS = "(FIXME: won't work with OPFS-over-sqlite3_vfs.)";
   let sqlite3 /* gets assigned when the wasm module is loaded */;
 
   self.onerror = function(/*message, source, lineno, colno, error*/) {
@@ -370,9 +370,9 @@
   */
   sqlite3InitModule(fiddleModule).then((_sqlite3)=>{
     sqlite3 = _sqlite3;
+    const dbVfs = sqlite3.capi.wasm.xWrap('fiddle_db_vfs', "*", ['string']);
     fiddleModule.fsUnlink = (fn)=>{
-      stderr("unlink:",fixmeOPFS);
-      return sqlite3.capi.wasm.sqlite3_wasm_vfs_unlink(fn);
+      return sqlite3.capi.wasm.sqlite3_wasm_vfs_unlink(dbVfs(0), fn);
     };
     wMsg('fiddle-ready');
   })/*then()*/;
