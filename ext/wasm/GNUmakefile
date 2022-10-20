@@ -291,12 +291,11 @@ $(sqlite3-license-version.js): $(sqlite3.h) $(sqlite3-license-version-header.js)
 # name of the JS file on whose behalf this pre-js is for.
 define call-make-pre-js
 pre-post-$(1).flags ?=
-pre-js-$(1).js: $$(pre-js.js) $$(MAKEFILE)
+$$(dir.tmp)/pre-js-$(1).js: $$(pre-js.js) $$(MAKEFILE)
 	cp $$(pre-js.js) $$@
 	echo "Module[xInstantiateWasm].uri = '$(1).wasm';" >> $$@
-CLEAN_FILES += pre-js-$(1).js
-pre-post-$(1).deps := $$(pre-post-jses.deps) pre-js-$(1).js
-pre-post-$(1).flags += --pre-js=pre-js-$(1).js
+pre-post-$(1).deps := $$(pre-post-jses.deps) $$(dir.tmp)/pre-js-$(1).js
+pre-post-$(1).flags += --pre-js=$$(dir.tmp)/pre-js-$(1).js
 endef
 #$(error $(call call-make-pre-js,sqlite3-wasmfs))
 # /post-js and pre-js
@@ -304,9 +303,9 @@ endef
 
 ########################################################################
 # emcc flags for .c/.o/.wasm/.js.
-emcc.flags =
+emcc.flags :=
 #emcc.flags += -v # _very_ loud but also informative about what it's doing
-# -g is needed to keep -O2 and higher from creating broken JS via
+# -g3 is needed to keep -O2 and higher from creating broken JS via
 # minification.
 
 ########################################################################

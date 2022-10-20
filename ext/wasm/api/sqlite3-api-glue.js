@@ -592,7 +592,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        For the given integer, returns the SQLITE_xxx result code as a
        string, or undefined if no such mapping is found.
     */
-    capi.sqlite3_web_rc_str = (rc)=>__rcMap[rc];
+    capi.sqlite3_js_rc_str = (rc)=>__rcMap[rc];
     /* Bind all registered C-side structs... */
     const notThese = Object.assign(Object.create(null),{
       // Structs NOT to register

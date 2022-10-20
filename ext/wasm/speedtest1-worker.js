@@ -96,6 +96,6 @@
     //if(App.pDir) log("Persistent storage:",pDir);
     //else log("Using transient storage.");
     mPost('ready',true);
-    log("Registered VFSes:", ...S.capi.sqlite3_web_vfs_list());
+    log("Registered VFSes:", ...S.capi.sqlite3_js_vfs_list());
   });
 })();

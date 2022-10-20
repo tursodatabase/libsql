@@ -1406,7 +1406,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           default:
             this._mayGet = false;
             console.warn("sqlite3_step() rc=",rc,
-                         capi.sqlite3_web_rc_str(rc),
+                         capi.sqlite3_js_rc_str(rc),
                          "SQL =", capi.sqlite3_sql(this.pointer));
             DB.checkRc(this.db.pointer, rc);
       }
@@ -1662,8 +1662,8 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     };
     const jdb = sqlite3.oo1.JsStorageDb;
     jdb.prototype = Object.create(DB.prototype);
-    /** Equivalent to sqlite3_web_kvvfs_clear(). */
-    jdb.clearStorage = capi.sqlite3_web_kvvfs_clear;
+    /** Equivalent to sqlite3_js_kvvfs_clear(). */
+    jdb.clearStorage = capi.sqlite3_js_kvvfs_clear;
     /**
        Clears this database instance's storage or throws if this
        instance has been closed. Returns the number of
@@ -1672,8 +1672,8 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     jdb.prototype.clearStorage = function(){
       return jdb.clearStorage(affirmDbOpen(this).filename);
     };
-    /** Equivalent to sqlite3_web_kvvfs_size(). */
-    jdb.storageSize = capi.sqlite3_web_kvvfs_size;
+    /** Equivalent to sqlite3_js_kvvfs_size(). */
+    jdb.storageSize = capi.sqlite3_js_kvvfs_size;
     /**
        Returns the _approximate_ number of bytes this database takes
        up in its storage or throws if this instance has been closed.

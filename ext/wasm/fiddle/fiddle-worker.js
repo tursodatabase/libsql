@@ -130,7 +130,7 @@
       return f._();
     },
     dbIsOpfs: function f(){
-      return sqlite3.opfs && sqlite3.capi.sqlite3_web_db_uses_vfs(
+      return sqlite3.opfs && sqlite3.capi.sqlite3_js_db_uses_vfs(
         this.dbHandle(), "opfs"
       );
     },
@@ -251,7 +251,7 @@
           const fn2 = fn ? fn.split(/[/\\]/).pop() : null;
           try{
             if(!fn2) toss("DB appears to be closed.");
-            const buffer = sqlite3.capi.sqlite3_web_db_export(
+            const buffer = sqlite3.capi.sqlite3_js_db_export(
               Sqlite3Shell.dbHandle()
             );
             wMsg('db-export',{filename: fn2, buffer: buffer.buffer}, [buffer.buffer]);

@@ -167,7 +167,7 @@
       the non-WASMFS OPFS VFS to open a database via a URI-style
       db filename.
 
-      vfsList: result of sqlite3.capi.sqlite3_web_vfs_list()
+      vfsList: result of sqlite3.capi.sqlite3_js_vfs_list()
    }
   }
   ```
@@ -225,13 +225,15 @@
     type: "close",
     messageId: ...as above...
     dbId: ...as above...
-    args: none
+    args: OPTIONAL {unlink: boolean}
   }
   ```
 
-  If the dbId does not refer to an opened ID, this is a no-op. The
-  inability to close a db (because it's not opened) or delete its
-  file does not trigger an error.
+  If the `dbId` does not refer to an opened ID, this is a no-op. If
+  the `args` object contains a truthy `unlink` value then the database
+  will unlinked (deleted) after closing it. The inability to close a
+  db (because it's not opened) or delete its file does not trigger an
+  error.
 
   Response:
 
@@ -432,15 +434,13 @@ sqlite3.initWorker1API = function(){
       const pDir = sqlite3.capi.sqlite3_wasmfs_opfs_dir();
       if(!args.filename || ':memory:'===args.filename){
         oargs.filename = args.filename || '';
-      }else if(pDir){
-        oargs.filename = pDir + ('/'===args.filename[0] ? args.filename : ('/'+args.filename));
       }else{
         oargs.filename = args.filename;
       }
       const db = wState.open(oargs);
       rc.filename = db.filename;
-      rc.persistent = (!!pDir && db.filename.startsWith(pDir))
-        || sqlite3.capi.sqlite3_web_db_uses_vfs(db.pointer, "opfs");
+      rc.persistent = (!!pDir && db.filename.startsWith(pDir+'/'))
+        || sqlite3.capi.sqlite3_js_db_uses_vfs(db.pointer, "opfs");
       rc.dbId = getDbId(db);
       return rc;
     },
@@ -521,7 +521,7 @@ sqlite3.initWorker1API = function(){
       });
       rc.wasmfsOpfsEnabled = !!sqlite3.capi.sqlite3_wasmfs_opfs_dir();
       rc.version = sqlite3.version;
-      rc.vfsList = sqlite3.capi.sqlite3_web_vfs_list();
+      rc.vfsList = sqlite3.capi.sqlite3_js_vfs_list();
       return rc;
     },
 

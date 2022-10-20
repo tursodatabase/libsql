@@ -1107,7 +1107,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      bad arguments cause a conversion error when passing into
      wasm-space, false is returned.
   */
-  capi.sqlite3_web_db_uses_vfs = function(pDb,vfsName,dbName="main"){
+  capi.sqlite3_js_db_uses_vfs = function(pDb,vfsName,dbName="main"){
     try{
       const pK = capi.sqlite3_vfs_find(vfsName);
       if(!pK) return false;
@@ -1134,7 +1134,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      Returns an array of the names of all currently-registered sqlite3
      VFSes.
   */
-  capi.sqlite3_web_vfs_list = function(){
+  capi.sqlite3_js_vfs_list = function(){
     const rc = [];
     let pVfs = capi.sqlite3_vfs_find(0);
     while(pVfs){
@@ -1151,7 +1151,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      sqlite3_serialize(). On success it returns a Uint8Array. On
      error it throws with a description of the problem.
   */
-  capi.sqlite3_web_db_export = function(pDb){
+  capi.sqlite3_js_db_export = function(pDb){
     if(!pDb) toss('Invalid sqlite3* argument.');
     if(!wasm.bigIntEnabled) toss('BigInt64 support is not enabled.');
     const stack = wasm.pstack.pointer;
@@ -1171,7 +1171,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       );
       if(rc){
         toss("Database serialization failed with code",
-             sqlite3.capi.sqlite3_web_rc_str(rc));
+             sqlite3.capi.sqlite3_js_rc_str(rc));
       }
       pOut = wasm.getPtrValue(ppOut);
       const nOut = wasm.getMemValue(pSize, 'i64');
@@ -1192,7 +1192,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     /* Features specific to the main window thread... */
 
     /**
-       Internal helper for sqlite3_web_kvvfs_clear() and friends.
+       Internal helper for sqlite3_js_kvvfs_clear() and friends.
        Its argument should be one of ('local','session','').
     */
     const __kvvfsInfo = function(which){
@@ -1217,7 +1217,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
 
        Returns the number of entries cleared.
     */
-    capi.sqlite3_web_kvvfs_clear = function(which=''){
+    capi.sqlite3_js_kvvfs_clear = function(which=''){
       let rc = 0;
       const kvinfo = __kvvfsInfo(which);
       kvinfo.stores.forEach((s)=>{
@@ -1250,7 +1250,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        those limits are unspecified and may include per-entry
        overhead invisible to clients.
     */
-    capi.sqlite3_web_kvvfs_size = function(which=''){
+    capi.sqlite3_js_kvvfs_size = function(which=''){
       let sz = 0;
       const kvinfo = __kvvfsInfo(which);
       kvinfo.stores.forEach((s)=>{

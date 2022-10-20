@@ -94,7 +94,6 @@
     const runTests = function(sqlite3){
         const capi = sqlite3.capi, wasm = capi.wasm;
         //console.debug('sqlite3 =',sqlite3);
-        const unlink = wasm.xWrap("sqlite3_wasm_vfs_unlink", "int", ["string"]);
         const pDir = wasmfsDir(wasm);
         if(pDir){
             console.warn("Persistent storage:",pDir);
@@ -108,9 +107,11 @@
         }
 
         let forceSize = 0;
+        let vfs, pVfs = 0;
         if(urlParams.has('vfs')){
-            const vfs = urlParams.get('vfs');
-            if(!capi.sqlite3_vfs_find(vfs)){
+            vfs = urlParams.get('vfs');
+            pVfs = capi.sqlite3_vfs_find(vfs);
+            if(!pVfs){
                 log2('error',"Unknown VFS:",vfs);
                 return;
             }
@@ -121,7 +122,7 @@
                 dbFile = 'session';
                 log2('warning',"kvvfs VFS: forcing --size",forceSize,
                      "and filename '"+dbFile+"'.");
-                capi.sqlite3_web_kvvfs_clear(dbFile);
+                capi.sqlite3_js_kvvfs_clear(dbFile);
             }
         }
         if(forceSize){
@@ -146,7 +147,7 @@
         console.log("argv =",argv);
         // These log messages are not emitted to the UI until after main() returns. Fixing that
         // requires moving the main() call and related cleanup into a timeout handler.
-        if(pDir) unlink(dbFile);
+        if(pDir) wasm.sqlite3_wasm_vfs_unlink(pVfs,dbFile);
         log2('',"Starting native app:\n ",argv.join(' '));
         log2('',"This will take a while and the browser might warn about the runaway JS.",
              "Give it time...");
@@ -155,7 +156,7 @@
             wasm.xCall('wasm_main', argv.length,
                        wasm.scopedAllocMainArgv(argv));
             wasm.scopedAllocPop(scope);
-            if(pDir) unlink(dbFile);
+            if(pDir) wasm.sqlite3_wasm_vfs_unlink(pVfs,dbFile);
             logList.unshift("Done running native main(). Output:");
             dumpLogList();
         }, 50);
