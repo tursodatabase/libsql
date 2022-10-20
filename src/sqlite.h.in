@@ -89,6 +89,9 @@ extern "C" {
 #ifndef SQLITE_SYSAPI
 # define SQLITE_SYSAPI
 #endif
+#ifndef LIBSQL_API
+# define LIBSQL_API
+#endif
 
 /*
 ** These no-op macros are used in front of interfaces to mark those
@@ -3665,6 +3668,10 @@ int sqlite3_open_v2(
   int flags,              /* Flags */
   const char *zVfs        /* Name of VFS module to use */
 );
+
+#ifdef LIBSQL_ENABLE_WASM_RUNTIME
+LIBSQL_API void libsql_try_initialize_wasm_func_table(sqlite3 *db);
+#endif
 
 /*
 ** CAPI3REF: Obtain Values For URI Parameters
