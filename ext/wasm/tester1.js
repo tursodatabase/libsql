@@ -43,44 +43,46 @@
   const isWorker = ()=>!isUIThread();
   /* Predicate for tests/groups. */
   const testIsTodo = ()=>false;
-  const haveWasmCTests = function(){
+  const haveWasmCTests = ()=>{
     return !!wasm.exports.sqlite3_wasm_test_int64_max;
   };
-  const mapToString = (v)=>{
-    switch(typeof v){
-        case 'number': case 'string': case 'boolean':
-        case 'undefined':
-          return ''+v;
-        default: break;
-    }
-    if(null===v) return 'null';
-    if(v instanceof Error){
-      v = {
-        message: v.message,
-        stack: v.stack,
-        errorClass: v.name
+  {
+    const mapToString = (v)=>{
+      switch(typeof v){
+          case 'number': case 'string': case 'boolean':
+          case 'undefined':
+            return ''+v;
+          default: break;
+      }
+      if(null===v) return 'null';
+      if(v instanceof Error){
+        v = {
+          message: v.message,
+          stack: v.stack,
+          errorClass: v.name
+        };
+      }
+      return JSON.stringify(v,undefined,2);
+    };
+    const normalizeArgs = (args)=>args.map(mapToString);
+    if( isUIThread() ){
+      console.log("Running in the UI thread.");
+      const logTarget = document.querySelector('#test-output');
+      logClass = function(cssClass,...args){
+        const ln = document.createElement('div');
+        if(cssClass) ln.classList.add(cssClass);
+        ln.append(document.createTextNode(normalizeArgs(args).join(' ')));
+        logTarget.append(ln);
+      };
+    }else{ /* Worker thread */
+      console.log("Running in a Worker thread.");
+      logClass = function(cssClass,...args){
+        postMessage({
+          type:'log',
+          payload:{cssClass, args: normalizeArgs(args)}
+        });
       };
     }
-    return JSON.stringify(v,undefined,2);
-  };
-  const normalizeArgs = (args)=>args.map(mapToString);
-  if( isUIThread() ){
-    console.log("Running in the UI thread.");
-    const logTarget = document.querySelector('#test-output');
-    logClass = function(cssClass,...args){
-      const ln = document.createElement('div');
-      if(cssClass) ln.classList.add(cssClass);
-      ln.append(document.createTextNode(normalizeArgs(args).join(' ')));
-      logTarget.append(ln);
-    };
-  }else{ /* Worker thread */
-    console.log("Running in a Worker thread.");
-    logClass = function(cssClass,...args){
-      postMessage({
-        type:'log',
-        payload:{cssClass, args: normalizeArgs(args)}
-      });
-    };
   }
   const log = (...args)=>{
     //console.log(...args);
@@ -1281,10 +1283,13 @@
         db.createFunction({
           name: 'summer',
           xStep: function(pCtx, n){
-            const pAgg = sjac(pCtx, 4);
-            wasm.setMemValue(pAgg, wasm.getMemValue(pAgg,'i32') + Number(n), 'i32');
+            const ac = sjac(pCtx, 4);
+            wasm.setMemValue(ac, wasm.getMemValue(ac,'i32') + Number(n), 'i32');
           },
-          xFinal: (pCtx)=>wasm.getMemValue(sjac(pCtx, 4),'i32')
+          xFinal: (pCtx)=>{
+            const ac = sjac(pCtx, 0);
+            return ac ? wasm.getMemValue(ac,'i32') : 0;
+          }
         });
         let v = db.selectValue([
           "with cte(v) as (",
@@ -1306,8 +1311,12 @@
             for(const v of args) sum += Number(v);
             wasm.setMemValue(pAgg, sum, 'i32');
           },
-          xFinal: function(pCtx){
-            return wasm.getMemValue(sjac(pCtx, 4),'i32')
+          xFinal: (pCtx)=>{
+            const ac = sjac(pCtx, 0);
+            capi.sqlite3_result_int( pCtx, ac ? wasm.getMemValue(ac,'i32') : 0 );
+            // xFinal() may either return its value directly or call
+            // sqlite3_result_xyz() and return undefined. Both are
+            // functionally equivalent.
           }
         }); 
         T.assert(18===db.selectValue('select summerN(1,8,9), summerN(2,3,4)'));
@@ -1347,7 +1356,10 @@
             const pAgg = sjac(pCtx, 8);
             wasm.setMemValue(pAgg, wasm.getMemValue(pAgg,'i64') + BigInt(n), 'i64');
           },
-          xFinal: (pCtx)=>wasm.getMemValue(sjac(pCtx, 8),'i64')
+          xFinal: (pCtx)=>{
+            const ac = sjac(pCtx, 0);
+            return ac ? wasm.getMemValue(ac,'i64') : 0n;
+          }
         });
         let v = db.selectValue([
             "with cte(v) as (",

@@ -1208,13 +1208,15 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   /**
      A thin wrapper around capi.sqlite3_aggregate_context() which
      behaves the same except that it throws a WasmAllocError if that
-     function returns 0.
+     function returns 0. As a special case, if n is falsy it does
+     _not_ throw if that function returns 0. That special case is
+     intended for use with xFinal() implementations.
   */
   capi.sqlite3_js_aggregate_context = (pCtx, n)=>{
     return capi.sqlite3_aggregate_context(pCtx, n)
-      || WasmAllocError.toss(
-        "Cannot allocate",n,"bytes for sqlite3_aggregate_context()"
-      );
+      || (n ? WasmAllocError.toss("Cannot allocate",n,
+                                  "bytes for sqlite3_aggregate_context()")
+          : 0);
   };
   
   if( capi.util.isMainWindow() ){

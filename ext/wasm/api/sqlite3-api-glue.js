@@ -226,6 +226,9 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     const __udfSetResult = function(pCtx, val){
       //console.warn("udfSetResult",typeof val, val);
       switch(typeof val) {
+          case 'undefined':
+            /* Assume that the client already called sqlite3_result_xxx(). */
+            break;
           case 'boolean':
             capi.sqlite3_result_int(pCtx, val ? 1 : 0);
             break;
@@ -320,7 +323,8 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       if(e instanceof sqlite3.WasmAllocError){
         capi.sqlite3_result_error_nomem(pCtx);
       }else{
-        capi.sqlite3_result_error(pCtx, e.message, -1);
+        const msg = ('string'===typeof e) ? e : e.message;
+        capi.sqlite3_result_error(pCtx, msg, -1);
       }
     };
 
@@ -462,6 +466,11 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        - `number`: sqlite3_result_int() or sqlite3_result_double()
        - `string`: sqlite3_result_text()
        - Uint8Array or Int8Array: sqlite3_result_blob()
+       - `undefined`: indicates that the UDF called one of the
+         `sqlite3_result_xyz()` routines on its own, making this
+         function a no-op. Results are _undefined_ if this function is
+         passed the `undefined` value but did _not_ call one of the
+         `sqlite3_result_xyz()` routines.
 
        Anything else triggers sqlite3_result_error().
     */
@@ -494,10 +503,10 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     /**
        A helper for UDFs implemented in JS and bound to WASM by the
        client. It expects to be a passed `(sqlite3_context*, Error)`
-       (i.e. an exception object). And it sets the current UDF's
-       result to sqlite3_result_error_nomem() or sqlite3_result_error(),
-       depending on whether the 2nd argument is a
-       sqlite3.WasmAllocError object or not.
+       (an exception object or message string). And it sets the
+       current UDF's result to sqlite3_result_error_nomem() or
+       sqlite3_result_error(), depending on whether the 2nd argument
+       is a sqlite3.WasmAllocError object or not.
     */
     capi.sqlite3_create_function_v2.udfSetError =
       capi.sqlite3_create_function.udfSetError =
