@@ -3672,6 +3672,13 @@ int sqlite3_open_v2(
   int flags,              /* Flags */
   const char *zVfs        /* Name of VFS module to use */
 );
+int libsql_open(
+  const char *filename,   /* Database filename (UTF-8) */
+  sqlite3 **ppDb,         /* OUT: SQLite db handle */
+  int flags,              /* Flags */
+  const char *zVfs,       /* Name of VFS module to use, NULL for default */
+  const char *zWal        /* Name of WAL module to use */
+);
 
 #ifdef LIBSQL_ENABLE_WASM_RUNTIME
 LIBSQL_API int libsql_try_initialize_wasm_func_table(sqlite3 *db);
@@ -7700,6 +7707,31 @@ int sqlite3_blob_write(sqlite3_blob *, const void *z, int n, int iOffset);
 sqlite3_vfs *sqlite3_vfs_find(const char *zVfsName);
 int sqlite3_vfs_register(sqlite3_vfs*, int makeDflt);
 int sqlite3_vfs_unregister(sqlite3_vfs*);
+
+/*
+** CAPI3REF: Virtual WAL Methods
+**
+** Virtual WAL methods can be redefined in order to change the default
+** behavior of the write-ahead log.
+** Methods can be registered and unregistered.
+** The following interfaces are provided.
+**
+** ^The libsql_wal_methods_find() interface returns a pointer
+** to the methods given their identifier.
+** ^Names are case sensitive.
+** ^Names are zero-terminated UTF-8 strings.
+** ^If there is no match, a NULL pointer is returned.
+** ^If zName is NULL then the default implementation is returned.
+**
+** ^New WAL methods are registered with libsql_wal_methods_register().
+** ^Same methods can be registered multiple times without injury.
+**
+** ^Unregister WAL methods with the libsql_wal_methods_unregister() interface.
+*/
+typedef struct libsql_wal_methods libsql_wal_methods;
+libsql_wal_methods *libsql_wal_methods_find(const char *zName);
+int libsql_wal_methods_register(libsql_wal_methods*);
+int libsql_wal_methods_unregister(libsql_wal_methods*);
 
 /*
 ** CAPI3REF: Mutexes

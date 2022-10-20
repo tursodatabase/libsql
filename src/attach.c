@@ -88,6 +88,7 @@ static void attachFunc(
   Db *pNew;                 /* Db object for the newly attached database */
   char *zErrDyn = 0;
   sqlite3_vfs *pVfs;
+  libsql_wal_methods *pWal;
 
   UNUSED_PARAMETER(NotUsed);
   zFile = (const char *)sqlite3_value_text(argv[0]);
@@ -106,12 +107,13 @@ static void attachFunc(
     ** from sqlite3_deserialize() to close database db->init.iDb and
     ** reopen it as a MemDB */
     pVfs = sqlite3_vfs_find("memdb");
+    pWal = libsql_wal_methods_find(NULL);
     if( pVfs==0 ) return;
     pNew = &db->aDb[db->init.iDb];
     if( pNew->pBt ) sqlite3BtreeClose(pNew->pBt);
     pNew->pBt = 0;
     pNew->pSchema = 0;
-    rc = sqlite3BtreeOpen(pVfs, "x\0", db, &pNew->pBt, 0, SQLITE_OPEN_MAIN_DB);
+    rc = sqlite3BtreeOpen(pVfs, pWal, "x\0", db, &pNew->pBt, 0, SQLITE_OPEN_MAIN_DB);
   }else{
     /* This is a real ATTACH
     **
@@ -155,7 +157,7 @@ static void attachFunc(
     ** or may not be initialized.
     */
     flags = db->openFlags;
-    rc = sqlite3ParseUri(db->pVfs->zName, zFile, &flags, &pVfs, &zPath, &zErr);
+    rc = sqlite3ParseUri(db->pVfs->zName, db->pWalMethods->zName, zFile, &flags, &pVfs, &pWal, &zPath, &zErr);
     if( rc!=SQLITE_OK ){
       if( rc==SQLITE_NOMEM ) sqlite3OomFault(db);
       sqlite3_result_error(context, zErr, -1);
@@ -164,7 +166,7 @@ static void attachFunc(
     }
     assert( pVfs );
     flags |= SQLITE_OPEN_MAIN_DB;
-    rc = sqlite3BtreeOpen(pVfs, zPath, db, &pNew->pBt, 0, flags);
+    rc = sqlite3BtreeOpen(pVfs, pWal, zPath, db, &pNew->pBt, 0, flags);
     db->nDb++;
     pNew->zDbSName = sqlite3DbStrDup(db, zName);
   }

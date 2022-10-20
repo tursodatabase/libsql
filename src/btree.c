@@ -2428,12 +2428,13 @@ static int btreeInvokeBusyHandler(void *pArg){
 ** to problems with locking.
 */
 int sqlite3BtreeOpen(
-  sqlite3_vfs *pVfs,      /* VFS to use for this b-tree */
-  const char *zFilename,  /* Name of the file containing the BTree database */
-  sqlite3 *db,            /* Associated database handle */
-  Btree **ppBtree,        /* Pointer to new Btree object written here */
-  int flags,              /* Options */
-  int vfsFlags            /* Flags passed through to sqlite3_vfs.xOpen() */
+  sqlite3_vfs *pVfs,       /* VFS to use for this b-tree */
+  libsql_wal_methods *pWal,/* WAL methods to use for this b-tree */
+  const char *zFilename,   /* Name of the file containing the BTree database */
+  sqlite3 *db,             /* Associated database handle */
+  Btree **ppBtree,         /* Pointer to new Btree object written here */
+  int flags,               /* Options */
+  int vfsFlags             /* Flags passed through to sqlite3_vfs.xOpen() */
 ){
   BtShared *pBt = 0;             /* Shared part of btree structure */
   Btree *p;                      /* Handle to return */
@@ -2574,7 +2575,7 @@ int sqlite3BtreeOpen(
       rc = SQLITE_NOMEM_BKPT;
       goto btree_open_out;
     }
-    rc = sqlite3PagerOpen(pVfs, &pBt->pPager, zFilename,
+    rc = sqlite3PagerOpen(pVfs, pWal, &pBt->pPager, zFilename,
                           sizeof(MemPage), flags, vfsFlags, pageReinit);
     if( rc==SQLITE_OK ){
       sqlite3PagerSetMmapLimit(pBt->pPager, db->szMmap);
