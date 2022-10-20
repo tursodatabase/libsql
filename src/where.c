@@ -5986,7 +5986,7 @@ WhereInfo *sqlite3WhereBegin(
         op = OP_ReopenIdx;
       }else{
         iIndexCur = pParse->nTab++;
-        if( pIx->bHasExpr ){
+        if( pIx->bHasExpr && OptimizationEnabled(db, SQLITE_IndexedExpr) ){
           whereAddIndexedExpr(pParse, pIx, iIndexCur, pTabItem);
         }
       }

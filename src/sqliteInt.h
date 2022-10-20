@@ -1789,6 +1789,7 @@ struct sqlite3 {
 #define SQLITE_ReleaseReg     0x00400000 /* Use OP_ReleaseReg for testing */
 #define SQLITE_FlttnUnionAll  0x00800000 /* Disable the UNION ALL flattener */
    /* TH3 expects this value  ^^^^^^^^^^ See flatten04.test */
+#define SQLITE_IndexedExpr    0x01000000 /* Pull exprs from index when able */
 #define SQLITE_AllOpts        0xffffffff /* All optimizations */
 
 /*
