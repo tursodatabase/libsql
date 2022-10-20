@@ -40,6 +40,7 @@
   if(urlParams.has('sqlite3.dir')){
     theJs = urlParams.get('sqlite3.dir') + '/' + theJs;
   }
+  //console.warn("worker1 theJs =",theJs);
   importScripts(theJs);
   sqlite3InitModule().then((sqlite3)=>{
     sqlite3.capi.sqlite3_wasmfs_opfs_dir();

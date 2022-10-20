@@ -522,7 +522,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       isInt32, isSQLableTypedArray, isTypedArray, 
       typedArrayToString,
       isMainWindow: ()=>{
-        return self.window===self && self.document;
+        return 'undefined' === typeof WorkerGlobalScope
       }
     },
     
@@ -904,8 +904,8 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   */
   wasm.pstack = Object.assign(Object.create(null),{
     /**
-       Sets the current ppstack position to the given pointer.
-       Results are undefined if the passed-in value did not come from
+       Sets the current pstack position to the given pointer. Results
+       are undefined if the passed-in value did not come from
        this.pointer.
     */
     restore: wasm.exports.sqlite3_wasm_pstack_restore,
@@ -927,7 +927,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
                                "bytes from the pstack.");
     },
     /**
-       Allocates n chunks, each sz bytes, as a single memory block and
+       alloc()'s n chunks, each sz bytes, as a single memory block and
        returns the addresses as an array of n element, each holding
        the address of one chunk.
 
@@ -965,7 +965,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        will corrupt or read neighboring memory.
 
        However, when all pointers involved point to "small" data, it
-       is safe to pass a falsy value to save to memory.
+       is safe to pass a falsy value to save a tiny bit of memory.
     */
     allocPtr: (n=1,safePtrSize=true)=>{
       return 1===n

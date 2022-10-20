@@ -23,19 +23,24 @@
 
      https://github.com/emscripten-core/emscripten/issues/18071
 
-     The only current workaround is to temporarily stash this state
+     The only(?) current workaround is to temporarily stash this state
      into the global scope and delete it when sqlite3InitModule()
      is called.
   */
   const initModuleState = self.sqlite3InitModuleState = Object.assign(Object.create(null),{
     moduleScript: self?.document?.currentScript,
-    isWorker: (!self.document && self.window !== self),
+    isWorker: ('undefined' !== typeof WorkerGlobalScope),
     location: self.location,
     urlParams: new URL(self.location.href).searchParams
   });
   if(initModuleState.urlParams.has('sqlite3.dir')){
     initModuleState.sqlite3Dir = initModuleState.urlParams.get('sqlite3.dir') +'/';
-  };
+  }else if(initModuleState.moduleScript){
+    const li = initModuleState.moduleScript.src.split('/');
+    li.pop();
+    initModuleState.sqlite3Dir = li.join('/') + '/';
+  }
+  //console.warn("initModuleState =",initModuleState);
 
   self.sqlite3InitModule = (...args)=>{
     //console.warn("Using replaced sqlite3InitModule()",self.location);
@@ -79,4 +84,12 @@
                    document?.currentScript?.src);
     }
   }
+  /* Replace the various module exports performed by the Emscripten
+     glue... */
+  if (typeof exports === 'object' && typeof module === 'object')
+    module.exports = sqlite3InitModule;
+  else if (typeof exports === 'object')
+    exports["sqlite3InitModule"] = sqlite3InitModule;
+  /* AMD modules get injected in a way we cannot override,
+     so we can't handle those here. */
 })();
