@@ -15,6 +15,12 @@
   </head>
   <body>
     <h1>sqlite3 WASM/JS tester #1 (UI thread)</h1>
+    <div>See <a href='tester1-worker.html' target='tester1-worker.html'>tester1-worker.html</a>
+      for the Worker-thread variant.</div>
+    <div class='input-wrapper'>
+      <input type='checkbox' id='cb-log-reverse' checked>
+      <label for='cb-log-reverse'>Reverse log order?</label>
+    </div>
     <div id='test-output'></div>
     <script src="jswasm/sqlite3.js"></script>
     <script src="tester1.js"></script>

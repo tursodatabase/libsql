@@ -78,6 +78,17 @@
         ln.append(document.createTextNode(normalizeArgs(args).join(' ')));
         logTarget.append(ln);
       };
+      const cbReverse = document.querySelector('#cb-log-reverse');
+      const cbReverseKey = 'tester1:cb-log-reverse';
+      const cbReverseIt = ()=>{
+        logTarget.classList[cbReverse.checked ? 'add' : 'remove']('reverse');
+        localStorage.setItem(cbReverseKey, cbReverse.checked ? 1 : 0);
+      };
+      cbReverse.addEventListener('change',cbReverseIt,true);
+      if(localStorage.getItem(cbReverseKey)){
+        cbReverse.checked = !!(+localStorage.getItem(cbReverseKey));
+      }
+      cbReverseIt();
     }else{ /* Worker thread */
       console.log("Running in a Worker thread.");
       logClass = function(cssClass,...args){
@@ -227,9 +238,9 @@
           const assertCount = TestUtil.counter;
           const groupState = Object.create(null);
           const skipped = [];
-          let runtime = 0;
-          for(let i in this.tests){
-            const t = this.tests[i];
+          let runtime = 0, i = 0;
+          for(const t of this.tests){
+            ++i;
             const n = this.number+"."+i;
               log(indent, n+":", t.name);
             if(t.predicate && !t.predicate(sqlite3)){
@@ -1579,12 +1590,49 @@
   ;/* end of oo1 checks */
 
   ////////////////////////////////////////////////////////////////////////
+  T.g('kvvfs (Worker thread only)', isWorker)
+    .t({
+      name: 'kvvfs is disabled',
+      test: ()=>{
+        T.assert(
+          !capi.sqlite3_vfs_find('kvvfs'),
+          "Expecting kvvfs to be unregistered."
+        );
+      }
+    });
+  T.g('kvvfs (UI thread only)', isUIThread)
+    .t({
+      name: 'kvvfs sanity checks',
+      test: function(sqlite3){
+        const filename = 'session';
+        const pVfs = capi.sqlite3_vfs_find('kvvfs');
+        T.assert(pVfs);
+        const JDb = sqlite3.oo1.JsStorageDb;
+        const unlink = ()=>JDb.clearStorage(filename);
+        unlink();
+        let db = new JDb(filename);
+        db.exec([
+          'create table kvvfs(a);',
+          'insert into kvvfs(a) values(1),(2),(3)'
+        ]);
+        T.assert(3 === db.selectValue('select count(*) from kvvfs'));
+        db.close();
+        db = new JDb(filename);
+        db.exec('insert into kvvfs(a) values(4),(5),(6)');
+        T.assert(6 === db.selectValue('select count(*) from kvvfs'));
+        db.close();
+        unlink();
+      }
+    }/*kvvfs sanity checks*/)
+  ;/* end kvvfs tests */
+
+  ////////////////////////////////////////////////////////////////////////
   T.g('OPFS (Worker thread only and only in supported browsers)',
       (sqlite3)=>{return !!sqlite3.opfs})
     .t({
       name: 'OPFS sanity checks',
       test: function(sqlite3){
-        const filename = 'tester1.js';
+        const filename = 'sqlite3-tester1.db';
         const pVfs = capi.sqlite3_vfs_find('opfs');
         T.assert(pVfs);
         const unlink = (fn=filename)=>wasm.sqlite3_wasm_vfs_unlink(pVfs,fn);

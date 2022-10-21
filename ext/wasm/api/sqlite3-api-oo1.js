@@ -87,7 +87,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      being-construct DB object as its "this". See the DB constructor
      for the argument docs. This is split into a separate function
      in order to enable simple creation of special-case DB constructors,
-     e.g. JsStorageDB and OpfsDb.
+     e.g. JsStorageDb and OpfsDb.
 
      Expects to be passed a configuration object with the following
      properties:
@@ -152,10 +152,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     const stack = wasm.pstack.pointer;
     try {
       const pPtr = wasm.pstack.allocPtr() /* output (sqlite3**) arg */;
-      const pVfsName = vfsName ? (
-        ('number'===typeof vfsName ? vfsName : wasm.scopedAllocCString(vfsName))
-      ): 0;
-      let rc = capi.sqlite3_open_v2(fn, pPtr, oflags, pVfsName);
+      let rc = capi.sqlite3_open_v2(fn, pPtr, oflags, vfsName || 0);
       pDb = wasm.getPtrValue(pPtr);
       checkSqlite3Rc(pDb, rc);
       if(flagsStr.indexOf('t')>=0){
