@@ -34,8 +34,10 @@ span.labeled-input {
     color: red;
     background-color: yellow;
 }
+.strong { font-weight: 700 }
 .warning { color: firebrick; }
 .green { color: darkgreen; }
+.faded { opacity: 0.5; }
 .group-start { color: blue; }
 .group-end { color: blue; }
 .input-wrapper { white-space: nowrap; }

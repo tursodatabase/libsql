@@ -70,7 +70,11 @@
       const logTarget = document.querySelector('#test-output');
       logClass = function(cssClass,...args){
         const ln = document.createElement('div');
-        if(cssClass) ln.classList.add(cssClass);
+        if(cssClass){
+          for(const c of (Array.isArray(cssClass) ? cssClass : [cssClass])){
+            ln.classList.add(c);
+          }
+        }
         ln.append(document.createTextNode(normalizeArgs(args).join(' ')));
         logTarget.append(ln);
       };
@@ -104,6 +108,8 @@
   const tossQuietly = (...args)=>{
     throw new Error(args.join(' '));
   };
+
+  const roundMs = (ms)=>Math.round(ms*100)/100;
 
   /**
      Helpers for writing sqlite3-specific tests.
@@ -210,33 +216,41 @@
           return this;
         },
         run: async function(sqlite3){
-          if(this.predicate && !this.predicate()){
-            log("SKIPPING test group #"+this.number,this.name);
-            return;
-          }
           log(TestUtil.separator);
           logClass('group-start',"Group #"+this.number+':',this.name);
           const indent = '    ';
+          if(this.predicate && !this.predicate(sqlite3)){
+            logClass('warning',indent,
+                     "SKIPPING group because predicate says to.");
+            return;
+          }
           const assertCount = TestUtil.counter;
           const groupState = Object.create(null);
           const skipped = [];
+          let runtime = 0;
           for(let i in this.tests){
             const t = this.tests[i];
             const n = this.number+"."+i;
-            if(t.predicate && !t.predicate()){
-              logClass('warning',indent, n+': SKIPPING',t.name);
+              log(indent, n+":", t.name);
+            if(t.predicate && !t.predicate(sqlite3)){
+              logClass('warning', indent, indent,
+                       'SKIPPING because predicate says to');
               skipped.push( n+': '+t.name );
             }else{
-              const tc = TestUtil.counter
-              log(indent, n+":", t.name);
+              const tc = TestUtil.counter, now = performance.now();
               await t.test.call(groupState, sqlite3);
-              log(indent, indent, TestUtil.counter - tc, 'assertion(s)');
+              const then = performance.now();
+              runtime += then - now;
+              logClass('faded',indent, indent,
+                       TestUtil.counter - tc, 'assertion(s) in',
+                       roundMs(then-now),'ms');
             }
           }
           logClass('green',
-                   "Group #"+this.number,"assertion count:",(TestUtil.counter - assertCount));
+                   "Group #"+this.number+":",(TestUtil.counter - assertCount),
+                   "assertion(s) in",roundMs(runtime),"ms");
           if(skipped.length){
-            log("SKIPPED test(s) in group",this.number+":",skipped);
+            logClass('warning',"SKIPPED test(s) in group",this.number+":",skipped);
           }
         }
       };
@@ -245,7 +259,8 @@
     testGroups: [],
     currentTestGroup: undefined,
     addGroup: function(name, predicate){
-      this.testGroups.push( this.currentTestGroup = new this.TestGroup(name) );
+      this.testGroups.push( this.currentTestGroup =
+                            new this.TestGroup(name, predicate) );
       return this;
     },
     addTest: function(name, callback){
@@ -264,11 +279,16 @@
     runTests: async function(sqlite3){
       return new Promise(async function(pok,pnok){
         try {
+          let runtime = 0;
           for(let g of this.testGroups){
+            const now = performance.now();
             await g.run(sqlite3);
+            runtime += performance.now() - now;
           }
           log(TestUtil.separator);
-          log("Done running tests. Total assertion count:",TestUtil.counter);
+          logClass(['strong','green'],
+                   "Done running tests.",TestUtil.counter,"assertions in",
+                   roundMs(runtime),'ms');
           pok();
         }catch(e){
           error(e);
@@ -1559,6 +1579,33 @@
   ;/* end of oo1 checks */
 
   ////////////////////////////////////////////////////////////////////////
+  T.g('OPFS (Worker thread only and only in supported browsers)',
+      (sqlite3)=>{return !!sqlite3.opfs})
+    .t({
+      name: 'OPFS sanity checks',
+      test: function(sqlite3){
+        const filename = 'tester1.js';
+        const pVfs = capi.sqlite3_vfs_find('opfs');
+        T.assert(pVfs);
+        const unlink = (fn=filename)=>wasm.sqlite3_wasm_vfs_unlink(pVfs,fn);
+        unlink();
+        let db = new sqlite3.opfs.OpfsDb(filename);
+        db.exec([
+          'create table p(a);',
+          'insert into p(a) values(1),(2),(3)'
+        ]);
+        T.assert(3 === db.selectValue('select count(*) from p'));
+        db.close();
+        db = new sqlite3.opfs.OpfsDb(filename);
+        db.exec('insert into p(a) values(4),(5),(6)');
+        T.assert(6 === db.selectValue('select count(*) from p'));
+        db.close();
+        unlink();
+      }
+    }/*OPFS sanity checks*/)
+  ;/* end OPFS tests */
+
+  ////////////////////////////////////////////////////////////////////////
   log("Loading and initializing sqlite3 WASM module...");
   if(!isUIThread()){
     /*
@@ -1592,9 +1639,15 @@
     wasm = capi.wasm;
     log("sqlite3 version:",capi.sqlite3_libversion(),
         capi.sqlite3_sourceid());
-    log("BigInt/int64 support is",(wasm.bigIntEnabled ? "enabled" : "disabled"));
+    if(wasm.bigIntEnabled){
+      log("BigInt/int64 support is enabled.");
+    }else{
+      logClass('warning',"BigInt/int64 support is disabled.");
+    }
     if(haveWasmCTests()){
       log("sqlite3_wasm_test_...() APIs are available.");
+    }else{
+      logClass('warning',"sqlite3_wasm_test_...() APIs unavailable.");
     }
     TestUtil.runTests(sqlite3);
   });

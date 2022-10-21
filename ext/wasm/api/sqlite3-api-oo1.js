@@ -87,7 +87,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      being-construct DB object as its "this". See the DB constructor
      for the argument docs. This is split into a separate function
      in order to enable simple creation of special-case DB constructors,
-     e.g. JsStorageDB and OpfsDB.
+     e.g. JsStorageDB and OpfsDb.
 
      Expects to be passed a configuration object with the following
      properties:
