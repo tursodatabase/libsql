@@ -193,6 +193,9 @@ static const char * const sqlite3azCompileOpt[] = {
 #ifdef SQLITE_DISABLE_SKIPAHEAD_DISTINCT
   "DISABLE_SKIPAHEAD_DISTINCT",
 #endif
+#ifdef SQLITE_DQS
+  "DQS=" CTIMEOPT_VAL(SQLITE_DQS),
+#endif
 #ifdef SQLITE_ENABLE_8_3_NAMES
   "ENABLE_8_3_NAMES=" CTIMEOPT_VAL(SQLITE_ENABLE_8_3_NAMES),
 #endif

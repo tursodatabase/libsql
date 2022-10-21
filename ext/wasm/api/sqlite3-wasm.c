@@ -56,7 +56,7 @@
 */
 
 /**********************************************************************/
-/* SQLITE_DEFAULT_... */
+/* SQLITE_D... */
 #ifndef SQLITE_DEFAULT_CACHE_SIZE
 /*
 ** The OPFS impls benefit tremendously from an increased cache size
@@ -75,6 +75,8 @@
 #ifndef SQLITE_DEFAULT_UNIX_VFS
 # define SQLITE_DEFAULT_UNIX_VFS "unix-none"
 #endif
+#undef SQLITE_DQS
+#define SQLITE_DQS 0
 
 /**********************************************************************/
 /* SQLITE_ENABLE_... */
