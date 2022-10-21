@@ -1,5 +1,5 @@
-C Add\skvvfs\stests\sto\stester1.js.\sFix\sa\sscopedAlloc()\smisuse\sin\soo1.DB\sctor\scaused\sby\srefactoring\searlier\sthis\smorning\s(and\scaught\sby\sthese\snew\stests).
-D 2022-10-21T06:58:27.888
+C Ensure\sthat\sthe\sRtreeCell\sobject\sin\srtreeUpdate\shas\sall\sbytes\sinitialized.
+D 2022-10-21T17:18:58.719
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -397,7 +397,7 @@ F ext/repair/test/checkindex01.test b530f141413b587c9eb78ff734de6bb79bc3515c3350
 F ext/repair/test/test.tcl 686d76d888dffd021f64260abf29a55c57b2cedfa7fc69150b42b1d6119aac3c
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/geopoly.c bb0dcd013dbb3fe0335b6bbae0d9c29fcfffda93d5ef6c31daa47e802132e435
-F ext/rtree/rtree.c d7b4b8b81d8d54376a7f81de5be85ec58b37c11604bcf42984a8418b34158d93
+F ext/rtree/rtree.c b963ebced19f249d8523396a779351481d13a67c36c3c1f034b982886cd39a42
 F ext/rtree/rtree.h 4a690463901cb5e6127cf05eb8e642f127012fd5003830dbc974eca5802d9412
 F ext/rtree/rtree1.test d47f58832145fcfed9067bc457ca8664962196c4566c17a1ebd679367db55d11
 F ext/rtree/rtree2.test 9d9deddbb16fd0c30c36e6b4fdc3ee3132d765567f0f9432ee71e1303d32603d
@@ -2036,8 +2036,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 99915b0076422487cdd181a54e55694404fba13e4a540329b5ede9e2c9e12532
-R a5a8d00ecb4b4c8e0659b56352a632c1
-U stephan
-Z 0c3f60384d64eebf1bbc2e3f1ead88de
+P 8e0f001ab76de6dbc17295b9085f7f61ce274c43f8c432ea4d2ec3153d248ff3
+R 4f4c998337e054efe35725546fb44ec3
+U drh
+Z 21fea6537087590fcabd164447032406
 # Remove this line to create a well-formed Fossil manifest.
