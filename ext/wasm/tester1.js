@@ -50,7 +50,7 @@
     const mapToString = (v)=>{
       switch(typeof v){
           case 'number': case 'string': case 'boolean':
-          case 'undefined':
+          case 'undefined': case 'bigint':
             return ''+v;
           default: break;
       }
@@ -216,7 +216,7 @@
           }
           log(TestUtil.separator);
           logClass('group-start',"Group #"+this.number+':',this.name);
-          const indent = '....';
+          const indent = '    ';
           const assertCount = TestUtil.counter;
           const groupState = Object.create(null);
           const skipped = [];
@@ -230,7 +230,7 @@
               const tc = TestUtil.counter
               log(indent, n+":", t.name);
               await t.test.call(groupState, sqlite3);
-              //log(indent, indent, 'assertion count:',TestUtil.counter - tc);
+              log(indent, indent, TestUtil.counter - tc, 'assertion(s)');
             }
           }
           logClass('green',
@@ -312,6 +312,8 @@
         T.assert(e instanceof Error)
           .assert(e instanceof sqlite3.WasmAllocError);
       }
+      try{ throw new sqlite3.SQLite3Error(capi.SQLITE_SCHEMA) }
+      catch(e){ T.assert('SQLITE_SCHEMA' === e.message) }
     })
   ////////////////////////////////////////////////////////////////////
     .t('strglob/strlike', function(sqlite3){
@@ -1092,7 +1094,7 @@
         const vfsList = capi.sqlite3_js_vfs_list();
         T.assert(vfsList.length>1);
         T.assert('string'===typeof vfsList[0]);
-
+        //log("vfsList =",vfsList);
         for(const v of vfsList){
           T.assert('string' === typeof v)
             .assert(capi.sqlite3_vfs_find(v) > 0);
@@ -1282,7 +1284,7 @@
         const sjac = capi.sqlite3_js_aggregate_context;
         db.createFunction({
           name: 'summer',
-          xStep: function(pCtx, n){
+          xStep: (pCtx, n)=>{
             const ac = sjac(pCtx, 4);
             wasm.setMemValue(ac, wasm.getMemValue(ac,'i32') + Number(n), 'i32');
           },
@@ -1305,11 +1307,11 @@
         db.createFunction({
           name: 'summerN',
           arity: -1,
-          xStep: function(pCtx, ...args){
-            const pAgg = sjac(pCtx, 4);
-            let sum = wasm.getMemValue(pAgg, 'i32');
+          xStep: (pCtx, ...args)=>{
+            const ac = sjac(pCtx, 4);
+            let sum = wasm.getMemValue(ac, 'i32');
             for(const v of args) sum += Number(v);
-            wasm.setMemValue(pAgg, sum, 'i32');
+            wasm.setMemValue(ac, sum, 'i32');
           },
           xFinal: (pCtx)=>{
             const ac = sjac(pCtx, 0);
@@ -1352,9 +1354,9 @@
         const sjac = capi.sqlite3_js_aggregate_context;
         db.createFunction({
           name: 'summer64',
-          xStep: function(pCtx, n){
-            const pAgg = sjac(pCtx, 8);
-            wasm.setMemValue(pAgg, wasm.getMemValue(pAgg,'i64') + BigInt(n), 'i64');
+          xStep: (pCtx, n)=>{
+            const ac = sjac(pCtx, 8);
+            wasm.setMemValue(ac, wasm.getMemValue(ac,'i64') + BigInt(n), 'i64');
           },
           xFinal: (pCtx)=>{
             const ac = sjac(pCtx, 0);
@@ -1362,19 +1364,64 @@
           }
         });
         let v = db.selectValue([
-            "with cte(v) as (",
-          "select 3 union all select 5 union all select 7",
-          ") select summer64(v*10), summer64(v+1) from cte"
+          "with cte(v) as (",
+          "select 9007199254740991 union all select 1 union all select 2",
+          ") select summer64(v), summer64(v+1) from cte"
         ]);
-        T.assert(150n===BigInt(v));
+        T.assert(9007199254740994n===v);
      }
     }/*aggregate UDFs*/)
 
   ////////////////////////////////////////////////////////////////////
     .t({
-      name: 'Window UDFs (tests are TODO)',
-      predicate: testIsTodo
-    })
+      name: 'Window UDFs',
+      test: function(){
+        /* Example window function, table, and results taken from:
+           https://sqlite.org/windowfunctions.html#udfwinfunc */
+        const db = this.db;
+        const sjac = (cx,n=4)=>capi.sqlite3_js_aggregate_context(cx,n);
+        const xValueFinal = (pCtx)=>{
+          const ac = sjac(pCtx, 0);
+          return ac ? wasm.getMemValue(ac,'i32') : 0;
+        };
+        const xStepInverse = (pCtx, n)=>{
+          const ac = sjac(pCtx);
+          wasm.setMemValue(ac, wasm.getMemValue(ac,'i32') + Number(n), 'i32');
+        };
+        db.createFunction({
+          name: 'winsumint',
+          xStep: (pCtx, n)=>xStepInverse(pCtx, n),
+          xInverse: (pCtx, n)=>xStepInverse(pCtx, -n),
+          xFinal: xValueFinal,
+          xValue: xValueFinal
+        });
+        db.exec([
+          "CREATE TABLE twin(x, y); INSERT INTO twin VALUES",
+          "('a', 4),('b', 5),('c', 3),('d', 8),('e', 1)"
+        ]);
+        let count = 0;
+        db.exec({
+          sql:[
+            "SELECT x, winsumint(y) OVER (",
+            "ORDER BY x ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING",
+            ") AS sum_y ",
+            "FROM twin ORDER BY x;",
+            "DROP TABLE twin;"
+          ],
+          callback: function(row){
+            switch(++count){
+                case 1: T.assert('a'===row[0] && 9===row[1]); break;
+                case 2: T.assert('b'===row[0] && 12===row[1]); break;
+                case 3: T.assert('c'===row[0] && 16===row[1]); break;
+                case 4: T.assert('d'===row[0] && 12===row[1]); break;
+                case 5: T.assert('e'===row[0] && 9===row[1]); break;
+                default: toss("Too many rows to window function.");
+            }
+          }
+        });
+        T.assert(5 === count);
+      }
+    }/*window UDFs*/)
 
   ////////////////////////////////////////////////////////////////////
     .t("ATTACH", function(){

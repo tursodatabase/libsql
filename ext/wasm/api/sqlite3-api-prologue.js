@@ -289,7 +289,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      ```
   */
   WasmAllocError.toss = (...args)=>{
-    throw new WasmAllocError(args.join(' '));
+    throw new WasmAllocError(...args);
   };
 
   /** 
@@ -530,9 +530,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       isBindableTypedArray,
       isInt32, isSQLableTypedArray, isTypedArray, 
       typedArrayToString,
-      isMainWindow: ()=>{
-        return 'undefined' === typeof WorkerGlobalScope
-      }
+      isUIThread: ()=>'undefined'===typeof WorkerGlobalScope
     },
     
     /**
@@ -839,7 +837,8 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     ["sqlite3_value_text", "string", "sqlite3_value*"],
     ["sqlite3_value_type", "int", "sqlite3_value*"],
     ["sqlite3_vfs_find", "*", "string"],
-    ["sqlite3_vfs_register", "int", "*", "int"]
+    ["sqlite3_vfs_register", "int", "sqlite3_vfs*", "int"],
+    ["sqlite3_vfs_unregister", "int", "sqlite3_vfs*"]
   ]/*wasm.bindingSignatures*/;
 
   if(false && wasm.compileOptionUsed('SQLITE_ENABLE_NORMALIZE')){
@@ -1026,10 +1025,18 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   class SQLite3Error extends Error {
     /**
        Constructs this object with a message equal to all arguments
-       concatenated with a space between each one.
+       concatenated with a space between each one. As a special case,
+       if it's passed only a single integer argument, the string form
+       of that argument is the result of
+       sqlite3.capi.sqlite3_js_rc_str() or (if that returns falsy), a
+       synthesized string which contains that integer.
     */
     constructor(...args){
-      super(args.join(' '));
+      if(1===args.length && 'number'===typeof args[0] && args[0]===(args[0] | 0)){
+        super(capi.sqlite3_js_rc_str(args[0]) || ("Unknown result code #"+args[0]));
+      }else{
+        super(args.join(' '));
+      }
       this.name = 'SQLite3Error';
     }
   };
@@ -1042,7 +1049,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      ```
   */
   SQLite3Error.toss = (...args)=>{
-    throw new SQLite3Error(args.join(' '));
+    throw new SQLite3Error(...args);
   };
 
   /** State for sqlite3_wasmfs_opfs_dir(). */
@@ -1219,7 +1226,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
           : 0);
   };
   
-  if( capi.util.isMainWindow() ){
+  if( capi.util.isUIThread() ){
     /* Features specific to the main window thread... */
 
     /**
