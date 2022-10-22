@@ -1603,8 +1603,8 @@ static void whereAddLimitExpr(
 */
 void SQLITE_NOINLINE sqlite3WhereAddLimit(WhereClause *pWC, Select *p){
   assert( p!=0 && p->pLimit!=0 );                 /* 1 -- checked by caller */
-  assert( p->pGroupBy==0 && (p->selFlags & SF_Aggregate)==0 );
-  if( (p->selFlags & (SF_Distinct|SF_Aggregate))==0             /* 2 */
+  if( p->pGroupBy==0
+   && (p->selFlags & (SF_Distinct|SF_Aggregate))==0             /* 2 */
    && (p->pSrc->nSrc==1 && IsVirtual(p->pSrc->a[0].pTab))       /* 3 */
   ){
     ExprList *pOrderBy = p->pOrderBy;
