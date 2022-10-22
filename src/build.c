@@ -2276,7 +2276,8 @@ static int isDupColumn(Index *pIdx, int nKey, Index *pPk, int iCol){
 /* Recompute the colNotIdxed field of the Index.
 **
 ** colNotIdxed is a bitmask that has a 0 bit representing each indexed
-** columns that are within the first 63 columns of the table.  The
+** columns that are within the first 63 columns of the table and a 1 for
+** all other bits (all columns that are not in the index).  The
 ** high-order bit of colNotIdxed is always 1.  All unindexed columns
 ** of the table have a 1.
 **
@@ -2304,7 +2305,7 @@ static void recomputeColumnsNotIndexed(Index *pIdx){
     }
   }
   pIdx->colNotIdxed = ~m;
-  assert( (pIdx->colNotIdxed>>63)==1 );
+  assert( (pIdx->colNotIdxed>>63)==1 );  /* See note-20221022-a */
 }
 
 /*
