@@ -1,5 +1,5 @@
-C More\sfrequently\ssend\sthe\scomplete\sSELECT\sstatement\sinto\ssqlite3WhereBegin()\nso\sthat\sit\scan\smore\saccurately\sdetermine\sindex\scoverage.
-D 2022-10-22T23:09:29.065
+C The\swide-table\scovering\sindex\sdetection\smust\stake\sinto\saccount\saggregate\nqueries.
+D 2022-10-23T20:09:13.523
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -707,7 +707,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c b9df133a705093da8977da5eb202eaadb844839f1c7297c08d33471f5491843d
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
-F src/where.c 658d7890809d20cd879621608cb8a6da19d7b4e00bbdbc175952c16ddaef4178
+F src/where.c 1ef5aae7fac877057b9f360f06b26d4275888460d8fb6e92bbb9e70e07afe946
 F src/whereInt.h df0c79388c0b71b4a91f480d02791679fe0345d40410435c541c8893e95a4d3f
 F src/wherecode.c 133a94f82858787217d073143617df19e4a6a7d0b771a1519f957608109ad5a5
 F src/whereexpr.c 05295b44b54eea76d1ba766f0908928d0e20e990c249344c9521454d3d09c7ae
@@ -2036,8 +2036,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1390417be45dd84e9118f6e761f23b8ff7476d26411e165bbaab678881e4eadd
-R fe4090e455979b12a8be7e7dd6cc1e7b
+P f6d09c5a0df940dbaa716df70df28218985b83540b34c468989729a3421ef38c
+R fd3c0067754c62608d43d72ec9e99f57
 U drh
-Z d37a1eec89dc77f7cc3b46b2df76b240
+Z 5bfa2fd79b68e79172127d7fb9b603ce
 # Remove this line to create a well-formed Fossil manifest.

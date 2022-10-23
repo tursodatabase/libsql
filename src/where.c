@@ -3274,7 +3274,7 @@ static int whereIsCoveringIndexWalkCallback(Walker *pWalk, Expr *pExpr){
   const Index *pIdx;      /* The index of interest */
   const i16 *aiColumn;    /* Columns contained in the index */
   u16 nColumn;            /* Number of columns in the index */
-  if( pExpr->op!=TK_COLUMN ) return WRC_Continue;
+  if( pExpr->op!=TK_COLUMN && pExpr->op!=TK_AGG_COLUMN ) return WRC_Continue;
   if( pExpr->iColumn<(BMS-1) ) return WRC_Continue;
   if( pExpr->iTable!=pWalk->u.pCovIdxCk->iTabCur ) return WRC_Continue;
   pIdx = pWalk->u.pCovIdxCk->pIdx;
