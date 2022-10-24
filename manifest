@@ -1,5 +1,5 @@
-C Add\sa\scomment\sto\sa\spreviously\sundescribed\smember\sof\sthe\sWalker\sunion.
-D 2022-10-24T18:33:50.858
+C Fix\stypo\sin\scomment.
+D 2022-10-24T18:42:45.118
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -625,7 +625,7 @@ F src/shell.c.in 97f4ee3966d7d8ffcd976658ea3b92bc9a670eb988d2e8aeb2243789631689a
 F src/sqlite.h.in d9c8a6243fc0a1c270d69db33758e34b810af3462f9bc5b4af113b347e07c69d
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 5336beea1868d99d2f62e628dbea55e97267dbff8193291ab175e960c5df9141
-F src/sqliteInt.h 666631a1b7e6dde044626c90a4aa85fbc2c3bc5115c5bef58fb979254d0b34d4
+F src/sqliteInt.h 9a40d5b075cd2e78bac6f9ae724e3fa4281373cb728f961272cb182f6ba94ce6
 F src/sqliteLimit.h d7323ffea5208c6af2734574bae933ca8ed2ab728083caa117c9738581a31657
 F src/status.c 160c445d7d28c984a0eae38c144f6419311ed3eace59b44ac6dafc20db4af749
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -2037,8 +2037,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 86cb21ca12581cae9a29f42ba707bd9d789e667e5ddc0f64b24940d5d5c9a118
-R 21f17ac8e71c90776b8e00d4be179330
+P 69d704224e9ed022fcec591beff2ffcc4daf3e7fc586debfdcf00b25c1fddd87
+R e2a88fcf6a9d4446fa629ea861bc8ca4
 U drh
-Z 94b439c11f7f291f078b33955954c7a9
+Z ea85a8ca90f8837e6e02f1969966b7f9
 # Remove this line to create a well-formed Fossil manifest.
