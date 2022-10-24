@@ -4100,7 +4100,7 @@ struct Walker {
     struct Table *pTab;                       /* Table of generated column */
     struct CoveringIndexCheck *pCovIdxCk;     /* Check for covering index */
     SrcItem *pSrcItem;                        /* A single FROM clause item */
-    DbFixer *pFix;
+    DbFixer *pFix;                            /* See sqlite3FixSelect() */
   } u;
 };
 
