@@ -29,7 +29,7 @@
 
 /* Forward references */
 static char *fuzz_invariant_sql(sqlite3_stmt*, int);
-static int sameValue(sqlite3_stmt*,int,sqlite3_stmt*,int);
+static int sameValue(sqlite3_stmt*,int,sqlite3_stmt*,int,sqlite3_stmt*);
 static void reportInvariantFailed(sqlite3_stmt*,sqlite3_stmt*,int);
 
 /*
@@ -108,13 +108,16 @@ int fuzz_invariant(
   }
   while( (rc = sqlite3_step(pTestStmt))==SQLITE_ROW ){
     for(i=0; i<nCol; i++){
-      if( !sameValue(pStmt, i, pTestStmt, i) ) break;
+      if( !sameValue(pStmt, i, pTestStmt, i, 0) ) break;
     }
     if( i>=nCol ) break;
   }
   if( rc==SQLITE_DONE ){
     /* No matching output row found */
     sqlite3_stmt *pCk = 0;
+
+    /* This is not a fault if the database file is corrupt, because anything
+    ** can happen with a corrupt database file */
     rc = sqlite3_prepare_v2(db, "PRAGMA integrity_check", -1, &pCk, 0);
     if( rc ){
       sqlite3_finalize(pCk);
@@ -132,6 +135,7 @@ int fuzz_invariant(
       return SQLITE_CORRUPT;
     }
     sqlite3_finalize(pCk);
+
     if( sqlite3_strlike("%group%by%order%by%desc%",sqlite3_sql(pStmt),0)==0 ){
       /* dbsqlfuzz crash-647c162051c9b23ce091b7bbbe5125ce5f00e922
       ** Original statement is:
@@ -145,6 +149,7 @@ int fuzz_invariant(
       */
       goto not_a_fault;
     }
+
     if( sqlite3_strlike("%limit%)%order%by%", sqlite3_sql(pTestStmt),0)==0 ){
       /* crash-89bd6a6f8c6166e9a4c5f47b3e70b225f69b76c6
       ** Original statement is:
@@ -159,6 +164,31 @@ int fuzz_invariant(
       */
       goto not_a_fault;
     }
+
+    /* The original sameValue() comparison assumed a collating sequence
+    ** of "binary".  It can sometimes get an incorrect result for different
+    ** collating sequences.  So rerun the test with no assumptions about
+    ** collations.
+    */
+    rc = sqlite3_prepare_v2(db,
+       "SELECT ?1=?2 OR ?1=?2 COLLATE nocase OR ?1=?2 COLLATE rtrim",
+       -1, &pCk, 0);
+    if( rc==SQLITE_OK ){
+      sqlite3_reset(pTestStmt);
+      while( (rc = sqlite3_step(pTestStmt))==SQLITE_ROW ){
+        for(i=0; i<nCol; i++){
+          if( !sameValue(pStmt, i, pTestStmt, i, pCk) ) break;
+        }
+        if( i>=nCol ){
+          sqlite3_finalize(pCk);
+          goto not_a_fault;
+        }
+      }
+    }
+    sqlite3_finalize(pCk);
+
+    /* Invariants do not necessarily work if there are virtual tables
+    ** involved in the query */
     rc = sqlite3_prepare_v2(db, 
             "SELECT 1 FROM bytecode(?1) WHERE opcode='VOpen'", -1, &pCk, 0);
     if( rc==SQLITE_OK ){
@@ -272,7 +302,11 @@ static char *fuzz_invariant_sql(sqlite3_stmt *pStmt, int iCnt){
 /*
 ** Return true if and only if v1 and is the same as v2.
 */
-static int sameValue(sqlite3_stmt *pS1, int i1, sqlite3_stmt *pS2, int i2){
+static int sameValue(
+  sqlite3_stmt *pS1, int i1,       /* Value to text on the left */
+  sqlite3_stmt *pS2, int i2,       /* Value to test on the right */
+  sqlite3_stmt *pTestCompare       /* COLLATE comparison statement or NULL */
+){
   int x = 1;
   int t1 = sqlite3_column_type(pS1,i1);
   int t2 = sqlite3_column_type(pS2,i2);
@@ -302,6 +336,14 @@ static int sameValue(sqlite3_stmt *pS1, int i1, sqlite3_stmt *pS2, int i2){
         const char *z2 = (const char*)sqlite3_column_text(pS2,i2);
         x = ((z1==0 && z2==0) || (z1!=0 && z2!=0 && strcmp(z1,z1)==0));
         printf("Encodings differ.  %d on left and %d on right\n", e1, e2);
+        abort();
+      }
+      if( pTestCompare ){
+        sqlite3_bind_value(pTestCompare, 1, sqlite3_column_value(pS1,i1));
+        sqlite3_bind_value(pTestCompare, 2, sqlite3_column_value(pS2,i2));
+        x = sqlite3_step(pTestCompare)==SQLITE_ROW
+                      && sqlite3_column_int(pTestCompare,0)!=0;
+        sqlite3_reset(pTestCompare);
         break;
       }
       if( e1!=SQLITE_UTF8 ){
