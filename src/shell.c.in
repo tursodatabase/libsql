@@ -4434,7 +4434,7 @@ static const char *(azHelp[]) = {
   "     line        One value per line",
   "     list        Values delimited by \"|\"",
   "     markdown    Markdown table format",
-  "     qbox        Shorthand for \"box --width 60 --quote\"",
+  "     qbox        Shorthand for \"box --wrap 60 --quote\"",
   "     quote       Escape answers as for SQL",
   "     table       ASCII-art table",
   "     tabs        Tab-separated values",
@@ -9506,7 +9506,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         cmOpts.bQuote = 0;
       }else if( zMode==0 ){
         zMode = z;
-        /* Apply defaults for qbox pseudo-mods. If that
+        /* Apply defaults for qbox pseudo-mode.  If that
          * overwrites already-set values, user was informed of this.
          */
         if( cli_strcmp(z, "qbox")==0 ){

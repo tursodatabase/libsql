@@ -1,5 +1,5 @@
-C Clarification\son\sthe\smeaning\sof\sSrcList\sand\sSrcItem\sand\sespecially\sthe\nSrcItem.colUsed\sand\sIndex.colNotIdxed\sfields.\s\sComment\schanges\sonly\s-\sno\nchanges\sto\scode.
-D 2022-10-22T13:49:35.916
+C Fix\sbuilt-in\sdocumentation\sfor\sthe\s".mode\sqbox"\scommand\sin\sthe\sCLI.
+D 2022-10-24T11:10:40.311
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -621,7 +621,7 @@ F src/random.c 546d6feb15ec69c1aafe9bb351a277cbb498fd5410e646add673acb805714960
 F src/resolve.c efea4e5fbecfd6d0a9071b0be0d952620991673391b6ffaaf4c277b0bb674633
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 3f7238ebb3252f4768a8fb46ad95b62700d27baddcab8a21548129f4f9305d52
-F src/shell.c.in 6a9e15cb9fc3cd13d3647d4d9714c0d4d4a65e7f49228c2aafca910ed08d5774
+F src/shell.c.in 97f4ee3966d7d8ffcd976658ea3b92bc9a670eb988d2e8aeb2243789631689a6
 F src/sqlite.h.in d9c8a6243fc0a1c270d69db33758e34b810af3462f9bc5b4af113b347e07c69d
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 5336beea1868d99d2f62e628dbea55e97267dbff8193291ab175e960c5df9141
@@ -2036,8 +2036,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fcd9e0dbe3226f3f7ccc15b11fc3aa3b8058571bef274c25a33e9753e22f7551
-R 3bee91f5b3c5cc3b42735acd38a39745
+P d96f6cc8475ae5509b8bff2db75e3c6f69a214d58d8979fbc0162ae488a040dc
+R d80b6eff956f308472eb5e33e1c2da52
 U drh
-Z 7715147e0f497c16dde985e20f495b12
+Z f106cab0f2ec627c6908493949c58d50
 # Remove this line to create a well-formed Fossil manifest.
