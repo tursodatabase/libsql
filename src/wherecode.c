@@ -1438,9 +1438,9 @@ Bitmask sqlite3WhereCodeOneLoopStart(
          && pLoop->u.vtab.bOmitOffset
         ){
           assert( pTerm->eOperator==WO_AUX );
-          assert( pWInfo->pLimit!=0 );
-          assert( pWInfo->pLimit->iOffset>0 );
-          sqlite3VdbeAddOp2(v, OP_Integer, 0, pWInfo->pLimit->iOffset);
+          assert( pWInfo->pSelect!=0 );
+          assert( pWInfo->pSelect->iOffset>0 );
+          sqlite3VdbeAddOp2(v, OP_Integer, 0, pWInfo->pSelect->iOffset);
           VdbeComment((v,"Zero OFFSET counter"));
         }
       }

@@ -3248,6 +3248,94 @@ static int whereUsablePartialIndex(
 }
 
 /*
+** Structure passed to the whereIsCoveringIndex Walker callback.
+*/
+struct CoveringIndexCheck {
+  Index *pIdx;       /* The index */
+  int iTabCur;       /* Cursor number for the corresponding table */
+};
+
+/*
+** Information passed in is pWalk->u.pCovIdxCk.  Call is pCk.
+**
+** If the Expr node references the table with cursor pCk->iTabCur, then
+** make sure that column is covered by the index pCk->pIdx.  We know that
+** all columns less than 63 (really BMS-1) are covered, so we don't need
+** to check them.  But we do need to check any column at 63 or greater.
+**
+** If the index does not cover the column, then set pWalk->eCode to 
+** non-zero and return WRC_Abort to stop the search.
+**
+** If this node does not disprove that the index can be a covering index,
+** then just return WRC_Continue, to continue the search.
+*/
+static int whereIsCoveringIndexWalkCallback(Walker *pWalk, Expr *pExpr){
+  int i;                  /* Loop counter */
+  const Index *pIdx;      /* The index of interest */
+  const i16 *aiColumn;    /* Columns contained in the index */
+  u16 nColumn;            /* Number of columns in the index */
+  if( pExpr->op!=TK_COLUMN && pExpr->op!=TK_AGG_COLUMN ) return WRC_Continue;
+  if( pExpr->iColumn<(BMS-1) ) return WRC_Continue;
+  if( pExpr->iTable!=pWalk->u.pCovIdxCk->iTabCur ) return WRC_Continue;
+  pIdx = pWalk->u.pCovIdxCk->pIdx;
+  aiColumn = pIdx->aiColumn;
+  nColumn = pIdx->nColumn;
+  for(i=0; i<nColumn; i++){
+    if( aiColumn[i]==pExpr->iColumn ) return WRC_Continue;
+  }
+  pWalk->eCode = 1;
+  return WRC_Abort;
+}
+
+
+/*
+** pIdx is an index that covers all of the low-number columns used by
+** pWInfo->pSelect (columns from 0 through 62).  But there are columns
+** in pWInfo->pSelect beyond 62.  This routine tries to answer the question
+** of whether pIdx covers *all* columns in the query.
+**
+** Return 0 if pIdx is a covering index.   Return non-zero if pIdx is
+** not a covering index or if we are unable to determine if pIdx is a
+** covering index.
+**
+** This routine is an optimization.  It is always safe to return non-zero.
+** But returning zero when non-zero should have been returned can lead to
+** incorrect bytecode and assertion faults.
+*/
+static SQLITE_NOINLINE u32 whereIsCoveringIndex(
+  WhereInfo *pWInfo,     /* The WHERE clause context */
+  Index *pIdx,           /* Index that is being tested */
+  int iTabCur            /* Cursor for the table being indexed */
+){
+  int i;
+  struct CoveringIndexCheck ck;
+  Walker w;
+  if( pWInfo->pSelect==0 ){
+    /* We don't have access to the full query, so we cannot check to see
+    ** if pIdx is covering.  Assume it is not. */
+    return 1;
+  }
+  for(i=0; i<pIdx->nColumn; i++){
+    if( pIdx->aiColumn[i]>=BMS-1 ) break;
+  }
+  if( i>=pIdx->nColumn ){
+    /* pIdx does not index any columns greater than 62, but we know from
+    ** colMask that columns greater than 62 are used, so this is not a
+    ** covering index */
+    return 1;
+  }
+  ck.pIdx = pIdx;
+  ck.iTabCur = iTabCur;
+  memset(&w, 0, sizeof(w));
+  w.xExprCallback = whereIsCoveringIndexWalkCallback;
+  w.xSelectCallback = sqlite3SelectWalkNoop;
+  w.u.pCovIdxCk = &ck;
+  w.eCode = 0;
+  sqlite3WalkSelect(&w, pWInfo->pSelect);
+  return w.eCode;
+}
+
+/*
 ** Add all WhereLoop objects for a single table of the join where the table
 ** is identified by pBuilder->pNew->iTab.  That table is guaranteed to be
 ** a b-tree table, not a virtual table.
@@ -3464,6 +3552,9 @@ static int whereLoopAddBtree(
         m = 0;
       }else{
         m = pSrc->colUsed & pProbe->colNotIdxed;
+        if( m==TOPBIT ){
+          m = whereIsCoveringIndex(pWInfo, pProbe, pSrc->iCursor);
+        }
         pNew->wsFlags = (m==0) ? (WHERE_IDX_ONLY|WHERE_INDEXED) : WHERE_INDEXED;
       }
 
@@ -5533,7 +5624,7 @@ WhereInfo *sqlite3WhereBegin(
   Expr *pWhere,           /* The WHERE clause */
   ExprList *pOrderBy,     /* An ORDER BY (or GROUP BY) clause, or NULL */
   ExprList *pResultSet,   /* Query result set.  Req'd for DISTINCT */
-  Select *pLimit,         /* Use this LIMIT/OFFSET clause, if any */
+  Select *pSelect,        /* The entire SELECT statement */
   u16 wctrlFlags,         /* The WHERE_* flags defined in sqliteInt.h */
   int iAuxArg             /* If WHERE_OR_SUBCLAUSE is set, index cursor number
                           ** If WHERE_USE_LIMIT, then the limit amount */
@@ -5612,9 +5703,7 @@ WhereInfo *sqlite3WhereBegin(
   pWInfo->wctrlFlags = wctrlFlags;
   pWInfo->iLimit = iAuxArg;
   pWInfo->savedNQueryLoop = pParse->nQueryLoop;
-#ifndef SQLITE_OMIT_VIRTUALTABLE
-  pWInfo->pLimit = pLimit;
-#endif
+  pWInfo->pSelect = pSelect;
   memset(&pWInfo->nOBSat, 0, 
          offsetof(WhereInfo,sWC) - offsetof(WhereInfo,nOBSat));
   memset(&pWInfo->a[0], 0, sizeof(WhereLoop)+nTabList*sizeof(WhereLevel));
@@ -5683,7 +5772,9 @@ WhereInfo *sqlite3WhereBegin(
   
   /* Analyze all of the subexpressions. */
   sqlite3WhereExprAnalyze(pTabList, &pWInfo->sWC);
-  sqlite3WhereAddLimit(&pWInfo->sWC, pLimit);
+  if( pSelect && pSelect->pLimit ){
+    sqlite3WhereAddLimit(&pWInfo->sWC, pSelect);
+  }
   if( pParse->nErr ) goto whereBeginError;
 
   /* Special case: WHERE terms that do not refer to any tables in the join

@@ -1601,9 +1601,9 @@ static void whereAddLimitExpr(
 ** exist only so that they may be passed to the xBestIndex method of the
 ** single virtual table in the FROM clause of the SELECT.
 */
-void sqlite3WhereAddLimit(WhereClause *pWC, Select *p){
-  assert( p==0 || (p->pGroupBy==0 && (p->selFlags & SF_Aggregate)==0) );
-  if( (p && p->pLimit)                                          /* 1 */
+void SQLITE_NOINLINE sqlite3WhereAddLimit(WhereClause *pWC, Select *p){
+  assert( p!=0 && p->pLimit!=0 );                 /* 1 -- checked by caller */
+  if( p->pGroupBy==0
    && (p->selFlags & (SF_Distinct|SF_Aggregate))==0             /* 2 */
    && (p->pSrc->nSrc==1 && IsVirtual(p->pSrc->a[0].pTab))       /* 3 */
   ){
