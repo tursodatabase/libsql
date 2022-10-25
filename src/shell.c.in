@@ -4161,6 +4161,8 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azNotUsed){
   zTable = azArg[0];
   zType = azArg[1];
   zSql = azArg[2];
+  if( zTable==0 ) return 0;
+  if( zType==0 ) return 0;
   dataOnly = (p->shellFlgs & SHFLG_DumpDataOnly)!=0;
   noSys    = (p->shellFlgs & SHFLG_DumpNoSys)!=0;
 
