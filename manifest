@@ -1,5 +1,5 @@
-C speedtest1:\suse\sthe\scurrent\s(or\sdefault)\svfs->xDelete\smethod\sto\sunlink\sthe\sdb.\sThis\sis\sspecifically\snecessary\swhen\srunning\sthe\sopfs\svfs\sin\sa\swasm\sbuild\sof\sspeedtest1.\sThis\sworked\swithout\sthis\sfix\suntil\srecently\sbecause\sthe\saffected\stest\scode\swas\sperforming\ssimilar\sacrobatics\sin\sits\sstead.
-D 2022-10-25T15:38:38.924
+C Rename\sfiddle.html\sto\sindex.html\sand\smove\sfiddle\spush-to-server\srules\sfrom\sGNUmakefile\sinto\sfiddle.make.
+D 2022-10-25T15:59:27.394
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -472,7 +472,7 @@ F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
 F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
 F ext/userauth/userauth.c 7f00cded7dcaa5d47f54539b290a43d2e59f4b1eb5f447545fa865f002fc80cb
 F ext/wasm/EXPORTED_FUNCTIONS.fiddle.in 27450c8b8c70875a260aca55435ec927068b34cef801a96205adb81bdcefc65c
-F ext/wasm/GNUmakefile 72f8ca582578295315f9f198f308b927e64e8657e2b14f738123745043db7c7c
+F ext/wasm/GNUmakefile ef0b2ab599c5e2fd89fe7620920319de73df36f1c8fe2ef4e745fa0e30ecc608
 F ext/wasm/README-dist.txt e78e44a58772d5b5d7a5a179b5bf639cd67b62249aac66138e2c319bd02dd243
 F ext/wasm/README.md 1e5b28158b74ab3ffc9d54fcbc020f0bbeb82c2ff8bbd904214c86c70e8a3066
 F ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-api 36f413ab4dbb057d2dec938fb366ac0a4c5e85ba14660a8d672f0277602c0fc5
@@ -511,11 +511,11 @@ F ext/wasm/demo-worker1-promiser.js f68ffbbe1c6086e18ce7961b8fc2b40dd88db174f590
 F ext/wasm/demo-worker1.html 2c178c1890a2beb5a5fecb1453e796d067a4b8d3d2a04d65ca2eb1ab2c68ef5d
 F ext/wasm/demo-worker1.js 8ba51d94c4601fa5c313d9e59b63b238f5305b5d5739ad21f4782a0161e6682e
 F ext/wasm/dist.make b3b156061ff6a35ce59715632c9446cb58e0fc497021a93c778fed051a04fde1
-F ext/wasm/fiddle.make acdb1a402864f9b05a4c89805c5e91d88f5080652d8861f0865655b172243847
+F ext/wasm/fiddle.make 68abe5dcfdd6fdf8dc1b715b94b96fae771b5b28bc1843997b9b1ec79407f2c9
 F ext/wasm/fiddle/emscripten.css 3d253a6fdb8983a2ac983855bfbdd4b6fa1ff267c28d69513dd6ef1f289ada3f
 F ext/wasm/fiddle/fiddle-worker.js 7ee53ca846071de5d46bb11a2a269a7990ef9cfd8abfae2a25cc948499783d78
-F ext/wasm/fiddle/fiddle.html 5daf54e8f3d7777cbb1ca4f93affe28858dbfff25841cb4ab81d694efed28ec2
 F ext/wasm/fiddle/fiddle.js 974b995119ac443685d7d94d3b3c58c6a36540e9eb3fed7069d5653284071715
+F ext/wasm/fiddle/index.html 5daf54e8f3d7777cbb1ca4f93affe28858dbfff25841cb4ab81d694efed28ec2 w ext/wasm/fiddle/fiddle.html
 F ext/wasm/index-dist.html cb0da16cba0f21cda2c25724c5869102d48eb0af04446acd3cd0ca031f80ed19
 F ext/wasm/index.html 751bbf248ee3106cec92cc4e6e3f703cd5c94deff3c6b7a596154fb04ab3efac
 F ext/wasm/jaccwabyt/jaccwabyt.js 0d7f32817456a0f3937fcfd934afeb32154ca33580ab264dab6c285e6dbbd215
@@ -2037,8 +2037,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8ba9c884bded52e3e044ff39c826c04838e7c31f05d802f4a14d9ce5a01ab721
-R a12e657bf006b1f4149c559a9983c3ea
+P d3c830bd37a402161b486d3631feceae5d00f89c2522aed65fcd2e666bd64238
+R cdf159df9e6c825fac67e2645c1ad476
 U stephan
-Z 350b5441f32a515aa32cf4712729b820
+Z 282ed5b5b57abda7a343c9407b34123d
 # Remove this line to create a well-formed Fossil manifest.

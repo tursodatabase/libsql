@@ -29,8 +29,8 @@ default: all
 release: oz
 
 # Emscripten SDK home dir and related binaries...
-EMSDK_HOME ?= $(word 1,$(wildcard $(HOME)/src/emsdk $(HOME)/emsdk))
-emcc.bin ?= $(word 1,$(wildcard $(shell which emcc) $(EMSDK_HOME)/upstream/emscripten/emcc))
+EMSDK_HOME ?= $(word 1,$(wildcard $(HOME)/emsdk $(HOME)/src/emsdk))
+emcc.bin ?= $(word 1,$(wildcard $(EMSDK_HOME)/upstream/emscripten/emcc) $(shell which emcc))
 ifeq (,$(emcc.bin))
   $(error Cannot find emcc.)
 endif
@@ -45,7 +45,7 @@ ifeq (,$(wasm-strip))
   $(info WARNING: info after compilation, using wasm-strip, to shrink the wasm file.)
   $(info WARNING: wasm-strip was not found in the PATH so we cannot strip those.)
   $(info WARNING: If this build uses any optimization level higher than -O1 then)
-  $(info WARNING: the ***resulting WASM binary WILL NOT BE USABLE***.)
+  $(info WARNING: the ***resulting JS code WILL NOT BE USABLE***.)
   $(info WARNING: wasm-strip is part of the wabt package:)
   $(info WARNING:    https://github.com/WebAssembly/wabt)
   $(info WARNING: on Ubuntu-like systems it can be installed with:)
@@ -72,6 +72,8 @@ dir.common := common
 dir.fiddle := fiddle
 dir.tool := $(dir.top)/tool
 ########################################################################
+# dir.dout = output dir for deliverables.
+#
 # MAINTENANCE REMINDER: the output .js and .wasm files of emcc must be
 # in _this_ dir, rather than a subdir, or else parts of the generated
 # code get confused and cannot load property. Specifically, when X.js
@@ -86,11 +88,10 @@ dir.tool := $(dir.top)/tool
 # We unfortunately have no way, from Worker-initiated code, to
 # automatically resolve the path from X.js to X.wasm.
 #
-# In case we ever find a solution to that which does not require
-# duplicating the X.js files only to swap out the path to X.wasm for
-# the loading-from-worker case...
-#
-# dir.dout = output dir for deliverables.
+# We have an "only slightly unsightly" solution for our main builds
+# but it does not work for the WASMFS builds, so those builds have to
+# be built to _this_ directory and can only run when the client app is
+# loaded from the same directory.
 dir.dout := $(dir.wasm)/jswasm
 # dir.tmp = output dir for intermediary build files, as opposed to
 # end-user deliverables.
@@ -512,29 +513,6 @@ CLEAN_FILES += $(speedtest1.js) $(speedtest1.wasm)
 ########################################################################
 
 ########################################################################
-# fiddle_remote is the remote destination for the fiddle app. It
-# must be a [user@]HOST:/path for rsync.
-# Note that the target "should probably" contain a symlink of
-# index.html -> fiddle.html.
-fiddle_remote ?=
-ifeq (,$(fiddle_remote))
-ifneq (,$(wildcard /home/stephan))
-  fiddle_remote = wh:www/wh/sqlite3/.
-else ifneq (,$(wildcard /home/drh))
-  #fiddle_remote = if appropriate, add that user@host:/path here
-endif
-endif
-$(fiddle_files): default
-push-fiddle: $(fiddle_files)
-	@if [ x = "x$(fiddle_remote)" ]; then \
-		echo "fiddle_remote must be a [user@]HOST:/path for rsync"; \
-		exit 1; \
-	fi
-	rsync -va fiddle/ $(fiddle_remote)
-# end fiddle remote push
-########################################################################
-
-########################################################################
 # Convenience rules to rebuild with various -Ox levels. Much
 # experimentation shows -O2 to be the clear winner in terms of speed.
 # Note that build times with anything higher than -O0 are somewhat
@@ -568,8 +546,8 @@ ifneq (,$(filter wasmfs,$(MAKECMDGOALS)))
 # wasmfs build disabled 2022-10-19 per /chat
 # discussion. OPFS-over-wasmfs was initially a stopgap measure and a
 # convenient point of comparison for the OPFS sqlite3_vfs's
-# performance, but it currently doubles our deliverables for very
-# little, if any, benefit.
+# performance, but it currently doubles our deliverables and build
+# maintenance burden for very little, if any, benefit.
 #
 ########################################################################
 # Some platforms do not support the WASMFS build. Raspberry Pi OS is one

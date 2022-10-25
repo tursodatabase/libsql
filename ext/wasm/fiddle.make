@@ -84,6 +84,29 @@ fiddle: $(fiddle-module.js) $(dir.fiddle)/fiddle.js.gz
 all: fiddle
 
 ########################################################################
+# fiddle_remote is the remote destination for the fiddle app. It
+# must be a [user@]HOST:/path for rsync.
+# Note that the target "should probably" contain a symlink of
+# index.html -> fiddle.html.
+fiddle_remote ?=
+ifeq (,$(fiddle_remote))
+ifneq (,$(wildcard /home/stephan))
+  fiddle_remote = wh:www/wh/sqlite3/.
+else ifneq (,$(wildcard /home/drh))
+  #fiddle_remote = if appropriate, add that user@host:/path here
+endif
+endif
+push-fiddle: fiddle
+	@if [ x = "x$(fiddle_remote)" ]; then \
+		echo "fiddle_remote must be a [user@]HOST:/path for rsync"; \
+		exit 1; \
+	fi
+	rsync -va fiddle/ $(fiddle_remote)
+# end fiddle remote push
+########################################################################
+
+
+########################################################################
 # Explanation of the emcc build flags follows. Full docs for these can
 # be found at:
 #
