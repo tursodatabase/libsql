@@ -2423,7 +2423,6 @@ int main(int argc, char **argv){
     }
   }
 #undef ARGC_VALUE_CHECK
-  if( zDbName!=0 ) unlink(zDbName);
 #if SQLITE_VERSION_NUMBER>=3006001
   if( nHeap>0 ){
     pHeap = malloc( nHeap );
@@ -2445,6 +2444,20 @@ int main(int argc, char **argv){
   }
 #endif
   sqlite3_initialize();
+
+  if( zDbName!=0 ){
+    sqlite3_vfs *pVfs = sqlite3_vfs_find(zVfs);
+    /* For some VFSes, e.g. opfs, unlink() is not sufficient. Use the
+    ** selected (or default) VFS's xDelete method to delete the
+    ** database. This is specifically important for the "opfs" VFS
+    ** when running from a WASM build of speedtest1, so that the db
+    ** can be cleaned up properly. For historical compatibility, we'll
+    ** also simply unlink(). */
+    if( pVfs!=0 ){
+      pVfs->xDelete(pVfs, zDbName, 1);
+    }
+    unlink(zDbName);
+  }
 
   /* Open the database and the input file */
   if( sqlite3_open_v2(memDb ? ":memory:" : zDbName, &g.db,
