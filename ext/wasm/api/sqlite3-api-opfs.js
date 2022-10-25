@@ -15,14 +15,17 @@
   asynchronous Origin-Private FileSystem (OPFS) APIs using a second
   Worker, implemented in sqlite3-opfs-async-proxy.js.  This file is
   intended to be appended to the main sqlite3 JS deliverable somewhere
-  after sqlite3-api-glue.js and before sqlite3-api-cleanup.js.
+  after sqlite3-api-oo1.js and before sqlite3-api-cleanup.js.
 */
 'use strict';
 self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 /**
-   installOpfsVfs() returns a Promise which, on success, installs
-   an sqlite3_vfs named "opfs", suitable for use with all sqlite3 APIs
-   which accept a VFS. It uses the Origin-Private FileSystem API for
+   installOpfsVfs() returns a Promise which, on success, installs an
+   sqlite3_vfs named "opfs", suitable for use with all sqlite3 APIs
+   which accept a VFS. It is intended to be called via
+   sqlite3ApiBootstrap.initializersAsync or an equivalent mechanism.
+
+   The installed VFS uses the Origin-Private FileSystem API for
    all file storage. On error it is rejected with an exception
    explaining the problem. Reasons for rejection include, but are
    not limited to:
@@ -48,31 +51,31 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     proxying OPFS's synchronous API via the synchronous interface
     required by the sqlite3_vfs API.
 
-  - This function may only be called a single time and it must be
-    called from the client, as opposed to the library initialization,
-    in case the client requires a custom path for this API's
-    "counterpart": this function's argument is the relative URI to
-    this module's "asynchronous half". When called, this function removes
-    itself from the sqlite3 object.
+  - This function may only be called a single time. When called, this
+    function removes itself from the sqlite3 object.
 
-   The argument may optionally be a plain object with the following
-   configuration options:
+  All arguments to this function are for internal/development purposes
+  only. They do not constitute a public API and may change at any
+  time.
 
-   - proxyUri: as described above
+  The argument may optionally be a plain object with the following
+  configuration options:
 
-   - verbose (=2): an integer 0-3. 0 disables all logging, 1 enables
-     logging of errors. 2 enables logging of warnings and errors. 3
-     additionally enables debugging info.
+  - proxyUri: as described above
 
-   - sanityChecks (=false): if true, some basic sanity tests are
-     run on the OPFS VFS API after it's initialized, before the
-     returned Promise resolves.
+  - verbose (=2): an integer 0-3. 0 disables all logging, 1 enables
+    logging of errors. 2 enables logging of warnings and errors. 3
+    additionally enables debugging info.
 
-   On success, the Promise resolves to the top-most sqlite3 namespace
-   object and that object gets a new object installed in its
-   `opfs` property, containing several OPFS-specific utilities.
+  - sanityChecks (=false): if true, some basic sanity tests are
+    run on the OPFS VFS API after it's initialized, before the
+    returned Promise resolves.
+
+  On success, the Promise resolves to the top-most sqlite3 namespace
+  object and that object gets a new object installed in its
+  `opfs` property, containing several OPFS-specific utilities.
 */
-const installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri){
+const installOpfsVfs = function callee(options){
   if(!self.SharedArrayBuffer ||
      !self.Atomics ||
      !self.FileSystemHandle ||
@@ -84,9 +87,9 @@ const installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri){
       new Error("This environment does not have OPFS support.")
     );
   }
-  const options = (asyncProxyUri && 'object'===asyncProxyUri) ? asyncProxyUri : {
-    proxyUri: asyncProxyUri
-  };
+  if(!options || 'object'!==typeof options){
+    options = Object.create(null);
+  }
   const urlParams = new URL(self.location.href).searchParams;
   if(undefined===options.verbose){
     options.verbose = urlParams.has('opfs-verbose') ? 3 : 2;
@@ -113,7 +116,6 @@ const installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri){
     const log =    (...args)=>logImpl(2, ...args);
     const warn =   (...args)=>logImpl(1, ...args);
     const error =  (...args)=>logImpl(0, ...args);
-    //warn("The OPFS VFS feature is very much experimental and under construction.");
     const toss = function(...args){throw new Error(args.join(' '))};
     const capi = sqlite3.capi;
     const wasm = capi.wasm;
@@ -158,9 +160,6 @@ const installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri){
         s.count = s.time = 0;
         s = metrics.s11n.deserialize = Object.create(null);
         s.count = s.time = 0;
-        //[ // timed routines which are not in state.opIds
-        //  'xFileControl'
-        //].forEach((k)=>r(metrics[k] = Object.create(null)));
       }
     }/*metrics*/;      
     const promiseReject = function(err){
@@ -223,32 +222,36 @@ const installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri){
        cases. We should probably have one SAB here with a single slot
        for locking a per-file initialization step and then allocate a
        separate SAB like the above one for each file. That will
-       require a bit of acrobatics but should be feasible.
+       require a bit of acrobatics but should be feasible. The most
+       problematic part is that xOpen() would have to use
+       postMessage() to communicate its SharedArrayBuffer, and mixing
+       that approach with Atomics.wait/notify() gets a bit messy.
     */
     const state = Object.create(null);
     state.verbose = options.verbose;
     state.littleEndian = (()=>{
       const buffer = new ArrayBuffer(2);
-      new DataView(buffer).setInt16(0, 256, true /* littleEndian */);
+      new DataView(buffer).setInt16(0, 256, true /* ==>littleEndian */);
       // Int16Array uses the platform's endianness.
       return new Int16Array(buffer)[0] === 256;
     })();
-    /** Whether the async counterpart should log exceptions to
-        the serialization channel. That produces a great deal of
-        noise for seemingly innocuous things like xAccess() checks
-        for missing files, so this option may have one of 3 values:
+    /**
+       Whether the async counterpart should log exceptions to
+       the serialization channel. That produces a great deal of
+       noise for seemingly innocuous things like xAccess() checks
+       for missing files, so this option may have one of 3 values:
 
-        0 = no exception logging
+       0 = no exception logging
 
-        1 = only log exceptions for "significant" ops like xOpen(),
-        xRead(), and xWrite().
+       1 = only log exceptions for "significant" ops like xOpen(),
+       xRead(), and xWrite().
 
-        2 = log all exceptions.
+       2 = log all exceptions.
     */
     state.asyncS11nExceptions = 1;
-    /* Size of file I/O buffer block. 64k = max sqlite3 page size. */
-    state.fileBufferSize =
-      1024 * 64;
+    /* Size of file I/O buffer block. 64k = max sqlite3 page size, and
+       xRead/xWrite() will never deal in blocks larger than that. */
+    state.fileBufferSize = 1024 * 64;
     state.sabS11nOffset = state.fileBufferSize;
     /**
        The size of the block in our SAB for serializing arguments and
@@ -258,7 +261,8 @@ const installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri){
     */
     state.sabS11nSize = opfsVfs.$mxPathname * 2;
     /**
-       The SAB used for all data I/O (files and arg/result s11n).
+       The SAB used for all data I/O between the synchronous and
+       async halves (file i/o and arg/result s11n).
     */
     state.sabIO = new SharedArrayBuffer(
       state.fileBufferSize/* file i/o block */
@@ -297,7 +301,13 @@ const installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri){
       state.opIds.mkdir = i++;
       state.opIds['opfs-async-metrics'] = i++;
       state.opIds['opfs-async-shutdown'] = i++;
-      state.sabOP = new SharedArrayBuffer(i * 4/*sizeof int32*/);
+      /* The retry slot is used by the async part for wait-and-retry
+         semantics. Though we could hypothetically use the xSleep slot
+         for that, doing so might lead to undesired side effects. */
+      state.opIds.retry = i++;
+      state.sabOP = new SharedArrayBuffer(
+        i * 4/* ==sizeof int32, noting that Atomics.wait() and friends
+                can only function on Int32Array views of an SAB. */);
       opfsUtil.metrics.reset();
     }
     /**
@@ -338,9 +348,12 @@ const installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri){
       state.s11n.serialize(...args);
       Atomics.store(state.sabOPView, state.opIds.rc, -1);
       Atomics.store(state.sabOPView, state.opIds.whichOp, opNdx);
-      Atomics.notify(state.sabOPView, state.opIds.whichOp) /* async thread will take over here */;
+      Atomics.notify(state.sabOPView, state.opIds.whichOp)
+      /* async thread will take over here */;
       const t = performance.now();
-      Atomics.wait(state.sabOPView, state.opIds.rc, -1);
+      Atomics.wait(state.sabOPView, state.opIds.rc, -1)
+      /* When this wait() call returns, the async half will have
+         completed the operation and reported its results. */;
       const rc = Atomics.load(state.sabOPView, state.opIds.rc);
       metrics[op].wait += performance.now() - t;
       if(rc && state.asyncS11nExceptions){
@@ -352,17 +365,22 @@ const installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri){
 
     const initS11n = ()=>{
       /**
-         ACHTUNG: this code is 100% duplicated in the other half of this
-         proxy! The documentation is maintained in the "synchronous half".
+         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+         ACHTUNG: this code is 100% duplicated in the other half of
+         this proxy! The documentation is maintained in the
+         "synchronous half".
+         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
          This proxy de/serializes cross-thread function arguments and
          output-pointer values via the state.sabIO SharedArrayBuffer,
          using the region defined by (state.sabS11nOffset,
          state.sabS11nOffset]. Only one dataset is recorded at a time.
 
-         This is not a general-purpose format. It only supports the range
-         of operations, and data sizes, needed by the sqlite3_vfs and
-         sqlite3_io_methods operations.
+         This is not a general-purpose format. It only supports the
+         range of operations, and data sizes, needed by the
+         sqlite3_vfs and sqlite3_io_methods operations. Serialized
+         data are transient and this serialization algorithm may
+         change at any time.
 
          The data format can be succinctly summarized as:
 
@@ -386,7 +404,8 @@ const installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri){
          using their TextEncoder/TextDecoder representations. It would
          arguably make more sense to store them as Int16Arrays of
          their JS character values, but how best/fastest to get that
-         in and out of string form us an open point.
+         in and out of string form is an open point. Initial
+         experimentation with that approach did not gain us any speed.
 
          Historical note: this impl was initially about 1% this size by
          using using JSON.stringify/parse(), but using fit-to-purpose
@@ -583,9 +602,11 @@ const installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri){
         toss("Member",name," is not a function pointer. Signature =",sigN);
       }
       const memKey = tgt.memberKey(name);
-      //log("installMethod",tgt, name, sigN);
       const fProxy = 0
-      // We can remove this proxy middle-man once the VFS is working
+      /** This middle-man proxy is only for use during development, to
+          confirm that we always pass the proper number of
+          arguments. We know that the C-level code will always use the
+          correct argument count. */
             ? callee.argcProxy(func, sigN)
             : func;
       const pFunc = wasm.installFunction(fProxy, tgt.memberSignature(name, true));
@@ -606,7 +627,6 @@ const installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri){
     const mTimeStart = (op)=>{
       opTimer.start = performance.now();
       opTimer.op = op;
-      //metrics[op] || toss("Maintenance required: missing metrics for",op);
       ++metrics[op].count;
     };
     const mTimeEnd = ()=>(
@@ -619,8 +639,15 @@ const installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri){
     */
     const ioSyncWrappers = {
       xCheckReservedLock: function(pFile,pOut){
-        // Exclusive lock is automatically acquired when opened
-        //warn("xCheckReservedLock(",arguments,") is a no-op");
+        /**
+           As of late 2022, only a single lock can be held on an OPFS
+           file. We have no way of checking whether any _other_ db
+           connection has a lock except by trying to obtain and (on
+           success) release a sync-handle for it, but doing so would
+           involve an inherent race condition. For the time being,
+           pending a better solution, we simply report whether the
+           given pFile instance has a lock.
+        */
         const f = __openFiles[pFile];
         wasm.setMemValue(pOut, f.lockMode ? 1 : 0, 'i32');
         return 0;
@@ -673,14 +700,17 @@ const installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri){
         return rc;
       },
       xRead: function(pFile,pDest,n,offset64){
-        /* int (*xRead)(sqlite3_file*, void*, int iAmt, sqlite3_int64 iOfst) */
         mTimeStart('xRead');
         const f = __openFiles[pFile];
         let rc;
         try {
           rc = opRun('xRead',pFile, n, Number(offset64));
-          if(0===rc || capi.SQLITE_IOERR_SHORT_READ===rc){
-            // set() seems to be the fastest way to copy this...
+          if(0===rc || capi.SQLITE_IOERR_SHORT_READ===rc){ 
+            /**
+               Results get written to the SharedArrayBuffer f.sabView.
+               Because the heap is _not_ a SharedArrayBuffer, we have
+               to copy the results. TypedArray.set() seems to be the
+               fastest way to copy this. */
             wasm.heap8u().set(f.sabView.subarray(0, n), pDest);
           }
         }catch(e){
@@ -713,7 +743,6 @@ const installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri){
         return rc;
       },
       xWrite: function(pFile,pSrc,n,offset64){
-        /* int (*xWrite)(sqlite3_file*, const void*, int iAmt, sqlite3_int64 iOfst) */
         mTimeStart('xWrite');
         const f = __openFiles[pFile];
         let rc;
@@ -779,28 +808,6 @@ const installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri){
       //xSleep is optionally defined below
       xOpen: function f(pVfs, zName, pFile, flags, pOutFlags){
         mTimeStart('xOpen');
-        if(!f._){
-          f._ = {
-            fileTypes: {
-              SQLITE_OPEN_MAIN_DB: 'mainDb',
-              SQLITE_OPEN_MAIN_JOURNAL: 'mainJournal',
-              SQLITE_OPEN_TEMP_DB: 'tempDb',
-              SQLITE_OPEN_TEMP_JOURNAL: 'tempJournal',
-              SQLITE_OPEN_TRANSIENT_DB: 'transientDb',
-              SQLITE_OPEN_SUBJOURNAL: 'subjournal',
-              SQLITE_OPEN_SUPER_JOURNAL: 'superJournal',
-              SQLITE_OPEN_WAL: 'wal'
-            },
-            getFileType: function(filename,oflags){
-              const ft = f._.fileTypes;
-              for(let k of Object.keys(ft)){
-                if(oflags & capi[k]) return ft[k];
-              }
-              warn("Cannot determine fileType based on xOpen() flags for file",filename);
-              return '???';
-            }
-          };
-        }
         if(0===zName){
           zName = randomFilename();
         }else if('number'===typeof zName){
@@ -1084,16 +1091,13 @@ const installOpfsVfs = function callee(asyncProxyUri = callee.defaultProxyUri){
             promiseReject(e);
             error("Unexpected message from the async worker:",data);
             break;
-      }
-    };
-
+      }/*switch(data.type)*/
+    }/*W.onmessage()*/;
   })/*thePromise*/;
   return thePromise;
 }/*installOpfsVfs()*/;
 installOpfsVfs.defaultProxyUri =
-    //self.location.pathname.replace(/[^/]*$/, "sqlite3-opfs-async-proxy.js");
   "sqlite3-opfs-async-proxy.js";
-//console.warn("sqlite3.installOpfsVfs.defaultProxyUri =",sqlite3.installOpfsVfs.defaultProxyUri);
 self.sqlite3ApiBootstrap.initializersAsync.push(async (sqlite3)=>{
   if(sqlite3.scriptInfo && !sqlite3.scriptInfo.isWorker){
     return;
