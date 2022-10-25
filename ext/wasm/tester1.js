@@ -82,12 +82,12 @@
       const cbReverseKey = 'tester1:cb-log-reverse';
       const cbReverseIt = ()=>{
         logTarget.classList[cbReverse.checked ? 'add' : 'remove']('reverse');
-        localStorage.setItem(cbReverseKey, cbReverse.checked ? 1 : 0);
+        //localStorage.setItem(cbReverseKey, cbReverse.checked ? 1 : 0);
       };
-      cbReverse.addEventListener('change',cbReverseIt,true);
-      if(localStorage.getItem(cbReverseKey)){
+      cbReverse.addEventListener('change', cbReverseIt, true);
+      /*if(localStorage.getItem(cbReverseKey)){
         cbReverse.checked = !!(+localStorage.getItem(cbReverseKey));
-      }
+      }*/
       cbReverseIt();
     }else{ /* Worker thread */
       console.log("Running in a Worker thread.");
