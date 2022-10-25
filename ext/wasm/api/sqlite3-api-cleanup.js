@@ -20,17 +20,15 @@ if('undefined' !== typeof Module){ // presumably an Emscripten build
   /**
      Install a suitable default configuration for sqlite3ApiBootstrap().
   */
-  const SABC = self.sqlite3ApiConfig || Object.create(null);
-  if(undefined===SABC.Module){
-    SABC.Module = Module /* ==> Currently needs to be exposed here for
-                            test code. NOT part of the public API. */;
-  }
-  if(undefined===SABC.exports){
-    SABC.exports = Module['asm'];
-  }
-  if(undefined===SABC.memory){
-    SABC.memory = Module.wasmMemory /* gets set if built with -sIMPORT_MEMORY */;
-  }
+  const SABC = Object.assign(
+    Object.create(null), {
+      Module: Module /* ==> Currently needs to be exposed here for
+                        test code. NOT part of the public API. */,
+      exports: Module['asm'],
+      memory: Module.wasmMemory /* gets set if built with -sIMPORT_MEMORY */
+    },
+    self.sqlite3ApiConfig || Object.create(null)
+  );
 
   /**
      For current (2022-08-22) purposes, automatically call
@@ -38,10 +36,11 @@ if('undefined' !== typeof Module){ // presumably an Emscripten build
      point, as we really want client code to be able to call this to
      configure certain parts. Clients may modify
      self.sqlite3ApiBootstrap.defaultConfig to tweak the default
-     configuration used by a no-args call to sqlite3ApiBootstrap().
+     configuration used by a no-args call to sqlite3ApiBootstrap(),
+     but must have first loaded their WASM module in order to be
+     able to provide the necessary configuration state.
   */
   //console.warn("self.sqlite3ApiConfig = ",self.sqlite3ApiConfig);
-  const rmApiConfig = (SABC !== self.sqlite3ApiConfig);
   self.sqlite3ApiConfig = SABC;
   let sqlite3;
   try{
@@ -51,7 +50,7 @@ if('undefined' !== typeof Module){ // presumably an Emscripten build
     throw e;
   }finally{
     delete self.sqlite3ApiBootstrap;
-    if(rmApiConfig) delete self.sqlite3ApiConfig;
+    delete self.sqlite3ApiConfig;
   }
 
   if(self.location && +self.location.port > 1024){

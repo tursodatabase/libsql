@@ -34,8 +34,7 @@
         </li>
         <li>Whether or not WASMFS/OPFS support is enabled on any given
           page may depend on build-time options which are <em>off by
-          default</em> because they currently (as of 2022-09-08) break
-          with Worker-based pages.
+          default</em>.
         </li>
       </ul>
     </div>
@@ -46,7 +45,7 @@
             <li><a href='tester1.html'>tester1</a>: Core unit and
               regression tests for the various APIs and surrounding
               utility code.</li>
-            <li><a href='tester1.html'>tester1-worker</a>: same thing
+            <li><a href='tester1-worker.html'>tester1-worker</a>: same thing
             but running in a Worker.</li>
           </ul>
         </li>
@@ -60,15 +59,21 @@
             <li><a href='demo-123-worker.html'>demo-123-worker</a> is
               the same as <code>demo-123</code> but loads and runs
               sqlite3 from a Worker thread.</li>
-            <li><a href='demo-kvvfs1.html'>demo-kvvfs1</a>: very basic
+            <li><a href='demo-jsstorage.html'>demo-jsstorage</a>: very basic
               demo of using the key-value VFS for storing a persistent db
               in JS <code>localStorage</code> or <code>sessionStorage</code>.</li>
+            <li><a href='demo-worker1.html'>demo-worker1</a>:
+              Worker-based wrapper of the OO API #1. Its Promise-based
+              wrapper is significantly easier to use, however.</li>
+            <li><a href='demo-worker1-promiser.html'>demo-worker1-promiser</a>:
+              a demo of the Promise-based wrapper of the Worker1 API.</li>
           </ul>
         </li>
         <li>speedtest1 ports (sqlite3's primary benchmarking tool)...
           <ul>
             <li><a href='speedtest1.html'>speedtest1</a>: a main-thread WASM build of speedtest1.</li>
-            <li><a href='speedtest1-wasmfs.html?flags=--size,25'>speedtest1-wasmfs</a>: a variant of speedtest1 built solely for the wasmfs/opfs feature.</li>
+            <!--li><a href='speedtest1-wasmfs.html?flags=--size,25'>speedtest1-wasmfs</a>: a variant of speedtest1 built solely for the wasmfs/opfs feature.
+                </li-->
             <li><a href='speedtest1.html?vfs=kvvfs'>speedtest1-kvvfs</a>: speedtest1 with the kvvfs.</li>
             <li><a href='speedtest1-worker.html?size=25'>speedtest1-worker</a>: an interactive Worker-thread variant of speedtest1.</li>
             <li><a href='speedtest1-worker.html?vfs=opfs&size=25'>speedtest1-worker-opfs</a>: speedtest1-worker with the
@@ -77,22 +82,18 @@
         </li>
         <li>The obligatory "misc." category...
           <ul>
-            <li><a href='testing2.html'>testing2</a>: Worker-based test of OO API #1.</li>
-            <li><a href='testing-worker1-promiser.html'>testing-worker1-promiser</a>:
-              tests for the Promise-based wrapper of the Worker-based API.</li>
             <li><a href='batch-runner.html'>batch-runner</a>: runs batches of SQL exported from speedtest1.</li>
-            <li><a href='scratchpad-wasmfs-main.html'>scratchpad-wasmfs-main</a>:
+            <!--li><a href='scratchpad-wasmfs-main.html'>scratchpad-wasmfs-main</a>:
               experimenting with WASMFS/OPFS-based persistence. Maintenance
               reminder: we cannot currently (2022-09-15) load WASMFS in a
-              worker due to an Emscripten limitation.</li>
+              worker due to an Emscripten limitation.</li-->
             <li><a href='test-opfs-vfs.html'>test-opfs-vfs</a>
               (<a href='test-opfs-vfs.html?opfs-sanity-check&opfs-verbose'>same
-                with verbose output and sanity-checking tests</a>) is an
-              experiment in implementing a syncronous sqlite3 VFS proxy
-              for a fully asynchronous backend interface (namely OPFS),
-              using SharedArrayBuffer and the Atomics APIs to regulate
-              communication between the synchronous interface and the
-              async impl.
+              with verbose output and sanity-checking tests</a>) is an
+              sqlite3_vfs OPFS proxy using SharedArrayBuffer and the
+              Atomics APIs to regulate communication between the
+              synchronous sqlite3_vfs interface and the async OPFS
+              impl.
             </li>
           </ul>
         </li>

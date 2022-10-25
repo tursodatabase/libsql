@@ -161,6 +161,7 @@ SQLITE_NOINLINE int sqlite3RunVacuum(
   int nDb;                /* Number of attached databases */
   const char *zDbMain;    /* Schema name of database to vacuum */
   const char *zOut;       /* Name of output file */
+  u32 pgflags = PAGER_SYNCHRONOUS_OFF; /* sync flags for output db */
 
   if( !db->autoCommit ){
     sqlite3SetString(pzErrMsg, db, "cannot VACUUM from within a transaction");
@@ -232,12 +233,17 @@ SQLITE_NOINLINE int sqlite3RunVacuum(
       goto end_of_vacuum;
     }
     db->mDbFlags |= DBFLAG_VacuumInto;
+
+    /* For a VACUUM INTO, the pager-flags are set to the same values as
+    ** they are for the database being vacuumed, except that PAGER_CACHESPILL
+    ** is always set. */
+    pgflags = db->aDb[iDb].safety_level | (db->flags & PAGER_FLAGS_MASK);
   }
   nRes = sqlite3BtreeGetRequestedReserve(pMain);
 
   sqlite3BtreeSetCacheSize(pTemp, db->aDb[iDb].pSchema->cache_size);
   sqlite3BtreeSetSpillSize(pTemp, sqlite3BtreeSetSpillSize(pMain,0));
-  sqlite3BtreeSetPagerFlags(pTemp, PAGER_SYNCHRONOUS_OFF|PAGER_CACHESPILL);
+  sqlite3BtreeSetPagerFlags(pTemp, pgflags|PAGER_CACHESPILL);
 
   /* Begin a transaction and take an exclusive lock on the main database
   ** file. This is done before the sqlite3BtreeGetPageSize(pMain) call below,

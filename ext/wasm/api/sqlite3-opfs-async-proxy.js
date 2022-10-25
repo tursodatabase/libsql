@@ -10,7 +10,7 @@
 
   ***********************************************************************
 
-  An Worker which manages asynchronous OPFS handles on behalf of a
+  A Worker which manages asynchronous OPFS handles on behalf of a
   synchronous API which controls it via a combination of Worker
   messages, SharedArrayBuffer, and Atomics. It is the asynchronous
   counterpart of the API defined in sqlite3-api-opfs.js.
@@ -25,8 +25,12 @@
   access to the sqlite3 JS/WASM bits, so any bits which it needs (most
   notably SQLITE_xxx integer codes) have to be imported into it via an
   initialization process.
+
+  This file represents an implementation detail of a larger piece of
+  code, and not a public interface. Its details may change at any time
+  and are not intended to be used by any client-level code.
 */
-'use strict';
+"use strict";
 const toss = function(...args){throw new Error(args.join(' '))};
 if(self.window === self){
   toss("This code cannot run from the main thread.",
@@ -133,8 +137,8 @@ const getDirForFilename = async function f(absFilename, createDirs = false){
 
 /**
    Returns the sync access handle associated with the given file
-   handle object (which must be a valid handle object), lazily opening
-   it if needed.
+   handle object (which must be a valid handle object, as created by
+   xOpen()), lazily opening it if needed.
 
    In order to help alleviate cross-tab contention for a dabase,
    if an exception is thrown while acquiring the handle, this routine
@@ -150,7 +154,7 @@ const getSyncHandle = async (fh)=>{
     let i = 1, ms = 300;
     for(; true; ms *= ++i){
       try {
-        //if(1===i) toss("Just testing.");
+        //if(i<3) toss("Just testing.");
         //TODO? A config option which tells it to throw here
         //randomly every now and then, for testing purposes.
         fh.syncHandle = await fh.fileHandle.createSyncAccessHandle();
@@ -163,7 +167,7 @@ const getSyncHandle = async (fh)=>{
         }
         warn("Error getting sync handle. Waiting",ms,
               "ms and trying again.",fh.filenameAbs,e);
-        Atomics.wait(state.sabOPView, state.opIds.xSleep, 0, ms);
+        Atomics.wait(state.sabOPView, state.opIds.retry, 0, ms);
       }
     }
     log("Got sync handle for",fh.filenameAbs,'in',performance.now() - t,'ms');
@@ -305,7 +309,7 @@ const vfsAsyncImpls = {
     storeAndNotify('xAccess', rc);
     mTimeEnd();
   },
-  xClose: async function(fid){
+  xClose: async function(fid/*sqlite3_file pointer*/){
     const opName = 'xClose';
     mTimeStart(opName);
     const fh = __openFiles[fid];
@@ -364,7 +368,7 @@ const vfsAsyncImpls = {
     wTimeEnd();
     return rc;
   },
-  xFileSize: async function(fid){
+  xFileSize: async function(fid/*sqlite3_file pointer*/){
     mTimeStart('xFileSize');
     const fh = __openFiles[fid];
     let sz;
@@ -381,7 +385,8 @@ const vfsAsyncImpls = {
     storeAndNotify('xFileSize', sz);
     mTimeEnd();
   },
-  xLock: async function(fid,lockType){
+  xLock: async function(fid/*sqlite3_file pointer*/,
+                        lockType/*SQLITE_LOCK_...*/){
     mTimeStart('xLock');
     const fh = __openFiles[fid];
     let rc = 0;
@@ -397,7 +402,8 @@ const vfsAsyncImpls = {
     storeAndNotify('xLock',rc);
     mTimeEnd();
   },
-  xOpen: async function(fid/*sqlite3_file pointer*/, filename, flags){
+  xOpen: async function(fid/*sqlite3_file pointer*/, filename,
+                        flags/*SQLITE_OPEN_...*/){
     const opName = 'xOpen';
     mTimeStart(opName);
     const deleteOnClose = (state.sq3Codes.SQLITE_OPEN_DELETEONCLOSE & flags);
@@ -440,7 +446,7 @@ const vfsAsyncImpls = {
     }
     mTimeEnd();
   },
-  xRead: async function(fid,n,offset){
+  xRead: async function(fid/*sqlite3_file pointer*/,n,offset64){
     mTimeStart('xRead');
     let rc = 0, nRead;
     const fh = __openFiles[fid];
@@ -448,7 +454,7 @@ const vfsAsyncImpls = {
       wTimeStart('xRead');
       nRead = (await getSyncHandle(fh)).read(
         fh.sabView.subarray(0, n),
-        {at: Number(offset)}
+        {at: Number(offset64)}
       );
       wTimeEnd();
       if(nRead < n){/* Zero-fill remaining bytes */
@@ -464,7 +470,7 @@ const vfsAsyncImpls = {
     storeAndNotify('xRead',rc);
     mTimeEnd();
   },
-  xSync: async function(fid,flags/*ignored*/){
+  xSync: async function(fid/*sqlite3_file pointer*/,flags/*ignored*/){
     mTimeStart('xSync');
     const fh = __openFiles[fid];
     let rc = 0;
@@ -480,7 +486,7 @@ const vfsAsyncImpls = {
     storeAndNotify('xSync',rc);
     mTimeEnd();
   },
-  xTruncate: async function(fid,size){
+  xTruncate: async function(fid/*sqlite3_file pointer*/,size){
     mTimeStart('xTruncate');
     let rc = 0;
     const fh = __openFiles[fid];
@@ -497,7 +503,8 @@ const vfsAsyncImpls = {
     storeAndNotify('xTruncate',rc);
     mTimeEnd();
   },
-  xUnlock: async function(fid,lockType){
+  xUnlock: async function(fid/*sqlite3_file pointer*/,
+                          lockType/*SQLITE_LOCK_...*/){
     mTimeStart('xUnlock');
     let rc = 0;
     const fh = __openFiles[fid];
@@ -514,7 +521,7 @@ const vfsAsyncImpls = {
     storeAndNotify('xUnlock',rc);
     mTimeEnd();
   },
-  xWrite: async function(fid,n,offset){
+  xWrite: async function(fid/*sqlite3_file pointer*/,n,offset64){
     mTimeStart('xWrite');
     let rc;
     wTimeStart('xWrite');
@@ -524,7 +531,7 @@ const vfsAsyncImpls = {
       rc = (
         n === (await getSyncHandle(fh))
           .write(fh.sabView.subarray(0, n),
-                 {at: Number(offset)})
+                 {at: Number(offset64)})
       ) ? 0 : state.sq3Codes.SQLITE_IOERR_WRITE;
     }catch(e){
       error("xWrite():",e,fh);

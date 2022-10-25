@@ -48,6 +48,7 @@
 ** want undefined. Please keep these alphabetized.
 */
 #undef SQLITE_OMIT_DESERIALIZE
+#undef SQLITE_OMIT_MEMORYDB
 
 /*
 ** Define any SQLITE_... config defaults we want if they aren't
@@ -55,7 +56,7 @@
 */
 
 /**********************************************************************/
-/* SQLITE_DEFAULT_... */
+/* SQLITE_D... */
 #ifndef SQLITE_DEFAULT_CACHE_SIZE
 /*
 ** The OPFS impls benefit tremendously from an increased cache size
@@ -74,6 +75,8 @@
 #ifndef SQLITE_DEFAULT_UNIX_VFS
 # define SQLITE_DEFAULT_UNIX_VFS "unix-none"
 #endif
+#undef SQLITE_DQS
+#define SQLITE_DQS 0
 
 /**********************************************************************/
 /* SQLITE_ENABLE_... */
@@ -809,26 +812,36 @@ const char * sqlite3_wasm_enum_json(void){
 ** This function is NOT part of the sqlite3 public API. It is strictly
 ** for use by the sqlite project's own JS/WASM bindings.
 **
-** Do not use this function, even for internal use: it was
-** ill-conceived and will be removed once the JS code which still
-** calls it has been weeded out.
-**
-** This function invokes the xDelete method of the default VFS,
-** passing on the given filename. If zName is NULL, no default VFS is
-** found, or it has no xDelete method, SQLITE_MISUSE is returned, else
-** the result of the xDelete() call is returned.
+** This function invokes the xDelete method of the given VFS (or the
+** default VFS if pVfs is NULL), passing on the given filename. If
+** zName is NULL, no default VFS is found, or it has no xDelete
+** method, SQLITE_MISUSE is returned, else the result of the xDelete()
+** call is returned.
 */
 SQLITE_WASM_KEEP
-int sqlite3_wasm_vfs_unlink(const char * zName){
+int sqlite3_wasm_vfs_unlink(sqlite3_vfs *pVfs, const char * zName){
   int rc = SQLITE_MISUSE /* ??? */;
-  sqlite3_vfs * const pVfs = sqlite3_vfs_find(0);
-#if defined(__EMSCRIPTEN__)
-  emscripten_console_warn("sqlite3_wasm_vfs_unlink() will be removed.");
-#endif
+  if( 0==pVfs && 0!=zName ) pVfs = sqlite3_vfs_find(0);
   if( zName && pVfs && pVfs->xDelete ){
     rc = pVfs->xDelete(pVfs, zName, 1);
   }
   return rc;
+}
+
+/*
+** This function is NOT part of the sqlite3 public API. It is strictly
+** for use by the sqlite project's own JS/WASM bindings.
+**
+** Returns a pointer to the given DB's VFS for the given DB name,
+** defaulting to "main" if zDbName is 0. Returns 0 if no db with the
+** given name is open.
+*/
+SQLITE_WASM_KEEP
+sqlite3_vfs * sqlite3_wasm_db_vfs(sqlite3 *pDb, const char *zDbName){
+  sqlite3_vfs * pVfs = 0;
+  sqlite3_file_control(pDb, zDbName ? zDbName : "main",
+                       SQLITE_FCNTL_VFS_POINTER, &pVfs);
+  return pVfs;
 }
 
 /*
@@ -1007,7 +1020,7 @@ int sqlite3_wasm_init_wasmfs(const char *zMountPoint){
        hypothetically suffice for the transient wasm-based virtual
        filesystem we're currently running in. */
     const int rc = wasmfs_create_directory(zMountPoint, 0777, pOpfs);
-    emscripten_console_logf("OPFS mkdir(%s) rc=%d", zMountPoint, rc);
+    /*emscripten_console_logf("OPFS mkdir(%s) rc=%d", zMountPoint, rc);*/
     if(rc) return SQLITE_IOERR;
   }
   return pOpfs ? 0 : SQLITE_NOMEM;

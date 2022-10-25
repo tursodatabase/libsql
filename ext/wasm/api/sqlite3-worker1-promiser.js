@@ -70,8 +70,8 @@
    message. The second expects an object in the form {type:...,
    args:...}  plus any other properties the client cares to set. This
    function will always set the `messageId` property on the object,
-   even if it's already set, and will set the `dbId` property to
-   `config.dbId` if it is _not_ set in the message object.
+   even if it's already set, and will set the `dbId` property to the
+   current database ID if it is _not_ set in the message object.
 
    The function throws on error.
 
@@ -237,6 +237,23 @@ self.sqlite3Worker1Promiser = function callee(config = callee.defaultConfig){
   };
 }/*sqlite3Worker1Promiser()*/;
 self.sqlite3Worker1Promiser.defaultConfig = {
-  worker: ()=>new Worker("sqlite3-worker1.js"+self.location.search),
+  worker: function(){
+    let theJs = "sqlite3-worker1.js";
+    if(this.currentScript){
+      const src = this.currentScript.src.split('/');
+      src.pop();
+      theJs = src.join('/')+'/' + theJs;
+      //console.warn("promiser currentScript, theJs =",this.currentScript,theJs);
+    }else{
+      //console.warn("promiser self.location =",self.location);
+      const urlParams = new URL(self.location.href).searchParams;
+      if(urlParams.has('sqlite3.dir')){
+        theJs = urlParams.get('sqlite3.dir') + '/' + theJs;
+      }
+    }
+    return new Worker(theJs + self.location.search);
+  }.bind({
+    currentScript: self?.document?.currentScript
+  }),
   onerror: (...args)=>console.error('worker1 promiser error',...args)
 };

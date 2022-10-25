@@ -102,7 +102,7 @@
   const toss = (...args)=>{
     throw new Error(args.join(' '));
   };
-  const fixmeOPFS = "(FIXME: won't work with vanilla OPFS.)";
+  const fixmeOPFS = "(FIXME: won't work with OPFS-over-sqlite3_vfs.)";
   let sqlite3 /* gets assigned when the wasm module is loaded */;
 
   self.onerror = function(/*message, source, lineno, colno, error*/) {
@@ -130,7 +130,7 @@
       return f._();
     },
     dbIsOpfs: function f(){
-      return sqlite3.opfs && sqlite3.capi.sqlite3_web_db_uses_vfs(
+      return sqlite3.opfs && sqlite3.capi.sqlite3_js_db_uses_vfs(
         this.dbHandle(), "opfs"
       );
     },
@@ -251,7 +251,7 @@
           const fn2 = fn ? fn.split(/[/\\]/).pop() : null;
           try{
             if(!fn2) toss("DB appears to be closed.");
-            const buffer = sqlite3.capi.sqlite3_web_db_export(
+            const buffer = sqlite3.capi.sqlite3_js_db_export(
               Sqlite3Shell.dbHandle()
             );
             wMsg('db-export',{filename: fn2, buffer: buffer.buffer}, [buffer.buffer]);
@@ -370,9 +370,9 @@
   */
   sqlite3InitModule(fiddleModule).then((_sqlite3)=>{
     sqlite3 = _sqlite3;
+    const dbVfs = sqlite3.capi.wasm.xWrap('fiddle_db_vfs', "*", ['string']);
     fiddleModule.fsUnlink = (fn)=>{
-      stderr("unlink:",fixmeOPFS);
-      return sqlite3.capi.wasm.sqlite3_wasm_vfs_unlink(fn);
+      return sqlite3.capi.wasm.sqlite3_wasm_vfs_unlink(dbVfs(0), fn);
     };
     wMsg('fiddle-ready');
   })/*then()*/;

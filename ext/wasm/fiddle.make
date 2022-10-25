@@ -23,6 +23,7 @@ $(dir.top)/shell.c: $(SHELL_SRC) $(dir.top)/tool/mkshellc.tcl
 # /shell.c
 ########################################################################
 
+EXPORTED_FUNCTIONS.fiddle := $(dir.tmp)/EXPORTED_FUNCTIONS.fiddle
 fiddle.emcc-flags = \
   $(emcc.cflags) $(emcc_opt_full) \
   --minify 0 \
@@ -34,35 +35,36 @@ fiddle.emcc-flags = \
   -sDYNAMIC_EXECUTION=0 \
   -sWASM_BIGINT=$(emcc_enable_bigint) \
   -sEXPORT_NAME=$(sqlite3.js.init-func) \
+  -Wno-limited-postlink-optimizations \
   $(sqlite3.js.flags.--post-js) \
-  -sEXPORTED_RUNTIME_METHODS=@$(dir.wasm)/EXPORTED_RUNTIME_METHODS.fiddle \
-  -sEXPORTED_FUNCTIONS=@$(dir.wasm)/EXPORTED_FUNCTIONS.fiddle \
+  $(emcc.exportedRuntimeMethods) \
+  -sEXPORTED_FUNCTIONS=@$(abspath $(EXPORTED_FUNCTIONS.fiddle)) \
   $(SQLITE_OPT) $(SHELL_OPT) \
   -DSQLITE_SHELL_FIDDLE
 # -D_POSIX_C_SOURCE is needed for strdup() with emcc
 
 fiddle.EXPORTED_FUNCTIONS.in := \
     EXPORTED_FUNCTIONS.fiddle.in \
-    EXPORTED_FUNCTIONS.api
+    $(EXPORTED_FUNCTIONS.api)
 
-EXPORTED_FUNCTIONS.fiddle: $(fiddle.EXPORTED_FUNCTIONS.in) $(MAKEFILE.fiddle)
-	grep -h -v jaccwabyt $(fiddle.EXPORTED_FUNCTIONS.in) | sort -u > $@
+$(EXPORTED_FUNCTIONS.fiddle): $(fiddle.EXPORTED_FUNCTIONS.in) $(MAKEFILE.fiddle)
+	sort -u $(fiddle.EXPORTED_FUNCTIONS.in) > $@
 
 fiddle-module.js := $(dir.fiddle)/fiddle-module.js
 fiddle-module.wasm := $(subst .js,.wasm,$(fiddle-module.js))
-fiddle.cs := $(dir.top)/shell.c $(sqlite3-wasm.c)
+fiddle.cses := $(dir.top)/shell.c $(sqlite3-wasm.c)
 
-SOAP.js := sqlite3-opfs-async-proxy.js
-$(dir.fiddle)/$(SOAP.js): $(SOAP.js)
+fiddle.SOAP.js := $(dir.fiddle)/$(notdir $(SOAP.js))
+$(fiddle.SOAP.js): $(SOAP.js)
 	cp $< $@
 
 $(eval $(call call-make-pre-js,fiddle-module))
 $(fiddle-module.js): $(MAKEFILE) $(MAKEFILE.fiddle) \
-    EXPORTED_FUNCTIONS.fiddle EXPORTED_RUNTIME_METHODS.fiddle \
-    $(fiddle.cs) $(pre-post-fiddle-module.deps) $(dir.fiddle)/$(SOAP.js)
+    $(EXPORTED_FUNCTIONS.fiddle) \
+    $(fiddle.cses) $(pre-post-fiddle-module.deps) $(fiddle.SOAP.js)
 	$(emcc.bin) -o $@ $(fiddle.emcc-flags) \
     $(pre-post-common.flags) $(pre-post-fiddle-module.flags) \
-    $(fiddle.cs)
+    $(fiddle.cses)
 	$(maybe-wasm-strip) $(fiddle-module.wasm)
 	gzip < $@ > $@.gz
 	gzip < $(fiddle-module.wasm) > $(fiddle-module.wasm).gz

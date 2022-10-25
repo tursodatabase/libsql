@@ -40,7 +40,7 @@
 
   const promiserConfig = {
     worker: ()=>{
-      const w = new Worker("sqlite3-worker1.js");
+      const w = new Worker("jswasm/sqlite3-worker1.js");
       w.onerror = (event)=>error("worker.onerror",event);
       return w;
     },

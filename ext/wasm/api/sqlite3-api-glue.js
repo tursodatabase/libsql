@@ -72,10 +72,12 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     ('sqlite3_stmt*', aPtr)
     ('sqlite3_context*', aPtr)
     ('sqlite3_value*', aPtr)
+    ('sqlite3_vfs*', aPtr)
     ('void*', aPtr);
     wasm.xWrap.resultAdapter('sqlite3*', aPtr)
-    ('sqlite3_stmt*', aPtr)
     ('sqlite3_context*', aPtr)
+    ('sqlite3_stmt*', aPtr)
+    ('sqlite3_vfs*', aPtr)
     ('void*', aPtr);
 
     /**
@@ -224,6 +226,9 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     const __udfSetResult = function(pCtx, val){
       //console.warn("udfSetResult",typeof val, val);
       switch(typeof val) {
+          case 'undefined':
+            /* Assume that the client already called sqlite3_result_xxx(). */
+            break;
           case 'boolean':
             capi.sqlite3_result_int(pCtx, val ? 1 : 0);
             break;
@@ -318,7 +323,8 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       if(e instanceof sqlite3.WasmAllocError){
         capi.sqlite3_result_error_nomem(pCtx);
       }else{
-        capi.sqlite3_result_error(pCtx, e.message, -1);
+        const msg = ('string'===typeof e) ? e : e.message;
+        capi.sqlite3_result_error(pCtx, msg, -1);
       }
     };
 
@@ -437,10 +443,10 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       try{
         const funcArgs = __xWrapFuncs({xStep, xFinal, xValue, xInverse, xDestroy},
                                       uninstall);
-        rc = sqlite3CreateFunction(pDb, funcName, nArg, eTextRep,
-                                   pApp, ...funcArgs);
+        rc = sqlite3CreateWindowFunction(pDb, funcName, nArg, eTextRep,
+                                         pApp, ...funcArgs);
       }catch(e){
-        console.error("sqlite3_create_function_v2() setup threw:",e);
+        console.error("sqlite3_create_window_function() setup threw:",e);
         for(let v of uninstall){
           wasm.uninstallFunction(v);
         }
@@ -460,6 +466,11 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        - `number`: sqlite3_result_int() or sqlite3_result_double()
        - `string`: sqlite3_result_text()
        - Uint8Array or Int8Array: sqlite3_result_blob()
+       - `undefined`: indicates that the UDF called one of the
+         `sqlite3_result_xyz()` routines on its own, making this
+         function a no-op. Results are _undefined_ if this function is
+         passed the `undefined` value but did _not_ call one of the
+         `sqlite3_result_xyz()` routines.
 
        Anything else triggers sqlite3_result_error().
     */
@@ -492,10 +503,10 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     /**
        A helper for UDFs implemented in JS and bound to WASM by the
        client. It expects to be a passed `(sqlite3_context*, Error)`
-       (i.e. an exception object). And it sets the current UDF's
-       result to sqlite3_result_error_nomem() or sqlite3_result_error(),
-       depending on whether the 2nd argument is a
-       sqlite3.WasmAllocError object or not.
+       (an exception object or message string). And it sets the
+       current UDF's result to sqlite3_result_error_nomem() or
+       sqlite3_result_error(), depending on whether the 2nd argument
+       is a sqlite3.WasmAllocError object or not.
     */
     capi.sqlite3_create_function_v2.udfSetError =
       capi.sqlite3_create_function.udfSetError =
@@ -590,12 +601,16 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        For the given integer, returns the SQLITE_xxx result code as a
        string, or undefined if no such mapping is found.
     */
-    capi.sqlite3_web_rc_str = (rc)=>__rcMap[rc];
+    capi.sqlite3_js_rc_str = (rc)=>__rcMap[rc];
     /* Bind all registered C-side structs... */
     const notThese = Object.assign(Object.create(null),{
       // Structs NOT to register
       WasmTestStruct: true
     });
+    if(!util.isUIThread()){
+      /* We remove the kvvfs VFS from Worker threads below. */
+      notThese.sqlite3_kvvfs_methods = true;
+    }
     for(const s of wasm.ctype.structs){
       if(!notThese[s.name]){
         capi[s.name] = sqlite3.StructBinder(s);
@@ -603,94 +618,96 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     }
   }/*end C constant imports*/
 
-  if( util.isMainWindow()
-      && 0!==capi.sqlite3_vfs_find("kvvfs") ){/* kvvfs-specific glue */
-    const kvvfsMethods = new capi.sqlite3_kvvfs_methods(
-      wasm.exports.sqlite3_wasm_kvvfs_methods()
-    );
-    delete capi.sqlite3_kvvfs_methods;
+  const pKvvfs = capi.sqlite3_vfs_find("kvvfs");
+  if( pKvvfs ){/* kvvfs-specific glue */
+    if(util.isUIThread()){
+      const kvvfsMethods = new capi.sqlite3_kvvfs_methods(
+        wasm.exports.sqlite3_wasm_kvvfs_methods()
+      );
+      delete capi.sqlite3_kvvfs_methods;
 
-    const kvvfsMakeKey = wasm.exports.sqlite3_wasm_kvvfsMakeKeyOnPstack,
-          pstack = wasm.pstack,
-          pAllocRaw = wasm.exports.sqlite3_wasm_pstack_alloc;
+      const kvvfsMakeKey = wasm.exports.sqlite3_wasm_kvvfsMakeKeyOnPstack,
+            pstack = wasm.pstack,
+            pAllocRaw = wasm.exports.sqlite3_wasm_pstack_alloc;
 
-    const kvvfsStorage = (zClass)=>
-          ((115/*=='s'*/===wasm.getMemValue(zClass))
-           ? sessionStorage : localStorage);
-    
-    const kvvfsImpls = {
-      xRead: (zClass, zKey, zBuf, nBuf)=>{
-        const stack = pstack.pointer,
-              astack = wasm.scopedAllocPush();
-        try {
-          const zXKey = kvvfsMakeKey(zClass,zKey);
-          if(!zXKey) return -3/*OOM*/;
-          const jKey = wasm.cstringToJs(zXKey);
-          const jV = kvvfsStorage(zClass).getItem(jKey);
-          if(!jV) return -1;
-          const nV = jV.length /* Note that we are relying 100% on v being
-                                  ASCII so that jV.length is equal to the
-                                  C-string's byte length. */;
-          if(nBuf<=0) return nV;
-          else if(1===nBuf){
-            wasm.setMemValue(zBuf, 0);
-            return nV;
+      const kvvfsStorage = (zClass)=>
+            ((115/*=='s'*/===wasm.getMemValue(zClass))
+             ? sessionStorage : localStorage);
+      
+      const kvvfsImpls = {
+        xRead: (zClass, zKey, zBuf, nBuf)=>{
+          const stack = pstack.pointer,
+                astack = wasm.scopedAllocPush();
+          try {
+            const zXKey = kvvfsMakeKey(zClass,zKey);
+            if(!zXKey) return -3/*OOM*/;
+            const jKey = wasm.cstringToJs(zXKey);
+            const jV = kvvfsStorage(zClass).getItem(jKey);
+            if(!jV) return -1;
+            const nV = jV.length /* Note that we are relying 100% on v being
+                                    ASCII so that jV.length is equal to the
+                                    C-string's byte length. */;
+            if(nBuf<=0) return nV;
+            else if(1===nBuf){
+              wasm.setMemValue(zBuf, 0);
+              return nV;
+            }
+            const zV = wasm.scopedAllocCString(jV);
+            if(nBuf > nV + 1) nBuf = nV + 1;
+            wasm.heap8u().copyWithin(zBuf, zV, zV + nBuf - 1);
+            wasm.setMemValue(zBuf + nBuf - 1, 0);
+            return nBuf - 1;
+          }catch(e){
+            console.error("kvstorageRead()",e);
+            return -2;
+          }finally{
+            pstack.restore(stack);
+            wasm.scopedAllocPop(astack);
           }
-          const zV = wasm.scopedAllocCString(jV);
-          if(nBuf > nV + 1) nBuf = nV + 1;
-          wasm.heap8u().copyWithin(zBuf, zV, zV + nBuf - 1);
-          wasm.setMemValue(zBuf + nBuf - 1, 0);
-          return nBuf - 1;
-        }catch(e){
-          console.error("kvstorageRead()",e);
-          return -2;
-        }finally{
-          pstack.restore(stack);
-          wasm.scopedAllocPop(astack);
+        },
+        xWrite: (zClass, zKey, zData)=>{
+          const stack = pstack.pointer;
+          try {
+            const zXKey = kvvfsMakeKey(zClass,zKey);
+            if(!zXKey) return 1/*OOM*/;
+            const jKey = wasm.cstringToJs(zXKey);
+            kvvfsStorage(zClass).setItem(jKey, wasm.cstringToJs(zData));
+            return 0;
+          }catch(e){
+            console.error("kvstorageWrite()",e);
+            return capi.SQLITE_IOERR;
+          }finally{
+            pstack.restore(stack);
+          }
+        },
+        xDelete: (zClass, zKey)=>{
+          const stack = pstack.pointer;
+          try {
+            const zXKey = kvvfsMakeKey(zClass,zKey);
+            if(!zXKey) return 1/*OOM*/;
+            kvvfsStorage(zClass).removeItem(wasm.cstringToJs(zXKey));
+            return 0;
+          }catch(e){
+            console.error("kvstorageDelete()",e);
+            return capi.SQLITE_IOERR;
+          }finally{
+            pstack.restore(stack);
+          }
         }
-      },
-      xWrite: (zClass, zKey, zData)=>{
-        const stack = pstack.pointer;
-        try {
-          const zXKey = kvvfsMakeKey(zClass,zKey);
-          if(!zXKey) return 1/*OOM*/;
-          const jKey = wasm.cstringToJs(zXKey);
-          kvvfsStorage(zClass).setItem(jKey, wasm.cstringToJs(zData));
-          return 0;
-        }catch(e){
-          console.error("kvstorageWrite()",e);
-          return capi.SQLITE_IOERR;
-        }finally{
-          pstack.restore(stack);
-        }
-      },
-      xDelete: (zClass, zKey)=>{
-        const stack = pstack.pointer;
-        try {
-          const zXKey = kvvfsMakeKey(zClass,zKey);
-          if(!zXKey) return 1/*OOM*/;
-          kvvfsStorage(zClass).removeItem(wasm.cstringToJs(zXKey));
-          return 0;
-        }catch(e){
-          console.error("kvstorageDelete()",e);
-          return capi.SQLITE_IOERR;
-        }finally{
-          pstack.restore(stack);
-        }
+      }/*kvvfsImpls*/;
+      for(let k of Object.keys(kvvfsImpls)){
+        kvvfsMethods[kvvfsMethods.memberKey(k)] =
+          wasm.installFunction(
+            kvvfsMethods.memberSignature(k),
+            kvvfsImpls[k]
+          );
       }
-    }/*kvvfsImpls*/;
-    for(let k of Object.keys(kvvfsImpls)){
-      kvvfsMethods[kvvfsMethods.memberKey(k)] =
-        wasm.installFunction(
-          kvvfsMethods.memberSignature(k),
-          kvvfsImpls[k]
-        );
+    }else{
+      /* Worker thread: unregister kvvfs to avoid it being used
+         for anything other than local/sessionStorage. It "can"
+         be used that way but it's not really intended to be. */
+      capi.sqlite3_vfs_unregister(pKvvfs);
     }
-  }/*kvvfs*/
+  }/*pKvvfs*/
 
-  sqlite3.version = Object.assign(Object.create(null),{
-    library: sqlite3.capi.sqlite3_libversion(),
-    sourceId: sqlite3.capi.sqlite3_sourceid()
-  });
 });
-

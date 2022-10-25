@@ -166,6 +166,7 @@ int sqlite3UpsertAnalyzeTarget(
         if( pIdx->aiColumn[ii]==XN_EXPR ){
           assert( pIdx->aColExpr!=0 );
           assert( pIdx->aColExpr->nExpr>ii );
+          assert( pIdx->bHasExpr );
           pExpr = pIdx->aColExpr->a[ii].pExpr;
           if( pExpr->op!=TK_COLLATE ){
             sCol[0].pLeft = pExpr;

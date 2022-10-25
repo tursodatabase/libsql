@@ -68,5 +68,26 @@ do_catchsql_test 3.2 {
   SELECT * FROM t0 LEFT OUTER JOIN t1 ON v0.c0 INNER JOIN v0 INNER JOIN t2 ON (t2.c2 NOT NULL); 
 } {1 {ON clause references tables to its right}}
 
+#-------------------------------------------------------------
+
+reset_db
+do_execsql_test 4.1 {
+  CREATE TABLE t1(a,b,c,d,e,f,g,h,PRIMARY KEY(a,b,c)) WITHOUT ROWID;
+  CREATE TABLE t2(i, j);
+  INSERT INTO t2 VALUES(10, 20);
+}
+
+do_execsql_test 4.2 {
+  SELECT (d IS NULL) FROM t1 RIGHT JOIN t2 ON (j=33);
+} {1}
+
+do_execsql_test 4.3 {
+  CREATE INDEX i1 ON t1( (d IS NULL), d );
+}
+
+do_execsql_test 4.4 {
+  SELECT (d IS NULL) FROM t1 RIGHT JOIN t2 ON (j=33);
+} {1}
+
 
 finish_test
