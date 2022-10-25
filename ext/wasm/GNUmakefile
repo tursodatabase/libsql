@@ -3,8 +3,9 @@
 # components. It is not part of the canonical build process.
 #
 # This build assumes a Linux platform and is not intended for
-# client-level use. It is for the sqlite project's own development of
-# the JS/WASM components.
+# general-purpose client-level use, except for creating builds with
+# custom configurations. It is primarily intended for the sqlite
+# project's own development of the JS/WASM components.
 #
 # Primary targets:
 #
@@ -14,9 +15,9 @@
 #      by the target name. Rebuild is necessary for all components to get
 #      the desired optimization level.
 #
-#  dist = create end user deliverables. Add dist-opt=oX to build with a
-#      specific optimization level, where oX is one of the above-listed
-#      o? target names.
+#  dist = create end user deliverables. Add dist.build=oX to build
+#      with a specific optimization level, where oX is one of the
+#      above-listed o? target names.
 #
 #  clean = clean up
 ########################################################################
@@ -344,7 +345,9 @@ emcc.jsflags += $(emcc.environment)
 #emcc.jsflags += -sTOTAL_STACK=4194304
 
 sqlite3.js.init-func := sqlite3InitModule
-# ^^^^ $(sqlite3.js.init-func) symbol name is hard-coded in $(extern-post-js.js)
+# ^^^^ $(sqlite3.js.init-func) symbol name is hard-coded in
+# $(extern-post-js.js) as well as in numerous docs. If changed, it
+# needs to be globally modified in *.js and all related documentation.
 
 emcc.jsflags += -sEXPORT_NAME=$(sqlite3.js.init-func)
 emcc.jsflags += -sGLOBAL_BASE=4096 # HYPOTHETICALLY keep func table indexes from overlapping w/ heap addr.
@@ -353,6 +356,7 @@ emcc.jsflags += -sGLOBAL_BASE=4096 # HYPOTHETICALLY keep func table indexes from
 #emcc.jsflags += -sFILESYSTEM=0 # only for experimentation. sqlite3 needs the FS API
 #emcc.jsflags += -sABORTING_MALLOC
 emcc.jsflags += -sALLOW_TABLE_GROWTH
+# -sALLOW_TABLE_GROWTH is required for installing new SQL UDFs
 emcc.jsflags += -Wno-limited-postlink-optimizations
 # ^^^^^ it likes to warn when we have "limited optimizations" via the -g3 flag.
 #emcc.jsflags += -sSTANDALONE_WASM # causes OOM errors, not sure why
