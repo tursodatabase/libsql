@@ -515,25 +515,13 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       }
     },
     /**
-       Similar to the this.filename property but will return a falsy
-       value for special names like ":memory:". Throws if the DB has
-       been closed. If passed an argument it then it will return the
-       filename of the ATTACHEd db with that name, else it assumes a
-       name of `main`. The argument may be either a JS string or
-       a pointer to a WASM-allocated C-string.
+       Similar to the this.filename but returns the
+       sqlite3_db_filename() value for the given database name,
+       defaulting to "main".  The argument may be either a JS string
+       or a pointer to a WASM-allocated C-string.
     */
-    getFilename: function(dbName='main'){
+    dbFilename: function(dbName='main'){
       return capi.sqlite3_db_filename(affirmDbOpen(this).pointer, dbName);
-    },
-    /**
-       Returns true if this db instance has a name which resolves to a
-       file. If the name is "" or starts with ":", it resolves to false.
-       Note that it is not aware of the peculiarities of URI-style
-       names and a URI-style name for a ":memory:" db will fool it.
-       Returns false if this db is closed.
-    */
-    hasFilename: function(){
-      return this.filename && ':'!==this.filename[0];
     },
     /**
        Returns the name of the given 0-based db number, as documented

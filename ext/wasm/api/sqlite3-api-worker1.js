@@ -366,7 +366,7 @@ sqlite3.initWorker1API = function(){
     close: function(db,alsoUnlink){
       if(db){
         delete this.dbs[getDbId(db)];
-        const filename = db.getFilename();
+        const filename = db.filename;
         const pVfs = sqlite3.capi.wasm.sqlite3_wasm_db_vfs(db.pointer, 0);
         db.close();
         if(db===this.defaultDb) this.defaultDb = undefined;

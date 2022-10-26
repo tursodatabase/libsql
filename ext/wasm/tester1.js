@@ -1059,16 +1059,19 @@
   ////////////////////////////////////////////////////////////////////////
   T.g('sqlite3.oo1')
     .t('Create db', function(sqlite3){
-      const db = this.db = new sqlite3.oo1.DB();
+      const dbFile = '/tester1.db';
+      sqlite3.capi.wasm.sqlite3_wasm_vfs_unlink(0, dbFile);
+      const db = this.db = new sqlite3.oo1.DB(dbFile);
       T.assert(Number.isInteger(db.pointer)).
         mustThrowMatching(()=>db.pointer=1, /read-only/).
         assert(0===sqlite3.capi.sqlite3_extended_result_codes(db.pointer,1)).
         assert('main'===db.dbName(0));
-
       // Custom db error message handling via sqlite3_prepare_v2/v3()
       let rc = capi.sqlite3_prepare_v3(db.pointer, {/*invalid*/}, -1, 0, null, null);
       T.assert(capi.SQLITE_MISUSE === rc)
-        .assert(0 === capi.sqlite3_errmsg(db.pointer).indexOf("Invalid SQL"));
+        .assert(0 === capi.sqlite3_errmsg(db.pointer).indexOf("Invalid SQL"))
+        .assert(dbFile === db.dbFilename())
+        .assert(!db.dbFilename('nope'));
     })
 
   ////////////////////////////////////////////////////////////////////
@@ -1146,7 +1149,6 @@
         .assert(pVfsDb > 0)
         .assert(pVfsMem !== pVfsDflt
                 /* memdb lives on top of the default vfs */)
-        .assert(':memory:' === db.filename)
         .assert(pVfsDb === pVfsDflt || pVfsdb === pVfsMem)
       ;
       /*const vMem = new capi.sqlite3_vfs(pVfsMem),

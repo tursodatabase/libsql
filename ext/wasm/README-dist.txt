@@ -2,7 +2,7 @@ This is the README for the sqlite3 WASM/JS distribution.
 
 Main project page: https://sqlite.org
 
-TODO: link to main WASM/JS docs, once they are online
+Documentation: https://sqlite.org/wasm
 
 This archive contains the sqlite3.js and sqlite3.wasm file which make
 up the sqlite3 WASM/JS build.
@@ -20,4 +20,4 @@ One simple way to get the demo apps up and running on Unix-style
 systems is to install althttpd (https://sqlite.org/althttpd) and run:
 
     althttpd --enable-sab --page index.html
- 
+

@@ -1538,4 +1538,4 @@ sqlite3.dll: $(REAL_LIBOBJ) sqlite3.def
 # Fiddle app
 #
 fiddle: sqlite3.c shell.c
-	make -C ext/wasm fiddle
+	make -C ext/wasm fiddle emcc_opt=-Os
