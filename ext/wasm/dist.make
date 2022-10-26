@@ -79,7 +79,7 @@ dist: \
 	@$(bin.stripccomments) -k -k < $(sqlite3.js) \
 		> $(dist-dir.jswasm)/$(notdir $(sqlite3.js))
 	@cp -p $(dist.common.extras) $(dist-dir.common)
-	@vnum=$$($(bin.version-info) --version-number); \
+	@vnum=$$($(bin.version-info) --download-version); \
 		vdir=sqlite-wasm-$$vnum; \
 		arczip=$$vdir.zip; \
 		echo "Making $$arczip ..."; \

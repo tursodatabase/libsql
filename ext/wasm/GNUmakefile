@@ -187,7 +187,7 @@ else
   $(info Development build. Use '$(MAKE) release' for a smaller release build.)
 endif
 
-bin.version-info := $(dir.wasm)/bin.version-info
+bin.version-info := $(dir.wasm)/version-info
 # ^^^^ NOT in $(dir.tmp) because we need it to survive the cleanup
 # process for the dist build to work properly.
 $(bin.version-info): $(dir.wasm)/version-info.c $(sqlite3.h) $(MAKEFILE)
