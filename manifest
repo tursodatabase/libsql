@@ -1,5 +1,5 @@
-C Merge\sfurther\schanges\sfrom\strunk,\sincluding\sfix\sto\sdbdata.c.
-D 2022-10-26T18:22:22.756
+C Remove\san\sundefined\sleft-shift\soperation\sfrom\sthe\srecover\sextension.
+D 2022-10-26T18:29:19.827
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -398,7 +398,7 @@ F ext/recover/recoverpgsz.test 93e970eab05e4e89f8fd6b1bd23f9ec137ea09857e66ba0d4
 F ext/recover/recoverrowid.test 1694a1a5526d825f71279f3d02ab02a1ee4c5265de18858bf54cb8ec54487ac8
 F ext/recover/recoverslowidx.test f356bb9fba7ffd6fc50e045e419464f0129ac6e24decf6e919584f79c3493727
 F ext/recover/recoversql.test f9872ff2114e13ffd8ee31e1de06919f62b9b48bc080191b5bd076d10becb60f
-F ext/recover/sqlite3recover.c db8f2166dbbdfc09a58a85f51f8e848858858ca8b4915a2f9c8cd5fd5ca536a8
+F ext/recover/sqlite3recover.c 537bfad4bf9f14fd43d138b988365bb38548fabec3252d3bff719524d907a1da
 F ext/recover/sqlite3recover.h f698ccc94bd4da38761035415ad08c4549a408491ff9fd5f52d34d2214f64e36
 F ext/recover/test_recover.c 61ec931e47abca6b2210f46239cafd9f3060741605e3d3c45a7c7a53f63dd957
 F ext/repair/README.md 92f5e8aae749a4dae14f02eea8e1bb42d4db2b6ce5e83dbcdd6b1446997e0c15
@@ -530,7 +530,7 @@ F ext/wasm/fiddle.make 68abe5dcfdd6fdf8dc1b715b94b96fae771b5b28bc1843997b9b1ec79
 F ext/wasm/fiddle/emscripten.css 3d253a6fdb8983a2ac983855bfbdd4b6fa1ff267c28d69513dd6ef1f289ada3f
 F ext/wasm/fiddle/fiddle-worker.js 41b9796d689fabbef1ad9447496d14645eeb4101b534e54951fa5259c877c341
 F ext/wasm/fiddle/fiddle.js 974b995119ac443685d7d94d3b3c58c6a36540e9eb3fed7069d5653284071715
-F ext/wasm/fiddle/index.html 5daf54e8f3d7777cbb1ca4f93affe28858dbfff25841cb4ab81d694efed28ec2 w ext/wasm/fiddle/fiddle.html
+F ext/wasm/fiddle/index.html 5daf54e8f3d7777cbb1ca4f93affe28858dbfff25841cb4ab81d694efed28ec2
 F ext/wasm/index-dist.html cb0da16cba0f21cda2c25724c5869102d48eb0af04446acd3cd0ca031f80ed19
 F ext/wasm/index.html 6ac073d45d7602e1d8a5b493ce4204dc4a6c5594fdeeb12dec38c4e36ce473ad
 F ext/wasm/jaccwabyt/jaccwabyt.js 0d7f32817456a0f3937fcfd934afeb32154ca33580ab264dab6c285e6dbbd215
@@ -2052,8 +2052,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 757e3f585959f4f113fee48fe3d504f037604c53a95c8d47ce5c2bccfb2af8ff 4eef562a00ae988f2426c9af51f4165c0e4cbccd601061664a0c54c19b9cc70f
-R fd8351a8bbdf0dfc78a1c53b0189bb2d
+P bcf6b48d52c1ce656899f50bd508c0920cae8cf2ef3c0758a7633981f0f0f484
+R 1abad855e0472232f0e7862b9a7dd438
 U dan
-Z 99bd3f3c58c53208f300189c934ad348
+Z 4fb1e189272de9078a5ba7b4ef187b9a
 # Remove this line to create a well-formed Fossil manifest.

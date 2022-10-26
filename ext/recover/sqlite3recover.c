@@ -2019,14 +2019,14 @@ static u32 recoverGetU32(const u8 *a){
 ** and return the number of bytes consumed.
 */
 static int recoverGetVarint(const u8 *a, i64 *pVal){
-  sqlite3_int64 v = 0;
+  sqlite3_uint64 u = 0;
   int i;
   for(i=0; i<8; i++){
-    v = (v<<7) + (a[i]&0x7f);
-    if( (a[i]&0x80)==0 ){ *pVal = v; return i+1; }
+    u = (u<<7) + (a[i]&0x7f);
+    if( (a[i]&0x80)==0 ){ *pVal = (sqlite3_int64)u; return i+1; }
   }
-  v = (v<<8) + (a[i]&0xff);
-  *pVal = v;
+  u = (u<<8) + (a[i]&0xff);
+  *pVal = (sqlite3_int64)u;
   return 9;
 }
 
