@@ -1,5 +1,5 @@
-C Replace\sthe\snewly-removed\soo1.DB.getFilename()\swith\sDB.dbFilename()\swith\sthe\shope\sthat\sthe\sdistinction\sfrom\sthe\sdbInstance.filename\sproperty\sis\sclearer.
-D 2022-10-26T11:27:33.666
+C Corrected\slink\sto\sfiddle\sin\sext/wasm/index.html\s(broken\sby\s[3d7b4f36b7dd]).
+D 2022-10-26T15:34:51.810
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -517,7 +517,7 @@ F ext/wasm/fiddle/fiddle-worker.js 7ee53ca846071de5d46bb11a2a269a7990ef9cfd8abfa
 F ext/wasm/fiddle/fiddle.js 974b995119ac443685d7d94d3b3c58c6a36540e9eb3fed7069d5653284071715
 F ext/wasm/fiddle/index.html 5daf54e8f3d7777cbb1ca4f93affe28858dbfff25841cb4ab81d694efed28ec2
 F ext/wasm/index-dist.html cb0da16cba0f21cda2c25724c5869102d48eb0af04446acd3cd0ca031f80ed19
-F ext/wasm/index.html 751bbf248ee3106cec92cc4e6e3f703cd5c94deff3c6b7a596154fb04ab3efac
+F ext/wasm/index.html 6ac073d45d7602e1d8a5b493ce4204dc4a6c5594fdeeb12dec38c4e36ce473ad
 F ext/wasm/jaccwabyt/jaccwabyt.js 0d7f32817456a0f3937fcfd934afeb32154ca33580ab264dab6c285e6dbbd215
 F ext/wasm/jaccwabyt/jaccwabyt.md 9aa6951b529a8b29f578ec8f0355713c39584c92cf1708f63ba0cf917cb5b68e
 F ext/wasm/scratchpad-wasmfs-main.html 20cf6f1a8f368e70d01e8c17200e3eaa90f1c8e1029186d836d14b83845fbe06
@@ -2037,8 +2037,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 75c546b982024bf2b527c85271111d54158cb010867f6e29fc89e86cc8457cc5
-R be623a8f6f7c8b5e05b25a56c6af0f35
+P 0b80543d75504c733b73b32f73b96074a4b0cebad64e47032926a3fefee41726
+R 2a1356c9a64536bf417fe49604c5ed2c
 U stephan
-Z 1a485f2ae92bc65c3a772e74dd0aa397
+Z c560d1f193bb5507ca9ff271fe297692
 # Remove this line to create a well-formed Fossil manifest.
