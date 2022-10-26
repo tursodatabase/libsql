@@ -358,15 +358,28 @@ static int dbdataLoadPage(
 ** Read a varint.  Put the value in *pVal and return the number of bytes.
 */
 static int dbdataGetVarint(const u8 *z, sqlite3_int64 *pVal){
-  sqlite3_int64 v = 0;
+  sqlite3_uint64 u = 0;
   int i;
   for(i=0; i<8; i++){
-    v = (v<<7) + (z[i]&0x7f);
-    if( (z[i]&0x80)==0 ){ *pVal = v; return i+1; }
+    u = (u<<7) + (z[i]&0x7f);
+    if( (z[i]&0x80)==0 ){ *pVal = (sqlite3_int64)u; return i+1; }
   }
-  v = (v<<8) + (z[i]&0xff);
-  *pVal = v;
+  u = (u<<8) + (z[i]&0xff);
+  *pVal = (sqlite3_int64)u;
   return 9;
+}
+
+/*
+** Like dbdataGetVarint(), but set the output to 0 if it is less than 0
+** or greater than 0xFFFFFFFF. This can be used for all varints in an
+** SQLite database except for key values in intkey tables.
+*/
+static int dbdataGetVarintU32(const u8 *z, sqlite3_int64 *pVal){
+  sqlite3_int64 val;
+  int nRet = dbdataGetVarint(z, &val);
+  if( val<0 || val>0xFFFFFFFF ) val = 0;
+  *pVal = val;
+  return nRet;
 }
 
 /*
@@ -540,7 +553,7 @@ static int dbdataNext(sqlite3_vtab_cursor *pCursor){
           if( bNextPage || iOff>pCsr->nPage ){
             bNextPage = 1;
           }else{
-            iOff += dbdataGetVarint(&pCsr->aPage[iOff], &nPayload);
+            iOff += dbdataGetVarintU32(&pCsr->aPage[iOff], &nPayload);
           }
     
           /* If this is a leaf intkey cell, load the rowid */
@@ -607,7 +620,7 @@ static int dbdataNext(sqlite3_vtab_cursor *pCursor){
               }
             }
     
-            iHdr = dbdataGetVarint(pCsr->pRec, &nHdr);
+            iHdr = dbdataGetVarintU32(pCsr->pRec, &nHdr);
             pCsr->nHdr = nHdr;
             pCsr->pHdrPtr = &pCsr->pRec[iHdr];
             pCsr->pPtr = &pCsr->pRec[pCsr->nHdr];
@@ -621,7 +634,7 @@ static int dbdataNext(sqlite3_vtab_cursor *pCursor){
           if( pCsr->pHdrPtr>&pCsr->pRec[pCsr->nRec] ){
             bNextPage = 1;
           }else{
-            pCsr->pHdrPtr += dbdataGetVarint(pCsr->pHdrPtr, &iType);
+            pCsr->pHdrPtr += dbdataGetVarintU32(pCsr->pHdrPtr, &iType);
             pCsr->pPtr += dbdataValueBytes(iType);
           }
         }
@@ -778,7 +791,7 @@ static int dbdataColumn(
           sqlite3_result_int64(ctx, pCsr->iIntkey);
         }else{
           sqlite3_int64 iType;
-          dbdataGetVarint(pCsr->pHdrPtr, &iType);
+          dbdataGetVarintU32(pCsr->pHdrPtr, &iType);
           dbdataValue(
               ctx, iType, pCsr->pPtr, &pCsr->pRec[pCsr->nRec] - pCsr->pPtr
           );
