@@ -1588,6 +1588,9 @@ TESTEXT = \
   $(TOP)\ext\misc\unionvtab.c \
   $(TOP)\ext\misc\wholenumber.c \
   $(TOP)\ext\rtree\test_rtreedoc.c \
+  $(TOP)\ext\recover\sqlite3recover.c \
+  $(TOP)\ext\recover\test_recover.c \
+  $(TOP)\ext\recover\dbdata.c \
   fts5.c
 
 # If use of zlib is enabled, add the "zipfile.c" source file.
@@ -2228,6 +2231,9 @@ SHELL_SRC = \
 	$(TOP)\ext\expert\sqlite3expert.c \
 	$(TOP)\ext\expert\sqlite3expert.h \
 	$(TOP)\ext\misc\memtrace.c \
+	$(TOP)/ext/recover/dbdata.c \
+	$(TOP)/ext/recover/sqlite3recover.c \
+	$(TOP)/ext/recover/sqlite3recover.h \
 	$(TOP)\src\test_windirent.c
 
 # If use of zlib is enabled, add the "zipfile.c" source file.

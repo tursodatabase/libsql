@@ -47,7 +47,7 @@
 **
 **     sqlite3 *db;
 **     sqlite3_open(":memory:", &db);
-**     sqlite3_load_extention(db, "./cksumvfs");
+**     sqlite3_load_extension(db, "./cksumvfs");
 **     sqlite3_close(db);
 **
 ** If this extension is compiled with -DSQLITE_CKSUMVFS_STATIC and

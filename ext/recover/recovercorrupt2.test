@@ -1,0 +1,117 @@
+# 2022 August 28
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+
+if {![info exists testdir]} {
+  set testdir [file join [file dirname [info script]] .. .. test]
+} 
+source [file join [file dirname [info script]] recover_common.tcl]
+source $testdir/tester.tcl
+
+set testprefix recovercorrupt2
+
+do_execsql_test 1.0 {
+  PRAGMA page_size = 512;
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
+  INSERT INTO t1 VALUES(1, 2, 3);
+  INSERT INTO t1 VALUES(2, hex(randomblob(100)), randomblob(200));
+  CREATE INDEX i1 ON t1(b, c);
+  CREATE TABLE t2(a PRIMARY KEY, b, c) WITHOUT ROWID;
+  INSERT INTO t2 VALUES(1, 2, 3);
+  INSERT INTO t2 VALUES(2, hex(randomblob(100)), randomblob(200));
+  ANALYZE;
+  PRAGMA writable_schema = 1;
+  UPDATE sqlite_schema SET sql = 'CREATE INDEX i1 ON o(world)' WHERE name='i1'; 
+  DELETE FROM sqlite_schema WHERE name='sqlite_stat4';
+}
+
+do_test 1.1 {
+  set R [sqlite3_recover_init db main test.db2]
+  $R run
+  $R finish
+} {}
+
+sqlite3 db2 test.db2
+do_execsql_test -db db2 1.2 {
+  SELECT sql FROM sqlite_schema
+} {
+  {CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c)}
+  {CREATE TABLE t2(a PRIMARY KEY, b, c) WITHOUT ROWID} 
+  {CREATE TABLE sqlite_stat1(tbl,idx,stat)} 
+}
+db2 close
+
+do_execsql_test 1.3 {
+  PRAGMA writable_schema = 1;
+  UPDATE sqlite_schema SET sql = 'CREATE TABLE t2 syntax error!' WHERE name='t2';
+}
+
+do_test 1.4 {
+  set R [sqlite3_recover_init db main test.db2]
+  $R run
+  $R finish
+} {}
+
+sqlite3 db2 test.db2
+do_execsql_test -db db2 1.5 {
+  SELECT sql FROM sqlite_schema
+} {
+  {CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c)}
+  {CREATE TABLE sqlite_stat1(tbl,idx,stat)} 
+}
+db2 close
+
+#-------------------------------------------------------------------------
+#
+reset_db
+do_test 2.0 {
+  sqlite3 db {}
+  db deserialize [decode_hexdb {
+| size 8192 pagesize 4096 filename x3.db
+| page 1 offset 0
+|      0: 53 51 4c 69 74 65 20 66 6f 72 6d 61 74 20 33 00   SQLite format 3.
+|     16: 10 00 01 01 00 40 20 20 00 00 00 02 00 00 00 02   .....@  ........
+|     32: 00 00 00 00 00 00 00 00 00 00 00 01 00 00 00 04   ................
+|     48: 00 00 00 00 00 00 00 00 00 00 00 01 00 00 00 00   ................
+|     80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 02   ................
+|     96: 00 2e 63 00 0d 00 00 00 01 0f d8 00 0f d8 00 00   ..c.............
+|   4048: 00 00 00 00 00 00 00 00 26 01 06 17 11 11 01 39   ........&......9
+|   4064: 74 61 62 6c 65 74 31 74 31 02 43 52 45 41 54 45   tablet1t1.CREATE
+|   4080: 20 54 41 42 4c 45 20 74 31 28 61 2c 62 2c 63 29    TABLE t1(a,b,c)
+| page 2 offset 4096
+|      0: 0d 00 00 00 01 0f ce 00 0f ce 00 00 00 00 00 00   ................
+|   4032: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ff ff   ..............(.
+|   4048: ff ff ff ff ff ff ff 28 04 27 25 23 61 61 61 61   .........'%#aaaa
+|   4064: 61 61 61 61 61 61 61 61 61 62 62 62 62 62 62 62   aaaaaaaaabbbbbbb
+|   4080: 62 62 62 62 62 63 63 63 63 63 63 63 63 63 63 63   bbbbbccccccccccc
+| end x3.db
+}]} {}
+
+do_test 2.1 {
+  set R [sqlite3_recover_init db main test.db2]
+  $R run
+  $R finish
+} {}
+
+sqlite3 db2 test.db2
+do_execsql_test -db db2 2.2 {
+  SELECT sql FROM sqlite_schema
+} {
+  {CREATE TABLE t1(a,b,c)}
+}
+do_execsql_test -db db2 2.3 {
+  SELECT * FROM t1
+} {}
+db2 close
+
+
+finish_test
+
