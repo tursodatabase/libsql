@@ -515,6 +515,15 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       }
     },
     /**
+       Similar to the this.filename but returns the
+       sqlite3_db_filename() value for the given database name,
+       defaulting to "main".  The argument may be either a JS string
+       or a pointer to a WASM-allocated C-string.
+    */
+    dbFilename: function(dbName='main'){
+      return capi.sqlite3_db_filename(affirmDbOpen(this).pointer, dbName);
+    },
+    /**
        Returns the name of the given 0-based db number, as documented
        for sqlite3_db_name().
     */
