@@ -2322,7 +2322,6 @@ static int recoverVfsRead(sqlite3_file *pFd, void *aBuf, int nByte, i64 iOff){
       rc = pFd->pMethods->xFileSize(pFd, &dbFileSize);
 
       if( rc==SQLITE_OK && p->detected_pgsz==0 ){
-        u32 pgsz2 = 0;
         rc = recoverVfsDetectPagesize(p, pFd, nReserve, dbFileSize);
       }
       if( p->detected_pgsz ){
@@ -2801,4 +2800,3 @@ int sqlite3_recover_finish(sqlite3_recover *p){
   }
   return rc;
 }
-
