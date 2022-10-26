@@ -5052,7 +5052,6 @@ extern const unsigned char sqlite3OpcodeProperty[];
 extern const char sqlite3StrBINARY[];
 extern const unsigned char sqlite3StdTypeLen[];
 extern const char sqlite3StdTypeAffinity[];
-extern const char sqlite3StdTypeMap[];
 extern const char *sqlite3StdType[];
 extern const unsigned char sqlite3UpperToLower[];
 extern const unsigned char *sqlite3aLTb;
