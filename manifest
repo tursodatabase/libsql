@@ -1,5 +1,5 @@
-C Automatically\sset\stemp_store=MEMORY\sif\sthe\sVFS\sis\skvvfs.
-D 2022-10-27T14:28:15.302
+C speedtest1.html:\swhen\svfs==kvvfs,\sincrease\s--size\sfrom\s2\sto\s4,\sas\senabled\sby\s[a4d40f6346e7].\s--size\s5\sis\s4.96mb\sout\sof\s(supposedly)\s5mb,\swhich\sworks\sbut\sis\sa\sbit\stoo\sclose\sto\sthe\sedge.
+D 2022-10-27T14:41:38.247
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -540,7 +540,7 @@ F ext/wasm/scratchpad-wasmfs-main.js 1841c124a58e3f9e7ee580a0868d6e1834c5a01dbb4
 F ext/wasm/speedtest1-wasmfs.html bc28eb29b69a73864b8d7aae428448f8b7e1de81d8bfb9bba99541322054dbd0
 F ext/wasm/speedtest1-worker.html 7b0cceab6a68b2883738e19f61d21620fe1244ba36c1b2e38d0efde57ecce86d
 F ext/wasm/speedtest1-worker.js 942af0909dee6e6a43af85d3e4a5e6aa74956290ca4b78fd4e753be13673ccd6
-F ext/wasm/speedtest1.html 6303e620162b2058d5e212f966a7caed4a31a516b6140fbc64185cb296218e4f
+F ext/wasm/speedtest1.html 3b3321eee32b6becf0b2134fd8f17db5802b400b8233c3537527d3c46e4e17b9
 F ext/wasm/split-speedtest1-script.sh a3e271938d4d14ee49105eb05567c6a69ba4c1f1293583ad5af0cd3a3779e205 x
 F ext/wasm/sql/000-mandelbrot.sql 775337a4b80938ac8146aedf88808282f04d02d983d82675bd63d9c2d97a15f0
 F ext/wasm/sql/001-sudoku.sql 35b7cb7239ba5d5f193bc05ec379bcf66891bce6f2a5b3879f2f78d0917299b5
@@ -2052,8 +2052,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fdecbd3b5bcdeb358015f461ac6c863f12ab180ab4624ed50734e41e557d8186
-R dfc4ed13a64515196293181db6b5de60
-U drh
-Z 98eb6601307a798f1c90903f8afb0012
+P a4d40f6346e7eb2a5239684dba86f297358122768a4d4bf6786b6028f4300e04
+R 99c4e795333d2dc1049d59bf743d209d
+U stephan
+Z 2931f3e9dccb9e9bedf9ff1781ba6005
 # Remove this line to create a well-formed Fossil manifest.

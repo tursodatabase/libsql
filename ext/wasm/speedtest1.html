@@ -118,7 +118,7 @@
             argv.push("--vfs", vfs);
             log2('',"Using VFS:",vfs);
             if('kvvfs' === vfs){
-                forceSize = 2;
+                forceSize = 4 /* 5 uses approx. 4.96mb */;
                 dbFile = 'session';
                 log2('warning',"kvvfs VFS: forcing --size",forceSize,
                      "and filename '"+dbFile+"'.");
@@ -156,6 +156,10 @@
             wasm.xCall('wasm_main', argv.length,
                        wasm.scopedAllocMainArgv(argv));
             wasm.scopedAllocPop(scope);
+            if('kvvfs'===vfs){
+                logList.unshift("KVVFS "+dbFile+" size = "+
+                                capi.sqlite3_js_kvvfs_size(dbFile));
+            }
             if(pDir) wasm.sqlite3_wasm_vfs_unlink(pVfs,dbFile);
             logList.unshift("Done running native main(). Output:");
             dumpLogList();
