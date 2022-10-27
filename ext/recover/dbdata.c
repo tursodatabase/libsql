@@ -466,12 +466,14 @@ static void dbdataValue(
         int n = ((eType-12) / 2);
         if( eType % 2 ){
           switch( enc ){
+#ifndef SQLITE_OMIT_UTF16
             case SQLITE_UTF16BE:
               sqlite3_result_text16be(pCtx, (void*)pData, n, SQLITE_TRANSIENT);
               break;
             case SQLITE_UTF16LE:
               sqlite3_result_text16le(pCtx, (void*)pData, n, SQLITE_TRANSIENT);
               break;
+#endif
             default:
               sqlite3_result_text(pCtx, (char*)pData, n, SQLITE_TRANSIENT);
               break;
