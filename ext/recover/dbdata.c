@@ -333,25 +333,27 @@ static int dbdataLoadPage(
 
   *ppPage = 0;
   *pnPage = 0;
-  sqlite3_bind_int64(pStmt, 2, pgno);
-  if( SQLITE_ROW==sqlite3_step(pStmt) ){
-    int nCopy = sqlite3_column_bytes(pStmt, 0);
-    if( nCopy>0 ){
-      u8 *pPage;
-      pPage = (u8*)sqlite3_malloc64(nCopy + DBDATA_PADDING_BYTES);
-      if( pPage==0 ){
-        rc = SQLITE_NOMEM;
-      }else{
-        const u8 *pCopy = sqlite3_column_blob(pStmt, 0);
-        memcpy(pPage, pCopy, nCopy);
-        memset(&pPage[nCopy], 0, DBDATA_PADDING_BYTES);
+  if( pgno>0 ){
+    sqlite3_bind_int64(pStmt, 2, pgno);
+    if( SQLITE_ROW==sqlite3_step(pStmt) ){
+      int nCopy = sqlite3_column_bytes(pStmt, 0);
+      if( nCopy>0 ){
+        u8 *pPage;
+        pPage = (u8*)sqlite3_malloc64(nCopy + DBDATA_PADDING_BYTES);
+        if( pPage==0 ){
+          rc = SQLITE_NOMEM;
+        }else{
+          const u8 *pCopy = sqlite3_column_blob(pStmt, 0);
+          memcpy(pPage, pCopy, nCopy);
+          memset(&pPage[nCopy], 0, DBDATA_PADDING_BYTES);
+        }
+        *ppPage = pPage;
+        *pnPage = nCopy;
       }
-      *ppPage = pPage;
-      *pnPage = nCopy;
     }
+    rc2 = sqlite3_reset(pStmt);
+    if( rc==SQLITE_OK ) rc = rc2;
   }
-  rc2 = sqlite3_reset(pStmt);
-  if( rc==SQLITE_OK ) rc = rc2;
 
   return rc;
 }

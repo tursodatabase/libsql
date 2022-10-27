@@ -1,5 +1,5 @@
-C In\sthe\sCLI,\sensure\sthat\sinput\sto\sutf8_width_print\sis\snot\sNULL,\sor\sif\sit\sis,\nchange\sit\sto\san\sempty\sstring.\s\sFor\sfor\sthe\sproblem\sreported\sby\n[forum:/forumpost/2961cf13eec61876|forum\spost\s2961cf13eec61876].
-D 2022-10-27T18:20:08.411
+C Fix\san\sassert()\sfailure\sin\sthe\srecover\sextension\striggered\sby\sa\szero\svalue\sas\sthe\sfirst\spage-number\sin\san\soverflow\spage\schain.
+D 2022-10-27T18:35:09.479
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -385,12 +385,12 @@ F ext/rbu/rbuvacuum4.test a78898e438a44803eb2bc897ba3323373c9f277418e2d6d76e90f2
 F ext/rbu/sqlite3rbu.c 8737cabdfbee84bb25a7851ecef8b1312be332761238da9be6ddb10c62ad4291
 F ext/rbu/sqlite3rbu.h 1dc88ab7bd32d0f15890ea08d23476c4198d3da3056985403991f8c9cd389812
 F ext/rbu/test_rbu.c 03f6f177096a5f822d68d8e4069ad8907fe572c62ff2d19b141f59742821828a
-F ext/recover/dbdata.c e2cb4c88ba97a1617d78fe2d8adfde7b3e5ad8bca902b691938e5cc0bae92e2d
+F ext/recover/dbdata.c a7b75b53054d131355cb62fd00643fdafc561dfd1e9e9dd0710778e690579853
 F ext/recover/recover1.test e08dc7a0513eab9de33e7b8e2260b9538bedb57c9bd6fbb278f328d29a102827
 F ext/recover/recover_common.tcl 6679af7dffc858e345053a91c9b0a897595b4a13007aceffafca75304ccb137c
 F ext/recover/recoverclobber.test 294dcc894124ab4ca3a7b35766630742a3d25810fceac22220beb64f70a33a60
 F ext/recover/recovercorrupt.test 6540aae95e17398dd70b44518367fd56588c44962cb276d2623a0fedba9efe9e
-F ext/recover/recovercorrupt2.test dff0c9f52888ae5956b1892ce502db42e6f51a666230369251bbbca923be541f
+F ext/recover/recovercorrupt2.test aae5329bd5e773895ad426a72100b290c06cc855704c7c7561369ea03742b5f0
 F ext/recover/recoverfault.test 3a0a32b9fc216592b97775d69220695b0926980c0f7424b7a59144e47d7cb568
 F ext/recover/recoverfault2.test 321036336af23e778a87f148c4cc4407f88fbdab1fd72ddb661669be9020d36b
 F ext/recover/recoverold.test 46e9d99b595fac583d4c67f74d7d89c20a435c752ef6eeb3e918b599940c88e0
@@ -2052,8 +2052,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P afce8443ace57c3c99c6810be98f05ed716ae504b68098726c869843c643bbf0
-R e55959c410fb52f7ad34ecde96c130d2
-U drh
-Z 207dea69502bccb805e97d5ac064979f
+P 9ecc9d25ea62a7777bbf621989a5c577b612784121a20465cda4d4023fa9634d
+R 3096a83bfa4b844f97735d498da01d52
+U dan
+Z ed22d20a006d2a515bbb5bbd662f21b3
 # Remove this line to create a well-formed Fossil manifest.
