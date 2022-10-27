@@ -2446,7 +2446,7 @@ static int recoverVfsCheckReservedLock(sqlite3_file *pFd, int *pResOut){
 }
 static int recoverVfsFileControl(sqlite3_file *pFd, int op, void *pArg){
   RECOVER_VFS_WRAPPER (
-      pFd->pMethods->xFileControl(pFd, op, pArg)
+    (pFd->pMethods ?  pFd->pMethods->xFileControl(pFd, op, pArg) : SQLITE_NOTFOUND)
   );
 }
 static int recoverVfsSectorSize(sqlite3_file *pFd){
@@ -2496,6 +2496,7 @@ static void recoverInstallWrapper(sqlite3_recover *p){
   assert( recover_g.pMethods==0 );
   recoverAssertMutexHeld();
   sqlite3_file_control(p->dbIn, p->zDb, SQLITE_FCNTL_FILE_POINTER, (void*)&pFd);
+  assert( pFd==0 || pFd->pMethods!=&recover_methods );
   if( pFd ){
     recover_g.pMethods = pFd->pMethods;
     recover_g.p = p;
@@ -2510,10 +2511,9 @@ static void recoverInstallWrapper(sqlite3_recover *p){
 */
 static void recoverUninstallWrapper(sqlite3_recover *p){
   recoverAssertMutexHeld();
-  if( recover_g.pMethods ){
-    sqlite3_file *pFd = 0;
-    sqlite3_file_control(p->dbIn, p->zDb,SQLITE_FCNTL_FILE_POINTER,(void*)&pFd);
-    assert( pFd );
+  sqlite3_file *pFd = 0;
+  sqlite3_file_control(p->dbIn, p->zDb,SQLITE_FCNTL_FILE_POINTER,(void*)&pFd);
+  if( pFd ){
     pFd->pMethods = recover_g.pMethods;
     recover_g.pMethods = 0;
     recover_g.p = 0;
