@@ -280,6 +280,22 @@ static RecoverGlobal recover_g;
 */
 #define RECOVER_ROWID_DEFAULT 1
 
+#if defined(SQLITE_THREADSAFE) && SQLITE_THREADSAFE==0
+# define recoverEnterMutex()
+# define recoverLeaveMutex()
+# define recoverAssertMutexHeld()
+#else
+static void recoverEnterMutex(void){
+  sqlite3_mutex_enter(sqlite3_mutex_alloc(RECOVER_MUTEX_ID));
+}
+static void recoverLeaveMutex(void){
+  sqlite3_mutex_leave(sqlite3_mutex_alloc(RECOVER_MUTEX_ID));
+}
+static void recoverAssertMutexHeld(void){
+  assert( sqlite3_mutex_held(sqlite3_mutex_alloc(RECOVER_MUTEX_ID)) );
+}
+#endif
+
 
 /*
 ** Like strlen(). But handles NULL pointer arguments.
@@ -2478,7 +2494,7 @@ static int recoverVfsShmUnmap(sqlite3_file *pFd, int deleteFlag){
 static void recoverInstallWrapper(sqlite3_recover *p){
   sqlite3_file *pFd = 0;
   assert( recover_g.pMethods==0 );
-  assert( sqlite3_mutex_held( sqlite3_mutex_alloc(RECOVER_MUTEX_ID) ) );
+  recoverAssertMutexHeld();
   sqlite3_file_control(p->dbIn, p->zDb, SQLITE_FCNTL_FILE_POINTER, (void*)&pFd);
   if( pFd ){
     recover_g.pMethods = pFd->pMethods;
@@ -2493,7 +2509,7 @@ static void recoverInstallWrapper(sqlite3_recover *p){
 ** held when this function is called.
 */
 static void recoverUninstallWrapper(sqlite3_recover *p){
-  assert( sqlite3_mutex_held( sqlite3_mutex_alloc(RECOVER_MUTEX_ID) ) );
+  recoverAssertMutexHeld();
   if( recover_g.pMethods ){
     sqlite3_file *pFd = 0;
     sqlite3_file_control(p->dbIn, p->zDb,SQLITE_FCNTL_FILE_POINTER,(void*)&pFd);
@@ -2518,7 +2534,7 @@ static void recoverStep(sqlite3_recover *p){
       recoverSqlCallback(p, "BEGIN");
       recoverSqlCallback(p, "PRAGMA writable_schema = on");
 
-      sqlite3_mutex_enter( sqlite3_mutex_alloc(RECOVER_MUTEX_ID) );
+      recoverEnterMutex();
       recoverInstallWrapper(p);
 
       /* Open the output database. And register required virtual tables and 
@@ -2535,7 +2551,7 @@ static void recoverStep(sqlite3_recover *p){
       recoverCacheSchema(p);
 
       recoverUninstallWrapper(p);
-      sqlite3_mutex_leave( sqlite3_mutex_alloc(RECOVER_MUTEX_ID) );
+      recoverLeaveMutex();
 
       recoverExec(p, p->dbOut, "BEGIN");
 

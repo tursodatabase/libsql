@@ -1,5 +1,5 @@
-C Minor\sdoc\stypo\sfixes.
-D 2022-10-27T03:57:48.950
+C Do\snot\suse\ssqlite3_mutex_xxx()\sfunctions\sin\ssqlite3recover.c\swhen\sbuilt\swith\sSQLITE_THREADSAFE=0.
+D 2022-10-27T10:51:49.063
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -398,7 +398,7 @@ F ext/recover/recoverpgsz.test 93e970eab05e4e89f8fd6b1bd23f9ec137ea09857e66ba0d4
 F ext/recover/recoverrowid.test 1694a1a5526d825f71279f3d02ab02a1ee4c5265de18858bf54cb8ec54487ac8
 F ext/recover/recoverslowidx.test f356bb9fba7ffd6fc50e045e419464f0129ac6e24decf6e919584f79c3493727
 F ext/recover/recoversql.test f9872ff2114e13ffd8ee31e1de06919f62b9b48bc080191b5bd076d10becb60f
-F ext/recover/sqlite3recover.c c91dd44f970b9e3cc37aec11e1b8eaedc93175e3021cda0db10fc3c751919e8a
+F ext/recover/sqlite3recover.c 8847c27ce4ad80b327fe8266dd79087839d8ba5aeb10a03c68b199b57da00019
 F ext/recover/sqlite3recover.h f698ccc94bd4da38761035415ad08c4549a408491ff9fd5f52d34d2214f64e36
 F ext/recover/test_recover.c 61ec931e47abca6b2210f46239cafd9f3060741605e3d3c45a7c7a53f63dd957
 F ext/repair/README.md 92f5e8aae749a4dae14f02eea8e1bb42d4db2b6ce5e83dbcdd6b1446997e0c15
@@ -2052,8 +2052,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ddd10c05c5d16d7205c347c5c1e73a75faecb2b7ec88a4a15875856765e1b143
-R 3db55ae605739ec81d57bf9021be2dd5
-U stephan
-Z 9cefeec4e7d702ffe1c98da983ab0ab0
+P ed8d3f25a4d6ac04d9f7918c791d8d2c6f23ce846278ca63f8fbadb7ea27369f
+R 31b949bd8120302ed6e08d715da99043
+U dan
+Z 1e435f3e6e7a6ad7e9a041f4354e77c4
 # Remove this line to create a well-formed Fossil manifest.
