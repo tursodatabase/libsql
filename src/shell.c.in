@@ -1057,12 +1057,7 @@ INCLUDE ../ext/misc/sqlar.c
 INCLUDE ../ext/expert/sqlite3expert.h
 INCLUDE ../ext/expert/sqlite3expert.c
 
-#if !defined(SQLITE_OMIT_VIRTUALTABLE)  \
-  && defined(SQLITE_ENABLE_DBPAGE_VTAB) \
-  && !defined(SQLITE_SHELL_FIDDLE)
-/* Including the recovery API causes the fiddle build to fail because
-** recovery-related code invokes mutex- and UTF16-related APIs which
-** we specifically disable in the wasm builds. */
+#if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_ENABLE_DBPAGE_VTAB)
 #define SQLITE_SHELL_HAVE_RECOVER 1
 #else
 #define SQLITE_SHELL_HAVE_RECOVER 0
