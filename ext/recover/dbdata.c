@@ -103,8 +103,8 @@ struct DbdataCursor {
 
   /* Only for the sqlite_dbdata table */
   u8 *pRec;                       /* Buffer containing current record */
-  int nRec;                       /* Size of pRec[] in bytes */
-  int nHdr;                       /* Size of header in bytes */
+  sqlite3_int64 nRec;             /* Size of pRec[] in bytes */
+  sqlite3_int64 nHdr;             /* Size of header in bytes */
   int iField;                     /* Current field number */
   u8 *pHdrPtr;
   u8 *pPtr;
@@ -639,6 +639,7 @@ static int dbdataNext(sqlite3_vtab_cursor *pCursor){
             }
     
             iHdr = dbdataGetVarintU32(pCsr->pRec, &nHdr);
+            if( nHdr>nPayload ) nHdr = 0;
             pCsr->nHdr = nHdr;
             pCsr->pHdrPtr = &pCsr->pRec[iHdr];
             pCsr->pPtr = &pCsr->pRec[pCsr->nHdr];

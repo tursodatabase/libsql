@@ -490,7 +490,7 @@ static sqlite3_stmt *recoverPreparePrintf(
 */
 static sqlite3_stmt *recoverReset(sqlite3_recover *p, sqlite3_stmt *pStmt){
   int rc = sqlite3_reset(pStmt);
-  if( rc!=SQLITE_OK && p->errCode==SQLITE_OK ){
+  if( rc!=SQLITE_OK && rc!=SQLITE_CONSTRAINT && p->errCode==SQLITE_OK ){
     recoverDbError(p, sqlite3_db_handle(pStmt));
   }
   return pStmt;
