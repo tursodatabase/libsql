@@ -215,6 +215,32 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     return (v && v.constructor && isInt32(v.constructor.BYTES_PER_ELEMENT)) ? v : false;
   };
 
+
+  /** Internal helper to use in operations which need to distinguish
+      between TypedArrays which are backed by a SharedArrayBuffer
+      from those which are not. */
+  const __SAB = ('undefined'===typeof SharedArrayBuffer)
+        ? function(){} : SharedArrayBuffer;
+  /** Returns true if the given TypedArray object is backed by a
+      SharedArrayBuffer, else false. */
+  const isSharedTypedArray = (aTypedArray)=>(aTypedArray.buffer instanceof __SAB);
+
+  /**
+     Returns either aTypedArray.slice(begin,end) (if
+     aTypedArray.buffer is a SharedArrayBuffer) or
+     aTypedArray.subarray(begin,end) (if it's not).
+
+     This distinction is important for APIs which don't like to
+     work on SABs, e.g. TextDecoder, and possibly for our
+     own APIs which work on memory ranges which "might" be
+     modified by other threads while it's working.
+   */
+  const typedArrayPart = (aTypedArray, begin, end)=>{
+    return isSharedTypedArray(aTypedArray)
+      ? aTypedArray.slice(begin, end)
+      : aTypedArray.subarray(begin, end);
+  };
+
   /**
      Returns true if v appears to be one of our bind()-able
      TypedArray types: Uint8Array or Int8Array. Support for
@@ -246,16 +272,16 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
 
   const utf8Decoder = new TextDecoder('utf-8');
 
-  /** Internal helper to use in operations which need to distinguish
-      between SharedArrayBuffer heap memory and non-shared heap. */
-  const __SAB = ('undefined'===typeof SharedArrayBuffer)
-        ? function(){} : SharedArrayBuffer;
-  const typedArrayToString = function(arrayBuffer, begin, end){
-    return utf8Decoder.decode(
-      (arrayBuffer.buffer instanceof __SAB)
-        ? arrayBuffer.slice(begin, end)
-        : arrayBuffer.subarray(begin, end)
-    );
+  /**
+     Uses TextDecoder to decode the given half-open range of the
+     given TypedArray to a string. This differs from a simple
+     call to TextDecoder in that it accounts for whether the
+     first argument is based by a SharedArrayBuffer or not,
+     and can work more efficiently if it's not (TextDecoder
+     refuses to act upon an SAB).
+  */
+  const typedArrayToString = function(typedArray, begin, end){
+    return utf8Decoder.decode(typedArrayPart(typedArray, begin,end));
   };
 
   /**
@@ -502,11 +528,11 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
 
        If the callback is a function, then for the duration of the
        sqlite3_exec() call, it installs a WASM-bound function which
-       acts as a proxy for the given callback. That proxy will
-       also perform a conversion of the callback's arguments from
+       acts as a proxy for the given callback. That proxy will also
+       perform a conversion of the callback's arguments from
        `(char**)` to JS arrays of strings. However, for API
-       consistency's sake it will still honor the C-level
-       callback parameter order and will call it like:
+       consistency's sake it will still honor the C-level callback
+       parameter order and will call it like:
 
        `callback(pVoid, colCount, listOfValues, listOfColNames)`
 
@@ -518,11 +544,26 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     sqlite3_exec: (pDb, sql, callback, pVoid, pErrMsg)=>{}/*installed later*/,
 
     /**
+       If passed a single argument which appears to be a byte-oriented
+       TypedArray (Int8Array or Uint8Array), this function treats that
+       TypedArray as an output target, fetches `theArray.byteLength`
+       bytes of randomness, and populates the whole array with it. As
+       a special case, if the array's length is 0, this function
+       behaves as if it were passed (0,0). When called this way, it
+       returns its argument, else it returns the `undefined` value.
+
+       If called with any other arguments, they are passed on as-is
+       to the C API. Results are undefined if passed any incompatible
+       values.
+     */
+    sqlite3_randomness: (n, outPtr)=>{/*installed later*/},
+
+    /**
        Various internal-use utilities are added here as needed. They
        are bound to an object only so that we have access to them in
        the differently-scoped steps of the API bootstrapping
        process. At the end of the API setup process, this object gets
-       removed.
+       removed. These are NOT part of the public API.
     */
     util:{
       affirmBindableTypedArray, flexibleString,
@@ -530,7 +571,9 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       isBindableTypedArray,
       isInt32, isSQLableTypedArray, isTypedArray, 
       typedArrayToString,
-      isUIThread: ()=>'undefined'===typeof WorkerGlobalScope
+      isUIThread: ()=>'undefined'===typeof WorkerGlobalScope,
+      isSharedTypedArray,
+      typedArrayPart
     },
     
     /**
@@ -617,7 +660,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     }/*wasm*/
   }/*capi*/;
 
-  const wasm = capi.wasm;
+  const wasm = capi.wasm, util = capi.util;
 
   /**
      wasm.alloc()'s srcTypedArray.byteLength bytes,
@@ -743,8 +786,8 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     // Please keep these sorted by function name!
     ["sqlite3_aggregate_context","void*", "sqlite3_context*", "int"],
     ["sqlite3_bind_blob","int", "sqlite3_stmt*", "int", "*", "int", "*"
-     /* We should arguably write a custom wrapper which knows how
-        to handle Blob, TypedArrays, and JS strings. */
+     /* TODO: we should arguably write a custom wrapper which knows
+        how to handle Blob, TypedArrays, and JS strings. */
     ],
     ["sqlite3_bind_double","int", "sqlite3_stmt*", "int", "f64"],
     ["sqlite3_bind_int","int", "sqlite3_stmt*", "int", "int"],
@@ -752,10 +795,10 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     ["sqlite3_bind_parameter_count", "int", "sqlite3_stmt*"],
     ["sqlite3_bind_parameter_index","int", "sqlite3_stmt*", "string"],
     ["sqlite3_bind_text","int", "sqlite3_stmt*", "int", "string", "int", "int"
-     /* We should arguably create a hand-written binding
-        which does more flexible text conversion, along the lines of
-        sqlite3_prepare_v3(). The slightly problematic part is the
-        final argument (text destructor). */
+     /* We should arguably create a hand-written binding of
+        bind_text() which does more flexible text conversion, along
+        the lines of sqlite3_prepare_v3(). The slightly problematic
+        part is the final argument (text destructor). */
     ],
     ["sqlite3_close_v2", "int", "sqlite3*"],
     ["sqlite3_changes", "int", "sqlite3*"],
@@ -770,15 +813,16 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     ["sqlite3_column_type","int", "sqlite3_stmt*", "int"],
     ["sqlite3_compileoption_get", "string", "int"],
     ["sqlite3_compileoption_used", "int", "string"],
-    /* sqlite3_create_function_v2() is handled separate to simplify conversion
-       of its callback argument */
+    /* sqlite3_create_function(), sqlite3_create_function_v2(), and
+       sqlite3_create_window_function() use hand-written bindings to
+       simplify handling of their function-type arguments. */
     ["sqlite3_data_count", "int", "sqlite3_stmt*"],
     ["sqlite3_db_filename", "string", "sqlite3*", "string"],
     ["sqlite3_db_handle", "sqlite3*", "sqlite3_stmt*"],
     ["sqlite3_db_name", "string", "sqlite3*", "int"],
     ["sqlite3_deserialize", "int", "sqlite3*", "string", "*", "i64", "i64", "int"]
     /* Careful! Short version: de/serialize() are problematic because they
-       might use a different allocator that the user for managing the
+       might use a different allocator than the user for managing the
        deserialized block. de/serialize() are ONLY safe to use with
        sqlite3_malloc(), sqlite3_free(), and its 64-bit variants. */,
     ["sqlite3_errmsg", "string", "sqlite3*"],
@@ -806,6 +850,8 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     /* sqlite3_prepare_v2() and sqlite3_prepare_v3() are handled
        separately due to us requiring two different sets of semantics
        for those, depending on how their SQL argument is provided. */
+    /* sqlite3_randomness() uses a hand-written wrapper to extend
+       the range of supported argument types. */
     ["sqlite3_realloc", "*","*","int"],
     ["sqlite3_reset", "int", "sqlite3_stmt*"],
     ["sqlite3_result_blob",undefined, "*", "*", "int", "*"],
@@ -1052,8 +1098,41 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     throw new SQLite3Error(...args);
   };
 
+  capi.sqlite3_randomness = (...args)=>{
+    if(1===args.length && util.isTypedArray(args[0])
+      && 1===args[0].BYTES_PER_ELEMENT){
+      const ta = args[0];
+      if(0===ta.byteLength){
+        wasm.exports.sqlite3_randomness(0,0);
+        return ta;
+      }
+      const stack = wasm.pstack.pointer;
+      try {
+        let n = ta.byteLength, offset = 0;
+        const r = wasm.exports.sqlite3_randomness;
+        const heap = wasm.heap8u();
+        const nAlloc = n < 512 ? n : 512;
+        const ptr = wasm.pstack.alloc(nAlloc);
+        do{
+          const j = (n>nAlloc ? nAlloc : n);
+          r(j, ptr);
+          ta.set(typedArrayPart(heap, ptr, ptr+j), offset);
+          n -= j;
+          offset += j;
+        } while(n > 0);
+      }catch(e){
+        console.error("Highly unexpected (and ignored!) "+
+                      "exception in sqlite3_randomness():",e);
+      }finally{
+        wasm.pstack.restore(stack);
+      }
+      return ta;
+    }
+    capi.wasm.exports.sqlite3_randomness(...args);
+  };
+
   /** State for sqlite3_wasmfs_opfs_dir(). */
-  let __persistentDir = undefined;
+  let __wasmfsOpfsDir = undefined;
   /**
      If the wasm environment has a WASMFS/OPFS-backed persistent
      storage directory, its path is returned by this function. If it
@@ -1068,26 +1147,26 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      Emscripten-managed virtual filesystem.
   */
   capi.sqlite3_wasmfs_opfs_dir = function(){
-    if(undefined !== __persistentDir) return __persistentDir;
+    if(undefined !== __wasmfsOpfsDir) return __wasmfsOpfsDir;
     // If we have no OPFS, there is no persistent dir
     const pdir = config.wasmfsOpfsDir;
     if(!pdir
        || !self.FileSystemHandle
        || !self.FileSystemDirectoryHandle
        || !self.FileSystemFileHandle){
-      return __persistentDir = "";
+      return __wasmfsOpfsDir = "";
     }
     try{
       if(pdir && 0===wasm.xCallWrapped(
         'sqlite3_wasm_init_wasmfs', 'i32', ['string'], pdir
       )){
-        return __persistentDir = pdir;
+        return __wasmfsOpfsDir = pdir;
       }else{
-        return __persistentDir = "";
+        return __wasmfsOpfsDir = "";
       }
     }catch(e){
       // sqlite3_wasm_init_wasmfs() is not available
-      return __persistentDir = "";
+      return __wasmfsOpfsDir = "";
     }
   };
 

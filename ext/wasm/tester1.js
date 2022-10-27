@@ -377,6 +377,19 @@
         }
       }
 
+      // isPtr32()
+      {
+        const ip = w.isPtr32;
+        T.assert(ip(0))
+          .assert(!ip(-1))
+          .assert(!ip(1.1))
+          .assert(!ip(0xffffffff))
+          .assert(ip(0x7fffffff))
+          .assert(!ip())
+          .assert(!ip(null)/*might change: under consideration*/)
+        ;
+      }
+
       //log("jstrlen()...");
       {
         T.assert(3 === w.jstrlen("abc")).assert(4 === w.jstrlen("äbc"));
@@ -1055,6 +1068,49 @@
 
   ////////////////////////////////////////////////////////////////////
   ;/*end of C/WASM utils checks*/
+
+  T.g('sqlite3_randomness()')
+    .t('To memory buffer', function(sqlite3){
+      const stack = wasm.pstack.pointer;
+      try{
+        const n = 520;
+        const p = wasm.pstack.alloc(n);
+        T.assert(0===wasm.getMemValue(p))
+          .assert(0===wasm.getMemValue(p+n-1));
+        T.assert(undefined === capi.sqlite3_randomness(n - 10, p));
+        let j, check = 0;
+        const heap = wasm.heap8u();
+        for(j = 0; j < 10 && 0===check; ++j){
+          check += heap[p + j];
+        }
+        T.assert(check > 0);
+        check = 0;
+        // Ensure that the trailing bytes were not modified...
+        for(j = n - 10; j < n && 0===check; ++j){
+          check += heap[p + j];
+        }
+        T.assert(0===check);
+      }finally{
+        wasm.pstack.restore(stack);
+      }
+    })
+    .t('To byte array', function(sqlite3){
+      const ta = new Uint8Array(117);
+      let i, n = 0;
+      for(i=0; i<ta.byteLength && 0===n; ++i){
+        n += ta[i];
+      }
+      T.assert(0===n)
+        .assert(ta === capi.sqlite3_randomness(ta));
+      for(i=ta.byteLength-10; i<ta.byteLength && 0===n; ++i){
+        n += ta[i];
+      }
+      T.assert(n>0);
+      const t0 = new Uint8Array(0);
+      T.assert(t0 === capi.sqlite3_randomness(t0),
+               "0-length array is a special case");
+    })
+  ;;/*end sqlite3_randomness() checks*/
 
   ////////////////////////////////////////////////////////////////////////
   T.g('sqlite3.oo1')

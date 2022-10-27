@@ -45,7 +45,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       if(v && v.constructor && v instanceof StructBinder.StructType){
         v = v.pointer;
       }
-      return (v === (v | 0) /* v is a 32-bit integer */)
+      return wasm.isPtr(v)
         ? argPointer(v)
         : toss("Invalid (object) type for StructType-type argument.");
     });

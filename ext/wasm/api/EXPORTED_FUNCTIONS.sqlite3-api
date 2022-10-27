@@ -52,6 +52,7 @@ _sqlite3_open
 _sqlite3_open_v2
 _sqlite3_prepare_v2
 _sqlite3_prepare_v3
+_sqlite3_randomness
 _sqlite3_realloc
 _sqlite3_realloc64
 _sqlite3_reset
