@@ -813,6 +813,7 @@ static int kvvfsOpen(
   int *pOutFlags
 ){
   KVVfsFile *pFile = (KVVfsFile*)pProtoFile;
+  if( zName==0 ) zName = "";
   SQLITE_KV_LOG(("xOpen(\"%s\")\n", zName));
   if( strcmp(zName, "local")==0
    || strcmp(zName, "session")==0
