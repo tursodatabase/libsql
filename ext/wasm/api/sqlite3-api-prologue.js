@@ -233,8 +233,8 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      This distinction is important for APIs which don't like to
      work on SABs, e.g. TextDecoder, and possibly for our
      own APIs which work on memory ranges which "might" be
-     modified by other threads while it's working.
-   */
+     modified by other threads while they're working.
+  */
   const typedArrayPart = (aTypedArray, begin, end)=>{
     return isSharedTypedArray(aTypedArray)
       ? aTypedArray.slice(begin, end)
@@ -276,7 +276,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      Uses TextDecoder to decode the given half-open range of the
      given TypedArray to a string. This differs from a simple
      call to TextDecoder in that it accounts for whether the
-     first argument is based by a SharedArrayBuffer or not,
+     first argument is backed by a SharedArrayBuffer or not,
      and can work more efficiently if it's not (TextDecoder
      refuses to act upon an SAB).
   */

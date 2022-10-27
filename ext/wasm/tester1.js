@@ -1110,7 +1110,7 @@
       T.assert(t0 === capi.sqlite3_randomness(t0),
                "0-length array is a special case");
     })
-  ;;/*end sqlite3_randomness() checks*/
+  ;/*end sqlite3_randomness() checks*/
 
   ////////////////////////////////////////////////////////////////////////
   T.g('sqlite3.oo1')
