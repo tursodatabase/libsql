@@ -2497,7 +2497,7 @@ static void recoverInstallWrapper(sqlite3_recover *p){
   recoverAssertMutexHeld();
   sqlite3_file_control(p->dbIn, p->zDb, SQLITE_FCNTL_FILE_POINTER, (void*)&pFd);
   assert( pFd==0 || pFd->pMethods!=&recover_methods );
-  if( pFd ){
+  if( pFd && pFd->pMethods ){
     int iVersion = 1 + (pFd->pMethods->iVersion>1 && pFd->pMethods->xShmMap!=0);
     recover_g.pMethods = pFd->pMethods;
     recover_g.p = p;
@@ -2515,7 +2515,7 @@ static void recoverUninstallWrapper(sqlite3_recover *p){
   recoverAssertMutexHeld();
   sqlite3_file *pFd = 0;
   sqlite3_file_control(p->dbIn, p->zDb,SQLITE_FCNTL_FILE_POINTER,(void*)&pFd);
-  if( pFd ){
+  if( pFd && pFd->pMethods ){
     pFd->pMethods = recover_g.pMethods;
     recover_g.pMethods = 0;
     recover_g.p = 0;
