@@ -770,6 +770,7 @@ static int dbdataFilter(
   assert( pCsr->iPgno==1 );
   if( idxNum & 0x01 ){
     zSchema = (const char*)sqlite3_value_text(argv[0]);
+    if( zSchema==0 ) zSchema = "";
   }
   if( idxNum & 0x02 ){
     pCsr->iPgno = sqlite3_value_int(argv[(idxNum & 0x01)]);

@@ -1,5 +1,5 @@
-C Fix\sanother\scrash\sin\sthe\srecover\sextension\striggered\sby\sa\scorrupt\sdatabase.
-D 2022-10-27T20:27:45.594
+C Fix\sa\sminor\sproblem\swith\ssqlite_dbdata.
+D 2022-10-27T23:17:49.777
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -385,7 +385,7 @@ F ext/rbu/rbuvacuum4.test a78898e438a44803eb2bc897ba3323373c9f277418e2d6d76e90f2
 F ext/rbu/sqlite3rbu.c 8737cabdfbee84bb25a7851ecef8b1312be332761238da9be6ddb10c62ad4291
 F ext/rbu/sqlite3rbu.h 1dc88ab7bd32d0f15890ea08d23476c4198d3da3056985403991f8c9cd389812
 F ext/rbu/test_rbu.c 03f6f177096a5f822d68d8e4069ad8907fe572c62ff2d19b141f59742821828a
-F ext/recover/dbdata.c 4c36b75735ebb554bd44b91c8788c45131c6ae1c5e6153eaaf0a189a07eb2448
+F ext/recover/dbdata.c 76b4040547dc5f448f5d4599ccde8ab4311e0ab9df002adc410fef3f13fd822e
 F ext/recover/recover1.test e08dc7a0513eab9de33e7b8e2260b9538bedb57c9bd6fbb278f328d29a102827
 F ext/recover/recover_common.tcl 6679af7dffc858e345053a91c9b0a897595b4a13007aceffafca75304ccb137c
 F ext/recover/recoverclobber.test 294dcc894124ab4ca3a7b35766630742a3d25810fceac22220beb64f70a33a60
@@ -2052,8 +2052,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5a7bfd4a217cd80882a1827674b479cdc547419a785e06e0ee82cb8cfca42701
-R 4890ae4a27813f81579cbe6a09f4e6de
-U dan
-Z 5b83e6d937b65a5473d327a12ed454d5
+P d125377378916fb3147612a536fde15ee955176eea9ea6eaa4a2ee5f1e8e1cbe
+R d5cee1d1ee9e2bbc207468a746867276
+U drh
+Z b1ba27eaf6110056c2f716aa2713d00f
 # Remove this line to create a well-formed Fossil manifest.
