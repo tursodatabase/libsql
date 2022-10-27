@@ -2498,8 +2498,10 @@ static void recoverInstallWrapper(sqlite3_recover *p){
   sqlite3_file_control(p->dbIn, p->zDb, SQLITE_FCNTL_FILE_POINTER, (void*)&pFd);
   assert( pFd==0 || pFd->pMethods!=&recover_methods );
   if( pFd ){
+    int iVersion = 1 + (pFd->pMethods->iVersion>1 && pFd->pMethods->xShmMap!=0);
     recover_g.pMethods = pFd->pMethods;
     recover_g.p = p;
+    recover_methods.iVersion = iVersion;
     pFd->pMethods = &recover_methods;
   }
 }

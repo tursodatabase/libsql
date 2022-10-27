@@ -143,13 +143,27 @@ do_test 3.1 {
   $R finish
 } {}
 
-sqlite3 db2 test.db2
-do_execsql_test -db db2 3.2 {
-} {
-}
-do_execsql_test -db db2 3.3 {
-} {}
-db2 close
+#-------------------------------------------------------------------------
+#
+reset_db
+do_test 4.0 {
+  sqlite3 db {}
+  db deserialize [decode_hexdb {
+  .open --hexdb
+  | size 4096 pagesize 4096 filename crash-00f2d3627f1b43.db
+  | page 1 offset 0
+  |      0: 53 51 4c 69 74 65 20 66 6f 72 6d 61 74 20 33 00   SQLite format 3.
+  |     16: 00 01 01 02 00 40 20 20 01 00 ff 00 42 01 10 01   .....@  ....B...
+  |     32: ef 00 00 87 00 ff ff ff f0 01 01 10 ff ff 00 00   ................
+  | end crash-00f2d3627f1b43.db
+  .recover
+}]} {}
+
+do_test 4.1 {
+  set R [sqlite3_recover_init db main test.db2]
+  catch { $R run }
+  list [catch { $R finish } msg] $msg
+} {1 {unable to open database file}}
 
 finish_test
 
