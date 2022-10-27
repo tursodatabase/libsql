@@ -1057,7 +1057,17 @@ INCLUDE ../ext/misc/sqlar.c
 INCLUDE ../ext/expert/sqlite3expert.h
 INCLUDE ../ext/expert/sqlite3expert.c
 
-#if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_ENABLE_DBPAGE_VTAB)
+#if !defined(SQLITE_OMIT_VIRTUALTABLE)  \
+  && defined(SQLITE_ENABLE_DBPAGE_VTAB) \
+  && !defined(SQLITE_SHELL_FIDDLE)
+/* Including the recovery API causes the fiddle build to fail because
+** recovery-related code invokes mutex- and UTF16-related APIs which
+** we specifically disable in the wasm builds. */
+#define SQLITE_SHELL_HAVE_RECOVER 1
+#else
+#define SQLITE_SHELL_HAVE_RECOVER 0
+#endif
+#if SQLITE_SHELL_HAVE_RECOVER
 INCLUDE ../ext/recover/dbdata.c
 INCLUDE ../ext/recover/sqlite3recover.h
 INCLUDE ../ext/recover/sqlite3recover.c
@@ -4357,7 +4367,7 @@ static const char *(azHelp[]) = {
   ".connection [close] [#]  Open or close an auxiliary database connection",
   ".databases               List names and files of attached databases",
   ".dbconfig ?op? ?val?     List or change sqlite3_db_config() options",
-#if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_ENABLE_DBPAGE_VTAB)
+#if SQLITE_SHELL_HAVE_RECOVER
   ".dbinfo ?DB?             Show status information about the database",
 #endif
   ".dump ?OBJECTS?          Render database content as SQL",
@@ -4505,7 +4515,7 @@ static const char *(azHelp[]) = {
   ".read FILE               Read input from FILE or command output",
   "    If FILE begins with \"|\", it is a command that generates the input.",
 #endif
-#if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_ENABLE_DBPAGE_VTAB)
+#if SQLITE_SHELL_HAVE_RECOVER
   ".recover                 Recover as much data as possible from corrupt db.",
   "   --freelist-corrupt       Assume the freelist is corrupt",
   "   --recovery-db NAME       Store recovery metadata in database file NAME",
@@ -5120,7 +5130,7 @@ static void open_db(ShellState *p, int openFlags){
     sqlite3_fileio_init(p->db, 0, 0);
     sqlite3_completion_init(p->db, 0, 0);
 #endif
-#if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_ENABLE_DBPAGE_VTAB)
+#if SQLITE_SHELL_HAVE_RECOVER
     sqlite3_dbdata_init(p->db, 0, 0);
 #endif
 #ifdef SQLITE_HAVE_ZLIB
@@ -6005,8 +6015,7 @@ static int shell_dbinfo_command(ShellState *p, int nArg, char **azArg){
   utf8_printf(p->out, "%-20s %u\n", "data version", iDataVersion);
   return 0;
 }
-#endif /* !defined(SQLITE_OMIT_VIRTUALTABLE)
-          && defined(SQLITE_ENABLE_DBPAGE_VTAB) */
+#endif /* SQLITE_SHELL_HAVE_RECOVER */
 
 /*
 ** Print the current sqlite3_errmsg() value to stderr and return 1.
@@ -7279,7 +7288,7 @@ end_ar_command:
 *******************************************************************************/
 #endif /* !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_HAVE_ZLIB) */
 
-#if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_ENABLE_DBPAGE_VTAB)
+#if SQLITE_SHELL_HAVE_RECOVER
 
 /*
 ** This function is used as a callback by the recover extension. Simply
@@ -7349,7 +7358,7 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
   rc = sqlite3_recover_finish(p);
   return rc;
 }
-#endif /* !(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_ENABLE_DBPAGE_VTAB) */
+#endif /* SQLITE_SHELL_HAVE_RECOVER */
 
 
 /*
@@ -7941,7 +7950,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     }   
   }else
 
-#if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_ENABLE_DBPAGE_VTAB)
+#if SQLITE_SHELL_HAVE_RECOVER
   if( c=='d' && n>=3 && cli_strncmp(azArg[0], "dbinfo", n)==0 ){
     rc = shell_dbinfo_command(p, nArg, azArg);
   }else
@@ -7950,7 +7959,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     open_db(p, 0);
     rc = recoverDatabaseCmd(p, nArg, azArg);
   }else
-#endif /* !(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_ENABLE_DBPAGE_VTAB) */
+#endif /* SQLITE_SHELL_HAVE_RECOVER */
 
   if( c=='d' && cli_strncmp(azArg[0], "dump", n)==0 ){
     char *zLike = 0;
