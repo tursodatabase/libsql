@@ -5419,6 +5419,11 @@ case OP_NewRowid: {           /* out2 */
       }
     }
 
+    if ( pOp->p3 == LIBSQL_RANDOM_ROWID_MARKER) {
+      pC->useRandomRowid = 1;
+      pOp->p3 = 0;
+    }
+
 #ifndef SQLITE_OMIT_AUTOINCREMENT
     if( pOp->p3 ){
       /* Assert that P3 is a valid memory cell. */

@@ -2708,6 +2708,15 @@ void sqlite3EndTable(
     p->tabFlags |= TF_WithoutRowid | TF_NoVisibleRowid;
     convertToWithoutRowidTable(pParse, p);
   }
+  if( tabOpts & TF_RandomRowid ){
+    assert( (p->tabFlags & TF_WithoutRowid) == 0 );
+    if( (p->tabFlags & TF_Autoincrement) ){
+      sqlite3ErrorMsg(pParse,
+          "AUTOINCREMENT not allowed on RANDOM ROWID tables");
+      return;
+    }
+    p->tabFlags |= TF_RandomRowid;
+  }
   iDb = sqlite3SchemaToIndex(db, p->pSchema);
 
 #ifndef SQLITE_OMIT_CHECK

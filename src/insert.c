@@ -500,7 +500,7 @@ void sqlite3AutoincrementBegin(Parse *pParse){
 ** memory cell is updated.
 */
 static void autoIncStep(Parse *pParse, int memId, int regRowid){
-  if( memId>0 ){
+  if( memId>0 && memId!=LIBSQL_RANDOM_ROWID_MARKER ){
     sqlite3VdbeAddOp2(pParse->pVdbe, OP_MemMax, memId, regRowid);
   }
 }
@@ -701,7 +701,7 @@ void sqlite3Insert(
 
   /* Register allocations */
   int regFromSelect = 0;/* Base register for data coming from SELECT */
-  int regAutoinc = 0;   /* Register holding the AUTOINCREMENT counter */
+  int regNextRowid = 0; /* Register holding the AUTOINCREMENT counter or sentinel value for RandomRowid */
   int regRowCount = 0;  /* Memory cell used for the row counter */
   int regIns;           /* Block of regs holding rowid+data being inserted */
   int regRowid;         /* registers holding insert rowid */
@@ -815,9 +815,12 @@ void sqlite3Insert(
 #endif /* SQLITE_OMIT_XFER_OPT */
 
   /* If this is an AUTOINCREMENT table, look up the sequence number in the
-  ** sqlite_sequence table and store it in memory cell regAutoinc.
+  ** sqlite_sequence table and store it in memory cell regNextRowid.
   */
-  regAutoinc = autoIncBegin(pParse, iDb, pTab);
+  regNextRowid = autoIncBegin(pParse, iDb, pTab);
+  if (pTab->tabFlags & TF_RandomRowid) {
+    regNextRowid = LIBSQL_RANDOM_ROWID_MARKER;
+  }
 
   /* Allocate a block registers to hold the rowid and the values
   ** for all columns of the new row.
@@ -1274,7 +1277,7 @@ void sqlite3Insert(
       }else{
         Expr *pIpk = pList->a[ipkColumn].pExpr;
         if( pIpk->op==TK_NULL && !IsVirtual(pTab) ){
-          sqlite3VdbeAddOp3(v, OP_NewRowid, iDataCur, regRowid, regAutoinc);
+          sqlite3VdbeAddOp3(v, OP_NewRowid, iDataCur, regRowid, regNextRowid);
           appendFlag = 1;
         }else{
           sqlite3ExprCode(pParse, pList->a[ipkColumn].pExpr, regRowid);
@@ -1287,7 +1290,7 @@ void sqlite3Insert(
         int addr1;
         if( !IsVirtual(pTab) ){
           addr1 = sqlite3VdbeAddOp1(v, OP_NotNull, regRowid); VdbeCoverage(v);
-          sqlite3VdbeAddOp3(v, OP_NewRowid, iDataCur, regRowid, regAutoinc);
+          sqlite3VdbeAddOp3(v, OP_NewRowid, iDataCur, regRowid, regNextRowid);
           sqlite3VdbeJumpHere(v, addr1);
         }else{
           addr1 = sqlite3VdbeCurrentAddr(v);
@@ -1298,10 +1301,10 @@ void sqlite3Insert(
     }else if( IsVirtual(pTab) || withoutRowid ){
       sqlite3VdbeAddOp2(v, OP_Null, 0, regRowid);
     }else{
-      sqlite3VdbeAddOp3(v, OP_NewRowid, iDataCur, regRowid, regAutoinc);
+      sqlite3VdbeAddOp3(v, OP_NewRowid, iDataCur, regRowid, regNextRowid);
       appendFlag = 1;
     }
-    autoIncStep(pParse, regAutoinc, regRowid);
+    autoIncStep(pParse, regNextRowid, regRowid);
 
 #ifndef SQLITE_OMIT_GENERATED_COLUMNS
     /* Compute the new value for generated columns after all other
@@ -2784,7 +2787,7 @@ static int xferOptimization(
   int emptyDestTest = 0;           /* Address of test for empty pDest */
   int emptySrcTest = 0;            /* Address of test for empty pSrc */
   Vdbe *v;                         /* The VDBE we are building */
-  int regAutoinc;                  /* Memory register used by AUTOINC */
+  int regNextRowid;                /* Memory register used by AUTOINC or sentinel value for RandomRowid */
   int destHasUniqueIdx = 0;        /* True if pDest has a UNIQUE index */
   int regData, regRowid;           /* Registers holding data and rowid */
 
@@ -2992,7 +2995,10 @@ static int xferOptimization(
   sqlite3CodeVerifySchema(pParse, iDbSrc);
   iSrc = pParse->nTab++;
   iDest = pParse->nTab++;
-  regAutoinc = autoIncBegin(pParse, iDbDest, pDest);
+  regNextRowid = autoIncBegin(pParse, iDbDest, pDest);
+  if ( (pDest->tabFlags & TF_RandomRowid) ){
+    regNextRowid = LIBSQL_RANDOM_ROWID_MARKER;
+  }
   regData = sqlite3GetTempReg(pParse);
   sqlite3VdbeAddOp2(v, OP_Null, 0, regData);
   regRowid = sqlite3GetTempReg(pParse);
@@ -3037,7 +3043,7 @@ static int xferOptimization(
         sqlite3RowidConstraint(pParse, onError, pDest);
         sqlite3VdbeJumpHere(v, addr2);
       }
-      autoIncStep(pParse, regAutoinc, regRowid);
+      autoIncStep(pParse, regNextRowid, regRowid);
     }else if( pDest->pIndex==0 && !(db->mDbFlags & DBFLAG_VacuumInto) ){
       addr1 = sqlite3VdbeAddOp2(v, OP_NewRowid, iDest, regRowid);
     }else{

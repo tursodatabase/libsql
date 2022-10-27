@@ -2341,6 +2341,10 @@ struct Table {
 #define TF_Ephemeral      0x00004000 /* An ephemeral table */
 #define TF_Eponymous      0x00008000 /* An eponymous virtual table */
 #define TF_Strict         0x00010000 /* STRICT mode */
+/* libSQL extension */
+#define TF_RandomRowid    0x01000000 /* Random rowid */
+
+#define LIBSQL_RANDOM_ROWID_MARKER 0xffffffff
 
 /*
 ** Allowed values for Table.eTabType
