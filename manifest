@@ -1,5 +1,5 @@
-C Re-enable\sthe\s.recovery\sand\s.dbinfo\scommands\sin\sshell.c.in\sin\sthe\sfiddle\sbuild,\sas\sthose\swere\sfixed\sby\s[3d20d77a3511]\sand\s[cd0aa27d1732].
-D 2022-10-27T11:32:20.864
+C The\skvvfs\sVFS\sshould\sremember\sthe\spage\ssize\swhen\swriting\sto\sthe\sdatabase.
+D 2022-10-27T12:46:17.474
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -617,7 +617,7 @@ F src/notify.c 89a97dc854c3aa62ad5f384ef50c5a4a11d70fcc69f86de3e991573421130ed6
 F src/os.c 81c9c1c52eab711e27e33fd51fe5788488d3a02bc1a71439857abbee5d0d2c97
 F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
-F src/os_kv.c c3d991bfb6207560d3416bbf241cade7113e4ce852781c53b7e40a3d6ac25fcb
+F src/os_kv.c f7cf0e1778a6827df864bb3e49bffbc5a2ef71557d65464df033e2ec6d115d6b
 F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d872107
 F src/os_unix.c 287aa5f5691a2b356780c63e83abaa33549add84227b8313395f04088486d79c
 F src/os_win.c 8d129ae3e59e0fa900e20d0ad789e96f2e08177f0b00b53cdda65c40331e0902
@@ -2052,8 +2052,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3d20d77a3511bb223474da8491e1da8aec098c41c1b81ab78ff80fbd37d5b568
-R 8b1c4b146eae8a02f0a8547671d20281
-U stephan
-Z 6ccb2d2f25ac48d59b613698e33377db
+P ba3a7a4a9997f62b78467d78d95fa5b58a03ecb2e2ccb68f4d316fc08fd02f86
+R b33b563552a619b10e13303be4b4d6d1
+U drh
+Z 69a517744f2cbe033f11e6c64dfd41a8
 # Remove this line to create a well-formed Fossil manifest.

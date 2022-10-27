@@ -629,6 +629,8 @@ static int kvvfsWriteDb(
   SQLITE_KV_LOG(("xWrite('%s-db',%d,%lld)\n", pFile->zClass, iAmt, iOfst));
   assert( iAmt>=512 && iAmt<=65536 );
   assert( (iAmt & (iAmt-1))==0 );
+  assert( pFile->szPage<0 || pFile->szPage==iAmt );
+  pFile->szPage = iAmt;
   pgno = 1 + iOfst/iAmt;
   sqlite3_snprintf(sizeof(zKey), zKey, "%u", pgno);
   kvvfsEncode(zBuf, iAmt, aData);
