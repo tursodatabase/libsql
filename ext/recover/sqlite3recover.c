@@ -2261,7 +2261,7 @@ static int recoverVfsDetectPagesize(
         }
       }
     }
-    if( pgsz>p->detected_pgsz ){
+    if( pgsz>(u32)p->detected_pgsz ){
       p->detected_pgsz = pgsz;
       p->nReserve = nReserve;
     }

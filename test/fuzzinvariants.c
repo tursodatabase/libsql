@@ -263,7 +263,7 @@ static char *fuzz_invariant_sql(sqlite3_stmt *pStmt, int iCnt){
   pTest = sqlite3_str_new(0);
   sqlite3_str_appendf(pTest, "SELECT %s* FROM (",  
                       bDistinct ? "DISTINCT " : "");
-  sqlite3_str_append(pTest, zIn, nIn);
+  sqlite3_str_append(pTest, zIn, (int)nIn);
   sqlite3_str_append(pTest, ")", 1);
   rc = sqlite3_prepare_v2(db, sqlite3_str_value(pTest), -1, &pBase, 0);
   if( rc ){

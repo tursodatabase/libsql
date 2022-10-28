@@ -377,7 +377,7 @@ static int vt02Filter(
     pCur->i = 0;
     for(m=1000, i=0; i<=e; i++, m /= 10){
       sqlite3_int64 v;
-      sqlite3_value *pVal = 0;
+      pVal = 0;
       if( sqlite3_vtab_in_first(0, &pVal)!=SQLITE_MISUSE
        || sqlite3_vtab_in_first(argv[iArg], &pVal)!=SQLITE_MISUSE
       ){
@@ -588,7 +588,6 @@ static void sqlite3BestIndexLog(
     char *zSql;
     int iCol = pInfo->aConstraint[i].iColumn;
     int op = pInfo->aConstraint[i].op;
-    int rc;
     const char *zCol;
     if( op==SQLITE_INDEX_CONSTRAINT_LIMIT
      || op==SQLITE_INDEX_CONSTRAINT_OFFSET

@@ -697,9 +697,9 @@ static int dbdataEof(sqlite3_vtab_cursor *pCursor){
 ** otherwise.
 */
 static int dbdataIsFunction(const char *zSchema){
-  int n = strlen(zSchema);
+  size_t n = strlen(zSchema);
   if( n>2 && zSchema[n-2]=='(' && zSchema[n-1]==')' ){
-    return n-2;
+    return (int)n-2;
   }
   return 0;
 }
