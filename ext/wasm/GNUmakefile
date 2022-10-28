@@ -60,6 +60,13 @@ else
   maybe-wasm-strip = $(wasm-strip)
 endif
 
+wasm-opt ?= $(shell which wasm-opt 2>/dev/null)
+ifeq (,$(wasm-opt))
+  maybe-wasm-shrink = echo "not using wasm-opt for post-process optimizing"
+else
+  maybe-wasm-shrink = $(wasm-opt) -Oz
+endif
+
 dir.top := ../..
 # Reminder: some Emscripten flags require absolute paths but we want
 # relative paths for most stuff simply to reduce noise. The
