@@ -153,7 +153,7 @@ impl<'vtab> CreateVTab<'vtab> for VTabLog {
 
 impl<'vtab> UpdateVTab<'vtab> for VTabLog {
     fn delete(&mut self, arg: ValueRef<'_>) -> Result<()> {
-        println!("VTabLog::delete({}, {:?})", self.i_inst, arg);
+        println!("VTabLog::delete({}, {arg:?})", self.i_inst);
         Ok(())
     }
 
@@ -246,7 +246,7 @@ unsafe impl VTabCursor for VTabLogCursor<'_> {
                 self.row_id
             )
         } else {
-            format!("{}{}", i, self.row_id)
+            format!("{i}{}", self.row_id)
         };
         println!(
             "VTabLogCursor::column(tab={}, cursor={}, i={}): {}",

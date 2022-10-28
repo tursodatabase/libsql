@@ -499,7 +499,7 @@ impl IndexInfo {
         if collation.is_null() {
             return Err(Error::SqliteFailure(
                 ffi::Error::new(ffi::SQLITE_MISUSE),
-                Some(format!("{} is out of range", constraint_idx)),
+                Some(format!("{constraint_idx} is out of range")),
             ));
         }
         Ok(unsafe { CStr::from_ptr(collation) }.to_str()?)
@@ -924,7 +924,7 @@ pub fn parameter(c_slice: &[u8]) -> Result<(&str, &str)> {
             return Ok((param, value));
         }
     }
-    Err(Error::ModuleError(format!("illegal argument: '{}'", arg)))
+    Err(Error::ModuleError(format!("illegal argument: '{arg}'")))
 }
 
 // FIXME copy/paste from function.rs
