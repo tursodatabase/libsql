@@ -42,7 +42,6 @@ _sqlite3_file_control
 _sqlite3_finalize
 _sqlite3_free
 _sqlite3_initialize
-_sqlite3_interrupt
 _sqlite3_libversion
 _sqlite3_libversion_number
 _sqlite3_malloc

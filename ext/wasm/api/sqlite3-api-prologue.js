@@ -838,10 +838,10 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     ["sqlite3_finalize", "int", "sqlite3_stmt*"],
     ["sqlite3_free", undefined,"*"],
     ["sqlite3_initialize", undefined],
-    ["sqlite3_interrupt", undefined, "sqlite3*"
-     /* ^^^ we cannot actually currently support this because JS is
+    /*["sqlite3_interrupt", undefined, "sqlite3*"
+       ^^^ we cannot actually currently support this because JS is
         single-threaded and we don't have a portable way to access a DB
-        from 2 SharedWorkers concurrently. */],
+        from 2 SharedWorkers concurrently. ],*/
     ["sqlite3_libversion", "string"],
     ["sqlite3_libversion_number", "int"],
     ["sqlite3_malloc", "*","int"],
