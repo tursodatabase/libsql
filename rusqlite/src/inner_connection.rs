@@ -105,7 +105,7 @@ impl InnerConnection {
                     {
                         e = Error::SqliteFailure(
                             ffi::Error::new(r),
-                            Some(format!("{}: {}", msg, c_path.to_string_lossy())),
+                            Some(format!("{msg}: {}", c_path.to_string_lossy())),
                         );
                     }
                     ffi::sqlite3_close(db);
@@ -325,7 +325,7 @@ impl InnerConnection {
             1 => Ok(true),
             -1 => Err(Error::SqliteFailure(
                 ffi::Error::new(ffi::SQLITE_MISUSE),
-                Some(format!("{:?} is not the name of a database", db_name)),
+                Some(format!("{db_name:?} is not the name of a database")),
             )),
             _ => Err(error_from_sqlite_code(
                 r,
@@ -351,7 +351,7 @@ impl InnerConnection {
             2 => Ok(super::transaction::TransactionState::Write),
             -1 => Err(Error::SqliteFailure(
                 ffi::Error::new(ffi::SQLITE_MISUSE),
-                Some(format!("{:?} is not the name of a valid schema", db_name)),
+                Some(format!("{db_name:?} is not the name of a valid schema")),
             )),
             _ => Err(error_from_sqlite_code(
                 r,
@@ -375,7 +375,7 @@ impl Drop for InnerConnection {
 
         if let Err(e) = self.close() {
             if panicking() {
-                eprintln!("Error while closing SQLite connection: {:?}", e);
+                eprintln!("Error while closing SQLite connection: {e:?}");
             } else {
                 panic!("Error while closing SQLite connection: {:?}", e);
             }
