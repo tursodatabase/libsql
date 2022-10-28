@@ -104,6 +104,10 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         : fI64Disabled(e[0]);
     }
 
+    /* There's no(?) need to expose bindingSignatures to clients,
+       implicitly making it part of the public interface. */
+    delete wasm.bindingSignatures;
+
     if(wasm.exports.sqlite3_wasm_db_error){
       util.sqlite3_wasm_db_error = capi.wasm.xWrap(
         'sqlite3_wasm_db_error', 'int', 'sqlite3*', 'int', 'string'
@@ -115,19 +119,19 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       };
     }
 
-    /**
-       When registering a VFS and its related components it may be
-       necessary to ensure that JS keeps a reference to them to keep
-       them from getting garbage collected. Simply pass each such value
-       to this function and a reference will be held to it for the life
-       of the app.
-    */
-    capi.sqlite3_vfs_register.addReference = function f(...args){
-      if(!f._) f._ = [];
-      f._.push(...args);
-    };
-
   }/*xWrap() bindings*/;
+
+  /**
+     When registering a VFS and its related components it may be
+     necessary to ensure that JS keeps a reference to them to keep
+     them from getting garbage collected. Simply pass each such value
+     to this function and a reference will be held to it for the life
+     of the app.
+  */
+  capi.sqlite3_vfs_register.addReference = function f(...args){
+    if(!f._) f._ = [];
+    f._.push(...args);
+  };
 
   /**
      Internal helper to assist in validating call argument counts in

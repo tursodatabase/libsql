@@ -1042,24 +1042,23 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       //set: wasm.exports.sqlite3_wasm_pstack_restore
     },
     /**
-      Resolves to the total number of bytes available in the pstack,
-      including any space which is currently allocated. This value is
-      a compile-time constant.
+       sqlite3.wasm.pstack.quota to the total number of bytes
+       available in the pstack, including any space which is currently
+       allocated. This value is a compile-time constant.
     */
     quota: {
       configurable: false, iterable: true, writeable: false,
       get: wasm.exports.sqlite3_wasm_pstack_quota
-    }    
+    },
+    /**
+       sqlite3.wasm.pstack.remaining resolves to the amount of space
+       remaining in the pstack.
+    */
+    remaining: {
+      configurable: false, iterable: true, writeable: false,
+      get: wasm.exports.sqlite3_wasm_pstack_remaining
+    }
   })/*wasm.pstack properties*/;
-
-  /**
-     sqlite3.wasm.pstack.remaining resolves to the amount of
-     space remaining in the pstack.
-  */
-  Object.defineProperty(wasm.pstack, 'remaining', {
-    configurable: false, iterable: true, writeable: false,
-    get: wasm.exports.sqlite3_wasm_pstack_remaining
-  });
 
   /**
      An Error subclass specifically for reporting DB-level errors and
