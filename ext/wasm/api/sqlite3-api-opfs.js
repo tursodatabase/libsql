@@ -948,12 +948,12 @@ const installOpfsVfs = function callee(options){
 
     if(sqlite3.oo1){
       opfsUtil.OpfsDb = function(...args){
-        const opt = sqlite3.oo1.dbCtorHelper.normalizeArgs(...args);
+        const opt = sqlite3.oo1.DB.dbCtorHelper.normalizeArgs(...args);
         opt.vfs = opfsVfs.$zName;
-        sqlite3.oo1.dbCtorHelper.call(this, opt);
+        sqlite3.oo1.DB.dbCtorHelper.call(this, opt);
       };
       opfsUtil.OpfsDb.prototype = Object.create(sqlite3.oo1.DB.prototype);
-      sqlite3.oo1.dbCtorHelper.setVfsPostOpenSql(
+      sqlite3.oo1.DB.dbCtorHelper.setVfsPostOpenSql(
         opfsVfs.pointer,
         [
           /* Truncate journal mode is faster than delete or wal for

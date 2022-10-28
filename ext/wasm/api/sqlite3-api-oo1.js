@@ -281,6 +281,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   const DB = function(...args){
     dbCtorHelper.apply(this, args);
   };
+  DB.dbCtorHelper = dbCtorHelper;
 
   /**
      Internal-use enum for mapping JS types to DB-bindable types.
@@ -1656,8 +1657,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       ooApi: "0.1"
     },
     DB,
-    Stmt,
-    dbCtorHelper
+    Stmt
   }/*oo1 object*/;
 
   if(util.isUIThread()){
