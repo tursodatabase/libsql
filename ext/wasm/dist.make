@@ -79,7 +79,8 @@ dist: \
 	@$(bin.stripccomments) -k -k < $(sqlite3.js) \
 		> $(dist-dir.jswasm)/$(notdir $(sqlite3.js))
 	@cp -p $(dist.common.extras) $(dist-dir.common)
-	@vnum=$$($(bin.version-info) --download-version); \
+	@set -e; \
+		vnum=$$($(bin.version-info) --download-version); \
 		vdir=sqlite-wasm-$$vnum; \
 		arczip=$$vdir.zip; \
 		echo "Making $$arczip ..."; \
@@ -88,6 +89,7 @@ dist: \
 		zip -qr $$arczip $$vdir; \
 		rm -fr $$vdir; \
 		ls -la $$arczip; \
+		set +e; \
 		unzip -lv $$arczip || echo "Missing unzip app? Not fatal."
 
 # We need a separate `clean` rule to account for weirdness in

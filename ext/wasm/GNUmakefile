@@ -580,24 +580,35 @@ wasm-testing.exclude = sql/speedtest1.sql
 wasm-testing.dir     = /jail/sites/wasm-testing
 wasm-testing.dest   ?= wasm-testing:$(wasm-testing.dir)
 # ---------------------^^^^^^^^^^^^ ssh alias
-push:
+.PHONY: push-testing
+push-testing:
 	rsync -z -e ssh --ignore-times --chown=stephan:www-data --group -r \
     $(patsubst %,--exclude=%,$(wasm-testing.exclude)) \
     $(wasm-testing.include) $(wasm-testing.dest)
-	ssh wasm-testing 'cd $(wasm-testing.dir) && bash .gzip' || \
-    echo "SSH failed: it's likely that stale content will be served via old gzip files." 
+	@echo "Updating gzipped copies..."; \
+		ssh wasm-testing 'cd $(wasm-testing.dir) && bash .gzip' || \
+    echo "SSH failed: it's likely that stale content will be served via old gzip files."
 
-WDOCS.home := $(wildcard ../../../wdoc)
-ifneq (,$(WDOCS.home))
-WDOCS.jswasm += $(WDOCS.home)/jswasm
-update-docs:
+########################################################################
+# If we find a copy of the sqlite.org/wasm docs checked out, copy
+# certain files over to it, noting that some need automatable edits...
+WDOCS.home ?= ../../../wdoc
+.PHONY: update-docs
+ifneq (,$(wildcard $(WDOCS.home)/api-index.md))
+WDOCS.jswasm := $(WDOCS.home)/jswasm
+update-docs: $(bin.stripccomments) $(sqlite3.js) $(sqlite3.wasm)
+	@echo "Copying files to the /wasm docs. Be sure to use an -Oz build for this!"
 	cp $(sqlite3.wasm) $(WDOCS.jswasm)/.
-	$(bin.stripccomments) -k -k < $(sqlite3.js) > $(WDOCS.jswasm)/sqlite3.js
+	$(bin.stripccomments) -k -k < $(sqlite3.js) \
+		| sed -e '/^[ \t]*$$/d' > $(WDOCS.jswasm)/sqlite3.js
 	cp demo-123.js demo-123.html demo-123-worker.html $(WDOCS.home)
 	sed -n -e '/EXTRACT_BEGIN/,/EXTRACT_END/p' \
 		module-symbols.html > $(WDOCS.home)/module-symbols.html
-
 else
 update-docs:
-  @echo "Cannot find wasm docs checkout."
+	@echo "Cannot find wasm docs checkout."; \
+	echo "Pass WDOCS.home=/path/to/wasm/docs/checkout or edit this makefile to suit."; \
+	exit 127
 endif
+# end /wasm docs
+########################################################################
