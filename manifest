@@ -1,5 +1,5 @@
-C Expand\sand\sdocument\sthe\swasm\sdoc-update\smake\srules.\sExtend\sthe\sdist\srules\sto\sfail\smore\sreadily\sif\sthere's\sa\sproblem.
-D 2022-10-29T09:45:01.066
+C More\sstyling\sof\smodule-symbols.html.
+D 2022-10-29T10:14:56.834
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -535,7 +535,7 @@ F ext/wasm/index-dist.html cb0da16cba0f21cda2c25724c5869102d48eb0af04446acd3cd0c
 F ext/wasm/index.html ce6a68a75532b47e3c0adb83381a06d15de8c0ac0331fb7bf31d33f8e7c77dc4
 F ext/wasm/jaccwabyt/jaccwabyt.js 0d7f32817456a0f3937fcfd934afeb32154ca33580ab264dab6c285e6dbbd215
 F ext/wasm/jaccwabyt/jaccwabyt.md 9aa6951b529a8b29f578ec8f0355713c39584c92cf1708f63ba0cf917cb5b68e
-F ext/wasm/module-symbols.html c473958c921adc4877ccaad94dafb506e807aced1949090180aa31cb29f1b9fc
+F ext/wasm/module-symbols.html ee4061a4a68e789a4a9403bc7e745f027d4789a8577e94f9d9d7a4ab9b616ed8
 F ext/wasm/scratchpad-wasmfs-main.html 20cf6f1a8f368e70d01e8c17200e3eaa90f1c8e1029186d836d14b83845fbe06
 F ext/wasm/scratchpad-wasmfs-main.js 4c140457f4d6da9d646a49addd91edb6e9ad1643c6c48e3258b5bce24725dc18
 F ext/wasm/speedtest1-wasmfs.html bc28eb29b69a73864b8d7aae428448f8b7e1de81d8bfb9bba99541322054dbd0
@@ -2054,8 +2054,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3f16eb18d6186ca972fca952ccac18649e7a905213f589e53c0c9333e695448d
-R 9d0a0a43f67e35a7a9fafd5def96ccb8
+P 362ec11ec09f441b745cbd8ac8366b6bc998aba6e2b70782a88f189a3ffa9923
+R b91e2c9b4a071a7a86b2de4a121116c1
 U stephan
-Z 6030ea3dadf7300cfa17e8c84bb8145d
+Z 1ad6c02cb88f8b4d1e237d5aecb20d32
 # Remove this line to create a well-formed Fossil manifest.
