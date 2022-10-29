@@ -557,110 +557,107 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        values.
      */
     sqlite3_randomness: (n, outPtr)=>{/*installed later*/},
-
-    /**
-       Various internal-use utilities are added here as needed. They
-       are bound to an object only so that we have access to them in
-       the differently-scoped steps of the API bootstrapping
-       process. At the end of the API setup process, this object gets
-       removed. These are NOT part of the public API.
-    */
-    util:{
-      affirmBindableTypedArray, flexibleString,
-      bigIntFits32, bigIntFits64, bigIntFitsDouble,
-      isBindableTypedArray,
-      isInt32, isSQLableTypedArray, isTypedArray, 
-      typedArrayToString,
-      isUIThread: ()=>'undefined'===typeof WorkerGlobalScope,
-      isSharedTypedArray,
-      typedArrayPart
-    },
-    
-    /**
-       Holds state which are specific to the WASM-related
-       infrastructure and glue code. It is not expected that client
-       code will normally need these, but they're exposed here in case
-       it does. These APIs are _not_ to be considered an
-       official/stable part of the sqlite3 WASM API. They may change
-       as the developers' experience suggests appropriate changes.
-
-       Note that a number of members of this object are injected
-       dynamically after the api object is fully constructed, so
-       not all are documented inline here.
-    */
-    wasm: {
-    //^^^ TODO?: move wasm from sqlite3.capi.wasm to sqlite3.wasm
-      /**
-         Emscripten APIs have a deep-seated assumption that all pointers
-         are 32 bits. We'll remain optimistic that that won't always be
-         the case and will use this constant in places where we might
-         otherwise use a hard-coded 4.
-      */
-      ptrSizeof: config.wasmPtrSizeof || 4,
-      /**
-         The WASM IR (Intermediate Representation) value for
-         pointer-type values. It MUST refer to a value type of the
-         size described by this.ptrSizeof _or_ it may be any value
-         which ends in '*', which Emscripten's glue code internally
-         translates to i32.
-      */
-      ptrIR: config.wasmPtrIR || "i32",
-      /**
-         True if BigInt support was enabled via (e.g.) the
-         Emscripten -sWASM_BIGINT flag, else false. When
-         enabled, certain 64-bit sqlite3 APIs are enabled which
-         are not otherwise enabled due to JS/WASM int64
-         impedence mismatches.
-      */
-      bigIntEnabled: !!config.bigIntEnabled,
-      /**
-         The symbols exported by the WASM environment.
-      */
-      exports: config.exports
-        || toss("Missing API config.exports (WASM module exports)."),
-
-      /**
-         When Emscripten compiles with `-sIMPORT_MEMORY`, it
-         initalizes the heap and imports it into wasm, as opposed to
-         the other way around. In this case, the memory is not
-         available via this.exports.memory.
-      */
-      memory: config.memory || config.exports['memory']
-        || toss("API config object requires a WebAssembly.Memory object",
-                "in either config.exports.memory (exported)",
-                "or config.memory (imported)."),
-
-      /**
-         The API's one single point of access to the WASM-side memory
-         allocator. Works like malloc(3) (and is likely bound to
-         malloc()) but throws an WasmAllocError if allocation fails. It is
-         important that any code which might pass through the sqlite3 C
-         API NOT throw and must instead return SQLITE_NOMEM (or
-         equivalent, depending on the context).
-
-         That said, very few cases in the API can result in
-         client-defined functions propagating exceptions via the C-style
-         API. Most notably, this applies ot User-defined SQL Functions
-         (UDFs) registered via sqlite3_create_function_v2(). For that
-         specific case it is recommended that all UDF creation be
-         funneled through a utility function and that a wrapper function
-         be added around the UDF which catches any exception and sets
-         the error state to OOM. (The overall complexity of registering
-         UDFs essentially requires a helper for doing so!)
-      */
-      alloc: undefined/*installed later*/,
-      /**
-         The API's one single point of access to the WASM-side memory
-         deallocator. Works like free(3) (and is likely bound to
-         free()).
-      */
-      dealloc: undefined/*installed later*/
-
-      /* Many more wasm-related APIs get installed later on. */
-    }/*wasm*/
   }/*capi*/;
 
-  const wasm = capi.wasm, util = capi.util;
+  /**
+     Various internal-use utilities are added here as needed. They
+     are bound to an object only so that we have access to them in
+     the differently-scoped steps of the API bootstrapping
+     process. At the end of the API setup process, this object gets
+     removed. These are NOT part of the public API.
+  */
+  const util = {
+    affirmBindableTypedArray, flexibleString,
+    bigIntFits32, bigIntFits64, bigIntFitsDouble,
+    isBindableTypedArray,
+    isInt32, isSQLableTypedArray, isTypedArray, 
+    typedArrayToString,
+    isUIThread: ()=>'undefined'===typeof WorkerGlobalScope,
+    isSharedTypedArray,
+    typedArrayPart
+  };
+    
+  /**
+     Holds state which are specific to the WASM-related
+     infrastructure and glue code. It is not expected that client
+     code will normally need these, but they're exposed here in case
+     it does. These APIs are _not_ to be considered an
+     official/stable part of the sqlite3 WASM API. They may change
+     as the developers' experience suggests appropriate changes.
+
+     Note that a number of members of this object are injected
+     dynamically after the api object is fully constructed, so
+     not all are documented inline here.
+  */
+  const wasm = {
+    /**
+       Emscripten APIs have a deep-seated assumption that all pointers
+       are 32 bits. We'll remain optimistic that that won't always be
+       the case and will use this constant in places where we might
+       otherwise use a hard-coded 4.
+    */
+    ptrSizeof: config.wasmPtrSizeof || 4,
+    /**
+       The WASM IR (Intermediate Representation) value for
+       pointer-type values. It MUST refer to a value type of the
+       size described by this.ptrSizeof _or_ it may be any value
+       which ends in '*', which Emscripten's glue code internally
+       translates to i32.
+    */
+    ptrIR: config.wasmPtrIR || "i32",
+    /**
+       True if BigInt support was enabled via (e.g.) the
+       Emscripten -sWASM_BIGINT flag, else false. When
+       enabled, certain 64-bit sqlite3 APIs are enabled which
+       are not otherwise enabled due to JS/WASM int64
+       impedence mismatches.
+    */
+    bigIntEnabled: !!config.bigIntEnabled,
+    /**
+       The symbols exported by the WASM environment.
+    */
+    exports: config.exports
+      || toss("Missing API config.exports (WASM module exports)."),
+
+    /**
+       When Emscripten compiles with `-sIMPORT_MEMORY`, it
+       initalizes the heap and imports it into wasm, as opposed to
+       the other way around. In this case, the memory is not
+       available via this.exports.memory.
+    */
+    memory: config.memory || config.exports['memory']
+      || toss("API config object requires a WebAssembly.Memory object",
+              "in either config.exports.memory (exported)",
+              "or config.memory (imported)."),
+
+    /**
+       The API's one single point of access to the WASM-side memory
+       allocator. Works like malloc(3) (and is likely bound to
+       malloc()) but throws an WasmAllocError if allocation fails. It is
+       important that any code which might pass through the sqlite3 C
+       API NOT throw and must instead return SQLITE_NOMEM (or
+       equivalent, depending on the context).
+
+       That said, very few cases in the API can result in
+       client-defined functions propagating exceptions via the C-style
+       API. Most notably, this applies ot User-defined SQL Functions
+       (UDFs) registered via sqlite3_create_function_v2(). For that
+       specific case it is recommended that all UDF creation be
+       funneled through a utility function and that a wrapper function
+       be added around the UDF which catches any exception and sets
+       the error state to OOM. (The overall complexity of registering
+       UDFs essentially requires a helper for doing so!)
+    */
+    alloc: undefined/*installed later*/,
+    /**
+       The API's one single point of access to the WASM-side memory
+       deallocator. Works like free(3) (and is likely bound to
+       free()).
+    */
+    dealloc: undefined/*installed later*/
+
+    /* Many more wasm-related APIs get installed later on. */
+  }/*wasm*/;
 
   /**
      wasm.alloc()'s srcTypedArray.byteLength bytes,
@@ -915,7 +912,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   /**
      Functions which are intended solely for API-internal use by the
      WASM components, not client code. These get installed into
-     capi.wasm.
+     sqlite3.wasm.
   */
   wasm.bindingSignatures.wasm = [
     ["sqlite3_wasm_db_reset", "int", "sqlite3*"],
@@ -1127,7 +1124,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       }
       return ta;
     }
-    capi.wasm.exports.sqlite3_randomness(...args);
+    wasm.exports.sqlite3_randomness(...args);
   };
 
   /** State for sqlite3_wasmfs_opfs_dir(). */
@@ -1304,7 +1301,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
           : 0);
   };
   
-  if( capi.util.isUIThread() ){
+  if( util.isUIThread() ){
     /* Features specific to the main window thread... */
 
     /**
@@ -1390,6 +1387,8 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     WasmAllocError: WasmAllocError,
     SQLite3Error: SQLite3Error,
     capi,
+    util,
+    wasm,
     config,
     /**
        Holds the version info of the sqlite3 source tree from which
@@ -1489,7 +1488,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   this array is deleted.
 
   Note that the order of insertion into this array is significant for
-  some pieces. e.g. sqlite3.capi and sqlite3.capi.wasm cannot be fully
+  some pieces. e.g. sqlite3.capi and sqlite3.wasm cannot be fully
   utilized until the whwasmutil.js part is plugged in via
   sqlite3-api-glue.js.
 */

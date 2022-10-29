@@ -18,7 +18,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   const toss = (...args)=>{throw new Error(args.join(' '))};
   const toss3 = (...args)=>{throw new sqlite3.SQLite3Error(...args)};
 
-  const capi = sqlite3.capi, wasm = capi.wasm, util = capi.util;
+  const capi = sqlite3.capi, wasm = sqlite3.wasm, util = sqlite3.util;
   /* What follows is colloquially known as "OO API #1". It is a
      binding of the sqlite3 API which is designed to be run within
      the same thread (main or worker) as the one in which the
@@ -694,7 +694,6 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     */
     exec: function(/*(sql [,obj]) || (obj)*/){
       affirmDbOpen(this);
-      const wasm = capi.wasm;
       const arg = parseExecArgs(arguments);
       if(!arg.sql){
         return (''===arg.sql) ? this : toss3("exec() requires an SQL string.");
@@ -925,7 +924,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       const pApp = opt.pApp;
       if(undefined!==pApp &&
          null!==pApp &&
-         (('number'!==typeof pApp) || !capi.util.isInt32(pApp))){
+         (('number'!==typeof pApp) || !util.isInt32(pApp))){
         toss3("Invalid value for pApp property. Must be a legal WASM pointer value.");
       }
       const xDestroy = opt.xDestroy || 0;

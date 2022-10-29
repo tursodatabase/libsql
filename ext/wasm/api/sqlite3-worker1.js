@@ -30,8 +30,6 @@
 
   - `sqlite3.dir`, if set, treats the given directory name as the
     directory from which `sqlite3.js` will be loaded.
-
-  By default is loads 'sqlite3.js'.
 */
 "use strict";
 (()=>{
@@ -43,7 +41,9 @@
   //console.warn("worker1 theJs =",theJs);
   importScripts(theJs);
   sqlite3InitModule().then((sqlite3)=>{
-    sqlite3.capi.sqlite3_wasmfs_opfs_dir();
+    if(sqlite3.capi.sqlite3_wasmfs_opfs_dir){
+      sqlite3.capi.sqlite3_wasmfs_opfs_dir();
+    }
     sqlite3.initWorker1API();
   });
 })();

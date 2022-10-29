@@ -86,11 +86,11 @@
   self.sqlite3InitModule(EmscriptenModule).then((sqlite3)=>{
     const S = sqlite3;
     App.vfsUnlink = function(pDb, fname){
-      const pVfs = S.capi.wasm.sqlite3_wasm_db_vfs(pDb, 0);
-      if(pVfs) S.capi.wasm.sqlite3_wasm_vfs_unlink(pVfs, fname||0);
+      const pVfs = S.wasm.sqlite3_wasm_db_vfs(pDb, 0);
+      if(pVfs) S.wasm.sqlite3_wasm_vfs_unlink(pVfs, fname||0);
     };
     App.pDir = wasmfsDir(S.wasm);
-    App.wasm = S.capi.wasm;
+    App.wasm = S.wasm;
     //if(App.pDir) log("Persistent storage:",pDir);
     //else log("Using transient storage.");
     mPost('ready',true);

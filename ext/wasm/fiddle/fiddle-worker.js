@@ -122,11 +122,11 @@
   const Sqlite3Shell = {
     /** Returns the name of the currently-opened db. */
     dbFilename: function f(){
-      if(!f._) f._ = sqlite3.capi.wasm.xWrap('fiddle_db_filename', "string", ['string']);
+      if(!f._) f._ = sqlite3.wasm.xWrap('fiddle_db_filename', "string", ['string']);
       return f._(0);
     },
     dbHandle: function f(){
-      if(!f._) f._ = sqlite3.capi.wasm.xWrap("fiddle_db_handle", "sqlite3*");
+      if(!f._) f._ = sqlite3.wasm.xWrap("fiddle_db_handle", "sqlite3*");
       return f._();
     },
     dbIsOpfs: function f(){
@@ -145,7 +145,7 @@
            that any argv strings passed to its main() are valid until
            the wasm environment shuts down. */
       ];
-      const capi = sqlite3.capi;
+      const capi = sqlite3.capi, wasm = sqlite3.wasm;
       /* We need to call sqlite3_shutdown() in order to avoid numerous
          legitimate warnings from the shell about it being initialized
          after sqlite3_initialize() has been called. This means,
@@ -154,8 +154,8 @@
          VFSes). We need a more generic approach to running such
          init-level code. */
       capi.sqlite3_shutdown();
-      f.argv.pArgv = capi.wasm.allocMainArgv(f.argv);
-      f.argv.rc = capi.wasm.exports.fiddle_main(
+      f.argv.pArgv = wasm.allocMainArgv(f.argv);
+      f.argv.rc = wasm.exports.fiddle_main(
         f.argv.length, f.argv.pArgv
       );
       if(f.argv.rc){
@@ -187,7 +187,7 @@
     exec: function f(sql){
       if(!f._){
         if(!this.runMain()) return;
-        f._ = sqlite3.capi.wasm.xWrap('fiddle_exec', null, ['string']);
+        f._ = sqlite3.wasm.xWrap('fiddle_exec', null, ['string']);
       }
       if(fiddleModule.isDead){
         stderr("shell module has exit()ed. Cannot run SQL.");
@@ -208,7 +208,7 @@
       }
     },
     resetDb: function f(){
-      if(!f._) f._ = sqlite3.capi.wasm.xWrap('fiddle_reset_db', null);
+      if(!f._) f._ = sqlite3.wasm.xWrap('fiddle_reset_db', null);
       stdout("Resetting database.");
       f._();
       stdout("Reset",this.dbFilename());
@@ -216,7 +216,7 @@
     /* Interrupt can't work: this Worker is tied up working, so won't get the
        interrupt event which would be needed to perform the interrupt. */
     interrupt: function f(){
-      if(!f._) f._ = sqlite3.capi.wasm.xWrap('fiddle_interrupt', null);
+      if(!f._) f._ = sqlite3.wasm.xWrap('fiddle_interrupt', null);
       stdout("Requesting interrupt.");
       f._();
     }
@@ -370,9 +370,9 @@
   */
   sqlite3InitModule(fiddleModule).then((_sqlite3)=>{
     sqlite3 = _sqlite3;
-    const dbVfs = sqlite3.capi.wasm.xWrap('fiddle_db_vfs', "*", ['string']);
+    const dbVfs = sqlite3.wasm.xWrap('fiddle_db_vfs', "*", ['string']);
     fiddleModule.fsUnlink = (fn)=>{
-      return sqlite3.capi.wasm.sqlite3_wasm_vfs_unlink(dbVfs(0), fn);
+      return sqlite3.wasm.sqlite3_wasm_vfs_unlink(dbVfs(0), fn);
     };
     wMsg('fiddle-ready');
   })/*then()*/;

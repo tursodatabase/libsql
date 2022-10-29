@@ -367,11 +367,11 @@ sqlite3.initWorker1API = function(){
       if(db){
         delete this.dbs[getDbId(db)];
         const filename = db.filename;
-        const pVfs = sqlite3.capi.wasm.sqlite3_wasm_db_vfs(db.pointer, 0);
+        const pVfs = sqlite3.wasm.sqlite3_wasm_db_vfs(db.pointer, 0);
         db.close();
         if(db===this.defaultDb) this.defaultDb = undefined;
         if(alsoUnlink && filename && pVfs){
-          sqlite3.capi.wasm.sqlite3_wasm_vfs_unlink(pVfs, filename);
+          sqlite3.wasm.sqlite3_wasm_vfs_unlink(pVfs, filename);
         }
       }
     },

@@ -586,3 +586,18 @@ push:
     $(wasm-testing.include) $(wasm-testing.dest)
 	ssh wasm-testing 'cd $(wasm-testing.dir) && bash .gzip' || \
     echo "SSH failed: it's likely that stale content will be served via old gzip files." 
+
+WDOCS.home := $(wildcard ../../../wdoc)
+ifneq (,$(WDOCS.home))
+WDOCS.jswasm += $(WDOCS.home)/jswasm
+update-docs:
+	cp $(sqlite3.wasm) $(WDOCS.jswasm)/.
+	$(bin.stripccomments) -k -k < $(sqlite3.js) > $(WDOCS.jswasm)/sqlite3.js
+	cp demo-123.js demo-123.html demo-123-worker.html $(WDOCS.home)
+	sed -n -e '/EXTRACT_BEGIN/,/EXTRACT_END/p' \
+		module-symbols.html > $(WDOCS.home)/module-symbols.html
+
+else
+update-docs:
+  @echo "Cannot find wasm docs checkout."
+endif

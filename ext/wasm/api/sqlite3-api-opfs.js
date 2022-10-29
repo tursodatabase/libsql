@@ -118,7 +118,7 @@ const installOpfsVfs = function callee(options){
     const error =  (...args)=>logImpl(0, ...args);
     const toss = function(...args){throw new Error(args.join(' '))};
     const capi = sqlite3.capi;
-    const wasm = capi.wasm;
+    const wasm = sqlite3.wasm;
     const sqlite3_vfs = capi.sqlite3_vfs;
     const sqlite3_file = capi.sqlite3_file;
     const sqlite3_io_methods = capi.sqlite3_io_methods;
@@ -924,7 +924,7 @@ const installOpfsVfs = function callee(options){
        cannot add an after-initialize callback mechanism.
     */
     opfsUtil.registerVfs = (asDefault=false)=>{
-      return capi.wasm.exports.sqlite3_vfs_register(
+      return wasm.exports.sqlite3_vfs_register(
         opfsVfs.pointer, asDefault ? 1 : 0
       );
     };

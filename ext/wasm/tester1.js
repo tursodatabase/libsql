@@ -44,7 +44,7 @@
   /* Predicate for tests/groups. */
   const testIsTodo = ()=>false;
   const haveWasmCTests = ()=>{
-    return !!wasm.exports.sqlite3_wasm_test_int64_max;
+    return !!wasm.exports.sqlite3_wasm_test_intptr;
   };
   {
     const mapToString = (v)=>{
@@ -358,7 +358,7 @@
 
   ////////////////////////////////////////////////////////////////////
   T.g('C/WASM Utilities')
-    .t('sqlite3.capi.wasm', function(sqlite3){
+    .t('sqlite3.wasm namespace', function(sqlite3){
       const w = wasm;
       const chr = (x)=>x.charCodeAt(0);
       //log("heap getters...");
@@ -587,7 +587,7 @@
 
   ////////////////////////////////////////////////////////////////////
     .t('sqlite3.StructBinder (jaccwabyt)', function(sqlite3){
-      const S = sqlite3, W = S.capi.wasm;
+      const S = sqlite3, W = S.wasm;
       const MyStructDef = {
         sizeof: 16,
         members: {
@@ -766,7 +766,6 @@
     .t('sqlite3.StructBinder part 2', function(sqlite3){
       // https://www.sqlite.org/c3ref/vfs.html
       // https://www.sqlite.org/c3ref/io_methods.html
-      const W = wasm;
       const sqlite3_io_methods = capi.sqlite3_io_methods,
             sqlite3_vfs = capi.sqlite3_vfs,
             sqlite3_file = capi.sqlite3_file;
@@ -792,7 +791,7 @@
               this.__ondispose.forEach(
                 (v)=>{
                   if('number'===typeof v){
-                    try{capi.wasm.uninstallFunction(v)}
+                    try{wasm.uninstallFunction(v)}
                     catch(e){/*ignore*/}
                   }else{/*wasm function wrapper property*/
                     delete who[v];
@@ -812,7 +811,7 @@
           tgt.__ondispose = [];
         }
         const fProxy = callee.argcProxy(func, sigN);
-        const pFunc = capi.wasm.installFunction(fProxy, tgt.memberSignature(name, true));
+        const pFunc = wasm.installFunction(fProxy, tgt.memberSignature(name, true));
         tgt[memKey] = pFunc;
         /**
            ACHTUNG: function pointer IDs are from a different pool than
@@ -868,7 +867,7 @@
               /* int (*xRead)(sqlite3_file*, void*, int iAmt, sqlite3_int64 iOfst) */
               log("xRead(",arguments,")");
               if(!(f = instm._requireFileArg(f))) return capi.SQLITE_MISUSE;
-              capi.wasm.heap8().fill(0, dest + offset, n);
+              wasm.heap8().fill(0, dest + offset, n);
               return 0;
             },
             xWrite: /*i(Ppij)*/function(f,dest,n,offset){
@@ -893,7 +892,7 @@
               /* int (*xFileSize)(sqlite3_file*, sqlite3_int64 *pSize) */
               log("xFileSize(",arguments,")");
               if(!(f=instm._requireFileArg(f,'xFileSize'))) return capi.SQLITE_MISUSE;
-              capi.wasm.setMemValue(pSz, 0/*file size*/);
+              wasm.setMemValue(pSz, 0/*file size*/);
               return 0;
             },
             xLock: /*i(Pi)*/function(f){
@@ -973,7 +972,7 @@
           .assert(dVfs.$iVersion>0)
           .assert('number'===typeof dVfs.$zName)
           .assert('number'===typeof dVfs.$xSleep)
-          .assert(capi.wasm.functionEntry(dVfs.$xOpen))
+          .assert(wasm.functionEntry(dVfs.$xOpen))
           .assert(dVfs.memberIsString('zName'))
           .assert(dVfs.memberIsString('$zName'))
           .assert(!dVfs.memberIsString('pAppData'))
@@ -999,7 +998,7 @@
             }
             //log(prefix, sep, val);
           }else{
-            //log(prefix," = funcptr @",addr, capi.wasm.functionEntry(addr));
+            //log(prefix," = funcptr @",addr, wasm.functionEntry(addr));
           }
         });
       }finally{
@@ -1009,8 +1008,8 @@
     }/*StructBinder part 2*/)
   
   ////////////////////////////////////////////////////////////////////
-    .t('sqlite3.capi.wasm.pstack', function(sqlite3){
-      const w = sqlite3.capi.wasm, P = w.pstack;
+    .t('sqlite3.wasm.pstack', function(sqlite3){
+      const P = wasm.pstack;
       const isAllocErr = (e)=>e instanceof sqlite3.WasmAllocError;
       const stack = P.pointer;
       T.assert(0===stack % 8 /* must be 8-byte aligned */);
@@ -1116,7 +1115,7 @@
   T.g('sqlite3.oo1')
     .t('Create db', function(sqlite3){
       const dbFile = '/tester1.db';
-      sqlite3.capi.wasm.sqlite3_wasm_vfs_unlink(0, dbFile);
+      wasm.sqlite3_wasm_vfs_unlink(0, dbFile);
       const db = this.db = new sqlite3.oo1.DB(dbFile);
       T.assert(Number.isInteger(db.pointer)).
         mustThrowMatching(()=>db.pointer=1, /read-only/).
@@ -1233,7 +1232,7 @@
       T.assert(2 === list.length)
         .assert('string'===typeof list[1])
         .assert(4===db.changes());
-      if(capi.wasm.bigIntEnabled){
+      if(wasm.bigIntEnabled){
         T.assert(4n===db.changes(false,true));
       }
       let blob = db.selectValue("select b from t where a='blob'");
@@ -1270,8 +1269,8 @@
                db.selectValue("SELECT "+Number.MIN_SAFE_INTEGER)).
         assert(Number.MAX_SAFE_INTEGER ===
                db.selectValue("SELECT "+Number.MAX_SAFE_INTEGER));
-      if(capi.wasm.bigIntEnabled && haveWasmCTests()){
-        const mI = capi.wasm.xCall('sqlite3_wasm_test_int64_max');
+      if(wasm.bigIntEnabled && haveWasmCTests()){
+        const mI = wasm.xCall('sqlite3_wasm_test_int64_max');
         const b = BigInt(Number.MAX_SAFE_INTEGER * 2);
         T.assert(b === db.selectValue("SELECT "+b)).
           assert(b === db.selectValue("SELECT ?", b)).
@@ -1742,7 +1741,7 @@
     //console.log('sqlite3 =',sqlite3);
     log("Done initializing WASM/JS bits. Running tests...");
     capi = sqlite3.capi;
-    wasm = capi.wasm;
+    wasm = sqlite3.wasm;
     log("sqlite3 version:",capi.sqlite3_libversion(),
         capi.sqlite3_sourceid());
     if(wasm.bigIntEnabled){
