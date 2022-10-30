@@ -1,5 +1,5 @@
-C Update\sext/wasm/README.md\sfor\srecent\sdevelopments.
-D 2022-10-29T12:31:50.367
+C Minor\supdates\sto\sthe\sWindows\sbatch\stools.
+D 2022-10-30T07:01:31.341
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1950,9 +1950,9 @@ F test/zipfile.test 0d8758d8c0d63f16644f959689f78969d223789d998964276554039f067b
 F test/zipfile2.test 9903388a602a3834189857a985106ff95c3bba6a3969e0134127df991889db5d
 F test/zipfilefault.test 44d4d7a7f7cca7521d569d7f71026b241d65a6b1757aa409c1a168827edbbc2c
 F tool/GetFile.cs 47852aa0d806fe47ed1ac5138bdce7f000fe87aaa7f28107d0cb1e26682aeb44
-F tool/GetTclKit.bat e95747c0f7a9fe279a9979178b71f6431a21f945b390fc3120244897ff3f5135
+F tool/GetTclKit.bat d84033c6a93dfe735d247f48ba00292a1cc284dcf69963e5e672444e04534bbf
 F tool/Replace.cs 02c67258801c2fb5f63231e0ac0f220b4b36ba91
-F tool/build-all-msvc.bat c12328d06c45fec8baada5949e3d5af54bf8c887 x
+F tool/build-all-msvc.bat c817b716e0edeecaf265a6775b63e5f45c34a6544f1d4114a222701ed5ac79ab x
 F tool/build-shell.sh 950f47c6174f1eea171319438b93ba67ff5bf367
 F tool/cg_anno.tcl c1f875f5a4c9caca3d59937b16aff716f8b1883935f1b4c9ae23124705bc8099 x
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
@@ -2054,8 +2054,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a36f42a8364b745c410a6f837d005a193f6a93134cac087ac18bee2897cad730
-R 7905691af970d052de1153df66321807
-U stephan
-Z f92abe7cb111b048f2eaf4abd561cacb
+P c76ec31ebf4d80ec8cbd2aa2017e1d6bc32eae66bfbcc130c053ddb403599c6b
+R 363016fa4e28705ed2554d72d33a3740
+U mistachkin
+Z e1214828164be445021f6f541770bc23
 # Remove this line to create a well-formed Fossil manifest.
