@@ -131,6 +131,9 @@ typedef struct libsql_wal_methods {
 
   void (*xDb)(Wal *pWal, sqlite3 *db);
 
+  /* True if the implementation relies on shared memory routines (e.g. locks) */
+  int bUsesShm;
+
   const char *zName;
   struct libsql_wal_methods *pNext;
 } libsql_wal_methods;

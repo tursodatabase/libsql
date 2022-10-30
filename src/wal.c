@@ -4129,6 +4129,7 @@ libsql_wal_methods *libsql_wal_methods_find(const char *zName) {
 #endif
     methods.xDb = sqlite3WalDb;
 
+    methods.bUsesShm = 1;
     methods.zName = "default";
     methods.pNext = NULL;
     methods_head = &methods;
