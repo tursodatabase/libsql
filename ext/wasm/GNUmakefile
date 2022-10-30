@@ -106,7 +106,7 @@ endif
 
 cflags.common :=  -I. -I.. -I$(dir.top)
 CLEAN_FILES += *~ $(dir.jacc)/*~ $(dir.api)/*~ $(dir.common)/*~
-emcc_enable_bigint ?= 1
+emcc.WASM_BIGINT ?= 1
 sqlite3.c := $(dir.top)/sqlite3.c
 sqlite3.h := $(dir.top)/sqlite3.h
 SQLITE_OPT = \
@@ -295,7 +295,11 @@ define call-make-pre-js
 pre-post-$(1).flags ?=
 $$(dir.tmp)/pre-js-$(1).js: $$(pre-js.js) $$(MAKEFILE)
 	cp $$(pre-js.js) $$@
-	echo "Module[xInstantiateWasm].uri = '$(1).wasm';" >> $$@
+	@if [ sqlite3-wasmfs = $(1) ]; then \
+		echo "delete Module[xNameOfInstantiateWasm] /*for WASMFS build*/;"; \
+	elif [ sqlite3 != $(1) ]; then \
+		echo "Module[xNameOfInstantiateWasm].uri = '$(1).wasm';"; \
+	fi >> $$@
 pre-post-$(1).deps := $$(pre-post-jses.deps) $$(dir.tmp)/pre-js-$(1).js
 pre-post-$(1).flags += --pre-js=$$(dir.tmp)/pre-js-$(1).js
 endef
@@ -388,14 +392,16 @@ emcc.jsflags += -sLLD_REPORT_UNDEFINED
 #emcc.jsflags += --unresolved-symbols=import-dynamic --experimental-pic
 #emcc.jsflags += --experimental-pic --unresolved-symbols=ingore-all --import-undefined
 #emcc.jsflags += --unresolved-symbols=ignore-all
-emcc.jsflags += -sWASM_BIGINT=$(emcc_enable_bigint)
-# ^^^^ MEMORY64=1 fails to load, erroring with:
+emcc.jsflags += -sWASM_BIGINT=$(emcc.WASM_BIGINT)
+
+########################################################################
+# -sMEMORY64=1 fails to load, erroring with:
 #  invalid memory limits flags 0x5
 #    (enable via --experimental-wasm-memory64)
 #
 # ^^^^ MEMORY64=2 builds and loads but dies when we do things like:
 #
-#  new Uint8Array(heapWrappers().HEAP8U.buffer, ptr, n)
+#  new Uint8Array(wasm.heap8u().buffer, ptr, n)
 #
 # because ptr is now a BigInt, so is invalid for passing to arguments
 # which have strict must-be-a-Number requirements.
@@ -405,10 +411,10 @@ emcc.jsflags += -sWASM_BIGINT=$(emcc_enable_bigint)
 ########################################################################
 # -sSINGLE_FILE:
 # https://github.com/emscripten-core/emscripten/blob/main/src/settings.js#L1704
-# -sSINGLE_FILE=1 would be really nice but we have to build with -g
+# -sSINGLE_FILE=1 would be really nice but we have to build with -g3
 # for -O2 and higher to work (else minification breaks the code) and
 # cannot wasm-strip the binary before it gets encoded into the JS
-# file. The result is that the generated JS file is, because of the -g
+# file. The result is that the generated JS file is, because of the -g3
 # debugging info, _huge_.
 ########################################################################
 
@@ -468,11 +474,12 @@ all: batch
 speedtest1-common.eflags := $(emcc_opt_full)
 speedtest1.eflags :=
 speedtest1.eflags += -sENVIRONMENT=web
+speedtest1.eflags += -sALLOW_MEMORY_GROWTH
+speedtest1.eflags += -sINITIAL_MEMORY=$(emcc.INITIAL_MEMORY.$(emcc.INITIAL_MEMORY))
 speedtest1-common.eflags += -sINVOKE_RUN=0
 speedtest1-common.eflags += --no-entry
 #speedtest1-common.eflags += -flto
 speedtest1-common.eflags += -sABORTING_MALLOC
-speedtest1-common.eflags += -sINITIAL_MEMORY=128450560
 speedtest1-common.eflags += -sSTRICT_JS
 speedtest1-common.eflags += -sMODULARIZE
 speedtest1-common.eflags += -Wno-limited-postlink-optimizations
@@ -483,7 +490,7 @@ speedtest1-common.eflags += -sALLOW_TABLE_GROWTH
 speedtest1-common.eflags += -sDYNAMIC_EXECUTION=0
 speedtest1-common.eflags += --minify 0
 speedtest1-common.eflags += -sEXPORT_NAME=$(sqlite3.js.init-func)
-speedtest1-common.eflags += -sWASM_BIGINT=$(emcc_enable_bigint)
+speedtest1-common.eflags += -sWASM_BIGINT=$(emcc.WASM_BIGINT)
 speedtest1-common.eflags += $(pre-post-common.flags) 
 speedtest1.exit-runtime0 := -sEXIT_RUNTIME=0
 speedtest1.exit-runtime1 := -sEXIT_RUNTIME=1

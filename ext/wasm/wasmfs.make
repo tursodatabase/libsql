@@ -11,7 +11,8 @@ MAKEFILE.wasmfs := $(lastword $(MAKEFILE_LIST))
 # subdirectory because loading of the auxiliary
 # sqlite3-wasmfs.worker.js file it creates fails if sqlite3-wasmfs.js
 # is loaded from any directory other than the one in which the
-# containing HTML lives.
+# containing HTML lives. Similarly, they cannot be loaded from a
+# Worker to an Emscripten quirk regarding loading nested Workers.
 dir.wasmfs := $(dir.wasm)
 sqlite3-wasmfs.js     := $(dir.wasmfs)/sqlite3-wasmfs.js
 sqlite3-wasmfs.wasm   := $(dir.wasmfs)/sqlite3-wasmfs.wasm
@@ -65,7 +66,7 @@ sqlite3-wasmfs.jsflags += $(sqlite3-wasmfs.fsflags)
 #^^^ using ALLOW_MEMORY_GROWTH produces a warning from emcc:
 #   USE_PTHREADS + ALLOW_MEMORY_GROWTH may run non-wasm code slowly,
 #   see https://github.com/WebAssembly/design/issues/1271 [-Wpthreads-mem-growth]
-sqlite3-wasmfs.jsflags += -sWASM_BIGINT=$(emcc_enable_bigint)
+sqlite3-wasmfs.jsflags += -sWASM_BIGINT=$(emcc.WASM_BIGINT)
 $(eval $(call call-make-pre-js,sqlite3-wasmfs))
 sqlite3-wasmfs.jsflags += $(pre-post-common.flags) $(pre-post-sqlite3-wasmfs.flags)
 $(sqlite3-wasmfs.js): $(sqlite3-wasm.c) \
@@ -83,13 +84,13 @@ wasmfs: $(sqlite3-wasmfs.js)
 all: wasmfs
 
 ########################################################################
-# speedtest1 for wasmfs. Re. sqlite3-wasm.o vs sqlite3-wasm.c:
-# building against the latter (predictably) results in a slightly
-# faster binary.
+# speedtest1 for wasmfs.
 speedtest1-wasmfs.js := $(dir.wasmfs)/speedtest1-wasmfs.js
 speedtest1-wasmfs.wasm := $(subst .js,.wasm,$(speedtest1-wasmfs.js))
 speedtest1-wasmfs.eflags := $(sqlite3-wasmfs.fsflags)
 speedtest1-wasmfs.eflags += $(SQLITE_OPT) -DSQLITE_WASM_WASMFS
+speedtest1-wasmfs.eflags += -sALLOW_MEMORY_GROWTH=0
+speedtest1-wasmfs.eflags += -sINITIAL_MEMORY=$(emcc.INITIAL_MEMORY.128)
 $(eval $(call call-make-pre-js,speedtest1-wasmfs))
 $(speedtest1-wasmfs.js): $(speedtest1.cses) $(sqlite3-wasmfs.js) \
   $(MAKEFILE) $(MAKEFILE.wasmfs) \

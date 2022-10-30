@@ -36,6 +36,11 @@
     location: self.location,
     urlParams: new URL(self.location.href).searchParams
   });
+  initModuleState.debugModule =
+    (new URL(self.location.href).searchParams).has('sqlite3.debugModule')
+    ? (...args)=>console.warn('sqlite3.debugModule:',...args)
+    : ()=>{};
+
   if(initModuleState.urlParams.has('sqlite3.dir')){
     initModuleState.sqlite3Dir = initModuleState.urlParams.get('sqlite3.dir') +'/';
   }else if(initModuleState.moduleScript){
@@ -43,7 +48,6 @@
     li.pop();
     initModuleState.sqlite3Dir = li.join('/') + '/';
   }
-  //console.warn("initModuleState =",initModuleState);
 
   self.sqlite3InitModule = (...args)=>{
     //console.warn("Using replaced sqlite3InitModule()",self.location);
@@ -79,6 +83,7 @@
     src.pop();
     sim.scriptDir = src.join('/') + '/';
   }
+  initModuleState.debugModule('sqlite3InitModuleState =',initModuleState);
   if(0){
     console.warn("Replaced sqlite3InitModule()");
     console.warn("self.location.href =",self.location.href);

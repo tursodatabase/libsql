@@ -33,7 +33,7 @@ fiddle.emcc-flags = \
   -sENVIRONMENT=web,worker \
   -sMODULARIZE \
   -sDYNAMIC_EXECUTION=0 \
-  -sWASM_BIGINT=$(emcc_enable_bigint) \
+  -sWASM_BIGINT=$(emcc.WASM_BIGINT) \
   -sEXPORT_NAME=$(sqlite3.js.init-func) \
   -Wno-limited-postlink-optimizations \
   $(sqlite3.js.flags.--post-js) \

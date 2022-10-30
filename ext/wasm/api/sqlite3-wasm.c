@@ -1028,7 +1028,7 @@ int sqlite3_wasm_init_wasmfs(const char *zMountPoint){
 #else
 SQLITE_WASM_KEEP
 int sqlite3_wasm_init_wasmfs(const char *zUnused){
-  emscripten_console_warn("WASMFS OPFS is not compiled in.");
+  //emscripten_console_warn("WASMFS OPFS is not compiled in.");
   if(zUnused){/*unused*/}
   return SQLITE_NOTFOUND;
 }
