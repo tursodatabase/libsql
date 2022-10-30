@@ -1616,7 +1616,7 @@ mod test {
         db.execute_batch("CREATE TABLE foo(x INTEGER);")?;
 
         let err = db.prepare("SELECT * FROM does_not_exist").unwrap_err();
-        assert!(format!("{}", err).contains("does_not_exist"));
+        assert!(format!("{err}").contains("does_not_exist"));
         Ok(())
     }
 
@@ -1669,7 +1669,7 @@ mod test {
         let query = "SELECT 12345";
         let stmt = db.prepare(query)?;
 
-        assert!(format!("{:?}", stmt).contains(query));
+        assert!(format!("{stmt:?}").contains(query));
         Ok(())
     }
 
@@ -1703,7 +1703,7 @@ mod test {
         let minor = (n % 1_000_000) / 1_000;
         let patch = n % 1_000;
 
-        assert!(version().contains(&format!("{}.{}.{}", major, minor, patch)));
+        assert!(version().contains(&format!("{major}.{minor}.{patch}")));
     }
 
     #[test]
@@ -1810,7 +1810,7 @@ mod test {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
                 match *self {
                     CustomError::SomeError => write!(f, "my custom error"),
-                    CustomError::Sqlite(ref se) => write!(f, "my custom error: {}", se),
+                    CustomError::Sqlite(ref se) => write!(f, "my custom error: {se}"),
                 }
             }
         }

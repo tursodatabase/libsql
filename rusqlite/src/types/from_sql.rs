@@ -52,7 +52,7 @@ impl fmt::Display for FromSqlError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
             FromSqlError::InvalidType => write!(f, "Invalid type"),
-            FromSqlError::OutOfRange(i) => write!(f, "Value {} out of range", i),
+            FromSqlError::OutOfRange(i) => write!(f, "Value {i} out of range"),
             FromSqlError::InvalidBlobSize {
                 expected_size,
                 blob_size,

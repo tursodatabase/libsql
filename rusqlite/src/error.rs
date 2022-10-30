@@ -245,7 +245,7 @@ impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
             Error::SqliteFailure(ref err, None) => err.fmt(f),
-            Error::SqliteFailure(_, Some(ref s)) => write!(f, "{}", s),
+            Error::SqliteFailure(_, Some(ref s)) => write!(f, "{s}"),
             Error::SqliteSingleThreadedMode => write!(
                 f,
                 "SQLite was compiled or configured for single-threaded use only"
@@ -263,21 +263,21 @@ impl fmt::Display for Error {
             }
             Error::IntegralValueOutOfRange(col, val) => {
                 if col != UNKNOWN_COLUMN {
-                    write!(f, "Integer {} out of range at index {}", val, col)
+                    write!(f, "Integer {val} out of range at index {col}")
                 } else {
-                    write!(f, "Integer {} out of range", val)
+                    write!(f, "Integer {val} out of range")
                 }
             }
             Error::Utf8Error(ref err) => err.fmt(f),
             Error::NulError(ref err) => err.fmt(f),
-            Error::InvalidParameterName(ref name) => write!(f, "Invalid parameter name: {}", name),
+            Error::InvalidParameterName(ref name) => write!(f, "Invalid parameter name: {name}"),
             Error::InvalidPath(ref p) => write!(f, "Invalid path: {}", p.to_string_lossy()),
             Error::ExecuteReturnedResults => {
                 write!(f, "Execute returned results - did you mean to call query?")
             }
             Error::QueryReturnedNoRows => write!(f, "Query returned no rows"),
-            Error::InvalidColumnIndex(i) => write!(f, "Invalid column index: {}", i),
-            Error::InvalidColumnName(ref name) => write!(f, "Invalid column name: {}", name),
+            Error::InvalidColumnIndex(i) => write!(f, "Invalid column index: {i}"),
+            Error::InvalidColumnName(ref name) => write!(f, "Invalid column name: {name}"),
             Error::InvalidColumnType(i, ref name, ref t) => write!(
                 f,
                 "Invalid column type {} at index: {}, name: {}",
@@ -288,22 +288,22 @@ impl fmt::Display for Error {
                 "Wrong number of parameters passed to query. Got {}, needed {}",
                 i1, n1
             ),
-            Error::StatementChangedRows(i) => write!(f, "Query changed {} rows", i),
+            Error::StatementChangedRows(i) => write!(f, "Query changed {i} rows"),
 
             #[cfg(feature = "functions")]
             Error::InvalidFunctionParameterType(i, ref t) => {
-                write!(f, "Invalid function parameter type {} at index {}", t, i)
+                write!(f, "Invalid function parameter type {t} at index {i}")
             }
             #[cfg(feature = "vtab")]
             Error::InvalidFilterParameterType(i, ref t) => {
-                write!(f, "Invalid filter parameter type {} at index {}", t, i)
+                write!(f, "Invalid filter parameter type {t} at index {i}")
             }
             #[cfg(feature = "functions")]
             Error::UserFunctionError(ref err) => err.fmt(f),
             Error::ToSqlConversionFailure(ref err) => err.fmt(f),
             Error::InvalidQuery => write!(f, "Query is not read-only"),
             #[cfg(feature = "vtab")]
-            Error::ModuleError(ref desc) => write!(f, "{}", desc),
+            Error::ModuleError(ref desc) => write!(f, "{desc}"),
             #[cfg(feature = "functions")]
             Error::UnwindingPanic => write!(f, "unwinding panic"),
             #[cfg(feature = "functions")]
@@ -317,7 +317,7 @@ impl fmt::Display for Error {
                 offset,
                 ref sql,
                 ..
-            } => write!(f, "{} in {} at offset {}", msg, sql, offset),
+            } => write!(f, "{msg} in {sql} at offset {offset}"),
         }
     }
 }

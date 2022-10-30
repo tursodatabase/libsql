@@ -37,7 +37,7 @@ impl Sql {
         } else {
             Err(Error::SqliteFailure(
                 ffi::Error::new(ffi::SQLITE_MISUSE),
-                Some(format!("Invalid keyword \"{}\"", keyword)),
+                Some(format!("Invalid keyword \"{keyword}\"")),
             ))
         }
     }
@@ -67,14 +67,14 @@ impl Sql {
             ToSqlOutput::ZeroBlob(_) => {
                 return Err(Error::SqliteFailure(
                     ffi::Error::new(ffi::SQLITE_MISUSE),
-                    Some(format!("Unsupported value \"{:?}\"", value)),
+                    Some(format!("Unsupported value \"{value:?}\"")),
                 ));
             }
             #[cfg(feature = "array")]
             ToSqlOutput::Array(_) => {
                 return Err(Error::SqliteFailure(
                     ffi::Error::new(ffi::SQLITE_MISUSE),
-                    Some(format!("Unsupported value \"{:?}\"", value)),
+                    Some(format!("Unsupported value \"{value:?}\"")),
                 ));
             }
         };
@@ -92,7 +92,7 @@ impl Sql {
             _ => {
                 return Err(Error::SqliteFailure(
                     ffi::Error::new(ffi::SQLITE_MISUSE),
-                    Some(format!("Unsupported value \"{:?}\"", value)),
+                    Some(format!("Unsupported value \"{value:?}\"")),
                 ));
             }
         };

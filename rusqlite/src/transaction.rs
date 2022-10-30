@@ -255,7 +255,7 @@ impl Savepoint<'_> {
         name: T,
     ) -> Result<Savepoint<'_>> {
         let name = name.into();
-        conn.execute_batch(&format!("SAVEPOINT {}", name))
+        conn.execute_batch(&format!("SAVEPOINT {name}"))
             .map(|_| Savepoint {
                 conn,
                 name,
@@ -267,7 +267,7 @@ impl Savepoint<'_> {
 
     #[inline]
     fn with_depth(conn: &Connection, depth: u32) -> Result<Savepoint<'_>> {
-        let name = format!("_rusqlite_sp_{}", depth);
+        let name = format!("_rusqlite_sp_{depth}");
         Savepoint::with_depth_and_name(conn, depth, name)
     }
 
