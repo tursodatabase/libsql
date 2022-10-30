@@ -150,9 +150,9 @@ const getSyncHandle = async (fh)=>{
   if(!fh.syncHandle){
     const t = performance.now();
     log("Acquiring sync handle for",fh.filenameAbs);
-    const maxTries = 3;
-    let i = 1, ms = 300;
-    for(; true; ms *= ++i){
+    const maxTries = 4, msBase = 300;
+    let i = 1, ms = msBase;
+    for(; true; ms = msBase * ++i){
       try {
         //if(i<3) toss("Just testing.");
         //TODO? A config option which tells it to throw here
