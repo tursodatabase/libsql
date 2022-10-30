@@ -430,6 +430,21 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   };
 
   /**
+     Internal impl of the DB.selectRowArray() and
+     selectRowObject() methods.
+  */
+  const __selectFirstRow = (db, sql, bind, getArg)=>{
+    let stmt, rc;
+    try {
+      stmt = db.prepare(sql).bind(bind);
+      if(stmt.step()) rc = stmt.get(getArg);
+    }finally{
+      if(stmt) stmt.finalize();
+    }
+    return rc;
+  };
+
+  /**
      Expects to be given a DB instance or an `sqlite3*` pointer (may
      be null) and an sqlite3 API result code. If the result code is
      not falsy, this function throws an SQLite3Error with an error
@@ -981,6 +996,38 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         if(stmt) stmt.finalize();
       }
       return rc;
+    },
+    /**
+       Prepares the given SQL, step()s it one time, and returns an
+       array containing the values of the first result row. If it has
+       no results, `undefined` is returned.
+
+       If passed a second argument other than `undefined`, it is
+       treated like an argument to Stmt.bind(), so may be any type
+       supported by that function.
+
+       Throws on error (e.g. malformed SQL).
+    */
+    selectArray: function(sql,bind){
+      return __selectFirstRow(this, sql, bind, []);
+    },
+
+    /**
+       Prepares the given SQL, step()s it one time, and returns an
+       object containing the key/value pairs of the first result
+       row. If it has no results, `undefined` is returned.
+
+       Note that the order of returned object's keys is not guaranteed
+       to be the same as the order of the fields in the query string.
+
+       If passed a second argument other than `undefined`, it is
+       treated like an argument to Stmt.bind(), so may be any type
+       supported by that function.
+
+       Throws on error (e.g. malformed SQL).
+    */
+    selectObject: function(sql,bind){
+      return __selectFirstRow(this, sql, bind, {});
     },
 
     /**

@@ -1301,6 +1301,24 @@
           .assert(0==e.message.indexOf('Cannot prepare empty'));
       }
     })
+
+  ////////////////////////////////////////////////////////////////////////
+    .t('selectArray/Object()', function(sqlite3){
+      const db = this.db;
+      let rc = db.selectArray('select a, b from t where a=?', 5);
+      T.assert(Array.isArray(rc))
+        .assert(2===rc.length)
+        .assert(5===rc[0] && 6===rc[1]);
+      rc = db.selectArray('select a, b from t where b=-1');
+      T.assert(undefined === rc);
+      rc = db.selectObject('select a A, b b from t where b=?', 6);
+      T.assert(rc && 'object'===typeof rc)
+        .assert(5===rc.A)
+        .assert(6===rc.b);
+      rc = db.selectArray('select a, b from t where b=-1');
+      T.assert(undefined === rc);
+    })
+
   ////////////////////////////////////////////////////////////////////////
     .t('sqlite3_js_db_export()', function(){
       const db = this.db;
