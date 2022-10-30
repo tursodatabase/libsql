@@ -335,13 +335,32 @@ emcc.jsflags += $(emcc.exportedRuntimeMethods)
 emcc.jsflags += -sUSE_CLOSURE_COMPILER=0
 emcc.jsflags += -sIMPORTED_MEMORY
 emcc.environment := -sENVIRONMENT=web,worker
+########################################################################
+# -sINITIAL_MEMORY: How much memory we need to start with is governed
+# at least in part by whether -sALLOW_MEMORY_GROWTH is enabled. If so,
+# we can start with less. If not, we need as much as we'll ever
+# possibly use (which, of course, we can't know for sure).  Note,
+# however, that speedtest1 shows that performance for even moderate
+# workloads MAY suffer considerably if we start small and have to grow
+# at runtime. e.g. OPFS-backed (speedtest1 --size 75) take MAY take X
+# time with 16mb+ memory and 3X time when starting with 8MB. However,
+# such test results are inconsistent due to browser internals which
+# are opaque to us.
 emcc.jsflags += -sALLOW_MEMORY_GROWTH
-# emcc: warning: USE_PTHREADS + ALLOW_MEMORY_GROWTH may run non-wasm code
-#       slowly, see https://github.com/WebAssembly/design/issues/1271
-#       [-Wpthreads-mem-growth]
-emcc.jsflags += -sINITIAL_MEMORY=13107200
-#emcc.jsflags += -sINITIAL_MEMORY=64225280
-# ^^^^ 64MB is not enough for WASMFS/OPFS test runs using batch-runner.js
+emcc.INITIAL_MEMORY.128 := 13107200
+emcc.INITIAL_MEMORY.96  := 100663296
+emcc.INITIAL_MEMORY.64  := 64225280
+emcc.INITIAL_MEMORY.32  := 33554432
+emcc.INITIAL_MEMORY.16  := 16777216
+emcc.INITIAL_MEMORY.8   := 8388608
+emcc.INITIAL_MEMORY ?= 16
+ifeq (,$(emcc.INITIAL_MEMORY.$(emcc.INITIAL_MEMORY)))
+$(error emcc.INITIAL_MEMORY must be one of: 8, 16, 32, 64, 96, 128 (megabytes))
+endif
+emcc.jsflags += -sINITIAL_MEMORY=$(emcc.INITIAL_MEMORY.$(emcc.INITIAL_MEMORY))
+# /INITIAL_MEMORY
+########################################################################
+
 emcc.jsflags += $(emcc.environment)
 #emcc.jsflags += -sTOTAL_STACK=4194304
 
