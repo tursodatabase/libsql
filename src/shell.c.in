@@ -2664,6 +2664,7 @@ static char *shell_error_context(const char *zSql, sqlite3 *db){
     while( (zSql[len]&0xc0)==0x80 ) len--;
   }
   zCode = sqlite3_mprintf("%.*s", len, zSql);
+  shell_check_oom(zCode);
   for(i=0; zCode[i]; i++){ if( IsSpace(zSql[i]) ) zCode[i] = ' '; }
   if( iOffset<25 ){
     zMsg = sqlite3_mprintf("\n  %z\n  %*s^--- error here", zCode, iOffset, "");
