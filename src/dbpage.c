@@ -354,11 +354,12 @@ static int dbpageUpdate(
   pPager = sqlite3BtreePager(pBt);
   rc = sqlite3PagerGet(pPager, pgno, (DbPage**)&pDbPage, 0);
   if( rc==SQLITE_OK ){
-    rc = sqlite3PagerWrite(pDbPage);
-    if( rc==SQLITE_OK ){
-      memcpy(sqlite3PagerGetData(pDbPage),
-             sqlite3_value_blob(argv[3]),
-             szPage);
+    const void *pData = sqlite3_value_blob(argv[3]);
+    assert( pData!=0 || pTab->db->mallocFailed );
+    if( pData
+     && (rc = sqlite3PagerWrite(pDbPage))==SQLITE_OK
+    ){
+      memcpy(sqlite3PagerGetData(pDbPage), pData, szPage);
     }
   }
   sqlite3PagerUnref(pDbPage);
