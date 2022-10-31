@@ -434,6 +434,9 @@ TESTSRC = \
   $(TOP)/ext/fts3/fts3_term.c \
   $(TOP)/ext/fts3/fts3_test.c  \
   $(TOP)/ext/session/test_session.c \
+  $(TOP)/ext/recover/sqlite3recover.c \
+  $(TOP)/ext/recover/dbdata.c \
+  $(TOP)/ext/recover/test_recover.c \
   $(TOP)/ext/rbu/test_rbu.c 
 
 # Statically linked extensions
@@ -623,7 +626,10 @@ SHELL_OPT += -DSQLITE_ENABLE_DBSTAT_VTAB
 SHELL_OPT += -DSQLITE_ENABLE_BYTECODE_VTAB
 SHELL_OPT += -DSQLITE_ENABLE_OFFSET_SQL_FUNC
 FUZZERSHELL_OPT = 
-FUZZCHECK_OPT = -DSQLITE_ENABLE_MEMSYS5 -DSQLITE_OSS_FUZZ
+FUZZCHECK_OPT += -I$(TOP)/test
+FUZZCHECK_OPT += -I$(TOP)/ext/recover
+FUZZCHECK_OPT += -DSQLITE_OMIT_LOAD_EXTENSION
+FUZZCHECK_OPT += -DSQLITE_ENABLE_MEMSYS5 -DSQLITE_OSS_FUZZ
 FUZZCHECK_OPT += -DSQLITE_MAX_MEMORY=50000000
 FUZZCHECK_OPT += -DSQLITE_PRINTF_PRECISION_LIMIT=1000
 FUZZCHECK_OPT += -DSQLITE_ENABLE_FTS4
@@ -633,7 +639,12 @@ FUZZCHECK_OPT += -DSQLITE_ENABLE_RTREE
 FUZZCHECK_OPT += -DSQLITE_ENABLE_GEOPOLY
 FUZZCHECK_OPT += -DSQLITE_ENABLE_DBSTAT_VTAB
 FUZZCHECK_OPT += -DSQLITE_ENABLE_BYTECODE_VTAB
-FUZZCHECK_SRC = $(TOP)/test/fuzzcheck.c $(TOP)/test/ossfuzz.c $(TOP)/test/fuzzinvariants.c
+FUZZCHECK_SRC += $(TOP)/test/fuzzcheck.c
+FUZZCHECK_SRC += $(TOP)/test/ossfuzz.c
+FUZZCHECK_SRC += $(TOP)/test/fuzzinvariants.c
+FUZZCHECK_SRC += $(TOP)/ext/recover/dbdata.c
+FUZZCHECK_SRC += $(TOP)/ext/recover/sqlite3recover.c
+FUZZCHECK_SRC += $(TOP)/test/vt02.c
 DBFUZZ_OPT =
 ST_OPT = -DSQLITE_OS_KV_OPTIONAL
 
@@ -684,7 +695,7 @@ fuzzershell$(TEXE):	$(TOP)/tool/fuzzershell.c sqlite3.c sqlite3.h
 	$(LTLINK) -o $@ $(FUZZERSHELL_OPT) \
 	  $(TOP)/tool/fuzzershell.c sqlite3.c $(TLIBS)
 
-fuzzcheck$(TEXE):	$(FUZZCHECK_SRC) sqlite3.c sqlite3.h
+fuzzcheck$(TEXE):	$(FUZZCHECK_SRC) sqlite3.c sqlite3.h $(FUZZCHECK_DEP)
 	$(LTLINK) -o $@ $(FUZZCHECK_OPT) $(FUZZCHECK_SRC) sqlite3.c $(TLIBS)
 
 ossshell$(TEXE):	$(TOP)/test/ossfuzz.c $(TOP)/test/ossshell.c sqlite3.c sqlite3.h
@@ -1108,6 +1119,9 @@ SHELL_SRC = \
 	$(TOP)/ext/expert/sqlite3expert.h \
 	$(TOP)/ext/misc/zipfile.c \
 	$(TOP)/ext/misc/memtrace.c \
+	$(TOP)/ext/recover/dbdata.c \
+	$(TOP)/ext/recover/sqlite3recover.c \
+	$(TOP)/ext/recover/sqlite3recover.h \
         $(TOP)/src/test_windirent.c
 
 shell.c:	$(SHELL_SRC) $(TOP)/tool/mkshellc.tcl
@@ -1535,4 +1549,4 @@ sqlite3.dll: $(REAL_LIBOBJ) sqlite3.def
 # Fiddle app
 #
 fiddle: sqlite3.c shell.c
-	make -C ext/wasm fiddle
+	make -C ext/wasm fiddle emcc_opt=-Os

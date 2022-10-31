@@ -1,0 +1,294 @@
+# 2022 August 28
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+
+if {![info exists testdir]} {
+  set testdir [file join [file dirname [info script]] .. .. test]
+} 
+source [file join [file dirname [info script]] recover_common.tcl]
+source $testdir/tester.tcl
+
+set testprefix recovercorrupt2
+
+do_execsql_test 1.0 {
+  PRAGMA page_size = 512;
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
+  INSERT INTO t1 VALUES(1, 2, 3);
+  INSERT INTO t1 VALUES(2, hex(randomblob(100)), randomblob(200));
+  CREATE INDEX i1 ON t1(b, c);
+  CREATE TABLE t2(a PRIMARY KEY, b, c) WITHOUT ROWID;
+  INSERT INTO t2 VALUES(1, 2, 3);
+  INSERT INTO t2 VALUES(2, hex(randomblob(100)), randomblob(200));
+  ANALYZE;
+  PRAGMA writable_schema = 1;
+  UPDATE sqlite_schema SET sql = 'CREATE INDEX i1 ON o(world)' WHERE name='i1'; 
+  DELETE FROM sqlite_schema WHERE name='sqlite_stat4';
+}
+
+do_test 1.1 {
+  set R [sqlite3_recover_init db main test.db2]
+  $R run
+  $R finish
+} {}
+
+sqlite3 db2 test.db2
+do_execsql_test -db db2 1.2 {
+  SELECT sql FROM sqlite_schema
+} {
+  {CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c)}
+  {CREATE TABLE t2(a PRIMARY KEY, b, c) WITHOUT ROWID} 
+  {CREATE TABLE sqlite_stat1(tbl,idx,stat)} 
+}
+db2 close
+
+do_execsql_test 1.3 {
+  PRAGMA writable_schema = 1;
+  UPDATE sqlite_schema SET sql = 'CREATE TABLE t2 syntax error!' WHERE name='t2';
+}
+
+do_test 1.4 {
+  set R [sqlite3_recover_init db main test.db2]
+  $R run
+  $R finish
+} {}
+
+sqlite3 db2 test.db2
+do_execsql_test -db db2 1.5 {
+  SELECT sql FROM sqlite_schema
+} {
+  {CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c)}
+  {CREATE TABLE sqlite_stat1(tbl,idx,stat)} 
+}
+db2 close
+
+#-------------------------------------------------------------------------
+#
+reset_db
+do_test 2.0 {
+  sqlite3 db {}
+  db deserialize [decode_hexdb {
+| size 8192 pagesize 4096 filename x3.db
+| page 1 offset 0
+|      0: 53 51 4c 69 74 65 20 66 6f 72 6d 61 74 20 33 00   SQLite format 3.
+|     16: 10 00 01 01 00 40 20 20 00 00 00 02 00 00 00 02   .....@  ........
+|     32: 00 00 00 00 00 00 00 00 00 00 00 01 00 00 00 04   ................
+|     48: 00 00 00 00 00 00 00 00 00 00 00 01 00 00 00 00   ................
+|     80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 02   ................
+|     96: 00 2e 63 00 0d 00 00 00 01 0f d8 00 0f d8 00 00   ..c.............
+|   4048: 00 00 00 00 00 00 00 00 26 01 06 17 11 11 01 39   ........&......9
+|   4064: 74 61 62 6c 65 74 31 74 31 02 43 52 45 41 54 45   tablet1t1.CREATE
+|   4080: 20 54 41 42 4c 45 20 74 31 28 61 2c 62 2c 63 29    TABLE t1(a,b,c)
+| page 2 offset 4096
+|      0: 0d 00 00 00 01 0f ce 00 0f ce 00 00 00 00 00 00   ................
+|   4032: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ff ff   ..............(.
+|   4048: ff ff ff ff ff ff ff 28 04 27 25 23 61 61 61 61   .........'%#aaaa
+|   4064: 61 61 61 61 61 61 61 61 61 62 62 62 62 62 62 62   aaaaaaaaabbbbbbb
+|   4080: 62 62 62 62 62 63 63 63 63 63 63 63 63 63 63 63   bbbbbccccccccccc
+| end x3.db
+}]} {}
+
+do_test 2.1 {
+  set R [sqlite3_recover_init db main test.db2]
+  $R run
+  $R finish
+} {}
+
+sqlite3 db2 test.db2
+do_execsql_test -db db2 2.2 {
+  SELECT sql FROM sqlite_schema
+} {
+  {CREATE TABLE t1(a,b,c)}
+}
+do_execsql_test -db db2 2.3 {
+  SELECT * FROM t1
+} {}
+db2 close
+
+#-------------------------------------------------------------------------
+#
+reset_db
+do_test 3.0 {
+  sqlite3 db {}
+  db deserialize [decode_hexdb {
+  .open --hexdb
+  | size 4096 pagesize 1024 filename corrupt032.txt.db
+  | page 1 offset 0
+  |      0: 53 51 4c 69 74 65 20 66 6f 72 6d 61 74 20 33 00   SQLite format 3.
+  |     16: 04 00 01 01 08 40 20 20 00 00 00 02 00 00 00 03   .....@  ........
+  |     32: 00 00 00 00 00 00 00 00 00 00 00 01 00 00 00 04   ................
+  |     48: 00 00 00 00 00 00 00 00 00 00 00 01 00 00 00 00   ................
+  |     80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 02   ................
+  |     96: 00 2e 24 80 0d 00 00 00 01 03 d4 00 03 d4 00 00   ..$.............
+  |    976: 00 00 00 00 22 01 06 17 11 11 01 31 74 61 62 6c   ...........1tabl
+  |    992: 65 74 31 74 31 02 43 52 45 41 54 45 20 54 41 42   et1t1.CREATE TAB
+  |   1008: 4c 45 20 74 31 28 78 29 00 00 00 00 00 00 00 00   LE t1(x)........
+  | page 2 offset 1024
+  |      0: 0d 00 00 00 01 02 06 00 02 06 00 00 00 00 00 00   ................
+  |    512: 00 00 00 00 00 00 8b 60 01 03 97 46 00 00 00 00   .......`...F....
+  |   1008: 00 00 00 00 00 00 00 03 00 00 00 00 00 00 00 00   ................
+  | end corrupt032.txt.db
+}]} {}
+
+do_test 3.1 {
+  set R [sqlite3_recover_init db main test.db2]
+  $R run
+  $R finish
+} {}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+do_test 4.0 {
+  sqlite3 db {}
+  db deserialize [decode_hexdb {
+  .open --hexdb
+  | size 4096 pagesize 4096 filename crash-00f2d3627f1b43.db
+  | page 1 offset 0
+  |      0: 53 51 4c 69 74 65 20 66 6f 72 6d 61 74 20 33 00   SQLite format 3.
+  |     16: 00 01 01 02 00 40 20 20 01 00 ff 00 42 01 10 01   .....@  ....B...
+  |     32: ef 00 00 87 00 ff ff ff f0 01 01 10 ff ff 00 00   ................
+  | end crash-00f2d3627f1b43.db
+}]} {}
+
+do_test 4.1 {
+  set R [sqlite3_recover_init db main test.db2]
+  catch { $R run }
+  list [catch { $R finish } msg] $msg
+} {1 {unable to open database file}}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+do_test 5.0 {
+  sqlite3 db {}
+  db deserialize [decode_hexdb {
+.open --hexdb
+| size 16384 pagesize 4096 filename crash-7b75760a4c5f15.db
+| page 1 offset 0
+|      0: 53 51 4c 69 74 65 20 66 6f 72 6d 61 74 20 33 00   SQLite format 3.
+|     16: 10 00 01 01 00 40 20 20 00 00 00 00 00 00 00 04   .....@  ........
+|     32: 00 00 00 00 00 00 00 00 00 00 00 03 00 00 00 00   ................
+|     96: 00 00 00 00 0d 00 00 00 03 0f 4e 00 0f bc 0f 90   ..........N.....
+|    112: 0f 4e 00 00 00 00 00 00 00 00 00 00 00 00 00 00   .N..............
+|   3904: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 40 03   ..............@.
+|   3920: 06 17 11 11 01 6d 74 61 62 6c 65 74 32 74 32 04   .....mtablet2t2.
+|   3936: 43 52 45 41 54 45 20 54 41 42 4c 45 20 74 32 28   CREATE TABLE t2(
+|   3952: 78 2c 79 2c 7a 20 50 52 49 4d 41 52 59 20 4b 45   x,y,z PRIMARY KE
+|   3968: 59 29 20 57 49 54 48 4f 55 54 20 52 4f 57 49 44   Y) WITHOUT ROWID
+|   3984: 2a 02 06 17 13 11 01 3f 69 6e 64 65 78 74 31 61   *......?indext1a
+|   4000: 74 31 03 43 52 45 41 54 45 20 49 4e 44 45 58 20   t1.CREATE INDEX 
+|   4016: 74 31 61 20 4f 4e 20 74 31 28 61 29 42 01 06 17   t1a ON t1(a)B...
+|   4032: 11 11 01 71 74 61 62 6c 65 74 31 74 31 02 43 52   ...qtablet1t1.CR
+|   4048: 45 41 54 45 20 54 41 42 4c 45 20 74 31 28 61 20   EATE TABLE t1(a 
+|   4064: 49 4e 54 2c 62 20 54 45 58 54 2c 63 20 42 4c 4f   INT,b TEXT,c BLO
+|   4080: 42 2c 64 20 52 45 41 4c 29 20 53 54 52 49 43 54   B,d REAL) STRICT
+| page 2 offset 4096
+|      0: 0d 00 00 00 14 0c ae 00 0f df 0f bd 0f 9a 0f 76   ...............v
+|     16: 0f 51 0f 2b 0f 04 0e dc 0e b3 0e 89 0e 5e 0e 32   .Q.+.........^.2
+|     32: 0e 05 0d 1a 0d a8 0d 78 0d 47 0d 15 0c e2 00 00   .......x.G......
+|   3232: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 32 14   ..............2.
+|   3248: 05 06 3f 34 07 15 f4 c9 23 af e2 b3 b6 61 62 63   ..?4....#....abc
+|   3264: 30 32 30 78 79 7a 01 00 00 00 00 00 00 00 00 00   020xyz..........
+|   3280: 00 00 00 00 00 00 00 00 00 00 c3 b0 96 7e fb 4e   .............~.N
+|   3296: c5 4c 31 13 05 06 1f 32 07 dd f2 2a a5 7e b2 4d   .L1....2...*.~.M
+|   3312: 82 61 62 63 30 31 39 78 79 7a 01 00 00 00 00 00   .abc019xyz......
+|   3328: 00 00 00 00 00 00 00 00 00 00 00 00 00 c3 a3 d6   ................
+|   3344: e9 f1 c2 fd f3 30 12 05 06 1f 30 07 8f 8f f5 c4   .....0....0.....
+|   3360: 35 b6 7f 8d 61 62 63 30 31 38 00 00 00 00 00 00   5...abc018......
+|   3376: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 43   ...............C
+|   3392: b2 13 1f 9d 56 8a 47 21 b1 05 06 1f 2e 07 7f 46   ....V.G!.......F
+|   3408: 91 03 3f 97 fb f7 61 62 63 30 00 00 00 00 00 00   ..?...abc0......
+|   3440: c3 bb d8 96 86 c2 e8 2b 2e 10 05 06 1f 2c 07 6d   .......+.....,.m
+|   3456: 85 7b ce d0 32 d2 54 61 62 63 30 00 00 00 00 00   ....2.Tabc0.....
+|   3488: 43 a1 eb 44 14 dc 03 7b 2d 0f 05 06 1f 2a 07 d9   C..D....-....*..
+|   3504: ab ec bf 34 51 70 f3 61 62 63 30 31 35 78 79 7a   ...4Qp.abc015xyz
+|   3520: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 c3   ................
+|   3536: b6 3d f4 46 b1 6a af 2c 0e 05 06 1f 28 07 36 75   .=.F.j.,....(.6u
+|   3552: e9 a2 bd 05 04 ea 61 62 63 30 31 34 78 79 7a 00   ......abc014xyz.
+|   3568: 00 00 00 00 00 00 00 00 00 00 00 00 00 c3 ab 23   ...............#
+|   3584: a7 6a 34 ca f8 2b 0d 05 06 1f 26 07 48 45 ab e0   .j4..+....&.HE..
+|   3600: 8c 7c ff 0c 61 62 63 30 31 33 78 79 7a 00 00 00   .|..abc013xyz...
+|   3616: 00 00 00 00 0d d0 00 00 00 00 43 b8 d3 93 f4 92   ..........C.....
+|   3632: 5b 7a 2a 0c 05 06 1f 24 07 be 6d 1e db 61 5d 80   [z*....$..m..a].
+|   3648: 9f 61 62 63 30 31 32 78 79 7a 00 00 00 00 00 00   .abc012xyz......
+|   3664: 00 00 00 00 00 00 43 b5 a1 a4 af 7b c6 60 29 0b   ......C......`).
+|   3680: 05 06 1f 22 07 6e a2 a3 64 68 d4 a6 bd 61 62 63   .....n..dh...abc
+|   3696: 30 31 31 78 79 7a 00 00 00 00 00 00 00 00 00 00   011xyz..........
+|   3712: 00 c3 c4 1e ff 0f fc e6 ff 28 0a 05 06 1f 20 07   .........(.... .
+|   3728: 50 f9 4a bb a5 7a 1e ca 61 62 63 30 31 30 78 79   P.J..z..abc010xy
+|   3744: 7a 00 00 00 00 00 00 00 00 00 00 c3 a7 90 ed d9   z...............
+|   3760: 5c 2c d5 27 09 05 06 1f 1e 07 90 8e 1d d9 1c 3a   .,.'...........:
+|   3776: e8 c1 61 62 63 30 30 39 78 79 7a 00 00 00 00 00   ..abc009xyz.....
+|   3792: 00 00 00 00 43 a7 97 87 cf b0 ff 79 26 08 05 06   ....C......y&...
+|   3808: 1f 1c 07 86 65 f6 7c 50 7a 2c 76 61 62 63 30 30   ....e.|Pz,vabc00
+|   3824: 38 78 79 7a 00 00 00 00 00 00 00 00 c3 b0 e3 4c   8xyz...........L
+|   3840: 4f d3 41 b5 25 07 05 06 1f 1a 07 8b 20 e5 68 11   O.A.%....... .h.
+|   3856: 13 55 87 61 62 63 30 30 37 78 79 7a 00 00 00 00   .U.abc007xyz....
+|   3872: 00 00 00 c3 b6 a3 74 f1 9c 33 f8 24 06 05 06 1f   ......t..3.$....
+|   3888: 18 07 97 3c bc 34 49 94 54 ab 61 62 63 30 30 36   ...<.4I.T.abc006
+|   3904: 78 79 7a 00 00 00 00 00 00 c3 88 00 c2 ca 4c 4d   xyz...........LM
+|   3920: d3 23 05 05 06 1f 16 07 59 37 11 10 e9 e5 3d d5   .#......Y7....=.
+|   3936: 61 62 63 30 30 35 78 79 7a 00 00 00 00 00 c3 c0   abc005xyz.......
+|   3952: 15 12 67 ed 4b 79 22 04 05 06 1f 14 07 93 39 01   ..g.Ky........9.
+|   3968: 7f b8 c7 99 58 61 62 63 30 30 34 78 79 7a 00 00   ....Xabc004xyz..
+|   3984: 09 c0 43 bf e0 e7 6d 70 fd 61 21 03 05 06 1f 12   ..C...mp.a!.....
+|   4000: 07 b6 df 8d 8b 27 08 22 5a 61 62 63 30 30 33 78   .....'..Zabc003x
+|   4016: 79 7a 00 00 00 c3 c7 ea 0f dc dd 32 22 20 02 05   yz.........2. ..
+|   4032: 06 1f 10 07 2f a6 da 71 df 66 b3 b5 61 62 63 30   ..../..q.f..abc0
+|   4048: 30 32 78 79 7a 00 00 c3 ce d9 8d e9 ec 20 45 1f   02xyz........ E.
+|   4064: 01 05 06 1f 0e 07 5a 47 53 20 3b 48 8f c0 61 62   ......ZGS ;H..ab
+|   4080: 63 30 30 31 78 79 7a 00 c3 c9 e6 81 f8 d9 24 04   c001xyz.......$.
+| page 3 offset 8192
+|      0: 0a 00 00 00 14 0e fd 00 0f f3 0f e6 0f d9 0f cc   ................
+|     16: 0f bf 0f b2 0f a5 0f 98 0f 8b 0f 7e 0f 71 0f 64   ...........~.q.d
+|     32: 0f 57 0f 4a 0f 3d 0f 30 0f 24 00 00 00 00 00 00   .W.J.=.0.$......
+|   3824: 00 00 00 00 00 00 00 00 00 00 00 00 00 0c 03 06   ................
+|   3840: 01 7f 46 91 03 3f 97 fb f7 11 0c 03 06 01 6e a2   ..F..?........n.
+|   3856: a3 64 68 d4 a6 bd 0b 0c 03 06 01 6d 85 7b ce d0   .dh........m....
+|   3872: 32 d2 54 10 0b 03 06 09 5a 47 53 20 3b 48 8f c0   2.T.....ZGS ;H..
+|   3888: 0c 03 06 01 59 37 11 10 e9 e5 3d d5 05 0c 03 06   ....Y7....=.....
+|   3904: 01 50 f9 4a bb a5 7a 1e ca 0a 0c 03 06 01 48 45   .P.J..z.......HE
+|   3920: ab e0 8c 7c ff 0c 0d 0c 03 06 01 36 75 e9 a2 bd   ...|.......6u...
+|   3936: 05 04 ea 0e 0c 03 06 01 2f a6 da 71 df 66 b3 b5   ......../..q.f..
+|   3952: 02 0c 03 06 01 15 f4 c9 23 af e2 b3 b6 14 0c 03   ........#.......
+|   3968: 06 01 dd f2 2a a5 7e b2 4d 82 13 0c 03 06 01 d9   ....*.~.M.......
+|   3984: ab ec bf 34 51 70 f3 0f 0c 03 06 01 be 6d 1e db   ...4Qp.......m..
+|   4000: 61 5d 80 9f 0c 0c 03 06 01 b6 df 8d 8b 27 08 22   a]...........'..
+|   4016: 5a 03 0c 03 06 01 97 3c bc 34 49 94 54 ab 06 0c   Z......<.4I.T...
+|   4032: 03 06 01 93 39 01 7f b8 c7 99 58 04 0c 03 06 01   ....9.....X.....
+|   4048: 90 8e 1d d9 1c 3a e8 c1 09 0c 03 06 01 8f 8f f5   .....:..........
+|   4064: c4 35 b6 7f 8d 12 0c 03 06 01 8b 20 e5 68 11 13   .5......... .h..
+|   4080: 55 87 07 0c 03 06 01 86 65 f6 7c 50 7a 2b 06 08   U.......e.|Pz+..
+| page 4 offset 12288
+|      0: 0a 00 00 00 14 0f 62 00 0f 7a 0f a1 0f c9 0f d9   ......b..z......
+|     16: 0f 81 0f d1 0f f1 0f f9 0f e1 0f 89 0e 6a 0f c1   .............j..
+|     32: 0f 91 0f 99 0f b9 0f 72 0f 62 0f e9 0f b1 0f a9   .......r.b......
+|   3936: 00 00 07 04 01 01 01 11 0e 9e 07 04 01 01 01 0b   ................
+|   3952: 31 16 07 04 01 01 01 10 37 36 06 04 09 01 01 ab   1.......76......
+|   3968: 58 07 04 01 01 01 05 1c 28 07 04 01 01 01 0a 10   X.......(.......
+|   3984: cf 07 04 01 01 01 0d b2 e3 07 04 01 01 01 0e d3   ................
+|   4000: f2 07 04 01 01 01 02 41 ad 07 04 01 01 01 14 3e   .......A.......>
+|   4016: 22 07 04 01 01 01 13 27 45 07 04 01 01 01 0f ad   .......'E.......
+|   4032: dd 07 04 01 01 01 0c 2e a1 07 04 01 01 01 03 df   ................
+|   4048: e1 07 04 01 01 01 06 59 a7 07 04 01 01 01 04 27   .......Y.......'
+|   4064: bd 07 04 01 01 01 09 d0 e0 07 04 01 01 01 12 39   ...............9
+|   4080: 4f 07 04 01 01 01 07 c4 11 06 04 00 00 00 00 00   O...............
+| end crash-7b75760a4c5f15.db
+}]} {}
+
+do_test 5.1 {
+  set R [sqlite3_recover_init db main test.db2]
+  catch { $R run }
+  list [catch { $R finish } msg] $msg
+} {0 {}}
+
+finish_test
+

@@ -63,7 +63,7 @@
 #  define SQLITE_OS_WIN 0
 #  define SQLITE_OMIT_LOAD_EXTENSION 1
 #  define SQLITE_OMIT_WAL 1
-#  define SQLITE_OMIT DEPRECATED 1
+#  define SQLITE_OMIT_DEPRECATED 1
 #  undef SQLITE_TEMP_STORE
 #  define SQLITE_TEMP_STORE 3  /* Always use memory for temporary storage */
 #  define SQLITE_DQS 0

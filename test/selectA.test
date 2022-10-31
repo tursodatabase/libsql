@@ -1483,4 +1483,28 @@ do_execsql_test 8.1 {
       AND (0 OR (SELECT 'xyz' INTERSECT SELECT a ORDER BY 1))
 } {}
 
+#-------------------------------------------------------------------------
+# dbsqlfuzz a34f455c91ad75a0cf8cd9476841903f42930a7a
+#
+reset_db
+do_execsql_test 9.0 {
+  CREATE TABLE t1(a COLLATE nocase);
+  CREATE TABLE t2(b COLLATE nocase);
+
+  INSERT INTO t1 VALUES('ABC');
+  INSERT INTO t2 VALUES('abc');
+}
+
+do_execsql_test 9.1 {
+  SELECT a FROM t1 INTERSECT SELECT b FROM t2;
+} {ABC}
+
+do_execsql_test 9.2 {
+  SELECT * FROM (
+      SELECT a FROM t1 INTERSECT SELECT b FROM t2
+  ) WHERE a||'' = 'ABC';
+} {ABC}
+
+
+
 finish_test

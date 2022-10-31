@@ -37,7 +37,7 @@
   const runTests = function(sqlite3){
     const capi = sqlite3.capi,
           oo = sqlite3.oo1,
-          wasm = capi.wasm;
+          wasm = sqlite3.wasm;
     stdout("Loaded sqlite3:",capi.sqlite3_libversion(), capi.sqlite3_sourceid());
     const persistentDir = capi.sqlite3_wasmfs_opfs_dir();
     if(persistentDir){
@@ -49,7 +49,7 @@
     let db;
     try {
       db = new oo.DB(persistentDir+'/foo.db');
-      stdout("DB filename:",db.filename,db.getFilename());
+      stdout("DB filename:",db.filename);
       const banner1 = '>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>',
             banner2 = '<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<';
       [

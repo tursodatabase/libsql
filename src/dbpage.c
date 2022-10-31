@@ -274,12 +274,18 @@ static int dbpageColumn(
     }
     case 1: {           /* data */
       DbPage *pDbPage = 0;
-      rc = sqlite3PagerGet(pCsr->pPager, pCsr->pgno, (DbPage**)&pDbPage, 0);
-      if( rc==SQLITE_OK ){
-        sqlite3_result_blob(ctx, sqlite3PagerGetData(pDbPage), pCsr->szPage,
-                            SQLITE_TRANSIENT);
+      if( pCsr->pgno==((PENDING_BYTE/pCsr->szPage)+1) ){
+        /* The pending byte page. Assume it is zeroed out. Attempting to
+        ** request this page from the page is an SQLITE_CORRUPT error. */
+        sqlite3_result_zeroblob(ctx, pCsr->szPage);
+      }else{
+        rc = sqlite3PagerGet(pCsr->pPager, pCsr->pgno, (DbPage**)&pDbPage, 0);
+        if( rc==SQLITE_OK ){
+          sqlite3_result_blob(ctx, sqlite3PagerGetData(pDbPage), pCsr->szPage,
+              SQLITE_TRANSIENT);
+        }
+        sqlite3PagerUnref(pDbPage);
       }
-      sqlite3PagerUnref(pDbPage);
       break;
     }
     default: {          /* schema */
@@ -288,7 +294,7 @@ static int dbpageColumn(
       break;
     }
   }
-  return SQLITE_OK;
+  return rc;
 }
 
 static int dbpageRowid(sqlite3_vtab_cursor *pCursor, sqlite_int64 *pRowid){

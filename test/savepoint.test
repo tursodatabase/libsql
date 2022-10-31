@@ -16,6 +16,8 @@ source $testdir/tester.tcl
 source $testdir/lock_common.tcl
 source $testdir/malloc_common.tcl
 
+forcedelete test2.db
+
 #----------------------------------------------------------------------
 # The following tests - savepoint-1.* - test that the SAVEPOINT, RELEASE
 # and ROLLBACK TO comands are correctly parsed, and that the auto-commit

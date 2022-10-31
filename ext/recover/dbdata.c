@@ -75,6 +75,7 @@
 #include "sqlite3ext.h"
 
 typedef unsigned char u8;
+typedef unsigned int u32;
 
 #endif
 SQLITE_EXTENSION_INIT1
@@ -102,11 +103,12 @@ struct DbdataCursor {
 
   /* Only for the sqlite_dbdata table */
   u8 *pRec;                       /* Buffer containing current record */
-  int nRec;                       /* Size of pRec[] in bytes */
-  int nHdr;                       /* Size of header in bytes */
+  sqlite3_int64 nRec;             /* Size of pRec[] in bytes */
+  sqlite3_int64 nHdr;             /* Size of header in bytes */
   int iField;                     /* Current field number */
   u8 *pHdrPtr;
   u8 *pPtr;
+  u32 enc;                        /* Text encoding */
   
   sqlite3_int64 iIntkey;          /* Integer key value */
 };
@@ -299,14 +301,14 @@ static int dbdataClose(sqlite3_vtab_cursor *pCursor){
 /* 
 ** Utility methods to decode 16 and 32-bit big-endian unsigned integers. 
 */
-static unsigned int get_uint16(unsigned char *a){
+static u32 get_uint16(unsigned char *a){
   return (a[0]<<8)|a[1];
 }
-static unsigned int get_uint32(unsigned char *a){
-  return ((unsigned int)a[0]<<24)
-       | ((unsigned int)a[1]<<16)
-       | ((unsigned int)a[2]<<8)
-       | ((unsigned int)a[3]);
+static u32 get_uint32(unsigned char *a){
+  return ((u32)a[0]<<24)
+       | ((u32)a[1]<<16)
+       | ((u32)a[2]<<8)
+       | ((u32)a[3]);
 }
 
 /*
@@ -321,7 +323,7 @@ static unsigned int get_uint32(unsigned char *a){
 */
 static int dbdataLoadPage(
   DbdataCursor *pCsr,             /* Cursor object */
-  unsigned int pgno,              /* Page number of page to load */
+  u32 pgno,                       /* Page number of page to load */
   u8 **ppPage,                    /* OUT: pointer to page buffer */
   int *pnPage                     /* OUT: Size of (*ppPage) in bytes */
 ){
@@ -331,25 +333,27 @@ static int dbdataLoadPage(
 
   *ppPage = 0;
   *pnPage = 0;
-  sqlite3_bind_int64(pStmt, 2, pgno);
-  if( SQLITE_ROW==sqlite3_step(pStmt) ){
-    int nCopy = sqlite3_column_bytes(pStmt, 0);
-    if( nCopy>0 ){
-      u8 *pPage;
-      pPage = (u8*)sqlite3_malloc64(nCopy + DBDATA_PADDING_BYTES);
-      if( pPage==0 ){
-        rc = SQLITE_NOMEM;
-      }else{
-        const u8 *pCopy = sqlite3_column_blob(pStmt, 0);
-        memcpy(pPage, pCopy, nCopy);
-        memset(&pPage[nCopy], 0, DBDATA_PADDING_BYTES);
+  if( pgno>0 ){
+    sqlite3_bind_int64(pStmt, 2, pgno);
+    if( SQLITE_ROW==sqlite3_step(pStmt) ){
+      int nCopy = sqlite3_column_bytes(pStmt, 0);
+      if( nCopy>0 ){
+        u8 *pPage;
+        pPage = (u8*)sqlite3_malloc64(nCopy + DBDATA_PADDING_BYTES);
+        if( pPage==0 ){
+          rc = SQLITE_NOMEM;
+        }else{
+          const u8 *pCopy = sqlite3_column_blob(pStmt, 0);
+          memcpy(pPage, pCopy, nCopy);
+          memset(&pPage[nCopy], 0, DBDATA_PADDING_BYTES);
+        }
+        *ppPage = pPage;
+        *pnPage = nCopy;
       }
-      *ppPage = pPage;
-      *pnPage = nCopy;
     }
+    rc2 = sqlite3_reset(pStmt);
+    if( rc==SQLITE_OK ) rc = rc2;
   }
-  rc2 = sqlite3_reset(pStmt);
-  if( rc==SQLITE_OK ) rc = rc2;
 
   return rc;
 }
@@ -358,15 +362,28 @@ static int dbdataLoadPage(
 ** Read a varint.  Put the value in *pVal and return the number of bytes.
 */
 static int dbdataGetVarint(const u8 *z, sqlite3_int64 *pVal){
-  sqlite3_int64 v = 0;
+  sqlite3_uint64 u = 0;
   int i;
   for(i=0; i<8; i++){
-    v = (v<<7) + (z[i]&0x7f);
-    if( (z[i]&0x80)==0 ){ *pVal = v; return i+1; }
+    u = (u<<7) + (z[i]&0x7f);
+    if( (z[i]&0x80)==0 ){ *pVal = (sqlite3_int64)u; return i+1; }
   }
-  v = (v<<8) + (z[i]&0xff);
-  *pVal = v;
+  u = (u<<8) + (z[i]&0xff);
+  *pVal = (sqlite3_int64)u;
   return 9;
+}
+
+/*
+** Like dbdataGetVarint(), but set the output to 0 if it is less than 0
+** or greater than 0xFFFFFFFF. This can be used for all varints in an
+** SQLite database except for key values in intkey tables.
+*/
+static int dbdataGetVarintU32(const u8 *z, sqlite3_int64 *pVal){
+  sqlite3_int64 val;
+  int nRet = dbdataGetVarint(z, &val);
+  if( val<0 || val>0xFFFFFFFF ) val = 0;
+  *pVal = val;
+  return nRet;
 }
 
 /*
@@ -405,6 +422,7 @@ static int dbdataValueBytes(int eType){
 */
 static void dbdataValue(
   sqlite3_context *pCtx, 
+  u32 enc,
   int eType, 
   u8 *pData,
   int nData
@@ -449,7 +467,19 @@ static void dbdataValue(
       default: {
         int n = ((eType-12) / 2);
         if( eType % 2 ){
-          sqlite3_result_text(pCtx, (const char*)pData, n, SQLITE_TRANSIENT);
+          switch( enc ){
+#ifndef SQLITE_OMIT_UTF16
+            case SQLITE_UTF16BE:
+              sqlite3_result_text16be(pCtx, (void*)pData, n, SQLITE_TRANSIENT);
+              break;
+            case SQLITE_UTF16LE:
+              sqlite3_result_text16le(pCtx, (void*)pData, n, SQLITE_TRANSIENT);
+              break;
+#endif
+            default:
+              sqlite3_result_text(pCtx, (char*)pData, n, SQLITE_TRANSIENT);
+              break;
+          }
         }else{
           sqlite3_result_blob(pCtx, pData, n, SQLITE_TRANSIENT);
         }
@@ -477,6 +507,7 @@ static int dbdataNext(sqlite3_vtab_cursor *pCursor){
         rc = dbdataLoadPage(pCsr, pCsr->iPgno, &pCsr->aPage, &pCsr->nPage);
         if( rc!=SQLITE_OK ) return rc;
         if( pCsr->aPage ) break;
+        if( pCsr->bOnePage ) return SQLITE_OK;
         pCsr->iPgno++;
       }
       pCsr->iCell = pTab->bPtr ? -2 : 0;
@@ -540,7 +571,7 @@ static int dbdataNext(sqlite3_vtab_cursor *pCursor){
           if( bNextPage || iOff>pCsr->nPage ){
             bNextPage = 1;
           }else{
-            iOff += dbdataGetVarint(&pCsr->aPage[iOff], &nPayload);
+            iOff += dbdataGetVarintU32(&pCsr->aPage[iOff], &nPayload);
           }
     
           /* If this is a leaf intkey cell, load the rowid */
@@ -587,7 +618,7 @@ static int dbdataNext(sqlite3_vtab_cursor *pCursor){
             /* Load content from overflow pages */
             if( nPayload>nLocal ){
               sqlite3_int64 nRem = nPayload - nLocal;
-              unsigned int pgnoOvfl = get_uint32(&pCsr->aPage[iOff]);
+              u32 pgnoOvfl = get_uint32(&pCsr->aPage[iOff]);
               while( nRem>0 ){
                 u8 *aOvfl = 0;
                 int nOvfl = 0;
@@ -607,7 +638,8 @@ static int dbdataNext(sqlite3_vtab_cursor *pCursor){
               }
             }
     
-            iHdr = dbdataGetVarint(pCsr->pRec, &nHdr);
+            iHdr = dbdataGetVarintU32(pCsr->pRec, &nHdr);
+            if( nHdr>nPayload ) nHdr = 0;
             pCsr->nHdr = nHdr;
             pCsr->pHdrPtr = &pCsr->pRec[iHdr];
             pCsr->pPtr = &pCsr->pRec[pCsr->nHdr];
@@ -621,7 +653,7 @@ static int dbdataNext(sqlite3_vtab_cursor *pCursor){
           if( pCsr->pHdrPtr>&pCsr->pRec[pCsr->nRec] ){
             bNextPage = 1;
           }else{
-            pCsr->pHdrPtr += dbdataGetVarint(pCsr->pHdrPtr, &iType);
+            pCsr->pHdrPtr += dbdataGetVarintU32(pCsr->pHdrPtr, &iType);
             pCsr->pPtr += dbdataValueBytes(iType);
           }
         }
@@ -660,6 +692,18 @@ static int dbdataEof(sqlite3_vtab_cursor *pCursor){
   return pCsr->aPage==0;
 }
 
+/*
+** Return true if nul-terminated string zSchema ends in "()". Or false
+** otherwise.
+*/
+static int dbdataIsFunction(const char *zSchema){
+  size_t n = strlen(zSchema);
+  if( n>2 && zSchema[n-2]=='(' && zSchema[n-1]==')' ){
+    return (int)n-2;
+  }
+  return 0;
+}
+
 /* 
 ** Determine the size in pages of database zSchema (where zSchema is
 ** "main", "temp" or the name of an attached database) and set 
@@ -670,10 +714,16 @@ static int dbdataDbsize(DbdataCursor *pCsr, const char *zSchema){
   DbdataTable *pTab = (DbdataTable*)pCsr->base.pVtab;
   char *zSql = 0;
   int rc, rc2;
+  int nFunc = 0;
   sqlite3_stmt *pStmt = 0;
 
-  zSql = sqlite3_mprintf("PRAGMA %Q.page_count", zSchema);
+  if( (nFunc = dbdataIsFunction(zSchema))>0 ){
+    zSql = sqlite3_mprintf("SELECT %.*s(0)", nFunc, zSchema);
+  }else{
+    zSql = sqlite3_mprintf("PRAGMA %Q.page_count", zSchema);
+  }
   if( zSql==0 ) return SQLITE_NOMEM;
+
   rc = sqlite3_prepare_v2(pTab->db, zSql, -1, &pStmt, 0);
   sqlite3_free(zSql);
   if( rc==SQLITE_OK && sqlite3_step(pStmt)==SQLITE_ROW ){
@@ -683,6 +733,25 @@ static int dbdataDbsize(DbdataCursor *pCsr, const char *zSchema){
   if( rc==SQLITE_OK ) rc = rc2;
   return rc;
 }
+
+/*
+** Attempt to figure out the encoding of the database by retrieving page 1
+** and inspecting the header field. If successful, set the pCsr->enc variable
+** and return SQLITE_OK. Otherwise, return an SQLite error code.
+*/
+static int dbdataGetEncoding(DbdataCursor *pCsr){
+  int rc = SQLITE_OK;
+  int nPg1 = 0;
+  u8 *aPg1 = 0;
+  rc = dbdataLoadPage(pCsr, 1, &aPg1, &nPg1);
+  assert( rc!=SQLITE_OK || nPg1==0 || nPg1>=512 );
+  if( rc==SQLITE_OK && nPg1>0 ){
+    pCsr->enc = get_uint32(&aPg1[56]);
+  }
+  sqlite3_free(aPg1);
+  return rc;
+}
+
 
 /* 
 ** xFilter method for sqlite_dbdata and sqlite_dbptr.
@@ -701,19 +770,28 @@ static int dbdataFilter(
   assert( pCsr->iPgno==1 );
   if( idxNum & 0x01 ){
     zSchema = (const char*)sqlite3_value_text(argv[0]);
+    if( zSchema==0 ) zSchema = "";
   }
   if( idxNum & 0x02 ){
     pCsr->iPgno = sqlite3_value_int(argv[(idxNum & 0x01)]);
     pCsr->bOnePage = 1;
   }else{
-    pCsr->nPage = dbdataDbsize(pCsr, zSchema);
     rc = dbdataDbsize(pCsr, zSchema);
   }
 
   if( rc==SQLITE_OK ){
+    int nFunc = 0;
     if( pTab->pStmt ){
       pCsr->pStmt = pTab->pStmt;
       pTab->pStmt = 0;
+    }else if( (nFunc = dbdataIsFunction(zSchema))>0 ){
+      char *zSql = sqlite3_mprintf("SELECT %.*s(?2)", nFunc, zSchema);
+      if( zSql==0 ){
+        rc = SQLITE_NOMEM;
+      }else{
+        rc = sqlite3_prepare_v2(pTab->db, zSql, -1, &pCsr->pStmt, 0);
+        sqlite3_free(zSql);
+      }
     }else{
       rc = sqlite3_prepare_v2(pTab->db, 
           "SELECT data FROM sqlite_dbpage(?) WHERE pgno=?", -1,
@@ -726,13 +804,20 @@ static int dbdataFilter(
   }else{
     pTab->base.zErrMsg = sqlite3_mprintf("%s", sqlite3_errmsg(pTab->db));
   }
+
+  /* Try to determine the encoding of the db by inspecting the header
+  ** field on page 1. */
+  if( rc==SQLITE_OK ){
+    rc = dbdataGetEncoding(pCsr);
+  }
+
   if( rc==SQLITE_OK ){
     rc = dbdataNext(pCursor);
   }
   return rc;
 }
 
-/* 
+/*
 ** Return a column for the sqlite_dbdata or sqlite_dbptr table.
 */
 static int dbdataColumn(
@@ -778,9 +863,10 @@ static int dbdataColumn(
           sqlite3_result_int64(ctx, pCsr->iIntkey);
         }else{
           sqlite3_int64 iType;
-          dbdataGetVarint(pCsr->pHdrPtr, &iType);
+          dbdataGetVarintU32(pCsr->pHdrPtr, &iType);
           dbdataValue(
-              ctx, iType, pCsr->pPtr, &pCsr->pRec[pCsr->nRec] - pCsr->pPtr
+              ctx, pCsr->enc, iType, pCsr->pPtr, 
+              &pCsr->pRec[pCsr->nRec] - pCsr->pPtr
           );
         }
         break;

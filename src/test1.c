@@ -1852,7 +1852,8 @@ static int SQLITE_TCLAPI test_create_function_v2(
     {"utf16le", SQLITE_UTF16LE },
     {"utf16be", SQLITE_UTF16BE },
     {"any",     SQLITE_ANY },
-    {"0", 0 }
+    {"0", 0 },
+    {0, 0 }
   };
 
   if( objc<5 || (objc%2)==0 ){
@@ -7273,6 +7274,7 @@ static int SQLITE_TCLAPI test_test_control(
     { "SQLITE_TESTCTRL_SORTER_MMAP",        SQLITE_TESTCTRL_SORTER_MMAP     }, 
     { "SQLITE_TESTCTRL_IMPOSTER",           SQLITE_TESTCTRL_IMPOSTER        },
     { "SQLITE_TESTCTRL_INTERNAL_FUNCTIONS", SQLITE_TESTCTRL_INTERNAL_FUNCTIONS},
+    { 0, 0 }
   };
   int iVerb;
   int iFlag;
@@ -7658,6 +7660,8 @@ static int SQLITE_TCLAPI optimization_control(
     { "skip-scan",           SQLITE_SkipScan       },
     { "push-down",           SQLITE_PushDown       },
     { "balanced-merge",      SQLITE_BalancedMerge  },
+    { "propagate-const",     SQLITE_PropagateConst },
+    { 0, 0 }
   };
 
   if( objc!=4 ){

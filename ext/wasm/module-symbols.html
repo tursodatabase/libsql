@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
+    <title>sqlite3 Module Symbols</title>
+    <style>
+      body {
+          font-size: 12.5pt;
+          padding-bottom: 1em;
+      }
+      </style>
+  </head>
+  <body>
+<div class="fossil-doc" data-title="sqlite3 Module Symbols"><!-- EXTRACT_BEGIN -->
+<!--
+    The part of this doc wrapped in div.fossil-doc gets snipped out
+    from the canonical copy in the main tree (ext/wasm/module-symbols.html)
+    and added to the wasm docs repository, where it's served from
+    fossil.
+-->
+  <style>
+    .pseudolist {
+        column-count: auto;
+        column-width: 12rem;
+        column-gap: 1.5em;
+        width: 90%;
+        margin: auto;
+    }
+    .pseudolist.wide {
+        column-width: 21rem;
+    }
+    .pseudolist.wide2 {
+        column-width: 25rem;
+    }
+    .pseudolist > span {
+        font-family: monospace;
+        margin: 0.25em 0;
+        display: block;
+    }
+    .pseudolist.wrap-anywhere {
+        overflow-wrap: anywhere;
+    }
+    .warning { color: firebrick }
+    .error { color: firebrick; background-color: yellow}
+    .hidden, .initially-hidden {
+        position: absolute !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        display: none !important;
+    }
+    h1::before, h2::before, h3::before, h4::before {
+        /* Remove automatic numbering */
+        content: "" !important;
+        background-color: transparent !important;
+        margin: 0 !important;
+        border: 0 !important;
+        padding: 0 !important;
+    }
+    .func-wasm {
+        
+    }
+    .func-wasm::after {
+        content: "WASM";
+        color: saddlebrown;
+        /* ^^^^ the color must be legible in both "bright" and "dark"
+           s    ite themes. */
+        font-size: 0.65em;
+    /* baseline-shift: super; */
+        vertical-align: super;
+    }
+  </style>
+  <p id='module-load-status'><strong>Loading WASM module...</strong>
+    If this takes "a long time" it may have failed and the browser's
+    dev console may contain hints as to why.
+  </p>
+
+  <p>
+    This page lists the SQLite3 APIs exported
+    by <code>sqlite3.wasm</code> and exposed to clients
+    by <code>sqlite3.js</code>. These lists are generated dynamically
+    by loading the JS/WASM module and introspecting it, with the following
+    caveats:
+  </p>
+
+  <ul>
+    <li>Some APIs are explicitly filtered out of these lists because
+      they are strictly for internal use within the JS/WASM APIs and
+      its own test code.
+    </li>
+    <li>This page runs in the main UI thread so cannot see features
+      which are only available in a Worker thread. If this page were
+      to function via a Worker, it would not be able to see
+      functionality only available in the main thread. Starting a
+      Worker here to fetch those symbols requires loading a second
+      copy of the sqlite3 WASM module and JS code.
+    </li>
+  </ul>
+
+  <div class='initially-hidden'>
+
+    <p>This page exposes a global symbol named <code>sqlite3</code>
+      which can be inspected using the browser's dev tools.
+    </p>
+
+    <p>Jump to...</p>
+    <ul>
+      <li><a href='#sqlite3-namespace'><code>sqlite3</code> namespace</a></li>
+      <li><a href='#sqlite3-version'><code>sqlite3.version</code> object</a></li>
+      <li><a href='#sqlite3-functions'><code>sqlite3_...()</code> functions</a></li>
+      <li><a href='#sqlite3-constants'><code>SQLITE_...</code> constants</a></li>
+      <li><a href='#sqlite3.oo1'><code>sqlite3.oo1</code> namespace</a>
+        <!--ul>
+          <li><a href='#sqlite3.oo1.DB'><code>sqlite3.oo1.DB</code></a></li>
+          <li><a href='#sqlite3.oo1.Stmt'><code>sqlite3.oo1.Stmt</code></a></li>
+        </ul-->
+      </li>
+      <li><a href='#sqlite3.wasm'><code>sqlite3.wasm</code> namespace</a></li>
+      <li><a href='#sqlite3.wasm.pstack'><code>sqlite3.wasm.pstack</code> namespace</a></li>
+      <li><a href='#compile-options'>Compilation options used in this module build</a></li>
+    </ul>
+
+    <a id="sqlite3-namespace"></a>
+    <h1><code>sqlite3</code> Namespace</h1>
+    <p>
+      The <code>sqlite3</code> namespace object exposes the following...
+    </p>
+    <div id='list-namespace' class='pseudolist'></div>
+
+    <a id="sqlite3-version"></a>
+    <h1><code>sqlite3.version</code> Object</h1>
+    <p>
+      The <code>sqlite3.version</code> object exposes the following...
+    </p>
+    <div id='list-version' class='pseudolist wide wrap-anywhere'></div>
+    
+    <a id="sqlite3-functions"></a>
+    <h1><code>sqlite3_...()</code> Function List</h1>
+    
+    <p>The <code>sqlite3.capi</code> namespace exposes the following
+      <a href='https://sqlite.org/c3ref/funclist.html'><code>sqlite3_...()</code>
+        functions</a>...
+    </p>
+    <div id='list-functions' class='pseudolist wide'></div>
+    <p>
+      <code class='func-wasm'></code> = function is specific to the JS/WASM
+      bindings, not part of the C API.
+    </p>
+
+    <a id="sqlite3-constants"></a>
+    <h1><code>SQLITE_...</code> Constants</h1>
+
+    <p>The <code>sqlite3.capi</code> namespace exposes the following
+      <a href='https://sqlite.org/c3ref/constlist.html'><code>SQLITE_...</code>
+        constants</a>...
+    </p>
+    <div id='list-constants' class='pseudolist wide'></div>
+
+    <a id="sqlite3.oo1"></a>
+    <h1><code>sqlite3.oo1</code> Namespace</h1>
+    <p>
+      The <code>sqlite3.oo1</code> namespace exposes the following...
+    </p>
+    <div id='list-oo1' class='pseudolist'></div>
+
+    <a id="sqlite3.wasm"></a>
+    <h1><code>sqlite3.wasm</code> Namespace</h1>
+    <p>
+      The <code>sqlite3.wasm</code> namespace exposes the
+      following...
+    </p>
+    <div id='list-wasm' class='pseudolist'></div>
+
+    <a id="sqlite3.wasm.pstack"></a>
+    <h1><code>sqlite3.wasm.pstack</code> Namespace</h1>
+    <p>
+      The <code>sqlite3.wasm.pstack</code> namespace exposes the
+      following...
+    </p>
+    <div id='list-wasm-pstack' class='pseudolist'></div>
+
+    <a id="compile-options"></a>
+    <h1>Compilation Options</h1>
+    <p>
+      <code>SQLITE_...</code> compilation options used in this build
+      of <code>sqlite3.wasm</code>...
+    </p>
+    <div id='list-compile-options' class='pseudolist wide2'></div>
+
+  </div><!-- .initially-hidden -->
+  <script src="jswasm/sqlite3.js">/* This tag MUST be in side the
+  fossil-doc block so that this part can work without modification in
+  the wasm docs repo.  */</script>
+  <script>(async function(){
+    const eNew = (tag,parent)=>{
+        const e = document.createElement(tag);
+        if(parent) parent.appendChild(e);
+        return e;
+    };
+    const eLi = (label,parent)=>{
+        const e = eNew('span',parent);
+        e.innerText = label;
+        return e;
+    };
+    const E = (sel)=>document.querySelector(sel);
+    const EAll = (sel)=>document.querySelectorAll(sel);
+    const eFuncs = E('#list-functions'),
+          eConst = E('#list-constants');
+    const renderConst = function(name){
+        eLi(name, eConst);
+    };
+    const renderFunc = function(name){
+        let lbl = name+'()';
+        const e = eLi(lbl, eFuncs);;
+        if(name.startsWith('sqlite3_js')
+           || name.startsWith('sqlite3_wasm')){
+            e.classList.add('func-wasm');
+        }
+    };
+    const renderGeneric = function(name,value,eParent){
+        let lbl;
+        if(value instanceof Function) lbl = name+'()';
+        else{
+            switch(typeof value){
+                case 'number': case 'boolean': case 'string':
+                    lbl = name+' = '+JSON.stringify(value);
+                    break;
+                default:
+                    lbl = name + ' ['+(typeof value)+']';
+            }
+        }
+        const e = eLi(lbl, eParent);
+        if(name.startsWith('sqlite3_wasm')){
+            e.classList.add('func-wasm');
+        }
+    };
+    const renderIt = async function(sqlite3){
+        self.sqlite3 = sqlite3;
+        console.warn("sqlite3 installed as global symbol self.sqlite3.");
+        const capi = sqlite3.capi, wasm = sqlite3.wasm;
+        const cmpIcase = (a,b)=>a.toLowerCase().localeCompare(b.toLowerCase());
+        const renderX = function(tgtElem, container, keys){
+            for(const k of keys.sort(cmpIcase)){
+                renderGeneric(k, container[k], tgtElem);
+            }
+        };
+        
+        const excludeNamespace = ['scriptInfo','StructBinder'];
+        renderX(
+            E('#list-namespace'), sqlite3,
+            Object.keys(sqlite3)
+                .filter((v)=>excludeNamespace.indexOf(v)<0)
+        );
+        renderX(
+            E('#list-version'), sqlite3.version,
+            Object.keys(sqlite3.version)
+        );
+
+        /* sqlite3_...() and SQLITE_... */
+        const lists = {c: [], f: []};
+        for(const [k,v] of Object.entries(capi)){
+            if(k.startsWith('SQLITE_')) lists.c.push(k);
+            else if(k.startsWith('sqlite3_')) lists.f.push(k);
+        }
+        const excludeCapi = [
+            'sqlite3_wasmfs_filename_is_persistent',
+            'sqlite3_wasmfs_opfs_dir'
+        ];
+        lists.c.sort().forEach(renderConst);
+        lists.f
+            .filter((v)=>excludeCapi.indexOf(v)<0)
+            .sort()
+            .forEach(renderFunc);
+        lists.c = lists.f = null;
+
+        renderX(E('#list-oo1'), sqlite3.oo1,
+                Object.keys(sqlite3.oo1) );
+
+        const excludeWasm = ['ctype'];
+        renderX(E('#list-wasm'),
+                wasm, Object.keys(wasm).filter((v)=>{
+                    return !v.startsWith('sqlite3_wasm_')
+                        && excludeWasm.indexOf(v)<0;
+                }));
+        const psKeys = Object.keys(wasm.pstack);
+        psKeys.push('pointer','quota','remaining');
+        renderX(E('#list-wasm-pstack'), wasm.pstack, psKeys);
+
+        const cou = wasm.compileOptionUsed();
+        //const cou2 = Object.create(null);
+        //Object.entries(cou).forEach((e)=>cou2['SQLITE_'+e[0]] = e[1]);
+        renderX(E('#list-compile-options'), cou, Object.keys(cou));
+    };
+
+    /**
+       This is a module object for use with the emscripten-installed
+       sqlite3InitModule() factory function.
+    */
+    const myModule = {
+        print: (...args)=>{console.log(...args)},
+        printErr: (...args)=>{console.error(...args)},
+        /**
+           Called by the Emscripten module init bits to report loading
+           progress. It gets passed an empty argument when loading is done
+           (after onRuntimeInitialized() and any this.postRun callbacks
+           have been run).
+        */
+        setStatus: function f(text){
+            if(!f.last){
+                f.last = { text: '', step: 0 };
+                f.ui = {
+                    status: E('#module-load-status')
+                };
+            }
+            if(text === f.last.text) return;
+            f.last.text = text;
+            ++f.last.step;
+            if(text) {
+                f.ui.status.classList.remove('hidden');
+                f.ui.status.innerText = text;
+            }else{
+                f.ui.status.classList.add('hidden');
+                EAll('.initially-hidden').forEach((e)=>{
+                    e.classList.remove('initially-hidden');
+                });
+            }
+        }
+    }/*myModule*/;
+    self.sqlite3InitModule(myModule).then(renderIt);
+})();</script>
+</div><!-- .fossil-doc EXTRACT_END -->
+</body></html>

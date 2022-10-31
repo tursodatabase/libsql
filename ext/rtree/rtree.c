@@ -3235,7 +3235,7 @@ static int rtreeUpdate(
   rtreeReference(pRtree);
   assert(nData>=1);
 
-  cell.iRowid = 0;  /* Used only to suppress a compiler warning */
+  memset(&cell, 0, sizeof(cell));
 
   /* Constraint handling. A write operation on an r-tree table may return
   ** SQLITE_CONSTRAINT for two reasons:
