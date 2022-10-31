@@ -162,12 +162,64 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     }
   });
 
-  /** Throws a new Error, the message of which is the concatenation
-      all args with a space between each. */
-  const toss = (...args)=>{throw new Error(args.join(' '))};
+  /**
+     An Error subclass specifically for reporting DB-level errors and
+     enabling clients to unambiguously identify such exceptions.
+     The C-level APIs never throw, but some of the higher-level
+     C-style APIs do and the object-oriented APIs use exceptions
+     exclusively to report errors.
+  */
+  class SQLite3Error extends Error {
+    /**
+       Constructs this object with a message equal to all arguments
+       concatenated with a space between each one. As a special case,
+       if it's passed only a single integer argument, the string form
+       of that argument is the result of
+       sqlite3.capi.sqlite3_js_rc_str() or (if that returns falsy), a
+       synthesized string which contains that integer.
+    */
+    constructor(...args){
+      if(1===args.length && 'number'===typeof args[0] && args[0]===(args[0] | 0)){
+        super((capi.sqlite3_js_rc_str && capi.sqlite3_js_rc_str(args[0]))
+              || ("Unknown result code #"+args[0]));
+      }else{
+        super(args.join(' '));
+      }
+      this.name = 'SQLite3Error';
+    }
+  };
+
+  /** 
+      The main sqlite3 binding API gets installed into this object,
+      mimicking the C API as closely as we can. The numerous members
+      names with prefixes 'sqlite3_' and 'SQLITE_' behave, insofar as
+      possible, identically to the C-native counterparts, as documented at:
+
+      https://www.sqlite.org/c3ref/intro.html
+
+      A very few exceptions require an additional level of proxy
+      function or may otherwise require special attention in the WASM
+      environment, and all such cases are document here. Those not
+      documented otherwise are installed as 1-to-1 proxies for their
+      C-side counterparts.
+  */
+  const capi = Object.create(null);
+
+  /**
+     Functionally equivalent to the SQLite3Error constructor but may
+     be used as part of an expression, e.g.:
+
+     ```
+     return someFunction(x) || SQLite3Error.toss(...);
+     ```
+  */
+  SQLite3Error.toss = (...args)=>{
+    throw new SQLite3Error(...args);
+  };
+  const toss3 = SQLite3Error.toss;
 
   if(config.wasmfsOpfsDir && !/^\/[^/]+$/.test(config.wasmfsOpfsDir)){
-    toss("config.wasmfsOpfsDir must be falsy or in the form '/dir-name'.");
+    toss3("config.wasmfsOpfsDir must be falsy or in the form '/dir-name'.");
   }
 
   /**
@@ -267,7 +319,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       that v is not a supported TypedArray value. */
   const affirmBindableTypedArray = (v)=>{
     return isBindableTypedArray(v)
-      || toss("Value is not of a supported TypedArray type.");
+      || toss3("Value is not of a supported TypedArray type.");
   };
 
   const utf8Decoder = new TextDecoder('utf-8');
@@ -318,21 +370,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     throw new WasmAllocError(...args);
   };
 
-  /** 
-      The main sqlite3 binding API gets installed into this object,
-      mimicking the C API as closely as we can. The numerous members
-      names with prefixes 'sqlite3_' and 'SQLITE_' behave, insofar as
-      possible, identically to the C-native counterparts, as documented at:
-
-      https://www.sqlite.org/c3ref/intro.html
-
-      A very few exceptions require an additional level of proxy
-      function or may otherwise require special attention in the WASM
-      environment, and all such cases are document here. Those not
-      documented here are installed as 1-to-1 proxies for their C-side
-      counterparts.
-  */
-  const capi = {
+  Object.assign(capi, {
     /**
        sqlite3_create_function_v2() differs from its native
        counterpart only in the following ways:
@@ -557,7 +595,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        values.
      */
     sqlite3_randomness: (n, outPtr)=>{/*installed later*/},
-  }/*capi*/;
+  }/*capi*/);
 
   /**
      Various internal-use utilities are added here as needed. They
@@ -617,7 +655,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        The symbols exported by the WASM environment.
     */
     exports: config.exports
-      || toss("Missing API config.exports (WASM module exports)."),
+      || toss3("Missing API config.exports (WASM module exports)."),
 
     /**
        When Emscripten compiles with `-sIMPORT_MEMORY`, it
@@ -626,7 +664,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        available via this.exports.memory.
     */
     memory: config.memory || config.exports['memory']
-      || toss("API config object requires a WebAssembly.Memory object",
+      || toss3("API config object requires a WebAssembly.Memory object",
               "in either config.exports.memory (exported)",
               "or config.memory (imported)."),
 
@@ -688,7 +726,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
         keyDealloc =  config.deallocExportName || 'free';
   for(const key of [keyAlloc, keyDealloc]){
     const f = wasm.exports[key];
-    if(!(f instanceof Function)) toss("Missing required exports[",key,"] function.");
+    if(!(f instanceof Function)) toss3("Missing required exports[",key,"] function.");
   }
 
   wasm.alloc = function(n){
@@ -1057,43 +1095,6 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     }
   })/*wasm.pstack properties*/;
 
-  /**
-     An Error subclass specifically for reporting DB-level errors and
-     enabling clients to unambiguously identify such exceptions.
-     The C-level APIs never throw, but some of the higher-level
-     C-style APIs do and the object-oriented APIs use exceptions
-     exclusively to report errors.
-  */
-  class SQLite3Error extends Error {
-    /**
-       Constructs this object with a message equal to all arguments
-       concatenated with a space between each one. As a special case,
-       if it's passed only a single integer argument, the string form
-       of that argument is the result of
-       sqlite3.capi.sqlite3_js_rc_str() or (if that returns falsy), a
-       synthesized string which contains that integer.
-    */
-    constructor(...args){
-      if(1===args.length && 'number'===typeof args[0] && args[0]===(args[0] | 0)){
-        super(capi.sqlite3_js_rc_str(args[0]) || ("Unknown result code #"+args[0]));
-      }else{
-        super(args.join(' '));
-      }
-      this.name = 'SQLite3Error';
-    }
-  };
-  /**
-     Functionally equivalent to the SQLite3Error constructor but may
-     be used as part of an expression, e.g.:
-
-     ```
-     return someFunction(x) || SQLite3Error.toss(...);
-     ```
-  */
-  SQLite3Error.toss = (...args)=>{
-    throw new SQLite3Error(...args);
-  };
-
   capi.sqlite3_randomness = (...args)=>{
     if(1===args.length && util.isTypedArray(args[0])
       && 1===args[0].BYTES_PER_ELEMENT){
@@ -1245,8 +1246,8 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      error it throws with a description of the problem.
   */
   capi.sqlite3_js_db_export = function(pDb){
-    if(!pDb) toss('Invalid sqlite3* argument.');
-    if(!wasm.bigIntEnabled) toss('BigInt64 support is not enabled.');
+    if(!pDb) toss3('Invalid sqlite3* argument.');
+    if(!wasm.bigIntEnabled) toss3('BigInt64 support is not enabled.');
     const stack = wasm.pstack.pointer;
     let pOut;
     try{
@@ -1263,7 +1264,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
         pDb, ppOut, pSize, 0
       );
       if(rc){
-        toss("Database serialization failed with code",
+        toss3("Database serialization failed with code",
              sqlite3.capi.sqlite3_js_rc_str(rc));
       }
       pOut = wasm.getPtrValue(ppOut);

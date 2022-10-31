@@ -365,7 +365,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      current Stmt and returns the callback argument of the type
      indicated by the input arguments.
   */
-  const parseExecArgs = function(args){
+  const parseExecArgs = function(db, args){
     const out = Object.create(null);
     out.opt = Object.create(null);
     switch(args.length){
@@ -385,20 +385,34 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           break;
         default: toss3("Invalid argument count for exec().");
     };
-    if(util.isSQLableTypedArray(out.sql)){
-      out.sql = util.typedArrayToString(out.sql);
-    }else if(Array.isArray(out.sql)){
-      out.sql = out.sql.join('');
-    }else if('string'!==typeof out.sql){
+    out.sql = util.flexibleString(out.sql);
+    if('string'!==typeof out.sql){
       toss3("Missing SQL argument or unsupported SQL value type.");
     }
-    if(out.opt.callback || out.opt.resultRows){
-      switch((undefined===out.opt.rowMode)
-             ? 'array' : out.opt.rowMode) {
+    const opt = out.opt;
+    switch(opt.returnValue){
+        case 'resultRows':
+          if(!opt.resultRows) opt.resultRows = [];
+          out.returnVal = ()=>opt.resultRows;
+          break;
+        case 'saveSql':
+          if(!opt.saveSql) opt.saveSql = [];
+          out.returnVal = ()=>opt.saveSql;
+          break;
+        case undefined:
+        case 'this':
+          break;
+        default:
+          toss3("Invalid returnValue value:",opt.returnValue);
+    }
+    if(!out.returnVal) out.returnVal = ()=>db;
+    if(opt.callback || opt.resultRows){
+      switch((undefined===opt.rowMode)
+             ? 'array' : opt.rowMode) {
           case 'object': out.cbArg = (stmt)=>stmt.get(Object.create(null)); break;
           case 'array': out.cbArg = (stmt)=>stmt.get([]); break;
           case 'stmt':
-            if(Array.isArray(out.opt.resultRows)){
+            if(Array.isArray(opt.resultRows)){
               toss3("exec(): invalid rowMode for a resultRows array: must",
                     "be one of 'array', 'object',",
                     "a result column number, or column name reference.");
@@ -406,32 +420,32 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             out.cbArg = (stmt)=>stmt;
             break;
           default:
-            if(util.isInt32(out.opt.rowMode)){
-              out.cbArg = (stmt)=>stmt.get(out.opt.rowMode);
+            if(util.isInt32(opt.rowMode)){
+              out.cbArg = (stmt)=>stmt.get(opt.rowMode);
               break;
-            }else if('string'===typeof out.opt.rowMode && out.opt.rowMode.length>1){
+            }else if('string'===typeof opt.rowMode && opt.rowMode.length>1){
               /* "$X", ":X", and "@X" fetch column named "X" (case-sensitive!) */
-              const prefix = out.opt.rowMode[0];
+              const prefix = opt.rowMode[0];
               if(':'===prefix || '@'===prefix || '$'===prefix){
                 out.cbArg = function(stmt){
                   const rc = stmt.get(this.obj)[this.colName];
                   return (undefined===rc) ? toss3("exec(): unknown result column:",this.colName) : rc;
                 }.bind({
                   obj:Object.create(null),
-                  colName: out.opt.rowMode.substr(1)
+                  colName: opt.rowMode.substr(1)
                 });
                 break;
               }
             }
-            toss3("Invalid rowMode:",out.opt.rowMode);
+            toss3("Invalid rowMode:",opt.rowMode);
       }
     }
     return out;
   };
 
   /**
-     Internal impl of the DB.selectRowArray() and
-     selectRowObject() methods.
+     Internal impl of the DB.selectArray() and
+     selectObject() methods.
   */
   const __selectFirstRow = (db, sql, bind, getArg)=>{
     let stmt, rc;
@@ -588,9 +602,10 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     /**
        Executes one or more SQL statements in the form of a single
        string. Its arguments must be either (sql,optionsObject) or
-       (optionsObject). In the latter case, optionsObject.sql
-       must contain the SQL to execute. Returns this
-       object. Throws on error.
+       (optionsObject). In the latter case, optionsObject.sql must
+       contain the SQL to execute. By default it returns this object
+       but that can be changed via the `returnValue` option as
+       described below. Throws on error.
 
        If no SQL is provided, or a non-string is provided, an
        exception is triggered. Empty SQL, on the other hand, is
@@ -599,21 +614,25 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        The optional options object may contain any of the following
        properties:
 
-       - `.sql` = the SQL to run (unless it's provided as the first
+       - `sql` = the SQL to run (unless it's provided as the first
        argument). This must be of type string, Uint8Array, or an array
        of strings. In the latter case they're concatenated together
        as-is, _with no separator_ between elements, before evaluation.
        The array form is often simpler for long hand-written queries.
 
-       - `.bind` = a single value valid as an argument for
+       - `bind` = a single value valid as an argument for
        Stmt.bind(). This is _only_ applied to the _first_ non-empty
        statement in the SQL which has any bindable parameters. (Empty
        statements are skipped entirely.)
 
-       - `.saveSql` = an optional array. If set, the SQL of each
+       - `saveSql` = an optional array. If set, the SQL of each
        executed statement is appended to this array before the
        statement is executed (but after it is prepared - we don't have
-       the string until after that). Empty SQL statements are elided.
+       the string until after that). Empty SQL statements are elided
+       but can have odd effects in the output. e.g. SQL of: `"select
+       1; -- empty\n; select 2"` will result in an array containing
+       `["select 1;", "--empty \n; select 2"]`. That's simply how
+       sqlite3 records the SQL for the 2nd statement.
 
        ==================================================================
        The following options apply _only_ to the _first_ statement
@@ -621,14 +640,14 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        the statement actually produces any result rows.
        ==================================================================
 
-       - `.columnNames`: if this is an array, the column names of the
+       - `columnNames`: if this is an array, the column names of the
        result set are stored in this array before the callback (if
        any) is triggered (regardless of whether the query produces any
        result rows). If no statement has result columns, this value is
        unchanged. Achtung: an SQL result may have multiple columns
        with identical names.
 
-       - `.callback` = a function which gets called for each row of
+       - `callback` = a function which gets called for each row of
        the result set, but only if that statement has any result
        _rows_. The callback's "this" is the options object, noting
        that this function synthesizes one if the caller does not pass
@@ -647,7 +666,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        The first argument passed to the callback defaults to an array of
        values from the current result row but may be changed with ...
 
-       - `.rowMode` = specifies the type of he callback's first argument.
+       - `rowMode` = specifies the type of he callback's first argument.
        It may be any of...
 
        A) A string describing what type of argument should be passed
@@ -655,7 +674,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
          A.1) `'array'` (the default) causes the results of
          `stmt.get([])` to be passed to the `callback` and/or appended
-         to `resultRows`.
+         to `resultRows`
 
          A.2) `'object'` causes the results of
          `stmt.get(Object.create(null))` to be passed to the
@@ -687,7 +706,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
        Any other `rowMode` value triggers an exception.
 
-       - `.resultRows`: if this is an array, it functions similarly to
+       - `resultRows`: if this is an array, it functions similarly to
        the `callback` option: each row of the result set (if any),
        with the exception that the `rowMode` 'stmt' is not legal. It
        is legal to use both `resultRows` and `callback`, but
@@ -695,28 +714,44 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        and can be used over a WebWorker-style message interface.
        exec() throws if `resultRows` is set and `rowMode` is 'stmt'.
 
+       - `returnValue`: is a string specifying what this function
+       should return:
+
+         A) The default value is `"this"`, meaning that the
+            DB object itself should be returned.
+
+         B) `"resultRows"` means to return the value of the
+            `resultRows` option. If `resultRows` is not set, this
+            function behaves as if it were set to an empty array.
+
+         C) `"saveSql"` means to return the value of the
+            `saveSql` option. If `saveSql` is not set, this
+            function behaves as if it were set to an empty array.
 
        Potential TODOs:
 
-       - `.bind`: permit an array of arrays/objects to bind. The first
+       - `bind`: permit an array of arrays/objects to bind. The first
        sub-array would act on the first statement which has bindable
        parameters (as it does now). The 2nd would act on the next such
        statement, etc.
 
-       - `.callback` and `.resultRows`: permit an array entries with
-       semantics similar to those described for `.bind` above.
+       - `callback` and `resultRows`: permit an array entries with
+       semantics similar to those described for `bind` above.
 
     */
     exec: function(/*(sql [,obj]) || (obj)*/){
       affirmDbOpen(this);
-      const arg = parseExecArgs(arguments);
+      const arg = parseExecArgs(this, arguments);
       if(!arg.sql){
         return (''===arg.sql) ? this : toss3("exec() requires an SQL string.");
       }
       const opt = arg.opt;
       const callback = opt.callback;
-      let resultRows = (Array.isArray(opt.resultRows)
-                          ? opt.resultRows : undefined);
+      const returnValue = opt.returnValue || 'this';
+      const resultRows = (Array.isArray(opt.resultRows)
+                          ? opt.resultRows : (
+                            'resultRows'===returnValue ? [] : undefined
+                          ));
       let stmt;
       let bind = opt.bind;
       let evalFirstResult = !!(arg.cbArg || opt.columnNames) /* true to evaluate the first result-returning query */;
@@ -774,7 +809,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
               stmt._isLocked = true;
               const row = arg.cbArg(stmt);
               if(resultRows) resultRows.push(row);
-              if(callback) callback.apply(opt,[row,stmt]);
+              if(callback) callback.call(opt, row, stmt);
               stmt._isLocked = false;
             }
           }else{
@@ -793,7 +828,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         }
         wasm.scopedAllocPop(stack);
       }
-      return this;
+      return arg.returnVal();
     }/*exec()*/,
     /**
        Creates a new scalar UDF (User-Defined Function) which is

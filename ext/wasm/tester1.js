@@ -1220,8 +1220,9 @@
     .t('Table t', function(sqlite3){
       const db = this.db;
       let list = [];
-      db.exec({
+      let rc = db.exec({
         sql:['CREATE TABLE t(a,b);',
+             // ^^^ using TEMP TABLE breaks the db export test
              "INSERT INTO t(a,b) VALUES(1,2),(3,4),",
              "(?,?),('blob',X'6869')"/*intentionally missing semicolon to test for
                                        off-by-one bug in string-to-WASM conversion*/],
@@ -1229,7 +1230,8 @@
         bind: [5,6]
       });
       //debug("Exec'd SQL:", list);
-      T.assert(2 === list.length)
+      T.assert(rc === db)
+        .assert(2 === list.length)
         .assert('string'===typeof list[1])
         .assert(4===db.changes());
       if(wasm.bigIntEnabled){
@@ -1502,30 +1504,61 @@
           xValue: xValueFinal
         });
         db.exec([
-          "CREATE TABLE twin(x, y); INSERT INTO twin VALUES",
+          "CREATE TEMP TABLE twin(x, y); INSERT INTO twin VALUES",
           "('a', 4),('b', 5),('c', 3),('d', 8),('e', 1)"
         ]);
-        let count = 0;
-        db.exec({
+        let rc = db.exec({
+          returnValue: 'resultRows',
           sql:[
             "SELECT x, winsumint(y) OVER (",
             "ORDER BY x ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING",
             ") AS sum_y ",
-            "FROM twin ORDER BY x;",
-            "DROP TABLE twin;"
-          ],
-          callback: function(row){
-            switch(++count){
-                case 1: T.assert('a'===row[0] && 9===row[1]); break;
-                case 2: T.assert('b'===row[0] && 12===row[1]); break;
-                case 3: T.assert('c'===row[0] && 16===row[1]); break;
-                case 4: T.assert('d'===row[0] && 12===row[1]); break;
-                case 5: T.assert('e'===row[0] && 9===row[1]); break;
-                default: toss("Too many rows to window function.");
-            }
-          }
+            "FROM twin ORDER BY x;"
+          ]
         });
-        T.assert(5 === count);
+        T.assert(Array.isArray(rc))
+          .assert(5 === rc.length);
+        let count = 0;
+        for(const row of rc){
+          switch(++count){
+              case 1: T.assert('a'===row[0] && 9===row[1]); break;
+              case 2: T.assert('b'===row[0] && 12===row[1]); break;
+              case 3: T.assert('c'===row[0] && 16===row[1]); break;
+              case 4: T.assert('d'===row[0] && 12===row[1]); break;
+              case 5: T.assert('e'===row[0] && 9===row[1]); break;
+              default: toss("Too many rows to window function.");
+          }
+        }
+        const resultRows = [];
+        rc = db.exec({
+          resultRows,
+          returnValue: 'resultRows',
+          sql:[
+            "SELECT x, winsumint(y) OVER (",
+            "ORDER BY x ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING",
+            ") AS sum_y ",
+            "FROM twin ORDER BY x;"
+          ]
+        });
+        T.assert(rc === resultRows)
+          .assert(5 === rc.length);
+
+        rc = db.exec({
+          returnValue: 'saveSql',
+          sql: "select 1; select 2; -- empty\n; select 3"
+        });
+        T.assert(Array.isArray(rc))
+          .assert(3===rc.length)
+          .assert('select 1;' === rc[0])
+          .assert('select 2;' === rc[1])
+          .assert('-- empty\n; select 3' === rc[2]
+                  /* Strange but true. */);
+        
+        T.mustThrowMatching(()=>{
+          db.exec({sql:'', returnValue: 'nope'});
+        }, /^Invalid returnValue/);
+
+        db.exec("DROP TABLE twin");
       }
     }/*window UDFs*/)
 
@@ -1536,7 +1569,7 @@
       db.exec({
         sql:new TextEncoder('utf-8').encode([
           // ^^^ testing string-vs-typedarray handling in exec()
-          "attach 'session' as foo;" /* name 'session' is magic for kvvfs! */,
+          "attach 'session' as foo;",
           "create table foo.bar(a);",
           "insert into foo.bar(a) values(1),(2),(3);",
           "select a from foo.bar order by a;"
@@ -1665,27 +1698,24 @@
   ;/* end of oo1 checks */
 
   ////////////////////////////////////////////////////////////////////////
-  T.g('kvvfs (Worker thread only)', isWorker)
-    .t({
-      name: 'kvvfs is disabled',
-      test: ()=>{
+  T.g('kvvfs')
+    .t('kvvfs sanity checks', function(sqlite3){
+      if(isWorker()){
         T.assert(
           !capi.sqlite3_vfs_find('kvvfs'),
           "Expecting kvvfs to be unregistered."
         );
+        log("kvvfs is (correctly) unavailable in a Worker.");
+        return;
       }
-    });
-  T.g('kvvfs (UI thread only)', isUIThread)
-    .t({
-      name: 'kvvfs sanity checks',
-      test: function(sqlite3){
-        const filename = 'session';
-        const pVfs = capi.sqlite3_vfs_find('kvvfs');
-        T.assert(pVfs);
-        const JDb = sqlite3.oo1.JsStorageDb;
-        const unlink = ()=>JDb.clearStorage(filename);
-        unlink();
-        let db = new JDb(filename);
+      const filename = 'session';
+      const pVfs = capi.sqlite3_vfs_find('kvvfs');
+      T.assert(pVfs);
+      const JDb = sqlite3.oo1.JsStorageDb;
+      const unlink = ()=>JDb.clearStorage(filename);
+      unlink();
+      let db = new JDb(filename);
+      try {
         db.exec([
           'create table kvvfs(a);',
           'insert into kvvfs(a) values(1),(2),(3)'
@@ -1695,6 +1725,7 @@
         db = new JDb(filename);
         db.exec('insert into kvvfs(a) values(4),(5),(6)');
         T.assert(6 === db.selectValue('select count(*) from kvvfs'));
+      }finally{
         db.close();
         unlink();
       }
@@ -1713,17 +1744,20 @@
         const unlink = (fn=filename)=>wasm.sqlite3_wasm_vfs_unlink(pVfs,fn);
         unlink();
         let db = new sqlite3.opfs.OpfsDb(filename);
-        db.exec([
-          'create table p(a);',
-          'insert into p(a) values(1),(2),(3)'
-        ]);
-        T.assert(3 === db.selectValue('select count(*) from p'));
-        db.close();
-        db = new sqlite3.opfs.OpfsDb(filename);
-        db.exec('insert into p(a) values(4),(5),(6)');
-        T.assert(6 === db.selectValue('select count(*) from p'));
-        db.close();
-        unlink();
+        try {
+          db.exec([
+            'create table p(a);',
+            'insert into p(a) values(1),(2),(3)'
+          ]);
+          T.assert(3 === db.selectValue('select count(*) from p'));
+          db.close();
+          db = new sqlite3.opfs.OpfsDb(filename);
+          db.exec('insert into p(a) values(4),(5),(6)');
+          T.assert(6 === db.selectValue('select count(*) from p'));
+        }finally{
+          db.close();
+          unlink();
+        }
       }
     }/*OPFS sanity checks*/)
   ;/* end OPFS tests */
