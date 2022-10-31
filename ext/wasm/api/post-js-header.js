@@ -5,7 +5,7 @@
    environment must have been set up already but it will not have
    loaded its WASM when the code in this file is run. The function it
    installs will be run after the WASM module is loaded, at which
-   point the sqlite3 WASM API bits will be set up.
+   point the sqlite3 JS API bits will get set up.
 */
 if(!Module.postRun) Module.postRun = [];
 Module.postRun.push(function(Module/*the Emscripten-style module object*/){

@@ -57,42 +57,41 @@ $ cd ext/wasm
 $ make
 ```
 
-That will generate the fiddle application under
-[ext/fiddle](/dir/ext/wasm/fiddle), as `fiddle.html`. That application
-cannot, due to XMLHttpRequest security limitations, run if the HTML
-file is opened directly in the browser (i.e. if it is opened using a
-`file://` URL), so it needs to be served via an HTTP server.  For
-example, using [althttpd][]:
+That will generate the a number of files required for a handful of
+test and demo applications which can be accessed via
+`index.html`. WASM content cannot, due to XMLHttpRequest security
+limitations, be loaded if the containing HTML file is opened directly
+in the browser (i.e. if it is opened using a `file://` URL), so it
+needs to be served via an HTTP server.  For example, using
+[althttpd][]:
 
 ```
-$ cd ext/wasm/fiddle
-$ althttpd -page fiddle.html
+$ cd ext/wasm
+$ althttpd --enable-sab --max-age 1 --page index.html
 ```
 
-That will open the system's browser and run the fiddle app's page.
+That will open the system's browser and run the index page, from which
+all of the test and demo applications can be accessed.
 
 Note that when serving this app via [althttpd][], it must be a version
-from 2022-05-17 or newer so that it recognizes the `.wasm` file
-extension and responds with the mimetype `application/wasm`, as the
-WASM loader is pedantic about that detail.
+from 2022-09-26 or newer so that it recognizes the `--enable-sab`
+flag, which causes althttpd to emit two HTTP response headers which
+are required to enable JavaScript's `SharedArrayBuffer` and `Atomics`
+APIs. Those APIs are required in order to enable the OPFS-related
+features in the apps which use them.
 
 # Testing on a remote machine that is accessed via SSH
 
 *NB: The following are developer notes, last validated on 2022-08-18*
 
   *  Remote: Install git, emsdk, and althttpd
-     *  Use a [version of althttpd](https://sqlite.org/althttpd/timeline?r=enable-atomics)
-        that adds HTTP reply header lines to enable SharedArrayBuffers.  These header
-        lines are required:
-```
-            Cross-Origin-Opener-Policy: same-origin
-            Cross-Origin-Embedder-Policy: require-corp
-```
+     *  Use a [version of althttpd][althttpd] from
+        September 26, 2022 or newer.
   *  Remote: Install the SQLite source tree.  CD to ext/wasm
   *  Remote: "`make`" to build WASM
-  *  Remote: althttpd --port 8080 --popup
-  *  Local:  ssh -L 8180:localhost:8080 remote
-  *  Local:  Point your web-browser at http://localhost:8180/testing1.html
+  *  Remote: `althttpd --enable-sab --port 8080 --popup`
+  *  Local:  `ssh -L 8180:localhost:8080 remote`
+  *  Local:  Point your web-browser at http://localhost:8180/index.html
 
 In order to enable [SharedArrayBuffers](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/SharedArrayBuffer),
 the web-browser requires that the two extra Cross-Origin lines be present
@@ -100,31 +99,6 @@ in HTTP reply headers and that the request must come from "localhost".
 Since the web-server is on a different machine from
 the web-broser, the localhost requirement means that the connection must be tunneled
 using SSH.
-
-
-
-# Known Quirks and Limitations
-
-Some "impedence mismatch" between C and WASM/JavaScript is to be
-expected.
-
-## No I/O
-
-sqlite3 shell commands which require file I/O or pipes are disabled in
-the WASM build.
-
-## `exit()` Triggered from C
-
-When C code calls `exit()`, as happens (for example) when running an
-"unsafe" command when safe mode is active, WASM's connection to the
-sqlite3 shell environment has no sensible choice but to shut down
-because `exit()` leaves it in a state we can no longer recover
-from. The JavaScript-side application attempts to recognize this and
-warn the user that restarting the application is necessary. Currently
-the only way to restart it is to reload the page. Restructuring the
-shell code such that it could be "rebooted" without restarting the
-JS app would require some invasive changes which are not currently
-on any TODO list but have not been entirely ruled out long-term.
 
 
 [emscripten]: https://emscripten.org

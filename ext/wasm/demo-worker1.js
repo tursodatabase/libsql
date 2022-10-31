@@ -13,13 +13,13 @@
   A basic test script for sqlite3-worker1.js.
 
   Note that the wrapper interface demonstrated in
-  testing-worker1-promiser.js is much easier to use from client code, as it
+  demo-worker1-promiser.js is much easier to use from client code, as it
   lacks the message-passing acrobatics demonstrated in this file.
 */
 'use strict';
 (function(){
   const T = self.SqliteTestUtil;
-  const SW = new Worker("sqlite3-worker1.js");
+  const SW = new Worker("jswasm/sqlite3-worker1.js");
   const DbState = {
     id: undefined
   };

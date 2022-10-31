@@ -64,12 +64,12 @@ browser client:
   thread via the Worker message-passing interface. Like OO API #1,
   this is an optional component, offering one of any number of
   potential implementations for such an API.
-    - `../sqlite3-worker1.js`\  
+    - `sqlite3-worker1.js`\  
       Is not part of the amalgamated sources and is intended to be
       loaded by a client Worker thread. It loads the sqlite3 module
       and runs the Worker #1 API which is implemented in
       `sqlite3-api-worker1.js`.
-    - `../sqlite3-worker1-promiser.js`\  
+    - `sqlite3-worker1-promiser.js`\  
       Is likewise not part of the amalgamated sources and provides
       a Promise-based interface into the Worker #1 API. This is
       a far user-friendlier way to interface with databases running
@@ -78,7 +78,7 @@ browser client:
   is an sqlite3 VFS implementation which supports Google Chrome's
   Origin-Private FileSystem (OPFS) as a storage layer to provide
   persistent storage for database files in a browser. It requires...
-    - `../sqlite3-opfs-async-proxy.js`\  
+    - `sqlite3-opfs-async-proxy.js`\  
       is the asynchronous backend part of the OPFS proxy. It speaks
       directly to the (async) OPFS API and channels those results back
       to its synchronous counterpart. This file, because it must be

@@ -85,6 +85,7 @@
 #include <ctype.h>
 #include <assert.h>
 #include "sqlite3.h"
+#include "sqlite3recover.h"
 #define ISSPACE(X) isspace((unsigned char)(X))
 #define ISDIGIT(X) isdigit((unsigned char)(X))
 
@@ -158,12 +159,10 @@ static struct GlobalVars {
 } g;
 
 /*
-** Include the external vt02.c module, if requested by compile-time
-** options.
+** Include the external vt02.c module.
 */
-#ifdef VT02_SOURCES
-# include "vt02.c"
-#endif
+extern int sqlite3_vt02_init(sqlite3*,char***,void*);
+
 
 /*
 ** Print an error message and quit.
@@ -629,6 +628,9 @@ static unsigned int oomCounter = 0;    /* Simulate OOM when equals 1 */
 static unsigned int oomRepeat = 0;     /* Number of OOMs in a row */
 static void*(*defaultMalloc)(int) = 0; /* The low-level malloc routine */
 
+/* Enable recovery */
+static int bNoRecover = 0;
+
 /* This routine is called when a simulated OOM occurs.  It is broken
 ** out as a separate routine to make it easy to set a breakpoint on
 ** the OOM
@@ -969,7 +971,7 @@ static int block_troublesome_sql(
 }
 
 /* Implementation found in fuzzinvariant.c */
-int fuzz_invariant(
+extern int fuzz_invariant(
   sqlite3 *db,            /* The database connection */
   sqlite3_stmt *pStmt,    /* Test statement stopped on an SQLITE_ROW */
   int iCnt,               /* Invariant sequence number, starting at 0 */
@@ -978,6 +980,52 @@ int fuzz_invariant(
   int *pbCorrupt,         /* IN/OUT: Flag indicating a corrupt database file */
   int eVerbosity          /* How much debugging output */
 );
+
+/* Implementation of sqlite_dbdata and sqlite_dbptr */
+extern int sqlite3_dbdata_init(sqlite3*,const char**,void*);
+
+
+/*
+** This function is used as a callback by the recover extension. Simply
+** print the supplied SQL statement to stdout.
+*/
+static int recoverSqlCb(void *pCtx, const char *zSql){
+  if( eVerbosity>=2 ){
+    printf("%s\n", zSql);
+  }
+  return SQLITE_OK;
+}
+
+/*
+** This function is called to recover data from the database.
+*/
+static int recoverDatabase(sqlite3 *db){
+  int rc = SQLITE_OK;
+  const char *zRecoveryDb = "";   /* Name of "recovery" database */
+  const char *zLAF = "lost_and_found";
+  int bFreelist = 1;
+  int bRowids = 1;
+  sqlite3_recover *p = 0;
+
+  p = sqlite3_recover_init_sql(db, "main", recoverSqlCb, 0);
+  sqlite3_recover_config(p, 789, (void*)zRecoveryDb);
+  sqlite3_recover_config(p, SQLITE_RECOVER_LOST_AND_FOUND, (void*)zLAF);
+  sqlite3_recover_config(p, SQLITE_RECOVER_ROWIDS, (void*)&bRowids);
+  sqlite3_recover_config(p, SQLITE_RECOVER_FREELIST_CORRUPT,(void*)&bFreelist);
+  sqlite3_recover_run(p);
+  if( sqlite3_recover_errcode(p)!=SQLITE_OK ){
+    const char *zErr = sqlite3_recover_errmsg(p);
+    int errCode = sqlite3_recover_errcode(p);
+    if( eVerbosity>0 ){
+      printf("recovery error: %s (%d)\n", zErr, errCode);
+    }
+  }
+  rc = sqlite3_recover_finish(p);
+  if( eVerbosity>0 && rc ){
+     printf("recovery returns error code %d\n", rc);
+  }
+  return rc;
+}
 
 /*
 ** Run the SQL text
@@ -1189,9 +1237,12 @@ int runCombinedDbSqlInput(
   ** deserialize to do this because deserialize depends on ATTACH */
   sqlite3_set_authorizer(cx.db, block_troublesome_sql, &btsFlags);
 
-#ifdef VT02_SOURCES
+  /* Add the vt02 virtual table */
   sqlite3_vt02_init(cx.db, 0, 0);
-#endif
+
+  /* Add support for sqlite_dbdata and sqlite_dbptr virtual tables used
+  ** by the recovery API */
+  sqlite3_dbdata_init(cx.db, 0, 0);
 
   /* Consistent PRNG seed */
 #ifdef SQLITE_TESTCTRL_PRNG_SEED
@@ -1200,6 +1251,12 @@ int runCombinedDbSqlInput(
 #else
   sqlite3_randomness(0,0);
 #endif
+
+  /* Run recovery on the initial database, just to make sure recovery
+  ** works. */
+  if( !bNoRecover ){
+    recoverDatabase(cx.db);
+  }
 
   zSql = sqlite3_malloc( nSql + 1 );
   if( zSql==0 ){
@@ -1700,6 +1757,7 @@ static void showHelp(void){
 "  -m TEXT              Add a description to the database\n"
 "  --native-vfs         Use the native VFS for initially empty database files\n"
 "  --native-malloc      Turn off MEMSYS3/5 and Lookaside\n"
+"  --no-recover         Do not run recovery on dbsqlfuzz databases\n"
 "  --oss-fuzz           Enable OSS-FUZZ testing\n"
 "  --prng-seed N        Seed value for the PRGN inside of SQLite\n"
 "  -q|--quiet           Reduced output\n"
@@ -1850,6 +1908,9 @@ int main(int argc, char **argv){
       }else
       if( strcmp(z,"native-vfs")==0 ){
         nativeFlag = 1;
+      }else
+      if( strcmp(z,"no-recover")==0 ){
+        bNoRecover = 1;
       }else
       if( strcmp(z,"oss-fuzz")==0 ){
         ossFuzz = 1;

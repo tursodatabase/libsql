@@ -1,0 +1,58 @@
+# 2022 October 18
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix windowE
+
+proc custom {a b} { return [string compare $a $b] }
+db collate custom custom
+
+do_execsql_test 1.0 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b TEXT COLLATE custom);
+  INSERT INTO t1 VALUES(1, 'one');
+  INSERT INTO t1 VALUES(2, 'two');
+  INSERT INTO t1 VALUES(3, 'three');
+  INSERT INTO t1 VALUES(4, 'four');
+  INSERT INTO t1 VALUES(5, 'five');
+  INSERT INTO t1 VALUES(6, 'six');
+  CREATE INDEX t1b ON t1(b);
+}
+
+do_execsql_test 1.1 {
+  SELECT * FROM t1
+} {
+  1 one 2 two 3 three 4 four 5 five 6 six
+}
+
+do_execsql_test 1.2 {
+  SELECT group_concat(a,',') OVER win FROM t1 
+  WINDOW win AS (
+    ORDER BY b RANGE BETWEEN 1 PRECEDING AND 2 PRECEDING
+  )
+} {
+  5 4 1 6 3 2
+}
+
+proc custom {a b} { return [string compare $b $a] }
+
+do_execsql_test 1.3 {
+  SELECT group_concat(a,',') OVER win FROM t1 
+  WINDOW win AS (
+    ORDER BY b RANGE BETWEEN 1 PRECEDING AND 2 PRECEDING
+  )
+} {
+  5 5,4 5,4,1 5,4,1,6 5,4,1,6,3 5,4,1,6,3,2
+}
+
+finish_test
+

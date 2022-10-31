@@ -76,7 +76,7 @@ const tryOpfsVfs = async function(sqlite3){
   log("Done!");
 }/*tryOpfsVfs()*/;
 
-importScripts('sqlite3.js');
+importScripts('jswasm/sqlite3.js');
 self.sqlite3InitModule()
   .then((sqlite3)=>tryOpfsVfs(sqlite3))
   .catch((e)=>{

@@ -953,6 +953,7 @@ static void analyzeVdbeCommentIndexWithColumnName(
   if( NEVER(i==XN_ROWID) ){
     VdbeComment((v,"%s.rowid",pIdx->zName));
   }else if( i==XN_EXPR ){
+    assert( pIdx->bHasExpr );
     VdbeComment((v,"%s.expr(%d)",pIdx->zName, k));
   }else{
     VdbeComment((v,"%s.%s", pIdx->zName, pIdx->pTable->aCol[i].zCnName));

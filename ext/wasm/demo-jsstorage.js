@@ -44,7 +44,7 @@
   const runTests = function(sqlite3){
     const capi = sqlite3.capi,
           oo = sqlite3.oo1,
-          wasm = capi.wasm;
+          wasm = sqlite3.wasm;
     log("Loaded module:",capi.sqlite3_libversion(), capi.sqlite3_sourceid());
     T.assert( 0 !== capi.sqlite3_vfs_find(null) );
     if(!capi.sqlite3_vfs_find('kvvfs')){

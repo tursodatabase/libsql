@@ -25,7 +25,11 @@
         ln.append(document.createTextNode(args.join(' ')));
         document.body.append(ln);
       };
-      const w = new Worker("demo-123.js");
+      const w = new Worker("demo-123.js?sqlite3.dir=jswasm"
+                           /* Note the URL argument on that name. See
+                              the notes in demo-123.js (search for
+                              "importScripts") for why we need
+                              that. */);
       w.onmessage = function({data}){
         switch(data.type){
             case 'log':

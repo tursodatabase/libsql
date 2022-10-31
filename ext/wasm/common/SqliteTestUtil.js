@@ -172,13 +172,9 @@
     ],
     //onRuntimeInitialized: function(){},
     /* Proxy for C-side stdout output. */
-    print: function(){
-      console.log.apply(console, Array.prototype.slice.call(arguments));
-    },
+    print: (...args)=>{console.log(...args)},
     /* Proxy for C-side stderr output. */
-    printErr: function(){
-      console.error.apply(console, Array.prototype.slice.call(arguments));
-    },
+    printErr: (...args)=>{console.error(...args)},
     /**
        Called by the Emscripten module init bits to report loading
        progress. It gets passed an empty argument when loading is done

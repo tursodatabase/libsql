@@ -6,10 +6,10 @@
     <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
     <link rel="stylesheet" href="common/emscripten.css"/>
     <link rel="stylesheet" href="common/testing.css"/>
-    <title>sqlite3-api.js tests</title>
+    <title>worker-promise tests</title>
   </head>
   <body>
-    <header id='titlebar'><span>sqlite3-api.js tests</span></header>
+    <header id='titlebar'><span>worker-promise tests</span></header>
     <!-- emscripten bits -->
     <figure id="module-spinner">
       <div class="spinner"></div>
@@ -27,10 +27,8 @@
     <div>Most stuff on this page happens in the dev console.</div>
     <hr>
     <div id='test-output'></div>
-    <!-- testing1.js "should" work with both sqlite3.js and sqlite3-kvvfs.js -->
-    <!--script src="sqlite3-kvvfs.js"></script-->
-    <script src="sqlite3.js"></script>
     <script src="common/SqliteTestUtil.js"></script>
-    <script src="testing1.js"></script>
+    <script src="jswasm/sqlite3-worker1-promiser.js"></script>
+    <script src="demo-worker1-promiser.js"></script>
   </body>
 </html>

@@ -55,9 +55,8 @@ char sqlite3ExprAffinity(const Expr *pExpr){
   if( op==TK_REGISTER ) op = pExpr->op2;
   if( op==TK_COLUMN || op==TK_AGG_COLUMN ){
     assert( ExprUseYTab(pExpr) );
-    if( pExpr->y.pTab ){
-      return sqlite3TableColumnAffinity(pExpr->y.pTab, pExpr->iColumn);
-    }
+    assert( pExpr->y.pTab!=0 );
+    return sqlite3TableColumnAffinity(pExpr->y.pTab, pExpr->iColumn);
   }
   if( op==TK_SELECT ){
     assert( ExprUseXSelect(pExpr) );
@@ -175,17 +174,14 @@ CollSeq *sqlite3ExprCollSeq(Parse *pParse, const Expr *pExpr){
     int op = p->op;
     if( op==TK_REGISTER ) op = p->op2;
     if( op==TK_AGG_COLUMN || op==TK_COLUMN || op==TK_TRIGGER ){
+      int j;
       assert( ExprUseYTab(p) );
-      if( p->y.pTab!=0 ){
-        /* op==TK_REGISTER && p->y.pTab!=0 happens when pExpr was originally
-        ** a TK_COLUMN but was previously evaluated and cached in a register */
-        int j = p->iColumn;
-        if( j>=0 ){
-          const char *zColl = sqlite3ColumnColl(&p->y.pTab->aCol[j]);
-          pColl = sqlite3FindCollSeq(db, ENC(db), zColl, 0);
-        }
-        break;
+      assert( p->y.pTab!=0 );
+      if( (j = p->iColumn)>=0 ){
+        const char *zColl = sqlite3ColumnColl(&p->y.pTab->aCol[j]);
+        pColl = sqlite3FindCollSeq(db, ENC(db), zColl, 0);
       }
+      break;
     }
     if( op==TK_CAST || op==TK_UPLUS ){
       p = p->pLeft;
@@ -3790,10 +3786,7 @@ void sqlite3ExprCodeGetColumnOfTable(
 ){
   Column *pCol;
   assert( v!=0 );
-  if( pTab==0 ){
-    sqlite3VdbeAddOp3(v, OP_Column, iTabCur, iCol, regOut);
-    return;
-  }
+  assert( pTab!=0 );
   if( iCol<0 || iCol==pTab->iPKey ){
     sqlite3VdbeAddOp2(v, OP_Rowid, iTabCur, regOut);
     VdbeComment((v, "%s.rowid", pTab->zName));
@@ -4043,6 +4036,53 @@ static int exprCodeInlineFunction(
   return target;
 }
 
+/*
+** Check to see if pExpr is one of the indexed expressions on pParse->pIdxExpr.
+** If it is, then resolve the expression by reading from the index and
+** return the register into which the value has been read.  If pExpr is
+** not an indexed expression, then return negative.
+*/
+static SQLITE_NOINLINE int sqlite3IndexedExprLookup(
+  Parse *pParse,   /* The parsing context */
+  Expr *pExpr,     /* The expression to potentially bypass */
+  int target       /* Where to store the result of the expression */
+){
+  IndexedExpr *p;
+  Vdbe *v;
+  for(p=pParse->pIdxExpr; p; p=p->pIENext){
+    int iDataCur = p->iDataCur;
+    if( iDataCur<0 ) continue;
+    if( pParse->iSelfTab ){
+      if( p->iDataCur!=pParse->iSelfTab-1 ) continue;
+      iDataCur = -1;
+    }
+    if( sqlite3ExprCompare(0, pExpr, p->pExpr, iDataCur)!=0 ) continue;
+    v = pParse->pVdbe;
+    assert( v!=0 );
+    if( p->bMaybeNullRow ){
+      /* If the index is on a NULL row due to an outer join, then we
+      ** cannot extract the value from the index.  The value must be
+      ** computed using the original expression. */
+      int addr = sqlite3VdbeCurrentAddr(v);
+      sqlite3VdbeAddOp3(v, OP_IfNullRow, p->iIdxCur, addr+3, target);
+      VdbeCoverage(v);
+      sqlite3VdbeAddOp3(v, OP_Column, p->iIdxCur, p->iIdxCol, target);
+      VdbeComment((v, "%s expr-column %d", p->zIdxName, p->iIdxCol));
+      sqlite3VdbeGoto(v, 0);
+      p = pParse->pIdxExpr;
+      pParse->pIdxExpr = 0;
+      sqlite3ExprCode(pParse, pExpr, target);
+      pParse->pIdxExpr = p;
+      sqlite3VdbeJumpHere(v, addr+2);
+    }else{
+      sqlite3VdbeAddOp3(v, OP_Column, p->iIdxCur, p->iIdxCol, target);
+      VdbeComment((v, "%s expr-column %d", p->zIdxName, p->iIdxCol));
+    }
+    return target;
+  }
+  return -1;  /* Not found */
+}
+
 
 /*
 ** Generate code into the current Vdbe to evaluate the given
@@ -4071,6 +4111,11 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
 expr_code_doover:
   if( pExpr==0 ){
     op = TK_NULL;
+  }else if( pParse->pIdxExpr!=0 
+   && !ExprHasProperty(pExpr, EP_Leaf)
+   && (r1 = sqlite3IndexedExprLookup(pParse, pExpr, target))>=0
+  ){
+    return r1;
   }else{
     assert( !ExprHasVVAProperty(pExpr,EP_Immutable) );
     op = pExpr->op;
@@ -4116,11 +4161,8 @@ expr_code_doover:
         int aff;
         iReg = sqlite3ExprCodeTarget(pParse, pExpr->pLeft,target);
         assert( ExprUseYTab(pExpr) );
-        if( pExpr->y.pTab ){
-          aff = sqlite3TableColumnAffinity(pExpr->y.pTab, pExpr->iColumn);
-        }else{
-          aff = pExpr->affExpr;
-        }
+        assert( pExpr->y.pTab!=0 );
+        aff = sqlite3TableColumnAffinity(pExpr->y.pTab, pExpr->iColumn);
         if( aff>SQLITE_AFF_BLOB ){
           static const char zAff[] = "B\000C\000D\000E";
           assert( SQLITE_AFF_BLOB=='A' );
@@ -4182,12 +4224,10 @@ expr_code_doover:
         }
       }
       assert( ExprUseYTab(pExpr) );
+      assert( pExpr->y.pTab!=0 );
       iReg = sqlite3ExprCodeGetColumn(pParse, pExpr->y.pTab,
                                pExpr->iColumn, iTab, target,
                                pExpr->op2);
-      if( pExpr->y.pTab==0 && pExpr->affExpr==SQLITE_AFF_REAL ){
-        sqlite3VdbeAddOp1(v, OP_RealAffinity, iReg);
-      }
       return iReg;
     }
     case TK_INTEGER: {
@@ -5570,7 +5610,13 @@ int sqlite3ExprCompare(
     if( pB->op==TK_COLLATE && sqlite3ExprCompare(pParse, pA,pB->pLeft,iTab)<2 ){
       return 1;
     }
-    return 2;
+    if( pA->op==TK_AGG_COLUMN && pB->op==TK_COLUMN 
+     && pB->iTable<0 && pA->iTable==iTab
+    ){
+      /* fall through */
+    }else{
+      return 2;
+    }
   }
   assert( !ExprHasProperty(pA, EP_IntValue) );
   assert( !ExprHasProperty(pB, EP_IntValue) );
@@ -5872,10 +5918,10 @@ static int impliesNotNullRow(Walker *pWalker, Expr *pExpr){
       assert( pLeft->op!=TK_COLUMN || ExprUseYTab(pLeft) );
       assert( pRight->op!=TK_COLUMN || ExprUseYTab(pRight) );
       if( (pLeft->op==TK_COLUMN
-           && pLeft->y.pTab!=0
+           && ALWAYS(pLeft->y.pTab!=0)
            && IsVirtual(pLeft->y.pTab))
        || (pRight->op==TK_COLUMN
-           && pRight->y.pTab!=0
+           && ALWAYS(pRight->y.pTab!=0)
            && IsVirtual(pRight->y.pTab))
       ){
         return WRC_Prune;

@@ -102,7 +102,7 @@
   const toss = (...args)=>{
     throw new Error(args.join(' '));
   };
-  const fixmeOPFS = "(FIXME: won't work with vanilla OPFS.)";
+  const fixmeOPFS = "(FIXME: won't work with OPFS-over-sqlite3_vfs.)";
   let sqlite3 /* gets assigned when the wasm module is loaded */;
 
   self.onerror = function(/*message, source, lineno, colno, error*/) {
@@ -122,15 +122,15 @@
   const Sqlite3Shell = {
     /** Returns the name of the currently-opened db. */
     dbFilename: function f(){
-      if(!f._) f._ = sqlite3.capi.wasm.xWrap('fiddle_db_filename', "string", ['string']);
+      if(!f._) f._ = sqlite3.wasm.xWrap('fiddle_db_filename', "string", ['string']);
       return f._(0);
     },
     dbHandle: function f(){
-      if(!f._) f._ = sqlite3.capi.wasm.xWrap("fiddle_db_handle", "sqlite3*");
+      if(!f._) f._ = sqlite3.wasm.xWrap("fiddle_db_handle", "sqlite3*");
       return f._();
     },
     dbIsOpfs: function f(){
-      return sqlite3.opfs && sqlite3.capi.sqlite3_web_db_uses_vfs(
+      return sqlite3.opfs && sqlite3.capi.sqlite3_js_db_uses_vfs(
         this.dbHandle(), "opfs"
       );
     },
@@ -145,7 +145,7 @@
            that any argv strings passed to its main() are valid until
            the wasm environment shuts down. */
       ];
-      const capi = sqlite3.capi;
+      const capi = sqlite3.capi, wasm = sqlite3.wasm;
       /* We need to call sqlite3_shutdown() in order to avoid numerous
          legitimate warnings from the shell about it being initialized
          after sqlite3_initialize() has been called. This means,
@@ -154,8 +154,8 @@
          VFSes). We need a more generic approach to running such
          init-level code. */
       capi.sqlite3_shutdown();
-      f.argv.pArgv = capi.wasm.allocMainArgv(f.argv);
-      f.argv.rc = capi.wasm.exports.fiddle_main(
+      f.argv.pArgv = wasm.allocMainArgv(f.argv);
+      f.argv.rc = wasm.exports.fiddle_main(
         f.argv.length, f.argv.pArgv
       );
       if(f.argv.rc){
@@ -166,11 +166,11 @@
       stdout("SQLite version", capi.sqlite3_libversion(),
              capi.sqlite3_sourceid().substr(0,19));
       stdout('Welcome to the "fiddle" shell.');
-      if(S.opfs){
+      if(sqlite3.opfs){
         stdout("\nOPFS is available. To open a persistent db, use:\n\n",
                "  .open file:name?vfs=opfs\n\nbut note that some",
                "features (e.g. upload) do not yet work with OPFS.");
-        S.opfs.registerVfs();
+        sqlite3.opfs.registerVfs();
       }
       stdout('\nEnter ".help" for usage hints.');
       this.exec([ // initialization commands...
@@ -187,7 +187,7 @@
     exec: function f(sql){
       if(!f._){
         if(!this.runMain()) return;
-        f._ = sqlite3.capi.wasm.xWrap('fiddle_exec', null, ['string']);
+        f._ = sqlite3.wasm.xWrap('fiddle_exec', null, ['string']);
       }
       if(fiddleModule.isDead){
         stderr("shell module has exit()ed. Cannot run SQL.");
@@ -208,7 +208,7 @@
       }
     },
     resetDb: function f(){
-      if(!f._) f._ = sqlite3.capi.wasm.xWrap('fiddle_reset_db', null);
+      if(!f._) f._ = sqlite3.wasm.xWrap('fiddle_reset_db', null);
       stdout("Resetting database.");
       f._();
       stdout("Reset",this.dbFilename());
@@ -216,7 +216,7 @@
     /* Interrupt can't work: this Worker is tied up working, so won't get the
        interrupt event which would be needed to perform the interrupt. */
     interrupt: function f(){
-      if(!f._) f._ = sqlite3.capi.wasm.xWrap('fiddle_interrupt', null);
+      if(!f._) f._ = sqlite3.wasm.xWrap('fiddle_interrupt', null);
       stdout("Requesting interrupt.");
       f._();
     }
@@ -251,7 +251,7 @@
           const fn2 = fn ? fn.split(/[/\\]/).pop() : null;
           try{
             if(!fn2) toss("DB appears to be closed.");
-            const buffer = sqlite3.capi.sqlite3_web_db_export(
+            const buffer = sqlite3.capi.sqlite3_js_db_export(
               Sqlite3Shell.dbHandle()
             );
             wMsg('db-export',{filename: fn2, buffer: buffer.buffer}, [buffer.buffer]);
@@ -370,9 +370,9 @@
   */
   sqlite3InitModule(fiddleModule).then((_sqlite3)=>{
     sqlite3 = _sqlite3;
+    const dbVfs = sqlite3.wasm.xWrap('fiddle_db_vfs', "*", ['string']);
     fiddleModule.fsUnlink = (fn)=>{
-      stderr("unlink:",fixmeOPFS);
-      return sqlite3.capi.wasm.sqlite3_wasm_vfs_unlink(fn);
+      return sqlite3.wasm.sqlite3_wasm_vfs_unlink(dbVfs(0), fn);
     };
     wMsg('fiddle-ready');
   })/*then()*/;

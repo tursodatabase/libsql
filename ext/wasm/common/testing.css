@@ -34,11 +34,17 @@ span.labeled-input {
     color: red;
     background-color: yellow;
 }
+.strong { font-weight: 700 }
 .warning { color: firebrick; }
 .green { color: darkgreen; }
+.faded { opacity: 0.5; }
 .group-start { color: blue; }
 .group-end { color: blue; }
-.input-wrapper { white-space: nowrap; }
+.input-wrapper {
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+}
 #test-output {
   border: 1px inset;
   border-radius: 0.25em;
@@ -52,3 +58,4 @@ span.labeled-input {
 #test-output.reverse {
   flex-direction: column-reverse;
 }
+label[for] { cursor: pointer }

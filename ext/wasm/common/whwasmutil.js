@@ -705,6 +705,23 @@ self.WhWasmUtilInstaller = function(target){
   target.setPtrValue = (ptr, value)=>target.setMemValue(ptr, value, ptrIR);
 
   /**
+     Returns true if the given value appears to be legal for use as
+     a WASM pointer value. Its _range_ of values is not (cannot be)
+     validated except to ensure that it is a 32-bit integer with a
+     value of 0 or greater. Likewise, it cannot verify whether the
+     value actually refers to allocated memory in the WASM heap.
+  */
+  target.isPtr32 = (ptr)=>('number'===typeof ptr && (ptr===(ptr|0)) && ptr>=0);
+
+  /**
+     isPtr() is an alias for isPtr32(). If/when 64-bit WASM pointer
+     support becomes widespread, it will become an alias for either
+     isPtr32() or the as-yet-hypothetical isPtr64(), depending on a
+     configuration option.
+  */
+  target.isPtr = target.isPtr32;
+
+  /**
      Expects ptr to be a pointer into the WASM heap memory which
      refers to a NUL-terminated C-style string encoded as UTF-8.
      Returns the length, in bytes, of the string, as for `strlen(3)`.
@@ -1229,7 +1246,8 @@ self.WhWasmUtilInstaller = function(target){
   xcv.result['*'] = xcv.result['pointer'] = xcv.arg['**'] = xcv.arg[ptrIR];
   xcv.result['number'] = (v)=>Number(v);
 
-  {
+  { /* Copy certain xcv.arg[...] handlers to xcv.result[...] and
+       add pointer-style variants of them. */
     const copyToResult = ['i8', 'i16', 'i32', 'int',
                           'f32', 'float', 'f64', 'double'];
     if(target.bigIntEnabled) copyToResult.push('i64');
