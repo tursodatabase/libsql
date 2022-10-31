@@ -2161,6 +2161,8 @@ static int recoverVfsShmMap(sqlite3_file*, int, int, int, void volatile**);
 static int recoverVfsShmLock(sqlite3_file*, int offset, int n, int flags);
 static void recoverVfsShmBarrier(sqlite3_file*);
 static int recoverVfsShmUnmap(sqlite3_file*, int deleteFlag);
+static int recoverVfsFetch(sqlite3_file*, sqlite3_int64, int, void**);
+static int recoverVfsUnfetch(sqlite3_file *pFd, sqlite3_int64 iOff, void *p);
 
 static sqlite3_io_methods recover_methods = {
   2, /* iVersion */
@@ -2180,7 +2182,8 @@ static sqlite3_io_methods recover_methods = {
   recoverVfsShmLock,
   recoverVfsShmBarrier,
   recoverVfsShmUnmap,
-  0, 0
+  recoverVfsFetch,
+  recoverVfsUnfetch
 };
 
 static int recoverVfsClose(sqlite3_file *pFd){
@@ -2484,6 +2487,19 @@ static int recoverVfsShmUnmap(sqlite3_file *pFd, int deleteFlag){
   RECOVER_VFS_WRAPPER (
       pFd->pMethods->xShmUnmap(pFd, deleteFlag)
   );
+}
+
+static int recoverVfsFetch(
+  sqlite3_file *pFd, 
+  sqlite3_int64 iOff, 
+  int iAmt, 
+  void **pp
+){
+  *pp = 0;
+  return SQLITE_OK;
+}
+static int recoverVfsUnfetch(sqlite3_file *pFd, sqlite3_int64 iOff, void *p){
+  return SQLITE_OK;
 }
 
 /*
