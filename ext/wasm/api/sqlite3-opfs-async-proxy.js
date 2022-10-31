@@ -136,6 +136,25 @@ const getDirForFilename = async function f(absFilename, createDirs = false){
 };
 
 /**
+   An error class specifically for use with getSyncHandle(), the goal
+   of which is to eventually be able to distinguish unambiguously
+   between locking-related failures and other types, noting that we
+   cannot currently do so because createSyncAccessHandle() does not
+   define its exceptions in the required level of detail.
+*/
+class GetSyncHandleError extends Error {
+  constructor(errorObject, ...msg){
+    super();
+    this.error = errorObject;
+    this.message = [
+      ...msg, ': Original exception ['+errorObject.name+']:',
+      errorObject.message
+    ].join(' ');
+    this.name = 'GetSyncHandleError';
+  }
+};
+
+/**
    Returns the sync access handle associated with the given file
    handle object (which must be a valid handle object, as created by
    xOpen()), lazily opening it if needed.
@@ -154,16 +173,17 @@ const getSyncHandle = async (fh)=>{
     let i = 1, ms = msBase;
     for(; true; ms = msBase * ++i){
       try {
-        //if(i<3) toss("Just testing.");
+        //if(i<3) toss("Just testing getSyncHandle() wait-and-retry.");
         //TODO? A config option which tells it to throw here
         //randomly every now and then, for testing purposes.
         fh.syncHandle = await fh.fileHandle.createSyncAccessHandle();
         break;
       }catch(e){
         if(i === maxTries){
-          toss("Error getting sync handle.",maxTries,
-               "attempts failed. ",fh.filenameAbs, ":", e.message);
-          throw e;
+          throw new GetSyncHandleError(
+            e, "Error getting sync handle.",maxTries,
+            "attempts failed.",fh.filenameAbs
+          );
         }
         warn("Error getting sync handle. Waiting",ms,
               "ms and trying again.",fh.filenameAbs,e);
@@ -199,7 +219,7 @@ const closeSyncHandle = async (fh)=>{
    Atomics.notify()'s it.
 */
 const storeAndNotify = (opName, value)=>{
-  log(opName+"() => notify(",state.opIds.rc,",",value,")");
+  log(opName+"() => notify(",value,")");
   Atomics.store(state.sabOPView, state.opIds.rc, value);
   Atomics.notify(state.sabOPView, state.opIds.rc);
 };
@@ -371,18 +391,18 @@ const vfsAsyncImpls = {
   xFileSize: async function(fid/*sqlite3_file pointer*/){
     mTimeStart('xFileSize');
     const fh = __openFiles[fid];
-    let sz;
+    let rc;
     wTimeStart('xFileSize');
     try{
-      sz = await (await getSyncHandle(fh)).getSize();
-      state.s11n.serialize(Number(sz));
-      sz = 0;
+      rc = await (await getSyncHandle(fh)).getSize();
+      state.s11n.serialize(Number(rc));
+      rc = 0;
     }catch(e){
       state.s11n.storeException(2,e);
-      sz = state.sq3Codes.SQLITE_IOERR;
+      rc = state.sq3Codes.SQLITE_IOERR;
     }
     wTimeEnd();
-    storeAndNotify('xFileSize', sz);
+    storeAndNotify('xFileSize', rc);
     mTimeEnd();
   },
   xLock: async function(fid/*sqlite3_file pointer*/,
@@ -395,7 +415,7 @@ const vfsAsyncImpls = {
       try { await getSyncHandle(fh) }
       catch(e){
         state.s11n.storeException(1,e);
-        rc = state.sq3Codes.SQLITE_IOERR;
+        rc = state.sq3Codes.SQLITE_IOERR_LOCK;
       }
       wTimeEnd();
     }
@@ -480,6 +500,7 @@ const vfsAsyncImpls = {
         await fh.syncHandle.flush();
       }catch(e){
         state.s11n.storeException(2,e);
+        rc = state.sq3Codes.SQLITE_IOERR_FSYNC;
       }
       wTimeEnd();
     }
@@ -514,7 +535,7 @@ const vfsAsyncImpls = {
       try { await closeSyncHandle(fh) }
       catch(e){
         state.s11n.storeException(1,e);
-        rc = state.sq3Codes.SQLITE_IOERR;
+        rc = state.sq3Codes.SQLITE_IOERR_UNLOCK;
       }
       wTimeEnd();
     }
@@ -641,7 +662,7 @@ const initS11n = ()=>{
   state.s11n.storeException = state.asyncS11nExceptions
     ? ((priority,e)=>{
       if(priority<=state.asyncS11nExceptions){
-        state.s11n.serialize(e.message);
+        state.s11n.serialize([e.name,': ',e.message].join(''));
       }
     })
     : ()=>{};
