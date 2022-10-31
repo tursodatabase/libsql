@@ -68,7 +68,7 @@
     // This would be SO much easier with the oo1 API, but we specifically want to
     // inject metrics we can't get via that API, and we cannot reliably (OPFS)
     // open the same DB twice to clear it using that API, so...
-    const rc = sqlite3.capi.wasm.exports.sqlite3_wasm_db_reset(db.handle);
+    const rc = sqlite3.wasm.exports.sqlite3_wasm_db_reset(db.handle);
     App.logHtml("reset db rc =",rc,db.id, db.filename);
   };
 
@@ -115,7 +115,7 @@
       const banner = "========================================";
       this.logHtml(banner,
                    "Running",name,'('+sql.length,'bytes) using',db.id);
-      const capi = this.sqlite3.capi, wasm = capi.wasm;
+      const capi = this.sqlite3.capi, wasm = this.sqlite3.wasm;
       let pStmt = 0, pSqlBegin;
       const stack = wasm.scopedAllocPush();
       const metrics = db.metrics = Object.create(null);
@@ -289,7 +289,7 @@
         return;
       }
       if(!db.handle) return;
-      const capi = this.sqlite3, wasm = capi.wasm;
+      const capi = this.sqlite3, wasm = this.sqlite3.wasm;
       //const scope = wasm.scopedAllocPush(
       this.logErr("TODO: clear db");
     },
@@ -488,7 +488,7 @@
           App.logHtml(dbId,"cache_size =",cacheSize);
         });
       }else{
-        const capi = this.sqlite3.capi, wasm = capi.wasm;
+        const capi = this.sqlite3.capi, wasm = this.sqlite3.wasm;
         const stack = wasm.scopedAllocPush();
         let pDb = 0;
         try{
@@ -516,7 +516,7 @@
     run: function(sqlite3){
       delete this.run;
       this.sqlite3 = sqlite3;
-      const capi = sqlite3.capi, wasm = capi.wasm;
+      const capi = sqlite3.capi, wasm = sqlite3.wasm;
       this.logHtml("Loaded module:",capi.sqlite3_libversion(), capi.sqlite3_sourceid());
       this.logHtml("WASM heap size =",wasm.heap8().length);
       this.loadSqlList();

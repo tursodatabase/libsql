@@ -823,7 +823,13 @@ static int patternCompare(
 ** non-zero if there is no match.
 */
 int sqlite3_strglob(const char *zGlobPattern, const char *zString){
-  return patternCompare((u8*)zGlobPattern, (u8*)zString, &globInfo, '[');
+  if( zString==0 ){
+    return zGlobPattern!=0;
+  }else if( zGlobPattern==0 ){
+    return 1;
+  }else {
+    return patternCompare((u8*)zGlobPattern, (u8*)zString, &globInfo, '[');
+  }
 }
 
 /*
@@ -831,7 +837,13 @@ int sqlite3_strglob(const char *zGlobPattern, const char *zString){
 ** a miss - like strcmp().
 */
 int sqlite3_strlike(const char *zPattern, const char *zStr, unsigned int esc){
-  return patternCompare((u8*)zPattern, (u8*)zStr, &likeInfoNorm, esc);
+  if( zStr==0 ){
+    return zPattern!=0;
+  }else if( zPattern==0 ){
+    return 1;
+  }else{
+    return patternCompare((u8*)zPattern, (u8*)zStr, &likeInfoNorm, esc);
+  }
 }
 
 /*
