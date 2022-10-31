@@ -634,7 +634,13 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       const kvvfsStorage = (zClass)=>
             ((115/*=='s'*/===wasm.getMemValue(zClass))
              ? sessionStorage : localStorage);
-      
+
+      /**
+         Implementations for members of the object referred to by
+         sqlite3_wasm_kvvfs_methods(). We swap out the native
+         implementations with these, which use localStorage or
+         sessionStorage for their backing store.
+      */
       const kvvfsImpls = {
         xRead: (zClass, zKey, zBuf, nBuf)=>{
           const stack = pstack.pointer,
@@ -696,7 +702,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           }
         }
       }/*kvvfsImpls*/;
-      for(let k of Object.keys(kvvfsImpls)){
+      for(const k of Object.keys(kvvfsImpls)){
         kvvfsMethods[kvvfsMethods.memberKey(k)] =
           wasm.installFunction(
             kvvfsMethods.memberSignature(k),

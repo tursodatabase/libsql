@@ -204,9 +204,10 @@
       dbId: an opaque ID value which must be passed in the message
       envelope to other calls in this API to tell them which db to
       use. If it is not provided to future calls, they will default to
-      operating on the first-opened db. This property is, for API
-      consistency's sake, also part of the containing message envelope.
-      Only the `open` operation includes it in the `result` property.
+      operating on the least-recently-opened db. This property is, for
+      API consistency's sake, also part of the containing message
+      envelope.  Only the `open` operation includes it in the `result`
+      property.
 
       persistent: true if the given filename resides in the
       known-persistent storage, else false.
@@ -348,9 +349,12 @@ sqlite3.initWorker1API = function(){
      Internal helper for managing Worker-level state.
   */
   const wState = {
-    /** First-opened db is the default for future operations when no
-        dbId is provided by the client. */
-    defaultDb: undefined,
+    /**
+       Each opened DB is added to this.dbList, and the first entry in
+       that list is the default db. As each db is closed, its entry is
+       removed from the list.
+    */
+    dbList: [],
     /** Sequence number of dbId generation. */
     idSeq: 0,
     /** Map of DB instances to dbId. */
@@ -360,7 +364,7 @@ sqlite3.initWorker1API = function(){
     open: function(opt){
       const db = new DB(opt.filename);
       this.dbs[getDbId(db)] = db;
-      if(!this.defaultDb) this.defaultDb = db;
+      if(this.dbList.indexOf(db)<0) this.dbList.push(db);
       return db;
     },
     close: function(db,alsoUnlink){
@@ -369,7 +373,8 @@ sqlite3.initWorker1API = function(){
         const filename = db.filename;
         const pVfs = sqlite3.wasm.sqlite3_wasm_db_vfs(db.pointer, 0);
         db.close();
-        if(db===this.defaultDb) this.defaultDb = undefined;
+        const ddNdx = this.dbList.indexOf(db);
+        if(ddNdx>=0) this.dbList.splice(ddNdx, 1);
         if(alsoUnlink && filename && pVfs){
           sqlite3.wasm.sqlite3_wasm_vfs_unlink(pVfs, filename);
         }
@@ -399,24 +404,25 @@ sqlite3.initWorker1API = function(){
     }
   };
 
-  /** Throws if the given db is falsy or not opened. */
-  const affirmDbOpen = function(db = wState.defaultDb){
+  /** Throws if the given db is falsy or not opened, else returns its
+      argument. */
+  const affirmDbOpen = function(db = wState.dbList[0]){
     return (db && db.pointer) ? db : toss("DB is not opened.");
   };
 
   /** Extract dbId from the given message payload. */
   const getMsgDb = function(msgData,affirmExists=true){
-    const db = wState.getDb(msgData.dbId,false) || wState.defaultDb;
+    const db = wState.getDb(msgData.dbId,false) || wState.dbList[0];
     return affirmExists ? affirmDbOpen(db) : db;
   };
 
   const getDefaultDbId = function(){
-    return wState.defaultDb && getDbId(wState.defaultDb);
+    return wState.dbList[0] && getDbId(wState.dbList[0]);
   };
 
   /**
-     A level of "organizational abstraction" for the Worker
-     API. Each method in this object must map directly to a Worker
+     A level of "organizational abstraction" for the Worker1
+     API. Each method in this object must map directly to a Worker1
      message type key. The onmessage() dispatcher attempts to
      dispatch all inbound messages to a method of this object,
      passing it the event.data part of the inbound event object. All
@@ -440,7 +446,7 @@ sqlite3.initWorker1API = function(){
       const db = wState.open(oargs);
       rc.filename = db.filename;
       rc.persistent = (!!pDir && db.filename.startsWith(pDir+'/'))
-        || sqlite3.capi.sqlite3_js_db_uses_vfs(db.pointer, "opfs");
+        || !!sqlite3.capi.sqlite3_js_db_uses_vfs(db.pointer, "opfs");
       rc.dbId = getDbId(db);
       return rc;
     },
@@ -526,38 +532,29 @@ sqlite3.initWorker1API = function(){
     },
 
     /**
-       TO(RE)DO, once we can abstract away access to the
-       JS environment's virtual filesystem. Currently this
-       always throws.
-
-       Response is (should be) an object:
+       Exports the database to a byte array, as per
+       sqlite3_serialize(). Response is an object:
 
        {
-         buffer: Uint8Array (db file contents),
+         bytearray: Uint8Array (db file contents),
          filename: the current db filename,
          mimetype: 'application/x-sqlite3'
        }
-
-       2022-09-30: we have shell.c:fiddle_export_db() which works fine
-       for disk-based databases (even if it's a virtual disk like an
-       Emscripten VFS). sqlite3_serialize() can return this for
-       :memory: and temp databases.
     */
     export: function(ev){
-      toss("export() requires reimplementing for portability reasons.");
       /**
          We need to reimplement this to use the Emscripten FS
          interface. That part used to be in the OO#1 API but that
          dependency was removed from that level of the API.
       */
-      /**const db = getMsgDb(ev);
+      const db = getMsgDb(ev);
       const response = {
-        buffer: db.exportBinaryImage(),
+        bytearray: sqlite3.capi.sqlite3_js_db_export(db.pointer),
         filename: db.filename,
         mimetype: 'application/x-sqlite3'
       };
-      wState.xfer.push(response.buffer.buffer);
-      return response;**/
+      wState.xfer.push(response.bytearray.buffer);
+      return response;
     }/*export()*/,
 
     toss: function(ev){
