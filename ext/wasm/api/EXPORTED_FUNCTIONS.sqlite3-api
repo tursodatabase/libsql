@@ -42,7 +42,6 @@ _sqlite3_file_control
 _sqlite3_finalize
 _sqlite3_free
 _sqlite3_initialize
-_sqlite3_interrupt
 _sqlite3_libversion
 _sqlite3_libversion_number
 _sqlite3_malloc
@@ -52,6 +51,7 @@ _sqlite3_open
 _sqlite3_open_v2
 _sqlite3_prepare_v2
 _sqlite3_prepare_v3
+_sqlite3_randomness
 _sqlite3_realloc
 _sqlite3_realloc64
 _sqlite3_reset
@@ -89,5 +89,6 @@ _sqlite3_value_text
 _sqlite3_value_type
 _sqlite3_vfs_find
 _sqlite3_vfs_register
+_sqlite3_vfs_unregister
 _malloc
 _free

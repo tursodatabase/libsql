@@ -18,7 +18,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   const toss = (...args)=>{throw new Error(args.join(' '))};
   const toss3 = (...args)=>{throw new sqlite3.SQLite3Error(...args)};
 
-  const capi = sqlite3.capi, wasm = capi.wasm, util = capi.util;
+  const capi = sqlite3.capi, wasm = sqlite3.wasm, util = sqlite3.util;
   /* What follows is colloquially known as "OO API #1". It is a
      binding of the sqlite3 API which is designed to be run within
      the same thread (main or worker) as the one in which the
@@ -87,7 +87,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      being-construct DB object as its "this". See the DB constructor
      for the argument docs. This is split into a separate function
      in order to enable simple creation of special-case DB constructors,
-     e.g. JsStorageDB and OpfsDB.
+     e.g. JsStorageDb and OpfsDb.
 
      Expects to be passed a configuration object with the following
      properties:
@@ -149,13 +149,10 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     if( flagsStr.indexOf('w')>=0 ) oflags |= capi.SQLITE_OPEN_READWRITE;
     if( 0===oflags ) oflags |= capi.SQLITE_OPEN_READONLY;
     oflags |= capi.SQLITE_OPEN_EXRESCODE;
-    const scope = wasm.scopedAllocPush();
+    const stack = wasm.pstack.pointer;
     try {
-      const pPtr = wasm.allocPtr() /* output (sqlite3**) arg */;
-      const pVfsName = vfsName ? (
-        ('number'===typeof vfsName ? vfsName : wasm.scopedAllocCString(vfsName))
-      ): 0;
-      let rc = capi.sqlite3_open_v2(fn, pPtr, oflags, pVfsName);
+      const pPtr = wasm.pstack.allocPtr() /* output (sqlite3**) arg */;
+      let rc = capi.sqlite3_open_v2(fn, pPtr, oflags, vfsName || 0);
       pDb = wasm.getPtrValue(pPtr);
       checkSqlite3Rc(pDb, rc);
       if(flagsStr.indexOf('t')>=0){
@@ -163,21 +160,19 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
                               __dbTraceToConsole, 0);
       }
       // Check for per-VFS post-open SQL...
-      wasm.setPtrValue(pPtr, 0);
-      if(0===capi.sqlite3_file_control(
-        pDb, "main", capi.SQLITE_FCNTL_VFS_POINTER, pPtr
-      )){
-        const postInitSql = __vfsPostOpenSql[wasm.getPtrValue(pPtr)];
-        if(postInitSql){
-          rc = capi.sqlite3_exec(pDb, postInitSql, 0, 0, 0);
-          checkSqlite3Rc(pDb, rc);
-        }
+      const pVfs = capi.sqlite3_js_db_vfs(pDb);
+      //console.warn("Opened db",fn,"with vfs",vfsName,pVfs);
+      if(!pVfs) toss3("Internal error: cannot get VFS for new db handle.");
+      const postInitSql = __vfsPostOpenSql[pVfs];
+      if(postInitSql){
+        rc = capi.sqlite3_exec(pDb, postInitSql, 0, 0, 0);
+        checkSqlite3Rc(pDb, rc);
       }      
     }catch( e ){
       if( pDb ) capi.sqlite3_close_v2(pDb);
       throw e;
     }finally{
-      wasm.scopedAllocPop(scope);
+      wasm.pstack.restore(stack);
     }
     this.filename = fnJs;
     __ptrMap.set(this, pDb);
@@ -286,6 +281,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   const DB = function(...args){
     dbCtorHelper.apply(this, args);
   };
+  DB.dbCtorHelper = dbCtorHelper;
 
   /**
      Internal-use enum for mapping JS types to DB-bindable types.
@@ -376,11 +372,11 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         case 1:
           if('string'===typeof args[0] || util.isSQLableTypedArray(args[0])){
             out.sql = args[0];
+          }else if(Array.isArray(args[0])){
+            out.sql = args[0];
           }else if(args[0] && 'object'===typeof args[0]){
             out.opt = args[0];
             out.sql = out.opt.sql;
-          }else if(Array.isArray(args[0])){
-            out.sql = args[0];
           }
           break;
         case 2:
@@ -394,7 +390,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     }else if(Array.isArray(out.sql)){
       out.sql = out.sql.join('');
     }else if('string'!==typeof out.sql){
-      toss3("Missing SQL argument.");
+      toss3("Missing SQL argument or unsupported SQL value type.");
     }
     if(out.opt.callback || out.opt.resultRows){
       switch((undefined===out.opt.rowMode)
@@ -431,6 +427,21 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       }
     }
     return out;
+  };
+
+  /**
+     Internal impl of the DB.selectRowArray() and
+     selectRowObject() methods.
+  */
+  const __selectFirstRow = (db, sql, bind, getArg)=>{
+    let stmt, rc;
+    try {
+      stmt = db.prepare(sql).bind(bind);
+      if(stmt.step()) rc = stmt.get(getArg);
+    }finally{
+      if(stmt) stmt.finalize();
+    }
+    return rc;
   };
 
   /**
@@ -520,25 +531,13 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       }
     },
     /**
-       Similar to the this.filename property but will return a falsy
-       value for special names like ":memory:". Throws if the DB has
-       been closed. If passed an argument it then it will return the
-       filename of the ATTACHEd db with that name, else it assumes a
-       name of `main`. The argument may be either a JS string or
-       a pointer to a WASM-allocated C-string.
+       Similar to the this.filename but returns the
+       sqlite3_db_filename() value for the given database name,
+       defaulting to "main".  The argument may be either a JS string
+       or a pointer to a WASM-allocated C-string.
     */
-    getFilename: function(dbName='main'){
+    dbFilename: function(dbName='main'){
       return capi.sqlite3_db_filename(affirmDbOpen(this).pointer, dbName);
-    },
-    /**
-       Returns true if this db instance has a name which resolves to a
-       file. If the name is "" or starts with ":", it resolves to false.
-       Note that it is not aware of the peculiarities of URI-style
-       names and a URI-style name for a ":memory:" db will fool it.
-       Returns false if this db is closed.
-    */
-    hasFilename: function(){
-      return this.filename && ':'!==this.filename[0];
     },
     /**
        Returns the name of the given 0-based db number, as documented
@@ -710,7 +709,6 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     */
     exec: function(/*(sql [,obj]) || (obj)*/){
       affirmDbOpen(this);
-      const wasm = capi.wasm;
       const arg = parseExecArgs(arguments);
       if(!arg.sql){
         return (''===arg.sql) ? this : toss3("exec() requires an SQL string.");
@@ -813,8 +811,8 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        case, the function's name must be the 'name' property.
 
        The first two call forms can only be used for creating scalar
-       functions. Creating an aggregate function requires the
-       options-object form (see below for details).
+       functions. Creating an aggregate or window function requires
+       the options-object form (see below for details).
 
        UDFs cannot currently be removed from a DB handle after they're
        added. More correctly, they can be removed as documented for
@@ -839,14 +837,19 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
          properties to the "step" and "final" callbacks for the
          aggregate. Do not set the `xFunc` property.
 
-       The options object may optionally have an `xDestroy`
-       function-type property, as per
-       sqlite3_create_function_v2(). Its argument will be the
-       WASM-pointer-type value of the `pApp` property, and this
-       function will throw if `pApp` is defined but is not null,
-       undefined, or a numeric (WASM pointer) value.
+       - Window: set the `xStep`, `xFinal`, `xValue`, and `xInverse`
+         function-type properties. Do not set the `xFunc` property.
 
-       The optional options object may contain flags to modify how
+       The options object may optionally have an `xDestroy`
+       function-type property, as per sqlite3_create_function_v2().
+       Its argument will be the WASM-pointer-type value of the `pApp`
+       property, and this function will throw if `pApp` is defined but
+       is not null, undefined, or a numeric (WASM pointer)
+       value. i.e. `pApp`, if set, must be value suitable for use as a
+       WASM pointer argument, noting that `null` or `undefined` will
+       translate to 0 for that purpose.
+
+       The options object may contain flags to modify how
        the function is defined:
 
        - `arity`: the number of arguments which SQL calls to this
@@ -857,36 +860,39 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        arity value means that the function is variadic and may accept
        any number of arguments, up to sqlite3's compile-time
        limits. sqlite3 will enforce the argument count if is zero or
-       greater.
-
-       The callback always receives a pointer to an `sqlite3_context`
-       object as its first argument. Any arguments after that are from
-       SQL code. The leading context argument does _not_ count towards
-       the function's arity. See the docs for
+       greater. The callback always receives a pointer to an
+       `sqlite3_context` object as its first argument. Any arguments
+       after that are from SQL code. The leading context argument does
+       _not_ count towards the function's arity. See the docs for
        sqlite3.capi.sqlite3_create_function_v2() for why that argument
        is needed in the interface.
 
-       The following properties correspond to flags documented at:
+       The following options-object properties correspond to flags
+       documented at:
 
        https://sqlite.org/c3ref/create_function.html
 
-       - .deterministic = SQLITE_DETERMINISTIC
-       - .directOnly = SQLITE_DIRECTONLY
-       - .innocuous = SQLITE_INNOCUOUS
+       - `deterministic` = sqlite3.capi.SQLITE_DETERMINISTIC
+       - `directOnly` = sqlite3.capi.SQLITE_DIRECTONLY
+       - `innocuous` = sqlite3.capi.SQLITE_INNOCUOUS
+
+       Sidebar: the ability to add new WASM-accessible functions to
+       the runtime requires that the WASM build is compiled with the
+       equivalent functionality as that provided by Emscripten's
+       `-sALLOW_TABLE_GROWTH` flag.
     */
     createFunction: function f(name, xFunc, opt){
-      let xStep, xFinal;
       const isFunc = (f)=>(f instanceof Function);
       switch(arguments.length){
           case 1: /* (optionsObject) */
             opt = name;
             name = opt.name;
-            xFunc = opt.xFunc;
+            xFunc = opt.xFunc || 0;
             break;
           case 2: /* (name, callback|optionsObject) */
             if(!isFunc(xFunc)){
               opt = xFunc;
-              xFunc = opt.xFunc;
+              xFunc = opt.xFunc || 0;
             }
             break;
           case 3: /* name, xFunc, opt */
@@ -897,30 +903,46 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       if('string' !== typeof name){
         toss3("Invalid arguments: missing function name.");
       }
-      xStep = opt.xStep;
-      xFinal = opt.xFinal;
+      let xStep = opt.xStep || 0;
+      let xFinal = opt.xFinal || 0;
+      const xValue = opt.xValue || 0;
+      const xInverse = opt.xInverse || 0;
+      let isWindow = undefined;
       if(isFunc(xFunc)){
+        isWindow = false;
         if(isFunc(xStep) || isFunc(xFinal)){
           toss3("Ambiguous arguments: scalar or aggregate?");
         }
         xStep = xFinal = null;
       }else if(isFunc(xStep)){
         if(!isFunc(xFinal)){
-          toss3("Missing xFinal() callback for aggregate UDF.");
+          toss3("Missing xFinal() callback for aggregate or window UDF.");
         }
         xFunc = null;
       }else if(isFunc(xFinal)){
-        toss3("Missing xStep() callback for aggregate UDF.");
+        toss3("Missing xStep() callback for aggregate or window UDF.");
       }else{
         toss3("Missing function-type properties.");
+      }
+      if(false === isWindow){
+        if(isFunc(xValue) || isFunc(xInverse)){
+          toss3("xValue and xInverse are not permitted for non-window UDFs.");
+        }
+      }else if(isFunc(xValue)){
+        if(!isFunc(xInverse)){
+          toss3("xInverse must be provided if xValue is.");
+        }
+        isWindow = true;
+      }else if(isFunc(xInverse)){
+        toss3("xValue must be provided if xInverse is.");
       }
       const pApp = opt.pApp;
       if(undefined!==pApp &&
          null!==pApp &&
-         (('number'!==typeof pApp) || !capi.util.isInt32(pApp))){
+         (('number'!==typeof pApp) || !util.isInt32(pApp))){
         toss3("Invalid value for pApp property. Must be a legal WASM pointer value.");
       }
-      const xDestroy = opt.xDestroy;
+      const xDestroy = opt.xDestroy || 0;
       if(xDestroy && !isFunc(xDestroy)){
         toss3("xDestroy property must be a function.");
       }
@@ -931,13 +953,22 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       name = name.toLowerCase();
       const xArity = xFunc || xStep;
       const arity = getOwnOption(opt, 'arity');
-      DB.checkRc(this, capi.sqlite3_create_function_v2(
-        this.pointer, name,
-        ('number'===typeof arity
-         ? arity
-         : (xArity.length ? xArity.length-1/*for pCtx arg*/ : 0)),
-        capi.SQLITE_UTF8 | fFlags, pApp,
-        xFunc, xStep, xFinal, xDestroy));
+      const arityArg = ('number'===typeof arity
+                        ? arity
+                        : (xArity.length ? xArity.length-1/*for pCtx arg*/ : 0));
+      let rc;
+      if( isWindow ){
+        rc = capi.sqlite3_create_window_function(
+          this.pointer, name, arityArg,
+          capi.SQLITE_UTF8 | fFlags, pApp || 0,
+          xStep, xFinal, xValue, xInverse, xDestroy);
+      }else{
+        rc = capi.sqlite3_create_function_v2(
+          this.pointer, name, arityArg,
+          capi.SQLITE_UTF8 | fFlags, pApp || 0,
+          xFunc, xStep, xFinal, xDestroy);
+      }
+      DB.checkRc(this, rc);
       return this;
     }/*createFunction()*/,
     /**
@@ -965,6 +996,38 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         if(stmt) stmt.finalize();
       }
       return rc;
+    },
+    /**
+       Prepares the given SQL, step()s it one time, and returns an
+       array containing the values of the first result row. If it has
+       no results, `undefined` is returned.
+
+       If passed a second argument other than `undefined`, it is
+       treated like an argument to Stmt.bind(), so may be any type
+       supported by that function.
+
+       Throws on error (e.g. malformed SQL).
+    */
+    selectArray: function(sql,bind){
+      return __selectFirstRow(this, sql, bind, []);
+    },
+
+    /**
+       Prepares the given SQL, step()s it one time, and returns an
+       object containing the key/value pairs of the first result
+       row. If it has no results, `undefined` is returned.
+
+       Note that the order of returned object's keys is not guaranteed
+       to be the same as the order of the fields in the query string.
+
+       If passed a second argument other than `undefined`, it is
+       treated like an argument to Stmt.bind(), so may be any type
+       supported by that function.
+
+       Throws on error (e.g. malformed SQL).
+    */
+    selectObject: function(sql,bind){
+      return __selectFirstRow(this, sql, bind, {});
     },
 
     /**
@@ -1406,7 +1469,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           default:
             this._mayGet = false;
             console.warn("sqlite3_step() rc=",rc,
-                         capi.sqlite3_web_rc_str(rc),
+                         capi.sqlite3_js_rc_str(rc),
                          "SQL =", capi.sqlite3_sql(this.pointer));
             DB.checkRc(this.db.pointer, rc);
       }
@@ -1640,11 +1703,10 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       ooApi: "0.1"
     },
     DB,
-    Stmt,
-    dbCtorHelper
+    Stmt
   }/*oo1 object*/;
 
-  if(util.isMainWindow()){
+  if(util.isUIThread()){
     /**
        Functionally equivalent to DB(storageName,'c','kvvfs') except
        that it throws if the given storage name is not one of 'local'
@@ -1662,8 +1724,8 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     };
     const jdb = sqlite3.oo1.JsStorageDb;
     jdb.prototype = Object.create(DB.prototype);
-    /** Equivalent to sqlite3_web_kvvfs_clear(). */
-    jdb.clearStorage = capi.sqlite3_web_kvvfs_clear;
+    /** Equivalent to sqlite3_js_kvvfs_clear(). */
+    jdb.clearStorage = capi.sqlite3_js_kvvfs_clear;
     /**
        Clears this database instance's storage or throws if this
        instance has been closed. Returns the number of
@@ -1672,8 +1734,8 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     jdb.prototype.clearStorage = function(){
       return jdb.clearStorage(affirmDbOpen(this).filename);
     };
-    /** Equivalent to sqlite3_web_kvvfs_size(). */
-    jdb.storageSize = capi.sqlite3_web_kvvfs_size;
+    /** Equivalent to sqlite3_js_kvvfs_size(). */
+    jdb.storageSize = capi.sqlite3_js_kvvfs_size;
     /**
        Returns the _approximate_ number of bytes this database takes
        up in its storage or throws if this instance has been closed.

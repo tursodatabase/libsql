@@ -133,4 +133,58 @@ if {[wal_is_capable]} {
   } {1024 ok}
 }
 
+#-------------------------------------------------------------------------
+
+testvfs tvfs -default 1
+tvfs filter xSync
+tvfs script xSyncCb
+proc xSyncCb {method file fileid flags} {
+  incr ::sync($flags)
+}
+
+reset_db
+
+do_execsql_test vacuum-into-700 {
+  CREATE TABLE t1(a, b);
+  INSERT INTO t1 VALUES(1, 2);
+}
+
+foreach {tn pragma res} {
+  710 {
+    PRAGMA synchronous = normal
+  } {normal 2}
+  720 {
+    PRAGMA synchronous = full
+  } {normal 3}
+  730 {
+    PRAGMA synchronous = off
+  } {}
+  740 {
+    PRAGMA synchronous = extra;
+  } {normal 3}
+  750 {
+    PRAGMA fullfsync = 1;
+    PRAGMA synchronous = full;
+  } {full|dataonly 1 full 2}
+} {
+
+  forcedelete test.db2
+  array unset ::sync
+  do_execsql_test vacuum-into-$tn.1 "
+    $pragma ;
+    VACUUM INTO 'test.db2'
+  "
+
+  do_test vacuum-into-$tn.2 {
+    array get ::sync
+  } $res
+}
+
+db close
+tvfs delete
+
+
 finish_test
+
+
+
