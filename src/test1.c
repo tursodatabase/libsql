@@ -7642,6 +7642,7 @@ static int SQLITE_TCLAPI optimization_control(
   const char *zOpt;
   int onoff;
   int mask = 0;
+  int cnt = 0;
   static const struct {
     const char *zOptName;
     int mask;
@@ -7661,7 +7662,6 @@ static int SQLITE_TCLAPI optimization_control(
     { "push-down",           SQLITE_PushDown       },
     { "balanced-merge",      SQLITE_BalancedMerge  },
     { "propagate-const",     SQLITE_PropagateConst },
-    { 0, 0 }
   };
 
   if( objc!=4 ){
@@ -7672,13 +7672,13 @@ static int SQLITE_TCLAPI optimization_control(
   if( Tcl_GetBooleanFromObj(interp, objv[3], &onoff) ) return TCL_ERROR;
   zOpt = Tcl_GetString(objv[2]);
   for(i=0; i<sizeof(aOpt)/sizeof(aOpt[0]); i++){
-    if( strcmp(zOpt, aOpt[i].zOptName)==0 ){
-      mask = aOpt[i].mask;
-      break;
+    if( strstr(zOpt, aOpt[i].zOptName)!=0 ){
+      mask |= aOpt[i].mask;
+      cnt++;
     }
   }
   if( onoff ) mask = ~mask;
-  if( i>=sizeof(aOpt)/sizeof(aOpt[0]) ){
+  if( cnt==0 ){
     Tcl_AppendResult(interp, "unknown optimization - should be one of:",
                      (char*)0);
     for(i=0; i<sizeof(aOpt)/sizeof(aOpt[0]); i++){

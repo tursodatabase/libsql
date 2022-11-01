@@ -4152,6 +4152,8 @@ static ExprList *findLeftmostExprlist(Select *pSel){
 **        (17g) either the subquery is the first element of the outer
 **              query or there are no RIGHT or FULL JOINs in any arm
 **              of the subquery.  (This is a duplicate of condition (27b).)
+**        (17h) The corresponding result set expressions in all arms of the
+**              compound must have the same affinity.
 **
 **        The parent and sub-query may contain WHERE clauses. Subject to
 **        rules (11), (13) and (14), they may also contain ORDER BY,
@@ -4328,6 +4330,7 @@ static int flattenSubquery(
   ** queries.
   */
   if( pSub->pPrior ){
+    int ii;
     if( pSub->pOrderBy ){
       return 0;  /* Restriction (20) */
     }
@@ -4360,7 +4363,6 @@ static int flattenSubquery(
 
     /* Restriction (18). */
     if( p->pOrderBy ){
-      int ii;
       for(ii=0; ii<p->pOrderBy->nExpr; ii++){
         if( p->pOrderBy->a[ii].u.x.iOrderByCol==0 ) return 0;
       }
@@ -4368,6 +4370,21 @@ static int flattenSubquery(
 
     /* Restriction (23) */
     if( (p->selFlags & SF_Recursive) ) return 0;
+
+    /* Restriction (17h) */
+    for(ii=0; ii<pSub->pEList->nExpr; ii++){
+      char aff;
+      assert( pSub->pEList->a[ii].pExpr!=0 );
+      aff = sqlite3ExprAffinity(pSub->pEList->a[ii].pExpr);
+      for(pSub1=pSub->pPrior; pSub1; pSub1=pSub1->pPrior){
+        assert( pSub1->pEList!=0 );
+        assert( pSub1->pEList->nExpr>ii );
+        assert( pSub1->pEList->a[ii].pExpr!=0 );
+        if( sqlite3ExprAffinity(pSub1->pEList->a[ii].pExpr)!=aff ){
+          return 0;
+        }
+      }
+    }
 
     if( pSrc->nSrc>1 ){
       if( pParse->nSelect>500 ) return 0;
