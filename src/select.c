@@ -1287,6 +1287,9 @@ static void selectInnerLoop(
       testcase( eDest==SRT_Fifo );
       testcase( eDest==SRT_DistFifo );
       sqlite3VdbeAddOp3(v, OP_MakeRecord, regResult, nResultCol, r1+nPrefixReg);
+      if( pDest->zAffSdst ){
+        sqlite3VdbeChangeP4(v, -1, pDest->zAffSdst, nResultCol);
+      }
 #ifndef SQLITE_OMIT_CTE
       if( eDest==SRT_DistFifo ){
         /* If the destination is DistFifo, then cursor (iParm+1) is open
@@ -4149,6 +4152,8 @@ static ExprList *findLeftmostExprlist(Select *pSel){
 **        (17g) either the subquery is the first element of the outer
 **              query or there are no RIGHT or FULL JOINs in any arm
 **              of the subquery.  (This is a duplicate of condition (27b).)
+**        (17h) The corresponding result set expressions in all arms of the
+**              compound must have the same affinity.
 **
 **        The parent and sub-query may contain WHERE clauses. Subject to
 **        rules (11), (13) and (14), they may also contain ORDER BY,
@@ -4325,6 +4330,7 @@ static int flattenSubquery(
   ** queries.
   */
   if( pSub->pPrior ){
+    int ii;
     if( pSub->pOrderBy ){
       return 0;  /* Restriction (20) */
     }
@@ -4357,7 +4363,6 @@ static int flattenSubquery(
 
     /* Restriction (18). */
     if( p->pOrderBy ){
-      int ii;
       for(ii=0; ii<p->pOrderBy->nExpr; ii++){
         if( p->pOrderBy->a[ii].u.x.iOrderByCol==0 ) return 0;
       }
@@ -4365,6 +4370,21 @@ static int flattenSubquery(
 
     /* Restriction (23) */
     if( (p->selFlags & SF_Recursive) ) return 0;
+
+    /* Restriction (17h) */
+    for(ii=0; ii<pSub->pEList->nExpr; ii++){
+      char aff;
+      assert( pSub->pEList->a[ii].pExpr!=0 );
+      aff = sqlite3ExprAffinity(pSub->pEList->a[ii].pExpr);
+      for(pSub1=pSub->pPrior; pSub1; pSub1=pSub1->pPrior){
+        assert( pSub1->pEList!=0 );
+        assert( pSub1->pEList->nExpr>ii );
+        assert( pSub1->pEList->a[ii].pExpr!=0 );
+        if( sqlite3ExprAffinity(pSub1->pEList->a[ii].pExpr)!=aff ){
+          return 0;
+        }
+      }
+    }
 
     if( pSrc->nSrc>1 ){
       if( pParse->nSelect>500 ) return 0;
@@ -7071,7 +7091,10 @@ int sqlite3Select(
       }
       sqlite3SelectDestInit(&dest, SRT_EphemTab, pItem->iCursor);
       ExplainQueryPlan((pParse, 1, "MATERIALIZE %!S", pItem));
+      dest.zAffSdst = sqlite3TableAffinityStr(db, pItem->pTab);
       sqlite3Select(pParse, pSub, &dest);
+      sqlite3DbFree(db, dest.zAffSdst);
+      dest.zAffSdst = 0;
       pItem->pTab->nRowLogEst = pSub->nSelectRow;
       if( onceAddr ) sqlite3VdbeJumpHere(v, onceAddr);
       sqlite3VdbeAddOp2(v, OP_Return, pItem->regReturn, topAddr+1);

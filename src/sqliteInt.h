@@ -3511,7 +3511,7 @@ struct SelectDest {
   int iSDParm2;        /* A second parameter for the eDest disposal method */
   int iSdst;           /* Base register where results are written */
   int nSdst;           /* Number of registers allocated */
-  char *zAffSdst;      /* Affinity used when eDest==SRT_Set */
+  char *zAffSdst;      /* Affinity used for SRT_Set, SRT_Table, and similar */
   ExprList *pOrderBy;  /* Key columns for SRT_Queue and SRT_DistQueue */
 };
 
@@ -4981,6 +4981,7 @@ int sqlite3VarintLen(u64 v);
 
 
 const char *sqlite3IndexAffinityStr(sqlite3*, Index*);
+char *sqlite3TableAffinityStr(sqlite3*,const Table*);
 void sqlite3TableAffinity(Vdbe*, Table*, int);
 char sqlite3CompareAffinity(const Expr *pExpr, char aff2);
 int sqlite3IndexAffinityOk(const Expr *pExpr, char idx_affinity);
