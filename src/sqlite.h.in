@@ -1264,6 +1264,26 @@ typedef struct sqlite3_mutex sqlite3_mutex;
 typedef struct sqlite3_api_routines sqlite3_api_routines;
 
 /*
+** CAPI3REF: File Name
+**
+** Type [sqlite3_filename] is used by SQLite to pass filenames to the
+** xOpen method of a [VFS]. It may be cast to (const char*) and treated
+** as a normal, nul-terminated, UTF-8 buffer containing the filename, but
+** may also be passed to special APIs such as:
+**
+** <ul>
+** <li>  sqlite3_filename_database()
+** <li>  sqlite3_filename_journal()
+** <li>  sqlite3_filename_wal()
+** <li>  sqlite3_uri_parameter()
+** <li>  sqlite3_uri_boolean()
+** <li>  sqlite3_uri_int64()
+** <li>  sqlite3_uri_key()
+** </ul>
+*/
+typedef const char *sqlite3_filename;
+
+/*
 ** CAPI3REF: OS Interface Object
 **
 ** An instance of the sqlite3_vfs object defines the interface between
@@ -1441,7 +1461,7 @@ struct sqlite3_vfs {
   sqlite3_vfs *pNext;      /* Next registered VFS */
   const char *zName;       /* Name of this virtual file system */
   void *pAppData;          /* Pointer to application-specific data */
-  int (*xOpen)(sqlite3_vfs*, const char *zName, sqlite3_file*,
+  int (*xOpen)(sqlite3_vfs*, sqlite3_filename zName, sqlite3_file*,
                int flags, int *pOutFlags);
   int (*xDelete)(sqlite3_vfs*, const char *zName, int syncDir);
   int (*xAccess)(sqlite3_vfs*, const char *zName, int flags, int *pResOut);
@@ -3711,10 +3731,10 @@ int sqlite3_open_v2(
 **
 ** See the [URI filename] documentation for additional information.
 */
-const char *sqlite3_uri_parameter(const char *zFilename, const char *zParam);
-int sqlite3_uri_boolean(const char *zFile, const char *zParam, int bDefault);
-sqlite3_int64 sqlite3_uri_int64(const char*, const char*, sqlite3_int64);
-const char *sqlite3_uri_key(const char *zFilename, int N);
+const char *sqlite3_uri_parameter(sqlite3_filename z, const char *zParam);
+int sqlite3_uri_boolean(sqlite3_filename z, const char *zParam, int bDefault);
+sqlite3_int64 sqlite3_uri_int64(sqlite3_filename, const char*, sqlite3_int64);
+const char *sqlite3_uri_key(sqlite3_filename z, int N);
 
 /*
 ** CAPI3REF:  Translate filenames
@@ -3743,9 +3763,9 @@ const char *sqlite3_uri_key(const char *zFilename, int N);
 ** return value from [sqlite3_db_filename()], then the result is
 ** undefined and is likely a memory access violation.
 */
-const char *sqlite3_filename_database(const char*);
-const char *sqlite3_filename_journal(const char*);
-const char *sqlite3_filename_wal(const char*);
+const char *sqlite3_filename_database(sqlite3_filename);
+const char *sqlite3_filename_journal(sqlite3_filename);
+const char *sqlite3_filename_wal(sqlite3_filename);
 
 /*
 ** CAPI3REF:  Database File Corresponding To A Journal
@@ -3811,14 +3831,14 @@ sqlite3_file *sqlite3_database_file_object(const char*);
 ** then the corresponding [sqlite3_module.xClose() method should also be
 ** invoked prior to calling sqlite3_free_filename(Y).
 */
-char *sqlite3_create_filename(
+sqlite3_filename sqlite3_create_filename(
   const char *zDatabase,
   const char *zJournal,
   const char *zWal,
   int nParam,
   const char **azParam
 );
-void sqlite3_free_filename(char*);
+void sqlite3_free_filename(sqlite3_filename);
 
 /*
 ** CAPI3REF: Error Codes And Messages
@@ -6352,7 +6372,7 @@ const char *sqlite3_db_name(sqlite3 *db, int N);
 ** <li> [sqlite3_filename_wal()]
 ** </ul>
 */
-const char *sqlite3_db_filename(sqlite3 *db, const char *zDbName);
+sqlite3_filename sqlite3_db_filename(sqlite3 *db, const char *zDbName);
 
 /*
 ** CAPI3REF: Determine if a database is read-only

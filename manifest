@@ -1,5 +1,5 @@
-C Fix\scompilation\serrors\sin\sthe\srecover\sAPI\sseen\swith\sMSVC.
-D 2022-11-01T14:13:05.112
+C Instead\sof\s(const\schar*),\suse\sa\sspecial\stype\s-\ssqlite3_filename\s-\sas\sthe\sfilename\sargument\spassed\sto\sVFS\smethod\sxOpen().
+D 2022-11-01T17:43:19.845
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -599,7 +599,7 @@ F src/insert.c 90a32bc7faa755cd5292ade21d2b3c6edba8fd1d70754a364caccabfde2c3bb2
 F src/json.c 7749b98c62f691697c7ee536b570c744c0583cab4a89200fdd0fc2aa8cc8cbd6
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 8086232d10e51e183a7f64199815bad1c579896354db69435347665f62f481e9
-F src/main.c 9cfec10a066121554edc9058156c412b9dc4550680c588122b67b445bb91e271
+F src/main.c fa53bb2ae09549dab5629271c3cfd681f89059f5192afaaaf5c0d396bb3957fe
 F src/malloc.c dfddca1e163496c0a10250cedeafaf56dff47673e0f15888fb0925340a8e3f90
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
@@ -638,9 +638,9 @@ F src/resolve.c efea4e5fbecfd6d0a9071b0be0d952620991673391b6ffaaf4c277b0bb674633
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 12cb5162e606290354f9512ff0c30fc6dc4d7a77a92b6c5b581395f9c4edd047
 F src/shell.c.in bde69ad6a9887396c87d089da84c0fe1e432957faebd9206b9185be735341104
-F src/sqlite.h.in d9c8a6243fc0a1c270d69db33758e34b810af3462f9bc5b4af113b347e07c69d
+F src/sqlite.h.in bf5846820130b6cf01b002e90427eae29f02db07d9cb9b5ccd0e0aad867eed14
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
-F src/sqlite3ext.h 5336beea1868d99d2f62e628dbea55e97267dbff8193291ab175e960c5df9141
+F src/sqlite3ext.h c4b9fa7a7e2bcdf850cfeb4b8a91d5ec47b7a00033bc996fd2ee96cbf2741f5f
 F src/sqliteInt.h 2c24ba38f78e32fe5d7ec136321a6ad827698b33ca98664970a8b7274d69ef7c
 F src/sqliteLimit.h d7323ffea5208c6af2734574bae933ca8ed2ab728083caa117c9738581a31657
 F src/status.c 160c445d7d28c984a0eae38c144f6419311ed3eace59b44ac6dafc20db4af749
@@ -2054,8 +2054,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b6c1b6e4a3bc21c40d6faca6f70842df5201f21c96a076a895410660630461c0
-R 8ed6b3007f662ca34a8779a141508876
-U mistachkin
-Z b5fe103640025881e47477a5f031a9c6
+P 78d17c4fedc1629bf161f9858f2b8bf35506155ccaa0acc084b419d244d4f75d
+R d6f4dd34441d21f0221621a80542629d
+T *branch * sqlite3_filename
+T *sym-sqlite3_filename *
+T -sym-trunk *
+U dan
+Z 2fb2647049877153f1471b440a0d1d12
 # Remove this line to create a well-formed Fossil manifest.
