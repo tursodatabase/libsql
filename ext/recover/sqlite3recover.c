@@ -2010,7 +2010,10 @@ static void recoverFinalCleanup(sqlite3_recover *p){
   p->pGetPage = 0;
 
   {
-    int res = sqlite3_close(p->dbOut);
+#ifdef SQLITE_DEBUG
+    int res = 
+#endif
+       sqlite3_close(p->dbOut);
     assert( res==SQLITE_OK );
   }
   p->dbOut = 0;
