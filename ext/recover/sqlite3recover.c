@@ -693,9 +693,11 @@ static void recoverGetPage(
     if( pStmt ){
       sqlite3_bind_int64(pStmt, 1, pgno);
       if( SQLITE_ROW==sqlite3_step(pStmt) ){
+        const u8 *aPg;
+        int nPg;
         assert( p->errCode==SQLITE_OK );
-        const u8 *aPg = sqlite3_column_blob(pStmt, 0);
-        int nPg = sqlite3_column_bytes(pStmt, 0);
+        aPg = sqlite3_column_blob(pStmt, 0);
+        nPg = sqlite3_column_bytes(pStmt, 0);
         if( pgno==1 && nPg==p->pgsz && 0==memcmp(p->pPage1Cache, aPg, nPg) ){
           aPg = p->pPage1Disk;
         }
@@ -2528,8 +2530,8 @@ static void recoverInstallWrapper(sqlite3_recover *p){
 ** held when this function is called.
 */
 static void recoverUninstallWrapper(sqlite3_recover *p){
-  recoverAssertMutexHeld();
   sqlite3_file *pFd = 0;
+  recoverAssertMutexHeld();
   sqlite3_file_control(p->dbIn, p->zDb,SQLITE_FCNTL_FILE_POINTER,(void*)&pFd);
   if( pFd && pFd->pMethods ){
     pFd->pMethods = recover_g.pMethods;
