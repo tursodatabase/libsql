@@ -51,8 +51,8 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     });
   }
 
-  if(1){/* Convert Arrays and certain TypedArrays to strings for
-           'flexible-string'-type arguments */
+  {/* Convert Arrays and certain TypedArrays to strings for
+      'flexible-string'-type arguments */
     const xString = wasm.xWrap.argAdapter('string');
     wasm.xWrap.argAdapter(
       'flexible-string', (v)=>xString(util.flexibleString(v))

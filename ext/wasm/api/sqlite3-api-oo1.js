@@ -401,11 +401,11 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           break;
         case undefined:
         case 'this':
+          out.returnVal = ()=>db;
           break;
         default:
           toss3("Invalid returnValue value:",opt.returnValue);
     }
-    if(!out.returnVal) out.returnVal = ()=>db;
     if(opt.callback || opt.resultRows){
       switch((undefined===opt.rowMode)
              ? 'array' : opt.rowMode) {
@@ -762,15 +762,12 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       affirmDbOpen(this);
       const arg = parseExecArgs(this, arguments);
       if(!arg.sql){
-        return (''===arg.sql) ? this : toss3("exec() requires an SQL string.");
+        return toss3("exec() requires an SQL string.");
       }
       const opt = arg.opt;
       const callback = opt.callback;
-      const returnValue = opt.returnValue || 'this';
-      const resultRows = (Array.isArray(opt.resultRows)
-                          ? opt.resultRows : (
-                            'resultRows'===returnValue ? [] : undefined
-                          ));
+      const resultRows =
+            Array.isArray(opt.resultRows) ? opt.resultRows : undefined;
       let stmt;
       let bind = opt.bind;
       let evalFirstResult = !!(arg.cbArg || opt.columnNames) /* true to evaluate the first result-returning query */;
