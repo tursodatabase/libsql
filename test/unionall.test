@@ -55,6 +55,27 @@ do_execsql_test 1.3 {
 } {1 one 2 two 5 five 6 six}
 
 
+# 2022-10-31 part of ticket 57c47526c34f01e8
+# The queries below were causing an assertion fault in
+# the comparison operators of the VDBE.
+#
+reset_db
+database_never_corrupt
+optimization_control db all 0
+do_execsql_test 1.10 {
+  CREATE TABLE t0(c0 INT);
+  INSERT INTO t0 VALUES(0);
+  CREATE TABLE t1_a(a INTEGER PRIMARY KEY, b TEXT);
+  INSERT INTO t1_a VALUES(1,'one');
+  CREATE TABLE t1_b(c INTEGER PRIMARY KEY, d TEXT);
+  INSERT INTO t1_b VALUES(2,'two');
+  CREATE VIEW t1 AS SELECT a, b FROM t1_a UNION ALL SELECT c, c FROM t1_b;
+  SELECT * FROM (SELECT t1.a, t1.b AS b, t0.c0 FROM t0, t1);
+} {1 one 0 2 2 0}
+do_execsql_test 1.11 {
+  SELECT * FROM (SELECT t1.a, t1.b AS b, t0.c0 FROM t0, t1) WHERE b=2;
+} {2 2 0}
+
 #-------------------------------------------------------------------------
 reset_db
 
