@@ -377,6 +377,7 @@ const vfsAsyncImpls = {
         if(!filenamePart) break;
         await hDir.removeEntry(filenamePart, {recursive});
         if(0x1234 !== syncDir) break;
+        recursive = false;
         filename = getResolvedPath(filename, true);
         filename.pop();
         filename = filename.join('/');

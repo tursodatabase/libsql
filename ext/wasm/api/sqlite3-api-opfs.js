@@ -371,6 +371,20 @@ const installOpfsVfs = function callee(options){
       return rc;
     };
 
+    /**
+       Not part of the public API. Only for test/development use.
+    */
+    opfsUtil.debug = {
+      asyncShutdown: ()=>{
+        warn("Shutting down OPFS async listener. The OPFS VFS will no longer work.");
+        opRun('opfs-async-shutdown');
+      },
+      asyncRestart: ()=>{
+        warn("Attempting to restart OPFS VFS async listener. Might work, might not.");
+        W.postMessage({type: 'opfs-async-restart'});
+      }
+    };
+
     const initS11n = ()=>{
       /**
          !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -876,37 +890,61 @@ const installOpfsVfs = function callee(options){
     }
 
     /**
-       Syncronously deletes the given OPFS filesystem entry, ignoring
-       any errors. As this environment has no notion of "current
-       directory", the given name must be an absolute path. If the 2nd
-       argument is truthy, deletion is recursive (use with caution!).
-
-       Returns true if the deletion succeeded and false if it fails,
-       but cannot report the nature of the failure.
+       Expects an OPFS file path. It gets resolved, such that ".."
+       components are properly expanded, and returned. If the 2nd arg
+       is true, the result is returned as an array of path elements,
+       else an absolute path string is returned.
     */
-    opfsUtil.deleteEntry = function(fsEntryName,recursive=false){
-      mTimeStart('xDelete');
-      const rc = opRun('xDelete', fsEntryName, 0, recursive);
-      mTimeEnd();
-      return 0===rc;
+    opfsUtil.getResolvedPath = function(filename,splitIt){
+      const p = new URL(filename, "file://irrelevant").pathname;
+      return splitIt ? p.split('/').filter((v)=>!!v) : p;
     };
+
     /**
-       Synchronously creates the given directory name, recursively, in
+       Takes the absolute path to a filesystem element. Returns an
+       array of [handleOfContainingDir, filename]. If the 2nd argument
+       is truthy then each directory element leading to the file is
+       created along the way. Throws if any creation or resolution
+       fails.
+    */
+    opfsUtil.getDirForFilename = async function f(absFilename, createDirs = false){
+      const path = opfsUtil.getResolvedPath(absFilename, true);
+      const filename = path.pop();
+      let dh = opfsUtil.rootDirectory;
+      for(const dirName of path){
+        if(dirName){
+          dh = await dh.getDirectoryHandle(dirName, {create: !!createDirs});
+        }
+      }
+      return [dh, filename];
+    };
+
+    /**
+       Creates the given directory name, recursively, in
        the OPFS filesystem. Returns true if it succeeds or the
        directory already exists, else false.
     */
-    opfsUtil.mkdir = function(absDirName){
-      mTimeStart('mkdir');
-      const rc = opRun('mkdir', absDirName);
-      mTimeEnd();
-      return 0===rc;
+    opfsUtil.mkdir = async function(absDirName){
+      try {
+        await opfsUtil.getDirForFilename(absDirName+"/filepart", true);
+        return true;
+      }catch(e){
+        //console.warn("mkdir(",absDirName,") failed:",e);
+        return false;
+      }
     };
     /**
-       Synchronously checks whether the given OPFS filesystem exists,
+       Checks whether the given OPFS filesystem entry exists,
        returning true if it does, false if it doesn't.
     */
-    opfsUtil.entryExists = function(fsEntryName){
-      return 0===opRun('xAccess', fsEntryName);
+    opfsUtil.entryExists = async function(fsEntryName){
+      try {
+        const [dh, fn] = await opfsUtil.getDirForFilename(filename);
+        await dh.getFileHandle(fn);
+        return true;
+      }catch(e){
+        return false;
+      }
     };
 
     /**
@@ -938,20 +976,160 @@ const installOpfsVfs = function callee(options){
     };
 
     /**
-       Only for test/development use.
+       Returns a promise which resolves to an object which represents
+       all files and directories in the OPFS tree. The top-most object
+       has two properties: `dirs` is an array of directory entries
+       (described below) and `files` is a list of file names for all
+       files in that directory.
+
+       Traversal starts at sqlite3.opfs.rootDirectory.
+
+       Each `dirs` entry is an object in this form:
+
+       ```
+       { name: directoryName,
+         dirs: [...subdirs],
+         files: [...file names]
+       }
+       ```
+
+       The `files` and `subdirs` entries are always set but may be
+       empty arrays.
+
+       The returned object has the same structure but its `name` is
+       an empty string. All returned objects are created with
+       Object.create(null), so have no prototype.
+
+       Design note: the entries do not contain more information,
+       e.g. file sizes, because getting such info is not only
+       expensive but is subject to locking-related errors.
     */
-    opfsUtil.debug = {
-      asyncShutdown: ()=>{
-        warn("Shutting down OPFS async listener. OPFS will no longer work.");
-        opRun('opfs-async-shutdown');
-      },
-      asyncRestart: ()=>{
-        warn("Attempting to restart OPFS async listener. Might work, might not.");
-        W.postMessage({type: 'opfs-async-restart'});
+    opfsUtil.treeList = async function(){
+      const doDir = async function callee(dirHandle,tgt){
+        tgt.name = dirHandle.name;
+        tgt.dirs = [];
+        tgt.files = [];
+        for await (const handle of dirHandle.values()){
+          if('directory' === handle.kind){
+            const subDir = Object.create(null);
+            tgt.dirs.push(subDir);
+            await callee(handle, subDir);
+          }else{
+            tgt.files.push(handle.name);
+          }
+        }
+      };
+      const root = Object.create(null);
+      await doDir(opfsUtil.rootDirectory, root);
+      return root;
+    };
+
+    /**
+       Irrevocably deletes _all_ files in the current origin's OPFS.
+       Obviously, this must be used with great caution. It may throw
+       an exception if removal of anything fails (e.g. a file is
+       locked), but the precise conditions under which it will throw
+       are not documented (so we cannot tell you what they are).
+    */
+    opfsUtil.rmfr = async function(){
+      const dir = opfsUtil.rootDirectory, opt = {recurse: true};
+      for await (const handle of dir.values()){
+        dir.removeEntry(handle.name, opt);
       }
     };
 
-    //TODO to support fiddle db upload:
+    /**
+       Deletes the given OPFS filesystem entry.  As this environment
+       has no notion of "current directory", the given name must be an
+       absolute path. If the 2nd argument is truthy, deletion is
+       recursive (use with caution!).
+
+       The returned Promise resolves to true if the deletion was
+       successful, else false (but...). The OPFS API reports the
+       reason for the failure only in human-readable form, not
+       exceptions which can be type-checked to determine the
+       failure. Because of that...
+
+       If the final argument is truthy then this function will
+       propagate any exception on error, rather than returning false.
+    */
+    opfsUtil.unlink = async function(fsEntryName, recursive = false,
+                                          throwOnError = false){
+      try {
+        const [hDir, filenamePart] =
+              await opfsUtil.getDirForFilename(fsEntryName, false);
+        await hDir.removeEntry(filenamePart, {recursive});
+        return true;
+      }catch(e){
+        if(throwOnError){
+          throw new Error("unlink(",arguments[0],") failed: "+e.message,{
+            cause: e
+          });
+        }
+        return false;
+      }
+    };
+
+    /**
+       Traverses the OPFS filesystem, calling a callback for each one.
+       The argument may be either a callback function or an options object
+       with any of the following properties:
+
+       - `callback`: function which gets called for each filesystem
+         entry.  It gets passed 3 arguments: 1) the
+         FileSystemFileHandle or FileSystemDirectoryHandle of each
+         entry (noting that both are instanceof FileSystemHandle). 2)
+         the FileSystemDirectoryHandle of the parent directory. 3) the
+         current depth level, with 0 being at the top of the tree
+         relative to the starting directory. If the callback returns a
+         literal false, as opposed to any other falsy value, traversal
+         stops without an error. Any exceptions it throws are
+         propagated. Results are undefined if the callback manipulate
+         the filesystem (e.g. removing or adding entries) because the
+         how OPFS iterators behave in the face of such changes is
+         undocumented.
+
+       - `recursive` [bool=true]: specifies whether to recurse into
+         subdirectories or not. Whether recursion is depth-first or
+         breadth-first is unspecified!
+
+       - `directory` [FileSystemDirectoryEntry=sqlite3.opfs.rootDirectory]
+         specifies the starting directory.
+
+       If this function is passed a function, it is assumed to be the
+       callback.
+
+       Returns a promise because it has to (by virtue of being async)
+       but that promise has no specific meaning: the traversal it
+       performs is synchronous. The promise must be used to catch any
+       exceptions propagated by the callback, however.
+
+       TODO: add an option which specifies whether to traverse
+       depth-first or breadth-first. We currently do depth-first but
+       an incremental file browsing widget would benefit more from
+       breadth-first.
+    */
+    opfsUtil.traverse = async function(opt){
+      const defaultOpt = {
+        recursive: true,
+        directory: opfsUtil.rootDirectory
+      };
+      if('function'===typeof opt){
+        opt = {callback:opt};
+      }
+      opt = Object.assign(defaultOpt, opt||{});
+      const doDir = async function callee(dirHandle, depth){
+        for await (const handle of dirHandle.values()){
+          if(false === opt.callback(handle, dirHandle, depth)) return false;
+          else if(opt.recursive && 'directory' === handle.kind){
+            if(false === await callee(handle, depth + 1)) break;
+          }
+        }
+      };
+      doDir(opt.directory, 0);
+    };
+
+    //TODO to support fiddle and worker1 db upload:
     //opfsUtil.createFile = function(absName, content=undefined){...}
 
     if(sqlite3.oo1){

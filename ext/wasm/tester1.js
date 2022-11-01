@@ -99,6 +99,14 @@
       };
     }
   }
+  const reportFinalTestStatus = function(pass){
+    if(isUIThread()){
+      const e = document.querySelector('#color-target');
+      e.classList.add(pass ? 'tests-pass' : 'tests-fail');
+    }else{
+      postMessage({type:'test-result', payload:{pass}});
+    }
+  };
   const log = (...args)=>{
     //console.log(...args);
     logClass('',...args);
@@ -139,26 +147,17 @@
     toBool: function(expr){
       return (expr instanceof Function) ? !!expr() : !!expr;
     },
-    /** abort() if expr is false. If expr is a function, it
-        is called and its result is evaluated.
+    /** Throws if expr is false. If expr is a function, it is called
+        and its result is evaluated. If passed multiple arguments,
+        those after the first are a message string which get applied
+        as an exception message if the assertion fails. The message
+        arguments are concatenated together with a space between each.
     */
-    assert: function f(expr, msg){
-      if(!f._){
-        f._ = ('undefined'===typeof abort
-               ? (msg)=>{throw new Error(msg)}
-               : abort);
-      }
+    assert: function f(expr, ...msg){
       ++this.counter;
       if(!this.toBool(expr)){
-        f._(msg || "Assertion failed.");
+        throw new Error(msg.length ? msg.join(' ') : "Assertion failed.");
       }
-      return this;
-    },
-    /** Identical to assert() but throws instead of calling
-        abort(). */
-    affirm: function(expr, msg){
-      ++this.counter;
-      if(!this.toBool(expr)) throw new Error(msg || "Affirmation failed.");
       return this;
     },
     /** Calls f() and squelches any exception it throws. If it
@@ -301,9 +300,11 @@
                    "Done running tests.",TestUtil.counter,"assertions in",
                    roundMs(runtime),'ms');
           pok();
+          reportFinalTestStatus(true);
         }catch(e){
           error(e);
           pnok(e);
+          reportFinalTestStatus(false);
         }
       }.bind(this));
     }
@@ -1117,10 +1118,11 @@
       const dbFile = '/tester1.db';
       wasm.sqlite3_wasm_vfs_unlink(0, dbFile);
       const db = this.db = new sqlite3.oo1.DB(dbFile);
-      T.assert(Number.isInteger(db.pointer)).
-        mustThrowMatching(()=>db.pointer=1, /read-only/).
-        assert(0===sqlite3.capi.sqlite3_extended_result_codes(db.pointer,1)).
-        assert('main'===db.dbName(0));
+      T.assert(Number.isInteger(db.pointer))
+        .mustThrowMatching(()=>db.pointer=1, /read-only/)
+        .assert(0===sqlite3.capi.sqlite3_extended_result_codes(db.pointer,1))
+        .assert('main'===db.dbName(0))
+        .assert('string' === typeof db.dbVfsName());
       // Custom db error message handling via sqlite3_prepare_v2/v3()
       let rc = capi.sqlite3_prepare_v3(db.pointer, {/*invalid*/}, -1, 0, null, null);
       T.assert(capi.SQLITE_MISUSE === rc)
@@ -1737,13 +1739,14 @@
       (sqlite3)=>{return !!sqlite3.opfs})
     .t({
       name: 'OPFS sanity checks',
-      test: function(sqlite3){
+      test: async function(sqlite3){
+        const opfs = sqlite3.opfs;
         const filename = 'sqlite3-tester1.db';
         const pVfs = capi.sqlite3_vfs_find('opfs');
         T.assert(pVfs);
         const unlink = (fn=filename)=>wasm.sqlite3_wasm_vfs_unlink(pVfs,fn);
         unlink();
-        let db = new sqlite3.opfs.OpfsDb(filename);
+        let db = new opfs.OpfsDb(filename);
         try {
           db.exec([
             'create table p(a);',
@@ -1751,13 +1754,26 @@
           ]);
           T.assert(3 === db.selectValue('select count(*) from p'));
           db.close();
-          db = new sqlite3.opfs.OpfsDb(filename);
+          db = new opfs.OpfsDb(filename);
           db.exec('insert into p(a) values(4),(5),(6)');
           T.assert(6 === db.selectValue('select count(*) from p'));
         }finally{
           db.close();
           unlink();
         }
+
+        // Some sanity checks of the opfs utility functions...
+        const testDir = '/sqlite3-opfs-'+opfs.randomFilename(12);
+        const aDir = testDir+'/test/dir';
+        T.assert(await opfs.mkdir(aDir), "mkdir failed")
+          .assert(await opfs.mkdir(aDir), "mkdir must pass if the dir exists")
+          .assert(!(await opfs.unlink(testDir+'/test')), "delete 1 should have failed (dir not empty)")
+          .assert((await opfs.unlink(testDir+'/test/dir')), "delete 2 failed")
+          .assert(!(await opfs.unlink(testDir+'/test/dir')),
+                  "delete 2b should have failed (dir already deleted)")
+          .assert((await opfs.unlink(testDir, true)), "delete 3 failed")
+          .assert(!(await opfs.entryExists(testDir)),
+                  "entryExists(",testDir,") should have failed");
       }
     }/*OPFS sanity checks*/)
   ;/* end OPFS tests */

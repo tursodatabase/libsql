@@ -258,9 +258,9 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      in the form of a single configuration object with the following
      properties:
 
-     - `.filename`: database file name
-     - `.flags`: open-mode flags
-     - `.vfs`: the VFS fname
+     - `filename`: database file name
+     - `flags`: open-mode flags
+     - `vfs`: the VFS fname
 
      The `filename` and `vfs` arguments may be either JS strings or
      C-strings allocated via WASM. `flags` is required to be a JS
@@ -559,6 +559,25 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     */
     dbName: function(dbNumber=0){
       return capi.sqlite3_db_name(affirmDbOpen(this).pointer, dbNumber);
+    },
+    /**
+       Returns the name of the sqlite3_vfs used by the given database
+       of this connection (defaulting to 'main'). The argument may be
+       either a JS string or a WASM C-string. Returns undefined if the
+       given db name is invalid. Throws if this object has been
+       close()d.
+    */
+    dbVfsName: function(dbName=0){
+      let rc;
+      const pVfs = capi.sqlite3_js_db_vfs(
+        affirmDbOpen(this).pointer, dbName
+      );
+      if(pVfs){
+        const v = new capi.sqlite3_vfs(pVfs);
+        try{ rc = wasm.cstringToJs(v.$zName) }
+        finally { v.dispose() }
+      }
+      return rc;        
     },
     /**
        Compiles the given SQL and returns a prepared Stmt. This is

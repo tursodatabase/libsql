@@ -1187,14 +1187,15 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   }
 
   /**
-     Given an `sqlite3*`, an sqlite3_vfs name, and an optional db
-     name, returns a truthy value (see below) if that db handle uses
-     that VFS, else returns false. If pDb is falsy then the 3rd
-     argument is ignored and this function returns a truthy value if
-     the default VFS name matches that of the 2nd argument. Results
-     are undefined if pDb is truthy but refers to an invalid
-     pointer. The 3rd argument specifies the database name of the
-     given database connection to check, defaulting to the main db.
+     Given an `sqlite3*`, an sqlite3_vfs name, and an optional db name
+     (defaulting to "main"), returns a truthy value (see below) if
+     that db uses that VFS, else returns false. If pDb is falsy then
+     the 3rd argument is ignored and this function returns a truthy
+     value if the default VFS name matches that of the 2nd
+     argument. Results are undefined if pDb is truthy but refers to an
+     invalid pointer. The 3rd argument specifies the database name of
+     the given database connection to check, defaulting to the main
+     db.
 
      The 2nd and 3rd arguments may either be a JS string or a WASM
      C-string. If the 2nd argument is a NULL WASM pointer, the default
@@ -1209,14 +1210,14 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      bad arguments cause a conversion error when passing into
      wasm-space, false is returned.
   */
-  capi.sqlite3_js_db_uses_vfs = function(pDb,vfsName,dbName="main"){
+  capi.sqlite3_js_db_uses_vfs = function(pDb,vfsName,dbName=0){
     try{
       const pK = capi.sqlite3_vfs_find(vfsName);
       if(!pK) return false;
       else if(!pDb){
         return pK===capi.sqlite3_vfs_find(0) ? pK : false;
       }else{
-        return pK===capi.sqlite3_js_db_vfs(pDb) ? pK : false;
+        return pK===capi.sqlite3_js_db_vfs(pDb,dbName) ? pK : false;
       }
     }catch(e){
       /* Ignore - probably bad args to a wasm-bound function. */

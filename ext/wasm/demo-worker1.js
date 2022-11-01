@@ -291,7 +291,8 @@
       log("open result",ev);
       T.assert('testing2.sqlite3'===ev.result.filename)
         .assert(ev.dbId)
-        .assert(ev.messageId);
+        .assert(ev.messageId)
+        .assert('string' === typeof ev.result.vfs);
       DbState.id = ev.dbId;
       if(waitForOpen) setTimeout(runTests2, 0);
     });

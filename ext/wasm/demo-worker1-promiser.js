@@ -91,7 +91,8 @@
       const r = ev.result;
       log("then open result",r);
       T.assert(ev.dbId === r.dbId)
-        .assert(ev.messageId);
+        .assert(ev.messageId)
+        .assert('string' === typeof r.vfs);
       promiserConfig.dbId = ev.dbId;
     }).then(runTests2);
   };

@@ -37,7 +37,7 @@ const tryOpfsVfs = async function(sqlite3){
 
   const urlArgs = new URL(self.location.href).searchParams;
   const dbFile = "my-persistent.db";
-  if(urlArgs.has('delete')) sqlite3.opfs.deleteEntry(dbFile);
+  if(urlArgs.has('delete')) sqlite3.opfs.unlink(dbFile);
 
   const db = new opfs.OpfsDb(dbFile,'ct');
   log("db file:",db.filename);
@@ -62,13 +62,14 @@ const tryOpfsVfs = async function(sqlite3){
     // Some sanity checks of the opfs utility functions...
     const testDir = '/sqlite3-opfs-'+opfs.randomFilename(12);
     const aDir = testDir+'/test/dir';
-    opfs.mkdir(aDir) || toss("mkdir failed");
-    opfs.mkdir(aDir) || toss("mkdir must pass if the dir exists");
-    opfs.deleteEntry(testDir+'/test') && toss("delete 1 should have failed (dir not empty)");
-    opfs.deleteEntry(testDir+'/test/dir') || toss("delete 2 failed");
-    opfs.deleteEntry(testDir+'/test/dir') && toss("delete 2b should have failed (dir already deleted)");
-    opfs.deleteEntry(testDir,true) || toss("delete 3 failed");
-    opfs.entryExists(testDir) && toss("entryExists(",testDir,") should have failed");
+    await opfs.mkdir(aDir) || toss("mkdir failed");
+    await opfs.mkdir(aDir) || toss("mkdir must pass if the dir exists");
+    await opfs.unlink(testDir+'/test') && toss("delete 1 should have failed (dir not empty)");
+    //await opfs.entryExists(testDir)
+    await opfs.unlink(testDir+'/test/dir') || toss("delete 2 failed");
+    await opfs.unlink(testDir+'/test/dir') && toss("delete 2b should have failed (dir already deleted)");
+    await opfs.unlink(testDir, true) || toss("delete 3 failed");
+    await opfs.entryExists(testDir) && toss("entryExists(",testDir,") should have failed");
   }finally{
     db.close();
   }
