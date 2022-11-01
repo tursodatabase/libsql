@@ -7629,7 +7629,12 @@ static int SQLITE_TCLAPI win32_rmdir(
 **
 ** Enable or disable query optimizations using the sqlite3_test_control()
 ** interface.  Disable if BOOLEAN is false and enable if BOOLEAN is true.
-** OPT is the name of the optimization to be disabled.
+** OPT is the name of the optimization to be disabled.  OPT can also be a
+** list or optimizations names, in which case all optimizations named are
+** enabled or disabled.
+**
+** Each invocation of this control overrides all prior invocations.  The
+** changes are not cumulative.
 */
 static int SQLITE_TCLAPI optimization_control(
   void * clientData,
@@ -7687,6 +7692,7 @@ static int SQLITE_TCLAPI optimization_control(
     return TCL_ERROR;
   }
   sqlite3_test_control(SQLITE_TESTCTRL_OPTIMIZATIONS, db, mask);
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(mask));
   return TCL_OK;
 }
 
