@@ -272,7 +272,7 @@ static int multiplexSubFilename(multiplexGroup *pGroup, int iChunk){
       return SQLITE_NOMEM;
     }
     multiplexFilename(pGroup->zName, pGroup->nName, pGroup->flags, iChunk, z);
-    pGroup->aReal[iChunk].z = sqlite3_create_filename(z,"","",0,0);
+    pGroup->aReal[iChunk].z = (char*)sqlite3_create_filename(z,"","",0,0);
     sqlite3_free(z);
     if( pGroup->aReal[iChunk].z==0 ) return SQLITE_NOMEM;
   }
