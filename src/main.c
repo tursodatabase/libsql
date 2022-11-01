@@ -3396,7 +3396,7 @@ static int openDatabase(
     goto opendb_out;
   }
   assert( db->pVfs!=0 );
-#if defined(SQLITE_OS_KV) || defined(SQLITE_OS_KV_OPTIONAL)
+#if SQLITE_OS_KV || defined(SQLITE_OS_KV_OPTIONAL)
   if( sqlite3_stricmp(db->pVfs->zName, "kvvfs")==0 ){
     db->temp_store = 2;
   }
