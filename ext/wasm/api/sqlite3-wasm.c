@@ -15,9 +15,11 @@
 #define SQLITE_WASM
 #ifdef SQLITE_WASM_ENABLE_C_TESTS
 /*
-** Functions blocked off by SQLITE_WASM_TESTS are intended solely for
-** use in unit/regression testing. They may be safely omitted from
-** client-side builds.
+** Code blocked off by SQLITE_WASM_TESTS is intended solely for use in
+** unit/regression testing. They may be safely omitted from
+** client-side builds. The main unit test script, tester1.js, will
+** skip related tests if it doesn't find the corresponding functions
+** in the WASM exports.
 */
 #  define SQLITE_WASM_TESTS 1
 #else
@@ -1026,7 +1028,7 @@ int sqlite3_wasm_vfs_create_file( sqlite3_vfs *pVfs,
       pPos += n;
     }
     if( 0==rc && nData>0 ){
-      assert(nData<512);
+      assert( nData<blockSize );
       rc = pIo->xWrite(pFile, pPos, nData, (sqlite3_int64)(pPos - pData));
     }
   }
@@ -1072,7 +1074,7 @@ sqlite3_kvvfs_methods * sqlite3_wasm_kvvfs_methods(void){
   return &sqlite3KvvfsMethods;
 }
 
-#if defined(__EMSCRIPTEN__) && defined(SQLITE_WASM_WASMFS)
+#if defined(__EMSCRIPTEN__) && defined(SQLITE_ENABLE_WASMFS)
 #include <emscripten/wasmfs.h>
 
 /*
@@ -1093,7 +1095,7 @@ sqlite3_kvvfs_methods * sqlite3_wasm_kvvfs_methods(void){
 **
 ** Returns 0 on success, SQLITE_NOMEM if instantiation of the backend
 ** object fails, SQLITE_IOERR if mkdir() of the zMountPoint dir in
-** the virtual FS fails. In builds compiled without SQLITE_WASM_WASMFS
+** the virtual FS fails. In builds compiled without SQLITE_ENABLE_WASMFS
 ** defined, SQLITE_NOTFOUND is returned without side effects.
 */
 SQLITE_WASM_KEEP
@@ -1102,9 +1104,6 @@ int sqlite3_wasm_init_wasmfs(const char *zMountPoint){
   if( !zMountPoint || !*zMountPoint ) zMountPoint = "/opfs";
   if( !pOpfs ){
     pOpfs = wasmfs_create_opfs_backend();
-    if( pOpfs ){
-      emscripten_console_log("Created WASMFS OPFS backend.");
-    }
   }
   /** It's not enough to instantiate the backend. We have to create a
       mountpoint in the VFS and attach the backend to it. */
@@ -1128,7 +1127,7 @@ int sqlite3_wasm_init_wasmfs(const char *zUnused){
   if(zUnused){/*unused*/}
   return SQLITE_NOTFOUND;
 }
-#endif /* __EMSCRIPTEN__ && SQLITE_WASM_WASMFS */
+#endif /* __EMSCRIPTEN__ && SQLITE_ENABLE_WASMFS */
 
 #if SQLITE_WASM_TESTS
 

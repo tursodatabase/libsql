@@ -568,12 +568,14 @@ oz: clean
 
 include fiddle.make
 
-ifneq (,$(filter wasmfs,$(MAKECMDGOALS)))
-# wasmfs build disabled 2022-10-19 per /chat
-# discussion. OPFS-over-wasmfs was initially a stopgap measure and a
-# convenient point of comparison for the OPFS sqlite3_vfs's
-# performance, but it currently doubles our deliverables and build
-# maintenance burden for very little, if any, benefit.
+# Only add wasmfs if wasmfs.enable=1 or we're running (dist)clean
+wasmfs.enable ?= $(if $(filter %clean,$(MAKECMDGOALS)),1,0)
+ifeq (1,$(wasmfs.enable))
+# wasmfs build disabled 2022-10-19 per /chat discussion.
+# OPFS-over-wasmfs was initially a stopgap measure and a convenient
+# point of comparison for the OPFS sqlite3_vfs's performance, but it
+# currently doubles our deliverables and build maintenance burden for
+# little, if any, benefit.
 #
 ########################################################################
 # Some platforms do not support the WASMFS build. Raspberry Pi OS is one

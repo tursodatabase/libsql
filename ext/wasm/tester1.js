@@ -1782,7 +1782,7 @@
             sh = await fh.createSyncAccessHandle();
             T.assert(fSize === await sh.getSize());
           }finally{
-            if(sh) sh.close();
+            if(sh) await sh.close();
             unlink();
           }
         }
