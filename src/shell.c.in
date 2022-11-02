@@ -4515,7 +4515,6 @@ static const char *(azHelp[]) = {
 #if SQLITE_SHELL_HAVE_RECOVER
   ".recover                 Recover as much data as possible from corrupt db.",
   "   --ignore-freelist        Ignore pages that appear to be on db freelist",
-  "   --recovery-db NAME       Store recovery metadata in database file NAME",
   "   --lost-and-found TABLE   Alternative name for the lost-and-found table",
   "   --no-rowids              Do not attempt to recover rowid values",
   "                            that are not also INTEGER PRIMARY KEYs",
@@ -7304,7 +7303,7 @@ static int recoverSqlCb(void *pCtx, const char *zSql){
 */
 static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
   int rc = SQLITE_OK;
-  const char *zRecoveryDb = "";   /* Name of "recovery" database */
+  const char *zRecoveryDb = "";   /* Name of "recovery" database.  Debug only */
   const char *zLAF = "lost_and_found";
   int bFreelist = 1;              /* 0 if --ignore-freelist is specified */
   int bRowids = 1;                /* 0 if --no-rowids */
@@ -7320,6 +7319,11 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
       bFreelist = 0;
     }else
     if( n<=12 && memcmp("-recovery-db", z, n)==0 && i<(nArg-1) ){
+      /* This option determines the name of the ATTACH-ed database used
+      ** internally by the recovery extension.  The default is "" which
+      ** means to use a temporary database that is automatically deleted
+      ** when closed.  This option is undocumented and might disappear at
+      ** any moment. */
       i++;
       zRecoveryDb = azArg[i];
     }else
@@ -7341,7 +7345,7 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
       pState->db, "main", recoverSqlCb, (void*)pState
   );
 
-  sqlite3_recover_config(p, 789, (void*)zRecoveryDb);
+  sqlite3_recover_config(p, 789, (void*)zRecoveryDb);  /* Debug use only */
   sqlite3_recover_config(p, SQLITE_RECOVER_LOST_AND_FOUND, (void*)zLAF);
   sqlite3_recover_config(p, SQLITE_RECOVER_ROWIDS, (void*)&bRowids);
   sqlite3_recover_config(p, SQLITE_RECOVER_FREELIST_CORRUPT,(void*)&bFreelist);

@@ -2750,6 +2750,11 @@ int sqlite3_recover_config(sqlite3_recover *p, int op, void *pArg){
   }else{
     switch( op ){
       case 789:
+        /* This undocumented magic configuration option is used to set the
+        ** name of the auxiliary database that is ATTACH-ed to the database
+        ** connection and used to hold state information during the
+        ** recovery process.  This option is for debugging use only and
+        ** is subject to change or removal at any time. */
         sqlite3_free(p->zStateDb);
         p->zStateDb = recoverMPrintf(p, "%s", (char*)pArg);
         break;

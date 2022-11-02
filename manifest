@@ -1,5 +1,5 @@
-C Minor\simprovements\sto\sAPI\sdocumentation\sin\scomments\sfor\sthe\srecovery\nextension.
-D 2022-11-02T13:09:14.779
+C Clarify\sdocumentation\sregarding\sthe\s--recovery-db\soption\sto\s".recover"\sand\nthe\smagic\s789\sconfiguration\soption\sit\sis\sassociated\swith.
+D 2022-11-02T14:08:26.051
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -398,7 +398,7 @@ F ext/recover/recoverpgsz.test 93e970eab05e4e89f8fd6b1bd23f9ec137ea09857e66ba0d4
 F ext/recover/recoverrowid.test 1694a1a5526d825f71279f3d02ab02a1ee4c5265de18858bf54cb8ec54487ac8
 F ext/recover/recoverslowidx.test f356bb9fba7ffd6fc50e045e419464f0129ac6e24decf6e919584f79c3493727
 F ext/recover/recoversql.test f9872ff2114e13ffd8ee31e1de06919f62b9b48bc080191b5bd076d10becb60f
-F ext/recover/sqlite3recover.c 89488d58e45645f38eaf46d65c90434976da40b25304282f7a54858244d63d7e
+F ext/recover/sqlite3recover.c d2feca815f489f3beed4af94b916e0cba046937b9cc760b0f2baacf1ae515fa2
 F ext/recover/sqlite3recover.h 011c799f02deb70ab685916f6f538e6bb32c4e0025e79bfd0e24ff9c74820959
 F ext/recover/test_recover.c 61ec931e47abca6b2210f46239cafd9f3060741605e3d3c45a7c7a53f63dd957
 F ext/repair/README.md 92f5e8aae749a4dae14f02eea8e1bb42d4db2b6ce5e83dbcdd6b1446997e0c15
@@ -637,7 +637,7 @@ F src/random.c 546d6feb15ec69c1aafe9bb351a277cbb498fd5410e646add673acb805714960
 F src/resolve.c efea4e5fbecfd6d0a9071b0be0d952620991673391b6ffaaf4c277b0bb674633
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 12cb5162e606290354f9512ff0c30fc6dc4d7a77a92b6c5b581395f9c4edd047
-F src/shell.c.in bde69ad6a9887396c87d089da84c0fe1e432957faebd9206b9185be735341104
+F src/shell.c.in 84bb08d8762920285f08f1c0993f1b3992ac43af5d72445cb8a973fc50c71923
 F src/sqlite.h.in bf5846820130b6cf01b002e90427eae29f02db07d9cb9b5ccd0e0aad867eed14
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h c4b9fa7a7e2bcdf850cfeb4b8a91d5ec47b7a00033bc996fd2ee96cbf2741f5f
@@ -1153,7 +1153,7 @@ F test/fuzz3.test 9c813e6613b837cb7a277b0383cd66bfa07042b4cf0317157c35852f30043c
 F test/fuzz4.test c229bcdb45518a89e1d208a21343e061503460ac69fae1539320a89f572eb634
 F test/fuzz_common.tcl b7197de6ed1ee8250a4f82d67876f4561b42ee8cbbfc6160dcb66331bad3f830
 F test/fuzz_malloc.test f348276e732e814802e39f042b1f6da6362a610af73a528d8f76898fde6b22f2
-F test/fuzzcheck.c 277da15bc937e9c71ec0000223365e2e0d55366605ff12cb9c004575648a5029
+F test/fuzzcheck.c 30475c820dc5ab8a87fa3be1fe8ba8199ebfe2544508a759d653688d8d168766
 F test/fuzzdata1.db 3e86d9cf5aea68ddb8e27c02d7dfdaa226347426c7eb814918e4d95475bf8517
 F test/fuzzdata2.db 128b3feeb78918d075c9b14b48610145a0dd4c8d6f1ca7c2870c7e425f5bf31f
 F test/fuzzdata3.db c6586d3e3cef0fbc18108f9bb649aa77bfc38aba
@@ -2054,8 +2054,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b35e1225c91a3cadc0d25af1e4e790237256d194990faa13190e343ed03e11c5
-R a16d6e67f5c5ba22e134aa878c96eeeb
+P ed1c3515ad6a988e07a8b4583fbc38be257e6eae7443b01a242b98207ce78162
+R 61e877321a6044c9940b1e7ec483318d
 U drh
-Z cc407503cda4120809bd1c2e059cd29e
+Z c1f74c9b622ab0020ca49c89b60463b4
 # Remove this line to create a well-formed Fossil manifest.
