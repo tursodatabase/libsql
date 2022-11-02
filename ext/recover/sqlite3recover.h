@@ -57,7 +57,25 @@ extern "C" {
 #endif
 
 /*
-** Opaque handle type.
+** An instance of the sqlite3_recover object represents a recovery
+** operation in progress.
+**
+** Constructors:
+**
+**    sqlite3_recover_init()
+**    sqlite3_recover_init_sql()
+**
+** Destructor:
+**
+**    sqlite3_recover_finish()
+**
+** Methods:
+**
+**    sqlite3_recover_config()
+**    sqlite3_recover_errcode()
+**    sqlite3_recover_errmsg()
+**    sqlite3_recover_run()
+**    sqlite3_recover_step()
 */
 typedef struct sqlite3_recover sqlite3_recover;
 
@@ -229,4 +247,3 @@ int sqlite3_recover_finish(sqlite3_recover*);
 #endif
 
 #endif /* ifndef _SQLITE_RECOVER_H */
-
