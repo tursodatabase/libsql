@@ -1,5 +1,5 @@
-C Fix\sa\smissing\ssymbol\sin\snon-SQLITE_DEBUG\sbuilds.
-D 2022-11-02T08:10:22.314
+C Fix\sa\ssymbol\sname\stypo\swhich\sbroke\sand\sexception-handling\scase\sin\sOPFS\sxOpen().
+D 2022-11-02T08:49:05.552
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -505,7 +505,7 @@ F ext/wasm/api/sqlite3-api-opfs.js 59b278ed00764fc47ba88be0582ab3fc3ce725e02b6d8
 F ext/wasm/api/sqlite3-api-prologue.js 201b9ab9d101fdefa3175b02748ef39cba43bc7abe87a69b6faac24e58cd70f0
 F ext/wasm/api/sqlite3-api-worker1.js 4f920a54fb97d4ca50632d45bd7d011a55016eb5a5883725033abb450903bc6f
 F ext/wasm/api/sqlite3-license-version-header.js a661182fc93fc2cf212dfd0b987f8e138a3ac98f850b1112e29b5fbdaecc87c3
-F ext/wasm/api/sqlite3-opfs-async-proxy.js 2627bf8dc04c24783a55de40d8a6d18da31e81a9bb926a5b672b402f582099b5
+F ext/wasm/api/sqlite3-opfs-async-proxy.js 9815bd045b638af06350bfe04eaaae17ddf33c3593a9ca2d3f7fdbfd3c6a2205
 F ext/wasm/api/sqlite3-wasi.h 25356084cfe0d40458a902afb465df8c21fc4152c1d0a59b563a3fba59a068f9
 F ext/wasm/api/sqlite3-wasm.c 14ac9c03f6585332f882703f3427f11ffe8ffe8b6c0e252be2c518f7aac6ab6a
 F ext/wasm/api/sqlite3-worker1-promiser.js 0c7a9826dbf82a5ed4e4f7bf7816e825a52aff253afbf3350431f5773faf0e4b
@@ -2054,8 +2054,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 663a89164fdd43529a13cab4b9d9f04fe519e7c6b954f9c91e32e4d7ae25eb46
-R 227ae1040979c47f4c4150c594db2a2c
+P 17cdcad627205cdc8ae8114df44ad2a44e59603200efb238fbbb5c30ea0a453e
+R b5852b88f4b76c009c5011f611c070bf
 U stephan
-Z eb5eb9f9c505195d442f3d8d45ded094
+Z 3a7fb0297f0bfd236153f29f2af79966
 # Remove this line to create a well-formed Fossil manifest.

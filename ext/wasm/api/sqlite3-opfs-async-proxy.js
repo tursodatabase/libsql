@@ -435,7 +435,8 @@ const vfsAsyncImpls = {
       try {
         [hDir, filenamePart] = await getDirForFilename(filename, !!create);
       }catch(e){
-        storeAndNotify(opName, state.sql3Codes.SQLITE_NOTFOUND);
+        state.s11n.storeException(1,e);
+        storeAndNotify(opName, state.sq3Codes.SQLITE_NOTFOUND);
         mTimeEnd();
         wTimeEnd();
         return;
