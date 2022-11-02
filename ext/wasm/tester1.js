@@ -346,6 +346,11 @@
       }
       try{ throw new sqlite3.SQLite3Error(capi.SQLITE_SCHEMA) }
       catch(e){ T.assert('SQLITE_SCHEMA' === e.message) }
+      try{ sqlite3.SQLite3Error.toss(capi.SQLITE_CORRUPT,{cause: true}) }
+      catch(e){
+        T.assert('SQLITE_CORRUPT'===e.message)
+          .assert(true===e.cause);
+      }
     })
   ////////////////////////////////////////////////////////////////////
     .t('strglob/strlike', function(sqlite3){
@@ -1760,6 +1765,26 @@
         }finally{
           db.close();
           unlink();
+        }
+
+        if(1){
+          // Sanity-test sqlite3_wasm_vfs_create_file()...
+          const fSize = 1379;
+          let sh;
+          try{
+            T.assert(!(await opfs.entryExists(filename)));
+            let rc = wasm.sqlite3_wasm_vfs_create_file(
+              pVfs, filename, null, fSize
+            );
+            T.assert(0===rc)
+              .assert(await opfs.entryExists(filename));
+            const fh = await opfs.rootDirectory.getFileHandle(filename);
+            sh = await fh.createSyncAccessHandle();
+            T.assert(fSize === await sh.getSize());
+          }finally{
+            if(sh) sh.close();
+            unlink();
+          }
         }
 
         // Some sanity checks of the opfs utility functions...

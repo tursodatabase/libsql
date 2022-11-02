@@ -12,7 +12,6 @@
 **
 ** emcc -o sqlite3.wasm ... -I/path/to/sqlite3-c-and-h sqlite3-wasm.c
 */
-
 #define SQLITE_WASM
 #ifdef SQLITE_WASM_ENABLE_C_TESTS
 /*
@@ -928,8 +927,8 @@ int sqlite3_wasm_db_export_chunked( sqlite3* pDb,
 ** sqlite3_free() to free it.
 */
 SQLITE_WASM_KEEP
-int sqlite3_wasm_db_serialize( sqlite3* pDb, unsigned char **pOut,
-                               sqlite3_int64 * nOut, unsigned int mFlags ){
+int sqlite3_wasm_db_serialize( sqlite3 *pDb, unsigned char **pOut,
+                               sqlite3_int64 *nOut, unsigned int mFlags ){
   unsigned char * z;
   if( !pDb || !pOut ) return SQLITE_MISUSE;
   if(nOut) *nOut = 0;
@@ -940,6 +939,103 @@ int sqlite3_wasm_db_serialize( sqlite3* pDb, unsigned char **pOut,
   }else{
     return SQLITE_NOMEM;
   }
+}
+
+/*
+** This function is NOT part of the sqlite3 public API. It is strictly
+** for use by the sqlite project's own JS/WASM bindings.
+**
+** Creates a new file using the I/O API of the given VFS, containing
+** the given number of bytes of the given data. If the file exists,
+** it is truncated to the given length and populated with the given
+** data.
+**
+** This function exists so that we can implement the equivalent of
+** Emscripten's FS.createDataFile() in a VFS-agnostic way. This
+** functionality is intended for use in uploading database files.
+**
+** If pVfs is NULL, sqlite3_vfs_find(0) is used.
+**
+** If zFile is NULL, pVfs is NULL (and sqlite3_vfs_find(0) returns
+** NULL), or nData is negative, SQLITE_MISUSE are returned.
+**
+** On success, it creates a new file with the given name, populated
+** with the fist nData bytes of pData. If pData is NULL, the file is
+** created and/or truncated to nData bytes.
+**
+** Whether or not directory components of zFilename are created
+** automatically or not is unspecified: that detail is left to the
+** VFS. The "opfs" VFS, for example, create them.
+**
+** Not all VFSes support this functionality, e.g. the "kvvfs" does
+** not.
+**
+** If an error happens while populating or truncating the file, the
+** target file will be deleted (if needed) if this function created
+** it. If this function did not create it, it is not deleted but may
+** be left in an undefined state.
+**
+** Returns 0 on success. On error, it returns a code described above
+** or propagates a code from one of the I/O methods.
+**
+** Design note: nData is an integer, instead of int64, for WASM
+** portability, so that the API can still work in builds where BigInt
+** support is disabled or unavailable.
+*/
+SQLITE_WASM_KEEP
+int sqlite3_wasm_vfs_create_file( sqlite3_vfs *pVfs,
+                                  const char *zFilename,
+                                  const unsigned char * pData,
+                                  int nData ){
+  int rc;
+  sqlite3_file *pFile = 0;
+  sqlite3_io_methods const *pIo;
+  const int openFlags = SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE;
+  int flagsOut = 0;
+  int fileExisted = 0;
+  int doUnlock = 0;
+  const unsigned char *pPos = pData;
+  const int blockSize = 512
+    /* Because we are using pFile->pMethods->xWrite() for writing, and
+    ** it may have a buffer limit related to sqlite3's pager size, we
+    ** conservatively write in 512-byte blocks (smallest page
+    ** size). */;
+
+  if( !pVfs ) pVfs = sqlite3_vfs_find(0);
+  if( !pVfs || !zFilename || nData<0 ) return SQLITE_MISUSE;
+  pVfs->xAccess(pVfs, zFilename, SQLITE_ACCESS_EXISTS, &fileExisted);
+  rc = sqlite3OsOpenMalloc(pVfs, zFilename, &pFile, openFlags, &flagsOut);
+  if(rc) return rc;
+  pIo = pFile->pMethods;
+  if( pIo->xLock ) {
+    /* We need xLock() in order to accommodate the OPFS VFS, as it
+    ** obtains a writeable handle via the lock operation and releases
+    ** it in xUnlock(). If we don't do those here, we have to add code
+    ** to the VFS to account check whether it was locked before
+    ** xFileSize(), xTruncate(), and the like, and release the lock
+    ** only if it was unlocked when the op was started. */
+    rc = pIo->xLock(pFile, SQLITE_LOCK_EXCLUSIVE);
+    doUnlock = 0==rc;
+  }
+  if( 0==rc) rc = pIo->xTruncate(pFile, nData);
+  if( 0==rc && 0!=pData && nData>0 ){
+    while( 0==rc && nData>0 ){
+      const int n = nData>=blockSize ? blockSize : nData;
+      rc = pIo->xWrite(pFile, pPos, n, (sqlite3_int64)(pPos - pData));
+      nData -= n;
+      pPos += n;
+    }
+    if( 0==rc && nData>0 ){
+      assert(nData<512);
+      rc = pIo->xWrite(pFile, pPos, nData, (sqlite3_int64)(pPos - pData));
+    }
+  }
+  if( pIo->xUnlock && doUnlock!=0 ) pIo->xUnlock(pFile, SQLITE_LOCK_NONE);
+  pIo->xClose(pFile);
+  if( rc!=0 && 0==fileExisted ){
+    pVfs->xDelete(pVfs, zFilename, 1);
+  }
+  return rc;
 }
 
 /*

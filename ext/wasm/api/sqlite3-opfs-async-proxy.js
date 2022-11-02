@@ -230,6 +230,16 @@ const storeAndNotify = (opName, value)=>{
 const affirmNotRO = function(opName,fh){
   if(fh.readOnly) toss(opName+"(): File is read-only: "+fh.filenameAbs);
 };
+const affirmLocked = function(opName,fh){
+  //if(!fh.syncHandle) toss(opName+"(): File does not have a lock: "+fh.filenameAbs);
+  /**
+     Currently a no-op, as speedtest1 triggers xRead() without a
+     lock (that seems like a bug but it's currently uninvestigated).
+     This means, however, that some OPFS VFS routines may trigger
+     acquisition of a lock but never let it go until xUnlock() is
+     called (which it likely won't be if xLock() was not called).
+  */
+};
 
 /**
    We track 2 different timers: the "metrics" timer records how much
@@ -395,6 +405,7 @@ const vfsAsyncImpls = {
     let rc;
     wTimeStart('xFileSize');
     try{
+      affirmLocked('xFileSize',fh);
       rc = await (await getSyncHandle(fh)).getSize();
       state.s11n.serialize(Number(rc));
       rc = 0;
@@ -473,6 +484,7 @@ const vfsAsyncImpls = {
     let rc = 0, nRead;
     const fh = __openFiles[fid];
     try{
+      affirmLocked('xRead',fh);
       wTimeStart('xRead');
       nRead = (await getSyncHandle(fh)).read(
         fh.sabView.subarray(0, n),
@@ -515,6 +527,7 @@ const vfsAsyncImpls = {
     const fh = __openFiles[fid];
     wTimeStart('xTruncate');
     try{
+      affirmLocked('xTruncate',fh);
       affirmNotRO('xTruncate', fh);
       await (await getSyncHandle(fh)).truncate(size);
     }catch(e){
@@ -547,9 +560,10 @@ const vfsAsyncImpls = {
   xWrite: async function(fid/*sqlite3_file pointer*/,n,offset64){
     mTimeStart('xWrite');
     let rc;
+    const fh = __openFiles[fid];
     wTimeStart('xWrite');
     try{
-      const fh = __openFiles[fid];
+      affirmLocked('xWrite',fh);
       affirmNotRO('xWrite', fh);
       rc = (
         n === (await getSyncHandle(fh))

@@ -162,33 +162,6 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     }
   });
 
-  /**
-     An Error subclass specifically for reporting DB-level errors and
-     enabling clients to unambiguously identify such exceptions.
-     The C-level APIs never throw, but some of the higher-level
-     C-style APIs do and the object-oriented APIs use exceptions
-     exclusively to report errors.
-  */
-  class SQLite3Error extends Error {
-    /**
-       Constructs this object with a message equal to all arguments
-       concatenated with a space between each one. As a special case,
-       if it's passed only a single integer argument, the string form
-       of that argument is the result of
-       sqlite3.capi.sqlite3_js_rc_str() or (if that returns falsy), a
-       synthesized string which contains that integer.
-    */
-    constructor(...args){
-      if(1===args.length && 'number'===typeof args[0] && args[0]===(args[0] | 0)){
-        super((capi.sqlite3_js_rc_str && capi.sqlite3_js_rc_str(args[0]))
-              || ("Unknown result code #"+args[0]));
-      }else{
-        super(args.join(' '));
-      }
-      this.name = 'SQLite3Error';
-    }
-  };
-
   /** 
       The main sqlite3 binding API gets installed into this object,
       mimicking the C API as closely as we can. The numerous members
@@ -218,6 +191,52 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      not all are documented in this file.
   */
   const wasm = Object.create(null);
+
+  /** Internal helper for SQLite3Error ctor. */
+  const __rcStr = (rc)=>{
+    return (capi.sqlite3_js_rc_str && capi.sqlite3_js_rc_str(rc))
+           || ("Unknown result code #"+rc);
+  };
+
+  /** Internal helper for SQLite3Error ctor. */
+  const __isInt = (n)=>'number'===typeof n && n===(n | 0);
+
+  /**
+     An Error subclass specifically for reporting DB-level errors and
+     enabling clients to unambiguously identify such exceptions.
+     The C-level APIs never throw, but some of the higher-level
+     C-style APIs do and the object-oriented APIs use exceptions
+     exclusively to report errors.
+  */
+  class SQLite3Error extends Error {
+    /**
+       Constructs this object with a message depending on its arguments:
+
+       - If it's passed only a single integer argument, it is assumed
+       to be an sqlite3 C API result code. The message becomes the
+       result of sqlite3.capi.sqlite3_js_rc_str() or (if that returns
+       falsy) a synthesized string which contains that integer.
+
+       - If passed 2 arguments and the 2nd is a object, it bevaves
+       like the Error(string,object) constructor except that the first
+       argument is subject to the is-integer semantics from the
+       previous point.
+
+       - Else all arguments are concatenated with a space between each
+       one, using args.join(' '), to create the error message.
+    */
+    constructor(...args){
+      if(1===args.length && __isInt(args[0])){
+        super(__rcStr(args[0]));
+      }else if(2===args.length && 'object'===typeof args){
+        if(__isInt(args[0])) super(__rcStr(args[0]), args[1]);
+        else super(...args);
+      }else{
+        super(args.join(' '));
+      }
+      this.name = 'SQLite3Error';
+    }
+  };
 
   /**
      Functionally equivalent to the SQLite3Error constructor but may
@@ -959,6 +978,8 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   wasm.bindingSignatures.wasm = [
     ["sqlite3_wasm_db_reset", "int", "sqlite3*"],
     ["sqlite3_wasm_db_vfs", "sqlite3_vfs*", "sqlite3*","string"],
+    ["sqlite3_wasm_vfs_create_file", "int",
+     "sqlite3_vfs*","string","*", "int"],
     ["sqlite3_wasm_vfs_unlink", "int", "sqlite3_vfs*","string"]
   ];
 

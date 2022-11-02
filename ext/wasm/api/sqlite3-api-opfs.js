@@ -316,6 +316,8 @@ const installOpfsVfs = function callee(options){
     */
     state.sq3Codes = Object.create(null);
     [
+      'SQLITE_ACCESS_EXISTS',
+      'SQLITE_ACCESS_READWRITE',
       'SQLITE_ERROR',
       'SQLITE_IOERR',
       'SQLITE_IOERR_ACCESS',
@@ -939,7 +941,7 @@ const installOpfsVfs = function callee(options){
     */
     opfsUtil.entryExists = async function(fsEntryName){
       try {
-        const [dh, fn] = await opfsUtil.getDirForFilename(filename);
+        const [dh, fn] = await opfsUtil.getDirForFilename(fsEntryName);
         await dh.getFileHandle(fn);
         return true;
       }catch(e){

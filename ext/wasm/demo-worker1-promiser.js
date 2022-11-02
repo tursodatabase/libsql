@@ -248,6 +248,14 @@
         .assert(2===ev.resultRows[0][0]);
     });
 
+    await wtest('export', function(ev){
+      ev = ev.result;
+      T.assert('string' === typeof ev.filename)
+        .assert(ev.byteArray instanceof Uint8Array)
+        .assert(ev.byteArray.length > 1024)
+        .assert('application/x-sqlite3' === ev.mimetype);
+    });
+
     /***** close() tests must come last. *****/
     await wtest('close',{},function(ev){
       T.assert('string' === typeof ev.result.filename);

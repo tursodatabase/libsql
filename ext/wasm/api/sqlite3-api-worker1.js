@@ -423,6 +423,15 @@ sqlite3.initWorker1API = function(){
     return wState.dbList[0] && getDbId(wState.dbList[0]);
   };
 
+  const guessVfs = function(filename){
+    const m = /^file:.+(vfs=(\w+))/.exec(filename);
+    return sqlite3.capi.sqlite3_vfs_find(m ? m[2] : 0);
+  };
+
+  const isSpecialDbFilename = (n)=>{
+    return ''===n || ':'===n[0];
+  };
+
   /**
      A level of "organizational abstraction" for the Worker1
      API. Each method in this object must map directly to a Worker1
@@ -441,11 +450,35 @@ sqlite3.initWorker1API = function(){
       }
       const rc = Object.create(null);
       const pDir = sqlite3.capi.sqlite3_wasmfs_opfs_dir();
-      if(!args.filename || ':memory:'===args.filename){
+      let byteArray, pVfs;
+      oargs.vfs = args.vfs;
+      if(isSpecialDbFilename(args.filename)){
         oargs.filename = args.filename || '';
       }else{
         oargs.filename = args.filename;
-        oargs.vfs = args.vfs;
+        byteArray = args.byteArray;
+        if(byteArray) pVfs = guessVfs(args.filename);
+      }
+      if(pVfs){
+        /* 2022-11-02: this feature is as-yet untested except that
+           sqlite3_wasm_vfs_create_file() has been tested from the
+           browser dev console. */
+        let pMem;
+        try{
+          pMem = sqlite3.wasm.allocFromTypedArray(byteArray);
+          const rc = sqlite3.wasm.sqlite3_wasm_vfs_create_file(
+            pVfs, oargs.filename, pMem, byteArray.byteLength
+          );
+          if(rc) sqlite3.SQLite3Error.toss(rc);
+        }catch(e){
+          throw new sqlite3.SQLite3Error(
+            e.name+' creating '+args.filename+": "+e.message, {
+              cause: e
+            }
+          );                           
+        }finally{
+          if(pMem) sqlite3.wasm.dealloc(pMem);
+        }
       }
       const db = wState.open(oargs);
       rc.filename = db.filename;
@@ -462,10 +495,9 @@ sqlite3.initWorker1API = function(){
         filename: db && db.filename
       };
       if(db){
-        // Keep the "unlink" flag undocumented until we figure out how
-        // to apply it consistently, independent of the db storage.
-        wState.close(db, ((ev.args && 'object'===typeof ev.args)
-                          ? !!ev.args.unlink : false));
+        const doUnlink = ((ev.args && 'object'===typeof ev.args)
+                         ? !!ev.args.unlink : false);
+        wState.close(db, doUnlink);
       }
       return response;
     },
@@ -542,7 +574,7 @@ sqlite3.initWorker1API = function(){
        sqlite3_serialize(). Response is an object:
 
        {
-         bytearray: Uint8Array (db file contents),
+         byteArray:  Uint8Array (db file contents),
          filename: the current db filename,
          mimetype: 'application/x-sqlite3'
        }
@@ -550,11 +582,11 @@ sqlite3.initWorker1API = function(){
     export: function(ev){
       const db = getMsgDb(ev);
       const response = {
-        bytearray: sqlite3.capi.sqlite3_js_db_export(db.pointer),
+        byteArray: sqlite3.capi.sqlite3_js_db_export(db.pointer),
         filename: db.filename,
         mimetype: 'application/x-sqlite3'
       };
-      wState.xfer.push(response.bytearray.buffer);
+      wState.xfer.push(response.byteArray.buffer);
       return response;
     }/*export()*/,
 
