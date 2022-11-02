@@ -2418,23 +2418,37 @@ FuncDef *try_instantiate_wasm_function(sqlite3 *db, const char *pName, int nName
     db->wasm.engine = wasm_engine_new();
   }
   wasm_byte_vec_t compiled_wasm;
-  wasmtime_error_t *error = wasmtime_wat2wasm(pSrcBody, nBody, &compiled_wasm);
-  if (error) {
-    char *zEscapedBody = sqlite3DbStrNDup(db, pSrcBody, nBody);
-    sqlite3Dequote(zEscapedBody);
-    error = wasmtime_wat2wasm(zEscapedBody, sqlite3Strlen30(zEscapedBody), &compiled_wasm);
-    sqlite3DbFree(db, zEscapedBody);
+  wasmtime_error_t *error = NULL;
+
+  int source_already_compiled = (nBody >= 4
+                                 && pSrcBody[0] == '\0'
+                                 && pSrcBody[1] == 'a'
+                                 && pSrcBody[2] == 's'
+                                 && pSrcBody[3] == 'm');
+  if (source_already_compiled) {
+    compiled_wasm.data = (char *)pSrcBody;
+    compiled_wasm.size = nBody;
+  } else {
+    error = wasmtime_wat2wasm(pSrcBody, nBody, &compiled_wasm);
     if (error) {
-      if (err_msg_buf) {
-        wasmtime_error_message(error, err_msg_buf);
+      char *zEscapedBody = sqlite3DbStrNDup(db, pSrcBody, nBody);
+      sqlite3Dequote(zEscapedBody);
+      error = wasmtime_wat2wasm(zEscapedBody, sqlite3Strlen30(zEscapedBody), &compiled_wasm);
+      sqlite3DbFree(db, zEscapedBody);
+      if (error) {
+        if (err_msg_buf) {
+          wasmtime_error_message(error, err_msg_buf);
+        }
+        return NULL;
       }
-      return NULL;
     }
   }
 
   wasmtime_module_t *module = NULL;
   error = wasmtime_module_new(db->wasm.engine, (uint8_t *)compiled_wasm.data, compiled_wasm.size, &module);
-  wasm_byte_vec_delete(&compiled_wasm);
+  if (!source_already_compiled) {
+    wasm_byte_vec_delete(&compiled_wasm);
+  }
   if (error) {
     if (err_msg_buf) {
       wasmtime_error_message(error, err_msg_buf);
@@ -2499,12 +2513,7 @@ int deregister_wasm_function(sqlite3 *db, const char *zName) {
 
 // This initialization is best-effort: failing to initialize a Wasm func table
 // does not prevent users from using this database
-
 FuncDef *try_instantiate_wasm_function(sqlite3 *db, const char *pName, int nName, const char *pSrcBody, int nBody, int nArg, wasm_byte_vec_t *err_msg_buf);
-int instantiate_callback(void *db, int argc, char **argv, char **names) {
-  try_instantiate_wasm_function((sqlite3 *)db, argv[0], sqlite3Strlen30(argv[0]), argv[1], sqlite3Strlen30(argv[1]), -1, NULL);
-  return SQLITE_OK;
-}
 
 void libsql_try_initialize_wasm_func_table(sqlite3 *db) {
 #ifdef SQLITE_TEST
@@ -2514,7 +2523,27 @@ void libsql_try_initialize_wasm_func_table(sqlite3 *db) {
   int rc = sqlite3_exec(db, "CREATE TABLE IF NOT EXISTS libsql_wasm_func_table (name text PRIMARY KEY, body text)", NULL, NULL, NULL);
   if (rc == SQLITE_OK) {
     // If the table exists, register all the functions
-    sqlite3_exec(db, "SELECT name, body FROM libsql_wasm_func_table", instantiate_callback, db, NULL);
+    sqlite3_stmt *stmt;
+    rc = sqlite3_prepare_v2(db, "SELECT name, body FROM libsql_wasm_func_table", -1, &stmt, 0);
+    if (rc != SQLITE_OK) return;
+    rc = SQLITE_ROW;
+    while (rc == SQLITE_ROW) {
+      rc = sqlite3_step(stmt);
+      if (rc == SQLITE_ROW) {
+        int name_type = sqlite3_column_type(stmt, 0);
+        int name_size = sqlite3_column_bytes(stmt, 0);
+        int body_type = sqlite3_column_type(stmt, 1);
+        int body_size = sqlite3_column_bytes(stmt, 1);
+        if (name_type != SQLITE_TEXT && body_type != SQLITE_TEXT && body_type != SQLITE_BLOB) {
+          sqlite3_finalize(stmt);
+          return;
+        }
+        const char *pName = sqlite3_column_text(stmt, 0);
+        const void *pBody = body_type == SQLITE_TEXT ? sqlite3_column_text(stmt, 1) : sqlite3_column_blob(stmt, 1);
+        try_instantiate_wasm_function(db, pName, name_size, pBody, body_size, -1, NULL);
+      }
+    }
+    sqlite3_finalize(stmt);
   }
   sqlite3_exec(db, "SELECT 0", NULL, NULL, NULL);
 }

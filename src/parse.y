@@ -497,7 +497,11 @@ cmd ::= DROP VIEW ifexists(E) fullname(X). {
 //
 
 cmd ::= createkw FUNCTION ifnotexists(E) nm(N) LANGUAGE nm(L) AS STRING(B). {
-  libsql_create_function(pParse, &N, &L, &B, E);
+  libsql_create_function(pParse, &N, &L, &B, 0, E);
+}
+
+cmd ::= createkw FUNCTION ifnotexists(E) nm(N) LANGUAGE nm(L) AS BLOB(B). {
+  libsql_create_function(pParse, &N, &L, &B, 1, E);
 }
 
 ///////////////////// The DROP FUNCTION statement ///////////////////////////

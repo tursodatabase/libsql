@@ -5697,6 +5697,7 @@ void libsql_create_function(
   Token *pName,      /* Function name */
   Token *pLang,      /* Language of the function */
   Token *pBody,      /* Body of the function */
+  int isBlob,        /* If the input token is blob */
   int noErr          /* Suppress error messages if FUNCTION already exists */
 ) {
   if (pLang->n != 4 && sqlite3_strnicmp("wasm", pLang->z, 4) != 0) {
@@ -5708,27 +5709,34 @@ void libsql_create_function(
   Token name = {"name", 4};
   Token body = {"body", 4};
 
-  // FIXME(libSQL): in addition to .wat strings, also allow blobs with encoded .wasm
-  const char *zBody = sqlite3NameFromToken(pParse->db, pBody);
-
   wasm_byte_vec_t err_msg;
-  if (!try_instantiate_wasm_function(pParse->db, pName->z, pName->n, zBody, sqlite3Strlen30(zBody), -1, &err_msg)) {
-    sqlite3ErrorMsg(pParse, "Failed to instantiate Wasm function: %s", err_msg.data);
-    sqlite3DbFree(pParse->db, (void*)zBody);
+  const void *pParsedBody = NULL;
+  int src_size = 0;
+  if (isBlob) {
+    pParsedBody = sqlite3HexToBlob(pParse->db, pBody->z + 2, pBody->n - 2);
+    src_size = (pBody->n - 3)/2;
+  } else {
+    pParsedBody = sqlite3NameFromToken(pParse->db, pBody);
+    src_size = sqlite3Strlen30(pParsedBody);
+  }
+  if (!try_instantiate_wasm_function(pParse->db, pName->z, pName->n, pParsedBody, src_size, -1, &err_msg)) {
+    sqlite3ErrorMsg(pParse, "Failed to instantiate Wasm function from .wat: %s", err_msg.data);
     wasm_byte_vec_delete(&err_msg);
+    sqlite3DbFree(pParse->db, (void*)pParsedBody);
     return;
   }
-  sqlite3DbFree(pParse->db, (void*)zBody);
 
   SrcList* tab_list = sqlite3SrcListAppend(pParse, NULL, &table, NULL);
   if (!tab_list) {
     sqlite3ErrorMsg(pParse, "Failed to allocate tab list");
+    sqlite3DbFree(pParse->db, (void*)pParsedBody);
     return;
   }
   IdList* id_list = sqlite3IdListAppend(pParse, NULL, &name);
   if (!id_list) {
     sqlite3ErrorMsg(pParse, "Failed to allocate id list");
     sqlite3SrcListDelete(pParse->db, tab_list);
+    sqlite3DbFree(pParse->db, (void*)pParsedBody);
     return;
   }
   id_list = sqlite3IdListAppend(pParse, id_list, &body);
@@ -5737,18 +5745,27 @@ void libsql_create_function(
     sqlite3ErrorMsg(pParse, "Failed to allocate expr list");
     sqlite3SrcListDelete(pParse->db, tab_list);
     sqlite3IdListDelete(pParse->db, id_list);
+    sqlite3DbFree(pParse->db, (void*)pParsedBody);
     return;
   }
-  expr_list = sqlite3ExprListAppend(pParse, expr_list, sqlite3ExprAlloc(pParse->db, TK_STRING, pBody, 0));
+
+  Token parsed_text = {
+    .z = pParsedBody,
+    .n = src_size
+  };
+  expr_list = sqlite3ExprListAppend(pParse, expr_list, sqlite3ExprAlloc(pParse->db, isBlob ? TK_BLOB : TK_STRING, isBlob ? pBody : &parsed_text, 0));
+
   Select* select = sqlite3SelectNew(pParse, expr_list, 0, 0, 0, 0, 0, SF_Values|SF_MultiValue, 0);
   if (!select) {
     sqlite3ErrorMsg(pParse, "Failed to allocate select");
     sqlite3SrcListDelete(pParse->db, tab_list);
     sqlite3IdListDelete(pParse->db, id_list);
     sqlite3ExprListDelete(pParse->db, expr_list);
+    sqlite3DbFree(pParse->db, (void*)pParsedBody);
     return;
   }
   sqlite3Insert(pParse, tab_list, select, id_list, noErr ? OE_Ignore : OE_Default, NULL);
+  sqlite3DbFree(pParse->db, (void*)pParsedBody);
 }
 
 void libsql_drop_function(
