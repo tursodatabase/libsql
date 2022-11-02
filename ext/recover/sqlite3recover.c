@@ -2014,7 +2014,9 @@ static void recoverFinalCleanup(sqlite3_recover *p){
     int res = 
 #endif
        sqlite3_close(p->dbOut);
+#ifdef SQLITE_DEBUG
     assert( res==SQLITE_OK );
+#endif
   }
   p->dbOut = 0;
 }
