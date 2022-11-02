@@ -5708,16 +5708,17 @@ void libsql_create_function(
   Token name = {"name", 4};
   Token body = {"body", 4};
 
-  // strip single quotes
-  pBody->n -= 2;
-  pBody->z += 1;
+  // FIXME(libSQL): in addition to .wat strings, also allow blobs with encoded .wasm
+  const char *zBody = sqlite3NameFromToken(pParse->db, pBody);
 
   wasm_byte_vec_t err_msg;
-  if (!try_instantiate_wasm_function(pParse->db, pName->z, pName->n, pBody->z, pBody->n, -1, &err_msg)) {
+  if (!try_instantiate_wasm_function(pParse->db, pName->z, pName->n, zBody, sqlite3Strlen30(zBody), -1, &err_msg)) {
     sqlite3ErrorMsg(pParse, "Failed to instantiate Wasm function: %s", err_msg.data);
+    sqlite3DbFree(pParse->db, (void*)zBody);
     wasm_byte_vec_delete(&err_msg);
     return;
   }
+  sqlite3DbFree(pParse->db, (void*)zBody);
 
   SrcList* tab_list = sqlite3SrcListAppend(pParse, NULL, &table, NULL);
   if (!tab_list) {

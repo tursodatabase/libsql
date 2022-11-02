@@ -2420,10 +2420,16 @@ FuncDef *try_instantiate_wasm_function(sqlite3 *db, const char *pName, int nName
   wasm_byte_vec_t compiled_wasm;
   wasmtime_error_t *error = wasmtime_wat2wasm(pSrcBody, nBody, &compiled_wasm);
   if (error) {
-    if (err_msg_buf) {
-      wasmtime_error_message(error, err_msg_buf);
+    char *zEscapedBody = sqlite3DbStrNDup(db, pSrcBody, nBody);
+    sqlite3Dequote(zEscapedBody);
+    error = wasmtime_wat2wasm(zEscapedBody, sqlite3Strlen30(zEscapedBody), &compiled_wasm);
+    sqlite3DbFree(db, zEscapedBody);
+    if (error) {
+      if (err_msg_buf) {
+        wasmtime_error_message(error, err_msg_buf);
+      }
+      return NULL;
     }
-    return NULL;
   }
 
   wasmtime_module_t *module = NULL;
