@@ -678,7 +678,7 @@ const initS11n = ()=>{
   state.s11n.storeException = state.asyncS11nExceptions
     ? ((priority,e)=>{
       if(priority<=state.asyncS11nExceptions){
-        state.s11n.serialize([e.name,': ',e.message].join(''));
+        state.s11n.serialize([e.name,': ',e.message].join(""));
       }
     })
     : ()=>{};

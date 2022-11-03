@@ -429,7 +429,7 @@ sqlite3.initWorker1API = function(){
   };
 
   const isSpecialDbFilename = (n)=>{
-    return ''===n || ':'===n[0];
+    return ""===n || ':'===n[0];
   };
 
   /**
@@ -453,7 +453,7 @@ sqlite3.initWorker1API = function(){
       let byteArray, pVfs;
       oargs.vfs = args.vfs;
       if(isSpecialDbFilename(args.filename)){
-        oargs.filename = args.filename || '';
+        oargs.filename = args.filename || "";
       }else{
         oargs.filename = args.filename;
         byteArray = args.byteArray;

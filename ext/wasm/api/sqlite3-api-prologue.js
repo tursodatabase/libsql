@@ -370,14 +370,14 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   };
 
   /**
-     If v is-a Array, its join('') result is returned.  If
+     If v is-a Array, its join("") result is returned.  If
      isSQLableTypedArray(v) is true then typedArrayToString(v) is
      returned. If it looks like a WASM pointer, wasm.cstringToJs(v) is
      returned. Else v is returned as-is.
   */
   const flexibleString = function(v){
     if(isSQLableTypedArray(v)) return typedArrayToString(v);
-    else if(Array.isArray(v)) return v.join('');
+    else if(Array.isArray(v)) return v.join("");
     else if(wasm.isPtr(v)) v = wasm.cstringToJs(v);
     return v;
   };
@@ -1333,21 +1333,21 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
 
     /**
        Internal helper for sqlite3_js_kvvfs_clear() and friends.
-       Its argument should be one of ('local','session','').
+       Its argument should be one of ('local','session',"").
     */
     const __kvvfsInfo = function(which){
       const rc = Object.create(null);
       rc.prefix = 'kvvfs-'+which;
       rc.stores = [];
-      if('session'===which || ''===which) rc.stores.push(self.sessionStorage);
-      if('local'===which || ''===which) rc.stores.push(self.localStorage);
+      if('session'===which || ""===which) rc.stores.push(self.sessionStorage);
+      if('local'===which || ""===which) rc.stores.push(self.localStorage);
       return rc;
     };
 
     /**
        Clears all storage used by the kvvfs DB backend, deleting any
        DB(s) stored there. Its argument must be either 'session',
-       'local', or ''. In the first two cases, only sessionStorage
+       'local', or "". In the first two cases, only sessionStorage
        resp. localStorage is cleared. If it's an empty string (the
        default) then both are cleared. Only storage keys which match
        the pattern used by kvvfs are cleared: any other client-side
@@ -1357,7 +1357,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
 
        Returns the number of entries cleared.
     */
-    capi.sqlite3_js_kvvfs_clear = function(which=''){
+    capi.sqlite3_js_kvvfs_clear = function(which=""){
       let rc = 0;
       const kvinfo = __kvvfsInfo(which);
       kvinfo.stores.forEach((s)=>{
@@ -1377,7 +1377,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        This routine guesses the approximate amount of
        window.localStorage and/or window.sessionStorage in use by the
        kvvfs database backend. Its argument must be one of
-       ('session', 'local', ''). In the first two cases, only
+       ('session', 'local', ""). In the first two cases, only
        sessionStorage resp. localStorage is counted. If it's an empty
        string (the default) then both are counted. Only storage keys
        which match the pattern used by kvvfs are counted. The returned
@@ -1390,7 +1390,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        those limits are unspecified and may include per-entry
        overhead invisible to clients.
     */
-    capi.sqlite3_js_kvvfs_size = function(which=''){
+    capi.sqlite3_js_kvvfs_size = function(which=""){
       let sz = 0;
       const kvinfo = __kvvfsInfo(which);
       kvinfo.stores.forEach((s)=>{

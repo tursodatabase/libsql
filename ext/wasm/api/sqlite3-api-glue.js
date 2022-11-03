@@ -141,7 +141,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   const __dbArgcMismatch = (pDb,f,n)=>{
     return sqlite3.util.sqlite3_wasm_db_error(pDb, capi.SQLITE_MISUSE,
                                               f+"() requires "+n+" argument"+
-                                              (1===n?'':'s')+".");
+                                              (1===n?"":'s')+".");
   };
 
   /**
@@ -158,7 +158,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       n = v.byteLength;
       v = util.typedArrayToString(v);
     }else if(Array.isArray(v)){
-      v = v.join('');
+      v = v.join("");
       n = -1;
     }
     return [v, n];
