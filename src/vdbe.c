@@ -708,6 +708,11 @@ static const char *vdbeMemTypeName(Mem *pMem){
   return azTypes[sqlite3_value_type(pMem)-1];
 }
 
+#ifdef LIBSQL_ENABLE_WASM_RUNTIME
+FuncDef *try_instantiate_wasm_function(sqlite3 *db, const char *pName, int nName, const char *pSrcBody, int nBody, int nArg, wasm_byte_vec_t *err_msg_buf);
+int deregister_wasm_function(sqlite3 *db, const char *zName);
+#endif
+
 /*
 ** Execute as much of a VDBE program as we can.
 ** This is the core of sqlite3_step().  
@@ -5340,6 +5345,45 @@ case OP_Sequence: {           /* out2 */
   break;
 }
 
+#ifdef LIBSQL_ENABLE_WASM_RUNTIME
+/* Opcode: CreateWasmFunc P1 P2 P3 P4 *
+** Synopsis: addWasmFunc[P4]
+**
+** Registers a user-defined WebAssembly function created with name stored in P4.
+** Name size is stored in P2, and body size in P3. Body can be found right after
+** the name's null terminator. P1 means that IF NOT EXISTS was passed.
+*/
+case OP_CreateWasmFunc: {
+  wasm_byte_vec_t err_msg = { .data = NULL, .size = 0 };
+  FuncDef *def = try_instantiate_wasm_function(db, pOp->p4.z, pOp->p2, pOp->p4.z + pOp->p2 + 1, pOp->p3, -1, &err_msg);
+  if( pOp->p1 == 0 && !def ) {
+    sqlite3DbFree(db, p->zErrMsg);
+    p->zErrMsg = sqlite3MPrintf(db, "Registering Wasm function %s failed: %s", pOp->p4.z, err_msg.data);
+    wasm_byte_vec_delete(&err_msg);
+    rc = SQLITE_ERROR;
+    goto abort_due_to_error;
+  }
+  break;
+}
+
+/* Opcode: DropWasmFunc P1 * * P4 *
+** Synopsis: dropWasmFunc[P4]
+**
+** Drops a user-defined WebAssembly function created with name stored in P4.
+** P1 means that IF EXISTS was passed
+*/
+case OP_DropWasmFunc: {
+  int dropped = deregister_wasm_function(db, pOp->p4.z);
+  if( pOp->p1 == 0 && !dropped ) {
+    rc = SQLITE_CONSTRAINT;
+    sqlite3DbFree(db, p->zErrMsg);
+    p->zErrMsg = sqlite3MPrintf(db, "Function %s was not registered", pOp->p4.z);
+    goto abort_due_to_error;
+  }
+  break;
+}
+
+#endif
 
 /* Opcode: NewRowid P1 P2 P3 * *
 ** Synopsis: r[P2]=rowid
