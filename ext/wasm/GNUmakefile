@@ -96,7 +96,7 @@ dir.dout := $(dir.wasm)/jswasm
 # dir.tmp = output dir for intermediary build files, as opposed to
 # end-user deliverables.
 dir.tmp := $(dir.wasm)/bld
-#CLEAN_FILES += $(wildcard $(dir.dout)/*) $(wildcard $(dir.tmp)/*)
+CLEAN_FILES += $(dir.tmp)/* $(dir.dout)/*
 ifeq (,$(wildcard $(dir.dout)))
   dir._tmp := $(shell mkdir -p $(dir.dout))
 endif
@@ -235,7 +235,8 @@ $(foreach X,$(SOAP.js) $(sqlite3-worker1.js) $(sqlite3-worker1-promiser.js),\
 all: $(sqlite3-api.ext.jses)
 
 sqlite3-api.js := $(dir.tmp)/sqlite3-api.js
-$(sqlite3-api.js): $(sqlite3-api.jses) $(MAKEFILE)
+sqlite3-api.pre-cpp.js := $(dir.tmp)/sqlite3-api.pre-cpp.js
+$(sqlite3-api.pre-cpp.js): $(sqlite3-api.jses) $(MAKEFILE)
 	@echo "Making $@..."
 	@for i in $(sqlite3-api.jses); do \
 		echo "/* BEGIN FILE: $$i */"; \
@@ -256,7 +257,8 @@ $(sqlite3-api-build-version.js): $(bin.version-info) $(MAKEFILE)
 ########################################################################
 # --post-js and --pre-js are emcc flags we use to append/prepend JS to
 # the generated emscripten module file.
-pre-js.js := $(dir.api)/pre-js.js
+pre-js.pre-cpp.js := $(dir.api)/pre-js.pre-cpp.js
+pre-js.js := $(dir.tmp)/pre-js.js
 post-js.js := $(dir.tmp)/post-js.js
 post-jses := \
   $(dir.api)/post-js-header.js \
@@ -287,6 +289,51 @@ $(sqlite3-license-version.js): $(sqlite3.h) $(sqlite3-license-version-header.js)
         -e '/define SQLITE_SOURCE_ID/{$$1=""; print "**" $$0}' $(sqlite3.h); \
     echo '*/'; \
    } > $@
+
+########################################################################
+# Transform $(1) to $(2) via cpp -E -CC $(1) ...
+#
+# DO NOT use gcc as the preprocessor because it will emit its own
+# license header to our output because that's a comment in its
+# stdc-predef.h, which we cannot tell it to _not_ include. The only
+# workaround to that is to allow gcc -E to strip all comments. The
+# wasm build uses clang behind emcc, anyway, so we already have a
+# clang dependency. However, the clang cpp refuses to read empty
+# strings in the form '', so we have to be sure to use "" in JS code
+# for those.
+#
+# It's tempting to build a custom mini-cpp-like binary for this
+# purpose to avoid these dependencies and quirks. Maybe we could use
+# lemon to do the heavy lifting for that, noting that we'd still need
+# to tokenize it by hand (but only lines which start with "#" or
+# backslash-continued lines, and we could treat all other lines as
+# opaque content).
+#
+# In this build we may have #ifdef's (and the like) in arbitrary input
+# JS files and we need to preprocess those before Emscripten gets
+# ahold of them. We cannot simply preprocess the resulting
+# Emscripten-generated sqlite3.js because (A) Emscripten may choke on
+# C preprocessor directives in the input and (B) Emscripten's output
+# may contain things which cpp cannot read (like single-quoted empty
+# strings: '').
+bin.cpp ?= clang
+ifneq (,$(filter ems,$(MAKECMDGOALS)))
+js.cpp.defines ?= -DSQLITE_JS_ESM
+ems: $(filter-out ems,$(MAKECMDGOALS))
+else
+js.cpp.defines ?=
+endif
+define CPP_JS
+# $1 = X.js. $2 = output file to generate by filtering $(1) through
+# $(bin.cpp) -E -CC.
+$(2): $(1) $$(MAKEFILE)
+	$$(bin.cpp) -E -CC -undef $(js.cpp.defines) -x c $(1) | sed -e '/^#/d' > $$@
+CLEAN_FILES += $(2)
+endef
+$(eval $(call CPP_JS,$(dir.tmp)/sqlite3-api.pre-cpp.js,$(dir.tmp)/sqlite3-api.js))
+$(eval $(call CPP_JS,$(dir.api)/pre-js.js,$(dir.tmp)/pre-js.js))
+# /end CPP-of-JS bits
+########################################################################
 
 ########################################################################
 # call-make-pre-js creates rules for pre-js-$(1).js. $1 = the base
