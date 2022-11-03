@@ -1,4 +1,6 @@
-use crate::user_defined_functions_src::{concat3_src, contains_src, get_null_src, fib_src, reverse_blob_src};
+use crate::user_defined_functions_src::{
+    concat3_src, contains_src, fib_src, get_null_src, reverse_blob_src,
+};
 use rusqlite::Connection;
 
 fn fib(n: i32) -> i32 {
@@ -147,21 +149,31 @@ fn test_reverse_blob() {
     unsafe { libsql_try_initialize_wasm_func_table(conn.handle()) }
 
     conn.execute("CREATE TABLE t (id)", ()).unwrap();
-    for vec in [vec![1, 2, 3, 4, 42], vec![7; 65536], vec![1], vec![0,5,0,5]] {
-        conn.execute("INSERT INTO t(id) VALUES (?)", (vec,)).unwrap();
+    for vec in [
+        vec![1, 2, 3, 4, 42],
+        vec![7; 65536],
+        vec![1],
+        vec![0, 5, 0, 5],
+    ] {
+        conn.execute("INSERT INTO t(id) VALUES (?)", (vec,))
+            .unwrap();
     }
 
     conn.execute(
-        &format!("CREATE FUNCTION reverse_blob LANGUAGE wasm AS '{}'", reverse_blob_src()),
+        &format!(
+            "CREATE FUNCTION reverse_blob LANGUAGE wasm AS '{}'",
+            reverse_blob_src()
+        ),
         (),
     )
     .unwrap();
     let mut stmt = conn.prepare("SELECT id, reverse_blob(id) FROM t").unwrap();
 
     for (mut blob, rev) in stmt
-    .query_map([], |row| Ok((row.get(0).unwrap(), row.get(1).unwrap())))
-    .unwrap()
-    .map(|e: rusqlite::Result<(Vec<u8>, Vec<u8>)>| e.unwrap()) {
+        .query_map([], |row| Ok((row.get(0).unwrap(), row.get(1).unwrap())))
+        .unwrap()
+        .map(|e: rusqlite::Result<(Vec<u8>, Vec<u8>)>| e.unwrap())
+    {
         blob.reverse();
         assert_eq!(blob, rev)
     }
@@ -177,7 +189,10 @@ fn test_get_null() {
     unsafe { libsql_try_initialize_wasm_func_table(conn.handle()) }
 
     conn.execute(
-        &format!("CREATE FUNCTION get_null LANGUAGE wasm AS '{}'", get_null_src()),
+        &format!(
+            "CREATE FUNCTION get_null LANGUAGE wasm AS '{}'",
+            get_null_src()
+        ),
         (),
     )
     .unwrap();
@@ -190,4 +205,24 @@ fn test_get_null() {
 
     conn.execute("DROP FUNCTION get_null", ()).unwrap();
     assert!(conn.prepare("SELECT id, get_null(id) FROM t").is_err());
+}
+
+#[test]
+fn test_explain() {
+    let conn = Connection::open_in_memory().unwrap();
+    unsafe { libsql_try_initialize_wasm_func_table(conn.handle()) }
+
+    let mut create_stmt = conn
+        .prepare("EXPLAIN CREATE FUNCTION mj LANGUAGE wasm AS 'hee-hee'")
+        .unwrap();
+    assert!(create_stmt
+        .query_map([], |row| Ok(row.get::<_, String>(1).unwrap()))
+        .unwrap()
+        .any(|e| e.unwrap() == "CreateWasmFunc"));
+
+    let mut drop_stmt = conn.prepare("EXPLAIN DROP FUNCTION mj").unwrap();
+    assert!(drop_stmt
+        .query_map([], |row| Ok(row.get::<_, String>(1).unwrap()))
+        .unwrap()
+        .any(|e| e.unwrap() == "DropWasmFunc"));
 }
