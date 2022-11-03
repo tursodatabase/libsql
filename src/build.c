@@ -5689,9 +5689,6 @@ void sqlite3WithDelete(sqlite3 *db, With *pWith){
 
 #ifdef LIBSQL_ENABLE_WASM_RUNTIME
 
-FuncDef *try_instantiate_wasm_function(sqlite3 *, const char *, int, const char *, int , int , wasm_byte_vec_t *);
-int deregister_wasm_function(sqlite3 *, const char *);
-
 void libsql_create_function(
   Parse *pParse,     /* The parsing context */
   Token *pName,      /* Function name */
@@ -5709,7 +5706,6 @@ void libsql_create_function(
   Token name = {"name", 4};
   Token body = {"body", 4};
 
-  wasm_byte_vec_t err_msg;
   const void *pParsedBody = NULL;
   int src_size = 0;
   if (isBlob) {
@@ -5718,12 +5714,6 @@ void libsql_create_function(
   } else {
     pParsedBody = sqlite3NameFromToken(pParse->db, pBody);
     src_size = sqlite3Strlen30(pParsedBody);
-  }
-  if (!try_instantiate_wasm_function(pParse->db, pName->z, pName->n, pParsedBody, src_size, -1, &err_msg)) {
-    sqlite3ErrorMsg(pParse, "Failed to instantiate Wasm function from .wat: %s", err_msg.data);
-    wasm_byte_vec_delete(&err_msg);
-    sqlite3DbFree(pParse->db, (void*)pParsedBody);
-    return;
   }
 
   SrcList* tab_list = sqlite3SrcListAppend(pParse, NULL, &table, NULL);
@@ -5765,6 +5755,18 @@ void libsql_create_function(
     return;
   }
   sqlite3Insert(pParse, tab_list, select, id_list, noErr ? OE_Ignore : OE_Default, NULL);
+
+  // AddWasmFunc operation
+  char *pAddFuncData = sqlite3DbStrNDup(pParse->db, pName->z, pName->n);
+  pAddFuncData = sqlite3DbRealloc(pParse->db, pAddFuncData, pName->n + 1 + src_size);
+  if (!pAddFuncData) {
+    sqlite3ErrorMsg(pParse, "Failed to allocate function name and body");
+    sqlite3DbFree(pParse->db, (void *)pParsedBody);
+    return;
+  }
+  memcpy(pAddFuncData + pName->n + 1, pParsedBody, src_size);
+  sqlite3VdbeAddOp4(sqlite3GetVdbe(pParse), OP_CreateWasmFunc, noErr, pName->n, src_size, pAddFuncData, P4_DYNAMIC);
+
   sqlite3DbFree(pParse->db, (void*)pParsedBody);
 }
 
@@ -5773,21 +5775,6 @@ void libsql_drop_function(
   Token *pName,      /* Function name */
   int noErr          /* Suppress error messages if FUNCTION does not exist */
 ) {
-  char *zName = sqlite3NameFromToken(pParse->db, pName);
-  if (!zName) {
-    sqlite3DbFreeNN(pParse->db, zName);
-    sqlite3OomFault(pParse->db);
-    return;
-  }
-
-  int dropped = deregister_wasm_function(pParse->db, zName);
-  if (!dropped && !noErr) {
-    sqlite3ErrorMsg(pParse, "no such function: %s", zName);
-    sqlite3DbFreeNN(pParse->db, zName);
-    return;
-  }
-  sqlite3DbFreeNN(pParse->db, zName);
-
   Token table = {"libsql_wasm_func_table", 22};
   SrcList* tab_list = sqlite3SrcListAppend(pParse, NULL, &table, NULL);
   if (!tab_list) {
@@ -5800,5 +5787,13 @@ void libsql_drop_function(
                              sqlite3ExprAlloc(pParse->db, TK_STRING, pName, 0));
 
   sqlite3DeleteFrom(pParse, tab_list, where, NULL, NULL);
+
+  char *zName = sqlite3NameFromToken(pParse->db, pName);
+  if (!zName) {
+    sqlite3OomFault(pParse->db);
+    return;
+  }
+
+  sqlite3VdbeAddOp4(sqlite3GetVdbe(pParse), OP_DropWasmFunc, noErr, 0, 0, zName, P4_DYNAMIC);
 }
 #endif

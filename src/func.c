@@ -2511,10 +2511,6 @@ int deregister_wasm_function(sqlite3 *db, const char *zName) {
   return ret;
 }
 
-// This initialization is best-effort: failing to initialize a Wasm func table
-// does not prevent users from using this database
-FuncDef *try_instantiate_wasm_function(sqlite3 *db, const char *pName, int nName, const char *pSrcBody, int nBody, int nArg, wasm_byte_vec_t *err_msg_buf);
-
 void libsql_try_initialize_wasm_func_table(sqlite3 *db) {
 #ifdef SQLITE_TEST
   // Tcl tests assume there are no extra tables during their execution
