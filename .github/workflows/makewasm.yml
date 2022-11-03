@@ -1,0 +1,24 @@
+name: ext/wasm
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Get wasm tools
+      run: sudo apt install wabt binaryen
+
+    - name: Configure
+      run: ./configure    
+
+    - name: Get emscripten env and build
+      run: git clone https://github.com/emscripten-core/emsdk.git && ./emsdk/emsdk install latest && ./emsdk/emsdk activate latest && source ./emsdk/emsdk_env.sh && make -C ext/wasm release
