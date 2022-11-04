@@ -23,6 +23,7 @@ foreach {pgsz bOverflow} {
 } {
   reset_db
   execsql "PRAGMA page_size = $pgsz"
+  execsql "PRAGMA auto_vacuum = 0"
   do_execsql_test 1.$pgsz.$bOverflow.1 {
     CREATE TABLE t1(a, b, c);
     CREATE INDEX i1 ON t1(b, a, c);

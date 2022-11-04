@@ -147,7 +147,6 @@ do_recover_test 2.4.1 {
   2 2 3 {} 8 9 7
 }
 
-breakpoint
 do_execsql_test 2.5 {
   CREATE TABLE x1(a, b, c);
   WITH s(i) AS (
@@ -165,17 +164,19 @@ do_recover_test 2.5.1 {
   2 2 3 {} 8 9 7
 }
 
-do_test 2.6 {
-  forcedelete test.db2
-  set R [sqlite3_recover_init db main test.db2]
-  $R config lostandfound lost_and_found
-  $R config freelistcorrupt 1
-  $R run
-  $R finish
-  sqlite3 db2 test.db2
-  execsql { SELECT count(*) FROM lost_and_found_1; } db2
-} {103}
-db2 close
+ifcapable !secure_delete {
+  do_test 2.6 {
+    forcedelete test.db2
+    set R [sqlite3_recover_init db main test.db2]
+    $R config lostandfound lost_and_found
+    $R config freelistcorrupt 1
+    $R run
+    $R finish
+    sqlite3 db2 test.db2
+    execsql { SELECT count(*) FROM lost_and_found_1; } db2
+  } {103}
+  db2 close
+}
 
 #-------------------------------------------------------------------------
 breakpoint
