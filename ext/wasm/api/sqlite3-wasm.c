@@ -67,7 +67,7 @@
 ** larger cache benefits the larger workloads. Speed differences
 ** between 2x and nearly 3x have been measured with ample page cache.
 */
-# define SQLITE_DEFAULT_CACHE_SIZE -16777216
+# define SQLITE_DEFAULT_CACHE_SIZE -16384
 #endif
 #if 0 && !defined(SQLITE_DEFAULT_PAGE_SIZE)
 /* TODO: experiment with this. */
