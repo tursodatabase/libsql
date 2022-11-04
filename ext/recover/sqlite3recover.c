@@ -17,6 +17,8 @@
 #include <assert.h>
 #include <string.h>
 
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+
 /*
 ** Declaration for public API function in file dbdata.c. This may be called
 ** with NULL as the final two arguments to register the sqlite_dbptr and
@@ -2844,3 +2846,6 @@ int sqlite3_recover_finish(sqlite3_recover *p){
   }
   return rc;
 }
+
+#endif /* ifndef SQLITE_OMIT_VIRTUALTABLE */
+

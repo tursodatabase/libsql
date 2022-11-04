@@ -71,6 +71,7 @@
 **   It contains one entry for each b-tree pointer between a parent and
 **   child page in the database.
 */
+
 #if !defined(SQLITEINT_H) 
 #include "sqlite3ext.h"
 
@@ -81,6 +82,8 @@ typedef unsigned int u32;
 SQLITE_EXTENSION_INIT1
 #include <string.h>
 #include <assert.h>
+
+#ifndef SQLITE_OMIT_VIRTUALTABLE
 
 #define DBDATA_PADDING_BYTES 100 
 
@@ -935,3 +938,5 @@ int sqlite3_dbdata_init(
   SQLITE_EXTENSION_INIT2(pApi);
   return sqlite3DbdataRegister(db);
 }
+
+#endif /* ifndef SQLITE_OMIT_VIRTUALTABLE */

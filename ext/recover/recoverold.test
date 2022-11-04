@@ -11,16 +11,8 @@
 #
 #
 
-if {![info exists testdir]} {
-  set testdir [file join [file dirname [info script]] .. .. test]
-} 
 source [file join [file dirname [info script]] recover_common.tcl]
-source $testdir/tester.tcl
 set testprefix recoverold
-
-ifcapable !vtab {
-  finish_test; return
-}
 
 proc compare_result {db1 db2 sql} {
   set r1 [$db1 eval $sql]
