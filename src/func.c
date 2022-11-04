@@ -2511,17 +2511,17 @@ int deregister_wasm_function(sqlite3 *db, const char *zName) {
   return ret;
 }
 
-void libsql_try_initialize_wasm_func_table(sqlite3 *db) {
+int libsql_try_initialize_wasm_func_table(sqlite3 *db) {
 #ifdef SQLITE_TEST
   // Tcl tests assume there are no extra tables during their execution
-  return;
+  return SQLITE_OK;
 #endif
   int rc = sqlite3_exec(db, "CREATE TABLE IF NOT EXISTS libsql_wasm_func_table (name text PRIMARY KEY, body text)", NULL, NULL, NULL);
   if (rc == SQLITE_OK) {
     // If the table exists, register all the functions
     sqlite3_stmt *stmt;
     rc = sqlite3_prepare_v2(db, "SELECT name, body FROM libsql_wasm_func_table", -1, &stmt, 0);
-    if (rc != SQLITE_OK) return;
+    if (rc != SQLITE_OK) return rc;
     rc = SQLITE_ROW;
     while (rc == SQLITE_ROW) {
       rc = sqlite3_step(stmt);
@@ -2532,7 +2532,7 @@ void libsql_try_initialize_wasm_func_table(sqlite3 *db) {
         int body_size = sqlite3_column_bytes(stmt, 1);
         if (name_type != SQLITE_TEXT && body_type != SQLITE_TEXT && body_type != SQLITE_BLOB) {
           sqlite3_finalize(stmt);
-          return;
+          return rc;
         }
         const char *pName = sqlite3_column_text(stmt, 0);
         const void *pBody = body_type == SQLITE_TEXT ? sqlite3_column_text(stmt, 1) : sqlite3_column_blob(stmt, 1);
@@ -2540,8 +2540,9 @@ void libsql_try_initialize_wasm_func_table(sqlite3 *db) {
       }
     }
     sqlite3_finalize(stmt);
+    rc = SQLITE_OK;
   }
-  sqlite3_exec(db, "SELECT 0", NULL, NULL, NULL);
+  return rc;
 }
 
 #endif // LIBSQL_ENABLE_WASM_RUNTIME
