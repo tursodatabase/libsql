@@ -2516,7 +2516,7 @@ int libsql_try_initialize_wasm_func_table(sqlite3 *db) {
   // Tcl tests assume there are no extra tables during their execution
   return SQLITE_OK;
 #endif
-  int rc = sqlite3_exec(db, "CREATE TABLE IF NOT EXISTS libsql_wasm_func_table (name text PRIMARY KEY, body text)", NULL, NULL, NULL);
+  int rc = sqlite3_exec(db, "CREATE TABLE IF NOT EXISTS libsql_wasm_func_table (name text PRIMARY KEY, body text) WITHOUT ROWID", NULL, NULL, NULL);
   if (rc == SQLITE_OK) {
     // If the table exists, register all the functions
     sqlite3_stmt *stmt;
