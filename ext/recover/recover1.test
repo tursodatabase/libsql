@@ -264,11 +264,13 @@ do_recover_test 14
 
 #-------------------------------------------------------------------------
 reset_db
-do_execsql_test 15.1 {
+execsql {
   PRAGMA journal_mode=OFF;
   PRAGMA mmap_size=10;
+}
+do_execsql_test 15.1 {
   CREATE TABLE t1(x);
-} {off 10}
+} {}
 do_recover_test 15 
 
 finish_test

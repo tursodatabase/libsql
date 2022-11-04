@@ -63,7 +63,10 @@ proc do_recover_test {tn {tsql {}} {res {}}} {
   sqlite3 db2 test.db2
   db2 eval [join $::sqlhook ";"]
 
+
+  db cache flush
   if {$tsql==""} {
+  compare_dbs db db2
     uplevel [list do_test $tn.sql [list compare_dbs db db2] {}]
   } else {
     uplevel [list do_execsql_test -db db2 $tn.sql $tsql $res]
