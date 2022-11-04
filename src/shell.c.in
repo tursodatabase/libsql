@@ -8776,10 +8776,10 @@ static int do_meta_command(char *zLine, ShellState *p){
 #ifdef LIBSQL_ENABLE_WASM_RUNTIME
   if( c=='i' && cli_strncmp(azArg[0], "init_wasm_func_table", n)==0 ){
     if (p->db) {
-      libsql_try_initialize_wasm_func_table(p->db);
+      rc = libsql_try_initialize_wasm_func_table(p->db);
     } else {
       open_db(p, 0);
-      libsql_try_initialize_wasm_func_table(p->db);
+      rc = libsql_try_initialize_wasm_func_table(p->db);
     }
   }else
 #endif

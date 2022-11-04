@@ -3670,7 +3670,7 @@ int sqlite3_open_v2(
 );
 
 #ifdef LIBSQL_ENABLE_WASM_RUNTIME
-LIBSQL_API void libsql_try_initialize_wasm_func_table(sqlite3 *db);
+LIBSQL_API int libsql_try_initialize_wasm_func_table(sqlite3 *db);
 #endif
 
 /*
