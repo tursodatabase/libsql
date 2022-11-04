@@ -1479,13 +1479,8 @@ do_test 19.0 {
 do_execsql_test 19.1 {
   PRAGMA writable_schema=ON;
 }
-
-set err "UNIQUE constraint failed: index 'a'"
-ifcapable oversize_cell_check {
-  set err "database disk image is malformed"
-}
 do_catchsql_test 19.2 {
   UPDATE t1 SET a=1;
-} [list 1 $err]
+} {1 {database disk image is malformed}}
 
 finish_test
