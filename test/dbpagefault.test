@@ -57,15 +57,25 @@ do_execsql_test 3.0 {
   END;
 }
 
-do_faultsim_test 3 -prep {
-  catch { db close }
-  sqlite3 db test.db
-  execsql { PRAGMA trusted_schema = true }
-} -body {
-  execsql { INSERT INTO x1 DEFAULT VALUES; }
-} -test {
-  faultsim_test_result {0 {}}
+# This test case no longer works, as it is no longer possible to use
+# virtual table sqlite_dbpage from within a trigger.
+#
+do_execsql_test 3.1 {
+  PRAGMA trusted_schema = 1;
 }
+do_catchsql_test 3.2 {
+  PRAGMA trusted_schema = 1;
+  INSERT INTO x1 DEFAULT VALUES;
+} {1 {unsafe use of virtual table "sqlite_dbpage"}}
+#do_faultsim_test 3 -prep {
+#  catch { db close }
+#  sqlite3 db test.db
+#  execsql { PRAGMA trusted_schema = 1 }
+#} -body {
+#  execsql { INSERT INTO x1 DEFAULT VALUES; }
+#} -test {
+#  faultsim_test_result {0 {}}
+#}
 
 
 finish_test
