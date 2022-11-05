@@ -4423,6 +4423,11 @@ static const char *(azHelp[]) = {
   ".indexes ?TABLE?         Show names of indexes",
   "                           If TABLE is specified, only show indexes for",
   "                           tables matching TABLE using the LIKE operator.",
+#ifdef LIBSQL_ENABLE_WASM_RUNTIME
+  ".init_wasm_func_table    Initialize libsql_wasm_func_table",
+  "                           The table is used to store names and sources",
+  "                           of dynamically created Wasm user-defined functions.",
+#endif
 #ifdef SQLITE_ENABLE_IOTRACE
   ".iotrace FILE            Enable I/O diagnostic logging to FILE",
 #endif
