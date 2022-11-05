@@ -787,7 +787,7 @@
       /* Set up the terminal-style view... */
       const eTerm = window.jQuery('#view-terminal').empty();
       SF.jqTerm = eTerm.terminal(SF.dbExec.bind(SF),{
-        prompt: 'sqlite> ',
+        prompt: 'libsql> ',
         greetings: false /* note that the docs incorrectly call this 'greeting' */
       });
       /* Set up a button to toggle the views... */
@@ -803,10 +803,6 @@
       }, false);
       btnToggleView.click()/*default to terminal view*/;
     }
-    SF.echo('This experimental app is provided in the hope that it',
-            'may prove interesting or useful but is not an officially',
-            'supported deliverable of the sqlite project. It is subject to',
-            'any number of changes or outright removal at any time.\n');
     const urlParams = new URL(self.location.href).searchParams;
     SF.dbExec(urlParams.get('sql') || null);
     delete ForceResizeKludge.$disabled;
