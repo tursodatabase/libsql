@@ -163,7 +163,7 @@
         fiddleModule.isDead = true;
         return false;
       }
-      stdout("SQLite version", capi.sqlite3_libversion(),
+      stdout("libSQL version", capi.sqlite3_libversion(),
              capi.sqlite3_sourceid().substr(0,19));
       stdout('Welcome to the "fiddle" shell.');
       if(sqlite3.opfs){
