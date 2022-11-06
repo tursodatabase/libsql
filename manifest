@@ -1,5 +1,5 @@
-C Update\stest\sfile\sdbpagefault.test\sto\saccount\sfor\sthe\srestriction\son\susing\sSQLITE_VTAB_DIRECTONLY\svirtual\stables\sfrom\swithin\striggers.
-D 2022-11-05T19:26:45.587
+C shell.c.in:\son\snon-Windows\splatforms,\scheck\sfor\s$XDG_CONFIG_HOME/sqlite3/sqliterc\sbefore\s~/.sqliterc,\sper\srequest\sin\s[forum:7a16582b1e403c81|forum\spost\s7a16582b1e403c81].
+D 2022-11-06T13:12:11.629
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -637,7 +637,7 @@ F src/random.c 546d6feb15ec69c1aafe9bb351a277cbb498fd5410e646add673acb805714960
 F src/resolve.c efea4e5fbecfd6d0a9071b0be0d952620991673391b6ffaaf4c277b0bb674633
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 12cb5162e606290354f9512ff0c30fc6dc4d7a77a92b6c5b581395f9c4edd047
-F src/shell.c.in 84bb08d8762920285f08f1c0993f1b3992ac43af5d72445cb8a973fc50c71923
+F src/shell.c.in eae218c72d127dafdd46f768380a0c338e69dd50b9d7993ec3dbca7c11ab48ee
 F src/sqlite.h.in bf5846820130b6cf01b002e90427eae29f02db07d9cb9b5ccd0e0aad867eed14
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h c4b9fa7a7e2bcdf850cfeb4b8a91d5ec47b7a00033bc996fd2ee96cbf2741f5f
@@ -2054,8 +2054,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 454c61e818f6941c9a23f6600e37828a3f2b2ad3c6dbc8d6223570aed5d9cd8b
-R 5bb95939440d8668f376bffbf10c30f6
-U dan
-Z e0d6aeb7f7ce3a618693295f8bdfb5c8
+P 2b68fc8aa35cc69e4d2c26aaebbf3f2b1f1c08d15ca9efcbe5be21d45735d3f1
+R 761db6cbff4c93d54e2273bd93e61ecf
+T *branch * sqliterc-xdg-config
+T *sym-sqliterc-xdg-config *
+T -sym-trunk * Cancelled\sby\sbranch.
+U stephan
+Z b1d4f5aca54a8028201ab20f9960723f
 # Remove this line to create a well-formed Fossil manifest.
