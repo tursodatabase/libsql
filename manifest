@@ -1,5 +1,5 @@
-C Update\stest\sfile\sdbpagefault.test\sto\saccount\sfor\sthe\srestriction\son\susing\sSQLITE_VTAB_DIRECTONLY\svirtual\stables\sfrom\swithin\striggers.
-D 2022-11-05T19:26:45.587
+C The\srecoverAssertMutexHeld()\sfunction\sis\sfor\stesting\sand\sverification\sonly\nand\sshould\sbe\sa\sharmless\sno-op\sfor\sproduction\sbuilds.\n[forum/forumpost/b4f2c7d402|Forum\spost\sb4f2c7d402].
+D 2022-11-06T17:19:34.134
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -398,7 +398,7 @@ F ext/recover/recoverpgsz.test 3658ab8e68475b1bb87d6af88baa04551c84b73280a566a1b
 F ext/recover/recoverrowid.test f948bf4024a5f41b0e21b8af80c60564c5b5d78c05a8d64fc00787715ff9f45f
 F ext/recover/recoverslowidx.test 5205a9742dd9490ee99950dabb622307355ef1662dea6a3a21030057bfd81411
 F ext/recover/recoversql.test e66d01f95302a223bcd3fd42b5ee58dc2b53d70afa90b0d00e41e4b8eab20486
-F ext/recover/sqlite3recover.c 3e38f2bd607f6ecd8dc10ed419363448c206791c7ce344e3a2a6848731b9f37c
+F ext/recover/sqlite3recover.c fd4b8a8607a50259764afd98757511e745d8b023d4a75df1cef1a412239b0f3d
 F ext/recover/sqlite3recover.h 011c799f02deb70ab685916f6f538e6bb32c4e0025e79bfd0e24ff9c74820959
 F ext/recover/test_recover.c 1a34e2d04533d919a30ae4d5caeb1643f6684e9ccd7597ca27721d8af81f4ade
 F ext/repair/README.md 92f5e8aae749a4dae14f02eea8e1bb42d4db2b6ce5e83dbcdd6b1446997e0c15
@@ -2054,8 +2054,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 454c61e818f6941c9a23f6600e37828a3f2b2ad3c6dbc8d6223570aed5d9cd8b
-R 5bb95939440d8668f376bffbf10c30f6
-U dan
-Z e0d6aeb7f7ce3a618693295f8bdfb5c8
+P 2b68fc8aa35cc69e4d2c26aaebbf3f2b1f1c08d15ca9efcbe5be21d45735d3f1
+R e151c91fffb05c9af064409987d0dbe9
+U drh
+Z c4b46067f2f5ee487396a5f348d0bff6
 # Remove this line to create a well-formed Fossil manifest.
