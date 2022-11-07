@@ -1278,7 +1278,7 @@ typedef int VList;
 #include "mutex.h"
 
 #ifdef LIBSQL_ENABLE_WASM_RUNTIME
-#include <wasm.h>
+#include "ext/udf/wasm_bindings.h"
 #endif
 
 /* The SQLITE_EXTRA_DURABLE compile-time option used to set the default
@@ -1538,7 +1538,7 @@ void sqlite3CryptFunc(sqlite3_context*,int,sqlite3_value**);
 
 #ifdef LIBSQL_ENABLE_WASM_RUNTIME
 typedef struct libsql_wasm_ctx {
-  wasm_engine_t *engine;
+  libsql_wasm_engine_t *engine;
 } libsql_wasm_ctx;
 #endif
 
