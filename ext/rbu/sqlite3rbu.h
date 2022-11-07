@@ -545,6 +545,34 @@ SQLITE_API void sqlite3rbu_bp_progress(sqlite3rbu *pRbu, int *pnOne, int*pnTwo);
 SQLITE_API int sqlite3rbu_state(sqlite3rbu *pRbu);
 
 /*
+** As part of applying an RBU update or performing an RBU vacuum operation,
+** the system must at one point move the *-oal file to the equivalent *-wal
+** path. Normally, it does this by invoking POSIX function rename(2) directly.
+** Except on WINCE platforms, where it uses win32 API MoveFileW(). This 
+** function may be used to register a callback that the RBU module will invoke
+** instead of one of these APIs. 
+**
+** If a callback is registered with an RBU handle, it invokes it instead
+** of rename(2) when it needs to move a file within the file-system. The
+** first argument passed to the xRename() callback is a copy of the second
+** argument (pArg) passed to this function. The second is the full path
+** to the file to move and the third the full path to which it should be
+** moved. The callback function should return SQLITE_OK to indicate 
+** success. If an error occurs, it should return an SQLite error code.
+** In this case the RBU operation will be abandoned and the error returned
+** to the RBU user.
+**
+** Passing a NULL pointer in place of the xRename argument to this function
+** restores the default behaviour.
+*/
+SQLITE_API void sqlite3rbu_rename_handler(
+  sqlite3rbu *pRbu, 
+  void *pArg,
+  int (*xRename)(void *pArg, const char *zOld, const char *zNew)
+);
+
+
+/*
 ** Create an RBU VFS named zName that accesses the underlying file-system
 ** via existing VFS zParent. Or, if the zParent parameter is passed NULL, 
 ** then the new RBU VFS uses the default system VFS to access the file-system.
