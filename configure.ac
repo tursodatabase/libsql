@@ -533,6 +533,9 @@ if test x"$with_readline" != xno; then
 	fi
 
 	if test x"$found" = xno; then
+		if test x"$enable_readline" = xyes; then
+			AC_MSG_ERROR(["No suitable readline library found"])
+		fi
 		TARGET_READLINE_LIBS=""
 		TARGET_READLINE_INC=""
 		TARGET_HAVE_READLINE=0
