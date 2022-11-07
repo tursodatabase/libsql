@@ -17,22 +17,29 @@
   conventions, and build process are very much under construction and
   will be (re)documented once they've stopped fluctuating so much.
 
-  Specific goals of this project:
+  Project home page: https://sqlite.org
+
+  Documentation home page: https://sqlite.org/wasm
+
+  Specific goals of this subproject:
 
   - Except where noted in the non-goals, provide a more-or-less
     feature-complete wrapper to the sqlite3 C API, insofar as WASM
-    feature parity with C allows for. In fact, provide at least 3
+    feature parity with C allows for. In fact, provide at least 4
     APIs...
 
-    1) Bind a low-level sqlite3 API which is as close to the native
-       one as feasible in terms of usage.
+    1) 1-to-1 bindings as exported from WASM, with no automatic
+       type conversions between JS and C.
+       
+    2) A binding of (1) which provides certain JS/C type conversions
+       to greatly simplify its use.
 
-    2) A higher-level API, more akin to sql.js and node.js-style
+    3) A higher-level API, more akin to sql.js and node.js-style
        implementations. This one speaks directly to the low-level
        API. This API must be used from the same thread as the
        low-level API.
 
-    3) A second higher-level API which speaks to the previous APIs via
+    4) A second higher-level API which speaks to the previous APIs via
        worker messages. This one is intended for use in the main
        thread, with the lower-level APIs installed in a Worker thread,
        and talking to them via Worker messages. Because Workers are
@@ -90,11 +97,13 @@
    config object is only honored the first time this is
    called. Subsequent calls ignore the argument and return the same
    (configured) object which gets initialized by the first call.
+   This function will throw if any of the required config options are
+   missing.
 
    The config object properties include:
 
    - `exports`[^1]: the "exports" object for the current WASM
-     environment. In an Emscripten build, this should be set to
+     environment. In an Emscripten-based build, this should be set to
      `Module['asm']`.
 
    - `memory`[^1]: optional WebAssembly.Memory object, defaulting to
@@ -104,7 +113,7 @@
      WASM-exported memory.
 
    - `bigIntEnabled`: true if BigInt support is enabled. Defaults to
-     true if self.BigInt64Array is available, else false. Some APIs
+     true if `self.BigInt64Array` is available, else false. Some APIs
      will throw exceptions if called without BigInt support, as BigInt
      is required for marshalling C-side int64 into and out of JS.
 
@@ -116,10 +125,12 @@
      the `free(3)`-compatible routine for the WASM
      environment. Defaults to `"free"`.
 
-   - `wasmfsOpfsDir`[^1]: if the environment supports persistent storage, this
-     directory names the "mount point" for that directory. It must be prefixed
-     by `/` and may currently contain only a single directory-name part. Using
-     the root directory name is not supported by any current persistent backend.
+   - `wasmfsOpfsDir`[^1]: if the environment supports persistent
+     storage, this directory names the "mount point" for that
+     directory. It must be prefixed by `/` and may contain only a
+     single directory-name part. Using the root directory name is not
+     supported by any current persistent backend.  This setting is
+     only used in WASMFS-enabled builds.
 
 
    [^1] = This property may optionally be a function, in which case this
