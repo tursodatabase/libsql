@@ -1,5 +1,5 @@
-C Add\sthe\ssqlite3rbu_rename_handler()\sAPI.\sTo\soverride\sthe\sdefault\sroutine\sthat\sRBU\suses\sto\srename\sfiles.
-D 2022-11-07T18:00:18.684
+C Improve\sthe\sability\sof\smkshellc.tcl\sto\sremove\sredundant\stypedefs\sfrom\sthe\ngenerated\sshell.c\scode.\s\sThis\sis\sneeded\sto\sget\sshell.c\sto\sbuild\son\solder\nC\scompilers.
+D 2022-11-07T18:36:02.221
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1987,7 +1987,7 @@ F tool/mkopcodec.tcl 33d20791e191df43209b77d37f0ff0904620b28465cca6990cf8d60da61
 F tool/mkopcodeh.tcl bcb2bd5affb545fd219ef0304c7978e2a356407ab723f45ec8569235892c1c3f
 F tool/mkopts.tcl 680f785fdb09729fd9ac50632413da4eadbdf9071535e3f26d03795828ab07fa
 F tool/mkpragmatab.tcl bd07bd59d45d0f3448e123d6937e9811195f9908a51e09d774609883055bfd3d
-F tool/mkshellc.tcl df5d249617f9cc94d5c48eb0401673eb3f31f383ecbc54e8a13ca3dd97e89450
+F tool/mkshellc.tcl f2338a4c38e4f4f56e01371f334fbdce2e5a3d1f35fc5b5363d006b972fae749
 F tool/mksourceid.c 36aa8020014aed0836fd13c51d6dc9219b0df1761d6b5f58ff5b616211b079b9
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl 4f7cfef5152b0c91920355cbfc1d608a4ad242cb819f1aea07f6d0274f584a7f
@@ -2055,8 +2055,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d2ed4116fbf1de3c840f84e05db6f29f7b489518ac07d56f61df153deab6bf6b
-R 883198cf0956cf3ea945ee8907257d82
-U dan
-Z f0f97d889869754ab1656f4d9587d370
+P ebbb1f88e7b5d6cbe84d400f1a187acedb4c668d0b7e4c63bf1496e57da9b8ad
+R 7804554888bc684c344c3fe1b6c3276b
+U drh
+Z 5e56457afaeb4e9d88ce8f0890f14fb1
 # Remove this line to create a well-formed Fossil manifest.
