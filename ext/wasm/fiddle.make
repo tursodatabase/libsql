@@ -66,6 +66,7 @@ $(fiddle-module.js): $(MAKEFILE) $(MAKEFILE.fiddle) \
     $(pre-post-common.flags) $(pre-post-fiddle-module.flags) \
     $(fiddle.cses)
 	$(maybe-wasm-strip) $(fiddle-module.wasm)
+	$(maybe-wasm-shrink) $(fiddle-module.wasm) -o $(fiddle-module.wasm)
 	gzip < $@ > $@.gz
 	gzip < $(fiddle-module.wasm) > $(fiddle-module.wasm).gz
 
