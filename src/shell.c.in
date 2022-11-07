@@ -16,6 +16,8 @@
 /* This needs to come before any includes for MSVC compiler */
 #define _CRT_SECURE_NO_WARNINGS
 #endif
+typedef unsigned int u32;
+typedef unsigned short int u16;
 
 /*
 ** Optionally #include a user-defined header, whereby compilation options

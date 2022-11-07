@@ -36,7 +36,7 @@ proc omit_redundant_typedefs {line} {
   global typedef_seen
   if {[regexp {^typedef .*\y([a-zA-Z0-9_]+);} $line all typename]} {
     if {[info exists typedef_seen($typename)]} {
-      return "/* $line */"
+      return "/* [string map {/* // */ //} $line] */"
     }
     set typedef_seen($typename) 1
   }
