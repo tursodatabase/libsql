@@ -1,3 +1,5 @@
+mod random_rowid;
+
 #[cfg(test)]
 mod tests {
     use rusqlite::Connection;
