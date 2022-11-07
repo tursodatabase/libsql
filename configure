@@ -11171,6 +11171,9 @@ fi
 	fi
 
 	if test x"$found" = xno; then
+		if test x"$enable_readline" = xyes; then
+			as_fn_error 1 "No suitable readline library found"
+		fi
 		TARGET_READLINE_LIBS=""
 		TARGET_READLINE_INC=""
 		TARGET_HAVE_READLINE=0
