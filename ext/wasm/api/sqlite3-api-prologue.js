@@ -399,8 +399,22 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      exceptions.
   */
   class WasmAllocError extends Error {
+    /**
+       If called with 2 arguments and the 2nd one is an object, it
+       behaves like the Error constructor, else it concatenates all
+       arguments together with a single space between each to
+       construct an error message string. As a special case, if
+       called with no arguments then it uses a default error
+       message.
+    */
     constructor(...args){
-      super(...args);
+      if(2===args.length && 'object'===typeof args){
+        super(...args);
+      }else if(args.length){
+        super(args.join(' '));
+      }else{
+        super("Allocation failed.");
+      }
       this.name = 'WasmAllocError';
     }
   };
@@ -710,21 +724,33 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        API NOT throw and must instead return SQLITE_NOMEM (or
        equivalent, depending on the context).
 
-       That said, very few cases in the API can result in
+       Very few cases in the sqlite3 JS APIs can result in
        client-defined functions propagating exceptions via the C-style
-       API. Most notably, this applies ot User-defined SQL Functions
-       (UDFs) registered via sqlite3_create_function_v2(). For that
-       specific case it is recommended that all UDF creation be
-       funneled through a utility function and that a wrapper function
-       be added around the UDF which catches any exception and sets
-       the error state to OOM. (The overall complexity of registering
-       UDFs essentially requires a helper for doing so!)
+       API. Most notably, this applies to WASM-bound JS functions
+       which are created directly by clients and passed on _as WASM
+       function pointers_ to functions such as
+       sqlite3_create_function_v2(). Such bindings created
+       transparently by this API will automatically use wrappers which
+       catch exceptions and convert them to appropriate error codes.
+
+       For cases where non-throwing allocation is required, use
+       sqlite3.wasm.alloc.impl(), which is direct binding of the
+       underlying C-level allocator.
+
+       Design note: this function is not named "malloc" primarily
+       because Emscripten uses that name and we wanted to avoid any
+       confusion early on in this code's development, when it still
+       had close ties to Emscripten's glue code.
     */
     alloc: undefined/*installed later*/,
+
     /**
        The API's one single point of access to the WASM-side memory
        deallocator. Works like free(3) (and is likely bound to
        free()).
+
+       Design note: this function is not named "free" for the same
+       reason that this.alloc() is not called this.malloc().
     */
     dealloc: undefined/*installed later*/
 
@@ -752,7 +778,9 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   wasm.allocFromTypedArray = function(srcTypedArray){
     affirmBindableTypedArray(srcTypedArray);
     const pRet = wasm.alloc(srcTypedArray.byteLength || 1);
-    wasm.heapForSize(srcTypedArray.constructor).set(srcTypedArray.byteLength ? srcTypedArray : [0], pRet);
+    wasm.heapForSize(srcTypedArray.constructor).set(
+      srcTypedArray.byteLength ? srcTypedArray : [0], pRet
+    );
     return pRet;
   };
 
@@ -763,13 +791,13 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     if(!(f instanceof Function)) toss3("Missing required exports[",key,"] function.");
   }
 
-  wasm.alloc = function(n){
-    const m = wasm.exports[keyAlloc](n);
-    if(!m) throw new WasmAllocError("Failed to allocate "+n+" bytes.");
+  wasm.alloc = function f(n){
+    const m = f.impl(n);
+    if(!m) throw new WasmAllocError("Failed to allocate",n," bytes.");
     return m;
   };
-
-  wasm.dealloc = (m)=>wasm.exports[keyDealloc](m);
+  wasm.alloc.impl = wasm.exports[keyAlloc];
+  wasm.dealloc = wasm.exports[keyDealloc];
 
   /**
      Reports info about compile-time options using

@@ -342,8 +342,20 @@
         throw new sqlite3.WasmAllocError;
       }catch(e){
         T.assert(e instanceof Error)
-          .assert(e instanceof sqlite3.WasmAllocError);
+          .assert(e instanceof sqlite3.WasmAllocError)
+          .assert("Allocation failed." === e.message);
       }
+      try {
+        throw new sqlite3.WasmAllocError("test",{
+          cause: 3
+        });
+      }catch(e){
+        T.assert(3 === e.cause)
+          .assert("test" === e.message);
+      }
+      try {throw new sqlite3.WasmAllocError("test","ing",".")}
+      catch(e){T.assert("test ing ." === e.message)}
+
       try{ throw new sqlite3.SQLite3Error(capi.SQLITE_SCHEMA) }
       catch(e){ T.assert('SQLITE_SCHEMA' === e.message) }
       try{ sqlite3.SQLite3Error.toss(capi.SQLITE_CORRUPT,{cause: true}) }
