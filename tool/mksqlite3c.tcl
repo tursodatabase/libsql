@@ -162,6 +162,8 @@ foreach hdr {
    vxworks.h
    wal.h
    whereInt.h
+
+   wasm_bindings.h
 } {
   set available_hdr($hdr) 1
 }
@@ -441,6 +443,8 @@ foreach file {
    sqlite3session.c
    fts5.c
    stmt.c
+
+   wasmtime_bindings.c
 } {
   copy_file $srcdir/$file
 }

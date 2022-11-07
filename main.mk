@@ -247,6 +247,8 @@ SRC += \
   $(TOP)/ext/rbu/sqlite3rbu.h
 SRC += \
   $(TOP)/ext/misc/stmt.c
+SRC += \
+  $(TOP)/ext/udf/wasmtime_bindings.c
 
 
 # FTS5 things

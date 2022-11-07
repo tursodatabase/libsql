@@ -369,6 +369,8 @@ SRC += \
   $(TOP)/ext/rbu/sqlite3rbu.c
 SRC += \
   $(TOP)/ext/misc/stmt.c
+SRC += \
+  $(TOP)/ext/udf/wasmtime_bindings.c
 
 # Generated source code files
 #
