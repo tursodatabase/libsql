@@ -313,11 +313,8 @@ static void recoverAssertMutexHeld(void){
 ** Like strlen(). But handles NULL pointer arguments.
 */
 static int recoverStrlen(const char *zStr){
-  int nRet = 0;
-  if( zStr ){
-    while( zStr[nRet] ) nRet++;
-  }
-  return nRet;
+  if( zStr==0 ) return 0;
+  return (int)(strlen(zStr)&0x7fffffff);
 }
 
 /*
