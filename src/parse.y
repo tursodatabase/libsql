@@ -216,6 +216,14 @@ table_option(A) ::= WITHOUT nm(X). {
     sqlite3ErrorMsg(pParse, "unknown table option: %.*s", X.n, X.z);
   }
 }
+table_option(A) ::= RANDOM nm(X). {
+  if( X.n==5 && sqlite3_strnicmp(X.z,"rowid",5)==0 ){
+    A = TF_RandomRowid;
+  }else{
+    A = 0;
+    sqlite3ErrorMsg(pParse, "unknown table option: %.*s", X.n, X.z);
+  }
+}
 table_option(A) ::= nm(X). {
   if( X.n==6 && sqlite3_strnicmp(X.z,"strict",6)==0 ){
     A = TF_Strict;
@@ -248,7 +256,7 @@ columnname(A) ::= nm(A) typetoken(Y). {sqlite3AddColumn(pParse,A,Y);}
   CONFLICT DATABASE DEFERRED DESC DETACH DO
   EACH END EXCLUSIVE EXPLAIN FAIL FOR
   IGNORE IMMEDIATE INITIALLY INSTEAD LIKE_KW MATCH NO PLAN
-  QUERY KEY OF OFFSET PRAGMA RAISE RECURSIVE RELEASE REPLACE RESTRICT ROW ROWS
+  QUERY KEY OF OFFSET PRAGMA RAISE RANDOM RECURSIVE RELEASE REPLACE RESTRICT ROW ROWS
   ROLLBACK SAVEPOINT TEMP TRIGGER VACUUM VIEW VIRTUAL WITH WITHOUT
   NULLS FIRST LAST
 %ifdef SQLITE_OMIT_COMPOUND_SELECT
