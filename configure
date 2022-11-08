@@ -800,6 +800,9 @@ BUILD_CFLAGS
 AMALGAMATION_LINE_MACROS
 USE_GCOV
 OPT_FEATURE_FLAGS
+OPT_WASM_RUNTIME_LIB
+TARGET_OPT_WASM_RUNTIME_LINK
+CARGO_BIN
 HAVE_ZLIB
 USE_AMALGAMATION
 TARGET_DEBUG
@@ -4460,13 +4463,13 @@ then :
 else $as_nop
   lt_cv_nm_interface="BSD nm"
   echo "int some_variable = 0;" > conftest.$ac_ext
-  (eval echo "\"\$as_me:4463: $ac_compile\"" >&5)
+  (eval echo "\"\$as_me:4466: $ac_compile\"" >&5)
   (eval "$ac_compile" 2>conftest.err)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:4466: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
+  (eval echo "\"\$as_me:4469: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
   (eval "$NM \"conftest.$ac_objext\"" 2>conftest.err > conftest.out)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:4469: output\"" >&5)
+  (eval echo "\"\$as_me:4472: output\"" >&5)
   cat conftest.out >&5
   if $GREP 'External.*some_variable' conftest.out > /dev/null; then
     lt_cv_nm_interface="MS dumpbin"
@@ -5717,7 +5720,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 5720 "configure"' > conftest.$ac_ext
+  echo '#line 5723 "configure"' > conftest.$ac_ext
   if { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_compile\""; } >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -7060,11 +7063,11 @@ else $as_nop
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7063: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7066: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:7067: \$? = $ac_status" >&5
+   echo "$as_me:7070: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -7400,11 +7403,11 @@ else $as_nop
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7403: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7406: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:7407: \$? = $ac_status" >&5
+   echo "$as_me:7410: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -7507,11 +7510,11 @@ else $as_nop
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7510: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7513: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:7514: \$? = $ac_status" >&5
+   echo "$as_me:7517: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -7563,11 +7566,11 @@ else $as_nop
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7566: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7569: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:7570: \$? = $ac_status" >&5
+   echo "$as_me:7573: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -9951,7 +9954,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 9954 "configure"
+#line 9957 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -10048,7 +10051,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 10051 "configure"
+#line 10054 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -11689,7 +11692,7 @@ fi
 
 	if test x"$found" = xno; then
 		if test x"$enable_readline" = xyes; then
-			as_fn_error 1 "No suitable readline library found"
+			as_fn_error $? "\"No suitable readline library found\"" "$LINENO" 5
 		fi
 		TARGET_READLINE_LIBS=""
 		TARGET_READLINE_INC=""
@@ -12063,69 +12066,58 @@ if test "$enable_wasm_runtime" = "yes"; then
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
   OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DLIBSQL_ENABLE_WASM_RUNTIME"
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for library containing wasmtime_store_new" >&5
-printf %s "checking for library containing wasmtime_store_new... " >&6; }
-if test ${ac_cv_search_wasmtime_store_new+y}
+  # Extract the first word of "cargo", so it can be a program name with args.
+set dummy cargo; ac_word=$2
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+printf %s "checking for $ac_word... " >&6; }
+if test ${ac_cv_prog_CARGO_BIN+y}
 then :
   printf %s "(cached) " >&6
 else $as_nop
-  ac_func_search_save_LIBS=$LIBS
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-char wasmtime_store_new ();
-int
-main (void)
-{
-return wasmtime_store_new ();
-  ;
-  return 0;
-}
-_ACEOF
-for ac_lib in '' wasmtime
+  if test -n "$CARGO_BIN"; then
+  ac_cv_prog_CARGO_BIN="$CARGO_BIN" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
 do
-  if test -z "$ac_lib"; then
-    ac_res="none required"
-  else
-    ac_res=-l$ac_lib
-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  IFS=$as_save_IFS
+  case $as_dir in #(((
+    '') as_dir=./ ;;
+    */) ;;
+    *) as_dir=$as_dir/ ;;
+  esac
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir$ac_word$ac_exec_ext"; then
+    ac_cv_prog_CARGO_BIN=""
+    printf "%s\n" "$as_me:${as_lineno-$LINENO}: found $as_dir$ac_word$ac_exec_ext" >&5
+    break 2
   fi
-  if ac_fn_c_try_link "$LINENO"
-then :
-  ac_cv_search_wasmtime_store_new=$ac_res
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext
-  if test ${ac_cv_search_wasmtime_store_new+y}
-then :
-  break
-fi
 done
-if test ${ac_cv_search_wasmtime_store_new+y}
-then :
-
-else $as_nop
-  ac_cv_search_wasmtime_store_new=no
-fi
-rm conftest.$ac_ext
-LIBS=$ac_func_search_save_LIBS
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_wasmtime_store_new" >&5
-printf "%s\n" "$ac_cv_search_wasmtime_store_new" >&6; }
-ac_res=$ac_cv_search_wasmtime_store_new
-if test "$ac_res" != no
-then :
-  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+  done
+IFS=$as_save_IFS
 
 fi
-
+fi
+CARGO_BIN=$ac_cv_prog_CARGO_BIN
+if test -n "$CARGO_BIN"; then
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $CARGO_BIN" >&5
+printf "%s\n" "$CARGO_BIN" >&6; }
 else
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
 fi
+
+
+  TARGET_OPT_WASM_RUNTIME_LINK='-L$(TOP)/.libs -lwblibsql'
+  OPT_WASM_RUNTIME_LIB="libwblibsql.so"
+else
+  TARGET_OPT_WASM_RUNTIME_LINK=""
+  OPT_WASM_RUNTIME_LIB=""
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+fi
+
+
 
 ########
 # The --enable-all argument is short-hand to enable

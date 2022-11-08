@@ -443,8 +443,6 @@ foreach file {
    sqlite3session.c
    fts5.c
    stmt.c
-
-   wasmtime_bindings.c
 } {
   copy_file $srcdir/$file
 }
