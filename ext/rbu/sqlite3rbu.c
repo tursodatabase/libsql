@@ -2783,7 +2783,7 @@ static void rbuOpenDatabase(sqlite3rbu *p, sqlite3 *dbMain, int *pbRetry){
     sqlite3_file_control(p->dbRbu, "main", SQLITE_FCNTL_RBUCNT, (void*)p);
     if( p->zState==0 ){
       const char *zFile = sqlite3_db_filename(p->dbRbu, "main");
-      p->zState = rbuMPrintf(p, "file://%s-vacuum?modeof=%s", zFile, zFile);
+      p->zState = rbuMPrintf(p, "file:///%s-vacuum?modeof=%s", zFile, zFile);
     }
   }
 

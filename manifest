@@ -1,5 +1,5 @@
-C Do\snot\sattempt\sto\srun\stest\sscript\sdbpagefault.test\swith\sSQLITE_OMIT_VIRTUALTABLE\sbuilds.
-D 2022-11-08T19:36:26.532
+C Fix\sa\sproblem\swith\sURI\sformatting\sin\scalls\sto\ssqlite3rbu_vacuum(zDb,\sNULL)\scausing\sproblems\son\swin32.\sFirst\sreported\shere\s<https://sqlite.org/forum/forumpost/a7ae915a9d>.
+D 2022-11-08T20:04:05.128
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -380,10 +380,10 @@ F ext/rbu/rbusave.test f4190a1a86fccf84f723af5c93813365ae33feda35845ba107b59683d
 F ext/rbu/rbusplit.test b37e7b40b38760881dc9c854bd40b4744c6b6cd74990754eca3bda0f407051e8
 F ext/rbu/rbutemplimit.test 05ceefa90a2e26a99f40dd48282ed63a00df5e59c1f2bfd479c143e201a1b0ba
 F ext/rbu/rbuvacuum.test 55e101e90168c2b31df6c9638fe73dc7f7cc666b6142266d1563697d79f73534
-F ext/rbu/rbuvacuum2.test 886add83fd74bcb02e6dd016ae5b585367bd58c5d0694c9d9ca7bdb1d1f578c2
+F ext/rbu/rbuvacuum2.test 2643b58f4d8d3573db0f93faae18805a35ab162b4c55ff6b656062ff432ed55b
 F ext/rbu/rbuvacuum3.test 8addd82e4b83b4c93fa47428eae4fd0dbf410f8512c186f38e348feb49ba03dc
 F ext/rbu/rbuvacuum4.test a78898e438a44803eb2bc897ba3323373c9f277418e2d6d76e90f2f1dbccfd10
-F ext/rbu/sqlite3rbu.c 90b6b5be1cb6cbd9b7a7dc0c0641d5be63cf00cf9ec8c3b57d27217d28530ea9
+F ext/rbu/sqlite3rbu.c c4ba7901b2d3e0c7845f30840e3ffb35c6f999d6da0d80f121866491f982794c
 F ext/rbu/sqlite3rbu.h 02d981e2d39c151391759e1a400e29c7388730812957ac3db8dad7f6c9f9cfc8
 F ext/rbu/test_rbu.c ee6ede75147bc081fe9bc3931e6b206277418d14d3fbceea6fdc6216d9b47055
 F ext/recover/dbdata.c 1d5353d3af247c4e0656f8f88a80564aa840644c1177212dd11a186dce4ab213
@@ -1414,7 +1414,7 @@ F test/recover.test fd5199f928757cb308661b5fdca1abc19398a798ff7f24b57c3071e9f8e0
 F test/regexp1.test 83c631617357150f8054ca1d1fed40a552b0d0f8eb7a7f090c3be02cee9f9913
 F test/regexp2.test 55ed41da802b0e284ac7e2fe944be3948f93ff25abbca0361a609acfed1368b5
 F test/reindex.test cd9d6021729910ece82267b4f5e1b5ac2911a7566c43b43c176a6a4732e2118d
-F test/releasetest_data.tcl 11ba48a21ed1c808147b0e77c6e93d204577f4327ffe6d7c3b34cd3c01eac3a2
+F test/releasetest_data.tcl 0db8aee0c348090fd06da47020ab4ed8ec692e0723427b2f3947d4dfb806f3b0
 F test/resetdb.test 8062cf10a09d8c048f8de7711e94571c38b38168db0e5877ba7561789e5eeb2b
 F test/resolver01.test f4022acafda7f4d40eca94dbf16bc5fc4ac30ceb
 F test/returning1.test c43b8370a351f77aec6d71f4a2cde59b849369ed1933261a2c2c69e23e34ff5e
@@ -2055,8 +2055,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ccf00a0e22a2a9815ff7db1c6c6457fce35aaf50843c1b5ff2adda22d6f70314
-R 2702d4b0d7cf0ce78b13ce55e0c73c55
+P 901918c4867557e51160ef9c495e4e007de26cfe07c237addc00a388662957e8
+R e1174940c9eea4fdd4992c2251cd547f
 U dan
-Z 4b132714b91dd0c91ae61ab427855e2e
+Z ccc7a06b399803ae9bb727d82784bfa2
 # Remove this line to create a well-formed Fossil manifest.
