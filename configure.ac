@@ -636,10 +636,16 @@ AC_MSG_CHECKING([whether to support WebAssembly integration])
 if test "$enable_wasm_runtime" = "yes"; then
   AC_MSG_RESULT([yes])
   OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DLIBSQL_ENABLE_WASM_RUNTIME"
-  AC_SEARCH_LIBS(wasmtime_store_new, wasmtime)
+  AC_CHECK_PROG(CARGO_BIN, cargo)
+  TARGET_OPT_WASM_RUNTIME_LINK='-L$(TOP)/.libs -lwblibsql'
+  OPT_WASM_RUNTIME_LIB="libwblibsql.so"
 else
+  TARGET_OPT_WASM_RUNTIME_LINK=""
+  OPT_WASM_RUNTIME_LIB=""
   AC_MSG_RESULT([no])
 fi
+AC_SUBST(TARGET_OPT_WASM_RUNTIME_LINK)
+AC_SUBST(OPT_WASM_RUNTIME_LIB)
 
 ########
 # The --enable-all argument is short-hand to enable

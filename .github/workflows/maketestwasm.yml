@@ -17,12 +17,11 @@ jobs:
     - name: get TCL
       run: sudo apt-get install -y tcl8.6-dev
 
-    - name: get Wasmtime
-      run: wget -q -O - https://github.com/bytecodealliance/wasmtime/releases/download/v1.0.1/wasmtime-v1.0.1-x86_64-linux-c-api.tar.xz | tar -xvJ
-            && sudo cp -vr wasmtime*/include /usr/ && sudo cp -vr wasmtime*/lib /usr/
-
     - name: configure with Wasm
       run: ./configure --enable-wasm-runtime
+
+    - name: make the library generally available
+      run: sudo ln -s $(pwd)/.libs/libwblibsql.so /usr/lib/libwblibsql.so && ls -lsh /usr/lib
       
     - name: Run tests
       run: make test
