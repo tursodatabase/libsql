@@ -20,6 +20,11 @@ if {[permutation] == "inmemory_journal"} {
   return
 }
 
+ifcapable !vtab {
+  finish_test
+  return
+}
+
 set testprefix dbpagefault
 
 faultsim_save_and_close
