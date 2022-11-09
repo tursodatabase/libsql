@@ -428,7 +428,7 @@ static void dbdataValue(
   u32 enc,
   int eType, 
   u8 *pData,
-  int nData
+  sqlite3_int64 nData
 ){
   if( eType>=0 && dbdataValueBytes(eType)<=nData ){
     switch( eType ){
