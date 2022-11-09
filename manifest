@@ -1,5 +1,5 @@
-C Additional\sdefense\sagainst\scorrupt\sdatabase\sfiles\sin\sdbdata.c.
-D 2022-11-09T11:02:39.285
+C Better\shandle\san\serror\sin\sthe\sfts5\sintegrity-check\scode.\sdbsqlfuzz\se87c62f9b67ea21aebdc36ab71cab7cc3eda8dc3.
+D 2022-11-09T11:17:57.759
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -118,7 +118,7 @@ F ext/fts5/fts5_buffer.c 3001fbabb585d6de52947b44b455235072b741038391f830d6b7292
 F ext/fts5/fts5_config.c 501e7d3566bc92766b0e11c0109a7c5a6146bc41144195459af5422f6c2078aa
 F ext/fts5/fts5_expr.c 40174a64829d30cc86e8266306ad24980f6911edd5ca0b8c1ce7821ea1341b88
 F ext/fts5/fts5_hash.c d4fb70940359f2120ccd1de7ffe64cc3efe65de9e8995b822cd536ff64c96982
-F ext/fts5/fts5_index.c 4b1ac44c665667be970df780bd8e734748047bd30a971d0bb7e884af8ac6e62c
+F ext/fts5/fts5_index.c a8ee270724ae1f958d0ce9897bcd60a5b760ecbeaa058fc8632805a283f1c20a
 F ext/fts5/fts5_main.c 6078ae86d3b813753a4f1201054550aff21a3f660e97b30f200d2b1472874151
 F ext/fts5/fts5_storage.c 76c6085239eb44424004c022e9da17a5ecd5aaec859fba90ad47d3b08f4c8082
 F ext/fts5/fts5_tcl.c b1445cbe69908c411df8084a10b2485500ac70a9c747cdc8cda175a3da59d8ae
@@ -2055,8 +2055,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 295447b44fc7658891352a9b3f792379b52a76ee5dcfd498b7028f5f87b40e9e
-R 851325ef7ac3ed67898936647c7dda82
-U drh
-Z e6b9c092d6b173c8cc4ef1e11fdfe252
+P 2e70d1e5c9b2c9e068be3ccf8a6062edf7bdde2e46d60ba8ce54eda851af6008
+R 5b3228ef5a47231a8a5df1bba248e63f
+U dan
+Z 85fe5476882fbe08da2a9ca03d046c66
 # Remove this line to create a well-formed Fossil manifest.
