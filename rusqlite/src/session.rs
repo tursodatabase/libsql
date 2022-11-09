@@ -75,13 +75,10 @@ impl Session<'_> {
                 let c_slice = CStr::from_ptr(tbl_str).to_bytes();
                 str::from_utf8(c_slice)
             };
-            if let Ok(true) =
+            c_int::from(
                 catch_unwind(|| (*boxed_filter)(tbl_name.expect("non-utf8 table name")))
-            {
-                1
-            } else {
-                0
-            }
+                    .unwrap_or_default(),
+            )
         }
 
         match filter {
@@ -193,7 +190,7 @@ impl Session<'_> {
     #[inline]
     pub fn set_enabled(&mut self, enabled: bool) {
         unsafe {
-            ffi::sqlite3session_enable(self.s, if enabled { 1 } else { 0 });
+            ffi::sqlite3session_enable(self.s, c_int::from(enabled));
         }
     }
 
@@ -207,7 +204,7 @@ impl Session<'_> {
     #[inline]
     pub fn set_indirect(&mut self, indirect: bool) {
         unsafe {
-            ffi::sqlite3session_indirect(self.s, if indirect { 1 } else { 0 });
+            ffi::sqlite3session_indirect(self.s, c_int::from(indirect));
         }
     }
 }
@@ -708,13 +705,9 @@ where
         str::from_utf8(c_slice)
     };
     match *tuple {
-        (Some(ref filter), _) => {
-            if let Ok(true) = catch_unwind(|| filter(tbl_name.expect("illegal table name"))) {
-                1
-            } else {
-                0
-            }
-        }
+        (Some(ref filter), _) => c_int::from(
+            catch_unwind(|| filter(tbl_name.expect("illegal table name"))).unwrap_or_default(),
+        ),
         _ => unimplemented!(),
     }
 }
