@@ -1,5 +1,5 @@
-C Automatically\srelinquish\simplicitly-acquired\sOPFS\sfile\slocks\sduring\sVFS\sidle\stime\sin\san\sattempt\sto\shelp\salleviate\scross-tab\slocking\scontention\slike\sthat\sdescribed\sin\s[forum:58a377083cd24a|forum\spost\s58a377083cd24a].
-D 2022-11-10T13:22:35.705
+C Avoid\sreturning\sSQLITE_SCHEMA\sif\sthe\sfirst\squery\srun\son\sa\sconnection\sis\s"SELECT\snosuchcolumn"\sor\ssimilar.\sForum\spost\s<https://sqlite.org/forum/forumpost/c1798f77ef>.
+D 2022-11-10T19:19:52.657
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -632,7 +632,7 @@ F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c dee95e3cd2b61e6512dc814c5ab76d5eb36f0bfc9441dbb4260fccc0d12bbddc
 F src/pragma.c 41430ca04735cc8e5d003bfd9315eadede3ec326e50805cc81bcf34e46601292
 F src/pragma.h e690a356c18e98414d2e870ea791c1be1545a714ba623719deb63f7f226d8bb7
-F src/prepare.c 1b02be0441eda4579471fea097f678effcbb77ef0c39ab3f703c837822bcd674
+F src/prepare.c 9ebd3a1b12bbd1951f0d6db850f32cf5d4547a6ab8bb9e958d75dfbe4e60d0a3
 F src/printf.c e99ee9741e79ae3873458146f59644276657340385ade4e76a5f5d1c25793764
 F src/random.c 546d6feb15ec69c1aafe9bb351a277cbb498fd5410e646add673acb805714960
 F src/resolve.c efea4e5fbecfd6d0a9071b0be0d952620991673391b6ffaaf4c277b0bb674633
@@ -2055,9 +2055,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ae43e97087a3207a5ca3ffae75fbe7a33c01f4a38ce0d1d7eed8591ae3083617 a7fe91afca473fe55c983bc81d214df4ef3699863c7423fa4b6b9cde23d6a3b4
-R 4034304670d7219ca07133486e9bbed5
-T +closed a7fe91afca473fe55c983bc81d214df4ef3699863c7423fa4b6b9cde23d6a3b4 Closed\sby\sintegrate-merge.
-U stephan
-Z 9ded40c19ad046a311beff933b79ea4d
+P 8daf24ff73dd9928057412e0e4c2e2b2e47e1dca66acfb6b07c846e8d97582cc
+R b4689da2653e425858ca303f2044a788
+T *branch * schema-error-fix
+T *sym-schema-error-fix *
+T -sym-trunk *
+U dan
+Z 8530f581085891f6457a19bb745014d9
 # Remove this line to create a well-formed Fossil manifest.
