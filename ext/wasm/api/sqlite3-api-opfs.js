@@ -467,9 +467,11 @@ const installOpfsVfs = function callee(options){
       /**
          Returns an array of the deserialized state stored by the most
          recent serialize() operation (from from this thread or the
-         counterpart thread), or null if the serialization buffer is empty.
+         counterpart thread), or null if the serialization buffer is
+         empty.  If passed a truthy argument, the serialization buffer
+         is cleared after deserialization.
       */
-      state.s11n.deserialize = function(){
+      state.s11n.deserialize = function(clear=false){
         ++metrics.s11n.deserialize.count;
         const t = performance.now();
         const argc = viewU8[0];
@@ -494,6 +496,7 @@ const installOpfsVfs = function callee(options){
             rc.push(v);
           }
         }
+        if(clear) viewU8[0] = 0;
         //log("deserialize:",argc, rc);
         metrics.s11n.deserialize.time += performance.now() - t;
         return rc;
