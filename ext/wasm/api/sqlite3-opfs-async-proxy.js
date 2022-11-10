@@ -44,6 +44,7 @@ if(self.window === self){
    this API.
 */
 const state = Object.create(null);
+
 /**
    verbose:
 
@@ -96,13 +97,27 @@ metrics.dump = ()=>{
 };
 
 /**
-   Map of sqlite3_file pointers (integers) to metadata related to a
-   given OPFS file handles. The pointers are, in this side of the
-   interface, opaque file handle IDs provided by the synchronous
-   part of this constellation. Each value is an object with a structure
-   demonstrated in the xOpen() impl.
+   __openFiles is a map of sqlite3_file pointers (integers) to
+   metadata related to a given OPFS file handles. The pointers are, in
+   this side of the interface, opaque file handle IDs provided by the
+   synchronous part of this constellation. Each value is an object
+   with a structure demonstrated in the xOpen() impl.
 */
 const __openFiles = Object.create(null);
+/**
+   __autoLocks is a Set of sqlite3_file pointers (integers) which were
+   "auto-locked".  i.e. those for which we obtained a sync access
+   handle without an explicit xLock() call. Such locks will be
+   released during db connection idle time, whereas a sync access
+   handle obtained via xLock(), or subsequently xLock()'d after
+   auto-acquisition, will not be released until xUnlock() is called.
+
+   Maintenance reminder: if we relinquish auto-locks at the end of the
+   operation which acquires them, we pay a massive performance
+   penalty: speedtest1 benchmarks take up to 4x as long. By delaying
+   the lock release until idle time, the hit is negligible.
+*/
+const __autoLocks = new Set();
 
 /**
    Expects an OPFS file path. It gets resolved, such that ".."
@@ -191,6 +206,10 @@ const getSyncHandle = async (fh)=>{
       }
     }
     log("Got sync handle for",fh.filenameAbs,'in',performance.now() - t,'ms');
+    if(!fh.xLock){
+      __autoLocks.add(fh.fid);
+      log("Auto-locked",fh.fid,fh.filenameAbs);
+    }
   }
   return fh.syncHandle;
 };
@@ -210,7 +229,27 @@ const closeSyncHandle = async (fh)=>{
     log("Closing sync handle for",fh.filenameAbs);
     const h = fh.syncHandle;
     delete fh.syncHandle;
+    delete fh.xLock;
+    __autoLocks.delete(fh.fid);
     return h.close();
+  }
+};
+
+/**
+   A proxy for closeSyncHandle() which is guaranteed to not throw.
+
+   This function is part of a lock/unlock step in functions which
+   require a sync access handle but may be called without xLock()
+   having been called first. Such calls need to release that
+   handle to avoid locking the file for all of time. This is an
+   _attempt_ at reducing cross-tab contention but it may prove
+   to be more of a problem than a solution and may need to be
+   removed.
+*/
+const closeSyncHandleNoThrow = async (fh)=>{
+  try{await closeSyncHandle(fh)}
+  catch(e){
+    warn("closeSyncHandleNoThrow() ignoring:",e,fh);
   }
 };
 
@@ -342,9 +381,10 @@ const vfsAsyncImpls = {
   xClose: async function(fid/*sqlite3_file pointer*/){
     const opName = 'xClose';
     mTimeStart(opName);
+    __autoLocks.delete(fid);
     const fh = __openFiles[fid];
     let rc = 0;
-    wTimeStart('xClose');
+    wTimeStart(opName);
     if(fh){
       delete __openFiles[fid];
       await closeSyncHandle(fh);
@@ -422,12 +462,17 @@ const vfsAsyncImpls = {
     mTimeStart('xLock');
     const fh = __openFiles[fid];
     let rc = 0;
+    const oldLockType = fh.xLock;
+    fh.xLock = lockType;
     if( !fh.syncHandle ){
       wTimeStart('xLock');
-      try { await getSyncHandle(fh) }
-      catch(e){
+      try {
+        await getSyncHandle(fh);
+        __autoLocks.delete(fid);
+      }catch(e){
         state.s11n.storeException(1,e);
         rc = state.sq3Codes.SQLITE_IOERR_LOCK;
+        fh.xLock = oldLockType;
       }
       wTimeEnd();
     }
@@ -461,6 +506,7 @@ const vfsAsyncImpls = {
       */
       wTimeEnd();
       __openFiles[fid] = Object.assign(Object.create(null),{
+        fid: fid,
         filenameAbs: filename,
         filenamePart: filenamePart,
         dirHandle: hDir,
@@ -610,7 +656,7 @@ const initS11n = ()=>{
       default: toss("Invalid type ID:",tid);
     }
   };
-  state.s11n.deserialize = function(){
+  state.s11n.deserialize = function(clear=false){
     ++metrics.s11n.deserialize.count;
     const t = performance.now();
     const argc = viewU8[0];
@@ -635,6 +681,7 @@ const initS11n = ()=>{
         rc.push(v);
       }
     }
+    if(clear) viewU8[0] = 0;
     //log("deserialize:",argc, rc);
     metrics.s11n.deserialize.time += performance.now() - t;
     return rc;
@@ -701,21 +748,30 @@ const waitLoop = async function f(){
      We need to wake up periodically to give the thread a chance
      to do other things.
   */
-  const waitTime = 1000;
+  const waitTime = 500;
   while(!flagAsyncShutdown){
     try {
       if('timed-out'===Atomics.wait(
         state.sabOPView, state.opIds.whichOp, 0, waitTime
       )){
+        if(__autoLocks.size){
+          /* Release all auto-locks. */
+          for(const fid of __autoLocks){
+            const fh = __openFiles[fid];
+            await closeSyncHandleNoThrow(fh);
+            log("Auto-unlocked",fid,fh.filenameAbs);
+          }
+        }
         continue;
       }
       const opId = Atomics.load(state.sabOPView, state.opIds.whichOp);
       Atomics.store(state.sabOPView, state.opIds.whichOp, 0);
       const hnd = opHandlers[opId] ?? toss("No waitLoop handler for whichOp #",opId);
-      const args = state.s11n.deserialize() || [];
-      state.s11n.serialize(/* clear s11n to keep the caller from
-                              confusing this with an exception string
-                              written by the upcoming operation */);
+      const args = state.s11n.deserialize(
+        true /* clear s11n to keep the caller from confusing this with
+                an exception string written by the upcoming
+                operation */
+      ) || [];
       //warn("waitLoop() whichOp =",opId, hnd, args);
       if(hnd.f) await hnd.f(...args);
       else error("Missing callback for opId",opId);

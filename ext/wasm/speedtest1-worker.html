@@ -169,7 +169,11 @@
         return str+a.join('&nbsp;');
     };
 
-    const W = new Worker("speedtest1-worker.js?sqlite3.dir=jswasm");
+    const urlParams = new URL(self.location.href).searchParams;
+    const W = new Worker(
+        "speedtest1-worker.js?sqlite3.dir=jswasm"+
+            (urlParams.has('opfs-verbose') ? '&opfs-verbose' : '')
+    );
     const mPost = function(msgType,payload){
         W.postMessage({type: msgType, data: payload});
     };
@@ -179,7 +183,6 @@
     const eLinkMainThread = E('#link-main-thread');
     const eLinkWasmfs = E('#link-wasmfs');
     const eLinkKvvfs = E('#link-kvvfs');
-    const urlParams = new URL(self.location.href).searchParams;
     const getSelectedFlags = ()=>{
         const f = Array.prototype.map.call(eFlags.selectedOptions, (v)=>v.value);
         [
