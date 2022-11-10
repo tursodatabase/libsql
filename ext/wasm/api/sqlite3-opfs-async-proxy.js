@@ -215,6 +215,24 @@ const closeSyncHandle = async (fh)=>{
 };
 
 /**
+   A proxy for closeSyncHandle() which is guaranteed to not throw.
+
+   This function is part of a lock/unlock step in functions which
+   require a sync access handle but may be called without xLock()
+   having been called first. Such calls need to release that
+   handle to avoid locking the file for all of time. This is an
+   _attempt_ at reducing cross-tab contention but it may prove
+   to be more of a problem than a solution and may need to be
+   removed.
+*/
+const closeSyncHandleNoThrow = async (fh)=>{
+  try{await closeSyncHandle(fh)}
+  catch(e){
+    warn("closeSyncHandleNoThrow() ignoring:",e,fh);
+  }
+};
+
+/**
    Stores the given value at state.sabOPView[state.opIds.rc] and then
    Atomics.notify()'s it.
 */
@@ -403,6 +421,7 @@ const vfsAsyncImpls = {
     mTimeStart('xFileSize');
     const fh = __openFiles[fid];
     let rc;
+    const hadLock = !!fh.syncHandle;
     wTimeStart('xFileSize');
     try{
       affirmLocked('xFileSize',fh);
@@ -413,6 +432,7 @@ const vfsAsyncImpls = {
       state.s11n.storeException(2,e);
       rc = state.sq3Codes.SQLITE_IOERR;
     }
+    if(!hadLock) closeSyncHandleNoThrow(fh);
     wTimeEnd();
     storeAndNotify('xFileSize', rc);
     mTimeEnd();
@@ -483,6 +503,7 @@ const vfsAsyncImpls = {
     mTimeStart('xRead');
     let rc = 0, nRead;
     const fh = __openFiles[fid];
+    const hadLock = !!fh.syncHandle;
     try{
       affirmLocked('xRead',fh);
       wTimeStart('xRead');
@@ -501,6 +522,7 @@ const vfsAsyncImpls = {
       state.s11n.storeException(1,e);
       rc = state.sq3Codes.SQLITE_IOERR_READ;
     }
+    if(!hadLock) closeSyncHandleNoThrow(fh);
     storeAndNotify('xRead',rc);
     mTimeEnd();
   },
@@ -525,6 +547,7 @@ const vfsAsyncImpls = {
     mTimeStart('xTruncate');
     let rc = 0;
     const fh = __openFiles[fid];
+    const hadLock = !!fh.syncHandle;
     wTimeStart('xTruncate');
     try{
       affirmLocked('xTruncate',fh);
@@ -535,6 +558,7 @@ const vfsAsyncImpls = {
       state.s11n.storeException(2,e);
       rc = state.sq3Codes.SQLITE_IOERR_TRUNCATE;
     }
+    if(!hadLock) closeSyncHandleNoThrow(fh);
     wTimeEnd();
     storeAndNotify('xTruncate',rc);
     mTimeEnd();
@@ -561,6 +585,7 @@ const vfsAsyncImpls = {
     mTimeStart('xWrite');
     let rc;
     const fh = __openFiles[fid];
+    const hadLock = !!fh.syncHandle;
     wTimeStart('xWrite');
     try{
       affirmLocked('xWrite',fh);
@@ -575,6 +600,7 @@ const vfsAsyncImpls = {
       state.s11n.storeException(1,e);
       rc = state.sq3Codes.SQLITE_IOERR_WRITE;
     }
+    if(!hadLock) closeSyncHandleNoThrow(fh);
     wTimeEnd();
     storeAndNotify('xWrite',rc);
     mTimeEnd();
