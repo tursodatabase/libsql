@@ -635,16 +635,25 @@ AS_HELP_STRING([--enable-wasm-runtime],[Enable WebAssembly runtime integration])
 AC_MSG_CHECKING([whether to support WebAssembly integration])
 AC_ARG_ENABLE(wasm_runtime_dynamic, 
 AS_HELP_STRING([--enable-wasm-runtime-dynamic],[Link with WebAssembly runtime dynamically]))
-if test "$enable_wasm_runtime" = "yes" -o "$enable_wasm_runtime_dynamic" = "yes"; then
+AC_ARG_ENABLE(wasm_runtime_wasmedge, 
+AS_HELP_STRING([--enable-wasm-runtime-wasmedge],[Enable WebAssembly runtime integration (WasmEdge library)]))
+if test "$enable_wasm_runtime" = "yes" \
+    -o "$enable_wasm_runtime_dynamic" = "yes" \
+    -o "$enable_wasm_runtime_wasmedge" = "yes"; then
   AC_MSG_RESULT([yes])
   OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DLIBSQL_ENABLE_WASM_RUNTIME"
   AC_CHECK_PROG(CARGO_BIN, cargo)
-  AC_MSG_CHECKING([whether to link WebAssembly runtime dynamically])
+  AC_MSG_CHECKING([how to set up WebAssembly runtime])
   if test "$enable_wasm_runtime_dynamic" = "yes"; then
-    AC_MSG_RESULT([yes])
+    AC_MSG_RESULT([link dynamically])
     OPT_WASM_RUNTIME=d
+  elif test "$enable_wasm_runtime_wasmedge" = "yes"; then
+    AC_MSG_RESULT([link libwasmedge])
+    OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DLIBSQL_ENABLE_WASM_RUNTIME_WASMEDGE"
+    AC_SEARCH_LIBS(WasmEdge_VMInstantiate, wasmedge, [], [AC_MSG_ERROR("WasmEdge library not found - install libwasmedge")])
+    OPT_WASM_RUNTIME=wasmedge
   else
-    AC_MSG_RESULT([no])
+    AC_MSG_RESULT([link statically])
     OPT_WASM_RUNTIME=y # static linking
   fi
 else

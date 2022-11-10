@@ -196,7 +196,7 @@ LIBOBJS0 = alter.lo analyze.lo attach.lo auth.lo \
          update.lo userauth.lo upsert.lo util.lo vacuum.lo \
          vdbe.lo vdbeapi.lo vdbeaux.lo vdbeblob.lo vdbemem.lo vdbesort.lo \
          vdbetrace.lo vdbevtab.lo \
-         wal.lo walker.lo where.lo wherecode.lo whereexpr.lo \
+         wal.lo walker.lo wasmedge_bindings.lo where.lo wherecode.lo whereexpr.lo \
          window.lo utf.lo vtab.lo
 
 # Object files for the amalgamation.
@@ -357,6 +357,8 @@ SRC += \
   $(TOP)/ext/rbu/sqlite3rbu.c
 SRC += \
   $(TOP)/ext/misc/stmt.c
+SRC += \
+  $(TOP)/ext/udf/wasmedge_bindings.c
 
 # Generated source code files
 #
@@ -543,6 +545,7 @@ TESTSRC2 = \
   $(TOP)/ext/async/sqlite3async.c \
   $(TOP)/ext/session/sqlite3session.c \
   $(TOP)/ext/misc/stmt.c \
+  $(TOP)/ext/udf/wasmedge_bindings.c \
   fts5.c
 
 # Header files used by all library source files.
@@ -1214,6 +1217,9 @@ sqlite3session.lo:	$(TOP)/ext/session/sqlite3session.c $(HDR) $(EXTHDR)
 
 stmt.lo:	$(TOP)/ext/misc/stmt.c
 	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/misc/stmt.c
+
+wasmedge_bindings.lo:	$(TOP)/ext/udf/wasmedge_bindings.c $(HDR) $(EXTHDR)
+	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/udf/wasmedge_bindings.c
 
 # FTS5 things
 #
