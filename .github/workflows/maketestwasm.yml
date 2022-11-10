@@ -18,6 +18,12 @@ jobs:
     - name: get TCL
       run: sudo apt-get install -y tcl8.6-dev
 
+    - name: get WasmEdge
+      run: > 
+        wget -O- https://github.com/WasmEdge/WasmEdge/releases/download/0.11.2/WasmEdge-slim-runtime-0.11.2-manylinux2014_x86_64.tar.gz | tar zxv
+        && sudo cp -r WasmEdge-0.11.2-Linux/include/* /usr/include/
+        && sudo cp -r WasmEdge-0.11.2-Linux/lib64/* /usr/lib64/
+
     - name: configure with Wasm
       run: ./configure --enable-wasm-runtime
 
@@ -28,4 +34,13 @@ jobs:
       run: make test
 
     - name: Run Rust tests with Wasm
+      run: make rusttestwasm
+
+    - name: reconfigure with Wasm in WasmEdge mode
+      run: make clean && ./configure --enable-wasm-runtime-wasmedge
+
+    - name: Run tests
+      run: make test
+
+    - name: Run tests with Wasm
       run: make rusttestwasm
