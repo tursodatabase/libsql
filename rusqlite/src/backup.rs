@@ -336,7 +336,7 @@ mod test {
             backup.step(-1)?;
         }
 
-        let the_answer: i64 = dst.query_row("SELECT x FROM foo", [], |r| r.get(0))?;
+        let the_answer: i64 = dst.one_column("SELECT x FROM foo")?;
         assert_eq!(42, the_answer);
 
         src.execute_batch("INSERT INTO foo VALUES(43)")?;
@@ -346,7 +346,7 @@ mod test {
             backup.run_to_completion(5, Duration::from_millis(250), None)?;
         }
 
-        let the_answer: i64 = dst.query_row("SELECT SUM(x) FROM foo", [], |r| r.get(0))?;
+        let the_answer: i64 = dst.one_column("SELECT SUM(x) FROM foo")?;
         assert_eq!(42 + 43, the_answer);
         Ok(())
     }
@@ -368,7 +368,7 @@ mod test {
             backup.step(-1)?;
         }
 
-        let the_answer: i64 = dst.query_row("SELECT x FROM foo", [], |r| r.get(0))?;
+        let the_answer: i64 = dst.one_column("SELECT x FROM foo")?;
         assert_eq!(42, the_answer);
 
         src.execute_batch("INSERT INTO foo VALUES(43)")?;
@@ -379,7 +379,7 @@ mod test {
             backup.run_to_completion(5, Duration::from_millis(250), None)?;
         }
 
-        let the_answer: i64 = dst.query_row("SELECT SUM(x) FROM foo", [], |r| r.get(0))?;
+        let the_answer: i64 = dst.one_column("SELECT SUM(x) FROM foo")?;
         assert_eq!(42 + 43, the_answer);
         Ok(())
     }
@@ -406,7 +406,7 @@ mod test {
             backup.step(-1)?;
         }
 
-        let the_answer: i64 = dst.query_row("SELECT x FROM foo", [], |r| r.get(0))?;
+        let the_answer: i64 = dst.one_column("SELECT x FROM foo")?;
         assert_eq!(42, the_answer);
 
         src.execute_batch("INSERT INTO foo VALUES(43)")?;
@@ -421,7 +421,7 @@ mod test {
             backup.run_to_completion(5, Duration::from_millis(250), None)?;
         }
 
-        let the_answer: i64 = dst.query_row("SELECT SUM(x) FROM foo", [], |r| r.get(0))?;
+        let the_answer: i64 = dst.one_column("SELECT SUM(x) FROM foo")?;
         assert_eq!(42 + 43, the_answer);
         Ok(())
     }

@@ -1212,8 +1212,7 @@ mod test {
         let mut stmt = db.prepare("INSERT INTO test (x, y) VALUES (:x, :y)")?;
         stmt.execute_named(&[(":x", &"one")])?;
 
-        let result: Option<String> =
-            db.query_row("SELECT y FROM test WHERE x = 'one'", [], |row| row.get(0))?;
+        let result: Option<String> = db.one_column("SELECT y FROM test WHERE x = 'one'")?;
         assert!(result.is_none());
         Ok(())
     }
@@ -1259,8 +1258,7 @@ mod test {
         stmt.execute(&[(":x", "one")])?;
         stmt.execute(&[(":y", "two")])?;
 
-        let result: String =
-            db.query_row("SELECT x FROM test WHERE y = 'two'", [], |row| row.get(0))?;
+        let result: String = db.one_column("SELECT x FROM test WHERE y = 'two'")?;
         assert_eq!(result, "one");
         Ok(())
     }
@@ -1500,7 +1498,7 @@ mod test {
         db.execute_batch("CREATE TABLE foo(x TEXT)")?;
         let expected = "テスト";
         db.execute("INSERT INTO foo(x) VALUES (?)", [&expected])?;
-        let actual: String = db.query_row("SELECT x FROM foo", [], |row| row.get(0))?;
+        let actual: String = db.one_column("SELECT x FROM foo")?;
         assert_eq!(expected, actual);
         Ok(())
     }
