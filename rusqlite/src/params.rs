@@ -138,9 +138,7 @@ use sealed::Sealed;
 /// ## No parameters
 ///
 /// You can just use an empty tuple or the empty array literal to run a query
-/// that accepts no parameters. (The `rusqlite::NO_PARAMS` constant which was
-/// common in previous versions of this library is no longer needed, and is now
-/// deprecated).
+/// that accepts no parameters.
 ///
 /// ### Example (no parameters)
 ///
@@ -192,8 +190,7 @@ pub trait Params: Sealed {
 }
 
 // Explicitly impl for empty array. Critically, for `conn.execute([])` to be
-// unambiguous, this must be the *only* implementation for an empty array. This
-// avoids `NO_PARAMS` being a necessary part of the API.
+// unambiguous, this must be the *only* implementation for an empty array.
 //
 // This sadly prevents `impl<T: ToSql, const N: usize> Params for [T; N]`, which
 // forces people to use `params![...]` or `rusqlite::params_from_iter` for long
