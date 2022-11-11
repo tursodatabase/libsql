@@ -26,6 +26,7 @@ impl FromSql for Value {
 mod test {
     use crate::types::ToSql;
     use crate::{Connection, Result};
+    use serde_json::Value;
 
     fn checked_memory_handle() -> Result<Connection> {
         let db = Connection::open_in_memory()?;
@@ -38,15 +39,15 @@ mod test {
         let db = checked_memory_handle()?;
 
         let json = r#"{"foo": 13, "bar": "baz"}"#;
-        let data: serde_json::Value = serde_json::from_str(json).unwrap();
+        let data: Value = serde_json::from_str(json).unwrap();
         db.execute(
             "INSERT INTO foo (t, b) VALUES (?, ?)",
             [&data as &dyn ToSql, &json.as_bytes()],
         )?;
 
-        let t: serde_json::Value = db.query_row("SELECT t FROM foo", [], |r| r.get(0))?;
+        let t: Value = db.one_column("SELECT t FROM foo")?;
         assert_eq!(data, t);
-        let b: serde_json::Value = db.query_row("SELECT b FROM foo", [], |r| r.get(0))?;
+        let b: Value = db.one_column("SELECT b FROM foo")?;
         assert_eq!(data, b);
         Ok(())
     }

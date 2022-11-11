@@ -93,7 +93,7 @@ mod test {
         for ts in ts_vec {
             db.execute("INSERT INTO foo(t) VALUES (?)", [ts])?;
 
-            let from: OffsetDateTime = db.query_row("SELECT t FROM foo", [], |r| r.get(0))?;
+            let from: OffsetDateTime = db.one_column("SELECT t FROM foo")?;
 
             db.execute("DELETE FROM foo", [])?;
 
@@ -152,8 +152,7 @@ mod test {
     #[test]
     fn test_sqlite_functions() -> Result<()> {
         let db = Connection::open_in_memory()?;
-        let result: Result<OffsetDateTime> =
-            db.query_row("SELECT CURRENT_TIMESTAMP", [], |r| r.get(0));
+        let result: Result<OffsetDateTime> = db.one_column("SELECT CURRENT_TIMESTAMP");
         result.unwrap();
         Ok(())
     }

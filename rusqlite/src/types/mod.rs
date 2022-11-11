@@ -155,7 +155,7 @@ mod test {
         let v1234 = vec![1u8, 2, 3, 4];
         db.execute("INSERT INTO foo(b) VALUES (?)", [&v1234])?;
 
-        let v: Vec<u8> = db.query_row("SELECT b FROM foo", [], |r| r.get(0))?;
+        let v: Vec<u8> = db.one_column("SELECT b FROM foo")?;
         assert_eq!(v, v1234);
         Ok(())
     }
@@ -167,7 +167,7 @@ mod test {
         let empty = vec![];
         db.execute("INSERT INTO foo(b) VALUES (?)", [&empty])?;
 
-        let v: Vec<u8> = db.query_row("SELECT b FROM foo", [], |r| r.get(0))?;
+        let v: Vec<u8> = db.one_column("SELECT b FROM foo")?;
         assert_eq!(v, empty);
         Ok(())
     }
@@ -179,7 +179,7 @@ mod test {
         let s = "hello, world!";
         db.execute("INSERT INTO foo(t) VALUES (?)", [&s])?;
 
-        let from: String = db.query_row("SELECT t FROM foo", [], |r| r.get(0))?;
+        let from: String = db.one_column("SELECT t FROM foo")?;
         assert_eq!(from, s);
         Ok(())
     }
@@ -191,7 +191,7 @@ mod test {
         let s = "hello, world!";
         db.execute("INSERT INTO foo(t) VALUES (?)", [s.to_owned()])?;
 
-        let from: String = db.query_row("SELECT t FROM foo", [], |r| r.get(0))?;
+        let from: String = db.one_column("SELECT t FROM foo")?;
         assert_eq!(from, s);
         Ok(())
     }
@@ -202,10 +202,7 @@ mod test {
 
         db.execute("INSERT INTO foo(i) VALUES (?)", [Value::Integer(10)])?;
 
-        assert_eq!(
-            10i64,
-            db.query_row::<i64, _, _>("SELECT i FROM foo", [], |r| r.get(0))?
-        );
+        assert_eq!(10i64, db.one_column::<i64>("SELECT i FROM foo")?);
         Ok(())
     }
 
