@@ -1267,9 +1267,9 @@ mod test {
 
         let path_string = path.to_str().unwrap();
         let db = Connection::open(path_string)?;
-        let the_answer: Result<i64> = db.one_column("SELECT x FROM foo");
+        let the_answer: i64 = db.one_column("SELECT x FROM foo")?;
 
-        assert_eq!(42i64, the_answer?);
+        assert_eq!(42i64, the_answer);
         Ok(())
     }
 
@@ -1324,9 +1324,9 @@ mod test {
         }
 
         let db = Connection::open(&db_path)?;
-        let the_answer: Result<i64> = db.one_column("SELECT x FROM foo");
+        let the_answer: i64 = db.one_column("SELECT x FROM foo")?;
 
-        assert_eq!(42i64, the_answer?);
+        assert_eq!(42i64, the_answer);
         Ok(())
     }
 

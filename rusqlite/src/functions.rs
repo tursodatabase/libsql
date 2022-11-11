@@ -820,9 +820,9 @@ mod test {
             FunctionFlags::SQLITE_UTF8 | FunctionFlags::SQLITE_DETERMINISTIC,
             half,
         )?;
-        let result: Result<f64> = db.one_column("SELECT half(6)");
+        let result: f64 = db.one_column("SELECT half(6)")?;
 
-        assert!((3f64 - result?).abs() < f64::EPSILON);
+        assert!((3f64 - result).abs() < f64::EPSILON);
         Ok(())
     }
 
@@ -835,8 +835,8 @@ mod test {
             FunctionFlags::SQLITE_UTF8 | FunctionFlags::SQLITE_DETERMINISTIC,
             half,
         )?;
-        let result: Result<f64> = db.one_column("SELECT half(6)");
-        assert!((3f64 - result?).abs() < f64::EPSILON);
+        let result: f64 = db.one_column("SELECT half(6)")?;
+        assert!((3f64 - result).abs() < f64::EPSILON);
 
         db.remove_function("half", 1)?;
         let result: Result<f64> = db.one_column("SELECT half(6)");
@@ -885,14 +885,14 @@ mod test {
             regexp_with_auxilliary,
         )?;
 
-        let result: Result<bool> = db.one_column("SELECT regexp('l.s[aeiouy]', 'lisa')");
+        let result: bool = db.one_column("SELECT regexp('l.s[aeiouy]', 'lisa')")?;
 
-        assert!(result?);
+        assert!(result);
 
-        let result: Result<i64> =
-            db.one_column("SELECT COUNT(*) FROM foo WHERE regexp('l.s[aeiouy]', x) == 1");
+        let result: i64 =
+            db.one_column("SELECT COUNT(*) FROM foo WHERE regexp('l.s[aeiouy]', x) == 1")?;
 
-        assert_eq!(2, result?);
+        assert_eq!(2, result);
         Ok(())
     }
 
