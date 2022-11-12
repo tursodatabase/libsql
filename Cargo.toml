@@ -1,0 +1,13 @@
+[package]
+name = "edge"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.66"
+bincode = "1.3.3"
+clap = { version = "4.0.23", features = [ "derive" ] }
+message-io = "0.14.6"
+rustyline = "10.0.0"
+serde = "1.0.147"
+sqlite = "0.30.1"
