@@ -10,6 +10,14 @@ pub(crate) struct Coordinator {
     tx: RefCell<Option<String>>,
 }
 
+fn is_transaction_start(stmt: &str) -> bool {
+    stmt == "BEGIN"
+}
+
+fn is_transaction_end(stmt: &str) -> bool {
+    stmt == "COMMIT" || stmt == "ROLLBACK"
+}
+
 impl Coordinator {
     pub fn start() -> Result<Coordinator> {
         let database = sqlite::open(":memory:")?;
@@ -24,7 +32,7 @@ impl Coordinator {
             }
         }
         println!("{} => {}", endpoint, stmt);
-        if stmt == "BEGIN" {
+        if is_transaction_start(&stmt) {
             self.tx.replace(Some(endpoint));
         }
         let mut rows = vec![];
@@ -34,7 +42,7 @@ impl Coordinator {
             }
             true
         });
-        if stmt == "COMMIT" || stmt == "ROLLBACK" {
+        if is_transaction_end(&stmt) {
             self.tx.replace(None);
         }
         match result {
