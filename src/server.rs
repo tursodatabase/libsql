@@ -30,7 +30,9 @@ pub(crate) fn start() -> Result<()> {
                 }
             }
         }
-        NetEvent::Disconnected(_endpoint) => {}
+        NetEvent::Disconnected(endpoint) => {
+            coordinator.on_disconnect(endpoint.to_string()).unwrap();
+        }
     });
     Ok(())
 }

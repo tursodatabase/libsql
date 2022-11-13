@@ -29,7 +29,7 @@ pub(crate) fn start() -> Result<()> {
                     Message::ResultSet(rows) => {
                         println!(">> {:?}", rows);
                     }
-                    Message::Error(message) => {
+                    Message::Error(_, message) => {
                         println!(">> {}", message);
                     }
                     _ => {
