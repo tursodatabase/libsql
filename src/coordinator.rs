@@ -11,11 +11,15 @@ pub(crate) struct Coordinator {
 }
 
 fn is_transaction_start(stmt: &str) -> bool {
-    stmt == "BEGIN"
+    // TODO: Add support for Savepoints
+    //       Savepoints are named transactions that can be nested.
+    //       See https://www.sqlite.org/lang_savepoint.html
+    stmt.trim_start().starts_with("BEGIN")
 }
 
 fn is_transaction_end(stmt: &str) -> bool {
-    stmt == "COMMIT" || stmt == "ROLLBACK"
+    let stmt = stmt.trim_start();
+    stmt.starts_with("COMMIT") || stmt.starts_with("END") || stmt.starts_with("ROLLBACK")
 }
 
 impl Coordinator {
