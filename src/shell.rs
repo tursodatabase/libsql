@@ -19,7 +19,7 @@ pub(crate) fn start() -> Result<()> {
     if rl.load_history(HISTORY_FILE).is_err() {
         println!("No previous history.");
     }
-    let listener = thread::spawn(|| {
+    let _listener = thread::spawn(|| {
         node_listener.for_each(move |event| match event.network() {
             NetEvent::Connected(_, _) => (),
             NetEvent::Accepted(_, _) => (),
@@ -64,6 +64,5 @@ pub(crate) fn start() -> Result<()> {
         }
     }
     rl.save_history(HISTORY_FILE)?;
-    listener.join().unwrap();
     Ok(())
 }
