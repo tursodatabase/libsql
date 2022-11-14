@@ -2,6 +2,7 @@ mod coordinator;
 mod messages;
 mod server;
 mod shell;
+mod sql_parser;
 mod types;
 
 use anyhow::Result;
