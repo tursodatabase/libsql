@@ -9,8 +9,7 @@ pub(crate) fn start() -> Result<()> {
     let listen_addr = "127.0.0.1:5000";
     handler
         .network()
-        .listen(Transport::FramedTcp, listen_addr)
-        .unwrap();
+        .listen(Transport::FramedTcp, listen_addr)?;
     let coordinator = Coordinator::start()?;
     println!("ChiselEdge server running at {}", listen_addr);
     node_listener.for_each(move |event| match event.network() {
