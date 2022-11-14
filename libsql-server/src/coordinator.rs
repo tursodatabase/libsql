@@ -19,10 +19,13 @@ impl Coordinator {
         Ok(Coordinator { database, tx })
     }
 
-    pub fn on_execute(&self, endpoint: NodeId, stmt: String) -> Message {
+    pub fn on_execute(&self, endpoint: NodeId, stmt: String) -> Result<Message> {
         if let Some(tx_owner) = &*self.tx.borrow() {
             if *tx_owner != endpoint {
-                return Message::Error(ErrorCode::TxBusy, "Transaction in progress.".to_string());
+                return Ok(Message::Error(
+                    ErrorCode::TxBusy,
+                    "Transaction in progress.".to_string(),
+                ));
             }
         }
         println!("{} => {}", endpoint, stmt);
@@ -39,10 +42,10 @@ impl Coordinator {
         if sql_parser::is_transaction_end(&stmt) {
             self.tx.replace(None);
         }
-        match result {
+        Ok(match result {
             Ok(_) => Message::ResultSet(rows),
             Err(err) => Message::Error(ErrorCode::SQLError, format!("{:?}", err)),
-        }
+        })
     }
 
     pub fn on_disconnect(&self, endpoint: NodeId) -> Result<()> {
@@ -68,23 +71,35 @@ mod tests {
         //assert!(matches!(response, Message::ResultSet(_)));
         let tx_start_stmt = "BEGIN";
         let tx_end_stmt = "COMMIT";
-        let response = coordinator.on_execute("Node 0".to_string(), tx_start_stmt.to_string());
+        let response = coordinator
+            .on_execute("Node 0".to_string(), tx_start_stmt.to_string())
+            .unwrap();
         assert!(matches!(response, Message::ResultSet(_)));
-        let response = coordinator.on_execute("Node 1".to_string(), tx_start_stmt.to_string());
+        let response = coordinator
+            .on_execute("Node 1".to_string(), tx_start_stmt.to_string())
+            .unwrap();
         assert!(matches!(response, Message::Error(ErrorCode::TxBusy, _)));
-        let response = coordinator.on_execute("Node 0".to_string(), tx_end_stmt.to_string());
+        let response = coordinator
+            .on_execute("Node 0".to_string(), tx_end_stmt.to_string())
+            .unwrap();
         assert!(matches!(response, Message::ResultSet(_)));
-        let response = coordinator.on_execute("Node 1".to_string(), tx_start_stmt.to_string());
+        let response = coordinator
+            .on_execute("Node 1".to_string(), tx_start_stmt.to_string())
+            .unwrap();
         assert!(matches!(response, Message::ResultSet(_)));
     }
 
     #[test]
     fn test_disconnect_aborts_interactive_transaction() {
         let coordinator = Coordinator::start().unwrap();
-        let response = coordinator.on_execute("Node 0".to_string(), "BEGIN".to_string());
+        let response = coordinator
+            .on_execute("Node 0".to_string(), "BEGIN".to_string())
+            .unwrap();
         assert!(matches!(response, Message::ResultSet(_)));
         coordinator.on_disconnect("Node 0".to_string()).unwrap();
-        let response = coordinator.on_execute("Node 1".to_string(), "BEGIN".to_string());
+        let response = coordinator
+            .on_execute("Node 1".to_string(), "BEGIN".to_string())
+            .unwrap();
         assert!(matches!(response, Message::ResultSet(_)));
     }
 }
