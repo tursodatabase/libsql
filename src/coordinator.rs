@@ -10,6 +10,18 @@ pub(crate) struct Coordinator {
     tx: RefCell<Option<String>>,
 }
 
+fn is_transaction_start(stmt: &str) -> bool {
+    // TODO: Add support for Savepoints
+    //       Savepoints are named transactions that can be nested.
+    //       See https://www.sqlite.org/lang_savepoint.html
+    stmt.trim_start().starts_with("BEGIN")
+}
+
+fn is_transaction_end(stmt: &str) -> bool {
+    let stmt = stmt.trim_start();
+    stmt.starts_with("COMMIT") || stmt.starts_with("END") || stmt.starts_with("ROLLBACK")
+}
+
 impl Coordinator {
     pub fn start() -> Result<Coordinator> {
         let database = sqlite::open(":memory:")?;
@@ -24,7 +36,7 @@ impl Coordinator {
             }
         }
         println!("{} => {}", endpoint, stmt);
-        if stmt == "BEGIN" {
+        if is_transaction_start(&stmt) {
             self.tx.replace(Some(endpoint));
         }
         let mut rows = vec![];
@@ -34,7 +46,7 @@ impl Coordinator {
             }
             true
         });
-        if stmt == "COMMIT" || stmt == "ROLLBACK" {
+        if is_transaction_end(&stmt) {
             self.tx.replace(None);
         }
         match result {
@@ -56,17 +68,50 @@ impl Coordinator {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rstest::rstest;
 
-    #[test]
-    fn test_concurrent_interactive_transaction_is_rejected() {
+    #[rstest]
+    #[trace]
+    fn test_concurrent_interactive_transaction_is_rejected(
+        #[values(
+            "BEGIN",
+            "BEGIN DEFERRED",
+            "BEGIN IMMEDIATE",
+            "BEGIN EXCLUSIVE",
+            "BEGIN TRANSACTION",
+            "BEGIN DEFERRED TRANSACTION",
+            "BEGIN IMMEDIATE TRANSACTION",
+            "BEGIN EXCLUSIVE TRANSACTION"
+        )]
+        tx_start_stmt: &str,
+        #[values(
+            "COMMIT",
+            "COMMIT TRANSACTION",
+            "END",
+            "END TRANSACTION",
+            "ROLLBACK",
+            "ROLLBACK TRANSACTION",
+        // TODO: add back when we support SAVEPOINTS
+        //       See https://www.sqlite.org/lang_savepoint.html
+        //    "ROLLBACK TO savepoint_name",
+        //    "ROLLBACK TRANSACTION TO savepoint_name",
+        //    "ROLLBACK TO SAVEPOINT savepoint_name",
+        //    "ROLLBACK TRANSACTION TO SAVEPOINT savepoint_name"
+        )]
+        tx_end_stmt: &str,
+    ) {
         let coordinator = Coordinator::start().unwrap();
-        let response = coordinator.on_execute("Node 0".to_string(), "BEGIN".to_string());
+        // TODO: add back when we support SAVEPOINTS
+        //       See https://www.sqlite.org/lang_savepoint.html
+        //let response = coordinator.on_execute("Node 0".to_string(), "SAVEPOINT savepoint_name".to_string());
+        //assert!(matches!(response, Message::ResultSet(_)));
+        let response = coordinator.on_execute("Node 0".to_string(), tx_start_stmt.to_string());
         assert!(matches!(response, Message::ResultSet(_)));
-        let response = coordinator.on_execute("Node 1".to_string(), "BEGIN".to_string());
+        let response = coordinator.on_execute("Node 1".to_string(), tx_start_stmt.to_string());
         assert!(matches!(response, Message::Error(ErrorCode::TxBusy, _)));
-        let response = coordinator.on_execute("Node 0".to_string(), "COMMIT".to_string());
+        let response = coordinator.on_execute("Node 0".to_string(), tx_end_stmt.to_string());
         assert!(matches!(response, Message::ResultSet(_)));
-        let response = coordinator.on_execute("Node 1".to_string(), "BEGIN".to_string());
+        let response = coordinator.on_execute("Node 1".to_string(), tx_start_stmt.to_string());
         assert!(matches!(response, Message::ResultSet(_)));
     }
 
