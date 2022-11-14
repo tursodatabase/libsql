@@ -20,7 +20,7 @@ pub(crate) fn start() -> Result<()> {
             match message {
                 Message::Execute(stmt) => {
                     println!(">> {}", stmt);
-                    let message = coordinator.on_execute(endpoint.to_string(), stmt);
+                    let message = coordinator.on_execute(endpoint.to_string(), stmt).unwrap();
                     let output_data = bincode::serialize(&message).unwrap();
                     handler.network().send(endpoint, &output_data);
                 }
