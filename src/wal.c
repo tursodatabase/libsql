@@ -4083,6 +4083,15 @@ static sqlite3_file *sqlite3WalFile(Wal *pWal){
   return pWal->pWalFd;
 }
 
+static int libsqlWalPathnameLen(int n) {
+  return n ? n + 4 : 0;
+}
+
+static void libsqlGetWalPathname(char *buf, const char *orig, int orig_len) {
+  memcpy(buf, orig, orig_len);
+  memcpy(buf + orig_len, "-wal", 4);
+}
+
 libsql_wal_methods *libsql_wal_methods_find(const char *zName) {
   static libsql_wal_methods methods;
   static libsql_wal_methods *methods_head = NULL; 
@@ -4128,6 +4137,8 @@ libsql_wal_methods *libsql_wal_methods_find(const char *zName) {
     methods.xWriteLock = sqlite3WalWriteLock;
 #endif
     methods.xDb = sqlite3WalDb;
+    methods.xPathnameLen = libsqlWalPathnameLen;
+    methods.xGetWalPathname = libsqlGetWalPathname;
 
     methods.bUsesShm = 1;
     methods.zName = "default";
