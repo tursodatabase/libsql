@@ -6,7 +6,7 @@ pub enum ErrorCode {
     TxBusy,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum Message {
     Execute(String),
     ResultSet(Vec<String>),
