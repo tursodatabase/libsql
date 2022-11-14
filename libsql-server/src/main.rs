@@ -2,6 +2,7 @@ mod coordinator;
 mod messages;
 mod server;
 mod shell;
+mod types;
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
