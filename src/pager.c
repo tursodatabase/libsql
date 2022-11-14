@@ -4778,6 +4778,10 @@ int sqlite3PagerOpen(
     }
   }
 
+#ifndef SQLITE_OMIT_WAL
+  int nWalPathname = pWalMethods->xPathnameLen(nPathname);
+#endif
+
   /* Allocate memory for the Pager structure, PCache object, the
   ** three file descriptors, the database file name and the journal 
   ** file name. The layout in memory is as follows:
@@ -4833,7 +4837,7 @@ int sqlite3PagerOpen(
     nUriByte +                           /* query parameters */
     nPathname + 8 + 1 +                  /* Journal filename */
 #ifndef SQLITE_OMIT_WAL
-    nPathname + 4 + 1 +                  /* WAL filename */
+    nWalPathname + 1 +                  /* WAL filename */
 #endif
     3                                    /* Terminator */
   );
@@ -4879,10 +4883,12 @@ int sqlite3PagerOpen(
 #ifndef SQLITE_OMIT_WAL
   pPager->pWalMethods = pWalMethods;
   /* Fill in Pager.zWal */
-  if( nPathname>0 ){
+  if( nWalPathname>0 ){
     pPager->zWal = (char*)pPtr;
-    memcpy(pPtr, zPathname, nPathname);   pPtr += nPathname;
-    memcpy(pPtr, "-wal", 4);              pPtr += 4 + 1;
+    pWalMethods->xGetWalPathname((char *)pPtr, zPathname, nPathname);
+    pPtr += nWalPathname;
+    pPtr[0] = '\0';
+    pPtr++;
 #ifdef SQLITE_ENABLE_8_3_NAMES
     sqlite3FileSuffix3(zFilename, pPager->zWal);
     pPtr = (u8*)(pPager->zWal + sqlite3Strlen30(pPager->zWal)+1);

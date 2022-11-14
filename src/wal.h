@@ -131,6 +131,16 @@ typedef struct libsql_wal_methods {
 
   void (*xDb)(Wal *pWal, sqlite3 *db);
 
+  /* Return the WAL pathname length based on the owning pager's pathname len.
+  ** For WAL implementations not based on a single file, 0 should be returned. */
+  int (*xPathnameLen)(int origPathname);
+
+  /* Get the WAL pathname to given buffer. Assumes that the buffer can hold
+  ** at least xPathnameLen bytes. For WAL implementations not based on a single file,
+  ** this operation can safely be a no-op.
+  ** */
+  void (*xGetWalPathname)(char *buf, const char *orig, int orig_len);
+
   /* True if the implementation relies on shared memory routines (e.g. locks) */
   int bUsesShm;
 
