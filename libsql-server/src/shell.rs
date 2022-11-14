@@ -15,7 +15,7 @@ pub(crate) fn start() -> Result<()> {
     let (endpoint, _) = handler
         .network()
         .connect(Transport::FramedTcp, discovery_addr)?;
-    let mut rl = Editor::<()>::new().unwrap();
+    let mut rl = Editor::<()>::new()?;
     if rl.load_history(HISTORY_FILE).is_err() {
         println!("No previous history.");
     }
@@ -46,7 +46,7 @@ pub(crate) fn start() -> Result<()> {
             Ok(line) => {
                 rl.add_history_entry(line.as_str());
                 let message = Message::Execute(line.to_string());
-                let output_data = bincode::serialize(&message).unwrap();
+                let output_data = bincode::serialize(&message)?;
                 handler.network().send(endpoint, &output_data);
             }
             Err(ReadlineError::Interrupted) => {
