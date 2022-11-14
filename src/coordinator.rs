@@ -82,7 +82,7 @@ mod tests {
             "BEGIN DEFERRED TRANSACTION",
             "BEGIN IMMEDIATE TRANSACTION",
             "BEGIN EXCLUSIVE TRANSACTION",
-            "begin",
+            "begin"
         )]
         tx_start_stmt: &str,
         #[values(
