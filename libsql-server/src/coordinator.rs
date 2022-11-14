@@ -4,6 +4,7 @@ use crate::types::NodeId;
 use anyhow::Result;
 use sqlite::Connection;
 use std::cell::RefCell;
+use std::time::{Duration, Instant};
 
 pub(crate) struct Coordinator {
     /// In-memory SQLite database.
@@ -14,11 +15,15 @@ pub(crate) struct Coordinator {
 
 struct Transaction {
     owner: NodeId,
+    last_action_at: Instant,
 }
 
 impl Transaction {
     fn new(endpoint: NodeId) -> Self {
-        Self { owner: endpoint }
+        Self {
+            owner: endpoint,
+            last_action_at: Instant::now(),
+        }
     }
 }
 
@@ -30,12 +35,22 @@ impl Coordinator {
     }
 
     pub fn on_execute(&self, endpoint: NodeId, stmt: String) -> Result<Message> {
-        if let Some(tx) = &*self.tx.borrow() {
-            if tx.owner != endpoint {
-                return Ok(Message::Error(
-                    ErrorCode::TxBusy,
-                    "Transaction in progress.".to_string(),
-                ));
+        {
+            let mut tx = self.tx.borrow_mut();
+            if let Some(t) = &mut *tx {
+                if t.owner != endpoint {
+                    if Instant::now() - t.last_action_at >= Duration::from_millis(1000) {
+                        self.database.execute("ROLLBACK")?;
+                        *tx = None;
+                    } else {
+                        return Ok(Message::Error(
+                            ErrorCode::TxBusy,
+                            "Transaction in progress.".to_string(),
+                        ));
+                    }
+                } else {
+                    t.last_action_at = Instant::now();
+                }
             }
         }
         println!("{} => {}", endpoint, stmt);
