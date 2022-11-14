@@ -14,11 +14,11 @@ fn is_transaction_start(stmt: &str) -> bool {
     // TODO: Add support for Savepoints
     //       Savepoints are named transactions that can be nested.
     //       See https://www.sqlite.org/lang_savepoint.html
-    stmt.trim_start().starts_with("BEGIN")
+    stmt.trim_start().to_uppercase().starts_with("BEGIN")
 }
 
 fn is_transaction_end(stmt: &str) -> bool {
-    let stmt = stmt.trim_start();
+    let stmt = stmt.trim_start().to_uppercase();
     stmt.starts_with("COMMIT") || stmt.starts_with("END") || stmt.starts_with("ROLLBACK")
 }
 
@@ -81,16 +81,20 @@ mod tests {
             "BEGIN TRANSACTION",
             "BEGIN DEFERRED TRANSACTION",
             "BEGIN IMMEDIATE TRANSACTION",
-            "BEGIN EXCLUSIVE TRANSACTION"
+            "BEGIN EXCLUSIVE TRANSACTION",
+            "begin",
         )]
         tx_start_stmt: &str,
         #[values(
             "COMMIT",
             "COMMIT TRANSACTION",
+            "commit",
             "END",
             "END TRANSACTION",
+            "end",
             "ROLLBACK",
             "ROLLBACK TRANSACTION",
+            "rollback",
         // TODO: add back when we support SAVEPOINTS
         //       See https://www.sqlite.org/lang_savepoint.html
         //    "ROLLBACK TO savepoint_name",
