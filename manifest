@@ -1,5 +1,5 @@
-C Change\sthe\sfake_big_file\stest\scommand\sso\sthat\sit\sfails\sfor\sfiles\slarger\sthan\n2MB\son\sWindows,\sas\swe\shave\sobserved\sthat\sWindow10\swill\ssometimes\sbluescreen\nwhen\soperating\son\svery\slarge\ssparse\sfiles.
-D 2022-11-14T18:57:21.280
+C Previous\schange\sto\sthe\sfake_big_file\scommand\sin\sthe\stest\sharness\swas\snot\ncorrect.\s\sThis\sone\sshould\sfix\sthe\sproblem.
+D 2022-11-14T19:42:01.427
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -648,7 +648,7 @@ F src/status.c 160c445d7d28c984a0eae38c144f6419311ed3eace59b44ac6dafc20db4af749
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
 F src/tclsqlite.c 4e64ba300a5a26e0f1170e09032429faeb65e45e8f3d1a7833e8edb69fc2979e
 F src/test1.c 40c9a40975512985762f87b83d0c63e4904833a9fe78cbcca664a37095301b1d
-F src/test2.c 81156697ce4b6f055775f861dba082a38293a09163aed0ac71331549ebdcc457
+F src/test2.c 827446e259a3b7ab949da1542953edda7b5117982576d3e6f1c24a0dd20a5cef
 F src/test3.c 61798bb0d38b915067a8c8e03f5a534b431181f802659a6616f9b4ff7d872644
 F src/test4.c 4533b76419e7feb41b40582554663ed3cd77aaa54e135cf76b3205098cd6e664
 F src/test5.c 328aae2c010c57a9829d255dc099d6899311672d
@@ -2055,8 +2055,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fa68dd8928c76888d535e649794743eeefd3abe0f909792a128955710bfc948a
-R 81dc75decf21b6c20ce21839364a49f7
+P d39ffd2abadcc85c46ba17612f9f575005b4818e18bf39362b8ee574837cfad9
+R 05517d79d8355d06966e47ba4dd15a19
 U drh
-Z 7fd5d288edd0a6561b6b880883bae564
+Z cb6873ce8d7b026932013ce6ae9355d2
 # Remove this line to create a well-formed Fossil manifest.
