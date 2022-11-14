@@ -1,5 +1,5 @@
-use crate::types::NodeId;
 use crate::messages::{ErrorCode, Message};
+use crate::types::NodeId;
 use anyhow::Result;
 use sqlite::Connection;
 use std::cell::RefCell;
