@@ -9,7 +9,17 @@ pub(crate) struct Coordinator {
     /// In-memory SQLite database.
     database: Connection,
     /// Current interactive transaction owner; if one exists.
-    tx: RefCell<Option<NodeId>>,
+    tx: RefCell<Option<Transaction>>,
+}
+
+struct Transaction {
+    owner: NodeId,
+}
+
+impl Transaction {
+    fn new(endpoint: NodeId) -> Self {
+        Self { owner: endpoint }
+    }
 }
 
 impl Coordinator {
@@ -20,8 +30,8 @@ impl Coordinator {
     }
 
     pub fn on_execute(&self, endpoint: NodeId, stmt: String) -> Result<Message> {
-        if let Some(tx_owner) = &*self.tx.borrow() {
-            if *tx_owner != endpoint {
+        if let Some(tx) = &*self.tx.borrow() {
+            if tx.owner != endpoint {
                 return Ok(Message::Error(
                     ErrorCode::TxBusy,
                     "Transaction in progress.".to_string(),
@@ -30,7 +40,7 @@ impl Coordinator {
         }
         println!("{} => {}", endpoint, stmt);
         if sql_parser::is_transaction_start(&stmt) {
-            self.tx.replace(Some(endpoint));
+            self.tx.replace(Some(Transaction::new(endpoint)));
         }
         let mut rows = vec![];
         let result = self.database.iterate(stmt.clone(), |pairs| {
@@ -50,9 +60,11 @@ impl Coordinator {
 
     pub fn on_disconnect(&self, endpoint: NodeId) -> Result<()> {
         let mut tx = self.tx.borrow_mut();
-        if *tx == Some(endpoint) {
-            self.database.execute("ROLLBACK")?;
-            *tx = None;
+        if let Some(t) = &*tx {
+            if t.owner == endpoint {
+                self.database.execute("ROLLBACK")?;
+                *tx = None;
+            }
         }
         Ok(())
     }
