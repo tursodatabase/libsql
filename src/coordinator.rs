@@ -1,3 +1,4 @@
+use crate::types::NodeId;
 use crate::messages::{ErrorCode, Message};
 use anyhow::Result;
 use sqlite::Connection;
@@ -7,7 +8,7 @@ pub(crate) struct Coordinator {
     /// In-memory SQLite database.
     database: Connection,
     /// Current interactive transaction owner; if one exists.
-    tx: RefCell<Option<String>>,
+    tx: RefCell<Option<NodeId>>,
 }
 
 fn is_transaction_start(stmt: &str) -> bool {
@@ -29,7 +30,7 @@ impl Coordinator {
         Ok(Coordinator { database, tx })
     }
 
-    pub fn on_execute(&self, endpoint: String, stmt: String) -> Message {
+    pub fn on_execute(&self, endpoint: NodeId, stmt: String) -> Message {
         if let Some(tx_owner) = &*self.tx.borrow() {
             if *tx_owner != endpoint {
                 return Message::Error(ErrorCode::TxBusy, "Transaction in progress.".to_string());
@@ -55,7 +56,7 @@ impl Coordinator {
         }
     }
 
-    pub fn on_disconnect(&self, endpoint: String) -> Result<()> {
+    pub fn on_disconnect(&self, endpoint: NodeId) -> Result<()> {
         let mut tx = self.tx.borrow_mut();
         if *tx == Some(endpoint) {
             self.database.execute("ROLLBACK")?;
