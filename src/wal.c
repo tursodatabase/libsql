@@ -4209,4 +4209,12 @@ int libsql_wal_methods_unregister(libsql_wal_methods *pWalMethods) {
   return SQLITE_OK;
 }
 
+libsql_wal_methods *libsql_wal_methods_next(libsql_wal_methods *w) {
+  return w->pNext;
+}
+
+const char *libsql_wal_methods_name(libsql_wal_methods *w) {
+  return w->zName;
+}
+
 #endif /* #ifndef SQLITE_OMIT_WAL */

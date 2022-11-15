@@ -214,6 +214,9 @@ u32 sqlite3PagerDataVersion(Pager*);
 int sqlite3PagerMemUsed(Pager*);
 const char *sqlite3PagerFilename(const Pager*, int);
 sqlite3_vfs *sqlite3PagerVfs(Pager*);
+#ifndef SQLITE_OMIT_WAL
+libsql_wal_methods *sqlite3PagerWalMethods(Pager*);
+#endif
 sqlite3_file *sqlite3PagerFile(Pager*);
 sqlite3_file *sqlite3PagerJrnlFile(Pager*);
 const char *sqlite3PagerJournalname(Pager*);

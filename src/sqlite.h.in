@@ -1012,6 +1012,13 @@ struct sqlite3_io_methods {
 ** ^When there are multiple VFS shims in the stack, this opcode finds the
 ** upper-most shim only.
 **
+** <li>[[SQLITE_FCNTL_WAL_METHODS_POINTER]]
+** ^The [SQLITE_FCNTL_WAL_METHODS_POINTER] opcode finds a pointer to the top-level
+** WAL methods currently in use.  ^(The argument X in
+** sqlite3_file_control(db,SQLITE_FCNTL_WAL_METHODS_POINTER,X) must be
+** of type "[libsql_wal_methods] **".  This opcodes will set *X
+** to a pointer to the top-level WAL methods.)^
+**
 ** <li>[[SQLITE_FCNTL_PRAGMA]]
 ** ^Whenever a [PRAGMA] statement is parsed, an [SQLITE_FCNTL_PRAGMA] 
 ** file control is sent to the open [sqlite3_file] object corresponding
@@ -1248,6 +1255,9 @@ struct sqlite3_io_methods {
 #define SQLITE_FCNTL_EXTERNAL_READER        40
 #define SQLITE_FCNTL_CKSM_FILE              41
 #define SQLITE_FCNTL_RESET_CACHE            42
+
+// libSQL extension
+#define SQLITE_FCNTL_WAL_METHODS_POINTER   129
 
 /* deprecated names */
 #define SQLITE_GET_LOCKPROXYFILE      SQLITE_FCNTL_GET_LOCKPROXYFILE
@@ -7750,6 +7760,9 @@ typedef struct libsql_wal_methods libsql_wal_methods;
 libsql_wal_methods *libsql_wal_methods_find(const char *zName);
 int libsql_wal_methods_register(libsql_wal_methods*);
 int libsql_wal_methods_unregister(libsql_wal_methods*);
+
+libsql_wal_methods *libsql_wal_methods_next(libsql_wal_methods *w);
+const char *libsql_wal_methods_name(libsql_wal_methods *w);
 
 /*
 ** CAPI3REF: Mutexes
