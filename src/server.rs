@@ -1,27 +1,28 @@
-use crate::coordinator::Coordinator;
-use crate::messages::ErrorCode;
-use crate::messages::Message;
-use anyhow::Result;
-use message_io::network::{NetEvent, Transport};
-use message_io::node::{self};
+use std::net::ToSocketAddrs;
 
-pub(crate) fn start() -> Result<()> {
-    let (handler, node_listener) = node::split::<()>();
-    let listen_addr = "127.0.0.1:5000";
+use anyhow::Result;
+use crossbeam::channel::Sender;
+use message_io::network::{NetEvent, Transport};
+use message_io::node;
+
+use crate::messages::Message;
+use crate::scheduler::{Action, ServerMessage};
+use crate::statements::Statements;
+
+pub fn start(
+    listen_addr: impl ToSocketAddrs,
+    scheduler_sender: Sender<ServerMessage>,
+) -> Result<()> {
+    let (handler, listener) = node::split::<()>();
     handler
         .network()
-        .listen(Transport::FramedTcp, listen_addr)?;
-    let handler_copy = handler.clone();
-    let coordinator = Coordinator::start(Box::new(move |endpoint| {
-        let data = bincode::serialize(&Message::Error(
-            ErrorCode::TxTimeout,
-            "Transaction timeouted due to too long inactivity".to_string(),
-        ))
-        .unwrap();
-        handler_copy.network().send(*endpoint, &data);
-    }))?;
-    println!("ChiselEdge server running at {}", listen_addr);
-    node_listener.for_each(move |event| match event.network() {
+        .listen(Transport::FramedTcp, &listen_addr)?;
+
+    println!(
+        "ChiselEdge server running at {:?}",
+        listen_addr.to_socket_addrs()?.next()
+    );
+    listener.for_each(move |event| match event.network() {
         NetEvent::Connected(_, _) => unreachable!(),
         NetEvent::Accepted(_, _) => (),
         NetEvent::Message(endpoint, input_data) => {
@@ -29,9 +30,14 @@ pub(crate) fn start() -> Result<()> {
             match message {
                 Message::Execute(stmt) => {
                     println!(">> {}", stmt);
-                    let message = coordinator.on_execute(endpoint, stmt).unwrap();
-                    let output_data = bincode::serialize(&message).unwrap();
-                    handler.network().send(endpoint, &output_data);
+                    scheduler_sender
+                        .send(ServerMessage {
+                            endpoint,
+                            handler: handler.clone(),
+                            // TODO: handle parse error
+                            action: Action::Execute(Statements::parse(stmt).unwrap()),
+                        })
+                        .unwrap();
                 }
                 _ => {
                     todo!();
@@ -39,8 +45,15 @@ pub(crate) fn start() -> Result<()> {
             }
         }
         NetEvent::Disconnected(endpoint) => {
-            coordinator.on_disconnect(endpoint).unwrap();
+            scheduler_sender
+                .send(ServerMessage {
+                    endpoint,
+                    handler: handler.clone(),
+                    action: Action::Disconnect,
+                })
+                .unwrap();
         }
     });
+
     Ok(())
 }
