@@ -780,6 +780,9 @@ mptest:	mptester$(TEXE)
 libwblibsql.so:	$(TOP)/src/rust/wasmtime-bindings/src/lib.rs
 	( mkdir -p .libs && cd $(TOP)/src/rust/wasmtime-bindings/ && cargo build --release && cp target/release/libwblibsql.so $(TOP)/.libs/ )
 
+libwblibsql.a:	$(TOP)/src/rust/wasmtime-bindings/src/lib.rs
+	( mkdir -p .libs && cd $(TOP)/src/rust/wasmtime-bindings/ && cargo build --release && cp target/release/libwblibsql.a $(TOP)/.libs/ )
+
 sqlite3.c:	.target_source $(TOP)/tool/mksqlite3c.tcl @OPT_WASM_RUNTIME_LIB@
 	$(TCLSH_CMD) $(TOP)/tool/mksqlite3c.tcl $(AMALGAMATION_LINE_MACROS)
 	cp tsrc/sqlite3ext.h .
