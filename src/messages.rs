@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 pub enum ErrorCode {
     SQLError,
     TxBusy,
+    TxTimeout,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
