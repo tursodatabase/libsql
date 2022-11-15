@@ -7050,6 +7050,15 @@ sqlite3_vfs *sqlite3PagerVfs(Pager *pPager){
   return pPager->pVfs;
 }
 
+#ifndef SQLITE_OMIT_WAL
+/*
+** Return the WAL methods structure for the pager.
+*/
+libsql_wal_methods *sqlite3PagerWalMethods(Pager *pPager){
+  return pPager->pWalMethods;
+}
+#endif
+
 /*
 ** Return the file handle for the database file associated
 ** with the pager.  This might return NULL if the file has

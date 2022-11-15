@@ -3975,6 +3975,11 @@ int sqlite3_file_control(sqlite3 *db, const char *zDbName, int op, void *pArg){
     }else if( op==SQLITE_FCNTL_DATA_VERSION ){
       *(unsigned int*)pArg = sqlite3PagerDataVersion(pPager);
       rc = SQLITE_OK;
+#ifndef SQLITE_OMIT_WAL
+    }else if( op==SQLITE_FCNTL_WAL_METHODS_POINTER ){
+      *(libsql_wal_methods**)pArg = sqlite3PagerWalMethods(pPager);
+      rc = SQLITE_OK;
+#endif
     }else if( op==SQLITE_FCNTL_RESERVE_BYTES ){
       int iNew = *(int*)pArg;
       *(int*)pArg = sqlite3BtreeGetRequestedReserve(pBtree);
