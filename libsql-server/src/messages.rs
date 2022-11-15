@@ -13,3 +13,9 @@ pub enum Message {
     ResultSet(Vec<String>),
     Error(ErrorCode, String),
 }
+
+impl Message {
+    pub fn is_err(&self) -> bool {
+        matches!(self, Self::Error(_, _))
+    }
+}
