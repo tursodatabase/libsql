@@ -1,4 +1,5 @@
 use crate::coordinator::Coordinator;
+use crate::messages::ErrorCode;
 use crate::messages::Message;
 use anyhow::Result;
 use message_io::network::{NetEvent, Transport};
@@ -10,7 +11,15 @@ pub(crate) fn start() -> Result<()> {
     handler
         .network()
         .listen(Transport::FramedTcp, listen_addr)?;
-    let coordinator = Coordinator::start()?;
+    let handler_copy = handler.clone();
+    let coordinator = Coordinator::start(Box::new(move |endpoint| {
+        let data = bincode::serialize(&Message::Error(
+            ErrorCode::TxTimeout,
+            "Transaction timeouted due to too long inactivity".to_string(),
+        ))
+        .unwrap();
+        handler_copy.network().send(*endpoint, &data);
+    }))?;
     println!("ChiselEdge server running at {}", listen_addr);
     node_listener.for_each(move |event| match event.network() {
         NetEvent::Connected(_, _) => unreachable!(),
@@ -20,7 +29,7 @@ pub(crate) fn start() -> Result<()> {
             match message {
                 Message::Execute(stmt) => {
                     println!(">> {}", stmt);
-                    let message = coordinator.on_execute(endpoint.to_string(), stmt);
+                    let message = coordinator.on_execute(endpoint, stmt).unwrap();
                     let output_data = bincode::serialize(&message).unwrap();
                     handler.network().send(endpoint, &output_data);
                 }
@@ -30,7 +39,7 @@ pub(crate) fn start() -> Result<()> {
             }
         }
         NetEvent::Disconnected(endpoint) => {
-            coordinator.on_disconnect(endpoint.to_string()).unwrap();
+            coordinator.on_disconnect(endpoint).unwrap();
         }
     });
     Ok(())
