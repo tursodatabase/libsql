@@ -937,6 +937,7 @@ enable_load_extension
 enable_math
 enable_json
 enable_wasm_runtime
+enable_wasm_runtime_dynamic
 enable_all
 enable_memsys5
 enable_memsys3
@@ -1601,6 +1602,9 @@ Optional Features:
   --disable-math          Disable math functions
   --disable-json          Disable JSON functions
   --enable-wasm-runtime   Enable WebAssembly runtime integration
+  --enable-wasm-runtime-dynamic
+                          Enable WebAssembly runtime integration (dynamic
+                          linking)
   --enable-all            Enable FTS4, FTS5, Geopoly, RTree, Sessions
   --enable-memsys5        Enable MEMSYS5
   --enable-memsys3        Enable MEMSYS3
@@ -4463,13 +4467,13 @@ then :
 else $as_nop
   lt_cv_nm_interface="BSD nm"
   echo "int some_variable = 0;" > conftest.$ac_ext
-  (eval echo "\"\$as_me:4466: $ac_compile\"" >&5)
+  (eval echo "\"\$as_me:4470: $ac_compile\"" >&5)
   (eval "$ac_compile" 2>conftest.err)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:4469: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
+  (eval echo "\"\$as_me:4473: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
   (eval "$NM \"conftest.$ac_objext\"" 2>conftest.err > conftest.out)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:4472: output\"" >&5)
+  (eval echo "\"\$as_me:4476: output\"" >&5)
   cat conftest.out >&5
   if $GREP 'External.*some_variable' conftest.out > /dev/null; then
     lt_cv_nm_interface="MS dumpbin"
@@ -5720,7 +5724,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 5723 "configure"' > conftest.$ac_ext
+  echo '#line 5727 "configure"' > conftest.$ac_ext
   if { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_compile\""; } >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -7063,11 +7067,11 @@ else $as_nop
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7066: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7070: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:7070: \$? = $ac_status" >&5
+   echo "$as_me:7074: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -7403,11 +7407,11 @@ else $as_nop
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7406: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7410: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:7410: \$? = $ac_status" >&5
+   echo "$as_me:7414: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -7510,11 +7514,11 @@ else $as_nop
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7513: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7517: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:7517: \$? = $ac_status" >&5
+   echo "$as_me:7521: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -7566,11 +7570,11 @@ else $as_nop
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7569: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7573: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:7573: \$? = $ac_status" >&5
+   echo "$as_me:7577: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -9954,7 +9958,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 9957 "configure"
+#line 9961 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -10051,7 +10055,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 10054 "configure"
+#line 10058 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -12060,9 +12064,15 @@ then :
   enableval=$enable_wasm_runtime;
 fi
 
+# Check whether --enable-wasm_runtime_dynamic was given.
+if test ${enable_wasm_runtime_dynamic+y}
+then :
+  enableval=$enable_wasm_runtime_dynamic;
+fi
+
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether to support WebAssembly integration" >&5
 printf %s "checking whether to support WebAssembly integration... " >&6; }
-if test "$enable_wasm_runtime" = "yes"; then
+if test "$enable_wasm_runtime" = "yes" -o "$enable_wasm_runtime_dynamic" = "yes"; then
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
   OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DLIBSQL_ENABLE_WASM_RUNTIME"
@@ -12108,8 +12118,13 @@ printf "%s\n" "no" >&6; }
 fi
 
 
-  TARGET_OPT_WASM_RUNTIME_LINK='-L$(TOP)/.libs -lwblibsql'
-  OPT_WASM_RUNTIME_LIB="libwblibsql.so"
+  if test "$enable_wasm_runtime" = "yes"; then
+    TARGET_OPT_WASM_RUNTIME_LINK='$(TOP)/.libs/libwblibsql.a'
+    OPT_WASM_RUNTIME_LIB="libwblibsql.a"
+  else
+    TARGET_OPT_WASM_RUNTIME_LINK='-L$(TOP)/.libs/ -lwblibsql'
+    OPT_WASM_RUNTIME_LIB="libwblibsql.so"
+  fi
 else
   TARGET_OPT_WASM_RUNTIME_LINK=""
   OPT_WASM_RUNTIME_LIB=""
