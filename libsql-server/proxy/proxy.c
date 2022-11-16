@@ -1,7 +1,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-typedef void sqlite3;
+typedef struct sqlite3 {
+} sqlite3;
+
+static struct sqlite3 *sqlite3_new(void)
+{
+	return malloc(sizeof(struct sqlite3));
+}
+
+#define TRACE() printf("TRACE %s\n", __func__)
 
 #define STUB(func_name)					\
 	int func_name(void)				\
@@ -94,6 +102,34 @@ const char *sqlite3_errstr(int)
 int sqlite3_error_offset(sqlite3 *db)
 {
 	printf("STUB %s\n", __func__);
+	return 0;
+}
+
+/*
+ * Opening a database connection.
+ */
+
+int sqlite3_open(const char *filename, sqlite3 **ppDb)
+{
+	TRACE();
+	struct sqlite3 *db = sqlite3_new();
+	*ppDb = db;
+	return 0;
+}
+
+int sqlite3_open16(const void *filename, sqlite3 **ppDb)
+{
+	TRACE();
+	struct sqlite3 *db = sqlite3_new();
+	*ppDb = db;
+	return 0;
+}
+
+int sqlite3_open_v2(const char *filename, sqlite3 **ppDb, int flags, const char *zVfs)
+{
+	TRACE();
+	struct sqlite3 *db = sqlite3_new();
+	*ppDb = db;
 	return 0;
 }
 
@@ -237,9 +273,6 @@ STUB(sqlite3_mutex_notheld);
 STUB(sqlite3_mutex_try);
 STUB(sqlite3_next_stmt);
 STUB(sqlite3_normalized_sql);
-STUB(sqlite3_open);
-STUB(sqlite3_open16);
-STUB(sqlite3_open_v2);
 STUB(sqlite3_overload_function);
 STUB(sqlite3_prepare);
 STUB(sqlite3_prepare16);
