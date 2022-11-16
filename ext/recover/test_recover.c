@@ -18,6 +18,8 @@
 #include <tcl.h>
 #include <assert.h>
 
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+
 typedef struct TestRecover TestRecover;
 struct TestRecover {
   sqlite3_recover *p;
@@ -284,9 +286,10 @@ static int test_sqlite3_dbdata_init(
   return TCL_OK;
 }
 
-
+#endif /* SQLITE_OMIT_VIRTUALTABLE */
 
 int TestRecover_Init(Tcl_Interp *interp){
+#ifndef SQLITE_OMIT_VIRTUALTABLE
   struct Cmd {
     const char *zCmd;
     Tcl_ObjCmdProc *xProc;
@@ -302,7 +305,7 @@ int TestRecover_Init(Tcl_Interp *interp){
     struct Cmd *p = &aCmd[i];
     Tcl_CreateObjCommand(interp, p->zCmd, p->xProc, p->pArg, 0);
   }
-
+#endif
   return TCL_OK;
 }
 

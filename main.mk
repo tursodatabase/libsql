@@ -390,7 +390,10 @@ TESTSRC += \
   $(TOP)/ext/fts5/fts5_tcl.c \
   $(TOP)/ext/fts5/fts5_test_mi.c \
   $(TOP)/ext/fts5/fts5_test_tok.c \
-  $(TOP)/ext/rtree/test_rtreedoc.c
+  $(TOP)/ext/rtree/test_rtreedoc.c \
+  $(TOP)/ext/recover/sqlite3recover.c \
+  $(TOP)/ext/recover/dbdata.c \
+  $(TOP)/ext/recover/test_recover.c
 
 
 #TESTSRC += $(TOP)/ext/fts2/fts2_tokenizer.c
@@ -446,9 +449,6 @@ TESTSRC2 = \
   $(TOP)/ext/misc/stmt.c \
   $(TOP)/ext/session/sqlite3session.c \
   $(TOP)/ext/session/test_session.c \
-  $(TOP)/ext/recover/sqlite3recover.c \
-  $(TOP)/ext/recover/dbdata.c \
-  $(TOP)/ext/recover/test_recover.c \
   fts5.c
 
 # Header files used by all library source files.

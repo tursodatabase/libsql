@@ -34,11 +34,11 @@ set in [open $topdir/src/shell.c.in]
 fconfigure $in -translation binary
 proc omit_redundant_typedefs {line} {
   global typedef_seen
-  if {[regexp {^typedef .*;} $line]} {
-    if {[info exists typedef_seen($line)]} {
-      return "/* $line */"
+  if {[regexp {^typedef .*\y([a-zA-Z0-9_]+);} $line all typename]} {
+    if {[info exists typedef_seen($typename)]} {
+      return "/* [string map {/* // */ //} $line] */"
     }
-    set typedef_seen($line) 1
+    set typedef_seen($typename) 1
   }
   return $line
 }

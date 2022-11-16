@@ -476,7 +476,7 @@ proc generate_main_page {{extra {}}} {
   generate_select_widget Test control_test $lOpt $G(test)
 
   # Build the "jobs" select widget. Options are 1 to 8.
-  generate_select_widget Jobs control_jobs {1 2 3 4 5 6 7 8} $G(jobs)
+  generate_select_widget Jobs control_jobs {1 2 3 4 5 6 7 8 12 16} $G(jobs)
 
   switch $G(state) {
     config {

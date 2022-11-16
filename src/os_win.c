@@ -4725,9 +4725,10 @@ static int winMakeEndInDirSep(int nBuf, char *zBuf){
 }
 
 /*
-** If sqlite3_temp_directory is not, take the mutex and return true.
+** If sqlite3_temp_directory is defined, take the mutex and return true.
 **
-** If sqlite3_temp_directory is NULL, omit the mutex and return false.
+** If sqlite3_temp_directory is NULL (undefined), omit the mutex and
+** return false.
 */
 static int winTempDirDefined(void){
   sqlite3_mutex_enter(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_TEMPDIR));

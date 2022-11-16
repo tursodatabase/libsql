@@ -24,11 +24,10 @@ source $testdir/malloc_common.tcl
 # result of IN is false and the result of NOT IN is true, regardless of
 # the left operand and even if the left operand is NULL.
 #
-# EVIDENCE-OF: R-13595-45863 Note that SQLite allows the parenthesized
+# EVIDENCE-OF: R-64309-54027 Note that SQLite allows the parenthesized
 # list of scalar values on the right-hand side of an IN or NOT IN
-# operator to be an empty list but most other SQL database database
-# engines and the SQL92 standard require the list to contain at least
-# one element.
+# operator to be an empty list but most other SQL database engines and
+# the SQL92 standard require the list to contain at least one element.
 #
 do_execsql_test tkt-80e031a00f.1 {SELECT 1 IN ()} 0
 do_execsql_test tkt-80e031a00f.1b {SELECT 1 IN (2)} 0

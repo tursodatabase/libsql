@@ -51,8 +51,8 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     });
   }
 
-  if(1){/* Convert Arrays and certain TypedArrays to strings for
-           'flexible-string'-type arguments */
+  {/* Convert Arrays and certain TypedArrays to strings for
+      'flexible-string'-type arguments */
     const xString = wasm.xWrap.argAdapter('string');
     wasm.xWrap.argAdapter(
       'flexible-string', (v)=>xString(util.flexibleString(v))
@@ -141,7 +141,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   const __dbArgcMismatch = (pDb,f,n)=>{
     return sqlite3.util.sqlite3_wasm_db_error(pDb, capi.SQLITE_MISUSE,
                                               f+"() requires "+n+" argument"+
-                                              (1===n?'':'s')+".");
+                                              (1===n?"":'s')+".");
   };
 
   /**
@@ -158,7 +158,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       n = v.byteLength;
       v = util.typedArrayToString(v);
     }else if(Array.isArray(v)){
-      v = v.join('');
+      v = v.join("");
       n = -1;
     }
     return [v, n];
@@ -634,7 +634,13 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       const kvvfsStorage = (zClass)=>
             ((115/*=='s'*/===wasm.getMemValue(zClass))
              ? sessionStorage : localStorage);
-      
+
+      /**
+         Implementations for members of the object referred to by
+         sqlite3_wasm_kvvfs_methods(). We swap out the native
+         implementations with these, which use localStorage or
+         sessionStorage for their backing store.
+      */
       const kvvfsImpls = {
         xRead: (zClass, zKey, zBuf, nBuf)=>{
           const stack = pstack.pointer,
@@ -696,7 +702,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           }
         }
       }/*kvvfsImpls*/;
-      for(let k of Object.keys(kvvfsImpls)){
+      for(const k of Object.keys(kvvfsImpls)){
         kvvfsMethods[kvvfsMethods.memberKey(k)] =
           wasm.installFunction(
             kvvfsMethods.memberSignature(k),

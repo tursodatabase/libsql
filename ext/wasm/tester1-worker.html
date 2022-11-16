@@ -14,7 +14,7 @@
     </style>
   </head>
   <body>
-    <h1>sqlite3 WASM/JS tester #1 (Worker thread)</h1>
+    <h1 id='color-target'>sqlite3 WASM/JS tester #1 (Worker thread)</h1>
     <div>See <a href='tester1.html' target='tester1.html'>tester1.html</a>
       for the UI-thread variant.</div>
     <div class='input-wrapper'>
@@ -45,6 +45,14 @@
         switch(data.type){
             case 'log':
               logHtml(data.payload.cssClass, ...data.payload.args);
+              break;
+            case 'error':
+              logHtml('error', ...data.payload.args);
+              break;
+            case 'test-result':
+              document.querySelector('#color-target').classList.add(
+                data.payload.pass ? 'tests-pass' : 'tests-fail'
+              );
               break;
             default:
               logHtml('error',"Unhandled message:",data.type);

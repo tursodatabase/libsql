@@ -17,6 +17,8 @@
 #include <assert.h>
 #include <string.h>
 
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+
 /*
 ** Declaration for public API function in file dbdata.c. This may be called
 ** with NULL as the final two arguments to register the sqlite_dbptr and
@@ -280,10 +282,16 @@ static RecoverGlobal recover_g;
 */
 #define RECOVER_ROWID_DEFAULT 1
 
+/*
+** Mutex handling:
+**
+**    recoverEnterMutex()       -   Enter the recovery mutex
+**    recoverLeaveMutex()       -   Leave the recovery mutex
+**    recoverAssertMutexHeld()  -   Assert that the recovery mutex is held
+*/
 #if defined(SQLITE_THREADSAFE) && SQLITE_THREADSAFE==0
 # define recoverEnterMutex()
 # define recoverLeaveMutex()
-# define recoverAssertMutexHeld()
 #else
 static void recoverEnterMutex(void){
   sqlite3_mutex_enter(sqlite3_mutex_alloc(RECOVER_MUTEX_ID));
@@ -291,9 +299,13 @@ static void recoverEnterMutex(void){
 static void recoverLeaveMutex(void){
   sqlite3_mutex_leave(sqlite3_mutex_alloc(RECOVER_MUTEX_ID));
 }
+#endif
+#if SQLITE_THREADSAFE+0>=1 && defined(SQLITE_DEBUG)
 static void recoverAssertMutexHeld(void){
   assert( sqlite3_mutex_held(sqlite3_mutex_alloc(RECOVER_MUTEX_ID)) );
 }
+#else
+# define recoverAssertMutexHeld()
 #endif
 
 
@@ -301,11 +313,8 @@ static void recoverAssertMutexHeld(void){
 ** Like strlen(). But handles NULL pointer arguments.
 */
 static int recoverStrlen(const char *zStr){
-  int nRet = 0;
-  if( zStr ){
-    while( zStr[nRet] ) nRet++;
-  }
-  return nRet;
+  if( zStr==0 ) return 0;
+  return (int)(strlen(zStr)&0x7fffffff);
 }
 
 /*
@@ -693,9 +702,11 @@ static void recoverGetPage(
     if( pStmt ){
       sqlite3_bind_int64(pStmt, 1, pgno);
       if( SQLITE_ROW==sqlite3_step(pStmt) ){
+        const u8 *aPg;
+        int nPg;
         assert( p->errCode==SQLITE_OK );
-        const u8 *aPg = sqlite3_column_blob(pStmt, 0);
-        int nPg = sqlite3_column_bytes(pStmt, 0);
+        aPg = sqlite3_column_blob(pStmt, 0);
+        nPg = sqlite3_column_bytes(pStmt, 0);
         if( pgno==1 && nPg==p->pgsz && 0==memcmp(p->pPage1Cache, aPg, nPg) ){
           aPg = p->pPage1Disk;
         }
@@ -2008,7 +2019,10 @@ static void recoverFinalCleanup(sqlite3_recover *p){
   p->pGetPage = 0;
 
   {
-    int res = sqlite3_close(p->dbOut);
+#ifndef NDEBUG
+    int res = 
+#endif
+       sqlite3_close(p->dbOut);
     assert( res==SQLITE_OK );
   }
   p->dbOut = 0;
@@ -2161,6 +2175,8 @@ static int recoverVfsShmMap(sqlite3_file*, int, int, int, void volatile**);
 static int recoverVfsShmLock(sqlite3_file*, int offset, int n, int flags);
 static void recoverVfsShmBarrier(sqlite3_file*);
 static int recoverVfsShmUnmap(sqlite3_file*, int deleteFlag);
+static int recoverVfsFetch(sqlite3_file*, sqlite3_int64, int, void**);
+static int recoverVfsUnfetch(sqlite3_file *pFd, sqlite3_int64 iOff, void *p);
 
 static sqlite3_io_methods recover_methods = {
   2, /* iVersion */
@@ -2180,7 +2196,8 @@ static sqlite3_io_methods recover_methods = {
   recoverVfsShmLock,
   recoverVfsShmBarrier,
   recoverVfsShmUnmap,
-  0, 0
+  recoverVfsFetch,
+  recoverVfsUnfetch
 };
 
 static int recoverVfsClose(sqlite3_file *pFd){
@@ -2486,6 +2503,19 @@ static int recoverVfsShmUnmap(sqlite3_file *pFd, int deleteFlag){
   );
 }
 
+static int recoverVfsFetch(
+  sqlite3_file *pFd, 
+  sqlite3_int64 iOff, 
+  int iAmt, 
+  void **pp
+){
+  *pp = 0;
+  return SQLITE_OK;
+}
+static int recoverVfsUnfetch(sqlite3_file *pFd, sqlite3_int64 iOff, void *p){
+  return SQLITE_OK;
+}
+
 /*
 ** Install the VFS wrapper around the file-descriptor open on the input
 ** database for recover handle p. Mutex RECOVER_MUTEX_ID must be held
@@ -2512,8 +2542,8 @@ static void recoverInstallWrapper(sqlite3_recover *p){
 ** held when this function is called.
 */
 static void recoverUninstallWrapper(sqlite3_recover *p){
-  recoverAssertMutexHeld();
   sqlite3_file *pFd = 0;
+  recoverAssertMutexHeld();
   sqlite3_file_control(p->dbIn, p->zDb,SQLITE_FCNTL_FILE_POINTER,(void*)&pFd);
   if( pFd && pFd->pMethods ){
     pFd->pMethods = recover_g.pMethods;
@@ -2669,7 +2699,7 @@ sqlite3_recover *recoverInit(
     pRet->zDb = (char*)&pRet[1];
     pRet->zUri = &pRet->zDb[nDb+1];
     memcpy(pRet->zDb, zDb, nDb);
-    if( nUri>0 ) memcpy(pRet->zUri, zUri, nUri);
+    if( nUri>0 && zUri ) memcpy(pRet->zUri, zUri, nUri);
     pRet->xSql = xSql;
     pRet->pSqlCtx = pSqlCtx;
     pRet->bRecoverRowid = RECOVER_ROWID_DEFAULT;
@@ -2729,6 +2759,11 @@ int sqlite3_recover_config(sqlite3_recover *p, int op, void *pArg){
   }else{
     switch( op ){
       case 789:
+        /* This undocumented magic configuration option is used to set the
+        ** name of the auxiliary database that is ATTACH-ed to the database
+        ** connection and used to hold state information during the
+        ** recovery process.  This option is for debugging use only and
+        ** is subject to change or removal at any time. */
         sqlite3_free(p->zStateDb);
         p->zStateDb = recoverMPrintf(p, "%s", (char*)pArg);
         break;
@@ -2818,3 +2853,5 @@ int sqlite3_recover_finish(sqlite3_recover *p){
   }
   return rc;
 }
+
+#endif /* ifndef SQLITE_OMIT_VIRTUALTABLE */

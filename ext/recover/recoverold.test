@@ -11,16 +11,8 @@
 #
 #
 
-if {![info exists testdir]} {
-  set testdir [file join [file dirname [info script]] .. .. test]
-} 
 source [file join [file dirname [info script]] recover_common.tcl]
-source $testdir/tester.tcl
 set testprefix recoverold
-
-ifcapable !vtab {
-  finish_test; return
-}
 
 proc compare_result {db1 db2 sql} {
   set r1 [$db1 eval $sql]
@@ -71,7 +63,10 @@ proc do_recover_test {tn {tsql {}} {res {}}} {
   sqlite3 db2 test.db2
   db2 eval [join $::sqlhook ";"]
 
+
+  db cache flush
   if {$tsql==""} {
+  compare_dbs db db2
     uplevel [list do_test $tn.sql [list compare_dbs db db2] {}]
   } else {
     uplevel [list do_execsql_test -db db2 $tn.sql $tsql $res]
@@ -155,7 +150,6 @@ do_recover_test 2.4.1 {
   2 2 3 {} 8 9 7
 }
 
-breakpoint
 do_execsql_test 2.5 {
   CREATE TABLE x1(a, b, c);
   WITH s(i) AS (
@@ -173,17 +167,19 @@ do_recover_test 2.5.1 {
   2 2 3 {} 8 9 7
 }
 
-do_test 2.6 {
-  forcedelete test.db2
-  set R [sqlite3_recover_init db main test.db2]
-  $R config lostandfound lost_and_found
-  $R config freelistcorrupt 1
-  $R run
-  $R finish
-  sqlite3 db2 test.db2
-  execsql { SELECT count(*) FROM lost_and_found_1; } db2
-} {103}
-db2 close
+ifcapable !secure_delete {
+  do_test 2.6 {
+    forcedelete test.db2
+    set R [sqlite3_recover_init db main test.db2]
+    $R config lostandfound lost_and_found
+    $R config freelistcorrupt 1
+    $R run
+    $R finish
+    sqlite3 db2 test.db2
+    execsql { SELECT count(*) FROM lost_and_found_1; } db2
+  } {103}
+  db2 close
+}
 
 #-------------------------------------------------------------------------
 breakpoint

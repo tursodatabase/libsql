@@ -24,7 +24,14 @@ set testprefix bigsort
 # memory.  Make sure the host has at least 8GB available before running
 # this test.
 #
+# Update: https://sqlite.org/src/info/7c96a56 adds assert() statements
+# that make this test too slow to run with SQLITE_DEBUG builds.
+#
 if {[catch {exec free | grep Mem:} out] || [lindex $out 1]<8000000} {
+  finish_test
+  return
+}
+ifcapable debug {
   finish_test
   return
 }

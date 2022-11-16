@@ -331,9 +331,9 @@ struct sqlite3_api_routines {
   const char *(*filename_journal)(const char*);
   const char *(*filename_wal)(const char*);
   /* Version 3.32.0 and later */
-  char *(*create_filename)(const char*,const char*,const char*,
+  const char *(*create_filename)(const char*,const char*,const char*,
                            int,const char**);
-  void (*free_filename)(char*);
+  void (*free_filename)(const char*);
   sqlite3_file *(*database_file_object)(const char*);
   /* Version 3.34.0 and later */
   int (*txn_state)(sqlite3*,const char*);

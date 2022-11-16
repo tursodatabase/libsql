@@ -141,6 +141,8 @@ do_recover_test 3.0
 
 #-------------------------------------------------------------------------
 reset_db 
+execsql { PRAGMA secure_delete = 0 }
+execsql { PRAGMA auto_vacuum = 0 }
 do_execsql_test 4.0 {
   CREATE TABLE t1(a, b, c);
   CREATE TABLE t2(d, e, f);
