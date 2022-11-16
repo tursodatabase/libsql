@@ -110,7 +110,7 @@ emcc.WASM_BIGINT ?= 1
 sqlite3.c := $(dir.top)/sqlite3.c
 sqlite3.h := $(dir.top)/sqlite3.h
 SQLITE_OPT = \
-  -DSQLITE_ENABLE_FTS4 \
+  -DSQLITE_ENABLE_FTS5 \
   -DSQLITE_ENABLE_RTREE \
   -DSQLITE_ENABLE_EXPLAIN_COMMENTS \
   -DSQLITE_ENABLE_UNKNOWN_SQL_FUNCTION \
