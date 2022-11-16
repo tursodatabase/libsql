@@ -11,16 +11,8 @@
 #
 #
 
-if {![info exists testdir]} {
-  set testdir [file join [file dirname [info script]] .. .. test]
-} 
 source [file join [file dirname [info script]] recover_common.tcl]
-source $testdir/tester.tcl
 set testprefix recoversql
-
-ifcapable !vtab {
-  finish_test; return
-}
 
 do_execsql_test 1.0 {
   CREATE TABLE "x.1" (x, y);

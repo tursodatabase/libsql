@@ -4575,7 +4575,7 @@ int sqlite3VdbeRecordCompareWithSkip(
   assert( pPKey2->pKeyInfo->aSortFlags!=0 );
   assert( pPKey2->pKeyInfo->nKeyField>0 );
   assert( idx1<=szHdr1 || CORRUPT_DB );
-  do{
+  while( 1 /*exit-by-break*/ ){
     u32 serial_type;
 
     /* RHS is an integer */
@@ -4713,8 +4713,13 @@ int sqlite3VdbeRecordCompareWithSkip(
     if( i==pPKey2->nField ) break;
     pRhs++;
     d1 += sqlite3VdbeSerialTypeLen(serial_type);
+    if( d1>(unsigned)nKey1 ) break;
     idx1 += sqlite3VarintLen(serial_type);
-  }while( idx1<(unsigned)szHdr1 && d1<=(unsigned)nKey1 );
+    if( idx1>=(unsigned)szHdr1 ){
+      pPKey2->errCode = (u8)SQLITE_CORRUPT_BKPT;
+      return 0;  /* Corrupt index */
+    }
+  }
 
   /* No memory allocation is ever used on mem1.  Prove this using
   ** the following assert().  If the assert() fails, it indicates a

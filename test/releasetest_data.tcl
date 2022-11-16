@@ -51,6 +51,7 @@ array set ::Configs [strip_comments {
     -O2
     --disable-amalgamation --disable-shared
     --enable-session
+    -DSQLITE_ENABLE_RBU
   }
   "Sanitize" {
     CC=clang -fsanitize=address,undefined

@@ -904,15 +904,15 @@ do_test pragma-8.1.2 {
     PRAGMA schema_version;
   }
 } {schema_version 105}
-do_test pragma-8.1.3 {
-  execsql {
-    PRAGMA schema_version = 106;
-  }
-} {}
-do_test pragma-8.1.4 {
-  execsql {
-    PRAGMA schema_version;
-  }
+sqlite3_db_config db DEFENSIVE 1
+do_execsql_test pragma-8.1.3 {
+  PRAGMA schema_version = 106;
+  PRAGMA schema_version;
+} 105
+sqlite3_db_config db DEFENSIVE 0
+do_execsql_test pragma-8.1.4 {
+  PRAGMA schema_version = 106;
+  PRAGMA schema_version;
 } 106
 
 # Check that creating a table modifies the schema-version (this is really
