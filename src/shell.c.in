@@ -535,6 +535,7 @@ static void SQLITE_CDECL iotracePrintf(const char *zFormat, ...){
   z = sqlite3_vmprintf(zFormat, ap);
   va_end(ap);
   utf8_printf(iotrace, "%s", z);
+  fflush(iotrace);
   sqlite3_free(z);
 }
 #endif
