@@ -1,5 +1,5 @@
-C wasm\sbuild:\sinclude\sFTS5\sinstead\sof\sFTS4,\sper\s/chat\sand\sHN\sdiscussions.
-D 2022-11-16T21:39:23.062
+C Change\sa\sself.X\sJS\sreference\sto\sX\sto\saccount\sfor\sa\ssymbol\sresolution\sdiscrepancy\sbetween\svanilla\sJS\sand\sES6\smodules,\sas\sexplained\sin\s[forum:801d8f77e5115141|forum\spost\s801d8f77e5115141].
+D 2022-11-16T21:52:29.439
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -494,7 +494,7 @@ F ext/wasm/README.md ef39861aa21632fdbca0bdd469f78f0096f6449a720f3f39642594af503
 F ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-api 9120c2f8f51fa85f46dcf4dcb6b12f4a807d428f6089b99cdb08d8ddfcfd88b2
 F ext/wasm/api/EXPORTED_RUNTIME_METHODS.sqlite3-api 1ec3c73e7d66e95529c3c64ac3de2470b0e9e7fbf7a5b41261c367cf4f1b7287
 F ext/wasm/api/README.md 1350088aee90e959ad9a94fab1bb6bcb5e99d4d27f976db389050f54f2640c78
-F ext/wasm/api/extern-post-js.js f3dc4219a2a1f183d98452dcbd55a0c5351b759eccca75480a92473974d8b047
+F ext/wasm/api/extern-post-js.js c197b7567496fc27766842f8c4f4963054bf8c667926ab3df4c91aa548939ce6
 F ext/wasm/api/extern-pre-js.js cc61c09c7a24a07dbecb4c352453c3985170cec12b4e7e7e7a4d11d43c5c8f41
 F ext/wasm/api/post-js-footer.js cd0a8ec768501d9bd45d325ab0442037fb0e33d1f3b4f08902f15c34720ee4a1
 F ext/wasm/api/post-js-header.js d6ab3dfef4a06960d28a7eaa338d4e2a1a5981e9b38718168bbde8fdb2a439b8
@@ -2055,8 +2055,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5689f0d9ad1be532b274508938b25ff0d63027b8cc31f796dfaa2cca71d53642
-R 1644a92a7b62cf30dbc95dcea2edd9c6
+P 85c3f2ac5a887ba809f236c8c9d3837b2fdb578d4beae61bc78ada7ce03b58e2
+R 7b8987d4eb67ce150345834e9ef9546a
 U stephan
-Z a1a626093eb098d45fed407572cb36cb
+Z 50adbd5c6dbf458e11e189272fde1820
 # Remove this line to create a well-formed Fossil manifest.

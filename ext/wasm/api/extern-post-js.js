@@ -15,7 +15,10 @@
      impls which Emscripten installs at some point in the file above
      this.
   */
-  const originalInit = self.sqlite3InitModule;
+  const originalInit =
+        /*Maintenance reminde: DO NOT use `self.` here. It's correct
+          for non-ES6 Module cases but wrong for ES6 modules because those
+          resolve this symbol differently! */ sqlite3InitModule;
   if(!originalInit){
     throw new Error("Expecting self.sqlite3InitModule to be defined by the Emscripten build.");
   }
