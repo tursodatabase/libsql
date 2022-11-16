@@ -26,9 +26,9 @@ static struct sqlite3_stmt *sqlite3_stmt_new(void)
 	return malloc(sizeof(struct sqlite3_stmt));
 }
 
-static void sqlite3_stmt_delete(struct sqlite3_stmt *db)
+static void sqlite3_stmt_delete(struct sqlite3_stmt *stmt)
 {
-	free(db);
+	free(stmt);
 }
 
 #define STUB() printf("STUB %s\n", __func__)
