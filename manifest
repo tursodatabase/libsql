@@ -1,5 +1,5 @@
-C Previous\schange\sto\sthe\sfake_big_file\scommand\sin\sthe\stest\sharness\swas\snot\ncorrect.\s\sThis\sone\sshould\sfix\sthe\sproblem.
-D 2022-11-14T19:42:01.427
+C Version\s3.40.0
+D 2022-11-16T12:10:08.388
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -2055,8 +2055,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d39ffd2abadcc85c46ba17612f9f575005b4818e18bf39362b8ee574837cfad9
+P 6ee57a2e4e3399481100c40da0229d2d33cbe3290016185c8a60839d14b209f6
 R 05517d79d8355d06966e47ba4dd15a19
+T +sym-major-release *
+T +sym-release *
+T +sym-version-3.40.0 *
 U drh
-Z cb6873ce8d7b026932013ce6ae9355d2
+Z ec924bc422a55f57f049fa2ef8df3b06
 # Remove this line to create a well-formed Fossil manifest.
