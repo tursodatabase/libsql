@@ -806,6 +806,8 @@ test_suite "inmemory_journal" -description {
   # This test depends on a successful recovery from the pager error 
   # state. Which is not possible with an in-memory journal
   fts5fault1.test
+
+  recoverpgsz.test
 }]
 
 ifcapable mem3 {

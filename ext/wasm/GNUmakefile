@@ -103,7 +103,7 @@ dir.dout := $(dir.wasm)/jswasm
 # dir.tmp = output dir for intermediary build files, as opposed to
 # end-user deliverables.
 dir.tmp := $(dir.wasm)/bld
-#CLEAN_FILES += $(wildcard $(dir.dout)/*) $(wildcard $(dir.tmp)/*)
+CLEAN_FILES += $(dir.tmp)/* $(dir.dout)/*
 ifeq (,$(wildcard $(dir.dout)))
   dir._tmp := $(shell mkdir -p $(dir.dout))
 endif
@@ -424,7 +424,20 @@ emcc.jsflags += -sWASM_BIGINT=$(emcc.WASM_BIGINT)
 # debugging info, _huge_.
 ########################################################################
 
-sqlite3.js := $(dir.dout)/sqlite3.js
+########################################################################
+# AN EXPERIMENT: undocumented Emscripten feature: if the target file
+# extension is "mjs", it defaults to ES6 module builds:
+# https://github.com/emscripten-core/emscripten/issues/14383
+ifeq (,$(filter esm,$(MAKECMDGOALS)))
+sqlite3.js.ext := js
+else
+esm.deps := $(filter-out esm,$(MAKECMDGOALS))
+esm: $(if $(esm.deps),$(esm.deps),all)
+sqlite3.js.ext := mjs
+endif
+# /esm
+########################################################################
+sqlite3.js := $(dir.dout)/sqlite3.$(sqlite3.js.ext)
 sqlite3.wasm := $(dir.dout)/sqlite3.wasm
 sqlite3-wasm.c := $(dir.api)/sqlite3-wasm.c
 # sqlite3-wasm.o vs sqlite3-wasm.c: building against the latter
@@ -576,12 +589,14 @@ oz: clean
 
 include fiddle.make
 
-ifneq (,$(filter wasmfs,$(MAKECMDGOALS)))
-# wasmfs build disabled 2022-10-19 per /chat
-# discussion. OPFS-over-wasmfs was initially a stopgap measure and a
-# convenient point of comparison for the OPFS sqlite3_vfs's
-# performance, but it currently doubles our deliverables and build
-# maintenance burden for very little, if any, benefit.
+# Only add wasmfs if wasmfs.enable=1 or we're running (dist)clean
+wasmfs.enable ?= $(if $(filter %clean,$(MAKECMDGOALS)),1,0)
+ifeq (1,$(wasmfs.enable))
+# wasmfs build disabled 2022-10-19 per /chat discussion.
+# OPFS-over-wasmfs was initially a stopgap measure and a convenient
+# point of comparison for the OPFS sqlite3_vfs's performance, but it
+# currently doubles our deliverables and build maintenance burden for
+# little, if any, benefit.
 #
 ########################################################################
 # Some platforms do not support the WASMFS build. Raspberry Pi OS is one

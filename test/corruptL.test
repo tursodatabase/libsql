@@ -1479,13 +1479,26 @@ do_test 19.0 {
 do_execsql_test 19.1 {
   PRAGMA writable_schema=ON;
 }
-
-set err "UNIQUE constraint failed: index 'a'"
-ifcapable oversize_cell_check {
-  set err "database disk image is malformed"
-}
 do_catchsql_test 19.2 {
   UPDATE t1 SET a=1;
-} [list 1 $err]
+} {1 {database disk image is malformed}}
+
+reset_db
+do_execsql_test 19.3 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b TEXT, c INTEGER, d TEXT);
+  CREATE INDEX i1 ON t1((NULL));
+  INSERT INTO t1 VALUES(1, NULL, 1, 'text value');
+  PRAGMA writable_schema = on;
+  UPDATE sqlite_schema SET 
+      sql = 'CREATE INDEX i1 ON t1(b, c, d)', 
+      tbl_name = 't1', 
+      type='index' 
+  WHERE name='i1';
+}
+db close
+sqlite3 db test.db
+do_catchsql_test 19.4 {
+  PRAGMA integrity_check;
+} {1 {database disk image is malformed}}
 
 finish_test

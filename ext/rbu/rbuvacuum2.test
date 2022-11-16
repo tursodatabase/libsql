@@ -227,10 +227,11 @@ do_test 6.1 {
   rbu close
 } {SQLITE_OK}
 
-do_execsql_test 6.2 {
-  SELECT 1 FROM sqlite_master LIMIT 1;
-  PRAGMA wal_checkpoint;
-} {1 0 4 4}
+do_test 6.2 {
+  execsql { SELECT 1 FROM sqlite_master LIMIT 1 }
+  execsql { PRAGMA wal_checkpoint }
+  execsql { SELECT 1 FROM sqlite_master LIMIT 1 }
+} {1}
 
 do_test 6.3 {
   sqlite3rbu_vacuum rbu test.db test.db2

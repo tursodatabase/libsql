@@ -361,7 +361,7 @@ self.Jaccwabyt = function StructBinderFactory(config){
      framework's native format or in Emscripten format.
   */
   const __memberSignature = function f(obj,memberName,emscriptenFormat=false){
-    if(!f._) f._ = (x)=>x.replace(/[^vipPsjrd]/g,'').replace(/[pPs]/g,'i');
+    if(!f._) f._ = (x)=>x.replace(/[^vipPsjrd]/g,"").replace(/[pPs]/g,'i');
     const m = __lookupMember(obj.structInfo, memberName, true);
     return emscriptenFormat ? f._(m.signature) : m.signature;
   };

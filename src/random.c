@@ -31,10 +31,10 @@ static SQLITE_WSD struct sqlite3PrngType {
 /* The RFC-7539 ChaCha20 block function
 */
 #define ROTL(a,b) (((a) << (b)) | ((a) >> (32 - (b))))
-#define QR(a, b, c, d) (	\
-    a += b, d ^= a, d = ROTL(d,16),	\
-    c += d, b ^= c, b = ROTL(b,12),	\
-    a += b, d ^= a, d = ROTL(d, 8),	\
+#define QR(a, b, c, d) ( \
+    a += b, d ^= a, d = ROTL(d,16), \
+    c += d, b ^= c, b = ROTL(b,12), \
+    a += b, d ^= a, d = ROTL(d, 8), \
     c += d, b ^= c, b = ROTL(b, 7))
 static void chacha_block(u32 *out, const u32 *in){
   int i;

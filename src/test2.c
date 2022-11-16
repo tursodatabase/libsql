@@ -521,6 +521,14 @@ static int SQLITE_TCLAPI fake_big_file(
     return TCL_ERROR;
   }
   if( Tcl_GetInt(interp, argv[1], &n) ) return TCL_ERROR;
+#if defined(_WIN32)
+  if( n>2 ){
+    Tcl_AppendResult(interp, "cannot create ", argv[1],
+       "MB file because Windows "
+       "does not support sparse files", (void*)0);
+    return TCL_ERROR;
+  }
+#endif
 
   pVfs = sqlite3_vfs_find(0);
   nFile = (int)strlen(argv[2]);

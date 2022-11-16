@@ -229,16 +229,14 @@
       T.assert(1===ev.resultRows.length)
         .assert(2===ev.resultRows[0][0]);
     });
-    if(0){
-      // export requires reimpl. for portability reasons.
-      runOneTest('export',{}, function(ev){
-        ev = ev.result;
-        T.assert('string' === typeof ev.filename)
-          .assert(ev.buffer instanceof Uint8Array)
-          .assert(ev.buffer.length > 1024)
-          .assert('application/x-sqlite3' === ev.mimetype);
-      });
-    }
+    runOneTest('export',{}, function(ev){
+      ev = ev.result;
+      log("export result:",ev);
+      T.assert('string' === typeof ev.filename)
+        .assert(ev.byteArray instanceof Uint8Array)
+        .assert(ev.byteArray.length > 1024)
+        .assert('application/x-sqlite3' === ev.mimetype);
+    });
     /***** close() tests must come last. *****/
     runOneTest('close',{unlink:true},function(ev){
       ev = ev.result;
@@ -291,7 +289,8 @@
       log("open result",ev);
       T.assert('testing2.sqlite3'===ev.result.filename)
         .assert(ev.dbId)
-        .assert(ev.messageId);
+        .assert(ev.messageId)
+        .assert('string' === typeof ev.result.vfs);
       DbState.id = ev.dbId;
       if(waitForOpen) setTimeout(runTests2, 0);
     });
@@ -341,4 +340,6 @@
     }
   };
   log("Init complete, but async init bits may still be running.");
+  log("Installing Worker into global scope SW for dev purposes.");
+  self.SW = SW;
 })();

@@ -1101,7 +1101,7 @@ self.WhWasmUtilInstaller = function(target){
      property and a forEach() method. A block of memory list.length
      entries long is allocated and each pointer-sized block of that
      memory is populated with a scopedAllocCString() conversion of the
-     (''+value) of each element. Returns a pointer to the start of the
+     (""+value) of each element. Returns a pointer to the start of the
      list, suitable for passing as the 2nd argument to a C-style
      main() function.
 

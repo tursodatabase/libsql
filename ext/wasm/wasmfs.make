@@ -26,7 +26,7 @@ sqlite3-wasmfs.cflags :=
 sqlite3-wasmfs.cflags += -std=c99 -fPIC
 sqlite3-wasmfs.cflags += -pthread
 sqlite3-wasmfs.cflags += $(cflags.common)
-sqlite3-wasmfs.cflags += $(SQLITE_OPT) -DSQLITE_WASM_WASMFS
+sqlite3-wasmfs.cflags += $(SQLITE_OPT) -DSQLITE_ENABLE_WASMFS
 
 ########################################################################
 # emcc flags specific to building the final .js/.wasm file...
@@ -88,7 +88,7 @@ all: wasmfs
 speedtest1-wasmfs.js := $(dir.wasmfs)/speedtest1-wasmfs.js
 speedtest1-wasmfs.wasm := $(subst .js,.wasm,$(speedtest1-wasmfs.js))
 speedtest1-wasmfs.eflags := $(sqlite3-wasmfs.fsflags)
-speedtest1-wasmfs.eflags += $(SQLITE_OPT) -DSQLITE_WASM_WASMFS
+speedtest1-wasmfs.eflags += $(SQLITE_OPT) -DSQLITE_ENABLE_WASMFS
 speedtest1-wasmfs.eflags += -sALLOW_MEMORY_GROWTH=0
 speedtest1-wasmfs.eflags += -sINITIAL_MEMORY=$(emcc.INITIAL_MEMORY.128)
 $(eval $(call call-make-pre-js,speedtest1-wasmfs))
