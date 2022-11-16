@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define SQLITE_OK	0
+#define SQLITE_ERROR	1
+
 typedef struct sqlite3 {
 } sqlite3;
 
@@ -15,7 +18,7 @@ static struct sqlite3 *sqlite3_new(void)
 	int func_name(void)				\
 	{						\
 		printf("STUB %s\n", #func_name);	\
-		return -1;				\
+		return SQLITE_ERROR;			\
 	}						\
 
 /*
@@ -44,25 +47,25 @@ int sqlite3_libversion_number(void)
 int sqlite3_initialize(void)
 {
 	printf("STUB %s\n", __func__);
-	return 0;
+	return SQLITE_OK;
 }
 
 int sqlite3_shutdown(void)
 {
 	printf("STUB %s\n", __func__);
-	return 0;
+	return SQLITE_OK;
 }
 
 int sqlite3_os_init(void)
 {
 	printf("STUB %s\n", __func__);
-	return 0;
+	return SQLITE_OK;
 }
 
 int sqlite3_os_end(void)
 {
 	printf("STUB %s\n", __func__);
-	return 0;
+	return SQLITE_OK;
 }
 
 /*
@@ -72,13 +75,13 @@ int sqlite3_os_end(void)
 int sqlite3_errcode(sqlite3 *db)
 {
 	printf("STUB %s\n", __func__);
-	return 0;
+	return SQLITE_OK;
 }
 
 int sqlite3_extended_errcode(sqlite3 *db)
 {
 	printf("STUB %s\n", __func__);
-	return 0;
+	return SQLITE_OK;
 }
 
 const char *sqlite3_errmsg(sqlite3*)
@@ -102,7 +105,7 @@ const char *sqlite3_errstr(int)
 int sqlite3_error_offset(sqlite3 *db)
 {
 	printf("STUB %s\n", __func__);
-	return 0;
+	return SQLITE_OK;
 }
 
 /*
@@ -114,7 +117,7 @@ int sqlite3_open(const char *filename, sqlite3 **ppDb)
 	TRACE();
 	struct sqlite3 *db = sqlite3_new();
 	*ppDb = db;
-	return 0;
+	return SQLITE_OK;
 }
 
 int sqlite3_open16(const void *filename, sqlite3 **ppDb)
@@ -122,7 +125,7 @@ int sqlite3_open16(const void *filename, sqlite3 **ppDb)
 	TRACE();
 	struct sqlite3 *db = sqlite3_new();
 	*ppDb = db;
-	return 0;
+	return SQLITE_OK;
 }
 
 int sqlite3_open_v2(const char *filename, sqlite3 **ppDb, int flags, const char *zVfs)
@@ -130,7 +133,7 @@ int sqlite3_open_v2(const char *filename, sqlite3 **ppDb, int flags, const char 
 	TRACE();
 	struct sqlite3 *db = sqlite3_new();
 	*ppDb = db;
-	return 0;
+	return SQLITE_OK;
 }
 
 /*
