@@ -12,6 +12,11 @@ static struct sqlite3 *sqlite3_new(void)
 	return malloc(sizeof(struct sqlite3));
 }
 
+static void sqlite3_delete(struct sqlite3 *db)
+{
+	free(db);
+}
+
 #define STUB() printf("STUB %s\n", __func__)
 #define TRACE() printf("TRACE %s\n", __func__)
 
@@ -138,6 +143,24 @@ int sqlite3_open_v2(const char *filename, sqlite3 **ppDb, int flags, const char 
 }
 
 /*
+ * Closing a database connection.
+ */
+
+int sqlite3_close(sqlite3* pDb)
+{
+	TRACE();
+	sqlite3_delete(pDb);
+	return SQLITE_OK;
+}
+
+int sqlite3_close_v2(sqlite3* pDb)
+{
+	TRACE();
+	sqlite3_delete(pDb);
+	return SQLITE_OK;
+}
+
+/*
  * Stubs.
  */
 
@@ -178,8 +201,6 @@ DEFINE_STUB(sqlite3_cancel_auto_extension);
 DEFINE_STUB(sqlite3_changes);
 DEFINE_STUB(sqlite3_changes64);
 DEFINE_STUB(sqlite3_clear_bindings);
-DEFINE_STUB(sqlite3_close);
-DEFINE_STUB(sqlite3_close_v2);
 DEFINE_STUB(sqlite3_collation_needed);
 DEFINE_STUB(sqlite3_collation_needed16);
 DEFINE_STUB(sqlite3_column_blob);
