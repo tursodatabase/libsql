@@ -467,7 +467,7 @@ static char *Argv0;
 ** Prompt strings. Initialized in main. Settable with
 **   .prompt main continue
 */
-static char mainPrompt[20];     /* First line prompt. default: "sqlite> "*/
+static char mainPrompt[20];     /* First line prompt. default: "libsql> "*/
 static char continuePrompt[20]; /* Continuation prompt. default: "   ...> " */
 
 /*
@@ -11401,7 +11401,7 @@ static void main_init(ShellState *data) {
   sqlite3_config(SQLITE_CONFIG_URI, 1);
   sqlite3_config(SQLITE_CONFIG_LOG, shellLog, data);
   sqlite3_config(SQLITE_CONFIG_MULTITHREAD);
-  sqlite3_snprintf(sizeof(mainPrompt), mainPrompt,"sqlite> ");
+  sqlite3_snprintf(sizeof(mainPrompt), mainPrompt,"libsql> ");
   sqlite3_snprintf(sizeof(continuePrompt), continuePrompt,"   ...> ");
 }
 
