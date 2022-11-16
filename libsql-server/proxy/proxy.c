@@ -7,12 +7,25 @@
 typedef struct sqlite3 {
 } sqlite3;
 
+typedef struct sqlite3_stmt {
+} sqlite3_stmt;
+
 static struct sqlite3 *sqlite3_new(void)
 {
 	return malloc(sizeof(struct sqlite3));
 }
 
 static void sqlite3_delete(struct sqlite3 *db)
+{
+	free(db);
+}
+
+static struct sqlite3_stmt *sqlite3_stmt_new(void)
+{
+	return malloc(sizeof(struct sqlite3_stmt));
+}
+
+static void sqlite3_stmt_delete(struct sqlite3_stmt *db)
 {
 	free(db);
 }
@@ -161,6 +174,26 @@ int sqlite3_close_v2(sqlite3* pDb)
 }
 
 /*
+ * Prepared statements.
+ */
+
+int sqlite3_prepare_v2(sqlite3 *db, const char *zSql, int nByte, sqlite3_stmt **ppStmt, const char **pzTail)
+{
+	TRACE();
+	struct sqlite3_stmt *stmt = sqlite3_stmt_new();
+	*ppStmt = stmt;
+	*pzTail = "";
+	return SQLITE_OK;
+}
+
+int sqlite3_finalize(sqlite3_stmt *pStmt)
+{
+	TRACE();
+	sqlite3_stmt_delete(pStmt);
+	return SQLITE_OK;
+}
+
+/*
  * Stubs.
  */
 
@@ -265,7 +298,6 @@ DEFINE_STUB(sqlite3_file_control);
 DEFINE_STUB(sqlite3_filename_database);
 DEFINE_STUB(sqlite3_filename_journal);
 DEFINE_STUB(sqlite3_filename_wal);
-DEFINE_STUB(sqlite3_finalize);
 DEFINE_STUB(sqlite3_free);
 DEFINE_STUB(sqlite3_free_filename);
 DEFINE_STUB(sqlite3_free_table);
@@ -303,7 +335,6 @@ DEFINE_STUB(sqlite3_prepare);
 DEFINE_STUB(sqlite3_prepare16);
 DEFINE_STUB(sqlite3_prepare16_v2);
 DEFINE_STUB(sqlite3_prepare16_v3);
-DEFINE_STUB(sqlite3_prepare_v2);
 DEFINE_STUB(sqlite3_prepare_v3);
 DEFINE_STUB(sqlite3_preupdate_blobwrite);
 DEFINE_STUB(sqlite3_preupdate_count);
