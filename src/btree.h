@@ -183,7 +183,7 @@ int sqlite3BtreeNewDb(Btree *p);
 **     reduce network bandwidth.
 **
 ** Note that BTREE_HINT_FLAGS with BTREE_BULKLOAD is the only hint used by
-** standard SQLite.  The other hints are provided for extentions that use
+** standard SQLite.  The other hints are provided for extensions that use
 ** the SQLite parser and code generator but substitute their own storage
 ** engine.
 */
