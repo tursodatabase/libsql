@@ -3,6 +3,7 @@
 
 #define SQLITE_OK	0
 #define SQLITE_ERROR	1
+#define SQLITE_DONE	101
 
 typedef struct sqlite3 {
 } sqlite3;
@@ -191,6 +192,16 @@ int sqlite3_finalize(sqlite3_stmt *pStmt)
 	TRACE();
 	sqlite3_stmt_delete(pStmt);
 	return SQLITE_OK;
+}
+
+/*
+ * SQL evaluation.
+ */
+
+int sqlite3_step(sqlite3_stmt* pStmt)
+{
+	TRACE();
+	return SQLITE_DONE;
 }
 
 /*
@@ -389,7 +400,6 @@ DEFINE_STUB(sqlite3_sourceid);
 DEFINE_STUB(sqlite3_sql);
 DEFINE_STUB(sqlite3_status);
 DEFINE_STUB(sqlite3_status64);
-DEFINE_STUB(sqlite3_step);
 DEFINE_STUB(sqlite3_stmt_busy);
 DEFINE_STUB(sqlite3_stmt_isexplain);
 DEFINE_STUB(sqlite3_stmt_readonly);
