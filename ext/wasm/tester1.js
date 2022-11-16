@@ -99,6 +99,14 @@
       };
     }
   }
+  const reportFinalTestStatus = function(pass){
+    if(isUIThread()){
+      const e = document.querySelector('#color-target');
+      e.classList.add(pass ? 'tests-pass' : 'tests-fail');
+    }else{
+      postMessage({type:'test-result', payload:{pass}});
+    }
+  };
   const log = (...args)=>{
     //console.log(...args);
     logClass('',...args);
@@ -139,26 +147,17 @@
     toBool: function(expr){
       return (expr instanceof Function) ? !!expr() : !!expr;
     },
-    /** abort() if expr is false. If expr is a function, it
-        is called and its result is evaluated.
+    /** Throws if expr is false. If expr is a function, it is called
+        and its result is evaluated. If passed multiple arguments,
+        those after the first are a message string which get applied
+        as an exception message if the assertion fails. The message
+        arguments are concatenated together with a space between each.
     */
-    assert: function f(expr, msg){
-      if(!f._){
-        f._ = ('undefined'===typeof abort
-               ? (msg)=>{throw new Error(msg)}
-               : abort);
-      }
+    assert: function f(expr, ...msg){
       ++this.counter;
       if(!this.toBool(expr)){
-        f._(msg || "Assertion failed.");
+        throw new Error(msg.length ? msg.join(' ') : "Assertion failed.");
       }
-      return this;
-    },
-    /** Identical to assert() but throws instead of calling
-        abort(). */
-    affirm: function(expr, msg){
-      ++this.counter;
-      if(!this.toBool(expr)) throw new Error(msg || "Affirmation failed.");
       return this;
     },
     /** Calls f() and squelches any exception it throws. If it
@@ -301,9 +300,11 @@
                    "Done running tests.",TestUtil.counter,"assertions in",
                    roundMs(runtime),'ms');
           pok();
+          reportFinalTestStatus(true);
         }catch(e){
           error(e);
           pnok(e);
+          reportFinalTestStatus(false);
         }
       }.bind(this));
     }
@@ -341,10 +342,27 @@
         throw new sqlite3.WasmAllocError;
       }catch(e){
         T.assert(e instanceof Error)
-          .assert(e instanceof sqlite3.WasmAllocError);
+          .assert(e instanceof sqlite3.WasmAllocError)
+          .assert("Allocation failed." === e.message);
       }
+      try {
+        throw new sqlite3.WasmAllocError("test",{
+          cause: 3
+        });
+      }catch(e){
+        T.assert(3 === e.cause)
+          .assert("test" === e.message);
+      }
+      try {throw new sqlite3.WasmAllocError("test","ing",".")}
+      catch(e){T.assert("test ing ." === e.message)}
+
       try{ throw new sqlite3.SQLite3Error(capi.SQLITE_SCHEMA) }
       catch(e){ T.assert('SQLITE_SCHEMA' === e.message) }
+      try{ sqlite3.SQLite3Error.toss(capi.SQLITE_CORRUPT,{cause: true}) }
+      catch(e){
+        T.assert('SQLITE_CORRUPT'===e.message)
+          .assert(true===e.cause);
+      }
     })
   ////////////////////////////////////////////////////////////////////
     .t('strglob/strlike', function(sqlite3){
@@ -1117,10 +1135,11 @@
       const dbFile = '/tester1.db';
       wasm.sqlite3_wasm_vfs_unlink(0, dbFile);
       const db = this.db = new sqlite3.oo1.DB(dbFile);
-      T.assert(Number.isInteger(db.pointer)).
-        mustThrowMatching(()=>db.pointer=1, /read-only/).
-        assert(0===sqlite3.capi.sqlite3_extended_result_codes(db.pointer,1)).
-        assert('main'===db.dbName(0));
+      T.assert(Number.isInteger(db.pointer))
+        .mustThrowMatching(()=>db.pointer=1, /read-only/)
+        .assert(0===sqlite3.capi.sqlite3_extended_result_codes(db.pointer,1))
+        .assert('main'===db.dbName(0))
+        .assert('string' === typeof db.dbVfsName());
       // Custom db error message handling via sqlite3_prepare_v2/v3()
       let rc = capi.sqlite3_prepare_v3(db.pointer, {/*invalid*/}, -1, 0, null, null);
       T.assert(capi.SQLITE_MISUSE === rc)
@@ -1220,8 +1239,9 @@
     .t('Table t', function(sqlite3){
       const db = this.db;
       let list = [];
-      db.exec({
+      let rc = db.exec({
         sql:['CREATE TABLE t(a,b);',
+             // ^^^ using TEMP TABLE breaks the db export test
              "INSERT INTO t(a,b) VALUES(1,2),(3,4),",
              "(?,?),('blob',X'6869')"/*intentionally missing semicolon to test for
                                        off-by-one bug in string-to-WASM conversion*/],
@@ -1229,7 +1249,8 @@
         bind: [5,6]
       });
       //debug("Exec'd SQL:", list);
-      T.assert(2 === list.length)
+      T.assert(rc === db)
+        .assert(2 === list.length)
         .assert('string'===typeof list[1])
         .assert(4===db.changes());
       if(wasm.bigIntEnabled){
@@ -1502,30 +1523,61 @@
           xValue: xValueFinal
         });
         db.exec([
-          "CREATE TABLE twin(x, y); INSERT INTO twin VALUES",
+          "CREATE TEMP TABLE twin(x, y); INSERT INTO twin VALUES",
           "('a', 4),('b', 5),('c', 3),('d', 8),('e', 1)"
         ]);
-        let count = 0;
-        db.exec({
+        let rc = db.exec({
+          returnValue: 'resultRows',
           sql:[
             "SELECT x, winsumint(y) OVER (",
             "ORDER BY x ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING",
             ") AS sum_y ",
-            "FROM twin ORDER BY x;",
-            "DROP TABLE twin;"
-          ],
-          callback: function(row){
-            switch(++count){
-                case 1: T.assert('a'===row[0] && 9===row[1]); break;
-                case 2: T.assert('b'===row[0] && 12===row[1]); break;
-                case 3: T.assert('c'===row[0] && 16===row[1]); break;
-                case 4: T.assert('d'===row[0] && 12===row[1]); break;
-                case 5: T.assert('e'===row[0] && 9===row[1]); break;
-                default: toss("Too many rows to window function.");
-            }
-          }
+            "FROM twin ORDER BY x;"
+          ]
         });
-        T.assert(5 === count);
+        T.assert(Array.isArray(rc))
+          .assert(5 === rc.length);
+        let count = 0;
+        for(const row of rc){
+          switch(++count){
+              case 1: T.assert('a'===row[0] && 9===row[1]); break;
+              case 2: T.assert('b'===row[0] && 12===row[1]); break;
+              case 3: T.assert('c'===row[0] && 16===row[1]); break;
+              case 4: T.assert('d'===row[0] && 12===row[1]); break;
+              case 5: T.assert('e'===row[0] && 9===row[1]); break;
+              default: toss("Too many rows to window function.");
+          }
+        }
+        const resultRows = [];
+        rc = db.exec({
+          resultRows,
+          returnValue: 'resultRows',
+          sql:[
+            "SELECT x, winsumint(y) OVER (",
+            "ORDER BY x ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING",
+            ") AS sum_y ",
+            "FROM twin ORDER BY x;"
+          ]
+        });
+        T.assert(rc === resultRows)
+          .assert(5 === rc.length);
+
+        rc = db.exec({
+          returnValue: 'saveSql',
+          sql: "select 1; select 2; -- empty\n; select 3"
+        });
+        T.assert(Array.isArray(rc))
+          .assert(3===rc.length)
+          .assert('select 1;' === rc[0])
+          .assert('select 2;' === rc[1])
+          .assert('-- empty\n; select 3' === rc[2]
+                  /* Strange but true. */);
+        
+        T.mustThrowMatching(()=>{
+          db.exec({sql:'', returnValue: 'nope'});
+        }, /^Invalid returnValue/);
+
+        db.exec("DROP TABLE twin");
       }
     }/*window UDFs*/)
 
@@ -1536,7 +1588,7 @@
       db.exec({
         sql:new TextEncoder('utf-8').encode([
           // ^^^ testing string-vs-typedarray handling in exec()
-          "attach 'session' as foo;" /* name 'session' is magic for kvvfs! */,
+          "attach 'session' as foo;",
           "create table foo.bar(a);",
           "insert into foo.bar(a) values(1),(2),(3);",
           "select a from foo.bar order by a;"
@@ -1665,27 +1717,24 @@
   ;/* end of oo1 checks */
 
   ////////////////////////////////////////////////////////////////////////
-  T.g('kvvfs (Worker thread only)', isWorker)
-    .t({
-      name: 'kvvfs is disabled',
-      test: ()=>{
+  T.g('kvvfs')
+    .t('kvvfs sanity checks', function(sqlite3){
+      if(isWorker()){
         T.assert(
           !capi.sqlite3_vfs_find('kvvfs'),
           "Expecting kvvfs to be unregistered."
         );
+        log("kvvfs is (correctly) unavailable in a Worker.");
+        return;
       }
-    });
-  T.g('kvvfs (UI thread only)', isUIThread)
-    .t({
-      name: 'kvvfs sanity checks',
-      test: function(sqlite3){
-        const filename = 'session';
-        const pVfs = capi.sqlite3_vfs_find('kvvfs');
-        T.assert(pVfs);
-        const JDb = sqlite3.oo1.JsStorageDb;
-        const unlink = ()=>JDb.clearStorage(filename);
-        unlink();
-        let db = new JDb(filename);
+      const filename = 'session';
+      const pVfs = capi.sqlite3_vfs_find('kvvfs');
+      T.assert(pVfs);
+      const JDb = sqlite3.oo1.JsStorageDb;
+      const unlink = ()=>JDb.clearStorage(filename);
+      unlink();
+      let db = new JDb(filename);
+      try {
         db.exec([
           'create table kvvfs(a);',
           'insert into kvvfs(a) values(1),(2),(3)'
@@ -1695,6 +1744,7 @@
         db = new JDb(filename);
         db.exec('insert into kvvfs(a) values(4),(5),(6)');
         T.assert(6 === db.selectValue('select count(*) from kvvfs'));
+      }finally{
         db.close();
         unlink();
       }
@@ -1706,24 +1756,61 @@
       (sqlite3)=>{return !!sqlite3.opfs})
     .t({
       name: 'OPFS sanity checks',
-      test: function(sqlite3){
+      test: async function(sqlite3){
+        const opfs = sqlite3.opfs;
         const filename = 'sqlite3-tester1.db';
         const pVfs = capi.sqlite3_vfs_find('opfs');
         T.assert(pVfs);
         const unlink = (fn=filename)=>wasm.sqlite3_wasm_vfs_unlink(pVfs,fn);
         unlink();
-        let db = new sqlite3.opfs.OpfsDb(filename);
-        db.exec([
-          'create table p(a);',
-          'insert into p(a) values(1),(2),(3)'
-        ]);
-        T.assert(3 === db.selectValue('select count(*) from p'));
-        db.close();
-        db = new sqlite3.opfs.OpfsDb(filename);
-        db.exec('insert into p(a) values(4),(5),(6)');
-        T.assert(6 === db.selectValue('select count(*) from p'));
-        db.close();
-        unlink();
+        let db = new opfs.OpfsDb(filename);
+        try {
+          db.exec([
+            'create table p(a);',
+            'insert into p(a) values(1),(2),(3)'
+          ]);
+          T.assert(3 === db.selectValue('select count(*) from p'));
+          db.close();
+          db = new opfs.OpfsDb(filename);
+          db.exec('insert into p(a) values(4),(5),(6)');
+          T.assert(6 === db.selectValue('select count(*) from p'));
+        }finally{
+          db.close();
+          unlink();
+        }
+
+        if(1){
+          // Sanity-test sqlite3_wasm_vfs_create_file()...
+          const fSize = 1379;
+          let sh;
+          try{
+            T.assert(!(await opfs.entryExists(filename)));
+            let rc = wasm.sqlite3_wasm_vfs_create_file(
+              pVfs, filename, null, fSize
+            );
+            T.assert(0===rc)
+              .assert(await opfs.entryExists(filename));
+            const fh = await opfs.rootDirectory.getFileHandle(filename);
+            sh = await fh.createSyncAccessHandle();
+            T.assert(fSize === await sh.getSize());
+          }finally{
+            if(sh) await sh.close();
+            unlink();
+          }
+        }
+
+        // Some sanity checks of the opfs utility functions...
+        const testDir = '/sqlite3-opfs-'+opfs.randomFilename(12);
+        const aDir = testDir+'/test/dir';
+        T.assert(await opfs.mkdir(aDir), "mkdir failed")
+          .assert(await opfs.mkdir(aDir), "mkdir must pass if the dir exists")
+          .assert(!(await opfs.unlink(testDir+'/test')), "delete 1 should have failed (dir not empty)")
+          .assert((await opfs.unlink(testDir+'/test/dir')), "delete 2 failed")
+          .assert(!(await opfs.unlink(testDir+'/test/dir')),
+                  "delete 2b should have failed (dir already deleted)")
+          .assert((await opfs.unlink(testDir, true)), "delete 3 failed")
+          .assert(!(await opfs.entryExists(testDir)),
+                  "entryExists(",testDir,") should have failed");
       }
     }/*OPFS sanity checks*/)
   ;/* end OPFS tests */

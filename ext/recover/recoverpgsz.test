@@ -10,11 +10,7 @@
 #***********************************************************************
 #
 
-if {![info exists testdir]} {
-  set testdir [file join [file dirname [info script]] .. .. test]
-} 
 source [file join [file dirname [info script]] recover_common.tcl]
-source $testdir/tester.tcl
 
 db close
 sqlite3_test_control_pending_byte 0x1000000
@@ -27,6 +23,7 @@ foreach {pgsz bOverflow} {
 } {
   reset_db
   execsql "PRAGMA page_size = $pgsz"
+  execsql "PRAGMA auto_vacuum = 0"
   do_execsql_test 1.$pgsz.$bOverflow.1 {
     CREATE TABLE t1(a, b, c);
     CREATE INDEX i1 ON t1(b, a, c);

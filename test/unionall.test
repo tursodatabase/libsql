@@ -55,6 +55,27 @@ do_execsql_test 1.3 {
 } {1 one 2 two 5 five 6 six}
 
 
+# 2022-10-31 part of ticket 57c47526c34f01e8
+# The queries below were causing an assertion fault in
+# the comparison operators of the VDBE.
+#
+reset_db
+database_never_corrupt
+optimization_control db all 0
+do_execsql_test 1.10 {
+  CREATE TABLE t0(c0 INT);
+  INSERT INTO t0 VALUES(0);
+  CREATE TABLE t1_a(a INTEGER PRIMARY KEY, b TEXT);
+  INSERT INTO t1_a VALUES(1,'one');
+  CREATE TABLE t1_b(c INTEGER PRIMARY KEY, d TEXT);
+  INSERT INTO t1_b VALUES(2,'two');
+  CREATE VIEW t1 AS SELECT a, b FROM t1_a UNION ALL SELECT c, c FROM t1_b;
+  SELECT * FROM (SELECT t1.a, t1.b AS b, t0.c0 FROM t0, t1);
+} {1 one 0 2 2 0}
+do_execsql_test 1.11 {
+  SELECT * FROM (SELECT t1.a, t1.b AS b, t0.c0 FROM t0, t1) WHERE b=2;
+} {2 2 0}
+
 #-------------------------------------------------------------------------
 reset_db
 
@@ -363,5 +384,61 @@ do_execsql_test 7.1 {
     FROM c1 AS x1, (SELECT x+1 AS y FROM c1 WHERE x<1 UNION ALL SELECT 1+x FROM c1 WHERE 1<x) AS x2
    ORDER BY x, y;
 } {0 1 | 0 101 | 0 102 | 1 1 | 1 101 | 1 102 | 100 1 | 100 101 | 100 102 | 101 1 | 101 101 | 101 102 |}
+
+# 2022-10-31 ticket https://sqlite.org/src/info/57c47526c34f01e8
+# dbsqlfuzz 37230460b46b3b6049f0d768eb801f3428189382
+# UNION ALL subqueries or views which have arms with different
+# affinities should not be flattened.
+#
+reset_db
+do_execsql_test 8.1 {
+  CREATE TABLE t0(c0 INT);
+  INSERT INTO t0 VALUES(0);
+  CREATE TABLE t1_a(a INTEGER PRIMARY KEY, b TEXT);
+  INSERT INTO t1_a VALUES(1,'one');
+  INSERT INTO t1_a VALUES(4,'four');
+  CREATE TABLE t1_b(c INTEGER PRIMARY KEY, d TEXT);
+  INSERT INTO t1_b VALUES(2,'two');
+  INSERT INTO t1_b VALUES(5,'five');
+  CREATE TABLE t1_c(e INTEGER PRIMARY KEY, f TEXT);
+  INSERT INTO t1_c VALUES(3,'three');
+  INSERT INTO t1_c VALUES(6,'six');
+  CREATE VIEW v0(c0) AS SELECT CAST(t0.c0 AS INTEGER) FROM t0;
+  CREATE VIEW t1 AS 
+    SELECT a, b FROM t1_a   UNION ALL
+    SELECT c, c FROM t1_b   UNION ALL
+    SELECT e, f FROM t1_c;
+}
+optimization_control db all 1
+do_execsql_test 8.2 {
+  SELECT * FROM (SELECT t1.a, t1.b, t0.c0 AS c, v0.c0 AS d FROM t0 LEFT JOIN v0 ON v0.c0>'0',t1) WHERE b=2;
+} {2 2 0 {}}
+do_execsql_test 8.3 {
+  SELECT * FROM (SELECT t1.a, t1.b, t0.c0 AS c, v0.c0 AS d FROM t0 LEFT JOIN v0 ON v0.c0>'0',t1) WHERE b=2.0;
+} {}
+do_execsql_test 8.4 {
+  SELECT * FROM (SELECT t1.a, t1.b, t0.c0 AS c, v0.c0 AS d FROM t0 LEFT JOIN v0 ON v0.c0>'0',t1) WHERE b='2';
+} {2 2 0 {}}
+optimization_control db query-flattener,push-down 0
+do_execsql_test 8.5 {
+  SELECT * FROM (SELECT t1.a, t1.b, t0.c0 AS c, v0.c0 AS d FROM t0 LEFT JOIN v0 ON v0.c0>'0',t1) WHERE b=2;
+} {2 2 0 {}}
+do_execsql_test 8.6 {
+  SELECT * FROM (SELECT t1.a, t1.b, t0.c0 AS c, v0.c0 AS d FROM t0 LEFT JOIN v0 ON v0.c0>'0',t1) WHERE b=2.0;
+} {}
+do_execsql_test 8.7 {
+  SELECT * FROM (SELECT t1.a, t1.b, t0.c0 AS c, v0.c0 AS d FROM t0 LEFT JOIN v0 ON v0.c0>'0',t1) WHERE b='2';
+} {2 2 0 {}}
+optimization_control db all 0
+do_execsql_test 8.8 {
+  SELECT * FROM (SELECT t1.a, t1.b, t0.c0 AS c, v0.c0 AS d FROM t0 LEFT JOIN v0 ON v0.c0>'0',t1) WHERE b=2;
+} {2 2 0 {}}
+do_execsql_test 8.9 {
+  SELECT * FROM (SELECT t1.a, t1.b, t0.c0 AS c, v0.c0 AS d FROM t0 LEFT JOIN v0 ON v0.c0>'0',t1) WHERE b=2.0;
+} {}
+do_execsql_test 8.10 {
+  SELECT * FROM (SELECT t1.a, t1.b, t0.c0 AS c, v0.c0 AS d FROM t0 LEFT JOIN v0 ON v0.c0>'0',t1) WHERE b='2';
+} {2 2 0 {}}
+
 
 finish_test

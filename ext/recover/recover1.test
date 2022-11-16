@@ -10,15 +10,8 @@
 #***********************************************************************
 #
 
-if {![info exists testdir]} {
-  set testdir [file join [file dirname [info script]] .. .. test]
-} 
 source [file join [file dirname [info script]] recover_common.tcl]
-source $testdir/tester.tcl
-
 set testprefix recover1
-
-
 
 proc compare_result {db1 db2 sql} {
   set r1 [$db1 eval $sql]
@@ -268,6 +261,17 @@ do_execsql_test 14.1 {
   INSERT INTO u2 VALUES(hex(randomblob(50000)), hex(randomblob(20000)));
 }
 do_recover_test 14 
+
+#-------------------------------------------------------------------------
+reset_db
+execsql {
+  PRAGMA journal_mode=OFF;
+  PRAGMA mmap_size=10;
+}
+do_execsql_test 15.1 {
+  CREATE TABLE t1(x);
+} {}
+do_recover_test 15 
 
 finish_test
 

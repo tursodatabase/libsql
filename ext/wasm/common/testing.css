@@ -37,6 +37,8 @@ span.labeled-input {
 .strong { font-weight: 700 }
 .warning { color: firebrick; }
 .green { color: darkgreen; }
+.tests-pass { background-color: green; color: white }
+.tests-fail { background-color: red; color: yellow }
 .faded { opacity: 0.5; }
 .group-start { color: blue; }
 .group-end { color: blue; }

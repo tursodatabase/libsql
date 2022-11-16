@@ -91,7 +91,8 @@
       const r = ev.result;
       log("then open result",r);
       T.assert(ev.dbId === r.dbId)
-        .assert(ev.messageId);
+        .assert(ev.messageId)
+        .assert('string' === typeof r.vfs);
       promiserConfig.dbId = ev.dbId;
     }).then(runTests2);
   };
@@ -245,6 +246,14 @@
       ev = ev.result;
       T.assert(1===ev.resultRows.length)
         .assert(2===ev.resultRows[0][0]);
+    });
+
+    await wtest('export', function(ev){
+      ev = ev.result;
+      T.assert('string' === typeof ev.filename)
+        .assert(ev.byteArray instanceof Uint8Array)
+        .assert(ev.byteArray.length > 1024)
+        .assert('application/x-sqlite3' === ev.mimetype);
     });
 
     /***** close() tests must come last. *****/

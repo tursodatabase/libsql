@@ -1000,15 +1000,13 @@ static int recoverSqlCb(void *pCtx, const char *zSql){
 ** This function is called to recover data from the database.
 */
 static int recoverDatabase(sqlite3 *db){
-  int rc = SQLITE_OK;
-  const char *zRecoveryDb = "";   /* Name of "recovery" database */
-  const char *zLAF = "lost_and_found";
-  int bFreelist = 1;
-  int bRowids = 1;
-  sqlite3_recover *p = 0;
+  int rc;                                 /* Return code from this routine */
+  const char *zLAF = "lost_and_found";    /* Name of "lost_and_found" table */
+  int bFreelist = 1;                      /* True to scan the freelist */
+  int bRowids = 1;                        /* True to restore ROWID values */
+  sqlite3_recover *p;                     /* The recovery object */
 
   p = sqlite3_recover_init_sql(db, "main", recoverSqlCb, 0);
-  sqlite3_recover_config(p, 789, (void*)zRecoveryDb);
   sqlite3_recover_config(p, SQLITE_RECOVER_LOST_AND_FOUND, (void*)zLAF);
   sqlite3_recover_config(p, SQLITE_RECOVER_ROWIDS, (void*)&bRowids);
   sqlite3_recover_config(p, SQLITE_RECOVER_FREELIST_CORRUPT,(void*)&bFreelist);

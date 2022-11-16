@@ -2170,6 +2170,11 @@ void sqlite3Pragma(
       aOp[1].p2 = iCookie;
       aOp[1].p3 = sqlite3Atoi(zRight);
       aOp[1].p5 = 1;
+      if( iCookie==BTREE_SCHEMA_VERSION && (db->flags & SQLITE_Defensive)!=0 ){
+        /* Do not allow the use of PRAGMA schema_version=VALUE in defensive
+        ** mode.  Change the OP_SetCookie opcode into a no-op.  */
+        aOp[1].opcode = OP_Noop;
+      }
     }else{
       /* Read the specified cookie value */
       static const VdbeOpList readCookie[] = {
