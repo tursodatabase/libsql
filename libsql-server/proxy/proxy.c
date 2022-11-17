@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <assert.h> // FIXME: kill
 
 /*
  * 	Helpers
@@ -21,8 +22,13 @@
  *	PostgreSQL mini-driver
  */
 
-#define MSG_TYPE_STARTUP		'F'
 #define MSG_TYPE_AUTHENTICATION_REQUEST	'R'
+#define MSG_TYPE_COMMAND_COMPLETION	'C'
+#define MSG_TYPE_NOTICE			'N'
+#define MSG_TYPE_READY_FOR_QUERY	'Z'
+#define MSG_TYPE_ROW_DESCRIPTION	'T'
+#define MSG_TYPE_SIMPLE_QUERY		'Q'
+#define MSG_TYPE_STARTUP		'F'
 
 static char *put_u8(char *buf, uint8_t v)
 {
@@ -114,6 +120,24 @@ static ssize_t postgres_recv_msg(int sockfd, char *buf, size_t buf_len)
 	return ret;
 }
 
+static void postgres_send_simple_query(int sockfd, const char *query)
+{
+	TRACE();
+
+	char buf[1024];
+	char *p = buf;
+	char *len;
+
+	p = put_u8(p, MSG_TYPE_SIMPLE_QUERY);
+	len = p;
+	p = put_be32(p, 0);
+	p = put_cstr(p, query);
+
+	size_t buf_len = p - buf;
+	put_be32(len, buf_len - 1);
+	send(sockfd, buf, buf_len, 0);
+}
+
 static void postgres_send_startup(int sockfd)
 {
 	TRACE();
@@ -185,6 +209,16 @@ static int postgres_connect(const char *host, uint16_t port)
 		printf("ERROR Authentication to PostgreSQL server failed.\n");
 		goto out_close;
 	}
+	for (;;) {
+		ssize_t len = postgres_recv_msg(sockfd, buf, sizeof(buf));
+		if (len < 0) {
+			goto out;
+		}
+		uint8_t msg_type = buf[0];
+		if (msg_type == MSG_TYPE_READY_FOR_QUERY) {
+			break;
+		}
+	}
 	return sockfd;
 
 out_close:
@@ -199,13 +233,25 @@ out:
 
 #define SQLITE_OK	0
 #define SQLITE_ERROR	1
+#define SQLITE_MISUSE	21
+#define SQLITE_ROW	100
 #define SQLITE_DONE	101
 
 typedef struct sqlite3 {
 	int conn_fd;
 } sqlite3;
 
+enum stmt_state {
+	STMT_STATE_INIT,
+	STMT_STATE_PREPARED,
+	STMT_STATE_ROWS,
+	STMT_STATE_DONE,
+};
+
 typedef struct sqlite3_stmt {
+	struct sqlite3 *parent;
+	enum stmt_state state;
+	char stmt[256];
 } sqlite3_stmt;
 
 static struct sqlite3 *sqlite3_new(void)
@@ -218,9 +264,14 @@ static void sqlite3_delete(struct sqlite3 *db)
 	free(db);
 }
 
-static struct sqlite3_stmt *sqlite3_stmt_new(void)
+static struct sqlite3_stmt *sqlite3_stmt_new(struct sqlite3 *parent)
 {
-	return malloc(sizeof(struct sqlite3_stmt));
+	struct sqlite3_stmt *stmt = malloc(sizeof(struct sqlite3_stmt));
+	if (!stmt)
+		return NULL;
+	stmt->parent = parent;
+	stmt->state = STMT_STATE_INIT;
+	return stmt;
 }
 
 static void sqlite3_stmt_delete(struct sqlite3_stmt *stmt)
@@ -386,7 +437,12 @@ int sqlite3_close_v2(sqlite3* pDb)
 int sqlite3_prepare_v2(sqlite3 *db, const char *zSql, int nByte, sqlite3_stmt **ppStmt, const char **pzTail)
 {
 	TRACE();
-	struct sqlite3_stmt *stmt = sqlite3_stmt_new();
+	struct sqlite3_stmt *stmt = sqlite3_stmt_new(db);
+	if (!stmt) {
+		return SQLITE_ERROR;
+	}
+	stmt->state = STMT_STATE_PREPARED;
+	strcpy(stmt->stmt, zSql);
 	*ppStmt = stmt;
 	*pzTail = "";
 	return SQLITE_OK;
@@ -405,8 +461,54 @@ int sqlite3_finalize(sqlite3_stmt *pStmt)
 
 int sqlite3_step(sqlite3_stmt* pStmt)
 {
-	TRACE();
-	return SQLITE_DONE;
+	printf("TRACE sqlite3_step %s\n", pStmt->stmt);
+	struct sqlite3 *db = pStmt->parent;
+retry:
+	switch (pStmt->state) {
+	case STMT_STATE_INIT:
+	case STMT_STATE_DONE: {
+		return SQLITE_MISUSE;
+	}
+	case STMT_STATE_PREPARED: {
+		postgres_send_simple_query(db->conn_fd, pStmt->stmt);
+		char buf[1024];
+		ssize_t len = postgres_recv_msg(db->conn_fd, buf, sizeof(buf));
+		if (len < 0) {
+			return SQLITE_ERROR;
+		}
+		uint8_t msg_type = buf[0];
+		switch (msg_type) {
+		case MSG_TYPE_COMMAND_COMPLETION:
+			pStmt->state = STMT_STATE_DONE;
+			ssize_t len = postgres_recv_msg(db->conn_fd, buf, sizeof(buf));
+			if (len < 0) {
+				return SQLITE_ERROR;
+			}
+			assert(buf[0] == MSG_TYPE_READY_FOR_QUERY);
+			break;
+		case MSG_TYPE_ROW_DESCRIPTION:
+			pStmt->state = STMT_STATE_ROWS;
+			break;
+		case MSG_TYPE_NOTICE:
+			goto retry;
+		default:
+			printf("Unknown message received: %c\n", msg_type);
+			return SQLITE_ERROR;
+		}
+		break;
+	}
+	case STMT_STATE_ROWS: {
+		assert(0);
+	}
+	}
+	switch (pStmt->state) {
+	case STMT_STATE_DONE:
+		return SQLITE_DONE;
+	case STMT_STATE_ROWS:
+		return SQLITE_ROW;
+	default:
+		return SQLITE_ERROR;
+	}
 }
 
 /*
