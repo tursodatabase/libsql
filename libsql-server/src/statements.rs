@@ -41,7 +41,7 @@ impl StmtKind {
 
 /// The state of a transaction for a series of statement
 pub enum State {
-    /// The txn in a opened state
+    /// The txn in an opened state
     TxnOpened,
     /// The txn in a closed state
     TxnClosed,
@@ -54,13 +54,13 @@ pub enum State {
 impl Statements {
     pub fn parse(s: String) -> Result<Self> {
         let statements = Parser::parse_sql(&SQLiteDialect {}, &s)?;
-        // We don't actually really care about `StmtKind::Other`, we keep keep it for conceptual simplicity.
+        // We don't really care about `StmtKind::Other`, we keep it for conceptual simplicity.
         let kinds = statements.iter().map(StmtKind::kind).collect();
 
         Ok(Self { stmts: s, kinds })
     }
 
-    /// Given an initial state, returns final state a transaction should be in after running these
+    /// Given an initial state, returns the final state a transaction should be in after running these
     /// statements.
     pub fn state(&self, state: State) -> State {
         self.kinds
