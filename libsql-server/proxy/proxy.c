@@ -83,18 +83,35 @@ static bool msg_is_authentication_ok(const char *buf)
 		&& request_type == 0;
 }
 
+#define MSG_HEADER_SIZE		(1 + MSG_HEADER_LENGTH_SIZE)
+#define MSG_HEADER_LENGTH_SIZE	4
+
 static ssize_t postgres_recv_msg(int sockfd, char *buf, size_t buf_len)
 {
 	TRACE();
 
-	ssize_t nr;
-
-	nr = recv(sockfd, buf, buf_len, 0);
-	/* We need at least message type and length.*/
-	if (nr < 5) {
+	ssize_t ret, nr;
+	ret = 0;
+	nr = recv(sockfd, buf, MSG_HEADER_SIZE, 0);
+	/*
+	 * First read message header.
+	 */
+	if (nr < MSG_HEADER_SIZE) {
 		return -1;
 	}
-	return nr;
+	ret += nr;
+	/*
+	 * Then read exactly the rest.
+	 */
+	uint32_t msg_len = read_be32(buf + 1);
+	size_t remaining = msg_len - MSG_HEADER_LENGTH_SIZE;
+	nr = recv(sockfd, buf + MSG_HEADER_SIZE, remaining, 0);
+	if (nr != remaining) {
+		return -1;
+	}
+	ret += nr;
+
+	return ret;
 }
 
 static void postgres_send_startup(int sockfd)
