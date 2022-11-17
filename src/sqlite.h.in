@@ -5542,16 +5542,6 @@ SQLITE_DEPRECATED int sqlite3_memory_alarm(void(*)(void*,sqlite3_int64,int),
 ** then the conversion is performed.  Otherwise no conversion occurs.
 ** The [SQLITE_INTEGER | datatype] after conversion is returned.)^
 **
-** ^(The sqlite3_value_encoding(X) interface returns one of [SQLITE_UTF8],
-** [SQLITE_UTF16BE], or [SQLITE_UTF16LE] according to the current encoding
-** of the value X, assuming that X has type TEXT.)^  If sqlite3_value_type(X)
-** returns something other than SQLITE_TEXT, then the return value from
-** sqlite3_value_encoding(X) is meaningless.  ^Calls to
-** sqlite3_value_text(X), sqlite3_value_text16(X), sqlite3_value_text16be(X),
-** sqlite3_value_text16le(X), sqlite3_value_bytes(X), or
-** sqlite3_value_bytes16(X) might change the encoding of the value X and
-** thus change the return from subsequent calls to sqlite3_value_encoding(X).
-**
 ** ^Within the [xUpdate] method of a [virtual table], the
 ** sqlite3_value_nochange(X) interface returns true if and only if
 ** the column corresponding to X is unchanged by the UPDATE operation
@@ -5616,6 +5606,27 @@ int sqlite3_value_type(sqlite3_value*);
 int sqlite3_value_numeric_type(sqlite3_value*);
 int sqlite3_value_nochange(sqlite3_value*);
 int sqlite3_value_frombind(sqlite3_value*);
+
+/*
+** CAPI3REF: Report the internal text encoding state of an sqlite3_value object
+** METHOD: sqlite3_value
+**
+** ^(The sqlite3_value_encoding(X) interface returns one of [SQLITE_UTF8],
+** [SQLITE_UTF16BE], or [SQLITE_UTF16LE] according to the current text encoding
+** of the value X, assuming that X has type TEXT.)^  If sqlite3_value_type(X)
+** returns something other than SQLITE_TEXT, then the return value from
+** sqlite3_value_encoding(X) is meaningless.  ^Calls to
+** [sqlite3_value_text(X)], [sqlite3_value_text16(X)], [sqlite3_value_text16be(X)],
+** [sqlite3_value_text16le(X)], [sqlite3_value_bytes(X)], or
+** [sqlite3_value_bytes16(X)] might change the encoding of the value X and
+** thus change the return from subsequent calls to sqlite3_value_encoding(X).
+**
+** This routine is intended for used by applications that test and validate
+** the SQLite implementation.  This routine is inquiring about the opaque
+** internal state of an [sqlite3_value] object.  Ordinary applications should
+** not need to know what the internal state of an sqlite3_value object is and
+** hence should not need to use this interface.
+*/
 int sqlite3_value_encoding(sqlite3_value*);
 
 /*
