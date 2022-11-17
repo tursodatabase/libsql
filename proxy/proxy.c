@@ -237,6 +237,9 @@ out:
 #define SQLITE_ROW	100
 #define SQLITE_DONE	101
 
+typedef int64_t sqlite3_int64;
+typedef uint64_t sqlite3_uint64;
+
 static char errmsg[256];
 
 typedef struct sqlite3 {
@@ -255,6 +258,9 @@ typedef struct sqlite3_stmt {
 	enum stmt_state state;
 	char stmt[256];
 } sqlite3_stmt;
+
+typedef struct sqlite3_value {
+} sqlite3_value;
 
 typedef struct sqlite3_mutex {
 } sqlite3_mutex;
@@ -525,6 +531,86 @@ retry:
 	}
 }
 
+int sqlite3_bind_blob(sqlite3_stmt*, int, const void*, int n, void(*)(void*))
+{
+	STUB();
+	return SQLITE_OK;
+}
+
+int sqlite3_bind_blob64(sqlite3_stmt*, int, const void*, sqlite3_uint64,
+                        void(*)(void*))
+{
+	STUB();
+	return SQLITE_OK;
+}
+
+int sqlite3_bind_double(sqlite3_stmt*, int, double)
+{
+	STUB();
+	return SQLITE_OK;
+}
+
+int sqlite3_bind_int(sqlite3_stmt*, int, int)
+{
+	STUB();
+	return SQLITE_OK;
+}
+
+int sqlite3_bind_int64(sqlite3_stmt*, int, sqlite3_int64)
+{
+	STUB();
+	return SQLITE_OK;
+}
+
+int sqlite3_bind_null(sqlite3_stmt*, int)
+{
+	STUB();
+	return SQLITE_OK;
+}
+
+int sqlite3_bind_text(sqlite3_stmt*,int,const char*,int,void(*)(void*))
+{
+	STUB();
+	return SQLITE_OK;
+}
+
+int sqlite3_bind_text16(sqlite3_stmt*, int, const void*, int, void(*)(void*))
+{
+	STUB();
+	return SQLITE_OK;
+}
+
+int sqlite3_bind_text64(sqlite3_stmt*, int, const char*, sqlite3_uint64,
+                         void(*)(void*), unsigned char encoding)
+{
+	STUB();
+	return SQLITE_OK;
+}
+
+int sqlite3_bind_value(sqlite3_stmt*, int, const sqlite3_value*)
+{
+	STUB();
+	return SQLITE_OK;
+}
+
+int sqlite3_bind_pointer(sqlite3_stmt*, int, void*, const char*,void(*)(void*))
+{
+	STUB();
+	return SQLITE_OK;
+}
+
+int sqlite3_bind_zeroblob(sqlite3_stmt*, int, int n)
+{
+	STUB();
+	return SQLITE_OK;
+}
+
+int sqlite3_bind_zeroblob64(sqlite3_stmt*, int, sqlite3_uint64)
+{
+	STUB();
+	return SQLITE_OK;
+}
+
 /*
  * Mutexes
  */
@@ -555,22 +641,9 @@ DEFINE_STUB(sqlite3_backup_init);
 DEFINE_STUB(sqlite3_backup_pagecount);
 DEFINE_STUB(sqlite3_backup_remaining);
 DEFINE_STUB(sqlite3_backup_step);
-DEFINE_STUB(sqlite3_bind_blob);
-DEFINE_STUB(sqlite3_bind_blob64);
-DEFINE_STUB(sqlite3_bind_double);
-DEFINE_STUB(sqlite3_bind_int);
-DEFINE_STUB(sqlite3_bind_int64);
-DEFINE_STUB(sqlite3_bind_null);
 DEFINE_STUB(sqlite3_bind_parameter_count);
 DEFINE_STUB(sqlite3_bind_parameter_index);
 DEFINE_STUB(sqlite3_bind_parameter_name);
-DEFINE_STUB(sqlite3_bind_pointer);
-DEFINE_STUB(sqlite3_bind_text);
-DEFINE_STUB(sqlite3_bind_text16);
-DEFINE_STUB(sqlite3_bind_text64);
-DEFINE_STUB(sqlite3_bind_value);
-DEFINE_STUB(sqlite3_bind_zeroblob);
-DEFINE_STUB(sqlite3_bind_zeroblob64);
 DEFINE_STUB(sqlite3_blob_bytes);
 DEFINE_STUB(sqlite3_blob_close);
 DEFINE_STUB(sqlite3_blob_open);
