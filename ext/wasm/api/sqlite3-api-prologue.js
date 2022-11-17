@@ -17,22 +17,29 @@
   conventions, and build process are very much under construction and
   will be (re)documented once they've stopped fluctuating so much.
 
-  Specific goals of this project:
+  Project home page: https://sqlite.org
+
+  Documentation home page: https://sqlite.org/wasm
+
+  Specific goals of this subproject:
 
   - Except where noted in the non-goals, provide a more-or-less
     feature-complete wrapper to the sqlite3 C API, insofar as WASM
-    feature parity with C allows for. In fact, provide at least 3
+    feature parity with C allows for. In fact, provide at least 4
     APIs...
 
-    1) Bind a low-level sqlite3 API which is as close to the native
-       one as feasible in terms of usage.
+    1) 1-to-1 bindings as exported from WASM, with no automatic
+       type conversions between JS and C.
+       
+    2) A binding of (1) which provides certain JS/C type conversions
+       to greatly simplify its use.
 
-    2) A higher-level API, more akin to sql.js and node.js-style
+    3) A higher-level API, more akin to sql.js and node.js-style
        implementations. This one speaks directly to the low-level
        API. This API must be used from the same thread as the
        low-level API.
 
-    3) A second higher-level API which speaks to the previous APIs via
+    4) A second higher-level API which speaks to the previous APIs via
        worker messages. This one is intended for use in the main
        thread, with the lower-level APIs installed in a Worker thread,
        and talking to them via Worker messages. Because Workers are
@@ -90,11 +97,13 @@
    config object is only honored the first time this is
    called. Subsequent calls ignore the argument and return the same
    (configured) object which gets initialized by the first call.
+   This function will throw if any of the required config options are
+   missing.
 
    The config object properties include:
 
    - `exports`[^1]: the "exports" object for the current WASM
-     environment. In an Emscripten build, this should be set to
+     environment. In an Emscripten-based build, this should be set to
      `Module['asm']`.
 
    - `memory`[^1]: optional WebAssembly.Memory object, defaulting to
@@ -104,7 +113,7 @@
      WASM-exported memory.
 
    - `bigIntEnabled`: true if BigInt support is enabled. Defaults to
-     true if self.BigInt64Array is available, else false. Some APIs
+     true if `self.BigInt64Array` is available, else false. Some APIs
      will throw exceptions if called without BigInt support, as BigInt
      is required for marshalling C-side int64 into and out of JS.
 
@@ -116,10 +125,12 @@
      the `free(3)`-compatible routine for the WASM
      environment. Defaults to `"free"`.
 
-   - `wasmfsOpfsDir`[^1]: if the environment supports persistent storage, this
-     directory names the "mount point" for that directory. It must be prefixed
-     by `/` and may currently contain only a single directory-name part. Using
-     the root directory name is not supported by any current persistent backend.
+   - `wasmfsOpfsDir`[^1]: if the environment supports persistent
+     storage, this directory names the "mount point" for that
+     directory. It must be prefixed by `/` and may contain only a
+     single directory-name part. Using the root directory name is not
+     supported by any current persistent backend.  This setting is
+     only used in WASMFS-enabled builds.
 
 
    [^1] = This property may optionally be a function, in which case this
@@ -388,8 +399,22 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      exceptions.
   */
   class WasmAllocError extends Error {
+    /**
+       If called with 2 arguments and the 2nd one is an object, it
+       behaves like the Error constructor, else it concatenates all
+       arguments together with a single space between each to
+       construct an error message string. As a special case, if
+       called with no arguments then it uses a default error
+       message.
+    */
     constructor(...args){
-      super(...args);
+      if(2===args.length && 'object'===typeof args){
+        super(...args);
+      }else if(args.length){
+        super(args.join(' '));
+      }else{
+        super("Allocation failed.");
+      }
       this.name = 'WasmAllocError';
     }
   };
@@ -699,21 +724,33 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        API NOT throw and must instead return SQLITE_NOMEM (or
        equivalent, depending on the context).
 
-       That said, very few cases in the API can result in
+       Very few cases in the sqlite3 JS APIs can result in
        client-defined functions propagating exceptions via the C-style
-       API. Most notably, this applies ot User-defined SQL Functions
-       (UDFs) registered via sqlite3_create_function_v2(). For that
-       specific case it is recommended that all UDF creation be
-       funneled through a utility function and that a wrapper function
-       be added around the UDF which catches any exception and sets
-       the error state to OOM. (The overall complexity of registering
-       UDFs essentially requires a helper for doing so!)
+       API. Most notably, this applies to WASM-bound JS functions
+       which are created directly by clients and passed on _as WASM
+       function pointers_ to functions such as
+       sqlite3_create_function_v2(). Such bindings created
+       transparently by this API will automatically use wrappers which
+       catch exceptions and convert them to appropriate error codes.
+
+       For cases where non-throwing allocation is required, use
+       sqlite3.wasm.alloc.impl(), which is direct binding of the
+       underlying C-level allocator.
+
+       Design note: this function is not named "malloc" primarily
+       because Emscripten uses that name and we wanted to avoid any
+       confusion early on in this code's development, when it still
+       had close ties to Emscripten's glue code.
     */
     alloc: undefined/*installed later*/,
+
     /**
        The API's one single point of access to the WASM-side memory
        deallocator. Works like free(3) (and is likely bound to
        free()).
+
+       Design note: this function is not named "free" for the same
+       reason that this.alloc() is not called this.malloc().
     */
     dealloc: undefined/*installed later*/
 
@@ -741,7 +778,9 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   wasm.allocFromTypedArray = function(srcTypedArray){
     affirmBindableTypedArray(srcTypedArray);
     const pRet = wasm.alloc(srcTypedArray.byteLength || 1);
-    wasm.heapForSize(srcTypedArray.constructor).set(srcTypedArray.byteLength ? srcTypedArray : [0], pRet);
+    wasm.heapForSize(srcTypedArray.constructor).set(
+      srcTypedArray.byteLength ? srcTypedArray : [0], pRet
+    );
     return pRet;
   };
 
@@ -752,13 +791,13 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     if(!(f instanceof Function)) toss3("Missing required exports[",key,"] function.");
   }
 
-  wasm.alloc = function(n){
-    const m = wasm.exports[keyAlloc](n);
-    if(!m) throw new WasmAllocError("Failed to allocate "+n+" bytes.");
+  wasm.alloc = function f(n){
+    const m = f.impl(n);
+    if(!m) throw new WasmAllocError("Failed to allocate",n," bytes.");
     return m;
   };
-
-  wasm.dealloc = (m)=>wasm.exports[keyDealloc](m);
+  wasm.alloc.impl = wasm.exports[keyAlloc];
+  wasm.dealloc = wasm.exports[keyDealloc];
 
   /**
      Reports info about compile-time options using

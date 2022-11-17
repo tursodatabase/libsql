@@ -67,7 +67,7 @@
 ** larger cache benefits the larger workloads. Speed differences
 ** between 2x and nearly 3x have been measured with ample page cache.
 */
-# define SQLITE_DEFAULT_CACHE_SIZE -16777216
+# define SQLITE_DEFAULT_CACHE_SIZE -16384
 #endif
 #if 0 && !defined(SQLITE_DEFAULT_PAGE_SIZE)
 /* TODO: experiment with this. */
@@ -1108,9 +1108,6 @@ int sqlite3_wasm_init_wasmfs(const char *zMountPoint){
   /** It's not enough to instantiate the backend. We have to create a
       mountpoint in the VFS and attach the backend to it. */
   if( pOpfs && 0!=access(zMountPoint, F_OK) ){
-    /* mkdir() simply hangs when called from fiddle app. Cause is
-       not yet determined but the hypothesis is an init-order
-       issue. */
     /* Note that this check and is not robust but it will
        hypothetically suffice for the transient wasm-based virtual
        filesystem we're currently running in. */

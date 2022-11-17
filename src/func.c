@@ -2106,17 +2106,15 @@ static void logFunc(
     }
     ans = log(x)/b;
   }else{
-    ans = log(x);
     switch( SQLITE_PTR_TO_INT(sqlite3_user_data(context)) ){
       case 1:
-        /* Convert from natural logarithm to log base 10 */
-        ans /= M_LN10;
+        ans = log10(x);
         break;
       case 2:
-        /* Convert from natural logarithm to log base 2 */
-        ans /= M_LN2;
+        ans = log2(x);
         break;
       default:
+        ans = log(x);
         break;
     }
   }

@@ -3,9 +3,9 @@
 # This is a template for a script used for day-to-day size and 
 # performance monitoring of SQLite.  Typical usage:
 #
-#     sh run-speed-test.sh trunk  #  Baseline measurement of trunk
-#     sh run-speed-test.sh x1     # Measure some experimental change
-#     fossil test-diff --tk cout-trunk.txt cout-x1.txt   # View chanages
+#     sh speed-check.sh trunk  #  Baseline measurement of trunk
+#     sh speed-check.sh x1     # Measure some experimental change
+#     fossil xdiff --tk cout-trunk.txt cout-x1.txt   # View chanages
 #
 # There are multiple output files, all with a base name given by
 # the first argument:

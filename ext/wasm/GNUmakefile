@@ -110,7 +110,7 @@ emcc.WASM_BIGINT ?= 1
 sqlite3.c := $(dir.top)/sqlite3.c
 sqlite3.h := $(dir.top)/sqlite3.h
 SQLITE_OPT = \
-  -DSQLITE_ENABLE_FTS4 \
+  -DSQLITE_ENABLE_FTS5 \
   -DSQLITE_ENABLE_RTREE \
   -DSQLITE_ENABLE_EXPLAIN_COMMENTS \
   -DSQLITE_ENABLE_UNKNOWN_SQL_FUNCTION \
@@ -465,7 +465,20 @@ emcc.jsflags += -sWASM_BIGINT=$(emcc.WASM_BIGINT)
 # debugging info, _huge_.
 ########################################################################
 
-sqlite3.js := $(dir.dout)/sqlite3.js
+########################################################################
+# AN EXPERIMENT: undocumented Emscripten feature: if the target file
+# extension is "mjs", it defaults to ES6 module builds:
+# https://github.com/emscripten-core/emscripten/issues/14383
+ifeq (,$(filter esm,$(MAKECMDGOALS)))
+sqlite3.js.ext := js
+else
+esm.deps := $(filter-out esm,$(MAKECMDGOALS))
+esm: $(if $(esm.deps),$(esm.deps),all)
+sqlite3.js.ext := mjs
+endif
+# /esm
+########################################################################
+sqlite3.js := $(dir.dout)/sqlite3.$(sqlite3.js.ext)
 sqlite3.wasm := $(dir.dout)/sqlite3.wasm
 sqlite3-wasm.c := $(dir.api)/sqlite3-wasm.c
 # sqlite3-wasm.o vs sqlite3-wasm.c: building against the latter
