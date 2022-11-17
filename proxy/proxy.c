@@ -460,6 +460,12 @@ int sqlite3_finalize(sqlite3_stmt *pStmt)
 	return SQLITE_OK;
 }
 
+int sqlite3_reset(sqlite3_stmt *pStmt)
+{
+	pStmt->state = STMT_STATE_PREPARED;
+	return SQLITE_OK;
+}
+
 /*
  * SQL evaluation.
  */
@@ -671,7 +677,6 @@ DEFINE_STUB(sqlite3_randomness);
 DEFINE_STUB(sqlite3_realloc);
 DEFINE_STUB(sqlite3_realloc64);
 DEFINE_STUB(sqlite3_release_memory);
-DEFINE_STUB(sqlite3_reset);
 DEFINE_STUB(sqlite3_reset_auto_extension);
 DEFINE_STUB(sqlite3_result_blob);
 DEFINE_STUB(sqlite3_result_blob64);
