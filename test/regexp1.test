@@ -303,6 +303,33 @@ do_execsql_test regexp1-6.7 {SELECT 'xabc' REGEXP '(^abc|def)';} {0}
 do_execsql_test regexp1-6.8 {SELECT 'def' REGEXP '(^abc|def)';} {1}
 do_execsql_test regexp1-6.9 {SELECT 'xdef' REGEXP '(^abc|def)';} {1}
 
+# 2022-11-17
+# https://sqlite.org/forum/forumpost/3ffe058b04
+#
+do_execsql_test regexp1-7.1 {
+  SELECT char(0x61,0x7ff,0x62) REGEXP char(0x7ff);
+} 1
+do_execsql_test regexp1-7.2 {
+  SELECT char(0x61,0x800,0x62) REGEXP char(0x800);
+} 1
+do_execsql_test regexp1-7.3 {
+  SELECT char(0x61,0xabc,0x62) REGEXP char(0xabc);
+} 1
+do_execsql_test regexp1-7.4 {
+  SELECT char(0x61,0xfff,0x62) REGEXP char(0xfff);
+} 1
+do_execsql_test regexp1-7.5 {
+  SELECT char(0x61,0x1000,0x62) REGEXP char(0x1000);
+} 1
+do_execsql_test regexp1-7.10 {
+  SELECT char(0x61,0xffff,0x62) REGEXP char(0xffff);
+} 1
+do_execsql_test regexp1-7.11 {
+  SELECT char(0x61,0x10000,0x62) REGEXP char(0x10000);
+} 1
+do_execsql_test regexp1-7.12 {
+  SELECT char(0x61,0x10ffff,0x62) REGEXP char(0x10ffff);
+} 1
 
 
 finish_test
