@@ -14,6 +14,13 @@ Wildly successful, and broadly useful, SQLite has solidified its place in modern
 ## Hack SQLite internally or externally?
 It seems to us that there are two obvious avenues to modify SQLite: forking the code to add features directly to it, or running it on top of a modified OS. History suggests that neither of these work well. The way we see it, this is a result of one major limitation of the software: SQLite is open source but does not accept contributions, so community improvements cannot be widely enjoyed.
 
+## Quickstart
+
+```
+./configure && make
+./sqlite3 <path-to-database.db>
+```
+
 ## SQLite needs to open contributions.
 We want to see a world where everyone can benefit from all of the great ideas and hard work that the SQLite community contributes back to the codebase.  Community contributions work well, because [we’ve done it before][qemu-sqlite]. If this was possible, what do you think SQLite could become?
 
