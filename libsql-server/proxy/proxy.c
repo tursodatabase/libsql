@@ -444,7 +444,9 @@ int sqlite3_prepare_v2(sqlite3 *db, const char *zSql, int nByte, sqlite3_stmt **
 	stmt->state = STMT_STATE_PREPARED;
 	strcpy(stmt->stmt, zSql);
 	*ppStmt = stmt;
-	*pzTail = "";
+	if (pzTail) {
+		*pzTail = "";
+	}
 	return SQLITE_OK;
 }
 
