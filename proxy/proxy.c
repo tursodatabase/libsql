@@ -54,12 +54,19 @@ static const char *get_u8(const char *buf, uint8_t *v)
 	return buf + 1;
 }
 
+static uint32_t read_be32(const char *buf)
+{
+	uint32_t ret;
+	ret = (uint32_t) buf[0] << 24;
+	ret |= (uint32_t) buf[1] << 16;
+	ret |= (uint32_t) buf[2] << 8;
+	ret |= (uint32_t) buf[3];
+	return ret;
+}
+
 static const char *get_be32(const char *buf, uint32_t *v)
 {
-	*v = (uint32_t) buf[0] << 24;
-	*v |= (uint32_t) buf[1] << 16;
-	*v |= (uint32_t) buf[2] << 8;
-	*v |= (uint32_t) buf[3];
+	*v = read_be32(buf);
 	return buf + 4;
 }
 
