@@ -1,11 +1,184 @@
+#include <errno.h>
+#include <netdb.h>
+#include <sys/socket.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
+/*
+ * 	Helpers
+ */
+
+#define STUB() printf("STUB %s\n", __func__)
+#define TRACE() printf("TRACE %s\n", __func__)
+
+/*
+ *	PostgreSQL mini-driver
+ */
+
+#define MSG_TYPE_STARTUP		'F'
+#define MSG_TYPE_AUTHENTICATION_REQUEST	'R'
+
+static char *put_u8(char *buf, uint8_t v)
+{
+	*buf = v;
+	return buf + 1;
+}
+
+static char *put_be32(char *buf, uint32_t v)
+{
+	buf[0] = (v >> 24) & 0xff;
+	buf[1] = (v >> 16) & 0xff;
+	buf[2] = (v >>8) & 0xff;
+	buf[3] = (v    ) & 0xff;
+	return buf + 4;
+}
+
+static char *put_cstr(char *buf, const char *s)
+{
+	size_t len = strlen(s);
+
+	strcpy(buf, s);
+
+	return buf + len + 1;
+}
+
+static const char *get_u8(const char *buf, uint8_t *v)
+{
+	*v = *buf;
+	return buf + 1;
+}
+
+static const char *get_be32(const char *buf, uint32_t *v)
+{
+	*v = (uint32_t) buf[0] << 24;
+	*v |= (uint32_t) buf[1] << 16;
+	*v |= (uint32_t) buf[2] << 8;
+	*v |= (uint32_t) buf[3];
+	return buf + 4;
+}
+
+static bool msg_is_authentication_ok(const char *buf)
+{
+	uint32_t request_type;
+	uint8_t msg_type;
+
+	buf = get_u8(buf, &msg_type);
+	buf += 4; /* skip length */
+	buf = get_be32(buf, &request_type);
+
+	return msg_type == MSG_TYPE_AUTHENTICATION_REQUEST
+		&& request_type == 0;
+}
+
+static ssize_t postgres_recv_msg(int sockfd, char *buf, size_t buf_len)
+{
+	TRACE();
+
+	ssize_t nr;
+
+	nr = recv(sockfd, buf, buf_len, 0);
+	/* We need at least message type and length.*/
+	if (nr < 5) {
+		return -1;
+	}
+	return nr;
+}
+
+static void postgres_send_startup(int sockfd)
+{
+	TRACE();
+
+	char buf[1024];
+	char *p = buf;
+	char *len;
+
+	len = p;
+	p = put_be32(p, 0);
+	p = put_be32(p, 0x30000);
+	p = put_cstr(p, "user");
+	p = put_cstr(p, "penberg");
+	p = put_u8(p, 0);
+
+	size_t buf_len = p - buf;
+	put_be32(len, buf_len);
+	send(sockfd, buf, buf_len, 0);
+}
+
+static int postgres_connect_to(const char *host, uint16_t port)
+{
+	TRACE();
+
+	struct addrinfo hints, *res;
+	int ret = -1;
+	int err;
+	char service[6];
+
+	snprintf(service, sizeof(service), "%d", port);
+
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family		= PF_INET;
+	hints.ai_socktype	= SOCK_STREAM;
+
+	err = getaddrinfo(host, service, &hints, &res);
+	if (err != 0) {
+		goto out;
+	}
+	if (!res) {
+		goto out_free;
+	}
+	int sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+	if (connect(sockfd, res->ai_addr, res->ai_addrlen) < 0) {
+		goto out_free;
+	}
+	ret = sockfd;
+out_free:
+	freeaddrinfo(res);
+out:
+	return ret;
+}
+
+static int postgres_connect(const char *host, uint16_t port)
+{
+	TRACE();
+	int sockfd = postgres_connect_to(host, port);
+	if (sockfd < 0) {
+		goto out;
+	}
+	postgres_send_startup(sockfd);
+
+	char buf[1024];
+	ssize_t len = postgres_recv_msg(sockfd, buf, sizeof(buf));
+	if (len < 0) {
+		goto out_close;
+	}
+	if (!msg_is_authentication_ok(buf)) {
+		printf("ERROR Authentication to PostgreSQL server failed.\n");
+		goto out_close;
+	}
+	return sockfd;
+
+out_close:
+	close(sockfd);
+out:
+	return -1;
+}
+
+/*
+ *	SQLite proxy
+ */
 
 #define SQLITE_OK	0
 #define SQLITE_ERROR	1
 #define SQLITE_DONE	101
 
 typedef struct sqlite3 {
+	int conn_fd;
 } sqlite3;
 
 typedef struct sqlite3_stmt {
@@ -31,9 +204,6 @@ static void sqlite3_stmt_delete(struct sqlite3_stmt *stmt)
 	free(stmt);
 }
 
-#define STUB() printf("STUB %s\n", __func__)
-#define TRACE() printf("TRACE %s\n", __func__)
-
 #define DEFINE_STUB(func_name)				\
 	int func_name(void)				\
 	{						\
@@ -45,7 +215,7 @@ static void sqlite3_stmt_delete(struct sqlite3_stmt *stmt)
  * Library version numbers.
  */
 
-#define SQLITE_VERSION        "3.39.3"
+#define SQLITE_VERSION      "3.39.3"
 #define SQLITE_VERSION_NUMBER 3039003
 
 const char *sqlite3_version = SQLITE_VERSION;
@@ -150,10 +320,21 @@ int sqlite3_open16(const void *filename, sqlite3 **ppDb)
 
 int sqlite3_open_v2(const char *filename, sqlite3 **ppDb, int flags, const char *zVfs)
 {
+	int ret;
 	TRACE();
 	struct sqlite3 *db = sqlite3_new();
+	if (!db) {
+		goto out;
+	}
+	db->conn_fd = postgres_connect("localhost", 5432);
+	if (db->conn_fd < 0) {
+		ret = SQLITE_ERROR;
+		goto out;
+	}
+	ret = SQLITE_OK;
+out:
 	*ppDb = db;
-	return SQLITE_OK;
+	return ret;
 }
 
 /*
