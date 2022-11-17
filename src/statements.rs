@@ -6,10 +6,7 @@ use sqlparser::{ast::Statement, dialect::SQLiteDialect, parser::Parser};
 /// A group of statements to be executed together.
 pub struct Statements {
     pub stmts: String,
-    /// At least one of the statements starts a transaction.
-    pub has_txn_begin: bool,
-    /// at least one of the statements ends a transaction.
-    pub has_txn_end: bool,
+    kinds: Vec<StmtKind>,
 }
 
 impl fmt::Debug for Statements {
@@ -19,6 +16,7 @@ impl fmt::Debug for Statements {
 }
 
 /// Classify statement in categories of interest.
+#[derive(Debug, PartialEq, Clone, Copy)]
 enum StmtKind {
     /// The begining of a transaction
     TxnBegin,
@@ -41,23 +39,42 @@ impl StmtKind {
     }
 }
 
+/// The state of a transaction for a series of statement
+pub enum State {
+    /// The txn in an opened state
+    TxnOpened,
+    /// The txn in a closed state
+    TxnClosed,
+    /// This is the initial state of the state machine
+    Start,
+    /// This is an invalid state for the state machine
+    Invalid,
+}
+
 impl Statements {
     pub fn parse(s: String) -> Result<Self> {
         let statements = Parser::parse_sql(&SQLiteDialect {}, &s)?;
-        let mut has_txn_begin = false;
-        let mut has_txn_end = false;
-        for stmt in &statements {
-            match StmtKind::kind(stmt) {
-                StmtKind::TxnBegin => has_txn_begin = true,
-                StmtKind::TxnEnd => has_txn_end = true,
-                StmtKind::Other => (),
-            }
-        }
+        // We don't really care about `StmtKind::Other`, we keep it for conceptual simplicity.
+        let kinds = statements.iter().map(StmtKind::kind).collect();
 
-        Ok(Self {
-            stmts: s,
-            has_txn_begin,
-            has_txn_end,
-        })
+        Ok(Self { stmts: s, kinds })
+    }
+
+    /// Given an initial state, returns the final state a transaction should be in after running these
+    /// statements.
+    pub fn state(&self, state: State) -> State {
+        self.kinds
+            .iter()
+            .fold(state, |old_state, current| match (old_state, current) {
+                (State::TxnOpened, StmtKind::TxnBegin) | (State::TxnClosed, StmtKind::TxnEnd) => {
+                    State::Invalid
+                }
+                (State::TxnOpened, StmtKind::TxnEnd) => State::TxnClosed,
+                (State::TxnClosed, StmtKind::TxnBegin) => State::TxnOpened,
+                (state, StmtKind::Other) => state,
+                (State::Invalid, _) => State::Invalid,
+                (State::Start, StmtKind::TxnBegin) => State::TxnOpened,
+                (State::Start, StmtKind::TxnEnd) => State::TxnClosed,
+            })
     }
 }
