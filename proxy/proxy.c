@@ -256,6 +256,9 @@ typedef struct sqlite3_stmt {
 	char stmt[256];
 } sqlite3_stmt;
 
+typedef struct sqlite3_mutex {
+} sqlite3_mutex;
+
 static struct sqlite3 *sqlite3_new(void)
 {
 	return malloc(sizeof(struct sqlite3));
@@ -523,6 +526,23 @@ retry:
 }
 
 /*
+ * Mutexes
+ */
+
+DEFINE_STUB(sqlite3_mutex_alloc);
+
+void sqlite3_mutex_enter(sqlite3_mutex*)
+{
+	STUB();
+}
+
+DEFINE_STUB(sqlite3_mutex_free);
+DEFINE_STUB(sqlite3_mutex_held);
+DEFINE_STUB(sqlite3_mutex_leave);
+DEFINE_STUB(sqlite3_mutex_notheld);
+DEFINE_STUB(sqlite3_mutex_try);
+
+/*
  * Stubs.
  */
 
@@ -650,13 +670,6 @@ DEFINE_STUB(sqlite3_memory_highwater);
 DEFINE_STUB(sqlite3_memory_used);
 DEFINE_STUB(sqlite3_mprintf);
 DEFINE_STUB(sqlite3_msize);
-DEFINE_STUB(sqlite3_mutex_alloc);
-DEFINE_STUB(sqlite3_mutex_enter);
-DEFINE_STUB(sqlite3_mutex_free);
-DEFINE_STUB(sqlite3_mutex_held);
-DEFINE_STUB(sqlite3_mutex_leave);
-DEFINE_STUB(sqlite3_mutex_notheld);
-DEFINE_STUB(sqlite3_mutex_try);
 DEFINE_STUB(sqlite3_next_stmt);
 DEFINE_STUB(sqlite3_normalized_sql);
 DEFINE_STUB(sqlite3_overload_function);
