@@ -8,7 +8,7 @@ use rayon::{ThreadPool, ThreadPoolBuilder};
 use crate::job::Job;
 use crate::messages::{ErrorCode, Message};
 use crate::scheduler::UpdateStateMessage;
-use crate::statements::Statements;
+use crate::statements::{State, Statements};
 
 const TXN_TIMEOUT_SECS: usize = 5;
 
@@ -88,46 +88,55 @@ impl Worker {
             log::debug!("executing job `{:?}` on worker {}", job.statements, self.id);
 
             // This is an interactive transaction.
-            if job.statements.has_txn_begin && !job.statements.has_txn_end {
+            if let State::TxnOpened = job.statements.state(State::Start) {
                 let (sender, receiver) = crossbeam::channel::unbounded();
                 job.scheduler_sender
                     .send(UpdateStateMessage::TxnBegin(job.endpoint, sender))
                     .unwrap();
                 let mut stmts = job.statements;
+
                 let txn_timeout = Instant::now() + Duration::from_secs(TXN_TIMEOUT_SECS as _);
+
                 loop {
                     let message = self.perform_oneshot(&stmts);
                     send_message(&job.handler, job.endpoint, &message);
-                    if stmts.has_txn_end && !message.is_err() {
-                        // the transaction was closed successfully
-                        job.scheduler_sender
-                            .send(UpdateStateMessage::TxnEnded(job.endpoint))
-                            .unwrap();
-                        break;
-                    }
-                    job.scheduler_sender
-                        .send(UpdateStateMessage::Ready(job.endpoint))
-                        .unwrap();
-                    match receiver.recv_timeout(txn_timeout - Instant::now()) {
-                        Ok(job) => {
-                            stmts = job.statements;
-                        }
-                        Err(_) => {
-                            log::warn!("rolling back transaction!");
-                            let _ = self.db_conn.execute("ROLLBACK TRANSACTION;");
-                            send_message(
-                                &job.handler,
-                                job.endpoint,
-                                &Message::Error(
-                                    ErrorCode::TxTimeout,
-                                    "transaction timed out".into(),
-                                ),
-                            );
+                    match stmts.state(State::TxnOpened) {
+                        State::TxnClosed if !message.is_err() => {
+                            // the transaction was closed successfully
+                            job.scheduler_sender
+                                .send(UpdateStateMessage::TxnEnded(job.endpoint))
+                                .unwrap();
                             break;
+                        }
+                        _ => {
+                            // Let the database handle any other state
+                            job.scheduler_sender
+                                .send(UpdateStateMessage::Ready(job.endpoint))
+                                .unwrap();
+                            match receiver.recv_timeout(txn_timeout - Instant::now()) {
+                                Ok(job) => {
+                                    stmts = job.statements;
+                                }
+                                Err(_) => {
+                                    log::warn!("rolling back transaction!");
+                                    let _ = self.db_conn.execute("ROLLBACK TRANSACTION;");
+                                    send_message(
+                                        &job.handler,
+                                        job.endpoint,
+                                        &Message::Error(
+                                            ErrorCode::TxTimeout,
+                                            "transaction timed out".into(),
+                                        ),
+                                    );
+                                    break;
+                                }
+                            }
                         }
                     }
                 }
             } else {
+                // Any other state falls in this branch, even invalid: we let sqlite deal with the
+                // error handling.
                 let m = self.perform_oneshot(&job.statements);
                 send_message(&job.handler, job.endpoint, &m);
                 job.scheduler_sender
