@@ -1,2 +1,2 @@
-gcc -Wall -c -Wall -Werror -fpic proxy.c
+gcc -Wall -fpic -c proxy.c
 gcc -shared -o libproxy.so proxy.o
