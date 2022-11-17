@@ -237,6 +237,8 @@ out:
 #define SQLITE_ROW	100
 #define SQLITE_DONE	101
 
+static char errmsg[256];
+
 typedef struct sqlite3 {
 	int conn_fd;
 } sqlite3;
@@ -279,12 +281,13 @@ static void sqlite3_stmt_delete(struct sqlite3_stmt *stmt)
 	free(stmt);
 }
 
-#define DEFINE_STUB(func_name)				\
-	int func_name(void)				\
-	{						\
-		printf("STUB %s\n", #func_name);	\
-		return SQLITE_ERROR;			\
-	}						\
+#define DEFINE_STUB(func_name)						\
+	int func_name(sqlite3 *db)					\
+	{								\
+		printf("STUB %s\n", #func_name);			\
+		sprintf(errmsg, "%s not implemented", #func_name);	\
+		return SQLITE_ERROR;					\
+	}								\
 
 /*
  * Library version numbers.
@@ -349,10 +352,10 @@ int sqlite3_extended_errcode(sqlite3 *db)
 	return SQLITE_OK;
 }
 
-const char *sqlite3_errmsg(sqlite3*)
+const char *sqlite3_errmsg(sqlite3 *db)
 {
 	STUB();
-	return "unknown error";
+	return errmsg;
 }
 
 const void *sqlite3_errmsg16(sqlite3*)
