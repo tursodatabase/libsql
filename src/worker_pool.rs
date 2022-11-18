@@ -90,7 +90,7 @@ impl Worker {
     fn handle_transaction(&self, job: Job) {
         let (sender, receiver) = crossbeam::channel::unbounded();
         job.scheduler_sender
-            .send(UpdateStateMessage::TxnBegin(job.endpoint, sender))
+            .send(UpdateStateMessage::TxnBegin(job.client_id, sender))
             .unwrap();
         let mut stmts = job.statements;
 
@@ -103,14 +103,14 @@ impl Worker {
                 State::TxnClosed if !message.is_err() => {
                     // the transaction was closed successfully
                     job.scheduler_sender
-                        .send(UpdateStateMessage::TxnEnded(job.endpoint))
+                        .send(UpdateStateMessage::TxnEnded(job.client_id))
                         .unwrap();
                     break;
                 }
                 _ => {
                     // Let the database handle any other state
                     job.scheduler_sender
-                        .send(UpdateStateMessage::Ready(job.endpoint))
+                        .send(UpdateStateMessage::Ready(job.client_id))
                         .unwrap();
                     match receiver.recv_timeout(txn_timeout - Instant::now()) {
                         Ok(job) => {
@@ -144,7 +144,7 @@ impl Worker {
                 let m = self.perform_oneshot(&job.statements);
                 job.responder.respond(&m);
                 job.scheduler_sender
-                    .send(UpdateStateMessage::Ready(job.endpoint))
+                    .send(UpdateStateMessage::Ready(job.client_id))
                     .unwrap();
             }
 
