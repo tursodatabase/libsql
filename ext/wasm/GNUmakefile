@@ -456,7 +456,7 @@ $(sqlite3.js): $(MAKEFILE) $(sqlite3.wasm.obj) \
     $(cflags.common) $(SQLITE_OPT) $(sqlite3-wasm.c)
 	chmod -x $(sqlite3.wasm)
 	$(maybe-wasm-strip) $(sqlite3.wasm)
-	$(maybe-wasm-shrink) $(sqlite3.wasm) -o $(sqlite3.wasm)
+	$(maybe-wasm-shrink) $(sqlite3.wasm) -o $(sqlite3.wasm) || :
 	@ls -la $@ $(sqlite3.wasm)
 $(sqlite3.wasm): $(sqlite3.js)
 CLEAN_FILES += $(sqlite3.js) $(sqlite3.wasm)
@@ -550,7 +550,7 @@ $(speedtest1.js): $(MAKEFILE) $(speedtest1.cses) \
         $(speedtest1.exit-runtime0) \
         -o $@ $(speedtest1.cses) -lm
 	$(maybe-wasm-strip) $(speedtest1.wasm)
-	$(maybe-wasm-shrink) $(speedtest1.wasm) -o $(speedtest1.wasm)
+	$(maybe-wasm-shrink) $(speedtest1.wasm) -o $(speedtest1.wasm) || :
 	ls -la $@ $(speedtest1.wasm)
 
 speedtest1: $(speedtest1.js)
