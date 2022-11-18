@@ -4,11 +4,11 @@ use std::fmt;
 use anyhow::Result;
 use crossbeam::channel::{Sender, TrySendError};
 use message_io::network::Endpoint;
-use message_io::node::NodeHandler;
 use smallvec::SmallVec;
 use tokio::sync::mpsc::{UnboundedReceiver as TokioReceiver, UnboundedSender as TokioSender};
 
 use crate::job::Job;
+use crate::messages::Responder;
 use crate::statements::Statements;
 
 #[derive(Default)]
@@ -36,8 +36,8 @@ pub enum Action {
 
 pub struct ServerMessage {
     pub endpoint: Endpoint,
-    pub handler: NodeHandler<()>,
     pub action: Action,
+    pub responder: Box<dyn Responder>,
 }
 
 impl fmt::Debug for ServerMessage {
@@ -176,7 +176,7 @@ impl Scheduler {
                     scheduler_sender: self.update_state_sender.clone(),
                     statements,
                     endpoint: msg.endpoint,
-                    handler: msg.handler,
+                    responder: msg.responder,
                 };
 
                 self.queues

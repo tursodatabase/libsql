@@ -19,3 +19,7 @@ impl Message {
         matches!(self, Self::Error(_, _))
     }
 }
+
+pub trait Responder: Sync + Send {
+    fn respond(&self, message: &Message);
+}

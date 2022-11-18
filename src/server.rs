@@ -1,18 +1,29 @@
 use std::net::ToSocketAddrs;
 
 use anyhow::Result;
-use message_io::network::{NetEvent, Transport};
-use message_io::node;
+use message_io::network::{Endpoint, NetEvent, Transport};
+use message_io::node::{self, NodeHandler};
 use tokio::sync::mpsc::UnboundedSender as TokioSender;
 
-use crate::messages::Message;
+use crate::messages::{Message, Responder};
 use crate::scheduler::{Action, ServerMessage};
 use crate::statements::Statements;
+
+struct MessageIoResponder(NodeHandler<()>, Endpoint);
+
+impl Responder for MessageIoResponder {
+    fn respond(&self, message: &Message) {
+        let handler = self.0.clone();
+        let endpoint = self.1;
+        let data = bincode::serialize(&message).unwrap();
+        let _ = handler.network().send(endpoint, &data);
+    }
+}
 
 pub async fn start(
     listen_addr: impl ToSocketAddrs,
     scheduler_sender: TokioSender<ServerMessage>,
-) -> Result<()> {
+) -> Result<tokio::task::JoinHandle<()>> {
     let (handler, listener) = node::split::<()>();
     handler
         .network()
@@ -34,9 +45,9 @@ pub async fn start(
                     scheduler_sender
                         .send(ServerMessage {
                             endpoint,
-                            handler: handler.clone(),
                             // TODO: handle parse error
                             action: Action::Execute(Statements::parse(stmt).unwrap()),
+                            responder: Box::new(MessageIoResponder(handler.clone(), endpoint)),
                         })
                         .unwrap();
                 }
@@ -49,14 +60,14 @@ pub async fn start(
             scheduler_sender
                 .send(ServerMessage {
                     endpoint,
-                    handler: handler.clone(),
                     action: Action::Disconnect,
+                    responder: Box::new(MessageIoResponder(handler.clone(), endpoint)),
                 })
                 .unwrap();
         }
     });
 
-    tokio::task::spawn_blocking(move || n.wait()).await?;
+    let handle = tokio::task::spawn_blocking(move || n.wait());
 
-    Ok(())
+    Ok(handle)
 }

@@ -5,8 +5,6 @@ use anyhow::Result;
 use crossbeam::channel::Sender;
 use futures::stream::FuturesUnordered;
 use futures::StreamExt;
-use message_io::network::Endpoint;
-use message_io::node::NodeHandler;
 use rayon::{ThreadPool, ThreadPoolBuilder};
 use tokio::sync::oneshot;
 
@@ -73,13 +71,6 @@ struct Worker {
     _close_sig: oneshot::Sender<()>,
 }
 
-fn send_message(handler: &NodeHandler<()>, endpoint: Endpoint, msg: &Message) {
-    // FIXME: we could save an allocation by using a buffer in the worker
-    let data = bincode::serialize(msg).unwrap();
-    // we ignore message send failure, since the node could already be disconnected
-    let _ = handler.network().send(endpoint, &data);
-}
-
 impl Worker {
     fn perform_oneshot(&self, stmts: &Statements) -> Message {
         let mut rows = vec![];
@@ -107,7 +98,7 @@ impl Worker {
 
         loop {
             let message = self.perform_oneshot(&stmts);
-            send_message(&job.handler, job.endpoint, &message);
+            job.responder.respond(&message);
             match stmts.state(State::TxnOpened) {
                 State::TxnClosed if !message.is_err() => {
                     // the transaction was closed successfully
@@ -128,14 +119,10 @@ impl Worker {
                         Err(_) => {
                             log::warn!("rolling back transaction!");
                             let _ = self.db_conn.execute("ROLLBACK TRANSACTION;");
-                            send_message(
-                                &job.handler,
-                                job.endpoint,
-                                &Message::Error(
-                                    ErrorCode::TxTimeout,
-                                    "transaction timed out".into(),
-                                ),
-                            );
+                            job.responder.respond(&Message::Error(
+                                ErrorCode::TxTimeout,
+                                "transaction timed out".into(),
+                            ));
                             break;
                         }
                     }
@@ -155,7 +142,7 @@ impl Worker {
                 // Any other state falls in this branch, even invalid: we let sqlite deal with the
                 // error handling.
                 let m = self.perform_oneshot(&job.statements);
-                send_message(&job.handler, job.endpoint, &m);
+                job.responder.respond(&m);
                 job.scheduler_sender
                     .send(UpdateStateMessage::Ready(job.endpoint))
                     .unwrap();
