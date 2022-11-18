@@ -1,9 +1,14 @@
+use std::future::ready;
 use std::time::{Duration, Instant};
 
 use anyhow::Result;
+use crossbeam::channel::Sender;
+use futures::stream::FuturesUnordered;
+use futures::StreamExt;
 use message_io::network::Endpoint;
 use message_io::node::NodeHandler;
 use rayon::{ThreadPool, ThreadPoolBuilder};
+use tokio::sync::oneshot;
 
 use crate::job::Job;
 use crate::messages::{ErrorCode, Message};
@@ -14,7 +19,7 @@ const TXN_TIMEOUT_SECS: usize = 5;
 
 pub struct WorkerPool {
     _pool: ThreadPool,
-    fifo: crossbeam::channel::Sender<Job>,
+    worker_sigs: FuturesUnordered<oneshot::Receiver<()>>,
 }
 
 impl WorkerPool {
@@ -25,19 +30,23 @@ impl WorkerPool {
     pub fn new(
         ncpu: usize,
         conn_builder: impl Fn() -> sqlite::Connection + Sync + Send,
-    ) -> Result<Self> {
+    ) -> Result<(Self, Sender<Job>)> {
         let _pool = ThreadPoolBuilder::new().num_threads(ncpu).build()?;
         let (fifo, receiver) = crossbeam::channel::unbounded();
 
+        let worker_sigs = FuturesUnordered::new();
         _pool.install(|| {
             for id in 0.._pool.current_num_threads() {
                 let db_conn = conn_builder();
                 let global_fifo = receiver.clone();
+                let (_close_sig, reveiver) = oneshot::channel();
+                worker_sigs.push(reveiver);
                 rayon::spawn(move || {
                     let worker = Worker {
                         global_fifo,
                         db_conn,
                         id,
+                        _close_sig,
                     };
 
                     worker.run();
@@ -45,12 +54,13 @@ impl WorkerPool {
             }
         });
 
-        Ok(Self { _pool, fifo })
+        let this = Self { _pool, worker_sigs };
+        Ok((this, fifo))
     }
 
-    /// Schedule a job to be performed on the coordinator thread_pool.
-    pub fn schedule(&self, job: Job) {
-        self.fifo.send(job).unwrap();
+    /// waits for all workers to finish their work and exit.
+    pub async fn join(self) {
+        self.worker_sigs.for_each(|_| ready(())).await;
     }
 }
 
@@ -58,6 +68,9 @@ struct Worker {
     global_fifo: crossbeam::channel::Receiver<Job>,
     db_conn: sqlite::Connection,
     id: usize,
+    /// signal that the worker has exited
+    /// nothing is done with this, it simply gets dropped with the worker.
+    _close_sig: oneshot::Sender<()>,
 }
 
 fn send_message(handler: &NodeHandler<()>, endpoint: Endpoint, msg: &Message) {

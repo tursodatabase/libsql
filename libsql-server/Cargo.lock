@@ -251,6 +251,7 @@ dependencies = [
  "clap",
  "crossbeam",
  "env_logger",
+ "futures",
  "log",
  "message-io",
  "rayon",
