@@ -11,10 +11,10 @@ use crate::messages::Responder;
 use crate::statements::Statements;
 
 #[derive(Default)]
-struct EndpointQueue {
+struct ClientQueue {
     queue: VecDeque<Job>,
-    /// Sender to the active transaction for this endpoint.
-    /// On ready state, jobs for this endpoint should be sent to this channel instead of the global queue.
+    /// Sender to the active transaction for this client.
+    /// On ready state, jobs for this client should be sent to this channel instead of the global queue.
     active_txn: Option<Sender<Job>>,
     /// The client for this queue has disconnected
     should_close: bool,
@@ -42,7 +42,7 @@ pub struct ServerMessage {
 impl fmt::Debug for ServerMessage {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("ServerMessage")
-            .field("endpoint", &self.client_id)
+            .field("client_id", &self.client_id)
             .field("action", &self.action)
             .finish()
     }
@@ -50,7 +50,7 @@ impl fmt::Debug for ServerMessage {
 
 pub struct Scheduler {
     worker_pool_sender: Sender<Job>,
-    queues: HashMap<u32, EndpointQueue>,
+    queues: HashMap<u32, ClientQueue>,
     /// The receiving end of the channel the pool uses to notify the scheduler of the state
     /// updates for its queues
     update_state_receiver: TokioReceiver<UpdateStateMessage>,
@@ -58,9 +58,9 @@ pub struct Scheduler {
     /// Receiver from the server with new statements to run
     job_receiver: TokioReceiver<ServerMessage>,
 
-    /// Set of endpoints that are ready to give some work, i.e that have no inflight work
+    /// Set of client that are ready to give some work, i.e that have no inflight work
     ready_set: HashSet<u32>,
-    /// Set of endpoints that have some work in their queue
+    /// Set of client that have some work in their queue
     has_work_set: HashSet<u32>,
 }
 
@@ -181,7 +181,7 @@ impl Scheduler {
                 self.queues
                     .entry(msg.client_id)
                     .or_insert_with(|| {
-                        // This is the first time we see this endpoint, so it's ready by default
+                        // This is the first time we see this client, so it's ready by default
                         self.ready_set.insert(msg.client_id);
                         Default::default()
                     })
@@ -223,6 +223,200 @@ impl Scheduler {
             {
                 break;
             }
+        }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use std::time::Duration;
+
+    use crossbeam::channel::TryRecvError;
+    use proptest::prelude::*;
+    use rand::{thread_rng, Rng};
+    use std::collections::hash_map::Entry;
+
+    use crate::messages::Message;
+
+    use super::*;
+
+    struct MockResponder;
+
+    impl Responder for MockResponder {
+        fn respond(&self, _: &Message) {}
+    }
+
+    #[tokio::test]
+    async fn client_jobs_are_sequential() {
+        let (job_sender, job_receiver) = tokio::sync::mpsc::unbounded_channel();
+        let (pool_sender, pool_receiver) = crossbeam::channel::unbounded();
+        let scheduler = Scheduler::new(pool_sender, job_receiver).unwrap();
+
+        tokio::spawn(scheduler.start());
+
+        job_sender
+            .send(ServerMessage {
+                client_id: 0,
+                action: Action::Execute(Statements::parse("SELECT * FROM test;".into()).unwrap()),
+                responder: Box::new(MockResponder),
+            })
+            .unwrap();
+        job_sender
+            .send(ServerMessage {
+                client_id: 0,
+                action: Action::Execute(Statements::parse("SELECT * FROM test2;".into()).unwrap()),
+                responder: Box::new(MockResponder),
+            })
+            .unwrap();
+
+        // sleep a bit to make sure scheduler had time to schedule something.
+        tokio::time::sleep(Duration::from_millis(5)).await;
+
+        let job = pool_receiver.try_recv().unwrap();
+
+        // the second job was not enqueued
+        assert_eq!(pool_receiver.try_recv().unwrap_err(), TryRecvError::Empty);
+
+        assert_eq!(job.statements.stmts, "SELECT * FROM test;");
+        // signal ready
+        job.scheduler_sender
+            .send(UpdateStateMessage::Ready(0))
+            .unwrap();
+
+        // sleep a bit more to the next job be scheduled
+        tokio::time::sleep(Duration::from_millis(10)).await;
+
+        let job = pool_receiver.try_recv().unwrap();
+        assert_eq!(pool_receiver.try_recv().unwrap_err(), TryRecvError::Empty);
+        assert_eq!(job.statements.stmts, "SELECT * FROM test2;");
+    }
+
+    #[tokio::test]
+    async fn different_clients_processed_concurrently() {
+        let (job_sender, job_receiver) = tokio::sync::mpsc::unbounded_channel();
+        let (pool_sender, pool_receiver) = crossbeam::channel::unbounded();
+        let scheduler = Scheduler::new(pool_sender, job_receiver).unwrap();
+
+        tokio::spawn(scheduler.start());
+
+        job_sender
+            .send(ServerMessage {
+                client_id: 0,
+                action: Action::Execute(Statements::parse("SELECT * FROM test;".into()).unwrap()),
+                responder: Box::new(MockResponder),
+            })
+            .unwrap();
+        job_sender
+            .send(ServerMessage {
+                client_id: 1,
+                action: Action::Execute(Statements::parse("SELECT * FROM test2;".into()).unwrap()),
+                responder: Box::new(MockResponder),
+            })
+            .unwrap();
+
+        tokio::time::sleep(Duration::from_millis(5)).await;
+
+        let job1 = pool_receiver.try_recv().unwrap();
+        let job2 = pool_receiver.try_recv().unwrap();
+
+        assert_eq!(pool_receiver.try_recv().unwrap_err(), TryRecvError::Empty);
+
+        assert_eq!(job1.statements.stmts, "SELECT * FROM test;");
+        assert_eq!(job2.statements.stmts, "SELECT * FROM test2;");
+
+        job1.scheduler_sender
+            .send(UpdateStateMessage::Ready(0))
+            .unwrap();
+        job1.scheduler_sender
+            .send(UpdateStateMessage::Ready(1))
+            .unwrap();
+
+        // queue is empty
+        tokio::time::sleep(Duration::from_millis(10)).await;
+        assert_eq!(pool_receiver.try_recv().unwrap_err(), TryRecvError::Empty);
+    }
+
+    proptest! {
+        /// This test's goal is to schedule random jobs and make sure that:
+        /// - all jobs get processed
+        /// - Jobs for each client are processed sequentially
+        /// - No two jobs for an enpoint get processed in the same batch.
+        ///
+        /// /!\ This test takes some time to run!
+        #[test]
+        fn test_random_scheduling(
+            num_tasks in 20..100usize,
+            num_clients in 1..20u32,
+        ) {
+            tokio::runtime::Runtime::new().unwrap().block_on(async {
+                let (job_sender, job_receiver) = tokio::sync::mpsc::unbounded_channel();
+                let (pool_sender, pool_receiver) = crossbeam::channel::unbounded();
+                let scheduler = Scheduler::new(pool_sender, job_receiver).unwrap();
+
+                tokio::spawn(scheduler.start());
+
+                let mut rng = thread_rng();
+                for i in 0..num_tasks {
+                    let client_id: u32 = rng.gen_range(0..num_clients);
+                    let msg = ServerMessage {
+                        client_id,
+                        // this is a hack here to pass a sequence number.
+                        action: Action::Execute(Statements::parse(format!("SELECT * FROM \"{i}\"")).unwrap()),
+                        responder: Box::new(MockResponder),
+                    };
+
+                    job_sender.send(msg).unwrap();
+                }
+
+                drop(job_sender);
+
+                let mut seen_tasks = 0;
+                let mut client_last_task_id = HashMap::new();
+                'outer: loop {
+                    tokio::time::sleep(Duration::from_millis(5)).await;
+                    let mut batch = Vec::new();
+                    loop {
+                        match pool_receiver.try_recv() {
+                            Ok(job) => {
+                                batch.push(job);
+                            }
+                            Err(TryRecvError::Empty) => break,
+                            Err(TryRecvError::Disconnected) => break 'outer,
+                        }
+                    }
+
+                    seen_tasks += batch.len();
+
+                    let mut distinct_clients = HashSet::new();
+                    for j in &batch {
+                        distinct_clients.insert(j.client_id);
+                        j.scheduler_sender.send(UpdateStateMessage::Ready(j.client_id)).unwrap();
+                        let new_task_idx = j.statements.stmts
+                            .split_whitespace()
+                            .last()
+                            .unwrap()
+                            .trim_matches('"')
+                            .parse::<usize>()
+                            .unwrap();
+
+                        match client_last_task_id.entry(j.client_id) {
+                            Entry::Occupied(mut old) => {
+                                assert!(*old.get() < new_task_idx);
+                                old.insert(new_task_idx);
+                            },
+                            Entry::Vacant(e) => {
+                                e.insert(new_task_idx);
+                            },
+                        }
+                    }
+
+                    // only a task per client is scheduled at a time.
+                    assert_eq!(batch.len(), distinct_clients.len());
+                }
+
+                // all tasks have been processed
+                assert_eq!(seen_tasks, num_tasks);
+            })
         }
     }
 }
