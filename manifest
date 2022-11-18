@@ -1,5 +1,5 @@
-C Fix\scorner\scases\sin\sUTF8\shandling\sin\sthe\sREGEXP\sextension.\n[forum:/forumpost/3ffe058b04|Forum\spost\s3ffe058b04].
-D 2022-11-17T19:24:39.375
+C shell.c.in:\son\snon-Windows\splatforms,\scheck\sfor\s$XDG_CONFIG_HOME/sqlite3/sqliterc\sbefore\s~/.sqliterc,\sper\srequest\sin\s[forum:7a16582b1e403c81|forum\spost\s7a16582b1e403c81].
+D 2022-11-18T15:22:45.180
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -638,7 +638,7 @@ F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c efea4e5fbecfd6d0a9071b0be0d952620991673391b6ffaaf4c277b0bb674633
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 9886d6669f5787471aab6ae52af76fad90b53edb1c218fc9ed9d953363bc5184
-F src/shell.c.in a0ba4a297f8134fef1a6b618ac57604a6c4f1eadeab4f6950b99a8bc151f3c1f
+F src/shell.c.in 16740a86346ba9823f92528ec588f2b74f68166dac965dabd19883ace230f11d
 F src/sqlite.h.in 100fc660c2f19961b8ed8437b9d53d687de2f8eb2b96437ec6da216adcb643ca
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h c4b9fa7a7e2bcdf850cfeb4b8a91d5ec47b7a00033bc996fd2ee96cbf2741f5f
@@ -2055,8 +2055,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7c572d02e60a83b36543ba4d9d45f61e9fc111b61fee085410c2d87558c732d6
-R f93830c4b318c6359968570a2d6be5a6
-U drh
-Z 502cd80eb5e32a4170e530e0ee906c79
+P abb18f61c5cec0f524acc41453b4c06b61c5af51ff46417588837fc0c3967288 49c6e438a83b9ff40ebadd3dfd5f58e6eea053575e15335909f5ee59a6dba82c
+R b7d6e814ba737a6b7a457711e5f6de4b
+T +closed 49c6e438a83b9ff40ebadd3dfd5f58e6eea053575e15335909f5ee59a6dba82c Closed\sby\sintegrate-merge.
+U stephan
+Z 43c8e43e0f98659e4d07cefba98fa2de
 # Remove this line to create a well-formed Fossil manifest.
