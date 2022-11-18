@@ -1,17 +1,17 @@
 use std::net::ToSocketAddrs;
 
 use anyhow::Result;
-use crossbeam::channel::Sender;
 use message_io::network::{NetEvent, Transport};
 use message_io::node;
+use tokio::sync::mpsc::UnboundedSender as TokioSender;
 
 use crate::messages::Message;
 use crate::scheduler::{Action, ServerMessage};
 use crate::statements::Statements;
 
-pub fn start(
+pub async fn start(
     listen_addr: impl ToSocketAddrs,
-    scheduler_sender: Sender<ServerMessage>,
+    scheduler_sender: TokioSender<ServerMessage>,
 ) -> Result<()> {
     let (handler, listener) = node::split::<()>();
     handler
@@ -22,7 +22,8 @@ pub fn start(
         "ChiselEdge server running at {:?}",
         listen_addr.to_socket_addrs()?.next()
     );
-    listener.for_each(move |event| match event.network() {
+
+    let mut n = listener.for_each_async(move |event| match event.network() {
         NetEvent::Connected(_, _) => unreachable!(),
         NetEvent::Accepted(_, _) => (),
         NetEvent::Message(endpoint, input_data) => {
@@ -54,6 +55,8 @@ pub fn start(
                 .unwrap();
         }
     });
+
+    tokio::task::spawn_blocking(move || n.wait()).await?;
 
     Ok(())
 }
