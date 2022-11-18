@@ -167,11 +167,11 @@ const installOpfsVfs = function callee(options){
       return promiseReject_(err);
     };
     const W =
-#ifdef SQLITE_JS_ESM
+//#if SQLITE_JS_ESM
     new Worker(new URL(options.proxyUri, import.meta.url));
-#else
+//#else
     new Worker(options.proxyUri);
-#endif
+//#endif
     W._originalOnError = W.onerror /* will be restored later */;
     W.onerror = function(err){
       // The error object doesn't contain any useful info when the

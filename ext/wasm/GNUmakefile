@@ -235,8 +235,8 @@ $(foreach X,$(SOAP.js) $(sqlite3-worker1.js) $(sqlite3-worker1-promiser.js),\
 all: $(sqlite3-api.ext.jses)
 
 sqlite3-api.js := $(dir.tmp)/sqlite3-api.js
-sqlite3-api.pre-cpp.js := $(dir.tmp)/sqlite3-api.pre-cpp.js
-$(sqlite3-api.pre-cpp.js): $(sqlite3-api.jses) $(MAKEFILE)
+sqlite3-api.c-pp.js := $(dir.tmp)/sqlite3-api.c-pp.js
+$(sqlite3-api.c-pp.js): $(sqlite3-api.jses) $(MAKEFILE)
 	@echo "Making $@..."
 	@for i in $(sqlite3-api.jses); do \
 		echo "/* BEGIN FILE: $$i */"; \
@@ -257,7 +257,6 @@ $(sqlite3-api-build-version.js): $(bin.version-info) $(MAKEFILE)
 ########################################################################
 # --post-js and --pre-js are emcc flags we use to append/prepend JS to
 # the generated emscripten module file.
-pre-js.pre-cpp.js := $(dir.api)/pre-js.pre-cpp.js
 pre-js.js := $(dir.tmp)/pre-js.js
 post-js.js := $(dir.tmp)/post-js.js
 post-jses := \
@@ -291,47 +290,47 @@ $(sqlite3-license-version.js): $(sqlite3.h) $(sqlite3-license-version-header.js)
    } > $@
 
 ########################################################################
-# Transform $(1) to $(2) via cpp -E -CC $(1) ...
+# Transform $(1) to $(2) via ./c-pp -f $(1) ...
 #
-# DO NOT use gcc as the preprocessor because it will emit its own
-# license header to our output because that's a comment in its
-# stdc-predef.h, which we cannot tell it to _not_ include. The only
-# workaround to that is to allow gcc -E to strip all comments. The
-# wasm build uses clang behind emcc, anyway, so we already have a
-# clang dependency. However, the clang cpp refuses to read empty
-# strings in the form '', so we have to be sure to use "" in JS code
-# for those.
+# Historical notes:
 #
-# It's tempting to build a custom mini-cpp-like binary for this
-# purpose to avoid these dependencies and quirks. Maybe we could use
-# lemon to do the heavy lifting for that, noting that we'd still need
-# to tokenize it by hand (but only lines which start with "#" or
-# backslash-continued lines, and we could treat all other lines as
-# opaque content).
+# - We first attempted to use gcc and/or clang to preprocess JS files
+#   in the same way we would normally do C files, but C-specific quirks
+#   of each makes that untennable.
 #
-# In this build we may have #ifdef's (and the like) in arbitrary input
-# JS files and we need to preprocess those before Emscripten gets
-# ahold of them. We cannot simply preprocess the resulting
-# Emscripten-generated sqlite3.js because (A) Emscripten may choke on
-# C preprocessor directives in the input and (B) Emscripten's output
-# may contain things which cpp cannot read (like single-quoted empty
-# strings: '').
-bin.cpp ?= clang
-ifneq (,$(filter ems,$(MAKECMDGOALS)))
+# - We implemented c-pp.c (the C-Minus Pre-processor) as a custom
+#   generic/file-format-agnostic preprocessor to enable us to pack
+#   code for different target builds into the same JS files. Most
+#   notably, some ES6 module (a.k.a. ESM) features cannot legally be
+#   referenced at all in non-ESM code, e.g.  the "import" and "export"
+#   keywords. This preprocessing step permits us to swap out sections
+#   of code where necessary for ESM and non-ESM (a.k.a. vanilla JS)
+#   require different implementations. The alternative to such
+#   preprocessing, would be to have separate source files for ES6
+#   builds, which would have a higher maintenance burden than c-pp.c
+#   seems likely to.
+#
+# c-pp.c was written specifically for the sqlite project's JavaScript
+# builds but is maintained as a standalone project:
+# https://fossil.wanderinghorse.net/r/c-pp
+bin.c-pp := ./c-pp
+$(bin.c-pp): c-pp.c $(sqlite3.c) $(MAKEFILE)
+	$(CC) -O0 -o $@ c-pp.c $(sqlite3.c) '-DCMPP_DEFAULT_DELIM="//#"' -I$(dir.top)
+ifneq (,$(filter esm,$(MAKECMDGOALS)))
 js.cpp.defines ?= -DSQLITE_JS_ESM
-ems: $(filter-out ems,$(MAKECMDGOALS))
+esm: $(filter-out esm,$(MAKECMDGOALS))
 else
 js.cpp.defines ?=
 endif
-define CPP_JS
+define C-PP_JS
 # $1 = X.js. $2 = output file to generate by filtering $(1) through
 # $(bin.cpp) -E -CC.
-$(2): $(1) $$(MAKEFILE)
-	$$(bin.cpp) -E -CC -undef $(js.cpp.defines) -x c $(1) | sed -e '/^#/d' > $$@
+$(2): $(1) $$(MAKEFILE) $$(bin.c-pp)
+	$$(bin.c-pp) $(js.cpp.defines) -f $(1) -o $$@
 CLEAN_FILES += $(2)
 endef
-$(eval $(call CPP_JS,$(dir.tmp)/sqlite3-api.pre-cpp.js,$(dir.tmp)/sqlite3-api.js))
-$(eval $(call CPP_JS,$(dir.api)/pre-js.js,$(dir.tmp)/pre-js.js))
+$(eval $(call C-PP_JS,$(dir.tmp)/sqlite3-api.c-pp.js,$(dir.tmp)/sqlite3-api.js))
+$(eval $(call C-PP_JS,$(dir.api)/pre-js.js,$(dir.tmp)/pre-js.js))
 # /end CPP-of-JS bits
 ########################################################################
 

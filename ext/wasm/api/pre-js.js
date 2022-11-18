@@ -29,9 +29,9 @@ sqlite3InitModuleState.debugModule('self.location =',self.location);
    4) If none of the above apply, (prefix+path) is returned.
 */
 Module['locateFile'] = function(path, prefix) {
-#ifdef SQLITE_JS_ESM
+//#if SQLITE_JS_ESM
   return new URL(path, import.meta.url).href;
-#else
+//#else
   'use strict';
   let theFile;
   const up = this.urlParams;
@@ -51,7 +51,7 @@ Module['locateFile'] = function(path, prefix) {
     "result =", theFile
   );
   return theFile;
-#endif /* SQLITE_JS_EMS */
+//#endif /* SQLITE_JS_EMS */
 }.bind(sqlite3InitModuleState);
 
 /**
