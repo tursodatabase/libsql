@@ -10,8 +10,8 @@ use std::path::PathBuf;
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
-use scheduler::SchedulerConfig;
 use sqlite::OpenFlags;
+use worker_pool::WorkerPool;
 
 /// ChiselEdge CLI
 #[derive(Debug, Parser)]
@@ -39,26 +39,24 @@ async fn main() -> Result<()> {
     let args = Cli::parse();
     match args.command {
         Commands::Serve { db_path } => {
+            let (pool, pool_sender) = WorkerPool::new(0, move || {
+                sqlite::Connection::open_with_flags(
+                    &db_path,
+                    OpenFlags::new()
+                        .set_create()
+                        .set_no_mutex()
+                        .set_read_write(),
+                )
+                .unwrap()
+            })?;
             let (sender, receiver) = tokio::sync::mpsc::unbounded_channel();
-            let sconfig = SchedulerConfig {
-                num_workers: 0,
-                db_conn_factory: Box::new(move || {
-                    sqlite::Connection::open_with_flags(
-                        &db_path,
-                        OpenFlags::new()
-                            .set_create()
-                            .set_no_mutex()
-                            .set_read_write(),
-                    )
-                    .unwrap()
-                }),
-            };
-            let scheduler = scheduler::Scheduler::new(&sconfig, receiver)?;
+            let scheduler = scheduler::Scheduler::new(pool_sender, receiver)?;
             let shandle = tokio::spawn(scheduler.start());
             server::start("127.0.0.1:5000", sender).await?;
 
             // wait for the scheduler to finish any remaining work.
             shandle.await?;
+            pool.join().await;
         }
         Commands::Shell => {
             shell::start()?;

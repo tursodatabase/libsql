@@ -10,7 +10,6 @@ use tokio::sync::mpsc::{UnboundedReceiver as TokioReceiver, UnboundedSender as T
 
 use crate::job::Job;
 use crate::statements::Statements;
-use crate::worker_pool::WorkerPool;
 
 #[derive(Default)]
 struct EndpointQueue {
@@ -51,7 +50,7 @@ impl fmt::Debug for ServerMessage {
 }
 
 pub struct Scheduler {
-    pool: WorkerPool,
+    worker_pool_sender: Sender<Job>,
     queues: HashMap<Endpoint, EndpointQueue>,
     /// The receiving end of the channel the pool uses to notify the scheduler of the state
     /// updates for its queues
@@ -66,24 +65,14 @@ pub struct Scheduler {
     has_work_set: HashSet<Endpoint>,
 }
 
-pub struct SchedulerConfig {
-    /// Number of desired workers in the threadpool.
-    /// A value of 0 will pick a value automatically.
-    pub num_workers: usize,
-    /// Creates a new database connection on each call.
-    /// Connections have to be fresh instances each time!
-    pub db_conn_factory: Box<dyn Fn() -> sqlite::Connection + Send + Sync>,
-}
-
 impl Scheduler {
     pub fn new(
-        config: &SchedulerConfig,
+        worker_pool_sender: Sender<Job>,
         job_receiver: TokioReceiver<ServerMessage>,
     ) -> Result<Self> {
-        let pool = WorkerPool::new(config.num_workers, &config.db_conn_factory)?;
         let (update_state_sender, update_state_receiver) = tokio::sync::mpsc::unbounded_channel();
         Ok(Self {
-            pool,
+            worker_pool_sender,
             queues: Default::default(),
             update_state_receiver,
             update_state_sender,
@@ -131,7 +120,9 @@ impl Scheduler {
             }
 
             // submit job to the main queue:
-            self.pool.schedule(job);
+            self.worker_pool_sender
+                .send(job)
+                .expect("worker pool crashed");
 
             if queue.queue.is_empty() {
                 not_waiting.push(endpoint);
