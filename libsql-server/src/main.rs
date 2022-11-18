@@ -10,7 +10,6 @@ use std::path::PathBuf;
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
-use crossbeam::channel::unbounded;
 use scheduler::SchedulerConfig;
 use sqlite::OpenFlags;
 
@@ -34,12 +33,13 @@ enum Commands {
     Shell,
 }
 
-fn main() -> Result<()> {
+#[tokio::main]
+async fn main() -> Result<()> {
     env_logger::init();
     let args = Cli::parse();
     match args.command {
         Commands::Serve { db_path } => {
-            let (sender, receiver) = unbounded();
+            let (sender, receiver) = tokio::sync::mpsc::unbounded_channel();
             let sconfig = SchedulerConfig {
                 num_workers: 0,
                 db_conn_factory: Box::new(move || {
@@ -54,11 +54,11 @@ fn main() -> Result<()> {
                 }),
             };
             let scheduler = scheduler::Scheduler::new(&sconfig, receiver)?;
-            let shandle = std::thread::spawn(|| scheduler.start());
-            server::start("127.0.0.1:5000", sender)?;
+            let shandle = tokio::spawn(scheduler.start());
+            server::start("127.0.0.1:5000", sender).await?;
 
             // wait for the scheduler to finish any remaining work.
-            shandle.join().unwrap();
+            shandle.await?;
         }
         Commands::Shell => {
             shell::start()?;

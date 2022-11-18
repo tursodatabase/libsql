@@ -1,28 +1,20 @@
-use std::collections::{HashMap, VecDeque};
-use std::time::Duration;
+use std::collections::{HashMap, HashSet, VecDeque};
+use std::fmt;
 
 use anyhow::Result;
-use crossbeam::channel::{Receiver, Sender, TryRecvError, TrySendError};
+use crossbeam::channel::{Sender, TrySendError};
 use message_io::network::Endpoint;
 use message_io::node::NodeHandler;
+use smallvec::SmallVec;
+use tokio::sync::mpsc::{UnboundedReceiver as TokioReceiver, UnboundedSender as TokioSender};
 
 use crate::job::Job;
 use crate::statements::Statements;
 use crate::worker_pool::WorkerPool;
 
-#[derive(Debug, PartialEq, Default)]
-enum QueueState {
-    /// Ready to do some work
-    #[default]
-    Ready,
-    /// Performing some oneshot job, and waiting for status.
-    Working,
-}
-
 #[derive(Default)]
 struct EndpointQueue {
     queue: VecDeque<Job>,
-    state: QueueState,
     /// Sender to the active transaction for this endpoint.
     /// On ready state, jobs for this endpoint should be sent to this channel instead of the global queue.
     active_txn: Option<Sender<Job>>,
@@ -30,18 +22,14 @@ struct EndpointQueue {
     should_close: bool,
 }
 
-impl EndpointQueue {
-    fn is_ready(&self) -> bool {
-        self.state == QueueState::Ready
-    }
-}
-
+#[derive(Debug)]
 pub enum UpdateStateMessage {
     Ready(Endpoint),
     TxnBegin(Endpoint, Sender<Job>),
     TxnEnded(Endpoint),
 }
 
+#[derive(Debug)]
 pub enum Action {
     Disconnect,
     Execute(Statements),
@@ -53,22 +41,29 @@ pub struct ServerMessage {
     pub action: Action,
 }
 
+impl fmt::Debug for ServerMessage {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("ServerMessage")
+            .field("endpoint", &self.endpoint)
+            .field("action", &self.action)
+            .finish()
+    }
+}
+
 pub struct Scheduler {
     pool: WorkerPool,
     queues: HashMap<Endpoint, EndpointQueue>,
     /// The receiving end of the channel the pool uses to notify the scheduler of the state
     /// updates for its queues
-    update_state_receiver: Receiver<UpdateStateMessage>,
-    update_state_sender: Sender<UpdateStateMessage>,
+    update_state_receiver: TokioReceiver<UpdateStateMessage>,
+    update_state_sender: TokioSender<UpdateStateMessage>,
     /// Receiver from the server with new statements to run
-    job_receiver: Receiver<ServerMessage>,
+    job_receiver: TokioReceiver<ServerMessage>,
 
-    should_exit: bool,
-
-    /// Number of unprocessed inbound jobs remaining
-    inbound_jobs: usize,
-    /// Number of currently processing jobs
-    inflight_jobs: usize,
+    /// Set of endpoints that are ready to give some work, i.e that have no inflight work
+    ready_set: HashSet<Endpoint>,
+    /// Set of endpoints that have some work in their queue
+    has_work_set: HashSet<Endpoint>,
 }
 
 pub struct SchedulerConfig {
@@ -81,42 +76,47 @@ pub struct SchedulerConfig {
 }
 
 impl Scheduler {
-    pub fn new(config: &SchedulerConfig, job_receiver: Receiver<ServerMessage>) -> Result<Self> {
+    pub fn new(
+        config: &SchedulerConfig,
+        job_receiver: TokioReceiver<ServerMessage>,
+    ) -> Result<Self> {
         let pool = WorkerPool::new(config.num_workers, &config.db_conn_factory)?;
-        let (update_state_sender, update_state_receiver) = crossbeam::channel::unbounded();
+        let (update_state_sender, update_state_receiver) = tokio::sync::mpsc::unbounded_channel();
         Ok(Self {
             pool,
             queues: Default::default(),
             update_state_receiver,
             update_state_sender,
             job_receiver,
-            should_exit: false,
-            inbound_jobs: 0,
-            inflight_jobs: 0,
+            ready_set: Default::default(),
+            has_work_set: Default::default(),
         })
     }
 
     /// push some work to the gobal queue
     fn schedule_work(&mut self) {
-        // FIXME: this is not very fair scheduling...
-        self.queues.retain(|_, queue| {
-            // skip jobs that are not ready
-            if !queue.is_ready() {
-                return true;
-            }
+        let mut not_waiting = SmallVec::<[Endpoint; 16]>::new();
+        let mut not_ready = SmallVec::<[Endpoint; 16]>::new();
 
-            // take the first job in the queue, else pass, or remove the queue from the queues if
-            // the connection was closed.
-            let Some(mut job) = queue.queue.pop_front() else { return !queue.should_close };
-            self.inbound_jobs -= 1;
-            self.inflight_jobs += 1;
-            queue.state = QueueState::Working;
+        for endpoint in self.ready_set.intersection(&self.has_work_set).copied() {
+            let Some(queue) = self.queues.get_mut(&endpoint) else {
+                not_ready.push(endpoint);
+                not_waiting.push(endpoint);
+                continue
+            };
+
+            let Some(mut job) = queue.queue.pop_front() else {
+                not_waiting.push(endpoint);
+                continue
+            };
+
+            not_ready.push(endpoint);
 
             // there is an active transaction, so we should send it there
             if let Some(ref sender) = queue.active_txn {
                 job = match sender.try_send(job) {
                     Ok(_) => {
-                        return true;
+                        continue;
                     }
                     // the transaction channel was closed before we were notified, we'll send
                     // to the main queue instead
@@ -133,97 +133,105 @@ impl Scheduler {
             // submit job to the main queue:
             self.pool.schedule(job);
 
-            true
-        })
+            if queue.queue.is_empty() {
+                not_waiting.push(endpoint);
+                if queue.should_close {
+                    self.queues.remove(&endpoint);
+                }
+            }
+        }
+
+        for e in &not_ready {
+            self.ready_set.remove(e);
+        }
+
+        for e in &not_waiting {
+            self.has_work_set.remove(e);
+        }
     }
 
     /// Update the queue with new status, and return whether there might be more work ready to do;
-    fn update_queue_status(&mut self) -> bool {
-        let mut maybe_ready = false;
-        while let Ok(update) = self.update_state_receiver.try_recv() {
-            match update {
-                UpdateStateMessage::Ready(e) => {
-                    self.inflight_jobs -= 1;
-                    // It's OK if the queue was already removed
-                    if let Some(queue) = self.queues.get_mut(&e) {
-                        assert_eq!(queue.state, QueueState::Working);
-                        maybe_ready |= !queue.queue.is_empty();
-                        queue.state = QueueState::Ready;
-                    }
+    fn update_queue_status(&mut self, update: UpdateStateMessage) {
+        match update {
+            UpdateStateMessage::Ready(e) => {
+                self.ready_set.insert(e);
+            }
+            UpdateStateMessage::TxnBegin(e, sender) => {
+                if let Some(queue) = self.queues.get_mut(&e) {
+                    assert!(queue.active_txn.is_none());
+                    queue.active_txn.replace(sender);
                 }
-                UpdateStateMessage::TxnBegin(e, sender) => {
-                    if let Some(queue) = self.queues.get_mut(&e) {
-                        assert!(queue.active_txn.is_none());
-                        queue.active_txn.replace(sender);
-                    }
-                }
-                UpdateStateMessage::TxnEnded(e) => {
-                    if let Some(queue) = self.queues.get_mut(&e) {
-                        // it's ok if the txn was already removed
-                        queue.active_txn.take();
-                        queue.state = QueueState::Ready;
-                    }
+            }
+            UpdateStateMessage::TxnEnded(e) => {
+                if let Some(queue) = self.queues.get_mut(&e) {
+                    // it's ok if the txn was already removed
+                    queue.active_txn.take();
+                    self.ready_set.insert(e);
                 }
             }
         }
-
-        maybe_ready
     }
 
     /// Update queues with new incoming tasks from server.
-    fn update_queues(&mut self) {
+    fn update_queues(&mut self, msg: ServerMessage) {
+        match msg.action {
+            Action::Disconnect => {
+                self.queues
+                    .get_mut(&msg.endpoint)
+                    .map(|q| q.should_close = true);
+            }
+            Action::Execute(statements) => {
+                let job = Job {
+                    scheduler_sender: self.update_state_sender.clone(),
+                    statements,
+                    endpoint: msg.endpoint,
+                    handler: msg.handler,
+                };
+
+                self.queues
+                    .entry(msg.endpoint)
+                    .or_insert_with(|| {
+                        // This is the first time we see this endpoint, so it's ready by default
+                        self.ready_set.insert(msg.endpoint);
+                        Default::default()
+                    })
+                    .queue
+                    .push_back(job);
+
+                self.has_work_set.insert(msg.endpoint);
+            }
+        }
+    }
+
+    pub async fn start(mut self) {
+        let mut should_exit = false;
         loop {
-            match self.job_receiver.try_recv() {
-                Ok(msg) => match msg.action {
-                    Action::Disconnect => {
-                        self.queues
-                            .get_mut(&msg.endpoint)
-                            .map(|q| q.should_close = true);
-                    }
-                    Action::Execute(statements) => {
-                        self.inbound_jobs += 1;
-                        let job = Job {
-                            scheduler_sender: self.update_state_sender.clone(),
-                            statements,
-                            endpoint: msg.endpoint,
-                            handler: msg.handler,
-                        };
-                        self.queues
-                            .entry(msg.endpoint)
-                            .or_default()
-                            .queue
-                            .push_back(job);
+            tokio::select! {
+                msg = self.update_state_receiver.recv() => {
+                    match msg {
+                        Some(msg) => {
+                            self.update_queue_status(msg);
+                        }
+                        None => unreachable!("Scheduler still owns a sender"),
                     }
                 },
-                Err(TryRecvError::Disconnected) => {
-                    self.should_exit = true;
-                    break;
+                msg = self.job_receiver.recv(), if !should_exit => {
+                    match msg {
+                        Some(msg) => self.update_queues(msg),
+                        None => should_exit = true,
+                    }
                 }
-                _ => break,
             }
-        }
-    }
 
-    pub fn start(mut self) {
-        loop {
-            // 1. find some work to perform
             self.schedule_work();
-            // 2. check the state update queue and update the status of the queues
-            let maybe_ready = self.update_queue_status();
-            // 3. handle new incoming jobs
-            if !self.should_exit {
-                self.update_queues();
-            }
 
-            if self.should_exit && self.inbound_jobs == 0 && self.inflight_jobs == 0 {
+            if should_exit
+                // no queue has work left
+                && self.has_work_set.is_empty()
+                // no queue has inflight work
+                && self.ready_set.len() == self.queues.len()
+            {
                 break;
-            }
-
-            // just sleep for a bit before checking for more work.
-            // FIXME: make this reactive, and put thread to sleep until we know for sure more work
-            // need to be done. This may be a bit tricky in practice.
-            if !maybe_ready {
-                std::thread::sleep(Duration::from_millis(10));
             }
         }
     }
