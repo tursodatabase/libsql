@@ -9182,12 +9182,13 @@ int sqlite3BtreeInsert(
       if( info.nPayload!=info.nLocal ){
         Pgno ovfl = get4byte(&newCell[szNew-4]);
         ptrmapPut(pBt, ovfl, PTRMAP_OVERFLOW1, pPage->pgno, &rc);
+        if( NEVER(rc) ) goto end_insert;
       }
     }
   }else{
     rc = fillInCell(pPage, newCell, pX, &szNew);
+    if( rc ) goto end_insert;
   }
-  if( rc ) goto end_insert;
   assert( szNew==pPage->xCellSize(pPage, newCell) );
   assert( szNew <= MX_CELL_SIZE(pBt) );
   idx = pCur->ix;
