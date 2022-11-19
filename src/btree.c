@@ -5495,9 +5495,25 @@ int sqlite3BtreeFirst(BtCursor *pCur, int *pRes){
 ** on success.  Set *pRes to 0 if the cursor actually points to something
 ** or set *pRes to 1 if the table is empty.
 */
+static SQLITE_NOINLINE int btreeLast(BtCursor *pCur, int *pRes){
+  int rc = moveToRoot(pCur);
+  if( rc==SQLITE_OK ){
+    assert( pCur->eState==CURSOR_VALID );
+    *pRes = 0;
+    rc = moveToRightmost(pCur);
+    if( rc==SQLITE_OK ){
+      pCur->curFlags |= BTCF_AtLast;
+    }else{
+      pCur->curFlags &= ~BTCF_AtLast;
+    }
+  }else if( rc==SQLITE_EMPTY ){
+    assert( pCur->pgnoRoot==0 || pCur->pPage->nCell==0 );
+    *pRes = 1;
+    rc = SQLITE_OK;
+  }
+  return rc;
+}
 int sqlite3BtreeLast(BtCursor *pCur, int *pRes){
-  int rc;
- 
   assert( cursorOwnsBtShared(pCur) );
   assert( sqlite3_mutex_held(pCur->pBtree->db->mutex) );
 
@@ -5518,23 +5534,7 @@ int sqlite3BtreeLast(BtCursor *pCur, int *pRes){
     *pRes = 0;
     return SQLITE_OK;
   }
-
-  rc = moveToRoot(pCur);
-  if( rc==SQLITE_OK ){
-    assert( pCur->eState==CURSOR_VALID );
-    *pRes = 0;
-    rc = moveToRightmost(pCur);
-    if( rc==SQLITE_OK ){
-      pCur->curFlags |= BTCF_AtLast;
-    }else{
-      pCur->curFlags &= ~BTCF_AtLast;
-    }
-  }else if( rc==SQLITE_EMPTY ){
-    assert( pCur->pgnoRoot==0 || pCur->pPage->nCell==0 );
-    *pRes = 1;
-    rc = SQLITE_OK;
-  }
-  return rc;
+  return btreeLast(pCur, pRes);
 }
 
 /* Move the cursor so that it points to an entry in a table (a.k.a INTKEY)
