@@ -8244,15 +8244,17 @@ static int balance_nonroot(
     d = r + 1 - leafData;
     (void)cachedCellSize(&b, d);
     do{
+      int szR, szD;
       assert( d<nMaxCells );
       assert( r<nMaxCells );
-      (void)cachedCellSize(&b, r);
+      szR = cachedCellSize(&b, r);
+      szD = b.szCell[d];
       if( szRight!=0
-       && (bBulk || szRight+b.szCell[d]+2 > szLeft-(b.szCell[r]+(i==k-1?0:2)))){
+       && (bBulk || szRight+szD+2 > szLeft-(szR+(i==k-1?0:2)))){
         break;
       }
-      szRight += b.szCell[d] + 2;
-      szLeft -= b.szCell[r] + 2;
+      szRight += szD + 2;
+      szLeft -= szR + 2;
       cntNew[i-1] = r;
       r--;
       d--;

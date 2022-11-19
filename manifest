@@ -1,5 +1,5 @@
-C Small\sperformance\simprovement\sand\ssize\sreduction\sin\sbtree.
-D 2022-11-19T18:17:40.978
+C Performance\simprovement\sand\ssize\sreduction\sin\sbalance_nonroot().
+D 2022-11-19T18:43:32.814
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -578,7 +578,7 @@ F src/auth.c f4fa91b6a90bbc8e0d0f738aa284551739c9543a367071f55574681e0f24f8cf
 F src/backup.c a2891172438e385fdbe97c11c9745676bec54f518d4447090af97189fd8e52d7
 F src/bitvec.c 7c849aac407230278445cb069bebc5f89bf2ddd87c5ed9459b070a9175707b3d
 F src/btmutex.c 6ffb0a22c19e2f9110be0964d0731d2ef1c67b5f7fabfbaeb7b9dabc4b7740ca
-F src/btree.c 80f29390eedbdac7f0fd3312df1a2df5ecd3c5b55c5e22dab4fc3fc52d5584dd
+F src/btree.c b9e66886f09b33cfa5058a6a3f3eddae92b5b9d566ba65bea26928f0b9860754
 F src/btree.h 4fcbb0b041013071dd5e9f53c538d49916c092e6ad8842185985e5270a0792de
 F src/btreeInt.h 8ce1332edd89dfd2461d561ac10a0ab5601c8e06200cb5230596c3caaf54482e
 F src/build.c d3e43e950e4e377c1d451a4862556792acdef1faba14a03f899d30d09731c48b
@@ -2057,8 +2057,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 90480586f1b2ad82118e19536b095431b8457f294c0afaa9b4f883f184cc804c
-R 66ae91579f9086a7ec56fccf1b9beb6e
+P daa07149c0a0fcb6a6a1ace6020ca68802588ed309f5aaaf99c871088bc46908
+R 486fbd2f4ae2f2943d0cbb110a637a8e
 U drh
-Z c7f53017341eeb656837188f25a22942
+Z 537c9962ecec2516b80c7b85babce28a
 # Remove this line to create a well-formed Fossil manifest.
