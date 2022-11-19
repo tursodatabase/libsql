@@ -10472,6 +10472,12 @@ int sqlite3_deserialize(
 # undef double
 #endif
 
+#if defined(__wasi__) || defined(WASM_WASI)
+# ifndef SQLITE_WASI
+#  define SQLITE_WASI
+# endif
+#endif
+
 #ifdef __cplusplus
 }  /* End of the 'extern "C"' block */
 #endif
