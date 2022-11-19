@@ -10473,9 +10473,10 @@ int sqlite3_deserialize(
 #endif
 
 #if defined(__wasi__) || defined(WASM_WASI)
-# ifndef SQLITE_WASI
-#  define SQLITE_WASI
-# endif
+# undef SQLITE_WASI
+# define SQLITE_WASI 1
+# undef SQLITE_OMIT_WAL
+# define SQLITE_OMIT_WAL 1/* because it requires shared memory APIs */
 #endif
 
 #ifdef __cplusplus

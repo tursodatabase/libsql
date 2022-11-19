@@ -95,7 +95,8 @@
 #include <time.h>
 #include <sys/time.h>    /* amalgamator: keep */
 #include <errno.h>
-#if !defined(SQLITE_OMIT_WAL) || SQLITE_MAX_MMAP_SIZE>0
+#if (!defined(SQLITE_OMIT_WAL) || SQLITE_MAX_MMAP_SIZE>0) \
+  && !defined(SQLITE_WASI)
 # include <sys/mman.h>
 #endif
 
@@ -190,6 +191,8 @@
 #ifdef SQLITE_WASI
 # undef HAVE_FCHMOD
 # undef HAVE_FCHOWN
+# undef HAVE_MREMAP
+# define HAVE_MREMAP 0
 # ifndef SQLITE_DEFAULT_UNIX_VFS
 #  define SQLITE_DEFAULT_UNIX_VFS "unix-dotfile"
    /* ^^^ should SQLITE_DEFAULT_UNIX_VFS be "unix-none"? */
@@ -214,9 +217,13 @@
 # endif
 #endif /* SQLITE_WASI */
 
+#ifdef SQLITE_WASI
+# define osGetpid(X) 1
+#else
 /* Always cast the getpid() return type for compatibility with
 ** kernel modules in VxWorks. */
-#define osGetpid(X) (pid_t)getpid()
+# define osGetpid(X) (pid_t)getpid()
+#endif
 
 /*
 ** Only set the lastErrno if the error code is a real error and not 
@@ -528,14 +535,16 @@ static struct unix_syscall {
 #endif
 #define osGeteuid   ((uid_t(*)(void))aSyscall[21].pCurrent)
 
-#if !defined(SQLITE_OMIT_WAL) || SQLITE_MAX_MMAP_SIZE>0
+#if (!defined(SQLITE_OMIT_WAL) || SQLITE_MAX_MMAP_SIZE>0) \
+  && !defined(SQLITE_WASI)
   { "mmap",         (sqlite3_syscall_ptr)mmap,            0 },
 #else
   { "mmap",         (sqlite3_syscall_ptr)0,               0 },
 #endif
 #define osMmap ((void*(*)(void*,size_t,int,int,int,off_t))aSyscall[22].pCurrent)
 
-#if !defined(SQLITE_OMIT_WAL) || SQLITE_MAX_MMAP_SIZE>0
+#if (!defined(SQLITE_OMIT_WAL) || SQLITE_MAX_MMAP_SIZE>0) \
+  && !defined(SQLITE_WASI)
   { "munmap",       (sqlite3_syscall_ptr)munmap,          0 },
 #else
   { "munmap",       (sqlite3_syscall_ptr)0,               0 },
