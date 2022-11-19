@@ -175,7 +175,7 @@ mod test {
     #[test]
     fn test_naive_date() -> Result<()> {
         let db = checked_memory_handle()?;
-        let date = NaiveDate::from_ymd(2016, 2, 23);
+        let date = NaiveDate::from_ymd_opt(2016, 2, 23).unwrap();
         db.execute("INSERT INTO foo (t) VALUES (?)", [date])?;
 
         let s: String = db.one_column("SELECT t FROM foo")?;
@@ -188,7 +188,7 @@ mod test {
     #[test]
     fn test_naive_time() -> Result<()> {
         let db = checked_memory_handle()?;
-        let time = NaiveTime::from_hms(23, 56, 4);
+        let time = NaiveTime::from_hms_opt(23, 56, 4).unwrap();
         db.execute("INSERT INTO foo (t) VALUES (?)", [time])?;
 
         let s: String = db.one_column("SELECT t FROM foo")?;
@@ -201,8 +201,8 @@ mod test {
     #[test]
     fn test_naive_date_time() -> Result<()> {
         let db = checked_memory_handle()?;
-        let date = NaiveDate::from_ymd(2016, 2, 23);
-        let time = NaiveTime::from_hms(23, 56, 4);
+        let date = NaiveDate::from_ymd_opt(2016, 2, 23).unwrap();
+        let time = NaiveTime::from_hms_opt(23, 56, 4).unwrap();
         let dt = NaiveDateTime::new(date, time);
 
         db.execute("INSERT INTO foo (t) VALUES (?)", [dt])?;
@@ -221,8 +221,8 @@ mod test {
     #[test]
     fn test_date_time_utc() -> Result<()> {
         let db = checked_memory_handle()?;
-        let date = NaiveDate::from_ymd(2016, 2, 23);
-        let time = NaiveTime::from_hms_milli(23, 56, 4, 789);
+        let date = NaiveDate::from_ymd_opt(2016, 2, 23).unwrap();
+        let time = NaiveTime::from_hms_milli_opt(23, 56, 4, 789).unwrap();
         let dt = NaiveDateTime::new(date, time);
         let utc = Utc.from_utc_datetime(&dt);
 
@@ -248,8 +248,8 @@ mod test {
     #[test]
     fn test_date_time_local() -> Result<()> {
         let db = checked_memory_handle()?;
-        let date = NaiveDate::from_ymd(2016, 2, 23);
-        let time = NaiveTime::from_hms_milli(23, 56, 4, 789);
+        let date = NaiveDate::from_ymd_opt(2016, 2, 23).unwrap();
+        let time = NaiveTime::from_hms_milli_opt(23, 56, 4, 789).unwrap();
         let dt = NaiveDateTime::new(date, time);
         let local = Local.from_local_datetime(&dt).single().unwrap();
 
