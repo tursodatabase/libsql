@@ -1,5 +1,5 @@
-C Add\sbuild\sof\ssqlite3.mjs\s(ES6\smodule),\sadd\sa\stest\sapp\sfor\sit,\sand\sinclude\sit\sin\sthe\sdist\sbuild.
-D 2022-11-19T05:26:45.763
+C Streamline\sthe\sdecodeFlags()\sroutine\sin\sbtree.c\sfor\sa\ssmall\sperformance\nincrease.
+D 2022-11-19T13:09:03.004
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -578,7 +578,7 @@ F src/auth.c f4fa91b6a90bbc8e0d0f738aa284551739c9543a367071f55574681e0f24f8cf
 F src/backup.c a2891172438e385fdbe97c11c9745676bec54f518d4447090af97189fd8e52d7
 F src/bitvec.c 7c849aac407230278445cb069bebc5f89bf2ddd87c5ed9459b070a9175707b3d
 F src/btmutex.c 6ffb0a22c19e2f9110be0964d0731d2ef1c67b5f7fabfbaeb7b9dabc4b7740ca
-F src/btree.c e8fae9a95ea9561aebc41e467a9ee9ba9150ca373031e65773d62ff02d8250d2
+F src/btree.c 405994e58bdf8f58adb5b238cda4b428de2bfe67e8dac5577082f2fd70faeade
 F src/btree.h 4fcbb0b041013071dd5e9f53c538d49916c092e6ad8842185985e5270a0792de
 F src/btreeInt.h 8ce1332edd89dfd2461d561ac10a0ab5601c8e06200cb5230596c3caaf54482e
 F src/build.c d3e43e950e4e377c1d451a4862556792acdef1faba14a03f899d30d09731c48b
@@ -2057,8 +2057,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 10c723d96d61d2e552ec1102563d58f1eb11bc3d30e03606fd8e0279c5a9043a
-R 222130501cabad70ae0d5e4c47519919
-U stephan
-Z bbe51f75fec2c52a531f67e9a6ac36f6
+P 2e783670e10b59e67c14b0db7f4803b41790cc7730de221d54fa2d4483cfba33
+R b0bb099cec1bed805505fb24b4006305
+U drh
+Z 40c7b0608af0db932c6182b2b48b07d6
 # Remove this line to create a well-formed Fossil manifest.
