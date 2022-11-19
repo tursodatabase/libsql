@@ -7239,14 +7239,16 @@ struct CellArray {
 ** computed.
 */
 static void populateCellCache(CellArray *p, int idx, int N){
+  MemPage *pRef = p->pRef;
+  u16 *szCell = p->szCell;
   assert( idx>=0 && idx+N<=p->nCell );
   while( N>0 ){
     assert( p->apCell[idx]!=0 );
-    if( p->szCell[idx]==0 ){
-      p->szCell[idx] = p->pRef->xCellSize(p->pRef, p->apCell[idx]);
+    if( szCell[idx]==0 ){
+      szCell[idx] = pRef->xCellSize(pRef, p->apCell[idx]);
     }else{
       assert( CORRUPT_DB ||
-              p->szCell[idx]==p->pRef->xCellSize(p->pRef, p->apCell[idx]) );
+              szCell[idx]==pRef->xCellSize(pRef, p->apCell[idx]) );
     }
     idx++;
     N--;
