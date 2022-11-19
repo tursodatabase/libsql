@@ -168,7 +168,6 @@ emcc_opt_full := $(emcc_opt) -g3
 # (Much later: -O2 consistently gives the best speeds.)
 ########################################################################
 
-
 $(sqlite3.c) $(sqlite3.h):
 	$(MAKE) -C $(dir.top) sqlite3.c
 
@@ -198,6 +197,48 @@ bin.stripccomments := $(dir.tool)/stripccomments
 $(bin.stripccomments): $(bin.stripccomments).c $(MAKEFILE)
 	$(CC) -o $@ $<
 DISTCLEAN_FILES += $(bin.stripccomments)
+
+
+########################################################################
+# Transform $(1) to $(2) via ./c-pp -f $(1) ...
+#
+# Historical notes:
+#
+# - We first attempted to use gcc and/or clang to preprocess JS files
+#   in the same way we would normally do C files, but C-specific quirks
+#   of each makes that untennable.
+#
+# - We implemented c-pp.c (the C-Minus Pre-processor) as a custom
+#   generic/file-format-agnostic preprocessor to enable us to pack
+#   code for different target builds into the same JS files. Most
+#   notably, some ES6 module (a.k.a. ESM) features cannot legally be
+#   referenced at all in non-ESM code, e.g.  the "import" and "export"
+#   keywords. This preprocessing step permits us to swap out sections
+#   of code where necessary for ESM and non-ESM (a.k.a. vanilla JS)
+#   require different implementations. The alternative to such
+#   preprocessing, would be to have separate source files for ES6
+#   builds, which would have a higher maintenance burden than c-pp.c
+#   seems likely to.
+#
+# c-pp.c was written specifically for the sqlite project's JavaScript
+# builds but is maintained as a standalone project:
+# https://fossil.wanderinghorse.net/r/c-pp
+bin.c-pp := ./c-pp
+$(bin.c-pp): c-pp.c $(sqlite3.c) $(MAKEFILE)
+	$(CC) -O0 -o $@ c-pp.c $(sqlite3.c) '-DCMPP_DEFAULT_DELIM="//#"' -I$(dir.top)
+define C-PP.JS
+# $1 c-pp -D... flags
+# $2 = c-pp -f X.js
+# $3 = c-pp -o X.js
+$(3): $(2) $$(MAKEFILE) $$(bin.c-pp)
+	$$(bin.c-pp) -f $(2) -o $$@ $(1)
+CLEAN_FILES += $(3)
+endef
+c-pp.D.vanilla ?=
+c-pp.D.esm ?= -Dsqlite3-es6-module-build
+# /end CPP-of-JS bits
+########################################################################
+
 
 EXPORTED_FUNCTIONS.api.in := $(abspath $(dir.api)/EXPORTED_FUNCTIONS.sqlite3-api)
 EXPORTED_FUNCTIONS.api := $(dir.tmp)/EXPORTED_FUNCTIONS.api
@@ -234,9 +275,8 @@ $(foreach X,$(SOAP.js) $(sqlite3-worker1.js) $(sqlite3-worker1-promiser.js),\
   $(eval $(call COPY_XAPI,$(X))))
 all: $(sqlite3-api.ext.jses)
 
-sqlite3-api.js := $(dir.tmp)/sqlite3-api.js
-sqlite3-api.c-pp.js := $(dir.tmp)/sqlite3-api.c-pp.js
-$(sqlite3-api.c-pp.js): $(sqlite3-api.jses) $(MAKEFILE)
+sqlite3-api.js.in := $(dir.tmp)/sqlite3-api.c-pp.js
+$(sqlite3-api.js.in): $(sqlite3-api.jses) $(MAKEFILE)
 	@echo "Making $@..."
 	@for i in $(sqlite3-api.jses); do \
 		echo "/* BEGIN FILE: $$i */"; \
@@ -257,28 +297,52 @@ $(sqlite3-api-build-version.js): $(bin.version-info) $(MAKEFILE)
 ########################################################################
 # --post-js and --pre-js are emcc flags we use to append/prepend JS to
 # the generated emscripten module file.
-pre-js.js := $(dir.tmp)/pre-js.js
-post-js.js := $(dir.tmp)/post-js.js
-post-jses := \
+pre-js.js.in := $(dir.api)/pre-js.js
+pre-js.js.esm := $(dir.tmp)/pre-js.esm.js
+pre-js.js.vanilla := $(dir.tmp)/pre-js.vanilla.js
+$(eval $(call C-PP.JS,$(c-pp.D.vanilla),$(pre-js.js.in),$(pre-js.js.vanilla)))
+$(eval $(call C-PP.JS,$(c-pp.D.esm),$(pre-js.js.in),$(pre-js.js.esm)))
+post-js.js.in := $(dir.tmp)/post-js.js
+post-js.js.vanilla := $(dir.tmp)/post-js.vanilla.js
+post-js.js.esm := $(dir.tmp)/post-js.esm.js
+post-jses.js := \
   $(dir.api)/post-js-header.js \
-  $(sqlite3-api.js) \
+  $(sqlite3-api.js.in) \
   $(dir.api)/post-js-footer.js
-$(post-js.js): $(post-jses) $(MAKEFILE)
+$(post-js.js.in): $(post-jses.js) $(MAKEFILE)
 	@echo "Making $@..."
-	@for i in $(post-jses); do \
+	@for i in $(post-jses.js); do \
 		echo "/* BEGIN FILE: $$i */"; \
 		cat $$i; \
 		echo "/* END FILE: $$i */"; \
 	done > $@
+$(eval $(call C-PP.JS,$(c-pp.D.vanilla),$(post-js.js.in),$(post-js.js.vanilla)))
+$(eval $(call C-PP.JS,$(c-pp.D.esm),$(post-js.js.in),$(post-js.js.esm)))
+
 extern-post-js.js.in := $(dir.api)/extern-post-js.js
-extern-post-js.js := $(dir.tmp)/extern-post-js.js
+extern-post-js.js.vanilla := $(dir.tmp)/extern-post-js.vanilla.js
+extern-post-js.js.esm := $(dir.tmp)/extern-post-js.esm.js
+$(eval $(call C-PP.JS,$(c-pp.D.vanilla),$(extern-post-js.js.in),$(extern-post-js.js.vanilla)))
+$(eval $(call C-PP.JS,$(c-pp.D.esm),$(extern-post-js.js.in),$(extern-post-js.js.esm)))
 extern-pre-js.js := $(dir.api)/extern-pre-js.js
+
+# Emscripten flags for --[extern-][pre|post]-js=...
 pre-post-common.flags := \
-  --post-js=$(post-js.js) \
-  --extern-post-js=$(extern-post-js.js) \
   --extern-pre-js=$(sqlite3-license-version.js)
-pre-post-jses.deps := $(post-js.js) \
-  $(extern-post-js.js) $(extern-pre-js.js) $(sqlite3-license-version.js)
+pre-post-common.flags.vanilla := \
+  $(pre-post-common.flags) \
+  --post-js=$(post-js.js.vanilla) \
+  --extern-post-js=$(extern-post-js.js.vanilla)
+pre-post-common.flags.esm := \
+  $(pre-post-common.flags) \
+  --post-js=$(post-js.js.esm) \
+  --extern-post-js=$(extern-post-js.js.esm)
+
+pre-post-jses.deps.common := $(extern-pre-js.js) $(sqlite3-license-version.js)
+pre-post-jses.deps.vanilla := $(pre-post-jses.deps.common) \
+  $(post-js.js.vanilla) $(extern-post-js.js.vanilla)
+pre-post-jses.deps.esm := $(pre-post-jses.deps.common) \
+  $(post-js.js.esm) $(extern-post-js.js.esm)
 $(sqlite3-license-version.js): $(sqlite3.h) $(sqlite3-license-version-header.js) $(MAKEFILE)
 	@echo "Making $@..."; { \
     cat $(sqlite3-license-version-header.js); \
@@ -291,65 +355,24 @@ $(sqlite3-license-version.js): $(sqlite3.h) $(sqlite3-license-version-header.js)
    } > $@
 
 ########################################################################
-# Transform $(1) to $(2) via ./c-pp -f $(1) ...
-#
-# Historical notes:
-#
-# - We first attempted to use gcc and/or clang to preprocess JS files
-#   in the same way we would normally do C files, but C-specific quirks
-#   of each makes that untennable.
-#
-# - We implemented c-pp.c (the C-Minus Pre-processor) as a custom
-#   generic/file-format-agnostic preprocessor to enable us to pack
-#   code for different target builds into the same JS files. Most
-#   notably, some ES6 module (a.k.a. ESM) features cannot legally be
-#   referenced at all in non-ESM code, e.g.  the "import" and "export"
-#   keywords. This preprocessing step permits us to swap out sections
-#   of code where necessary for ESM and non-ESM (a.k.a. vanilla JS)
-#   require different implementations. The alternative to such
-#   preprocessing, would be to have separate source files for ES6
-#   builds, which would have a higher maintenance burden than c-pp.c
-#   seems likely to.
-#
-# c-pp.c was written specifically for the sqlite project's JavaScript
-# builds but is maintained as a standalone project:
-# https://fossil.wanderinghorse.net/r/c-pp
-bin.c-pp := ./c-pp
-$(bin.c-pp): c-pp.c $(sqlite3.c) $(MAKEFILE)
-	$(CC) -O0 -o $@ c-pp.c $(sqlite3.c) '-DCMPP_DEFAULT_DELIM="//#"' -I$(dir.top)
-ifneq (,$(filter esm,$(MAKECMDGOALS)))
-js.cpp.defines ?= -DSQLITE_JS_ESM
-esm: $(filter-out esm,$(MAKECMDGOALS))
-else
-js.cpp.defines ?=
-endif
-define C-PP.JS
-# $1 = X.js. $2 = output file to generate by filtering $(1) through
-# $(bin.cpp) -E -CC.
-$(2): $(1) $$(MAKEFILE) $$(bin.c-pp)
-	$$(bin.c-pp) $(js.cpp.defines) -f $(1) -o $$@
-CLEAN_FILES += $(2)
-endef
-$(eval $(call C-PP.JS,$(dir.tmp)/sqlite3-api.c-pp.js,$(sqlite3-api.js)))
-$(eval $(call C-PP.JS,$(dir.api)/pre-js.js,$(dir.tmp)/pre-js.js))
-$(eval $(call C-PP.JS,$(extern-post-js.js.in),$(extern-post-js.js)))
-# /end CPP-of-JS bits
-########################################################################
-
-########################################################################
 # call-make-pre-js creates rules for pre-js-$(1).js. $1 = the base
-# name of the JS file on whose behalf this pre-js is for.
+# name of the JS file on whose behalf this pre-js is for. $2 is the
+# build mode: one of (vanilla, esm).
 define call-make-pre-js
-pre-post-$(1).flags ?=
-$$(dir.tmp)/pre-js-$(1).js: $$(pre-js.js) $$(MAKEFILE)
-	cp $$(pre-js.js) $$@
+pre-post-$(1).flags.$(2) ?=
+$$(dir.tmp)/pre-js-$(1)-$(2).js: $$(pre-js.js.$(2)) $$(MAKEFILE)
+	cp $$(pre-js.js.$(2)) $$@
 	@if [ sqlite3-wasmfs = $(1) ]; then \
 		echo "delete Module[xNameOfInstantiateWasm] /*for WASMFS build*/;"; \
 	elif [ sqlite3 != $(1) ]; then \
 		echo "Module[xNameOfInstantiateWasm].uri = '$(1).wasm';"; \
 	fi >> $$@
-pre-post-$(1).deps := $$(pre-post-jses.deps) $$(dir.tmp)/pre-js-$(1).js
-pre-post-$(1).flags += --pre-js=$$(dir.tmp)/pre-js-$(1).js
+pre-post-$(1).deps.$(2) := \
+  $$(pre-post-jses.deps.$(2)) \
+  $$(dir.tmp)/pre-js-$(1)-$(2).js
+pre-post-$(1).flags.$(2) += \
+  $$(pre-post-common.flags.$(2)) \
+  --pre-js=$$(dir.tmp)/pre-js-$(1)-$(2).js
 endef
 #$(error $(call call-make-pre-js,sqlite3-wasmfs))
 # /post-js and pre-js
@@ -466,20 +489,11 @@ emcc.jsflags += -sWASM_BIGINT=$(emcc.WASM_BIGINT)
 # debugging info, _huge_.
 ########################################################################
 
-########################################################################
-# AN EXPERIMENT: undocumented Emscripten feature: if the target file
-# extension is "mjs", it defaults to ES6 module builds:
+sqlite3.js := $(dir.dout)/sqlite3.js
+sqlite3.mjs := $(dir.dout)/sqlite3.mjs
+# Undocumented Emscripten feature: if the target file extension is
+# "mjs", it defaults to ES6 module builds:
 # https://github.com/emscripten-core/emscripten/issues/14383
-ifeq (,$(filter esm,$(MAKECMDGOALS)))
-sqlite3.js.ext := js
-else
-esm.deps := $(filter-out esm,$(MAKECMDGOALS))
-esm: $(if $(esm.deps),$(esm.deps),all)
-sqlite3.js.ext := mjs
-endif
-# /esm
-########################################################################
-sqlite3.js := $(dir.dout)/sqlite3.$(sqlite3.js.ext)
 sqlite3.wasm := $(dir.dout)/sqlite3.wasm
 sqlite3-wasm.c := $(dir.api)/sqlite3-wasm.c
 # sqlite3-wasm.o vs sqlite3-wasm.c: building against the latter
@@ -487,22 +501,52 @@ sqlite3-wasm.c := $(dir.api)/sqlite3-wasm.c
 # enough to the target speed requirements that the 500ms makes a
 # difference. Thus we build all binaries against sqlite3-wasm.c
 # instead of building a shared copy of sqlite3-wasm.o.
-$(eval $(call call-make-pre-js,sqlite3))
+$(eval $(call call-make-pre-js,sqlite3,vanilla))
+$(eval $(call call-make-pre-js,sqlite3,esm))
 $(sqlite3.js):
-$(sqlite3.js): $(MAKEFILE) $(sqlite3.wasm.obj) \
-    $(EXPORTED_FUNCTIONS.api) \
-    $(pre-post-sqlite3.deps)
+$(sqlite3.js) $(sqlite3.mjs): $(MAKEFILE) $(sqlite3.wasm.obj) \
+    $(EXPORTED_FUNCTIONS.api)
+$(sqlite3.js):  $(pre-post-sqlite3.deps.vanilla)
+$(sqlite3.mjs): $(pre-post-sqlite3.deps.esm)
+# SQLITE3.xJS.RECIPE = Recipe body for $(sqlite3.js) and
+# $(sqlite3.mjs). $1 = one of (vanilla, esm).
+define SQLITE3.xJS.RECIPE
 	@echo "Building $@ ..."
 	$(emcc.bin) -o $@ $(emcc_opt_full) $(emcc.flags) \
-    $(emcc.jsflags) $(pre-post-common.flags) $(pre-post-sqlite3.flags) \
+    $(emcc.jsflags) \
+    $(pre-post-sqlite3.flags.$(1)) $(emcc.flags.sqlite3.$(1)) \
     $(cflags.common) $(SQLITE_OPT) $(sqlite3-wasm.c)
+	if [ esm = $(1) ]; then \
+    sed -i -e '0,/^export default/{/^export default/d}' $@; \
+	fi # work around an Emscripten annoyance. See emcc.flags.esm
 	chmod -x $(sqlite3.wasm)
 	$(maybe-wasm-strip) $(sqlite3.wasm)
 	@ls -la $@ $(sqlite3.wasm)
+endef
+emcc.flags.sqlite3.vanilla :=
+emcc.flags.sqlite3.esm := -sEXPORT_ES6 -sUSE_ES6_IMPORT_META
+# Reminder: even if we use -sEXPORT_ES6=0, emcc _still_ adds:
+#
+#   export default $(sqlite3.js.init-func);
+#
+# when building *.mjs, which is bad because we need to export an
+# overwritten version of that function and cannot "export default"
+# twice. Because of this, we have to sed $(sqlite3.mjs) to remove the
+# first instance of /^export default/.
+$(sqlite3.js):
+	$(call SQLITE3.xJS.RECIPE,vanilla)
+$(sqlite3.mjs):
+	$(call SQLITE3.xJS.RECIPE,esm)
 $(sqlite3.wasm): $(sqlite3.js)
-CLEAN_FILES += $(sqlite3.js) $(sqlite3.wasm)
-all: $(sqlite3.js)
-wasm: $(sqlite3.js)
+$(sqlite3.mjs): $(sqlite3.js)
+# We have to ensure that we do not build both $(sqlite3.js) and
+# $(sqlite3.mjs) in parallel because both result in the build of
+# $(sqlite3.wasm). We have no way to build just the .mjs file without
+# also building the .wasm file. i.e.  we're building $(sqlite3.wasm)
+# twice, but that's unavoidable.
+CLEAN_FILES += $(sqlite3.js) $(sqlite3.mjs) $(sqlite3.wasm)
+all: $(sqlite3.mjs)
+wasm: $(sqlite3.mjs)
 # End main Emscripten-based module build
 ########################################################################
 
@@ -552,7 +596,6 @@ speedtest1-common.eflags += -sDYNAMIC_EXECUTION=0
 speedtest1-common.eflags += --minify 0
 speedtest1-common.eflags += -sEXPORT_NAME=$(sqlite3.js.init-func)
 speedtest1-common.eflags += -sWASM_BIGINT=$(emcc.WASM_BIGINT)
-speedtest1-common.eflags += $(pre-post-common.flags) 
 speedtest1.exit-runtime0 := -sEXIT_RUNTIME=0
 speedtest1.exit-runtime1 := -sEXIT_RUNTIME=1
 # Re -sEXIT_RUNTIME=1 vs 0: if it's 1 and speedtest1 crashes, we get
@@ -576,17 +619,17 @@ $(EXPORTED_FUNCTIONS.speedtest1): $(EXPORTED_FUNCTIONS.api)
 	@echo "Making $@ ..."
 	@{ echo _wasm_main; cat $(EXPORTED_FUNCTIONS.api); } > $@
 speedtest1.js := $(dir.dout)/speedtest1.js
-speedtest1.wasm := $(subst .js,.wasm,$(speedtest1.js))
+speedtest1.wasm := $(dir.dout)/speedtest1.wasm
 speedtest1.cflags := $(cflags.common) -DSQLITE_SPEEDTEST1_WASM
 speedtest1.cses := $(speedtest1.c) $(sqlite3-wasm.c)
-$(eval $(call call-make-pre-js,speedtest1))
+$(eval $(call call-make-pre-js,speedtest1,vanilla))
 $(speedtest1.js): $(MAKEFILE) $(speedtest1.cses) \
-    $(pre-post-speedtest1.deps) \
+    $(pre-post-speedtest1.deps.vanilla) \
     $(EXPORTED_FUNCTIONS.speedtest1)
 	@echo "Building $@ ..."
 	$(emcc.bin) \
         $(speedtest1.eflags) $(speedtest1-common.eflags) $(speedtest1.cflags) \
-        $(pre-post-speedtest1.flags) \
+        $(pre-post-speedtest1.flags.vanilla) \
         $(SQLITE_OPT) \
         $(speedtest1.exit-runtime0) \
         -o $@ $(speedtest1.cses) -lm

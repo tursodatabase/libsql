@@ -167,7 +167,7 @@ const installOpfsVfs = function callee(options){
       return promiseReject_(err);
     };
     const W =
-//#if SQLITE_JS_ESM
+//#if sqlite3-es6-module-build
     new Worker(new URL(options.proxyUri, import.meta.url));
 //#else
     new Worker(options.proxyUri);

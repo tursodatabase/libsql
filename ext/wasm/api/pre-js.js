@@ -29,7 +29,7 @@ sqlite3InitModuleState.debugModule('self.location =',self.location);
    4) If none of the above apply, (prefix+path) is returned.
 */
 Module['locateFile'] = function(path, prefix) {
-//#if SQLITE_JS_ESM
+//#if sqlite3-es6-module-build
   return new URL(path, import.meta.url).href;
 //#else
   'use strict';

@@ -1,11 +1,15 @@
+
+/* ^^^^ ACHTUNG: blank line at the start is necessary because
+   Emscripten will not add a newline in some cases and we need
+   a blank line for a sed-based kludge for the ES6 build. */
 /* extern-post-js.js must be appended to the resulting sqlite3.js
    file. It gets its name from being used as the value for the
    --extern-post-js=... Emscripten flag. Note that this code, unlike
    most of the associated JS code, runs outside of the
    Emscripten-generated module init scope, in the current
    global scope. */
-//#if SQLITE_JS_ESM
-const toexport =
+//#if sqlite3-es6-module-build
+const toExportForES6 =
 //#endif
 (function(){
   /**
@@ -106,10 +110,10 @@ const toexport =
     exports["sqlite3InitModule"] = sqlite3InitModule;
   /* AMD modules get injected in a way we cannot override,
      so we can't handle those here. */
-//#if SQLITE_JS_ESM
+//#if sqlite3-es6-module-build
   return self.sqlite3InitModule;
 //#endif
 })();
-//#if SQLITE_JS_ESM
-export default toexport;
+//#if sqlite3-es6-module-build
+export default toExportForES6;
 //#endif
