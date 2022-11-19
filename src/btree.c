@@ -9172,6 +9172,7 @@ int sqlite3BtreeInsert(
   assert( pPage->isInit || CORRUPT_DB );
   newCell = pBt->pTmpSpace;
   assert( newCell!=0 );
+  assert( BTREE_PREFORMAT==OPFLAG_PREFORMAT );
   if( flags & BTREE_PREFORMAT ){
     rc = SQLITE_OK;
     szNew = pBt->nPreformatSize;
