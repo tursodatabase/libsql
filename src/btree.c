@@ -7448,8 +7448,8 @@ static int pageFreeArray(
   int nRet = 0;
   int i;
   int iEnd = iFirst + nCell;
-  u8 *pFree = 0;
-  int szFree = 0;
+  u8 *pFree = 0;                  /* \__ Parameters for pending call to */
+  int szFree = 0;                 /* /   freeSpace()                    */
 
   for(i=iFirst; i<iEnd; i++){
     u8 *pCell = pCArray->apCell[i];
@@ -7470,6 +7470,9 @@ static int pageFreeArray(
           return 0;
         }
       }else{
+        /* The current cell is adjacent to and before the pFree cell.
+        ** Combine the two regions into one to reduce the number of calls
+        ** to freeSpace(). */
         pFree = pCell;
         szFree += sz;
       }
