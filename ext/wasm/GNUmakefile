@@ -227,12 +227,13 @@ bin.c-pp := ./c-pp
 $(bin.c-pp): c-pp.c $(sqlite3.c) $(MAKEFILE)
 	$(CC) -O0 -o $@ c-pp.c $(sqlite3.c) '-DCMPP_DEFAULT_DELIM="//#"' -I$(dir.top)
 define C-PP.JS
-# $1 c-pp -D... flags
-# $2 = c-pp -f X.js
-# $3 = c-pp -o X.js
-$(3): $(2) $$(MAKEFILE) $$(bin.c-pp)
-	$$(bin.c-pp) -f $(2) -o $$@ $(1)
-CLEAN_FILES += $(3)
+# Create $2 from $1 using $(bin.c-pp)
+# $1 = Input file: c-pp -f X.js
+# $2 = Output file: c-pp -o X.js
+# $3 = optional c-pp -D... flags
+$(2): $(1) $$(MAKEFILE) $$(bin.c-pp)
+	$$(bin.c-pp) -f $(1) -o $$@ $(3)
+CLEAN_FILES += $(2)
 endef
 c-pp.D.vanilla ?=
 c-pp.D.esm ?= -Dsqlite3-es6-module-build
@@ -300,8 +301,8 @@ $(sqlite3-api-build-version.js): $(bin.version-info) $(MAKEFILE)
 pre-js.js.in := $(dir.api)/pre-js.js
 pre-js.js.esm := $(dir.tmp)/pre-js.esm.js
 pre-js.js.vanilla := $(dir.tmp)/pre-js.vanilla.js
-$(eval $(call C-PP.JS,$(c-pp.D.vanilla),$(pre-js.js.in),$(pre-js.js.vanilla)))
-$(eval $(call C-PP.JS,$(c-pp.D.esm),$(pre-js.js.in),$(pre-js.js.esm)))
+$(eval $(call C-PP.JS,$(pre-js.js.in),$(pre-js.js.vanilla),$(c-pp.D.vanilla)))
+$(eval $(call C-PP.JS,$(pre-js.js.in),$(pre-js.js.esm),$(c-pp.D.esm)))
 post-js.js.in := $(dir.tmp)/post-js.js
 post-js.js.vanilla := $(dir.tmp)/post-js.vanilla.js
 post-js.js.esm := $(dir.tmp)/post-js.esm.js
@@ -316,14 +317,14 @@ $(post-js.js.in): $(post-jses.js) $(MAKEFILE)
 		cat $$i; \
 		echo "/* END FILE: $$i */"; \
 	done > $@
-$(eval $(call C-PP.JS,$(c-pp.D.vanilla),$(post-js.js.in),$(post-js.js.vanilla)))
-$(eval $(call C-PP.JS,$(c-pp.D.esm),$(post-js.js.in),$(post-js.js.esm)))
+$(eval $(call C-PP.JS,$(post-js.js.in),$(post-js.js.vanilla),$(c-pp.D.vanilla)))
+$(eval $(call C-PP.JS,$(post-js.js.in),$(post-js.js.esm),$(c-pp.D.esm)))
 
 extern-post-js.js.in := $(dir.api)/extern-post-js.js
 extern-post-js.js.vanilla := $(dir.tmp)/extern-post-js.vanilla.js
 extern-post-js.js.esm := $(dir.tmp)/extern-post-js.esm.js
-$(eval $(call C-PP.JS,$(c-pp.D.vanilla),$(extern-post-js.js.in),$(extern-post-js.js.vanilla)))
-$(eval $(call C-PP.JS,$(c-pp.D.esm),$(extern-post-js.js.in),$(extern-post-js.js.esm)))
+$(eval $(call C-PP.JS,$(extern-post-js.js.in),$(extern-post-js.js.vanilla),$(c-pp.D.vanilla)))
+$(eval $(call C-PP.JS,$(extern-post-js.js.in),$(extern-post-js.js.esm),$(c-pp.D.esm)))
 extern-pre-js.js := $(dir.api)/extern-pre-js.js
 
 # Emscripten flags for --[extern-][pre|post]-js=...
@@ -641,6 +642,17 @@ all: speedtest1
 CLEAN_FILES += $(speedtest1.js) $(speedtest1.wasm)
 # end speedtest1.js
 ########################################################################
+
+########################################################################
+# tester1 code:
+#  tester1.js: for main thread and worker thread
+#  tester1-esm.js: to be loaded from an ES6 Worker Module thread
+$(eval $(call C-PP.JS,tester1.c-pp.js,tester1.js))
+$(eval $(call C-PP.JS,tester1.c-pp.js,tester1-esm.js,-Dtester1-esm-worker))
+tester1.js: $(sqlite3.js)
+tester1-esm.js: $(sqlite3.mjs)
+tester1: tester1.js tester1-esm.js
+all: tester1
 
 ########################################################################
 # Convenience rules to rebuild with various -Ox levels. Much

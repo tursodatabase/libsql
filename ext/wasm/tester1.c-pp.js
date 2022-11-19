@@ -29,8 +29,25 @@
   a db in an early test and close it in a later test. Each test gets
   passed the sqlite3 namespace object as its only argument.
 */
+/*
+   This file is intended to be processed by c-pp to inject (or not)
+   code specific to ES6 modules which is illegal in non-module code.
+
+   Non-ES6 module build and ES6 module for the main-thread:
+
+     ./c-pp -f tester1.c-pp.js -o tester1.js
+
+   ES6 worker module build:
+
+     ./c-pp -f tester1.c-pp.js -o tester1-esm.js -Dtester1-esm-worker
+*/
+//#if tester1-esm-worker
+import {default as sqlite3InitModule} from './jswasm/sqlite3.mjs';
+self.sqlite3InitModule = sqlite3InitModule;
+//#else
 'use strict';
-(function(){
+//#endif
+(function(self){
   /**
      Set up our output channel differently depending
      on whether we are running in a worker thread or
@@ -1817,7 +1834,8 @@
 
   ////////////////////////////////////////////////////////////////////////
   log("Loading and initializing sqlite3 WASM module...");
-  if(!isUIThread()){
+  if(!self.sqlite3InitModule && !isUIThread()){
+    /* Vanilla worker, as opposed to an ES6 module worker */
     /*
       If sqlite3.js is in a directory other than this script, in order
       to get sqlite3.js to resolve sqlite3.wasm properly, we have to
@@ -1861,4 +1879,5 @@
     }
     TestUtil.runTests(sqlite3);
   });
-})();
+})(self);
+
