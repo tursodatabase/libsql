@@ -131,3 +131,11 @@ into the build-generated `sqlite3.js` along with `sqlite3-api.js`.
   `sqlite3InitModule()` function with one which, after the module is
   loaded, also initializes the asynchronous parts of the sqlite3
   module. For example, the OPFS VFS support.
+
+## Preprocessing of Source Files
+
+Certain files in the build require preprocessing to filter in/out
+parts which differ between vanilla JS builds and ES6 Module
+(a.k.a. esm) builds. The preprocessor itself is in
+[](/file/ext/wasm/c-pp.c) and the associates flags and rules are in
+[](/file/ext/wasm/GNUmakefile).

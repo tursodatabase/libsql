@@ -166,7 +166,12 @@ const installOpfsVfs = function callee(options){
       opfsVfs.dispose();
       return promiseReject_(err);
     };
-    const W = new Worker(options.proxyUri);
+    const W =
+//#if SQLITE_JS_ESM
+    new Worker(new URL(options.proxyUri, import.meta.url));
+//#else
+    new Worker(options.proxyUri);
+//#endif
     W._originalOnError = W.onerror /* will be restored later */;
     W.onerror = function(err){
       // The error object doesn't contain any useful info when the
@@ -569,7 +574,7 @@ const installOpfsVfs = function callee(options){
         const ndx = Math.random() * (f._n * 64) % f._n | 0;
         a[i] = f._chars[ndx];
       }
-      return a.join('');
+      return a.join("");
     };
 
     /**
@@ -1158,7 +1163,7 @@ const installOpfsVfs = function callee(options){
             be set here.
           */
           //"pragma cache_size=-8388608;"
-        ].join('')
+        ].join("")
       );
     }
 
