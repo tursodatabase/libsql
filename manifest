@@ -1,5 +1,5 @@
-C Create\snew\sbranch\snamed\s"base_convert"
-D 2022-11-19T02:32:26.249
+C New\sextensions\sfor\sbase85\sand\sbase64\sconversion\sUDFs
+D 2022-11-19T02:39:16.296
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -289,6 +289,8 @@ F ext/misc/README.md d6dd0fe1d8af77040216798a6a2b0c46c73054d2f0ea544fbbcdccf6f23
 F ext/misc/amatch.c e3ad5532799cee9a97647f483f67f43b38796b84b5a8c60594fe782a4338f358
 F ext/misc/anycollseq.c 5ffdfde9829eeac52219136ad6aa7cd9a4edb3b15f4f2532de52f4a22525eddb
 F ext/misc/appendvfs.c 9642c7a194a2a25dca7ad3e36af24a0a46d7702168c4ad7e59c9f9b0e16a3824
+F ext/misc/base64.c e4d3f13bb59aa903734b557e1400f3c5961f0a5abc40400e0e2aa3ad362c0fd7
+F ext/misc/base85.c 3e07aea038129ee646b129ac2ed736344ea03859ff447019e67250b80722c528
 F ext/misc/blobio.c a867c4c4617f6ec223a307ebfe0eabb45e0992f74dd47722b96f3e631c0edb2a
 F ext/misc/btreeinfo.c d28ce349b40054eaa9473e835837bad7a71deec33ba13e39f963d50933bfa0f9
 F ext/misc/carray.c b752f46411e4e47e34dce6f0c88bc8e51bb821ba9e49bfcd882506451c928f69
@@ -2055,11 +2057,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f710cce13577788cf3b95ed7089c3af2854271ff53f0a0b7b0619f315e331eff
-R 8e4332decceeea7e1973b8e5ac88e8a4
-T *branch * base_convert
-T *sym-base_convert *
-T -sym-trunk *
+P 0cbf55407a3a94b1c9c0ada52fa2995088bac3739876fa8d465dfb4dfcc4a6ea
+R 4ecad003b3a6f60dd6b11d354f8edbe2
 U larrybr
-Z 21ba949f5c7ccf39d76b47dd8fe1f905
+Z d182470ca73df70df09238ac5a5e4382
 # Remove this line to create a well-formed Fossil manifest.
