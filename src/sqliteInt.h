@@ -5003,6 +5003,9 @@ const char *sqlite3ErrName(int);
 
 #ifndef SQLITE_OMIT_DESERIALIZE
 int sqlite3MemdbInit(void);
+int sqlite3IsMemdb(const sqlite3_vfs*);
+#else
+# define sqlite3IsMemdb(X) 0
 #endif
 
 const char *sqlite3ErrStr(int);
