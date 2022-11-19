@@ -11196,7 +11196,7 @@ static char *find_home_dir(int clearFlag){
   if( home_dir ) return home_dir;
 
 #if !defined(_WIN32) && !defined(WIN32) && !defined(_WIN32_WCE) \
-     && !defined(__RTP__) && !defined(_WRS_KERNEL)
+     && !defined(__RTP__) && !defined(_WRS_KERNEL) && !defined(SQLITE_WASI)
   {
     struct passwd *pwent;
     uid_t uid = getuid();
