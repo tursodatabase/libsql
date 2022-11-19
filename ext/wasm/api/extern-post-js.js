@@ -4,6 +4,9 @@
    most of the associated JS code, runs outside of the
    Emscripten-generated module init scope, in the current
    global scope. */
+//#if SQLITE_JS_ESM
+const toexport =
+//#endif
 (function(){
   /**
      In order to hide the sqlite3InitModule()'s resulting Emscripten
@@ -103,4 +106,10 @@
     exports["sqlite3InitModule"] = sqlite3InitModule;
   /* AMD modules get injected in a way we cannot override,
      so we can't handle those here. */
+//#if SQLITE_JS_ESM
+  return self.sqlite3InitModule;
+//#endif
 })();
+//#if SQLITE_JS_ESM
+export default toexport;
+//#endif

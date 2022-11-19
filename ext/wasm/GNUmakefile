@@ -225,13 +225,13 @@ sqlite3-api.jses += $(dir.api)/sqlite3-api-cleanup.js
 SOAP.js := $(dir.api)/sqlite3-opfs-async-proxy.js
 sqlite3-worker1.js := $(dir.api)/sqlite3-worker1.js
 sqlite3-worker1-promiser.js := $(dir.api)/sqlite3-worker1-promiser.js
-define CP_XAPI
+define COPY_XAPI
 sqlite3-api.ext.jses += $$(dir.dout)/$$(notdir $(1))
 $$(dir.dout)/$$(notdir $(1)): $(1) $$(MAKEFILE)
 	cp $$< $$@
 endef
 $(foreach X,$(SOAP.js) $(sqlite3-worker1.js) $(sqlite3-worker1-promiser.js),\
-  $(eval $(call CP_XAPI,$(X))))
+  $(eval $(call COPY_XAPI,$(X))))
 all: $(sqlite3-api.ext.jses)
 
 sqlite3-api.js := $(dir.tmp)/sqlite3-api.js
@@ -270,7 +270,8 @@ $(post-js.js): $(post-jses) $(MAKEFILE)
 		cat $$i; \
 		echo "/* END FILE: $$i */"; \
 	done > $@
-extern-post-js.js := $(dir.api)/extern-post-js.js
+extern-post-js.js.in := $(dir.api)/extern-post-js.js
+extern-post-js.js := $(dir.tmp)/extern-post-js.js
 extern-pre-js.js := $(dir.api)/extern-pre-js.js
 pre-post-common.flags := \
   --post-js=$(post-js.js) \
@@ -322,15 +323,16 @@ esm: $(filter-out esm,$(MAKECMDGOALS))
 else
 js.cpp.defines ?=
 endif
-define C-PP_JS
+define C-PP.JS
 # $1 = X.js. $2 = output file to generate by filtering $(1) through
 # $(bin.cpp) -E -CC.
 $(2): $(1) $$(MAKEFILE) $$(bin.c-pp)
 	$$(bin.c-pp) $(js.cpp.defines) -f $(1) -o $$@
 CLEAN_FILES += $(2)
 endef
-$(eval $(call C-PP_JS,$(dir.tmp)/sqlite3-api.c-pp.js,$(dir.tmp)/sqlite3-api.js))
-$(eval $(call C-PP_JS,$(dir.api)/pre-js.js,$(dir.tmp)/pre-js.js))
+$(eval $(call C-PP.JS,$(dir.tmp)/sqlite3-api.c-pp.js,$(sqlite3-api.js)))
+$(eval $(call C-PP.JS,$(dir.api)/pre-js.js,$(dir.tmp)/pre-js.js))
+$(eval $(call C-PP.JS,$(extern-post-js.js.in),$(extern-post-js.js)))
 # /end CPP-of-JS bits
 ########################################################################
 
