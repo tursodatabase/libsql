@@ -46,7 +46,7 @@ dist-dir.common := $(dist-dir.top)/common
 dist.top.extras := \
     demo-123.html demo-123-worker.html demo-123.js \
     tester1.html tester1-worker.html tester1-esm.html \
-    tester1.js tester1-esm.js \
+    tester1.js tester1.mjs \
     demo-jsstorage.html demo-jsstorage.js \
     demo-worker1.html demo-worker1.js \
     demo-worker1-promiser.html demo-worker1-promiser.js
