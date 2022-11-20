@@ -24,7 +24,8 @@
 # Required tools beyond those needed for the canonical builds:
 #
 # - Emscripten SDK: https://emscripten.org/docs/getting_started/downloads.html
-# - GNU make, GNU sed, GNU awk, GNU grep
+# - The bash shell
+# - GNU make, GNU sed, GNU awk, GNU grep (all in the $PATH)
 # - wasm-strip for release builds: https://github.com/WebAssembly/wabt
 # - InfoZip for 'dist' zip file
 ########################################################################
@@ -426,7 +427,7 @@ endef
 ########################################################################
 # emcc flags for .c/.o/.wasm/.js.
 emcc.flags :=
-ifeq (1,$(verbose))
+ifeq (1,$(emcc.verbose))
 emcc.flags += -v
 # -v is _very_ loud but also informative about what it's doing
 endif
@@ -490,10 +491,19 @@ emcc.jsflags += $(emcc.environment)
 ########################################################################
 # $(sqlite3.js.init-func) is the name Emscripten assigns our exported
 # module init/load function. This symbol name is hard-coded in
-# $(extern-post-js.js) as well as in numerous docs. If changed, it
-# needs to be globally modified in *.js and all related documentation.
-# Note that changing it will break client applications, so never
-# change it unless you're creating a custom deliverable.
+# $(extern-post-js.js) as well as in numerous docs.
+#
+# "sqlite3InitModule" is the symbol we document for client use, so
+# that's the symbol name which must be exported, whether it comes from
+# Emscripten or our own code in extern-post-js.js.
+#
+# That said... we can change $(sqlite3.js.init-func) as long as the
+# name "sqlite3InitModule" is the one which gets exposed via the
+# resulting JS files. That can be accomplished via
+# extern-post-js.js. However...  using a temporary symbol name here
+# and then adding sqlite3InitModule() ourselves results in 2 global
+# symbols: we cannot "delete" the Emscripten-defined
+# $(sqlite3.js.init-func) because it's declared with "var".
 sqlite3.js.init-func := sqlite3InitModule
 emcc.jsflags += -sEXPORT_NAME=$(sqlite3.js.init-func)
 emcc.jsflags += -sGLOBAL_BASE=4096 # HYPOTHETICALLY keep func table indexes from overlapping w/ heap addr.
@@ -562,8 +572,23 @@ $(sqlite3.js) $(sqlite3.mjs): $(MAKEFILE) $(sqlite3.wasm.obj) \
     $(EXPORTED_FUNCTIONS.api)
 $(sqlite3.js):  $(pre-post-sqlite3.deps.vanilla)
 $(sqlite3.mjs): $(pre-post-sqlite3.deps.esm)
+########################################################################
 # SQLITE3.xJS.RECIPE = the $(call)able recipe body for $(sqlite3.js)
 # and $(sqlite3.mjs). $1 = one of (vanilla, esm).
+#
+# Reminder for ESM builds: even if we use -sEXPORT_ES6=0, emcc _still_
+# adds:
+#
+#   export default $(sqlite3.js.init-func);
+#
+# when building *.mjs, which is bad because we need to export an
+# overwritten version of that function and cannot "export default"
+# twice. Because of this, we have to sed $(sqlite3.mjs) to remove the
+# _first_ instance (only) of /^export default/.
+#
+# Upstream RFE:
+# https://github.com/emscripten-core/emscripten/issues/18237
+########################################################################
 define SQLITE3.xJS.RECIPE
 	@echo "Building $@ ..."
 	$(emcc.bin) -o $@ $(emcc_opt_full) $(emcc.flags) \
@@ -584,26 +609,19 @@ define SQLITE3.xJS.RECIPE
 endef
 emcc.flags.sqlite3.vanilla :=
 emcc.flags.sqlite3.esm := -sEXPORT_ES6 -sUSE_ES6_IMPORT_META
-# Reminder for ESM build: even if we use -sEXPORT_ES6=0, emcc _still_
-# adds:
-#
-#   export default $(sqlite3.js.init-func);
-#
-# when building *.mjs, which is bad because we need to export an
-# overwritten version of that function and cannot "export default"
-# twice. Because of this, we have to sed $(sqlite3.mjs) to remove the
-# _first_ instance (only) of /^export default/.
 $(sqlite3.js):
 	$(call SQLITE3.xJS.RECIPE,vanilla)
 $(sqlite3.mjs):
 	$(call SQLITE3.xJS.RECIPE,esm)
-$(sqlite3.wasm): $(sqlite3.js)
-$(sqlite3.mjs): $(sqlite3.js)
+########################################################################
 # We have to ensure that we do not build both $(sqlite3.js) and
-# $(sqlite3.mjs) in parallel because both result in the build of
+# $(sqlite3.mjs) in parallel because both result in the creation of
 # $(sqlite3.wasm). We have no(?) way to build just the .mjs file
 # without also building the .wasm file. i.e.  we're building
-# $(sqlite3.wasm) twice, but that's apparently unavoidable.
+# $(sqlite3.wasm) twice, but that's apparently unavoidable (and
+# harmless, just a waste of build time).
+$(sqlite3.wasm): $(sqlite3.js)
+$(sqlite3.mjs): $(sqlite3.js)
 CLEAN_FILES += $(sqlite3.js) $(sqlite3.mjs) $(sqlite3.wasm)
 all: $(sqlite3.mjs)
 wasm: $(sqlite3.mjs)
@@ -717,12 +735,14 @@ CLEAN_FILES += $(speedtest1.js) $(speedtest1.wasm)
 # To that end, we require two separate builds of tester1.js:
 # 
 #  tester1.js: cases 1 and 2
-#  tester1-esm.js: cases 3 and 4
+#  tester1.mjs: cases 3 and 4
 #
 # To create those, we filter tester1.c-pp.js with $(bin.c-pp)...
 $(eval $(call C-PP.FILTER,tester1.c-pp.js,tester1.js))
-$(eval $(call C-PP.FILTER,tester1.c-pp.js,tester1-esm.js,$(c-pp.D.esm)))
-tester1: tester1.js tester1-esm.js
+$(eval $(call C-PP.FILTER,tester1.c-pp.js,tester1.mjs,$(c-pp.D.esm)))
+$(eval $(call C-PP.FILTER,tester1.c-pp.html,tester1.html))
+$(eval $(call C-PP.FILTER,tester1.c-pp.html,tester1-esm.html,$(c-pp.D.esm)))
+tester1: tester1.js tester1.mjs tester1.html tester1-esm.html
 all: tester1
 
 ########################################################################
@@ -794,8 +814,8 @@ endif
 
 ########################################################################
 # Push files to public wasm-testing.sqlite.org server
-wasm-testing.include = $(dir.dout) *.js *.html \
-    batch-runner.list $(dir.sql) $(dir.common) $(dir.fiddle) $(dir.jacc)
+wasm-testing.include = *.js *.html batch-runner.list \
+  $(dir.dout) $(dir.sql) $(dir.common) $(dir.fiddle) $(dir.jacc)
 wasm-testing.exclude = sql/speedtest1.sql
 wasm-testing.dir     = /jail/sites/wasm-testing
 wasm-testing.dest   ?= wasm-testing:$(wasm-testing.dir)

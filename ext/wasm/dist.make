@@ -6,6 +6,10 @@
 # 'make dist' rules for creating a distribution archive of the WASM/JS
 # pieces, noting that we only build a dist of the built files, not the
 # numerous pieces required to build them.
+#
+# Use 'make snapshot' to create "snapshot" releases. They use a
+# distinctly different zip file and top directory name to distinguish
+# them from release builds.
 #######################################################################
 MAKEFILE.dist := $(lastword $(MAKEFILE_LIST))
 

@@ -46,7 +46,7 @@
           logHtml('warning',"Attempting to run an ES6 Worker Module, "+
                   "which is not supported by all browsers! "+
                   "e.g. Firefox (as of 2022-11) cannot do this.");
-        workerArgs.push("tester1-esm.js",{type:"module"});
+        workerArgs.push("tester1.mjs",{type:"module"});
         document.querySelectorAll('title,#color-target').forEach((e)=>{
           e.innerText = "sqlite3 tester #1: ES6 Worker Module";
         });
