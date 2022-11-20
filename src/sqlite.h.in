@@ -10472,7 +10472,7 @@ int sqlite3_deserialize(
 # undef double
 #endif
 
-#if defined(__wasi__) || defined(WASM_WASI)
+#if defined(__wasi__)
 # undef SQLITE_WASI
 # define SQLITE_WASI 1
 # undef SQLITE_OMIT_WAL

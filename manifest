@@ -1,5 +1,5 @@
-C Elide\sa\swasi-incompatible\sshell.c\sblock\sin\sSQLITE_WASI\sbuilds.
-D 2022-11-19T15:03:25.773
+C Remove\scheck\sfor\sWASM_WASI\smacro\swhen\sdetecting\swasi\scompilation\smode,\sas\sthat\smacro\sis\sproject-specific.\sRely\sonly\son\s__wasi__\s(exposed\sby\sclang)\sto\sdetect\swasi\scompilation\smode.
+D 2022-11-20T15:30:42.968
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -641,7 +641,7 @@ F src/resolve.c efea4e5fbecfd6d0a9071b0be0d952620991673391b6ffaaf4c277b0bb674633
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 9886d6669f5787471aab6ae52af76fad90b53edb1c218fc9ed9d953363bc5184
 F src/shell.c.in c04980beb7d8a6443bef463d3bac695d35c76e26a577076f2390efc871193cea
-F src/sqlite.h.in 843bf14e3dff296f0b2be440e59094530063bc6052347e23e97e6667ad59acad
+F src/sqlite.h.in b14769848d4c1bcf51b3a968c656133302443aa4112de52fec8425a862fa99e9
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h c4b9fa7a7e2bcdf850cfeb4b8a91d5ec47b7a00033bc996fd2ee96cbf2741f5f
 F src/sqliteInt.h 1a2cec0f7682da69975eb203fef2058949051ff500445b997d8047cbd8813315
@@ -2057,8 +2057,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 382ba3b28409bbc54e6c5c3c9fe78980832e9f33261ee842e3b56e788300f669
-R fbc353ec2c303468e2c4f3839734e5b5
+P 9b8b15a779158ec7c39d936f6bfa6a35e12063a36933341ade051809993a5678
+R eab0332091536d080c020fa14b102cbe
 U stephan
-Z 832db4ba1df42c3e6c0af6e904f13656
+Z 0c7f0b6e6cee222ce3be0bf4f50c95f1
 # Remove this line to create a well-formed Fossil manifest.
