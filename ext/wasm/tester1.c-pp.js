@@ -39,9 +39,9 @@
 
    ES6 worker module build:
 
-     ./c-pp -f tester1.c-pp.js -o tester1-esm.js -Dtester1-esm-worker
+     ./c-pp -f tester1.c-pp.js -o tester1-esm.js -Dtarget=es6-module
 */
-//#if tester1-esm-worker
+//#if target=es6-module
 import {default as sqlite3InitModule} from './jswasm/sqlite3.mjs';
 self.sqlite3InitModule = sqlite3InitModule;
 //#else

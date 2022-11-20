@@ -20,11 +20,6 @@
       <label for='cb-log-reverse'>Reverse log order?</label>
     </div>
     <div id='test-output'></div>
-    <script type="module" defer>
-      import {default as sqlite3InitModule} from "./jswasm/sqlite3.mjs";
-      self.sqlite3InitModule = sqlite3InitModule;
-      console.log("Loaded sqlite3InitModule() via an ES6 module.");
-    </script>
-    <script src="tester1.js" defer></script>
+    <script src="tester1-esm.js" type="module"></script>
   </body>
 </html>

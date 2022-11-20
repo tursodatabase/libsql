@@ -8,7 +8,7 @@
    most of the associated JS code, runs outside of the
    Emscripten-generated module init scope, in the current
    global scope. */
-//#if sqlite3-es6-module-build
+//#if target=es6-module
 const toExportForES6 =
 //#endif
 (function(){
@@ -110,10 +110,8 @@ const toExportForES6 =
     exports["sqlite3InitModule"] = sqlite3InitModule;
   /* AMD modules get injected in a way we cannot override,
      so we can't handle those here. */
-//#if sqlite3-es6-module-build
-  return self.sqlite3InitModule;
-//#endif
+  return self.sqlite3InitModule /* required for ESM */;
 })();
-//#if sqlite3-es6-module-build
+//#if target=es6-module
 export default toExportForES6;
 //#endif
