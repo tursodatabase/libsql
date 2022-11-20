@@ -1,5 +1,5 @@
-C Generic\scleanups\sand\sdoc\sadditions\sin\sthe\swasm\sbuild\sfiles.
-D 2022-11-20T04:14:00.750
+C Remove\san\sobsolete\sreference\sto\sWASMFS\sfrom\sext/wasm/index.html.
+D 2022-11-20T04:14:29.454
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -534,7 +534,7 @@ F ext/wasm/fiddle/fiddle-worker.js b4a0c8ab6c0983218543ca771c45f6075449f63a1dcf2
 F ext/wasm/fiddle/fiddle.js 974b995119ac443685d7d94d3b3c58c6a36540e9eb3fed7069d5653284071715
 F ext/wasm/fiddle/index.html 5daf54e8f3d7777cbb1ca4f93affe28858dbfff25841cb4ab81d694efed28ec2
 F ext/wasm/index-dist.html c4337617c4d6d4d0796827cec28ac81d128c6f911dcf888a290a32ad50890408
-F ext/wasm/index.html 8289252ca8b25a4a76b8e5a86e84c42f5c7ca3302f2b5b1dbdf269fa96c28d84
+F ext/wasm/index.html 5393ced912ee9af18cc8cefbda96fac922839d192d7c3d4ec4f4b42dd7f1cf8b
 F ext/wasm/jaccwabyt/jaccwabyt.js 95f573de1826474c9605dda620ee622fcb1673ae74f191eb324c0853aa4dcb66
 F ext/wasm/jaccwabyt/jaccwabyt.md 9aa6951b529a8b29f578ec8f0355713c39584c92cf1708f63ba0cf917cb5b68e
 F ext/wasm/module-symbols.html b8eebafef8e536624bbe5f7a3da40c07a9062b843dfd3161a0bb72cbb6763dc5
@@ -2057,8 +2057,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f7620aa09e4893971e00cdee5c6f1fe15c3bd21f985bec90fbd90fdfc457ac31
-R 7c89dac6ffbc92dde31ec50f0fbc1ade
+P d10f385e36ee7fe3077d80d8d6e7ce55732d20ef73e2a63533d8d2932ec8bf62
+R 37857805b3b6071fa9b37ce0a0873f80
 U stephan
-Z 0b0ddc4c7b7acf4fd988a55bdb70d0c8
+Z f1048ad4ae84ec54ea82e7fb7b483cf6
 # Remove this line to create a well-formed Fossil manifest.
