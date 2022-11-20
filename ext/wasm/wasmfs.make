@@ -101,7 +101,7 @@ $(speedtest1-wasmfs.js): $(speedtest1.cses) $(sqlite3-wasmfs.js) \
   $(EXPORTED_FUNCTIONS.speedtest1)
 	@echo "Building $@ ..."
 	$(emcc.bin) \
-        $(speedtest1-wasmfs.eflags) $(speedtest1-common.eflags) \
+        $(speedtest1-wasmfs.eflags) $(speedtest1.eflags.common) \
         $(pre-post-speedtest1-wasmfs.flags) \
         $(speedtest1.cflags) \
         $(sqlite3-wasmfs.cflags) \
