@@ -6629,6 +6629,30 @@ static int sameSrcAlias(SrcItem *p0, SrcList *pSrc){
   return 0;
 }
 
+#if TREETRACE_ENABLED
+/*
+** Display all information about an AggInfo object
+*/
+static void printAggInfo(AggInfo *pAggInfo){
+  int ii;
+  for(ii=0; ii<pAggInfo->nColumn; ii++){
+    struct AggInfo_col *pCol = &pAggInfo->aCol[ii];
+    sqlite3DebugPrintf(
+       "agg-column[%d] pTab=%s iTable=%d iColumn=%d iMem=%d"
+       " iSorterColumn=%d\n",
+       ii, pCol->pTab ? pCol->pTab->zName : "NULL", 
+       pCol->iTable, pCol->iColumn, pCol->iMem,
+       pCol->iSorterColumn);
+    sqlite3TreeViewExpr(0, pAggInfo->aCol[ii].pCExpr, 0);
+  }
+  for(ii=0; ii<pAggInfo->nFunc; ii++){
+    sqlite3DebugPrintf("agg-func[%d]: iMem=%d\n",
+        ii, pAggInfo->aFunc[ii].iMem);
+    sqlite3TreeViewExpr(0, pAggInfo->aFunc[ii].pFExpr, 0);
+  }
+}
+#endif /* TREETRACE_ENABLED */
+
 /*
 ** Generate code for the SELECT statement given in the p argument.  
 **
@@ -7428,28 +7452,13 @@ int sqlite3Select(
     if( db->mallocFailed ) goto select_end;
 #if TREETRACE_ENABLED
     if( sqlite3TreeTrace & 0x400 ){
-      int ii;
       SELECTTRACE(0x400,pParse,p,("After aggregate analysis %p:\n", pAggInfo));
       sqlite3TreeViewSelect(0, p, 0);
       if( minMaxFlag ){
         sqlite3DebugPrintf("MIN/MAX Optimization (0x%02x) adds:\n", minMaxFlag);
         sqlite3TreeViewExprList(0, pMinMaxOrderBy, 0, "ORDERBY");
       }
-      for(ii=0; ii<pAggInfo->nColumn; ii++){
-        struct AggInfo_col *pCol = &pAggInfo->aCol[ii];
-        sqlite3DebugPrintf(
-           "agg-column[%d] pTab=%s iTable=%d iColumn=%d iMem=%d"
-           " iSorterColumn=%d\n",
-           ii, pCol->pTab ? pCol->pTab->zName : "NULL", 
-           pCol->iTable, pCol->iColumn, pCol->iMem,
-           pCol->iSorterColumn);
-        sqlite3TreeViewExpr(0, pAggInfo->aCol[ii].pCExpr, 0);
-      }
-      for(ii=0; ii<pAggInfo->nFunc; ii++){
-        sqlite3DebugPrintf("agg-func[%d]: iMem=%d\n",
-            ii, pAggInfo->aFunc[ii].iMem);
-        sqlite3TreeViewExpr(0, pAggInfo->aFunc[ii].pFExpr, 0);
-      }
+      printAggInfo(pAggInfo);
     }
 #endif
 
