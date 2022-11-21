@@ -1,5 +1,8 @@
 const sqlite3 = require('sqlite3').verbose();
-const db = new sqlite3.Database(':memory:');
+
+const db_uri = process.env.DB_URI;
+
+const db = new sqlite3.Database(db_uri);
 
 db.serialize(() => {
     db.run("CREATE TABLE lorem (info TEXT)");

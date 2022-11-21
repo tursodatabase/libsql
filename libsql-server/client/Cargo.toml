@@ -1,0 +1,15 @@
+[package]
+name = "edgeproxy"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "edgeproxy"
+crate-type = ["cdylib"]
+
+[dependencies]
+anyhow = "1.0.66"
+bytes = "1.3.0"
+postgres-protocol = "0.6.4"
+unwrap_or = "1.0.0"
+url = { version = "2.3.1", default-features = false }
