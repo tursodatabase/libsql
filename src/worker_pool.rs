@@ -98,9 +98,12 @@ impl Worker {
 
         loop {
             let message = self.perform_oneshot(&stmts);
-            job.responder.respond(&message);
+            let is_err = message.is_err();
+
+            job.responder.respond(message);
+
             match stmts.state(State::TxnOpened) {
-                State::TxnClosed if !message.is_err() => {
+                State::TxnClosed if !is_err => {
                     // the transaction was closed successfully
                     job.scheduler_sender
                         .send(UpdateStateMessage::TxnEnded(job.client_id))
@@ -119,7 +122,7 @@ impl Worker {
                         Err(_) => {
                             log::warn!("rolling back transaction!");
                             let _ = self.db_conn.execute("ROLLBACK TRANSACTION;");
-                            job.responder.respond(&Message::Error(
+                            job.responder.respond(Message::Error(
                                 ErrorCode::TxTimeout,
                                 "transaction timed out".into(),
                             ));
@@ -142,7 +145,7 @@ impl Worker {
                 // Any other state falls in this branch, even invalid: we let sqlite deal with the
                 // error handling.
                 let m = self.perform_oneshot(&job.statements);
-                job.responder.respond(&m);
+                job.responder.respond(m);
                 job.scheduler_sender
                     .send(UpdateStateMessage::Ready(job.client_id))
                     .unwrap();

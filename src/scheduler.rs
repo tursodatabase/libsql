@@ -10,6 +10,8 @@ use crate::job::Job;
 use crate::messages::Responder;
 use crate::statements::Statements;
 
+pub type ClientId = usize;
+
 #[derive(Default)]
 struct ClientQueue {
     queue: VecDeque<Job>,
@@ -22,9 +24,9 @@ struct ClientQueue {
 
 #[derive(Debug)]
 pub enum UpdateStateMessage {
-    Ready(u32),
-    TxnBegin(u32, Sender<Job>),
-    TxnEnded(u32),
+    Ready(ClientId),
+    TxnBegin(ClientId, Sender<Job>),
+    TxnEnded(ClientId),
 }
 
 #[derive(Debug)]
@@ -34,7 +36,7 @@ pub enum Action {
 }
 
 pub struct ServerMessage {
-    pub client_id: u32,
+    pub client_id: ClientId,
     pub action: Action,
     pub responder: Box<dyn Responder>,
 }
@@ -50,7 +52,7 @@ impl fmt::Debug for ServerMessage {
 
 pub struct Scheduler {
     worker_pool_sender: Sender<Job>,
-    queues: HashMap<u32, ClientQueue>,
+    queues: HashMap<ClientId, ClientQueue>,
     /// The receiving end of the channel the pool uses to notify the scheduler of the state
     /// updates for its queues
     update_state_receiver: TokioReceiver<UpdateStateMessage>,
@@ -58,10 +60,10 @@ pub struct Scheduler {
     /// Receiver from the server with new statements to run
     job_receiver: TokioReceiver<ServerMessage>,
 
-    /// Set of client that are ready to give some work, i.e that have no inflight work
-    ready_set: HashSet<u32>,
-    /// Set of client that have some work in their queue
-    has_work_set: HashSet<u32>,
+    /// Set of endpoints that are ready to give some work, i.e that have no inflight work
+    ready_set: HashSet<ClientId>,
+    /// Set of endpoints that have some work in their queue
+    has_work_set: HashSet<ClientId>,
 }
 
 impl Scheduler {
@@ -83,8 +85,8 @@ impl Scheduler {
 
     /// push some work to the gobal queue
     fn schedule_work(&mut self) {
-        let mut not_waiting = SmallVec::<[u32; 16]>::new();
-        let mut not_ready = SmallVec::<[u32; 16]>::new();
+        let mut not_waiting = SmallVec::<[ClientId; 16]>::new();
+        let mut not_ready = SmallVec::<[ClientId; 16]>::new();
 
         for client_id in self.ready_set.intersection(&self.has_work_set).copied() {
             let Some(queue) = self.queues.get_mut(&client_id) else {
@@ -164,6 +166,7 @@ impl Scheduler {
 
     /// Update queues with new incoming tasks from server.
     fn update_queues(&mut self, msg: ServerMessage) {
+        log::debug!("got server message: {msg:?}");
         match msg.action {
             Action::Disconnect => {
                 self.queues
@@ -243,7 +246,7 @@ mod test {
     struct MockResponder;
 
     impl Responder for MockResponder {
-        fn respond(&self, _: &Message) {}
+        fn respond(&self, _: Message) {}
     }
 
     #[tokio::test]
@@ -346,7 +349,7 @@ mod test {
         #[test]
         fn test_random_scheduling(
             num_tasks in 20..100usize,
-            num_clients in 1..20u32,
+            num_clients in 1..20usize,
         ) {
             tokio::runtime::Runtime::new().unwrap().block_on(async {
                 let (job_sender, job_receiver) = tokio::sync::mpsc::unbounded_channel();
@@ -357,7 +360,7 @@ mod test {
 
                 let mut rng = thread_rng();
                 for i in 0..num_tasks {
-                    let client_id: u32 = rng.gen_range(0..num_clients);
+                    let client_id = rng.gen_range(0..num_clients);
                     let msg = ServerMessage {
                         client_id,
                         // this is a hack here to pass a sequence number.
