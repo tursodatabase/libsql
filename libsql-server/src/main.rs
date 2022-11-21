@@ -1,5 +1,6 @@
 mod job;
 mod messages;
+mod net;
 mod scheduler;
 mod server;
 mod shell;
@@ -50,19 +51,15 @@ async fn main() -> Result<()> {
                 .unwrap()
             })?;
             let (sender, receiver) = tokio::sync::mpsc::unbounded_channel();
-            let handle = tokio::task::spawn_blocking(|| {
-                server::Server::default().start("127.0.0.1:5000", sender)
-            });
+
             let scheduler = scheduler::Scheduler::new(pool_sender, receiver)?;
             let shandle = tokio::spawn(scheduler.start());
-
-            // wait for the scheduler to finish any remaining work.
-            handle.await??;
+            server::start("127.0.0.1:5000", sender).await?;
             shandle.await?;
             pool.join().await;
         }
         Commands::Shell => {
-            shell::start()?;
+            shell::start("127.0.0.1:5000").await?;
         }
     }
     Ok(())
