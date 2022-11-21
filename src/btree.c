@@ -6606,7 +6606,7 @@ static int freePage2(BtShared *pBt, MemPage *pMemPage, Pgno iPage){
   /* If the database supports auto-vacuum, write an entry in the pointer-map
   ** to indicate that the page is free.
   */
-  if( ISAUTOVACUUM ){
+  if( ISAUTOVACUUM(pBt) ){
     ptrmapPut(pBt, iPage, PTRMAP_FREEPAGE, 0, &rc);
     if( rc ) goto freepage_out;
   }
@@ -7682,7 +7682,7 @@ static int balance_quick(MemPage *pParent, MemPage *pPage, u8 *pSpace){
     ** be marked as dirty. Returning an error code will cause a
     ** rollback, undoing any changes made to the parent page.
     */
-    if( ISAUTOVACUUM ){
+    if( ISAUTOVACUUM(pBt) ){
       ptrmapPut(pBt, pgnoNew, PTRMAP_BTREE, pParent->pgno, &rc);
       if( szCell>pNew->minLocal ){
         ptrmapPutOvflPtr(pNew, pNew, pCell, &rc);
@@ -7820,7 +7820,7 @@ static void copyNodeContent(MemPage *pFrom, MemPage *pTo, int *pRC){
     /* If this is an auto-vacuum database, update the pointer-map entries
     ** for any b-tree or overflow pages that pTo now contains the pointers to.
     */
-    if( ISAUTOVACUUM ){
+    if( ISAUTOVACUUM(pBt) ){
       *pRC = setChildPtrmaps(pTo);
     }
   }
@@ -8308,7 +8308,7 @@ static int balance_nonroot(
       cntOld[i] = b.nCell;
 
       /* Set the pointer-map entry for the new sibling page. */
-      if( ISAUTOVACUUM ){
+      if( ISAUTOVACUUM(pBt) ){
         ptrmapPut(pBt, pNew->pgno, PTRMAP_BTREE, pParent->pgno, &rc);
         if( rc!=SQLITE_OK ){
           goto balance_cleanup;
@@ -8401,7 +8401,7 @@ static int balance_nonroot(
   ** updated. This happens below, after the sibling pages have been 
   ** populated, not here.
   */
-  if( ISAUTOVACUUM ){
+  if( ISAUTOVACUUM(pBt) ){
     MemPage *pOld;
     MemPage *pNew = pOld = apNew[0];
     int cntOldNext = pNew->nCell + pNew->nOverflow;
@@ -8594,7 +8594,7 @@ static int balance_nonroot(
     );
     copyNodeContent(apNew[0], pParent, &rc);
     freePage(apNew[0], &rc);
-  }else if( ISAUTOVACUUM && !leafCorrection ){
+  }else if( ISAUTOVACUUM(pBt) && !leafCorrection ){
     /* Fix the pointer map entries associated with the right-child of each
     ** sibling page. All other pointer map entries have already been taken
     ** care of.  */
@@ -8615,7 +8615,7 @@ static int balance_nonroot(
   }
 
 #if 0
-  if( ISAUTOVACUUM && rc==SQLITE_OK && apNew[0]->isInit ){
+  if( ISAUTOVACUUM(pBt) && rc==SQLITE_OK && apNew[0]->isInit ){
     /* The ptrmapCheckPages() contains assert() statements that verify that
     ** all pointer map pages are set correctly. This is helpful while 
     ** debugging. This is usually disabled because a corrupt database may
@@ -8677,7 +8677,7 @@ static int balance_deeper(MemPage *pRoot, MemPage **ppChild){
   if( rc==SQLITE_OK ){
     rc = allocateBtreePage(pBt,&pChild,&pgnoChild,pRoot->pgno,0);
     copyNodeContent(pRoot, pChild, &rc);
-    if( ISAUTOVACUUM ){
+    if( ISAUTOVACUUM(pBt) ){
       ptrmapPut(pBt, pgnoChild, PTRMAP_BTREE, pRoot->pgno, &rc);
     }
   }
@@ -9009,7 +9009,6 @@ int sqlite3BtreeInsert(
   int idx;
   MemPage *pPage;
   Btree *p = pCur->pBtree;
-  BtShared *pBt = p->pBt;
   unsigned char *oldCell;
   unsigned char *newCell = 0;
 
@@ -9028,7 +9027,7 @@ int sqlite3BtreeInsert(
   ** not to clear the cursor here.
   */
   if( pCur->curFlags & BTCF_Multiple ){
-    rc = saveAllCursors(pBt, pCur->pgnoRoot, pCur);
+    rc = saveAllCursors(p->pBt, pCur->pgnoRoot, pCur);
     if( rc ) return rc;
     if( loc && pCur->iPage<0 ){
       /* This can only happen if the schema is corrupt such that there is more
@@ -9052,8 +9051,8 @@ int sqlite3BtreeInsert(
 
   assert( cursorOwnsBtShared(pCur) );
   assert( (pCur->curFlags & BTCF_WriteFlag)!=0
-              && pBt->inTransaction==TRANS_WRITE
-              && (pBt->btsFlags & BTS_READ_ONLY)==0 );
+              && p->pBt->inTransaction==TRANS_WRITE
+              && (p->pBt->btsFlags & BTS_READ_ONLY)==0 );
   assert( hasSharedCacheTableLock(p, pCur->pgnoRoot, pCur->pKeyInfo!=0, 2) );
 
   /* Assert that the caller has been consistent. If this cursor was opened
@@ -9170,19 +9169,19 @@ int sqlite3BtreeInsert(
           pCur->pgnoRoot, pX->nKey, pX->nData, pPage->pgno,
           loc==0 ? "overwrite" : "new entry"));
   assert( pPage->isInit || CORRUPT_DB );
-  newCell = pBt->pTmpSpace;
+  newCell = p->pBt->pTmpSpace;
   assert( newCell!=0 );
   assert( BTREE_PREFORMAT==OPFLAG_PREFORMAT );
   if( flags & BTREE_PREFORMAT ){
     rc = SQLITE_OK;
-    szNew = pBt->nPreformatSize;
+    szNew = p->pBt->nPreformatSize;
     if( szNew<4 ) szNew = 4;
-    if( ISAUTOVACUUM && szNew>pPage->maxLocal ){
+    if( ISAUTOVACUUM(p->pBt) && szNew>pPage->maxLocal ){
       CellInfo info;
       pPage->xParseCell(pPage, newCell, &info);
       if( info.nPayload!=info.nLocal ){
         Pgno ovfl = get4byte(&newCell[szNew-4]);
-        ptrmapPut(pBt, ovfl, PTRMAP_OVERFLOW1, pPage->pgno, &rc);
+        ptrmapPut(p->pBt, ovfl, PTRMAP_OVERFLOW1, pPage->pgno, &rc);
         if( NEVER(rc) ) goto end_insert;
       }
     }
@@ -9191,7 +9190,7 @@ int sqlite3BtreeInsert(
     if( rc ) goto end_insert;
   }
   assert( szNew==pPage->xCellSize(pPage, newCell) );
-  assert( szNew <= MX_CELL_SIZE(pBt) );
+  assert( szNew <= MX_CELL_SIZE(p->pBt) );
   idx = pCur->ix;
   if( loc==0 ){
     CellInfo info;
@@ -9211,7 +9210,7 @@ int sqlite3BtreeInsert(
     testcase( pCur->curFlags & BTCF_ValidOvfl );
     invalidateOverflowCache(pCur);
     if( info.nSize==szNew && info.nLocal==info.nPayload 
-     && (!ISAUTOVACUUM || szNew<pPage->minLocal)
+     && (!ISAUTOVACUUM(p->pBt) || szNew<pPage->minLocal)
     ){
       /* Overwrite the old cell with the new if they are the same size.
       ** We could also try to do this if the old cell is smaller, then add
@@ -9390,7 +9389,7 @@ int sqlite3BtreeTransferRow(BtCursor *pDest, BtCursor *pSrc, i64 iKey){
         MemPage *pNew = 0;
         rc = allocateBtreePage(pBt, &pNew, &pgnoNew, 0, 0);
         put4byte(pPgnoOut, pgnoNew);
-        if( ISAUTOVACUUM && pPageOut ){
+        if( ISAUTOVACUUM(pBt) && pPageOut ){
           ptrmapPut(pBt, pgnoNew, PTRMAP_OVERFLOW2, pPageOut->pgno, &rc);
         }
         releasePage(pPageOut);
