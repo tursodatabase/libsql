@@ -16,6 +16,23 @@
 **
 ** Presently, it combines the base64.c and base85.c extensions. However,
 ** it can be used as a template for other combinations.
+**
+** Example usages:
+**
+**  - Build a runtime-loadable extension from SQLite checkout directory:
+** *Nix, OSX: gcc -O2 -shared -I. -fPIC -o basexx.so ext/misc/basexx.c
+** Win32: cl /Os -I. ext/misc/basexx.c -link -dll -out:basexx.dll
+**
+**  - Incorporate as built-in in sqlite3 shell:
+** *Nix, OSX with gcc on a like platform:
+**  export mop1=-DSQLITE_SHELL_EXTSRC=ext/misc/basexx.c
+**  export mop2=-DSQLITE_SHELL_EXTFUNCS=BASEXX
+**  make sqlite3 "OPTS=$mop1 $mop2"
+** Win32 with Microsoft toolset on Windows: 
+**  set mop1=-DSQLITE_SHELL_EXTSRC=ext/misc/basexx.c
+**  set mop2=-DSQLITE_SHELL_EXTFUNCS=BASEXX
+**  set mops="OPTS=%mop1% %mop2%"
+**  nmake -f Makefile.msc sqlite3.exe %mops%
 */
 
 #ifndef SQLITE_SHELL_EXTFUNCS /* Guard for #include as built-in extension. */
@@ -44,7 +61,10 @@ static void init_api_ptr(const sqlite3_api_routines *pApi){
 #define sqlite3_base_init sqlite3_base85_init
 #include "base85.c"
 
-static int sqlite3_basexx_init(sqlite3 *db, char **pzErr,
+#ifdef _WIN32
+__declspec(dllexport)
+#endif
+int sqlite3_basexx_init(sqlite3 *db, char **pzErr,
                                const sqlite3_api_routines *pApi){
   init_api_ptr(pApi);
   int rc1 = BASE64_INIT(db);

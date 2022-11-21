@@ -84,7 +84,7 @@ static const ubyte b64DigitValues[128] = {
     41,42,43,44, 45,46,47,48, 49,50,51,ND, ND,ND,ND,ND
 };
 
-static const char b64Numerals[64]
+static const char b64Numerals[64+1]
 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 #define BX_DV_PROTO(c) ((((ubyte)(c))<0x80)? b64DigitValues[c] : 0x80)
