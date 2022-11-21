@@ -651,7 +651,7 @@ ST_OPT = -DSQLITE_OS_KV_OPTIONAL
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
 #
-all:	sqlite3.h libsqlite3.la sqlite3$(TEXE) $(HAVE_TCL:1=libtclsqlite3.la)
+all:	sqlite3.h libsqlite3.la sqlite3$(TEXE) libsql$(TEXE) $(HAVE_TCL:1=libtclsqlite3.la)
 
 Makefile: $(TOP)/Makefile.in
 	./config.status
@@ -674,6 +674,9 @@ sqlite3$(TEXE):	shell.c sqlite3.c
 	$(LTLINK) $(READLINE_FLAGS) $(SHELL_OPT) -o $@ \
 		shell.c sqlite3.c \
 		$(LIBREADLINE) $(TLIBS) -rpath "$(libdir)"
+
+libsql$(TEXE):	sqlite3$(TEXE)
+		cp sqlite3$(TEXE) libsql$(TEXE)
 
 sqldiff$(TEXE):	$(TOP)/tool/sqldiff.c sqlite3.lo sqlite3.h
 	$(LTLINK) -o $@ $(TOP)/tool/sqldiff.c sqlite3.lo $(TLIBS)
@@ -1494,7 +1497,7 @@ tcl_install:	lib_install libtclsqlite3.la pkgIndex.tcl
 	$(INSTALL) -m 0644 pkgIndex.tcl $(DESTDIR)$(TCLLIBDIR)
 
 clean:
-	rm -f *.lo *.la *.o sqlite3$(TEXE) libsqlite3.la
+	rm -f *.lo *.la *.o sqlite3$(TEXE) libsql$(TEXE) libsqlite3.la
 	rm -f sqlite3.h opcodes.*
 	rm -rf .libs .deps
 	rm -f lemon$(BEXE) lempar.c parse.* sqlite*.tar.gz
