@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
+    <link rel="stylesheet" href="../../../common/testing.css"/>
+    <title>sqlite3 OPFS Worker concurrency tester</title>
+    <style>
+      body { display: revert; }
+      body > * {}
+      #test-output {
+          font-family: monospace;
+      }
+    </style>
+  </head>
+  <body>
+    <h1></h1>
+    <p>
+      OPFS concurrency tester using multiple independent Workers.
+      This app is incomplete.
+    </p>
+    <div class='input-wrapper'>
+      <input type='checkbox' id='cb-log-reverse'>
+      <label for='cb-log-reverse'>Reverse log order?</label>
+    </div>
+    <div id='test-output'></div>
+    <script>(function(){
+      document.querySelector('h1').innerHTML =
+        document.querySelector('title').innerHTML;
+    })();</script>
+    <script src="test.js?sqlite3.dir=../../../jswasm"></script>
+  </body>
+</html>
