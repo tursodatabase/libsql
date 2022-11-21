@@ -9314,7 +9314,6 @@ end_insert:
 ** SQLITE_OK is returned if successful, or an SQLite error code otherwise.
 */
 int sqlite3BtreeTransferRow(BtCursor *pDest, BtCursor *pSrc, i64 iKey){
-  int rc = SQLITE_OK;
   BtShared *pBt = pDest->pBt;
   u8 *aOut = pBt->pTmpSpace;    /* Pointer to next output buffer */
   const u8 *aIn;                /* Pointer to next input buffer */
@@ -9337,7 +9336,9 @@ int sqlite3BtreeTransferRow(BtCursor *pDest, BtCursor *pSrc, i64 iKey){
   if( nIn==nRem && nIn<pDest->pPage->maxLocal ){
     memcpy(aOut, aIn, nIn);
     pBt->nPreformatSize = nIn + (aOut - pBt->pTmpSpace);
+    return SQLITE_OK;
   }else{
+    int rc = SQLITE_OK;
     Pager *pSrcPager = pSrc->pBt->pPager;
     u8 *pPgnoOut = 0;
     Pgno ovflIn = 0;
@@ -9405,9 +9406,8 @@ int sqlite3BtreeTransferRow(BtCursor *pDest, BtCursor *pSrc, i64 iKey){
   
     releasePage(pPageOut);
     sqlite3PagerUnref(pPageIn);
+    return rc;
   }
-
-  return rc;
 }
 
 /*
