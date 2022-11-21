@@ -100,12 +100,15 @@ static int (*const sqlite3BuiltinExtensions[])(sqlite3*) = {
 ** contains the text of SQLITE_VERSION macro.
 */
 const char sqlite3_version[] = SQLITE_VERSION;
+const char libsql_version[] = LIBSQL_VERSION;
 #endif
 
 /* IMPLEMENTATION-OF: R-53536-42575 The sqlite3_libversion() function returns
 ** a pointer to the to the sqlite3_version[] string constant. 
 */
 const char *sqlite3_libversion(void){ return sqlite3_version; }
+
+const char *libsql_libversion(void){ return LIBSQL_VERSION; }
 
 /* IMPLEMENTATION-OF: R-25063-23286 The sqlite3_sourceid() function returns a
 ** pointer to a string constant whose value is the same as the
