@@ -4,7 +4,7 @@ use crate::messages::Message;
 use crate::net::Connection;
 
 use anyhow::Result;
-use futures::{pin_mut, FutureExt};
+use futures::pin_mut;
 use rustyline_async::{Readline, ReadlineError};
 use tokio::net::ToSocketAddrs;
 
@@ -36,12 +36,12 @@ pub async fn start(addr: impl ToSocketAddrs) -> Result<()> {
         writeln!(stdout, "disconnected").unwrap();
     });
 
-    let client_fut = client.run().fuse();
+    let client_fut = client.run();
     pin_mut!(client_fut);
 
     loop {
         tokio::select! {
-            res = rl.readline().fuse() => {
+            res = rl.readline() => {
                 match res {
                     Ok(line) => {
                         rl.add_history_entry(line.clone());
