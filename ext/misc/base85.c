@@ -14,7 +14,7 @@
 ** It can be built as a standalone program or an SQLite3 extension.
 **
 ** Much like base64 representations, base85 can be sent through a
-** sane ASCII channel unmolested. It also plays nicely in CSV or
+** sane USASCII channel unmolested. It also plays nicely in CSV or
 ** written as TCL brace-enclosed literals or SQL string literals.
 ** It is not suited for unmodified use in XML-like documents.
 **
@@ -24,7 +24,7 @@
 ** Further, this is an independent implementation of a base85 system.
 ** Hence, the author has rightfully put this into the public domain.
 **
-** Base85 numerals are taken from the set of 7-bit ASCII codes,
+** Base85 numerals are taken from the set of 7-bit USASCII codes,
 ** excluding control characters and Space ! " ' ( ) { | } ~ Del
 ** in code order representing digit values 0 to 84 (base 10.)
 **
@@ -32,8 +32,11 @@
 ** are represented as 5-digit base85 numbers with MS to LS digit
 ** order. Groups of 1-3 bytes are represented with 2-4 digits,
 ** still big-endian but 8-24 bit values. (Using big-endian yields
-** the simplest transition to byte groups smaller than 4 bytes.)
+** the simplest transition to byte groups smaller than 4 bytes.
+** These byte groups can also be considered base-256 numbers.)
 ** Groups of 0 bytes are represented with 0 digits and vice-versa.
+** No pad characters are used; Encoded base85 numeral sequence
+** (aka "group") length maps 1-to-1 to the decoded binary length.
 **
 ** Any character not in the base85 numeral set delimits groups.
 ** When base85 is streamed or stored in containers of indefinite
@@ -82,7 +85,10 @@
 
 #ifndef BASE85_STANDALONE
 
+#ifndef SQLITE_SHELL_EXTFUNCS /* Guard for #include as built-in extension. */
 # include "sqlite3ext.h"
+#endif
+
 SQLITE_EXTENSION_INIT1;
 
 #else
@@ -107,7 +113,7 @@ static void sayHelp(){
 }
 #endif
 
-/* Classify c according to interval within ASCII set w.r.t. base85
+/* Classify c according to interval within USASCII set w.r.t. base85
  * Values of 1 and 3 are base85 numerals. Values of 0, 2, or 4 are not.
  */
 #define B85_CLASS( c ) (((c)>='#')+((c)>'&')+((c)>='*')+((c)>'z'))
@@ -127,16 +133,25 @@ static unsigned char base85DigitValue( char c ){
 }
 #endif
 
+/* Width of base64 lines. Should be an integer multiple of 5. */
+#define B85_DARK_MAX 80
+
+
 static char * skipNonB85( char *s ){
   char c;
   while( (c = *s) && !IS_B85(c) ) ++s;
   return s;
 }
 
+/* Convert small integer, known to be in 0..84 inclusive, to base85 numeral.*/
 static char base85Numeral( unsigned char b ){
   return (b < 4)? (char)(b + '#') : (char)(b - 4 + '*');
 }
 
+/* Encode a byte buffer into base85 text. If pSep!=0, it's a C string
+** to be appended to encoded groups to limit their length to B85_DARK_MAX
+** or to terminate the last group (to aid concatenation.)
+*/
 static char* toBase85( unsigned char *pIn, int nbIn, char *pOut, char *pSep ){
   int nCol = 0;
   *pOut = 0;
@@ -157,7 +172,7 @@ static char* toBase85( unsigned char *pIn, int nbIn, char *pOut, char *pSep ){
       pOut[--nco] = base85Numeral(dv);
     }
     pOut += ncio[nbi];
-    if( pSep && ((nCol += ncio[nbi])>=80 || nbIn<=0) ){
+    if( pSep && ((nCol += ncio[nbi])>=B85_DARK_MAX || nbIn<=0) ){
       char *p = pSep;
       while( *p ) *pOut++ = *p++;
       nCol = 0;
@@ -167,6 +182,7 @@ static char* toBase85( unsigned char *pIn, int nbIn, char *pOut, char *pSep ){
   return pOut;
 }
 
+/* Decode base85 text into a byte buffer. */
 static unsigned char* fromBase85( char *pIn, int ncIn, unsigned char *pOut ){
   if( ncIn>0 && pIn[ncIn-1]=='\n' ) --ncIn;
   while( ncIn>0 ){
@@ -196,6 +212,7 @@ static unsigned char* fromBase85( char *pIn, int ncIn, unsigned char *pOut ){
 }
 
 #ifndef OMIT_BASE85_CHECKER
+/* Say whether input char sequence is all (base85 and/or whitespace).*/
 static int allBase85( char *p, int len ){
   char c;
   while( len-- > 0 && (c = *p++) != 0 ){
@@ -208,6 +225,7 @@ static int allBase85( char *p, int len ){
 #ifndef BASE85_STANDALONE
 
 # ifndef OMIT_BASE85_CHECKER
+/* This function does the work for the SQLite is_base85(t) UDF. */
 static void is_base85(sqlite3_context *context, int na, sqlite3_value *av[]){
   assert(na==1);
   switch( sqlite3_value_type(av[0]) ){
@@ -228,6 +246,7 @@ static void is_base85(sqlite3_context *context, int na, sqlite3_value *av[]){
 }
 # endif
 
+/* This function does the work for the SQLite base85(x) UDF. */
 static void base85(sqlite3_context *context, int na, sqlite3_value *av[]){
   int nb, nc, nv = sqlite3_value_bytes(av[0]);
   int nvMax = sqlite3_limit(sqlite3_context_db_handle(context),
@@ -272,11 +291,18 @@ static void base85(sqlite3_context *context, int na, sqlite3_value *av[]){
   sqlite3_result_error(context, "base85 OOM", -1);
 }
 
+/*
+** Establish linkage to running SQLite library.
+*/
+#ifndef SQLITE_SHELL_EXTFUNCS
 #ifdef _WIN32
 __declspec(dllexport)
 #endif
-int sqlite3_base_init(sqlite3 *db, char **pzErr,
-                        const sqlite3_api_routines *pApi){
+int sqlite3_base_init
+#else
+static int sqlite3_base85_init
+#endif
+(sqlite3 *db, char **pzErr, const sqlite3_api_routines *pApi){
   SQLITE_EXTENSION_INIT2(pApi);
   (void)pzErr;
 # ifndef OMIT_BASE85_CHECKER
@@ -294,12 +320,20 @@ int sqlite3_base_init(sqlite3 *db, char **pzErr,
      0, base85, 0, 0);
 }
 
+/*
+** Define some macros to allow this extension to be built into the shell
+** conveniently, in conjunction with use of SQLITE_SHELL_EXTFUNCS. This
+** allows shell.c, as distributed, to have this extension built in.
+*/
+# define BASE85_INIT(db) sqlite3_base85_init(db, 0, 0)
+# define BASE85_EXPOSE(db, pzErr) /* Not needed, ..._init() does this. */
+
 #else /* standalone program */
 
 int main(int na, char *av[]){
   int cin;
   int rc = 0;
-  unsigned char bBuf[64];
+  unsigned char bBuf[4*(B85_DARK_MAX/5)];
   char cBuf[5*(sizeof(bBuf)/4)+2];
   size_t nio;
 # ifndef OMIT_BASE85_CHECKER
