@@ -219,31 +219,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "edge"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "bincode",
- "bytes",
- "clap",
- "crossbeam",
- "env_logger",
- "futures",
- "log",
- "parking_lot",
- "proptest",
- "rand",
- "rayon",
- "rstest",
- "rustyline-async",
- "serde",
- "smallvec",
- "sqlite",
- "sqlparser",
- "tokio",
-]
-
-[[package]]
 name = "either"
 version = "1.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -831,6 +806,31 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "server"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "bincode",
+ "bytes",
+ "clap",
+ "crossbeam",
+ "env_logger",
+ "futures",
+ "log",
+ "parking_lot",
+ "proptest",
+ "rand",
+ "rayon",
+ "rstest",
+ "rustyline-async",
+ "serde",
+ "smallvec",
+ "sqlite",
+ "sqlparser",
+ "tokio",
 ]
 
 [[package]]

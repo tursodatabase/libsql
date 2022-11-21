@@ -37,10 +37,10 @@ async fn main() -> Result<()> {
             db_path,
             serve_addr,
         } => {
-            edge::run_server(&db_path, serve_addr).await?;
+            server::run_server(&db_path, serve_addr).await?;
         }
         Commands::Shell { addr } => {
-            edge::shell::start(addr).await?;
+            server::shell::start(addr).await?;
         }
     }
 
