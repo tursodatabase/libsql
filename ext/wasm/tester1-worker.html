@@ -6,7 +6,7 @@
     <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
     <link rel="stylesheet" href="../common/emscripten.css"/>
     <link rel="stylesheet" href="../common/testing.css"/>
-    <title>sqlite3 tester #1 (Worker thread)</title>
+    <title>sqlite3 tester #1: Worker thread</title>
     <style>
       body {
           font-family: monospace;
@@ -14,7 +14,7 @@
     </style>
   </head>
   <body>
-    <h1 id='color-target'>sqlite3 WASM/JS tester #1 (Worker thread)</h1>
+    <h1 id='color-target'>sqlite3 tester #1: Worker thread</h1>
     <div>See <a href='tester1.html' target='tester1.html'>tester1.html</a>
       for the UI-thread variant.</div>
     <div class='input-wrapper'>
@@ -40,7 +40,20 @@
       };
       cbReverse.addEventListener('change',cbReverseIt,true);
       cbReverseIt();
-      const w = new Worker("tester1.js?sqlite3.dir=jswasm");
+      const urlParams = new URL(self.location.href).searchParams;
+      const workerArgs = [];
+      if(urlParams.has('esm')){
+          logHtml('warning',"Attempting to run an ES6 Worker Module, "+
+                  "which is not supported by all browsers! "+
+                  "e.g. Firefox (as of 2022-11) cannot do this.");
+        workerArgs.push("tester1.mjs",{type:"module"});
+        document.querySelectorAll('title,#color-target').forEach((e)=>{
+          e.innerText = "sqlite3 tester #1: ES6 Worker Module";
+        });
+      }else{
+        workerArgs.push("tester1.js?sqlite3.dir=jswasm");
+      }
+      const w = new Worker(...workerArgs);
       w.onmessage = function({data}){
         switch(data.type){
             case 'log':

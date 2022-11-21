@@ -8,24 +8,25 @@
    most of the associated JS code, runs outside of the
    Emscripten-generated module init scope, in the current
    global scope. */
-//#if sqlite3-es6-module-build
+//#if target=es6-module
 const toExportForES6 =
 //#endif
 (function(){
   /**
-     In order to hide the sqlite3InitModule()'s resulting Emscripten
-     module from downstream clients (and simplify our documentation by
-     being able to elide those details), we rewrite
-     sqlite3InitModule() to return the sqlite3 object.
+     In order to hide the sqlite3InitModule()'s resulting
+     Emscripten module from downstream clients (and simplify our
+     documentation by being able to elide those details), we hide that
+     function and expose a hand-written sqlite3InitModule() to return
+     the sqlite3 object (most of the time).
 
      Unfortunately, we cannot modify the module-loader/exporter-based
      impls which Emscripten installs at some point in the file above
      this.
   */
   const originalInit =
-        /*Maintenance reminde: DO NOT use `self.` here. It's correct
-          for non-ES6 Module cases but wrong for ES6 modules because those
-          resolve this symbol differently! */ sqlite3InitModule;
+        /* Maintenance reminder: DO NOT use `self.` here. It's correct
+           for non-ES6 Module cases but wrong for ES6 modules because those
+           resolve this symbol differently. */ sqlite3InitModule;
   if(!originalInit){
     throw new Error("Expecting self.sqlite3InitModule to be defined by the Emscripten build.");
   }
@@ -57,6 +58,9 @@ const toExportForES6 =
     const li = initModuleState.moduleScript.src.split('/');
     li.pop();
     initModuleState.sqlite3Dir = li.join('/') + '/';
+  }
+  if(initModuleState.sqlite3Dir){
+    initModuleState.sqlite3Dir = initModuleState.sqlite3Dir.replace(/[/]{2,}/g,'/');
   }
 
   self.sqlite3InitModule = (...args)=>{
@@ -104,16 +108,15 @@ const toExportForES6 =
   }
   /* Replace the various module exports performed by the Emscripten
      glue... */
-  if (typeof exports === 'object' && typeof module === 'object')
+  if (typeof exports === 'object' && typeof module === 'object'){
     module.exports = sqlite3InitModule;
-  else if (typeof exports === 'object')
+  }else if (typeof exports === 'object'){
     exports["sqlite3InitModule"] = sqlite3InitModule;
+  }
   /* AMD modules get injected in a way we cannot override,
      so we can't handle those here. */
-//#if sqlite3-es6-module-build
-  return self.sqlite3InitModule;
-//#endif
+  return self.sqlite3InitModule /* required for ESM */;
 })();
-//#if sqlite3-es6-module-build
+//#if target=es6-module
 export default toExportForES6;
 //#endif
