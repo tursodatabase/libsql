@@ -8,7 +8,6 @@ self.sqlite3InitModule().then(async function(sqlite3){
   };
   const stdout = (...args)=>wPost('stdout',...args);
   const stderr = (...args)=>wPost('stderr',...args);
-  const postErr = (...args)=>wPost('error',...args);
   if(!sqlite3.opfs){
     stderr("OPFS support not detected. Aborting.");
     return;
@@ -19,15 +18,33 @@ self.sqlite3InitModule().then(async function(sqlite3){
   };
 
   const dbName = 'concurrency-tester.db';
-  if((new URL(self.location.href).searchParams).has('unlink-db')){
+  const urlArgs = new URL(self.location.href).searchParams;
+  if(urlArgs.has('unlink-db')){
     await sqlite3.opfs.unlink(dbName);
     stdout("Unlinked",dbName);
   }
   wPost('loaded');
-
+  let db;
+  const interval = Object.assign(Object.create(null),{
+    delay: urlArgs.has('interval') ? (+urlArgs.get('interval') || 750) : 750,
+    handle: undefined,
+    count: 0
+  });
+  const finish = ()=>{
+    if(db){
+      if(!db.pointer) return;
+      db.close();
+    }
+    if(interval.error){
+      wPost('failed',"Ending work after interval #"+interval.count,
+            "due to error:",interval.error);
+    }else{
+      wPost('finished',"Ending work after",interval.count,"intervals.");
+    }
+  };
   const run = async function(){
-    const db = new sqlite3.opfs.OpfsDb(dbName,'c');
-    //sqlite3.capi.sqlite3_busy_timeout(db.pointer, 2000);
+    db = new sqlite3.opfs.OpfsDb(dbName,'c');
+    sqlite3.capi.sqlite3_busy_timeout(db.pointer, 5000);
     db.transaction((db)=>{
       db.exec([
         "create table if not exists t1(w TEXT UNIQUE ON CONFLICT REPLACE,v);",
@@ -36,11 +53,6 @@ self.sqlite3InitModule().then(async function(sqlite3){
     });
 
     const maxIterations = 10;
-    const interval = Object.assign(Object.create(null),{
-      delay: 500,
-      handle: undefined,
-      count: 0
-    });
     stdout("Starting interval-based db updates with delay of",interval.delay,"ms.");
     const doWork = async ()=>{
       const tm = new Date().getTime();
@@ -55,15 +67,6 @@ self.sqlite3InitModule().then(async function(sqlite3){
         //stdout("Set",prefix);
       }catch(e){
         interval.error = e;
-      }
-    };
-    const finish = ()=>{
-      db.close();
-      if(interval.error){
-        wPost('failed',"Ending work after interval #"+interval.count,
-              "due to error:",interval.error);
-      }else{
-        wPost('finished',"Ending work after",interval.count,"intervals.");
       }
     };
     if(1){/*use setInterval()*/
@@ -89,7 +92,10 @@ self.sqlite3InitModule().then(async function(sqlite3){
 
   self.onmessage = function({data}){
     switch(data.type){
-        case 'run': run().catch((e)=>postErr(e.message));
+        case 'run': run().catch((e)=>{
+          if(!interval.error) interval.error = e;
+          finish();
+        });
           break;
         default:
           stderr("Unhandled message type '"+data.type+"'.");

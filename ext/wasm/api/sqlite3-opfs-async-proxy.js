@@ -220,22 +220,19 @@ class GetSyncHandleError extends Error {
   }
 };
 GetSyncHandleError.convertRc = (e,rc)=>{
-  if(1){
-    /* This approach returns SQLITE_LOCKED to the C API
-       when getSyncHandle() fails but makes the very
-       wild assumption that such a failure _is_ a locking
-       error. In practice that appears to be the most
-       common error, by far, but we cannot unambiguously
+  if(0){
+    /* This approach makes the very wild assumption that such a
+       failure _is_ a locking error. In practice that appears to be
+       the most common error, by far, but we cannot unambiguously
        distinguish that from other errors.
 
-       This approach demonstrably reduces concurrency-related
-       errors but is highly questionable.
+       This approach is highly questionable.
     */
     return (e instanceof GetSyncHandleError)
-      ? state.sq3Codes.SQLITE_LOCKED
+      ? state.sq3Codes.SQLITE_IOERR_LOCK
       : rc;
   }else{
-    return ec;
+    return rc;
   }
 }
 /**
@@ -253,7 +250,7 @@ const getSyncHandle = async (fh)=>{
   if(!fh.syncHandle){
     const t = performance.now();
     log("Acquiring sync handle for",fh.filenameAbs);
-    const maxTries = 4, msBase = 300;
+    const maxTries = 6, msBase = 300;
     let i = 1, ms = msBase;
     for(; true; ms = msBase * ++i){
       try {
@@ -271,7 +268,7 @@ const getSyncHandle = async (fh)=>{
         }
         warn("Error getting sync handle. Waiting",ms,
              "ms and trying again.",fh.filenameAbs,e);
-        //await closeAutoLocks();
+        await closeAutoLocks();
         Atomics.wait(state.sabOPView, state.opIds.retry, 0, ms);
       }
     }

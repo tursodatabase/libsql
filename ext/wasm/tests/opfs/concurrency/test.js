@@ -57,6 +57,12 @@
   options.workerCount = (
     urlArgsHtml.has('workers') ? +urlArgsHtml.get('workers') : 3
   ) || 3;
+  options.opfsVerbose = (
+    urlArgsHtml.has('verbose') ? +urlArgsHtml.get('verbose') : 1
+  ) || 1;
+  options.interval = (
+    urlArgsHtml.has('interval') ? +urlArgsHtml.get('interval') : 750
+  ) || 750;
   const workers = [];
   workers.post = (type,...args)=>{
     for(const w of workers) w.postMessage({type, payload:args});
@@ -91,7 +97,8 @@
   workers.uri = (
     'worker.js?'
       + 'sqlite3.dir='+options.sqlite3Dir
-      + '&opfs-verbose=2'
+      + '&interval='+options.interval
+      + '&opfs-verbose='+options.opfsVerbose
   );
   for(let i = 0; i < options.workerCount; ++i){
     stdout("Launching worker...");
