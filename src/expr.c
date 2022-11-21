@@ -4037,7 +4037,7 @@ static int exprCodeInlineFunction(
 }
 
 /*
-** Check to see if pExpr is one of the indexed expressions on pParse->pIdxExpr.
+** Check to see if pExpr is one of the indexed expressions on pParse->pIdxEpr.
 ** If it is, then resolve the expression by reading from the index and
 ** return the register into which the value has been read.  If pExpr is
 ** not an indexed expression, then return negative.
@@ -4049,7 +4049,7 @@ static SQLITE_NOINLINE int sqlite3IndexedExprLookup(
 ){
   IndexedExpr *p;
   Vdbe *v;
-  for(p=pParse->pIdxExpr; p; p=p->pIENext){
+  for(p=pParse->pIdxEpr; p; p=p->pIENext){
     int iDataCur = p->iDataCur;
     if( iDataCur<0 ) continue;
     if( pParse->iSelfTab ){
@@ -4069,10 +4069,10 @@ static SQLITE_NOINLINE int sqlite3IndexedExprLookup(
       sqlite3VdbeAddOp3(v, OP_Column, p->iIdxCur, p->iIdxCol, target);
       VdbeComment((v, "%s expr-column %d", p->zIdxName, p->iIdxCol));
       sqlite3VdbeGoto(v, 0);
-      p = pParse->pIdxExpr;
-      pParse->pIdxExpr = 0;
+      p = pParse->pIdxEpr;
+      pParse->pIdxEpr = 0;
       sqlite3ExprCode(pParse, pExpr, target);
-      pParse->pIdxExpr = p;
+      pParse->pIdxEpr = p;
       sqlite3VdbeJumpHere(v, addr+2);
     }else{
       sqlite3VdbeAddOp3(v, OP_Column, p->iIdxCur, p->iIdxCol, target);
@@ -4111,7 +4111,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
 expr_code_doover:
   if( pExpr==0 ){
     op = TK_NULL;
-  }else if( pParse->pIdxExpr!=0 
+  }else if( pParse->pIdxEpr!=0 
    && !ExprHasProperty(pExpr, EP_Leaf)
    && (r1 = sqlite3IndexedExprLookup(pParse, pExpr, target))>=0
   ){
