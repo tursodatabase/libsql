@@ -54,3 +54,4 @@ srcck1
 test-out.txt
 test/rust_suite/target
 testfixture
+libsql
