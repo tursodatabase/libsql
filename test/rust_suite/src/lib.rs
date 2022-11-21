@@ -1,5 +1,10 @@
 mod random_rowid;
 
+#[cfg(all(test, feature = "udf"))]
+mod user_defined_functions;
+#[cfg(all(test, feature = "udf"))]
+mod user_defined_functions_src;
+
 #[cfg(test)]
 mod tests {
     use rusqlite::Connection;

@@ -5686,3 +5686,114 @@ void sqlite3WithDelete(sqlite3 *db, With *pWith){
   }
 }
 #endif /* !defined(SQLITE_OMIT_CTE) */
+
+#ifdef LIBSQL_ENABLE_WASM_RUNTIME
+
+void libsql_create_function(
+  Parse *pParse,     /* The parsing context */
+  Token *pName,      /* Function name */
+  Token *pLang,      /* Language of the function */
+  Token *pBody,      /* Body of the function */
+  int isBlob,        /* If the input token is blob */
+  int noErr          /* Suppress error messages if FUNCTION already exists */
+) {
+  if (pLang->n != 4 && sqlite3_strnicmp("wasm", pLang->z, 4) != 0) {
+    sqlite3ErrorMsg(pParse, "The only supported language for user-defined functions is 'wasm'");
+    return;
+  }
+
+  Token table = {"libsql_wasm_func_table", 22};
+  Token name = {"name", 4};
+  Token body = {"body", 4};
+
+  const void *pParsedBody = NULL;
+  int src_size = 0;
+  if (isBlob) {
+    pParsedBody = sqlite3HexToBlob(pParse->db, pBody->z + 2, pBody->n - 2);
+    src_size = (pBody->n - 3)/2;
+  } else {
+    pParsedBody = sqlite3NameFromToken(pParse->db, pBody);
+    src_size = sqlite3Strlen30(pParsedBody);
+  }
+
+  SrcList* tab_list = sqlite3SrcListAppend(pParse, NULL, &table, NULL);
+  if (!tab_list) {
+    sqlite3ErrorMsg(pParse, "Failed to allocate tab list");
+    sqlite3DbFree(pParse->db, (void*)pParsedBody);
+    return;
+  }
+  IdList* id_list = sqlite3IdListAppend(pParse, NULL, &name);
+  if (!id_list) {
+    sqlite3ErrorMsg(pParse, "Failed to allocate id list");
+    sqlite3SrcListDelete(pParse->db, tab_list);
+    sqlite3DbFree(pParse->db, (void*)pParsedBody);
+    return;
+  }
+  id_list = sqlite3IdListAppend(pParse, id_list, &body);
+  ExprList* expr_list = sqlite3ExprListAppend(pParse, NULL, sqlite3ExprAlloc(pParse->db, TK_STRING, pName, 0));
+  if (!expr_list) {
+    sqlite3ErrorMsg(pParse, "Failed to allocate expr list");
+    sqlite3SrcListDelete(pParse->db, tab_list);
+    sqlite3IdListDelete(pParse->db, id_list);
+    sqlite3DbFree(pParse->db, (void*)pParsedBody);
+    return;
+  }
+
+  Token parsed_text = {
+    .z = pParsedBody,
+    .n = src_size
+  };
+  expr_list = sqlite3ExprListAppend(pParse, expr_list, sqlite3ExprAlloc(pParse->db, isBlob ? TK_BLOB : TK_STRING, isBlob ? pBody : &parsed_text, 0));
+
+  Select* select = sqlite3SelectNew(pParse, expr_list, 0, 0, 0, 0, 0, SF_Values|SF_MultiValue, 0);
+  if (!select) {
+    sqlite3ErrorMsg(pParse, "Failed to allocate select");
+    sqlite3SrcListDelete(pParse->db, tab_list);
+    sqlite3IdListDelete(pParse->db, id_list);
+    sqlite3ExprListDelete(pParse->db, expr_list);
+    sqlite3DbFree(pParse->db, (void*)pParsedBody);
+    return;
+  }
+  sqlite3Insert(pParse, tab_list, select, id_list, noErr ? OE_Ignore : OE_Default, NULL);
+
+  // AddWasmFunc operation
+  char *pAddFuncData = sqlite3DbStrNDup(pParse->db, pName->z, pName->n);
+  pAddFuncData = sqlite3DbRealloc(pParse->db, pAddFuncData, pName->n + 1 + src_size);
+  if (!pAddFuncData) {
+    sqlite3ErrorMsg(pParse, "Failed to allocate function name and body");
+    sqlite3DbFree(pParse->db, (void *)pParsedBody);
+    return;
+  }
+  memcpy(pAddFuncData + pName->n + 1, pParsedBody, src_size);
+  sqlite3VdbeAddOp4(sqlite3GetVdbe(pParse), OP_CreateWasmFunc, noErr, pName->n, src_size, pAddFuncData, P4_DYNAMIC);
+
+  sqlite3DbFree(pParse->db, (void*)pParsedBody);
+}
+
+void libsql_drop_function(
+  Parse *pParse,     /* The parsing context */
+  Token *pName,      /* Function name */
+  int noErr          /* Suppress error messages if FUNCTION does not exist */
+) {
+  Token table = {"libsql_wasm_func_table", 22};
+  SrcList* tab_list = sqlite3SrcListAppend(pParse, NULL, &table, NULL);
+  if (!tab_list) {
+    sqlite3ErrorMsg(pParse, "Failed to allocate tab list");
+    return;
+  }
+  Token name = {"name", 4};
+  Expr* where = sqlite3PExpr(pParse, TK_EQ,
+                             sqlite3ExprAlloc(pParse->db, TK_ID, &name, 0),
+                             sqlite3ExprAlloc(pParse->db, TK_STRING, pName, 0));
+
+  sqlite3DeleteFrom(pParse, tab_list, where, NULL, NULL);
+
+  char *zName = sqlite3NameFromToken(pParse->db, pName);
+  if (!zName) {
+    sqlite3OomFault(pParse->db);
+    return;
+  }
+
+  sqlite3VdbeAddOp4(sqlite3GetVdbe(pParse), OP_DropWasmFunc, noErr, 0, 0, zName, P4_DYNAMIC);
+}
+#endif

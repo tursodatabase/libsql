@@ -371,8 +371,8 @@ void sqlite3InsertBuiltinFuncs(
     }
   }
 }
-  
-  
+
+
 
 /*
 ** Locate a user function given a name, a number of arguments and a flag
@@ -462,7 +462,7 @@ FuncDef *sqlite3FindFunction(
     memcpy((char*)&pBest[1], zName, nName+1);
     for(z=(u8*)pBest->zName; *z; z++) *z = sqlite3UpperToLower[*z];
     pOther = (FuncDef*)sqlite3HashInsert(&db->aFunc, pBest->zName, pBest);
-    if( pOther==pBest ){
+    if(pOther == pBest) {
       sqlite3DbFree(db, pBest);
       sqlite3OomFault(db);
       return 0;
