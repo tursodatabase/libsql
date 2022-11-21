@@ -1,6 +1,14 @@
 require 'sqlite3'
 
-db = SQLite3::Database.open 'accounts.db'
+db_uri = ENV["DB_URI"]
+
+if db_uri.nil?
+    raise "Please configure database via the `DB_URI` environment variable."
+end
+
+puts db_uri
+
+db = SQLite3::Database.open db_uri
 
 db.execute "CREATE TABLE IF NOT EXISTS bank_account (owner TEXT, balance DECIMAL)"
 db.execute "INSERT INTO bank_account (owner, balance) VALUES ('alice', 150)"
