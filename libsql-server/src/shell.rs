@@ -1,68 +1,73 @@
+use std::io::Write;
+
 use crate::messages::Message;
+use crate::net::Connection;
 
 use anyhow::Result;
-use message_io::network::{NetEvent, Transport};
-use message_io::node::{self, NodeHandler, NodeListener};
-use rustyline::error::ReadlineError;
-use rustyline::Editor;
-use std::thread;
+use futures::{pin_mut, FutureExt};
+use rustyline_async::{Readline, ReadlineError};
+use tokio::net::ToSocketAddrs;
 
-const HISTORY_FILE: &str = ".edge_history";
+pub async fn start(addr: impl ToSocketAddrs) -> Result<()> {
+    let mut client = Connection::connect(addr).await?;
+    let (mut rl, stdout) = Readline::new(">>".into())?;
 
-pub(crate) fn start() -> Result<()> {
-    let (handler, node_listener): (NodeHandler<()>, NodeListener<()>) = node::split();
-    let discovery_addr = "127.0.0.1:5000";
-    let (endpoint, _) = handler
-        .network()
-        .connect(Transport::FramedTcp, discovery_addr)?;
-    let mut rl = Editor::<()>::new()?;
-    if rl.load_history(HISTORY_FILE).is_err() {
-        println!("No previous history.");
-    }
-    let _listener = thread::spawn(|| {
-        node_listener.for_each(move |event| match event.network() {
-            NetEvent::Connected(_, _) => (),
-            NetEvent::Accepted(_, _) => (),
-            NetEvent::Message(_endpoint, input_data) => {
-                let message: Message = bincode::deserialize(input_data).unwrap();
-                match message {
-                    Message::ResultSet(rows) => {
-                        println!(">> {:?}", rows);
+    let message_sender = client.sender();
+    let stdout_clone = stdout.clone();
+    client.set_on_message(move |msg| {
+        let mut stdout = stdout_clone.clone();
+        match msg {
+            Message::Error(_code, msg) => {
+                writeln!(stdout, "{msg}").unwrap();
+            }
+            Message::ResultSet(data) => {
+                for row in data {
+                    writeln!(stdout, "{row}").unwrap();
+                }
+            }
+            _ => (),
+        }
+        Ok(())
+    });
+
+    let stdout_clone = stdout.clone();
+    client.set_on_disconnect(move || {
+        let mut stdout = stdout_clone.clone();
+        writeln!(stdout, "disconnected").unwrap();
+    });
+
+    let client_fut = client.run().fuse();
+    pin_mut!(client_fut);
+
+    loop {
+        tokio::select! {
+            res = rl.readline().fuse() => {
+                match res {
+                    Ok(line) => {
+                        rl.add_history_entry(line.clone());
+                        if let Err(_) = message_sender.send(Message::Execute(line)) {
+                            break;
+                        }
                     }
-                    Message::Error(_, message) => {
-                        println!(">> {}", message);
+                    Err(ReadlineError::Interrupted) => {
+                        println!("CTRL-C");
+                        break;
                     }
-                    _ => {
-                        todo!();
+                    Err(ReadlineError::Eof) => {
+                        println!("CTRL-D");
+                        break;
+                    }
+                    Err(err) => {
+                        println!("Error: {:?}", err);
+                        break;
                     }
                 }
             }
-            NetEvent::Disconnected(_endpoint) => {}
-        });
-    });
-    loop {
-        let readline = rl.readline(">> ");
-        match readline {
-            Ok(line) => {
-                rl.add_history_entry(line.as_str());
-                let message = Message::Execute(line.to_string());
-                let output_data = bincode::serialize(&message)?;
-                handler.network().send(endpoint, &output_data);
-            }
-            Err(ReadlineError::Interrupted) => {
-                println!("CTRL-C");
-                break;
-            }
-            Err(ReadlineError::Eof) => {
-                println!("CTRL-D");
-                break;
-            }
-            Err(err) => {
-                println!("Error: {:?}", err);
-                break;
-            }
+            _ = &mut client_fut => break,
         }
     }
-    rl.save_history(HISTORY_FILE)?;
+
+    rl.flush()?;
+
     Ok(())
 }

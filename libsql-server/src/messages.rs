@@ -21,5 +21,5 @@ impl Message {
 }
 
 pub trait Responder: Sync + Send {
-    fn respond(&self, message: &Message);
+    fn respond(&self, message: Message);
 }
