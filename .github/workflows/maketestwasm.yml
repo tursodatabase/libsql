@@ -1,0 +1,30 @@
+name: Makefile CI with Wasm enabled
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: get TCL
+      run: sudo apt-get install -y tcl8.6-dev
+
+    - name: configure with Wasm
+      run: ./configure --enable-wasm-runtime-dynamic
+
+    - name: make the library generally available
+      run: sudo ln -s $(pwd)/.libs/libwblibsql.so /usr/lib/libwblibsql.so && ls -lsh /usr/lib
+      
+    - name: Run tests
+      run: make test
+
+    - name: Run Rust tests with Wasm
+      run: make rusttestwasm

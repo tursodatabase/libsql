@@ -14,12 +14,16 @@
 ** time functions, are implemented separately.)
 */
 #include "sqliteInt.h"
+#include <sqlite3.h>
 #include <stdlib.h>
 #include <assert.h>
 #ifndef SQLITE_OMIT_FLOATING_POINT
 #include <math.h>
 #endif
 #include "vdbeInt.h"
+#ifdef LIBSQL_ENABLE_WASM_RUNTIME
+#include "ext/udf/wasm_bindings.h"
+#endif
 
 /*
 ** Return the collating function associated with a function.
@@ -2207,6 +2211,137 @@ static void signFunc(
   x = sqlite3_value_double(argv[0]);
   sqlite3_result_int(context, x<0.0 ? -1 : x>0.0 ? +1 : 0);
 }
+
+#ifdef LIBSQL_ENABLE_WASM_RUNTIME
+void functionDestroy(sqlite3 *db, FuncDef *p);
+
+// Removes a Wasm function
+int deregister_wasm_function(sqlite3 *db, const char *zName) {
+  FuncDef *p = (FuncDef *)sqlite3HashInsert(&db->aFunc, zName, NULL);
+  int ret = p ? 1 : 0;
+  while (p) {
+    functionDestroy(db, p);
+    FuncDef *pNext = p->pNext;
+    sqlite3DbFree(db, p);
+    p = pNext;
+  };
+  return ret;
+}
+
+void run_wasm(sqlite3_context *context, int argc, sqlite3_value **argv) {
+  static libsql_wasm_udf_api api = {
+    .libsql_value_type = sqlite3_value_type,
+    .libsql_value_int = sqlite3_value_int,
+    .libsql_value_double = sqlite3_value_double,
+    .libsql_value_text = sqlite3_value_text,
+    .libsql_value_blob = sqlite3_value_blob,
+    .libsql_value_bytes = sqlite3_value_bytes,
+    .libsql_result_error = sqlite3_result_error,
+    .libsql_result_error_nomem = sqlite3_result_error_nomem,
+    .libsql_result_int = sqlite3_result_int,
+    .libsql_result_double = sqlite3_result_double,
+    .libsql_result_text = sqlite3_result_text,
+    .libsql_result_blob = sqlite3_result_blob,
+    .libsql_result_null = sqlite3_result_null,
+    .libsql_malloc = sqlite3_malloc,
+    .libsql_free = sqlite3_free
+  };
+  void *user_data = sqlite3_user_data(context);
+  libsql_wasm_module_t *module = *(libsql_wasm_module_t **)(user_data);
+  const char *func_name = (const char *)user_data + sizeof(module);
+  libsql_run_wasm(&api, context, context->pVdbe->db->wasm.engine, module, func_name, argc, argv);
+}
+
+// Tries to initialize and register a Wasm function dynamically.
+// Returns NULL on failure and fills err_msg_buf with an error message, if not NULL.
+FuncDef *try_instantiate_wasm_function(sqlite3 *db, const char *pName, int nName, const char *pSrcBody, int nBody, int nArg, char **err_msg_buf) {
+  FuncDef *pBest = NULL;
+  FuncDef *pOther = NULL;
+
+  if (!db->wasm.engine) {
+    db->wasm.engine = libsql_wasm_engine_new();
+  }
+
+  libsql_wasm_module_t *module = libsql_compile_wasm_module(db->wasm.engine, pSrcBody, nBody, sqlite3MallocZero, err_msg_buf);
+  if (!module) {
+    return NULL;
+  }
+
+  pBest = sqlite3DbMallocZero(db, sizeof(*pBest)+sizeof(module)+nName+1);
+  memcpy(&pBest[1], &module, sizeof(module));
+  pBest->zName = (const char*)&pBest[1] + sizeof(module);
+  memcpy((char *)pBest->zName, pName, nName);
+  ((char *)pBest->zName)[nName] = '\0';
+
+  pBest->funcFlags = 0;
+  pBest->xSFunc = run_wasm;
+  pBest->xFinalize = NULL;
+  pBest->xValue = NULL;
+  pBest->xInverse = NULL;
+  pBest->pUserData = &pBest[1];
+  pBest->nArg = (i8)nArg;
+
+  pBest->u.pDestructor = (FuncDestructor *)sqlite3Malloc(sizeof(FuncDestructor));
+  if(!pBest->u.pDestructor) {
+    sqlite3OomFault(db);
+    libsql_free_wasm_module(pBest);
+    return NULL;
+  }
+  pBest->u.pDestructor->nRef = 1;
+  pBest->u.pDestructor->xDestroy = libsql_free_wasm_module;
+  pBest->u.pDestructor->pUserData = &pBest[1];
+
+  // Register the function dynamically
+  for(u8 *z = (u8*)pBest->zName; *z; z++) {
+    *z = sqlite3UpperToLower[*z];
+  };
+  pOther = (FuncDef*)sqlite3HashInsert(&db->aFunc, pBest->zName, pBest);
+  if (pOther == pBest) {
+    sqlite3DbFree(db, pBest);
+    sqlite3OomFault(db);
+    return NULL;
+  } else {
+    pBest->pNext = pOther;
+  }
+
+  return pBest;
+}
+
+int libsql_try_initialize_wasm_func_table(sqlite3 *db) {
+#ifdef SQLITE_TEST
+  // Tcl tests assume there are no extra tables during their execution
+  return SQLITE_OK;
+#endif
+  int rc = sqlite3_exec(db, "CREATE TABLE IF NOT EXISTS libsql_wasm_func_table (name text PRIMARY KEY, body text) WITHOUT ROWID", NULL, NULL, NULL);
+  if (rc == SQLITE_OK) {
+    // If the table exists, register all the functions
+    sqlite3_stmt *stmt;
+    rc = sqlite3_prepare_v2(db, "SELECT name, body FROM libsql_wasm_func_table", -1, &stmt, 0);
+    if (rc != SQLITE_OK) return rc;
+    rc = SQLITE_ROW;
+    while (rc == SQLITE_ROW) {
+      rc = sqlite3_step(stmt);
+      if (rc == SQLITE_ROW) {
+        int name_type = sqlite3_column_type(stmt, 0);
+        int name_size = sqlite3_column_bytes(stmt, 0);
+        int body_type = sqlite3_column_type(stmt, 1);
+        int body_size = sqlite3_column_bytes(stmt, 1);
+        if (name_type != SQLITE_TEXT && body_type != SQLITE_TEXT && body_type != SQLITE_BLOB) {
+          sqlite3_finalize(stmt);
+          return rc;
+        }
+        const char *pName = sqlite3_column_text(stmt, 0);
+        const void *pBody = body_type == SQLITE_TEXT ? sqlite3_column_text(stmt, 1) : sqlite3_column_blob(stmt, 1);
+        try_instantiate_wasm_function(db, pName, name_size, pBody, body_size, -1, NULL);
+      }
+    }
+    sqlite3_finalize(stmt);
+    rc = SQLITE_OK;
+  }
+  return rc;
+}
+
+#endif // LIBSQL_ENABLE_WASM_RUNTIME
 
 /*
 ** All of the FuncDef structures in the aBuiltinFunc[] array above

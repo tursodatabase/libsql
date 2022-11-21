@@ -162,6 +162,8 @@ foreach hdr {
    vxworks.h
    wal.h
    whereInt.h
+
+   wasm_bindings.h
 } {
   set available_hdr($hdr) 1
 }

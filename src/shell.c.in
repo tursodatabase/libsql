@@ -4423,6 +4423,11 @@ static const char *(azHelp[]) = {
   ".indexes ?TABLE?         Show names of indexes",
   "                           If TABLE is specified, only show indexes for",
   "                           tables matching TABLE using the LIKE operator.",
+#ifdef LIBSQL_ENABLE_WASM_RUNTIME
+  ".init_wasm_func_table    Initialize libsql_wasm_func_table",
+  "                           The table is used to store names and sources",
+  "                           of dynamically created Wasm user-defined functions.",
+#endif
 #ifdef SQLITE_ENABLE_IOTRACE
   ".iotrace FILE            Enable I/O diagnostic logging to FILE",
 #endif
@@ -8772,6 +8777,17 @@ static int do_meta_command(char *zLine, ShellState *p){
     sqlite3_free(zSql);
   }else
 #endif /* !defined(SQLITE_OMIT_TEST_CONTROL) */
+
+#ifdef LIBSQL_ENABLE_WASM_RUNTIME
+  if( c=='i' && cli_strncmp(azArg[0], "init_wasm_func_table", n)==0 ){
+    if (p->db) {
+      rc = libsql_try_initialize_wasm_func_table(p->db);
+    } else {
+      open_db(p, 0);
+      rc = libsql_try_initialize_wasm_func_table(p->db);
+    }
+  }else
+#endif
 
 #ifdef SQLITE_ENABLE_IOTRACE
   if( c=='i' && cli_strncmp(azArg[0], "iotrace", n)==0 ){
