@@ -1,6 +1,6 @@
 (async function(self){
 
-  const logClass = (function(){
+  const logCss = (function(){
     const mapToString = (v)=>{
       switch(typeof v){
           case 'number': case 'string': case 'boolean':
@@ -20,7 +20,7 @@
     };
     const normalizeArgs = (args)=>args.map(mapToString);
     const logTarget = document.querySelector('#test-output');
-    const logClass = function(cssClass,...args){
+    const logCss = function(cssClass,...args){
       const ln = document.createElement('div');
       if(cssClass){
         for(const c of (Array.isArray(cssClass) ? cssClass : [cssClass])){
@@ -41,10 +41,10 @@
       cbReverse.checked = !!(+localStorage.getItem(cbReverseKey));
     }
     cbReverseIt();
-    return logClass;
+    return logCss;
   })();
-  const stdout = (...args)=>logClass('',...args);
-  const stderr = (...args)=>logClass('error',...args);
+  const stdout = (...args)=>logCss('',...args);
+  const stderr = (...args)=>logCss('error',...args);
 
   const wait = async (ms)=>{
     return new Promise((resolve)=>setTimeout(resolve,ms));
@@ -67,9 +67,6 @@
     const wName =  msg.worker;
     const prefix = 'Worker ['+wName+']:';
     switch(msg.type){
-        case 'stdout': stdout(prefix,...msg.payload); break;
-        case 'stderr': stderr(prefix,...msg.payload); break;
-        case 'error': stderr(prefix,"ERROR:",...msg.payload); break;
         case 'loaded':
           stdout(prefix,"loaded");
           if(++workers.loadedCount === workers.length){
@@ -77,7 +74,16 @@
             workers.post('run');
           }
           break;
-        default: logClass('error',"Unhandled message type:",msg); break;
+        case 'stdout': stdout(prefix,...msg.payload); break;
+        case 'stderr': stderr(prefix,...msg.payload); break;
+        case 'error': stderr(prefix,"ERROR:",...msg.payload); break;
+        case 'finished':
+          logCss('tests-pass',prefix,...msg.payload);
+          break;
+        case 'failed':
+          logCss('tests-fail',prefix,"FAILED:",...msg.payload);
+          break;
+        default: logCss('error',"Unhandled message type:",msg); break;
     }
   };
 

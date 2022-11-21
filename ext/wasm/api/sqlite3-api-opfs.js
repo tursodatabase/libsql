@@ -343,6 +343,7 @@ const installOpfsVfs = function callee(options){
       'SQLITE_LOCK_PENDING',
       'SQLITE_LOCK_RESERVED',
       'SQLITE_LOCK_SHARED',
+      'SQLITE_LOCKED',
       'SQLITE_MISUSE',
       'SQLITE_NOTFOUND',
       'SQLITE_OPEN_CREATE',

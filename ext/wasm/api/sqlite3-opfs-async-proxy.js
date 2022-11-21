@@ -477,8 +477,8 @@ const vfsAsyncImpls = {
     wTimeStart('xFileSize');
     try{
       affirmLocked('xFileSize',fh);
-      rc = await (await getSyncHandle(fh)).getSize();
-      state.s11n.serialize(Number(rc));
+      const sz = await (await getSyncHandle(fh)).getSize();
+      state.s11n.serialize(Number(sz));
       rc = 0;
     }catch(e){
       state.s11n.storeException(2,e);

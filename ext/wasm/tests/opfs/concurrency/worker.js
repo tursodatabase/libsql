@@ -26,7 +26,7 @@ self.sqlite3InitModule().then(async function(sqlite3){
   wPost('loaded');
 
   const run = async function(){
-    const db = new sqlite3.opfs.OpfsDb(dbName);
+    const db = new sqlite3.opfs.OpfsDb(dbName,'c');
     //sqlite3.capi.sqlite3_busy_timeout(db.pointer, 2000);
     db.transaction((db)=>{
       db.exec([
@@ -37,7 +37,7 @@ self.sqlite3InitModule().then(async function(sqlite3){
 
     const maxIterations = 10;
     const interval = Object.assign(Object.create(null),{
-      delay: 300,
+      delay: 500,
       handle: undefined,
       count: 0
     });
@@ -58,9 +58,13 @@ self.sqlite3InitModule().then(async function(sqlite3){
       }
     };
     const finish = ()=>{
-      if(interval.error) stderr("Ending work due to error:",e.message);
-      else stdout("Ending work after",interval.count,"interval(s)");
       db.close();
+      if(interval.error){
+        wPost('failed',"Ending work after interval #"+interval.count,
+              "due to error:",interval.error);
+      }else{
+        wPost('finished',"Ending work after",interval.count,"intervals.");
+      }
     };
     if(1){/*use setInterval()*/
       interval.handle = setInterval(async ()=>{
