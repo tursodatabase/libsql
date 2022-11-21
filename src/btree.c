@@ -7046,24 +7046,20 @@ static void dropCell(MemPage *pPage, int idx, int sz, int *pRC){
 ** in pTemp or the original pCell) and also record its index. 
 ** Allocating a new entry in pPage->aCell[] implies that 
 ** pPage->nOverflow is incremented.
-**
-** *pRC must be SQLITE_OK when this routine is called.
 */
-static void insertCell(
+static int insertCell(
   MemPage *pPage,   /* Page into which we are copying */
   int i,            /* New cell becomes the i-th cell of the page */
   u8 *pCell,        /* Content of the new cell */
   int sz,           /* Bytes of content in pCell */
   u8 *pTemp,        /* Temp storage space for pCell, if needed */
-  Pgno iChild,      /* If non-zero, replace first 4 bytes with this value */
-  int *pRC          /* Read and write return code from here */
+  Pgno iChild       /* If non-zero, replace first 4 bytes with this value */
 ){
   int idx = 0;      /* Where to write new cell content in data[] */
   int j;            /* Loop counter */
   u8 *data;         /* The content of the whole page */
   u8 *pIns;         /* The point in pPage->aCellIdx[] where no cell inserted */
 
-  assert( *pRC==SQLITE_OK );
   assert( i>=0 && i<=pPage->nCell+pPage->nOverflow );
   assert( MX_CELL(pPage->pBt)<=10921 );
   assert( pPage->nCell<=MX_CELL(pPage->pBt) || CORRUPT_DB );
@@ -7098,14 +7094,13 @@ static void insertCell(
   }else{
     int rc = sqlite3PagerWrite(pPage->pDbPage);
     if( rc!=SQLITE_OK ){
-      *pRC = rc;
-      return;
+      return rc;
     }
     assert( sqlite3PagerIswriteable(pPage->pDbPage) );
     data = pPage->aData;
     assert( &data[pPage->cellOffset]==pPage->aCellIdx );
     rc = allocateSpace(pPage, sz, &idx);
-    if( rc ){ *pRC = rc; return; }
+    if( rc ){ return rc; }
     /* The allocateSpace() routine guarantees the following properties
     ** if it returns successfully */
     assert( idx >= 0 );
@@ -7132,13 +7127,16 @@ static void insertCell(
     assert( get2byte(&data[pPage->hdrOffset+3])==pPage->nCell || CORRUPT_DB );
 #ifndef SQLITE_OMIT_AUTOVACUUM
     if( pPage->pBt->autoVacuum ){
+      int rc = SQLITE_OK;
       /* The cell may contain a pointer to an overflow page. If so, write
       ** the entry for the overflow page into the pointer map.
       */
-      ptrmapPutOvflPtr(pPage, pPage, pCell, pRC);
+      ptrmapPutOvflPtr(pPage, pPage, pCell, &rc);
+      if( rc ) return rc;
     }
 #endif
   }
+  return SQLITE_OK;
 }
 
 /*
@@ -7710,8 +7708,8 @@ static int balance_quick(MemPage *pParent, MemPage *pPage, u8 *pSpace){
 
     /* Insert the new divider cell into pParent. */
     if( rc==SQLITE_OK ){
-      insertCell(pParent, pParent->nCell, pSpace, (int)(pOut-pSpace),
-                   0, pPage->pgno, &rc);
+      rc = insertCell(pParent, pParent->nCell, pSpace, (int)(pOut-pSpace),
+                      0, pPage->pgno);
     }
 
     /* Set the right-child pointer of pParent to point to the new page. */
@@ -8498,7 +8496,7 @@ static int balance_nonroot(
       rc = SQLITE_CORRUPT_BKPT;
       goto balance_cleanup;
     }
-    insertCell(pParent, nxDiv+i, pCell, sz, pTemp, pNew->pgno, &rc);
+    rc = insertCell(pParent, nxDiv+i, pCell, sz, pTemp, pNew->pgno);
     if( rc!=SQLITE_OK ) goto balance_cleanup;
     assert( sqlite3PagerIswriteable(pParent->pDbPage) );
   }
@@ -9240,7 +9238,7 @@ int sqlite3BtreeInsert(
   }else{
     assert( pPage->leaf );
   }
-  insertCell(pPage, idx, newCell, szNew, 0, 0, &rc);
+  rc = insertCell(pPage, idx, newCell, szNew, 0, 0);
   assert( pPage->nOverflow==0 || rc==SQLITE_OK );
   assert( rc!=SQLITE_OK || pPage->nCell>0 || pPage->nOverflow>0 );
 
@@ -9561,7 +9559,7 @@ int sqlite3BtreeDelete(BtCursor *pCur, u8 flags){
     assert( pTmp!=0 );
     rc = sqlite3PagerWrite(pLeaf->pDbPage);
     if( rc==SQLITE_OK ){
-      insertCell(pPage, iCellIdx, pCell-4, nCell+4, pTmp, n, &rc);
+      rc = insertCell(pPage, iCellIdx, pCell-4, nCell+4, pTmp, n);
     }
     dropCell(pLeaf, pLeaf->nCell-1, nCell, &rc);
     if( rc ) return rc;
