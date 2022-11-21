@@ -70,8 +70,7 @@
   workers.loadedCount = 0;
   workers.onmessage = function(msg){
     msg = msg.data;
-    const wName =  msg.worker;
-    const prefix = 'Worker ['+wName+']:';
+    const prefix = 'Worker #'+msg.worker+':';
     switch(msg.type){
         case 'loaded':
           stdout(prefix,"loaded");
@@ -102,7 +101,9 @@
   );
   for(let i = 0; i < options.workerCount; ++i){
     stdout("Launching worker...");
-    workers.push(new Worker(workers.uri+(i ? '' : '&unlink-db')));
+    workers.push(new Worker(
+      workers.uri+'&workerId='+(i+1)+(i ? '' : '&unlink-db')
+    ));
   }
   // Have to delay onmessage assignment until after the loop
   // to avoid that early workers get an undue head start.

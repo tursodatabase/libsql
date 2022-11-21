@@ -1,5 +1,5 @@
-C Performance\soptimization\sand\ssize\sreduction\sin\sinsertCell()\sby\somitting\nthe\s"pRC"\sargument\sand\sinstead\sreturning\sthe\sresult\scode\sas\san\sinteger.
-D 2022-11-21T15:55:57.369
+C OPFS\scontention\stest:\sgive\seach\sworker\sa\sdistinct\srecognizable\sname\sinstead\sof\sa\srandom\sone.
+D 2022-11-21T16:00:26.047
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -553,8 +553,8 @@ F ext/wasm/tester1-worker.html 5ef353348c37cf2e4fd0b23da562d3275523e036260b51073
 F ext/wasm/tester1.c-pp.html 74aa9b31c75f12490653f814b53c3dd39f40cd3f70d6a53a716f4e8587107399
 F ext/wasm/tester1.c-pp.js 0c129495d057c77788b59715152d51f9bf9002ebbcce759ef8b028272ce3519d
 F ext/wasm/tests/opfs/concurrency/index.html bb9b0f6da86df34c67fa506db9c45b7c4cf0045a211611cc6b8d2b53fa983481
-F ext/wasm/tests/opfs/concurrency/test.js cea04456ffae7bbfd726ef0e859d2afc2a51ead66940fc4a2499884ac44d16dd
-F ext/wasm/tests/opfs/concurrency/worker.js a92fa4da1431d3c6db3e1dd0b98794e09d1021e23a8c490335410cce283b11c1
+F ext/wasm/tests/opfs/concurrency/test.js 5993c08657d547d3a26b78ff3480122aed2b7361823bc127e96e558931093aff
+F ext/wasm/tests/opfs/concurrency/worker.js df065bb386ff994951f7fbdd76e12f16e58fbef0e929b2caf74553359da40afc
 F ext/wasm/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd72273503ae7d5
 F ext/wasm/wasmfs.make 8fea9b4f3cde06141de1fc4c586ab405bd32c3f401554f4ebb18c797401a678d
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
@@ -2059,8 +2059,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b8976ebfe03fbc1e09a38d598a62493a7f19ff7a2a3acd1ec54d0dee190471e9
-R 6d5890069b8a565895abb49912f71e80
-U drh
-Z df511e58d09c8af289615762e74d854c
+P bee94d1bb0daade023cc1e274339daafc249e1978c0765fc45042b5f9060e478
+R 24e9b381879a473eda77c6d52873b2a6
+U stephan
+Z 5200ed97b9b65f90e5d50e34624e223d
 # Remove this line to create a well-formed Fossil manifest.

@@ -2,7 +2,8 @@ importScripts(
   (new URL(self.location.href).searchParams).get('sqlite3.dir') + '/sqlite3.js'
 );
 self.sqlite3InitModule().then(async function(sqlite3){
-  const wName = Math.round(Math.random()*10000);
+  const urlArgs = new URL(self.location.href).searchParams;
+  const wName = urlArgs.get('workerId') || Math.round(Math.random()*10000);
   const wPost = (type,...payload)=>{
     postMessage({type, worker: wName, payload});
   };
@@ -18,7 +19,6 @@ self.sqlite3InitModule().then(async function(sqlite3){
   };
 
   const dbName = 'concurrency-tester.db';
-  const urlArgs = new URL(self.location.href).searchParams;
   if(urlArgs.has('unlink-db')){
     await sqlite3.opfs.unlink(dbName);
     stdout("Unlinked",dbName);
