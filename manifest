@@ -1,5 +1,5 @@
-C More\stweaking\sof\sOPFS\sconcurrency\smeasures\sand\sthe\srelated\stest\sapp.
-D 2022-11-21T05:18:24.071
+C Add\snew\sJS\stests\sdir\sto\sthose\spushed\sto\sthe\stest\sserver.
+D 2022-11-21T06:07:22.911
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -488,7 +488,7 @@ F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
 F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
 F ext/userauth/userauth.c 7f00cded7dcaa5d47f54539b290a43d2e59f4b1eb5f447545fa865f002fc80cb
 F ext/wasm/EXPORTED_FUNCTIONS.fiddle.in 27450c8b8c70875a260aca55435ec927068b34cef801a96205adb81bdcefc65c
-F ext/wasm/GNUmakefile 712795c4893ea65f8d30fe414937a33b677a194dd58372b4074aee17039c845e
+F ext/wasm/GNUmakefile bc1696a1189f4c571b3d878b8f3a67c1f4b52c222f52d356027a5a0c707337c7
 F ext/wasm/README-dist.txt 2d670b426fc7c613b90a7d2f2b05b433088fe65181abead970980f0a4a75ea20
 F ext/wasm/README.md ef39861aa21632fdbca0bdd469f78f0096f6449a720f3f39642594af503030e9
 F ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-api b4d68c97d14944b48d55e06aa44f544a6f56a7fa2bcb6f9e030936a5b2a9479a
@@ -2059,8 +2059,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2debbbca33bd4170a1dc4dbb5eb3e68523e51d289b06c551e5560ac4e32e433b
-R cdfdba12cf28ae07442f6b59e52570f8
+P a8d4da1501d411085ec2fd48c4a056c8b1d97ef3c3203c5b403a854ac2864870
+R de977a34ec9f33a01661a43c62f057f6
 U stephan
-Z bce379ce157581c096a0eabd8577e81e
+Z 6c2e6c110bc94fae29d67ff59b3bd9c5
 # Remove this line to create a well-formed Fossil manifest.
