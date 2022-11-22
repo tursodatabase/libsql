@@ -1,5 +1,5 @@
-C Convert\san\sALWAYS()\sin\ssqlite3DbSpanDup()\sinto\san\sassert(),\sfor\sa\sperformance\nincrease\sand\ssize\sreduction.
-D 2022-11-22T12:47:32.742
+C This\sis\sthe\sfirst\sin\swhat\sis\santicipated\sto\sbe\sa\slong\ssequence\sof\sincremental\nchanges\saimed\sat\simproving\saggregate\squery\sprocessing,\sand\sin\sparticular\nhelping\saggregate\squeries\stake\sbetter\sadvantage\sof\sindexes\son\sexpression.\nThe\send\sgoal\sis\sto\sresolve\sticket\s[99378177930f87bd],\sthough\sit\sremains\sto\nbe\sseen\swhether\sor\snot\sI\scan\sget\sthere\swith\sthis\sapproach.
+D 2022-11-22T13:33:58.528
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -641,12 +641,12 @@ F src/printf.c e99ee9741e79ae3873458146f59644276657340385ade4e76a5f5d1c25793764
 F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c efea4e5fbecfd6d0a9071b0be0d952620991673391b6ffaaf4c277b0bb674633
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c 3fc60a8f0b54db15e86584c5fd68dbf63c20fe86886a39267ce7dfc17b68853d
+F src/select.c 0f78363cb997bba3df6f974c5022b1cef9c6d7bc9ae73bcfd75b1e4b5f7d95fc
 F src/shell.c.in 16740a86346ba9823f92528ec588f2b74f68166dac965dabd19883ace230f11d
 F src/sqlite.h.in 100fc660c2f19961b8ed8437b9d53d687de2f8eb2b96437ec6da216adcb643ca
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h c4b9fa7a7e2bcdf850cfeb4b8a91d5ec47b7a00033bc996fd2ee96cbf2741f5f
-F src/sqliteInt.h 42bcbb6cebef64c99068e7bc141a2541d40d65c7c26a9ca5ada4d83ca353555d
+F src/sqliteInt.h 62ff4e899d1a10e7fe60617f9d58ad49f20de4ad30ee02b68dc403ece984b617
 F src/sqliteLimit.h d7323ffea5208c6af2734574bae933ca8ed2ab728083caa117c9738581a31657
 F src/status.c 160c445d7d28c984a0eae38c144f6419311ed3eace59b44ac6dafc20db4af749
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -2059,8 +2059,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P dc33cfbedef4b444adeadea17f8183b7c4ce5b87432d0c712f986b34c7374ff1
-R 6f72c126be40c707db8479e3d23315a3
+P 21e80a29737c367babcc0cf2533eed61b5d0fcf3cc3c33ab88761899e394eaf3
+R 8a6d83ef799149939ad05ed6225df7c1
+T *branch * agg-with-indexed-expr
+T *sym-agg-with-indexed-expr *
+T -sym-trunk *
 U drh
-Z 9806e837fcd3094e05cfafc89f1e72fe
+Z c8ad55df8af287c23ae8c2fae9e521d0
 # Remove this line to create a well-formed Fossil manifest.

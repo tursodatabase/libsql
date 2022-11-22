@@ -6223,18 +6223,17 @@ static void resetAccumulator(Parse *pParse, AggInfo *pAggInfo){
   if( pParse->nErr ) return;
 #ifdef SQLITE_DEBUG
   /* Verify that all AggInfo registers are within the range specified by
-  ** AggInfo.mnReg..AggInfo.mxReg */
-  assert( nReg==pAggInfo->mxReg-pAggInfo->mnReg+1 );
+  ** AggInfo.mnReg..(AggInfo.mnReg+nReg-1) */
   for(i=0; i<pAggInfo->nColumn; i++){
     assert( pAggInfo->aCol[i].iMem>=pAggInfo->mnReg
-         && pAggInfo->aCol[i].iMem<=pAggInfo->mxReg );
+         && pAggInfo->aCol[i].iMem<pAggInfo->mnReg+nReg );
   }
   for(i=0; i<pAggInfo->nFunc; i++){
     assert( pAggInfo->aFunc[i].iMem>=pAggInfo->mnReg
-         && pAggInfo->aFunc[i].iMem<=pAggInfo->mxReg );
+         && pAggInfo->aFunc[i].iMem<pAggInfo->mnReg+nReg );
   }
 #endif
-  sqlite3VdbeAddOp3(v, OP_Null, 0, pAggInfo->mnReg, pAggInfo->mxReg);
+  sqlite3VdbeAddOp3(v, OP_Null, 0, pAggInfo->mnReg, pAggInfo->mnReg+nReg-1);
   for(pFunc=pAggInfo->aFunc, i=0; i<pAggInfo->nFunc; i++, pFunc++){
     if( pFunc->iDistinct>=0 ){
       Expr *pE = pFunc->pFExpr;
@@ -7448,7 +7447,6 @@ int sqlite3Select(
 #endif
       sNC.ncFlags &= ~NC_InAggFunc;
     }
-    pAggInfo->mxReg = pParse->nMem;
     if( db->mallocFailed ) goto select_end;
 #if TREETRACE_ENABLED
     if( sqlite3TreeTrace & 0x400 ){
