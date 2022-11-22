@@ -1029,12 +1029,12 @@ extern u32 sqlite3TreeTrace;
     && (defined(SQLITE_TEST) || defined(SQLITE_ENABLE_SELECTTRACE) \
                              || defined(SQLITE_ENABLE_TREETRACE))
 # define TREETRACE_ENABLED 1
-# define SELECTTRACE(K,P,S,X)  \
+# define TREETRACE(K,P,S,X)  \
   if(sqlite3TreeTrace&(K))   \
     sqlite3DebugPrintf("%u/%d/%p: ",(S)->selId,(P)->addrExplain,(S)),\
     sqlite3DebugPrintf X
 #else
-# define SELECTTRACE(K,P,S,X)
+# define TREETRACE(K,P,S,X)
 # define TREETRACE_ENABLED 0
 #endif
 
