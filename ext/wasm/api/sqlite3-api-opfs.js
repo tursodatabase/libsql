@@ -92,7 +92,8 @@ const installOpfsVfs = function callee(options){
   }
   const urlParams = new URL(self.location.href).searchParams;
   if(undefined===options.verbose){
-    options.verbose = urlParams.has('opfs-verbose') ? 3 : 2;
+    options.verbose = urlParams.has('opfs-verbose')
+      ? (+urlParams.get('opfs-verbose') || 2) : 1;
   }
   if(undefined===options.sanityChecks){
     options.sanityChecks = urlParams.has('opfs-sanity-check');
@@ -100,6 +101,8 @@ const installOpfsVfs = function callee(options){
   if(undefined===options.proxyUri){
     options.proxyUri = callee.defaultProxyUri;
   }
+
+  //console.warn("OPFS options =",options,self.location);
 
   if('function' === typeof options.proxyUri){
     options.proxyUri = options.proxyUri();
@@ -166,7 +169,12 @@ const installOpfsVfs = function callee(options){
       opfsVfs.dispose();
       return promiseReject_(err);
     };
-    const W = new Worker(options.proxyUri);
+    const W =
+//#if target=es6-module
+    new Worker(new URL(options.proxyUri, import.meta.url));
+//#else
+    new Worker(options.proxyUri);
+//#endif
     W._originalOnError = W.onerror /* will be restored later */;
     W.onerror = function(err){
       // The error object doesn't contain any useful info when the
@@ -335,6 +343,7 @@ const installOpfsVfs = function callee(options){
       'SQLITE_LOCK_PENDING',
       'SQLITE_LOCK_RESERVED',
       'SQLITE_LOCK_SHARED',
+      'SQLITE_LOCKED',
       'SQLITE_MISUSE',
       'SQLITE_NOTFOUND',
       'SQLITE_OPEN_CREATE',
@@ -569,7 +578,7 @@ const installOpfsVfs = function callee(options){
         const ndx = Math.random() * (f._n * 64) % f._n | 0;
         a[i] = f._chars[ndx];
       }
-      return a.join('');
+      return a.join("");
     };
 
     /**
@@ -1149,7 +1158,10 @@ const installOpfsVfs = function callee(options){
         [
           /* Truncate journal mode is faster than delete or wal for
              this vfs, per speedtest1. */
-          "pragma journal_mode=truncate;"
+          "pragma journal_mode=truncate;",
+          /* Set a default busy-timeout handler to help OPFS dbs
+             deal with multi-tab/multi-worker contention. */
+          "pragma busy_timeout=2000;",
           /*
             This vfs benefits hugely from cache on moderate/large
             speedtest1 --size 50 and --size 100 workloads. We currently
@@ -1157,8 +1169,8 @@ const installOpfsVfs = function callee(options){
             sqlite3.wasm. If that policy changes, the cache can
             be set here.
           */
-          //"pragma cache_size=-8388608;"
-        ].join('')
+          //"pragma cache_size=-16384;"
+        ].join("")
       );
     }
 

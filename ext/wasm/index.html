@@ -32,10 +32,6 @@
           and testing is currently done against a dev-channel release
           of Chrome (v107 as of 2022-09-26).
         </li>
-        <li>Whether or not WASMFS/OPFS support is enabled on any given
-          page may depend on build-time options which are <em>off by
-          default</em>.
-        </li>
       </ul>
     </div>
     <div>The tests and demos...
@@ -46,7 +42,17 @@
               regression tests for the various APIs and surrounding
               utility code.</li>
             <li><a href='tester1-worker.html'>tester1-worker</a>: same thing
-            but running in a Worker.</li>
+              but running in a Worker.</li>
+            <li><a href='tester1-esm.html'>tester1-esm</a>: same as
+              <code>tester1</code> but loads sqlite3 in the main thread via
+              an ES6 module.
+            </li>
+            <li><a href='tester1-worker.html?esm'>tester1-worker?esm</a>:
+              same as <code>tester1-esm</code> but loads a Worker Module which
+              then loads the sqlite3 API via an ES6 module. Note that
+              not all browsers permit loading modules in Worker
+              threads.
+            </li>
           </ul>
         </li>
         <li>High-level apps and demos...
@@ -97,6 +103,9 @@
               Atomics APIs to regulate communication between the
               synchronous sqlite3_vfs interface and the async OPFS
               impl.
+            </li>
+            <li><a href='tests/opfs/concurrency/index.html'>OPFS concurrency</a>
+              tests using multiple workers.
             </li>
           </ul>
         </li>

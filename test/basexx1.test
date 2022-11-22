@@ -1,0 +1,113 @@
+# 2022 November 22
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix basexx
+
+if {[catch {load_static_extension db basexx} error]} {
+  puts "Skipping basexx tests, hit load error: $error"
+  finish_test; return
+}
+
+# Empty blobs encode to empty strings.
+do_execsql_test 100 {
+  SELECT base64(x'')||base85(x'');
+} {{}}
+
+# Empty strings decode to empty blobs.
+do_execsql_test 101 {
+  SELECT hex(x'01'||base64('')||base85('')||x'02');
+} {0102}
+
+# Basic base64 encoding
+do_execsql_test 102 {
+  SELECT base64(x'000102030405');
+  SELECT base64(x'0001020304');
+  SELECT base64(x'00010203');
+} {{AAECAwQF
+} {AAECAwQ=
+} {AAECAw==
+}}
+
+# Basic base64 decoding with pad chars
+do_execsql_test 103 {
+  SELECT hex(base64('AAECAwQF'));
+  SELECT hex(base64('AAECAwQ='));
+  SELECT hex(base64('AAECAw=='));
+} {000102030405 0001020304 00010203}
+
+# Basic base64 decoding without pad chars and with whitespace
+do_execsql_test 104 {
+  SELECT hex(base64(' AAECAwQF '));
+  SELECT hex(base64(' AAECAwQ'));
+  SELECT hex(base64('AAECAw '));
+} {000102030405 0001020304 00010203}
+
+# Basic base85 encoding
+do_execsql_test 105 {
+  SELECT base85(x'000102030405');
+  SELECT base85(x'0001020304');
+  SELECT base85(x'00010203');
+} {{##/2,#2/
+} {##/2,#*
+} {##/2,
+}}
+
+# Basic base85 decoding with and without whitespace
+do_execsql_test 106 {
+  SELECT hex(base85('##/2,#2/'));
+  SELECT hex(base85('##/2,#*'));
+  SELECT hex(base85('##/2,'));
+  SELECT hex(base85(' ##/2,#2/ '));
+  SELECT hex(base85(' ##/2,#*'));
+  SELECT hex(base85('##/2, '));
+} {000102030405 0001020304 00010203 000102030405 0001020304 00010203}
+
+# Round-trip some random blobs.
+do_execsql_test 107 {
+  CREATE TEMP TABLE rb( len int, b blob ) STRICT;
+  INSERT INTO rb(len) VALUES (1),(2),(3),(4),(5),(150),(151),(152),(153),(1054);
+  UPDATE rb SET b = randomblob(len);
+  SELECT len, base64(base64(b))=b, base85(base85(b))=b
+  FROM rb ORDER BY len;
+} {1 1 1 2 1 1 3 1 1 4 1 1 5 1 1 150 1 1 151 1 1 152 1 1 153 1 1 1054 1 1}
+
+# Same round-trip but with space or junk prepended and/or appended or not.
+do_execsql_test 108 {
+  CREATE TEMP TABLE junk(j text, rank int);
+  INSERT INTO junk VALUES ('',0),(' ',1),('~',2);
+  SELECT len, base64(j.j||base64(b)||j.j)=b, base85(j.j||base85(b)||j.j)=b
+  FROM rb r, junk j WHERE j.rank=(r.len+r.len/25)%3 ORDER BY len;
+} {1 1 1 2 1 1 3 1 1 4 1 1 5 1 1 150 1 1 151 1 1 152 1 1 153 1 1 1054 1 1}
+
+# Exercise the fail-on-too-large result feature.
+# ToDo: See if extension code for this can be eliminated.
+
+set inLimit [sqlite3_limit db SQLITE_LIMIT_LENGTH -1]
+sqlite3_limit db SQLITE_LIMIT_LENGTH 1060
+
+do_catchsql_test 109 {
+  SELECT len, base64(b) FROM rb WHERE len>200;
+} {1 {string or blob too big}}
+
+do_catchsql_test 110 {
+  SELECT len, base85(b) FROM rb WHERE len>200;
+} {1 {string or blob too big}}
+
+sqlite3_limit db SQLITE_LIMIT_LENGTH $inLimit
+
+do_execsql_test 111 {
+  SELECT is_base85(base85(x'123456')), is_base85('~');
+} {1 0}
+
+finish_test

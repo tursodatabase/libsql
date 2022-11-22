@@ -6,35 +6,38 @@
 # 'make dist' rules for creating a distribution archive of the WASM/JS
 # pieces, noting that we only build a dist of the built files, not the
 # numerous pieces required to build them.
+#
+# Use 'make snapshot' to create "snapshot" releases. They use a
+# distinctly different zip file and top directory name to distinguish
+# them from release builds.
 #######################################################################
 MAKEFILE.dist := $(lastword $(MAKEFILE_LIST))
 
 ########################################################################
-# Chicken/egg situation: we need $(bin.version-info) to get the version
-# info for the archive name, but that binary may not yet be built, and
-# won't be built until we expand the dependencies. We have to use a
-# temporary name for the archive.
-dist-name = sqlite-wasm-TEMP
-#ifeq (0,1)
-#  $(info WARNING  *******************************************************************)
-#  $(info ** Be sure to create the desired build configuration before creating the)
-#  $(info ** distribution archive. Use one of the following targets to do so:)
-#  $(info **)
-#  $(info **   o2: builds with -O2, resulting in the fastest builds)
-#  $(info **   oz: builds with -Oz, resulting in the smallest builds)
-#  $(info /WARNING *******************************************************************)
-#endif
+# Chicken/egg situation: we need $(bin.version-info) to get the
+# version info for the archive name, but that binary may not yet be
+# built, and won't be built until we expand the dependencies. Thus we
+# have to use a temporary name for the archive until we can get
+# that binary built.
+ifeq (,$(filter snapshot,$(MAKECMDGOALS)))
+dist-name-prefix := sqlite-wasm
+else
+dist-name-prefix := sqlite-wasm-snapshot-$(shell /usr/bin/date +%Y%m%d)
+endif
+dist-name := $(dist-name-prefix)-TEMP
 
 ########################################################################
-# dist.build must be the name of a target which triggers the
-# build of the files to be packed into the dist archive.  The
-# intention is that it be one of (o0, o1, o2, o3, os, oz), each of
-# which uses like-named -Ox optimization level flags. The o2 target
-# provides the best overall runtime speeds. The oz target provides
-# slightly slower speeds (roughly 10%) with significantly smaller WASM
-# file sizes. Note that -O2 (the o2 target) results in faster binaries
-# than both -O3 and -Os (the o3 and os targets) in all tests run to
-# date.
+# dist.build must be the name of a target which triggers the build of
+# the files to be packed into the dist archive.  The intention is that
+# it be one of (o0, o1, o2, o3, os, oz), each of which uses like-named
+# -Ox optimization level flags. The o2 target provides the best
+# overall runtime speeds. The oz target provides slightly slower
+# speeds (roughly 10%) with significantly smaller WASM file
+# sizes. Note that -O2 (the o2 target) results in faster binaries than
+# both -O3 and -Os (the o3 and os targets) in all tests run to
+# date. Our general policy is that we want the smallest binaries for
+# dist zip files, so use the oz build unless there is a compelling
+# reason not to.
 dist.build ?= oz
 
 dist-dir.top := $(dist-name)
@@ -42,7 +45,8 @@ dist-dir.jswasm := $(dist-dir.top)/$(notdir $(dir.dout))
 dist-dir.common := $(dist-dir.top)/common
 dist.top.extras := \
     demo-123.html demo-123-worker.html demo-123.js \
-    tester1.html tester1-worker.html tester1.js \
+    tester1.html tester1-worker.html tester1-esm.html \
+    tester1.js tester1.mjs \
     demo-jsstorage.html demo-jsstorage.js \
     demo-worker1.html demo-worker1.js \
     demo-worker1-promiser.html demo-worker1-promiser.js
@@ -51,7 +55,7 @@ dist.common.extras := \
     $(wildcard $(dir.common)/*.css) \
     $(dir.common)/SqliteTestUtil.js
 
-.PHONY: dist
+.PHONY: dist snapshot
 ########################################################################
 # dist: create the end-user deliverable archive.
 #
@@ -78,10 +82,12 @@ dist: \
 	@cp -p $(dist.jswasm.extras) $(dist-dir.jswasm)
 	@$(bin.stripccomments) -k -k < $(sqlite3.js) \
 		> $(dist-dir.jswasm)/$(notdir $(sqlite3.js))
+	@$(bin.stripccomments) -k -k < $(sqlite3.mjs) \
+		> $(dist-dir.jswasm)/$(notdir $(sqlite3.mjs))
 	@cp -p $(dist.common.extras) $(dist-dir.common)
 	@set -e; \
 		vnum=$$($(bin.version-info) --download-version); \
-		vdir=sqlite-wasm-$$vnum; \
+		vdir=$(dist-name-prefix)-$$vnum; \
 		arczip=$$vdir.zip; \
 		echo "Making $$arczip ..."; \
 		rm -fr $$arczip $$vdir; \
@@ -91,7 +97,7 @@ dist: \
 		ls -la $$arczip; \
 		set +e; \
 		unzip -lv $$arczip || echo "Missing unzip app? Not fatal."
-
+snapshot: dist
 # We need a separate `clean` rule to account for weirdness in
 # a sub-make, where we get a copy of the $(dist-name) dir
 # copied into the new $(dist-name) dir.

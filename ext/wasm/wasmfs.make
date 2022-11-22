@@ -67,14 +67,17 @@ sqlite3-wasmfs.jsflags += $(sqlite3-wasmfs.fsflags)
 #   USE_PTHREADS + ALLOW_MEMORY_GROWTH may run non-wasm code slowly,
 #   see https://github.com/WebAssembly/design/issues/1271 [-Wpthreads-mem-growth]
 sqlite3-wasmfs.jsflags += -sWASM_BIGINT=$(emcc.WASM_BIGINT)
-$(eval $(call call-make-pre-js,sqlite3-wasmfs))
-sqlite3-wasmfs.jsflags += $(pre-post-common.flags) $(pre-post-sqlite3-wasmfs.flags)
+$(eval $(call call-make-pre-js,sqlite3-wasmfs,vanilla))
+sqlite3-wasmfs.jsflags += \
+  $(pre-post-common.flags.vanilla) \
+  $(pre-post-sqlite3-wasmfs.flags.vanilla)
 $(sqlite3-wasmfs.js): $(sqlite3-wasm.c) \
     $(EXPORTED_FUNCTIONS.api) $(MAKEFILE) $(MAKEFILE.wasmfs) \
-    $(pre-post-sqlite3-wasmfs.deps)
+    $(pre-post-sqlite3-wasmfs.deps.vanilla)
 	@echo "Building $@ ..."
 	$(emcc.bin) -o $@ $(emcc_opt_full) $(emcc.flags) \
       $(sqlite3-wasmfs.cflags) $(sqlite3-wasmfs.jsflags) \
+      $(pre-post-sqlite3-wasm.flags.vanilla) \
      $(sqlite3-wasm.c)
 	chmod -x $(sqlite3-wasmfs.wasm)
 	$(maybe-wasm-strip) $(sqlite3-wasmfs.wasm)
@@ -98,7 +101,7 @@ $(speedtest1-wasmfs.js): $(speedtest1.cses) $(sqlite3-wasmfs.js) \
   $(EXPORTED_FUNCTIONS.speedtest1)
 	@echo "Building $@ ..."
 	$(emcc.bin) \
-        $(speedtest1-wasmfs.eflags) $(speedtest1-common.eflags) \
+        $(speedtest1-wasmfs.eflags) $(speedtest1.eflags.common) \
         $(pre-post-speedtest1-wasmfs.flags) \
         $(speedtest1.cflags) \
         $(sqlite3-wasmfs.cflags) \

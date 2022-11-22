@@ -22,7 +22,8 @@
 **
 ** The conversions meet RFC 4648 requirements, provided that this
 ** C source specifies that line-feeds are included in the encoded
-** data to limit visible line lengths to 72 characters.
+** data to limit visible line lengths to 72 characters and to
+** terminate any encoded blob having non-zero length.
 **
 ** Length limitations are not imposed except that the runtime
 ** SQLite string or blob length limits are respected. Otherwise,
@@ -148,17 +149,20 @@ static ubyte* fromBase64( char *pIn, int ncIn, ubyte *pOut ){
     ncIn -= (pUse - pIn);
     pIn = pUse;
     nti = (ncIn>4)? 4 : ncIn;
+    ncIn -= nti;
     nbo = nboi[nti];
     if( nbo==0 ) break;
     for( nac=0; nac<4; ++nac ){
-      char c = (nac<=nti)? *pIn++ : PAD_CHAR;
+      char c = (nac<nti)? *pIn++ : b64Numerals[0];
       ubyte bdp = BX_DV_PROTO(c);
-      --ncIn;
       switch( bdp ){
-      case WS:
       case ND:
-        nti = 0;
-        break;
+        /*  Treat non-digits as pad, but they terminate decode too. */
+        ncIn = 0;
+        /* fall thru */
+      case WS:
+        /* Treat whitespace as pad */
+        /* fall thru */
       case PC:
         bdp = 0;
         --nbo;

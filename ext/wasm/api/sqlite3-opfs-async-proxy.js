@@ -53,7 +53,7 @@ const state = Object.create(null);
    2 = warnings and errors
    3 = debug, warnings, and errors
 */
-state.verbose = 2;
+state.verbose = 1;
 
 const loggers = {
   0:console.error.bind(console),
@@ -151,70 +151,6 @@ const getDirForFilename = async function f(absFilename, createDirs = false){
 };
 
 /**
-   An error class specifically for use with getSyncHandle(), the goal
-   of which is to eventually be able to distinguish unambiguously
-   between locking-related failures and other types, noting that we
-   cannot currently do so because createSyncAccessHandle() does not
-   define its exceptions in the required level of detail.
-*/
-class GetSyncHandleError extends Error {
-  constructor(errorObject, ...msg){
-    super();
-    this.error = errorObject;
-    this.message = [
-      ...msg, ': Original exception ['+errorObject.name+']:',
-      errorObject.message
-    ].join(' ');
-    this.name = 'GetSyncHandleError';
-  }
-};
-
-/**
-   Returns the sync access handle associated with the given file
-   handle object (which must be a valid handle object, as created by
-   xOpen()), lazily opening it if needed.
-
-   In order to help alleviate cross-tab contention for a dabase,
-   if an exception is thrown while acquiring the handle, this routine
-   will wait briefly and try again, up to 3 times. If acquisition
-   still fails at that point it will give up and propagate the
-   exception.
-*/
-const getSyncHandle = async (fh)=>{
-  if(!fh.syncHandle){
-    const t = performance.now();
-    log("Acquiring sync handle for",fh.filenameAbs);
-    const maxTries = 4, msBase = 300;
-    let i = 1, ms = msBase;
-    for(; true; ms = msBase * ++i){
-      try {
-        //if(i<3) toss("Just testing getSyncHandle() wait-and-retry.");
-        //TODO? A config option which tells it to throw here
-        //randomly every now and then, for testing purposes.
-        fh.syncHandle = await fh.fileHandle.createSyncAccessHandle();
-        break;
-      }catch(e){
-        if(i === maxTries){
-          throw new GetSyncHandleError(
-            e, "Error getting sync handle.",maxTries,
-            "attempts failed.",fh.filenameAbs
-          );
-        }
-        warn("Error getting sync handle. Waiting",ms,
-              "ms and trying again.",fh.filenameAbs,e);
-        Atomics.wait(state.sabOPView, state.opIds.retry, 0, ms);
-      }
-    }
-    log("Got sync handle for",fh.filenameAbs,'in',performance.now() - t,'ms');
-    if(!fh.xLock){
-      __autoLocks.add(fh.fid);
-      log("Auto-locked",fh.fid,fh.filenameAbs);
-    }
-  }
-  return fh.syncHandle;
-};
-
-/**
    If the given file-holding object has a sync handle attached to it,
    that handle is remove and asynchronously closed. Though it may
    sound sensible to continue work as soon as the close() returns
@@ -251,6 +187,98 @@ const closeSyncHandleNoThrow = async (fh)=>{
   catch(e){
     warn("closeSyncHandleNoThrow() ignoring:",e,fh);
   }
+};
+
+/* Release all auto-locks. */
+const closeAutoLocks = async ()=>{
+  if(__autoLocks.size){
+    /* Release all auto-locks. */
+    for(const fid of __autoLocks){
+      const fh = __openFiles[fid];
+      await closeSyncHandleNoThrow(fh);
+      log("Auto-unlocked",fid,fh.filenameAbs);
+    }
+  }
+};
+
+/**
+   An error class specifically for use with getSyncHandle(), the goal
+   of which is to eventually be able to distinguish unambiguously
+   between locking-related failures and other types, noting that we
+   cannot currently do so because createSyncAccessHandle() does not
+   define its exceptions in the required level of detail.
+*/
+class GetSyncHandleError extends Error {
+  constructor(errorObject, ...msg){
+    super();
+    this.error = errorObject;
+    this.message = [
+      ...msg, ': Original exception ['+errorObject.name+']:',
+      errorObject.message
+    ].join(' ');
+    this.name = 'GetSyncHandleError';
+  }
+};
+GetSyncHandleError.convertRc = (e,rc)=>{
+  if(0){
+    /* This approach makes the very wild assumption that such a
+       failure _is_ a locking error. In practice that appears to be
+       the most common error, by far, but we cannot unambiguously
+       distinguish that from other errors.
+
+       This approach is highly questionable.
+    */
+    return (e instanceof GetSyncHandleError)
+      ? state.sq3Codes.SQLITE_IOERR_LOCK
+      : rc;
+  }else{
+    return rc;
+  }
+}
+/**
+   Returns the sync access handle associated with the given file
+   handle object (which must be a valid handle object, as created by
+   xOpen()), lazily opening it if needed.
+
+   In order to help alleviate cross-tab contention for a dabase,
+   if an exception is thrown while acquiring the handle, this routine
+   will wait briefly and try again, up to 3 times. If acquisition
+   still fails at that point it will give up and propagate the
+   exception.
+*/
+const getSyncHandle = async (fh)=>{
+  if(!fh.syncHandle){
+    const t = performance.now();
+    log("Acquiring sync handle for",fh.filenameAbs);
+    const maxTries = 6, msBase = 300;
+    let i = 1, ms = msBase;
+    for(; true; ms = msBase * ++i){
+      try {
+        //if(i<3) toss("Just testing getSyncHandle() wait-and-retry.");
+        //TODO? A config option which tells it to throw here
+        //randomly every now and then, for testing purposes.
+        fh.syncHandle = await fh.fileHandle.createSyncAccessHandle();
+        break;
+      }catch(e){
+        if(i === maxTries){
+          throw new GetSyncHandleError(
+            e, "Error getting sync handle.",maxTries,
+            "attempts failed.",fh.filenameAbs
+          );
+        }
+        warn("Error getting sync handle. Waiting",ms,
+             "ms and trying again.",fh.filenameAbs,e);
+        await closeAutoLocks();
+        Atomics.wait(state.sabOPView, state.opIds.retry, 0, ms);
+      }
+    }
+    log("Got sync handle for",fh.filenameAbs,'in',performance.now() - t,'ms');
+    if(!fh.xLock){
+      __autoLocks.add(fh.fid);
+      log("Auto-locked",fh.fid,fh.filenameAbs);
+    }
+  }
+  return fh.syncHandle;
 };
 
 /**
@@ -446,12 +474,12 @@ const vfsAsyncImpls = {
     wTimeStart('xFileSize');
     try{
       affirmLocked('xFileSize',fh);
-      rc = await (await getSyncHandle(fh)).getSize();
-      state.s11n.serialize(Number(rc));
+      const sz = await (await getSyncHandle(fh)).getSize();
+      state.s11n.serialize(Number(sz));
       rc = 0;
     }catch(e){
       state.s11n.storeException(2,e);
-      rc = state.sq3Codes.SQLITE_IOERR;
+      rc = GetSyncHandleError.convertRc(e,state.sq3Codes.SQLITE_IOERR);
     }
     wTimeEnd();
     storeAndNotify('xFileSize', rc);
@@ -471,7 +499,7 @@ const vfsAsyncImpls = {
         __autoLocks.delete(fid);
       }catch(e){
         state.s11n.storeException(1,e);
-        rc = state.sq3Codes.SQLITE_IOERR_LOCK;
+        rc = GetSyncHandleError.convertRc(e,state.sq3Codes.SQLITE_IOERR_LOCK);
         fh.xLock = oldLockType;
       }
       wTimeEnd();
@@ -545,7 +573,7 @@ const vfsAsyncImpls = {
       if(undefined===nRead) wTimeEnd();
       error("xRead() failed",e,fh);
       state.s11n.storeException(1,e);
-      rc = state.sq3Codes.SQLITE_IOERR_READ;
+      rc = GetSyncHandleError.convertRc(e,state.sq3Codes.SQLITE_IOERR_READ);
     }
     storeAndNotify('xRead',rc);
     mTimeEnd();
@@ -579,7 +607,7 @@ const vfsAsyncImpls = {
     }catch(e){
       error("xTruncate():",e,fh);
       state.s11n.storeException(2,e);
-      rc = state.sq3Codes.SQLITE_IOERR_TRUNCATE;
+      rc = GetSyncHandleError.convertRc(e,state.sq3Codes.SQLITE_IOERR_TRUNCATE);
     }
     wTimeEnd();
     storeAndNotify('xTruncate',rc);
@@ -619,7 +647,7 @@ const vfsAsyncImpls = {
     }catch(e){
       error("xWrite():",e,fh);
       state.s11n.storeException(1,e);
-      rc = state.sq3Codes.SQLITE_IOERR_WRITE;
+      rc = GetSyncHandleError.convertRc(e,state.sq3Codes.SQLITE_IOERR_WRITE);
     }
     wTimeEnd();
     storeAndNotify('xWrite',rc);
@@ -746,22 +774,16 @@ const waitLoop = async function f(){
   /**
      waitTime is how long (ms) to wait for each Atomics.wait().
      We need to wake up periodically to give the thread a chance
-     to do other things.
+     to do other things. If this is too high (e.g. 500ms) then
+     even two workers/tabs can easily run into locking errors.
   */
-  const waitTime = 500;
+  const waitTime = 150;
   while(!flagAsyncShutdown){
     try {
       if('timed-out'===Atomics.wait(
         state.sabOPView, state.opIds.whichOp, 0, waitTime
       )){
-        if(__autoLocks.size){
-          /* Release all auto-locks. */
-          for(const fid of __autoLocks){
-            const fh = __openFiles[fid];
-            await closeSyncHandleNoThrow(fh);
-            log("Auto-unlocked",fid,fh.filenameAbs);
-          }
-        }
+        await closeAutoLocks();
         continue;
       }
       const opId = Atomics.load(state.sabOPView, state.opIds.whichOp);
@@ -791,7 +813,7 @@ navigator.storage.getDirectory().then(function(d){
           const opt = data.args;
           state.littleEndian = opt.littleEndian;
           state.asyncS11nExceptions = opt.asyncS11nExceptions;
-          state.verbose = opt.verbose ?? 2;
+          state.verbose = opt.verbose ?? 1;
           state.fileBufferSize = opt.fileBufferSize;
           state.sabS11nOffset = opt.sabS11nOffset;
           state.sabS11nSize = opt.sabS11nSize;

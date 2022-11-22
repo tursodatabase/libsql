@@ -56,6 +56,16 @@
               utility code.</li>
             <li><a href='tester1-worker.html'>tester1-worker</a>: same thing
               but running in a Worker.</li>
+            <li><a href='tester1-esm.html'>tester1-esm</a>: same as
+              <code>tester1</code> but loads sqlite3 in the main thread via
+              an ES6 module.
+            </li>
+            <li><a href='tester1-worker.html?esm'>tester1-worker?esm</a>:
+              same as <code>tester1-esm</code> but loads a Worker Module which
+              then loads the sqlite3 API via an ES6 module. Note that
+              not all browsers permit loading modules in Worker
+              threads.
+            </li>
           </ul>
         </li>
         <li>Higher-level apps and demos...

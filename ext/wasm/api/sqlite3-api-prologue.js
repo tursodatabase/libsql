@@ -897,6 +897,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
         the lines of sqlite3_prepare_v3(). The slightly problematic
         part is the final argument (text destructor). */
     ],
+    ["sqlite3_busy_timeout","int", "sqlite3*", "int"],
     ["sqlite3_close_v2", "int", "sqlite3*"],
     ["sqlite3_changes", "int", "sqlite3*"],
     ["sqlite3_clear_bindings","int", "sqlite3_stmt*"],
