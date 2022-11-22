@@ -1,0 +1,23 @@
+on:
+#  release:
+#    types: [created]
+  pull_request:
+    branches: [ "main" ]
+name: Handle Release
+jobs:
+  generate:
+    name: Create release-artifacts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v3
+      - name: Generate the artifacts
+        uses: skx/github-action-build@master
+      - name: Upload the artifacts
+        uses: skx/github-action-publish-binaries@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          # test only
+          releaseId: libsql-0.1.0
+          args: 'sqlite3.c sqlite3.h sqlite3 libsql sqlite3.o .libs/libsqlite3.a .libs/libsqlite3.so.0.8.6'
