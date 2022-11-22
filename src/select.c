@@ -6209,12 +6209,10 @@ void sqlite3SelectPrep(
 ** entries.
 */
 static void assignAggregateRegisters(Parse *pParse, AggInfo *pAggInfo){
-  int i, m;
   assert( pAggInfo!=0 );
-  m = pParse->nMem;
-  for(i=0; i<pAggInfo->nColumn; i++) pAggInfo->aCol[i].iMem = ++m;
-  for(i=0; i<pAggInfo->nFunc; i++) pAggInfo->aFunc[i].iMem = ++m;
-  pParse->nMem = m;
+  assert( pAggInfo->iFirstReg==0 );
+  pAggInfo->iFirstReg = pParse->nMem + 1;
+  pParse->nMem += pAggInfo->nColumn + pAggInfo->nFunc;
 }
 
 /*
@@ -6228,34 +6226,15 @@ static void assignAggregateRegisters(Parse *pParse, AggInfo *pAggInfo){
 static void resetAccumulator(Parse *pParse, AggInfo *pAggInfo){
   Vdbe *v = pParse->pVdbe;
   int i;
-  int iFirstReg;
   struct AggInfo_func *pFunc;
   int nReg = pAggInfo->nFunc + pAggInfo->nColumn;
   assert( pParse->db->pParse==pParse );
   assert( pParse->db->mallocFailed==0 || pParse->nErr!=0 );
   if( nReg==0 ) return;
+  assert( pAggInfo->iFirstReg>0 );
   if( pParse->nErr ) return;
-  if( pAggInfo->nColumn==0 ){
-    iFirstReg = pAggInfo->aFunc[0].iMem;
-  }else{
-    iFirstReg = pAggInfo->aCol[0].iMem;
-  }
-#ifdef SQLITE_DEBUG
-  /* Verify that all AggInfo register numbers have been assigned and that
-  ** they are all sequential. */
-  assert( iFirstReg>0 );
-  for(i=0; i<pAggInfo->nColumn; i++){
-    assert( pAggInfo->aCol[i].iMem>=iFirstReg );
-    assert( i==0 || pAggInfo->aCol[i].iMem==pAggInfo->aCol[i-1].iMem+1 );
-  }
-  for(i=0; i<pAggInfo->nFunc; i++){
-    assert( pAggInfo->aFunc[i].iMem>=iFirstReg );
-    assert( i>0 || pAggInfo->nColumn==0
-      || pAggInfo->aFunc[i].iMem==pAggInfo->aCol[pAggInfo->nColumn-1].iMem+1 );
-    assert( i==0 || pAggInfo->aFunc[i].iMem==pAggInfo->aFunc[i-1].iMem+1 );
-  }
-#endif
-  sqlite3VdbeAddOp3(v, OP_Null, 0, iFirstReg, iFirstReg+nReg-1);
+  sqlite3VdbeAddOp3(v, OP_Null, 0, pAggInfo->iFirstReg,
+                    pAggInfo->iFirstReg+nReg-1);
   for(pFunc=pAggInfo->aFunc, i=0; i<pAggInfo->nFunc; i++, pFunc++){
     if( pFunc->iDistinct>=0 ){
       Expr *pE = pFunc->pFExpr;
@@ -6287,7 +6266,8 @@ static void finalizeAggFunctions(Parse *pParse, AggInfo *pAggInfo){
     ExprList *pList;
     assert( ExprUseXList(pF->pFExpr) );
     pList = pF->pFExpr->x.pList;
-    sqlite3VdbeAddOp2(v, OP_AggFinal, pF->iMem, pList ? pList->nExpr : 0);
+    sqlite3VdbeAddOp2(v, OP_AggFinal, AggInfoFuncReg(pAggInfo,i),
+                      pList ? pList->nExpr : 0);
     sqlite3VdbeAppendP4(v, pF->pFunc, P4_FUNCDEF);
   }
 }
@@ -6375,7 +6355,7 @@ static void updateAccumulator(
       if( regHit==0 && pAggInfo->nAccumulator ) regHit = ++pParse->nMem;
       sqlite3VdbeAddOp4(v, OP_CollSeq, regHit, 0, 0, (char *)pColl, P4_COLLSEQ);
     }
-    sqlite3VdbeAddOp3(v, OP_AggStep, 0, regAgg, pF->iMem);
+    sqlite3VdbeAddOp3(v, OP_AggStep, 0, regAgg, AggInfoFuncReg(pAggInfo,i));
     sqlite3VdbeAppendP4(v, pF->pFunc, P4_FUNCDEF);
     sqlite3VdbeChangeP5(v, (u8)nArg);
     sqlite3ReleaseTempRange(pParse, regAgg, nArg);
@@ -6390,7 +6370,7 @@ static void updateAccumulator(
     addrHitTest = sqlite3VdbeAddOp1(v, OP_If, regHit); VdbeCoverage(v);
   }
   for(i=0, pC=pAggInfo->aCol; i<pAggInfo->nAccumulator; i++, pC++){
-    sqlite3ExprCode(pParse, pC->pCExpr, pC->iMem);
+    sqlite3ExprCode(pParse, pC->pCExpr, AggInfoColumnReg(pAggInfo,i));
   }
 
   pAggInfo->directMode = 0;
@@ -6662,13 +6642,13 @@ static void printAggInfo(AggInfo *pAggInfo){
        "agg-column[%d] pTab=%s iTable=%d iColumn=%d iMem=%d"
        " iSorterColumn=%d\n",
        ii, pCol->pTab ? pCol->pTab->zName : "NULL", 
-       pCol->iTable, pCol->iColumn, pCol->iMem,
+       pCol->iTable, pCol->iColumn, AggInfoColumnReg(pAggInfo,ii),
        pCol->iSorterColumn);
     sqlite3TreeViewExpr(0, pAggInfo->aCol[ii].pCExpr, 0);
   }
   for(ii=0; ii<pAggInfo->nFunc; ii++){
-    sqlite3DebugPrintf("agg-func[%d]: iMem=%d\n",
-        ii, pAggInfo->aFunc[ii].iMem);
+    sqlite3DebugPrintf("agg-func[%d]: iMem=\n",
+        ii, AggInfoFuncReg(pAggInfo,ii));
     sqlite3TreeViewExpr(0, pAggInfo->aFunc[ii].pFExpr, 0);
   }
 }
@@ -7795,8 +7775,7 @@ int sqlite3Select(
           sqlite3VdbeChangeP4(v, -1, (char *)pKeyInfo, P4_KEYINFO);
         }
         assignAggregateRegisters(pParse, pAggInfo);
-        assert( pAggInfo->aFunc[0].iMem>=0 );
-        sqlite3VdbeAddOp2(v, OP_Count, iCsr, pAggInfo->aFunc[0].iMem);
+        sqlite3VdbeAddOp2(v, OP_Count, iCsr, AggInfoFuncReg(pAggInfo,0));
         sqlite3VdbeAddOp1(v, OP_Close, iCsr);
         explainSimpleCount(pParse, pTab, pBest);
       }else{
