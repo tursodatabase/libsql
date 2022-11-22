@@ -2091,7 +2091,7 @@ void sqlite3GenerateColumnNames(
   if( pParse->colNamesSet ) return;
   /* Column names are determined by the left-most term of a compound select */
   while( pSelect->pPrior ) pSelect = pSelect->pPrior;
-  SELECTTRACE(1,pParse,pSelect,("generating column names\n"));
+  TREETRACE(0x80,pParse,pSelect,("generating column names\n"));
   pTabList = pSelect->pSrc;
   pEList = pSelect->pEList;
   assert( v!=0 );
@@ -2877,7 +2877,7 @@ static int multiSelect(
         pPrior->iLimit = p->iLimit;
         pPrior->iOffset = p->iOffset;
         pPrior->pLimit = p->pLimit;
-        SELECTTRACE(1, pParse, p, ("multiSelect UNION ALL left...\n"));
+        TREETRACE(0x200, pParse, p, ("multiSelect UNION ALL left...\n"));
         rc = sqlite3Select(pParse, pPrior, &dest);
         pPrior->pLimit = 0;
         if( rc ){
@@ -2895,7 +2895,7 @@ static int multiSelect(
           }
         }
         ExplainQueryPlan((pParse, 1, "UNION ALL"));
-        SELECTTRACE(1, pParse, p, ("multiSelect UNION ALL right...\n"));
+        TREETRACE(0x200, pParse, p, ("multiSelect UNION ALL right...\n"));
         rc = sqlite3Select(pParse, p, &dest);
         testcase( rc!=SQLITE_OK );
         pDelete = p->pPrior;
@@ -2948,7 +2948,7 @@ static int multiSelect(
         */
         assert( !pPrior->pOrderBy );
         sqlite3SelectDestInit(&uniondest, priorOp, unionTab);
-        SELECTTRACE(1, pParse, p, ("multiSelect EXCEPT/UNION left...\n"));
+        TREETRACE(0x200, pParse, p, ("multiSelect EXCEPT/UNION left...\n"));
         rc = sqlite3Select(pParse, pPrior, &uniondest);
         if( rc ){
           goto multi_select_end;
@@ -2968,7 +2968,7 @@ static int multiSelect(
         uniondest.eDest = op;
         ExplainQueryPlan((pParse, 1, "%s USING TEMP B-TREE",
                           sqlite3SelectOpName(p->op)));
-        SELECTTRACE(1, pParse, p, ("multiSelect EXCEPT/UNION right...\n"));
+        TREETRACE(0x200, pParse, p, ("multiSelect EXCEPT/UNION right...\n"));
         rc = sqlite3Select(pParse, p, &uniondest);
         testcase( rc!=SQLITE_OK );
         assert( p->pOrderBy==0 );
@@ -3029,7 +3029,7 @@ static int multiSelect(
         /* Code the SELECTs to our left into temporary table "tab1".
         */
         sqlite3SelectDestInit(&intersectdest, SRT_Union, tab1);
-        SELECTTRACE(1, pParse, p, ("multiSelect INTERSECT left...\n"));
+        TREETRACE(0x400, pParse, p, ("multiSelect INTERSECT left...\n"));
         rc = sqlite3Select(pParse, pPrior, &intersectdest);
         if( rc ){
           goto multi_select_end;
@@ -3046,7 +3046,7 @@ static int multiSelect(
         intersectdest.iSDParm = tab2;
         ExplainQueryPlan((pParse, 1, "%s USING TEMP B-TREE",
                           sqlite3SelectOpName(p->op)));
-        SELECTTRACE(1, pParse, p, ("multiSelect INTERSECT right...\n"));
+        TREETRACE(0x400, pParse, p, ("multiSelect INTERSECT right...\n"));
         rc = sqlite3Select(pParse, p, &intersectdest);
         testcase( rc!=SQLITE_OK );
         pDelete = p->pPrior;
@@ -4395,7 +4395,7 @@ static int flattenSubquery(
   }
 
   /***** If we reach this point, flattening is permitted. *****/
-  SELECTTRACE(1,pParse,p,("flatten %u.%p from term %d\n",
+  TREETRACE(0x4,pParse,p,("flatten %u.%p from term %d\n",
                    pSub->selId, pSub, iFrom));
 
   /* Authorize the subquery */
@@ -4474,7 +4474,7 @@ static int flattenSubquery(
       if( pPrior ) pPrior->pNext = pNew;
       pNew->pNext = p;
       p->pPrior = pNew;
-      SELECTTRACE(2,pParse,p,("compound-subquery flattener"
+      TREETRACE(0x4,pParse,p,("compound-subquery flattener"
                               " creates %u as peer\n",pNew->selId));
     }
     assert( pSubitem->pSelect==0 );
@@ -4654,8 +4654,8 @@ static int flattenSubquery(
   sqlite3SelectDelete(db, pSub1);
 
 #if TREETRACE_ENABLED
-  if( sqlite3TreeTrace & 0x100 ){
-    SELECTTRACE(0x100,pParse,p,("After flattening:\n"));
+  if( sqlite3TreeTrace & 0x4 ){
+    TREETRACE(0x4,pParse,p,("After flattening:\n"));
     sqlite3TreeViewSelect(0, p, 0);
   }
 #endif
@@ -6068,8 +6068,8 @@ static int selectExpander(Walker *pWalker, Select *p){
     }
   }
 #if TREETRACE_ENABLED
-  if( sqlite3TreeTrace & 0x100 ){
-    SELECTTRACE(0x100,pParse,p,("After result-set wildcard expansion:\n"));
+  if( sqlite3TreeTrace & 0x8 ){
+    TREETRACE(0x8,pParse,p,("After result-set wildcard expansion:\n"));
     sqlite3TreeViewSelect(0, p, 0);
   }
 #endif
@@ -6466,7 +6466,7 @@ static void havingToWhere(Parse *pParse, Select *p){
   sqlite3WalkExpr(&sWalker, p->pHaving);
 #if TREETRACE_ENABLED
   if( sWalker.eCode && (sqlite3TreeTrace & 0x100)!=0 ){
-    SELECTTRACE(0x100,pParse,p,("Move HAVING terms into WHERE:\n"));
+    TREETRACE(0x100,pParse,p,("Move HAVING terms into WHERE:\n"));
     sqlite3TreeViewSelect(0, p, 0);
   }
 #endif
@@ -6598,8 +6598,8 @@ static int countOfViewOptimization(Parse *pParse, Select *p){
   p->selFlags &= ~SF_Aggregate;
 
 #if TREETRACE_ENABLED
-  if( sqlite3TreeTrace & 0x400 ){
-    SELECTTRACE(0x400,pParse,p,("After count-of-view optimization:\n"));
+  if( sqlite3TreeTrace & 0x200 ){
+    TREETRACE(0x200,pParse,p,("After count-of-view optimization:\n"));
     sqlite3TreeViewSelect(0, p, 0);
   }
 #endif
@@ -6699,8 +6699,8 @@ int sqlite3Select(
   assert( db->mallocFailed==0 );
   if( sqlite3AuthCheck(pParse, SQLITE_SELECT, 0, 0, 0) ) return 1;
 #if TREETRACE_ENABLED
-  SELECTTRACE(1,pParse,p, ("begin processing:\n", pParse->addrExplain));
-  if( sqlite3TreeTrace & 0x10100 ){
+  TREETRACE(0x1,pParse,p, ("begin processing:\n", pParse->addrExplain));
+  if( sqlite3TreeTrace & 0x10000 ){
     if( (sqlite3TreeTrace & 0x10001)==0x10000 ){
       sqlite3TreeViewLine(0, "In sqlite3Select() at %s:%d",
                            __FILE__, __LINE__);
@@ -6720,8 +6720,8 @@ int sqlite3Select(
     /* All of these destinations are also able to ignore the ORDER BY clause */
     if( p->pOrderBy ){
 #if TREETRACE_ENABLED
-      SELECTTRACE(1,pParse,p, ("dropping superfluous ORDER BY:\n"));
-      if( sqlite3TreeTrace & 0x100 ){
+      TREETRACE(0x800,pParse,p, ("dropping superfluous ORDER BY:\n"));
+      if( sqlite3TreeTrace & 0x800 ){
         sqlite3TreeViewExprList(0, p->pOrderBy, 0, "ORDERBY");
       }
 #endif    
@@ -6741,8 +6741,8 @@ int sqlite3Select(
   assert( db->mallocFailed==0 );
   assert( p->pEList!=0 );
 #if TREETRACE_ENABLED
-  if( sqlite3TreeTrace & 0x104 ){
-    SELECTTRACE(0x104,pParse,p, ("after name resolution:\n"));
+  if( sqlite3TreeTrace & 0x10 ){
+    TREETRACE(0x10,pParse,p, ("after name resolution:\n"));
     sqlite3TreeViewSelect(0, p, 0);
   }
 #endif
@@ -6783,8 +6783,8 @@ int sqlite3Select(
     goto select_end;
   }
 #if TREETRACE_ENABLED
-  if( p->pWin && (sqlite3TreeTrace & 0x108)!=0 ){
-    SELECTTRACE(0x104,pParse,p, ("after window rewrite:\n"));
+  if( p->pWin && (sqlite3TreeTrace & 0x40)!=0 ){
+    TREETRACE(0x40,pParse,p, ("after window rewrite:\n"));
     sqlite3TreeViewSelect(0, p, 0);
   }
 #endif
@@ -6815,7 +6815,7 @@ int sqlite3Select(
      && sqlite3ExprImpliesNonNullRow(p->pWhere, pItem->iCursor)
      && OptimizationEnabled(db, SQLITE_SimplifyJoin)
     ){
-      SELECTTRACE(0x100,pParse,p,
+      TREETRACE(0x1000,pParse,p,
                 ("LEFT-JOIN simplifies to JOIN on term %d\n",i));
       pItem->fg.jointype &= ~(JT_LEFT|JT_OUTER);
       assert( pItem->iCursor>=0 );
@@ -6871,7 +6871,7 @@ int sqlite3Select(
      && (p->selFlags & SF_OrderByReqd)==0         /* Condition (3) and (4) */
      && OptimizationEnabled(db, SQLITE_OmitOrderBy)
     ){
-      SELECTTRACE(0x100,pParse,p,
+      TREETRACE(0x800,pParse,p,
                 ("omit superfluous ORDER BY on %r FROM-clause subquery\n",i+1));
       sqlite3ParserAddCleanup(pParse, 
          (void(*)(sqlite3*,void*))sqlite3ExprListDelete,
@@ -6926,8 +6926,8 @@ int sqlite3Select(
   if( p->pPrior ){
     rc = multiSelect(pParse, p, pDest);
 #if TREETRACE_ENABLED
-    SELECTTRACE(0x1,pParse,p,("end compound-select processing\n"));
-    if( (sqlite3TreeTrace & 0x2000)!=0 && ExplainQueryPlanParent(pParse)==0 ){
+    TREETRACE(0x400,pParse,p,("end compound-select processing\n"));
+    if( (sqlite3TreeTrace & 0x400)!=0 && ExplainQueryPlanParent(pParse)==0 ){
       sqlite3TreeViewSelect(0, p, 0);
     }
 #endif
@@ -6947,13 +6947,13 @@ int sqlite3Select(
    && propagateConstants(pParse, p)
   ){
 #if TREETRACE_ENABLED
-    if( sqlite3TreeTrace & 0x100 ){
-      SELECTTRACE(0x100,pParse,p,("After constant propagation:\n"));
+    if( sqlite3TreeTrace & 0x2000 ){
+      TREETRACE(0x2000,pParse,p,("After constant propagation:\n"));
       sqlite3TreeViewSelect(0, p, 0);
     }
 #endif
   }else{
-    SELECTTRACE(0x100,pParse,p,("Constant propagation not helpful\n"));
+    TREETRACE(0x2000,pParse,p,("Constant propagation not helpful\n"));
   }
 
 #ifdef SQLITE_COUNTOFVIEW_OPTIMIZATION
@@ -7026,15 +7026,15 @@ int sqlite3Select(
      && pushDownWhereTerms(pParse, pSub, p->pWhere, pItem)
     ){
 #if TREETRACE_ENABLED
-      if( sqlite3TreeTrace & 0x100 ){
-        SELECTTRACE(0x100,pParse,p,
+      if( sqlite3TreeTrace & 0x4000 ){
+        TREETRACE(0x4000,pParse,p,
             ("After WHERE-clause push-down into subquery %d:\n", pSub->selId));
         sqlite3TreeViewSelect(0, p, 0);
       }
 #endif
       assert( pItem->pSelect && (pItem->pSelect->selFlags & SF_PushDown)!=0 );
     }else{
-      SELECTTRACE(0x100,pParse,p,("Push-down not possible\n"));
+      TREETRACE(0x4000,pParse,p,("Push-down not possible\n"));
     }
 
     zSavedAuthContext = pParse->zAuthContext;
@@ -7149,8 +7149,8 @@ int sqlite3Select(
   sDistinct.isTnct = (p->selFlags & SF_Distinct)!=0;
 
 #if TREETRACE_ENABLED
-  if( sqlite3TreeTrace & 0x400 ){
-    SELECTTRACE(0x400,pParse,p,("After all FROM-clause analysis:\n"));
+  if( sqlite3TreeTrace & 0x8000 ){
+    TREETRACE(0x8000,pParse,p,("After all FROM-clause analysis:\n"));
     sqlite3TreeViewSelect(0, p, 0);
   }
 #endif
@@ -7186,8 +7186,8 @@ int sqlite3Select(
     sDistinct.isTnct = 2;
 
 #if TREETRACE_ENABLED
-    if( sqlite3TreeTrace & 0x400 ){
-      SELECTTRACE(0x400,pParse,p,("Transform DISTINCT into GROUP BY:\n"));
+    if( sqlite3TreeTrace & 0x20000 ){
+      TREETRACE(0x20000,pParse,p,("Transform DISTINCT into GROUP BY:\n"));
       sqlite3TreeViewSelect(0, p, 0);
     }
 #endif
@@ -7273,7 +7273,7 @@ int sqlite3Select(
 
 
     /* Begin the database scan. */
-    SELECTTRACE(1,pParse,p,("WhereBegin\n"));
+    TREETRACE(0x2,pParse,p,("WhereBegin\n"));
     pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, sSort.pOrderBy,
                                p->pEList, p, wctrlFlags, p->nSelectRow);
     if( pWInfo==0 ) goto select_end;
@@ -7290,7 +7290,7 @@ int sqlite3Select(
         sSort.pOrderBy = 0;
       }
     }
-    SELECTTRACE(1,pParse,p,("WhereBegin returns\n"));
+    TREETRACE(0x2,pParse,p,("WhereBegin returns\n"));
 
     /* If sorting index that was created by a prior OP_OpenEphemeral 
     ** instruction ended up not being needed, then change the OP_OpenEphemeral
@@ -7329,7 +7329,7 @@ int sqlite3Select(
 
       /* End the database scan loop.
       */
-      SELECTTRACE(1,pParse,p,("WhereEnd\n"));
+      TREETRACE(0x2,pParse,p,("WhereEnd\n"));
       sqlite3WhereEnd(pWInfo);
     }
   }else{
@@ -7450,8 +7450,8 @@ int sqlite3Select(
     }
     if( db->mallocFailed ) goto select_end;
 #if TREETRACE_ENABLED
-    if( sqlite3TreeTrace & 0x400 ){
-      SELECTTRACE(0x400,pParse,p,("After aggregate analysis %p:\n", pAggInfo));
+    if( sqlite3TreeTrace & 0x20 ){
+      TREETRACE(0x20,pParse,p,("After aggregate analysis %p:\n", pAggInfo));
       sqlite3TreeViewSelect(0, p, 0);
       if( minMaxFlag ){
         sqlite3DebugPrintf("MIN/MAX Optimization (0x%02x) adds:\n", minMaxFlag);
@@ -7526,7 +7526,7 @@ int sqlite3Select(
       ** in the right order to begin with.
       */
       sqlite3VdbeAddOp2(v, OP_Gosub, regReset, addrReset);
-      SELECTTRACE(1,pParse,p,("WhereBegin\n"));
+      TREETRACE(0x2,pParse,p,("WhereBegin\n"));
       pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, pGroupBy, pDistinct,
           p, (sDistinct.isTnct==2 ? WHERE_DISTINCTBY : WHERE_GROUPBY) 
           |  (orderByGrp ? WHERE_SORTBYGROUP : 0) | distFlag, 0
@@ -7537,7 +7537,7 @@ int sqlite3Select(
       }
       assignAggregateRegisters(pParse, pAggInfo);
       eDist = sqlite3WhereIsDistinct(pWInfo);
-      SELECTTRACE(1,pParse,p,("WhereBegin returns\n"));
+      TREETRACE(0x2,pParse,p,("WhereBegin returns\n"));
       if( sqlite3WhereIsOrdered(pWInfo)==pGroupBy->nExpr ){
         /* The optimizer is able to deliver rows in group by order so
         ** we do not have to sort.  The OP_OpenEphemeral table will be
@@ -7586,7 +7586,7 @@ int sqlite3Select(
         sqlite3VdbeAddOp2(v, OP_SorterInsert, pAggInfo->sortingIdx, regRecord);
         sqlite3ReleaseTempReg(pParse, regRecord);
         sqlite3ReleaseTempRange(pParse, regBase, nCol);
-        SELECTTRACE(1,pParse,p,("WhereEnd\n"));
+        TREETRACE(0x2,pParse,p,("WhereEnd\n"));
         sqlite3WhereEnd(pWInfo);
         pAggInfo->sortingIdxPTab = sortPTab = pParse->nTab++;
         sortOut = sqlite3GetTempReg(pParse);
@@ -7664,7 +7664,7 @@ int sqlite3Select(
         sqlite3VdbeAddOp2(v, OP_SorterNext, pAggInfo->sortingIdx,addrTopOfLoop);
         VdbeCoverage(v);
       }else{
-        SELECTTRACE(1,pParse,p,("WhereEnd\n"));
+        TREETRACE(0x2,pParse,p,("WhereEnd\n"));
         sqlite3WhereEnd(pWInfo);
         sqlite3VdbeChangeToNoop(v, addrSortingIdx);
       }
@@ -7828,13 +7828,13 @@ int sqlite3Select(
         assert( minMaxFlag==WHERE_ORDERBY_NORMAL || pMinMaxOrderBy!=0 );
         assert( pMinMaxOrderBy==0 || pMinMaxOrderBy->nExpr==1 );
 
-        SELECTTRACE(1,pParse,p,("WhereBegin\n"));
+        TREETRACE(0x2,pParse,p,("WhereBegin\n"));
         pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, pMinMaxOrderBy,
                                    pDistinct, p, minMaxFlag|distFlag, 0);
         if( pWInfo==0 ){
           goto select_end;
         }
-        SELECTTRACE(1,pParse,p,("WhereBegin returns\n"));
+        TREETRACE(0x2,pParse,p,("WhereBegin returns\n"));
         eDist = sqlite3WhereIsDistinct(pWInfo);
         updateAccumulator(pParse, regAcc, pAggInfo, eDist);
         if( eDist!=WHERE_DISTINCT_NOOP ){
@@ -7848,7 +7848,7 @@ int sqlite3Select(
         if( minMaxFlag ){
           sqlite3WhereMinMaxOptEarlyOut(v, pWInfo);
         }
-        SELECTTRACE(1,pParse,p,("WhereEnd\n"));
+        TREETRACE(0x2,pParse,p,("WhereEnd\n"));
         sqlite3WhereEnd(pWInfo);
         finalizeAggFunctions(pParse, pAggInfo);
       }
@@ -7909,8 +7909,8 @@ select_end:
 #endif
 
 #if TREETRACE_ENABLED
-  SELECTTRACE(0x1,pParse,p,("end processing\n"));
-  if( (sqlite3TreeTrace & 0x2000)!=0 && ExplainQueryPlanParent(pParse)==0 ){
+  TREETRACE(0x1,pParse,p,("end processing\n"));
+  if( (sqlite3TreeTrace & 0x40000)!=0 && ExplainQueryPlanParent(pParse)==0 ){
     sqlite3TreeViewSelect(0, p, 0);
   }
 #endif
