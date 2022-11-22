@@ -6205,6 +6205,21 @@ void sqlite3SelectPrep(
 }
 
 /*
+** Assign register numbers to all pAggInfo->aCol[] and pAggInfo->aFunc[]
+** entries.
+*/
+static void assignAggregateRegisters(Parse *pParse, AggInfo *pAggInfo){
+  int i, m;
+  assert( pAggInfo!=0 );
+  assert( pAggInfo->mnReg==0 );
+  m = pParse->nMem;
+  pAggInfo->mnReg = m+1;
+  for(i=0; i<pAggInfo->nColumn; i++) pAggInfo->aCol[i].iMem = ++m;
+  for(i=0; i<pAggInfo->nFunc; i++) pAggInfo->aFunc[i].iMem = ++m;
+  pParse->nMem = m;
+}
+
+/*
 ** Reset the aggregate accumulator.
 **
 ** The aggregate accumulator is a set of memory cells that hold
@@ -6219,6 +6234,7 @@ static void resetAccumulator(Parse *pParse, AggInfo *pAggInfo){
   int nReg = pAggInfo->nFunc + pAggInfo->nColumn;
   assert( pParse->db->pParse==pParse );
   assert( pParse->db->mallocFailed==0 || pParse->nErr!=0 );
+  assert( pAggInfo->mnReg>0 ); /* assignAggregateRegisters() has been run */
   if( nReg==0 ) return;
   if( pParse->nErr ) return;
 #ifdef SQLITE_DEBUG
@@ -7413,7 +7429,6 @@ int sqlite3Select(
     sNC.pSrcList = pTabList;
     sNC.uNC.pAggInfo = pAggInfo;
     VVA_ONLY( sNC.ncFlags = NC_UAggInfo; )
-    pAggInfo->mnReg = pParse->nMem+1;
     pAggInfo->nSortingColumn = pGroupBy ? pGroupBy->nExpr : 0;
     pAggInfo->pGroupBy = pGroupBy;
     sqlite3ExprAnalyzeAggList(&sNC, pEList);
@@ -7534,6 +7549,7 @@ int sqlite3Select(
         sqlite3ExprListDelete(db, pDistinct);
         goto select_end;
       }
+      assignAggregateRegisters(pParse, pAggInfo);
       eDist = sqlite3WhereIsDistinct(pWInfo);
       SELECTTRACE(1,pParse,p,("WhereBegin returns\n"));
       if( sqlite3WhereIsOrdered(pWInfo)==pGroupBy->nExpr ){
@@ -7772,6 +7788,8 @@ int sqlite3Select(
         if( pKeyInfo ){
           sqlite3VdbeChangeP4(v, -1, (char *)pKeyInfo, P4_KEYINFO);
         }
+        assignAggregateRegisters(pParse, pAggInfo);
+        assert( pAggInfo->aFunc[0].iMem>=0 );
         sqlite3VdbeAddOp2(v, OP_Count, iCsr, pAggInfo->aFunc[0].iMem);
         sqlite3VdbeAddOp1(v, OP_Close, iCsr);
         explainSimpleCount(pParse, pTab, pBest);
@@ -7808,6 +7826,7 @@ int sqlite3Select(
           pDistinct = pAggInfo->aFunc[0].pFExpr->x.pList;
           distFlag = pDistinct ? (WHERE_WANT_DISTINCT|WHERE_AGG_DISTINCT) : 0;
         }
+        assignAggregateRegisters(pParse, pAggInfo);
 
         /* This case runs if the aggregate has no GROUP BY clause.  The
         ** processing is much simpler since there is only a single row
