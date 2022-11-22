@@ -2719,7 +2719,6 @@ struct AggInfo {
   int sortingIdx;         /* Cursor number of the sorting index */
   int sortingIdxPTab;     /* Cursor number of pseudo-table */
   int nSortingColumn;     /* Number of columns in the sorting index */
-  int mnReg;              /* First in a range of regsiters for aCol and aFunc */
   ExprList *pGroupBy;     /* The group by clause */
   struct AggInfo_col {    /* For each column used in source tables */
     Table *pTab;             /* Source table */

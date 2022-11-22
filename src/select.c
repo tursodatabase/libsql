@@ -6211,9 +6211,7 @@ void sqlite3SelectPrep(
 static void assignAggregateRegisters(Parse *pParse, AggInfo *pAggInfo){
   int i, m;
   assert( pAggInfo!=0 );
-  assert( pAggInfo->mnReg==0 );
   m = pParse->nMem;
-  pAggInfo->mnReg = m+1;
   for(i=0; i<pAggInfo->nColumn; i++) pAggInfo->aCol[i].iMem = ++m;
   for(i=0; i<pAggInfo->nFunc; i++) pAggInfo->aFunc[i].iMem = ++m;
   pParse->nMem = m;
@@ -6230,26 +6228,34 @@ static void assignAggregateRegisters(Parse *pParse, AggInfo *pAggInfo){
 static void resetAccumulator(Parse *pParse, AggInfo *pAggInfo){
   Vdbe *v = pParse->pVdbe;
   int i;
+  int iFirstReg;
   struct AggInfo_func *pFunc;
   int nReg = pAggInfo->nFunc + pAggInfo->nColumn;
   assert( pParse->db->pParse==pParse );
   assert( pParse->db->mallocFailed==0 || pParse->nErr!=0 );
-  assert( pAggInfo->mnReg>0 ); /* assignAggregateRegisters() has been run */
   if( nReg==0 ) return;
   if( pParse->nErr ) return;
+  if( pAggInfo->nColumn==0 ){
+    iFirstReg = pAggInfo->aFunc[0].iMem;
+  }else{
+    iFirstReg = pAggInfo->aCol[0].iMem;
+  }
 #ifdef SQLITE_DEBUG
-  /* Verify that all AggInfo registers are within the range specified by
-  ** AggInfo.mnReg..(AggInfo.mnReg+nReg-1) */
+  /* Verify that all AggInfo register numbers have been assigned and that
+  ** they are all sequential. */
+  assert( iFirstReg>0 );
   for(i=0; i<pAggInfo->nColumn; i++){
-    assert( pAggInfo->aCol[i].iMem>=pAggInfo->mnReg
-         && pAggInfo->aCol[i].iMem<pAggInfo->mnReg+nReg );
+    assert( pAggInfo->aCol[i].iMem>=iFirstReg );
+    assert( i==0 || pAggInfo->aCol[i].iMem==pAggInfo->aCol[i-1].iMem+1 );
   }
   for(i=0; i<pAggInfo->nFunc; i++){
-    assert( pAggInfo->aFunc[i].iMem>=pAggInfo->mnReg
-         && pAggInfo->aFunc[i].iMem<pAggInfo->mnReg+nReg );
+    assert( pAggInfo->aFunc[i].iMem>=iFirstReg );
+    assert( i>0 || pAggInfo->nColumn==0
+      || pAggInfo->aFunc[i].iMem==pAggInfo->aCol[pAggInfo->nColumn-1].iMem+1 );
+    assert( i==0 || pAggInfo->aFunc[i].iMem==pAggInfo->aFunc[i-1].iMem+1 );
   }
 #endif
-  sqlite3VdbeAddOp3(v, OP_Null, 0, pAggInfo->mnReg, pAggInfo->mnReg+nReg-1);
+  sqlite3VdbeAddOp3(v, OP_Null, 0, iFirstReg, iFirstReg+nReg-1);
   for(pFunc=pAggInfo->aFunc, i=0; i<pAggInfo->nFunc; i++, pFunc++){
     if( pFunc->iDistinct>=0 ){
       Expr *pE = pFunc->pFExpr;
