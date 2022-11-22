@@ -23,8 +23,8 @@ Start a server with:
 cargo run -- serve
 ```
 
-and one or more SQL shells with:
+and connect to it with psql:
 
 ```console
-cargo run -- shell
+psql -h 127.0.0.1 -p 5000
 ```
