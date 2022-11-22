@@ -6640,10 +6640,11 @@ static void printAggInfo(AggInfo *pAggInfo){
     struct AggInfo_col *pCol = &pAggInfo->aCol[ii];
     sqlite3DebugPrintf(
        "agg-column[%d] pTab=%s iTable=%d iColumn=%d iMem=%d"
-       " iSorterColumn=%d\n",
+       " iSorterColumn=%d %s\n",
        ii, pCol->pTab ? pCol->pTab->zName : "NULL", 
        pCol->iTable, pCol->iColumn, AggInfoColumnReg(pAggInfo,ii),
-       pCol->iSorterColumn);
+       pCol->iSorterColumn, 
+       ii>=pAggInfo->nAccumulator ? "" : " Accumulator");
     sqlite3TreeViewExpr(0, pAggInfo->aCol[ii].pCExpr, 0);
   }
   for(ii=0; ii<pAggInfo->nFunc; ii++){
@@ -6667,12 +6668,13 @@ static int optimizeAggregateUsingIndexedExpr(
   AggInfo *pAggInfo       /* The aggregate info */
 ){
 #if TREETRACE_ENABLED
-  if( sqlite3TreeTrace & 0x100000 ){
+  if( sqlite3TreeTrace & 0x80000 ){
     IndexedExpr *pIEpr;
-    TREETRACE(0x1000000, pParse, pSelect,
+    TREETRACE(0x80000, pParse, pSelect,
         ("Attempting to optimize AggInfo for Indexed Exprs\n"));
     for(pIEpr=pParse->pIdxEpr; pIEpr; pIEpr=pIEpr->pIENext){
-      printf("cur=%d\n", pIEpr->iDataCur);
+      printf("data-cursor=%d index={%d,%d}\n",
+          pIEpr->iDataCur, pIEpr->iIdxCur, pIEpr->iIdxCol);
       sqlite3TreeViewExpr(0, pIEpr->pExpr, 0);
     }
     printAggInfo(pAggInfo);
