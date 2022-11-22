@@ -91,23 +91,51 @@ do_execsql_test 108 {
 } {1 1 1 2 1 1 3 1 1 4 1 1 5 1 1 150 1 1 151 1 1 152 1 1 153 1 1 1054 1 1}
 
 # Exercise the fail-on-too-large result feature.
-# ToDo: See if extension code for this can be eliminated.
 
 set inLimit [sqlite3_limit db SQLITE_LIMIT_LENGTH -1]
-sqlite3_limit db SQLITE_LIMIT_LENGTH 1060
+sqlite3_limit db SQLITE_LIMIT_LENGTH 1300
 
 do_catchsql_test 109 {
   SELECT len, base64(b) FROM rb WHERE len>200;
-} {1 {string or blob too big}}
+} {1 {blob expanded to base64 too big}}
 
 do_catchsql_test 110 {
   SELECT len, base85(b) FROM rb WHERE len>200;
-} {1 {string or blob too big}}
+} {1 {blob expanded to base85 too big}}
+
+do_catchsql_test 111 {
+  SELECT length(base85(b))=1335 FROM rb WHERE len=1054;
+} {1 {blob expanded to base85 too big}}
 
 sqlite3_limit db SQLITE_LIMIT_LENGTH $inLimit
 
-do_execsql_test 111 {
-  SELECT is_base85(base85(x'123456')), is_base85('~');
-} {1 0}
+# Exercise is_base85(t)
+
+do_execsql_test 112 {
+  SELECT is_base85(' '||base85(x'123456')||char(10)),
+  is_base85('#$%&*+,-./0123456789:;<=>?@'
+   ||'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+   ||'[\]^_`'
+   ||'abcdefghijklmnopqrstuvwxyz'),
+  is_base85('!'), is_base85('"'), is_base85(''''), is_base85('('),
+  is_base85(')'), is_base85(char(123)), is_base85('|'), is_base85(char(125)),
+  is_base85('~'), is_base85(char(127));
+} {1 1 0 0 0 0 0 0 0 0 0 0}
+
+do_execsql_test 113 {
+  SELECT is_base85(NULL) IS NULL;
+} {1}
+
+do_catchsql_test 114 {
+  SELECT is_base85(1);
+} {1 {is_base85 accepts only text or NULL}}
+
+do_catchsql_test 115 {
+  SELECT is_base85(1.1);
+} {1 {is_base85 accepts only text or NULL}}
+
+do_catchsql_test 116 {
+  SELECT is_base85(x'00');
+} {1 {is_base85 accepts only text or NULL}}
 
 finish_test

@@ -240,8 +240,8 @@ static void is_base85(sqlite3_context *context, int na, sqlite3_value *av[]){
     sqlite3_result_null(context);
     break;
   default:
-    sqlite3_result_error(context, "is_base85 accepts only text or NULL.", -1);
-    break;
+    sqlite3_result_error(context, "is_base85 accepts only text or NULL", -1);
+    return;
   }
 }
 # endif
@@ -260,7 +260,8 @@ static void base85(sqlite3_context *context, int na, sqlite3_value *av[]){
     /*    ulongs    tail   newlines  tailenc+nul*/
     nc = 5*(nv/4) + nv%4 + nv/64+1 + 2;
     if( nvMax < nc ){
-      sqlite3_result_error(context, "blob expanded to base85 too big.", -1);
+      sqlite3_result_error(context, "blob expanded to base85 too big", -1);
+      return;
     }
     cBuf = sqlite3_malloc(nc);
     if( !cBuf ) goto memFail;
@@ -272,7 +273,8 @@ static void base85(sqlite3_context *context, int na, sqlite3_value *av[]){
     nc = nv;
     nb = 4*(nv/5) + nv%5; /* may overestimate */
     if( nvMax < nb ){
-      sqlite3_result_error(context, "blob from base85 may be too big.", -1);
+      sqlite3_result_error(context, "blob from base85 may be too big", -1);
+      return;
     }else if( nb<1 ){
       nb = 1;
     }
@@ -284,7 +286,7 @@ static void base85(sqlite3_context *context, int na, sqlite3_value *av[]){
     break;
   default:
     sqlite3_result_error(context, "base85 accepts only blob or text.", -1);
-    break;
+    return;
   }
   return;
  memFail:

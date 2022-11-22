@@ -187,14 +187,15 @@ static void base64(sqlite3_context *context, int na, sqlite3_value *av[]){
                             SQLITE_LIMIT_LENGTH, -1);
   char *cBuf;
   ubyte *bBuf;
-  assert(na==1);
+  assert(na==1); 
   switch( sqlite3_value_type(av[0]) ){
   case SQLITE_BLOB:
     nb = nv;
     nc = 4*(nv+2/3); /* quads needed */
     nc += (nc+(B64_DARK_MAX-1))/B64_DARK_MAX + 1; /* LFs and a 0-terminator */
     if( nvMax < nc ){
-      sqlite3_result_error(context, "blob expanded to base64 too big.", -1);
+      sqlite3_result_error(context, "blob expanded to base64 too big", -1);
+      return;
     }
     cBuf = sqlite3_malloc(nc);
     if( !cBuf ) goto memFail;
@@ -206,7 +207,8 @@ static void base64(sqlite3_context *context, int na, sqlite3_value *av[]){
     nc = nv;
     nb = 3*((nv+3)/4); /* may overestimate due to LF and padding */
     if( nvMax < nb ){
-      sqlite3_result_error(context, "blob from base64 may be too big.", -1);
+      sqlite3_result_error(context, "blob from base64 may be too big", -1);
+      return;
     }else if( nb<1 ){
       nb = 1;
     }
@@ -217,8 +219,8 @@ static void base64(sqlite3_context *context, int na, sqlite3_value *av[]){
     sqlite3_result_blob(context, bBuf, nb, sqlite3_free);
     break;
   default:
-    sqlite3_result_error(context, "base64 accepts only blob or text.", -1);
-    break;
+    sqlite3_result_error(context, "base64 accepts only blob or text", -1);
+    return;
   }
   return;
  memFail:
