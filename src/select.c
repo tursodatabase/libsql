@@ -6655,6 +6655,34 @@ static void printAggInfo(AggInfo *pAggInfo){
 #endif /* TREETRACE_ENABLED */
 
 /*
+** An index on expressions is being used in the inner loop of an
+** aggregate query with a GROUP BY clause.  This routine attempts
+** to adjust the AggInfo object to take advantage of index and to
+** perhaps use the index as a covering index.
+**
+*/
+static int optimizeAggregateUsingIndexedExpr(
+  Parse *pParse,          /* Parsing context */
+  Select *pSelect,        /* The SELECT being coded */
+  AggInfo *pAggInfo       /* The aggregate info */
+){
+#if TREETRACE_ENABLED
+  if( sqlite3TreeTrace & 0x100000 ){
+    IndexedExpr *pIEpr;
+    TREETRACE(0x1000000, pParse, pSelect,
+        ("Attempting to optimize AggInfo for Indexed Exprs\n"));
+    for(pIEpr=pParse->pIdxEpr; pIEpr; pIEpr=pIEpr->pIENext){
+      printf("cur=%d\n", pIEpr->iDataCur);
+      sqlite3TreeViewExpr(0, pIEpr->pExpr, 0);
+    }
+    printAggInfo(pAggInfo);
+  }
+#endif
+  return 0;
+}
+
+
+/*
 ** Generate code for the SELECT statement given in the p argument.  
 **
 ** The results are returned according to the SelectDest structure.
@@ -7534,6 +7562,9 @@ int sqlite3Select(
       if( pWInfo==0 ){
         sqlite3ExprListDelete(db, pDistinct);
         goto select_end;
+      }
+      if( pParse->pIdxEpr ){
+        optimizeAggregateUsingIndexedExpr(pParse, p, pAggInfo);
       }
       assignAggregateRegisters(pParse, pAggInfo);
       eDist = sqlite3WhereIsDistinct(pWInfo);
