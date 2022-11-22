@@ -1,5 +1,5 @@
-C Include\sthe\streetrace\sbitmap\scomment\saccidentally\somitted\sfrom\sthe\sprevious\ncheck-in.
-D 2022-11-22T19:56:54.514
+C Avoid\snaming\scollision\sbetween\sthe\ssha1\sand\sshathree\sextensions.
+D 2022-11-22T20:04:00.704
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -322,7 +322,7 @@ F ext/misc/rot13.c 51ac5f51e9d5fd811db58a9c23c628ad5f333c173f1fc53c8491a3603d385
 F ext/misc/scrub.c 2a44b0d44c69584c0580ad2553f6290a307a49df4668941d2812135bfb96a946
 F ext/misc/series.c 8d79354f2c3d46b95ee21272a07cf0bcabb58d1f2b06d9e7b8a31dca1dacb3e5
 F ext/misc/sha1.c 4011aef176616872b2a0d5bccf0ecfb1f7ce3fe5c3d107f3a8e949d8e1e3f08d
-F ext/misc/shathree.c 7b17615869a495659f1569ada1d8d3d21b4a24614f2746d93cc87ef7c0b6b36d
+F ext/misc/shathree.c 9b7af7b7d55b27c5bbd16548b67fe6aa47a819e71bc6a80a456144f86f4e834d
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
 F ext/misc/spellfix.c 94df9bbfa514a563c1484f684a2df3d128a2f7209a84ca3ca100c68a0163e29f
 F ext/misc/sqlar.c 0ace5d3c10fe736dc584bf1159a36b8e2e60fab309d310cd8a0eecd9036621b6
@@ -2059,8 +2059,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8036445a36d9d982c1305935e7e37367bdf9e466b923eb6286b52524802e3ccd
-R cda0c33c9442df99ec4e280c19853a61
-U drh
-Z 4e00dfd5e0c8561123895f1dda8a08f5
+P db07471c531766a8eec1d5b41c9fd0283b5e64ee13166dc3391f70a1e1946121
+R 028f4214066f285c3501b4fa202e9f4b
+U mistachkin
+Z 9f8febbd78f0b476308550c8b424fd90
 # Remove this line to create a well-formed Fossil manifest.
