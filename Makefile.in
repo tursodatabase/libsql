@@ -778,6 +778,15 @@ sqlite3.c:	.target_source $(TOP)/tool/mksqlite3c.tcl
 	cp tsrc/sqlite3ext.h .
 	cp $(TOP)/ext/session/sqlite3session.h .
 
+sqlite3r.h: sqlite3.h
+	$(TCLSH_CMD) $(TOP)/tool/mksqlite3h.tcl $(TOP) --enable-recover >sqlite3r.h
+
+sqlite3r.c: sqlite3.c sqlite3r.h
+	cp $(TOP)/ext/recover/sqlite3recover.c tsrc/
+	cp $(TOP)/ext/recover/sqlite3recover.h tsrc/
+	cp $(TOP)/ext/recover/dbdata.c tsrc/
+	$(TCLSH_CMD) $(TOP)/tool/mksqlite3c.tcl --enable-recover $(AMALGAMATION_LINE_MACROS)
+
 sqlite3ext.h:	.target_source
 	cp tsrc/sqlite3ext.h .
 
