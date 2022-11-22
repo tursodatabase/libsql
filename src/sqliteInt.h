@@ -1038,6 +1038,29 @@ extern u32 sqlite3TreeTrace;
 # define TREETRACE_ENABLED 0
 #endif
 
+/* TREETRACE flag meanings:
+**
+**   0x00000001     Beginning and end of SELECT processing
+**   0x00000002     WHERE clause processing
+**   0x00000004     Query flattener
+**   0x00000008     Result-set wildcard expansion
+**   0x00000010     Query name resolution
+**   0x00000020     Aggregate analysis
+**   0x00000040     Window functions
+**   0x00000080     Generated column names
+**   0x00000100     Move HAVING terms into WHERE
+**   0x00000200     Count-of-view optimization
+**   0x00000400     Compound SELECT processing
+**   0x00000800     Drop superfluous ORDER BY
+**   0x00001000     LEFT JOIN simplifies to JOIN
+**   0x00002000     Constant propagation
+**   0x00004000     Push-down optimization
+**   0x00008000     After all FROM-clause analysis
+**   0x00010000     Beginning of DELETE/INSERT/UPDATE processing
+**   0x00020000     Transform DISTINCT into GROUP BY
+**   0x00040000     SELECT tree dump after all code has been generated
+*/
+
 /*
 ** Macros for "wheretrace"
 */
