@@ -11,7 +11,6 @@ mod messages;
 mod net;
 mod scheduler;
 mod server;
-pub mod shell;
 mod statements;
 mod worker_pool;
 

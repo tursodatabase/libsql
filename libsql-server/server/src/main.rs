@@ -21,11 +21,6 @@ enum Commands {
         #[clap(long, short, default_value = "127.0.0.1:5000")]
         serve_addr: SocketAddr,
     },
-    /// Start a ChiselEdge shell.
-    Shell {
-        #[clap(long, short, default_value = "127.0.0.1:5000")]
-        addr: SocketAddr,
-    },
 }
 
 #[tokio::main]
@@ -38,9 +33,6 @@ async fn main() -> Result<()> {
             serve_addr,
         } => {
             server::run_server(&db_path, serve_addr).await?;
-        }
-        Commands::Shell { addr } => {
-            server::shell::start(addr).await?;
         }
     }
 
