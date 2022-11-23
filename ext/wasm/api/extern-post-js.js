@@ -59,9 +59,6 @@ const toExportForES6 =
     li.pop();
     initModuleState.sqlite3Dir = li.join('/') + '/';
   }
-  if(initModuleState.sqlite3Dir){
-    initModuleState.sqlite3Dir = initModuleState.sqlite3Dir.replace(/[/]{2,}/g,'/');
-  }
 
   self.sqlite3InitModule = (...args)=>{
     //console.warn("Using replaced sqlite3InitModule()",self.location);

@@ -1,5 +1,5 @@
-C OPFS\sconcurrency\stester:\sensure\sthat\sthe\swork\sinterval\stimer\sdoes\snot\soverlap\swith\sthe\swork\stime.
-D 2022-11-23T15:33:49.725
+C Remove\sa\sbit\sof\sover-cleverness\swhich\sbreaks\sloading\sof\ssqlite3.js\sin\ssome\smain-thread\scases.
+D 2022-11-23T15:52:52.817
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -494,7 +494,7 @@ F ext/wasm/README.md ef39861aa21632fdbca0bdd469f78f0096f6449a720f3f39642594af503
 F ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-api b4d68c97d14944b48d55e06aa44f544a6f56a7fa2bcb6f9e030936a5b2a9479a
 F ext/wasm/api/EXPORTED_RUNTIME_METHODS.sqlite3-api 1ec3c73e7d66e95529c3c64ac3de2470b0e9e7fbf7a5b41261c367cf4f1b7287
 F ext/wasm/api/README.md 29276a845e57004e82efba61fa5866fd05f9137380a1dc26dc4c6d65264cd81c
-F ext/wasm/api/extern-post-js.js 31400dd1c0ae3458a0e6510229e59318e45eac402a75dd703c2950b9b5758b46
+F ext/wasm/api/extern-post-js.js 59e52f579cd3a332d73dae94c91b9579daafb10dd6ada03803f1afa6bdad7689
 F ext/wasm/api/extern-pre-js.js cc61c09c7a24a07dbecb4c352453c3985170cec12b4e7e7e7a4d11d43c5c8f41
 F ext/wasm/api/post-js-footer.js cd0a8ec768501d9bd45d325ab0442037fb0e33d1f3b4f08902f15c34720ee4a1
 F ext/wasm/api/post-js-header.js d6ab3dfef4a06960d28a7eaa338d4e2a1a5981e9b38718168bbde8fdb2a439b8
@@ -2059,8 +2059,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9ec923b5dc24d6082da8d42bc0ee8ab1c418912625c0c56de9627be2c818ef98
-R f934382a93ebec7212ddc22bd89cd134
+P 8f2076553bc486ea6a17934695ecc02217461af2082d891697b62aab89bd1b43
+R 48a8d083139c4365079fe8210cacb510
 U stephan
-Z 5fd98b4beaa4b9278c801856cb1d0dd1
+Z c7336980b293a293ed2df30baba9b924
 # Remove this line to create a well-formed Fossil manifest.
