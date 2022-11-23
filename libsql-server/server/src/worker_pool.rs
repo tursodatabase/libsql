@@ -9,7 +9,7 @@ use rayon::{ThreadPool, ThreadPoolBuilder};
 use tokio::sync::oneshot;
 
 use crate::job::Job;
-use crate::messages::{ErrorCode, Message};
+use crate::query::{ErrorCode, QueryError, QueryResponse, QueryResult};
 use crate::scheduler::UpdateStateMessage;
 use crate::statements::{State, Statements};
 
@@ -72,7 +72,7 @@ struct Worker {
 }
 
 impl Worker {
-    fn perform_oneshot(&self, stmts: &Statements) -> Message {
+    fn perform_oneshot(&self, stmts: &Statements) -> QueryResult {
         let mut rows = vec![];
         let result = self.db_conn.iterate(&stmts.stmts, |pairs| {
             for &(name, value) in pairs.iter() {
@@ -82,8 +82,8 @@ impl Worker {
         });
 
         match result {
-            Ok(_) => Message::ResultSet(rows),
-            Err(err) => Message::Error(ErrorCode::SQLError, format!("{:?}", err)),
+            Ok(_) => Ok(QueryResponse::ResultSet(rows)),
+            Err(err) => Err(QueryError::new(ErrorCode::SQLError, err)),
         }
     }
 
@@ -96,11 +96,12 @@ impl Worker {
 
         let txn_timeout = Instant::now() + Duration::from_secs(TXN_TIMEOUT_SECS as _);
 
+        let mut responder = job.responder;
         loop {
             let message = self.perform_oneshot(&stmts);
             let is_err = message.is_err();
 
-            job.responder.respond(message);
+            let _ = responder.send(message);
 
             match stmts.state(State::TxnOpened) {
                 State::TxnClosed if !is_err => {
@@ -118,14 +119,15 @@ impl Worker {
                     match receiver.recv_timeout(txn_timeout - Instant::now()) {
                         Ok(job) => {
                             stmts = job.statements;
+                            responder = job.responder;
                         }
                         Err(_) => {
                             log::warn!("rolling back transaction!");
                             let _ = self.db_conn.execute("ROLLBACK TRANSACTION;");
-                            job.responder.respond(Message::Error(
-                                ErrorCode::TxTimeout,
-                                "transaction timed out".into(),
-                            ));
+                            // FIXME: potential data race with Ready issued before.
+                            job.scheduler_sender
+                                .send(UpdateStateMessage::TxnTimeout(job.client_id))
+                                .unwrap();
                             break;
                         }
                     }
@@ -145,7 +147,7 @@ impl Worker {
                 // Any other state falls in this branch, even invalid: we let sqlite deal with the
                 // error handling.
                 let m = self.perform_oneshot(&job.statements);
-                job.responder.respond(m);
+                let _ = job.responder.send(m);
                 job.scheduler_sender
                     .send(UpdateStateMessage::Ready(job.client_id))
                     .unwrap();

@@ -1,77 +1,139 @@
+use std::future::poll_fn;
+use std::io;
+use std::net::SocketAddr;
+use std::pin::Pin;
+use std::task::{ready, Context, Poll};
+
 use anyhow::Result;
-use futures::stream::FuturesUnordered;
-use futures::StreamExt;
-use tokio::net::ToSocketAddrs;
-use tokio::sync::mpsc;
+use futures::Future;
+use futures::{stream::FuturesOrdered, StreamExt};
+use tokio::io::{AsyncRead, AsyncWrite, ReadBuf};
+use tokio::net::{TcpListener, TcpStream, ToSocketAddrs};
+use tower::Service;
 
-use crate::messages::{Message, Responder};
-use crate::net::NetworkManager;
-use crate::scheduler::{Action, ServerMessage};
-use crate::statements::Statements;
-
-/// Do Responder that does nothing
-struct SinkResponder;
-
-impl Responder for SinkResponder {
-    fn respond(&self, _: Message) {}
+pub struct Server {
+    listener: TcpListener,
 }
 
-#[derive(Clone)]
-struct AsyncServerResponder(mpsc::UnboundedSender<Message>);
+impl Server {
+    pub async fn bind(addr: impl ToSocketAddrs) -> Result<Self> {
+        let listener = TcpListener::bind(addr).await?;
+        Ok(Self { listener })
+    }
 
-impl Responder for AsyncServerResponder {
-    fn respond(&self, message: Message) {
-        let _ = self.0.send(message);
+    pub async fn serve<S>(self, mut make_svc: S)
+    where
+        S: Service<(NetStream, SocketAddr)>,
+    {
+        let mut connections = FuturesOrdered::new();
+        loop {
+            tokio::select! {
+                conn = self.listener.accept() => {
+                    match conn {
+                        Ok((stream, addr)) => {
+                            if poll_fn(|c| make_svc.poll_ready(c)).await.is_err() {
+                                eprintln!("there was an error!");
+                                break
+                            }
+                            log::info!("new connection: {addr}");
+                            let fut = make_svc.call((NetStream::Tcp { stream } , addr));
+                            connections.push_back(fut);
+                        }
+                        Err(_) => break,
+                    }
+                }
+                _dis = connections.next() => { }
+            }
+        }
     }
 }
 
-pub async fn start(
-    listen_addr: impl ToSocketAddrs,
-    scheduler_sender: mpsc::UnboundedSender<ServerMessage>,
-) -> Result<()> {
-    let mut handles = FuturesUnordered::new();
+pin_project_lite::pin_project! {
+    /// Represents all the types of stream that the server can handle.
+    ///
+    /// This type implements AsyncRead and AsyncWrite, and is an abstraction over a Tcp-like network stream, like websocket or tls.
+    #[project = NetStreamProj]
+    pub enum NetStream {
+        Tcp {
+            #[pin]
+            stream: TcpStream,
+        },
+    }
+}
 
-    let mut listener = NetworkManager::listen(listen_addr).await?;
-    let mut next_client_id = 0usize;
+impl AsyncRead for NetStream {
+    fn poll_read(
+        self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        buf: &mut tokio::io::ReadBuf<'_>,
+    ) -> Poll<std::io::Result<()>> {
+        match self.project() {
+            NetStreamProj::Tcp { stream } => stream.poll_read(cx, buf),
+        }
+    }
+}
 
-    loop {
-        tokio::select! {
-            Some(Ok(conn)) = listener.next() => {
-                let client_id = next_client_id;
-                next_client_id += 1;
-                let scheduler_sender_clone = scheduler_sender.clone();
-                let on_message = Box::new(move |msg, sender| {
-                    match msg {
-                        Message::Execute(stmts) => {
-                            let message = ServerMessage {
-                                client_id,
-                                responder: Box::new(AsyncServerResponder(sender)),
-                                action: Action::Execute(Statements::parse(stmts).unwrap()),
-                            };
-
-                            scheduler_sender_clone.send(message)?;
-                        }
-                        Message::ResultSet(_) => (),
-                        Message::Error(_, _) => (),
-                    }
-
-                    Ok(())
-                });
-                let scheduler_sender_clone = scheduler_sender.clone();
-                let on_disconnect = Box::new(move || {
-                    let _ = scheduler_sender_clone.send(ServerMessage {
-                        client_id,
-                        action: Action::Disconnect,
-                        // there isn't much to respond to anyways...
-                        responder: Box::new(SinkResponder),
-                    });
-                });
-                handles.push(conn.run(on_message, on_disconnect));
-            }
-            _ = &mut handles.next() => (),
-            else => break,
+impl AsyncWrite for NetStream {
+    fn poll_write(
+        self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        buf: &[u8],
+    ) -> Poll<Result<usize, std::io::Error>> {
+        match self.project() {
+            NetStreamProj::Tcp { stream } => stream.poll_write(cx, buf),
         }
     }
 
-    Ok(())
+    fn poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), std::io::Error>> {
+        match self.project() {
+            NetStreamProj::Tcp { stream } => stream.poll_flush(cx),
+        }
+    }
+
+    fn poll_shutdown(
+        self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+    ) -> Poll<Result<(), std::io::Error>> {
+        match self.project() {
+            NetStreamProj::Tcp { stream } => stream.poll_shutdown(cx),
+        }
+    }
+}
+
+pin_project_lite::pin_project! {
+    pub struct Peek<'a, T: ?Sized> {
+        buf: &'a mut [u8],
+        #[pin]
+        peek: &'a T,
+    }
+}
+
+impl<'a, T> Future for Peek<'a, T>
+where
+    T: AsyncPeekable + Unpin + ?Sized,
+{
+    type Output = io::Result<usize>;
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        let this = self.project();
+        let mut buf = ReadBuf::new(this.buf);
+        let out = ready!(this.peek.poll_peek(cx, &mut buf));
+        Poll::Ready(out)
+    }
+}
+
+pub trait AsyncPeekable {
+    fn poll_peek(&self, cx: &mut Context<'_>, buf: &mut ReadBuf<'_>) -> Poll<io::Result<usize>>;
+
+    fn peek<'a>(&'a self, buf: &'a mut [u8]) -> Peek<'a, Self> {
+        Peek { buf, peek: self }
+    }
+}
+
+impl AsyncPeekable for NetStream {
+    fn poll_peek(&self, cx: &mut Context<'_>, buf: &mut ReadBuf<'_>) -> Poll<io::Result<usize>> {
+        match self {
+            NetStream::Tcp { stream } => stream.poll_peek(cx, buf),
+        }
+    }
 }
