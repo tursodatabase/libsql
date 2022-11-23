@@ -916,25 +916,27 @@ int sqlite3_wasm_db_export_chunked( sqlite3* pDb,
 }
 
 /*
-** A proxy for sqlite3_serialize() which serializes the "main" schema
+** A proxy for sqlite3_serialize() which serializes the schema zSchema
 ** of pDb, placing the serialized output in pOut and nOut. nOut may be
-** NULL. If pDb or pOut are NULL then SQLITE_MISUSE is returned. If
-** allocation of the serialized copy fails, SQLITE_NOMEM is returned.
-** On success, 0 is returned and `*pOut` will contain a pointer to the
-** memory unless mFlags includes SQLITE_SERIALIZE_NOCOPY and the
-** database has no contiguous memory representation, in which case
-** `*pOut` will be NULL but 0 will be returned.
+** NULL. If zSchema is NULL then "main" is assumed. If pDb or pOut are
+** NULL then SQLITE_MISUSE is returned. If allocation of the
+** serialized copy fails, SQLITE_NOMEM is returned.  On success, 0 is
+** returned and `*pOut` will contain a pointer to the memory unless
+** mFlags includes SQLITE_SERIALIZE_NOCOPY and the database has no
+** contiguous memory representation, in which case `*pOut` will be
+** NULL but 0 will be returned.
 **
 ** If `*pOut` is not NULL, the caller is responsible for passing it to
 ** sqlite3_free() to free it.
 */
 SQLITE_WASM_KEEP
-int sqlite3_wasm_db_serialize( sqlite3 *pDb, unsigned char **pOut,
+int sqlite3_wasm_db_serialize( sqlite3 *pDb, const char *zSchema,
+                               unsigned char **pOut,
                                sqlite3_int64 *nOut, unsigned int mFlags ){
   unsigned char * z;
   if( !pDb || !pOut ) return SQLITE_MISUSE;
   if(nOut) *nOut = 0;
-  z = sqlite3_serialize(pDb, "main", nOut, mFlags);
+  z = sqlite3_serialize(pDb, zSchema ? zSchema : "main", nOut, mFlags);
   if( z || (SQLITE_SERIALIZE_NOCOPY & mFlags) ){
     *pOut = z;
     return 0;

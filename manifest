@@ -1,5 +1,5 @@
-C Update\sMakefile.in\sto\sinclude\snew\starget\s"sqlite3r.c".\sFor\sgenerating\s"sqlite3r.c"\sand\s"sqlite3r.h",\sversions\sof\sthe\samalgamation\sthat\sinclude\sthe\srecover\sextension.\sTo\sbuild\sthe\sshell\stool\sagainst\sthese\sfiles,\sadd\s-DSQLITE_HAVE_SQLITE3R.
-D 2022-11-23T16:08:49.765
+C Add\soptional\szSchema\sargument\sto\ssqlite3_js_db_export().
+D 2022-11-23T21:03:22.603
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -503,12 +503,12 @@ F ext/wasm/api/sqlite3-api-cleanup.js ecdc69dbfccfe26146f04799fcfd4a6f5790d46e7e
 F ext/wasm/api/sqlite3-api-glue.js 056f44b82c126358a0175e08a892d56fadfce177b0d7a0012502a6acf67ea6d5
 F ext/wasm/api/sqlite3-api-oo1.js e9a83489bbb4838ce0aee46eaaa9350e0e25a5b926b565e4f5ae8e840e4fbaed
 F ext/wasm/api/sqlite3-api-opfs.js 38d368e33f470f9ba196f1a2b0c9ce076c930c70df233c345a246f1ad4c26d3b
-F ext/wasm/api/sqlite3-api-prologue.js 08e96d26d329e8c1e08813fe0b84ee93e0e78b087efdd6eb2809ae2672902437
+F ext/wasm/api/sqlite3-api-prologue.js fa28d080a28bb936348156f7a298e0a001be088fb439905ff2dd85146f4fd2a0
 F ext/wasm/api/sqlite3-api-worker1.js e94ba98e44afccfa482874cd9acb325883ade50ed1f9f9526beb9de1711f182f
 F ext/wasm/api/sqlite3-license-version-header.js a661182fc93fc2cf212dfd0b987f8e138a3ac98f850b1112e29b5fbdaecc87c3
 F ext/wasm/api/sqlite3-opfs-async-proxy.js 1ec10873f1d59d305f6f3b435c50a1b75d693d5fb739b226f3da46fcbb11261a
 F ext/wasm/api/sqlite3-wasi.h 25356084cfe0d40458a902afb465df8c21fc4152c1d0a59b563a3fba59a068f9
-F ext/wasm/api/sqlite3-wasm.c 8fc8f47680df0e9a6c0f2f03cb004148645ecc983aa216daba09cb21f7e092a2
+F ext/wasm/api/sqlite3-wasm.c 8b32787a3b6bb2990cbaba2304bd5b75a9652acbc8d29909b3279019b6cbaef5
 F ext/wasm/api/sqlite3-worker1-promiser.js 0c7a9826dbf82a5ed4e4f7bf7816e825a52aff253afbf3350431f5773faf0e4b
 F ext/wasm/api/sqlite3-worker1.js 1e54ea3d540161bcfb2100368a2fc0cad871a207b8336afee1c445715851ec54
 F ext/wasm/batch-runner.html 4deeed44fe41496dc6898d9fb17938ea3291f40f4bfb977e29d0cef96fbbe4c8
@@ -2059,9 +2059,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 220cc4c6399b772b4ece03305a41b437ef0654d586a8a1c3dc5e7606fd36d655 59a837cfc7f9f96509491c8fc45355d2e8892af25246955e22adec1cbf37327b
-R 6b5395a59674684ae7409c1a67752bd1
-T +closed 59a837cfc7f9f96509491c8fc45355d2e8892af25246955e22adec1cbf37327b
-U dan
-Z 08a51ae8157c87edcee2b45d299f4155
+P 5f135575b923cb59947667071c6af9ff14063c933cedf37d6c2a0a1b86c85032
+R f8ada562338905eb066689b281095c3e
+U stephan
+Z 3d9c890d275324696db830c3a91a1a42
 # Remove this line to create a well-formed Fossil manifest.
