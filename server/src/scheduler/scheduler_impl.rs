@@ -1,5 +1,4 @@
 use std::collections::{HashMap, HashSet, VecDeque};
-use std::fmt;
 
 use anyhow::Result;
 use crossbeam::channel::{Sender, TrySendError};
@@ -7,10 +6,10 @@ use smallvec::SmallVec;
 use tokio::sync::mpsc::{UnboundedReceiver as TokioReceiver, UnboundedSender as TokioSender};
 
 use crate::job::Job;
-use crate::messages::Responder;
+use crate::query::{ErrorCode, Query, QueryError, QueryResponse};
 use crate::statements::Statements;
 
-pub type ClientId = usize;
+use super::{ClientId, SchedulerQuery, UpdateStateMessage};
 
 #[derive(Default)]
 struct ClientQueue {
@@ -20,34 +19,8 @@ struct ClientQueue {
     active_txn: Option<Sender<Job>>,
     /// The client for this queue has disconnected
     should_close: bool,
-}
-
-#[derive(Debug)]
-pub enum UpdateStateMessage {
-    Ready(ClientId),
-    TxnBegin(ClientId, Sender<Job>),
-    TxnEnded(ClientId),
-}
-
-#[derive(Debug)]
-pub enum Action {
-    Disconnect,
-    Execute(Statements),
-}
-
-pub struct ServerMessage {
-    pub client_id: ClientId,
-    pub action: Action,
-    pub responder: Box<dyn Responder>,
-}
-
-impl fmt::Debug for ServerMessage {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("ServerMessage")
-            .field("client_id", &self.client_id)
-            .field("action", &self.action)
-            .finish()
-    }
+    /// Last message was a timeout, next message should return an error
+    timeout: bool,
 }
 
 pub struct Scheduler {
@@ -58,7 +31,7 @@ pub struct Scheduler {
     update_state_receiver: TokioReceiver<UpdateStateMessage>,
     update_state_sender: TokioSender<UpdateStateMessage>,
     /// Receiver from the server with new statements to run
-    job_receiver: TokioReceiver<ServerMessage>,
+    job_receiver: TokioReceiver<SchedulerQuery>,
 
     /// Set of endpoints that are ready to give some work, i.e that have no inflight work
     ready_set: HashSet<ClientId>,
@@ -69,7 +42,7 @@ pub struct Scheduler {
 impl Scheduler {
     pub fn new(
         worker_pool_sender: Sender<Job>,
-        job_receiver: TokioReceiver<ServerMessage>,
+        job_receiver: TokioReceiver<SchedulerQuery>,
     ) -> Result<Self> {
         let (update_state_sender, update_state_receiver) = tokio::sync::mpsc::unbounded_channel();
         Ok(Self {
@@ -99,6 +72,15 @@ impl Scheduler {
                 not_waiting.push(client_id);
                 continue
             };
+
+            if queue.timeout {
+                let _ = job.responder.send(Err(QueryError::new(
+                    ErrorCode::TxTimeout,
+                    "transaction timeout",
+                )));
+                queue.timeout = false;
+                continue;
+            }
 
             not_ready.push(client_id);
 
@@ -145,53 +127,71 @@ impl Scheduler {
     /// Update the queue with new status, and return whether there might be more work ready to do;
     fn update_queue_status(&mut self, update: UpdateStateMessage) {
         match update {
-            UpdateStateMessage::Ready(e) => {
-                self.ready_set.insert(e);
+            UpdateStateMessage::Ready(c) => {
+                self.ready_set.insert(c);
             }
-            UpdateStateMessage::TxnBegin(e, sender) => {
-                if let Some(queue) = self.queues.get_mut(&e) {
+            UpdateStateMessage::TxnBegin(c, sender) => {
+                if let Some(queue) = self.queues.get_mut(&c) {
                     assert!(queue.active_txn.is_none());
                     queue.active_txn.replace(sender);
                 }
             }
-            UpdateStateMessage::TxnEnded(e) => {
-                if let Some(queue) = self.queues.get_mut(&e) {
+            UpdateStateMessage::TxnEnded(c) => {
+                if let Some(queue) = self.queues.get_mut(&c) {
                     // it's ok if the txn was already removed
                     queue.active_txn.take();
-                    self.ready_set.insert(e);
+                    self.ready_set.insert(c);
+                }
+            }
+            UpdateStateMessage::TxnTimeout(c) => {
+                if let Some(queue) = self.queues.get_mut(&c) {
+                    // it's ok if the txn was already removed
+                    queue.active_txn.take();
+                    queue.timeout = true;
+                    self.ready_set.insert(c);
                 }
             }
         }
     }
 
     /// Update queues with new incoming tasks from server.
-    fn update_queues(&mut self, msg: ServerMessage) {
-        log::debug!("got server message: {msg:?}");
-        match msg.action {
-            Action::Disconnect => {
-                self.queues
-                    .get_mut(&msg.client_id)
-                    .map(|q| q.should_close = true);
-            }
-            Action::Execute(statements) => {
+    fn update_queues(&mut self, (req, chan): SchedulerQuery) {
+        log::debug!("got server message: {req:?}");
+        match req.query {
+            Query::SimpleQuery(stmts_str) => {
+                let statements = match Statements::parse(stmts_str) {
+                    Ok(stmts) => stmts,
+                    Err(e) => {
+                        let _ = chan.send(Err(QueryError::new(ErrorCode::SQLError, e)));
+                        return;
+                    }
+                };
+
                 let job = Job {
                     scheduler_sender: self.update_state_sender.clone(),
                     statements,
-                    client_id: msg.client_id,
-                    responder: msg.responder,
+                    client_id: req.client_id,
+                    responder: chan,
                 };
 
                 self.queues
-                    .entry(msg.client_id)
+                    .entry(req.client_id)
                     .or_insert_with(|| {
                         // This is the first time we see this client, so it's ready by default
-                        self.ready_set.insert(msg.client_id);
+                        self.ready_set.insert(req.client_id);
                         Default::default()
                     })
                     .queue
                     .push_back(job);
 
-                self.has_work_set.insert(msg.client_id);
+                self.has_work_set.insert(req.client_id);
+            }
+            Query::Disconnect => {
+                if let Some(q) = self.queues.get_mut(&req.client_id) {
+                    q.should_close = true
+                }
+                let _ = chan.send(Ok(QueryResponse::Ack));
+                log::debug!("removing client {} from scheduler.", req.client_id);
             }
         }
     }
@@ -238,16 +238,11 @@ mod test {
     use proptest::prelude::*;
     use rand::{thread_rng, Rng};
     use std::collections::hash_map::Entry;
+    use tokio::sync::oneshot;
 
-    use crate::messages::Message;
+    use crate::query::QueryRequest;
 
     use super::*;
-
-    struct MockResponder;
-
-    impl Responder for MockResponder {
-        fn respond(&self, _: Message) {}
-    }
 
     #[tokio::test]
     async fn client_jobs_are_sequential() {
@@ -257,19 +252,26 @@ mod test {
 
         tokio::spawn(scheduler.start());
 
+        let (sender, _receiver) = oneshot::channel();
         job_sender
-            .send(ServerMessage {
-                client_id: 0,
-                action: Action::Execute(Statements::parse("SELECT * FROM test;".into()).unwrap()),
-                responder: Box::new(MockResponder),
-            })
+            .send((
+                QueryRequest {
+                    client_id: 0,
+                    query: Query::SimpleQuery("SELECT * FROM test;".into()),
+                },
+                sender,
+            ))
             .unwrap();
+
+        let (sender, _receiver) = oneshot::channel();
         job_sender
-            .send(ServerMessage {
-                client_id: 0,
-                action: Action::Execute(Statements::parse("SELECT * FROM test2;".into()).unwrap()),
-                responder: Box::new(MockResponder),
-            })
+            .send((
+                QueryRequest {
+                    client_id: 0,
+                    query: Query::SimpleQuery("SELECT * FROM test2;".into()),
+                },
+                sender,
+            ))
             .unwrap();
 
         // sleep a bit to make sure scheduler had time to schedule something.
@@ -302,19 +304,26 @@ mod test {
 
         tokio::spawn(scheduler.start());
 
+        let (sender, _receiver) = oneshot::channel();
         job_sender
-            .send(ServerMessage {
-                client_id: 0,
-                action: Action::Execute(Statements::parse("SELECT * FROM test;".into()).unwrap()),
-                responder: Box::new(MockResponder),
-            })
+            .send((
+                QueryRequest {
+                    client_id: 0,
+                    query: Query::SimpleQuery("SELECT * FROM test;".into()),
+                },
+                sender,
+            ))
             .unwrap();
+
+        let (sender, _receiver) = oneshot::channel();
         job_sender
-            .send(ServerMessage {
-                client_id: 1,
-                action: Action::Execute(Statements::parse("SELECT * FROM test2;".into()).unwrap()),
-                responder: Box::new(MockResponder),
-            })
+            .send((
+                QueryRequest {
+                    client_id: 1,
+                    query: Query::SimpleQuery("SELECT * FROM test2;".into()),
+                },
+                sender,
+            ))
             .unwrap();
 
         tokio::time::sleep(Duration::from_millis(5)).await;
@@ -361,14 +370,14 @@ mod test {
                 let mut rng = thread_rng();
                 for i in 0..num_tasks {
                     let client_id = rng.gen_range(0..num_clients);
-                    let msg = ServerMessage {
-                        client_id,
-                        // this is a hack here to pass a sequence number.
-                        action: Action::Execute(Statements::parse(format!("SELECT * FROM \"{i}\"")).unwrap()),
-                        responder: Box::new(MockResponder),
-                    };
-
-                    job_sender.send(msg).unwrap();
+                    let (sender, _receiver) = oneshot::channel();
+                    job_sender.send((
+                            QueryRequest {
+                                client_id,
+                                query: Query::SimpleQuery(format!("SELECT * FROM \"{i}\"")),
+                            },
+                            sender,
+                    )).unwrap();
                 }
 
                 drop(job_sender);
