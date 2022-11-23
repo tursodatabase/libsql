@@ -43,7 +43,11 @@ self.sqlite3InitModule().then(async function(sqlite3){
     }
   };
   const run = async function(){
-    db = new sqlite3.opfs.OpfsDb(dbName,'c');
+    db = new sqlite3.oo1.DB({
+      filename: 'file:'+dbName,
+      flags: 'c',
+      vfs: 'opfs'
+    });
     sqlite3.capi.sqlite3_busy_timeout(db.pointer, 5000);
     db.transaction((db)=>{
       db.exec([

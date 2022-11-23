@@ -348,6 +348,7 @@ const installOpfsVfs = function callee(options){
       'SQLITE_NOTFOUND',
       'SQLITE_OPEN_CREATE',
       'SQLITE_OPEN_DELETEONCLOSE',
+      'SQLITE_OPEN_MAIN_DB',
       'SQLITE_OPEN_READONLY'
     ].forEach((k)=>{
       if(undefined === (state.sq3Codes[k] = capi[k])){
