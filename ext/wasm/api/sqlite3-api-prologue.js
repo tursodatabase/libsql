@@ -1307,12 +1307,16 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   };
 
   /**
-     Serializes the given `sqlite3*` pointer to a Uint8Array, as per
-     sqlite3_serialize(). On success it returns a Uint8Array. On
-     error it throws with a description of the problem.
+     A convenience wrapper around sqlite3_serialize() which serializes
+     the given `sqlite3*` pointer to a Uint8Array.
 
-     schema is the schema to serialize. It may be a WASM C-string
-     pointer or a JS string. If it is falsy, it defaults to "main".
+     On success it returns a Uint8Array. If the schema is empty, an
+     empty array is returned.
+
+     `schema` is the schema to serialize. It may be a WASM C-string
+     pointer or a JS string. If it is falsy, it defaults to `"main"`.
+
+     On error it throws with a description of the problem.
   */
   capi.sqlite3_js_db_export = function(pDb, schema=0){
     if(!pDb) toss3('Invalid sqlite3* argument.');
