@@ -1,6 +1,7 @@
 
 [![License](https://img.shields.io/badge/license-MIT-blue)](https://github.com/libsql/libsql/blob/master/LICENSE.md)
 [![Discord](https://img.shields.io/discord/1026540227218640906?color=5865F2&label=discord&logo=discord&logoColor=8a9095)](https://discord.gg/TxwbQTWHSr)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/libsql/libsql/badge)](https://api.securityscorecards.dev/projects/github.com/libsql/libsql)
 
 
 # What is libSQL?
