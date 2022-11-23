@@ -7,6 +7,7 @@
 
 if [[ "$#" != "1" ]]; then
     echo "Usage: $0 <release-number>"
+    exit 1
 fi
 
 for mode in "" "--enable-wasm-runtime" "--enable-wasm-runtime-dynamic"; do
