@@ -1,5 +1,5 @@
-C Add\san\sexperimental\sOPFS\sVFS-specific\sURI\sflag,\sopfs-unlock-asap,\swhich\stells\sthe\sVFS\sto\srelease\simplicit\slocks\sASAP.\sThis\spermits\shigher\sconcurrency\sbut\shurts\sperformance\sconsiderably.\sThis\smay\sor\smay\snot\sbe\sobsoleted\sby\sother\sconcurrency-related\sexperimentation.
-D 2022-11-23T19:03:22.450
+C OPFS\sconcurrency\stest:\sadd\sa\sURL\sflag\sto\senable/disable\sunlock-asap\smode.
+D 2022-11-23T20:49:08.427
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -553,8 +553,8 @@ F ext/wasm/tester1-worker.html 5ef353348c37cf2e4fd0b23da562d3275523e036260b51073
 F ext/wasm/tester1.c-pp.html 74aa9b31c75f12490653f814b53c3dd39f40cd3f70d6a53a716f4e8587107399
 F ext/wasm/tester1.c-pp.js 0c129495d057c77788b59715152d51f9bf9002ebbcce759ef8b028272ce3519d
 F ext/wasm/tests/opfs/concurrency/index.html bb9b0f6da86df34c67fa506db9c45b7c4cf0045a211611cc6b8d2b53fa983481
-F ext/wasm/tests/opfs/concurrency/test.js 5993c08657d547d3a26b78ff3480122aed2b7361823bc127e96e558931093aff
-F ext/wasm/tests/opfs/concurrency/worker.js e1b10dc5d96117ac58f4eedde97a970816adc60e007f0a0f20a41d880ab59ca9
+F ext/wasm/tests/opfs/concurrency/test.js 9a937068b66a0cfbb9cb6833cb001ce22f9d0f8f765775e3456860b05db21797
+F ext/wasm/tests/opfs/concurrency/worker.js 2a275c4983016365cac18c9105f1ac7bd2adbc7ad89cc91b363d722f2bb55cb5
 F ext/wasm/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd72273503ae7d5
 F ext/wasm/wasmfs.make 8fea9b4f3cde06141de1fc4c586ab405bd32c3f401554f4ebb18c797401a678d
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
@@ -2059,8 +2059,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c5b7a9715a13b696ab3ee965aa0a310f59b65f07cecd72faa2e3504bfd8eb632
-R 37d44560e41f4eab685876e5b8c66c33
+P d23c917013485ec2793125221f3936b05c39d6eca941629fb819b6b4aa714520
+R ff8c3df82102d217683515f7779a95c4
 U stephan
-Z 1cab17b5c5d56b08d5be52571107da20
+Z 269769e48cdf286c8fb19455cdae3a52
 # Remove this line to create a well-formed Fossil manifest.

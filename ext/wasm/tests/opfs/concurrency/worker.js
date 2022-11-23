@@ -3,9 +3,12 @@ importScripts(
 );
 self.sqlite3InitModule().then(async function(sqlite3){
   const urlArgs = new URL(self.location.href).searchParams;
-  const wName = urlArgs.get('workerId') || Math.round(Math.random()*10000);
+  const options = {
+    workerName: urlArgs.get('workerId') || Math.round(Math.random()*10000),
+    unlockAsap: urlArgs.get('opfs-unlock-asap') || 0 /*EXPERIMENTAL*/
+  };
   const wPost = (type,...payload)=>{
-    postMessage({type, worker: wName, payload});
+    postMessage({type, worker: options.workerName, payload});
   };
   const stdout = (...args)=>wPost('stdout',...args);
   const stderr = (...args)=>wPost('stderr',...args);
@@ -44,7 +47,7 @@ self.sqlite3InitModule().then(async function(sqlite3){
   };
   const run = async function(){
     db = new sqlite3.oo1.DB({
-      filename: 'file:'+dbName,//+'?opfs-unlock-asap=1'/*EXPERIMENTAL*/,
+      filename: 'file:'+dbName+'?opfs-unlock-asap='+options.unlockAsap,
       flags: 'c',
       vfs: 'opfs'
     });
@@ -66,7 +69,7 @@ self.sqlite3InitModule().then(async function(sqlite3){
       try{
         db.exec({
           sql:"INSERT OR REPLACE INTO t1(w,v) VALUES(?,?)",
-          bind: [wName, new Date().getTime()]
+          bind: [options.workerName, new Date().getTime()]
         });
         //stdout("Set",prefix);
       }catch(e){

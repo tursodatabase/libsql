@@ -63,6 +63,9 @@
   options.interval = (
     urlArgsHtml.has('interval') ? +urlArgsHtml.get('interval') : 750
   ) || 750;
+  options.unlockAsap = (
+    urlArgsHtml.has('unlock-asap') ? +urlArgsHtml.get('unlock-asap') : 0
+  ) || 0;
   const workers = [];
   workers.post = (type,...args)=>{
     for(const w of workers) w.postMessage({type, payload:args});
@@ -92,12 +95,13 @@
     }
   };
 
-  stdout("Launching",options.workerCount,"workers...");
+  stdout("Launching",options.workerCount,"workers. Options:",options);
   workers.uri = (
     'worker.js?'
       + 'sqlite3.dir='+options.sqlite3Dir
       + '&interval='+options.interval
       + '&opfs-verbose='+options.opfsVerbose
+      + '&opfs-unlock-asap='+options.unlockAsap
   );
   for(let i = 0; i < options.workerCount; ++i){
     stdout("Launching worker...");
