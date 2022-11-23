@@ -202,18 +202,6 @@ const releaseImplicitLocks = async ()=>{
 };
 
 /**
-   If true, any routine which implicitly acquires a sync access handle
-   (i.e. an OPFS lock) will release that locks at the end of the call
-   which acquires it. If false, such "autolocks" are not released
-   until the VFS is idle for some brief amount of time.
-
-   The benefit of enabling this is much higher concurrency. The
-   down-side is much-reduced performance (as much as a 4x decrease
-   in speedtest1).
-*/
-state.defaultReleaseImplicitLocks = false;
-
-/**
    An experiment in improving concurrency by freeing up implicit locks
    sooner. This is known to impact performance dramatically but it has
    also shown to improve concurrency considerably.
@@ -536,7 +524,8 @@ const vfsAsyncImpls = {
     mTimeEnd();
   },
   xOpen: async function(fid/*sqlite3_file pointer*/, filename,
-                        flags/*SQLITE_OPEN_...*/){
+                        flags/*SQLITE_OPEN_...*/,
+                        opfsFlags/*OPFS_...*/){
     const opName = 'xOpen';
     mTimeStart(opName);
     const create = (state.sq3Codes.SQLITE_OPEN_CREATE & flags);
@@ -566,13 +555,8 @@ const vfsAsyncImpls = {
         deleteOnClose: !!(state.sq3Codes.SQLITE_OPEN_DELETEONCLOSE & flags)
       });
       fh.releaseImplicitLocks =
-        state.defaultReleaseImplicitLocks
-        /* TODO: check URI flags for "opfs-auto-unlock". First we need to
-           reshape the API a bit to be able to pass those on to here
-           from the other half of the proxy. */;
-      /*if(fh.releaseImplicitLocks){
-        console.warn("releaseImplicitLocks is ON for",fh);
-      }*/
+        (opfsFlags & state.opfsFlags.OPFS_UNLOCK_ASAP)
+        || state.opfsFlags.defaultUnlockAsap;
       if(0 /* this block is modelled after something wa-sqlite
               does but it leads to horrible contention on journal files. */
          && (0===(flags & state.sq3Codes.SQLITE_OPEN_MAIN_DB))){
@@ -887,6 +871,7 @@ navigator.storage.getDirectory().then(function(d){
           state.sabS11nView = new Uint8Array(state.sabIO, state.sabS11nOffset, state.sabS11nSize);
           state.opIds = opt.opIds;
           state.sq3Codes = opt.sq3Codes;
+          state.opfsFlags = opt.opfsFlags;
           Object.keys(vfsAsyncImpls).forEach((k)=>{
             if(!Number.isFinite(state.opIds[k])){
               toss("Maintenance required: missing state.opIds[",k,"]");
