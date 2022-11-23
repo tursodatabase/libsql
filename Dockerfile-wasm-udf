@@ -11,6 +11,7 @@ WORKDIR /home/libsql
 ADD src src
 ADD ext ext
 ADD tool tool
+ADD VERSION LIBSQL_VERSION
 
 RUN apt-get update
 RUN apt-get install -y tcl8.6-dev build-essential autoconf
