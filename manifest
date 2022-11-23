@@ -1,9 +1,9 @@
-C Remove\sa\sbit\sof\sover-cleverness\swhich\sbreaks\sloading\sof\ssqlite3.js\sin\ssome\smain-thread\scases.
-D 2022-11-23T15:52:52.817
+C Update\sMakefile.in\sto\sinclude\snew\starget\s"sqlite3r.c".\sFor\sgenerating\s"sqlite3r.c"\sand\s"sqlite3r.h",\sversions\sof\sthe\samalgamation\sthat\sinclude\sthe\srecover\sextension.\sTo\sbuild\sthe\sshell\stool\sagainst\sthese\sfiles,\sadd\s-DSQLITE_HAVE_SQLITE3R.
+D 2022-11-23T16:08:49.765
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in 78e4c4916f2c3993a8a454018745ff02094a8029d449d0c22db98f1cf8260420
+F Makefile.in 9a1228fd6406cc607958ccf1386a9a8f74f8255a7e98bc9c0a2792b56bd3a309
 F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
 F Makefile.msc e7a564ceec71f0d9666031d5638cf0d4f88b050b44e8df5d32125137cd259ac0
 F README.md 8b8df9ca852aeac4864eb1e400002633ee6db84065bd01b78c33817f97d31f5e
@@ -642,7 +642,7 @@ F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c efea4e5fbecfd6d0a9071b0be0d952620991673391b6ffaaf4c277b0bb674633
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 4c48373abb4e67129c36bc15d1f5a99a0dfd9534afeb539a2169a09ae91ccec9
-F src/shell.c.in 7d1705f139e6762e8c0fe254a8ebf3ab77aec6d8366f033cdd5f5ebadefbbb20
+F src/shell.c.in 09cb15d7421c475f2d308f6a4312d8d690916ea5cb62ea1618f2f4ce5703af35
 F src/sqlite.h.in 100fc660c2f19961b8ed8437b9d53d687de2f8eb2b96437ec6da216adcb643ca
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h c4b9fa7a7e2bcdf850cfeb4b8a91d5ec47b7a00033bc996fd2ee96cbf2741f5f
@@ -1995,8 +1995,8 @@ F tool/mkshellc.tcl 02d0de8349ef830c0fb20d29680320bde2466e2ec422e5bd94c4317a7a7e
 F tool/mksourceid.c 36aa8020014aed0836fd13c51d6dc9219b0df1761d6b5f58ff5b616211b079b9
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl 4f7cfef5152b0c91920355cbfc1d608a4ad242cb819f1aea07f6d0274f584a7f
-F tool/mksqlite3c.tcl 4fc26a9bfa0c4505b203d7ca0cf086e75ebcd4d63eb719c82f37e3fecdf23d37
-F tool/mksqlite3h.tcl 1f5e4a1dbbbc43c83cc6e74fe32c6c620502240b66c7c0f33a51378e78fc4edf
+F tool/mksqlite3c.tcl eb47021591b1ad4a6862e2cb5625f1ac67ec1e0c6db5ba3953c069c635284cf5
+F tool/mksqlite3h.tcl d391cff7cad0a372ee1406faee9ccc7dad9cb80a0c95cae0f73d10dd26e06762
 F tool/mksqlite3internalh.tcl eb994013e833359137eb53a55acdad0b5ae1049b
 F tool/mkvsix.tcl b9e0777a213c23156b6542842c238479e496ebf5
 F tool/offsets.c 8ed2b344d33f06e71366a9b93ccedaa38c096cc1dbd4c3c26ad08c6115285845
@@ -2059,8 +2059,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8f2076553bc486ea6a17934695ecc02217461af2082d891697b62aab89bd1b43
-R 48a8d083139c4365079fe8210cacb510
-U stephan
-Z c7336980b293a293ed2df30baba9b924
+P 220cc4c6399b772b4ece03305a41b437ef0654d586a8a1c3dc5e7606fd36d655 59a837cfc7f9f96509491c8fc45355d2e8892af25246955e22adec1cbf37327b
+R 6b5395a59674684ae7409c1a67752bd1
+T +closed 59a837cfc7f9f96509491c8fc45355d2e8892af25246955e22adec1cbf37327b
+U dan
+Z 08a51ae8157c87edcee2b45d299f4155
 # Remove this line to create a well-formed Fossil manifest.
