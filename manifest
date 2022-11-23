@@ -1,5 +1,5 @@
-C Merge\senhancements\sand\sfixes\sfrom\strunk.
-D 2022-11-22T20:58:18.661
+C Further\sfoundation\sprep\swork\sprior\sto\sstarting\sto\sflesh-out\sthe\noptimizeAggregateUseOfIndexedExpr()\sroutine.
+D 2022-11-23T14:13:39.215
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -641,7 +641,7 @@ F src/printf.c e99ee9741e79ae3873458146f59644276657340385ade4e76a5f5d1c25793764
 F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c efea4e5fbecfd6d0a9071b0be0d952620991673391b6ffaaf4c277b0bb674633
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c 6f5403b8f1849d2a8ba152dd790ec189bba18242157904ddca77707e209265d4
+F src/select.c 1d3f8a5b510f8e2859c7f800babb5a63802789f93c9c29498312b37655dac1b8
 F src/shell.c.in 7d1705f139e6762e8c0fe254a8ebf3ab77aec6d8366f033cdd5f5ebadefbbb20
 F src/sqlite.h.in 100fc660c2f19961b8ed8437b9d53d687de2f8eb2b96437ec6da216adcb643ca
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -2059,8 +2059,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d85bb724fdd6fbad2b88ed7f60e4174e3f65182356f404d04620c5cf6b17f77e 9ec923b5dc24d6082da8d42bc0ee8ab1c418912625c0c56de9627be2c818ef98
-R 55f08c65335ec615b6caa516a7697c9d
+P f8932e04d4d18eb9d71edda15aa08af2eb139ff14d77ca147ea6e9b173e0f5e0
+R e49e6155bccbafba580b14baaea3db86
 U drh
-Z dbc39758acc6c225892e0cac1e391b2a
+Z b6500d1e8d8b2720badce4287d0e1594
 # Remove this line to create a well-formed Fossil manifest.

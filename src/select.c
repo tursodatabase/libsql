@@ -6204,9 +6204,106 @@ void sqlite3SelectPrep(
   sqlite3SelectAddTypeInfo(pParse, p);
 }
 
+#if TREETRACE_ENABLED
 /*
-** Assign register numbers to all pAggInfo->aCol[] and pAggInfo->aFunc[]
-** entries.
+** Display all information about an AggInfo object
+*/
+static void printAggInfo(AggInfo *pAggInfo){
+  int ii;
+  for(ii=0; ii<pAggInfo->nColumn; ii++){
+    struct AggInfo_col *pCol = &pAggInfo->aCol[ii];
+    sqlite3DebugPrintf(
+       "agg-column[%d] pTab=%s iTable=%d iColumn=%d iMem=%d"
+       " iSorterColumn=%d %s\n",
+       ii, pCol->pTab ? pCol->pTab->zName : "NULL", 
+       pCol->iTable, pCol->iColumn, AggInfoColumnReg(pAggInfo,ii),
+       pCol->iSorterColumn, 
+       ii>=pAggInfo->nAccumulator ? "" : " Accumulator");
+    sqlite3TreeViewExpr(0, pAggInfo->aCol[ii].pCExpr, 0);
+  }
+  for(ii=0; ii<pAggInfo->nFunc; ii++){
+    sqlite3DebugPrintf("agg-func[%d]: iMem=\n",
+        ii, AggInfoFuncReg(pAggInfo,ii));
+    sqlite3TreeViewExpr(0, pAggInfo->aFunc[ii].pFExpr, 0);
+  }
+}
+#endif /* TREETRACE_ENABLED */
+
+/*
+** Analyze the arguments to aggregate functions.  Create new pAggInfo->aCol[]
+** entries for columns that are arguments to aggregate functions but which
+** are not otherwise used.
+**
+** The aCol[] entries in AggInfo prior to nAccumulator are columns that
+** are referenced outside of aggregate functions.  These might be columns
+** that are part of the GROUP by clause, for example.  Other database engines
+** would throw an error if there is a column reference that is not in the
+** GROUP BY clause and that is not part of an aggregate function argument.
+** But SQLite allows this.
+**
+** The aCol[] entries beginning with the aCol[nAccumulator] and following
+** are column references that are used exclusively as arguments to
+** aggregate functions.  This routine is responsible for computing
+** (or recomputing) those aCol[] entries.
+*/
+static void analyzeAggFuncArgs(
+  Parse *pParse,
+  AggInfo *pAggInfo,
+  NameContext *pNC
+){
+  int i;
+  assert( pAggInfo!=0 );
+  pNC->ncFlags |= NC_InAggFunc;
+  for(i=0; i<pAggInfo->nFunc; i++){
+    Expr *pExpr = pAggInfo->aFunc[i].pFExpr;
+    assert( ExprUseXList(pExpr) );
+    sqlite3ExprAnalyzeAggList(pNC, pExpr->x.pList);
+#ifndef SQLITE_OMIT_WINDOWFUNC
+    assert( !IsWindowFunc(pExpr) );
+    if( ExprHasProperty(pExpr, EP_WinFunc) ){
+      sqlite3ExprAnalyzeAggregates(pNC, pExpr->y.pWin->pFilter);
+    }
+#endif
+  }
+  pNC->ncFlags &= ~NC_InAggFunc;
+}
+
+/*
+** An index on expressions is being used in the inner loop of an
+** aggregate query with a GROUP BY clause.  This routine attempts
+** to adjust the AggInfo object to take advantage of index and to
+** perhaps use the index as a covering index.
+**
+*/
+static void optimizeAggregateUseOfIndexedExpr(
+  Parse *pParse,          /* Parsing context */
+  Select *pSelect,        /* The SELECT statement being processed */
+  AggInfo *pAggInfo,      /* The aggregate info */
+  NameContext *pNC        /* Name context used to resolve agg-func args */
+){
+#if TREETRACE_ENABLED
+  if( sqlite3TreeTrace & 0x80000 ){
+    IndexedExpr *pIEpr;
+    TREETRACE(0x80000, pParse, pSelect,
+        ("Attempting to optimize AggInfo for Indexed Exprs\n"));
+    for(pIEpr=pParse->pIdxEpr; pIEpr; pIEpr=pIEpr->pIENext){
+      printf("data-cursor=%d index={%d,%d}\n",
+          pIEpr->iDataCur, pIEpr->iIdxCur, pIEpr->iIdxCol);
+      sqlite3TreeViewExpr(0, pIEpr->pExpr, 0);
+    }
+    printAggInfo(pAggInfo);
+  }
+#else
+  (void)pSelect;  /* Suppress unused-parameter warnings */
+#endif
+  pAggInfo->nColumn = pAggInfo->nAccumulator;
+  analyzeAggFuncArgs(pParse, pAggInfo, pNC);
+}
+
+/*
+** Allocate a block of registers so that there is one register for each
+** pAggInfo->aCol[] and pAggInfo->aFunc[] entry in pAggInfo.  The first
+** register in this block is stored in pAggInfo->iFirstReg.
 */
 static void assignAggregateRegisters(Parse *pParse, AggInfo *pAggInfo){
   assert( pAggInfo!=0 );
@@ -6629,60 +6726,6 @@ static int sameSrcAlias(SrcItem *p0, SrcList *pSrc){
   }
   return 0;
 }
-
-#if TREETRACE_ENABLED
-/*
-** Display all information about an AggInfo object
-*/
-static void printAggInfo(AggInfo *pAggInfo){
-  int ii;
-  for(ii=0; ii<pAggInfo->nColumn; ii++){
-    struct AggInfo_col *pCol = &pAggInfo->aCol[ii];
-    sqlite3DebugPrintf(
-       "agg-column[%d] pTab=%s iTable=%d iColumn=%d iMem=%d"
-       " iSorterColumn=%d %s\n",
-       ii, pCol->pTab ? pCol->pTab->zName : "NULL", 
-       pCol->iTable, pCol->iColumn, AggInfoColumnReg(pAggInfo,ii),
-       pCol->iSorterColumn, 
-       ii>=pAggInfo->nAccumulator ? "" : " Accumulator");
-    sqlite3TreeViewExpr(0, pAggInfo->aCol[ii].pCExpr, 0);
-  }
-  for(ii=0; ii<pAggInfo->nFunc; ii++){
-    sqlite3DebugPrintf("agg-func[%d]: iMem=\n",
-        ii, AggInfoFuncReg(pAggInfo,ii));
-    sqlite3TreeViewExpr(0, pAggInfo->aFunc[ii].pFExpr, 0);
-  }
-}
-#endif /* TREETRACE_ENABLED */
-
-/*
-** An index on expressions is being used in the inner loop of an
-** aggregate query with a GROUP BY clause.  This routine attempts
-** to adjust the AggInfo object to take advantage of index and to
-** perhaps use the index as a covering index.
-**
-*/
-static int optimizeAggregateUsingIndexedExpr(
-  Parse *pParse,          /* Parsing context */
-  Select *pSelect,        /* The SELECT being coded */
-  AggInfo *pAggInfo       /* The aggregate info */
-){
-#if TREETRACE_ENABLED
-  if( sqlite3TreeTrace & 0x80000 ){
-    IndexedExpr *pIEpr;
-    TREETRACE(0x80000, pParse, pSelect,
-        ("Attempting to optimize AggInfo for Indexed Exprs\n"));
-    for(pIEpr=pParse->pIdxEpr; pIEpr; pIEpr=pIEpr->pIENext){
-      printf("data-cursor=%d index={%d,%d}\n",
-          pIEpr->iDataCur, pIEpr->iIdxCur, pIEpr->iIdxCol);
-      sqlite3TreeViewExpr(0, pIEpr->pExpr, 0);
-    }
-    printAggInfo(pAggInfo);
-  }
-#endif
-  return 0;
-}
-
 
 /*
 ** Generate code for the SELECT statement given in the p argument.  
@@ -7465,19 +7508,7 @@ int sqlite3Select(
     }else{
       minMaxFlag = WHERE_ORDERBY_NORMAL;
     }
-    for(i=0; i<pAggInfo->nFunc; i++){
-      Expr *pExpr = pAggInfo->aFunc[i].pFExpr;
-      assert( ExprUseXList(pExpr) );
-      sNC.ncFlags |= NC_InAggFunc;
-      sqlite3ExprAnalyzeAggList(&sNC, pExpr->x.pList);
-#ifndef SQLITE_OMIT_WINDOWFUNC
-      assert( !IsWindowFunc(pExpr) );
-      if( ExprHasProperty(pExpr, EP_WinFunc) ){
-        sqlite3ExprAnalyzeAggregates(&sNC, pExpr->y.pWin->pFilter);
-      }
-#endif
-      sNC.ncFlags &= ~NC_InAggFunc;
-    }
+    analyzeAggFuncArgs(pParse, pAggInfo, &sNC);
     if( db->mallocFailed ) goto select_end;
 #if TREETRACE_ENABLED
     if( sqlite3TreeTrace & 0x20 ){
@@ -7566,7 +7597,7 @@ int sqlite3Select(
         goto select_end;
       }
       if( pParse->pIdxEpr ){
-        optimizeAggregateUsingIndexedExpr(pParse, p, pAggInfo);
+        optimizeAggregateUseOfIndexedExpr(pParse, p, pAggInfo, &sNC);
       }
       assignAggregateRegisters(pParse, pAggInfo);
       eDist = sqlite3WhereIsDistinct(pWInfo);
