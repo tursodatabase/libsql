@@ -1,5 +1,5 @@
-C Avoid\snaming\scollision\sbetween\sthe\ssha1\sand\sshathree\sextensions.
-D 2022-11-22T20:04:00.704
+C OPFS\sconcurrency\stester:\sensure\sthat\sthe\swork\sinterval\stimer\sdoes\snot\soverlap\swith\sthe\swork\stime.
+D 2022-11-23T15:33:49.725
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -554,7 +554,7 @@ F ext/wasm/tester1.c-pp.html 74aa9b31c75f12490653f814b53c3dd39f40cd3f70d6a53a716
 F ext/wasm/tester1.c-pp.js 0c129495d057c77788b59715152d51f9bf9002ebbcce759ef8b028272ce3519d
 F ext/wasm/tests/opfs/concurrency/index.html bb9b0f6da86df34c67fa506db9c45b7c4cf0045a211611cc6b8d2b53fa983481
 F ext/wasm/tests/opfs/concurrency/test.js 5993c08657d547d3a26b78ff3480122aed2b7361823bc127e96e558931093aff
-F ext/wasm/tests/opfs/concurrency/worker.js df065bb386ff994951f7fbdd76e12f16e58fbef0e929b2caf74553359da40afc
+F ext/wasm/tests/opfs/concurrency/worker.js afccb78082b57edb17d5aba0754c823772553395df6f1aed92f82b4d9e3c32de
 F ext/wasm/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd72273503ae7d5
 F ext/wasm/wasmfs.make 8fea9b4f3cde06141de1fc4c586ab405bd32c3f401554f4ebb18c797401a678d
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
@@ -2059,8 +2059,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P db07471c531766a8eec1d5b41c9fd0283b5e64ee13166dc3391f70a1e1946121
-R 028f4214066f285c3501b4fa202e9f4b
-U mistachkin
-Z 9f8febbd78f0b476308550c8b424fd90
+P 9ec923b5dc24d6082da8d42bc0ee8ab1c418912625c0c56de9627be2c818ef98
+R f934382a93ebec7212ddc22bd89cd134
+U stephan
+Z 5fd98b4beaa4b9278c801856cb1d0dd1
 # Remove this line to create a well-formed Fossil manifest.
