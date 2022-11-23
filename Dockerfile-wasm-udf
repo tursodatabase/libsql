@@ -11,11 +11,12 @@ WORKDIR /home/libsql
 ADD src src
 ADD ext ext
 ADD tool tool
+ADD VERSION LIBSQL_VERSION
 
 RUN apt-get update
 RUN apt-get install -y tcl8.6-dev build-essential autoconf
 
-#I'm sorry for that
+# To make the build system happy
 RUN ln -s /bin/grep /usr/bin/grep
 RUN ln -s /bin/sed /usr/bin/sed
 RUN ln -sf /bin/bash /bin/sh
@@ -24,5 +25,5 @@ COPY manifest manifest.uuid VERSION configure.ac Makefile.in \
     libtool sqlite3.pc.in sqlite_cfg.h.in install-sh config.guess config.sub ltmain.sh .
 
 RUN autoconf
-RUN ./configure --enable-wasm-runtime
-RUN make sqlite3
+RUN ./configure --enable-wasm-runtime --enable-releasemode --enable-all
+RUN make
