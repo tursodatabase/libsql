@@ -53,7 +53,7 @@ char sqlite3ExprAffinity(const Expr *pExpr){
   }
   op = pExpr->op;
   if( op==TK_REGISTER ) op = pExpr->op2;
-  if( op==TK_COLUMN || op==TK_AGG_COLUMN ){
+  if( op==TK_COLUMN || (op==TK_AGG_COLUMN && pExpr->y.pTab!=0) ){
     assert( ExprUseYTab(pExpr) );
     assert( pExpr->y.pTab!=0 );
     return sqlite3TableColumnAffinity(pExpr->y.pTab, pExpr->iColumn);
@@ -173,7 +173,9 @@ CollSeq *sqlite3ExprCollSeq(Parse *pParse, const Expr *pExpr){
   while( p ){
     int op = p->op;
     if( op==TK_REGISTER ) op = p->op2;
-    if( op==TK_AGG_COLUMN || op==TK_COLUMN || op==TK_TRIGGER ){
+    if( (op==TK_AGG_COLUMN && p->y.pTab!=0) 
+     || op==TK_COLUMN || op==TK_TRIGGER
+    ){
       int j;
       assert( ExprUseYTab(p) );
       assert( p->y.pTab!=0 );

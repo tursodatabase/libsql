@@ -6222,7 +6222,7 @@ static void printAggInfo(AggInfo *pAggInfo){
     sqlite3TreeViewExpr(0, pAggInfo->aCol[ii].pCExpr, 0);
   }
   for(ii=0; ii<pAggInfo->nFunc; ii++){
-    sqlite3DebugPrintf("agg-func[%d]: iMem=\n",
+    sqlite3DebugPrintf("agg-func[%d]: iMem=%d\n",
         ii, AggInfoFuncReg(pAggInfo,ii));
     sqlite3TreeViewExpr(0, pAggInfo->aFunc[ii].pFExpr, 0);
   }
@@ -6308,6 +6308,40 @@ static void optimizeAggregateUseOfIndexedExpr(
   (void)pSelect;  /* Suppress unused-parameter warnings */
 #endif
 }
+
+/*
+** Walker callback for aggregateConvertIndexedExprRefToColumn().
+*/
+static int aggregateIdxEprRefToColCallback(Walker *pWalker, Expr *pExpr){
+  AggInfo *pAggInfo;
+  struct AggInfo_col *pCol;
+  if( pExpr->pAggInfo==0 ) return WRC_Continue;
+  if( pExpr->op==TK_AGG_COLUMN ) return WRC_Continue;
+  if( pExpr->op==TK_AGG_FUNCTION ) return WRC_Continue;
+  pAggInfo = pExpr->pAggInfo;
+  assert( pExpr->iAgg>=0 && pExpr->iAgg<pAggInfo->nColumn );
+  pCol = &pAggInfo->aCol[pExpr->iAgg];
+  pExpr->op = TK_AGG_COLUMN;
+  pExpr->iTable = pCol->iTable;
+  pExpr->iColumn = pCol->iColumn;
+  return WRC_Prune;
+}
+
+/*
+** Convert every pAggInfo->aFunc[].pExpr such that any node within
+** those expressions that has pAppInfo set is changed into a TK_AGG_COLUMN
+** opcode.
+*/
+static void aggregateConvertIndexedExprRefToColumn(AggInfo *pAggInfo){
+  int i;
+  Walker w;
+  memset(&w, 0, sizeof(w));
+  w.xExprCallback = aggregateIdxEprRefToColCallback;
+  for(i=0; i<pAggInfo->nFunc; i++){
+    sqlite3WalkExpr(&w, pAggInfo->aFunc[i].pFExpr);
+  }
+}
+
 
 /*
 ** Allocate a block of registers so that there is one register for each
@@ -7667,6 +7701,18 @@ int sqlite3Select(
         sqlite3VdbeAddOp2(v, OP_SorterSort, pAggInfo->sortingIdx, addrEnd);
         VdbeComment((v, "GROUP BY sort")); VdbeCoverage(v);
         pAggInfo->useSortingIdx = 1;
+      }
+
+      if( pParse->pIdxEpr ){
+        aggregateConvertIndexedExprRefToColumn(pAggInfo);
+#if TREETRACE_ENABLED
+        if( sqlite3TreeTrace & 0x20 ){
+          TREETRACE(0x20, pParse, p,
+             ("AggInfo function expressions converted to reference index\n"));
+          sqlite3TreeViewSelect(0, p, 0);
+          printAggInfo(pAggInfo);
+        }
+#endif
       }
 
       /* If the index or temporary table used by the GROUP BY sort
