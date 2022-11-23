@@ -1059,7 +1059,6 @@ extern u32 sqlite3TreeTrace;
 **   0x00010000     Beginning of DELETE/INSERT/UPDATE processing
 **   0x00020000     Transform DISTINCT into GROUP BY
 **   0x00040000     SELECT tree dump after all code has been generated
-**   0x00080000     Optimize Aggregates using indexed expressions
 */
 
 /*

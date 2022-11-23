@@ -6281,11 +6281,22 @@ static void optimizeAggregateUseOfIndexedExpr(
   AggInfo *pAggInfo,      /* The aggregate info */
   NameContext *pNC        /* Name context used to resolve agg-func args */
 ){
+  pAggInfo->nColumn = pAggInfo->nAccumulator;
+  if( pAggInfo->nSortingColumn>0 ){
+    if( pAggInfo->nColumn==0 ){
+      pAggInfo->nSortingColumn = 0;
+    }else{
+      pAggInfo->nSortingColumn =
+        pAggInfo->aCol[pAggInfo->nColumn-1].iSorterColumn+1;
+    }
+  }
+  analyzeAggFuncArgs(pParse, pAggInfo, pNC);
 #if TREETRACE_ENABLED
-  if( sqlite3TreeTrace & 0x80000 ){
+  if( sqlite3TreeTrace & 0x20 ){
     IndexedExpr *pIEpr;
-    TREETRACE(0x80000, pParse, pSelect,
-        ("Attempting to optimize AggInfo for Indexed Exprs\n"));
+    TREETRACE(0x20, pParse, pSelect,
+        ("AggInfo (possibly) adjusted for Indexed Exprs\n"));
+    sqlite3TreeViewSelect(0, pSelect, 0);
     for(pIEpr=pParse->pIdxEpr; pIEpr; pIEpr=pIEpr->pIENext){
       printf("data-cursor=%d index={%d,%d}\n",
           pIEpr->iDataCur, pIEpr->iIdxCur, pIEpr->iIdxCol);
@@ -6296,8 +6307,6 @@ static void optimizeAggregateUseOfIndexedExpr(
 #else
   (void)pSelect;  /* Suppress unused-parameter warnings */
 #endif
-  pAggInfo->nColumn = pAggInfo->nAccumulator;
-  analyzeAggFuncArgs(pParse, pAggInfo, pNC);
 }
 
 /*
@@ -7959,7 +7968,7 @@ select_end:
   if( pAggInfo && !db->mallocFailed ){
     for(i=0; i<pAggInfo->nColumn; i++){
       Expr *pExpr = pAggInfo->aCol[i].pCExpr;
-      assert( pExpr!=0 );
+      if( pExpr==0 ) continue;
       assert( pExpr->pAggInfo==pAggInfo );
       assert( pExpr->iAgg==i );
     }

@@ -4135,7 +4135,7 @@ expr_code_doover:
                               pCol->iSorterColumn, target);
         if( pCol->iColumn<0 ){
           VdbeComment((v,"%s.rowid",pTab->zName));
-        }else if( ALWAYS(pTab!=0) ){
+        }else if( pTab!=0 ){
           VdbeComment((v,"%s.%s", 
               pTab->zName, pTab->aCol[pCol->iColumn].zCnName));
           if( pTab->aCol[pCol->iColumn].affinity==SQLITE_AFF_REAL ){
@@ -6242,6 +6242,71 @@ static int addAggInfoFunc(sqlite3 *db, AggInfo *pInfo){
 }
 
 /*
+** Search the AggInfo object for an aCol[] entry that has iTable and iColumn.
+** Return the index in aCol[] of the entry that describes that column. 
+**
+** If no prior entry is found, create a new one and return -1.  The
+** new column will have an idex of pAggInfo->nColumn-1.
+*/
+static void findOrCreateAggInfoColumn(
+  Parse *pParse,       /* Parsing context */
+  AggInfo *pAggInfo,   /* The AggInfo object to search and/or modify */
+  Expr *pExpr          /* Expr describing the column to find or insert */
+){
+  struct AggInfo_col *pCol;
+  int k;
+
+  pCol = pAggInfo->aCol;
+  for(k=0; k<pAggInfo->nColumn; k++, pCol++){
+    if( pCol->iTable==pExpr->iTable
+     && pCol->iColumn==pExpr->iColumn
+     && pExpr->op!=TK_IF_NULL_ROW
+    ){
+      goto fix_up_expr;
+    }
+  }
+  k = addAggInfoColumn(pParse->db, pAggInfo);
+  if( k<0 ){
+    /* OOM on resize */
+    assert( pParse->db->mallocFailed );
+    return;
+  }
+  pCol = &pAggInfo->aCol[k];
+  assert( ExprUseYTab(pExpr) );
+  pCol->pTab = pExpr->y.pTab;
+  pCol->iTable = pExpr->iTable;
+  pCol->iColumn = pExpr->iColumn;
+  pCol->iSorterColumn = -1;
+  pCol->pCExpr = pExpr;
+  if( pAggInfo->pGroupBy && pExpr->op!=TK_IF_NULL_ROW ){
+    int j, n;
+    ExprList *pGB = pAggInfo->pGroupBy;
+    struct ExprList_item *pTerm = pGB->a;
+    n = pGB->nExpr;
+    for(j=0; j<n; j++, pTerm++){
+      Expr *pE = pTerm->pExpr;
+      if( pE->op==TK_COLUMN
+       && pE->iTable==pExpr->iTable
+       && pE->iColumn==pExpr->iColumn
+      ){
+        pCol->iSorterColumn = j;
+        break;
+      }
+    }
+  }
+  if( pCol->iSorterColumn<0 ){
+    pCol->iSorterColumn = pAggInfo->nSortingColumn++;
+  }
+fix_up_expr:
+  ExprSetVVAProperty(pExpr, EP_NoReduce);
+  pExpr->pAggInfo = pAggInfo;
+  if( pExpr->op==TK_COLUMN ){
+    pExpr->op = TK_AGG_COLUMN;
+  }
+  pExpr->iAgg = (i16)k;
+}
+
+/*
 ** This is the xExprCallback for a tree walker.  It is used to
 ** implement sqlite3ExprAnalyzeAggregates().  See sqlite3ExprAnalyzeAggregates
 ** for additional information.
@@ -6255,6 +6320,37 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
 
   assert( pNC->ncFlags & NC_UAggInfo );
   switch( pExpr->op ){
+    default: {
+      IndexedExpr *pIEpr;
+      Expr tmp;
+      if( (pNC->ncFlags & NC_InAggFunc)==0 ) break;
+      if( pParse->pIdxEpr==0 ) break;
+      for(pIEpr=pParse->pIdxEpr; pIEpr; pIEpr=pIEpr->pIENext){
+        int iDataCur = pIEpr->iDataCur;
+        if( iDataCur<0 ) continue;
+        if( pParse->iSelfTab ){
+          if( pIEpr->iDataCur!=pParse->iSelfTab-1 ) continue;
+          iDataCur = -1;
+        }
+        if( sqlite3ExprCompare(0, pExpr, pIEpr->pExpr, iDataCur)==0 ) break;
+      }
+      if( pIEpr==0 ) break;
+      if( !ExprUseYTab(pExpr) ) break;
+
+      /* If we reach this point, it means that expression pExpr can be
+      ** translated into a reference to an index column as described by
+      ** pIEpr.
+      */
+      memset(&tmp, 0, sizeof(tmp));
+      tmp.op = TK_AGG_COLUMN;
+      tmp.iTable = pIEpr->iIdxCur;
+      tmp.iColumn = pIEpr->iIdxCol;
+      findOrCreateAggInfoColumn(pParse, pAggInfo, &tmp);
+      pAggInfo->aCol[tmp.iAgg].pCExpr = pExpr;
+      pExpr->pAggInfo = pAggInfo;
+      pExpr->iAgg = tmp.iAgg;
+      return WRC_Prune;
+    }
     case TK_IF_NULL_ROW:
     case TK_AGG_COLUMN:
     case TK_COLUMN: {
@@ -6266,66 +6362,9 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
       if( ALWAYS(pSrcList!=0) ){
         SrcItem *pItem = pSrcList->a;
         for(i=0; i<pSrcList->nSrc; i++, pItem++){
-          struct AggInfo_col *pCol;
           assert( !ExprHasProperty(pExpr, EP_TokenOnly|EP_Reduced) );
           if( pExpr->iTable==pItem->iCursor ){
-            /* If we reach this point, it means that pExpr refers to a table
-            ** that is in the FROM clause of the aggregate query.  
-            **
-            ** Make an entry for the column in pAggInfo->aCol[] if there
-            ** is not an entry there already.
-            */
-            int k;
-            pCol = pAggInfo->aCol;
-            for(k=0; k<pAggInfo->nColumn; k++, pCol++){
-              if( pCol->iTable==pExpr->iTable
-               && pCol->iColumn==pExpr->iColumn
-               && pExpr->op!=TK_IF_NULL_ROW
-              ){
-                break;
-              }
-            }
-            if( (k>=pAggInfo->nColumn)
-             && (k = addAggInfoColumn(pParse->db, pAggInfo))>=0 
-            ){
-              pCol = &pAggInfo->aCol[k];
-              assert( ExprUseYTab(pExpr) );
-              pCol->pTab = pExpr->y.pTab;
-              pCol->iTable = pExpr->iTable;
-              pCol->iColumn = pExpr->iColumn;
-              pCol->iSorterColumn = -1;
-              pCol->pCExpr = pExpr;
-              if( pAggInfo->pGroupBy && pExpr->op!=TK_IF_NULL_ROW ){
-                int j, n;
-                ExprList *pGB = pAggInfo->pGroupBy;
-                struct ExprList_item *pTerm = pGB->a;
-                n = pGB->nExpr;
-                for(j=0; j<n; j++, pTerm++){
-                  Expr *pE = pTerm->pExpr;
-                  if( pE->op==TK_COLUMN
-                   && pE->iTable==pExpr->iTable
-                   && pE->iColumn==pExpr->iColumn
-                  ){
-                    pCol->iSorterColumn = j;
-                    break;
-                  }
-                }
-              }
-              if( pCol->iSorterColumn<0 ){
-                pCol->iSorterColumn = pAggInfo->nSortingColumn++;
-              }
-            }
-            /* There is now an entry for pExpr in pAggInfo->aCol[] (either
-            ** because it was there before or because we just created it).
-            ** Convert the pExpr to be a TK_AGG_COLUMN referring to that
-            ** pAggInfo->aCol[] entry.
-            */
-            ExprSetVVAProperty(pExpr, EP_NoReduce);
-            pExpr->pAggInfo = pAggInfo;
-            if( pExpr->op==TK_COLUMN ){
-              pExpr->op = TK_AGG_COLUMN;
-            }
-            pExpr->iAgg = (i16)k;
+            findOrCreateAggInfoColumn(pParse, pAggInfo, pExpr);
             break;
           } /* endif pExpr->iTable==pItem->iCursor */
         } /* end loop over pSrcList */
