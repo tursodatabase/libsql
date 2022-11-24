@@ -1,5 +1,5 @@
-C Minor\sJS\sdoc\supdates.
-D 2022-11-23T21:09:51.213
+C Add\ssqlite3.oo1.DB.prototype.checkRc()\sand\stests\sfor\sboth\sthat\smethod\sand\sits\sclass-level\scounterpart.
+D 2022-11-24T02:35:03.924
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -501,7 +501,7 @@ F ext/wasm/api/post-js-header.js d6ab3dfef4a06960d28a7eaa338d4e2a1a5981e9b387181
 F ext/wasm/api/pre-js.js b88499dc303c21fc3f55f2c364a0f814f587b60a95784303881169f9e91c1d5f
 F ext/wasm/api/sqlite3-api-cleanup.js ecdc69dbfccfe26146f04799fcfd4a6f5790d46e7e3b9b6e9b0491f92ed8ae34
 F ext/wasm/api/sqlite3-api-glue.js 056f44b82c126358a0175e08a892d56fadfce177b0d7a0012502a6acf67ea6d5
-F ext/wasm/api/sqlite3-api-oo1.js e9a83489bbb4838ce0aee46eaaa9350e0e25a5b926b565e4f5ae8e840e4fbaed
+F ext/wasm/api/sqlite3-api-oo1.js dec6c14994317ad0011714890426cdc211f4eab451c9766ea88c7ac4f535287e
 F ext/wasm/api/sqlite3-api-opfs.js 38d368e33f470f9ba196f1a2b0c9ce076c930c70df233c345a246f1ad4c26d3b
 F ext/wasm/api/sqlite3-api-prologue.js 58caf45e4cc0deec9bdddb051ce17408686f2bc21ea7b3ee0b4c4deaba532605
 F ext/wasm/api/sqlite3-api-worker1.js e94ba98e44afccfa482874cd9acb325883ade50ed1f9f9526beb9de1711f182f
@@ -551,7 +551,7 @@ F ext/wasm/test-opfs-vfs.html 1f2d672f3f3fce810dfd48a8d56914aba22e45c6834e262555
 F ext/wasm/test-opfs-vfs.js 44363db07b2a20e73b0eb1808de4400ca71b703af718d0fa6d962f15e73bf2ac
 F ext/wasm/tester1-worker.html 5ef353348c37cf2e4fd0b23da562d3275523e036260b510734e9a3239ba8c987
 F ext/wasm/tester1.c-pp.html 74aa9b31c75f12490653f814b53c3dd39f40cd3f70d6a53a716f4e8587107399
-F ext/wasm/tester1.c-pp.js 0c129495d057c77788b59715152d51f9bf9002ebbcce759ef8b028272ce3519d
+F ext/wasm/tester1.c-pp.js 3b91f192c159088004fba6fe3441edea58421a8b88bccf3dd20978a077648d19
 F ext/wasm/tests/opfs/concurrency/index.html bb9b0f6da86df34c67fa506db9c45b7c4cf0045a211611cc6b8d2b53fa983481
 F ext/wasm/tests/opfs/concurrency/test.js 5993c08657d547d3a26b78ff3480122aed2b7361823bc127e96e558931093aff
 F ext/wasm/tests/opfs/concurrency/worker.js afccb78082b57edb17d5aba0754c823772553395df6f1aed92f82b4d9e3c32de
@@ -2059,8 +2059,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9c23644b1e5bf44bfb431a35fd1674c11ccb99e9eb0989f10175b0cb2a858eaa
-R 8f8d491e9ca84b75fecb920dbf623854
+P 27efd63ad7fb3bf8d0d07f2c9f48652c8cacc4e697c229c8085120a8e6b50a39
+R 25ba86c410fa1767dbcf638c18b7bc32
 U stephan
-Z a1e4b87d56bdef1be072540c12f0e1a7
+Z 6ecc8a9a17b94657e9cbb62c36aba3fc
 # Remove this line to create a well-formed Fossil manifest.
