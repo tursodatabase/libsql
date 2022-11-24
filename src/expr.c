@@ -6330,15 +6330,12 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
     default: {
       IndexedExpr *pIEpr;
       Expr tmp;
+      assert( pParse->iSelfTab==0 );
       if( (pNC->ncFlags & NC_InAggFunc)==0 ) break;
       if( pParse->pIdxEpr==0 ) break;
       for(pIEpr=pParse->pIdxEpr; pIEpr; pIEpr=pIEpr->pIENext){
         int iDataCur = pIEpr->iDataCur;
         if( iDataCur<0 ) continue;
-        if( NEVER(pParse->iSelfTab) ){
-          if( pIEpr->iDataCur!=pParse->iSelfTab-1 ) continue;
-          iDataCur = -1;
-        }
         if( sqlite3ExprCompare(0, pExpr, pIEpr->pExpr, iDataCur)==0 ) break;
       }
       if( pIEpr==0 ) break;
