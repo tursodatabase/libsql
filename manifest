@@ -1,5 +1,5 @@
-C Add\ssqlite3.oo1.DB.prototype.checkRc()\sand\stests\sfor\sboth\sthat\smethod\sand\sits\sclass-level\scounterpart.
-D 2022-11-24T02:35:03.924
+C Update\smultiplex3.test\sto\saccount\sfor\sthe\sfact\sthat\sthe\smultiplexor\sxDelete\smethod\smay\sreturn\san\serror\seven\sif\sit\smanages\sto\sdelete\sthe\sfirst\schunk\sof\sa\sfile.
+D 2022-11-24T15:32:00.589
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1340,7 +1340,7 @@ F test/mmapfault.test d4c9eff9cd8c2dc14bc43e71e042f175b0a26fe3
 F test/mmapwarm.test 2272005969cd17a910077bd5082f70bc1fefad9a875afec7fc9af483898ecaf3
 F test/multiplex.test d74c034e52805f6de8cc5432cef8c9eb774bb64ec29b83a22effc8ca4dac1f08
 F test/multiplex2.test 580ca5817c7edbe4cc68fa150609c9473393003a
-F test/multiplex3.test d228f59eac91839a977eac19f21d053f03e4d101
+F test/multiplex3.test fac575e0b1b852025575a6a8357701d80933e98b5d2fe6d35ddaa68f92f6a1f7
 F test/multiplex4.test e8ae4c4bd70606a5727743241f13b5701990abe4
 F test/mutex1.test 177db2e4edb530f2ff21edc52ac79a412dbe63e4c47c3ae9504d3fb4f1ce81fa
 F test/mutex2.test bfeaeac2e73095b2ac32285d2756e3a65e681660
@@ -2059,8 +2059,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 27efd63ad7fb3bf8d0d07f2c9f48652c8cacc4e697c229c8085120a8e6b50a39
-R 25ba86c410fa1767dbcf638c18b7bc32
-U stephan
-Z 6ecc8a9a17b94657e9cbb62c36aba3fc
+P f7eaa6ba2147bfd6dbdc2444d0f919d846aa7f9b68cccab17ef585ffdacf3d60
+R f39101951334943bf67c026388719509
+U dan
+Z db7c150da52ab80c381cc3a21444c8d8
 # Remove this line to create a well-formed Fossil manifest.
