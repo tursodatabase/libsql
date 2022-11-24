@@ -4135,9 +4135,11 @@ expr_code_doover:
         Table *pTab = pCol->pTab;
         sqlite3VdbeAddOp3(v, OP_Column, pAggInfo->sortingIdxPTab,
                               pCol->iSorterColumn, target);
-        if( pCol->iColumn<0 ){
+        if( pTab==0 ){
+          /* No comment added */
+        }else if( pCol->iColumn<0 ){
           VdbeComment((v,"%s.rowid",pTab->zName));
-        }else if( pTab!=0 ){
+        }else{
           VdbeComment((v,"%s.%s", 
               pTab->zName, pTab->aCol[pCol->iColumn].zCnName));
           if( pTab->aCol[pCol->iColumn].affinity==SQLITE_AFF_REAL ){

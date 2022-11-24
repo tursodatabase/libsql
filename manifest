@@ -1,5 +1,5 @@
-C Change\sa\sNEVER()\sinto\san\sassert().
-D 2022-11-24T18:45:56.655
+C Take\scare\snot\sto\stry\sto\sadd\scomments\sto\sa\sTK_AGG_COLUMN\sopcode\sthat\sdoes\nnot\shave\san\sassociated\sTable\sobject\sbecause\sit\sis\sa\sreference\sto\san\sindexed\nexpression.
+D 2022-11-24T19:02:40.883
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -591,7 +591,7 @@ F src/date.c 94ce83b4cd848a387680a5f920c9018c16655db778c4d36525af0a0f34679ac5
 F src/dbpage.c f1a87f4ebcf22284e0aaf0697862f4ccfc120dcd6db3d8dfa3b049b2580c01d8
 F src/dbstat.c 861e08690fcb0f2ee1165eff0060ea8d4f3e2ea10f80dab7d32ad70443a6ff2d
 F src/delete.c 86573edae75e3d3e9a8b590d87db8e47222103029df4f3e11fa56044459b514e
-F src/expr.c 4de4d488850fdf28ec2237401594af36713bec2fa739f6eda87e29ae8515fbb3
+F src/expr.c af9e80644a53ba437851659ba753e8e049e32c40cd584eece3796357fab52e9e
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 722f20779f5342a787922deded3628d8c74b5249cab04098cf17ee2f2aaff002
 F src/func.c 7e86074afc4dc702691a29b7801f6dcc191db092b52e8bbe69dcd2f7be52194d
@@ -2060,8 +2060,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3a901e88c87fc76c7fe42e47a976a5706830f0dbd6027605663e4d55f4f33590
-R fd9fef17e074036cfa72866de0a2e639
+P a0fd44f4e5a0ec83465203a0009f307ca50223833575895a3ebf8a289515714f
+R 54c8f77b091e9c38ba79b231dfbd47a4
 U drh
-Z bd1dc748d429f9c2f3da3ec49c4b6323
+Z df0c8e1baf68d2353d611c7c44676419
 # Remove this line to create a well-formed Fossil manifest.
