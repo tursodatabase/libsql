@@ -113,21 +113,26 @@ static void sayHelp(){
 }
 #endif
 
+#ifndef UBYTE_TYPEDEF
+typedef unsigned char ubyte;
+# define UBYTE_TYPEDEF
+#endif
+
 /* Classify c according to interval within USASCII set w.r.t. base85
  * Values of 1 and 3 are base85 numerals. Values of 0, 2, or 4 are not.
  */
 #define B85_CLASS( c ) (((c)>='#')+((c)>'&')+((c)>='*')+((c)>'z'))
 
 /* Provide digitValue to b85Numeral offset as a function of above class. */
-static unsigned char b85_cOffset[] = { 0, '#', 0, '*'-4, 0 };
+static ubyte b85_cOffset[] = { 0, '#', 0, '*'-4, 0 };
 #define B85_DNOS( c ) b85_cOffset[B85_CLASS(c)]
 
 /* Say whether c is a base85 numeral. */
 #define IS_B85( c ) (B85_CLASS(c) & 1)
 
 #if 0 /* Not used, */
-static unsigned char base85DigitValue( char c ){
-  unsigned char dv = (unsigned char)(c - '#');
+static ubyte base85DigitValue( char c ){
+  ubyte dv = (ubyte)(c - '#');
   if( dv>87 ) return 0xff;
   return (dv > 3)? dv-3 : dv;
 }
@@ -144,46 +149,61 @@ static char * skipNonB85( char *s ){
 }
 
 /* Convert small integer, known to be in 0..84 inclusive, to base85 numeral.*/
-static char base85Numeral( unsigned char b ){
+static char base85Numeral( ubyte b ){
   return (b < 4)? (char)(b + '#') : (char)(b - 4 + '*');
+}
+
+static char *putcs(char *pc, char *s){
+  char c;
+  while( (c = *s++)!=0 ) *pc++ = c;
+  return pc;
 }
 
 /* Encode a byte buffer into base85 text. If pSep!=0, it's a C string
 ** to be appended to encoded groups to limit their length to B85_DARK_MAX
 ** or to terminate the last group (to aid concatenation.)
 */
-static char* toBase85( unsigned char *pIn, int nbIn, char *pOut, char *pSep ){
+static char* toBase85( ubyte *pIn, int nbIn, char *pOut, char *pSep ){
   int nCol = 0;
-  *pOut = 0;
-  while( nbIn > 0 ){
-    static signed char ncio[] = { 0, 2, 3, 4, 5 };
-    int nbi = (nbIn > 4)? 4 : nbIn;
-    unsigned long qv = 0L;
-    int nbe = 0;
-    signed char nco;
-    while( nbe++ < nbi ){
+  while( nbIn >= 4 ){
+    int nco = 5;
+    unsigned long qbv = (pIn[0]<<24)|(pIn[1]<<16)|(pIn[2]<<8)|pIn[3];
+    while( nco > 0 ){
+      unsigned nqv = (unsigned)(qbv/85UL);
+      unsigned char dv = qbv - 85UL*nqv;
+      qbv = nqv;
+      pOut[--nco] = base85Numeral(dv);
+    }
+    nbIn -= 4;
+    pIn += 4;
+    pOut += 5;
+    if( pSep && (nCol += 5)>=B85_DARK_MAX ){
+      pOut = putcs(pOut, pSep);
+      nCol = 0;
+    }
+  }
+  if( nbIn > 0 ){
+    int nco = nbIn + 1;
+    unsigned long qv = *pIn++;
+    int nbe = 1;
+    while( nbe++ < nbIn ){
       qv = (qv<<8) | *pIn++;
     }
-    nco = ncio[nbi];
-    nbIn -= nbi;
+    nCol += nco;
     while( nco > 0 ){
-      unsigned char dv = (unsigned char)(qv % 85);
+      ubyte dv = (ubyte)(qv % 85);
       qv /= 85;
       pOut[--nco] = base85Numeral(dv);
     }
-    pOut += ncio[nbi];
-    if( pSep && ((nCol += ncio[nbi])>=B85_DARK_MAX || nbIn<=0) ){
-      char *p = pSep;
-      while( *p ) *pOut++ = *p++;
-      nCol = 0;
-    }
-    *pOut = 0;
+    pOut += (nbIn+1);
   }
+  if( pSep && nCol>0 ) pOut = putcs(pOut, pSep);
+  *pOut = 0;
   return pOut;
 }
 
 /* Decode base85 text into a byte buffer. */
-static unsigned char* fromBase85( char *pIn, int ncIn, unsigned char *pOut ){
+static ubyte* fromBase85( char *pIn, int ncIn, ubyte *pOut ){
   if( ncIn>0 && pIn[ncIn-1]=='\n' ) --ncIn;
   while( ncIn>0 ){
     static signed char nboi[] = { 0, 0, 1, 2, 3, 4 };
@@ -191,21 +211,30 @@ static unsigned char* fromBase85( char *pIn, int ncIn, unsigned char *pOut ){
     unsigned long qv = 0L;
     int nti, nbo;
     ncIn -= (pUse - pIn);
-    if( ncIn==0 ) break;
     pIn = pUse;
     nti = (ncIn>5)? 5 : ncIn;
     nbo = nboi[nti];
+    if( nbo==0 ) break;
     while( nti>0 ){
       char c = *pIn++;
-      unsigned char cdo = B85_DNOS(c);
+      ubyte cdo = B85_DNOS(c);
       --ncIn;
       if( cdo==0 ) break;
-      qv = 85 * qv + c - cdo;
+      qv = 85 * qv + (c - cdo);
       --nti;
     }
-    nbo -= nti;
-    while( nbo-- > 0 ){
-      *pOut++ = (qv >> (8*nbo))&0xff;
+    nbo -= nti; /* Adjust for early (non-digit) end of group. */
+    switch( nbo ){
+    case 4:
+      *pOut++ = (qv >> 24)&0xff;
+    case 3:
+      *pOut++ = (qv >> 16)&0xff;
+    case 2:
+      *pOut++ = (qv >> 8)&0xff;
+    case 1:
+      *pOut++ = qv&0xff;
+    case 0:
+      break;
     }
   }
   return pOut;
@@ -252,7 +281,7 @@ static void base85(sqlite3_context *context, int na, sqlite3_value *av[]){
   int nvMax = sqlite3_limit(sqlite3_context_db_handle(context),
                             SQLITE_LIMIT_LENGTH, -1);
   char *cBuf;
-  unsigned char *bBuf;
+  ubyte *bBuf;
   assert(na==1);
   switch( sqlite3_value_type(av[0]) ){
   case SQLITE_BLOB:
@@ -265,7 +294,7 @@ static void base85(sqlite3_context *context, int na, sqlite3_value *av[]){
     }
     cBuf = sqlite3_malloc(nc);
     if( !cBuf ) goto memFail;
-    bBuf = (unsigned char*)sqlite3_value_blob(av[0]);
+    bBuf = (ubyte*)sqlite3_value_blob(av[0]);
     nc = (int)(toBase85(bBuf, nb, cBuf, "\n") - cBuf);
     sqlite3_result_text(context, cBuf, nc, sqlite3_free);
     break;
@@ -335,7 +364,7 @@ static int sqlite3_base85_init
 int main(int na, char *av[]){
   int cin;
   int rc = 0;
-  unsigned char bBuf[4*(B85_DARK_MAX/5)];
+  ubyte bBuf[4*(B85_DARK_MAX/5)];
   char cBuf[5*(sizeof(bBuf)/4)+2];
   size_t nio;
 # ifndef OMIT_BASE85_CHECKER

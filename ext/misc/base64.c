@@ -64,7 +64,10 @@ SQLITE_EXTENSION_INIT1;
 #define ND 0x82 /* Not above or digit-value */
 #define PAD_CHAR '='
 
+#ifndef UBYTE_TYPEDEF
 typedef unsigned char ubyte;
+# define UBYTE_TYPEDEF
+#endif
 
 static const ubyte b64DigitValues[128] = {
   /*                             HT LF VT  FF CR       */

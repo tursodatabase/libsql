@@ -55,12 +55,13 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     if(sqliteResultCode){
       if(dbPtr instanceof DB) dbPtr = dbPtr.pointer;
       toss3(
-        "sqlite result code",sqliteResultCode+":",
+        "sqlite3 result code",sqliteResultCode+":",
         (dbPtr
          ? capi.sqlite3_errmsg(dbPtr)
          : capi.sqlite3_errstr(sqliteResultCode))
       );
     }
+    return arguments[0];
   };
 
   /**
@@ -462,14 +463,16 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      Expects to be given a DB instance or an `sqlite3*` pointer (may
      be null) and an sqlite3 API result code. If the result code is
      not falsy, this function throws an SQLite3Error with an error
-     message from sqlite3_errmsg(), using dbPtr as the db handle, or
-     sqlite3_errstr() if dbPtr is falsy. Note that if it's passed a
-     non-error code like SQLITE_ROW or SQLITE_DONE, it will still
-     throw but the error string might be "Not an error."  The various
-     non-0 non-error codes need to be checked for in
-     client code where they are expected.
+     message from sqlite3_errmsg(), using db (or, if db is-a DB,
+     db.pointer) as the db handle, or sqlite3_errstr() if db is
+     falsy. Note that if it's passed a non-error code like SQLITE_ROW
+     or SQLITE_DONE, it will still throw but the error string might be
+     "Not an error."  The various non-0 non-error codes need to be
+     checked for in client code where they are expected.
+
+     If it does not throw, it returns its first argument.
   */
-  DB.checkRc = checkSqlite3Rc;
+  DB.checkRc = (db,resultCode)=>checkSqlite3Rc(db,resultCode);
 
   DB.prototype = {
     /** Returns true if this db handle is open, else false. */
@@ -1130,6 +1133,14 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         this.exec("ROLLBACK to SAVEPOINT oo1; RELEASE SAVEPOINT oo1");
         throw e;
       }
+    },
+
+    /**
+       A convenience form of DB.checkRc(this,resultCode). If it does
+       not throw, it returns this object.
+    */
+    checkRc: function(resultCode){
+      return DB.checkRc(this, resultCode);
     }
   }/*DB.prototype*/;
 

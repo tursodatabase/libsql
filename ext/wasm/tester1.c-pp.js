@@ -1163,6 +1163,16 @@ self.sqlite3InitModule = sqlite3InitModule;
         .assert(0 === capi.sqlite3_errmsg(db.pointer).indexOf("Invalid SQL"))
         .assert(dbFile === db.dbFilename())
         .assert(!db.dbFilename('nope'));
+      //Sanity check DB.checkRc()...
+      let ex;
+      try{db.checkRc(rc)}
+      catch(e){ex = e}
+      T.assert(ex instanceof sqlite3.SQLite3Error)
+        .assert(0===ex.message.indexOf("sqlite3 result code"))
+        .assert(ex.message.indexOf("Invalid SQL")>0);
+      T.assert(db === db.checkRc(0))
+        .assert(db === sqlite3.oo1.DB.checkRc(db,0))
+        .assert(null === sqlite3.oo1.DB.checkRc(null,0))
     })
 
   ////////////////////////////////////////////////////////////////////
