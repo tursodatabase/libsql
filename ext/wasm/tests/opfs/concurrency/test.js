@@ -56,13 +56,16 @@
   options.sqlite3Dir = urlArgsJs.get('sqlite3.dir');
   options.workerCount = (
     urlArgsHtml.has('workers') ? +urlArgsHtml.get('workers') : 3
-  ) || 3;
+  ) || 4;
   options.opfsVerbose = (
     urlArgsHtml.has('verbose') ? +urlArgsHtml.get('verbose') : 1
   ) || 1;
   options.interval = (
     urlArgsHtml.has('interval') ? +urlArgsHtml.get('interval') : 750
-  ) || 750;
+  ) || 1000;
+  options.iterations = (
+    urlArgsHtml.has('iterations') ? +urlArgsHtml.get('iterations') : 10
+  ) || 10;
   options.unlockAsap = (
     urlArgsHtml.has('unlock-asap') ? +urlArgsHtml.get('unlock-asap') : 0
   ) || 0;
@@ -70,15 +73,25 @@
   workers.post = (type,...args)=>{
     for(const w of workers) w.postMessage({type, payload:args});
   };
-  workers.loadedCount = 0;
+  workers.counts = {loaded: 0, passed: 0, failed: 0};
+  const checkFinished = function(){
+    if(workers.counts.passed + workers.counts.failed !== workers.length){
+      return;
+    }
+    if(workers.counts.failed>0){
+      logCss('tests-fail',"Finished with",workers.counts.failed,"failure(s).");
+    }else{
+      logCss('tests-pass',"All",workers.length,"workers finished.");
+    }
+  };
   workers.onmessage = function(msg){
     msg = msg.data;
     const prefix = 'Worker #'+msg.worker+':';
     switch(msg.type){
         case 'loaded':
           stdout(prefix,"loaded");
-          if(++workers.loadedCount === workers.length){
-            stdout("All workers loaded. Telling them to run...");
+          if(++workers.counts.loaded === workers.length){
+            stdout("All",workers.length,"workers loaded. Telling them to run...");
             workers.post('run');
           }
           break;
@@ -86,10 +99,14 @@
         case 'stderr': stderr(prefix,...msg.payload); break;
         case 'error': stderr(prefix,"ERROR:",...msg.payload); break;
         case 'finished':
+          ++workers.counts.passed;
           logCss('tests-pass',prefix,...msg.payload);
+          checkFinished();
           break;
         case 'failed':
+          ++workers.counts.failed;
           logCss('tests-fail',prefix,"FAILED:",...msg.payload);
+          checkFinished();
           break;
         default: logCss('error',"Unhandled message type:",msg); break;
     }
@@ -100,6 +117,7 @@
     'worker.js?'
       + 'sqlite3.dir='+options.sqlite3Dir
       + '&interval='+options.interval
+      + '&iterations='+options.iterations
       + '&opfs-verbose='+options.opfsVerbose
       + '&opfs-unlock-asap='+options.unlockAsap
   );

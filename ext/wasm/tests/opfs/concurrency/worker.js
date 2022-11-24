@@ -46,10 +46,9 @@ self.sqlite3InitModule().then(async function(sqlite3){
     }
   };
   const run = async function(){
-    db = new sqlite3.oo1.DB({
+    db = new sqlite3.opfs.OpfsDb({
       filename: 'file:'+dbName+'?opfs-unlock-asap='+options.unlockAsap,
-      flags: 'c',
-      vfs: 'opfs'
+      flags: 'c'
     });
     sqlite3.capi.sqlite3_busy_timeout(db.pointer, 5000);
     db.transaction((db)=>{
@@ -59,7 +58,8 @@ self.sqlite3InitModule().then(async function(sqlite3){
       ]);
     });
 
-    const maxIterations = 10;
+    const maxIterations =
+          urlArgs.has('iterations') ? (+urlArgs.get('iterations') || 10) : 10;
     stdout("Starting interval-based db updates with delay of",interval.delay,"ms.");
     const doWork = async ()=>{
       const tm = new Date().getTime();

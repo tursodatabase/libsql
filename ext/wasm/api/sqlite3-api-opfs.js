@@ -1171,6 +1171,9 @@ const installOpfsVfs = function callee(options){
 
     //TODO to support fiddle and worker1 db upload:
     //opfsUtil.createFile = function(absName, content=undefined){...}
+    //We have sqlite3.wasm.sqlite3_wasm_vfs_create_file() for this
+    //purpose but its interface and name are still under
+    //consideration.
 
     if(sqlite3.oo1){
       opfsUtil.OpfsDb = function(...args){

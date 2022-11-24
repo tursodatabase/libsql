@@ -558,33 +558,17 @@ const vfsAsyncImpls = {
         (opfsFlags & state.opfsFlags.OPFS_UNLOCK_ASAP)
         || state.opfsFlags.defaultUnlockAsap;
       if(0 /* this block is modelled after something wa-sqlite
-              does but it leads to horrible contention on journal files. */
+              does but it leads to immediate contention on journal files. */
          && (0===(flags & state.sq3Codes.SQLITE_OPEN_MAIN_DB))){
         /* sqlite does not lock these files, so go ahead and grab an OPFS
            lock.
 
-           Regarding "immutable": that flag is not _really_ applicable
-           here.  It's intended for use on read-only media. If,
-           however, a file is opened with that flag but changes later
-           (which can happen if we _don't_ grab a sync handle here)
-           then sqlite may misbehave.
-
-           Regarding "nolock": ironically, the nolock flag forces us
-           to lock the file up front. "nolock" tells sqlite to _not_
-           use its locking API, but OPFS requires a lock to perform
-           most of the operations performed in this file. If we don't
-           grab that lock up front, another handle could end up grabbing
-           it and mutating the database out from under our nolocked'd
-           handle. In the interest of preventing corruption, at the cost
-           of decreased concurrency, we have to lock it for the duration
-           of this file handle.
-
            https://www.sqlite.org/uri.html
         */
-        fh.xLock = "atOpen"/* Truthy value to keep entry from getting
-                              flagged as auto-locked. String value so
-                              that we can easily distinguish is later
-                              if needed. */;
+        fh.xLock = "xOpen"/* Truthy value to keep entry from getting
+                             flagged as auto-locked. String value so
+                             that we can easily distinguish is later
+                             if needed. */;
         await getSyncHandle(fh,'xOpen');
       }
       __openFiles[fid] = fh;
@@ -824,7 +808,7 @@ const waitLoop = async function f(){
      to do other things. If this is too high (e.g. 500ms) then
      even two workers/tabs can easily run into locking errors.
   */
-  const waitTime = 150;
+  const waitTime = 100;
   while(!flagAsyncShutdown){
     try {
       if('timed-out'===Atomics.wait(
