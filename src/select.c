@@ -7703,6 +7703,11 @@ int sqlite3Select(
         pAggInfo->useSortingIdx = 1;
       }
 
+      /* If there entries in pAgggInfo->aFunc[] that contain subexpressions
+      ** that are indexed (and that were previously identified and tagged
+      ** in optimizeAggregateUseOfIndexedExpr()) then those subexpressions
+      ** must now be converted into a TK_AGG_COLUMN node so that the value
+      ** is correctly pulled from the index rather than being recomputed. */
       if( pParse->pIdxEpr ){
         aggregateConvertIndexedExprRefToColumn(pAggInfo);
 #if TREETRACE_ENABLED
