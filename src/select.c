@@ -6282,7 +6282,7 @@ static void optimizeAggregateUseOfIndexedExpr(
   NameContext *pNC        /* Name context used to resolve agg-func args */
 ){
   pAggInfo->nColumn = pAggInfo->nAccumulator;
-  if( pAggInfo->nSortingColumn>0 ){
+  if( ALWAYS(pAggInfo->nSortingColumn>0) ){
     if( pAggInfo->nColumn==0 ){
       pAggInfo->nSortingColumn = 0;
     }else{
