@@ -92,42 +92,46 @@ static const char b64Numerals[64+1]
 #define IS_BX_DIGIT(bdp) (((ubyte)(bdp))<0x80)
 #define IS_BX_WS(bdp) ((bdp)==WS)
 #define IS_BX_PAD(bdp) ((bdp)==PC)
-#define BX_NUMERAL(dv) (b64Numerals[dv])
+#define BX_NUMERAL(dv) (b64Numerals[(ubyte)(dv)])
 /* Width of base64 lines. Should be an integer multiple of 4. */
 #define B64_DARK_MAX 72
 
-/* Encode a byte buffer into base64 text. If pSep!=0, it's a C string
-** to be appended to encoded groups to limit their length to B64_DARK_MAX
-** or to terminate the last group (to aid concatenation.)
+/* Encode a byte buffer into base64 text with linefeeds appended to limit
+** encoded group lengths to B64_DARK_MAX or to terminate the last group.
 */
-static char* toBase64( ubyte *pIn, int nbIn, char *pOut, char *pSep ){
+static char* toBase64( ubyte *pIn, int nbIn, char *pOut ){
   int nCol = 0;
-  *pOut = 0;
-  while( nbIn > 0 ){
-    static signed char ncio[] = { 0, 2, 3, 4 };
-    int nbi = (nbIn > 3)? 3 : nbIn;
-    signed char nc;
-    int nbe;
-    unsigned long qv = (ubyte)*pIn++;
-    for( nbe=1; nbe<3; ++nbe ){
-      ubyte b = (nbe<nbi)? *pIn++ : 0;
-      qv = (qv<<8) | b;
+  while( nbIn >= 3 ){
+    /* Do the bit-shuffle, exploiting unsigned input to avoid masking. */
+    pOut[0] = BX_NUMERAL(pIn[0]>>2);
+    pOut[1] = BX_NUMERAL(((pIn[0]<<4)|(pIn[1]>>4))&0x3f);
+    pOut[2] = BX_NUMERAL(((pIn[1]&0xf)<<2)|(pIn[2]>>6));
+    pOut[3] = BX_NUMERAL(pIn[2]&0x3f);
+    pOut += 4;
+    nbIn -= 3;
+    pIn += 3;
+    if( (nCol += 4)>=B64_DARK_MAX || nbIn<=0 ){
+      *pOut++ = '\n';
+      nCol = 0;
     }
-    nc = ncio[nbi];
-    nbIn -= nbi;
+  }
+  if( nbIn > 0 ){
+    signed char nco = nbIn+1;
+    int nbe;
+    unsigned long qv = *pIn++;
+    for( nbe=1; nbe<3; ++nbe ){
+      qv <<= 8;
+      if( nbe<nbIn ) qv |= *pIn++;
+    }
     for( nbe=3; nbe>=0; --nbe ){
-      char ce = (nbe<nc)? BX_NUMERAL((ubyte)(qv & 0x3f)) : PAD_CHAR;
+      char ce = (nbe<nco)? BX_NUMERAL((ubyte)(qv & 0x3f)) : PAD_CHAR;
       qv >>= 6;
       pOut[nbe] = ce;
     }
     pOut += 4;
-    if( pSep && ((nCol += 4)>=B64_DARK_MAX || nbIn<=0) ){
-      char *p = pSep;
-      while( *p ) *pOut++ = *p++;
-      nCol = 0;
-    }
-    *pOut = 0;
+    *pOut++ = '\n';
   }
+  *pOut = 0;
   return pOut;
 }
 
@@ -157,11 +161,12 @@ static ubyte* fromBase64( char *pIn, int ncIn, ubyte *pOut ){
       ubyte bdp = BX_DV_PROTO(c);
       switch( bdp ){
       case ND:
-        /*  Treat non-digits as pad, but they terminate decode too. */
+        /*  Treat dark non-digits as pad, but they terminate decode too. */
         ncIn = 0;
         /* fall thru */
       case WS:
-        /* Treat whitespace as pad */
+        /* Treat whitespace as pad and terminate this group.*/
+        nti = nac;
         /* fall thru */
       case PC:
         bdp = 0;
@@ -172,10 +177,15 @@ static ubyte* fromBase64( char *pIn, int ncIn, ubyte *pOut ){
         break;
       }
     }
-    nti = 2;
-    while( nbo-- > 0 ){
-      *pOut++ = (qv >> (8*nti--))&0xff;
+    switch( nbo ){
+    case 3:
+      pOut[2] = (qv) & 0xff;
+    case 2:
+      pOut[1] = (qv>>8) & 0xff;
+    case 1:
+      pOut[0] = (qv>>16) & 0xff;
     }
+    pOut += nbo;
   }
   return pOut;
 }
@@ -200,7 +210,7 @@ static void base64(sqlite3_context *context, int na, sqlite3_value *av[]){
     cBuf = sqlite3_malloc(nc);
     if( !cBuf ) goto memFail;
     bBuf = (ubyte*)sqlite3_value_blob(av[0]);
-    nc = (int)(toBase64(bBuf, nb, cBuf, "\n") - cBuf);
+    nc = (int)(toBase64(bBuf, nb, cBuf) - cBuf);
     sqlite3_result_text(context, cBuf, nc, sqlite3_free);
     break;
   case SQLITE_TEXT:

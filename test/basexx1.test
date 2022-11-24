@@ -138,4 +138,18 @@ do_catchsql_test 116 {
   SELECT is_base85(x'00');
 } {1 {is_base85 accepts only text or NULL}}
 
+# Round-trip many bigger random blobs.
+
+do_execsql_test 117 {
+  CREATE TABLE bs(b blob, num);
+  INSERT INTO bs SELECT randomblob(4000 + n%3), n 
+   FROM ( 
+     WITH RECURSIVE seq(n) AS (
+      VALUES(1) UNION ALL SELECT n+1
+      FROM seq WHERE n<100
+     ) SELECT n FROM seq);
+  SELECT num FROM bs WHERE base64(base64(b))!=b;
+  SELECT num FROM bs WHERE base85(base85(b))!=b;
+} {}
+
 finish_test
