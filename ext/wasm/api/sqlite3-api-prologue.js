@@ -1307,17 +1307,24 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   };
 
   /**
-     Serializes the given `sqlite3*` pointer to a Uint8Array, as per
-     sqlite3_serialize(). On success it returns a Uint8Array. On
-     error it throws with a description of the problem.
+     A convenience wrapper around sqlite3_serialize() which serializes
+     the given `sqlite3*` pointer to a Uint8Array.
+
+     On success it returns a Uint8Array. If the schema is empty, an
+     empty array is returned.
+
+     `schema` is the schema to serialize. It may be a WASM C-string
+     pointer or a JS string. If it is falsy, it defaults to `"main"`.
+
+     On error it throws with a description of the problem.
   */
-  capi.sqlite3_js_db_export = function(pDb){
+  capi.sqlite3_js_db_export = function(pDb, schema=0){
     if(!pDb) toss3('Invalid sqlite3* argument.');
     if(!wasm.bigIntEnabled) toss3('BigInt64 support is not enabled.');
-    const stack = wasm.pstack.pointer;
+    const scope = wasm.scopedAllocPush();
     let pOut;
     try{
-      const pSize = wasm.pstack.alloc(8/*i64*/ + wasm.ptrSizeof);
+      const pSize = wasm.scopedAlloc(8/*i64*/ + wasm.ptrSizeof);
       const ppOut = pSize + 8;
       /**
          Maintenance reminder, since this cost a full hour of grief
@@ -1326,8 +1333,11 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
          export reads a garbage size because it's not on an 8-byte
          memory boundary!
       */
+      const zSchema = schema
+            ? (wasm.isPtr(schema) ? schema : wasm.scopedAllocCString(''+schema))
+            : 0;
       let rc = wasm.exports.sqlite3_wasm_db_serialize(
-        pDb, ppOut, pSize, 0
+        pDb, zSchema, ppOut, pSize, 0
       );
       if(rc){
         toss3("Database serialization failed with code",
@@ -1341,7 +1351,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       return rc;
     }finally{
       if(pOut) wasm.exports.sqlite3_free(pOut);
-      wasm.pstack.restore(stack);
+      wasm.scopedAllocPop(scope);
     }
   };
 

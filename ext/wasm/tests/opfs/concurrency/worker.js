@@ -70,11 +70,12 @@ self.sqlite3InitModule().then(async function(sqlite3){
       }
     };
     if(1){/*use setInterval()*/
-      interval.handle = setInterval(async ()=>{
+      setTimeout(async function timer(){
         await doWork();
         if(interval.error || maxIterations === interval.count){
-          clearInterval(interval.handle);
           finish();
+        }else{
+          setTimeout(timer, interval.delay);
         }
       }, interval.delay);
     }else{
