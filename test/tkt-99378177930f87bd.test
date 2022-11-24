@@ -66,4 +66,89 @@ do_execsql_test tkt-99378-120 {
    GROUP BY a;
 } {~/Function/}
 
+
+do_execsql_test tkt-99378-130 {
+  SELECT a,
+         SUM(1)                              AS t1,
+         SUM(CASE WHEN b->>'x'=1 THEN 1 END) AS t2,
+         SUM(c)                              AS t3,
+         SUM(CASE WHEN b->>'x'=1 THEN c END) AS t4
+    FROM t1
+   WHERE d BETWEEN 0 and 10
+   GROUP BY +a;
+} {
+  1  2  1 16 12
+  2  2  1 26 22
+  3  1  1  6  6
+}
+do_execsql_test tkt-99378-140 {
+  EXPLAIN
+  SELECT a,
+         SUM(1)                              AS t1,
+         SUM(CASE WHEN b->>'x'=1 THEN 1 END) AS t2,
+         SUM(c)                              AS t3,
+         SUM(CASE WHEN b->>'x'=1 THEN c END) AS t4
+    FROM t1
+   WHERE d BETWEEN 0 and 10
+   GROUP BY +a;
+} {~/Function/}
+
+do_execsql_test tkt-99378-200 {
+  DROP INDEX t1x;
+  CREATE INDEX t1x ON t1(a, d, b->>'x', c);
+}
+do_execsql_test tkt-99378-210 {
+  SELECT a,
+         SUM(1)                              AS t1,
+         SUM(CASE WHEN b->>'x'=1 THEN 1 END) AS t2,
+         SUM(c)                              AS t3,
+         SUM(CASE WHEN b->>'x'=1 THEN c END) AS t4
+    FROM t1
+   WHERE d BETWEEN 0 and 10
+   GROUP BY a;
+} {
+  1  2  1 16 12
+  2  2  1 26 22
+  3  1  1  6  6
+}
+do_execsql_test tkt-99378-220 {
+  EXPLAIN
+  SELECT a,
+         SUM(1)                              AS t1,
+         SUM(CASE WHEN b->>'x'=1 THEN 1 END) AS t2,
+         SUM(c)                              AS t3,
+         SUM(CASE WHEN b->>'x'=1 THEN c END) AS t4
+    FROM t1
+   WHERE d BETWEEN 0 and 10
+   GROUP BY a;
+} {~/Function/}
+do_execsql_test tkt-99378-230 {
+  SELECT a,
+         SUM(1)                              AS t1,
+         SUM(CASE WHEN b->>'x'=1 THEN 1 END) AS t2,
+         SUM(c)                              AS t3,
+         SUM(CASE WHEN b->>'x'=1 THEN c END) AS t4
+    FROM t1
+   WHERE d BETWEEN 0 and 10
+   GROUP BY a;
+} {
+  1  2  1 16 12
+  2  2  1 26 22
+  3  1  1  6  6
+}
+do_execsql_test tkt-99378-240 {
+  EXPLAIN
+  SELECT a,
+         SUM(1)                              AS t1,
+         SUM(CASE WHEN b->>'x'=1 THEN 1 END) AS t2,
+         SUM(c)                              AS t3,
+         SUM(CASE WHEN b->>'x'=1 THEN c END) AS t4
+    FROM t1
+   WHERE d BETWEEN 0 and 10
+   GROUP BY a;
+} {~/Function/}
+
+
+
+
 finish_test

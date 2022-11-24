@@ -4145,6 +4145,11 @@ expr_code_doover:
           }
         }
         return target;
+      }else if( pExpr->y.pTab==0 ){
+        /* This case happens when the argument to an aggregate function
+        ** is rewritten by aggregateConvertIndexedExprRefToColumn() */
+        sqlite3VdbeAddOp3(v, OP_Column, pExpr->iTable, pExpr->iColumn, target);
+        return target;
       }
       /* Otherwise, fall thru into the TK_COLUMN case */
       /* no break */ deliberate_fall_through
