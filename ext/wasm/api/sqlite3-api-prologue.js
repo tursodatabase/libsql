@@ -11,76 +11,18 @@
   ***********************************************************************
 
   This file is intended to be combined at build-time with other
-  related code, most notably a header and footer which wraps this whole
-  file into an Emscripten Module.postRun() handler which has a parameter
-  named "Module" (the Emscripten Module object). The exact requirements,
-  conventions, and build process are very much under construction and
-  will be (re)documented once they've stopped fluctuating so much.
+  related code, most notably a header and footer which wraps this
+  whole file into an Emscripten Module.postRun() handler which has a
+  parameter named "Module" (the Emscripten Module object). The sqlite3
+  JS API has no hard requirements on Emscripten, and does not expose
+  any Emscripten APIs to clients. It is structured such that its build
+  can be tweaked to include it in arbitrary WASM environments which
+  supply the necessary underlying features (e.g. a POSIX file I/O
+  layer).
 
-  Project home page: https://sqlite.org
+  Main project home page: https://sqlite.org
 
   Documentation home page: https://sqlite.org/wasm
-
-  Specific goals of this subproject:
-
-  - Except where noted in the non-goals, provide a more-or-less
-    feature-complete wrapper to the sqlite3 C API, insofar as WASM
-    feature parity with C allows for. In fact, provide at least 4
-    APIs...
-
-    1) 1-to-1 bindings as exported from WASM, with no automatic
-       type conversions between JS and C.
-       
-    2) A binding of (1) which provides certain JS/C type conversions
-       to greatly simplify its use.
-
-    3) A higher-level API, more akin to sql.js and node.js-style
-       implementations. This one speaks directly to the low-level
-       API. This API must be used from the same thread as the
-       low-level API.
-
-    4) A second higher-level API which speaks to the previous APIs via
-       worker messages. This one is intended for use in the main
-       thread, with the lower-level APIs installed in a Worker thread,
-       and talking to them via Worker messages. Because Workers are
-       asynchronouns and have only a single message channel, some
-       acrobatics are needed here to feed async work results back to
-       the client (as we cannot simply pass around callbacks between
-       the main and Worker threads).
-
-  - Insofar as possible, support client-side storage using JS
-    filesystem APIs. As of this writing, such things are still very
-    much under development.
-
-  Specific non-goals of this project:
-
-  - As WASM is a web-centric technology and UTF-8 is the King of
-    Encodings in that realm, there are no currently plans to support
-    the UTF16-related sqlite3 APIs. They would add a complication to
-    the bindings for no appreciable benefit. Though web-related
-    implementation details take priority, and the JavaScript
-    components of the API specifically focus on browser clients, the
-    lower-level WASM module "should" work in non-web WASM
-    environments.
-
-  - Supporting old or niche-market platforms. WASM is built for a
-    modern web and requires modern platforms.
-
-  - Though scalar User-Defined Functions (UDFs) may be created in
-    JavaScript, there are currently no plans to add support for
-    aggregate and window functions.
-
-  Attribution:
-
-  This project is endebted to the work of sql.js:
-
-  https://github.com/sql-js/sql.js
-
-  sql.js was an essential stepping stone in this code's development as
-  it demonstrated how to handle some of the WASM-related voodoo (like
-  handling pointers-to-pointers and adding JS implementations of
-  C-bound callback functions). These APIs have a considerably
-  different shape than sql.js's, however.
 */
 
 /**
@@ -89,6 +31,10 @@
    end of the API amalgamation process, passed configuration details
    for the current environment, and then optionally be removed from
    the global object using `delete self.sqlite3ApiBootstrap`.
+
+   This function is not intended for client-level use. It is intended
+   for use in creating bundles configured for specific WASM
+   environments.
 
    This function expects a configuration object, intended to abstract
    away details specific to any given WASM environment, primarily so
@@ -126,11 +72,11 @@
      environment. Defaults to `"free"`.
 
    - `wasmfsOpfsDir`[^1]: if the environment supports persistent
-     storage, this directory names the "mount point" for that
-     directory. It must be prefixed by `/` and may contain only a
-     single directory-name part. Using the root directory name is not
-     supported by any current persistent backend.  This setting is
-     only used in WASMFS-enabled builds.
+     storage using OPFS-over-WASMFS , this directory names the "mount
+     point" for that directory. It must be prefixed by `/` and may
+     contain only a single directory-name part. Using the root
+     directory name is not supported by any current persistent
+     backend.  This setting is only used in WASMFS-enabled builds.
 
 
    [^1] = This property may optionally be a function, in which case this
@@ -191,11 +137,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   const capi = Object.create(null);
   /**
      Holds state which are specific to the WASM-related
-     infrastructure and glue code. It is not expected that client
-     code will normally need these, but they're exposed here in case
-     it does. These APIs are _not_ to be considered an
-     official/stable part of the sqlite3 WASM API. They may change
-     as the developers' experience suggests appropriate changes.
+     infrastructure and glue code.
 
      Note that a number of members of this object are injected
      dynamically after the api object is fully constructed, so
@@ -228,7 +170,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        result of sqlite3.capi.sqlite3_js_rc_str() or (if that returns
        falsy) a synthesized string which contains that integer.
 
-       - If passed 2 arguments and the 2nd is a object, it bevaves
+       - If passed 2 arguments and the 2nd is a object, it behaves
        like the Error(string,object) constructor except that the first
        argument is subject to the is-integer semantics from the
        previous point.
@@ -686,9 +628,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     /**
        The WASM IR (Intermediate Representation) value for
        pointer-type values. It MUST refer to a value type of the
-       size described by this.ptrSizeof _or_ it may be any value
-       which ends in '*', which Emscripten's glue code internally
-       translates to i32.
+       size described by this.ptrSizeof.
     */
     ptrIR: config.wasmPtrIR || "i32",
     /**
