@@ -1,5 +1,5 @@
-C JS\sdocumentation\scleanups.\sNo\scode\schanges.
-D 2022-11-24T16:03:49.104
+C Fix\sa\stest\scase\sin\sfts3expr4.test\sto\saccount\sfor\sdifferent\slocales.
+D 2022-11-24T17:58:55.503
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1094,7 +1094,7 @@ F test/fts3e.test 1f6c6ac9cc8b772ca256e6b22aaeed50c9350851
 F test/fts3expr.test ebae205a7a89446c32583bcd492dcb817b9f6b31819bb4dde2583bb99c77e526
 F test/fts3expr2.test 18da930352e5693eaa163a3eacf96233b7290d1a
 F test/fts3expr3.test c4d4a7d6327418428c96e0a3a1137c251b8dfbf8
-F test/fts3expr4.test f5b2832549f01b1f7f73389fa21d4b875499bc95bf7c8b36271844888c6a0938
+F test/fts3expr4.test 6c7675bbdbffe6ffc95e9e861500b8ac3f739c4d004ffda812f138eeb1b45529
 F test/fts3expr5.test a5b9a053becbdb8e973fbf4d6d3abaabeb42d511d1848bd57931f3e0a1cf983e
 F test/fts3f.test 8c438d5e1cab526b0021988fb1dc70cf3597b006a33ffd6c955ee89929077fe3
 F test/fts3fault.test f4e1342acfe6d216a001490e8cd52afac1f9ffe4a11bbcdcb296129a45c5df45
@@ -2059,8 +2059,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1a7f3254735054ed8ca32d5ec7c8cde9195a64702638bdc50392007e396fead2
-R abd9b2d5004cf0e1068a5fc8037a67b4
-U stephan
-Z 59d8b0c4ff23bb85893a1a0d379c6144
+P 18e89a436daa18a8c972caf06b298da43c97a6ea3e2e5229dccb6920c27bfdb9
+R e3089d3062e617db155d3fe3a44f9c32
+U dan
+Z c38105809dd01fc34e6f6bf40716c164
 # Remove this line to create a well-formed Fossil manifest.
