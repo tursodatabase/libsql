@@ -31,9 +31,11 @@ where
         let next = ready!(self.stream.poll_next_unpin(cx));
         match next {
             Some(Ok(Message::Binary(data))) => self.buffer.extend(data.iter()),
+            Some(Ok(Message::Close(_))) => self.terminated = true,
+            Some(Ok(_)) => (),
             Some(Err(WsError::Io(io))) => return Poll::Ready(Err(io)),
             Some(Err(WsError::ConnectionClosed)) | None => self.terminated = true,
-            _ => unimplemented!("implement unsupported error and message"),
+            _ => unimplemented!("implement unsupported error"),
         }
 
         Poll::Ready(Ok(()))
@@ -62,10 +64,10 @@ where
             }
         }
 
-        let to_read = buf.capacity().min(self.buffer.len());
+        let to_read = buf.remaining().min(self.buffer.remaining());
         let mut take = (&mut self.buffer).take(to_read);
-        unsafe { buf.assume_init(to_read) };
-        take.copy_to_slice(buf.initialized_mut());
+        let dest = buf.initialize_unfilled_to(to_read);
+        take.copy_to_slice(dest);
         buf.advance(to_read);
 
         Poll::Ready(Ok(()))
@@ -125,7 +127,7 @@ where
         }
 
         if self.buffer.has_remaining() {
-            let to_peek = self.buffer.len().min(buf.capacity());
+            let to_peek = self.buffer.remaining().min(buf.capacity());
             self.buffer.make_contiguous();
             buf.put_slice(&self.buffer.chunk()[..to_peek]);
 
@@ -181,5 +183,126 @@ impl Stream for WsAdapter {
         };
 
         Poll::Ready(Some(Ok((stream, addr))))
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use std::time::Duration;
+
+    use super::*;
+    use rand::{prelude::*, Fill};
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+
+    #[tokio::test]
+    async fn test_read_from_socket() {
+        let (client, server) = tokio::io::duplex(512);
+        let server_stream = WebSocketStream::from_raw_socket(server, Role::Server, None).await;
+        let mut adapter = WsStreamAdapter::new(server_stream);
+        let shandle = tokio::task::spawn(async move {
+            let mut buffer = Vec::new();
+            adapter.read_to_end(&mut buffer).await.unwrap();
+            buffer
+        });
+
+        let mut client_stream = WebSocketStream::from_raw_socket(client, Role::Client, None).await;
+
+        let local = tokio::task::LocalSet::new();
+        let chandle = local.run_until(async move {
+            let mut expected = Vec::new();
+            let mut rng = thread_rng();
+            let n_messages = rng.gen_range(10..50);
+            let mut buffer = [0; 64];
+            for _ in 0..n_messages {
+                buffer.try_fill(&mut rng).unwrap();
+                expected.extend_from_slice(&buffer);
+                client_stream
+                    .send(Message::Binary(buffer.to_vec()))
+                    .await
+                    .unwrap();
+            }
+
+            client_stream.close(None).await.unwrap();
+            expected
+        });
+        let (found, expected) = tokio::join!(shandle, chandle);
+        assert_eq!(found.unwrap(), expected);
+    }
+
+    #[tokio::test]
+    async fn test_write_from_socket() {
+        let (client, server) = tokio::io::duplex(512);
+        let server_stream = WebSocketStream::from_raw_socket(server, Role::Server, None).await;
+        let mut adapter = WsStreamAdapter::new(server_stream);
+
+        let local = tokio::task::LocalSet::new();
+        let shandle = local.run_until(async move {
+            let mut expected = Vec::new();
+            let mut rng = thread_rng();
+            let n_messages = rng.gen_range(10..50);
+            let mut buffer = [0; 64];
+            for _ in 0..n_messages {
+                buffer.try_fill(&mut rng).unwrap();
+                expected.extend_from_slice(&buffer);
+                adapter.write_all(&buffer).await.unwrap();
+            }
+
+            adapter.flush().await.unwrap();
+            adapter.shutdown().await.unwrap();
+
+            expected
+        });
+
+        let mut client_stream = WebSocketStream::from_raw_socket(client, Role::Client, None).await;
+
+        let chandle = tokio::spawn(async move {
+            let mut found = Vec::new();
+            while let Some(msg) = client_stream.next().await {
+                match msg.unwrap() {
+                    Message::Binary(data) => found.extend_from_slice(&data),
+                    Message::Close(_) => break,
+                    _ => panic!(),
+                }
+            }
+
+            found
+        });
+        let (expected, found) = tokio::join!(shandle, chandle);
+        assert_eq!(found.unwrap(), expected);
+    }
+
+    #[tokio::test]
+    async fn test_peek_from_socket() {
+        let (client, server) = tokio::io::duplex(512);
+        let server_stream = WebSocketStream::from_raw_socket(server, Role::Server, None).await;
+        let mut adapter = WsStreamAdapter::new(server_stream);
+
+        let shandle = tokio::spawn(async move {
+            let buf = &mut [0; 32];
+            let peeked = adapter.peek(buf).await.unwrap();
+            assert_eq!(&buf[..peeked], &[1, 2, 3, 4]);
+            // sync with client
+            adapter.write_u8(1).await.unwrap();
+            tokio::time::sleep(Duration::from_millis(5)).await;
+            let peeked = adapter.peek(buf).await.unwrap();
+            assert_eq!(&buf[..peeked], &[1, 2, 3, 4, 5, 6, 7, 8]);
+        });
+
+        let mut client_stream = WebSocketStream::from_raw_socket(client, Role::Client, None).await;
+
+        let chandle = tokio::spawn(async move {
+            client_stream
+                .send(Message::Binary(vec![1, 2, 3, 4]))
+                .await
+                .unwrap();
+            client_stream.next().await;
+            client_stream
+                .send(Message::Binary(vec![5, 6, 7, 8]))
+                .await
+                .unwrap();
+        });
+
+        shandle.await.unwrap();
+        chandle.await.unwrap();
     }
 }
