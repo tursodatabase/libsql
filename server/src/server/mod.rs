@@ -6,33 +6,19 @@ use std::task::{ready, Context, Poll};
 
 use anyhow::Result;
 use futures::stream::select_all;
-use futures::{stream::FuturesOrdered, StreamExt};
+use futures::{stream::FuturesUnordered, StreamExt};
 use futures::{Future, Stream};
 use tokio::io::{AsyncRead, AsyncWrite, ReadBuf};
 use tokio::net::{TcpListener, TcpStream, ToSocketAddrs};
 use tower::Service;
 
-struct TcpAdapter {
-    listener: TcpListener,
-}
+use crate::server::ws::WsStreamAdapter;
 
-impl TcpAdapter {
-    fn new(stream: TcpListener) -> Self {
-        Self { listener: stream }
-    }
-}
+use self::tcp::TcpAdapter;
+use self::ws::WsAdapter;
 
-impl Stream for TcpAdapter {
-    type Item = io::Result<(NetStream, SocketAddr)>;
-
-    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        let conn = ready!(self.as_mut().listener.poll_accept(cx));
-        match conn {
-            Ok((stream, addr)) => Poll::Ready(Some(Ok((NetStream::Tcp { stream }, addr)))),
-            Err(e) => Poll::Ready(Some(Err(e))),
-        }
-    }
-}
+mod tcp;
+mod ws;
 
 pub struct Server {
     listeners: Vec<Box<dyn Stream<Item = io::Result<(NetStream, SocketAddr)>> + Unpin>>,
@@ -52,11 +38,18 @@ impl Server {
         Ok(self)
     }
 
+    pub async fn bind_ws(&mut self, addr: impl ToSocketAddrs) -> Result<&mut Self> {
+        let listener = TcpListener::bind(addr).await?;
+        self.listeners.push(Box::new(WsAdapter::new(listener)));
+
+        Ok(self)
+    }
+
     pub async fn serve<S>(self, mut make_svc: S)
     where
         S: Service<(NetStream, SocketAddr)>,
     {
-        let mut connections = FuturesOrdered::new();
+        let mut connections = FuturesUnordered::new();
         let mut listeners = select_all(self.listeners);
         loop {
             tokio::select! {
@@ -69,7 +62,7 @@ impl Server {
                             }
                             log::info!("new connection: {addr}");
                             let fut = make_svc.call((stream , addr));
-                            connections.push_back(fut);
+                            connections.push(fut);
                         }
                         _ => break,
                     }
@@ -90,6 +83,10 @@ pin_project_lite::pin_project! {
             #[pin]
             stream: TcpStream,
         },
+        Ws {
+            #[pin]
+            stream: WsStreamAdapter<TcpStream>,
+        }
     }
 }
 
@@ -101,6 +98,7 @@ impl AsyncRead for NetStream {
     ) -> Poll<std::io::Result<()>> {
         match self.project() {
             NetStreamProj::Tcp { stream } => stream.poll_read(cx, buf),
+            NetStreamProj::Ws { stream } => stream.poll_read(cx, buf),
         }
     }
 }
@@ -113,12 +111,14 @@ impl AsyncWrite for NetStream {
     ) -> Poll<Result<usize, std::io::Error>> {
         match self.project() {
             NetStreamProj::Tcp { stream } => stream.poll_write(cx, buf),
+            NetStreamProj::Ws { stream } => stream.poll_write(cx, buf),
         }
     }
 
     fn poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), std::io::Error>> {
         match self.project() {
             NetStreamProj::Tcp { stream } => stream.poll_flush(cx),
+            NetStreamProj::Ws { stream } => stream.poll_flush(cx),
         }
     }
 
@@ -128,6 +128,7 @@ impl AsyncWrite for NetStream {
     ) -> Poll<Result<(), std::io::Error>> {
         match self.project() {
             NetStreamProj::Tcp { stream } => stream.poll_shutdown(cx),
+            NetStreamProj::Ws { stream } => stream.poll_shutdown(cx),
         }
     }
 }
@@ -136,7 +137,7 @@ pin_project_lite::pin_project! {
     pub struct Peek<'a, T: ?Sized> {
         buf: &'a mut [u8],
         #[pin]
-        peek: &'a T,
+        peek: &'a mut T,
     }
 }
 
@@ -147,7 +148,7 @@ where
     type Output = io::Result<usize>;
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        let this = self.project();
+        let mut this = self.project();
         let mut buf = ReadBuf::new(this.buf);
         let out = ready!(this.peek.poll_peek(cx, &mut buf));
         Poll::Ready(out)
@@ -155,17 +156,23 @@ where
 }
 
 pub trait AsyncPeekable {
-    fn poll_peek(&self, cx: &mut Context<'_>, buf: &mut ReadBuf<'_>) -> Poll<io::Result<usize>>;
+    fn poll_peek(&mut self, cx: &mut Context<'_>, buf: &mut ReadBuf<'_>)
+        -> Poll<io::Result<usize>>;
 
-    fn peek<'a>(&'a self, buf: &'a mut [u8]) -> Peek<'a, Self> {
+    fn peek<'a>(&'a mut self, buf: &'a mut [u8]) -> Peek<'a, Self> {
         Peek { buf, peek: self }
     }
 }
 
 impl AsyncPeekable for NetStream {
-    fn poll_peek(&self, cx: &mut Context<'_>, buf: &mut ReadBuf<'_>) -> Poll<io::Result<usize>> {
+    fn poll_peek(
+        &mut self,
+        cx: &mut Context<'_>,
+        buf: &mut ReadBuf<'_>,
+    ) -> Poll<io::Result<usize>> {
         match self {
             NetStream::Tcp { stream } => stream.poll_peek(cx, buf),
+            NetStream::Ws { stream } => stream.poll_peek(cx, buf),
         }
     }
 }
