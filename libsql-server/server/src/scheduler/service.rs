@@ -7,7 +7,9 @@ use futures::Future;
 use tokio::sync::{mpsc, oneshot};
 use tower::Service;
 
-use crate::query::{ErrorCode, Query, QueryError, QueryRequest, QueryResponse, QueryResult};
+use crate::coordinator::query::{
+    ErrorCode, Query, QueryError, QueryRequest, QueryResponse, QueryResult,
+};
 
 use super::{ClientId, SchedulerQuery};
 

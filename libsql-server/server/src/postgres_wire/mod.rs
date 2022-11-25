@@ -2,7 +2,7 @@ use std::io;
 
 use pgwire::error::{ErrorInfo, PgWireError};
 
-use crate::query::{ErrorCode, QueryError};
+use crate::coordinator::query::{ErrorCode, QueryError};
 
 pub mod authenticator;
 mod proto;

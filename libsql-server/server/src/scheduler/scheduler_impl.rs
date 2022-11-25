@@ -5,9 +5,9 @@ use crossbeam::channel::{Sender, TrySendError};
 use smallvec::SmallVec;
 use tokio::sync::mpsc::{UnboundedReceiver as TokioReceiver, UnboundedSender as TokioSender};
 
+use crate::coordinator::query::{ErrorCode, Query, QueryError, QueryResponse};
+use crate::coordinator::statements::Statements;
 use crate::job::Job;
-use crate::query::{ErrorCode, Query, QueryError, QueryResponse};
-use crate::statements::Statements;
 
 use super::{ClientId, SchedulerQuery, UpdateStateMessage};
 
@@ -240,7 +240,7 @@ mod test {
     use std::collections::hash_map::Entry;
     use tokio::sync::oneshot;
 
-    use crate::query::QueryRequest;
+    use crate::coordinator::query::QueryRequest;
 
     use super::*;
 

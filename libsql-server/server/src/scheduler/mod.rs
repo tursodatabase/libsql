@@ -3,8 +3,8 @@ pub mod service;
 
 use tokio::sync::oneshot;
 
+use crate::coordinator::query::{QueryRequest, QueryResult};
 use crate::job::Job;
-use crate::query::{QueryRequest, QueryResult};
 
 pub use scheduler_impl::Scheduler;
 
