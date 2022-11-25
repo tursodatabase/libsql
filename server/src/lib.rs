@@ -5,20 +5,20 @@ use scheduler::service::SchedulerServiceFactory;
 use sqlite::OpenFlags;
 use tokio::net::ToSocketAddrs;
 
+use crate::coordinator::Coordinator;
 use crate::postgres_wire::service::PgConnectionFactory;
 use crate::server::Server;
-use crate::worker_pool::WorkerPool;
 
+mod coordinator;
 mod job;
 mod postgres_wire;
 mod query;
 mod scheduler;
 mod server;
 mod statements;
-mod worker_pool;
 
 pub async fn run_server(db_path: &Path, addr: impl ToSocketAddrs) -> Result<()> {
-    let (pool, pool_sender) = WorkerPool::new(0, move || {
+    let (pool, pool_sender) = Coordinator::new(0, move || {
         sqlite::Connection::open_with_flags(
             db_path,
             OpenFlags::new()
