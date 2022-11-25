@@ -5,20 +5,51 @@ use std::pin::Pin;
 use std::task::{ready, Context, Poll};
 
 use anyhow::Result;
-use futures::Future;
+use futures::stream::select_all;
 use futures::{stream::FuturesOrdered, StreamExt};
+use futures::{Future, Stream};
 use tokio::io::{AsyncRead, AsyncWrite, ReadBuf};
 use tokio::net::{TcpListener, TcpStream, ToSocketAddrs};
 use tower::Service;
 
-pub struct Server {
+struct TcpAdapter {
     listener: TcpListener,
 }
 
+impl TcpAdapter {
+    fn new(stream: TcpListener) -> Self {
+        Self { listener: stream }
+    }
+}
+
+impl Stream for TcpAdapter {
+    type Item = io::Result<(NetStream, SocketAddr)>;
+
+    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        let conn = ready!(self.as_mut().listener.poll_accept(cx));
+        match conn {
+            Ok((stream, addr)) => Poll::Ready(Some(Ok((NetStream::Tcp { stream }, addr)))),
+            Err(e) => Poll::Ready(Some(Err(e))),
+        }
+    }
+}
+
+pub struct Server {
+    listeners: Vec<Box<dyn Stream<Item = io::Result<(NetStream, SocketAddr)>> + Unpin>>,
+}
+
 impl Server {
-    pub async fn bind(addr: impl ToSocketAddrs) -> Result<Self> {
+    pub fn new() -> Self {
+        Self {
+            listeners: Vec::new(),
+        }
+    }
+
+    pub async fn bind_tcp(&mut self, addr: impl ToSocketAddrs) -> Result<&mut Self> {
         let listener = TcpListener::bind(addr).await?;
-        Ok(Self { listener })
+        self.listeners.push(Box::new(TcpAdapter::new(listener)));
+
+        Ok(self)
     }
 
     pub async fn serve<S>(self, mut make_svc: S)
@@ -26,20 +57,21 @@ impl Server {
         S: Service<(NetStream, SocketAddr)>,
     {
         let mut connections = FuturesOrdered::new();
+        let mut listeners = select_all(self.listeners);
         loop {
             tokio::select! {
-                conn = self.listener.accept() => {
+                conn = listeners.next() => {
                     match conn {
-                        Ok((stream, addr)) => {
+                        Some(Ok((stream, addr))) => {
                             if poll_fn(|c| make_svc.poll_ready(c)).await.is_err() {
                                 eprintln!("there was an error!");
                                 break
                             }
                             log::info!("new connection: {addr}");
-                            let fut = make_svc.call((NetStream::Tcp { stream } , addr));
+                            let fut = make_svc.call((stream , addr));
                             connections.push_back(fut);
                         }
-                        Err(_) => break,
+                        _ => break,
                     }
                 }
                 _dis = connections.next() => { }
