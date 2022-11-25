@@ -5,9 +5,9 @@ use crossbeam::channel::{Sender, TrySendError};
 use smallvec::SmallVec;
 use tokio::sync::mpsc::{UnboundedReceiver as TokioReceiver, UnboundedSender as TokioSender};
 
+use crate::coordinator::statements::Statements;
 use crate::job::Job;
 use crate::query::{ErrorCode, Query, QueryError, QueryResponse};
-use crate::statements::Statements;
 
 use super::{ClientId, SchedulerQuery, UpdateStateMessage};
 
