@@ -17,7 +17,7 @@ use tower::MakeService;
 use tower::Service;
 
 use crate::coordinator::query::{Query, QueryError, QueryResponse};
-use crate::postgres_wire::authenticator::PgAuthenticator;
+use crate::postgres::authenticator::PgAuthenticator;
 use crate::server::AsyncPeekable;
 
 use super::proto::{peek_for_sslrequest, process_error, SimpleHandler};
