@@ -1,7 +1,7 @@
 use std::path::Path;
 
 use anyhow::Result;
-use scheduler::service::SchedulerServiceFactory;
+use coordinator::scheduler::service::SchedulerServiceFactory;
 use sqlite::OpenFlags;
 use tokio::net::ToSocketAddrs;
 
@@ -12,7 +12,6 @@ use crate::server::Server;
 mod coordinator;
 mod job;
 mod postgres_wire;
-mod scheduler;
 mod server;
 
 pub async fn run_server(db_path: &Path, addr: impl ToSocketAddrs) -> Result<()> {
@@ -31,7 +30,7 @@ pub async fn run_server(db_path: &Path, addr: impl ToSocketAddrs) -> Result<()> 
     let service = SchedulerServiceFactory::new(sender);
     let factory = PgConnectionFactory::new(service);
     let server = Server::bind(addr).await?;
-    let scheduler = scheduler::Scheduler::new(pool_sender, receiver)?;
+    let scheduler = coordinator::scheduler::Scheduler::new(pool_sender, receiver)?;
     let shandle = tokio::spawn(scheduler.start());
 
     server.serve(factory).await;

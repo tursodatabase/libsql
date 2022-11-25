@@ -2,8 +2,8 @@ use tokio::sync::mpsc::UnboundedSender as TokioSender;
 use tokio::sync::oneshot;
 
 use crate::coordinator::query::QueryResult;
+use crate::coordinator::scheduler::{ClientId, UpdateStateMessage};
 use crate::coordinator::statements::Statements;
-use crate::scheduler::{ClientId, UpdateStateMessage};
 
 #[derive(Debug)]
 pub struct Job {

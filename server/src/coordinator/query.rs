@@ -1,4 +1,4 @@
-use crate::scheduler::ClientId;
+use crate::coordinator::scheduler::ClientId;
 
 pub type QueryResult = Result<QueryResponse, QueryError>;
 
