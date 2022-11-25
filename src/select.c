@@ -5046,12 +5046,9 @@ static int pushDownWindowCheck(Parse *pParse, Select *pSubq, Expr *pExpr){
 **       be materialized.  (This restriction is implemented in the calling
 **       routine.)
 **
-**   (8) The subquery may not be a compound that uses UNION, INTERSECT,
-**       or EXCEPT.  (We could, perhaps, relax this restriction to allow
-**       this case if none of the comparisons operators between left and
-**       right arms of the compound use a collation other than BINARY.
-**       But it is a lot of work to check that case for an obscure and
-**       minor optimization, so we omit it for now.)
+**   (8) If the subquery is a compound that uses UNION, INTERSECT,
+**       or EXCEPT, then all of the result set columns for all arms of
+**       the compound must use the BINARY collating sequence.
 **
 **   (9) If the subquery is a compound, then all arms of the compound must
 **       have the same affinity.  (This is the same as restriction (17h)
@@ -5075,17 +5072,36 @@ static int pushDownWhereTerms(
 
   if( pSubq->pPrior ){
     Select *pSel;
+    int notUnionAll = 0;
     for(pSel=pSubq; pSel; pSel=pSel->pPrior){
       u8 op = pSel->op;
       assert( op==TK_ALL || op==TK_SELECT 
            || op==TK_UNION || op==TK_INTERSECT || op==TK_EXCEPT );
-      if( op!=TK_ALL && op!=TK_SELECT ) return 0;  /* restriction (8) */
+      if( op!=TK_ALL && op!=TK_SELECT ){
+        notUnionAll = 1;
+      }
 #ifndef SQLITE_OMIT_WINDOWFUNC
       if( pSel->pWin ) return 0;    /* restriction (6b) */
 #endif
     }
     if( compoundHasDifferentAffinities(pSubq) ){
       return 0;  /* restriction (9) */
+    }
+    if( notUnionAll ){
+      /* If any of the compound arms are connected using UNION, INTERSECT,
+      ** or EXCEPT, then we must ensure that none of the columns use a
+      ** non-BINARY collating sequence. */
+      for(pSel=pSubq; pSel; pSel=pSel->pPrior){
+        int ii;
+        const ExprList *pList = pSel->pEList;
+        assert( pList!=0 );
+        for(ii=0; ii<pList->nExpr; ii++){
+          CollSeq *pColl = sqlite3ExprCollSeq(pParse, pList->a[ii].pExpr);
+          if( !sqlite3IsBinary(pColl) ){
+            return 0;  /* Restriction (8) */
+          }
+        }
+      }
     }
   }else{
 #ifndef SQLITE_OMIT_WINDOWFUNC
