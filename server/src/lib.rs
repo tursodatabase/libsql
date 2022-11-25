@@ -6,12 +6,12 @@ use sqlite::OpenFlags;
 use tokio::net::ToSocketAddrs;
 
 use crate::coordinator::Coordinator;
-use crate::postgres_wire::service::PgConnectionFactory;
+use crate::postgres::service::PgConnectionFactory;
 use crate::server::Server;
 
 mod coordinator;
 mod job;
-mod postgres_wire;
+mod postgres;
 mod server;
 
 pub async fn run_server(db_path: &Path, addr: impl ToSocketAddrs) -> Result<()> {
