@@ -15,12 +15,13 @@ use crate::statements::{State, Statements};
 
 const TXN_TIMEOUT_SECS: usize = 5;
 
-pub struct WorkerPool {
+/// Transaction coordinator.
+pub struct Coordinator {
     _pool: ThreadPool,
     worker_sigs: FuturesUnordered<oneshot::Receiver<()>>,
 }
 
-impl WorkerPool {
+impl Coordinator {
     /// Create a new coordinator that will spawn `ncpu` threads.
     /// Each worker maintains a connections to the database, and process jobs sequentially.
     /// `conn_builder` must create a fresh db_connection each time it is called.
