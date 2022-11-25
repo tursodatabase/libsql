@@ -1,4 +1,5 @@
 pub mod query;
+pub mod scheduler;
 pub mod statements;
 
 use std::future::ready;
@@ -12,9 +13,9 @@ use rayon::{ThreadPool, ThreadPoolBuilder};
 use tokio::sync::oneshot;
 
 use crate::coordinator::query::{ErrorCode, QueryError, QueryResponse, QueryResult};
+use crate::coordinator::scheduler::UpdateStateMessage;
 use crate::coordinator::statements::{State, Statements};
 use crate::job::Job;
-use crate::scheduler::UpdateStateMessage;
 
 const TXN_TIMEOUT_SECS: usize = 5;
 
