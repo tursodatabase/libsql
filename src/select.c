@@ -6430,8 +6430,8 @@ static void finalizeAggFunctions(Parse *pParse, AggInfo *pAggInfo){
 
 
 /*
-** Update the accumulator memory cells for an aggregate based on
-** the current cursor position.
+** Generate code that will update the accumulator memory cells for an
+** aggregate based on the current cursor position.
 **
 ** If regAcc is non-zero and there are no min() or max() aggregates
 ** in pAggInfo, then only populate the pAggInfo->nAccumulator accumulator
@@ -6452,6 +6452,7 @@ static void updateAccumulator(
   struct AggInfo_col *pC;
 
   assert( pAggInfo->iFirstReg>0 );
+  if( pParse->nErr ) return;
   pAggInfo->directMode = 1;
   for(i=0, pF=pAggInfo->aFunc; i<pAggInfo->nFunc; i++, pF++){
     int nArg;
