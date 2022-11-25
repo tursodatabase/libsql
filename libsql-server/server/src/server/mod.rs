@@ -20,8 +20,10 @@ use self::ws::WsAdapter;
 mod tcp;
 mod ws;
 
+type Listener = Box<dyn Stream<Item = io::Result<(NetStream, SocketAddr)>> + Unpin>;
+
 pub struct Server {
-    listeners: Vec<Box<dyn Stream<Item = io::Result<(NetStream, SocketAddr)>> + Unpin>>,
+    listeners: Vec<Listener>,
 }
 
 impl Server {
