@@ -21,6 +21,33 @@ ChiselEdge follows a traditional client-server model:
 * Server processes client requests against a server-side SQLite and sends responses back to the client.
 * Server passively replicates database to all clients that can hold a replica.
 
+### Server
+
+The server architecture uses the service design pattern and uses `tower` as an interface. Tower provides middleware that we can reuse, and the design implements a clear separation of concern. Service is isolated and composable, which is a desirable property.
+
+Here is a simplified architecture diagram:
+
+```mermaid
+classDiagram
+    Server --|> PgConnectionFactory
+    PgConnectionFactory --|> SchedulerService
+
+    class Server {
+    }
+
+    class PgConnectionFactory {
+    }
+
+    class SchedulerService {
+    }
+```
+
+`Server::serve` takes a `Service` (in fact, a Service factory), and calls the passed service with all incoming socket connections. The server runs the connections.
+
+The `PgConnectionFactory` service takes a service factory that responds to `Query` requests and drives the Postgres wire protocol.
+
+The `SchedulerServiceFactory` creates `SchedulerService`s that respond to `Query` requests, and schedule them to be performed.
+
 ## Transactions
 
 * Serializable reads and writes
