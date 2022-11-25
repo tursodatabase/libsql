@@ -15,7 +15,11 @@ mod job;
 mod postgres;
 mod server;
 
-pub async fn run_server(db_path: &Path, addr: impl ToSocketAddrs) -> Result<()> {
+pub async fn run_server(
+    db_path: &Path,
+    tcp_addr: impl ToSocketAddrs,
+    ws_addr: Option<impl ToSocketAddrs>,
+) -> Result<()> {
     let (pool, pool_sender) = Coordinator::new(0, move || {
         rusqlite::Connection::open_with_flags(
             db_path,
@@ -31,7 +35,11 @@ pub async fn run_server(db_path: &Path, addr: impl ToSocketAddrs) -> Result<()> 
     let service = SchedulerServiceFactory::new(sender);
     let factory = PgConnectionFactory::new(service);
     let mut server = Server::new();
-    server.bind_tcp(addr).await?;
+    server.bind_tcp(tcp_addr).await?;
+
+    if let Some(addr) = ws_addr {
+        server.bind_ws(addr).await?;
+    }
     let scheduler = Scheduler::new(pool_sender, receiver)?;
     let shandle = tokio::spawn(scheduler.start());
 
