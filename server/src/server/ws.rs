@@ -83,13 +83,13 @@ where
         cx: &mut Context<'_>,
         buf: &[u8],
     ) -> Poll<Result<usize, io::Error>> {
-        if let Err(_e) = ready!(self.stream.poll_ready_unpin(cx)) {
-            todo!("handle error");
+        if let Err(e) = ready!(self.stream.poll_ready_unpin(cx)) {
+            return Poll::Ready(Err(ws_error_to_io_error(e)));
         }
 
         let message = Message::Binary(buf.to_vec());
-        if let Err(_e) = self.stream.start_send_unpin(message) {
-            todo!("handle error");
+        if let Err(e) = self.stream.start_send_unpin(message) {
+            return Poll::Ready(Err(ws_error_to_io_error(e)));
         }
 
         Poll::Ready(Ok(buf.len()))
@@ -97,7 +97,7 @@ where
 
     fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), io::Error>> {
         match ready!(self.stream.poll_flush_unpin(cx)) {
-            Err(_e) => todo!("handle error"),
+            Err(e) => Poll::Ready(Err(ws_error_to_io_error(e))),
             Ok(_) => Poll::Ready(Ok(())),
         }
     }
@@ -107,7 +107,7 @@ where
         cx: &mut Context<'_>,
     ) -> Poll<Result<(), io::Error>> {
         match ready!(self.stream.poll_close_unpin(cx)) {
-            Err(_e) => todo!("handle error"),
+            Err(e) => Poll::Ready(Err(ws_error_to_io_error(e))),
             Ok(_) => Poll::Ready(Ok(())),
         }
     }
@@ -159,6 +159,16 @@ impl WsAdapter {
             listener,
             init: FuturesUnordered::new(),
         }
+    }
+}
+
+fn ws_error_to_io_error(error: WsError) -> io::Error {
+    match error {
+        WsError::ConnectionClosed | WsError::AlreadyClosed => {
+            io::Error::new(io::ErrorKind::BrokenPipe, "")
+        }
+        WsError::Io(io) => io,
+        error => io::Error::new(io::ErrorKind::Other, error),
     }
 }
 
