@@ -19,7 +19,9 @@ enum Commands {
         #[clap(long, short, default_value = "iku.db")]
         db_path: PathBuf,
         #[clap(long, short, default_value = "127.0.0.1:5000")]
-        serve_addr: SocketAddr,
+        tcp_addr: SocketAddr,
+        #[clap(long, short)]
+        ws_addr: Option<SocketAddr>,
     },
 }
 
@@ -30,9 +32,10 @@ async fn main() -> Result<()> {
     match args.command {
         Commands::Serve {
             db_path,
-            serve_addr,
+            tcp_addr,
+            ws_addr,
         } => {
-            server::run_server(&db_path, serve_addr).await?;
+            server::run_server(&db_path, tcp_addr, ws_addr).await?;
         }
     }
 
