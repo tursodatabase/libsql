@@ -4050,6 +4050,34 @@ static ExprList *findLeftmostExprlist(Select *pSel){
   return pSel->pEList;
 }
 
+/*
+** Return true if any of the result-set columns in the compound query
+** have incompatible affinities on one or more arms of the compound.
+*/
+static int compoundHasDifferentAffinities(Select *p){
+  int ii;
+  ExprList *pList;
+  assert( p!=0 );
+  assert( p->pEList!=0 );
+  assert( p->pPrior!=0 );
+  pList = p->pEList;
+  for(ii=0; ii<pList->nExpr; ii++){
+    char aff;
+    Select *pSub1;
+    assert( pList->a[ii].pExpr!=0 );
+    aff = sqlite3ExprAffinity(pList->a[ii].pExpr);
+    for(pSub1=p->pPrior; pSub1; pSub1=pSub1->pPrior){
+      assert( pSub1->pEList!=0 );
+      assert( pSub1->pEList->nExpr>ii );
+      assert( pSub1->pEList->a[ii].pExpr!=0 );
+      if( sqlite3ExprAffinity(pSub1->pEList->a[ii].pExpr)!=aff ){
+        return 1;
+      }
+    }
+  }
+  return 0;
+}
+
 #if !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW)
 /*
 ** This routine attempts to flatten subqueries as a performance optimization.
@@ -4153,7 +4181,8 @@ static ExprList *findLeftmostExprlist(Select *pSel){
 **              query or there are no RIGHT or FULL JOINs in any arm
 **              of the subquery.  (This is a duplicate of condition (27b).)
 **        (17h) The corresponding result set expressions in all arms of the
-**              compound must have the same affinity.
+**              compound must have the same affinity. (See restriction (9)
+**              on the push-down optimization.)
 **
 **        The parent and sub-query may contain WHERE clauses. Subject to
 **        rules (11), (13) and (14), they may also contain ORDER BY,
@@ -4372,19 +4401,7 @@ static int flattenSubquery(
     if( (p->selFlags & SF_Recursive) ) return 0;
 
     /* Restriction (17h) */
-    for(ii=0; ii<pSub->pEList->nExpr; ii++){
-      char aff;
-      assert( pSub->pEList->a[ii].pExpr!=0 );
-      aff = sqlite3ExprAffinity(pSub->pEList->a[ii].pExpr);
-      for(pSub1=pSub->pPrior; pSub1; pSub1=pSub1->pPrior){
-        assert( pSub1->pEList!=0 );
-        assert( pSub1->pEList->nExpr>ii );
-        assert( pSub1->pEList->a[ii].pExpr!=0 );
-        if( sqlite3ExprAffinity(pSub1->pEList->a[ii].pExpr)!=aff ){
-          return 0;
-        }
-      }
-    }
+    if( compoundHasDifferentAffinities(pSub) ) return 0;
 
     if( pSrc->nSrc>1 ){
       if( pParse->nSelect>500 ) return 0;
@@ -5036,6 +5053,11 @@ static int pushDownWindowCheck(Parse *pParse, Select *pSubq, Expr *pExpr){
 **       But it is a lot of work to check that case for an obscure and
 **       minor optimization, so we omit it for now.)
 **
+**   (9) If the subquery is a compound, then all arms of the compound must
+**       have the same affinity.  (This is the same as restriction (17h)
+**       for query flattening.)
+**       
+**
 ** Return 0 if no changes are made and non-zero if one or more WHERE clause
 ** terms are duplicated into the subquery.
 */
@@ -5060,6 +5082,9 @@ static int pushDownWhereTerms(
            || op==TK_UNION || op==TK_INTERSECT || op==TK_EXCEPT );
       if( op!=TK_ALL && op!=TK_SELECT ) return 0;  /* restriction (8) */
       if( pSel->pWin ) return 0;    /* restriction (6b) */
+    }
+    if( compoundHasDifferentAffinities(pSubq) ){
+      return 0;  /* restriction (9) */
     }
   }else{
     if( pSubq->pWin && pSubq->pWin->pPartition==0 ) return 0;
