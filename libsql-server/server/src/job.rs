@@ -1,8 +1,8 @@
 use tokio::sync::mpsc::UnboundedSender as TokioSender;
 use tokio::sync::oneshot;
 
+use crate::coordinator::query::QueryResult;
 use crate::coordinator::statements::Statements;
-use crate::query::QueryResult;
 use crate::scheduler::{ClientId, UpdateStateMessage};
 
 #[derive(Debug)]

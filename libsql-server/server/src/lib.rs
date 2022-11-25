@@ -12,7 +12,6 @@ use crate::server::Server;
 mod coordinator;
 mod job;
 mod postgres_wire;
-mod query;
 mod scheduler;
 mod server;
 
