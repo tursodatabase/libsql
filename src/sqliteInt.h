@@ -2766,10 +2766,15 @@ struct AggInfo {
 };
 
 /*
-** Macros to compute aCol[] and aFunc[] register numbers:
+** Macros to compute aCol[] and aFunc[] register numbers.
+**
+** These macros should not be used prior to the call to 
+** assignAggregateRegisters() that computes the value of pAggInfo->iFirstReg.
+** The assert()s that are part of this macro verify that constraint.
 */
-#define AggInfoColumnReg(A,I)  ((A)->iFirstReg+(I))
-#define AggInfoFuncReg(A,I)    ((A)->iFirstReg+(A)->nColumn+(I))
+#define AggInfoColumnReg(A,I)  (assert((A)->iFirstReg),(A)->iFirstReg+(I))
+#define AggInfoFuncReg(A,I)    \
+                      (assert((A)->iFirstReg),(A)->iFirstReg+(A)->nColumn+(I))
 
 /*
 ** The datatype ynVar is a signed integer, either 16-bit or 32-bit.

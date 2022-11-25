@@ -6253,6 +6253,7 @@ static void analyzeAggFuncArgs(
 ){
   int i;
   assert( pAggInfo!=0 );
+  assert( pAggInfo->iFirstReg==0 );
   pNC->ncFlags |= NC_InAggFunc;
   for(i=0; i<pAggInfo->nFunc; i++){
     Expr *pExpr = pAggInfo->aFunc[i].pFExpr;
@@ -6281,6 +6282,7 @@ static void optimizeAggregateUseOfIndexedExpr(
   AggInfo *pAggInfo,      /* The aggregate info */
   NameContext *pNC        /* Name context used to resolve agg-func args */
 ){
+  assert( pAggInfo->iFirstReg==0 );
   pAggInfo->nColumn = pAggInfo->nAccumulator;
   if( ALWAYS(pAggInfo->nSortingColumn>0) ){
     if( pAggInfo->nColumn==0 ){
@@ -6348,6 +6350,18 @@ static void aggregateConvertIndexedExprRefToColumn(AggInfo *pAggInfo){
 ** Allocate a block of registers so that there is one register for each
 ** pAggInfo->aCol[] and pAggInfo->aFunc[] entry in pAggInfo.  The first
 ** register in this block is stored in pAggInfo->iFirstReg.
+**
+** This routine may only be called once for each AggInfo object.  Prior
+** to calling this routine:
+**
+**     *  The aCol[] and aFunc[] arrays may be modified
+**     *  The AggInfoColumnReg() and AggInfoFuncReg() macros may not be used
+**
+** After clling this routine:
+**
+**     *  The aCol[] and aFunc[] arrays are fixed
+**     *  The AggInfoColumnReg() and AggInfoFuncReg() macros may be used
+**
 */
 static void assignAggregateRegisters(Parse *pParse, AggInfo *pAggInfo){
   assert( pAggInfo!=0 );
@@ -6369,6 +6383,7 @@ static void resetAccumulator(Parse *pParse, AggInfo *pAggInfo){
   int i;
   struct AggInfo_func *pFunc;
   int nReg = pAggInfo->nFunc + pAggInfo->nColumn;
+  assert( pAggInfo->iFirstReg>0 );
   assert( pParse->db->pParse==pParse );
   assert( pParse->db->mallocFailed==0 || pParse->nErr!=0 );
   if( nReg==0 ) return;
@@ -6436,6 +6451,7 @@ static void updateAccumulator(
   struct AggInfo_func *pF;
   struct AggInfo_col *pC;
 
+  assert( pAggInfo->iFirstReg>0 );
   pAggInfo->directMode = 1;
   for(i=0, pF=pAggInfo->aFunc; i<pAggInfo->nFunc; i++, pF++){
     int nArg;

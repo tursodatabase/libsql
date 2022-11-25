@@ -6265,6 +6265,7 @@ static void findOrCreateAggInfoColumn(
   struct AggInfo_col *pCol;
   int k;
 
+  assert( pAggInfo->iFirstReg==0 );
   pCol = pAggInfo->aCol;
   for(k=0; k<pAggInfo->nColumn; k++, pCol++){
     if( pCol->iTable==pExpr->iTable
@@ -6328,6 +6329,7 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
   AggInfo *pAggInfo = pNC->uNC.pAggInfo;
 
   assert( pNC->ncFlags & NC_UAggInfo );
+  assert( pAggInfo->iFirstReg==0 );
   switch( pExpr->op ){
     default: {
       IndexedExpr *pIEpr;
