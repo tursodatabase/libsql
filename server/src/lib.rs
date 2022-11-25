@@ -2,6 +2,7 @@ use std::path::Path;
 
 use anyhow::Result;
 use coordinator::scheduler::service::SchedulerServiceFactory;
+use coordinator::scheduler::Scheduler;
 use rusqlite::OpenFlags;
 use tokio::net::ToSocketAddrs;
 
@@ -29,8 +30,9 @@ pub async fn run_server(db_path: &Path, addr: impl ToSocketAddrs) -> Result<()> 
 
     let service = SchedulerServiceFactory::new(sender);
     let factory = PgConnectionFactory::new(service);
-    let server = Server::bind(addr).await?;
-    let scheduler = coordinator::scheduler::Scheduler::new(pool_sender, receiver)?;
+    let mut server = Server::new();
+    server.bind_tcp(addr).await?;
+    let scheduler = Scheduler::new(pool_sender, receiver)?;
     let shandle = tokio::spawn(scheduler.start());
 
     server.serve(factory).await;
