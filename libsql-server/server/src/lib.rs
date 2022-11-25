@@ -15,7 +15,6 @@ mod postgres_wire;
 mod query;
 mod scheduler;
 mod server;
-mod statements;
 
 pub async fn run_server(db_path: &Path, addr: impl ToSocketAddrs) -> Result<()> {
     let (pool, pool_sender) = Coordinator::new(0, move || {
