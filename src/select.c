@@ -5073,7 +5073,6 @@ static int pushDownWhereTerms(
   if( pSubq->selFlags & (SF_Recursive|SF_MultiPart) ) return 0;
   if( pSrc->fg.jointype & (JT_LTORJ|JT_RIGHT) ) return 0;
 
-#ifndef SQLITE_OMIT_WINDOWFUNC
   if( pSubq->pPrior ){
     Select *pSel;
     for(pSel=pSubq; pSel; pSel=pSel->pPrior){
@@ -5081,15 +5080,18 @@ static int pushDownWhereTerms(
       assert( op==TK_ALL || op==TK_SELECT 
            || op==TK_UNION || op==TK_INTERSECT || op==TK_EXCEPT );
       if( op!=TK_ALL && op!=TK_SELECT ) return 0;  /* restriction (8) */
+#ifndef SQLITE_OMIT_WINDOWFUNC
       if( pSel->pWin ) return 0;    /* restriction (6b) */
+#endif
     }
     if( compoundHasDifferentAffinities(pSubq) ){
       return 0;  /* restriction (9) */
     }
   }else{
+#ifndef SQLITE_OMIT_WINDOWFUNC
     if( pSubq->pWin && pSubq->pWin->pPartition==0 ) return 0;
-  }
 #endif
+  }
 
 #ifdef SQLITE_DEBUG
   /* Only the first term of a compound can have a WITH clause.  But make
