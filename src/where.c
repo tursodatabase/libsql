@@ -3583,8 +3583,15 @@ static int whereLoopAddBtree(
         m = 0;
       }else{
         m = pSrc->colUsed & pProbe->colNotIdxed;
-        if( m==TOPBIT || pProbe->bHasExpr ){
+        if( m==TOPBIT || (pProbe->bHasExpr && !pProbe->bHasVCol) ){
           m = whereIsCoveringIndex(pWInfo, pProbe, pSrc->iCursor);
+          WHERETRACE(0xff,
+             ("-> %s %s a covering index according to whereIsCoveringIndex()\n",
+             pProbe->zName, m==0 ? "is" : "is not"));
+        }else{
+          WHERETRACE(0xff,
+             ("-> %s %s a covering index according to bitmasks\n",
+             pProbe->zName, m==0 ? "is" : "is not"));
         }
         pNew->wsFlags = (m==0) ? (WHERE_IDX_ONLY|WHERE_INDEXED) : WHERE_INDEXED;
       }

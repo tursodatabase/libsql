@@ -487,7 +487,7 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
     sqlite3TreeViewPop(&pView);
     return;
   }
-  if( pExpr->flags || pExpr->affExpr || pExpr->vvaFlags ){
+  if( pExpr->flags || pExpr->affExpr || pExpr->vvaFlags || pExpr->pAggInfo ){
     StrAccum x;
     sqlite3StrAccumInit(&x, 0, zFlgs, sizeof(zFlgs), 0);
     sqlite3_str_appendf(&x, " fg.af=%x.%c",
@@ -503,6 +503,9 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
     }
     if( ExprHasVVAProperty(pExpr, EP_Immutable) ){
       sqlite3_str_appendf(&x, " IMMUTABLE");
+    }
+    if( pExpr->pAggInfo!=0 ){
+      sqlite3_str_appendf(&x, " agg-column[%d]", pExpr->iAgg);
     }
     sqlite3StrAccumFinish(&x);
   }else{
