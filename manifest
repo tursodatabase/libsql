@@ -1,5 +1,5 @@
-C Relax\srestriction\s(8)\son\sthe\spush-down\soptimization\sso\sthat\sit\sonly\sapplies\nif\sone\sor\smore\scolumns\suses\sa\scollating\ssequence\sother\sthan\sBINARY.\nSee\s[forum:/forumpost/3824ced748baa808|forum\spost\s3824ced748baa808]\sand\ncheck-in\s[346a3b12b861ce7b].
-D 2022-11-25T17:05:55.692
+C Experimental\schanges\sto\shelp\sthe\squery\splanner\sdetect\swhen\san\sexpression\nindex\sis\scoverting.\s\sWorks\ssomewhat,\sbut\sthere\sare\stests\sthat\sfail.
+D 2022-11-26T14:19:47.899
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -728,7 +728,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c b9df133a705093da8977da5eb202eaadb844839f1c7297c08d33471f5491843d
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
-F src/where.c ea0f518df9e00aa44013a1d384090b4b3a499ee11d4daa0a7d99c4eb9f7ab4ba
+F src/where.c 550388b75a29c2af2c2182e56e2a51bc6b92aef302eb072f177b3526394d6020
 F src/whereInt.h df0c79388c0b71b4a91f480d02791679fe0345d40410435c541c8893e95a4d3f
 F src/wherecode.c 133a94f82858787217d073143617df19e4a6a7d0b771a1519f957608109ad5a5
 F src/whereexpr.c 05295b44b54eea76d1ba766f0908928d0e20e990c249344c9521454d3d09c7ae
@@ -2060,8 +2060,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 09e1e42e0ff26f9a71cbd128169f060a66425828d637bf8f781490ca38d99103
-R 051f7bebeb695c93dfdb45030ad5b532
+P adbca3448e2099f0d6149a073978f230ed9a92a2f384779879ef89e672231bcf
+R b02bf662fd2aa7710f36a7d19197692a
+T *branch * covering-indexed-expr
+T *sym-covering-indexed-expr *
+T -sym-trunk *
 U drh
-Z 0a4a218169578e69e7b7469760b002aa
+Z e78db49817bfc2647feb4d11db6b69e2
 # Remove this line to create a well-formed Fossil manifest.

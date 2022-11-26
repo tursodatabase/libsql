@@ -3248,6 +3248,26 @@ static int whereUsablePartialIndex(
 }
 
 /*
+** pIdx is an index containing expressions.  Check it see if any of the
+** expressions in the index match the pExpr expression.
+*/
+static int exprIsCoveredByIndex(
+  const Expr *pExpr,
+  const Index *pIdx,
+  int iTabCur
+){
+  int i;
+  for(i=0; i<pIdx->nColumn; i++){
+    if( pIdx->aiColumn[i]==XN_EXPR
+     && sqlite3ExprCompare(0, pExpr, pIdx->aColExpr->a[i].pExpr, iTabCur)==0
+    ){
+      return 1;
+    }
+  }
+  return 0;
+}
+
+/*
 ** Structure passed to the whereIsCoveringIndex Walker callback.
 */
 struct CoveringIndexCheck {
@@ -3256,7 +3276,7 @@ struct CoveringIndexCheck {
 };
 
 /*
-** Information passed in is pWalk->u.pCovIdxCk.  Call is pCk.
+** Information passed in is pWalk->u.pCovIdxCk.  Call it pCk.
 **
 ** If the Expr node references the table with cursor pCk->iTabCur, then
 ** make sure that column is covered by the index pCk->pIdx.  We know that
@@ -3268,23 +3288,32 @@ struct CoveringIndexCheck {
 **
 ** If this node does not disprove that the index can be a covering index,
 ** then just return WRC_Continue, to continue the search.
+**
+** If pCk->pIdx contains indexed expressions and one of those expressions
+** matches pExpr, then prune the search.
 */
 static int whereIsCoveringIndexWalkCallback(Walker *pWalk, Expr *pExpr){
   int i;                  /* Loop counter */
   const Index *pIdx;      /* The index of interest */
   const i16 *aiColumn;    /* Columns contained in the index */
   u16 nColumn;            /* Number of columns in the index */
-  if( pExpr->op!=TK_COLUMN && pExpr->op!=TK_AGG_COLUMN ) return WRC_Continue;
-  if( pExpr->iColumn<(BMS-1) ) return WRC_Continue;
-  if( pExpr->iTable!=pWalk->u.pCovIdxCk->iTabCur ) return WRC_Continue;
   pIdx = pWalk->u.pCovIdxCk->pIdx;
-  aiColumn = pIdx->aiColumn;
-  nColumn = pIdx->nColumn;
-  for(i=0; i<nColumn; i++){
-    if( aiColumn[i]==pExpr->iColumn ) return WRC_Continue;
+  if( (pExpr->op==TK_COLUMN || pExpr->op==TK_AGG_COLUMN) ){
+    /* if( pExpr->iColumn<(BMS-1) && pIdx->bHasExpr==0 ) return WRC_Continue;*/
+    if( pExpr->iTable!=pWalk->u.pCovIdxCk->iTabCur ) return WRC_Continue;
+    pIdx = pWalk->u.pCovIdxCk->pIdx;
+    aiColumn = pIdx->aiColumn;
+    nColumn = pIdx->nColumn;
+    for(i=0; i<nColumn; i++){
+      if( aiColumn[i]==pExpr->iColumn ) return WRC_Continue;
+    }
+    pWalk->eCode = 1;
+    return WRC_Abort;
+  }else if( pIdx->bHasExpr
+         && exprIsCoveredByIndex(pExpr, pIdx, pWalk->u.pCovIdxCk->iTabCur) ){
+    return WRC_Prune;
   }
-  pWalk->eCode = 1;
-  return WRC_Abort;
+  return WRC_Continue;
 }
 
 
@@ -3315,14 +3344,16 @@ static SQLITE_NOINLINE u32 whereIsCoveringIndex(
     ** if pIdx is covering.  Assume it is not. */
     return 1;
   }
-  for(i=0; i<pIdx->nColumn; i++){
-    if( pIdx->aiColumn[i]>=BMS-1 ) break;
-  }
-  if( i>=pIdx->nColumn ){
-    /* pIdx does not index any columns greater than 62, but we know from
-    ** colMask that columns greater than 62 are used, so this is not a
-    ** covering index */
-    return 1;
+  if( pIdx->bHasExpr==0 ){
+    for(i=0; i<pIdx->nColumn; i++){
+      if( pIdx->aiColumn[i]>=BMS-1 ) break;
+    }
+    if( i>=pIdx->nColumn ){
+      /* pIdx does not index any columns greater than 62, but we know from
+      ** colMask that columns greater than 62 are used, so this is not a
+      ** covering index */
+      return 1;
+    }
   }
   ck.pIdx = pIdx;
   ck.iTabCur = iTabCur;
@@ -3552,7 +3583,7 @@ static int whereLoopAddBtree(
         m = 0;
       }else{
         m = pSrc->colUsed & pProbe->colNotIdxed;
-        if( m==TOPBIT ){
+        if( m==TOPBIT || pProbe->bHasExpr ){
           m = whereIsCoveringIndex(pWInfo, pProbe, pSrc->iCursor);
         }
         pNew->wsFlags = (m==0) ? (WHERE_IDX_ONLY|WHERE_INDEXED) : WHERE_INDEXED;
