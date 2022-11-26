@@ -6259,7 +6259,7 @@ static void printAggInfo(AggInfo *pAggInfo){
        "agg-column[%d] pTab=%s iTable=%d iColumn=%d iMem=%d"
        " iSorterColumn=%d %s\n",
        ii, pCol->pTab ? pCol->pTab->zName : "NULL", 
-       pCol->iTable, pCol->iColumn, AggInfoColumnReg(pAggInfo,ii),
+       pCol->iTable, pCol->iColumn, pAggInfo->iFirstReg+ii,
        pCol->iSorterColumn, 
        ii>=pAggInfo->nAccumulator ? "" : " Accumulator");
     sqlite3TreeViewExpr(0, pAggInfo->aCol[ii].pCExpr, 0);

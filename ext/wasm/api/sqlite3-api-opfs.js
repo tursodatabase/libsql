@@ -348,11 +348,31 @@ const installOpfsVfs = function callee(options){
       'SQLITE_NOTFOUND',
       'SQLITE_OPEN_CREATE',
       'SQLITE_OPEN_DELETEONCLOSE',
+      'SQLITE_OPEN_MAIN_DB',
       'SQLITE_OPEN_READONLY'
     ].forEach((k)=>{
       if(undefined === (state.sq3Codes[k] = capi[k])){
         toss("Maintenance required: not found:",k);
       }
+    });
+    state.opfsFlags = Object.assign(Object.create(null),{
+      /**
+         Flag for use with xOpen(). "opfs-unlock-asap=1" enables
+         this. See defaultUnlockAsap, below.
+       */
+      OPFS_UNLOCK_ASAP: 0x01,
+      /**
+         If true, any async routine which implicitly acquires a sync
+         access handle (i.e. an OPFS lock) will release that locks at
+         the end of the call which acquires it. If false, such
+         "autolocks" are not released until the VFS is idle for some
+         brief amount of time.
+
+         The benefit of enabling this is much higher concurrency. The
+         down-side is much-reduced performance (as much as a 4x decrease
+         in speedtest1).
+      */
+      defaultUnlockAsap: false
     });
 
     /**
@@ -844,9 +864,15 @@ const installOpfsVfs = function callee(options){
       //xSleep is optionally defined below
       xOpen: function f(pVfs, zName, pFile, flags, pOutFlags){
         mTimeStart('xOpen');
+        let opfsFlags = 0;
         if(0===zName){
           zName = randomFilename();
         }else if('number'===typeof zName){
+          if(capi.sqlite3_uri_boolean(zName, "opfs-unlock-asap", 0)){
+            /* -----------------------^^^^^ MUST pass the untranslated
+               C-string here. */
+            opfsFlags |= state.opfsFlags.OPFS_UNLOCK_ASAP;
+          }
           zName = wasm.cstringToJs(zName);
         }
         const fh = Object.create(null);
@@ -854,7 +880,7 @@ const installOpfsVfs = function callee(options){
         fh.filename = zName;
         fh.sab = new SharedArrayBuffer(state.fileBufferSize);
         fh.flags = flags;
-        const rc = opRun('xOpen', pFile, zName, flags);
+        const rc = opRun('xOpen', pFile, zName, flags, opfsFlags);
         if(!rc){
           /* Recall that sqlite3_vfs::xClose() will be called, even on
              error, unless pFile->pMethods is NULL. */
@@ -1145,6 +1171,9 @@ const installOpfsVfs = function callee(options){
 
     //TODO to support fiddle and worker1 db upload:
     //opfsUtil.createFile = function(absName, content=undefined){...}
+    //We have sqlite3.wasm.sqlite3_wasm_vfs_create_file() for this
+    //purpose but its interface and name are still under
+    //consideration.
 
     if(sqlite3.oo1){
       opfsUtil.OpfsDb = function(...args){
