@@ -1,5 +1,5 @@
-C Fix\san\sincorrect\sassertion-fault\sin\sthe\s"TREETRACE"\sdebugging\slogic\son\nselect.c.\s\sThe\sproblem\sdoes\snot\saffect\sproduction\sbuilds.
-D 2022-11-26T20:12:02.257
+C Show\swhich\sAggInfo.aCol\san\sExpr\snode\srepresents\sin\sthe\stree\strace\sdebugging\nlogic.\s\sDoes\snot\saffect\sproduction\sbuilds.
+D 2022-11-26T20:48:56.633
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -706,7 +706,7 @@ F src/test_window.c cdae419fdcea5bad6dcd9368c685abdad6deb59e9fc8b84b153de513d394
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 1305797eab3542a0896b552c6e7669c972c1468e11e92b370533c1f37a37082b
-F src/treeview.c 07787f67cd297a6d09d04b8d70c06769c60c9c1d9080378f93929c16f8fd3298
+F src/treeview.c 29b1dc7e0f84ba090734febe27393d4719682af0cae1b902d5ebf0236ecebea4
 F src/trigger.c 4163ada044af89d51caba1cb713a73165347b2ec05fe84a283737c134d61fcd5
 F src/update.c 5b0302c47cf31b533d5dff04c497ca1d8b9d89c39727e633fbe7b882fd5ac5aa
 F src/upsert.c 5303dc6c518fa7d4b280ec65170f465c7a70b7ac2b22491598f6d0b4875b3145
@@ -2060,8 +2060,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9542f9ce9e023b489e2d93661f719fb0751c1e28f72fded9d3c2156d5777e7b1
-R 581898efb4aefcef8555315298dbd7f7
+P f11bb42292d94e7b7687bd2134f72afe1353182238cb4837fc0a6d78a021dd7e
+R 77aba841340d0be9ea0f0036dfeb9ac7
 U drh
-Z f6493a79b992a3696ede08a261d497d4
+Z cf507f961f29b58691309417f6fc3d94
 # Remove this line to create a well-formed Fossil manifest.
