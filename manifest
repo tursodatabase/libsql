@@ -1,5 +1,5 @@
-C OPFS\sVFS:\sadd\sthe\sopfs-unlock-asap=1\sURI\sflag\swhich\stells\sthe\sVFS\sto\srelease\simplicit\slocks\sASAP\sinstead\sof\sduring\sVFS\sidle\stime.\sThis\simproves\sconcurrency\snotably\sin\sthe\stest\sapp\sbut\sbrings\sa\ssignificant\sperformance\spenalty\sin\sspeedtest1\s(roughly\s4x\sslowdown).\sThis\sis\snot\sthe\sfinal\sword\sin\sOPFS\sconcurrency,\sbut\sgets\sus\sa\sstep\sfurther.
-D 2022-11-26T15:24:58.092
+C Fix\san\sincorrect\sassertion-fault\sin\sthe\s"TREETRACE"\sdebugging\slogic\son\nselect.c.\s\sThe\sproblem\sdoes\snot\saffect\sproduction\sbuilds.
+D 2022-11-26T20:12:02.257
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -641,7 +641,7 @@ F src/printf.c e99ee9741e79ae3873458146f59644276657340385ade4e76a5f5d1c25793764
 F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c efea4e5fbecfd6d0a9071b0be0d952620991673391b6ffaaf4c277b0bb674633
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c 934c37455762579dcef5ce37f6abf04facaa61ef04cde207ac170b28c4780113
+F src/select.c c1eb8f3ee25152327f2e7e87db8cea549e57c104b63638bff4fc584d479c33f0
 F src/shell.c.in 09cb15d7421c475f2d308f6a4312d8d690916ea5cb62ea1618f2f4ce5703af35
 F src/sqlite.h.in 100fc660c2f19961b8ed8437b9d53d687de2f8eb2b96437ec6da216adcb643ca
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -2060,9 +2060,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P adbca3448e2099f0d6149a073978f230ed9a92a2f384779879ef89e672231bcf c0458caca3508d5d252f9b5198bda4f51a5c1874540f014b17e409f2daab1706
-R ef0be46e6ac8ee603582dd679fae7434
-T +closed c0458caca3508d5d252f9b5198bda4f51a5c1874540f014b17e409f2daab1706 Closed\sby\sintegrate-merge.
-U stephan
-Z 3b8060cf3f2afe36aab99fa36bba89db
+P 9542f9ce9e023b489e2d93661f719fb0751c1e28f72fded9d3c2156d5777e7b1
+R 581898efb4aefcef8555315298dbd7f7
+U drh
+Z f6493a79b992a3696ede08a261d497d4
 # Remove this line to create a well-formed Fossil manifest.
