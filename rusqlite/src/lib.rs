@@ -534,7 +534,7 @@ impl Connection {
     /// ```rust,no_run
     /// # use rusqlite::{Connection};
     /// fn update_rows(conn: &Connection) {
-    ///     match conn.execute("UPDATE foo SET bar = 'baz' WHERE qux = ?", [1i32]) {
+    ///     match conn.execute("UPDATE foo SET bar = 'baz' WHERE qux = ?1", [1i32]) {
     ///         Ok(updated) => println!("{} rows were updated", updated),
     ///         Err(err) => println!("update failed: {}", err),
     ///     }
@@ -739,7 +739,7 @@ impl Connection {
     /// ```rust,no_run
     /// # use rusqlite::{Connection, Result};
     /// fn insert_new_people(conn: &Connection) -> Result<()> {
-    ///     let mut stmt = conn.prepare("INSERT INTO People (name) VALUES (?)")?;
+    ///     let mut stmt = conn.prepare("INSERT INTO People (name) VALUES (?1)")?;
     ///     stmt.execute(["Joe Smith"])?;
     ///     stmt.execute(["Bob Jones"])?;
     ///     Ok(())
@@ -1406,8 +1406,8 @@ mod test {
         let db = Connection::open_in_memory()?;
         db.execute_batch("CREATE TABLE foo(x INTEGER)")?;
 
-        assert_eq!(1, db.execute("INSERT INTO foo(x) VALUES (?)", [1i32])?);
-        assert_eq!(1, db.execute("INSERT INTO foo(x) VALUES (?)", [2i32])?);
+        assert_eq!(1, db.execute("INSERT INTO foo(x) VALUES (?1)", [1i32])?);
+        assert_eq!(1, db.execute("INSERT INTO foo(x) VALUES (?1)", [2i32])?);
 
         assert_eq!(3i32, db.one_column::<i32>("SELECT SUM(x) FROM foo")?);
         Ok(())
@@ -1417,7 +1417,7 @@ mod test {
     #[cfg(feature = "extra_check")]
     fn test_execute_select() {
         let db = checked_memory_handle();
-        let err = db.execute("SELECT 1 WHERE 1 < ?", [1i32]).unwrap_err();
+        let err = db.execute("SELECT 1 WHERE 1 < ?1", [1i32]).unwrap_err();
         assert_eq!(
             err,
             Error::ExecuteReturnedResults,
@@ -1462,7 +1462,7 @@ mod test {
         let db = Connection::open_in_memory()?;
         db.execute_batch("CREATE TABLE foo(x INTEGER);")?;
 
-        let mut insert_stmt = db.prepare("INSERT INTO foo(x) VALUES(?)")?;
+        let mut insert_stmt = db.prepare("INSERT INTO foo(x) VALUES(?1)")?;
         assert_eq!(insert_stmt.execute([1i32])?, 1);
         assert_eq!(insert_stmt.execute([2i32])?, 1);
         assert_eq!(insert_stmt.execute([3i32])?, 1);
@@ -1471,7 +1471,7 @@ mod test {
         assert_eq!(insert_stmt.execute(["goodbye"])?, 1);
         assert_eq!(insert_stmt.execute([types::Null])?, 1);
 
-        let mut update_stmt = db.prepare("UPDATE foo SET x=? WHERE x<?")?;
+        let mut update_stmt = db.prepare("UPDATE foo SET x=?1 WHERE x<?2")?;
         assert_eq!(update_stmt.execute([3i32, 3i32])?, 2);
         assert_eq!(update_stmt.execute([3i32, 3i32])?, 0);
         assert_eq!(update_stmt.execute([8i32, 8i32])?, 3);
@@ -1483,12 +1483,12 @@ mod test {
         let db = Connection::open_in_memory()?;
         db.execute_batch("CREATE TABLE foo(x INTEGER);")?;
 
-        let mut insert_stmt = db.prepare("INSERT INTO foo(x) VALUES(?)")?;
+        let mut insert_stmt = db.prepare("INSERT INTO foo(x) VALUES(?1)")?;
         assert_eq!(insert_stmt.execute([1i32])?, 1);
         assert_eq!(insert_stmt.execute([2i32])?, 1);
         assert_eq!(insert_stmt.execute([3i32])?, 1);
 
-        let mut query = db.prepare("SELECT x FROM foo WHERE x < ? ORDER BY x DESC")?;
+        let mut query = db.prepare("SELECT x FROM foo WHERE x < ?1 ORDER BY x DESC")?;
         {
             let mut rows = query.query([4i32])?;
             let mut v = Vec::<i32>::new();
@@ -1753,7 +1753,7 @@ mod test {
         let db = Connection::open_in_memory()?;
         db.execute_batch("CREATE TABLE foo(i, x);")?;
         let vals = ["foobar", "1234", "qwerty"];
-        let mut insert_stmt = db.prepare("INSERT INTO foo(i, x) VALUES(?, ?)")?;
+        let mut insert_stmt = db.prepare("INSERT INTO foo(i, x) VALUES(?1, ?2)")?;
         for (i, v) in vals.iter().enumerate() {
             let i_to_insert = i as i64;
             assert_eq!(insert_stmt.execute(params![i_to_insert, v])?, 1);
@@ -2019,7 +2019,7 @@ mod test {
         let db = Connection::open_in_memory()?;
         db.execute_batch("CREATE TABLE foo(x INTEGER);")?;
         let b: Box<dyn ToSql> = Box::new(5);
-        db.execute("INSERT INTO foo VALUES(?)", [b])?;
+        db.execute("INSERT INTO foo VALUES(?1)", [b])?;
         db.query_row("SELECT x FROM foo", [], |r| {
             assert_eq!(5, r.get_unwrap::<_, i32>(0));
             Ok(())
@@ -2031,10 +2031,10 @@ mod test {
         let db = Connection::open_in_memory()?;
         db.query_row(
             "SELECT
-            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-            ?, ?, ?, ?;",
+            ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10,
+            ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20,
+            ?21, ?22, ?23, ?24, ?25, ?26, ?27, ?28, ?29, ?30,
+            ?31, ?32, ?33, ?34;",
             params![
                 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
                 1, 1, 1, 1, 1, 1,

@@ -91,7 +91,7 @@ mod test {
         ts_vec.push(make_datetime(10_000_000_000, 0)); //November 20, 2286
 
         for ts in ts_vec {
-            db.execute("INSERT INTO foo(t) VALUES (?)", [ts])?;
+            db.execute("INSERT INTO foo(t) VALUES (?1)", [ts])?;
 
             let from: OffsetDateTime = db.one_column("SELECT t FROM foo")?;
 
@@ -143,7 +143,7 @@ mod test {
                 Ok(OffsetDateTime::parse("2013-10-07T04:23:19.120-04:00", &Rfc3339).unwrap()),
             ),
         ] {
-            let result: Result<OffsetDateTime> = db.query_row("SELECT ?", [s], |r| r.get(0));
+            let result: Result<OffsetDateTime> = db.query_row("SELECT ?1", [s], |r| r.get(0));
             assert_eq!(result, t);
         }
         Ok(())
@@ -160,7 +160,7 @@ mod test {
     #[test]
     fn test_param() -> Result<()> {
         let db = Connection::open_in_memory()?;
-        let result: Result<bool> = db.query_row("SELECT 1 WHERE ? BETWEEN datetime('now', '-1 minute') AND datetime('now', '+1 minute')", [OffsetDateTime::now_utc()], |r| r.get(0));
+        let result: Result<bool> = db.query_row("SELECT 1 WHERE ?1 BETWEEN datetime('now', '-1 minute') AND datetime('now', '+1 minute')", [OffsetDateTime::now_utc()], |r| r.get(0));
         result.unwrap();
         Ok(())
     }

@@ -33,7 +33,7 @@ impl Statement<'_> {
     /// ```rust,no_run
     /// # use rusqlite::{Connection, Result, params};
     /// fn update_rows(conn: &Connection) -> Result<()> {
-    ///     let mut stmt = conn.prepare("UPDATE foo SET bar = ? WHERE qux = ?")?;
+    ///     let mut stmt = conn.prepare("UPDATE foo SET bar = ?1 WHERE qux = ?2")?;
     ///     // For a single parameter, or a parameter where all the values have
     ///     // the same type, just passing an array is simplest.
     ///     stmt.execute([2i32])?;
@@ -58,7 +58,7 @@ impl Statement<'_> {
     /// fn store_file(conn: &Connection, path: &str, data: &[u8]) -> Result<()> {
     ///     # // no need to do it for real.
     ///     # fn sha256(_: &[u8]) -> [u8; 32] { [0; 32] }
-    ///     let query = "INSERT OR REPLACE INTO files(path, hash, data) VALUES (?, ?, ?)";
+    ///     let query = "INSERT OR REPLACE INTO files(path, hash, data) VALUES (?1, ?2, ?3)";
     ///     let mut stmt = conn.prepare_cached(query)?;
     ///     let hash: [u8; 32] = sha256(data);
     ///     // The easiest way to pass positional parameters of have several
@@ -193,7 +193,7 @@ impl Statement<'_> {
     /// ```rust,no_run
     /// # use rusqlite::{Connection, Result};
     /// fn query(conn: &Connection, name: &str) -> Result<()> {
-    ///     let mut stmt = conn.prepare("SELECT * FROM test where name = ?")?;
+    ///     let mut stmt = conn.prepare("SELECT * FROM test where name = ?1")?;
     ///     let mut rows = stmt.query(rusqlite::params![name])?;
     ///     while let Some(row) = rows.next()? {
     ///         // ...
@@ -207,7 +207,7 @@ impl Statement<'_> {
     /// ```rust,no_run
     /// # use rusqlite::{Connection, Result};
     /// fn query(conn: &Connection, name: &str) -> Result<()> {
-    ///     let mut stmt = conn.prepare("SELECT * FROM test where name = ?")?;
+    ///     let mut stmt = conn.prepare("SELECT * FROM test where name = ?1")?;
     ///     let mut rows = stmt.query([name])?;
     ///     while let Some(row) = rows.next()? {
     ///         // ...
@@ -398,7 +398,7 @@ impl Statement<'_> {
     /// ```rust,no_run
     /// # use rusqlite::{Connection, Result};
     /// fn get_names(conn: &Connection) -> Result<Vec<String>> {
-    ///     let mut stmt = conn.prepare("SELECT name FROM people WHERE id = ?")?;
+    ///     let mut stmt = conn.prepare("SELECT name FROM people WHERE id = ?1")?;
     ///     let rows = stmt.query_and_then(["one"], |row| row.get::<_, String>(0))?;
     ///
     ///     let mut persons = Vec::new();
@@ -1267,7 +1267,7 @@ mod test {
     fn test_insert() -> Result<()> {
         let db = Connection::open_in_memory()?;
         db.execute_batch("CREATE TABLE foo(x INTEGER UNIQUE)")?;
-        let mut stmt = db.prepare("INSERT OR IGNORE INTO foo (x) VALUES (?)")?;
+        let mut stmt = db.prepare("INSERT OR IGNORE INTO foo (x) VALUES (?1)")?;
         assert_eq!(stmt.insert([1i32])?, 1);
         assert_eq!(stmt.insert([2i32])?, 2);
         match stmt.insert([1i32]).unwrap_err() {
@@ -1307,7 +1307,7 @@ mod test {
                    INSERT INTO foo VALUES(2);
                    END;";
         db.execute_batch(sql)?;
-        let mut stmt = db.prepare("SELECT 1 FROM foo WHERE x = ?")?;
+        let mut stmt = db.prepare("SELECT 1 FROM foo WHERE x = ?1")?;
         assert!(stmt.exists([1i32])?);
         assert!(stmt.exists([2i32])?);
         assert!(!stmt.exists([0i32])?);
@@ -1316,18 +1316,18 @@ mod test {
     #[test]
     fn test_tuple_params() -> Result<()> {
         let db = Connection::open_in_memory()?;
-        let s = db.query_row("SELECT printf('[%s]', ?)", ("abc",), |r| {
+        let s = db.query_row("SELECT printf('[%s]', ?1)", ("abc",), |r| {
             r.get::<_, String>(0)
         })?;
         assert_eq!(s, "[abc]");
         let s = db.query_row(
-            "SELECT printf('%d %s %d', ?, ?, ?)",
+            "SELECT printf('%d %s %d', ?1, ?2, ?3)",
             (1i32, "abc", 2i32),
             |r| r.get::<_, String>(0),
         )?;
         assert_eq!(s, "1 abc 2");
         let s = db.query_row(
-            "SELECT printf('%d %s %d %d', ?, ?, ?, ?)",
+            "SELECT printf('%d %s %d %d', ?1, ?2, ?3, ?4)",
             (1, "abc", 2i32, 4i64),
             |r| r.get::<_, String>(0),
         )?;
@@ -1339,10 +1339,10 @@ mod test {
         );
         let query = "SELECT printf(
             '%d %s | %d %s | %d %s | %d %s || %d %s | %d %s | %d %s | %d %s',
-            ?, ?, ?, ?,
-            ?, ?, ?, ?,
-            ?, ?, ?, ?,
-            ?, ?, ?, ?
+            ?1, ?2, ?3, ?4,
+            ?5, ?6, ?7, ?8,
+            ?9, ?10, ?11, ?12,
+            ?13, ?14, ?15, ?16
         )";
         let s = db.query_row(query, bigtup, |r| r.get::<_, String>(0))?;
         assert_eq!(s, "0 a | 1 b | 2 c | 3 d || 4 e | 5 f | 6 g | 7 h");
@@ -1358,7 +1358,7 @@ mod test {
                    INSERT INTO foo VALUES(2, 4);
                    END;";
         db.execute_batch(sql)?;
-        let mut stmt = db.prepare("SELECT y FROM foo WHERE x = ?")?;
+        let mut stmt = db.prepare("SELECT y FROM foo WHERE x = ?1")?;
         let y: Result<i64> = stmt.query_row([1i32], |r| r.get(0));
         assert_eq!(3i64, y?);
         Ok(())
@@ -1395,7 +1395,7 @@ mod test {
     #[test]
     fn test_expanded_sql() -> Result<()> {
         let db = Connection::open_in_memory()?;
-        let stmt = db.prepare("SELECT ?")?;
+        let stmt = db.prepare("SELECT ?1")?;
         stmt.bind_parameter(&1, 1)?;
         assert_eq!(Some("SELECT 1".to_owned()), stmt.expanded_sql());
         Ok(())
@@ -1497,7 +1497,7 @@ mod test {
         assert_eq!("UTF-16le", encoding);
         db.execute_batch("CREATE TABLE foo(x TEXT)")?;
         let expected = "テスト";
-        db.execute("INSERT INTO foo(x) VALUES (?)", [&expected])?;
+        db.execute("INSERT INTO foo(x) VALUES (?1)", [&expected])?;
         let actual: String = db.one_column("SELECT x FROM foo")?;
         assert_eq!(expected, actual);
         Ok(())
@@ -1507,7 +1507,7 @@ mod test {
     fn test_nul_byte() -> Result<()> {
         let db = Connection::open_in_memory()?;
         let expected = "a\x00b";
-        let actual: String = db.query_row("SELECT ?", [expected], |row| row.get(0))?;
+        let actual: String = db.query_row("SELECT ?1", [expected], |row| row.get(0))?;
         assert_eq!(expected, actual);
         Ok(())
     }

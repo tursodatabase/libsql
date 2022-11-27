@@ -144,13 +144,13 @@ mod test {
         let mut db = Connection::open_in_memory()?;
         db.trace(Some(tracer));
         {
-            let _ = db.query_row("SELECT ?", [1i32], |_| Ok(()));
-            let _ = db.query_row("SELECT ?", ["hello"], |_| Ok(()));
+            let _ = db.query_row("SELECT ?1", [1i32], |_| Ok(()));
+            let _ = db.query_row("SELECT ?1", ["hello"], |_| Ok(()));
         }
         db.trace(None);
         {
-            let _ = db.query_row("SELECT ?", [2i32], |_| Ok(()));
-            let _ = db.query_row("SELECT ?", ["goodbye"], |_| Ok(()));
+            let _ = db.query_row("SELECT ?1", [2i32], |_| Ok(()));
+            let _ = db.query_row("SELECT ?1", ["goodbye"], |_| Ok(()));
         }
 
         let traced_stmts = TRACED_STMTS.lock().unwrap();

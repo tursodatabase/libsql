@@ -244,7 +244,7 @@ mod test {
         {
             for n in out_of_range {
                 let err = db
-                    .query_row("SELECT ?", [n], |r| r.get::<_, T>(0))
+                    .query_row("SELECT ?1", [n], |r| r.get::<_, T>(0))
                     .unwrap_err();
                 match err {
                     Error::IntegralValueOutOfRange(_, value) => assert_eq!(*n, value),
@@ -254,7 +254,7 @@ mod test {
             for n in in_range {
                 assert_eq!(
                     *n,
-                    db.query_row("SELECT ?", [n], |r| r.get::<_, T>(0))
+                    db.query_row("SELECT ?1", [n], |r| r.get::<_, T>(0))
                         .unwrap()
                         .into()
                 );

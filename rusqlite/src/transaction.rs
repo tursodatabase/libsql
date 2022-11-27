@@ -718,7 +718,7 @@ mod test {
     }
 
     fn insert(x: i32, conn: &Connection) -> Result<usize> {
-        conn.execute("INSERT INTO foo VALUES(?)", [x])
+        conn.execute("INSERT INTO foo VALUES(?1)", [x])
     }
 
     fn assert_current_sum(x: i32, conn: &Connection) -> Result<()> {

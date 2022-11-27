@@ -211,7 +211,7 @@ impl Connection {
     /// (e.g. `integrity_check`).
     ///
     /// Prefer [PRAGMA function](https://sqlite.org/pragma.html#pragfunc) introduced in SQLite 3.20:
-    /// `SELECT * FROM pragma_table_info(?);`
+    /// `SELECT * FROM pragma_table_info(?1);`
     pub fn pragma<F, V>(
         &self,
         schema_name: Option<DatabaseName<'_>>,
@@ -379,7 +379,7 @@ mod test {
     #[cfg(feature = "modern_sqlite")]
     fn pragma_func() -> Result<()> {
         let db = Connection::open_in_memory()?;
-        let mut table_info = db.prepare("SELECT * FROM pragma_table_info(?)")?;
+        let mut table_info = db.prepare("SELECT * FROM pragma_table_info(?1)")?;
         let mut columns = Vec::new();
         let mut rows = table_info.query(["sqlite_master"])?;
 

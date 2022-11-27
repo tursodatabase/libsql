@@ -102,7 +102,7 @@ mod value_ref;
 /// # use rusqlite::types::{Null};
 ///
 /// fn insert_null(conn: &Connection) -> Result<usize> {
-///     conn.execute("INSERT INTO people (name) VALUES (?)", [Null])
+///     conn.execute("INSERT INTO people (name) VALUES (?1)", [Null])
 /// }
 /// ```
 #[derive(Copy, Clone)]
@@ -153,7 +153,7 @@ mod test {
         let db = checked_memory_handle()?;
 
         let v1234 = vec![1u8, 2, 3, 4];
-        db.execute("INSERT INTO foo(b) VALUES (?)", [&v1234])?;
+        db.execute("INSERT INTO foo(b) VALUES (?1)", [&v1234])?;
 
         let v: Vec<u8> = db.one_column("SELECT b FROM foo")?;
         assert_eq!(v, v1234);
@@ -165,7 +165,7 @@ mod test {
         let db = checked_memory_handle()?;
 
         let empty = vec![];
-        db.execute("INSERT INTO foo(b) VALUES (?)", [&empty])?;
+        db.execute("INSERT INTO foo(b) VALUES (?1)", [&empty])?;
 
         let v: Vec<u8> = db.one_column("SELECT b FROM foo")?;
         assert_eq!(v, empty);
@@ -177,7 +177,7 @@ mod test {
         let db = checked_memory_handle()?;
 
         let s = "hello, world!";
-        db.execute("INSERT INTO foo(t) VALUES (?)", [&s])?;
+        db.execute("INSERT INTO foo(t) VALUES (?1)", [&s])?;
 
         let from: String = db.one_column("SELECT t FROM foo")?;
         assert_eq!(from, s);
@@ -189,7 +189,7 @@ mod test {
         let db = checked_memory_handle()?;
 
         let s = "hello, world!";
-        db.execute("INSERT INTO foo(t) VALUES (?)", [s.to_owned()])?;
+        db.execute("INSERT INTO foo(t) VALUES (?1)", [s.to_owned()])?;
 
         let from: String = db.one_column("SELECT t FROM foo")?;
         assert_eq!(from, s);
@@ -200,7 +200,7 @@ mod test {
     fn test_value() -> Result<()> {
         let db = checked_memory_handle()?;
 
-        db.execute("INSERT INTO foo(i) VALUES (?)", [Value::Integer(10)])?;
+        db.execute("INSERT INTO foo(i) VALUES (?1)", [Value::Integer(10)])?;
 
         assert_eq!(10i64, db.one_column::<i64>("SELECT i FROM foo")?);
         Ok(())
@@ -213,8 +213,8 @@ mod test {
         let s = Some("hello, world!");
         let b = Some(vec![1u8, 2, 3, 4]);
 
-        db.execute("INSERT INTO foo(t) VALUES (?)", [&s])?;
-        db.execute("INSERT INTO foo(b) VALUES (?)", [&b])?;
+        db.execute("INSERT INTO foo(t) VALUES (?1)", [&s])?;
+        db.execute("INSERT INTO foo(b) VALUES (?1)", [&b])?;
 
         let mut stmt = db.prepare("SELECT t, b FROM foo ORDER BY ROWID ASC")?;
         let mut rows = stmt.query([])?;
