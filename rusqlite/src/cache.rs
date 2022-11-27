@@ -17,13 +17,13 @@ impl Connection {
     /// # use rusqlite::{Connection, Result};
     /// fn insert_new_people(conn: &Connection) -> Result<()> {
     ///     {
-    ///         let mut stmt = conn.prepare_cached("INSERT INTO People (name) VALUES (?)")?;
+    ///         let mut stmt = conn.prepare_cached("INSERT INTO People (name) VALUES (?1)")?;
     ///         stmt.execute(["Joe Smith"])?;
     ///     }
     ///     {
     ///         // This will return the same underlying SQLite statement handle without
     ///         // having to prepare it again.
-    ///         let mut stmt = conn.prepare_cached("INSERT INTO People (name) VALUES (?)")?;
+    ///         let mut stmt = conn.prepare_cached("INSERT INTO People (name) VALUES (?1)")?;
     ///         stmt.execute(["Bob Jones"])?;
     ///     }
     ///     Ok(())

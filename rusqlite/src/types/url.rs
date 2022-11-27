@@ -49,7 +49,7 @@ mod test {
         let url2 = "http://www.example2.com/👌";
 
         db.execute(
-            "INSERT INTO urls (i, v) VALUES (0, ?), (1, ?), (2, ?), (3, ?)",
+            "INSERT INTO urls (i, v) VALUES (0, ?1), (1, ?2), (2, ?3), (3, ?4)",
             // also insert a non-hex encoded url (which might be present if it was
             // inserted separately)
             params![url0, url1, url2, "illegal"],

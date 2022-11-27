@@ -70,7 +70,7 @@ use sealed::Sealed;
 /// ```rust,no_run
 /// # use rusqlite::{Connection, Result, params};
 /// fn update_rows(conn: &Connection) -> Result<()> {
-///     let mut stmt = conn.prepare("INSERT INTO test (a, b) VALUES (?, ?)")?;
+///     let mut stmt = conn.prepare("INSERT INTO test (a, b) VALUES (?1, ?2)")?;
 ///
 ///     // Using a tuple:
 ///     stmt.execute((0, "foobar"))?;
@@ -357,7 +357,7 @@ impl_for_array_ref!(
 /// fn query(conn: &Connection, ids: &BTreeSet<String>) -> Result<()> {
 ///     assert_eq!(ids.len(), 3, "Unrealistic sample code");
 ///
-///     let mut stmt = conn.prepare("SELECT * FROM users WHERE id IN (?, ?, ?)")?;
+///     let mut stmt = conn.prepare("SELECT * FROM users WHERE id IN (?1, ?2, ?3)")?;
 ///     let _rows = stmt.query(params_from_iter(ids.iter()))?;
 ///
 ///     // use _rows...

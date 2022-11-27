@@ -176,7 +176,7 @@ mod test {
     fn test_naive_date() -> Result<()> {
         let db = checked_memory_handle()?;
         let date = NaiveDate::from_ymd_opt(2016, 2, 23).unwrap();
-        db.execute("INSERT INTO foo (t) VALUES (?)", [date])?;
+        db.execute("INSERT INTO foo (t) VALUES (?1)", [date])?;
 
         let s: String = db.one_column("SELECT t FROM foo")?;
         assert_eq!("2016-02-23", s);
@@ -189,7 +189,7 @@ mod test {
     fn test_naive_time() -> Result<()> {
         let db = checked_memory_handle()?;
         let time = NaiveTime::from_hms_opt(23, 56, 4).unwrap();
-        db.execute("INSERT INTO foo (t) VALUES (?)", [time])?;
+        db.execute("INSERT INTO foo (t) VALUES (?1)", [time])?;
 
         let s: String = db.one_column("SELECT t FROM foo")?;
         assert_eq!("23:56:04", s);
@@ -205,7 +205,7 @@ mod test {
         let time = NaiveTime::from_hms_opt(23, 56, 4).unwrap();
         let dt = NaiveDateTime::new(date, time);
 
-        db.execute("INSERT INTO foo (t) VALUES (?)", [dt])?;
+        db.execute("INSERT INTO foo (t) VALUES (?1)", [dt])?;
 
         let s: String = db.one_column("SELECT t FROM foo")?;
         assert_eq!("2016-02-23 23:56:04", s);
@@ -226,7 +226,7 @@ mod test {
         let dt = NaiveDateTime::new(date, time);
         let utc = Utc.from_utc_datetime(&dt);
 
-        db.execute("INSERT INTO foo (t) VALUES (?)", [utc])?;
+        db.execute("INSERT INTO foo (t) VALUES (?1)", [utc])?;
 
         let s: String = db.one_column("SELECT t FROM foo")?;
         assert_eq!("2016-02-23 23:56:04.789+00:00", s);
@@ -253,7 +253,7 @@ mod test {
         let dt = NaiveDateTime::new(date, time);
         let local = Local.from_local_datetime(&dt).single().unwrap();
 
-        db.execute("INSERT INTO foo (t) VALUES (?)", [local])?;
+        db.execute("INSERT INTO foo (t) VALUES (?1)", [local])?;
 
         // Stored string should be in UTC
         let s: String = db.one_column("SELECT t FROM foo")?;
@@ -269,7 +269,7 @@ mod test {
         let db = checked_memory_handle()?;
         let time = DateTime::parse_from_rfc3339("2020-04-07T11:23:45+04:00").unwrap();
 
-        db.execute("INSERT INTO foo (t) VALUES (?)", [time])?;
+        db.execute("INSERT INTO foo (t) VALUES (?1)", [time])?;
 
         // Stored string should preserve timezone offset
         let s: String = db.one_column("SELECT t FROM foo")?;
@@ -298,7 +298,7 @@ mod test {
     #[test]
     fn test_naive_date_time_param() -> Result<()> {
         let db = checked_memory_handle()?;
-        let result: Result<bool> = db.query_row("SELECT 1 WHERE ? BETWEEN datetime('now', '-1 minute') AND datetime('now', '+1 minute')", [Utc::now().naive_utc()], |r| r.get(0));
+        let result: Result<bool> = db.query_row("SELECT 1 WHERE ?1 BETWEEN datetime('now', '-1 minute') AND datetime('now', '+1 minute')", [Utc::now().naive_utc()], |r| r.get(0));
         result.unwrap();
         Ok(())
     }
@@ -306,7 +306,7 @@ mod test {
     #[test]
     fn test_date_time_param() -> Result<()> {
         let db = checked_memory_handle()?;
-        let result: Result<bool> = db.query_row("SELECT 1 WHERE ? BETWEEN datetime('now', '-1 minute') AND datetime('now', '+1 minute')", [Utc::now()], |r| r.get(0));
+        let result: Result<bool> = db.query_row("SELECT 1 WHERE ?1 BETWEEN datetime('now', '-1 minute') AND datetime('now', '+1 minute')", [Utc::now()], |r| r.get(0));
         result.unwrap();
         Ok(())
     }
