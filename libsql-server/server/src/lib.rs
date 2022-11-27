@@ -2,7 +2,7 @@ use std::path::Path;
 
 use anyhow::Result;
 use coordinator::scheduler::service::SchedulerServiceFactory;
-use sqlite::OpenFlags;
+use rusqlite::OpenFlags;
 use tokio::net::ToSocketAddrs;
 
 use crate::coordinator::Coordinator;
@@ -16,12 +16,12 @@ mod server;
 
 pub async fn run_server(db_path: &Path, addr: impl ToSocketAddrs) -> Result<()> {
     let (pool, pool_sender) = Coordinator::new(0, move || {
-        sqlite::Connection::open_with_flags(
+        rusqlite::Connection::open_with_flags(
             db_path,
-            OpenFlags::new()
-                .set_create()
-                .set_no_mutex()
-                .set_read_write(),
+            OpenFlags::SQLITE_OPEN_READ_WRITE
+                | OpenFlags::SQLITE_OPEN_CREATE
+                | OpenFlags::SQLITE_OPEN_URI
+                | OpenFlags::SQLITE_OPEN_NO_MUTEX,
         )
         .unwrap()
     })?;

@@ -32,7 +32,7 @@ impl Coordinator {
     /// If ncpu is 0, then the number of worker is determined automatically.
     pub fn new(
         ncpu: usize,
-        conn_builder: impl Fn() -> sqlite::Connection + Sync + Send,
+        conn_builder: impl Fn() -> rusqlite::Connection + Sync + Send,
     ) -> Result<(Self, Sender<Job>)> {
         let _pool = ThreadPoolBuilder::new().num_threads(ncpu).build()?;
         let (fifo, receiver) = crossbeam::channel::unbounded();
@@ -67,9 +67,15 @@ impl Coordinator {
     }
 }
 
+impl std::convert::From<rusqlite::Error> for QueryError {
+    fn from(err: rusqlite::Error) -> Self {
+        QueryError::new(ErrorCode::SQLError, err)
+    }
+}
+
 struct Worker {
     global_fifo: crossbeam::channel::Receiver<Job>,
-    db_conn: sqlite::Connection,
+    db_conn: rusqlite::Connection,
     id: usize,
     /// signal that the worker has exited
     /// nothing is done with this, it simply gets dropped with the worker.
@@ -78,18 +84,25 @@ struct Worker {
 
 impl Worker {
     fn perform_oneshot(&self, stmts: &Statements) -> QueryResult {
-        let mut rows = vec![];
-        let result = self.db_conn.iterate(&stmts.stmts, |pairs| {
-            for &(name, value) in pairs.iter() {
-                rows.push(format!("{} = {}", name, value.unwrap()));
+        let mut result = vec![];
+        let mut prepared = self.db_conn.prepare(&stmts.stmts)?;
+        let col_names: Vec<String> = prepared
+            .column_names()
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+        //FIXME(sarna): the code below was ported as-is,
+        // but once we switch to gathering whole rows in the result vector
+        // instead of single values, Statement::query_map is a more convenient
+        // interface (it also implements Iter).
+        let mut rows = prepared.query([])?;
+        while let Some(row) = rows.next()? {
+            for (i, name) in col_names.iter().enumerate() {
+                result.push(format!("{} = {}", name, row.get::<usize, String>(i)?));
             }
-            true
-        });
-
-        match result {
-            Ok(_) => Ok(QueryResponse::ResultSet(rows)),
-            Err(err) => Err(QueryError::new(ErrorCode::SQLError, err)),
         }
+
+        Ok(QueryResponse::ResultSet(result))
     }
 
     fn handle_transaction(&self, job: Job) {
@@ -128,7 +141,7 @@ impl Worker {
                         }
                         Err(_) => {
                             log::warn!("rolling back transaction!");
-                            let _ = self.db_conn.execute("ROLLBACK TRANSACTION;");
+                            let _ = self.db_conn.execute("ROLLBACK TRANSACTION;", ());
                             // FIXME: potential data race with Ready issued before.
                             job.scheduler_sender
                                 .send(UpdateStateMessage::TxnTimeout(job.client_id))
