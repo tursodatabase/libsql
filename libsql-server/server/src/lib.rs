@@ -14,6 +14,7 @@ mod coordinator;
 mod job;
 mod postgres;
 mod server;
+mod wal;
 
 pub async fn run_server(
     db_path: &Path,
@@ -21,7 +22,7 @@ pub async fn run_server(
     ws_addr: Option<impl ToSocketAddrs>,
 ) -> Result<()> {
     let (pool, pool_sender) = Coordinator::new(0, move || {
-        rusqlite::Connection::open_with_flags(
+        crate::wal::open_with_virtual_wal(
             db_path,
             OpenFlags::SQLITE_OPEN_READ_WRITE
                 | OpenFlags::SQLITE_OPEN_CREATE
