@@ -7132,7 +7132,7 @@ static int insertCell(
       ** the entry for the overflow page into the pointer map.
       */
       ptrmapPutOvflPtr(pPage, pPage, pCell, &rc2);
-      if( rc2 ) return rc;
+      if( rc2 ) return rc2;
     }
 #endif
   }
