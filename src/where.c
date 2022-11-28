@@ -3094,7 +3094,7 @@ static int whereLoopAddBtreeIndex(
     assert( pSrc->pTab->szTabRow>0 );
     rCostIdx = pNew->nOut + 1 + (15*pProbe->szIdxRow)/pSrc->pTab->szTabRow;
     pNew->rRun = sqlite3LogEstAdd(rLogSize, rCostIdx);
-    if( (pNew->wsFlags & (WHERE_IDX_ONLY|WHERE_IPK))==0 ){
+    if( (pNew->wsFlags & (WHERE_IDX_ONLY|WHERE_IPK|WHERE_EXPRIDX))==0 ){
       pNew->rRun = sqlite3LogEstAdd(pNew->rRun, pNew->nOut + 16);
     }
     ApplyCostMultiplier(pNew->rRun, pProbe->pTable->costMult);
@@ -3270,9 +3270,12 @@ static int exprIsCoveredByIndex(
 /*
 ** Structure passed to the whereIsCoveringIndex Walker callback.
 */
+typedef struct CoveringIndexCheck CoveringIndexCheck;
 struct CoveringIndexCheck {
   Index *pIdx;       /* The index */
   int iTabCur;       /* Cursor number for the corresponding table */
+  u8 bExpr;          /* Uses an indexed expression */
+  u8 bUnidx;         /* Uses an unindexed column not within an indexed expr */
 };
 
 /*
@@ -3293,24 +3296,28 @@ struct CoveringIndexCheck {
 ** matches pExpr, then prune the search.
 */
 static int whereIsCoveringIndexWalkCallback(Walker *pWalk, Expr *pExpr){
-  int i;                  /* Loop counter */
-  const Index *pIdx;      /* The index of interest */
-  const i16 *aiColumn;    /* Columns contained in the index */
-  u16 nColumn;            /* Number of columns in the index */
-  pIdx = pWalk->u.pCovIdxCk->pIdx;
+  int i;                    /* Loop counter */
+  const Index *pIdx;        /* The index of interest */
+  const i16 *aiColumn;      /* Columns contained in the index */
+  u16 nColumn;              /* Number of columns in the index */
+  CoveringIndexCheck *pCk;  /* Info about this search */
+
+  pCk = pWalk->u.pCovIdxCk;
+  pIdx = pCk->pIdx;
   if( (pExpr->op==TK_COLUMN || pExpr->op==TK_AGG_COLUMN) ){
     /* if( pExpr->iColumn<(BMS-1) && pIdx->bHasExpr==0 ) return WRC_Continue;*/
-    if( pExpr->iTable!=pWalk->u.pCovIdxCk->iTabCur ) return WRC_Continue;
+    if( pExpr->iTable!=pCk->iTabCur ) return WRC_Continue;
     pIdx = pWalk->u.pCovIdxCk->pIdx;
     aiColumn = pIdx->aiColumn;
     nColumn = pIdx->nColumn;
     for(i=0; i<nColumn; i++){
       if( aiColumn[i]==pExpr->iColumn ) return WRC_Continue;
     }
-    pWalk->eCode = 1;
+    pCk->bUnidx = 1;
     return WRC_Abort;
   }else if( pIdx->bHasExpr
          && exprIsCoveredByIndex(pExpr, pIdx, pWalk->u.pCovIdxCk->iTabCur) ){
+    pCk->bExpr = 1;
     return WRC_Prune;
   }
   return WRC_Continue;
@@ -3319,30 +3326,39 @@ static int whereIsCoveringIndexWalkCallback(Walker *pWalk, Expr *pExpr){
 
 /*
 ** pIdx is an index that covers all of the low-number columns used by
-** pWInfo->pSelect (columns from 0 through 62).  But there are columns
-** in pWInfo->pSelect beyond 62.  This routine tries to answer the question
-** of whether pIdx covers *all* columns in the query.
+** pWInfo->pSelect (columns from 0 through 62) or an index that has
+** expressions terms.  Hence, we cannot determine whether or not it is
+** a covering index by using the colUsed bitmasks.  We have to do a search
+** to see if the index is covering.  This routine does that search.
 **
-** Return 0 if pIdx is a covering index.   Return non-zero if pIdx is
-** not a covering index or if we are unable to determine if pIdx is a
-** covering index.
+** The return value is one of these:
 **
-** This routine is an optimization.  It is always safe to return non-zero.
-** But returning zero when non-zero should have been returned can lead to
-** incorrect bytecode and assertion faults.
+**      0                The index is definitely not a covering index
+**
+**      WHERE_IDX_ONLY   The index is definitely a covering index
+**
+**      WHERE_EXPRIDX    The index is likely a covering index, but it is
+**                       difficult to determine precisely because of the
+**                       expressions that are indexed.  Score it as a
+**                       covering index, but still keep the main table open
+**                       just in case we need it.
+**
+** This routine is an optimization.  It is always safe to return zero.
+** But returning one of the other two values when zero should have been
+** returned can lead to incorrect bytecode and assertion faults.
 */
 static SQLITE_NOINLINE u32 whereIsCoveringIndex(
   WhereInfo *pWInfo,     /* The WHERE clause context */
   Index *pIdx,           /* Index that is being tested */
   int iTabCur            /* Cursor for the table being indexed */
 ){
-  int i;
+  int i, rc;
   struct CoveringIndexCheck ck;
   Walker w;
   if( pWInfo->pSelect==0 ){
     /* We don't have access to the full query, so we cannot check to see
     ** if pIdx is covering.  Assume it is not. */
-    return 1;
+    return 0;
   }
   if( pIdx->bHasExpr==0 ){
     for(i=0; i<pIdx->nColumn; i++){
@@ -3352,18 +3368,26 @@ static SQLITE_NOINLINE u32 whereIsCoveringIndex(
       /* pIdx does not index any columns greater than 62, but we know from
       ** colMask that columns greater than 62 are used, so this is not a
       ** covering index */
-      return 1;
+      return 0;
     }
   }
   ck.pIdx = pIdx;
   ck.iTabCur = iTabCur;
+  ck.bExpr = 0;
+  ck.bUnidx = 0;
   memset(&w, 0, sizeof(w));
   w.xExprCallback = whereIsCoveringIndexWalkCallback;
   w.xSelectCallback = sqlite3SelectWalkNoop;
   w.u.pCovIdxCk = &ck;
-  w.eCode = 0;
   sqlite3WalkSelect(&w, pWInfo->pSelect);
-  return w.eCode;
+  if( ck.bUnidx ){
+    rc = 0;
+  }else if( ck.bExpr ){
+    rc = WHERE_EXPRIDX;
+  }else{
+    rc = WHERE_IDX_ONLY;
+  }
+  return rc;
 }
 
 /*
@@ -3579,21 +3603,38 @@ static int whereLoopAddBtree(
     }else{
       Bitmask m;
       if( pProbe->isCovering ){
-        pNew->wsFlags = WHERE_IDX_ONLY | WHERE_INDEXED;
         m = 0;
+        pNew->wsFlags = WHERE_IDX_ONLY | WHERE_INDEXED;
       }else{
         m = pSrc->colUsed & pProbe->colNotIdxed;
-        if( m==TOPBIT || (pProbe->bHasExpr && !pProbe->bHasVCol) ){
-          m = whereIsCoveringIndex(pWInfo, pProbe, pSrc->iCursor);
+        pNew->wsFlags = WHERE_INDEXED;
+        if( m==TOPBIT || (pProbe->bHasExpr && !pProbe->bHasVCol && m!=0) ){
+          u32 isCov = whereIsCoveringIndex(pWInfo, pProbe, pSrc->iCursor);
+          if( isCov==0 ){
+            WHERETRACE(0xff,
+               ("-> %s is not a covering index"
+                " according to whereIsCoveringIndex()\n", pProbe->zName));
+            assert( m!=0 );
+          }else{
+            m = 0;
+            pNew->wsFlags |= isCov;
+            if( isCov & WHERE_IDX_ONLY ){
+              WHERETRACE(0xff,
+                 ("-> %s is a covering expression index"
+                  " according to whereIsCoveringIndex()\n", pProbe->zName));
+            }else{
+              assert( isCov==WHERE_EXPRIDX );
+              WHERETRACE(0xff,
+                 ("-> %s might be a covering expression index"
+                  " according to whereIsCoveringIndex()\n", pProbe->zName));
+            }
+          }
+        }else if( m==0 ){
           WHERETRACE(0xff,
-             ("-> %s %s a covering index according to whereIsCoveringIndex()\n",
+             ("-> %s a covering index according to bitmasks\n",
              pProbe->zName, m==0 ? "is" : "is not"));
-        }else{
-          WHERETRACE(0xff,
-             ("-> %s %s a covering index according to bitmasks\n",
-             pProbe->zName, m==0 ? "is" : "is not"));
+          pNew->wsFlags = WHERE_IDX_ONLY | WHERE_INDEXED;
         }
-        pNew->wsFlags = (m==0) ? (WHERE_IDX_ONLY|WHERE_INDEXED) : WHERE_INDEXED;
       }
 
       /* Full scan via index */
