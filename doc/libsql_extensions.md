@@ -57,6 +57,11 @@ This feature is experimental and opt-in, and can be enabled by the following con
 
 Then, in your source code, the internal table for storing WebAssembly source code can be created via `libsql_try_initialize_wasm_func_table(sqlite3 *db)` function.
 
+You can also download a pre-compiled binary from https://github.com/libsql/libsql/releases/tag/libsql-0.1.0, or use a docker image for experiments:
+```
+docker run -it piotrsarna/libsql:libsql-0.1.0-wasm-udf ./libsql
+```
+
 #### shell support
 In order to initialize the internal WebAssembly function lookup table in libsql shell (sqlite3 binary), one can use the `.init_wasm_func_table` command. This command is safe to be called multiple times, even if the internal table already exists.
 
@@ -121,4 +126,50 @@ DROP FUNCTION IF EXISTS fib;
 
 ### How to implement user-defined functions in WebAssembly
 
-TODO
+This paragraph is based on our [blog post](https://blog.chiselstrike.com/webassembly-functions-for-your-sqlite-compatible-database-7e1ad95a2aa7) which describes the process in more detail.
+
+In order for a WebAssembly function to be runnable from libSQL, it must follow its ABI - which in this case can be reduced to "how to translate libSQL types to WebAssembly and back". Fortunately, both projects have a very small set of supported types, so the whole mapping fits in a short table:
+| libSQL type  | Wasm type  |
+|---|---|
+| INTEGER  | i64  |
+| REAL  | f64  |
+| TEXT  | i32*  |
+| BLOB  | i32*  |
+| NULL  | i32*  |
+
+where `i32` represents a pointer to WebAssembly memory. Underneath, indirectly represented types are encoded as follows:
+| libSQL type | representation |
+|---|---|
+| TEXT  | [1 byte with value `3` (`SQLITE_TEXT`)][null-terminated string] |
+| BLOB  | [1 byte with value `4` (`SQLITE_BLOB`)][4 bytes of size][binary string] |
+| NULL  | [1 byte with value `5` (`SQLITE_NULL`)  |
+
+The compiled module should export at least the function that is supposed to be later used as a user-defined function, and its `memory` instance.
+
+Encoding type translation manually for each function can be cumbersome, so we provide helper libraries for languages compilable to WebAssembly. Right now the only implementation is for Rust: https://crates.io/crates/libsql_bindgen
+
+With `libsql_bindgen`, a native Rust function can be annotated with a macro:
+```rust
+#[libsql_bindgen::libsql_bindgen]
+pub fn decrypt(data: String, key: String) -> String {
+  use magic_crypt::MagicCryptTrait;
+  let mc = magic_crypt::new_magic_crypt!(key, 256);
+  mc.decrypt_base64_to_string(data)
+      .unwrap_or("[ACCESS DENIED]".to_owned())
+}
+```
+
+Compiling the function to WebAssembly will produce code that can be registered as a user-defined function in libSQL.
+```
+cargo build --release --target wasm32-unknown-unknown
+```
+
+For quick experiments, our playground application can be used: https://bindgen.libsql.org
+
+After the function is compiled, it can be registered via SQL by:
+```sql
+CREATE FUNCTION your_function LANGUAGE wasm AS <source-code>
+```
+, where `<source-code>` is either a binary .wasm blob or text presented in WebAssembly Text format.
+
+See an example in `CREATE FUNCTION` paragraph above.
