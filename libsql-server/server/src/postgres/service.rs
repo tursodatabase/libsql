@@ -11,7 +11,7 @@ use pgwire::api::PgWireConnectionState;
 use pgwire::error::PgWireError;
 use pgwire::tokio::PgWireMessageServerCodec;
 use pgwire::{api::ClientInfoHolder, messages::PgWireFrontendMessage};
-use tokio::io::{AsyncRead, AsyncWrite};
+use tokio::io::{AsyncRead, AsyncWrite, AsyncWriteExt};
 use tokio_util::codec::{Decoder, Framed};
 use tower::MakeService;
 use tower::Service;
@@ -34,7 +34,7 @@ where
     S: Service<Query, Response = QueryResponse, Error = QueryError>,
     T: AsyncRead + AsyncWrite + Unpin + Send + Sync,
 {
-    async fn run(mut self) {
+    async fn run(&mut self) {
         loop {
             let result = match self.socket.next().await {
                 // TODO: handle error correctly
@@ -140,13 +140,18 @@ where
             let decoder = PgWireMessageServerCodec::new(client_info);
             let socket = decoder.framed(stream);
 
-            let connection = PgWireConnection {
+            let mut connection = PgWireConnection {
                 socket,
                 authenticator,
                 service,
             };
 
             connection.run().await;
+
+            // cleanup socket
+            let mut socket = connection.socket.into_inner();
+            socket.flush().await?;
+            socket.shutdown().await?;
 
             Ok(())
         })
