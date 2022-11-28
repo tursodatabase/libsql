@@ -148,10 +148,16 @@ static char * skipNonB85( char *s ){
   return s;
 }
 
-/* Convert small integer, known to be in 0..84 inclusive, to base85 numeral.*/
+/* Convert small integer, known to be in 0..84 inclusive, to base85 numeral.
+ * Do not use the macro form with argument expression having a side-effect.*/
+#if 0
 static char base85Numeral( ubyte b ){
   return (b < 4)? (char)(b + '#') : (char)(b - 4 + '*');
 }
+#else
+# define base85Numeral( dn )\
+  ((char)(((dn) < 4)? (char)((dn) + '#') : (char)((dn) - 4 + '*')))
+#endif
 
 static char *putcs(char *pc, char *s){
   char c;

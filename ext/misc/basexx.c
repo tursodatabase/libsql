@@ -28,7 +28,7 @@
 **  export mop1=-DSQLITE_SHELL_EXTSRC=ext/misc/basexx.c
 **  export mop2=-DSQLITE_SHELL_EXTFUNCS=BASEXX
 **  make sqlite3 "OPTS=$mop1 $mop2"
-** Win32 with Microsoft toolset on Windows: 
+** Win32 with Microsoft toolset on Windows:
 **  set mop1=-DSQLITE_SHELL_EXTSRC=ext/misc/basexx.c
 **  set mop2=-DSQLITE_SHELL_EXTFUNCS=BASEXX
 **  set mops="OPTS=%mop1% %mop2%"

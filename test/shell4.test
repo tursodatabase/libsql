@@ -125,6 +125,12 @@ SELECT * FROM t1;}}
 do_test shell4-2.5 {
   catchcmd ":memory:" "CREATE TABLE t1(x);\n.trace stdout\nSELECT * FROM t1;"
 } {0 {SELECT * FROM t1;}}
+do_test shell4-2.6 {
+  catchcmd ":memory:" {
+CREATE TABLE t1(x);
+.trace --stmt stdout
+SELECT * FROM t1;}
+} {0 {SELECT * FROM t1;}}
 }
 
 do_test shell4-3.1 {

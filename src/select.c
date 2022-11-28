@@ -4050,6 +4050,34 @@ static ExprList *findLeftmostExprlist(Select *pSel){
   return pSel->pEList;
 }
 
+/*
+** Return true if any of the result-set columns in the compound query
+** have incompatible affinities on one or more arms of the compound.
+*/
+static int compoundHasDifferentAffinities(Select *p){
+  int ii;
+  ExprList *pList;
+  assert( p!=0 );
+  assert( p->pEList!=0 );
+  assert( p->pPrior!=0 );
+  pList = p->pEList;
+  for(ii=0; ii<pList->nExpr; ii++){
+    char aff;
+    Select *pSub1;
+    assert( pList->a[ii].pExpr!=0 );
+    aff = sqlite3ExprAffinity(pList->a[ii].pExpr);
+    for(pSub1=p->pPrior; pSub1; pSub1=pSub1->pPrior){
+      assert( pSub1->pEList!=0 );
+      assert( pSub1->pEList->nExpr>ii );
+      assert( pSub1->pEList->a[ii].pExpr!=0 );
+      if( sqlite3ExprAffinity(pSub1->pEList->a[ii].pExpr)!=aff ){
+        return 1;
+      }
+    }
+  }
+  return 0;
+}
+
 #if !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW)
 /*
 ** This routine attempts to flatten subqueries as a performance optimization.
@@ -4153,7 +4181,8 @@ static ExprList *findLeftmostExprlist(Select *pSel){
 **              query or there are no RIGHT or FULL JOINs in any arm
 **              of the subquery.  (This is a duplicate of condition (27b).)
 **        (17h) The corresponding result set expressions in all arms of the
-**              compound must have the same affinity.
+**              compound must have the same affinity. (See restriction (9)
+**              on the push-down optimization.)
 **
 **        The parent and sub-query may contain WHERE clauses. Subject to
 **        rules (11), (13) and (14), they may also contain ORDER BY,
@@ -4372,19 +4401,7 @@ static int flattenSubquery(
     if( (p->selFlags & SF_Recursive) ) return 0;
 
     /* Restriction (17h) */
-    for(ii=0; ii<pSub->pEList->nExpr; ii++){
-      char aff;
-      assert( pSub->pEList->a[ii].pExpr!=0 );
-      aff = sqlite3ExprAffinity(pSub->pEList->a[ii].pExpr);
-      for(pSub1=pSub->pPrior; pSub1; pSub1=pSub1->pPrior){
-        assert( pSub1->pEList!=0 );
-        assert( pSub1->pEList->nExpr>ii );
-        assert( pSub1->pEList->a[ii].pExpr!=0 );
-        if( sqlite3ExprAffinity(pSub1->pEList->a[ii].pExpr)!=aff ){
-          return 0;
-        }
-      }
-    }
+    if( compoundHasDifferentAffinities(pSub) ) return 0;
 
     if( pSrc->nSrc>1 ){
       if( pParse->nSelect>500 ) return 0;
@@ -5029,12 +5046,14 @@ static int pushDownWindowCheck(Parse *pParse, Select *pSubq, Expr *pExpr){
 **       be materialized.  (This restriction is implemented in the calling
 **       routine.)
 **
-**   (8) The subquery may not be a compound that uses UNION, INTERSECT,
-**       or EXCEPT.  (We could, perhaps, relax this restriction to allow
-**       this case if none of the comparisons operators between left and
-**       right arms of the compound use a collation other than BINARY.
-**       But it is a lot of work to check that case for an obscure and
-**       minor optimization, so we omit it for now.)
+**   (8) If the subquery is a compound that uses UNION, INTERSECT,
+**       or EXCEPT, then all of the result set columns for all arms of
+**       the compound must use the BINARY collating sequence.
+**
+**   (9) If the subquery is a compound, then all arms of the compound must
+**       have the same affinity.  (This is the same as restriction (17h)
+**       for query flattening.)
+**       
 **
 ** Return 0 if no changes are made and non-zero if one or more WHERE clause
 ** terms are duplicated into the subquery.
@@ -5051,20 +5070,44 @@ static int pushDownWhereTerms(
   if( pSubq->selFlags & (SF_Recursive|SF_MultiPart) ) return 0;
   if( pSrc->fg.jointype & (JT_LTORJ|JT_RIGHT) ) return 0;
 
-#ifndef SQLITE_OMIT_WINDOWFUNC
   if( pSubq->pPrior ){
     Select *pSel;
+    int notUnionAll = 0;
     for(pSel=pSubq; pSel; pSel=pSel->pPrior){
       u8 op = pSel->op;
       assert( op==TK_ALL || op==TK_SELECT 
            || op==TK_UNION || op==TK_INTERSECT || op==TK_EXCEPT );
-      if( op!=TK_ALL && op!=TK_SELECT ) return 0;  /* restriction (8) */
+      if( op!=TK_ALL && op!=TK_SELECT ){
+        notUnionAll = 1;
+      }
+#ifndef SQLITE_OMIT_WINDOWFUNC
       if( pSel->pWin ) return 0;    /* restriction (6b) */
+#endif
+    }
+    if( compoundHasDifferentAffinities(pSubq) ){
+      return 0;  /* restriction (9) */
+    }
+    if( notUnionAll ){
+      /* If any of the compound arms are connected using UNION, INTERSECT,
+      ** or EXCEPT, then we must ensure that none of the columns use a
+      ** non-BINARY collating sequence. */
+      for(pSel=pSubq; pSel; pSel=pSel->pPrior){
+        int ii;
+        const ExprList *pList = pSel->pEList;
+        assert( pList!=0 );
+        for(ii=0; ii<pList->nExpr; ii++){
+          CollSeq *pColl = sqlite3ExprCollSeq(pParse, pList->a[ii].pExpr);
+          if( !sqlite3IsBinary(pColl) ){
+            return 0;  /* Restriction (8) */
+          }
+        }
+      }
     }
   }else{
+#ifndef SQLITE_OMIT_WINDOWFUNC
     if( pSubq->pWin && pSubq->pWin->pPartition==0 ) return 0;
-  }
 #endif
+  }
 
 #ifdef SQLITE_DEBUG
   /* Only the first term of a compound can have a WITH clause.  But make
@@ -6204,6 +6247,172 @@ void sqlite3SelectPrep(
   sqlite3SelectAddTypeInfo(pParse, p);
 }
 
+#if TREETRACE_ENABLED
+/*
+** Display all information about an AggInfo object
+*/
+static void printAggInfo(AggInfo *pAggInfo){
+  int ii;
+  for(ii=0; ii<pAggInfo->nColumn; ii++){
+    struct AggInfo_col *pCol = &pAggInfo->aCol[ii];
+    sqlite3DebugPrintf(
+       "agg-column[%d] pTab=%s iTable=%d iColumn=%d iMem=%d"
+       " iSorterColumn=%d %s\n",
+       ii, pCol->pTab ? pCol->pTab->zName : "NULL", 
+       pCol->iTable, pCol->iColumn, pAggInfo->iFirstReg+ii,
+       pCol->iSorterColumn, 
+       ii>=pAggInfo->nAccumulator ? "" : " Accumulator");
+    sqlite3TreeViewExpr(0, pAggInfo->aCol[ii].pCExpr, 0);
+  }
+  for(ii=0; ii<pAggInfo->nFunc; ii++){
+    sqlite3DebugPrintf("agg-func[%d]: iMem=%d\n",
+        ii, AggInfoFuncReg(pAggInfo,ii));
+    sqlite3TreeViewExpr(0, pAggInfo->aFunc[ii].pFExpr, 0);
+  }
+}
+#endif /* TREETRACE_ENABLED */
+
+/*
+** Analyze the arguments to aggregate functions.  Create new pAggInfo->aCol[]
+** entries for columns that are arguments to aggregate functions but which
+** are not otherwise used.
+**
+** The aCol[] entries in AggInfo prior to nAccumulator are columns that
+** are referenced outside of aggregate functions.  These might be columns
+** that are part of the GROUP by clause, for example.  Other database engines
+** would throw an error if there is a column reference that is not in the
+** GROUP BY clause and that is not part of an aggregate function argument.
+** But SQLite allows this.
+**
+** The aCol[] entries beginning with the aCol[nAccumulator] and following
+** are column references that are used exclusively as arguments to
+** aggregate functions.  This routine is responsible for computing
+** (or recomputing) those aCol[] entries.
+*/
+static void analyzeAggFuncArgs(
+  Parse *pParse,
+  AggInfo *pAggInfo,
+  NameContext *pNC
+){
+  int i;
+  assert( pAggInfo!=0 );
+  assert( pAggInfo->iFirstReg==0 );
+  pNC->ncFlags |= NC_InAggFunc;
+  for(i=0; i<pAggInfo->nFunc; i++){
+    Expr *pExpr = pAggInfo->aFunc[i].pFExpr;
+    assert( ExprUseXList(pExpr) );
+    sqlite3ExprAnalyzeAggList(pNC, pExpr->x.pList);
+#ifndef SQLITE_OMIT_WINDOWFUNC
+    assert( !IsWindowFunc(pExpr) );
+    if( ExprHasProperty(pExpr, EP_WinFunc) ){
+      sqlite3ExprAnalyzeAggregates(pNC, pExpr->y.pWin->pFilter);
+    }
+#endif
+  }
+  pNC->ncFlags &= ~NC_InAggFunc;
+}
+
+/*
+** An index on expressions is being used in the inner loop of an
+** aggregate query with a GROUP BY clause.  This routine attempts
+** to adjust the AggInfo object to take advantage of index and to
+** perhaps use the index as a covering index.
+**
+*/
+static void optimizeAggregateUseOfIndexedExpr(
+  Parse *pParse,          /* Parsing context */
+  Select *pSelect,        /* The SELECT statement being processed */
+  AggInfo *pAggInfo,      /* The aggregate info */
+  NameContext *pNC        /* Name context used to resolve agg-func args */
+){
+  assert( pAggInfo->iFirstReg==0 );
+  pAggInfo->nColumn = pAggInfo->nAccumulator;
+  if( ALWAYS(pAggInfo->nSortingColumn>0) ){
+    if( pAggInfo->nColumn==0 ){
+      pAggInfo->nSortingColumn = 0;
+    }else{
+      pAggInfo->nSortingColumn =
+        pAggInfo->aCol[pAggInfo->nColumn-1].iSorterColumn+1;
+    }
+  }
+  analyzeAggFuncArgs(pParse, pAggInfo, pNC);
+#if TREETRACE_ENABLED
+  if( sqlite3TreeTrace & 0x20 ){
+    IndexedExpr *pIEpr;
+    TREETRACE(0x20, pParse, pSelect,
+        ("AggInfo (possibly) adjusted for Indexed Exprs\n"));
+    sqlite3TreeViewSelect(0, pSelect, 0);
+    for(pIEpr=pParse->pIdxEpr; pIEpr; pIEpr=pIEpr->pIENext){
+      printf("data-cursor=%d index={%d,%d}\n",
+          pIEpr->iDataCur, pIEpr->iIdxCur, pIEpr->iIdxCol);
+      sqlite3TreeViewExpr(0, pIEpr->pExpr, 0);
+    }
+    printAggInfo(pAggInfo);
+  }
+#else
+  (void)pSelect;  /* Suppress unused-parameter warnings */
+#endif
+}
+
+/*
+** Walker callback for aggregateConvertIndexedExprRefToColumn().
+*/
+static int aggregateIdxEprRefToColCallback(Walker *pWalker, Expr *pExpr){
+  AggInfo *pAggInfo;
+  struct AggInfo_col *pCol;
+  if( pExpr->pAggInfo==0 ) return WRC_Continue;
+  if( pExpr->op==TK_AGG_COLUMN ) return WRC_Continue;
+  if( pExpr->op==TK_AGG_FUNCTION ) return WRC_Continue;
+  if( pExpr->op==TK_IF_NULL_ROW ) return WRC_Continue;
+  pAggInfo = pExpr->pAggInfo;
+  assert( pExpr->iAgg>=0 && pExpr->iAgg<pAggInfo->nColumn );
+  pCol = &pAggInfo->aCol[pExpr->iAgg];
+  pExpr->op = TK_AGG_COLUMN;
+  pExpr->iTable = pCol->iTable;
+  pExpr->iColumn = pCol->iColumn;
+  return WRC_Prune;
+}
+
+/*
+** Convert every pAggInfo->aFunc[].pExpr such that any node within
+** those expressions that has pAppInfo set is changed into a TK_AGG_COLUMN
+** opcode.
+*/
+static void aggregateConvertIndexedExprRefToColumn(AggInfo *pAggInfo){
+  int i;
+  Walker w;
+  memset(&w, 0, sizeof(w));
+  w.xExprCallback = aggregateIdxEprRefToColCallback;
+  for(i=0; i<pAggInfo->nFunc; i++){
+    sqlite3WalkExpr(&w, pAggInfo->aFunc[i].pFExpr);
+  }
+}
+
+
+/*
+** Allocate a block of registers so that there is one register for each
+** pAggInfo->aCol[] and pAggInfo->aFunc[] entry in pAggInfo.  The first
+** register in this block is stored in pAggInfo->iFirstReg.
+**
+** This routine may only be called once for each AggInfo object.  Prior
+** to calling this routine:
+**
+**     *  The aCol[] and aFunc[] arrays may be modified
+**     *  The AggInfoColumnReg() and AggInfoFuncReg() macros may not be used
+**
+** After clling this routine:
+**
+**     *  The aCol[] and aFunc[] arrays are fixed
+**     *  The AggInfoColumnReg() and AggInfoFuncReg() macros may be used
+**
+*/
+static void assignAggregateRegisters(Parse *pParse, AggInfo *pAggInfo){
+  assert( pAggInfo!=0 );
+  assert( pAggInfo->iFirstReg==0 );
+  pAggInfo->iFirstReg = pParse->nMem + 1;
+  pParse->nMem += pAggInfo->nColumn + pAggInfo->nFunc;
+}
+
 /*
 ** Reset the aggregate accumulator.
 **
@@ -6217,24 +6426,13 @@ static void resetAccumulator(Parse *pParse, AggInfo *pAggInfo){
   int i;
   struct AggInfo_func *pFunc;
   int nReg = pAggInfo->nFunc + pAggInfo->nColumn;
+  assert( pAggInfo->iFirstReg>0 );
   assert( pParse->db->pParse==pParse );
   assert( pParse->db->mallocFailed==0 || pParse->nErr!=0 );
   if( nReg==0 ) return;
   if( pParse->nErr ) return;
-#ifdef SQLITE_DEBUG
-  /* Verify that all AggInfo registers are within the range specified by
-  ** AggInfo.mnReg..AggInfo.mxReg */
-  assert( nReg==pAggInfo->mxReg-pAggInfo->mnReg+1 );
-  for(i=0; i<pAggInfo->nColumn; i++){
-    assert( pAggInfo->aCol[i].iMem>=pAggInfo->mnReg
-         && pAggInfo->aCol[i].iMem<=pAggInfo->mxReg );
-  }
-  for(i=0; i<pAggInfo->nFunc; i++){
-    assert( pAggInfo->aFunc[i].iMem>=pAggInfo->mnReg
-         && pAggInfo->aFunc[i].iMem<=pAggInfo->mxReg );
-  }
-#endif
-  sqlite3VdbeAddOp3(v, OP_Null, 0, pAggInfo->mnReg, pAggInfo->mxReg);
+  sqlite3VdbeAddOp3(v, OP_Null, 0, pAggInfo->iFirstReg,
+                    pAggInfo->iFirstReg+nReg-1);
   for(pFunc=pAggInfo->aFunc, i=0; i<pAggInfo->nFunc; i++, pFunc++){
     if( pFunc->iDistinct>=0 ){
       Expr *pE = pFunc->pFExpr;
@@ -6266,15 +6464,16 @@ static void finalizeAggFunctions(Parse *pParse, AggInfo *pAggInfo){
     ExprList *pList;
     assert( ExprUseXList(pF->pFExpr) );
     pList = pF->pFExpr->x.pList;
-    sqlite3VdbeAddOp2(v, OP_AggFinal, pF->iMem, pList ? pList->nExpr : 0);
+    sqlite3VdbeAddOp2(v, OP_AggFinal, AggInfoFuncReg(pAggInfo,i),
+                      pList ? pList->nExpr : 0);
     sqlite3VdbeAppendP4(v, pF->pFunc, P4_FUNCDEF);
   }
 }
 
 
 /*
-** Update the accumulator memory cells for an aggregate based on
-** the current cursor position.
+** Generate code that will update the accumulator memory cells for an
+** aggregate based on the current cursor position.
 **
 ** If regAcc is non-zero and there are no min() or max() aggregates
 ** in pAggInfo, then only populate the pAggInfo->nAccumulator accumulator
@@ -6294,6 +6493,8 @@ static void updateAccumulator(
   struct AggInfo_func *pF;
   struct AggInfo_col *pC;
 
+  assert( pAggInfo->iFirstReg>0 );
+  if( pParse->nErr ) return;
   pAggInfo->directMode = 1;
   for(i=0, pF=pAggInfo->aFunc; i<pAggInfo->nFunc; i++, pF++){
     int nArg;
@@ -6354,7 +6555,7 @@ static void updateAccumulator(
       if( regHit==0 && pAggInfo->nAccumulator ) regHit = ++pParse->nMem;
       sqlite3VdbeAddOp4(v, OP_CollSeq, regHit, 0, 0, (char *)pColl, P4_COLLSEQ);
     }
-    sqlite3VdbeAddOp3(v, OP_AggStep, 0, regAgg, pF->iMem);
+    sqlite3VdbeAddOp3(v, OP_AggStep, 0, regAgg, AggInfoFuncReg(pAggInfo,i));
     sqlite3VdbeAppendP4(v, pF->pFunc, P4_FUNCDEF);
     sqlite3VdbeChangeP5(v, (u8)nArg);
     sqlite3ReleaseTempRange(pParse, regAgg, nArg);
@@ -6369,7 +6570,7 @@ static void updateAccumulator(
     addrHitTest = sqlite3VdbeAddOp1(v, OP_If, regHit); VdbeCoverage(v);
   }
   for(i=0, pC=pAggInfo->aCol; i<pAggInfo->nAccumulator; i++, pC++){
-    sqlite3ExprCode(pParse, pC->pCExpr, pC->iMem);
+    sqlite3ExprCode(pParse, pC->pCExpr, AggInfoColumnReg(pAggInfo,i));
   }
 
   pAggInfo->directMode = 0;
@@ -6628,30 +6829,6 @@ static int sameSrcAlias(SrcItem *p0, SrcList *pSrc){
   }
   return 0;
 }
-
-#if TREETRACE_ENABLED
-/*
-** Display all information about an AggInfo object
-*/
-static void printAggInfo(AggInfo *pAggInfo){
-  int ii;
-  for(ii=0; ii<pAggInfo->nColumn; ii++){
-    struct AggInfo_col *pCol = &pAggInfo->aCol[ii];
-    sqlite3DebugPrintf(
-       "agg-column[%d] pTab=%s iTable=%d iColumn=%d iMem=%d"
-       " iSorterColumn=%d\n",
-       ii, pCol->pTab ? pCol->pTab->zName : "NULL", 
-       pCol->iTable, pCol->iColumn, pCol->iMem,
-       pCol->iSorterColumn);
-    sqlite3TreeViewExpr(0, pAggInfo->aCol[ii].pCExpr, 0);
-  }
-  for(ii=0; ii<pAggInfo->nFunc; ii++){
-    sqlite3DebugPrintf("agg-func[%d]: iMem=%d\n",
-        ii, pAggInfo->aFunc[ii].iMem);
-    sqlite3TreeViewExpr(0, pAggInfo->aFunc[ii].pFExpr, 0);
-  }
-}
-#endif /* TREETRACE_ENABLED */
 
 /*
 ** Generate code for the SELECT statement given in the p argument.  
@@ -7414,7 +7591,6 @@ int sqlite3Select(
     sNC.pSrcList = pTabList;
     sNC.uNC.pAggInfo = pAggInfo;
     VVA_ONLY( sNC.ncFlags = NC_UAggInfo; )
-    pAggInfo->mnReg = pParse->nMem+1;
     pAggInfo->nSortingColumn = pGroupBy ? pGroupBy->nExpr : 0;
     pAggInfo->pGroupBy = pGroupBy;
     sqlite3ExprAnalyzeAggList(&sNC, pEList);
@@ -7435,20 +7611,7 @@ int sqlite3Select(
     }else{
       minMaxFlag = WHERE_ORDERBY_NORMAL;
     }
-    for(i=0; i<pAggInfo->nFunc; i++){
-      Expr *pExpr = pAggInfo->aFunc[i].pFExpr;
-      assert( ExprUseXList(pExpr) );
-      sNC.ncFlags |= NC_InAggFunc;
-      sqlite3ExprAnalyzeAggList(&sNC, pExpr->x.pList);
-#ifndef SQLITE_OMIT_WINDOWFUNC
-      assert( !IsWindowFunc(pExpr) );
-      if( ExprHasProperty(pExpr, EP_WinFunc) ){
-        sqlite3ExprAnalyzeAggregates(&sNC, pExpr->y.pWin->pFilter);
-      }
-#endif
-      sNC.ncFlags &= ~NC_InAggFunc;
-    }
-    pAggInfo->mxReg = pParse->nMem;
+    analyzeAggFuncArgs(pParse, pAggInfo, &sNC);
     if( db->mallocFailed ) goto select_end;
 #if TREETRACE_ENABLED
     if( sqlite3TreeTrace & 0x20 ){
@@ -7536,6 +7699,10 @@ int sqlite3Select(
         sqlite3ExprListDelete(db, pDistinct);
         goto select_end;
       }
+      if( pParse->pIdxEpr ){
+        optimizeAggregateUseOfIndexedExpr(pParse, p, pAggInfo, &sNC);
+      }
+      assignAggregateRegisters(pParse, pAggInfo);
       eDist = sqlite3WhereIsDistinct(pWInfo);
       TREETRACE(0x2,pParse,p,("WhereBegin returns\n"));
       if( sqlite3WhereIsOrdered(pWInfo)==pGroupBy->nExpr ){
@@ -7594,6 +7761,23 @@ int sqlite3Select(
         sqlite3VdbeAddOp2(v, OP_SorterSort, pAggInfo->sortingIdx, addrEnd);
         VdbeComment((v, "GROUP BY sort")); VdbeCoverage(v);
         pAggInfo->useSortingIdx = 1;
+      }
+
+      /* If there entries in pAgggInfo->aFunc[] that contain subexpressions
+      ** that are indexed (and that were previously identified and tagged
+      ** in optimizeAggregateUseOfIndexedExpr()) then those subexpressions
+      ** must now be converted into a TK_AGG_COLUMN node so that the value
+      ** is correctly pulled from the index rather than being recomputed. */
+      if( pParse->pIdxEpr ){
+        aggregateConvertIndexedExprRefToColumn(pAggInfo);
+#if TREETRACE_ENABLED
+        if( sqlite3TreeTrace & 0x20 ){
+          TREETRACE(0x20, pParse, p,
+             ("AggInfo function expressions converted to reference index\n"));
+          sqlite3TreeViewSelect(0, p, 0);
+          printAggInfo(pAggInfo);
+        }
+#endif
       }
 
       /* If the index or temporary table used by the GROUP BY sort
@@ -7774,7 +7958,8 @@ int sqlite3Select(
         if( pKeyInfo ){
           sqlite3VdbeChangeP4(v, -1, (char *)pKeyInfo, P4_KEYINFO);
         }
-        sqlite3VdbeAddOp2(v, OP_Count, iCsr, pAggInfo->aFunc[0].iMem);
+        assignAggregateRegisters(pParse, pAggInfo);
+        sqlite3VdbeAddOp2(v, OP_Count, iCsr, AggInfoFuncReg(pAggInfo,0));
         sqlite3VdbeAddOp1(v, OP_Close, iCsr);
         explainSimpleCount(pParse, pTab, pBest);
       }else{
@@ -7810,6 +7995,7 @@ int sqlite3Select(
           pDistinct = pAggInfo->aFunc[0].pFExpr->x.pList;
           distFlag = pDistinct ? (WHERE_WANT_DISTINCT|WHERE_AGG_DISTINCT) : 0;
         }
+        assignAggregateRegisters(pParse, pAggInfo);
 
         /* This case runs if the aggregate has no GROUP BY clause.  The
         ** processing is much simpler since there is only a single row
@@ -7893,7 +8079,7 @@ select_end:
   if( pAggInfo && !db->mallocFailed ){
     for(i=0; i<pAggInfo->nColumn; i++){
       Expr *pExpr = pAggInfo->aCol[i].pCExpr;
-      assert( pExpr!=0 );
+      if( pExpr==0 ) continue;
       assert( pExpr->pAggInfo==pAggInfo );
       assert( pExpr->iAgg==i );
     }

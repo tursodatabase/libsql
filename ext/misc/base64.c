@@ -200,7 +200,7 @@ static void base64(sqlite3_context *context, int na, sqlite3_value *av[]){
                             SQLITE_LIMIT_LENGTH, -1);
   char *cBuf;
   ubyte *bBuf;
-  assert(na==1); 
+  assert(na==1);
   switch( sqlite3_value_type(av[0]) ){
   case SQLITE_BLOB:
     nb = nv;
