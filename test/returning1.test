@@ -376,4 +376,28 @@ do_execsql_test 16.1 {
   SELECT * FROM t2;
 } {1 2 3 a b c}
 
+
+foreach {tn temp} {
+  1 ""
+  2 TEMP
+} {
+  reset_db
+  do_execsql_test 17.$tn.0 "
+    CREATE $temp TABLE foo (
+      fooid INTEGER PRIMARY KEY,
+      fooval INTEGER NOT NULL UNIQUE,
+      refcnt INTEGER NOT NULL DEFAULT 1
+    );
+  "
+  do_execsql_test 17.$tn.1 {
+    INSERT INTO foo (fooval) VALUES (17), (4711), (17)
+      ON CONFLICT DO
+      UPDATE SET refcnt = refcnt+1
+    RETURNING fooid;
+  } {
+    1 2 1
+  }
+}
+
+
 finish_test
