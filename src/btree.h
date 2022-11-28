@@ -368,6 +368,8 @@ void sqlite3BtreeCursorList(Btree*);
 
 int sqlite3BtreeTransferRow(BtCursor*, BtCursor*, i64);
 
+void sqlite3BtreeClearCache(Btree*);
+
 /*
 ** If we are not using shared cache, then there is no need to
 ** use mutexes to access the BtShared structures.  So make the
