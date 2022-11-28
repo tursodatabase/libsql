@@ -1,5 +1,5 @@
-C Merge\strunk\schanges\sinto\scovering-index-expr\sbranch.
-D 2022-11-28T16:11:10.036
+C Test\scases\sadded\sderived\sfrom\sthe\senhancment\sticket.
+D 2022-11-28T18:17:42.151
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1213,7 +1213,7 @@ F test/index7.test b238344318e0b4e42126717f6554f0e7dfd0b39cecad4b736039b43e1e3b6
 F test/index8.test caa097735c91dbc23d8a402f5e63a2a03c83840ba3928733ed7f9a03f8a912a3
 F test/index9.test 2ac891806a4136ef3e91280477e23114e67575207dc331e6797fa0ed9379f997
 F test/indexedby.test f21eca4f7a6ffe14c8500a7ad6cd53166666c99e5ccd311842a28bc94a195fe0
-F test/indexexpr1.test 3360c2a29a8844e7c4b13293567025281257f9e13a31854cfff6959cede11502
+F test/indexexpr1.test 1cd460113e3999a1477754fd0e3ac0d7bcbbbc742b427b418945f28af708c695
 F test/indexexpr2.test 2c7abe3c48f8aaa5a448615ab4d13df3662185d28419c00999670834a3f0b484
 F test/indexfault.test 98d78a8ff1f5335628b62f886a1cb7c7dac1ef6d48fa39c51ec871c87dce9811
 F test/init.test 15c823093fdabbf7b531fe22cf037134d09587a7
@@ -2064,8 +2064,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b8eec4214363192e6f3e12b3faa5810d8269a5fdaecab3ec09b02e5002cf798a b44ab10c49bc2895483a9d40813be3798710ee713cc4bf04e449dce55a68452a
-R 5944640ae5b4a3237e1d8a4c46c48db4
+P 89d775ada39aed4dc532374ace02156d07dc06e8ae54a194608af0c5a582d20f
+R e73156e3b8e8d088eb2bbd902f358640
 U drh
-Z 9aa95e661b7edb77eed478b829e7796d
+Z b96271db8dd85961a10ccefd57c768e1
 # Remove this line to create a well-formed Fossil manifest.
