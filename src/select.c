@@ -6290,7 +6290,6 @@ static void printAggInfo(AggInfo *pAggInfo){
 ** (or recomputing) those aCol[] entries.
 */
 static void analyzeAggFuncArgs(
-  Parse *pParse,
   AggInfo *pAggInfo,
   NameContext *pNC
 ){
@@ -6335,7 +6334,7 @@ static void optimizeAggregateUseOfIndexedExpr(
         pAggInfo->aCol[pAggInfo->nColumn-1].iSorterColumn+1;
     }
   }
-  analyzeAggFuncArgs(pParse, pAggInfo, pNC);
+  analyzeAggFuncArgs(pAggInfo, pNC);
 #if TREETRACE_ENABLED
   if( sqlite3TreeTrace & 0x20 ){
     IndexedExpr *pIEpr;
@@ -6350,7 +6349,8 @@ static void optimizeAggregateUseOfIndexedExpr(
     printAggInfo(pAggInfo);
   }
 #else
-  (void)pSelect;  /* Suppress unused-parameter warnings */
+  UNUSED_PARAMETER(pSelect);
+  UNUSED_PARAMETER(pParse);
 #endif
 }
 
@@ -6360,6 +6360,7 @@ static void optimizeAggregateUseOfIndexedExpr(
 static int aggregateIdxEprRefToColCallback(Walker *pWalker, Expr *pExpr){
   AggInfo *pAggInfo;
   struct AggInfo_col *pCol;
+  UNUSED_PARAMETER(pWalker);
   if( pExpr->pAggInfo==0 ) return WRC_Continue;
   if( pExpr->op==TK_AGG_COLUMN ) return WRC_Continue;
   if( pExpr->op==TK_AGG_FUNCTION ) return WRC_Continue;
@@ -7611,7 +7612,7 @@ int sqlite3Select(
     }else{
       minMaxFlag = WHERE_ORDERBY_NORMAL;
     }
-    analyzeAggFuncArgs(pParse, pAggInfo, &sNC);
+    analyzeAggFuncArgs(pAggInfo, &sNC);
     if( db->mallocFailed ) goto select_end;
 #if TREETRACE_ENABLED
     if( sqlite3TreeTrace & 0x20 ){
