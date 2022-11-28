@@ -10658,7 +10658,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         }
       }else{
         output_file_close(p->traceOut);
-        p->traceOut = output_file_open(azArg[1], 0);
+        p->traceOut = output_file_open(z, 0);
       }
     }
     if( p->traceOut==0 ){
