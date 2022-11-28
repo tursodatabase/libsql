@@ -1072,6 +1072,9 @@ INCLUDE ../ext/recover/dbdata.c
 INCLUDE ../ext/recover/sqlite3recover.c
 # endif
 #endif
+#ifdef SQLITE_SHELL_EXTSRC
+# include SHELL_STRINGIFY(SQLITE_SHELL_EXTSRC)
+#endif
 
 #if defined(SQLITE_ENABLE_SESSION)
 /*
@@ -5117,6 +5120,7 @@ static void open_db(ShellState *p, int openFlags){
       }
       exit(1);
     }
+
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
     sqlite3_enable_load_extension(p->db, 1);
 #endif
@@ -5139,6 +5143,34 @@ static void open_db(ShellState *p, int openFlags){
       sqlite3_sqlar_init(p->db, 0, 0);
     }
 #endif
+#ifdef SQLITE_SHELL_EXTFUNCS
+    /* Create a preprocessing mechanism for extensions to make
+     * their own provisions for being built into the shell.
+     * This is a short-span macro. See further below for usage.
+     */
+#define SHELL_SUB_MACRO(base, variant) base ## _ ## variant
+#define SHELL_SUBMACRO(base, variant) SHELL_SUB_MACRO(base, variant)
+    /* Let custom-included extensions get their ..._init() called.
+     * The WHATEVER_INIT( db, pzErrorMsg, pApi ) macro should cause
+     * the extension's sqlite3_*_init( db, pzErrorMsg, pApi )
+     * inititialization routine to be called.
+     */
+    {
+      int irc = SHELL_SUBMACRO(SQLITE_SHELL_EXTFUNCS, INIT)(p->db);
+    /* Let custom-included extensions expose their functionality.
+     * The WHATEVER_EXPOSE( db, pzErrorMsg ) macro should cause
+     * the SQL functions, virtual tables, collating sequences or
+     * VFS's implemented by the extension to be registered.
+     */
+      if( irc==SQLITE_OK
+          || irc==SQLITE_OK_LOAD_PERMANENTLY ){
+        SHELL_SUBMACRO(SQLITE_SHELL_EXTFUNCS, EXPOSE)(p->db, 0);
+      }
+#undef SHELL_SUB_MACRO
+#undef SHELL_SUBMACRO
+    }
+#endif
+
     sqlite3_create_function(p->db, "shell_add_schema", 3, SQLITE_UTF8, 0,
                             shellAddSchemaName, 0, 0);
     sqlite3_create_function(p->db, "shell_module_schema", 1, SQLITE_UTF8, 0,
@@ -5159,6 +5191,7 @@ static void open_db(ShellState *p, int openFlags){
     sqlite3_create_function(p->db, "edit", 2, SQLITE_UTF8, 0,
                             editFunc, 0, 0);
 #endif
+
     if( p->openMode==SHELL_OPEN_ZIPFILE ){
       char *zSql = sqlite3_mprintf(
          "CREATE VIRTUAL TABLE zip USING zipfile(%Q);", zDbFilename);
@@ -10658,7 +10691,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         }
       }else{
         output_file_close(p->traceOut);
-        p->traceOut = output_file_open(azArg[1], 0);
+        p->traceOut = output_file_open(z, 0);
       }
     }
     if( p->traceOut==0 ){

@@ -29,6 +29,22 @@
   This file represents an implementation detail of a larger piece of
   code, and not a public interface. Its details may change at any time
   and are not intended to be used by any client-level code.
+
+  2022-11-27: Chrome v108 changes some async methods to synchronous, as
+  documented at:
+
+  https://developer.chrome.com/blog/sync-methods-for-accesshandles/
+
+  We cannot change to the sync forms at this point without breaking
+  clients who use Chrome v104-ish or higher. truncate(), getSize(),
+  flush(), and close() are now (as of v108) synchronous. Calling them
+  with an "await", as we have to for the async forms, is still legal
+  with the sync forms but is superfluous. Calling the async forms with
+  theFunc().then(...) is not compatible with the change to
+  synchronous, but we do do not use those APIs that way. i.e. we don't
+  _need_ to change anything for this, but at some point (after Chrome
+  versions (approximately) 104-107 are extinct) should change our
+  usage of those methods to remove the "await".
 */
 "use strict";
 const toss = function(...args){throw new Error(args.join(' '))};
