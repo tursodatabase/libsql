@@ -22,6 +22,8 @@ jobs:
       run: cargo fmt --check
     - name: Clippy
       run: cargo clippy
+    - name: Build libsql
+      run: ( git submodule update --init --force --recursive && cd libsql && ./configure && make libsqlite3.la )
     - name: Build
       run: cargo build --verbose
     - name: Run tests
