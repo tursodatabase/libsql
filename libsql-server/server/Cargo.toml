@@ -10,9 +10,7 @@ byteorder = "1.4.3"
 bytes = "1.2.1"
 clap = { version = "4.0.23", features = [ "derive" ] }
 crossbeam = "0.8.2"
-env_logger = "0.9.3"
 futures = "0.3.25"
-log = "0.4.17"
 parking_lot = "0.12.1"
 pgwire = "0.5.0"
 pin-project-lite = "0.2.9"
@@ -25,6 +23,8 @@ tokio = { version = "1.21.2", features = ["full"] }
 tokio-tungstenite = "0.17.2"
 tokio-util = "0.7.4"
 tower = { version = "0.4.13", features = ["make"] }
+tracing = "0.1.37"
+tracing-subscriber = "0.3.16"
 
 [dev-dependencies]
 proptest = "1.0.0"

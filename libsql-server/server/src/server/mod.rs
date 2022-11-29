@@ -62,7 +62,7 @@ impl Server {
                                 eprintln!("there was an error!");
                                 break
                             }
-                            log::info!("new connection: {addr}");
+                            tracing::info!("new connection: {addr}");
                             let fut = make_svc.call((stream , addr));
                             connections.push(fut);
                         }

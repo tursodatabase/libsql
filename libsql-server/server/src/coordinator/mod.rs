@@ -141,7 +141,7 @@ impl Worker {
                             responder = job.responder;
                         }
                         Err(_) => {
-                            log::warn!("rolling back transaction!");
+                            tracing::warn!("rolling back transaction!");
                             let _ = self.db_conn.execute("ROLLBACK TRANSACTION;", ());
                             // FIXME: potential data race with Ready issued before.
                             job.scheduler_sender
@@ -157,7 +157,7 @@ impl Worker {
 
     fn run(self) {
         while let Ok(job) = self.global_fifo.recv() {
-            log::debug!("executing job `{:?}` on worker {}", job.statements, self.id);
+            tracing::debug!("executing job `{:?}` on worker {}", job.statements, self.id);
 
             // This is an interactive transaction.
             if let State::TxnOpened = job.statements.state(State::Start) {
@@ -172,7 +172,7 @@ impl Worker {
                     .unwrap();
             }
 
-            log::debug!("job finished on worker {}", self.id);
+            tracing::debug!("job finished on worker {}", self.id);
         }
     }
 }
