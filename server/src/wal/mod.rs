@@ -1,4 +1,3 @@
-use log::trace;
 use rusqlite::Connection;
 use std::ffi::c_void;
 
@@ -152,7 +151,7 @@ extern "C" fn open(
     methods: *mut libsql_wal_methods,
     wal: *mut *const Wal,
 ) -> i32 {
-    trace!("Opening {}", unsafe {
+    tracing::trace!("Opening {}", unsafe {
         std::ffi::CStr::from_ptr(wal_name as *const i8)
             .to_str()
             .unwrap()
@@ -235,11 +234,12 @@ extern "C" fn savepoint_undo(wal: *mut Wal, wal_data: *mut u32) -> i32 {
     (orig_methods.savepoint_undo)(wal, wal_data)
 }
 
+#[tracing::instrument]
 fn print_frames(page_headers: *const PgHdr) {
     let mut current_ptr = page_headers;
     loop {
         let current: &PgHdr = unsafe { &*current_ptr };
-        trace!("page {} written to WAL", current.pgno);
+        tracing::trace!("page {} written to WAL", current.pgno);
         if current.dirty.is_null() {
             break;
         }
@@ -348,6 +348,7 @@ impl std::ops::Drop for WalConnection {
     }
 }
 
+#[tracing::instrument(skip(path))]
 pub(crate) fn open_with_virtual_wal(
     path: impl AsRef<std::path::Path>,
     flags: rusqlite::OpenFlags,
@@ -402,7 +403,7 @@ pub(crate) fn open_with_virtual_wal(
         assert_eq!(open_err, 0);
         let conn = Connection::from_handle(pdb)?;
         conn.pragma_update(None, "journal_mode", "wal")?;
-        trace!(
+        tracing::trace!(
             "Opening a connection with virtual WAL at {}",
             path.as_ref().display()
         );

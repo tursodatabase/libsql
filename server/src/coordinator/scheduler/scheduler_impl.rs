@@ -156,7 +156,7 @@ impl Scheduler {
 
     /// Update queues with new incoming tasks from server.
     fn update_queues(&mut self, (req, chan): SchedulerQuery) {
-        log::debug!("got server message: {req:?}");
+        tracing::debug!("got server message: {req:?}");
         match req.query {
             Query::SimpleQuery(stmts_str) => {
                 let statements = match Statements::parse(stmts_str) {
@@ -191,7 +191,7 @@ impl Scheduler {
                     q.should_close = true
                 }
                 let _ = chan.send(Ok(QueryResponse::Ack));
-                log::debug!("removing client {} from scheduler.", req.client_id);
+                tracing::debug!("removing client {} from scheduler.", req.client_id);
             }
         }
     }
