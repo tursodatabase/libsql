@@ -1,5 +1,5 @@
-C Rename\sone\sinstance\sof\sopfs.OpfsDb\sto\soo1.OpfsDb,\sas\sper\s[0c5c51f4fb04].
-D 2022-11-29T06:56:09.516
+C Fix\slegacy\sbuild\ssystem\smain.mk\sto\sinclude\sbasexx.c\sin\stestfixture\sbuilds.
+D 2022-11-29T11:28:45.200
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -563,7 +563,7 @@ F ext/wasm/wasmfs.make 8fea9b4f3cde06141de1fc4c586ab405bd32c3f401554f4ebb18c7974
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk fd90f1bd90bd4070c9af7e9c8396bd0cf4208a0186c8d18fa6e2609dff447d5d
+F main.mk 5ce166d63fb99df9821f262fb1777fd5eb7b6c9396e867a6b0b2761f35f8238a
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -2064,8 +2064,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 61799b05ff232c2ac349169c27bfe7f8d9277366093b0c9dd2739828993b3066
-R ccbd533ba6a1af3ea32f1c34f9412b94
-U stephan
-Z 5d4b5205e72d1fad1817c77ba7b7ffb7
+P 75b04c9b302ec66749d8f072a49e61de9640b868bec99eadeb5b4bdef354c336
+R 5b4d2911b428490bdd01585b55a3d462
+U dan
+Z d91547f2ddaedf2a7b8258684ff0e02a
 # Remove this line to create a well-formed Fossil manifest.
