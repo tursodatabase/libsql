@@ -19,4 +19,5 @@ fn main() {
         .unwrap();
     println!("cargo:rustc-link-search=native=libsql/.libs");
     println!("cargo:rustc-link-lib=static=sqlite3");
+    println!("cargo:rerun-if-changed=libsql/*");
 }
