@@ -46,7 +46,7 @@ self.sqlite3InitModule().then(async function(sqlite3){
     }
   };
   const run = async function(){
-    db = new sqlite3.opfs.OpfsDb({
+    db = new sqlite3.oo1.OpfsDb({
       filename: 'file:'+dbName+'?opfs-unlock-asap='+options.unlockAsap,
       flags: 'c'
     });

@@ -1,5 +1,5 @@
-C Minor\sinternal\scleanups\sand\sdocs\sin\sthe\sOPFS\ssqlite3_vfs.
-D 2022-11-29T06:09:32.898
+C Rename\sone\sinstance\sof\sopfs.OpfsDb\sto\soo1.OpfsDb,\sas\sper\s[0c5c51f4fb04].
+D 2022-11-29T06:56:09.516
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -557,7 +557,7 @@ F ext/wasm/tester1.c-pp.html 74aa9b31c75f12490653f814b53c3dd39f40cd3f70d6a53a716
 F ext/wasm/tester1.c-pp.js a4b6a165aafcd3b86118efaec6b47c70fbb6c64b5ab86d21ca8c250d42617dfa
 F ext/wasm/tests/opfs/concurrency/index.html 2b1cda51d6c786102875a28eba22f0da3eecb732a5e677b0d1ecdb53546d1a62
 F ext/wasm/tests/opfs/concurrency/test.js bfc3d7e27b207f0827f12568986b8d516a744529550b449314f5c21c9e9faf4a
-F ext/wasm/tests/opfs/concurrency/worker.js 0eff027cbd3a495acb2ac94f57ca9e4d21125ab9fda07d45f3701b0efe82d450
+F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d599948915c76906681bb7da1d3d2
 F ext/wasm/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd72273503ae7d5
 F ext/wasm/wasmfs.make 8fea9b4f3cde06141de1fc4c586ab405bd32c3f401554f4ebb18c797401a678d
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
@@ -2064,8 +2064,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0c5c51f4fb04a4b90c50ec9704cfea9a3fb7d7d0ee55c1b0d4476129188217a6
-R e8239b21ab627d1eba84cc5be45ed7a1
+P 61799b05ff232c2ac349169c27bfe7f8d9277366093b0c9dd2739828993b3066
+R ccbd533ba6a1af3ea32f1c34f9412b94
 U stephan
-Z 1147c5417905a9e8323d8798a4fd57dd
+Z 5d4b5205e72d1fad1817c77ba7b7ffb7
 # Remove this line to create a well-formed Fossil manifest.
