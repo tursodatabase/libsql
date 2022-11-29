@@ -76,15 +76,25 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   `opfs` property, containing several OPFS-specific utilities.
 */
 const installOpfsVfs = function callee(options){
-  if(!self.SharedArrayBuffer ||
-     !self.Atomics ||
-     !self.FileSystemHandle ||
-     !self.FileSystemDirectoryHandle ||
-     !self.FileSystemFileHandle ||
-     !self.FileSystemFileHandle.prototype.createSyncAccessHandle ||
-     !navigator.storage.getDirectory){
+  if(!self.SharedArrayBuffer
+    || !self.Atomics){
     return Promise.reject(
-      new Error("This environment does not have OPFS support.")
+      new Error("Cannot install OPFS: Missing SharedArrayBuffer and/or Atomics. "+
+                "The server must emit the COOP/COEP response headers to enable those. "+
+                "See https://sqlite.org/wasm/doc/trunk/persistence.md#coop-coep")
+    );
+  }else if(self.window===self && self.document){
+    return Promise.reject(
+      new Error("The OPFS sqlite3_vfs cannot run in the main thread "+
+                "because it requires Atomics.wait().")
+    );
+  }else if(!self.FileSystemHandle ||
+           !self.FileSystemDirectoryHandle ||
+           !self.FileSystemFileHandle ||
+           !self.FileSystemFileHandle.prototype.createSyncAccessHandle ||
+           !navigator.storage.getDirectory){
+    return Promise.reject(
+      new Error("Missing required OPFS APIs.")
     );
   }
   if(!options || 'object'!==typeof options){
@@ -134,6 +144,18 @@ const installOpfsVfs = function callee(options){
        OPFS-specific sqlite3_vfs evolves.
     */
     const opfsUtil = Object.create(null);
+
+    /**
+       Returns true if _this_ thread has access to the OPFS APIs.
+    */
+    const thisThreadHasOPFS = ()=>{
+      return self.FileSystemHandle &&
+        self.FileSystemDirectoryHandle &&
+        self.FileSystemFileHandle &&
+        self.FileSystemFileHandle.prototype.createSyncAccessHandle &&
+        navigator.storage.getDirectory;
+    };
+
     /**
        Not part of the public API. Solely for internal/development
        use.
@@ -1179,12 +1201,16 @@ const installOpfsVfs = function callee(options){
     //consideration.
 
     if(sqlite3.oo1){
-      opfsUtil.OpfsDb = function(...args){
+      const OpfsDb = function(...args){
         const opt = sqlite3.oo1.DB.dbCtorHelper.normalizeArgs(...args);
         opt.vfs = opfsVfs.$zName;
         sqlite3.oo1.DB.dbCtorHelper.call(this, opt);
       };
-      opfsUtil.OpfsDb.prototype = Object.create(sqlite3.oo1.DB.prototype);
+      sqlite3.oo1.OpfsDb =
+        opfsUtil.OpfsDb /* sqlite3.opfs.OpfsDb => deprecated name -
+                           will be phased out Real Soon */ =
+        OpfsDb;
+      OpfsDb.prototype = Object.create(sqlite3.oo1.DB.prototype);
       sqlite3.oo1.DB.dbCtorHelper.setVfsPostOpenSql(
         opfsVfs.pointer,
         [
@@ -1206,13 +1232,6 @@ const installOpfsVfs = function callee(options){
       );
     }
 
-    /**
-       Potential TODOs:
-
-       - Expose one or both of the Worker objects via opfsUtil and
-         publish an interface for proxying the higher-level OPFS
-         features like getting a directory listing.
-    */
     const sanityCheck = function(){
       const scope = wasm.scopedAllocPush();
       const sq3File = new sqlite3_file();
@@ -1282,6 +1301,11 @@ const installOpfsVfs = function callee(options){
     W.onmessage = function({data}){
       //log("Worker.onmessage:",data);
       switch(data.type){
+          case 'opfs-unavailable':
+            /* Async proxy has determined that OPFS is unavailable. There's
+               nothing more for us to do here. */
+            promiseReject(new Error(data.payload.join(' ')));
+            break;
           case 'opfs-async-loaded':
             /*Arrives as soon as the asyc proxy finishes loading.
               Pass our config and shared state on to the async worker.*/
@@ -1308,14 +1332,18 @@ const installOpfsVfs = function callee(options){
                 warn("Running sanity checks because of opfs-sanity-check URL arg...");
                 sanityCheck();
               }
-              navigator.storage.getDirectory().then((d)=>{
-                W.onerror = W._originalOnError;
-                delete W._originalOnError;
-                sqlite3.opfs = opfsUtil;
-                opfsUtil.rootDirectory = d;
-                log("End of OPFS sqlite3_vfs setup.", opfsVfs);
+              if(thisThreadHasOPFS()){
+                navigator.storage.getDirectory().then((d)=>{
+                  W.onerror = W._originalOnError;
+                  delete W._originalOnError;
+                  sqlite3.opfs = opfsUtil;
+                  opfsUtil.rootDirectory = d;
+                  log("End of OPFS sqlite3_vfs setup.", opfsVfs);
+                  promiseResolve(sqlite3);
+                });
+              }else{
                 promiseResolve(sqlite3);
-              });
+              }                
             }catch(e){
               error(e);
               promiseReject(e);
@@ -1334,9 +1362,6 @@ const installOpfsVfs = function callee(options){
 installOpfsVfs.defaultProxyUri =
   "sqlite3-opfs-async-proxy.js";
 self.sqlite3ApiBootstrap.initializersAsync.push(async (sqlite3)=>{
-  if(sqlite3.scriptInfo && !sqlite3.scriptInfo.isWorker){
-    return;
-  }
   try{
     let proxyJs = installOpfsVfs.defaultProxyUri;
     if(sqlite3.scriptInfo.sqlite3Dir){

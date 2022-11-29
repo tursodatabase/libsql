@@ -33,9 +33,10 @@
       with <code>unlock-asap=0-1</code>.
     </p>
     <p>Achtung: if it does not start to do anything within a couple of
-      seconds, check the dev console: Chrome often fails with "cannot allocate
-      WasmMemory" at startup. Closing and re-opening the tab usually resolves
-      it.
+      seconds, check the dev console: Chrome sometimes fails to load
+      the wasm module due to "cannot allocate WasmMemory." Closing and
+      re-opening the tab usually resolves it, but sometimes restarting
+      the browser is required.
     </p>
     <div class='input-wrapper'>
       <input type='checkbox' id='cb-log-reverse'>
