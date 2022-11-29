@@ -128,6 +128,10 @@ const installOpfsVfs = function callee(options){
     /**
        Generic utilities for working with OPFS. This will get filled out
        by the Promise setup and, on success, installed as sqlite3.opfs.
+
+       ACHTUNG: do not rely on these APIs in client code. They are
+       experimental and subject to change or removal as the
+       OPFS-specific sqlite3_vfs evolves.
     */
     const opfsUtil = Object.create(null);
     /**
@@ -186,8 +190,7 @@ const installOpfsVfs = function callee(options){
     const dVfs = pDVfs
           ? new sqlite3_vfs(pDVfs)
           : null /* dVfs will be null when sqlite3 is built with
-                    SQLITE_OS_OTHER. Though we cannot currently handle
-                    that case, the hope is to eventually be able to. */;
+                    SQLITE_OS_OTHER. */;
     const opfsVfs = new sqlite3_vfs();
     const opfsIoMethods = new sqlite3_io_methods();
     opfsVfs.$iVersion = 2/*yes, two*/;
