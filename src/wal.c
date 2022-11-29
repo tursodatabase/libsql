@@ -4096,6 +4096,13 @@ libsql_wal_methods *libsql_wal_methods_find(const char *zName) {
   static libsql_wal_methods methods;
   static libsql_wal_methods *methods_head = NULL; 
 
+#ifndef SQLITE_OMIT_AUTOINIT
+  int rc = sqlite3_initialize();
+  if (rc != SQLITE_OK) {
+    return NULL;
+  }
+#endif
+
   if (!zName || *zName == '\0') {
     zName = "default";
   }
@@ -4159,6 +4166,13 @@ libsql_wal_methods *libsql_wal_methods_find(const char *zName) {
 }
 
 int libsql_wal_methods_register(libsql_wal_methods* pWalMethods) {
+#ifndef SQLITE_OMIT_AUTOINIT
+  int rc = sqlite3_initialize();
+  if (rc != SQLITE_OK) {
+    return rc;
+  }
+#endif
+
   if (strncmp(pWalMethods->zName, "default", 7) == 0) {
     return SQLITE_MISUSE;
   }
