@@ -290,7 +290,9 @@ const installOpfsVfs = function callee(options){
        The size of the block in our SAB for serializing arguments and
        result values. Needs to be large enough to hold serialized
        values of any of the proxied APIs. Filenames are the largest
-       part but are limited to opfsVfs.$mxPathname bytes.
+       part but are limited to opfsVfs.$mxPathname bytes. We also
+       store exceptions there, so it needs to be long enough to hold
+       a reasonably long exception string.
     */
     state.sabS11nSize = opfsVfs.$mxPathname * 2;
     /**

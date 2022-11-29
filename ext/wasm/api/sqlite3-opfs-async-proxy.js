@@ -239,15 +239,26 @@ const installAsyncProxy = function(self){
      between locking-related failures and other types, noting that we
      cannot currently do so because createSyncAccessHandle() does not
      define its exceptions in the required level of detail.
+
+     2022-11-29: according to:
+
+     https://github.com/whatwg/fs/pull/21
+
+     NoModificationAllowedError will be the standard exception thrown
+     when acquisition of a sync access handle fails due to a locking
+     error. As of this writing, that error type is not visible in the
+     dev console in Chrome v109, nor is it documented in MDN, but an
+     error with that "name" property is being thrown from the OPFS
+     layer.
   */
   class GetSyncHandleError extends Error {
     constructor(errorObject, ...msg){
-      super();
-      this.error = errorObject;
-      this.message = [
-        ...msg, ': Original exception ['+errorObject.name+']:',
+      super([
+        ...msg, ': '+errorObject.name+':',
         errorObject.message
-      ].join(' ');
+      ].join(' '), {
+        cause: errorObject
+      });
       this.name = 'GetSyncHandleError';
     }
   };
@@ -259,8 +270,12 @@ const installAsyncProxy = function(self){
          distinguish that from other errors.
 
          This approach is highly questionable.
+
+         Note that even if we return SQLITE_IOERR_LOCK from here,
+         it bubbles up to the client as a plain I/O error.
       */
-      return (e instanceof GetSyncHandleError)
+      return (e instanceof GetSyncHandleError
+              && e.cause.name==='NoModificationAllowedError')
         ? state.sq3Codes.SQLITE_IOERR_LOCK
         : rc;
     }else{
