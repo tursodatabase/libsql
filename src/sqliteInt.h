@@ -5535,4 +5535,8 @@ const char **sqlite3CompileOptions(int *pnOpt);
 int sqlite3KvvfsInit(void);
 #endif
 
+#if defined(VDBE_PROFILE) || defined(SQLITE_PERFORMANCE_TRACE)
+sqlite3_uint64 sqlite3Hwtime(void);
+#endif
+
 #endif /* SQLITEINT_H */
