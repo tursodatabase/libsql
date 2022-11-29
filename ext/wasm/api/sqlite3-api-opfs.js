@@ -1216,12 +1216,14 @@ const installOpfsVfs = function callee(options){
       sqlite3.oo1.DB.dbCtorHelper.setVfsPostOpenSql(
         opfsVfs.pointer,
         [
-          /* Truncate journal mode is faster than delete or wal for
-             this vfs, per speedtest1. */
-          "pragma journal_mode=truncate;",
+          /* Truncate journal mode is faster than delete for
+             this vfs, per speedtest1. That gap seems to have closed with
+             Chome version 108 or 109, but "persist" is very roughly 5-6%
+             faster than truncate in initial tests. */
+          "pragma journal_mode=persist;",
           /* Set a default busy-timeout handler to help OPFS dbs
              deal with multi-tab/multi-worker contention. */
-          "pragma busy_timeout=2000;",
+          "pragma busy_timeout=3000;",
           /*
             This vfs benefits hugely from cache on moderate/large
             speedtest1 --size 50 and --size 100 workloads. We currently
