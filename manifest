@@ -1,5 +1,5 @@
-C Change\sthe\shandling\sof\shwtime.h\sto\smake\sit\seasier\sto\scompile\sperformance\nmeasurement\sbuilds\sthat\smake\suse\sof\shwtime.h.\s\sThis\sshould\snot\saffect\nproductions\sbuilds.
-D 2022-11-29T17:52:04.105
+C OPFS\sspeedtest1:\shide\sa\scurrently-broken/to-fix\sWASMFS-build\slink.
+D 2022-11-29T18:00:01.024
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -544,7 +544,7 @@ F ext/wasm/module-symbols.html b8eebafef8e536624bbe5f7a3da40c07a9062b843dfd3161a
 F ext/wasm/scratchpad-wasmfs-main.html 20cf6f1a8f368e70d01e8c17200e3eaa90f1c8e1029186d836d14b83845fbe06
 F ext/wasm/scratchpad-wasmfs-main.js 4c140457f4d6da9d646a49addd91edb6e9ad1643c6c48e3258b5bce24725dc18
 F ext/wasm/speedtest1-wasmfs.html bc28eb29b69a73864b8d7aae428448f8b7e1de81d8bfb9bba99541322054dbd0
-F ext/wasm/speedtest1-worker.html d75d9de9347c6f2f3278b73ccb6bceb559080644aef385fe496fa389f58bcd66
+F ext/wasm/speedtest1-worker.html e94cecebcbb9d187647025edd04d37af9789dfba98c2cc439b549b5ae8a8bc93
 F ext/wasm/speedtest1-worker.js 13b57c4a41729678a1194014afec2bd5b94435dcfc8d1039dfa9a533ac819ee1
 F ext/wasm/speedtest1.html e4c4e5c1c8ec1ad13c995e346e4216a1df152fd2c5cd17e0793b865b2f3c5000
 F ext/wasm/split-speedtest1-script.sh a3e271938d4d14ee49105eb05567c6a69ba4c1f1293583ad5af0cd3a3779e205 x
@@ -2064,8 +2064,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8c9200b7e156206c4270ff60631c57d5898e2769f7f68294ce652bfec4cfa7c2
-R 427322317ebe04d9616d118c250b6e39
-U drh
-Z a5571007571b0b63420d1f8b08046ddf
+P f64a224244743ab121371abd516fccbfc93c110e0952211764bd1b217e792c1b
+R 9e4ddb7294c8c5e99856ae19fd524910
+U stephan
+Z 303f08b9a1a9cd719a67e29d0dc3ab85
 # Remove this line to create a well-formed Fossil manifest.
