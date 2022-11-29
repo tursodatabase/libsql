@@ -49,36 +49,56 @@ macro_rules! ok_or_exit {
 }
 
 impl LibSqlDb {
-    pub fn new(path: PathBuf) -> anyhow::Result<Self> {
+    pub fn new(
+        path: PathBuf,
+        vwal_methods: Option<std::sync::Arc<std::sync::Mutex<crate::wal::WalMethods>>>,
+    ) -> anyhow::Result<Self> {
         let (sender, receiver) =
             crossbeam::channel::unbounded::<(Statements, oneshot::Sender<QueryResult>)>();
 
         tokio::task::spawn_blocking(move || {
             let mut retries = 0;
             let conn = loop {
-                match crate::wal::open_with_virtual_wal(
-                    &path,
-                    OpenFlags::SQLITE_OPEN_READ_WRITE
-                        | OpenFlags::SQLITE_OPEN_CREATE
-                        | OpenFlags::SQLITE_OPEN_URI
-                        | OpenFlags::SQLITE_OPEN_NO_MUTEX,
-                ) {
+                let conn_result = match vwal_methods {
+                    Some(ref vwal_methods) => crate::wal::open_with_virtual_wal(
+                        &path,
+                        OpenFlags::SQLITE_OPEN_READ_WRITE
+                            | OpenFlags::SQLITE_OPEN_CREATE
+                            | OpenFlags::SQLITE_OPEN_URI
+                            | OpenFlags::SQLITE_OPEN_NO_MUTEX,
+                        vwal_methods.clone(),
+                    ),
+                    None => crate::wal::open_with_regular_wal(
+                        &path,
+                        OpenFlags::SQLITE_OPEN_READ_WRITE
+                            | OpenFlags::SQLITE_OPEN_CREATE
+                            | OpenFlags::SQLITE_OPEN_URI
+                            | OpenFlags::SQLITE_OPEN_NO_MUTEX,
+                    ),
+                };
+                match conn_result {
                     Ok(conn) => break conn,
-                    // > When the last connection to a particular database is closing, that
-                    // > connection will acquire an exclusive lock for a short time while it cleans
-                    // > up the WAL and shared-memory files. If a second database tries to open and
-                    // > query the database while the first connection is still in the middle of its
-                    // > cleanup process, the second connection might get an SQLITE_BUSY error.
-                    //
-                    // For this reason we may not be able to open the database right away, so we
-                    // retry a couple of times before giving up.
-                    Err(rusqlite::Error::SqliteFailure(e, _))
-                        if e.code == rusqlite::ffi::ErrorCode::DatabaseBusy && retries < 10 =>
-                    {
-                        std::thread::sleep(Duration::from_millis(10));
-                        retries += 1;
+                    Err(e) => {
+                        match e.downcast::<rusqlite::Error>() {
+                            // > When the last connection to a particular database is closing, that
+                            // > connection will acquire an exclusive lock for a short time while it cleans
+                            // > up the WAL and shared-memory files. If a second database tries to open and
+                            // > query the database while the first connection is still in the middle of its
+                            // > cleanup process, the second connection might get an SQLITE_BUSY error.
+                            //
+                            // For this reason we may not be able to open the database right away, so we
+                            // retry a couple of times before giving up.
+                            Ok(rusqlite::Error::SqliteFailure(e, _))
+                                if e.code == rusqlite::ffi::ErrorCode::DatabaseBusy
+                                    && retries < 10 =>
+                            {
+                                std::thread::sleep(Duration::from_millis(10));
+                                retries += 1;
+                            }
+                            Ok(e) => panic!("Unhandled error opening libsql: {}", e),
+                            Err(e) => panic!("Unhandled error opening libsql: {}", e),
+                        }
                     }
-                    _ => panic!("unhandled error opening libsql"),
                 }
             };
 

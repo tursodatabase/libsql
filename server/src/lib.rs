@@ -1,5 +1,6 @@
 use std::net::SocketAddr;
 use std::path::PathBuf;
+use std::sync::{Arc, Mutex};
 
 use anyhow::Result;
 use database::libsql::LibSqlDb;
@@ -19,6 +20,7 @@ pub async fn run_server(
     db_path: PathBuf,
     tcp_addr: SocketAddr,
     ws_addr: Option<SocketAddr>,
+    fdb_config_path: Option<String>,
 ) -> Result<()> {
     let mut server = Server::new();
     server.bind_tcp(tcp_addr).await?;
@@ -27,9 +29,17 @@ pub async fn run_server(
         server.bind_ws(addr).await?;
     }
 
+    let vwal_methods = match &fdb_config_path {
+        Some(_path) => Some(Arc::new(Mutex::new(wal::WalMethods::new(
+            fdb_config_path.clone(),
+        )?))),
+        None => None,
+    };
+
     let service = DbFactoryService::new(move || {
         let db_path = db_path.clone();
-        async move { LibSqlDb::new(db_path) }
+        let vwal_methods = vwal_methods.clone();
+        async move { LibSqlDb::new(db_path, vwal_methods) }
     });
     let factory = PgConnectionFactory::new(service);
     server.serve(factory).await;

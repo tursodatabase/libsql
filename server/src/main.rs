@@ -22,6 +22,8 @@ enum Commands {
         tcp_addr: SocketAddr,
         #[clap(long, short)]
         ws_addr: Option<SocketAddr>,
+        #[clap(long, short)]
+        fdb_config_path: Option<String>,
     },
 }
 
@@ -29,15 +31,22 @@ enum Commands {
 async fn main() -> Result<()> {
     tracing_subscriber::fmt::init();
     let args = Cli::parse();
+    // This is how foundationdb crate recommends its initialization,
+    // along with dropping `network` manually before the program ends:
+    // https://docs.rs/foundationdb/0.7.0/foundationdb/fn.boot.html
+    let network = unsafe { foundationdb::boot() };
+
     match args.command {
         Commands::Serve {
             db_path,
             tcp_addr,
             ws_addr,
+            fdb_config_path,
         } => {
-            server::run_server(db_path, tcp_addr, ws_addr).await?;
+            server::run_server(db_path, tcp_addr, ws_addr, fdb_config_path).await?;
         }
     }
 
+    drop(network);
     Ok(())
 }
