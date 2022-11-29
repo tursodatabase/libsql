@@ -8,3 +8,4 @@ server/iku.db
 server/iku.db-shm
 testing/iku.db
 testing/iku.db-shm
+testing/fdb/fdb.cluster
