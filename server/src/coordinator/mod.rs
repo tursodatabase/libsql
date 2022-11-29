@@ -16,6 +16,7 @@ use crate::coordinator::query::{ErrorCode, QueryError, QueryResponse, QueryResul
 use crate::coordinator::scheduler::UpdateStateMessage;
 use crate::coordinator::statements::{State, Statements};
 use crate::job::Job;
+use crate::wal::WalConnection;
 
 const TXN_TIMEOUT_SECS: usize = 5;
 
@@ -32,7 +33,7 @@ impl Coordinator {
     /// If ncpu is 0, then the number of worker is determined automatically.
     pub fn new(
         ncpu: usize,
-        conn_builder: impl Fn() -> rusqlite::Connection + Sync + Send,
+        conn_builder: impl Fn() -> WalConnection + Sync + Send,
     ) -> Result<(Self, Sender<Job>)> {
         let _pool = ThreadPoolBuilder::new().num_threads(ncpu).build()?;
         let (fifo, receiver) = crossbeam::channel::unbounded();
@@ -75,7 +76,7 @@ impl std::convert::From<rusqlite::Error> for QueryError {
 
 struct Worker {
     global_fifo: crossbeam::channel::Receiver<Job>,
-    db_conn: rusqlite::Connection,
+    db_conn: WalConnection,
     id: usize,
     /// signal that the worker has exited
     /// nothing is done with this, it simply gets dropped with the worker.

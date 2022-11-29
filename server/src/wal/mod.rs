@@ -1,6 +1,6 @@
+use log::trace;
 use rusqlite::Connection;
 use std::ffi::c_void;
-use tracing::{instrument, trace};
 
 #[repr(C)]
 pub struct Wal {
@@ -141,7 +141,6 @@ extern "C" {
     ) -> i32;
     fn libsql_wal_methods_register(wal_methods: *const libsql_wal_methods) -> i32;
     fn libsql_wal_methods_find(name: *const u8) -> *const libsql_wal_methods;
-    fn sqlite3_initialize();
 }
 
 extern "C" fn open(
@@ -236,7 +235,6 @@ extern "C" fn savepoint_undo(wal: *mut Wal, wal_data: *mut u32) -> i32 {
     (orig_methods.savepoint_undo)(wal, wal_data)
 }
 
-#[instrument]
 fn print_frames(page_headers: *const PgHdr) {
     let mut current_ptr = page_headers;
     loop {
@@ -324,16 +322,36 @@ extern "C" fn pathname_len(orig_len: i32) -> i32 {
 }
 
 extern "C" fn get_pathname(buf: *mut u8, orig: *const u8, orig_len: i32) {
-    let buf = unsafe { std::slice::from_raw_parts_mut(buf, orig_len as usize) };
-    let orig = unsafe { std::slice::from_raw_parts(orig, orig_len as usize) };
-    buf.copy_from_slice(orig)
+    unsafe { std::ptr::copy(orig, buf, orig_len as usize) }
 }
 
-#[instrument(skip(path))]
+pub struct WalConnection {
+    inner: rusqlite::Connection,
+    wal_methods: std::sync::atomic::AtomicPtr<libsql_wal_methods>,
+}
+
+impl std::ops::Deref for WalConnection {
+    type Target = rusqlite::Connection;
+
+    fn deref(&self) -> &Self::Target {
+        &self.inner
+    }
+}
+
+impl std::ops::Drop for WalConnection {
+    fn drop(&mut self) {
+        unsafe {
+            rusqlite::ffi::sqlite3_close(self.inner.handle());
+        }
+        let _ = self.inner;
+        let _ = unsafe { Box::from_raw(self.wal_methods.get_mut()) };
+    }
+}
+
 pub(crate) fn open_with_virtual_wal(
     path: impl AsRef<std::path::Path>,
     flags: rusqlite::OpenFlags,
-) -> rusqlite::Result<rusqlite::Connection> {
+) -> rusqlite::Result<WalConnection> {
     let vwal_name: *const u8 = "edge_vwal\0".as_ptr();
 
     let vwal = Box::into_raw(Box::new(libsql_wal_methods {
@@ -368,7 +386,6 @@ pub(crate) fn open_with_virtual_wal(
     unsafe {
         let mut pdb: *mut rusqlite::ffi::sqlite3 = std::ptr::null_mut();
         let ppdb: *mut *mut rusqlite::ffi::sqlite3 = &mut pdb;
-        sqlite3_initialize();
         let register_err = libsql_wal_methods_register(vwal);
         assert_eq!(register_err, 0);
         let open_err = libsql_open(
@@ -389,6 +406,9 @@ pub(crate) fn open_with_virtual_wal(
             "Opening a connection with virtual WAL at {}",
             path.as_ref().display()
         );
-        Ok(conn)
+        Ok(WalConnection {
+            inner: conn,
+            wal_methods: std::sync::atomic::AtomicPtr::new(vwal),
+        })
     }
 }
