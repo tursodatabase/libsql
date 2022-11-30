@@ -17,7 +17,8 @@ multiple JS files because:
    to be loaded as JS Workers.
 
 Note that the structure described here is the current state of things,
-not necessarily the "final" state.
+as of this writing, but is not set in stone forever and may change
+at any time.
 
 The overall idea is that the following files get concatenated
 together, in the listed order, the resulting file is loaded by a
@@ -45,10 +46,13 @@ browser client:
   independent spinoff project, conceived for the sqlite3 project but
   maintained separately.
 - **`sqlite3-api-glue.js`**\  
-  Invokes functionality exposed by the previous two files to
-  flesh out low-level parts of `sqlite3-api-prologue.js`. Most of
-  these pieces related to the `sqlite3.capi.wasm` object.
-- **`sqlite3-api-build-version.js`**\  
+  Invokes functionality exposed by the previous two files to flesh out
+  low-level parts of `sqlite3-api-prologue.js`. Most of these pieces
+  related to populating the `sqlite3.capi.wasm` object. This file
+  also deletes most global-scope symbols the above files create,
+  effectively moving them into the scope being used for initializing
+  the API.
+- **`<build>/sqlite3-api-build-version.js`**\  
   Gets created by the build process and populates the
   `sqlite3.version` object. This part is not critical, but records the
   version of the library against which this module was built.
@@ -76,10 +80,10 @@ browser client:
       in a Worker thread.
 - **`sqlite3-vfs-helper.js`**\  
   This internal-use-only file installs `sqlite3.VfsHelper` for use by
-  `sqlite3-*.js` files which create `sqlite3_vfs` implemenations.
+  `sqlite3-*.js` files which create `sqlite3_vfs` implementations.
   `sqlite3.VfsHelper` gets removed from the the `sqlite3` object after
   the library is finished initializing.
-- **`sqlite3-vfs-opfs.js`**\  
+- **`sqlite3-vfs-opfs.c-pp.js`**\  
   is an sqlite3 VFS implementation which supports Google Chrome's
   Origin-Private FileSystem (OPFS) as a storage layer to provide
   persistent storage for database files in a browser. It requires...
@@ -100,6 +104,13 @@ browser client:
   symbol installed. When adapting the API for non-Emscripten
   toolchains, this "should" be the only file where changes are needed.
 
+
+**Files with the extension `.c-pp.js`** are intended [to be processed
+with `c-pp`](#c-pp), noting that such preprocessing may be applied
+after all of the relevant files are concatenated. That extension is
+used primarily to keep the code maintainers cognisant of the fact that
+those files contain constructs which will not run as-is in JavaScript.
+
 The build process glues those files together, resulting in
 `sqlite3-api.js`, which is everything except for the `post-js-*.js`
 files, and `sqlite3.js`, which is the Emscripten-generated amalgamated
@@ -119,7 +130,7 @@ into the build-generated `sqlite3.js` along with `sqlite3-api.js`.
   Emscripten-specific header for Emscripten's `--extern-pre-js`
   flag. As of this writing, that file is only used for experimentation
   purposes and holds no code relevant to the production deliverables.
-- `pre-js.js`\  
+- `pre-js.c-pp.js`\  
   Emscripten-specific header for Emscripten's `--pre-js` flag. This
   file is intended as a place to override certain Emscripten behavior
   before it starts up, but corner-case Emscripten bugs keep that from
@@ -130,17 +141,20 @@ into the build-generated `sqlite3.js` along with `sqlite3-api.js`.
 - `post-js-footer.js`\  
   Emscripten-specific footer for the `--post-js` input. This closes
   off the lexical scope opened by `post-js-header.js`.
-- `extern-post-js.js`\  
+- `extern-post-js.c-pp.js`\  
   Emscripten-specific header for Emscripten's `--extern-post-js`
   flag. This file overwrites the Emscripten-installed
   `sqlite3InitModule()` function with one which, after the module is
   loaded, also initializes the asynchronous parts of the sqlite3
   module. For example, the OPFS VFS support.
 
-## Preprocessing of Source Files
+<a id='c-pp'></a>
+Preprocessing of Source Files
+------------------------------------------------------------------------
 
 Certain files in the build require preprocessing to filter in/out
 parts which differ between vanilla JS builds and ES6 Module
-(a.k.a. esm) builds. The preprocessor itself is in
-[](/file/ext/wasm/c-pp.c) and the associates flags and rules are in
-[](/file/ext/wasm/GNUmakefile).
+(a.k.a. esm) builds. The preprocessor application itself is in
+[`c-pp.c`](/file/ext/wasm/c-pp.c) and the complete technical details
+of such preprocessing are maintained in
+[`GNUMakefile`](/file/ext/wasm/GNUmakefile).
