@@ -58,11 +58,8 @@ impl Service<Query> for SchedulerService {
     type Error = QueryError;
     type Future = Pin<Box<dyn Future<Output = QueryResult>>>;
 
-    fn poll_ready(
-        &mut self,
-        _cx: &mut std::task::Context<'_>,
-    ) -> std::task::Poll<Result<(), Self::Error>> {
-        Poll::Ready(Ok(()))
+    fn poll_ready(&mut self, _cx: &mut std::task::Context<'_>) -> Poll<Result<(), Self::Error>> {
+        Ok(()).into()
     }
 
     fn call(&mut self, query: Query) -> Self::Future {
