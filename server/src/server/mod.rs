@@ -69,7 +69,7 @@ impl Server {
                         _ => break,
                     }
                 }
-                _dis = connections.next() => { }
+                _dis = connections.next(), if !connections.is_empty() => { }
             }
         }
     }
