@@ -1266,7 +1266,7 @@ const installOpfsVfs = function callee(options){
                   opfsUtil.rootDirectory = d;
                   log("End of OPFS sqlite3_vfs setup.", opfsVfs);
                   promiseResolve(sqlite3);
-                });
+                }).catch(promiseReject);
               }else{
                 promiseResolve(sqlite3);
               }                

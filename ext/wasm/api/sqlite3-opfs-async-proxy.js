@@ -592,13 +592,12 @@ const installAsyncProxy = function(self){
           (opfsFlags & state.opfsFlags.OPFS_UNLOCK_ASAP)
           || state.opfsFlags.defaultUnlockAsap;
         if(0 /* this block is modelled after something wa-sqlite
-                does but it leads to immediate contention on journal files. */
+                does but it leads to immediate contention on journal files.
+                Update: this approach reportedly only works for DELETE journal
+                mode. */
            && (0===(flags & state.sq3Codes.SQLITE_OPEN_MAIN_DB))){
           /* sqlite does not lock these files, so go ahead and grab an OPFS
-             lock.
-
-             https://www.sqlite.org/uri.html
-          */
+             lock. */
           fh.xLock = "xOpen"/* Truthy value to keep entry from getting
                                flagged as auto-locked. String value so
                                that we can easily distinguish is later

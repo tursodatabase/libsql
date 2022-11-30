@@ -913,9 +913,12 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     ["sqlite3_strlike", "int", "string","string","int"],
     ["sqlite3_trace_v2", "int", "sqlite3*", "int", "*", "*"],
     ["sqlite3_total_changes", "int", "sqlite3*"],
-    ["sqlite3_uri_boolean", "int", "string", "string", "int"],
-    ["sqlite3_uri_key", "string", "string", "int"],
-    ["sqlite3_uri_parameter", "string", "string", "string"],
+    /* Note sqlite3_uri_...() has very specific requirements
+       for their first C-string arguments, so we cannot perform
+       any type conversion on those. */
+    ["sqlite3_uri_boolean", "int", "sqlite3_filename", "string", "int"],
+    ["sqlite3_uri_key", "string", "sqlite3_filename", "int"],
+    ["sqlite3_uri_parameter", "string", "sqlite3_filename", "string"],
     ["sqlite3_user_data","void*", "sqlite3_context*"],
     ["sqlite3_value_blob", "*", "sqlite3_value*"],
     ["sqlite3_value_bytes","int", "sqlite3_value*"],
@@ -949,7 +952,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     ["sqlite3_realloc64", "*","*", "i64"],
     ["sqlite3_result_int64",undefined, "*", "i64"],
     ["sqlite3_total_changes64", "i64", ["sqlite3*"]],
-    ["sqlite3_uri_int64", "i64", ["string", "string", "i64"]],
+    ["sqlite3_uri_int64", "i64", ["sqlite3_filename", "string", "i64"]],
     ["sqlite3_value_int64","i64", "sqlite3_value*"],
   ];
 
@@ -1450,9 +1453,6 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       let lip = sqlite3ApiBootstrap.initializersAsync;
       delete sqlite3ApiBootstrap.initializersAsync;
       if(!lip || !lip.length) return Promise.resolve(sqlite3);
-      // Is it okay to resolve these in parallel or do we need them
-      // to resolve in order? We currently only have 1, so it
-      // makes no difference.
       lip = lip.map((f)=>{
         const p = (f instanceof Promise) ? f : f(sqlite3);
         return p.catch((e)=>{
@@ -1460,10 +1460,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
           throw e;
         });
       });
-      //let p = lip.shift();
-      //while(lip.length) p = p.then(lip.shift());
-      //return p.then(()=>sqlite3);
-      return Promise.all(lip).then(()=>{
+      const postInit = ()=>{
         if(!sqlite3.__isUnderTest){
           /* Delete references to internal-only APIs which are used by
              some initializers. Retain them when running in test mode
@@ -1473,7 +1470,19 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
           delete sqlite3.StructBinder;
         }
         return sqlite3;
-      });
+      };
+      if(1){
+        /* Run all initializers in sequence. The advantage is that it
+           allows us to have post-init cleanup defined outside of this
+           routine at the end of the list and have it run at a
+           well-defined time. */
+        let p = lip.shift();
+        while(lip.length) p = p.then(lip.shift());
+        return p.then(postInit);
+      }else{
+        /* Run them in an arbitrary order. */
+        return Promise.all(lip).then(postInit);
+      }
     },
     /**
        scriptInfo ideally gets injected into this object by the

@@ -183,25 +183,37 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      `methods`, (optional) `applyArgcCheck`) properties to
      this.installMethods().
 
-     If the `vfs` entry is set, its `struct` property is passed
-     to this.registerVfs(). The `vfs` entry may optionally have
-     an `asDefault` property, which gets passed as the 2nd
-     argument to registerVfs().
+     If the `vfs` entry is set then:
+
+     - Its `struct` property is passed to this.registerVfs(). The
+       `vfs` entry may optionally have an `asDefault` property, which
+       gets passed as the 2nd argument to registerVfs().
+
+     - If `struct.$zName` is falsy and the entry has a string-type
+       `name` property, `struct.$zName` is set to the C-string form of
+       that `name` value before registerVfs() is called.
 
      On success returns this object. Throws on error.
   */
   vh.installVfs = function(opt){
     let count = 0;
-    for(const key of ['io','vfs']){
+    const propList = ['io','vfs'];
+    for(const key of propList){
       const o = opt[key];
       if(o){
         ++count;
         this.installMethods(o.struct, o.methods, !!o.applyArgcCheck);
-        if('vfs'===key) this.registerVfs(o.struct, !!o.asDefault);
+        if('vfs'===key){
+          if(!o.struct.$zName && 'string'===typeof o.name){
+            o.struct.$zName = wasm.allocCString(o.name);
+            /* Note that we leak that C-string. */
+          }
+          this.registerVfs(o.struct, !!o.asDefault);
+        }
       }
     }
-    if(!count) toss("Misue: installVfs() options object requires at least",
-                    "one of 'io' or 'vfs' properties.");
+    if(!count) toss("Misuse: installVfs() options object requires at least",
+                    "one of:", propList);
     return this;
   };
   

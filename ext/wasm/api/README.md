@@ -52,11 +52,6 @@ browser client:
   Gets created by the build process and populates the
   `sqlite3.version` object. This part is not critical, but records the
   version of the library against which this module was built.
-- **`sqlite3-vfs-helper.js`**\  
-  This internal-use-only file installs `sqlite3.VfsHelper` for use by
-  `sqlite3-api-*.js` files which create `sqlite3_vfs` implemenations.
-  `sqlite3.VfsHelper` gets removed from the the `sqlite3` object after
-  the library is finished initializing.
 - **`sqlite3-api-oo1.js`**\  
   Provides a high-level object-oriented wrapper to the lower-level C
   API, colloquially known as OO API #1. Its API is similar to other
@@ -79,7 +74,12 @@ browser client:
       a Promise-based interface into the Worker #1 API. This is
       a far user-friendlier way to interface with databases running
       in a Worker thread.
-- **`sqlite3-api-opfs.js`**\  
+- **`sqlite3-vfs-helper.js`**\  
+  This internal-use-only file installs `sqlite3.VfsHelper` for use by
+  `sqlite3-*.js` files which create `sqlite3_vfs` implemenations.
+  `sqlite3.VfsHelper` gets removed from the the `sqlite3` object after
+  the library is finished initializing.
+- **`sqlite3-vfs-opfs.js`**\  
   is an sqlite3 VFS implementation which supports Google Chrome's
   Origin-Private FileSystem (OPFS) as a storage layer to provide
   persistent storage for database files in a browser. It requires...
