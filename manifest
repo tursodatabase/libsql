@@ -1,5 +1,5 @@
-C Fix\san\sover-zealous\sassert()\sreported\sby\sYong\sHeng.
-D 2022-11-30T20:22:31.967
+C Add\sa\stestcase()\smacro\sto\sverify\sthat\sthe\scase\sof\sa\sNOT\sNULL\serror\smessage\nhitting\sthe\sstring\slength\slimit.
+D 2022-11-30T21:18:23.655
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -604,7 +604,7 @@ F src/hash.c 8d7dda241d0ebdafb6ffdeda3149a412d7df75102cecfc1021c98d6219823b19
 F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h cb1d7e3e1ed94b7aa6fde95ae2c2daccc3df826be26fc9ed7fd90d1750ae6144
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c 90a32bc7faa755cd5292ade21d2b3c6edba8fd1d70754a364caccabfde2c3bb2
+F src/insert.c 1b11a2e33ee52db93c02fddac67e39d00161d61b69fac2675b82f2aa68c1b61c
 F src/json.c 7749b98c62f691697c7ee536b570c744c0583cab4a89200fdd0fc2aa8cc8cbd6
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 25663175950c5c4404b9377840b7b4c6fe5c53b415caf43634c62f442c02a9a7
@@ -2065,8 +2065,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8ec361695a107a94f2cf6a7fe509656a99d85d49bd7c74133c69903f059a2675
-R 2a3a42c549d849993e0ed51d258499d0
+P 6ee61f8cede4998f0c838d6506b058c6b09f34b3d7f30ed296100785c93f8d00
+R ca2f65a200c7997e977e891739f47e7d
 U drh
-Z 19ee33e552ce9650229a03299d6e09f2
+Z 02ee85efaa582407b1d21e8a02ad86a6
 # Remove this line to create a well-formed Fossil manifest.
