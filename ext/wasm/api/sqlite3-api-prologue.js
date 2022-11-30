@@ -612,8 +612,11 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     isBindableTypedArray,
     isInt32, isSQLableTypedArray, isTypedArray, 
     typedArrayToString,
-    isUIThread: ()=>'undefined'===typeof WorkerGlobalScope,
+    isUIThread: ()=>(self.window===self && !!self.document),
+    // is this true for ESM?: 'undefined'===typeof WorkerGlobalScope
     isSharedTypedArray,
+    toss: function(...args){throw new Error(args.join(' '))},
+    toss3,
     typedArrayPart
   };
     
@@ -1460,7 +1463,17 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       //let p = lip.shift();
       //while(lip.length) p = p.then(lip.shift());
       //return p.then(()=>sqlite3);
-      return Promise.all(lip).then(()=>sqlite3);
+      return Promise.all(lip).then(()=>{
+        if(!sqlite3.__isUnderTest){
+          /* Delete references to internal-only APIs which are used by
+             some initializers. Retain them when running in test mode
+             so that we can add tests for them. */
+          delete sqlite3.util;
+          delete sqlite3.VfsHelper;
+          delete sqlite3.StructBinder;
+        }
+        return sqlite3;
+      });
     },
     /**
        scriptInfo ideally gets injected into this object by the

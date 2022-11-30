@@ -60,7 +60,7 @@ const toExportForES6 =
     initModuleState.sqlite3Dir = li.join('/') + '/';
   }
 
-  self.sqlite3InitModule = (...args)=>{
+  self.sqlite3InitModule = function ff(...args){
     //console.warn("Using replaced sqlite3InitModule()",self.location);
     return originalInit(...args).then((EmscriptenModule)=>{
       if(self.window!==self &&
@@ -76,10 +76,12 @@ const toExportForES6 =
             Emscripten details. */
         return EmscriptenModule;
       }
-      EmscriptenModule.sqlite3.scriptInfo = initModuleState;
-      //console.warn("sqlite3.scriptInfo =",EmscriptenModule.sqlite3.scriptInfo);
-      const f = EmscriptenModule.sqlite3.asyncPostInit;
-      delete EmscriptenModule.sqlite3.asyncPostInit;
+      const s = EmscriptenModule.sqlite3;
+      s.scriptInfo = initModuleState;
+      //console.warn("sqlite3.scriptInfo =",s.scriptInfo);
+      if(ff.__isUnderTest) s.__isUnderTest = true;
+      const f = s.asyncPostInit;
+      delete s.asyncPostInit;
       return f();
     }).catch((e)=>{
       console.error("Exception loading sqlite3 module:",e);

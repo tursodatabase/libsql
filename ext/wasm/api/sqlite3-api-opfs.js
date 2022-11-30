@@ -129,7 +129,7 @@ const installOpfsVfs = function callee(options){
     const log =    (...args)=>logImpl(2, ...args);
     const warn =   (...args)=>logImpl(1, ...args);
     const error =  (...args)=>logImpl(0, ...args);
-    const toss = function(...args){throw new Error(args.join(' '))};
+    const toss = sqlite3.util.toss;
     const capi = sqlite3.capi;
     const wasm = sqlite3.wasm;
     const sqlite3_vfs = capi.sqlite3_vfs;
@@ -191,6 +191,8 @@ const installOpfsVfs = function callee(options){
         s.count = s.time = 0;
       }
     }/*metrics*/;      
+    const opfsVfs = new sqlite3_vfs();
+    const opfsIoMethods = new sqlite3_io_methods();
     const promiseReject = function(err){
       opfsVfs.dispose();
       return promiseReject_(err);
@@ -213,8 +215,6 @@ const installOpfsVfs = function callee(options){
           ? new sqlite3_vfs(pDVfs)
           : null /* dVfs will be null when sqlite3 is built with
                     SQLITE_OS_OTHER. */;
-    const opfsVfs = new sqlite3_vfs();
-    const opfsIoMethods = new sqlite3_io_methods();
     opfsVfs.$iVersion = 2/*yes, two*/;
     opfsVfs.$szOsFile = capi.sqlite3_file.structInfo.sizeof;
     opfsVfs.$mxPathname = 1024/*sure, why not?*/;
@@ -633,77 +633,6 @@ const installOpfsVfs = function callee(options){
     */
     const __openFiles = Object.create(null);
 
-    /**
-       Installs a StructBinder-bound function pointer member of the
-       given name and function in the given StructType target object.
-       It creates a WASM proxy for the given function and arranges for
-       that proxy to be cleaned up when tgt.dispose() is called.  Throws
-       on the slightest hint of error (e.g. tgt is-not-a StructType,
-       name does not map to a struct-bound member, etc.).
-
-       Returns a proxy for this function which is bound to tgt and takes
-       2 args (name,func). That function returns the same thing,
-       permitting calls to be chained.
-
-       If called with only 1 arg, it has no side effects but returns a
-       func with the same signature as described above.
-    */
-    const installMethod = function callee(tgt, name, func){
-      if(!(tgt instanceof sqlite3.StructBinder.StructType)){
-        toss("Usage error: target object is-not-a StructType.");
-      }
-      if(1===arguments.length){
-        return (n,f)=>callee(tgt,n,f);
-      }
-      if(!callee.argcProxy){
-        callee.argcProxy = function(func,sig){
-          return function(...args){
-            if(func.length!==arguments.length){
-              toss("Argument mismatch. Native signature is:",sig);
-            }
-            return func.apply(this, args);
-          }
-        };
-        callee.removeFuncList = function(){
-          if(this.ondispose.__removeFuncList){
-            this.ondispose.__removeFuncList.forEach(
-              (v,ndx)=>{
-                if('number'===typeof v){
-                  try{wasm.uninstallFunction(v)}
-                  catch(e){/*ignore*/}
-                }
-                /* else it's a descriptive label for the next number in
-                   the list. */
-              }
-            );
-            delete this.ondispose.__removeFuncList;
-          }
-        };
-      }/*static init*/
-      const sigN = tgt.memberSignature(name);
-      if(sigN.length<2){
-        toss("Member",name," is not a function pointer. Signature =",sigN);
-      }
-      const memKey = tgt.memberKey(name);
-      const fProxy = 0
-      /** This middle-man proxy is only for use during development, to
-          confirm that we always pass the proper number of
-          arguments. We know that the C-level code will always use the
-          correct argument count. */
-            ? callee.argcProxy(func, sigN)
-            : func;
-      const pFunc = wasm.installFunction(fProxy, tgt.memberSignature(name, true));
-      tgt[memKey] = pFunc;
-      if(!tgt.ondispose) tgt.ondispose = [];
-      if(!tgt.ondispose.__removeFuncList){
-        tgt.ondispose.push('ondispose.__removeFuncList handler',
-                           callee.removeFuncList);
-        tgt.ondispose.__removeFuncList = [];
-      }
-      tgt.ondispose.__removeFuncList.push(memKey, pFunc);
-      return (n,f)=>callee(tgt, n, f);
-    }/*installMethod*/;
-
     const opTimer = Object.create(null);
     opTimer.op = undefined;
     opTimer.start = undefined;
@@ -729,7 +658,11 @@ const installOpfsVfs = function callee(options){
            success) release a sync-handle for it, but doing so would
            involve an inherent race condition. For the time being,
            pending a better solution, we simply report whether the
-           given pFile instance has a lock.
+           given pFile is open.
+
+           FIXME: we need to ask the async half whether a lock is
+           held, as it's possible (since long after this method was
+           implemented) that we do not hold a lock on an OPFS file.
         */
         const f = __openFiles[pFile];
         wasm.setMemValue(pOut, f.lockMode ? 1 : 0, 'i32');
@@ -948,14 +881,6 @@ const installOpfsVfs = function callee(options){
       };
     }
 
-    /* Install the vfs/io_methods into their C-level shared instances... */
-    for(let k of Object.keys(ioSyncWrappers)){
-      installMethod(opfsIoMethods, k, ioSyncWrappers[k]);
-    }
-    for(let k of Object.keys(vfsSyncWrappers)){
-      installMethod(opfsVfs, k, vfsSyncWrappers[k]);
-    }
-
     /**
        Expects an OPFS file path. It gets resolved, such that ".."
        components are properly expanded, and returned. If the 2nd arg
@@ -1095,8 +1020,9 @@ const installOpfsVfs = function callee(options){
        Irrevocably deletes _all_ files in the current origin's OPFS.
        Obviously, this must be used with great caution. It may throw
        an exception if removal of anything fails (e.g. a file is
-       locked), but the precise conditions under which it will throw
-       are not documented (so we cannot tell you what they are).
+       locked), but the precise conditions under which the underlying
+       APIs will throw are not documented (so we cannot tell you what
+       they are).
     */
     opfsUtil.rmfr = async function(){
       const dir = opfsUtil.rootDirectory, opt = {recurse: true};
@@ -1320,14 +1246,10 @@ const installOpfsVfs = function callee(options){
               and has finished initializing, so the real work can
               begin...*/
             try {
-              const rc = capi.sqlite3_vfs_register(opfsVfs.pointer, 0);
-              if(rc){
-                toss("sqlite3_vfs_register(OPFS) failed with rc",rc);
-              }
-              if(opfsVfs.pointer !== capi.sqlite3_vfs_find("opfs")){
-                toss("BUG: sqlite3_vfs_find() failed for just-installed OPFS VFS");
-              }
-              capi.sqlite3_vfs_register.addReference(opfsVfs, opfsIoMethods);
+              sqlite3.VfsHelper.installVfs({
+                io: {struct: opfsIoMethods, methods: ioSyncWrappers},
+                vfs: {struct: opfsVfs, methods: vfsSyncWrappers}
+              });
               state.sabOPView = new Int32Array(state.sabOP);
               state.sabFileBufView = new Uint8Array(state.sabIO, 0, state.fileBufferSize);
               state.sabS11nView = new Uint8Array(state.sabIO, state.sabS11nOffset, state.sabS11nSize);

@@ -58,8 +58,6 @@ if('undefined' !== typeof Module){ // presumably an Emscripten build
     self.S = sqlite3;
   }
 
-  /* Clean up temporary references to our APIs... */
-  delete sqlite3.util /* arguable, but these are (currently) internal-use APIs */;
   Module.sqlite3 = sqlite3 /* Needed for customized sqlite3InitModule() to be able to
                               pass the sqlite3 object off to the client. */;
 }else{

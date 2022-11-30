@@ -287,6 +287,7 @@ sqlite3-api.jses += $(dir.common)/whwasmutil.js
 sqlite3-api.jses += $(dir.jacc)/jaccwabyt.js
 sqlite3-api.jses += $(dir.api)/sqlite3-api-glue.js
 sqlite3-api.jses += $(sqlite3-api-build-version.js)
+sqlite3-api.jses += $(dir.api)/sqlite3-vfs-helper.js
 sqlite3-api.jses += $(dir.api)/sqlite3-api-oo1.js
 sqlite3-api.jses += $(dir.api)/sqlite3-api-worker1.js
 sqlite3-api.jses += $(dir.api)/sqlite3-api-opfs.js

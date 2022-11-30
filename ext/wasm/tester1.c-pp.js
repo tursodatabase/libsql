@@ -1867,6 +1867,9 @@ self.sqlite3InitModule = sqlite3InitModule;
     }
     importScripts(sqlite3Js);
   }
+  self.sqlite3InitModule.__isUnderTest =
+    true /* disables certain API-internal cleanup so that we can
+            test internal APIs from here */;
   self.sqlite3InitModule({
     print: log,
     printErr: error
