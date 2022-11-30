@@ -705,7 +705,7 @@ static void translateColumnToCopy(
 #if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(WHERETRACE_ENABLED)
 static void whereTraceIndexInfoInputs(sqlite3_index_info *p){
   int i;
-  if( !sqlite3WhereTrace ) return;
+  if( (sqlite3WhereTrace & 0x10)==0 ) return;
   for(i=0; i<p->nConstraint; i++){
     sqlite3DebugPrintf(
        "  constraint[%d]: col=%d termid=%d op=%d usabled=%d collseq=%s\n",
@@ -725,7 +725,7 @@ static void whereTraceIndexInfoInputs(sqlite3_index_info *p){
 }
 static void whereTraceIndexInfoOutputs(sqlite3_index_info *p){
   int i;
-  if( !sqlite3WhereTrace ) return;
+  if( (sqlite3WhereTrace & 0x10)==0 ) return;
   for(i=0; i<p->nConstraint; i++){
     sqlite3DebugPrintf("  usage[%d]: argvIdx=%d omit=%d\n",
        i,
@@ -1742,7 +1742,7 @@ static int whereRangeSkipScanEst(
       int nAdjust = (sqlite3LogEst(p->nSample) - sqlite3LogEst(nDiff));
       pLoop->nOut -= nAdjust;
       *pbDone = 1;
-      WHERETRACE(0x10, ("range skip-scan regions: %u..%u  adjust=%d est=%d\n",
+      WHERETRACE(0x20, ("range skip-scan regions: %u..%u  adjust=%d est=%d\n",
                            nLower, nUpper, nAdjust*-1, pLoop->nOut));
     }
 
@@ -1920,7 +1920,7 @@ static int whereRangeScanEst(
         if( nNew<nOut ){
           nOut = nNew;
         }
-        WHERETRACE(0x10, ("STAT4 range scan: %u..%u  est=%d\n",
+        WHERETRACE(0x20, ("STAT4 range scan: %u..%u  est=%d\n",
                            (u32)iLower, (u32)iUpper, nOut));
       }
     }else{
@@ -1953,7 +1953,7 @@ static int whereRangeScanEst(
   if( nNew<nOut ) nOut = nNew;
 #if defined(WHERETRACE_ENABLED)
   if( pLoop->nOut>nOut ){
-    WHERETRACE(0x10,("Range scan lowers nOut from %d to %d\n",
+    WHERETRACE(0x20,("Range scan lowers nOut from %d to %d\n",
                     pLoop->nOut, nOut));
   }
 #endif
@@ -2018,7 +2018,7 @@ static int whereEqualScanEst(
   pBuilder->nRecValid = nEq;
 
   whereKeyStats(pParse, p, pRec, 0, a);
-  WHERETRACE(0x10,("equality scan regions %s(%d): %d\n",
+  WHERETRACE(0x20,("equality scan regions %s(%d): %d\n",
                    p->zName, nEq-1, (int)a[1]));
   *pnRow = a[1];
   
@@ -2068,7 +2068,7 @@ static int whereInScanEst(
   if( rc==SQLITE_OK ){
     if( nRowEst > nRow0 ) nRowEst = nRow0;
     *pnRow = nRowEst;
-    WHERETRACE(0x10,("IN row estimate: est=%d\n", nRowEst));
+    WHERETRACE(0x20,("IN row estimate: est=%d\n", nRowEst));
   }
   assert( pBuilder->nRecValid==nRecValid );
   return rc;
@@ -2177,7 +2177,7 @@ void sqlite3WhereLoopPrint(WhereLoop *p, WhereClause *pWC){
     sqlite3DebugPrintf(" f %06x N %d", p->wsFlags, p->nLTerm);
   }
   sqlite3DebugPrintf(" cost %d,%d,%d\n", p->rSetup, p->rRun, p->nOut);
-  if( p->nLTerm && (sqlite3WhereTrace & 0x100)!=0 ){
+  if( p->nLTerm && (sqlite3WhereTrace & 0x4000)!=0 ){
     int i;
     for(i=0; i<p->nLTerm; i++){
       sqlite3WhereTermPrint(p->aLTerm[i], i);
@@ -3055,7 +3055,7 @@ static int whereLoopAddBtreeIndex(
              && pNew->nOut+10 > pProbe->aiRowLogEst[0]
             ){
 #if WHERETRACE_ENABLED /* 0x01 */
-              if( sqlite3WhereTrace & 0x01 ){
+              if( sqlite3WhereTrace & 0x20 ){
                 sqlite3DebugPrintf(
                    "STAT4 determines term has low selectivity:\n");
                 sqlite3WhereTermPrint(pTerm, 999);
@@ -3611,7 +3611,7 @@ static int whereLoopAddBtree(
         if( m==TOPBIT || (pProbe->bHasExpr && !pProbe->bHasVCol && m!=0) ){
           u32 isCov = whereIsCoveringIndex(pWInfo, pProbe, pSrc->iCursor);
           if( isCov==0 ){
-            WHERETRACE(0xff,
+            WHERETRACE(0x200,
                ("-> %s is not a covering index"
                 " according to whereIsCoveringIndex()\n", pProbe->zName));
             assert( m!=0 );
@@ -3619,18 +3619,18 @@ static int whereLoopAddBtree(
             m = 0;
             pNew->wsFlags |= isCov;
             if( isCov & WHERE_IDX_ONLY ){
-              WHERETRACE(0xff,
+              WHERETRACE(0x200,
                  ("-> %s is a covering expression index"
                   " according to whereIsCoveringIndex()\n", pProbe->zName));
             }else{
               assert( isCov==WHERE_EXPRIDX );
-              WHERETRACE(0xff,
+              WHERETRACE(0x200,
                  ("-> %s might be a covering expression index"
                   " according to whereIsCoveringIndex()\n", pProbe->zName));
             }
           }
         }else if( m==0 ){
-          WHERETRACE(0xff,
+          WHERETRACE(0x200,
              ("-> %s a covering index according to bitmasks\n",
              pProbe->zName, m==0 ? "is" : "is not"));
           pNew->wsFlags = WHERE_IDX_ONLY | WHERE_INDEXED;
@@ -3807,7 +3807,7 @@ static int whereLoopAddVirtualOne(
       ** that the particular combination of parameters provided is unusable.
       ** Make no entries in the loop table.
       */
-      WHERETRACE(0xffff, ("  ^^^^--- non-viable plan rejected!\n"));
+      WHERETRACE(0xffffffff, ("  ^^^^--- non-viable plan rejected!\n"));
       return SQLITE_OK;
     }
     return rc;
@@ -3918,7 +3918,7 @@ static int whereLoopAddVirtualOne(
     sqlite3_free(pNew->u.vtab.idxStr);
     pNew->u.vtab.needFree = 0;
   }
-  WHERETRACE(0xffff, ("  bIn=%d prereqIn=%04llx prereqOut=%04llx\n",
+  WHERETRACE(0xffffffff, ("  bIn=%d prereqIn=%04llx prereqOut=%04llx\n",
                       *pbIn, (sqlite3_uint64)mPrereq,
                       (sqlite3_uint64)(pNew->prereq & ~mPrereq)));
 
@@ -4110,7 +4110,7 @@ static int whereLoopAddVirtual(
 
   /* First call xBestIndex() with all constraints usable. */
   WHERETRACE(0x800, ("BEGIN %s.addVirtual()\n", pSrc->pTab->zName));
-  WHERETRACE(0x40, ("  VirtualOne: all usable\n"));
+  WHERETRACE(0x800, ("  VirtualOne: all usable\n"));
   rc = whereLoopAddVirtualOne(
       pBuilder, mPrereq, ALLBITS, 0, p, mNoOmit, &bIn, &bRetry
   );
@@ -4135,7 +4135,7 @@ static int whereLoopAddVirtual(
     /* If the plan produced by the earlier call uses an IN(...) term, call
     ** xBestIndex again, this time with IN(...) terms disabled. */
     if( bIn ){
-      WHERETRACE(0x40, ("  VirtualOne: all usable w/o IN\n"));
+      WHERETRACE(0x800, ("  VirtualOne: all usable w/o IN\n"));
       rc = whereLoopAddVirtualOne(
           pBuilder, mPrereq, ALLBITS, WO_IN, p, mNoOmit, &bIn, 0);
       assert( bIn==0 );
@@ -4161,7 +4161,7 @@ static int whereLoopAddVirtual(
       mPrev = mNext;
       if( mNext==ALLBITS ) break;
       if( mNext==mBest || mNext==mBestNoIn ) continue;
-      WHERETRACE(0x40, ("  VirtualOne: mPrev=%04llx mNext=%04llx\n",
+      WHERETRACE(0x800, ("  VirtualOne: mPrev=%04llx mNext=%04llx\n",
                        (sqlite3_uint64)mPrev, (sqlite3_uint64)mNext));
       rc = whereLoopAddVirtualOne(
           pBuilder, mPrereq, mNext|mPrereq, 0, p, mNoOmit, &bIn, 0);
@@ -4175,7 +4175,7 @@ static int whereLoopAddVirtual(
     ** that requires no source tables at all (i.e. one guaranteed to be
     ** usable), make a call here with all source tables disabled */
     if( rc==SQLITE_OK && seenZero==0 ){
-      WHERETRACE(0x40, ("  VirtualOne: all disabled\n"));
+      WHERETRACE(0x800, ("  VirtualOne: all disabled\n"));
       rc = whereLoopAddVirtualOne(
           pBuilder, mPrereq, mPrereq, 0, p, mNoOmit, &bIn, 0);
       if( bIn==0 ) seenZeroNoIN = 1;
@@ -4185,7 +4185,7 @@ static int whereLoopAddVirtual(
     ** that requires no source tables at all and does not use an IN(...)
     ** operator, make a final call to obtain one here.  */
     if( rc==SQLITE_OK && seenZeroNoIN==0 ){
-      WHERETRACE(0x40, ("  VirtualOne: all disabled and w/o IN\n"));
+      WHERETRACE(0x800, ("  VirtualOne: all disabled and w/o IN\n"));
       rc = whereLoopAddVirtualOne(
           pBuilder, mPrereq, mPrereq, WO_IN, p, mNoOmit, &bIn, 0);
     }
@@ -4241,7 +4241,7 @@ static int whereLoopAddOr(
       sSubBuild = *pBuilder;
       sSubBuild.pOrSet = &sCur;
 
-      WHERETRACE(0x200, ("Begin processing OR-clause %p\n", pTerm));
+      WHERETRACE(0x400, ("Begin processing OR-clause %p\n", pTerm));
       for(pOrTerm=pOrWC->a; pOrTerm<pOrWCEnd; pOrTerm++){
         if( (pOrTerm->eOperator & WO_AND)!=0 ){
           sSubBuild.pWC = &pOrTerm->u.pAndInfo->wc;
@@ -4258,9 +4258,9 @@ static int whereLoopAddOr(
         }
         sCur.n = 0;
 #ifdef WHERETRACE_ENABLED
-        WHERETRACE(0x200, ("OR-term %d of %p has %d subterms:\n", 
+        WHERETRACE(0x400, ("OR-term %d of %p has %d subterms:\n", 
                    (int)(pOrTerm-pOrWC->a), pTerm, sSubBuild.pWC->nTerm));
-        if( sqlite3WhereTrace & 0x400 ){
+        if( sqlite3WhereTrace & 0x20000 ){
           sqlite3WhereClausePrint(sSubBuild.pWC);
         }
 #endif
@@ -4322,7 +4322,7 @@ static int whereLoopAddOr(
         pNew->prereq = sSum.a[i].prereq;
         rc = whereLoopInsert(pBuilder, pNew);
       }
-      WHERETRACE(0x200, ("End processing OR-clause %p\n", pTerm));
+      WHERETRACE(0x400, ("End processing OR-clause %p\n", pTerm));
     }
   }
   return rc;
@@ -5337,7 +5337,7 @@ static int whereShortCut(WhereLoopBuilder *pBuilder){
     pLoop->cId = '0';
 #endif
 #ifdef WHERETRACE_ENABLED
-    if( sqlite3WhereTrace ){
+    if( sqlite3WhereTrace & 0x02 ){
       sqlite3DebugPrintf("whereShortCut() used to compute solution\n");
     }
 #endif
@@ -5467,7 +5467,7 @@ static SQLITE_NOINLINE Bitmask whereOmitNoopJoin(
       }
     }
     if( pTerm<pEnd ) continue;
-    WHERETRACE(0xffff, ("-> drop loop %c not used\n", pLoop->cId));
+    WHERETRACE(0xffffffff, ("-> drop loop %c not used\n", pLoop->cId));
     notReady &= ~pLoop->maskSelf;
     for(pTerm=pWInfo->sWC.a; pTerm<pEnd; pTerm++){
       if( (pTerm->prereqAll & pLoop->maskSelf)!=0 ){
@@ -5527,7 +5527,7 @@ static SQLITE_NOINLINE void whereCheckIfBloomFilterIsUseful(
         testcase( pItem->fg.jointype & JT_LEFT );
         pLoop->wsFlags |= WHERE_BLOOMFILTER;
         pLoop->wsFlags &= ~WHERE_IDX_ONLY;
-        WHERETRACE(0xffff, (
+        WHERETRACE(0xffffffff, (
            "-> use Bloom-filter on loop %c because there are ~%.1e "
            "lookups into %s which has only ~%.1e rows\n",
            pLoop->cId, (double)sqlite3LogEstToInt(nSearch), pTab->zName,
@@ -5894,13 +5894,13 @@ WhereInfo *sqlite3WhereBegin(
 
   /* Construct the WhereLoop objects */
 #if defined(WHERETRACE_ENABLED)
-  if( sqlite3WhereTrace & 0xffff ){
+  if( sqlite3WhereTrace & 0xffffffff ){
     sqlite3DebugPrintf("*** Optimizer Start *** (wctrlFlags: 0x%x",wctrlFlags);
     if( wctrlFlags & WHERE_USE_LIMIT ){
       sqlite3DebugPrintf(", limit: %d", iAuxArg);
     }
     sqlite3DebugPrintf(")\n");
-    if( sqlite3WhereTrace & 0x100 ){
+    if( sqlite3WhereTrace & 0x8000 ){
       Select sSelect;
       memset(&sSelect, 0, sizeof(sSelect));
       sSelect.selFlags = SF_WhereBegin;
@@ -5910,10 +5910,10 @@ WhereInfo *sqlite3WhereBegin(
       sSelect.pEList = pResultSet;
       sqlite3TreeViewSelect(0, &sSelect, 0);
     }
-  }
-  if( sqlite3WhereTrace & 0x100 ){ /* Display all terms of the WHERE clause */
-    sqlite3DebugPrintf("---- WHERE clause at start of analysis:\n");
-    sqlite3WhereClausePrint(sWLB.pWC);
+    if( sqlite3WhereTrace & 0x4000 ){ /* Display all WHERE clause terms */
+      sqlite3DebugPrintf("---- WHERE clause at start of analysis:\n");
+      sqlite3WhereClausePrint(sWLB.pWC);
+    }
   }
 #endif
 
@@ -5929,7 +5929,7 @@ WhereInfo *sqlite3WhereBegin(
     ** loops will be built using the revised truthProb values. */
     if( sWLB.bldFlags2 & SQLITE_BLDF2_2NDPASS ){
       WHERETRACE_ALL_LOOPS(pWInfo, sWLB.pWC);
-      WHERETRACE(0xffff, 
+      WHERETRACE(0xffffffff, 
            ("**** Redo all loop computations due to"
             " TERM_HIGHTRUTH changes ****\n"));
       while( pWInfo->pLoops ){
@@ -6015,11 +6015,11 @@ WhereInfo *sqlite3WhereBegin(
   }
 
 #if defined(WHERETRACE_ENABLED)
-  if( sqlite3WhereTrace & 0x100 ){ /* Display all terms of the WHERE clause */
+  if( sqlite3WhereTrace & 0x4000 ){ /* Display all terms of the WHERE clause */
     sqlite3DebugPrintf("---- WHERE clause at end of analysis:\n");
     sqlite3WhereClausePrint(sWLB.pWC);
   }
-  WHERETRACE(0xffff,("*** Optimizer Finished ***\n"));
+  WHERETRACE(0xffffffff,("*** Optimizer Finished ***\n"));
 #endif
   pWInfo->pParse->nQueryLoop += pWInfo->nRowOut;
 

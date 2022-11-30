@@ -1073,6 +1073,36 @@ extern u32 sqlite3WhereTrace;
 # define WHERETRACE(K,X)
 #endif
 
+/*
+** Bits for the sqlite3WhereTrace mask:
+**
+** (---any--)   Top-level block structure
+** 0x-------F   High-level debug messages
+** 0x----FFF-   More detail
+** 0xFFFF----   Low-level debug messages
+**
+** 0x00000001   Code generation
+** 0x00000002   Solver
+** 0x00000004   Solver costs
+** 0x00000008   WhereLoop inserts
+**
+** 0x00000010   Display sqlite3_index_info xBestIndex calls
+** 0x00000020   Range an equality scan metrics
+** 0x00000040   IN operator decisions
+** 0x00000080   WhereLoop cost adjustements
+** 0x00000100
+** 0x00000200   Covering index decisions
+** 0x00000400   OR optimization
+** 0x00000800   Index scanner
+** 0x00001000   More details associated with code generation
+** 0x00002000
+** 0x00004000   Show all WHERE terms at key points
+** 0x00008000   Show the full SELECT statement at key places
+**
+** 0x00010000   Show more detail when printing WHERE terms
+** 0x00020000   Show WHERE terms returned from whereScanNext()
+*/
+
 
 /*
 ** An instance of the following structure is used to store the busy-handler
