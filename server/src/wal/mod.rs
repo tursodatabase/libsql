@@ -344,7 +344,8 @@ impl std::ops::Drop for WalConnection {
             rusqlite::ffi::sqlite3_close(self.inner.handle());
         }
         let _ = self.inner;
-        let _ = unsafe { Box::from_raw(self.wal_methods.get_mut()) };
+        let _ =
+            unsafe { Box::from_raw(self.wal_methods.load(std::sync::atomic::Ordering::Relaxed)) };
     }
 }
 
