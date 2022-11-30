@@ -269,6 +269,16 @@ const installOpfsVfs = function callee(options){
       return new Int16Array(buffer)[0] === 256;
     })();
     /**
+       asyncIdleWaitTime is how long (ms) to wait, in the async proxy,
+       for each Atomics.wait() when waiting on inbound VFS API calls.
+       We need to wake up periodically to give the thread a chance to
+       do other things. If this is too high (e.g. 500ms) then even two
+       workers/tabs can easily run into locking errors. Some multiple
+       of this value is also used for determining how long to wait on
+       lock contention to free up.
+    */
+    state.asyncIdleWaitTime = 100;
+    /**
        Whether the async counterpart should log exceptions to
        the serialization channel. That produces a great deal of
        noise for seemingly innocuous things like xAccess() checks

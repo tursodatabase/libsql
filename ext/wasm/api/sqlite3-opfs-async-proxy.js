@@ -298,7 +298,7 @@ const installAsyncProxy = function(self){
     if(!fh.syncHandle){
       const t = performance.now();
       log("Acquiring sync handle for",fh.filenameAbs);
-      const maxTries = 6, msBase = 300;
+      const maxTries = 6, msBase = state.asyncIdleWaitTime * 3;
       let i = 1, ms = msBase;
       for(; true; ms = msBase * ++i){
         try {
@@ -316,7 +316,6 @@ const installAsyncProxy = function(self){
           }
           warn("Error getting sync handle for",opName+"(). Waiting",ms,
                "ms and trying again.",fh.filenameAbs,e);
-          //await releaseImplicitLocks();
           Atomics.wait(state.sabOPView, state.opIds.retry, 0, ms);
         }
       }
@@ -835,17 +834,10 @@ const installAsyncProxy = function(self){
       o.key = k;
       o.f = vi;
     }
-    /**
-       waitTime is how long (ms) to wait for each Atomics.wait().
-       We need to wake up periodically to give the thread a chance
-       to do other things. If this is too high (e.g. 500ms) then
-       even two workers/tabs can easily run into locking errors.
-    */
-    const waitTime = 100;
     while(!flagAsyncShutdown){
       try {
         if('timed-out'===Atomics.wait(
-          state.sabOPView, state.opIds.whichOp, 0, waitTime
+          state.sabOPView, state.opIds.whichOp, 0, state.asyncIdleWaitTime
         )){
           await releaseImplicitLocks();
           continue;
@@ -874,20 +866,11 @@ const installAsyncProxy = function(self){
           case 'opfs-async-init':{
             /* Receive shared state from synchronous partner */
             const opt = data.args;
-            state.littleEndian = opt.littleEndian;
-            state.asyncS11nExceptions = opt.asyncS11nExceptions;
+            for(const k in opt) state[k] = opt[k];
             state.verbose = opt.verbose ?? 1;
-            state.fileBufferSize = opt.fileBufferSize;
-            state.sabS11nOffset = opt.sabS11nOffset;
-            state.sabS11nSize = opt.sabS11nSize;
-            state.sabOP = opt.sabOP;
             state.sabOPView = new Int32Array(state.sabOP);
-            state.sabIO = opt.sabIO;
             state.sabFileBufView = new Uint8Array(state.sabIO, 0, state.fileBufferSize);
             state.sabS11nView = new Uint8Array(state.sabIO, state.sabS11nOffset, state.sabS11nSize);
-            state.opIds = opt.opIds;
-            state.sq3Codes = opt.sq3Codes;
-            state.opfsFlags = opt.opfsFlags;
             Object.keys(vfsAsyncImpls).forEach((k)=>{
               if(!Number.isFinite(state.opIds[k])){
                 toss("Maintenance required: missing state.opIds[",k,"]");
