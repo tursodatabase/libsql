@@ -659,13 +659,9 @@ const installOpfsVfs = function callee(options){
            involve an inherent race condition. For the time being,
            pending a better solution, we simply report whether the
            given pFile is open.
-
-           FIXME: we need to ask the async half whether a lock is
-           held, as it's possible (since long after this method was
-           implemented) that we do not hold a lock on an OPFS file.
         */
         const f = __openFiles[pFile];
-        wasm.setMemValue(pOut, f.lockMode ? 1 : 0, 'i32');
+        wasm.setMemValue(pOut, f.lockType ? 1 : 0, 'i32');
         return 0;
       },
       xClose: function(pFile){
@@ -706,7 +702,11 @@ const installOpfsVfs = function callee(options){
         mTimeStart('xLock');
         const f = __openFiles[pFile];
         let rc = 0;
-        if( capi.SQLITE_LOCK_NONE === f.lockType ) {
+        /* All OPFS locks are exclusive locks. If xLock() has
+           previously succeeded, do nothing except record the lock
+           type. If no lock is active, have the async counterpart
+           lock the file. */
+        if( !f.lockType ) {
           rc = opRun('xLock', pFile, lockType);
           if( 0===rc ) f.lockType = lockType;
         }else{
