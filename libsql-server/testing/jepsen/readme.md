@@ -15,8 +15,8 @@ vagrant up
 TERM=screen-256color vagrant ssh
 ```
 
-This will drop you in a shell on the vagrant. You need to run as root, so run `sudo su` to get a root shell.
+This will drop you in a shell on the vagrant
 
-once there, try to run `ssh n1`: this should drop you in one of the node shell. exit this node shell.
+once there, try to run `ssh root@n1`: this should drop you into one of the node's shell. Exit this node's shell.
 
-navigate to the `/jepsen` directory and run `lein run test` to run the jepsen test suite.
+Navigate to the `/jepsen` directory and run `lein run test` to run the jepsen test suite.

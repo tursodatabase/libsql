@@ -1,21 +1,22 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-# All Vagrant configuration is done below. The "2" in Vagrant.configure
-# configures the configuration version (we support older styles for
-# backwards compatibility). Please don't change it unless you know what
-# you're doing.
 Vagrant.configure("2") do |config|
-  # The most common configuration options are documented and commented below.
-  # For a complete reference, please see the online documentation at
-  # https://docs.vagrantup.com.
+  config.vm.provider "virtualbox" do |v|
+    v.cpus = 4
+    v.memory = 8192
+  end
 
-  # Every Vagrant development environment requires a box. You can search for
-  # boxes at https://vagrantcloud.com/search.
   config.vm.box = "debian/buster64"
   config.vm.network "forwarded_port", guest: 8080, host: 8081
 
   config.vm.synced_folder "../cluster-test", "/jepsen", type: "rsync"
+
+  config.vm.provision "shell" do |shell|
+    shell.inline  = <<-SCRIPT
+      ssh-keygen -t rsa -q -f "/home/vagrant/.ssh/id_rsa" -N ""
+    SCRIPT
+  end
   # setup lxc nodes
   config.vm.provision "shell" do |shell|
     shell.privileged = true

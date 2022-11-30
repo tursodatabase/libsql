@@ -26,12 +26,12 @@ virsh net-start default
 # setup dhcp
 echo "prepend domain-name-servers 192.168.122.1;" >>/etc/dhcp/dhclient.conf
 
-ssh-keygen -t rsa -q -f "$HOME/.ssh/id_rsa" -N ""
-
+printf "adding key to containers"
+cat /home/vagrant/.ssh/id_rsa.pub
 for i in {1..10}; do
     mkdir -p /var/lib/lxc/n${i}/rootfs/root/.ssh
     chmod 700 /var/lib/lxc/n${i}/rootfs/root/.ssh/
-    cp ~/.ssh/id_rsa.pub /var/lib/lxc/n${i}/rootfs/root/.ssh/authorized_keys
+    cp /home/vagrant/.ssh/id_rsa.pub /var/lib/lxc/n${i}/rootfs/root/.ssh/authorized_keys
     chmod 644 /var/lib/lxc/n${i}/rootfs/root/.ssh/authorized_keys
 done
 
@@ -47,7 +47,7 @@ for i in {1..10}; do
     lxc-attach -n n${i} -- systemctl restart sshd;
 done
 
-for n in {1..10}; do ssh-keyscan -t rsa n$n; done >> ~/.ssh/known_hosts
+for n in {1..10}; do ssh-keyscan -t rsa n$n; done >> /home/vagrant/.ssh/known_hosts
 
 for i in {1..10}; do
     lxc-attach -n n${i} -- apt install -y sudo
