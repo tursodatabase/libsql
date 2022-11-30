@@ -287,11 +287,12 @@ const installAsyncProxy = function(self){
      handle object (which must be a valid handle object, as created by
      xOpen()), lazily opening it if needed.
 
-     In order to help alleviate cross-tab contention for a dabase,
-     if an exception is thrown while acquiring the handle, this routine
-     will wait briefly and try again, up to 3 times. If acquisition
-     still fails at that point it will give up and propagate the
-     exception.
+     In order to help alleviate cross-tab contention for a dabase, if
+     an exception is thrown while acquiring the handle, this routine
+     will wait briefly and try again, up to some fixed number of
+     times. If acquisition still fails at that point it will give up
+     and propagate the exception. Client-level code will see that as
+     an I/O error.
   */
   const getSyncHandle = async (fh,opName)=>{
     if(!fh.syncHandle){
@@ -323,7 +324,7 @@ const installAsyncProxy = function(self){
           'in',performance.now() - t,'ms');
       if(!fh.xLock){
         __implicitLocks.add(fh.fid);
-        log("Auto-locked for",opName+"()",fh.fid,fh.filenameAbs);
+        log("Acquired implicit lock for",opName+"()",fh.fid,fh.filenameAbs);
       }
     }
     return fh.syncHandle;
