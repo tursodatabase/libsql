@@ -18,10 +18,10 @@ jobs:
     - name: Install deps
       run: sudo apt-get update -y && sudo apt-get install -y bundler
     - uses: actions/checkout@v3
+      with:
+        submodules: recursive
     - name: Check format
       run: cargo fmt --check
-    - name: Checkout libsql
-      run: ( git submodule update --init --force --recursive )
     - name: Clippy
       run: cargo clippy
     - name: Build
