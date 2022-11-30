@@ -69,6 +69,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     */
     const aPtr = wasm.xWrap.argAdapter('*');
     wasm.xWrap.argAdapter('sqlite3*', aPtr)
+    ('sqlite3_filename', aPtr)
     ('sqlite3_stmt*', aPtr)
     ('sqlite3_context*', aPtr)
     ('sqlite3_value*', aPtr)

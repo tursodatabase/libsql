@@ -618,16 +618,6 @@ void sqlite3VdbeRegisterDump(Vdbe *v){
 #endif
 
 
-#ifdef VDBE_PROFILE
-
-/* 
-** hwtime.h contains inline assembler code for implementing 
-** high-performance timing routines.
-*/
-#include "hwtime.h"
-
-#endif
-
 #ifndef NDEBUG
 /*
 ** This function is only called from within an assert() expression. It

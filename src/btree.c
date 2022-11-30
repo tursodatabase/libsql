@@ -7127,12 +7127,12 @@ static int insertCell(
     assert( get2byte(&data[pPage->hdrOffset+3])==pPage->nCell || CORRUPT_DB );
 #ifndef SQLITE_OMIT_AUTOVACUUM
     if( pPage->pBt->autoVacuum ){
-      int rc = SQLITE_OK;
+      int rc2 = SQLITE_OK;
       /* The cell may contain a pointer to an overflow page. If so, write
       ** the entry for the overflow page into the pointer map.
       */
-      ptrmapPutOvflPtr(pPage, pPage, pCell, &rc);
-      if( rc ) return rc;
+      ptrmapPutOvflPtr(pPage, pPage, pCell, &rc2);
+      if( rc2 ) return rc2;
     }
 #endif
   }
@@ -11082,6 +11082,17 @@ int sqlite3BtreeIsReadonly(Btree *p){
 ** Return the size of the header added to each page by this module.
 */
 int sqlite3HeaderSizeBtree(void){ return ROUND8(sizeof(MemPage)); }
+
+/*
+** If no transaction is active and the database is not a temp-db, clear
+** the in-memory pager cache.
+*/
+void sqlite3BtreeClearCache(Btree *p){
+  BtShared *pBt = p->pBt;
+  if( pBt->inTransaction==TRANS_NONE ){
+    sqlite3PagerClearCache(pBt->pPager);
+  }
+}
 
 #if !defined(SQLITE_OMIT_SHARED_CACHE)
 /*

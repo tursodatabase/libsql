@@ -3,9 +3,12 @@ importScripts(
 );
 self.sqlite3InitModule().then(async function(sqlite3){
   const urlArgs = new URL(self.location.href).searchParams;
-  const wName = urlArgs.get('workerId') || Math.round(Math.random()*10000);
+  const options = {
+    workerName: urlArgs.get('workerId') || Math.round(Math.random()*10000),
+    unlockAsap: urlArgs.get('opfs-unlock-asap') || 0 /*EXPERIMENTAL*/
+  };
   const wPost = (type,...payload)=>{
-    postMessage({type, worker: wName, payload});
+    postMessage({type, worker: options.workerName, payload});
   };
   const stdout = (...args)=>wPost('stdout',...args);
   const stderr = (...args)=>wPost('stderr',...args);
@@ -43,7 +46,10 @@ self.sqlite3InitModule().then(async function(sqlite3){
     }
   };
   const run = async function(){
-    db = new sqlite3.opfs.OpfsDb(dbName,'c');
+    db = new sqlite3.oo1.OpfsDb({
+      filename: 'file:'+dbName+'?opfs-unlock-asap='+options.unlockAsap,
+      flags: 'c'
+    });
     sqlite3.capi.sqlite3_busy_timeout(db.pointer, 5000);
     db.transaction((db)=>{
       db.exec([
@@ -52,7 +58,8 @@ self.sqlite3InitModule().then(async function(sqlite3){
       ]);
     });
 
-    const maxIterations = 10;
+    const maxIterations =
+          urlArgs.has('iterations') ? (+urlArgs.get('iterations') || 10) : 10;
     stdout("Starting interval-based db updates with delay of",interval.delay,"ms.");
     const doWork = async ()=>{
       const tm = new Date().getTime();
@@ -62,7 +69,7 @@ self.sqlite3InitModule().then(async function(sqlite3){
       try{
         db.exec({
           sql:"INSERT OR REPLACE INTO t1(w,v) VALUES(?,?)",
-          bind: [wName, new Date().getTime()]
+          bind: [options.workerName, new Date().getTime()]
         });
         //stdout("Set",prefix);
       }catch(e){
@@ -70,11 +77,12 @@ self.sqlite3InitModule().then(async function(sqlite3){
       }
     };
     if(1){/*use setInterval()*/
-      interval.handle = setInterval(async ()=>{
+      setTimeout(async function timer(){
         await doWork();
         if(interval.error || maxIterations === interval.count){
-          clearInterval(interval.handle);
           finish();
+        }else{
+          setTimeout(timer, interval.delay);
         }
       }, interval.delay);
     }else{

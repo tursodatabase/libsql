@@ -40,8 +40,15 @@ set TOP [lindex $argv 0]
 #
 set useapicall 0
 
+# Include sqlite3recover.h?
+#
+set enable_recover 0
+
 if {[lsearch -regexp [lrange $argv 1 end] {^-+useapicall}] != -1} {
   set useapicall 1
+}
+if {[lsearch -regexp [lrange $argv 1 end] {^-+enable-recover}] != -1} {
+  set enable_recover 1
 }
 
 # Get the SQLite version number (ex: 3.6.18) from the $TOP/VERSION file.
@@ -84,6 +91,9 @@ set filelist [subst {
   $TOP/ext/session/sqlite3session.h
   $TOP/ext/fts5/fts5.h
 }]
+if {$enable_recover} {
+  lappend filelist "$TOP/ext/recover/sqlite3recover.h"
+}
 
 # These are the functions that accept a variable number of arguments.  They
 # always need to use the "cdecl" calling convention even when another calling

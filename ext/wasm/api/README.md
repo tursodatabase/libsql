@@ -23,13 +23,13 @@ The overall idea is that the following files get concatenated
 together, in the listed order, the resulting file is loaded by a
 browser client:
 
-- `sqlite3-api-prologue.js`\  
+- **`sqlite3-api-prologue.js`**\  
   Contains the initial bootstrap setup of the sqlite3 API
   objects. This is exposed as a function, rather than objects, so that
   the next step can pass in a config object which abstracts away parts
   of the WASM environment, to facilitate plugging it in to arbitrary
   WASM toolchains.
-- `../common/whwasmutil.js`\  
+- **`../common/whwasmutil.js`**\  
   A semi-third-party collection of JS/WASM utility code intended to
   replace much of the Emscripten glue. The sqlite3 APIs internally use
   these APIs instead of their Emscripten counterparts, in order to be
@@ -38,47 +38,52 @@ browser client:
   toolchains. It is "semi-third-party" in that it was created in order
   to support this tree but is standalone and maintained together
   with...
-- `../jaccwabyt/jaccwabyt.js`\  
+- **`../jaccwabyt/jaccwabyt.js`**\  
   Another semi-third-party API which creates bindings between JS
   and C structs, such that changes to the struct state from either JS
   or C are visible to the other end of the connection. This is also an
   independent spinoff project, conceived for the sqlite3 project but
   maintained separately.
-- `sqlite3-api-glue.js`\  
+- **`sqlite3-api-glue.js`**\  
   Invokes functionality exposed by the previous two files to
   flesh out low-level parts of `sqlite3-api-prologue.js`. Most of
   these pieces related to the `sqlite3.capi.wasm` object.
-- `sqlite3-api-build-version.js`\  
+- **`sqlite3-api-build-version.js`**\  
   Gets created by the build process and populates the
   `sqlite3.version` object. This part is not critical, but records the
   version of the library against which this module was built.
-- `sqlite3-api-oo1.js`\  
+- **`sqlite3-api-oo1.js`**\  
   Provides a high-level object-oriented wrapper to the lower-level C
   API, colloquially known as OO API #1. Its API is similar to other
   high-level sqlite3 JS wrappers and should feel relatively familiar
   to anyone familiar with such APIs. That said, it is not a "required
   component" and can be elided from builds which do not want it.
-- `sqlite3-api-worker1.js`\  
+- **`sqlite3-api-worker1.js`**\  
   A Worker-thread-based API which uses OO API #1 to provide an
   interface to a database which can be driven from the main Window
   thread via the Worker message-passing interface. Like OO API #1,
   this is an optional component, offering one of any number of
   potential implementations for such an API.
-    - `sqlite3-worker1.js`\  
+    - **`sqlite3-worker1.js`**\  
       Is not part of the amalgamated sources and is intended to be
       loaded by a client Worker thread. It loads the sqlite3 module
       and runs the Worker #1 API which is implemented in
       `sqlite3-api-worker1.js`.
-    - `sqlite3-worker1-promiser.js`\  
+    - **`sqlite3-worker1-promiser.js`**\  
       Is likewise not part of the amalgamated sources and provides
       a Promise-based interface into the Worker #1 API. This is
       a far user-friendlier way to interface with databases running
       in a Worker thread.
-- `sqlite3-api-opfs.js`\  
+- **`sqlite3-vfs-helper.js`**\  
+  This internal-use-only file installs `sqlite3.VfsHelper` for use by
+  `sqlite3-*.js` files which create `sqlite3_vfs` implemenations.
+  `sqlite3.VfsHelper` gets removed from the the `sqlite3` object after
+  the library is finished initializing.
+- **`sqlite3-vfs-opfs.js`**\  
   is an sqlite3 VFS implementation which supports Google Chrome's
   Origin-Private FileSystem (OPFS) as a storage layer to provide
   persistent storage for database files in a browser. It requires...
-    - `sqlite3-opfs-async-proxy.js`\  
+    - **`sqlite3-opfs-async-proxy.js`**\  
       is the asynchronous backend part of the OPFS proxy. It speaks
       directly to the (async) OPFS API and channels those results back
       to its synchronous counterpart. This file, because it must be

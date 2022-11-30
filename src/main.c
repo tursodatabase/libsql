@@ -3950,6 +3950,9 @@ int sqlite3_file_control(sqlite3 *db, const char *zDbName, int op, void *pArg){
         sqlite3BtreeSetPageSize(pBtree, 0, iNew, 0);
       }
       rc = SQLITE_OK;
+    }else if( op==SQLITE_FCNTL_RESET_CACHE ){
+      sqlite3BtreeClearCache(pBtree);
+      rc = SQLITE_OK;
     }else{
       int nSave = db->busyHandler.nBusy;
       rc = sqlite3OsFileControl(fd, op, pArg);

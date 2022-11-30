@@ -76,15 +76,25 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   `opfs` property, containing several OPFS-specific utilities.
 */
 const installOpfsVfs = function callee(options){
-  if(!self.SharedArrayBuffer ||
-     !self.Atomics ||
-     !self.FileSystemHandle ||
-     !self.FileSystemDirectoryHandle ||
-     !self.FileSystemFileHandle ||
-     !self.FileSystemFileHandle.prototype.createSyncAccessHandle ||
-     !navigator.storage.getDirectory){
+  if(!self.SharedArrayBuffer
+    || !self.Atomics){
     return Promise.reject(
-      new Error("This environment does not have OPFS support.")
+      new Error("Cannot install OPFS: Missing SharedArrayBuffer and/or Atomics. "+
+                "The server must emit the COOP/COEP response headers to enable those. "+
+                "See https://sqlite.org/wasm/doc/trunk/persistence.md#coop-coep")
+    );
+  }else if(self.window===self && self.document){
+    return Promise.reject(
+      new Error("The OPFS sqlite3_vfs cannot run in the main thread "+
+                "because it requires Atomics.wait().")
+    );
+  }else if(!self.FileSystemHandle ||
+           !self.FileSystemDirectoryHandle ||
+           !self.FileSystemFileHandle ||
+           !self.FileSystemFileHandle.prototype.createSyncAccessHandle ||
+           !navigator.storage.getDirectory){
+    return Promise.reject(
+      new Error("Missing required OPFS APIs.")
     );
   }
   if(!options || 'object'!==typeof options){
@@ -119,7 +129,7 @@ const installOpfsVfs = function callee(options){
     const log =    (...args)=>logImpl(2, ...args);
     const warn =   (...args)=>logImpl(1, ...args);
     const error =  (...args)=>logImpl(0, ...args);
-    const toss = function(...args){throw new Error(args.join(' '))};
+    const toss = sqlite3.util.toss;
     const capi = sqlite3.capi;
     const wasm = sqlite3.wasm;
     const sqlite3_vfs = capi.sqlite3_vfs;
@@ -128,8 +138,24 @@ const installOpfsVfs = function callee(options){
     /**
        Generic utilities for working with OPFS. This will get filled out
        by the Promise setup and, on success, installed as sqlite3.opfs.
+
+       ACHTUNG: do not rely on these APIs in client code. They are
+       experimental and subject to change or removal as the
+       OPFS-specific sqlite3_vfs evolves.
     */
     const opfsUtil = Object.create(null);
+
+    /**
+       Returns true if _this_ thread has access to the OPFS APIs.
+    */
+    const thisThreadHasOPFS = ()=>{
+      return self.FileSystemHandle &&
+        self.FileSystemDirectoryHandle &&
+        self.FileSystemFileHandle &&
+        self.FileSystemFileHandle.prototype.createSyncAccessHandle &&
+        navigator.storage.getDirectory;
+    };
+
     /**
        Not part of the public API. Solely for internal/development
        use.
@@ -165,6 +191,8 @@ const installOpfsVfs = function callee(options){
         s.count = s.time = 0;
       }
     }/*metrics*/;      
+    const opfsVfs = new sqlite3_vfs();
+    const opfsIoMethods = new sqlite3_io_methods();
     const promiseReject = function(err){
       opfsVfs.dispose();
       return promiseReject_(err);
@@ -186,10 +214,7 @@ const installOpfsVfs = function callee(options){
     const dVfs = pDVfs
           ? new sqlite3_vfs(pDVfs)
           : null /* dVfs will be null when sqlite3 is built with
-                    SQLITE_OS_OTHER. Though we cannot currently handle
-                    that case, the hope is to eventually be able to. */;
-    const opfsVfs = new sqlite3_vfs();
-    const opfsIoMethods = new sqlite3_io_methods();
+                    SQLITE_OS_OTHER. */;
     opfsVfs.$iVersion = 2/*yes, two*/;
     opfsVfs.$szOsFile = capi.sqlite3_file.structInfo.sizeof;
     opfsVfs.$mxPathname = 1024/*sure, why not?*/;
@@ -244,6 +269,16 @@ const installOpfsVfs = function callee(options){
       return new Int16Array(buffer)[0] === 256;
     })();
     /**
+       asyncIdleWaitTime is how long (ms) to wait, in the async proxy,
+       for each Atomics.wait() when waiting on inbound VFS API calls.
+       We need to wake up periodically to give the thread a chance to
+       do other things. If this is too high (e.g. 500ms) then even two
+       workers/tabs can easily run into locking errors. Some multiple
+       of this value is also used for determining how long to wait on
+       lock contention to free up.
+    */
+    state.asyncIdleWaitTime = 100;
+    /**
        Whether the async counterpart should log exceptions to
        the serialization channel. That produces a great deal of
        noise for seemingly innocuous things like xAccess() checks
@@ -265,7 +300,9 @@ const installOpfsVfs = function callee(options){
        The size of the block in our SAB for serializing arguments and
        result values. Needs to be large enough to hold serialized
        values of any of the proxied APIs. Filenames are the largest
-       part but are limited to opfsVfs.$mxPathname bytes.
+       part but are limited to opfsVfs.$mxPathname bytes. We also
+       store exceptions there, so it needs to be long enough to hold
+       a reasonably long exception string.
     */
     state.sabS11nSize = opfsVfs.$mxPathname * 2;
     /**
@@ -348,11 +385,31 @@ const installOpfsVfs = function callee(options){
       'SQLITE_NOTFOUND',
       'SQLITE_OPEN_CREATE',
       'SQLITE_OPEN_DELETEONCLOSE',
+      'SQLITE_OPEN_MAIN_DB',
       'SQLITE_OPEN_READONLY'
     ].forEach((k)=>{
       if(undefined === (state.sq3Codes[k] = capi[k])){
         toss("Maintenance required: not found:",k);
       }
+    });
+    state.opfsFlags = Object.assign(Object.create(null),{
+      /**
+         Flag for use with xOpen(). "opfs-unlock-asap=1" enables
+         this. See defaultUnlockAsap, below.
+       */
+      OPFS_UNLOCK_ASAP: 0x01,
+      /**
+         If true, any async routine which implicitly acquires a sync
+         access handle (i.e. an OPFS lock) will release that locks at
+         the end of the call which acquires it. If false, such
+         "autolocks" are not released until the VFS is idle for some
+         brief amount of time.
+
+         The benefit of enabling this is much higher concurrency. The
+         down-side is much-reduced performance (as much as a 4x decrease
+         in speedtest1).
+      */
+      defaultUnlockAsap: false
     });
 
     /**
@@ -586,77 +643,6 @@ const installOpfsVfs = function callee(options){
     */
     const __openFiles = Object.create(null);
 
-    /**
-       Installs a StructBinder-bound function pointer member of the
-       given name and function in the given StructType target object.
-       It creates a WASM proxy for the given function and arranges for
-       that proxy to be cleaned up when tgt.dispose() is called.  Throws
-       on the slightest hint of error (e.g. tgt is-not-a StructType,
-       name does not map to a struct-bound member, etc.).
-
-       Returns a proxy for this function which is bound to tgt and takes
-       2 args (name,func). That function returns the same thing,
-       permitting calls to be chained.
-
-       If called with only 1 arg, it has no side effects but returns a
-       func with the same signature as described above.
-    */
-    const installMethod = function callee(tgt, name, func){
-      if(!(tgt instanceof sqlite3.StructBinder.StructType)){
-        toss("Usage error: target object is-not-a StructType.");
-      }
-      if(1===arguments.length){
-        return (n,f)=>callee(tgt,n,f);
-      }
-      if(!callee.argcProxy){
-        callee.argcProxy = function(func,sig){
-          return function(...args){
-            if(func.length!==arguments.length){
-              toss("Argument mismatch. Native signature is:",sig);
-            }
-            return func.apply(this, args);
-          }
-        };
-        callee.removeFuncList = function(){
-          if(this.ondispose.__removeFuncList){
-            this.ondispose.__removeFuncList.forEach(
-              (v,ndx)=>{
-                if('number'===typeof v){
-                  try{wasm.uninstallFunction(v)}
-                  catch(e){/*ignore*/}
-                }
-                /* else it's a descriptive label for the next number in
-                   the list. */
-              }
-            );
-            delete this.ondispose.__removeFuncList;
-          }
-        };
-      }/*static init*/
-      const sigN = tgt.memberSignature(name);
-      if(sigN.length<2){
-        toss("Member",name," is not a function pointer. Signature =",sigN);
-      }
-      const memKey = tgt.memberKey(name);
-      const fProxy = 0
-      /** This middle-man proxy is only for use during development, to
-          confirm that we always pass the proper number of
-          arguments. We know that the C-level code will always use the
-          correct argument count. */
-            ? callee.argcProxy(func, sigN)
-            : func;
-      const pFunc = wasm.installFunction(fProxy, tgt.memberSignature(name, true));
-      tgt[memKey] = pFunc;
-      if(!tgt.ondispose) tgt.ondispose = [];
-      if(!tgt.ondispose.__removeFuncList){
-        tgt.ondispose.push('ondispose.__removeFuncList handler',
-                           callee.removeFuncList);
-        tgt.ondispose.__removeFuncList = [];
-      }
-      tgt.ondispose.__removeFuncList.push(memKey, pFunc);
-      return (n,f)=>callee(tgt, n, f);
-    }/*installMethod*/;
-
     const opTimer = Object.create(null);
     opTimer.op = undefined;
     opTimer.start = undefined;
@@ -682,10 +668,10 @@ const installOpfsVfs = function callee(options){
            success) release a sync-handle for it, but doing so would
            involve an inherent race condition. For the time being,
            pending a better solution, we simply report whether the
-           given pFile instance has a lock.
+           given pFile is open.
         */
         const f = __openFiles[pFile];
-        wasm.setMemValue(pOut, f.lockMode ? 1 : 0, 'i32');
+        wasm.setMemValue(pOut, f.lockType ? 1 : 0, 'i32');
         return 0;
       },
       xClose: function(pFile){
@@ -726,7 +712,11 @@ const installOpfsVfs = function callee(options){
         mTimeStart('xLock');
         const f = __openFiles[pFile];
         let rc = 0;
-        if( capi.SQLITE_LOCK_NONE === f.lockType ) {
+        /* All OPFS locks are exclusive locks. If xLock() has
+           previously succeeded, do nothing except record the lock
+           type. If no lock is active, have the async counterpart
+           lock the file. */
+        if( !f.lockType ) {
           rc = opRun('xLock', pFile, lockType);
           if( 0===rc ) f.lockType = lockType;
         }else{
@@ -844,9 +834,15 @@ const installOpfsVfs = function callee(options){
       //xSleep is optionally defined below
       xOpen: function f(pVfs, zName, pFile, flags, pOutFlags){
         mTimeStart('xOpen');
+        let opfsFlags = 0;
         if(0===zName){
           zName = randomFilename();
         }else if('number'===typeof zName){
+          if(capi.sqlite3_uri_boolean(zName, "opfs-unlock-asap", 0)){
+            /* -----------------------^^^^^ MUST pass the untranslated
+               C-string here. */
+            opfsFlags |= state.opfsFlags.OPFS_UNLOCK_ASAP;
+          }
           zName = wasm.cstringToJs(zName);
         }
         const fh = Object.create(null);
@@ -854,7 +850,7 @@ const installOpfsVfs = function callee(options){
         fh.filename = zName;
         fh.sab = new SharedArrayBuffer(state.fileBufferSize);
         fh.flags = flags;
-        const rc = opRun('xOpen', pFile, zName, flags);
+        const rc = opRun('xOpen', pFile, zName, flags, opfsFlags);
         if(!rc){
           /* Recall that sqlite3_vfs::xClose() will be called, even on
              error, unless pFile->pMethods is NULL. */
@@ -893,14 +889,6 @@ const installOpfsVfs = function callee(options){
         Atomics.wait(state.sabOPView, state.opIds.xSleep, 0, ms);
         return 0;
       };
-    }
-
-    /* Install the vfs/io_methods into their C-level shared instances... */
-    for(let k of Object.keys(ioSyncWrappers)){
-      installMethod(opfsIoMethods, k, ioSyncWrappers[k]);
-    }
-    for(let k of Object.keys(vfsSyncWrappers)){
-      installMethod(opfsVfs, k, vfsSyncWrappers[k]);
     }
 
     /**
@@ -1042,8 +1030,9 @@ const installOpfsVfs = function callee(options){
        Irrevocably deletes _all_ files in the current origin's OPFS.
        Obviously, this must be used with great caution. It may throw
        an exception if removal of anything fails (e.g. a file is
-       locked), but the precise conditions under which it will throw
-       are not documented (so we cannot tell you what they are).
+       locked), but the precise conditions under which the underlying
+       APIs will throw are not documented (so we cannot tell you what
+       they are).
     */
     opfsUtil.rmfr = async function(){
       const dir = opfsUtil.rootDirectory, opt = {recurse: true};
@@ -1145,23 +1134,32 @@ const installOpfsVfs = function callee(options){
 
     //TODO to support fiddle and worker1 db upload:
     //opfsUtil.createFile = function(absName, content=undefined){...}
+    //We have sqlite3.wasm.sqlite3_wasm_vfs_create_file() for this
+    //purpose but its interface and name are still under
+    //consideration.
 
     if(sqlite3.oo1){
-      opfsUtil.OpfsDb = function(...args){
+      const OpfsDb = function(...args){
         const opt = sqlite3.oo1.DB.dbCtorHelper.normalizeArgs(...args);
         opt.vfs = opfsVfs.$zName;
         sqlite3.oo1.DB.dbCtorHelper.call(this, opt);
       };
-      opfsUtil.OpfsDb.prototype = Object.create(sqlite3.oo1.DB.prototype);
+      sqlite3.oo1.OpfsDb =
+        opfsUtil.OpfsDb /* sqlite3.opfs.OpfsDb => deprecated name -
+                           will be phased out Real Soon */ =
+        OpfsDb;
+      OpfsDb.prototype = Object.create(sqlite3.oo1.DB.prototype);
       sqlite3.oo1.DB.dbCtorHelper.setVfsPostOpenSql(
         opfsVfs.pointer,
         [
-          /* Truncate journal mode is faster than delete or wal for
-             this vfs, per speedtest1. */
-          "pragma journal_mode=truncate;",
+          /* Truncate journal mode is faster than delete for
+             this vfs, per speedtest1. That gap seems to have closed with
+             Chome version 108 or 109, but "persist" is very roughly 5-6%
+             faster than truncate in initial tests. */
+          "pragma journal_mode=persist;",
           /* Set a default busy-timeout handler to help OPFS dbs
              deal with multi-tab/multi-worker contention. */
-          "pragma busy_timeout=2000;",
+          "pragma busy_timeout=3000;",
           /*
             This vfs benefits hugely from cache on moderate/large
             speedtest1 --size 50 and --size 100 workloads. We currently
@@ -1174,13 +1172,6 @@ const installOpfsVfs = function callee(options){
       );
     }
 
-    /**
-       Potential TODOs:
-
-       - Expose one or both of the Worker objects via opfsUtil and
-         publish an interface for proxying the higher-level OPFS
-         features like getting a directory listing.
-    */
     const sanityCheck = function(){
       const scope = wasm.scopedAllocPush();
       const sq3File = new sqlite3_file();
@@ -1250,6 +1241,11 @@ const installOpfsVfs = function callee(options){
     W.onmessage = function({data}){
       //log("Worker.onmessage:",data);
       switch(data.type){
+          case 'opfs-unavailable':
+            /* Async proxy has determined that OPFS is unavailable. There's
+               nothing more for us to do here. */
+            promiseReject(new Error(data.payload.join(' ')));
+            break;
           case 'opfs-async-loaded':
             /*Arrives as soon as the asyc proxy finishes loading.
               Pass our config and shared state on to the async worker.*/
@@ -1260,14 +1256,10 @@ const installOpfsVfs = function callee(options){
               and has finished initializing, so the real work can
               begin...*/
             try {
-              const rc = capi.sqlite3_vfs_register(opfsVfs.pointer, 0);
-              if(rc){
-                toss("sqlite3_vfs_register(OPFS) failed with rc",rc);
-              }
-              if(opfsVfs.pointer !== capi.sqlite3_vfs_find("opfs")){
-                toss("BUG: sqlite3_vfs_find() failed for just-installed OPFS VFS");
-              }
-              capi.sqlite3_vfs_register.addReference(opfsVfs, opfsIoMethods);
+              sqlite3.VfsHelper.installVfs({
+                io: {struct: opfsIoMethods, methods: ioSyncWrappers},
+                vfs: {struct: opfsVfs, methods: vfsSyncWrappers}
+              });
               state.sabOPView = new Int32Array(state.sabOP);
               state.sabFileBufView = new Uint8Array(state.sabIO, 0, state.fileBufferSize);
               state.sabS11nView = new Uint8Array(state.sabIO, state.sabS11nOffset, state.sabS11nSize);
@@ -1276,14 +1268,18 @@ const installOpfsVfs = function callee(options){
                 warn("Running sanity checks because of opfs-sanity-check URL arg...");
                 sanityCheck();
               }
-              navigator.storage.getDirectory().then((d)=>{
-                W.onerror = W._originalOnError;
-                delete W._originalOnError;
-                sqlite3.opfs = opfsUtil;
-                opfsUtil.rootDirectory = d;
-                log("End of OPFS sqlite3_vfs setup.", opfsVfs);
+              if(thisThreadHasOPFS()){
+                navigator.storage.getDirectory().then((d)=>{
+                  W.onerror = W._originalOnError;
+                  delete W._originalOnError;
+                  sqlite3.opfs = opfsUtil;
+                  opfsUtil.rootDirectory = d;
+                  log("End of OPFS sqlite3_vfs setup.", opfsVfs);
+                  promiseResolve(sqlite3);
+                }).catch(promiseReject);
+              }else{
                 promiseResolve(sqlite3);
-              });
+              }                
             }catch(e){
               error(e);
               promiseReject(e);
@@ -1302,9 +1298,6 @@ const installOpfsVfs = function callee(options){
 installOpfsVfs.defaultProxyUri =
   "sqlite3-opfs-async-proxy.js";
 self.sqlite3ApiBootstrap.initializersAsync.push(async (sqlite3)=>{
-  if(sqlite3.scriptInfo && !sqlite3.scriptInfo.isWorker){
-    return;
-  }
   try{
     let proxyJs = installOpfsVfs.defaultProxyUri;
     if(sqlite3.scriptInfo.sqlite3Dir){

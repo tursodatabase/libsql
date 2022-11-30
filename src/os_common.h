@@ -35,12 +35,6 @@
 */
 #ifdef SQLITE_PERFORMANCE_TRACE
 
-/*
-** hwtime.h contains inline assembler code for implementing
-** high-performance timing routines.
-*/
-#include "hwtime.h"
-
 static sqlite_uint64 g_start;
 static sqlite_uint64 g_elapsed;
 #define TIMER_START       g_start=sqlite3Hwtime()
