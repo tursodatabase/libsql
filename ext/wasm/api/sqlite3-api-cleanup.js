@@ -22,12 +22,10 @@ if('undefined' !== typeof Module){ // presumably an Emscripten build
   */
   const SABC = Object.assign(
     Object.create(null), {
-      Module: Module /* ==> Currently needs to be exposed here for
-                        test code. NOT part of the public API. */,
       exports: Module['asm'],
       memory: Module.wasmMemory /* gets set if built with -sIMPORT_MEMORY */
     },
-    self.sqlite3ApiConfig || Object.create(null)
+    self.sqlite3ApiConfig || {}
   );
 
   /**

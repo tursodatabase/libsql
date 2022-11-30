@@ -336,6 +336,10 @@ self.sqlite3InitModule = sqlite3InitModule;
 
   ////////////////////////////////////////////////////////////////////
   T.g('Basic sanity checks')
+    .t("JS wasm-side allocator === sqlite3_malloc()", function(sqlite3){
+      T.assert(wasm.alloc.impl === wasm.exports.sqlite3_malloc)
+        .assert(wasm.dealloc === wasm.exports.sqlite3_free);
+    })
     .t('Namespace object checks', function(sqlite3){
       const wasmCtypes = wasm.ctype;
       T.assert(wasmCtypes.structs[0].name==='sqlite3_vfs').

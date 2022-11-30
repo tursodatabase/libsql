@@ -65,11 +65,15 @@
 
    - `allocExportName`: the name of the function, in `exports`, of the
      `malloc(3)`-compatible routine for the WASM environment. Defaults
-     to `"malloc"`.
+     to `"sqlite3_malloc"`. Beware that using any allocator other than
+     sqlite3_malloc() may require care in certain client-side code
+     regarding which allocator is uses. Notably, sqlite3_deserialize()
+     and sqlite3_serialize() can only safely use memory from different
+     allocators under very specific conditions.
 
    - `deallocExportName`: the name of the function, in `exports`, of
      the `free(3)`-compatible routine for the WASM
-     environment. Defaults to `"free"`.
+     environment. Defaults to `"sqlite3_free"`.
 
    - `wasmfsOpfsDir`[^1]: if the environment supports persistent
      storage using OPFS-over-WASMFS , this directory names the "mount
@@ -104,8 +108,8 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       }
       return !!self.BigInt64Array;
     })(),
-    allocExportName: 'malloc',
-    deallocExportName: 'free',
+    allocExportName: 'sqlite3_malloc',
+    deallocExportName: 'sqlite3_free',
     wasmfsOpfsDir: '/opfs'
   }, apiConfig || {});
 
@@ -727,8 +731,8 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     return pRet;
   };
 
-  const keyAlloc = config.allocExportName || 'malloc',
-        keyDealloc =  config.deallocExportName || 'free';
+  const keyAlloc = config.allocExportName,
+        keyDealloc =  config.deallocExportName;
   for(const key of [keyAlloc, keyDealloc]){
     const f = wasm.exports[key];
     if(!(f instanceof Function)) toss3("Missing required exports[",key,"] function.");
