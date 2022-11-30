@@ -1,5 +1,5 @@
-C Attempt\sto\srationalize\sthe\sbits\sassociated\swith\s".wheretrace".\s\sProvide\na\sdecoder\skey\sin\ssqliteInt.h\sfor\swhat\seach\sbit\sis\sintended\sto\sdo.
-D 2022-11-30T19:11:31.801
+C Fix\san\sover-zealous\sassert()\sreported\sby\sYong\sHeng.
+D 2022-11-30T20:22:31.967
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -721,7 +721,7 @@ F src/vdbe.c 00648bd76fb2145c2d890312112bda446569da64ca70aaf1f2282cc6c2b22d14
 F src/vdbe.h 58675f47dcf3105bab182c3ad3726efd60ffd003e954386904ac9107d0d2b743
 F src/vdbeInt.h 17b7461ffcf9ee760d1341731715a419f6b8c763089a7ece25c2e8098d702b3f
 F src/vdbeapi.c 1e8713d0b653acb43cd1bdf579c40e005c4844ea90f414f065946a83db3c27fb
-F src/vdbeaux.c 87684b89877eae0c58c78b340bb5356aa1c8fb1dd650b29410c8b745aeeb20b5
+F src/vdbeaux.c 8ebe337e82d99cf3b01cd4fd67103a5b0054d53fee8456b90dbeba46ebf97ceb
 F src/vdbeblob.c 5e61ce31aca17db8fb60395407457a8c1c7fb471dde405e0cd675974611dcfcd
 F src/vdbemem.c 6cfed43758d57b6e3b99d9cdedfeccd86e45a07e427b22d8487cbdbebb6c522a
 F src/vdbesort.c 43756031ca7430f7aec3ef904824a7883c4ede783e51f280d99b9b65c0796e35
@@ -2065,8 +2065,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2eade7c7b17a186735c72974c11a34798a08364861d0f307e897ba765c0a93c7
-R 017a8b97f0f146b3506618eca7867206
+P 8ec361695a107a94f2cf6a7fe509656a99d85d49bd7c74133c69903f059a2675
+R 2a3a42c549d849993e0ed51d258499d0
 U drh
-Z b8ffdae4ce7e302410b9546e9e5b50f2
+Z 19ee33e552ce9650229a03299d6e09f2
 # Remove this line to create a well-formed Fossil manifest.
