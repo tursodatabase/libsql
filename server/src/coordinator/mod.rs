@@ -2,15 +2,12 @@ pub mod query;
 pub mod scheduler;
 pub mod statements;
 
-use std::future::ready;
 use std::time::{Duration, Instant};
 
 use anyhow::Result;
 use crossbeam::channel::Sender;
 use futures::stream::FuturesUnordered;
-use futures::StreamExt;
-use rayon::{ThreadPool, ThreadPoolBuilder};
-use tokio::sync::oneshot;
+use tokio::task::JoinHandle;
 
 use crate::coordinator::query::{ErrorCode, QueryError, QueryResponse, QueryResult};
 use crate::coordinator::scheduler::UpdateStateMessage;
@@ -22,8 +19,7 @@ const TXN_TIMEOUT_SECS: usize = 5;
 
 /// Transaction coordinator.
 pub struct Coordinator {
-    _pool: ThreadPool,
-    worker_sigs: FuturesUnordered<oneshot::Receiver<()>>,
+    worker_handles: FuturesUnordered<JoinHandle<()>>,
 }
 
 impl Coordinator {
@@ -32,39 +28,40 @@ impl Coordinator {
     /// `conn_builder` must create a fresh db_connection each time it is called.
     /// If ncpu is 0, then the number of worker is determined automatically.
     pub fn new(
-        ncpu: usize,
+        mut ncpu: usize,
         conn_builder: impl Fn() -> WalConnection + Sync + Send,
     ) -> Result<(Self, Sender<Job>)> {
-        let _pool = ThreadPoolBuilder::new().num_threads(ncpu).build()?;
+        if ncpu == 0 {
+            ncpu = std::thread::available_parallelism()?.get();
+        }
         let (fifo, receiver) = crossbeam::channel::unbounded();
 
-        let worker_sigs = FuturesUnordered::new();
-        _pool.install(|| {
-            for id in 0.._pool.current_num_threads() {
-                let db_conn = conn_builder();
-                let global_fifo = receiver.clone();
-                let (_close_sig, reveiver) = oneshot::channel();
-                worker_sigs.push(reveiver);
-                rayon::spawn(move || {
-                    let worker = Worker {
-                        global_fifo,
-                        db_conn,
-                        id,
-                        _close_sig,
-                    };
+        let worker_handles = FuturesUnordered::new();
+        for id in 0..ncpu {
+            let db_conn = conn_builder();
+            let global_fifo = receiver.clone();
+            worker_handles.push(tokio::task::spawn_blocking(move || {
+                let worker = Worker {
+                    global_fifo,
+                    db_conn,
+                    id,
+                };
 
-                    worker.run();
-                })
-            }
-        });
+                worker.run();
+            }));
+        }
 
-        let this = Self { _pool, worker_sigs };
+        let this = Self { worker_handles };
         Ok((this, fifo))
     }
 
     /// waits for all workers to finish their work and exit.
     pub async fn join(self) {
-        self.worker_sigs.for_each(|_| ready(())).await;
+        for h in self.worker_handles {
+            if let Err(e) = h.await {
+                tracing::error!("{}", e);
+            }
+        }
     }
 }
 
@@ -78,9 +75,6 @@ struct Worker {
     global_fifo: crossbeam::channel::Receiver<Job>,
     db_conn: WalConnection,
     id: usize,
-    /// signal that the worker has exited
-    /// nothing is done with this, it simply gets dropped with the worker.
-    _close_sig: oneshot::Sender<()>,
 }
 
 impl Worker {

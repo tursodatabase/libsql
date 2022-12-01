@@ -15,7 +15,6 @@ parking_lot = "0.12.1"
 pgwire = "0.5.0"
 pin-project-lite = "0.2.9"
 postgres-protocol = "0.6.4"
-rayon = "1.5.3"
 rusqlite = { version = "0.28.0", features = [ "buildtime_bindgen" ] }
 smallvec = "1.10.0"
 sqlparser = "0.27.0"
