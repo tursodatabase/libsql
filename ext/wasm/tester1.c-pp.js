@@ -1232,22 +1232,18 @@ self.sqlite3InitModule = sqlite3InitModule;
       if(1){
         const vfsList = capi.sqlite3_js_vfs_list();
         T.assert(vfsList.length>1);
-        T.assert('string'===typeof vfsList[0]);
         //log("vfsList =",vfsList);
-        for(const v of vfsList){
-          T.assert('string' === typeof v)
-            .assert(wasm.isPtr(
-              capi.sqlite3_vfs_find(v)
-            ));
-        }
-        // While we have vfsList handy, let's verify...
         wasm.scopedAllocCall(()=>{
           const vfsArg = (v)=>wasm.xWrap.testConvertArg('sqlite3_vfs*',v);
-          T.assert(wasm.isPtr(vfsArg(vfsList[0])));
-          const pVfs = capi.sqlite3_vfs_find(vfsList[0]);
-          const vfs = new capi.sqlite3_vfs(pVfs);
-          T.assert(wasm.isPtr(vfsArg(vfs)));
-          vfs.dispose();
+          for(const v of vfsList){
+            T.assert('string' === typeof v);
+            const pVfs = capi.sqlite3_vfs_find(v);
+            T.assert(wasm.isPtr(pVfs))
+              .assert(pVfs===vfsArg(v));
+            const vfs = new capi.sqlite3_vfs(pVfs);
+            try { T.assert(vfsArg(vfs)===pVfs) }
+            finally{ vfs.dispose() }
+          }
         });
       }
       /**
