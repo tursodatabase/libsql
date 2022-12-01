@@ -1,5 +1,6 @@
 use rusqlite::Connection;
 use std::ffi::c_void;
+use std::os::unix::ffi::OsStrExt;
 
 #[repr(C)]
 pub struct Wal {
@@ -391,11 +392,7 @@ pub(crate) fn open_with_virtual_wal(
         let register_err = libsql_wal_methods_register(vwal);
         assert_eq!(register_err, 0);
         let open_err = libsql_open(
-            path.as_ref()
-                .as_os_str()
-                .to_str()
-                .ok_or(rusqlite::Error::InvalidQuery)?
-                .as_ptr(),
+            path.as_ref().as_os_str().as_bytes().as_ptr(),
             ppdb,
             flags.bits(),
             std::ptr::null(),
