@@ -18,7 +18,7 @@ It seems to us that there are two obvious avenues to modify SQLite: forking the 
 
 ```
 ./configure && make
-./sqlite3 <path-to-database.db>
+./libsql <path-to-database.db>
 ```
 
 ## SQLite needs to open contributions.
