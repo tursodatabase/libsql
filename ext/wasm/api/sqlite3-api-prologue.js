@@ -1258,7 +1258,8 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
 
   /**
      A convenience wrapper around sqlite3_serialize() which serializes
-     the given `sqlite3*` pointer to a Uint8Array.
+     the given `sqlite3*` pointer to a Uint8Array. The first argument
+     may be either an `sqlite3*` or an sqlite3.oo1.DB instance.
 
      On success it returns a Uint8Array. If the schema is empty, an
      empty array is returned.
@@ -1269,6 +1270,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      On error it throws with a description of the problem.
   */
   capi.sqlite3_js_db_export = function(pDb, schema=0){
+    pDb = wasm.xWrap.testConvertArg('sqlite3*', pDb);
     if(!pDb) toss3('Invalid sqlite3* argument.');
     if(!wasm.bigIntEnabled) toss3('BigInt64 support is not enabled.');
     const scope = wasm.scopedAllocPush();
@@ -1340,11 +1342,11 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
 
      The second argument, the filename, must be a JS or WASM C-string.
 
-     The 3rd may either be falsy, a valid WASM memory pointer, or a
-     Uint8Array. The 4th must be the length, in bytes, of the data
-     array to copy. If the 3rd argument is a Uint8Array and the 4th is
-     not a positive integer then the 4th defaults to the array's
-     byteLength value.
+     The 3rd may either be falsy, a valid WASM memory pointer, an
+     ArrayBuffer, or a Uint8Array. The 4th must be the length, in
+     bytes, of the data array to copy. If the 3rd argument is an
+     ArrayBuffer or Uint8Array and the 4th is not a positive integer
+     then the 4th defaults to the array's byteLength value.
 
      If data is falsy then a file is created with dataLen bytes filled
      with uninitialized data (whatever truncate() leaves there). If
@@ -1364,7 +1366,9 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
 
      VFS-specific notes:
 
-     - "memdb" and "kvvfs": results are undefined.
+     - "memdb": results are undefined.
+
+     - "kvvfs": results are undefined.
 
      - "unix" and related: will use the WASM build's equivalent of the
        POSIX I/O APIs.
@@ -1374,16 +1378,22 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   */
   capi.sqlite3_js_vfs_create_file = function(vfs, filename, data, dataLen){
     let pData;
-    if(!data) pData = 0;
-    else if(wasm.isPtr(data)){
-      pData = data;
-    }else if(data instanceof Uint8Array){
-      pData = wasm.allocFromTypedArray(data);
-      if(arguments.length<4 || !util.isInt32(dataLen) || dataLen<0){
-        dataLen = data.byteLength;
+    if(data){
+      if(wasm.isPtr(data)){
+        pData = data;
+      }else if(data instanceof ArrayBuffer){
+        data = new Uint8Array(data);
+      }
+      if(data instanceof Uint8Array){
+        pData = wasm.allocFromTypedArray(data);
+        if(arguments.length<4 || !util.isInt32(dataLen) || dataLen<0){
+          dataLen = data.byteLength;
+        }
+      }else{
+        SQLite3Error.toss("Invalid 3rd argument type for sqlite3_js_vfs_create_file().");
       }
     }else{
-      SQLite3Error.toss("Invalid 3rd argument type for sqlite3_js_vfs_create_file().");
+       pData = 0;
     }
     if(!util.isInt32(dataLen) || dataLen<0){
       wasm.dealloc(pData);

@@ -1160,7 +1160,8 @@ self.sqlite3InitModule = sqlite3InitModule;
         .mustThrowMatching(()=>db.pointer=1, /read-only/)
         .assert(0===sqlite3.capi.sqlite3_extended_result_codes(db.pointer,1))
         .assert('main'===db.dbName(0))
-        .assert('string' === typeof db.dbVfsName());
+        .assert('string' === typeof db.dbVfsName())
+        .assert(db.pointer === wasm.xWrap.testConvertArg('sqlite3*',db));
       // Custom db error message handling via sqlite3_prepare_v2/v3()
       let rc = capi.sqlite3_prepare_v3(db.pointer, {/*invalid*/}, -1, 0, null, null);
       T.assert(capi.SQLITE_MISUSE === rc)
@@ -1782,6 +1783,17 @@ self.sqlite3InitModule = sqlite3InitModule;
         db = new JDb(filename);
         db.exec('insert into kvvfs(a) values(4),(5),(6)');
         T.assert(6 === db.selectValue('select count(*) from kvvfs'));
+
+        // Check import/export of db...
+        if(0){
+          // does not yet work with kvvfs for unknown reasons...
+          const exp = capi.sqlite3_js_db_export(db);
+          db.close();
+          unlink();
+          capi.sqlite3_js_vfs_create_file("kvvfs", filename, exp);
+          db = new JDb(filename);
+          T.assert(6 === db.selectValue('select count(*) from kvvfs'));
+        }
       }finally{
         db.close();
         unlink();
@@ -1812,6 +1824,10 @@ self.sqlite3InitModule = sqlite3InitModule;
           db = new sqlite3.oo1.OpfsDb(filename);
           db.exec('insert into p(a) values(4),(5),(6)');
           T.assert(6 === db.selectValue('select count(*) from p'));
+          this.opfsDbExport = capi.sqlite3_js_db_export(db);
+          T.assert(this.opfsDbExport instanceof Uint8Array)
+            .assert(this.opfsDbExport.byteLength>0
+                    && 0===this.opfsDbExport.byteLength % 512);
         }finally{
           db.close();
           unlink();
@@ -1819,12 +1835,30 @@ self.sqlite3InitModule = sqlite3InitModule;
       }
     }/*OPFS db sanity checks*/)
     .t({
+      name: 'OPFS export/import',
+      test: async function(sqlite3){
+        let db;
+        try {
+          const exp = this.opfsDbExport;
+          delete this.opfsDbExport;
+          capi.sqlite3_js_vfs_create_file("opfs", this.opfsDbFile, exp);
+          const db = new sqlite3.oo1.OpfsDb(this.opfsDbFile);
+          T.assert(6 === db.selectValue('select count(*) from p'));
+        }finally{
+          if(db) db.close();
+        }
+      }
+    }/*OPFS export/import*/)
+    .t({
       name: 'OPFS utility APIs and sqlite3_js_vfs_create_file()',
       test: async function(sqlite3){
         const filename = this.opfsDbFile;
         const pVfs = this.opfsVfs;
         const unlink = this.opfsUnlink;
         T.assert(filename && pVfs && !!unlink);
+        delete this.opfsDbFile;
+        delete this.opfsVfs;
+        delete this.opfsUnlink;
         unlink();
         // Sanity-test sqlite3_js_vfs_create_file()...
         /**************************************************************

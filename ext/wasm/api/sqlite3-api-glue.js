@@ -68,12 +68,15 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        `sqlite3_vfs*` via capi.sqlite3_vfs.pointer.
     */
     const aPtr = wasm.xWrap.argAdapter('*');
-    wasm.xWrap.argAdapter('sqlite3*', aPtr)
-    ('sqlite3_filename', aPtr)
+    wasm.xWrap.argAdapter('sqlite3_filename', aPtr)
     ('sqlite3_stmt*', aPtr)
     ('sqlite3_context*', aPtr)
     ('sqlite3_value*', aPtr)
     ('void*', aPtr)
+    ('sqlite3*', (v)=>{
+      if(sqlite3.oo1 && v instanceof sqlite3.oo1.DB) v = v.pointer;
+      return aPtr(v);
+    })
     /**
        `sqlite3_vfs*`:
 
