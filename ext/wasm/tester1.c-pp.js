@@ -1236,8 +1236,19 @@ self.sqlite3InitModule = sqlite3InitModule;
         //log("vfsList =",vfsList);
         for(const v of vfsList){
           T.assert('string' === typeof v)
-            .assert(capi.sqlite3_vfs_find(v) > 0);
+            .assert(wasm.isPtr(
+              capi.sqlite3_vfs_find(v)
+            ));
         }
+        // While we have vfsList handy, let's verify...
+        wasm.scopedAllocCall(()=>{
+          const vfsArg = (v)=>wasm.xWrap.testConvertArg('sqlite3_vfs*',v);
+          T.assert(wasm.isPtr(vfsArg(vfsList[0])));
+          const pVfs = capi.sqlite3_vfs_find(vfsList[0]);
+          const vfs = new capi.sqlite3_vfs(pVfs);
+          T.assert(wasm.isPtr(vfsArg(vfs)));
+          vfs.dispose();
+        });
       }
       /**
          Trivia: the magic db name ":memory:" does not actually use the
@@ -1784,14 +1795,15 @@ self.sqlite3InitModule = sqlite3InitModule;
 
   ////////////////////////////////////////////////////////////////////////
   T.g('OPFS (Worker thread only and only in supported browsers)',
-      (sqlite3)=>{return !!sqlite3.opfs})
+      (sqlite3)=>!!sqlite3.opfs)
     .t({
-      name: 'OPFS sanity checks',
+      name: 'OPFS db sanity checks',
       test: async function(sqlite3){
-        const filename = 'sqlite3-tester1.db';
-        const pVfs = capi.sqlite3_vfs_find('opfs');
+        const filename = this.opfsDbFile = 'sqlite3-tester1.db';
+        const pVfs = this.opfsVfs = capi.sqlite3_vfs_find('opfs');
         T.assert(pVfs);
-        const unlink = (fn=filename)=>wasm.sqlite3_wasm_vfs_unlink(pVfs,fn);
+        const unlink = this.opfsUnlink =
+              (fn=filename)=>{wasm.sqlite3_wasm_vfs_unlink(pVfs,fn)};
         unlink();
         let db = new sqlite3.oo1.OpfsDb(filename);
         try {
@@ -1808,42 +1820,76 @@ self.sqlite3InitModule = sqlite3InitModule;
           db.close();
           unlink();
         }
-
-        if(sqlite3.opfs){
-          // Sanity-test sqlite3_wasm_vfs_create_file()...
-          const opfs = sqlite3.opfs;
-          const fSize = 1379;
-          let sh;
-          try{
-            T.assert(!(await opfs.entryExists(filename)));
-            let rc = wasm.sqlite3_wasm_vfs_create_file(
-              pVfs, filename, null, fSize
-            );
-            T.assert(0===rc)
-              .assert(await opfs.entryExists(filename));
-            const fh = await opfs.rootDirectory.getFileHandle(filename);
-            sh = await fh.createSyncAccessHandle();
-            T.assert(fSize === await sh.getSize());
-          }finally{
-            if(sh) await sh.close();
-            unlink();
-          }
-
-          // Some sanity checks of the opfs utility functions...
-          const testDir = '/sqlite3-opfs-'+opfs.randomFilename(12);
-          const aDir = testDir+'/test/dir';
-          T.assert(await opfs.mkdir(aDir), "mkdir failed")
-            .assert(await opfs.mkdir(aDir), "mkdir must pass if the dir exists")
-            .assert(!(await opfs.unlink(testDir+'/test')), "delete 1 should have failed (dir not empty)")
-            .assert((await opfs.unlink(testDir+'/test/dir')), "delete 2 failed")
-            .assert(!(await opfs.unlink(testDir+'/test/dir')),
-                    "delete 2b should have failed (dir already deleted)")
-            .assert((await opfs.unlink(testDir, true)), "delete 3 failed")
-            .assert(!(await opfs.entryExists(testDir)),
-                    "entryExists(",testDir,") should have failed");
-        }
       }
-    }/*OPFS sanity checks*/)
+    }/*OPFS db sanity checks*/)
+    .t({
+      name: 'OPFS utility APIs and sqlite3_js_vfs_create_file()',
+      test: async function(sqlite3){
+        const filename = this.opfsDbFile;
+        const pVfs = this.opfsVfs;
+        const unlink = this.opfsUnlink;
+        T.assert(filename && pVfs && !!unlink);
+        unlink();
+        // Sanity-test sqlite3_js_vfs_create_file()...
+        /**************************************************************
+           ATTENTION CLIENT-SIDE USERS: sqlite3.opfs is NOT intended
+           for client-side use. It is only for this project's own
+           internal use. Its APIs are subject to change or removal at
+           any time.
+        ***************************************************************/
+        const opfs = sqlite3.opfs;
+        const fSize = 1379;
+        let sh;
+        try{
+          T.assert(!(await opfs.entryExists(filename)));
+          capi.sqlite3_js_vfs_create_file(
+            pVfs, filename, null, fSize
+          );
+          T.assert(await opfs.entryExists(filename));
+          let fh = await opfs.rootDirectory.getFileHandle(filename);
+          sh = await fh.createSyncAccessHandle();
+          T.assert(fSize === await sh.getSize());
+          await sh.close();
+          sh = undefined;
+          unlink();
+          T.assert(!(await opfs.entryExists(filename)));
+
+          const ba = new Uint8Array([1,2,3,4,5]);
+          capi.sqlite3_js_vfs_create_file(
+            "opfs", filename, ba
+          );
+          T.assert(await opfs.entryExists(filename));
+          fh = await opfs.rootDirectory.getFileHandle(filename);
+          sh = await fh.createSyncAccessHandle();
+          T.assert(ba.byteLength === await sh.getSize());
+          await sh.close();
+          sh = undefined;
+          unlink();
+
+          T.mustThrowMatching(()=>{
+            capi.sqlite3_js_vfs_create_file(
+              "no-such-vfs", filename, ba
+            );
+          }, "Unknown sqlite3_vfs name: no-such-vfs");
+        }finally{
+          if(sh) await sh.close();
+          unlink();
+        }
+
+        // Some sanity checks of the opfs utility functions...
+        const testDir = '/sqlite3-opfs-'+opfs.randomFilename(12);
+        const aDir = testDir+'/test/dir';
+        T.assert(await opfs.mkdir(aDir), "mkdir failed")
+          .assert(await opfs.mkdir(aDir), "mkdir must pass if the dir exists")
+          .assert(!(await opfs.unlink(testDir+'/test')), "delete 1 should have failed (dir not empty)")
+          .assert((await opfs.unlink(testDir+'/test/dir')), "delete 2 failed")
+          .assert(!(await opfs.unlink(testDir+'/test/dir')),
+                  "delete 2b should have failed (dir already deleted)")
+          .assert((await opfs.unlink(testDir, true)), "delete 3 failed")
+          .assert(!(await opfs.entryExists(testDir)),
+                  "entryExists(",testDir,") should have failed");
+      }
+    }/*OPFS util sanity checks*/)
   ;/* end OPFS tests */
 
   ////////////////////////////////////////////////////////////////////////

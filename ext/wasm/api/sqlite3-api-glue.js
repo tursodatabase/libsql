@@ -73,8 +73,27 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     ('sqlite3_stmt*', aPtr)
     ('sqlite3_context*', aPtr)
     ('sqlite3_value*', aPtr)
-    ('sqlite3_vfs*', aPtr)
-    ('void*', aPtr);
+    ('void*', aPtr)
+    /**
+       `sqlite3_vfs*`:
+
+       - v is-a string: use the result of sqlite3_vfs_find(v) but
+         throw if it returns 0.
+       - v is-a capi.sqlite3_vfs: use v.pointer.
+       - Else return the same as the `'*'` argument conversion.
+    */
+    ('sqlite3_vfs*', (v)=>{
+      if('string'===typeof v){
+        const x = capi.sqlite3_vfs_find(v);
+        /* A NULL sqlite3_vfs pointer will be treated as the default
+           VFS in many contexts. We specifically do not want that
+           behavior here. */
+        if(!x) sqlite3.SQLite3Error.toss("Unknown sqlite3_vfs name:",v);
+        return x;
+      }else if(v instanceof sqlite3.capi.sqlite3_vfs) v = v.pointer;
+      return aPtr(v);
+    });
+
     wasm.xWrap.resultAdapter('sqlite3*', aPtr)
     ('sqlite3_context*', aPtr)
     ('sqlite3_stmt*', aPtr)
@@ -588,8 +607,8 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
                     'version'
                    ]){
       for(const e of Object.entries(wasm.ctype[t])){
-        // ^^^ [k,v] there triggers a buggy code transormation via one
-        // of the Emscripten-driven optimizers.
+        // ^^^ [k,v] there triggers a buggy code transformation via
+        // one of the Emscripten-driven optimizers.
         capi[e[0]] = e[1];
       }
     }

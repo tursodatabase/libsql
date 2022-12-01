@@ -185,7 +185,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     constructor(...args){
       if(1===args.length && __isInt(args[0])){
         super(__rcStr(args[0]));
-      }else if(2===args.length && 'object'===typeof args){
+      }else if(2===args.length && 'object'===typeof args[1]){
         if(__isInt(args[0])) super(__rcStr(args[0]), args[1]);
         else super(...args);
       }else{
@@ -354,7 +354,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        message.
     */
     constructor(...args){
-      if(2===args.length && 'object'===typeof args){
+      if(2===args.length && 'object'===typeof args[1]){
         super(...args);
       }else if(args.length){
         super(args.join(' '));
@@ -748,7 +748,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
 
   /**
      Reports info about compile-time options using
-     sqlite_compileoption_get() and sqlite3_compileoption_used(). It
+     sqlite3_compileoption_get() and sqlite3_compileoption_used(). It
      has several distinct uses:
 
      If optName is an array then it is expected to be a list of
@@ -972,7 +972,6 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      "sqlite3_vfs*","string","*", "int"],
     ["sqlite3_wasm_vfs_unlink", "int", "sqlite3_vfs*","string"]
   ];
-
 
   /**
      sqlite3.wasm.pstack (pseudo-stack) holds a special-case
@@ -1326,6 +1325,76 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       || (n ? WasmAllocError.toss("Cannot allocate",n,
                                   "bytes for sqlite3_aggregate_context()")
           : 0);
+  };
+
+  /**
+     Creates a file using the storage appropriate for the given
+     sqlite3_vfs.  The first argument may be a VFS name (JS string
+     only, NOT a WASM C-string), WASM-managed `sqlite3_vfs*`, or
+     a capi.sqlite3_vfs instance. Pass 0 (a NULL pointer) to use the
+     default VFS. If passed a string which does not resolve using
+     sqlite3_vfs_find(), an exception is thrown. (Note that a WASM
+     C-string is not accepted because it is impossible to
+     distinguish from a C-level `sqlite3_vfs*`.)
+
+     The second argument, the filename, must be a JS or WASM C-string.
+
+     The 3rd may either be falsy, a valid WASM memory pointer, or a
+     Uint8Array. The 4th must be the length, in bytes, of the data
+     array to copy. If the 3rd argument is a Uint8Array and the 4th is
+     not a positive integer then the 4th defaults to the array's
+     byteLength value.
+
+     If data is falsy then a file is created with dataLen bytes filled
+     with uninitialized data (whatever truncate() leaves there). If
+     data is not falsy then a file is created or truncated and it is
+     filled with the first dataLen bytes of the data source.
+
+     Throws if any arguments are invalid or if creating or writing to
+     the file fails.
+
+     Note that most VFSes do _not_ automatically create directory
+     parts of filenames, nor do all VFSes have a concept of
+     directories.  If the given filename is not valid for the given
+     VFS, an exception will be thrown. This function exists primarily
+     to assist in implementing file-upload capability, with the caveat
+     that clients must have some idea of the VFS into which they want
+     to upload and that VFS must support the operation.
+
+     VFS-specific notes:
+
+     - "memdb" and "kvvfs": results are undefined.
+
+     - "unix" and related: will use the WASM build's equivalent of the
+       POSIX I/O APIs.
+
+     - "opfs": if available, uses OPFS storage and _does_ create
+       directory parts of the filename.
+  */
+  capi.sqlite3_js_vfs_create_file = function(vfs, filename, data, dataLen){
+    let pData;
+    if(!data) pData = 0;
+    else if(wasm.isPtr(data)){
+      pData = data;
+    }else if(data instanceof Uint8Array){
+      pData = wasm.allocFromTypedArray(data);
+      if(arguments.length<4 || !util.isInt32(dataLen) || dataLen<0){
+        dataLen = data.byteLength;
+      }
+    }else{
+      SQLite3Error.toss("Invalid 3rd argument type for sqlite3_js_vfs_create_file().");
+    }
+    if(!util.isInt32(dataLen) || dataLen<0){
+      wasm.dealloc(pData);
+      SQLite3Error.toss("Invalid 4th argument for sqlite3_js_vfs_create_file().");
+    }
+    try{
+      const rc = wasm.sqlite3_wasm_vfs_create_file(vfs, filename, pData, dataLen);
+      if(rc) SQLite3Error.toss("Creation of file failed with sqlite3 result code",
+                               capi.sqlite3_js_rc_str(rc));
+    }finally{
+      wasm.dealloc(pData);
+    }
   };
   
   if( util.isUIThread() ){
