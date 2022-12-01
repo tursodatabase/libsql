@@ -1,11 +1,12 @@
 use crate::coordinator::scheduler::ClientId;
+use rusqlite::types::Value;
 
 pub type QueryResult = Result<QueryResponse, QueryError>;
 
 #[derive(Debug)]
 pub enum QueryResponse {
     Ack,
-    ResultSet(Vec<String>),
+    ResultSet(Vec<(String, Option<String>)>, Vec<Vec<Value>>),
 }
 
 #[derive(Debug)]

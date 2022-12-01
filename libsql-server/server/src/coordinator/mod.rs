@@ -7,6 +7,7 @@ use std::time::{Duration, Instant};
 use anyhow::Result;
 use crossbeam::channel::Sender;
 use futures::stream::FuturesUnordered;
+use rusqlite::types::Value;
 use tokio::task::JoinHandle;
 
 use crate::coordinator::query::{ErrorCode, QueryError, QueryResponse, QueryResult};
@@ -81,23 +82,20 @@ impl Worker {
     fn perform_oneshot(&self, stmts: &Statements) -> QueryResult {
         let mut result = vec![];
         let mut prepared = self.db_conn.prepare(&stmts.stmts)?;
-        let col_names: Vec<String> = prepared
-            .column_names()
+        let columns: Vec<(String, Option<String>)> = prepared
+            .columns()
             .iter()
-            .map(|s| s.to_string())
+            .map(|col| (col.name().into(), col.decl_type().map(str::to_lowercase)))
             .collect();
-        //FIXME(sarna): the code below was ported as-is,
-        // but once we switch to gathering whole rows in the result vector
-        // instead of single values, Statement::query_map is a more convenient
-        // interface (it also implements Iter).
         let mut rows = prepared.query([])?;
         while let Some(row) = rows.next()? {
-            for (i, name) in col_names.iter().enumerate() {
-                result.push(format!("{} = {}", name, row.get::<usize, String>(i)?));
+            let mut row_ = vec![];
+            for (i, _) in columns.iter().enumerate() {
+                row_.push(row.get::<usize, Value>(i)?);
             }
+            result.push(row_);
         }
-
-        Ok(QueryResponse::ResultSet(result))
+        Ok(QueryResponse::ResultSet(columns, result))
     }
 
     fn handle_transaction(&self, job: Job) {
