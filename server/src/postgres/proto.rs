@@ -8,6 +8,7 @@ use pgwire::messages::response::{ReadyForQuery, READY_STATUS_IDLE};
 use pgwire::messages::startup::SslRequest;
 use pgwire::messages::PgWireBackendMessage;
 use pgwire::tokio::PgWireMessageServerCodec;
+use rusqlite::types::Value;
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 use tokio_util::codec::Framed;
 
@@ -25,14 +26,49 @@ impl SimpleQueryHandler for SimpleHandler {
         // TODO: find a way to prevent unecessary clones.
         match &self.0 {
             Ok(resp) => match resp {
-                QueryResponse::ResultSet(rows) => {
-                    let data_row_stream = stream::iter(rows.clone().into_iter()).map(|r| {
-                        let mut encoder = TextDataRowEncoder::new(1);
-                        encoder.append_field(Some(&r))?;
+                QueryResponse::ResultSet(col_names, rows) => {
+                    let nr_cols = col_names.len();
+                    let field_infos = col_names
+                        .iter()
+                        .map(move |(name, ty)| {
+                            let ty = match ty {
+                                Some(ty) => match ty.as_str() {
+                                    "integer" => Type::INT8,
+                                    "real" => Type::NUMERIC,
+                                    "text" => Type::VARCHAR,
+                                    "blob" => Type::BYTEA,
+                                    _ => Type::UNKNOWN,
+                                },
+                                None => Type::UNKNOWN,
+                            };
+                            FieldInfo::new(name.into(), None, None, ty)
+                        })
+                        .collect();
+                    let data_row_stream = stream::iter(rows.clone().into_iter()).map(move |row| {
+                        let mut encoder = TextDataRowEncoder::new(nr_cols);
+                        for col in &row {
+                            match col {
+                                Value::Null => {
+                                    encoder.append_field(None::<&u8>)?;
+                                }
+                                Value::Integer(i) => {
+                                    encoder.append_field(Some(&i))?;
+                                }
+                                Value::Real(f) => {
+                                    encoder.append_field(Some(&f))?;
+                                }
+                                Value::Text(t) => {
+                                    encoder.append_field(Some(&t))?;
+                                }
+                                Value::Blob(b) => {
+                                    encoder.append_field(Some(&hex::encode(b)))?;
+                                }
+                            }
+                        }
                         encoder.finish()
                     });
                     return Ok(vec![Response::Query(text_query_response(
-                        vec![FieldInfo::new("row".into(), None, None, Type::VARCHAR)],
+                        field_infos,
                         data_row_stream,
                     ))]);
                 }

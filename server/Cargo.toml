@@ -11,11 +11,12 @@ bytes = "1.2.1"
 clap = { version = "4.0.23", features = [ "derive" ] }
 crossbeam = "0.8.2"
 futures = "0.3.25"
+hex = "0.4.3"
 parking_lot = "0.12.1"
 pgwire = "0.5.0"
 pin-project-lite = "0.2.9"
 postgres-protocol = "0.6.4"
-rusqlite = { version = "0.28.0", features = [ "buildtime_bindgen" ] }
+rusqlite = { version = "0.28.0", features = [ "buildtime_bindgen", "column_decltype" ] }
 smallvec = "1.10.0"
 sqlparser = "0.27.0"
 tokio = { version = "1.21.2", features = ["full"] }
