@@ -10,21 +10,26 @@ use std::cell::RefCell;
 use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_int, c_void};
 use std::rc::Rc;
+use tracing::trace;
 use unwrap_or::unwrap_ok_or;
 
-static mut errmsg: RefCell<Option<CString>> = RefCell::new(None);
+thread_local! {
+    static ERRMSG: RefCell<Option<CString>> = RefCell::new(None);
+}
+
+fn set_error_message<T: ToString>(e: T) {
+    ERRMSG.with(|errmsg| {
+        errmsg.replace(Some(CString::new(e.to_string()).unwrap()));
+    });
+}
 
 macro_rules! define_stub {
     ($name:tt) => {
         #[no_mangle]
         pub extern "C" fn $name() -> c_int {
             let func_name = std::stringify!($name);
-            println!("STUB {}", func_name);
-            unsafe {
-                errmsg.replace(Some(
-                    CString::new(format!("{} not implemented", func_name)).unwrap(),
-                ));
-            }
+            trace!("STUB {}", func_name);
+            set_error_message(format!("{} not implemented", func_name));
             SQLITE_ERROR
         }
     };
@@ -72,7 +77,7 @@ impl sqlite3 {
 
 impl Drop for sqlite3 {
     fn drop(&mut self) {
-        println!("TRACE drop sqlite3");
+        trace!("TRACE drop sqlite3");
     }
 }
 
@@ -100,7 +105,7 @@ pub struct sqlite3_stmt {
 
 impl Drop for sqlite3_stmt {
     fn drop(&mut self) {
-        println!("TRACE drop sqlite3_stmt");
+        trace!("TRACE drop sqlite3_stmt");
     }
 }
 
@@ -129,28 +134,27 @@ pub extern "C" fn sqlite3_libversion_number() -> c_int {
 
 #[no_mangle]
 pub extern "C" fn sqlite3_initialize() -> c_int {
-    println!("STUB sqlite3_initialize");
-    unsafe {
-        errmsg.replace(Some(CString::new(String::new()).unwrap()));
-    }
+    tracing_subscriber::fmt::init();
+    trace!("STUB sqlite3_initialize");
+    set_error_message("");
     SQLITE_OK
 }
 
 #[no_mangle]
 pub extern "C" fn sqlite3_shutdown() -> c_int {
-    println!("STUB sqlite3_shutdown");
+    trace!("STUB sqlite3_shutdown");
     SQLITE_OK
 }
 
 #[no_mangle]
 pub extern "C" fn sqlite3_os_init() -> c_int {
-    println!("STUB sqlite3_os_init");
+    trace!("STUB sqlite3_os_init");
     SQLITE_OK
 }
 
 #[no_mangle]
 pub extern "C" fn sqlite3_os_end() -> c_int {
-    println!("STUB sqlite3_os_end");
+    trace!("STUB sqlite3_os_end");
     SQLITE_OK
 }
 
@@ -160,36 +164,36 @@ pub extern "C" fn sqlite3_os_end() -> c_int {
 
 #[no_mangle]
 pub extern "C" fn sqlite3_errcode(_db: *mut sqlite3) -> c_int {
-    println!("STUB sqlite3_errcode");
+    trace!("STUB sqlite3_errcode");
     SQLITE_OK
 }
 
 #[no_mangle]
 pub extern "C" fn sqlite3_extended_errcode(_db: *mut sqlite3) -> c_int {
-    println!("STUB sqlite3_extended_errcode");
+    trace!("STUB sqlite3_extended_errcode");
     SQLITE_OK
 }
 
 #[no_mangle]
 pub extern "C" fn sqlite3_errmsg(_db: *mut sqlite3) -> *const c_char {
-    println!("STUB sqlite3_errmsg");
-    unsafe {
+    trace!("STUB sqlite3_errmsg");
+    ERRMSG.with(|errmsg| {
         errmsg
             .borrow()
             .as_ref()
             .map_or_else(std::ptr::null, |v| v.as_ptr())
-    }
+    })
 }
 
 #[no_mangle]
 pub extern "C" fn sqlite3_errmsg16(_db: *mut sqlite3) -> *const c_char {
-    println!("STUB sqlite3_errmsg16");
+    trace!("STUB sqlite3_errmsg16");
     std::ptr::null()
 }
 
 #[no_mangle]
 pub extern "C" fn sqlite3_errstr(_err: c_int) -> *const c_char {
-    println!("STUB sqlite3_errstr");
+    trace!("STUB sqlite3_errstr");
     std::ptr::null()
 }
 
@@ -201,13 +205,15 @@ define_stub!(sqlite3_error_offset);
 
 #[no_mangle]
 pub extern "C" fn sqlite3_open(filename: *const c_char, db: *mut *mut sqlite3) -> c_int {
-    println!("TRACE sqlite3_open");
+    trace!("TRACE sqlite3_open");
     let filename = unsafe { CStr::from_ptr(filename) };
-    let filename = unwrap_ok_or!(filename.to_str(), _, {
+    let filename = unwrap_ok_or!(filename.to_str(), e, {
+        set_error_message(e);
         return SQLITE_MISUSE;
     });
     unsafe {
-        let database = unwrap_ok_or!(sqlite3::connect(filename), _, {
+        let database = unwrap_ok_or!(sqlite3::connect(filename), e, {
+            set_error_message(e);
             return SQLITE_ERROR;
         });
         let ptr = Box::new(database);
@@ -218,13 +224,15 @@ pub extern "C" fn sqlite3_open(filename: *const c_char, db: *mut *mut sqlite3) -
 
 #[no_mangle]
 pub extern "C" fn sqlite3_open16(filename: *const c_char, db: *mut *mut sqlite3) -> c_int {
-    println!("TRACE sqlite3_open16");
+    trace!("TRACE sqlite3_open16");
     let filename = unsafe { CStr::from_ptr(filename) };
-    let filename = unwrap_ok_or!(filename.to_str(), _, {
+    let filename = unwrap_ok_or!(filename.to_str(), e, {
+        set_error_message(e);
         return SQLITE_MISUSE;
     });
     unsafe {
-        let database = unwrap_ok_or!(sqlite3::connect(filename), _, {
+        let database = unwrap_ok_or!(sqlite3::connect(filename), e, {
+            set_error_message(e);
             return SQLITE_ERROR;
         });
         let ptr = Box::new(database);
@@ -240,13 +248,15 @@ pub extern "C" fn sqlite3_open_v2(
     _flags: c_int,
     _pVfs: *const c_char,
 ) -> c_int {
-    println!("TRACE sqlite3_open_v2");
+    trace!("TRACE sqlite3_open_v2");
     let filename = unsafe { CStr::from_ptr(filename) };
-    let filename = unwrap_ok_or!(filename.to_str(), _, {
+    let filename = unwrap_ok_or!(filename.to_str(), e, {
+        set_error_message(e);
         return SQLITE_MISUSE;
     });
     unsafe {
-        let database = unwrap_ok_or!(sqlite3::connect(filename), _, {
+        let database = unwrap_ok_or!(sqlite3::connect(filename), e, {
+            set_error_message(e);
             return SQLITE_ERROR;
         });
         let ptr = Box::new(database);
@@ -257,7 +267,7 @@ pub extern "C" fn sqlite3_open_v2(
 
 #[no_mangle]
 pub extern "C" fn sqlite3_close(db: *mut sqlite3) -> c_int {
-    println!("TRACE sqlite3_close");
+    trace!("TRACE sqlite3_close");
     if db.is_null() {
         return SQLITE_OK;
     }
@@ -267,7 +277,7 @@ pub extern "C" fn sqlite3_close(db: *mut sqlite3) -> c_int {
 
 #[no_mangle]
 pub extern "C" fn sqlite3_close_v2(db: *mut sqlite3) -> c_int {
-    println!("TRACE sqlite3_close_v2");
+    trace!("TRACE sqlite3_close_v2");
     if db.is_null() {
         return SQLITE_OK;
     }
@@ -288,7 +298,7 @@ pub extern "C" fn sqlite3_prepare_v2(
     pzTail: *mut *const c_char,
 ) -> c_int {
     let database = unsafe { (*db).inner.clone() };
-    println!("TRACE sqlite3_prepare_v2");
+    trace!("TRACE sqlite3_prepare_v2");
     let zSql = unsafe { CStr::from_ptr(zSql) };
     let sql = unwrap_ok_or!(zSql.to_str(), _, {
         return SQLITE_ERROR;
@@ -307,13 +317,13 @@ pub extern "C" fn sqlite3_prepare_v2(
 
 #[no_mangle]
 pub extern "C" fn sqlite3_finalize(_stmt: *mut sqlite3_stmt) -> c_int {
-    println!("STUB sqlite3_finalize");
+    trace!("STUB sqlite3_finalize");
     SQLITE_OK
 }
 
 #[no_mangle]
 pub extern "C" fn sqlite3_reset(_stmt: *mut sqlite3_stmt) -> c_int {
-    println!("STUB sqlite3_reset");
+    trace!("STUB sqlite3_reset");
     SQLITE_OK
 }
 
@@ -324,15 +334,17 @@ pub extern "C" fn sqlite3_reset(_stmt: *mut sqlite3_stmt) -> c_int {
 #[no_mangle]
 pub extern "C" fn sqlite3_step(stmt: *mut sqlite3_stmt) -> c_int {
     let stmt = unsafe { &(*stmt).inner };
-    println!("STUB sqlite3_step {}", stmt.sql);
+    trace!("STUB sqlite3_step {}", stmt.sql);
     match stmt.state {
         StatementState::Prepared => {
             let database = stmt.parent.clone();
             let mut conn = database.conn.borrow_mut();
-            unwrap_ok_or!(conn.send_simple_query(&stmt.sql), _, {
+            unwrap_ok_or!(conn.send_simple_query(&stmt.sql), e, {
+                set_error_message(e);
                 return SQLITE_ERROR;
             });
-            unwrap_ok_or!(conn.wait_until_ready(), _, {
+            unwrap_ok_or!(conn.wait_until_ready(), e, {
+                set_error_message(e);
                 return SQLITE_ERROR;
             });
             SQLITE_DONE
@@ -350,7 +362,7 @@ pub extern "C" fn sqlite3_bind_blob(
     _n: c_int,
     _callback: extern "C" fn(*mut ()),
 ) -> c_int {
-    println!("STUB sqlite3_bind_blob");
+    trace!("STUB sqlite3_bind_blob");
     SQLITE_OK
 }
 
@@ -362,19 +374,19 @@ pub extern "C" fn sqlite3_bind_blob64(
     _n: sqlite3_uint64,
     _callback: extern "C" fn(*mut ()),
 ) -> c_int {
-    println!("STUB sqlite3_bind_blob64");
+    trace!("STUB sqlite3_bind_blob64");
     SQLITE_ERROR
 }
 
 #[no_mangle]
 pub extern "C" fn sqlite3_bind_double(_stmt: *mut sqlite3_stmt, _idx: c_int, _value: f32) -> c_int {
-    println!("sqlite3_bind_double");
+    trace!("sqlite3_bind_double");
     SQLITE_OK
 }
 
 #[no_mangle]
 pub extern "C" fn sqlite3_bind_int(_stmt: *mut sqlite3_stmt, _idx: c_int, _value: c_int) -> c_int {
-    println!("sqlite3_bind_int");
+    trace!("sqlite3_bind_int");
     SQLITE_OK
 }
 
@@ -384,13 +396,13 @@ pub extern "C" fn sqlite3_bind_int64(
     _idx: c_int,
     _value: sqlite3_int64,
 ) -> c_int {
-    println!("STUB sqlite3_bind_int64");
+    trace!("STUB sqlite3_bind_int64");
     SQLITE_OK
 }
 
 #[no_mangle]
 pub extern "C" fn sqlite3_bind_null(_stmt: *mut sqlite3_stmt, _idx: c_int) -> c_int {
-    println!("STUB sqlite3_bind_null");
+    trace!("STUB sqlite3_bind_null");
     SQLITE_OK
 }
 
@@ -402,7 +414,7 @@ pub extern "C" fn sqlite3_bind_text(
     _n: c_int,
     _callback: extern "C" fn(*mut ()),
 ) -> c_int {
-    println!("STUB sqlite3_bind_text");
+    trace!("STUB sqlite3_bind_text");
     SQLITE_OK
 }
 
@@ -414,7 +426,7 @@ pub extern "C" fn sqlite3_bind_text16(
     _n: c_int,
     _callback: extern "C" fn(*mut ()),
 ) -> c_int {
-    println!("STUB sqlite3_bind_text64");
+    trace!("STUB sqlite3_bind_text64");
     SQLITE_OK
 }
 
@@ -427,7 +439,7 @@ pub extern "C" fn sqlite3_bind_text64(
     _callback: extern "C" fn(*mut ()),
     _encoding: c_char,
 ) -> c_int {
-    println!("STUB sqlite3_bind_text64");
+    trace!("STUB sqlite3_bind_text64");
     SQLITE_OK
 }
 
