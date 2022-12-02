@@ -14,17 +14,19 @@ use unwrap_or::unwrap_ok_or;
 
 static mut errmsg: RefCell<Option<CString>> = RefCell::new(None);
 
+fn set_error_message<T: ToString>(e: T) {
+    unsafe {
+        errmsg.replace(Some(CString::new(e.to_string()).unwrap()));
+    }
+}
+
 macro_rules! define_stub {
     ($name:tt) => {
         #[no_mangle]
         pub extern "C" fn $name() -> c_int {
             let func_name = std::stringify!($name);
             println!("STUB {}", func_name);
-            unsafe {
-                errmsg.replace(Some(
-                    CString::new(format!("{} not implemented", func_name)).unwrap(),
-                ));
-            }
+            set_error_message(format!("{} not implemented", func_name));
             SQLITE_ERROR
         }
     };
@@ -130,9 +132,7 @@ pub extern "C" fn sqlite3_libversion_number() -> c_int {
 #[no_mangle]
 pub extern "C" fn sqlite3_initialize() -> c_int {
     println!("STUB sqlite3_initialize");
-    unsafe {
-        errmsg.replace(Some(CString::new(String::new()).unwrap()));
-    }
+    set_error_message("");
     SQLITE_OK
 }
 
