@@ -1,0 +1,154 @@
+# 2022-11-23
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.
+#
+# This file implements tests to verify that the enhancement
+# request documented by ticket 99378177930f87bd is working.
+#
+# The enhancement is that if an aggregate query with a GROUP BY clause
+# uses subexpressions in the arguments to aggregate functions that are
+# also columns of an index, then the values are pulled from the index
+# rather than being recomputed.  This has the potential to make some
+# indexed queries works as if the index were covering.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+do_execsql_test tkt-99378-100 {
+  CREATE TABLE t1(a INT, b TEXT, c INT, d INT);
+  INSERT INTO t1(a,b,c,d) VALUES
+    (1, '{"x":1}', 12,  3),
+    (1, '{"x":2}',  4,  5),
+    (1, '{"x":1}',  6, 11),
+    (2, '{"x":1}', 22,  3),
+    (2, '{"x":2}',  4,  5),
+    (3, '{"x":1}',  6,  7);
+  CREATE INDEX t1x ON t1(d, a, b->>'x', c);
+} {}
+do_execsql_test tkt-99378-110 {
+  SELECT a,
+         SUM(1)                              AS t1,
+         SUM(CASE WHEN b->>'x'=1 THEN 1 END) AS t2,
+         SUM(c)                              AS t3,
+         SUM(CASE WHEN b->>'x'=1 THEN c END) AS t4
+    FROM t1
+   WHERE d BETWEEN 0 and 10
+   GROUP BY a;
+} {
+  1  2  1 16 12
+  2  2  1 26 22
+  3  1  1  6  6
+}
+
+# The proof that the index on the expression is being used is in the
+# fact that the byte code contains no "Function" opcodes.  In other words,
+# the ->> operator (which is implemented by a function) is never invoked.
+# Instead, the b->>'x' value is pulled out of the index.
+#
+do_execsql_test tkt-99378-120 {
+  EXPLAIN
+  SELECT a,
+         SUM(1)                              AS t1,
+         SUM(CASE WHEN b->>'x'=1 THEN 1 END) AS t2,
+         SUM(c)                              AS t3,
+         SUM(CASE WHEN b->>'x'=1 THEN c END) AS t4
+    FROM t1
+   WHERE d BETWEEN 0 and 10
+   GROUP BY a;
+} {~/Function/}
+
+
+do_execsql_test tkt-99378-130 {
+  SELECT a,
+         SUM(1)                              AS t1,
+         SUM(CASE WHEN b->>'x'=1 THEN 1 END) AS t2,
+         SUM(c)                              AS t3,
+         SUM(CASE WHEN b->>'x'=1 THEN c END) AS t4
+    FROM t1
+   WHERE d BETWEEN 0 and 10
+   GROUP BY +a;
+} {
+  1  2  1 16 12
+  2  2  1 26 22
+  3  1  1  6  6
+}
+do_execsql_test tkt-99378-140 {
+  EXPLAIN
+  SELECT a,
+         SUM(1)                              AS t1,
+         SUM(CASE WHEN b->>'x'=1 THEN 1 END) AS t2,
+         SUM(c)                              AS t3,
+         SUM(CASE WHEN b->>'x'=1 THEN c END) AS t4
+    FROM t1
+   WHERE d BETWEEN 0 and 10
+   GROUP BY +a;
+} {~/Function/}
+
+do_execsql_test tkt-99378-200 {
+  DROP INDEX t1x;
+  CREATE INDEX t1x ON t1(a, d, b->>'x', c);
+}
+do_execsql_test tkt-99378-210 {
+  SELECT a,
+         SUM(1)                              AS t1,
+         SUM(CASE WHEN b->>'x'=1 THEN 1 END) AS t2,
+         SUM(c)                              AS t3,
+         SUM(CASE WHEN b->>'x'=1 THEN c END) AS t4
+    FROM t1
+   WHERE d BETWEEN 0 and 10
+   GROUP BY a;
+} {
+  1  2  1 16 12
+  2  2  1 26 22
+  3  1  1  6  6
+}
+do_execsql_test tkt-99378-220 {
+  EXPLAIN
+  SELECT a,
+         SUM(1)                              AS t1,
+         SUM(CASE WHEN b->>'x'=1 THEN 1 END) AS t2,
+         SUM(c)                              AS t3,
+         SUM(CASE WHEN b->>'x'=1 THEN c END) AS t4
+    FROM t1
+   WHERE d BETWEEN 0 and 10
+   GROUP BY a;
+} {~/Function/}
+do_execsql_test tkt-99378-230 {
+  SELECT a,
+         SUM(1)                              AS t1,
+         SUM(CASE WHEN b->>'x'=1 THEN 1 END) AS t2,
+         SUM(c)                              AS t3,
+         SUM(CASE WHEN b->>'x'=1 THEN c END) AS t4
+    FROM t1
+   WHERE d BETWEEN 0 and 10
+   GROUP BY a;
+} {
+  1  2  1 16 12
+  2  2  1 26 22
+  3  1  1  6  6
+}
+do_execsql_test tkt-99378-240 {
+  EXPLAIN
+  SELECT a,
+         SUM(1)                              AS t1,
+         SUM(CASE WHEN b->>'x'=1 THEN 1 END) AS t2,
+         SUM(c)                              AS t3,
+         SUM(CASE WHEN b->>'x'=1 THEN c END) AS t4
+    FROM t1
+   WHERE d BETWEEN 0 and 10
+   GROUP BY a;
+} {~/Function/}
+
+
+
+
+finish_test

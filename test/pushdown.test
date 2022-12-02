@@ -86,6 +86,31 @@ do_test 2.2 {
   set L
 } {three}
 
-
+# 2022-11-25 dbsqlfuzz crash-3a548de406a50e896c1bf7142692d35d339d697f
+# Disable the push-down optimization for compound subqueries if any
+# arm of the compound has an incompatible affinity.
+#
+reset_db
+do_execsql_test 3.1 {
+  CREATE TABLE t0(c0 INT);
+  INSERT INTO t0 VALUES(0);
+  CREATE TABLE t1_a(a INTEGER PRIMARY KEY, b TEXT);
+  INSERT INTO t1_a VALUES(1,'one'); --,(4,'four');
+  CREATE TABLE t1_b(c INTEGER PRIMARY KEY, d TEXT);
+  INSERT INTO t1_b VALUES(2,'two'); --,(5,'five');
+  CREATE VIEW v0 AS SELECT CAST(t0.c0 AS INTEGER) AS c0 FROM t0;
+  CREATE VIEW t1 AS SELECT a, b FROM t1_a UNION ALL SELECT c, 0 FROM t1_b;
+  SELECT t1.a, quote(t1.b), t0.c0 AS cd FROM t0 LEFT JOIN v0 ON v0.c0!=0,t1;
+} {
+  1 'one' 0
+  2 '0'   0
+}
+do_execsql_test 3.2 {
+  SELECT a, quote(b), cd FROM (
+    SELECT t1.a, t1.b, t0.c0 AS cd FROM t0 LEFT JOIN v0 ON v0.c0!=0,t1
+  ) WHERE a=2 AND b='0' AND cd=0;
+} {
+  2 '0'   0
+}
   
 finish_test

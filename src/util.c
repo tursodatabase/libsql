@@ -1713,3 +1713,10 @@ int sqlite3VListNameToNum(VList *pIn, const char *zName, int nName){
   }while( i<mx );
   return 0;
 }
+
+/*
+** High-resolution hardware timer used for debugging and testing only.
+*/
+#if defined(VDBE_PROFILE) || defined(SQLITE_PERFORMANCE_TRACE)
+# include "hwtime.h"
+#endif

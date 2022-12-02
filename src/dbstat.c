@@ -824,16 +824,16 @@ static int statColumn(
       }
       break;
     case 4:            /* ncell */
-      sqlite3_result_int(ctx, pCsr->nCell);
+      sqlite3_result_int64(ctx, pCsr->nCell);
       break;
     case 5:            /* payload */
-      sqlite3_result_int(ctx, pCsr->nPayload);
+      sqlite3_result_int64(ctx, pCsr->nPayload);
       break;
     case 6:            /* unused */
-      sqlite3_result_int(ctx, pCsr->nUnused);
+      sqlite3_result_int64(ctx, pCsr->nUnused);
       break;
     case 7:            /* mx_payload */
-      sqlite3_result_int(ctx, pCsr->nMxPayload);
+      sqlite3_result_int64(ctx, pCsr->nMxPayload);
       break;
     case 8:            /* pgoffset */
       if( !pCsr->isAgg ){
@@ -841,7 +841,7 @@ static int statColumn(
       }
       break;
     case 9:            /* pgsize */
-      sqlite3_result_int(ctx, pCsr->szPage);
+      sqlite3_result_int64(ctx, pCsr->szPage);
       break;
     case 10: {         /* schema */
       sqlite3 *db = sqlite3_context_db_handle(ctx);

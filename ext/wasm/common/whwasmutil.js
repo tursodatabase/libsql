@@ -1313,7 +1313,7 @@ self.WhWasmUtilInstaller = function(target){
 
   const __xResultAdapterCheck =
         (t)=>xcv.result[t] || toss("Result adapter not found:",t);
-  
+
   cache.xWrap.convertArg = (t,v)=>__xArgAdapterCheck(t)(v);
   cache.xWrap.convertResult =
     (t,v)=>(null===t ? v : (t ? __xResultAdapterCheck(t)(v) : undefined));
@@ -1442,7 +1442,7 @@ self.WhWasmUtilInstaller = function(target){
      exception.
 
      Clients may map their own result and argument adapters using
-     xWrap.resultAdapter() and xWrap.argAdaptor(), noting that not all
+     xWrap.resultAdapter() and xWrap.argAdapter(), noting that not all
      type conversions are valid for both arguments _and_ result types
      as they often have different memory ownership requirements.
 
@@ -1497,7 +1497,7 @@ self.WhWasmUtilInstaller = function(target){
     };
   }/*xWrap()*/;
 
-  /** Internal impl for xWrap.resultAdapter() and argAdaptor(). */
+  /** Internal impl for xWrap.resultAdapter() and argAdapter(). */
   const __xAdapter = function(func, argc, typeName, adapter, modeName, xcvPart){
     if('string'===typeof typeName){
       if(1===argc) return xcvPart[typeName];
@@ -1575,7 +1575,7 @@ self.WhWasmUtilInstaller = function(target){
   */
   target.xWrap.argAdapter = function f(typeName, adapter){
     return __xAdapter(f, arguments.length, typeName, adapter,
-                      'argAdaptor()', xcv.arg);
+                      'argAdapter()', xcv.arg);
   };
 
   /**
@@ -1600,6 +1600,33 @@ self.WhWasmUtilInstaller = function(target){
     if(Array.isArray(arguments[3])) args = arguments[3];
     return target.xWrap(fname, resultType, argTypes||[]).apply(null, args||[]);
   };
+
+  /**
+     This function is ONLY exposed in the public API to facilitate
+     testing. It should not be used in application-level code, only
+     in test code.
+
+     Expects to be given (typeName, value) and returns a conversion
+     of that value as has been registered using argAdapter().
+     It throws if no adapter is found.
+
+     ACHTUNG: the adapter may require that a scopedAllocPush() is
+     active and it may allocate memory within that scope.
+  */
+  target.xWrap.testConvertArg = cache.xWrap.convertArg;
+  /**
+     This function is ONLY exposed in the public API to facilitate
+     testing. It should not be used in application-level code, only
+     in test code.
+
+     Expects to be given (typeName, value) and returns a conversion
+     of that value as has been registered using resultAdapter().
+     It throws if no adapter is found.
+
+     ACHTUNG: the adapter may allocate memory which the caller may need
+     to know how to free.
+  */
+  target.xWrap.testConvertResult = cache.xWrap.convertResult;
 
   return target;
 };
