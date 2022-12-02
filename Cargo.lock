@@ -293,6 +293,8 @@ dependencies = [
  "anyhow",
  "bytes",
  "postgres-protocol",
+ "tracing",
+ "tracing-subscriber",
  "unwrap_or",
  "url",
 ]
