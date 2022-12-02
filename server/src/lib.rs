@@ -12,6 +12,7 @@ use crate::server::Server;
 
 mod coordinator;
 mod job;
+mod database;
 mod postgres;
 mod server;
 mod wal;
