@@ -277,7 +277,7 @@ const installOpfsVfs = function callee(options){
        of this value is also used for determining how long to wait on
        lock contention to free up.
     */
-    state.asyncIdleWaitTime = 100;
+    state.asyncIdleWaitTime = 150;
     /**
        Whether the async counterpart should log exceptions to
        the serialization channel. That produces a great deal of
@@ -636,6 +636,12 @@ const installOpfsVfs = function callee(options){
         a[i] = f._chars[ndx];
       }
       return a.join("");
+      /*
+        An alternative impl. with an unpredictable length
+        but much simpler:
+
+        Math.floor(Math.random() * Number.MAX_SAFE_INTEGER).toString(36)
+      */
     };
 
     /**
@@ -1159,7 +1165,7 @@ const installOpfsVfs = function callee(options){
           "pragma journal_mode=persist;",
           /* Set a default busy-timeout handler to help OPFS dbs
              deal with multi-tab/multi-worker contention. */
-          "pragma busy_timeout=3000;",
+          "pragma busy_timeout=5000;",
           /*
             This vfs benefits hugely from cache on moderate/large
             speedtest1 --size 50 and --size 100 workloads. We currently

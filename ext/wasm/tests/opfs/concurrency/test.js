@@ -69,6 +69,7 @@
   options.unlockAsap = (
     urlArgsHtml.has('unlock-asap') ? +urlArgsHtml.get('unlock-asap') : 0
   ) || 0;
+  options.noUnlink = !!urlArgsHtml.has('no-unlink');
   const workers = [];
   workers.post = (type,...args)=>{
     for(const w of workers) w.postMessage({type, payload:args});
@@ -124,7 +125,9 @@
   for(let i = 0; i < options.workerCount; ++i){
     stdout("Launching worker...");
     workers.push(new Worker(
-      workers.uri+'&workerId='+(i+1)+(i ? '' : '&unlink-db')
+      workers.uri+'&workerId='+(i+1)+(
+        (i || options.noUnlink) ? '' : '&unlink-db'
+      )
     ));
   }
   // Have to delay onmessage assignment until after the loop
