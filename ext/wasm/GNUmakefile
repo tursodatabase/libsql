@@ -854,3 +854,7 @@ update-docs:
 endif
 # end /wasm docs
 ########################################################################
+
+# Run local web server for the test/demo pages.
+httpd:
+	althttpd -max-age 1 -enable-sab -page index.html

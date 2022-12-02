@@ -1759,10 +1759,6 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
   /** The OO API's public namespace. */
   sqlite3.oo1 = {
-    version: {
-      lib: capi.sqlite3_libversion(),
-      ooApi: "0.1"
-    },
     DB,
     Stmt
   }/*oo1 object*/;
