@@ -12,7 +12,7 @@ use crate::query_analysis::{State, Statements};
 
 use super::{Database, TXN_TIMEOUT_SECS};
 
-pub struct SQLiteDb {
+pub struct LibSqlDb {
     sender: crossbeam::channel::Sender<(Statements, oneshot::Sender<QueryResult>)>,
 }
 
@@ -48,7 +48,7 @@ macro_rules! ok_or_exit {
     };
 }
 
-impl SQLiteDb {
+impl LibSqlDb {
     pub fn new(path: PathBuf) -> anyhow::Result<Self> {
         let (sender, receiver) =
             crossbeam::channel::unbounded::<(Statements, oneshot::Sender<QueryResult>)>();
@@ -122,7 +122,7 @@ impl SQLiteDb {
 }
 
 #[async_trait::async_trait(?Send)]
-impl Database for SQLiteDb {
+impl Database for LibSqlDb {
     async fn execute(&self, query: Statements) -> QueryResult {
         let (sender, receiver) = oneshot::channel();
         let _ = self.sender.send((query, sender));

@@ -2,8 +2,8 @@ use std::net::SocketAddr;
 use std::path::PathBuf;
 
 use anyhow::Result;
+use database::libsql::LibSqlDb;
 use database::service::DbFactoryService;
-use database::sqlite::SQLiteDb;
 
 use crate::postgres::service::PgConnectionFactory;
 use crate::server::Server;
@@ -29,7 +29,7 @@ pub async fn run_server(
 
     let service = DbFactoryService::new(move || {
         let db_path = db_path.clone();
-        async move { SQLiteDb::new(db_path) }
+        async move { LibSqlDb::new(db_path) }
     });
     let factory = PgConnectionFactory::new(service);
     server.serve(factory).await;
