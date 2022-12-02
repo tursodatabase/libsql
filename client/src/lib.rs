@@ -13,12 +13,14 @@ use std::rc::Rc;
 use tracing::trace;
 use unwrap_or::unwrap_ok_or;
 
-static mut errmsg: RefCell<Option<CString>> = RefCell::new(None);
+thread_local! {
+    static ERRMSG: RefCell<Option<CString>> = RefCell::new(None);
+}
 
 fn set_error_message<T: ToString>(e: T) {
-    unsafe {
+    ERRMSG.with(|errmsg| {
         errmsg.replace(Some(CString::new(e.to_string()).unwrap()));
-    }
+    });
 }
 
 macro_rules! define_stub {
@@ -175,12 +177,12 @@ pub extern "C" fn sqlite3_extended_errcode(_db: *mut sqlite3) -> c_int {
 #[no_mangle]
 pub extern "C" fn sqlite3_errmsg(_db: *mut sqlite3) -> *const c_char {
     trace!("STUB sqlite3_errmsg");
-    unsafe {
+    ERRMSG.with(|errmsg| {
         errmsg
             .borrow()
             .as_ref()
             .map_or_else(std::ptr::null, |v| v.as_ptr())
-    }
+    })
 }
 
 #[no_mangle]
