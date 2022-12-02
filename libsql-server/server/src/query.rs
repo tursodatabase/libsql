@@ -1,4 +1,3 @@
-use crate::coordinator::scheduler::ClientId;
 use rusqlite::types::Value;
 
 pub type QueryResult = Result<QueryResponse, QueryError>;
@@ -7,12 +6,6 @@ pub type QueryResult = Result<QueryResponse, QueryError>;
 pub enum QueryResponse {
     Ack,
     ResultSet(Vec<(String, Option<String>)>, Vec<Vec<Value>>),
-}
-
-#[derive(Debug)]
-pub struct QueryRequest {
-    pub client_id: ClientId,
-    pub query: Query,
 }
 
 #[derive(Debug)]
@@ -33,6 +26,12 @@ impl QueryError {
             code,
             msg: msg.to_string(),
         }
+    }
+}
+
+impl From<rusqlite::Error> for QueryError {
+    fn from(other: rusqlite::Error) -> Self {
+        Self::new(ErrorCode::SQLError, other)
     }
 }
 

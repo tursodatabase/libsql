@@ -16,8 +16,8 @@ use tokio_util::codec::{Decoder, Framed};
 use tower::MakeService;
 use tower::Service;
 
-use crate::coordinator::query::{Query, QueryError, QueryResponse};
 use crate::postgres::authenticator::PgAuthenticator;
+use crate::query::{Query, QueryError, QueryResponse};
 use crate::server::AsyncPeekable;
 
 use super::proto::{peek_for_sslrequest, process_error, SimpleHandler};
