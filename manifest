@@ -1,5 +1,5 @@
-C wasm:\safter\sbuilding\ssnapshot\szip\sfile,\semit\sinstructions\sfor\spushing\sit\sto\sthe\stest\sserver.
-D 2022-12-02T09:23:38.378
+C wasm\sbuilds:\sexplicitly\sset\sa\sdefault\sstack\ssize\sbecause\semsdk\s3.1.27\sreduced\sit\sfrom\s4MB\sto\sonly\s64kb,\sleading\sto\smemory\scorruption\swhen\skvvfs\sis\sused\s(it\srequires\sat\sleast\stwice\sthat\sfor\sI/O).
+D 2022-12-02T10:43:14.520
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -491,7 +491,7 @@ F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
 F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
 F ext/userauth/userauth.c 7f00cded7dcaa5d47f54539b290a43d2e59f4b1eb5f447545fa865f002fc80cb
 F ext/wasm/EXPORTED_FUNCTIONS.fiddle.in 27450c8b8c70875a260aca55435ec927068b34cef801a96205adb81bdcefc65c
-F ext/wasm/GNUmakefile 891c5ce27966e6a87267300cafda145747bf9ad5eddacf1fbb5f1600768c8157
+F ext/wasm/GNUmakefile 3ccde6913ab2d1739d03a950b26ba84b2e66df35dd9dcd3d6e9609d963d12b50
 F ext/wasm/README-dist.txt 2d670b426fc7c613b90a7d2f2b05b433088fe65181abead970980f0a4a75ea20
 F ext/wasm/README.md ef39861aa21632fdbca0bdd469f78f0096f6449a720f3f39642594af503030e9
 F ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-api b4d68c97d14944b48d55e06aa44f544a6f56a7fa2bcb6f9e030936a5b2a9479a
@@ -560,7 +560,7 @@ F ext/wasm/tests/opfs/concurrency/index.html 86d8ac435074d1e7007b91105f4897f368c
 F ext/wasm/tests/opfs/concurrency/test.js bfc3d7e27b207f0827f12568986b8d516a744529550b449314f5c21c9e9faf4a
 F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d599948915c76906681bb7da1d3d2
 F ext/wasm/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd72273503ae7d5
-F ext/wasm/wasmfs.make 8fea9b4f3cde06141de1fc4c586ab405bd32c3f401554f4ebb18c797401a678d
+F ext/wasm/wasmfs.make 7ab655788bf0b52dce4538acbd5b11cdbe77edd36a14af5dec6dfe1ec4ab25fc
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
@@ -2065,8 +2065,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e06e490c240aa56b616e6f0380b5d08abf06f35f9e683e5150c5ac464eae9e55
-R 8b2a86dd310ca7e22a548f45d379ed5f
+P 9615c77919fee60d708d72729c741b373a89900aabc318e0ceb4154638cdf339
+R 29a0b11b169b5fde0c1900de7b5662de
 U stephan
-Z d9c77faf9eb600fc5df42049da15712b
+Z b619ea6beb43ef409ffd5a793f810416
 # Remove this line to create a well-formed Fossil manifest.

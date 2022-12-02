@@ -488,7 +488,10 @@ emcc.jsflags += -sINITIAL_MEMORY=$(emcc.INITIAL_MEMORY.$(emcc.INITIAL_MEMORY))
 ########################################################################
 
 emcc.jsflags += $(emcc.environment)
-#emcc.jsflags += -sTOTAL_STACK=4194304
+emcc.jsflags += -sSTACK_SIZE=1MB
+# ^^^ ACHTUNG: emsdk 3.1.27 reduced the default stack size from 4MB to
+# a mere 64KB, which leads to silent memory corruption via the kvvfs
+# VFS, which requires twice that for its xRead() and xWrite() methods.
 ########################################################################
 # $(sqlite3.js.init-func) is the name Emscripten assigns our exported
 # module init/load function. This symbol name is hard-coded in
@@ -670,6 +673,7 @@ speedtest1.eflags.common += -sSTRICT_JS
 speedtest1.eflags.common += -sMODULARIZE
 speedtest1.eflags.common += -Wno-limited-postlink-optimizations
 EXPORTED_FUNCTIONS.speedtest1 := $(abspath $(dir.tmp)/EXPORTED_FUNCTIONS.speedtest1)
+speedtest1.eflags.common += -sSTACK_SIZE=1MB
 speedtest1.eflags.common += -sEXPORTED_FUNCTIONS=@$(EXPORTED_FUNCTIONS.speedtest1)
 speedtest1.eflags.common += $(emcc.exportedRuntimeMethods)
 speedtest1.eflags.common += -sALLOW_TABLE_GROWTH
