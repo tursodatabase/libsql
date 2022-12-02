@@ -54,14 +54,26 @@ impl LibSqlDb {
             crossbeam::channel::unbounded::<(Statements, oneshot::Sender<QueryResult>)>();
 
         tokio::task::spawn_blocking(move || {
-            let conn = crate::wal::open_with_virtual_wal(
-                path,
-                OpenFlags::SQLITE_OPEN_READ_WRITE
-                    | OpenFlags::SQLITE_OPEN_CREATE
-                    | OpenFlags::SQLITE_OPEN_URI
-                    | OpenFlags::SQLITE_OPEN_NO_MUTEX,
-            )
-            .unwrap();
+            let mut retries = 0;
+            let conn = loop {
+                match crate::wal::open_with_virtual_wal(
+                    &path,
+                    OpenFlags::SQLITE_OPEN_READ_WRITE
+                        | OpenFlags::SQLITE_OPEN_CREATE
+                        | OpenFlags::SQLITE_OPEN_URI
+                        | OpenFlags::SQLITE_OPEN_NO_MUTEX,
+                ) {
+                    Ok(conn) => break conn,
+                    // Maybe db is locked because someone is currently opening it, let's try again a few times.
+                    Err(rusqlite::Error::SqliteFailure(e, _))
+                        if e.code == rusqlite::ffi::ErrorCode::DatabaseBusy && retries < 10 =>
+                    {
+                        std::thread::sleep(Duration::from_millis(10));
+                        retries += 1;
+                    }
+                    _ => panic!("unhandled error opening sqlite"),
+                }
+            };
 
             let mut state = State::Start;
             let mut timeout_deadline = None;
