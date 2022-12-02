@@ -223,25 +223,6 @@ pub extern "C" fn sqlite3_open(filename: *const c_char, db: *mut *mut sqlite3) -
 }
 
 #[no_mangle]
-pub extern "C" fn sqlite3_open16(filename: *const c_char, db: *mut *mut sqlite3) -> c_int {
-    trace!("TRACE sqlite3_open16");
-    let filename = unsafe { CStr::from_ptr(filename) };
-    let filename = unwrap_ok_or!(filename.to_str(), e, {
-        set_error_message(e);
-        return SQLITE_MISUSE;
-    });
-    unsafe {
-        let database = unwrap_ok_or!(sqlite3::connect(filename), e, {
-            set_error_message(e);
-            return SQLITE_ERROR;
-        });
-        let ptr = Box::new(database);
-        *db = Box::into_raw(ptr);
-    }
-    SQLITE_OK
-}
-
-#[no_mangle]
 pub extern "C" fn sqlite3_open_v2(
     filename: *const c_char,
     db: *mut *mut sqlite3,
@@ -577,6 +558,7 @@ define_stub!(sqlite3_mprintf);
 define_stub!(sqlite3_msize);
 define_stub!(sqlite3_next_stmt);
 define_stub!(sqlite3_normalized_sql);
+define_stub!(sqlite3_open16);
 define_stub!(sqlite3_overload_function);
 define_stub!(sqlite3_prepare);
 define_stub!(sqlite3_prepare16);
