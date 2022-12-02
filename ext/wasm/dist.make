@@ -98,6 +98,8 @@ dist: \
 		set +e; \
 		unzip -lv $$arczip || echo "Missing unzip app? Not fatal."
 snapshot: dist
+	@echo "Upload snapshot with:"; \
+	echo "rsync -ve ssh $(dist-name-prefix)*.zip $(wasm-testing.dest)/snapshots/."
 # We need a separate `clean` rule to account for weirdness in
 # a sub-make, where we get a copy of the $(dist-name) dir
 # copied into the new $(dist-name) dir.
