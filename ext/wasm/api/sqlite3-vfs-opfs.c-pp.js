@@ -284,7 +284,7 @@ const installOpfsVfs = function callee(options){
        noise for seemingly innocuous things like xAccess() checks
        for missing files, so this option may have one of 3 values:
 
-       0 = no exception logging
+       0 = no exception logging.
 
        1 = only log exceptions for "significant" ops like xOpen(),
        xRead(), and xWrite().
@@ -363,6 +363,7 @@ const installOpfsVfs = function callee(options){
     [
       'SQLITE_ACCESS_EXISTS',
       'SQLITE_ACCESS_READWRITE',
+      'SQLITE_BUSY',
       'SQLITE_ERROR',
       'SQLITE_IOERR',
       'SQLITE_IOERR_ACCESS',
@@ -706,10 +707,15 @@ const installOpfsVfs = function callee(options){
       },
       xFileSize: function(pFile,pSz64){
         mTimeStart('xFileSize');
-        const rc = opRun('xFileSize', pFile);
+        let rc = opRun('xFileSize', pFile);
         if(0==rc){
-          const sz = state.s11n.deserialize()[0];
-          wasm.setMemValue(pSz64, sz, 'i64');
+          try {
+            const sz = state.s11n.deserialize()[0];
+            wasm.setMemValue(pSz64, sz, 'i64');
+          }catch(e){
+            error("Unexpected error reading xFileSize() result:",e);
+            rc = state.sq3Codes.SQLITE_IOERR;
+          }
         }
         mTimeEnd();
         return rc;
@@ -1160,7 +1166,7 @@ const installOpfsVfs = function callee(options){
         [
           /* Truncate journal mode is faster than delete for
              this vfs, per speedtest1. That gap seems to have closed with
-             Chome version 108 or 109, but "persist" is very roughly 5-6%
+             Chrome version 108 or 109, but "persist" is very roughly 5-6%
              faster than truncate in initial tests. */
           "pragma journal_mode=persist;",
           /* Set a default busy-timeout handler to help OPFS dbs

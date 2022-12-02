@@ -295,7 +295,8 @@ const installAsyncProxy = function(self){
     if(!fh.syncHandle){
       const t = performance.now();
       log("Acquiring sync handle for",fh.filenameAbs);
-      const maxTries = 5, msBase = state.asyncIdleWaitTime * 2;
+      const maxTries = 6,
+            msBase = state.asyncIdleWaitTime * 2;
       let i = 1, ms = msBase;
       for(; true; ms = msBase * ++i){
         try {
@@ -515,15 +516,14 @@ const installAsyncProxy = function(self){
     xFileSize: async function(fid/*sqlite3_file pointer*/){
       mTimeStart('xFileSize');
       const fh = __openFiles[fid];
-      let rc;
+      let rc = 0;
       wTimeStart('xFileSize');
       try{
         affirmLocked('xFileSize',fh);
         const sz = await (await getSyncHandle(fh,'xFileSize')).getSize();
         state.s11n.serialize(Number(sz));
-        rc = 0;
       }catch(e){
-        state.s11n.storeException(2,e);
+        state.s11n.storeException(1,e);
         rc = GetSyncHandleError.convertRc(e,state.sq3Codes.SQLITE_IOERR);
       }
       await releaseImplicitLock(fh);
