@@ -66,12 +66,15 @@
 #endif
 #if !defined(SQLITE_DEFAULT_PAGE_SIZE)
 /*
-** OPFS performance is improved with a page size of 8kb instead of
-** 4kb. Performance with 16kb is equivalent to 8kb.
+** OPFS performance is improved by approx. 12% with a page size of 8kb
+** instead of 4kb. Performance with 16kb is equivalent to 8kb.
 **
-** However... kvvfs doesn't work at all with 8kb!
+** Performance difference of kvvfs with a page size of 8kb compared to
+** 4kb, as measured by speedtest1 --size 4, is indeterminate:
+** measurements are all over the place either way and not
+** significantly different.
 */
-# define SQLITE_DEFAULT_PAGE_SIZE 4096 /* 8196 */
+# define SQLITE_DEFAULT_PAGE_SIZE 8192
 #endif
 #ifndef SQLITE_DEFAULT_UNIX_VFS
 # define SQLITE_DEFAULT_UNIX_VFS "unix-none"
