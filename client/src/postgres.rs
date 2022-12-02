@@ -1,9 +1,10 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use bytes::BytesMut;
 use postgres_protocol::message::{backend, frontend};
 use std::collections::HashMap;
 use std::io::prelude::*;
 use std::net::TcpStream;
+use tracing::trace;
 use url::Url;
 
 pub struct Connection {
@@ -17,7 +18,8 @@ impl Connection {
         let url = Url::parse(addr)?;
         let host = url.host_str().unwrap();
         let port = url.port().unwrap();
-        let stream = TcpStream::connect((host, port))?;
+        let stream = TcpStream::connect((host, port))
+            .with_context(|| format!("Unable to connect to {}", addr))?;
         let rx_buf = BytesMut::with_capacity(1024);
         let username = url.username().into();
         Ok(Self {
@@ -69,7 +71,7 @@ impl Connection {
             backend::Message::AuthenticationKerberosV5 => todo!(),
             backend::Message::AuthenticationMd5Password(_) => todo!(),
             backend::Message::AuthenticationOk => {
-                println!("TRACE postgres -> AuthenticationOk");
+                trace!("TRACE postgres -> AuthenticationOk");
             }
             backend::Message::AuthenticationScmCredential => todo!(),
             backend::Message::AuthenticationSspi => todo!(),
@@ -78,41 +80,41 @@ impl Connection {
             backend::Message::AuthenticationSaslContinue(_) => todo!(),
             backend::Message::AuthenticationSaslFinal(_) => todo!(),
             backend::Message::BackendKeyData(_) => {
-                println!("TRACE postgres -> BackendKeyData");
+                trace!("TRACE postgres -> BackendKeyData");
             }
             backend::Message::BindComplete => todo!(),
             backend::Message::CloseComplete => todo!(),
             backend::Message::CommandComplete(_) => {
-                println!("TRACE postgres -> CommandComplete");
+                trace!("TRACE postgres -> CommandComplete");
             }
             backend::Message::CopyData(_) => todo!(),
             backend::Message::CopyDone => todo!(),
             backend::Message::CopyInResponse(_) => todo!(),
             backend::Message::CopyOutResponse(_) => todo!(),
             backend::Message::DataRow(_) => {
-                println!("TRACE postgres -> DataRow");
+                trace!("TRACE postgres -> DataRow");
             }
             backend::Message::EmptyQueryResponse => todo!(),
             backend::Message::ErrorResponse(_) => {
-                println!("TRACE postgres -> ErrorResponse");
+                trace!("TRACE postgres -> ErrorResponse");
             }
             backend::Message::NoData => todo!(),
             backend::Message::NoticeResponse(_) => {
-                println!("TRACE postgres -> NoticeResponse");
+                trace!("TRACE postgres -> NoticeResponse");
             }
             backend::Message::NotificationResponse(_) => todo!(),
             backend::Message::ParameterDescription(_) => todo!(),
             backend::Message::ParameterStatus(_) => {
-                println!("TRACE postgres -> ParameterStatus");
+                trace!("TRACE postgres -> ParameterStatus");
             }
             backend::Message::ParseComplete => todo!(),
             backend::Message::PortalSuspended => todo!(),
             backend::Message::ReadyForQuery(_) => {
-                println!("TRACE postgres -> ReadyForQuery");
+                trace!("TRACE postgres -> ReadyForQuery");
                 return false;
             }
             backend::Message::RowDescription(_) => {
-                println!("TRACE postgres -> RowDescription");
+                trace!("TRACE postgres -> RowDescription");
             }
             _ => todo!(),
         }
