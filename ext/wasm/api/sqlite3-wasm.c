@@ -65,10 +65,13 @@
 # define SQLITE_DEFAULT_CACHE_SIZE -16384
 #endif
 #if !defined(SQLITE_DEFAULT_PAGE_SIZE)
-/* OPFS performance is improved with a page size of 8k instead
-** of 4k. kvvfs, OTOH, likely suffers from that. Peformance
-** with 16k is equivalent to 8k. */
-# define SQLITE_DEFAULT_PAGE_SIZE 8196 /*4096*/
+/*
+** OPFS performance is improved with a page size of 8kb instead of
+** 4kb. Performance with 16kb is equivalent to 8kb.
+**
+** However... kvvfs doesn't work at all with 8kb!
+*/
+# define SQLITE_DEFAULT_PAGE_SIZE 4096 /* 8196 */
 #endif
 #ifndef SQLITE_DEFAULT_UNIX_VFS
 # define SQLITE_DEFAULT_UNIX_VFS "unix-none"
