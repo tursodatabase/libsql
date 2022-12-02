@@ -819,8 +819,9 @@ endif
 
 ########################################################################
 # Push files to public wasm-testing.sqlite.org server
-wasm-testing.include = *.js *.html batch-runner.list \
+wasm-testing.include = *.js *.mjs *.html \
   ./tests \
+  batch-runner.list \
   $(dir.dout) $(dir.sql) $(dir.common) $(dir.fiddle) $(dir.jacc)
 wasm-testing.exclude = sql/speedtest1.sql
 wasm-testing.dir     = /jail/sites/wasm-testing
