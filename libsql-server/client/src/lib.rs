@@ -203,11 +203,13 @@ define_stub!(sqlite3_error_offset);
 pub extern "C" fn sqlite3_open(filename: *const c_char, db: *mut *mut sqlite3) -> c_int {
     println!("TRACE sqlite3_open");
     let filename = unsafe { CStr::from_ptr(filename) };
-    let filename = unwrap_ok_or!(filename.to_str(), _, {
+    let filename = unwrap_ok_or!(filename.to_str(), e, {
+        set_error_message(e);
         return SQLITE_MISUSE;
     });
     unsafe {
-        let database = unwrap_ok_or!(sqlite3::connect(filename), _, {
+        let database = unwrap_ok_or!(sqlite3::connect(filename), e, {
+            set_error_message(e);
             return SQLITE_ERROR;
         });
         let ptr = Box::new(database);
@@ -220,11 +222,13 @@ pub extern "C" fn sqlite3_open(filename: *const c_char, db: *mut *mut sqlite3) -
 pub extern "C" fn sqlite3_open16(filename: *const c_char, db: *mut *mut sqlite3) -> c_int {
     println!("TRACE sqlite3_open16");
     let filename = unsafe { CStr::from_ptr(filename) };
-    let filename = unwrap_ok_or!(filename.to_str(), _, {
+    let filename = unwrap_ok_or!(filename.to_str(), e, {
+        set_error_message(e);
         return SQLITE_MISUSE;
     });
     unsafe {
-        let database = unwrap_ok_or!(sqlite3::connect(filename), _, {
+        let database = unwrap_ok_or!(sqlite3::connect(filename), e, {
+            set_error_message(e);
             return SQLITE_ERROR;
         });
         let ptr = Box::new(database);
@@ -242,11 +246,13 @@ pub extern "C" fn sqlite3_open_v2(
 ) -> c_int {
     println!("TRACE sqlite3_open_v2");
     let filename = unsafe { CStr::from_ptr(filename) };
-    let filename = unwrap_ok_or!(filename.to_str(), _, {
+    let filename = unwrap_ok_or!(filename.to_str(), e, {
+        set_error_message(e);
         return SQLITE_MISUSE;
     });
     unsafe {
-        let database = unwrap_ok_or!(sqlite3::connect(filename), _, {
+        let database = unwrap_ok_or!(sqlite3::connect(filename), e, {
+            set_error_message(e);
             return SQLITE_ERROR;
         });
         let ptr = Box::new(database);
@@ -329,10 +335,12 @@ pub extern "C" fn sqlite3_step(stmt: *mut sqlite3_stmt) -> c_int {
         StatementState::Prepared => {
             let database = stmt.parent.clone();
             let mut conn = database.conn.borrow_mut();
-            unwrap_ok_or!(conn.send_simple_query(&stmt.sql), _, {
+            unwrap_ok_or!(conn.send_simple_query(&stmt.sql), e, {
+                set_error_message(e);
                 return SQLITE_ERROR;
             });
-            unwrap_ok_or!(conn.wait_until_ready(), _, {
+            unwrap_ok_or!(conn.wait_until_ready(), e, {
+                set_error_message(e);
                 return SQLITE_ERROR;
             });
             SQLITE_DONE
