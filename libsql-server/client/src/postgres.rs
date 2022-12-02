@@ -1,12 +1,30 @@
 use anyhow::{Context, Result};
 use bytes::BytesMut;
+use fallible_iterator::FallibleIterator;
+use postgres_protocol::message::backend::DataRowBody;
 use postgres_protocol::message::{backend, frontend};
-use std::collections::HashMap;
+use postgres_types::Type;
+use std::collections::{HashMap, VecDeque};
 use std::io::prelude::*;
 use std::net::TcpStream;
 use tracing::trace;
 use url::Url;
 
+pub struct Metadata {
+    pub col_names: Vec<String>,
+    pub col_types: Vec<Type>,
+}
+
+impl Metadata {
+    pub fn new() -> Metadata {
+        let col_names = vec![];
+        let col_types = vec![];
+        Metadata {
+            col_names,
+            col_types,
+        }
+    }
+}
 pub struct Connection {
     stream: TcpStream,
     rx_buf: BytesMut,
@@ -45,13 +63,15 @@ impl Connection {
         Ok(())
     }
 
-    pub fn wait_until_ready(&mut self) -> Result<()> {
+    pub fn wait_until_ready(&mut self) -> Result<(Metadata, VecDeque<DataRowBody>)> {
+        let mut metadata = Metadata::new();
+        let mut rows = VecDeque::default();
         loop {
             let msg = backend::Message::parse(&mut self.rx_buf)?;
             match msg {
                 Some(msg) => {
-                    if !self.process_msg(msg) {
-                        return Ok(());
+                    if !self.process_msg(msg, &mut metadata, &mut rows) {
+                        return Ok((metadata, rows));
                     }
                 }
                 None => {
@@ -64,7 +84,12 @@ impl Connection {
         }
     }
 
-    fn process_msg(&mut self, msg: backend::Message) -> bool {
+    fn process_msg(
+        &mut self,
+        msg: backend::Message,
+        metadata: &mut Metadata,
+        rows: &mut VecDeque<DataRowBody>,
+    ) -> bool {
         match msg {
             backend::Message::AuthenticationCleartextPassword => todo!(),
             backend::Message::AuthenticationGss => todo!(),
@@ -91,8 +116,9 @@ impl Connection {
             backend::Message::CopyDone => todo!(),
             backend::Message::CopyInResponse(_) => todo!(),
             backend::Message::CopyOutResponse(_) => todo!(),
-            backend::Message::DataRow(_) => {
+            backend::Message::DataRow(row) => {
                 trace!("TRACE postgres -> DataRow");
+                rows.push_back(row);
             }
             backend::Message::EmptyQueryResponse => todo!(),
             backend::Message::ErrorResponse(_) => {
@@ -113,8 +139,14 @@ impl Connection {
                 trace!("TRACE postgres -> ReadyForQuery");
                 return false;
             }
-            backend::Message::RowDescription(_) => {
+            backend::Message::RowDescription(row_description) => {
                 trace!("TRACE postgres -> RowDescription");
+                let mut fields = row_description.fields();
+                while let Some(field) = fields.next().unwrap() {
+                    metadata.col_names.push(field.name().into());
+                    let ty = Type::from_oid(field.type_oid()).unwrap();
+                    metadata.col_types.push(ty);
+                }
             }
             _ => todo!(),
         }

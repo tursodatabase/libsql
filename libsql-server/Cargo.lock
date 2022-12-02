@@ -351,7 +351,9 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "bytes",
+ "fallible-iterator",
  "postgres-protocol",
+ "postgres-types",
  "tracing",
  "tracing-subscriber",
  "unwrap_or",

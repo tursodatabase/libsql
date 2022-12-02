@@ -6,8 +6,13 @@
 mod postgres;
 
 use anyhow::Result;
+use fallible_iterator::FallibleIterator;
+use postgres::Metadata;
+use postgres_protocol::message::backend::DataRowBody;
 use std::cell::RefCell;
+use std::collections::VecDeque;
 use std::ffi::{CStr, CString};
+use std::ops::Range;
 use std::os::raw::{c_char, c_int, c_void};
 use std::rc::Rc;
 use tracing::trace;
@@ -69,7 +74,8 @@ impl sqlite3 {
     fn connect(addr: &str) -> Result<Self> {
         let mut conn = postgres::Connection::connect(addr)?;
         conn.send_startup()?;
-        conn.wait_until_ready()?;
+        let (_metadata, rows) = conn.wait_until_ready()?;
+        assert!(rows.is_empty());
         let inner = Rc::new(Database::new(conn));
         Ok(Self { inner })
     }
@@ -81,22 +87,36 @@ impl Drop for sqlite3 {
     }
 }
 
+#[derive(Debug)]
 enum StatementState {
     Prepared,
-    _Rows,
-    _Done,
+    Rows,
+    Done,
 }
 
 struct Statement {
     parent: Rc<Database>,
     sql: String,
     state: StatementState,
+    metadata: Option<Metadata>,
+    current_row: Option<(DataRowBody, Vec<Option<Range<usize>>>)>,
+    rows: VecDeque<DataRowBody>,
 }
 
 impl Statement {
     fn new(parent: Rc<Database>, sql: String) -> Self {
         let state = StatementState::Prepared;
-        Self { parent, sql, state }
+        let metadata = None;
+        let current_row = None;
+        let rows = VecDeque::default();
+        Self {
+            parent,
+            sql,
+            state,
+            metadata,
+            current_row,
+            rows,
+        }
     }
 }
 pub struct sqlite3_stmt {
@@ -314,8 +334,12 @@ pub extern "C" fn sqlite3_reset(_stmt: *mut sqlite3_stmt) -> c_int {
 
 #[no_mangle]
 pub extern "C" fn sqlite3_step(stmt: *mut sqlite3_stmt) -> c_int {
-    let stmt = unsafe { &(*stmt).inner };
-    trace!("STUB sqlite3_step {}", stmt.sql);
+    let mut stmt = unsafe { &mut (*stmt).inner };
+    trace!(
+        "TRACE sqlite3_step [sql = {}, state = {:?}]",
+        stmt.sql,
+        stmt.state
+    );
     match stmt.state {
         StatementState::Prepared => {
             let database = stmt.parent.clone();
@@ -324,14 +348,33 @@ pub extern "C" fn sqlite3_step(stmt: *mut sqlite3_stmt) -> c_int {
                 set_error_message(e);
                 return SQLITE_ERROR;
             });
-            unwrap_ok_or!(conn.wait_until_ready(), e, {
+            let (metadata, rows) = unwrap_ok_or!(conn.wait_until_ready(), e, {
                 set_error_message(e);
                 return SQLITE_ERROR;
             });
-            SQLITE_DONE
+            stmt.metadata = Some(metadata);
+            stmt.rows = rows;
+            if let Some(row) = stmt.rows.pop_front() {
+                let column_ranges = parse_column_ranges(&row);
+                stmt.current_row = Some((row, column_ranges));
+                stmt.state = StatementState::Rows;
+                SQLITE_ROW
+            } else {
+                stmt.state = StatementState::Done;
+                SQLITE_DONE
+            }
         }
-        StatementState::_Rows => todo!(),
-        StatementState::_Done => SQLITE_MISUSE,
+        StatementState::Rows => {
+            if let Some(row) = stmt.rows.pop_front() {
+                let column_ranges = parse_column_ranges(&row);
+                stmt.current_row = Some((row, column_ranges));
+                SQLITE_ROW
+            } else {
+                stmt.state = StatementState::Done;
+                SQLITE_DONE
+            }
+        }
+        StatementState::Done => SQLITE_MISUSE,
     }
 }
 
@@ -430,6 +473,105 @@ define_stub!(sqlite3_bind_zeroblob);
 define_stub!(sqlite3_bind_zeroblob64);
 
 /*
+ * Result sets
+ */
+
+#[no_mangle]
+pub extern "C" fn sqlite3_column_count(stmt: *mut sqlite3_stmt) -> c_int {
+    trace!("TRACE sqlite3_column_count");
+    let stmt = unsafe { &mut (*stmt).inner };
+    if let Some(metadata) = stmt.metadata.as_ref() {
+        metadata.col_types.len().try_into().unwrap()
+    } else {
+        0
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn sqlite3_column_name(_stmt: *mut sqlite3_stmt, _n: c_int) -> *const c_char {
+    trace!("STUB sqlite3_column_name");
+    std::ptr::null()
+}
+
+const SQLITE_INTEGER: c_int = 1;
+const SQLITE3_TEXT: c_int = 3;
+
+#[no_mangle]
+pub extern "C" fn sqlite3_column_type(stmt: *mut sqlite3_stmt, n: c_int) -> c_int {
+    trace!("TRACE sqlite3_column_type");
+    let stmt = unsafe { &mut (*stmt).inner };
+    let ty = &stmt.metadata.as_ref().unwrap().col_types[n as usize];
+    match ty.oid() {
+        25 => SQLITE3_TEXT,
+        1700 => SQLITE_INTEGER,
+        _ => todo!("{}", ty.oid()),
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn sqlite3_column_decltype(_stmt: *mut sqlite3_stmt, _n: c_int) -> *const c_char {
+    trace!("TRACE sqlite3_column_decltype");
+    std::ptr::null()
+}
+
+#[no_mangle]
+pub extern "C" fn sqlite3_column_bytes(stmt: *mut sqlite3_stmt, n: c_int) -> c_int {
+    trace!("TRACE sqlite3_column_bytes");
+    let stmt = unsafe { &mut (*stmt).inner };
+    if let Some((_, column_ranges)) = &stmt.current_row {
+        column_ranges[n as usize]
+            .as_ref()
+            .unwrap()
+            .len()
+            .try_into()
+            .unwrap()
+    } else {
+        0
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn sqlite3_column_int64(stmt: *mut sqlite3_stmt, n: c_int) -> sqlite3_int64 {
+    trace!("TRACE sqlite3_column_int64");
+    let stmt = unsafe { &mut (*stmt).inner };
+    if let Some((row, column_ranges)) = &stmt.current_row {
+        let range = column_ranges[n as usize].as_ref().unwrap();
+        let buf = &row.buffer()[range.to_owned()];
+        let s = unsafe {
+            std::str::from_utf8_unchecked(std::slice::from_raw_parts(buf.as_ptr(), range.len()))
+        };
+        s.parse().unwrap()
+    } else {
+        0
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn sqlite3_column_text(stmt: *mut sqlite3_stmt, n: c_int) -> *const c_char {
+    trace!("TRACE sqlite3_column_text");
+    let stmt = unsafe { &mut (*stmt).inner };
+    if let Some((row, column_ranges)) = &stmt.current_row {
+        if let Some(range) = &column_ranges[n as usize] {
+            let buf = &row.buffer()[range.clone()];
+            buf.as_ptr() as *const c_char
+        } else {
+            std::ptr::null()
+        }
+    } else {
+        std::ptr::null()
+    }
+}
+
+fn parse_column_ranges(row: &DataRowBody) -> Vec<Option<Range<usize>>> {
+    let mut ranges = row.ranges();
+    let mut row = vec![];
+    while let Ok(Some(range)) = ranges.next() {
+        row.push(range);
+    }
+    row
+}
+
+/*
  * Mutexes
  */
 
@@ -472,25 +614,18 @@ define_stub!(sqlite3_clear_bindings);
 define_stub!(sqlite3_collation_needed);
 define_stub!(sqlite3_collation_needed16);
 define_stub!(sqlite3_column_blob);
-define_stub!(sqlite3_column_bytes);
 define_stub!(sqlite3_column_bytes16);
-define_stub!(sqlite3_column_count);
 define_stub!(sqlite3_column_database_name);
 define_stub!(sqlite3_column_database_name16);
-define_stub!(sqlite3_column_decltype);
 define_stub!(sqlite3_column_decltype16);
 define_stub!(sqlite3_column_double);
 define_stub!(sqlite3_column_int);
-define_stub!(sqlite3_column_int64);
-define_stub!(sqlite3_column_name);
 define_stub!(sqlite3_column_name16);
 define_stub!(sqlite3_column_origin_name);
 define_stub!(sqlite3_column_origin_name16);
 define_stub!(sqlite3_column_table_name);
 define_stub!(sqlite3_column_table_name16);
-define_stub!(sqlite3_column_text);
 define_stub!(sqlite3_column_text16);
-define_stub!(sqlite3_column_type);
 define_stub!(sqlite3_column_value);
 define_stub!(sqlite3_commit_hook);
 define_stub!(sqlite3_compileoption_get);
