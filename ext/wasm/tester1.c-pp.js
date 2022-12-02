@@ -118,8 +118,10 @@ self.sqlite3InitModule = sqlite3InitModule;
   }
   const reportFinalTestStatus = function(pass){
     if(isUIThread()){
-      const e = document.querySelector('#color-target');
+      let e = document.querySelector('#color-target');
       e.classList.add(pass ? 'tests-pass' : 'tests-fail');
+      e = document.querySelector('title');
+      e.innerText = (pass ? 'PASS' : 'FAIL') + ': ' + e.innerText;
     }else{
       postMessage({type:'test-result', payload:{pass}});
     }
@@ -246,10 +248,13 @@ self.sqlite3InitModule = sqlite3InitModule;
           log(TestUtil.separator);
           logClass('group-start',"Group #"+this.number+':',this.name);
           const indent = '    ';
-          if(this.predicate && !this.predicate(sqlite3)){
-            logClass('warning',indent,
-                     "SKIPPING group because predicate says to.");
-            return;
+          if(this.predicate){
+            const p = this.predicate(sqlite3);
+            if(!p || 'string'===typeof p){
+              logClass('warning',indent,
+                       "SKIPPING group:", p ? p : "predicate says to" );
+              return;
+            }
           }
           const assertCount = TestUtil.counter;
           const groupState = Object.create(null);
@@ -259,24 +264,27 @@ self.sqlite3InitModule = sqlite3InitModule;
             ++i;
             const n = this.number+"."+i;
               log(indent, n+":", t.name);
-            if(t.predicate && !t.predicate(sqlite3)){
-              logClass('warning', indent, indent,
-                       'SKIPPING because predicate says to');
-              skipped.push( n+': '+t.name );
-            }else{
-              const tc = TestUtil.counter, now = performance.now();
-              await t.test.call(groupState, sqlite3);
-              const then = performance.now();
-              runtime += then - now;
-              logClass('faded',indent, indent,
-                       TestUtil.counter - tc, 'assertion(s) in',
-                       roundMs(then-now),'ms');
+            if(t.predicate){
+              const p = t.predicate(sqlite3);
+              if(!p || 'string'===typeof p){
+                logClass('warning',indent,
+                         "SKIPPING:", p ? p : "predicate says to" );
+                skipped.push( n+': '+t.name );
+                continue;
+              }
             }
+            const tc = TestUtil.counter, now = performance.now();
+            await t.test.call(groupState, sqlite3);
+            const then = performance.now();
+            runtime += then - now;
+            logClass('faded',indent, indent,
+                     TestUtil.counter - tc, 'assertion(s) in',
+                     roundMs(then-now),'ms');
           }
           logClass('green',
                    "Group #"+this.number+":",(TestUtil.counter - assertCount),
                    "assertion(s) in",roundMs(runtime),"ms");
-          if(skipped.length){
+          if(0 && skipped.length){
             logClass('warning',"SKIPPED test(s) in group",this.number+":",skipped);
           }
         }
@@ -1380,13 +1388,38 @@ self.sqlite3InitModule = sqlite3InitModule;
     })
 
   ////////////////////////////////////////////////////////////////////////
-    .t('sqlite3_js_db_export()', function(){
-      const db = this.db;
-      const xp = capi.sqlite3_js_db_export(db.pointer);
-      T.assert(xp instanceof Uint8Array)
-        .assert(xp.byteLength>0)
-        .assert(0 === xp.byteLength % 512);
+    .t({
+      name: 'sqlite3_js_db_export()',
+      predicate: ()=>true,
+      test: function(sqlite3){
+        const db = this.db;
+        const xp = capi.sqlite3_js_db_export(db.pointer);
+        T.assert(xp instanceof Uint8Array)
+          .assert(xp.byteLength>0)
+          .assert(0 === xp.byteLength % 512);
+        this.dbExport = xp;
+      }
     }/*sqlite3_js_db_export()*/)
+    .t({
+      name: 'sqlite3_js_vfs_create_file() with db in default VFS',
+      predicate: ()=>true,
+      test: function(sqlite3){
+        const db = this.db;
+        const pVfs = capi.sqlite3_js_db_vfs(db);
+        const filename = "sqlite3_js_vfs_create_file().db";
+        capi.sqlite3_js_vfs_create_file(pVfs, filename, this.dbExport);
+        delete this.dbExport;
+        const db2 = new sqlite3.oo1.DB(filename,'r');
+        try {
+          const sql = "select count(*) from t";
+          const n = db.selectValue(sql);
+          T.assert(n>0 && db2.selectValue(sql) === n);
+        }finally{
+          if(db2) db2.close();
+          wasm.sqlite3_wasm_vfs_unlink(pVfs, filename);
+        }
+      }
+    }/*sqlite3_js_vfs_create_file()*/)
 
   ////////////////////////////////////////////////////////////////////
     .t('Scalar UDFs', function(sqlite3){
@@ -1757,53 +1790,70 @@ self.sqlite3InitModule = sqlite3InitModule;
 
   ////////////////////////////////////////////////////////////////////////
   T.g('kvvfs')
-    .t('kvvfs sanity checks', function(sqlite3){
-      if(isWorker()){
+    .t({
+      name: 'kvvfs is disabled in worker',
+      predicate: ()=>(isWorker() || "test is only valid in a Worker"),
+      test: function(sqlite3){
         T.assert(
           !capi.sqlite3_vfs_find('kvvfs'),
           "Expecting kvvfs to be unregistered."
         );
-        log("kvvfs is (correctly) unavailable in a Worker.");
-        return;
       }
-      const filename = 'session';
-      const pVfs = capi.sqlite3_vfs_find('kvvfs');
-      T.assert(pVfs);
-      const JDb = sqlite3.oo1.JsStorageDb;
-      const unlink = ()=>JDb.clearStorage(filename);
-      unlink();
-      let db = new JDb(filename);
-      try {
-        db.exec([
-          'create table kvvfs(a);',
-          'insert into kvvfs(a) values(1),(2),(3)'
-        ]);
-        T.assert(3 === db.selectValue('select count(*) from kvvfs'));
-        db.close();
-        db = new JDb(filename);
-        db.exec('insert into kvvfs(a) values(4),(5),(6)');
-        T.assert(6 === db.selectValue('select count(*) from kvvfs'));
-
-        // Check import/export of db...
-        if(0){
-          // does not yet work with kvvfs for unknown reasons...
-          const exp = capi.sqlite3_js_db_export(db);
-          db.close();
-          unlink();
-          capi.sqlite3_js_vfs_create_file("kvvfs", filename, exp);
-          db = new JDb(filename);
-          T.assert(6 === db.selectValue('select count(*) from kvvfs'));
-        }
-      }finally{
-        db.close();
+    })
+    .t({
+      name: 'kvvfs in main thread',
+      predicate: ()=>(isUIThread() ? true : "No local/sessionStorage in Worker"),
+      test: function(sqlite3){
+        const filename = this.kvvfsDbFile = 'session';
+        const pVfs = capi.sqlite3_vfs_find('kvvfs');
+        T.assert(pVfs);
+        const JDb = this.JDb = sqlite3.oo1.JsStorageDb;
+        const unlink = this.kvvfsUnlink = ()=>{JDb.clearStorage(filename)};
         unlink();
+        let db = new JDb(filename);
+        try {
+          db.exec([
+            'create table kvvfs(a);',
+            'insert into kvvfs(a) values(1),(2),(3)'
+          ]);
+          T.assert(3 === db.selectValue('select count(*) from kvvfs'));
+          db.close();
+          db = new JDb(filename);
+          db.exec('insert into kvvfs(a) values(4),(5),(6)');
+          T.assert(6 === db.selectValue('select count(*) from kvvfs'));
+        }finally{
+          db.close();
+        }
       }
     }/*kvvfs sanity checks*/)
+    .t({
+      name: 'kvvfs sqlite3_js_vfs_create_file()',
+      predicate: ()=>"kvvfs does not currently support this",
+      test: function(sqlite3){
+        let db;
+        try {
+          db = new this.JDb(this.kvvfsDbFile);
+          const exp = capi.sqlite3_js_db_export(db);
+          db.close();
+          this.kvvfsUnlink();
+          capi.sqlite3_js_vfs_create_file("kvvfs", this.kvvfsDbFile, exp);
+          db = new this.JDb(filename);
+          T.assert(6 === db.selectValue('select count(*) from kvvfs'));
+        }finally{
+          db.close();
+          this.kvvfsUnlink();
+        }
+        delete this.kvvfsDbFile;
+        delete this.kvvfsUnlink;
+        delete this.JDb;
+      }
+    }/*kvvfs sqlite3_js_vfs_create_file()*/)
   ;/* end kvvfs tests */
 
   ////////////////////////////////////////////////////////////////////////
-  T.g('OPFS (Worker thread only and only in supported browsers)',
-      (sqlite3)=>!!sqlite3.opfs)
+  T.g('OPFS: Origin-Private File System',
+      (sqlite3)=>(sqlite3.opfs
+                  ? true : "requires Worker thread in a compatible browser"))
     .t({
       name: 'OPFS db sanity checks',
       test: async function(sqlite3){

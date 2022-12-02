@@ -1368,13 +1368,15 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
 
      - "memdb": results are undefined.
 
-     - "kvvfs": results are undefined.
+     - "kvvfs": will fail with an I/O error due to strict internal
+       requirments of that VFS's xTruncate().
 
      - "unix" and related: will use the WASM build's equivalent of the
-       POSIX I/O APIs.
+       POSIX I/O APIs. This will work so long as neither a specific
+       VFS nor the WASM environment imposes requirements which break it.
 
-     - "opfs": if available, uses OPFS storage and _does_ create
-       directory parts of the filename.
+     - "opfs": uses OPFS storage and creates directory parts of the
+       filename.
   */
   capi.sqlite3_js_vfs_create_file = function(vfs, filename, data, dataLen){
     let pData;

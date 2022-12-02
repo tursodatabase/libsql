@@ -62,11 +62,16 @@
             case 'error':
               logHtml('error', ...data.payload.args);
               break;
-            case 'test-result':
-              document.querySelector('#color-target').classList.add(
-                data.payload.pass ? 'tests-pass' : 'tests-fail'
-              );
-              break;
+            case 'test-result':{
+                document.querySelector('#color-target').classList.add(
+                    data.payload.pass ? 'tests-pass' : 'tests-fail'
+                );
+                const e = document.querySelector('title');
+                e.innerText = (
+                    data.payload.pass ? 'PASS' : 'FAIL'
+                ) + ': ' + e.innerText;
+                break;
+            }
             default:
               logHtml('error',"Unhandled message:",data.type);
         };
