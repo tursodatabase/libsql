@@ -14,6 +14,8 @@ mod coordinator;
 mod job;
 mod database;
 mod postgres;
+mod query;
+mod query_analysis;
 mod server;
 mod wal;
 
