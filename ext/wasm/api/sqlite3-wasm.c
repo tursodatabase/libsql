@@ -32,21 +32,16 @@
 ** the same db handle as another thread, thus multi-threading support
 ** is unnecessary in the library. Because the filesystems are virtual
 ** and local to a given wasm runtime instance, two Workers can never
-** access the same db file at once, with the exception of OPFS. As of
-** this writing (2022-09-30), OPFS exclusively locks a file when
-** opening it, so two Workers can never open the same OPFS-backed file
-** at once. That situation will change if and when lower-level locking
-** features are added to OPFS (as is currently planned, per folks
-** involved with its development).
+** access the same db file at once, with the exception of OPFS.
 **
-** Summary: except for the case of future OPFS, which supports
-** locking, and any similar future filesystems, threading and file
-** locking support are unnecessary in the wasm build.
+** Summary: except for the case of OPFS, which supports locking using
+** its own API, threading and file locking support are unnecessary in
+** the wasm build.
 */
 
 /*
 ** Undefine any SQLITE_... config flags which we specifically do not
-** want undefined. Please keep these alphabetized.
+** want defined. Please keep these alphabetized.
 */
 #undef SQLITE_OMIT_DESERIALIZE
 #undef SQLITE_OMIT_MEMORYDB
@@ -69,9 +64,11 @@
 */
 # define SQLITE_DEFAULT_CACHE_SIZE -16384
 #endif
-#if 0 && !defined(SQLITE_DEFAULT_PAGE_SIZE)
-/* TODO: experiment with this. */
-# define SQLITE_DEFAULT_PAGE_SIZE 8192 /*4096*/
+#if !defined(SQLITE_DEFAULT_PAGE_SIZE)
+/* OPFS performance is improved with a page size of 8k instead
+** of 4k. kvvfs, OTOH, likely suffers from that. Peformance
+** with 16k is equivalent to 8k. */
+# define SQLITE_DEFAULT_PAGE_SIZE 8196 /*4096*/
 #endif
 #ifndef SQLITE_DEFAULT_UNIX_VFS
 # define SQLITE_DEFAULT_UNIX_VFS "unix-none"
@@ -363,7 +360,7 @@ const char * sqlite3_wasm_enum_json(void){
   int n = 0, nChildren = 0, nStruct = 0
     /* output counters for figuring out where commas go */;
   char * zPos = &aBuffer[1] /* skip first byte for now to help protect
-                          ** against a small race condition */;
+                            ** against a small race condition */;
   char const * const zEnd = &aBuffer[0] + sizeof(aBuffer) /* one-past-the-end */;
   if(aBuffer[0]) return aBuffer;
   /* Leave aBuffer[0] at 0 until the end to help guard against a tiny
@@ -695,8 +692,8 @@ const char * sqlite3_wasm_enum_json(void){
   /** Macros for emitting StructBinder description. */
 #define StructBinder__(TYPE)                 \
   n = 0;                                     \
-  outf("%s{", (nStruct++ ? ", " : ""));  \
-  out("\"name\": \"" # TYPE "\",");         \
+  outf("%s{", (nStruct++ ? ", " : ""));      \
+  out("\"name\": \"" # TYPE "\",");          \
   outf("\"sizeof\": %d", (int)sizeof(TYPE)); \
   out(",\"members\": {");
 #define StructBinder_(T) StructBinder__(T)
@@ -716,78 +713,78 @@ const char * sqlite3_wasm_enum_json(void){
 
 #define CurrentStruct sqlite3_vfs
     StructBinder {
-      M(iVersion,"i");
-      M(szOsFile,"i");
-      M(mxPathname,"i");
-      M(pNext,"p");
-      M(zName,"s");
-      M(pAppData,"p");
-      M(xOpen,"i(pppip)");
-      M(xDelete,"i(ppi)");
-      M(xAccess,"i(ppip)");
-      M(xFullPathname,"i(ppip)");
-      M(xDlOpen,"p(pp)");
-      M(xDlError,"p(pip)");
-      M(xDlSym,"p()");
-      M(xDlClose,"v(pp)");
-      M(xRandomness,"i(pip)");
-      M(xSleep,"i(pi)");
-      M(xCurrentTime,"i(pp)");
-      M(xGetLastError,"i(pip)");
-      M(xCurrentTimeInt64,"i(pp)");
-      M(xSetSystemCall,"i(ppp)");
-      M(xGetSystemCall,"p(pp)");
-      M(xNextSystemCall,"p(pp)");
+      M(iVersion,          "i");
+      M(szOsFile,          "i");
+      M(mxPathname,        "i");
+      M(pNext,             "p");
+      M(zName,             "s");
+      M(pAppData,          "p");
+      M(xOpen,             "i(pppip)");
+      M(xDelete,           "i(ppi)");
+      M(xAccess,           "i(ppip)");
+      M(xFullPathname,     "i(ppip)");
+      M(xDlOpen,           "p(pp)");
+      M(xDlError,          "p(pip)");
+      M(xDlSym,            "p()");
+      M(xDlClose,          "v(pp)");
+      M(xRandomness,       "i(pip)");
+      M(xSleep,            "i(pi)");
+      M(xCurrentTime,      "i(pp)");
+      M(xGetLastError,     "i(pip)");
+      M(xCurrentTimeInt64, "i(pp)");
+      M(xSetSystemCall,    "i(ppp)");
+      M(xGetSystemCall,    "p(pp)");
+      M(xNextSystemCall,   "p(pp)");
     } _StructBinder;
 #undef CurrentStruct
 
 #define CurrentStruct sqlite3_io_methods
     StructBinder {
-      M(iVersion,"i");
-      M(xClose,"i(p)");
-      M(xRead,"i(ppij)");
-      M(xWrite,"i(ppij)");
-      M(xTruncate,"i(pj)");
-      M(xSync,"i(pi)");
-      M(xFileSize,"i(pp)");
-      M(xLock,"i(pi)");
-      M(xUnlock,"i(pi)");
-      M(xCheckReservedLock,"i(pp)");
-      M(xFileControl,"i(pip)");
-      M(xSectorSize,"i(p)");
-      M(xDeviceCharacteristics,"i(p)");
-      M(xShmMap,"i(piiip)");
-      M(xShmLock,"i(piii)");
-      M(xShmBarrier,"v(p)");
-      M(xShmUnmap,"i(pi)");
-      M(xFetch,"i(pjip)");
-      M(xUnfetch,"i(pjp)");
+      M(iVersion,               "i");
+      M(xClose,                 "i(p)");
+      M(xRead,                  "i(ppij)");
+      M(xWrite,                 "i(ppij)");
+      M(xTruncate,              "i(pj)");
+      M(xSync,                  "i(pi)");
+      M(xFileSize,              "i(pp)");
+      M(xLock,                  "i(pi)");
+      M(xUnlock,                "i(pi)");
+      M(xCheckReservedLock,     "i(pp)");
+      M(xFileControl,           "i(pip)");
+      M(xSectorSize,            "i(p)");
+      M(xDeviceCharacteristics, "i(p)");
+      M(xShmMap,                "i(piiip)");
+      M(xShmLock,               "i(piii)");
+      M(xShmBarrier,            "v(p)");
+      M(xShmUnmap,              "i(pi)");
+      M(xFetch,                 "i(pjip)");
+      M(xUnfetch,               "i(pjp)");
     } _StructBinder;
 #undef CurrentStruct
 
 #define CurrentStruct sqlite3_file
     StructBinder {
-      M(pMethods,"p");
+      M(pMethods, "p");
     } _StructBinder;
 #undef CurrentStruct
 
 #define CurrentStruct sqlite3_kvvfs_methods
     StructBinder {
-      M(xRead,"i(sspi)");
-      M(xWrite,"i(sss)");
-      M(xDelete,"i(ss)");
-      M(nKeySize,"i");
+      M(xRead,    "i(sspi)");
+      M(xWrite,   "i(sss)");
+      M(xDelete,  "i(ss)");
+      M(nKeySize, "i");
     } _StructBinder;
 #undef CurrentStruct
 
 #if SQLITE_WASM_TESTS
 #define CurrentStruct WasmTestStruct
     StructBinder {
-      M(v4,"i");
-      M(cstr,"s");
-      M(ppV,"p");
-      M(v8,"j");
-      M(xFunc,"v(p)");
+      M(v4,    "i");
+      M(cstr,  "s");
+      M(ppV,   "p");
+      M(v8,    "j");
+      M(xFunc, "v(p)");
     } _StructBinder;
 #undef CurrentStruct
 #endif
@@ -820,7 +817,7 @@ const char * sqlite3_wasm_enum_json(void){
 ** call is returned.
 */
 SQLITE_WASM_KEEP
-int sqlite3_wasm_vfs_unlink(sqlite3_vfs *pVfs, const char * zName){
+int sqlite3_wasm_vfs_unlink(sqlite3_vfs *pVfs, const char *zName){
   int rc = SQLITE_MISUSE /* ??? */;
   if( 0==pVfs && 0!=zName ) pVfs = sqlite3_vfs_find(0);
   if( zName && pVfs && pVfs->xDelete ){
@@ -857,12 +854,14 @@ sqlite3_vfs * sqlite3_wasm_db_vfs(sqlite3 *pDb, const char *zDbName){
 ** SQLITE_MISUSE if pDb is NULL.
 */
 SQLITE_WASM_KEEP
-int sqlite3_wasm_db_reset(sqlite3*pDb){
+int sqlite3_wasm_db_reset(sqlite3 *pDb){
   int rc = SQLITE_MISUSE;
   if( pDb ){
     rc = sqlite3_db_config(pDb, SQLITE_DBCONFIG_RESET_DATABASE, 1, 0);
-    if( 0==rc ) rc = sqlite3_exec(pDb, "VACUUM", 0, 0, 0);
-    sqlite3_db_config(pDb, SQLITE_DBCONFIG_RESET_DATABASE, 0, 0);
+    if( 0==rc ){
+      rc = sqlite3_exec(pDb, "VACUUM", 0, 0, 0);
+      sqlite3_db_config(pDb, SQLITE_DBCONFIG_RESET_DATABASE, 0, 0);
+    }
   }
   return rc;
 }
@@ -907,7 +906,7 @@ int sqlite3_wasm_db_export_chunked( sqlite3* pDb,
   }
   for( ; 0==rc && nPos<nSize; nPos += nBuf ){
     rc = pFile->pMethods->xRead(pFile, buf, nBuf, nPos);
-    if(SQLITE_IOERR_SHORT_READ == rc){
+    if( SQLITE_IOERR_SHORT_READ == rc ){
       rc = (nPos + nBuf) < nSize ? rc : 0/*assume EOF*/;
     }
     if( 0==rc ) rc = xCallback(buf, nBuf);
@@ -935,7 +934,7 @@ int sqlite3_wasm_db_serialize( sqlite3 *pDb, const char *zSchema,
                                sqlite3_int64 *nOut, unsigned int mFlags ){
   unsigned char * z;
   if( !pDb || !pOut ) return SQLITE_MISUSE;
-  if(nOut) *nOut = 0;
+  if( nOut ) *nOut = 0;
   z = sqlite3_serialize(pDb, zSchema ? zSchema : "main", nOut, mFlags);
   if( z || (SQLITE_SERIALIZE_NOCOPY & mFlags) ){
     *pOut = z;
@@ -958,9 +957,8 @@ int sqlite3_wasm_db_serialize( sqlite3 *pDb, const char *zSchema,
 ** Emscripten's FS.createDataFile() in a VFS-agnostic way. This
 ** functionality is intended for use in uploading database files.
 **
-** Note that not all VFSes support this operation because they impose
-** specific requirements on truncate and write sizes. e.g.  kvvfs does
-** not work with this.
+** Not all VFSes support this functionality, e.g. the "kvvfs" does
+** not.
 **
 ** If pVfs is NULL, sqlite3_vfs_find(0) is used.
 **
@@ -973,10 +971,7 @@ int sqlite3_wasm_db_serialize( sqlite3 *pDb, const char *zSchema,
 **
 ** Whether or not directory components of zFilename are created
 ** automatically or not is unspecified: that detail is left to the
-** VFS. The "opfs" VFS, for example, create them.
-**
-** Not all VFSes support this functionality, e.g. the "kvvfs" does
-** not.
+** VFS. The "opfs" VFS, for example, creates them.
 **
 ** If an error happens while populating or truncating the file, the
 ** target file will be deleted (if needed) if this function created
@@ -1014,7 +1009,8 @@ int sqlite3_wasm_vfs_create_file( sqlite3_vfs *pVfs,
   pVfs->xAccess(pVfs, zFilename, SQLITE_ACCESS_EXISTS, &fileExisted);
   rc = sqlite3OsOpenMalloc(pVfs, zFilename, &pFile, openFlags, &flagsOut);
 #if 0
-# define RC fprintf(stderr,"create_file(%s,%s) @%d rc=%d\n", pVfs->zName, zFilename, __LINE__, rc);
+# define RC fprintf(stderr,"create_file(%s,%s) @%d rc=%d\n", \
+                    pVfs->zName, zFilename, __LINE__, rc);
 #else
 # define RC
 #endif
@@ -1046,11 +1042,14 @@ int sqlite3_wasm_vfs_create_file( sqlite3_vfs *pVfs,
     }
     if( 0==rc && nData>0 ){
       assert( nData<blockSize );
-      rc = pIo->xWrite(pFile, pPos, nData, (sqlite3_int64)(pPos - pData));
+      rc = pIo->xWrite(pFile, pPos, nData,
+                       (sqlite3_int64)(pPos - pData));
       RC;
     }
   }
-  if( pIo->xUnlock && doUnlock!=0 ) pIo->xUnlock(pFile, SQLITE_LOCK_NONE);
+  if( pIo->xUnlock && doUnlock!=0 ){
+    pIo->xUnlock(pFile, SQLITE_LOCK_NONE);
+  }
   pIo->xClose(pFile);
   if( rc!=0 && 0==fileExisted ){
     pVfs->xDelete(pVfs, zFilename, 1);

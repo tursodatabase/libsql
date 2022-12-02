@@ -1,5 +1,5 @@
-C Expand\sJS\stests\sfor\sdb\sexport/import\sand\sdocument\sreason\sit\scannot\scurrently\swork\swith\skvvfs.\sFix\sa\sminor\sJS\sbuild\sdependencies\sbug.\sUpdate\spage\stitle\swith\sPASS/FAIL\sprefix\sfor\stester1.js\sto\simprove\soverview\swhen\slaunching\smultiple\stest\stabs.\sAdd\sability\sof\stester1\sshould-run-test\spredicates\sto\sreport\swhy\sa\sgiven\stest\sis\sdisabled.
-D 2022-12-02T07:14:56.641
+C sqlite3-wasm.c:\scode\slegibility\sand\scoding\sstyle\stweaks.\sIncrease\sSQLITE_DEFAULT_PAGE_SIZE\sfrom\s4k\sto\s8k,\sas\sthat\simproves\sOPFS\sspeedtest1\sperformance\sby\sroughly\s12%.
+D 2022-12-02T08:29:03.564
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -512,7 +512,7 @@ F ext/wasm/api/sqlite3-opfs-async-proxy.js 9963c78bf6e5ccb5ba28e8597851bd9d980e8
 F ext/wasm/api/sqlite3-vfs-helper.js 4ad4faf02e1524bf0296be8452c00b5708dce6faf649468d0377e26a0b299263
 F ext/wasm/api/sqlite3-vfs-opfs.c-pp.js 654f37fd6312d3bb0d067b21ad42f9dcfd629fd34ace892e67e06143a65dc6d0
 F ext/wasm/api/sqlite3-wasi.h 25356084cfe0d40458a902afb465df8c21fc4152c1d0a59b563a3fba59a068f9
-F ext/wasm/api/sqlite3-wasm.c edae35c7fe070ae7db5feaf3a7d9ba45708f6f56fdcbb3ad0fb2710e4da3bb05
+F ext/wasm/api/sqlite3-wasm.c 3fb517065417bfddf9f49b73cf1f8af1d8d50fbb295c484e77359e5ed6e14a21
 F ext/wasm/api/sqlite3-worker1-promiser.js 0c7a9826dbf82a5ed4e4f7bf7816e825a52aff253afbf3350431f5773faf0e4b
 F ext/wasm/api/sqlite3-worker1.js 1e54ea3d540161bcfb2100368a2fc0cad871a207b8336afee1c445715851ec54
 F ext/wasm/batch-runner.html 4deeed44fe41496dc6898d9fb17938ea3291f40f4bfb977e29d0cef96fbbe4c8
@@ -2065,8 +2065,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8e4d30ac033a6d9019a7eeedfe788dc0120f565cef2ae8f09d2bf32eb94d8a33
-R 537bb49fe6ebd23b0d6c90dc722897c8
+P 75f610d3a4cf3d972220f9abc27cdf5990451e3835ceb9cf66973934004dfc5c
+R 476dae20eba5ae2d14fd70169918f0cd
 U stephan
-Z eb02f2c4f6198c757ec0df7e4c3e3028
+Z e6e64ad365153ec68f24a3bd7c94c825
 # Remove this line to create a well-formed Fossil manifest.
