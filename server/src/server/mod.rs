@@ -1,8 +1,8 @@
 use std::future::poll_fn;
-use std::io;
 use std::net::SocketAddr;
 use std::pin::Pin;
 use std::task::{ready, Context, Poll};
+use std::{fmt, io};
 
 use anyhow::Result;
 use futures::stream::select_all;
@@ -50,6 +50,7 @@ impl Server {
     pub async fn serve<S>(self, mut make_svc: S)
     where
         S: Service<(NetStream, SocketAddr)>,
+        S::Error: fmt::Display,
     {
         let mut connections = FuturesUnordered::new();
         let mut listeners = select_all(self.listeners);
@@ -69,7 +70,11 @@ impl Server {
                         _ => break,
                     }
                 }
-                _dis = connections.next(), if !connections.is_empty() => { }
+                disconnect = connections.next(), if !connections.is_empty() => {
+                    if let Some(Err(e)) = disconnect {
+                        tracing::error!("connection exited with error: {e}")
+                    }
+                }
             }
         }
     }
