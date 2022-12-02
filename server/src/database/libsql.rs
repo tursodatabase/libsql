@@ -92,13 +92,11 @@ impl LibSqlDb {
                         State::TxnOpened => {
                             timeout_deadline =
                                 Some(Instant::now() + Duration::from_secs(TXN_TIMEOUT_SECS));
-                            timedout = false;
                             state = State::TxnOpened;
                         }
                         State::TxnClosed => {
                             if result.is_ok() {
                                 state = State::Start;
-                                timedout = false;
                                 timeout_deadline = None;
                             }
                         }
