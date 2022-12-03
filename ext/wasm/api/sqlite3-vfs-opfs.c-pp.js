@@ -1163,24 +1163,27 @@ const installOpfsVfs = function callee(options){
       OpfsDb.prototype = Object.create(sqlite3.oo1.DB.prototype);
       sqlite3.oo1.DB.dbCtorHelper.setVfsPostOpenSql(
         opfsVfs.pointer,
-        [
-          /* Truncate journal mode is faster than delete for
-             this vfs, per speedtest1. That gap seems to have closed with
-             Chrome version 108 or 109, but "persist" is very roughly 5-6%
-             faster than truncate in initial tests. */
-          "pragma journal_mode=persist;",
-          /* Set a default busy-timeout handler to help OPFS dbs
-             deal with multi-tab/multi-worker contention. */
-          "pragma busy_timeout=5000;",
-          /*
-            This vfs benefits hugely from cache on moderate/large
-            speedtest1 --size 50 and --size 100 workloads. We currently
-            rely on setting a non-default cache size when building
-            sqlite3.wasm. If that policy changes, the cache can
-            be set here.
-          */
-          //"pragma cache_size=-16384;"
-        ].join("")
+        function(oo1Db, sqlite3){
+          /* Set a relatively high default busy-timeout handler to
+             help OPFS dbs deal with multi-tab/multi-worker
+             contention. */
+          sqlite3.capi.sqlite3_busy_timeout(oo1Db, 10000);
+          sqlite3.capi.sqlite3_exec(oo1Db, [
+            /* Truncate journal mode is faster than delete for
+               this vfs, per speedtest1. That gap seems to have closed with
+               Chrome version 108 or 109, but "persist" is very roughly 5-6%
+               faster than truncate in initial tests. */
+            "pragma journal_mode=persist;",
+            /*
+              This vfs benefits hugely from cache on moderate/large
+              speedtest1 --size 50 and --size 100 workloads. We
+              currently rely on setting a non-default cache size when
+              building sqlite3.wasm. If that policy changes, the cache
+              can be set here.
+            */
+            "pragma cache_size=-16384;"
+          ], 0, 0, 0);
+        }
       );
     }
 
