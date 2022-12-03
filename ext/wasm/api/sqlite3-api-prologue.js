@@ -748,18 +748,20 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      returned pointer must eventually be passed to
      wasm.dealloc() to clean it up.
 
+     The argument may be a Uint8Array, Int8Array, or ArrayBuffer,
+     and it throws if passed any other type.
+
      As a special case, to avoid further special cases where
      this is used, if srcTypedArray.byteLength is 0, it
      allocates a single byte and sets it to the value
      0. Even in such cases, calls must behave as if the
      allocated memory has exactly srcTypedArray.byteLength
      bytes.
-
-     ACHTUNG: this currently only works for Uint8Array and
-     Int8Array types and will throw if srcTypedArray is of
-     any other type.
   */
   wasm.allocFromTypedArray = function(srcTypedArray){
+    if(srcTypedArray instanceof ArrayBuffer){
+      srcTypedArray = new Uint8Array(srcTypedArray);
+    }
     affirmBindableTypedArray(srcTypedArray);
     const pRet = wasm.alloc(srcTypedArray.byteLength || 1);
     wasm.heapForSize(srcTypedArray.constructor).set(
