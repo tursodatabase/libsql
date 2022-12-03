@@ -489,7 +489,7 @@ emcc.jsflags += -sINITIAL_MEMORY=$(emcc.INITIAL_MEMORY.$(emcc.INITIAL_MEMORY))
 
 emcc.jsflags += $(emcc.environment)
 emcc.jsflags += -sSTACK_SIZE=1MB
-# ^^^ ACHTUNG: emsdk 3.1.27 reduced the default stack size from 4MB to
+# ^^^ ACHTUNG: emsdk 3.1.27 reduced the default stack size from 5MB to
 # a mere 64KB, which leads to silent memory corruption via the kvvfs
 # VFS, which requires twice that for its xRead() and xWrite() methods.
 ########################################################################

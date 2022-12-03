@@ -113,6 +113,12 @@
 #endif
 
 /**********************************************************************/
+/* SQLITE_M... */
+#ifndef SQLITE_MAX_ALLOCATION_SIZE
+# define SQLITE_MAX_ALLOCATION_SIZE 0x1fffffff
+#endif
+
+/**********************************************************************/
 /* SQLITE_O... */
 #ifndef SQLITE_OMIT_DEPRECATED
 # define SQLITE_OMIT_DEPRECATED 1
@@ -495,6 +501,10 @@ const char * sqlite3_wasm_enum_json(void){
     DefInt(SQLITE_IOCAP_POWERSAFE_OVERWRITE);
     DefInt(SQLITE_IOCAP_IMMUTABLE);
     DefInt(SQLITE_IOCAP_BATCH_ATOMIC);
+  } _DefGroup;
+
+  DefGroup(limits) {
+    DefInt(SQLITE_MAX_ALLOCATION_SIZE);
   } _DefGroup;
 
   DefGroup(openFlags) {

@@ -424,6 +424,38 @@ self.sqlite3InitModule = sqlite3InitModule;
         }
       }
 
+      // alloc(), realloc(), allocFromTypedArray()
+      {
+        let m = w.alloc(14);
+        let m2 = w.realloc(m, 16);
+        T.assert(m === m2/* because of alignment */);
+        T.assert(0 === w.realloc(m, 0));
+        m = m2 = 0;
+
+        // Check allocation limits and allocator's responses...
+        T.assert('number' === typeof sqlite3.capi.SQLITE_MAX_ALLOCATION_SIZE);
+        const tooMuch = sqlite3.capi.SQLITE_MAX_ALLOCATION_SIZE + 1,
+              isAllocErr = (e)=>e instanceof sqlite3.WasmAllocError;
+        T.mustThrowMatching(()=>w.alloc(tooMuch), isAllocErr)
+          .assert(0 === w.alloc.impl(tooMuch))
+          .mustThrowMatching(()=>w.realloc(0, tooMuch), isAllocErr)
+          .assert(0 === w.realloc.impl(0, tooMuch));
+
+        // Check allocFromTypedArray()...
+        const byteList = [11,22,33]
+        const u = new Uint8Array(byteList);
+        m = w.allocFromTypedArray(u);
+        for(let i = 0; i < u.length; ++i){
+          T.assert(u[i] === byteList[i])
+            .assert(u[i] === w.getMemValue(m + i, 'i8'));
+        }
+        w.dealloc(m);
+        T.mustThrowMatching(
+          ()=>w.allocFromTypedArray(1),
+          'Value is not of a supported TypedArray type.'
+        );
+      }
+
       // isPtr32()
       {
         const ip = w.isPtr32;
