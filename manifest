@@ -1,5 +1,5 @@
-C Add\sa\stest\scase\sto\sshow\sthat\sticket\s[e8b674241947eb3b]\shas\sbeen\sfixed.
-D 2022-12-03T17:23:29.589
+C Add\sTOTAL\srows\sto\sthe\soutput\sgenerated\sby\stool/vdbe_profile.tcl.
+D 2022-12-03T18:21:30.267
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -2040,7 +2040,7 @@ F tool/symbols-mingw.sh 4dbcea7e74768305384c9fd2ed2b41bbf9f0414d
 F tool/symbols.sh 1612bd947750e21e7b47befad5f6b3825b06cce0705441f903bf35ced65ae9b9
 F tool/varint.c 5d94cb5003db9dbbcbcc5df08d66f16071aee003
 F tool/vdbe-compress.tcl 1dcb7632e57cf57105248029e6e162fddaf6c0fccb3bb9e6215603752c5a2d4a
-F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
+F tool/vdbe_profile.tcl 3ac5a4a9449f4baf77059358ea050db3e34395ccf59c5464d29b91746d5b961e
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d58dc38367cc776550f90327e205d7946802d4004fb9f291fd8b81256bc1eedd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
@@ -2065,8 +2065,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f3290cf83b7c02d17d85d8942954f052b486c370cd5ec732969da9061dc1d19a
-R e8ab3ed0037b8a828ad83ab76a453ef0
+P e20de6d450c2b4d5bde737f625de16ff53262c22ce7aa6917b64f1665170d33f
+R aefabaf5ca745982d6ec40be787f17b5
 U drh
-Z 8bdcb4a69164adf0860f9006c8d2a11c
+Z 6a37ae50ecfc47b777551be2941b67ad
 # Remove this line to create a well-formed Fossil manifest.
