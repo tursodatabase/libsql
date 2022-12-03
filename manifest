@@ -1,5 +1,5 @@
-C sqlite3.wasm.allocFromTypedArray()\snow\soptionally\saccepts\san\sArrayBuffer\sas\sits\sargument.
-D 2022-12-03T14:58:45.066
+C Correct\sa\smemory\sleak\sin\stester1.js.
+D 2022-12-03T15:41:29.086
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -555,7 +555,7 @@ F ext/wasm/test-opfs-vfs.html 1f2d672f3f3fce810dfd48a8d56914aba22e45c6834e262555
 F ext/wasm/test-opfs-vfs.js 44363db07b2a20e73b0eb1808de4400ca71b703af718d0fa6d962f15e73bf2ac
 F ext/wasm/tester1-worker.html 29b1d87f7d51f70d61645719fee657f3787fe939bb695f27034c75404e8f1e6f
 F ext/wasm/tester1.c-pp.html 74aa9b31c75f12490653f814b53c3dd39f40cd3f70d6a53a716f4e8587107399
-F ext/wasm/tester1.c-pp.js b33f50216ad78a7d5a88967b8613fc2bc76b57fda2fcbceb58d2d739a315c2c5
+F ext/wasm/tester1.c-pp.js d096a8fadfd27caa680a4311b1d529551f8fe885a63dd27457c87b6008c64632
 F ext/wasm/tests/opfs/concurrency/index.html 86d8ac435074d1e7007b91105f4897f368c165e8cecb6a9aa3d81f5cf5dcbe70
 F ext/wasm/tests/opfs/concurrency/test.js a98016113eaf71e81ddbf71655aa29b0fed9a8b79a3cdd3620d1658eb1cc9a5d
 F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d599948915c76906681bb7da1d3d2
@@ -2065,8 +2065,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d9807656f8a7c2a893d3f68ee5592f44826b8e999ae66f7d9000674b5c1b0207
-R 36bd64116645d9b16e5ee1bfbfa56d1c
+P 75a1a796f86d289c7275666fab19013934775dcccaed44a1a61d1749a6cb99c9
+R 7a48580039cdf0dcac94f303fc1d293a
 U stephan
-Z 62ef618676c9b9a1f0d769e57183adb7
+Z a4c0098dd4ed05913f5ba3742d524e04
 # Remove this line to create a well-formed Fossil manifest.

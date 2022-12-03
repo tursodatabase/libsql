@@ -470,6 +470,7 @@ self.sqlite3InitModule = sqlite3InitModule;
           T.assert(u[i] === byteList[i])
             .assert(u[i] === w.getMemValue(m + i, 'i8'));
         }
+        w.dealloc(m);
         T.mustThrowMatching(
           ()=>w.allocFromTypedArray(1),
           'Value is not of a supported TypedArray type.'
