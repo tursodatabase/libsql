@@ -1267,7 +1267,7 @@ self.WhWasmUtilInstaller = function(target){
      - If v is a string, scopeAlloc() a new C-string from it and return
        that temp string's pointer.
 
-     - Else return the value from the arg adaptor defined for ptrIR.
+     - Else return the value from the arg adapter defined for ptrIR.
 
      TODO? Permit an Int8Array/Uint8Array and convert it to a string?
      Would that be too much magic concentrated in one place, ready to
@@ -1279,12 +1279,12 @@ self.WhWasmUtilInstaller = function(target){
       return v ? xcv.arg[ptrIR](v) : null;
     };
   xcv.result.string = xcv.result.utf8 = (i)=>target.cstringToJs(i);
-  xcv.result['string:free'] = xcv.result['utf8:free'] = (i)=>{
+  xcv.result['string:dealloc'] = xcv.result['utf8:dealloc'] = (i)=>{
     try { return i ? target.cstringToJs(i) : null }
     finally{ target.dealloc(i) }
   };
   xcv.result.json = (i)=>JSON.parse(target.cstringToJs(i));
-  xcv.result['json:free'] = (i)=>{
+  xcv.result['json:dealloc'] = (i)=>{
     try{ return i ? JSON.parse(target.cstringToJs(i)) : null }
     finally{ target.dealloc(i) }
   }
@@ -1383,7 +1383,7 @@ self.WhWasmUtilInstaller = function(target){
        true.
 
      - `f32` (`float`), `f64` (`double`) (args and results): pass
-       their argument to Number(). i.e. the adaptor does not currently
+       their argument to Number(). i.e. the adapter does not currently
        distinguish between the two types of floating-point numbers.
 
      - `number` (results): converts the result to a JS Number using
@@ -1411,7 +1411,7 @@ self.WhWasmUtilInstaller = function(target){
          const C-string, encoded as UTF-8, copies it to a JS string,
          and returns that JS string.
 
-     - `string:free` or `utf8:free) (results): treats the result value
+     - `string:dealloc` or `utf8:dealloc) (results): treats the result value
        as a non-const UTF-8 C-string, ownership of which has just been
        transfered to the caller. It copies the C-string to a JS
        string, frees the C-string, and returns the JS string. If such
@@ -1422,7 +1422,7 @@ self.WhWasmUtilInstaller = function(target){
        required. For example:
 
 ```js
-   target.xWrap.resultAdaptor('string:my_free',(i)=>{
+   target.xWrap.resultAdapter('string:my_free',(i)=>{
       try { return i ? target.cstringToJs(i) : null }
       finally{ target.exports.my_free(i) }
    };
@@ -1432,9 +1432,9 @@ self.WhWasmUtilInstaller = function(target){
        returns the result of passing the converted-to-JS string to
        JSON.parse(). Returns `null` if the C-string is a NULL pointer.
 
-     - `json:free` (results): works exactly like `string:free` but
+     - `json:dealloc` (results): works exactly like `string:dealloc` but
        returns the same thing as the `json` adapter. Note the
-       warning in `string:free` regarding maching allocators and
+       warning in `string:dealloc` regarding maching allocators and
        deallocators.
 
      The type names for results and arguments are validated when
@@ -1545,7 +1545,7 @@ self.WhWasmUtilInstaller = function(target){
   */
   target.xWrap.resultAdapter = function f(typeName, adapter){
     return __xAdapter(f, arguments.length, typeName, adapter,
-                      'resultAdaptor()', xcv.result);
+                      'resultAdapter()', xcv.result);
   };
 
   /**

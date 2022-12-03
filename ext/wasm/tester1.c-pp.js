@@ -344,9 +344,20 @@ self.sqlite3InitModule = sqlite3InitModule;
 
   ////////////////////////////////////////////////////////////////////
   T.g('Basic sanity checks')
-    .t("JS wasm-side allocator === sqlite3_malloc()", function(sqlite3){
-      T.assert(wasm.alloc.impl === wasm.exports.sqlite3_malloc)
-        .assert(wasm.dealloc === wasm.exports.sqlite3_free);
+    .t({
+      name: "JS wasm-side allocator",
+      test: function(sqlite3){
+        if(sqlite3.config.useStdAlloc){
+          warn("Using system allocator. This violates the docs.");
+          T.assert(wasm.alloc.impl === wasm.exports.malloc)
+            .assert(wasm.dealloc === wasm.exports.free)
+            .assert(wasm.realloc.impl === wasm.exports.realloc);
+        }else{
+          T.assert(wasm.alloc.impl === wasm.exports.sqlite3_malloc)
+            .assert(wasm.dealloc === wasm.exports.sqlite3_free)
+            .assert(wasm.realloc.impl === wasm.exports.sqlite3_realloc);
+        }
+      }
     })
     .t('Namespace object checks', function(sqlite3){
       const wasmCtypes = wasm.ctype;
@@ -434,12 +445,14 @@ self.sqlite3InitModule = sqlite3InitModule;
 
         // Check allocation limits and allocator's responses...
         T.assert('number' === typeof sqlite3.capi.SQLITE_MAX_ALLOCATION_SIZE);
-        const tooMuch = sqlite3.capi.SQLITE_MAX_ALLOCATION_SIZE + 1,
-              isAllocErr = (e)=>e instanceof sqlite3.WasmAllocError;
-        T.mustThrowMatching(()=>w.alloc(tooMuch), isAllocErr)
-          .assert(0 === w.alloc.impl(tooMuch))
-          .mustThrowMatching(()=>w.realloc(0, tooMuch), isAllocErr)
-          .assert(0 === w.realloc.impl(0, tooMuch));
+        if(!sqlite3.config.useStdAlloc){
+          const tooMuch = sqlite3.capi.SQLITE_MAX_ALLOCATION_SIZE + 1,
+                isAllocErr = (e)=>e instanceof sqlite3.WasmAllocError;
+          T.mustThrowMatching(()=>w.alloc(tooMuch), isAllocErr)
+            .assert(0 === w.alloc.impl(tooMuch))
+            .mustThrowMatching(()=>w.realloc(0, tooMuch), isAllocErr)
+            .assert(0 === w.realloc.impl(0, tooMuch));
+        }
 
         // Check allocFromTypedArray()...
         const byteList = [11,22,33]
@@ -553,11 +566,12 @@ self.sqlite3InitModule = sqlite3InitModule;
 
       //log("allocCString()...");
       {
-        const cstr = w.allocCString("hällo, world");
-        const n = w.cstrlen(cstr);
-        T.assert(13 === n)
+        const jstr = "hällo, world!";
+        const [cstr, n] = w.allocCString(jstr, true);
+        T.assert(14 === n)
           .assert(0===w.getMemValue(cstr+n))
-          .assert(chr('d')===w.getMemValue(cstr+n-1));
+          .assert(chr('!')===w.getMemValue(cstr+n-1));
+        w.dealloc(cstr);
       }
 
       //log("scopedAlloc() and friends...");
@@ -639,11 +653,13 @@ self.sqlite3InitModule = sqlite3InitModule;
         rc = w.xCallWrapped('sqlite3_wasm_enum_json','utf8');
         T.assert('string'===typeof rc).assert(rc.length>300);
         if(haveWasmCTests()){
-          fw = w.xWrap('sqlite3_wasm_test_str_hello', 'utf8:free',['i32']);
-          rc = fw(0);
-          T.assert('hello'===rc);
-          rc = fw(1);
-          T.assert(null===rc);
+          if(!sqlite3.config.useStdAlloc){
+            fw = w.xWrap('sqlite3_wasm_test_str_hello', 'utf8:dealloc',['i32']);
+            rc = fw(0);
+            T.assert('hello'===rc);
+            rc = fw(1);
+            T.assert(null===rc);
+          }
 
           if(w.bigIntEnabled){
             w.xWrap.resultAdapter('thrice', (v)=>3n*BigInt(v));

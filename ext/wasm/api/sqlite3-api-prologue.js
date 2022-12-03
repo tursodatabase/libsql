@@ -112,11 +112,22 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       }
       return !!self.BigInt64Array;
     })(),
-    allocExportName: 'sqlite3_malloc',
-    deallocExportName: 'sqlite3_free',
-    reallocExportName: 'sqlite3_realloc',
-    wasmfsOpfsDir: '/opfs'
+    wasmfsOpfsDir: '/opfs',
+    /**
+       useStdAlloc is just for testing an allocator discrepancy. The
+       docs guarantee that this is false in the canonical builds. For
+       99% of purposes it doesn't matter which allocators we use, but
+       it becomes significant with, e.g., sqlite3_deserialize()
+       and certain wasm.xWrap.resultAdapter()s.
+    */
+    useStdAlloc: false
   }, apiConfig || {});
+
+  Object.assign(config, {
+    allocExportName: config.useStdAlloc ? 'malloc' : 'sqlite3_malloc',
+    deallocExportName: config.useStdAlloc ? 'free' : 'sqlite3_free',
+    reallocExportName: config.useStdAlloc ? 'realloc' : 'sqlite3_realloc'
+  }, config);
 
   [
     // If any of these config options are functions, replace them with
@@ -768,15 +779,12 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     }
 
     wasm.alloc = function f(n){
-      const m = f.impl(n);
-      if(!m) throw new WasmAllocError("Failed to allocate",n," bytes.");
-      return m;
+      return f.impl(n) || WasmAllocError.toss("Failed to allocate",n," bytes.");
     };
     wasm.alloc.impl = wasm.exports[keyAlloc];
     wasm.realloc = function f(m,n){
       const m2 = f.impl(m,n);
-      if(n && !m2) throw new WasmAllocError("Failed to reallocate",n," bytes.");
-      return n ? m2 : 0;
+      return n ? (m2 || WasmAllocError.toss("Failed to reallocate",n," bytes.")) : 0;
     };
     wasm.realloc.impl = wasm.exports[keyRealloc];
     wasm.dealloc = wasm.exports[keyDealloc];

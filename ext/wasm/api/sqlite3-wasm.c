@@ -1204,7 +1204,7 @@ void sqlite3_wasm_test_stack_overflow(int recurse){
 /* For testing the 'string-free' whwasmutil.xWrap() conversion. */
 SQLITE_WASM_KEEP
 char * sqlite3_wasm_test_str_hello(int fail){
-  char * s = fail ? 0 : (char *)malloc(6);
+  char * s = fail ? 0 : (char *)sqlite3_malloc(6);
   if(s){
     memcpy(s, "hello", 5);
     s[5] = 0;

@@ -93,3 +93,4 @@ _sqlite3_vfs_register
 _sqlite3_vfs_unregister
 _malloc
 _free
+_realloc
