@@ -1,5 +1,5 @@
-C Minor\sinternal\stweaks\sto\sthe\sOPFS\sVFS.\sResolve\sa\smissing\sresult\scode\swhich\slead\sto\sa\snull\sderef\sin\sxFileSize().
-D 2022-12-02T18:56:37.557
+C Tuning\sthe\squery\splanner\sby\sadjusting\sthe\sweights\sthat\spredict\sthe\srelative\nperformance\sof\ssorting\sand\sindex\slookup.
+D 2022-12-03T00:52:21.776
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -732,7 +732,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c b9df133a705093da8977da5eb202eaadb844839f1c7297c08d33471f5491843d
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
-F src/where.c bf470b5d1ba03af8d558a0c98cc1fa97b330e03a198a7af61895e5a2e8d93f20
+F src/where.c 5826b62ddcfc92979669cb5fb80f73d0df86bbfeefa1d757f5dc1f857cd628e7
 F src/whereInt.h e25203e5bfee149f5f1225ae0166cfb4f1e65490c998a024249e98bb0647377c
 F src/wherecode.c ee52c2781c36004d23c85bf111063b78fc16e5e1b6a0d424326af8bf90babb0b
 F src/whereexpr.c 05295b44b54eea76d1ba766f0908928d0e20e990c249344c9521454d3d09c7ae
@@ -1368,7 +1368,7 @@ F test/openv2.test 0d3040974bf402e19b7df4b783e447289d7ab394
 F test/optfuzz-db01.c 9f2fa80b8f84ebbf1f2e8b13421a4e0477fe300f6686fbd76cac1d2db66e0fdc
 F test/optfuzz-db01.txt 21f6bdeadc701cf11528276e2a55c70bfcb846ba42df327f979bd9e7b6ce7041
 F test/optfuzz.c 690430a0bf0ad047d5a168bf52b05b2ee97aedaad8c14337e9eb5050faa64994
-F test/orderby1.test a4bba04b9c60a21e53486fbc173a596b29641a3b3a57a0f26a1cbef1360358e9
+F test/orderby1.test 02cfd870127a7342170b829175c5c53e9e7405744451ac1aeb2f7e2b0c18ca76
 F test/orderby2.test bc11009f7cd99d96b1b11e57b199b00633eb5b04
 F test/orderby3.test 8619d06a3debdcd80a27c0fdea5c40b468854b99
 F test/orderby4.test 4d39bfbaaa3ae64d026ca2ff166353d2edca4ba4
@@ -1884,7 +1884,7 @@ F test/walthread.test 14b20fcfa6ae152f5d8e12f5dc8a8a724b7ef189f5d8ef1e2ceab79f2a
 F test/walvfs.test e1a6ad0f3c78e98b55c3d5f0889cf366cc0d0a1cb2bccb44ac9ec67384adc4a1
 F test/wapp.tcl b440cd8cf57953d3a49e7ee81e6a18f18efdaf113b69f7d8482b0710a64566ec
 F test/wapptest.tcl 1bea58a6a8e68a73f542ee4fca28b771b84ed803bd0c9e385087070b3d747b3c x
-F test/where.test d13cd7c24e80009d2b54e2f7a8893c457afa49c64f99359c9eb3fe668ba1d9d4
+F test/where.test 98208c95b574269980132c347b4bdb8992c6d5fc30c1954938593336d12e7447
 F test/where2.test 03c21a11e7b90e2845fc3c8b4002fc44cc2797fa74c86ee47d70bd7ea4f29ed6
 F test/where3.test 5b4ffc0ac2ea0fe92f02b1244b7531522fe4d7bccf6fa8741d54e82c10e67753
 F test/where4.test 4a371bfcc607f41d233701bdec33ac2972908ba8
@@ -2065,8 +2065,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0d36021d107d3afca190ad61c3380536ad0cc2d493d345d48f9f9c1191741128
-R 6eba0a795b491027bc2604925d67afb7
-U stephan
-Z 379ecd060fe213536d8ac858396e84c5
+P 57dd593ef0efa17dfb3a9f4eac36d5b8b879e271de817d8cd94a8c8b56d31870
+R e47495a3cfe52da04033a615c7da71c2
+T *branch * qp-tuning
+T *sym-qp-tuning *
+T -sym-trunk *
+U drh
+Z bdcd0fcd9740989c0fc73b883156ab70
 # Remove this line to create a well-formed Fossil manifest.

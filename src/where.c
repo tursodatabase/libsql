@@ -3472,7 +3472,7 @@ static int whereLoopAddBtree(
     sPk.aiRowLogEst = aiRowEstPk;
     sPk.onError = OE_Replace;
     sPk.pTable = pTab;
-    sPk.szIdxRow = pTab->szTabRow;
+    sPk.szIdxRow = 1;  /* Interior rows of IPK table are very small */
     sPk.idxType = SQLITE_IDXTYPE_IPK;
     aiRowEstPk[0] = pTab->nRowLogEst;
     aiRowEstPk[1] = 0;
@@ -4811,13 +4811,18 @@ static LogEst whereSortingCost(
   /* TUNING: Estimated cost of a full external sort, where N is 
   ** the number of rows to sort is:
   **
-  **   cost = (3.0 * N * log(N)).
+  **   cost = (K * N * log(N)).
   ** 
   ** Or, if the order-by clause has X terms but only the last Y 
   ** terms are out of order, then block-sorting will reduce the 
   ** sorting cost to:
   **
-  **   cost = (3.0 * N * log(N)) * (Y/X)
+  **   cost = (K * N * log(N)) * (Y/X)
+  **
+  ** The constant K is 2.0 for an external sort that is built around
+  ** the OP_SorterInsert, OP_SorterSort, and OP_SorterData opcodes.
+  ** For a sort built using OP_IdxInsert and OP_Sort (which is slower
+  ** by a constant factor), the constant K is 4.0.
   **
   ** The (Y/X) term is implemented using stack variable rScale
   ** below.
@@ -4825,7 +4830,8 @@ static LogEst whereSortingCost(
   LogEst rScale, rSortCost;
   assert( nOrderBy>0 && 66==sqlite3LogEst(100) );
   rScale = sqlite3LogEst((nOrderBy-nSorted)*100/nOrderBy) - 66;
-  rSortCost = nRow + rScale + 16;
+  rSortCost = nRow + rScale + 10;
+  if( pWInfo->wctrlFlags & WHERE_USE_LIMIT ) rSortCost += 10;
 
   /* Multiple by log(M) where M is the number of output rows.
   ** Use the LIMIT for M if it is smaller.  Or if this sort is for
@@ -4985,11 +4991,11 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
                 pWInfo, nRowEst, nOrderBy, isOrdered
             );
           }
-          /* TUNING:  Add a small extra penalty (5) to sorting as an
+          /* TUNING:  Add a small extra penalty (3) to sorting as an
           ** extra encouragment to the query planner to select a plan
           ** where the rows emerge in the correct order without any sorting
           ** required. */
-          rCost = sqlite3LogEstAdd(rUnsorted, aSortCost[isOrdered]) + 5;
+          rCost = sqlite3LogEstAdd(rUnsorted, aSortCost[isOrdered]) + 3;
 
           WHERETRACE(0x002,
               ("---- sort cost=%-3d (%d/%d) increases cost %3d to %-3d\n",
