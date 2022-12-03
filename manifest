@@ -1,5 +1,5 @@
-C Move\skvvfs\sxRead()/xWrite()\sbuffer\sfrom\sfunction-local\sstack\smemory\sto\sheap\smemory\sto\saccommodate\schanges\sin\semsdk\s3.1.27.
-D 2022-12-03T11:51:29.063
+C Doc\stypo\sfix\sfor\sSQLITE_MAX_ALLOCATION_SIZE\sin\smalloc.c.\sNo\scode\schanges.
+D 2022-12-03T13:05:33.513
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -609,7 +609,7 @@ F src/json.c 7749b98c62f691697c7ee536b570c744c0583cab4a89200fdd0fc2aa8cc8cbd6
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 25663175950c5c4404b9377840b7b4c6fe5c53b415caf43634c62f442c02a9a7
 F src/main.c 954490392b74fb215378af3c75a9e1f4f559f19cb1567e5d77f3fbbb63909b4d
-F src/malloc.c 3d4ec162214024ee071d85711b93bec25cd3371280aee3702b63bcf312ca8238
+F src/malloc.c 47b82c5daad557d9b963e3873e99c22570fb470719082c6658bf64e3012f7d23
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
 F src/mem2.c c8bfc9446fd0798bddd495eb5d9dbafa7d4b7287d8c22d50a83ac9daa26d8a75
@@ -2065,8 +2065,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P eeb84ba5de1152ef0f42105b8b285fdee9f5ad58281e60a4e0c8b1d6de1dead8
-R 3c59336372e40211f743691646d8f288
+P f1da32410ca7b808b3bef5f5a59766e7281e9e6ea343c8b979599bf1fc1060f5
+R ecd21c0eba1077a6366f5dd7664db4b8
 U stephan
-Z 413cf7b6bea840d13a8d33f3b8232f5f
+Z d0c7ece3afa4de468292a6daac64615d
 # Remove this line to create a well-formed Fossil manifest.
