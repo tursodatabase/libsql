@@ -1,5 +1,5 @@
-C Further\simprovements\sto\sthe\sestimated\scost\sof\ssorting.\s\sTake\sinto\saccount\nthe\snumber\sof\scolumns\sto\sbe\ssorted.
-D 2022-12-03T17:09:15.127
+C Add\sa\stest\scase\sto\sshow\sthat\sticket\s[e8b674241947eb3b]\shas\sbeen\sfixed.
+D 2022-12-03T17:23:29.589
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1525,7 +1525,7 @@ F test/snapshot_fault.test f6c5ef7cb93bf92fbb4e864ecc5c87df7d3a250064838822db5b4
 F test/snapshot_up.test a0a29c4cf33475fcef07c3f8e64af795e24ab91b4cc68295863402a393cdd41c
 F test/soak.test 18944cf21b94a7fe0df02016a6ee1e9632bc4e8d095a0cb49d95e15d5cca2d5c
 F test/softheap1.test 843cd84db9891b2d01b9ab64cef3e9020f98d087
-F test/sort.test c2adc635c2564241fefec0b3a68391ef6868fd3b
+F test/sort.test f86751134159abb5e5fd4381a0d7038c91013638cd1e3fa1d7850901f6df6196
 F test/sort2.test cc23b7c19d684657559e8a55b02f7fcee03851d0
 F test/sort3.test 1480ed7c4c157682542224e05e3b75faf4a149e5
 F test/sort4.test 5c34d9623a4ae5921d956dfa2b70e77ed0fc6e5c
@@ -2065,8 +2065,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9f2806da4d88beceac2e81e05421f00481dd3dd100b096cd2ae6c828adb42ca7
-R 7460b69c2cad54c6cd480cae6fbd9d9a
+P f3290cf83b7c02d17d85d8942954f052b486c370cd5ec732969da9061dc1d19a
+R e8ab3ed0037b8a828ad83ab76a453ef0
 U drh
-Z b965371360d6f8e63aa93b345d42429e
+Z 8bdcb4a69164adf0860f9006c8d2a11c
 # Remove this line to create a well-formed Fossil manifest.
