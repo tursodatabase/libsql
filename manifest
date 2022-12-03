@@ -1,5 +1,5 @@
-C Add\sTOTAL\srows\sto\sthe\soutput\sgenerated\sby\stool/vdbe_profile.tcl.
-D 2022-12-03T18:21:30.267
+C Increase\sthe\snominal\srow\ssize\sfor\sIPK\sindex\slookups\sslightly,\sfor\sbetter\nbalance.
+D 2022-12-03T19:04:09.723
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -732,7 +732,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c b9df133a705093da8977da5eb202eaadb844839f1c7297c08d33471f5491843d
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
-F src/where.c 32875f4f738b1b32f648e8fd52df23a5ba28744a2b4209b262cac09efc2a8569
+F src/where.c cf893bd9e48cc4f761beb490e2016cfec7791b0778808a84f2d3d6340085f0d5
 F src/whereInt.h e25203e5bfee149f5f1225ae0166cfb4f1e65490c998a024249e98bb0647377c
 F src/wherecode.c ee52c2781c36004d23c85bf111063b78fc16e5e1b6a0d424326af8bf90babb0b
 F src/whereexpr.c 05295b44b54eea76d1ba766f0908928d0e20e990c249344c9521454d3d09c7ae
@@ -2065,8 +2065,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e20de6d450c2b4d5bde737f625de16ff53262c22ce7aa6917b64f1665170d33f
-R aefabaf5ca745982d6ec40be787f17b5
+P 9800586393c9d3b82459ef657620d245a7985ef5fa389b8a9ea633d6a29c7299
+R bdb8fcd5ad681651f9b1330561cafc6c
 U drh
-Z 6a37ae50ecfc47b777551be2941b67ad
+Z f5c8d079aea1d9c7b44238c2c41ad282
 # Remove this line to create a well-formed Fossil manifest.
