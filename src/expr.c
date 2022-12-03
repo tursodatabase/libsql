@@ -3258,7 +3258,7 @@ int sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
   int nReg;                   /* Registers to allocate */
   Expr *pLimit;               /* New limit expression */
 #ifdef SQLITE_ENABLE_STMT_SCANSTATUS
-  int addrExplain;
+  int addrExplain;            /* Address of OP_Explain instruction */
 #endif
 
   Vdbe *v = pParse->pVdbe;
@@ -3356,8 +3356,7 @@ int sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
   if( addrOnce ){
     sqlite3VdbeJumpHere(v, addrOnce);
   }
-  sqlite3VdbeScanStatusEnd(v, addrExplain);
-
+  sqlite3VdbeScanStatusRange(v, addrExplain, addrExplain, -1);
 
   /* Subroutine return */
   assert( ExprUseYSub(pExpr) );

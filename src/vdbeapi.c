@@ -2207,11 +2207,17 @@ int sqlite3_stmt_scanstatus_v2(
     }
     case SQLITE_SCANSTAT_NCYCLE: {
       i64 res = -1;
-      if( pScan->addrEndRange ){
+      if( pScan->aAddrRange[0] ){
         int ii;
         res = 0;
-        for(ii=pScan->addrExplain; ii<=pScan->addrEndRange; ii++){
-          res += p->anCycle[ii];
+        for(ii=0; ii<ArraySize(pScan->aAddrRange); ii+=2){
+          int iIns = pScan->aAddrRange[ii];
+          int iEnd = pScan->aAddrRange[ii+1];
+          if( iIns==0 ) break;
+          while( iIns<=iEnd ){
+            res += p->anCycle[iIns];
+            iIns++;
+          }
         }
       }
       *(i64*)pOut = res;

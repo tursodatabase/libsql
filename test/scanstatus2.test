@@ -94,6 +94,12 @@ proc do_graph_test {tn sql res} {
   uplevel [list do_test $tn [list set {} $graph] [string trim $res]]
 }
 
+proc puts_graph {sql} {
+  db eval $sql
+  set stmt [db version -last-stmt-ptr]
+  puts [string trim [get_graph $stmt]]
+}
+
 
 do_zexplain_test 0 1.1 {
   SELECT (SELECT a FROM t1 WHERE b=x) FROM t2 WHERE y=2

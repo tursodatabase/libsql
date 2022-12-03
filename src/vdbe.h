@@ -387,10 +387,10 @@ int sqlite3VdbeBytecodeVtabInit(sqlite3*);
 
 #ifdef SQLITE_ENABLE_STMT_SCANSTATUS
 void sqlite3VdbeScanStatus(Vdbe*, int, int, int, LogEst, const char*);
-void sqlite3VdbeScanStatusEnd(Vdbe*, int);
+void sqlite3VdbeScanStatusRange(Vdbe*, int, int, int);
 #else
 # define sqlite3VdbeScanStatus(a,b,c,d,e,f)
-# define sqlite3VdbeScanStatusEnd(a,b)
+# define sqlite3VdbeScanStatusRange(a,b,c,d)
 #endif
 
 #if defined(SQLITE_DEBUG) || defined(VDBE_PROFILE)

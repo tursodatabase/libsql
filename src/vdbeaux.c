@@ -1128,7 +1128,12 @@ void sqlite3VdbeScanStatus(
   }
 }
 
-void sqlite3VdbeScanStatusEnd(Vdbe *p, int addrExplain){
+void sqlite3VdbeScanStatusRange(
+  Vdbe *p, 
+  int addrExplain, 
+  int addrStart, 
+  int addrEnd
+){
   ScanStatus *pScan = 0;
   int ii;
   for(ii=p->nScan-1; ii>=0; ii--){
@@ -1137,7 +1142,14 @@ void sqlite3VdbeScanStatusEnd(Vdbe *p, int addrExplain){
     pScan = 0;
   }
   if( pScan ){
-    pScan->addrEndRange = sqlite3VdbeCurrentAddr(p)-1;
+    if( addrEnd<0 ) addrEnd = sqlite3VdbeCurrentAddr(p)-1;
+    for(ii=0; ii<ArraySize(pScan->aAddrRange); ii+=2){
+      if( pScan->aAddrRange[ii]==0 ){
+        pScan->aAddrRange[ii] = addrStart;
+        pScan->aAddrRange[ii+1] = addrEnd;
+        break;
+      }
+    }
   }
 }
 #endif
