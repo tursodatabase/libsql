@@ -4803,12 +4803,12 @@ static const char *wherePathName(WherePath *pPath, int nLoop, WhereLoop *pLast){
 ** order.
 */
 static LogEst whereSortingCost(
-  WhereInfo *pWInfo,
-  LogEst nRow,
-  int nOrderBy,
-  int nSorted
+  WhereInfo *pWInfo, /* Query planning context */
+  LogEst nRow,       /* Estimated number of rows to sort */
+  int nOrderBy,      /* Number of ORDER BY clause terms */
+  int nSorted        /* Number of initial ORDER BY terms naturally in order */
 ){
-  /* TUNING: Estimated cost of a full external sort, where N is 
+  /* Estimated cost of a full external sort, where N is 
   ** the number of rows to sort is:
   **
   **   cost = (K * N * log(N)).
@@ -4819,27 +4819,40 @@ static LogEst whereSortingCost(
   **
   **   cost = (K * N * log(N)) * (Y/X)
   **
-  ** The constant K is 2.0 for an external sort that is built around
-  ** the OP_SorterInsert, OP_SorterSort, and OP_SorterData opcodes.
-  ** For a sort built using OP_IdxInsert and OP_Sort (which is slower
-  ** by a constant factor), the constant K is 4.0.
+  ** The constant K is at least 2.0 but will be larger if there are a
+  ** large number of columns to be sorted, as the sorting time is
+  ** proportional to the amount of content to be sorted.  The algorithm
+  ** does not currently distinguish between fat columns (BLOBs and TEXTs) 
+  ** and skinny columns (INTs).  It just uses the number of columns as 
+  ** an approximation for the row width.
   **
-  ** The (Y/X) term is implemented using stack variable rScale
-  ** below.
+  ** And extra factor of 2.0 or 3.0 is added to the sorting cost if the sort
+  ** is built using OP_IdxInsert and OP_Sort rather than with OP_SorterInsert.
   */
-  LogEst rScale, rSortCost;
-  assert( nOrderBy>0 && 66==sqlite3LogEst(100) );
-  rScale = sqlite3LogEst((nOrderBy-nSorted)*100/nOrderBy) - 66;
-  rSortCost = nRow + rScale + 10;
-  if( pWInfo->wctrlFlags & WHERE_USE_LIMIT ) rSortCost += 10;
+  LogEst rSortCost, nCol;
+  assert( pWInfo->pSelect!=0 );
+  assert( pWInfo->pSelect->pEList!=0 );
+  /* TUNING: sorting cost proportional to the number of output columns: */
+  nCol = sqlite3LogEst((pWInfo->pSelect->pEList->nExpr+59)/30);
+  rSortCost = nRow + nCol;
+  if( nSorted>0 ){
+    /* Scale the result by (Y/X) */
+    rSortCost += sqlite3LogEst((nOrderBy-nSorted)*100/nOrderBy) - 66;
+  }
 
   /* Multiple by log(M) where M is the number of output rows.
   ** Use the LIMIT for M if it is smaller.  Or if this sort is for
   ** a DISTINCT operator, M will be the number of distinct output
   ** rows, so fudge it downwards a bit.
   */
-  if( (pWInfo->wctrlFlags & WHERE_USE_LIMIT)!=0 && pWInfo->iLimit<nRow ){
-    nRow = pWInfo->iLimit;
+  if( (pWInfo->wctrlFlags & WHERE_USE_LIMIT)!=0 ){
+    rSortCost += 10;       /* TUNING: Extra 2.0x if using LIMIT */
+    if( nSorted!=0 ){
+      rSortCost += 6;      /* TUNING: Extra 1.5x if also using partial sort */
+    }
+    if( pWInfo->iLimit<nRow ){
+      nRow = pWInfo->iLimit;
+    }
   }else if( (pWInfo->wctrlFlags & WHERE_WANT_DISTINCT) ){
     /* TUNING: In the sort for a DISTINCT operator, assume that the DISTINCT
     ** reduces the number of output rows by a factor of 2 */
