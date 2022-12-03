@@ -1,5 +1,5 @@
-C Rename\swasm.xWrap.resultAdapter()\sX:free\sentries\sto\sX:dealloc\sfor\sconsistency\swith\swasm.dealloc().\sAdd\san\sundocumented\sfeature\sto\sreplace\swasm.alloc/dealloc/realloc()\swith\sthe\sC-standard\sallocators\s(after\san\sallocator\smisuse\sled\sdown\sa\sseveral-hour\srabbit\shole\strying\sto\sdiscover\sa\smis-free()\sviolation).\sRelated\stest\supdates.
-D 2022-12-03T13:10:58.483
+C Cause\sCLI\s.sha3sum\sto\swarn\sof\stext\sfields\sthat\sdo\snot\ssurvive\sCAST(CAST(t\sas\sBLOB)\sAS\sTEXT)\sdue\sto\sinvalid\sUTF\sencoding.
+D 2022-12-03T16:09:32.554
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -646,7 +646,7 @@ F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c efea4e5fbecfd6d0a9071b0be0d952620991673391b6ffaaf4c277b0bb674633
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 6983de0e6b8b68c97f82f9fca27ffb8f17161cff4d0d48fdf9eb40b213da0cc6
-F src/shell.c.in 9fda74d40b206a707aaa69fc5dc38e2c6a9137a3f4a1dcd7af581d59d92c063c
+F src/shell.c.in aa3e4c78ae25c24562b0c3497a88875baa61425714437143170b2c462842035d
 F src/sqlite.h.in 3439711b72cf1a541716da3671ac40f8d5957cdecfc192d47d32f7aed94207c2
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h c4b9fa7a7e2bcdf850cfeb4b8a91d5ec47b7a00033bc996fd2ee96cbf2741f5f
@@ -2065,8 +2065,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ed1ed21221b048ac5a5275cdfc4d9b2a406acdc7d4b648c3b61bcc822d88d955
-R 04802c5e85209b72659bc288df2e94a1
-U stephan
-Z 23bb6930a31350fa896c81241f2934b6
+P d9807656f8a7c2a893d3f68ee5592f44826b8e999ae66f7d9000674b5c1b0207
+R 9f83c1fb14dddfc272778480afabb0a3
+T *branch * sha3sum_text_validation
+T *sym-sha3sum_text_validation *
+T -sym-trunk *
+U larrybr
+Z 1ba97ab620561a8dccaf913734ec9094
 # Remove this line to create a well-formed Fossil manifest.
