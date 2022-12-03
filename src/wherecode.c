@@ -302,6 +302,9 @@ void sqlite3WhereAddScanStatus(
   sqlite3VdbeScanStatus(
       v, addrExplain, pLvl->addrBody, pLvl->addrVisit, pLoop->nOut, zObj
   );
+  if( pLoop->wsFlags & WHERE_VIRTUALTABLE ){
+    sqlite3VdbeScanStatusRange(v, addrExplain, -1, pLvl->iTabCur);
+  }
 }
 #endif
 

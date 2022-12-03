@@ -2206,17 +2206,33 @@ int sqlite3_stmt_scanstatus_v2(
       break;
     }
     case SQLITE_SCANSTAT_NCYCLE: {
-      i64 res = -1;
-      if( pScan->aAddrRange[0] ){
+      i64 res = 0;
+      if( pScan->aAddrRange[0]==0 ){
+        res = -1;
+      }else{
         int ii;
-        res = 0;
         for(ii=0; ii<ArraySize(pScan->aAddrRange); ii+=2){
           int iIns = pScan->aAddrRange[ii];
           int iEnd = pScan->aAddrRange[ii+1];
           if( iIns==0 ) break;
-          while( iIns<=iEnd ){
-            res += p->anCycle[iIns];
-            iIns++;
+          if( iIns>0 ){
+            while( iIns<=iEnd ){
+              res += p->anCycle[iIns];
+              iIns++;
+            }
+          }else{
+            int iOp;
+            for(iOp=0; iOp<p->nOp; iOp++){
+              Op *pOp = &p->aOp[iOp];
+              if( pOp->p1!=iEnd ) continue;
+              if( pOp->opcode!=OP_VFilter && pOp->opcode!=OP_VColumn
+               && pOp->opcode!=OP_Rowid   && pOp->opcode!=OP_VOpen
+               && pOp->opcode!=OP_VNext
+              ){
+                continue;
+              }
+              res += p->anCycle[iOp];
+            }
           }
         }
       }

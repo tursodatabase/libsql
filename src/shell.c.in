@@ -3054,7 +3054,7 @@ static void display_scanstats(
     zText = sqlite3_mprintf("%s", z);
     if( nCycle>=0 || nLoop>=0 || nRow>=0 ){
       char *z = 0;
-      if( nCycle>=0 ){
+      if( nCycle>=0 && nTotal>0 ){
         z = sqlite3_mprintf("%zcycles=%lld [%d%%]", z,
             nCycle, ((nCycle*100)+nTotal/2) / nTotal
         );
