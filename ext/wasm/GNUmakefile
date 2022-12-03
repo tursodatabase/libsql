@@ -833,7 +833,7 @@ push-testing:
 ########################################################################
 # If we find a copy of the sqlite.org/wasm docs checked out, copy
 # certain files over to it, noting that some need automatable edits...
-wasm.docs.home ?= ../../../wdoc
+wasm.docs.home ?= ../../../wasm
 wasm.docs.found = $(if $(wildcard $(wasm.docs.home)/api-index.md),\
   $(wildcard $(wasm.docs.home)),)
 .PHONY: update-docs

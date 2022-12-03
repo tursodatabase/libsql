@@ -92,9 +92,8 @@
     <li>This page runs in the main UI thread so cannot see features
       which are only available in a Worker thread. If this page were
       to function via a Worker, it would not be able to see
-      functionality only available in the main thread. Starting a
-      Worker here to fetch those symbols requires loading a second
-      copy of the sqlite3 WASM module and JS code.
+      functionality only available in the main thread. Either way, it
+      would be missing certain APIs.
     </li>
   </ul>
 
