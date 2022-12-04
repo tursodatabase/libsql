@@ -1880,7 +1880,7 @@ static int safeModeAuth(
     "zipfile",
     "zipfile_cds",
   };
-  UNUSED_PARAMETER(zA2);
+  UNUSED_PARAMETER(zA1);
   UNUSED_PARAMETER(zA3);
   UNUSED_PARAMETER(zA4);
   switch( op ){
@@ -1895,7 +1895,7 @@ static int safeModeAuth(
     case SQLITE_FUNCTION: {
       int i;
       for(i=0; i<ArraySize(azProhibitedFunctions); i++){
-        if( sqlite3_stricmp(zA1, azProhibitedFunctions[i])==0 ){
+        if( sqlite3_stricmp(zA2, azProhibitedFunctions[i])==0 ){
           failIfSafeMode(p, "cannot use the %s() function in safe mode",
                          azProhibitedFunctions[i]);
         }
