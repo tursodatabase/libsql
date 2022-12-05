@@ -857,6 +857,13 @@ end_deserialize:
   return rc;
 }
 
+/*
+** Return true if the VFS is the memvfs.
+*/
+int sqlite3IsMemdb(const sqlite3_vfs *pVfs){
+  return pVfs==&memdb_vfs;
+}
+
 /* 
 ** This routine is called when the extension is loaded.
 ** Register the new VFS.

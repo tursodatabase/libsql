@@ -273,5 +273,46 @@ do_execsql_test 15.1 {
 } {}
 do_recover_test 15 
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 16.1 {
+  PRAGMA journal_mode = wal;
+  CREATE TABLE t1(x);
+  INSERT INTO t1 VALUES(1), (2), (3);
+} {wal}
+do_test 16.2 {
+  set R [sqlite3_recover_init db main test.db2]
+  $R run
+  $R finish
+} {}
+do_execsql_test 16.3 {
+  SELECT * FROM t1;
+} {1 2 3}
+
+do_execsql_test 16.4 {
+  BEGIN;
+    SELECT * FROM t1;
+} {1 2 3}
+do_test 16.5 {
+  set R [sqlite3_recover_init db main test.db2]
+  $R run
+  list [catch { $R finish } msg] $msg
+} {1 {cannot start a transaction within a transaction}}
+do_execsql_test 16.6 {
+  SELECT * FROM t1;
+} {1 2 3}
+do_execsql_test 16.7 {
+  INSERT INTO t1 VALUES(4);
+}
+do_test 16.8 {
+  set R [sqlite3_recover_init db main test.db2]
+  $R run
+  list [catch { $R finish } msg] $msg
+} {1 {cannot start a transaction within a transaction}}
+do_execsql_test 16.9 {
+  SELECT * FROM t1;
+  COMMIT;
+} {1 2 3 4}
+
 finish_test
 

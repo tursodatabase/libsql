@@ -1,21 +1,32 @@
+
+/* ^^^^ ACHTUNG: blank line at the start is necessary because
+   Emscripten will not add a newline in some cases and we need
+   a blank line for a sed-based kludge for the ES6 build. */
 /* extern-post-js.js must be appended to the resulting sqlite3.js
    file. It gets its name from being used as the value for the
    --extern-post-js=... Emscripten flag. Note that this code, unlike
    most of the associated JS code, runs outside of the
    Emscripten-generated module init scope, in the current
    global scope. */
+//#if target=es6-module
+const toExportForES6 =
+//#endif
 (function(){
   /**
-     In order to hide the sqlite3InitModule()'s resulting Emscripten
-     module from downstream clients (and simplify our documentation by
-     being able to elide those details), we rewrite
-     sqlite3InitModule() to return the sqlite3 object.
+     In order to hide the sqlite3InitModule()'s resulting
+     Emscripten module from downstream clients (and simplify our
+     documentation by being able to elide those details), we hide that
+     function and expose a hand-written sqlite3InitModule() to return
+     the sqlite3 object (most of the time).
 
      Unfortunately, we cannot modify the module-loader/exporter-based
      impls which Emscripten installs at some point in the file above
      this.
   */
-  const originalInit = self.sqlite3InitModule;
+  const originalInit =
+        /* Maintenance reminder: DO NOT use `self.` here. It's correct
+           for non-ES6 Module cases but wrong for ES6 modules because those
+           resolve this symbol differently. */ sqlite3InitModule;
   if(!originalInit){
     throw new Error("Expecting self.sqlite3InitModule to be defined by the Emscripten build.");
   }
@@ -49,7 +60,7 @@
     initModuleState.sqlite3Dir = li.join('/') + '/';
   }
 
-  self.sqlite3InitModule = (...args)=>{
+  self.sqlite3InitModule = function ff(...args){
     //console.warn("Using replaced sqlite3InitModule()",self.location);
     return originalInit(...args).then((EmscriptenModule)=>{
       if(self.window!==self &&
@@ -65,10 +76,12 @@
             Emscripten details. */
         return EmscriptenModule;
       }
-      EmscriptenModule.sqlite3.scriptInfo = initModuleState;
-      //console.warn("sqlite3.scriptInfo =",EmscriptenModule.sqlite3.scriptInfo);
-      const f = EmscriptenModule.sqlite3.asyncPostInit;
-      delete EmscriptenModule.sqlite3.asyncPostInit;
+      const s = EmscriptenModule.sqlite3;
+      s.scriptInfo = initModuleState;
+      //console.warn("sqlite3.scriptInfo =",s.scriptInfo);
+      if(ff.__isUnderTest) s.__isUnderTest = true;
+      const f = s.asyncPostInit;
+      delete s.asyncPostInit;
       return f();
     }).catch((e)=>{
       console.error("Exception loading sqlite3 module:",e);
@@ -94,10 +107,15 @@
   }
   /* Replace the various module exports performed by the Emscripten
      glue... */
-  if (typeof exports === 'object' && typeof module === 'object')
+  if (typeof exports === 'object' && typeof module === 'object'){
     module.exports = sqlite3InitModule;
-  else if (typeof exports === 'object')
+  }else if (typeof exports === 'object'){
     exports["sqlite3InitModule"] = sqlite3InitModule;
+  }
   /* AMD modules get injected in a way we cannot override,
      so we can't handle those here. */
+  return self.sqlite3InitModule /* required for ESM */;
 })();
+//#if target=es6-module
+export default toExportForES6;
+//#endif

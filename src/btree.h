@@ -183,7 +183,7 @@ int sqlite3BtreeNewDb(Btree *p);
 **     reduce network bandwidth.
 **
 ** Note that BTREE_HINT_FLAGS with BTREE_BULKLOAD is the only hint used by
-** standard SQLite.  The other hints are provided for extentions that use
+** standard SQLite.  The other hints are provided for extensions that use
 ** the SQLite parser and code generator but substitute their own storage
 ** engine.
 */
@@ -367,6 +367,8 @@ void sqlite3BtreeCursorList(Btree*);
 #endif
 
 int sqlite3BtreeTransferRow(BtCursor*, BtCursor*, i64);
+
+void sqlite3BtreeClearCache(Btree*);
 
 /*
 ** If we are not using shared cache, then there is no need to

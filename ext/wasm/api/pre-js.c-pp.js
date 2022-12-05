@@ -29,6 +29,10 @@ sqlite3InitModuleState.debugModule('self.location =',self.location);
    4) If none of the above apply, (prefix+path) is returned.
 */
 Module['locateFile'] = function(path, prefix) {
+//#if target=es6-module
+  return new URL(path, import.meta.url).href;
+//#else
+  'use strict';
   let theFile;
   const up = this.urlParams;
   if(up.has(path)){
@@ -47,6 +51,7 @@ Module['locateFile'] = function(path, prefix) {
     "result =", theFile
   );
   return theFile;
+//#endif /* SQLITE_JS_EMS */
 }.bind(sqlite3InitModuleState);
 
 /**
@@ -65,7 +70,7 @@ Module[xNameOfInstantiateWasm] = function callee(imports,onSuccess){
   const uri = Module.locateFile(
     callee.uri, (
       ('undefined'===typeof scriptDirectory/*var defined by Emscripten glue*/)
-        ? '' : scriptDirectory)
+        ? "" : scriptDirectory)
   );
   sqlite3InitModuleState.debugModule(
     "instantiateWasm() uri =", uri
