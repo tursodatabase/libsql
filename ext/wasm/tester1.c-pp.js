@@ -344,9 +344,22 @@ self.sqlite3InitModule = sqlite3InitModule;
 
   ////////////////////////////////////////////////////////////////////
   T.g('Basic sanity checks')
-    .t("JS wasm-side allocator === sqlite3_malloc()", function(sqlite3){
-      T.assert(wasm.alloc.impl === wasm.exports.sqlite3_malloc)
-        .assert(wasm.dealloc === wasm.exports.sqlite3_free);
+    .t({
+      name: "JS wasm-side allocator",
+      test: function(sqlite3){
+        if(sqlite3.config.useStdAlloc){
+          warn("Using system allocator. This violates the docs and",
+               "may cause grief with certain APIs",
+               "(e.g. sqlite3_deserialize()).");
+          T.assert(wasm.alloc.impl === wasm.exports.malloc)
+            .assert(wasm.dealloc === wasm.exports.free)
+            .assert(wasm.realloc.impl === wasm.exports.realloc);
+        }else{
+          T.assert(wasm.alloc.impl === wasm.exports.sqlite3_malloc)
+            .assert(wasm.dealloc === wasm.exports.sqlite3_free)
+            .assert(wasm.realloc.impl === wasm.exports.sqlite3_realloc);
+        }
+      }
     })
     .t('Namespace object checks', function(sqlite3){
       const wasmCtypes = wasm.ctype;
@@ -422,6 +435,46 @@ self.sqlite3InitModule = sqlite3InitModule;
             assert(s!==u).
             assert(w.heapForSize(u.constructor) === u);
         }
+      }
+
+      // alloc(), realloc(), allocFromTypedArray()
+      {
+        let m = w.alloc(14);
+        let m2 = w.realloc(m, 16);
+        T.assert(m === m2/* because of alignment */);
+        T.assert(0 === w.realloc(m, 0));
+        m = m2 = 0;
+
+        // Check allocation limits and allocator's responses...
+        T.assert('number' === typeof sqlite3.capi.SQLITE_MAX_ALLOCATION_SIZE);
+        if(!sqlite3.config.useStdAlloc){
+          const tooMuch = sqlite3.capi.SQLITE_MAX_ALLOCATION_SIZE + 1,
+                isAllocErr = (e)=>e instanceof sqlite3.WasmAllocError;
+          T.mustThrowMatching(()=>w.alloc(tooMuch), isAllocErr)
+            .assert(0 === w.alloc.impl(tooMuch))
+            .mustThrowMatching(()=>w.realloc(0, tooMuch), isAllocErr)
+            .assert(0 === w.realloc.impl(0, tooMuch));
+        }
+
+        // Check allocFromTypedArray()...
+        const byteList = [11,22,33]
+        const u = new Uint8Array(byteList);
+        m = w.allocFromTypedArray(u);
+        for(let i = 0; i < u.length; ++i){
+          T.assert(u[i] === byteList[i])
+            .assert(u[i] === w.getMemValue(m + i, 'i8'));
+        }
+        w.dealloc(m);
+        m = w.allocFromTypedArray(u.buffer);
+        for(let i = 0; i < u.length; ++i){
+          T.assert(u[i] === byteList[i])
+            .assert(u[i] === w.getMemValue(m + i, 'i8'));
+        }
+        w.dealloc(m);
+        T.mustThrowMatching(
+          ()=>w.allocFromTypedArray(1),
+          'Value is not of a supported TypedArray type.'
+        );
       }
 
       // isPtr32()
@@ -521,11 +574,12 @@ self.sqlite3InitModule = sqlite3InitModule;
 
       //log("allocCString()...");
       {
-        const cstr = w.allocCString("hällo, world");
-        const n = w.cstrlen(cstr);
-        T.assert(13 === n)
+        const jstr = "hällo, world!";
+        const [cstr, n] = w.allocCString(jstr, true);
+        T.assert(14 === n)
           .assert(0===w.getMemValue(cstr+n))
-          .assert(chr('d')===w.getMemValue(cstr+n-1));
+          .assert(chr('!')===w.getMemValue(cstr+n-1));
+        w.dealloc(cstr);
       }
 
       //log("scopedAlloc() and friends...");
@@ -607,11 +661,13 @@ self.sqlite3InitModule = sqlite3InitModule;
         rc = w.xCallWrapped('sqlite3_wasm_enum_json','utf8');
         T.assert('string'===typeof rc).assert(rc.length>300);
         if(haveWasmCTests()){
-          fw = w.xWrap('sqlite3_wasm_test_str_hello', 'utf8:free',['i32']);
-          rc = fw(0);
-          T.assert('hello'===rc);
-          rc = fw(1);
-          T.assert(null===rc);
+          if(!sqlite3.config.useStdAlloc){
+            fw = w.xWrap('sqlite3_wasm_test_str_hello', 'utf8:dealloc',['i32']);
+            rc = fw(0);
+            T.assert('hello'===rc);
+            rc = fw(1);
+            T.assert(null===rc);
+          }
 
           if(w.bigIntEnabled){
             w.xWrap.resultAdapter('thrice', (v)=>3n*BigInt(v));
@@ -1415,7 +1471,7 @@ self.sqlite3InitModule = sqlite3InitModule;
           const n = db.selectValue(sql);
           T.assert(n>0 && db2.selectValue(sql) === n);
         }finally{
-          if(db2) db2.close();
+          db2.close();
           wasm.sqlite3_wasm_vfs_unlink(pVfs, filename);
         }
       }
@@ -1454,8 +1510,7 @@ self.sqlite3InitModule = sqlite3InitModule;
         assert(T.eqApprox(3.1,db.selectValue("select 3.0 + 0.1"))).
         assert(T.eqApprox(1.3,db.selectValue("select asis(1 + 0.3)")));
 
-      let blobArg = new Uint8Array(2);
-      blobArg.set([0x68, 0x69], 0);
+      let blobArg = new Uint8Array([0x68, 0x69]);
       let blobRc = db.selectValue("select asis(?1)", blobArg);
       T.assert(blobRc instanceof Uint8Array).
         assert(2 === blobRc.length).
@@ -1465,8 +1520,7 @@ self.sqlite3InitModule = sqlite3InitModule;
         assert(2 === blobRc.length).
         assert(0x68==blobRc[0] && 0x69==blobRc[1]);
 
-      blobArg = new Int8Array(2);
-      blobArg.set([0x68, 0x69]);
+      blobArg = new Int8Array([0x68, 0x69]);
       //debug("blobArg=",blobArg);
       blobRc = db.selectValue("select asis(?1)", blobArg);
       T.assert(blobRc instanceof Uint8Array).

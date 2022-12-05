@@ -605,6 +605,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     //console.debug('wasm.ctype length =',wasm.cstrlen(cJson));
     for(const t of ['access', 'blobFinalizers', 'dataTypes',
                     'encodings', 'fcntl', 'flock', 'ioCap',
+                    'limits',
                     'openFlags', 'prepareFlags', 'resultCodes',
                     'serialize', 'syncFlags', 'trace', 'udfFlags',
                     'version'

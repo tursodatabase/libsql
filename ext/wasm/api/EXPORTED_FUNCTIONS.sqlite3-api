@@ -66,6 +66,8 @@ _sqlite3_result_int
 _sqlite3_result_int64
 _sqlite3_result_null
 _sqlite3_result_text
+_sqlite3_result_zeroblob
+_sqlite3_result_zeroblob64
 _sqlite3_serialize
 _sqlite3_shutdown
 _sqlite3_sourceid
@@ -93,3 +95,4 @@ _sqlite3_vfs_register
 _sqlite3_vfs_unregister
 _malloc
 _free
+_realloc

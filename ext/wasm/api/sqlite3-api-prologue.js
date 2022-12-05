@@ -75,6 +75,10 @@
      the `free(3)`-compatible routine for the WASM
      environment. Defaults to `"sqlite3_free"`.
 
+   - `reallocExportName`: the name of the function, in `exports`, of
+     the `realloc(3)`-compatible routine for the WASM
+     environment. Defaults to `"sqlite3_realloc"`.
+
    - `wasmfsOpfsDir`[^1]: if the environment supports persistent
      storage using OPFS-over-WASMFS , this directory names the "mount
      point" for that directory. It must be prefixed by `/` and may
@@ -108,10 +112,22 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       }
       return !!self.BigInt64Array;
     })(),
-    allocExportName: 'sqlite3_malloc',
-    deallocExportName: 'sqlite3_free',
-    wasmfsOpfsDir: '/opfs'
+    wasmfsOpfsDir: '/opfs',
+    /**
+       useStdAlloc is just for testing an allocator discrepancy. The
+       docs guarantee that this is false in the canonical builds. For
+       99% of purposes it doesn't matter which allocators we use, but
+       it becomes significant with, e.g., sqlite3_deserialize()
+       and certain wasm.xWrap.resultAdapter()s.
+    */
+    useStdAlloc: false
   }, apiConfig || {});
+
+  Object.assign(config, {
+    allocExportName: config.useStdAlloc ? 'malloc' : 'sqlite3_malloc',
+    deallocExportName: config.useStdAlloc ? 'free' : 'sqlite3_free',
+    reallocExportName: config.useStdAlloc ? 'realloc' : 'sqlite3_realloc'
+  }, config);
 
   [
     // If any of these config options are functions, replace them with
@@ -284,12 +300,14 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   };
 
   /**
-     Returns true if v appears to be one of our bind()-able
-     TypedArray types: Uint8Array or Int8Array. Support for
-     TypedArrays with element sizes >1 is TODO.
+     Returns true if v appears to be one of our bind()-able TypedArray
+     types: Uint8Array or Int8Array. Support for TypedArrays with
+     element sizes >1 is a potential TODO just waiting on a use case
+     to justify them.
   */
   const isBindableTypedArray = (v)=>{
-    return v && v.constructor && (1===v.constructor.BYTES_PER_ELEMENT);
+    return v && (v instanceof Uint8Array || v instanceof Int8Array);
+    //v && v.constructor && (1===v.constructor.BYTES_PER_ELEMENT);
   };
 
   /**
@@ -302,7 +320,8 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      isSQLableTypedArray() list.
   */
   const isSQLableTypedArray = (v)=>{
-    return v && v.constructor && (1===v.constructor.BYTES_PER_ELEMENT);
+    return v && (v instanceof Uint8Array || v instanceof Int8Array);
+    //v && v.constructor && (1===v.constructor.BYTES_PER_ELEMENT);
   };
 
   /** Returns true if isBindableTypedArray(v) does, else throws with a message
@@ -664,12 +683,12 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
               "or config.memory (imported)."),
 
     /**
-       The API's one single point of access to the WASM-side memory
-       allocator. Works like malloc(3) (and is likely bound to
-       malloc()) but throws an WasmAllocError if allocation fails. It is
-       important that any code which might pass through the sqlite3 C
-       API NOT throw and must instead return SQLITE_NOMEM (or
-       equivalent, depending on the context).
+       The API's primary point of access to the WASM-side memory
+       allocator.  Works like sqlite3_malloc() but throws a
+       WasmAllocError if allocation fails. It is important that any
+       code which might pass through the sqlite3 C API NOT throw and
+       must instead return SQLITE_NOMEM (or equivalent, depending on
+       the context).
 
        Very few cases in the sqlite3 JS APIs can result in
        client-defined functions propagating exceptions via the C-style
@@ -681,7 +700,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        catch exceptions and convert them to appropriate error codes.
 
        For cases where non-throwing allocation is required, use
-       sqlite3.wasm.alloc.impl(), which is direct binding of the
+       this.alloc.impl(), which is direct binding of the
        underlying C-level allocator.
 
        Design note: this function is not named "malloc" primarily
@@ -692,9 +711,27 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     alloc: undefined/*installed later*/,
 
     /**
-       The API's one single point of access to the WASM-side memory
-       deallocator. Works like free(3) (and is likely bound to
-       free()).
+       Rarely necessary in JS code, this routine works like
+       sqlite3_realloc(M,N), where M is either NULL or a pointer
+       obtained from this function or this.alloc() and N is the number
+       of bytes to reallocate the block to. Returns a pointer to the
+       reallocated block or 0 if allocation fails.
+
+       If M is NULL and N is positive, this behaves like
+       this.alloc(N). If N is 0, it behaves like this.dealloc().
+       Results are undefined if N is negative (sqlite3_realloc()
+       treats that as 0, but if this code is built with a different
+       allocator it may misbehave with negative values).
+
+       Like this.alloc.impl(), this.realloc.impl() is a direct binding
+       to the underlying realloc() implementation which does not throw
+       exceptions, instead returning 0 on allocation error.
+    */
+    realloc: undefined/*installed later*/,
+
+    /**
+       The API's primary point of access to the WASM-side memory
+       deallocator. Works like sqlite3_free().
 
        Design note: this function is not named "free" for the same
        reason that this.alloc() is not called this.malloc().
@@ -711,18 +748,20 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      returned pointer must eventually be passed to
      wasm.dealloc() to clean it up.
 
+     The argument may be a Uint8Array, Int8Array, or ArrayBuffer,
+     and it throws if passed any other type.
+
      As a special case, to avoid further special cases where
      this is used, if srcTypedArray.byteLength is 0, it
      allocates a single byte and sets it to the value
      0. Even in such cases, calls must behave as if the
      allocated memory has exactly srcTypedArray.byteLength
      bytes.
-
-     ACHTUNG: this currently only works for Uint8Array and
-     Int8Array types and will throw if srcTypedArray is of
-     any other type.
   */
   wasm.allocFromTypedArray = function(srcTypedArray){
+    if(srcTypedArray instanceof ArrayBuffer){
+      srcTypedArray = new Uint8Array(srcTypedArray);
+    }
     affirmBindableTypedArray(srcTypedArray);
     const pRet = wasm.alloc(srcTypedArray.byteLength || 1);
     wasm.heapForSize(srcTypedArray.constructor).set(
@@ -731,20 +770,27 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     return pRet;
   };
 
-  const keyAlloc = config.allocExportName,
-        keyDealloc =  config.deallocExportName;
-  for(const key of [keyAlloc, keyDealloc]){
-    const f = wasm.exports[key];
-    if(!(f instanceof Function)) toss3("Missing required exports[",key,"] function.");
-  }
+  {
+    // Set up allocators...
+    const keyAlloc = config.allocExportName,
+          keyDealloc = config.deallocExportName,
+          keyRealloc = config.reallocExportName;
+    for(const key of [keyAlloc, keyDealloc, keyRealloc]){
+      const f = wasm.exports[key];
+      if(!(f instanceof Function)) toss3("Missing required exports[",key,"] function.");
+    }
 
-  wasm.alloc = function f(n){
-    const m = f.impl(n);
-    if(!m) throw new WasmAllocError("Failed to allocate",n," bytes.");
-    return m;
-  };
-  wasm.alloc.impl = wasm.exports[keyAlloc];
-  wasm.dealloc = wasm.exports[keyDealloc];
+    wasm.alloc = function f(n){
+      return f.impl(n) || WasmAllocError.toss("Failed to allocate",n," bytes.");
+    };
+    wasm.alloc.impl = wasm.exports[keyAlloc];
+    wasm.realloc = function f(m,n){
+      const m2 = f.impl(m,n);
+      return n ? (m2 || WasmAllocError.toss("Failed to reallocate",n," bytes.")) : 0;
+    };
+    wasm.realloc.impl = wasm.exports[keyRealloc];
+    wasm.dealloc = wasm.exports[keyDealloc];
+  }
 
   /**
      Reports info about compile-time options using
@@ -899,15 +945,16 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        the range of supported argument types. */
     ["sqlite3_realloc", "*","*","int"],
     ["sqlite3_reset", "int", "sqlite3_stmt*"],
-    ["sqlite3_result_blob",undefined, "*", "*", "int", "*"],
-    ["sqlite3_result_double",undefined, "*", "f64"],
-    ["sqlite3_result_error",undefined, "*", "string", "int"],
-    ["sqlite3_result_error_code", undefined, "*", "int"],
-    ["sqlite3_result_error_nomem", undefined, "*"],
-    ["sqlite3_result_error_toobig", undefined, "*"],
-    ["sqlite3_result_int",undefined, "*", "int"],
-    ["sqlite3_result_null",undefined, "*"],
-    ["sqlite3_result_text",undefined, "*", "string", "int", "*"],
+    ["sqlite3_result_blob",undefined, "sqlite3_context*", "*", "int", "*"],
+    ["sqlite3_result_double",undefined, "sqlite3_context*", "f64"],
+    ["sqlite3_result_error",undefined, "sqlite3_context*", "string", "int"],
+    ["sqlite3_result_error_code", undefined, "sqlite3_context*", "int"],
+    ["sqlite3_result_error_nomem", undefined, "sqlite3_context*"],
+    ["sqlite3_result_error_toobig", undefined, "sqlite3_context*"],
+    ["sqlite3_result_int",undefined, "sqlite3_context*", "int"],
+    ["sqlite3_result_null",undefined, "sqlite3_context*"],
+    ["sqlite3_result_text",undefined, "sqlite3_context*", "string", "int", "*"],
+    ["sqlite3_result_zeroblob", undefined, "sqlite3_context*", "int"],
     ["sqlite3_serialize","*", "sqlite3*", "string", "*", "int"],
     ["sqlite3_shutdown", undefined],
     ["sqlite3_sourceid", "string"],
@@ -955,6 +1002,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     ["sqlite3_msize", "i64", "*"],
     ["sqlite3_realloc64", "*","*", "i64"],
     ["sqlite3_result_int64",undefined, "*", "i64"],
+    ["sqlite3_result_zeroblob64", "int", "*", "i64"],
     ["sqlite3_total_changes64", "i64", ["sqlite3*"]],
     ["sqlite3_uri_int64", "i64", ["sqlite3_filename", "string", "i64"]],
     ["sqlite3_value_int64","i64", "sqlite3_value*"],

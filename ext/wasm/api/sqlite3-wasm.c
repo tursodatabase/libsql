@@ -113,6 +113,12 @@
 #endif
 
 /**********************************************************************/
+/* SQLITE_M... */
+#ifndef SQLITE_MAX_ALLOCATION_SIZE
+# define SQLITE_MAX_ALLOCATION_SIZE 0x1fffffff
+#endif
+
+/**********************************************************************/
 /* SQLITE_O... */
 #ifndef SQLITE_OMIT_DEPRECATED
 # define SQLITE_OMIT_DEPRECATED 1
@@ -495,6 +501,10 @@ const char * sqlite3_wasm_enum_json(void){
     DefInt(SQLITE_IOCAP_POWERSAFE_OVERWRITE);
     DefInt(SQLITE_IOCAP_IMMUTABLE);
     DefInt(SQLITE_IOCAP_BATCH_ATOMIC);
+  } _DefGroup;
+
+  DefGroup(limits) {
+    DefInt(SQLITE_MAX_ALLOCATION_SIZE);
   } _DefGroup;
 
   DefGroup(openFlags) {
@@ -1194,7 +1204,7 @@ void sqlite3_wasm_test_stack_overflow(int recurse){
 /* For testing the 'string-free' whwasmutil.xWrap() conversion. */
 SQLITE_WASM_KEEP
 char * sqlite3_wasm_test_str_hello(int fail){
-  char * s = fail ? 0 : (char *)malloc(6);
+  char * s = fail ? 0 : (char *)sqlite3_malloc(6);
   if(s){
     memcpy(s, "hello", 5);
     s[5] = 0;

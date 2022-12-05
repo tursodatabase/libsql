@@ -545,6 +545,7 @@ do_test where-6.1 {
     CREATE INDEX t3acb ON t3(a,c,b);
     INSERT INTO t3 SELECT w, 101-w, y FROM t1;
     SELECT count(*), sum(a), sum(b), sum(c) FROM t3;
+    ANALYZE;
   }
 } {100 5050 5050 348550}
 do_test where-6.2 {

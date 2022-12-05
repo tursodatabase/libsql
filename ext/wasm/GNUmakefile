@@ -489,7 +489,7 @@ emcc.jsflags += -sINITIAL_MEMORY=$(emcc.INITIAL_MEMORY.$(emcc.INITIAL_MEMORY))
 
 emcc.jsflags += $(emcc.environment)
 emcc.jsflags += -sSTACK_SIZE=1MB
-# ^^^ ACHTUNG: emsdk 3.1.27 reduced the default stack size from 4MB to
+# ^^^ ACHTUNG: emsdk 3.1.27 reduced the default stack size from 5MB to
 # a mere 64KB, which leads to silent memory corruption via the kvvfs
 # VFS, which requires twice that for its xRead() and xWrite() methods.
 ########################################################################
@@ -812,12 +812,6 @@ endif
 ########################################################################
 
 ########################################################################
-# Create main client downloadable zip file:
-ifneq (,$(filter dist snapshot,$(MAKECMDGOALS)))
-include dist.make
-endif
-
-########################################################################
 # Push files to public wasm-testing.sqlite.org server
 wasm-testing.include = *.js *.mjs *.html \
   ./tests \
@@ -839,26 +833,34 @@ push-testing:
 ########################################################################
 # If we find a copy of the sqlite.org/wasm docs checked out, copy
 # certain files over to it, noting that some need automatable edits...
-WDOCS.home ?= ../../../wdoc
+wasm.docs.home ?= ../../../wasm
+wasm.docs.found = $(if $(wildcard $(wasm.docs.home)/api-index.md),\
+  $(wildcard $(wasm.docs.home)),)
 .PHONY: update-docs
-ifneq (,$(wildcard $(WDOCS.home)/api-index.md))
-WDOCS.jswasm := $(WDOCS.home)/jswasm
-update-docs: $(bin.stripccomments) $(sqlite3.js) $(sqlite3.wasm)
-	@echo "Copying files to the /wasm docs. Be sure to use an -Oz build for this!"
-	cp $(sqlite3.wasm) $(WDOCS.jswasm)/.
-	$(bin.stripccomments) -k -k < $(sqlite3.js) \
-		| sed -e '/^[ \t]*$$/d' > $(WDOCS.jswasm)/sqlite3.js
-	cp demo-123.js demo-123.html demo-123-worker.html $(WDOCS.home)
-	sed -n -e '/EXTRACT_BEGIN/,/EXTRACT_END/p' \
-		module-symbols.html > $(WDOCS.home)/module-symbols.html
-else
+ifeq (,$(wasm.docs.found))
 update-docs:
 	@echo "Cannot find wasm docs checkout."; \
-	echo "Pass WDOCS.home=/path/to/wasm/docs/checkout or edit this makefile to suit."; \
+	echo "Pass wasm.docs.home=/path/to/wasm/docs/checkout or edit this makefile to suit."; \
 	exit 127
+else
+wasm.docs.jswasm := $(wasm.docs.home)/jswasm
+update-docs: $(bin.stripccomments) $(sqlite3.js) $(sqlite3.wasm)
+	@echo "Copying files to the /wasm docs. Be sure to use an -Oz build for this!"
+	cp $(sqlite3.wasm) $(wasm.docs.jswasm)/.
+	$(bin.stripccomments) -k -k < $(sqlite3.js) \
+		| sed -e '/^[ \t]*$$/d' > $(wasm.docs.jswasm)/sqlite3.js
+	cp demo-123.js demo-123.html demo-123-worker.html $(wasm.docs.home)
+	sed -n -e '/EXTRACT_BEGIN/,/EXTRACT_END/p' \
+		module-symbols.html > $(wasm.docs.home)/module-symbols.html
 endif
 # end /wasm docs
 ########################################################################
+
+########################################################################
+# Create main client downloadable zip file:
+ifneq (,$(filter dist snapshot,$(MAKECMDGOALS)))
+include dist.make
+endif
 
 # Run local web server for the test/demo pages.
 httpd:
