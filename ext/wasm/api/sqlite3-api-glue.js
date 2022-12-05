@@ -603,13 +603,16 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     }
     wasm.ctype = JSON.parse(wasm.cstringToJs(cJson));
     //console.debug('wasm.ctype length =',wasm.cstrlen(cJson));
-    for(const t of ['access', 'blobFinalizers', 'dataTypes',
-                    'encodings', 'fcntl', 'flock', 'ioCap',
-                    'limits',
-                    'openFlags', 'prepareFlags', 'resultCodes',
-                    'serialize', 'syncFlags', 'trace', 'udfFlags',
-                    'version'
-                   ]){
+    const defineGroups = ['access', 'blobFinalizers', 'dataTypes',
+                          'encodings', 'fcntl', 'flock', 'ioCap',
+                          'limits',
+                          'openFlags', 'prepareFlags', 'resultCodes',
+                          'serialize', 'syncFlags', 'trace', 'udfFlags',
+                          'version' ];
+    if(wasm.bigIntEnabled){
+      defineGroups.push('vtab');
+    }
+    for(const t of defineGroups){
       for(const e of Object.entries(wasm.ctype[t])){
         // ^^^ [k,v] there triggers a buggy code transformation via
         // one of the Emscripten-driven optimizers.
@@ -629,19 +632,33 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     capi.sqlite3_js_rc_str = (rc)=>__rcMap[rc];
     /* Bind all registered C-side structs... */
     const notThese = Object.assign(Object.create(null),{
-      // Structs NOT to register
-      WasmTestStruct: true
-    });
-    if(!util.isUIThread()){
+      // For each struct to NOT register, map its name to false:
+      WasmTestStruct: true,
       /* We remove the kvvfs VFS from Worker threads below. */
-      notThese.sqlite3_kvvfs_methods = true;
-    }
+      sqlite3_kvvfs_methods: !util.isUIThread(),
+      sqlite3_index_info: !wasm.bigIntEnabled,
+      sqlite3_index_constraint: !wasm.bigIntEnabled,
+      sqlite3_index_orderby: !wasm.bigIntEnabled,
+      sqlite3_index_constraint_usage: !wasm.bigIntEnabled
+    });
     for(const s of wasm.ctype.structs){
       if(!notThese[s.name]){
         capi[s.name] = sqlite3.StructBinder(s);
       }
     }
-  }/*end C constant imports*/
+    if(capi.sqlite3_index_info){
+      /* Move these inner structs into sqlite3_index_info.  Binding
+      ** them to WASM requires that we create global-scope structs to
+      ** model them with, but those are no longer needed after we've
+      ** passed them to StructBinder. */
+      for(const k of ['sqlite3_index_constraint',
+                      'sqlite3_index_orderby',
+                      'sqlite3_index_constraint_usage']){
+        capi.sqlite3_index_info[k] = capi[k];
+        delete capi[k];
+      }
+    }
+  }/*end C constant and struct imports*/
 
   const pKvvfs = capi.sqlite3_vfs_find("kvvfs");
   if( pKvvfs ){/* kvvfs-specific glue */
@@ -652,8 +669,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       delete capi.sqlite3_kvvfs_methods;
 
       const kvvfsMakeKey = wasm.exports.sqlite3_wasm_kvvfsMakeKeyOnPstack,
-            pstack = wasm.pstack,
-            pAllocRaw = wasm.exports.sqlite3_wasm_pstack_alloc;
+            pstack = wasm.pstack;
 
       const kvvfsStorage = (zClass)=>
             ((115/*=='s'*/===wasm.getMemValue(zClass))

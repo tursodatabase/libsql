@@ -1081,10 +1081,9 @@ self.WhWasmUtilInstaller = function(target){
 
   // impl for allocMainArgv() and scopedAllocMainArgv().
   const __allocMainArgv = function(isScoped, list){
-    if(!list.length) toss("Cannot allocate empty array.");
     const pList = target[
       isScoped ? 'scopedAlloc' : 'alloc'
-    ](list.length * target.ptrSizeof);
+    ]((list.length + 1) * target.ptrSizeof);
     let i = 0;
     list.forEach((e)=>{
       target.setPtrValue(pList + (target.ptrSizeof * i++),
@@ -1092,26 +1091,33 @@ self.WhWasmUtilInstaller = function(target){
                            isScoped ? 'scopedAllocCString' : 'allocCString'
                          ](""+e));
     });
+    target.setPtrValue(pList + (target.ptrSizeof * i), 0);
     return pList;
   };
 
   /**
      Creates an array, using scopedAlloc(), suitable for passing to a
      C-level main() routine. The input is a collection with a length
-     property and a forEach() method. A block of memory list.length
-     entries long is allocated and each pointer-sized block of that
-     memory is populated with a scopedAllocCString() conversion of the
-     (""+value) of each element. Returns a pointer to the start of the
-     list, suitable for passing as the 2nd argument to a C-style
-     main() function.
+     property and a forEach() method. A block of memory
+     (list.length+1) entries long is allocated and each pointer-sized
+     block of that memory is populated with a scopedAllocCString()
+     conversion of the (""+value) of each element, with the exception
+     that the final entry is a NULL pointer. Returns a pointer to the
+     start of the list, suitable for passing as the 2nd argument to a
+     C-style main() function.
 
-     Throws if list.length is falsy or scopedAllocPush() is not active.
+     Throws if scopedAllocPush() is not active.
+
+     Design note: the returned array is allocated with an extra NULL
+     pointer entry to accommodate certain APIs, but client code which
+     does not need that functionality should treat the returned array
+     as list.length entries long.
   */
   target.scopedAllocMainArgv = (list)=>__allocMainArgv(true, list);
 
   /**
      Identical to scopedAllocMainArgv() but uses alloc() instead of
-     scopedAllocMainArgv
+     scopedAlloc().
   */
   target.allocMainArgv = (list)=>__allocMainArgv(false, list);
 

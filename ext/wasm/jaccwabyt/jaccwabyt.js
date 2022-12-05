@@ -121,6 +121,7 @@ self.Jaccwabyt = function StructBinderFactory(config){
       at SIG s[0]. Throws for an unknown SIG. */
   const sigIR = function(s){
     switch(sigLetter(s)){
+        case 'c': case 'C': return 'i8';
         case 'i': return 'i32';
         case 'p': case 'P': case 's': return ptrIR;
         case 'j': return 'i64';
@@ -133,6 +134,7 @@ self.Jaccwabyt = function StructBinderFactory(config){
       unknown SIG. */
   const sigSizeof = function(s){
     switch(sigLetter(s)){
+        case 'c': case 'C': return 1;
         case 'i': return 4;
         case 'p': case 'P': case 's': return ptrSizeof;
         case 'j': return 8;
@@ -168,6 +170,8 @@ self.Jaccwabyt = function StructBinderFactory(config){
           break;
         }
         case 'i': return 'getInt32';
+        case 'c': return 'getInt8';
+        case 'C': return 'getUint8';
         case 'j': return affirmBigIntArray() && 'getBigInt64';
         case 'f': return 'getFloat32';
         case 'd': return 'getFloat64';
@@ -186,6 +190,8 @@ self.Jaccwabyt = function StructBinderFactory(config){
           break;
         }
         case 'i': return 'setInt32';
+        case 'c': return 'setInt8';
+        case 'C': return 'setUint8';
         case 'j': return affirmBigIntArray() && 'setBigInt64';
         case 'f': return 'setFloat32';
         case 'd': return 'setFloat64';
@@ -199,7 +205,7 @@ self.Jaccwabyt = function StructBinderFactory(config){
   */
   const sigDVSetWrapper = function(s){
     switch(sigLetter(s)) {
-        case 'i': case 'f': case 'd': return Number;
+        case 'i': case 'f': case 'c': case 'C': case 'd': return Number;
         case 'j': return affirmBigIntArray() && BigInt;
         case 'p': case 'P': case 's':
           switch(ptrSizeof){
@@ -361,7 +367,7 @@ self.Jaccwabyt = function StructBinderFactory(config){
      framework's native format or in Emscripten format.
   */
   const __memberSignature = function f(obj,memberName,emscriptenFormat=false){
-    if(!f._) f._ = (x)=>x.replace(/[^vipPsjrd]/g,"").replace(/[pPs]/g,'i');
+    if(!f._) f._ = (x)=>x.replace(/[^vipPsjrdcC]/g,"").replace(/[pPscC]/g,'i');
     const m = __lookupMember(obj.structInfo, memberName, true);
     return emscriptenFormat ? f._(m.signature) : m.signature;
   };
@@ -570,7 +576,7 @@ self.Jaccwabyt = function StructBinderFactory(config){
       /*cache all available getters/setters/set-wrappers for
         direct reuse in each accessor function. */
       f._ = {getters: {}, setters: {}, sw:{}};
-      const a = ['i','p','P','s','f','d','v()'];
+      const a = ['i','c','C','p','P','s','f','d','v()'];
       if(bigIntEnabled) a.push('j');
       a.forEach(function(v){
         //const ir = sigIR(v);
@@ -579,8 +585,8 @@ self.Jaccwabyt = function StructBinderFactory(config){
         f._.sw[v] = sigDVSetWrapper(v)  /* BigInt or Number ctor to wrap around values
                                            for conversion */;
       });
-      const rxSig1 = /^[ipPsjfd]$/,
-            rxSig2 = /^[vipPsjfd]\([ipPsjfd]*\)$/;
+      const rxSig1 = /^[ipPsjfdcC]$/,
+            rxSig2 = /^[vipPsjfdcC]\([ipPsjfdcC]*\)$/;
       f.sigCheck = function(obj, name, key,sig){
         if(Object.prototype.hasOwnProperty.call(obj, key)){
           toss(obj.structName,'already has a property named',key+'.');
@@ -594,7 +600,6 @@ self.Jaccwabyt = function StructBinderFactory(config){
     f.sigCheck(ctor.prototype, name, key, descr.signature);
     descr.key = key;
     descr.name = name;
-    const sizeOf = sigSizeof(descr.signature);
     const sigGlyph = sigLetter(descr.signature);
     const xPropName = sPropName(ctor.prototype.structName,key);
     const dbg = ctor.prototype.debugFlags.__flags;
@@ -610,10 +615,10 @@ self.Jaccwabyt = function StructBinderFactory(config){
     prop.get = function(){
       if(dbg.getter){
         log("debug.getter:",f._.getters[sigGlyph],"for", sigIR(sigGlyph),
-            xPropName,'@', this.pointer,'+',descr.offset,'sz',sizeOf);
+            xPropName,'@', this.pointer,'+',descr.offset,'sz',descr.sizeof);
       }
       let rc = (
-        new DataView(heap().buffer, this.pointer + descr.offset, sizeOf)
+        new DataView(heap().buffer, this.pointer + descr.offset, descr.sizeof)
       )[f._.getters[sigGlyph]](0, isLittleEndian);
       if(dbg.getter) log("debug.getter:",xPropName,"result =",rc);
       if(rc && isAutoPtrSig(descr.signature)){
@@ -628,7 +633,7 @@ self.Jaccwabyt = function StructBinderFactory(config){
       prop.set = function(v){
         if(dbg.setter){
           log("debug.setter:",f._.setters[sigGlyph],"for", sigIR(sigGlyph),
-              xPropName,'@', this.pointer,'+',descr.offset,'sz',sizeOf, v);
+              xPropName,'@', this.pointer,'+',descr.offset,'sz',descr.sizeof, v);
         }
         if(!this.pointer){
           toss("Cannot set struct property on disposed instance.");
@@ -644,7 +649,7 @@ self.Jaccwabyt = function StructBinderFactory(config){
           toss("Invalid value for pointer-type",xPropName+'.');
         }
         (
-          new DataView(heap().buffer, this.pointer + descr.offset, sizeOf)
+          new DataView(heap().buffer, this.pointer + descr.offset, descr.sizeof)
         )[f._.setters[sigGlyph]](0, f._.sw[sigGlyph](v), isLittleEndian);
       };
     }
@@ -665,13 +670,18 @@ self.Jaccwabyt = function StructBinderFactory(config){
     if(!structName) toss("Struct name is required.");
     let lastMember = false;
     Object.keys(structInfo.members).forEach((k)=>{
+      // Sanity checks of sizeof/offset info...
       const m = structInfo.members[k];
       if(!m.sizeof) toss(structName,"member",k,"is missing sizeof.");
-      else if(0!==(m.sizeof%4)){
-        toss(structName,"member",k,"sizeof is not aligned.");
-      }
-      else if(0!==(m.offset%4)){
-        toss(structName,"member",k,"offset is not aligned.");
+      else if(m.sizeof>1){ // offsets of size-1 members may be odd values.
+        if(0!==(m.sizeof%4)){
+          console.warn("Invalid struct description =",m,"from",structInfo.members);
+          toss(structName,"member",k,"sizeof is not aligned. sizeof="+m.sizeof);
+        }
+        if(0!==(m.offset%4)){
+          console.warn("Invalid struct description =",m,"from",structInfo.members);
+          toss(structName,"member",k,"offset is not aligned. offset="+m.offset);
+        }
       }
       if(!lastMember || lastMember.offset < m.offset) lastMember = m;
     });

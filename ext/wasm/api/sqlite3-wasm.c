@@ -368,7 +368,7 @@ void sqlite3_wasm_test_struct(WasmTestStruct * s){
 */
 SQLITE_WASM_KEEP
 const char * sqlite3_wasm_enum_json(void){
-  static char aBuffer[1024 * 12] = {0} /* where the JSON goes */;
+  static char aBuffer[1024 * 16] = {0} /* where the JSON goes */;
   int n = 0, nChildren = 0, nStruct = 0
     /* output counters for figuring out where commas go */;
   char * zPos = &aBuffer[1] /* skip first byte for now to help protect
@@ -409,6 +409,14 @@ const char * sqlite3_wasm_enum_json(void){
     DefInt(SQLITE_ACCESS_READWRITE);
     DefInt(SQLITE_ACCESS_READ)/*docs say this is unused*/;
   } _DefGroup;
+
+#if 0
+  /* TODO? Authorizer... */
+  DefGroup(authorizer){
+    DefInt(SQLITE_DENY);
+    DefInt(SQLITE_IGNORE);
+  } _DefGroup;
+#endif
 
   DefGroup(blobFinalizers) {
     /* SQLITE_STATIC/TRANSIENT need to be handled explicitly as
@@ -681,7 +689,28 @@ const char * sqlite3_wasm_enum_json(void){
     DefStr(SQLITE_VERSION);
     DefStr(SQLITE_SOURCE_ID);
   } _DefGroup;
-  
+
+  DefGroup(vtab) {
+    DefInt(SQLITE_INDEX_SCAN_UNIQUE);
+    DefInt(SQLITE_INDEX_CONSTRAINT_EQ);
+    DefInt(SQLITE_INDEX_CONSTRAINT_GT);
+    DefInt(SQLITE_INDEX_CONSTRAINT_LE);
+    DefInt(SQLITE_INDEX_CONSTRAINT_LT);
+    DefInt(SQLITE_INDEX_CONSTRAINT_GE);
+    DefInt(SQLITE_INDEX_CONSTRAINT_MATCH);
+    DefInt(SQLITE_INDEX_CONSTRAINT_LIKE);
+    DefInt(SQLITE_INDEX_CONSTRAINT_GLOB);
+    DefInt(SQLITE_INDEX_CONSTRAINT_REGEXP);
+    DefInt(SQLITE_INDEX_CONSTRAINT_NE);
+    DefInt(SQLITE_INDEX_CONSTRAINT_ISNOT);
+    DefInt(SQLITE_INDEX_CONSTRAINT_ISNOTNULL);
+    DefInt(SQLITE_INDEX_CONSTRAINT_ISNULL);
+    DefInt(SQLITE_INDEX_CONSTRAINT_IS);
+    DefInt(SQLITE_INDEX_CONSTRAINT_LIMIT);
+    DefInt(SQLITE_INDEX_CONSTRAINT_OFFSET);
+    DefInt(SQLITE_INDEX_CONSTRAINT_FUNCTION);
+  } _DefGroup;
+
 #undef DefGroup
 #undef DefStr
 #undef DefInt
@@ -790,6 +819,137 @@ const char * sqlite3_wasm_enum_json(void){
       M(xWrite,   "i(sss)");
       M(xDelete,  "i(ss)");
       M(nKeySize, "i");
+    } _StructBinder;
+#undef CurrentStruct
+
+
+#define CurrentStruct sqlite3_vtab
+    StructBinder {
+      M(pModule, "p");
+      M(nRef,    "i");
+      M(zErrMsg, "p");
+    } _StructBinder;
+#undef CurrentStruct
+
+#define CurrentStruct sqlite3_vtab_cursor
+    StructBinder {
+      M(pVtab, "p");
+    } _StructBinder;
+#undef CurrentStruct
+
+#define CurrentStruct sqlite3_module
+    StructBinder {
+      M(iVersion,       "i");
+      M(xCreate,        "i(ppippp)");
+      M(xConnect,       "i(ppippp)");
+      M(xBestIndex,     "i(pp)");
+      M(xDisconnect,    "i(p)");
+      M(xDestroy,       "i(p)");
+      M(xOpen,          "i(pp)");
+      M(xClose,         "i(p)");
+      M(xFilter,        "i(pisip)");
+      M(xNext,          "i(p)");
+      M(xEof,           "i(p)");
+      M(xColumn,        "i(ppi)");
+      M(xRowid,         "i(pp)");
+      M(xUpdate,        "i(pipp)");
+      M(xBegin,         "i(p)");
+      M(xSync,          "i(p)");
+      M(xCommit,        "i(p)");
+      M(xRollback,      "i(p)");
+      M(xFindFunction,  "i(pispp)");
+      M(xRename,        "i(ps)");
+      // ^^^ v1. v2+ follows...
+      M(xSavepoint,     "i(pi)");
+      M(xRelease,       "i(pi)");
+      M(xRollbackTo,    "i(pi)");
+      // ^^^ v2. v3+ follows...
+      M(xShadowName,    "i(s)");
+    } _StructBinder;
+#undef CurrentStruct
+    /*
+      module/vtab todos:
+
+      - sqlite3_create_module()
+      - sqlite3_create_module_v2()
+      - sqlite3_drop_modules()
+      - sqlite3_declare_vtab()
+      - sqlite3_overload_function()
+     */
+    
+    /**
+     ** Workaround: in order to map the various inner structs from
+     ** sqlite3_index_info, we have to uplift those into constructs we
+     ** can access by type name. These structs _must_ match their
+     ** in-sqlite3_index_info counterparts byte for byte.
+    */
+    typedef struct {
+      int iColumn;
+      unsigned char op;
+      unsigned char usable;
+      int iTermOffset;
+    } sqlite3_index_constraint;
+    typedef struct {
+      int iColumn;
+      unsigned char desc;
+    } sqlite3_index_orderby;
+    typedef struct {
+      int argvIndex;
+      unsigned char omit;
+    } sqlite3_index_constraint_usage;
+    { /* Validate that the above struct sizeof()s match
+      ** expectations. We could improve upon this by
+      ** checking the offsetof() for each member. */
+      const sqlite3_index_info siiCheck;
+#define IndexSzCheck(T,M)           \
+      (sizeof(T) == sizeof(*siiCheck.M))
+      if(!IndexSzCheck(sqlite3_index_constraint,aConstraint)
+         || !IndexSzCheck(sqlite3_index_orderby,aOrderBy)
+         || !IndexSzCheck(sqlite3_index_constraint_usage,aConstraintUsage)){
+        assert(!"sizeof mismatch in sqlite3_index_... struct(s)");
+        return 0;
+      }
+#undef IndexSzCheck
+    }
+
+#define CurrentStruct sqlite3_index_constraint
+    StructBinder {
+      M(iColumn,        "i");
+      M(op,             "C");
+      M(usable,         "C");
+      M(iTermOffset,    "i");
+    } _StructBinder;
+#undef CurrentStruct
+
+#define CurrentStruct sqlite3_index_orderby
+    StructBinder {
+      M(iColumn,   "i");
+      M(desc,      "C");
+    } _StructBinder;
+#undef CurrentStruct
+
+#define CurrentStruct sqlite3_index_constraint_usage
+    StructBinder {
+      M(argvIndex,  "i");
+      M(omit,       "C");
+    } _StructBinder;
+#undef CurrentStruct
+
+#define CurrentStruct sqlite3_index_info
+    StructBinder {
+      M(nConstraint,        "i");
+      M(aConstraint,        "p");
+      M(nOrderBy,           "i");
+      M(aOrderBy,           "p");
+      M(aConstraintUsage,   "p");
+      M(idxNum,             "i");
+      M(idxStr,             "p");
+      M(needToFreeIdxStr,   "i");
+      M(orderByConsumed,    "i");
+      M(estimatedCost,      "d");
+      M(estimatedRows,      "j");
+      M(idxFlags,           "i");
+      M(colUsed,            "j");
     } _StructBinder;
 #undef CurrentStruct
 
