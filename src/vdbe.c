@@ -8735,6 +8735,7 @@ default: {          /* This is really OP_Noop, OP_Explain */
     assert( pnCycle );
     if( pnCycle ){
       *pnCycle += sqlite3NProfileCnt ? sqlite3NProfileCnt : sqlite3Hwtime();
+      assert( *pnCycle < (((u64)1) << 48) );
       pnCycle = 0;
     }
 #elif defined(SQLITE_ENABLE_STMT_SCANSTATUS)
@@ -8820,9 +8821,14 @@ vdbe_return:
 #if defined(VDBE_PROFILE)
     if( pnCycle ){
       *pnCycle += sqlite3NProfileCnt ? sqlite3NProfileCnt : sqlite3Hwtime();
+      assert( *pnCycle < (((u64)1) << 48) );
+      pnCycle = 0;
     }
 #elif defined(SQLITE_ENABLE_STMT_SCANSTATUS)
-  if( pnCycle ) *pnCycle += sqlite3Hwtime();
+  if( pnCycle ){
+    *pnCycle += sqlite3Hwtime();
+    pnCycle = 0;
+  }
 #endif
 
 #ifndef SQLITE_OMIT_PROGRESS_CALLBACK

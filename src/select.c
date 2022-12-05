@@ -66,7 +66,7 @@ struct SortCtx {
 #endif
   struct RowLoadInfo *pDeferredRowLoad;  /* Deferred row loading info or NULL */
 #ifdef SQLITE_ENABLE_STMT_SCANSTATUS
-  int addrPushStart;    /* First instruction to push data into sorter */
+  int addrPush;         /* First instruction to push data into sorter */
   int addrPushEnd;      /* Last instruction that pushes data into sorter */
 #endif
 };
@@ -726,7 +726,7 @@ static void pushOntoSorter(
   assert( nData==1 || regData==regOrigData || regOrigData==0 );
 
 #ifdef SQLITE_ENABLE_STMT_SCANSTATUS
-  pSort->addrPushStart = sqlite3VdbeCurrentAddr(v);
+  pSort->addrPush = sqlite3VdbeCurrentAddr(v);
 #endif
 
   if( nPrefixReg ){
@@ -1665,9 +1665,9 @@ static void generateSortTail(
   ExplainQueryPlan2(addrExplain, (pParse, 0, 
         "USE TEMP B-TREE FOR %sORDER BY", pSort->nOBSat>0?"RIGHT PART OF ":"")
   );
-  sqlite3VdbeScanStatusRange(
-      v, addrExplain, pSort->addrPushStart, pSort->addrPushEnd
-  );
+  sqlite3VdbeScanStatusRange(v, addrExplain,pSort->addrPush,pSort->addrPushEnd);
+  sqlite3VdbeScanStatusCounters(v, addrExplain, addrExplain, pSort->addrPush);
+
 
   assert( addrBreak<0 );
   if( pSort->labelBkOut ){

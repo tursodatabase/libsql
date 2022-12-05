@@ -2142,7 +2142,7 @@ int sqlite3_stmt_scanstatus_v2(
   }else{
     for(idx=0; idx<p->nScan; idx++){
       pScan = &p->aScan[idx];
-      if( pScan->addrLoop ){
+      if( pScan->zName ){
         iScan--;
         if( iScan<0 ) break;
       }

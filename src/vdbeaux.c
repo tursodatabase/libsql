@@ -1152,6 +1152,25 @@ void sqlite3VdbeScanStatusRange(
     }
   }
 }
+
+void sqlite3VdbeScanStatusCounters(
+  Vdbe *p, 
+  int addrExplain, 
+  int addrLoop, 
+  int addrVisit
+){
+  ScanStatus *pScan = 0;
+  int ii;
+  for(ii=p->nScan-1; ii>=0; ii--){
+    pScan = &p->aScan[ii];
+    if( pScan->addrExplain==addrExplain ) break;
+    pScan = 0;
+  }
+  if( pScan ){
+    pScan->addrLoop = addrLoop;
+    pScan->addrVisit = addrVisit;
+  }
+}
 #endif
 
 

@@ -135,7 +135,7 @@ QUERY (nCycle=nnn)
 ----SCAN t2
 --SCAN v2
 --SCAN t1
---USE TEMP B-TREE FOR ORDER BY
+--USE TEMP B-TREE FOR ORDER BY (nCycle=nnn)
 }
 
 #-------------------------------------------------------------------------
@@ -147,12 +147,11 @@ do_execsql_test 2.0 {
   INSERT INTO ft VALUES('ghi');
 }
 
-explain_i {
-  SELECT * FROM ft('def')
-  }
 do_graph_test 2.1 {
   SELECT * FROM ft('def')
 } {
+QUERY (nCycle=nnn)
+--SCAN ft VIRTUAL TABLE INDEX 0:M1 (nCycle=nnn)
 }
 
 finish_test
