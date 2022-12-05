@@ -579,7 +579,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
                                 "int", ["sqlite3*", "*", "int", "int",
                                         "**", "**"]);
 
-    /* Documented in the api object's initializer. */
+    /* Documented in the capi object's initializer. */
     capi.sqlite3_prepare_v3 = function f(pDb, sql, sqlLen, prepFlags, ppStmt, pzTail){
       if(f.length!==arguments.length){
         return __dbArgcMismatch(pDb,"sqlite3_prepare_v3",f.length);
@@ -596,7 +596,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       }
     };
 
-    /* Documented in the api object's initializer. */
+    /* Documented in the capi object's initializer. */
     capi.sqlite3_prepare_v2 = function f(pDb, sql, sqlLen, ppStmt, pzTail){
       return (f.length===arguments.length)
         ? capi.sqlite3_prepare_v3(pDb, sql, sqlLen, 0, ppStmt, pzTail)

@@ -900,6 +900,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     ["sqlite3_close_v2", "int", "sqlite3*"],
     ["sqlite3_changes", "int", "sqlite3*"],
     ["sqlite3_clear_bindings","int", "sqlite3_stmt*"],
+    ["sqlite3_collation_needed", "int", "sqlite3*", "*", "*"/*=>v(ppis)*/],
     ["sqlite3_column_blob","*", "sqlite3_stmt*", "int"],
     ["sqlite3_column_bytes","int", "sqlite3_stmt*", "int"],
     ["sqlite3_column_count", "int", "sqlite3_stmt*"],
@@ -914,6 +915,12 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     /* sqlite3_create_function(), sqlite3_create_function_v2(), and
        sqlite3_create_window_function() use hand-written bindings to
        simplify handling of their function-type arguments. */
+    ["sqlite3_create_collation", "int",
+     "sqlite3*", "string", "int"/*SQLITE_UTF8 is the only legal value*/,
+     "*", "*"],
+    ["sqlite3_create_collation_v2", "int",
+     "sqlite3*", "string", "int"/*SQLITE_UTF8 is the only legal value*/,
+     "*", "*", "*"],
     ["sqlite3_data_count", "int", "sqlite3_stmt*"],
     ["sqlite3_db_filename", "string", "sqlite3*", "string"],
     ["sqlite3_db_handle", "sqlite3*", "sqlite3_stmt*"],
@@ -970,7 +977,9 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     ["sqlite3_sql", "string", "sqlite3_stmt*"],
     ["sqlite3_step", "int", "sqlite3_stmt*"],
     ["sqlite3_strglob", "int", "string","string"],
-    ["sqlite3_strlike", "int", "string","string","int"],
+    ["sqlite3_stricmp", "int", "string", "string"],
+    ["sqlite3_strlike", "int", "string", "string","int"],
+    ["sqlite3_strnicmp", "int", "string", "string", "int"],
     ["sqlite3_trace_v2", "int", "sqlite3*", "int", "*", "*"],
     ["sqlite3_total_changes", "int", "sqlite3*"],
     /* Note sqlite3_uri_...() has very specific requirements

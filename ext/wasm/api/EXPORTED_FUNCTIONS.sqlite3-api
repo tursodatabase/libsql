@@ -14,6 +14,7 @@ _sqlite3_changes
 _sqlite3_changes64
 _sqlite3_clear_bindings
 _sqlite3_close_v2
+_sqlite3_collation_needed
 _sqlite3_column_blob
 _sqlite3_column_bytes
 _sqlite3_column_count
@@ -27,6 +28,8 @@ _sqlite3_column_type
 _sqlite3_compileoption_get
 _sqlite3_compileoption_used
 _sqlite3_complete
+_sqlite3_create_collation
+_sqlite3_create_collation_v2
 _sqlite3_create_function
 _sqlite3_create_function_v2
 _sqlite3_create_module
@@ -83,7 +86,9 @@ _sqlite3_sourceid
 _sqlite3_sql
 _sqlite3_step
 _sqlite3_strglob
+_sqlite3_stricmp
 _sqlite3_strlike
+_sqlite3_strnicmp
 _sqlite3_total_changes
 _sqlite3_total_changes64
 _sqlite3_trace_v2
