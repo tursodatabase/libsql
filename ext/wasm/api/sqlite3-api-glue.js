@@ -45,7 +45,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     );
 
     /**
-       The 'static-string' argument adapter treats its argument as
+       The 'string:static' argument adapter treats its argument as
        either...
 
        - WASM pointer: assumed to be a long-lived C-string which gets
@@ -66,7 +66,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        need it to.
     */
     wasm.xWrap.argAdapter(
-      'static-string',
+      'string:static',
       function(v){
         if(wasm.isPtr(v)) return v;
         v = ''+v;

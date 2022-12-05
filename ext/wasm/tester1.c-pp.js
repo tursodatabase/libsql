@@ -660,6 +660,26 @@ self.sqlite3InitModule = sqlite3InitModule;
         T.assert(rc>0 && Number.isFinite(rc));
         rc = w.xCallWrapped('sqlite3_wasm_enum_json','utf8');
         T.assert('string'===typeof rc).assert(rc.length>300);
+
+
+        { // 'string:static' argAdapter() sanity checks...
+          let argAd = w.xWrap.argAdapter('string:static');
+          let p0 = argAd('foo'), p1 = argAd('bar');
+          T.assert(w.isPtr(p0) && w.isPtr(p1))
+            .assert(p0 !== p1)
+            .assert(p0 === argAd('foo'))
+            .assert(p1 === argAd('bar'));
+        }
+
+        // 'flexible-string' argAdapter() sanity checks...
+        w.scopedAllocCall(()=>{
+          const argAd = w.xWrap.argAdapter('flexible-string');
+          const cj = (v)=>w.cstringToJs(argAd(v));
+          T.assert('Hi' === cj('Hi'))
+            .assert('hi' === cj(['h','i']))
+            .assert('HI' === cj(new Uint8Array([72, 73])));
+        });
+
         if(haveWasmCTests()){
           if(!sqlite3.config.useStdAlloc){
             fw = w.xWrap('sqlite3_wasm_test_str_hello', 'utf8:dealloc',['i32']);

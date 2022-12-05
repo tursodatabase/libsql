@@ -885,7 +885,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     ["sqlite3_bind_parameter_count", "int", "sqlite3_stmt*"],
     ["sqlite3_bind_parameter_index","int", "sqlite3_stmt*", "string"],
     ["sqlite3_bind_pointer", "int",
-     "sqlite3_stmt*", "int", "*", "static-string", "*"],
+     "sqlite3_stmt*", "int", "*", "string:static", "*"],
     ["sqlite3_bind_text","int", "sqlite3_stmt*", "int", "string", "int", "int"
      /* We should arguably create a hand-written binding of
         bind_text() which does more flexible text conversion, along
@@ -961,7 +961,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     ["sqlite3_result_int",undefined, "sqlite3_context*", "int"],
     ["sqlite3_result_null",undefined, "sqlite3_context*"],
     ["sqlite3_result_pointer",undefined,
-     "sqlite3_context*", "*", "static-string", "*"],
+     "sqlite3_context*", "*", "string:static", "*"],
     ["sqlite3_result_text",undefined, "sqlite3_context*", "string", "int", "*"],
     ["sqlite3_result_zeroblob", undefined, "sqlite3_context*", "int"],
     ["sqlite3_serialize","*", "sqlite3*", "string", "*", "int"],
@@ -984,7 +984,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     ["sqlite3_value_bytes","int", "sqlite3_value*"],
     ["sqlite3_value_double","f64", "sqlite3_value*"],
     ["sqlite3_value_int","int", "sqlite3_value*"],
-    ["sqlite3_value_pointer", "*", "sqlite3_value*", "static-string"],
+    ["sqlite3_value_pointer", "*", "sqlite3_value*", "string:static"],
     ["sqlite3_value_text", "string", "sqlite3_value*"],
     ["sqlite3_value_type", "int", "sqlite3_value*"],
     ["sqlite3_vfs_find", "*", "string"],
