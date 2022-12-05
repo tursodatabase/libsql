@@ -12,7 +12,7 @@ use rusqlite::types::Value;
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 use tokio_util::codec::Framed;
 
-use crate::coordinator::query::{QueryResponse, QueryResult};
+use crate::query::{QueryResponse, QueryResult};
 use crate::server::AsyncPeekable;
 
 pub struct SimpleHandler(pub QueryResult);

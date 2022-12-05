@@ -1,4 +1,3 @@
-use std::convert::Infallible;
 use std::future::{poll_fn, Future};
 use std::io;
 use std::net::SocketAddr;
@@ -16,8 +15,8 @@ use tokio_util::codec::{Decoder, Framed};
 use tower::MakeService;
 use tower::Service;
 
-use crate::coordinator::query::{Query, QueryError, QueryResponse};
 use crate::postgres::authenticator::PgAuthenticator;
+use crate::query::{Query, QueryError, QueryResponse};
 use crate::server::AsyncPeekable;
 
 use super::proto::{peek_for_sslrequest, process_error, SimpleHandler};
@@ -115,7 +114,7 @@ impl<T, F, S> Service<(T, SocketAddr)> for PgConnectionFactory<F>
 where
     // Send not necessary, get rid of it when implementing authentication.
     T: AsyncRead + AsyncWrite + AsyncPeekable + Unpin + Send + Sync + 'static,
-    F: MakeService<(), Query, MakeError = Infallible, Service = S>,
+    F: MakeService<(), Query, MakeError = anyhow::Error, Service = S>,
     F::Future: 'static,
     S: Service<Query, Response = QueryResponse, Error = QueryError>,
 {

@@ -35,7 +35,7 @@ async fn main() -> Result<()> {
             tcp_addr,
             ws_addr,
         } => {
-            server::run_server(&db_path, tcp_addr, ws_addr).await?;
+            server::run_server(db_path, tcp_addr, ws_addr).await?;
         }
     }
 

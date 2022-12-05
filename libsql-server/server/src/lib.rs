@@ -1,52 +1,38 @@
-use std::path::Path;
+use std::net::SocketAddr;
+use std::path::PathBuf;
 
 use anyhow::Result;
-use coordinator::scheduler::service::SchedulerServiceFactory;
-use coordinator::scheduler::Scheduler;
-use rusqlite::OpenFlags;
-use tokio::net::ToSocketAddrs;
+use database::libsql::LibSqlDb;
+use database::service::DbFactoryService;
 
-use crate::coordinator::Coordinator;
 use crate::postgres::service::PgConnectionFactory;
 use crate::server::Server;
 
-mod coordinator;
-mod job;
+mod database;
 mod postgres;
+mod query;
+mod query_analysis;
 mod server;
 mod wal;
 
 pub async fn run_server(
-    db_path: &Path,
-    tcp_addr: impl ToSocketAddrs,
-    ws_addr: Option<impl ToSocketAddrs>,
+    db_path: PathBuf,
+    tcp_addr: SocketAddr,
+    ws_addr: Option<SocketAddr>,
 ) -> Result<()> {
-    let (pool, pool_sender) = Coordinator::new(0, move || {
-        crate::wal::open_with_virtual_wal(
-            db_path,
-            OpenFlags::SQLITE_OPEN_READ_WRITE
-                | OpenFlags::SQLITE_OPEN_CREATE
-                | OpenFlags::SQLITE_OPEN_URI
-                | OpenFlags::SQLITE_OPEN_NO_MUTEX,
-        )
-        .unwrap()
-    })?;
-    let (sender, receiver) = tokio::sync::mpsc::unbounded_channel();
-
-    let service = SchedulerServiceFactory::new(sender);
-    let factory = PgConnectionFactory::new(service);
     let mut server = Server::new();
     server.bind_tcp(tcp_addr).await?;
 
     if let Some(addr) = ws_addr {
         server.bind_ws(addr).await?;
     }
-    let scheduler = Scheduler::new(pool_sender, receiver)?;
-    let shandle = tokio::spawn(scheduler.start());
 
+    let service = DbFactoryService::new(move || {
+        let db_path = db_path.clone();
+        async move { LibSqlDb::new(db_path) }
+    });
+    let factory = PgConnectionFactory::new(service);
     server.serve(factory).await;
-    shandle.await?;
-    pool.join().await;
 
     Ok(())
 }
